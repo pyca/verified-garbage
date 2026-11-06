@@ -53,17 +53,4 @@ theorem twoBytes_values {η : Nat} (hη : η=2 ∨ η=4) {a : List Zq}
 theorem accepted_length (η : Nat) (bs : List Nat) : (accepted η bs).length≤bs.length := by
   simpa only [accepted, List.length_map] using List.length_filter_le (fun b => b < rbB η) bs
 
-theorem twoBytes_length {η : Nat} (hη : η=2 ∨ η=4) {a : List Zq}
-    (ha : a.length≤252) (b c : Byte) :
-    (rbFold η a [b,c]).length=a.length+(accepted η (nibbles b c)).length := by
-  rw [twoBytes_values hη ha, List.length_append]
-
-/-- The fourth lane of the three-polynomial tail duplicates its first lane.
-Consequently the aggregate failure test has exactly the original three inputs. -/
-theorem duplicate_failure (a b c : Nat) :
-    (a=0 ∧ b=0 ∧ c=0 ∧ a=0) ↔ (a=0 ∧ b=0 ∧ c=0) := by
-  constructor
-  · rintro ⟨ha,hb,hc,_⟩; exact ⟨ha,hb,hc⟩
-  · rintro ⟨ha,hb,hc⟩; exact ⟨ha,hb,hc,ha⟩
-
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour

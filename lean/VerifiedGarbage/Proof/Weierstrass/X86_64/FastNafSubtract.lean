@@ -103,7 +103,6 @@ theorem fastSub5_next (a b c d e : BitVec 64) (w k j : Nat)
   exact sub_next_of hs (nafVal5_lt _ _ _ _ _) (fastMagnitude_bound w k j)
     (FastNaf.negative_magnitude_pos w k j) (by omega_arith) (FastNaf.recurrence w k j)
 
-
 theorem fastSubtract_ok (s : State) (w k j : Nat)
     (hx : s.gpr .rcx=BitVec.ofInt 64 (FastNaf.digit w k j))
     (hv : nafVal5 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12)=FastNaf.residual w k j)
@@ -144,8 +143,6 @@ theorem fastSub7_next (a b c d e f g : BitVec 64) (w k j : Nat)
   rw [he] at hs
   exact sub_next_of hs (nafVal7_lt _ _ _ _ _ _ _) (fastMagnitude_bound w k j)
     (FastNaf.negative_magnitude_pos w k j) (by omega_arith) (FastNaf.recurrence w k j)
-
-theorem subtractDigitN_four : Naf.subtractDigitN 4=Naf.subtractDigit := rfl
 
 theorem subtractDigitN_six : Naf.subtractDigitN 6=
     [.mov .rax (.reg .rcx),.shift .shr .rax 63,.mov32 .rdx (.imm 0),.alu .sub .rdx (.reg .rax),

@@ -56,9 +56,6 @@ theorem frame_bytes {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Re
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   omega_arith
 
-theorem addr_toNat (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
-  simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega_arith)
-
 /-- `[x + d]`, for a word within a region at `x` inside the 32-bit address space. -/
 theorem contains_addr {x : BitVec 32} {d n len : Nat} (h : d + n ≤ len) (hn : 0 < n)
     (hx : x.toNat + len ≤ 2 ^ 32) :
@@ -97,12 +94,6 @@ theorem readW_writeW_addr (m : Mem) {x : BitVec 32} (v : BitVec 32) {d e : Nat}
 theorem add_ofNat (p : Addr) (a b : Nat) :
     p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
   rw [BitVec.ofNat_add, BitVec.add_assoc]
-
-/-- A region within one of `rs'`, at offset `o`. -/
-theorem within {r : Region} {rs' : List Region} (r' : Region) (hr' : r' ∈ rs') (o : Nat)
-    (hb : r.base = r'.base + BitVec.ofNat 64 o) (hl : o + r.len ≤ r'.len) :
-    ∃ r' ∈ rs', ∃ o, r.base = r'.base + BitVec.ofNat 64 o ∧ o + r.len ≤ r'.len :=
-  ⟨r', hr', o, hb, hl⟩
 
 /-! ## Arithmetic -/
 
@@ -288,8 +279,6 @@ theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = addr (s.gpr b) 
 theorem eval_e (s : State) : eval .e s = s.zf := rfl
 theorem eval_ne (s : State) : eval .ne s = s.zf.map (!·) := rfl
 theorem eval_b (s : State) : eval .b s = s.cf := rfl
-theorem eval_ae (s : State) : eval .ae s = s.cf.map (!·) := rfl
-
 theorem seq_assoc {M : ISA} {a b c : Prog M} {s : M.State} {Q : M.State → Prop} :
     WP M (.seq (.seq a b) c) s Q ↔ WP M (.seq a (.seq b c)) s Q := by
   simp only [WP.seq_iff]
@@ -564,8 +553,6 @@ theorem CalleeOk.withOut {P : Params} {H : Md P.B P.N P.L} {code : Prog isa} (hf
 /-- The 20 bytes of stack below `E`, as the contracts write them. -/
 theorem stk_eq {E : BitVec 32} (h : 20 ≤ E.toNat) : below E 20 = ⟨E.setWidth 64 - 20, 20⟩ := by
   simp only [below]; rw [Taint.sub_setWidth h]; rfl
-
-theorem arg_eq (s : State) (i : Nat) : arg s i = s.mem.readW (addr (s.gpr .esp) (4 + 4 * i)) 32 := rfl
 
 section
 variable {P : Params} {H : Md P.B P.N P.L}

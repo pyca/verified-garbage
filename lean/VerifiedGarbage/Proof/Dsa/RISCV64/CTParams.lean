@@ -482,11 +482,6 @@ section K
 variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SK v u)
 include hΦ
 
-theorem semB (hV : ∀ v u, Φ v u → VB v) {v : VD} {u : State} (h : At Φ FK 29 v u ∧ u.gpr .a0 = 0) :
-    SB v u :=
-  let m := at_sem (fun _ _ h => midK hΦ h) h.1
-  ⟨m.1, m.2.mp h.2, at_pure hV h.1⟩
-
 end K
 
 /-! ## `elemOrder` -/

@@ -103,14 +103,4 @@ theorem finish_vpiece {S : Nat} (h16 : 16≤S) (hS : S<2^64) {p : Params} (hF : 
         (cmpAnd (sc oCT) (.x27,0) p.ctildeLen)) :=
   (hash_vpiece h16 hS hF).seq (cmp_vpiece hF)
 
-/-- The final phase preserves public table addresses even though its semantic
-postcondition no longer needs table contents. -/
-theorem finish_rootPair {S : Nat} (h16 : 16≤S) (hS : S<2^64) {p : Params} (hF : VFacts p) :
-    RelCT isa (RootPair p S (SCx p S p.ℓ true p.k))
-      (.seq (shake256With keccak.callee (hIns p) [⟨.x28,oCT,p.ctildeLen⟩])
-        (cmpAnd (sc oCT) (.x27,0) p.ctildeLen))
-      (RootPair p S (VFin p)) := by
-  have h := finish_vpiece (keccak:=keccak) h16 hS hF
-  exact rootPair_progress h.ok (RelCT.mono h.tr (fun _ _ h=>h.1) (fun _ _ _=>trivial))
-
 end VG.Proof.MlDsa.AArch64.Verify.Optimized

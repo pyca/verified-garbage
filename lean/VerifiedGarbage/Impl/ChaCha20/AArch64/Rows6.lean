@@ -115,11 +115,6 @@ def next : List Instr :=
 
 def body : Prog isa := .seq chunk (.block next)
 
-/-- Bulk core before the two callee-saved vectors are wrapped. -/
-def raw : Prog isa := .seq (.block check)
-  (.seq (.ite (.nonzero .x .x5) (.block []) (.loop body (.zero .x .x5)))
-    VG.Impl.ChaCha20.AArch64.Small.xor)
-
 def save : List Instr := [.strq .v8 .x3 256,.strq .v9 .x3 272]
 def restore : List Instr := [.ldrq .v8 .x3 256,.ldrq .v9 .x3 272]
 def bulk : Prog isa := .seq (.block check)

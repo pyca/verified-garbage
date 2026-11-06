@@ -54,15 +54,6 @@ def initSat (w : Nat) : State where
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, bufOff w + blockBytes w⟩]
 
-/-- `update_scratch`, with no data, for `w`-bit words. -/
-def updateSat (w : Nat) : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a2 => 0x2000 | .a4 => 0x3000 | _ => 0
-  sp := 0x5000
-  mem _ := 0
-  rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x3000, 576⟩]
-
 /-- `update`, with no data, for `w`-bit words. -/
 def updateFramedSat (w : Nat) : State where
   gpr r := match r with
@@ -71,15 +62,6 @@ def updateFramedSat (w : Nat) : State where
   mem _ := 0
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, bufOff w + blockBytes w⟩]
-
-/-- `finalize_scratch`, for `w`-bit words. -/
-def finalizeSat (w : Nat) : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a2 => 0x2000 | .a3 => 0x3000 | _ => 0
-  sp := 0x5000
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x2000, bufOff w⟩, ⟨0x3000, 576⟩]
 
 /-- `finalize`, for `w`-bit words. -/
 def finalizeFramedSat (w : Nat) : State where
@@ -108,15 +90,6 @@ theorem initB_verified :
       Spec.Blake2.bufOff, Spec.Blake2.blockBytes, Size.bits, RISCV64.abi, RISCV64.argRegs] [initSat]
       using initSat 64)
 
-theorem updateScratchB_verified :
-    Verified RISCV64.target (Impl.Blake2.RISCV64.Stream.updateScratch b)
-      (Proof.Blake2.updateBScratchContract RISCV64.abi) :=
-  Verified.of_correct (fun st hs => Update.correct okB calleeB hs) updateScratchB_ct (by
-    sig_implies [Proof.Blake2.updateBScratchContract, Proof.Blake2.updateBScratchSig,
-      Proof.Blake2.updateRISCV64, Proof.Blake2.updatePost, Spec.Blake2.updateBPost, Spec.Blake2.bufOff,
-      Spec.Blake2.blockBytes, RISCV64.abi, RISCV64.argRegs]
-      [updateSat] using updateSat 64)
-
 theorem updateB_verified :
     Verified RISCV64.target (Impl.Blake2.RISCV64.Stream.update b)
       (Spec.Blake2.updateBContract RISCV64.abi 576) :=
@@ -125,15 +98,6 @@ theorem updateB_verified :
       Proof.Blake2.updateFramedRISCV64, Proof.Blake2.updatePost, Spec.Blake2.updateBPost,
       Spec.Blake2.bufOff, Spec.Blake2.blockBytes, RISCV64.abi, RISCV64.argRegs]
       [updateFramedSat] using updateFramedSat 64)
-
-theorem finalizeScratchB_verified :
-    Verified RISCV64.target (Impl.Blake2.RISCV64.Stream.finalizeScratch b)
-      (Proof.Blake2.finalizeBScratchContract RISCV64.abi) :=
-  Verified.of_correct (fun st hs => Finalize.correct okB calleeB hs) finalizeScratchB_ct (by
-    sig_implies [Proof.Blake2.finalizeBScratchContract, Proof.Blake2.finalizeBScratchSig,
-      Proof.Blake2.finalizeRISCV64, Proof.Blake2.finalizePost, Spec.Blake2.finalizeBPost,
-      Spec.Blake2.bufOff, Spec.Blake2.blockBytes, RISCV64.abi, RISCV64.argRegs]
-      [finalizeSat] using finalizeSat 64)
 
 theorem finalizeB_verified :
     Verified RISCV64.target (Impl.Blake2.RISCV64.Stream.finalize b)

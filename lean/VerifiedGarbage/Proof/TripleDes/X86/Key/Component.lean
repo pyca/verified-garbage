@@ -311,12 +311,6 @@ theorem work_slot (s : State) (fit : (s.gpr .ebp).toNat + 512 ≤ 2 ^ 32)
   rw [addr_eq (by omega_arith)]
   exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
 
-theorem keyStore_read (s : State) (k : BitVec 64) (p : Addr)
-    (hsep : ∀ j ∈ [4, 5], Mem.Sep p 8 (wordAddr (s.gpr .ebp) j) 4) :
-    (keyStoreMem s k).readW p 64 = (s.mem.writeW (wordAddr (roundKeyPtr s) 0) k).readW p 64 := by
-  rw [keyStoreMem, Mem.readW_writeW_sep (hsep 5 (by decide)) (by decide),
-    Mem.readW_writeW_sep (hsep 4 (by decide)) (by decide)]
-
 theorem keyStore_frame (s : State) (base : BitVec 32) (j : Nat) (hj : j < 16)
     (fit : base.toNat + 128 ≤ 2 ^ 32) (scratchFit : (s.gpr .ebp).toNat + 512 ≤ 2 ^ 32)
     (ptr : roundKeyPtr s = base + BitVec.ofNat 32 (8 * j)) (k : BitVec 64) :

@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.RsaPss.X86.Table
 
 `ctHashT_noSp`: the hash through the table of `MdHash` writes `esp` only
 through the frames of its calls, when every function its calls may reach
-does, as `ctHash_noSp` for the direct calls.
+does.
 -/
 
 @[expose] public section

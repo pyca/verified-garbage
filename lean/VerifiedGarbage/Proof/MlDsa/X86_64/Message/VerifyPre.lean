@@ -122,17 +122,4 @@ theorem vlay_ok {p : Params} (hp : p ∈ params) {s : State} (h : VPre p s) (h8 
     have := h.nScr
     subst hR; simp only; omega
 
-theorem vmu_eq (p : Params) (s : State) :
-    (vlay p s).MU = stackArg s 0 + BitVec.ofNat 64 (oE p + 840) := by
-  simp only [Lay.MU, Lay.X, vlay, add_add]
-
-theorem vmu_nowrap {p : Params} {s : State} (h : VPre p s) : (vlay p s).MU.toNat + 64 ≤ 2 ^ 64 := by
-  have hn : (stackArg s 0).toNat + (oE p + 1024) ≤ 2 ^ 64 := by rw [← mScr_eq]; exact h.nScr
-  rw [vmu_eq]
-  generalize oE p = e at hn ⊢
-  generalize stackArg s 0 = x at hn ⊢
-  clear h
-  rw [toNat_add_ofNat (by omega), Nat.add_assoc]
-  exact Nat.le_trans (Nat.add_le_add_left (by clear hn; omega) _) hn
-
 end VG.Proof.MlDsa.X86_64.Message

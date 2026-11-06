@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.X86.MulMod
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 public import VerifiedGarbage.Impl.Mont.X86.Context
 public import VerifiedGarbage.Impl.Mont.X86.Window
@@ -9,6 +8,7 @@ public import VerifiedGarbage.Impl.Rsa.X86.GcdBatchRt
 import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Impl.Mont.X86.Sse2
 public import VerifiedGarbage.Impl.Bignum.X86.CrtRt
+public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
 
 /-! # RSA prime recovery by SP 800-56B Rev. 2 Appendix C.2 at a run-time width (i686)
 

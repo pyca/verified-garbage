@@ -229,9 +229,6 @@ theorem KR.keep {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ) 
 
 /-! ## `ρ` and `K` to the keys -/
 
-theorem r12_bases (o n : Nat) : ∀ w ∈ [(((.r12, o) : Ptr), n)], w.1.1 ∈ bases := fun w hw => by
-  rw [List.mem_singleton] at hw; subst hw; show Reg.r12 ∈ bases; decide
-
 theorem r13_bases (o n : Nat) : ∀ w ∈ [(((.r13, o) : Ptr), n)], w.1.1 ∈ bases := fun w hw => by
   rw [List.mem_singleton] at hw; subst hw; show Reg.r13 ∈ bases; decide
 

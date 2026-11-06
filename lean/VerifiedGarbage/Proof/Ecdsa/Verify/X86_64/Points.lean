@@ -234,19 +234,6 @@ theorem sum_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base siz
     simpa only [sn, tmv, sv, Impl.Ecdsa.X86_64.Cfg.rcbSlots, Impl.Ecdsa.X86_64.Cfg.pt] using
       (congrArg₂ Prod.mk vx (congrArg₂ Prod.mk vy vz)).trans t₁
 
-/-- `Step` depends only on what the slots of `a`, `3b` and `G` stand for. -/
-theorem Step.congr {L : LadderCfg} {C : Curve} {base : Addr} {s s' : State} {k : Nat}
-    {Q : Nat → Fe C → Fe C → Fe C → Prop} (h : Step L C base s k Q)
-    (ha : tmv C L.M.n base s' L.S.a = tmv C L.M.n base s L.S.a)
-    (hb : tmv C L.M.n base s' L.S.b3 = tmv C L.M.n base s L.S.b3)
-    (hx : tmv C L.M.n base s' L.G.x = tmv C L.M.n base s L.G.x)
-    (hy : tmv C L.M.n base s' L.G.y = tmv C L.M.n base s L.G.y)
-    (hz : tmv C L.M.n base s' L.G.z = tmv C L.M.n base s L.G.z) : Step L C base s' k Q := by
-  intro j hj X Y Z X2 Y2 Z2 X3 Y3 Z3 hq h2 h3
-  rw [ha, hb] at h2
-  rw [ha, hb, hx, hy, hz] at h3
-  exact h j hj X Y Z X2 Y2 Z2 X3 Y3 Z3 hq h2 h3
-
 /-! ## `[v]Q` -/
 
 /-- The slots `mulV` may write, in either case. -/

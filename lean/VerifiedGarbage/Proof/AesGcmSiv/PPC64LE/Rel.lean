@@ -71,9 +71,6 @@ the registers the pieces pass on. -/
 abbrev Kept (c : Cx) (s s' : State) : Prop :=
   Env c s' ∧ s'.sp = s.sp ∧ ∀ r ∈ [Reg.r23, .r24, .r25], s'.gpr r = s.gpr r
 
-theorem Kept.trans {c : Cx} {s t u : State} (h₁ : Kept c s t) (h₂ : Kept c t u) : Kept c s u :=
-  ⟨h₂.1, h₂.2.1.trans h₁.2.1, fun r hr => (h₂.2.2 r hr).trans (h₁.2.2 r hr)⟩
-
 /-- Code without calls that writes none of the environment's registers, nor
 `r23`–`r25`. -/
 theorem Runs.kept {c : Cx} {code : Prog isa} {s : State} (E : Env c s) (rs : List Reg)
@@ -112,9 +109,5 @@ theorem ctr_runs {c : Cx} {s : State} {K C D S : Addr} {R n : Nat} (E : Env c s)
 theorem gh_runs [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} {s : State} {H Y D S : Addr} {n : Nat} (E : Env c s) (h : GhCall s H Y D S n) :
     Runs Impl.AesGcm.PPC64LE.ghCall s (Kept c s) :=
   Runs.of_wp (WP.mono (Proof.AesGcm.PPC64LE.gh_call h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
-
-theorem key_runs {c : Cx} {s : State} {K : Addr} {kl : Nat} {C S : Addr} (E : Env c s) (h : KeyCall s K kl C S) :
-    Runs Impl.AesGcm.PPC64LE.keyCall s (Kept c s) :=
-  Runs.of_wp (WP.mono (Proof.AesGcm.PPC64LE.key_call h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
 
 end VG.Proof.AesGcmSiv.PPC64LE

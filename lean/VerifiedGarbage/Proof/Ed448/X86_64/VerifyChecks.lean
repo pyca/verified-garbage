@@ -143,11 +143,6 @@ structure CKeep (base : Addr) (s t : State) : Prop where
   wr : t.wr = s.wr
   mem : Outside base BAD 80 s.mem t.mem
 
-theorem CKeep.trans {base : Addr} {s t u : State} (h₁ : CKeep base s t) (h₂ : CKeep base t u) :
-    CKeep base s u :=
-  ⟨fun r hr => (h₂.gpr r hr).trans (h₁.gpr r hr), h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr,
-    h₁.mem.trans h₂.mem⟩
-
 theorem CKeep.scr {base : Addr} {s t : State} (h : CKeep base s t) (hs : Scr s base) : Scr t base :=
   ⟨(h.gpr _ (by decide)).trans hs.rdi, h.wr ▸ hs.wr, hs.nowrap⟩
 

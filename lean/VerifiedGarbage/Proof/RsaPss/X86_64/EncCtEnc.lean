@@ -34,8 +34,6 @@ open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
 
 variable {T : Tabs}
 
-theorem slo_le (s : State) : slo s ≤ 1 := Nat.zero_le 1
-
 /-- The public words after the checks. -/
 def KS6 : List Nat := [8, 9, 10, 11, 12, 13, 14, 16, 17, 21, 25, 26, 37, 39, 40]
 

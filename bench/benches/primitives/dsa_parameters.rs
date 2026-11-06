@@ -19,11 +19,16 @@ pub fn bench(c: &mut Criterion) {
 
     // verified-garbage searches from a fixed tape (`generate` but for
     // `getrandom`), so it tests the same candidates and witnesses in every
-    // iteration. OpenSSL cannot be given its tape, and draws from its own
-    // generator.
+    // iteration. How long a search takes depends on how many seeds and
+    // candidates its tape rejects, so that the draw is a typical one, each
+    // size's tape is `fixed_tape` of the seed whose search is the median of
+    // those of seeds `bits` to `bits + 8`. They were ranked by the time of
+    // the search on x86-64 with `VG_CPU_FEATURES=none`; the search reads the
+    // same candidates from a tape on every target. OpenSSL cannot be given
+    // its tape, and draws from its own generator.
     let mut group = c.benchmark_group("dsa_generate_parameters");
     group.sample_size(10);
-    for bits in [1024, 2048, 3072] {
+    for (bits, seed) in [(1024, 1027), (2048, 2050), (3072, 3075)] {
         // The legacy API used by rust-openssl chooses 160/256-bit q, unlike
         // the provider's default. Verify the comparison sizes before timing.
         let check = Dsa::generate_params(bits as u32).unwrap();
@@ -31,7 +36,7 @@ pub fn bench(c: &mut Criterion) {
         assert_eq!(check.q().num_bits(), if bits == 1024 { 160 } else { 256 });
         group.bench(BenchmarkId::new(VG, bits), |b| {
             b.iter(|| {
-                let mut tape = fixed_tape(bits as u64);
+                let mut tape = fixed_tape(seed);
                 Parameters::generate_with_rng(black_box(bits), |buf| {
                     tape(buf);
                     Ok(())

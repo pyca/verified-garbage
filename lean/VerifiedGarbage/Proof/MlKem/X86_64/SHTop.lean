@@ -137,7 +137,7 @@ theorem end3G_ok {H : Mem → Prop} {s : State} (h : Done3 w16 σ H s) :
 /-- The runs after the squeezes, keeping `H`. -/
 theorem run3G_ok {fast : Bool} {Y : Spec.Sha3.State} {H : Mem → Prop} {s : State} (h : SqY w16 σ Y 0 3 s)
     (hs : H s.mem) (hH : Stab σ H) :
-    WP isa (.seq (.block tabAddr) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))) s fun s' =>
+    WP isa (.seq (.block tabAddr) (.seq (run1 0 w16 fast) (.seq (run1 1 w16 fast) (.seq (run1 2 w16 fast) (tail3 fast w16))))) s fun s' =>
       Post3 w16 σ s' ∧ H s'.mem ∧ gprPreserved σ s' := by
   refine WP.seq (WP.mono (tabY_ok h hs hH) fun _ p₀ => ?_)
   refine WP.seq (WP.mono (run1Y_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (run1Y_ok hp (by decide) p₁)
@@ -151,7 +151,7 @@ theorem run3G_ok {fast : Bool} {Y : Spec.Sha3.State} {H : Mem → Prop} {s : Sta
 /-- After the squeezes, with the sponge's state stored back. -/
 theorem run3_ok {fast : Bool} {m : Nat} {Y : Spec.Sha3.State} {s : State} (h : SqY w16 σ Y 0 3 s)
     (hs : HS σ (hst σ m) s.mem) :
-    WP isa (.seq (.block tabAddr) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))) s fun s' =>
+    WP isa (.seq (.block tabAddr) (.seq (run1 0 w16 fast) (.seq (run1 1 w16 fast) (.seq (run1 2 w16 fast) (tail3 fast w16))))) s fun s' =>
       (sampleHMKW w16 m).post σ s' ∧ gprPreserved σ s' :=
   WP.mono (run3G_ok (fast := fast) hp h hs (HS.stab σ _)) fun _ ⟨⟨a, b⟩, c, d⟩ => ⟨⟨a, b, c⟩, d⟩
 

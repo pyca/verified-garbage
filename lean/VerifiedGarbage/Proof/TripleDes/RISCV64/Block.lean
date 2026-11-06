@@ -83,9 +83,6 @@ theorem savedSlots_restorable : Spill.Restorable sb savedSlots := by decide
 
 theorem savedSlots_in : ∀ p ∈ savedSlots, 56 ≤ p.2 ∧ p.2 + 8 ≤ 56 + 48 := by decide
 
-/-- A word of the frame, `8 o` bytes on. -/
-theorem slot_eq (B : Addr) (o : Nat) : B + BitVec.ofNat 64 (8 * o) = wordAddr B o := rfl
-
 /-- The schedules' copy, for the rounds. -/
 theorem keysAt_of {k : Schedule} {s : State} (hal : (s.gpr sb).toNat % 8 = 0)
     (hwr : ∀ o < 118, InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * o)) 8)

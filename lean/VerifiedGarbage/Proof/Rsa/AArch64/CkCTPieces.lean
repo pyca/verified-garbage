@@ -92,13 +92,6 @@ theorem ckPQ_ct : RelCT isa (Two GK) (seqs (loadA aX sP sPlen ++ (loadA aR sQ sQ
       (ct_app (by simp [eqA]) (by simp) (eqA_ckct (by decide) (by decide) (by taint_decide))
         (ct_one andZero_ckct)))))
 
-theorem modOne_ckct : RelCT isa (Two GK) (seqs modOne) (Two GK) := by
-  unfold modOne
-  rw [List.append_assoc]
-  exact ct_app (a := [divmod aA aRem aM aT]) (by simp) (by simp [eqA]) (ct_one (divmod_ckct (by taint_decide)
-    (by taint_decide))) (ct_app (by simp [eqA]) (by simp) (eqA_ckct (a := aRem) (b := aOne) (by decide) (by decide)
-      (by taint_decide)) (ct_one andZero_ckct))
-
 theorem ckDN_ct : RelCT isa (Two GK) (seqs (loadA aX sD sDlen ++ ltA aX 0)) (Two GK) :=
   toGK (ofGK (ct_app (by simp [loadA]) (by simp [ltA]) (ld_ct (by decide) (by decide) (by decide) CkP.pD CkP.dl
     (by decide) (fun I m₀ s hs L => ⟨hs.args.d, hs.args.dl, ⟨_, hs.d, L.dbl⟩, L.dl1, L.dcap⟩)

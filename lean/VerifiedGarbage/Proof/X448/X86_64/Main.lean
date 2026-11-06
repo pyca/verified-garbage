@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 public import VerifiedGarbage.Proof.X448.X86_64.Finish
 public import VerifiedGarbage.Proof.X448.X86_64.InvCall
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -15,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # X448 on x86-64: the whole function
 
 The contract the proof is written against (the facts of
-`Spec.X448.x448Contract` it uses, stated for x86-64), and the correctness of
+`Proof.X448.x448Contract` it uses, stated for x86-64), and the correctness of
 `vg_x448` against it: every write is in the working space but the result's, so
 the arguments are read unchanged, the callee-saved registers restored from the
 working space, and the return address kept.
@@ -306,11 +307,6 @@ theorem correctBase_of {lad inv : Prog isa}
   exact WP.seq (WP.mono (setupBase_ok rfl (by rw [hp.wr]; simp) hp.sc_fit) fun s₁ h₁ =>
     tail_ok hf hlad hinv ⟨by rw [hp.rd]; simp, by rw [hp.wr]; simp, hp.out_sc, hp.scalar_sc,
       hp.ret_out, hp.ret_sc, hp.sc_fit⟩ h₁)
-
-include hf in
-theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa (x448With fld) s₀ fun s' => gprPreserved s₀ s' ∧ Proof.X448.x448X86_64.post s₀ s' :=
-  correct_of hf (fun h => ladder_post hf h) (fun hs => invert_post hf hs) hp
 
 theorem x448_inline : Impl.X448.X86_64.x448.inline =
     x448Of baseline (ladder baseline) (invertCall baseline []).inline := rfl

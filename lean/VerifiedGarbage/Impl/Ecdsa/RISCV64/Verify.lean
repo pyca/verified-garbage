@@ -163,20 +163,6 @@ def select : List Instr :=
   window c ++ (List.range 4).flatMap Comb.Cfg.maskOfBit ++ addAt .a0 wb c.jt ++
     (List.range (3 * c.n)).flatMap (scanWord c)
 
-/-- One step: `s1 -= 1`, the entry `E`, `D = R + R`, `T = D + D`, `R = T + E`. -/
-def step : Prog isa :=
-  .seq (.block (decCounter :: select c)) <|
-  .seq (addPt c (c.pt RX RY RZ) (c.pt RX RY RZ) (c.pt DX DY DZ)) <|
-  .seq (addPt c (c.pt DX DY DZ) (c.pt DX DY DZ) (c.pt TX TY TZ))
-    (addPt c (c.pt TX TY TZ) (c.pt c.EX c.EY c.EZ) (c.pt RX RY RZ))
-
-/-- `R = [u]G + [v]Q`: the table, `R = O`, then the steps. -/
-def joint : Prog isa :=
-  .seq (build c) <|
-  .seq (.block (copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO) ++
-    [.li ctr (NW c)]))
-    (.loop (step c) more)
-
 /-- `x mod n`, `r mod n` and their difference. -/
 def compare : Prog isa :=
   progs [addCall FN (c.sl XN) (c.sl XO) (c.sl ZERO), addCall FN (c.sl RN) (c.sl VR) (c.sl ZERO),
@@ -186,18 +172,6 @@ def compare : Prog isa :=
 low bit returned, the registers restored. -/
 def finish : List Instr :=
   Sign.Cfg.nonzeroFlag c RZ ++ zeroMask c.n (c.sl WD) ++ Ecdh.RISCV64.Cfg.andFlag c ++ Ecdh.RISCV64.Cfg.retCode c
-
-/-- `vg_ecdsa_<curve>_verify(public = a0, digest = a1, sig = a2, scratch = a3)`,
-with the check of the key `checkName` (its code `checkCode`). -/
-def verify (checkName : String) (checkCode : Prog isa) : Prog isa :=
-  .seq (.block (setup c)) <|
-  .seq (Ecdh.RISCV64.Cfg.wsCall checkName checkCode) <|
-  .seq (.block ((Sign.Cfg.nConsts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x))) <|
-  .seq (uv c FN) <|
-  .seq (joint c) <|
-  .seq (chainPow (Ecdh.RISCV64.Cfg.chainP c) (c.sl ONEP) c.FP) <|
-  .seq (Ecdh.RISCV64.Cfg.affineCoord c XM XO RX) <|
-  .seq (compare c FN) (.block (finish c))
 
 end Cfg
 

@@ -25,9 +25,6 @@ theorem generationDepth.seq {a b : Prog isa} (ha : generationDepth a) (hb : gene
 theorem generationDepth.ite {a b : Prog isa} (ha : generationDepth a) (hb : generationDepth b) (cc : Cond) :
     generationDepth (.ite cc a b) := Nat.max_le.mpr ⟨ha, hb⟩
 
-theorem generationDepth.loop {b : Prog isa} (hb : generationDepth b) (cc : Cond) :
-    generationDepth (.loop b cc) := hb
-
 theorem generationDepth.block (is : List Instr) : generationDepth (.block is) := by
   change 0 ≤ 128
   decide

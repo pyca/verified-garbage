@@ -52,11 +52,6 @@ structure CopyInInv (s₀ : State) (p : Addr) (m j : Nat) (s : State) : Prop whe
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem writeW32_byte (m : Mem) (a : Addr) (v : BitVec 32) {j : Nat} (hj : j < 4) :
-    (m.writeW a v) (a + BitVec.ofNat 64 j) = v.extractLsb' (8 * j) 8 := by
-  simp only [Mem.writeW, Mem.write, Mem.sub_ofNat_toNat a (show j < 2 ^ 64 by omega_arith),
-    show j < 32 / 8 by omega_arith, ite_true, BitVec.setWidth_eq]
-
 /-- The copy of word `w` of a block. -/
 def inWord (w : Nat) : List Instr :=
   [.li .r9 (4 * w), .loadRev .w .r9 .r6 .r9, .store .w .r9 .r7 (8 * arrSlot w)]

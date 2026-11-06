@@ -138,8 +138,6 @@ theorem backO_ok (s : State) :
   · simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
 
-theorem off_eq (base : Addr) (x : Nat) : off base x = base + BitVec.ofNat 64 x := rfl
-
 /-- The registers the products' branches change. -/
 abbrev brClob : List Reg := [.rax, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15]
 

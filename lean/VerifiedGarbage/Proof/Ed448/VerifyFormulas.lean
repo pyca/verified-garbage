@@ -18,7 +18,6 @@ namespace VG.Proof.Ed448
 open VG.Impl.Ed448 (FOp doubleAt addAt decodeUV)
 
 theorem doubleAt_valid0 : ∀ op ∈ doubleAt 0 1 2, fopValid op := by decide
-theorem doubleAt_valid8 : ∀ op ∈ doubleAt 8 9 10, fopValid op := by decide
 theorem addAt_valid8 : ∀ op ∈ addAt 8 9, fopValid op := by decide
 theorem addAt_valid6 : ∀ op ∈ addAt 6 7, fopValid op := by decide
 

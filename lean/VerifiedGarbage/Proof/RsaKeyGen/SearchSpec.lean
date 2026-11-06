@@ -271,12 +271,4 @@ theorem used_of_leak (r : Rand) :
       simp only [candidateLeak, hc, usedOfLeak, List.length_map, List.length_take, hd, List.length_drop]
       omega
 
-/-- Two traces that agree start with the same entry. -/
-theorem entry_eq {l₁ l₂ r₁ r₂ : List Nat} (h : (l₁.length :: l₁) ++ r₁ = (l₂.length :: l₂) ++ r₂) :
-    l₁ = l₂ := by
-  simp only [List.cons_append, List.cons.injEq] at h
-  obtain ⟨hl, h⟩ := h
-  have := congrArg (List.take l₁.length) h
-  rwa [List.take_left' rfl, hl, List.take_left' rfl] at this
-
 end VG.Proof.RsaKeyGen.Search

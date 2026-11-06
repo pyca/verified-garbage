@@ -27,7 +27,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 public import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
 public import VerifiedGarbage.Proof.Dsa.X86.FetchByte
 public import VerifiedGarbage.Proof.Dsa.X86.Layout
-public import VerifiedGarbage.Proof.Dsa.X86.LoadSlot
 public import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
 public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 public import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
@@ -171,7 +170,6 @@ import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
 import VerifiedGarbage.Proof.Dsa.X86.FetchByte
 import VerifiedGarbage.Proof.Dsa.X86.Layout
-import VerifiedGarbage.Proof.Dsa.X86.LoadSlot
 import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
 import VerifiedGarbage.Proof.Dsa.X86.Moduli
 import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.EncVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.Dec.Verified
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.RndVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -19,6 +20,10 @@ def artifacts : List Artifact := [
   Spec.RsaPkcs1Enc.decryptApi.artifact RISCV64.target {
     code := Impl.RsaPkcs1Enc.RISCV64.Decrypt.code
     stack := Proof.RsaPkcs1Enc.RISCV64.Dec.stackBytes
-    verified := Proof.RsaPkcs1Enc.RISCV64.Dec.dec_verified }]
+    verified := Proof.RsaPkcs1Enc.RISCV64.Dec.dec_verified },
+  Spec.RsaPkcs1Enc.encryptRandomApi.artifact RISCV64.target {
+    code := Impl.RsaPkcs1Enc.RISCV64.Random.code
+    stack := 4304
+    verified := Proof.RsaPkcs1Enc.RISCV64.Rnd.code_verified }]
 
 end VG.Artifacts.RsaPkcs1Enc.RISCV64

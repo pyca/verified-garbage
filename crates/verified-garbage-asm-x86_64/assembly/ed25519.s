@@ -491,6 +491,24 @@ vg_ed25519_sign_expanded:
 	ret
 	.p2align 6
 
+vg_ed25519_key_pair:
+	push rdi
+	push rsi
+	push rcx
+	mov rdi, rdx
+	mov rdx, rsi
+	mov esi, 32
+	call {vg_sha512_digest}
+	mov rdi, QWORD PTR [rsp+16]
+	mov rsi, QWORD PTR [rsp+8]
+	mov rdx, QWORD PTR [rsp]
+	call {vg_ed25519_public_key_expanded}
+	pop rax
+	pop rax
+	pop rax
+	ret
+	.p2align 6
+
 vg_ed25519_verify_adx:
 	push rdi
 	push rsi
@@ -789,6 +807,24 @@ vg_ed25519_sign_expanded_adx:
 	pop rax
 	pop rax
 	pop rax
+	pop rax
+	pop rax
+	pop rax
+	ret
+	.p2align 6
+
+vg_ed25519_key_pair_adx:
+	push rdi
+	push rsi
+	push rcx
+	mov rdi, rdx
+	mov rdx, rsi
+	mov esi, 32
+	call {vg_sha512_digest}
+	mov rdi, QWORD PTR [rsp+16]
+	mov rsi, QWORD PTR [rsp+8]
+	mov rdx, QWORD PTR [rsp]
+	call {vg_ed25519_public_key_expanded_adx}
 	pop rax
 	pop rax
 	pop rax
@@ -1099,6 +1135,24 @@ vg_ed25519_sign_expanded_ifma:
 	ret
 	.p2align 6
 
+vg_ed25519_key_pair_ifma:
+	push rdi
+	push rsi
+	push rcx
+	mov rdi, rdx
+	mov rdx, rsi
+	mov esi, 32
+	call {vg_sha512_digest}
+	mov rdi, QWORD PTR [rsp+16]
+	mov rsi, QWORD PTR [rsp+8]
+	mov rdx, QWORD PTR [rsp]
+	call {vg_ed25519_public_key_expanded_ifma}
+	pop rax
+	pop rax
+	pop rax
+	ret
+	.p2align 6
+
 vg_ed25519_verify_avx2:
 	push rdi
 	push rsi
@@ -1397,6 +1451,24 @@ vg_ed25519_sign_expanded_avx2:
 	pop rax
 	pop rax
 	pop rax
+	pop rax
+	pop rax
+	pop rax
+	ret
+	.p2align 6
+
+vg_ed25519_key_pair_avx2:
+	push rdi
+	push rsi
+	push rcx
+	mov rdi, rdx
+	mov rdx, rsi
+	mov esi, 32
+	call {vg_sha512_digest_avx2}
+	mov rdi, QWORD PTR [rsp+16]
+	mov rsi, QWORD PTR [rsp+8]
+	mov rdx, QWORD PTR [rsp]
+	call {vg_ed25519_public_key_expanded}
 	pop rax
 	pop rax
 	pop rax
@@ -1707,6 +1779,24 @@ vg_ed25519_sign_expanded_avx2_adx:
 	ret
 	.p2align 6
 
+vg_ed25519_key_pair_avx2_adx:
+	push rdi
+	push rsi
+	push rcx
+	mov rdi, rdx
+	mov rdx, rsi
+	mov esi, 32
+	call {vg_sha512_digest_avx2}
+	mov rdi, QWORD PTR [rsp+16]
+	mov rsi, QWORD PTR [rsp+8]
+	mov rdx, QWORD PTR [rsp]
+	call {vg_ed25519_public_key_expanded_adx}
+	pop rax
+	pop rax
+	pop rax
+	ret
+	.p2align 6
+
 vg_ed25519_verify_avx2_ifma:
 	push rdi
 	push rsi
@@ -2005,6 +2095,24 @@ vg_ed25519_sign_expanded_avx2_ifma:
 	pop rax
 	pop rax
 	pop rax
+	pop rax
+	pop rax
+	pop rax
+	ret
+	.p2align 6
+
+vg_ed25519_key_pair_avx2_ifma:
+	push rdi
+	push rsi
+	push rcx
+	mov rdi, rdx
+	mov rdx, rsi
+	mov esi, 32
+	call {vg_sha512_digest_avx2}
+	mov rdi, QWORD PTR [rsp+16]
+	mov rsi, QWORD PTR [rsp+8]
+	mov rdx, QWORD PTR [rsp]
+	call {vg_ed25519_public_key_expanded_ifma}
 	pop rax
 	pop rax
 	pop rax
@@ -2315,6 +2423,24 @@ vg_ed25519_sign_expanded_shani:
 	ret
 	.p2align 6
 
+vg_ed25519_key_pair_shani:
+	push rdi
+	push rsi
+	push rcx
+	mov rdi, rdx
+	mov rdx, rsi
+	mov esi, 32
+	call {vg_sha512_digest_shani}
+	mov rdi, QWORD PTR [rsp+16]
+	mov rsi, QWORD PTR [rsp+8]
+	mov rdx, QWORD PTR [rsp]
+	call {vg_ed25519_public_key_expanded}
+	pop rax
+	pop rax
+	pop rax
+	ret
+	.p2align 6
+
 vg_ed25519_verify_shani_adx:
 	push rdi
 	push rsi
@@ -2619,6 +2745,24 @@ vg_ed25519_sign_expanded_shani_adx:
 	ret
 	.p2align 6
 
+vg_ed25519_key_pair_shani_adx:
+	push rdi
+	push rsi
+	push rcx
+	mov rdi, rdx
+	mov rdx, rsi
+	mov esi, 32
+	call {vg_sha512_digest_shani}
+	mov rdi, QWORD PTR [rsp+16]
+	mov rsi, QWORD PTR [rsp+8]
+	mov rdx, QWORD PTR [rsp]
+	call {vg_ed25519_public_key_expanded_adx}
+	pop rax
+	pop rax
+	pop rax
+	ret
+	.p2align 6
+
 vg_ed25519_verify_shani_ifma:
 	push rdi
 	push rsi
@@ -2917,6 +3061,24 @@ vg_ed25519_sign_expanded_shani_ifma:
 	pop rax
 	pop rax
 	pop rax
+	pop rax
+	pop rax
+	pop rax
+	ret
+	.p2align 6
+
+vg_ed25519_key_pair_shani_ifma:
+	push rdi
+	push rsi
+	push rcx
+	mov rdi, rdx
+	mov rdx, rsi
+	mov esi, 32
+	call {vg_sha512_digest_shani}
+	mov rdi, QWORD PTR [rsp+16]
+	mov rsi, QWORD PTR [rsp+8]
+	mov rdx, QWORD PTR [rsp]
+	call {vg_ed25519_public_key_expanded_ifma}
 	pop rax
 	pop rax
 	pop rax

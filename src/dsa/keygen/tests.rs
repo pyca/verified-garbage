@@ -68,7 +68,7 @@ fn generated_key_rejection_and_replay() {
     assert_eq!(&key.packed.0[3 * p.len() + q.len()..], &x[..]);
     let digest = [0x42; 32];
     let signature = key.sign(&digest).unwrap();
-    assert!(key.public_key().verify(&digest, &signature));
+    assert!(key.public_key().verify(&digest, &signature).is_ok());
 }
 
 #[test]
@@ -112,8 +112,8 @@ fn generated_keys_sign_and_verify() {
         assert_ne!(key.packed.0, other.packed.0);
         let digest = [0x5a; 32];
         let signature = key.sign(&digest).unwrap();
-        assert!(key.public_key().verify(&digest, &signature));
-        assert!(!other.public_key().verify(&digest, &signature));
+        assert!(key.public_key().verify(&digest, &signature).is_ok());
+        assert!(!other.public_key().verify(&digest, &signature).is_ok());
     }
 }
 
@@ -202,7 +202,7 @@ fn imported_private_components() {
         let key = PrivateKey::from_private_components(&p, &q, &g, &x).unwrap();
         assert_eq!(key.packed.0, [&p[..], &q, &g, &y, &x].concat());
         let signature = key.sign(b"imported key").unwrap();
-        assert!(key.public_key().verify(b"imported key", &signature));
+        assert!(key.public_key().verify(b"imported key", &signature).is_ok());
         for bad_x in [vec![0; q_len], q.clone(), vec![255; q_len]] {
             assert_eq!(
                 PrivateKey::from_private_components(&p, &q, &g, &bad_x).unwrap_err(),
@@ -259,7 +259,7 @@ fn legacy_2048_160_key_generation() {
     assert_eq!(&key.public.packed[2 * p.len() + q.len()..], g);
     let digest = [0x42; 32];
     let signature = key.sign(&digest).unwrap();
-    assert!(key.public_key().verify(&digest, &signature));
+    assert!(key.public_key().verify(&digest, &signature).is_ok());
 }
 
 #[test]
@@ -273,5 +273,6 @@ fn legacy_2048_160_private_import() {
     assert!(
         key.public_key()
             .verify(b"legacy private import", &signature)
+            .is_ok()
     );
 }

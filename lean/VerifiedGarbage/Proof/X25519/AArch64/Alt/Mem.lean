@@ -63,8 +63,6 @@ theorem rd_withMem (s : State) (m : Mem) : (withMem s m).rd = s.rd := rfl
 theorem wr_withMem (s : State) (m : Mem) : (withMem s m).wr = s.wr := rfl
 theorem sp_withMem (s : State) (m : Mem) : (withMem s m).sp = s.sp := rfl
 theorem zf_withMem (s : State) (m : Mem) : (withMem s m).zf = s.zf := rfl
-theorem c_withMem (s : State) (m : Mem) : (withMem s m).c = s.c := rfl
-
 theorem _root_.VG.Proof.Ed25519.AArch64.Scr.withMem {s : State} {base : Addr} (hs : Scr s base large) (m : Mem) :
     Scr (Alt.withMem s m) base large := ⟨hs.x0, hs.wr, hs.nowrap⟩
 
@@ -154,13 +152,5 @@ structure AltOp (base : Addr) (o : Nat) (s t : State) : Prop where
   wr : t.wr = s.wr
   sp : t.sp = s.sp
   mem : Outside base o 32 s.mem t.mem
-
-theorem AltOp.scr {base : Addr} {o : Nat} {s t : State} (h : AltOp base o s t)
-    (hs : Scr s base large) : Scr t base large :=
-  ⟨(h.gpr _ (by decide)).trans hs.x0, h.wr ▸ hs.wr, hs.nowrap⟩
-
-theorem AltOp.fe {base : Addr} {o : Nat} {s t : State} (h : AltOp base o s t) {d : Nat}
-    (hd : d + 32 ≤ o ∨ o + 32 ≤ d) (hd' : AltRange d large) : fe t.mem base d = fe s.mem base d :=
-  h.mem.fe hd (by have := hd'.2.2; have := workSize_le large; omega)
 
 end VG.Proof.X25519.AArch64.Alt

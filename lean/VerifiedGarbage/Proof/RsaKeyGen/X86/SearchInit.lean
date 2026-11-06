@@ -97,11 +97,6 @@ theorem not_decide_lt (a b : Nat) : (!decide (a < b)) = decide (b ≤ a) := by
   · rw [decide_eq_true h, decide_eq_false (by omega)]; rfl
   · rw [decide_eq_false h, decide_eq_true (by omega)]; rfl
 
-theorem sub_beq32 (a b : BitVec 32) : (a - b == 0) = (a == b) := by
-  apply Bool.eq_iff_iff.mpr
-  simp only [beq_iff_eq]
-  bv_omega
-
 /-- A guard: its check leaves `R`, then zeros when `P` holds. -/
 theorem guard_ok {check : List Instr} {cond : Cond} {rest : Prog isa} {t : State} {P : Prop}
     [Decidable P] {R Q : State → Prop}

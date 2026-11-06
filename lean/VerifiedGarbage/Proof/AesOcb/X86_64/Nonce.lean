@@ -36,10 +36,6 @@ open VG.Proof.AesCcm.X86_64 (bytesAt_frame)
 /-- The functions an instance calls. -/
 def callees (v : BlocksImpl) : Callees := ⟨v.enc, v.dec, v.expand⟩
 
-/-- A frame within the parts the pieces write. -/
-theorem mut_of {W SP D : Addr} {n : Nat} {rs : List Region} {m m' : Mem} (h : Frame rs m m')
-    (hs : ∀ r ∈ rs, ∃ r' ∈ mutR W SP D n, Region.Sub r r') : Frame (mutR W SP D n) m m' := h.sub hs
-
 /-- The key schedule, after a frame within the parts the pieces write. -/
 theorem ctxCiph_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hD : (⟨K, 256⟩ : Region).Disjoint ⟨D, n⟩)
     {m m' : Mem} (h : Frame (mutR W SP D n) m m') {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) :

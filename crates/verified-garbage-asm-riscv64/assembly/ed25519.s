@@ -4,6 +4,30 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
+vg_ed25519_key_pair:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -32
+	addi t0, sp, 0
+	sd ra, 0(t0)
+	sd a0, 8(t0)
+	sd a1, 16(t0)
+	sd a3, 24(t0)
+	addi a0, a2, 0
+	addi a2, a1, 0
+	addi a1, zero, 32
+	call {vg_sha512_digest}
+	addi t0, sp, 0
+	ld a0, 8(t0)
+	ld a1, 16(t0)
+	ld a2, 24(t0)
+	call {vg_ed25519_public_key_expanded}
+	addi t0, sp, 0
+	ld ra, 0(t0)
+	addi sp, sp, 32
+	ret
+	.option pop
+
 vg_ed25519_public_key_expanded:
 	.option push
 	.option arch, +m, +c

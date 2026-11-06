@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PdVerified
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # The ARMv7 PKCS #1 v1.5 functions: their callee `vg_rsa_public_precomputed_checked`
 
 `PdImpl`: an implementation of `vg_rsa_public_precomputed_checked`, with
-its proof and the stack it uses (at most 56 bytes); `pdBase`, the baseline
-(`Impl/Bignum/Arm/PdFn.lean`). Its contract, at a call with given arguments
+its proof and the stack it uses (at most 56 bytes). Its contract, at a call with given arguments
 (`pd_pre`, `pd_pub`, `pd_post`).
 -/
 
@@ -24,15 +24,8 @@ open VG VG.Arm
 structure PdImpl where
   name : String
   code : Prog isa
-  verified : Verified target code (Spec.Rsa.publicPrecomputedCheckedContract abi 56)
+  verified : Verified target code (Proof.Rsa.publicPrecomputedCheckedContract abi 56)
   stack : FrameStack.armStack code ≤ 56
-
-/-- The baseline. -/
-def pdBase : PdImpl where
-  name := Spec.Rsa.publicPrecomputedCheckedApi.name
-  code := Impl.Bignum.Arm.PdFn.code
-  verified := Proof.Bignum.Arm.pd_verified
-  stack := by decide +kernel
 
 theorem stackArg_call (s : State) (rd wr : List Region) (i : Nat) :
     stackArg (s.callEntry.withRegions rd wr) i = stackArg s i := by
@@ -92,13 +85,13 @@ theorem pd_pre {sp : BitVec 32} (h : PdArgs s out pre e inp scr K el rl sl) (hsp
     (dSA : Region.Disjoint ⟨State.addr scr, sl * 8⟩ ⟨State.addr sp, 24⟩)
     (lowD : ∀ r ∈ pdRd sp pre e inp K el rl ++ pdWr out scr K sl,
       Region.Disjoint ⟨State.addr sp - BitVec.ofNat 64 56, 56⟩ r) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre
       (s.callEntry.withRegions (pdRd sp pre e inp K el rl) (pdWr out scr K sl)) := by
   subst hspE
   have k32 := h.k32
   have rl32 := h.rl32
   have el32 : el < 2 ^ 32 := by have := h.elK; omega
-  sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val]
   simp only [stackArg_call, stackArgAddr_call, h.r0, h.r1, h.r2, h.r3, h.a0, h.a1, h.a2, h.a3, h.a4, h.a5,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32, Nat.mod_eq_of_lt rl32, Nat.mod_eq_of_lt el32,
@@ -120,12 +113,12 @@ theorem pd_pub {s₁ s₂ : State} (h₁ : PdArgs s₁ out pre e inp scr K el rl
     (hpre : Spec.Rsa.wordsAt s₁.mem (State.addr pre) rl = Spec.Rsa.wordsAt s₂.mem (State.addr pre) rl)
     (he : Spec.Rsa.bytesAt s₁.mem (State.addr e) el = Spec.Rsa.bytesAt s₂.mem (State.addr e) el)
     (rd wr : List Region) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pub (s₁.callEntry.withRegions rd wr)
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pub (s₁.callEntry.withRegions rd wr)
       (s₂.callEntry.withRegions rd wr) := by
   have k32 := h₁.k32
   have rl32 := h₁.rl32
   have el32 : el < 2 ^ 32 := by have := h₁.elK; omega
-  sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val]
   simp only [stackArg_call, h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₁.a0, h₁.a1, h₁.a2, h₁.a3, h₁.a4, h₁.a5,
     h₂.r0, h₂.r1, h₂.r2, h₂.r3, h₂.a0, h₂.a1, h₂.a2, h₂.a3, h₂.a4, h₂.a5,
@@ -138,7 +131,7 @@ theorem pd_pub {s₁ s₂ : State} (h₁ : PdArgs s₁ out pre e inp scr K el rl
 /-- The call's result: what it writes to `out` and returns, for every
 modulus whose precomputed values are `pre`'s. -/
 theorem pd_post {s t : State} (h : PdArgs s out pre e inp scr K el rl sl) {rd wr : List Region}
-    (hp : (Spec.Rsa.publicPrecomputedCheckedContract abi 56).post (s.callEntry.withRegions rd wr)
+    (hp : (Proof.Rsa.publicPrecomputedCheckedContract abi 56).post (s.callEntry.withRegions rd wr)
       (t.withRegions rd wr)) :
     ∀ nB : List Byte, nB.length = K →
       Spec.Rsa.publicPrecompute nB = some (Spec.Rsa.wordsAt s.mem (State.addr pre) rl) →
@@ -148,7 +141,7 @@ theorem pd_post {s t : State} (h : PdArgs s out pre e inp scr K el rl sl) {rd wr
   have k32 := h.k32
   have rl32 := h.rl32
   have el32 : el < 2 ^ 32 := by have := h.elK; omega
-  sig_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
+  sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val] at hp
   simp only [stackArg_call, h.r0, h.r1, h.r2, h.r3, h.a0, h.a1, h.a2,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32, Nat.mod_eq_of_lt rl32, Nat.mod_eq_of_lt el32] at hp

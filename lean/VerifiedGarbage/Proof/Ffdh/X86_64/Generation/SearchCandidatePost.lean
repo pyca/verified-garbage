@@ -72,9 +72,4 @@ theorem SearchCandidatePost.used_word {p : SearchPublic} {used : Nat} {s : State
   have he := (List.cons.inj hh).1
   simpa only [Bignum.word, off, BitVec.add_zero] using he
 
-theorem SearchCandidatePost.keep {p : SearchPublic} {used : Nat} {s t : State}
-    (h : SearchCandidatePost p used s) (hm : t.mem = s.mem)
-    (hr : (t.gpr .rax).setWidth 32 = (s.gpr .rax).setWidth 32) : SearchCandidatePost p used t := by
-  exact ⟨by rw [hr]; exact h.1, by rw [hm]; exact h.2⟩
-
 end VG.Proof.Ffdh.X86_64.Generation

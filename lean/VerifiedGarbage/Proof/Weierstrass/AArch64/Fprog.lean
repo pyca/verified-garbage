@@ -68,11 +68,6 @@ theorem Low.of_call {M : Mod} {l : List Nat}
   | none => exact .inl hc
   | some c => exact .inr (h c.1 c.2 hc)
 
-/-- Aligned, for products of at most four words. -/
-theorem Aligned.small {M : Mod} {Sl : Nat → Prop} (hn : M.n ≤ 4) (hsl : ∀ x, Sl x → x % 8 = 0)
-    (hmod : ModA M) : Aligned M Sl :=
-  ⟨hsl, hmod, fun _ _ h => by rw [callOf_small hn] at h; cases h⟩
-
 /-- The state holds the environment `E` in Montgomery's form in the slots
 `V`, below `m`, with the modulus in place. -/
 structure Inv (M : Mod) (base : Addr) (size m : Nat) [NeZero m] (Sl : Nat → Prop) (V : List Nat)
@@ -358,7 +353,6 @@ theorem rcb_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     rcases List.mem_append.mp hx with hx | hx
     · exact Or.inr (rcb_out_mem hx)
     · exact Or.inl hx
-
 
 /-- A formula on numbered slots, renamed to `p`, `q` and `o`: it writes only
 `rcbW S o`, and its result is what the numbered formula computes. -/

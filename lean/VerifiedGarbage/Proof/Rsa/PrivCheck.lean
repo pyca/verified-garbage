@@ -12,8 +12,7 @@ the CRT and the public operation return and write, as every target's
 `vg_rsa_private_checked` computes it without branches: the mask of the
 release (`relMask`), the result (`result`, `checkResult`), whether `M` is
 released (`released`), and that this is `privateChecked`'s outcome
-(`outcome_eq`) and releases only a result that passes the check
-(`checkResult_sound`).
+(`outcome_eq`).
 -/
 
 @[expose] public section
@@ -205,20 +204,5 @@ theorem outcome_eq {m m' : Mem} {M out : Addr} {k : Nat} {rc r : BitVec 64}
       simp only [hrel, ↓reduceIte] at hout
       simp only [he, Bool.false_eq_true, ↓reduceIte]
       exact ⟨by rw [hr]; rfl, hout⟩
-
-/-- What the check releases passes it: a result 1 means `mB` (of `k` octets)
-is below `n` and `mB^e mod n` is the input. -/
-theorem checkResult_sound {r₁ : BitVec 64} {nB eB xB mB : List Byte} (hx : xB.length = nB.length)
-    (h : checkResult r₁ nB eB xB mB = 1) :
-    released r₁ nB eB xB mB ∧ Spec.Rsa.os2ip mB < Spec.Rsa.os2ip nB ∧
-      Spec.Rsa.os2ip mB ^ Spec.Rsa.os2ip eB % Spec.Rsa.os2ip nB = Spec.Rsa.os2ip xB := by
-  simp only [checkResult] at h
-  split at h
-  · rename_i hc
-    split at h
-    · rename_i hp
-      exact ⟨⟨hc.1, hc.2.1, hp⟩, Proof.Rsa.publicOpChecked_sound hx hp⟩
-    · cases h
-  · cases h
 
 end VG.Proof.Rsa

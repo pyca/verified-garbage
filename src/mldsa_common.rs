@@ -60,8 +60,8 @@ impl Backend {
 /// `VerifyingKey`, whose functions fail with `crate::error::MlDsaError`,
 /// over its verified `keygen`, `sign_message` and `verify_message_cached`
 /// functions (which takes the hash `tr` of the public key the
-/// `VerifyingKey` keeps), its `sign` and `verify` functions (which take a
-/// precomputed `μ`) and its sizes.
+/// `VerifyingKey` keeps, from `keygen` or from `pk_tr`), its `sign` and
+/// `verify` functions (which take a precomputed `μ`) and its sizes.
 macro_rules! ml_dsa {
     (
         name: $name:literal,
@@ -72,11 +72,13 @@ macro_rules! ml_dsa {
         verify: $verify:path,
         sign_message: $sign_message:path,
         verify_message_cached: $verify_message_cached:path,
+        pk_tr: $pk_tr:path,
         keygen_sha3: ($keygen_sha3:path, $keygen_sha3_features:path),
         sign_sha3: ($sign_sha3:path, $sign_sha3_features:path),
         verify_sha3: ($verify_sha3:path, $verify_sha3_features:path),
         sign_message_sha3: ($sign_message_sha3:path, $sign_message_sha3_features:path),
         verify_message_cached_sha3: ($verify_message_cached_sha3:path, $verify_message_cached_sha3_features:path),
+        pk_tr_sha3: ($pk_tr_sha3:path, $pk_tr_sha3_features:path),
         keygen_avx2: ($keygen_avx2:path, $keygen_avx2_features:path),
         keygen_avx512: ($keygen_avx512:path, $keygen_avx512_features:path),
         sign_avx2: ($sign_avx2:path, $sign_avx2_features:path),
@@ -95,7 +97,7 @@ macro_rules! ml_dsa {
     ) => {
         use $crate::zeroize::zeroize;
         use $crate::mldsa_common::Backend;
-        use $crate::error::MlDsaError;
+        use $crate::error::{InvalidSignature, MlDsaError};
 
         /// Select from the generated requirements of every accelerated caller.
         fn backend() -> Backend {
@@ -106,6 +108,7 @@ macro_rules! ml_dsa {
                 $verify_sha3_features,
                 $sign_message_sha3_features,
                 $verify_message_cached_sha3_features,
+                $pk_tr_sha3_features,
             ];
             #[cfg(target_arch = "x86_64")]
             const REQUIRED: &[verified_garbage_cpu::Features] = &[
@@ -143,7 +146,8 @@ macro_rules! ml_dsa {
         #[derive(Clone, PartialEq, Eq)]
         pub struct $VerifyingKey {
             bytes: [u8; $pk],
-            // Constructors maintain tr = SHAKE256(bytes, 64).
+            // Constructors maintain tr = H(bytes, 64), from the verified
+            // `pk_tr` or `keygen`.
             tr: [u8; 64],
         }
 
@@ -162,14 +166,29 @@ macro_rules! ml_dsa {
             /// The public key `bytes` (every byte string of this size is
             /// one).
             pub fn from_bytes(bytes: &[u8; $pk]) -> Self {
-                $VerifyingKey {
-                    bytes: *bytes,
-                    tr: {
-                        let mut tr = [0; 64];
-                        $crate::hashes::sha3::Shake256::digest(bytes, &mut tr);
-                        tr
-                    },
+                let mut tr = [0; 64];
+                // The verified contract accepts arbitrary initial scratch bytes.
+                let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
+                // SAFETY: `bytes`, `tr` and `scratch` are valid for reads
+                // (and, for `tr` and `scratch`, writes) of their sizes; they
+                // are distinct Rust objects, so they do not overlap each other
+                // or the stack, or wrap around the end of the address space.
+                // `backend()` chose an implementation whose features the CPU
+                // has. `pk_tr` writes `tr = H(bytes, 64)`
+                // (`VG.Spec.MlDsa.pkTrContract`), which
+                // `verify_message_cached` requires.
+                unsafe {
+                    match backend() {
+                        Backend::Scalar => $pk_tr(bytes, &mut tr, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::Sha3 => $pk_tr_sha3(bytes, &mut tr, scratch.as_mut_ptr()),
+                        // x86-64 has one implementation of `pk_tr`: its
+                        // sponge has no variants.
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx2 | Backend::Avx512 => $pk_tr(bytes, &mut tr, scratch.as_mut_ptr()),
+                    }
                 }
+                $VerifyingKey { bytes: *bytes, tr }
             }
 
             /// The bytes of the key.
@@ -179,12 +198,12 @@ macro_rules! ml_dsa {
 
             /// `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3):
             /// whether `sig` is a valid signature of the message `msg` with
-            /// the context string `ctx`. Fails with
-            /// [`MlDsaError::InvalidSignature`] if it is not (or, with
-            /// probability about 2⁻²⁵⁶ or less, if a loop reaches its bound),
-            /// and [`MlDsaError::ContextTooLong`] if `ctx` is longer than 255
-            /// bytes.
-            pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), MlDsaError> {
+            /// the context string `ctx`. Fails with [`InvalidSignature`] if
+            /// it is not (or, with probability about 2⁻²⁵⁶ or less, if a loop
+            /// reaches its bound), or if `ctx` is longer than 255 bytes, for
+            /// which nothing is a valid signature (Algorithm 3 returns an
+            /// error).
+            pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
                 let (m, m_len, c, c_len) = (msg.as_ptr(), msg.len(), ctx.as_ptr(), ctx.len());
@@ -196,8 +215,9 @@ macro_rules! ml_dsa {
                 // Backend selection checks the generated CPU feature requirements.
                 let r = unsafe {
                     match backend() {
-                        // Both constructors establish tr = SHAKE256(bytes, 64);
-                        // the key and digest remain private and immutable.
+                        // Both constructors establish tr = H(bytes, 64) with
+                        // verified code (`pk_tr`, `keygen`); the key and digest
+                        // remain private and immutable.
                         Backend::Scalar => $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
@@ -207,11 +227,8 @@ macro_rules! ml_dsa {
                         Backend::Avx512 => $verify_message_cached_avx512(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                     }
                 };
-                match r {
-                    1 => Ok(()),
-                    2 => Err(MlDsaError::ContextTooLong),
-                    _ => Err(MlDsaError::InvalidSignature),
-                }
+                // 2 is a context longer than 255 bytes.
+                if r == 1 { Ok(()) } else { Err(InvalidSignature) }
             }
 
             /// Verify a signature of the 64-byte message representative `mu`
@@ -220,8 +237,8 @@ macro_rules! ml_dsa {
             /// len(ctx) || ctx || msg, 64)`, where `tr = SHAKE256(pk, 64)`
             /// and `len(ctx)` is one byte (at most 255). This method does
             /// not hash the message or apply context formatting.
-            /// Returns [`MlDsaError::InvalidSignature`] if verification fails.
-            pub fn verify_mu(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), MlDsaError> {
+            /// Returns [`InvalidSignature`] if verification fails.
+            pub fn verify_mu(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
                 // SAFETY: `self.bytes`, `mu`, `sig` and `scratch` are valid
@@ -241,7 +258,7 @@ macro_rules! ml_dsa {
                         Backend::Avx512 => $verify_avx512(&self.bytes, mu, sig, scratch.as_mut_ptr()),
                     }
                 };
-                if r == 1 { Ok(()) } else { Err(MlDsaError::InvalidSignature) }
+                if r == 1 { Ok(()) } else { Err(InvalidSignature) }
             }
         }
 
@@ -458,7 +475,7 @@ pub(crate) use ml_dsa;
 
 #[cfg(test)]
 mod tests {
-    use crate::error::MlDsaError;
+    use crate::error::{InvalidSignature, MlDsaError};
     use crate::mldsa44::SigningKey44;
 
     #[cfg(target_arch = "x86_64")]
@@ -504,9 +521,6 @@ mod tests {
         let vk = key.verifying_key();
         assert_eq!(vk.verify(b"msg", &[0; 255], &sig), Ok(()));
         assert_eq!(key.sign(b"msg", &[0; 256]), Err(MlDsaError::ContextTooLong));
-        assert_eq!(
-            vk.verify(b"msg", &[0; 256], &sig),
-            Err(MlDsaError::ContextTooLong)
-        );
+        assert_eq!(vk.verify(b"msg", &[0; 256], &sig), Err(InvalidSignature));
     }
 }

@@ -38,16 +38,6 @@ def sealPwCode (v : GcmImpl) (g : GhashWithImpl) : Prog isa :=
 def openPwCode (v : GcmImpl) (g : GhashWithImpl) : Prog isa :=
   if v.stitch then Impl.AesGcm.AArch64.Stitch.openWithPw v.callees g.fn else Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn
 
-/-- `vg_aes_gcm_seal_store_powers`, calling `g`. -/
-def sealStCode (v : GcmImpl) (g : GhashStoreImpl) : Prog isa :=
-  if v.stitch then Impl.AesGcm.AArch64.Stitch.sealStorePw v.callees g.fn
-  else Impl.AesGcm.AArch64.Fast.sealStorePw v.callees g.fn
-
-/-- `vg_aes_gcm_open_store_powers`, calling `g`. -/
-def openStCode (v : GcmImpl) (g : GhashStoreImpl) : Prog isa :=
-  if v.stitch then Impl.AesGcm.AArch64.Stitch.openStorePw v.callees g.fn
-  else Impl.AesGcm.AArch64.Fast.openStorePw v.callees g.fn
-
 section
 variable (v : GcmImpl) (hMK : MulKey) (hP : PrepPow) (gh : Gh8Ok)
 include hMK hP gh
@@ -69,22 +59,6 @@ theorem openPwCode_framed (g : GhashWithImpl) :
   split
   · exact Fast.openPwS_framed v g hMK gh
   · exact Fast.openPw_framed v g hMK
-
-theorem sealStCode_framed (g : GhashStoreImpl) :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (sealStCode v g))
-      (Proof.AesGcm.sealStorePowersRoundsContract AArch64.abi 2592) := by
-  unfold sealStCode
-  split
-  · exact Fast.sealStS_framed v g hMK hP gh
-  · exact Fast.sealSt_framed v g hMK
-
-theorem openStCode_framed (g : GhashStoreImpl) :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openStCode v g))
-      (Proof.AesGcm.openStorePowersRoundsContract AArch64.abi 2592) := by
-  unfold openStCode
-  split
-  · exact Fast.openStS_framed v g hMK hP gh
-  · exact Fast.openSt_framed v g hMK
 
 end
 

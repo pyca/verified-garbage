@@ -50,7 +50,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
 import VerifiedGarbage.Proof.P256.Prime
 public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
 public import VerifiedGarbage.Impl.P256.EcdhJac
 public import VerifiedGarbage.Proof.Divstep.Batch
 public import VerifiedGarbage.Proof.Divstep.Incl
@@ -73,11 +72,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Sign
 public import VerifiedGarbage.Proof.Ecdsa.Verify
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCached
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPoints
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
@@ -152,7 +147,6 @@ public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Impl.Ecdh.P256.AArch64
-import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
 import VerifiedGarbage.Impl.P256.EcdhJac
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Divstep.Incl
@@ -175,11 +169,7 @@ import VerifiedGarbage.Proof.Ecdsa.Sign
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCached
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPoints
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 import VerifiedGarbage.Proof.Framework.Pratt

@@ -101,11 +101,6 @@ theorem pkSetup_ok {s : State} (hp : PkPre sl s) :
     obtain ⟨a, b, c, d⟩ := hn
     rw [g r a b c d, gu r]
 
-theorem pkV_s7 (s : State) : pkV s .s7 = s.gpr .a0 := rfl
-theorem pkV_s8 (s : State) : pkV s .s8 = s.gpr .a1 := rfl
-theorem pkV_s9 (s : State) : pkV s .s9 = s.gpr .a2 := rfl
-theorem pkV_s10 (s : State) : pkV s .s10 = s.gpr .a3 := rfl
-
 /-- The bytes at `a1`, while the body runs. -/
 theorem pk_seed {s t : State} (hp : PkPre sl s) (h : PkInv s t) (hn : sl < 2 ^ 64) :
     bytesAt t.mem (s.gpr .a1) sl = bytesAt s.mem (s.gpr .a1) sl :=

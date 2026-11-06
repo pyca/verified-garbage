@@ -355,7 +355,7 @@ def invert (F : Field) : Prog isa := .seq (chain223 F Z2) (invTail F)
 
 /-! ## The chain as a function
 
-`vg_gf448_r64_pow223` (`Proof/X448/Field64Contract.lean`): `chain223` of slot 12,
+`vg_gf448_r64_pow223`: `chain223` of slot 12,
 with the baseline's multiplications, between a save of the callee-saved
 registers it writes (`rbx`, `rbp`, `r12`–`r15`) at `SAVE`, in its own
 working space, and their restore. -/
@@ -377,9 +377,6 @@ def powRestore : List Instr := powSaved.map fun (r, d) => .mov r (.mem (sc d))
 def pow223FnWith (F : Field) : Prog isa := .seq (.block powSave) (.seq (chain223 F (slot 12)) (.block powRestore))
 
 def pow223Fn : Prog isa := pow223FnWith baseline
-
-/-- A call of `vg_gf448_r64_pow223`. -/
-def pow223Call : Prog isa := .call "vg_gf448_r64_pow223" pow223Fn
 
 /-- The registers that carry the words at `keep` across a call (`pow223Keep`), which the
 function restores. -/
@@ -474,9 +471,6 @@ point, whose setup writes its u-coordinate, 5, instead of reading one
 def x448BaseOf (F : Field) (lad : Prog isa) (inv : Prog isa := invert F) : Prog isa :=
   .seq (.block setupBase) <| .seq bits <| .seq (.block [.mov .rsi (.reg .r15)]) <| .seq lad <|
     .seq (.block lastSwap) <| .seq inv (.block (finish F))
-
-/-- X448 with the field multiplications `F`. -/
-def x448With (F : Field) : Prog isa := x448Of F (ladder F)
 
 def x448 : Prog isa := x448Of baseline (ladder baseline) (invertCall baseline)
 

@@ -131,9 +131,6 @@ abbrev PhiD (L : Lay) (_ : Mem) (t : State) : Prop :=
 def fixB (L : Lay) : Reg → BitVec 64
   | .x11 => L.out | .x12 => L.inp | .x13 => L.k | _ => 0
 
-def fixD (L : Lay) : Reg → BitVec 64
-  | .x11 => L.out | .x14 => L.B + BitVec.ofNat 64 oM | .x15 => L.k | _ => 0
-
 theorem cmpArgs_ct : RelCT isa (Two fun L _ t => Slots L t.mem) (.block cmpArgs) (Two PhiB) :=
   two_blk [] (fun _ _ => 0) (fun _ _ _ _ _ h => absurd h (by simp)) (by taint_decide)
     fun L _ _ _ t hL _ hc hs => WP.mono (cmpArgs_ok hL hc hs rfl rfl)

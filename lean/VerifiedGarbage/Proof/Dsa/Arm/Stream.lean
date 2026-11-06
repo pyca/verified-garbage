@@ -38,9 +38,6 @@ open VG.Impl.Dsa.Arm
 open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_str wp_ldr wp_ldrb wp_dp wp_cmp op2_imm op2_reg dpVal eval_ne
   eval_eq)
 
-theorem _root_.VG.Proof.Mont.Arm.Dyn.OpKeep.refl (n : Nat) (base : Addr) (o : Nat) (s : State) :
-    OpKeep n base o s s := ⟨Rest.refl _ _, Outs.refl _ _ _⟩
-
 theorem _root_.VG.Proof.Mont.Arm.Dyn.OpKeep.trans {n o : Nat} {base : Addr} {s t u : State}
     (h₁ : OpKeep n base o s t) (h₂ : OpKeep n base o t u) : OpKeep n base o s u :=
   ⟨h₁.rest.trans h₂.rest, h₁.mem.trans h₂.mem⟩

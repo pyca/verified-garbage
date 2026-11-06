@@ -27,12 +27,12 @@ structure CrtImpl where
   pcStack : FrameStack.armStack pc ≤ 56
   pdName : String
   pd : Prog isa
-  pdVerified : Verified target pd (Spec.Rsa.publicPrecomputedCheckedContract abi 56)
+  pdVerified : Verified target pd (Proof.Rsa.publicPrecomputedCheckedContract abi 56)
   pdStack : FrameStack.armStack pd ≤ 56
   suffix : String
   features : List String
 
-def privName (v : CrtImpl) : String := Spec.Rsa.privateCheckedApi.name ++ v.suffix
+def privName (v : CrtImpl) : String := "vg_rsa_private_checked" ++ v.suffix
 def privCode (v : CrtImpl) : Prog isa := Impl.Rsa.Arm.PrivChecked.code v.name v.code v.pcName v.pc v.pdName v.pd
 /-- Inner frame, register save, and the largest callee frame. -/
 def stackBytes : Nat := 3440

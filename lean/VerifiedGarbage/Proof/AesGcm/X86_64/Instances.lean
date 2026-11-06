@@ -25,7 +25,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksVerified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
@@ -38,10 +37,16 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Short
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Split
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.BlocksTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Gather
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.BlocksVerified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenTo.Verified
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+public import VerifiedGarbage.Proof.Gcm.PreparedContract
+public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
+public import VerifiedGarbage.Proof.Gcm.Prepared16Contract
 
 /-!
 # AES-GCM on x86-64: the functions a variant's artifacts are built from

@@ -66,7 +66,6 @@ theorem jacLoadAtFields_ok {K : WinCfg} {base : Addr} {size a : Nat} {C : Spec.W
   unfold tmv
   rw [vx,vy,vz,hI.val _ (hT _ (by simp)),hI.val _ (hT _ (by simp)),hI.val _ (hT _ (by simp))]
 
-
 theorem jacPublicFields_ok {K : WinCfg} {base : Addr} {size a : Nat} {C : Spec.Weierstrass.Curve}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl)
     (hn : K.M.n=4) (hy : K.E.y=K.E.x+32) (hz : K.E.z=K.E.x+64)
@@ -91,41 +90,6 @@ theorem jacPublicFields_ok {K : WinCfg} {base : Addr} {size a : Nat} {C : Spec.W
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hh
     rcases hh with rfl | rfl | rfl <;> simp [clob]
   exact kp.trans kt
-
-theorem jacLoadAt_relCT {K : WinCfg} {base : Addr} {size a : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl)
-    (hn : K.M.n=4) (hy : K.E.y=K.E.x+32) (hz : K.E.z=K.E.x+64)
-    {V : List Nat} {E : Nat → Fe C}
-    (hD : ∀ x∈jacCoords K.E, Sl x)
-    (hT : ∀ x∈jacCoords (Jacobian.tablePt K a), x∈V)
-    (hap : K.E.x+96≤K.tbl+96*(a-1) ∨ K.tbl+96*(a-1)+96≤K.E.x)
-    (hct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0,.x16]))
-      (.block ((List.range 12).flatMap fun i => [.ldr .x .x4 .x16 (8*i),st .x4 (K.E.x+8*i)]))) :
-    RelCT isa (fun s t => FieldPair K.M base size C.p Sl V E s t ∧
-      s.gpr .x16=off base (K.tbl+96*(a-1)) ∧ t.gpr .x16=off base (K.tbl+96*(a-1)))
-      (.block ((List.range 12).flatMap fun i => [.ldr .x .x4 .x16 (8*i),st .x4 (K.E.x+8*i)]))
-      (fun s t => ∃ E', FieldPair K.M base size C.p Sl (jacCoords K.E++V) E' s t) := by
-  let q := Jacobian.tablePt K a
-  let F := fun x => if x=K.E.x then E q.x else if x=K.E.y then E q.y else E q.z
-  apply fieldWrite_relCT (F:=F) hL hct
-  · intro s t hp ps pt
-    refine ⟨hp.sp,fun r hr => ?_⟩
-    simp only [Taint.mem_ofRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl
-    · exact hp.left.scr.x0.trans hp.right.scr.x0.symm
-    · exact ps.trans pt.symm
-  · exact hD
-  · intro x hx; exact List.mem_append.mp hx
-  · intro s hi hp
-    refine WP.mono (jacLoadAtFields_ok hL hAl hn hy hz hi hp hD hT hap)
-      fun t ⟨hk,it,ht⟩ => ⟨_,hk,it,?_⟩
-    intro x _ hx
-    simp only [Prod.mk.injEq] at ht
-    simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
-    rcases hx with rfl | rfl | rfl
-    · simpa only [F,ite_true] using ht.1
-    · simpa only [F,show K.E.y ≠ K.E.x by omega,ite_false,ite_true] using ht.2.1
-    · simpa only [F,show K.E.z ≠ K.E.x by omega,show K.E.z ≠ K.E.y by omega,ite_false] using ht.2.2
 
 theorem jacPublic_relCT {K : WinCfg} {base : Addr} {size a : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl)

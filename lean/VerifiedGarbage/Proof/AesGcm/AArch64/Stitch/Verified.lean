@@ -64,9 +64,6 @@ theorem stitchOpenWithS_keepsV (v : GcmImpl) {k : Nat} (hk : k = 16 ∨ k = 24) 
     padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, List.nil_append, v.ctr.keepsV,
     v.gh.keepsV, htb, hcl, Bool.and_true, Bool.true_and] <;> decide +kernel
 
-theorem powTbl_keepsV : (Code.block Impl.AesGcm.AArch64.Stitch.powTbl : Prog isa).allInstrs keepsV = true := by
-  decide +kernel
-
 theorem pwTbl_keepsV {k : Nat} (hk : k = 8 ∨ k = 16) :
     (Code.block (Impl.AesGcm.AArch64.Stitch.pwTbl k) : Prog isa).allInstrs keepsV = true := by
   rcases hk with rfl | rfl <;> decide +kernel

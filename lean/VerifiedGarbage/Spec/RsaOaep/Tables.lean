@@ -29,7 +29,7 @@ length. These are preconditions, on the public lengths; everything about
 the values is checked. Encryption returns 1 and writes the ciphertext, or
 returns 0 and writes zeros; with a `pre` that does not hold the values for
 `n`, what it writes and returns is unspecified, as in
-`Rsa.publicPrecomputedCheckedContract`. Decryption returns 1 and writes the
+`Proof.Rsa.publicPrecomputedCheckedContract`. Decryption returns 1 and writes the
 message, padded with zeros to `n_len` octets, and its length; or writes
 zeros and returns 0, the single error for every failure of the key, the
 ciphertext or its decoding, or 2 (the internal error: RSADP's result failed

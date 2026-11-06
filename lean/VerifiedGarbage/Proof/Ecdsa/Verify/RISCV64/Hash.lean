@@ -63,8 +63,6 @@ structure CPost (len : Nat) (wide : Bool) (s t : State) : Prop where
   keep : Keep [.t0, .t1, .t2, .a1, .a2] s t
   sp : t.sp = s.sp
 
-/-! ## Bytes -/
-
 /-! ## The cases -/
 
 theorem hash_byte {i : Nat} (hi : i < (s.gpr .a2).toNat) :
@@ -319,9 +317,6 @@ structure IPre (st : Nat) (s : State) : Prop where
 
 theorem hashSig_words : ((I.verifyHashSig.withScratch "buf" .u8 80).words abi.ptrBits).length ≤ 8 := by
   simp [Spec.Ecdsa.Instance.verifyHashSig, Sig.withScratch, Sig.words, Param.words]
-
-theorem coreSig_words : ((Proof.Ecdsa.verifySig I).words abi.ptrBits).length ≤ 8 := by
-  simp [Proof.Ecdsa.verifySig, Sig.words, Param.words]
 
 /-- `verifyHashContract`'s postcondition. -/
 abbrev hPost : I.verifyHashSig.Post abi.ptrBits := fun pk digest digestLen sig _scratch m _m' r =>

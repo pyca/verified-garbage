@@ -179,10 +179,6 @@ theorem n_w' {d k : Nat} (hd : d + k ≤ 2560) :
     (⟨w64 p.N, p.nl⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.n_w.sub_right (wSub hd)
 
-theorem a_w' {d k : Nat} (hd : d + k ≤ 2560) :
-    (⟨w64 p.A, p.al⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
-  L.a_w.sub_right (wSub hd)
-
 theorem d_w' {d k : Nat} (hd : d + k ≤ 2560) :
     (⟨w64 p.D, p.n⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.d_w.sub_right (wSub hd)
@@ -194,15 +190,7 @@ theorem t_w' {d k : Nat} (hd : d + k ≤ 2560) :
 theorem bw' {d k : Nat} (hd : d + k ≤ 2560) : (stk p).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.bw.sub_right (wSub hd)
 
-/-- The stack below `SP` that a call uses, within the 24 bytes. -/
-theorem stkSub {k : Nat} (hk : k ≤ 24) : Region.Sub (below p.SP k) (stk p) := VG.X86.below_sub hk L.sp
-
 theorem rounds_le : 16 * (p.R + 1) ≤ 240 := by rcases L.rounds with h | h | h <;> rw [h] <;> decide
-
-theorem toNat_R : (BitVec.ofNat 32 p.R).toNat = p.R := by
-  rcases L.rounds with h | h | h <;> rw [h] <;> rfl
-
-theorem R_lt : p.R < 2 ^ 32 := by rcases L.rounds with h | h | h <;> rw [h] <;> decide
 
 end Lay
 
@@ -335,9 +323,6 @@ theorem bytes_mut {p : Prm} {P : BitVec 32} {len : Nat}
     · exact hw.sub_right (Lay.wSub (by decide))
     · exact hb.symm
     · exact hd) hl
-
-theorem ctx_mut {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (mutR p) m m') :
-    bytesAt m' (w64 p.K) 256 = bytesAt m (w64 p.K) 256 := bytes_mut L.k_w L.bk L.k_d (by decide) hf
 
 theorem nonce_mut {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (mutR p) m m') :
     bytesAt m' (w64 p.N) p.nl = bytesAt m (w64 p.N) p.nl :=

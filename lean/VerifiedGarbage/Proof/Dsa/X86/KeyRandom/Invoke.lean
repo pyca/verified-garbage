@@ -25,8 +25,4 @@ structure DeriveInvoke (I : State → Mem → Prop) where
       Spec.Rsa.bytesAt u.mem (argumentPointer s₀ 0) (arg s₀ 1).toNat=
         (callResult s₀ t).getD (List.replicate (arg s₀ 1).toNat 0)
 
-def DeriveFn.invoke (F : DeriveFn) : DeriveInvoke (fun _ _ => True) where
-  code := .call F.name F.code
-  correct := fun A R C _ _ => call_ok F A R C
-
 end VG.Proof.Dsa.X86.KeyRandom

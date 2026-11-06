@@ -54,9 +54,9 @@ theorem pdCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : Sta
     (eb : bs1 1 = bs2 1)
     (pre : Spec.Rsa.wordsAt s.mem (State.addr g.precomputation) (2 * Spec.Rsa.modulusWords g.length) =
       Spec.Rsa.wordsAt t.mem (State.addr g.precomputation) (2 * Spec.Rsa.modulusWords g.length)) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pub
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pub
       (s.callEntry.withRegions (pdRd g) (pdWr g)) (t.callEntry.withRegions (pdRd g) (pdWr g)) := by
-  sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   have sa := fun {j} (hj : j < 6) => pdArgs_stack hs argsS hj
   have ta := fun {j} (hj : j < 6) => pdArgs_stack ht argsT hj
   simp only [hs.sp, ht.sp, argsS.output, argsT.output, argsS.outputLength, argsT.outputLength,

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # cdecl resources for the two shared key-validation contracts -/
 
@@ -14,7 +15,7 @@ open VG.Proof.Bignum.X86
 open VG.Impl.Rsa.X86.KeyCheck
 
 def contract (full : Bool) : Contract isa :=
-  if full then Spec.Rsa.checkKeyContract abi 20 else Spec.Rsa.checkCrtKeyContract abi 20
+  if full then Spec.Rsa.checkKeyContract abi 20 else Proof.Rsa.checkCrtKeyContract abi 20
 
 def caller (full : Bool) (s : State) : CallGeometry :=
   ⟨full, argumentPointer s (scratchArg full), (arg s (scratchArg full + 1)).toNat * 8,
@@ -73,8 +74,8 @@ private theorem all_eight {P : Nat → Prop} (h0 : P 0) (h1 : P 1) (h2 : P 2) (h
 
 theorem abi_crt_layout {s : State} (h : (contract false).pre s) : Layout false s := by
   simp only [contract, Bool.false_eq_true, ite_false] at h
-  sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, Spec.Rsa.checkCrtKeyContract,
-    Spec.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, Proof.Rsa.checkCrtKeyContract,
+    Proof.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   have rd : s.rd = inputRegions false s := by
     dsimp [inputRegions, inputCount, caller, CallGeometry.buffer, byteAddr]
@@ -97,8 +98,8 @@ theorem abi_crt_layout {s : State} (h : (contract false).pre s) : Layout false s
 
 theorem abi_crt_sizes {s : State} (h : (contract false).pre s) : Sizes false s := by
   simp only [contract, Bool.false_eq_true, ite_false] at h
-  sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, Spec.Rsa.checkCrtKeyContract,
-    Spec.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, Proof.Rsa.checkCrtKeyContract,
+    Proof.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   have len : Spec.Rsa.lenValid (arg s 1).toNat := by with_reducible assumption
   have lo := len.1
@@ -121,8 +122,8 @@ theorem abi_crt_of {s : State} (h : (contract false).pre s) : ABI false s :=
 
 theorem abi_key_layout {s : State} (h : (contract true).pre s) : Layout true s := by
   simp only [contract, ite_true] at h
-  sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, Spec.Rsa.checkCrtKeyContract,
-    Spec.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, Proof.Rsa.checkCrtKeyContract,
+    Proof.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   have rd : s.rd = inputRegions true s := by
     dsimp [inputRegions, inputCount, caller, CallGeometry.buffer, byteAddr]
@@ -145,8 +146,8 @@ theorem abi_key_layout {s : State} (h : (contract true).pre s) : Layout true s :
 
 theorem abi_key_sizes {s : State} (h : (contract true).pre s) : Sizes true s := by
   simp only [contract, ite_true] at h
-  sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, Spec.Rsa.checkCrtKeyContract,
-    Spec.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_pre [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, Proof.Rsa.checkCrtKeyContract,
+    Proof.Rsa.checkCrtKeySig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   have len : Spec.Rsa.lenValid (arg s 1).toNat := by with_reducible assumption
   have lo := len.1

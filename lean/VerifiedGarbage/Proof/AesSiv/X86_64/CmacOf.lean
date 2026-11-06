@@ -82,8 +82,6 @@ theorem chainedLen_rest (L : Nat) : L - Spec.Cmac.chainedLen 16 L ≤ 16 := by
 theorem chainedLen_div (L : Nat) : 16 * (Spec.Cmac.chainedLen 16 L / 16) = Spec.Cmac.chainedLen 16 L := by
   simp only [Spec.Cmac.chainedLen]; omega_arith
 
-theorem chainedLen_zero : Spec.Cmac.chainedLen 16 0 = 0 := rfl
-
 /-! ## Before the update -/
 
 theorem cmacA_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s) :

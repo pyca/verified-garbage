@@ -40,12 +40,6 @@ structure DPub where
 /-- The words of p. -/
 abbrev DPub.w (a : DPub) : Nat := (a.k + 7) / 8
 
-/-- The inner workspace, as the arithmetic sees it. -/
-abbrev DPub.ws (a : DPub) : Ws := ⟨off a.B (inner a.w), slot a.w 8, a.w⟩
-
-/-- p's load. -/
-abbrev DPub.bp (a : DPub) : BPub := ⟨⟨a.B, a.Z, inner a.w, a.w, a.w⟩, a.dp, a.k⟩
-
 /-! ## The check of p -/
 
 /-- `domHead_ok`'s hypotheses. -/

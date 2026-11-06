@@ -44,16 +44,6 @@ open VG.Proof.X448.X86_64 (Scr Index Env E FieldOk word off Outside ofs Saved cl
 open VG.Impl.X448.X86_64 (BITS slot)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 
-/-- The result's bytes: those of `y = Y/Z` and the sign of `x = X/Z`, for
-`(X : Y : Z)` the ladder's point of a scalar of 57 bytes. -/
-theorem encode_result (hL : BaseLadderOk) {X Y Z : Spec.X448.Fe} {m : Mem} {p : Addr}
-    (h : (⟨X, Y, Z⟩ : Spec.Ed448.Point) = ladder (decodeLE (bytesAt m p 57)) 456) :
-    Proof.X25519.leBytes 56 (Y * Proof.X448.invert Z).val ++
-      [BitVec.ofNat 8 (128 * ((X * Proof.X448.invert Z).val % 2))] =
-      Spec.Ed448.scalarBase (bytesAt m p 57) := by
-  rw [Spec.Ed448.scalarBase, ← hL _ (decodeLE_below (by rw [bytesAt_eq]; simp [Spec.X25519.bytesAt])),
-    ← h, encodePoint_code]
-
 /-- The output's address into `r15`, the working space into `rdi`. -/
 theorem movOut_ok (s : State) :
     WP isa (.block ([.mov .r15 (.reg .rdi), .mov .rdi (.reg .rdx)] : List Instr)) s fun t =>
@@ -242,24 +232,6 @@ theorem scalarBase_correct_of (_hL : BaseLadderOk) {inv : Prog isa}
     change Spec.Ed448.encodePoint (pt (E s₆'.mem base) 0 1 2) = _
     rw [encodePoint_rep r₆]
     exact (encodePoint_rep (pointMul_rep K basePoint_rep)).symm
-
-include hf hP in
-theorem scalarBase_correct (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal.pre s) :
-    WP isa (scalarBaseWith fld P) s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t :=
-  scalarBase_correct_of hf hP hL (fun hs => invert_post hf hs) hp
-
-theorem scalarBase_inline : scalarBase.inline =
-    scalarBaseWith Impl.X448.X86_64.baseline Point64.bodies
-      (Impl.X448.X86_64.invertCall Impl.X448.X86_64.baseline [OUT]).inline :=
-  rfl
-
-/-- `vg_ed448_scalar_base`, its calls of the point functions and `vg_gf448_r64_pow223`
-inlined. -/
-theorem scalarBase_correct_inline (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal.pre s) :
-    WP isa scalarBase.inline s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t := by
-  rw [scalarBase_inline]
-  exact scalarBase_correct_of Proof.X448.X86_64.baseline_ok Point64.bodies_ok hL
-    (fun hs => invertCall_post Proof.X448.X86_64.baseline_ok (keep := [OUT]) (by simp [OUT]) hs) hp
 
 theorem scalarBaseFor_inline (v : Impl.Ed448.X86_64.FieldVariant) :
     (scalarBaseFor v).inline = scalarBaseWith v.field v.bodies

@@ -38,9 +38,6 @@ namespace VG.Impl.Ecdsa.PPC64LE.VerifyHash
 
 open VG.PPC64LE
 
-/-- The buffer's bytes: at least `len + 1` (67 for P-521) and 72 (the zeros). -/
-def bufBytes : Nat := 80
-
 /-- The frame: the buffer above the frame's 32-byte header, a multiple of 16. -/
 def frameBytes : Nat := 112
 

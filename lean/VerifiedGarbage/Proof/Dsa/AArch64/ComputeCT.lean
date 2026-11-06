@@ -80,32 +80,4 @@ theorem signCompute_ct (M : Mont) : RelCT isa (Two (PublicKeyPre signComputeInpu
   · exact two_map (fun p => p) (fun p st h =>
       ⟨h, h.1.availableLocal .q s (by decide) (scalar_space (by decide) p)⟩) h5
 
-theorem verifyCompute_ct (M : Mont) : RelCT isa (Two (PublicKeyPre verifyComputeInputs))
-    (verifyCompute M.mm) (Two (ScheduleState verifyComputeInputs)) := by
-  have h1 := publicKey_ct M verifyComputeInputs verifyComputeInputs_stable
-    (by intro p; simp [verifyComputeInputs, verifyInputs])
-    (by intro p; simp [verifyComputeInputs, verifyInputs]) (by intro p; simp [verifyComputeInputs])
-  have h2 := scheduleRange_ct verifyComputeInputs verifyComputeInputs_stable .q Core.signatureR
-    (fun p => p.layout.qLen) false (by trivial) (by simp [stablePointer, Core.signatureR])
-    (fun p => p.layout.widths.1) (fun _ => Nat.le_refl _) (by taint_decide)
-  have h3 := scheduleRange_ct verifyComputeInputs verifyComputeInputs_stable .q Core.signatureS
-    (fun p => p.layout.qLen) false (by trivial) (by trivial)
-    (fun p => p.layout.widths.1) (fun _ => Nat.le_refl _) (by taint_decide)
-  have h4 := coreVerifySchedule_ct M verifyComputeInputs verifyComputeInputs_stable
-    (by intro p a ha; simp [verifyComputeInputs, ha])
-  have h5 := scheduleEqual_ct verifyComputeInputs verifyComputeInputs_stable (Core.scalar u) Core.signatureR
-    (fun p => p.layout.qLen) false (by change u < 2 ^ 16; decide) (by trivial) (by trivial)
-    (by simp [stablePointer, Core.signatureR]) (by decide)
-    (fun p => p.layout.widths.1) (by intro p; have := p.layout.widths; omega) (by taint_decide)
-  unfold verifyCompute seqs
-  refine RelCT.seq h1 (RelCT.seq (R := Two (ScheduleState verifyComputeInputs)) ?_
-    (RelCT.seq (R := Two (ScheduleState verifyComputeInputs)) ?_ (RelCT.seq h4 ?_)))
-  · exact two_map (fun p => p) (fun p st h =>
-      ⟨h, (h.2.1 (Core.signatureR, p.layout.qLen) (by simp [verifyComputeInputs, verifyInputs])).active⟩) h2
-  · exact two_map (fun p => p) (fun p st h =>
-      ⟨h, (h.2.1 (Core.signatureS, p.layout.qLen) (by simp [verifyComputeInputs, verifyInputs])).active⟩) h3
-  · exact two_map (fun p => p) (fun p st h =>
-      ⟨h, h.1.availableLocal .q u (by decide) (scalar_space (by decide) p),
-        (h.2.1 (Core.signatureR, p.layout.qLen) (by simp [verifyComputeInputs, verifyInputs])).active⟩) h5
-
 end VG.Proof.Dsa.AArch64

@@ -50,24 +50,4 @@ theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhAArch64.post s s' := 
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .x2) (1 + 2 * p256.C.len)) = ex s.mem (s.gpr .x1) (s.gpr .x2) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-theorem ecdh_a64 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds) (s : State) (hs : ecdhAArch64.pre s) :
-    ∃ t s', Exec isa exchangeP256 s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p256_ok hI) hL (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, post_of hpost⟩
-
-theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP256 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-    (fun _ _ _ _ ⟨h0, h1, h2, h3, hsp⟩ => ⟨hsp, fun r hr => by
-      simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact h0
-      · exact h1
-      · exact h2
-      · exact h3⟩) (by taint_decide)
-
-theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds) :
-    Verified AArch64.target exchangeP256
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi) :=
-  Verified.of_correct (ecdh_a64 hL hI) ecdh_ct implies
-
 end VG.Proof.Ecdh.AArch64

@@ -11,10 +11,8 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Two
 /-!
 # RSAES-OAEP decryption on PPC64LE: the shared code's base state
 
-Untrusted: everything here is checked by Lean. The arguments of the hash
-functions' calls (`UpdArgs`, `FinArgs`) hold for the decoding's `Base` and so
-for the shared code's (`UpdArgs.toX`, `FinArgs.toX`), whose base state has
-the entry's public data (`pubX_bx`); the label's hash is through its table,
+Untrusted: everything here is checked by Lean. The shared code's base state
+has the entry's public data (`pubX_bx`); the label's hash is through its table,
 in two runs `hashLabelT_ct` (`Proof/RsaOaep/PPC64LE/CTMgfT.lean`).
 -/
 
@@ -30,21 +28,6 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Two two_post wp_li wp_addi wp_mov wp_nil
 section
 variable {s : State} (P : PreD s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) {rc : Nat} (hrc : rc ≤ 2)
 include P hm hrc
-
-theorem UpdArgs.toX {H : Hash} {t : State} {d : Addr} {l : Nat} (A : UpdArgs (SD s) (VD s rc) H (withMem s m) t d l) :
-    PreX (bx s m rc) ∧ UpdArgs SX VX H (bx s m rc) t d l := by
-  obtain ⟨pX, bX⟩ := Dec.toX P hm rc hrc A.b
-  have h13 : SX (bx s m rc) = Sd s := stackArg_bx P hm rc (i := 13) (by decide)
-  have e : ∀ o, off (SD s (withMem s m)) o = off (SX (bx s m rc)) o := fun o => by rw [h13]
-  exact ⟨pX, pX, bX, A.h3.trans (e _), A.h5, A.h6, A.h7.trans (e _), A.hdc, by rw [← e]; exact A.hd₁,
-    by rw [← e]; exact A.hd₂, A.hd₃⟩
-
-theorem FinArgs.toX {t : State} (A : FinArgs (SD s) (VD s rc) (withMem s m) t) :
-    PreX (bx s m rc) ∧ FinArgs SX VX (bx s m rc) t := by
-  obtain ⟨pX, bX⟩ := Dec.toX P hm rc hrc A.b
-  have h13 : SX (bx s m rc) = Sd s := stackArg_bx P hm rc (i := 13) (by decide)
-  have e : ∀ o, off (SD s (withMem s m)) o = off (SX (bx s m rc)) o := fun o => by rw [h13]
-  exact ⟨pX, pX, bX, A.h3.trans (e _), A.h5.trans (e _), A.h6.trans (e _)⟩
 
 omit hrc in
 theorem pubX_bx {a : State} (p : PubD a s) : PubX a (bx s m rc) :=

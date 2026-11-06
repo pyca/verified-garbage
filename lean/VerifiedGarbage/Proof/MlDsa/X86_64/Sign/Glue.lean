@@ -59,9 +59,6 @@ theorem Arg.mov_ok (d : Reg) (a : Arg) (ha : a.ok = true) (hd : d ∈ argRegs6) 
     simp only [Arg.mov, movi, Arg.val]
     xrun [sw_ofNat ha]
 
-theorem Keep.of_sub {rs rs' : List Reg} {s s' : State} (h : Keep rs s s') (hs : ∀ r ∈ rs, r ∈ rs') :
-    Keep rs' s s' := h.mono hs
-
 theorem setArgsGen_ok : ∀ (ds : List Reg) (as : List Arg), ds.Nodup → (∀ d ∈ ds, d ∈ argRegs6) →
     as.all Arg.ok = true → ∀ s : State,
     WP isa (.block ((ds.zip as).flatMap fun (d, a) => a.mov d)) s fun s1 =>
@@ -92,13 +89,6 @@ theorem setArgsGen_ok : ∀ (ds : List Reg) (as : List Arg), ds.Nodup → (∀ d
 
 theorem argRegs6_nodup : argRegs6.Nodup := by decide
 
-
-theorem argRegs6_sub : ∀ as : List Arg, ∀ r ∈ (argRegs6.zip as).map (·.1), r ∈ argRegs := by
-  intro as r hr
-  obtain ⟨⟨d, a⟩, hm, rfl⟩ := List.mem_map.mp hr
-  have := (List.of_mem_zip hm).1
-  simp only [argRegs6, argRegs, List.mem_cons, List.not_mem_nil, or_false] at this ⊢
-  rcases this with h | h | h | h | h | h <;> simp [h]
 
 /-- The moves of the arguments `as`. -/
 theorem setArgs_ok (as : List Arg) (ha : as.all Arg.ok = true) (s : State) :

@@ -169,9 +169,6 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
     have hne : ∀ k, var t k ≠ r := fun k h => (work_ne (var_mem t k)).2.2.2 (h ▸ hr)
     rw [hk₂ r (Ne.symm (hne 4)) (Ne.symm (hne 1)) hp.2.1 hp.2.2, hk₁ r hp.2.1 hp.2.2]
 
-theorem ofInt_natCast (n : Nat) : BitVec.ofInt 64 (n : Int) = BitVec.ofNat 64 n := by
-  apply BitVec.eq_of_toInt_eq; simp
-
 /-! ## The message schedule -/
 
 theorem slot_ok (j : Nat) : slot j % 4 = 0 ∧ slot j < 16384 := by
@@ -404,7 +401,6 @@ def finalizeAArch64 : Contract AArch64.isa where
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.sp = s₂.sp
 
 end VG.Proof.Sha1
-
 
 namespace VG.Proof.Sha1.AArch64
 

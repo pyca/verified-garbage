@@ -207,13 +207,6 @@ theorem safe_call {u : State} (hc : Ctx L g m₀ u) {ws : List Region} (hs : ∀
 theorem scr_work {e k : Nat} (h : e + k ≤ 2256) : Region.Sub ⟨L.scr + BitVec.ofNat 64 e, k⟩ ⟨L.scr, 2256⟩ :=
   Offset.sub_base _ h
 
-theorem W_safe : ∀ r ∈ W L, Safe L r := by
-  intro r hr
-  simp only [W, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact .inr (.inl (Region.sub_prefix (by omega)))
-  · exact .inr (.inr (.inl (Region.sub_prefix (by omega))))
-
 /-! ## HMAC's `init` -/
 
 /-- The arguments of HMAC's `init`. -/

@@ -89,8 +89,6 @@ def pairStep (sha3 : Bool) (p a b : Reg) : Prog isa :=
 def squeezeStepWith (sha3 : Bool) : Prog isa :=
   .seq (pairStep sha3 .x22 .x24 .x25) (.seq (pairStep sha3 .x23 .x26 .x27) (.block advance))
 
-def squeezeStep : Prog isa := squeezeStepWith false
-
 /-- Reuse the verified single-stream rejection loop on stream k's output. -/
 def sample (k : Nat) : Prog isa :=
   .seq (.block [.addImm .x .x25 .x19 (1008*k),.addImm .x .x26 .x21 (1024*k)])
@@ -103,5 +101,4 @@ def rejNTT4With (sha3 : Bool) : Prog isa :=
     (.seq (.loop (squeezeStepWith sha3) (.nonzero .x .x28))
       (.seq (.block [.movz .x .x27 1 0])
         (.seq (sample 0) (.seq (sample 1) (.seq (sample 2) (.seq (sample 3) (.block epi)))))))
-def rejNTT4 : Prog isa := rejNTT4With false
 end VG.Impl.MlDsa.AArch64.Sample.Rej4

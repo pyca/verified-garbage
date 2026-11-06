@@ -28,14 +28,4 @@ theorem Bits.bit {base : Addr} {o k : Nat} {s : State} (h : Bits base o k s)
   simpa only [SignedWindow.carry, Nat.add_eq_zero_iff, Nat.one_ne_zero, and_false,
     ite_false, Nat.add_sub_cancel, show o - 1 + (t + 1) = o + t by omega] using hh
 
-theorem Bits.keep {base : Addr} {o k : Nat} (ho : 2048 ≤ o) (hb : o + 460 ≤ 8192) {s u : State} (h : Bits base o k s) (f : Keep base s u) :
-    Bits base o k u := by
-  intro t ht
-  have hout : ofs base (off base (o - 1 + t)) < 64 ∨
-      64 + 1584 ≤ ofs base (off base (o - 1 + t)) := by
-    rw [VG.Proof.X448.X86_64.ofs_off' base (by omega)]
-    right; omega
-  rw [f.mem _ hout]
-  exact h t ht
-
 end VG.Proof.Ed448.X86_64.Window

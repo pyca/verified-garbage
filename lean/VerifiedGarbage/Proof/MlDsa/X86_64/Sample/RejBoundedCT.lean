@@ -398,96 +398,13 @@ theorem loop_ct (n : Nat) :
         rw [z₁] at this; simpa using this
       exact ⟨544 - (t + 1), by omega_arith, σ₁, σ₂, t + 1, p₁, p₂, hq, he, rfl, by omega_arith, l₁', l₂'⟩
 
-/-- After the first block of the loop's setup. -/
-def IA (σ s : State) : Prop :=
-  Env (spOf σ) σ s ∧ bytesAt s.mem ((spOf σ).at' 840) 544 = X σ ∧ s.gpr .rsi = (spOf σ).at' 840 ∧
-    s.gpr .rdi = 0
-
-omit hη c1 c2 c3 in
-theorem latB {σ s : State} (h : IA σ s) : WP isa (.block [.mov32 .rcx (.imm 544)]) s (LAt σ 0) := by
-  refine WP.mono (WP.keep [.rcx] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .rcx = BitVec.ofNat 64 544)
-    (by xrun) (by decide)) fun s2 ⟨⟨hm2, hcx⟩, k2⟩ => ?_
-  exact ⟨h.1.keep hm2 (k2.mono (by decide)), by rw [hm2]; exact h.2.1, by rw [k2.gpr (by decide), h.2.2.1]; simp,
-    by rw [k2.gpr (by decide), h.2.2.2]; rfl, hcx, by rw [hm2]; exact stored_nil _ _⟩
-
-omit hη c1 c2 c3 in
-theorem hok : ∀ σ, rbK.pre σ → SpOk (spOf σ) σ := fun _ hp => spOk hp
-
 omit hη c1 c2 c3 in
 theorem hpub : ∀ σ₁ σ₂, rbK.pre σ₁ → rbK.pre σ₂ → rbK.pub σ₁ σ₂ → SpPub (spOf σ₁) (spOf σ₂) σ₁ σ₂ :=
   fun _ _ _ _ hq => spPub hq
 
-/-- The loop for `η`, in runs of a call with that `η`. -/
-theorem rbLoop_ct : RelCT isa (Rel2 rbK.pre rbK.pub fun σ s => etaOf σ = η ∧ J6 136 544 (spOf σ) σ s)
-    (rbLoop η) (Rel2 rbK.pre rbK.pub fun σ s => LAt σ 544 s) := by
-  refine RelCT.seq (relInv (I' := fun σ s => etaOf σ = η ∧ IA σ s) (fun σ s _ h => WP.mono (lat0 h.2) fun _ h' =>
-      ⟨h.1, h'⟩)
-    (taintSp (f := spOf) hpub (J := fun P σ s => etaOf σ = η ∧ J6 136 544 P σ s) (fun _ _ h => h.2.env) []
-      nil_regs (by taint_decide)))
-    (RelCT.seq (RelCT.mono (relInv (I' := fun σ s => etaOf σ = η ∧ LAt σ 0 s)
-        (fun σ s _ h => WP.mono (latB h.2) fun _ h' => ⟨h.1, h'⟩)
-        (taintSp (f := spOf) hpub (J := fun P σ s => etaOf σ = η ∧ Env P σ s ∧
-          bytesAt s.mem (P.at' 840) 544 = X σ ∧ s.gpr .rsi = P.at' 840 ∧ s.gpr .rdi = 0)
-          (fun _ _ h => h.2.1) [] nil_regs (by taint_decide)))
-      (fun _ _ h => h) fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, ⟨he, l₁⟩, ⟨_, l₂⟩⟩ =>
-        ⟨σ₁, σ₂, 0, p₁, p₂, hq, he, rfl, by omega_arith, l₁, l₂⟩)
-      (loop_ct hη c1 c2 c3 544))
-
 end
 
-/-- The branch on `η`, and the loops. -/
-theorem sel_ct : RelCT isa (Rel2 rbK.pre rbK.pub fun σ => J6 136 544 (spOf σ) σ)
-    (.seq (.block [.alu32 .cmp .r12 (.imm 2)]) (.ite .e (rbLoop 2) (rbLoop 4)))
-    (Rel2 rbK.pre rbK.pub fun σ s => LAt σ 544 s) := by
-  refine RelCT.seq (relInv (I' := fun σ s => J6 136 544 (spOf σ) σ s ∧ s.zf = some (decide (etaOf σ = 2)))
-    (fun σ s hp h => ?_) (taintSp hpub (fun _ _ h => h.env) [] nil_regs (by taint_decide))) ?_
-  · refine WP.mono (WP.keep [.r12] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r12 = s.gpr .r12 ∧
-        s'.zf = some (BitVec.setWidth 32 (s.gpr .r12) - 2 == 0)) (by xrun) (by rfl))
-      fun s1 ⟨⟨hm1, h12, hz1⟩, k1⟩ => ⟨⟨h.env.keep hm1 ⟨fun r hr => by
-        by_cases e : r = .r12
-        · subst e; exact h12
-        · exact k1.gpr (by simp [e]), k1.2⟩, by rw [hm1]; exact h.out⟩, ?_⟩
-    have hr12 : BitVec.setWidth 32 (s.gpr .r12) = BitVec.ofNat 32 (etaOf σ) := by
-      rw [h.env.r12]; rw [sw32_64, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-    rw [hz1, hr12]
-    rcases eta hp with he | he <;> rw [he] <;> rfl
-  refine RelCT.ite (fun x y ⟨σ₁, σ₂, _, _, hq, ⟨_, z₁⟩, ⟨_, z₂⟩⟩ => by
-    show x.zf = y.zf; rw [z₁, z₂, pub_eta hq]) ?_ ?_
-  · refine RelCT.mono (rbLoop_ct (η := 2) (.inl rfl) (by taint_decide) (by taint_decide) (by taint_decide))
-      (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, hq, ⟨j₁, z₁⟩, ⟨j₂, _⟩⟩, hb⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, ⟨?_, j₁⟩, ⟨?_, j₂⟩⟩)
-      fun _ _ h => h
-    · have : x.zf = some true := hb
-      rw [z₁] at this; simpa using this
-    · have : x.zf = some true := hb
-      rw [z₁, pub_eta hq] at this; simpa using this
-  · refine RelCT.mono (rbLoop_ct (η := 4) (.inr rfl) (by taint_decide) (by taint_decide) (by taint_decide))
-      (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, hq, ⟨j₁, z₁⟩, ⟨j₂, _⟩⟩, hb⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, ⟨?_, j₁⟩, ⟨?_, j₂⟩⟩)
-      fun _ _ h => h
-    · have : x.zf = some false := hb
-      rw [z₁] at this
-      rcases eta p₁ with he | he
-      · rw [he] at this; simp at this
-      · exact he
-    · have : x.zf = some false := hb
-      rw [z₁, pub_eta hq] at this
-      rcases eta p₂ with he | he
-      · rw [he] at this; simp at this
-      · exact he
-
 end RejBounded
-
-open RejBounded in
-theorem rejBounded_ct : ConstantTime isa rbK.pre rbK.pub Impl.MlDsa.X86_64.Sample.rejBounded := by
-  refine relStart (Q := fun _ _ => True) (RelCT.seq (relInv (I' := fun σ => J0 (spOf σ) σ)
-    (fun σ s hp h => by subst h; exact pro_ok hp)
-    (taintRel [.rdi, .rdx, .rcx, .rsp] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
-      subst h₁ h₂
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      exacts [hq.1, hq.2.2.1, hq.2.2.2.1, hq.2.2.2.2.1]) (by taint_decide))) ?_)
-  refine RelCT.seq (sponge_ct hok hpub (.inl rfl) (by decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
-  exact RelCT.seq sel_ct (taintSp (J := fun P σ s => LAt σ 544 s) hpub (fun _ _ h => h.env) [] nil_regs
-    (by taint_decide))
 
 end VG.Proof.MlDsa.X86_64.Sample
 
@@ -509,34 +426,5 @@ def rbSat : State where
   mem _ := 0
   rd := [⟨0x1000, 66⟩]
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
-
-theorem rejBounded_verified :
-    Verified X86_64.target Impl.MlDsa.X86_64.Sample.rejBounded (Proof.MlDsa.rejBoundedContract X86_64.abi 16) :=
-  Verified.of_correct rejBounded_correct rejBounded_ct
-    { pre := by sig_implies_pre [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK, X86_64.abi,
-        X86_64.argRegs]
-      post := by
-        intro s s' _ h
-        sig_post [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK, X86_64.abi, X86_64.argRegs]
-        dsimp only [rbK] at h
-        obtain ⟨hr, hp⟩ := h
-        by_cases hf : (rbFold (etaOf s) [] (H (bytesAt s.mem (s.gpr .rdi) 66) 544)).length = 256
-        · rw [ifT hf] at hr
-          obtain ⟨hred, hpoly⟩ := hp hf
-          exact ⟨fun _ => hred, .inl ⟨hr, { Spec.MlDsa.minBounds with rejBounded := 544 }, by
-            show Option.map _ (Spec.MlDsa.rejBoundedPoly _ 544 _) = _
-            rw [rejBounded_some _ hf, hpoly]⟩⟩
-        · rw [ifF hf] at hr
-          exact ⟨fun h1 => absurd (hr.symm.trans h1) (by decide),
-            .inr ⟨hr, by
-              show Option.map _ (Spec.MlDsa.rejBoundedPoly _ 481 _) = none
-              rw [rejBounded_none _ (B := 544) (by decide) hf]; rfl⟩⟩
-      pub := by
-        intro s₁ s₂ _ _ h
-        sig_pub [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK, X86_64.abi, X86_64.argRegs] at h
-        obtain ⟨hsp, hb, hdi, hsi, hdx, hcx⟩ := h
-        exact ⟨hdi, hsi, hdx, hcx, hsp, hb⟩
-      sat := by sig_implies_sat [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK, X86_64.abi,
-        X86_64.argRegs] [rbSat] using rbSat }
 
 end VG.Proof.MlDsa.X86_64.Sample

@@ -11,8 +11,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # ML-DSA verification on AArch64, with this library's primitives
 
-Verification with the AArch64 implementations of the primitives (`prims_ok`)
-is verified with 16 bytes of stack (`verify44_verified`, …).
+Verification with the AArch64 implementations of the primitives
+(`prims_okWith`) is verified with 16 bytes of stack (`verify44_verifiedWith`,
+…).
 -/
 
 @[expose] public section
@@ -55,17 +56,5 @@ theorem verify65_verifiedWith :
 theorem verify87_verifiedWith :
     Verified AArch64.target (verify87With keccak.callee) (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa87 AArch64.abi 16) :=
   verify_verified (keccak := keccak) (prims_okWith (keccak := keccak)) Spec.MlDsa.mlDsa87 (.inr (.inr rfl)) (verify_sat _ (.inr (.inr rfl)))
-
-theorem verify44_verified :
-    Verified AArch64.target verify44 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa44 AArch64.abi 16) :=
-  verify44_verifiedWith (keccak := .scalar)
-
-theorem verify65_verified :
-    Verified AArch64.target verify65 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa65 AArch64.abi 16) :=
-  verify65_verifiedWith (keccak := .scalar)
-
-theorem verify87_verified :
-    Verified AArch64.target verify87 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa87 AArch64.abi 16) :=
-  verify87_verifiedWith (keccak := .scalar)
 
 end VG.Proof.MlDsa.AArch64.Verify

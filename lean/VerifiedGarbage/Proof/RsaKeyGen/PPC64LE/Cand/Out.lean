@@ -47,11 +47,6 @@ theorem frame_of_outs {B : Addr} {rs : List (Nat × Nat)} {Z : Nat} {m m' : Mem}
   simp only [ofs]
   omega)
 
-/-- A write of a word within a region of the frame's list. -/
-theorem frame_writeW {rs : List Region} {r : Region} (hr : r ∈ rs) (m : Mem) {a : Addr} (v : BitVec 64)
-    (ha : r.Contains a 8) : Frame rs m (m.writeW a v) :=
-  (Frame.refl rs m).writeW hr v ha
-
 /-- Octets survive what keeps their bytes. -/
 theorem bytes_keep {rs : List Region} {m m' : Mem} (f : Frame rs m m') {Ra : Addr} {rl : Nat} (hrl : rl < 2 ^ 64)
     (hd : ∀ ρ ∈ rs, (⟨Ra, rl⟩ : Region).Disjoint ρ) : Spec.Rsa.bytesAt m' Ra rl = Spec.Rsa.bytesAt m Ra rl := by

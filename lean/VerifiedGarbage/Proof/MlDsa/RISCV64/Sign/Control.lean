@@ -25,8 +25,7 @@ function branches on, that the result is a function of their public data
 `maxBounds`. A call of such a sampler gives the same result in two runs
 (`callVRet_tr`). Then: `ρ` is public (`pub_rho`); two runs with the same
 layout (`STwo1`, `STwo2`) and the constant time of a piece without calls by
-the taint analysis from the pointers; and `ifOkElse t e`, a branch on the
-result in `s4` (`ifOkElse_piece`), which is a function of the public data.
+the taint analysis from the pointers.
 -/
 
 @[expose] public section
@@ -291,19 +290,6 @@ theorem stepRR {p : Params} {STK : Nat} {I J E E' Q₀ F : State → State → P
   obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
   exact ⟨ht', ⟨σ₁, σ₂, p₁, p₂, hpub, g₁, g₂⟩, hE _ _ _ _ ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, he⟩ k₁ k₂ hq⟩
 
-/-- A piece, from runs related by `RR`, keeping `E` as each run keeps it (`F`). -/
-theorem pieceRR {p : Params} {STK : Nat} {I J E E' F : State → State → Prop} {c : Prog isa}
-    (h : SPiece p STK I J c) (hF : ∀ σ s, SPre p STK σ → I σ s → WP isa c s (F s))
-    (hE : ∀ x y x' y', RR p STK I E x y → F x x' → F y y' → E' x' y') :
-    RelCT isa (RR p STK I E) c (RR p STK J E') :=
-  stepRR (fun σ s hp hs => WP.conj (h.ok σ s hp hs) (hF σ s hp hs))
-    (RelCT.mono h.tr (fun _ _ hr => hr.1) fun _ _ h => h) fun x y x' y' hr fx fy _ => hE x y x' y' hr fx fy
-
-theorem RR.mono {p : Params} {STK : Nat} {I I' E E' : State → State → Prop} {x y : State} (h : RR p STK I E x y)
-    (hI : ∀ σ s, I σ s → I' σ s) (hE : E x y → E' x y) : RR p STK I' E' x y := by
-  obtain ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, e⟩ := h
-  exact ⟨⟨σ₁, σ₂, p₁, p₂, hpub, hI _ _ i₁, hI _ _ i₂⟩, hE e⟩
-
 /-! ## `ρ` -/
 
 theorem signLeak_head (p : Params) (sk μ rnd : List Byte) :
@@ -393,42 +379,6 @@ theorem srel2p {I : State → State → Prop} (hI : ∀ σ s, I σ s → SC2 p S
     RelCT isa (Rel2 (SPre p STK) (sPub p) I) c fun _ _ => True :=
   rel_of (RelCT.exists_ fun _ => taint4 (fun _ _ h => h) h)
     fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, sc2_twoL pub (hI _ _ h₁) (hI _ _ h₂)⟩
-
-/-! ## A branch on `s4` -/
-
-/-- `ifOkElse t e`: `t` if `s4 ≠ 0` and `e` otherwise, where `s4` is `v σ`,
-a function of the public data. -/
-theorem ifOkElse_piece {I J : State → State → Prop} {t e : Prog isa} {v : State → BitVec 64}
-    (hv : ∀ σ s, SPre p STK σ → I σ s → s.gpr .s4 = v σ)
-    (hpub : ∀ σ₁ σ₂, SPre p STK σ₁ → SPre p STK σ₂ → sPub p σ₁ σ₂ → v σ₁ = v σ₂)
-    (ht : SPiece p STK (fun σ s => I σ s ∧ v σ ≠ 0) J t)
-    (he : SPiece p STK (fun σ s => I σ s ∧ v σ = 0) J e) :
-    SPiece p STK I J (ifOkElse t e) := by
-  refine ⟨fun σ s hp hs => ?_, ?_⟩
-  · have h24 := hv σ s hp hs
-    refine WP.ite _ (Steps.eval_nonzero s .s4) (fun hb => ht.ok σ _ hp ⟨hs, ?_⟩) fun hb => he.ok σ _ hp ⟨hs, ?_⟩
-    · rw [← h24]; simpa using hb
-    · rw [← h24]; simpa using hb
-  · refine RelCT.ite ?_ ?_ ?_
-    · rintro _ _ ⟨σ₁, σ₂, p₁, p₂, pub, hx, hy⟩
-      rw [Steps.eval_nonzero, Steps.eval_nonzero, hv _ _ p₁ hx, hv _ _ p₂ hy, hpub _ _ p₁ p₂ pub]
-    · refine RelCT.mono ht.tr (fun _ _ ⟨⟨σ₁, σ₂, p₁, p₂, pub, hx, hy⟩, hb⟩ =>
-        ⟨σ₁, σ₂, p₁, p₂, pub, ⟨hx, ?_⟩, ⟨hy, ?_⟩⟩) fun _ _ h => h
-      · rw [Steps.eval_nonzero] at hb
-        rw [← hv _ _ p₁ hx]; simpa using hb
-      · rw [Steps.eval_nonzero] at hb
-        rw [← hpub _ _ p₁ p₂ pub, ← hv _ _ p₁ hx]; simpa using hb
-    · refine RelCT.mono he.tr (fun _ _ ⟨⟨σ₁, σ₂, p₁, p₂, pub, hx, hy⟩, hb⟩ =>
-        ⟨σ₁, σ₂, p₁, p₂, pub, ⟨hx, ?_⟩, ⟨hy, ?_⟩⟩) fun _ _ h => h
-      · rw [Steps.eval_nonzero] at hb
-        rw [← hv _ _ p₁ hx]; simpa using hb
-      · rw [Steps.eval_nonzero] at hb
-        rw [← hpub _ _ p₁ p₂ pub, ← hv _ _ p₁ hx]; simpa using hb
-
-/-- The empty block, from `I` to `J`. -/
-theorem nil_piece {I J : State → State → Prop} (h : ∀ σ s, SPre p STK σ → I σ s → J σ s) :
-    SPiece p STK I J (.block []) :=
-  ⟨fun σ s hp hs => WP.block_nil (h σ s hp hs), RelCT.block_nil fun _ _ _ => trivial⟩
 
 end
 

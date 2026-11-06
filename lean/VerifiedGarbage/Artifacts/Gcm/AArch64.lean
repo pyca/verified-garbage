@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # GHASH on AArch64 -/
+/-! # GHASH, and the powers of AES-GCM's hash subkey, on AArch64 -/
 
 @[expose] public section
 
@@ -17,6 +17,11 @@ def artifacts : List Artifact := [
     code := Impl.Gcm.AArch64.Pmull.ghashS
     verified := Proof.Gcm.AArch64.Pmull.ghashS_verified
     writtenOk := Proof.Gcm.AArch64.Pmull.ghashS_written
+    features := ["aes"] },
+  Spec.Gcm.storePowersApi.artifact AArch64.target {
+    suffix := "_aes"
+    code := Impl.Gcm.AArch64.Pmull.keyPowers
+    verified := Proof.Gcm.AArch64.Pmull.keyPowers_verified
     features := ["aes"] }]
 
 end VG.Artifacts.Gcm.AArch64

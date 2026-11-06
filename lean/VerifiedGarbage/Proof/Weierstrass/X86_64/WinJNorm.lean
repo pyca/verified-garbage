@@ -162,9 +162,6 @@ theorem slotMul_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
     · exact hL.lay.apart x o hx hSo hxo
     · exact hL.lay.tmp x hx
 
-theorem fprog_append (M : Mod) (a b : List FOp) : fprog M (a ++ b) = fprog M a ++ fprog M b := by
-  simp only [fprog, List.flatMap_append]
-
 /-- Straight-line code made of `N` pieces, by an invariant of the pieces done. -/
 theorem block_range_ok {f : Nat → List Instr} {N : Nat} {Inv : Nat → State → Prop}
     (step : ∀ i < N, ∀ s, Inv i s → WP isa (.block (f i)) s (Inv (i + 1))) :
@@ -262,18 +259,6 @@ theorem other_ne_tbl {K : WinCfg} {size : Nat} (hL : WinLay K size) {x : Nat} (h
 theorem Dy_tbl {K : WinCfg} {size : Nat} (hL : WinLay K size) {m : Nat} (h1 : 1 ≤ m) (h8 : m ≤ 8)
     {y : Nat} (hy : y ∈ [(K.tblPt m).x, (K.tblPt m).y, (K.tblPt m).z]) : y ≠ K.D.y :=
   (other_ne_tbl hL (by win_mem) h1 h8 hy).symm
-
-/-- The table's slots of different coordinates or entries are distinct. -/
-theorem tbl_coord_ne {K : WinCfg} {size : Nat} (hL : WinLay K size) {m m' : Nat} (h1 : 1 ≤ m) (h8 : m ≤ 8)
-    (h1' : 1 ≤ m') (h8' : m' ≤ 8) {c c' : Nat} (hc : c < 3) (hc' : c' < 3) (h : m ≠ m' ∨ c ≠ c') :
-    K.tbl + 8 * K.M.n * (3 * (m - 1) + c) ≠ K.tbl + 8 * K.M.n * (3 * (m' - 1) + c') :=
-  hL.tbl_ne₂ (by omega_arith)
-
-theorem tblPt_coords (K : WinCfg) (m : Nat) :
-    (K.tblPt m).x = K.tbl + 8 * K.M.n * (3 * (m - 1) + 0) ∧
-    (K.tblPt m).y = K.tbl + 8 * K.M.n * (3 * (m - 1) + 1) ∧
-    (K.tblPt m).z = K.tbl + 8 * K.M.n * (3 * (m - 1) + 2) :=
-  ⟨by rw [tblPt_x]; rfl, tblPt_y K m, tblPt_z K m⟩
 
 theorem tmv_congr {C : Curve} {n : Nat} {base : Addr} {s t : State} {x : Nat}
     (h : wordsVal t.mem base x n = wordsVal s.mem base x n) : tmv C n base t x = tmv C n base s x := by

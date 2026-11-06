@@ -34,9 +34,6 @@ theorem exec_store64 {s : State} {m : MemOp} {r : Reg} (h : InRegions s.wr (s.ea
     exec (.store m r) s = some { s with mem := s.mem.writeW (s.ea m) (s.gpr r) } := by
   simp only [reduceExec, State.store64, h, ite_true]
 
-/-- `u` is `t` with other registers and memory. -/
-def GM (t u : State) : Prop := u = { t with gpr := u.gpr, mem := u.mem }
-
 theorem GM.trans {t u v : State} (h₁ : u = { t with gpr := u.gpr, mem := u.mem })
     (h₂ : v = { u with gpr := v.gpr, mem := v.mem }) : v = { t with gpr := v.gpr, mem := v.mem } := by
   rw [h₂]; conv => lhs; rw [h₁]

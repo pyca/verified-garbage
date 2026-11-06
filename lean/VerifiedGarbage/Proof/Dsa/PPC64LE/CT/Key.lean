@@ -130,9 +130,6 @@ theorem envP_of {v : VD} {s : State} (h : InP s v.L) : FixL (envP v) s := by
   simp only [FixL, envP, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]
   exact ⟨h.env.h10, h.env.h11, h.env.h29, h.env.h31, h.h23⟩
 
-theorem body_out {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Body L m m') : Outside L.S 0 L.Z m m' :=
-  h.mono (Nat.zero_le _) (by have := hL.z256; omega_arith)
-
 theorem ql_bounds {v : VD} {s : State} (h : Base v s) : 20 ≤ v.L.ql ∧ v.L.ql ≤ 32 := h.ok.ql
 
 /-! ## The steps between the branches -/

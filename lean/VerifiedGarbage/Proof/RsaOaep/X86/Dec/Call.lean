@@ -73,11 +73,6 @@ abbrev Fin (H G : Spec.Mgf1.Hash) (P : EP) (σ s : State) : Prop := S P σ s ∧
 
 theorem dec_arg {j : Nat} (hj : j < 23) {P : EP} : j < P.lay.argv.length := by simp; omega_arith
 
-/-- An argument's place may be read. -/
-theorem argR {P : EP} {σ t : State} (hg : Geo P.lay P.scr) (ct : Ctx P.lay P.scr σ t) {j : Nat}
-    (hj : j < 23) : InRegions (t.rd ++ t.wr) (VG.X86.addr P.lay.B (Impl.RsaPkcs1Sig.X86.argOff frameBytes j)) 4 := by
-  rw [hg.aArg ct.st.ok j (dec_arg hj), ct.st.rd, ct.st.wr]; exact ct.st.ok.arg_read (dec_arg hj)
-
 /-! ## The call's arguments -/
 
 /-- The call's arguments. -/
@@ -253,7 +248,7 @@ abbrev R2 (P : EP) (σ s : State) : Prop :=
     OcK P σ
 
 /-- The name of `vg_rsa_private_checked` over `v`. -/
-def privName (v : Proof.Rsa.X86.PrivChecked.CrtImpl) : String := Spec.Rsa.privateCheckedApi.name ++ v.suffix
+def privName (v : Proof.Rsa.X86.PrivChecked.CrtImpl) : String := "vg_rsa_private_checked" ++ v.suffix
 
 /-- `EM` and the result: the call. -/
 theorem call_vp (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :

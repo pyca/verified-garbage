@@ -128,10 +128,6 @@ theorem data_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D
   · exact hd.ok.w.sub_right (Lay.wSub (by decide))
   · exact hd.ok.w.sub_right (Lay.wSub (by decide))
 
-theorem hH_tFrame {m m' : Mem} (hf : Frame (tFrame St W 16) m m') :
-    blockAt m' (Ctx + BitVec.ofNat 64 240) = blockAt m (Ctx + BitVec.ofNat 64 240) :=
-  blockAt_frame hf fun r hr => (ctx_tFrame' L r hr).sub_left (Lay.ctxSub (by decide))
-
 theorem hH_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D n) {m m' : Mem}
     (hf : Frame (crFrame St SP D n) m m') :
     blockAt m' (Ctx + BitVec.ofNat 64 240) = blockAt m (Ctx + BitVec.ofNat 64 240) :=

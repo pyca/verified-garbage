@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-!
 # Verification calling the point functions: `Verified`
@@ -102,61 +102,6 @@ theorem verify_ct_calls {win' : Prog isa} (hinl : win'.inline = win)
     exact ⟨t, s', e ▸ he⟩
   · rw [e]
     exact fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => verify_ct s₁ s₂ t₁ t₂ s₁' s₂' h₁.1 h₂.1 hp e₁ e₂
-
-/-- The shared contract's precondition with 8 bytes of stack, from its facts. -/
-theorem verify_spec_pre8 {s : State}
-    (hrd : s.rd = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rsi, 64⟩, ⟨s.gpr .rdx, 64⟩, ⟨s.syms baseOddSym, 16384⟩])
-    (hw : s.wr = [⟨s.gpr .rcx, 8192⟩]) (hsp : 8 ≤ (s.gpr .rsp).toNat)
-    (h1 : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rcx, 8192⟩)
-    (h2 : Region.Disjoint ⟨s.gpr .rsi, 64⟩ ⟨s.gpr .rcx, 8192⟩)
-    (h3 : Region.Disjoint ⟨s.gpr .rdx, 64⟩ ⟨s.gpr .rcx, 8192⟩)
-    (r1 : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdi, 32⟩) (r2 : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rsi, 64⟩)
-    (r3 : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdx, 64⟩) (r4 : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rcx, 8192⟩)
-    (q1 : Region.Disjoint ⟨s.gpr .rsp - 8, 8⟩ ⟨s.gpr .rdi, 32⟩)
-    (q2 : Region.Disjoint ⟨s.gpr .rsp - 8, 8⟩ ⟨s.gpr .rsi, 64⟩)
-    (q3 : Region.Disjoint ⟨s.gpr .rsp - 8, 8⟩ ⟨s.gpr .rdx, 64⟩)
-    (q4 : Region.Disjoint ⟨s.gpr .rsp - 8, 8⟩ ⟨s.gpr .rcx, 8192⟩)
-    (f0 : (s.gpr .rdi).toNat + 32 ≤ 2 ^ 64) (f1 : (s.gpr .rsi).toNat + 64 ≤ 2 ^ 64)
-    (f2 : (s.gpr .rdx).toNat + 64 ≤ 2 ^ 64) (f3 : (s.gpr .rcx).toNat + 8192 ≤ 2 ^ 64)
-    (held : ∀ i < 2048,
-      s.mem.readW (s.syms baseOddSym + BitVec.ofNat 64 (8 * i)) 64 = baseOddWords.getD i 0)
-    (fit : (s.syms baseOddSym).toNat + 16384 ≤ 2 ^ 64)
-    (td : Region.Disjoint ⟨s.syms baseOddSym, 16384⟩ ⟨s.gpr .rcx, 8192⟩)
-    (tr : Region.Disjoint ⟨s.syms baseOddSym, 16384⟩ ⟨s.gpr .rsp, 8⟩)
-    (tq : Region.Disjoint ⟨s.syms baseOddSym, 16384⟩ ⟨s.gpr .rsp - 8, 8⟩)
-    (hal : (s.syms baseOddSym).toNat % 64 = 0) :
-    (Proof.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts) 8).pre s := by
-  sig_pre [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
-    Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseOddConsts_eq, Abi.withConsts,
-    Abi.constRegions, Abi.constsHeld, stackBelow, baseOddWords_length]
-  exact ⟨hsp, by rw [hrd]; rfl, held, fit, by rw [hw]; simp only [List.mem_singleton, forall_eq]; exact td, tr, tq, hal,
-    by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, r4, q1, q2, q3, q4, f0, f1, f2, f3⟩
-
-theorem verify_sat8 :
-    (Proof.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts) 8).pre verifySatState :=
-  verify_spec_pre8 rfl rfl (by decide) (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
-    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
-    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
-    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
-    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
-    (Region.disjoint_of_sep (by decide)) (by decide) (by decide) (by decide) (by decide)
-    verifySatMem_held (by decide) (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
-    (Region.disjoint_of_sep (by decide)) (by decide)
-
-/-- The registered code, calling the point functions, against the shared contract with 8 bytes of
-stack. -/
-theorem verify_verified8 {win' : Prog isa} (hinl : win'.inline = win)
-    (hok : (verifyEquation fld win').InlineOk = true)
-    (hmx : MxcsrOk (verifyEquationWith fld (Point64.bodies fld) win)) :
-    Verified X86_64.target (verifyEquation fld win')
-      (Proof.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts) 8) := by
-  have e := verifyEquation_inline (fld := fld) hinl
-  refine Verified.of_inline hok (k₀ := verifyLocal) (fun s hs => e ▸ verify_ok hmx s hs) (e ▸ verify_ct)
-    (verify_implies.stack8 ⟨verifySatState, verify_sat8⟩) (fun _ h => Sig.clear_of_pre_consts h)
-    (fun _ _ _ _ _ hp => hp) fun s₁ s₂ _ _ hp => ?_
-  sig_pub [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig,
-    Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseOddConsts_eq, Abi.withConsts] at hp
-  exact hp.1
 
 /-- What a caller of the checker `verifyEquation fld win'` needs of its code: the windows `win` its
 calls inline to, with their proofs, the inlining's condition and MXCSR's restores. Decided for each

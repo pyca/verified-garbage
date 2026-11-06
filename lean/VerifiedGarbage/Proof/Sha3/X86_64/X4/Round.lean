@@ -130,10 +130,6 @@ structure Src (s : State) (src : Addr) (A : Nat → KState) : Prop where
   src_in : ∀ i < 25, InRegions (s.rd ++ s.wr) (src + BitVec.ofNat 64 (32 * i)) 32
   lanes : Lanes4 s.mem src A
 
-theorem Src.vw {s s' : State} {src : Addr} {A : Nat → KState} (h : Src s src A) {ws : List XReg}
-    (hw : VW s s' ws) : Src s' src A :=
-  ⟨by rw [hw.gpr, h.rdi], by rw [hw.rd, hw.wr]; exact h.src_in, by rw [hw.mem]; exact h.lanes⟩
-
 /-- `vpxor d, d, [b + 32 i]`, lane `i` of the four states at `p` (`= b`), as they were at `s₀`. -/
 theorem wp_xld {is : List Instr} {Q : State → Prop} {s₀ s : State} {ws : List XReg} (h : VW s₀ s ws)
     {b : Reg} {p : Addr} {i : Nat} {d : XReg} (hb : s₀.gpr b = p)

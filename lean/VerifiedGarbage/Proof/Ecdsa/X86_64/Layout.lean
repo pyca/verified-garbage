@@ -192,10 +192,7 @@ abbrev shAt (c : Cfg) (hs : Option Nat) (i : Nat) : Nat := if hs = some i then c
 theorem shAt_none (c : Cfg) (i : Nat) : shAt c none i = 0 := rfl
 theorem shAt_self (c : Cfg) (i : Nat) : shAt c (some i) i = c.sh := ite_eq_left_of_eq_true _ _ (eq_true rfl)
 theorem shAt_E_D (c : Cfg) : shAt c (some E) D = 0 := rfl
-theorem shAt_E_K (c : Cfg) : shAt c (some E) K = 0 := rfl
 theorem shAt_D_E (c : Cfg) : shAt c (some D) E = 0 := rfl
-theorem shAt_D_K (c : Cfg) : shAt c (some D) K = 0 := rfl
-
 /-- What `setupWith hs` leaves, from the state `s₀` at entry, with the
 working space at `base = r8`: `rdi = base`, `out` in `rsi`, the callee-saved
 registers in `[0, 48)`, `k`, `d` and the hash in their slots (the one in

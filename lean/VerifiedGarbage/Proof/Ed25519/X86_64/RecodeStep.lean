@@ -42,9 +42,6 @@ structure RecKeep (base : Addr) (dst : Nat) (s t : State) : Prop where
   wr : t.wr = s.wr
   mem : ∀ x, (ofs base x < 2048 ∨ 3104 ≤ ofs base x ∨ ofs base x % 2 ≠ dst) → t.mem x = s.mem x
 
-theorem RecKeep.refl (base : Addr) (dst : Nat) (s : State) : RecKeep base dst s s :=
-  ⟨fun _ _ => rfl, rfl, rfl, fun _ _ => rfl⟩
-
 theorem RecKeep.trans {base : Addr} {dst : Nat} {s t u : State} (h : RecKeep base dst s t)
     (k : RecKeep base dst t u) : RecKeep base dst s u :=
   ⟨fun r hr => (k.gpr r hr).trans (h.gpr r hr), k.rd.trans h.rd, k.wr.trans h.wr,

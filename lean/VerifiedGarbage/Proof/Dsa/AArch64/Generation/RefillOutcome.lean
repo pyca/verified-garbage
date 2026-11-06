@@ -93,25 +93,6 @@ theorem RefillFinished.prepend {p : GenerationContext} {Wi Wm : Nat → BitVec 6
   exact ⟨hs, W, used, sub, mt, hu, h16, fun k hk => (hsl k hk).trans (slots k (refillSlots_search hk)), outcome,
     hf.trans ft, rt.trans hr, wt.trans hw⟩
 
-/-- A context's memory, with another `h` tape whose words are saved. -/
-theorem GenerationMemory.withHs {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
-    (h : GenerationMemory p W s) (hs : GenerationTape p.geo) (hm : GenerationTapeMemory hs s)
-    (h11 : W 11 = hs.ptr) (h13 : W 13 = BitVec.ofNat 64 hs.bytes.length) :
-    GenerationMemory (p.withHs hs) W s where
-  layout := h.layout
-  rep := h.rep
-  slots k hk := by
-    by_cases e11 : k = 11
-    · subst e11; simpa [GenerationContext.withHs] using h11
-    · by_cases e13 : k = 13
-      · subst e13; simpa [GenerationContext.withHs] using h13
-      · simp only [GenerationContext.withHs, e11, e13, ite_false]
-        exact h.slots k hk
-  scratch := h.scratch
-  seeds := h.seeds
-  hs := hm
-  rand := h.rand
-
 /-- An attempt that ends with the context's own `h` tape. -/
 theorem refillFinished_of {p : GenerationContext} {W Wt : Nat → BitVec 64} {used : Nat}
     {res : Option (Option Spec.Dsa.Params × List Byte)} {s t : State}

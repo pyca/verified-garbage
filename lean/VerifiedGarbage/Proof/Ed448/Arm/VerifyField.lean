@@ -109,9 +109,6 @@ def decodeXF (xo : Index) : List FieldOp := [.mul xo xo 1, .mul 12 xo xo, .mul 1
 
 def negXF (xo : Index) : List FieldOp := [.sub 12 xo xo, .sub 12 12 xo]
 
-theorem doubleF_impl (x y z : Index) :
-    (doubleF x y z).map FieldOp.impl = doubleAt x.val y.val z.val := rfl
-theorem addF_impl (x y : Index) : (addF x y).map FieldOp.impl = addAt x.val y.val := rfl
 theorem decodeUVF_impl (yo xo : Index) :
     (decodeUVF yo xo).map FieldOp.impl = decodeUV yo.val xo.val := rfl
 theorem decodeXF_impl (xo : Index) : (decodeXF xo).map FieldOp.impl = decodeX xo.val := rfl

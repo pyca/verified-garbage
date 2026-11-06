@@ -61,19 +61,6 @@ theorem pins_env {α : Type} {Φ : α → State → Prop} (f : α → BD)
   · rw [e₁.h29, e₂.h29]
   · rw [e₁.h31, e₂.h31]
 
-/-- Pins of fewer registers. -/
-theorem Pins.sub {α : Type} {Φ : α → State → Prop} {rs rs' : List Reg} (h : Pins Φ rs)
-    (hs : ∀ r ∈ rs', r ∈ rs) : Pins Φ rs' := fun a s₁ s₂ h₁ h₂ =>
-  ⟨(h a s₁ s₂ h₁ h₂).1, fun r hr => (h a s₁ s₂ h₁ h₂).2 r (hs r hr)⟩
-
-/-- Pins of more registers, each fixed by the predicate. -/
-theorem Pins.cons {α : Type} {Φ : α → State → Prop} {rs : List Reg} (h : Pins Φ rs) (r : Reg)
-    (hr : ∀ a s₁ s₂, Φ a s₁ → Φ a s₂ → s₁.gpr r = s₂.gpr r) : Pins Φ (r :: rs) := fun a s₁ s₂ h₁ h₂ =>
-  ⟨(h a s₁ s₂ h₁ h₂).1, fun r' hr' => by
-    rcases List.mem_cons.mp hr' with rfl | hr'
-    · exact hr a s₁ s₂ h₁ h₂
-    · exact (h a s₁ s₂ h₁ h₂).2 r' hr'⟩
-
 /-- A predicate implied by one with pins has them. -/
 theorem Pins.of_imp {α : Type} {Φ Ψ : α → State → Prop} {rs : List Reg} (h : Pins Φ rs)
     (hi : ∀ a s, Ψ a s → Φ a s) : Pins Ψ rs := fun a s₁ s₂ h₁ h₂ => h a s₁ s₂ (hi a s₁ h₁) (hi a s₂ h₂)

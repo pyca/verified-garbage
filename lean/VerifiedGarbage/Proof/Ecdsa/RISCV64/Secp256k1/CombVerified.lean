@@ -35,8 +35,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 `vg_secp256k1_mul_g(ws = a0)`, an internal function: `vg_secp256k1_mul`'s contract
 (`mulRVc`) for `Q = G`, with the table of the comb (`VG_SECP256K1_COMB`, its only
 readable region): `mulGRVc`, which `mulG_rv` proves from `body_ok` around the
-table's address (`lla`), the saves past the numbered slots and their loads;
-`mulG_ct` is its constant time, by taint tracking. `tailG_ok` is ECDH's
+table's address (`lla`), the saves past the numbered slots and their loads.
+`tailG_ok` is ECDH's
 `tail` with `R = [k]G` by a call of it, for secp256k1's signatures and public
 keys, as `Proof/Ecdsa/RISCV64/Comb/Tail.lean` gives P-256's.
 -/
@@ -218,13 +218,7 @@ theorem mulG_rv (hL : Law W) (s : State) (hs : mulGRVc.pre s) :
     · rw [Impl.Weierstrass.Point.Curve.pointAt, x0, x1, x2, dq, dq, dq]
       exact represents_of_rep R₇
 
-/-! ## Constant time -/
-
-theorem mulG_ct : ConstantTime isa mulGRVc.pre mulGRVc.pub mulGSecp256k1 :=
-  VG.Taint.constantTime (A := taintSym [secp256k1Sym]) (Taint.ofRegs [.a0])
-    (fun _ _ _ _ ⟨hsp, h0, hsy⟩ => ⟨⟨hsp, fun r hr => by
-      simp only [Taint.mem_ofRegs, List.mem_singleton] at hr; subst hr; exact h0⟩, fun n hn => by
-        simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
+/-! ## The table, for the callers -/
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ecdsa.RISCV64.Comb VG.Proof.Mont VG.Impl.Ecdsa.RISCV64
 open VG.Impl.Weierstrass VG.Impl.Weierstrass.RISCV64 VG.Impl.Ecdh.RISCV64

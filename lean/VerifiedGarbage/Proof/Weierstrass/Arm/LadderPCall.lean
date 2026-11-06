@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 `ptCall S dbl` calls `vg_<curve>_point_double` or `vg_<curve>_point_add` on
 the working space at `r12` (`ptCall_ok`): it changes only `r0`–`r3` and
 `r10`, `O` and the point functions' own working space, and `O` then holds
-`rcbAdd` of what `a`, `3b`, `P` and `Q` (or `P`) stood for (`fn_ok`).
+`rcbAdd` of what `a`, `3b`, `P` and `Q` (or `P`) stood for (`ptVal`).
 -/
 
 @[expose] public section
@@ -115,10 +115,6 @@ theorem fnOps_noFrames (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : L
     obtain ⟨op, _, rfl⟩ := List.mem_map.mp hp
     exact fields op
   simpa only [Impl.Weierstrass.Arm.Point.fnOps, Code.noFrames, Bool.true_and, Bool.and_true] using prog
-
-theorem fn_noFrames (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) (u : Bool := false) :
-    (fn S dbl u).noFrames = true :=
-  fnOps_noFrames S dbl _ u
 
 /-- A call of a point function, from the working space at `r12`: only
 `r0`–`r3`, `r10`, `O` and the own working space change, and `O` holds

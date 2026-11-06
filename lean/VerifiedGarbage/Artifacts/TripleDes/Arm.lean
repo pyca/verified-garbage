@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
 public import VerifiedGarbage.Proof.TripleDes.Arm.Frame
-public import VerifiedGarbage.Proof.TripleDes.Arm.VerifiedBlock
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Arm.Lit

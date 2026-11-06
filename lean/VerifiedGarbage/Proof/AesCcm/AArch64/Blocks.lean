@@ -38,8 +38,6 @@ open VG.Proof.CmacAes.Stream.AArch64 (upd_call)
 open VG.Proof.AesCcm (length_bytesAt bytesAt_writeBytes_at bytesAt_writeW8_base ctrBlock_take8 ctr_or be_zero
   sub_low_byte)
 
-theorem ofNat_lit (n : Nat) : (OfNat.ofNat n : Addr) = BitVec.ofNat 64 n := rfl
-
 /-! ## `Ctr₀` -/
 
 /-- `Ctr₀`, from the nonce `N` of `nl` bytes. -/

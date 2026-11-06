@@ -121,9 +121,6 @@ theorem sizesW (h : P.R.big = true) : P.w = 9 ∧ P.Q = 66 ∧ P.k = 18 ∧ P.F.
 theorem mac_length (K t : List Byte) : (P.mac K t).length = P.F.H.D := by
   simp only [mac, Spec.Hmac.hmac, Spec.Hmac.hmacBlockKey, P.macLen]
 
-/-- The digest is at least 16 bytes. -/
-theorem len16 : 16 ≤ P.I.hashLen := by rw [P.len]; exact (P.shape P.hDB).1
-
 /-- The curve's scalars are `Q` bytes. -/
 theorem curveLen : P.I.ecdsa.curve.len = P.Q := by rw [P.ecdsa, P.R.curve]
 
@@ -147,7 +144,6 @@ def cfgOf (P : RfcHash) : Cfg where
   coreN := P.R.coreN
   coreC := P.R.coreC
 
-theorem cfgOf_w (P : RfcHash) : (cfgOf P).w = P.k := rfl
 theorem cfgOf_len (P : RfcHash) : (cfgOf P).len = P.Q := rfl
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecBase
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the private-key operation
@@ -145,7 +146,7 @@ theorem R1.privArgs {σ s : State} (h : R1 P σ s) :
     by have := hs.1.ok.fits P.SCR (by simp); simp only [Proof.X25519.Arm.addr_toNat] at this; omega⟩
 
 theorem call_pre {σ s : State} (h : R1 P σ s) :
-    (Spec.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
+    (Proof.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
       (s.callEntry.withRegions (privRd P.B P.n P.e P.inp P.p P.q P.dp P.dq P.qinv P.K P.el
         P.pl P.ql) (privWr P.out P.scr P.K P.sl)) := by
   have hs := h.1

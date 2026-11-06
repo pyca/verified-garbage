@@ -337,8 +337,6 @@ structure CE (s0 s : State) : Prop where
   wr : s.wr = s0.wr
   hdr : ∀ i < 12, word s.mem (bOf s0) (8 * i) = s0.gpr (saved i)
 
-theorem CB.ce {s0 s : State} {M : Mem} (c : CB s0 M s) : CE s0 s := ⟨c.s11, c.ra, c.rd, c.wr, c.hdr⟩
-
 theorem preserved_saved : ∀ r ∈ preserved, ∃ i < 12, saved i = r := by decide
 
 theorem restore_ok {s0 t : State} (h : PreC s0) (c : CE s0 t) :

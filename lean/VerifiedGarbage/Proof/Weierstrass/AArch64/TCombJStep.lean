@@ -18,7 +18,7 @@ open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 open Spec.Weierstrass
 
 /-- The addition of window `j`'s entry, selected into `E` (`TEntryPostJ`), and its
-corrections (`stepJWith`'s tail): one public window advances the signed partial sum. Both exceptional cases
+corrections (`fixJ`): one public window advances the signed partial sum. Both exceptional cases
 (zero digit and infinity accumulator) are resolved by masks; `BoothOk` rules
 out the remaining equal-point case for the incomplete mixed-add formula.
 The field compiler may forward loads while preserving its exact field result. -/
@@ -311,41 +311,5 @@ theorem tailJ_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg} {C 
   · exact TblMem.of_unch hI.tbl (by rw [k₁₀.rd, k₁₀.wr, k₉.rd, k₉.wr, k₈.rd, k₈.wr, k₇.rd,
       k₇.wr, k₆.rd, k₆.wr, k₅.rd, k₅.wr, P₄.rd, P₄.wr, E₃.keep.rd, E₃.keep.wr]) U
       (fun w hw => tcombW_size hL hI.mod w (List.mem_append_left _ hw)) hF.out
-
-/-- One public window advances the signed partial sum. Both exceptional cases
-(zero digit and infinity accumulator) are resolved by masks; `BoothOk` rules
-out the remaining equal-point case for the incomplete mixed-add formula.
-The field compiler may forward loads while preserving its exact field result. -/
-theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
-    {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb)
-    {X : List Reg} (hcompiler : FieldCompilerOn K.M C X arithmetic size)
-    (hX : ∀ r ∈ X, r ∈ tcombClob K.M.n ∧ r ≠ .x19) (hJenc : K.J<4096) (hC : Law C) (hM3 : AM3 C)
-    (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n))
-    (hb1 : 1 ≤ K.bits) {kmax : Nat} (hB : BoothOk C K.w K.J kmax) (hk : k < kmax) {s₀ : State}
-    (hF : TCombFixed K C base size s₀ k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
-    {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j < K.J)
-    (hI : TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s j) :
-    WP isa (K.stepJWith arithmetic) s fun s' =>
-      TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s' (j + 1) ∧
-        s'.gpr .x4=BitVec.ofNat 64 (j+1)-BitVec.ofNat 64 K.J := by
-  have hn := hI.scr.nowrap
-  have hsz : size ≤ 2 ^ 64 := by omega_using [hn]
-  have hJ := hL.comb.J
-  rw [TCombCfg.toComb_J] at hJ
-  have hle : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ size := fun x hx => hL.comb.lay.le x hx
-  have hnd := hL.comb.nodup
-  dsimp only [TCombCfg.toComb] at hnd
-  simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
-    List.not_mem_nil, or_false, not_or] at hnd
-  have hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) hV.one_lt
-  have hNZ : NeZero C.p := ⟨by omega_arith⟩
-  unfold TCombCfg.stepJWith
-  refine WP.seq ?_
-  have hz : wordsVal s.mem base K.zero K.M.n = 0 := by
-    rw [hI.unch.wordsVal (tcombW_ro hL (x := K.zero) (by simp [combRo, TCombCfg.toComb]))
-      (by have := hle K.zero (by tcomb_mem); omega_arith), hF.zero]
-  refine tentryJ_ok hL hA hC hV hpn hI.scr hI.mod hjn hI.x19 hb1 (c := true) (Or.inl ⟨rfl, hj⟩)
-    hI.bits hz hI.tsym hI.tbl hF.out fun s₃ E₃ sy₃ =>
-    tailJ_ok hL hA hcompiler hX hJenc hC hM3 hG hV hb1 hB hk hF hj hjn hI E₃ sy₃
 
 end VG.Proof.Weierstrass.AArch64

@@ -22,7 +22,7 @@ program only the arithmetic's registers (`Keep`), and `restores` brings back
 `rbp` and `r12`–`r15`, which `KeepReg.keeps` follows through `xmm0`–`xmm4`.
 The program's values are `evalOps ops` of the slots', and it changes only the
 bytes of its results (`fieldCode_frame`). The doubling's values are RFC
-8032's (`dblOps_eval`), the cached addition's `pointAdd`'s (`addCachedOps_eval`).
+8032's formula's (`dblOps_formula`).
 -/
 
 @[expose] public section
@@ -117,33 +117,5 @@ theorem dblOps_formula (e : Env) (t : Bool) :
   cases t
   · exact ⟨rfl, rfl, rfl, nofun⟩
   · exact ⟨rfl, rfl, rfl, fun _ => rfl⟩
-
-theorem dblResult_eq (e : Env) : dblResult e = Proof.Ed25519.Point64.pointDouble (point e 0 1 2 3) := by
-  simp only [dblResult, Proof.Ed25519.Point64.pointDouble, point]
-  congr 1 <;> grind
-
-/-- `dblOps` computes RFC 8032's doubling (`pointDouble`), but for `T` unless `t`. -/
-theorem dblOps_eval (e : Env) (t : Bool) :
-    evalOps (dblOps t) e 0 = (Proof.Ed25519.Point64.pointDouble (point e 0 1 2 3)).X ∧
-      evalOps (dblOps t) e 1 = (Proof.Ed25519.Point64.pointDouble (point e 0 1 2 3)).Y ∧
-      evalOps (dblOps t) e 2 = (Proof.Ed25519.Point64.pointDouble (point e 0 1 2 3)).Z ∧
-      (t = true → evalOps (dblOps t) e 3 = (Proof.Ed25519.Point64.pointDouble (point e 0 1 2 3)).T) := by
-  rw [← dblResult_eq]; exact dblOps_formula e t
-
-/-- `addCachedOps` computes `pointAdd` of the point in slots 0–3 and `q`, whose cached form is
-in slots 4–7, but for `T` unless `t`. -/
-theorem addCachedOps_eval (e : Env) (t : Bool) (q : Spec.Ed25519.Point) (hq : point e 4 5 6 7 = cache q) :
-    evalOps (addCachedOps t) e 0 = (Spec.Ed25519.pointAdd (point e 0 1 2 3) q).X ∧
-      evalOps (addCachedOps t) e 1 = (Spec.Ed25519.pointAdd (point e 0 1 2 3) q).Y ∧
-      evalOps (addCachedOps t) e 2 = (Spec.Ed25519.pointAdd (point e 0 1 2 3) q).Z ∧
-      (t = true → evalOps (addCachedOps t) e 3 = (Spec.Ed25519.pointAdd (point e 0 1 2 3) q).T) := by
-  have h := pointAddCached_eval e q hq
-  have e0 := congrArg Spec.Ed25519.Point.X h
-  have e1 := congrArg Spec.Ed25519.Point.Y h
-  have e2 := congrArg Spec.Ed25519.Point.Z h
-  have e3 := congrArg Spec.Ed25519.Point.T h
-  cases t
-  · exact ⟨e0, e1, e2, nofun⟩
-  · exact ⟨e0, e1, e2, fun _ => e3⟩
 
 end VG.Proof.Ed25519.X86_64.Point64

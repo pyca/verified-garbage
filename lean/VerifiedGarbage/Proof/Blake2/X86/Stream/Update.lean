@@ -98,19 +98,6 @@ theorem arg_in {d : Nat} (hd₁ : 4 ≤ d) (hd : d + 4 ≤ 28) : (argR s₀).Con
   rw [addr_eq (by omega_arith), addr_eq (by omega_arith)]
   exact Offset.contains _ hd₁ (by omega_arith) (by omega_arith)
 
-/-- An argument word, as a region. -/
-theorem arg_sub {d : Nat} (hd₁ : 4 ≤ d) (hd : d + 4 ≤ 28) : Region.Sub ⟨addr (esp₀ s₀) d, 4⟩ (argR s₀) := by
-  have := hp.sp_fit
-  show Region.Sub _ ⟨addr (esp₀ s₀) 4, 24⟩
-  rw [addr_eq (by omega_arith), addr_eq (by omega_arith)]
-  exact Offset.sub _ hd₁ (by omega_arith)
-
-theorem a_stk : (argR s₀).Disjoint (stkR s₀) := by
-  have := hp.sp_fit; have := hp.sp_lo
-  show Region.Disjoint ⟨addr (esp₀ s₀) 4, 24⟩ ⟨(esp₀ s₀ - BitVec.ofNat 32 32).setWidth 64, 32⟩
-  rw [addr_eq (by omega_arith), Taint.sub_setWidth (by omega_arith)]
-  exact Offset.disjoint_below _ (by omega_arith)
-
 theorem ret_stk : (retR s₀).Disjoint (stkR s₀) := by
   have := hp.sp_fit; have := hp.sp_lo
   show Region.Disjoint ⟨(esp₀ s₀).setWidth 64, 4⟩ ⟨(esp₀ s₀ - BitVec.ofNat 32 32).setWidth 64, 32⟩
@@ -193,18 +180,6 @@ theorem Inv.of_gpr {s₀ : State} {c r : Nat} {s s' : State} (h : Inv P s₀ c r
 theorem Ptr.of_gpr {s₀ : State} {c : Nat} {s s' : State} (h : Ptr s₀ c s)
     (h₁ : s'.gpr .esi = s.gpr .esi) (h₂ : s'.gpr .edi = s.gpr .edi) : Ptr s₀ c s' :=
   ⟨h₁.trans h.esi, h₂.trans h.edi⟩
-
-/-- The argument words are never written. -/
-theorem Common.arg {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : State} (h : Common w s₀ c s) {d : Nat}
-    (h₁ : 4 ≤ d) (h₂ : d + 4 ≤ 28) :
-    s.mem.readW (addr (esp₀ s₀) d) 32 = s₀.mem.readW (addr (esp₀ s₀) d) 32 := by
-  refine h.frame.readW (r := ⟨addr (esp₀ s₀) d, 4⟩) (Region.contains_self _ _) ?_ (by decide)
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact hp.a_st.sub_left (hp.arg_sub h₁ h₂)
-  · exact hp.a_scr.sub_left (hp.arg_sub h₁ h₂)
-  · exact hp.a_stk.sub_left (hp.arg_sub h₁ h₂)
 
 /-- The data is unchanged. -/
 theorem Common.data {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : State} (h : Common w s₀ c s) {i : Nat}

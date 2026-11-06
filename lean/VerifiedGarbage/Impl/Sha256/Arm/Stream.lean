@@ -39,24 +39,6 @@ def init : Prog isa := initWith Spec.Sha256.H0
 /-- `vg_sha224_init`. -/
 def init224 : Prog isa := initWith Spec.Sha256.H0_224
 
-/-- The callee-saved registers we use (and `lr`), and where they are saved in `scratch`. -/
-def saved : List (Reg × Nat) :=
-  [(.r4, 112), (.r5, 116), (.r6, 120), (.r7, 124), (.r8, 128), (.r9, 132), (.r10, 136), (.r11, 140),
-    (.lr, 144)]
-
-/-- Save them, with `scratch` in `b`. -/
-def save (b : Reg) : List Instr := saved.map fun (r, d) => .str r b d
-
-/-- Restore them from `scratch` in `r3`. -/
-def restore : List Instr := saved.map fun (r, d) => .ldr r .r3 d
-
-/-- A call of `vg_sha256_compress`. -/
-def compressCall : Prog isa := .call "vg_sha256_compress" compress
-
-/-- Compress the block at `r1` into the hash value at `r0`, with scratch
-space `r3`. -/
-def compressAt : Prog isa := .seq (.block [.mov .r2 (.imm 1)]) compressCall
-
 /-! ## `update` and `finalize`
 
 The generic streaming code (`Impl/MdStream/Arm.lean`). -/

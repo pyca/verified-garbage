@@ -188,16 +188,6 @@ theorem args_mut : ∀ r ∈ mutR w s.sp D n, (args s 7).Disjoint r := by
   · exact Ar.stk.blw_args rfl
   · exact Ar.da.symm
 
-/-- The nonce and the associated data miss what the pieces write. -/
-theorem nonce_mut : ∀ r ∈ mutR w s.sp D n, (⟨State.addr N, nl⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact Ar.nonce.w.sub_right (Region.sub_prefix (by decide))
-  · exact Ar.nonce.w.sub_right (Lay.wSub (by decide))
-  · exact Ar.nonce.stk.symm
-  · exact Ar.nd
-
 theorem aad_mut : ∀ r ∈ mutR w s.sp D n, (⟨State.addr A, al⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -47,6 +47,7 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use crate::cpu::detected;
+use crate::error::InvalidSignature;
 use crate::rsa::{PrivateKey, PublicKey};
 use crate::zeroize::zeroize;
 
@@ -312,9 +313,14 @@ fn sign_with(
 }
 
 impl PublicKey {
-    /// RSASSA-PSS-VERIFY (RFC 8017 §8.1.2): whether `signature` is a valid
-    /// signature of the hash value `digest` of the hash function `hash`, with
-    /// MGF1 over `mgf1_hash` and a salt of `salt_length`.
+    /// RSASSA-PSS-VERIFY (RFC 8017 §8.1.2): checks that `signature` is a
+    /// valid signature of the hash value `digest` of the hash function
+    /// `hash`, with MGF1 over `mgf1_hash` and a salt of `salt_length`.
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidSignature`] if it is not, including if `digest` is not as
+    /// long as `hash`'s values or `signature` not as long as the modulus.
     pub fn verify_pss(
         &self,
         signature: &[u8],
@@ -322,10 +328,10 @@ impl PublicKey {
         hash: Hash,
         mgf1_hash: Hash,
         salt_length: SaltLength,
-    ) -> bool {
+    ) -> Result<(), InvalidSignature> {
         let k = self.n.len();
         if digest.len() != hash.digest_len() || signature.len() != k {
-            return false;
+            return Err(InvalidSignature);
         }
         let (salt_len, any) = match salt_length {
             SaltLength::Len(l) => (l, 0),
@@ -367,13 +373,17 @@ impl PublicKey {
             )
         };
         // The encoding is public: ScratchLease returns the buffer to the key unwiped.
-        r == 1
+        if r == 1 {
+            Ok(())
+        } else {
+            Err(InvalidSignature)
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, Hash, SaltLength};
+    use super::{Error, Hash, InvalidSignature, SaltLength};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 
@@ -407,10 +417,11 @@ mod tests {
         let (_, public) = composite_key();
         let sig = [1; 64];
         let v = |s: &[u8], d: &[u8], h, g| public.verify_pss(s, d, h, g, SaltLength::Any);
-        assert!(!v(&sig, &[0; 19], Hash::Sha1, Hash::Sha1));
-        assert!(!v(&sig[..63], &[0; 20], Hash::Sha1, Hash::Sha1));
-        assert!(!v(&sig, &[0; 20], Hash::Sha1, Hash::Sha1));
-        assert!(!v(&sig, &[0; 20], Hash::Sha1, Hash::Sha256));
+        let bad = Err(InvalidSignature);
+        assert_eq!(v(&sig, &[0; 19], Hash::Sha1, Hash::Sha1), bad);
+        assert_eq!(v(&sig[..63], &[0; 20], Hash::Sha1, Hash::Sha1), bad);
+        assert_eq!(v(&sig, &[0; 20], Hash::Sha1, Hash::Sha1), bad);
+        assert_eq!(v(&sig, &[0; 20], Hash::Sha1, Hash::Sha256), bad);
     }
 
     #[test]

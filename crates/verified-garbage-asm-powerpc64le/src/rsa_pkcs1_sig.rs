@@ -216,7 +216,7 @@ b 21f
 .base64 "AABgOA=="
 21:
 .base64 "IACATg==""#,
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
 
@@ -450,7 +450,7 @@ bne %cr0, 262b
 .base64 "AABgOA=="
 21:
 .base64 "IACATg==""#,
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
 
@@ -663,6 +663,6 @@ b 255f
 bne %cr0, 257b
 255:
 .base64 "AACBOegADOimAwh8wABM68gAbOvQAIzr2ACs6+AAzOvwBCE4IACATg==""#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
     )
 }

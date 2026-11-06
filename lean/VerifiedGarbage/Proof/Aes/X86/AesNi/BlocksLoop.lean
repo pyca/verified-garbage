@@ -74,12 +74,6 @@ theorem loadData_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
     · simp only [List.mem_cons, not_or] at hr
       rw [hx r hr.2, xmm_setXmm_of_ne _ _ hr.1]
 
-theorem addr_sep {p : BitVec 32} {a b n : Nat} (h : a + 16 ≤ b ∨ b + 16 ≤ a) (ha : p.toNat + a + 16 ≤ 2 ^ 32)
-    (hb : p.toNat + b + 16 ≤ 2 ^ 32) (_hn : n = 16) : Mem.Sep (addr p a) n (addr p b) n := by
-  subst _hn
-  rw [addr_eq (by omega), addr_eq (by omega)]
-  exact Offset.sep _ h (by omega) (by omega)
-
 theorem storeData_ok (regs : List XReg) (j : Nat) (s : State)
     (hin : ∀ k < regs.length, InRegions s.wr (addr (s.gpr .esi) (16 * (j + k))) 16)
     (hw : (s.gpr .esi).toNat + 16 * (j + regs.length) ≤ 2 ^ 32) :

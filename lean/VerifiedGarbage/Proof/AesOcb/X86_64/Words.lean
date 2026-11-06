@@ -70,8 +70,6 @@ theorem blockAtMem_words (m : Mem) (p : Addr) :
     Spec.Ocb.ofBytes (le8 (m.readW p 64) ++ le8 (m.readW (p + BitVec.ofNat 64 8) 64)) = blockAtMem m p := by
   rw [le8_readW, le8_readW, ← Proof.Cmac.bytesAt_split]; rfl
 
-theorem blockAtMem_zero : Spec.Ocb.ofBytes (le8 0 ++ le8 0) = 0 := by decide
-
 theorem addr8 (p : Addr) (d : Nat) : p + BitVec.ofNat 64 d + BitVec.ofNat 64 8 = p + BitVec.ofNat 64 (d + 8) :=
   Offset.add_add p d 8
 

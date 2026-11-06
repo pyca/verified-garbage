@@ -143,7 +143,6 @@ theorem unrolled_permute_correct (s : State) (hs : VG.Proof.Sha3.permuteAArch64.
   Boundary.wrap_correct (.block unrolledRounds) (fun orig A s _ hs => (unrolled_rounds_ok orig A s hs).mono fun _ h => h.1)
     s (VG.Proof.Sha3.AArch64.pre_of s hs)
 
-theorem unrolled_permute_noCalls : unrolledPermute.noCalls = true := by lit_decide
 theorem unrolled_permute_noFrames : unrolledPermute.noFrames = true := by lit_decide
 
 theorem unrolled_permute_ct : ConstantTime isa VG.Proof.Sha3.permuteAArch64.pre
@@ -162,6 +161,5 @@ theorem unrolled_permute_verified :
     sig_implies [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, VG.Proof.Sha3.permuteAArch64,
       AArch64.abi, AArch64.argRegs] [VG.Proof.Sha3.AArch64.satState]
       using VG.Proof.Sha3.AArch64.satState)
-
 
 end VG.Proof.Sha3.AArch64.Scalar

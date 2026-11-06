@@ -49,11 +49,6 @@ theorem ea_stk (t : State) (d : Nat) : t.ea (stk d) = t.gpr .rsp + BitVec.ofNat 
   show t.gpr .rsp + BitVec.ofInt 64 (d : Int) = _
   rw [ofInt_nat]
 
-theorem ea_base (t : State) (r : Reg) (d : Nat) :
-    t.ea { base := r, disp := (d : Int) } = t.gpr r + BitVec.ofNat 64 d := by
-  show t.gpr r + BitVec.ofInt 64 (d : Int) = _
-  rw [ofInt_nat]
-
 theorem sx32 {n : Nat} (h : n < 2 ^ 31) : (BitVec.ofNat 32 n).signExtend 64 = BitVec.ofNat 64 n :=
   Proof.MlKem.X86_64.sx_ofNat h
 
@@ -102,8 +97,6 @@ abbrev SP : Addr := L.B + BitVec.ofNat 64 40
 abbrev FR : Region := ⟨L.SP, 72⟩
 /-- The stack used: the frame and the 40 bytes below it. -/
 abbrev STK : Region := ⟨L.B, 112⟩
-/-- The return address. -/
-abbrev RET : Region := ⟨L.B + BitVec.ofNat 64 112, 8⟩
 /-- The 1 KiB of the external function in `scratch`. -/
 abbrev X : Addr := L.scr + BitVec.ofNat 64 L.E
 abbrev XS : Region := ⟨L.X, 1024⟩
@@ -155,11 +148,6 @@ theorem x_r (_h : L.Ok) {r : Region} (hr : L.XS.Disjoint r) {e k : Nat} (h₂ : 
     Region.Disjoint ⟨L.X + BitVec.ofNat 64 e, k⟩ r :=
   hr.sub_left (Offset.sub_base _ h₂)
 
-/-- The 1 KiB is writable. -/
-theorem covX (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 1024) : ∃ R ∈ L.wr, Within ⟨L.X + BitVec.ofNat 64 e, k⟩ R := by
-  obtain ⟨R, hR, hw⟩ := h.inX
-  exact ⟨R, hR, (within_off L.X h₂).trans hw⟩
-
 end Lay.Ok
 
 /-- `B + 40 - 8 = B + 32`. -/
@@ -174,10 +162,6 @@ theorem below_call_sub (B : Addr) {m : Nat} (hm : m ≤ 40) :
   show Region.Sub ⟨B + BitVec.ofNat 64 40 - BitVec.ofNat 64 m, m⟩ _
   rw [this]
   exact Offset.sub_base _ (by omega)
-
-theorem below24 (B : Addr) : below (B + BitVec.ofNat 64 32) 24 = ⟨B + BitVec.ofNat 64 8, 24⟩ := by
-  show (⟨B + BitVec.ofNat 64 32 - BitVec.ofNat 64 24, 24⟩ : Region) = _
-  congr 1; bv_omega
 
 theorem below32 (B : Addr) : below (B + BitVec.ofNat 64 32) 32 = ⟨B, 32⟩ := by
   show (⟨B + BitVec.ofNat 64 32 - BitVec.ofNat 64 32, 32⟩ : Region) = _
@@ -230,13 +214,6 @@ theorem congr (hc : Ctx L g mx m₀ t) {g' : Reg → BitVec 64} {mx' : BitVec 32
 theorem inFr (hc : Ctx L g mx m₀ t) {d : Nat} (h₂ : d + 8 ≤ 72) :
     InRegions (t.rd ++ t.wr) (L.SP + BitVec.ofNat 64 d) 8 :=
   ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h₂ (by omega)⟩
-
-theorem inFrW (hc : Ctx L g mx m₀ t) {d n : Nat} (h₂ : d + n ≤ 72) :
-    InRegions t.wr (L.SP + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains_base _ h₂ (by omega)⟩
-
-theorem ea_fr (hc : Ctx L g mx m₀ t) (d : Nat) : t.ea (stk d) = L.SP + BitVec.ofNat 64 d := by
-  rw [ea_stk, hc.rsp]
 
 /-- The return address of a call from the frame. -/
 theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.ofNat 64 32, 8⟩ := by

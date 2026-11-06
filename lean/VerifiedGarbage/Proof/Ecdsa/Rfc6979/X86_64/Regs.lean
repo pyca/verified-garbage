@@ -82,11 +82,6 @@ theorem bytesAt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m') {p : 
   simp only [Spec.Sha256.bytesAt]
   exact List.map_congr_left fun i hi => Frame.bytes (R := ⟨p, n⟩) hf hd hn (List.mem_range.mp hi)
 
-/-- Memory that changed only within `ws` changed only within `ws'`, if each
-of `ws` lies within one of `ws'`. -/
-theorem Frame.widen {ws ws' : List Region} {m m' : Mem} (hf : Frame ws m m')
-    (h : ∀ r ∈ ws, ∃ r' ∈ ws', Region.Sub r r') : Frame ws' m m' := hf.sub h
-
 theorem sub_refl (r : Region) : Region.Sub r r := fun _ h => h
 
 theorem _root_.VG.Region.Sub.trans {a b c : Region} (h₁ : Region.Sub a b) (h₂ : Region.Sub b c) : Region.Sub a c :=
@@ -180,16 +175,5 @@ theorem mov32_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d
     Option.map_some, zx32 hn, Option.some.injEq, exists_eq_left']
   exact ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl, RegUpd.gpr_setReg_self _ _ _,
     fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr⟩
-
-/-- Two pieces of code, each setting one register. -/
-theorem upd_append {is js : List Instr} {u : State} {d e : Reg} {v w : BitVec 64}
-    (h₁ : WP isa (.block is) u (Upd L g m₀ u d v))
-    (h₂ : ∀ u', Ctx L g m₀ u' → WP isa (.block js) u' (Upd L g m₀ u' e w)) {Q : State → Prop}
-    (hQ : ∀ u'', Ctx L g m₀ u'' → u''.mem = u.mem → u''.gpr e = w →
-      (∀ r, r ≠ e → r ≠ d → u''.gpr r = u.gpr r) → (e ≠ d → u''.gpr d = v) → Q u'') :
-    WP isa (.block (is ++ js)) u Q := by
-  rw [WP.block_append_iff]
-  refine WP.mono h₁ fun u' h => WP.mono (h₂ u' h.ctx) fun u'' h' => hQ u'' h'.ctx (h'.mem.trans h.mem) h'.val
-    (fun r hre hrd => (h'.keep r hre).trans (h.keep r hrd)) fun hne => (h'.keep d hne.symm).trans h.val
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

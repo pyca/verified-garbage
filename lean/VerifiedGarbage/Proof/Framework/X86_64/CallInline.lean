@@ -404,7 +404,8 @@ def Instr.rspFree : Instr → Bool
   | .store m r => m.noRsp && r != .rsp
   | .shift _ d _ => d != .rsp
   | .mul r => r != .rsp
-  | .imul d r => d != .rsp && r != .rsp
+  | .imul d r | .imul3 d r _ => d != .rsp && r != .rsp
+  | .shld d r _ => d != .rsp && r != .rsp
   | .mulx hi lo src => hi != .rsp && lo != .rsp && src.noRsp
   | .movImm64 d _ => d != .rsp
   | .bswap d => d != .rsp
@@ -533,6 +534,16 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
     simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
     simp only [exec, execImul, Option.map_some, setRsp_gpr hi.1, setRsp_gpr hi.2, setFlags_setRsp,
       setReg_setRsp hi.1]
+  | imul3 d r k =>
+    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [exec, execImul3, Option.map_some, setRsp_gpr hi.2, setFlags_setRsp,
+      setReg_setRsp hi.1]
+  | shld d r n =>
+    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [exec, execShld, setRsp_gpr hi.1, setRsp_gpr hi.2]
+    split
+    · simp only [Option.map_some, setFlags_setRsp, setReg_setRsp hi.1]
+    · rfl
   | mulx hi' lo src =>
     simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
     simp only [exec, execMulx]

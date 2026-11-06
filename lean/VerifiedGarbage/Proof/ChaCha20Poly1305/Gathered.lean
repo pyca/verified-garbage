@@ -26,8 +26,6 @@ theorem bytesAt_eq_aes : Spec.Poly1305.bytesAt = Spec.Aes.bytesAt := rfl
 
 theorem gathered_eq_gcm : Spec.ChaCha20Poly1305.gathered = Spec.Gcm.gathered := rfl
 
-theorem gatheredLen_eq_gcm : Spec.ChaCha20Poly1305.gatheredLen = Spec.Gcm.gatheredLen := rfl
-
 open VG VG.WriteBytes
 open VG.Spec.Poly1305 (bytesAt)
 

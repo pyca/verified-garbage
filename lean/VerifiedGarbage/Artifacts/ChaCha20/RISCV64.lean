@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Shared
 public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Xor
 public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Stream.Init
 public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Stream.ApplyCT

@@ -28,4 +28,3 @@ elab "forward_state " n:ident " := " t:term : command => do
     addDecl (forceExpose := true) <| .defnDecl {
       name := name, levelParams := [], type := ty, value := ShareCommon.shareCommon' l
       hints := .abbrev, safety := .safe }
-

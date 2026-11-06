@@ -113,7 +113,7 @@ fn check(
     sig: &[u8],
     result: Expectation,
 ) -> bool {
-    let ok = key.verify_pkcs1v15(sig, d, h);
+    let ok = key.verify_pkcs1v15(sig, d, h).is_ok();
     match result {
         Expectation::Valid => assert!(ok, "{name} tcId {id}"),
         Expectation::Invalid => assert!(!ok, "{name} tcId {id}"),
@@ -122,7 +122,7 @@ fn check(
     match key.recover_pkcs1v15(sig, h) {
         Ok(v) => {
             assert_eq!(v == d, ok, "{name} tcId {id}");
-            assert!(key.verify_pkcs1v15(sig, &v, h), "{name} tcId {id}");
+            assert!(key.verify_pkcs1v15(sig, &v, h).is_ok(), "{name} tcId {id}");
         }
         Err(_) => assert!(!ok, "{name} tcId {id}"),
     }
@@ -241,7 +241,7 @@ fn rsa_pkcs1_sign_test() {
                 assert!(check(&name, 0, &public, h, &d, &sig, Expectation::Valid));
                 let mut other = d.clone();
                 other[0] ^= 1;
-                assert!(!public.verify_pkcs1v15(&sig, &other, h), "{name}");
+                assert!(!public.verify_pkcs1v15(&sig, &other, h).is_ok(), "{name}");
             }
         });
     }

@@ -132,10 +132,6 @@ theorem bytesAt_writeW_sep (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {d n : 
   rw [Offset.add_add_eq _ rfl, Mem.sub_ofNat_toNat P (by omega_arith)]
   omega_using [hd]
 
-theorem toNat_append_eq {m n : Nat} (x : BitVec m) (y : BitVec n) :
-    (x ++ y).toNat = x.toNat * 2 ^ n + y.toNat := by
-  rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt y.isLt, Nat.shiftLeft_eq]
-
 /-! ## 64-bit words -/
 
 /-- A 64-bit word with its bytes reversed (`bswap` on x86-64, `rev` on
@@ -252,12 +248,6 @@ theorem bytesAt_writeW_sep' (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {a b n
   rw [show P + BitVec.ofNat 64 b = (P + BitVec.ofNat 64 a) + BitVec.ofNat 64 (b - a) from
     (Offset.add_add_eq P (by omega_using [hd])).symm]
   exact bytesAt_writeW_sep _ _ _ (by omega_using [hd]) (by omega_using [hn])
-
-/-- The carry out of a sum split across two strings. -/
-theorem carry_append (a b : List Byte) (x : Nat) :
-    (toNat (a ++ b) + x) / 256 ^ (a.length + b.length) = (toNat a + (toNat b + x) / 256 ^ b.length) / 256 ^ a.length := by
-  rw [toNat_append, Nat.pow_add, Nat.mul_comm (256 ^ a.length), ← Nat.div_div_eq_div_mul, Nat.add_assoc,
-    Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.pow_pos (by decide)), Nat.add_comm]
 
 /-- The block at `P` after the increment as four 32-bit words: the reversed
 words `rv32 wᵢ` stored at `P + 12`, `P + 8`, `P + 4` and `P`, each the word

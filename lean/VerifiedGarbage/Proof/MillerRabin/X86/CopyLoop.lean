@@ -18,7 +18,8 @@ def copyBody : List Instr :=
   [.mov .eax (.mem (at_ .ebx 0)), .store (at_ .ebp 0) .eax,
     .alu .add .ebx (.imm 4), .alu .add .ebp (.imm 4), .alu .sub .esi (.imm 1)]
 
-/-- `copyLoop_ok`, with the pointers past the words copied. -/
+/-- The copy loop copies `N` words from `y` to `x`, and leaves the pointers
+past the words copied. -/
 theorem copyLoop_ends {s : State} {W : Addr} {L x y N : Nat} (hw : Ws s W L)
     (positive : 0 < N) (dstFit : x + 4 * N ≤ L) (srcFit : y + 4 * N ≤ L)
     (apart : x = y ∨ x + 4 * N ≤ y ∨ y + 4 * N ≤ x)
@@ -58,14 +59,5 @@ theorem copyLoop_ends {s : State} {W : Addr} {L x y N : Nat} (hw : Ws s W L)
       V, A.gpr, Nat.add_zero, val32_succ s.mem W y]
     change _ + _ * w32 t.mem W (y + 4 * i) = _
     rw [word]
-
-theorem copyLoop_ok {s : State} {W : Addr} {L x y N : Nat} (hw : Ws s W L)
-    (positive : 0 < N) (dstFit : x + 4 * N ≤ L) (srcFit : y + 4 * N ≤ L)
-    (apart : x = y ∨ x + 4 * N ≤ y ∨ y + 4 * N ≤ x)
-    (dst : PtrAt s W .ebp x) (src : PtrAt s W .ebx y) (count : (s.gpr .esi).toNat = N) :
-    WP isa (.loop (.block copyBody) .ne) s fun t =>
-      Outside W x (4 * N) s.mem t.mem ∧ val32 t.mem W x N = val32 s.mem W y N ∧
-      Keeps [.eax, .ebx, .ebp, .esi] s t :=
-  WP.mono (copyLoop_ends hw positive dstFit srcFit apart dst src count) fun _ ⟨O, V, K, _⟩ => ⟨O, V, K⟩
 
 end VG.Proof.MillerRabin.X86

@@ -13,7 +13,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{BrainpoolP384r1, Error, PublicKey};
+use verified_garbage::ec::{BrainpoolP384r1, PublicKey};
+use verified_garbage::error::InvalidSignature;
 use verified_garbage::hashes::sha384::Sha384;
 
 use super::harness::{self, Count, Expectation};
@@ -43,7 +44,7 @@ fn ecdsa_brainpoolp384r1_sha384_p1363_test() {
                 verified.add();
             }
             Expectation::Invalid | Expectation::Acceptable => {
-                assert_eq!(result, Err(Error::InvalidSignature), "tcId {}", test.tc_id);
+                assert_eq!(result, Err(InvalidSignature), "tcId {}", test.tc_id);
                 refused.add();
             }
         }

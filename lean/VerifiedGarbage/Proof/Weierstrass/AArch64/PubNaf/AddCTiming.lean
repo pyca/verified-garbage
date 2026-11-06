@@ -10,7 +10,8 @@ import VerifiedGarbage.Proof.Weierstrass.JacMul
 /-!
 # Timing of the cached addition
 
-`addCB_relCT` is `jacAddB_relCT` for `PubNaf.addC`, whose head reads `q`'s
+`addCB_relCT` is `jacAdd_relCT` for `PubNaf.addC`, for products that may be
+calls, whose head reads `q`'s
 `Z²` and `Z³` from `o.y` and `o.z`: two runs from the same values leak the
 same trace.
 -/

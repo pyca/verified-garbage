@@ -19,7 +19,7 @@ below the stack pointer, from `B` up (`Lay dn E`), as on x86-64
 `B + 16`: `K` and `V` (64 bytes each), the length of `T`, the number of
 candidates left, the pointers to `scratch`, `digest`, `d` and `out`, and
 `e` more words (`D`, `B`, then `HIGH`: `h`, `X`, `core`'s digest and `T`),
-the table's address at its top (`TS`); then the frame holding our return
+the table's address at its top; then the frame holding our return
 address (`LR`). `Ctx` is what holds between the frames' pushes and pops: the
 permissions, `sp`, the callee-saved registers, the return address, the
 pointers, `D`, `B` and the table's address in the frame, that memory changed
@@ -75,8 +75,6 @@ abbrev STK : Region := ⟨L.B, 256 + 8 * L.e⟩
 /-- The frames: our words, and our return address. -/
 abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 16, 224 + 8 * L.e⟩
 abbrev LR : Region := ⟨L.B + BitVec.ofNat 64 (240 + 8 * L.e), 16⟩
-/-- The frame's slot of the table's address, its top word. -/
-abbrev TS : Region := ⟨L.B + BitVec.ofNat 64 (232 + 8 * L.e), 8⟩
 /-- The stack below the frame's pointers: the calls' and `K`, `V`, `|T|` and the count. -/
 abbrev LOW : Region := ⟨L.B, 200⟩
 /-- The frame above its pointers and the slots of `D` and `B`, below the table's address. -/
@@ -119,13 +117,6 @@ end Lay
 
 /-- `r` lies at an offset within `R`. -/
 def Within (r R : Region) : Prop := ∃ off, r.base = R.base + BitVec.ofNat 64 off ∧ off + r.len ≤ R.len
-
-theorem Within.sub {r R : Region} (h : Within r R) : Region.Sub r R := by
-  obtain ⟨off, hb, hl⟩ := h
-  obtain ⟨b, n⟩ := r
-  simp only at hb hl
-  subst hb
-  exact Offset.sub_base _ hl
 
 theorem within_off (p : Addr) {d n k : Nat} (h : d + n ≤ k) :
     Within ⟨p + BitVec.ofNat 64 d, n⟩ ⟨p, k⟩ := ⟨d, rfl, h⟩
@@ -184,12 +175,6 @@ theorem stk_SCR (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 256 + 8 * L.e) :
 theorem stk_OUT (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 256 + 8 * L.e) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.OUT := h.ko.sub_left (Offset.sub_base _ h₁)
 
-theorem stk_D (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 256 + 8 * L.e) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.D := h.kd.sub_left (Offset.sub_base _ h₁)
-
-theorem stk_DG (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 256 + 8 * L.e) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.DG := h.kg.sub_left (Offset.sub_base _ h₁)
-
 /-- The 16 bytes the calls use, apart from `scratch`. -/
 theorem low_scr (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B, 16⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
@@ -207,49 +192,6 @@ theorem stk_safe (h : L.Ok) {d n : Nat} (h₁ : 200 ≤ d) (h₂ : d + n ≤ 248
   · exact (h.stk_SCR h₃).sub_right hs
   · exact (Offset.disjoint_base _ h₁ (by omega_arith)).sub_right hs
   · exact (Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)).sub_right hs
-
-/-- The frame's pointers are apart from every safe region. -/
-theorem ptrs_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 200, 32⟩ r :=
-  h.stk_safe (by omega_arith) (.inl (by omega_arith)) (by have := L.he; omega_arith) hs
-
-/-- The frame's slots of `D` and `B` are apart from every safe region. -/
-theorem db_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 232, 16⟩ r :=
-  h.stk_safe (by omega_arith) (.inl (by omega_arith)) (by have := L.he; omega_arith) hs
-
-/-- The frame's slot of the table's address is apart from every safe region. -/
-theorem ts_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.TS.Disjoint r :=
-  h.stk_safe (by have := L.he; omega_arith) (.inr (Nat.le_refl _)) (by omega_arith) hs
-
-/-- Our return address is apart from every safe region. -/
-theorem lr_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.LR.Disjoint r :=
-  h.stk_safe (by have := L.he; omega_arith) (.inr (by omega_arith)) (by omega_arith) hs
-
-/-- The table is apart from every safe region. -/
-theorem tab_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.TAB.Disjoint r := by
-  rcases hs with hs | hs | hs | hs
-  · exact h.to.sub_right hs
-  · exact h.tc.sub_right hs
-  · exact (h.tk.sub_right (Region.sub_prefix (by omega_arith))).sub_right hs
-  · exact (h.tk.sub_right (Offset.sub_base _ (by have := L.he; omega_arith))).sub_right hs
-
-/-- The buffers that are only read are apart from every safe region. -/
-theorem d_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.D.Disjoint r := by
-  rcases hs with hs | hs | hs | hs
-  · exact h.od.symm.sub_right hs
-  · exact h.dc.sub_right hs
-  · exact (h.kd.symm.sub_right (Region.sub_prefix (by omega_arith))).sub_right hs
-  · have := L.he
-    exact (h.kd.symm.sub_right (Offset.sub_base _ (by omega_arith))).sub_right hs
-
-theorem dg_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.DG.Disjoint r := by
-  rcases hs with hs | hs | hs | hs
-  · exact h.og.symm.sub_right hs
-  · exact h.gc.sub_right hs
-  · exact (h.kg.symm.sub_right (Region.sub_prefix (by omega_arith))).sub_right hs
-  · have := L.he
-    exact (h.kg.symm.sub_right (Offset.sub_base _ (by omega_arith))).sub_right hs
 
 end Lay.Ok
 

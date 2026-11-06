@@ -23,8 +23,6 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 (`VG_P256_COMB`, its only readable region): `mulGRVc`. `mulG_rv` proves it
 from `body_ok`, around the table's address (`lla`, first), the saves of
 `s0`, `s1`, `ra` and `s4` (past the numbered slots) and their loads.
-`mulG_ct` is its constant time, by taint tracking: only the pointer, in
-`a0`, and the table's address are public.
 -/
 
 @[expose] public section
@@ -204,13 +202,5 @@ theorem mulG_rv (hL : Law W) (s : State) (hs : mulGRVc.pre s) :
     · show _ < W.p; rw [Impl.Weierstrass.Point.Curve.pointAt, x2]; exact lt₇.2.2
     · rw [Impl.Weierstrass.Point.Curve.pointAt, x0, x1, x2, dq, dq, dq]
       exact represents_of_rep R₇
-
-/-! ## Constant time -/
-
-theorem mulG_ct : ConstantTime isa mulGRVc.pre mulGRVc.pub mulGP256 :=
-  VG.Taint.constantTime (A := taintSym [p256Sym]) (Taint.ofRegs [.a0])
-    (fun _ _ _ _ ⟨hsp, h0, hsy⟩ => ⟨⟨hsp, fun r hr => by
-      simp only [Taint.mem_ofRegs, List.mem_singleton] at hr; subst hr; exact h0⟩, fun n hn => by
-        simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
 end VG.Proof.Ecdsa.RISCV64.Comb

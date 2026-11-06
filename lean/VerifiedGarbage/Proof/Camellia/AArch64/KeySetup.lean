@@ -453,11 +453,6 @@ theorem loadValues_ok {s : State} (hscr : (⟨s.gpr sb, 8 * slots⟩ : Region) �
 
 /-! ## The prologue -/
 
-/-- A frame of slots below the tail buffer's. -/
-theorem frame_tail {m : Mem} {b : Addr} {k : Nat} (v : BitVec 64) (hk : k < tailSlot) :
-    Frame [⟨b, 8 * tailSlot⟩] m (m.writeW (wordAddr b k) v) :=
-  frame_writeW v (by rw [wordAddr]; rw [tailSlot_eq] at hk; exact VG.Offset.sub_base _ (by rw [tailSlot_eq]; omega_arith))
-
 theorem sreg_ne' (i : Nat) (hi : i < 10) : sreg i ≠ sb ∧ sreg i ≠ .x3 := by
   revert i; decide
 

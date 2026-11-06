@@ -62,9 +62,6 @@ theorem ArgsKeep.frame {n : Nat} {s₀ s s' : State} (h : ArgsKeep n s₀ s) (hf
   rw [← h.arg i hi]
   exact arg_frame hsp (by rw [h.sp]; exact hf) hfr (fun r hr => by rw [args_sp h.sp]; exact hd r hr) hi
 
-theorem ArgsKeep.trans {n : Nat} {s₀ s s' : State} (h : ArgsKeep n s₀ s) (h' : ArgsKeep n s s') : ArgsKeep n s₀ s' :=
-  ⟨h'.sp.trans h.sp, h'.rd.trans h.rd, h'.wr.trans h.wr, fun i hi => (h'.arg i hi).trans (h.arg i hi)⟩
-
 theorem ArgsKeep.read {n : Nat} {s₀ s : State} (h : ArgsKeep n s₀ s) (hf : s₀.sp.toNat + 4 * n ≤ 2 ^ 32)
     (hin : args s₀ n ∈ s₀.rd) {i : Nat} (hi : i < n) :
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 (4 * i))) 4 ∧

@@ -271,8 +271,9 @@ theorem cry_st (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L 
 
 /-- `seal` after its entry, up to the copy of the tag. -/
 abbrev sealSFront (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) : Prog isa :=
-  .seq (.seq (.seq (.seq (.seq (keys v.callees ⟨eb.enc.name, eb.enc.code⟩) (.block Impl.AesGcmSiv.X86_64Stitch.lenCmp))
-    (.ite .b (polyval v.callees wide) (Impl.AesGcmSiv.X86_64Stitch.hashS v.callees wide))) (tag v.callees tagO))
+  .seq (.seq (.seq (.seq (.seq (.seq (keysS ⟨eb.enc.name, eb.enc.code⟩) (.block Impl.AesGcmSiv.X86_64Stitch.lenCmp))
+    (.ite .b (polyval v.callees wide) (Impl.AesGcmSiv.X86_64Stitch.hashS v.callees wide))) (expand v.callees))
+    (tag v.callees tagO))
     (.block Impl.AesGcmSiv.X86_64Stitch.lenCmp))
     (.ite .b (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)
       (Impl.AesGcmSiv.X86_64Stitch.cryptS v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
@@ -280,8 +281,9 @@ abbrev sealSFront (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) : Prog isa :=
 theorem sealSFront_st (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat}
     (hR : R = 10 ∨ R = 14) {N A D T : Addr} {al n : Nat} {t : State} (h : St K W SP R N A D al n T t) :
     WP isa (sealSFront v eb wide) t (St K W SP R N A D al n T) :=
-  WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (keys_st v eb L hR h)
-    fun _ h => lenCmp_stk h)) fun _ h => poly_st v wide L h)) fun _ h => tag_st v L hR (by decide) h))
+  WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono
+    (keysS_st eb L hR h) fun _ h => lenCmp_stk h)) fun _ h => poly_st v wide L h)) fun _ h => expand_st v L hR h))
+    fun _ h => tag_st v L hR (by decide) h))
     fun _ h => lenCmp_st h)) fun _ h => cry_st v eb wide L hR h)
 
 /-- `sealSFront`, in two runs. -/
@@ -291,10 +293,10 @@ theorem sealSFront_rel (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : A
     (hP : ∀ t₁ t₂, P t₁ t₂ → St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂) :
     RelCT isa P (sealSFront v eb wide) fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧
       St K W SP R N A D al n T t₂ := by
-  have r₁ := (keys_rel v eb L hR hDW hn fun t₁ t₂ h => ⟨⟨(hP _ _ h).1.bufs.one, (hP _ _ h).1.nonce⟩,
+  have r₁ := (keysS_rel eb L hR hDW hn fun t₁ t₂ h => ⟨⟨(hP _ _ h).1.bufs.one, (hP _ _ h).1.nonce⟩,
       ⟨(hP _ _ h).2.bufs.one, (hP _ _ h).2.nonce⟩⟩).wp
     (F₁ := StK K W SP R N A D al n T) (F₂ := StK K W SP R N A D al n T)
-    fun t₁ t₂ h => ⟨keys_st v eb L hR (hP _ _ h).1, keys_st v eb L hR (hP _ _ h).2⟩
+    fun t₁ t₂ h => ⟨keysS_st eb L hR (hP _ _ h).1, keysS_st eb L hR (hP _ _ h).2⟩
   have r₂ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ StK K W SP R N A D al n T t₁ ∧
       StK K W SP R N A D al n T t₂) hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.bufs.one, h.2.2.1.bufs.one, fun _ h => nomatch h⟩)
     lenCmp_check).wp
@@ -312,6 +314,10 @@ theorem sealSFront_rel (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : A
         have := h.2; rw [eval_b h.1.2.1.2] at this; simp at this; omega
   have r₃ := i₃.wp (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨poly_st v wide L h.2.1, poly_st v wide L h.2.2⟩
+  have r₃' := (expand_rel v L hR hDW hn (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧
+      St K W SP R N A D al n T t₂) fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one⟩).wp
+    (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
+    fun t₁ t₂ h => ⟨expand_st v L hR h.2.1, expand_st v L hR h.2.2⟩
   have r₄ := (tag_rel v L hR hDW hn (o := tagO) (by decide) (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧
       St K W SP R N A D al n T t₂) fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩).wp
     (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
@@ -335,7 +341,8 @@ theorem sealSFront_rel (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : A
         have := h.2; rw [eval_b h.1.2.1.2] at this; simp at this; omega
   have r₆ := i₆.wp (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨cry_st v eb wide L hR h.2.1, cry_st v eb wide L hR h.2.2⟩
-  exact (RelCT.seq (RelCT.seq (RelCT.seq (RelCT.seq (RelCT.seq r₁ r₂) r₃) r₄) r₅) r₆).mono (fun _ _ h => h)
+  exact (RelCT.seq (RelCT.seq (RelCT.seq (RelCT.seq (RelCT.seq (RelCT.seq r₁ r₂) r₃) r₃') r₄) r₅) r₆).mono
+    (fun _ _ h => h)
     fun _ _ h => ⟨trivial, h.2⟩
 
 /-- `vg_aes_gcm_siv_seal`, in two runs with the same public arguments. -/
@@ -347,7 +354,7 @@ theorem sealS_rel (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {s₀ s₀' : St
   have L := Ar.lay
   refine RelCT.seq (entry_rel (pub_regs hq) (hq.2.2.2.2.2.2.2 2 (by decide)) (argW_in Ar rfl)
     (argW_in (args_of_seal hp').1.1 rfl) (entry_seal hp) (entry_seal_pub hp' hq)) ?_
-  refine RelCT.assoc (RelCT.assoc (RelCT.assoc (RelCT.assoc (RelCT.assoc ?_))))
+  refine RelCT.assoc (RelCT.assoc (RelCT.assoc (RelCT.assoc (RelCT.assoc (RelCT.assoc ?_)))))
   have hn := Nat.le_of_lt Ar.data.lt
   have front := rel_narrow (c := sealSFront v eb wide)
     (P := fun s₁ s₂ => True ∧

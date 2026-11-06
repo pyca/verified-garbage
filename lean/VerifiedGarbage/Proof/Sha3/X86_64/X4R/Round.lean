@@ -181,8 +181,6 @@ theorem dcols_ok (s₀ : State) (A : Nat → KState) (hA : Regs4 s₀ A)
 
 /-! ## ρ and π -/
 
-theorem chain_len : piChain.length = 24 := rfl
-
 /-- The facts about `piChain` the proof uses, each for the 24 lanes. -/
 theorem chain_lt : ∀ j < 24, piChain.getD j 0 < 25 ∧ piChain.getD j 0 ≠ 0 := by decide
 theorem chain_inj : ∀ j < 24, ∀ j' < 24, piChain.getD j 0 = piChain.getD j' 0 → j = j' := by decide
@@ -191,7 +189,6 @@ theorem chain_src : ∀ j < 23,
 theorem chain_last : piSrc (piChain.getD 23 0 % 5) (piChain.getD 23 0 / 5) = piChain.getD 0 0 := by decide
 theorem chain_all : ∀ p < 25, p ≠ 0 → ∃ j < 24, piChain.getD j 0 = p := by decide
 theorem chain_rho : ∀ j < 24, 0 < rhoOff (piChain.getD j 0) ∧ rhoOff (piChain.getD j 0) < 64 := by decide
-theorem piSrc_lt : ∀ p < 25, piSrc (p % 5) (p / 5) < 25 := by decide
 theorem piSrc_zero : piSrc (0 % 5) (0 / 5) = 0 := rfl
 theorem rhoOff_zero : rhoOff 0 = 0 := rfl
 theorem piSrc_mod (x y : Nat) : piSrc x y % 5 = (x + 3 * y) % 5 := by
@@ -331,7 +328,6 @@ theorem chi5_ok (s : State) (a₀ a₁ a₂ a₃ a₄ t₀ t₁ : VReg) (b : Nat
         u₅.other _ q2.symm k hk, u₅.other _ r2.symm k hk, u₅.other _ n24.symm k hk,
         u₄.other _ q1.symm k hk, u₄.other _ r1.symm k hk, u₄.other _ n14.symm k hk,
         u₃.other _ q0.symm k hk, u₃.other _ r0.symm k hk, u₃.other _ n04.symm k hk, zt0, zt1, z4]
-
 
 /-- χ on plane `y`. -/
 theorem chi_ok (y : Nat) (hy : y < 5) (s : State) (A : Nat → KState)

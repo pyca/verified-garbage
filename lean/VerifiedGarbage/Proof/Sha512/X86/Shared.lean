@@ -61,21 +61,6 @@ namespace VG.Proof.Sha512.X86.Shared
 
 open _root_.VG.X86
 
-/-- `compressX86` with 1328 bytes of scratch. -/
-def compressWide : Contract X86.isa :=
-  { Proof.Sha512.compressX86 with
-    pre := fun s =>
-      let state : Region := ⟨(arg s 0).setWidth 64, 64⟩
-      let blocks : Region := ⟨(arg s 1).setWidth 64, 128 * (arg s 2).toNat⟩
-      let scratch : Region := ⟨(arg s 3).setWidth 64, 1328⟩
-      let args : Region := ⟨argAddr s 0, 16⟩
-      let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-      s.rd = [blocks, args] ∧ s.wr = [state, scratch] ∧
-      state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
-      args.Disjoint state ∧ args.Disjoint scratch ∧ ret.Disjoint state ∧ ret.Disjoint scratch ∧
-      (arg s 0).toNat + 64 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 128 * (arg s 2).toNat ≤ 2 ^ 32 ∧
-      (arg s 3).toNat + 1328 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 }
-
 /-- `updateX86` with 1376 bytes of scratch. -/
 def updateWide : Contract X86.isa :=
   { Proof.Sha512.updateX86 with
@@ -114,33 +99,16 @@ def finalizeWide : Contract X86.isa :=
 
 theorem pfx {a : Addr} {m n : Nat} (h : Nat.ble m n = true) : Region.Prefix ⟨a, m⟩ ⟨a, n⟩ :=
   ⟨rfl, Nat.le_of_ble_eq_true h⟩
-theorem sub224 (a : Addr) : Region.Sub ⟨a, 224⟩ ⟨a, 1328⟩ := Region.sub_prefix (by decide)
 theorem sub272 (a : Addr) : Region.Sub ⟨a, 272⟩ ⟨a, 1376⟩ := Region.sub_prefix (by decide)
-theorem le224 {x : Nat} (h : x + 1328 ≤ 2 ^ 32) : x + 224 ≤ 2 ^ 32 := by omega
 theorem le272 {x : Nat} (h : x + 1376 ≤ 2 ^ 32) : x + 272 ≤ 2 ^ 32 := by omega
 
 /-- Rewrites the per-target contracts at a narrowed state (`arg` does not
 unfold cheaply). -/
 macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| plain_simp_names simp only [Proof.Sha512.compressX86, Proof.Sha512.updateX86, Proof.Sha512.finalizeX86,
-                     Proof.Sha512.countX86, compressWide, updateWide, finalizeWide, VG.X86.arg_withRegions,
+                     Proof.Sha512.countX86, updateWide, finalizeWide, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd,
                      State.withRegions_wr] $(loc)?)
-
-theorem compressWide_verified (hsat : ∃ s, compressWide.pre s) :
-    Verified X86.target Impl.Sha512.X86.compress compressWide :=
-  Verified.widen Proof.Sha512.X86.Compress.compress_verified
-    (fun s => [⟨(arg s 0).setWidth 64, 64⟩, ⟨(arg s 3).setWidth 64, 224⟩])
-    (fun _ h => by
-      obtain ⟨h₁, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃⟩ := h
-      narrow
-      exact ⟨h₁, trivial, h₃.sub_right (sub224 _), h₄, h₅.sub_right (sub224 _), h₆, h₇.sub_right (sub224 _),
-        h₈, h₉.sub_right (sub224 _), h₁₀, h₁₁, le224 h₁₂, h₁₃⟩)
-    (fun _ h => by
-      obtain ⟨_, h₂, _⟩ := h
-      rw [h₂]; exact .cons (pfx rfl) (.cons (pfx rfl) .nil))
-    (fun _ _ _ h => by narrow at h ⊢; exact h)
-    (fun _ _ _ _ h => by narrow; exact h) hsat
 
 theorem updateWide_verified (hsat : ∃ s, updateWide.pre s) :
     Verified X86.target Impl.Sha512.X86.Stream.update updateWide :=
@@ -175,10 +143,6 @@ theorem finalizeWide_verified (hsat : ∃ s, finalizeWide.pre s) :
     (fun _ _ _ h => by narrow at h ⊢; exact h)
     (fun _ _ _ _ h => by narrow; exact h) hsat
 
-/-- A state satisfying `compressWide.pre`. -/
-def compressSat : State :=
-  { Proof.Sha512.X86.Compress.satState with wr := [⟨0x1000, 64⟩, ⟨0x3000, 1328⟩] }
-
 /-- A state satisfying `updateWide.pre`. -/
 def updateSat : State :=
   { Proof.Sha512.X86.Stream.Update.sat with wr := [⟨0x1000, 192⟩, ⟨0x3000, 1376⟩] }
@@ -187,16 +151,6 @@ def updateSat : State :=
 def finalizeSat : State :=
   { Proof.Sha512.X86.Stream.Finalize.sat with
     wr := [⟨0x1000, 192⟩, ⟨0x2000, 64⟩, ⟨0x3000, 1376⟩] }
-
-theorem compressWide_implies : compressWide.Implies (Proof.Sha512.compressContract X86.abi) := by
-  sig_implies [Proof.Sha512.compressContract, Proof.Sha512.compressSig, compressWide,
-    Proof.Sha512.compressX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    [compressSat, Proof.Sha512.X86.Compress.satState, Proof.Sha512.X86.Compress.satMem, X86.arg,
-      X86.argAddr, Mem.readW, Mem.read] using compressSat
-
-theorem compress :
-    Verified X86.target Impl.Sha512.X86.compress (Proof.Sha512.compressContract X86.abi) :=
-  (compressWide_verified compressWide_implies.sat_left).of_implies compressWide_implies
 
 theorem init (iv : Spec.Sha512.HashValue) :
     Verified X86.target (Impl.Sha512.X86.Stream.init iv) (Spec.Sha512.initContract X86.abi iv) :=

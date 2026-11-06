@@ -101,12 +101,6 @@ theorem SearchLive.frame_ld' {p : SearchPublic} {original s : State} {used remai
     ∀ d, d + 8 ≤ 160 → InRegions (s.rd ++ s.wr) (p.F + BitVec.ofNat 64 d) 8 :=
   fun d hd => let ⟨r, hr, hc⟩ := h.frame_st d hd; ⟨r, List.mem_append_right _ hr, hc⟩
 
-/-- The frame's words but `values`, through stores of them. -/
-theorem stores_words (m : Mem) (B : Addr) (values : List (Nat × BitVec 64))
-    (hb : ∀ e ∈ values, e.1 < 20) {j : Nat} (hj : j < 20) (hnot : ∀ e ∈ values, j ≠ e.1) :
-    word (writeFrame m B values) B (8 * j) = word m B (8 * j) := by
-  rw [writeFrame_word _ _ _ hb j hj, frameValue_unchanged _ _ _ hnot]
-
 def terminalValues (status : Nat) : List (Nat × BitVec 64) :=
   [(0, 0), (3, 0), (17, BitVec.ofNat 64 status)]
 

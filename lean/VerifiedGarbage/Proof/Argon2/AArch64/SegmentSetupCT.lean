@@ -1455,20 +1455,6 @@ structure Related (p : Params) (pass lane slice index old : Nat) (leftState righ
     reference p pass lane slice index (Proof.Argon2.FillStep.random p pass lane slice index leftState.memory) =
       reference p pass lane slice index (Proof.Argon2.FillStep.random p pass lane slice index rightState.memory)
 
-theorem Related.of_indices {p : Params} {pass lane slice index old : Nat} {s t : State}
-    {leftState rightState : FillState} (source : RandomSource.Related p pass lane slice index old s t)
-    (leftMatrix : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks leftState.memory)
-    (rightMatrix : Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks rightState.memory)
-    (indices : (fillBlock p pass slice lane index leftState).indices =
-      (fillBlock p pass slice lane index rightState).indices) :
-    Related p pass lane slice index old leftState rightState s t := by
-  refine ⟨source, leftMatrix, rightMatrix, ?_⟩
-  intro mode
-  rw [Proof.Argon2.FillStep.indices p pass lane slice index leftState source.left.filling.bounds.active,
-    Proof.Argon2.FillStep.indices p pass lane slice index rightState source.right.filling.bounds.active] at indices
-  simp only [mode, Bool.false_eq_true, ite_false] at indices
-  exact (List.cons.inj indices).1
-
 theorem Related.reference_eq {p : Params} {pass lane slice index old : Nat} {s t : State}
     {leftState rightState : FillState} (h : Related p pass lane slice index old leftState rightState s t) :
     reference p pass lane slice index (Proof.Argon2.FillStep.random p pass lane slice index leftState.memory) =

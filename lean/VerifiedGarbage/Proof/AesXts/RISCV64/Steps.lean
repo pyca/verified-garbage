@@ -144,11 +144,6 @@ theorem mulWord_wp {s : State} {w p : Reg} {off : Nat} {x y : BitVec 32} {Q : Ad
       (by rw [sp₄, u₃.sp, u₂.sp, u₁.sp])
   rw [m₄, g₃ _ (by decide) (by decide), h3, v₃, word_val, u₃.mem, u₂.mem, u₁.mem]
 
-/-- The words of a block in a region the block is. -/
-theorem in_words {rs : List Region} {Q : Addr} (h : (⟨Q, 16⟩ : Region) ∈ rs) :
-    ∀ d, d + 4 ≤ 16 → InRegions rs (Q + BitVec.ofNat 64 d) 4 :=
-  fun _ hd => ⟨_, h, Offset.contains_base Q hd (by omega)⟩
-
 /-- The registers `mulA` writes. -/
 abbrev mulRegs : List Reg := [.t1, .t2, .t3, .t4, .t5, .t6, .a6]
 

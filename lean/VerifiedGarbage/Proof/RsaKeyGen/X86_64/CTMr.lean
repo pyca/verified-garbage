@@ -64,19 +64,6 @@ structure MrH (p : MrPub) (i u : Nat) (m : Mem) : Prop where
   ki : word m p.B (8 * kI) = BitVec.ofNat 64 i
   used : word m p.B (8 * kUsed) = BitVec.ofNat 64 u
 
-/-- `MrH` survives changes away from its words. -/
-theorem MrH.frm {p : MrPub} {i u : Nat} {m m' : Mem} {rs : List (Nat × Nat)} (h : MrH p i u m)
-    (hf : Frm p.B rs m m')
-    (hd : ∀ k ∈ [kOut, kLen, kUsedP, kRand, kRandLen, kChecks, kI, kUsed], ∀ r ∈ rs, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k) :
-    MrH p i u m' := by
-  have e : ∀ k ∈ [kOut, kLen, kUsedP, kRand, kRandLen, kChecks, kI, kUsed], word m' p.B (8 * k) = word m p.B (8 * k) :=
-    fun k hk => hf.word_eq (hd k hk) (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
-      rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
-  exact ⟨(e _ (by simp)).trans h.out, (e _ (by simp)).trans h.len, (e _ (by simp)).trans h.usedP,
-    (e _ (by simp)).trans h.rand, (e _ (by simp)).trans h.rlen, (e _ (by simp)).trans h.chk,
-    (e _ (by simp)).trans h.ki, (e _ (by simp)).trans h.used⟩
-
 /-- The header of a state in Miller–Rabin, with the words `ex` too. -/
 theorem mr_hp {p : MrPub} {i u : Nat} {s : State} {mi : BitVec 64} {ex : List (Nat × BitVec 64)}
     (hg : Good s p.B p.Z p.w mi) (hw : s.wr = p.wr) (h : MrH p i u s.mem)

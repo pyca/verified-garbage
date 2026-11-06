@@ -198,10 +198,6 @@ structure Data (s : State) (D : Addr) (n : Nat) : Prop where
   fit : D.toNat + 8 * n ≤ 2 ^ 64
   sep : (⟨D, 8 * n⟩ : Region).Disjoint (frameR s)
 
-theorem Data.congr {s s' : State} {D : Addr} {n : Nat} (h : Data s D n) (hb : s'.gpr .s0 = s.gpr .s0)
-    (hw : s'.wr = s.wr) : Data s' D n :=
-  ⟨by rw [hw]; exact h.wr, h.fit, by simp only [frameR, hb]; exact h.sep⟩
-
 theorem Data.byte {s : State} {D : Addr} {n : Nat} (h : Data s D n) {i : Nat} (hi : i < 8 * n) :
     InRegions s.wr (D + BitVec.ofNat 64 i) 1 :=
   h.wr i hi

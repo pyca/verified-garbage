@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on AArch64: correctness
 
-As `vg_rsa_pkcs1_encrypt`'s (`enc_ok`), with `pre` loaded for the call
+As `vg_rsa_pkcs1_encrypt`'s, with `pre` loaded for the call
 (`callArgs_inv`) and the precomputed public operation (`pd_call`): the
 registers the ABI keeps whatever `pre` holds, and, if `pre` holds the values
 for `n`, `encK`'s postcondition.

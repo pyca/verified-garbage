@@ -11,10 +11,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: entering the frames
 
-The layout of a call (`lay`), what its precondition says of it (`lay_ok`),
-and the first block (`setup`), run from the state in which the inner frame's
-body starts (`entered`): it writes the slots, the call's stack arguments and
-the first two bytes of `EM`, establishing `Ctx` (`entry_ok`).
+The layout of a call (`lay`), and the first block (`setup`), run from the
+state in which the inner frame's body starts (`entered`): it writes the
+slots, the call's stack arguments and the first two bytes of `EM`,
+establishing `Ctx` (`entry_okX`).
 -/
 
 @[expose] public section
@@ -42,21 +42,6 @@ theorem toNat_sub_k {a : Addr} {k : Nat} (h : k ≤ a.toNat) : (a - BitVec.ofNat
   have := a.isLt
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_arith),
     show 2 ^ 64 - k + a.toNat = a.toNat - k + 2 ^ 64 by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
-
-theorem lay_ok {P : Nat} {s : State} (h : (encK P).pre s) : (lay P s).Ok := by
-  obtain ⟨hsp, hsp2, -, -, oN, oE, oM, oP, oS, oA, nS, eS, mS, pS, sA, kO, kN, kE, kM, kP, kS, -,
-    bO, bN, bE, bM, bP, bS, kv, olk, el1, elk, mlk, plk, slk⟩ := h
-  have eO : (lay P s).OUT = ⟨s.gpr .x0, (s.gpr .x1).toNat⟩ := by simp only [Lay.OUT, lay, olk]
-  have eA : (lay P s).ARGS = ⟨stackArgAddr s 0, 32⟩ := by simp only [Lay.ARGS, lay_args]; rfl
-  have eK : (lay P s).STK = ⟨s.sp - BitVec.ofNat 64 (P + 1088), P + 1088⟩ := by
-    show (⟨(lay P s).Q - BitVec.ofNat 64 P, P + 1088⟩ : Region) = _
-    rw [lay_stk]
-  have hQ : (lay P s).Q.toNat = s.sp.toNat - 1088 := toNat_sub_k (by omega_arith)
-  exact ⟨eO ▸ oN, eO ▸ oE, eO ▸ oM, eO ▸ oP, eO ▸ oS, by rw [eA, eO]; exact oA, nS, eS, mS, pS,
-    by rw [eA]; exact sA, by rw [eK, eO]; exact kO, eK ▸ kN, eK ▸ kE, eK ▸ kM, eK ▸ kP, eK ▸ kS,
-    by simp only [lay]; omega_arith, bN, bE, bM, bP, bS, by omega_arith, by simp only [lay] at hQ ⊢; omega_arith, kv, olk, el1,
-    elk, mlk, plk, slk, Nat.le_refl _, by simp [lay], by simp only [lay] at hQ ⊢; omega_arith, by simp [lay], by simp [lay], by simp [lay],
-    by simp [lay]⟩
 
 /-- The state in which the inner frame's body starts. -/
 def entered (s : State) : State := allocated frameBytes (pushed .x30 s)
@@ -159,9 +144,6 @@ theorem loadArgs_ok {P : Nat} {X : List Region} {al : Nat} {s : State} (hL : (la
     by simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq],
     by simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq],
     fun r h9 h10 h11 => by simp only [RegUpd.gpr_write, h9, h10, h11, ite_false, entered_gpr]⟩
-
-/-- The four saves. -/
-abbrev saveList : List (Reg × Nat) := [(.x10, 0), (.x11, 8), (.x0, oOut), (.x3, oK)]
 
 /-- After `emStart`, from the state `t` after the saves. -/
 structure Started (s t u : State) : Prop where
@@ -335,15 +317,5 @@ theorem entry_okX {P : Nat} {X : List Region} {al : Nat} {s : State} (hL : (lay 
       hu.x11, hu.x12, by rw [hu.x13, hsp₂], hu.x14, hu.x15, ?_, ?_⟩
     · rw [hu.mem, hsp₂, Bytes.write1_ne _ _ hx40, Bytes.write1_self]; rfl
     · rw [hu.mem, hsp₂, Bytes.write1_self]; rfl
-
-theorem lay_rd {P : Nat} {s : State} (h : (encK P).pre s) :
-    s.rd = [(lay P s).N, (lay P s).E, (lay P s).MSG, (lay P s).PS] ++ [] ++ [(lay P s).ARGS] := by
-  rw [h.2.2.1]
-  simp only [Lay.N, Lay.E, Lay.MSG, Lay.PS, Lay.ARGS, lay_args, List.nil_append, List.cons_append]
-  rfl
-
-theorem entry_ok {P : Nat} {s : State} (h : (encK P).pre s) :
-    WP isa (.block setup) (entered s) fun t => Ctx (lay P s) s.gpr s.v s.mem t ∧ Setup (lay P s) s.gpr t :=
-  entry_okX (lay_ok h) (lay_rd h) h.2.2.2.1
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Enc

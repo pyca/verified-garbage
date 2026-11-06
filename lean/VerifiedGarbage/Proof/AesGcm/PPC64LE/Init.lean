@@ -47,10 +47,6 @@ theorem zero_block2 (m : Mem) (p : Addr) :
     blockAt ((m.writeW p (0 : BitVec 64)).writeW (p + BitVec.ofNat 64 8) (0 : BitVec 64)) p = 0 := by
   rw [blockAt, zeroT_bytes]; decide
 
-theorem add8 (p : Addr) (a : Nat) :
-    p + BitVec.ofNat 64 (a + 8) = p + BitVec.ofNat 64 a + BitVec.ofNat 64 8 := by
-  simp only [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-
 /-- The number of rounds of `init`'s key. -/
 abbrev initR (s₀ : State) : Nat := Spec.Aes.rounds ((s₀.gpr .r4).toNat / 4)
 
@@ -96,10 +92,6 @@ theorem init_kc {s₀ s₁ : State} (h : initPPC64LE.pre s₀) (h1 : IS1 s₀ s�
   · rw [h1.keeps.wr]
     exact Covers.cons (covers_prefix hC (by decide)) (Covers.cons (covers_off hW (by decide) (by decide))
       Covers.nil)
-
-/-- After the key expansion. -/
-def IS2 (s₀ s₂ : State) : Prop :=
-  ∃ s₁, IS1 s₀ s₁ ∧ KeyPost s₁ (s₀.gpr .r3) (s₀.gpr .r4).toNat (s₀.gpr .r5) (s₀.gpr .r6 + BitVec.ofNat 64 512) s₂
 
 /-- `initArgs`: the hash subkey's block and `T` zeroed, and the arguments of
 `vg_aes_ctr32`. -/

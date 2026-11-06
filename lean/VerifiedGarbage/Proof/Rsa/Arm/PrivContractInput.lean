@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.PrivContractGeometry
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnInput
 import VerifiedGarbage.Proof.Rsa.Arm.PrivEntryReady
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Shared private RSA preconditions establish the native wrapper inputs -/
 
@@ -11,9 +12,9 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 namespace VG.Proof.Rsa.Arm
 open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm VG.Proof.Mont
 
-theorem private_contract_pre (s : State) (h : (Spec.Rsa.privateCheckedContract abi stackBytes).pre s) :
+theorem private_contract_pre (s : State) (h : (Proof.Rsa.privateCheckedContract abi stackBytes).pre s) :
     PrivFnInput (privateGeometry s) (privateBytes s) s := by
-  sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
+  sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   have addr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   rw [addr] at h
   obtain ⟨stackFit, argFit, rd, wr, outN, outE, outI, outP, outQ, outDP, outDQ, outQI, outWs, outArgs,

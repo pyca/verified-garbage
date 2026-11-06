@@ -42,13 +42,6 @@ theorem eqMask_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} 
     fun t ⟨⟨h15, mt⟩, k⟩ => ⟨h15, mt.trans m₁, (k₁.trans k).mono (by decide)⟩
 
 
-theorem neg_bit (b : Bool) : BitVec.setWidth 64 0#16 - BitVec.ofNat 64 b.toNat = mask b := by
-  cases b <;> decide
-
-theorem shl_one (x : BitVec 64) : x <<< 1 = x + x := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_shiftLeft, BitVec.toNat_add, Nat.shiftLeft_eq, Nat.pow_one, Nat.mul_two]
-
 theorem ofNat64_pred {n : Nat} (h : 1 ≤ n) (hn : n < 2 ^ 64) :
     BitVec.ofNat 64 n - 1#64 = BitVec.ofNat 64 (n - 1) := by
   apply BitVec.eq_of_toNat_eq

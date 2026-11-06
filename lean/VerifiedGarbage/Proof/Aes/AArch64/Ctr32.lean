@@ -363,16 +363,6 @@ theorem keyDone_ok (s : State) :
 
 theorem sub_refl (r : Region) : Region.Sub r r := fun _ h => h
 
-/-- A frame within the writable regions. -/
-theorem frame_wr {rs : List Region} {m m' : Mem} {C D b : Addr} {len : Nat} (hf : Frame rs m m')
-    (h : ∀ r ∈ rs, Region.Sub r ⟨C, 16⟩ ∨ Region.Sub r ⟨D, len⟩ ∨ Region.Sub r ⟨b, 2048⟩) :
-    Frame [⟨C, 16⟩, ⟨D, len⟩, ⟨b, 2048⟩] m m' :=
-  hf.sub fun r hr => by
-    rcases h r hr with h | h | h
-    · exact ⟨_, by simp, h⟩
-    · exact ⟨_, by simp, h⟩
-    · exact ⟨_, by simp, h⟩
-
 theorem saved_frame {s₀ : State} {b : Addr} {m m' : Mem} {rs : List Region} (h : Saved s₀ b m)
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, Region.Disjoint ⟨b + BitVec.ofNat 64 384, 88⟩ r) :
     Saved s₀ b m' := fun i hi => by
@@ -586,16 +576,6 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32AArch64.pre s₀) :
         exact dCS.sub_right (Region.sub_prefix (by omega_arith))
     · simp
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 10 | .x2 => 0x2000 | .x3 => 0x3000 | .x4 => 1 | .x5 => 0x4000
-    | _ => 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 240⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 2048⟩]
-
 theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32AArch64.pre s) :
     ∃ t s', Exec isa Impl.Aes.AArch64.ctr32 s t s' ∧ abiPreserved s s' ∧
       Proof.Aes.ctr32AArch64.post s s' := by
@@ -624,11 +604,5 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AA
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-theorem ctr32_verified :
-    Verified AArch64.target Impl.Aes.AArch64.ctr32 (Proof.Gcm.ctr32Contract AArch64.abi) :=
-  Verified.of_correct ctr32_correct ctr32_ct (by
-    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, Proof.Aes.ctr32AArch64, AArch64.abi,
-      AArch64.argRegs] [Proof.Aes.AArch64.satState] using Proof.Aes.AArch64.satState)
 
 end VG.Proof.Aes.AArch64

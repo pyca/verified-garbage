@@ -63,36 +63,6 @@ theorem writeW_readW128 (m src : Mem) (a b : Addr) :
   refine List.map_congr_left fun j hj => ?_
   exact Mem.extractLsb'_read src b (List.mem_range.mp hj)
 
-/-- The 16-byte loop's body. -/
-abbrev copy16Body : List Instr :=
-  [.vmovdquLoad .l128 .xmm4 srcB, .vmovdquStore .l128 dstB .xmm4, .alu .add .r10 (imm 16),
-    .alu .cmp .r10 (.reg .r8)]
-
-theorem copy16Step_ok (s : State) {S D : Addr} {i k : Nat} (hs : s.gpr .rsi = S) (hd : s.gpr .rdi = D)
-    (hi : s.gpr .r10 = BitVec.ofNat 64 i) (hk : s.gpr .r8 = BitVec.ofNat 64 k)
-    (r : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 i) 16) (w : InRegions s.wr (D + BitVec.ofNat 64 i) 16) :
-    ∃ s', runBlock isa copy16Body s = some s' ∧
-      s'.mem = writeBytes s.mem (D + BitVec.ofNat 64 i) (bytesAt s.mem (S + BitVec.ofNat 64 i) 16) ∧
-      s'.gpr .r10 = BitVec.ofNat 64 i + 16 ∧
-      s'.zf = some (BitVec.ofNat 64 i + 16 - BitVec.ofNat 64 k == 0) ∧
-      (∀ r, r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ZKeep [.xmm4] s s' := by
-  have e₁ := ea_idx s .rsi hs hi
-  have e₂ := ea_idx s .rdi hd hi
-  refine ⟨_, by
-    simp only [copy16Body, srcB, dstB, imm, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-      execAlu, State.load128, State.store128, State.ea, e₁, r, ite_true, Option.map_some, Option.bind_some]
-    simp only [State.setV, ite_true, e₂, w]
-    rfl, ?_⟩
-  refine ⟨?_, ?_, ?_, ?_, rfl, rfl, ?_⟩
-  · simp only [mem_setReg, mem_arithFlags, mem_setFlags]
-    exact writeW_readW128 _ _ _ _
-  · simp [gpr_setReg, gpr_arithFlags, hi]
-  · simp [gpr_setReg, gpr_arithFlags, zf_arithFlags, hi, hk]
-  · intro r h₁; simp [gpr_setReg, gpr_arithFlags, h₁]
-  · intro r hr l hl
-    simp only [List.mem_singleton] at hr
-    exact (State.zlane_setV128 s .xmm4 r _ 0 hl).trans (by simp [hr])
-
 theorem shl_ofNat {a k : Nat} (h : a * 2 ^ k < 2 ^ 64) :
     BitVec.ofNat 64 a <<< k = BitVec.ofNat 64 (a * 2 ^ k) := by
   have ha : a < 2 ^ 64 := by

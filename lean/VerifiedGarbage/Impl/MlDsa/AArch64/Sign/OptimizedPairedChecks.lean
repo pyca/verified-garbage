@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedHints
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedLow
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedZ
 
 @[expose] public section
 

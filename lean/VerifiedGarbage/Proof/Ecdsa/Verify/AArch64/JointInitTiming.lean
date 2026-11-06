@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Inplace
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCached
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMixed
@@ -34,37 +33,6 @@ theorem jointExternal_frame {C : Curve} {base T : Addr} {G : Point C} :
     CachedField.ExternalFrame base (JointGenerator cfg C base 8192 G T) := by
   intro s t hk hsym hs
   exact hs.keep hk hsym (by decide +kernel) (by decide)
-
-theorem jointOps_ok {C : Curve} {base T : Addr} {P Q : Point C} {u v : Nat}
-    (hm : UnitMod C.p (2^(64*cfg.K.M.n))) (hC : Law C) (ha : AM3 C)
-    (hOne : cfg.K.one<C.p) (hP : onCurve C P=true) (hQ : onCurve C Q=true) :
-    JointOpsOk cfg P256Joint.ops C base (jointWork cfg)
-      (JointCore cfg C base 8192 Q u v (JointGenerator cfg C base 8192 P T)) P Q u v where
-  keep := by
-    intro A s t hk hsym hs
-    apply hs.of_keeps hk (by decide)
-    exact { symbol := by rw [hsym]; exact hs.external.symbol
-            read := by simpa only [hk.rd,hk.wr] using hs.external.read
-            outside := hs.external.outside
-            bounds := by simpa only [hk.mem] using hs.external.bounds
-            point := by simpa only [hk.mem] using hs.external.point }
-  double := by
-    intro A s hA hs
-    dsimp only [P256Joint.ops]
-    refine WP.mono_syms (Forward.Arithmetic.double_ok (S:=cfg.K.S) Forward.Arithmetic.cases
-      JointLayout.layout.lay JointLayout.layout.aligned hm (by decide) hC ha
-      (by decide +kernel) (by decide +kernel) (Low.small (by decide) _) hs.field (jointLive_R cfg) hA hs.point)
-      fun t ⟨hk,hi,hj⟩ hsym => ?_
-    have kp : ProgKeep cfg.K.M base (jointWork cfg) s t := hk.mono (by decide +kernel)
-    exact ⟨kp,hs.next JointLayout.layout kp hi hj (jointExternal_frame kp hsym hs.external)⟩
-  peer := by
-    intro A j s hj hA hs h19
-    exact CachedField.digit_ok JointLayout.layout (by decide) hm hC ha hOne hj hQ hA
-      jointExternal_frame hs h19
-  generator := by
-    intro A j s hj hA hs h19
-    exact jointFixedDigit_ok Forward.Arithmetic.cases JointLayout.fixedLayout hm
-      (by decide) hC ha hOne hP hA hs hj h19
 
 
 theorem jointInitCounter_ok (s : State) :
@@ -108,23 +76,6 @@ theorem jointInit_ok {C : Curve} {base T : Addr} {P Q : Point C} {u v : Nat}
       point := by simpa only [kt.mem] using ca.external.point })
   exact ⟨⟨(JointLoopKeep.of_prog kp).regs.trans ((Keeps.regs kt).mono (by simp)),
     by simpa only [kt.mem] using kp.unch⟩,ct,t19⟩
-
-/-- Both public scalar products are accumulated in the same Jacobian point. -/
-theorem jointInitializedRun_ok {C : Curve} {base T : Addr} {P Q : Point C} {u v : Nat}
-    (hm : UnitMod C.p (2^(64*cfg.K.M.n))) (hC : Law C) (ha : AM3 C)
-    (hOne : cfg.K.one<C.p) (hP : onCurve C P=true) (hQ : onCurve C Q=true)
-    (hu : u<2^256) (hv : v<2^256) {s : State}
-    (hi : Inv cfg.K.M base 8192 C.p (·∈jointSlots cfg) (jointLive cfg) (tmv C cfg.K.M.n base s) s)
-    (hs : JointStable cfg C base Q u v s) (hg : JointGenerator cfg C base 8192 P T s) :
-    WP isa (.seq (.block (Jacobian.infinity cfg.K cfg.K.R++([.movz .x .x19 256 0] : List Instr)))
-      (Joint.run cfg P256Joint.ops)) s fun t =>
-      JointLoopKeep cfg.K.M base (jointWork cfg) s t ∧
-      JointCore cfg C base 8192 Q u v (JointGenerator cfg C base 8192 P T)
-        (add (mul u P) (mul v Q)) t ∧ t.gpr .x19=0 := by
-  apply WP.seq
-  refine WP.mono (jointInit_ok hOne hi hs hg) fun a ⟨ka,ca,a19⟩ => ?_
-  refine WP.mono (jointRun_ok hC hP hQ (jointOps_ok hm hC ha hOne hP hQ) hu hv ca a19)
-    fun t ⟨kt,ct,t19⟩ => ⟨ka.trans kt,ct,t19⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64
 

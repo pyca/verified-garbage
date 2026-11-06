@@ -24,18 +24,11 @@ namespace VG.Proof.Blowfish.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Blowfish.AArch64
 open VG.AArch64.Tbl (VOnly)
 
-theorem exec_veor (s : State) (d n m : VReg) :
-    exec (veor d n m) s = some (s.setV d (s.v n ^^^ s.v m)) := rfl
-
 theorem exec_vperm (s : State) (op : VPermOp) (a : VArr) (d n m : VReg) :
     exec (vperm op a d n m) s = some (s.setV d (op.eval a (s.v n) (s.v m))) := rfl
 
 theorem exec_vmov (s : State) (d n : VReg) :
     exec (.vop (.mov d n)) s = some (s.setV d (s.v n)) := rfl
-
-theorem exec_vadd (s : State) (d n m : VReg) :
-    exec (.vop (.add .s4 d n m)) s =
-      some (s.setV d (VArr.s4.map2 (fun _ x y => x + y) (s.v n) (s.v m))) := rfl
 
 theorem exec_dup4 (s : State) (d : VReg) (n : Reg) :
     exec (.vop (.dup .s4 d n)) s =

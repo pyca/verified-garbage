@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Public RSA resources supplied by the shared cdecl contract -/
 
@@ -44,8 +45,8 @@ structure PrecomputedABI (s : State) : Prop where
   eLength : (arg s 5).toNat ≤ (arg s 1).toNat
   scratchLength : Spec.Rsa.publicScratchWords (arg s 1).toNat ≤ (arg s 9).toNat
 
-theorem precomputedABI_of {s : State} (h : (Spec.Rsa.publicPrecomputedCheckedContract abi 20).pre s) : PrecomputedABI s := by
-  sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+theorem precomputedABI_of {s : State} (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 20).pre s) : PrecomputedABI s := by
+  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption
 

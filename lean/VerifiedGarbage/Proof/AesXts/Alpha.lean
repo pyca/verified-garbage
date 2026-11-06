@@ -166,18 +166,6 @@ theorem bytesAt_writeW_below' (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {d e
     (Offset.add_add_eq P (by omega_arith)).symm]
   exact bytesAt_writeW_below _ _ _ (by omega_arith) (by omega_arith)
 
-/-- Bytes above a store, both at offsets. -/
-theorem bytesAt_writeW_above (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {d e n : Nat}
-    (hd : d + w / 8 ≤ e) (hn : e + n < 2 ^ 64) :
-    bytesAt (m.writeW (P + BitVec.ofNat 64 d) v) (P + BitVec.ofNat 64 e) n = bytesAt m (P + BitVec.ofNat 64 e) n := by
-  apply List.map_congr_left
-  intro j hj
-  have hj := List.mem_range.mp hj
-  simp only [Mem.writeW]
-  apply Mem.write_apply
-  rw [Offset.add_add_eq P rfl, Offset.sub_toNat' P (by omega_arith) (by omega_arith)]
-  split <;> omega_arith
-
 /-! ## The product -/
 
 /-- The tweak at `P` times `α`, as two 64-bit words: the low word shifted

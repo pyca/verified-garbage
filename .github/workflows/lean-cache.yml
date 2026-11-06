@@ -1,20 +1,23 @@
 name: Publish Lean cache
 
 # Exports main's checked Lean build for agents that cannot restore Actions
-# caches (see "Restoring the CI build cache" in lean/README.md), after CI
-# passes on a push to main. A workflow of its own, not a job of CI: its
-# runs serialize (CI runs on main can finish out of order), and GitHub
-# cancels a waiting run when another queues, which in CI would mark a run
-# that passed as cancelled. A cancelled run here only means a newer commit
-# took over. A run publishes its commit's build unless the published one is
-# of a newer commit: while main moves faster than a run packages the build,
-# each run still replaces an older cache, rather than leaving it to a newer
-# run that main will also have moved past.
+# caches (see "Restoring the CI build cache" in lean/README.md). CI's
+# `lean-cache` job starts it on a push to main as soon as the Lean build is
+# checked, without waiting for the Rust jobs. A workflow of its own, not a
+# job of CI: its runs serialize (CI runs on main can finish out of order),
+# and GitHub cancels a waiting run when another queues, which in CI would
+# mark a run that passed as cancelled. A cancelled run here only means a
+# newer commit took over. A run publishes its commit's build unless the
+# published one is of a newer commit: while main moves faster than a run
+# packages the build, each run still replaces an older cache, rather than
+# leaving it to a newer run that main will also have moved past.
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: The commit of main whose checked Lean build to publish.
+        required: true
+        type: string
 
 permissions: {}
 
@@ -25,13 +28,9 @@ concurrency:
 jobs:
   publish:
     name: Publish Lean cache
-    # Only CI's pushes to main: `branches` alone would also match a pull
-    # request from a fork's `main`.
-    if: >-
-      ${{ github.repository == 'pyca/verified-garbage'
-      && github.event.workflow_run.conclusion == 'success'
-      && github.event.workflow_run.event == 'push'
-      && github.event.workflow_run.head_repository.full_name == github.repository }}
+    # Only on main, which restores only main's caches: the build it
+    # publishes is one main checked (`Check the checked build was restored`).
+    if: ${{ github.repository == 'pyca/verified-garbage' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-26.04
     # Only the steps that talk to the registry see the token: the others run
     # third-party code (elan's installer, Mathlib's `cache` tool).
@@ -42,15 +41,26 @@ jobs:
       GH_REPO: ${{ github.repository }}
       IMAGE: ghcr.io/pyca/vg-lean-cache:latest
       # The commit CI checked (GITHUB_SHA is main's head when this started).
-      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      HEAD_SHA: ${{ inputs.sha }}
       # Bump if the archive format or compression settings change.
       CACHE_FORMAT: ltar5-oras-v6
       ORAS_VERSION: 1.3.2
       ORAS_SHA256: 9229ccc6d17bb282039ad4a69abb16dcb887a5bce567c075d731d9b3c7ad8eaf
     steps:
+      # A dispatch names any commit: only one of main is published.
+      - name: Check the commit is main's
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Not a commit: $HEAD_SHA"; exit 1; }
+          status=$(gh api "repos/$GH_REPO/compare/$HEAD_SHA...main" --jq .status)
+          case "$status" in
+            ahead|identical) ;;
+            *) echo "::error::$HEAD_SHA is not a commit of main ($status)"; exit 1 ;;
+          esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ inputs.sha }}
           persist-credentials: false
       # The keys CI saved this commit's build under.
       - uses: ./.github/actions/lean-keys

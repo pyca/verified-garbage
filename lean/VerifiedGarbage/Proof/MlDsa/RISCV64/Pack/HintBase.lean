@@ -45,14 +45,6 @@ theorem ltBit_eq {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
     BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   split <;> omega
 
-/-- Whether `ltBit`'s bit is zero. -/
-theorem ltBit_zero {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
-    ((BitVec.ofNat 64 x - BitVec.ofNat 64 y) >>> 63 == 0) = decide (y ≤ x) := by
-  rw [ltBit_eq hx hy]
-  split
-  · rw [decide_eq_false (by omega)]; rfl
-  · rw [decide_eq_true (by omega)]; rfl
-
 /-- The counter of a loop over 256 coefficients: `j + 1 - 256`. -/
 theorem cnt256 {j : Nat} (hj : j < 256) :
     (BitVec.ofNat 64 (j + 1) - BitVec.ofNat 64 256 != 0) = decide (j + 1 ≠ 256) := by
@@ -108,15 +100,6 @@ theorem eval_zero_ofNat (s : State) (r : Reg) {k : Nat} (hk : k < 2 ^ 64)
     refine beq_false_of_ne fun h0 => e ?_
     have := congrArg BitVec.toNat h0
     rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk] at this
-
-/-- `bnez` of a register holding a number. -/
-theorem eval_nonzero_ofNat' (s : State) (r : Reg) {k : Nat} (hk : k < 2 ^ 64)
-    (h : s.gpr r = BitVec.ofNat 64 k) : isa.eval (.nonzero r) s = some (decide (k ≠ 0)) := by
-  have e := eval_zero_ofNat s r hk h
-  change some (s.gpr r == 0) = _ at e
-  show some (s.gpr r != 0) = _
-  rw [bne, Option.some.inj e]
-  by_cases e' : k = 0 <;> simp [e']
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}

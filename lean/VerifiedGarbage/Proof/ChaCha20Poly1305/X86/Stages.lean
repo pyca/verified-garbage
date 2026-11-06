@@ -255,11 +255,6 @@ theorem APre.E64 {n : Nat} (hn : n ≤ 32) :
 
 end
 
-theorem toNat_setWidth64 (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
-  simp [BitVec.toNat_setWidth]; omega_arith
-
-theorem ea_esp (s : State) (d : Nat) : s.ea (at_ .esp d) = addr (s.gpr .esp) d := rfl
-
 theorem argAddr_eq (s₀ : State) (i : Nat) : argAddr s₀ i = addr (E s₀) (4 + 4 * i) := rfl
 
 /-! ## Regions -/
@@ -415,15 +410,6 @@ theorem ptr_ok (d r : Reg) (k : Nat) (s : State) :
     Option.bind_some,
     Option.some.injEq, exists_eq_left', ite_true]
   exact ⟨trivial, fun q hq => by simp [hq], trivial⟩
-
-/-! ## Covering the callees' regions -/
-
-theorem covers_ctx {s₀ : State} (hp : APre e s₀) {wr : List Region} (hwr : ctxR s₀ ∈ wr) (rs : List Region)
-    (h : ∀ r ∈ rs, ∃ k, r = sub s₀ k r.len ∧ k + r.len ≤ 704) : Covers rs wr := by
-  refine Covers.of_sub fun r hr => ?_
-  obtain ⟨k, hrk, hk⟩ := h r hr
-  have _ := hp
-  exact ⟨ctxR s₀, hwr, k, by rw [hrk], hk⟩
 
 end VG.Proof.ChaCha20Poly1305.X86
 
@@ -1370,10 +1356,6 @@ theorem copy_step {s₀ : State} (hp : APre e s₀) {s₂ : State} (hr₂ : s₂
       rw [toNat_ofNat32 (by lit_omega)] at this
       simp at this; omega_arith
 
-theorem copyLoop_eq : (Code.loop (.block [.movzx8 .eax (at_ .esi 0), .store8 (at_ .ecx 0) .al,
-    .alu .add .esi (.imm 1), .alu .add .ecx (.imm 1), .alu .sub .edx (.imm 1)]) .ne : Prog isa) =
-    .loop (.block copyBody) .ne := rfl
-
 theorem copy_ok {s₀ : State} (hp : APre e s₀) {s₂ : State} (hr₂ : s₂.rd = s₀.rd) (hw₂ : s₂.wr = s₀.wr)
     {Q : BitVec 32} {t : Nat} (ht : Tail s₀ Q t) (ht0 : 0 < t) (h₂ : CpInv s₀ s₂ Q t 0 s₂) :
     WP isa (.loop (.block copyBody) .ne) s₂ (CpInv s₀ s₂ Q t t) := by
@@ -2171,8 +2153,6 @@ structure Fin (s₀ s : State) : Prop where
   at_ : At s₀ s
   edi : s.gpr .edi = CX s₀
   saved : Saved s₀ s.mem
-
-theorem Inv.fin {s₀ s : State} (h : Inv s₀ s) : Fin s₀ s := ⟨h.at, h.edi, h.saved⟩
 
 theorem fiB_ok {s₀ : State} (hp : APre e s₀) {O : BitVec 32} (ho : OutOk s₀ O) {s : State} (h : FiA s₀ O s) :
     WP isa (callWith finRegs "vg_poly1305_finalize_scratch" Impl.Poly1305.X86.finalize) s fun s' =>

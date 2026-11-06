@@ -75,8 +75,4 @@ theorem two {S : Nat} {c : Prog isa} {Φ Ψ : Inv} (rs : List Reg) {hc : VG.Tain
     obtain ⟨hsp, hr⟩ := hag _ _ _ _ _ _ _ _ _ hL f₁ f₂
     exact ⟨hsp, fun r hr' => hr r (Taint.mem_ofRegs.mp hr')⟩) h) hw
 
-/-- Two runs' registers, each a function of the layout. -/
-theorem pin {a b : State} {r : Reg} {x : BitVec 64} (ha : a.gpr r = x) (hb : b.gpr r = x) :
-    a.gpr r = b.gpr r := ha.trans hb.symm
-
 end VG.Proof.RsaPkcs1Enc.AArch64.Dec

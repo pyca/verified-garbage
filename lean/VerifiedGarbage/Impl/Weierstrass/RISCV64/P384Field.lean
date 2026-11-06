@@ -217,9 +217,6 @@ def roundWith (quot qm : Reg → List Instr) (i : Nat) : List Instr :=
    .add .a6 .a6 .a2, .add .a6 .a6 .a7, .sltu .a2 (rw (i + 3)) .a6,
    .sub (rw (i + 3)) (rw (i + 3)) .a6]
 
-/-- Round `i` modulo `p`. -/
-def round (i : Nat) : List Instr := roundWith quotP qm i
-
 /-- Word `j` of a sum into `d = d + y + c` (`c` in `a2`, in and out),
 through `a6`. -/
 def adcWord (d y : Reg) : List Instr :=

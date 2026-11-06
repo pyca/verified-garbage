@@ -72,13 +72,6 @@ theorem callWith {I : State → Prop} {rs : List Reg} {n : String} {c : Prog isa
 
 theorem nil {I : State → Prop} : CT I (.block []) := RelCT.nil fun _ _ _ => trivial
 
-/-- Cases on a public value. -/
-theorem cases {α : Sort _} {I : α → State → Prop} {c : Prog isa} (h : ∀ a, CT (I a) c)
-    (hu : ∀ a b s₁ s₂, I a s₁ → I b s₂ → a = b) : CT (fun s => ∃ a, I a s) c := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨⟨a, h₁⟩, ⟨b, h₂⟩⟩ e₁ e₂
-  obtain rfl := hu a b s₁ s₂ h₁ h₂
-  exact h a _ _ _ _ _ _ ⟨h₁, h₂⟩ e₁ e₂
-
 end CT
 
 /-- Constant time of a whole function, from `CT` for each value of what is

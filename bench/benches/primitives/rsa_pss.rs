@@ -207,13 +207,9 @@ pub fn bench(c: &mut Criterion) {
                 aws_sign(&digest, &mut out);
                 let d = Digest::import_less_safe(&digest, alg).unwrap();
                 aws_public.verify_digest_sig(&d, sig).unwrap();
-                assert!(vg_public.verify_pss(
-                    &out,
-                    &digest,
-                    hash,
-                    hash,
-                    SaltLength::Len(digest.len())
-                ));
+                vg_public
+                    .verify_pss(&out, &digest, hash, hash, SaltLength::Len(digest.len()))
+                    .unwrap();
                 g.bench(BenchmarkId::new(AWS_LC, k), |b| {
                     b.iter(|| aws_sign(black_box(&digest), &mut out))
                 });
@@ -228,13 +224,15 @@ pub fn bench(c: &mut Criterion) {
             let k = sig.len();
             g.bench(BenchmarkId::new(VG, k), |b| {
                 b.iter(|| {
-                    assert!(black_box(vg_public).verify_pss(
-                        black_box(sig),
-                        &digest,
-                        hash,
-                        hash,
-                        SaltLength::Len(digest.len())
-                    ))
+                    black_box(vg_public)
+                        .verify_pss(
+                            black_box(sig),
+                            &digest,
+                            hash,
+                            hash,
+                            SaltLength::Len(digest.len()),
+                        )
+                        .unwrap()
                 })
             });
             let mut c = ctx(pkey, &md, |c| c.verify_init().unwrap());

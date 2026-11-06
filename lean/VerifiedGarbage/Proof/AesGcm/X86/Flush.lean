@@ -81,8 +81,6 @@ theorem bytesAt_writeBytes_prefix (m : Mem) (p : Addr) (xs : List Byte) {n : Nat
     Nat.mod_eq_of_lt (by omega_arith)]
   simp [show ¬xs.length + i < xs.length by omega_arith]
 
-theorem zeros_eq (n : Nat) : Spec.Cmac.zeros n = zeros n := rfl
-
 theorem zero4_bytes' (m : Mem) (p : Addr) : bytesAt (Cmac.zero4 m p) p 16 = zeros 16 := Cmac.zero4_bytes m p
 
 theorem store4_eq (m : Mem) (W : BitVec 32) (o : Nat) (a b c d : BitVec 32) :

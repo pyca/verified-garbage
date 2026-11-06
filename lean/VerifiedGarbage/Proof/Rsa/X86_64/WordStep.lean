@@ -169,10 +169,4 @@ theorem step_ok {t : State} {B : Addr} {Z w ex em et ev : Nat} (hs : Scr t B Z)
   refine ⟨?_, ff, (((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans (k₆.trans k')).mono (by decide)⟩
   rw [hc, hm₆, hlow, hT3]
 
-/-- The low input word and modulus are secret; only bases and width are public. -/
-theorem step_ct {α : Type} {Φ : α → State → Prop}
-    (hp : Pins Φ [.rbx, .r10, .r8, .r12, .rbp]) :
-    RelCT isa (Two Φ) Impl.Rsa.X86_64.WordReduce.step fun _ _ => True :=
-  two_taint [.rbx, .r10, .r8, .r12, .rbp] hp (by taint_decide)
-
 end VG.Proof.Rsa.X86_64.WordReduce

@@ -62,9 +62,6 @@ theorem Ctx.linOk {s₀ s : State} {R : Nat} {w : List Byte} (hp : EncPre s₀ R
   Ok.of_off (off := 0) (by rw [hc.wr]; exact hp.scr) hp.fit (by show s.gpr sb = _; rw [hc.base]; simp)
     (by simp [sboxCfg]) rfl
 
-theorem toNat_lt_of_fit {b : BitVec 32} {n k : Nat} (h : b.toNat + n ≤ 2 ^ 32) (hk : k < n) :
-    b.toNat + k < 2 ^ 32 := by omega
-
 /-- The key area is outside what the layers write. -/
 theorem keys_disjoint (b : Addr) : Region.Disjoint ⟨b + 1024, 1024⟩ ⟨b, 128⟩ := by
   intro a h₁ h₂

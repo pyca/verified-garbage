@@ -52,14 +52,4 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Bignum.X86
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)),Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
     exact congrArg _ ((ps.arguments _ (by omega)).value.trans (pt.arguments _ (by omega)).value.symm)
 
- theorem compare7_check (limit : Nat) :
-    (VG.Taint.check taint τ (.block [.mov .eax (.mem (VG.Impl.Rsa.X86.KeyRt.argOp 7)),.alu .cmp .eax (.imm (BitVec.ofNat 32 limit))])
-    (VG.Taint.hintOf taint τ (.block [.mov .eax (.mem (VG.Impl.Rsa.X86.KeyRt.argOp 7)),.alu .cmp .eax (.imm (BitVec.ofNat 32 limit))]))).isSome=true := by rfl
- theorem compare9_check (limit : Nat) :
-    (VG.Taint.check taint τ (.block [.mov .eax (.mem (VG.Impl.Rsa.X86.KeyRt.argOp 9)),.alu .cmp .eax (.imm (BitVec.ofNat 32 limit))])
-    (VG.Taint.hintOf taint τ (.block [.mov .eax (.mem (VG.Impl.Rsa.X86.KeyRt.argOp 9)),.alu .cmp .eax (.imm (BitVec.ofNat 32 limit))]))).isSome=true := by rfl
- theorem compare11_check (limit : Nat) :
-    (VG.Taint.check taint τ (.block [.mov .eax (.mem (VG.Impl.Rsa.X86.KeyRt.argOp 11)),.alu .cmp .eax (.imm (BitVec.ofNat 32 limit))])
-    (VG.Taint.hintOf taint τ (.block [.mov .eax (.mem (VG.Impl.Rsa.X86.KeyRt.argOp 11)),.alu .cmp .eax (.imm (BitVec.ofNat 32 limit))]))).isSome=true := by rfl
-
 end VG.Proof.Rsa.X86.InvTiming

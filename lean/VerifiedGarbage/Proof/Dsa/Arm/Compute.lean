@@ -139,24 +139,4 @@ theorem verifyTail_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R 
   · exact (((St₂.run (.inl ⟨rfl, rfl⟩)).trans (St₃.run (.inl ⟨rfl, rfl⟩))).trans Rn₄).trans
       (St₅.run (.inl ⟨rfl, rfl⟩))
 
-theorem verifyCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S D c : Nat}
-    (Sc : Sched s base size pLen qLen nP nQ)
-    (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
-    (Ig : Input s base size (.input .g) pLen G) (Iy : Input s base size (.input .y) pLen Y)
-    (Ir : Input s base size (.input .signature) qLen R) (Is : Input s base size .signatureS qLen S)
-    (Id : Input s base size (.input .digest) c D) (hc : countValue base s Core.digestPrefix = c)
-    (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
-    WP isa (SignVerify.verifyCompute pLen qLen) s fun t =>
-      maskW base t = maskW base s &&& mask32 (verifyChecks P Q G Y R S D) ∧ Run base s t := by
-  have fits := Sc.fits
-  have big := Sc.big
-  unfold SignVerify.verifyCompute Core.sequence
-  dsimp only [List.foldr]
-  refine WP.seq (WP.mono (PublicValidation.call_ok Sc Ip Iq Ig Iy hP hPo hQ hQo) fun u₁ ⟨F₁, L₁, Rn₁⟩ => ?_)
-  have r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
-    fun I => I.run Rn₁ (by omega_arith) fits
-  refine WP.mono (verifyTail_ok (Sc.run Rn₁) (r₁ Ip) (r₁ Iq) (r₁ Ig) (r₁ Iy) (r₁ Ir) (r₁ Is) (r₁ Id)
-    ((countValue_run Rn₁).trans hc) L₁ hP hPo hQ hQo) fun t ⟨F, Rn⟩ => ⟨?_, Rn₁.trans Rn⟩
-  rw [F, F₁, BitVec.and_assoc, mask32_and]
-
 end VG.Proof.Dsa.Arm

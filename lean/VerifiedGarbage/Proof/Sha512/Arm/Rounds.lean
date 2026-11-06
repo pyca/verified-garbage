@@ -160,10 +160,6 @@ theorem wp_add64 {dl dh l h : Reg} {x y : BitVec 64} (h₁ : dl ≠ dh) (h₂ : 
   · rw [u₂.gpr, hc, carry_eq, u₁.other dh (Ne.symm h₁), u₁.other h (Ne.symm h₂), px.1, py.1, px.2,
       py.2, hi_add]
 
-theorem movw_movt' (x : BitVec 32) :
-    (x.extractLsb' 16 16 ++ ((x.extractLsb' 0 16).setWidth 32).extractLsb' 0 16 : BitVec 32) = x :=
-  movw_movt x
-
 theorem wp_const64 {l h : Reg} {x : BitVec 64} (hlh : l ≠ h)
     (k : ∀ s', Only [l, h] s s' → Pair s' l h x → WP isa (.block rest) s' Q) :
     WP isa (.block (const64 l h x ++ rest)) s Q := by

@@ -83,14 +83,6 @@ theorem SubgroupPlan.bits (p : SubgroupPlan) : Spec.Dsa.bitLength p.prime.N = 8 
   rw [p.modulus]
   exact VG.Proof.Dsa.Generation.qCandidate_bitLength (by rcases p.width with h | h <;> omega) _
 
-theorem SubgroupPlan.large (p : SubgroupPlan) : 8161 < p.prime.N := by
-  have hshape := VG.Proof.Dsa.Generation.qCandidate_shape
-    (show 2 ≤ 8 * p.prime.len by rcases p.width with h | h <;> omega) p.seed
-  rw [← p.modulus] at hshape
-  have hbig : 8161 < 2 ^ (8 * p.prime.len - 1) := by
-    rcases p.width with h | h <;> rw [h] <;> decide
-  exact Nat.lt_of_lt_of_le hbig hshape.2.1
-
 theorem SubgroupPlan.encoding (p : SubgroupPlan) :
     Spec.Rsa.os2ip (Spec.Dsa.encodeBE p.prime.len p.prime.N) = p.prime.N := by
   rw [← VG.Proof.Dsa.decodeBE_os2ip]

@@ -56,11 +56,4 @@ theorem codeOf_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p
   · exact ((Outs.of_outside Ob (by simp [ranges])).trans
       (Outs.of_outside Od (by simp [ranges]))).trans (Outs.of_outside Ot (by simp [ranges]))
 
-theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
-    (S : Prepare.Data g c capacity p s) :
-    WP isa (.block (code g.w)) s fun t =>
-      Prepare.Data g c capacity p t ∧ w32 t.mem g.W 176 = 0 ∧ w32 t.mem g.W 192 = 0 ∧
-      w32 t.mem g.W 200 = checks g.w ∧ Outs g.W ranges s.mem t.mem ∧ Keeps [.eax] s t :=
-  codeOf_ok v S (checks_bound g.w)
-
 end VG.Proof.RsaKeyGen.X86.WitnessChecks

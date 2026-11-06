@@ -35,8 +35,4 @@ theorem Environment.Valid.width_low {E : Environment} (v : E.Valid) : 4 ≤ E.wi
 
 theorem Environment.Valid.width_high {E : Environment} (v : E.Valid) : E.width ≤ 64 := v.bits.width_high
 
-theorem Environment.Valid.words_le {E : Environment} (v : E.Valid) : E.words ≤ 2 * E.width := v.bits.words_le
-
-theorem Environment.Valid.words_two {E : Environment} (v : E.Valid) : 2 ≤ E.words := v.bits.words_two
-
 end VG.Proof.Dsa.X86.ProbablePrime

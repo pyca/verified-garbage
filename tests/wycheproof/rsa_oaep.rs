@@ -242,24 +242,40 @@ fn shared_key_leases(bits: usize, groups: usize, repetitions: usize) {
                     let private = &private;
                     scope.spawn(move || {
                         for _ in 0..repetitions {
-                            assert!(public.verify_pkcs1v15(sig, d, pkcs1_sig::Hash::Sha256));
-                            assert!(!public.verify_pkcs1v15(
-                                &sig[..sig.len() - 1],
-                                d,
-                                pkcs1_sig::Hash::Sha256
-                            ));
-                            assert!(public.verify_pss(
-                                pss_sig,
-                                d,
-                                pss::Hash::Sha256,
-                                pss::Hash::Sha256,
-                                pss::SaltLength::Len(0),
-                            ));
-                            assert!(!public.verify_pkcs1v15(
-                                sig,
-                                &d[..d.len() - 1],
-                                pkcs1_sig::Hash::Sha256
-                            ));
+                            assert!(
+                                public
+                                    .verify_pkcs1v15(sig, d, pkcs1_sig::Hash::Sha256)
+                                    .is_ok()
+                            );
+                            assert!(
+                                !public
+                                    .verify_pkcs1v15(
+                                        &sig[..sig.len() - 1],
+                                        d,
+                                        pkcs1_sig::Hash::Sha256
+                                    )
+                                    .is_ok()
+                            );
+                            assert!(
+                                public
+                                    .verify_pss(
+                                        pss_sig,
+                                        d,
+                                        pss::Hash::Sha256,
+                                        pss::Hash::Sha256,
+                                        pss::SaltLength::Len(0),
+                                    )
+                                    .is_ok()
+                            );
+                            assert!(
+                                !public
+                                    .verify_pkcs1v15(
+                                        sig,
+                                        &d[..d.len() - 1],
+                                        pkcs1_sig::Hash::Sha256
+                                    )
+                                    .is_ok()
+                            );
                             let ciphertext = public
                                 .encrypt_oaep(
                                     d,
@@ -279,7 +295,11 @@ fn shared_key_leases(bits: usize, groups: usize, repetitions: usize) {
                                     .unwrap(),
                                 *d,
                             );
-                            assert!(public.verify_pkcs1v15(sig, d, pkcs1_sig::Hash::Sha256));
+                            assert!(
+                                public
+                                    .verify_pkcs1v15(sig, d, pkcs1_sig::Hash::Sha256)
+                                    .is_ok()
+                            );
                         }
                     });
                 }

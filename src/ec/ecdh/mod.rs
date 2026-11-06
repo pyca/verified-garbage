@@ -21,7 +21,8 @@ mod p384;
 mod p521;
 mod secp256k1;
 
-use crate::ec::{Curve, Error, PrivateKey, PublicKey};
+use crate::ec::{Curve, PrivateKey, PublicKey};
+use crate::error::InvalidKey;
 
 /// Exchanging keys with ECDH.
 impl<C: Curve> PrivateKey<C> {
@@ -33,9 +34,9 @@ impl<C: Curve> PrivateKey<C> {
     ///
     /// # Errors
     ///
-    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`, or `peer`
-    /// is not a valid public key.
-    pub fn exchange(&self, peer: &PublicKey<C>) -> Result<C::SharedSecret, Error> {
-        C::exchange(&self.d, &peer.q).ok_or(Error::InvalidKey)
+    /// [`InvalidKey`] if the key is not in `[1, n − 1]`, or `peer`
+    /// is not a valid public key (the verified code does not say which).
+    pub fn exchange(&self, peer: &PublicKey<C>) -> Result<C::SharedSecret, InvalidKey> {
+        C::exchange(&self.d, &peer.q).ok_or(InvalidKey)
     }
 }

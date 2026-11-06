@@ -226,19 +226,4 @@ theorem round_eq (blocks : Nat → CState) (k : Fin 24) (j : Nat) (hj : j < 4) :
   rw [Symbolic.schedule_equal k j hj] at h
   exact h.symm.trans (target_rel blocks k j hj)
 
-theorem doubleRound_ok {blocks : Nat → CState} {s : State} (h : Holds (pack blocks) s)
-    (ht : s.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table) :
-    WP isa (.block doubleRound) s fun u =>
-      Holds (pack (fun b => innerBlock (blocks b))) u ∧ RoundSame s u := by
-  refine (ops_ok roundOps h ht).mono fun u ⟨hu,hs⟩ => ⟨?_,hs⟩
-  intro k j hj
-  exact (hu k j hj).trans (round_eq blocks k j hj)
-theorem rounds_ok {blocks : Nat → CState} {s : State} (h : Holds (pack blocks) s)
-    (ht : s.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table) :
-    ∀ n, WP isa (rounds n) s fun u =>
-      Holds (pack (fun b => Nat.repeat innerBlock n (blocks b))) u ∧ RoundSame s u
-  | 0 => WP.block_nil ⟨h, ⟨⟨rfl,rfl,rfl,rfl,rfl⟩,rfl⟩⟩
-  | n + 1 => WP.seq ((rounds_ok h ht n).mono fun _ ⟨h',hs⟩ =>
-      (doubleRound_ok h' (hs.v30.trans ht)).mono fun _ ⟨h'',hs'⟩ => ⟨h'',hs.trans hs'⟩)
-
 end VG.Proof.ChaCha20.AArch64.Rows6

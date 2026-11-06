@@ -85,15 +85,6 @@ def zextState (s : State) : State :=
   ((s.write .r4 (BitVec.ofNat 64 (lo s .r4))).write .r5 (BitVec.ofNat 64 (lo s .r5))).write .r6
     (BitVec.ofNat 64 (lo s .r6))
 
-theorem exec_zext {s s' : State} {t : List Leak} (h : Exec isa (.block zext) s t s') :
-    t = [] ∧ s' = zextState s := by
-  cases h with
-  | block b =>
-    simp only [zext, execBlock, exec_rotr_w (show 0 < 32 by decide), addrs, Option.map_some, List.map_nil,
-      List.nil_append, Option.some.injEq, Prod.mk.injEq, ext_lo] at b
-    refine ⟨b.2.symm, b.1.symm.trans ?_⟩
-    simp only [zextState, lo, write_gpr, reduceCtorEq, ite_false]
-
 theorem zext_wp (s : State) : WP isa (.block zext) s (· = zextState s) := by
   refine wp_step (exec_rotr_w (by decide)) (wp_step (exec_rotr_w (by decide))
     (wp_step (exec_rotr_w (by decide)) (WP.block_nil ?_)))

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.JointComb
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 public import VerifiedGarbage.Spec.Ecdsa.Verify
 public import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.CheckVerified
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.CheckLit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset

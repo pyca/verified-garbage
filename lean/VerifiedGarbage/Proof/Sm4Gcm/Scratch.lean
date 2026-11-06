@@ -15,8 +15,7 @@ The functions of SM4-GCM keep their working space in a frame of their own
 (`Verified.stackScratch`, `Verified.stackArgScratch`), around code proved
 with the working space as an argument: `initScratchContract`, … are the
 shared contracts of `Spec/Sm4/Gcm/Contract.lean` with a 2560-byte `scratch`
-or `work` buffer appended, whatever it holds (`Sig.scratchContract`,
-`initScratchContract_eq`, …). `vg_sm4_gcm_stream_init` and
+or `work` buffer appended, whatever it holds. `vg_sm4_gcm_stream_init` and
 `vg_sm4_gcm_stream_aad` are AES-GCM's (`Proof/AesGcm/Scratch.lean`).
 
 On x86-64 the frames of the functions with an argument on the stack also
@@ -46,10 +45,6 @@ def initScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (post := fun key ctx _scratch => initPost A.ptrBits key ctx)
     (writeArgs := true) (stack := stack)
 
-theorem initScratchContract_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    initScratchContract A stack = Sig.scratchContract A initSig "scratch" .u64 320
-      (Curry.const (fun _ => True) _) (initPost A.ptrBits) true stack := rfl
-
 /-- `vg_sm4_gcm_stream_encrypt` and `vg_sm4_gcm_stream_decrypt` with
 `scratch: *mut [u64; 320]`. -/
 def streamCryptScratchSig : Sig where
@@ -64,20 +59,12 @@ def streamEncryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
       streamEncryptPost A.ptrBits ctx state aadLen textLen data len)
     (writeArgs := true) (stack := stack)
 
-theorem streamEncryptScratchContract_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    streamEncryptScratchContract A stack = Sig.scratchContract A streamCryptSig "scratch" .u64 320
-      (Curry.const (fun _ => True) _) (streamEncryptPost A.ptrBits) true stack := rfl
-
 /-- `streamDecryptContract`, whatever `scratch` is. -/
 def streamDecryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamCryptScratchSig.contract A
     (post := fun ctx state aadLen textLen data len _scratch =>
       streamDecryptPost A.ptrBits ctx state aadLen textLen data len)
     (writeArgs := true) (stack := stack)
-
-theorem streamDecryptScratchContract_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    streamDecryptScratchContract A stack = Sig.scratchContract A streamCryptSig "scratch" .u64 320
-      (Curry.const (fun _ => True) _) (streamDecryptPost A.ptrBits) true stack := rfl
 
 /-- `vg_sm4_gcm_stream_finish` with `work: *mut [u64; 320]`. -/
 def streamFinishScratchSig : Sig where
@@ -91,10 +78,6 @@ def streamFinishScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contr
     (post := fun ctx state aadLen textLen tag _work =>
       streamFinishPost A.ptrBits ctx state aadLen textLen tag)
     (writeArgs := true) (stack := stack)
-
-theorem streamFinishScratchContract_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    streamFinishScratchContract A stack = Sig.scratchContract A streamFinishSig "work" .u64 320
-      (Curry.const (fun _ => True) _) (streamFinishPost A.ptrBits) true stack := rfl
 
 /-- `vg_sm4_gcm_stream_verify` with `work: *mut [u64; 320]`. -/
 def streamVerifyScratchSig : Sig where
@@ -110,10 +93,6 @@ def streamVerifyScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contr
       streamVerifyPost A.ptrBits ctx state aadLen textLen tag tagLen)
     (writeArgs := true) (stack := stack)
 
-theorem streamVerifyScratchContract_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    streamVerifyScratchContract A stack = Sig.scratchContract A streamVerifySig "work" .u64 320
-      (Curry.const (fun _ => True) _) (streamVerifyPost A.ptrBits) true stack := rfl
-
 /-- `vg_sm4_gcm_seal` with `work: *mut [u64; 320]`. -/
 def sealScratchSig : Sig where
   params := [("ctx", .array false .u64 32), ("nonce", .slice false .u8 "nonce_len"),
@@ -126,10 +105,6 @@ def sealScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (post := fun ctx nonce nonceLen aad aadLen data len tag _work =>
       sealPost A.ptrBits ctx nonce nonceLen aad aadLen data len tag)
     (writeArgs := true) (stack := stack)
-
-theorem sealScratchContract_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    sealScratchContract A stack = Sig.scratchContract A sealSig "work" .u64 320
-      (Curry.const (fun _ => True) _) (sealPost A.ptrBits) true stack := rfl
 
 /-- `vg_sm4_gcm_open` with `work: *mut [u64; 320]`. -/
 def openScratchSig : Sig where
@@ -146,11 +121,6 @@ def openScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (writeArgs := true) (stack := stack)
     (leak := some fun ctx nonce nonceLen aad aadLen data len tag tagLen _work =>
       openLeak A.ptrBits ctx nonce nonceLen aad aadLen data len tag tagLen)
-
-theorem openScratchContract_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    openScratchContract A stack = Sig.scratchContract A openSig "work" .u64 320
-      (Curry.const (fun _ => True) _) (openPost A.ptrBits) true stack
-      (some (openLeak A.ptrBits)) := rfl
 
 /-! ## Locality -/
 

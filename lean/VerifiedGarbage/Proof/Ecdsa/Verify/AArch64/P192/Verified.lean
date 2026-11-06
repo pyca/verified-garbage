@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
@@ -10,7 +9,6 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.AArch64
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
@@ -42,24 +40,5 @@ open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.P192
 theorem pre_of {s : State} (h : verifyAArch64.pre s) : FrontPre p192 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
   exact ⟨⟨[], h1⟩, h2, h3, h4, h5, h6⟩
-
-theorem verify_a64 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.AArch64.InvSounds) (s : State) (hs : verifyAArch64.pre s) :
-    ∃ t s', Exec isa VG.Impl.Ecdsa.Verify.AArch64.P192.verify s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p192_ok hI) hL (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, hpost⟩
-
-theorem verify_ct : ConstantTime isa verifyAArch64.pre verifyAArch64.pub VG.Impl.Ecdsa.Verify.AArch64.P192.verify :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-    (fun _ _ _ _ ⟨h0, h1, h2, h3, hsp⟩ => ⟨hsp, fun r hr => by
-      simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact h0
-      · exact h1
-      · exact h2
-      · exact h3⟩) (by taint_decide)
-
-theorem verify_verified (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.AArch64.InvSounds) :
-    Verified AArch64.target VG.Impl.Ecdsa.Verify.AArch64.P192.verify (Proof.Ecdsa.verifyContract Spec.Ecdsa.P192.inst AArch64.abi) :=
-  Verified.of_correct (verify_a64 hL hI) verify_ct implies
 
 end VG.Proof.Ecdsa.Verify.AArch64.P192

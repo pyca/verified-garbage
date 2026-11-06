@@ -39,9 +39,6 @@ open VG.Spec.Aes (bytesAt)
 /-- What S2V's end writes: `wR` and its result at `W + out`. -/
 abbrev oR (c : Cx) (out : Nat) : List Region := ⟨c.W + BitVec.ofNat 64 out, 16⟩ :: wR c
 
-theorem frame_oR {c : Cx} {m m' : Mem} (out : Nat) (h : Frame (wR c) m m') : Frame (oR c out) m m' :=
-  h.mono fun _ hr => List.mem_cons_of_mem _ hr
-
 theorem copyRegs_keep : ∀ r ∈ keepRegs, r ∉ copyRegs := by decide
 
 theorem PK.ofKeeps {s t : State} (h : VG.Proof.AesCcm.RISCV64.Keeps s t) : PK s t :=

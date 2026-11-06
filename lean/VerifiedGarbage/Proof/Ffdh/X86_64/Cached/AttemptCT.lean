@@ -234,7 +234,8 @@ theorem sliced_workC (q : AQ) (s : State) (h : SlicedC q s) :
   exact WP.mono (CheckPrivate.setup_work hb hd hG hQ hm) fun t ⟨⟨mi, hw, hdi⟩, hi, _, k⟩ =>
     ⟨⟨rb, mi, hw, hdi, hm, hbuf.keep hi k, hrl⟩, hx.keep (.of_scr hi) k (by decide)⟩
 
-/-- `CS`, with the random bytes' length and the context. -/
+/-- The working space after the scalar's stage, and its flag in `rax`, with
+the random bytes' length and the context. -/
 def CSc (q : AQ) (s : State) : Prop := WorkInC q s ∧ s.gpr .rax = bit (q.1.sv = true)
 
 def CBc (q : AQ) (s : State) : Prop :=

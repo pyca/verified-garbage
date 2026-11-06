@@ -91,9 +91,6 @@ def openSat : State := { sealSat with
   rd := [⟨0x1000, 240⟩, ⟨0x2000, 7⟩, ⟨0x2100, 0⟩, ⟨0x3000, 4⟩, ⟨0x8008, 40⟩]
   wr := [⟨0, 0⟩, ⟨0, 2560⟩] }
 
-theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true then 1 else 0]) : a = b := by
-  cases a <;> cases b <;> simp_all
-
 /-- `open`'s public data include its leak, from which `pub` has whether it
 succeeds. -/
 theorem open_verified (v : UpdateImpl) :

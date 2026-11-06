@@ -45,24 +45,10 @@ theorem clob : ∀ r∈optimized.flatMap instrClob,r∈VG.Proof.Mont.AArch64.clo
 theorem checked : OptChecked 8192 original optimized :=
   ⟨rfl,wf,writes_of_bound leftBound,writes_of_bound rightBound⟩
 
-
 theorem caseProof : CombArithmetic.Case .mixed where
   checked := checked
   leftBound := leftBound
   rightBound := rightBound
   clob := clob
-
-
-theorem ct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0]))
-    (VG.Impl.P256.CombArithmetic.program VG.Impl.P256.CombArithmetic.K.M
-      (VG.Impl.P256.CombArithmetic.operations .mixed)) := by
-  have hs : VG.Impl.P256.CombArithmetic.selected VG.Impl.P256.CombArithmetic.K.M
-      (VG.Impl.P256.CombArithmetic.operations .mixed) :=
-    ⟨rfl,List.mem_map.mpr ⟨.mixed,by simp [VG.Impl.P256.CombArithmetic.kinds],rfl⟩⟩
-  rw [VG.Impl.P256.CombArithmetic.program,ite_eq_left hs]
-  change ConstantTime isa _ _ (.block optimized)
-  rw [optimized_lit]
-  exact VG.Taint.constantTime (A:=taint) (hc:=.block (List.replicate 5 (Taint.ofRegs [.x0])))
-    (Taint.ofRegs [.x0]) (fun _ _ _ _ h => h) (by decide +kernel)
 
 end VG.Proof.Weierstrass.AArch64.Forward.CombMixed

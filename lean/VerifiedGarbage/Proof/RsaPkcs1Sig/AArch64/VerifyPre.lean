@@ -14,8 +14,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 # `vg_rsa_pkcs1_verify` on AArch64: the precondition
 
 `PreV K s`: the shared contract's precondition (`verifyContract`, with the
-stack `stk K` of the frame and a callee using `K` bytes), by name
-(`preV_of`).
+stack `stk K` of the frame and a callee using `K` bytes), by name.
 -/
 
 @[expose] public section
@@ -71,19 +70,5 @@ structure PreV (K : Nat) (s : State) : Prop where
   e1 : 1 ≤ (s.gpr .x3).toNat
   e2 : (s.gpr .x3).toNat ≤ (s.gpr .x1).toNat
   hs : Spec.Rsa.publicScratchWords (s.gpr .x1).toNat ≤ (stackArg s 2).toNat
-
-theorem preV_of {K : Nat} {s : State}
-    (h : (Spec.RsaPkcs1Sig.verifyContract abi (stk K)).pre s) : PreV K s := by
-  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
-  rw [e] at h
-  sig_pre [Spec.RsaPkcs1Sig.verifyContract, Spec.RsaPkcs1Sig.verifySig, abi, argRegs, stackArgs_three,
-    List.append_eq] at h
-  sig_pre [Spec.RsaPkcs1Sig.verifyContract, Spec.RsaPkcs1Sig.verifySig, abi, argRegs, stackArgs_three,
-    List.append_eq] at h
-  obtain ⟨sp1, sp2, hrd, hwr, ns, es, ds, gs, sa, kn, ke, kd, kg, ks, ka, wn, we, wd, wg, ws, ⟨k1, k2⟩,
-    e1, e2, hs⟩ := h
-  rw [← e] at sp1 kn ke kd kg ks ka
-  exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, by rw [hwr]; simp, ns, es, ds, gs, sa, kn, ke, kd, kg,
-    ks, ka, wn, we, wd, wg, ws, k1, k2, e1, e2, hs⟩
 
 end VG.Proof.RsaPkcs1Sig.AArch64.Ver

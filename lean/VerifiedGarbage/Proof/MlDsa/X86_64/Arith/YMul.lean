@@ -38,9 +38,6 @@ open VG.Impl.MlKem.X86_64 (xb xmov toY yconst rcxLoop)
 open VG.Spec.MlDsa (q n Poly Zq)
 open VG.Proof.MlDsa (coeffAt polyAt Reduced)
 
-theorem lane_mulCore : laneSseBlock (toY mulCore) = some mulCore := by decide +kernel
-theorem lane_mulAddCore : laneSseBlock (toY mulAddCore) = some mulAddCore := by decide +kernel
-
 /-- The constants, and `2⁶⁴ mod q` in both lanes of `ymm11`. -/
 theorem ymulPro_ok (s : State) :
     WP isa (.block ymulPro) s fun s' => YConsts s' ∧ (∀ l < 2, s'.lane .xmm11 l = r2V) ∧
@@ -361,46 +358,5 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
       exact dn k (by omega_arith)
 
 end YMul
-
-/-! ## The functions -/
-
-theorem mulY_correct (s : State) (hs : mulK'.pre s) :
-    ∃ t s', Exec isa mulAvx2 s t s' ∧ abiPreserved s s' ∧ mulK'.post s s' := by
-  obtain ⟨t, s', he, hk, hf, hq⟩ := YMul.fn_ok hs (core := mulCore) (Fv := fun x y _ => mulV x y)
-    (fun s hc h11 => mulCore_ok hc h11) lane_mulCore
-    (fun i hi x y z hx hy _ e he => by
-      rw [mul_get _ _ (by rw [n_eq]; omega_arith)]
-      exact mul_lane hx hy he)
-    (by decide +kernel)
-  exact ⟨t, s', he, abiPreserved_of_ctl (by decide +kernel) he (gprPreserved_of hk (by decide) hf
-    (by simpa using hs.2.2.2.2.1)), hq⟩
-
-theorem mulAddY_correct (s : State) (hs : mulAddK.pre s) :
-    ∃ t s', Exec isa mulAddAvx2 s t s' ∧ abiPreserved s s' ∧ mulAddK.post s s' := by
-  obtain ⟨t, s', he, hk, hf, hq⟩ := YMul.fn_ok hs (core := mulAddCore) (Fv := mulAddV)
-    (fun s hc h11 => mulAddCore_ok hc h11) lane_mulAddCore
-    (fun i hi x y z hx hy hz e he => by
-      rw [add_get _ _ (by rw [n_eq]; omega_arith), mul_get _ _ (by rw [n_eq]; omega_arith)]
-      exact mulAdd_lane hx hy (c := fun e => (polyAt s.mem (s.gpr .rdi))[4 * i + e]!)
-        (fun e he => by rw [hz e he, polyAt_val hs.2.2.2.2.2.2.2.1 (by rw [n_eq]; omega_arith)]) he)
-    (by decide +kernel)
-  exact ⟨t, s', he, abiPreserved_of_ctl (by decide +kernel) he (gprPreserved_of hk (by decide) hf
-    (by simpa using hs.2.2.2.2.1)), hq⟩
-
-theorem mulY_ct : ConstantTime isa mulK'.pre mulK'.pub mulAvx2 :=
-  VG.Taint.constantTime (A := taint) mulτ mul_agree (by taint_decide)
-
-theorem mulAddY_ct : ConstantTime isa mulAddK.pre mulAddK.pub mulAddAvx2 :=
-  VG.Taint.constantTime (A := taint) mulτ mul_agree (by taint_decide)
-
-theorem mulY_verified : Verified X86_64.target mulAvx2 (Proof.MlDsa.mulContract X86_64.abi) :=
-  Verified.of_correct mulY_correct mulY_ct (by
-    mldsa_implies [Proof.MlDsa.mulContract, Proof.MlDsa.mulSig, mulK, X86_64.abi, X86_64.argRegs]
-      [mulSat] using mulSat)
-
-theorem mulAddY_verified : Verified X86_64.target mulAddAvx2 (Proof.MlDsa.mulAddContract X86_64.abi) :=
-  Verified.of_correct mulAddY_correct mulAddY_ct (by
-    mldsa_implies [Proof.MlDsa.mulAddContract, Proof.MlDsa.mulSig, mulK, X86_64.abi, X86_64.argRegs]
-      [mulSat] using mulSat)
 
 end VG.Proof.MlDsa.X86_64.Arith

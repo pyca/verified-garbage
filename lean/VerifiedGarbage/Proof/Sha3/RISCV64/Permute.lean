@@ -55,8 +55,6 @@ open VG.Proof.Sha3.RISCV64.Round (rowReg kept round_ok check₀ check₁ keeps�
 open VG.Proof.Sha3.Compl (cmpl msk)
 
 abbrev KState := Spec.Sha3.State
-abbrev Lane := Spec.Sha3.Lane
-
 /-! ## The precondition -/
 
 section
@@ -120,8 +118,6 @@ theorem off_add (s₀ : State) (a b : Nat) : off s₀ a + BitVec.ofNat 64 b = of
 
 theorem laneAddr_off (s₀ : State) (a i : Nat) : laneAddr (off s₀ a) i = off s₀ (a + 8 * i) :=
   off_add s₀ a (8 * i)
-
-theorem sp_off (s₀ : State) (d : Nat) : F s₀ + BitVec.ofNat 64 d = off s₀ d := rfl
 
 /-- Frame words at separate offsets. -/
 theorem rw_off (s₀ : State) (m : Mem) {d e : Nat} (h : d + 8 ≤ e ∨ e + 8 ≤ d) (hd : d + 8 ≤ 2 ^ 32)
@@ -757,34 +753,5 @@ theorem permute_correct (s : State) (hs : Proof.Sha3.permuteRISCV64.pre s) :
   refine ⟨t, s', he, ⟨fun r hr => ?_, hsp, hu .ra (by decide)⟩, h₂⟩
   rcases preserved_split r hr with rfl | rfl | h
   exacts [h0, h1, hu r h]
-
-theorem permute_ct : ConstantTime isa Proof.Sha3.permuteRISCV64.pre Proof.Sha3.permuteRISCV64.pub
-    Impl.Sha3.RISCV64.permute := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h1, h2, hsp⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  exacts [h1, h2]
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x2000 | _ => 0
-  sp := 0x5000
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 200⟩, ⟨0x2000, 512⟩]
-
-theorem permute_verified' :
-    Verified RISCV64.target Impl.Sha3.RISCV64.permute Proof.Sha3.permuteRISCV64 := by
-  refine ⟨permute_correct, permute_ct, satState, rfl, rfl, ?_, by decide, by decide, ?_, ?_⟩ <;>
-  exact Region.disjoint_of_sep (by decide)
-
-theorem permute_verified :
-    Verified RISCV64.target Impl.Sha3.RISCV64.permute (Proof.Sha3.permuteContract RISCV64.abi 608) :=
-  permute_verified'.of_implies (by
-    contract_implies [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, Proof.Sha3.permuteRISCV64,
-      RISCV64.abi, RISCV64.argRegs] [satState] using satState)
 
 end VG.Proof.Sha3.RISCV64

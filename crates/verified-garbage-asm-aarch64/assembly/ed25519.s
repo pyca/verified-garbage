@@ -157,6 +157,25 @@ vg_ed25519_public_key_expanded:
 	ret
 	.p2align 6
 
+vg_ed25519_key_pair:
+	str x30, [sp, #-16]!
+	sub sp, sp, #32
+	str x0, [sp, #0]
+	str x1, [sp, #8]
+	str x3, [sp, #16]
+	add x0, x2, #0
+	add x2, x1, #0
+	movz x1, #32, lsl #0
+	bl {vg_sha512_digest}
+	ldr x0, [sp, #0]
+	ldr x1, [sp, #8]
+	ldr x2, [sp, #16]
+	bl {vg_ed25519_public_key_expanded}
+	add sp, sp, #32
+	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
 vg_ed25519_sign_expanded:
 	str x30, [sp, #-16]!
 	sub sp, sp, #320
@@ -488,6 +507,25 @@ vg_ed25519_verify:
 	add x3, x3, #0
 	bl {vg_ed25519_verify_equation}
 	add sp, sp, #320
+	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
+vg_ed25519_key_pair_sha3:
+	str x30, [sp, #-16]!
+	sub sp, sp, #32
+	str x0, [sp, #0]
+	str x1, [sp, #8]
+	str x3, [sp, #16]
+	add x0, x2, #0
+	add x2, x1, #0
+	movz x1, #32, lsl #0
+	bl {vg_sha512_digest_sha3}
+	ldr x0, [sp, #0]
+	ldr x1, [sp, #8]
+	ldr x2, [sp, #16]
+	bl {vg_ed25519_public_key_expanded}
+	add sp, sp, #32
 	ldr x30, [sp], #16
 	ret
 	.p2align 6

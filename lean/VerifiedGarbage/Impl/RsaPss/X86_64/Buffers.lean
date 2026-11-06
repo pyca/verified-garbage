@@ -15,10 +15,4 @@ def copyWord64 (src dst : Reg) (so doff j : Nat) : List Instr :=
 def copyWords64 (src dst : Reg) (so doff n : Nat) : List Instr :=
   (List.range n).flatMap (copyWord64 src dst so doff)
 
-def xorWord64 (j : Nat) : List Instr :=
-  [.mov .rax (.mem (at_ .rcx (8 * j))), .alu .xor .rax (.mem (at_ .rdi (8 * j))),
-    .store (at_ .rdi (8 * j)) .rax]
-
-def xorWords64 (n : Nat) : List Instr := (List.range n).flatMap xorWord64
-
 end VG.Impl.RsaPss.X86_64

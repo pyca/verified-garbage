@@ -39,18 +39,6 @@ theorem valueWord_eq {η : Nat} (hη : η=2 ∨ η=4) {b : Nat} (hb : b<16) :
   · exact valueWord_two b hb
   · exact valueWord_four b hb
 
-theorem acceptWord_two : ∀ b < 16,
-    acceptWord 2 (BitVec.ofNat 32 b) = BitVec.ofNat 32 (halfByteOk 2 b) := by decide
-
-theorem acceptWord_four : ∀ b < 16,
-    acceptWord 4 (BitVec.ofNat 32 b) = BitVec.ofNat 32 (halfByteOk 4 b) := by decide
-
-theorem acceptWord_eq {η : Nat} (hη : η=2 ∨ η=4) {b : Nat} (hb : b<16) :
-    acceptWord η (BitVec.ofNat 32 b) = BitVec.ofNat 32 (halfByteOk η b) := by
-  rcases hη with rfl | rfl
-  · exact acceptWord_two b hb
-  · exact acceptWord_four b hb
-
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 
 end

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarOperands
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
@@ -14,12 +13,13 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Spec.Ed448.Contract
 
 /-!
 # Ed448 scalar reduction on AArch64: the whole function
 
-The contract the proof is written against (the facts of
-`Proof.Ed448.scalarReduceContract` it uses, stated for AArch64), and the
+The contract the proof is written against (`scalarReduceLocal`, stated for
+AArch64), and the
 correctness of `vg_ed448_scalar_reduce` against it: the working space is
 written only where the callee-saved registers are saved, so the input is
 read unchanged; they are restored before the result is written.

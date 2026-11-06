@@ -55,9 +55,6 @@ theorem liveF_pub (p : KPub) (e e' : BitVec 32) (used keys scalars : Nat) :
   rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
     rfl
 
-theorem St.at {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o ds f s) : At (ofState o, ds, f) s :=
-  ⟨o, rfl, h⟩
-
 /-- The public words of a loop state. -/
 abbrev liveAt (p : KPub) (used keys scalars : Nat) : Pw := (p, pubDs, liveF p 0 used keys scalars)
 
@@ -71,8 +68,6 @@ theorem Live.at {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p o
 def ZAt (a : Pw) (s : State) : Prop :=
   At a s ∧ Aligned a.2.1 ∧ xOff ∈ a.2.1 ∧ yOff ∈ a.2.1 ∧ lenOff ∈ a.2.1 ∧ a.2.2 xOff = a.1.xp ∧
     a.2.2 yOff = a.1.yp ∧ a.2.2 lenOff = BitVec.ofNat 32 a.1.len
-
-theorem zat_pins : Pins ZAt [.esi, .esp] := fun a _ _ h₁ h₂ => at_pins a _ _ h₁.1 h₂.1
 
 theorem zeroHead_ok {d : Nat} (hd4 : d + 4 ≤ 128) (a : Pw) (s : State) (h : At a s) (hd : d ∈ a.2.1)
     (hl : lenOff ∈ a.2.1) :

@@ -59,7 +59,6 @@ theorem gpr {r : Reg} (hr : r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]) :
   (h.2.1.1 r hr).symm
 
 theorem sig : stackArg s 0 = stackArg a 0 := h.2.1.2.1.symm
-theorem arg0 : stackArg s 1 = stackArg a 1 := h.2.1.2.2.1.symm
 theorem arg1 : stackArg s 2 = stackArg a 2 := h.2.1.2.2.2.1.symm
 theorem arg2 : (stackArg s 3).setWidth 32 = (stackArg a 3).setWidth 32 := h.2.1.2.2.2.2.1.symm
 theorem arg3 : stackArg s 4 = stackArg a 4 := h.2.1.2.2.2.2.2.1.symm
@@ -77,14 +76,6 @@ theorem eB : Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat =
 
 theorem preW : Spec.Rsa.wordsAt s.mem (stackArg s 6) (stackArg s 7).toNat =
     Spec.Rsa.wordsAt a.mem (stackArg a 6) (stackArg a 7).toNat := h.2.1.2.2.2.2.2.2.2.2.2.2.2.2.2.1.symm
-
-theorem syms : ∀ f ∈ tabFns tsH ++ tabFns tsG, s.syms f = a.syms f := fun f hf => (h.2.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 f hf).symm
-
-theorem tabH : ∀ T ∈ tsH, (Abi.tableHeld 64 s.mem (stackArg s 8) (FnTable.words isa s T) ↔
-    Abi.tableHeld 64 a.mem (stackArg a 8) (FnTable.words isa a T)) := fun T hT => (h.2.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 T hT).symm
-
-theorem tabG : ∀ T ∈ tsG, (Abi.tableHeld 64 s.mem (stackArg s 9) (FnTable.words isa s T) ↔
-    Abi.tableHeld 64 a.mem (stackArg a 9) (FnTable.words isa a T)) := fun T hT => (h.2.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2 T hT).symm
 
 theorem pa : VPre tsH tsG a := h.1
 theorem ps : VPre tsH tsG s := h.2.2.1
@@ -124,9 +115,6 @@ def vdb (D : Nat) (s : State) : Nat := veml s - D - 1
 /-- The blocks of the hash of `M'`. -/
 def vnb (H : Hash) (s : State) : Nat := (vdb H.D s + (7 + H.D + H.P.L)) / H.P.B + 1
 
-/-- The expected salt length's register, 0 if any. -/
-def vrdx (s : State) : BitVec 64 := if (stackArg s 3).setWidth 32 = 0 then stackArg s 2 else 0
-
 /-- The public words of the frame, by index. -/
 def vw (H : Hash) (s : State) (k : Nat) : BitVec 64 :=
   match k with
@@ -164,16 +152,11 @@ theorem veml : veml s = veml a := by
   simp only [VG.Proof.RsaPss.X86_64.veml, h.vlo, h.gpr (r := .rsi) (by decide)]
 theorem vdb {D : Nat} : vdb D s = vdb D a := by simp only [VG.Proof.RsaPss.X86_64.vdb, h.veml]
 theorem vnb {H : Hash} : vnb H s = vnb H a := by simp only [VG.Proof.RsaPss.X86_64.vnb, h.vdb]
-theorem vrdx : vrdx s = vrdx a := by simp only [VG.Proof.RsaPss.X86_64.vrdx, h.arg2, h.arg1]
-
 theorem vw {H : Hash} (k : Nat) : vw H s k = vw H a k := by
   unfold VG.Proof.RsaPss.X86_64.vw
   split <;> simp only [h.gpr (r := .rsi) (by decide), h.gpr (r := .rdi) (by decide),
     h.gpr (r := .rdx) (by decide), h.gpr (r := .rcx) (by decide), h.gpr (r := .r8) (by decide),
     h.sig, h.arg1, h.arg2, h.arg3, h.arg4, h.vlo, h.vdb, h.n0v, h.vnb, h.arg8, h.arg9, h.idxw]
-
-theorem pw {H : Hash} (ks : List Nat) : pw H s ks = pw H a ks := by
-  simp only [VG.Proof.RsaPss.X86_64.pw, h.vw]
 
 /-- The frame and the working space are apart. -/
 theorem rest : RestOk 1 (VG.Proof.RsaPss.X86_64.fb a) a.wr := by

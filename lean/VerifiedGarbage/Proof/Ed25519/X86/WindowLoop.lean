@@ -35,19 +35,12 @@ abbrev verificationChallenge (s : State) : Nat := Spec.Ed25519.decodeLE
 abbrev kByte (s₀ : State) (i : Nat) : Byte :=
   (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ 2 + BitVec.ofNat 32 0).setWidth 64) 64).getD i 0
 
-/-- Byte `i` of `S`. -/
-abbrev sByte (s₀ : State) (i : Nat) : Byte :=
-  (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ 1 + BitVec.ofNat 32 32).setWidth 64) 32).getD i 0
-
 /-- The sum after the bytes from `i` up. -/
 def wsum (s₀ : State) (Aa : EPoint dZ) (i : Nat) : EPoint dZ :=
   (verificationChallenge s₀ / 256 ^ i) • Aa + (verificationScalar s₀ / 256 ^ i) • (-baseAff)
 
 theorem kByte_val (s₀ : State) (i : Nat) :
     (kByte s₀ i).toNat = verificationChallenge s₀ / 256 ^ i % 256 := (decodeLE_byte _ i).symm
-
-theorem sByte_val (s₀ : State) (i : Nat) :
-    (sByte s₀ i).toNat = verificationScalar s₀ / 256 ^ i % 256 := (decodeLE_byte _ i).symm
 
 /-- The sum after the nibbles from `n` up. -/
 def nsum (s₀ : State) (Aa : EPoint dZ) (n : Nat) : EPoint dZ :=
@@ -340,23 +333,6 @@ theorem skipZero_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
   · exact .inr ⟨by show t.zf.map (!·) = _; rw [zt, hs], m - 1, by omega_arith, tt hs⟩
 
 /-! ## The whole multiplication -/
-
-theorem Saved.frame2 {s₀ s t : State} {x : BitVec 32} (h : Saved s₀ x s) (hx : x.toNat + 8192 ≤ 2 ^ 32)
-    (hk : ScalarKeep s t) {o n o' n' : Nat} (hf : Frame [sub x o n, sub x o' n'] s.mem t.mem)
-    (h1 : 16 ≤ o) (h2 : o + n ≤ 8192) (h3 : 16 ≤ o') (h4 : o' + n' ≤ 8192) (h5 : o < 8192)
-    (h6 : o' < 8192) : Saved s₀ x t := by
-  apply h.of_frame hk hf
-  · intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> refine .inl ?_ <;> rw [scR_eq]
-    · exact sub_sub hx (Nat.zero_le _) h2 h5
-    · exact sub_sub hx (Nat.zero_le _) h4 h6
-  · intro p hp r hr
-    have := savedSlots_bound p hp
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact sub_disj (by omega_arith) (by omega_arith) (Or.inl (by omega_arith))
-    · exact sub_disj (by omega_arith) (by omega_arith) (Or.inl (by omega_arith))
 
 theorem Saved.frame2s {s₀ s t : State} {x : BitVec 32} (h : Saved s₀ x s) (hx : x.toNat + 8192 ≤ 2 ^ 32)
     (hk : ScalarKeep s t) {o n o' n' : Nat} (hf : Frame [sub x o n, sub x o' n', callStk s] s.mem t.mem)

@@ -40,9 +40,6 @@ theorem coeffAddr_add (p : Addr) (j len : Nat) :
     coeffAddr p j + BitVec.ofNat 64 (4 * len) = coeffAddr p (j + len) := by
   rw [coeffAddr, coeffAddr, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_add]
 
-theorem coeffAddr_succ (p : Addr) (j : Nat) : coeffAddr p j + 4 = coeffAddr p (j + 1) :=
-  coeffAddr_add p j 1
-
 theorem coeffAt_writeW_self (m : Mem) (p : Addr) (i : Nat) (v : BitVec 32) :
     coeffAt (m.writeW (coeffAddr p i) v) p i = v :=
   Mem.readW_writeW_self32 m _ v
@@ -68,13 +65,6 @@ theorem polyAt_get (m : Mem) (p : Addr) {i : Nat} (hi : i < n) :
 theorem polyAt_val {m : Mem} {p : Addr} (hr : Reduced m p) {i : Nat} (hi : i < n) :
     ((polyAt m p)[i]!).val = (coeffAt m p i).toNat := by
   rw [polyAt_get m p hi, ofNat_of_lt (hr i hi)]
-
-theorem reduced_writeW {m : Mem} {p : Addr} (hr : Reduced m p) {j : Nat} (hj : j < n) {v : BitVec 32}
-    (hv : v.toNat < q) : Reduced (m.writeW (coeffAddr p j) v) p := fun i hi => by
-  rw [coeffAt_writeW m p hi hj]
-  split
-  · exact hv
-  · exact hr i hi
 
 /-- The word stored for coefficient `i` of `f`. -/
 theorem polyIs_toNat {m : Mem} {p : Addr} {f : Poly} (h : PolyIs m p f) {i : Nat} (hi : i < n) :

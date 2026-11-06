@@ -184,23 +184,6 @@ theorem stores_outside (s₀ : State) (base : Addr) (m : Mem) {o n : Nat} (hn : 
 
 theorem mq_eq_word (m : Mem) (base : Addr) (d : Nat) : mq m base d = word m base d := rfl
 
-open VG.Proof.X25519.X86_64 (Outside) in
-theorem Consts.outside {m m' : Mem} {base : Addr} {x1 : Nat → Nat} (hk : Consts m base x1)
-    (h : Outside base 1024 480 m m') : Consts m' base x1 := by
-  have w : ∀ d, 1504 ≤ d → d + 8 ≤ 4096 → mq m' base d = mq m base d := fun d h1 h2 => by
-    rw [mq_eq_word, mq_eq_word]; exact h.word (by omega_arith) (by omega_arith)
-  refine ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun i hi l hl => ?_,
-    fun i hi l hl => ?_, hk.x1, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩
-  · rw [w _ (by simp only [KM]; omega_arith) (by simp only [KM]; omega_arith)]; exact hk.km l hl
-  · rw [w _ (by simp only [K19]; omega_arith) (by simp only [K19]; omega_arith)]; exact hk.k19 l hl
-  · rw [w _ (by simp only [KB0]; omega_arith) (by simp only [KB0]; omega_arith)]; exact hk.kb0 l hl
-  · rw [w _ (by simp only [KB1]; omega_arith) (by simp only [KB1]; omega_arith)]; exact hk.kb1 l hl
-  · rw [slotv, w _ (by simp only [KA24]; omega_arith) (by simp only [KA24]; omega_arith)]; exact hk.a24 i hi l hl
-  · rw [slotv, w _ (by simp only [KX1]; omega_arith) (by simp only [KX1]; omega_arith)]; exact hk.kx1 i hi l hl
-  · rw [w _ (by simp only [K13]; omega_arith) (by simp only [K13]; omega_arith)]; exact hk.k13 l hl
-  · rw [w _ (by simp only [K26]; omega_arith) (by simp only [K26]; omega_arith)]; exact hk.k26 l hl
-  · rw [w _ (by simp only [K39]; omega_arith) (by simp only [K39]; omega_arith)]; exact hk.k39 l hl
-
 /-! ## Products -/
 
 /-- What `mul4 a` leaves: the product of the slot `a` and `ymm5–ymm9`, lane by

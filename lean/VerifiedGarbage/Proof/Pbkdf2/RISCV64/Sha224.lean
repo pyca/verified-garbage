@@ -26,7 +26,7 @@ meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 The iteration over a Merkle–Damgård hash function (`Impl/Pbkdf2/RISCV64.lean`)
 for SHA-224's sizes, compression function and digest code (`it`): what its
 proof needs of SHA-224 (`hashOk`), its constant time, which the kernel
-checks, and `iterate` against the shared contract of `Spec.Hmac.sha224I`.
+checks.
 -/
 
 @[expose] public section
@@ -69,9 +69,6 @@ theorem hashOkW (Wi : Nat) (h₁ : 239 ≤ Wi) (h₂ : Wi ≤ 8192) :
   link := ⟨rfl, rfl, rfl, fun _ _ _ h => h, fun m => (Proof.Sha256.sha224_eq m).symm,
     by decide, by decide⟩
 
-theorem hashOk : HashOk it (8 * Spec.Hmac.sha224I.scratch) Spec.Hmac.sha224S Proof.Sha256.md Spec.Sha256.H0_224 :=
-  hashOkW _ (by decide) (by decide)
-
 /-- The taint analysis of `main`, which the kernel checks. -/
 theorem main_ck : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4]) it.main hc).isSome = true := by
   refine ⟨?_, ?_⟩
@@ -80,15 +77,5 @@ theorem main_ck : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.a0, .a1, .a2, .a
 /-- `iterate`'s constant time, with any working space. -/
 theorem ctW (Wi : Nat) : ConstantTime isa (iterK Spec.Hmac.sha224S Wi).pre (iterK Spec.Hmac.sha224S Wi).pub code :=
   main_ck.elim fun _ h => ct _ _ _ h
-
-theorem iterate_ct : ConstantTime isa (iterK Spec.Hmac.sha224S (8 * Spec.Hmac.sha224I.scratch)).pre
-    (iterK Spec.Hmac.sha224S (8 * Spec.Hmac.sha224I.scratch)).pub code :=
-  ctW _
-
-theorem iterate : Verified RISCV64.target code (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha224I RISCV64.abi 0) :=
-  verified (I := Spec.Hmac.sha224I) hashOk callee (Nat.le_refl _) iterate_ct (by
-    inst_sat [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
-      Spec.Hmac.sha224I, Spec.Hmac.sha224S, Spec.Hmac.sha224, RISCV64.abi, RISCV64.argRegs]
-      using iterSat 96 28 832)
 
 end VG.Proof.Pbkdf2.RISCV64.Sha224

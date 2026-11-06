@@ -32,8 +32,6 @@ theorem mk_eq_zero (p : Prop) [Decidable p] : mk p = 0 ↔ ¬ p := by
   · rw [ifp hp]; exact ⟨fun h => absurd h (by decide), fun h => absurd hp h⟩
   · rw [ifn hp]; exact ⟨fun _ => hp, fun _ => rfl⟩
 
-theorem zM_mk (x : BitVec 64) : zM x = mk (x = 0) := rfl
-
 /-- `out`, from the buffer shifted by `idx + 1` under the mask all ones. -/
 theorem out_list {m : Mem} {o : Addr} {k : Nat} {T : List Byte} {idx : Nat} (hT : T.length ≤ k) (hi : idx < T.length)
     (h : ∀ i < k, m (o + BitVec.ofNat 64 i) = T.getD (i + (idx + 1)) 0) :

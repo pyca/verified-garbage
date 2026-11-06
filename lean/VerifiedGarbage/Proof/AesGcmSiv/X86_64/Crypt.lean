@@ -40,16 +40,6 @@ open VG.WriteBytes (writeBytes)
 open VG.Proof.AesGcm.X86_64 (GcmImpl CtrCall CtrPost ctr_call toNat_ofNat_of_lt)
 open VG.Proof.Aes.X86_64 (BlocksImpl)
 
-theorem ctr32_single (ciph : Spec.Gcm.Block → Spec.Gcm.Block) (icb x : Spec.Gcm.Block) :
-    Spec.Gcm.ctr32 ciph icb [x] = [x ^^^ ciph icb] := by
-  simp [Spec.Gcm.ctr32, Spec.Gcm.keystream, Nat.repeat]
-
-theorem toBytes_xor (a b : Spec.Gcm.Block) :
-    Spec.Gcm.toBytes (a ^^^ b) = Spec.Cmac.xor (Spec.Gcm.toBytes a) (Spec.Gcm.toBytes b) := by
-  apply List.ext_getElem (by simp [Spec.Gcm.toBytes, Spec.Cmac.xor])
-  intro i h₁ h₂
-  simp [Spec.Gcm.toBytes, Spec.Cmac.xor, BitVec.extractLsb'_xor]
-
 /-- What counter mode writes: the counter block, its copy and the block at
 `W + 128`, `vg_aes_ctr32`'s working space, the stack below `SP` and the data. -/
 abbrev cryR (W SP D : Addr) (n : Nat) : List Region :=

@@ -55,10 +55,6 @@ def parametersValid (a : Parameters) : Bool :=
     | some q => 2 < q && q % 2 == 1 && q < a.p - 1 &&
         (a.p - 1) % q == 0 && powMod a.g q a.p == 1
 
-def parametersFrom (p g : Nat) (q : Option Nat) : Option Parameters :=
-  let a : Parameters := ⟨p, g, q⟩
-  if parametersValid a then some a else none
-
 /-- Reject the identity and order-two value even without q. -/
 def publicValid (k : PublicKey) : Bool :=
   1 < k.y && k.y < k.params.p - 1 && match k.params.q with
@@ -75,12 +71,6 @@ def publicFrom (a : Parameters) (y : Nat) : Option PublicKey :=
 def privateFrom (a : Parameters) (y x : Nat) : Option PrivateKey := do
   let k ← publicFrom a y
   if privateValid a x && powMod a.g x a.p == y then some ⟨k, x⟩ else none
-
-/-- Component export is exact, including whether q was supplied. -/
-def publicComponents (k : PublicKey) : Nat × Nat × Option Nat × Nat :=
-  (k.params.p, k.params.g, k.params.q, k.y)
-def privateComponents (k : PrivateKey) : Nat × Nat × Option Nat × Nat × Nat :=
-  (k.publicKey.params.p, k.publicKey.params.g, k.publicKey.params.q, k.publicKey.y, k.x)
 
 /-- Uniform scalar sampling; invalid samples and degenerate public keys retry. -/
 def generate (a : Parameters) : List Nat → Option PrivateKey

@@ -130,58 +130,6 @@ theorem colEnd_ok (hA : acc + 96 ≤ 2048) (hA8 : acc % 8 = 0) {s0 : State} {k :
     generalize 2 ^ 64 = W
     grind
 
-/-- A column's terms: from a state with the accumulator `acc`, each term `p`
-of `ps` adds `f p` and keeps `Inv`. -/
-def TermOk (acc : Nat) (b : Addr) (s0 : State) (k : Nat) (Inv : State → Prop) (f : Nat × Nat → Nat)
-    (code : Nat × Nat → List Instr) (p : Nat × Nat) : Prop :=
-  ∀ s, Inv s → Ctx b s → Rest clob64 s0 s → Frame [AR acc b] s0.mem s.mem →
-    WP isa (.block (code p)) s fun s' => Inv s' ∧ Ctx b s' ∧ Rest clob64 s0 s' ∧
-      Frame [AR acc b] s0.mem s'.mem ∧
-      accW acc s'.mem b k = accW acc s.mem b k ∧
-      (val3 s (rr k) (rr (k + 1)) (rr (k + 2)) + f p < 2 ^ 192 →
-        val3 s' (rr k) (rr (k + 1)) (rr (k + 2)) = val3 s (rr k) (rr (k + 1)) (rr (k + 2)) + f p)
-
-/-- A column's terms, by induction on them. -/
-theorem terms_ok {s0 : State} {k : Nat} {Inv : State → Prop} {f : Nat × Nat → Nat}
-    {code : Nat × Nat → List Instr} :
-    ∀ (ps : List (Nat × Nat)), (∀ p ∈ ps, TermOk acc b s0 k Inv f code p) → ∀ s, Inv s → Ctx b s →
-      Rest clob64 s0 s → Frame [AR acc b] s0.mem s.mem →
-      val3 s (rr k) (rr (k + 1)) (rr (k + 2)) + tsum f ps < 2 ^ 192 →
-      WP isa (.block (ps.flatMap code)) s fun s' => Inv s' ∧ Ctx b s' ∧ Rest clob64 s0 s' ∧
-        Frame [AR acc b] s0.mem s'.mem ∧
-        accW acc s'.mem b k = accW acc s.mem b k ∧
-        val3 s' (rr k) (rr (k + 1)) (rr (k + 2)) = val3 s (rr k) (rr (k + 1)) (rr (k + 2)) + tsum f ps
-  | [], _, s, hi, hc, hr, hf, _ => WP.block_nil ⟨hi, hc, hr, hf, rfl, by simp [tsum]⟩
-  | p :: ps, hok, s, hi, hc, hr, hf, hb => by
-    rw [List.flatMap_cons]
-    rw [tsum_cons] at hb
-    refine WP.append (hok p (List.mem_cons_self ..) s hi hc hr hf) fun s1 ⟨hi1, hc1, hr1, hf1, ha1, hv1⟩ => ?_
-    have hv1 := hv1 (by omega)
-    refine WP.mono (terms_ok ps (fun q hq => hok q (List.mem_cons_of_mem _ hq)) s1 hi1 hc1 hr1 hf1
-      (by omega)) fun s2 ⟨hi2, hc2, hr2, hf2, ha2, hv2⟩ => ⟨hi2, hc2, hr2, hf2, ha2.trans ha1, ?_⟩
-    rw [hv2, hv1, tsum_cons]; omega
-
-/-- Column `k`: its terms `ps`, which sum to `cs k`, then its end. -/
-theorem column_ok (hA : acc + 96 ≤ 2048) (hA8 : acc % 8 = 0) {s0 : State} {k : Nat} (hk : k < 12)
-    {Inv : State → Prop} {f : Nat × Nat → Nat}
-    {code : Nat × Nat → List Instr} {cs : Nat → Nat} (ps : List (Nat × Nat))
-    (hok : ∀ p ∈ ps, TermOk acc b s0 k Inv f code p) (hcs : cs k = tsum f ps)
-    (hbd : tsum f ps < 6 * 2 ^ 128)
-    (hinv : ∀ s s', Inv s → (∀ r, r ≠ rr k → s'.gpr r = s.gpr r) → Inv s') {s : State}
-    (h : ColInv acc b s0 cs k s) (hi : Inv s) :
-    WP isa (.block (ps.flatMap code ++ colEnd acc k)) s fun s' =>
-      ColInv acc b s0 cs (k + 1) s' ∧ Inv s' := by
-  have hv0 : val3 s (rr k) (rr (k + 1)) (rr (k + 2)) =
-      (s.gpr (rr k)).toNat + 2 ^ 64 * (s.gpr (rr (k + 1))).toNat := by
-    simp only [val3, h.top]; rfl
-  have hl := (s.gpr (rr k)).isLt
-  have hh := (s.gpr (rr (k + 1))).isLt
-  refine WP.append (terms_ok ps hok s hi h.ctx h.rest h.frame (by rw [hv0]; omega_arith))
-    fun s1 ⟨hi1, hc1, hr1, hf1, ha1, hv1⟩ => ?_
-  have hwp := colEnd_ok (cs := cs) hA hA8 hk hc1 hr1 hf1 (by
-    rw [ha1, hv1, hv0, colsV, ← h.val, hcs, Nat.mul_add]; omega_arith)
-  exact WP.mono hwp fun s2 ⟨h2, hk2⟩ => ⟨h2, hinv s1 s2 hi1 hk2⟩
-
 /-- The columns, by induction. -/
 theorem columns_ok {s0 : State} {cs : Nat → Nat} {Inv : Nat → State → Prop} {col : Nat → List Instr}
     (hcol : ∀ k < 12, ∀ s, ColInv acc b s0 cs k s → Inv k s →

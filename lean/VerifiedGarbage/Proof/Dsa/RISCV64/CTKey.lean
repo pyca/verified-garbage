@@ -112,20 +112,6 @@ end Top
 
 /-! ## `restore` -/
 
-theorem s6_kept : ∀ i ∈ instrs (seg FT 1 6), dstOf i ≠ some .s6 := by
-  have h : (instrs (seg FT 1 6)).all (fun i => dstOf i != some .s6) = true := by
-    rw [← Code.allInstrs_eq]; decide +kernel
-  intro i hi
-  simpa using List.all_eq_true.mp h i hi
-
-theorem pinsT6 : Pins (At C0 FT 6) [.s6] :=
-  pins_fix (fun v => [(.s6, v.L.S)]) (fun _ => rfl) fun v u ⟨s₀, t, h₀, e⟩ => by
-    rw [take_split FT (n := 1) (m := 6) (by decide)] at e
-    obtain ⟨_, _, u₁, -, e₁, e₂⟩ := exec_seqL_append.mp e
-    have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0) (F := FT) (n := 1) (M := P0)
-      (fun _ _ h => WP.of_flat (c := .block Verify.entry) rfl (front_P0 h)) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
-    exact ⟨(Exec.gpr_callFree s6_kept e₂ rfl).trans h₁, trivial⟩
-
 /-! ## `X1`: q's scan -/
 
 theorem a2_P0 {v : VD} {s : State} (h : P0 v s) :

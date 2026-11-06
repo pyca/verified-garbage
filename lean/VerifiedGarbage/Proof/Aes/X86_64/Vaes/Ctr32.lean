@@ -267,7 +267,8 @@ end
 /-!
 # VAES counter mode: the whole function
 
-`ctr32_verified` proves `Impl.Aes.X86_64.Vaes.ctr32` against `ctr32X86_64`.
+`ctr32_correct` and `ctr32_ct` prove `Impl.Aes.X86_64.Vaes.ctr32` against
+`ctr32X86_64`.
 The sixteen-block loop keeps `vg_aes_ctr32_aesni`'s loop invariant
 (`AesNi.Inv`), which is about lane 0 of the registers, and the upper lanes of
 the counter (`inc₃₂ᶜ⁺¹(CB)`), of the mask and of the increment (`VInv`); after
@@ -519,12 +520,5 @@ theorem ctr32_ct : ConstantTime isa AesNi.ctr32X86_64.pre AesNi.ctr32X86_64.pub 
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
-
-theorem ctr32_verified :
-    Verified X86_64.target Impl.Aes.X86_64.Vaes.ctr32 (Proof.Gcm.ctr32Contract X86_64.abi) :=
-  Verified.of_correct ctr32_correct ctr32_ct (by
-    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, Proof.Aes.X86_64.AesNi.ctr32X86_64,
-      X86_64.abi, X86_64.argRegs] [Proof.Aes.X86_64.AesNi.satState] using
-      Proof.Aes.X86_64.AesNi.satState)
 
 end VG.Proof.Aes.X86_64.Vaes

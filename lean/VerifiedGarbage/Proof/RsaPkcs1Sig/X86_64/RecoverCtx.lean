@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Words
 
 `recContract` states the shared contract (with the stack the frame and the
 call use, `verStack`, as for `vg_rsa_pkcs1_verify`) on the registers and the
-stack (`recover_implies`).
+stack.
 -/
 
 @[expose] public section
@@ -93,28 +93,5 @@ theorem leak_eq3 {a b c a' b' c' : List Byte} (ha : a.length = a'.length) (hb : 
   obtain ⟨h₁, rfl⟩ := List.append_inj hi (by simp [ha, hb])
   obtain ⟨rfl, rfl⟩ := List.append_inj h₁ ha
   exact ⟨rfl, rfl, rfl⟩
-
-theorem recover_implies : recContract.Implies (Spec.RsaPkcs1Sig.recoverContract abi verStack) where
-  pre := by
-    intro s h
-    -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.RsaPkcs1Sig.recoverContract, Spec.RsaPkcs1Sig.recoverSig, abi, argRegs, recContract, verStack, stackArgs_five, List.append_eq] at h
-    sig_pre [Spec.RsaPkcs1Sig.recoverContract, Spec.RsaPkcs1Sig.recoverSig, abi, argRegs, recContract, verStack, stackArgs_five, List.append_eq] at h
-    sig_split h
-    sig_reduce [Spec.RsaPkcs1Sig.recoverContract, Spec.RsaPkcs1Sig.recoverSig, abi, argRegs, recContract, verStack, stackArgs_five, List.append_eq]
-    sig_and_intros
-    sig_close
-    all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaPkcs1Sig.recoverContract, Spec.RsaPkcs1Sig.recoverSig, abi, argRegs, recContract, verStack, stackArgs_five, List.append_eq]
-  pub := by
-    rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPkcs1Sig.recoverContract, Spec.RsaPkcs1Sig.recoverSig, abi, argRegs, recContract, verStack, stackArgs_five, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-    obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4⟩ := h
-    obtain ⟨hn, he, hs⟩ := leak_eq3 (by simp [Spec.Rsa.bytesAt, hcx]) (by simp [Spec.Rsa.bytesAt, h9]) hl
-    refine ⟨?_, a0, by rw [a1, a2, a3, a4], hn, he, hs⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := by sig_implies_sat [Spec.RsaPkcs1Sig.recoverContract, Spec.RsaPkcs1Sig.recoverSig, abi, argRegs, recContract, verStack, stackArgs_five, List.append_eq] [recSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using recSatState
 
 end VG.Proof.RsaPkcs1Sig.X86_64

@@ -106,11 +106,6 @@ theorem WinStR.ro_tmv {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL 
   · rw [hL.ro_val h.unch hn hx]; exact hF.ro_lt x hx
   · rw [hL.ro_val h.unch hn (by simp [winRo])]; exact hF.zero
 
-/-- A state of the loop with the table in projective coordinates. -/
-theorem WinSt.toR {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} {P : Point C} {s₀ s : State}
-    (h : WinSt K C base size P s₀ s) : WinStR K C base size (Rep C) P s₀ s :=
-  ⟨h.scr, h.keep, h.unch, h.mod, h.tbl⟩
-
 /-! ## Four doublings in place -/
 
 /-- The slots the doublings keep in the environment: `R` and the constants. -/
@@ -133,9 +128,6 @@ field programs do. -/
 def DblsOk (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (dd : Option (Prog isa × Prog isa)) : Prop :=
   ∀ d, dd = some d → DblSpec K C base size d.1 K.R K.D (dblVR K) ∧
     DblSpec K C base size d.2 K.D K.R ([K.D.x, K.D.y, K.D.z] ++ dblVR K)
-
-theorem DblsOk.none {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} : DblsOk K C base size none :=
-  fun _ h => by cases h
 
 /-- What a window's mixed addition must do, `R` and `E` holding their values:
 change only the registers `combClob` and the loop's slots, and leave `D`
@@ -576,7 +568,6 @@ theorem sumJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
       toM_selValJ hp tz1 l1 tz2 l2 (v₁' _ (by simp)) (v₁' _ (by simp)) jy,
       toM_selValJ hp tz1 l1 tz2 l2 (v₁' _ (by simp)) (v₁' _ (by simp)) jz]
     exact InvJ.sumSelM hC hM3 hQR hQE hR hE hsep
-
 
 /-! ## An iteration but the last -/
 

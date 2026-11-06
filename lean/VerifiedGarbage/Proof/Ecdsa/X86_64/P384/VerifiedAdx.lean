@@ -164,14 +164,6 @@ theorem sign_ct_adx : ConstantTime isa signX86_64.pre signX86_64.pub signP384Adx
       · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
     rfl (by taint_decide)
 
-theorem sign_verified_adx (hL : Law Spec.P384.curve)
-    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
-    (hI : InvSounds) :
-    Verified X86_64.target signP384Adx
-      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P384.inst (X86_64.abi.withConsts p384.combConsts) 8) :=
-  Verified.of_inline_ct sign_inlineOk_adx (sign_x86_adx hL hT hI) sign_ct_adx implies8
-    (fun _ h => Sig.clear_of_pre_consts h) sign_patch
-
 /-- `sign_call_x86` with BMI2 and ADX. -/
 theorem sign_call_x86_adx (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)

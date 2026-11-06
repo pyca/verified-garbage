@@ -39,12 +39,6 @@ theorem Inputs.scalarBound_bits_fit (p : Inputs) :
 def vettedScalarOctets (p : Inputs) (rb : List Byte) : List Byte :=
   VG.Proof.Ffdh.VettedPolicy.octets (Spec.Ffdh.domainOf p.k p.dom) rb
 
-theorem vettedScalarOctets_length {p : Inputs} {rb : List Byte} (size : rb.length = p.k) :
-    (vettedScalarOctets p rb).length = p.k := by
-  rw [← size]
-  exact VG.Proof.Ffdh.VettedPolicy.octets_length (by have := p.minLength; omega)
-    (by rw [size]; exact p.scalarBound_bits_fit)
-
 theorem vettedScalarOctets_value {p : Inputs} {rb : List Byte} (size : rb.length = p.k) :
     Spec.Rsa.os2ip (vettedScalarOctets p rb) =
       Spec.Ffdh.vettedScalarOfOctets (Spec.Ffdh.domainOf p.k p.dom) rb :=
@@ -90,9 +84,6 @@ theorem encode_significant {p : Inputs} (l : ScalarLayout p) (rb : List Byte) :
     Spec.Rsa.os2ip ((l.encode rb).drop l.lead) = Spec.Rsa.os2ip (l.encode rb) :=
   VG.Proof.Ffdh.KeyScalar.os2ip_cut_drop _ _ _
 
-def standard (p : Inputs) : ScalarLayout p :=
-  ⟨p.scalarLead, p.scalarMask, p.scalarLeadBound⟩
-
 def vetted (p : Inputs) : ScalarLayout p :=
   let bits := Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom)
   let count := VG.Proof.Ffdh.ScalarWidth.width bits
@@ -125,20 +116,5 @@ structure SampleContext (p : Inputs) (l : ScalarLayout p) (slots : List Nat) (s 
   scalarStart : s.mem.readW (off (State.addr s.sp) 16) 32 = l.start
   scalarWidth : s.mem.readW (off (State.addr s.sp) 20) 32 = BitVec.ofNat 32 l.width
   scalarMask : s.mem.readW (off (State.addr s.sp) 68) 32 = l.mask
-
-theorem SampleContext.of_standard {p : Inputs} {slots : List Nat} {s : State}
-    (h : Context p slots s) (h16 : 16 ∈ slots) (h20 : 20 ∈ slots) (h68 : 68 ∈ slots) :
-    SampleContext p (ScalarLayout.standard p) slots s :=
-  ⟨h, h.saved 16 h16, h.saved 20 h20, h.saved 68 h68⟩
-
-theorem SampleContext.after_kept {p : Inputs} {l : ScalarLayout p} {slots : List Nat}
-    {s t : State} (h : SampleContext p l slots s) (context : Context p slots t)
-    (sp : t.sp = s.sp)
-    (kept : ∀ d ∈ [16, 20, 68], t.mem.readW (off (State.addr s.sp) d) 32 =
-      s.mem.readW (off (State.addr s.sp) d) 32) : SampleContext p l slots t := by
-  refine ⟨context, ?_, ?_, ?_⟩
-  · rw [sp, kept 16 (by simp)]; exact h.scalarStart
-  · rw [sp, kept 20 (by simp)]; exact h.scalarWidth
-  · rw [sp, kept 68 (by simp)]; exact h.scalarMask
 
 end VG.Proof.Ffdh.Arm

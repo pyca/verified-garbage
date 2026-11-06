@@ -260,9 +260,6 @@ theorem Ks.of_rest {rs ws : List Reg} {s s' : State} (h : Rest ws s s')
     (hws : ∀ r ∈ ws, r ∉ preserved ∨ r ∈ rs := by decide) : Ks rs s s' :=
   ⟨fun r hr hn => h.gpr r fun h' => (hws r h').elim (· hr) hn, h.rd, h.wr, h.sp⟩
 
-theorem Ks.kp {s s' : State} (h : Ks [] s s') : Kp s s' :=
-  ⟨fun r hr => h.gpr r hr (List.not_mem_nil), h.rd, h.wr, h.sp⟩
-
 theorem KRegs.of_ks {k : Nat} {rs : List Reg} {s s' : State} (h : KRegs k s) (K : Ks rs s s')
     (h4 : Reg.s4 ∉ rs := by decide) (h5 : Reg.s5 ∉ rs := by decide) : KRegs k s' :=
   ⟨by rw [K.gpr _ (by decide) h4]; exact h.1, by rw [K.gpr _ (by decide) h5]; exact h.2⟩
@@ -356,13 +353,6 @@ theorem mask_and_imm (c : Bool) (v : Nat) :
   cases c
   · simp [maskOf]
   · show BitVec.allOnes 64 &&& _ = _; exact BitVec.allOnes_and
-
-theorem digAcc_le (G : Nat → Fe W) (y : Fe W) : ∀ f, digAcc G y f ≤ 15 * f
-  | 0 => Nat.le_refl _
-  | f + 1 => by
-    rw [digAcc]
-    have := digAcc_le G y f
-    split <;> omega
 
 /-- `s6 += (16 - e) mod 16` if `y = g^e`. -/
 theorem cmpStep_ok {s : State} {base : Addr} (hw : WsReg s base) {e v : Nat} (he : e < 16)

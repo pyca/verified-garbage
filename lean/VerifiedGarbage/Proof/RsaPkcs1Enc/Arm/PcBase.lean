@@ -68,9 +68,6 @@ abbrev lay : Lay where
   ro := [P.N, P.E, P.MSG, P.PS, P.PRE]
   rw := [P.OUT, P.SCR]
 
-/-- `EM`. -/
-abbrev EM : Region := ⟨P.lay.fr oEM, P.K⟩
-
 end EP
 
 /-- The state the body starts from. -/

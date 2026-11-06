@@ -58,9 +58,6 @@ theorem sqzOk {n : Nat} : argsOk n sqzArgs = true := by
   simp (config := { decide := true }) [argsOk]
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
 
-theorem argOk {L : Lay} (hL : L.Ok) {i : Nat} (hi : i < 5) : (Arg.arg i).ok L.nA = true := by
-  have := hL.nA5; simp only [Arg.ok, decide_eq_true_eq]; omega
-
 theorem Ctx.arg' {L : Lay} {m₁ : Mem} {t : State} (hc : Ctx L m₁ t) (hL : L.Ok) {i : Nat} (hi : i < 5) :
     (Arg.arg i).val t = L.argv.getD i 0 :=
   hc.argV (by have := hL.nA5; omega)

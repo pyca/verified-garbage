@@ -125,12 +125,6 @@ theorem setup_callFrame {vr : List VReg} {s t : State} (h : SetupKeep vr s t) :
     CallFrame [.x9] vr s t :=
   ⟨fun r hr => h.gpr r (by simpa only [List.mem_singleton] using hr),h.rd,h.wr,h.sp,h.vec⟩
 
-theorem setup_callFrame_wide {vr : List VReg} {s t : State} (h : SetupKeep vr s t) :
-    CallFrame [.x9] allVectors s t := by
-  refine (setup_callFrame h).mono (by rfl) ?_
-  intro r _
-  exact (show ∀r:VReg,r∈allVectors by intro r; cases r <;> decide) r
-
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
 end

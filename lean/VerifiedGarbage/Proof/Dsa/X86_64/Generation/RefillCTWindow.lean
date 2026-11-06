@@ -65,15 +65,6 @@ def SeedGeneratorPublic.windowed (g : SeedGeneratorPublic) : SeedGeneratorPublic
   value := g.value
   domain := g.domain
 
-theorem ctFrame_of_outside {F : Addr} {d n : Nat} {m m' : Mem} (h : Outside F d n m m')
-    (hd : d + n ≤ frameBytes) : Frame [⟨F, frameBytes⟩] m m' := by
-  intro a ha
-  apply h a
-  right
-  have hn := ha ⟨F, frameBytes⟩ (by simp)
-  change ¬ ofs F a < frameBytes at hn
-  omega
-
 theorem ctFrame_bytes {g : GenerationGeometry} {m m' : Mem}
     (hf : Frame [⟨g.F, frameBytes⟩] m m') {d n : Nat} (hd : d + n ≤ usedBytes g.pLen) :
     Spec.Rsa.bytesAt m' (off g.B d) n = Spec.Rsa.bytesAt m (off g.B d) n := by
@@ -290,23 +281,6 @@ theorem windowFull_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s t : St
 
 theorem seedGeneratorBefore_pLen {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State}
     (h : SeedGeneratorBefore n pLen qLen g s) : g.seed.context.geo.pLen = pLen := h.1.2.1
-
-/-- The window, run: the generator search's input over it. -/
-theorem window_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State}
-    (h : SeedGeneratorBefore n pLen qLen g s) :
-    WP isa (Impl.Dsa.X86_64.Generation.Refill.window pLen) s fun u =>
-      SeedGeneratorBefore n pLen qLen g.windowed u ∧
-        Frame [⟨g.seed.context.geo.F, frameBytes⟩] s.mem u.mem ∧ u.rd = s.rd ∧ u.wr = s.wr := by
-  have hp := seedGeneratorBefore_pLen h
-  subst pLen
-  unfold Impl.Dsa.X86_64.Generation.Refill.window
-  refine WP.seq (WP.mono (windowHead_ready h) fun t ht => ?_)
-  obtain ⟨hs', hc, hr, hm, hk⟩ := ht
-  refine WP.ite (decide (g.seed.context.rand.bytes.length - g.seed.used <
-    Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen)) (by simp only [eval, hc])
-    (fun hb => ?_) (fun hb => ?_)
-  · exact windowTaken_ready hs' hc hr hm hk (by simp only [eval, hc, hb])
-  · exact windowFull_ready hs' hc hm hk (by simp only [eval, hc, hb])
 
 theorem windowChecked_pins (n pLen qLen : Nat) : Pins (WindowChecked n pLen qLen) [.rsp] := by
   intro g s t ⟨s₀, ⟨⟨⟨⟨_, hs, _⟩, _⟩, _⟩, _⟩, _, _, _, hks⟩ ⟨t₀, ⟨⟨⟨⟨_, ht, _⟩, _⟩, _⟩, _⟩, _, _, _, hkt⟩ r hr

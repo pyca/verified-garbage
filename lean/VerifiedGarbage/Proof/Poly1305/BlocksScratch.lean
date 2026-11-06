@@ -28,10 +28,6 @@ open VG.Spec.Poly1305
 def blocksPost (pb : Nat) : blocksSig.Post pb := fun state blocks n m m' _ =>
   ∀ key msg, Repr m state key msg → Repr m' state key (msg ++ bytesAt m blocks (16 * n.toNat))
 
-theorem blocksContract_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    blocksContract A stack = blocksSig.contract A (post := blocksPost A.ptrBits) (stack := stack) :=
-  rfl
-
 /-- `vg_poly1305_blocks` with `scratch: *mut [u64; 16]`. -/
 def blocksScratchSig : Sig where
   params := [("state", .array true .u64 16), ("blocks", .slice false (.array .u8 16) "n"),

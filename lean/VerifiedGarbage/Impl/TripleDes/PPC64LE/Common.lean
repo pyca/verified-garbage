@@ -13,8 +13,6 @@ def rr (d n : Reg) : Instr := .logic .or d n n
 
 def imm (r : Reg) (n : Nat) : Instr := .li r n
 
-def shr (r : Reg) (n : Nat) : List Instr := if n = 0 then [] else [.lsr .d r r n]
-
 /-- `d := n >>> k`, as a move when `k = 0`. -/
 def shrFrom (d n : Reg) (k : Nat) : List Instr := if k = 0 then [rr d n] else [.lsr .d d n k]
 

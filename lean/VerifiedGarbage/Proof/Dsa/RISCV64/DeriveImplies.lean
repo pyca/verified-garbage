@@ -9,9 +9,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # `vg_dsa_derive_key` on RISC-V: the contract on the registers and the stack
 
-`deriveKey_implies`: `dContract` implies the shared contract; `deriveKey_wp`:
-`vg_dsa_derive_key` meets the shared contract's precondition and
-postcondition, and the calling convention, with no stack of its own.
+`deriveKey_implies`: `dContract` implies the shared contract, with no stack
+of its own.
 -/
 
 @[expose] public section
@@ -40,11 +39,5 @@ theorem deriveKey_implies : dContract.Implies (Spec.Dsa.deriveKeyContract RISCV6
     List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false, List.cons_append,
     List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, pairFacts_two, List.range, List.range.loop]
     [deriveSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using deriveSatState
-
-/-- `vg_dsa_derive_key` under the shared contract. -/
-theorem deriveKey_wp (s : State) (h : (Spec.Dsa.deriveKeyContract RISCV64.abi).pre s) :
-    WP isa Derive.derive s fun t => abiPreserved s t ∧ (Spec.Dsa.deriveKeyContract RISCV64.abi).post s t := by
-  obtain ⟨tr, t, he, ha, hp⟩ := deriveKey_correct s (deriveKey_implies.pre s h)
-  exact ⟨tr, t, he, ha, deriveKey_implies.post s t h hp⟩
 
 end VG.Proof.Dsa.RISCV64

@@ -902,16 +902,6 @@ theorem prepareHeader_ok (p : MontInputData) (s : State) (h : MontStart p s) :
     (by rw [second.gpr, first.mem]; exact h.stack.savedCount), ?_⟩
   rw [memory];exact h.normalized
 
-theorem montInput_ct : RelCT isa (Two MontStart)
-    (.seq (.block [.ldrSp .r0 0, .ldrSp .r6 12]) VG.Impl.Ffdh.Arm.CandidatePrepare.code) (fun _ _ => True) := by
-  have head : RelCT isa (Two MontStart) (.block [.ldrSp .r0 0, .ldrSp .r6 12]) (Two PreparedInput) :=
-    two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) prepareHeader_ok
-  have prepare : RelCT isa (Two PreparedInput) VG.Impl.Ffdh.Arm.CandidatePrepare.code (fun _ _ => True) := by
-    intro s t trS trT u v h runS runT
-    obtain ⟨p, left, right, sp⟩ := h
-    exact candidatePrepare_ct _ _ _ _ _ _ ⟨left,right,sp⟩ runS runT
-  exact head.seq prepare
-
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 end
 

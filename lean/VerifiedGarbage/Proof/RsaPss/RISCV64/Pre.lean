@@ -206,9 +206,6 @@ theorem scLen : oRsa ≤ (stackArg s 3).toNat * 8 := by
 
 theorem sc_sub : Region.Sub (SC Sp s) (scR s) := Region.sub_prefix (scLen P)
 
-theorem scR_contains {o n : Nat} (h : o + n ≤ oRsa) : (scR s).Contains (off (Sp s) o) n :=
-  Offset.contains_base _ (by have := scLen P; omega) (by unfold oRsa at h; omega)
-
 theorem PreP.fits : Fits Sp s where
   sp1 := P.sp1
   sp16 := P.spal

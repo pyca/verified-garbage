@@ -76,10 +76,6 @@ theorem encodeId_length {x : BitVec 32} {H em : List Byte} {k : Nat} (h : encode
 theorem ite01 (c : Prop) [Decidable c] : (if c then (1 : BitVec 64) else 0).setWidth 32 = if c then 1 else 0 := by
   split <;> rfl
 
-theorem and01 (c : Bool) (r : BitVec 32) (hr : r = 1 ∨ r = 0) :
-    ((if c then (1 : BitVec 32) else 0) &&& r) = if c ∧ r = 1 then 1 else 0 := by
-  rcases hr with rfl | rfl <;> cases c <;> decide
-
 theorem ret0_ok (t : State) : WP isa (.block ret0) t fun w => Only [.r3] t w ∧ w.gpr .r3 = 0 :=
   wp_li (by decide) fun w o e => wp_nil ⟨o, by rw [e]; rfl⟩
 

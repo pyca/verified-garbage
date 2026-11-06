@@ -46,18 +46,6 @@ def policyFirst (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
 def sievedPolicy (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
   if p.sieved p.Q then policyFirst p r else some (false, r)
 
-theorem PhaseOutcome.as_tape {p : CandidateP} {used n : Nat} {q : Bool} {c : Checks} {m : Mem}
-    (h : PhaseOutcome p used n q c m) :
-    TapeOutcome p used n (checkWitnesses (p.phaseValue q) (p.phaseChecks q c) (p.rand.drop used)) m := by
-  unfold TapeOutcome PhaseOutcome at *
-  exact h
-
-theorem TapeOutcome.congr {p : CandidateP} {used n : Nat} {result : Option (Bool × List Byte)} {m m' : Mem}
-    (h : TapeOutcome p used n result m)
-    (hs : word m' p.B (8 * oStatus) = word m p.B (8 * oStatus)) : TapeOutcome p used n result m' := by
-  unfold TapeOutcome at *
-  simpa only [hs] using h
-
 theorem tape_reject {p : CandidateP} {used : Nat} {m : Mem} (hstatus : word m p.B (8 * oStatus) = 2) :
     TapeOutcome p used 0 (some (false, p.rand.drop used)) m := by
   simp [TapeOutcome, hstatus]

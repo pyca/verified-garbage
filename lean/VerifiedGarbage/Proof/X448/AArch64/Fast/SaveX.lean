@@ -30,8 +30,6 @@ theorem SavedX.outside {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : S
     SavedX base g m' := fun k hk =>
   (ho.word (by omega) (by simp only [SAVE]; omega)).trans (h k hk)
 
-theorem saved_ne : ∀ k < 8, saved k ≠ .x3 ∧ saved k ≠ .x12 := by decide
-
 theorem save_ok {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block save) s fun t =>
       SavedX base s.gpr t.mem ∧ Outside base SAVE 64 s.mem t.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧

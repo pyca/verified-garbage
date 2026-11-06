@@ -122,11 +122,6 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_encrypt_aes_sha3, vg_aes_gcm_stream_finish_aes_sha3,
     vg_aes_gcm_stream_init_aes_sha3, vg_aes_gcm_stream_verify_aes_sha3,
 };
-#[cfg(target_arch = "aarch64")]
-use crate::arch::gcm::{
-    VG_GHASH_STORE_POWERS_AES_SCRATCH_WRITTEN, vg_aes_gcm_open_with_powers_aes,
-    vg_aes_gcm_seal_with_powers_aes, vg_ghash_store_powers_aes,
-};
 use crate::arch::gcm::{
     vg_aes_gcm_init, vg_aes_gcm_open, vg_aes_gcm_seal, vg_aes_gcm_stream_aad,
     vg_aes_gcm_stream_decrypt, vg_aes_gcm_stream_encrypt, vg_aes_gcm_stream_finish,
@@ -144,6 +139,10 @@ use crate::arch::gcm::{
 use crate::arch::gcm::{
     vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512,
     vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx, vg_aes_gcm_open_to_prepared16_vaes_vpclmul,
+};
+#[cfg(target_arch = "aarch64")]
+use crate::arch::gcm::{
+    vg_aes_gcm_open_with_powers_aes, vg_aes_gcm_seal_with_powers_aes, vg_aes_gcm_store_powers_aes,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
@@ -1099,30 +1098,21 @@ impl AesGcm {
         unsafe { prepare(self.ctx.as_mut_ptr()) };
     }
 
-    /// Computes the powers of the hash subkey into `self.powers`, from the
-    /// key context, with `vg_ghash_store_powers_aes`, hashing no blocks.
+    /// Computes the powers of the hash subkey of the key context into
+    /// `self.powers`, with `vg_aes_gcm_store_powers_aes`
+    /// (`VG.Spec.Gcm.storePowersContract`: `Powers8Repr` of the context's
+    /// `ctxH`, which the `_with_powers` instances require).
     #[cfg(target_arch = "aarch64")]
     fn store_powers(&mut self) {
-        // It never writes its working space (`Artifact.written`), so that
-        // space needs neither initializing nor wiping.
-        const _: () = assert!(VG_GHASH_STORE_POWERS_AES_SCRATCH_WRITTEN == 0);
-        let mut scratch = MaybeUninit::<[u64; 32]>::uninit();
-        let mut y: Block = [0; 16];
-        // The hash subkey, the last 16 bytes of the key context
-        // (`VG.Spec.Gcm.KeyRepr`).
-        let h: *const Block = self.key()[30..].as_ptr().cast();
-        // SAFETY: `h` is valid for reads of 16 bytes (within `self.ctx`, which
-        // `new` wrote before calling this), and
-        // so is `data`, of which no block is read (`n` is 0); `y`, `scratch`
-        // and `self.powers` are distinct objects, valid for reads and writes
-        // of 16, 256 and 128 bytes, which overlap nothing else; none wraps
-        // around the end of the address space. The CPU has the features of
-        // the key's backend, which has `_with_powers` instances, whose
-        // features include `vg_ghash_store_powers_aes`'s (see the tests).
-        unsafe {
-            vg_ghash_store_powers_aes(h, &mut y, h, 0, scratch.as_mut_ptr(), &mut self.powers)
-        };
-        // `y` hashed no block: it is still zero.
+        let ctx: *const [u64; 32] = self.key();
+        // SAFETY: `ctx`, the key context, is valid for reads of 256 bytes
+        // (`new` wrote them before calling this), and `self.powers` for
+        // writes of 128; they are distinct fields, so they do not overlap
+        // each other or anything on the stack, or wrap around the end of the
+        // address space. The CPU has the features of the key's backend,
+        // which has `_with_powers` instances, whose features include
+        // `vg_aes_gcm_store_powers_aes`'s (see the tests).
+        unsafe { vg_aes_gcm_store_powers_aes(ctx, &mut self.powers) };
     }
 
     /// GCM-AE (§7.1): encrypts `data` in place under `nonce`, and returns
@@ -2303,14 +2293,15 @@ mod tests {
                 VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES, VG_AES_GCM_SEAL_AES_FEATURES,
                 VG_AES_GCM_SEAL_AES_SHA3_FEATURES, VG_AES_GCM_SEAL_GATHER_AES_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES, VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES,
-                VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES, VG_AES_GCM_STREAM_AAD_AES_FEATURES,
+                VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES,
+                VG_AES_GCM_STORE_POWERS_AES_FEATURES, VG_AES_GCM_STREAM_AAD_AES_FEATURES,
                 VG_AES_GCM_STREAM_AAD_AES_SHA3_FEATURES, VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES,
                 VG_AES_GCM_STREAM_DECRYPT_AES_SHA3_FEATURES,
                 VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES,
                 VG_AES_GCM_STREAM_ENCRYPT_AES_SHA3_FEATURES, VG_AES_GCM_STREAM_FINISH_AES_FEATURES,
                 VG_AES_GCM_STREAM_FINISH_AES_SHA3_FEATURES, VG_AES_GCM_STREAM_INIT_AES_FEATURES,
                 VG_AES_GCM_STREAM_INIT_AES_SHA3_FEATURES, VG_AES_GCM_STREAM_VERIFY_AES_FEATURES,
-                VG_AES_GCM_STREAM_VERIFY_AES_SHA3_FEATURES, VG_GHASH_STORE_POWERS_AES_FEATURES,
+                VG_AES_GCM_STREAM_VERIFY_AES_SHA3_FEATURES,
             };
             for other in [
                 VG_AES_GCM_INIT_AES_FEATURES,
@@ -2324,7 +2315,7 @@ mod tests {
                 VG_AES_GCM_SEAL_GATHER_AES_FEATURES,
                 VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES,
                 VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES,
-                VG_GHASH_STORE_POWERS_AES_FEATURES,
+                VG_AES_GCM_STORE_POWERS_AES_FEATURES,
             ] {
                 assert!(VG_AES_GCM_SEAL_AES_FEATURES.contains(other));
             }
@@ -2340,7 +2331,7 @@ mod tests {
                 VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES,
                 VG_AES_GCM_SEAL_AES_SHA3_FEATURES,
                 VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES,
-                VG_GHASH_STORE_POWERS_AES_FEATURES,
+                VG_AES_GCM_STORE_POWERS_AES_FEATURES,
             ] {
                 assert!(VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES.contains(other));
             }

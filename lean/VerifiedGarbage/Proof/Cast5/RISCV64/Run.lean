@@ -46,7 +46,6 @@ macro_rules
 /-- The low word of a register. -/
 abbrev lo (x : BitVec 64) : BitVec 32 := x.setWidth 32
 
-theorem lo_and (x y : BitVec 64) : lo (x &&& y) = lo x &&& lo y := lo32_and x y
 theorem lo_or (x y : BitVec 64) : lo (x ||| y) = lo x ||| lo y := lo32_or x y
 theorem lo_xor (x y : BitVec 64) : lo (x ^^^ y) = lo x ^^^ lo y := lo32_xor x y
 theorem lo_add (x y : BitVec 64) : lo (x + y) = lo x + lo y := lo32_add x y

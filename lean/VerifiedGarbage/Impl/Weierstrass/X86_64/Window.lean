@@ -124,11 +124,24 @@ def ySelWord (w : Nat) : List Instr :=
 /-- `R = (0 : 1 : 0)` where `E.z` is zero: `R.x` and `R.z` are zero then already. -/
 def ySel : List Instr := zeroMask K ++ (List.range K.M.n).flatMap (ySelWord K)
 
+/-- `dblJS`'s operations in the order that runs fastest on x86-64 for
+nine-word numbers, whose products are calls of `vg_p521_mul_mod_p`: the
+chain to `X'` (`X ∓ Z²`, their product and its triple) starts right after
+`Z²`, and the additions run between the products they do not feed (the
+order measured fastest of those tried). -/
+def dblJX (S : RcbSlots) (p o : Pt) : List FOp :=
+  [.mul S.t0 p.z p.z, .sub S.t3 p.x S.t0, .add o.x p.x S.t0, .add o.z p.y p.z, .mul S.t1 p.y p.y,
+   .mul S.t3 S.t3 o.x, .mul S.t2 p.x S.t1, .add o.x S.t3 S.t3, .add S.t3 o.x S.t3,
+   .mul o.z o.z o.z, .add S.t2 S.t2 S.t2, .mul o.x S.t3 S.t3, .add S.t2 S.t2 S.t2,
+   .sub o.z o.z S.t1, .sub o.x o.x S.t2, .mul S.t1 S.t1 S.t1, .sub o.x o.x S.t2, .sub o.z o.z S.t0,
+   .add S.t1 S.t1 S.t1, .sub o.y S.t2 o.x, .add S.t1 S.t1 S.t1, .add S.t1 S.t1 S.t1,
+   .mul o.y S.t3 o.y, .sub o.y o.y S.t1]
+
 /-- Up to six limbs, form `2YZ` directly and scale `Y²` by two first, which
 saves four field additions and subtractions for one square that becomes a
-product; for more, `dblJ` ordered for the processor's overlap (`dblJS`). -/
+product; for more, `dblJ` ordered for the processor's overlap (`dblJX`). -/
 def double (p o : Pt) : List FOp :=
-  if (K.M.n ≤ 6 : Bool) then dblJMul K.S p o else dblJS K.S p o
+  if (K.M.n ≤ 6 : Bool) then dblJMul K.S p o else dblJX K.S p o
 
 /-- A pair of Jacobian doublings, with a public count in the bits above the
 window index in `rbx`. The window index is less than 4096. -/

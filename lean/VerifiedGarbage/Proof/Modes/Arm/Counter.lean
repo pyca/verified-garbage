@@ -31,7 +31,6 @@ theorem gpr_addFlags (s : State) (x y : BitVec 32) : (addFlags s x y).gpr = s.gp
 theorem mem_addFlags (s : State) (x y : BitVec 32) : (addFlags s x y).mem = s.mem := rfl
 theorem rd_addFlags (s : State) (x y : BitVec 32) : (addFlags s x y).rd = s.rd := rfl
 theorem wr_addFlags (s : State) (x y : BitVec 32) : (addFlags s x y).wr = s.wr := rfl
-theorem sp_addFlags (s : State) (x y : BitVec 32) : (addFlags s x y).sp = s.sp := rfl
 theorem c_addFlags (s : State) (x y : BitVec 32) :
     (addFlags s x y).c = decide (2 ^ 32 ≤ x.toNat + y.toNat) := rfl
 

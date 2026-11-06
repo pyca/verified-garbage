@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 The 32-bit targets' proofs of `bits2octets` (x86, 32-bit ARM) hold the
 digest and `n` as eight 32-bit words, least significant first: their value
-(`wsum`), `n`'s (`nW`, `nW_sum`), the selection of one number or
+(`wsum`), a number `N`'s (`nWn`, `wsum_nWn`), the selection of one number or
 another by a mask, word by word (`sel_mask32`, `wsum_sel`), and the number
 that `4 k` bytes are, big-endian, from the byte reversals of their words
 (`ofBytes_words`).
@@ -26,9 +26,6 @@ that `4 k` bytes are, big-endian, from the byte reversals of their words
 namespace VG.Proof.Ecdsa.Rfc6979
 
 open VG
-
-/-- The words of `n`, least significant first. -/
-def nW (j : Nat) : BitVec 32 := BitVec.ofNat 32 (Spec.P256.n >>> (32 * j))
 
 /-- The words `j < k` of a number, least significant first. -/
 def wsum (f : Nat → BitVec 32) : Nat → Nat
@@ -56,12 +53,6 @@ theorem wsum_nWn (N : Nat) : ∀ i, wsum (nWn N) i = N % 2 ^ (32 * i)
   | i + 1 => by
     rw [wsum, wsum_nWn N i, show 32 * (i + 1) = 32 * i + 32 by omega, Nat.pow_add, Nat.mod_mul,
       BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.mul_comm, Nat.add_comm]
-
-theorem nW_sum : wsum nW 8 = Spec.P256.n := by
-  simp only [wsum, nW]
-  decide +kernel
-
-theorem n_ge : 2 ^ 255 ≤ Spec.P256.n := by decide +kernel
 
 theorem sel_mask32 (x d : BitVec 32) (c : Bool) :
     ((x ^^^ d) &&& (if c then BitVec.allOnes 32 else 0)) ^^^ d = if c then x else d := by

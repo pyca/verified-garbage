@@ -7,6 +7,7 @@ public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Rsa.X86.PrivContract
 import VerifiedGarbage.Proof.Rsa.X86.PrivObservations
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Complete i686 certificate for checked private RSA -/
 
@@ -45,7 +46,7 @@ def satState : State where
   rd := [⟨8192, 64⟩, ⟨12288, 1⟩, ⟨16384, 64⟩, ⟨20480, 1⟩, ⟨24576, 1⟩, ⟨28672, 1⟩, ⟨32768, 1⟩, ⟨36864, 1⟩]
   wr := [⟨4096, 64⟩, ⟨40960, 8448⟩, ⟨0x20004, 80⟩]
 
-theorem satisfiable : ∃ s, (Spec.Rsa.privateCheckedContract abi stackBytes).pre s := by
+theorem satisfiable : ∃ s, (Proof.Rsa.privateCheckedContract abi stackBytes).pre s := by
   have a0 : arg satState 0 = 4096 := by decide
   have a1 : arg satState 1 = 64 := by decide
   have a2 : arg satState 2 = 8192 := by decide
@@ -68,10 +69,10 @@ theorem satisfiable : ∃ s, (Spec.Rsa.privateCheckedContract abi stackBytes).pr
   have a19 : arg satState 19 = 1056 := by decide
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_implies_sat [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, e, esp, satState, stackBytes,
       Spec.Rsa.lenValid, Spec.Rsa.scratchWords] using satState
 
-theorem code_verified (v : CrtImpl) : Verified target (privCode v) (Spec.Rsa.privateCheckedContract abi stackBytes) :=
+theorem code_verified (v : CrtImpl) : Verified target (privCode v) (Proof.Rsa.privateCheckedContract abi stackBytes) :=
   ⟨private_contract_correct v, private_contract_ct v, satisfiable⟩
 end VG.Proof.Rsa.X86.PrivChecked

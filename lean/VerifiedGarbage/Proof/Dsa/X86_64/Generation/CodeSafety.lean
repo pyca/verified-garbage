@@ -36,15 +36,6 @@ theorem generationSafe.loop {b : Prog isa} (hb : generationSafe b) (cc : Cond) :
 theorem generationSafe.call {b : Prog isa} (hb : generationSafe b) (name : String) :
     generationSafe (.call name b) := hb
 
-theorem generationSafe.seqs (cs : List (Prog isa))
-    (hc : ∀ c ∈ cs, generationSafe c) : generationSafe (Impl.Bignum.X86_64.seqs cs) := by
-  induction cs with
-  | nil => rfl
-  | cons c cs ih =>
-    cases cs with
-    | nil => exact hc c (by simp)
-    | cons d cs => exact (hc c (by simp)).seq (ih fun x hx => hc x (List.mem_cons_of_mem _ hx))
-
 theorem generationSafe.sp {c : Prog isa} (h : generationSafe c) :
     c.all (fun i => !isa.writesSp i) = true := by
   apply Code.all_of_allInstrs

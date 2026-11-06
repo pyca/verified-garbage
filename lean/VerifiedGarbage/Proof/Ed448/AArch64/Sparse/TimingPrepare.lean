@@ -6,13 +6,15 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Normalize
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Persist
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Front
 meta import VerifiedGarbage.Impl.Ed448.AArch64.Sparse
 meta import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
 meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
 import VerifiedGarbage.Proof.X448.AArch64.Iter
 import VerifiedGarbage.Proof.Ed448.WnafWide.Bits
+import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
 
 /-! The decoding/table prefix supplies the two public scalar values to recoding. -/
 

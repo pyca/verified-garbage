@@ -42,12 +42,6 @@ theorem WordRel.congr_right {Q : Nat → BitVec 64} {v v' : Nat → Word} (h : W
     (he : ∀ b < 16, v' b = v b) : WordRel Q v' := fun b hb i hi j hj => by
   rw [he b hb]; exact h b hb i hi j hj
 
-/-- XORing the planes of two words. -/
-theorem WordRel.xor {Q K Q' : Nat → BitVec 64} {v u : Nat → Word} (hq : WordRel Q v) (hk : WordRel K u)
-    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = ((Q j).getLsbD p ^^ (K j).getLsbD p)) :
-    WordRel Q' (fun b => v b ^^^ u b) := fun b hb i hi j hj => by
-  rw [h j hj _ (by omega), hq b hb i hi j hj, hk b hb i hi j hj, BitVec.getLsbD_xor]
-
 /-! ## The S-box -/
 
 /-- Byte `i` (from the most significant) of a word. -/

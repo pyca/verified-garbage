@@ -86,9 +86,6 @@ theorem SearchParams.capacity_fits (p : SearchParams) : p.c.capacity < 2 ^ 32 :=
   have := p.c.scratchFits
   omega
 
-theorem SearchLive.used_fits {p : SearchParams} {used remaining : Nat} {s : State}
-    (h : SearchLive p used remaining s) : used < 2 ^ 32 := Nat.lt_of_le_of_lt h.usedBound p.c.tapeCount
-
 theorem SearchLive.remaining_bound {p : SearchParams} {used remaining : Nat} {s : State}
     (h : SearchLive p used remaining s) : remaining ≤ 2 ^ 32 := Nat.le_trans h.remainingBound p.attempts_bound
 

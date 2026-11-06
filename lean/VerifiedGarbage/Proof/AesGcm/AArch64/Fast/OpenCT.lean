@@ -227,8 +227,8 @@ theorem openRunA_relX (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {s₀₁ s₀
     (by agree_tac [O₁.env.x19, O₂.env.x19, O₁.kept .x28 (by decide), O₂.kept .x28 (by decide), k28₁, k28₂])
     ⟨_, by taint_decide⟩
 
-/-- `openRunWith` in two runs, after `tagIn`, whose tags compare alike, with
-`gh` called with memory changed since the entries `s₀₁`, `s₀₂` only in the
+/-- `openRunWithP` in two runs, after `tagIn`, whose tags compare alike, with
+`cl` called with memory changed since the entries `s₀₁`, `s₀₂` only in the
 working space and the text. -/
 theorem openRunWith_relX (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {nl : Nat} {s₀₁ s₀₂ t₁ t₂ : State}
     {ex : List Region} (hexW : ∀ r ∈ ex, (workR W).Disjoint r) (hexD : ∀ r ∈ ex, (⟨D, n⟩ : Region).Disjoint r)

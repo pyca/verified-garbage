@@ -19,9 +19,6 @@ def validatedSatKey : List Byte :=
   Spec.Dsa.encodeBE 128 (a * a + a + 1) ++ Spec.Dsa.encodeBE 20 q ++
     Spec.Dsa.encodeBE 128 a ++ Spec.Dsa.encodeBE 128 a
 
-theorem validatedSatKey_length : validatedSatKey.length = 404 := by
-  simp only [validatedSatKey, List.length_append, VG.Proof.Dsa.encodeBE_length]
-
 theorem validatedSatKey_valid : Spec.Dsa.validatePublicKeyBytes 128 20 validatedSatKey = true := by
   decide +kernel
 

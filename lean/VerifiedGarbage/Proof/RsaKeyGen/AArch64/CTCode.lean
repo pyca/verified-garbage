@@ -29,10 +29,9 @@ import Mathlib.Order.Defs.LinearOrder
 /-!
 # A candidate on AArch64: constant time, the front
 
-`code` leaks the same in runs that agree on the arguments, `e` and
-`candidateLeak`, given that `kMain` does from `K0` (`code_ct`): the entry,
+For runs that agree on the arguments, `e` and `candidateLeak`: the entry,
 the zeros to `out`, the length check and the end for too few octets depend
-on the arguments alone, and `kMain` on the schedule the leak fixes
+on the arguments alone, and `kMainWith` on the schedule the leak fixes
 (`schedOf_eq`).
 -/
 
@@ -178,7 +177,7 @@ theorem lenCheck_ct : RelCT isa (Two C2') (.block ([ldh .x3 kRandLen, ldh .x4 kL
     rw [(z₁.keep.gpr .x0 (by decide)).trans e₁.x0, (z₂.keep.gpr .x0 (by decide)).trans e₂.x0, c₁.B, c₂.B])
     (by taint_decide) fun q t ⟨s, t₁, c, he, hz⟩ => WP.mono (lenCheck_ok (kctx_of c.pre) he hz) fun t' hf => ⟨s, c, hf⟩
 
-/-- What `kMain` needs, from a state past the length check with enough
+/-- What `kMainWith` needs, from a state past the length check with enough
 octets. -/
 theorem C3.k0 {q : FPub} {t : State} (h : C3 q t) (hlt : 8 * q.w ≤ q.rl) : K0 q t := by
   obtain ⟨s, c, hf⟩ := h
@@ -196,21 +195,6 @@ theorem C3.k0 {q : FPub} {t : State} (h : C3 q t) (hlt : 8 * q.w ≤ q.rl) : K0 
   · rw [← c.eB, bytesAt_length]; exact k.el1
   · rw [← c.eB, bytesAt_length]; exact k.el8
   · rw [← c.pl, ← c.w]; exact k.pl
-
-/-- `vg_rsa_keygen_candidate` leaks the same in runs that agree on the public
-data, given that `kMain` does. -/
-theorem code_ct (M : Mont) (hK : RelCT isa (Two K0) (kMain M.mm) fun _ _ => True) :
-    RelCT isa (Two CRel) (code M.mm) fun _ _ => True := by
-  unfold code
-  simp only [seqs]
-  refine RelCT.seq entry_ct (RelCT.seq zeros_ct (RelCT.seq lenCheck_ct ?_))
-  refine two_ite (fun q s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.x5, h₂.x5]) ?_ ?_
-  · exact finNone_ct fun _ _ h => h.1
-  · exact hK.mono (fun _ _ h => two_bind (fun q t₁ t₂ h₁ h₂ => ⟨q, h₁.1.k0 (by
-        have := h₁.2; rw [eval_zero, h₁.1.x5] at this; revert this
-        cases hd : decide (8 * q.w ≤ q.rl) <;> simp_all), h₂.1.k0 (by
-        have := h₂.2; rw [eval_zero, h₂.1.x5] at this; revert this
-        cases hd : decide (8 * q.w ≤ q.rl) <;> simp_all)⟩) h) fun _ _ h => h
 
 theorem candPre_wr {s : State} (h : candPre s) :
     s.wr = [⟨s.gpr .x0, (s.gpr .x1).toNat⟩, ⟨s.gpr .x2, 8⟩, ⟨stackArg s 1, (stackArg s 2).toNat * 8⟩] := h.2.2.1
@@ -253,12 +237,5 @@ theorem crel_of {s₁ s₂ : State} (h₁ : candPre s₁) (h₂ : candPre s₂) 
     rw [show 8 * ((s₁.gpr .x1).toNat / 8) = (s₁.gpr .x1).toNat by omega] at hk ⊢
     refine (VG.Proof.RsaKeyGen.schedOf_eq (by omega) (by rw [bytesAt_length, bytesAt_length, ha 0 (by decide)])
       (by rw [bytesAt_length]; omega) hl').symm
-
-/-- `vg_rsa_keygen_candidate` is constant time but for the arguments, `e` and
-`candidateLeak`, given that `kMain` is from `K0`. -/
-theorem code_constantTime (M : Mont) (hK : RelCT isa (Two K0) (kMain M.mm) fun _ _ => True) :
-    ConstantTime isa candPre candPub (code M.mm) :=
-  RelCT.constantTime ((code_ct M hK).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
-    ⟨cpubOf s₁, crel_self h₁, crel_of h₁ h₂ hp, hp.2.1⟩) fun _ _ h => h)
 
 end VG.Proof.RsaKeyGen.AArch64

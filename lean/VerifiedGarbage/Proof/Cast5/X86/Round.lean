@@ -120,13 +120,6 @@ theorem dword_movd0 (v : BitVec 32) : dword ((0 : BitVec 96) ++ v) 0 = v := by
   simp only [dword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
     Nat.mul_zero, Nat.zero_add, ite_true]
 
-theorem dword_movd1 (v : BitVec 32) : dword ((0 : BitVec 96) ++ v) 1 = 0 := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [dword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
-    Nat.mul_one]
-  rw [ite_eq_right (by omega)]
-  simp
-
 theorem lanes_eq (a b c d : BitVec 32) :
     XBinOp.eval .punpcklqdq (XBinOp.eval .punpckldq ((0 : BitVec 96) ++ a) ((0 : BitVec 96) ++ b))
       (XBinOp.eval .punpckldq ((0 : BitVec 96) ++ c) ((0 : BitVec 96) ++ d)) = ofDwords a b c d := by

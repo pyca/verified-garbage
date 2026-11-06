@@ -19,7 +19,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.CombLit
@@ -46,7 +45,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 meta import VerifiedGarbage.Proof.Weierstrass.Law
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.CombGenerator
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi

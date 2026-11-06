@@ -12,7 +12,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{Error, P192, PrivateKey, PublicKey};
+use verified_garbage::ec::{P192, PrivateKey, PublicKey};
+use verified_garbage::error::InvalidKey;
 
 /// Each vector: `QCAVS` (uncompressed), `dIUT`, `QIUT` (uncompressed) and
 /// `ZIUT`.
@@ -74,21 +75,14 @@ fn ecdh_p192_invalid() {
     bad.push(big_y);
     bad.push([0; 49]);
     for p in &bad {
-        assert_eq!(
-            key.exchange(&PublicKey::from_bytes(p)),
-            Err(Error::InvalidKey)
-        );
+        assert_eq!(key.exchange(&PublicKey::from_bytes(p)), Err(InvalidKey));
         #[cfg(target_arch = "x86_64")]
         assert!(!P192::validate_public_key(p));
     }
     for d in [[0; 24], [0xff; 24]] {
         let key = PrivateKey::<P192>::from_bytes(&d);
-        assert_eq!(key.public_key(), Err(Error::InvalidKey));
-        assert_eq!(
-            key.exchange(&PublicKey::from_bytes(&peer)),
-            Err(Error::InvalidKey)
-        );
+        assert_eq!(key.public_key(), Err(InvalidKey));
+        assert_eq!(key.exchange(&PublicKey::from_bytes(&peer)), Err(InvalidKey));
     }
     assert_eq!(format!("{key:?}"), "PrivateKey { .. }");
-    assert_eq!(Error::InvalidKey.to_string(), "invalid elliptic-curve key");
 }

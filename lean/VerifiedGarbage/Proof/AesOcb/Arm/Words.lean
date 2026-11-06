@@ -48,10 +48,6 @@ structure Ran (rs : List Reg) (m : Mem) (s s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
-theorem Ran.mono {rs rs' : List Reg} {m : Mem} {s s' : State} (h : Ran rs m s s') (hr : ∀ r ∈ rs, r ∈ rs') :
-    Ran rs' m s s' :=
-  ⟨h.mem, fun r h' => h.gpr r fun h'' => h' (hr r h''), h.sp, h.rd, h.wr⟩
-
 /-! ## XOR -/
 
 theorem xorB_eq (pb qb cb : Reg) (pd qd cd : Nat) :

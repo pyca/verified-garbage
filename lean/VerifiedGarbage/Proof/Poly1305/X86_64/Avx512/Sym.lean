@@ -243,10 +243,6 @@ theorem vec_zop {s₀ s : State} (h : vec s₀ s = s) (o : ZOp) : vec s₀ (o.ex
   rw [← h]
   cases o <;> rfl
 
-theorem vec_setV {s₀ s : State} (h : vec s₀ s = s) (len : VLen) (d : XReg) (lo hi : BitVec 128) :
-    vec s₀ (s.setV len d lo hi) = s.setV len d lo hi := by
-  rw [← h]; rfl
-
 theorem vec_setZ {s₀ s : State} (h : vec s₀ s = s) (d : XReg) (a b c e : BitVec 128) :
     vec s₀ (s.setZ d a b c e) = s.setZ d a b c e := by
   rw [← h]; rfl

@@ -95,7 +95,7 @@ pub fn encap_decap(name: &str, function: &str) -> Vec<EncapDecap> {
 /// `mlkem1024`) and its key types.
 macro_rules! mlkem_tests {
     ($name:literal, verified_garbage::$module:ident, $DecapsulationKey:ident, $EncapsulationKey:ident) => {
-        use verified_garbage::error::MlKemError;
+        use verified_garbage::error::InvalidKey;
         use verified_garbage::hashes::sha3::{Sha3_256, Shake256};
         use verified_garbage::$module::{$DecapsulationKey, $EncapsulationKey};
 
@@ -159,7 +159,7 @@ macro_rules! mlkem_tests {
                     }
                     Err(e) => {
                         assert!(!passed);
-                        assert_eq!(e, MlKemError::InvalidKey);
+                        assert_eq!(e, InvalidKey);
                     }
                 }
             }

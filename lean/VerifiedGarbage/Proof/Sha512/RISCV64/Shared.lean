@@ -21,10 +21,6 @@ against per-target contracts (`Proof/Sha512/RISCV64/Contract.lean`); these
 theorems move them to the shared contracts of `Spec/Sha512/Contract.lean`,
 which the artifacts are emitted with.
 
-The shared contract gives `compress` more scratch than this one uses (1328
-bytes, sized for x86-64's AVX2 compression function): the per-target
-contract is first widened to that scratch (`Verified.widen`, the same code
-running with the same trace and result), then moved to the shared one.
 `update` and `finalize` keep their working space in a frame of their own,
 of 208 bytes (`Impl.Sha512.RISCV64.Stream.frameBytes`), the `stack` of their
 contracts. SHA-384, SHA-512/224 and SHA-512/256 are SHA-512 from other
@@ -37,40 +33,6 @@ final hash value; their `update` is SHA-512's.
 namespace VG.Proof.Sha512.RISCV64.Shared
 
 open _root_.VG.RISCV64
-
-/-- `compressRISCV64` with 1328 bytes of scratch. -/
-def compressWide : Contract RISCV64.isa :=
-  { Proof.Sha512.compressRISCV64 with
-    pre := fun s =>
-      let state : Region := ⟨s.gpr .a0, 64⟩
-      let blocks : Region := ⟨s.gpr .a1, 128 * (s.gpr .a2).toNat⟩
-      let scratch : Region := ⟨s.gpr .a3, 1328⟩
-      s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
-      state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch }
-
-theorem pfx {a : Addr} {m n : Nat} (h : Nat.ble m n = true) : Region.Prefix ⟨a, m⟩ ⟨a, n⟩ :=
-  ⟨rfl, Nat.le_of_ble_eq_true h⟩
-theorem sub144 (a : Addr) : Region.Sub ⟨a, 144⟩ ⟨a, 1328⟩ := Region.sub_prefix (by decide)
-
-theorem compressWide_verified (hsat : ∃ s, compressWide.pre s) :
-    Verified RISCV64.target Impl.Sha512.RISCV64.compress compressWide :=
-  Verified.widen Proof.Sha512.RISCV64.compress_verified
-    (fun s => [⟨s.gpr .a0, 64⟩, ⟨s.gpr .a3, 144⟩])
-    (fun _ ⟨h₁, _, h₃, h₄, h₅⟩ => ⟨h₁, rfl, h₃.sub_right (sub144 _), h₄, h₅.sub_right (sub144 _)⟩)
-    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons (pfx rfl) (.cons (pfx rfl) .nil))
-    (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
-
-/-- A state satisfying `compressWide.pre`. -/
-def compressSat : State :=
-  { Proof.Sha512.RISCV64.satState with wr := [⟨0x1000, 64⟩, ⟨0x3000, 1328⟩] }
-
-theorem compress :
-    Verified RISCV64.target Impl.Sha512.RISCV64.compress (Proof.Sha512.compressContract RISCV64.abi) := by
-  have hi : compressWide.Implies (Proof.Sha512.compressContract RISCV64.abi) := by
-    contract_implies [Proof.Sha512.compressContract, Proof.Sha512.compressSig, compressWide,
-      Proof.Sha512.compressRISCV64, RISCV64.abi, RISCV64.argRegs]
-      [compressSat, Proof.Sha512.RISCV64.satState] using compressSat
-  exact (compressWide_verified hi.sat_left).of_implies hi
 
 /-- `init` from `iv`, with the shared contract. -/
 theorem init_of {iv : Spec.Sha512.HashValue}

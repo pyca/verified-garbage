@@ -121,8 +121,11 @@ Modelling choices:
   `kStore` (of quadwords) and `kLoad8` and `kStore8` (of bytes), each of
   which the model treats as one instruction together with the `kmovw k1,
   r32` (`kmovq k1, r64` for the bytes) before it that sets its mask, as
-  `push` is the sequence of a frame's pushes: no modelled instruction reads `k1`
-  otherwise, and only these write it. The value they leave in `k1` is
+  `push` is the sequence of a frame's pushes; and `vpcmpltuw`, a VPCMPUW
+  into `k1` that the model treats as one instruction together with the
+  `kmovd r32, k1` after it that moves its result to a general-purpose
+  register. No modelled instruction reads `k1` otherwise, and only these
+  write it. The value they leave in `k1` is
   never read, and the opmask registers are caller-saved (System V AMD64
   psABI §3.2.1, Figure 3.4: `%k0`–`%k7`, "No" under "callee-saved"), so the
   model need not know it. A masked move accesses exactly the quadwords (or
@@ -380,6 +383,12 @@ inductive Instr
   bytes of `src` that bits 63:0 of `mask` enable, stored to the 64 bytes at
   `dst`. -/
   | kStore8 (dst : MemOp) (mask : Reg) (src : XReg)
+  /-- `vpcmpuw k1, zmm1, zmm2, 1` (`EVEX.512.66.0F3A.W1 3E /r ib`, the
+  predicate 1, `LT`), then `kmovd r32, k1` (`VEX.L0.F2.0F.W0 93 /r`): bit
+  `j` of `dst` is whether word `j` of `zmm1` is less than word `j` of
+  `zmm2`, unsigned, for `j` from 0 to 31, and its bits 63:32 are zero
+  (see `cmpltuMask`). -/
+  | vpcmpltuw (dst : Reg) (src1 src2 : XReg)
   /-- `stmxcsr DWORD PTR [dst]` (`NP 0F AE /3`) -/
   | stmxcsr (dst : MemOp)
   /-- `ldmxcsr DWORD PTR [src]` (`NP 0F AE /2`) -/
@@ -526,6 +535,14 @@ VAES and AVX512F; EVEX.512
 VPCLMULQDQ (`EVEX.512.66.0F3A.WIG 44 /r ib`) requires VPCLMULQDQ and
 AVX512F. EVEX.512 VPSHUFB (`EVEX.512.66.0F38.WIG 00 /r`), VPSLLDQ and
 VPSRLDQ (`EVEX.512.66.0F.WIG 73 /7 ib`, `/3 ib`) require AVX512BW.
+
+Word additions: SDM Vol. 2, the opcode tables' "CPUID Feature Flag": the
+EVEX.512 VPERMW (`EVEX.512.66.0F38.W1 8D /r`) and VPSRLVW
+(`EVEX.512.66.0F38.W1 10 /r`) require AVX512BW, and so do VPCMPUW
+(`EVEX.512.66.0F3A.W1 3E /r ib`) and KMOVD r32, k1 (`VEX.L0.F2.0F.W0 93
+/r`), and so `vpcmpltuw`, which lists AVX512F too (see the masked moves
+above); the EVEX.512 VEXTRACTI32X4 (`EVEX.512.66.0F3A.W0 39 /r ib`)
+requires AVX512F.
 AVX and AVX512F requirements also ensure the vector state is enabled,
 following the model's existing feature convention. -/
 def Instr.requires : Instr → List String
@@ -565,13 +582,14 @@ def Instr.requires : Instr → List String
   | .zop (.zbin .vaesdec ..) | .zop (.zbin .vaesdeclast ..) => ["vaes", "avx512f"]
   | .zop (.vpclmulqdq ..) => ["vpclmulqdq", "avx512f"]
   | .zop (.vpmadd52 ..) => ["avx512ifma", "avx512f"]
-  | .zop (.zbin .vpshufb ..) | .zop (.vpslldq ..) | .zop (.vpsrldq ..) =>
+  | .zop (.zbin .vpshufb ..) | .zop (.vpslldq ..) | .zop (.vpsrldq ..) | .zop (.vpermw ..) | .zop (.vpsrlvw ..) =>
     ["avx512bw"]
   | .zop _ | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst ..
   | .vpbroadcastdZ .. | .zbcstd .. =>
     ["avx512f"]
   | .kLoad .. | .kStore .. => ["avx512f"]
   | .kLoad8 .. | .kStore8 .. => ["avx512f", "avx512bw"]
+  | .vpcmpltuw .. => ["avx512f", "avx512bw"]
   | .vop (.vsha512rnds2 ..) | .vop (.vsha512msg1 ..) | .vop (.vsha512msg2 ..) => ["sha512"]
   | .vop (.vpmadd52luq ..) | .vop (.vpmadd52huq ..) | .vpmadd52Load .. =>
     ["avx512ifma", "avx512vl"]
@@ -580,6 +598,13 @@ def Instr.requires : Instr → List String
   | .eop (.vmovq ..) | .eop (.vmovqx ..) => ["avx512f"]
   | .eop _ | .evLoad .. | .evStore .. => ["avx512f", "avx512vl"]
   | _ => []
+
+/-- The mask `vpcmpltuw` moves to `dst`: bit `j`, for `j` from 0 to 31,
+is whether word `j` of `zmm a` is less than word `j` of `zmm b`, as
+unsigned integers (see `exec`). -/
+def cmpltuMask (s : State) (a b : XReg) : BitVec 32 :=
+  BitVec.ofNat 32 ((List.range 32).foldl
+    (fun acc j => if (s.zword a j).toNat < (s.zword b j).toNat then acc + 2 ^ j else acc) 0)
 
 /-- Semantics of an instruction. The byte forms: SDM Vol. 2, "MOVZX":
 `DEST := ZeroExtend(SRC)` (with a 32-bit destination, zero-extended to 64
@@ -789,6 +814,16 @@ def exec : Instr → State → Option State
     s.setZ d (v.extractLsb' 0 128) (v.extractLsb' 128 128) (v.extractLsb' 256 128)
       (v.extractLsb' 384 128)
   | .kStore8 m k r, s => s.storeMasked512B (s.ea m) (s.gpr k) (s.zmm r)
+  -- SDM Vol. 2, "VPCMPW/VPCMPUW—Compare Packed Word Values Into Mask",
+  -- VPCMPUW (EVEX encoded versions) with `(KL, VL) = (32, 512)`, a register
+  -- `SRC2` and no write mask (`k2 = k0`): `CASE (COMPARISON PREDICATE) OF …
+  -- 1: OP := LT; …; FOR j := 0 TO KL-1: i := j * 16; CMP := SRC1[i+15:i] OP
+  -- SRC2[i+15:i]; IF CMP = TRUE THEN DEST[j] := 1 ELSE DEST[j] := 0;
+  -- DEST[MAX_KL-1:KL] := 0`, the words compared as unsigned integers; the
+  -- flags are not affected. Then "KMOVW/KMOVB/KMOVQ/KMOVD" (`KMOVD r32,
+  -- k1`): `DEST[31:0] := ZeroExtend(SRC[31:0])`, a 32-bit destination
+  -- zero-extended to 64 bits (SDM Vol. 1 §3.4.1.1); "Flags Affected: None".
+  | .vpcmpltuw d a b, s => some (s.setReg32 d (cmpltuMask s a b))
   -- SDM Vol. 2, "STMXCSR": `m32 := MXCSR`. "LDMXCSR": `MXCSR := m32`, with
   -- #GP(0) "for an attempt to set reserved bits in MXCSR", which are bits
   -- 31:16 (SDM Vol. 1 §10.2.3); on processors without DAZ, bit 6 is
@@ -869,6 +904,7 @@ def addrs : Instr → State → List Addr
   -- instruction makes the same number of observations.
   | .kLoad k _ m, s | .kStore m k _, s => [s.ea m, (s.gpr k).setWidth 8 |>.setWidth 64]
   | .kLoad8 k _ m, s | .kStore8 m k _, s => [s.ea m, s.gpr k]
+  | .vpcmpltuw .., _ => []
   | .stmxcsr m, s => [s.ea m]
   | .ldmxcsr m, s => [s.ea m]
   | .lfence, _ => []
@@ -979,7 +1015,7 @@ def Instr.dst : Instr → Option Reg
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
   | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _
-  | .imul3 d .. | .shld d .. | .btr d _ => some d
+  | .imul3 d .. | .shld d .. | .btr d _ | .vpcmpltuw d .. => some d
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..

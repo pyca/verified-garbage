@@ -184,8 +184,6 @@ def Pre₀ (K W SP : Addr) (R : Nat) (N A D : Addr) (nl al n tl : Nat) (T : Addr
 
 theorem ctrs_check : ∃ hc, (taint.check (ccmT []) ctrs hc).isSome = true := ⟨_, by taint_decide⟩
 
-theorem restore_check : ∃ hc, (taint.check (ccmT []) (.block restore) hc).isSome = true := ⟨_, by taint_decide⟩
-
 /-- `seal` after its entry, up to the copy of the tag, in two runs. -/
 theorem sealFront_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr}
     {nl al n tl : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)

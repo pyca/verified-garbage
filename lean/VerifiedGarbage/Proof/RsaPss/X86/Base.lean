@@ -47,9 +47,6 @@ structure Ctx (L : Lay) (scr : BitVec 32) (σ s : State) : Prop where
   st : L.St σ s
   ebp : s.gpr .ebp = scr
 
-theorem offs : oCW = 0 ∧ oSt = 512 ∧ oSel = 768 ∧ oDig = 832 ∧ oLen = 896 ∧ oEm = 1024 ∧ oY = 2048 ∧
-    oRsa = 8192 ∧ frameBytes = 144 := ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
-
 section
 variable {L : Lay} {scr : BitVec 32}
 
@@ -120,10 +117,6 @@ end Geo
 
 namespace Ctx
 
-theorem regs {σ s t : State} (h : Ctx L scr σ s) (rd : t.rd = s.rd) (wr : t.wr = s.wr)
-    (sp : t.gpr .esp = s.gpr .esp) (bp : t.gpr .ebp = s.gpr .ebp) (m : t.mem = s.mem) : Ctx L scr σ t :=
-  ⟨h.st.regs rd wr sp m, bp.trans h.ebp⟩
-
 theorem upd {σ s t : State} (h : Ctx L scr σ s) {d : Reg} {v : BitVec 32} (u : Upd s t d v) (hd : d ≠ .esp)
     (hb : d ≠ .ebp) : Ctx L scr σ t :=
   ⟨h.st.upd u hd, (u.other _ (Ne.symm hb)).trans h.ebp⟩
@@ -142,11 +135,6 @@ end Ctx
 end
 
 /-! ## Facts that writes elsewhere keep -/
-
-theorem bytes_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {a : Addr} {n : Nat}
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨a, n⟩ r) (hn : n ≤ 2 ^ 64) {f : Nat → Byte}
-    (h : ∀ i < n, m (a + BitVec.ofNat 64 i) = f i) : ∀ i < n, m' (a + BitVec.ofNat 64 i) = f i :=
-  fun i hi => (hf.bytes (R := ⟨a, n⟩) hd hn hi).trans (h i hi)
 
 theorem slot_keep {L : Lay} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {d : Nat} {v : BitVec 32}
     (hd : ∀ r ∈ rs, (slotR L d).Disjoint r) (h : m.readW (L.fr d) 32 = v) : m'.readW (L.fr d) 32 = v := by

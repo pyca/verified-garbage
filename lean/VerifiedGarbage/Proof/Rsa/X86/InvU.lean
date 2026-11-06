@@ -18,7 +18,7 @@ import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Rsa.KeyMath
 
-/-! # `inverse` on i686: `u` and `v` in a step -/
+/-! # The inverse on i686: `u` and `v` in a step -/
 
 @[expose] public section
 

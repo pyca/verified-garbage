@@ -144,16 +144,6 @@ theorem tailLoad_ok {s : State} {p : Addr} {rest : List Instr} {Q : State → Pr
     rw [show 3840+(32+16*j.val)=3872+16*j.val by omega]
     exact h
 
-theorem Hoisted.frame {s t : State} {vs : List VReg} (h : Hoisted s) (hc : VChg vs s t)
-    (hv : ∀ r∈[VReg.v22,.v23,.v28,.v29], r∉vs) : Hoisted t := by
-  intro j e he
-  have hr : tailRootReg j.val∈[VReg.v22,.v23,.v28,.v29] :=
-    (show ∀ j : Fin 2, tailRootReg j.val∈[VReg.v22,.v23,.v28,.v29] by decide +kernel) j
-  have hb : tailRecipReg j.val∈[VReg.v22,.v23,.v28,.v29] :=
-    (show ∀ j : Fin 2, tailRecipReg j.val∈[VReg.v22,.v23,.v28,.v29] by decide +kernel) j
-  rw [hc.get _ (hv _ hr),hc.get _ (hv _ hb)]
-  exact h j e he
-
 
 def sourceGroup (i : Nat) : Nat := if i<4 then 0 else 1
 def sourceLane (i : Nat) : Nat := if i<4 then i else i-4

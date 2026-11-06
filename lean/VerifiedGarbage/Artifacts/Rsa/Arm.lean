@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtUmaal
 public import VerifiedGarbage.Proof.Bignum.Arm.PdVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.CvVerified
-public import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.CkVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
@@ -28,10 +27,6 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.Arm.CheckKey.code
     stack := 0
     verified := Proof.Rsa.Arm.CheckKey.check_key_verified },
-  Spec.Rsa.checkCrtKeyApi.artifact Arm.target {
-    code := Impl.Rsa.Arm.CheckCrtKey.code
-    stack := 0
-    verified := Proof.Rsa.Arm.CheckCrtKey.check_crt_key_verified },
   Spec.Rsa.recoverPrimesDetApi.artifact Arm.target {
     code := Impl.Rsa.Arm.RecoverDet.code
     stack := 56

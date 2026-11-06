@@ -242,13 +242,4 @@ theorem Inv.ctxOk {s₀ s : State} (hp : APre e s₀) (h : s.rd = s₀.rd) (h' :
 theorem Kept.mem_eq {s s' : State} (hk : Kept [] s s') : s'.mem = s.mem :=
   funext fun x => hk.frame x fun _ h => absurd h List.not_mem_nil
 
-/-- A block that writes no callee-saved register keeps them. -/
-theorem WP.kept {is : List Instr} {s : State} {Q : State → Prop} (h : WP isa (.block is) s Q)
-    (hc : (is.all fun i => preserved.all fun r => dstOf i != some r) = true) :
-    WP isa (.block is) s fun s' => Q s' ∧ (∀ r ∈ preserved, s'.gpr r = s.gpr r) := by
-  obtain ⟨t, s', he, hq⟩ := h
-  refine ⟨t, s', he, hq, fun r hr => Exec.gpr (fun i hi => ?_) he (.inl rfl)⟩
-  have := List.all_eq_true.mp (List.all_eq_true.mp hc i hi) r hr
-  simpa using this
-
 end VG.Proof.ChaCha20Poly1305.PPC64LE

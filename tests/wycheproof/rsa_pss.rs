@@ -123,8 +123,10 @@ fn rsa_pss_test() {
             let mgf = hash(&p.mgf_sha).expect("a supported hash function");
             let id = test.tc_id;
             let (d, sig) = (digest(h, &test.case.msg.0), &test.case.sig.0);
-            let ok = key.verify_pss(sig, &d, h, mgf, SaltLength::Len(p.s_len));
-            let any = key.verify_pss(sig, &d, h, mgf, SaltLength::Any);
+            let ok = key
+                .verify_pss(sig, &d, h, mgf, SaltLength::Len(p.s_len))
+                .is_ok();
+            let any = key.verify_pss(sig, &d, h, mgf, SaltLength::Any).is_ok();
             assert_ne!(test.result, Expectation::Acceptable, "{name} tcId {id}");
             assert_eq!(ok, test.result == Expectation::Valid, "{name} tcId {id}");
             // A signature with the expected salt length has some salt length.
@@ -179,9 +181,17 @@ fn check_signatures(
                 .sign_pss(&d, *h, *h, s_len)
                 .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
             assert_eq!(sig.len(), n.len(), "{name} tcId {id}");
-            assert!(public.verify_pss(&sig, &d, *h, *h, SaltLength::Len(s_len)));
-            assert!(public.verify_pss(&sig, &d, *h, *h, SaltLength::Any));
-            assert!(!public.verify_pss(&sig, &d, *h, *h, SaltLength::Len(s_len + 1)));
+            assert!(
+                public
+                    .verify_pss(&sig, &d, *h, *h, SaltLength::Len(s_len))
+                    .is_ok()
+            );
+            assert!(public.verify_pss(&sig, &d, *h, *h, SaltLength::Any).is_ok());
+            assert!(
+                !public
+                    .verify_pss(&sig, &d, *h, *h, SaltLength::Len(s_len + 1))
+                    .is_ok()
+            );
         }
         let a = private.sign_pss(&d, *h, *h, 16).unwrap();
         let b = private.sign_pss(&d, *h, *h, 16).unwrap();
@@ -194,15 +204,17 @@ fn check_signatures(
             .sign_pss(&d, *h, g, 16)
             .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
         assert!(
-            public.verify_pss(&sig, &d, *h, g, SaltLength::Len(16)),
+            public
+                .verify_pss(&sig, &d, *h, g, SaltLength::Len(16))
+                .is_ok(),
             "{name} tcId {id}"
         );
         assert!(
-            public.verify_pss(&sig, &d, *h, g, SaltLength::Any),
+            public.verify_pss(&sig, &d, *h, g, SaltLength::Any).is_ok(),
             "{name} tcId {id}"
         );
         assert!(
-            !public.verify_pss(&sig, &d, *h, *h, SaltLength::Any),
+            !public.verify_pss(&sig, &d, *h, *h, SaltLength::Any).is_ok(),
             "{name} tcId {id}"
         );
     }

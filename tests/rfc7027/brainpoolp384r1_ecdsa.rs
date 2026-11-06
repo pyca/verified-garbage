@@ -9,7 +9,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{BrainpoolP384r1, Error, PrivateKey, PublicKey};
+use verified_garbage::ec::{BrainpoolP384r1, PrivateKey, PublicKey};
+use verified_garbage::error::{InvalidKey, InvalidSignature};
 use verified_garbage::hashes::sha384::Sha384;
 
 use super::value;
@@ -43,18 +44,18 @@ fn ecdsa_and_invalid_keys() {
     assert_eq!(verifier.verify::<Sha384>(message, &sig), Ok(()));
     assert_eq!(
         verifier.verify::<Sha384>(b"changed", &sig),
-        Err(Error::InvalidSignature)
+        Err(InvalidSignature)
     );
     let mut invalid = qa;
     invalid[0] = 0;
     assert_eq!(
         PublicKey::<BrainpoolP384r1>::from_bytes(&invalid).verify::<Sha384>(message, &sig),
-        Err(Error::InvalidSignature)
+        Err(InvalidSignature)
     );
     // 0 and 2³⁸⁴ − 1 (above n) are not in [1, n − 1].
     for d in [[0; 48], [0xff; 48]] {
         let bad = PrivateKey::<BrainpoolP384r1>::from_bytes(&d);
-        assert_eq!(bad.public_key(), Err(Error::InvalidKey));
-        assert_eq!(bad.sign::<Sha384>(message), Err(Error::InvalidKey));
+        assert_eq!(bad.public_key(), Err(InvalidKey));
+        assert_eq!(bad.sign::<Sha384>(message), Err(InvalidKey));
     }
 }

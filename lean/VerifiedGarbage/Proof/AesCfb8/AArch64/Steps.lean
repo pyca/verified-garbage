@@ -61,10 +61,6 @@ theorem encPost_eq : encPost = encByte ++ (shift ++ Impl.AesCfb8.AArch64.advance
 
 theorem decPost_eq : decPost = decByte ++ (shift ++ Impl.AesCfb8.AArch64.advance) := rfl
 
-theorem zext_xor (a b : Byte) :
-    (a.setWidth 32).setWidth 64 ^^^ (b.setWidth 32).setWidth 64 = (a ^^^ b).setWidth 64 := by
-  ext i hi; simp
-
 theorem zext_zext (a : Byte) : (a.setWidth 32).setWidth 64 = a.setWidth 64 := by
   ext i hi; simp
 
