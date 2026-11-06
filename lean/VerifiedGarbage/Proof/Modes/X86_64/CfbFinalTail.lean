@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Modes.X86_64.CfbFinal
 public import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Steps
+import VerifiedGarbage.Proof.Modes.X86_64.CfbFinalSteps
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.WriteBytes
@@ -59,6 +61,7 @@ structure XInv (s₀ : State) (K R : Addr) (r : Nat) (Rd Rl : Reg) (j : Nat) (s 
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   gpr : ∀ x, x ≠ .rax → x ≠ .r10 → x ≠ .r11 → x ≠ Rd → x ≠ Rl → s.gpr x = s₀.gpr x
+  mx : s.mxcsr = s₀.mxcsr
 
 /-- The loop, done. -/
 structure XDone (s₀ : State) (K R : Addr) (r : Nat) (Rd Rl : Reg) (s : State) : Prop where
@@ -67,6 +70,12 @@ structure XDone (s₀ : State) (K R : Addr) (r : Nat) (Rd Rl : Reg) (s : State) 
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   gpr : ∀ x, x ≠ .rax → x ≠ .r10 → x ≠ .r11 → x ≠ Rd → x ≠ Rl → s.gpr x = s₀.gpr x
+  mx : s.mxcsr = s₀.mxcsr
+
+theorem xorBody_mxcsr (Rd Rl : Reg) : ∀ i ∈ xorBody Rd Rl, loadsMxcsr i = false := by
+  intro i hi
+  simp only [xorBody, List.mem_cons, List.not_mem_nil, or_false] at hi
+  rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem one_signExtend : (1 : BitVec 32).signExtend 64 = 1 := by decide
 
@@ -108,6 +117,7 @@ theorem xorBody_wp {s₀ : State} {K R : Addr} {r : Nat} {Rd Rl : Reg} (hp : XPr
     rw [h, runBlock_app, runBlock_app, runBlock_app, runBlock_app, runBlock_app, runBlock_app, e₁, Option.bind_some,
       e₂, Option.bind_some, e₃, Option.bind_some, e₄, Option.bind_some, e₅, Option.bind_some, e₆, Option.bind_some, e₇]
   refine WP.of_runBlock ⟨s₇, run, ?_⟩
+  have mx₇ : s₇.mxcsr = s₀.mxcsr := by rw [runBlock_mxcsr _ _ _ (xorBody_mxcsr Rd Rl) run, hi.mx]
   -- Registers.
   have gR : ∀ x, x ≠ .rax → x ≠ .r10 → x ≠ .r11 → x ≠ Rd → x ≠ Rl → s₇.gpr x = s.gpr x := fun x h1 h2 h3 h4 h5 => by
     rw [o₇ _ h5, o₆ _ h4, o₅ _ h1, g₄, o₃ _ h3, o₂ _ h3, o₁ _ h2]
@@ -171,9 +181,9 @@ theorem xorBody_wp {s₀ : State} {K R : Addr} {r : Nat} {Rd Rl : Reg} (hp : XPr
     · intro h
       rw [show r - (j + 1) = 0 by omega]; rfl
   by_cases hdone : j + 1 = r
-  · refine .inl ⟨by rw [hz, decide_eq_true hdone], fun q hq => ?_, fr₇, rd₇, wr₇, gpr₇⟩
+  · refine .inl ⟨by rw [hz, decide_eq_true hdone], fun q hq => ?_, fr₇, rd₇, wr₇, gpr₇, mx₇⟩
     rw [data₇ q hq, ite_eq_left (by omega)]
-  · exact .inr ⟨by rw [hz, decide_eq_false hdone], rax₇, dat₇, left₇, by omega, data₇, fr₇, rd₇, wr₇, gpr₇⟩
+  · exact .inr ⟨by rw [hz, decide_eq_false hdone], rax₇, dat₇, left₇, by omega, data₇, fr₇, rd₇, wr₇, gpr₇, mx₇⟩
 
 /-- The XOR loop, from its first byte. -/
 theorem xorLoop_wp {s₀ : State} {K R : Addr} {r : Nat} {Rd Rl : Reg} (hp : XPre s₀ K R r Rd Rl)
