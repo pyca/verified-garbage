@@ -83,10 +83,6 @@ theorem q128_pair (x : BitVec 64) {q : Nat} (hq : q < 2) : q128 (x ++ x) q = x :
   · simp [hi]
   · simp [show ¬ 64 * 1 + i < 64 by omega_arith]
 
-theorem q128_xor (a b : BitVec 128) (q : Nat) : q128 (a ^^^ b) q = q128 a q ^^^ q128 b q := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp [q128, qword, hi]
-
 theorem q128_and (a b : BitVec 128) (q : Nat) : q128 (a &&& b) q = q128 a q &&& q128 b q := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp [q128, qword, hi]

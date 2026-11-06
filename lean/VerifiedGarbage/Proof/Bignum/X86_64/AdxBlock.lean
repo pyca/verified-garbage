@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 /-!
 # Multiword arithmetic on x86-64: a block of the BMI2/ADX multiplication
 
-A block of `montMulAdx` (`Impl/Bignum/X86_64/Adx.lean`) adds `a_i` times
+A block of the ADX multiplication (`Impl/Bignum/X86_64/Adx.lean`) adds `a_i` times
 four words of `b` and `u` times four words of `m` to four words of the
 window, with the carries `rcx` and `rbp` in and out (`block_ok`). Its first
 half (`halfA_ok`) and its second (`halfB_ok`) each end their two chains in

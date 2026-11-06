@@ -75,13 +75,6 @@ theorem mxRestore_ok {s : State} {B : Addr} {d Z : Nat} {v : BitVec 32} (hB : s.
   · rw [WP.block_cons_iff]
     exact ⟨_, rfl, WP.block_nil ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
-theorem Out2.toOutside {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l B o n m m')
-    (hon : o + n ≤ l.D) : Outside B 0 (2 * l.D) m m' := fun a ha => h a fun p hp => by
-  rcases ha with ha | ha
-  · omega_using [ha]
-  · have : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
-    exact .inr (by omega_using [hon, ha, this])
-
 theorem OutE.toOutside {B : Addr} {m m' : Mem} (h : OutE l B m m') : Outside B 0 (2 * l.D) m m' :=
   fun a ha => h a fun p hp => by
     obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l

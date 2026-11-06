@@ -75,14 +75,6 @@ theorem r13Inc_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i ≤ l.ND) (h13 : 
     all_goals rfl) rfl)
     fun s' ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, k, c, d⟩
 
-theorem ExpSt.of_outV (hl : LayOk l) {m m' : Mem} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : Nat → Nat}
-    (h : ExpSt l m B M k x Q E) (f : Out2 l B l.oV 8 m m') : ExpSt l m' B M k x Q E := by
-  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  exact ⟨h.ar.of_out2 hl f (by omega_using [o2, o8]) (by omega_using [o8, o10]),
-      h.tab_of hl f (.inr (by omega_using [o5, o8])) (by omega_using [o8, o10]),
-    fun p hp => (h.y p hp).of_out2 hl hp f (.inl (by omega_using [o2, o8])) (by omega_using [o2, o10]) (by omega_using [o8, o10]),
-    fun hq p hp => by rw [f.val hl hp (.inl (by omega_using [o2, o8])) (by omega_using [o2, o10]) (by omega_using [o8, o10])]; exact h.yv hq p hp⟩
-
 theorem ExpSt.congrE {m : Mem} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E E' : Nat → Nat}
     (h : ExpSt l m B M k x Q E) (e : ∀ p < 2, E p = E' p) : ExpSt l m B M k x Q E' :=
   ⟨h.ar, h.tab, h.y, fun hq p hp => by rw [← e p hp]; exact h.yv hq p hp⟩

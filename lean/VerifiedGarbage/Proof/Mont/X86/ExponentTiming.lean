@@ -19,10 +19,6 @@ theorem exponent_check_seq {M : ISA} (A : VG.Taint M) {τ mid u v : A.T}
   change (VG.Taint.check A τ a ha).bind _ = _
   rw [h₁, Option.bind_some, hl, ite_eq_left rfl, h₂]
 
-def productHint : VG.Taint.Hint VG.X86.Taint.T :=
-  .seq (workspaceTaint true) (.block [])
-    (.seq (workspaceTaint true) (mulHint true) selectHint)
-
 def shiftDownHint : VG.Taint.Hint VG.X86.Taint.T :=
   VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (shiftDown 2 0))
 
@@ -34,53 +30,6 @@ theorem shiftDown_check (k out : Nat) :
   (check_of_erase_eq (shiftDown k out) (shiftDown 2 0) (workspaceTaint true) shiftDownHint
     rfl rfl rfl).trans rfl
 
-def bodyHint : VG.Taint.Hint VG.X86.Taint.T :=
-  .seq (workspaceTaint true) productHint
-    (.seq (workspaceTaint true) (mulHint true) shiftDownHint)
-
-def stepHint : VG.Taint.Hint VG.X86.Taint.T :=
-  .seq (workspaceTaint true) bodyHint (.block [])
-
 def counterEndTaint : VG.X86.Taint.T := { regs := .ofList [.edi, .esi], flags := true }
-
-theorem exponentProduct_check (n : Nat) :
-    VG.Taint.check taint (workspaceTaint true) (exponentProduct n) productHint = some (rowTaint true) := by
-  unfold exponentProduct productHint
-  exact exponent_check_seq taint (exponentMask_taint _ _) (by kernel_rfl)
-    (exponent_check_seq taint (mul_check true _ _ _ _ _ _)
-      (by kernel_rfl) (selectProduct_check (contextMod n) (slot n 6) (slot n 7) 4))
-
-theorem exponentBody_check (n expWords : Nat) :
-    VG.Taint.check taint (workspaceTaint true) (exponentBody n expWords) bodyHint = some shiftDownTaint := by
-  unfold exponentBody bodyHint
-  exact exponent_check_seq taint (exponentProduct_check n) (by kernel_rfl)
-    (exponent_check_seq taint (mul_check true _ _ _ _ _ _) (by kernel_rfl) (shiftDown_check _ _))
-
-theorem exponentStep_check (n expWords : Nat) :
-    VG.Taint.check taint (workspaceTaint true) (exponentStep n expWords) stepHint = some counterEndTaint := by
-  unfold exponentStep stepHint
-  exact exponent_check_seq taint (exponentBody_check n expWords) (by kernel_rfl) (by kernel_rfl)
-
-def exponentiateHint : VG.Taint.Hint VG.X86.Taint.T :=
-  .seq (workspaceTaint false) (.seq (workspaceTaint false) (mulHint false) (mulHint false))
-    (.seq (workspaceTaint true) (.block [])
-      (.seq (workspaceTaint false) (.loop (workspaceTaint true) stepHint) (mulHint false)))
-
-theorem exponentiate_check (n expWords : Nat) :
-    VG.Taint.check taint (workspaceTaint false) (exponentiate n expWords) exponentiateHint = some (rowTaint false) := by
-  have loop : VG.Taint.check taint (workspaceTaint true) (.loop (exponentStep n expWords) .ne)
-      (.loop (workspaceTaint true) stepHint) = some counterEndTaint := by
-    change (if taint.le (workspaceTaint true) (workspaceTaint true) then
-      (VG.Taint.check taint (workspaceTaint true) (exponentStep n expWords) stepHint).bind
-        (fun t => if taint.le (workspaceTaint true) t && taint.condPub t .ne then some t else none)
-      else none) = _
-    rw [exponentStep_check n expWords]
-    rfl
-  unfold exponentiate exponentiateHint encodeBase
-  refine exponent_check_seq taint
-    (exponent_check_seq taint (mul_check false _ _ _ _ _ _) (by kernel_rfl) (mul_check false _ _ _ _ _ _))
-    (by kernel_rfl) ?_
-  refine exponent_check_seq taint (u := workspaceTaint true) (by kernel_rfl) (by kernel_rfl) ?_
-  exact exponent_check_seq taint loop (by kernel_rfl) (mul_check false _ _ _ _ _ _)
 
 end VG.Proof.Mont.X86.Dynamic

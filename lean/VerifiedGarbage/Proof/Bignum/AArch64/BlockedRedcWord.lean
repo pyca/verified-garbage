@@ -205,34 +205,6 @@ theorem keep_operand {s t : State} {rs : List Reg} (h : Keep rs s t)
 theorem blockValue_lt (f : Nat → Word) : blockValue f < (2 ^ 64) ^ 8 :=
   value_lt _ _ _ (fun i _ => (f i).isLt)
 
-theorem blockValue_mod (f : Nat → Word) : blockValue f % 2 ^ 64 = (f 0).toNat :=
-  value_mod _ _ 7 (f 0).isLt
-
-/-- The inverse condition cancels exactly the low word of the register
-block. Higher carries are left in the row conservation identity. -/
-theorem cancel_low {s : State} {n0 lo : Word} {rest : Nat}
-    (hinv : (n0.toNat * (s.gpr .x15).toNat + 1) % 2 ^ 64 = 0)
-    (hv : lo.toNat + 2 ^ 64 * rest = blockValue (accumulator s) +
-      (s.gpr .x19 * s.gpr .x15).toNat * blockValue (operand s n0)) : lo = 0 := by
-  have h := congrArg (· % 2 ^ 64) hv
-  have hacc := blockValue_mod (accumulator s)
-  have hop := blockValue_mod (operand s n0)
-  change blockValue (accumulator s) % 2 ^ 64 = (s.gpr .x19).toNat at hacc
-  change blockValue (operand s n0) % 2 ^ 64 = n0.toNat at hop
-  have hm := mont_low (s.gpr .x19).toNat (s.gpr .x15).toNat n0.toNat hinv
-  have hmul : (s.gpr .x19 * s.gpr .x15).toNat =
-      (s.gpr .x19).toNat * (s.gpr .x15).toNat % 2 ^ 64 := BitVec.toNat_mul _ _
-  have hrem : lo.toNat = 0 := by
-    simp only [Nat.add_mod, Nat.mul_mod, Nat.mod_self, Nat.zero_mul, Nat.zero_mod,
-      Nat.add_zero, Nat.mod_mod, Nat.mod_eq_of_lt lo.isLt] at h
-    rw [hacc, hop, hmul] at h
-    simp only [Nat.add_mod, Nat.mul_mod, Nat.mod_mod,
-      Nat.mod_eq_of_lt (s.gpr .x19).isLt, Nat.mod_eq_of_lt (s.gpr .x15).isLt,
-      Nat.mod_eq_of_lt n0.isLt] at h hm
-    rw [Nat.add_comm] at hm
-    exact h.trans hm
-  exact BitVec.eq_of_toNat_eq hrem
-
 theorem value_words (m : Mem) (B : Addr) (e k : Nat) :
     VG.Proof.Bignum.Square.value (2 ^ 64) (fun i => (word m B (e + 8 * i)).toNat) k =
       wv m B e k := by

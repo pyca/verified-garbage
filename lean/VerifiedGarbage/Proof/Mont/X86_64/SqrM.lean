@@ -1145,13 +1145,6 @@ theorem final_arith {Q L U V H AA m : Nat} (hQ : 0 < Q) (eV : Q * V = L + U * m)
   rw [Nat.mod_mul_mod, Nat.add_mul, Nat.mul_comm V, Nat.mul_comm H, eV, eA, Nat.add_right_comm,
     Nat.add_mul_mod_self_right]
 
-theorem sqrS_eq (M : Mod) (o a : Nat) : sqrS M o a =
-    (sqrRow0' M.adx a ++ (stores ([.r8, .r9] : List Reg) (M.tmp + 8) ++ sqrRows M.adx a)) ++ (sqrDbl' M.adx M.tmp a ++
-    (stores sqHigh6 o ++ (loads ([.r13, .r14, .r15] : List Reg) M.tmp ++ (redsShort M.adx 6 ++
-    (([.mov32 .r8 (.imm 0)] : List Instr) ++ (chain .add .adc sqWin6 o ++
-    (([.alu .adc .r8 (.imm 0)] : List Instr) ++ (csub M sqWin6 .r8 ++ stores sqWin6 o)))))))) := by
-  simp only [sqrS, sqrSA, List.append_assoc]
-
 theorem sqrSA_eq (M : Mod) (o a : Nat) : sqrSA M o a =
     (sqrRow0' M.adx a ++ (stores ([.r8, .r9] : List Reg) (M.tmp + 8) ++ sqrRows M.adx a)) ++ (sqrDbl' M.adx M.tmp a ++
     (stores sqHigh6 o ++ (loads ([.r13, .r14, .r15] : List Reg) M.tmp ++ (redsShort M.adx 6 ++

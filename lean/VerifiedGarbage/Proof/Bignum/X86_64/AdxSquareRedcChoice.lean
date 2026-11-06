@@ -39,32 +39,6 @@ theorem redcTest_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
   rw [and7 w hw]
   exact ofNat_sub_beq (by omega) (by decide)
 
-theorem redcChoice_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
-    (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv)
-    (hZ : slot w 8 ≤ Z) (hw1 : 2 ≤ w) (hw : w < 2 ^ 31)
-    (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0) :
-    WP isa AdxSquare.redcChoice s fun t =>
-      (∃ q < 2 ^ (64 * w), 2 ^ (64 * w) * wv t.mem B (slot w aTmp) (w + 2) =
-        wv s.mem B (slot w aAcc + 16) (2 * w) + q * wv s.mem B (slot w aN) w) ∧
-      Outside B (slot w aAcc) (16 * w + 32) s.mem t.mem ∧ Keep mmRegs s t := by
-  unfold AdxSquare.redcChoice
-  refine WP.seq (WP.mono (redcTest_ok hs hdi hH hZ (by omega)) fun a ⟨hz, hm, ka⟩ => ?_)
-  have sa := hs.congr ka.2.2
-  have da := (ka.gpr (by decide)).trans hdi
-  have ha := hm ▸ hH
-  have inv : ((word a.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by rw [hm]; exact hinv
-  by_cases h8 : w % 8 = 0
-  · refine WP.ite true (by simp [eval, hz, h8]) (fun _ => ?_) (by simp)
-    refine WP.mono (AdxRotate8.redc_ok sa da ha hZ (show w = 8 * (w / 8) by omega) (by omega))
-      fun t ⟨vt, ot, kt⟩ => ?_
-    have v := vt inv
-    rw [hm] at v ot
-    exact ⟨v, ot, (ka.trans kt).mono (by decide)⟩
-  · refine WP.ite false (by simp [eval, hz, h8]) (by simp) (fun _ => ?_)
-    refine WP.mono (redc_ok sa da ha hZ hw1 hw inv) fun t ⟨vt, ot, kt⟩ => ?_
-    rw [hm] at vt ot
-    exact ⟨vt, ot.mono (by omega) (by omega), (ka.trans kt).mono (by decide)⟩
-
 /-- A reduction of the square at `aAcc + 16` into `aTmp`, for sizes `w` with `P w`. -/
 structure RedOk (red : Prog isa) (P : Nat → Prop) : Prop where
   ok : ∀ {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}, Scr s B Z → s.gpr .rdi = B →
@@ -74,9 +48,6 @@ structure RedOk (red : Prog isa) (P : Nat → Prop) : Prop where
       (∃ q < 2 ^ (64 * w), 2 ^ (64 * w) * wv t.mem B (slot w aTmp) (w + 2) =
         wv s.mem B (slot w aAcc + 16) (2 * w) + q * wv s.mem B (slot w aN) w) ∧
       Outside B (slot w aAcc) (16 * w + 32) s.mem t.mem ∧ Keep mmRegs s t
-
-theorem redcChoice_red (P : Nat → Prop) : RedOk AdxSquare.redcChoice P :=
-  ⟨fun hs hdi hH hZ hw1 hw hinv _ => redcChoice_ok hs hdi hH hZ hw1 hw hinv⟩
 
 theorem redc_red (P : Nat → Prop) : RedOk AdxSquare.redc P := ⟨fun hs hdi hH hZ hw1 hw hinv _ =>
   WP.mono (redc_ok hs hdi hH hZ hw1 hw hinv) fun _ ⟨vt, ot, kt⟩ =>

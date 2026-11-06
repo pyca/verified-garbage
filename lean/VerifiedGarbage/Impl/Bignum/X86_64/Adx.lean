@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Bignum.X86_64
 /-!
 # Multiword arithmetic on x86-64: Montgomery multiplication with BMI2 and ADX
 
-`montMulAdx o a b` computes what `mm o a b` does (`[o] = [a] [b] R⁻¹ mod m`,
+Its parts (`row`, `finish`, `fused`) compute what `mm o a b` does (`[o] = [a] [b] R⁻¹ mod m`,
 with `m` in array `aN` and the arrays `aAcc` and `aTmp` as working space) by
 coarsely integrated operand scanning in one pass per word of `a`, four words
 at a time, with `mulx` and the two carry chains of `adcx` (CF) and `adox`
@@ -122,10 +122,5 @@ def fused (o a b : Nat) : Prog isa :=
 rotated right by 2, its low bits are on top, and the rest below `2²⁸`. -/
 def sizeTest : List Instr :=
   [.mov .rax (.mem (hdr sW)), .alu .sub .rax (.imm 4), .shift .ror .rax 2, .shift .shr .rax 28]
-
-/-- `[o] = [a] [b] R⁻¹ mod m`: `fused` if `w` is a multiple of 4 with
-`4 ≤ w < 2³⁰ + 4`, the baseline `montMul` otherwise. -/
-def montMulAdx (o a b : Nat) : Prog isa :=
-  .seq (.block sizeTest) (.ite .e (fused o a b) (montMul aN aAcc aTmp o a b))
 
 end VG.Impl.Bignum.X86_64.Adx

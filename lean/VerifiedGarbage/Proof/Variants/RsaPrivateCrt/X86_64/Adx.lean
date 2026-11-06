@@ -40,7 +40,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
@@ -83,7 +82,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCode
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
 public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
@@ -148,7 +146,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
@@ -202,7 +199,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.StepU
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
@@ -246,6 +242,10 @@ import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
 
 /-!
 # `vg_rsa_private_crt` on x86-64: with BMI2 and ADX: the variant's code and proofs

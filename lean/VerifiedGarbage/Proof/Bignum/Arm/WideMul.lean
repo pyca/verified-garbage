@@ -130,11 +130,4 @@ theorem wideMul_ok (s : State) :
     exact wide_value _ _
   all_goals decide
 
-/-- No branches or memory addresses depend on either operand. -/
-theorem wideMul_ct : ConstantTime isa (fun _ => True) (fun _ _ => True) (.block wideMul) := by
-  refine ConstantTime.of_silent fun s tr t _ h => ?_
-  rw [Exec.block_iff] at h
-  cases h
-  rfl
-
 end VG.Proof.Bignum.Arm

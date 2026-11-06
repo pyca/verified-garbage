@@ -7,8 +7,8 @@ public import VerifiedGarbage.Proof.Bignum.Amm52
 
 `Amm52`'s steps for numbers of `N` limbs (`N ≥ 2`) instead of twenty: a
 step (`step N`) for the limb `b` of the second operand takes the value from
-`V` to `(V + a b + u m) / 2⁵²` exactly (`step_val`), and `N` steps from 0
-give `(a b + Q m) / 2^(52 N)` for some `Q < 2^(52 N)` (`amm_val`), below
+`V` to `(V + a b + u m) / 2⁵²` exactly, and `N` steps from 0
+give `(a b + Q m) / 2^(52 N)` for some `Q < 2^(52 N)`, below
 `2 m` for `a, b < 2 m` and `4 m ≤ 2^(52 N)` (`Amm52.amm_lt`). The low halves
 and `u` (`Amm52.low`, `Amm52.stepU`) do not depend on `N`.
 -/
@@ -156,18 +156,6 @@ theorem steps_lt {N : Nat} {o : Ops} {b : Nat → Nat} {L : Nat → Nat} (hN : N
     have h := step_lt (o := o) (b := b n) (S := (n + 1) * 2 ^ 56) (by omega) (ih (by omega)) j hj
     rw [show (n + 1 + 1) * 2 ^ 56 = (n + 1) * 2 ^ 56 + 2 ^ 56 by rw [Nat.add_mul, Nat.one_mul]]
     exact h
-
-/-- `N` steps from zero: `V 2^(52 N) = a b + Q m` with `Q < 2^(52 N)`. -/
-theorem amm_val {N : Nat} (hN : 2 ≤ N) {o : Ops} (ho : Ok N o) {b : Nat → Nat}
-    (hb : ∀ i < N, b i < 2 ^ 52) :
-    lval (steps N o b N fun _ => 0) N * 2 ^ (52 * N) =
-      lval o.a N * lval b N + lval o.m N * lval (stepsU N o b fun _ => 0) N ∧
-      lval (stepsU N o b fun _ => 0) N < 2 ^ (52 * N) := by
-  have e := steps_val hN ho hb (fun _ => 0) N (Nat.le_refl _)
-  have z : lval (fun _ => 0) N = 0 := by
-    rw [show (fun _ : Nat => 0) = fun j => (fun _ : Nat => 0) j * 0 by funext; rfl, lval_mul, Nat.mul_zero]
-  rw [z, Nat.zero_add] at e
-  exact ⟨e, lval_lt (n := N) fun j _ => lo_lt _ _⟩
 
 /-- `N` limbs of a value below `2^(52 N)` leave no carry. -/
 theorem carryIn_zero {N : Nat} {L : Nat → Nat} (h : lval L N < 2 ^ (52 * N)) : carryIn L N = 0 := by

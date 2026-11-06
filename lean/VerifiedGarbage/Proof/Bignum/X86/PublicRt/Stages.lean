@@ -52,9 +52,6 @@ theorem RtIn.fits (h : RtIn base bytes len args s) {j : Nat} (hj : j ≤ 7) :
   simp only [numAt, numOff, wb] at *
   omega
 
-theorem RtIn.bytes_lt (h : RtIn base bytes len args s) : bytes < 2 ^ 32 :=
-  h.scratch.size_lt
-
 end
 
 /-! ## Zeroing and one -/

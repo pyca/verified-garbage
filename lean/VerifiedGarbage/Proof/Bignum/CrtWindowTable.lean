@@ -73,14 +73,4 @@ theorem buildRanges_sub (wx : Nat) : ∀ r ∈ buildRanges wx, r ∈ crtExpRange
   simp only [buildRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp [crtExpRanges, crtWinRanges]
 
-theorem buildRanges_y (wx : Nat) :
-    ∀ r ∈ buildRanges wx, slot wx aY + 8 * wx ≤ r.1 ∨ r.1 + r.2 ≤ slot wx aY := by
-  have := hdr_lt_slot wx aY (show 31 < 32 by decide)
-  have s1 := slot_sep (w := wx) (show aY ≠ aAcc by decide)
-  have s2 := slot_sep (w := wx) (show aY ≠ aTmp by decide)
-  have s3 := slot_sep (w := wx) (show aY ≠ Crt.aT by decide)
-  have s8 := slot_le (w := wx) (show aY < 8 by decide)
-  simp only [buildRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [Crt.sTab, Crt.sEnt, Crt.sBit, sFn] at * <;> omega_arith
-
 end VG.Proof.Bignum.CrtWindowFive

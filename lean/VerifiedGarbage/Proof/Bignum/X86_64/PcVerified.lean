@@ -7,10 +7,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 /-!
 # `vg_rsa_public_precompute` on x86-64: verified against the shared contract
 
-`pcContract` states the shared contract on the registers
-(`precompute_implies`); with correctness (`pcCode_correct`) and constant
-time (`pcCode_constantTime`), `Precompute.code` is verified
-(`precompute_verified`).
+`pcContract` states the shared contract on the registers;
+`pcSatState`, a state it allows.
 -/
 
 @[expose] public section
@@ -32,31 +30,5 @@ def pcSatState : State where
   mem _ := 0
   rd := [⟨0x2000, 64⟩]
   wr := [⟨0x1000, 128⟩, ⟨0x4000, 8448⟩]
-
-theorem precompute_implies : pcContract.Implies (Spec.Rsa.publicPrecomputeContract abi) where
-  pre := by
-    intro s h
-    sig_pre [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, pcContract, List.append_eq] at h
-    sig_split h
-    sig_reduce [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, pcContract, List.append_eq]
-    sig_and_intros
-    sig_close
-    all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, pcContract, List.append_eq]
-  pub := by
-    rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, pcContract, List.append_eq] at h
-    obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9⟩ := h
-    refine ⟨?_, (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := by sig_implies_sat [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, pcContract, List.append_eq] [pcSatState] using pcSatState
-
-/-- `vg_rsa_public_precompute` with Montgomery multiplication `M`, given that
-its code never loads MXCSR (which the registration file evaluates). -/
-theorem precompute_verified (M : Mont) (r : R2Impl M)
-    (hmx : (Precompute.code M.mm r.code).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (Precompute.code M.mm r.code) (Spec.Rsa.publicPrecomputeContract abi) :=
-  Verified.of_correct (pcCode_correct M r hmx) (pcCode_constantTime M r) precompute_implies
 
 end VG.Proof.Bignum.X86_64

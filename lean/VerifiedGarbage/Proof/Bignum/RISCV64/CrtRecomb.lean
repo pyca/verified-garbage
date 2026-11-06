@@ -321,11 +321,6 @@ theorem copySame_ok {s : State} {B : Addr} {Z dS dD w : Nat} (hs : Scr s B Z)
   · exact Keep.trans' jk ((((((Keep.write _ _ _).trans (Keep.mem _ _)).trans (Keep.write _ _ _)).trans
       (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono (by decide))
 
-theorem bytesAt_congr {m m' : Mem} {D : Addr} {L : Nat} (h : ∀ i < L, m' (D + BitVec.ofNat 64 i) = m (D + BitVec.ofNat 64 i)) :
-    Spec.Rsa.bytesAt m' D L = Spec.Rsa.bytesAt m D L := by
-  simp only [Spec.Rsa.bytesAt]
-  exact List.map_congr_left fun i hi => h i (List.mem_range.mp hi)
-
 /-- `a; b; c; d` and then `e`. -/
 theorem seq4_then {a b c d e : Prog isa} {s : State} {P Q : State → Prop}
     (h : WP isa (.seq a (.seq b (.seq c d))) s P) (k : ∀ t, P t → WP isa e t Q) :

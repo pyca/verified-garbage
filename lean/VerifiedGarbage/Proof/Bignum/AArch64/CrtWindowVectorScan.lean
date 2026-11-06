@@ -86,17 +86,4 @@ theorem scan_ok {s : State} {base : Addr} {stride v : Nat}
   exact wp_countdown (by decide) (by decide) (fun j => ScanInv s base stride v j)
     (fun j hj t hI _ => scanStep_ok hj hv hs hI hld) h0 hc
 
-theorem scan_ct :
-    RelCT isa (Two fun (p : Addr × BitVec 64 × BitVec 64) s =>
-      s.gpr .x16 = p.1 ∧ s.gpr .x6 = p.2.1 ∧ s.gpr .x14 = p.2.2)
-      (countLoop .x14 inner) (fun _ _ => True) := by
-  apply two_taint [.x16, .x6, .x14]
-  · intro p s t hs ht r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact hs.1.trans ht.1.symm
-    · exact hs.2.1.trans ht.2.1.symm
-    · exact hs.2.2.trans ht.2.2.symm
-  · taint_decide
-
 end VG.Proof.Bignum.AArch64.WindowVector

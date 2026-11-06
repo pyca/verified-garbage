@@ -36,8 +36,4 @@ def satState : State where
   rd := [⟨0x8004, 20⟩]
   wr := [⟨0x1000, 512⟩]
 
-theorem satisfiable : ∃ s, (Proof.Rsa.Mont.mulContract abi 16).pre s := by
-  sig_implies_sat [Proof.Rsa.Mont.mulContract, Proof.Rsa.Mont.sig, abi, argSlots, argVal, argBytes, stackBelow]
-    [satState, arg, argAddr, Mem.readW, Mem.read] using satState
-
 end VG.Proof.Mont.X86.Compact
