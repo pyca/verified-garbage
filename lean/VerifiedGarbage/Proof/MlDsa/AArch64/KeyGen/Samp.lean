@@ -199,24 +199,10 @@ theorem expA_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
       fun x y h => ⟨ok x h.1.lx, ok y h.1.ly⟩)
     (tail_tr (j := e) (by omega))
 
-/-! ## The bound `η` of `s₁ ‖ s₂` -/
-
-theorem eta_of {p : Params} (hF : PFacts p) : p.η = 2 ∨ p.η = 4 := by
-  rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩
-  exacts [.inl h, .inr h]
-
 /-! ## The pieces -/
 
 theorem expA_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFacts p) {e : Nat}
     (he : e < p.k * p.ℓ) : Piece p S (KSamp p · e 0) (KSamp p · (e + 1) 0) (expA P p e) :=
   ⟨fun _ _ hp h => expA_ok hP hF hp he h, expA_tr hP hF he⟩
-
-/-- The entries of `Â`. -/
-theorem sampA_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFacts p) :
-    Piece p S (fun σ s => K1 p σ s ∧ s.gpr .x24 = 1) (fun σ s => KSamp p σ (p.k * p.ℓ) 0 s)
-      (seqR (expA P p) 0 (p.k * p.ℓ)) := by
-  refine Piece.mono (Piece.seqR (I := fun e σ s => KSamp p σ e 0 s) (p.k * p.ℓ) 0
-    fun e _ he => expA_piece hP hF (by omega)) (fun σ s _ h => KSamp.zero h.1 h.2) fun σ s _ h => ?_
-  simpa using h
 
 end VG.Proof.MlDsa.AArch64.KeyGen

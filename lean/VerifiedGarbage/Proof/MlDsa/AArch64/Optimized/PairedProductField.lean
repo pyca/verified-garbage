@@ -221,24 +221,6 @@ theorem valuesAt_coeff (m : Mem) (a b : Addr) (u : Nat) (poly : Fin 2) (j : Fin 
   rw [show 128*u+16*j.val+4*e=4*(32*u+4*j.val+e) by omega,
     show 128*u+(1024*poly.val+16*j.val)+4*e=1024*poly.val+4*(32*u+4*j.val+e) by omega]
 
-theorem valuesAt_bounds {m : Mem} {a b : Addr} {u : Nat} {poly : Fin 2} {f g : Poly}
-    (hu : u<8) (hf : PosPolyIs m a f) (hg : PosPolyIs m (b+BitVec.ofNat 64 (1024*poly.val)) g)
-    (j : Fin 8) {e : Nat} (he : e<4) :
-    -(q : Int)≤(vword ((valuesAt m (a+BitVec.ofNat 64 (128*u)) (b+BitVec.ofNat 64 (128*u)) poly)[j.val]) e).toInt ∧
-    (vword ((valuesAt m (a+BitVec.ofNat 64 (128*u)) (b+BitVec.ofNat 64 (128*u)) poly)[j.val]) e).toInt≤147168 := by
-  rw [valuesAt_coeff _ _ _ _ _ _ he]
-  exact centeredProduct_bounds _ _ (hf.bound _ (by change 32*u+4*j.val+e<256; omega))
-    (hg.bound _ (by change 32*u+4*j.val+e<256; omega))
-
-theorem valuesAt_scaled {m : Mem} {a b : Addr} {u : Nat} {poly : Fin 2} {f g : Poly}
-    (hu : u<8) (hf : PosPolyIs m a f) (hg : PosPolyIs m (b+BitVec.ofNat 64 (1024*poly.val)) g)
-    (j : Fin 8) {e : Nat} (he : e<4) :
-    ofInt (vword ((valuesAt m (a+BitVec.ofNat 64 (128*u)) (b+BitVec.ofNat 64 (128*u)) poly)[j.val]) e).toInt * ofInt 4294967296=
-      f[32*u+4*j.val+e]! * g[32*u+4*j.val+e]! := by
-  have hi : 32*u+4*j.val+e<n := by change 32*u+4*j.val+e<256; omega
-  rw [valuesAt_coeff _ _ _ _ _ _ he,
-    centeredProduct_scaled _ _ (hf.bound _ hi) (hg.bound _ hi),
-    ofInt_nat_eq,ofInt_nat_eq,←polyAt_get _ _ hi,←polyAt_get _ _ hi,hf.value,hg.value]
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
 end

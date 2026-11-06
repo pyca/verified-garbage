@@ -38,10 +38,6 @@ abbrev mScrLen (p : Params) : Nat := messageScratchWords p * 8
 theorem mScr_eq (p : Params) : mScrLen p = oE p + 1024 := by
   simp only [mScrLen, messageScratchWords, oE]; omega
 
-theorem oE_lt {p : Params} (hp : p ∈ params) : oE p + 1024 < 2 ^ 31 := by
-  simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl <;> decide
-
 theorem skLen_ge {p : Params} (hp : p ∈ params) : 128 ≤ p.skLen ∧ p.skLen < 2 ^ 16 := by
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl <;> decide
@@ -134,8 +130,6 @@ theorem slay_ok {p : Params} (hp : p ∈ params) {s : State} (h : SPre p s) (h8 
   ⟨h8, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq], skLen_ge hp, h.sp, h.nScr, by simp [slay, h.wr], by simp [slay, h.rd],
     by simp [slay, h.rd], by simp [slay, h.rd], h.skScr.symm, h.msgScr.symm, h.ctxScr.symm, h.stkScr,
     h.stkSk, h.stkMsg, h.stkCtx, h.nSk, h.nMsg, h.nCtx⟩
-
-/-! ## Verification -/
 
 /-! ## Verification with a cached `tr` -/
 

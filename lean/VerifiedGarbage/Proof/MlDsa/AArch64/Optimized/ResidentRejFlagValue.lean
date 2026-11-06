@@ -48,12 +48,4 @@ theorem smallFlag_status (x : BitVec 64) (hx : x.toNat<512) :
     simp only [BitVec.toNat_ushiftRight,BitVec.toNat_sub,BitVec.toNat_ofNat]
     omega
 
-theorem foldedFlags_status (C : Nat → BitVec 64) (n : Nat)
-    (hc : ∀i<n+1,(C i).toNat≤256) :
-    (foldedFlags C n-1#64)>>>63 = if ∀i<n+1,C i=0#64 then 1#64 else 0#64 := by
-  rw [smallFlag_status _ (foldedFlags_bound C n hc)]
-  by_cases hz : ∀i<n+1,C i=0#64
-  · rw [ite_eq_left hz,ite_eq_left ((foldedFlags_zero C n).mpr hz)]
-  · rw [ite_eq_right hz,ite_eq_right (fun h => hz ((foldedFlags_zero C n).mp h))]
-
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

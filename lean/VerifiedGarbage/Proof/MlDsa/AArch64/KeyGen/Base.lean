@@ -21,8 +21,6 @@ open VG VG.AArch64
 /-- The registers the functions keep the addresses of their buffers in. -/
 abbrev bases : List Reg := [.x25, .x26, .x27, .x28]
 
-theorem bases_pres : ∀ r ∈ bases, r ∈ preserved ∧ r ≠ .x30 := by decide
-
 theorem bases_kept : ∀ r ∈ bases, r ∈ keptRegs := by decide
 
 /-- The buffers of a layout are in the registers `bases`. -/

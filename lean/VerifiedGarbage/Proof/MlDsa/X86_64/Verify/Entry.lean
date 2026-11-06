@@ -141,10 +141,6 @@ theorem Lay.wreduced {p : Ptr} (h : inB (rbs ++ wbs) p 1024 = true) (v : BitVec 
 
 end
 
-/-- The values of the arguments after their moves. -/
-theorem Args.reg {as : List (Reg × Arg)} {s s1 : State} (h : Args as s s1) {r : Reg} {a : Arg} (ha : (r, a) ∈ as) :
-    s1.gpr r = a.val s := h.1.1 _ ha
-
 theorem Args.r0 {r : Reg} {a : Arg} {as : List (Reg × Arg)} {s s1 : State} (h : Args ((r, a) :: as) s s1) :
     s1.gpr r = a.val s := h.1.1 _ (List.mem_cons_self ..)
 

@@ -108,13 +108,6 @@ theorem ymm_bit (s : State) (r : XReg) {i : Nat} (hi : i < 32) :
   · rw [ite_eq_right (show ¬ 8 * i + 7 < 128 by omega_arith), ite_eq_right (show ¬ i / 16 = 0 by omega_arith),
       show 32 * (i % 16 / 4) + (8 * (i % 4) + 7) = 8 * i + 7 - 128 by omega_arith]
 
-/-- A doubleword spread from its top bit. -/
-theorem bit_of_spread {d : BitVec 32} (h : d = 0 ∨ d = BitVec.allOnes 32) {j : Nat} (hj : j < 32) :
-    d.getLsbD j = d.msb := by
-  rcases h with rfl | rfl
-  · simp
-  · rw [BitVec.msb_allOnes (by decide), BitVec.getLsbD_allOnes]; simp [hj]
-
 /-! ## The code on a register -/
 
 theorem nlX_ok (s : State) :

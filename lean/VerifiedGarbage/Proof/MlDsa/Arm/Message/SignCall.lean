@@ -279,14 +279,6 @@ theorem signK_pre (hp : p ∈ params) (h : SPre p s) (h8 : (stackArg s 0).toNat 
   · exact h.nSig
   · have := h.nScr; simp only [mScrLen, sScr, messageScratchWords] at this ⊢; omega_arith
 
-/-- The bytes of a region apart from the 8 the push writes, in the callee's entry state. -/
-theorem pushed_bytes {t : State} (h8 : 8 ≤ t.sp.toNat) (rd wr : List Region) {a : Addr} {n : Nat}
-    (hd : Region.Disjoint ⟨a, n⟩ (below t 8)) (hn : n ≤ 2 ^ 64) :
-    bytesAt ((pushed [.r12, .lr] t).callEntry.withRegions rd wr).mem a n = bytesAt t.mem a n := by
-  simp only [State.withRegions_mem, State.callEntry_mem]
-  exact Proof.MlKem.bytesAt_frame (push2_frame h8) (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact hd) hn
-
 /-- The call of the signing function on `μ`. -/
 theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ params) (h : SPre p s)
     (h8 : (stackArg s 0).toNat < 256) {g : Reg → BitVec 32} {m₀ : Mem} {t : State}

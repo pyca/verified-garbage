@@ -37,12 +37,6 @@ open VG.PPC64LE
 open VG.Impl.Sha3.PPC64LE.Stream (mov)
 open VG.Impl.MlKem.PPC64LE (zeroState)
 
-/-- Where the XOF output starts in `scratch`. -/
-abbrev outOff : Nat := 840
-
-/-- Where our caller's registers are saved in `scratch`. -/
-abbrev saveOff : Nat := 2000
-
 /-- Save `r27`–`r31` and the return address at `scr + 2000`, and set up the
 layout: `r31` = `scr`, `r30` = `a`, `r29` = `msg`, then `len` (which sets
 `r28`) and `prm` (which sets `r27`). `scr`, `a` and `msg` are argument

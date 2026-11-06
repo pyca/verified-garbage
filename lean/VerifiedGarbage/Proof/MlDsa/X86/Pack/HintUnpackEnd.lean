@@ -60,9 +60,6 @@ theorem Pub.ecK {s₀ s₀' : State} (h : Pub s₀ s₀') : cK s₀ = cK s₀' :
 theorem Pub.etr {s₀ s₀' : State} (h : Pub s₀ s₀') (k : Nat) : tr s₀ k = tr s₀' k := by
   unfold tr; simp only [i₀, h.ecK, h.y]
 
-theorem Pub.efin {s₀ s₀' : State} (h : Pub s₀ s₀') : fin s₀ = fin s₀' := by
-  unfold fin TS; rw [h.eK, h.ePS, h.y, h.eω]
-
 /-- What the end keeps. -/
 structure TB (s₀ s : State) : Prop extends Base s₀ s where
   edi : s.gpr .edi = arg s₀ 0
@@ -84,9 +81,6 @@ def TM (k : Nat) (s₀ s : State) : Prop :=
 
 /-- At the end. -/
 def TFin (s₀ s : State) : Prop := TB s₀ s ∧ s.gpr .eax = BitVec.ofNat 32 (fin s₀)
-
-theorem sr_le {s₀ : State} {m : Mem} (h : SR s₀ (PS s₀ (K s₀)) m) (e : PS s₀ (K s₀) = some (cK s₀)) :
-    i₀ s₀ ≤ ω s₀ := (h _ e).1
 
 theorem TS_some {s₀ : State} (e : PS s₀ (K s₀) = some (cK s₀)) (ht : TF s₀ (ω s₀ - i₀ s₀) = some ()) :
     fin s₀ = ω s₀ := by

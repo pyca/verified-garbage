@@ -5,15 +5,15 @@ public import VerifiedGarbage.Spec.MlDsa
 public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 
 /-!
-# ML-DSA on AArch64: `vg_mldsa{44,65,87}_sign`
+# ML-DSA on AArch64: pieces of `vg_mldsa{44,65,87}_sign`
 
-`sign(sk = x0, mu = x1, rnd = x2, sig = x3, scratch = x4) -> w0`:
-`ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with the message
-representative `μ` given (`Spec.MlDsa.signMu`), for the parameter set `p`,
-as calls of the primitives `P` and the sponge functions (`Frag.lean`). It
-keeps `scratch` in `x28`, `sk` in `x25`, `mu` in `x26`, `rnd` in `x27` and
-`sig` in `x23`, and saves its caller's values of them (and of `x24` and
-`x30`) in `scratch`.
+The constants of a parameter set `p`, the layout of `scratch`, and pieces of
+code, as calls of the primitives `P` and the sponge functions (`Frag.lean`),
+from which the signing functions (`Optimized.signWith`,
+`Sign/OptimizedRest.lean`) are built: `ML-DSA.Sign_internal(sk, M′, rnd)`
+(FIPS 204 Algorithm 7) with the message representative `μ` given
+(`Spec.MlDsa.signMu`). They keep `scratch` in `x28`, `sk` in `x25`, `mu` in
+`x26`, `rnd` in `x27` and `sig` in `x23`. Signing goes:
 
 1. `ρ` (the first 32 bytes of `sk`) to `RS`, the seed of `RejNTTPoly`, and
    `Â[r, s] = RejNTTPoly(ρ ‖ s ‖ r)` for the `kℓ` entries, with `w24` the
@@ -124,23 +124,6 @@ def sampleAll : Prog isa :=
 def expandA : Prog isa :=
   .seq (.block (Impl.MlKem.AArch64.copy32 .x25 0 .x28 oRS)) (sampleAll P p)
 
-/-- `ŝ₁[r]`. -/
-def decS1 (r : Nat) : Prog isa :=
-  .seq (bitUnpackAt P (.x25, skS1 p r) (sLen p) p.η p.η (s1P p r)) (nttAt P (s1P p r))
-
-/-- `ŝ₂[i]`. -/
-def decS2 (i : Nat) : Prog isa :=
-  .seq (bitUnpackAt P (.x25, skS2 p i) (sLen p) p.η p.η (s2P p i)) (nttAt P (s2P p i))
-
-/-- `t̂₀[i]`. -/
-def decT0 (i : Nat) : Prog isa :=
-  .seq (bitUnpackAt P (.x25, skT0 p i) 416 4095 4096 (t0P p i)) (nttAt P (t0P p i))
-
-/-- `ŝ₁`, `ŝ₂`, `t̂₀`, and `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`. -/
-def decodeWith : Prog isa :=
-  .seq (seqR (decS1 P p) 0 p.ℓ) (.seq (seqR (decS2 P p) 0 p.k) (.seq (seqR (decT0 P p) 0 p.k)
-    ((shakeAtWith c) [⟨.x25, 32, 32⟩, ⟨.x27, 0, 32⟩, ⟨.x26, 0, 64⟩] ⟨.x28, oMS, 64⟩)))
-
 /-! ### An iteration -/
 
 /-- The two bytes of `κ + r` to `MS + 64`, through `x9`. -/
@@ -187,30 +170,10 @@ def masks : Prog isa :=
   if P.pairedMask then masksPaired P p "vg_mldsa_expand_mask_pair_sha3" P.expandMaskPair
   else seqR (maskR P p) 0 p.ℓ
 
-/-- `w[i] = NTT⁻¹(∑_j Â[i, j] ŷ[j])`. -/
-def rowW (i : Nat) : Prog isa :=
-  .seq (mulAt P (wP p i) (aP p i 0) (yhP p 0))
-    (.seq (seqR (fun j => mulAddAt P (wP p i) (aP p i j) (yhP p j)) 1 (p.ℓ - 1)) (invNttAt P (wP p i)))
-
 /-- `w1Encode(HighBits(w[i]))` to `W1 + i · w1Len`. -/
 def w1R (i : Nat) : Prog isa :=
   callAt (if p.γ₂ = 261888 then "vg_mldsa_high_pack4" else "vg_mldsa_high_pack6")
     (P.highPack p.γ₂) [(.x0,.ptr (wP p i)),(.x1,.ptr (sc (oW1+w1Len p*i)))]
-
-/-- `y`, `ŷ`, `w`, `w₁` and `c̃ = H(μ ‖ w1Encode(w₁), λ/4)` to `CT`. -/
-def commitWith : Prog isa :=
-  .seq (masks P p) (.seq (seqR (rowW P p) 0 p.k) (.seq (seqR (w1R P p) 0 p.k)
-    ((shakeAtWith c) [⟨.x26, 0, 64⟩, ⟨.x28, oW1, p.k * w1Len p⟩] ⟨.x28, oCT, cLen p⟩)))
-
-/-- `z[r] = y[r] + NTT⁻¹(ĉ ŝ₁[r])` (in `y[r]`), and its norm. -/
-def zR (r : Nat) : Prog isa :=
-  .seq (mulAt P t1P cP (s1P p r)) (.seq (invNttAt P t1P) (.seq (addAt P (yP p r) t1P)
-    (normAt P (yP p r) (p.γ₁ - p.β))))
-
-/-- `w[i] - NTT⁻¹(ĉ ŝ₂[i])` (in `w[i]`), and the norm of its `LowBits`. -/
-def r0R (i : Nat) : Prog isa :=
-  .seq (mulAt P t1P cP (s2P p i)) (.seq (invNttAt P t1P) (.seq (subAt P (wP p i) t1P)
-    (.seq (lowBitsAt P (wP p i) p.γ₂ t2P) (normAt P t2P (p.γ₂ - p.β)))))
 
 /-- `ct₀[i] = NTT⁻¹(ĉ t̂₀[i])` and its norm, `w[i] - cs₂[i] + ct₀[i]` (in `w[i]`),
 `-ct₀[i]` (in `T4`), and `h[i] = MakeHint(-ct₀[i], w[i] - cs₂[i] + ct₀[i])`. -/
@@ -226,27 +189,8 @@ def onesOk : List Instr :=
 /-- `KAP ← KAP + ℓ`, through `x9`. -/
 def kapAdd : List Instr := [.ldr .x .x9 .x28 oKAP, .addImm .x .x9 .x9 p.ℓ, .str .x .x9 .x28 oKAP]
 
-/-- The validity checks of an iteration, combined into `x24`; then, if they
-passed, `CNT ← 1` (the loop ends with `w24 = 1`), and otherwise `κ ← κ + ℓ`. -/
-def checks : Prog isa :=
-  .seq (nttAt P cP) (.seq (.block (([.movz .x .x24 1 0] : List Instr) ++ setQ (sc oONES) 0))
-    (.seq (seqR (zR P p) 0 p.ℓ) (.seq (seqR (r0R P p) 0 p.k) (.seq (seqR (hR P p) 0 p.k)
-      (.seq (.block (onesOk p)) (ifOkElse (.block (setQ (sc oCNT) 1)) (.block (kapAdd p))))))))
-
 /-- `CNT ← CNT - 1`, left in `x9`, which the loop tests. -/
 def cntDec : List Instr := [.ldr .x .x9 .x28 oCNT, .subImm .x .x9 .x9 1, .str .x .x9 .x28 oCNT]
-
-/-- An iteration: the commitment, `SampleInBall`, and the checks if it
-succeeded (and otherwise `x24 ← 0`, `CNT ← 1`); then `CNT ← CNT - 1`. -/
-def iterWith : Prog isa :=
-  .seq ((commitWith c) P p) (.seq (ballAt P (cLen p) p.τ cP)
-    (.seq (.ite (.nonzero .w .x0) (checks P p) (.block (([.movz .x .x24 0 0] : List Instr) ++ setQ (sc oCNT) 1)))
-      (.block cntDec)))
-
-/-- The rejection sampling loop: `κ ← 0`, `CNT ← 814`, and iterations while
-`CNT ≠ 0`. -/
-def signLoopWith : Prog isa :=
-  .seq (.block (setQ (sc oKAP) 0 ++ setQ (sc oCNT) 814)) (.loop ((iterWith c) P p) (.nonzero .x .x9))
 
 /-! ### The signature -/
 
@@ -258,21 +202,6 @@ def output : Prog isa :=
   .seq (copy (.x23, 0) (sc oCT) (cLen p)) (.seq (seqR (packZ P p) 0 p.ℓ)
     (hintBitPackAt P (hP 0) (256 * p.k) p.ω (.x23, sigH p) (p.ω + p.k)))
 
-/-- Once `Â` is sampled: the private key, the loop, and the signature if the
-loop succeeded. -/
-def restWith : Prog isa := .seq ((decodeWith c) P p) (.seq ((signLoopWith c) P p) (ifOk (output P p)))
-
 end
-
-/-- `vg_mldsa{44,65,87}_sign` for the parameter set `p`, with the primitives `P`. -/
-def signWith (P : Prims) (p : Params) : Prog isa :=
-  .seq (.block pro) (.seq (expandA P p) (.seq (ifOk ((restWith c) P p)) (.block epi)))
-
-def decode := decodeWith .scalar
-def commit := commitWith .scalar
-def iter := iterWith .scalar
-def signLoop := signLoopWith .scalar
-def rest := restWith .scalar
-def sign := signWith .scalar
 
 end VG.Impl.MlDsa.AArch64.Sign

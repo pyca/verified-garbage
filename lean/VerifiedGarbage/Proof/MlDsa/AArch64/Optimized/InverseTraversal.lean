@@ -76,6 +76,4 @@ theorem mask_comm {a b : Op} (h : (mask a &&& mask b) = 0) (w : Poly) :
 /-- The place of a butterfly in the standard order. -/
 def key (o : Op) : Nat := o.length*256+o.index
 
-theorem run_cons (a : Op) (xs : List Op) (w : Poly) : run (a::xs) w=run xs (a.apply w) := rfl
-
 end VG.Proof.MlDsa.AArch64.Optimized.InverseTraversal

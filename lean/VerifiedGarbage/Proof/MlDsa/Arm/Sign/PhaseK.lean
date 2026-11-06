@@ -109,11 +109,6 @@ theorem bit_congr {a b : Prop} [Decidable a] [Decidable b] (h : a ↔ b) : bit a
   · rw [show bit a = 1 from ifp ha _ _, show bit b = 1 from ifp (h.mp ha) _ _]
   · rw [show bit a = 0 from ifn ha _ _, show bit b = 0 from ifn (fun hb => ha (h.mpr hb)) _ _]
 
-theorem bit01 {a : Prop} [Decidable a] : bit a = 0 ∨ bit a = 1 := by
-  by_cases ha : a
-  · exact .inr (ifp ha _ _)
-  · exact .inl (ifn ha _ _)
-
 theorem bit_one {a : Prop} [Decidable a] : bit a = 1 ↔ a := by
   by_cases ha : a
   · exact ⟨fun _ => ha, fun _ => ifp ha _ _⟩
@@ -128,15 +123,6 @@ theorem forall_lt_succ {P : Nat → Prop} {r : Nat} : ((∀ j < r, P j) ∧ P r)
   ⟨fun ⟨h1, h2⟩ j hj => by
     rcases (by omega_arith : j < r ∨ j = r) with hj | rfl
     exacts [h1 j hj, h2], fun h => ⟨fun j hj => h j (by omega_arith), h r (by omega_arith)⟩⟩
-
-theorem Fam.head {s : State} {b m : Nat} {f : Nat → Poly} (h : Fam s b (m + 1) f) : Pl s b (f 0) := h 0 (by omega_arith)
-
-theorem Fam.tail {s : State} {b m : Nat} {f : Nat → Poly} (h : Fam s b (m + 1) f) :
-    Fam s (b + 1) m fun j => f (j + 1) := fun j hj => by
-  have := h (j + 1) (by omega_arith)
-  show Pl s (b + 1 + j) _
-  rw [show b + 1 + j = b + (j + 1) by omega_arith]
-  exact this
 
 theorem Fam.shift {s : State} {b m r : Nat} {f : Nat → Poly} (h : Fam s (b + r) (m - r) fun j => f (r + j))
     (hr : r < m) : Fam s (b + (r + 1)) (m - (r + 1)) fun j => f (r + 1 + j) := fun j hj => by

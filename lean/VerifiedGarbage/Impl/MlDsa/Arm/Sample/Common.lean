@@ -33,9 +33,6 @@ namespace VG.Impl.MlDsa.Arm.Sample
 open VG.Arm
 open VG.Impl.MlKem.Arm (saveRegs restoreRegs zeroState absorbCall padCall squeezeCall)
 
-/-- Where the XOF output starts in `scratch`. -/
-abbrev outOff : Nat := 840
-
 /-- Where our caller's registers are saved in `scratch`. -/
 abbrev saveOff : Nat := 2012
 

@@ -68,13 +68,6 @@ theorem traversal_montgomery (w : Poly) :
   have h : (8347681 : Zq)*montgomeryR=16382 := by decide +kernel
   simp only [Function.comp_def,Fin.mul_assoc,h]
 
-/-- Folding the final scale into the difference root has exactly the same
-field result as uniformly scaling both outputs of the final butterfly. -/
-theorem folded_pair (a b z c : Zq) :
-    ((a+b)*c,(z*c)*(a-b))=((a+b)*c,(z*(a-b))*c) := by
-  congr 1
-  rw [Fin.mul_assoc,Fin.mul_comm c,← Fin.mul_assoc]
-
 end VG.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 
 end

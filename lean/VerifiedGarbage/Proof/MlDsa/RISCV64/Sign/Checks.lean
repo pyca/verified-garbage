@@ -761,16 +761,6 @@ theorem onesOk_piece {t : Nat} : SPiece p STK (fun σ s => IH p STK σ t p.k p.k
   rw [e24, h.s6, h.s4, sign_bit (by omega) (by omega), bit_and']
   exact bit_congr passV_iff
 
-theorem zs_piece {t : Nat} :
-    SPiece p STK (fun σ s => IZ p STK σ t 0 0 s) (fun σ s => IQ p STK σ t 0 0 s) (seqR (zR P p) 0 p.ℓ) :=
-  Piece.mono (Piece.seqR (I := fun r σ s => IZ p STK σ t r r s) p.ℓ 0
-    fun r _ hr => zR_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by rw [Nat.zero_add] at h; exact h.iq
-
-theorem r0s_piece {t : Nat} :
-    SPiece p STK (fun σ s => IQ p STK σ t 0 0 s) (fun σ s => IH p STK σ t 0 0 0 s) (seqR (r0R P p) 0 p.k) :=
-  Piece.mono (Piece.seqR (I := fun i σ s => IQ p STK σ t i i s) p.k 0
-    fun i _ hi => r0R_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by rw [Nat.zero_add] at h; exact h.ih
-
 theorem hs_piece {t : Nat} :
     SPiece p STK (fun σ s => IH p STK σ t 0 0 0 s) (fun σ s => IH p STK σ t p.k p.k p.k s) (seqR (hR P p) 0 p.k) :=
   Piece.mono (Piece.seqR (I := fun i σ s => IH p STK σ t i i i s) p.k 0

@@ -37,12 +37,6 @@ def IA (p : Params) (e : Nat) (σ s : State) : Prop := ∃ h, HN p σ h ∧ S3 p
 
 theorem IA.t {p : Params} {e : Nat} {σ s : State} (h : IA p e σ s) : T p σ s := let ⟨_, _, hs⟩ := h; hs.t
 
-theorem seed_of {p : Params} {h : List (Vector Bool n)} {e r c : Nat} {σ s₀ s : State} (hs : S3 p h e σ s₀)
-    (hP : PPostB s₀ s wsB) (hm : s.mem = (s₀.mem.writeW (pa s₀ (sc oSB) + BitVec.ofNat 64 32) (BitVec.ofNat 8 c)).writeW
-      (pa s₀ (sc oSB) + BitVec.ofNat 64 33) (BitVec.ofNat 8 r)) :
-    bytesAt s.mem (pa s (sc oSB)) 34 = aSeed (vPk p σ) r c := by
-  rw [hP.pa (by decide), hm, seed_bytes, hs.rho, aSeed, integerToBytes_one, integerToBytes_one]
-
 theorem bytes136 (m : Mem) (P : Addr) : bytesAt m P 136 = bytesAt m P 34 ++ bytesAt m (P + BitVec.ofNat 64 34) 34 ++
     bytesAt m (P + BitVec.ofNat 64 68) 34 ++ bytesAt m (P + BitVec.ofNat 64 102) 34 := by
   rw [show 136 = 34 + 102 from rfl, Proof.MlKem.bytesAt_add, show 102 = 34 + 68 from rfl, Proof.MlKem.bytesAt_add,

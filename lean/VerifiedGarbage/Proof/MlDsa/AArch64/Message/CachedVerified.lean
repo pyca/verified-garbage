@@ -42,12 +42,6 @@ theorem signMessage_of_verified (v : Proof.Sha3.AArch64.Permutation)
   · exact List.mem_cons_of_mem _ List.mem_cons_self
   · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
 
-theorem signFn (v : Proof.Sha3.AArch64.Permutation)
-    {p : Params} (hp : p=mlDsa65∨p=mlDsa87) :
-    Paired.SignFn p (Impl.MlDsa.AArch64.Sign.Cached.signWith v.callee (Sign.primsWith v.callee) p
-      (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks p)) :=
-  signFn_of_verified v hp (Sign.Cached.sign_verified v hp)
-
 theorem signMessage_verified (v : Proof.Sha3.AArch64.Permutation)
     {p : Params} (hp : p=mlDsa65∨p=mlDsa87) (n : String) :
     Verified target (signMessage v.callee n

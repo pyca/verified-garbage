@@ -375,17 +375,6 @@ theorem samples_rooted_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S)
       (Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p) :=
   rooted_piece (samples_vpiece hP hF) (samples_depth hP p) hP.s64
 
-/-- The paired timing relation also preserves the shared table addresses. -/
-theorem samples_rootPair {P : Prims} {S : Nat} (hP : PrimsOk P S)
-    {p : Params} (hF : VFacts p) :
-    RelCT isa
-      (RootPair p S (fun σ s=>(Z0 p p.ℓ σ s ∧ normOk p σ p.ℓ) ∧ StaticRoots S s))
-      (Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p)
-      (RootPair p S (fun σ s=>VB p σ s ∧ StaticRoots S s)) := by
-  have h := samples_rooted_vpiece hP hF
-  exact rootPair_progress h.ok
-    (RelCT.mono h.tr (fun _ _ hp=>hp.1) (fun _ _ _=>trivial))
-
 end VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
 end
 

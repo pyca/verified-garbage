@@ -62,12 +62,4 @@ theorem optimizedZ_ok {p : Params} {S : Nat} {σ s : State} {t r : Nat}
   rw [hflagc,bit_and (h24b.trans (h24a.trans hflag)) hret]
   exact bit_congr forall_lt_succ
 
-/-- Every z polynomial is processed before the next rejection-check phase. -/
-theorem optimizedZ_vector_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
-    (hp : Ok3 p) (h : PositiveIZ p S σ t 0 s) :
-    WP isa (VG.Impl.MlDsa.AArch64.Call.seqR (Impl.MlDsa.AArch64.Sign.Optimized.zR p) 0 p.ℓ)
-      s (PositiveIZ p S σ t p.ℓ) := by
-  simpa only [Nat.zero_add] using seqR_ok (I := fun r s => PositiveIZ p S σ t r s)
-    p.ℓ 0 (fun r _ hr s h => optimizedZ_ok hp (by omega) h) s h
-
 end VG.Proof.MlDsa.AArch64.Sign

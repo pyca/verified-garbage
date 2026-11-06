@@ -117,17 +117,6 @@ theorem leq_step (h : LeakEq p t σ₁ σ₂) (ht : t < 814) :
       ((List.range p.k).map (T0 p σ₂)) (muOf σ₂) (rppS p σ₂) ((999 - t) + 1) (p.ℓ * t) := by
   rw [show 999 - t + 1 = 1000 - t by omega]; exact h
 
-theorem leq_ct (h : LeakEq p t σ₁ σ₂) (ht : t < 814) : CTv p σ₁ (p.ℓ * t) = CTv p σ₂ (p.ℓ * t) := by
-  have := (leakF_step (leq_step h ht)).1
-  rwa [signCommit_eq, signCommit_eq] at this
-
-theorem leq_succ (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
-    (hr : ∃ ct, iterF p σ₁ maxBounds (p.ℓ * t) = some (ct, none)) : LeakEq p (t + 1) σ₁ σ₂ := by
-  have := ((leakF_step (leq_step h ht)).2.1 hr).2
-  unfold LeakEq
-  rw [show 1000 - (t + 1) = 999 - t by omega, Nat.mul_succ]
-  exact this
-
 theorem outTag_eq (hp : ParamsOk p) {σ : State} {κ : Nat} (hs : (sampleInBall p.τ maxBounds.ball (CTv p σ κ)).isSome) :
     outTag (iterF p σ maxBounds κ) = if PassV p σ κ then
       1 :: ((List.range p.k).map (Hv p σ κ)).flatMap (fun hi => hi.toList.map Bool.toNat) else [0] := by

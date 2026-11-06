@@ -51,30 +51,10 @@ theorem PosFam.keep {S : Nat} {rbs wbs : List (Reg × Nat)} {s s' : State}
     (h : PosFam s b m f) : PosFam s' b m f :=
   fun j hj => keepPosPoly L hP (famChk_one hc hj) (h j hj)
 
-theorem PosFam.of_canonical {s : State} {b m : Nat} {f : Nat → Poly}
-    (h : Fam s b m f) : PosFam s b m f :=
-  fun j hj => PosPolyIs.of_canonical (h j hj)
-
 theorem PosPl.keep {S : Nat} {rbs wbs : List (Reg × Nat)} {s s' : State}
     (L : Lay S rbs wbs s) {ws : List (Ptr × Nat)} {j : Nat} {f : Poly}
     (hP : PPostB S s s' ws) (hc : keepB rbs wbs ws (pS j) 1024=true)
     (h : PosPl s j f) : PosPl s' j f := keepPosPoly L hP hc h
-
-theorem PosFam.congr {s : State} {b m : Nat} {f g : Nat → Poly}
-    (h : PosFam s b m f) (he : ∀ j<m, f j=g j) : PosFam s b m g :=
-  fun j hj => he j hj ▸ h j hj
-
-theorem PosFam.split {s : State} {b m r : Nat} {f : Nat → Poly} (hr : r≤m) :
-    PosFam s b m f ↔ PosFam s b r f ∧ PosFam s (b+r) (m-r) (fun j => f (r+j)) := by
-  constructor
-  · intro h
-    exact ⟨fun j hj => h j (by omega),fun j hj => by
-      rw [Nat.add_assoc]; exact h (r+j) (by omega)⟩
-  · rintro ⟨h1,h2⟩ j hj
-    by_cases he : j<r
-    · exact h1 j he
-    · have h := h2 (j-r) (by omega)
-      simpa only [show b+r+(j-r)=b+j by omega,show r+(j-r)=j by omega] using h
 
 /-- The already computed positive transforms extend by one slot. -/
 theorem PosFam.snoc {s : State} {b m : Nat} {f : Nat → Poly}

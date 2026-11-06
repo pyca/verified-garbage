@@ -144,11 +144,6 @@ theorem cmpAnd_tr {a b : Ptr} {n : Nat}
 
 /-! ## Blocks the taint analysis checks -/
 
-theorem setB2_tr {x y : Nat} {P : State → State → Prop} (hP : ∀ s₁ s₂, P s₁ s₂ → s₁.gpr .rbx = s₂.gpr .rbx) :
-    RelCT isa P (.block (setB (sc (oSB + 32)) x ++ setB (sc (oSB + 33)) y)) fun _ _ => True :=
-  taintRel [.rbx] (fun s₁ s₂ h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hP s₁ s₂ h)
-    (hc := .block []) (by with_unfolding_all rfl)
-
 theorem and15_tr {P : State → State → Prop} : RelCT isa P (.block and15) fun _ _ => True :=
   block_nomem_tr fun i hi s => by simp only [and15, List.mem_singleton] at hi; subst hi; rfl
 
