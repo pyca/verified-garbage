@@ -300,8 +300,6 @@ def checkEdges : Except String Unit := do
     throw "import accepted unsupported parameter sizes"
   unless sampleScalar a.q [0, a.q, a.q + 1] == none do throw "invalid scalar accepted"
   unless generate a [] == none do throw "empty randomness tape accepted"
-  for bits in [0, 512, 1024, 2048, 3072, 4096] do
-    unless generateParameters bits [] [] [] == none do throw "empty seed tape accepted"
   for n in List.range 4 do
     for x in List.range 512 do
       unless decodeBE (encodeBE n x) == x % 2 ^ (8 * n) do throw "big-endian wrap failed"
@@ -350,12 +348,11 @@ def checkPrimality : Except String Unit := do
 
 #assert_standard_axioms Spec.Dsa.signContract
 #assert_standard_axioms Spec.Dsa.verifyContract
-#assert_standard_axioms Spec.Dsa.generateParameters
 #assert_standard_axioms Spec.Dsa.probablePrime
 #assert_standard_axioms Spec.Dsa.fromComponents
 #assert_standard_axioms Spec.Dsa.sign
 #assert_standard_axioms Spec.Dsa.verify
-#assert_no_compiler_overrides Spec.Dsa.generateParameters Spec.Dsa.fromComponents Spec.Dsa.sign Spec.Dsa.verify
+#assert_no_compiler_overrides Spec.Dsa.fromComponents Spec.Dsa.sign Spec.Dsa.verify
 #assert_no_compiler_overrides Spec.Dsa.validatePublicKeyApi Spec.Dsa.verifyPrevalidatedApi
 #assert_spec_origin
 

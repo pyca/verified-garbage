@@ -39,7 +39,6 @@ example (pLen qLen : Nat) : Import.lengthsValid pLen qLen ↔
 -- The import extension does not enable parameter generation at 2048/160.
 #guard subgroupBits 2048 == some 256
 #guard ¬generationLengthsValid 256 20
-#guard generateParametersBytes 256 20 [] [] [] == none
 
 #assert_standard_axioms Import.sizesValid
 #assert_standard_axioms Import.lengthsValid

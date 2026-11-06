@@ -30,6 +30,12 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillCorrect
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillWidths
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha1
 import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
+public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
+public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.Contract
 
 -- separate module: its proofs build in parallel with the constant-time ones, `RefillCT`
 

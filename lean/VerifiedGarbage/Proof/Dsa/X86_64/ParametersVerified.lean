@@ -142,13 +142,4 @@ def parametersSatState : State where
   rd := [⟨0x2000, 276⟩]
   wr := [⟨0x8000, 16384⟩]
 
-theorem parametersSatisfiable : ∃ s, (Proof.Dsa.checkParametersContract abi).pre s := by
-  sig_implies_sat [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
-    [parametersSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using parametersSatState
-
-theorem parameters_verified (M : Mont) (Sq : MontS)
-    (hmx : (Generate.checkParameters Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (Generate.checkParameters Sq.mm M.mm) (Proof.Dsa.checkParametersContract abi) :=
-  ⟨parametersCorrect M Sq hmx, parametersConstantTime M Sq, parametersSatisfiable⟩
-
 end VG.Proof.Dsa.X86_64

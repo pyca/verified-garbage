@@ -17,9 +17,9 @@ pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
     use verified_garbage::dsa::Parameters;
 
-    // verified-garbage searches from fixed tapes (`generate` but for
+    // verified-garbage searches from a fixed tape (`generate` but for
     // `getrandom`), so it tests the same candidates and witnesses in every
-    // iteration. OpenSSL cannot be given its tapes, and draws from its own
+    // iteration. OpenSSL cannot be given its tape, and draws from its own
     // generator.
     let mut group = c.benchmark_group("dsa_generate_parameters");
     group.sample_size(10);
