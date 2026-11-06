@@ -13,7 +13,7 @@
     target_arch = "riscv64"
 ))]
 
-use crate::aes_gcm::{Backend, instance, select as select_gcm};
+use crate::aead::aes_gcm::{Backend, instance, select as select_gcm};
 use crate::arch::aes::vg_aes_expand_key;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes::vg_aes_expand_key_aes;
@@ -296,7 +296,7 @@ impl AesGcmSiv {
 #[cfg(test)]
 mod tests {
     use super::{AesGcmSiv, Error, InvalidKeyLength, MAX_LEN, check};
-    use crate::aes_gcm::{Backend, instance};
+    use crate::aead::aes_gcm::{Backend, instance};
     #[cfg(target_arch = "aarch64")]
     use crate::arch::aes_gcm_siv::{
         VG_AES_GCM_SIV_OPEN_AES_FEATURES, VG_AES_GCM_SIV_OPEN_AES_SHA3_FEATURES,

@@ -13,7 +13,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::chacha20poly1305::{ChaCha20Poly1305, Error};
+use verified_garbage::aead::chacha20poly1305::{ChaCha20Poly1305, Error};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{AeadCase, SizesGroup};

@@ -151,7 +151,7 @@ class SplitTests(unittest.TestCase):
 
 
 # What the stand-in `cargo` lists, for the library and the test binary.
-LIB_TESTS = ["aes_gcm::tests::round_trip", "aes_gcm_siv::tests::errors", "cpu::tests::of_names",
+LIB_TESTS = ["aead::aes_gcm::tests::round_trip", "aead::aes_gcm_siv::tests::errors", "cpu::tests::of_names",
              "rsa::pkcs1_enc::tests::padding", "rsa::pss::tests::sign", "x25519::tests::agreement"]
 TESTS_TESTS = ["rfc7748::x448", "wycheproof::rsa_oaep::rsa_oaep_test", "wycheproof::x25519::x25519_test"]
 

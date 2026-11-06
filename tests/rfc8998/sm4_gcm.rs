@@ -1,7 +1,7 @@
 //! SM4-GCM on RFC 8998's example; Wycheproof's vectors are in
 //! `tests/wycheproof/sm4_gcm.rs`.
 
-use verified_garbage::sm4_gcm::{Error, Sm4Gcm};
+use verified_garbage::aead::sm4_gcm::{Error, Sm4Gcm};
 use verified_garbage_test_vectors::unhex_spaced;
 
 /// The value of the field `label` of Appendix A.1: the hex after `label:`,

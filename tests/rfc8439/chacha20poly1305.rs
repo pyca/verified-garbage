@@ -12,8 +12,8 @@
     target_arch = "riscv64"
 ))]
 
+use verified_garbage::aead::chacha20poly1305::{ChaCha20Poly1305, Error};
 use verified_garbage::chacha20::ChaCha20;
-use verified_garbage::chacha20poly1305::{ChaCha20Poly1305, Error};
 use verified_garbage::poly1305::Poly1305;
 
 use super::vectors;

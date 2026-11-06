@@ -3,7 +3,7 @@
 //! A nonce must never be used twice with the same key. The tag length, 1 to 16
 //! bytes, is a type parameter, `T` in [`AesOcb::encrypt_in_place`] and
 //! [`AesOcb::decrypt_in_place`], so that it is fixed in the caller's code and
-//! never taken from a message (see `crate::aes_gcm`); RFC 7253 §3.1 defines the
+//! never taken from a message (see `crate::aead::aes_gcm`); RFC 7253 §3.1 defines the
 //! AEADs with tags of 16, 12 and 8 bytes.
 
 #![cfg(any(

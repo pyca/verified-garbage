@@ -14,7 +14,7 @@
 
 use std::collections::HashMap;
 
-use verified_garbage::aes_ccm::{AesCcm, Error};
+use verified_garbage::aead::aes_ccm::{AesCcm, Error};
 
 use verified_garbage_test_vectors::unhex;
 

@@ -25,7 +25,7 @@ pub fn bench(c: &mut Criterion) {
     use aws_lc_rs::aead::{Aad, CHACHA20_POLY1305, LessSafeKey, Nonce, UnboundKey};
     use criterion::{BenchmarkId, Throughput};
     use openssl::symm::{Cipher, decrypt_aead, encrypt_aead};
-    use verified_garbage::chacha20poly1305::ChaCha20Poly1305;
+    use verified_garbage::aead::chacha20poly1305::ChaCha20Poly1305;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
     // The shared sizes, and more below 1 KiB and at 4 KiB, where the TLS
@@ -246,7 +246,7 @@ fn tls_records(c: &mut Criterion) {
     use criterion::{BenchmarkId, Throughput};
     use openssl::cipher::Cipher as OsslCipher;
     use openssl::cipher_ctx::CipherCtx;
-    use verified_garbage::chacha20poly1305::ChaCha20Poly1305;
+    use verified_garbage::aead::chacha20poly1305::ChaCha20Poly1305;
 
     use crate::aes_gcm::{Aligned, Offsets};
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};

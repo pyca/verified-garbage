@@ -5,7 +5,7 @@
 //! 10, 12, 14 or 16 bytes (Appendix A.1), is a type parameter, `T` in
 //! [`AesCcm::encrypt_in_place`] and [`AesCcm::decrypt_in_place`], so that it is
 //! fixed in the caller's code and never taken from a message (see
-//! `crate::aes_gcm`).
+//! `crate::aead::aes_gcm`).
 
 #![cfg(any(
     target_arch = "x86",
