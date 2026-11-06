@@ -453,4 +453,41 @@ theorem cfbFinal_wp {a : FinalArgs} (ha : FinalOk a) {whole enc : Prog isa} {kW 
       obtain ⟨j, hj, rfl⟩ := this
       exact v' j hj
 
+/-- All that `cfbFinal` writes: the frame, the stack below it that the
+inlined functions use, the data, and the functions' buffers. -/
+theorem FinalDone.frame {a : FinalArgs} (ha : FinalOk a) {s₀ : State} {D : Addr} {len : Nat} {kW kE : Contract isa}
+    {rdW wrW rdE wrE : List Region} {dW dE : Nat} {s' : State}
+    (h : FinalDone a s₀ D len kW kE rdW wrW rdE wrE dW dE s') :
+    Frame (frameRegion s₀ :: below (frameSp s₀) dW :: below (frameSp s₀) dE :: ⟨D, len⟩ :: (wrW ++ wrE))
+      s₀.mem s'.mem := by
+  obtain ⟨u₁', hA, h0, h1⟩ := h.run
+  obtain ⟨u, hu, -, f₁⟩ := hA.run
+  have F : Frame (frameRegion s₀ :: below (frameSp s₀) dW :: below (frameSp s₀) dE :: ⟨D, len⟩ :: (wrW ++ wrE))
+      s₀.mem u₁'.mem := by
+    refine (hu.frame.mono fun x hx => ?_).trans (f₁.mono fun x hx => ?_)
+    · simp only [List.mem_singleton] at hx; subst hx; exact List.mem_cons_self
+    · rcases List.mem_append.mp hx with hx | hx
+      · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+          (List.mem_append_left _ hx))))
+      · simp only [List.mem_singleton] at hx; subst hx
+        exact List.mem_cons_of_mem _ List.mem_cons_self
+  by_cases hr : len % a.blk = 0
+  · rw [h0 hr]; exact F
+  · obtain ⟨v, u₂', vm, -, -, -, hA₂, -, f₃⟩ := h1 hr
+    obtain ⟨u₂, hc₂, -, f₂⟩ := hA₂.run
+    rw [← vm] at F
+    refine F.trans ((hc₂.frame.sub fun x hx => ?_).trans ((f₂.sub fun x hx => ?_).trans (f₃.sub fun x hx => ?_)))
+    · simp only [List.mem_singleton] at hx; subst hx
+      exact ⟨frameRegion s₀, List.mem_cons_self, block_sub s₀ (by have := ha.blk_eq; omega)⟩
+    · rcases List.mem_append.mp hx with hx | hx
+      · exact ⟨x, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+          (List.mem_append_right _ hx)))), fun _ h => h⟩
+      · simp only [List.mem_singleton] at hx; subst hx
+        exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl
+      · exact ⟨⟨D, len⟩, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)),
+          rest_sub a D len⟩
+      · exact ⟨frameRegion s₀, List.mem_cons_self, block_sub s₀ (by have := ha.blk_eq; omega)⟩
+
 end VG.Proof.Modes.X86_64
