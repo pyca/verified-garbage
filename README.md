@@ -1861,7 +1861,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512VL, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX-512BW, AVX2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -1881,7 +1881,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512VL, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX-512BW, AVX2</td>
 
 <td>✅ SHA extensions</td>
 
