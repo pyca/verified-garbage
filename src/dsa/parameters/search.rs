@@ -4,25 +4,33 @@
 //! one tape until it finds parameters, gives up, or asks for a longer tape,
 //! which [`entropy::serve`] supplies.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use alloc::{vec, vec::Vec};
 
 use super::{Error, Secret};
+#[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
-    VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES, vg_dsa_parameter_search, vg_dsa_parameter_search_init,
-    vg_dsa_parameter_search_mr_adx, vg_dsa_parameter_search_sha1_shani,
-    vg_dsa_parameter_search_sha1_shani_mr_adx, vg_dsa_parameter_search_sha1_shani_sha256_avx2,
+    VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES, vg_dsa_parameter_search_mr_adx,
+    vg_dsa_parameter_search_sha1_shani, vg_dsa_parameter_search_sha1_shani_mr_adx,
+    vg_dsa_parameter_search_sha1_shani_sha256_avx2,
     vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx,
     vg_dsa_parameter_search_sha1_shani_sha256_shani,
     vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx, vg_dsa_parameter_search_sha256_avx2,
     vg_dsa_parameter_search_sha256_avx2_mr_adx, vg_dsa_parameter_search_sha256_shani,
     vg_dsa_parameter_search_sha256_shani_mr_adx,
 };
+use crate::arch::dsa::{vg_dsa_parameter_search, vg_dsa_parameter_search_init};
+#[cfg(target_arch = "aarch64")]
+use crate::arch::dsa::{
+    vg_dsa_parameter_search_sha1_sha2, vg_dsa_parameter_search_sha1_sha2_sha256_sha2,
+    vg_dsa_parameter_search_sha256_sha2,
+};
 use crate::cpu::detected;
 use crate::entropy::{self, Step, Stop};
 use verified_garbage_cpu::Features;
 
+#[cfg(target_arch = "x86_64")]
 pub(super) type Search = unsafe extern "sysv64" fn(
     *mut u8,
     usize,
@@ -34,6 +42,7 @@ pub(super) type Search = unsafe extern "sysv64" fn(
     *mut [u64; 4],
 ) -> u32;
 
+#[cfg(target_arch = "x86_64")]
 pub(super) fn select(features: Features) -> Search {
     use crate::hashes::{sha1::Sha1Backend, sha256::Sha256Backend};
     select_backends(
@@ -43,6 +52,7 @@ pub(super) fn select(features: Features) -> Search {
     )
 }
 
+#[cfg(target_arch = "x86_64")]
 pub(super) fn select_backends(
     sha1: crate::hashes::sha1::Sha1Backend,
     sha256: crate::hashes::sha256::Sha256Backend,
@@ -64,6 +74,43 @@ pub(super) fn select_backends(
         (H1::ShaNi, H256::Avx2, true) => vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx,
         (H1::ShaNi, H256::ShaNi, false) => vg_dsa_parameter_search_sha1_shani_sha256_shani,
         (H1::ShaNi, H256::ShaNi, true) => vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx,
+    }
+}
+
+#[cfg(target_arch = "aarch64")]
+pub(super) type Search = unsafe extern "C" fn(
+    *mut u8,
+    usize,
+    *mut [u64; 1],
+    *const u8,
+    usize,
+    *mut u64,
+    usize,
+    *mut [u64; 4],
+) -> u32;
+
+#[cfg(target_arch = "aarch64")]
+pub(super) fn select(features: Features) -> Search {
+    use crate::hashes::{sha1::Sha1Backend, sha256::Sha256Backend};
+    select_backends(
+        Sha1Backend::select(features),
+        Sha256Backend::select(features),
+    )
+}
+
+#[cfg(target_arch = "aarch64")]
+pub(super) fn select_backends(
+    sha1: crate::hashes::sha1::Sha1Backend,
+    sha256: crate::hashes::sha256::Sha256Backend,
+) -> Search {
+    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
+    // Match the hashes' enums exhaustively so a new hash backend reaches
+    // parameter generation.
+    match (sha1, sha256) {
+        (H1::Scalar, H256::Scalar) => vg_dsa_parameter_search,
+        (H1::Scalar, H256::Sha2) => vg_dsa_parameter_search_sha256_sha2,
+        (H1::Sha2, H256::Scalar) => vg_dsa_parameter_search_sha1_sha2,
+        (H1::Sha2, H256::Sha2) => vg_dsa_parameter_search_sha1_sha2_sha256_sha2,
     }
 }
 
