@@ -166,7 +166,8 @@ theorem SC2.of_regs {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ
     by rw [hg .s11 (by decide)]; exact hs.s11, by rw [hg .s10 (by decide)]; exact hs.s10,
     by rw [hg .s9 (by decide)]; exact hs.s9, by rw [hg .s8 (by decide)]; exact hs.s8,
     by rw [hwr]; exact hs.cw, by rw [hwr, hrd]; exact hs.cr⟩, hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp,
-    fun r hr hs' => ?_, by rw [hm]; exact h.sav, by rw [hm]; exact h.sk, by rw [hm]; exact h.mu⟩
+    fun r hr hs' => ?_, by rw [hm]; exact h.sav, by rw [hm]; exact h.sk, by rw [hm]; exact h.mu, h.pre,
+    by rw [hg .s3 (by decide)]; exact h.s3, by rw [hm]; exact h.cache⟩
   have : r ∉ [.a0, .s4, .s5, .s6, .s7] := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro (rfl | rfl | rfl | rfl | rfl)

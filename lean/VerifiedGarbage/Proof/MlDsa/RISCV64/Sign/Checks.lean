@@ -123,7 +123,8 @@ theorem SC2.of_eq {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ s
     by rw [hg .s9 (by decide) (by decide) (by decide)]; exact hs.s9,
     by rw [hg .s8 (by decide) (by decide) (by decide)]; exact hs.s8,
     by rw [hwr]; exact hs.cw, by rw [hwr, hrd]; exact hs.cr⟩, hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp,
-    fun r hr hs' => ?_, by rw [hm]; exact h.sav, by rw [hm]; exact h.sk, by rw [hm]; exact h.mu⟩
+    fun r hr hs' => ?_, by rw [hm]; exact h.sav, by rw [hm]; exact h.sk, by rw [hm]; exact h.mu, h.pre,
+    by rw [hg .s3 (by decide) (by decide) (by decide)]; exact h.s3, by rw [hm]; exact h.cache⟩
   have : r ≠ .a0 ∧ r ≠ .s4 ∧ r ≠ .s6 := ⟨fun e => by subst e; simp [preserved] at hr,
     fun e => by subst e; simp [savedTop] at hs', fun e => by subst e; simp [savedTop] at hs'⟩
   rw [hg r this.1 this.2.1 this.2.2]; exact h.pres r hr hs'

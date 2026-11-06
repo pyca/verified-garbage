@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Lay
 public import VerifiedGarbage.Impl.MlDsa.RISCV64.Sign.Sign
+public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
@@ -91,14 +92,20 @@ abbrev sMu : Addr := σ.gpr .a1
 abbrev sRnd : Addr := σ.gpr .a2
 abbrev sSig : Addr := σ.gpr .a3
 abbrev sScr : Addr := σ.gpr .a4
+abbrev sCache : Addr := σ.gpr .a5
+abbrev sCLen : Nat := (σ.gpr .a6).toNat
+
+/-- What signing keeps in `s3`: the cache pointer if the cache is not empty,
+and 0 otherwise. -/
+def cSel : Addr := if σ.gpr .a6 = 0 then 0 else σ.gpr .a5
 
 end
 
-/-- The precondition of `signContract` with `STK` bytes of stack. -/
+/-- The precondition of `signWithCacheContract` with `STK` bytes of stack. -/
 structure SPre (p : Params) (STK : Nat) (σ : State) : Prop where
   al : σ.sp.toNat % 16 = 0
   stk : STK ≤ σ.sp.toNat
-  rd : σ.rd = [reg (sSk σ) p.skLen, reg (sMu σ) 64, reg (sRnd σ) 32]
+  rd : σ.rd = [reg (sSk σ) p.skLen, reg (sMu σ) 64, reg (sRnd σ) 32, reg (sCache σ) (sCLen σ)]
   wr : σ.wr = [reg (sSig σ) p.sigLen, reg (sScr σ) (scrLen p)]
   d_kg : (reg (sSk σ) p.skLen).Disjoint (reg (sSig σ) p.sigLen)
   d_kc : (reg (sSk σ) p.skLen).Disjoint (reg (sScr σ) (scrLen p))
@@ -107,23 +114,32 @@ structure SPre (p : Params) (STK : Nat) (σ : State) : Prop where
   d_rg : (reg (sRnd σ) 32).Disjoint (reg (sSig σ) p.sigLen)
   d_rc : (reg (sRnd σ) 32).Disjoint (reg (sScr σ) (scrLen p))
   d_gc : (reg (sSig σ) p.sigLen).Disjoint (reg (sScr σ) (scrLen p))
+  d_gx : (reg (sSig σ) p.sigLen).Disjoint (reg (sCache σ) (sCLen σ))
+  d_cx : (reg (sScr σ) (scrLen p)).Disjoint (reg (sCache σ) (sCLen σ))
   b_k : (below σ.sp STK).Disjoint (reg (sSk σ) p.skLen)
   b_m : (below σ.sp STK).Disjoint (reg (sMu σ) 64)
   b_r : (below σ.sp STK).Disjoint (reg (sRnd σ) 32)
   b_g : (below σ.sp STK).Disjoint (reg (sSig σ) p.sigLen)
   b_c : (below σ.sp STK).Disjoint (reg (sScr σ) (scrLen p))
+  b_x : (below σ.sp STK).Disjoint (reg (sCache σ) (sCLen σ))
   f_k : (sSk σ).toNat + p.skLen ≤ 2 ^ 64
   f_m : (sMu σ).toNat + 64 ≤ 2 ^ 64
   f_r : (sRnd σ).toNat + 32 ≤ 2 ^ 64
   f_g : (sSig σ).toNat + p.sigLen ≤ 2 ^ 64
   f_c : (sScr σ).toNat + scrLen p ≤ 2 ^ 64
+  f_x : (sCache σ).toNat + sCLen σ ≤ 2 ^ 64
+  cache : σ.gpr .a6 = 0 ∨ (sCLen σ = 4 * Spec.MlDsa.n * (p.ℓ + 2 * p.k) ∧
+    Proof.MlDsa.CachedSecretPolys p σ.mem (sCache σ) (bytesAt σ.mem (sSk σ) p.skLen))
   al_c : (sScr σ).toNat % 8 = 0
 
-theorem spre_of {p : Params} {n : Nat} {σ : State} (h : (Spec.MlDsa.signContract p RISCV64.abi (n + 1)).pre σ) :
-    SPre p (n + 1) σ := by
-  sig_pre [Spec.MlDsa.signContract, Spec.MlDsa.signSig, RISCV64.abi, RISCV64.argRegs] at h
-  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21⟩ := h
-  exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21⟩
+theorem spre_of {p : Params} {n : Nat} {σ : State}
+    (h : (Proof.MlDsa.signWithCacheContract p RISCV64.abi (n + 1)).pre σ) : SPre p (n + 1) σ := by
+  sig_pre [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, Spec.MlDsa.signSig, RISCV64.abi,
+    RISCV64.argRegs] at h
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22,
+    h23, h24, h25, h26⟩ := h
+  exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22,
+    h23, h24, h25, h26⟩
 
 /-! ## The buffers -/
 

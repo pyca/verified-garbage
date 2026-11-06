@@ -58,7 +58,7 @@ theorem vinvG_regs {p : Params} {STK : Nat} {s₁ s₂ a b : State} {rs : List R
   (ha.regs r hr).trans ((h r hr).trans (hb.regs r hr).symm)
 
 section
-variable {p : Params} {STK : Nat} {X : List Region} {s t : State} (hF : MFacts p) (hp : MVPre p STK X s)
+variable {p : Params} {q : Bool} {STK : Nat} {X : List Region} {s t : State} (hF : MFacts p) (hp : MVPre p q STK X s)
   (h48 : 1168 ≤ STK)
 include hF hp h48
 
@@ -78,10 +78,12 @@ end
 
 /-- The call of the verification function on `μ`, in two runs that agree on `MVCPub`'s inputs, and whose
 invariants say the registers `rs` hold the same. -/
-theorem verifyCall_ct {p : Params} {STK S : Nat} {X₁ X₂ : List Region} {s₁ s₂ : State} {rs : List Reg}
+theorem verifyCall_ct {p : Params} {q : Bool} {STK S : Nat} {X₁ X₂ : List Region} {s₁ s₂ : State} {rs : List Reg}
     {V₁ V₂ : Reg → BitVec 64} (hF : MFacts p) {f : Prog isa}
-    (hf : Callee f (fun stk => verifyContract p RISCV64.abi stk) S) (hS : S ≤ STK) {n : String}
-    (hL₁ : VL p s₁ rs V₁) (hL₂ : VL p s₂ rs V₂) (hp₁ : MVPre p STK X₁ s₁) (hp₂ : MVPre p STK X₂ s₂) (psp : s₁.sp = s₂.sp)
+    (hf : Callee f (fun stk => PreparedKey.verifyEK p q stk) S) (hS : S ≤ STK) {n : String}
+    (hL₁ : VL p s₁ rs V₁) (hL₂ : VL p s₂ rs V₂) (hp₁ : MVPre p q STK X₁ s₁) (hp₂ : MVPre p q STK X₂ s₂)
+    (hk₁ : q = true → PreparedPublicKey p s₁.mem (s₁.gpr .a0)) (hk₂ : q = true → PreparedPublicKey p s₂.mem (s₂.gpr .a0))
+    (psp : s₁.sp = s₂.sp)
     (pr : ∀ r ∈ vArgs, s₁.gpr r = s₂.gpr r) (hV : ∀ r ∈ rs, V₁ r = V₂ r)
     (ek : pkB p s₁ = pkB p s₂) (em : msgB s₁ = msgB s₂) (ec : ctxB s₁ = ctxB s₂) (eg : vsigB p s₁ = vsigB p s₂) :
     RelCT isa (fun a b => MV3 p STK s₁ rs V₁ a ∧ MV3 p STK s₂ rs V₂ b) (.seq (.block verifyArgs) (.call n f))
@@ -93,10 +95,10 @@ theorem verifyCall_ct {p : Params} {STK S : Nat} {X₁ X₂ : List Region} {s₁
       (fun a b hab r hr => vinvG_regs hV hab.1.inv hab.2.inv r (hL₁.regs r (by revert r hr; decide)).1)
       (by taint_decide))
       fun a b hab => ⟨verifyArgs_ok hL₁ hab.1, verifyArgs_ok hL₂ hab.2⟩) ?_
-  refine RelCT.call hver.1 hver.2.1 (vRd p s₁) (vWr p s₁) fun a b hab => ?_
-  have hpre₁ := verifyCall_pre hF hp₁ (Nat.le_trans hstk hS) hab.1
-  have hpre₂ := verifyCall_pre hF hp₂ (Nat.le_trans hstk hS) hab.2
-  have eRd : vRd p s₂ = vRd p s₁ := by simp only [vRd, pkR, vsigR, pr _ (by decide : Reg.a0 ∈ vArgs),
+  refine RelCT.call hver.1 hver.2.1 (vRd p q s₁) (vWr p s₁) fun a b hab => ?_
+  have hpre₁ := verifyCall_pre hF hp₁ hk₁ (Nat.le_trans hstk hS) hab.1
+  have hpre₂ := verifyCall_pre hF hp₂ hk₂ (Nat.le_trans hstk hS) hab.2
+  have eRd : vRd p q s₂ = vRd p q s₁ := by simp only [vRd, pkR, vsigR, pr _ (by decide : Reg.a0 ∈ vArgs),
     pr _ (by decide : Reg.a5 ∈ vArgs), pr _ (by decide : Reg.a6 ∈ vArgs)]
   have eWr : vWr p s₂ = vWr p s₁ := by simp only [vWr, pr _ (by decide : Reg.a6 ∈ vArgs)]
   rw [eRd, eWr] at hpre₂
@@ -111,9 +113,11 @@ theorem verifyCall_ct {p : Params} {STK S : Nat} {X₁ X₂ : List Region} {s₁
   · simp only [State.withRegions_mem, State.callEntry_mem, ce_gpr _ _ _ (show Reg.a0 ∉ linkRegs by decide),
       ce_gpr _ _ _ (show Reg.a1 ∉ linkRegs by decide), ce_gpr _ _ _ (show Reg.a2 ∉ linkRegs by decide),
       hab.1.a0, hab.1.a1, hab.1.a2, hab.2.a0, hab.2.a1, hab.2.a2]
-    rw [v_keep k₁ (R := pkR p s₁) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega) hp₁.kc hp₁.bk,
+    have ks := pkE_sub hF q
+    have hl : p.pkLen < 2 ^ 64 := by have := hF.pk; omega
+    rw [v_keep k₁ (R := ⟨s₁.gpr .a0, p.pkLen⟩) hl (hp₁.kc.sub_left (ks s₁)) (hp₁.bk.sub_right (ks s₁)),
       hab.1.ms.mu, v_keep k₁ (R := vsigR p s₁) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega) hp₁.gc hp₁.bg,
-      v_keep k₂ (R := pkR p s₂) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega) hp₂.kc hp₂.bk,
+      v_keep k₂ (R := ⟨s₂.gpr .a0, p.pkLen⟩) hl (hp₂.kc.sub_left (ks s₂)) (hp₂.bk.sub_right (ks s₂)),
       hab.2.ms.mu, v_keep k₂ (R := vsigR p s₂) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega) hp₂.gc hp₂.bg]
     simp only [pkB, vsigB, fmtB, ctxB, msgB] at ek em ec eg ⊢
     rw [ek, em, ec, eg, p7]
@@ -141,14 +145,14 @@ theorem cachedV_eq {p : Params} {s₁ s₂ : State} (h : ∀ r ∈ vcArgs, s₁.
   show eAt p (s₁.gpr .a6) = eAt p (s₂.gpr .a6)
   rw [h .a6 (by decide)]
 
-theorem verifyMessageCached_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 ≤ STK) {f : Prog isa}
-    (hf : Callee f (fun stk => verifyContract p RISCV64.abi stk) S) (hS : S ≤ STK) {n : String} :
-    ConstantTime isa (MVCPre p STK) (MVCPub p) (verifyMessageCached n f p) := by
+theorem verifyMessageCached_ct {p : Params} {q : Bool} {STK S : Nat} (hF : MFacts p) (h48 : 1168 ≤ STK) {f : Prog isa}
+    (hf : Callee f (fun stk => PreparedKey.verifyEK p q stk) S) (hS : S ≤ STK) {n : String} :
+    ConstantTime isa (MVCPre p q STK) (MVCPub p) (verifyMessageCached n f p) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
-  refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧ MVCPre p STK x.1 ∧
-    MVCPre p STK x.2 ∧ MVCPub p x.1 x.2) (RelCT.exists_ fun ⟨s₁, s₂⟩ => ?_) (fun a b h => ⟨(a, b), rfl, rfl, h⟩)
+  refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧ MVCPre p q STK x.1 ∧
+    MVCPre p q STK x.2 ∧ MVCPub p x.1 x.2) (RelCT.exists_ fun ⟨s₁, s₂⟩ => ?_) (fun a b h => ⟨(a, b), rfl, rfl, h⟩)
     (fun _ _ h => h)
-  by_cases hH : MVCPre p STK s₁ ∧ MVCPre p STK s₂ ∧ MVCPub p s₁ s₂
+  by_cases hH : MVCPre p q STK s₁ ∧ MVCPre p q STK s₂ ∧ MVCPub p s₁ s₂
   swap
   · exact RelCT.of_false fun a b h => hH h.2.2
   obtain ⟨hc₁, hc₂, psp, pl, pr⟩ := hH
@@ -194,12 +198,12 @@ theorem verifyMessageCached_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 :
     -- The call.
     refine RelCT.seq (R := fun a b => VInvG p STK s₁ signRegs (cachedV p s₁) a ∧
         VInvG p STK s₂ signRegs (cachedV p s₂) b)
-      (relct_wp ?_ fun a b hab => ⟨WP.mono (verifyCall_ok (vl_cached p s₁) hF hp₁ hf hS hab.1) fun _ h => h.1,
-        WP.mono (verifyCall_ok (vl_cached p s₂) hF hp₂ hf hS hab.2) fun _ h => h.1⟩)
+      (relct_wp ?_ fun a b hab => ⟨WP.mono (verifyCall_ok (vl_cached p s₁) hF hp₁ hc₁.kp hf hS hab.1) fun _ h => h.1,
+        WP.mono (verifyCall_ok (vl_cached p s₂) hF hp₂ hc₂.kp hf hS hab.2) fun _ h => h.1⟩)
       (ct_prog [.s8] (fun a b hab => hab.1.sp.trans (psp.trans hab.2.sp.symm))
         (fun a b hab r hr => by rw [List.mem_singleton.mp hr]; exact vinvG_regs hV hab.1 hab.2 _ (by decide))
         (by taint_decide))
-    exact verifyCall_ct (n := n) hF hf hS (vl_cached p s₁) (vl_cached p s₂) hp₁ hp₂ psp pv hV ek em ec eg
+    exact verifyCall_ct (n := n) hF hf hS (vl_cached p s₁) (vl_cached p s₂) hp₁ hp₂ hc₁.kp hc₂.kp psp pv hV ek em ec eg
   · -- `ctx_len ≥ 256`.
     exact ct_prog [] (fun a b hab => by rw [hab.1.1, hab.1.2, (Upd.write _ _ _).sp, (Upd.write _ _ _).sp, psp])
       (fun _ _ _ r hr => absurd hr List.not_mem_nil) (by taint_decide)

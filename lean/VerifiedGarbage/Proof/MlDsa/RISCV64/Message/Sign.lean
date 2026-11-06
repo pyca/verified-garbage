@@ -53,9 +53,39 @@ structure MFacts (p : Params) : Prop where
   pk : p.pkLen < 3072
   skl : p.skLen < 8192
   sgl : p.sigLen < 8192
+  psk : preparedSecretKeyBytes p < 2 ^ 31
+  ppk : preparedPublicKeyBytes p < 2 ^ 31
+  psk1 : p.skLen ≤ preparedSecretKeyBytes p
+  ppk1 : p.pkLen ≤ preparedPublicKeyBytes p
 
 theorem mfacts {p : Params} (h : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) : MFacts p := by
-  rcases h with rfl | rfl | rfl <;> exact ⟨by decide, by decide, by decide, by decide, by decide, by decide⟩
+  rcases h with rfl | rfl | rfl <;> exact ⟨by decide, by decide, by decide, by decide, by decide, by decide,
+    by decide, by decide, by decide, by decide⟩
+
+/-- The key's length, encoded or prepared. -/
+theorem sk128 {p : Params} (hF : MFacts p) (q : Bool) : 128 ≤ PreparedKey.skBytes p q ∧ p.skLen ≤ PreparedKey.skBytes p q ∧
+    PreparedKey.skBytes p q < 2 ^ 31 := by
+  have := hF.sk; have := hF.skl; have := hF.psk; have := hF.psk1
+  cases q <;> simp only [PreparedKey.skBytes] <;> omega
+
+/-- The encoded key, in the key. -/
+theorem skE_sub {p : Params} (hF : MFacts p) (q : Bool) (x : State) :
+    Region.Sub ⟨x.gpr .a0, p.skLen⟩ (skR p x q) := by
+  have e := Offset.sub_base (x.gpr .a0) (d := 0) (n := p.skLen) (k := PreparedKey.skBytes p q)
+    (by have := (sk128 hF q).2.1; omega)
+  rwa [BitVec.add_zero] at e
+
+theorem pkL {p : Params} (hF : MFacts p) (q : Bool) : p.pkLen ≤ PreparedKey.pkBytes p q ∧
+    PreparedKey.pkBytes p q < 2 ^ 31 := by
+  have := hF.pk; have := hF.ppk; have := hF.ppk1
+  cases q <;> simp only [PreparedKey.pkBytes] <;> omega
+
+/-- The encoded public key, in the key. -/
+theorem pkE_sub {p : Params} (hF : MFacts p) (q : Bool) (x : State) :
+    Region.Sub ⟨x.gpr .a0, p.pkLen⟩ (pkR p x q) := by
+  have e := Offset.sub_base (x.gpr .a0) (d := 0) (n := p.pkLen) (k := PreparedKey.pkBytes p q)
+    (by have := (pkL hF q).1; omega)
+  rwa [BitVec.add_zero] at e
 
 theorem msw (p : Params) : messageScratchWords p * 8 = oE p + 1024 := by
   simp only [messageScratchWords, oE]; omega_arith
@@ -134,7 +164,7 @@ abbrev SInv (p : Params) (STK : Nat) (s : State) : State → Prop :=
 theorem signRegs_pres : ∀ r ∈ signRegs, r ∈ preserved := by decide
 
 section
-variable {p : Params} {STK : Nat} {s : State} (hF : MFacts p) (hp : MSPre p STK s) (h48 : 1168 ≤ STK)
+variable {p : Params} {q : Bool} {STK : Nat} {s : State} (hF : MFacts p) (hp : MSPre p q STK s) (h48 : 1168 ≤ STK)
 
 theorem s_e {t : State} (h : SInv p STK s t) : t.gpr .s8 = eAt p (s.gpr .a7) := h.regs _ (by decide)
 
@@ -217,7 +247,7 @@ theorem base_ok (p : Params) (hF : MFacts p) {sr : Reg} (hsr : sr ≠ .t2) (u : 
   · rw [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ hsr, RegUpd.gpr_write_self]
   · rw [RegUpd.gpr_write_of_ne _ _ hr, RegUpd.gpr_write_of_ne _ _ hr]
 
-theorem signSetup_ok {p : Params} {STK : Nat} {s u : State} (hF : MFacts p) (hp : MSPre p STK s)
+theorem signSetup_ok {p : Params} {q : Bool} {STK : Nat} {s u : State} (hF : MFacts p) (hp : MSPre p q STK s)
     (hu : ∀ r, r ≠ .t1 → u.gpr r = s.gpr r) (hrd : u.rd = s.rd) (hwr : u.wr = s.wr) (hsp : u.sp = s.sp)
     (hlr : u.gpr .ra = s.gpr .ra) (hm : u.mem = s.mem) :
     WP isa (.block (enter .a7 p signRegs signMs)) u (MS1 p STK s) := by
@@ -271,7 +301,7 @@ structure MS2 (p : Params) (STK : Nat) (s t : State) : Prop where
   mu : bytesAt t.mem (eAt p (s.gpr .a7) + BitVec.ofNat 64 oMU) 64 = messageRep (skTr (skB p s)) (fmtB s)
 
 /-- Where the hash of `μ` may run, from the invariant. -/
-theorem signHash_env {p : Params} {STK : Nat} {s t : State} (hF : MFacts p) (hp : MSPre p STK s) (h48 : 1168 ≤ STK)
+theorem signHash_env {p : Params} {q : Bool} {STK : Nat} {s t : State} (hF : MFacts p) (hp : MSPre p q STK s) (h48 : 1168 ≤ STK)
     (hi : SInv p STK s t) : KEnv 840 (eAt p (s.gpr .a7)) t ∧
       ∀ q ∈ (⟨.s0, 64, .imm 64⟩ : Piece) :: fmtPieces, PieceOk 840 (eAt p (s.gpr .a7)) t q := by
   have g22 : t.gpr .s0 = s.gpr .a0 := hi.regs _ (by decide)
@@ -280,12 +310,13 @@ theorem signHash_env {p : Params} {STK : Nat} {s t : State} (hF : MFacts p) (hp 
   have g25 : t.gpr .s3 = s.gpr .a3 := hi.regs _ (by decide)
   have g26 : t.gpr .s4 = s.gpr .a4 := hi.regs _ (by decide)
   have g30 := s_e hi
-  have hsk := hF.sk
+  have hsk := (sk128 hF q).1
+  have hsk0 := hF.sk
   have b48 := below48 hp h48
   have hsp : t.sp = s.sp := hi.sp
-  have trS : Region.Sub ⟨s.gpr .a0 + BitVec.ofNat 64 64, 64⟩ (skR p s) := Offset.sub_base _ (by omega_arith)
+  have trS : Region.Sub ⟨s.gpr .a0 + BitVec.ofNat 64 64, 64⟩ (skR p s q) := Offset.sub_base _ (by omega_arith)
   have eS := e_sub0 (p := p) (x := s.gpr .a7) (n := 840) (by decide)
-  have cr : ∀ R ∈ [skR p s, msgR s, ctxR s, rndR s], RISCV64.Covers [R] (t.rd ++ t.wr) := fun R hR => by
+  have cr : ∀ R ∈ [skR p s q, msgR s, ctxR s, rndR s], RISCV64.Covers [R] (t.rd ++ t.wr) := fun R hR => by
     rw [hi.rd, hp.rd]; exact cov_rd fun a n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton.mp hr]; exact hR, hc⟩
   have ke : KEnv 840 (eAt p (s.gpr .a7)) t :=
     ⟨by decide, e_cov0 hp hi.wr (by decide), e_al hp.alx hp.fx, by rw [hsp]; exact hp.al,
@@ -296,7 +327,7 @@ theorem signHash_env {p : Params} {STK : Nat} {s t : State} (hF : MFacts p) (hp 
     rcases hq with rfl | rfl | rfl | rfl
     · exact pieceOk_of (R := ⟨s.gpr .a0 + BitVec.ofNat 64 64, 64⟩)
         (by simp only [Piece.R, Piece.addr, Len.val, g22]) (by decide) (by decide) (show 64 < 2048 by decide)
-        (cov_rd (cov_in (k := p.skLen) (by rw [hi.rd, hp.rd]; simp) (by omega_arith)))
+        (cov_rd (cov_in (k := PreparedKey.skBytes p q) (by rw [hi.rd, hp.rd]; simp) (by omega_arith)))
         ((hp.kc.sub_left trS).sub_right eS) (by rw [hsp]; exact (hp.bk.sub_left b48).sub_right trS)
     · exact pieceOk_of (R := ⟨eAt p (s.gpr .a7) + BitVec.ofNat 64 oHdr, 2⟩)
         (by simp only [Piece.R, Piece.addr, Len.val, g30]) (by decide) (by decide) (show 2 < 2048 by decide)
@@ -310,7 +341,7 @@ theorem signHash_env {p : Params} {STK : Nat} {s t : State} (hF : MFacts p) (hp 
         (hp.mc.sub_right eS) (by rw [hsp]; exact hp.bm.sub_left b48)
   exact ⟨ke, hin⟩
 
-theorem signHash_ok {p : Params} {STK : Nat} {s t : State} (hF : MFacts p) (hp : MSPre p STK s) (h48 : 1168 ≤ STK)
+theorem signHash_ok {p : Params} {q : Bool} {STK : Nat} {s t : State} (hF : MFacts p) (hp : MSPre p q STK s) (h48 : 1168 ≤ STK)
     (h : MS1 p STK s t) : WP isa (muHash ⟨.s0, 64, .imm 64⟩) t (MS2 p STK s) := by
   have hi := h.inv
   obtain ⟨ke, hin⟩ := signHash_env hF hp h48 hi
@@ -320,10 +351,11 @@ theorem signHash_ok {p : Params} {STK : Nat} {s t : State} (hF : MFacts p) (hp :
   have g25 : t.gpr .s3 = s.gpr .a3 := hi.regs _ (by decide)
   have g26 : t.gpr .s4 = s.gpr .a4 := hi.regs _ (by decide)
   have g30 := s_e hi
-  have hsk := hF.sk
+  have hsk := (sk128 hF q).1
+  have hsk0 := hF.sk
   have b48 := below48 hp h48
   have hsp : t.sp = s.sp := hi.sp
-  have trS : Region.Sub ⟨s.gpr .a0 + BitVec.ofNat 64 64, 64⟩ (skR p s) := Offset.sub_base _ (by omega_arith)
+  have trS : Region.Sub ⟨s.gpr .a0 + BitVec.ofNat 64 64, 64⟩ (skR p s q) := Offset.sub_base _ (by omega_arith)
   have eS := e_sub0 (p := p) (x := s.gpr .a7) (n := 840) (by decide)
   unfold muHash
   refine WP.mono (hash_ok (N := 840) (n := 64) (o := oMU) (out := eAt p (s.gpr .a7) + BitVec.ofNat 64 oMU) (by decide) (by decide) (by decide) (by decide) g30
@@ -393,15 +425,15 @@ theorem signArgs_ok {p : Params} {STK : Nat} {s t : State} (h : MS2 p STK s t) :
   · rw [a7, g29, BitVec.add_zero]
 
 /-- What the signing function on `μ` reads and writes. -/
-abbrev sRd (p : Params) (s : State) : List Region :=
-  [skR p s, ⟨eAt p (s.gpr .a7) + BitVec.ofNat 64 oMU, 64⟩, rndR s]
+abbrev sRd (p : Params) (q : Bool) (s : State) : List Region :=
+  [skR p s q, ⟨eAt p (s.gpr .a7) + BitVec.ofNat 64 oMU, 64⟩, rndR s]
 abbrev sWr (p : Params) (s : State) : List Region := [sigR p s, ⟨s.gpr .a7, scratchWords p * 8⟩]
 
 /-- The call's precondition, and its regions. -/
-theorem signCall_pre {p : Params} {STK stk : Nat} {s u : State} (hF : MFacts p) (hp : MSPre p STK s)
+theorem signCall_pre {p : Params} {q : Bool} {STK stk : Nat} {s u : State} (hF : MFacts p) (hp : MSPre p q STK s)
     (hstk : stk ≤ STK) (h : SA p STK s u) :
-    (signContract p RISCV64.abi stk).pre (u.callEntry.withRegions (sRd p s) (sWr p s)) ∧
-      RISCV64.Covers (sRd p s ++ sWr p s) (u.rd ++ u.wr) ∧ RISCV64.Covers (sWr p s) u.wr := by
+    (PreparedKey.signEK p q stk).pre (u.callEntry.withRegions (sRd p q s) (sWr p s)) ∧
+      RISCV64.Covers (sRd p q s ++ sWr p s) (u.rd ++ u.wr) ∧ RISCV64.Covers (sWr p s) u.wr := by
   have iu := h.ms.inv
   have hstkS : STK ≤ s.sp.toNat := hp.stk
   have hE := hF.e
@@ -421,7 +453,13 @@ theorem signCall_pre {p : Params} {STK stk : Nat} {s u : State} (hF : MFacts p) 
       ((ce_gpr _ _ _ (by decide)).trans h.a4) rfl rfl (by simp only [State.withRegions_sp, State.callEntry_sp, usp]; omega_arith)
       (by simp only [State.withRegions_sp, State.callEntry_sp, usp]; exact hp.al) hp.alx
       hp.kg (hp.kc.sub_right w_sub) (hp.gc.symm.sub_left muS) muW.symm hp.rg (hp.rc.sub_right w_sub)
-      (hp.gc.sub_right w_sub) ?_ ?_ ?_ ?_ ?_ hp.fk muF hp.fr hp.fg (by have : scratchWords p * 8 ≤ oE p := (by simp only [oE]; omega_arith); omega_arith)
+      (hp.gc.sub_right w_sub) ?_ ?_ ?_ ?_ ?_ hp.fk muF hp.fr hp.fg (by have : scratchWords p * 8 ≤ oE p := (by simp only [oE]; omega_arith); omega_arith) ?_
+    case' refine_6 =>
+      intro hq
+      have hk := hp.kp hq
+      subst hq
+      have hl : preparedSecretKeyBytes p < 2 ^ 64 := by have := hF.psk; omega_arith
+      exact PreparedKey.preparedSecret_of_bytes (s_keep iu (R := skR p s true) hl hp.kg hp.kc hp.bk) hk
     all_goals simp only [State.withRegions_sp, State.callEntry_sp, usp]
     · exact hp.bk.sub_left bs
     · exact (hp.bx.sub_left bs).sub_right muS
@@ -432,7 +470,7 @@ theorem signCall_pre {p : Params} {STK stk : Nat} {s u : State} (hF : MFacts p) 
     refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact ⟨skR p s, by simp, 0, by simp, by simp⟩
+    · exact ⟨skR p s q, by simp, 0, by simp, by simp⟩
     · exact ⟨scrR p s, by simp, oE p + oMU, e_add _ _ _, e_len p (d := oMU) (n := 64) (by decide)⟩
     · exact ⟨rndR s, by simp, 0, by simp, by simp⟩
     · exact ⟨sigR p s, by simp, 0, by simp, by simp⟩
@@ -444,8 +482,8 @@ theorem signCall_pre {p : Params} {STK stk : Nat} {s u : State} (hF : MFacts p) 
     · exact ⟨sigR p s, by simp, 0, by simp, by simp⟩
     · exact ⟨scrR p s, by simp, 0, by simp, by simp only [messageScratchWords]; omega_arith⟩
 
-theorem signCall_ok {p : Params} {STK S : Nat} {s t : State} (hF : MFacts p) (hp : MSPre p STK s)
-    {f : Prog isa} (hf : Callee f (fun stk => signContract p RISCV64.abi stk) S) (hS : S ≤ STK) {n : String}
+theorem signCall_ok {p : Params} {q : Bool} {STK S : Nat} {s t : State} (hF : MFacts p) (hp : MSPre p q STK s)
+    {f : Prog isa} (hf : Callee f (fun stk => PreparedKey.signEK p q stk) S) (hS : S ≤ STK) {n : String}
     (h : MS2 p STK s t) :
     WP isa (.seq (.block signArgs) (.call n f)) t fun t' => SInv p STK s t' ∧
       Outcome (fun b => signMu p b (skB p s) (messageRep (skTr (skB p s)) (fmtB s)) (rndB s))
@@ -470,23 +508,25 @@ theorem signCall_ok {p : Params} {STK S : Nat} {s t : State} (hF : MFacts p) (hp
     · exact slot_w hF
     · rw [usp]
       exact (hp.bx.symm.sub_left slot_sub).sub_right (below_sub (by have := hf.stack; omega_arith) (by omega_arith))
-  · have q := sign_post post'
+  · have hq := sign_post post'
     simp only [State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
       State.callEntry_gpr _ (show Reg.a0 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.a1 ∉ linkRegs by decide),
       State.callEntry_gpr _ (show Reg.a2 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.a3 ∉ linkRegs by decide),
-      hu.a0, hu.a1, hu.a2, hu.a3] at q
-    rw [s_keep iu (R := skR p s) (by have := hF.skl; show p.skLen < 2 ^ 64; omega_arith) hp.kg hp.kc hp.bk, hu.ms.mu,
-      s_keep iu (R := rndR s) (show (32 : Nat) < 2 ^ 64 by decide) hp.rg hp.rc hp.br] at q
-    exact q
+      hu.a0, hu.a1, hu.a2, hu.a3] at hq
+    have ks := skE_sub hF q s
+    rw [s_keep iu (R := ⟨s.gpr .a0, p.skLen⟩) (by have := hF.skl; show p.skLen < 2 ^ 64; omega_arith)
+      (hp.kg.sub_left ks) (hp.kc.sub_left ks) (hp.bk.sub_right ks), hu.ms.mu,
+      s_keep iu (R := rndR s) (show (32 : Nat) < 2 ^ 64 by decide) hp.rg hp.rc hp.br] at hq
+    exact hq
 
 /-! ## `sign_message` -/
 
 /-- The result: 2 for a context string longer than 255 bytes, else the
 signature of the formatted message. -/
-theorem signMessage_wp {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 ≤ STK) {f : Prog isa}
-    (hf : Callee f (fun stk => signContract p RISCV64.abi stk) S) (hS : S ≤ STK) {n : String} {s : State}
-    (hp : MSPre p STK s) :
-    WP isa (signMessage n f p) s fun t => abiPreserved s t ∧ (signMessageContract p RISCV64.abi STK).post s t := by
+theorem signMessage_wp {p : Params} {q : Bool} {STK S : Nat} (hF : MFacts p) (h48 : 1168 ≤ STK) {f : Prog isa}
+    (hf : Callee f (fun stk => PreparedKey.signEK p q stk) S) (hS : S ≤ STK) {n : String} {s : State}
+    (hp : MSPre p q STK s) :
+    WP isa (signMessage n f p) s fun t => abiPreserved s t ∧ (signMessageEK p q STK).post s t := by
   unfold signMessage top
   refine WP.seq (Steps.WP.cons (exec_shift_d (by decide)) (WP.block_nil ?_))
   have hu := Steps.Upd.write s .t1 (s.gpr .a4 >>> 8)
@@ -505,16 +545,24 @@ theorem signMessage_wp {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 �
         rw [h₃.rd, h₃.wr, hp.rd, hp.wr, e_add]
         exact ⟨scrR p s, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
       fun t₄ g₄ sp₄ lr₄ m₄ o₄ => ⟨⟨g₄, sp₄, lr₄⟩, ?_⟩
-    · sig_post [signMessageContract, signMessageSig, RISCV64.abi, RISCV64.argRegs]
-      rw [Proof.MlDsa.Message.formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact hcl'), o₄ .a0 (by decide)
+    · cases q
+      all_goals simp only [signMessageEK, Bool.false_eq_true, ↓reduceIte]
+      all_goals first
+        | sig_post [signMessageContract, signMessageSig, RISCV64.abi, RISCV64.argRegs]
+        | sig_post [preparedSignMessageContract, preparedSignMessageSig, RISCV64.abi, RISCV64.argRegs]
+      all_goals rw [Proof.MlDsa.Message.formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact hcl'), o₄ .a0 (by decide)
         (by decide), m₄]
-      simp only [signInternal, Proof.MlKem.bytesAt_length]
-      exact r₃
+      all_goals simp only [signInternal, Proof.MlKem.bytesAt_length]
+      all_goals exact r₃
   · have hcl' : ¬ (s.gpr .a4).toNat < 256 := of_decide_eq_false hcl
     refine Steps.WP.cons (exec_li (d := .a0) (imm := 2) (by decide)) (WP.block_nil ⟨⟨fun r hr => ?_, rfl, rfl⟩, ?_⟩)
     · rw [(Steps.Upd.write _ _ _).other _ (Proof.Sha3.RISCV64.Pieces.pres_ne hr).2.1, hu.other _ (by revert hr; cases r <;> decide)]
-    · sig_post [signMessageContract, signMessageSig, RISCV64.abi, RISCV64.argRegs]
-      rw [Proof.MlDsa.Message.formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega_arith)]
-      rfl
+    · cases q
+      all_goals simp only [signMessageEK, Bool.false_eq_true, ↓reduceIte]
+      all_goals first
+        | sig_post [signMessageContract, signMessageSig, RISCV64.abi, RISCV64.argRegs]
+        | sig_post [preparedSignMessageContract, preparedSignMessageSig, RISCV64.abi, RISCV64.argRegs]
+      all_goals rw [Proof.MlDsa.Message.formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega_arith)]
+      all_goals rfl
 
 end VG.Proof.MlDsa.RISCV64.Message
