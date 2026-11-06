@@ -382,6 +382,8 @@ theorem sizesS_ct (hl : LayOk l) : RelCT isa (Two (Stage R3)) (.block (sizes l))
     (by unfold offQ at hZq; omega_arith) (show (p.k + 7) / 8 < 2 ^ 64 by omega_arith) (by omega_arith) (by omega_arith))
     fun t' ⟨zf, me, k⟩ => ⟨⟨minv, mp, mq, hr.of_regs me k⟩, zf⟩
 
+local notation "CLay" => VG.Impl.Rsa.X86_64.CrtIfma.Lay
+
 /-- The layout of a key with `w` words, if it has one. -/
 def layOf (w : Nat) : CLay :=
   if w = 2 * lay2048.W then lay2048 else if w = 2 * lay3072.W then lay3072 else lay4096
