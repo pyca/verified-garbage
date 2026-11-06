@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Layout
+public import VerifiedGarbage.Spec.MlDsa.PreparedKey
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -32,10 +33,16 @@ def params : List Params := [mlDsa44, mlDsa65, mlDsa87]
 /-- The size of `scratch` in bytes. -/
 abbrev mScrLen (p : Params) : Nat := messageScratchWords p * 8
 
-section
-variable (p : Params) (s : State)
+/-- The length of the key: the encoded key, or a prepared key (`prep`). -/
+abbrev keyLen (p : Params) (prep : Bool) : Nat := if prep then preparedSecretKeyBytes p else p.skLen
 
-abbrev rSk : Region := ⟨s.gpr .rdi, p.skLen⟩
+/-- The flag of the signing function on `μ`: whether the key is prepared. -/
+abbrev flagOf (prep : Bool) : Nat := if prep then 1 else 0
+
+section
+variable (p : Params) (prep : Bool) (s : State)
+
+abbrev rSk : Region := ⟨s.gpr .rdi, keyLen p prep⟩
 abbrev rMsg : Region := ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩
 abbrev rCtx : Region := ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
 abbrev rRnd : Region := ⟨s.gpr .r9, 32⟩
@@ -47,14 +54,15 @@ abbrev rStk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 112, 112⟩
 
 end
 
-/-- The precondition of `signMessageContract p X86_64.abi 112`. -/
-structure SPre (p : Params) (s : State) : Prop where
+/-- The precondition of `signMessageContract p X86_64.abi 112` (`prep = false`) or of
+`preparedSignMessageContract p X86_64.abi 112` (`prep = true`). -/
+structure SPre (p : Params) (prep : Bool) (s : State) : Prop where
   sp : 112 ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 24 ≤ 2 ^ 64
-  rd : s.rd = [rSk p s, rMsg s, rCtx s, rRnd s, rArgs s]
+  rd : s.rd = [rSk p prep s, rMsg s, rCtx s, rRnd s, rArgs s]
   wr : s.wr = [rSig p s, rScr p s]
-  skSig : (rSk p s).Disjoint (rSig p s)
-  skScr : (rSk p s).Disjoint (rScr p s)
+  skSig : (rSk p prep s).Disjoint (rSig p s)
+  skScr : (rSk p prep s).Disjoint (rScr p s)
   msgSig : (rMsg s).Disjoint (rSig p s)
   msgScr : (rMsg s).Disjoint (rScr p s)
   ctxSig : (rCtx s).Disjoint (rSig p s)
@@ -64,35 +72,47 @@ structure SPre (p : Params) (s : State) : Prop where
   sigScr : (rSig p s).Disjoint (rScr p s)
   sigArgs : (rSig p s).Disjoint (rArgs s)
   scrArgs : (rScr p s).Disjoint (rArgs s)
-  retSk : (rRet s).Disjoint (rSk p s)
+  retSk : (rRet s).Disjoint (rSk p prep s)
   retMsg : (rRet s).Disjoint (rMsg s)
   retCtx : (rRet s).Disjoint (rCtx s)
   retRnd : (rRet s).Disjoint (rRnd s)
   retSig : (rRet s).Disjoint (rSig p s)
   retScr : (rRet s).Disjoint (rScr p s)
   retArgs : (rRet s).Disjoint (rArgs s)
-  stkSk : (rStk s).Disjoint (rSk p s)
+  stkSk : (rStk s).Disjoint (rSk p prep s)
   stkMsg : (rStk s).Disjoint (rMsg s)
   stkCtx : (rStk s).Disjoint (rCtx s)
   stkRnd : (rStk s).Disjoint (rRnd s)
   stkSig : (rStk s).Disjoint (rSig p s)
   stkScr : (rStk s).Disjoint (rScr p s)
   stkArgs : (rStk s).Disjoint (rArgs s)
-  nSk : (s.gpr .rdi).toNat + p.skLen ≤ 2 ^ 64
+  nSk : (s.gpr .rdi).toNat + keyLen p prep ≤ 2 ^ 64
   nMsg : (s.gpr .rsi).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64
   nCtx : (s.gpr .rcx).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64
   nRnd : (s.gpr .r9).toNat + 32 ≤ 2 ^ 64
   nSig : (stackArg s 0).toNat + p.sigLen ≤ 2 ^ 64
   nScr : (stackArg s 1).toNat + mScrLen p ≤ 2 ^ 64
+  prepK : prep = true → PreparedSecretKey p s.mem (s.gpr .rdi)
 
-theorem sPre_of {p : Params} {s : State} (h : (signMessageContract p X86_64.abi 112).pre s) : SPre p s := by
+theorem sPre_of {p : Params} {s : State} (h : (signMessageContract p X86_64.abi 112).pre s) : SPre p false s := by
   sig_pre [signMessageContract, signMessageSig, X86_64.abi, X86_64.argRegs, List.range, List.range.loop] at h
   obtain ⟨sp, sp2, rd, wr, skSig, skScr, msgSig, msgScr, ctxSig, ctxScr, rndSig, rndScr, sigScr, sigArgs,
     scrArgs, retSk, retMsg, retCtx, retRnd, retSig, retScr, retArgs, stkSk, stkMsg, stkCtx, stkRnd, stkSig,
     stkScr, stkArgs, nSk, nMsg, nCtx, nRnd, nSig, nScr⟩ := h
   exact ⟨sp, sp2, rd, wr, skSig, skScr, msgSig, msgScr, ctxSig, ctxScr, rndSig, rndScr, sigScr, sigArgs,
     scrArgs, retSk, retMsg, retCtx, retRnd, retSig, retScr, retArgs, stkSk, stkMsg, stkCtx, stkRnd, stkSig,
-    stkScr, stkArgs, nSk, nMsg, nCtx, nRnd, nSig, nScr⟩
+    stkScr, stkArgs, nSk, nMsg, nCtx, nRnd, nSig, nScr, fun h => absurd h (by decide)⟩
+
+theorem sPreP_of {p : Params} {s : State} (h : (preparedSignMessageContract p X86_64.abi 112).pre s) :
+    SPre p true s := by
+  sig_pre [preparedSignMessageContract, preparedSignMessageSig, X86_64.abi, X86_64.argRegs, List.range,
+    List.range.loop] at h
+  obtain ⟨sp, sp2, rd, wr, skSig, skScr, msgSig, msgScr, ctxSig, ctxScr, rndSig, rndScr, sigScr, sigArgs,
+    scrArgs, retSk, retMsg, retCtx, retRnd, retSig, retScr, retArgs, stkSk, stkMsg, stkCtx, stkRnd, stkSig,
+    stkScr, stkArgs, nSk, nMsg, nCtx, nRnd, nSig, nScr, hk⟩ := h
+  exact ⟨sp, sp2, rd, wr, skSig, skScr, msgSig, msgScr, ctxSig, ctxScr, rndSig, rndScr, sigScr, sigArgs,
+    scrArgs, retSk, retMsg, retCtx, retRnd, retSig, retScr, retArgs, stkSk, stkMsg, stkCtx, stkRnd, stkSig,
+    stkScr, stkArgs, nSk, nMsg, nCtx, nRnd, nSig, nScr, fun _ => hk⟩
 
 /-! ## The layout -/
 
@@ -107,11 +127,16 @@ theorem skLen_ge {p : Params} (hp : p ∈ params) : 128 ≤ p.skLen ∧ p.skLen 
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl <;> decide
 
+theorem keyLen_ge {p : Params} (hp : p ∈ params) (prep : Bool) :
+    128 ≤ keyLen p prep ∧ keyLen p prep < 2 ^ 31 ∧ p.skLen ≤ keyLen p prep := by
+  simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
+  rcases hp with rfl | rfl | rfl <;> cases prep <;> decide
+
 /-- The layout of a run of `sign_message` from `s`. -/
-def slay (p : Params) (s : State) : Lay where
+def slay (p : Params) (prep : Bool) (s : State) : Lay where
   B := s.gpr .rsp - BitVec.ofNat 64 112
   key := s.gpr .rdi
-  keyLen := p.skLen
+  keyLen := keyLen p prep
   msg := s.gpr .rsi
   len := s.gpr .rdx
   ctx := s.gpr .rcx
@@ -123,17 +148,17 @@ def slay (p : Params) (s : State) : Lay where
   rd := s.rd
   wr := s.wr
 
-theorem slay_B (p : Params) (s : State) :
-    (slay p s).B + BitVec.ofNat 64 112 = s.gpr .rsp := BitVec.sub_add_cancel _ _
+theorem slay_B (p : Params) (prep : Bool) (s : State) :
+    (slay p prep s).B + BitVec.ofNat 64 112 = s.gpr .rsp := BitVec.sub_add_cancel _ _
 
-theorem slay_X (p : Params) (s : State) : Within (slay p s).XS (rScr p s) :=
+theorem slay_X (p : Params) (prep : Bool) (s : State) : Within (slay p prep s).XS (rScr p s) :=
   ⟨oE p, rfl, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq]⟩
 
-theorem slay_ok {p : Params} (hp : p ∈ params) {s : State} (h : SPre p s) (h8 : (s.gpr .r8).toNat < 256) :
-    (slay p s).Ok := by
-  have hX := slay_X p s
+theorem slay_ok {p : Params} {prep : Bool} (hp : p ∈ params) {s : State} (h : SPre p prep s)
+    (h8 : (s.gpr .r8).toNat < 256) : (slay p prep s).Ok := by
+  have hX := slay_X p prep s
   have hXs := hX.sub
-  refine ⟨h8, oE_lt hp, skLen_ge hp, ?_, ⟨rScr p s, by simp [slay, h.wr], hX⟩, by simp [slay, h.rd],
+  refine ⟨h8, oE_lt hp, ⟨(keyLen_ge hp prep).1, (keyLen_ge hp prep).2.1⟩, ?_, ⟨rScr p s, by simp [slay, h.wr], hX⟩, by simp [slay, h.rd],
     by simp [slay, h.rd], by simp [slay, h.rd], h.skScr.symm.sub_left hXs, h.msgScr.symm.sub_left hXs,
     h.ctxScr.symm.sub_left hXs, h.stkScr.sub_right hXs, h.stkSk, h.stkMsg, h.stkCtx, h.nSk, h.nMsg, h.nCtx, ?_⟩
   · have := h.sp; have := (s.gpr .rsp).isLt
@@ -144,12 +169,12 @@ theorem slay_ok {p : Params} (hp : p ∈ params) {s : State} (h : SPre p s) (h8 
     have := h.nSig; have := h.nScr
     rcases hR with rfl | rfl <;> simp only <;> omega
 
-theorem mu_eq (p : Params) (s : State) :
-    (slay p s).MU = stackArg s 1 + BitVec.ofNat 64 (oE p + 840) := by
+theorem mu_eq (p : Params) (prep : Bool) (s : State) :
+    (slay p prep s).MU = stackArg s 1 + BitVec.ofNat 64 (oE p + 840) := by
   simp only [Lay.MU, Lay.X, slay, add_add]
 
 
-theorem mu_nowrap {p : Params} {s : State} (h : SPre p s) : (slay p s).MU.toNat + 64 ≤ 2 ^ 64 := by
+theorem mu_nowrap {p : Params} {prep : Bool} {s : State} (h : SPre p prep s) : (slay p prep s).MU.toNat + 64 ≤ 2 ^ 64 := by
   have hn : (stackArg s 1).toNat + (oE p + 1024) ≤ 2 ^ 64 := by rw [← mScr_eq]; exact h.nScr
   rw [mu_eq]
   generalize oE p = e at hn ⊢

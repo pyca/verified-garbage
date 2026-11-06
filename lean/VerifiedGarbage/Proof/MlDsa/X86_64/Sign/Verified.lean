@@ -33,38 +33,6 @@ open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlDsa.X86_64 (Comp Same Same.ok ArithImpl Code.allInstrs_of_all)
 open VG.Impl.MlDsa.X86_64.Arith (Backend)
 
-/-- A state satisfying `signContract`'s precondition. -/
-def signSat (p : Params) : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x3000 | .rdx => 0x3100 | .rcx => 0x4000 | .r8 => 0x10000 | .rsp => 0x80000
-    | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, p.skLen⟩, ⟨0x3000, 64⟩, ⟨0x3100, 32⟩]
-  wr := [⟨0x4000, p.sigLen⟩, ⟨0x10000, 8 * scratchWords p⟩]
-
-theorem signK_implies_of {p : Params} (hsat : ∃ s, (signContract p X86_64.abi signStack).pre s) :
-    (signK p signStack).Implies (signContract p X86_64.abi signStack) where
-  pre := by sig_implies_pre [signContract, signSig, signK, X86_64.abi, X86_64.argRegs]
-  post := by sig_implies_post [signContract, signSig, signK, X86_64.abi, X86_64.argRegs]
-  pub := by
-    intro s₁ s₂ _ _ h
-    sig_pub [signContract, signSig, signK, X86_64.abi, X86_64.argRegs] at h
-    obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8⟩ := h
-    exact ⟨hdi, hsi, hdx, hcx, h8, hsp, hb⟩
-  sat := hsat
-
-theorem signK_implies {p : Params} (h3 : Ok3 p) :
-    (signK p signStack).Implies (signContract p X86_64.abi signStack) := by
-  refine signK_implies_of ?_
-  rcases h3 with rfl | rfl | rfl
-  · sig_implies_sat [signContract, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa44
-  · sig_implies_sat [signContract, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa65
-  · sig_implies_sat [signContract, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa87
-
 /-! ## For any implementation of the polynomial arithmetic
 
 A check that composes over the code (`Comp`) gives the same result on
@@ -125,14 +93,5 @@ theorem sign_spSafe : (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p).all (fu
     (Code.allInstrs_of_all v.ok.normLt.sp) (Code.allInstrs_of_all v.ok.makeHint.sp)
     (Code.allInstrs_of_all (v.ok.dotInv 4 (.inl rfl)).sp) (Code.allInstrs_of_all (v.ok.dotInv 5 (.inr (.inl rfl))).sp)
     (Code.allInstrs_of_all (v.ok.dotInv 7 (.inr (.inr rfl))).sp) p) (sign0_sp h3))
-
-theorem sign_verified :
-    Verified X86_64.target (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) (signContract p X86_64.abi signStack) :=
-  Verified.of_correct (sign_correct (prims_okWith v) h3 (sign_ctl v h3)) (sign_ct (prims_okWith v) h3)
-    (signK_implies h3)
-
-theorem sign_verified' :
-    Verified X86_64.target (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) (signContract p X86_64.abi signStack) :=
-  sign_verified v h3
 
 end VG.Proof.MlDsa.X86_64.Sign

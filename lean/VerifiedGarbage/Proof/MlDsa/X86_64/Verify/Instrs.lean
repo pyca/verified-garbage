@@ -72,6 +72,11 @@ theorem SameQ.ifOk {c c' : Prog isa} (h : SameQ q c c') : SameQ q (ifOk c) (ifOk
   show (c.allInstrs q && _) = (c'.allInstrs q && _)
   rw [show c.allInstrs q = c'.allInstrs q from h]
 
+theorem SameQ.ite {t t' e e' : Prog isa} {c : isa.Cond} (ht : SameQ q t t') (he : SameQ q e e') :
+    SameQ q (.ite c t e) (.ite c t' e') := by
+  show (t.allInstrs q && e.allInstrs q) = (t'.allInstrs q && e'.allInstrs q)
+  rw [show t.allInstrs q = t'.allInstrs q from ht, show e.allInstrs q = e'.allInstrs q from he]
+
 theorem SameQ.sampled {c c' : Prog isa} (h : SameQ q c c') (a : Ptr) : SameQ q (sampled c a) (sampled c' a) :=
   h.seq rfl
 
@@ -99,9 +104,9 @@ theorem dot_q (r : Nat) : SameQ q (dot P p r) (dot P0 p r) :=
   (SameQ.call hP.mul _).seq (SameQ.seqR (fun _ => SameQ.call hP.mulAdd _) _ _)
 
 theorem row_q (r : Nat) : SameQ q (row P p r) (row P0 p r) :=
-  (dot_q hP p r).seq ((SameQ.call hP.unpackT1 _).seq ((SameQ.call hP.ntt _).seq ((SameQ.call hP.mul _).seq
-    ((SameQ.call hP.sub _).seq ((SameQ.call hP.invNtt _).seq ((SameQ.call hP.useHint _).seq
-      (SameQ.call hP.simpleBitPack _)))))))
+  (dot_q hP p r).seq ((SameQ.seq rfl (SameQ.ite rfl ((SameQ.call hP.unpackT1 _).seq (SameQ.call hP.ntt _)))).seq
+    ((SameQ.call hP.mul _).seq ((SameQ.call hP.sub _).seq ((SameQ.call hP.invNtt _).seq ((SameQ.call hP.useHint _).seq
+      (SameQ.call hP.simpleBitPack _))))))
 
 theorem compute_q : SameQ q (compute P p) (compute P0 p) :=
   (SameQ.seqR (fun _ => SameQ.call hP.ntt _) _ _).seq ((SameQ.call hP.ntt _).seq
@@ -156,6 +161,11 @@ theorem SameC.ifOk {c c' : Prog isa} (h : SameC c c') : SameC (ifOk c) (ifOk c')
   show (ctlC c && _) = (ctlC c' && _)
   rw [show ctlC c = ctlC c' from h]
 
+theorem SameC.ite {t t' e e' : Prog isa} {c : isa.Cond} (ht : SameC t t') (he : SameC e e') :
+    SameC (.ite c t e) (.ite c t' e') := by
+  show (ctlC t && ctlC e) = (ctlC t' && ctlC e')
+  rw [show ctlC t = ctlC t' from ht, show ctlC e = ctlC e' from he]
+
 theorem SameC.sampled {c c' : Prog isa} (h : SameC c c') (a : Ptr) : SameC (sampled c a) (sampled c' a) :=
   h.seq rfl
 
@@ -170,9 +180,9 @@ theorem verify_c : SameC (verify P p) (verify P0 p) := by
   have dot : ∀ r, SameC (dot P p r) (dot P0 p r) := fun r =>
     (SameC.call hP.mul _).seq (SameC.seqR (fun _ => SameC.call hP.mulAdd _) _ _)
   have row : ∀ r, SameC (row P p r) (row P0 p r) := fun r =>
-    (dot r).seq ((SameC.call hP.unpackT1 _).seq ((SameC.call hP.ntt _).seq ((SameC.call hP.mul _).seq
-      ((SameC.call hP.sub _).seq ((SameC.call hP.invNtt _).seq ((SameC.call hP.useHint _).seq
-        (SameC.call hP.simpleBitPack _)))))))
+    (dot r).seq ((SameC.seq rfl (SameC.ite rfl ((SameC.call hP.unpackT1 _).seq (SameC.call hP.ntt _)))).seq
+      ((SameC.call hP.mul _).seq ((SameC.call hP.sub _).seq ((SameC.call hP.invNtt _).seq ((SameC.call hP.useHint _).seq
+        (SameC.call hP.simpleBitPack _))))))
   have aQuad : ∀ e, SameC (aQuad P p e) (aQuad P0 p e) := fun e =>
     SameC.seq rfl (SameC.seq rfl (SameC.seq rfl (SameC.seq rfl (SameC.sampled4 (SameC.call hP.rej4 _) _))))
   have samples : SameC (samples P p) (samples P0 p) :=

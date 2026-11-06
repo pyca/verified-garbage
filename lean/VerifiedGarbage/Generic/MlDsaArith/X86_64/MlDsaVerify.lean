@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
 import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyFn
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
@@ -54,29 +56,32 @@ namespace VG.Generic.MlDsaArith.X86_64.MlDsaVerify
 
 open VG
 open VG.Proof.MlDsa.X86_64 (ArithImpl)
-open VG.Proof.MlDsa.X86_64.Verify (primsWith prims_okWith verify_prims verify_spSafe)
+open VG.Proof.MlDsa.X86_64.Verify (primsWith prims_okWith verify_spSafe)
 
 def artifacts (v : ArithImpl) : List Artifact := [
   Spec.MlDsa.verify44Api.artifact X86_64.target {
     suffix := v.code.sfx
     features := v.features
-    code := Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa44
-    stack := 32
-    verified := verify_prims v (List.mem_cons_self ..)
-    spSafe := verify_spSafe (prims_okWith v) (List.mem_cons_self ..) },
+    code := Impl.MlDsa.X86_64.Verify.entry (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx)
+      (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa44) 0
+    stack := 40
+    verified := Proof.MlDsa.X86_64.Message.verifyEntry_verified v (List.mem_cons_self ..) _
+    spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_self ..)) 0 },
   Spec.MlDsa.verify65Api.artifact X86_64.target {
     suffix := v.code.sfx
     features := v.features
-    code := Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa65
-    stack := 32
-    verified := verify_prims v (List.mem_cons_of_mem _ (List.mem_cons_self ..))
-    spSafe := verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..)) },
+    code := Impl.MlDsa.X86_64.Verify.entry (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx)
+      (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa65) 0
+    stack := 40
+    verified := Proof.MlDsa.X86_64.Message.verifyEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_self ..)) _
+    spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..))) 0 },
   Spec.MlDsa.verify87Api.artifact X86_64.target {
     suffix := v.code.sfx
     features := v.features
-    code := Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa87
-    stack := 32
-    verified := verify_prims v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
-    spSafe := verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) }]
+    code := Impl.MlDsa.X86_64.Verify.entry (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx)
+      (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa87) 0
+    stack := 40
+    verified := Proof.MlDsa.X86_64.Message.verifyEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) _
+    spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) 0 }]
 
 end VG.Generic.MlDsaArith.X86_64.MlDsaVerify
