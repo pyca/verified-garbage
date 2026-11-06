@@ -20,16 +20,19 @@ established by verified code, not by the caller.
 namespace VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
-/-- `vg_mldsa*_pk_tr(pk: *const [u8; pkLen], tr: *mut [u8; 64])`. -/
+/-- `vg_mldsa*_pk_tr(pk: *const [u8; pkLen], tr: *mut [u8; 64], scratch: *mut [u64; scratchWords])`.
+`scratch` is working space, as key generation's is, which computes the same
+hash (Algorithm 6). -/
 def pkTrSig (p : Params) : Sig where
-  params := [("pk", .array false .u8 p.pkLen), ("tr", .array true .u8 64)]
+  params := [("pk", .array false .u8 p.pkLen), ("tr", .array true .u8 64),
+    ("scratch", .array true .u64 (scratchWords p))]
 
 /-- With the public key at `pk`: writes `tr = H(pk, 64)` (`pkTr`, Algorithm 8,
 line 6) of the parameter set `p` to `tr`. Constant time: only the pointers
-may affect timing, not the key or the digest. -/
+may affect timing, not the key, the digest or the working space. -/
 def pkTrContract (p : Params) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   (pkTrSig p).contract A
-    (post := fun pk tr m m' _ => bytesAt m' tr 64 = pkTr (bytesAt m pk p.pkLen))
+    (post := fun pk tr _scratch m m' _ => bytesAt m' tr 64 = pkTr (bytesAt m pk p.pkLen))
     (writeArgs := true)
     (stack := stack)
 
@@ -44,8 +47,8 @@ def pkTrApi (p : Params) (module name : String) : Api where
     line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest \
     `vg_{module}_verify_message_cached` takes.\n\n\
     Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect \
-    timing, not the key or the digest."
-  safety := []
+    timing, not the key, the digest or the working space."
+  safety := [keyScratchSafety]
 
 /-- `vg_mldsa44_pk_tr` on every target. -/
 def pkTr44Api : Api := pkTrApi mlDsa44 "mldsa44" "ML-DSA-44"
