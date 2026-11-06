@@ -33,10 +33,9 @@ def hEnd : Nat := fSave + 8 * 19
 /-- The header word at `o`. -/
 abbrev fw (m : Mem) (G : GP) (o : Nat) : BitVec 64 := m.readW (G.scr + BitVec.ofNat 64 o) 64
 
-/-- The fixed header words: `out`, the witnesses and `hs`. -/
+/-- The fixed header words: `out`, `rand`, `used` and `state`. -/
 def fixedWords (G : GP) : List (Nat × BitVec 64) :=
-  [(fOut, G.out), (fWit, G.wit), (fWitLen, BitVec.ofNat 64 G.witLen), (fHs, G.hs),
-    (fHsLen, BitVec.ofNat 64 G.hsLen)]
+  [(fOut, G.out), (fWit, G.wit), (fWitLen, BitVec.ofNat 64 G.witLen), (fUsedP, G.usedP), (fStP, G.stP)]
 
 /-- A variable header word: before the saved registers, apart from the return
 address and the fixed words. -/
@@ -91,8 +90,8 @@ theorem GI.lens (h : GI G STK σ V LS s) :
 /-- `scratch`'s size. -/
 theorem GI.scrBig (h : GI G STK σ V LS s) : 8 * (64 * G.pLen + 1024) ≤ G.scrLen * 8 := by
   have := h.pre.scrLen
-  have e1 : (σ.gpr .r5).toNat = G.pLen := by rw [← h.hG]; rfl
-  have e2 : (stackArg σ 3).toNat = G.scrLen := by rw [← h.hG]; rfl
+  have e1 : pLenOf σ = G.pLen := by rw [← h.hG]; rfl
+  have e2 : (σ.gpr .r9).toNat = G.scrLen := by rw [← h.hG]; rfl
   rw [e1, e2] at this
   simp only [Spec.Dsa.generationScratchWords] at this
   omega

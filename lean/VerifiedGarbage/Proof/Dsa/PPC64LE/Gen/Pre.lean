@@ -111,7 +111,7 @@ theorem pre_vp {V : Nat → BitVec 64} {LS : List Nat} {B N L : Nat} (md : MdStr
   have hn : G.qLen = 20 ∨ G.qLen = 32 := by omega
   have hq32 : G.qLen ≤ 32 := by omega
   have nM : sMsg = 512 := rfl
-  have hE : hEnd = 296 := rfl
+  have hE : hEnd = 352 := rfl
   have kb : 576 ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
   have kz := gi.kBig
   have wb := gi.wBig
