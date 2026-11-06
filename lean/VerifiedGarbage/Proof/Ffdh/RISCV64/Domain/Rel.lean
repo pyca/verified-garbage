@@ -91,8 +91,11 @@ theorem range_rel (h : Pins Φ (.a6 :: dbaseRegs)) :
 theorem hasQ_rel (h : Pins Φ dbaseRegs) :
     RelCT isa (Two Φ) (.block hasQ) fun _ _ => True := two_taint _ h (by taint_decide)
 
-theorem sg1_rel (h : Pins Φ dbaseRegs) :
-    RelCT isa (Two Φ) (.seq r2 (.block qPtr)) fun _ _ => True := two_taint _ h (by taint_decide)
+theorem sgA_rel (h : Pins Φ dbaseRegs) :
+    RelCT isa (Two Φ) (.seq r2 (.block qScan)) fun _ _ => True := two_taint _ h (by taint_decide)
+
+theorem qSkip_rel (h : Pins Φ (.t3 :: .a4 :: dbaseRegs)) :
+    RelCT isa (Two Φ) qSkip fun _ _ => True := two_taint _ h (by taint_decide)
 
 theorem powWin_rel (h : Pins Φ (.s9 :: .s10 :: dbaseRegs)) :
     RelCT isa (Two Φ) ModExp.powWin fun _ _ => True := two_taint _ h (by taint_decide)
@@ -163,15 +166,20 @@ theorem fail_CF {Φ : DD → State → Prop} (hb : ∀ x s, Φ x s → DBase x s
 theorem subgroup_rel {Φ : DD → State → Prop} (v : DD → Nat)
     (h : ∀ x s, Φ x s → PV x s ∧ wordsVal s.mem x.S (slot x.w 4) x.w = v x ∧ x.L = 3 * x.k) :
     RelCT isa (Two Φ) subgroup (Two CF) := by
-  unfold subgroup
+  unfold subgroup sgPre
+  have pinsA : Pins (fun x s => SGA x (v x) s ∧ x.L = 3 * x.k) (.t3 :: .a4 :: dbaseRegs) :=
+    pins_cons (pins_one .t3 (fun x => off x.D (2 * x.k)) fun _ _ h => h.1.2.2.2.2.1)
+      (pins_cons (pins_one .a4 (fun x => BitVec.ofNat 64 x.k) fun _ _ h => h.1.2.2.2.2.2)
+        (pins_base id fun _ _ h => h.1.1.1))
   have pinsSG : Pins (fun x s => SG1 x (v x) s ∧ x.L = 3 * x.k) (.s9 :: .s10 :: dbaseRegs) :=
-    pins_cons (pins_one .s9 (fun x => off x.D (2 * x.k)) fun _ _ h => h.1.2.2.2.2.1)
-      (pins_cons (pins_one .s10 (fun x => BitVec.ofNat 64 x.k) fun _ _ h => h.1.2.2.2.2.2)
+    pins_cons (pins_one .s9 (fun x => off x.D (2 * x.k + x.ld)) fun _ _ h => h.1.2.2.2.2.1)
+      (pins_cons (pins_one .s10 (fun x => BitVec.ofNat 64 (x.k - x.ld)) fun _ _ h => h.1.2.2.2.2.2)
         (pins_base id fun _ _ h => h.1.1.1))
   have pinsPW : Pins (fun x s => PV x s ∧ wordsVal s.mem x.S (slot x.w 4) x.w = v x ^ x.q % x.p) dbaseRegs :=
     pins_base id fun _ _ h => h.1.1
-  refine RelCT.seq (two_post (sg1_rel (pins_base id fun _ _ g => (h _ _ g).1.1)) fun x s g =>
-    WP.mono (sg1_ok (h x s g).1 (h x s g).2.1) fun _ k => ⟨k.1, (h x s g).2.2⟩) (RelCT.seq
+  refine RelCT.seq (RelCT.seq (two_post (sgA_rel (pins_base id fun _ _ g => (h _ _ g).1.1)) fun x s g =>
+    WP.mono (sgA_ok (h x s g).1 (h x s g).2.1) fun _ k => ⟨k.1, (h x s g).2.2⟩)
+      (two_post (qSkip_rel pinsA) fun x s g => WP.mono (sgB_ok g.1 g.2) fun _ k => ⟨k.1, g.2⟩)) (RelCT.seq
       (two_post (powWin_rel pinsSG) fun x s g => WP.mono (sg2_ok g.1 g.2) fun _ k => k.1)
       (two_post (isOne_rel pinsPW) fun x s g => WP.mono (isOne_ok g.1 g.2) fun _ k => k.1.1.s6))
 

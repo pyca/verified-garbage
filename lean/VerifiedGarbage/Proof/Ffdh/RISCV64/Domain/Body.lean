@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.ZMask
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PubSave
+public import VerifiedGarbage.Proof.Ffdh.Lead
+import VerifiedGarbage.Proof.Ffdh.RISCV64.GenerateKey.Body
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Ffdh.RISCV64.Power
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
@@ -41,7 +43,8 @@ the arrays (`DArr`, memory from byte 256 of the working space on):
 * `range_ok`: a value's octets into array 4, and the mask of its range;
 * `hasQ_ok`: whether there is q;
 * `sg1_ok`, `sg2_ok`, `isOne_ok`: the subgroup check of the value in
-  array 4 (`subgroup`).
+  array 4 (`subgroup`), the power over q's octets from its first nonzero one
+  (`DD.ld`, by `GenerateKey.scan_ok`).
 -/
 
 @[expose] public section
@@ -73,6 +76,9 @@ abbrev DD.p (x : DD) : Nat := Spec.Rsa.os2ip (x.db.take x.k)
 abbrev DD.g (x : DD) : Nat := Spec.Rsa.os2ip ((x.db.drop x.k).take x.k)
 abbrev DD.q (x : DD) : Nat := Spec.Rsa.os2ip ((x.db.drop (2 * x.k)).take x.k)
 abbrev DD.y (x : DD) : Nat := Spec.Rsa.os2ip x.yb
+
+/-- q's leading zero octets, which the subgroup's power skips. -/
+abbrev DD.ld (x : DD) : Nat := lead ((x.db.drop (2 * x.k)).take x.k)
 
 /-- What holds from the front on, but for the registers. -/
 structure DCtx (x : DD) (s : State) : Prop where
@@ -395,32 +401,76 @@ theorem qPtrA_ok {x : DD} {s : State} (h : DBase x s) :
     (by brun [(k1.gpr (by decide)).trans h.s11, a6, h.ctx.hD, add2, ← Nat.two_mul]) (by rfl) (by rfl))
     fun t ⟨⟨t6, tm⟩, kt⟩ => ⟨⟨t6, by rw [tm, m1]⟩, (k1.trans kt).mono (by decide)⟩
 
-/-- `qPtr`: q's octets in `s9` and `p_len` in `s10`. -/
-theorem qPtr_ok {x : DD} {s : State} (h : DBase x s) :
+theorem dbytes_q {x : DD} {s : State} (hc : DCtx x s) (hq : x.L = 3 * x.k) :
+    Spec.Rsa.bytesAt s.mem (off x.D (2 * x.k)) x.k = (x.db.drop (2 * x.k)).take x.k := by
+  rw [← hc.bD, VG.Proof.Dsa.bytesAt_slice s.mem x.D (by omega_arith : 2 * x.k + x.k ≤ x.L)]
+
+/-- `qScan`: q's octets in `t3` and `p_len` in `a4`. -/
+theorem qScan_ok {x : DD} {s : State} (h : DBase x s) :
+    WP isa (.block qScan) s fun t =>
+      (t.gpr .t3 = off x.D (2 * x.k) ∧ t.gpr .a4 = BitVec.ofNat 64 x.k ∧ t.mem = s.mem) ∧ Keep [.t3, .a4] s t := by
+  unfold qScan
+  rw [show ([.load .d .t3 .s6 0, .add .t3 .t3 .s11, .add .t3 .t3 .s11, .addi .a4 .s11 0] : List Instr) =
+    [.load .d .t3 .s6 0] ++ [.add .t3 .t3 .s11, .add .t3 .t3 .s11, .addi .a4 .s11 0] from rfl, WP.block_append_iff]
+  refine WP.mono (ldw_ok h.ctx h.s6 .t3 (d := 0) (by decide) (by decide)) fun s₁ ⟨⟨a3, m1⟩, k1⟩ => ?_
+  refine WP.mono (WP.keep [.t3, .a4] (Q := fun t => t.gpr .t3 = off x.D (2 * x.k) ∧
+    t.gpr .a4 = BitVec.ofNat 64 x.k ∧ t.mem = s₁.mem)
+    (by brun [(k1.gpr (by decide)).trans h.s11, a3, h.ctx.hD, add2, BitVec.add_zero, ← Nat.two_mul]) (by rfl) (by rfl))
+    fun t ⟨⟨t3, t4, tm⟩, kt⟩ => ⟨⟨t3, t4, by rw [tm, m1]⟩, (k1.trans kt).mono (by decide)⟩
+
+/-- `qPtr`: q's octets from index `l` (in `s1`) in `s9`, and their number
+`p_len − l` in `s10`. -/
+theorem qPtr_ok {x : DD} {s : State} {l : Nat} (h : DBase x s) (h1 : s.gpr .s1 = BitVec.ofNat 64 l) (hl : l ≤ x.k) :
     WP isa (.block qPtr) s fun t =>
-      (t.gpr .s9 = off x.D (2 * x.k) ∧ t.gpr .s10 = BitVec.ofNat 64 x.k ∧ t.mem = s.mem) ∧ Keep [.s9, .s10] s t := by
+      (t.gpr .s9 = off x.D (2 * x.k + l) ∧ t.gpr .s10 = BitVec.ofNat 64 (x.k - l) ∧ t.mem = s.mem) ∧
+        Keep [.s9, .s10] s t := by
   unfold qPtr
-  rw [show ([.load .d .s9 .s6 0, .add .s9 .s9 .s11, .add .s9 .s9 .s11, .addi .s10 .s11 0] : List Instr) =
-    [.load .d .s9 .s6 0] ++ [.add .s9 .s9 .s11, .add .s9 .s9 .s11, .addi .s10 .s11 0] from rfl, WP.block_append_iff]
+  rw [show ([.load .d .s9 .s6 0, .add .s9 .s9 .s11, .add .s9 .s9 .s11, .add .s9 .s9 .s1, .sub .s10 .s11 .s1] :
+      List Instr) =
+    [.load .d .s9 .s6 0] ++ [.add .s9 .s9 .s11, .add .s9 .s9 .s11, .add .s9 .s9 .s1, .sub .s10 .s11 .s1] from rfl,
+    WP.block_append_iff]
   refine WP.mono (ldw_ok h.ctx h.s6 .s9 (d := 0) (by decide) (by decide)) fun s₁ ⟨⟨a9, m1⟩, k1⟩ => ?_
-  refine WP.mono (WP.keep [.s9, .s10] (Q := fun t => t.gpr .s9 = off x.D (2 * x.k) ∧
-    t.gpr .s10 = BitVec.ofNat 64 x.k ∧ t.mem = s₁.mem)
-    (by brun [(k1.gpr (by decide)).trans h.s11, a9, h.ctx.hD, add2, BitVec.add_zero, ← Nat.two_mul]) (by rfl) (by rfl))
-    fun t ⟨⟨t9, t10, tm⟩, kt⟩ => ⟨⟨t9, t10, by rw [tm, m1]⟩, (k1.trans kt).mono (by decide)⟩
+  refine WP.mono (WP.keep [.s9, .s10] (Q := fun t => t.gpr .s9 = off x.D (2 * x.k) + BitVec.ofNat 64 l ∧
+    t.gpr .s10 = BitVec.ofNat 64 x.k - BitVec.ofNat 64 l ∧ t.mem = s₁.mem)
+    (by brun [(k1.gpr (by decide)).trans h.s11, (k1.gpr (by decide)).trans h1, a9, h.ctx.hD, add2, ← Nat.two_mul])
+    (by rfl) (by rfl))
+    fun t ⟨⟨t9, t10, tm⟩, kt⟩ => ⟨⟨by rw [t9, ← off_off], by rw [t10, VG.Offset.ofNat_sub_ofNat hl], by rw [tm, m1]⟩,
+      (k1.trans kt).mono (by decide)⟩
 
 /-! ## The subgroup -/
 
 /-- Before the power: `v` in array 4, `R² mod p` in array 1, `-p⁻¹` in `t1`,
-and q's octets in `s9` and `s10`. -/
+and q's octets from its first nonzero one in `s9` and `s10`. -/
 def SG1 (x : DD) (v : Nat) (s : State) : Prop :=
   PV x s ∧ wordsVal s.mem x.S (slot x.w 4) x.w = v ∧
     wordsVal s.mem x.S (slot x.w 1) x.w = 2 ^ (64 * x.w) * 2 ^ (64 * x.w) % x.p ∧
     ((Mont.word s.mem x.S (slot x.w 0)).toNat * (s.gpr .t1).toNat + 1) % 2 ^ 64 = 0 ∧
-    s.gpr .s9 = off x.D (2 * x.k) ∧ s.gpr .s10 = BitVec.ofNat 64 x.k
+    s.gpr .s9 = off x.D (2 * x.k + x.ld) ∧ s.gpr .s10 = BitVec.ofNat 64 (x.k - x.ld)
 
-/-- `R² mod p` and q's octets. -/
-theorem sg1_ok {x : DD} {v : Nat} {s : State} (h : PV x s) (hv : wordsVal s.mem x.S (slot x.w 4) x.w = v) :
-    WP isa (.seq r2 (.block qPtr)) s fun t => SG1 x v t ∧ DArr x s.mem t.mem := by
+/-- q's octets have `p_len` of them. -/
+theorem qOct_length {x : DD} {s : State} (hc : DCtx x s) (hq : x.L = 3 * x.k) :
+    ((x.db.drop (2 * x.k)).take x.k).length = x.k := by
+  rw [List.length_take, List.length_drop, ← hc.bD, VG.Proof.Bignum.bytesAt_length]; omega_arith
+
+/-- q's leading zero octets are fewer than `p_len`. -/
+theorem ld_lt {x : DD} {s : State} (hc : DCtx x s) (hq : x.L = 3 * x.k) : x.ld < x.k := by
+  have hl := qOct_length hc hq
+  have hk := hc.k64
+  have hne : (x.db.drop (2 * x.k)).take x.k ≠ [] := fun e => by rw [e] at hl; simp at hl; omega_arith
+  have := VG.Proof.Ffdh.lead_lt hne
+  rw [hl] at this; exact this
+
+/-- After `R² mod p`: as `SG1`, but q's octets in `t3` and `p_len` in `a4`,
+for the scan. -/
+def SGA (x : DD) (v : Nat) (s : State) : Prop :=
+  PV x s ∧ wordsVal s.mem x.S (slot x.w 4) x.w = v ∧
+    wordsVal s.mem x.S (slot x.w 1) x.w = 2 ^ (64 * x.w) * 2 ^ (64 * x.w) % x.p ∧
+    ((Mont.word s.mem x.S (slot x.w 0)).toNat * (s.gpr .t1).toNat + 1) % 2 ^ 64 = 0 ∧
+    s.gpr .t3 = off x.D (2 * x.k) ∧ s.gpr .a4 = BitVec.ofNat 64 x.k
+
+/-- `R² mod p`, and q's octets for the scan. -/
+theorem sgA_ok {x : DD} {v : Nat} {s : State} (h : PV x s) (hv : wordsVal s.mem x.S (slot x.w 4) x.w = v) :
+    WP isa (.seq r2 (.block qScan)) s fun t => SGA x v t ∧ DArr x s.mem t.mem := by
   obtain ⟨hb, hp, hv'⟩ := h
   have hc := hb.ctx
   obtain ⟨hw8, hw128, hkw, hn, hsl⟩ := dsizes hc
@@ -448,11 +498,41 @@ theorem sg1_ok {x : DD} {v : Nat} {s : State} (h : PV x s) (hv : wordsVal s.mem 
   have k14 := k13.trans k4
   have ar4 : DArr x s.mem s₄.mem := darr_of o (by omega_arith) (by omega_arith)
   have b4 : DBase x s₄ := hb.keep k14 ar4
-  refine WP.mono (qPtr_ok b4) fun t ⟨⟨t9, t10, tm⟩, kt⟩ => ?_
+  refine WP.mono (qScan_ok b4) fun t ⟨⟨t3, t4, tm⟩, kt⟩ => ?_
   have art : DArr x s.mem t.mem := by rw [tm]; exact ar4
   refine ⟨⟨⟨b4.same kt tm, by rw [tm, Outside.wordsVal o (by omega_arith) (by omega_arith), hp], hv'⟩,
     by rw [tm, Outside.wordsVal o (by omega_arith) (by omega_arith), hv], by rw [tm, rr, ← Nat.pow_add]; congr 2; omega_arith,
-    by rw [kt.gpr (by decide), tm, Outside.word o (by omega_arith) (by omega_arith)]; exact inv, t9, t10⟩, art⟩
+    by rw [kt.gpr (by decide), tm, Outside.word o (by omega_arith) (by omega_arith)]; exact inv, t3, t4⟩, art⟩
+
+/-- `qSkip`: the scan of q's octets, then their pointer and number from the
+first nonzero one. -/
+theorem sgB_ok {x : DD} {v : Nat} {s : State} (h : SGA x v s) (hq : x.L = 3 * x.k) :
+    WP isa qSkip s fun t => SG1 x v t ∧ t.mem = s.mem := by
+  obtain ⟨hpv, h4, hrr, hinv, t3, a4⟩ := h
+  have hb := hpv.1
+  have hc := hb.ctx
+  have hld := ld_lt hc hq
+  have hk := hc.k64
+  have hk' := hc.k1024
+  unfold qSkip
+  refine WP.seq (WP.mono (GenerateKey.scan_ok (P := off x.D (2 * x.k)) (k := x.k) (by omega_arith)
+    (by omega_arith) (fun i hi => by rw [off_off]; exact hc.rdD _ (by omega_arith))
+    (by rw [t3, off_off, Nat.add_zero]) a4) fun s₁ h₁ => WP.seq (WP.mono h₁ fun s₂ ⟨⟨a1, _, m2⟩, k2⟩ => ?_))
+  rw [dbytes_q hc hq] at a1
+  have b2 : DBase x s₂ := hb.same k2 m2
+  refine WP.mono (qPtr_ok b2 a1 (Nat.le_of_lt hld)) fun t ⟨⟨t9, t10, tm⟩, kt⟩ => ?_
+  have tm' : t.mem = s.mem := by rw [tm, m2]
+  have k2t := k2.trans kt
+  exact ⟨⟨⟨b2.same kt tm, by rw [tm']; exact hpv.2.1, hpv.2.2⟩, by rw [tm']; exact h4, by rw [tm']; exact hrr,
+    by rw [k2t.gpr (by decide), tm']; exact hinv, t9, t10⟩, tm'⟩
+
+/-- `R² mod p`, and q's octets from its first nonzero one, by the scan. -/
+theorem sg1_ok {x : DD} {v : Nat} {s : State} (h : PV x s) (hv : wordsVal s.mem x.S (slot x.w 4) x.w = v)
+    (hq : x.L = 3 * x.k) :
+    WP isa sgPre s fun t => SG1 x v t ∧ DArr x s.mem t.mem := by
+  unfold sgPre
+  exact WP.seq (WP.mono (sgA_ok h hv) fun s₁ ⟨h1, a1⟩ =>
+    WP.mono (sgB_ok h1 hq) fun t ⟨ht, tm⟩ => ⟨ht, by rw [tm]; exact a1⟩)
 
 /-- The power: `v^q mod p` into array 4. -/
 theorem sg2_ok {x : DD} {v : Nat} {s : State} (h : SG1 x v s) (hq : x.L = 3 * x.k) :
@@ -467,15 +547,22 @@ theorem sg2_ok {x : DD} {v : Nat} {s : State} (h : SG1 x v s) (hq : x.L = 3 * x.
   have hk := hc.k64
   have hk' := hc.k1024
   have hw' : x.w < 2 ^ 31 := by omega_arith
-  have hrdq : ∀ i < x.k, InRegions (s.rd ++ s.wr) (off (off x.D (2 * x.k)) i) 1 := fun i hi => by
+  have hld := ld_lt hc hq
+  have hrdq : ∀ i < x.k - x.ld, InRegions (s.rd ++ s.wr) (off (off x.D (2 * x.k + x.ld)) i) 1 := fun i hi => by
     rw [off_off]; exact hc.rdD _ (by omega_arith)
-  have hsepq : ∀ i < x.k, ∀ y, ofs x.S y < x.Z → off (off x.D (2 * x.k)) i ≠ y := fun i hi => by
+  have hsepq : ∀ i < x.k - x.ld, ∀ y, ofs x.S y < x.Z → off (off x.D (2 * x.k + x.ld)) i ≠ y := fun i hi => by
     rw [off_off]; exact hc.sepD _ (by omega_arith)
-  have hbq : Spec.Rsa.bytesAt s.mem (off x.D (2 * x.k)) x.k = (x.db.drop (2 * x.k)).take x.k := by
-    rw [← hc.bD, VG.Proof.Dsa.bytesAt_slice s.mem x.D (by omega_arith : 2 * x.k + x.k ≤ x.L)]
-  refine WP.mono (Win.powWin_ok (D := off x.D (2 * x.k)) hc.scr (by omega_arith) hw' z24 hb.a7 hb.s5 hb.t0 hinv
-    (by rw [hp]; omega_arith) (by rw [hp]; exact hf.1) (by rw [hrr, hp]; exact Nat.mod_lt _ (by omega_arith))
-    (by rw [h9]; show _ = off (off x.D (2 * x.k)) 0; rw [off_off, Nat.add_zero]) h10 (by omega_arith) (by omega_arith) hrdq hsepq)
+  have hbs : Spec.Rsa.bytesAt s.mem (off x.D (2 * x.k + x.ld)) (x.k - x.ld) =
+      (x.db.drop (2 * x.k + x.ld)).take (x.k - x.ld) := by
+    rw [← hc.bD, VG.Proof.Dsa.bytesAt_slice s.mem x.D (by omega_arith : 2 * x.k + x.ld + (x.k - x.ld) ≤ x.L)]
+  have hbq : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off x.D (2 * x.k + x.ld)) (x.k - x.ld)) = x.q := by
+    rw [hbs]
+    show _ = Spec.Rsa.os2ip ((x.db.drop (2 * x.k)).take x.k)
+    rw [← VG.Proof.Ffdh.os2ip_drop_lead ((x.db.drop (2 * x.k)).take x.k), List.drop_take, List.drop_drop]
+  refine WP.mono (Win.powWin_ok (D := off x.D (2 * x.k + x.ld)) hc.scr (by omega_arith) hw' z24 hb.a7 hb.s5 hb.t0
+    hinv (by rw [hp]; omega_arith) (by rw [hp]; exact hf.1) (by rw [hrr, hp]; exact Nat.mod_lt _ (by omega_arith))
+    (by rw [h9]; show _ = off (off x.D (2 * x.k + x.ld)) 0; rw [off_off, Nat.add_zero]) h10 (by omega_arith)
+    (by omega_arith) hrdq hsepq)
     fun t ⟨⟨hpow, ot⟩, kt⟩ => ?_
   have art : DArr x s.mem t.mem := darr_of ot (by omega_arith) (by omega_arith)
   refine ⟨⟨⟨hb.keep kt art, by rw [Outside.wordsVal ot (by omega_arith) (by omega_arith)]; exact hp, hv'⟩, ?_⟩, art⟩
@@ -519,7 +606,7 @@ theorem subgroup_ok {x : DD} {v : Nat} {s : State} (h : PV x s) (hv : wordsVal s
     WP isa subgroup s fun t =>
       (DBase x t ∧ t.gpr .a0 = BitVec.ofNat 64 (if v ^ x.q % x.p = 1 then 1 else 0)) ∧ DArr x s.mem t.mem := by
   unfold subgroup
-  exact WP.seq (WP.mono (sg1_ok h hv) fun s₁ ⟨h1, a1⟩ => WP.seq (WP.mono (sg2_ok h1 hq) fun s₂ ⟨h2, a2⟩ =>
+  exact WP.seq (WP.mono (sg1_ok h hv hq) fun s₁ ⟨h1, a1⟩ => WP.seq (WP.mono (sg2_ok h1 hq) fun s₂ ⟨h2, a2⟩ =>
     WP.mono (isOne_ok h2.1 h2.2) fun t ⟨ht, a3⟩ => ⟨ht, a1.trans (a2.trans a3)⟩))
 
 /-! ## The values' octets and ranges -/
@@ -527,10 +614,6 @@ theorem subgroup_ok {x : DD} {v : Nat} {s : State} (h : PV x s) (hv : wordsVal s
 theorem dbytes_g {x : DD} {s : State} (hc : DCtx x s) :
     Spec.Rsa.bytesAt s.mem (off x.D x.k) x.k = (x.db.drop x.k).take x.k := by
   rw [← hc.bD, VG.Proof.Dsa.bytesAt_slice s.mem x.D (by rcases hc.hL with h | h <;> omega_arith : x.k + x.k ≤ x.L)]
-
-theorem dbytes_q {x : DD} {s : State} (hc : DCtx x s) (hq : x.L = 3 * x.k) :
-    Spec.Rsa.bytesAt s.mem (off x.D (2 * x.k)) x.k = (x.db.drop (2 * x.k)).take x.k := by
-  rw [← hc.bD, VG.Proof.Dsa.bytesAt_slice s.mem x.D (by omega_arith : 2 * x.k + x.k ≤ x.L)]
 
 /-- After `range`: `v` in array 4, and `s9` the mask of `1 < v < p − 1`. -/
 def RG (x : DD) (v : Nat) (s : State) : Prop :=

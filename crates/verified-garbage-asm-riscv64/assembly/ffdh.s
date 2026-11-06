@@ -1770,10 +1770,40 @@ vg_ffdh_check_public:
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 285b
+	ld t3, 0(s6)
+	add t3, t3, s11
+	add t3, t3, s11
+	addi a4, s11, 0
+	addi t5, a4, 0
+	addi t4, zero, 0
+	addi s1, a4, -1
+	addi s2, zero, 0
+	addi s3, zero, 0
+286:
+	lbu t6, 0(t3)
+	addi t2, zero, 0
+	sub s4, t2, t6
+	or s4, s4, t6
+	srli s4, s4, 63
+	sub s4, t2, s4
+	or s4, s4, s3
+	xor s4, s4, s3
+	xor s0, s1, t4
+	and s0, s0, s4
+	xor s1, s1, s0
+	xor s0, s2, t6
+	and s0, s0, s4
+	xor s2, s2, s0
+	or s3, s3, s4
+	addi t3, t3, 1
+	addi t4, t4, 1
+	addi t5, t5, -1
+	bnez t5, 286b
 	ld s9, 0(s6)
 	add s9, s9, s11
 	add s9, s9, s11
-	addi s10, s11, 0
+	add s9, s9, s1
+	sub s10, s11, s1
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -1784,11 +1814,11 @@ vg_ffdh_check_public:
 	add t3, t3, s5
 	addi t5, t0, 0
 	addi s0, zero, 0
-286:
+287:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 286b
+	bnez t5, 287b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -1830,12 +1860,12 @@ vg_ffdh_check_public:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-287:
+288:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 287b
-288:
+	bnez t5, 288b
+289:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -1858,8 +1888,8 @@ vg_ffdh_check_public:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 289f
-291:
+	beqz t5, 290f
+292:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -1884,14 +1914,14 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 291b
-	j 290f
-289:
+	bnez t5, 292b
+	j 291f
 290:
+291:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 292f
-294:
+	beqz t5, 293f
+295:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -1976,10 +2006,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 294b
-	j 293f
-292:
+	bnez t5, 295b
+	j 294f
 293:
+294:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -1992,7 +2022,7 @@ vg_ffdh_check_public:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 288b
+	bnez a1, 289b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -2003,7 +2033,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-295:
+296:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -2016,7 +2046,7 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 295b
+	bnez t5, 296b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -2025,7 +2055,7 @@ vg_ffdh_check_public:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-296:
+297:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -2036,7 +2066,7 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 296b
+	bnez t5, 297b
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -2066,12 +2096,12 @@ vg_ffdh_check_public:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-297:
+298:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 297b
-298:
+	bnez t5, 298b
+299:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -2094,8 +2124,8 @@ vg_ffdh_check_public:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 299f
-2101:
+	beqz t5, 2100f
+2102:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -2120,14 +2150,14 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2101b
-	j 2100f
-299:
+	bnez t5, 2102b
+	j 2101f
 2100:
+2101:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2102f
-2104:
+	beqz t5, 2103f
+2105:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -2212,10 +2242,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2104b
-	j 2103f
-2102:
+	bnez t5, 2105b
+	j 2104f
 2103:
+2104:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -2228,7 +2258,7 @@ vg_ffdh_check_public:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 298b
+	bnez a1, 299b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -2239,7 +2269,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2105:
+2106:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -2252,7 +2282,7 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2105b
+	bnez t5, 2106b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -2261,7 +2291,7 @@ vg_ffdh_check_public:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2106:
+2107:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -2272,7 +2302,7 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2106b
+	bnez t5, 2107b
 	addi s4, zero, -1
 	addi a5, a7, 0
 	add a5, a5, s5
@@ -2305,7 +2335,7 @@ vg_ffdh_check_public:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2107:
+2108:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -2316,9 +2346,9 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2107b
+	bnez t5, 2108b
 	addi s7, zero, 2
-2108:
+2109:
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -2355,12 +2385,12 @@ vg_ffdh_check_public:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2109:
+2110:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2109b
-2110:
+	bnez t5, 2110b
+2111:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -2383,8 +2413,8 @@ vg_ffdh_check_public:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2111f
-2113:
+	beqz t5, 2112f
+2114:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -2409,14 +2439,14 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2113b
-	j 2112f
-2111:
+	bnez t5, 2114b
+	j 2113f
 2112:
+2113:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2114f
-2116:
+	beqz t5, 2115f
+2117:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -2501,10 +2531,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2116b
-	j 2115f
-2114:
+	bnez t5, 2117b
+	j 2116f
 2115:
+2116:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -2517,7 +2547,7 @@ vg_ffdh_check_public:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2110b
+	bnez a1, 2111b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -2528,7 +2558,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2117:
+2118:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -2541,7 +2571,7 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2117b
+	bnez t5, 2118b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -2550,7 +2580,7 @@ vg_ffdh_check_public:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2118:
+2119:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -2561,7 +2591,7 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2118b
+	bnez t5, 2119b
 	addi s4, zero, -1
 	addi t2, s7, 8
 	mul t2, t2, s5
@@ -2584,7 +2614,7 @@ vg_ffdh_check_public:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2119:
+2120:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -2595,10 +2625,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2119b
+	bnez t5, 2120b
 	addi s7, s7, 1
 	addi t2, s7, -16
-	bnez t2, 2108b
+	bnez t2, 2109b
 	addi s4, zero, -1
 	addi a5, a7, 0
 	add a5, a5, s5
@@ -2629,7 +2659,7 @@ vg_ffdh_check_public:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2120:
+2121:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -2640,8 +2670,8 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2120b
-2121:
+	bnez t5, 2121b
+2122:
 	lbu s7, 0(s9)
 	slli s7, s7, 56
 	addi s9, s9, 1
@@ -2672,15 +2702,15 @@ vg_ffdh_check_public:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2122:
+2123:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2122b
+	bnez t5, 2123b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2123:
+2124:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -2689,8 +2719,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2124f
-2126:
+	beqz t5, 2125f
+2127:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -2782,12 +2812,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2126b
-	j 2125f
-2124:
+	bnez t5, 2127b
+	j 2126f
 2125:
-	beqz t6, 2127f
-2129:
+2126:
+	beqz t6, 2128f
+2130:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -2802,21 +2832,21 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2129b
-	j 2128f
-2127:
+	bnez t6, 2130b
+	j 2129f
 2128:
+2129:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2123b
+	bnez a1, 2124b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2130:
+2131:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -2841,7 +2871,7 @@ vg_ffdh_check_public:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2130b
+	bnez t5, 2131b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -2849,7 +2879,7 @@ vg_ffdh_check_public:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2131:
+2132:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -2858,8 +2888,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2132f
-2134:
+	beqz t5, 2133f
+2135:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -2951,12 +2981,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2134b
-	j 2133f
-2132:
+	bnez t5, 2135b
+	j 2134f
 2133:
-	beqz t6, 2135f
-2137:
+2134:
+	beqz t6, 2136f
+2138:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -2971,10 +3001,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2137b
-	j 2136f
-2135:
+	bnez t6, 2138b
+	j 2137f
 2136:
+2137:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -2986,7 +3016,7 @@ vg_ffdh_check_public:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2131b
+	bnez t2, 2132b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -3000,7 +3030,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2138:
+2139:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -3009,31 +3039,31 @@ vg_ffdh_check_public:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2138b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2139:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2139b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2140:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2140b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi a2, a7, 0
@@ -3063,15 +3093,15 @@ vg_ffdh_check_public:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2140:
+2141:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2140b
+	bnez t5, 2141b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2141:
+2142:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -3080,8 +3110,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2142f
-2144:
+	beqz t5, 2143f
+2145:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3173,12 +3203,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2144b
-	j 2143f
-2142:
+	bnez t5, 2145b
+	j 2144f
 2143:
-	beqz t6, 2145f
-2147:
+2144:
+	beqz t6, 2146f
+2148:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3193,21 +3223,21 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2147b
-	j 2146f
-2145:
+	bnez t6, 2148b
+	j 2147f
 2146:
+2147:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2141b
+	bnez a1, 2142b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2148:
+2149:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -3232,7 +3262,7 @@ vg_ffdh_check_public:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2148b
+	bnez t5, 2149b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -3240,7 +3270,7 @@ vg_ffdh_check_public:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2149:
+2150:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -3249,8 +3279,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2150f
-2152:
+	beqz t5, 2151f
+2153:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3342,12 +3372,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2152b
-	j 2151f
-2150:
+	bnez t5, 2153b
+	j 2152f
 2151:
-	beqz t6, 2153f
-2155:
+2152:
+	beqz t6, 2154f
+2156:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3362,10 +3392,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2155b
-	j 2154f
-2153:
+	bnez t6, 2156b
+	j 2155f
 2154:
+2155:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -3377,7 +3407,7 @@ vg_ffdh_check_public:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2149b
+	bnez t2, 2150b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -3391,7 +3421,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2156:
+2157:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -3400,31 +3430,31 @@ vg_ffdh_check_public:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2156b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2157:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2157b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2158:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2158b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi a2, a7, 0
@@ -3454,15 +3484,15 @@ vg_ffdh_check_public:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2158:
+2159:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2158b
+	bnez t5, 2159b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2159:
+2160:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -3471,8 +3501,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2160f
-2162:
+	beqz t5, 2161f
+2163:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3564,12 +3594,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2162b
-	j 2161f
-2160:
+	bnez t5, 2163b
+	j 2162f
 2161:
-	beqz t6, 2163f
-2165:
+2162:
+	beqz t6, 2164f
+2166:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3584,21 +3614,21 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2165b
-	j 2164f
-2163:
+	bnez t6, 2166b
+	j 2165f
 2164:
+2165:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2159b
+	bnez a1, 2160b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2166:
+2167:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -3623,7 +3653,7 @@ vg_ffdh_check_public:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2166b
+	bnez t5, 2167b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -3631,7 +3661,7 @@ vg_ffdh_check_public:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2167:
+2168:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -3640,8 +3670,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2168f
-2170:
+	beqz t5, 2169f
+2171:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3733,12 +3763,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2170b
-	j 2169f
-2168:
+	bnez t5, 2171b
+	j 2170f
 2169:
-	beqz t6, 2171f
-2173:
+2170:
+	beqz t6, 2172f
+2174:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3753,10 +3783,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2173b
-	j 2172f
-2171:
+	bnez t6, 2174b
+	j 2173f
 2172:
+2173:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -3768,7 +3798,7 @@ vg_ffdh_check_public:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2167b
+	bnez t2, 2168b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -3782,7 +3812,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2174:
+2175:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -3791,31 +3821,31 @@ vg_ffdh_check_public:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2174b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2175:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2175b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2176:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2176b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi a2, a7, 0
@@ -3845,15 +3875,15 @@ vg_ffdh_check_public:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2176:
+2177:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2176b
+	bnez t5, 2177b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2177:
+2178:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -3862,8 +3892,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2178f
-2180:
+	beqz t5, 2179f
+2181:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3955,12 +3985,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2180b
-	j 2179f
-2178:
+	bnez t5, 2181b
+	j 2180f
 2179:
-	beqz t6, 2181f
-2183:
+2180:
+	beqz t6, 2182f
+2184:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3975,21 +4005,21 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2183b
-	j 2182f
-2181:
+	bnez t6, 2184b
+	j 2183f
 2182:
+2183:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2177b
+	bnez a1, 2178b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2184:
+2185:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -4014,7 +4044,7 @@ vg_ffdh_check_public:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2184b
+	bnez t5, 2185b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -4022,7 +4052,7 @@ vg_ffdh_check_public:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2185:
+2186:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -4031,8 +4061,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2186f
-2188:
+	beqz t5, 2187f
+2189:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -4124,12 +4154,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2188b
-	j 2187f
-2186:
+	bnez t5, 2189b
+	j 2188f
 2187:
-	beqz t6, 2189f
-2191:
+2188:
+	beqz t6, 2190f
+2192:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -4144,10 +4174,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2191b
-	j 2190f
-2189:
+	bnez t6, 2192b
+	j 2191f
 2190:
+2191:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -4159,7 +4189,7 @@ vg_ffdh_check_public:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2185b
+	bnez t2, 2186b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -4173,7 +4203,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2192:
+2193:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -4186,7 +4216,7 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2192b
+	bnez t5, 2193b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -4195,7 +4225,7 @@ vg_ffdh_check_public:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2193:
+2194:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -4206,47 +4236,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2193b
+	bnez t5, 2194b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	srli a1, s7, 60
 	addi s8, zero, 0
-2194:
-	xor t2, s8, a1
-	addi t2, t2, -1
-	srli t2, t2, 63
-	addi t3, zero, 0
-	sub s4, t3, t2
-	addi t2, s8, 8
-	mul t2, t2, s5
-	add a5, t2, a7
-	addi a6, a7, 0
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
 2195:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2195b
-	addi s8, s8, 1
 	xor t2, s8, a1
 	addi t2, t2, -1
 	srli t2, t2, 63
@@ -4259,9 +4254,9 @@ vg_ffdh_check_public:
 	add a6, a6, s5
 	add a6, a6, s5
 	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
 	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
 	add a2, a2, s5
 	add a2, a2, s5
 	add a2, a2, s5
@@ -4282,8 +4277,43 @@ vg_ffdh_check_public:
 	addi t5, t5, -1
 	bnez t5, 2196b
 	addi s8, s8, 1
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2197:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2197b
+	addi s8, s8, 1
 	addi t2, s8, -16
-	bnez t2, 2194b
+	bnez t2, 2195b
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -4316,12 +4346,12 @@ vg_ffdh_check_public:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2197:
+2198:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2197b
-2198:
+	bnez t5, 2198b
+2199:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -4344,8 +4374,8 @@ vg_ffdh_check_public:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2199f
-2201:
+	beqz t5, 2200f
+2202:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -4370,14 +4400,14 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2201b
-	j 2200f
-2199:
+	bnez t5, 2202b
+	j 2201f
 2200:
+2201:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2202f
-2204:
+	beqz t5, 2203f
+2205:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -4462,10 +4492,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2204b
-	j 2203f
-2202:
+	bnez t5, 2205b
+	j 2204f
 2203:
+2204:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -4478,7 +4508,7 @@ vg_ffdh_check_public:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2198b
+	bnez a1, 2199b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -4489,7 +4519,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2205:
+2206:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -4502,7 +4532,7 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2205b
+	bnez t5, 2206b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -4511,7 +4541,7 @@ vg_ffdh_check_public:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2206:
+2207:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -4522,7 +4552,7 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2206b
+	bnez t5, 2207b
 	slli s7, s7, 4
 	addi a2, a7, 0
 	add a2, a2, s5
@@ -4551,15 +4581,15 @@ vg_ffdh_check_public:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2207:
+2208:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2207b
+	bnez t5, 2208b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2208:
+2209:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -4568,8 +4598,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2209f
-2211:
+	beqz t5, 2210f
+2212:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -4661,12 +4691,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2211b
-	j 2210f
-2209:
+	bnez t5, 2212b
+	j 2211f
 2210:
-	beqz t6, 2212f
-2214:
+2211:
+	beqz t6, 2213f
+2215:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -4681,21 +4711,21 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2214b
-	j 2213f
-2212:
+	bnez t6, 2215b
+	j 2214f
 2213:
+2214:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2208b
+	bnez a1, 2209b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2215:
+2216:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -4720,7 +4750,7 @@ vg_ffdh_check_public:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2215b
+	bnez t5, 2216b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -4728,7 +4758,7 @@ vg_ffdh_check_public:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2216:
+2217:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -4737,8 +4767,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2217f
-2219:
+	beqz t5, 2218f
+2220:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -4830,12 +4860,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2219b
-	j 2218f
-2217:
+	bnez t5, 2220b
+	j 2219f
 2218:
-	beqz t6, 2220f
-2222:
+2219:
+	beqz t6, 2221f
+2223:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -4850,10 +4880,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2222b
-	j 2221f
-2220:
+	bnez t6, 2223b
+	j 2222f
 2221:
+2222:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -4865,7 +4895,7 @@ vg_ffdh_check_public:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2216b
+	bnez t2, 2217b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -4879,7 +4909,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2223:
+2224:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -4888,31 +4918,31 @@ vg_ffdh_check_public:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2223b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2224:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2224b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2225:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2225b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi a2, a7, 0
@@ -4942,15 +4972,15 @@ vg_ffdh_check_public:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2225:
+2226:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2225b
+	bnez t5, 2226b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2226:
+2227:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -4959,8 +4989,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2227f
-2229:
+	beqz t5, 2228f
+2230:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5052,12 +5082,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2229b
-	j 2228f
-2227:
+	bnez t5, 2230b
+	j 2229f
 2228:
-	beqz t6, 2230f
-2232:
+2229:
+	beqz t6, 2231f
+2233:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5072,21 +5102,21 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2232b
-	j 2231f
-2230:
+	bnez t6, 2233b
+	j 2232f
 2231:
+2232:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2226b
+	bnez a1, 2227b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2233:
+2234:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -5111,7 +5141,7 @@ vg_ffdh_check_public:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2233b
+	bnez t5, 2234b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -5119,7 +5149,7 @@ vg_ffdh_check_public:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2234:
+2235:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -5128,8 +5158,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2235f
-2237:
+	beqz t5, 2236f
+2238:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5221,12 +5251,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2237b
-	j 2236f
-2235:
+	bnez t5, 2238b
+	j 2237f
 2236:
-	beqz t6, 2238f
-2240:
+2237:
+	beqz t6, 2239f
+2241:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5241,10 +5271,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2240b
-	j 2239f
-2238:
+	bnez t6, 2241b
+	j 2240f
 2239:
+2240:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -5256,7 +5286,7 @@ vg_ffdh_check_public:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2234b
+	bnez t2, 2235b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -5270,7 +5300,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2241:
+2242:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -5279,31 +5309,31 @@ vg_ffdh_check_public:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2241b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2242:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2242b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2243:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2243b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi a2, a7, 0
@@ -5333,15 +5363,15 @@ vg_ffdh_check_public:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2243:
+2244:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2243b
+	bnez t5, 2244b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2244:
+2245:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -5350,8 +5380,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2245f
-2247:
+	beqz t5, 2246f
+2248:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5443,12 +5473,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2247b
-	j 2246f
-2245:
+	bnez t5, 2248b
+	j 2247f
 2246:
-	beqz t6, 2248f
-2250:
+2247:
+	beqz t6, 2249f
+2251:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5463,21 +5493,21 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2250b
-	j 2249f
-2248:
+	bnez t6, 2251b
+	j 2250f
 2249:
+2250:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2244b
+	bnez a1, 2245b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2251:
+2252:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -5502,7 +5532,7 @@ vg_ffdh_check_public:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2251b
+	bnez t5, 2252b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -5510,7 +5540,7 @@ vg_ffdh_check_public:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2252:
+2253:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -5519,8 +5549,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2253f
-2255:
+	beqz t5, 2254f
+2256:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5612,12 +5642,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2255b
-	j 2254f
-2253:
+	bnez t5, 2256b
+	j 2255f
 2254:
-	beqz t6, 2256f
-2258:
+2255:
+	beqz t6, 2257f
+2259:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5632,10 +5662,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2258b
-	j 2257f
-2256:
+	bnez t6, 2259b
+	j 2258f
 2257:
+2258:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -5647,7 +5677,7 @@ vg_ffdh_check_public:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2252b
+	bnez t2, 2253b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -5661,7 +5691,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2259:
+2260:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -5670,31 +5700,31 @@ vg_ffdh_check_public:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2259b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2260:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2260b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2261:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2261b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi a2, a7, 0
@@ -5724,15 +5754,15 @@ vg_ffdh_check_public:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2261:
+2262:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2261b
+	bnez t5, 2262b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2262:
+2263:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -5741,8 +5771,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2263f
-2265:
+	beqz t5, 2264f
+2266:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5834,12 +5864,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2265b
-	j 2264f
-2263:
+	bnez t5, 2266b
+	j 2265f
 2264:
-	beqz t6, 2266f
-2268:
+2265:
+	beqz t6, 2267f
+2269:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -5854,21 +5884,21 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2268b
-	j 2267f
-2266:
+	bnez t6, 2269b
+	j 2268f
 2267:
+2268:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2262b
+	bnez a1, 2263b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2269:
+2270:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -5893,7 +5923,7 @@ vg_ffdh_check_public:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2269b
+	bnez t5, 2270b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -5901,7 +5931,7 @@ vg_ffdh_check_public:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2270:
+2271:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -5910,8 +5940,8 @@ vg_ffdh_check_public:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2271f
-2273:
+	beqz t5, 2272f
+2274:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -6003,12 +6033,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2273b
-	j 2272f
-2271:
+	bnez t5, 2274b
+	j 2273f
 2272:
-	beqz t6, 2274f
-2276:
+2273:
+	beqz t6, 2275f
+2277:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -6023,10 +6053,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2276b
-	j 2275f
-2274:
+	bnez t6, 2277b
+	j 2276f
 2275:
+2276:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -6038,7 +6068,7 @@ vg_ffdh_check_public:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2270b
+	bnez t2, 2271b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -6052,7 +6082,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2277:
+2278:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -6065,7 +6095,7 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2277b
+	bnez t5, 2278b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -6074,7 +6104,7 @@ vg_ffdh_check_public:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2278:
+2279:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -6085,47 +6115,12 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2278b
+	bnez t5, 2279b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	srli a1, s7, 60
 	addi s8, zero, 0
-2279:
-	xor t2, s8, a1
-	addi t2, t2, -1
-	srli t2, t2, 63
-	addi t3, zero, 0
-	sub s4, t3, t2
-	addi t2, s8, 8
-	mul t2, t2, s5
-	add a5, t2, a7
-	addi a6, a7, 0
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
 2280:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2280b
-	addi s8, s8, 1
 	xor t2, s8, a1
 	addi t2, t2, -1
 	srli t2, t2, 63
@@ -6138,9 +6133,9 @@ vg_ffdh_check_public:
 	add a6, a6, s5
 	add a6, a6, s5
 	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
 	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
 	add a2, a2, s5
 	add a2, a2, s5
 	add a2, a2, s5
@@ -6161,8 +6156,43 @@ vg_ffdh_check_public:
 	addi t5, t5, -1
 	bnez t5, 2281b
 	addi s8, s8, 1
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2282:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2282b
+	addi s8, s8, 1
 	addi t2, s8, -16
-	bnez t2, 2279b
+	bnez t2, 2280b
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -6195,12 +6225,12 @@ vg_ffdh_check_public:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2282:
+2283:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2282b
-2283:
+	bnez t5, 2283b
+2284:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -6223,8 +6253,8 @@ vg_ffdh_check_public:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2284f
-2286:
+	beqz t5, 2285f
+2287:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -6249,14 +6279,14 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2286b
-	j 2285f
-2284:
+	bnez t5, 2287b
+	j 2286f
 2285:
+2286:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2287f
-2289:
+	beqz t5, 2288f
+2290:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -6341,10 +6371,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2289b
-	j 2288f
-2287:
+	bnez t5, 2290b
+	j 2289f
 2288:
+2289:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -6357,7 +6387,7 @@ vg_ffdh_check_public:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2283b
+	bnez a1, 2284b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -6368,7 +6398,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2290:
+2291:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -6377,34 +6407,34 @@ vg_ffdh_check_public:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2290b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2291:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2291b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2292:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2292b
 	slli s7, s7, 4
 	addi s10, s10, -1
-	bnez s10, 2121b
+	bnez s10, 2122b
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -6437,12 +6467,12 @@ vg_ffdh_check_public:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2292:
+2293:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2292b
-2293:
+	bnez t5, 2293b
+2294:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -6465,8 +6495,8 @@ vg_ffdh_check_public:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2294f
-2296:
+	beqz t5, 2295f
+2297:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -6491,14 +6521,14 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2296b
-	j 2295f
-2294:
+	bnez t5, 2297b
+	j 2296f
 2295:
+2296:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2297f
-2299:
+	beqz t5, 2298f
+2300:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -6583,10 +6613,10 @@ vg_ffdh_check_public:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2299b
-	j 2298f
-2297:
+	bnez t5, 2300b
+	j 2299f
 2298:
+2299:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -6599,7 +6629,7 @@ vg_ffdh_check_public:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2293b
+	bnez a1, 2294b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -6610,7 +6640,7 @@ vg_ffdh_check_public:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2300:
+2301:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -6623,7 +6653,7 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2300b
+	bnez t5, 2301b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -6632,7 +6662,7 @@ vg_ffdh_check_public:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2301:
+2302:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -6643,7 +6673,7 @@ vg_ffdh_check_public:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2301b
+	bnez t5, 2302b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -6654,11 +6684,11 @@ vg_ffdh_check_public:
 	add t3, t3, s5
 	addi t5, t0, 0
 	addi s0, zero, 0
-2302:
+2303:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2302b
+	bnez t5, 2303b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -6685,7 +6715,7 @@ vg_ffdh_check_public:
 	add t4, t4, s5
 	addi t5, t0, 0
 	addi s1, zero, 0
-2303:
+2304:
 	ld s2, 0(t3)
 	ld s3, 0(t4)
 	xor s2, s2, s3
@@ -6693,7 +6723,7 @@ vg_ffdh_check_public:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2303b
+	bnez t5, 2304b
 	addi s2, zero, 0
 	sltu s1, s2, s1
 	addi s1, s1, -1
@@ -9316,10 +9346,40 @@ vg_ffdh_check_domain:
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2149b
+	ld t3, 0(s6)
+	add t3, t3, s11
+	add t3, t3, s11
+	addi a4, s11, 0
+	addi t5, a4, 0
+	addi t4, zero, 0
+	addi s1, a4, -1
+	addi s2, zero, 0
+	addi s3, zero, 0
+2150:
+	lbu t6, 0(t3)
+	addi t2, zero, 0
+	sub s4, t2, t6
+	or s4, s4, t6
+	srli s4, s4, 63
+	sub s4, t2, s4
+	or s4, s4, s3
+	xor s4, s4, s3
+	xor s0, s1, t4
+	and s0, s0, s4
+	xor s1, s1, s0
+	xor s0, s2, t6
+	and s0, s0, s4
+	xor s2, s2, s0
+	or s3, s3, s4
+	addi t3, t3, 1
+	addi t4, t4, 1
+	addi t5, t5, -1
+	bnez t5, 2150b
 	ld s9, 0(s6)
 	add s9, s9, s11
 	add s9, s9, s11
-	addi s10, s11, 0
+	add s9, s9, s1
+	sub s10, s11, s1
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -9330,11 +9390,11 @@ vg_ffdh_check_domain:
 	add t3, t3, s5
 	addi t5, t0, 0
 	addi s0, zero, 0
-2150:
+2151:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2150b
+	bnez t5, 2151b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -9376,12 +9436,12 @@ vg_ffdh_check_domain:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2151:
+2152:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2151b
-2152:
+	bnez t5, 2152b
+2153:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -9404,8 +9464,8 @@ vg_ffdh_check_domain:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2153f
-2155:
+	beqz t5, 2154f
+2156:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -9430,14 +9490,14 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2155b
-	j 2154f
-2153:
+	bnez t5, 2156b
+	j 2155f
 2154:
+2155:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2156f
-2158:
+	beqz t5, 2157f
+2159:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -9522,10 +9582,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2158b
-	j 2157f
-2156:
+	bnez t5, 2159b
+	j 2158f
 2157:
+2158:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -9538,7 +9598,7 @@ vg_ffdh_check_domain:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2152b
+	bnez a1, 2153b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -9549,7 +9609,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2159:
+2160:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -9562,7 +9622,7 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2159b
+	bnez t5, 2160b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -9571,7 +9631,7 @@ vg_ffdh_check_domain:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2160:
+2161:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -9582,7 +9642,7 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2160b
+	bnez t5, 2161b
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -9612,12 +9672,12 @@ vg_ffdh_check_domain:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2161:
+2162:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2161b
-2162:
+	bnez t5, 2162b
+2163:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -9640,8 +9700,8 @@ vg_ffdh_check_domain:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2163f
-2165:
+	beqz t5, 2164f
+2166:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -9666,14 +9726,14 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2165b
-	j 2164f
-2163:
+	bnez t5, 2166b
+	j 2165f
 2164:
+2165:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2166f
-2168:
+	beqz t5, 2167f
+2169:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -9758,10 +9818,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2168b
-	j 2167f
-2166:
+	bnez t5, 2169b
+	j 2168f
 2167:
+2168:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -9774,7 +9834,7 @@ vg_ffdh_check_domain:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2162b
+	bnez a1, 2163b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -9785,7 +9845,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2169:
+2170:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -9798,7 +9858,7 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2169b
+	bnez t5, 2170b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -9807,7 +9867,7 @@ vg_ffdh_check_domain:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2170:
+2171:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -9818,7 +9878,7 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2170b
+	bnez t5, 2171b
 	addi s4, zero, -1
 	addi a5, a7, 0
 	add a5, a5, s5
@@ -9851,7 +9911,7 @@ vg_ffdh_check_domain:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2171:
+2172:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -9862,9 +9922,9 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2171b
+	bnez t5, 2172b
 	addi s7, zero, 2
-2172:
+2173:
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -9901,12 +9961,12 @@ vg_ffdh_check_domain:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2173:
+2174:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2173b
-2174:
+	bnez t5, 2174b
+2175:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -9929,8 +9989,8 @@ vg_ffdh_check_domain:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2175f
-2177:
+	beqz t5, 2176f
+2178:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -9955,14 +10015,14 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2177b
-	j 2176f
-2175:
+	bnez t5, 2178b
+	j 2177f
 2176:
+2177:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2178f
-2180:
+	beqz t5, 2179f
+2181:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -10047,10 +10107,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2180b
-	j 2179f
-2178:
+	bnez t5, 2181b
+	j 2180f
 2179:
+2180:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -10063,7 +10123,7 @@ vg_ffdh_check_domain:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2174b
+	bnez a1, 2175b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -10074,7 +10134,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2181:
+2182:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -10087,7 +10147,7 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2181b
+	bnez t5, 2182b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -10096,7 +10156,7 @@ vg_ffdh_check_domain:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2182:
+2183:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -10107,7 +10167,7 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2182b
+	bnez t5, 2183b
 	addi s4, zero, -1
 	addi t2, s7, 8
 	mul t2, t2, s5
@@ -10130,7 +10190,7 @@ vg_ffdh_check_domain:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2183:
+2184:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -10141,10 +10201,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2183b
+	bnez t5, 2184b
 	addi s7, s7, 1
 	addi t2, s7, -16
-	bnez t2, 2172b
+	bnez t2, 2173b
 	addi s4, zero, -1
 	addi a5, a7, 0
 	add a5, a5, s5
@@ -10175,7 +10235,7 @@ vg_ffdh_check_domain:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2184:
+2185:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -10186,8 +10246,8 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2184b
-2185:
+	bnez t5, 2185b
+2186:
 	lbu s7, 0(s9)
 	slli s7, s7, 56
 	addi s9, s9, 1
@@ -10218,15 +10278,15 @@ vg_ffdh_check_domain:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2186:
+2187:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2186b
+	bnez t5, 2187b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2187:
+2188:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -10235,8 +10295,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2188f
-2190:
+	beqz t5, 2189f
+2191:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -10328,12 +10388,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2190b
-	j 2189f
-2188:
+	bnez t5, 2191b
+	j 2190f
 2189:
-	beqz t6, 2191f
-2193:
+2190:
+	beqz t6, 2192f
+2194:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -10348,21 +10408,21 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2193b
-	j 2192f
-2191:
+	bnez t6, 2194b
+	j 2193f
 2192:
+2193:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2187b
+	bnez a1, 2188b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2194:
+2195:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -10387,7 +10447,7 @@ vg_ffdh_check_domain:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2194b
+	bnez t5, 2195b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -10395,7 +10455,7 @@ vg_ffdh_check_domain:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2195:
+2196:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -10404,8 +10464,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2196f
-2198:
+	beqz t5, 2197f
+2199:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -10497,12 +10557,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2198b
-	j 2197f
-2196:
+	bnez t5, 2199b
+	j 2198f
 2197:
-	beqz t6, 2199f
-2201:
+2198:
+	beqz t6, 2200f
+2202:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -10517,10 +10577,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2201b
-	j 2200f
-2199:
+	bnez t6, 2202b
+	j 2201f
 2200:
+2201:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -10532,7 +10592,7 @@ vg_ffdh_check_domain:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2195b
+	bnez t2, 2196b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -10546,7 +10606,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2202:
+2203:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -10555,31 +10615,31 @@ vg_ffdh_check_domain:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2202b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2203:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2203b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2204:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2204b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi a2, a7, 0
@@ -10609,15 +10669,15 @@ vg_ffdh_check_domain:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2204:
+2205:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2204b
+	bnez t5, 2205b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2205:
+2206:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -10626,8 +10686,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2206f
-2208:
+	beqz t5, 2207f
+2209:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -10719,12 +10779,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2208b
-	j 2207f
-2206:
+	bnez t5, 2209b
+	j 2208f
 2207:
-	beqz t6, 2209f
-2211:
+2208:
+	beqz t6, 2210f
+2212:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -10739,21 +10799,21 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2211b
-	j 2210f
-2209:
+	bnez t6, 2212b
+	j 2211f
 2210:
+2211:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2205b
+	bnez a1, 2206b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2212:
+2213:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -10778,7 +10838,7 @@ vg_ffdh_check_domain:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2212b
+	bnez t5, 2213b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -10786,7 +10846,7 @@ vg_ffdh_check_domain:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2213:
+2214:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -10795,8 +10855,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2214f
-2216:
+	beqz t5, 2215f
+2217:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -10888,12 +10948,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2216b
-	j 2215f
-2214:
+	bnez t5, 2217b
+	j 2216f
 2215:
-	beqz t6, 2217f
-2219:
+2216:
+	beqz t6, 2218f
+2220:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -10908,10 +10968,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2219b
-	j 2218f
-2217:
+	bnez t6, 2220b
+	j 2219f
 2218:
+2219:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -10923,7 +10983,7 @@ vg_ffdh_check_domain:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2213b
+	bnez t2, 2214b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -10937,7 +10997,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2220:
+2221:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -10946,31 +11006,31 @@ vg_ffdh_check_domain:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2220b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2221:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2221b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2222:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2222b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi a2, a7, 0
@@ -11000,15 +11060,15 @@ vg_ffdh_check_domain:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2222:
+2223:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2222b
+	bnez t5, 2223b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2223:
+2224:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -11017,8 +11077,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2224f
-2226:
+	beqz t5, 2225f
+2227:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -11110,12 +11170,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2226b
-	j 2225f
-2224:
+	bnez t5, 2227b
+	j 2226f
 2225:
-	beqz t6, 2227f
-2229:
+2226:
+	beqz t6, 2228f
+2230:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -11130,21 +11190,21 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2229b
-	j 2228f
-2227:
+	bnez t6, 2230b
+	j 2229f
 2228:
+2229:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2223b
+	bnez a1, 2224b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2230:
+2231:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -11169,7 +11229,7 @@ vg_ffdh_check_domain:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2230b
+	bnez t5, 2231b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -11177,7 +11237,7 @@ vg_ffdh_check_domain:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2231:
+2232:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -11186,8 +11246,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2232f
-2234:
+	beqz t5, 2233f
+2235:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -11279,12 +11339,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2234b
-	j 2233f
-2232:
+	bnez t5, 2235b
+	j 2234f
 2233:
-	beqz t6, 2235f
-2237:
+2234:
+	beqz t6, 2236f
+2238:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -11299,10 +11359,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2237b
-	j 2236f
-2235:
+	bnez t6, 2238b
+	j 2237f
 2236:
+2237:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -11314,7 +11374,7 @@ vg_ffdh_check_domain:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2231b
+	bnez t2, 2232b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -11328,7 +11388,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2238:
+2239:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -11337,31 +11397,31 @@ vg_ffdh_check_domain:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2238b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2239:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2239b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2240:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2240b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi a2, a7, 0
@@ -11391,15 +11451,15 @@ vg_ffdh_check_domain:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2240:
+2241:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2240b
+	bnez t5, 2241b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2241:
+2242:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -11408,8 +11468,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2242f
-2244:
+	beqz t5, 2243f
+2245:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -11501,12 +11561,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2244b
-	j 2243f
-2242:
+	bnez t5, 2245b
+	j 2244f
 2243:
-	beqz t6, 2245f
-2247:
+2244:
+	beqz t6, 2246f
+2248:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -11521,21 +11581,21 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2247b
-	j 2246f
-2245:
+	bnez t6, 2248b
+	j 2247f
 2246:
+2247:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2241b
+	bnez a1, 2242b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2248:
+2249:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -11560,7 +11620,7 @@ vg_ffdh_check_domain:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2248b
+	bnez t5, 2249b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -11568,7 +11628,7 @@ vg_ffdh_check_domain:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2249:
+2250:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -11577,8 +11637,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2250f
-2252:
+	beqz t5, 2251f
+2253:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -11670,12 +11730,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2252b
-	j 2251f
-2250:
+	bnez t5, 2253b
+	j 2252f
 2251:
-	beqz t6, 2253f
-2255:
+2252:
+	beqz t6, 2254f
+2256:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -11690,10 +11750,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2255b
-	j 2254f
-2253:
+	bnez t6, 2256b
+	j 2255f
 2254:
+2255:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -11705,7 +11765,7 @@ vg_ffdh_check_domain:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2249b
+	bnez t2, 2250b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -11719,7 +11779,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2256:
+2257:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -11732,7 +11792,7 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2256b
+	bnez t5, 2257b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -11741,7 +11801,7 @@ vg_ffdh_check_domain:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2257:
+2258:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -11752,47 +11812,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2257b
+	bnez t5, 2258b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	srli a1, s7, 60
 	addi s8, zero, 0
-2258:
-	xor t2, s8, a1
-	addi t2, t2, -1
-	srli t2, t2, 63
-	addi t3, zero, 0
-	sub s4, t3, t2
-	addi t2, s8, 8
-	mul t2, t2, s5
-	add a5, t2, a7
-	addi a6, a7, 0
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
 2259:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2259b
-	addi s8, s8, 1
 	xor t2, s8, a1
 	addi t2, t2, -1
 	srli t2, t2, 63
@@ -11805,9 +11830,9 @@ vg_ffdh_check_domain:
 	add a6, a6, s5
 	add a6, a6, s5
 	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
 	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
 	add a2, a2, s5
 	add a2, a2, s5
 	add a2, a2, s5
@@ -11828,8 +11853,43 @@ vg_ffdh_check_domain:
 	addi t5, t5, -1
 	bnez t5, 2260b
 	addi s8, s8, 1
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2261:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2261b
+	addi s8, s8, 1
 	addi t2, s8, -16
-	bnez t2, 2258b
+	bnez t2, 2259b
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -11862,12 +11922,12 @@ vg_ffdh_check_domain:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2261:
+2262:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2261b
-2262:
+	bnez t5, 2262b
+2263:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -11890,8 +11950,8 @@ vg_ffdh_check_domain:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2263f
-2265:
+	beqz t5, 2264f
+2266:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -11916,14 +11976,14 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2265b
-	j 2264f
-2263:
+	bnez t5, 2266b
+	j 2265f
 2264:
+2265:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2266f
-2268:
+	beqz t5, 2267f
+2269:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -12008,10 +12068,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2268b
-	j 2267f
-2266:
+	bnez t5, 2269b
+	j 2268f
 2267:
+2268:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -12024,7 +12084,7 @@ vg_ffdh_check_domain:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2262b
+	bnez a1, 2263b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -12035,7 +12095,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2269:
+2270:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -12048,7 +12108,7 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2269b
+	bnez t5, 2270b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -12057,7 +12117,7 @@ vg_ffdh_check_domain:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2270:
+2271:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -12068,7 +12128,7 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2270b
+	bnez t5, 2271b
 	slli s7, s7, 4
 	addi a2, a7, 0
 	add a2, a2, s5
@@ -12097,15 +12157,15 @@ vg_ffdh_check_domain:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2271:
+2272:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2271b
+	bnez t5, 2272b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2272:
+2273:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -12114,8 +12174,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2273f
-2275:
+	beqz t5, 2274f
+2276:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -12207,12 +12267,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2275b
-	j 2274f
-2273:
+	bnez t5, 2276b
+	j 2275f
 2274:
-	beqz t6, 2276f
-2278:
+2275:
+	beqz t6, 2277f
+2279:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -12227,21 +12287,21 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2278b
-	j 2277f
-2276:
+	bnez t6, 2279b
+	j 2278f
 2277:
+2278:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2272b
+	bnez a1, 2273b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2279:
+2280:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -12266,7 +12326,7 @@ vg_ffdh_check_domain:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2279b
+	bnez t5, 2280b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -12274,7 +12334,7 @@ vg_ffdh_check_domain:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2280:
+2281:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -12283,8 +12343,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2281f
-2283:
+	beqz t5, 2282f
+2284:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -12376,12 +12436,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2283b
-	j 2282f
-2281:
+	bnez t5, 2284b
+	j 2283f
 2282:
-	beqz t6, 2284f
-2286:
+2283:
+	beqz t6, 2285f
+2287:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -12396,10 +12456,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2286b
-	j 2285f
-2284:
+	bnez t6, 2287b
+	j 2286f
 2285:
+2286:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -12411,7 +12471,7 @@ vg_ffdh_check_domain:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2280b
+	bnez t2, 2281b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -12425,7 +12485,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2287:
+2288:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -12434,31 +12494,31 @@ vg_ffdh_check_domain:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2287b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2288:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2288b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2289:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2289b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi a2, a7, 0
@@ -12488,15 +12548,15 @@ vg_ffdh_check_domain:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2289:
+2290:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2289b
+	bnez t5, 2290b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2290:
+2291:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -12505,8 +12565,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2291f
-2293:
+	beqz t5, 2292f
+2294:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -12598,12 +12658,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2293b
-	j 2292f
-2291:
+	bnez t5, 2294b
+	j 2293f
 2292:
-	beqz t6, 2294f
-2296:
+2293:
+	beqz t6, 2295f
+2297:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -12618,21 +12678,21 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2296b
-	j 2295f
-2294:
+	bnez t6, 2297b
+	j 2296f
 2295:
+2296:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2290b
+	bnez a1, 2291b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2297:
+2298:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -12657,7 +12717,7 @@ vg_ffdh_check_domain:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2297b
+	bnez t5, 2298b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -12665,7 +12725,7 @@ vg_ffdh_check_domain:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2298:
+2299:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -12674,8 +12734,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2299f
-2301:
+	beqz t5, 2300f
+2302:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -12767,12 +12827,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2301b
-	j 2300f
-2299:
+	bnez t5, 2302b
+	j 2301f
 2300:
-	beqz t6, 2302f
-2304:
+2301:
+	beqz t6, 2303f
+2305:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -12787,10 +12847,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2304b
-	j 2303f
-2302:
+	bnez t6, 2305b
+	j 2304f
 2303:
+2304:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -12802,7 +12862,7 @@ vg_ffdh_check_domain:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2298b
+	bnez t2, 2299b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -12816,7 +12876,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2305:
+2306:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -12825,31 +12885,31 @@ vg_ffdh_check_domain:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2305b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2306:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2306b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2307:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2307b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi a2, a7, 0
@@ -12879,15 +12939,15 @@ vg_ffdh_check_domain:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2307:
+2308:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2307b
+	bnez t5, 2308b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2308:
+2309:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -12896,8 +12956,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2309f
-2311:
+	beqz t5, 2310f
+2312:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -12989,12 +13049,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2311b
-	j 2310f
-2309:
+	bnez t5, 2312b
+	j 2311f
 2310:
-	beqz t6, 2312f
-2314:
+2311:
+	beqz t6, 2313f
+2315:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -13009,21 +13069,21 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2314b
-	j 2313f
-2312:
+	bnez t6, 2315b
+	j 2314f
 2313:
+2314:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2308b
+	bnez a1, 2309b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2315:
+2316:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -13048,7 +13108,7 @@ vg_ffdh_check_domain:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2315b
+	bnez t5, 2316b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -13056,7 +13116,7 @@ vg_ffdh_check_domain:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2316:
+2317:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -13065,8 +13125,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2317f
-2319:
+	beqz t5, 2318f
+2320:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -13158,12 +13218,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2319b
-	j 2318f
-2317:
+	bnez t5, 2320b
+	j 2319f
 2318:
-	beqz t6, 2320f
-2322:
+2319:
+	beqz t6, 2321f
+2323:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -13178,10 +13238,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2322b
-	j 2321f
-2320:
+	bnez t6, 2323b
+	j 2322f
 2321:
+2322:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -13193,7 +13253,7 @@ vg_ffdh_check_domain:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2316b
+	bnez t2, 2317b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -13207,7 +13267,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2323:
+2324:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -13216,31 +13276,31 @@ vg_ffdh_check_domain:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2323b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2324:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2324b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2325:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2325b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi a2, a7, 0
@@ -13270,15 +13330,15 @@ vg_ffdh_check_domain:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2325:
+2326:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2325b
+	bnez t5, 2326b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2326:
+2327:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -13287,8 +13347,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2327f
-2329:
+	beqz t5, 2328f
+2330:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -13380,12 +13440,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2329b
-	j 2328f
-2327:
+	bnez t5, 2330b
+	j 2329f
 2328:
-	beqz t6, 2330f
-2332:
+2329:
+	beqz t6, 2331f
+2333:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -13400,21 +13460,21 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2332b
-	j 2331f
-2330:
+	bnez t6, 2333b
+	j 2332f
 2331:
+2332:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2326b
+	bnez a1, 2327b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2333:
+2334:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -13439,7 +13499,7 @@ vg_ffdh_check_domain:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2333b
+	bnez t5, 2334b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -13447,7 +13507,7 @@ vg_ffdh_check_domain:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2334:
+2335:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -13456,8 +13516,8 @@ vg_ffdh_check_domain:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2335f
-2337:
+	beqz t5, 2336f
+2338:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -13549,12 +13609,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2337b
-	j 2336f
-2335:
+	bnez t5, 2338b
+	j 2337f
 2336:
-	beqz t6, 2338f
-2340:
+2337:
+	beqz t6, 2339f
+2341:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -13569,10 +13629,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2340b
-	j 2339f
-2338:
+	bnez t6, 2341b
+	j 2340f
 2339:
+2340:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -13584,7 +13644,7 @@ vg_ffdh_check_domain:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2334b
+	bnez t2, 2335b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -13598,7 +13658,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2341:
+2342:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -13611,7 +13671,7 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2341b
+	bnez t5, 2342b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -13620,7 +13680,7 @@ vg_ffdh_check_domain:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2342:
+2343:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -13631,47 +13691,12 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2342b
+	bnez t5, 2343b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	srli a1, s7, 60
 	addi s8, zero, 0
-2343:
-	xor t2, s8, a1
-	addi t2, t2, -1
-	srli t2, t2, 63
-	addi t3, zero, 0
-	sub s4, t3, t2
-	addi t2, s8, 8
-	mul t2, t2, s5
-	add a5, t2, a7
-	addi a6, a7, 0
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
 2344:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2344b
-	addi s8, s8, 1
 	xor t2, s8, a1
 	addi t2, t2, -1
 	srli t2, t2, 63
@@ -13684,9 +13709,9 @@ vg_ffdh_check_domain:
 	add a6, a6, s5
 	add a6, a6, s5
 	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
 	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
 	add a2, a2, s5
 	add a2, a2, s5
 	add a2, a2, s5
@@ -13707,8 +13732,43 @@ vg_ffdh_check_domain:
 	addi t5, t5, -1
 	bnez t5, 2345b
 	addi s8, s8, 1
+	xor t2, s8, a1
+	addi t2, t2, -1
+	srli t2, t2, 63
+	addi t3, zero, 0
+	sub s4, t3, t2
+	addi t2, s8, 8
+	mul t2, t2, s5
+	add a5, t2, a7
+	addi a6, a7, 0
+	add a6, a6, s5
+	add a6, a6, s5
+	add a6, a6, s5
+	addi a2, a7, 0
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	add a2, a2, s5
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2346:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2346b
+	addi s8, s8, 1
 	addi t2, s8, -16
-	bnez t2, 2343b
+	bnez t2, 2344b
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -13741,12 +13801,12 @@ vg_ffdh_check_domain:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2346:
+2347:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2346b
-2347:
+	bnez t5, 2347b
+2348:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -13769,8 +13829,8 @@ vg_ffdh_check_domain:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2348f
-2350:
+	beqz t5, 2349f
+2351:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -13795,14 +13855,14 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2350b
-	j 2349f
-2348:
+	bnez t5, 2351b
+	j 2350f
 2349:
+2350:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2351f
-2353:
+	beqz t5, 2352f
+2354:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -13887,10 +13947,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2353b
-	j 2352f
-2351:
+	bnez t5, 2354b
+	j 2353f
 2352:
+2353:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -13903,7 +13963,7 @@ vg_ffdh_check_domain:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2347b
+	bnez a1, 2348b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -13914,7 +13974,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2354:
+2355:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -13923,34 +13983,34 @@ vg_ffdh_check_domain:
 	sub s2, s2, s4
 	or s4, s0, s1
 	sd s2, 0(t4)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 2354b
-	ld s2, 0(t3)
-	sltu s0, s2, s4
-	addi s1, zero, 0
-	sub s4, s1, s0
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-2355:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
 	bnez t5, 2355b
+	ld s2, 0(t3)
+	sltu s0, s2, s4
+	addi s1, zero, 0
+	sub s4, s1, s0
+	addi t3, a5, 0
+	addi t4, a6, 0
+	addi a0, a2, 0
+	addi t5, t0, 0
+2356:
+	ld s2, 0(t4)
+	ld s3, 0(t3)
+	xor s3, s3, s2
+	and s3, s3, s4
+	xor s3, s3, s2
+	sd s3, 0(a0)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi a0, a0, 8
+	addi t5, t5, -1
+	bnez t5, 2356b
 	slli s7, s7, 4
 	addi s10, s10, -1
-	bnez s10, 2185b
+	bnez s10, 2186b
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -13983,12 +14043,12 @@ vg_ffdh_check_domain:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-2356:
+2357:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2356b
-2357:
+	bnez t5, 2357b
+2358:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -14011,8 +14071,8 @@ vg_ffdh_check_domain:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 2358f
-2360:
+	beqz t5, 2359f
+2361:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -14037,14 +14097,14 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2360b
-	j 2359f
-2358:
+	bnez t5, 2361b
+	j 2360f
 2359:
+2360:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2361f
-2363:
+	beqz t5, 2362f
+2364:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -14129,10 +14189,10 @@ vg_ffdh_check_domain:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2363b
-	j 2362f
-2361:
+	bnez t5, 2364b
+	j 2363f
 2362:
+2363:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -14145,7 +14205,7 @@ vg_ffdh_check_domain:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 2357b
+	bnez a1, 2358b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -14156,7 +14216,7 @@ vg_ffdh_check_domain:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2364:
+2365:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -14169,7 +14229,7 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2364b
+	bnez t5, 2365b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -14178,7 +14238,7 @@ vg_ffdh_check_domain:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2365:
+2366:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -14189,7 +14249,7 @@ vg_ffdh_check_domain:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2365b
+	bnez t5, 2366b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -14200,11 +14260,11 @@ vg_ffdh_check_domain:
 	add t3, t3, s5
 	addi t5, t0, 0
 	addi s0, zero, 0
-2366:
+2367:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2366b
+	bnez t5, 2367b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -14231,7 +14291,7 @@ vg_ffdh_check_domain:
 	add t4, t4, s5
 	addi t5, t0, 0
 	addi s1, zero, 0
-2367:
+2368:
 	ld s2, 0(t3)
 	ld s3, 0(t4)
 	xor s2, s2, s3
@@ -14239,7 +14299,7 @@ vg_ffdh_check_domain:
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi t5, t5, -1
-	bnez t5, 2367b
+	bnez t5, 2368b
 	addi s2, zero, 0
 	sltu s1, s2, s1
 	addi s1, s1, -1
