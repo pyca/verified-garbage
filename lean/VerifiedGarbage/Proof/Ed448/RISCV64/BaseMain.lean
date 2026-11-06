@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed448.RISCV64.BaseStep
 import VerifiedGarbage.Proof.Ed448.RISCV64.Comb
 import VerifiedGarbage.Proof.Ed448.Group.Projective

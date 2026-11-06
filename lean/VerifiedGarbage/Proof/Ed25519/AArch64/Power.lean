@@ -304,15 +304,7 @@ theorem powCall_spec (base : Addr) : ISpec (large := large) base powCall power25
       exact ⟨fun h => hr (by rw [h]; decide), fun h => hr (by rw [h]; decide), h30⟩
     rw [uoth r (by simpa using h30), hg r hr, State.callEntry_gpr _ hl, g₁]
 
-def invEnv (e : Env) : Env := opMul 15 15 14 (opSqn 15 15 5 (power250Env e))
 def rootEnv (e : Env) : Env := opMul 15 15 2 (opSqn 15 15 2 (power250Env e))
-
-theorem invert_spec (base : Addr) : ISpec (large := large) base invert invEnv := by
-  have _hcap := workSize_le large
-  have _hmin := workSize_ge large
-  have h : ISpec (large := large) base _ _ := (powCall_spec base).seq ((sqnI base 15 15 ⟨by decide, by decide⟩ 5 (by decide) (by decide)).seq
-    (mulI base 15 15 14 ⟨by decide, by decide⟩))
-  exact h
 
 theorem rootPower_spec (base : Addr) : ISpec (large := large) base Impl.Ed25519.AArch64.rootPower rootEnv := by
   have _hcap := workSize_le large
@@ -321,18 +313,9 @@ theorem rootPower_spec (base : Addr) : ISpec (large := large) base Impl.Ed25519.
     (mulI base 15 15 2 ⟨by decide, by decide⟩))
   exact h
 
-theorem invEnv_eval (e : Env) : invEnv e 15 = VG.Proof.X25519.invert (e 2) := by
-  simp only [↓reduceIte, invEnv, power250Env, opMul, opSqn, Function.update_apply]
-  rfl
-
 theorem rootEnv_eval (e : Env) : rootEnv e 15 = VG.Proof.Ed25519.rootPower (e 2) := by
   simp only [↓reduceIte, rootEnv, power250Env, opMul, opSqn, Function.update_apply]
   rfl
-
-theorem invert_ok {s : State} {base : Addr} (hs : Scr s base large) :
-    WP isa invert s fun t => IKeep base s t ∧
-      env t.mem base 15 = VG.Proof.X25519.invert (env s.mem base 2) :=
-  WP.mono (invert_spec base s hs) fun _ ⟨hk, hv⟩ => ⟨hk, by rw [hv, invEnv_eval]⟩
 
 theorem rootPower_ok {s : State} {base : Addr} (hs : Scr s base large) :
     WP isa Impl.Ed25519.AArch64.rootPower s fun t => IKeep base s t ∧

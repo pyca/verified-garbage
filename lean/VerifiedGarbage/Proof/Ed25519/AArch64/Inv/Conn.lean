@@ -66,9 +66,6 @@ theorem corrV_false_eq (x : Word) (w : Word) :
 
 theorem negN_le_absN (w : Word) : negN w ≤ absN w := by unfold negN; split <;> omega
 
-theorem flipN_lt (w : Word) {X : Nat} (hX : X < 2 ^ 256) : flipN w X < 2 ^ 256 := by
-  unfold flipN; split <;> omega
-
 /-- The carry of two entries, below `2⁶⁴`. -/
 theorem car_eq (a b : Word) (h : absN a + absN b < 2 ^ 64) :
     ((absW a &&& maskN a) + (absW b &&& maskN b)).toNat = negN a + negN b := by

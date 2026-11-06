@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Contract
@@ -15,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-! Merged from `Proof.Ed25519.X86_64.ScalarLit`. -/
 
@@ -41,17 +41,6 @@ signature contract is satisfiable.
 namespace VG.Proof.Ed25519.X86_64
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
-
-def scalarSatState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x2000, 64⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x3000, 8192⟩]
 
 theorem scalarReduce_ok (s : State) (hs : scalarReduceLocal.pre s) :
     ∃ t s', Exec isa scalarReduce s t s' ∧ abiPreserved s s' ∧ scalarReduceLocal.post s s' := by
@@ -84,12 +73,5 @@ theorem scalarReduce_agree {s₁ s₂ : State} (h₁ : scalarReduceLocal.pre s�
 theorem scalarReduce_ct : ConstantTime isa scalarReduceLocal.pre scalarReduceLocal.pub scalarReduce := by
   refine VG.Taint.constantTime (A := taint) scalarReduceτ (fun _ _ h₁ h₂ hp => scalarReduce_agree h₁ h₂ hp)
     (by taint_decide)
-
-theorem scalarReduce_verified : Verified X86_64.target scalarReduce
-    (Proof.Ed25519.scalarReduceContract X86_64.abi) :=
-  Verified.of_correct scalarReduce_ok scalarReduce_ct (by
-    sig_implies [Proof.Ed25519.scalarReduceContract, Proof.Ed25519.scalarReduceSig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, scalarReduceLocal]
-      [scalarSatState] using scalarSatState)
 
 end VG.Proof.Ed25519.X86_64

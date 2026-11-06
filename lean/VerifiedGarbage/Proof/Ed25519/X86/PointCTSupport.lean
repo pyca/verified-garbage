@@ -179,14 +179,4 @@ theorem ctBlockAppend {P R Q : State → State → Prop} {xs ys : List Instr}
   fun _ _ _ _ _ _ hp ex ey => VG.RelCT.seq hx hy _ _ _ _ _ _ hp
     (ctExecBlock_append ex) (ctExecBlock_append ey)
 
-theorem ctTaintRegs {τ : VG.X86.Taint.T} {P : State → State → Prop} {c : Prog isa}
-    (hp : ∀ s t, P s t → VG.X86.Taint.Agree τ s t) (rs : List Reg)
-    {hc : VG.Taint.Hint VG.X86.Taint.T}
-    (h : ((taint.check τ c hc).map fun τ' => (RegSet.ofList rs).subset τ'.regs) = some true) :
-    RelCT isa P c (fun s t => ∀ r ∈ rs, s.gpr r = t.gpr r) := by
-  intro s t ts tt s' t' hp' es et
-  obtain ⟨τ', hc', hs⟩ := Option.map_eq_some_iff.mp h
-  obtain ⟨he, ha⟩ := VG.Taint.check_sound hc' (hp _ _ hp') es et
-  exact ⟨he, fun r hr => ha.rf.1 r (RegSet.mem_of_subset hs (RegSet.mem_ofList.mpr hr))⟩
-
 end VG.Proof.Ed25519.X86

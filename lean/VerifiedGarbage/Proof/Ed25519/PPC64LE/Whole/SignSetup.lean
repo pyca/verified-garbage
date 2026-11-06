@@ -78,9 +78,6 @@ theorem sign_slot {sn : Nat} {s : State} (hp : SignPre sn s) :
   exact Offset.disjoint _ (.inr h) (by decide) (by omega)
 
 theorem signV_r20 (s : State) : signV s .r20 = s.gpr .r3 := rfl
-theorem signV_r21 (s : State) : signV s .r21 = s.gpr .r4 := rfl
-theorem signV_r22 (s : State) : signV s .r22 = s.gpr .r6 := rfl
-theorem signV_r23 (s : State) : signV s .r23 = s.gpr .r7 := rfl
 theorem signV_r24 (s : State) : signV s .r24 = s.gpr .r8 := rfl
 theorem signV_r25 (s : State) : signV s .r25 = s.gpr .r9 := rfl
 

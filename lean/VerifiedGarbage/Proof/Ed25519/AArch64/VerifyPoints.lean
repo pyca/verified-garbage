@@ -34,7 +34,6 @@ namespace VG.Proof.Ed25519.AArch64
 
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 
-
 theorem tableIndexZero_ok (s : State) :
     WP isa (.block [.movz .w .x19 0 0]) s fun t => t.gpr .x19 = 0 ∧ Keeps [.x19] s t := by
   apply WP.of_runBlock
@@ -75,50 +74,6 @@ Each constant field is four immediate words stored at a constant offset of
 `x19` and testing the difference for zero.
 -/
 
-namespace VG.Proof.Ed25519.AArch64
-
-open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Proof.X25519
-
-theorem cachedFieldStore_ok {s : State} {base : Addr} (hs : Scr s base) (v : Spec.X25519.Fe)
-    {dst : Nat} (ha : dst % 8 = 0) (ho : dst + 32 ≤ 8192) :
-    WP isa (.block (cachedFieldStore v dst)) s fun t =>
-      F t.mem base dst = v ∧ TableKeep base dst 32 s t := by
-  rw [cachedFieldStore, WP.block_append_iff]
-  refine WP.mono (constWords_ok s v) fun t ⟨hv, hk⟩ => ?_
-  refine WP.mono (store4_ok (hs.of_keeps hk (by decide)) ⟨ha, ho⟩) fun u hu => ?_
-  subst u
-  refine ⟨?_, ⟨hk.gpr, hk.rd, hk.wr, hk.sp, ?_⟩⟩
-  · rw [F, fe_st4 _ _ (by omega_arith), hv, toFe_self]
-  · rw [hk.mem]; exact st4_outside _ _ (by omega_arith) _ _ _ _
-
-theorem cachedPointStore_ok {s : State} {base : Addr} (hs : Scr s base) (q : Spec.Ed25519.Point)
-    {dst : Nat} (ha : dst % 8 = 0) (ho : dst + 128 ≤ 8192) :
-    WP isa (.block (cachedPointStore q dst)) s fun t =>
-      tablePoint t.mem base dst = q ∧ TableKeep base dst 128 s t := by
-  rw [cachedPointStore, WP.block_append_iff]
-  refine WP.mono (cachedFieldStore_ok hs q.X ha (by omega_arith)) fun a ⟨ax, ka⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (cachedFieldStore_ok (ka.scratch hs) q.Y (dst := dst + 32) (by omega_arith) (by omega_arith))
-    fun b ⟨by_, kb⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (cachedFieldStore_ok (kb.scratch (ka.scratch hs)) q.Z (dst := dst + 64)
-    (by omega_arith) (by omega_arith)) fun c ⟨cz, kc⟩ => ?_
-  refine WP.mono (cachedFieldStore_ok (kc.scratch (kb.scratch (ka.scratch hs))) q.T
-    (dst := dst + 96) (by omega_arith) (by omega_arith)) fun t ⟨tt, kt⟩ => ?_
-  refine ⟨?_, ((ka.mono (by omega_arith) (by omega_arith)).trans (kb.mono (by omega_arith) (by omega_arith))).trans
-    ((kc.mono (by omega_arith) (by omega_arith)).trans (kt.mono (by omega_arith) (by omega_arith)))⟩
-  have ex : F t.mem base dst = q.X := by
-    rw [Outside_F kt.mem (by omega_arith) (Or.inl (by omega_arith)),
-      Outside_F kc.mem (by omega_arith) (Or.inl (by omega_arith)),
-      Outside_F kb.mem (by omega_arith) (Or.inl (by omega_arith)), ax]
-  have ey : F t.mem base (dst + 32) = q.Y := by
-    rw [Outside_F kt.mem (by omega_arith) (Or.inl (by omega_arith)),
-      Outside_F kc.mem (by omega_arith) (Or.inl (by omega_arith)), by_]
-  have ez : F t.mem base (dst + 64) = q.Z := by
-    rw [Outside_F kt.mem (by omega_arith) (Or.inl (by omega_arith)), cz]
-  simp only [tablePoint, ex, ey, ez, tt]
-
-end VG.Proof.Ed25519.AArch64
 end
 
 /-!

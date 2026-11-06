@@ -58,11 +58,6 @@ inductive FieldOp where
   | sub (out a b : Slot)
   deriving DecidableEq
 
-/-- Whether an operation's code is inlined: all but `mulc`, a call. -/
-def FieldOp.inline : FieldOp → Bool
-  | .mulc .. => false
-  | _ => true
-
 def FieldOp.code : FieldOp → Prog isa
   | .copy o a => .block (copyField o a)
   | .const o v => .block (constField o v)
@@ -74,18 +69,5 @@ def FieldOp.code : FieldOp → Prog isa
 def fieldCode : List FieldOp → Prog isa
   | [] => .block []
   | op :: ops => .seq op.code (fieldCode ops)
-
-/-- Add the points in slots 0–3 and 4–7 into slots 0–3. The coordinates
-are X,Y,Z,T. Slot 16 holds d; slots 8–15 are temporary. Both points are
-read before the result overwrites the first. -/
-def pointAddOps : List FieldOp := [
-  .sub 8 1 0, .sub 9 5 4, .mul 8 8 9,
-  .add 9 1 0, .add 10 5 4, .mul 9 9 10,
-  .mul 10 3 16, .add 10 10 10, .mul 10 10 7,
-  .add 11 2 2, .mul 11 11 6,
-  .sub 12 9 8, .sub 13 11 10, .add 14 11 10, .add 15 9 8,
-  .mul 0 12 13, .mul 1 14 15, .mul 2 13 14, .mul 3 12 15]
-
-def pointAdd : Prog isa := fieldCode pointAddOps
 
 end VG.Impl.Ed25519.RISCV64
