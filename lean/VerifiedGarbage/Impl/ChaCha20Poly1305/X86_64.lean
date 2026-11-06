@@ -67,7 +67,9 @@ analysis knows it for the context's address, which it cannot know of a value
 the callee restored from memory.
 
 Only the pointers and the lengths can affect timing: the branches are on the
-lengths, and the tags are compared without a branch.
+lengths, and the tags are compared without a branch; but `open` then branches
+on whether they are equal, which its contract lets it leak, to zero the data
+if they are not (`openTail`).
 -/
 
 @[expose] public section
@@ -430,14 +432,32 @@ def compare : List Instr :=
    .mov .rdx (.mem (at_ .rcx 8)), .alu .xor .rdx (.mem (at_ .r12 8)),
    .alu .or .rax (.reg .rdx), .alu .cmp .rax (.imm 1), .mov32 .rax (.imm 0), .alu32 .adc .rax (.imm 0)]
 
-def «open» (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+/-- The `r13` bytes at `r14` zeroed, a byte at a time, from `al`, which is
+zero: through `rdx` (the address) and `rcx` (the count). -/
+def zeroData : Prog isa :=
+  .seq (.block [.mov .rdx (.reg .r14), .mov .rcx (.reg .r13), .alu .cmp .rcx (.imm 0)])
+    (.ite .e (.block [])
+      (.loop (.block [.store8 { base := .rdx } .rax, .alu .add .rdx (.imm 1), .alu .sub .rcx (.imm 1)]) .ne))
+
+/-- After the tag computed: the tags compared without a branch, then, if
+they differ (`eax` 0, which `ZF` then says), the data zeroed, branching on
+the result, which `open`'s contract lets it leak; then the registers
+restored. -/
+def openTail : Prog isa :=
+  .seq (.block (compare ++ [.alu32 .cmp .rax (.imm 0)]))
+    (.seq (.ite .e zeroData (.block [])) (.block restore))
+
+/-- `open` up to the tag computed. -/
+def openBody (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (.block entry)
   (.seq (prologue x)
   (.seq (macPad b .rbx .rbp)
   (.seq (.block lengths)
   (.seq (macPadLengths b .r14 .r13)
   (.seq (crypt x)
-  (.seq (finalizeTo 48)
-    (.block (compare ++ restore))))))))
+    (finalizeTo 48))))))
+
+def «open» (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (openBody x b) openTail
 
 end VG.Impl.ChaCha20Poly1305.X86_64

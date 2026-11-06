@@ -867,15 +867,18 @@ def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa 
   (.seq (wipeL x.fold 192)
   (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide)))))
 
-/-- `open`, with Poly1305 inside the kernel for the whole chunks. -/
-def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+/-- `openStitched` up to the tag computed. -/
+def openStitchedBody (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (.block entry)
   (.seq (prologueX x)
   (.seq (macPad b .rbx .rbp)
   (.seq (.block lengths)
   (.seq (cryptO x b)
-  (.seq (finalizeTo 48)
-    (.block (compare ++ restore)))))))
+    (finalizeTo 48)))))
+
+/-- `open`, with Poly1305 inside the kernel for the whole chunks. -/
+def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (openStitchedBody x b) openTail
 
 /-- `openSmall`'s limit, as `smallLim` is `sealSmall`'s: on Cascade Lake,
 `open`'s AVX2 code with AVX-512VL's rounds (`vl`) is the faster below 768
