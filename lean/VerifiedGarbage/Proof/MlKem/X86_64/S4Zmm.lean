@@ -1,5 +1,7 @@
 module
 
+-- separate module: its proofs (about 4 s) build in parallel with `S4Parse`'s, which `S4Loop` also imports
+
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Wide
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import VerifiedGarbage.Proof.Framework.X86_64.ZFrame

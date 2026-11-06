@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
 public import VerifiedGarbage.Impl.Sha3.X86_64.X4
 
 /-!
-# ML-KEM on x86-64: `vg_mlkem_sample_ntt4` and `vg_mlkem_sample_ntt4_avx2`
+# ML-KEM on x86-64: `vg_mlkem_sample_ntt4`, `vg_mlkem_sample_ntt4_avx2` and `_avx512`
 
 `sampleNTT4(seeds = rdi, a = rsi, scratch = rdx) -> eax` runs `SampleNTT`
 on four seeds. The baseline implementation (`sampleNTT4`) calls
@@ -20,9 +20,10 @@ bytes), the table of the round constants (768 bytes), a buffer of 504
 bytes of the XOF output of each seed (from byte `2368 + 504 k`), the
 number `j` of coefficients of each seed sampled so far (from byte
 `4424 + 8 k`). The masks of the compaction (`idxQ`, 4096 bytes), the
-constants of the vector code (`consts`, 96 bytes) and the number of set
-bits of each byte are a static (`tblWords`, `tblName`), whose address it
-keeps in `r11`.
+constants of the vector code (`consts`, 96 bytes), the number of set
+bits of each byte and the constants of the AVX-512 code (`zconsts`, 96
+bytes) are a static (`tblWords`, `tblName`), whose address it keeps in
+`r11`.
 
 Each seed is at most 34 bytes, so the padded message is one block: the
 code zeroes the states, writes the seed's bytes, SHAKE's suffix `0x1f` (at
@@ -48,6 +49,20 @@ lane to its bottom with `vpshufb`, whose indices are the static's masks of
 bytes (`scaG`), since they would store nothing. A value stored but not
 counted lies past the coefficients sampled, and is overwritten by the next.
 It keeps each seed's `j`.
+
+`vg_mlkem16_sample_ntt4_avx512` (`fast`) runs them sixteen at a time
+(`zgrp`, with the constants of `zcstLoad` in `zmm9` to `zmm13`): while
+`j ≤ 224`, so that its stores end by `a[256]`, it computes the 32 candidates
+of the 48 bytes at `rsi` in the words of `zmm0`, eight in each lane, and
+their mask of those less than `q` in `eax`, a byte for each lane (`zcand`:
+`vpermw` puts bytes `12 l` to `12 l + 11` at the bottom of lane `l`, and
+`vpshufb`, `vpsrlvw` and `vpandq` make the candidates, as `vcand` does; then
+`vpcmpuw` and `kmovd`); it then moves those of each lane to its bottom with
+`vpshufb` and the static's mask of its byte, stores its eight words to
+`a[j..j+8)`, and adds to `j` the static's count of the byte (`zputL`).
+Otherwise it runs two `vgrp`. Its first runs are ten of them and a `vgrp`
+(168 iterations, the 64 bytes each loads within the buffer), and its second
+seven (112).
 
 Only if a seed has fewer than 256 coefficients (`tail4`), the states are
 still there: the code squeezes two more blocks of each seed to its buffer
@@ -183,9 +198,10 @@ def oCst : Nat := 4096
 def oNum : Nat := 4192
 
 /-- The static: the masks (`idxQ`, two quadwords for each byte `m`), the
-constants and, from `oNum`, the number of set bits of each byte
-(`(setBits m).length`, a quadword each): the words the instructions that read
-it carry, and the emitter writes. -/
+constants, from `oNum` the number of set bits of each byte
+(`(setBits m).length`, a quadword each), and from `oZ` the AVX-512 code's
+constants: the words the instructions that read it carry, and the emitter
+writes. -/
 def tblWords : List (BitVec 64) :=
   (List.range 512).map (fun i => idxQ (i / 2) (i % 2)) ++ consts ++
     (List.range 256).map (fun m => BitVec.ofNat 64 (setBits m).length) ++ zconsts
