@@ -90,7 +90,40 @@ inductive ZOp
   each quadword of `zmm1` plus the low (or high) 52 bits of the 104-bit product
   of the low 52 bits of the quadwords of `zmm2` and `zmm3` (see `madd52`). -/
   | vpmadd52 (hi : Bool) (dst src1 src2 : XReg)
+  /-- `vpermw zmm1, zmm2, zmm3` (`EVEX.512.66.0F38.W1 8D /r`), AVX512BW:
+  word `j` of `zmm1` is the word of `zmm3` that bits 4:0 of word `j` of
+  `zmm2` index (see `permWord`). -/
+  | vpermw (dst idx src : XReg)
+  /-- `vpsrlvw zmm1, zmm2, zmm3` (`EVEX.512.66.0F38.W1 10 /r`), AVX512BW:
+  each word of `zmm2` shifted right by the same word of `zmm3`, zero for a
+  count above 15 (see `srlvWord`). -/
+  | vpsrlvw (dst src cnt : XReg)
+  /-- `vextracti32x4 xmm1, zmm2, imm8` (`EVEX.512.66.0F3A.W0 39 /r ib`),
+  AVX512F, with a register destination: lane `imm8[1:0]` of `zmm2`, and
+  the rest of the destination zeroed. -/
+  | vextracti32x4 (dst src : XReg) (sel : BitVec 8)
   deriving DecidableEq, Repr
+
+/-- Word `j` (bits `16j+15:16j`, for `j` from 0 to 31) of `zmm r`: word
+`j % 8` of its lane `j / 8`. -/
+def State.zword (s : State) (r : XReg) (j : Nat) : BitVec 16 := word (s.zlane r (j / 8)) (j % 8)
+
+/-- SDM Vol. 2, "VPERMB/VPERMW/VPERMD/VPERMQ", "VPERMW (EVEX encoded
+versions)" with `VL = 512` (`KL = 32`, `id := 4`), no write mask and a
+register `SRC2`: `FOR j := 0 TO KL-1: i := j * 16; id := SRC1[i+id:i];
+DEST[i+15:i] := SRC2[id*16+15:id*16]`: word `j` of the result, of `SRC1`
+(`zmm2`, the indices) `a` and `SRC2` (`zmm3`) `b`. -/
+def State.permWord (s : State) (a b : XReg) (j : Nat) : BitVec 16 := s.zword b ((s.zword a j).toNat % 32)
+
+/-- SDM Vol. 2, "VPSRLVW/VPSRLVD/VPSRLVQ", "VPSRLVW (EVEX encoded version)"
+with `(KL, VL) = (32, 512)`, no write mask and a register `SRC2`: `FOR j :=
+0 TO KL-1: i := j * 16; DEST[i+15:i] := ZeroExtend(SRC1[i+15:i] >>
+SRC2[i+15:i])`, where (the operation's description) "if the unsigned value
+of the variable shift count exceeds 15, the result is 0": word `j` of the
+result, of `SRC1` `a` and `SRC2` `b`. -/
+def State.srlvWord (s : State) (a b : XReg) (j : Nat) : BitVec 16 :=
+  let c := (s.zword b j).toNat
+  if c < 16 then s.zword a j >>> c else 0
 
 /-- The legacy SSE instruction whose operation `op` applies to each lane:
 VPADDD, VPXORD, VPUNPCK{L,H}{DQ,QDQ}, VPADDQ, VPMULUDQ, VPANDQ, VPORQ and
@@ -230,6 +263,13 @@ SDM Vol. 2 (no flags are affected; with 512-bit operands the whole of
   (IMM8[7:6] * 64))[63:0]`, with `TMP_SRC := SRC`: each 256-bit half of
   `DEST` is the same half of `SRC` permuted as VEX.256 VPERMQ permutes a
   register (`permQwords`).
+* VPERMW and VPSRLVW: see `permWord` and `srlvWord`, each word of the
+  destination (word `8i + k` is word `k` of lane `i`).
+* VEXTRACTI32X4 ("VEXTRACTI32x4 (EVEX encoded versions) when destination
+  is a register", `VL = 512`, no write mask): `CASE (imm8[1:0]) OF 00:
+  TMP_DEST[127:0] := SRC1[127:0]; 01: TMP_DEST[127:0] := SRC1[255:128]; 10:
+  TMP_DEST[127:0] := SRC1[383:256]; 11: TMP_DEST[127:0] := SRC1[511:384];
+  ESAC. DEST[127:0] := TMP_DEST[127:0]; DEST[MAXVL-1:128] := 0`.
 * VPMADD52LUQ and VPMADD52HUQ ("EVEX encoded version", `(KL, VL) = (8,
   512)`, no write mask, a register `SRC3`): `temp128 :=
   ZeroExtend64(SRC2[i+51:i]) * ZeroExtend64(SRC3[i+51:i]); DEST[i+63:i] :=
@@ -282,5 +322,12 @@ def ZOp.exec : ZOp → State → State
   | .vpmadd52 hi d a b, s =>
     let f (i : Nat) := madd52 hi (s.zlane d i) (s.zlane a i) (s.zlane b i)
     s.setZ d (f 0) (f 1) (f 2) (f 3)
+  | .vpermw d a b, s =>
+    let f (i : Nat) := ofWords fun k => s.permWord a b (8 * i + k)
+    s.setZ d (f 0) (f 1) (f 2) (f 3)
+  | .vpsrlvw d a b, s =>
+    let f (i : Nat) := ofWords fun k => s.srlvWord a b (8 * i + k)
+    s.setZ d (f 0) (f 1) (f 2) (f 3)
+  | .vextracti32x4 d r n, s => s.setZ d (s.zlane r (n.toNat % 4)) 0 0 0
 
 end VG.X86_64
