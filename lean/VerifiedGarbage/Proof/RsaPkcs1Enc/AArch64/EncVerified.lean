@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callee
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWidenCopy
 import VerifiedGarbage.Proof.Rsa.X86.KeyScalar
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyExponent

@@ -41,13 +41,4 @@ def kOk : Nat := 88
 def kFlag : Nat := 92
 def kProduct : Nat := 128
 
-/-- Clear every array, including the two extra carry words, and set one. -/
-def clearArrays (n : Nat) : Prog isa :=
-  .seq (zerosW hdr (nArr * (n + 2))) (.block (setOne n aOne))
-
-/-- Copy a smaller native integer into a cleared modulus-width array. -/
-def widenCopy (n k out src : Nat) : Prog isa :=
-  .seq (zerosW (slot n out) (n + 2))
-    (VG.Impl.Rsa.X86.Div.copyWords k src (slot n out))
-
 end VG.Impl.RsaKeyGen.X86.Key

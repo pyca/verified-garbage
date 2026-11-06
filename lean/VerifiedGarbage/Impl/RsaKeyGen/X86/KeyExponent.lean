@@ -22,11 +22,6 @@ namespace VG.Impl.RsaKeyGen.X86.Key
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic
 open VG.Impl.Rsa.X86 VG.Impl.Rsa.X86.Keys
 
-def loadExponent (n : Nat) : Prog isa := seqs [
-  .block [.mov .esi (.mem (sc 56)), .mov .ecx (.mem (sc 60))],
-  VG.Impl.Bignum.X86.loadBE 1 kEv,
-  widenCopy n 2 aE kEv]
-
 def borrowMask : List Instr :=
   [.mov .eax (.imm 1), .alu .sub .eax (.reg .ebx),
     .alu .and .eax (.mem (sc kFlag)), .store (sc kOk) .eax]

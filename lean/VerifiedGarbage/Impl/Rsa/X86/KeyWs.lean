@@ -46,6 +46,4 @@ def bitOf (n sl j : Nat) : List Instr :=
 def andS (d a b : Nat) : List Instr :=
   [.mov .eax (.mem (sc a)), .alu .and .eax (.mem (sc b)), .store (sc d) .eax]
 
-def setOne (n j : Nat) : List Instr := [.mov .eax (.imm 1), .store (sc (slot n j)) .eax]
-
 end VG.Impl.Rsa.X86.Keys

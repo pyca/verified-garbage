@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 public import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWidenCopy
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
 import VerifiedGarbage.Proof.Rsa.X86.KeySelect
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
