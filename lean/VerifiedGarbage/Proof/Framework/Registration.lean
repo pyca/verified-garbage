@@ -22,6 +22,14 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
   `Sig.contract` (e.g. `nttInvContract A` to `inPlaceContract A nttInv` to
   `Sig.contract A (inPlaceSig "f") …`), and then `⟨_, _, _, rfl⟩`, whose
   unification does not always find the arguments of `Sig.contract` itself.
+* `consts_of` gives `consts`, the tables of constants in the contract
+  `verified` proves (the goal `ConstsOf contract`): the tables `cs` of the
+  first `Abi.withConsts A cs` in it, where it states them (the contract on
+  `A.withConsts cs` of a proof that names the tables, e.g.
+  `expandKeyContract (AArch64.abi.withConsts initConsts)`), else in the
+  calling convention of the `Sig.contract` it unfolds to (as `of_sig`
+  unfolds it), whose head is unfolded until it is an application of
+  `Abi.withConsts`; and none if there is no such application.
 * `sp_safe` proves `spSafe`, `code.all (fun i => !T.isa.writesSp i) = true`:
   on the ISAs whose `writesSp` is always `false` (ARMv7, AArch64, PPC64LE) by
   `Code.all_of_forall`, which evaluates nothing, and on the others (x86,
@@ -62,6 +70,48 @@ elab_rules : tactic
     let c' ← toSigContract c
     setGoals [← g.replaceTargetDefEq (ty.replace fun e => if e == c then some c' else none)]
     evalTactic (← `(tactic| exact ⟨_, _, _, rfl⟩))
+
+/-- The tables `cs` of the first application `Abi.withConsts A cs` in `e` that
+has neither loose bound variables nor metavariables. -/
+def findConsts? (e : Expr) : Option Expr :=
+  (e.find? fun e => e.isAppOfArity ``Abi.withConsts 3 && !e.hasLooseBVars && !e.hasMVar).map
+    (·.appArg!)
+
+/-- The tables of constants of the calling convention `A`: those of the first
+application of `Abi.withConsts` in it, with its head unfolded until there is
+one, or none. -/
+partial def abiConsts? (A : Expr) : MetaM (Option Expr) := do
+  if let some cs := findConsts? A then return some cs
+  match ← unfoldDefinition? A with
+  | some A' => abiConsts? (← whnfCore A')
+  | none => return none
+
+elab_rules : tactic
+  | `(tactic| consts_of) => do
+    let g ← getMainGoal
+    let ty := (← instantiateMVars (← g.getType)).cleanupAnnotations
+    unless ty.isAppOfArity ``ConstsOf 2 do
+      throwError "consts_of: the goal is not `ConstsOf contract`: {ty}"
+    let c := ty.appArg!
+    if c.hasMVar then
+      throwError "consts_of: the contract is not known; give `consts`: {c}"
+    let cs? ← match findConsts? c with
+      | some cs => pure (some cs)
+      | none =>
+        let s ← saveState
+        try
+          let c' ← toSigContract c
+          -- `Sig.contract A sig pre post writeArgs stack leak`, implicit `M` first.
+          abiConsts? (c'.getArg! 1)
+        catch _ =>
+          s.restore
+          pure none
+    match cs? with
+    | some cs =>
+      unless ← isDefEq (← inferType cs) (← g.getType) do
+        throwError "consts_of: {cs} is not a list of tables of constants"
+      g.assign cs
+    | none => evalTactic (← `(tactic| exact []))
 
 /-- A free variable of `e` whose type is an enumeration (`Bool`, an
 `inductive` of constructors without fields). -/
