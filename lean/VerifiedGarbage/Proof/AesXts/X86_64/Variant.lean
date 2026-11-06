@@ -7,6 +7,8 @@ public import VerifiedGarbage.Impl.AesXts.X86_64Unit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.AesXts.X86_64.CT
+public import VerifiedGarbage.Proof.AesXts.X86_64.To.Copy
+public import VerifiedGarbage.Proof.AesXts.X86_64.VaesTo.Verified
 
 /-!
 # Implementations of `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt` on x86-64
@@ -55,6 +57,9 @@ structure XtsImpl where
   decNosp : NoSp dec.code
   decMxcsr : dec.code.allInstrs (fun i => !loadsMxcsr i) = true
   decSpSafe : dec.code.all (fun i => !isa.writesSp i) = true
+  /-- Its out-of-place counterparts, `vg_aes_xts_encrypt_to` and
+  `vg_aes_xts_decrypt_to` with its suffix. -/
+  to : To.ToImpl
   /-- What the names of its callers' instances end with (e.g. `_aesni`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -101,6 +106,15 @@ def blocks (v : BlocksImpl) : XtsImpl where
   decNosp := crypt_nosp v.decNosp
   decMxcsr := decrypt_mx v
   decSpSafe := decrypt_spSafe v
+  to := To.ToImpl.ofCopy v.suffix
+    ⟨"vg_aes_xts_encrypt" ++ v.suffix, Impl.AesXts.X86_64.encrypt v.enc⟩ (crypt_depth v.encDepth)
+    (encrypt_correct v)
+    (crypt_ct true v.encOk v.encCt v.encNosp v.encDepth fun R w m p => (AesCbc.aesWith_state R w m p).symm)
+    (crypt_nosp v.encNosp) (encrypt_mx v) (encrypt_spSafe v)
+    ⟨"vg_aes_xts_decrypt" ++ v.suffix, Impl.AesXts.X86_64.decrypt v.dec⟩ (crypt_depth v.decDepth)
+    (decrypt_correct v)
+    (crypt_ct false v.decOk v.decCt v.decNosp v.decDepth fun R w m p => (AesCbc.aesInvWith_state R w m p).symm)
+    (crypt_nosp v.decNosp) (decrypt_mx v) (decrypt_spSafe v)
   suffix := v.suffix
   features := v.features
 
@@ -133,6 +147,7 @@ def vaesVpclmul : XtsImpl where
   decNosp := vaes_dec_nosp
   decMxcsr := Vaes.decrypt_mx
   decSpSafe := Vaes.decrypt_spSafe
+  to := VaesTo.toVaes
   suffix := "_vaes_vpclmul"
   features := ["aes", "avx", "avx2", "vaes", "vpclmulqdq"]
 
@@ -153,6 +168,7 @@ def aesniPclmul : XtsImpl where
   decNosp := aesni_dec_nosp
   decMxcsr := OnePassNi.decrypt_mx
   decSpSafe := OnePassNi.decrypt_spSafe
+  to := VaesTo.toAesNi
   suffix := "_aesni_pclmul"
   features := ["aes", "avx", "pclmulqdq"]
 

@@ -35,10 +35,22 @@ fn aes_xts() {
         let mut i = [0; 16];
         i[..iv.0.len()].copy_from_slice(&iv.0);
         let mut buffer = msg.0.clone();
-        ctx.encrypt(&i, &mut buffer).unwrap();
+        ctx.encrypt_in_place(&i, &mut buffer).unwrap();
         assert_eq!(buffer, ct.0, "tcId {id}");
-        ctx.decrypt(&i, &mut buffer).unwrap();
+        ctx.decrypt_in_place(&i, &mut buffer).unwrap();
         assert_eq!(buffer, msg.0, "tcId {id}");
+        // Out of place, from and to every offset in a block.
+        let n = msg.0.len();
+        for (a, b) in [(0, 0), (1, 3), (7, 0), (0, 15), (9, 9)] {
+            let mut src = vec![0x33; a + n];
+            src[a..].copy_from_slice(&msg.0);
+            let mut dst = vec![0xa5; b + n];
+            ctx.encrypt(&i, &src[a..], &mut dst[b..]).unwrap();
+            assert_eq!(dst[b..], ct.0, "tcId {id}");
+            src[a..].copy_from_slice(&ct.0);
+            ctx.decrypt(&i, &src[a..], &mut dst[b..]).unwrap();
+            assert_eq!(dst[b..], msg.0, "tcId {id}");
+        }
         valid.add();
     });
     assert_eq!(valid.get(), 123);

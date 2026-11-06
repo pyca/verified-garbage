@@ -1,6 +1,8 @@
 //! XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) with 256-, 384- and 512-bit
-//! keys (AES-128, AES-192 and AES-256), in place, with ciphertext stealing for
-//! a data unit that is not of whole blocks.
+//! keys (AES-128, AES-192 and AES-256), with ciphertext stealing for a data
+//! unit that is not of whole blocks: from one buffer to another
+//! ([`AesXts::encrypt`], [`AesXts::decrypt`]) or in place
+//! ([`AesXts::encrypt_in_place`], [`AesXts::decrypt_in_place`]).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -42,6 +44,14 @@ use crate::arch::aes_xts::{
     vg_aes_xts_decrypt_unit_vaes_vpclmul, vg_aes_xts_encrypt_unit_vaes_vpclmul,
 };
 use crate::arch::aes_xts::{vg_aes_xts_decrypt_unit, vg_aes_xts_encrypt_unit};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes_xts::{
+    vg_aes_xts_decrypt_unit_to, vg_aes_xts_decrypt_unit_to_aesni,
+    vg_aes_xts_decrypt_unit_to_aesni_pclmul, vg_aes_xts_decrypt_unit_to_vaes,
+    vg_aes_xts_decrypt_unit_to_vaes_vpclmul, vg_aes_xts_encrypt_unit_to,
+    vg_aes_xts_encrypt_unit_to_aesni, vg_aes_xts_encrypt_unit_to_aesni_pclmul,
+    vg_aes_xts_encrypt_unit_to_vaes, vg_aes_xts_encrypt_unit_to_vaes_vpclmul,
+};
 use crate::cipher::aes::Backend;
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
@@ -184,6 +194,9 @@ pub enum XtsError {
     DataUnitTooShort,
     /// The data unit is longer than [`XTS_MAX_BLOCKS`] blocks.
     DataUnitTooLong,
+    /// The output of [`AesXts::encrypt`] or [`AesXts::decrypt`] is not
+    /// as long as the data unit.
+    InvalidOutputLength,
 }
 
 crate::error::impl_error! {
@@ -192,6 +205,7 @@ crate::error::impl_error! {
         EqualKeyHalves => "AES-XTS key halves are equal",
         DataUnitTooShort => "AES-XTS data unit is shorter than a block",
         DataUnitTooLong => "AES-XTS data unit is too long",
+        InvalidOutputLength => "AES-XTS output is not as long as the data unit",
     }
 }
 
@@ -241,6 +255,31 @@ type Unit = unsafe extern "C" fn(
     *mut [u64; 304],
 );
 
+/// The signature of `vg_aes_xts_encrypt_unit_to` and `vg_aes_xts_decrypt_unit_to`.
+#[cfg(target_arch = "x86_64")]
+type UnitTo = unsafe extern "sysv64" fn(
+    *const [u8; 240],
+    *const [u8; 240],
+    usize,
+    *const [u8; 16],
+    *const u8,
+    usize,
+    *mut u8,
+    usize,
+    *mut [u64; 304],
+);
+
+/// Checks a data unit's length, as the verified functions require it.
+fn check_len(len: usize) -> Result<(), XtsError> {
+    if len < 16 {
+        return Err(XtsError::DataUnitTooShort);
+    }
+    if len > 16 * XTS_MAX_BLOCKS {
+        return Err(XtsError::DataUnitTooLong);
+    }
+    Ok(())
+}
+
 impl AesXts {
     /// Expands a 32-, 48- or 64-byte key, `Key1 ‖ Key2`, for use in either
     /// direction.
@@ -282,7 +321,7 @@ impl AesXts {
     /// Encrypts the data unit `buffer` in place with the tweak value `i`
     /// (§5.3.2). Returns an error without changing the buffer if it is
     /// shorter than 16 bytes or longer than [`XTS_MAX_BLOCKS`] blocks.
-    pub fn encrypt(&self, i: &[u8; 16], buffer: &mut [u8]) -> Result<(), XtsError> {
+    pub fn encrypt_in_place(&self, i: &[u8; 16], buffer: &mut [u8]) -> Result<(), XtsError> {
         let f: Unit = match self.imp {
             Impl::Blocks(backend) => instance!(
                 backend,
@@ -302,7 +341,7 @@ impl AesXts {
     /// Decrypts the data unit `buffer` in place with the tweak value `i`
     /// (§5.4.2). Returns an error without changing the buffer if it is
     /// shorter than 16 bytes or longer than [`XTS_MAX_BLOCKS`] blocks.
-    pub fn decrypt(&self, i: &[u8; 16], buffer: &mut [u8]) -> Result<(), XtsError> {
+    pub fn decrypt_in_place(&self, i: &[u8; 16], buffer: &mut [u8]) -> Result<(), XtsError> {
         let f: Unit = match self.imp {
             Impl::Blocks(backend) => instance!(
                 backend,
@@ -322,12 +361,7 @@ impl AesXts {
     /// Runs `f` on the data unit `buffer` with the tweak value `i`, after
     /// checking its length.
     fn unit(&self, f: Unit, i: &[u8; 16], buffer: &mut [u8]) -> Result<(), XtsError> {
-        if buffer.len() < 16 {
-            return Err(XtsError::DataUnitTooShort);
-        }
-        if buffer.len() > 16 * XTS_MAX_BLOCKS {
-            return Err(XtsError::DataUnitTooLong);
-        }
+        check_len(buffer.len())?;
         let mut scratch = [0; 304];
         // SAFETY: `rounds` is 10, 12 or 14 and the schedules hold its key
         // schedules; `buffer` holds `len` bytes, at least 16 and at most
@@ -349,6 +383,85 @@ impl AesXts {
         // and our caller's registers.
         zeroize(&mut scratch);
         Ok(())
+    }
+
+    /// Encrypts the data unit `src` with the tweak value `i` (§5.3.2) into
+    /// `dst`, which must be as long. Returns an error without changing `dst`
+    /// if it is not, or if `src` is shorter than 16 bytes or longer than
+    /// [`XTS_MAX_BLOCKS`] blocks.
+    pub fn encrypt(&self, i: &[u8; 16], src: &[u8], dst: &mut [u8]) -> Result<(), XtsError> {
+        self.unit_to(true, i, src, dst)
+    }
+
+    /// Decrypts the data unit `src` with the tweak value `i` (§5.4.2) into
+    /// `dst`, which must be as long. Returns an error without changing `dst`
+    /// if it is not, or if `src` is shorter than 16 bytes or longer than
+    /// [`XTS_MAX_BLOCKS`] blocks.
+    pub fn decrypt(&self, i: &[u8; 16], src: &[u8], dst: &mut [u8]) -> Result<(), XtsError> {
+        self.unit_to(false, i, src, dst)
+    }
+
+    /// Encrypts (`enc`) or decrypts the data unit `src` into `dst`, after
+    /// checking their lengths, with the out-of-place function of the
+    /// implementation chosen for the CPU.
+    #[cfg(target_arch = "x86_64")]
+    fn unit_to(&self, enc: bool, i: &[u8; 16], src: &[u8], dst: &mut [u8]) -> Result<(), XtsError> {
+        if src.len() != dst.len() {
+            return Err(XtsError::InvalidOutputLength);
+        }
+        check_len(src.len())?;
+        let f: UnitTo = match (self.imp, enc) {
+            (Impl::Blocks(Backend::Scalar), true) => vg_aes_xts_encrypt_unit_to,
+            (Impl::Blocks(Backend::Scalar), false) => vg_aes_xts_decrypt_unit_to,
+            (Impl::Blocks(Backend::AesNi), true) => vg_aes_xts_encrypt_unit_to_aesni,
+            (Impl::Blocks(Backend::AesNi), false) => vg_aes_xts_decrypt_unit_to_aesni,
+            (Impl::Blocks(Backend::Vaes), true) => vg_aes_xts_encrypt_unit_to_vaes,
+            (Impl::Blocks(Backend::Vaes), false) => vg_aes_xts_decrypt_unit_to_vaes,
+            (Impl::VaesVpclmul, true) => vg_aes_xts_encrypt_unit_to_vaes_vpclmul,
+            (Impl::VaesVpclmul, false) => vg_aes_xts_decrypt_unit_to_vaes_vpclmul,
+            (Impl::AesNiPclmul, true) => vg_aes_xts_encrypt_unit_to_aesni_pclmul,
+            (Impl::AesNiPclmul, false) => vg_aes_xts_decrypt_unit_to_aesni_pclmul,
+        };
+        let mut scratch = [0; 304];
+        // SAFETY: `rounds` is 10, 12 or 14 and the schedules hold its key
+        // schedules; `src` and `dst` hold `len` bytes each, at least 16 and
+        // at most `XTS_MAX_BLOCKS` blocks; they (`dst` being a `&mut`), the tweak
+        // value, the schedules and the scratch space are separate valid
+        // objects of the sizes of the signature. `select` chose `f` for the
+        // CPU's features.
+        unsafe {
+            f(
+                &self.data_schedule,
+                &self.tweak_schedule,
+                self.rounds,
+                i,
+                src.as_ptr(),
+                src.len(),
+                dst.as_mut_ptr(),
+                dst.len(),
+                &mut scratch,
+            );
+        }
+        // The scratch space may hold the key schedule, the tweaks, the data
+        // and our caller's registers.
+        zeroize(&mut scratch);
+        Ok(())
+    }
+
+    /// Encrypts (`enc`) or decrypts the data unit `src` into `dst`, after
+    /// checking their lengths: a copy, transformed in place.
+    #[cfg(not(target_arch = "x86_64"))]
+    fn unit_to(&self, enc: bool, i: &[u8; 16], src: &[u8], dst: &mut [u8]) -> Result<(), XtsError> {
+        if src.len() != dst.len() {
+            return Err(XtsError::InvalidOutputLength);
+        }
+        check_len(src.len())?;
+        dst.copy_from_slice(src);
+        if enc {
+            self.encrypt_in_place(i, dst)
+        } else {
+            self.decrypt_in_place(i, dst)
+        }
     }
 }
 
