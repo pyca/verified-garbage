@@ -1327,4 +1327,251 @@ theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
       simp only [hba₂, hrs₂, c₂.mem]
       exact inv.one₂.mb e he
 
+/-- What the free of a frame of `b` bytes does to the state. -/
+structure FreeFx (b : Nat) (s s' : State) : Prop where
+  head : s.wr = ⟨s.gpr .rsp, b⟩ :: s'.wr
+  sp : s'.gpr .rsp = s.gpr .rsp + BitVec.ofNat 64 b
+  gpr : ∀ r, r ≠ .rsp → s'.gpr r = s.gpr r
+  flags : s'.cf = s.cf ∧ s'.zf = s.zf ∧ s'.sf = s.sf ∧ s'.of = s.of
+  xmm : s'.xmm = s.xmm
+  unk : s'.unknowns = s.unknowns
+  mem : s'.mem = s.mem
+
+theorem freeFx {b : Nat} {a s s' : State} (h : isa.pop (.free b) a s = some s') : FreeFx b s s' := by
+  simp only [isa, pop] at h
+  split at h <;> [rename_i hc; cases h]
+  cases h
+  obtain ⟨-, -, -, hsp, hwr, hhd⟩ := hc
+  refine ⟨?_, by simp only [State.setReg, ↓reduceIte], fun _ h => setReg_ne h, ⟨rfl, rfl, rfl, rfl⟩, rfl, rfl, rfl⟩
+  rw [hwr]
+  cases hw : a.wr with
+  | nil => rw [hw] at hhd; cases hhd
+  | cons r l => rw [hw] at hhd; cases hhd; rw [hsp]; rfl
+
+theorem region_tail {s s' : State} {r : Region} (h : s.wr = r :: s'.wr) (i : Nat) :
+    region s' i = region s (i + 1) := by
+  simp only [region, h, List.getD_cons_succ]
+
+theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Agree τ b₁ b₂)
+    (hs : popF τ j = some τ') (e₁ : isa.pop j a₁ b₁ = some c₁) (e₂ : isa.pop j a₂ b₂ = some c₂) :
+    isa.addrs j b₁ = isa.addrs j b₂ ∧ Agree τ' c₁ c₂ := by
+  cases j <;> simp only [popF, reduceCtorEq] at hs
+  rename_i b
+  split at hs <;> [rename_i hc; cases hs]
+  simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq, List.all_eq_true] at hc
+  obtain ⟨⟨⟨⟨hok, hn1⟩, hhd⟩, hbd⟩, hras⟩ := hc
+  cases hs
+  have inv := ha hok
+  have c₁' := freeFx e₁
+  have c₂' := freeFx e₂
+  refine ⟨rfl, fun _ => ?_⟩
+  have hroom := inv.room
+  have htop := inv.top
+  have hne : τ.t.lens ≠ [] := by intro h; rw [h] at hhd; cases hhd
+  obtain ⟨hF, hP, hB⟩ := inv.base.wf₁.1 hne
+  obtain ⟨lt, hlt⟩ : ∃ lt, τ.t.lens = b :: lt := by
+    cases h : τ.t.lens with
+    | nil => exact absurd h hne
+    | cons x lt => rw [h] at hhd; cases hhd; exact ⟨lt, rfl⟩
+  have hw1 := c₁'.head
+  have hsh₁ : c₁.gpr .rsp - BitVec.ofNat 64 (τ.room + b) = b₁.gpr .rsp - BitVec.ofNat 64 τ.room := by
+    rw [c₁'.sp]; exact addr_add_sub _ _ _
+  have hsh₂ : c₂.gpr .rsp - BitVec.ofNat 64 (τ.room + b) = b₂.gpr .rsp - BitVec.ofNat 64 τ.room := by
+    rw [c₂'.sp]; exact addr_add_sub _ _ _
+  have hwr₂ : c₂.wr = c₁.wr := by
+    have h := c₂'.head
+    rw [← inv.wr, hw1, ← inv.rsp] at h
+    exact (List.cons.inj h).2.symm
+  have hrb : (b₁.gpr .rsp + BitVec.ofNat 64 b).toNat = (b₁.gpr .rsp).toNat + b := toNat_add_ofNat _ (by omega)
+  have hrt : ∀ i, region c₁ i = region b₁ (i + 1) := region_tail hw1
+  have hrt₂ : ∀ i, region c₂ i = region b₂ (i + 1) := region_tail c₂'.head
+  have hba : ∀ i k, byteAddr c₁ i k = byteAddr b₁ (i + 1) k := fun i k => by simp only [byteAddr, hrt]
+  have hba₂ : ∀ i k, byteAddr c₂ i k = byteAddr b₂ (i + 1) k := fun i k => by simp only [byteAddr, hrt₂]
+  have hr0 : region b₁ 0 = ⟨b₁.gpr .rsp, b⟩ := region_cons_zero hw1
+  have hlen : b₁.wr.length = c₁.wr.length + 1 := by rw [hw1, List.length_cons]
+  -- The regions after the frame are disjoint from it.
+  have hdis : ∀ i, Region.Disjoint (region b₁ (i + 1)) ⟨b₁.gpr .rsp, b⟩ := by
+    intro i
+    rw [hw1] at hP
+    by_cases hi : i < c₁.wr.length
+    · rw [region_cons_succ hw1, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some]
+      exact Region.Disjoint.symm ((List.pairwise_cons.mp hP).1 _ (List.getElem_mem _))
+    · intro x hx
+      rw [region_cons_succ hw1, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega),
+        Option.getD_none] at hx
+      simp only [Region.Contains] at hx; omega
+  have hbase : Taint.Agree (shiftOut τ.t) c₁ c₂ := by
+    have wf : ∀ {s s' : State}, FreeFx b s s' → Wf τ.t s → Wf (shiftOut τ.t) s' := by
+      intro s s' c hw
+      refine ⟨fun _ => ?_, fun p hp => ?_⟩
+      · obtain ⟨hF, hP, hB⟩ := hw.1 hne
+        rw [c.head, hlt] at hF
+        rw [c.head] at hP hB
+        simp only [shiftOut, hlt, List.tail_cons]
+        exact ⟨(List.forall₂_cons.mp hF).2, (List.pairwise_cons.mp hP).2,
+          fun r hr => hB r (List.mem_cons_of_mem _ hr)⟩
+      · simp only [shiftOut, List.mem_filterMap, kill, List.mem_filter, bne_iff_ne, ne_eq] at hp
+        obtain ⟨q, ⟨hq, hqr⟩, hq'⟩ := hp
+        split at hq' <;> [cases hq'; rename_i hq0]
+        cases hq'
+        simp only
+        rw [c.gpr _ hqr, hw.2 q hq, region_tail c.head, Nat.sub_add_cancel (by omega)]
+    refine ⟨⟨fun r hr => ?_, fun hf => ?_⟩, fun _ => hwr₂.symm, wf c₁' inv.base.wf₁, wf c₂' inv.base.wf₂,
+      ?_, ?_, noLo, fun r hr => by rw [c₁'.xmm, c₂'.xmm]; exact inv.base.xr r hr⟩
+    · by_cases h : r = .rsp
+      · subst h; rw [c₁'.sp, c₂'.sp, inv.rsp]
+      · rw [c₁'.gpr r h, c₂'.gpr r h]; exact inv.base.rf.1 r hr
+    · obtain ⟨a, b', c, d⟩ := inv.base.rf.2 hf
+      rw [c₁'.flags.1, c₂'.flags.1, c₁'.flags.2.1, c₂'.flags.2.1, c₁'.flags.2.2.1, c₂'.flags.2.2.1,
+        c₁'.flags.2.2.2, c₂'.flags.2.2.2]
+      exact ⟨a, b', c, d⟩
+    · intro sl hsl
+      simp only [shiftOut, List.mem_filterMap] at hsl
+      obtain ⟨q, hq, hq'⟩ := hsl
+      split at hq' <;> [cases hq'; rename_i hq0]
+      cases hq'
+      have := inv.base.ok q hq
+      simp only [shiftOut, hlt, List.tail_cons]
+      rw [hlt] at this
+      obtain ⟨k, hk⟩ : ∃ k, q.1 = k + 1 := ⟨q.1 - 1, by omega⟩
+      rw [hk, List.getD_cons_succ] at this
+      simp only [hk, Nat.add_sub_cancel]
+      exact this
+    · intro sl hsl k hk₁ hk₂
+      simp only [shiftOut, List.mem_filterMap] at hsl
+      obtain ⟨q, hq, hq'⟩ := hsl
+      split at hq' <;> [cases hq'; rename_i hq0]
+      cases hq'
+      simp only at hk₁ hk₂ ⊢
+      rw [hba, hba₂, c₁'.mem, c₂'.mem, Nat.sub_add_cancel (by omega)]
+      exact inv.base.slots q hq k hk₁ hk₂
+  refine ⟨hbase, by rw [c₁'.sp, c₂'.sp, inv.rsp], by rw [c₁'.unk, c₂'.unk, inv.unk], hwr₂.symm,
+    ?_, by dsimp only; have := inv.nfr; omega, ?_, ?_, ?_, ?_, ?_, inv.rasSorted, ?_, ?_, ?_, ?_, ?_⟩
+  · intro h
+    have hF' := hF
+    rw [hw1, hlt] at hF'
+    have := forall₂_length (List.forall₂_cons.mp hF').2
+    simp only [shiftOut, hlt, List.tail_cons] at h
+    rw [h, List.length_nil] at this
+    exact List.eq_nil_of_length_eq_zero this
+  · dsimp only; rw [c₁'.sp]; omega
+  · dsimp only; rw [c₁'.sp]; omega
+  · intro i hi
+    dsimp only at hi ⊢
+    rw [hrt, c₁'.sp]
+    exact sub_shrink (inv.frames (i + 1) (by omega)) (hdis i) hbd (by omega)
+  · intro i h₁ h₂
+    dsimp only at h₁
+    have := inv.others (i + 1) (by omega) (by omega)
+    simp only [wb] at this ⊢
+    rw [hrt, hsh₁, show τ.room + b + (τ.depth - b) = τ.room + τ.depth by omega]
+    exact this
+  · intro j hj
+    dsimp only at hj ⊢
+    have := inv.rasIn j hj
+    have := hras j hj
+    omega
+  · intro j hj i hi
+    dsimp only at hj hi
+    simp only [raSlot, wa, wb]
+    rw [hsh₁, hrt]
+    exact inv.rasFr j hj (i + 1) (by omega)
+  · intro j hj hn hw
+    dsimp only at hj hn
+    simp only [wa, wb] at hw ⊢
+    rw [hsh₁] at hw
+    rw [hsh₁, hsh₂, c₁'.mem, c₂'.mem]
+    show b₁.mem (wa b₁ τ j) = b₂.mem (wa b₂ τ j)
+    change ∀ r ∈ c₁.wr, ¬ r.Contains (wa b₁ τ j) 1 at hw
+    by_cases hin : (⟨b₁.gpr .rsp, b⟩ : Region).Contains (wa b₁ τ j) 1
+    · -- A byte of the frame freed: public unless `sec` now lists it.
+      have hrw : b₁.gpr .rsp = wb b₁ τ + BitVec.ofNat 64 τ.room := by simp only [wb, BitVec.sub_add_cancel]
+      have hj' : τ.room ≤ j ∧ j < τ.room + b := by
+        simp only [Region.Contains, hrw] at hin
+        have h := (Offset.lt_iff (wa b₁ τ j) (wb b₁ τ) (d := τ.room) (n := b) (by omega)).mp (by omega)
+        simp only [wa, Mem.sub_ofNat_toNat _ (show j < 2 ^ 64 by omega)] at h
+        exact h
+      have hfs : InSec (frameSlots τ.t τ.room) j := Classical.byContradiction fun hns => hn (by
+        obtain ⟨p, hp, h⟩ := (mem_gaps (j := j) (frameSlots τ.t τ.room) [(τ.room, b)]).mpr
+          ⟨⟨(τ.room, b), List.mem_singleton_self _, hj'⟩, hns⟩
+        exact ⟨p, List.mem_append_right _ hp, h⟩)
+      obtain ⟨p, hp, hp1, hp2⟩ := hfs
+      simp only [frameSlots, List.mem_filterMap] at hp
+      obtain ⟨sl, hsl, hsl'⟩ := hp
+      split at hsl' <;> [rename_i h0; cases hsl']
+      cases hsl'
+      simp only at hp1 hp2
+      have hag := inv.base.slots sl hsl (j - τ.room) (by omega) (by omega)
+      have e₁ : byteAddr b₁ sl.1 (j - τ.room) = wa b₁ τ j := by
+        rw [h0, byteAddr, hr0]
+        dsimp only
+        rw [hrw, wa, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' hj'.1]
+      have e₂ : byteAddr b₂ sl.1 (j - τ.room) = wa b₂ τ j := by
+        rw [← inv.base.byteAddr_eq hsl (by omega), e₁, wa_eq inv.rsp]
+      rw [← e₁, ← e₂]
+      exact hag
+    · have hw' : ∀ r ∈ b₁.wr, ¬ r.Contains (wa b₁ τ j) 1 := by
+        rw [hw1]
+        intro r hr
+        rcases List.mem_cons.mp hr with rfl | hr
+        · exact hin
+        · exact hw r hr
+      exact inv.dead j (by omega) (inSec_append_left hn) hw'
+  · intro e he
+    simp only [List.mem_filterMap] at he
+    obtain ⟨q, hq, hq'⟩ := he
+    split at hq' <;> [cases hq'; rename_i hq0]
+    cases hq'
+    have := inv.mbFit q hq
+    simp only [shiftOut, hlt, List.tail_cons]
+    rw [hlt] at this
+    obtain ⟨k, hk⟩ : ∃ k, q.1 = k + 1 := ⟨q.1 - 1, by omega⟩
+    rw [hk, List.getD_cons_succ] at this
+    simp only [hk, Nat.add_sub_cancel]
+    exact this
+  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_⟩
+    · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
+      rw [c₁'.gpr _ hp.2]; exact inv.one₁.ub p hp.1
+    · simp only [List.mem_filterMap] at he
+      obtain ⟨q, hq, hq'⟩ := he
+      split at hq' <;> [cases hq'; rename_i hq0]
+      cases hq'
+      simp only
+      rw [hba, hrt, c₁'.mem, Nat.sub_add_cancel (by omega), Nat.sub_add_cancel (by omega)]
+      exact inv.one₁.mb q hq
+  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), fun e he => ?_⟩
+    · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
+      rw [c₂'.gpr _ hp.2]; exact inv.one₂.ub p hp.1
+    · simp only [List.mem_filterMap] at he
+      obtain ⟨q, hq, hq'⟩ := he
+      split at hq' <;> [cases hq'; rename_i hq0]
+      cases hq'
+      simp only
+      rw [hba₂, hrt₂, c₂'.mem, Nat.sub_add_cancel (by omega), Nat.sub_add_cancel (by omega)]
+      exact inv.one₂.mb q hq
+
+/-! ## The analysis -/
+
+/-- The residue analysis, as a `VG.Taint`. -/
+def rtaint : VG.Taint isa where
+  T := FT
+  Agree := Agree
+  step := step
+  step_sound := step_sound
+  condPub τ _ := τ.ok && τ.t.flags
+  cond_sound := cond_sound
+  meet := meet
+  meet_left := meet_left
+  meet_right := meet_right
+  le := le
+  le_sound := le_sound
+  call := callF
+  call_sound := call_sound
+  ret := retF
+  ret_sound := ret_sound
+  push := pushF
+  push_sound := push_sound
+  pop := popF
+  pop_sound := pop_sound
+
 end VG.X86_64.RTaint
