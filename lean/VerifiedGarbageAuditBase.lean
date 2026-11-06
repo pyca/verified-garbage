@@ -12,7 +12,6 @@ import Init.Core
 import Init.Data.BitVec.Basic
 import Init.Data.BitVec.BasicAux
 import Init.Data.BitVec.Lemmas
-import Init.Data.Bool
 import Init.Data.Char.Basic
 import Init.Data.Fin.Basic
 import Init.Data.Int.Basic
