@@ -65,9 +65,6 @@ def Cfg.loc (c : Cfg) (m : MemOp) : Option Where :=
     else none
   else none
 
-/-- The memory operand of slot `k` of base register `b`. -/
-def slotOp (b : Reg) (k : Nat) : MemOp := { base := b, disp := 4 * k }
-
 section
 variable (D : Dom α 32) (c : Cfg) (ext : Nat → Option α)
 

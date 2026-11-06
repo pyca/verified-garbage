@@ -21,28 +21,6 @@ open VG VG.AArch64 VG.Impl.Zeroize.AArch64 RegUpd
 def InvV (s₀ : State) (i : Nat) (s : State) : Prop :=
   Inv s₀ i s ∧ s.v .v0 = 0
 
-/-- One vector store extends the erased prefix without changing registers. -/
-theorem wideStore_ok (s₀ s : State) (hp : contract.pre s₀) (i off : Nat)
-    (hoff : off % 16 = 0 ∧ off < 65536)
-    (hi : i + off + 16 ≤ (s₀.gpr .x1).toNat)
-    (hw : s.wr = s₀.wr) (hd : s.gpr .x0 = s₀.gpr .x0 + BitVec.ofNat 64 i)
-    (hv : s.v .v0 = 0) (hz : Prefix s.mem (s₀.gpr .x0) (i + off))
-    (hf : Frame s₀.wr s₀.mem s.mem) :
-    WP isa (.block [.strq .v0 .x0 off]) s fun t =>
-      Prefix t.mem (s₀.gpr .x0) (i + off + 16) ∧ Frame s₀.wr s₀.mem t.mem ∧
-      t.gpr = s.gpr ∧ t.v = s.v ∧ t.wr = s.wr := by
-  have hn := (s₀.gpr .x1).isLt
-  have hc : (⟨s₀.gpr .x0, (s₀.gpr .x1).toNat⟩ : Region).Contains
-      (s₀.gpr .x0 + BitVec.ofNat 64 (i + off)) 16 :=
-    Offset.contains_base _ hi (by omega_arith)
-  have hm := List.mem_singleton_self (⟨s₀.gpr .x0, (s₀.gpr .x1).toNat⟩ : Region)
-  rw [← hp.2] at hm
-  have hs : InRegions s₀.wr (s₀.gpr .x0 + BitVec.ofNat 64 (i + off)) 16 := ⟨_, hm, hc⟩
-  have ha : s₀.gpr .x0 + BitVec.ofNat 64 i + BitVec.ofNat 64 off =
-      s₀.gpr .x0 + BitVec.ofNat 64 (i + off) := by rw [BitVec.add_assoc, BitVec.ofNat_add]
-  crun [hd, hv, hw, ha, hs, hoff, State.store]
-  exact ⟨prefix_write hz (by omega_arith), hf.write hm _ hc⟩
-
 theorem wideStep_ok (s₀ s : State) (hp : contract.pre s₀) (i : Nat)
     (hi : i + 128 ≤ (s₀.gpr .x1).toNat) (h : InvV s₀ i s) :
     WP isa (.block wideStep) s fun t =>

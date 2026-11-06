@@ -76,9 +76,6 @@ theorem wipe_run (R : Region) (u : State) (words : Nat) (hR : R ∈ u.wr) (hwb :
       ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r11 (BitVec.ofNat 64 0)) from rfl]
   simp only [Option.map_some, he, h12, addrs, List.map_nil, List.nil_append]
 
-theorem wipe_spSafe (words : Nat) : (wipe words).all (fun i => !isa.writesSp i) = true := by
-  simp [wipe, wipeStores, List.all_cons, List.all_map]
-
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}

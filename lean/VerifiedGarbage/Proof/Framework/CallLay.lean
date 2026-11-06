@@ -108,10 +108,6 @@ theorem sepB_ne {w : R → Bool} (bs : List (R × Nat)) {r r' : R} (h : r ≠ r'
 section
 variable {kp w : R → Bool} {bs : List (R × Nat)} {ws : List ((R × Nat) × Nat)} {p : R × Nat} {l : Nat}
 
-theorem keepB_kp (hc : keepB kp w bs ws p l = true) : kp p.1 = true := by
-  simp only [keepB, Bool.and_eq_true] at hc
-  exact hc.1.1
-
 theorem keepB_in (hc : keepB kp w bs ws p l = true) : inB bs p l = true := by
   simp only [keepB, Bool.and_eq_true] at hc
   exact hc.1.2

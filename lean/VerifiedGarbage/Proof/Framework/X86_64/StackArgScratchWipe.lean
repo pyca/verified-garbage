@@ -341,13 +341,6 @@ theorem Verified.stackArgScratchWipedX {c : Prog isa} {k : Nat}
       (sig.contract abi pre post wa (stack + bytes) leak) :=
   Verified.stackArgScratchWipedBy (.x k) h hk hb hst hsp hd hw hpre hpost hpostOut hsat hleak
 
-/-- `withStackArgScratchWiped` writes `rsp` only in its frame if its code
-does. -/
-theorem withStackArgScratchWiped_spSafe {bytes m words : Nat} {c : Prog isa}
-    (h : c.all (fun i => !isa.writesSp i) = true) :
-    (withStackArgScratchWiped bytes m words c).all (fun i => !isa.writesSp i) = true :=
-  withStackArgScratch_spSafe (by simp only [Code.all, h, wipeAt_spSafe, Bool.and_self])
-
 /-- So does `withStackArgScratchWipedX`. -/
 theorem withStackArgScratchWipedX_spSafe {bytes m k : Nat} {c : Prog isa}
     (h : c.all (fun i => !isa.writesSp i) = true) :

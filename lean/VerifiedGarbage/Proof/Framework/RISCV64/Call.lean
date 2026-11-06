@@ -45,9 +45,6 @@ theorem call_callEntry (s : State) : isa.call s = some s.callEntry := rfl
 theorem State.callEntry_gpr (s : State) {r : Reg} (h : r ∉ linkRegs) : s.callEntry.gpr r = s.gpr r := by
   cases r <;> first | exact absurd (by decide) h | rfl
 
-theorem State.callEntry_withRegions (s : State) (rd wr : List Region) :
-    (s.withRegions rd wr).callEntry = s.callEntry.withRegions rd wr := rfl
-
 /-- Calls change none of the callee-saved registers. -/
 theorem preserved_not_link : ∀ r ∈ preserved, r ∉ linkRegs := by decide
 
@@ -375,38 +372,5 @@ theorem frame_contains (sp : Addr) : (⟨sp - 16, 16⟩ : Region).Contains (sp -
   simp only [Region.Contains]
   rw [show sp - 16 + 8 - (sp - 16) = 8 by bv_omega]
   decide
-
-/-- A frame saving `r` around `main`: `main` runs from `s₀` with the stack
-pointer moved down by 16 and `r` stored 8 bytes above it, in the permissions
-of `s₀` (the frame's region must be disjoint from the regions `s₀` may
-write), and the pop restores `r` and the stack pointer. -/
-theorem WP.frameReg {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
-    (hsp : 16 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 16, 16⟩ R)
-    (hmain : WP isa main (framed r s₀) fun s₂ => Q { s₂.write r (s₀.gpr r) with sp := s₀.sp })
-    (hn : 16 * main.fdepth + 16 < 2 ^ 64 := by decide +kernel)
-    (hpf : pushFrames main = true := by decide +kernel) :
-    WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
-  refine WP.frame hsp (WP.narrowF (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega) hpf)
-  · intro a n hi
-    exact InRegions_append_cons.mpr (.inr hi)
-  · intro a n hi
-    exact InRegions_append_cons (xs := []).mpr (.inr hi)
-  · intro s' hrd hwr hsp' hf hq
-    have hread : s'.mem.read (s'.sp + 8) 8 = s₀.gpr r := by
-      rw [hsp', show (pushed r s₀).sp = s₀.sp - 16 from rfl,
-        hf.read (r := ⟨s₀.sp - 16, 16⟩) (frame_contains s₀.sp) (fun R hR => ?_) (by decide)]
-      · exact read_write_self _ _ _
-      · rcases List.mem_append.mp hR with hR | hR
-        · exact hd R hR
-        · simp only [List.mem_singleton] at hR; subst hR
-          exact frame_not_below s₀.sp hn
-    have e : popped r s' = { (s'.withRegions s₀.rd s₀.wr).write r (s₀.gpr r) with sp := s₀.sp } := by
-      simp only [popped, hread]
-      simp only [hsp', hwr, pushed, List.tail_cons, BitVec.sub_add_cancel]
-      cases s'
-      simp only [pushed] at hrd
-      subst hrd
-      rfl
-    rw [e]; exact hq
 
 end VG.RISCV64

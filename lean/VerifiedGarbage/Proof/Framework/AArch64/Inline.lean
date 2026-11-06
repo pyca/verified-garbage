@@ -113,9 +113,6 @@ theorem store_widen (hc : Covers s.wr wr) {a : Addr} {n : Nat} {v : BitVec (8 * 
 theorem holds_withRegions (c : CondCode) : c.holds (s.withRegions rd wr) = c.holds s := by
   cases c <;> rfl
 
-theorem write_withRegions (sz : Size) (d : Reg) (v : BitVec sz.bits) :
-    (s.withRegions rd wr).write sz d v = (s.write sz d v).withRegions rd wr := rfl
-
 theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr) {i : Instr}
     (h : exec i s = some s') : exec i (s.withRegions rd wr) = some (s'.withRegions rd wr) := by
   cases i with
@@ -474,10 +471,6 @@ theorem Exec.widen {c : Prog isa} {s s' : State} {t : List Leak} {rd wr : List R
     (h : Exec isa c s t s') (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr) :
     Exec isa c (s.withRegions rd wr) t (s'.withRegions rd wr) :=
   regionModel.widen h hc hw
-
-theorem execBlock_gpr {is : List Instr} {r : Reg} (hc : ∀ i ∈ is, clobbers i r = false)
-    {s s' : State} {t : List Leak} (h : execBlock isa is s = some (s', t)) : s'.gpr r = s.gpr r :=
-  execBlock_keep (fun s : State => s.gpr r) exec_gpr hc h
 
 /-- A register that no instruction writes keeps its value, unless it is
 one of `linkRegs` and the code calls a function. -/

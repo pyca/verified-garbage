@@ -27,10 +27,6 @@ theorem gpr_writeCarry (r : Reg) (v : Nat) (r' : Reg) :
 theorem gpr_writeCarry_self (r : Reg) (v : Nat) : (s.writeCarry r v).gpr r = BitVec.ofNat 64 v := by
   simp [State.writeCarry, State.write]
 
-theorem gpr_writeCarry_of_ne {r r' : Reg} (v : Nat) (h : ¬r' = r) :
-    (s.writeCarry r v).gpr r' = s.gpr r' := by
-  simp [State.writeCarry, State.write, h]
-
 theorem ca_writeCarry (r : Reg) (v : Nat) : (s.writeCarry r v).ca = decide (2 ^ 64 ≤ v) := rfl
 theorem mem_writeCarry (r : Reg) (v : Nat) : (s.writeCarry r v).mem = s.mem := rfl
 theorem rd_writeCarry (r : Reg) (v : Nat) : (s.writeCarry r v).rd = s.rd := rfl
