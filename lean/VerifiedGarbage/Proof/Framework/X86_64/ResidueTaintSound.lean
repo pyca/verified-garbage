@@ -680,4 +680,359 @@ theorem step_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     rw [r₁, r₂, f₁ _ hw, f₂ _ (by rw [← inv.wr, ← inv.rsp]; exact hw)]
     exact d hw
 
+/-! ## Soundness: branches, joins and order -/
+
+theorem cond_sound {τ : FT} {c : Cond} {s₁ s₂ : State} (ha : Agree τ s₁ s₂)
+    (h : (τ.ok && τ.t.flags) = true) : eval c s₁ = eval c s₂ := by
+  simp only [Bool.and_eq_true] at h
+  exact Taint.cond_sound (ha h.1).base h.2
+
+/-- `RInv τ` gives `RInv σ` for a `σ` of the same frames that knows less. -/
+theorem RInv.weaken {τ σ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) (hn : σ.nfr = τ.nfr)
+    (hd : σ.depth = τ.depth) (hr : σ.room = τ.room) (hra : σ.ras = τ.ras)
+    (hb : Taint.Agree σ.t s₁ s₂) (hl : σ.t.lens = τ.t.lens)
+    (hsec : ∀ j, ¬ InSec σ.sec j → ¬ InSec τ.sec j)
+    (hub : ∀ p ∈ σ.ub, ∃ n, (p.1, n) ∈ τ.ub ∧ n ≤ p.2) (hfl : σ.fl = none ∨ σ.fl = τ.fl)
+    (hmb : ∀ e ∈ σ.mb, e ∈ τ.mb) : RInv σ s₁ s₂ := by
+  have e : ∀ s, wa s σ = wa s τ := fun s => by funext j; simp only [wa, wb, hr]
+  have e' : ∀ s, raSlot s σ = raSlot s τ := fun s => by funext j; simp only [raSlot, e]
+  have one : ∀ {s}, One τ s → One σ s := fun o =>
+    ⟨fun p hp => by
+      obtain ⟨n, hn, hle⟩ := hub p hp
+      exact Nat.le_trans (o.ub (p.1, n) hn) hle,
+     fun a b h => by
+      rcases hfl with h' | h'
+      · rw [h'] at h; cases h
+      · exact o.fl a b (h' ▸ h),
+     fun e he => o.mb e (hmb e he)⟩
+  refine ⟨hb, inv.rsp, inv.unk, inv.wr, fun x => inv.lens (hl ▸ x), hn ▸ inv.nfr, hr ▸ inv.room,
+    hd ▸ inv.top, ?_, ?_, ?_, hra ▸ inv.rasSorted, ?_, ?_, ?_, one inv.one₁, one inv.one₂⟩
+  · rw [hn, hd]; exact inv.frames
+  · intro i h₁ h₂; simp only [wb, hr, hd]; exact inv.others i (hn ▸ h₁) h₂
+  · rw [hra, hr, hd]; exact inv.rasIn
+  · rw [e', hra, hn]; exact inv.rasFr
+  · intro j hj hnot hw
+    rw [e] at hw ⊢; rw [e]
+    exact inv.dead j (hr ▸ hd ▸ hj) (hsec j hnot) hw
+  · intro e he; rw [hl]; exact inv.mbFit e (hmb e he)
+
+theorem inSec_append_left {l₁ l₂ : List (Nat × Nat)} {j : Nat} (h : ¬ InSec (l₁ ++ l₂) j) : ¬ InSec l₁ j :=
+  fun ⟨p, hp, h'⟩ => h ⟨p, List.mem_append_left _ hp, h'⟩
+
+theorem inSec_append_right {l₁ l₂ : List (Nat × Nat)} {j : Nat} (h : ¬ InSec (l₁ ++ l₂) j) : ¬ InSec l₂ j :=
+  fun ⟨p, hp, h'⟩ => h ⟨p, List.mem_append_right _ hp, h'⟩
+
+theorem mem_ubMeet {l₁ l₂ : List (Reg × Nat)} {p : Reg × Nat}
+    (h : p ∈ l₁.filterMap fun p => (ubOf l₂ p.1).map fun n => (p.1, max p.2 n)) :
+    (∃ n, (p.1, n) ∈ l₁ ∧ n ≤ p.2) ∧ (∃ n, (p.1, n) ∈ l₂ ∧ n ≤ p.2) := by
+  obtain ⟨q, hq, h⟩ := List.mem_filterMap.mp h
+  obtain ⟨n, hn, rfl⟩ := Option.map_eq_some_iff.mp h
+  exact ⟨⟨q.2, hq, Nat.le_max_left _ _⟩, ⟨n, ubOf_some hn, Nat.le_max_right _ _⟩⟩
+
+theorem meet_left {τ₁ τ₂ : FT} {s₁ s₂ : State} (h : Agree τ₁ s₁ s₂) : Agree (meet τ₁ τ₂) s₁ s₂ := by
+  unfold meet
+  split
+  · rename_i hc
+    simp only [Bool.and_eq_true, beq_iff_eq] at hc
+    obtain ⟨⟨⟨⟨⟨⟨h1, -⟩, -⟩, -⟩, -⟩, -⟩, hl⟩ := hc
+    intro _
+    refine (h h1).weaken rfl rfl rfl rfl (Taint.meet_left (h h1).base) (by simp [Taint.meet, hl])
+      (fun j hn => inSec_append_left hn) (fun p hp => (mem_ubMeet hp).1) ?_
+      (fun e he => (List.mem_filter.mp he).1)
+    simp only
+    split <;> [exact .inr rfl; exact .inl rfl]
+  · exact fun h => absurd h (by decide)
+
+theorem meet_right {τ₁ τ₂ : FT} {s₁ s₂ : State} (h : Agree τ₂ s₁ s₂) : Agree (meet τ₁ τ₂) s₁ s₂ := by
+  unfold meet
+  split
+  · rename_i hc
+    simp only [Bool.and_eq_true, beq_iff_eq] at hc
+    obtain ⟨⟨⟨⟨⟨⟨-, h2⟩, hn⟩, hd⟩, hr⟩, hra⟩, hl⟩ := hc
+    intro _
+    refine (h h2).weaken hn hd hr hra (Taint.meet_right (h h2).base) (by simp [Taint.meet, hl])
+      (fun j hn => inSec_append_right hn) (fun p hp => (mem_ubMeet hp).2) ?_
+      (fun e he => by simpa using (List.mem_filter.mp he).2)
+    simp only
+    split
+    · rename_i hf; simp only [beq_iff_eq] at hf; exact .inr hf
+    · exact .inl rfl
+  · exact fun h => absurd h (by decide)
+
+theorem le_sound {τ σ : FT} {s₁ s₂ : State} (hle : le τ σ = true) (h : Agree σ s₁ s₂) : Agree τ s₁ s₂ := by
+  intro hτ
+  simp only [le, hτ, Bool.not_true, Bool.false_or, Bool.and_eq_true, beq_iff_eq, List.all_eq_true,
+    List.contains_iff_mem] at hle
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨hs, hn⟩, hd⟩, hr⟩, hra⟩, hb⟩, hsec⟩, hub⟩, hfl⟩, hmb⟩ := hle
+  have inv := h hs
+  have hbase := Taint.le_sound (Taint.leK_eq ▸ hb) inv.base
+  have hl : τ.t.lens = σ.t.lens := by
+    have hb' := hb
+    rw [Taint.leK_eq] at hb'; simp only [Taint.le, Bool.and_eq_true, beq_iff_eq] at hb'; exact hb'.1.1.1.1.2
+  refine inv.weaken hn hd hr hra hbase hl (fun j hnot ⟨p, hp, h'⟩ => hnot ⟨p, hsec p hp, h'⟩) ?_ ?_ hmb
+  · intro p hp
+    have h := hub p hp
+    cases hn : ubOf σ.ub p.1 with
+    | none => rw [hn] at h; cases h
+    | some n => rw [hn] at h; exact ⟨n, ubOf_some hn, by simpa using h⟩
+  · rcases Bool.or_eq_true_iff.mp hfl with h | h
+    · exact .inl (Option.isNone_iff_eq_none.mp h)
+    · exact .inr (by simpa using h)
+
+/-! ## The window -/
+
+theorem addr_add_sub (p : Addr) (n r : Nat) : p + BitVec.ofNat 64 n - BitVec.ofNat 64 (r + n) = p - BitVec.ofNat 64 r := by
+  rw [BitVec.ofNat_add, BitVec.add_comm (BitVec.ofNat 64 r), BitVec.sub_eq_add_neg, BitVec.neg_add,
+    BitVec.sub_eq_add_neg, ← BitVec.add_assoc, BitVec.add_assoc p, BitVec.add_right_neg, BitVec.add_zero,
+    BitVec.add_neg_eq_sub]
+
+theorem addr_sub_sub (p : Addr) {n r : Nat} (h : n ≤ r) :
+    p - BitVec.ofNat 64 n - BitVec.ofNat 64 (r - n) = p - BitVec.ofNat 64 r := by
+  rw [Offset.sub_ofNat_eq p h, BitVec.add_sub_cancel]
+
+theorem toNat_sub_ofNat (x : Addr) {n : Nat} (h : n ≤ x.toNat) : (x - BitVec.ofNat 64 n).toNat = x.toNat - n := by
+  have := x.isLt
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega),
+    show 2 ^ 64 - n + x.toNat = x.toNat - n + 2 ^ 64 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+
+theorem toNat_add_ofNat (x : Addr) {n : Nat} (h : x.toNat + n < 2 ^ 64) : (x + BitVec.ofNat 64 n).toNat = x.toNat + n := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega), Nat.mod_eq_of_lt h]
+
+theorem wa_eq {s₁ s₂ : State} {τ : FT} (h : s₁.gpr .rsp = s₂.gpr .rsp) (j : Nat) : wa s₁ τ j = wa s₂ τ j := by
+  simp only [wa, wb, h]
+
+/-- An address within `n` bytes below the stack pointer is a window index below `room`. -/
+theorem below_wa {τ : FT} {s : State} {n : Nat} (hn : n ≤ τ.room) (y : Addr) :
+    y = wa s τ (τ.room - n + (y - (s.gpr .rsp - BitVec.ofNat 64 n)).toNat) := by
+  simp only [wa, wb]
+  rw [BitVec.ofNat_add, ← BitVec.add_assoc, ← Offset.sub_ofNat_eq _ hn, BitVec.ofNat_toNat, BitVec.setWidth_eq,
+    BitVec.add_comm, BitVec.sub_add_cancel]
+
+theorem wa_shift {s s' : State} {τ τ' : FT}
+    (h : s'.gpr .rsp - BitVec.ofNat 64 τ'.room = s.gpr .rsp - BitVec.ofNat 64 τ.room) : wa s' τ' = wa s τ := by
+  funext j; simp only [wa, wb, h]
+
+theorem region_getElem {s : State} {i : Nat} (hi : i < s.wr.length) : region s i = s.wr[i] := by
+  simp only [region, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some]
+
+theorem contains_self (a : Addr) {n : Nat} (h : 0 < n) : (⟨a, n⟩ : Region).Contains a 1 := by
+  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+
+/-- The bytes of the window below the stack pointer are in no writable region. -/
+theorem below_free {τ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) {j : Nat} (hj : j < τ.room) :
+    ∀ r ∈ s₁.wr, ¬ r.Contains (wa s₁ τ j) 1 := by
+  intro r hr hc
+  obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hr
+  have hroom := inv.room
+  have htop := inv.top
+  rw [← region_getElem hi] at hc
+  by_cases hfr : i < τ.nfr
+  · have h1 := inv.frames i hfr _ hc
+    have hw : wa s₁ τ j = s₁.gpr .rsp - BitVec.ofNat 64 (τ.room - j) := by
+      simp only [wa, wb]
+      rw [Offset.sub_ofNat_eq _ (Nat.sub_le τ.room j), Nat.sub_sub_self (Nat.le_of_lt hj)]
+    have hd := Offset.base_disjoint_below (s₁.gpr .rsp) (n := τ.room - j) (k := τ.depth) (by omega)
+    exact hd _ h1 (by rw [hw]; exact contains_self _ (by omega))
+  · have hd := inv.others i (by omega) hi
+    exact hd _ hc (Offset.contains_base _ (by omega) (by omega))
+
+theorem below_free' {τ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) {n : Nat} (hn : n ≤ τ.room) :
+    ∀ y, (y - (s₁.gpr .rsp - BitVec.ofNat 64 n)).toNat < n → ∀ r ∈ s₁.wr, ¬ r.Contains y 1 := by
+  intro y hy
+  rw [below_wa hn y]
+  exact below_free inv (by omega)
+
+/-- A byte of a region the base analysis knows is in the region. -/
+theorem byte_in {t : Taint.T} {s : State} (hw : Wf t s) {i k : Nat} (hk : k < t.lens.getD i 0) :
+    region s i ∈ s.wr ∧ (region s i).Contains (byteAddr s i k) 1 := by
+  have hne := lens_ne (n := k + 1) (by omega) hk
+  obtain ⟨hi, hri⟩ := region_mem hw hne (i := i) (by omega)
+  have hli := region_len hw hne i
+  have hb : (region s i).len ≤ 2 ^ 64 := by rw [hri]; exact (hw.1 hne).2.2 _ (List.getElem_mem _)
+  refine ⟨hri ▸ List.getElem_mem _, ?_⟩
+  simp only [Region.Contains, byteAddr]
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  omega
+
+/-- The pointers of `mb` are kept by a change of memory outside the writable regions. -/
+theorem mb_out {τ : FT} {s s' : State} (hw : Wf τ.t s) (o : One τ s)
+    (hfit : ∀ e ∈ τ.mb, e.2.1 + 8 ≤ τ.t.lens.getD e.1 0) (hwr : s'.wr = s.wr)
+    (hm : ∀ y, (∃ r ∈ s.wr, r.Contains y 1) → s'.mem y = s.mem y) :
+    ∀ e ∈ τ.mb, s'.mem.readW (byteAddr s' e.1 e.2.1) 64 = (region s' e.2.2.1).base + BitVec.ofNat 64 e.2.2.2 := by
+  intro e he
+  have hba : byteAddr s' e.1 e.2.1 = byteAddr s e.1 e.2.1 := by simp only [byteAddr, region, hwr]
+  have hrg : region s' e.2.2.1 = region s e.2.2.1 := by simp only [region, hwr]
+  rw [hba, hrg, ← o.mb e he]
+  apply Mem.readW_congr
+  intro k hk
+  simp only [Nat.reduceDiv] at hk
+  rw [byteAddr_add]
+  have := hfit e he
+  obtain ⟨h1, h2⟩ := byte_in hw (i := e.1) (k := e.2.1 + k) (by omega)
+  exact hm _ ⟨_, h1, h2⟩
+
+/-- The base analysis's agreement after a call or a return: the stack pointer
+moves the same way in both runs, and memory changes only to equal values. -/
+theorem agree_killSp {t : Taint.T} {s₁ s₂ s₁' s₂' : State} (ha : Taint.Agree t s₁ s₂)
+    (hsp : s₁'.gpr .rsp = s₂'.gpr .rsp)
+    (hg₁ : ∀ r, r ≠ .rsp → s₁'.gpr r = s₁.gpr r) (hg₂ : ∀ r, r ≠ .rsp → s₂'.gpr r = s₂.gpr r)
+    (hf₁ : s₁'.cf = s₁.cf ∧ s₁'.zf = s₁.zf ∧ s₁'.sf = s₁.sf ∧ s₁'.of = s₁.of)
+    (hf₂ : s₂'.cf = s₂.cf ∧ s₂'.zf = s₂.zf ∧ s₂'.sf = s₂.sf ∧ s₂'.of = s₂.of)
+    (hx₁ : s₁'.xmm = s₁.xmm) (hx₂ : s₂'.xmm = s₂.xmm) (hw₁ : s₁'.wr = s₁.wr) (hw₂ : s₂'.wr = s₂.wr)
+    (hm : ∀ a, (s₁'.mem a = s₁.mem a ∧ s₂'.mem a = s₂.mem a) ∨ s₁'.mem a = s₂'.mem a) :
+    Taint.Agree (killSp t) s₁' s₂' where
+  rf := ⟨fun r hr => by
+      by_cases h : r = .rsp
+      · subst h; exact hsp
+      · rw [hg₁ r h, hg₂ r h]; exact ha.rf.1 r hr,
+    fun hf => by
+      obtain ⟨a, b, c, d⟩ := ha.rf.2 hf
+      rw [hf₁.1, hf₂.1, hf₁.2.1, hf₂.2.1, hf₁.2.2.1, hf₂.2.2.1, hf₁.2.2.2, hf₂.2.2.2]
+      exact ⟨a, b, c, d⟩⟩
+  wr h := by rw [hw₁, hw₂]; exact ha.wr h
+  wf₁ := ⟨fun h => by rw [hw₁]; exact ha.wf₁.1 h, kill_bases ha.wf₁ hw₁ hg₁⟩
+  wf₂ := ⟨fun h => by rw [hw₂]; exact ha.wf₂.1 h, kill_bases ha.wf₂ hw₂ hg₂⟩
+  ok := ha.ok
+  slots sl h k h₁ h₂ := by
+    have hb : ∀ s s' : State, s'.wr = s.wr → byteAddr s' sl.1 k = byteAddr s sl.1 k := fun s s' h => by
+      simp only [byteAddr, region, h]
+    rw [hb _ _ hw₁, hb _ _ hw₂, ← ha.byteAddr_eq h h₂]
+    rcases hm (byteAddr s₁ sl.1 k) with ⟨e₁, e₂⟩ | e
+    · have := ha.slots sl h k h₁ h₂
+      rw [← ha.byteAddr_eq h h₂] at this
+      rw [e₁, e₂]; exact this
+    · exact e
+  lo := noLo
+  xr r h := by rw [hx₁, hx₂]; exact ha.xr r h
+
+/-- `[p, p + d)` without its first `b` bytes. -/
+theorem sub_shrink {r : Region} {p : Addr} {d b : Nat} (hs : Region.Sub r ⟨p, d⟩)
+    (hd : Region.Disjoint r ⟨p, b⟩) (hb : b ≤ d) (hd64 : d < 2 ^ 64) :
+    Region.Sub r ⟨p + BitVec.ofNat 64 b, d - b⟩ := by
+  intro a ha
+  have h1 := hs a ha
+  have h2 := hd a ha
+  simp only [Region.Contains] at h1 h2 ⊢
+  rw [Offset.toNat_sub_add _ _ (by omega), show 2 ^ 64 - b + (a - p).toNat = (a - p).toNat - b + 2 ^ 64 by omega,
+    Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+  omega
+
+theorem sub_down (p : Addr) (n d : Nat) : Region.Sub ⟨p, d⟩ ⟨p - BitVec.ofNat 64 n, d + n⟩ := by
+  have := Offset.sub_base (p - BitVec.ofNat 64 n) (d := n) (n := d) (k := d + n) (by omega)
+  rwa [BitVec.sub_add_cancel] at this
+
+theorem Region.sub_trans {a b c : Region} (h₁ : Region.Sub a b) (h₂ : Region.Sub b c) : Region.Sub a c :=
+  fun x h => h₂ x (h₁ x h)
+
+/-! ## Soundness: calls and returns -/
+
+/-- What a call does to the state, field by field. -/
+structure CallFx (s s' : State) : Prop where
+  sp : s'.gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 8
+  gpr : ∀ r, r ≠ .rsp → s'.gpr r = s.gpr r
+  flags : s'.cf = s.cf ∧ s'.zf = s.zf ∧ s'.sf = s.sf ∧ s'.of = s.of
+  xmm : s'.xmm = s.xmm
+  wr : s'.wr = s.wr
+  unk : s'.unknowns = fun n => s.unknowns (n + 1)
+  mem : s'.mem = s.mem.writeW (s.gpr .rsp - BitVec.ofNat 64 8) (s.unknowns 0)
+
+theorem callFx {s s' : State} (h : isa.call s = some s') : CallFx s s' := by
+  simp only [isa, call, Option.some.injEq] at h
+  subst h
+  exact ⟨by simp only [State.setReg, ↓reduceIte]; rfl, fun _ h => setReg_ne h, ⟨rfl, rfl, rfl, rfl⟩, rfl, rfl, rfl, rfl⟩
+
+theorem call_sound {τ τ' : FT} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂) (hs : callF τ = some τ')
+    (e₁ : isa.call s₁ = some s₁') (e₂ : isa.call s₂ = some s₂') :
+    isa.callAddrs s₁ = isa.callAddrs s₂ ∧ Agree τ' s₁' s₂' := by
+  unfold callF at hs
+  split at hs <;> [rename_i hc; cases hs]
+  simp only [Bool.and_eq_true, decide_eq_true_eq] at hc
+  obtain ⟨hok, h8⟩ := hc
+  cases hs
+  have inv := ha hok
+  have c₁ := callFx e₁
+  have c₂ := callFx e₂
+  refine ⟨by simp only [inv.rsp], fun _ => ?_⟩
+  have hroom := inv.room
+  have htop := inv.top
+  -- What the call writes: the 8 bytes below the stack pointer, the same in both runs.
+  have hout₁ : ∀ y, ¬ (y - (s₁.gpr .rsp - BitVec.ofNat 64 8)).toNat < 8 → s₁'.mem y = s₁.mem y := by
+    intro y hy; rw [c₁.mem]; exact writeW_out (by simpa using hy)
+  have hout₂ : ∀ y, ¬ (y - (s₁.gpr .rsp - BitVec.ofNat 64 8)).toNat < 8 → s₂'.mem y = s₂.mem y := by
+    intro y hy; rw [c₂.mem, ← inv.rsp]; exact writeW_out (by simpa using hy)
+  have hin : ∀ y, (y - (s₁.gpr .rsp - BitVec.ofNat 64 8)).toNat < 8 → s₁'.mem y = s₂'.mem y := by
+    intro y hy
+    have hy' : (y - (s₁.gpr .rsp - BitVec.ofNat 64 8)).toNat < 64 / 8 := hy
+    rw [c₁.mem, c₂.mem]
+    simp only [Mem.writeW, Mem.write, ← inv.rsp, ← inv.unk, hy', ↓reduceIte]
+  have hm : ∀ y, (s₁'.mem y = s₁.mem y ∧ s₂'.mem y = s₂.mem y) ∨ s₁'.mem y = s₂'.mem y := by
+    intro y
+    by_cases hy : (y - (s₁.gpr .rsp - BitVec.ofNat 64 8)).toNat < 8
+    · exact .inr (hin y hy)
+    · exact .inl ⟨hout₁ y hy, hout₂ y hy⟩
+  have hfree₁ := below_free' inv (n := 8) (by omega)
+  have hsh₁ : s₁'.gpr .rsp - BitVec.ofNat 64 (τ.room - 8) = s₁.gpr .rsp - BitVec.ofNat 64 τ.room := by
+    rw [c₁.sp]; exact addr_sub_sub _ h8
+  have hsh₂ : s₂'.gpr .rsp - BitVec.ofNat 64 (τ.room - 8) = s₂.gpr .rsp - BitVec.ofNat 64 τ.room := by
+    rw [c₂.sp]; exact addr_sub_sub _ h8
+  have hr8 : (s₁.gpr .rsp - BitVec.ofNat 64 8).toNat = (s₁.gpr .rsp).toNat - 8 := toNat_sub_ofNat _ (by omega)
+  have hwa8 : wa s₁ τ (τ.room - 8) = s₁.gpr .rsp - BitVec.ofNat 64 8 := by
+    simp only [wa, wb]; rw [← Offset.sub_ofNat_eq _ h8]
+  have hrg : ∀ i, region s₁' i = region s₁ i := fun i => by simp only [region, c₁.wr]
+  refine ⟨agree_killSp inv.base (by rw [c₁.sp, c₂.sp, inv.rsp]) c₁.gpr c₂.gpr c₁.flags c₂.flags c₁.xmm c₂.xmm
+      c₁.wr c₂.wr hm,
+    by rw [c₁.sp, c₂.sp, inv.rsp], by rw [c₁.unk, c₂.unk, inv.unk], by rw [c₁.wr, c₂.wr, inv.wr],
+    fun h => by rw [c₁.wr]; exact inv.lens h, by rw [c₁.wr]; exact inv.nfr,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, inv.mbFit, ?_, ?_⟩
+  · dsimp only; rw [c₁.sp]; omega
+  · dsimp only; rw [c₁.sp]; omega
+  · intro i hi
+    dsimp only
+    rw [hrg, c₁.sp]
+    exact Region.sub_trans (inv.frames i hi) (sub_down _ 8 τ.depth)
+  · intro i h₁ h₂
+    rw [c₁.wr] at h₂
+    have := inv.others i h₁ h₂
+    simp only [wb] at this ⊢
+    rw [hrg, hsh₁, show τ.room - 8 + (τ.depth + 8) = τ.room + τ.depth by omega]
+    exact this
+  · intro j hj
+    dsimp only at hj ⊢
+    rcases List.mem_cons.mp hj with rfl | hj
+    · omega
+    · have := inv.rasIn j hj; omega
+  · dsimp only
+    exact List.pairwise_cons.mpr ⟨fun j hj => by have := inv.rasIn j hj; omega, inv.rasSorted⟩
+  · intro j hj i hi
+    simp only [raSlot]
+    rw [wa_shift hsh₁, hrg]
+    dsimp only at hj
+    rcases List.mem_cons.mp hj with rfl | hj
+    · rw [hwa8]
+      exact Region.Disjoint.sub_left (Offset.base_disjoint_below (s₁.gpr .rsp) (n := 8) (k := τ.depth) (by omega))
+        (inv.frames i hi)
+    · exact inv.rasFr j hj i hi
+  · intro j hj hn hw
+    rw [c₁.wr] at hw
+    dsimp only at hj
+    simp only [wa, wb] at hw ⊢
+    rw [hsh₁] at hw
+    rw [hsh₁, hsh₂, ← inv.rsp]
+    show s₁'.mem (wa s₁ τ j) = s₂'.mem (wa s₁ τ j)
+    rcases hm (wa s₁ τ j) with ⟨h₁, h₂⟩ | h
+    · rw [h₁, h₂]
+      have := inv.dead j (by omega) hn hw
+      rwa [← wa_eq inv.rsp] at this
+    · exact h
+  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), ?_⟩
+    · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
+      rw [c₁.gpr _ hp.2]; exact inv.one₁.ub p hp.1
+    · exact mb_out (τ := τ) inv.base.wf₁ inv.one₁ inv.mbFit c₁.wr
+        (fun y ⟨r, hr, hc⟩ => hout₁ y (fun hy => hfree₁ y hy r hr hc))
+  · refine ⟨fun p hp => ?_, fun _ _ h => (by cases h), ?_⟩
+    · simp only [List.mem_filter, bne_iff_ne, ne_eq] at hp
+      rw [c₂.gpr _ hp.2]; exact inv.one₂.ub p hp.1
+    · exact mb_out (τ := τ) inv.base.wf₂ inv.one₂ inv.mbFit c₂.wr
+        (fun y ⟨r, hr, hc⟩ => hout₂ y (fun hy => hfree₁ y hy r (inv.wr ▸ hr) hc))
+
 end VG.X86_64.RTaint
