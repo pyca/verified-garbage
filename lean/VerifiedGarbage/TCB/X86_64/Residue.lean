@@ -24,7 +24,9 @@ no choice of what to keep (zero, or the entry value) can carry a secret.
 
 What was there on entry (all of the registers, and the memory outside the
 buffers) is taken as given: a secret the caller passed in a register, or
-left in one, is the caller's.
+left in one, is the caller's. So are the return addresses the code's calls
+push (`State.unknowns`), which the two runs share: they are where the code
+is, not data.
 
 Not covered, because the model does not have them: the opmask register `k1`
 (which the masked AVX-512 moves set from a general-purpose register), the
@@ -52,6 +54,7 @@ def Outside (retBits : Nat) (s₁ s₂ : State) : Prop :=
 secret residue (see the module docs). -/
 def NoResidue (c : Prog isa) (k : Contract isa) (retBits : Nat) : Prop :=
   ∀ s₁ s₂ t₁ t₂ s₁' s₂', k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → Outside 0 s₁ s₂ →
+    s₁.unknowns = s₂.unknowns →
     Exec isa c s₁ t₁ s₁' → Exec isa c s₂ t₂ s₂' → Outside retBits s₁' s₂'
 
 end VG.X86_64
