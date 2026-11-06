@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, sampling
@@ -610,31 +611,74 @@ theorem add48_ok (s : State) :
   xrun [show BitVec.signExtend 64 (48 : BitVec 32) = BitVec.ofNat 64 48 by decide]
   exact ⟨fun _ _ => rfl, rfl⟩
 
-/-- Sixteen iterations with the AVX-512 code, from at most 224 coefficients. -/
-theorem zvec_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 16 ≤ 168) (hbt : b + t + 16 ≤ 280)
-    {s : State} (h : LAtW w16 σ s₀ K b t s) (hc : ZC s) (hl : (Lt σ K (b + t)).length < 225) :
-    WP isa (.block (zcand ++ zput)) s fun s' =>
-      LAtW w16 σ s₀ K b (t + 16) s' ∧ ZC s' ∧ s'.gpr .r10 = s.gpr .r10 := by
-  subst hw
+/-- `s₁` after `zcand` from `s`. -/
+abbrev ZCF (s s₁ : State) : Prop :=
+  (s₁.gpr .rax).toNat = zmaskL (s.mem.readW (s.gpr .rsi) 512) 0 + 256 * zmaskL (s.mem.readW (s.gpr .rsi) 512) 1 +
+      65536 * zmaskL (s.mem.readW (s.gpr .rsi) 512) 2 + 16777216 * zmaskL (s.mem.readW (s.gpr .rsi) 512) 3 ∧
+    (∀ l < 4, s₁.zlane .xmm0 l = zcandW (s.mem.readW (s.gpr .rsi) 512) l) ∧ ZC s₁ ∧ s₁.mem = s.mem ∧
+    s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.syms = s.syms ∧ ∀ r, r ≠ .rax → s₁.gpr r = s.gpr r
+
+/-- After `zcand`, at iteration `b + t` with at most 224 coefficients. -/
+def ZIW (w16 : Bool) (σ s₀ : State) (K b t : Nat) (s₁ : State) : Prop :=
+  ∃ s, LAtW w16 σ s₀ K b t s ∧ (Lt σ K (b + t)).length < 225 ∧ ZCF s s₁
+
+omit hp in
+/-- The mask of the candidates less than `q` of lane `l` of the 48 bytes. -/
+theorem zmaskL_eq {s₀ : State} {K b t : Nat} (ht : t + 16 ≤ 168) (hbt : b + t + 16 ≤ 280) {s : State}
+    (h : LAtW w16 σ s₀ K b t s) {l : Nat} (hl : l < 4) :
+    zmaskL (s.mem.readW (s.gpr .rsi) 512) l =
+      bsum (fun i => decide (cand4 (xofByte (B σ K)) (3 * (b + t) + 12 * l) i < 3329)) 8 :=
+  bsum_congr fun i hi => by
+    rw [zcand_eq ht hbt h (by omega_arith), show (8 * l + i) / 8 = l by omega_arith, show (8 * l + i) % 8 = i by omega_arith]
+
+/-- The candidates of sixteen iterations and their mask. -/
+theorem zvec1_ok {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 16 ≤ 168) {s : State} (h : LAtW w16 σ s₀ K b t s)
+    (hc : ZC s) (hl : (Lt σ K (b + t)).length < 225) :
+    WP isa (.block zcand) s fun s₁ => ZIW w16 σ s₀ K b t s₁ ∧ s₁.gpr .r10 = s.gpr .r10 := by
   have hrsi : s.gpr .rsi = at' σ (oBuf + 504 * K + 3 * t) := by rw [h.rsi, at', at', Offset.add_add]
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 64 := by
     rw [hrsi]; exact in_scr' hp h.lb.env.rd h.lb.env.wr (by simp only [oBuf]; omega_arith)
+  exact WP.mono (zcand_ok hc hin) fun s₁ h₁ => ⟨⟨s, h, hl, h₁⟩, h₁.2.2.2.2.2.2.2 _ (by decide)⟩
+
+/-- The mask in `eax` after `zcand` from `s`. -/
+abbrev zE (s : State) : Nat :=
+  zmaskL (s.mem.readW (s.gpr .rsi) 512) 0 + 256 * zmaskL (s.mem.readW (s.gpr .rsi) 512) 1 +
+    65536 * zmaskL (s.mem.readW (s.gpr .rsi) 512) 2 + 16777216 * zmaskL (s.mem.readW (s.gpr .rsi) 512) 3
+
+/-- Before lane `l` of `zput`, at iteration `b + t` with at most 224 coefficients. -/
+def ZLW (w16 : Bool) (σ s₀ : State) (K b t l : Nat) (s' : State) : Prop :=
+  ∃ s, LAtW w16 σ s₀ K b t s ∧ (Lt σ K (b + t)).length < 225 ∧
+    ZLI σ s₀ K b t (s.mem.readW (s.gpr .rsi) 512) (zE s) s l s'
+
+omit hp in
+theorem zlw_start (hw : w16 = true) {s₀ : State} {K b t : Nat} {s1 : State} (hi : ZIW w16 σ s₀ K b t s1) :
+    ZLW w16 σ s₀ K b t 0 s1 := by
+  subst hw
+  obtain ⟨s, h, hl, hax, h0, c1, m1, rd1, wr1, sy1, g1⟩ := hi
+  exact ⟨s, h, hl, h0, hax, c1, by rw [g1 _ (by decide), h.rdi]; rfl, by rw [m1]; exact h.stored,
+    by rw [m1]; exact Frame.refl _ _, rd1, wr1, sy1, fun r hr _ _ => g1 r hr⟩
+
+/-- Lane `l` of `zput`. -/
+theorem zlaneW_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 16 ≤ 168)
+    (hbt : b + t + 16 ≤ 280) {l : Nat} (hl : l < 4) {s' : State} (hz : ZLW w16 σ s₀ K b t l s') :
+    WP isa (.block (zputL l)) s' fun s'' => ZLW w16 σ s₀ K b t (l + 1) s'' ∧ s''.gpr .r10 = s'.gpr .r10 := by
+  subst hw
+  obtain ⟨s, h, hlen, z⟩ := hz
   have hc' : ∀ l < 4, ∀ k < 8, candN (fun i => (byteZ (s.mem.readW (s.gpr .rsi) 512) i).toNat) (8 * l + k) =
       cand4 (xofByte (B σ K)) (3 * (b + t) + 12 * l) k := fun l hl k hk => by
     rw [zcand_eq ht hbt h (by omega_arith), show (8 * l + k) / 8 = l by omega_arith,
       show (8 * l + k) % 8 = k by omega_arith]
-  rw [show zput = zputL 0 ++ (zputL 1 ++ (zputL 2 ++ (zputL 3 ++ [.alu .add .rsi (.imm 48)]))) from rfl]
-  refine WP.block_append_iff.mpr (WP.mono (zcand_ok hc hin) fun s1 ⟨hax, h0, c1, m1, rd1, wr1, sy1, g1⟩ => ?_)
-  have z1 : ZLI σ s₀ K b t (s.mem.readW (s.gpr .rsi) 512) (zmaskL (s.mem.readW (s.gpr .rsi) 512) 0 +
-      256 * zmaskL (s.mem.readW (s.gpr .rsi) 512) 1 + 65536 * zmaskL (s.mem.readW (s.gpr .rsi) 512) 2 +
-      16777216 * zmaskL (s.mem.readW (s.gpr .rsi) 512) 3) s 0 s1 :=
-    ⟨h0, hax, c1, by rw [g1 _ (by decide), h.rdi]; rfl, by rw [m1]; exact h.stored, by rw [m1]; exact Frame.refl _ _,
-      rd1, wr1, sy1, fun r hr _ _ => g1 r hr⟩
-  refine WP.block_append_iff.mpr (WP.mono (zlane_ok hp rfl hK h hl hc' (by decide) z1) fun s2 z2 =>
-    WP.block_append_iff.mpr (WP.mono (zlane_ok hp rfl hK h hl hc' (by decide) z2) fun s3 z3 =>
-    WP.block_append_iff.mpr (WP.mono (zlane_ok hp rfl hK h hl hc' (by decide) z3) fun s4 z4 =>
-    WP.block_append_iff.mpr (WP.mono (zlane_ok hp rfl hK h hl hc' (by decide) z4) fun s5 z5 =>
-    WP.mono (add48_ok s5) fun s6 ⟨⟨m6, hsi6, zl6, sy6⟩, k6⟩ => ?_))))
+  exact WP.mono (zlane_ok hp rfl hK h hlen hc' hl z) fun s'' z' =>
+    ⟨⟨s, h, hlen, z'⟩, by rw [z'.gpr _ (by decide) (by decide) (by decide), z.gpr _ (by decide) (by decide) (by decide)]⟩
+
+/-- After the four lanes, `rsi` moves past the 48 bytes. -/
+theorem zfinish_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) {s5 : State}
+    (hz : ZLW w16 σ s₀ K b t 4 s5) :
+    WP isa (.block [.alu .add .rsi (.imm 48)]) s5 fun s' =>
+      LAtW w16 σ s₀ K b (t + 16) s' ∧ ZC s' ∧ s'.gpr .r10 = s5.gpr .r10 := by
+  subst hw
+  obtain ⟨s, h, hl, z5⟩ := hz
+  refine WP.mono (add48_ok s5) fun s6 ⟨⟨m6, hsi6, zl6, sy6⟩, k6⟩ => ?_
   have g6 : ∀ r, r ≠ .rsi → s6.gpr r = s5.gpr r := fun r hr => k6.gpr (by simp [hr])
   have rd6 : s6.rd = s5.rd := k6.2.1
   have wr6 : s6.wr = s5.wr := k6.2.2
@@ -643,13 +687,31 @@ theorem zvec_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) (ht 
   have e4 := Lz_four (σ := σ) hl
   refine ⟨⟨h.lb.poly hp hK (by rw [m6]; exact z5.fr) (rd6.trans z5.rd) (wr6.trans z5.wr) (fun r hr => gk r ?_ ?_ ?_ ?_)
       (sy6.trans z5.syms), ?_, ?_, by rw [gk _ (by decide) (by decide) (by decide) (by decide), h.rbp],
-      by rw [e4, m6]; exact z5.stored⟩, z5.zc.same fun r _ i _ => zl6 r i,
-    gk _ (by decide) (by decide) (by decide) (by decide)⟩
+      by rw [e4, m6]; exact z5.stored⟩, z5.zc.same fun r _ i _ => zl6 r i, g6 _ (by decide)⟩
   all_goals try (simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
                  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
   · rw [hsi6, z5.gpr _ (by decide) (by decide) (by decide), h.rsi, Offset.add_add]
     exact congrArg (fun x => at' σ (oBuf + 504 * K) + BitVec.ofNat 64 x) (by omega_arith)
   · rw [g6 _ (by decide), z5.rdi, e4]
+
+/-- The stores of sixteen iterations' coefficients, after `zcand`. -/
+theorem zvec2_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 16 ≤ 168)
+    (hbt : b + t + 16 ≤ 280) {s1 : State} (hi : ZIW w16 σ s₀ K b t s1) :
+    WP isa (.block zput) s1 fun s' => LAtW w16 σ s₀ K b (t + 16) s' ∧ ZC s' ∧ s'.gpr .r10 = s1.gpr .r10 := by
+  rw [show zput = zputL 0 ++ (zputL 1 ++ (zputL 2 ++ (zputL 3 ++ [.alu .add .rsi (.imm 48)]))) from rfl]
+  exact WP.block_append_iff.mpr (WP.mono (zlaneW_ok hp hw hK ht hbt (by decide) (zlw_start hw hi)) fun s2 ⟨z2, g2⟩ =>
+    WP.block_append_iff.mpr (WP.mono (zlaneW_ok hp hw hK ht hbt (by decide) z2) fun s3 ⟨z3, g3⟩ =>
+    WP.block_append_iff.mpr (WP.mono (zlaneW_ok hp hw hK ht hbt (by decide) z3) fun s4 ⟨z4, g4⟩ =>
+    WP.block_append_iff.mpr (WP.mono (zlaneW_ok hp hw hK ht hbt (by decide) z4) fun s5 ⟨z5, g5⟩ =>
+    WP.mono (zfinish_ok hp hw hK z5) fun s' ⟨l', c', h10⟩ => ⟨l', c', by rw [h10, g5, g4, g3, g2]⟩))))
+
+/-- Sixteen iterations with the AVX-512 code, from at most 224 coefficients. -/
+theorem zvec_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 16 ≤ 168) (hbt : b + t + 16 ≤ 280)
+    {s : State} (h : LAtW w16 σ s₀ K b t s) (hc : ZC s) (hl : (Lt σ K (b + t)).length < 225) :
+    WP isa (.block (zcand ++ zput)) s fun s' =>
+      LAtW w16 σ s₀ K b (t + 16) s' ∧ ZC s' ∧ s'.gpr .r10 = s.gpr .r10 :=
+  WP.block_append_iff.mpr (WP.mono (zvec1_ok hp hK ht h hc hl) fun s₁ ⟨hi, g₁⟩ =>
+    WP.mono (zvec2_ok hp hw hK ht hbt hi) fun s' ⟨l', c', h10⟩ => ⟨l', c', by rw [h10, g₁]⟩)
 
 omit hp in
 theorem cmp225_ok (s : State) :
@@ -709,6 +771,132 @@ theorem zloop_ok (hw : w16 = true) {s₀ : State} {K b N : Nat} (hK : K < 4) (hN
   rw [e] at h₂
   exact ⟨⟨⟨h₂.lv.lat.same' hm k sy, fun hw h' => (h₂.lv.vc hw h').same hl⟩, fun h' => (h₂.zc h').same fun r _ j _ => zl r j⟩,
     by rw [h10', g₂], by rw [hz, g₂]⟩
+
+/-! ## The constants of the AVX-512 code -/
+
+omit hp in
+open VG.Impl.MlKem.X86_64.Sample4 (zconsts) in
+theorem tblWords_z (i : Nat) : tblWords.getD (780 + i) 0 = zconsts.getD i 0 := by
+  rw [tblWords, List.getD_eq_getElem?_getD, List.getElem?_append_right (by simp [consts])]
+  simp [List.getD_eq_getElem?_getD, consts]
+
+omit hp in
+open VG.Impl.MlKem.X86_64.Sample4 (oZ) in
+theorem zcst_at {s : State} (ht : TabOK s) {d o : Nat} (hd : d < 96) (ho : 8 * o = 8 * 780 + d) :
+    (s.ea (at_ .r11 (oZ + d)) - s.syms tblName).toNat = 8 * o := by
+  rw [ea_at, show s.gpr .r11 = s.syms tblName from ht, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  simp only [oZ]; omega_arith
+
+omit hp in
+open VG.Impl.MlKem.X86_64.Sample4 (zconsts) in
+theorem zconsts_vals : (∀ l < 4, zconsts.getD (2 * l + 1) 0 ++ zconsts.getD (2 * l) 0 = permL l) ∧
+    zconsts.getD 9 0 ++ zconsts.getD 8 0 = cntW := by
+  refine ⟨fun l hl => ?_, by decide⟩
+  rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> decide
+
+open VG.Impl.MlKem.X86_64.Sample4 (zcstLoad oZ) in
+omit hp in
+/-- The constants of the AVX-512 code, from the static. -/
+theorem zcst_ok {s₀ : State} {K b t : Nat} {s : State} (l₁ : LAtW w16 σ s₀ K b t s) :
+    WP isa (.block zcstLoad) s fun s' => LAtW w16 σ s₀ K b t s' ∧ ZC s' ∧ s'.gpr .r10 = s.gpr .r10 := by
+  rw [zcstLoad, WP.block_append_iff]
+  refine WP.mono (cstV_ok l₁) fun s1 ⟨l1, v1, h10⟩ => ?_
+  have tab := l1.lb.tab
+  refine wp_vtblZ (o := 780) tab (zcst_at tab (d := 0) (by decide) rfl) (by simp [tblWords_length])
+    fun s2 u2 => ?_
+  have t2 := tab.of (by rw [u2.gpr]) u2.syms
+  refine wp_vtblZ (o := 784) t2 (zcst_at t2 (d := 32) (by decide) rfl) (by simp [tblWords_length]) fun s3 u3 =>
+    wp_zshuf fun s4 u4 => ?_
+  have t4 := (t2.of (by rw [u3.gpr]) u3.syms).of (by rw [u4.gpr]) u4.syms
+  refine wp_vtblZ (o := 788) t4 (zcst_at t4 (d := 64) (by decide) rfl) (by simp [tblWords_length]) fun s5 u5 =>
+    wp_zshuf fun s6 u6 => wp_zshuf fun s7 u7 => wp_zshuf fun s8 u8 => wp_zshuf fun s9 u9 => WP.block_nil ?_
+  obtain ⟨zp, zc⟩ := zconsts_vals
+  have tz : ∀ i < 12, tblWords.getD (780 + i) 0 = Impl.MlKem.X86_64.Sample4.zconsts.getD i 0 := fun i _ => tblWords_z i
+  have k12 : ∀ l < 4, s4.zlane .xmm12 l = permL l := fun l hl => by
+    rw [u4.val l hl, shuf4Lanes_eq]
+    rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
+    · rw [itT (by decide), show ((0x44 : BitVec 8).extractLsb' (2 * 0) 2).toNat = 0 by decide,
+        u3.other _ (by decide) 0 (by decide), u2.val 0 (by decide), ite_eq_left rfl,
+        show 780 + 1 = 780 + (2 * 0 + 1) from rfl, tz _ (by decide), show tblWords.getD 780 0 = _ from tblWords_z (2 * 0)]
+      exact zp 0 (by decide)
+    · rw [itT (by decide), show ((0x44 : BitVec 8).extractLsb' (2 * 1) 2).toNat = 1 by decide,
+        u3.other _ (by decide) 1 (by decide), u2.val 1 (by decide), ite_eq_right (by decide), ite_eq_left rfl,
+        show 780 + 3 = 780 + (2 * 1 + 1) from rfl, show 780 + 2 = 780 + 2 * 1 from rfl, tz _ (by decide),
+        tz _ (by decide)]
+      exact zp 1 (by decide)
+    · rw [itF (by decide), show ((0x44 : BitVec 8).extractLsb' (2 * 2) 2).toNat = 0 by decide,
+        u3.val 0 (by decide), ite_eq_left rfl, show 784 + 1 = 780 + (2 * 2 + 1) from rfl, tz _ (by decide),
+        show tblWords.getD 784 0 = _ from tblWords_z (2 * 2)]
+      exact zp 2 (by decide)
+    · rw [itF (by decide), show ((0x44 : BitVec 8).extractLsb' (2 * 3) 2).toNat = 1 by decide,
+        u3.val 1 (by decide), ite_eq_right (by decide), ite_eq_left rfl, show 784 + 3 = 780 + (2 * 3 + 1) from rfl,
+        show 784 + 2 = 780 + 2 * 3 from rfl, tz _ (by decide), tz _ (by decide)]
+      exact zp 3 (by decide)
+  have k13 : ∀ l < 4, s6.zlane .xmm13 l = cntW := fun l hl => by
+    rw [u6.val l hl, shuf4Lanes_eq, show ((0 : BitVec 8).extractLsb' (2 * l) 2).toNat = 0 by
+      rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> decide]
+    have e : s5.zlane .xmm13 0 = cntW := by
+      rw [u5.val 0 (by decide), ite_eq_left rfl, show 788 + 1 = 780 + 9 from rfl, tz _ (by decide),
+        show tblWords.getD 788 0 = _ from tblWords_z 8, zc]
+    split <;> exact e
+  have sel0 : ∀ l < 4, ((0 : BitVec 8).extractLsb' (2 * l) 2).toNat = 0 := fun l hl => by
+    rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> decide
+  have a8 : s6.zlane .xmm8 0 = shufW 0 := by
+    rw [u6.other _ (by decide) 0 (by decide), u5.other _ (by decide) 0 (by decide), u4.other _ (by decide) 0 (by decide),
+      u3.other _ (by decide) 0 (by decide), u2.other _ (by decide) 0 (by decide), s1.zlane_lt2 _ (by decide), v1.c8 0 (by decide)]
+  have a9 : s7.zlane .xmm9 0 = fffW := by
+    rw [u7.other _ (by decide) 0 (by decide), u6.other _ (by decide) 0 (by decide), u5.other _ (by decide) 0 (by decide),
+      u4.other _ (by decide) 0 (by decide), u3.other _ (by decide) 0 (by decide), u2.other _ (by decide) 0 (by decide),
+      s1.zlane_lt2 _ (by decide), v1.c9 0 (by decide)]
+  have a10 : s8.zlane .xmm10 0 = qW := by
+    rw [u8.other _ (by decide) 0 (by decide), u7.other _ (by decide) 0 (by decide), u6.other _ (by decide) 0 (by decide),
+      u5.other _ (by decide) 0 (by decide), u4.other _ (by decide) 0 (by decide), u3.other _ (by decide) 0 (by decide),
+      u2.other _ (by decide) 0 (by decide), s1.zlane_lt2 _ (by decide), v1.c10 0 (by decide)]
+  have z11 : ∀ l < 4, s9.zlane .xmm11 l = shufW 0 := fun l hl => by
+    rw [u9.other _ (by decide) l hl, u8.other _ (by decide) l hl, u7.val l hl, shuf4Lanes_eq, sel0 l hl]
+    split <;> exact a8
+  have z9 : ∀ l < 4, s9.zlane .xmm9 l = fffW := fun l hl => by
+    rw [u9.other _ (by decide) l hl, u8.val l hl, shuf4Lanes_eq, sel0 l hl]
+    split <;> exact a9
+  have z10 : ∀ l < 4, s9.zlane .xmm10 l = qW := fun l hl => by
+    rw [u9.val l hl, shuf4Lanes_eq, sel0 l hl]
+    split <;> exact a10
+  have z12 : ∀ l < 4, s9.zlane .xmm12 l = permL l := fun l hl => by
+    rw [u9.other _ (by decide) l hl, u8.other _ (by decide) l hl, u7.other _ (by decide) l hl,
+      u6.other _ (by decide) l hl, u5.other _ (by decide) l hl, k12 l hl]
+  have z13 : ∀ l < 4, s9.zlane .xmm13 l = cntW := fun l hl => by
+    rw [u9.other _ (by decide) l hl, u8.other _ (by decide) l hl, u7.other _ (by decide) l hl, k13 l hl]
+  have z8 : ∀ l < 2, s9.lane .xmm8 l = shufW l := fun l hl => by
+    rw [← s9.zlane_lt2 _ hl, u9.other _ (by decide) l (by omega_arith), u8.other _ (by decide) l (by omega_arith),
+      u7.other _ (by decide) l (by omega_arith), u6.other _ (by decide) l (by omega_arith),
+      u5.other _ (by decide) l (by omega_arith), u4.other _ (by decide) l (by omega_arith),
+      u3.other _ (by decide) l (by omega_arith), u2.other _ (by decide) l (by omega_arith), s1.zlane_lt2 _ hl, v1.c8 l hl]
+  have g : s9.gpr = s1.gpr := by rw [u9.gpr, u8.gpr, u7.gpr, u6.gpr, u5.gpr, u4.gpr, u3.gpr, u2.gpr]
+  refine ⟨l1.same g (by rw [u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem])
+      (by rw [u9.rd, u8.rd, u7.rd, u6.rd, u5.rd, u4.rd, u3.rd, u2.rd])
+      (by rw [u9.wr, u8.wr, u7.wr, u6.wr, u5.wr, u4.wr, u3.wr, u2.wr])
+      (by rw [u9.syms, u8.syms, u7.syms, u6.syms, u5.syms, u4.syms, u3.syms, u2.syms]),
+    ⟨⟨z8, fun l hl => by rw [← s9.zlane_lt2 _ hl]; exact z9 l (by omega_arith),
+      fun l hl => by rw [← s9.zlane_lt2 _ hl]; exact z10 l (by omega_arith)⟩, z9, z10, z11, z12, z13⟩,
+    by rw [g, h10]⟩
+
+/-- The setup of the first 168 iterations on seed `K` with AVX-512. -/
+theorem setupZ_ok {K : Nat} (hK : K < 4) {s : State} (h : LBW w16 σ s K 0 s) :
+    WP isa (.block (setup K w16 10 ++ Impl.MlKem.X86_64.Sample4.zcstLoad)) s fun s' =>
+      LZW w16 σ s K 0 0 s' ∧ s'.gpr .r10 = BitVec.ofNat 64 10 := by
+  rw [WP.block_append_iff]
+  exact WP.mono (setupN_ok hp hK (by decide) h) fun s₁ ⟨l₁, h10⟩ =>
+    WP.mono (zcst_ok l₁) fun s' ⟨h', c', h10'⟩ => ⟨⟨⟨h', fun _ _ => c'.vc⟩, fun _ => c'⟩, by rw [h10', h10]⟩
+
+/-- The setup of the 112 more iterations on seed `K` with AVX-512. -/
+theorem contSetupZ_ok {K : Nat} (hK : K < 4) {s : State} (h : LBW w16 σ s K 168 s)
+    (hj : s.mem.readW (at' σ (oCnt + 8 * K)) 64 = BitVec.ofNat 64 (Lt σ K 168).length)
+    (hst : Stored w16 s.mem (poly4W w16 (aP σ) K) (Lt σ K 168)) :
+    WP isa (.block (contSetup K w16 7 ++ Impl.MlKem.X86_64.Sample4.zcstLoad)) s fun s' =>
+      LZW w16 σ s K 168 0 s' ∧ s'.gpr .r10 = BitVec.ofNat 64 7 := by
+  rw [WP.block_append_iff]
+  exact WP.mono (contSetupN_ok hp hK (by decide) h hj hst) fun s₁ ⟨l₁, h10⟩ =>
+    WP.mono (zcst_ok l₁) fun s' ⟨h', c', h10'⟩ => ⟨⟨⟨h', fun _ _ => c'.vc⟩, fun _ => c'⟩, by rw [h10', h10]⟩
 
 omit hp in
 /-- `vzeroupper` changes no register or memory the invariants see. -/
