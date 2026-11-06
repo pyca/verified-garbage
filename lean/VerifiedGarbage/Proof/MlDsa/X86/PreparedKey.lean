@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -469,6 +470,210 @@ theorem secret_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = 
     · exact ⟨satState satMemP [⟨0, 4896⟩] [⟨0x8000, 28448⟩, ⟨0x20000, 1024⟩, ⟨0x5004, 12⟩],
         by sig_sat_check [prepareSecretKeyContract, prepareSecretKeySig, X86.abi, X86.argSlots, X86.argVal,
           X86.argBytes, satState, satMemP]⟩
+
+/-! ## Prepared keys in memory, for the preconditions that need them -/
+
+/-- `a` below `0x8000`, and `m` from there. -/
+def above (a m : Mem) : Mem := fun x => if x.toNat < 0x8000 then a x else m x
+
+theorem above_eq {a m : Mem} {i : Nat} (hi : i < 2 ^ 32) :
+    above a m (0x8000 + BitVec.ofNat 64 i) = m (0x8000 + BitVec.ofNat 64 i) := by
+  unfold above
+  have e : (0x8000 + BitVec.ofNat 64 i : Addr).toNat = 0x8000 + i := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega)]
+    have : (32768 : BitVec 64).toNat = 32768 := rfl
+    rw [this]
+    exact Nat.mod_eq_of_lt (by omega)
+  rw [e, ite_eq_right_iff.mpr fun h => absurd h (by omega)]
+
+theorem polyStored_congr {m m' : Mem} {a : Addr} {f : Poly}
+    (hc : ∀ i < 1024, m' (a + BitVec.ofNat 64 i) = m (a + BitVec.ofNat 64 i)) (h : PolyStored m a f) :
+    PolyStored m' a f := fun i hi => by
+  rw [← h i hi, Mem.readW_congr fun j hj => ?_]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  exact hc _ (by change i < 256 at hi; omega)
+
+theorem secret_congr {m m' : Mem} {key : Addr} (h : PreparedSecretKey p m key)
+    (hc : ∀ i < preparedSecretKeyBytes p, m' (key + BitVec.ofNat 64 i) = m (key + BitVec.ofNat 64 i)) :
+    PreparedSecretKey p m' key := fun i hi => by
+  have hb : bytesAt m' key p.skLen = bytesAt m key p.skLen :=
+    Proof.MlKem.bytesAt_congr fun j hj => hc j (by simp only [preparedSecretKeyBytes]; omega)
+  rw [hb]
+  refine polyStored_congr (fun j hj => ?_) (h i hi)
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  exact hc _ (by
+    have : p.skLen + 4 * n * i + 1024 ≤ preparedSecretKeyBytes p := by
+      simp only [preparedSecretKeyBytes, n]; omega
+    omega)
+
+theorem public_congr {m m' : Mem} {key : Addr} (h : PreparedPublicKey p m key)
+    (hc : ∀ i < preparedPublicKeyBytes p, m' (key + BitVec.ofNat 64 i) = m (key + BitVec.ofNat 64 i)) :
+    PreparedPublicKey p m' key := fun i hi => by
+  have hb : bytesAt m' key p.pkLen = bytesAt m key p.pkLen :=
+    Proof.MlKem.bytesAt_congr fun j hj => hc j (by simp only [preparedPublicKeyBytes]; omega)
+  rw [hb]
+  refine polyStored_congr (fun j hj => ?_) (h i hi)
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  exact hc _ (by
+    have : p.pkLen + 4 * n * i + 1024 ≤ preparedPublicKeyBytes p := by
+      simp only [preparedPublicKeyBytes, n]; omega
+    omega)
+
+/-- Memory with the arguments `0x8000`, `0x1000`, `0x2000`, `0x40000` and `0x50000` at `0x5004`. -/
+def satMemE : Mem := fun a =>
+  if a = 0x5005 then 0x80 else if a = 0x5009 then 0x10 else if a = 0x500d then 0x20 else
+  if a = 0x5012 then 4 else if a = 0x5016 then 5 else 0
+
+/-- A prepared private key at `0x8000`, from a run of `vg_mldsa*_prepare_signing_key`. -/
+theorem secret_at_of {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {kl : Nat}
+    (hσ : (prepareSecretKeyContract p X86.abi 96).pre
+      (satState satMemP [⟨0, kl⟩] [⟨0x8000, preparedSecretKeyBytes p⟩, ⟨0x20000, 1024⟩, ⟨0x5004, 12⟩])) :
+    ∃ m : Mem, PreparedSecretKey p m 0x8000 := by
+  obtain ⟨_, t, -, -, post⟩ := (secret_verified hP hp3).1 _ hσ
+  sig_post [prepareSecretKeyContract, prepareSecretKeySig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
+  have a1 : (arg (satState satMemP [⟨0, kl⟩] [⟨0x8000, preparedSecretKeyBytes p⟩, ⟨0x20000, 1024⟩,
+      ⟨0x5004, 12⟩]) 1).setWidth 64 = 0x8000 := by kernel_rfl
+  rw [a1] at post
+  exact ⟨t.mem, post.2⟩
+
+theorem secret_at {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    ∃ m : Mem, PreparedSecretKey p m 0x8000 := by
+  rcases hp3 with rfl | rfl | rfl
+  · exact secret_at_of hP (.inl rfl) (kl := 2560) (by sig_sat_check [prepareSecretKeyContract, prepareSecretKeySig,
+      X86.abi, X86.argSlots, X86.argVal, X86.argBytes, satState, satMemP])
+  · exact secret_at_of hP (.inr (.inl rfl)) (kl := 4032) (by sig_sat_check [prepareSecretKeyContract,
+      prepareSecretKeySig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, satState, satMemP])
+  · exact secret_at_of hP (.inr (.inr rfl)) (kl := 4896) (by sig_sat_check [prepareSecretKeyContract,
+      prepareSecretKeySig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, satState, satMemP])
+
+theorem prepared_sign_sat {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    ∃ s, (Proof.MlDsa.preparedSignContract p X86.abi 136).pre s := by
+  obtain ⟨m, hm⟩ := secret_at hP hp3
+  have hk : PreparedSecretKey p (above satMemE m) 0x8000 := secret_congr hm fun i hi => above_eq
+    (Nat.lt_of_lt_of_le hi (by rcases hp3 with rfl | rfl | rfl <;> decide))
+  refine ⟨satState (above satMemE m) [⟨0x8000, preparedSecretKeyBytes p⟩, ⟨0x1000, 64⟩, ⟨0x2000, 32⟩]
+    [⟨0x40000, p.sigLen⟩, ⟨0x50000, scratchWords p * 8⟩, ⟨0x5004, 20⟩], ?_⟩
+  have a0 : ∀ τ : State, τ.mem = above satMemE m → τ.gpr .esp = 0x5000 →
+      arg τ 0 = 0x8000 ∧ arg τ 1 = 0x1000 ∧ arg τ 2 = 0x2000 ∧ arg τ 3 = 0x40000 ∧ arg τ 4 = 0x50000 := by
+    intro τ hm he
+    simp only [arg, argAddr, hm, he]
+    exact ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+  obtain ⟨b0, b1, b2, b3, b4⟩ := a0 (satState (above satMemE m) [⟨0x8000, preparedSecretKeyBytes p⟩, ⟨0x1000, 64⟩,
+    ⟨0x2000, 32⟩] [⟨0x40000, p.sigLen⟩, ⟨0x50000, scratchWords p * 8⟩, ⟨0x5004, 20⟩]) rfl rfl
+  have ag : argAddr (satState (above satMemE m) [⟨0x8000, preparedSecretKeyBytes p⟩, ⟨0x1000, 64⟩,
+    ⟨0x2000, 32⟩] [⟨0x40000, p.sigLen⟩, ⟨0x50000, scratchWords p * 8⟩, ⟨0x5004, 20⟩]) 0 = 0x5004 := rfl
+  sig_pre [Proof.MlDsa.preparedSignContract, Proof.MlDsa.preparedSignSig, X86.abi, X86.argSlots, X86.argVal,
+    X86.argBytes]
+  simp only [b0, b1, b2, b3, b4, ag]
+  rcases hp3 with rfl | rfl | rfl
+  all_goals
+    and_intros
+    all_goals first
+      | exact hk
+      | exact Region.disjoint_of_sep (by decide +kernel)
+      | decide +kernel
+
+/-- A prepared public key at `0x8000`, from a run of `vg_mldsa*_prepare_verifying_key`. -/
+theorem public_at_of {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {kl : Nat}
+    (hσ : (preparePublicKeyContract p X86.abi 96).pre
+      (satState satMemP [⟨0, kl⟩] [⟨0x8000, preparedPublicKeyBytes p⟩, ⟨0x20000, 1024⟩, ⟨0x5004, 12⟩])) :
+    ∃ m : Mem, PreparedPublicKey p m 0x8000 := by
+  obtain ⟨_, t, -, -, post⟩ := (public_verified hP hp3).1 _ hσ
+  sig_post [preparePublicKeyContract, preparePublicKeySig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
+  have a1 : (arg (satState satMemP [⟨0, kl⟩] [⟨0x8000, preparedPublicKeyBytes p⟩, ⟨0x20000, 1024⟩,
+      ⟨0x5004, 12⟩]) 1).setWidth 64 = 0x8000 := by kernel_rfl
+  rw [a1] at post
+  exact ⟨t.mem, post.2⟩
+
+theorem public_at {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    ∃ m : Mem, PreparedPublicKey p m 0x8000 := by
+  rcases hp3 with rfl | rfl | rfl
+  · exact public_at_of hP (.inl rfl) (kl := 1312) (by sig_sat_check [preparePublicKeyContract, preparePublicKeySig,
+      X86.abi, X86.argSlots, X86.argVal, X86.argBytes, satState, satMemP])
+  · exact public_at_of hP (.inr (.inl rfl)) (kl := 1952) (by sig_sat_check [preparePublicKeyContract,
+      preparePublicKeySig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, satState, satMemP])
+  · exact public_at_of hP (.inr (.inr rfl)) (kl := 2592) (by sig_sat_check [preparePublicKeyContract,
+      preparePublicKeySig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, satState, satMemP])
+
+theorem prepared_verify_sat {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    ∃ s, (Proof.MlDsa.preparedVerifyContract p X86.abi 136).pre s := by
+  obtain ⟨m, hm⟩ := public_at hP hp3
+  have hk : PreparedPublicKey p (above satMemE m) 0x8000 := public_congr hm fun i hi => above_eq
+    (Nat.lt_of_lt_of_le hi (by rcases hp3 with rfl | rfl | rfl <;> decide))
+  refine ⟨satState (above satMemE m) [⟨0x8000, preparedPublicKeyBytes p⟩, ⟨0x1000, 64⟩, ⟨0x2000, p.sigLen⟩]
+    [⟨0x40000, scratchWords p * 8⟩, ⟨0x5004, 16⟩], ?_⟩
+  have a0 : ∀ τ : State, τ.mem = above satMemE m → τ.gpr .esp = 0x5000 →
+      arg τ 0 = 0x8000 ∧ arg τ 1 = 0x1000 ∧ arg τ 2 = 0x2000 ∧ arg τ 3 = 0x40000 := by
+    intro τ hm he
+    simp only [arg, argAddr, hm, he]
+    exact ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+  obtain ⟨b0, b1, b2, b3⟩ := a0 (satState (above satMemE m) [⟨0x8000, preparedPublicKeyBytes p⟩, ⟨0x1000, 64⟩,
+    ⟨0x2000, p.sigLen⟩] [⟨0x40000, scratchWords p * 8⟩, ⟨0x5004, 16⟩]) rfl rfl
+  have ag : argAddr (satState (above satMemE m) [⟨0x8000, preparedPublicKeyBytes p⟩, ⟨0x1000, 64⟩,
+    ⟨0x2000, p.sigLen⟩] [⟨0x40000, scratchWords p * 8⟩, ⟨0x5004, 16⟩]) 0 = 0x5004 := rfl
+  sig_pre [Proof.MlDsa.preparedVerifyContract, Proof.MlDsa.preparedVerifySig, X86.abi, X86.argSlots, X86.argVal,
+    X86.argBytes]
+  simp only [b0, b1, b2, b3, ag]
+  rcases hp3 with rfl | rfl | rfl
+  all_goals
+    and_intros
+    all_goals first
+      | exact hk
+      | exact Region.disjoint_of_sep (by decide +kernel)
+      | decide +kernel
+
+/-- `t̂₁` of a prepared public key, as `vg_mldsa*_verify_core` takes it. -/
+theorem t1In_of {m : Mem} {key t : Addr} (h : PreparedPublicKey p m key) (ht : t = key + BitVec.ofNat 64 p.pkLen) :
+    Verify.T1In p m t (bytesAt m key p.pkLen) := fun r hr => by
+  have e := (Proof.MlDsa.preparedPublicKey_iff.mp h) r hr
+  rw [ht, BitVec.add_assoc, ← BitVec.ofNat_add]
+  simpa only [n, show 4 * 256 * r = 1024 * r by omega] using e
+
+/-- `satMemE` with the fifth argument `t`, below `0x10000`. -/
+def satMemC (t : Nat) : Mem := fun a =>
+  if a = 0x5014 then BitVec.ofNat 8 t else if a = 0x5015 then BitVec.ofNat 8 (t / 256) else
+  if a = 0x5016 then 0 else satMemE a
+
+theorem above_low {a m : Mem} {x : Addr} (hx : x.toNat < 0x8000) : above a m x = a x := by
+  unfold above; simp only [hx, ↓reduceIte]
+
+/-- An argument word below `0x8000`, read from `a`. -/
+theorem above_readW {a m : Mem} {x : Addr} (hx : ∀ i < 4, (x + BitVec.ofNat 64 i).toNat < 0x8000) :
+    (above a m).readW x 32 = a.readW x 32 :=
+  Mem.readW_congr fun i hi => above_low (hx i hi)
+
+theorem verify_core_sat {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    ∃ s, (Verify.verifyCoreContract p X86.abi 96).pre s := by
+  obtain ⟨m, hm⟩ := public_at hP hp3
+  have hk : PreparedPublicKey p (above (satMemC (0x8000 + p.pkLen)) m)
+      0x8000 := public_congr hm fun i hi => above_eq
+    (Nat.lt_of_lt_of_le hi (by rcases hp3 with rfl | rfl | rfl <;> decide))
+  refine ⟨satState (above (satMemC (0x8000 + p.pkLen)) m)
+    [⟨0x8000, p.pkLen⟩, ⟨0x1000, 64⟩, ⟨0x2000, p.sigLen⟩, ⟨0x8000 + p.pkLen, 1024 * p.k⟩]
+    [⟨0x40000, (scratchWords p - 128 * p.k) * 8⟩, ⟨0x5004, 20⟩], ?_⟩
+  have a0 : ∀ τ : State, τ.mem = above (satMemC (0x8000 + p.pkLen)) m →
+      τ.gpr .esp = 0x5000 → arg τ 0 = 0x8000 ∧ arg τ 1 = 0x1000 ∧ arg τ 2 = 0x2000 ∧ arg τ 3 = 0x40000 ∧
+        arg τ 4 = BitVec.ofNat 32 (0x8000 + p.pkLen) := by
+    intro τ e he
+    simp only [arg, argAddr, e, he]
+    have hL : p.pkLen = 1312 ∨ p.pkLen = 1952 ∨ p.pkLen = 2592 := by rcases hp3 with rfl | rfl | rfl <;> decide
+    generalize p.pkLen = L at hL ⊢
+    refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> rw [above_readW]
+    all_goals first | decide | rcases hL with rfl | rfl | rfl <;> kernel_rfl
+  obtain ⟨b0, b1, b2, b3, b4⟩ := a0 (satState (above (satMemC (0x8000 + p.pkLen)) m) [⟨0x8000, p.pkLen⟩, ⟨0x1000, 64⟩, ⟨0x2000, p.sigLen⟩, ⟨0x8000 + p.pkLen, 1024 * p.k⟩]
+    [⟨0x40000, (scratchWords p - 128 * p.k) * 8⟩, ⟨0x5004, 20⟩]) rfl rfl
+  have ag : argAddr (satState (above (satMemC (0x8000 + p.pkLen)) m)
+    [⟨0x8000, p.pkLen⟩, ⟨0x1000, 64⟩, ⟨0x2000, p.sigLen⟩, ⟨0x8000 + p.pkLen, 1024 * p.k⟩]
+    [⟨0x40000, (scratchWords p - 128 * p.k) * 8⟩, ⟨0x5004, 20⟩]) 0 = 0x5004 := rfl
+  sig_pre [Verify.verifyCoreContract, Verify.verifyCoreSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+  simp only [b0, b1, b2, b3, b4, ag]
+  rcases hp3 with rfl | rfl | rfl
+  all_goals
+    and_intros
+    all_goals first
+      | exact t1In_of hk (by decide +kernel)
+      | exact Region.disjoint_of_sep (by decide +kernel)
+      | decide +kernel
 
 end
 
