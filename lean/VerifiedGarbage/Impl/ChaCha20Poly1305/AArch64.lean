@@ -8,9 +8,13 @@ public import VerifiedGarbage.Impl.Poly1305.AArch64.Radix64
 
 `vg_chacha20_poly1305_seal(key = x0, nonce = x1, aad = x2, aad_len = x3, data = x4,
 len = x5, tag = x6, work = x7)` and `vg_chacha20_poly1305_open` (the same
-arguments, returning `w0`), composed of calls of the verified ChaCha20 and
-Poly1305 functions. `work` is the working space, which the artifact's frame
-allocates on the stack (`withStackScratchWiped`).
+arguments, returning `w0`, and zeroing the data if the tag is wrong),
+composed of calls of the verified ChaCha20 and Poly1305 functions. `work` is
+the working space, which the artifact's frame allocates on the stack
+(`withStackScratchWiped`): `seal`'s is the context, `open`'s the context and
+16 bytes after it, `[1280, 1296)`, where it saves `data` and `len`
+(`saveData`) for the zeroing (`zeroData`), as no register keeps them through
+every path of its code.
 
 The working space (`workLen` = 1280 bytes, called the context below):
 
@@ -192,15 +196,31 @@ def openMainWith (crypt : Prog isa) : Prog isa :=
 
 def openMain (c : XorCallee) : Prog isa := openMainWith (cryptWith c)
 
-/-- The tags compared, with the address of `tag` loaded from the context,
-and the registers restored. -/
-def openTail : Prog isa :=
-  .seq (.block [.ldr .x .x12 .x21 624]) (.block (compare ++ restore))
+/-- `open`'s `data` and `len` saved after the context, at `work + 1280`. -/
+def saveData : List Instr := [.str .x .x4 .x7 1280, .str .x .x5 .x7 1288]
 
-def openWith (c : XorCallee) : Prog isa := .seq (openMain c) openTail
+/-- `data` into `x9` and `len` into `x10`, from after the context, and zero
+into `x11`. -/
+def zeroLoad : List Instr := [.ldr .x .x9 .x21 1280, .ldr .x .x10 .x21 1288, .movz .x .x11 0 0]
+
+/-- The `x10` bytes at `x9` zeroed, a byte at a time. -/
+def zeroLoop : Prog isa :=
+  .ite (.zero .x .x10) (.block [])
+    (.loop (.block [.strb .x11 .x9 0, .addImm .x .x9 .x9 1, .subImm .x .x10 .x10 1])
+      (.nonzero .x .x10))
+
+/-- The `len` bytes at `data`, loaded from after the context, zeroed. -/
+def zeroData : Prog isa := .seq (.block zeroLoad) zeroLoop
+
+/-- The tags compared, with the address of `tag` loaded from the context,
+the data zeroed if they differ, and the registers restored. -/
+def openTail : Prog isa :=
+  .seq (.block [.ldr .x .x12 .x21 624])
+  (.seq (.block compare)
+  (.seq (.ite (.zero .w .x0) zeroData (.block []))
+    (.block restore)))
 
 def crypt := cryptWith .scalar
 def «seal» := sealWith .scalar
-def «open» := openWith .scalar
 
 end VG.Impl.ChaCha20Poly1305.AArch64

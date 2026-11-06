@@ -90,10 +90,17 @@ theorem APre.agree {s₀ s₁ : State} (h : Agree s₀ s₁) (hp : APre e s₀) 
   have h5 := h.gpr .x5 (by decide) (by decide)
   have h6 := h.gpr .x6 (by decide) (by decide)
   have h7 := h.gpr .x7 (by decide) (by decide)
-  obtain ⟨p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17⟩ := hp
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [kR, nR, aR, dR, tR, ctxR, kp, np, ad, AL, dp, L, tp, cx, h.rd, h.wr, h0, h1, h2, h3, h4, h5,
-      h6, h7] <;>
+  obtain ⟨p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18⟩ := hp
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun he => ?_⟩
+  rotate_right
+  · obtain ⟨q1, q2, q3, q4, q5, q6⟩ := p18 he
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+      simp only [slotR, sub, off, kR, nR, aR, dR, tR, kp, np, ad, AL, dp, L, tp, cx, h0, h1, h2, h3, h4, h5,
+        h6, h7] <;>
+      with_reducible assumption
+  all_goals
+    simp only [kR, nR, aR, dR, tR, ctxR, slotR, sub, off, kp, np, ad, AL, dp, L, tp, cx, h.rd, h.wr, h0, h1, h2,
+      h3, h4, h5, h6, h7]
     with_reducible assumption
 
 theorem inv0_agree {s₀ s₁ s : State} (h : Agree s₀ s₁) (hi : Inv0 s₁ s) : Inv0 s₀ s := by

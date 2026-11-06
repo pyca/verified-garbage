@@ -9,9 +9,9 @@ import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
 /-!
 # ChaCha20-Poly1305: AArch64, with Poly1305 inside the ChaCha20 kernel
 
-`sealWith` and `openWith` (`../AArch64.lean`) encrypt the data with one
+`sealWith` and `openMain` (`../AArch64.lean`) encrypt the data with one
 call and absorb it with another. With the eight-block kernel, `sealStitched`
-and `openStitched` instead process the data's whole chunks of 512 bytes with
+and `openStitchedMain` instead process the data's whole chunks of 512 bytes with
 `Stitch.bulk`, which absorbs the ciphertext while it computes the keystream,
 and only the rest with those calls:
 
@@ -425,7 +425,7 @@ def sealStitchedMain (c : XorCallee) : Prog isa :=
 
 def sealStitched (c : XorCallee) : Prog isa := .seq (sealStitchedMain c) sealTail
 
-/-- `openStitched` up to the tag computed. -/
+/-- `open` up to the tag computed, stitched. -/
 def openStitchedMain (c : XorCallee) : Prog isa :=
   .seq prologue
   (.seq (macPad .x24 .x25)
@@ -484,8 +484,6 @@ def openWideMain (c : XorCallee) : Prog isa :=
   (.seq (openRest c)
   (.seq absorbLengths
     (finalizeTo 48)))))))))))
-
-def openStitched (c : XorCallee) : Prog isa := .seq (openStitchedMain c) openTail
 
 /-! ## Decrypting 449 to 511 bytes
 
@@ -626,6 +624,8 @@ def openMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
 /-- The code for a stream backend. -/
 def sealCode (c : XorCallee) (stitched : Bool) : Prog isa := .seq (sealMainCode c stitched) sealTail
 
-def openCode (c : XorCallee) (stitched : Bool) : Prog isa := .seq (openMainCode c stitched) openTail
+/-- `data` and `len` saved after the context first, for `openTail`. -/
+def openCode (c : XorCallee) (stitched : Bool) : Prog isa :=
+  .seq (.block saveData) (.seq (openMainCode c stitched) openTail)
 
 end VG.Impl.ChaCha20Poly1305.AArch64
