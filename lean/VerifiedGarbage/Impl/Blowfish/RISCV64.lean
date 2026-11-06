@@ -76,9 +76,6 @@ def cnt : Reg := .a2
 /-- The P-array's offset in the schedule. -/
 def pOff : Nat := 4096
 
-/-- The bytes of the frame holding the schedule: 4168, rounded up to 16. -/
-def frameBytes : Nat := 4176
-
 /-! ## Lookups -/
 
 /-- The accumulator of plane `b`. -/
@@ -188,7 +185,7 @@ def cipher (up : Bool) : Prog isa :=
 
 /-! ## The frame -/
 
-/-- The frame of `frameBytes`, around `body`. -/
+/-- The frame holding the schedule (4168 bytes, rounded up to 16), around `body`. -/
 def inFrame (body : Prog isa) : Prog isa :=
   .frame (.alloc 2032) (.frame (.alloc 2032) (.frame (.alloc 112) body (.free 112)) (.free 2032))
     (.free 2032)

@@ -47,9 +47,6 @@ theorem KEnv.keep {K S W : Addr} {len bits : Nat} {key : List Byte} {s t : State
     by rw [k.gpr h.2.2.2.1]; exact E.a3, E.pi.keep k h.2.2.2.2 hm, by rw [k.2.1]; exact E.rd,
     by rw [k.2.2]; exact E.wr, by rw [hm]; exact E.key⟩
 
-theorem keyTemps_ok : Reg.a0 ∉ keyTemps ∧ Reg.a1 ∉ keyTemps ∧ Reg.a2 ∉ keyTemps ∧ Reg.a3 ∉ keyTemps ∧
-    Reg.a4 ∉ keyTemps := by decide
-
 /-- After a step that writes byte `i` of `L`. -/
 theorem KEnv.write {K S W : Addr} {len bits : Nat} {key : List Byte} {s t : State}
     (E : KEnv K S W len bits key s) (R : KRegions K S W len) (k : Keep keyTemps s t) {i : Nat} (hi : i < 128)

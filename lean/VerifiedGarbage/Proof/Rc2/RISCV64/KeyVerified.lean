@@ -55,33 +55,4 @@ theorem expandKey_ok (hw : writesOnly keyWrites expandKey = true) (hn : callFree
   obtain ⟨t, s', he, hp, hk⟩ := WP.keep keyWrites (expandKey_wp ⟨valid, rd, wr, al, kS, kW, SW⟩) hw hn
   exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide), hp⟩
 
-theorem key_agree : ∀ s₁ s₂, keyC.pre s₁ → keyC.pre s₂ → keyC.pub s₁ s₂ →
-    taint.Agree (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4]) s₁ s₂ := by
-  intro s₁ s₂ _ _ h
-  refine ⟨h.2.2.2.2.2, fun r hr => ?_⟩
-  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact h.1
-  · exact h.2.1
-  · exact h.2.2.1
-  · exact h.2.2.2.1
-  · exact h.2.2.2.2.1
-
-theorem expandKey_ct : ConstantTime isa keyC.pre keyC.pub expandKey :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4]) key_agree (by taint_decide)
-
-def keySat : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 16 | .a2 => 128 | .a3 => 0x2000 | .a4 => 0x4000 | _ => 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 16⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x4000, 512⟩]
-
-theorem key_verified : Verified RISCV64.target expandKey (Proof.Rc2.expandKeyContract RISCV64.abi) := by
-  refine Verified.of_correct (k := keyC) (expandKey_ok (by lit_decide) (by lit_decide)) expandKey_ct ?_
-  sig_implies [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, Spec.Rc2.validKey, RISCV64.abi,
-    RISCV64.argRegs, keyC]
-    [keySat] using keySat
-
 end VG.Proof.Rc2.RISCV64

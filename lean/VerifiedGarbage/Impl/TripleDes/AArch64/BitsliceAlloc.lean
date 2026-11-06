@@ -37,9 +37,7 @@ namespace Alloc
 
 def regOf (a : Alloc) (v : Nat) : VReg := ((a.regs.find? (·.2 == v)).map (·.1)).getD .v0
 
-def usesVar (v : Nat) (g : Gate) : Bool := g.a == v || g.b == v
-
-/-- The variables the gates read (`usesVar`), as a set of bits, which the
+/-- The variables the gates read, as a set of bits, which the
 kernel builds once for each gate's `rest` rather than comparing variables
 for each query. -/
 def readSet (rest : List Gate) : Nat :=

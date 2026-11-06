@@ -57,9 +57,6 @@ structure Stable (origin s : State) : Prop where
   regs : ∀ q ∈ passKept, s.gpr q = origin.gpr q
   frame : Frame [spillRegion origin] origin.mem s.mem
 
-theorem Stable.refl (s : State) : Stable s s :=
-  ⟨rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
-
 theorem Stable.trans {s t u : State} (hs : Stable s t) (ht : Stable t u) : Stable s u := by
   have hwork : spillRegion t = spillRegion s :=
     congrArg (fun p => (⟨p + BitVec.ofNat 64 120, 392⟩ : Region)) (hs.regs .r5 (by decide))

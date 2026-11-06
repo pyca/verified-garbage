@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import VerifiedGarbage.Proof.Rc2.AArch64.BlockIO
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.ConstantTime
 import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Decrypt
 import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Phase
 import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified

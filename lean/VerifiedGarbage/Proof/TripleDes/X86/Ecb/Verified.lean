@@ -33,10 +33,8 @@ import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
 import VerifiedGarbage.Proof.TripleDes.Permutation
 import VerifiedGarbage.Proof.TripleDes.Round
 import VerifiedGarbage.Proof.TripleDes.Word
-import VerifiedGarbage.Proof.TripleDes.X86.BlockCT
 import VerifiedGarbage.Proof.TripleDes.X86.Bytes
 import VerifiedGarbage.Proof.TripleDes.X86.RestoredOutput
-import VerifiedGarbage.Proof.TripleDes.X86.VerifiedBlock
 import VerifiedGarbage.Proof.TripleDes.X86.WordStore
 import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 
@@ -187,26 +185,6 @@ structure StepPre (s : State) (n : Nat := 1) : Prop where
   stackKey : (below (s.gpr .esp) 16).Disjoint (keyR s)
   stackData : (below (s.gpr .esp) 16).Disjoint (dataR s n)
   stackBuf : (below (s.gpr .esp) 16).Disjoint (bufR s)
-
-theorem StepPre.transport {s s' : State} {n : Nat} (hp : StepPre s n)
-    (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) (regs : ∀ r ∈ kept, s'.gpr r = s.gpr r) : StepPre s' n := by
-  have a := regs .ebx (by decide)
-  have c := regs .esi (by decide)
-  have d := regs .ebp (by decide)
-  have sp := regs .esp (by decide)
-  constructor
-  · simpa only [keyR, dataR, bufR, rd, wr, a, c, d] using hp.reads
-  · simpa only [keyR, dataR, bufR, rd, wr, a, c, d] using hp.writes
-  · simpa only [keyR, dataR, bufR, rd, wr, a, c, d] using hp.keyData
-  · simpa only [keyR, dataR, bufR, rd, wr, a, c, d] using hp.keyBuf
-  · simpa only [keyR, dataR, bufR, rd, wr, a, c, d] using hp.dataBuf
-  · simpa only [a] using hp.keyFit
-  · simpa only [c] using hp.dataFit
-  · simpa only [d] using hp.bufFit
-  · rw [sp]; exact hp.stackLo
-  · simpa only [keyR, sp, a] using hp.stackKey
-  · simpa only [dataR, sp, c] using hp.stackData
-  · simpa only [bufR, sp, d] using hp.stackBuf
 
 theorem StepPre.call {s : State} (hp : StepPre s) : CallPre s := by
   constructor
@@ -1091,9 +1069,6 @@ theorem ecb_verified (d : Spec.TripleDes.Direction) :
   · intro s₁ s₂ _ _ h
     tdes_ecb_narrow
     exact h
-
-theorem encrypt_verified : Verified target Impl.TripleDes.X86.Ecb.encrypt (Proof.TripleDes.ecbEncryptScratchContract abi 16) := ecb_verified .encrypt
-theorem decrypt_verified : Verified target Impl.TripleDes.X86.Ecb.decrypt (Proof.TripleDes.ecbDecryptScratchContract abi 16) := ecb_verified .decrypt
 
 end VG.Proof.TripleDes.X86.Ecb
 

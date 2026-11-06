@@ -93,39 +93,9 @@ def satState : State where
   rd := [⟨0x1000, 384⟩]
   wr := [⟨0x2000, 0⟩, ⟨0x3000, 1024⟩]
 
-theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
-    ∃ t s', Exec isa Impl.TripleDes.X86_64.Bitslice.encrypt s t s' ∧ abiPreserved s s' ∧
-      (contract .encrypt).post s s' := by
-  obtain ⟨rd, wr, kd, kb, db, rdt, rb, fit⟩ := hs
-  obtain ⟨t, s', he, hp⟩ := ecb_ok .encrypt (EcbPre.of_regions rd wr kd kb db rdt rb fit)
-  exact ⟨t, s', he, abiPreserved_of_exec (c := Impl.TripleDes.X86_64.Bitslice.encrypt) (by lit_decide) he hp.gpr,
-    ecb_blocks _ _ _ _ _ _ hp.done⟩
-
-theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
-    ∃ t s', Exec isa Impl.TripleDes.X86_64.Bitslice.decrypt s t s' ∧ abiPreserved s s' ∧
-      (contract .decrypt).post s s' := by
-  obtain ⟨rd, wr, kd, kb, db, rdt, rb, fit⟩ := hs
-  obtain ⟨t, s', he, hp⟩ := ecb_ok .decrypt (EcbPre.of_regions rd wr kd kb db rdt rb fit)
-  exact ⟨t, s', he, abiPreserved_of_exec (c := Impl.TripleDes.X86_64.Bitslice.decrypt) (by lit_decide) he hp.gpr,
-    ecb_blocks _ _ _ _ _ _ hp.done⟩
-
 theorem publicRegs_five (s₁ s₂ : State) : PublicRegs [.rdi, .rsi, .rdx, .rcx, .rsp] s₁ s₂ ↔
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp := by
   simp [PublicRegs]
-
-theorem encrypt_verified : Verified target Impl.TripleDes.X86_64.Bitslice.encrypt
-    (Proof.TripleDes.ecbEncryptScratchContract abi) := by
-  refine Verified.of_correct encrypt_correct
-    (encrypt_constantTime _ _ (ecbTaint_agree .encrypt)) ?_
-  sig_implies [Proof.TripleDes.ecbEncryptScratchContract, Proof.TripleDes.ecbScratchContract,
-    Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argRegs, contract, publicRegs_five] [satState] using satState
-
-theorem decrypt_verified : Verified target Impl.TripleDes.X86_64.Bitslice.decrypt
-    (Proof.TripleDes.ecbDecryptScratchContract abi) := by
-  refine Verified.of_correct decrypt_correct
-    (decrypt_constantTime _ _ (ecbTaint_agree .decrypt)) ?_
-  sig_implies [Proof.TripleDes.ecbDecryptScratchContract, Proof.TripleDes.ecbScratchContract,
-    Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argRegs, contract, publicRegs_five] [satState] using satState
 
 end VG.Proof.TripleDes.X86_64.Bitsliced

@@ -79,8 +79,6 @@ def Ready (s : State) (B : BitVec 32) (k : Spec.Seed.Schedule) : Prop :=
     Region.Disjoint (stkRegion (s.gpr .esp) 20) ⟨B.setWidth 64, 4 * (coreSlots + 10)⟩
 
 theorem dirCore_total (d : Direction) : (dirCore d).total = 286 := rfl
-theorem dirCore_slots (d : Direction) : (dirCore d).slots = 276 := rfl
-
 theorem ea_congr {s s' : State} (h : s'.gpr .esp = s.gpr .esp) (i : Nat) : s'.ea (argOp i) = s.ea (argOp i) := by
   show (s'.gpr .esp + _).setWidth 64 = (s.gpr .esp + _).setWidth 64; rw [h]
 

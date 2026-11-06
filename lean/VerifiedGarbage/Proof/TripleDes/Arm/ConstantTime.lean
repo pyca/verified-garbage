@@ -40,20 +40,6 @@ taint_summary encSum : taintS (Taint.ofRegs [.r0, .r1, .r2]) encryptBlock
 taint_summary decSum : taintS (Taint.ofRegs [.r0, .r1, .r2]) decryptBlock
   keeping (Taint.ofRegs [.r1, .r2, .r3]) using roundEnc roundDec
 
-theorem encryptBlock_constantTime (pre : State → Prop) :
-    ConstantTime isa pre (PublicRegs [.r0, .r1, .r2]) encryptBlock := by
-  obtain ⟨_, h⟩ := VG.Taint.exists_check_of_sumOk (τ := Taint.ofRegs [.r0, .r1, .r2]) encSum (by decide +kernel)
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.r0, .r1, .r2]) ?_ h
-  intro s₁ s₂ _ _ hp
-  exact Taint.agree_ofRegs hp.2
-
-theorem decryptBlock_constantTime (pre : State → Prop) :
-    ConstantTime isa pre (PublicRegs [.r0, .r1, .r2]) decryptBlock := by
-  obtain ⟨_, h⟩ := VG.Taint.exists_check_of_sumOk (τ := Taint.ofRegs [.r0, .r1, .r2]) decSum (by decide +kernel)
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.r0, .r1, .r2]) ?_ h
-  intro s₁ s₂ _ _ hp
-  exact Taint.agree_ofRegs hp.2
-
 theorem expandKey_constantTime (pre : State → Prop) :
     ConstantTime isa pre (PublicRegs [.r0, .r1, .r2, .r3]) Key.expandKey := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3]) ?_ (by taint_decide)

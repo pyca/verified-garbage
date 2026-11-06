@@ -191,8 +191,6 @@ theorem KeyPre.pre0 {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O 
   · exact (h.bo.sub_left (Region.sub_prefix (by decide)))
   · exact (h.bs.sub_left (Region.sub_prefix (by decide)))
 
-theorem view_syms (s : State) (rd wr : List Region) : (view s rd wr).syms = s.syms := rfl
-
 /-- The table, as the callee's calling convention states it. -/
 theorem KeyPre.consts {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) :
     ConstsOk piConsts 0 (view s (keyRdC s K KL) (keyWr O S)) := by
@@ -722,9 +720,6 @@ def initContractC : Contract isa where
   post := initContract.post
   pub s₁ s₂ := initContract.pub s₁ s₂ ∧ s₁.syms piSym = s₂.syms piSym
 
-theorem stackArg_stripConsts' (K : List (String × List (BitVec 64))) (s : State) (i : Nat) :
-    stackArg (stripConsts K s) i = stackArg s i := rfl
-
 /-- The precondition with the table, from the one without it (`stripConsts`)
 and what the calling convention says of the table. -/
 theorem initC_pre {s : State} (h : initContract0.pre (stripConsts piConsts s)) (hc : ConstsOk piConsts 8 s) :
@@ -832,8 +827,6 @@ theorem add0 (a : Addr) : a + BitVec.ofNat 64 0 = a := BitVec.add_zero a
 
 theorem e128 : (128 : Addr) = BitVec.ofNat 64 128 := rfl
 theorem e136 : (136 : Addr) = BitVec.ofNat 64 136 := rfl
-theorem e512 : (512 : Addr) = BitVec.ofNat 64 512 := rfl
-
 /-- A range at an offset within a region of `rs`. -/
 theorem cov1 {rs : List Region} {b : Addr} {len : Nat} (hR : (⟨b, len⟩ : Region) ∈ rs) {off n : Nat}
     (h : off + n ≤ len) : Covers [⟨b + BitVec.ofNat 64 off, n⟩] rs :=
@@ -850,9 +843,6 @@ theorem argIn {s : State} {rs : List Region} (hR : (⟨stackArgAddr s 0, 12⟩ :
     (hi : i < 3) (hsp : s.sp.toNat + 12 ≤ 2 ^ 32) : InRegions rs (stackArgAddr s i) 4 := by
   rw [stackArgAddr_eq s hi hsp]
   exact ⟨_, hR, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-
-theorem ldrSp_addr (s : State) (i : Nat) :
-    State.addr (s.sp + BitVec.ofNat 32 (4 * i)) = stackArgAddr s i := rfl
 
 /-- Memory reads of 1 byte within a word written elsewhere. -/
 theorem bytesAt_writeW {m : Mem} {p a : Addr} {n : Nat} (v : BitVec 32) (hn : n ≤ 2 ^ 64)

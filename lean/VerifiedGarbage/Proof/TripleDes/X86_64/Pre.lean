@@ -16,18 +16,6 @@ namespace VG.Proof.TripleDes.X86_64
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.TripleDes.X86_64
 open VG.Spec.TripleDes (Direction)
 
-def blockContract (d : Direction) : Contract isa where
-  pre s :=
-    let key : Region := ⟨s.gpr .rdi, 384⟩
-    let data : Region := ⟨s.gpr .rsi, 8⟩
-    let scratch : Region := ⟨s.gpr .rdx, 512⟩
-    let ret : Region := ⟨s.gpr .rsp, 8⟩
-    s.rd = [key] ∧ s.wr = [data, scratch] ∧ key.Disjoint scratch ∧ data.Disjoint scratch ∧
-      ret.Disjoint data ∧ ret.Disjoint scratch
-  post s s' := Spec.TripleDes.blockAt s'.mem (s.gpr .rsi) =
-    blockResult (Spec.TripleDes.scheduleAt s.mem (s.gpr .rdi)) d (Spec.TripleDes.blockAt s.mem (s.gpr .rsi))
-  pub := PublicRegs [.rdi, .rsi, .rdx]
-
 def selectedRound (d : Direction) (j : Nat) : Nat := if d = .encrypt then j else 15 - j
 
 theorem selectedRound_bound (d : Direction) (j : Nat) (hj : j < 16) : selectedRound d j < 16 := by
@@ -81,63 +69,5 @@ theorem headPre_of (s : State)
     rw [keyAddr_component]
     exact (VG.Proof.TripleDes.componentSchedule_readW s.mem (s.gpr .rdi) c
       (selectedRound direction j) hc (selectedRound_bound direction j hj)).symm
-
-theorem headPre_of_contract (d : Direction) (s : State) (hs : (blockContract d).pre s) :
-    HeadPre (Spec.TripleDes.componentSchedule (Spec.TripleDes.scheduleAt s.mem (s.gpr .rdi)))
-      (s.gpr .rdi) s := by
-  obtain ⟨hrd, hwr, keySep, dataSep, _, _⟩ := hs
-  refine headPre_of s (fun i hi => ?_) (fun i hi => ?_) ?_ keySep dataSep
-  · rw [hwr]
-    exact ⟨⟨s.gpr .rdx, 512⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
-  · rw [hrd, hwr]
-    exact ⟨⟨s.gpr .rdi, 384⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
-  · rw [hwr]
-    exact ⟨⟨s.gpr .rsi, 8⟩, by simp, Region.contains_self _ _⟩
-
-theorem blockTaint_wf (d : Direction) (s : State) (hs : (blockContract d).pre s) :
-    Taint.Wf blockTaint s := by
-  obtain ⟨_, hwr, _, dataSep, _, _⟩ := hs
-  refine ⟨?_, ?_⟩
-  · intro _
-    rw [hwr]
-    refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 0 ≤ 8; decide)
-        (List.Forall₂.cons (by change 512 ≤ 512; decide) List.Forall₂.nil)
-    · exact List.Pairwise.cons
-        (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact dataSep)
-        (List.Pairwise.cons (by simp) List.Pairwise.nil)
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · change 8 ≤ 2 ^ 64; decide
-      · change 512 ≤ 2 ^ 64; decide
-  · intro p hp
-    simp only [blockTaint, List.mem_singleton] at hp
-    subst p
-    unfold Taint.region
-    rw [hwr]
-    change s.gpr .rdx = s.gpr .rdx + (0 : BitVec 64)
-    exact (BitVec.add_zero _).symm
-
-theorem blockTaint_agree (d : Direction) (s t : State)
-    (hs : (blockContract d).pre s) (ht : (blockContract d).pre t)
-    (hp : (blockContract d).pub s t) : X86_64.Taint.Agree blockTaint s t := by
-  refine ⟨?_, ?_, blockTaint_wf d s hs, blockTaint_wf d t ht, ?_, ?_, ?_, X86_64.Taint.noXr⟩
-  · constructor
-    · intro r hr
-      exact hp r (by simpa only [blockTaint, RegSet.mem_ofList] using hr)
-    · intro h
-      change false = true at h
-      contradiction
-  · intro _
-    rw [hs.2.1, ht.2.1, hp .rsi (by decide), hp .rdx (by decide)]
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro r hr
-    simp only [blockTaint, RegSet.not_mem_empty] at hr
 
 end VG.Proof.TripleDes.X86_64

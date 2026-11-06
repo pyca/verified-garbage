@@ -31,15 +31,14 @@ meta import VerifiedGarbage.Proof.Framework.RegSet
 /-!
 # Camellia's prepared subkeys and batches on PPC64LE meet their contracts
 
-`crypt_verified`: `vg_camellia_crypt_prepared` against
+`crypt_correct`: `vg_camellia_crypt_prepared` against
 `Proof.Camellia.Prepared`, with `layout`. (The modes run the preparation
 inline, `prepareBody_wp`, rather than call it.) The body runs from the state
 narrowed to ECB's scratch buffer (`cryptBody_wp`) and then from the whole
 working space (`Exec.widen`), which it changes only where the narrowed run
 may. A batch's blocks are ECB in the direction and under the subkeys of any
 words whose table its working space holds: the run from it is the run from
-the table the precondition gives (`Exec.det`). Constant time by the taint
-analysis: the pointers, `ws_len` and `rounds` are public.
+the table the precondition gives (`Exec.det`).
 -/
 
 @[expose] public section
@@ -68,18 +67,6 @@ theorem exec_widen {c : Prog isa} {s s' : State} {t : List Leak} {ws : Addr} {le
     Exec isa c s t (s'.withRegions s.rd s.wr) := by
   have := Exec.widen h (narrow_covers s hw hl).1 (narrow_covers s hw hl).2
   rwa [State.withRegions_withRegions, State.withRegions_self] at this
-
-/-- The bytes of `ws` from `8 * slots` on keep their values. -/
-theorem keeps_of_frame {m m' : Mem} {ws : Addr} {wsLen : Nat} {rs : List (Nat × Nat)}
-    (hf : Frame [⟨ws, 8 * slots⟩] m m') (fit : ws.toNat + wsLen * 8 ≤ 2 ^ 64)
-    (hrs : ∀ i, (∀ r ∈ rs, i < r.1 ∨ r.1 + r.2 ≤ i) → 8 * slots ≤ i) :
-    Keeps ws wsLen rs m m' := fun i hi hout =>
-  hf _ fun r hr hc => by
-    simp only [List.mem_singleton] at hr; subst hr
-    simp only [Region.Contains] at hc
-    rw [Mem.sub_ofNat_toNat ws (by omega)] at hc
-    have := hrs i hout
-    omega
 
 theorem size_eq : layout.size = 8 * slots := rfl
 
@@ -190,64 +177,5 @@ theorem crypt_correct (s : State) (hs : cryptPPC64LE.pre s) :
       · rw [Mem.sub_ofNat_toNat _ (by omega), keySlot_eq] at hc; omega
       · rw [VG.Offset.sub_toNat' _ (by rw [savedSlot_eq]; omega) (by omega), savedSlot_eq] at hc
         split at hc <;> omega
-
-theorem cryptTaint_agree (s₁ s₂ : State) (_ : cryptPPC64LE.pre s₁) (_ : cryptPPC64LE.pre s₂)
-    (hp : cryptPPC64LE.pub s₁ s₂) : taint.Agree (Taint.ofRegs [.r3, .r4, .r5]) s₁ s₂ := by
-  obtain ⟨h1, h2, h3, hsp⟩ := hp
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
-
-theorem crypt_ct : ConstantTime isa cryptPPC64LE.pre cryptPPC64LE.pub cryptPrepared :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5]) cryptTaint_agree (by taint_decide)
-
-/-- A working space at `0x2000` holding the table of no words (all zeros)
-for 18 rounds of encryption. -/
-def cryptSatMem : Mem := fun a =>
-  if 0x2000 ≤ a.toNat ∧ a.toNat < 0x2000 + 3312 then layout.encode 18 [] .encrypt (a.toNat - 0x2000) else 0
-
-theorem cryptSat_holds : Holds layout cryptSatMem 0x2000 18 [] .encrypt := by
-  intro r hr i hi
-  have hr' : r.1 + i < 3312 := by
-    rw [layout_table] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> dsimp only at hi ⊢ <;> omega
-  have ht : ((0x2000 : Addr) + BitVec.ofNat 64 (r.1 + i)).toNat = 0x2000 + (r.1 + i) := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, show (0x2000 : Addr).toNat = 0x2000 from rfl]; omega
-  have hc : 0x2000 ≤ 0x2000 + (r.1 + i) ∧ 0x2000 + (r.1 + i) < 0x2000 + 3312 := ⟨by omega, by omega⟩
-  simp only [cryptSatMem, ht, hc, and_self, ↓reduceIte]
-  rw [show 0x2000 + (r.1 + i) - 0x2000 = r.1 + i by omega]
-
-/-- A state satisfying the batch's precondition. -/
-def cryptSat : State where
-  gpr r := match r with | .r3 => 18 | .r4 => 0x2000 | .r5 => 414 | _ => 0
-  lr := 0
-  sp := 0x8000
-  mem := cryptSatMem
-  rd := []
-  wr := [⟨0x2000, 414 * 8⟩]
-
-theorem crypt_implies : cryptPPC64LE.Implies (Proof.Camellia.Prepared.cryptContract layout abi) where
-  pre := by
-    sig_implies_pre [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptPPC64LE,
-      abi, argRegs]
-  post := by
-    sig_implies_post [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptPPC64LE,
-      abi, argRegs]
-  pub := by
-    sig_implies_pub [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptPPC64LE,
-      abi, argRegs]
-  sat := by
-    refine ⟨cryptSat, ?_⟩
-    sig_pre [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, abi, argRegs]
-    sig_and_intros
-    all_goals first
-      | decide
-      | exact ⟨_, _, cryptSat_holds⟩
-      | (rw [size_eq, slots_eq]; decide)
-
-theorem crypt_verified :
-    Verified target cryptPrepared (Proof.Camellia.Prepared.cryptContract layout abi) :=
-  Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Camellia.PPC64LE

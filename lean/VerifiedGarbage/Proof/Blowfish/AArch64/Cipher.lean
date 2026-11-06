@@ -32,8 +32,6 @@ open VG.AArch64.Tbl (VOnly)
 def order (up : Bool) (m : Nat) : Nat := if up then m else 17 - m
 
 theorem order_true : order true = id := rfl
-theorem order_false : order false = (17 - ·) := rfl
-
 theorem eval_nonzero (s : State) (r : Reg) {m : Nat} (h : s.gpr r = BitVec.ofNat 64 m)
     (hm : m < 2 ^ 64) : isa.eval (.nonzero .x r) s = some (m != 0) := by
   show some (s.read .x r != 0) = _

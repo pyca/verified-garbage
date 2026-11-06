@@ -253,11 +253,6 @@ theorem runBlock_append' (a b : List Instr) (s : State) :
     | none => rfl
     | some s' => exact ih s'
 
-theorem all_append_dst {a b : List Instr} {r : Reg}
-    (h : ((a ++ b).all fun i => dst i != some r) = true) :
-    (a.all fun i => dst i != some r) = true ∧ (b.all fun i => dst i != some r) = true := by
-  simpa only [List.all_append, Bool.and_eq_true] using h
-
 /-- The round function: L XORed with the round function of R and the round
 key at `a3`. -/
 theorem feistel_ok (s : State) (h : FeiReady s) (l r : BitVec 32)
