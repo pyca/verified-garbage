@@ -114,21 +114,15 @@ theorem foldX_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) (hd : (s.gpr .rdx).
   rw [e8, hax, k7.1 .r8 (by decide), k7.1 .r9 (by decide), k7.1 .r10 (by decide),
     k7.1 .r11 (by decide), fold256]
 
-/-- `shld a, b, 1` of `a < 2⁶³`: `2 a` and bit 63 of `b`. -/
-theorem shld1_toNat (a b : BitVec 64) (ha : a.toNat < 2 ^ 63) :
-    (a <<< 1 ||| b >>> (64 - 1)).toNat = 2 * a.toNat + b.toNat / 2 ^ 63 := by
-  have hb := b.isLt
-  rw [BitVec.toNat_or, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight]
-  simp only [Nat.reduceSub, Nat.shiftRight_eq_div_pow]
-  rw [Nat.mod_eq_of_lt (by rw [Nat.shiftLeft_eq]; omega_arith),
-    ← Nat.shiftLeft_add_eq_or_of_lt (by omega_arith : b.toNat / 2 ^ 63 < 2 ^ 1), Nat.shiftLeft_eq]
+/-- `adc a, a` of `a < 2⁶³` with the carry `c`: `2 a + c`. -/
+theorem adcSelf_toNat (a : BitVec 64) (c : Bool) (ha : a.toNat < 2 ^ 63) :
+    (a + a + (BitVec.ofBool c).setWidth 64).toNat = 2 * a.toNat + c.toNat := by
+  have hc : ((BitVec.ofBool c).setWidth 64).toNat = c.toNat := by cases c <;> rfl
+  have := Bool.toNat_le c
+  rw [BitVec.toNat_add, BitVec.toNat_add, hc,
+    Nat.mod_eq_of_lt (show a.toNat + a.toNat < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show a.toNat + a.toNat + c.toNat < 2 ^ 64 by omega_arith)]
   omega_arith
-
-/-- `btr x, 63`: `x` with bit 63 cleared. -/
-theorem btr63_toNat (x : BitVec 64) : (x &&& ~~~((1 : BitVec 64) <<< 63)).toNat = x.toNat % 2 ^ 63 := by
-  rw [show ~~~((1 : BitVec 64) <<< 63) = BitVec.ofNat 64 (2 ^ 63 - 1) by decide, BitVec.toNat_and,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by decide : 2 ^ 63 - 1 < 2 ^ 64),
-    Nat.and_two_pow_sub_one_eq_mod]
 
 /-- `imul r, q, 19` of a small `q`: `19 q`. -/
 theorem imul19_toNat (q : BitVec 64) (hq : q.toNat < 2 ^ 58) :
@@ -150,17 +144,18 @@ theorem fold19X_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) :
       Keeps [.r8, .r9, .r10, .r11, .r12, .rax] s s' := by
   apply WP.of_runBlock
   simp only [fold19X, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu,
-    execShld, execBtr, execImul3, Option.map_some, Option.bind_some, RegUpd.gpr_setReg,
+    execShift, execImul3, Option.map_some, Option.bind_some, RegUpd.gpr_setReg,
     RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg,
-    ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left', se0,
-    Nat.le_refl, and_self, Nat.reduceLeDiff, Nat.reduceLT]
-  have hq := shld1_toNat (s.gpr .r12) (s.gpr .r11) (by omega_arith)
-  have hu := btr63_toNat (s.gpr .r11)
-  generalize s.gpr .r12 <<< 1 ||| s.gpr .r11 >>> (64 - 1) = q at hq ⊢
-  have h11 := (s.gpr .r11).isLt
+    RegUpd.cf_setFlags, ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left', se0,
+    Nat.le_refl, and_self, Nat.reduceLeDiff]
+  obtain ⟨hsh, hu⟩ := shl_shr_one (s.gpr .r11)
+  generalize (s.gpr .r11).getLsbD (64 - 1) = c at hsh hu ⊢
+  have hq := adcSelf_toNat (s.gpr .r12) c (by omega_arith)
+  generalize s.gpr .r12 + s.gpr .r12 + (BitVec.ofBool c).setWidth 64 = q at hq ⊢
+  have hc := Bool.toNat_le c
   have hr := imul19_toNat q (by omega_arith)
   generalize BitVec.ofInt 64 (q.toInt * ((19 : BitVec 32).signExtend 64).toInt) = r at hr ⊢
-  generalize s.gpr .r11 &&& ~~~((1 : BitVec 64) <<< 63) = u at hu ⊢
+  generalize s.gpr .r11 <<< 1 >>> 1 = u at hsh hu ⊢
   have e := chain_add (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) u r 0 0 0
   simp only at e
   generalize decide (2 ^ 64 ≤ u.toNat + BitVec.toNat 0 + _) = c3 at e
