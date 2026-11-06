@@ -51,6 +51,12 @@ theorem sharedKernel_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(8, 8), 
   · exact .inr ⟨(11, 16), by decide, by simp only [slot, hdrBytes]; omega_using [],
       by simp only [slot, hdrBytes]; omega_using []⟩
 
+theorem sharedMidRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w
+    ([(216, 8), (0, 8)] ++ [(8, 8), (184, 8), (208, 8), (232, 8), (240, 8)])
+    ([(1, 1), (2, 1), (3, 1), (5, 1), (8, 1)] ++ [(7, 1), (2, 1), (3, 1), (5, 1), (6, 1), (8, 1), (11, 16)])
+    (sharedMidRanges w) :=
+  VG.Proof.RsaKeyGen.shape_append (witnessRanges_shape w) (sharedKernel_shape w)
+
 theorem sharedKernel_hdr (w j : Nat) (hj : j ∈ [0, 16, 17, 18, 19, 20, 21, 22, 24, 25, 27]) :
     ∀ r ∈ Caller.callRanges w, 8 * j + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * j := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
@@ -136,6 +142,12 @@ theorem sharedMid_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm : 
 /-- The round's scratch areas plus RSA's status and counters. -/
 def sharedRoundRanges (w : Nat) : List (Nat × Nat) :=
   sharedMidRanges w ++ [(8 * kI, 8), (8 * kUni, 8), (8 * kStat, 8)]
+
+theorem sharedRoundRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w
+    ([(216, 8), (0, 8)] ++ [(8, 8), (184, 8), (208, 8), (232, 8), (240, 8)] ++ [(8 * kI, 8), (8 * kUni, 8), (8 * kStat, 8)])
+    ([(1, 1), (2, 1), (3, 1), (5, 1), (8, 1)] ++ [(7, 1), (2, 1), (3, 1), (5, 1), (6, 1), (8, 1), (11, 16)] ++ [])
+    (sharedRoundRanges w) :=
+  VG.Proof.RsaKeyGen.shape_append (sharedMidRanges_shape w) (VG.Proof.RsaKeyGen.shape_self w _)
 
 
 theorem sharedRound_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 ≤ w) (hw128 : w ≤ 128)
