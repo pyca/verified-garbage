@@ -12,7 +12,7 @@
 
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
-use verified_garbage::blowfish_cbc::{BlowfishCbcDecryptor, BlowfishCbcEncryptor};
+use verified_garbage::cipher::blowfish::{BlowfishCbcDecryptor, BlowfishCbcEncryptor};
 
 use verified_garbage_test_vectors::unhex;
 

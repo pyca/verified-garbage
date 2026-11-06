@@ -1,14 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Spec.Dsa.ParameterSearch
 
-/-! Dispatch only the three reviewed parameter-generation sizes. -/
+/-! # The search for the width in `W 17`, one of the three the specification allows -/
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
@@ -41,27 +44,25 @@ theorem lengthTest256_ok {s : State} :
 
 theorem dispatch_ok (G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash)
     (gen : Nat → Prog isa) (round : Nat → Prog isa)
-    {p : GenerationContext} {W : Nat → BitVec 64} {s : State} {Q : State → Prop}
-    (h : GenerationMemory p W s)
-    (run : ∀ t, GenerationMemory p W t → t.mem = s.mem → Keep [.x3, .x4] s t →
-      WP isa (Impl.Dsa.AArch64.Generation.generate G1 G256 gen round p.geo.pLen p.geo.qLen) t Q) :
+    {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} {Q : State → Prop}
+    (L : Lay s F S) (R : Rep s.mem F S V W) {pBytes : Nat} (hp : pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384)
+    (h17 : W 17 = BitVec.ofNat 64 pBytes)
+    (run : ∀ t, t.mem = s.mem → Keep [.x3, .x4] s t →
+      WP isa (Impl.Dsa.AArch64.Generation.Refill.search G1 G256 gen round pBytes (Spec.Dsa.generationQLen pBytes)) t Q) :
     WP isa (Impl.Dsa.AArch64.Generation.dispatch G1 G256 gen round) s Q := by
-  obtain ⟨V, R⟩ := h.rep
-  have h17 := (h.slots 17 (by simp [generationSlots])).trans p.pLenSlot
   unfold Impl.Dsa.AArch64.Generation.dispatch
-  refine WP.seq (WP.mono (lengthTest_ok h.layout R) fun u ⟨ha, hz, hm, ku⟩ => ?_)
-  have mu := h.congr hm ku
+  refine WP.seq (WP.mono (lengthTest_ok L R) fun u ⟨ha, hz, hm, ku⟩ => ?_)
   rw [h17] at ha hz
-  rcases p.geo.lengths with ⟨hp, hq⟩ | ⟨hp, hq⟩ | ⟨hp, hq⟩
-  · refine WP.ite true (by apply hz.trans; rw [hp]; rfl) (fun _ => ?_) (fun he => Bool.noConfusion he)
-    simpa only [hp, hq] using run u mu hm ku
-  · refine WP.ite false (by apply hz.trans; rw [hp]; rfl) (fun he => Bool.noConfusion he) (fun _ => ?_)
+  rcases hp with rfl | rfl | rfl
+  · refine WP.ite true (by apply hz.trans; rfl) (fun _ => ?_) (fun he => Bool.noConfusion he)
+    exact run u hm ku
+  · refine WP.ite false (by apply hz.trans; rfl) (fun he => Bool.noConfusion he) (fun _ => ?_)
     refine WP.seq (WP.mono lengthTest256_ok fun v ⟨hzv, hmv, kv⟩ => ?_)
-    refine WP.ite true (by apply hzv.trans; rw [ha, hp]; rfl) (fun _ => ?_) (fun he => Bool.noConfusion he)
-    simpa only [hp, hq] using run v (mu.congr hmv kv) (hmv.trans hm) ((ku.trans kv).mono (by decide))
-  · refine WP.ite false (by apply hz.trans; rw [hp]; rfl) (fun he => Bool.noConfusion he) (fun _ => ?_)
+    refine WP.ite true (by apply hzv.trans; rw [ha]; rfl) (fun _ => ?_) (fun he => Bool.noConfusion he)
+    exact run v (hmv.trans hm) ((ku.trans kv).mono (by decide))
+  · refine WP.ite false (by apply hz.trans; rfl) (fun he => Bool.noConfusion he) (fun _ => ?_)
     refine WP.seq (WP.mono lengthTest256_ok fun v ⟨hzv, hmv, kv⟩ => ?_)
-    refine WP.ite false (by apply hzv.trans; rw [ha, hp]; rfl) (fun he => Bool.noConfusion he) (fun _ => ?_)
-    simpa only [hp, hq] using run v (mu.congr hmv kv) (hmv.trans hm) ((ku.trans kv).mono (by decide))
+    refine WP.ite false (by apply hzv.trans; rw [ha]; rfl) (fun he => Bool.noConfusion he) (fun _ => ?_)
+    exact run v (hmv.trans hm) ((ku.trans kv).mono (by decide))
 
 end VG.Proof.Dsa.AArch64.Generation

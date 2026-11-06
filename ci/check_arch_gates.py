@@ -7,10 +7,15 @@ declare it) and each benchmark (the `#[cfg(...)]` of its `pub fn bench`,
 and the `#[cfg(not(...))]` of the empty one for the other architectures)
 must name exactly the architectures that every library module it uses
 (`verified_garbage::<path>`) states in its inner `#![cfg(...)]`. Where a construction over hash functions has a file per hash
-(`src/<family>/<hash>.rs`, e.g. `src/hmac/sha256.rs`), a file that uses
-both `<family>` and `hashes::<hash>` needs that file's architectures too;
+(`src/<family>/<hash>.rs`, e.g. `src/hmac/sha256.rs`, or
+`src/kdf/pbkdf2/sha256.rs`), a file that uses both `<family>` and
+`hashes::<hash>` needs that file's architectures too;
 and an item named for a module's file (`ec::P384`, of `src/ec/p384.rs`,
 a curve's file) needs that file's.
+
+An item a module re-exports from a private submodule (`pub use
+cbc::AesCbcEncryptor;` in `src/cipher/aes/mod.rs`, of
+`src/cipher/aes/cbc.rs`) needs the submodule's architectures.
 
 Only `target_arch` is compared; other conditions (`feature = "alloc"`) are
 allowed alongside.
@@ -36,7 +41,10 @@ NO_BENCH_CFG = re.compile(r"^#\[cfg\(not\((.*?)\)\)\]\npub fn bench\(", re.MULTI
 ARCH = re.compile(r'target_arch\s*=\s*"(\w+)"')
 MOD_DECL = re.compile(r"^(?:pub(?:\(crate\))?\s+)?mod\s+(\w+);", re.MULTILINE)
 USES = re.compile(r"verified_garbage::((?:\w+::)*\w+)")
-USE_GROUP = re.compile(r"verified_garbage::(\w+)::\{([^}]*)\}", re.DOTALL)
+USE_GROUP = re.compile(r"verified_garbage::((?:\w+::)*\w+)::\{([^}]*)\}", re.DOTALL)
+# A re-export of a submodule's items: `pub use <child>::{<items>};` or
+# `pub use <child>::<item>;`.
+REEXPORT = re.compile(r"^pub use (\w+)::(?:\{([^}]*)\}|(\w+));", re.MULTILINE)
 TEST_DIR = re.compile(r'^#\[path = "(\w+)/main\.rs"\]\nmod (\w+);$', re.MULTILINE)
 
 
@@ -54,7 +62,9 @@ def inner(path):
 
 def library():
     """The architectures of each library module, by its path under the
-    crate (e.g. `hashes::md5`), within those of its parents."""
+    crate (e.g. `hashes::md5`), within those of its parents; and of each
+    item a module re-exports from a submodule, by its public path (e.g.
+    `cipher::aes::AesCbcEncryptor`), the submodule's."""
     mods = {}
 
     def walk(path, name, parent):
@@ -62,12 +72,19 @@ def library():
         if name:
             mods[name] = archs
         folder = path.parent if path.name in ("lib.rs", "mod.rs") else path.with_suffix("")
-        for child in MOD_DECL.findall(path.read_text()):
+        text = path.read_text()
+        for child in MOD_DECL.findall(text):
             if child in ("asm", "cpu", "tests"):
                 continue
             for sub in (folder / f"{child}.rs", folder / child / "mod.rs"):
                 if sub.is_file():
                     walk(sub, f"{name}::{child}" if name else child, archs)
+        for child, group, single in REEXPORT.findall(text):
+            source = f"{name}::{child}" if name else child
+            for item in group.split(",") if group else [single]:
+                item = item.strip()
+                if item and source in mods:
+                    mods[f"{name}::{item}" if name else item] = mods[source]
 
     walk(ROOT / "src" / "lib.rs", "", ARCHES)
     return mods
@@ -99,7 +116,7 @@ def required(text, mods):
     for u in used:
         for h in hashes:
             per_hash = f"{u}::{h}"
-            if "::" not in u and per_hash in mods:
+            if per_hash in mods:
                 archs &= mods[per_hash]
     return archs, used
 

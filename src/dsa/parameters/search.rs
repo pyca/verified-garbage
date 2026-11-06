@@ -5,10 +5,11 @@
 //! which [`entropy::serve`] supplies.
 
 #![cfg(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
     target_arch = "x86",
-    target_arch = "arm"
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use alloc::{vec, vec::Vec};
@@ -26,6 +27,11 @@ use crate::arch::dsa::{
     vg_dsa_parameter_search_sha256_shani_mr_adx,
 };
 use crate::arch::dsa::{vg_dsa_parameter_search, vg_dsa_parameter_search_init};
+#[cfg(target_arch = "aarch64")]
+use crate::arch::dsa::{
+    vg_dsa_parameter_search_sha1_sha2, vg_dsa_parameter_search_sha1_sha2_sha256_sha2,
+    vg_dsa_parameter_search_sha256_sha2,
+};
 #[cfg(target_arch = "x86")]
 use crate::arch::dsa::{
     vg_dsa_parameter_search_sha1_shani, vg_dsa_parameter_search_sha1_shani_sha256_shani,
@@ -139,6 +145,43 @@ pub(super) fn select_backends(
         (H1::Scalar, H256::ShaNi) => vg_dsa_parameter_search_sha256_shani,
         (H1::ShaNi, H256::Scalar) => vg_dsa_parameter_search_sha1_shani,
         (H1::ShaNi, H256::ShaNi) => vg_dsa_parameter_search_sha1_shani_sha256_shani,
+    }
+}
+
+#[cfg(target_arch = "aarch64")]
+pub(super) type Search = unsafe extern "C" fn(
+    *mut u8,
+    usize,
+    *mut [u64; 1],
+    *const u8,
+    usize,
+    *mut u64,
+    usize,
+    *mut [u64; 4],
+) -> u32;
+
+#[cfg(target_arch = "aarch64")]
+pub(super) fn select(features: Features) -> Search {
+    use crate::hashes::{sha1::Sha1Backend, sha256::Sha256Backend};
+    select_backends(
+        Sha1Backend::select(features),
+        Sha256Backend::select(features),
+    )
+}
+
+#[cfg(target_arch = "aarch64")]
+pub(super) fn select_backends(
+    sha1: crate::hashes::sha1::Sha1Backend,
+    sha256: crate::hashes::sha256::Sha256Backend,
+) -> Search {
+    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
+    // Match the hashes' enums exhaustively so a new hash backend reaches
+    // parameter generation.
+    match (sha1, sha256) {
+        (H1::Scalar, H256::Scalar) => vg_dsa_parameter_search,
+        (H1::Scalar, H256::Sha2) => vg_dsa_parameter_search_sha256_sha2,
+        (H1::Sha2, H256::Scalar) => vg_dsa_parameter_search_sha1_sha2,
+        (H1::Sha2, H256::Sha2) => vg_dsa_parameter_search_sha1_sha2_sha256_sha2,
     }
 }
 

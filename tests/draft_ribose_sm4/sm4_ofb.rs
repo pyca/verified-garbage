@@ -11,7 +11,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::sm4_ofb::Sm4Ofb;
+use verified_garbage::cipher::sm4::Sm4Ofb;
 
 use super::{field, section};
 

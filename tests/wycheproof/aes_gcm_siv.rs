@@ -13,7 +13,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::aes_gcm_siv::{AesGcmSiv, Error};
+use verified_garbage::aead::aes_gcm_siv::{AesGcmSiv, Error};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{AeadCase, SizesGroup};

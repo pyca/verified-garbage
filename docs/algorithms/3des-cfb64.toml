@@ -1,5 +1,5 @@
 name = "3DES-CFB64"
 family = "Ciphers"
 specs = ["TripleDes", "Cfb"]
-modules = ["src/triple_des_cfb.rs"]
+modules = ["src/cipher/triple_des/cfb.rs"]
 asm = ["triple_des_cfb"]

@@ -16,7 +16,7 @@
 
 use verified_garbage::error::IncompleteBlock;
 
-use verified_garbage::sm4_ecb::Sm4Ecb;
+use verified_garbage::cipher::sm4::Sm4Ecb;
 
 use super::{field, section};
 

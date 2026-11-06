@@ -9,7 +9,7 @@
 
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
-use verified_garbage::cast5_cbc::{Cast5CbcDecryptor, Cast5CbcEncryptor};
+use verified_garbage::cipher::cast5::{Cast5CbcDecryptor, Cast5CbcEncryptor};
 
 #[test]
 fn vectors() {

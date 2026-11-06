@@ -11,7 +11,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::sm4_cfb::{Sm4Cfb128Decryptor, Sm4Cfb128Encryptor};
+use verified_garbage::cipher::sm4::{Sm4Cfb128Decryptor, Sm4Cfb128Encryptor};
 
 use super::{field, section};
 

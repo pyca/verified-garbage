@@ -46,7 +46,6 @@ structure StageABI (pLen : Nat) (s : State) : Prop where
   wsBound : (s.gpr .x0).toNat + (s.gpr .x1).toNat * 8 ≤ 2 ^ 64
   tapeBound : (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64
   size : Impl.Dsa.Generation.Layout.usedBytes pLen ≤ 8 * (s.gpr .x1).toNat
-  chunks : (s.gpr .x3).toNat % pLen = 0
   odd : pOf pLen s.mem (s.gpr .x0) % 2 = 1
   bits : Spec.Dsa.bitLength (pOf pLen s.mem (s.gpr .x0)) = 8 * pLen
   qPos : 0 < qOf pLen s.mem (s.gpr .x0)

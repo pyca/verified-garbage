@@ -60,55 +60,55 @@ def runs_in(runner, test):
 
 GROUPS = {
     "aes_cbc": {
-        "lib": ["aes_cbc"],
+        "lib": ["cipher::aes::cbc"],
         "tests": ["cavp::aes_cbc", "wycheproof::aes_cbc"],
     },
     "aes_ccm": {
-        "lib": ["aes_ccm"],
+        "lib": ["aead::aes_ccm"],
         "tests": ["cavp::aes_ccm", "wycheproof::aes_ccm"],
     },
     "aes_ecb": {
-        "lib": ["aes_ecb"],
+        "lib": ["cipher::aes::ecb"],
         "tests": ["cavp::aes_ecb"],
     },
     "aes_gcm": {
-        "lib": ["aes_gcm", "aes_gcm_siv"],
+        "lib": ["aead::aes_gcm", "aead::aes_gcm_siv"],
         "tests": ["cavp::aes_gcm", "wycheproof::aes_gcm", "wycheproof::aes_gcm_siv"],
     },
     "aes_gcm_siv": {
-        "lib": ["aes_gcm_siv"],
+        "lib": ["aead::aes_gcm_siv"],
         "tests": ["wycheproof::aes_gcm_siv"],
     },
     "aes_ocb": {
-        "lib": ["aes_ocb"],
+        "lib": ["aead::aes_ocb"],
         "tests": ["rfc7253::aes_ocb_iterative", "rfc7253::aes_ocb_sample_results"],
     },
     "aes_ofb": {
-        "lib": ["aes_ofb"],
+        "lib": ["cipher::aes::ofb"],
         "tests": ["cavp::aes_ofb"],
     },
     "aes_cfb": {
-        "lib": ["aes_cfb"],
+        "lib": ["cipher::aes::cfb"],
         "tests": ["cavp::aes_cfb"],
     },
     "aes_cfb8": {
-        "lib": ["aes_cfb8"],
+        "lib": ["cipher::aes::cfb8"],
         "tests": ["cavp::aes_cfb8"],
     },
     "aes_ctr": {
-        "lib": ["aes_ctr"],
+        "lib": ["cipher::aes::ctr"],
         "tests": ["rfc3686"],
     },
     "aes_xts": {
-        "lib": ["aes_xts"],
+        "lib": ["cipher::aes::xts"],
         "tests": ["cavp::aes_xts", "wycheproof::aes_xts"],
     },
     "aes_siv": {
-        "lib": ["aes_siv"],
+        "lib": ["aead::aes_siv"],
         "tests": ["wycheproof::aes_siv"],
     },
     "argon2": {
-        "lib": ["argon2"],
+        "lib": ["kdf::argon2"],
         "tests": [],
     },
     "blake2": {
@@ -146,7 +146,7 @@ GROUPS = {
         ],
     },
     "chacha20": {
-        "lib": ["chacha20", "chacha20poly1305"],
+        "lib": ["cipher::chacha20", "aead::chacha20poly1305"],
         "tests": [
             "rfc8439::chacha20",
             "rfc8439::chacha20poly1305",
@@ -273,7 +273,7 @@ GROUPS = {
         "tests": ["rfc6979::p384::p384_sha384"],
     },
     "poly1305": {
-        "lib": ["chacha20poly1305", "poly1305"],
+        "lib": ["aead::chacha20poly1305", "poly1305"],
         "tests": [
             "rfc8439::chacha20::rfc8439_chacha20_poly1305_key_generation",
             "rfc8439::chacha20poly1305",
@@ -351,7 +351,7 @@ GROUPS = {
         "tests": ["wycheproof::rsa_pss::rsa_pss_every_hash"],
     },
     "scrypt": {
-        "lib": ["scrypt"],
+        "lib": ["kdf::scrypt"],
         "tests": [],
     },
     "secp256k1": {
@@ -364,11 +364,11 @@ GROUPS = {
         ],
     },
     "sha1": {
-        "lib": ["hashes::sha1", "hmac::sha1", "pbkdf2::sha1"],
+        "lib": ["hashes::sha1", "hmac::sha1", "kdf::pbkdf2::sha1"],
         "tests": ["cavp::sha1", "wycheproof::hmac_sha1", "wycheproof::pbkdf2_sha1"],
     },
     "sha224": {
-        "lib": ["hashes::sha224", "hmac::sha224", "pbkdf2::sha224"],
+        "lib": ["hashes::sha224", "hmac::sha224", "kdf::pbkdf2::sha224"],
         "tests": [
             "cavp::sha224",
             "rfc4231::hmac_sha224",
@@ -380,7 +380,7 @@ GROUPS = {
         ],
     },
     "sha256": {
-        "lib": ["hashes::sha256", "hmac::sha256", "pbkdf2::sha256"],
+        "lib": ["hashes::sha256", "hmac::sha256", "kdf::pbkdf2::sha256"],
         "tests": [
             "cavp::sha256",
             "secp256k1",
@@ -397,7 +397,7 @@ GROUPS = {
         ],
     },
     "sha3": {
-        "lib": ["hashes::sha3", "hashes::sha384", "hmac::sha384", "pbkdf2::sha384"],
+        "lib": ["hashes::sha3", "hashes::sha384", "hmac::sha384", "kdf::pbkdf2::sha384"],
         "tests": [
             "cavp::sha3",
             "cavp::sha384",
@@ -412,7 +412,7 @@ GROUPS = {
         ],
     },
     "sha384": {
-        "lib": ["hashes::sha384", "hmac::sha384", "pbkdf2::sha384"],
+        "lib": ["hashes::sha384", "hmac::sha384", "kdf::pbkdf2::sha384"],
         "tests": [
             "cavp::sha384",
             "rfc4231::hmac_sha384",
@@ -433,9 +433,9 @@ GROUPS = {
             "hmac::sha512",
             "hmac::sha512_224",
             "hmac::sha512_256",
-            "pbkdf2::sha512",
-            "pbkdf2::sha512_224",
-            "pbkdf2::sha512_256",
+            "kdf::pbkdf2::sha512",
+            "kdf::pbkdf2::sha512_224",
+            "kdf::pbkdf2::sha512_256",
         ],
         "tests": [
             "cavp::sha512",
@@ -468,11 +468,11 @@ GROUPS = {
         ],
     },
     "sm4_gcm": {
-        "lib": ["sm4_gcm"],
+        "lib": ["aead::sm4_gcm"],
         "tests": ["rfc8998::sm4_gcm", "wycheproof::sm4_gcm"],
     },
     "triple_des_ecb": {
-        "lib": ["triple_des_ecb"],
+        "lib": ["cipher::triple_des::ecb"],
         "tests": ["cavp::triple_des_ecb"],
     },
     "x25519": {

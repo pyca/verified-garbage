@@ -36,7 +36,7 @@ abbrev spillRegion (s : State) : Region := ⟨off (s.gpr .x0) spill, spillBytes�
 the memory changed only in the stage's regions, the frame and the saved
 registers' slots, and the callee-saved registers. -/
 structure BodyPost (pLen : Nat) (s t : State) : Prop where
-  status : t.gpr .x0 = BitVec.ofNat 64 (if (result pLen s).isSome then 1 else 0)
+  status : t.gpr .x0 = BitVec.ofNat 64 (endCode pLen s + 4 * (pLen * readCount pLen s))
   packed : ∀ a, result pLen s = some a →
     Spec.Rsa.bytesAt t.mem (off (s.gpr .x0) packed) (2 * pLen + qLen pLen) = Spec.Dsa.encodeParams pLen (qLen pLen) a
   frame : Frame (stageChanged pLen s ++ [⟨frameBase s, 272⟩, spillRegion s]) s.mem t.mem
@@ -48,14 +48,17 @@ structure BodyPost (pLen : Nat) (s t : State) : Prop where
 
 theorem exit_ok {t : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (L : Lay t F S) (R : Rep t.mem F S V W) :
-    WP isa (.block exit) t fun t' => t'.mem = t.mem ∧ t'.gpr .x0 = (3 - W 19) >>> 1 ∧ Keep [.x0, .x3] t t' := by
+    WP isa (.block exit) t fun t' => t'.mem = t.mem ∧ t'.gpr .x0 = W 19 + (W 20 <<< 2) ∧
+      Keep [.x0, .x3, .x4] t t' := by
   have hw : t.mem.readW (t.sp + BitVec.ofNat 64 152) 64 = W 19 := by rw [L.sp]; exact R.fr 19 (by decide)
+  have hw' : t.mem.readW (t.sp + BitVec.ofNat 64 160) 64 = W 20 := by rw [L.sp]; exact R.fr 20 (by decide)
   have hl : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 152) 8 := by rw [L.sp]; exact L.ld (d := 152) (by decide)
-  have h3 : BitVec.setWidth 64 (BitVec.ofNat 16 3) = (3 : BitVec 64) := by decide
-  have run : WP isa (.block exit) t fun t' => t'.mem = t.mem ∧ t'.gpr .x0 = (3 - W 19) >>> 1 := by
+  have hl' : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 160) 8 := by rw [L.sp]; exact L.ld (d := 160) (by decide)
+  have run : WP isa (.block exit) t fun t' => t'.mem = t.mem ∧ t'.gpr .x0 = W 19 + (W 20 <<< 2) := by
     unfold exit
-    brun [State.write, exec_ldrSp (off := 152) (by decide), exec_lsr_x (by decide : 1 < 64), hw, hl, h3]
-  exact WP.mono (WP.keep [.x0, .x3] run (by decide)) fun t' ⟨⟨hm, hx⟩, k⟩ => ⟨hm, hx, k⟩
+    brun [State.write, exec_ldrSp (off := 152) (by decide), exec_ldrSp (off := 160) (by decide),
+      exec_lsl_x (by decide : 2 < 64), hw, hl, hw', hl']
+  exact WP.mono (WP.keep [.x0, .x3, .x4] run (by decide)) fun t' ⟨⟨hm, hx⟩, k⟩ => ⟨hm, hx, k⟩
 
 theorem savedState_gpr (s : State) {r : Reg} (h : r ≠ .x9) : (savedState s).gpr r = s.gpr r := by
   simp [savedState, h]
@@ -102,7 +105,7 @@ theorem body_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) :
   subst hl
   refine WP.seq (WP.mono (entry_entered (pLen := pLen) s) fun u ⟨E, fe⟩ => ?_)
   refine WP.seq (WP.mono (stage_ok M hb A E) fun t T => ?_)
-  obtain ⟨V, W, R, h5, h19⟩ := T.rep
+  obtain ⟨V, W, R, h5, h19, h20⟩ := T.rep
   refine WP.seq (WP.mono (exit_ok T.lay R) fun t' ⟨hm', hx, k'⟩ => ?_)
   -- The saved registers, which nothing but the saves wrote.
   have pn : pLen ≤ 384 := by rcases hb with rfl | rfl | rfl <;> decide
@@ -146,8 +149,10 @@ theorem body_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) :
   refine WP.mono (restore_ok (s := allocState 272 s) hB r40 rd saved_g saved_v) fun t'' Rs => ?_
   refine ⟨?_, fun a ha => ?_, ?_, Rs.gprs, Rs.vectors, Rs.stack.trans sp', Rs.write.trans wr',
     Rs.read.trans (k'.rd.trans (T.rd.trans E.rd))⟩
-  · rw [Rs.result, hx, h19]
-    cases (result pLen s).isSome <;> decide
+  · rw [Rs.result, hx, h19, h20]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat]
+    omega
   · rw [Rs.memory, hm']; exact T.packed a ha
   · rw [Rs.memory, hm']
     exact (E.frame.mono (by simp)).trans (T.frame.mono (by intro r hr; simp [hr]))

@@ -17,7 +17,7 @@
 ))]
 
 use verified_garbage::error::PasswordHashError;
-use verified_garbage::scrypt::{derive, verify};
+use verified_garbage::kdf::scrypt::{derive, verify};
 use verified_garbage_test_vectors::unhex_spaced;
 
 /// One `scrypt (P="…", S="…", N=…, r=…, p=…, dkLen=…) = <hex>` vector.

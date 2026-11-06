@@ -11,7 +11,7 @@
     feature = "openssl-argon2"
 ))]
 
-use verified_garbage::argon2::{Params, Variant, derive_keyed};
+use verified_garbage::kdf::argon2::{Params, Variant, derive_keyed};
 
 type Oracle = fn(
     Option<&openssl::lib_ctx::LibCtxRef>,

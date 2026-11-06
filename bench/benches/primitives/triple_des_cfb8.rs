@@ -22,7 +22,7 @@ pub fn bench(c: &mut Criterion) {
 
     use criterion::{BenchmarkId, Throughput};
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::triple_des_cfb8::{TripleDesCfb8Decryptor, TripleDesCfb8Encryptor};
+    use verified_garbage::cipher::triple_des::{TripleDesCfb8Decryptor, TripleDesCfb8Encryptor};
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 

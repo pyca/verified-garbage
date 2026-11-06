@@ -17,7 +17,7 @@
 ))]
 
 use crate::json_struct;
-use verified_garbage::chacha20::ChaCha20;
+use verified_garbage::cipher::chacha20::ChaCha20;
 
 use super::harness::{self, Count, Expectation};
 use super::schema::SizesGroup;

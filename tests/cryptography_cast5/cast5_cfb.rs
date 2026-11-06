@@ -9,7 +9,7 @@
 
 use verified_garbage::error::InvalidKeyLength;
 
-use verified_garbage::cast5_cfb::{Cast5Cfb64Decryptor, Cast5Cfb64Encryptor};
+use verified_garbage::cipher::cast5::{Cast5Cfb64Decryptor, Cast5Cfb64Encryptor};
 
 /// The vectors in both directions, truncated, in pieces and with a partial
 /// last segment (`crate::modes::check`).

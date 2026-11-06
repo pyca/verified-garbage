@@ -11,7 +11,7 @@
 
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
-use verified_garbage::triple_des_ecb::TripleDesEcb;
+use verified_garbage::cipher::triple_des::TripleDesEcb;
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 

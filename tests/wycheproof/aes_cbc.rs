@@ -16,7 +16,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::aes_cbc::{AesCbcDecryptor, AesCbcEncryptor};
+use verified_garbage::cipher::aes::{AesCbcDecryptor, AesCbcEncryptor};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{CipherCase, SizesGroup};

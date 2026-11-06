@@ -1,5 +1,5 @@
 name = "CAST5-CBC"
 family = "Ciphers"
 specs = ["Cast5", "Cbc"]
-modules = ["src/cast5_cbc.rs"]
+modules = ["src/cipher/cast5/cbc.rs"]
 asm = ["cast5_cbc"]

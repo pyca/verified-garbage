@@ -25,7 +25,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::{BenchmarkId, Throughput};
     use openssl::hash::MessageDigest;
     use verified_garbage::hashes::sha256::Sha256;
-    use verified_garbage::pbkdf2::{pbkdf2_hmac, pbkdf2_hmac_verify};
+    use verified_garbage::kdf::pbkdf2::{pbkdf2_hmac, pbkdf2_hmac_verify};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 

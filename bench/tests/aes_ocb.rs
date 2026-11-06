@@ -9,7 +9,7 @@
 ))]
 
 use openssl::{cipher::Cipher, cipher_ctx::CipherCtx};
-use verified_garbage::aes_ocb::AesOcb;
+use verified_garbage::aead::aes_ocb::AesOcb;
 
 fn compare<const T: usize>(key: &[u8], cipher: &openssl::cipher::CipherRef, n: usize) {
     let nonce = vec![0x24; 1 + n % 15];

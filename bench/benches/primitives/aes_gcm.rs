@@ -31,7 +31,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::cipher::Cipher as OsslCipher;
     use openssl::cipher_ctx::CipherCtx;
     use openssl::symm::{Cipher, Crypter, Mode, decrypt_aead, encrypt_aead};
-    use verified_garbage::aes_gcm::AesGcm;
+    use verified_garbage::aead::aes_gcm::AesGcm;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
@@ -657,7 +657,7 @@ fn tls_record_rows(c: &mut Criterion, sizes: &[usize], offsets: Offsets, label: 
     use criterion::{BenchmarkId, Throughput};
     use openssl::cipher::Cipher as OsslCipher;
     use openssl::cipher_ctx::CipherCtx;
-    use verified_garbage::aes_gcm::AesGcm;
+    use verified_garbage::aead::aes_gcm::AesGcm;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
@@ -829,7 +829,7 @@ fn tls_connection_rows(c: &mut Criterion) {
     use criterion::{BenchmarkId, Throughput};
     use openssl::cipher::Cipher as OsslCipher;
     use openssl::cipher_ctx::CipherCtx;
-    use verified_garbage::aes_gcm::AesGcm;
+    use verified_garbage::aead::aes_gcm::AesGcm;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 
@@ -930,7 +930,7 @@ fn key_setup_rows(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use openssl::cipher::Cipher as OsslCipher;
     use openssl::cipher_ctx::CipherCtx;
-    use verified_garbage::aes_gcm::AesGcm;
+    use verified_garbage::aead::aes_gcm::AesGcm;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
 

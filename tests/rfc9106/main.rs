@@ -12,8 +12,8 @@
     feature = "alloc"
 ))]
 
-use verified_garbage::argon2::{Params, Variant, derive, derive_keyed, verify, verify_keyed};
 use verified_garbage::error::PasswordHashError;
+use verified_garbage::kdf::argon2::{Params, Variant, derive, derive_keyed, verify, verify_keyed};
 
 fn bytes(text: &str, label: &str, length: usize) -> Vec<u8> {
     text.split_once(label)

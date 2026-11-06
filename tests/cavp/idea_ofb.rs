@@ -13,7 +13,7 @@
 
 use verified_garbage::error::InvalidKeyLength;
 
-use verified_garbage::idea_ofb::IdeaOfb;
+use verified_garbage::cipher::idea::IdeaOfb;
 
 use verified_garbage_test_vectors::unhex;
 

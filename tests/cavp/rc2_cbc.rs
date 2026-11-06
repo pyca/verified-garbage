@@ -9,8 +9,8 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
+use verified_garbage::cipher::rc2::{Error, Rc2CbcDecryptor, Rc2CbcEncryptor};
 use verified_garbage::error::{IncompleteBlock, OutputTooSmall};
-use verified_garbage::rc2_cbc::{Error, Rc2CbcDecryptor, Rc2CbcEncryptor};
 
 use verified_garbage_test_vectors::{Record, unhex};
 

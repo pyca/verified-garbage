@@ -1,5 +1,5 @@
 name = "Camellia-ECB (128-, 192- and 256-bit keys)"
 family = "Ciphers"
 specs = ["Camellia"]
-modules = ["src/camellia_ecb.rs"]
+modules = ["src/cipher/camellia/ecb.rs"]
 asm = ["camellia"]

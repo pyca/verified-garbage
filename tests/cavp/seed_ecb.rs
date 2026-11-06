@@ -14,7 +14,7 @@
 
 use verified_garbage::error::IncompleteBlock;
 
-use verified_garbage::seed_ecb::SeedEcb;
+use verified_garbage::cipher::seed::SeedEcb;
 
 use verified_garbage_test_vectors::unhex;
 

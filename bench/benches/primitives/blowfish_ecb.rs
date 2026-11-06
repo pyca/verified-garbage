@@ -19,7 +19,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::{BenchmarkId, Throughput};
     use openssl::provider::Provider;
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::blowfish_ecb::{BlowfishEcbDecryptor, BlowfishEcbEncryptor};
+    use verified_garbage::cipher::blowfish::{BlowfishEcbDecryptor, BlowfishEcbEncryptor};
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 

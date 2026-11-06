@@ -10,7 +10,7 @@
 ))]
 
 use verified_garbage::hashes::sha512::Sha512;
-use verified_garbage::pbkdf2::pbkdf2_hmac;
+use verified_garbage::kdf::pbkdf2::pbkdf2_hmac;
 
 use super::pbkdf2::check_with;
 use crate::require_vectors;

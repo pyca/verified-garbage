@@ -116,7 +116,7 @@ own changes are rebuilt either way, on top of the restored build.
   too, and their callers, without anyone listing it. The Rust code that
   chooses among implementations matches exhaustively on the primitive's
   backend enum (`streaming_hash!`'s, which `streaming_hmac!` and `whole_pbkdf2!`
-  follow; `chacha20::Backend`, which ChaCha20-Poly1305 follows; a caller of
+  follow; `cipher::chacha20::Backend`, which ChaCha20-Poly1305 follows; a caller of
   several, like Argon2, matches on each of their enums together): a new
   backend does not compile until everything built on it handles it.
   `ci/check_variants.py` checks the generated code for this (the
@@ -222,6 +222,10 @@ should add files, not edit lists that every other PR edits too.
   Tests and benchmarks are gated on exactly the architectures of the
   library modules they use (`ci/check_arch_gates.py` checks it), so update
   their `cfg`s with the module's.
+* A block cipher's modes are one module, `cipher::<cipher>`, but a file
+  each: `src/cipher/<cipher>/<mode>.rs`, a private module with its own
+  `#![cfg(...)]`, whose types `src/cipher/<cipher>/mod.rs` re-exports
+  (`pub use <mode>::{…};`), so that each type has one public path.
 * Import the verified functions from `crate::arch::<module>` (the target's
   crate of generated code, `verified_garbage_asm_<target>::<module>`,
   `src/lib.rs`), once for every
@@ -238,7 +242,8 @@ should add files, not edit lists that every other PR edits too.
   hash everywhere: its `Api`s' `module` is `<family>_<hash>` (so
   `crates/verified-garbage-asm-<target>/src/hmac_sha256.rs`), its registration files are
   `Artifacts/<Family><Hash>/<Target>.lean`, its Rust implementation is
-  `src/<family>/<hash>.rs` (the generic code stays in `src/<family>/mod.rs`),
+  `src/<family>/<hash>.rs` (`src/kdf/pbkdf2/<hash>.rs` for PBKDF2; the
+  generic code stays in the family's `mod.rs`),
   and its tests, benchmarks and `docs/algorithms/` row are
   `<family>_<hash>.rs` and `<family>-<hash>.toml`.
 
