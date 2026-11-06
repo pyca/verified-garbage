@@ -613,7 +613,7 @@ structure CInv (P : Params) (s t₀ : State) (c : Nat) (t : State) : Prop where
   blk : Blk P s c t.mem
 
 theorem ea_blk {P : Params} (t : State) {b : Addr} {c : Nat} (hb : t.gpr .rbx = b)
-    (hc : t.gpr .r11 = BitVec.ofNat 64 c) : t.ea (blkByte P) = b + BitVec.ofNat 64 (P.N + c) := by
+    (hc : t.gpr .rcx = BitVec.ofNat 64 c) : t.ea (blkByte P) = b + BitVec.ofNat 64 (P.N + c) := by
   simp only [State.ea, blkByte, hb, hc, BitVec.mul_one, ofInt_natCast]
   rw [add_ofNat, Nat.add_comm]
 
@@ -629,33 +629,36 @@ theorem copy16_step {P : Params} (hF : Fits P) (hd : Dims P) {D : Nat} {s t₀ t
   unfold copy16
   refine wp_movdquLoad (a := dp s + BitVec.ofNat 64 (whl P s + c)) (by simp [State.ea, h.r13])
     ⟨dR s, by rw [hm.rd, hp.rd]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩ ?_
-  refine wp_movdquStore (a := sb s + BitVec.ofNat 64 (P.N + c)) (ea_blk _ hm.rbx h.r11)
-    ⟨wR P s, by simp [State.setXmm, hm.wr, hp.wr], Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  refine wp_clampWith (idx := .r11) (dst := .rcx) (by decide) (c := c) (by omega_arith) (by omega_arith) h.r11
+    fun t₁ v₁ vx₁ => ?_
+  refine wp_movdquStore (a := sb s + BitVec.ofNat 64 (P.N + c)) (ea_blk _ (by rw [v₁.other _ (by decide)]; exact hm.rbx) v₁.gpr)
+    ⟨wR P s, by rw [v₁.wr]; simp [State.setXmm, hm.wr, hp.wr], Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     fun t₂ g₂ m₂ rd₂ wr₂ => ?_
   refine wp_addi fun t₃ u₃ => wp_addi fun t₄ u₄ => wp_subi fun t₅ u₅ hz₅ => WP.block_nil ?_
-  have g : ∀ r, r ≠ .r9 → r ≠ .r11 → r ≠ .r13 → t₅.gpr r = t.gpr r := fun r h1 h2 h3 => by
-    rw [u₅.other r h1, u₄.other r h2, u₃.other r h3, g₂]; rfl
+  have g : ∀ r, r ≠ .r9 → r ≠ .r11 → r ≠ .r13 → r ≠ .rcx → t₅.gpr r = t.gpr r := fun r h1 h2 h3 h4 => by
+    rw [u₅.other r h1, u₄.other r h2, u₃.other r h3, g₂, v₁.other r h4]; rfl
   have mem₅ : t₅.mem = t₂.mem := by rw [u₅.mem, u₄.mem, u₃.mem]
   have fr₂ : Frame [bR P s] t.mem t₂.mem := by
-    rw [m₂]
+    rw [m₂, v₁.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by
       rw [← add_ofNat]; exact Offset.contains_base _ (by omega_arith) (by omega_arith))
   have h9₅ : t₅.gpr .r9 = BitVec.ofNat 64 (k - 1) := by
-    rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), g₂]
+    rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), g₂, v₁.other _ (by decide)]
     show t.gpr .r9 - _ = _
     rw [h9, sx1, ofNat_pred hk]
-  refine ⟨⟨Mid.of_blk hF hd hm (by rw [u₅.rd, u₄.rd, u₃.rd, rd₂]; rfl) (by rw [u₅.wr, u₄.wr, u₃.wr, wr₂]; rfl)
-      (fun r hr => g r (mid_ne r hr _ (by decide)) (mid_ne r hr _ (by decide)) (mid_ne r hr _ (by decide)))
+  refine ⟨⟨Mid.of_blk hF hd hm (by rw [u₅.rd, u₄.rd, u₃.rd, rd₂, v₁.rd]; rfl) (by rw [u₅.wr, u₄.wr, u₃.wr, wr₂, v₁.wr]; rfl)
+      (fun r hr => g r (mid_ne r hr _ (by decide)) (mid_ne r hr _ (by decide)) (mid_ne r hr _ (by decide))
+        (mid_ne r hr _ (by decide)))
       (by rw [mem₅]; exact fr₂),
     by omega_arith, ?_, ?_, ?_, by rw [mem₅]; exact h.frame.trans fr₂, fun j hj => ?_⟩, h9₅, ?_⟩
-  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g₂]
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g₂, v₁.other _ (by decide)]
     show t.gpr .r13 + _ = _
     rw [h.r13, sx16, add_ofNat, Nat.add_assoc]
-  · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂]
+  · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂, v₁.other _ (by decide)]
     show t.gpr .r11 + _ = _
     rw [h.r11, sx16, ← BitVec.ofNat_add]
-  · rw [g _ (by decide) (by decide) (by decide), h.r10]
-  · rw [mem₅, m₂, writeW128_off _ _ _ (by omega_arith) (by omega_arith)]
+  · rw [g _ (by decide) (by decide) (by decide) (by decide), h.r10]
+  · rw [mem₅, m₂, v₁.mem, vx₁, writeW128_off _ _ _ (by omega_arith) (by omega_arith)]
     simp only [State.setXmm, ite_true]
     split
     · rw [readW128_byte _ _ (by omega_arith), add_ofNat, data_eq hp hm (by omega_arith), itp (show j < c + 16 by omega_arith)]
@@ -664,7 +667,7 @@ theorem copy16_step {P : Params} (hF : Fits P) (hd : Dims P) {D : Nat} {s t₀ t
     by_cases hjc : j < c
     · rw [itp hjc, itp (show j < c + 16 by omega_arith)]
     · rw [itn hjc, itn (show ¬ j < c + 16 by omega_arith)]
-  · rw [hz₅, u₄.other _ (by decide), u₃.other _ (by decide), g₂]
+  · rw [hz₅, u₄.other _ (by decide), u₃.other _ (by decide), g₂, v₁.other _ (by decide)]
     show some (t.gpr .r9 - _ == 0) = _
     rw [h9, sx1, ofNat_pred hk, ofNat_beq_zero (by omega_arith)]
 
@@ -680,33 +683,35 @@ theorem copy1_step {P : Params} (hF : Fits P) (hd : Dims P) {D : Nat} {s t₀ t 
   unfold copy1
   refine wp_movzx8 (a := dp s + BitVec.ofNat 64 (whl P s + c)) (by simp [State.ea, h.r13])
     ⟨dR s, by rw [hm.rd, hp.rd]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩ fun t₁ u₁ => ?_
+  refine wp_clampWith (idx := .r11) (dst := .rcx) (by decide) (c := c) (by omega_arith) (by omega_arith)
+    (by rw [u₁.other _ (by decide), h.r11]) fun t₁' v₁ _ => ?_
   refine wp_store8 (a := sb s + BitVec.ofNat 64 (P.N + c))
-    (ea_blk _ (by rw [u₁.other _ (by decide), hm.rbx]) (by rw [u₁.other _ (by decide), h.r11]))
-    ⟨wR P s, by rw [u₁.wr, hm.wr, hp.wr]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+    (ea_blk _ (by rw [v₁.other _ (by decide), u₁.other _ (by decide), hm.rbx]) v₁.gpr)
+    ⟨wR P s, by rw [v₁.wr, u₁.wr, hm.wr, hp.wr]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     fun t₂ g₂ m₂ rd₂ wr₂ => ?_
   refine wp_addi fun t₃ u₃ => wp_addi fun t₄ u₄ => wp_subi fun t₅ u₅ hz₅ => WP.block_nil ?_
-  have g : ∀ r, r ≠ .rax → r ≠ .r11 → r ≠ .r13 → r ≠ .r8 → t₅.gpr r = t.gpr r := fun r h1 h2 h3 h4 => by
-    rw [u₅.other r h1, u₄.other r h2, u₃.other r h3, g₂, u₁.other r h4]
+  have g : ∀ r, r ≠ .rax → r ≠ .r11 → r ≠ .r13 → r ≠ .r8 → r ≠ .rcx → t₅.gpr r = t.gpr r :=
+    fun r h1 h2 h3 h4 h5 => by rw [u₅.other r h1, u₄.other r h2, u₃.other r h3, g₂, v₁.other r h5, u₁.other r h4]
   have mem₅ : t₅.mem = t₂.mem := by rw [u₅.mem, u₄.mem, u₃.mem]
   have fr₂ : Frame [bR P s] t.mem t₂.mem := by
-    rw [m₂, u₁.mem]
+    rw [m₂, v₁.mem, u₁.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by
       rw [← add_ofNat]; exact Offset.contains_base _ (by omega_arith) (by omega_arith))
   have hax₄ : t₄.gpr .rax = BitVec.ofNat 64 k := by
-    rw [u₄.other _ (by decide), u₃.other _ (by decide), g₂, u₁.other _ (by decide), hax]
-  refine ⟨⟨Mid.of_blk hF hd hm (by rw [u₅.rd, u₄.rd, u₃.rd, rd₂, u₁.rd]) (by rw [u₅.wr, u₄.wr, u₃.wr, wr₂, u₁.wr])
+    rw [u₄.other _ (by decide), u₃.other _ (by decide), g₂, v₁.other _ (by decide), u₁.other _ (by decide), hax]
+  refine ⟨⟨Mid.of_blk hF hd hm (by rw [u₅.rd, u₄.rd, u₃.rd, rd₂, v₁.rd, u₁.rd]) (by rw [u₅.wr, u₄.wr, u₃.wr, wr₂, v₁.wr, u₁.wr])
       (fun r hr => g r (mid_ne r hr _ (by decide)) (mid_ne r hr _ (by decide)) (mid_ne r hr _ (by decide))
-        (mid_ne r hr _ (by decide)))
+        (mid_ne r hr _ (by decide)) (mid_ne r hr _ (by decide)))
       (by rw [mem₅]; exact fr₂),
     by omega_arith, ?_, ?_, ?_, by rw [mem₅]; exact h.frame.trans fr₂, fun j hj => ?_⟩, ?_, ?_⟩
-  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g₂, u₁.other _ (by decide), h.r13, sx1,
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g₂, v₁.other _ (by decide), u₁.other _ (by decide), h.r13, sx1,
       ← Nat.add_assoc, ofNat_succ, BitVec.add_assoc]
-  · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂, u₁.other _ (by decide), h.r11, sx1,
+  · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂, v₁.other _ (by decide), u₁.other _ (by decide), h.r11, sx1,
       ofNat_succ]
-  · rw [g _ (by decide) (by decide) (by decide) (by decide), h.r10]
-  · rw [mem₅, m₂, u₁.mem, writeW8_off _ _ _ (by omega_arith) (by omega_arith)]
+  · rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide), h.r10]
+  · rw [mem₅, m₂, v₁.mem, u₁.mem, writeW8_off _ _ _ (by omega_arith) (by omega_arith)]
     split
-    · rw [itp (show j < c + 1 by omega_arith), u₁.gpr, data_eq hp hm (by omega_arith), show j = c by omega_arith]
+    · rw [itp (show j < c + 1 by omega_arith), v₁.other .r8 (by decide), u₁.gpr, data_eq hp hm (by omega_arith), show j = c by omega_arith]
       ext i hi; simp
     rw [h.blk j hj]
     by_cases hjc : j < c
@@ -775,21 +780,24 @@ block. -/
 theorem chunk_ok {P : Params} (hF : Fits P) (hd : Dims P) {D : Nat} {s t₀ t : State} (hp : Pre P D s) {c : Nat}
     (h : CInv P s t₀ c t) (hc : rem P s < c + 16) (hcB : c + 16 ≤ P.B)
     (hx : ∀ i < 16, byte (t.xmm .xmm1) i = P80 P s c i) :
-    WP isa (.block [storeChunk P]) t (TailPost P s t₀) := by
+    WP isa (.block (storeChunk P)) t (TailPost P s t₀) := by
   have := hF.lt; have := st_le P; have := sc_le P; have := hd.B; have := hd.N
   have hm := h.mid
   have hcl := h.c_le
   unfold storeChunk
-  refine wp_movdquStore (a := sb s + BitVec.ofNat 64 (P.N + c)) (ea_blk _ hm.rbx h.r11)
-    ⟨wR P s, by rw [hm.wr, hp.wr]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  refine wp_clampWith (idx := .r11) (dst := .rcx) (by decide) (c := c) (by omega_arith) (by omega_arith) h.r11
+    fun t₁ v₁ vx₁ => ?_
+  refine wp_movdquStore (a := sb s + BitVec.ofNat 64 (P.N + c)) (ea_blk _ (by rw [v₁.other _ (by decide)]; exact hm.rbx) v₁.gpr)
+    ⟨wR P s, by rw [v₁.wr, hm.wr, hp.wr]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     fun t₂ g₂ m₂ rd₂ wr₂ => WP.block_nil ?_
   have fr : Frame [bR P s] t.mem t₂.mem := by
-    rw [m₂]
+    rw [m₂, v₁.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by
       rw [← add_ofNat]; exact Offset.contains_base _ (by omega_arith) (by omega_arith))
-  refine ⟨Mid.of_blk hF hd hm rd₂ wr₂ (fun r _ => by rw [g₂]) fr, by rw [g₂, h.r10], h.frame.trans fr,
-    fun j hj => ?_⟩
-  rw [m₂, writeW128_off _ _ _ (by omega_arith) (by omega_arith)]
+  refine ⟨Mid.of_blk hF hd hm (rd₂.trans v₁.rd) (wr₂.trans v₁.wr)
+      (fun r hr => by rw [g₂, v₁.other r (mid_ne r hr _ (by decide))]) fr,
+    by rw [g₂, v₁.other _ (by decide), h.r10], h.frame.trans fr, fun j hj => ?_⟩
+  rw [m₂, v₁.mem, vx₁, writeW128_off _ _ _ (by omega_arith) (by omega_arith)]
   split
   · rename_i hr
     have e := hx (j - c) (by omega_arith)
@@ -845,18 +853,20 @@ theorem bytesTail_ok {P : Params} (hF : Fits P) (hd : Dims P) {D : Nat} {s t₀ 
   have hc : 16 * (rem P s / 16) + rem P s % 16 = rem P s := Nat.div_add_mod _ _
   rw [hc] at hI₉
   have hm₉ := hI₉.mid
-  refine wp_mov32i fun t₁₀ u₁₀ _ _ => wp_store8 (a := sb s + BitVec.ofNat 64 (P.N + rem P s))
-    (ea_blk _ (by rw [u₁₀.other _ (by decide), hm₉.rbx]) (by rw [u₁₀.other _ (by decide), hI₉.r11]))
-    ⟨wR P s, by rw [u₁₀.wr, hm₉.wr, hp.wr]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  refine wp_mov32i fun t₁₀' u₁₀ _ _ => wp_clampWith (idx := .r11) (dst := .rcx) (by decide) (c := rem P s)
+    (by omega_arith) (by omega_arith) (by rw [u₁₀.other _ (by decide), hI₉.r11]) fun t₁₀ v₁₀ _ =>
+    wp_store8 (a := sb s + BitVec.ofNat 64 (P.N + rem P s))
+    (ea_blk _ (by rw [v₁₀.other _ (by decide), u₁₀.other _ (by decide), hm₉.rbx]) v₁₀.gpr)
+    ⟨wR P s, by rw [v₁₀.wr, u₁₀.wr, hm₉.wr, hp.wr]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     fun t₁₁ g₁₁ m₁₁ rd₁₁ wr₁₁ => WP.block_nil ?_
   have fr : Frame [bR P s] t₉.mem t₁₁.mem := by
-    rw [m₁₁, u₁₀.mem]
+    rw [m₁₁, v₁₀.mem, u₁₀.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by
       rw [← add_ofNat]; exact Offset.contains_base _ (by omega_arith) (by omega_arith))
-  refine ⟨Mid.of_blk hF hd hm₉ (by rw [rd₁₁, u₁₀.rd]) (by rw [wr₁₁, u₁₀.wr])
-      (fun r hr => by rw [g₁₁, u₁₀.other _ (mid_ne r hr _ (by decide))]) fr,
-    by rw [g₁₁, u₁₀.other _ (by decide), hI₉.r10], hI₉.frame.trans fr, fun j hj => ?_⟩
-  rw [m₁₁, u₁₀.mem, u₁₀.gpr, writeW8_off _ _ _ (by omega_arith) (by omega_arith)]
+  refine ⟨Mid.of_blk hF hd hm₉ (by rw [rd₁₁, v₁₀.rd, u₁₀.rd]) (by rw [wr₁₁, v₁₀.wr, u₁₀.wr])
+      (fun r hr => by rw [g₁₁, v₁₀.other _ (mid_ne r hr _ (by decide)), u₁₀.other _ (mid_ne r hr _ (by decide))]) fr,
+    by rw [g₁₁, v₁₀.other _ (by decide), u₁₀.other _ (by decide), hI₉.r10], hI₉.frame.trans fr, fun j hj => ?_⟩
+  rw [m₁₁, v₁₀.mem, u₁₀.mem, v₁₀.other .r8 (by decide), u₁₀.gpr, writeW8_off _ _ _ (by omega_arith) (by omega_arith)]
   split
   · rw [itn (show ¬ j < rem P s by omega_arith), itp (show j = rem P s by omega_arith)]; rfl
   rw [hI₉.blk j hj]

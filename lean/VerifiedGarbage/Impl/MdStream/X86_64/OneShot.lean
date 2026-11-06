@@ -84,25 +84,29 @@ def whole (name : String) (code : Prog isa) : Prog isa :=
 def zeroBuf : List Instr :=
   .xop (.bin .pxor .xmm0 .xmm0) :: (List.range (P.B / 16)).map fun k => .movdquStore (at_ .rbx (P.N + 16 * k)) .xmm0
 
-/-- Byte `r11` of the block. -/
-def blkByte : MemOp := { base := .rbx, index := some .r11, scale := 1, disp := P.N }
+/-- Byte `rcx` of the block, after `clampO`. -/
+def blkByte : MemOp := { base := .rbx, index := some .rcx, scale := 1, disp := P.N }
+
+/-- `rcx = min(r11, B - w)`, before a store of `w` bytes at byte `r11` of the
+block, which `r11 ≤ B - w` makes `r11` (see `clamp`). -/
+def clampO (w : Nat) : List Instr := clampWith (P.B - w) .r11 .rcx
 
 /-- Copy sixteen bytes from `r13` to the block at `r11`, advancing both. -/
 def copy16 : List Instr :=
-  [.movdquLoad .xmm1 { base := .r13 }, .movdquStore (blkByte P) .xmm1, .alu .add .r13 (.imm 16),
+  [.movdquLoad .xmm1 { base := .r13 }] ++ clampO P 16 ++ [.movdquStore (blkByte P) .xmm1, .alu .add .r13 (.imm 16),
     .alu .add .r11 (.imm 16), .alu .sub .r9 (.imm 1)]
 
 /-- Copy a byte from `r13` to the block at `r11`, advancing both. -/
 def copy1 : List Instr :=
-  [.movzx8 .r8 { base := .r13 }, .store8 (blkByte P) .r8, .alu .add .r13 (.imm 1), .alu .add .r11 (.imm 1),
-    .alu .sub .rax (.imm 1)]
+  [.movzx8 .r8 { base := .r13 }] ++ clampO P 1 ++ [.store8 (blkByte P) .r8, .alu .add .r13 (.imm 1),
+    .alu .add .r11 (.imm 1), .alu .sub .rax (.imm 1)]
 
 /-- Store `xmm1` as the 16 bytes of the block at `r11`. -/
-def storeChunk : Instr := .movdquStore (blkByte P) .xmm1
+def storeChunk : List Instr := clampO P 16 ++ [.movdquStore (blkByte P) .xmm1]
 
 /-- When the bytes left end at a multiple of 16: the 16 bytes at `r11` are
 `0x80` and zeros, one 16-byte store. -/
-def mark16 : List Instr := [.mov32 .r8 (.imm 0x80), .xop (.movq .xmm1 .r8), storeChunk P]
+def mark16 : List Instr := [.mov32 .r8 (.imm 0x80), .xop (.movq .xmm1 .r8)] ++ storeChunk P
 
 /-- The last `r = rax` bytes left (at `r13`), `0 < r < 8`, then `0x80` and
 zeros, as the 16 bytes at `r11`: the 8 bytes of the message that end with
@@ -112,7 +116,7 @@ def partLo : List Instr :=
   [.mov .r8 (.mem { base := .r13, index := some .rax, disp := -8 }), .mov32 .rcx (.imm 8),
     .alu .sub .rcx (.reg .rax), .shift .shl .rcx 3, .shiftCl .shr .r8,
     .mov .rcx (.reg .rax), .shift .shl .rcx 3, .mov32 .r9 (.imm 0x80), .shiftCl .shl .r9,
-    .alu .or .r8 (.reg .r9), .xop (.movq .xmm1 .r8), storeChunk P]
+    .alu .or .r8 (.reg .r9), .xop (.movq .xmm1 .r8)] ++ storeChunk P
 
 /-- As `partLo`, for `8 ≤ r < 16`: the first 8 bytes left in `r8`; in `r9`,
 the 8 bytes of the message that end with them, shifted right by the
@@ -123,14 +127,14 @@ def partHi : List Instr :=
     .mov32 .rcx (.imm 15), .alu .sub .rcx (.reg .rax), .shift .shl .rcx 3, .shiftCl .shr .r9,
     .shift .shr .r9 8, .mov .rcx (.reg .rax), .alu .sub .rcx (.imm 8), .shift .shl .rcx 3,
     .mov32 .rdx (.imm 0x80), .shiftCl .shl .rdx, .alu .or .r9 (.reg .rdx), .xop (.movq .xmm1 .r8),
-    .xop (.movq .xmm2 .r9), .xop (.bin .punpcklqdq .xmm1 .xmm2), storeChunk P]
+    .xop (.movq .xmm2 .r9), .xop (.bin .punpcklqdq .xmm1 .xmm2)] ++ storeChunk P
 
 /-- Fewer than 8 bytes left in a message shorter than 8: one at a time
 (`rax` of them), then the `0x80` byte. -/
 def bytesTail : Prog isa :=
   .seq (.block [.alu .test .rax (.reg .rax)])
   (.seq (.ite .e (.block []) (.loop (.block (copy1 P)) .ne))
-    (.block [.mov32 .r8 (.imm 0x80), .store8 (blkByte P) .r8]))
+    (.block ([.mov32 .r8 (.imm 0x80)] ++ clampO P 1 ++ [.store8 (blkByte P) .r8])))
 
 /-- Copy the `len mod B` bytes left (counted in `r10`) to the block, sixteen
 at a time (`r9` of them), and the 16 bytes holding the last of them and the
