@@ -36,6 +36,18 @@ pub struct OutputTooSmall;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InvalidMac;
 
+/// A key is not valid. The function that returns it says which key, and
+/// which checks it failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InvalidKey;
+
+/// The signature is not a valid signature of the message (or hash value)
+/// with the public key, or the public key is not valid. The function that
+/// returns it says which checks the key and the signature are held to.
+/// Every signature scheme's verification returns it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InvalidSignature;
+
 /// Why an X25519 or X448 operation failed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum XdhError {
@@ -54,8 +66,6 @@ pub enum MlKemError {
     /// call: less than 2⁻²⁵⁸ in an ML-KEM-768 operation (9 calls) and 2⁻²⁵⁷
     /// in an ML-KEM-1024 one (16 calls).
     SampleBound,
-    /// The encapsulation key failed the check of FIPS 203 §7.2.
-    InvalidKey,
     /// The operating system's random number generator failed.
     Randomness,
 }
@@ -66,11 +76,9 @@ pub enum MlDsaError {
     /// A loop reached its bound (FIPS 204 Appendix C), which happens with
     /// probability about 2⁻²⁵⁶ or less.
     LoopBound,
-    /// The context string is longer than 255 bytes (FIPS 204 Algorithms 2
-    /// and 3).
+    /// The context string to sign with is longer than 255 bytes (FIPS 204
+    /// Algorithm 2).
     ContextTooLong,
-    /// The signature is not valid.
-    InvalidSignature,
     /// The operating system's random number generator failed.
     Randomness,
 }
@@ -113,6 +121,8 @@ impl_unit_error! {
     IncompleteBlock => "input is not a whole number of blocks",
     OutputTooSmall => "output buffer is too small",
     InvalidMac => "MAC does not match",
+    InvalidKey => "invalid key",
+    InvalidSignature => "invalid signature",
 }
 
 /// Implements `core::fmt::Display` for the error enum `$ty`, writing `$msg`
@@ -142,7 +152,6 @@ impl_error! {
 impl_error! {
     MlKemError {
         SampleBound => "ML-KEM sampling loop reached its bound",
-        InvalidKey => "invalid ML-KEM encapsulation key",
         Randomness => "random number generator failed",
     }
 }
@@ -151,7 +160,6 @@ impl_error! {
     MlDsaError {
         LoopBound => "ML-DSA loop reached its bound",
         ContextTooLong => "context is longer than 255 bytes",
-        InvalidSignature => "invalid ML-DSA signature",
         Randomness => "random number generator failed",
     }
 }
@@ -184,13 +192,13 @@ mod tests {
     fn errors_display() {
         check!(
             super::IncompleteBlock,
+            super::InvalidKey,
             super::InvalidKeyLength,
             super::InvalidMac,
+            super::InvalidSignature,
             super::MlDsaError::ContextTooLong,
-            super::MlDsaError::InvalidSignature,
             super::MlDsaError::LoopBound,
             super::MlDsaError::Randomness,
-            super::MlKemError::InvalidKey,
             super::MlKemError::Randomness,
             super::MlKemError::SampleBound,
             super::OutputTooSmall,
@@ -218,15 +226,11 @@ mod tests {
             crate::cipher::aes::XtsError::EqualKeyHalves,
             crate::cipher::aes::XtsError::InvalidKeyLength,
             crate::cipher::aes::XtsError::InvalidOutputLength,
-            crate::ec::Error::InvalidKey,
-            crate::ec::Error::InvalidSignature,
             crate::aead::chacha20poly1305::Error::InvalidOutputLength,
             crate::aead::chacha20poly1305::Error::InvalidTextLength,
             crate::aead::chacha20poly1305::Error::TagMismatch,
             crate::aead::chacha20poly1305::Error::TooManyPieces,
-            crate::ed25519::Error::InvalidSignature,
             crate::ed448::Error::ContextTooLong,
-            crate::ed448::Error::InvalidSignature,
             crate::cipher::rc2::Error::InvalidEffectiveBits,
             crate::cipher::rc2::Error::InvalidIvLength,
             crate::cipher::rc2::Error::InvalidKeyLength,

@@ -10,6 +10,7 @@
 ))]
 
 use verified_garbage::ed448::{Error, MAX_CONTEXT_LEN, SigningKey, VerifyingKey};
+use verified_garbage::error::InvalidSignature;
 
 use super::{hex_lines, text};
 
@@ -94,17 +95,17 @@ fn ed448_vectors() {
         changed_message.push(0);
         assert_eq!(
             verifying.verify_with_context(&context, &changed_message, &signature),
-            Err(Error::InvalidSignature)
+            Err(InvalidSignature)
         );
         let mut changed_context = context.clone();
         changed_context.push(0);
         assert_eq!(
             verifying.verify_with_context(&changed_context, &message, &signature),
-            Err(Error::InvalidSignature)
+            Err(InvalidSignature)
         );
         assert_eq!(
             verifying.verify_with_context(&context, &message, &signature[..113]),
-            Err(Error::InvalidSignature)
+            Err(InvalidSignature)
         );
         assert_eq!(format!("{key:?}"), "SigningKey { .. }");
     }
@@ -140,7 +141,7 @@ fn context_limits() {
     assert_eq!(
         key.verifying_key()
             .verify_with_context(&context, b"message", &signature),
-        Err(Error::InvalidSignature)
+        Err(InvalidSignature)
     );
 }
 

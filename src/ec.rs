@@ -34,6 +34,7 @@ mod validate;
 
 pub use ecdsa::SignatureHash;
 
+use crate::error::InvalidKey;
 use crate::zeroize::zeroize;
 
 pub(crate) mod sealed {
@@ -134,9 +135,9 @@ impl<C: Curve> PrivateKey<C> {
     ///
     /// # Errors
     ///
-    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
-    pub fn public_key(&self) -> Result<PublicKey<C>, Error> {
-        PublicKey::derive(&self.d).ok_or(Error::InvalidKey)
+    /// [`InvalidKey`] if the key is not in `[1, n − 1]`.
+    pub fn public_key(&self) -> Result<PublicKey<C>, InvalidKey> {
+        PublicKey::derive(&self.d).ok_or(InvalidKey)
     }
 }
 
@@ -155,29 +156,6 @@ impl<C: Curve> core::fmt::Debug for PrivateKey<C> {
 impl<C: Curve> Drop for PrivateKey<C> {
     fn drop(&mut self) {
         zeroize(self.d.as_mut());
-    }
-}
-
-/// Why an operation with a key failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The private key is not in `[1, n − 1]`, or, for an exchange, the
-    /// peer's public key is not a valid uncompressed public key on the curve
-    /// (the verified code does not say which). For a valid key, signing
-    /// fails only if none of the candidates for `k` it tries is suitable:
-    /// for P-224, with probability under 2⁻⁸⁸⁸, for P-256 under 2⁻²⁴⁸, for
-    /// P-384 under 2⁻¹⁵⁴⁴, and for P-521 under 2⁻²⁰⁸⁸; deriving the public
-    /// key never fails.
-    InvalidKey,
-    /// The signature is not valid for the public key, or the public key is
-    /// not valid.
-    InvalidSignature,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidKey => "invalid elliptic-curve key",
-        InvalidSignature => "invalid ECDSA signature",
     }
 }
 

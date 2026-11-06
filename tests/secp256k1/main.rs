@@ -10,7 +10,8 @@
 ))]
 
 use crate::json_struct;
-use verified_garbage::ec::{Error, PrivateKey, PublicKey, Secp256k1};
+use verified_garbage::ec::{PrivateKey, PublicKey, Secp256k1};
+use verified_garbage::error::{InvalidKey, InvalidSignature};
 use verified_garbage::hashes::sha256::Sha256;
 
 json_struct! {
@@ -101,7 +102,7 @@ fn messages_and_keys() {
     assert_eq!(verifier.clone().verify::<Sha256>(message, &sig), Ok(()));
     assert_eq!(
         verifier.verify::<Sha256>(b"changed", &sig),
-        Err(Error::InvalidSignature)
+        Err(InvalidSignature)
     );
     let private = PrivateKey::<Secp256k1>::from_bytes(&d);
     assert_eq!(private.public_key(), Ok(PublicKey::from_bytes(&public)));
@@ -121,26 +122,20 @@ fn messages_and_keys() {
     }
     for d in [[0; 32], n, [0xff; 32]] {
         let bad = PrivateKey::<Secp256k1>::from_bytes(&d);
-        assert_eq!(bad.public_key(), Err(Error::InvalidKey));
-        assert_eq!(bad.sign::<Sha256>(message), Err(Error::InvalidKey));
+        assert_eq!(bad.public_key(), Err(InvalidKey));
+        assert_eq!(bad.sign::<Sha256>(message), Err(InvalidKey));
         let bad = PrivateKey::<Secp256k1>::from_bytes(&d);
-        assert_eq!(
-            bad.public_key(),
-            Err(verified_garbage::ec::Error::InvalidKey)
-        );
-        assert_eq!(
-            bad.exchange(&verifier),
-            Err(verified_garbage::ec::Error::InvalidKey)
-        );
+        assert_eq!(bad.public_key(), Err(InvalidKey));
+        assert_eq!(bad.exchange(&verifier), Err(InvalidKey));
     }
     let mut invalid = public;
     invalid[0] = 0;
     assert_eq!(
         private.exchange(&PublicKey::from_bytes(&invalid)),
-        Err(verified_garbage::ec::Error::InvalidKey)
+        Err(InvalidKey)
     );
     assert_eq!(
         PublicKey::<Secp256k1>::from_bytes(&invalid).verify::<Sha256>(message, &sig),
-        Err(Error::InvalidSignature)
+        Err(InvalidSignature)
     );
 }

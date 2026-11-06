@@ -15,7 +15,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{Error, P256, PublicKey, SignatureHash};
+use verified_garbage::ec::{P256, PublicKey, SignatureHash};
+use verified_garbage::error::InvalidSignature;
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha512::Sha512;
 
@@ -57,7 +58,7 @@ fn check<H: SignatureHash<P256>>(file: &str, sha: &str) {
                 verified.add();
             }
             Expectation::Invalid | Expectation::Acceptable => {
-                assert_eq!(result, Err(Error::InvalidSignature), "tcId {}", test.tc_id);
+                assert_eq!(result, Err(InvalidSignature), "tcId {}", test.tc_id);
                 refused.add();
             }
         }

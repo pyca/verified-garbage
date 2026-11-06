@@ -19,7 +19,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{BrainpoolP512r1, Error, PrivateKey, PublicKey};
+use verified_garbage::ec::{BrainpoolP512r1, PrivateKey, PublicKey};
+use verified_garbage::error::InvalidKey;
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{CurveEncodingGroup, EcdhCase};
@@ -84,7 +85,7 @@ fn ecdh_brainpoolp512r1_test() {
                 checked.add();
             }
             Expectation::Invalid | Expectation::Acceptable => {
-                assert_eq!(result, Err(Error::InvalidKey), "tcId {}", test.tc_id);
+                assert_eq!(result, Err(InvalidKey), "tcId {}", test.tc_id);
                 refused.add();
             }
         }

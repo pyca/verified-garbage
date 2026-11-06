@@ -95,7 +95,7 @@ macro_rules! ml_dsa {
     ) => {
         use $crate::zeroize::zeroize;
         use $crate::mldsa_common::Backend;
-        use $crate::error::MlDsaError;
+        use $crate::error::{InvalidSignature, MlDsaError};
 
         /// Select from the generated requirements of every accelerated caller.
         fn backend() -> Backend {
@@ -179,12 +179,12 @@ macro_rules! ml_dsa {
 
             /// `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3):
             /// whether `sig` is a valid signature of the message `msg` with
-            /// the context string `ctx`. Fails with
-            /// [`MlDsaError::InvalidSignature`] if it is not (or, with
-            /// probability about 2⁻²⁵⁶ or less, if a loop reaches its bound),
-            /// and [`MlDsaError::ContextTooLong`] if `ctx` is longer than 255
-            /// bytes.
-            pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), MlDsaError> {
+            /// the context string `ctx`. Fails with [`InvalidSignature`] if
+            /// it is not (or, with probability about 2⁻²⁵⁶ or less, if a loop
+            /// reaches its bound), or if `ctx` is longer than 255 bytes, for
+            /// which nothing is a valid signature (Algorithm 3 returns an
+            /// error).
+            pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
                 let (m, m_len, c, c_len) = (msg.as_ptr(), msg.len(), ctx.as_ptr(), ctx.len());
@@ -207,11 +207,8 @@ macro_rules! ml_dsa {
                         Backend::Avx512 => $verify_message_cached_avx512(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                     }
                 };
-                match r {
-                    1 => Ok(()),
-                    2 => Err(MlDsaError::ContextTooLong),
-                    _ => Err(MlDsaError::InvalidSignature),
-                }
+                // 2 is a context longer than 255 bytes.
+                if r == 1 { Ok(()) } else { Err(InvalidSignature) }
             }
 
             /// Verify a signature of the 64-byte message representative `mu`
@@ -220,8 +217,8 @@ macro_rules! ml_dsa {
             /// len(ctx) || ctx || msg, 64)`, where `tr = SHAKE256(pk, 64)`
             /// and `len(ctx)` is one byte (at most 255). This method does
             /// not hash the message or apply context formatting.
-            /// Returns [`MlDsaError::InvalidSignature`] if verification fails.
-            pub fn verify_mu(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), MlDsaError> {
+            /// Returns [`InvalidSignature`] if verification fails.
+            pub fn verify_mu(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
                 // SAFETY: `self.bytes`, `mu`, `sig` and `scratch` are valid
@@ -241,7 +238,7 @@ macro_rules! ml_dsa {
                         Backend::Avx512 => $verify_avx512(&self.bytes, mu, sig, scratch.as_mut_ptr()),
                     }
                 };
-                if r == 1 { Ok(()) } else { Err(MlDsaError::InvalidSignature) }
+                if r == 1 { Ok(()) } else { Err(InvalidSignature) }
             }
         }
 
@@ -458,7 +455,7 @@ pub(crate) use ml_dsa;
 
 #[cfg(test)]
 mod tests {
-    use crate::error::MlDsaError;
+    use crate::error::{InvalidSignature, MlDsaError};
     use crate::mldsa44::SigningKey44;
 
     #[cfg(target_arch = "x86_64")]
@@ -504,9 +501,6 @@ mod tests {
         let vk = key.verifying_key();
         assert_eq!(vk.verify(b"msg", &[0; 255], &sig), Ok(()));
         assert_eq!(key.sign(b"msg", &[0; 256]), Err(MlDsaError::ContextTooLong));
-        assert_eq!(
-            vk.verify(b"msg", &[0; 256], &sig),
-            Err(MlDsaError::ContextTooLong)
-        );
+        assert_eq!(vk.verify(b"msg", &[0; 256], &sig), Err(InvalidSignature));
     }
 }

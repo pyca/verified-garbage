@@ -12,7 +12,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{Error, P384, PrivateKey, PublicKey};
+use verified_garbage::ec::{P384, PrivateKey, PublicKey};
+use verified_garbage::error::InvalidKey;
 
 use verified_garbage_test_vectors::unhex;
 
@@ -73,22 +74,15 @@ fn ecdh_p384_invalid() {
     bad.push(big_y);
     bad.push([0; 97]);
     for p in &bad {
-        assert_eq!(
-            key.exchange(&PublicKey::from_bytes(p)),
-            Err(Error::InvalidKey)
-        );
+        assert_eq!(key.exchange(&PublicKey::from_bytes(p)), Err(InvalidKey));
     }
     let n = unhex(
         "ffffffffffffffffffffffffffffffffffffffffffffffffc7634d81f4372ddf581a0db248b0a77aecec196accc52973",
     );
     for d in [[0; 48], n.try_into().unwrap(), [0xff; 48]] {
         let key = PrivateKey::<P384>::from_bytes(&d);
-        assert_eq!(key.public_key(), Err(Error::InvalidKey));
-        assert_eq!(
-            key.exchange(&PublicKey::from_bytes(&peer)),
-            Err(Error::InvalidKey)
-        );
+        assert_eq!(key.public_key(), Err(InvalidKey));
+        assert_eq!(key.exchange(&PublicKey::from_bytes(&peer)), Err(InvalidKey));
     }
     assert_eq!(format!("{key:?}"), "PrivateKey { .. }");
-    assert_eq!(Error::InvalidKey.to_string(), "invalid elliptic-curve key");
 }

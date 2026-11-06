@@ -97,7 +97,9 @@ fn check_key(name: &str, k: &RsaAnyPrivateKey) -> bool {
     let digest = [0x5a; 32];
     let expect = key.sign_pkcs1v15(&digest, Hash::Sha256).unwrap();
     assert!(
-        public.verify_pkcs1v15(&expect, &digest, Hash::Sha256),
+        public
+            .verify_pkcs1v15(&expect, &digest, Hash::Sha256)
+            .is_ok(),
         "{name}"
     );
     let values = key.components().map(BigUint::as_be_bytes)[..3].concat();
