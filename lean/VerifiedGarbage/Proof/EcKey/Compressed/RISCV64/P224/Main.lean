@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.P224.SqrtTable
 import VerifiedGarbage.Proof.Weierstrass.RootPowers
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.PublicKey
 import VerifiedGarbage.Proof.EcKey.Compressed.Parity
-import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.CheckVerified
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.CheckLit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset

@@ -13,8 +13,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 /-!
 # ECDH on x86-64: `[d]P` by 5-bit windows with an affine table
 
-`Cfg.mulQJA`: `mulQJ` (`WinJac.lean`) with the window method's table made
-affine (`JacWinCfg.windowA`, `winJacA_ok`). Its inversion leaves `R.z^(p-2)`
+`Cfg.mulQJA`: the Jacobian window method on `WinJac.lean`'s slots, with its table
+made affine (`JacWinCfg.windowA`, `winJacA_ok`). Its inversion leaves `R.z^(p-2)`
 in the selected entry's `X` (`E.x`, a slot of the grid). Written out
 (`Cfg.invJA`, `invSpecJA`), it writes the temporary area and the working area
 of `invWin`, over the table of the bits of `n - 2`, below the window's table
@@ -22,7 +22,7 @@ of bits. A call of `vg_<curve>_inv_mod_p` (`Cfg.invJACall`, `invSpecJACall`,
 for six words) writes `ACC`, `PT` and its working area, which covers part of
 the window's table of bits: the call keeps those bytes and `PT` in the table
 of the bits of `n - 2` and puts them back. Either way, `mulQJA` writes what
-`mulQJ` and the power write and that table (`mulQJAW`).
+the window method and the power may (`mulQJW`) and that table (`mulQJAW`).
 -/
 
 @[expose] public section
@@ -335,7 +335,7 @@ theorem invSpecJAP (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) {base : Addr} :
   · exact invSpecJA hc h46
 
 /-- What the window method with an affine table writes, inversion included,
-within what `mulQJ`, its inversion and the power may write. -/
+within what the window method, its inversion and the power may write. -/
 theorem invJAP_w (h46 : c.n = 4 ∨ c.n = 6) :
     ∀ w ∈ jwW (jwQ c) ++ invJAW c, ∃ w' ∈ winXJ c ++ slW c (otherJ ++ gridJ ++ [TMP]) ++ pwW c,
       w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by
@@ -365,8 +365,8 @@ theorem invJAP_w (h46 : c.n = 4 ∨ c.n = 6) :
 
 /-! ## `[d]P` and `Z^(p-2)` -/
 
-/-- What `mulQJA` and the power may write: what `mulQJ` and the power may, and
-the inversion's working area (`winXJ`). -/
+/-- What `mulQJA` and the power may write: what the window method and the power
+may (`mulQJW`), and the inversion's working area (`winXJ`). -/
 abbrev mulQJAW (c : Cfg) : List (Nat × Nat) := winXJ c ++ slW c mulJI ++ pwW c
 
 theorem mulQJA_w (hc : CfgOk c) : MulW c (mulQJAW c) where
@@ -380,7 +380,7 @@ theorem mulQJA_w (hc : CfgOk c) : MulW c (mulQJAW c) where
     · exact Or.inr h
 
 /-- The Jacobian window method with an affine table computes `[d]P` for
-`d < n` (`MulOk`), as `mulQJ_ok`. -/
+`d < n` (`MulOk`). -/
 theorem mulQJA_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO : PrimeOrder c.C)
     {dbl : Pt → Prog isa} (hD : DblOk c.MP' c.rcbSlots c.C dbl) (hn17 : 17 ≤ c.C.n % 32)
     (hn64 : 64 ≤ c.C.n) : MulOk c (Impl.Ecdh.X86_64.Cfg.mulQJA c dbl) (mulQJAW c) := by
