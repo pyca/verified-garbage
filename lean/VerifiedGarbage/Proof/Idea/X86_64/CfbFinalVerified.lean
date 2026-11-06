@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Idea.ModeBytes
 import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 
 /-!
@@ -170,5 +171,36 @@ theorem blocksOf_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p :
 
 theorem cipher_length (k : Spec.Idea.Schedule) (b : List Byte) : (Spec.Idea.cipher k b).length = 8 := by
   simp [Spec.Idea.cipher]
+
+theorem cfbEncrypt_depth : cfbEncrypt.x86_64Depth = 0 := by lit_decide
+
+theorem cfbDecrypt_depth : cfbDecrypt.x86_64Depth = 0 := by lit_decide
+
+/-- A quadword that reads zero holds eight zero bytes. -/
+theorem bytes_zero {m : Mem} {a : Addr} (h : m.readW a 64 = 0) : bytesAt m a 8 = List.replicate 8 0 := by
+  apply List.ext_getElem (by simp [bytesAt])
+  intro i h1 _
+  have hi : i < 8 := by simpa [bytesAt] using h1
+  simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
+  rw [← Mem.extractLsb'_read m a hi]
+  have : (m.read a 8) = (m.readW a 64) := by simp [Mem.readW]
+  rw [this, h]
+  simp
+
+/-- CFB encryption of a zero block: the cipher of the IV. -/
+theorem encrypt_zero (k : Spec.Idea.Schedule) (c : List Byte) :
+    Spec.Cfb.encrypt (Spec.Idea.cipher k) c [List.replicate 8 0] = [Spec.Idea.cipher k c] := by
+  simp only [Spec.Cfb.encrypt, List.cons.injEq, and_true]
+  apply List.ext_getElem (by simp [Spec.Cbc.xor, cipher_length])
+  intro i h1 h2
+  simp only [Spec.Cbc.xor, List.getElem_zipWith, List.getElem_replicate]
+  exact BitVec.zero_xor
+
+/-- The final functions' contract on x86-64: `finalPre`, and the data and
+the IV as `Spec.Cfb.EncryptFinal` says. -/
+def cfbEncFinalX86_64 : Contract isa where
+  pre := finalPre
+  post s s' := Spec.Cfb.EncryptFinal (ciphOf s) 8 s.mem s'.mem (s.gpr .rsi) (s.gpr .rdx) (s.gpr .rcx).toNat
+  pub := fbPub
 
 end VG.Proof.Idea.X86_64

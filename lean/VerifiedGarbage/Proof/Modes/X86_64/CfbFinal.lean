@@ -490,4 +490,14 @@ theorem FinalDone.frame {a : FinalArgs} (ha : FinalOk a) {s₀ : State} {D : Add
           rest_sub a D len⟩
       · exact ⟨frameRegion s₀, List.mem_cons_self, block_sub s₀ (by have := ha.blk_eq; omega)⟩
 
+/-- The slots lie within the frame. -/
+theorem slots_sub_frame (s₀ : State) : Region.Sub (slotsRegion s₀) (frameRegion s₀) := by
+  rw [show slotsRegion s₀ = ⟨frameSp s₀ + BitVec.ofNat 64 32, 48⟩ by
+    rw [slotsRegion, frameSp, sub_add_ofNat _ (by decide)], frameRegion]
+  exact VG.Offset.sub_base _ (by omega)
+
+/-- Nothing lies in an empty region. -/
+theorem disjoint_empty (r : Region) (b : Addr) : r.Disjoint ⟨b, 0⟩ := fun _ _ h => by
+  simp only [Region.Contains] at h; omega
+
 end VG.Proof.Modes.X86_64
