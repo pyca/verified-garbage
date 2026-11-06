@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Impl.StackScratch.X86_64
 
 /-!
 # CFB of a message's last piece on x86-64, for any block cipher
@@ -92,9 +92,8 @@ def rest : List Instr :=
   [.mov .rax (.reg (saved a.lenIx)), .shift .shr .rax a.lg, .shift .shl .rax a.lg,
     .alu .add (saved a.dataIx) (.reg .rax), .alu .sub (saved a.lenIx) (.reg .rax)]
 
-/-- Zeroes the working block, through `rax`. -/
-def zeroBlock : List Instr :=
-  .mov32 .rax (.imm 0) :: (List.range (a.blk / 8)).map fun k => .store (blockOp (8 + 8 * k)) .rax
+/-- Zeroes the working block, at `rsp + 8`, through `r11`. -/
+def zeroBlock : List Instr := Impl.StackScratch.X86_64.wipe (a.blk / 8)
 
 /-- The arguments for one block at `rsp + 8`: those of the call, but the
 data's address, `rsp + 8`, and the number of blocks, 1. -/

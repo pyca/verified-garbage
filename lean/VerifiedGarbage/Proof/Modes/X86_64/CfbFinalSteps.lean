@@ -4,6 +4,8 @@ public import VerifiedGarbage.Impl.Modes.X86_64.CfbFinal
 public import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # CFB of a message's last piece on x86-64: straight-line steps
@@ -148,5 +150,35 @@ theorem rest_ok (s : State) {Rd Rl : Reg} {lg : Nat} (h1 : 1 ≤ lg) (h2 : lg �
       exact this
     · intro h; rw [h]; rfl
   · rw [o₅ _ h3, o₄ _ h2, o₃ _ h1, o₂ _ h1, o₁ _ h1]
+
+/-- `wipe words` from `u`, with the `words` quadwords at `rsp + 8` in the
+writable region `R`: zero, and nothing else changed. -/
+theorem wipe_zero (R : Region) (u : State) (hR : R ∈ u.wr) : ∀ words, 8 + 8 * words ≤ 2 ^ 64 →
+    (∀ k < words, R.Contains (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * k)) 8) →
+    ∃ s', runBlock isa (Impl.StackScratch.X86_64.wipe words) u = some s' ∧ Frame [R] u.mem s'.mem ∧
+      (∀ k < words, s'.mem.readW (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * k)) 64 = 0) ∧
+      (∀ x, x ≠ .r11 → s'.gpr x = u.gpr x) ∧ s'.gpr .r11 = 0 ∧ s'.rd = u.rd ∧ s'.wr = u.wr
+  | 0, _, _ => ⟨u.setReg32 .r11 0, by
+      simp only [Impl.StackScratch.X86_64.wipe, Impl.StackScratch.X86_64.wipeStores, List.range_zero,
+        List.map_nil, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some],
+      Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _),
+      fun x hx => by simp [State.setReg32, State.setReg, hx], by simp [State.setReg32, State.setReg], rfl, rfl⟩
+  | w + 1, hw, hc => by
+    obtain ⟨s₁, e₁, f₁, z₁, g₁, r₁, rd₁, wr₁⟩ := wipe_zero R u hR w (by omega) fun k hk => hc k (by omega)
+    have hsp : s₁.gpr .rsp = u.gpr .rsp := g₁ _ (by decide)
+    have hin : InRegions s₁.wr (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * w)) 8 := ⟨R, by rw [wr₁]; exact hR, hc w (by omega)⟩
+    refine ⟨{ s₁ with mem := s₁.mem.writeW (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * w)) (s₁.gpr .r11) }, ?_,
+      f₁.writeW (List.mem_singleton_self _) _ (hc w (by omega)), fun k hk => ?_, g₁, r₁, rd₁, wr₁⟩
+    · have h : Impl.StackScratch.X86_64.wipe (w + 1) = Impl.StackScratch.X86_64.wipe w ++
+          ([.store { base := .rsp, disp := ((8 + 8 * w : Nat) : Int) } .r11] : List Instr) := by
+        simp only [Impl.StackScratch.X86_64.wipe, Impl.StackScratch.X86_64.wipeStores, List.range_succ,
+          List.map_append, List.map_cons, List.map_nil, List.cons_append]
+      rw [h, runBlock_app, e₁, Option.bind_some, runBlock_cons]
+      simp only [exec, State.store64, State.ea, BitVec.ofInt_natCast, hsp, hin, ↓reduceIte, runStep_some,
+        runBlock_nil]
+    · show (s₁.mem.writeW _ (s₁.gpr .r11)).readW _ 64 = 0
+      by_cases hkw : k = w
+      · subst hkw; rw [Mem.readW_writeW_self64, r₁]
+      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide), z₁ k (by omega)]
 
 end VG.Proof.Modes.X86_64
