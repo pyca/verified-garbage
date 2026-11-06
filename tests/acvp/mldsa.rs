@@ -189,6 +189,32 @@ macro_rules! mldsa_tests {
             assert!(format!("{key:?}").starts_with(stringify!($SigningKey)));
             assert!(format!("{pk:?}").starts_with(stringify!($VerifyingKey)));
         }
+
+        /// A prepared key signs and verifies as the key it was prepared
+        /// from, and refuses what it refuses.
+        #[test]
+        fn prepared() {
+            let key = $SigningKey::from_seed(&[7; 32]).unwrap();
+            let sig = key.sign_deterministic(b"message", b"context").unwrap();
+            let pk = key.verifying_key().clone().prepare();
+            let key = key.prepare();
+            assert_eq!(key.signing_key().seed(), &[7; 32]);
+            assert_eq!(pk.verifying_key(), key.signing_key().verifying_key());
+            assert_eq!(key.sign_deterministic(b"message", b"context"), Ok(sig));
+            assert_eq!(pk.verify(b"message", b"context", &sig), Ok(()));
+            assert_eq!(pk.verify(b"message", b"other", &sig), Err(InvalidSignature));
+            let hedged = key.sign(b"message", b"").unwrap();
+            assert_eq!(pk.verify(b"message", b"", &hedged), Ok(()));
+            let long = [0u8; 256];
+            assert_eq!(key.sign(b"message", &long), Err(MlDsaError::ContextTooLong));
+            assert_eq!(
+                key.sign_deterministic(b"message", &long),
+                Err(MlDsaError::ContextTooLong)
+            );
+            assert_eq!(pk.verify(b"message", &long, &sig), Err(InvalidSignature));
+            assert!(format!("{key:?}").starts_with(concat!("Prepared", stringify!($SigningKey))));
+            assert!(format!("{pk:?}").starts_with(concat!("Prepared", stringify!($VerifyingKey))));
+        }
     };
 }
 
