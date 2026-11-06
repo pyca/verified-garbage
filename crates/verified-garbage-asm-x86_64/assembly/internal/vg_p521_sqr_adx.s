@@ -195,37 +195,44 @@ vg_p521_sqr_adx:
 	adox r14, rcx
 	adc r14, 0
 	mov QWORD PTR [rdi+4088], r15
+	mov rax, QWORD PTR [rdi+4024]
 	mov rcx, QWORD PTR [rdi+4024]
 	shl rcx, 18
 	or r14, rcx
 	mov r15, QWORD PTR [rdi+4024]
 	shr r15, 46
 	and r15d, 511
-	mov rax, QWORD PTR [rdi+4088]
-	mov rcx, QWORD PTR [rdi+4080]
-	shld rax, rcx, 9
-	mov QWORD PTR [rdi+4080], rax
-	mov rax, QWORD PTR [rdi+4072]
-	shld rcx, rax, 9
-	mov QWORD PTR [rdi+4072], rcx
-	mov rcx, QWORD PTR [rdi+4064]
-	shld rax, rcx, 9
-	mov QWORD PTR [rdi+4064], rax
-	mov rax, QWORD PTR [rdi+4056]
-	shld rcx, rax, 9
-	mov QWORD PTR [rdi+4056], rcx
-	mov rcx, QWORD PTR [rdi+4048]
-	shld rax, rcx, 9
-	mov QWORD PTR [rdi+4048], rax
-	mov rax, QWORD PTR [rdi+4040]
-	shld rcx, rax, 9
-	mov QWORD PTR [rdi+4040], rcx
 	mov rcx, QWORD PTR [rdi+4032]
-	shld rax, rcx, 9
-	mov QWORD PTR [rdi+4032], rax
-	mov rax, QWORD PTR [rdi+4024]
 	shld rcx, rax, 9
 	mov QWORD PTR [rdi+4024], rcx
+	mov rax, QWORD PTR [rdi+4032]
+	mov rcx, QWORD PTR [rdi+4040]
+	shld rcx, rax, 9
+	mov QWORD PTR [rdi+4032], rcx
+	mov rax, QWORD PTR [rdi+4040]
+	mov rcx, QWORD PTR [rdi+4048]
+	shld rcx, rax, 9
+	mov QWORD PTR [rdi+4040], rcx
+	mov rax, QWORD PTR [rdi+4048]
+	mov rcx, QWORD PTR [rdi+4056]
+	shld rcx, rax, 9
+	mov QWORD PTR [rdi+4048], rcx
+	mov rax, QWORD PTR [rdi+4056]
+	mov rcx, QWORD PTR [rdi+4064]
+	shld rcx, rax, 9
+	mov QWORD PTR [rdi+4056], rcx
+	mov rax, QWORD PTR [rdi+4064]
+	mov rcx, QWORD PTR [rdi+4072]
+	shld rcx, rax, 9
+	mov QWORD PTR [rdi+4064], rcx
+	mov rax, QWORD PTR [rdi+4072]
+	mov rcx, QWORD PTR [rdi+4080]
+	shld rcx, rax, 9
+	mov QWORD PTR [rdi+4072], rcx
+	mov rax, QWORD PTR [rdi+4080]
+	mov rcx, QWORD PTR [rdi+4088]
+	shld rcx, rax, 9
+	mov QWORD PTR [rdi+4080], rcx
 	mov rax, QWORD PTR [rdi+4088]
 	shr rax, 55
 	xor edx, edx
