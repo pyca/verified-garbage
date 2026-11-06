@@ -29,8 +29,8 @@ that the stream `rand ++ t` continues, for any `t`, agrees with it
 * if it is exhausted, either the loop on the stream fails with
   `tooManyIterations` after the `used` octets, or the search ran into the
   entropy budget: the loop is the loop with some rejections left on the stream
-  after the `used` octets, whose next candidate does not finish within
-  `primeEntropy` octets. That is the one way the search fails where
+  after the `used` octets, which has at least `primeEntropy` octets more, and
+  whose next candidate does not finish within them. That is the one way the search fails where
   `generatePrime` may not.
 
 `used` is never more than the tape (`primeSearch_used_le`). Chained over the
@@ -64,6 +64,7 @@ def SearchAgrees (pLen : Nat) (eB pB : List Byte) (remaining : Nat) (s : Rand)
       searchFrom pLen eB pB remaining s = some (.error .tooManyIterations, s.drop r.used) ∨
       ∃ rem, 0 < rem ∧
         searchFrom pLen eB pB remaining s = searchFrom pLen eB pB rem (s.drop r.used) ∧
+        primeEntropy pLen ≤ (s.drop r.used).length ∧
         candidateOp pLen eB pB ((s.drop r.used).take (primeEntropy pLen)) = none
 
 /-! ## Reading from the front -/
@@ -181,7 +182,7 @@ private theorem primalityTest_reads (w : Nat) : Reads (primalityTest w) := by
 
 /-- `candidateStep` reads from the front, and reads at least its candidate's
 `bits / 8` octets. -/
-private theorem candidateStep_reads {bits e : Nat} {p : Option Nat} {r t rest : Rand}
+theorem candidateStep_reads {bits e : Nat} {p : Option Nat} {r t rest : Rand}
     {b : Candidate} (h : candidateStep bits e p r = some (b, rest)) :
     candidateStep bits e p (r ++ t) = some (b, rest ++ t) ∧ rest <:+ r ∧
       rest.length + bits / 8 ≤ r.length := by
@@ -303,7 +304,7 @@ theorem primeSearch_agrees {pLen : Nat} {eB pB : List Byte} (hp : primeLenValid 
       rename_i hE
       unfold SearchAgrees
       simp only [List.drop_zero]
-      refine Or.inr ⟨remaining, h0, rfl, ?_⟩
+      refine Or.inr ⟨remaining, h0, rfl, by simp only [List.length_append]; omega, ?_⟩
       rw [List.take_append_of_le_length hE]
       match hc' : candidateOp pLen eB pB (rand.take (primeEntropy pLen)) with
       | none => rfl
