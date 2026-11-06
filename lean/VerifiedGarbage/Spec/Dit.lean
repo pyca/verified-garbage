@@ -24,6 +24,12 @@ the functions take no argument, write no memory, keep what the calling
 convention preserves, and take a time that depends on nothing secret (they
 have no secret input). What each does to the mode is proven of its code, as
 a theorem of its proofs (`Proof/Dit/`), against the same model.
+
+`vg_dit_enter`'s contract also makes the mode public (`Abi.withMode`): its time
+may depend on whether the mode was on, so that it need not turn on a mode
+that already is (writing PSTATE.DIT takes tens of nanoseconds on Apple's
+cores). The Rust code turns the mode on for an operation whatever data the
+operation is given, so whether it is on depends on nothing secret.
 -/
 
 @[expose] public section
@@ -35,9 +41,10 @@ def enterSig : Sig where
   params := []
   ret := some .u32
 
-/-- `vg_dit_enter`: no argument, no memory written, a `u32` returned. -/
+/-- `vg_dit_enter`: no argument, no memory written, a `u32` returned, and
+the mode public. -/
 def enterContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  enterSig.contract A (post := fun _m _m' _r => True) (stack := stack)
+  enterSig.contract (A.withMode true) (post := fun _m _m' _r => True) (stack := stack)
 
 /-- `vg_dit_enter` on every target that has the mode. -/
 def enterApi : Api where
@@ -45,8 +52,10 @@ def enterApi : Api where
   name := "vg_dit_enter"
   sig := enterSig
   contracts := some fun A stack => enterContract A stack
+  pubMode := true
   summary := "Turns data independent timing on (on AArch64, PSTATE.DIT), and returns 1 if it \
-    was already on and 0 if it was off. Writes no memory.\n\n\
+    was already on and 0 if it was off. Writes no memory. Its time may depend on whether the \
+    mode was on, which is public.\n\n\
     Contract: `VG.Spec.Dit.enterContract`, and its effect on the mode is \
     `VG.Proof.Dit.AArch64.enter_dit` (on AArch64)."
   safety := []
