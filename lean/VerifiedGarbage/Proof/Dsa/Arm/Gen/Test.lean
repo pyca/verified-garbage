@@ -44,11 +44,11 @@ abbrev St (G : GP) (c : Cfg) (X : State → Prop) (σ s : State) : Prop := SS G 
 
 theorem St.ss {c : Cfg} {X : State → Prop} : ∀ σ s, St G c X σ s → SS G σ c s := fun _ _ h => h.1
 
-theorem varOk_of {o : Nat} (h : 40 ≤ o ∧ o + 4 ≤ F ∧ o % 4 = 0 ∧ o ∉ [fOut, fOutLen, fScratch, fWit, fWitLen]) :
-    VarOk G o := by
+theorem varOk_of {o : Nat}
+    (h : 40 ≤ o ∧ o + 4 ≤ F ∧ o % 4 = 0 ∧ o ∉ [fOut, fUsedP, fStP, fScratch, fWit, fWitLen]) : VarOk G o := by
   refine ⟨h.1, h.2.1, h.2.2.1, fun p hp e => h.2.2.2 ?_⟩
   simp only [fixedWords, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl <;> simp [e]
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [e]
 
 theorem varOk_fRes : VarOk G fRes := varOk_of (by decide)
 theorem varOk_fUsed : VarOk G fUsed := varOk_of (by decide)
@@ -90,7 +90,7 @@ theorem targs1_vp {L bits : Nat} (hL : L = G.pLen) (hb : bits < 2 ^ 16) :
     rw [Nat.mod_eq_of_lt hb, Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- A load of a frame word whose value is known, keeping a stage. -/
-theorem SS.ldK {σ s : State} (h : SS G σ c s) {o : Nat} (ho : o + 4 ≤ F + 32) (h4 : o % 4 = 0) {v : BitVec 32}
+theorem SS.ldK {σ s : State} (h : SS G σ c s) {o : Nat} (ho : o + 4 ≤ F + 16) (h4 : o % 4 = 0) {v : BitVec 32}
     (hv : fw s.mem G o = v) {t : Reg} (h7 : t ≠ .r7) (h8 : t ≠ .r8) (h9 : t ≠ .r9) {rest : List Instr}
     {Q : State → Prop} (k : ∀ s', SS G σ c s' → Upd s s' t v → WP isa (.block rest) s' Q) :
     WP isa (.block (.ldrSp t o :: rest)) s Q :=

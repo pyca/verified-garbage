@@ -6,12 +6,14 @@ import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
 
 /-! # DSA parameter generation on ARMv7: the frame's words in a state of the search
 
 `SS.stF`: a store into a variable word of the frame keeps the claims, arrays
 and header words. `SS.ldF`: a load of a word whose value the stage keeps.
-`cmpF_vp`, `st_vp`, `stImm_vp`: those as pieces.
+`cmpF_vp`, `st_vp`, `stImm_vp`: those as pieces. `less_vp`: an unsigned
+comparison of `r0` with `r1`; `wp_cst`: a 32-bit constant.
 -/
 
 @[expose] public section
@@ -59,7 +61,7 @@ theorem SS.stF (h : SS G σ c s) {o : Nat} (hv : VarOk G o) {r : Reg} (hr : r �
 
 /-- A load of a frame word whose value both runs know. -/
 theorem ld_vp {P Q : State → State → Prop} {c : State → Cfg} (hF : ∀ σ s, P σ s → SS G σ (c σ) s)
-    {r : Reg} {o : Nat} (ho : o + 4 ≤ F + 32) (h4 : o % 4 = 0) {x : BitVec 32}
+    {r : Reg} {o : Nat} (ho : o + 4 ≤ F + 16) (h4 : o % 4 = 0) {x : BitVec 32}
     (hx : ∀ σ s, P σ s → fw s.mem G o = x)
     (k : ∀ σ s t, P σ s → Upd s t r x → Q σ t) : VP P (.block [ld r o]) Q :=
   VP.ld (SS.spOk hF) fun σ s hs => (hF σ s hs).gi.ldV ho h4 (hx σ s hs) fun t u => WP.block_nil (k σ s t hs u)
@@ -72,7 +74,7 @@ theorem beq_sub_zero (x y : BitVec 32) : (x - y == 0) = (x == y) := by
 
 /-- `cmpF o v`: Z iff the frame word `o`, which both runs know, is `v`. -/
 theorem cmpF_vp {P Q : State → State → Prop} {c : State → Cfg} (hF : ∀ σ s, P σ s → SS G σ (c σ) s)
-    {o v : Nat} (ho : o + 4 ≤ F + 32) (h4 : o % 4 = 0) (hv : v < 256) {x : BitVec 32}
+    {o v : Nat} (ho : o + 4 ≤ F + 16) (h4 : o % 4 = 0) (hv : v < 256) {x : BitVec 32}
     (hx : ∀ σ s, P σ s → fw s.mem G o = x)
     (k : ∀ σ s t, P σ s → Rest [.r0] s t → t.mem = s.mem → isa.eval .eq t = some (x == BitVec.ofNat 32 v) →
       Q σ t) : VP P (.block (cmpF o v)) Q := by
@@ -111,5 +113,84 @@ theorem stImm_vp {P Q : State → State → Prop} {c : State → Cfg} (hF : ∀ 
   exact k σ s₀ t hs₀ h ((u.rest (by simp)).trans (R.mono (by simp)))
 
 end
+
+/-! ## Unsigned comparisons and constants -/
+
+theorem less_ok (s : State) :
+    WP isa (.block less) s fun t =>
+      (t.z = decide ((s.gpr .r0).toNat < (s.gpr .r1).toNat) ∧ t.mem = s.mem) ∧ Rest [.r12] s t := by
+  refine VG.Proof.Ffdh.Arm.withRest_all [.r12] ?_ (by rfl) (by rfl)
+  unfold less
+  by_cases ge : (s.gpr .r1).toNat ≤ (s.gpr .r0).toNat
+  · have lt : ¬ (s.gpr .r0).toNat < (s.gpr .r1).toNat := by omega
+    ffrun [ge, lt, show (0 : BitVec 32) = 0#32 from rfl, BitVec.zero_add]
+  · have lt : (s.gpr .r0).toNat < (s.gpr .r1).toNat := by omega
+    ffrun [ge, lt, show (0 : BitVec 32) = 0#32 from rfl, BitVec.zero_add]
+
+/-- `less` as a piece: `Z` iff `r0 < r1`, which both runs know. -/
+theorem less_vp {P Q : State → State → Prop} {x y : BitVec 32} (hx : ∀ σ s, P σ s → s.gpr .r0 = x)
+    (hy : ∀ σ s, P σ s → s.gpr .r1 = y)
+    (k : ∀ σ s t, P σ s → Rest [.r12] s t → t.mem = s.mem → isa.eval .eq t = some (decide (x.toNat < y.toNat)) →
+      Q σ t) : VP P (.block less) Q := by
+  refine VP.taint [.r0, .r1] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0, .r1]) (.block less), rfl⟩
+    (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => ?_) fun σ s hs => WP.mono (less_ok s) fun t ⟨⟨z, m⟩, R⟩ =>
+      k σ s t hs R m (by rw [eval_eq, z, hx σ s hs, hy σ s hs])
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · rw [hx _ _ h₁, hx _ _ h₂]
+  · rw [hy _ _ h₁, hy _ _ h₂]
+
+theorem setWidth_ofNat16 {n : Nat} (h : n < 2 ^ 16) : (BitVec.ofNat 16 n).setWidth 32 = BitVec.ofNat 32 n := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
+
+section
+variable {G : GP}
+
+/-- `ld r0 o; movw r1 v; less`: `Z` iff the frame word `o`, which both runs
+know, is below `v`. -/
+theorem ltF_vp {P Q : State → State → Prop} {c : State → Cfg} (hF : ∀ σ s, P σ s → SS G σ (c σ) s)
+    {o v : Nat} (ho : o + 4 ≤ F + 16) (h4 : o % 4 = 0) (hv : v < 2 ^ 16) {x : BitVec 32}
+    (hx : ∀ σ s, P σ s → fw s.mem G o = x)
+    (k : ∀ σ s t, P σ s → Rest [.r0, .r1, .r12] s t → t.mem = s.mem →
+      isa.eval .eq t = some (decide (x.toNat < v)) → Q σ t) :
+    VP P (.seq (.block [ld .r0 o]) (.block (([.movw .r1 (BitVec.ofNat 16 v)] : List Instr) ++ less))) Q := by
+  refine VP.seq (G := fun σ t => ∃ s, P σ s ∧ Upd s t .r0 x) (ld_vp hF ho h4 hx fun σ s t hs u => ⟨s, hs, u⟩) ?_
+  refine VP.block_append (G := fun σ t => ∃ s, P σ s ∧ Rest [.r0, .r1] s t ∧ t.mem = s.mem ∧ t.gpr .r0 = x ∧
+      t.gpr .r1 = BitVec.ofNat 32 v)
+    (VP.taint [] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [])
+      (.block [.movw .r1 (BitVec.ofNat 16 0)]), rfl⟩ (fun _ _ _ _ _ _ r hr => absurd hr (by simp))
+      fun σ s ⟨s₀, hs₀, u⟩ => VG.Proof.X25519.Arm.wp_movw fun t u' => WP.block_nil ⟨s₀, hs₀,
+        (u.rest (by simp)).trans (u'.rest (by simp)), by rw [u'.mem, u.mem], by rw [u'.other _ (by decide), u.gpr],
+        by rw [u'.gpr, setWidth_ofNat16 hv]⟩) ?_
+  refine less_vp (x := x) (y := BitVec.ofNat 32 v) (fun σ s ⟨_, _, _, _, h0, _⟩ => h0)
+    (fun σ s ⟨_, _, _, _, _, h1⟩ => h1) fun σ s t ⟨s₀, hs₀, R, m, _, _⟩ R' m' e => k σ s₀ t hs₀
+      ((R.mono (by simp)).trans (R'.mono (by simp))) (m'.trans m) ?_
+  rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+
+end
+
+/-- `movw` and `movt` of the halves of `v`. -/
+theorem cst_val {v : Nat} (hv : v < 2 ^ 32) :
+    (BitVec.ofNat 16 (v / 2 ^ 16) ++ ((BitVec.ofNat 16 (v % 2 ^ 16)).setWidth 32).extractLsb' 0 16 : BitVec 32) =
+      BitVec.ofNat 32 v := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_append, BitVec.extractLsb'_toNat, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
+    BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_zero,
+    ← Nat.shiftLeft_add_eq_or_of_lt (by omega), Nat.shiftLeft_eq]
+  omega
+
+/-- `cst d v`: `d` := `v`. -/
+theorem wp_cst {s : State} {is : List Instr} {Q : State → Prop} {d : Reg} {v : Nat} (hv : v < 2 ^ 32)
+    (k : ∀ s', Upd s s' d (BitVec.ofNat 32 v) → WP isa (.block is) s' Q) :
+    WP isa (.block (cst d v ++ is)) s Q := by
+  simp only [cst, List.cons_append, List.nil_append]
+  refine VG.Proof.X25519.Arm.wp_movw fun s₁ u₁ => VG.Proof.X25519.Arm.WP.cons rfl (k _ ?_)
+  have hval : (BitVec.ofNat 16 (v / 2 ^ 16) ++ (s₁.gpr d).extractLsb' 0 16 : BitVec 32) = BitVec.ofNat 32 v := by
+    rw [u₁.gpr]; exact cst_val hv
+  have e := Upd.setReg s₁ d (BitVec.ofNat 16 (v / 2 ^ 16) ++ (s₁.gpr d).extractLsb' 0 16 : BitVec 32)
+  exact ⟨e.gpr.trans hval, fun r hr => (e.other r hr).trans (u₁.other r hr), e.mem.trans u₁.mem,
+    e.rd.trans u₁.rd, e.wr.trans u₁.wr, e.sp.trans u₁.sp⟩
 
 end VG.Proof.Dsa.Arm.Gen

@@ -5,10 +5,11 @@
 //! which [`entropy::serve`] supplies.
 
 #![cfg(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
     target_arch = "x86",
-    target_arch = "aarch64"
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
 use alloc::{vec, vec::Vec};
@@ -182,6 +183,68 @@ pub(super) fn select_backends(
         (H1::Sha2, H256::Scalar) => vg_dsa_parameter_search_sha1_sha2,
         (H1::Sha2, H256::Sha2) => vg_dsa_parameter_search_sha1_sha2_sha256_sha2,
     }
+}
+
+#[cfg(target_arch = "arm")]
+pub(super) type Search = unsafe extern "C" fn(
+    *mut u8,
+    usize,
+    *mut [u64; 1],
+    *const u8,
+    usize,
+    *mut u64,
+    usize,
+    *mut [u64; 4],
+) -> u32;
+
+/// ARMv7: `vg_dsa_parameter_search_umaal` where the operating system runs on
+/// A-profile cores alone, on CPUs with the features its `_FEATURES` constant
+/// names, else the baseline.
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+pub(super) fn select(features: Features) -> Search {
+    use crate::arch::dsa::VG_DSA_PARAMETER_SEARCH_UMAAL_FEATURES;
+    select_backends(features.contains(VG_DSA_PARAMETER_SEARCH_UMAAL_FEATURES))
+}
+
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+pub(super) fn select_backends(umaal: bool) -> Search {
+    use crate::arch::dsa::vg_dsa_parameter_search_umaal;
+    match umaal {
+        false => vg_dsa_parameter_search,
+        true => vg_dsa_parameter_search_umaal,
+    }
+}
+
+#[cfg(all(
+    target_arch = "arm",
+    not(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))
+))]
+pub(super) fn select(_features: Features) -> Search {
+    vg_dsa_parameter_search
 }
 
 /// The search's buffers and state, for one modulus width.

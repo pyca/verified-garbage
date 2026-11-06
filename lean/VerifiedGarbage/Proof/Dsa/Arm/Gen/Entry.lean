@@ -17,10 +17,9 @@ public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # DSA parameter generation on ARMv7: the entry
 
-`entry_vp`: from the frame just allocated, the callee-saved registers, `out`
-and its length, the first seed, all seeds left, the witnesses, `scratch`,
-nothing read and `fStatus` = 0 in the frame (`GI` with `eV`, `eLS`), `r2`
-(`p_len`) kept.
+`entry_ok`: from the frame just allocated, the callee-saved registers, `out`,
+the pointers to `used` and `state`, `rand` and its length, `scratch`, the
+cursor at 0 and `fStatus` = 0 in the frame (`GI` with `eV`, `eLS`).
 -/
 
 @[expose] public section
@@ -67,21 +66,15 @@ theorem wmem_frame (m : Mem) (B : Addr) {R : Region} (hR : ∀ o < 128, o % 4 = 
 /-! ## The entry's frame words -/
 
 /-- The variable frame words the entry writes. -/
-abbrev eLS : List Nat := [fStatus, fUsed, fSeedLeft, fSeed]
+abbrev eLS : List Nat := [fStatus, fC]
 
 /-- Their values. -/
-def eV (G : GP) : Nat → BitVec 32 := fun o =>
-  if o = fSeed then G.seeds else if o = fSeedLeft then BitVec.ofNat 32 G.seedsLen else 0
-
-theorem eV_fStatus (G : GP) : eV G fStatus = 0 := by simp [eV, fStatus, fSeed, fSeedLeft]
-theorem eV_fUsed (G : GP) : eV G fUsed = 0 := by simp [eV, fUsed, fSeed, fSeedLeft]
-theorem eV_fSeedLeft (G : GP) : eV G fSeedLeft = BitVec.ofNat 32 G.seedsLen := by simp [eV, fSeed, fSeedLeft]
-theorem eV_fSeed (G : GP) : eV G fSeed = G.seeds := by simp [eV]
+def eV (_G : GP) : Nat → BitVec 32 := fun _ => 0
 
 /-- The words after the saved registers. -/
 def eWords (σ : State) : List (Nat × BitVec 32) :=
-  [(fStatus, 0), (fUsed, 0), (fScratch, stackArg σ 6), (fWitLen, stackArg σ 5), (fWit, stackArg σ 4),
-    (fSeedLeft, stackArg σ 1), (fSeed, stackArg σ 0), (fOutLen, σ.gpr .r1), (fOut, σ.gpr .r0)]
+  [(fStatus, 0), (fC, 0), (fStP, stackArg σ 3), (fScratch, stackArg σ 1), (fWitLen, stackArg σ 0),
+    (fWit, σ.gpr .r3), (fUsedP, σ.gpr .r2), (fOut, σ.gpr .r0)]
 
 /-- During the entry: the frame allocated, `r12` its base, memory changed in the frame alone. -/
 structure EI (σ : State) (s : State) : Prop where
@@ -116,7 +109,7 @@ theorem EI.of_upd (h : EI σ s) {t : State} {r : Reg} {v : BitVec 32} (u : Upd s
   ⟨u.sp.trans h.sp, u.rd.trans h.rd, u.wr.trans h.wr, (u.other _ (Ne.symm hr)).trans h.r12, u.mem ▸ h.frame⟩
 
 /-- `ldr r, [sp, #arg i]`: the stack argument `i`. -/
-theorem EI.ldArg (h : EI σ s) (hpre : CIn σ) {i : Nat} (hi : i < 8) (r : Reg)
+theorem EI.ldArg (h : EI σ s) (hpre : CIn σ) {i : Nat} (hi : i < 4) (r : Reg)
     (k : ∀ t, Upd s t r (stackArg σ i) → WP isa (.block rest) t Q) :
     WP isa (.block (.ldrSp r (arg i) :: rest)) s Q := by
   have := hpre.spLo; have := hpre.spHi
@@ -124,17 +117,17 @@ theorem EI.ldArg (h : EI σ s) (hpre : CIn σ) {i : Nat} (hi : i < 8) (r : Reg)
     rw [h.sp, show (mkG σ).sp = σ.sp - BitVec.ofNat 32 F from rfl, show arg i = F + 4 * i from rfl,
       BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
   have sub : Region.Sub ⟨State.addr (σ.sp + BitVec.ofNat 32 (4 * i)), 4⟩ (mkG σ).rArgs := by
-    show Region.Sub _ ⟨State.addr (σ.sp + BitVec.ofNat 32 (4 * 0)), 32⟩
+    show Region.Sub _ ⟨State.addr (σ.sp + BitVec.ofNat 32 (4 * 0)), 16⟩
     rw [Nat.mul_zero, BitVec.add_zero, addr_add (by omega_arith)]
     exact Offset.sub_base _ (by omega_arith)
   have con : (mkG σ).rArgs.Contains (State.addr (σ.sp + BitVec.ofNat 32 (4 * i))) 4 := by
-    show Region.Contains ⟨State.addr (σ.sp + BitVec.ofNat 32 (4 * 0)), 32⟩ _ _
+    show Region.Contains ⟨State.addr (σ.sp + BitVec.ofNat 32 (4 * 0)), 16⟩ _ _
     rw [Nat.mul_zero, BitVec.add_zero, addr_add (by omega_arith)]
     exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   refine VG.Proof.Bignum.Arm.wp_loadStack (by simp only [arg, F]; omega_arith) ha
     ⟨(mkG σ).rArgs, List.mem_append_left _ (by
       rw [h.rd, hpre.rd]
-      exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))), con⟩
+      exact List.mem_cons_of_mem _ (List.mem_singleton_self _)), con⟩
     fun t u => k t ?_
   have e : s.mem.readW (State.addr (σ.sp + BitVec.ofNat 32 (4 * i))) 32 = stackArg σ i :=
     h.frame.readW (Region.contains_self _ _) (fun r hr => by
@@ -152,8 +145,7 @@ theorem saved_ne12 : ∀ p ∈ VG.Impl.Dsa.Arm.Generation.saved, p.1 ≠ .r12 :=
 
 /-- The entry, from the frame just allocated. -/
 theorem entry_ok {σ : State} (hpre : CIn σ) :
-    WP isa (.block entry) (allocated F σ) fun t =>
-      GI (mkG σ) σ (eV (mkG σ)) eLS t ∧ t.gpr .r2 = σ.gpr .r2 := by
+    WP isa (.block entry) (allocated F σ) fun t => GI (mkG σ) σ (eV (mkG σ)) eLS t := by
   have spN := hpre.spN; have spLo := hpre.spLo; have spHi := hpre.spHi
   -- The frame's words are in the frame.
   have inF : ∀ o, o + 4 ≤ F → (mkG σ).rFrame.Contains (State.addr (mkG σ).sp + BitVec.ofNat 64 o) 4 :=
@@ -178,78 +170,62 @@ theorem entry_ok {σ : State} (hpre : CIn σ) :
   have g₂ : ∀ r, r ≠ .r12 → u₂.gpr r = σ.gpr r := fun r hr => by rw [gp₂]; exact h0.other _ hr
   refine e2.st hpre (o := fOut) (by decide) .r0 fun u₃ m₃ => ?_
   have e3 := e2.of_st hpre (by decide) m₃
-  refine e3.st hpre (o := fOutLen) (by decide) .r1 fun u₄ m₄ => ?_
+  refine e3.st hpre (o := fUsedP) (by decide) .r2 fun u₄ m₄ => ?_
   have e4 := e3.of_st hpre (by decide) m₄
-  refine e4.ldArg hpre (i := 0) (by decide) .r1 fun u₅ v₅ => ?_
-  have e5 := e4.of_upd v₅ (by decide)
-  refine e5.st hpre (o := fSeed) (by decide) .r1 fun u₆ m₆ => ?_
-  have e6 := e5.of_st hpre (by decide) m₆
-  refine e6.ldArg hpre (i := 1) (by decide) .r1 fun u₇ v₇ => ?_
-  have e7 := e6.of_upd v₇ (by decide)
-  refine e7.st hpre (o := fSeedLeft) (by decide) .r1 fun u₈ m₈ => ?_
-  have e8 := e7.of_st hpre (by decide) m₈
-  refine e8.ldArg hpre (i := 4) (by decide) .r1 fun u₉ v₉ => ?_
-  have e9 := e8.of_upd v₉ (by decide)
-  refine e9.st hpre (o := fWit) (by decide) .r1 fun u₁₀ m₁₀ => ?_
-  have e10 := e9.of_st hpre (by decide) m₁₀
-  refine e10.ldArg hpre (i := 5) (by decide) .r1 fun u₁₁ v₁₁ => ?_
-  have e11 := e10.of_upd v₁₁ (by decide)
-  refine e11.st hpre (o := fWitLen) (by decide) .r1 fun u₁₂ m₁₂ => ?_
-  have e12 := e11.of_st hpre (by decide) m₁₂
-  refine e12.ldArg hpre (i := 6) (by decide) .r1 fun u₁₃ v₁₃ => ?_
-  have e13 := e12.of_upd v₁₃ (by decide)
-  refine e13.st hpre (o := fScratch) (by decide) .r1 fun u₁₄ m₁₄ => ?_
+  refine e4.st hpre (o := fWit) (by decide) .r3 fun u₅ m₅ => ?_
+  have e5 := e4.of_st hpre (by decide) m₅
+  refine e5.ldArg hpre (i := 0) (by decide) .r1 fun u₆ v₆ => ?_
+  have e6 := e5.of_upd v₆ (by decide)
+  refine e6.st hpre (o := fWitLen) (by decide) .r1 fun u₇ m₇ => ?_
+  have e7 := e6.of_st hpre (by decide) m₇
+  refine e7.ldArg hpre (i := 1) (by decide) .r1 fun u₈ v₈ => ?_
+  have e8 := e7.of_upd v₈ (by decide)
+  refine e8.st hpre (o := fScratch) (by decide) .r1 fun u₉ m₉ => ?_
+  have e9 := e8.of_st hpre (by decide) m₉
+  refine e9.ldArg hpre (i := 3) (by decide) .r1 fun u₁₀ v₁₀ => ?_
+  have e10 := e9.of_upd v₁₀ (by decide)
+  refine e10.st hpre (o := fStP) (by decide) .r1 fun u₁₁ m₁₁ => ?_
+  have e11 := e10.of_st hpre (by decide) m₁₁
+  refine wp_mov (d := .r1) (op2_imm (by decide)) fun u₁₂ v₁₂ => ?_
+  have e12 := e11.of_upd v₁₂ (by decide)
+  refine e12.st hpre (o := fC) (by decide) .r1 fun u₁₃ m₁₃ => ?_
+  have e13 := e12.of_st hpre (by decide) m₁₃
+  refine e13.st hpre (o := fStatus) (by decide) .r1 fun u₁₄ m₁₄ => WP.block_nil ?_
   have e14 := e13.of_st hpre (by decide) m₁₄
-  refine wp_mov (d := .r1) (op2_imm (by decide)) fun u₁₅ v₁₅ => ?_
-  have e15 := e14.of_upd v₁₅ (by decide)
-  refine e15.st hpre (o := fUsed) (by decide) .r1 fun u₁₆ m₁₆ => ?_
-  have e16 := e15.of_st hpre (by decide) m₁₆
-  refine e16.st hpre (o := fStatus) (by decide) .r1 fun u₁₇ m₁₇ => WP.block_nil ?_
-  have e17 := e16.of_st hpre (by decide) m₁₇
   -- The frame's words.
-  have hmem : u₁₇.mem = wmem u₂.mem (State.addr (mkG σ).sp) (eWords σ) := by
-    rw [m₁₇.mem, m₁₆.mem, v₁₅.mem, m₁₄.mem, v₁₃.mem, m₁₂.mem, v₁₁.mem, m₁₀.mem, v₉.mem, m₈.mem, v₇.mem, m₆.mem,
-      v₅.mem, m₄.mem, m₃.mem, m₁₆.gpr, v₁₅.gpr, v₁₃.gpr, v₁₁.gpr, v₉.gpr, v₇.gpr, v₅.gpr, m₃.gpr,
-      g₂ _ (by decide), g₂ _ (by decide)]
+  have hmem : u₁₄.mem = wmem u₂.mem (State.addr (mkG σ).sp) (eWords σ) := by
+    rw [m₁₄.mem, m₁₃.mem, v₁₂.mem, m₁₁.mem, v₁₀.mem, m₉.mem, v₈.mem, m₇.mem, v₆.mem, m₅.mem, m₄.mem, m₃.mem,
+      m₁₃.gpr, v₁₂.gpr, v₁₀.gpr, v₈.gpr, v₆.gpr, m₄.gpr, m₃.gpr,
+      g₂ _ (by decide), g₂ _ (by decide), g₂ _ (by decide)]
     rfl
-  have rd : ∀ d, d + 4 ≤ F → d % 4 = 0 → fw u₁₇.mem (mkG σ) d = (wmem u₂.mem (State.addr (mkG σ).sp) (eWords σ)).readW
-      (State.addr (mkG σ).sp + BitVec.ofNat 64 d) 32 := fun d _ _ => by rw [hmem]
-  refine ⟨⟨hpre, rfl, e17.sp, e17.rd, e17.wr, fun p hp => ?_, fun p hp => ?_, fun o ho => ?_, fun o ho => ?_,
-    e17.frame.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp⟩, ?_⟩
+  refine ⟨hpre, rfl, e14.sp, e14.rd, e14.wr, fun p hp => ?_, fun p hp => ?_, fun o ho => ?_, fun o ho => ?_,
+    e14.frame.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp⟩
   · -- The saved registers.
     have hb := saved_ok p hp
-    show u₁₇.mem.readW _ 32 = _
+    show u₁₄.mem.readW _ 32 = _
     rw [hmem, wmem_sep _ _ (by omega_arith) _ fun q hq => ?_, mem₂]
     · exact Spill.saveMem_saved (lo := 0) (hi := 36) _ _ _ _ (by decide) p hp
     · simp only [eWords, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
         exact ⟨Or.inl (Nat.le_trans hb.1 (by dsimp only; decide)), by dsimp only; decide⟩
   · simp only [fixedWords, List.mem_cons, List.not_mem_nil, or_false] at hp
-    show u₁₇.mem.readW _ 32 = _
+    show u₁₄.mem.readW _ 32 = _
     rw [hmem]
-    rcases hp with rfl | rfl | rfl | rfl | rfl <;>
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp (disch := decide) only [eWords, wmem_cons_sep, wmem_head]
     · rfl
-    · show σ.gpr .r1 = BitVec.ofNat 32 (σ.gpr .r1).toNat
-      rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
     · rfl
     · rfl
-    · show stackArg σ 5 = BitVec.ofNat 32 (stackArg σ 5).toNat
+    · rfl
+    · rfl
+    · show stackArg σ 0 = BitVec.ofNat 32 (stackArg σ 0).toNat
       rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · simp only [eLS, List.mem_cons, List.not_mem_nil, or_false] at ho
-    show u₁₇.mem.readW _ 32 = _
+    show u₁₄.mem.readW _ 32 = _
     rw [hmem]
-    rcases ho with rfl | rfl | rfl | rfl <;>
-      simp (disch := decide) only [eWords, wmem_cons_sep, wmem_head]
-    · rw [eV_fStatus]
-    · rw [eV_fUsed]
-    · rw [eV_fSeedLeft]; show stackArg σ 1 = BitVec.ofNat 32 (stackArg σ 1).toNat
-      rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-    · rw [eV_fSeed]; rfl
+    rcases ho with rfl | rfl <;>
+      simp (disch := decide) only [eWords, wmem_cons_sep, wmem_head] <;> rfl
   · simp only [eLS, List.mem_cons, List.not_mem_nil, or_false] at ho
-    rcases ho with rfl | rfl | rfl | rfl <;> exact varOk_of (by decide)
-  · rw [m₁₇.gpr, m₁₆.gpr, v₁₅.other _ (by decide), m₁₄.gpr, v₁₃.other _ (by decide), m₁₂.gpr,
-      v₁₁.other _ (by decide), m₁₀.gpr, v₉.other _ (by decide), m₈.gpr, v₇.other _ (by decide), m₆.gpr,
-      v₅.other _ (by decide), m₄.gpr, m₃.gpr, g₂ _ (by decide)]
+    rcases ho with rfl | rfl <;> exact varOk_of (by decide)
 
 end VG.Proof.Dsa.Arm.Gen

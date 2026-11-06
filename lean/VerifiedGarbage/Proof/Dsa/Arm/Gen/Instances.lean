@@ -83,13 +83,10 @@ theorem genOk {g : Geo} {HO : HashOk g.G} {n pL qL : Nat} {G : GP} (hex : ∃ σ
     hlq := pre.lens
     hp := gp
     hq := gq
-    hsb := by simp [mkG, Spec.Rsa.bytesAt]
     hwl := by simp [mkG, Spec.Rsa.bytesAt]
-    hhsb := by simp [mkG, Spec.Rsa.bytesAt]
-    hmod := pre.hsMod
     h32 := BitVec.isLt _
-    smod := pre.seedsMod
-    s32 := BitVec.isLt _ }
+    hqL := rfl
+    k0 := pre.seeds }
 
 theorem sha1_length (bs : List Byte) : (Spec.Sha1.hash bs).length = 20 := by
   rw [Proof.Sha1.hash_eq]; exact Proof.Sha1.md.digest_length _
@@ -181,9 +178,9 @@ def geoOk3 (v : RoundImpl) : GeoOk (geo3 v) 384 32 where
   hlb := by exact (by decide : Proof.Sha256.md.lenBytes 32 =
     [0, 0, 0, 0, 0, 0, BitVec.ofNat 8 (8 * 32 / 256), BitVec.ofNat 8 (8 * 32 % 256)])
 
-/-- `vg_dsa_generate_parameters` over the round `v` meets its contract. -/
-theorem params_verified (v : RoundImpl) :
-    Verified target (code (geo1 v) (geo2 v) (geo3 v)) (Spec.Dsa.generateParametersContract abi 304) :=
-  generate_verified (geoOk1 v) (geoOk2 v) (geoOk3 v)
+/-- `vg_dsa_parameter_search` over the round `v` meets its contract. -/
+theorem search_params (v : RoundImpl) :
+    Verified target (code (geo1 v) (geo2 v) (geo3 v)) (Spec.Dsa.parameterSearchContract abi 304) :=
+  search_verified (geoOk1 v) (geoOk2 v) (geoOk3 v)
 
 end VG.Proof.Dsa.Arm.Gen

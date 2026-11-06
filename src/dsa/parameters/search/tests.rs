@@ -282,3 +282,39 @@ fn backend_combinations() {
         }
     }
 }
+
+#[test]
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+fn backend_combinations() {
+    use super::{select, select_backends};
+    use crate::arch::dsa::{
+        VG_DSA_PARAMETER_SEARCH_UMAAL_FEATURES, vg_dsa_parameter_search,
+        vg_dsa_parameter_search_umaal,
+    };
+    use verified_garbage_cpu::Features;
+    let cases: &[(bool, Search, Features)] = &[
+        (false, vg_dsa_parameter_search, Features(0)),
+        (
+            true,
+            vg_dsa_parameter_search_umaal,
+            VG_DSA_PARAMETER_SEARCH_UMAAL_FEATURES,
+        ),
+    ];
+    for &(umaal, expected, required) in cases {
+        let selected = select_backends(umaal);
+        assert!(core::ptr::fn_addr_eq(selected, expected));
+        assert!(core::ptr::fn_addr_eq(select(required), expected));
+        if detected().contains(required) {
+            check(selected);
+        }
+    }
+}

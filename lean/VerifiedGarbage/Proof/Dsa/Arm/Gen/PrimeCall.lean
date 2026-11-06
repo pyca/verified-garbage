@@ -102,7 +102,7 @@ theorem GI.witFit (h : GI G σ V LS s) : G.wit.toNat + G.witLen ≤ 2 ^ 32 := by
   have := h.pre.nW; rw [← h.hG]; exact this
 
 theorem GI.witLt (h : GI G σ V LS s) : G.witLen < 2 ^ 32 := by
-  rw [← h.hG]; exact (stackArg σ 5).isLt
+  rw [← h.hG]; exact (stackArg σ 0).isLt
 
 theorem GI.randLen (h : GI G σ V LS s) (u : Nat) : (BitVec.ofNat 32 (G.witLen - u)).toNat = G.witLen - u := by
   have := h.witLt; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Generation
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.Framework.Sig
@@ -11,13 +11,15 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # DSA parameter generation on ARMv7: the public parameters and the frame
 
-`mkG s`: the public parameters of a call from `s`, the tapes' bytes among
-them, which the contract makes public. `CIn s`: the contract's precondition
-(`cin_of_pre`). `GI G σ s`: a state of the search, for the call from `σ`
-with the parameters `G`: the frame allocated (`G.sp`), the regions those of
-the call and the frame, the callee-saved registers and the fixed frame words
-in the frame, the frame words of `LS` holding `V`, and memory changed only in
-the frame, `scratch` and the stack below the frame (`G.chg`).
+`mkG s`: the public parameters of a call of `vg_dsa_parameter_search` from
+`s`: its arguments, the state's first two words (the seeds left and the
+modulus's width) and the tape's bytes, which the contract makes public.
+`CIn s`: the contract's precondition (`cin_of_pre`). `GI G σ s`: a state of
+the search, for the call from `σ` with the parameters `G`: the frame
+allocated (`G.sp`), the regions those of the call and the frame, the
+callee-saved registers and the fixed frame words in the frame, the frame
+words of `LS` holding `V`, and memory changed only in the frame, `scratch`
+and the stack below the frame (`G.chg`).
 -/
 
 @[expose] public section
@@ -31,40 +33,44 @@ structure GP where
   sp0 : BitVec 32
   out : BitVec 32
   outLen : Nat
-  pLen : Nat
-  qLen : Nat
-  seeds : BitVec 32
-  seedsLen : Nat
-  hs : BitVec 32
-  hsLen : Nat
+  usedP : BitVec 32
+  /-- `rand`, which holds the seeds, the witnesses and the `h` candidates. -/
   wit : BitVec 32
   witLen : Nat
   scr : BitVec 32
   scrLen : Nat
-  seedsB : List Byte
-  hsB : List Byte
+  stP : BitVec 32
+  /-- The seeds left, `state[0]`. -/
+  k0 : Nat
+  pLen : Nat
+  qLen : Nat
   witB : List Byte
+
+/-- The modulus's width, `state[1]`. -/
+abbrev pLenOf (s : State) : Nat := (s.mem.readW (State.addr (stackArg s 3) + 8#64) 64).toNat
 
 def mkG (s : State) : GP where
   sp0 := s.sp
   out := s.gpr .r0
   outLen := (s.gpr .r1).toNat
-  pLen := (s.gpr .r2).toNat
-  qLen := (s.gpr .r3).toNat
-  seeds := stackArg s 0
-  seedsLen := (stackArg s 1).toNat
-  hs := stackArg s 2
-  hsLen := (stackArg s 3).toNat
-  wit := stackArg s 4
-  witLen := (stackArg s 5).toNat
-  scr := stackArg s 6
-  scrLen := (stackArg s 7).toNat
-  seedsB := Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat
-  hsB := Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 3).toNat
-  witB := Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 4)) (stackArg s 5).toNat
+  usedP := s.gpr .r2
+  wit := s.gpr .r3
+  witLen := (stackArg s 0).toNat
+  scr := stackArg s 1
+  scrLen := (stackArg s 2).toNat
+  stP := stackArg s 3
+  k0 := (s.mem.readW (State.addr (stackArg s 3)) 64).toNat
+  pLen := pLenOf s
+  qLen := Spec.Dsa.generationQLen (pLenOf s)
+  witB := Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r3)) (stackArg s 0).toNat
 
 namespace GP
 variable (G : GP)
+
+/-- The seeds are read from `rand`. -/
+abbrev seeds : BitVec 32 := G.wit
+abbrev seedsLen : Nat := G.witLen
+abbrev seedsB : List Byte := G.witB
 
 /-- The frame's base. -/
 abbrev sp : BitVec 32 := G.sp0 - BitVec.ofNat 32 F
@@ -73,10 +79,11 @@ abbrev rFrame : Region := ⟨State.addr G.sp, F⟩
 abbrev rBelow : Region := ⟨State.addr G.sp - 176#64, 176⟩
 abbrev rScr : Region := ⟨State.addr G.scr, G.scrLen * 8⟩
 abbrev rOut : Region := ⟨State.addr G.out, G.outLen⟩
-abbrev rSeeds : Region := ⟨State.addr G.seeds, G.seedsLen⟩
-abbrev rHs : Region := ⟨State.addr G.hs, G.hsLen⟩
+abbrev rUsed : Region := ⟨State.addr G.usedP, 8⟩
 abbrev rWit : Region := ⟨State.addr G.wit, G.witLen⟩
-abbrev rArgs : Region := ⟨State.addr (G.sp0 + BitVec.ofNat 32 (4 * 0)), 32⟩
+abbrev rSeeds : Region := G.rWit
+abbrev rSt : Region := ⟨State.addr G.stP, 32⟩
+abbrev rArgs : Region := ⟨State.addr (G.sp0 + BitVec.ofNat 32 (4 * 0)), 16⟩
 
 /-- What the search may change. -/
 abbrev chg : List Region := [G.rFrame, G.rScr, G.rBelow]
@@ -86,49 +93,62 @@ end GP
 /-- The contract's precondition. -/
 structure CIn (s : State) : Prop where
   spLo : 304 ≤ s.sp.toNat
-  spHi : s.sp.toNat + 32 ≤ 2 ^ 32
-  rd : s.rd = [(mkG s).rSeeds, (mkG s).rHs, (mkG s).rWit, (mkG s).rArgs]
-  wr : s.wr = [(mkG s).rOut, (mkG s).rScr]
-  oS : (mkG s).rOut.Disjoint (mkG s).rSeeds
-  oH : (mkG s).rOut.Disjoint (mkG s).rHs
+  spHi : s.sp.toNat + 16 ≤ 2 ^ 32
+  rd : s.rd = [(mkG s).rWit, (mkG s).rArgs]
+  wr : s.wr = [(mkG s).rOut, (mkG s).rUsed, (mkG s).rScr, (mkG s).rSt]
+  oU : (mkG s).rOut.Disjoint (mkG s).rUsed
   oW : (mkG s).rOut.Disjoint (mkG s).rWit
   oC : (mkG s).rOut.Disjoint (mkG s).rScr
+  oS : (mkG s).rOut.Disjoint (mkG s).rSt
   oA : (mkG s).rOut.Disjoint (mkG s).rArgs
-  sC : (mkG s).rSeeds.Disjoint (mkG s).rScr
-  hC : (mkG s).rHs.Disjoint (mkG s).rScr
+  uW : (mkG s).rUsed.Disjoint (mkG s).rWit
+  uC : (mkG s).rUsed.Disjoint (mkG s).rScr
+  uS : (mkG s).rUsed.Disjoint (mkG s).rSt
+  uA : (mkG s).rUsed.Disjoint (mkG s).rArgs
   wC : (mkG s).rWit.Disjoint (mkG s).rScr
+  wS : (mkG s).rWit.Disjoint (mkG s).rSt
+  cS : (mkG s).rScr.Disjoint (mkG s).rSt
   cA : (mkG s).rScr.Disjoint (mkG s).rArgs
+  sA : (mkG s).rSt.Disjoint (mkG s).rArgs
   fO : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rOut
-  fS : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rSeeds
-  fH : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rHs
+  fU : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rUsed
   fW : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rWit
   fC : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rScr
+  fS : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rSt
   fA : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rArgs
   nO : (s.gpr .r0).toNat + (s.gpr .r1).toNat ≤ 2 ^ 32
-  nS : (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 32
-  nH : (stackArg s 2).toNat + (stackArg s 3).toNat ≤ 2 ^ 32
-  nW : (stackArg s 4).toNat + (stackArg s 5).toNat ≤ 2 ^ 32
-  nC : (stackArg s 6).toNat + (stackArg s 7).toNat * 8 ≤ 2 ^ 32
-  lens : Spec.Dsa.generationLengthsValid (s.gpr .r2).toNat (s.gpr .r3).toNat
-  outLen : (s.gpr .r1).toNat = 2 * (s.gpr .r2).toNat + (s.gpr .r3).toNat
-  seedsMod : (stackArg s 1).toNat % (s.gpr .r3).toNat = 0
-  hsMod : (stackArg s 3).toNat % (s.gpr .r2).toNat = 0
-  scrLen : Spec.Dsa.generationScratchWords (s.gpr .r2).toNat ≤ (stackArg s 7).toNat
+  nU : (s.gpr .r2).toNat + 8 ≤ 2 ^ 32
+  nW : (s.gpr .r3).toNat + (stackArg s 0).toNat ≤ 2 ^ 32
+  nC : (stackArg s 1).toNat + (stackArg s 2).toNat * 8 ≤ 2 ^ 32
+  nS : (stackArg s 3).toNat + 32 ≤ 2 ^ 32
+  valid : Spec.Dsa.generationPLenValid (pLenOf s)
+  outLen : (s.gpr .r1).toNat = 2 * pLenOf s + Spec.Dsa.generationQLen (pLenOf s)
+  scrLen : Spec.Dsa.generationScratchWords (pLenOf s) ≤ (stackArg s 2).toNat
+  seeds : (s.mem.readW (State.addr (stackArg s 3)) 64).toNat ≤ Spec.Dsa.parameterSeeds
+  budget : s.mem.readW (State.addr (stackArg s 3) + 16#64) 64 = BitVec.ofNat 64 (Spec.Dsa.parameterEntropy (pLenOf s))
+  randLen : (stackArg s 0).toNat ≤ Spec.Dsa.parameterEntropy (pLenOf s)
 
-theorem cin_of_pre (s : State) (h : (Spec.Dsa.generateParametersContract abi 304).pre s) : CIn s := by
-  sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, reduceClassify,
+theorem cin_of_pre (s : State) (h : (Spec.Dsa.parameterSearchContract abi 304).pre s) : CIn s := by
+  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, reduceClassify,
     Loc.val] at h
-  obtain ⟨spLo, spHi, rd, wr, oS, oH, oW, oC, oA, sC, hC, wC, cA, fO, fS, fH, fW, fC, fA, nO, nS, nH, nW, nC,
-    lens, outLen, seedsMod, hsMod, scrLen⟩ := h
-  exact ⟨spLo, spHi, rd, wr, oS, oH, oW, oC, oA, sC, hC, wC, cA, fO, fS, fH, fW, fC, fA, nO, nS, nH, nW, nC,
-    lens, outLen, seedsMod, hsMod, scrLen⟩
+  obtain ⟨spLo, spHi, rd, wr, oU, oW, oC, oS, oA, uW, uC, uS, uA, wC, wS, cS, cA, sA, fO, fU, fW, fC, fS, fA, nO, nU, nW, nC, nS, valid, outLen, scrLen, seeds, budget, randLen⟩ := h
+  exact ⟨spLo, spHi, rd, wr, oU, oW, oC, oS, oA, uW, uC, uS, uA, wC, wS, cS, cA, sA, fO, fU, fW, fC, fS, fA, nO, nU, nW, nC, nS, valid, outLen, scrLen, seeds, budget, randLen⟩
+
+theorem CIn.lens {s : State} (h : CIn s) :
+    ((mkG s).pLen = 128 ∧ (mkG s).qLen = 20) ∨ ((mkG s).pLen = 256 ∧ (mkG s).qLen = 32) ∨
+      ((mkG s).pLen = 384 ∧ (mkG s).qLen = 32) := by
+  have := h.valid
+  simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this
+  simp only [mkG, Spec.Dsa.generationQLen]
+  rcases this with (e | e) | e <;> simp [e]
 
 /-- The frame word at `o`. -/
 abbrev fw (m : Mem) (G : GP) (o : Nat) : BitVec 32 := m.readW (State.addr G.sp + BitVec.ofNat 64 o) 32
 
-/-- The fixed frame words: `out`, its length, `scratch` and the witnesses. -/
+/-- The fixed frame words: `out`, the pointers to `used` and `state`,
+`scratch` and `rand`. -/
 def fixedWords (G : GP) : List (Nat × BitVec 32) :=
-  [(fOut, G.out), (fOutLen, BitVec.ofNat 32 G.outLen), (fScratch, G.scr), (fWit, G.wit),
+  [(fOut, G.out), (fUsedP, G.usedP), (fStP, G.stP), (fScratch, G.scr), (fWit, G.wit),
     (fWitLen, BitVec.ofNat 32 G.witLen)]
 
 /-- A state of the search. -/

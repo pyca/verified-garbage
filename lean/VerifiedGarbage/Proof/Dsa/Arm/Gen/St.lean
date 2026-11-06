@@ -87,8 +87,8 @@ theorem GI.lens (h : GI G σ V LS s) :
 theorem GI.scrBig (h : GI G σ V LS s) : sK G.pLen + kz G.pLen ≤ G.scrLen * 8 := by
   have l := h.lens
   have := h.pre.scrLen
-  have e1 : (σ.gpr .r2).toNat = G.pLen := by rw [← h.hG]; rfl
-  have e2 : (stackArg σ 7).toNat = G.scrLen := by rw [← h.hG]; rfl
+  have e1 : pLenOf σ = G.pLen := by rw [← h.hG]; rfl
+  have e2 : (stackArg σ 2).toNat = G.scrLen := by rw [← h.hG]; rfl
   rw [e1, e2] at this
   simp only [Spec.Dsa.generationScratchWords] at this
   simp only [sK, sA, wa, kz]

@@ -1,11 +1,4 @@
 use super::{Error, Parameters, Vec};
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
-    target_arch = "x86",
-    target_arch = "aarch64"
-)))]
-use super::{Features, Generate, detected, select, vec};
 use crate::dsa::PrivateKey;
 use crate::dsa::tests::vectors::hex;
 
@@ -59,51 +52,10 @@ fn prime_vectors() -> Vec<Vector> {
     cases
 }
 
-/// The three fixed tapes: the published seed in every seed chunk, h = 2 in
-/// every h chunk, and 0x02 witnesses.
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
-    target_arch = "x86",
-    target_arch = "aarch64"
-)))]
-fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
-    match tape {
-        0 => {
-            for seed in buf.chunks_exact_mut(v.seed.len()) {
-                seed.copy_from_slice(&v.seed);
-            }
-        }
-        1 => {
-            buf.fill(0);
-            for h in buf.chunks_exact_mut(v.p.len()) {
-                h[v.p.len() - 1] = 2;
-            }
-        }
-        // Deterministic valid witnesses for known-answer tests;
-        // production obtains independent bytes from the OS.
-        _ => buf.fill(2),
-    }
-}
-
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
-    target_arch = "x86",
-    target_arch = "aarch64"
-)))]
-const KNOWN_ANSWER_FILLS: usize = 3;
-
 /// One refillable tape: the published seed, then 0x02 octets for its
 /// witnesses and generator candidates (deterministic, for known answers;
 /// production obtains independent bytes from the OS), and 0x02 octets in
 /// any refill.
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
-    target_arch = "x86",
-    target_arch = "aarch64"
-))]
 fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     buf.fill(2);
     if tape == 0 {
@@ -111,12 +63,6 @@ fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     }
 }
 
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
-    target_arch = "x86",
-    target_arch = "aarch64"
-))]
 const KNOWN_ANSWER_FILLS: usize = 1;
 
 #[test]
@@ -129,19 +75,6 @@ fn cavp_generated_parameters() {
             Ok(())
         })
         .unwrap();
-        #[cfg(not(any(
-            target_arch = "x86_64",
-            target_arch = "powerpc64",
-            target_arch = "x86",
-            target_arch = "aarch64"
-        )))]
-        assert_eq!(tape, KNOWN_ANSWER_FILLS);
-        #[cfg(any(
-            target_arch = "x86_64",
-            target_arch = "powerpc64",
-            target_arch = "x86",
-            target_arch = "aarch64"
-        ))]
         assert!(tape >= KNOWN_ANSWER_FILLS);
         assert_eq!(parameters.p(), v.p);
         assert_eq!(parameters.q(), v.q);
@@ -153,19 +86,6 @@ fn cavp_generated_parameters() {
     }
 }
 
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
-    target_arch = "x86",
-    target_arch = "aarch64"
-)))]
-const FILLS: usize = 3;
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
-    target_arch = "x86",
-    target_arch = "aarch64"
-))]
 const FILLS: usize = 2;
 
 #[test]
@@ -173,8 +93,8 @@ fn parameter_generation_errors() {
     for bits in [0, 512, 2047, 4096] {
         assert_eq!(Parameters::generate(bits).unwrap_err(), Error::Length);
     }
-    // The fixed tapes are filled up front; the refillable tape is filled,
-    // then refilled once before the 0x02 seeds below exhaust the search.
+    // The tape is filled, then refilled once before the 0x02 seeds below
+    // exhaust the search.
     for fail_at in 0..FILLS {
         let mut fills = 0;
         let result = Parameters::generate_from(1024, |buf| {
@@ -203,42 +123,6 @@ fn parameter_generation_errors() {
 }
 
 #[test]
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
-    target_arch = "x86",
-    target_arch = "aarch64"
-)))]
-fn empty_tapes_zero_output() {
-    for (p_len, q_len) in [(128, 20), (256, 32), (384, 32)] {
-        let mut out = vec![0xa5; 2 * p_len + q_len];
-        let mut scratch = vec![0xdeadbeef; 64 * p_len + 1024];
-        let empty: &[u8] = &[];
-        // SAFETY: supported widths and disjoint output/scratch allocations;
-        // empty tapes satisfy the whole-chunk conditions. Selection uses
-        // only features detected on this CPU.
-        let status = unsafe {
-            select(detected())(
-                out.as_mut_ptr(),
-                out.len(),
-                p_len,
-                q_len,
-                empty.as_ptr(),
-                0,
-                empty.as_ptr(),
-                0,
-                empty.as_ptr(),
-                0,
-                scratch.as_mut_ptr(),
-                scratch.len(),
-            )
-        };
-        assert_eq!(status, 0);
-        assert!(out.iter().all(|&b| b == 0));
-    }
-}
-
-#[test]
 fn generated_parameters_with_os_randomness() {
     let parameters = Parameters::generate(1024).unwrap();
     let key = PrivateKey::generate(parameters.p(), parameters.q(), parameters.g()).unwrap();
@@ -247,125 +131,4 @@ fn generated_parameters_with_os_randomness() {
         key.public_key()
             .verify(&digest, &key.sign(&digest).unwrap())
     );
-}
-
-/// An implementation given empty tapes zeroes `out` and returns 0.
-#[cfg(all(
-    target_arch = "arm",
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
-))]
-fn check_empty_tapes(selected: Generate, p_len: usize) {
-    let q_len = if p_len == 128 { 20 } else { 32 };
-    let mut out = vec![0xa5; 2 * p_len + q_len];
-    let mut scratch = vec![0u64; 64 * p_len + 1024];
-    let empty: &[u8] = &[];
-    // SAFETY: the selected helper matches the supported public width; disjoint buffers,
-    // whole empty tapes, and all emitted CPU requirements checked.
-    assert_eq!(
-        unsafe {
-            selected(
-                out.as_mut_ptr(),
-                out.len(),
-                p_len,
-                q_len,
-                empty.as_ptr(),
-                0,
-                empty.as_ptr(),
-                0,
-                empty.as_ptr(),
-                0,
-                scratch.as_mut_ptr(),
-                scratch.len(),
-            )
-        },
-        0
-    );
-    assert!(out.iter().all(|&byte| byte == 0));
-}
-
-#[test]
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "powerpc64",
-    target_arch = "x86",
-    target_arch = "aarch64"
-)))]
-fn exhausted_tapes_after_prime_search_zero_output() {
-    let v = prime_vectors().remove(0);
-    assert_eq!(v.bits, 1024);
-    let witnesses = vec![2; 16384 * v.p.len()];
-    let rejected_h = vec![0; v.p.len()];
-    // A known prime-producing seed distinguishes exhaustion during primality
-    // testing from exhaustion after both primes have been found. h=0 also
-    // exercises rejection of a complete generator chunk before exhaustion.
-    for (rand, hs) in [
-        (&[][..], &[][..]),
-        (&witnesses[..], &[][..]),
-        (&witnesses[..], &rejected_h[..]),
-    ] {
-        let mut out = vec![0xa5; 2 * v.p.len() + v.q.len()];
-        let mut scratch = vec![0xdeadbeefu64; 64 * v.p.len() + 1024];
-        // SAFETY: published 1024/160 widths, whole seed and h chunks, exact
-        // output size, sufficient scratch, and disjoint owned buffers.
-        // The selected implementation requires only detected CPU features.
-        let status = unsafe {
-            select(detected())(
-                out.as_mut_ptr(),
-                out.len(),
-                v.p.len(),
-                v.q.len(),
-                v.seed.as_ptr(),
-                v.seed.len(),
-                hs.as_ptr(),
-                hs.len(),
-                rand.as_ptr(),
-                rand.len(),
-                scratch.as_mut_ptr(),
-                scratch.len(),
-            )
-        };
-        assert_eq!(status, 0);
-        assert!(out.iter().all(|&byte| byte == 0));
-    }
-}
-
-#[test]
-#[cfg(all(
-    target_arch = "arm",
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
-))]
-fn backend_combinations() {
-    use super::select_backends;
-    use crate::arch::dsa::{
-        VG_DSA_GENERATE_PARAMETERS_UMAAL_FEATURES, vg_dsa_generate_parameters,
-        vg_dsa_generate_parameters_umaal,
-    };
-    let cases: &[(bool, Generate, Features)] = &[
-        (false, vg_dsa_generate_parameters, Features(0)),
-        (
-            true,
-            vg_dsa_generate_parameters_umaal,
-            VG_DSA_GENERATE_PARAMETERS_UMAAL_FEATURES,
-        ),
-    ];
-    for &(umaal, expected, required) in cases {
-        let selected = select_backends(umaal);
-        assert!(core::ptr::fn_addr_eq(selected, expected));
-        assert!(core::ptr::fn_addr_eq(select(required), expected));
-        if detected().contains(required) {
-            check_empty_tapes(selected, 128);
-        }
-    }
 }
