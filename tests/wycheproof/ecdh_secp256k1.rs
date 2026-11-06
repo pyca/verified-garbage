@@ -11,8 +11,7 @@
 ))]
 
 use crate::json_struct;
-use verified_garbage::ec::{PublicKey, Secp256k1};
-use verified_garbage::ecdh::{Error, PrivateKey};
+use verified_garbage::ec::{Error, PrivateKey, PublicKey, Secp256k1};
 
 use super::harness::{self, Count, Expectation, Hex};
 use super::schema::CurveGroup;

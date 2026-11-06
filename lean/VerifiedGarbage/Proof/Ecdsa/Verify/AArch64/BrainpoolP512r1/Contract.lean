@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
@@ -9,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # ECDSA verification over brainpoolP512r1 on AArch64: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract` for AArch64, by name:
+The facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst` for AArch64, by name:
 `vg_ecdsa_brainpoolp512r1_verify(public = x0, digest = x1, sig = x2, scratch = x3)`,
 the result in `w0`. Only the pointers are public here: the proof shows that
 nothing else affects timing, although the contract would let the contents of
@@ -48,8 +49,8 @@ def satState : State where
   rd := [⟨0x1000, 129⟩, ⟨0x2000, 64⟩, ⟨0x3000, 128⟩]
   wr := [⟨0x8000, 8192⟩]
 
-theorem implies : verifyAArch64.Implies (Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract AArch64.abi) := by
-  sig_implies [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+theorem implies : verifyAArch64.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst AArch64.abi) := by
+  sig_implies [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, verifyAArch64, vf]
     [satState] using satState
 

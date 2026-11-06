@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
@@ -9,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # ECDSA verification over brainpoolP256r1 on x86-64: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.BrainpoolP256r1.inst.verifyContract` for x86-64, by name:
+The facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst` for x86-64, by name:
 `vg_ecdsa_brainpoolp256r1_verify(public = rdi, digest = rsi, sig = rdx, scratch = rcx)`,
 the result in `eax`. Only the pointers are public here: the proof shows that
 nothing else affects timing, although the contract would let the contents of
@@ -53,8 +54,8 @@ def satState : State where
   rd := [⟨0x1000, 65⟩, ⟨0x2000, 32⟩, ⟨0x3000, 64⟩]
   wr := [⟨0x8000, 8192⟩]
 
-theorem implies : verifyX86_64.Implies (Spec.Ecdsa.BrainpoolP256r1.inst.verifyContract X86_64.abi) := by
-  sig_implies [Spec.Ecdsa.BrainpoolP256r1.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+theorem implies : verifyX86_64.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst X86_64.abi) := by
+  sig_implies [Spec.Ecdsa.BrainpoolP256r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, verifyX86_64, vf]
     [satState] using satState
 

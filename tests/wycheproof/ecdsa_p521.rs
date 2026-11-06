@@ -13,8 +13,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{P521, PublicKey};
-use verified_garbage::ecdsa::Error;
+use verified_garbage::ec::{Error, P521, PublicKey};
 use verified_garbage::hashes::sha512::Sha512;
 
 use super::harness::{self, Count, Expectation};

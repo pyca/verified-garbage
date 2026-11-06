@@ -40,34 +40,6 @@ namespace Instance
 
 variable (I : Instance)
 
-/-- `(public: *const [u8; 2 len + 1], digest: *const [u8; len],
-sig: *const [u8; 2 len], scratch: *mut [u64; 1024]) -> u32`: no function of
-the Rust interface has it; it is `verifyContract`'s. -/
-def verifySig : Sig where
-  params := [("public", .array false .u8 (2 * I.curve.len + 1)), ("digest", .array false .u8 I.curve.len),
-    ("sig", .array false .u8 (2 * I.curve.len)), ("scratch", .array true .u64 scratchWords)]
-  ret := some .u32
-
-/-- Whether the signature at `sig` of the `len` octets at `digest` (whose
-leftmost `N` bits are `e`, as `hashToInt` reads them) verifies with the
-public key at `public` (`verify`): it returns 1 if it does and 0 otherwise.
-Every input is public, and may affect timing.
-
-No function of the Rust interface has this contract: it is that of each
-target's internal verification of the `len` octets, which the
-implementations of `verifyHashContract` run after converting the hash to
-them. -/
-def verifyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  I.verifySig.contract A
-    (post := fun pk digest sig _scratch m _m' r =>
-      r = if verify I.curve (bytesAt m pk (2 * I.curve.len + 1))
-          (hashToInt I.curve (bytesAt m digest I.curve.len)) (bytesAt m sig (2 * I.curve.len))
-        then 1 else 0)
-    (writeArgs := true) (stack := stack)
-    (leak := some fun pk digest sig _scratch m =>
-      (bytesAt m pk (2 * I.curve.len + 1) ++ bytesAt m digest I.curve.len ++
-        bytesAt m sig (2 * I.curve.len)).map (·.toNat))
-
 /-- `(public: *const [u8; 2 len + 1], digest: *const u8, digest_len: usize,
 sig: *const [u8; 2 len], scratch: *mut [u64; 1024]) -> u32`. -/
 def verifyHashSig : Sig where

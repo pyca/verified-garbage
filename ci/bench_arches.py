@@ -58,6 +58,12 @@ files changed:
     that compile the inclusion; every benchmark if one of them is no
     benchmark's (e.g. `main.rs`).
 
+A library file that moved into another module's directory is named by the
+path it had at the crate's root (`MOVED`), whose module names the
+benchmarks' `USES` list: `src/ec/ecdsa/p256.rs`, the private file of
+ECDSA over P-256, as `src/ecdsa/p256.rs` (`ecdsa_p256`), and
+`src/ec/ecdsa/mod.rs`, the code ECDSA's curves share, as `src/ecdsa/mod.rs`.
+
 A change to a file of `src/` only inside its tests (a top-level
 `#[cfg(test)] mod`, which no benchmark compiles) needs nothing.
 
@@ -181,6 +187,45 @@ ASM_DIRS = {"powerpc64": "powerpc64le"}
 # The crate of `Features` and the features' bits, which `src/cpu.rs`
 # re-exports.
 CPU_CRATE = "crates/verified-garbage-cpu/"
+
+# Library files and directories (`/`) that moved into another module's
+# directory, and the path at the crate's root this script names each by.
+MOVED = {
+    "src/ec/ecdh/": "src/ecdh/",
+    "src/ec/ecdsa/": "src/ecdsa/",
+}
+
+# The lists of modules, `src/lib.rs`'s and those of the modules that group
+# others: a change to them adds or removes modules (`registrations`).
+REGISTRIES = ("src/lib.rs",)
+
+
+def logical(path):
+    """`path` by the name this script gives it: a generated file's in the
+    library's layout (`asm_layout.logical`), a moved file's at the crate's
+    root (`MOVED`)."""
+    path = asm_layout.logical(path)
+    for moved, name in MOVED.items():
+        if path == moved or moved.endswith("/") and path.startswith(moved):
+            return name + path[len(moved):]
+    return path
+
+
+def physical(path):
+    """The file `path` names (`logical`)."""
+    for moved, name in MOVED.items():
+        if path == name or name.endswith("/") and path.startswith(name):
+            return moved + path[len(name):]
+    return asm_layout.physical(path)
+
+
+def crate_path(module):
+    """The path in the crate of the module this script names `module`
+    (`ec::ecdsa` for `ecdsa`)."""
+    for name in (f"src/{module}/", f"src/{module}.rs"):
+        if (path := physical(name)) != name:
+            return path[len("src/"):].removesuffix("/").removesuffix(".rs").replace("/", "::")
+    return module
 
 
 def asm_dir(arch):
@@ -343,8 +388,8 @@ ALL = None
 @functools.lru_cache(None)
 def read(path, revision=None, root="."):
     """The text of `path` at `revision` (or in the tree), None if it has none;
-    a generated file's from its crate (`asm_layout.physical`)."""
-    path = asm_layout.physical(path)
+    a generated or moved file's from where it is (`physical`)."""
+    path = physical(path)
     if revision:
         result = subprocess.run(["git", "show", f"{revision}:{path}"], cwd=root,
                                 capture_output=True, text=True, check=False)
@@ -759,9 +804,9 @@ def submodule_arches(parent, name, base, root="."):
 
 
 def rust_files(root="."):
-    """The library's Rust files, the generated ones by their path in the
-    library's layout (`asm_layout.logical`)."""
-    files = {p.relative_to(root).as_posix() for p in pathlib.Path(root, "src").glob("**/*.rs")}
+    """The library's Rust files, by the names this script gives them
+    (`logical`)."""
+    files = {logical(p.relative_to(root).as_posix()) for p in pathlib.Path(root, "src").glob("**/*.rs")}
     return sorted(files | set(asm_layout.generated_files(root)))
 
 
@@ -850,13 +895,14 @@ def users(family, known, root=".", seen=frozenset()):
     """The modules whose Rust code (outside the family's) uses the family's
     shared code, or a private module of the crate; a file that is no
     module's names itself, which no benchmark uses. Modules only tests
-    compile are left out, and a private submodule counts as its parent."""
+    compile, and files' test modules, are left out, and a private submodule
+    counts as its parent."""
     seen = seen | {family}
     names = set()
     tests = {m for m, (test, _) in lib_modules(None, root).items() if test}
     for path in rust_files(root):
         if path.startswith(("src/asm/", f"src/{family}/")) or path == f"src/{family}.rs" or not re.search(
-                rf"\b(?:crate|super)::{family}::", read(path, None, root) or ""):
+                rf"\b(?:crate|super)::{crate_path(family)}::", without_tests(read(path, None, root) or "")):
             continue
         api, other = API.match(path), FAMILY.match(path)
         if path == HASHES:
@@ -987,8 +1033,8 @@ def allows(restriction, reqs):
 def arches(changed, base=None):
     # The modules to benchmark on each architecture that needs it, or ALL.
     needed = {}
-    # Generated files by their path in the library's layout (`asm_layout`).
-    changed = [asm_layout.logical(p) for p in changed]
+    # Generated and moved files by the names this script gives them.
+    changed = [logical(p) for p in changed]
     catalogs = [bench_catalog(base), bench_catalog()]
     known = set().union(*catalogs[-1].values()) if catalogs[-1] else set()
     external_tests = None
@@ -1031,7 +1077,7 @@ def arches(changed, base=None):
         # A change to code only other architectures compile, or to the
         # assembly of one that is not benchmarked, needs nothing.
         targets = [a for a in PLATFORMS if asm_dir(a) == asm[1]] if asm else affected(path, base)
-        if path in ("src/lib.rs", "bench/benches/primitives/main.rs") or (asm and asm[2] == "mod"):
+        if path in (*REGISTRIES, "bench/benches/primitives/main.rs") or (asm and asm[2] == "mod"):
             for arch in targets:
                 names = registrations(path, base, arch)
                 if names is None:

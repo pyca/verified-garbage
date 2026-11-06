@@ -82,7 +82,7 @@ macro_rules! compressed_peers {
                         .unwrap_or(&test.case.private.0);
                     let mut private = [0; $len];
                     private[$len - bytes.len()..].copy_from_slice(bytes);
-                    let key = verified_garbage::ecdh::PrivateKey::<$curve>::from_bytes(&private);
+                    let key = verified_garbage::ec::PrivateKey::<$curve>::from_bytes(&private);
                     let shared = key
                         .exchange(&verified_garbage::ec::PublicKey::from_bytes(&public))
                         .unwrap()

@@ -1,5 +1,10 @@
 use super::{Error, Parameters, Vec};
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+)))]
 use super::{Features, Generate, detected, select, vec};
 use crate::dsa::PrivateKey;
 use crate::dsa::tests::vectors::hex;
@@ -56,7 +61,12 @@ fn prime_vectors() -> Vec<Vector> {
 
 /// The three fixed tapes: the published seed in every seed chunk, h = 2 in
 /// every h chunk, and 0x02 witnesses.
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+)))]
 fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     match tape {
         0 => {
@@ -76,14 +86,24 @@ fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     }
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+)))]
 const KNOWN_ANSWER_FILLS: usize = 3;
 
 /// One refillable tape: the published seed, then 0x02 octets for its
 /// witnesses and generator candidates (deterministic, for known answers;
 /// production obtains independent bytes from the OS), and 0x02 octets in
 /// any refill.
-#[cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+))]
 fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     buf.fill(2);
     if tape == 0 {
@@ -91,7 +111,12 @@ fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     }
 }
 
-#[cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+))]
 const KNOWN_ANSWER_FILLS: usize = 1;
 
 #[test]
@@ -104,9 +129,19 @@ fn cavp_generated_parameters() {
             Ok(())
         })
         .unwrap();
-        #[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+        #[cfg(not(any(
+            target_arch = "x86_64",
+            target_arch = "powerpc64",
+            target_arch = "x86",
+            target_arch = "arm"
+        )))]
         assert_eq!(tape, KNOWN_ANSWER_FILLS);
-        #[cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm"))]
+        #[cfg(any(
+            target_arch = "x86_64",
+            target_arch = "powerpc64",
+            target_arch = "x86",
+            target_arch = "arm"
+        ))]
         assert!(tape >= KNOWN_ANSWER_FILLS);
         assert_eq!(parameters.p(), v.p);
         assert_eq!(parameters.q(), v.q);
@@ -118,9 +153,19 @@ fn cavp_generated_parameters() {
     }
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+)))]
 const FILLS: usize = 3;
-#[cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+))]
 const FILLS: usize = 2;
 
 #[test]
@@ -158,7 +203,12 @@ fn parameter_generation_errors() {
 }
 
 #[test]
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+)))]
 fn empty_tapes_zero_output() {
     for (p_len, q_len) in [(128, 20), (256, 32), (384, 32)] {
         let mut out = vec![0xa5; 2 * p_len + q_len];
@@ -200,88 +250,12 @@ fn generated_parameters_with_os_randomness() {
 }
 
 #[test]
-#[cfg(target_arch = "x86")]
-fn backend_combinations() {
-    use super::select_backends;
-    use crate::arch::dsa::{
-        VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_FEATURES, vg_dsa_generate_parameters,
-        vg_dsa_generate_parameters_sha1_shani, vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-        vg_dsa_generate_parameters_sha256_shani,
-    };
-    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
-    // The mixed SHA pairs cannot be selected by a real CPU today because
-    // the hash instructions share feature requirements. Check the complete
-    // dispatch table, including those pairs, against emitted feature sets.
-    let cases: &[(H1, H256, Generate, Features)] = &[
-        (
-            H1::Scalar,
-            H256::Scalar,
-            vg_dsa_generate_parameters,
-            Features(0),
-        ),
-        (
-            H1::Scalar,
-            H256::ShaNi,
-            vg_dsa_generate_parameters_sha256_shani,
-            VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::Scalar,
-            vg_dsa_generate_parameters_sha1_shani,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::ShaNi,
-            vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_FEATURES,
-        ),
-    ];
-    for &(h1, h256, expected, required) in cases {
-        let selected = select_backends(h1, h256);
-        assert!(core::ptr::fn_addr_eq(selected, expected));
-        if detected().contains(required) {
-            check_empty_tapes(selected, 128);
-        }
-    }
-}
-
-/// An implementation given empty tapes zeroes `out` and returns 0.
-#[cfg(target_arch = "x86")]
-fn check_empty_tapes(selected: Generate, p_len: usize) {
-    let q_len = if p_len == 128 { 20 } else { 32 };
-    let mut out = vec![0xa5; 2 * p_len + q_len];
-    let mut scratch = vec![0u64; 64 * p_len + 1024];
-    let empty: &[u8] = &[];
-    // SAFETY: the selected helper matches the supported public width; disjoint buffers,
-    // whole empty tapes, and all emitted CPU requirements checked.
-    assert_eq!(
-        unsafe {
-            selected(
-                out.as_mut_ptr(),
-                out.len(),
-                p_len,
-                q_len,
-                empty.as_ptr(),
-                0,
-                empty.as_ptr(),
-                0,
-                empty.as_ptr(),
-                0,
-                scratch.as_mut_ptr(),
-                scratch.len(),
-            )
-        },
-        0
-    );
-    assert!(out.iter().all(|&byte| byte == 0));
-}
-
-#[test]
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+)))]
 fn exhausted_tapes_after_prime_search_zero_output() {
     let v = prime_vectors().remove(0);
     assert_eq!(v.bits, 1024);

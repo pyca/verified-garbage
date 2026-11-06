@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Hash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
@@ -124,39 +126,39 @@ def satState : State where
 
 theorem verifyWith_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (u : Bool)
     (hct : ConstantTime isa verifyArm.pre verifyArm.pub (verifyBrainpoolP512r1With u)) :
-    Verified Arm.target (verifyBrainpoolP512r1With u) (Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract Arm.abi) :=
+    Verified Arm.target (verifyBrainpoolP512r1With u) (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst Arm.abi) :=
   Verified.of_correct (verify_arm hL u) hct
     { pre := by
-        sig_implies_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
+        sig_implies_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       post := by
         intro s s' _ h
-        sig_post [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
+        sig_post [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
         exact h
       pub := by
-        sig_implies_pub [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
+        sig_implies_pub [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := by
-        sig_implies_sat [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
+        sig_implies_sat [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState }
 
 theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
-    Verified Arm.target verifyBrainpoolP512r1 (Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract Arm.abi) :=
+    Verified Arm.target verifyBrainpoolP512r1 (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst Arm.abi) :=
   verifyWith_verified hL false verify_ct
 
 theorem verifyU_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
-    Verified Arm.target verifyBrainpoolP512r1U (Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract Arm.abi) :=
+    Verified Arm.target verifyBrainpoolP512r1U (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst Arm.abi) :=
   verifyWith_verified hL true verifyU_ct
 
 /-- `satState` satisfies the precondition. -/
-theorem verify_sat : (Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract Arm.abi).pre satState := by
-  sig_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+theorem verify_sat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst Arm.abi).pre satState := by
+  sig_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr, satState]
   repeat' (first | exact Region.disjoint_of_sep (by decide) | decide | constructor)

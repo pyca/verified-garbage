@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Hash
 public import VerifiedGarbage.Proof.Framework.Mem
@@ -1251,35 +1253,35 @@ theorem constsOk_nil (st : Nat) (s : State) : ConstsOk [] st s := by
   simp [ConstsOk, constRegs, Abi.constRegions, Abi.constsHeld]
 
 /-- The verification's precondition under `abi`, from `KPre`. -/
-theorem core_pre {st : Nat} {s : State} (h : KPre I st s) : (I.verifyContract abi (st + 1)).pre s := by
+theorem core_pre {st : Nat} {s : State} (h : KPre I st s) : (Proof.Ecdsa.verifyContract I abi (st + 1)).pre s := by
   have h' : KF I st (s.gpr .esp) (arg s 0) (arg s 1) (arg s 2) (arg s 3) s.rd s.wr := h
-  sig_pre [Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig, Spec.Ecdsa.scratchWords,
+  sig_pre [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow]
   exact ⟨h'.stk, h'.fit, h'.rd, h'.wr, h'.d03, h'.d0A, h'.d13, h'.d1A, h'.d23, h'.d2A, h'.d3A, h'.r0, h'.r1,
     h'.r2, h'.r3, h'.rA, h'.b0, h'.b1, h'.b2, h'.b3, h'.bA, h'.f0, h'.f1, h'.f2, h'.f3⟩
 
-theorem core_post {st : Nat} {s s' : State} (h : (I.verifyContract abi st).post s s') :
+theorem core_post {st : Nat} {s s' : State} (h : (Proof.Ecdsa.verifyContract I abi st).post s s') :
     (s'.gpr .edx ++ s'.gpr .eax).setWidth 32 =
       vres I s.mem ((arg s 0).setWidth 64)
         (Spec.Ecdsa.hashToInt I.curve (Spec.Ecdsa.bytesAt s.mem ((arg s 1).setWidth 64) I.curve.len))
         ((arg s 2).setWidth 64) := by
-  sig_post [Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig, Spec.Ecdsa.scratchWords,
+  sig_post [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
   exact h
 
 theorem core_pub' {st : Nat} {s₁ s₂ : State} (h : s₁.gpr .esp = s₂.gpr .esp ∧ kleakOf (I := I) s₁ = kleakOf (I := I) s₂ ∧
     arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧ arg s₁ 2 = arg s₂ 2 ∧ arg s₁ 3 = arg s₂ 3) :
-    (I.verifyContract abi st).pub s₁ s₂ := by
-  sig_pub [Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig, Spec.Ecdsa.scratchWords,
+    (Proof.Ecdsa.verifyContract I abi st).pub s₁ s₂ := by
+  sig_pub [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
   exact h
 
 /-- The verification, run as `coreR` describes it, from its proof under `abi`. -/
-theorem coreR_nil {st : Nat} {core : Prog isa} (h : Verified target core (I.verifyContract abi (st + 1))) :
+theorem coreR_nil {st : Nat} {core : Prog isa} (h : Verified target core (Proof.Ecdsa.verifyContract I abi (st + 1))) :
     (∀ s, (coreR I [] st).pre s → ∃ t s', Exec isa core s t s' ∧ abiPreserved s s' ∧ (coreR I [] st).post s s') ∧
       ConstantTime isa (coreR I [] st).pre (coreR I [] st).pub core := by
   obtain ⟨hc, hct, -⟩ := h
-  have hp : ∀ s, (coreR I [] st).pre s → (I.verifyContract abi (st + 1)).pre s := fun s hs => by
+  have hp : ∀ s, (coreR I [] st).pre s → (Proof.Ecdsa.verifyContract I abi (st + 1)).pre s := fun s hs => by
     have := hs.1; rw [stripConsts_nil] at this; exact core_pre this
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_⟩
   · obtain ⟨t, s', he, ha, hq⟩ := hc s (hp s hs)
@@ -1289,13 +1291,13 @@ theorem coreR_nil {st : Nat} {core : Prog isa} (h : Verified target core (I.veri
 
 /-- The same, from its proof under `abi.withConsts` of its tables. -/
 theorem coreR_cons {st : Nat} {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
-    {core : Prog isa} (h : Verified target core (I.verifyContract (abi.withConsts (c₀ :: cs)) (st + 1))) :
+    {core : Prog isa} (h : Verified target core (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) (st + 1))) :
     (∀ s, (coreR I (c₀ :: cs) st).pre s →
       ∃ t s', Exec isa core s t s' ∧ abiPreserved s s' ∧ (coreR I (c₀ :: cs) st).post s s') ∧
       ConstantTime isa (coreR I (c₀ :: cs) st).pre (coreR I (c₀ :: cs) st).pub core := by
   obtain ⟨hc, hct, -⟩ := h
   have hp : ∀ s, (coreR I (c₀ :: cs) st).pre s →
-      (I.verifyContract (abi.withConsts (c₀ :: cs)) (st + 1)).pre s :=
+      (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) (st + 1)).pre s :=
     fun s hs => pre_consts.mpr ⟨core_pre hs.1, hs.2⟩
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_⟩
   · obtain ⟨t, s', he, ha, hq⟩ := hc s (hp s hs)
@@ -1354,7 +1356,7 @@ theorem inner_pub {K : List (String × List (BitVec 64))} {st : Nat} {s₁ s₂ 
 /-- `hashed` under `abi`, from states with the buffer at `esp + bufOff`. -/
 theorem hashed_nil {wide : Bool} {core : Prog isa} {st : Nat}
     (hL : 8 * I.curve.len = Spec.Ecdsa.nBits I.curve + if wide then 7 else 0) (h66 : I.curve.len ≤ 66)
-    (hcore : Verified target core (I.verifyContract abi (st + 1))) {hc : Taint.Hint taint.T}
+    (hcore : Verified target core (Proof.Ecdsa.verifyContract I abi (st + 1))) {hc : Taint.Hint taint.T}
     (htc : (taint.check τc (convert I.curve.len wide) hc).isSome = true) :
     (∀ s, (innerA (I := I) (st + 1)).pre s → AtBuf 5 s → ∃ t s', Exec isa (hashed I.curve.len wide core) s t s' ∧
       abiPreserved s s' ∧ (innerA (I := I) (st + 1)).post s s') ∧
@@ -1373,7 +1375,7 @@ theorem hashed_nil {wide : Bool} {core : Prog isa} {st : Nat}
 theorem hashed_cons {wide : Bool} {core : Prog isa} {st : Nat} {c₀ : String × List (BitVec 64)}
     {cs : List (String × List (BitVec 64))}
     (hL : 8 * I.curve.len = Spec.Ecdsa.nBits I.curve + if wide then 7 else 0) (h66 : I.curve.len ≤ 66)
-    (hcore : Verified target core (I.verifyContract (abi.withConsts (c₀ :: cs)) (st + 1)))
+    (hcore : Verified target core (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) (st + 1)))
     {hc : Taint.Hint taint.T} (htc : (taint.check τc (convert I.curve.len wide) hc).isSome = true) :
     (∀ s, (innerK (I := I) c₀ cs (st + 1)).pre s → AtBuf 5 s →
       ∃ t s', Exec isa (hashed I.curve.len wide core) s t s' ∧
@@ -1670,7 +1672,7 @@ variable {I : Spec.Ecdsa.Instance}
 bytes with `st + 1` bytes of stack: `Impl.Ecdsa.X86.VerifyHash.frameBytes` more. -/
 theorem verifyHash_verified {wide : Bool} {core : Prog isa} {st : Nat}
     (hL : 8 * I.curve.len = Spec.Ecdsa.nBits I.curve + if wide then 7 else 0) (h66 : I.curve.len ≤ 66)
-    (hcore : Verified target core (I.verifyContract abi (st + 1))) (hsp : NoSp core)
+    (hcore : Verified target core (Proof.Ecdsa.verifyContract I abi (st + 1))) (hsp : NoSp core)
     (hd : stackUse core ≤ st + 1) {hc : Taint.Hint taint.T}
     (htc : (taint.check τc (convert I.curve.len wide) hc).isSome = true)
     (hsat : ∃ s, (I.verifyHashContract abi (st + 1 + Impl.Ecdsa.X86.VerifyHash.frameBytes)).pre s) :
@@ -1687,7 +1689,7 @@ the `len` bytes with `st + 1` bytes of stack. -/
 theorem verifyHash_verifiedC {wide : Bool} {core : Prog isa} {st : Nat} {c₀ : String × List (BitVec 64)}
     {cs : List (String × List (BitVec 64))}
     (hL : 8 * I.curve.len = Spec.Ecdsa.nBits I.curve + if wide then 7 else 0) (h66 : I.curve.len ≤ 66)
-    (hcore : Verified target core (I.verifyContract (abi.withConsts (c₀ :: cs)) (st + 1))) (hsp : NoSp core)
+    (hcore : Verified target core (Proof.Ecdsa.verifyContract I (abi.withConsts (c₀ :: cs)) (st + 1))) (hsp : NoSp core)
     (hd : stackUse core ≤ st + 1) {hc : Taint.Hint taint.T}
     (htc : (taint.check τc (convert I.curve.len wide) hc).isSome = true)
     (hsat : ∃ s, (I.verifyHashContract (abi.withConsts (c₀ :: cs)) (st + 1 + Impl.Ecdsa.X86.VerifyHash.frameBytes)).pre s) :

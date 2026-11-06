@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.RISCV64.Hash
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
@@ -57,15 +59,15 @@ def verifySat : State where
   rd := [⟨0x1000, 57⟩, ⟨0x2000, 28⟩, ⟨0x3000, 56⟩]
   wr := [⟨0x8000, 8192⟩]
 
-theorem verifyRV_implies : verifyRV.Implies (Spec.Ecdsa.Instance.verifyContract Spec.Ecdsa.P224.inst RISCV64.abi) :=
+theorem verifyRV_implies : verifyRV.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst RISCV64.abi) :=
     { pre := by
-        sig_implies_pre [Spec.Ecdsa.P224.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P224.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
+        sig_implies_pre [Spec.Ecdsa.P224.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P224.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
           RISCV64.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.Ecdsa.P224.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P224.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
+        sig_post [Spec.Ecdsa.P224.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P224.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
           RISCV64.argRegs]
         have h' : s'.gpr .a0 = if vf s.mem (s.gpr .a0) (s.gpr .a1) (s.gpr .a2) then 1 else 0 := h
         rw [h']
@@ -73,19 +75,19 @@ theorem verifyRV_implies : verifyRV.Implies (Spec.Ecdsa.Instance.verifyContract 
           if vf s.mem (s.gpr .a0) (s.gpr .a1) (s.gpr .a2) then 1 else 0
         split <;> rfl
       pub := by
-        sig_implies_pub [Spec.Ecdsa.P224.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P224.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
+        sig_implies_pub [Spec.Ecdsa.P224.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P224.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
           RISCV64.argRegs]
       sat := by
-        sig_implies_sat [Spec.Ecdsa.P224.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P224.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
+        sig_implies_sat [Spec.Ecdsa.P224.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P224.curve, Spec.Ecdsa.scratchWords, verifyRV, vf, RISCV64.abi,
           RISCV64.argRegs] [verifySat] using verifySat }
 
 /-- A state satisfying the precondition with the table. -/
 def verifySatC : State :=
   { verifySat with mem := Comb.combSatMem, rd := verifySat.rd ++ [⟨0x100000, 151552⟩], syms := fun _ => 0x100000 }
 
-theorem verify_sat : (Spec.Ecdsa.Instance.verifyContract Spec.Ecdsa.P224.inst
+theorem verify_sat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst
     (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p224CombConsts)).pre verifySatC := by
   have hl := Comb.combWords_length
   have held := Comb.combSatMem_held
@@ -93,7 +95,7 @@ theorem verify_sat : (Spec.Ecdsa.Instance.verifyContract Spec.Ecdsa.P224.inst
     Impl.Ecdsa.RISCV64.Comb.p224CombWords)] from rfl]
   generalize Impl.Ecdsa.RISCV64.Comb.p224CombWords = W' at hl held ⊢
   generalize e : verifySatC = s
-  sig_pre [Spec.Ecdsa.P224.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig, Spec.P224.curve,
+  sig_pre [Spec.Ecdsa.P224.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.P224.curve,
     Spec.Ecdsa.scratchWords, RISCV64.abi, RISCV64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow]
   subst e
@@ -107,7 +109,7 @@ theorem verify_sat : (Spec.Ecdsa.Instance.verifyContract Spec.Ecdsa.P224.inst
   exact Region.disjoint_of_sep (by decide)
 
 theorem verifyRVC_implies :
-    verifyRVC.Implies (Spec.Ecdsa.Instance.verifyContract Spec.Ecdsa.P224.inst
+    verifyRVC.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst
       (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p224CombConsts)) :=
   { pre := fun _ hs => ⟨verifyRV_implies.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
     post := fun s s' hs hp => post_consts.mpr (verifyRV_implies.post (stripConsts _ s) s'
@@ -118,7 +120,7 @@ theorem verifyRVC_implies :
     sat := ⟨verifySatC, verify_sat⟩ }
 
 theorem verify_verified (hL : VG.Proof.Weierstrass.Law W) :
-    Verified RISCV64.target verifyP224 (Spec.Ecdsa.Instance.verifyContract Spec.Ecdsa.P224.inst
+    Verified RISCV64.target verifyP224 (Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst
       (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p224CombConsts)) :=
   Verified.of_correct (verify_rv hL) verify_ct verifyRVC_implies
 

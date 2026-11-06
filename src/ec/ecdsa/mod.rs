@@ -1,12 +1,6 @@
-//! ECDSA (FIPS 186-5 §6.4) with deterministic signatures (RFC 6979 §3.2), over
-//! the curves of [`ec`](crate::ec), with MD5, SHA-1 or a SHA-2 hash function
-//! ([`SignatureHash<C>`]).
-//!
-//! Signing's timing may depend on how many candidates for the per-message
-//! secret `k` it tries (almost always one), but not otherwise on the key or the
-//! message. Verification with a [`PublicKey<C>`] uses as many of the hash's
-//! leftmost bits as the curve's order has (FIPS 186-5 §6.4.2), and validates
-//! the key (SP 800-56A §5.6.2.3.3).
+//! ECDSA (FIPS 186-5 §6.4) with deterministic signatures (RFC 6979 §3.2): the
+//! signing and verification methods of `ec`'s keys, and each curve's verified
+//! functions with each hash function, in its file here.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -28,8 +22,7 @@ mod p521;
 mod secp256k1;
 mod table;
 
-use crate::ec::{Curve, PublicKey};
-use crate::zeroize::zeroize;
+use crate::ec::{Curve, Error, PrivateKey, PublicKey};
 
 mod sealed {
     /// The verified functions of the curve `C` with a hash function: signing
@@ -54,57 +47,15 @@ mod sealed {
 /// brainpoolP512r1, `Sha512`.
 pub trait SignatureHash<C: Curve>: sealed::Functions<C> {}
 
-/// Why signing, deriving the public key, or verifying a signature failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The private key is not in `[1, n − 1]`. For a valid key, signing
-    /// fails only if none of the candidates for `k` it tries is suitable:
-    /// for P-224, with probability under 2⁻⁸⁸⁸, for P-256 under 2⁻²⁴⁸, for
-    /// P-384 under 2⁻¹⁵⁴⁴,
-    /// and for P-521 under 2⁻²⁰⁸⁸; deriving the public key
-    /// never fails.
-    InvalidKey,
-    /// The signature is not valid for the public key, or the public key is
-    /// not valid.
-    InvalidSignature,
-}
-
-impl core::fmt::Display for Error {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str(match self {
-            Error::InvalidKey => "invalid ECDSA private key",
-            Error::InvalidSignature => "invalid ECDSA signature",
-        })
-    }
-}
-
-impl core::error::Error for Error {}
-
-/// An ECDSA private key on the curve `C`.
-///
-/// The key is cleared when it is dropped. Debug output omits it.
-pub struct SigningKey<C: Curve> {
-    d: C::PrivateKey,
-}
-
-impl<C: Curve> SigningKey<C> {
-    /// Imports a private key `d`, most significant byte first. Signing and
-    /// deriving the public key check that it is in `[1, n − 1]`.
-    pub fn from_bytes(d: &C::PrivateKey) -> Self {
-        Self { d: d.clone() }
-    }
-
-    /// The public key `Q = dG`, which verifies the key's signatures.
+/// Signing with ECDSA.
+impl<C: Curve> PrivateKey<C> {
+    /// Signs the hash of `message` with the hash function `H` (FIPS 186-5
+    /// §6.4.1), deriving `k` with HMAC with `H` (RFC 6979 §3.2): the
+    /// signature `r ‖ s`.
     ///
-    /// # Errors
-    ///
-    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
-    pub fn public_key(&self) -> Result<PublicKey<C>, Error> {
-        PublicKey::derive(&self.d).ok_or(Error::InvalidKey)
-    }
-
-    /// Signs the hash of `message` with the hash function `H`, deriving `k`
-    /// with HMAC with `H` (RFC 6979 §3.2): the signature `r ‖ s`.
+    /// The timing may depend on how many candidates for the per-message
+    /// secret `k` it tries (almost always one), but not otherwise on the key
+    /// or the message.
     ///
     /// # Errors
     ///
@@ -127,28 +78,12 @@ impl<C: Curve> SigningKey<C> {
     }
 }
 
-impl<C: Curve> Clone for SigningKey<C> {
-    fn clone(&self) -> Self {
-        Self { d: self.d.clone() }
-    }
-}
-
-impl<C: Curve> core::fmt::Debug for SigningKey<C> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("SigningKey").finish_non_exhaustive()
-    }
-}
-
-impl<C: Curve> Drop for SigningKey<C> {
-    fn drop(&mut self) {
-        zeroize(self.d.as_mut());
-    }
-}
-
 /// Verifying ECDSA signatures.
 impl<C: Curve> PublicKey<C> {
     /// Verifies the signature `r ‖ s` of the hash of `message` with the hash
-    /// function `H` (FIPS 186-5 §6.4.2).
+    /// function `H` (FIPS 186-5 §6.4.2), using as many of the hash's leftmost
+    /// bits as the curve's order has, and validating the key (SP 800-56A
+    /// §5.6.2.3.3).
     ///
     /// # Errors
     ///

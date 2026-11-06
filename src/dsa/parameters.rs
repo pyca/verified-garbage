@@ -14,26 +14,41 @@
 // supplies the three entropy tapes. It
 // allocates the output and working space, and chooses the implementation.
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+)))]
 use alloc::vec;
 use alloc::vec::Vec;
 
 use super::{Error, Secret};
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+)))]
 use crate::arch::dsa::vg_dsa_generate_parameters;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dsa::{
     vg_dsa_generate_parameters_sha1_sha2, vg_dsa_generate_parameters_sha1_sha2_sha256_sha2,
     vg_dsa_generate_parameters_sha256_sha2,
 };
-#[cfg(target_arch = "x86")]
-use crate::arch::dsa::{
-    vg_dsa_generate_parameters_sha1_shani, vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-    vg_dsa_generate_parameters_sha256_shani,
-};
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+)))]
 use crate::cpu::detected;
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+)))]
 use verified_garbage_cpu::Features;
 
 mod search;
@@ -90,9 +105,19 @@ impl Parameters {
             3072 => (384, 32),
             _ => return Err(Error::Length),
         };
-        #[cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm"))]
+        #[cfg(any(
+            target_arch = "x86_64",
+            target_arch = "powerpc64",
+            target_arch = "x86",
+            target_arch = "arm"
+        ))]
         let packed = search::generate(p_len, q_len, random)?;
-        #[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+        #[cfg(not(any(
+            target_arch = "x86_64",
+            target_arch = "powerpc64",
+            target_arch = "x86",
+            target_arch = "arm"
+        )))]
         let packed = tapes(p_len, q_len, random)?;
         Ok(Self {
             packed,
@@ -117,7 +142,12 @@ impl Parameters {
     }
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+)))]
 type Generate = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -135,7 +165,12 @@ type Generate = unsafe extern "C" fn(
 
 /// The finite search over three fixed tapes (`VG.Spec.Dsa.generateParametersBytes`),
 /// on the targets that do not have the refillable-tape search yet.
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "arm"
+)))]
 fn tapes(
     p_len: usize,
     q_len: usize,
@@ -178,29 +213,6 @@ fn tapes(
 
 #[cfg(test)]
 mod tests;
-
-#[cfg(target_arch = "x86")]
-fn select(features: Features) -> Generate {
-    use crate::hashes::{sha1::Sha1Backend, sha256::Sha256Backend};
-    select_backends(
-        Sha1Backend::select(features),
-        Sha256Backend::select(features),
-    )
-}
-
-#[cfg(target_arch = "x86")]
-fn select_backends(
-    sha1: crate::hashes::sha1::Sha1Backend,
-    sha256: crate::hashes::sha256::Sha256Backend,
-) -> Generate {
-    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
-    match (sha1, sha256) {
-        (H1::Scalar, H256::Scalar) => vg_dsa_generate_parameters,
-        (H1::Scalar, H256::ShaNi) => vg_dsa_generate_parameters_sha256_shani,
-        (H1::ShaNi, H256::Scalar) => vg_dsa_generate_parameters_sha1_shani,
-        (H1::ShaNi, H256::ShaNi) => vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-    }
-}
 
 #[cfg(target_arch = "aarch64")]
 fn select(features: Features) -> Generate {

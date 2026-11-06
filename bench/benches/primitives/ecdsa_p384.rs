@@ -29,15 +29,14 @@ pub const USES: &[&str] = &[
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
-    use aws_lc_rs::agreement::{ECDH_P384, PrivateKey};
+    use aws_lc_rs::agreement::{self, ECDH_P384};
     use aws_lc_rs::signature::{ECDSA_P384_SHA384_ASN1, ECDSA_P384_SHA384_FIXED_SIGNING};
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
     use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
     use openssl::hash::MessageDigest;
     use openssl::nid::Nid;
-    use verified_garbage::ec::P384;
-    use verified_garbage::ecdsa::SigningKey;
+    use verified_garbage::ec::{P384, PrivateKey};
     use verified_garbage::hashes::sha384::Sha384;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, VG};
@@ -59,7 +58,7 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("ec_p384_public_key");
     g.bench(BenchmarkId::new(VG, 97), |b| {
         b.iter(|| {
-            SigningKey::<P384>::from_bytes(black_box(&d))
+            PrivateKey::<P384>::from_bytes(black_box(&d))
                 .public_key()
                 .unwrap()
         })
@@ -76,19 +75,19 @@ pub fn bench(c: &mut Criterion) {
     // aws-lc-rs computes the public key of a bare private key only for ECDH
     // (`agreement::PrivateKey`), when it constructs one.
     assert_eq!(
-        PrivateKey::from_private_key(&ECDH_P384, &d)
+        agreement::PrivateKey::from_private_key(&ECDH_P384, &d)
             .unwrap()
             .compute_public_key()
             .unwrap()
             .as_ref(),
-        SigningKey::<P384>::from_bytes(&d)
+        PrivateKey::<P384>::from_bytes(&d)
             .public_key()
             .unwrap()
             .as_bytes()
     );
     g.bench(BenchmarkId::new(AWS_LC, 97), |b| {
         b.iter(|| {
-            PrivateKey::from_private_key(&ECDH_P384, black_box(&d))
+            agreement::PrivateKey::from_private_key(&ECDH_P384, black_box(&d))
                 .unwrap()
                 .compute_public_key()
                 .unwrap()
@@ -110,7 +109,7 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::P384>>(
+fn hash<H: verified_garbage::ec::SignatureHash<verified_garbage::ec::P384>>(
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
@@ -129,12 +128,11 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::P384>>(
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use openssl::sign::{Signer, Verifier};
-    use verified_garbage::ec::P384;
-    use verified_garbage::ecdsa::SigningKey;
+    use verified_garbage::ec::{P384, PrivateKey};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
-    let key = SigningKey::<P384>::from_bytes(d);
+    let key = PrivateKey::<P384>::from_bytes(d);
     let group = EcGroup::from_curve_name(Nid::SECP384R1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let d_bn = BigNum::from_slice(d).unwrap();

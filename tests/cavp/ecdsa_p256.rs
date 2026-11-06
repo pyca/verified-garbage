@@ -20,8 +20,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{P256, PublicKey};
-use verified_garbage::ecdsa::{Error, SignatureHash};
+use verified_garbage::ec::{Error, P256, PublicKey, SignatureHash};
 use verified_garbage::hashes::sha1::Sha1;
 use verified_garbage::hashes::sha224::Sha224;
 use verified_garbage::hashes::sha256::Sha256;

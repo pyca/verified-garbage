@@ -182,6 +182,57 @@ fn baseline() {
 }
 
 #[test]
+#[cfg(target_arch = "x86")]
+fn backend_combinations() {
+    use super::select_backends;
+    use crate::arch::dsa::{
+        VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_FEATURES,
+        VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES,
+        VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_FEATURES, vg_dsa_parameter_search,
+        vg_dsa_parameter_search_sha1_shani, vg_dsa_parameter_search_sha1_shani_sha256_shani,
+        vg_dsa_parameter_search_sha256_shani,
+    };
+    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
+    use verified_garbage_cpu::Features;
+    // The mixed SHA pairs cannot be selected by a real CPU, since both hashes
+    // need the same feature. Check the complete dispatch table against the
+    // emitted feature sets, at every width.
+    let cases: &[(H1, H256, Search, Features)] = &[
+        (
+            H1::Scalar,
+            H256::Scalar,
+            vg_dsa_parameter_search,
+            Features(0),
+        ),
+        (
+            H1::Scalar,
+            H256::ShaNi,
+            vg_dsa_parameter_search_sha256_shani,
+            VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_FEATURES,
+        ),
+        (
+            H1::ShaNi,
+            H256::Scalar,
+            vg_dsa_parameter_search_sha1_shani,
+            VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_FEATURES,
+        ),
+        (
+            H1::ShaNi,
+            H256::ShaNi,
+            vg_dsa_parameter_search_sha1_shani_sha256_shani,
+            VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES,
+        ),
+    ];
+    for &(h1, h256, expected, required) in cases {
+        let selected = select_backends(h1, h256);
+        assert!(core::ptr::fn_addr_eq(selected, expected));
+        if detected().contains(required) {
+            check(selected);
+        }
+    }
+}
+
+#[test]
 #[cfg(all(
     target_arch = "arm",
     any(

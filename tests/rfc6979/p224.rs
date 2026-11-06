@@ -10,8 +10,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{P224, PublicKey};
-use verified_garbage::ecdsa::{Error, SigningKey};
+use verified_garbage::ec::{Error, P224, PrivateKey, PublicKey};
 use verified_garbage::hashes::sha224::Sha224;
 
 use verified_garbage::hashes::sha1::Sha1;
@@ -27,7 +26,7 @@ fn p224() -> ([u8; 28], [u8; 28], [u8; 57], Signatures<56>) {
 }
 
 /// The signature of `message`, of the message and of its hash.
-fn sign(key: &SigningKey<P224>, message: &[u8]) -> [Result<[u8; 56], Error>; 2] {
+fn sign(key: &PrivateKey<P224>, message: &[u8]) -> [Result<[u8; 56], Error>; 2] {
     [
         key.sign::<Sha224>(message),
         key.sign_prehashed::<Sha224>(&Sha224::digest(message)),
@@ -47,12 +46,12 @@ fn verify(key: &PublicKey<P224>, message: &[u8], rs: &[u8; 56]) -> [Result<(), E
 #[test]
 fn p224_sha224() {
     let (_, x, _, signatures) = p224();
-    let key = SigningKey::<P224>::from_bytes(&x);
+    let key = PrivateKey::<P224>::from_bytes(&x);
     for (hash, message, rs) in &signatures {
         let signed = sign(&key.clone(), message.as_bytes());
         assert_eq!(signed, [Ok(*rs); 2], "{hash} {message}");
     }
-    assert_eq!(format!("{key:?}"), "SigningKey { .. }");
+    assert_eq!(format!("{key:?}"), "PrivateKey { .. }");
 }
 
 /// RFC 6979's bits2octets reduces the full seven-word digest modulo n.
@@ -61,7 +60,7 @@ fn p224_sha224() {
 #[test]
 fn p224_sha224_digest_reduction() {
     let (n, x, q, _) = p224();
-    let signing = SigningKey::<P224>::from_bytes(&x);
+    let signing = PrivateKey::<P224>::from_bytes(&x);
     let verifying = PublicKey::<P224>::from_bytes(&q);
     for (digest, reduced) in [(n, [0; 28]), (add(&n, 1), add(&[0; 28], 1))] {
         let signature = signing.sign_prehashed::<Sha224>(&digest).unwrap();
@@ -91,7 +90,7 @@ fn p224_verify() {
     let (_, x, u, signatures) = p224();
     let key = PublicKey::<P224>::from_bytes(&u);
     assert_eq!(key.as_bytes(), &u);
-    let other = SigningKey::<P224>::from_bytes(&add(&x, 1))
+    let other = PrivateKey::<P224>::from_bytes(&add(&x, 1))
         .public_key()
         .unwrap();
     let bad = Err(Error::InvalidSignature);
@@ -111,7 +110,7 @@ fn p224_verify() {
 fn p224_public_key() {
     let (_, x, u, _) = p224();
     assert_eq!(
-        SigningKey::<P224>::from_bytes(&x).public_key(),
+        PrivateKey::<P224>::from_bytes(&x).public_key(),
         Ok(PublicKey::from_bytes(&u))
     );
 }
@@ -122,12 +121,12 @@ fn p224_public_key() {
 fn p224_keys() {
     let (q, _, _, _) = p224();
     for bad in [[0; 28], q, add(&q, 1), [0xff; 28]] {
-        let key = SigningKey::<P224>::from_bytes(&bad);
+        let key = PrivateKey::<P224>::from_bytes(&bad);
         assert_eq!(sign(&key, b"sample"), [Err(Error::InvalidKey); 2]);
         assert_eq!(key.public_key(), Err(Error::InvalidKey));
     }
     for good in [add(&[0; 28], 1), add(&q, -1)] {
-        let key = SigningKey::<P224>::from_bytes(&good);
+        let key = PrivateKey::<P224>::from_bytes(&good);
         assert!(sign(&key, b"sample").iter().all(Result::is_ok));
         assert!(key.public_key().is_ok());
     }

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Hash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
@@ -112,31 +114,31 @@ def satState : State where
   wr := [⟨0x8000, 8192⟩]
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P521.curve) :
-    Verified Arm.target verifyP521 (Spec.Ecdsa.P521.inst.verifyContract Arm.abi) :=
+    Verified Arm.target verifyP521 (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst Arm.abi) :=
   Verified.of_correct (verify_arm hL) verify_ct
     { pre := by
-        sig_implies_pre [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P521.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
+        sig_implies_pre [Spec.Ecdsa.P521.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P521.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       post := by
         intro s s' _ h
-        sig_post [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P521.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
+        sig_post [Spec.Ecdsa.P521.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P521.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
         exact h
       pub := by
-        sig_implies_pub [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P521.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
+        sig_implies_pub [Spec.Ecdsa.P521.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P521.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := by
-        sig_implies_sat [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.P521.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
+        sig_implies_sat [Spec.Ecdsa.P521.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.P521.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState }
 
 /-- `satState` satisfies the precondition. -/
-theorem verify_sat : (Spec.Ecdsa.P521.inst.verifyContract Arm.abi).pre satState := by
-  sig_pre [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+theorem verify_sat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst Arm.abi).pre satState := by
+  sig_pre [Spec.Ecdsa.P521.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P521.curve, Spec.Ecdsa.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr, satState]
   repeat' (first | exact Region.disjoint_of_sep (by decide) | decide | constructor)

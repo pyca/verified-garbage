@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GContract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
@@ -326,7 +327,7 @@ theorem jointVerify_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weiers
     (hT : Weierstrass.CombOkW Spec.P256.curve 9 1 Impl.P256.p256G9 Impl.P256.p256G9Start)
     :
     Verified AArch64.target P256Joint.verify
-      (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts P256Joint.p256v.combConsts)) := by
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts P256Joint.p256v.combConsts)) := by
   refine ⟨fun s hs => ?_,?_,impliesG.sat⟩
   · obtain ⟨t,s',he,ha,hp⟩ := jointVerify_a64 hL hI hT s (impliesG.pre _ hs)
     exact ⟨t,s',he,ha,impliesG.post s s' hs hp⟩
@@ -361,8 +362,8 @@ open VG.Proof.Ecdsa.AArch64
 theorem verify_ct (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
     ConstantTime isa
-      (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts p256.combConsts)).pre
-      (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts p256.combConsts)).pub verifyP256 := by
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts p256.combConsts)).pre
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts p256.combConsts)).pub verifyP256 := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   apply nafVerify_public_ct (p256_ok hI) (by decide) hL hT nafVerify_checks
     _ _ _ _ _ _ (jacPre_of (implies.pre _ pre₁)) (jacPre_of (implies.pre _ pre₂)) (jacPublic_of_spec pub) e₁ e₂
@@ -370,7 +371,7 @@ theorem verify_ct (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch
 theorem verify_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
     Verified AArch64.target verifyP256
-      (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts p256.combConsts)) := by
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts p256.combConsts)) := by
   refine ⟨fun s hs => ?_, verify_ct hL hI hT, implies.sat⟩
   obtain ⟨t, s', he, ha, hp⟩ := jacVerify_a64 hL hI hT s (implies.pre _ hs)
   exact ⟨t, s', he, ha, implies.post s s' hs hp⟩

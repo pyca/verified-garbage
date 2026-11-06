@@ -10,8 +10,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{P192, PublicKey};
-use verified_garbage::ecdsa::{Error, SigningKey};
+use verified_garbage::ec::{Error, P192, PrivateKey, PublicKey};
 use verified_garbage::hashes::sha256::Sha256;
 
 use verified_garbage::hashes::sha1::Sha1;
@@ -27,7 +26,7 @@ fn p192() -> ([u8; 24], [u8; 24], [u8; 49], Signatures<48>) {
 }
 
 /// The signature of `message`, of the message and of its hash.
-fn sign(key: &SigningKey<P192>, message: &[u8]) -> [Result<[u8; 48], Error>; 2] {
+fn sign(key: &PrivateKey<P192>, message: &[u8]) -> [Result<[u8; 48], Error>; 2] {
     [
         key.sign::<Sha256>(message),
         key.sign_prehashed::<Sha256>(&Sha256::digest(message)),
@@ -47,12 +46,12 @@ fn verify(key: &PublicKey<P192>, message: &[u8], rs: &[u8; 48]) -> [Result<(), E
 #[test]
 fn p192_sha256() {
     let (_, x, _, signatures) = p192();
-    let key = SigningKey::<P192>::from_bytes(&x);
+    let key = PrivateKey::<P192>::from_bytes(&x);
     for (hash, message, rs) in &signatures {
         let signed = sign(&key.clone(), message.as_bytes());
         assert_eq!(signed, [Ok(*rs); 2], "{hash} {message}");
     }
-    assert_eq!(format!("{key:?}"), "SigningKey { .. }");
+    assert_eq!(format!("{key:?}"), "PrivateKey { .. }");
 }
 
 /// The signatures verify with the public key, and not of another message,
@@ -62,7 +61,7 @@ fn p192_verify() {
     let (_, x, u, signatures) = p192();
     let key = PublicKey::<P192>::from_bytes(&u);
     assert_eq!(key.as_bytes(), &u);
-    let other = SigningKey::<P192>::from_bytes(&add(&x, 1))
+    let other = PrivateKey::<P192>::from_bytes(&add(&x, 1))
         .public_key()
         .unwrap();
     let bad = Err(Error::InvalidSignature);
@@ -82,7 +81,7 @@ fn p192_verify() {
 fn p192_public_key() {
     let (_, x, u, _) = p192();
     assert_eq!(
-        SigningKey::<P192>::from_bytes(&x).public_key(),
+        PrivateKey::<P192>::from_bytes(&x).public_key(),
         Ok(PublicKey::from_bytes(&u))
     );
 }
@@ -93,12 +92,12 @@ fn p192_public_key() {
 fn p192_keys() {
     let (q, _, _, _) = p192();
     for bad in [[0; 24], q, add(&q, 1), [0xff; 24]] {
-        let key = SigningKey::<P192>::from_bytes(&bad);
+        let key = PrivateKey::<P192>::from_bytes(&bad);
         assert_eq!(sign(&key, b"sample"), [Err(Error::InvalidKey); 2]);
         assert_eq!(key.public_key(), Err(Error::InvalidKey));
     }
     for good in [add(&[0; 24], 1), add(&q, -1)] {
-        let key = SigningKey::<P192>::from_bytes(&good);
+        let key = PrivateKey::<P192>::from_bytes(&good);
         assert!(sign(&key, b"sample").iter().all(Result::is_ok));
         assert!(key.public_key().is_ok());
     }

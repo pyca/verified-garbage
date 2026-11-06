@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Hash
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
@@ -67,28 +69,28 @@ def satState : State where
   wr := [⟨0x8000, 8192⟩]
 
 theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) :
-    Verified PPC64LE.target verifyBrainpoolP256r1 (Spec.Ecdsa.BrainpoolP256r1.inst.verifyContract PPC64LE.abi) :=
+    Verified PPC64LE.target verifyBrainpoolP256r1 (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst PPC64LE.abi) :=
   Verified.of_correct (verify_ppc hL) verify_ct
     { pre := by
-        sig_implies_pre [Spec.Ecdsa.BrainpoolP256r1.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
+        sig_implies_pre [Spec.Ecdsa.BrainpoolP256r1.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
           PPC64LE.abi, PPC64LE.argRegs]
       post := by
         intro s s' _ h
-        sig_post [Spec.Ecdsa.BrainpoolP256r1.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
+        sig_post [Spec.Ecdsa.BrainpoolP256r1.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
           PPC64LE.abi, PPC64LE.argRegs]
         simp only [verifyPPC, vf, Spec.BrainpoolP256r1.curve] at h
         revert h
         split <;> rename_i hv <;> simp only [hv, ite_true, ite_false, Bool.false_eq_true] <;>
           exact fun h => by rw [h]; rfl
       pub := by
-        sig_implies_pub [Spec.Ecdsa.BrainpoolP256r1.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
+        sig_implies_pub [Spec.Ecdsa.BrainpoolP256r1.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
           PPC64LE.abi, PPC64LE.argRegs]
       sat := by
-        sig_implies_sat [Spec.Ecdsa.BrainpoolP256r1.inst, Spec.Ecdsa.Instance.verifyContract,
-          Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
+        sig_implies_sat [Spec.Ecdsa.BrainpoolP256r1.inst, Proof.Ecdsa.verifyContract,
+          Proof.Ecdsa.verifySig, Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, verifyPPC, vf,
           PPC64LE.abi, PPC64LE.argRegs]
           [satState] using satState }
 

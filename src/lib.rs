@@ -134,8 +134,6 @@ pub mod cmac;
 mod ct;
 pub mod dsa;
 pub mod ec;
-pub mod ecdh;
-pub mod ecdsa;
 pub mod ed25519;
 pub mod ed448;
 mod entropy;

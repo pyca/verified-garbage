@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # ECDSA verification over brainpoolP512r1 on 32-bit ARM: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract` for 32-bit ARM, by name:
+The facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst` for 32-bit ARM, by name:
 `vg_ecdsa_brainpoolp512r1_verify(public, digest, sig, scratch)`, with the arguments in
 `r0`–`r3` (AAPCS), the result in `r0` (the low word of `r1:r0`). Only the
 pointers are public here: the proof shows that nothing else affects timing,
