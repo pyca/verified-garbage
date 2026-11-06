@@ -14,13 +14,6 @@ open VG.Spec.Poly1305 (P)
 
 abbrev absorbRegs : List Reg := [.x4, .x5, .x6, .x9, .x10, .x11, .x12, .x13, .x14, .x15]
 
-theorem absorb_eq (pad : Bool) : absorb pad =
-    addBlock pad ++ (mulTo .x9 .x10 .x4 .x7 ++ (mulAdd .x9 .x10 .x5 .x17 ++
-    (mulTo .x11 .x12 .x4 .x8 ++ (mulAdd .x11 .x12 .x5 .x7 ++
-    (mulAddSmall .x11 .x12 .x6 .x17 ++ (([.mul .x .x13 .x6 .x7] : List Instr) ++
-    (combine ++ (fold ++ addLow)))))))) := by
-  simp only [absorb, products, List.append_assoc]
-
 /-- `products ++ combine ++ fold ++ addLow`: `x4:x5:x6` (`x6 ≤ 6`) times the key, partially reduced. -/
 theorem mul_eq : Impl.Poly1305.AArch64.Radix64.products ++ combine ++ fold ++ addLow =
     mulTo .x9 .x10 .x4 .x7 ++ (mulAdd .x9 .x10 .x5 .x17 ++

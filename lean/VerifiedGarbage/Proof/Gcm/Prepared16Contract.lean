@@ -20,19 +20,6 @@ namespace VG.Proof.Gcm
 open VG.Spec VG.Spec.Gcm
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def cryptBlocksPrepared16Pre (pb : Nat) : Curry (cryptBlocksPreparedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _counter _y _data _n _scratch m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      PreparedPowers16Repr m ctx
-
-/-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def encryptBlocksToPrepared16Pre (pb : Nat) :
-    Curry (encryptBlocksToPreparedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _counter _y _src n _dst dstN _scratch m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      dstN = n ∧ PreparedPowers16Repr m ctx
-
-/-- The existing round-count and length requirements, plus 16 prepared powers. -/
 def streamEncryptToPrepared16Pre (pb : Nat) :
     Curry (streamEncryptToPreparedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _state _aadLen _textLen _src len _dst dstLen m =>
@@ -44,32 +31,6 @@ def sealSplitPrepared16Pre (pb : Nat) : Curry (sealSplitPreparedSig.words pb) (M
   fun ctx rounds _nonce _nonceLen _aad _aadLen _src srcLen _dst len _tag m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧ srcLen.toNat ≤ len.toNat ∧
       PreparedPowers16Repr m ctx
-
-/-- The unchanged `encryptBlocksContract` postcondition with 16 prepared powers. -/
-def encryptBlocksPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cryptBlocksPreparedSig.contract A (pre := cryptBlocksPrepared16Pre A.ptrBits)
-    (post := fun ctx rounds counter y data n _scratch m m' _ =>
-      let c := ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) (blocksAt m data n.toNat)
-      blocksAt m' data n.toNat = c ∧
-        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
-        blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
-    (stack := stack)
-
-/-- The unchanged `decryptBlocksContract` postcondition with 16 prepared powers. -/
-def decryptBlocksPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cryptBlocksPreparedSig.contract A (pre := cryptBlocksPrepared16Pre A.ptrBits)
-    (post := fun ctx rounds counter y data n _scratch m m' _ =>
-      let c := blocksAt m data n.toNat
-      blocksAt m' data n.toNat = ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) c ∧
-        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
-        blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
-    (stack := stack)
-
-/-- The unchanged `encryptBlocksToContract` postcondition with 16 prepared powers. -/
-def encryptBlocksToPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  encryptBlocksToPreparedSig.contract A (pre := encryptBlocksToPrepared16Pre A.ptrBits)
-    (post := encryptBlocksToPost A.ptrBits)
-    (stack := stack)
 
 /-- The unchanged `streamEncryptToContract` postcondition with 16 prepared powers. -/
 def streamEncryptToPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=

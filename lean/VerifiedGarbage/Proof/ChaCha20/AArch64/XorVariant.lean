@@ -5,11 +5,12 @@ public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Spec.ChaCha20.Contract
-public import VerifiedGarbage.Proof.ChaCha20.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 
@@ -35,11 +36,5 @@ structure XorImpl where
     (Impl.ChaCha20Poly1305.AArch64.sealMainCode callee stitched) h).isSome = true
   openTaint : ∃ h, (taint.check (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7])
     (Impl.ChaCha20Poly1305.AArch64.openMainCode callee stitched) h).isSome = true
-
-theorem XorImpl.verified (v : XorImpl) :
-    Verified AArch64.target v.callee.code (Proof.ChaCha20.xorContract AArch64.abi) :=
-  Verified.of_correct v.ok v.ct
-    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, AArch64.abi, AArch64.argRegs,
-      xorAArch64] [Xor.sat] using Xor.sat)
 
 end VG.Proof.ChaCha20.AArch64

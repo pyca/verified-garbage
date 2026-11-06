@@ -100,17 +100,6 @@ theorem finishRowsFor_ok (js : List (Fin 4)) (hj : js.Nodup) (rs : List (Fin 4))
     intro x
     simpa only [Data, List.flatMap_cons, List.mem_append, or_assoc, or_left_comm] using hu x
 
-theorem finishRow_ok {s : State} {m₀ : Mem} {p : Addr} {vs : Nat → CState} {done : List Nat}
-    (r : Fin 4) (hd : Data m₀ s.mem p (output vs) done) (hp : s.gpr .x1 = p)
-    (hv : ∀ i j : Fin 4, vword (s.v (vreg (rowWord r i))) j = (vs j)[rowWord r i])
-    (hfresh : ∀ j : Fin 4, slot r j ∉ done)
-    (hout : ∀ j : Fin 4, InRegions s.wr (p + BitVec.ofNat 64 (64 * j + 16 * r)) 16) :
-    WP isa (.block (finishRow r)) s fun s' =>
-      Data m₀ s'.mem p (output vs) (rowSlots r ++ done) ∧
-      (∀ k : Fin 16, k.val / 4 ≠ r.val → s'.v (vreg k) = s.v (vreg k)) ∧ Keep s s' := by
-  exact finishRowFor_ok (List.finRange 4) (List.nodup_finRange 4) r hd hp hv
-    (fun j _ => hfresh j) (fun j _ => hout j)
-
 theorem finishRows_ok (rs : List (Fin 4)) (hn : rs.Nodup)
     {s : State} {m₀ : Mem} {p : Addr} {vs : Nat → CState} {done : List Nat}
     (hd : Data m₀ s.mem p (output vs) done) (hp : s.gpr .x1 = p)

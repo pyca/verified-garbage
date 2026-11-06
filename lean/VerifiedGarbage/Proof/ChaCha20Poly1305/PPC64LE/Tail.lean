@@ -32,9 +32,6 @@ open VG.Spec.ChaCha20 (stateAt keystream)
 variable {e : Bool}
 
 theorem lenOff_eq : lenOff = 432 := rfl
-theorem tagOff_eq : tagOff = 448 := rfl
-theorem scrOff_eq : scrOff = 520 := rfl
-
 /-! ## Encrypting -/
 
 theorem set12_initState (key nonce : List Byte) :

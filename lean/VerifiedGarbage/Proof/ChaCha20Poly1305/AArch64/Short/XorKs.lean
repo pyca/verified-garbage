@@ -27,9 +27,6 @@ open VG.Proof.ChaCha20.AArch64.Xor (Upd Mupd wp_addImm wp_subImm wp_mov wp_ldrb 
   eval_nonzero_ofNat eval_zero ofNat_beq_zero xor_setWidth writeW8_apply sub_ofNat add_ofNat)
 open VG.Proof.ChaCha20.AArch64 (toNat_ofNat_lt)
 
-/-- The bytes `[0, n)` at `D`, a region of `w * c` bytes. -/
-abbrev dR' (D : Addr) (n : Nat) : Region := ⟨D, n⟩
-
 /-- What the loops need: `c` blocks of `w` bytes at `D` may be written, at `P`
 read, and the two do not overlap or wrap around. -/
 structure XH (s : State) (D P : Addr) (n : Nat) : Prop where
@@ -89,8 +86,6 @@ theorem write_out {m : Mem} {D : Addr} {a i n : Nat} {v : BitVec (8 * n)} (h : i
 abbrev body16 : List Instr :=
   [.ldrq .v0 .x9 0, .ldrq .v1 .x10 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x9 0,
     .addImm .x .x9 .x9 16, .addImm .x .x10 .x10 16, .subImm .x .x11 .x11 1]
-
-theorem xor16_eq : xor16 = .loop (.block body16) (.nonzero .x .x11) := rfl
 
 theorem step16_ok {s₀ s : State} {D P : Addr} {n j : Nat} (hh : XH s₀ D P (16 * n)) (hj : j < n)
     (h : XI s₀ D P 16 n j s) : WP isa (.block body16) s (XI s₀ D P 16 n (j + 1)) := by
@@ -159,8 +154,6 @@ theorem step16_ok {s₀ s : State} {D P : Addr} {n j : Nat} (hh : XH s₀ D P (1
 abbrev body1 : List Instr :=
   [.ldrb .x12 .x9 0, .ldrb .x13 .x10 0, .logic .eor .w .x12 .x12 .x13, .strb .x12 .x9 0,
     .addImm .x .x9 .x9 1, .addImm .x .x10 .x10 1, .subImm .x .x11 .x11 1]
-
-theorem xor1_eq : xor1 = .loop (.block body1) (.nonzero .x .x11) := rfl
 
 theorem step1_ok {s₀ s : State} {D P : Addr} {n j : Nat} (hh : XH s₀ D P (1 * n)) (hj : j < n)
     (h : XI s₀ D P 1 n j s) : WP isa (.block body1) s (XI s₀ D P 1 n (j + 1)) := by

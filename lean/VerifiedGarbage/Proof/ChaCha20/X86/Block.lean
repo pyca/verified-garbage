@@ -6,8 +6,6 @@ public import VerifiedGarbage.Impl.ChaCha20.X86
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Spec.ChaCha20.Contract
-public import VerifiedGarbage.Proof.ChaCha20.Contract
-meta import VerifiedGarbage.Proof.ChaCha20.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -20,6 +18,10 @@ meta import VerifiedGarbage.Spec.ChaCha20.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.Spec.ChaCha20
+meta import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 
@@ -292,8 +294,6 @@ theorem eaA {d : Nat} (hd : d < 12) :
     addr (esp₀ s₀) d = (esp₀ s₀).setWidth 64 + BitVec.ofNat 64 d :=
   addr_eq (by have := hp.esp_fits; omega)
 
-theorem hw : bufR s₀ ∈ s₀.wr := by simp [hp.wr]
-
 theorem in_buf {d n : Nat} (h : d + n ≤ 256) (rs : List Region) :
     InRegions (rs ++ s₀.wr) (BA s₀ + BitVec.ofNat 64 d) n :=
   ⟨bufR s₀, by simp [hp.wr], contains_off (by lit_omega) (by lit_omega)⟩
@@ -304,15 +304,6 @@ theorem out_buf {d n : Nat} (h : d + n ≤ 256) : InRegions s₀.wr (BA s₀ + B
 theorem in_st {k : Nat} (hk : k < 16) (ws : List Region) :
     InRegions (s₀.rd ++ ws) (SA s₀ + BitVec.ofNat 64 (4 * k)) 4 :=
   ⟨stR s₀, by simp [hp.rd], contains_off (by lit_omega) (by lit_omega)⟩
-
-/-- An argument slot is inside the argument region. -/
-theorem arg_sub {i : Nat} (hi : i < 2) : Region.Sub ⟨argAddr s₀ i, 4⟩ (argR s₀) := by
-  simp only [argR, argAddr]
-  rw [show (esp₀ s₀ + BitVec.ofNat 32 (4 + 4 * 0)).setWidth 64 = addr (esp₀ s₀) 4 from rfl,
-    hp.eaA (by lit_omega),
-    show (s₀.gpr .esp + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64 = addr (esp₀ s₀) (4 + 4 * i)
-    from rfl, hp.eaA (by lit_omega)]
-  exact Offset.sub _ (by lit_omega) (by lit_omega)
 
 theorem arg_contains {i : Nat} (hi : i < 2) : (argR s₀).Contains (argAddr s₀ i) 4 := by
   simp only [argR]
@@ -555,22 +546,6 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     rw [hm']
     exact block_post fun j hj => by simpa [hj] using hA.out j hj
 
-/-- Memory whose two argument slots (at `0x4004`) hold `0x1000` and `0x2000`. -/
-def satMem : Mem := fun a =>
-  bif Nat.beq a.toNat 0x4005 then 0x10 else bif Nat.beq a.toNat 0x4009 then 0x20 else 0
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .esp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := satMem
-  rd := [⟨0x1000, 64⟩, ⟨0x4004, 8⟩]
-  wr := [⟨0x2000, 256⟩]
-
 /-! ## Constant time -/
 
 /-- The initial taint: `esp` is public, and so are the 12 bytes above it (the
@@ -613,15 +588,5 @@ theorem block_correct (s : State) (hs : Proof.ChaCha20.blockX86.pre s) :
 
 theorem block_ct : ConstantTime isa Proof.ChaCha20.blockX86.pre Proof.ChaCha20.blockX86.pub block :=
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub) (by taint_decide)
-
-theorem block_verified :
-    Verified X86.target Impl.ChaCha20.X86.block (Proof.ChaCha20.blockContract X86.abi) :=
-  Verified.of_correct block_correct block_ct (by
-    have a0 : arg satState 0 = 0x1000 := by decide
-    have a1 : arg satState 1 = 0x2000 := by decide
-    have e : argAddr satState 0 = 0x4004 := by decide
-    have esp : satState.gpr .esp = 0x4000 := rfl
-    sig_implies [Proof.ChaCha20.blockContract, Proof.ChaCha20.blockSig, X86.abi, X86.argSlots,
-      X86.argVal, X86.argBytes, Proof.ChaCha20.blockX86] [a0, a1, e, esp] using satState)
 
 end VG.Proof.ChaCha20.X86

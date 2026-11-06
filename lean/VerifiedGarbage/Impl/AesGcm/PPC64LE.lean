@@ -437,9 +437,6 @@ def sealWith (textBody : Prog isa) : Prog isa :=
   .seq (.block (oneEntry 104))
     (.seq oneAad (.seq textBody (.seq (.block tagOut) (.block restore))))
 
-/-- `vg_aes_gcm_seal`, with `scratch = [sp + 104]`. -/
-def «seal» : Prog isa := sealWith (.seq oneCrypt (oneTag 0))
-
 /-- The entry of `open`, with `tag_len = [sp + 104]` in `r19` and
 `scratch = [sp + 112]`. -/
 def openEntry : List Instr := oneEntry 112 ++ ([.load .d .r19 .r12 104] : List Instr)

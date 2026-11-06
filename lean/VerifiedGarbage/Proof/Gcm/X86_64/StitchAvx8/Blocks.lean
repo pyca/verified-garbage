@@ -438,14 +438,6 @@ theorem SrcOk.inplace {s₀ : State} (hp : SPre s₀) : SrcOk s₀ false where
     rw [srcBlk_false]
     exact hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega_arith))
 
-/-- The data of block `g + j`, at `rdx` at block `g`, and `rbx` as at the start. -/
-theorem srcAddr_eq {s₀ s : State} (ix : Bool) {g : Nat} (hrdx : s.gpr .rdx = bAddr s₀ g)
-    (hrbx : s.gpr .rbx = s₀.gpr .rbx) (j : Nat) : srcAddr s ix (16 * j) = srcBlk s₀ ix (g + j) := by
-  cases ix
-  · rw [srcAddr_false, srcBlk_false, hrdx, bAddr_add]
-  · simp only [srcAddr, srcBlk, off, ite_true, hrdx, hrbx]
-    rw [BitVec.add_assoc, BitVec.add_comm (s₀.gpr .rbx), ← BitVec.add_assoc, bAddr_add]
-
 /-- The data of block `c + i`, at `rdx + 16 j` at block `c`, and `rbx` as at
 the start. -/
 theorem srcAddr_eq' {s₀ s : State} (ix : Bool) {c j : Nat}

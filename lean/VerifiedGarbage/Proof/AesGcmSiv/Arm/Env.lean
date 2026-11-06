@@ -327,9 +327,6 @@ theorem rounds_le : 16 * (p.R + 1) ≤ 240 := by rcases L.rounds with h | h <;> 
 
 theorem rounds3 : p.R = 10 ∨ p.R = 12 ∨ p.R = 14 := by rcases L.rounds with h | h <;> simp [h]
 
-theorem toNat_R : (BitVec.ofNat 32 p.R).toNat = p.R := by
-  rcases L.rounds with h | h <;> rw [h] <;> rfl
-
 theorem ofNat_R_lt : p.R < 2 ^ 32 := by rcases L.rounds with h | h <;> rw [h] <;> decide
 
 end Lay
@@ -398,13 +395,5 @@ theorem ofNat_lsr32 {a : Nat} (ha : a < 2 ^ 32) (k : Nat) : BitVec.ofNat 32 a >>
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
     Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by have := Nat.div_le_self a (2 ^ k); omega)]
-
-/-- The `n` bytes at `p + d` within the `k` bytes at `p`. -/
-theorem contains_at (p : Addr) {d n k : Nat} (h : d + n ≤ k) (hk : k < 2 ^ 64) :
-    (⟨p, k⟩ : Region).Contains (p + BitVec.ofNat 64 d) n := Offset.contains_base p h (by omega)
-
-theorem contains_at0 (p : Addr) {n k : Nat} (h : n ≤ k) (hk : k < 2 ^ 64) :
-    (⟨p, k⟩ : Region).Contains p n := by
-  simpa using contains_at p (d := 0) (by omega : 0 + n ≤ k) hk
 
 end VG.Proof.AesGcmSiv.Arm

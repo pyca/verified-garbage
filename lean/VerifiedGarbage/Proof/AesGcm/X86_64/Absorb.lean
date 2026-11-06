@@ -86,16 +86,6 @@ theorem data_absFrame {s : State} {D : Addr} {n : Nat} (hd : DataOk St W SP s D 
   · exact hd.w.sub_right (Lay.wSub (by decide))
   · exact hd.stk.symm
 
-/-- The context is apart from what `absorb` writes. -/
-theorem ctx_absFrame : ∀ r ∈ absFrame St W SP yo, (⟨Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact L.ctx_st (by decide) (by omega_arith)
-  · exact L.ctx_st (by decide) (by decide)
-  · exact L.ctx_w (by decide) (by decide)
-  · exact (L.stk_ctx (by decide)).symm
-
 omit L hyo in
 /-- A write within the buffer is within what `absorb` writes. -/
 theorem buf_absFrame {m m' : Mem} {o k : Nat} (h : Frame [⟨St + BitVec.ofNat 64 (32 + o), k⟩] m m')

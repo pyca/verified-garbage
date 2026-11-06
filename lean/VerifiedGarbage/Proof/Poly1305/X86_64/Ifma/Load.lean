@@ -49,12 +49,6 @@ structure Consts (s : State) : Prop where
   mask : (envOf s).mb 104 = 0xfffffffffff
   pad : (envOf s).mb 112 = 0x10000000000
 
-theorem Consts.of_mem {s s' : State} (h : Consts s) (hg : s'.gpr .rdi = s.gpr .rdi) (hm : s'.mem = s.mem) :
-    Consts s' := by
-  have e : (envOf s').mb = (envOf s).mb := by
-    funext d; simp only [envOf, Avx512.envOf, hg, hm]
-  exact ⟨by rw [e]; exact h.mask, by rw [e]; exact h.pad⟩
-
 structure AddPre (s : State) : Prop where
   ctx : Ctx s
   c : Consts s

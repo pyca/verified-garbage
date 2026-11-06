@@ -179,9 +179,6 @@ theorem keep_r {m m' : Mem} (hf : Frame (wR s) m m') : m'.readW (SP s) 64 = m.re
     · exact hp.t_d
     · exact hp.t_s) (by decide)
 
-omit hp in
-theorem arg_eq (i : Nat) : s.mem.readW (SP s + BitVec.ofNat 64 (8 * (i + 1))) 64 = stackArg s i := rfl
-
 /-- The entry: the arguments kept, with `scratch` in `r11` and `dst` in `r10`. -/
 theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = S s ∧
     s₁.gpr .r10 = Dst s ∧ (∀ r, r ≠ .r11 → r ≠ .r10 → s₁.gpr r = s.gpr r) ∧

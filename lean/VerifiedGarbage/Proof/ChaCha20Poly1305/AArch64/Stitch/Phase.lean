@@ -16,10 +16,10 @@ import VerifiedGarbage.Proof.Framework.Taint
 
 `Stitch.phaseWith`: five double rounds of the eight-block ChaCha20 kernel, as
 in `Mixed8.counted_phase_ok`, and `lead + 5 k` blocks of Poly1305
-(`Poly.block_absorb`) from `W` (sixteen for `Stitch.phase`). The rounds write
-only the vector registers, the registers of the integer block (`Words`) and
-`x1`; the blocks only `Poly.regs`; neither writes memory, so each preserves
-what the other computes.
+(`Poly.block_absorb`) from `W`. The rounds write only the vector registers,
+the registers of the integer block (`Words`) and `x1`; the blocks only
+`Poly.regs`; neither writes memory, so each preserves what the other
+computes.
 -/
 
 @[expose] public section
@@ -44,8 +44,6 @@ theorem words_not_poly {r : Reg} (h : Words r) : r ∉ Poly.regs := by
   exact (show ∀ k < 16, VG.Impl.ChaCha20.AArch64.wreg k ∉ Poly.regs by decide) k hk
 
 theorem x0_not_poly : Reg.x0 ∉ Poly.regs := by decide
-theorem x1_not_poly : Reg.x1 ∉ Poly.regs := by decide
-
 /-- The `len` bytes from `W` are readable, and so is the key. -/
 structure Readable (W : Addr) (len : Nat) (s : State) : Prop where
   blk : ∀ d, d + 8 ≤ len → InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) 8
@@ -93,10 +91,6 @@ theorem absorb_next {R a : Nat} {W : Addr} {len n : Nat} (hn : 16 * n + 16 ≤ l
   · rw [hx, hp, BitVec.add_assoc]
     change W + (BitVec.ofNat 64 (16 * n) + BitVec.ofNat 64 16) = _
     rw [← BitVec.ofNat_add, Nat.mul_succ]
-
-/-- Code that keeps `Poly.regs`, memory and the regions. -/
-theorem keeps_frame {s u : State} (h : Keeps Poly.regs s u) {r : Reg} (hr : r ∉ Poly.regs) :
-    u.gpr r = s.gpr r := h.1 r hr
 
 /-- `k` blocks, from the `n + 1`st. -/
 theorem absorbN_ok {R a : Nat} {W : Addr} {len : Nat} (k : Nat) {n : Nat} (hn : 16 * n + 16 * k ≤ len)
@@ -326,15 +320,5 @@ theorem phaseWith_ok {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.ChaC
       rw [Nat.mul_comm k 5] at ha'
       exact ha'.of (fun r hr' => g r (by intro he; rw [he] at hr'; exact absurd hr' (by decide))
         (by intro he; rw [he] at hr'; exact absurd hr' (by decide))) rfl
-
-/-- The phase of a whole chunk: sixteen blocks, 256 bytes. -/
-theorem phase_ok {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.ChaCha20.State}
-    {R a : Nat} {W : Addr} {start : Instr} {restore : Reg} {s : State}
-    (hn : N (VG.Proof.ChaCha20.AArch64.Rows6.pack blocks) s) (hc : C v s)
-    (ht : s.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table)
-    (hstart : exec start s = some (s.write .x .x20 W))
-    (ha : Acc R a s) (hr : Readable W 256 s) :
-    WP isa (phase sve start restore) s (Done blocks v R a W 256 restore s) :=
-  phaseWith_ok (lead := 1) (k := 3) (by decide) hn hc ht hstart ha hr
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Stitch

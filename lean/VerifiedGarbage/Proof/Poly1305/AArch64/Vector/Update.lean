@@ -51,8 +51,6 @@ open VG.Spec.Poly1305 (P bytesAt)
 /-- The low halves of the callee-saved vector registers are those of `s`. -/
 def VPres (s s' : State) : Prop := ∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
 
-theorem VPres.refl (s : State) : VPres s s := fun _ _ => rfl
-
 theorem VPres.trans {s₁ s₂ s₃ : State} (h₁ : VPres s₁ s₂) (h₂ : VPres s₂ s₃) : VPres s₁ s₃ :=
   fun r hr => (h₂ r hr).trans (h₁ r hr)
 

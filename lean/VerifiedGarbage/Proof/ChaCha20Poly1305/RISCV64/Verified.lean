@@ -50,14 +50,6 @@ theorem byte_frame {s₀ : State} {rs : List Region} {m m' : Mem} (hf : Frame rs
   have := hf.bytes (R := sub s₀ k n) hd (by show n ≤ 2 ^ 64; omega) hi
   rwa [Offset.add_add] at this
 
-/-- The parts of the context are apart from each other. -/
-theorem parts_disj (s₀ : State) {k n : Nat} (rs : List (Nat × Nat))
-    (h : ∀ p ∈ rs, (p.1 + p.2 ≤ k ∨ k + n ≤ p.1) ∧ p.1 + p.2 ≤ 608) (hk : k + n ≤ 608) :
-    ∀ r ∈ rs.map (fun p => sub s₀ p.1 p.2), (sub s₀ k n).Disjoint r := by
-  intro r hr
-  obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
-  exact sub_disj s₀ (h p hp).1.symm hk (h p hp).2
-
 /-- The additional data is unchanged. -/
 theorem aad_eq {s₀ s : State} (hp : APre e s₀) (h : Inv s₀ s) : bytesAt s.mem (ad s₀) (AL s₀) = A s₀ :=
   bytesAt_frame h.frame (fun r hr => by

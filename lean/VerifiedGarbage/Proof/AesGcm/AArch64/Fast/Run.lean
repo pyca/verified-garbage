@@ -17,10 +17,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 # AES-GCM on AArch64, the path for TLS records: `run`
 
 Untrusted: everything here is checked by Lean. After the entry of `seal`, for
-a 12-byte nonce and at most 16 bytes of additional data, `run` does what
-`sealRest` does (`run_ok`): `front` (`front_ok`), the text encrypted as
-`sealRest` encrypts it (`cryptAl_ok`), its whole blocks absorbed by one call
-of `vg_ghash` (`absSeg2_ok`, `absCall2_ok`), its last bytes and the lengths
+a 12-byte nonce and at most 16 bytes of additional data, `runWithP` does
+what `sealRest` does (`runWithP_ok`): `front` (`front_ok`), the text
+encrypted as `sealRest` encrypts it (`cryptAl_ok`), its whole blocks absorbed
+by one call of `vg_ghash` (`absSeg2_ok`, `absCall2_ok`), its last bytes and the lengths
 block absorbed in registers (`padMul_ok`, `mulT_ok`), and the tag
 (`tagSeg_ok`, `tagCall_ok`, `tagOut_ok`).
 -/
@@ -553,11 +553,5 @@ theorem runWithP_ok (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} {extr
   WP.mono (runWithPX_ok v cl hMK (ex := []) (I := fun _ => True) hs (by simp) (by simp) (by simp)
     (fun _ _ => trivial) (fun s' _ _ _ _ hc sY sS hrd hwr hsp hf _ =>
       WP.mono (hgh s' hc sY sS hrd hwr hsp hf) fun _ g => ⟨g, trivial⟩) h₁ hx h12 h16) fun _ q => q.1
-
-theorem run_ok (v : GcmImpl) (hMK : MulKey) {extra : List Region} {s s₁ : State} (hs : sealPreX extra s)
-    (h₁ : SealEntry 1 s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
-    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) :
-    WP isa (Impl.AesGcm.AArch64.Fast.run v.callees) s₁ fun s' => GprAbi s s' ∧ sealAArch64.post s s' :=
-  runWithP_ok v _ hMK (sealPreX_W hs) (fun _ _ _ _ _ hc _ _ _ _ _ _ => gh_call v.gh hc) h₁ hx h12 h16
 
 end VG.Proof.AesGcm.AArch64.Fast

@@ -145,12 +145,6 @@ theorem cwArgs_ok {s : State} (he : Env Ctx St W SP s) :
   · intro r a b; simp [gpr_setReg, a, b]
   all_goals rfl
 
-omit L in
-theorem CrMid.data_eq {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : CrMid Ctx St W SP icb P D n m₀ j s) : bytesAt s.mem D n =
-      bytesAt s.mem D j ++ bytesAt s.mem (D + BitVec.ofNat 64 j) (n - j) := by
-  rw [← bytesAt_add, Nat.add_sub_cancel' h.le]
-
 /-- The arguments of `cryptWhole`'s call of `vg_sm4_ctr32`. -/
 theorem cwCall_of {D : Addr} {n j nb : Nat} {s₂ : State} (he₂ : Env Ctx St W SP s₂)
     (hd : DataW4 Ctx St W SP s₂ D n) (hj : j ≤ n) (h16 : 16 * nb ≤ n - j)
@@ -461,16 +455,6 @@ theorem crypt_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
     · obtain ⟨j, hj⟩ := hj
       refine WP.seq (WP.mono (cryptWhole_ok L hj (hj.ciph L)) fun s'' hj' => ?_)
       exact cryptTail_ok L hj' (by have := hj.le; omega_arith) (hj'.ciph L)
-
-omit L in
-/-- `cryptHead` alone, for data within the rest of the keystream block. -/
-theorem cryptHead_out {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
-    (h : CrIn Ctx St W SP icb P D n s) (hn : n ≠ 0) (hP : P % 16 ≠ 0) (hle : n ≤ 16 - P % 16) :
-    WP isa cryptHead s (CrOut Ctx St W SP icb P D n s.mem) := by
-  have e : min (16 - P % 16) n = n := Nat.min_eq_right hle
-  refine WP.mono (cryptHead_ok h hn hP) fun s' hm => ?_
-  rw [e] at hm
-  exact ⟨hm.env, hm.ctr, hm.done, hm.frame⟩
 
 omit L in
 /-- From the start of a keystream block, nothing done yet. -/

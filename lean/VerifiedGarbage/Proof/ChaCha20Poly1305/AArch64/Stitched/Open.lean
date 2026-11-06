@@ -281,8 +281,4 @@ theorem openWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
     simp only [macData, List.append_assoc, VG.Proof.Poly1305.length_bytesAt]
   · rw [bytesAt_frame k₁₂.frame (by rdisj_all) hL', bytesAt_frame k₁₁.frame (by rdisj_all) hL', pt₁₀]
 
-theorem openStitched_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀) :
-    WP isa (openStitched v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ openAArch64.post s₀ s' :=
-  WP.seq (WP.mono (openStitchedMain_ok v hp) fun _ h => openTail_ok hp h)
-
 end VG.Proof.ChaCha20Poly1305.AArch64

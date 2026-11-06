@@ -162,8 +162,6 @@ structure Keeps (s s' : State) : Prop where
 theorem Keeps.trans {s₁ s₂ s₃ : State} (h₁ : Keeps s₁ s₂) (h₂ : Keeps s₂ s₃) : Keeps s₁ s₃ :=
   ⟨h₂.mem.trans h₁.mem, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp⟩
 
-theorem Keeps.refl (s : State) : Keeps s s := ⟨rfl, rfl, rfl, rfl⟩
-
 /-- What code that writes only memory it may keeps: the regions and the stack
 pointer. -/
 structure Keeps' (s s' : State) : Prop where
@@ -215,12 +213,6 @@ theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 
     (⟨st + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨st + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by omega) (by omega)
 
-/-- Doublewords of the context, the state and `W` are aligned. -/
-theorem cal {d : Nat} (hd : d % 8 = 0) (h : d < 256) : (c + BitVec.ofNat 64 d).toNat % 8 = 0 := by
-  have := L.cw; have := L.ca
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega)]
-  omega
-
 theorem stal {d : Nat} (hd : d % 8 = 0) (h : d < 80) : (st + BitVec.ofNat 64 d).toNat % 8 = 0 := by
   have := L.sw; have := L.sal
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega)]
@@ -252,20 +244,12 @@ theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 25
     (⟨w + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by omega) (by omega)
 
-omit L in
-theorem ctx_ctx {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 256) (hd : d + k ≤ 256) :
-    (⟨c + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨c + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by omega) (by omega)
-
 end Lay
 
 namespace Perm
 
 variable {c st w : Addr} {s : State} (P : Perm c st w s)
 include P
-
-theorem ctxR {d n : Nat} (h : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (c + BitVec.ofNat 64 d) n :=
-  in_off P.ctx h (by decide)
 
 theorem stW {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (st + BitVec.ofNat 64 d) n :=
   in_off P.st h (by decide)
@@ -392,11 +376,6 @@ theorem bytesAt_writeBytes_prefix (m : Mem) (p : Addr) (xs : List Byte) {n : Nat
 theorem writeBytes_frame' (m : Mem) {q : Addr} {xs : List Byte} {n : Nat} (hn : xs.length = n) :
     Frame [⟨q, n⟩] m (writeBytes m q xs) :=
   writeBytes_frame m q xs (by rw [hn]; exact Region.contains_self _ _)
-
-/-- Running a block with what is known of its result. -/
-theorem WP.run {is : List Instr} {s : State} {Q R : State → Prop}
-    (h : ∃ s', runBlock isa is s = some s' ∧ Q s') (hq : ∀ s', Q s' → R s') : WP isa (.block is) s R := by
-  obtain ⟨s', h₁, h₂⟩ := h; exact WP.of_runBlock ⟨s', h₁, hq _ h₂⟩
 
 /-! ## Arithmetic -/
 

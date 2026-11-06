@@ -86,10 +86,6 @@ theorem mask_val :
     ((0x3ff#16 ++ (0 : BitVec 16)).signExtend 64 ||| (0xffff#16).setWidth 64) = M26 := by
   decide
 
-/-- `lis` of `0x100`: `2²⁴`. -/
-theorem pad_val : ((0x100#16 ++ (0 : BitVec 16)).signExtend 64) = BitVec.ofNat 64 (2 ^ 24) := by
-  decide
-
 set_option simprocs false in
 /-- `2²⁶ - 1` into `r20`. -/
 theorem mask_ok (s : State) :

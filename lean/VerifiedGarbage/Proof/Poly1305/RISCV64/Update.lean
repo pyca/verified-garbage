@@ -120,8 +120,6 @@ abbrev kept : List Reg := [.a0, H0, H1, H2, R0, R1, S1]
 def Temps (s s' : State) : Prop :=
   (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr
 
-theorem Temps.refl (s : State) : Temps s s := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
-
 theorem Temps.trans {s₁ s₂ s₃ : State} (h₁ : Temps s₁ s₂) (h₂ : Temps s₂ s₃) : Temps s₁ s₃ :=
   ⟨fun r hr => (h₂.1 r hr).trans (h₁.1 r hr), h₂.2.1.trans h₁.2.1, h₂.2.2.1.trans h₁.2.2.1,
     h₂.2.2.2.trans h₁.2.2.2⟩
@@ -129,10 +127,6 @@ theorem Temps.trans {s₁ s₂ s₃ : State} (h₁ : Temps s₁ s₂) (h₂ : Te
 theorem Temps.upd {s s' : State} {d : Reg} {v : BitVec 64} (u : Upd s s' d v)
     (hd : d ∉ kept := by decide) : Temps s s' :=
   ⟨fun r hr => u.other r fun e => hd (e ▸ hr), u.mem, u.rd, u.wr⟩
-
-theorem Temps.keeps {rs : List Reg} {s s' : State} (h : Keeps rs s s')
-    (hd : ∀ r ∈ kept, r ∉ rs := by decide) : Temps s s' :=
-  ⟨fun r hr => h.1 r (hd r hr), h.2.1, h.2.2.1, h.2.2.2.1⟩
 
 theorem Temps.keys {s₀ s s' : State} (h : Keys (Rn s₀) s) (ht : Temps s s') : Keys (Rn s₀) s' :=
   h.of_regs fun r hr => ht.1 r (by
@@ -381,13 +375,6 @@ theorem copyFill_ok {s₀ : State} (hp : UPre s₀) {s : State} {n : Nat} (h : C
       refine ⟨by rw [e']; exact e, ?_⟩
       simp only [Bounds, g H2 (by decide)]
       exact b
-
-theorem Acc.of_keeps {s₀ s s' : State} {X : List Byte} {rs : List Reg} (h : Acc s₀ X s)
-    (k : Keeps rs s s') (hr : H0 ∉ rs ∧ H1 ∉ rs ∧ H2 ∉ rs := by decide) : Acc s₀ X s' := by
-  intro hA
-  obtain ⟨e, b⟩ := bounds_eq k hr
-  obtain ⟨h1, h2⟩ := h hA
-  exact ⟨by rw [e]; exact h1, b h2⟩
 
 /-- `min(16 - kb, dl)` bytes into the buffer, which is absorbed if that fills it. -/
 theorem fill_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : Pre1 s₀ s) :

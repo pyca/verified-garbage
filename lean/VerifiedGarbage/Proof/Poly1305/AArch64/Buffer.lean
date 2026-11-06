@@ -38,11 +38,6 @@ theorem Upd.write (s : State) (sz : Size) (d : Reg) (v : BitVec sz.bits) :
 theorem Upd.write64 (s : State) (d : Reg) (v : BitVec 64) : Upd s (s.write .x d v) d v := by
   simpa using Upd.write s .x d v
 
-theorem Upd.trans {s₁ s₂ s₃ : State} {d : Reg} {v w : BitVec 64} (h₁ : Upd s₁ s₂ d v)
-    (h₂ : Upd s₂ s₃ d w) : Upd s₁ s₃ d w :=
-  ⟨h₂.gpr, fun r h => (h₂.other r h).trans (h₁.other r h), h₂.mem.trans h₁.mem,
-    h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp⟩
-
 /-- `s'` is `s` with memory `m`. -/
 structure Mupd (s s' : State) (m : Mem) : Prop where
   gpr : s'.gpr = s.gpr
@@ -193,59 +188,6 @@ theorem bufB_in {s : State} {st : Addr} (hw : sR st ∈ s.wr) {k : Nat} (hk : k 
 
 theorem bfR_sub_wR (st : Addr) : Region.Sub (bfR st) (wR st) :=
   Offset.sub st (by decide) (by decide)
-
-theorem bfR_disjoint_cR (st : Addr) : (bfR st).Disjoint (cR st) :=
-  Offset.disjoint st (by decide) (by decide) (by decide)
-
-/-- The first `n` bytes of the buffer are not where the coefficients are. -/
-theorem buf_disjoint_cR (st : Addr) {n : Nat} (hn : n ≤ 16) :
-    (⟨off st 56, n⟩ : Region).Disjoint (cR st) :=
-  (bfR_disjoint_cR st).sub_left (Region.sub_prefix hn)
-
-theorem coef_facts : ∀ k < 5, ∀ i < 5, 72 ≤ coef k i ∧ coef k i + 4 ≤ 108 := by decide +kernel
-
-/-- The coefficients are unchanged by writes to the buffer. -/
-theorem Coefs.frame {m m' : Mem} {st : Addr} {R : Nat} (h : Coefs m st R) (hf : Frame [bfR st] m m') :
-    Coefs m' st R := by
-  intro k hk i hi
-  obtain ⟨c₁, c₂⟩ := coef_facts k hk i hi
-  rw [← h k hk i hi]
-  refine congrArg BitVec.toNat (hf.readW (r := ⟨off st (coef k i), 4⟩) (Region.contains_self _ _) ?_
-    (by decide))
-  simp only [List.mem_singleton, forall_eq]
-  exact Offset.disjoint st (by omega_using [c₁, c₂]) (by omega_using [c₁, c₂]) (by decide)
-
-/-- The coefficient words may be read when the state may be. -/
-theorem coefIn_of {s : State} (hw : sR (s.gpr .x0) ∈ s.wr) : CoefIn s := fun off h₁ h₂ =>
-  ⟨_, List.mem_append_right _ hw, contains_off (by omega_using [h₁, h₂]) (by omega_using [h₁, h₂])⟩
-
-/-- Absorbing the buffer: its 16 bytes, and `pad · 2¹²⁸`. -/
-theorem absorbBuf_ok (s : State) (pad : Bool) {R : Nat} (hR : R < 2 ^ 128) (hm : s.gpr .x17 = M26)
-    (hco : Coefs s.mem (s.gpr .x0) R) (hw : sR (s.gpr .x0) ∈ s.wr) :
-    WP isa (.block (([.addImm .x .x1 .x0 56] : List Instr) ++ absorb pad)) s fun s' =>
-      (Bounds s → hv s' % P = ((hv s + (leNum (bytesAt s.mem (off (s.gpr .x0) 56) 16) +
-        2 ^ 128 * pad.toNat)) * R) % P ∧ Bounds s') ∧ Keeps (.x1 :: absorbRegs) s s' := by
-  refine WP.block_append (wp_addImm (by decide) fun s₁ u₁ => WP.block_nil ?_)
-  have x0₁ : s₁.gpr .x0 = s.gpr .x0 := u₁.other _ (by decide)
-  have hin : ∀ d, d + 8 ≤ 16 → InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x1 + BitVec.ofNat 64 d) 8 := by
-    intro d hd
-    rw [u₁.rd, u₁.wr, u₁.gpr, ← off, off_off]
-    exact ⟨_, List.mem_append_right _ hw, contains_off (by omega_using [hd]) (by omega_using [hd])⟩
-  refine WP.mono (absorb_ok s₁ pad hR (by rw [u₁.other _ (by decide)]; exact hm)
-    (by rw [u₁.mem, x0₁]; exact hco) (coefIn_of (by rw [u₁.wr, x0₁]; exact hw)) (hin 0 (by decide))
-    (hin (0 + 8) (by decide))) fun s' ⟨ha, k⟩ => ⟨fun hb => ?_, ?_⟩
-  · have hv₁ : hv s₁ = hv s := by
-      simp only [hv, v, u₁.other .x4 (by decide), u₁.other .x5 (by decide), u₁.other .x6 (by decide),
-        u₁.other .x7 (by decide), u₁.other .x8 (by decide)]
-    have hb₁ : Bounds s₁ := by
-      simpa only [Bounds, v, u₁.other .x4 (by decide), u₁.other .x5 (by decide),
-        u₁.other .x6 (by decide), u₁.other .x7 (by decide), u₁.other .x8 (by decide)] using hb
-    obtain ⟨hv', hb'⟩ := ha hb₁
-    refine ⟨?_, hb'⟩
-    rw [hv', hv₁, leNum_key, u₁.mem, u₁.gpr]
-  · refine ⟨fun r hr => ?_, by rw [k.2.1, u₁.mem], by rw [k.2.2.1, u₁.rd], by rw [k.2.2.2, u₁.wr]⟩
-    simp only [List.mem_cons, not_or] at hr
-    rw [k.1 r (by simpa using hr.2), u₁.other r hr.1]
 
 /-! ## Copying bytes into the buffer -/
 

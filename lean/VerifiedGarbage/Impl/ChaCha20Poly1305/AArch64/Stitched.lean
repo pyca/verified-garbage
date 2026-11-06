@@ -10,10 +10,10 @@ import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
 # ChaCha20-Poly1305: AArch64, with Poly1305 inside the ChaCha20 kernel
 
 `sealWith` and `openWith` (`../AArch64.lean`) encrypt the data with one
-call and absorb it with another. With the eight-block kernel, `sealStitched`
-and `openStitched` instead process the data's whole chunks of 512 bytes with
-`Stitch.bulk`, which absorbs the ciphertext while it computes the keystream,
-and only the rest with those calls:
+call and absorb it with another. With the eight-block kernel,
+`sealStitchedMain` and `openStitchedMain` instead process the data's whole
+chunks of 512 bytes with `Stitch.bulk`, which absorbs the ciphertext while it
+computes the keystream, and only the rest with those calls:
 
 * the counter is set to 1 (`counterOne`; for some lengths, the one-time key is
   instead computed with the first 256 bytes' keystream, and the stitched code
@@ -425,7 +425,7 @@ def sealStitchedMain (c : XorCallee) : Prog isa :=
 
 def sealStitched (c : XorCallee) : Prog isa := .seq (sealStitchedMain c) sealTail
 
-/-- `openStitched` up to the tag computed. -/
+/-- `open` up to the tag computed, as `sealStitchedMain`. -/
 def openStitchedMain (c : XorCallee) : Prog isa :=
   .seq prologue
   (.seq (macPad .x24 .x25)
@@ -484,8 +484,6 @@ def openWideMain (c : XorCallee) : Prog isa :=
   (.seq (openRest c)
   (.seq absorbLengths
     (finalizeTo 48)))))))))))
-
-def openStitched (c : XorCallee) : Prog isa := .seq (openStitchedMain c) openTail
 
 /-! ## Decrypting 449 to 511 bytes
 

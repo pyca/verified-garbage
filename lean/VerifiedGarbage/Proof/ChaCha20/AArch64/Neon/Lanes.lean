@@ -27,11 +27,6 @@ theorem shr_mask (x : BitVec 32) (k : Nat) (hk : k < 32) :
   · have hx : x.getLsbD (32 - k + i) = false := BitVec.getLsbD_of_ge x _ (by omega)
     simp only [BitVec.getLsbD_and, BitVec.getLsbD_ushiftRight, hx, Bool.false_and]
 
-theorem sli_ushr (x : BitVec 32) (k : Nat) (hk : k < 32) :
-    VShiftOp.sli.eval k 32 (x >>> (32 - k)) x = x.rotateLeft k := by
-  rw [VShiftOp.eval, shr_mask x k hk, BitVec.rotateLeft_def, Nat.mod_eq_of_lt hk,
-    BitVec.or_comm]
-
 /-- EXT aligns the rows for the four parallel diagonal quarter rounds. -/
 theorem vword_ext (x : BitVec 128) (k e : Nat) (hk : k < 4) (he : e < 4) :
     vword (((x ++ x) >>> (4 * k * 8)).extractLsb' 0 128) e =

@@ -25,7 +25,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-public import VerifiedGarbage.Proof.ChaCha20.Contract
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # ChaCha20 keystream XOR on ARMv7
@@ -183,9 +184,6 @@ theorem XPre.of (s₀ : State) (h : Proof.ChaCha20.xorArm.pre s₀) : XPre s₀ 
 namespace XPre
 variable {s₀ : State} (hp : XPre s₀)
 include hp
-
-theorem eaB {d : Nat} (h : d < 320) : State.addr (bP s₀ + BitVec.ofNat 32 d) = bA s₀ + BitVec.ofNat 64 d :=
-  addr_add (by have := hp.b_fit; omega_arith)
 
 theorem eaS {d : Nat} (h : d < 64) : State.addr (stP s₀ + BitVec.ofNat 32 d) = stA s₀ + BitVec.ofNat 64 d :=
   addr_add (by have := hp.st_fit; omega_arith)
@@ -761,19 +759,6 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.ChaCha20.xorArm.pre s₁)
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [hp₁.wr, hp₂.wr]; simp only [stRg, dRg, bRg, stA, dA, bA, stP, dP, bP, L, p0, p1, p2, p3]
 
-/-- A state satisfying the precondition (with no data). -/
-def sat : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r3 => 0x3000 | _ => 0
-  sp := 0x5000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 64⟩, ⟨0x2000, 0⟩, ⟨0x3000, 320⟩]
-
 theorem xor_correct (s : State) (hs : Proof.ChaCha20.xorArm.pre s) :
     ∃ t s', Exec isa Impl.ChaCha20.Arm.Xor.xor s t s' ∧ abiPreserved s s' ∧
       Proof.ChaCha20.xorArm.post s s' :=
@@ -783,12 +768,5 @@ theorem xor_ct : ConstantTime isa Proof.ChaCha20.xorArm.pre Proof.ChaCha20.xorAr
     Impl.ChaCha20.Arm.Xor.xor :=
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
     (by native_taint_decide)
-
-theorem xor_verified :
-    Verified Arm.target Impl.ChaCha20.Arm.Xor.xor (Proof.ChaCha20.xorContract Arm.abi) :=
-  Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Proof.ChaCha20.xorArm, State.addr]
-      [sat] using sat)
 
 end VG.Proof.ChaCha20.Arm.Xor

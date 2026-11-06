@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 Untrusted: everything here is checked by Lean. Each function saves and
 restores our caller's registers as AES-GCM's do (`Proof/AesGcm/X86_64/Fn.lean`,
 `save_ok`, `restore_ok`, `exit_ok`); the pieces of SM4-GCM's own never write
-the slots they are saved in (`saved_tagFrame`, `saved_crFrame`).
+the slots they are saved in (`saved_tagFrame`).
 -/
 
 @[expose] public section
@@ -33,15 +33,6 @@ theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame S
   · exact L.lay.w_w (.inr (by decide)) (by decide) (by decide)
   · exact L.lay.w_w (.inr (by omega)) (by decide) (by omega)
   · exact L.lay.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.kw.sub_right (Lay.wSub (by decide))).symm
-
-theorem saved_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW4 Ctx St W SP s D n) :
-    ∀ r ∈ crFrame St SP D n, (savedR W).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact (hd.dw.ok.w.sub_right (Lay.wSub (by decide))).symm
-  · exact (L.lay.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact (L.kw.sub_right (Lay.wSub (by decide))).symm
 
 end

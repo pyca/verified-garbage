@@ -67,11 +67,6 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
-/-- Two runs of `a; (b; c)` are two runs of `(a; b); c`. -/
-theorem RelCT.assoc {a b c : Prog isa} {P Q : State → State → Prop}
-    (h : RelCT isa P (.seq (.seq a b) c) Q) : RelCT isa P (.seq a (.seq b c)) Q :=
-  fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ _ _ _ _ hp (Exec.seq_assoc e₁) (Exec.seq_assoc e₂)
-
 theorem RelCT.assoc' {a b c : Prog isa} {P Q : State → State → Prop}
     (h : RelCT isa P (.seq a (.seq b c)) Q) : RelCT isa P (.seq (.seq a b) c) Q :=
   fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ _ _ _ _ hp (Exec.seq_assoc' e₁) (Exec.seq_assoc' e₂)

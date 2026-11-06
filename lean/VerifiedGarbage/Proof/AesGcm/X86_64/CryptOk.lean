@@ -161,12 +161,6 @@ theorem ctrArgs_ok {R : Nat} {s : State} (he : Env Ctx St W SP s) (hR : RoundsAt
   · intro r a b c d; simp [gpr_setReg, a, b, c, d]
   all_goals rfl
 
-omit L in
-theorem CrMid.data_eq {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : CrMid Ctx St W SP R icb P D n m₀ j s) : bytesAt s.mem D n =
-      bytesAt s.mem D j ++ bytesAt s.mem (D + BitVec.ofNat 64 j) (n - j) := by
-  rw [← bytesAt_add, Nat.add_sub_cancel' h.le]
-
 /-- The arguments of `cryptWhole`'s call of `vg_aes_ctr32`. -/
 theorem cwCall_of {R : Nat} {D : Addr} {n j nb : Nat} {s₂ : State} (he₂ : Env Ctx St W SP s₂)
     (hd : DataW Ctx St W SP s₂ D n) (hj : j ≤ n) (h16 : 16 * nb ≤ n - j) (hR : R = 10 ∨ R = 12 ∨ R = 14)

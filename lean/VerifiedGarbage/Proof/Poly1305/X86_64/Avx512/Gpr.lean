@@ -25,9 +25,6 @@ open VG.Impl.Poly1305.X86_64 (at_)
 open VG.Proof.Poly1305.X86_64 (off off_eq M0 M1)
 open VG.Proof.Poly1305.X86_64.Avx2 (vec vec_gpr vec_mem vec_rd vec_wr ea_at se1 se3)
 
-theorem VKeep.avx2 {s s' : State} (h : VKeep s s') : Avx2.VKeep s s' :=
-  ⟨h.xmm, h.ymmHi, h.mxcsr, h.rd, h.wr⟩
-
 set_option simprocs false in
 theorem cmp_ok (s : State) :
     WP isa (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 minBlocks))]) s fun s' =>
