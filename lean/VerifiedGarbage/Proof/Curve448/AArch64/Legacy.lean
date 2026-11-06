@@ -77,10 +77,4 @@ theorem toLegacy_ok' {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
         (unpacked (normalized (limbs s.mem base o))) 16 from VG.Proof.X448.valN_congr out,
         unpacked_val, normalized_mod cap]
 
-theorem toLegacy_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
-    (ho : Slot o) (ho8 : o % 8 = 0) (hb : Bounded s.mem base o) :
-    WP isa (.block (Impl.Curve448.AArch64.toLegacy o)) s fun t =>
-      Op base o s t ∧ VG.Proof.X448.AArch64.Bounded t.mem base o ∧
-      VG.Proof.X448.AArch64.F t.mem base o = F s.mem base o :=
-  toLegacy_ok' hs ho ho8 fun i hi => Nat.lt_trans (hb i hi) (by decide)
 end VG.Proof.Curve448.AArch64

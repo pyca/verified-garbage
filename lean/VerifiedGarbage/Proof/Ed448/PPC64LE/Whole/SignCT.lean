@@ -105,14 +105,6 @@ theorem inv_regs {s₁ s₂ a b : State} (hp : SPub s₁ s₂) (ha : SInv s₁ a
 theorem inv_sp {s₁ s₂ a b : State} (hp : SPub s₁ s₂) (ha : SInv s₁ a) (hb : SInv s₂ b) : a.sp = b.sp :=
   ha.sp.trans (hp.2.2.2.2.2.2.2.2.1.trans hb.sp.symm)
 
-/-- From what the hashes keep. -/
-theorem rg_regs {s₁ s₂ t₁ t₂ a b : State} (hp : SPub s₁ s₂) (h₁ : SInv s₁ t₁) (h₂ : SInv s₂ t₂) (ha : Rg t₁ a)
-    (hb : Rg t₂ b) : ∀ r ∈ signRegs, a.gpr r = b.gpr r := fun r hr =>
-  (ha.cs r (signRegs_pres r hr)).trans ((inv_regs hp h₁ h₂ r hr).trans (hb.cs r (signRegs_pres r hr)).symm)
-
-theorem rg_sp {s₁ s₂ t₁ t₂ a b : State} (hp : SPub s₁ s₂) (h₁ : SInv s₁ t₁) (h₂ : SInv s₂ t₂) (ha : Rg t₁ a)
-    (hb : Rg t₂ b) : a.sp = b.sp := ha.sp.trans ((inv_sp hp h₁ h₂).trans hb.sp.symm)
-
 theorem sub_regs {rs : List Reg} (h : ∀ r ∈ rs, r ∈ signRegs) {g₁ g₂ : Reg → BitVec 64}
     (he : ∀ r ∈ signRegs, g₁ r = g₂ r) : ∀ r ∈ rs, g₁ r = g₂ r := fun r hr => he r (h r hr)
 

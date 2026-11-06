@@ -55,11 +55,6 @@ theorem two_wp {c : Prog isa} {Φ Ψ : Lay → Mem → State → Prop}
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
   exact ⟨ht, L, g₁, g₂, mx₁, mx₂, m₁, m₂, hL, hi, y₁.1, y₂.1, y₁.2, y₂.2⟩
 
-theorem two_mono {Φ Ψ : Lay → Mem → State → Prop} (h : ∀ L m t, Φ L m t → Ψ L m t) {a b : State}
-    (hp : Two I Φ a b) : Two I Ψ a b :=
-  let ⟨L, g₁, g₂, mx₁, mx₂, m₁, m₂, hL, hi, c₁, c₂, f₁, f₂⟩ := hp
-  ⟨L, g₁, g₂, mx₁, mx₂, m₁, m₂, hL, hi, c₁, c₂, h _ _ _ f₁, h _ _ _ f₂⟩
-
 /-- A call after the moves of its arguments, of verified code whose public
 data agree in both runs. -/
 theorem call_tr {Φ : Lay → Mem → State → Prop} {as : List Arg} (hok : as.all Arg.ok = true) {n : String}

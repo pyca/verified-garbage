@@ -67,7 +67,6 @@ abbrev HS (L : Lay) : Region := ⟨L.E + BitVec.ofNat 64 hashAt, 114⟩
 
 theorem st_sub (L : Lay) : Region.Sub (ST L) L.SCR := Region.sub_prefix (by decide)
 theorem ks_sub (L : Lay) : Region.Sub (KS L) L.SCR := Offset.sub_base _ (by decide)
-theorem hs_sub (L : Lay) : Region.Sub (HS L) L.FR := Offset.sub_base _ (by decide)
 theorem st_ks (L : Lay) : (ST L).Disjoint (KS L) := Offset.base_disjoint _ (by decide) (by decide)
 
 theorem covers_writes {E : Addr} {rd wr ws : List Region}

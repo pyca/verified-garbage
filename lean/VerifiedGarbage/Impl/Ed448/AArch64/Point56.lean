@@ -7,7 +7,7 @@ public import VerifiedGarbage.Spec.Ed448
 # Ed448's point addition and doubling on AArch64, as functions
 
 `vg_ed448_r56_point_add(ws)` and `vg_ed448_r56_point_double(ws)`
-(`Proof/Ed448/Point56Contract.lean`; AAPCS64: `ws` in `x0`) run the register-resident
+(AAPCS64: `ws` in `x0`) run the register-resident
 field code that `vg_ed448_verify_equation` inlined (`Base.addOps`, `dblOps`)
 on the slots where it keeps their operands, as functions and calls of them
 built as `vg_gf448_r56_pow_p34` is (`asFn`, `fnCall`,

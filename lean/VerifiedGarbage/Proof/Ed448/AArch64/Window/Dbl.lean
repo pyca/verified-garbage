@@ -130,9 +130,6 @@ def dblPt (p : Point) (one : Spec.X448.Fe) : Point :=
   ⟨(pp + pp) * j, e * (c - dd), e * j⟩
 
 theorem dblEnv_345 (e : Env) : pt (dblEnv 3 4 5 e) 3 4 5 = dblPt (pt e 3 4 5) (e 20) := rfl
-theorem dblEnv_012 (e : Env) : pt (dblEnv 0 1 2 e) 0 1 2 = dblPt (pt e 0 1 2) (e 20) := rfl
-theorem dblEnv_678 (e : Env) : pt (dblEnv 6 7 8 e) 6 7 8 = dblPt (pt e 6 7 8) (e 20) := rfl
-
 theorem dblPt_eq (p : Point) : dblPt p 1 = VG.Proof.Ed448.double p := by
   simp only [dblPt, VG.Proof.Ed448.double]
   congr 1 <;> refine Ed448.toZ_inj.1 ?_ <;>

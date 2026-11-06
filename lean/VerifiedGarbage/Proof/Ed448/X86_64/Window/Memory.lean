@@ -40,9 +40,6 @@ theorem KeepW.trans {base : Addr} {s u v : State} (h : KeepW base s u) (g : Keep
 theorem KeepW.scr {base : Addr} {s u : State} (h : KeepW base s u) (hs : Scr s base) : Scr u base :=
   ⟨(h.gpr _ (by decide)).trans hs.rdi, h.wr ▸ hs.wr, hs.nowrap⟩
 
-theorem Frame.wide {base : Addr} {m u : Mem} (h : Frame base m u) : Outside base 64 7296 m u :=
-  h.outside (by decide) (by decide) (by decide) (by decide)
-
 theorem Bits.keepW {base : Addr} {o k : Nat} (ho : 2048 ≤ o) (hb : o + 460 ≤ TAB)
     {s u : State} (h : Bits base o k s) (f : KeepW base s u) : Bits base o k u := by
   intro t ht
@@ -65,23 +62,6 @@ theorem pointAt_outside {base : Addr} {a n o : Nat} {m u : Mem} (h : Outside bas
 theorem tablePoint_keep {base : Addr} {s u : State} (h : Keep base s u) (i : Nat) (hi : i < 17) :
     tablePoint u.mem base i = tablePoint s.mem base i := by
   apply pointAt_outside h.mem <;> simp only [tabOffset, TAB] <;> omega
-
-/-- Copy a stored coordinate into a field slot. -/
-theorem load_ok {s : State} {base : Addr} (hs : Scr s base) (i : Index) {a : Nat} (ha : a + 56 ≤ 8192) :
-    WP isa (.block (copyOut (slot i.val) a)) s fun u => Keep base s u ∧
-      E u.mem base = Function.update (E s.mem base) i (F s.mem base a) := by
-  have hi := VG.Proof.X448.X86_64.slot_lt i
-  have gi := VG.Proof.X448.X86_64.slot_ge i
-  simp only [Impl.X448.X86_64.ACC] at hi
-  refine WP.mono (copyOut_ok hs (by omega) ha) fun u ⟨fu, ou, gu, ru, wu⟩ => ⟨?_, ?_⟩
-  · refine ⟨fun r hr => gu r (fun h => hr (?_)), ru, wu, ou.mono (by omega) (by omega)⟩
-    exact (show ∀ r ∈ W, r ∈ clob from by decide) r h
-  · funext j
-    by_cases hj : j = i
-    · subst j; rw [Function.update_self]; show F u.mem base (slot i.val) = _
-      unfold F; rw [fu]
-    · rw [Function.update_of_ne hj]
-      exact E_outside ou j (VG.Proof.X448.X86_64.slot_sep hj)
 
 /-- Store one field slot in the table, preserving all working slots. -/
 theorem store_coord_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}

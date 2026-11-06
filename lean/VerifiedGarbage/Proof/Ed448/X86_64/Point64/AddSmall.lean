@@ -82,14 +82,6 @@ theorem addCodeWith_ok {F : Impl.X448.X86_64.Field} (hf : Proof.X448.X86_64.Fiel
       f₂ x (hx _ (by decide)) ha,
       f₁ x (fun op hop => hx op (List.mem_of_mem_take hop)) ha]
 
-theorem addCode_ok {s : State} {base : Addr} (hs : Scr s base)
-    (hd : E s.mem base 11 = Spec.Ed448.d) :
-    WP isa (.block addCode) s fun t =>
-      Keep base s t ∧ E t.mem base = evalOps addAffineOps (E s.mem base) ∧
-      ∀ x, (∀ op ∈ addAffineOps, OutOf base x op) →
-        (ofs base x < ACC ∨ ACC + 112 ≤ ofs base x) → t.mem x = s.mem x :=
-  addCodeWith_ok Proof.X448.X86_64.baseline_ok hs hd
-
 /-- The specialized addition between the same register saves and restores. -/
 theorem addFnWith_ok {F : Impl.X448.X86_64.Field} (hf : Proof.X448.X86_64.FieldOk F) {s : State} {base : Addr} (hs : Scr s base)
     (hd : E s.mem base 11 = Spec.Ed448.d) :
@@ -113,18 +105,5 @@ theorem addFnWith_ok {F : Impl.X448.X86_64.Field} (hf : Proof.X448.X86_64.FieldO
     rw [g₃ r hk, k₂.gpr r hr, g₁]
   · intro x hx
     rw [m₃, k₂.mem x hx, m₁]
-
-theorem addFn_ok {s : State} {base : Addr} (hs : Scr s base)
-    (hd : E s.mem base 11 = Spec.Ed448.d) :
-    WP isa addFn s fun t =>
-      Keep base s t ∧ E t.mem base = evalOps addAffineOps (E s.mem base) ∧
-      ∀ x, (∀ op ∈ addAffineOps, OutOf base x op) →
-        (ofs base x < ACC ∨ ACC + 112 ≤ ofs base x) → t.mem x = s.mem x :=
-  addFnWith_ok Proof.X448.X86_64.baseline_ok hs hd
-
-/-- The functions' code, as the calls run it. The addition uses its existing `d` precondition. -/
-theorem bodies_ok : PointOk bodies where
-  dbl hs := WP.mono (fn_ok doubleOps doubleOps_valid hs) fun _ ⟨k, e, _⟩ => ⟨k, e⟩
-  add hs hd := WP.mono (addFn_ok hs hd) fun _ ⟨k, e, _⟩ => ⟨k, e⟩
 
 end VG.Proof.Ed448.X86_64.Point64
