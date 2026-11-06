@@ -28,7 +28,7 @@ It prints, for $GITHUB_OUTPUT, `arches=<JSON list>` (those tested),
 job's matrix (`rust=`, `thumb=`, `cpu=`): the JSON list of its entries,
 each with `tests`, and each CPU with shards as one entry per shard. Each
 `rust` entry also has `bench`: whether the Benchmarks workflow measures its
-architecture (ci/bench_arches.py's `PLATFORMS`), for which a push to main
+architecture on its runner (ci/bench_arches.py's `PLATFORMS`), for which a push to main
 caches the benchmarks' dependencies. `lint=` is the JSON list of the targets
 `rust-lint` lints (ci/rust_lint.py): those of the architectures tested, or
 every one when the benchmarks changed, or on a push to main (for its
@@ -140,6 +140,16 @@ def arch_of(entry):
     return entry.get("arch", "x86_64")  # the SDE chips'
 
 
+def benches_on(entry):
+    """Whether the Benchmarks workflow measures the `rust` entry's
+    architecture on the entry's runner, without cross-compiling for it
+    (ci/bench_arches.py's `PLATFORMS`), so that a push to main can build the
+    benchmarks' dependencies there for it: not RISC-V's, tested under QEMU
+    on an x86-64 runner and measured natively."""
+    platform = bench_arches.PLATFORMS.get(arch_of(entry))
+    return platform is not None and platform["os"] == entry["os"] and "target" not in entry
+
+
 def cache_of(entry):
     """What a `cpu` job's cache entry depends on but for what every one
     shares. Swatinem/rust-cache keys it by the job's `shared-key`, the
@@ -164,7 +174,7 @@ def output(matrix, selected, tests=True, bench=False):
         keep = [dict(e, tests=tests) for e in entries(matrix, job)
                 if not tests or arch_of(e) in selected]
         if job == "rust":
-            keep = [dict(e, bench=arch_of(e) in bench_arches.PLATFORMS) for e in keep]
+            keep = [dict(e, bench=benches_on(e)) for e in keep]
         if not tests and job == "cpu":
             first = {}
             for e in keep:

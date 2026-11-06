@@ -52,15 +52,23 @@ asm = "powerpc64le"
 rust = "stable"
 container = { image = "ghcr.io/pyca/verified-garbage-runner:ppc64le" }
 
-# RISC-V: natively on a riscv64 runner (RISE's, as pyca/infra's riscv64
-# images use), with the toolchain its image installs (`rust = "host"`, see
-# ci.yml): a container image of our own took the job 46 s to start, as RISE's
-# runners pull it for every job at a few MB/s and unpack it slowly.
+# RISC-V: cross-compiled on an x86-64 host and run under QEMU's user-mode
+# emulation, rather than natively on RISE's riscv64 runners, which are few
+# and slow (the Benchmarks workflow still measures on them, as timing under
+# QEMU would mean nothing). RISC-V detects no CPU features (src/cpu.rs), so
+# QEMU's CPU chooses nothing the tests could miss. `target` is the target
+# Cargo builds for (CARGO_BUILD_TARGET), `apt` the runner's packages for its
+# linker, C library and QEMU, `linker` its linker and `qemu` Cargo's runner
+# for its test binaries.
 [[rust]]
-name = "Linux, RISC-V"
-os = "ubuntu-24.04-riscv"
+name = "Linux, RISC-V (QEMU)"
+os = "ubuntu-26.04"
 arch = "riscv64"
-rust = "host"
+rust = "stable"
+target = "riscv64gc-unknown-linux-gnu"
+apt = "gcc-riscv64-linux-gnu libc6-dev-riscv64-cross qemu-user"
+linker = "riscv64-linux-gnu-gcc"
+qemu = "qemu-riscv64 -L /usr/riscv64-linux-gnu"
 
 [[rust]]
 name = "macOS, AArch64"

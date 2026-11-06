@@ -153,8 +153,14 @@ class Output(unittest.TestCase):
             out = run(event)
             with self.subTest(event=event):
                 for e in out["rust"]:
-                    self.assertEqual(e["bench"], e["arch"] in bench_arches.PLATFORMS, e["name"])
-                self.assertEqual({e["arch"] for e in out["rust"] if not e["bench"]}, set())
+                    self.assertEqual(e["bench"], rust_arches.benches_on(e), e["name"])
+                    if e["bench"]:
+                        self.assertIn(e["arch"], bench_arches.PLATFORMS, e["name"])
+                # RISC-V's tests run under QEMU on x86-64, its benchmarks
+                # natively: every other architecture has a Linux entry that
+                # caches them.
+                benched = {e["arch"] for e in out["rust"] if e["bench"] and e["os"].startswith("ubuntu")}
+                self.assertEqual(set(ALL) - benched, {"riscv64"})
                 self.assertTrue(all("bench" not in e for job in ("thumb", "cpu") for e in out[job]))
 
     def test_push_builds_one_job_per_cache(self):
@@ -232,7 +238,7 @@ class Workflow(unittest.TestCase):
         self.assertIn("/crates/verified-garbage-asm-*/Cargo.toml", job("rust"))
 
     def test_only_benchmarked_arches_cache_the_benchmarks_dependencies(self):
-        self.assertIn("if: ${{ matrix.bench && (matrix.rust == 'stable' || matrix.rust == 'host') "
+        self.assertIn("if: ${{ matrix.bench && matrix.rust == 'stable' "
                       "&& runner.os == 'Linux' && github.event_name == 'push' }}", job("rust"))
 
     def test_jobs_read_their_matrices(self):
