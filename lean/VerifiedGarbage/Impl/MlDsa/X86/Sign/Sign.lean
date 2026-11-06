@@ -4,20 +4,23 @@ public import VerifiedGarbage.Impl.MlDsa.X86.Sign.Frag
 public import VerifiedGarbage.Spec.MlDsa
 
 /-!
-# ML-DSA on x86 (32-bit): `vg_mldsa{44,65,87}_sign`
+# ML-DSA on x86 (32-bit): `vg_mldsa{44,65,87}_sign_core`
 
 `sign(sk, mu, rnd, sig, scratch) -> eax`: `ML-DSA.Sign_internal(sk, M′, rnd)`
 (FIPS 204 Algorithm 7) with the message representative `μ` given
 (`Spec.MlDsa.signMu`), for the parameter set `p`, as calls of the
-primitives `P` and the sponge functions (`Frag.lean`). It saves its
-caller's registers in a frame of 16 bytes (`leaf`), keeps `scratch` in
-`esi`, and reads the other arguments from the stack.
+primitives `P` and the sponge functions (`Frag.lean`), shared by
+`vg_mldsa*_sign` and `vg_mldsa*_sign_prepared` (`Entry.lean`), which set the
+word `KEYS` of `scratch` first. It saves its caller's registers in a frame
+of 16 bytes (`leaf`), keeps `scratch` in `esi`, and reads the other
+arguments from the stack.
 
-1. `ρ` (the first 32 bytes of `sk`) to `RS`, the seed of `RejNTTPoly`, and
+1. If `KEYS = 0`, `ŝ₁`, `ŝ₂` and `t̂₀`: the `NTT` of the `BitUnpack` of
+   their pieces of `sk`; otherwise the caller has written them.
+2. `ρ` (the first 32 bytes of `sk`) to `RS`, the seed of `RejNTTPoly`, and
    `Â[r, s] = RejNTTPoly(ρ ‖ s ‖ r)` for the `kℓ` entries, with `OK` the
    AND of the results. If one failed (`OK = 0`), it returns 0 at once.
-2. `ŝ₁`, `ŝ₂` and `t̂₀`: the `NTT` of the `BitUnpack` of their pieces of
-   `sk`; and `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`, with `K ‖ rnd` copied to
+   Otherwise `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`, with `K ‖ rnd` copied to
    `HIN` first.
 3. The rejection sampling loop, at most 814 iterations (`minBounds.sign`),
    with the counter `κ` at `KAP`: the commitment (`y ← ExpandMask(ρ″, κ)`,
@@ -31,7 +34,8 @@ caller's registers in a frame of 16 bytes (`leaf`), keeps `scratch` in
    iterations.
 4. If `OK = 1`: `c̃`, the `BitPack` of `z` and `HintBitPack(h)` to `sig`.
 
-It returns `OK`. Only the calls of `vg_mldsa_rej_ntt_poly` (whose seeds are
+It returns `OK`. Only the branch on `KEYS`, which the contract makes
+public, depends on which caller called it; only the calls of `vg_mldsa_rej_ntt_poly` (whose seeds are
 `ρ` and two indices), and the branch on their results, depend on `ρ`; only
 the calls of `vg_mldsa_sample_in_ball`, and the branch on their results, on
 `c̃`; only the branches on validity checks on which check rejected the iteration
