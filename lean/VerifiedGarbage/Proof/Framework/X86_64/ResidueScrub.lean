@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSound
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public meta import Lean.Meta.Eval
+public meta import Lean.Elab.Term
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Offset
@@ -374,4 +376,34 @@ def keepOf (sec : List (Nat × Nat)) (cs : List Nat) : List Nat :=
     if (List.range g.2).any (fun k => sec.any fun p => decide (p.1 ≤ g.1 + k ∧ g.1 + k < p.1 + p.2)) then
       some g.1 else none
 
+/-! ## Registrations -/
+
+/-- `resOk_of_check` for a registration. -/
+theorem resOk_reg {api : Api} (r : Registration api target) (ks : List Nat) {h : VG.Taint.Hint FT}
+    (hc : (VG.Taint.check rtaint (init api.sig r.stack) r.code h).any (resOkB · r.stack ks (chunks r.stack)) = true) :
+    ResOk r.code r.contract r.stack ks (chunks r.stack) := by
+  obtain ⟨pre, post, leak, e⟩ := r.ofSig
+  have hv := r.verified
+  rw [e] at hv ⊢
+  exact resOk_of_check (ScrubAbi.of r.consts api.sig r.tables) hv (chunks_sum r.stack) hc
+
+/-- The granules of `r.stack` bytes of stack that `scrub` must wipe after
+the code `code` of signature `sig`, from the analysis (none if it fails,
+which the check then rejects). -/
+def keepFor (sig : Sig) (stack : Nat) (code : Prog isa) : List Nat :=
+  match VG.Taint.hint rtaint 256 (init sig stack) code with
+  | some (τ, _) => keepOf τ.sec (chunks stack)
+  | none => []
+
 end VG.X86_64.RScrub
+
+open Lean Elab Term Meta in
+/-- `keep_for% sig stack code`: `RScrub.keepFor sig stack code`, computed in
+compiled code, as a literal (for the kernel, which then checks it with the
+analysis, `RScrub.resOk_reg`, rather than computing it too). -/
+elab "keep_for% " sig:term:max stack:term:max code:term:max : term => do
+  let e ← elabTerm (← `(VG.X86_64.RScrub.keepFor $sig $stack $code)) none
+  synthesizeSyntheticMVarsNoPostponing
+  let e ← instantiateMVars e
+  let v ← unsafe evalExpr (List Nat) (← inferType e) e
+  return toExpr v
