@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 # RSAES-OAEP on x86-64: the label's hash with the hash function of a table
 
 `hashLabelT f o` writes the label's hash `H(label)` to `scratch + o` as
-`hashLabel` does (`hashLabelT_ok`, as `hashLabel_ok`), for `H` the hash
+`hashLabel` does (`hashLabelT_ok`), for `H` the hash
 function of the table whose address is in the slot `sTab` (word 35): each
 of its calls is an indirect call (`tcall`) that reaches `H`'s function
 (`Table.TabAt`), and so runs as its call (`Table.initT_ok`, `updExtT_ok`,

@@ -34,93 +34,6 @@ def setMem (s : State) (m : Mem) : State := { s with mem := m }
 @[simp] theorem setMem_mem (s : State) (m : Mem) : (setMem s m).mem = m := rfl
 @[simp] theorem setMem_z (s : State) (m : Mem) : (setMem s m).z = s.z := rfl
 
-theorem exec_movw (s : State) (d : Reg) (imm : BitVec 16) :
-    exec (.movw d imm) s = some (s.setReg d (imm.setWidth 32)) := rfl
-
-theorem exec_addSp (s : State) (d : Reg) {imm : Nat} (h : imm < 256) :
-    exec (.addSp d imm) s = some (s.setReg d (s.sp + BitVec.ofNat 32 imm)) := by
-  simp only [exec, h, ite_true]
-
-theorem exec_dp_reg (s : State) (op : DpOp) (d n m : Reg) :
-    exec (.dp op d n (.reg m)) s = some (s.setReg d (VG.Proof.X25519.Arm.dpVal op (s.gpr n) (s.gpr m))) := by
-  cases op <;> rfl
-
-theorem exec_dp_imm (s : State) (op : DpOp) (d n : Reg) {v : BitVec 32} (h : encodable v = true) :
-    exec (.dp op d n (.imm v)) s = some (s.setReg d (VG.Proof.X25519.Arm.dpVal op (s.gpr n) v)) := by
-  cases op <;> simp [exec, Op2.eval, h, VG.Proof.X25519.Arm.dpVal]
-
-theorem exec_dp_lsr (s : State) (op : DpOp) (d n m : Reg) {k : Nat} (h : 1 ≤ k ∧ k ≤ 31) :
-    exec (.dp op d n (.shifted m .lsr k)) s =
-      some (s.setReg d (VG.Proof.X25519.Arm.dpVal op (s.gpr n) (s.gpr m >>> k))) := by
-  cases op <;> simp [exec, Op2.eval, h, VG.Proof.X25519.Arm.dpVal]
-
-theorem exec_dp_lsl (s : State) (op : DpOp) (d n m : Reg) {k : Nat} (h : 1 ≤ k ∧ k ≤ 31) :
-    exec (.dp op d n (.shifted m .lsl k)) s =
-      some (s.setReg d (VG.Proof.X25519.Arm.dpVal op (s.gpr n) (s.gpr m <<< k))) := by
-  cases op <;> simp [exec, Op2.eval, h, VG.Proof.X25519.Arm.dpVal]
-
-theorem exec_dp_one (s : State) (op : DpOp) (d n : Reg) :
-    exec (.dp op d n (.imm 1)) s = some (s.setReg d (VG.Proof.X25519.Arm.dpVal op (s.gpr n) 1)) :=
-  exec_dp_imm s op d n (v := 1) (by decide)
-
-theorem exec_dp_ff (s : State) (op : DpOp) (d n : Reg) :
-    exec (.dp op d n (.imm 0xFF)) s = some (s.setReg d (VG.Proof.X25519.Arm.dpVal op (s.gpr n) 0xFF)) :=
-  exec_dp_imm s op d n (v := 0xFF) (by decide)
-
-theorem exec_dp_bc (s : State) (op : DpOp) (d n : Reg) :
-    exec (.dp op d n (.imm 0xbc)) s = some (s.setReg d (VG.Proof.X25519.Arm.dpVal op (s.gpr n) 0xbc)) :=
-  exec_dp_imm s op d n (v := 0xbc) (by decide)
-
-theorem exec_cmp_zero (s : State) (n : Reg) : exec (.cmp n (.imm 0)) s = some (subFlags s (s.gpr n) 0) := by
-  simp [exec, Op2.eval]; rfl
-
-theorem exec_subs_one (s : State) (d n : Reg) :
-    exec (.subs d n (.imm 1)) s = some ((subFlags s (s.gpr n) 1).setReg d (s.gpr n - 1)) := by
-  simp [exec, Op2.eval]; rfl
-
-theorem exec_mov_reg (s : State) (d m : Reg) : exec (.mov d (.reg m)) s = some (s.setReg d (s.gpr m)) := rfl
-
-theorem exec_mov_imm (s : State) (d : Reg) {v : BitVec 32} (h : encodable v = true) :
-    exec (.mov d (.imm v)) s = some (s.setReg d v) := by
-  simp [exec, Op2.eval, h]
-
-theorem exec_mov_lsr (s : State) (d m : Reg) {k : Nat} (h : 1 ≤ k ∧ k ≤ 31) :
-    exec (.mov d (.shifted m .lsr k)) s = some (s.setReg d (s.gpr m >>> k)) := by
-  simp [exec, Op2.eval, h]
-
-theorem exec_mov_lsl (s : State) (d m : Reg) {k : Nat} (h : 1 ≤ k ∧ k ≤ 31) :
-    exec (.mov d (.shifted m .lsl k)) s = some (s.setReg d (s.gpr m <<< k)) := by
-  simp [exec, Op2.eval, h]
-
-theorem exec_cmp_reg (s : State) (n m : Reg) : exec (.cmp n (.reg m)) s = some (subFlags s (s.gpr n) (s.gpr m)) :=
-  rfl
-
-theorem exec_cmp_imm (s : State) (n : Reg) {v : BitVec 32} (h : encodable v = true) :
-    exec (.cmp n (.imm v)) s = some (subFlags s (s.gpr n) v) := by
-  simp [exec, Op2.eval, h]
-
-theorem exec_ldrSp (s : State) (t : Reg) {off : Nat} (ho : off < 4096)
-    (h : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 off)) 4) :
-    exec (.ldrSp t off) s = some (s.setReg t (s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 off)) 32)) := by
-  simp only [exec, ho, ite_true, State.load32, h, Option.map_some]
-
-theorem exec_strR (s : State) (t n : Reg) {off : Nat} (ho : off < 4096)
-    (h : InRegions s.wr (State.addr (s.gpr n + BitVec.ofNat 32 off)) 4) :
-    exec (.str t n off) s =
-      some (setMem s (s.mem.writeW (State.addr (s.gpr n + BitVec.ofNat 32 off)) (s.gpr t))) :=
-  exec_str ho h
-
-theorem exec_ldrbR (s : State) (t n : Reg) {off : Nat} (ho : off < 4096)
-    (h : InRegions (s.rd ++ s.wr) (State.addr (s.gpr n + BitVec.ofNat 32 off)) 1) :
-    exec (.ldrb t n off) s = some (s.setReg t ((s.mem (State.addr (s.gpr n + BitVec.ofNat 32 off))).setWidth 32)) := by
-  simp only [exec, ho, ite_true, State.load8, h, Option.map_some]
-
-theorem exec_strbR (s : State) (t n : Reg) {off : Nat} (ho : off < 4096)
-    (h : InRegions s.wr (State.addr (s.gpr n + BitVec.ofNat 32 off)) 1) :
-    exec (.strb t n off) s =
-      some (setMem s (s.mem.writeW (State.addr (s.gpr n + BitVec.ofNat 32 off)) ((s.gpr t).setWidth 8))) := by
-  simp only [exec, ho, ite_true, State.store8, h]; rfl
-
 theorem subFlags_gpr (s : State) (x y : BitVec 32) : (subFlags s x y).gpr = s.gpr := rfl
 theorem subFlags_mem (s : State) (x y : BitVec 32) : (subFlags s x y).mem = s.mem := rfl
 theorem subFlags_rd (s : State) (x y : BitVec 32) : (subFlags s x y).rd = s.rd := rfl
@@ -128,13 +41,7 @@ theorem subFlags_wr (s : State) (x y : BitVec 32) : (subFlags s x y).wr = s.wr :
 theorem subFlags_sp (s : State) (x y : BitVec 32) : (subFlags s x y).sp = s.sp := rfl
 theorem subFlags_z (s : State) (x y : BitVec 32) : (subFlags s x y).z = (x - y == 0) := rfl
 
-theorem gpr_setReg' (s : State) (d : Reg) (x : BitVec 32) (r : Reg) :
-    (s.setReg d x).gpr r = if r = d then x else s.gpr r := rfl
-
 theorem setWidth_zero16 : (0#16).setWidth 32 = (0 : BitVec 32) := rfl
-
-theorem encodable_small {v : Nat} (h : v < 256) : encodable (BitVec.ofNat 32 v) = true :=
-  VG.Proof.RsaPkcs1Sig.Arm.encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega)
 
 theorem movw_val {v : Nat} (h : v < 2 ^ 16) : (BitVec.ofNat 16 v).setWidth 32 = BitVec.ofNat 32 v := by
   apply BitVec.eq_of_toNat_eq

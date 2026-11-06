@@ -87,13 +87,6 @@ theorem byteAt_inj {p : BitVec 32} {n i j : Nat} (h : p.toNat + n ≤ 2 ^ 32) (h
     (e : byteAt p i = byteAt p j) : i = j :=
   Classical.byContradiction fun hne => Offset.add_ofNat_ne (State.addr p) (a := i) (b := j) (by omega) (by omega) hne e
 
-/-- An address of the buffer's region is one of its bytes. -/
-theorem mem_region {p : BitVec 32} {n : Nat} {a : Addr} (hc : (⟨State.addr p, n⟩ : Region).Contains a 1) : ∃ j < n, a = byteAt p j := by
-  refine ⟨(a - State.addr p).toNat, by simp only [Region.Contains] at hc; omega, ?_⟩
-  show a = State.addr p + BitVec.ofNat 64 (a - State.addr p).toNat
-  rw [show BitVec.ofNat 64 (a - State.addr p).toNat = a - State.addr p from BitVec.eq_of_toNat_eq (by simp),
-    BitVec.add_comm, BitVec.sub_add_cancel]
-
 theorem frame_of_outside {p : BitVec 32} {n : Nat} {m m' : Mem} (h : p.toNat + n ≤ 2 ^ 32)
     (hm : ∀ a, (∀ j < n, a ≠ State.addr (p + BitVec.ofNat 32 j)) → m' a = m a) :
     Frame [⟨State.addr p, n⟩] m m' := by

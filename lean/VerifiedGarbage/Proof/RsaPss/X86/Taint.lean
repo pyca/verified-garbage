@@ -31,7 +31,6 @@ theorem idxWord_taint : TaintOk [.esp, .edx] (.block [.mov .edx (.mem (Impl.RsaP
   ⟨_, by taint_decide⟩
 theorem compInit_taint : TaintOk [.esp, .ebp] (.block compInit) := ⟨_, by taint_decide⟩
 theorem compNext_taint : TaintOk [.esp, .ebp] (.block compNext) := ⟨_, by taint_decide⟩
-theorem mgfInit_taint : TaintOk [.esp, .ebp] (.block mgfInit) := ⟨_, by taint_decide⟩
 theorem topSet_taint : TaintOk [.esp, .ebp] (.block topSet) := ⟨_, by taint_decide⟩
 theorem topAnd_taint : TaintOk [.esp, .esi] (.block topAnd) := ⟨_, by taint_decide⟩
 theorem clrY2048_taint : TaintOk [.esp, .ebp] (.block (clrArgs oY 2048)) := ⟨_, by taint_decide⟩

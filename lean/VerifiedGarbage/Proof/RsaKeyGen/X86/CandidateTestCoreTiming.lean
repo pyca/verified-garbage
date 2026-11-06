@@ -53,16 +53,6 @@ theorem r2_pairAt {mont : Prog isa} {name : String}
       fun _ ⟨R, r2, _, _, _⟩ => ⟨c, R, odd, by omega, r2⟩
   exact ⟨trace, pair, wp_result (post H.2.1) E, wp_result (post H.2.2) G⟩
 
-theorem r2_pair {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
-    {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
-    (length : g.L = 8 * capacity) (bound : g.w ≤ 64) :
-    RelCT isa (PreparedR2.InputPair g capacity p) (VG.Impl.RsaKeyGen.X86.PreparedR2.code g.w name mont)
-      (Constants.InputPair g capacity p) :=
-  r2_pairAt verified noSp stack v length bound (e := 64 * g.w - 1)
-    (by have := v.minWidth; omega) (by have := v.minWidth; omega)
-
 end VG.Proof.RsaKeyGen.X86.Prepare
 end
 
@@ -237,40 +227,6 @@ theorem code_rawAt {mont : Prog isa} {name : String}
     (RelCT.seq (Constants.code_trace verified noSp stack v length) ?_))
   exact (Exponent.code_trace g.w (g.array 5) (g.array 0) (g.array 27)).mono
     (fun _ _ H => H.2.2) (fun _ _ H => H)
-
-theorem code_raw {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
-    {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
-    (length : g.L = 8 * capacity) (bound : g.w ≤ 64) :
-    RelCT isa (InitialPair g capacity p) (VG.Impl.RsaKeyGen.X86.Prepare.code g.w name mont)
-      (VG.X86.Taint.Agree (roundTaint [.edi])) :=
-  code_rawAt verified noSp stack v length bound (e := 64 * g.w - 1)
-    (by have := v.minWidth; omega) (by have := v.minWidth; omega)
-
-theorem code_traceAt {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
-    {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
-    (length : g.L = 8 * capacity) (bound : g.w ≤ 64) {e : Nat} (positive : 1 ≤ e) (eLt : e < 64 * g.w) :
-    RelCT isa (fun s t => InitialPair g capacity p s t e) (VG.Impl.RsaKeyGen.X86.Prepare.codeAt e g.w name mont)
-      (Pair g [.edi]) := by
-  intro s t tr ur u z H E G
-  obtain ⟨trace, agree⟩ := code_rawAt (p := p) verified noSp stack v length bound positive eLt _ _ _ _ _ _ H E G
-  have post {a : State} (I : Initial g capacity p a e) :
-      WP isa (VG.Impl.RsaKeyGen.X86.Prepare.codeAt e g.w name mont) a (Context g) := by
-    obtain ⟨c, I⟩ := I
-    exact WP.mono (code_okAt verified noSp stack v bound length I positive eLt) fun _ R => R.1.ready.context
-  exact ⟨trace, wp_result (post H.2.1) E, wp_result (post H.2.2) G, agree⟩
-
-theorem code_trace {mont : Prog isa} {name : String}
-    (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
-    (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
-    {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32}
-    (length : g.L = 8 * capacity) (bound : g.w ≤ 64) :
-    RelCT isa (InitialPair g capacity p) (VG.Impl.RsaKeyGen.X86.Prepare.code g.w name mont) (Pair g [.edi]) :=
-  code_traceAt verified noSp stack v length bound (e := 64 * g.w - 1)
-    (by have := v.minWidth; omega) (by have := v.minWidth; omega)
 
 end VG.Proof.RsaKeyGen.X86.Prepare
 end

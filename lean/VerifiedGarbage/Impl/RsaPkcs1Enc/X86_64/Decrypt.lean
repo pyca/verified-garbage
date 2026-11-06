@@ -36,7 +36,7 @@ is returned.
 The frame is `frameBytes` bytes, an odd number of words, so that `rsp` is a
 multiple of 16 at each call: at `rsp`, the private-key operation's stack
 arguments; from `oOut`, the slots. Only caller-saved registers are used,
-so the slots hold everything kept across a call. In `scratch`, from `sSt`:
+so the slots hold everything kept across a call. In `scratch`, from its start:
 the streaming state (also HMAC's inner state), HMAC's outer state, the
 working space, the message of an IRPRF block, `DH`, `KDK`, `CL`, `AM` and
 `D`.
@@ -67,7 +67,6 @@ def oI : Nat := 200
 def oNB : Nat := 208
 
 /-! Where things are in `scratch`. -/
-def sSt : Nat := 0
 def sOuter : Nat := 96
 def sWork : Nat := 192
 def sMsg : Nat := 1024

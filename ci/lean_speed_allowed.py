@@ -226,7 +226,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/RsaKeyGen/Arm/Key/Key1.lean": 5,
     "VerifiedGarbage/Proof/RsaKeyGen/Arm/Key/Key2.lean": 6,
     "VerifiedGarbage/Proof/RsaKeyGen/Arm/Key/Key3.lean": 12,
-    "VerifiedGarbage/Proof/RsaKeyGen/Arm/Key/Mid1.lean": 25,
+    "VerifiedGarbage/Proof/RsaKeyGen/Arm/Key/Mid1.lean": 21,
     "VerifiedGarbage/Proof/RsaKeyGen/Arm/Key/Mid2.lean": 3,
     "VerifiedGarbage/Proof/RsaKeyGen/Arm/Key/Mid3.lean": 6,
     "VerifiedGarbage/Proof/RsaKeyGen/Arm/Key/Mid4.lean": 7,

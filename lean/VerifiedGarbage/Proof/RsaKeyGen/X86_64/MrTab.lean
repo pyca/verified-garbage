@@ -93,59 +93,6 @@ theorem MrCtx.of_tab {s t : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm
   · rw [hf.wv_eq (d := slot w aRm1) (fun r hr => Or.inr (by have := hlt r hr; omega_arith)) (by omega_arith)]
     exact hc.rm1
 
-/-- `[d] := [a]` for two of the eight arrays. -/
-theorem copyArr_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good s B Z w mi)
-    (hZ : slot w 8 ≤ Z) (hw : 1 ≤ w) (hw' : w < 2 ^ 31) {a d : Nat} (ha : a < 8) (hd : d < 8) (had : a ≠ d) :
-    WP isa (seqs [.block [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr a))), .mov .rbx (.mem (hdr (sArr d)))],
-      copyWords]) s fun t => wv t.mem B (slot w d) w = wv s.mem B (slot w a) w ∧
-      Outside B (slot w d) (8 * w) s.mem t.mem ∧ Keep [.rax, .rbx, .rsi, .r12, .r14] s t := by
-  have hn := hg.scr.nowrap
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
-  have sA := slot_le (w := w) ha
-  have sD := slot_le (w := w) hd
-  have hsep := slot_sep (w := w) had
-  simp only [seqs]
-  refine WP.seq (WP.mono (WP.keep [.r12, .rsi, .rbx] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
-      t.gpr .rsi = off B (slot w a) ∧ t.gpr .rbx = off B (slot w d) ∧ t.mem = s.mem) (by
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide), hl (sArr a) (by unfold sArr; omega_arith),
-      hl (sArr d) (by unfold sArr; omega_arith), hg.hdr.hw, hg.hdr.harr a ha, hg.hdr.harr d hd]) rfl)
-    fun s₁ ⟨⟨h12, hsi, hbx, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (copyB_ok (hg.scr.congr k₁.2.2) hsi hbx h12 hw hw' (by omega_arith) (by omega_arith) (by omega_arith))
-    fun t ⟨hv, ho, k⟩ => ⟨by rw [hv, hm₁], by rw [hm₁] at ho; exact ho, (k₁.trans k).mono (by decide)⟩
-
-/-- `[aT0] := [aR1]`, between two extra arrays. -/
-theorem copyT0_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good s B Z w mi)
-    (hd : MrDims B Z w) :
-    WP isa (seqs [.block (([.mov .r12 (.mem (hdr sW))] : List Instr) ++ extBase aR1 .rsi ++ extBase aT0 .rbx),
-      copyWords]) s fun t => wv t.mem B (slot w aT0) w = wv s.mem B (slot w aR1) w ∧
-      Outside B (slot w aT0) (8 * w) s.mem t.mem ∧ Keep [.rax, .rbx, .rsi, .r12, .r14] s t := by
-  have hn := hg.scr.nowrap
-  have hZ := hd.z
-  have hw' : w < 2 ^ 31 := by have := hd.w128; omega_arith
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
-  have h1 := slot_succ w aR1
-  have h0R := slot_mono w (show aT0 + 1 ≤ aR1 by decide)
-  have h0s := slot_succ w aT0
-  have hRm := slot_mono w (show aR1 + 1 ≤ aRm1 by decide)
-  have hx := hd.x
-  simp only [seqs]
-  refine WP.seq ?_
-  rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (WP.keep [.r12] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧ t.mem = s.mem) (by
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide), hg.hdr.hw]) rfl) fun s₁ ⟨⟨h12, hm₁⟩, k₁⟩ => ?_
-  have hg₁ : Good s₁ B Z w mi := ⟨hg.scr.congr k₁.2.2, (k₁.gpr (by decide)).trans hg.rdi, by rw [hm₁]; exact hg.hdr⟩
-  refine WP.mono (extBase_ok hg₁ hZ hw' (j := aR1) (by decide) (r := .rsi) (by decide) rfl rfl)
-    fun s₂ ⟨hsi, hm₂, k₂⟩ => ?_
-  have hg₂ : Good s₂ B Z w mi := ⟨hg₁.scr.congr k₂.2.2, (k₂.gpr (by decide)).trans hg₁.rdi, by rw [hm₂]; exact hg₁.hdr⟩
-  refine WP.mono (extBase_ok hg₂ hZ hw' (j := aT0) (by decide) (r := .rbx) (by decide) rfl rfl)
-    fun s₃ ⟨hbx, hm₃, k₃⟩ => ?_
-  refine WP.mono (copyB_ok (hg₂.scr.congr k₃.2.2) ((k₃.gpr (by decide)).trans hsi) hbx
-    ((k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans h12)) (by have := hd.w4; omega_arith) hw' (by omega_arith) (by omega_arith)
-    (Or.inl (by omega_arith))) fun t ⟨hv, ho, k⟩ => ⟨by rw [hv, hm₃, hm₂, hm₁], by rw [hm₃, hm₂, hm₁] at ho; exact ho,
-      (((k₁.trans k₂).trans k₃).trans k).mono (by decide)⟩
-
 /-- After `i` entries of the table's loop, from `s₀`: entries `0` to `i + 1`,
 `y = T_(i+1)`, the entry `i + 2` in `kV`, `14 − i` in `kBits`. -/
 structure TabI (B : Addr) (Z w : Nat) (mi : BitVec 64) (c bm b : Nat) (s₀ : State) (i : Nat) (s : State) : Prop where

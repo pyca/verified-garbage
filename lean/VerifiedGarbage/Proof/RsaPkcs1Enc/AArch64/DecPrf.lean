@@ -128,10 +128,6 @@ structure PrfStep (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (
   keep : ∀ a l, 1040 ≤ a → a + l ≤ scrBytes → (a + l ≤ o ∨ o + 32 ≤ a) →
     Spec.Rsa.bytesAt w.mem (scA L a) l = Spec.Rsa.bytesAt t.mem (scA L a) l
 
-theorem Post.sameR {t : State} (hc : Post L g vv m₀ R EM t) {u : State} (h : SameR t u) (hm : u.mem = t.mem) :
-    Post L g vv m₀ R EM u :=
-  hc.regs h.rd h.wr h.sp hm h.v fun r hr _ => h.cs r hr
-
 theorem shl5 (i dst : Nat) (scr : Addr) :
     (BitVec.ofNat 64 i <<< 5) + (scr + BitVec.ofNat 64 dst) = scr + BitVec.ofNat 64 (dst + 32 * i) := by
   apply BitVec.eq_of_toNat_eq

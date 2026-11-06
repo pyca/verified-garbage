@@ -102,9 +102,6 @@ theorem stackArgAddr_eq (s : State) (j : Nat) :
 /-- The callee-saved registers other than `r14`–`r29`. -/
 def hiRegs : List Reg := [.r2, .r30, .r31]
 
-/-- The callee-saved registers. -/
-def kept : List Reg := saved.map Prod.fst ++ hiRegs
-
 theorem save_eq : save = ([.addSp .r12 0] : List Instr) ++ Spill.saveCode .r12 saved ++
     ([.mflr .r0, .store .d .r0 .r12 oLr] : List Instr) :=
   rfl
@@ -119,9 +116,6 @@ theorem saved_ho : ∀ p ∈ saved, p.2 % 8 = 0 ∧ p.2 < 32768 := by decide
 
 theorem preserved_split {r : Reg} (h : r ∈ preserved) : r ∈ saved.map Prod.fst ∨ r ∈ hiRegs := by
   revert r; decide
-
-theorem not_kept {rs : List Reg} {r : Reg} (hrs : ∀ r ∈ rs, r ∉ kept) (hr : r ∈ kept) : r ∉ rs :=
-  fun h => hrs r h hr
 
 /-- The saves, from the state after the frame's push (`u`): `r12` holds
 the frame's base, `r14`–`r29` and the return address are in their slots, and

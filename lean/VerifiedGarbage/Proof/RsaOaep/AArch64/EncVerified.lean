@@ -220,11 +220,6 @@ theorem pub_sp {ts : List FnTable} {P : Nat} {s₁ s₂ : State}
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   exact h.1
 
-/-- `In` with `X`, as `In` with nothing more. -/
-theorem In.forget {L : ELay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem}
-    {X : (Nat → BitVec 64) → State → Prop} {t : State} (h : In L g vv m₀ X t) : In L g vv m₀ (fun _ _ => True) t :=
-  ⟨h.1, h.2.choose, h.2.choose_spec.choose, h.2.choose_spec.choose_spec.1, h.2.choose_spec.choose_spec.2.1, trivial⟩
-
 theorem pw_mono {P : Nat} {e : Env} {X Y : (Nat → BitVec 64) → State → Prop} (h : ∀ W t, X W t → Y W t)
     {a b : State} (hp : PW P e X a b) : PW P e Y a b :=
   let ⟨hL, hP, hk, ⟨c₁, V₁, W₁, R₁, S₁, x₁⟩, ⟨c₂, V₂, W₂, R₂, S₂, x₂⟩⟩ := hp

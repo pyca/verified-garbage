@@ -68,7 +68,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivOutcome
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCT
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCorrect
@@ -136,7 +135,6 @@ import VerifiedGarbage.Proof.Poly1305.Limbs64
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivOutcome
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCT
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCorrect

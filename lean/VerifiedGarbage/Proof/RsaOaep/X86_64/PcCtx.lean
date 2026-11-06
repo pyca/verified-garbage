@@ -10,10 +10,6 @@ namespace VG.Proof.RsaOaep.X86_64.Pc
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
-theorem stackArgs_ten (s : State) :
-    (List.range 10).map (stackArg s) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4,
-      stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9] := rfl
-
 /-- The precomputed values, in bytes. -/
 def preR (s : State) : Region := ⟨stackArg s 8, (stackArg s 9).toNat * 8⟩
 

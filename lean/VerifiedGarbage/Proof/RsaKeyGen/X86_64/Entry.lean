@@ -68,8 +68,6 @@ structure EntryPost (s t : State) (B : Addr) : Prop where
   frame : Outside B 0 (8 * 32) s.mem t.mem
   keep : Keep [.r11, .rax, .rdi] s t
 
-theorem stackArg_readW (s : State) (i : Nat) : s.mem.readW (stackArgAddr s i) 64 = stackArg s i := rfl
-
 /-- `kEntry`: the header from the arguments, and the scratch space's base
 (the fourth stack argument) in `rdi`. -/
 theorem kEntry_ok {s : State} {B : Addr} (hB : stackArg s 3 = B)

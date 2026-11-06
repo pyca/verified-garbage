@@ -14,9 +14,9 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
 
 /-!
-# The callees of encryption and decryption
+# The callee of decryption
 
-`vg_rsa_public_checked` is a `PubImpl` (`pubImpl`). For each implementation `c` of `vg_rsa_private_crt` (a variant of
+For each implementation `c` of `vg_rsa_private_crt` (a variant of
 `RsaPrivateCrt`), `vg_rsa_private_checked` calling it, the internal
 function the padding functions call, is a `PrivImpl`
 (`privOf`): `privK` is its contract, and it uses its frame and two return
@@ -28,18 +28,6 @@ addresses of stack, since its callees' callees use none.
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 
 open VG VG.X86_64 VG.Proof.Rsa.X86_64
-
-theorem pubChkK_eq : pubChkK = pubChkContract := rfl
-
-/-- `vg_rsa_public_checked`, as encryption's callee. -/
-def pubImpl : PubImpl where
-  name := "vg_rsa_public_checked"
-  code := Impl.Rsa.X86_64.Checked.publicChecked
-  ok := pubChkK_eq ▸ publicChecked_correct
-  ct := pubChkK_eq ▸ publicChecked_constantTime
-  nosp := noSp_of (by decide +kernel)
-  depth := by decide +kernel
-  spSafe := Code.all_of_allInstrs (by decide +kernel)
 
 theorem privK_eq : privK = chkContract := rfl
 

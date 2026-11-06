@@ -205,8 +205,6 @@ theorem ofId_hashes : ∀ j (h : j < hashes.length), Hash.ofId j = some hashes[j
 theorem ofId_ge {j : Nat} (h : hashes.length ≤ j) : Hash.ofId j = none := by
   unfold Hash.ofId; split <;> simp_all [hashes]
 
-theorem hashes_length : hashes.length = 12 := rfl
-
 theorem setWidth_ofNat32 {v : Nat} (h : v < 2 ^ 32) :
     (BitVec.ofNat 32 v).setWidth 64 = BitVec.ofNat 64 v := by
   apply BitVec.eq_of_toNat_eq; simp; omega_arith

@@ -28,12 +28,11 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 /-!
 # A candidate on AArch64: constant time of a round of Miller–Rabin
 
-`mrRound`, from what `mrRound_ok` needs (`R0`), for runs that agree on the
+A round, from what it needs (`R0`), for runs that agree on the
 working space, `rand`, the octets read and whether the witness passes
 (`RP`): the witness (`mrWitness_ct`), its Montgomery form, the table and
-`y := 1` (`tabBuild_ct`), the exponentiation (`mrExpLoop_ct`), whose
-preconditions come from `roundPre_ok`, and the end, which branches on the
-flag `roundMid_ok` fixes.
+`y := 1` (`tabBuild_ct`), the exponentiation (`mrExpLoop_ct`), and the
+end, which branches on the flag (`roundTail_ct`).
 -/
 
 @[expose] public section
@@ -55,7 +54,7 @@ structure RP where
   u : Nat
   pass : Bool
 
-/-- What a round needs (`mrRound_ok`'s hypotheses). -/
+/-- What a round needs. -/
 def R0 (p : RP) (s : State) : Prop :=
   4 ≤ p.L.w ∧ p.L.w ≤ 128 ∧ slot p.L.w aE + 8 * (p.L.w + 2) ≤ p.L.Z ∧
     ∃ (c bm : Nat) (r : List Byte) (i uni ch : Nat), MrCtx s p.L.B p.L.Z p.L.w c bm ∧ ECtx s.mem p.L.B p.L.w c ∧
@@ -128,30 +127,8 @@ theorem copyB_ct : RelCT isa (Two fun (p : RP) t => TB p.L t) (copyA aB aXm) (Tw
   exact ⟨h4, h128, hEZ, c, _, b, hc.setB f (by kmut) k (by decide) ((VG.Proof.RsaKeyGen.arr_shape _ _).hdrW rfl rfl) ((VG.Proof.RsaKeyGen.arr_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.arr_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.arr_shape _ _).apartW rfl rfl) rfl,
     hodd, hc1, by rw [f.wv_eq (d := slot p.L.w aXm) (k := p.L.w) ((VG.Proof.RsaKeyGen.arr_shape _ _).apartW rfl rfl) (by omega)]; exact hX⟩
 
-/-- The round up to the exponentiation. -/
-theorem roundPre_ct (M : Mont) : RelCT isa (Two R0) (seqs (mrWitness ++
-    (([M.mm aXm aX aR2, copyA aB aXm] : List (Prog isa)) ++ tabBuild M.mm))) (Two fun (p : RP) t => E0 p.L t) := by
-  refine two_post (ct_app' (by simp [mrWitness]) (by simp) witP1_ct (ct_app' (by simp) (by simp [tabBuild])
-    (RelCT.seq (preMul_ct M) copyB_ct) (two_map (fun p : RP => p.L) (fun _ _ h => h) (tabBuild_ct M)))) ?_
-  rintro p s ⟨h4, h128, hEZ, c, bm, r, i, uni, ch, hc, hE, hR2, hc1, hsh, hR, hU, hK, hsrc, hlen, -⟩
-  obtain ⟨_, hb, _⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
-  have hn := hc.ws.scr.nowrap
-  exact WP.mono (roundPre_ok M h4 h128 hEZ hc hR2 hsh.1 hc1 hb hR hU hK hsrc hlen)
-    fun t ⟨hc', hT, hy, _, _, _, hf, _⟩ => ⟨h4, h128, hEZ, c, _, _, hc', hT,
-      hE.of_frm hf (fun r hr => Or.inr (roundRanges_lt p.L.w r (by
-        simp only [roundRanges, List.mem_append]; exact Or.inl (Or.inl hr)))) (by omega), hsh.1, hc1, hy⟩
-
 /-- After the exponentiation: the flag, the witness passing or not. -/
 def Rmid (p : RP) (s : State) : Prop := Ws s p.L.B p.L.Z p.L.w ∧ word s.mem p.L.B (8 * kFlag) = mask p.pass
-
-theorem roundMid_ct (M : Mont) : RelCT isa (Two R0) (seqs ((mrWitness ++
-    (([M.mm aXm aX aR2, copyA aB aXm] : List (Prog isa)) ++ tabBuild M.mm)) ++ mrExpLoop M.mm)) (Two Rmid) := by
-  refine two_post (ct_app' (by simp [mrWitness]) (by simp [mrExpLoop]) (roundPre_ct M)
-    (two_map (fun p : RP => p.L) (fun _ _ h => h) (mrExpLoop_ct M))) ?_
-  rintro p s ⟨h4, h128, hEZ, c, bm, r, i, uni, ch, hc, hE, hR2, hc1, hsh, hR, hU, hK, hsrc, hlen, hI, hN, hC, -, -, -,
-    hpass⟩
-  exact WP.mono (roundMid_ok M h4 h128 hEZ hc hE hR2 hc1 hsh hR hU hK hsrc hlen hI hN hC)
-    fun t ⟨hc', hfl, _⟩ => ⟨hc'.ws, by rw [hfl, hpass]⟩
 
 theorem mask_beq (b : Bool) : (mask b == 0) = !b := by cases b <;> decide
 
@@ -176,11 +153,5 @@ theorem roundTail_ct : RelCT isa (Two Rmid) (seqs [.block [ldh .x3 kFlag],
       hF]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h3, hm⟩, k⟩ => ⟨?_, ?_⟩
   · exact hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide)
   · rw [eval_zero, h3, mask_beq]
-
-/-- A round leaks the same in runs that agree on the public data, the
-witness passing or not among them. -/
-theorem mrRound_ct (M : Mont) : RelCT isa (Two R0) (seqs (mrRound M.mm)) fun _ _ => True := by
-  rw [mrRound_eq, ← List.append_assoc]
-  exact ct_app' (by simp [mrWitness]) (by simp) (roundMid_ct M) roundTail_ct
 
 end VG.Proof.RsaKeyGen.AArch64

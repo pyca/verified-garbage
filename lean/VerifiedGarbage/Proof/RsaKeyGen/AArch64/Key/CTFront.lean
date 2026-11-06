@@ -250,13 +250,6 @@ theorem front_ct : RelCT isa (Two (KG NF)) (seqs frontL) (Two (KG PF)) := by
     (fun I _ s h _ _ => WP.mono (decTo_k h (o := aPm) (j := aPa) (by decide) (by decide) (by decide) (by decide)
       (by decide)) fun _ ⟨ht, _⟩ => ⟨ht, trivial⟩) decQ_ct0
 
-/-- `KG PF` is `KPrimes`, with words `W` of `p − 1` and `q − 1` zero. -/
-theorem KG.primes {p : KP} {s : State} (h : KG PF p s) :
-    ∃ I s₀, I.pub = p.q ∧ I.st = p.st ∧ KPrimes I s₀ s ∧ KLens I ∧ KOuts I ∧ atop I s.mem aPm = 0 ∧
-      atop I s.mem aQm = 0 := by
-  obtain ⟨I, s₀, he, hst, hk, L, O, hf⟩ := h
-  exact ⟨I, s₀, he, hst, PF.primes hk hf, L, O, hf.2.2.2.2.2.1, hf.2.2.2.2.2.2⟩
-
 /-! ## From the contract -/
 
 /-- Byte lists with the same values. -/

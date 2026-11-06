@@ -10,10 +10,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 /-!
 # RSASSA-PSS verification on x86-64: the call of `vg_rsa_public_checked`
 
-With its stack arguments in the frame's first 4 words (the signature, `k`,
-the rest of `scratch`), `vg_rsa_public_checked` runs under its contract
-(`pub_pre`) and returns with `EM`'s place (`scratch + oEm`) written as it
-says, the frame and the rest of our working space kept (`pub_call`).
+Its stack arguments (`vArg`), in the frame's first 4 words: the signature,
+`k`, the rest of `scratch` (`vstackArg_call`).
 -/
 
 @[expose] public section

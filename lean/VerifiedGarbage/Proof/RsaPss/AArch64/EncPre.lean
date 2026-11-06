@@ -91,10 +91,4 @@ theorem fb_toNat (hp : PreE D tsH tsG s) : (fb s).toNat + frameBytes = s.sp.toNa
   have := hp.sp1
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold encStack stk at this; omega
 
-theorem kb_toNat (hp : PreE D tsH tsG s) : (kb 288 s).toNat + encStack = s.sp.toNat := by
-  have := hp.sp1
-  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  unfold encStack stk frameBytes at *
-  omega
-
 end VG.Proof.RsaPss.AArch64.Enc

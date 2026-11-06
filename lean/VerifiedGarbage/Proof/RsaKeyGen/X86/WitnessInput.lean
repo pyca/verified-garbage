@@ -15,8 +15,6 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
 def geometryAt (g : Geometry) (rand : BitVec 32) (used count : Nat) : Import.Geometry :=
   ⟨rand + BitVec.ofNat 32 used, BitVec.ofNat 32 (g.W.toNat + g.array 6), count⟩
 
-def geometry (g : Geometry) (rand : BitVec 32) (used : Nat) : Import.Geometry := geometryAt g rand used g.words
-
 theorem source_address {rand : BitVec 32} {used : Nat} (fit : rand.toNat + used < 2 ^ 32) :
     (rand + BitVec.ofNat 32 used).setWidth 64 = off (rand.setWidth 64) used := by
   change addr rand used = _
@@ -82,14 +80,5 @@ theorem context_okAt {g : Geometry} (v : g.Valid) {s : State} (S : Scr s g.W g.L
     rw [sourceAddr, destAddr]
     exact (separate.sub_left (Offset.sub_base _ enough)).sub_right
       (Offset.sub_base _ (by have := v.arrayFit (j := 6) (by decide); omega))
-
-theorem context_ok {g : Geometry} (v : g.Valid) {s : State} (S : Scr s g.W g.L)
-    {rand : BitVec 32} {used length : Nat} (noWrap : rand.toNat + length ≤ 2 ^ 32)
-    (enough : used + 8 * g.w ≤ length)
-    (readable : InRegions (s.rd ++ s.wr) (rand.setWidth 64) length)
-    (separate : (⟨rand.setWidth 64, length⟩ : Region).Disjoint ⟨g.W, g.L⟩) :
-    Import.Context (geometry g rand used) s :=
-  context_okAt v S noWrap (by have := v.minWidth; unfold Geometry.words; omega) (Nat.le_refl _)
-    (by unfold Geometry.words; omega) readable separate
 
 end VG.Proof.RsaKeyGen.X86.WitnessInput

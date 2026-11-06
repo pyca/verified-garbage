@@ -142,17 +142,4 @@ theorem ret8_sub (s : State) : Region.Sub (below (fb s) 8) (stkR s) := by
   simp only [below, fb, sub_sub']
   exact Offset.sub_below _ (by decide) (by decide)
 
-/-- An address of an input: in no writable region of the frame's state, nor
-below the frame. -/
-theorem SPre.outside {s : State} (hp : SPre tsH tsG s) {R : Region} (hO : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint R)
-    (hS : R.Disjoint ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩) (hK : (stkR s).Disjoint R) {a : Addr}
-    (ha : R.Contains a 1) : Outside (⟨fb s, frameBytes⟩ :: s.wr) (fb s) a := by
-  refine ⟨fun r hr hc => ?_, fun hc => hK a (ret_sub s a hc) ha⟩
-  rw [List.mem_cons, hp.hwr] at hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact hK a (frame_sub s a hc) ha
-  · exact hO a hc ha
-  · exact hS a ha hc
-
 end VG.Proof.RsaPss.X86_64

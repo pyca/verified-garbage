@@ -44,10 +44,6 @@ theorem shrinkRt {L : VG.Impl.Rsa.X86.KeyRt.Lay} {s : State} {B : Addr} {Z len N
   { h with ws := { h.ws with fits :=
       (Nat.le_trans (VG.Proof.Rsa.X86.Keys.arr_mono bound) h.ws.fits) } }
 
-theorem Ws.shrink {s : State} {B : Addr} {Z n N K : Nat} (h : Ws s B Z n N)
-    (bound : K ≤ N) : Ws s B Z n K :=
-  ⟨shrinkRt h.full bound, shrinkRt h.prime bound, shrinkRt h.exponent bound, h.width, h.size, h.deep⟩
-
 theorem Ws.old {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N) :
     VG.Proof.Rsa.X86.Keys.Ws s B Z n N := by
   have old := h.full.ws

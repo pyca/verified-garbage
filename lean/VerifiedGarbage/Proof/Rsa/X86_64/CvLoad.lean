@@ -135,32 +135,6 @@ theorem andZero_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Bool
   rw [show (0#64 - BitVec.setWidth 64 (BitVec.ofBool (decide z))) = mask (decide z) from rfl, BitVec.and_comm,
     mask_and']
 
-/-- `andOdd j`: the mask of `[j]` odd and'ed into `sMask`. -/
-theorem andOdd_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (hj : j < 16) {c : Bool}
-    (hm : word s.mem B (8 * Impl.Bignum.X86_64.Public.sMask) = mask c) :
-    WP isa (.block (andOdd j)) s fun t =>
-      t.mem = s.mem.writeW (off B (8 * Impl.Bignum.X86_64.Public.sMask))
-        (mask (decide (wv s.mem B (slot w j) w % 2 = 1) && c)) ∧
-        Keep [.r12, .r9, .rbx, .rax, .rdx] s t := by
-  have hn := h.scr.nowrap
-  have sj := h.sl hj
-  have hst := h.scr.st (d := 8 * Impl.Bignum.X86_64.Public.sMask) (by have := h.h256; unfold Impl.Bignum.X86_64.Public.sMask sFn; omega)
-  unfold andOdd
-  rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono h.ws_ok fun s₁ ⟨_, h9, m₁, k₁⟩ => WP.block_append_iff.mpr ?_
-  refine WP.mono (base_ok j (r := .rbx) (by decide) ((k₁.gpr (by decide)).trans h.rdi) h9) fun s₂ ⟨hbx, m₂, k₂⟩ => ?_
-  have hs₂ := h.scr.congr (k₁.trans k₂).2.2
-  have hdi₂ : s₂.gpr .rdi = B := ((k₁.trans k₂).gpr (by decide)).trans h.rdi
-  have e0 : (s.mem.readW (off B (slot w j)) 64).toNat % 2 = wv s.mem B (slot w j) w % 2 := by
-    rw [← wv_mod64 s.mem B (slot w j) (n := w) (by have := h.w1; omega), Nat.mod_mod_of_dvd _ (by decide)]
-  refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t => t.mem = s.mem.writeW (off B (8 * Impl.Bignum.X86_64.Public.sMask))
-      (mask (decide (wv s.mem B (slot w j) w % 2 = 1) && c))) (by
-    xrun [State.ea, at0, hdr, hdi₂, hdrOff, hbx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
-      hs₂.ld (d := slot w j) (by omega), hs₂.ld (d := 8 * Impl.Bignum.X86_64.Public.sMask) (by
-        have := h.h256; unfold Impl.Bignum.X86_64.Public.sMask sFn; omega), hs₂.st (d := 8 * Impl.Bignum.X86_64.Public.sMask) (by
-        have := h.h256; unfold Impl.Bignum.X86_64.Public.sMask sFn; omega), m₂, m₁, hm, mask_low, e0]
-    rw [mask_and']) rfl) fun t ⟨mt, k₃⟩ => ⟨mt, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
-
 /-- `setOneA j`: word 0 of `[j]` := 1. -/
 theorem setOneA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (hj : j < 16) :
     WP isa (.block (setOneA j)) s fun t =>

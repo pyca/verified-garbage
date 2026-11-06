@@ -112,7 +112,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.InstallArguments
 public import VerifiedGarbage.Proof.Dsa.X86.KeyPointerStep
 public import VerifiedGarbage.Proof.Dsa.X86.KeyPointers
 public import VerifiedGarbage.Proof.Dsa.X86.Layout
-public import VerifiedGarbage.Proof.Dsa.X86.LoadSlot
 public import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
 public import VerifiedGarbage.Proof.Dsa.X86.OpenScratch
 public import VerifiedGarbage.Proof.Dsa.X86.OutputPointer
@@ -316,7 +315,6 @@ import VerifiedGarbage.Proof.Dsa.X86.InstallArguments
 import VerifiedGarbage.Proof.Dsa.X86.KeyPointerStep
 import VerifiedGarbage.Proof.Dsa.X86.KeyPointers
 import VerifiedGarbage.Proof.Dsa.X86.Layout
-import VerifiedGarbage.Proof.Dsa.X86.LoadSlot
 import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
 import VerifiedGarbage.Proof.Dsa.X86.OpenScratch
 import VerifiedGarbage.Proof.Dsa.X86.OutputPointer

@@ -39,8 +39,8 @@ open Mgf1 (Hash xorBytes mgf1)
 open Proof.Mgf1 (Valid xorBytes_length mgf1_length)
 open VG.Proof.RsaPss (emT eq_range_map zeros_getD db_getD getD_app ifn zeros_length)
 
-/-- `encodeK_eq` (`Proof/RsaPss/EncBytes.lean`), with MGF1's hash function `G`
-another than `H`. -/
+/-- `encodeK`, byte by byte (as in `Proof/RsaPss/EncBytes.lean`), with MGF1's
+hash function `G` another than `H`. -/
 theorem encodeK_eq₂ (H G : Hash) (hH : Valid H) (hG : Valid G) {n₀ : Byte} {rest mHash salt : List Byte} (h0 : n₀ ≠ 0)
     (hm : mHash.length = H.len) {emBits emLen lo db : Nat}
     (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
@@ -91,8 +91,8 @@ theorem encodeK_eq₂ (H G : Hash) (hH : Valid H) (hG : Valid G) {n₀ : Byte} {
     · simp only [h4, ↓reduceIte]
       rw [show i - lo - (db + H.len) = 0 by omega_arith]; rfl
 
-/-- `sign_eq` (`Proof/RsaPss/SignCases.lean`), with MGF1's hash function `G`
-another than `H`. -/
+/-- `sign`, byte by byte (as in `Proof/RsaPss/SignCases.lean`), with MGF1's
+hash function `G` another than `H`. -/
 theorem sign_eq₂ (H G : Hash) (hH : Valid H) (hG : Valid G) {n₀ : Byte}
     {rest eB pB qB dPB dQB qInvB mHash salt : List Byte} (h0 : n₀ ≠ 0)
     (hm : mHash.length = H.len) {emBits emLen lo db : Nat}

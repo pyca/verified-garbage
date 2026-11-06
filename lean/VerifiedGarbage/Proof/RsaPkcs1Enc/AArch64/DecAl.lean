@@ -164,10 +164,6 @@ theorem cand_bv (a b : Byte) {M : Nat} (hM : M < 2 ^ 64) :
     Nat.mod_eq_of_lt (a := a.toNat * 2 ^ 8 + b.toNat) (by omega_arith), show a.toNat * 2 ^ 8 = 256 * a.toNat by omega_arith,
     Nat.mod_eq_of_lt (by omega_arith)]
 
-theorem bytes_get (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
-    (Spec.Rsa.bytesAt m p n)[i]'(by simp [Spec.Rsa.bytesAt]; exact hi) = m (p + BitVec.ofNat 64 i) := by
-  simp [Spec.Rsa.bytesAt]
-
 theorem alLoop_ok {t₀ : State} {x M : Nat} {CL : List Byte} {B : Addr}
     (hx : x < 2 ^ 32) (hM : M = bitMask x) (hMl : M < 2 ^ 64)
     (hm : ∀ i < 256, t₀.mem (B + BitVec.ofNat 64 i) = CL.getD i 0)

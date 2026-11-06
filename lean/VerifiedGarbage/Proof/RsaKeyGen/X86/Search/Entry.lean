@@ -103,8 +103,6 @@ theorem step (hb : SearchBase p o s) {t : State} {rs : List Reg} (k : Keep rs s 
     (sy : t.syms = s.syms) (hm : t.mem = s.mem) : SearchBase p o t :=
   hb.keep k hrs sy (by rw [hm]; exact hb.saved) (by rw [hm]; exact Frame.refl _ _)
 
-theorem top (hb : SearchBase p o s) : p.sp.toNat + 4 + 48 ≤ 2 ^ 32 := hb.input.facts.top
-
 /-- The address of argument `i`, at displacement `d = 20 + 4 i` from `esp`. -/
 theorem arg_ea (hb : SearchBase p o s) {i d : Nat} (hd : 20 + 4 * i = d) :
     (s.gpr .esp + BitVec.ofNat 32 d).setWidth 64 = argAddr o i := by

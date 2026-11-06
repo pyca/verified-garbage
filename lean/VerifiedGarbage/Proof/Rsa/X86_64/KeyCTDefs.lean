@@ -93,12 +93,6 @@ theorem KK.hl {p : KPub} {t : State} (h : KK p t) : ∀ i < 32, InRegions (t.rd 
   intro i hi
   exact c.good.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega)
 
-theorem KK.hdr {p : KPub} {t : State} (h : KK p t) : ∃ minv, Hdr t.mem p.B p.w minv :=
-  let ⟨_, minv, _, c, _⟩ := h; ⟨minv, c.good.hdr⟩
-
-theorem KK.w {p : KPub} {t : State} (h : KK p t) : 1 ≤ p.w ∧ p.w < 2 ^ 28 :=
-  let ⟨_, _, _, c, _⟩ := h; ⟨c.w1, c.w2⟩
-
 /-- `KK` with the same memory and `rdi`. -/
 theorem KK.keep {p : KPub} {t t' : State} (h : KK p t) (hm : t'.mem = t.mem) (k : Keep mmRegs t t') : KK p t' := by
   obtain ⟨s, minv, N, c, hs⟩ := h

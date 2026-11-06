@@ -14,10 +14,12 @@ import VerifiedGarbage.Proof.Framework.Block
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: correctness
 
-After the call (`AfterCall`): the encoding of the last `out_len` bytes of
-`EM₁` into `EM₂` (`encode`), their comparison (`compare`) and the release
-of those bytes to `out`, or zeros (`afterPub_ok`), which is BoringSSL's
-recovery (`recover_eq_recoverEnc`).
+Pieces of the proof of correctness: the encoding of the last `out_len`
+bytes of `EM₁` into `EM₂` (`encode`, `enc_ok`), the release of those bytes
+to `out` (`copyOut_ok`), or zeros (`zeroKept_ok`, `zeroArgs_ok`), the
+restores (`restore_ok`), and the result BoringSSL's recovery
+(`recover_eq_recoverEnc`) gives, from the entry state (`recover_eq`,
+`recover_none`).
 -/
 
 @[expose] public section
@@ -228,12 +230,6 @@ structure AtEnc (s : State) (em : List Byte) (u : State) : Prop where
   x11 : u.gpr .x11 = valA s
   em1 : Spec.Rsa.bytesAt u.mem (fb s + BitVec.ofNat 64 oEM1) (s.gpr .x3).toNat = em
 
-theorem atEnc_ok {K : Nat} {s t : State} (hp : PreR K s) (hm : Mid s t) {em : List Byte}
-    (hem : Spec.Rsa.bytesAt t.mem (fb s + BitVec.ofNat 64 oEM1) (s.gpr .x3).toNat = em) :
-    WP isa (.block encArgs) t (AtEnc s em) :=
-  WP.mono (encArgs_ok hp hm) fun _ ⟨O, x8, x9, x10, x12, x11⟩ =>
-    ⟨hm.only O, x8, x9, x10, x12, x11, by rw [O.mem, hem]⟩
-
 /-- After `encode`: its result, and the buffers. -/
 structure AfterEnc (s : State) (h : Spec.RsaPkcs1Sig.Hash) (em : List Byte) (w : State) : Prop where
   mid : Mid s w
@@ -318,91 +314,11 @@ structure AtCmp (s : State) (h : Spec.RsaPkcs1Sig.Hash) (em em' : List Byte) (v 
   b2 : Spec.Rsa.bytesAt v.mem (fb s + BitVec.ofNat 64 oEM2) (s.gpr .x3).toNat = em'
   val : Spec.Rsa.bytesAt v.mem (valA s) (s.gpr .x1).toNat = em.drop ((s.gpr .x3).toNat - h.len)
 
-theorem cmpArgs_ok {s w : State} {h : Spec.RsaPkcs1Sig.Hash} {em em' : List Byte} (hm : Mid s w)
-    (b1 : Spec.Rsa.bytesAt w.mem (fb s + BitVec.ofNat 64 oEM1) (s.gpr .x3).toNat = em)
-    (b2 : Spec.Rsa.bytesAt w.mem (fb s + BitVec.ofNat 64 oEM2) (s.gpr .x3).toNat = em')
-    (hv : Spec.Rsa.bytesAt w.mem (valA s) (s.gpr .x1).toNat = em.drop ((s.gpr .x3).toNat - h.len)) :
-    WP isa (.block cmpArgs) w (AtCmp s h em em') := by
-  unfold cmpArgs
-  refine wp_addSp (by decide) fun v₁ p₁ f₁ => wp_addSp (by decide) fun v₂ p₂ f₂ =>
-    wp_mov fun v₃ p₃ f₃ => wp_nil ?_
-  have P₃ : Only [.x14, .x15, .x13] w v₃ := (p₁.trans (p₂.trans p₃)).mono
-  refine ⟨hm.only P₃, ?_, ?_, ?_, by rw [P₃.mem, b1], by rw [P₃.mem, b2], by rw [P₃.mem, hv]⟩
-  · rw [p₃.get .x14, p₂.get .x14, f₁, hm.sp]
-  · rw [p₃.get .x15, f₂, p₁.sp, hm.sp]
-  · rw [f₃, p₂.get .x21, p₁.get .x21, hm.x21, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-
 /-- After `compare`: its result, and the hash value in `EM₁`. -/
 structure AfterCmp (s : State) (h : Spec.RsaPkcs1Sig.Hash) (em em' : List Byte) (y : State) : Prop where
   mid : Mid s y
   hiff : y.gpr .x12 = 0 ↔ em = em'
   val : Spec.Rsa.bytesAt y.mem (valA s) (s.gpr .x1).toNat = em.drop ((s.gpr .x3).toNat - h.len)
-
-theorem cmp_ok {K : Nat} {s v : State} (hp : PreR K s) {h : Spec.RsaPkcs1Sig.Hash} {em em' : List Byte}
-    (hv : AtCmp s h em em' v) : WP isa compare v (AfterCmp s h em em') := by
-  have hk1 := hp.k1; have hk2 := hp.k2
-  refine WP.mono (compare_ok (s := v) (n := (s.gpr .x3).toNat) (by omega_arith) (by omega_arith) hv.x13
-    (fun j hj => by rw [hv.x14]; exact frame_bytes hv.mid.wr (by unfold oEM1 frameBytes; omega_arith) j hj)
-    (fun j hj => by rw [hv.x15]; exact frame_bytes hv.mid.wr (by unfold oEM2 frameBytes; omega_arith) j hj))
-    fun y ⟨oy, hiff, _⟩ => ⟨hv.mid.only oy, ?_, by rw [oy.mem, hv.val]⟩
-  rw [hv.x14, hv.x15, hv.b1, hv.b2] at hiff
-  exact hiff
-
-theorem release_ok {K : Nat} {s y : State} (hp : PreR K s) {h : Spec.RsaPkcs1Sig.Hash} {em em' : List Byte}
-    (hy : AfterCmp s h em em' y) :
-    WP isa release y fun w => Mid s w ∧ Spec.Rsa.written w.mem (s.gpr .x0) (s.gpr .x1).toNat
-      ((w.gpr .x0).setWidth 32) (if some em' = some em then some (em.drop ((s.gpr .x3).toNat - h.len)) else none) := by
-  unfold release
-  by_cases he : em = em'
-  · refine WP.ite false (by rw [eval_nonzero]; simp [hy.hiff.mpr he]) (by simp) fun _ => ?_
-    refine WP.mono (copyOut_ok hp hy.mid) fun w' ⟨m', hw', _⟩ => ⟨m', ?_⟩
-    rw [hy.val] at hw'
-    simpa [he] using hw'
-  · have hne : y.gpr .x12 ≠ 0 := fun h' => he (hy.hiff.mp h')
-    refine WP.ite true (by rw [eval_nonzero]; simp; exact hne) (fun _ => ?_) (by simp)
-    refine WP.mono (zeroKept_ok hp hy.mid) fun w' hw => ⟨hw.1, ?_⟩
-    have : ¬ some em' = some em := fun h' => he (Option.some.inj h').symm
-    simpa [this] using hw.2
-
-theorem tail_ok {K : Nat} {s w : State} (hp : PreR K s) {h : Spec.RsaPkcs1Sig.Hash} {em : List Byte}
-    (hw : AfterEnc s h em w) :
-    WP isa tail w fun w' => Mid s w' ∧ Spec.Rsa.written w'.mem (s.gpr .x0) (s.gpr .x1).toNat
-      ((w'.gpr .x0).setWidth 32)
-      (if encRes s h em = some em then some (em.drop ((s.gpr .x3).toNat - h.len)) else none) := by
-  have hres := hw.res
-  unfold tail
-  cases heo : encRes s h em with
-  | none =>
-    rw [heo] at hres
-    refine WP.ite true ((eval_zero' w .x0).trans (by rw [hres]; rfl)) (fun _ => ?_) (by simp)
-    refine WP.mono (zeroKept_ok hp hw.mid) fun w' hw' => ⟨hw'.1, ?_⟩
-    simpa using hw'.2
-  | some em' =>
-    rw [heo] at hres
-    obtain ⟨h1, b1, b2, hv⟩ := hres
-    refine WP.ite false ((eval_zero' w .x0).trans (by rw [h1]; rfl)) (by simp) fun _ => ?_
-    exact WP.seq (WP.mono (cmpArgs_ok hw.mid b1 b2 hv) fun v hv' =>
-      WP.seq (WP.mono (cmp_ok hp hv') fun y hy => release_ok hp hy))
-
-theorem afterPub_ok {K : Nat} {s t : State} (hp : PreR K s) {h : Spec.RsaPkcs1Sig.Hash}
-    (hh : Spec.RsaPkcs1Sig.Hash.ofId ((s.gpr .x6).setWidth 32).toNat = some h) (hol : (s.gpr .x1).toNat = h.len)
-    (ha : AfterCall s t) :
-    WP isa afterPub t fun w => Mid s w ∧
-      Spec.Rsa.written w.mem (s.gpr .x0) (s.gpr .x1).toNat ((w.gpr .x0).setWidth 32) (recOut s h) := by
-  have hres := ha.res
-  unfold afterPub recOut
-  cases hpo : pubOut s with
-  | none =>
-    rw [hpo] at hres
-    refine WP.ite true (by simp [eval, State.read, hres.1]) (fun _ => ?_) (by simp)
-    exact zeroKept_ok hp ha.toMid
-  | some em =>
-    rw [hpo] at hres
-    obtain ⟨hr, hem⟩ := hres
-    dsimp only
-    refine WP.ite false (by simp [eval, State.read, hr]) (by simp) fun _ => ?_
-    exact WP.seq (WP.mono (atEnc_ok hp ha.toMid hem) fun u hu =>
-      WP.seq (WP.mono (enc_ok hp hh hol hu) fun w hw => tail_ok hp hw.1))
 
 /-! ## The restores, and the whole function -/
 
@@ -441,15 +357,6 @@ theorem restore_ok {s w : State} (hm : Mid s w) :
     rw [hr.other .x0 (by decide), o₁.get .x0]
   · simp only [freed]
     rw [hr.mem, o₁.mem]
-
-/-- What `vg_rsa_pkcs1_recover` returns and writes, and the calling
-convention. -/
-def Post (s s' : State) : Prop :=
-  abiPreserved s s' ∧ ∀ h, Spec.RsaPkcs1Sig.Hash.ofId ((s.gpr .x6).setWidth 32).toNat = some h →
-    Spec.Rsa.written s'.mem (s.gpr .x0) (s.gpr .x1).toNat ((s'.gpr .x0).setWidth 32)
-      (Spec.RsaPkcs1Sig.recover (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
-        (Spec.Rsa.bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat) h
-        (Spec.Rsa.bytesAt s.mem (s.gpr .x7) (stackArg s 0).toNat))
 
 theorem recover_eq {s : State} (h : Spec.RsaPkcs1Sig.Hash) (hsig : stackArg s 0 = s.gpr .x3) :
     Spec.RsaPkcs1Sig.recover (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
@@ -496,35 +403,5 @@ theorem zeroArgs_ok {K : Nat} {s t : State} (hp : PreR K s) (o : Only [.x8] s t)
   rw [mw, O₂.mem]
   have := bytesAt_writeBytes s.mem (s.gpr .x0) (List.replicate (s.gpr .x1).toNat 0) (by simp; omega_arith)
   rwa [List.length_replicate] at this
-
-theorem code_ok (c : PubChecked) {s : State} (hp : PreR c.stack s) :
-    WP isa (code c.name c.code) s (Post s) := by
-  obtain ⟨h, hh, hol⟩ := hp.hh
-  have hof : ∀ h', Spec.RsaPkcs1Sig.Hash.ofId ((s.gpr .x6).setWidth 32).toNat = some h' → h' = h :=
-    fun h' e => Option.some.inj (e.symm.trans hh)
-  unfold code
-  refine WP.seq (WP.mono (lenCheck_ok hp) fun t₁ ⟨o₁, e₁⟩ => ?_)
-  have hne := eval_len e₁
-  by_cases hsig : stackArg s 0 = s.gpr .x3
-  · refine WP.ite false (by rw [hne]; simp [hsig]) (by simp) fun _ => ?_
-    refine WP.alloc (by decide) (by rw [o₁.sp]; have := hp.sp1; unfold stk at this; omega_arith) ?_
-    unfold body
-    refine WP.seq (WP.mono (pubArgs_ok hp (by simp [allocated, o₁.sp]) (by simp [allocated, o₁.rd])
-      (by simp [allocated, o₁.sp, o₁.wr]) (by simp [allocated, o₁.mem]) (fun r hr => by
-        simp only [allocated]; exact o₁.gpr r (by simpa using hr)) (fun r hr => o₁.vcs r hr))
-      fun t₂ h₂ => ?_)
-    refine WP.seq (WP.mono (call_ok c hp h₂ hsig) fun t₃ h₃ => ?_)
-    refine WP.seq (WP.mono (afterPub_ok hp hh hol h₃) fun t₄ ⟨m₄, r₄⟩ => ?_)
-    refine WP.mono (restore_ok m₄) fun w ⟨habi, hx0, hmem⟩ => ⟨habi, fun h' e => ?_⟩
-    rw [hof h' e, recover_eq h hsig, hx0, hmem]; exact r₄
-  · refine WP.ite true (by rw [hne]; simp [hsig]) (fun _ => WP.mono (zeroArgs_ok hp o₁) fun w ⟨o, r⟩ =>
-      ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, fun h' _ => ?_⟩) (by simp)
-    · have h8 : r ∉ [Reg.x8, .x14, .x13, .x15, .x13, .x14, .x0] := by
-        simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with h | h | h | h | h | h | h | h | h | h | h <;> subst h <;> decide
-      exact o.gpr r h8
-    · rw [o.sp]
-    · rw [o.vcs r hr]
-    · rw [recover_none h' hsig]; exact r
 
 end VG.Proof.RsaPkcs1Sig.AArch64.Rec

@@ -39,8 +39,6 @@ theorem Keep.trans {o n : Nat} {m m' m'' : Mem} (h : Keep L o n m m') (h' : Keep
   ⟨fun a l h₁ h₂ h₃ => (h'.scr a l h₁ h₂ h₃).trans (h.scr a l h₁ h₂ h₃),
     fun d h₁ h₂ => (h'.slot d h₁ h₂).trans (h.slot d h₁ h₂)⟩
 
-theorem Keep.refl (o n : Nat) (m : Mem) : Keep L o n m m := ⟨fun _ _ _ _ _ => rfl, fun _ _ _ => rfl⟩
-
 theorem Keep.of_eq {o n : Nat} {m m' : Mem} (h : m' = m) : Keep L o n m m' :=
   ⟨fun _ _ _ _ _ => by rw [h], fun _ _ _ => by rw [h]⟩
 

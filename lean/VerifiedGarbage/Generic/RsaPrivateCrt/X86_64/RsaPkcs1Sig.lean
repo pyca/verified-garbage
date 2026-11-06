@@ -38,7 +38,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivOutcome
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
@@ -81,7 +80,6 @@ import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivOutcome
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify

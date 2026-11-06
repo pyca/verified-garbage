@@ -32,9 +32,8 @@ of the piece is checked by the taint analysis.
 Two ways to go from one piece to the next: `kg_ws` and `kg_ct` give the
 facts after a piece from its correctness (as x86-64's `CTBase.lean`, with
 `Stab` for the facts that survive it); `kg_ws0` checks a piece with no
-postcondition, and `kg_then` and `kg_split` take the facts in between from
-the correctness of the first part and the facts after both from that of
-the whole, for code whose parts have no correctness proof of their own.
+postcondition, and `kg_then` takes the facts between two pieces from the
+correctness of the first.
 `kg_blk_ws0` checks a block that reloads `w` and the stride in its middle,
 and `kg_ite` a branch on a register both runs agree on (`kg_zero_eq`,
 `kg_nonzero_eq`).
@@ -85,13 +84,6 @@ abbrev KIn.st (I : KIn) : Nat := Spec.RsaKeyGen.keyStatus (Spec.RsaKeyGen.keyOp 
 
 theorem KIn.pub_W {I : KIn} {q : KQ} (h : I.pub = q) : I.W = q.W := by rw [← h]; rfl
 
-theorem KIn.pub_B {I : KIn} {q : KQ} (h : I.pub = q) : I.B = q.B := by rw [← h]; rfl
-
-theorem KIn.pub_eb {I : KIn} {q : KQ} (h : I.pub = q) : I.eb = q.eb := by rw [← h]; rfl
-
-/-- `e`'s value is public. -/
-theorem KIn.pub_E {I : KIn} {q : KQ} (h : I.pub = q) : I.E = Spec.Rsa.os2ip q.eb := by rw [← h]; rfl
-
 /-! ## The relation between the pieces -/
 
 /-- Between the pieces: the state of some inputs with the public data `p`,
@@ -114,12 +106,6 @@ theorem KG.imp {F G : KIn → State → Prop} {p : KP} {s : State} (h : KG F p s
     KG G p s := by
   obtain ⟨I, s₀, he, hst, hk, L, O, hF⟩ := h
   exact ⟨I, s₀, he, hst, hk, L, O, hFG I hF⟩
-
-/-- `KG` with other facts, which may use `KS` and the lengths. -/
-theorem KG.imp' {F G : KIn → State → Prop} {p : KP} {s : State} (h : KG F p s)
-    (hFG : ∀ I s₀, KS I s₀ s → KLens I → F I s → G I s) : KG G p s := by
-  obtain ⟨I, s₀, he, hst, hk, L, O, hF⟩ := h
-  exact ⟨I, s₀, he, hst, hk, L, O, hFG I s₀ hk L hF⟩
 
 /-- Two runs related with some facts, related with others. -/
 theorem two_kg {F G : KIn → State → Prop} (hFG : ∀ I s, F I s → G I s) {s₁ s₂ : State}
@@ -145,15 +131,6 @@ theorem kg_then {F G : KIn → State → Prop} {c₁ c₂ : Prog isa} (h₁ : Re
     (h₂ : RelCT isa (Two (KG G)) c₂ fun _ _ => True) :
     RelCT isa (Two (KG F)) (.seq c₁ c₂) fun _ _ => True :=
   RelCT.seq (kg_ct h₁ hw₁) h₂
-
-/-- `kg_then`, with the facts after both from the correctness of the whole. -/
-theorem kg_split {F G H : KIn → State → Prop} {c₁ c₂ : Prog isa}
-    (h₁ : RelCT isa (Two (KG F)) c₁ fun _ _ => True)
-    (hw₁ : ∀ I s₀ s, KS I s₀ s → KLens I → F I s → WP isa c₁ s fun t => KS I s₀ t ∧ G I t)
-    (h₂ : RelCT isa (Two (KG G)) c₂ fun _ _ => True)
-    (hw : ∀ I s₀ s, KS I s₀ s → KLens I → F I s → WP isa (.seq c₁ c₂) s fun t => KS I s₀ t ∧ H I t) :
-    RelCT isa (Two (KG F)) (.seq c₁ c₂) (Two (KG H)) :=
-  kg_ct (kg_then h₁ hw₁ h₂) hw
 
 /-- `kg_then` for a sequence in two parts. -/
 theorem kg_app0 {F G : KIn → State → Prop} {a b : List (Prog isa)} (ha : a ≠ []) (hb : b ≠ [])
@@ -204,15 +181,6 @@ theorem kg_blk_ws0 {F G : KIn → State → Prop} {l₁ rest : List Instr} {hc�
     (ht₂ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.block rest) hc₂).isSome = true) :
     RelCT isa (Two (KG F)) (.block (l₁ ++ (ws ++ rest))) fun _ _ => True :=
   RelCT.block_append (kg_then (two_taint [.x0] (pins_kg F) ht₁) hw₁ (kg_wsb0 ht₂))
-
-/-- `kg_blk_ws0`, for a block followed by code. -/
-theorem kg_blk_ws_seq0 {F G : KIn → State → Prop} {l₁ rest : List Instr} {body : Prog isa}
-    {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht₁ : (taint.check (Taint.ofRegs [.x0]) (.block l₁) hc₁).isSome = true)
-    (hw₁ : ∀ I s₀ s, KS I s₀ s → KLens I → F I s → WP isa (.block l₁) s fun t => KS I s₀ t ∧ G I t)
-    (ht₂ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block rest) body) hc₂).isSome = true) :
-    RelCT isa (Two (KG F)) (.seq (.block (l₁ ++ (ws ++ rest))) body) fun _ _ => True :=
-  RelCT.block_seq (kg_then (two_taint [.x0] (pins_kg F) ht₁) hw₁ (kg_ws0 ht₂))
 
 /-- `ws` and then code the taint analysis checks from `x0`, `x12` and `x11`,
 with what correctness gives after it. -/
@@ -348,9 +316,6 @@ def PF (I : KIn) (t : State) : Prop :=
   av I t.mem aPa = I.P ∧ av I t.mem aQa = I.Q ∧ av I t.mem aPm = I.P - 1 ∧ av I t.mem aQm = I.Q - 1 ∧
     EvOK I t ∧ TopZ aPm I t ∧ TopZ aQm I t
 
-theorem PF.primes {I : KIn} {s₀ t : State} (h : KS I s₀ t) (hf : PF I t) : KPrimes I s₀ t :=
-  ⟨h, hf.1, hf.2.1, hf.2.2.1, hf.2.2.2.1, hf.2.2.2.2.1⟩
-
 /-- `PF` across a change of none of its parts. -/
 theorem PF.frame {cs : List Rc} (hok : cs.all Rc.ok = true) (hPa : .arr aPa ∉ cs)
     (hQa : .arr aQa ∉ cs) (hPm : .arr aPm ∉ cs) (hQm : .arr aQm ∉ cs) (hEv : .hdr kEv ∉ cs) {I : KIn} {s t : State}
@@ -360,18 +325,5 @@ theorem PF.frame {cs : List Rc} (hok : cs.all Rc.ok = true) (hPa : .arr aPa ∉ 
     (hf.av hok (by decide) hPm hZ).trans c, (hf.av hok (by decide) hQm hZ).trans d,
     (hf.word hok (by decide) hEv).trans e, (hf.at hok (by decide) hPm hZ).trans f,
     (hf.at hok (by decide) hQm hZ).trans g⟩
-
-/-- `PF` survives a piece that changes none of its parts. -/
-theorem stab_pf {cs : List Rc} (rs : List Reg) (hok : cs.all Rc.ok = true) (hPa : .arr aPa ∉ cs)
-    (hQa : .arr aQa ∉ cs) (hPm : .arr aPm ∉ cs) (hQm : .arr aQm ∉ cs) (hEv : .hdr kEv ∉ cs) : Stab PF cs rs :=
-  fun _ _ _ hZ h hf _ => PF.frame hok hPa hQa hPm hQm hEv hZ h hf
-
-/-- A block that changes the registers alone, checked by the taint analysis
-from `x0`. -/
-theorem kg_regs {F G : KIn → State → Prop} {l : List Instr} {rs : List Reg} (hr : ∀ r ∈ rs, r ∈ mmRegs)
-    {hc : VG.Taint.Hint VG.AArch64.Taint.T} (ht : (taint.check (Taint.ofRegs [.x0]) (.block l) hc).isSome = true)
-    (hw : ∀ I s, slot I.W 16 ≤ 2 ^ 64 → F I s → WP isa (.block l) s fun t => t.mem = s.mem ∧ Keep rs s t ∧ G I t) :
-    RelCT isa (Two (KG F)) (.block l) (Two (KG G)) :=
-  kg_x0 ht fun I _ s h _ hf => WP.mono (hw I s h.hZ hf) fun _ ⟨hm, k, hg⟩ => ⟨h.regs hm k hr, hg⟩
 
 end VG.Proof.RsaKeyGen.AArch64.Key

@@ -25,10 +25,6 @@ namespace VG.Proof.RsaOaep.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.RsaOaep.PPC64LE
 
-theorem stackArgs_seven (s : State) :
-    List.map (stackArg s) (List.range 7) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
-      stackArg s 4, stackArg s 5, stackArg s 6] := rfl
-
 theorem stackArgs_ten (s : State) :
     List.map (stackArg s) (List.range 10) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
       stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9] := rfl

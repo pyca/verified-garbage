@@ -29,19 +29,6 @@ theorem correction_scratch_arr {m m' : Mem} {B : Addr} {j : Nat} (hj : j < 4)
   simp only [arr, S, hdr] at H ⊢
   omega
 
-theorem correction_scratch_keep {m m' : Mem} {B : Addr} {js : List Nat}
-    (indices : ∀ j ∈ js, j < 4) (O : Keep B 4 js [] m m') : Outs B correctionScratch m m' := by
-  apply VG.Proof.Rsa.outs_cover O
-  intro r hr
-  simp only [ranges, List.map_nil, List.append_nil, List.mem_map] at hr
-  obtain ⟨j, hj, rfl⟩ := hr
-  refine ⟨(hdr, 96), by simp [correctionScratch], ?_, ?_⟩
-  · unfold arr
-    omega
-  · have bound := indices j hj
-    simp only [arr, S, hdr]
-    omega
-
 theorem correction_scratch_outside {m m' : Mem} {B : Addr} {out len : Nat}
     (low : hdr ≤ out) (high : out + len ≤ hdr + 96) (O : Outside B out len m m') :
     Outs B correctionScratch m m' := by

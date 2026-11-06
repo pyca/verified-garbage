@@ -48,12 +48,6 @@ abbrev SearchPublic.F (p : SearchPublic) : Addr := p.sp - BitVec.ofNat 64 160
 /-- The frame's region. -/
 abbrev SearchPublic.frame (p : SearchPublic) : Region := ⟨p.F, 160⟩
 
-/-- The search from octet `used` of `rand`, with `remaining` counted
-candidates left. -/
-abbrev SearchPublic.tail (p : SearchPublic) (pB rand : List Byte) (used remaining : Nat) :
-    PrimeSearchResult :=
-  primeSearch p.len p.eB pB remaining (rand.drop used)
-
 /-- The frame's words while the search goes on (but the request and the
 status, which only a finished search has). -/
 def SearchPublic.headers (p : SearchPublic) (used remaining : Nat) : List (Nat × BitVec 64) :=
@@ -66,12 +60,6 @@ def SearchPublic.headers (p : SearchPublic) (used remaining : Nat) : List (Nat �
 
 theorem SearchPublic.headers_bound (p : SearchPublic) (used remaining : Nat) :
     ∀ e ∈ p.headers used remaining, e.1 < 20 := by
-  simp only [SearchPublic.headers, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
-    dsimp only <;> decide
-
-theorem SearchPublic.headers_four (p : SearchPublic) (used remaining : Nat) :
-    ∀ e ∈ p.headers used remaining, 4 ≠ e.1 := by
   simp only [SearchPublic.headers, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
     dsimp only <;> decide

@@ -221,8 +221,9 @@ theorem emLen_eq {P : EP} {b : Byte} {rest : List Byte} (hbr : P.nB = b :: rest)
   · rw [ite_eq_left hb1] at e2; rw [ite_eq_left (by omega_arith)]; all_goals omega_arith
   · rw [ite_eq_right hb1] at e2; rw [ite_eq_right (by have := b.isLt; omega_arith)]; all_goals omega_arith
 
-/-- `verify_short` (`Proof/RsaPss/VerifyCases.lean`), with MGF1's hash function
-`G` another than `H`. -/
+/-- `verify` refuses an encoding too short for the salt (as in
+`Proof/RsaPss/VerifyCases.lean`), with MGF1's hash function `G` another than
+`H`. -/
 theorem verify_short₂ (H G : Spec.Mgf1.Hash) {nB : List Byte} (eB mHash sB : List Byte) {sLen : Option Nat}
     (h : Spec.RsaPss.emLength (Spec.RsaPss.bitLength (Spec.Rsa.os2ip nB) - 1) < H.len + sLen.getD 0 + 2) :
     Spec.RsaPss.verify H G nB eB mHash sB sLen = false := by

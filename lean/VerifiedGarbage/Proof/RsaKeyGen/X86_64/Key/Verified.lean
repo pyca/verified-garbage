@@ -130,8 +130,6 @@ theorem storeBlkK_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr
       fun _ ⟨⟨hsi, hcx⟩, k₄⟩ => ⟨(k₄.gpr (by decide)).trans hbx, hsi, hcx,
         ((k₂.trans k₃).trans k₄ |>.gpr (by decide)).trans h.rdi⟩))
 
-theorem stab_hdr_kok : HdrStab KokM := fun _ _ _ ⟨c, h⟩ fw => ⟨c, (fw _ (by decide)).trans h⟩
-
 theorem storeAK_ct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen < 32) (ptr : KQ → Addr)
     (len : KQ → Nat) (hA : OutHdr sPtr sLen ptr len) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi]) (.block (ws ++ base j .rbx ++ ([.mov .rsi (.mem (hdr sPtr)),

@@ -64,21 +64,6 @@ theorem Arrays.apart {w : Nat} {i j : Nat} (I : Arrays i) (J : Arrays j) (differ
   unfold slot stride VG.Impl.Bignum.hdrBytes
   rcases I with rfl | rfl | rfl | rfl <;> rcases J with rfl | rfl | rfl | rfl <;> first | omega | exact absurd rfl different
 
-/-- Workspace writes beyond the header keep the frame. -/
-theorem Framed.keepOutside {W : Addr} {L w : Nat} {q : BitVec 32} {s t : State} (F : Framed W L w q s)
-    {rs : List Reg} (K : Keeps rs s t) (edi : .edi ∉ rs) (esp : .esp ∉ rs) {d n : Nat}
-    (O : Outside W d n s.mem t.mem) (header : 8 ≤ d) (fit : d + n ≤ L) : Framed W L w q t := by
-  have nowrap := F.space.scratch.nowrap
-  have Fr := VG.Proof.Bignum.outside_frame O (by omega)
-  refine ⟨F.space.keep K edi esp (BitVec.eq_of_toNat_eq (O.w32 (d := 4) (Or.inl (by omega)) (by omega))),
-    F.stack.keep K esp, F.apart, ?_⟩
-  rw [Fr.readW (r := ⟨q.setWidth 64, 20⟩) ?_ ?_ (by decide)]
-  · exact F.saved
-  · exact Offset.contains_base _ (by decide) (by decide)
-  · intro r mem
-    obtain rfl := List.mem_singleton.mp mem
-    exact (F.apart.sub_left (Offset.sub_base W fit)).symm
-
 theorem Framed.keepMem {W : Addr} {L w : Nat} {q : BitVec 32} {s t : State} (F : Framed W L w q s)
     {rs : List Reg} (K : Keeps rs s t) (edi : .edi ∉ rs) (esp : .esp ∉ rs) (M : t.mem = s.mem) :
     Framed W L w q t :=

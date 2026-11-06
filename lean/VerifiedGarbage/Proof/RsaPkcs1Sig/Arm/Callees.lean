@@ -10,8 +10,7 @@ public import VerifiedGarbage.Proof.Rsa.Contract
 # The ARMv7 PKCS #1 v1.5 functions: their callee `vg_rsa_public_precomputed_checked`
 
 `PdImpl`: an implementation of `vg_rsa_public_precomputed_checked`, with
-its proof and the stack it uses (at most 56 bytes); `pdBase`, the baseline
-(`Impl/Bignum/Arm/PdFn.lean`). Its contract, at a call with given arguments
+its proof and the stack it uses (at most 56 bytes). Its contract, at a call with given arguments
 (`pd_pre`, `pd_pub`, `pd_post`).
 -/
 
@@ -27,13 +26,6 @@ structure PdImpl where
   code : Prog isa
   verified : Verified target code (Proof.Rsa.publicPrecomputedCheckedContract abi 56)
   stack : FrameStack.armStack code ≤ 56
-
-/-- The baseline. -/
-def pdBase : PdImpl where
-  name := "vg_rsa_public_precomputed_checked"
-  code := Impl.Bignum.Arm.PdFn.code
-  verified := Proof.Bignum.Arm.pd_verified
-  stack := by decide +kernel
 
 theorem stackArg_call (s : State) (rd wr : List Region) (i : Nat) :
     stackArg (s.callEntry.withRegions rd wr) i = stackArg s i := by

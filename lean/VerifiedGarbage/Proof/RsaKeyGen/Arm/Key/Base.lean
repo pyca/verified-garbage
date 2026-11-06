@@ -157,8 +157,6 @@ structure In (P : KP) (σ : State) : Prop where
 section
 variable {P : KP} {σ : State}
 
-theorem In.W_eq (h : In P σ) : 2 * (P.W - 4) = P.K := by have := h.k8; simp only [KP.W]; omega
-
 theorem In.wle (h : In P σ) : P.W ≤ 260 := by have := h.k2; simp only [KP.W]; omega
 
 theorem In.wge (h : In P σ) : 20 ≤ P.W := by have := h.k1; simp only [KP.W]; omega

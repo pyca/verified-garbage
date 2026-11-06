@@ -49,9 +49,6 @@ theorem out_sub {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreV tsH ts
 theorem sc_sub {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreV tsH tsG K s) : Region.Sub (scR s) (sR s) :=
   Offset.sub_base _ (by rw [scr_toNat hp]; have := hp.hs; unfold oRsa; omega_arith)
 
-theorem rsa_sub {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreV tsH tsG K s) : Region.Sub ⟨scr s, oRsa⟩ (sR s) :=
-  Region.sub_prefix (by have := hp.hs; unfold oRsa; omega_arith)
-
 theorem a16_sub (K : Nat) (s : State) : Region.Sub ⟨fb s, 16⟩ (kR K s) := by
   have := frame_sub K s (d := 0) (n := 16) (by decide); rwa [BitVec.add_zero] at this
 

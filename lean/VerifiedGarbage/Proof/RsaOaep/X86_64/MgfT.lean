@@ -13,9 +13,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # RSAES-OAEP on x86-64: MGF1 with the hash function of a table
 
 `Table.mgfXor lay f` (`Impl/RsaOaep/X86_64/Table.lean`) XORs
-`MGF1(src, dstLen)` into `dst` as `mgfXor lay G` does (`mgfXorT_ok`, as
-`mgfXor_ok`), for `G` the hash function whose functions' addresses the
-table holds (`Tab`): the table's address is in the slot `sTab` (word 35)
+`MGF1(src, dstLen)` into `dst` as `mgfXor lay G` does (`mgfXorT_ok`), for
+`G` the hash function whose functions' addresses the table holds (`Tab`): the table's address is in the slot `sTab` (word 35)
 and `G`'s digest length in `sD` (word 36), and the table holds the
 addresses of `G`'s `init`, `update` and `finalize`, which an indirect call
 of `f`'s functions reaches (`TabOK`), in every memory that differs from the
