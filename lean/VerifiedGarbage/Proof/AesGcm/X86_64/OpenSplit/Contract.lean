@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_open_split`
 `(ctx = rdi, rounds = rsi, nonce = rdx, nonce_len = rcx, aad = r8,
 aad_len = r9, dst = [rsp + 8], len = [rsp + 16], tag = [rsp + 24],
-tag_len = [rsp + 32], src = [rsp + 40], work = [rsp + 48])`, for a key
+tag_len = [rsp + 32], src = [rsp + 40], src_len = [rsp + 48], work = [rsp + 56])`, for a key
 context of kind `M`: `open`'s contract (`openPre`, `openX86_64`), with the
 ciphertext read from the `len` bytes at `src` and the plaintext written to
 `dst`, which it leaves unspecified when the tag is wrong (its callers zero
@@ -32,8 +32,9 @@ open VG.Spec.Gcm (ctxCiph ctxH openResult)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 
 /-- What `vg_aes_gcm_open_split` needs, for a key context of `cl` bytes:
-`openPre`'s layout (`oneLay`), with `src` and `work` the fifth and sixth
-arguments on the stack, `src` the `len` bytes to read, and the 56 bytes
+`openPre`'s layout (`oneLay`), with `src`, `src_len` and `work` the fifth to
+seventh arguments on the stack, `src` the `len` bytes to read (`src_len`
+is `len`), and the 56 bytes
 below the stack pointer apart from the buffers. -/
 def openSplitPre (cl : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .rdi, cl⟩
@@ -42,12 +43,12 @@ def openSplitPre (cl : Nat) (s : State) : Prop :=
   let data : Region := ⟨arg s 0, (arg s 1).toNat⟩
   let tag : Region := ⟨arg s 2, (arg s 3).toNat⟩
   let src : Region := ⟨arg s 4, (arg s 1).toNat⟩
-  let work : Region := ⟨arg s 5, 2560⟩
-  s.rd = [ctx, nonce, aad, tag, src, args s 6] ∧ s.wr = [data, work] ∧ oneLay cl 5 6 s ∧
+  let work : Region := ⟨arg s 6, 2560⟩
+  s.rd = [ctx, nonce, aad, tag, src, args s 7] ∧ s.wr = [data, work] ∧ oneLay cl 6 7 s ∧
     tag.Disjoint data ∧ tag.Disjoint work ∧ (stk56 s).Disjoint tag ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 64 ∧
     src.Disjoint data ∧ src.Disjoint work ∧ (stk56 s).Disjoint ctx ∧ (stk56 s).Disjoint nonce ∧
     (stk56 s).Disjoint aad ∧ (stk56 s).Disjoint src ∧ (stk56 s).Disjoint data ∧ (stk56 s).Disjoint work ∧
-    (arg s 4).toNat + (arg s 1).toNat ≤ 2 ^ 64 ∧ 56 ≤ (s.gpr .rsp).toNat
+    (arg s 4).toNat + (arg s 1).toNat ≤ 2 ^ 64 ∧ 56 ≤ (s.gpr .rsp).toNat ∧ arg s 5 = arg s 1
 
 /-- The result of `open` of the ciphertext at `src`. -/
 abbrev openSplitResult (s : State) : Option (List Byte) :=
@@ -66,6 +67,6 @@ def openSplitX86_64M (M : CtxMode) : Contract isa where
     match openSplitResult s with
     | some pt => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem (arg s 0) (arg s 1).toNat = pt
     | none => (s'.gpr .rax).setWidth 32 = 0
-  pub s₁ s₂ := onePub 6 s₁ s₂ ∧ openSplitLeak s₁ = openSplitLeak s₂
+  pub s₁ s₂ := onePub 7 s₁ s₂ ∧ openSplitLeak s₁ = openSplitLeak s₂
 
 end VG.Proof.AesGcm

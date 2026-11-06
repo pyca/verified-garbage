@@ -54,7 +54,7 @@ open VG.Proof.Gcm (Absorbed Ctr xorKs lensBlock padded)
 bytes of the received tag at `T`, apart from what is written, and the 56
 bytes below the stack pointer apart from the buffers. -/
 structure OSCtx (s : State) (cl : Nat) (Ctx W SP Np A D S T : Addr) (nl al n t : Nat) : Prop
-    extends OneCtx s 6 Ctx W SP Np A D nl al n where
+    extends OneCtx s 7 Ctx W SP Np A D nl al n where
   src : Covers [⟨S, n⟩] (s.rd ++ s.wr)
   sW : (⟨S, n⟩ : Region).Disjoint ⟨W, 2560⟩
   sD : (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩
@@ -70,14 +70,14 @@ structure OSCtx (s : State) (cl : Nat) (Ctx W SP Np A D S T : Addr) (nl al n t :
   tK : (below SP 56).Disjoint ⟨T, t⟩
 
 theorem OSCtx.of {cl : Nat} {s : State} (hp : Proof.AesGcm.openSplitPre cl s) (hcl : 256 ≤ cl) :
-    OSCtx s cl (s.gpr .rdi) (stackArg s 5) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (stackArg s 0) (stackArg s 4)
+    OSCtx s cl (s.gpr .rdi) (stackArg s 6) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (stackArg s 0) (stackArg s 4)
       (stackArg s 2) (s.gpr .rcx).toNat (s.gpr .r9).toNat (stackArg s 1).toNat (stackArg s 3).toNat := by
   have hp' := hp
   simp only [Proof.AesGcm.openSplitPre, Proof.AesGcm.stk56, Proof.AesGcm.args, Proof.AesGcm.arg] at hp'
-  obtain ⟨hrd, hwr, hl, d_td, d_tw, t_t, -, s_d, s_w, k_c, -, -, k_s, k_d, k_w, ws, sp56⟩ := hp'
+  obtain ⟨hrd, hwr, hl, d_td, d_tw, t_t, -, s_d, s_w, k_c, -, -, k_s, k_d, k_w, ws, sp56, -⟩ := hp'
   have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at hrd
-  refine ⟨OneCtx.of (w := 5) hl hcl ?_ ?_ ?_ ?_ ?_ ?_, ?_, s_w, s_d, ws, k_c, k_w, k_d, k_s, sp56, ?_, d_td, d_tw,
+  refine ⟨OneCtx.of (w := 6) hl hcl ?_ ?_ ?_ ?_ ?_ ?_, ?_, s_w, s_d, ws, k_c, k_w, k_d, k_s, sp56, ?_, d_td, d_tw,
     t_t⟩
   · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..))
   · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
@@ -94,7 +94,7 @@ theorem OSCtx.of {cl : Nat} {s : State} (hp : Proof.AesGcm.openSplitPre cl s) (h
 
 /-- From `open_split`'s precondition, for a key context of kind `M`. -/
 theorem CtxExt.ofOS {M : CtxMode} {s : State} (hp : Proof.AesGcm.openSplitPre M.len s) (hok : M.ok s.mem (s.gpr .rdi)) :
-    CtxExt M (s.gpr .rdi) (stackArg s 5 + BitVec.ofNat 64 16) (stackArg s 5) (s.gpr .rsp) (stackArg s 0)
+    CtxExt M (s.gpr .rdi) (stackArg s 6 + BitVec.ofNat 64 16) (stackArg s 6) (s.gpr .rsp) (stackArg s 0)
       (stackArg s 1).toNat s := by
   simp only [Proof.AesGcm.openSplitPre, Proof.AesGcm.oneLay, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.args,
     Proof.AesGcm.arg] at hp
@@ -133,19 +133,19 @@ end
 /-- The entry of `open_split`: `open`'s, with `src` and `len` kept at `tlO`
 and `tlenO`, and the tag length in `rbx`. -/
 theorem entryS_ok {s : State} {Ctx W SP Np A D : Addr} {nl al n : Nat}
-    (C : OneCtx s 6 Ctx W SP Np A D nl al n) (hCtx : s.gpr .rdi = Ctx) (hSP : s.gpr .rsp = SP) (hA : s.gpr .r8 = A)
-    (hD : stackArg s 0 = D) (hn : (stackArg s 1).toNat = n) (hW : s.mem.readW (SP + BitVec.ofNat 64 48) 64 = W) :
+    (C : OneCtx s 7 Ctx W SP Np A D nl al n) (hCtx : s.gpr .rdi = Ctx) (hSP : s.gpr .rsp = SP) (hA : s.gpr .r8 = A)
+    (hD : stackArg s 0 = D) (hn : (stackArg s 1).toNat = n) (hW : s.mem.readW (SP + BitVec.ofNat 64 56) 64 = W) :
     WP isa (.block OpenSplit.entry) s
       fun s₁ => OneEntry s Ctx W SP A D n s₁ ∧ s₁.gpr .rbx = stackArg s 3 ∧
         s₁.mem.readW (W + BitVec.ofNat 64 224) 64 = stackArg s 4 ∧
         s₁.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 n ∧ Frame [oneR W] s.mem s₁.mem := by
   have L := C.lay
-  have a₅ := C.args 5 (by decide)
-  refine WP.block_append (WP.mono (oneEntry_ok (by decide) C hCtx hSP hA hD hn hW a₅) fun s₁ E => ?_)
-  have kA : ∀ i < 6, s₁.mem.readW (SP + BitVec.ofNat 64 (8 * (i + 1))) 64 = stackArg s i := fun i hi => by
+  have a₆ := C.args 6 (by decide)
+  refine WP.block_append (WP.mono (oneEntry_ok (by decide) C hCtx hSP hA hD hn hW a₆) fun s₁ E => ?_)
+  have kA : ∀ i < 7, s₁.mem.readW (SP + BitVec.ofNat 64 (8 * (i + 1))) 64 = stackArg s i := fun i hi => by
     rw [E.frame.readW (r := ⟨SP + BitVec.ofNat 64 (8 * (i + 1)), 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      have hs : Region.Sub ⟨SP + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * 6⟩ := by
+      have hs : Region.Sub ⟨SP + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * 7⟩ := by
         rw [show 8 * (i + 1) = 8 + 8 * i by omega_arith, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega_arith)
       exact (C.dA.sub_left hs).sub_right (Lay.wSub (by decide))) (by decide), ← hSP]
     simp only [stackArg, stackArgAddr]
@@ -164,7 +164,7 @@ theorem entryS_ok {s : State} {Ctx W SP Np A D : Addr} {nl al n : Nat}
   have sA : Mem.Sep (SP + BitVec.ofNat 64 16) (64 / 8) (W + BitVec.ofNat 64 224) (64 / 8) := by
     refine Region.Disjoint.sep (?_ : (⟨SP + BitVec.ofNat 64 16, 8⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 224, 8⟩)
       (Region.contains_self _ _) (Region.contains_self _ _)
-    have hs : Region.Sub ⟨SP + BitVec.ofNat 64 16, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * 6⟩ := by
+    have hs : Region.Sub ⟨SP + BitVec.ofNat 64 16, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * 7⟩ := by
       rw [show (16 : Nat) = 8 + 8 by rfl, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega_arith)
     exact (C.dA.sub_left hs).sub_right (Lay.wSub (by omega_arith))
   obtain ⟨s₂, run₂, hbx₂, hg₂, hm₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa [.mov .rbx (.mem (at_ .rsp 32)),
@@ -383,7 +383,7 @@ theorem frontS_ok (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M) {s
   have dArg : ∀ {e : Nat}, 8 ≤ e → e + 8 ≤ 56 → ∀ {r : Region}, r.Sub ⟨W, 2560⟩ ∨ r.Sub ⟨D, n⟩ ∨ r.Sub (below SP 56) →
       (⟨SP + BitVec.ofNat 64 e, 8⟩ : Region).Disjoint r := by
     intro e h₁ h₂ r hr
-    have hs : Region.Sub ⟨SP + BitVec.ofNat 64 e, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * 6⟩ := by
+    have hs : Region.Sub ⟨SP + BitVec.ofNat 64 e, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * 7⟩ := by
       rw [show e = 8 + (e - 8) by omega_arith, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega_arith)
     rcases hr with hr | hr | hr
     · exact (C.dA.sub_left hs).sub_right hr
@@ -694,7 +694,7 @@ theorem openSplitM_wp (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M
       fun s' => gprPreserved s s' ∧ (Proof.AesGcm.openSplitX86_64M M).post s s' := by
   have X := CtxExt.ofOS hp.1 hp.2
   have C := OSCtx.of hp.1 M.ge
-  have hW' : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 48) 64 = stackArg s 5 := rfl
+  have hW' : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 56) 64 = stackArg s 6 := rfl
   have hTa : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 24) 64 = stackArg s 2 := rfl
   have htl : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 32) 64 = stackArg s 3 := rfl
   generalize hCtx : s.gpr .rdi = Ctx at *
@@ -707,7 +707,7 @@ theorem openSplitM_wp (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M
   generalize hn : (stackArg s 1).toNat = n at *
   generalize hT : stackArg s 2 = T' at *
   generalize hS : stackArg s 4 = S at *
-  generalize hW : stackArg s 5 = W at *
+  generalize hW : stackArg s 6 = W at *
   have L := C.lay
   generalize hR : (s.gpr .rsi).toNat = R at *
   refine WP.seq (WP.mono (entryS_ok C.toOneCtx hCtx hSP hA hD hn hW') fun s₁ ⟨E, hbx₁, hS₁, hN₁, fE⟩ => ?_)

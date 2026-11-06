@@ -7,12 +7,13 @@ public import VerifiedGarbage.Impl.AesGcm.X86_64.SealSplit
 
 `vg_aes_gcm_open_split` `(ctx = rdi, rounds = rsi, nonce = rdx,
 nonce_len = rcx, aad = r8, aad_len = r9, dst = [rsp + 8], len = [rsp + 16],
-tag = [rsp + 24], tag_len = [rsp + 32], src = [rsp + 40], work = [rsp + 48])`,
+tag = [rsp + 24], tag_len = [rsp + 32], src = [rsp + 40], src_len = [rsp + 48],
+work = [rsp + 56])`,
 its working space allocated on the stack by `withStackArgScratch`: `open`
 (`Impl.AesGcm.X86_64.open`) of the `len` bytes of ciphertext at `src`, with
 the plaintext written to `dst` instead of over the ciphertext. Its arguments
-are `open`'s, in the same places, with `src` and `work` after them. The
-entry is `open`'s (`oneEntry 48`), with `src` kept in the slot of the
+are `open`'s, in the same places, with `src`, its length (which equals `len`) and `work` after them. The
+entry is `open`'s (`oneEntry 56`), with `src` kept in the slot of the
 received tag's length (`tlO`) and `len` in that of the total length
 (`tlenO`, which `open` sets only in `oneBlocks`), as `seal_split`'s entry
 keeps `src` and its length. After `J₀` and the additional data
@@ -42,10 +43,10 @@ open VG.X86_64
 open VG.Impl.AesGcm.X86_64 (at_ imm Callees Fn restore oneEntry oneAad oneTag oneCrypt recv cmp tagLenOk tlenO
   auxO tlO uO)
 
-/-- The entry: `open`'s, with `work` at `[rsp + 48]`, and `src` and `len`
+/-- The entry: `open`'s, with `work` at `[rsp + 56]`, and `src` and `len`
 kept at `tlO` and `tlenO`, where `seal_split`'s `prefix` reads them. -/
 def entry : List Instr :=
-  oneEntry 48 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .mov .rax (.mem (at_ .rsp 40)), .store (at_ .r15 tlO) .rax,
+  oneEntry 56 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .mov .rax (.mem (at_ .rsp 40)), .store (at_ .r15 tlO) .rax,
     .mov .rax (.mem (at_ .rsp 16)), .store (at_ .r15 tlenO) .rax] : List Instr)
 
 /-- `tag_len` kept at `tlO`, after `prefix`. -/

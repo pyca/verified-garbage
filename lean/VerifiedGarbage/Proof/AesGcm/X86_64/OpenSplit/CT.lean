@@ -78,11 +78,11 @@ theorem osK_eq {s₀ : State} {Ctx Np A S Tp : Addr} {nl al n t R : Nat} (hok : 
 
 /-- A stack argument between `[SP + 8]` and `[SP + 48]` is apart from `W`,
 the data and the 56 bytes below `SP`. -/
-theorem argD {s : State} {Ctx W SP Np A D : Addr} {nl al n : Nat} (C : OneCtx s 6 Ctx W SP Np A D nl al n)
+theorem argD {s : State} {Ctx W SP Np A D : Addr} {nl al n : Nat} (C : OneCtx s 7 Ctx W SP Np A D nl al n)
     {e : Nat} (h₁ : 8 ≤ e) (h₂ : e + 8 ≤ 56) {r : Region}
     (hr : r.Sub ⟨W, 2560⟩ ∨ r.Sub ⟨D, n⟩ ∨ r.Sub (below SP 56)) :
     (⟨SP + BitVec.ofNat 64 e, 8⟩ : Region).Disjoint r := by
-  have hs : Region.Sub ⟨SP + BitVec.ofNat 64 e, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * 6⟩ := by
+  have hs : Region.Sub ⟨SP + BitVec.ofNat 64 e, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * 7⟩ := by
     rw [show e = 8 + (e - 8) by omega_arith, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega_arith)
   rcases hr with hr | hr | hr
   · exact (C.dA.sub_left hs).sub_right hr
@@ -403,42 +403,42 @@ theorem openSplitM_rel (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn 
   rw [hres' C.rounds, hres' C'.rounds] at hres
   have hres := leak_bool hres
   have a₀ := qa 0 (by decide); have a₁ := qa 1 (by decide); have a₂ := qa 2 (by decide)
-  have a₃ := qa 3 (by decide); have a₄ := qa 4 (by decide); have a₅ := qa 5 (by decide)
-  simp only [Proof.AesGcm.arg] at a₀ a₁ a₂ a₃ a₄ a₅
-  have ha₅ := C.args 5 (by decide); have ha₅' := C'.args 5 (by decide)
-  have hw48 : s₀.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 48) 64 =
-      s₀'.mem.readW (s₀'.gpr .rsp + BitVec.ofNat 64 48) 64 := a₅
+  have a₃ := qa 3 (by decide); have a₄ := qa 4 (by decide); have a₆ := qa 6 (by decide)
+  simp only [Proof.AesGcm.arg] at a₀ a₁ a₂ a₃ a₄ a₆
+  have ha₆ := C.args 6 (by decide); have ha₆' := C'.args 6 (by decide)
+  have hw56 : s₀.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 56) 64 =
+      s₀'.mem.readW (s₀'.gpr .rsp + BitVec.ofNat 64 56) 64 := a₆
   have hT₁ : ArgT (s₀.gpr .rsp) (stackArg s₀ 2) s₀ := rfl
   have hT₂ : ArgT (s₀.gpr .rsp) (stackArg s₀ 2) s₀' := by rw [ArgT, q₇, a₂]; rfl
   have htl₁ : s₀.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 32) 64 = stackArg s₀ 3 := rfl
   have htl₂ : s₀'.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 32) 64 = stackArg s₀ 3 := by rw [q₇, a₃]; rfl
-  rw [← q₁, ← q₃, ← q₄, ← q₅, ← q₆, ← q₇, ← a₀, ← a₁, ← a₂, ← a₃, ← a₄, ← a₅] at C'
-  rw [← q₁, ← q₇, ← a₀, ← a₁, ← a₅] at X'
+  rw [← q₁, ← q₃, ← q₄, ← q₅, ← q₆, ← q₇, ← a₀, ← a₁, ← a₂, ← a₃, ← a₄, ← a₆] at C'
+  rw [← q₁, ← q₇, ← a₀, ← a₁, ← a₆] at X'
   rw [← q₁, ← q₂, ← q₃, ← q₄, ← q₅, ← q₆, ← a₁, ← a₂, ← a₃, ← a₄] at hres
   generalize ht : (stackArg s₀ 3).toNat = t at hres C C'
   have hst : stackArg s₀ 3 = BitVec.ofNat 64 t := by rw [← ht, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   rw [hst] at htl₁ htl₂
-  have hE : ∀ {s : State} (C : OneCtx s 6 (s₀.gpr .rdi) (stackArg s₀ 5) (s₀.gpr .rsp) (s₀.gpr .rdx) (s₀.gpr .r8)
+  have hE : ∀ {s : State} (C : OneCtx s 7 (s₀.gpr .rdi) (stackArg s₀ 6) (s₀.gpr .rsp) (s₀.gpr .rdx) (s₀.gpr .r8)
       (stackArg s₀ 0) (s₀.gpr .rcx).toNat (s₀.gpr .r9).toNat (stackArg s₀ 1).toNat),
       s.gpr .rdi = s₀.gpr .rdi → s.gpr .rsp = s₀.gpr .rsp → s.gpr .r8 = s₀.gpr .r8 →
       stackArg s 0 = stackArg s₀ 0 → (stackArg s 1).toNat = (stackArg s₀ 1).toNat →
-      s.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 48) 64 = stackArg s₀ 5 → stackArg s 3 = stackArg s₀ 3 →
+      s.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 56) 64 = stackArg s₀ 6 → stackArg s 3 = stackArg s₀ 3 →
       stackArg s 4 = stackArg s₀ 4 →
       WP isa (.block OpenSplit.entry) s
-        (OpenInS s (s₀.gpr .rdi) (stackArg s₀ 5) (s₀.gpr .rsp) (s₀.gpr .r8) (stackArg s₀ 0) (stackArg s₀ 4)
+        (OpenInS s (s₀.gpr .rdi) (stackArg s₀ 6) (s₀.gpr .rsp) (s₀.gpr .r8) (stackArg s₀ 0) (stackArg s₀ 4)
           (stackArg s₀ 1).toNat t) :=
     fun C h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ => WP.mono (entryS_ok C h₁ h₂ h₃ h₄ h₅ h₆) fun _ ⟨E, hbx, hS, hN, _⟩ =>
       ⟨E, by rw [hbx, h₇, hst], by rw [hS, h₈], hN⟩
   have hE₁ := hE C.toOneCtx rfl rfl rfl rfl rfl rfl rfl rfl
-  have hE₂ := hE C'.toOneCtx q₁.symm q₇.symm q₅.symm a₀.symm (by rw [a₁]) (by rw [q₇, a₅]; rfl) a₃.symm a₄.symm
+  have hE₂ := hE C'.toOneCtx q₁.symm q₇.symm q₅.symm a₀.symm (by rw [a₁]) (by rw [q₇, a₆]; rfl) a₃.symm a₄.symm
   rw [OpenSplit.entry, oneEntry] at hE₁ hE₂
   simp only [List.append_assoc] at hE₁ hE₂
   unfold OpenSplit.openSplit
   rw [OpenSplit.entry, oneEntry]
   simp only [List.append_assoc]
-  refine rel_reassoc_inner (fn_rel₂ (Ctx := s₀.gpr .rdi) (St := stackArg s₀ 5 + BitVec.ofNat 64 16)
-    (W := stackArg s₀ 5) (SP := s₀.gpr .rsp) (k := 48) [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (by simp)
-    ⟨_, by taint_decide⟩ (one_pub ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, qa⟩) hw48 ha₅ ha₅' ⟨_, by taint_decide⟩ hE₁ hE₂ ?_)
+  refine rel_reassoc_inner (fn_rel₂ (Ctx := s₀.gpr .rdi) (St := stackArg s₀ 6 + BitVec.ofNat 64 16)
+    (W := stackArg s₀ 6) (SP := s₀.gpr .rsp) (k := 56) [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (by simp)
+    ⟨_, by taint_decide⟩ (one_pub ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, qa⟩) hw56 ha₆ ha₆' ⟨_, by taint_decide⟩ hE₁ hE₂ ?_)
   exact openBodyS_relOf L (by rw [← ht]; exact (stackArg s₀ 3).isLt) fun hok =>
     midS_rel v B T C C' X X' rfl rfl rfl rfl q₃.symm (by rw [← q₄]) (by rw [← q₆]) (by rw [← q₂]) hT₁ hT₂ htl₁ htl₂
       hres hok
