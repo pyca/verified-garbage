@@ -19,7 +19,6 @@ after a new push that still conflicts.
 import argparse
 import json
 import os
-import sys
 import time
 import urllib.request
 
@@ -97,13 +96,13 @@ def open_pulls(api, repo):
         after = prs["pageInfo"]["endCursor"]
 
 
-def resolve(api, repo, attempts, delay, sleep=time.sleep):
+def resolve(api, repo, attempts, delay):
     """The open pull requests whose mergeability GitHub knows, by number,
     asking again for those it does not yet; and the numbers still unknown."""
     known, unknown = {}, set()
     for attempt in range(attempts):
         if attempt:
-            sleep(delay)
+            time.sleep(delay)
         unknown = set()
         for pr in open_pulls(api, repo):
             if pr["mergeable"] == "UNKNOWN":
@@ -133,17 +132,17 @@ def body(pr, repo, sha):
     )
 
 
-def run(api, repo, sha, attempts, delay, dry_run, sleep=time.sleep, out=sys.stdout):
-    known, unknown = resolve(api, repo, attempts, delay, sleep)
+def run(api, repo, sha, attempts, delay, dry_run):
+    known, unknown = resolve(api, repo, attempts, delay)
     for number, pr in sorted(known.items()):
         if needs_comment(pr):
-            print(f"#{number}: conflicts at {pr['headRefOid']}: commenting", file=out)
+            print(f"#{number}: conflicts at {pr['headRefOid']}: commenting")
             if not dry_run:
                 api.comment(repo, number, body(pr, repo, sha))
         elif pr["mergeable"] == "CONFLICTING":
-            print(f"#{number}: conflicts at {pr['headRefOid']}: already told", file=out)
+            print(f"#{number}: conflicts at {pr['headRefOid']}: already told")
     for number in unknown:
-        print(f"#{number}: mergeability still unknown: skipped", file=out)
+        print(f"#{number}: mergeability still unknown: skipped")
 
 
 def main():
