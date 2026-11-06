@@ -13,9 +13,6 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.X448.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.X448.x448Api.artifact RISCV64.target {
-    code := Impl.X448.RISCV64.R64.x448
-    verified := Proof.X448.RISCV64.R64.x448_verified },
   Spec.X448.exchangeApi.artifact RISCV64.target {
     code := Impl.Xdh.RISCV64.exchange "vg_x448" Impl.X448.RISCV64.R64.x448 56
     stack := 16

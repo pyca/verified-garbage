@@ -15,12 +15,6 @@ public import VerifiedGarbage.TCB.X86_64.Print
 namespace VG.Generic.Curve448Field.X86_64.X448
 
 def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
-  Spec.X448.x448Api.artifact X86_64.target {
-    suffix := v.suffix
-    features := v.features
-    code := Proof.X448.X86_64.code v
-    stack := 8
-    verified := Proof.X448.X86_64.code_verified v },
   Spec.X448.exchangeApi.artifact X86_64.target {
     suffix := v.suffix
     features := v.features
