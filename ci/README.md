@@ -46,6 +46,7 @@ needs the edited modules built: run it before pushing, as CLAUDE.md says.
 | `ci_metrics.py`, `ci_metrics_bundle.py` | Record each run's metrics, and fetch and share them (the `ci-metrics` skill) |
 | `runner.Dockerfile`, `arm32-run` | The runner images of the 32-bit, PPC64LE, RISC-V and lint jobs |
 | `requirements-coverage.txt` | Python dependencies of the coverage merge |
+| `conflict_comments.py` | Comments on open pull requests that conflict, once per push (`.github/workflows/conflicts.yml`) |
 
 ## Tools
 
