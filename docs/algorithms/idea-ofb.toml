@@ -1,5 +1,5 @@
 name = "IDEA-OFB"
 family = "Ciphers"
 specs = ["Idea", "Ofb"]
-modules = ["src/idea_ofb.rs"]
+modules = ["src/cipher/idea/ofb.rs"]
 asm = ["idea_ofb"]

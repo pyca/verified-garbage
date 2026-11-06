@@ -14,7 +14,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::aes_xts::{AesXts, Error, MAX_BLOCKS};
+use verified_garbage::cipher::aes::{AesXts, XTS_MAX_BLOCKS, XtsError};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 
@@ -64,18 +64,24 @@ fn limits_and_lengths() {
     for len in 0..=80 {
         let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
         if !matches!(len, 32 | 48 | 64) {
-            assert!(matches!(AesXts::new(&key), Err(Error::InvalidKeyLength)));
+            assert!(matches!(AesXts::new(&key), Err(XtsError::InvalidKeyLength)));
             continue;
         }
         let mut equal = key.clone();
         equal.copy_within(..len / 2, len / 2);
-        assert!(matches!(AesXts::new(&equal), Err(Error::EqualKeyHalves)));
+        assert!(matches!(AesXts::new(&equal), Err(XtsError::EqualKeyHalves)));
         let ctx = AesXts::new(&key).unwrap();
         let i = [0x3c; 16];
         for n in 0..16 {
             let mut buffer = vec![0x5a; n];
-            assert_eq!(ctx.encrypt(&i, &mut buffer), Err(Error::DataUnitTooShort));
-            assert_eq!(ctx.decrypt(&i, &mut buffer), Err(Error::DataUnitTooShort));
+            assert_eq!(
+                ctx.encrypt(&i, &mut buffer),
+                Err(XtsError::DataUnitTooShort)
+            );
+            assert_eq!(
+                ctx.decrypt(&i, &mut buffer),
+                Err(XtsError::DataUnitTooShort)
+            );
             assert_eq!(buffer, [0x5a; 16][..n]);
         }
         // Every length round-trips, and a data unit's whole blocks before
@@ -96,14 +102,14 @@ fn limits_and_lengths() {
         }
     }
     let ctx = AesXts::new(&[[1; 16], [2; 16]].concat()).unwrap();
-    let mut buffer = vec![0; 16 * MAX_BLOCKS + 1];
+    let mut buffer = vec![0; 16 * XTS_MAX_BLOCKS + 1];
     assert_eq!(
         ctx.encrypt(&[0; 16], &mut buffer),
-        Err(Error::DataUnitTooLong)
+        Err(XtsError::DataUnitTooLong)
     );
     assert_eq!(
         ctx.decrypt(&[0; 16], &mut buffer),
-        Err(Error::DataUnitTooLong)
+        Err(XtsError::DataUnitTooLong)
     );
     assert!(crate::bytes::all_equal(&buffer, 0));
 }

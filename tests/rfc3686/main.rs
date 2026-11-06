@@ -14,7 +14,7 @@
 
 use crate::bytes::counter_add;
 use crate::text::{get, labelled};
-use verified_garbage::aes_ctr::AesCtr;
+use verified_garbage::cipher::aes::AesCtr;
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
 /// Checks a message truncated, in pieces and with a partial last block

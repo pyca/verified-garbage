@@ -13,7 +13,7 @@
 
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
-use verified_garbage::idea_cbc::{IdeaCbcDecryptor, IdeaCbcEncryptor};
+use verified_garbage::cipher::idea::{IdeaCbcDecryptor, IdeaCbcEncryptor};
 
 use verified_garbage_test_vectors::unhex;
 

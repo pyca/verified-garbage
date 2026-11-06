@@ -12,7 +12,7 @@
 
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
-use verified_garbage::seed_cbc::{SeedCbcDecryptor, SeedCbcEncryptor};
+use verified_garbage::cipher::seed::{SeedCbcDecryptor, SeedCbcEncryptor};
 
 use verified_garbage_test_vectors::unhex;
 

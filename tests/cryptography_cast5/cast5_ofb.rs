@@ -9,7 +9,7 @@
 
 use verified_garbage::error::InvalidKeyLength;
 
-use verified_garbage::cast5_ofb::Cast5Ofb;
+use verified_garbage::cipher::cast5::Cast5Ofb;
 
 /// The vectors both ways, truncated, in pieces and with a partial last
 /// block (`crate::modes::check`).

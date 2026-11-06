@@ -1,5 +1,5 @@
 name = "SM4-CBC"
 family = "Ciphers"
 specs = ["Sm4", "Cbc"]
-modules = ["src/sm4_cbc.rs"]
+modules = ["src/cipher/sm4/cbc.rs"]
 asm = ["sm4_cbc"]

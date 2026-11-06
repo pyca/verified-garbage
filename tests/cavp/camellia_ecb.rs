@@ -13,7 +13,7 @@
 
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
-use verified_garbage::camellia_ecb::CamelliaEcb;
+use verified_garbage::cipher::camellia::CamelliaEcb;
 
 use verified_garbage_test_vectors::unhex;
 

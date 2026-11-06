@@ -20,7 +20,7 @@ pub fn bench(c: &mut Criterion) {
 
     use criterion::{BenchmarkId, Throughput};
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::aes_xts::AesXts;
+    use verified_garbage::cipher::aes::AesXts;
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 

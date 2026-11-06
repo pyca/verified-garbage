@@ -12,7 +12,7 @@
 
 use verified_garbage::error::InvalidKeyLength;
 
-use verified_garbage::triple_des_cfb::{TripleDesCfb64Decryptor, TripleDesCfb64Encryptor};
+use verified_garbage::cipher::triple_des::{TripleDesCfb64Decryptor, TripleDesCfb64Encryptor};
 
 use verified_garbage_test_vectors::{cavp_records, unhex};
 

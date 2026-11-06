@@ -12,7 +12,6 @@
     target_arch = "riscv64"
 ))]
 
-use crate::aes::Backend;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes_siv::{
     VG_AES_SIV_DECRYPT_AES_CBC_FEATURES, VG_AES_SIV_DECRYPT_AES_FEATURES,
@@ -37,6 +36,7 @@ use crate::arch::aes_siv::{
     vg_aes_siv_init_aesni,
 };
 use crate::arch::aes_siv::{vg_aes_siv_decrypt, vg_aes_siv_encrypt, vg_aes_siv_init};
+use crate::cipher::aes::Backend;
 use crate::cpu::detected;
 use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;

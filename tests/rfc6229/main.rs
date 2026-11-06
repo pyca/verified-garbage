@@ -13,7 +13,7 @@
 
 use verified_garbage::error::InvalidKeyLength;
 
-use verified_garbage::rc4::Rc4;
+use verified_garbage::cipher::rc4::Rc4;
 use verified_garbage_test_vectors::unhex_spaced;
 
 #[test]

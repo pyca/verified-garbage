@@ -10,7 +10,6 @@
     target_arch = "riscv64"
 ))]
 
-use crate::aes::Backend;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::cmac_aes::{
     VG_CMAC_AES_ABSORB_AES_CBC_FEATURES, VG_CMAC_AES_ABSORB_AES_FEATURES,
@@ -30,6 +29,7 @@ use crate::arch::cmac_aes::{
     vg_cmac_aes_init_aesni,
 };
 use crate::arch::cmac_aes::{vg_cmac_aes_absorb, vg_cmac_aes_finish, vg_cmac_aes_init};
+use crate::cipher::aes::Backend;
 use crate::cpu::detected;
 use crate::error::{InvalidKeyLength, InvalidMac};
 use crate::zeroize::zeroize;

@@ -60,7 +60,7 @@ def runs_in(runner, test):
 
 GROUPS = {
     "aes_cbc": {
-        "lib": ["aes_cbc"],
+        "lib": ["cipher::aes::cbc"],
         "tests": ["cavp::aes_cbc", "wycheproof::aes_cbc"],
     },
     "aes_ccm": {
@@ -68,7 +68,7 @@ GROUPS = {
         "tests": ["cavp::aes_ccm", "wycheproof::aes_ccm"],
     },
     "aes_ecb": {
-        "lib": ["aes_ecb"],
+        "lib": ["cipher::aes::ecb"],
         "tests": ["cavp::aes_ecb"],
     },
     "aes_gcm": {
@@ -84,23 +84,23 @@ GROUPS = {
         "tests": ["rfc7253::aes_ocb_iterative", "rfc7253::aes_ocb_sample_results"],
     },
     "aes_ofb": {
-        "lib": ["aes_ofb"],
+        "lib": ["cipher::aes::ofb"],
         "tests": ["cavp::aes_ofb"],
     },
     "aes_cfb": {
-        "lib": ["aes_cfb"],
+        "lib": ["cipher::aes::cfb"],
         "tests": ["cavp::aes_cfb"],
     },
     "aes_cfb8": {
-        "lib": ["aes_cfb8"],
+        "lib": ["cipher::aes::cfb8"],
         "tests": ["cavp::aes_cfb8"],
     },
     "aes_ctr": {
-        "lib": ["aes_ctr"],
+        "lib": ["cipher::aes::ctr"],
         "tests": ["rfc3686"],
     },
     "aes_xts": {
-        "lib": ["aes_xts"],
+        "lib": ["cipher::aes::xts"],
         "tests": ["cavp::aes_xts", "wycheproof::aes_xts"],
     },
     "aes_siv": {
@@ -146,7 +146,7 @@ GROUPS = {
         ],
     },
     "chacha20": {
-        "lib": ["chacha20", "aead::chacha20poly1305"],
+        "lib": ["cipher::chacha20", "aead::chacha20poly1305"],
         "tests": [
             "rfc8439::chacha20",
             "rfc8439::chacha20poly1305",
@@ -472,7 +472,7 @@ GROUPS = {
         "tests": ["rfc8998::sm4_gcm", "wycheproof::sm4_gcm"],
     },
     "triple_des_ecb": {
-        "lib": ["triple_des_ecb"],
+        "lib": ["cipher::triple_des::ecb"],
         "tests": ["cavp::triple_des_ecb"],
     },
     "x25519": {

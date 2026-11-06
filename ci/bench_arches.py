@@ -206,11 +206,22 @@ MOVED = {
     "src/kdf/argon2.rs": "src/argon2.rs",
     "src/kdf/pbkdf2/": "src/pbkdf2/",
     "src/kdf/scrypt.rs": "src/scrypt.rs",
+    "src/cipher/aes/": "src/aes/",
+    "src/cipher/blowfish/": "src/blowfish/",
+    "src/cipher/camellia/": "src/camellia/",
+    "src/cipher/cast5/": "src/cast5/",
+    "src/cipher/chacha20.rs": "src/chacha20.rs",
+    "src/cipher/idea/": "src/idea/",
+    "src/cipher/rc2/": "src/rc2/",
+    "src/cipher/rc4.rs": "src/rc4.rs",
+    "src/cipher/seed/": "src/seed/",
+    "src/cipher/sm4/": "src/sm4/",
+    "src/cipher/triple_des/": "src/triple_des/",
 }
 
 # The lists of modules, `src/lib.rs`'s and those of the modules that group
 # others: a change to them adds or removes modules (`registrations`).
-REGISTRIES = ("src/lib.rs", "src/aead/mod.rs", "src/kdf/mod.rs")
+REGISTRIES = ("src/lib.rs", "src/aead/mod.rs", "src/cipher/mod.rs", "src/kdf/mod.rs")
 
 
 def logical(path):

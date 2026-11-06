@@ -24,7 +24,7 @@ pub fn bench(c: &mut Criterion) {
     use aws_lc_rs::iv::FixedLength;
     use criterion::{BenchmarkId, Throughput};
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::aes_cfb::{AesCfb128Decryptor, AesCfb128Encryptor};
+    use verified_garbage::cipher::aes::{AesCfb128Decryptor, AesCfb128Encryptor};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 

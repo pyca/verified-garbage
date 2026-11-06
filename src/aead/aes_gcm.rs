@@ -171,7 +171,7 @@ const MAX_TEXT: u64 = (1 << 36) - 32;
 const MAX_AAD: u64 = (1 << 61) - 1;
 
 /// The implementations of AES-GCM: each is a variant of every
-/// `vg_aes_gcm_*` function, by suffix. (A product of `crate::aes::Backend`
+/// `vg_aes_gcm_*` function, by suffix. (A product of `crate::cipher::aes::Backend`
 /// and a GHASH backend would let a caller pair them any way; one enum of the
 /// variants keeps every `match` exhaustive over exactly the functions that
 /// exist.)

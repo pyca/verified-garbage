@@ -25,7 +25,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::nid::Nid;
     use openssl::provider::Provider;
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::idea_cbc::{IdeaCbcDecryptor, IdeaCbcEncryptor};
+    use verified_garbage::cipher::idea::{IdeaCbcDecryptor, IdeaCbcEncryptor};
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 

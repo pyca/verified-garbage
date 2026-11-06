@@ -22,7 +22,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::nid::Nid;
     use openssl::provider::Provider;
     use openssl::symm::{Cipher, Crypter, Mode};
-    use verified_garbage::seed_cfb::{SeedCfb128Decryptor, SeedCfb128Encryptor};
+    use verified_garbage::cipher::seed::{SeedCfb128Decryptor, SeedCfb128Encryptor};
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 

@@ -14,7 +14,7 @@
 
 use crate::bytes::counter_add;
 use crate::text::{get, labelled};
-use verified_garbage::camellia_ctr::CamelliaCtr;
+use verified_garbage::cipher::camellia::CamelliaCtr;
 use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 
 /// Checks a message truncated, in pieces and with a partial last block
