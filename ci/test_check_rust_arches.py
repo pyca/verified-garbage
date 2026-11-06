@@ -233,7 +233,14 @@ class Workflow(unittest.TestCase):
 
     def test_only_benchmarked_arches_cache_the_benchmarks_dependencies(self):
         self.assertIn("if: ${{ matrix.bench && (matrix.rust == 'stable' || matrix.rust == 'host') "
-                      "&& runner.os == 'Linux' && github.event_name == 'push' }}", job("rust"))
+                      "&& runner.os != 'Windows' && github.event_name == 'push' }}", job("rust"))
+        for name in ("rust", "rust-thumb"):
+            self.assertIn("uses: ./.github/actions/bench-cache", job(name))
+            self.assertNotIn("!/bench/", job(name))
+        self.assertIn("if: ${{ matrix.rust == 'stable' && github.event_name == 'push' }}",
+                      job("rust-thumb"))
+        self.assertIn("PKG_CONFIG_LIBDIR: /usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig",
+                      job("rust-thumb"))
 
     def test_jobs_read_their_matrices(self):
         for name, output in (("rust", "rust"), ("rust-thumb", "thumb"), ("rust-cpu-features", "cpu")):

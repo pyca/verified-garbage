@@ -1,0 +1,39 @@
+name: Cache the benchmarks' dependencies
+description: Build and save main's benchmark dependencies only when its cache is absent.
+
+runs:
+  using: composite
+  steps:
+    - id: key
+      shell: bash
+      run: sh ci/bench_cache_key.sh bench >> "$GITHUB_OUTPUT"
+    # Most pushes change no dependency. Look up the entry without
+    # downloading it, so they take no longer than the lookup.
+    - id: cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          bench-target
+          ${{ steps.key.outputs.registry }}
+        key: ${{ steps.key.outputs.key }}
+        lookup-only: true
+    - name: Build the benchmarks' dependencies
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      shell: bash
+      working-directory: bench
+      # Match bench_compare.py's target directory and flags. Its staged
+      # repository crates rebuild anyway; only dependencies are reusable.
+      env:
+        RUSTFLAGS: ""
+      run: |
+        export CARGO_TARGET_DIR="$GITHUB_WORKSPACE/bench-target"
+        if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
+        cargo bench --no-run --locked
+        cargo clean --release -p verified-garbage -p verified-garbage-bench
+    - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          bench-target
+          ${{ steps.key.outputs.registry }}
+        key: ${{ steps.key.outputs.key }}

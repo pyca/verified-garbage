@@ -4,7 +4,9 @@
 # compiler (`rustc -vV`), the target (CARGO_BUILD_TARGET when
 # cross-compiling, as the armv7-cross image does, else the compiler's host),
 # Cargo's home and the benchmark crate's manifest and lock file. Prints
-# `key=<key>` and `prefix=<prefix>` for $GITHUB_OUTPUT: the prefix leaves out
+# `key=<key>`, `prefix=<prefix>` and `registry=<path>` for $GITHUB_OUTPUT.
+# The registry sources accompany the build, so even a build cache hit does
+# not download every crate again. The prefix leaves out
 # the manifest and lock file, so that a branch that changes them (adding a
 # dependency, as a benchmark of one architecture's internal functions does)
 # restores main's entry for the same compiler and rebuilds only what changed,
@@ -13,7 +15,7 @@
 # under Cargo's home, so an entry built in an image with another home (as
 # PPC64LE's was, before its runner image set CARGO_HOME) restores, but every
 # dependency is built again. ci.yml's `rust` job saves the entry on main;
-# bench.yml's `compare` restores it.
+# bench.yml's `compare` restores it. The `rust-thumb` job seeds Thumb's too.
 set -e
 bench=$1
 # macOS has `shasum`, Linux `sha256sum`.
@@ -22,5 +24,7 @@ target=${CARGO_BUILD_TARGET:-$(rustc -vV | sed -n 's/^host: //p')}
 home=${CARGO_HOME:-$HOME/.cargo}
 tools=$({ rustc -vV; echo "$home"; } | $sum | cut -c1-16)
 deps=$(cat "$bench/Cargo.toml" "$bench/Cargo.lock" | $sum | cut -c1-16)
-echo "key=bench-deps-$target-$tools-$deps"
-echo "prefix=bench-deps-$target-$tools-"
+# v2 includes the registry, which the old build-only entries lack.
+echo "key=bench-deps-v2-$target-$tools-$deps"
+echo "prefix=bench-deps-v2-$target-$tools-"
+echo "registry=$home/registry"
