@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Hash
 public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
@@ -32,8 +34,8 @@ theorem vCombSat_spec : vCombSpec.pre vCombSatState := by
       ((vCombSatState.syms "VG_P256_COMB").setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0 :=
     combSatMem_held
   generalize e : vCombSatState = s
-  sig_pre [vCombSpec, Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
-    Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+  sig_pre [vCombSpec, Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract,
+    Proof.Ecdsa.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s
@@ -75,8 +77,8 @@ theorem vComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
     subst r
     exact List.mem_cons_self ..
   · intro s t _ h
-    sig_post [vCombSpec, Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+    sig_post [vCombSpec, Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes, Abi.withConsts]
     have er : (t.gpr .edx ++ t.gpr .eax).setWidth 32 = t.gpr .eax := BitVec.setWidth_append_eq_right
     rw [er]
@@ -84,8 +86,8 @@ theorem vComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
       arg_withRegions, ptr, show p256Comb.C = Spec.P256.curve from rfl,
       Spec.P256.curve, Nat.reduceMul, Nat.reduceAdd] using h
   · intro s t _ _ h
-    sig_pub [vCombSpec, Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+    sig_pub [vCombSpec, Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts, Abi.withConsts] at h
     obtain ⟨he, hy, inputs, a0, a1, a2, a3⟩ := h
     have eqBytes := (List.map_inj_right (fun (a b : BitVec 8) h => BitVec.eq_of_toNat_eq h)).mp inputs

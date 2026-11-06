@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
@@ -112,9 +114,9 @@ theorem verify_checks : VerifyChecks p256 p256Table where
 
 /-- The shared contract declares all verification input buffers public. -/
 theorem verify_public_of_spec {s₁ s₂ : State}
-    (pub : (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pub s₁ s₂) :
+    (pub : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts)).pub s₁ s₂) :
     VerifyPublic p256 p256Table s₁ s₂ := by
-  sig_pub [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+  sig_pub [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P256.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p256_combConsts,
     Abi.withConsts] at pub
   obtain ⟨_,hsy,inputs,h0,h1,h2,h3⟩ := pub
@@ -135,8 +137,8 @@ theorem verify_ct (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) :
     ConstantTime isa
-      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pre
-      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pub verifyP256.inline := by
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts)).pre
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts)).pub verifyP256.inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact verify_public_ct (p256_ok hI) hL (p256_tbls hL hT) rfl (by decide) verify_checks rfl
     _ _ _ _ _ _ (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂)) (verify_public_of_spec pub) e₁ e₂
@@ -145,15 +147,15 @@ theorem verify_ct (hL : Weierstrass.Law Spec.P256.curve)
 /-- The shared contract, but with `verifyX86_64`'s postcondition: what the
 proofs of the inlined code give. -/
 def verifyK₀ : Contract isa :=
-  { pre := (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pre
+  { pre := (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts)).pre
     post := verifyX86_64.post
-    pub := (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pub }
+    pub := (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts)).pub }
 
 theorem sat_spec8 :
-    (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts) 8).pre satState := by
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts) 8).pre satState := by
   have held : ∀ i < p256W.length, satState.mem.readW (satState.syms "VG_P256_COMB" +
       BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0 := satMem_held
-  sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+  sig_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P256.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p256_combConsts,
     Abi.withConsts, p256_constRegions, Abi.constsHeld, stackBelow]
   sig_and_intros
@@ -161,7 +163,7 @@ theorem sat_spec8 :
 
 /-- The contract with 8 bytes of stack, for the calls' return address. -/
 theorem implies8 :
-    verifyK₀.Implies (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts) 8) :=
+    verifyK₀.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts) 8) :=
   ⟨fun _ hs => Sig.pre_stack0 hs, fun s s' hs hp => implies.post s s' (Sig.pre_stack0 hs) hp,
     fun _ _ _ _ hp => hp, ⟨satState, sat_spec8⟩⟩
 
@@ -169,7 +171,7 @@ theorem verify_verified (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target verifyP256
-      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts) 8) :=
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts) 8) :=
   Verified.of_inline (k₀ := verifyK₀) verifyP256_inlineOk (fun s hs => verify_x86 hL hT hI s (implies.pre _ hs))
     (verify_ct hL hT hI) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
     fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1

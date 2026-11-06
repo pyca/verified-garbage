@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Hash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
@@ -34,8 +36,8 @@ def combVerifySat : State := {combSatState with
 theorem combVerify_sat : combVerifySpec.pre combVerifySat := by
   have held := combSat_held
   generalize eqs : combVerifySat=s
-  sig_pre [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.verifyContract,
-    Spec.Ecdsa.Instance.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+  sig_pre [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.verifyContract,
+    Proof.Ecdsa.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
     Loc.val,State.addr,secp256k1CombConsts,Abi.withConsts,Abi.constRegions,Abi.constsHeld,stackBelow]
   subst s
   rw [comb_words_length]
@@ -61,14 +63,14 @@ theorem combVerifyWith_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) (um 
   · obtain ⟨tr,t,exec,keep,post⟩ := combVerify_ok hC hs
     exact ⟨tr,t,exec,VG.Proof.Ecdsa.Arm.abi_of_saved keep.saved keep.sp,post⟩
   · intro s t _ post
-    sig_post [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+    sig_post [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,Abi.withConsts]
     rw [show (t.gpr .r1++t.gpr .r0).setWidth 32=t.gpr .r0 from BitVec.setWidth_append_eq_right]
     exact post
   · intro s t _ _ pub
-    sig_pub [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
+    sig_pub [combVerifySpec,Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,secp256k1CombConsts,Abi.withConsts] at pub
     obtain ⟨sp,sy,_inputs,h0,h1,h2,h3⟩ := pub
     exact ⟨⟨sp,h0,h1,h2,h3⟩,sy⟩

@@ -1,4 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ecdsa.P521
@@ -35,8 +37,8 @@ theorem verify_ct (hL : Weierstrass.Law Spec.P521.curve) (hO : Weierstrass.Prime
     (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
     ConstantTime isa
-      (Spec.Ecdsa.P521.inst.verifyContract (AArch64.abi.withConsts p521.combConsts)).pre
-      (Spec.Ecdsa.P521.inst.verifyContract (AArch64.abi.withConsts p521.combConsts)).pub verifyP521 := by
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (AArch64.abi.withConsts p521.combConsts)).pre
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (AArch64.abi.withConsts p521.combConsts)).pub verifyP521 := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact Joint.verify_public_ct (p521_ok hI) hL hO (by decide) hT _ _ _ _ _ _
     (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂)) (jacPublic_of_spec pub) e₁ e₂
@@ -45,7 +47,7 @@ theorem verify_verified (hL : Weierstrass.Law Spec.P521.curve) (hO : Weierstrass
     (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
     Verified AArch64.target verifyP521
-      (Spec.Ecdsa.P521.inst.verifyContract (AArch64.abi.withConsts p521.combConsts)) := by
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (AArch64.abi.withConsts p521.combConsts)) := by
   refine ⟨fun s hs => ?_, verify_ct hL hO hI hT, implies.sat⟩
   obtain ⟨t, s', he, ha, hp⟩ := verify_a64 hL hO hI hT s (implies.pre _ hs)
   exact ⟨t, s', he, ha, implies.post s s' hs hp⟩

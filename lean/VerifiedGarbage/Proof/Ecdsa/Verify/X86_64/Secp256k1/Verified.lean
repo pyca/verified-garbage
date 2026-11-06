@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
@@ -97,9 +99,9 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre secp256k1v s := by
     simp [hr]
 
 theorem jointPublic_of_spec {a b : State}
-    (pub : (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts)).pub a b) :
+    (pub : (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (X86_64.abi.withConsts secp256k1v.combConsts)).pub a b) :
     JointPublic secp256k1v secp256k1GTab a b := by
-  sig_pub [Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
+  sig_pub [Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,X86_64.abi,X86_64.argRegs,secp256k1v_combConsts,
     Abi.withConsts] at pub
   obtain ⟨_,hsy,inputs,h0,h1,h2,h3⟩ := pub
@@ -166,8 +168,8 @@ theorem jointVerify_secp256k1_public_ct :
 
 theorem jointVerify_ct :
     ConstantTime isa
-      (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts)).pre
-      (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts)).pub
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (X86_64.abi.withConsts secp256k1v.combConsts)).pre
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (X86_64.abi.withConsts secp256k1v.combConsts)).pub
       Impl.Ecdsa.Verify.X86_64.verifySecp256k1.inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact jointVerify_secp256k1_public_ct hL hT hI _ _ _ _ _ _ (pre_of (implies.pre _ pre₁))
@@ -239,16 +241,16 @@ theorem verify_abi_of_wp {code : Prog isa} {s : State} (hs : verifyX86_64.pre s)
 /-- The shared contract, but with `verifyX86_64`'s postcondition: what the
 proofs of the inlined code give. -/
 def verifyK₀ : Contract isa :=
-  { pre := (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts)).pre
+  { pre := (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (X86_64.abi.withConsts secp256k1v.combConsts)).pre
     post := verifyX86_64.post
-    pub := (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts)).pub }
+    pub := (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (X86_64.abi.withConsts secp256k1v.combConsts)).pub }
 
 theorem sat_spec8 :
-    (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts) 8).pre
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (X86_64.abi.withConsts secp256k1v.combConsts) 8).pre
       satState := by
   have held : ∀ i < secp256k1GW.length, satState.mem.readW (satState.syms "VG_SECP256K1_GTAB" +
       BitVec.ofNat 64 (8 * i)) 64 = secp256k1GW.getD i 0 := satMemG_held
-  sig_pre [Spec.Ecdsa.Secp256k1.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+  sig_pre [Spec.Ecdsa.Secp256k1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.Secp256k1.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, secp256k1v_combConsts,
     Abi.withConsts, secp256k1G_constRegions, Abi.constsHeld, stackBelow]
   sig_and_intros
@@ -257,7 +259,7 @@ theorem sat_spec8 :
 /-- The contract with 8 bytes of stack, for the calls' return address. -/
 theorem implies8 :
     verifyK₀.Implies
-      (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts) 8) :=
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (X86_64.abi.withConsts secp256k1v.combConsts) 8) :=
   ⟨fun _ hs => Sig.pre_stack0 hs, fun s s' hs hp => implies.post s s' (Sig.pre_stack0 hs) hp,
     fun _ _ _ _ hp => hp, ⟨satState, sat_spec8⟩⟩
 
@@ -273,7 +275,7 @@ theorem verify_x86 (s : State) (hs : verifyX86_64.pre s) :
     (by rw [Code.allInstrs_inline]; exact verify_rspMxcsr) (Code.noCalls_inline verify_inlineOk)
 
 theorem verify_verified : Verified X86_64.target verifySecp256k1
-    (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts) 8) :=
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (X86_64.abi.withConsts secp256k1v.combConsts) 8) :=
   Verified.of_inline (k₀ := verifyK₀) verify_inlineOk (fun s hs => verify_x86 hL hT hI s (implies.pre _ hs))
     (jointVerify_ct hL hT hI) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
     fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1

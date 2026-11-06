@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GTable
@@ -13,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 
 `Contract.lean`'s contract with the verifier's table of `[m]G`, `m = 1 … 256`
 (`P256Joint.p256v`, in the static `VG_P256_GTAB`) in place of the comb's: the
-facts of `Spec.Ecdsa.P256.inst.verifyContract` with those constants, by name,
+facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst` with those constants, by name,
 and the precondition the proofs are written against (`VPreG`).
 -/
 
@@ -80,8 +81,8 @@ theorem spec_preG {s : State}
     (f2 : (s.gpr .x2).toNat + 64 ≤ 2 ^ 64) (f3 : (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64)
     (ht : TblHeldG s [⟨s.gpr .x3, 8192⟩])
     (hal : (s.syms P256Joint.p256v.tsym).toNat % 64 = 0) :
-    (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts P256Joint.p256v.combConsts)).pre s := by
-  sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts P256Joint.p256v.combConsts)).pre s := by
+  sig_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p256v_combConsts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
@@ -99,7 +100,7 @@ def satStateG : State where
   syms _ := 0x100000
 
 theorem sat_specG :
-    (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts P256Joint.p256v.combConsts)).pre
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts P256Joint.p256v.combConsts)).pre
       satStateG := by
   have hl := p256v_combWords_length
   have held : ∀ i < P256Joint.p256v.combWords.length, satStateG.mem.readW (satStateG.syms P256Joint.p256v.tsym +
@@ -113,20 +114,20 @@ theorem sat_specG :
     rintro r rfl; exact Region.disjoint_of_sep (by decide)
 
 theorem impliesG : verifyGAArch64.Implies
-    (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts P256Joint.p256v.combConsts)) where
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts P256Joint.p256v.combConsts)) where
   pre s h := by
-    sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    sig_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
       Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p256v_combConsts,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, h1, h2, h3, -, -, -, h4⟩ := h
     refine ⟨?_, hw, h1, h2, h3, h4, hheld, hfit, by rw [hw] at hdw; exact hdw⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post := by
-    sig_implies_post [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi,
+    sig_implies_post [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi,
       AArch64.argRegs, p256v_combConsts, Abi.withConsts, verifyGAArch64, vfG]
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    sig_pub [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
       Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p256v_combConsts,
       Abi.withConsts] at h
     obtain ⟨hsp, hsy, -, h0, h1, h2, h3⟩ := h
@@ -134,10 +135,10 @@ theorem impliesG : verifyGAArch64.Implies
   sat := ⟨satStateG, sat_specG⟩
 
 theorem jacPublicG_of_spec {s₁ s₂ : State}
-    (pub : (Spec.Ecdsa.P256.inst.verifyContract
+    (pub : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst
       (AArch64.abi.withConsts P256Joint.p256v.combConsts)).pub s₁ s₂) :
     JacPublicG s₁ s₂ := by
-  sig_pub [Spec.Ecdsa.P256.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
+  sig_pub [Spec.Ecdsa.P256.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.P256.curve,Spec.Ecdsa.scratchWords,AArch64.abi,AArch64.argRegs,p256v_combConsts,
     Abi.withConsts] at pub
   obtain ⟨hsp,hsy,inputs,h0,h1,h2,h3⟩ := pub

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Tables
 public import VerifiedGarbage.Spec.Ecdsa.P256
@@ -9,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # ECDSA verification over P-256 on AArch64: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.P256.inst.verifyContract` for AArch64, by name:
+The facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst` for AArch64, by name:
 `vg_ecdsa_p256_verify(public = x0, digest = x1, sig = x2, scratch = x3)`,
 the result in `w0`. This adapter supplies the correctness precondition and
 postcondition. The timing proof uses the shared contract directly, including
@@ -54,8 +55,8 @@ theorem spec_pre {s : State}
     (f2 : (s.gpr .x2).toNat + 64 ≤ 2 ^ 64) (f3 : (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64)
     (ht : TblHeld s [⟨s.gpr .x3, 8192⟩])
     (hal : (s.syms p256.tsym).toNat % 64 = 0) :
-    (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts p256.combConsts)).pre s := by
-  sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts p256.combConsts)).pre s := by
+  sig_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p256_combConsts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
@@ -73,7 +74,7 @@ def satState : State where
   syms _ := 0x100000
 
 theorem sat_spec :
-    (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts p256.combConsts)).pre satState := by
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts p256.combConsts)).pre satState := by
   have hl := p256_combWords_length
   have held : ∀ i < p256.combWords.length, satState.mem.readW (satState.syms p256.tsym +
       BitVec.ofNat 64 (8 * i)) 64 = p256.combWords.getD i 0 := satMem_held
@@ -86,20 +87,20 @@ theorem sat_spec :
     rintro r rfl; exact Region.disjoint_of_sep (by decide)
 
 theorem implies : verifyAArch64.Implies
-    (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts p256.combConsts)) where
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts p256.combConsts)) where
   pre s h := by
-    sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    sig_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
       Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p256_combConsts,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, h1, h2, h3, -, -, -, h4⟩ := h
     refine ⟨?_, hw, h1, h2, h3, h4, hheld, hfit, by rw [hw] at hdw; exact hdw⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post := by
-    sig_implies_post [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi,
+    sig_implies_post [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi,
       AArch64.argRegs, p256_combConsts, Abi.withConsts, verifyAArch64, vf]
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    sig_pub [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
       Spec.P256.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p256_combConsts,
       Abi.withConsts] at h
     obtain ⟨hsp, hsy, -, h0, h1, h2, h3⟩ := h
