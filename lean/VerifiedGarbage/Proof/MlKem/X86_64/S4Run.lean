@@ -241,11 +241,17 @@ theorem run1End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P1W w16 σ K s) 
     · exact st_poly hK (by omega_arith) e h₂.lb.fr (h.st k (by omega_arith)) (hL _ _)
 
 /-- The first 168 iterations on seed `K`, and its count kept. -/
-theorem run1_ok {K : Nat} (hK : K < 4) {s : State} (h : P1W w16 σ K s) : WP isa (run1 K w16) s (P1W w16 σ (K + 1)) := by
+theorem run1_ok {K : Nat} (hK : K < 4) {z : Bool} {s : State} (h : P1W w16 σ K s) :
+    WP isa (run1 K w16 z) s (P1W w16 σ (K + 1)) := by
   unfold run1
-  exact WP.seq (WP.mono (setup_ok hp hK (lb1 hK h)) fun s₁ ⟨h₁, h10⟩ =>
-    WP.seq (WP.mono (loop_ok hp hK (N := 21) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
-      run1End_ok hp hK h h₂))
+  split
+  · rename_i hz
+    exact WP.seq (WP.mono (setupZ_ok hp hK (lb1 hK h)) fun s₁ ⟨h₁, h10⟩ =>
+      WP.seq (WP.mono (zloop_ok hp hz.2 hK (N := 10) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
+        WP.seq (WP.mono (vgrp_ok hp hK (by decide) (by decide) h₂.lv) fun _ ⟨h₃, _⟩ => run1End_ok hp hK h h₃.lat)))
+  · exact WP.seq (WP.mono (setup_ok hp hK (lb1 hK h)) fun s₁ ⟨h₁, h10⟩ =>
+      WP.seq (WP.mono (loop_ok hp hK (N := 21) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
+        run1End_ok hp hK h h₂))
 
 /-! ## The check -/
 
@@ -386,15 +392,21 @@ theorem run2End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P2W w16 σ K s) 
       · rw [ite_eq_right hk'] at this; rwa [ite_eq_right (by omega_arith)]
 
 /-- 112 more iterations on seed `K`, and its count kept. -/
-theorem run2_ok {K : Nat} (hK : K < 4) {s : State} (h : P2W w16 σ K s) : WP isa (run2 K w16) s (P2W w16 σ (K + 1)) := by
+theorem run2_ok {K : Nat} (hK : K < 4) {z : Bool} {s : State} (h : P2W w16 σ K s) :
+    WP isa (run2 K w16 z) s (P2W w16 σ (K + 1)) := by
   have hj : s.mem.readW (at' σ (oCnt + 8 * K)) 64 = BitVec.ofNat 64 (Lt σ K 168).length := by
     rw [h.j K hK, ite_eq_right (by omega_arith)]
   have hst : Stored w16 s.mem (poly4W w16 (aP σ) K) (Lt σ K 168) := by
     have := h.st K hK; rwa [ite_eq_right (by omega_arith)] at this
   unfold run2
-  exact WP.seq (WP.mono (contSetup_ok hp hK (lb2 hK h) hj hst) fun s₁ ⟨h₁, h10⟩ =>
-    WP.seq (WP.mono (loop_ok hp hK (N := 14) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
-      run2End_ok hp hK h h₂))
+  split
+  · rename_i hz
+    exact WP.seq (WP.mono (contSetupZ_ok hp hK (lb2 hK h) hj hst) fun s₁ ⟨h₁, h10⟩ =>
+      WP.seq (WP.mono (zloop_ok hp hz.2 hK (N := 7) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
+        run2End_ok hp hK h h₂.lv.lat))
+  · exact WP.seq (WP.mono (contSetup_ok hp hK (lb2 hK h) hj hst) fun s₁ ⟨h₁, h10⟩ =>
+      WP.seq (WP.mono (loop_ok hp hK (N := 14) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
+        run2End_ok hp hK h h₂))
 
 /-- The counts' AND, after the second runs. -/
 theorem last_ok {s : State} (h : P2W w16 σ 4 s) : WP isa (.block cntFlags) s (DoneW w16 σ) := by
