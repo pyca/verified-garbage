@@ -5,12 +5,10 @@ public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 import VerifiedGarbage.Proof.Aes.Scratch
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Impl.Aes.X86_64.ExpandKey
-public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Offset
@@ -19,12 +17,13 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # The AES key expansion on x86-64, with its working space on the stack
 
-`vg_aes_expand_key` and `vg_aes_expand_key_aesni` run the code of
-`vg_aes_expand_key_scratch` and `vg_aes_expand_key_scratch_aesni`, proved
+`vg_aes_expand_key` runs the code of `vg_aes_expand_key_scratch`, proved
 with the working space as an argument, in a frame that allocates it and
 zeroes it after the code (`Verified.stackScratchWiped`), since it may hold
 the key and its schedule: 520 bytes, the 512 of working space and 8 more to
-keep `rsp` aligned. The code uses no other stack.
+keep `rsp` aligned. The code uses no other stack. (`vg_aes_expand_key_aesni`
+uses no working space, and is its code with no frame:
+`AesNi.Key.expandKey3_verified`.)
 -/
 
 @[expose] public section
@@ -68,12 +67,5 @@ theorem scalar_expandKey_framed :
       (Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64 Impl.Aes.X86_64.expandKey)
       (Spec.Aes.expandKeyContract X86_64.abi 520) :=
   expandKey_framed expandKey_verified (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
-
-theorem aesni_expandKey_framed :
-    Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64 Impl.Aes.X86_64.AesNi.expandKey)
-      (Spec.Aes.expandKeyContract X86_64.abi 520) :=
-  expandKey_framed AesNi.Key.expandKey_verified (Code.all_of_allInstrs (by lit_decide))
-    (by lit_decide)
 
 end VG.Proof.Aes.X86_64

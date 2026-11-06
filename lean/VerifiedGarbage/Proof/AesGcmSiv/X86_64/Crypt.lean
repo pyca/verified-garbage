@@ -426,10 +426,10 @@ whole blocks and last bytes. -/
 theorem cryptHead_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} {t : State} (E : Env K W SP t) {N A D : Addr}
     {al n : Nat} (S : Slots W R N A D al n t.mem) (hD : Buf K W SP t D n) :
     ∃ t₁ : State, runBlock isa
-      [.mov .rax (.mem (at_ .r15 tagO)), .store (at_ .r15 cmO) .rax, .mov .rax (.mem (at_ .r15 (tagO + 8))),
-        .movImm64 .rcx 0x8000000000000000, .alu .or .rax (.reg .rcx), .store (at_ .r15 (cmO + 8)) .rax,
-        .mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
-        .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)] t = some t₁ ∧
+      (([.mov .rax (.mem (at_ .r15 tagO)), .mov .rdx (.mem (at_ .r15 (tagO + 8))),
+        .movImm64 .rcx 0x8000000000000000, .alu .or .rdx (.reg .rcx)] : List Instr) ++ store2 (at_ .r15 cmO) .rax .rdx ++
+        ([.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
+        .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)] : List Instr)) t = some t₁ ∧
       t₁.mem = (t.mem.writeW (W + BitVec.ofNat 64 96) (t.mem.readW W 64)).writeW
         (W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8)
         (t.mem.readW (W + BitVec.ofNat 64 8) 64 ||| 0x8000000000000000#64) ∧
@@ -443,19 +443,20 @@ theorem cryptHead_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} {t : State} (E :
   have rT₈ := E.perm.wR (show 8 + 8 ≤ 3816 by decide)
   have rD := E.perm.wR (show 232 + 8 ≤ 3816 by decide)
   have rL := E.perm.wR (show 240 + 8 ≤ 3816 by decide)
-  have w₀ := E.perm.wW (show 96 + 8 ≤ 3816 by decide)
-  have w₈ := E.perm.wW (show 104 + 8 ≤ 3816 by decide)
+  have w₀ := E.perm.wW (show 96 + 16 ≤ 3816 by decide)
   have sD := S.data
   have sL := S.len
   have hand := Proof.AesGcm.X86_64.and15 (BitVec.ofNat 64 n)
   rw [toNat_ofNat_of_lt hn, Proof.AesGcm.X86_64.imm_eq (by decide)] at hand
-  refine ⟨_, by srun [h15, rT₀, rT₈, rD, rL, w₀, w₈], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp only [mem_setReg, mem_arithFlags, mem_setFlags, add_ofNat_assoc]; rfl
-  · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, sD]
-  · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, sL, hand]
-  · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, sL,
+  refine ⟨_, by srun [store2, h15, rT₀, rT₈, rD, rL, w₀, XOp.exec, State.store128, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, zf_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [mem_setReg, mem_arithFlags, mem_setFlags, mem_setXmm, gpr_setXmm, gpr_setReg, gpr_arithFlags,
+      gpr_setFlags, ite_true, ite_false, reduceCtorEq, xmm_setXmm_self, xmm_setXmm_of_ne, punpck_movq, writeW128_app,
+      add_ofNat_assoc]; rfl
+  · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq, sD]
+  · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq, sL, hand]
+  · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq, sL,
       Proof.AesGcm.X86_64.shr4 _ hn]
-  · simp only [zf_setReg, zf_arithFlags, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false,
+  · simp only [zf_setReg, zf_setXmm, zf_arithFlags, gpr_setReg, gpr_arithFlags, gpr_setFlags, gpr_setXmm, ite_true, ite_false,
       reduceCtorEq, sL, Proof.AesGcm.X86_64.shr4 _ hn]
     rw [Proof.AesGcm.X86_64.and_self_beq (by omega_arith)]
   · intro r hr h₁ h₂ h₃; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -463,7 +464,7 @@ theorem cryptHead_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} {t : State} (E :
     any_goals exact absurd rfl h₁
     any_goals exact absurd rfl h₂
     any_goals exact absurd rfl h₃
-    all_goals simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
+    all_goals simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq]
   all_goals rfl
 
 theorem crypt_ok (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}

@@ -61,6 +61,12 @@ implementations as AES-GCM is (`Impl.AesGcm.X86_64.Callees`: only `ctr`,
 
 `tag`'s address stays on the stack, at `[rsp + 16]`.
 
+A block that a function called next reads with a 16-byte load (a key, a
+counter block, a block to absorb) is written with one 16-byte store, never
+two 8-byte ones or four 4-byte ones, which the load cannot take from the store
+buffer and waits for: the halves built in two general-purpose registers are
+combined in `xmm0` (`store2`), and `zero16` and `copy16` go through `xmm0`.
+
 `r15` holds `W` and `r13` the key schedule throughout; the functions called
 preserve them, and `rbx`, `rbp`, `r12` and `r14`, which hold lengths,
 pointers and counts across calls. Only the pointers, the lengths and
@@ -102,14 +108,19 @@ def save (b : Reg) : List Instr := saved.map fun (r, d) => .store (at_ b d) r
 
 def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .r15 d))
 
+/-- The 16 bytes `lo` then `hi` (two registers) stored at `m` with one
+128-bit store, through `xmm0` and `xmm1`: a 16-byte load of them right after
+takes them from the store buffer, which it cannot from two 8-byte stores. -/
+def store2 (m : MemOp) (lo hi : Reg) : List Instr :=
+  [.xop (.movq .xmm0 lo), .xop (.movq .xmm1 hi), .xop (.bin .punpcklqdq .xmm0 .xmm1), .movdquStore m .xmm0]
+
 /-- The 16 bytes at `W + d` zeroed. -/
 def zero16 (d : Nat) : List Instr :=
-  [.mov32 .rax (imm 0), .store (at_ .r15 d) .rax, .store (at_ .r15 (d + 8)) .rax]
+  [.xop (.bin .pxor .xmm0 .xmm0), .movdquStore (at_ .r15 d) .xmm0]
 
 /-- The 16 bytes at `W + s` copied to `W + d`. -/
 def copy16 (s d : Nat) : List Instr :=
-  [.mov .rax (.mem (at_ .r15 s)), .store (at_ .r15 d) .rax, .mov .rax (.mem (at_ .r15 (s + 8))),
-    .store (at_ .r15 (d + 8)) .rax]
+  [.movdquLoad .xmm0 (at_ .r15 s), .movdquStore (at_ .r15 d) .xmm0]
 
 variable (c : Callees)
 
@@ -129,11 +140,11 @@ def ctrArgs : List Instr :=
 
 /-! ## The keys -/
 
-/-- `little_endian_uint32(rbx) ‖ nonce` at `rdi`. -/
+/-- `little_endian_uint32(rbx) ‖ nonce` at `rdi` (`rbx` below `2³²`): its
+first 8 bytes in `rcx`, the nonce's last 8 in `rdx`. -/
 def deriveBlock : List Instr :=
-  [.mov .rax (.mem (at_ .r15 nonceO)), .mov32 .rcx (.mem (at_ .rax 0)), .mov32 .rdx (.mem (at_ .rax 4)),
-    .mov32 .r8 (.mem (at_ .rax 8)), .store32 (at_ .rdi 0) .rbx, .store32 (at_ .rdi 4) .rcx,
-    .store32 (at_ .rdi 8) .rdx, .store32 (at_ .rdi 12) .r8]
+  ([.mov .rax (.mem (at_ .r15 nonceO)), .mov32 .rcx (.mem (at_ .rax 0)), .shift .shl .rcx 32,
+    .alu .or .rcx (.reg .rbx), .mov .rdx (.mem (at_ .rax 4))] : List Instr) ++ store2 (at_ .rdi 0) .rcx .rdx
 
 /-- The `rbp` blocks `little_endian_uint32(i) ‖ nonce` from `W + revO`, for
 `i` from 0. -/
@@ -150,12 +161,15 @@ def deriveArgs : List Instr :=
   ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r15 revO ++
     ([.mov .rcx (.reg .rbp)] : List Instr) ++ ptr .r8 .r15 scrO
 
-/-- The first 8 bytes of each of the `rbp` encrypted blocks at `W + revO`,
-one after the other from `W + akO`. -/
+/-- The first 8 bytes of each of the `rbp` (4 or 6) encrypted blocks at
+`W + revO`, one after the other from `W + akO`: two at a time, with one
+16-byte store (`punpcklqdq` of the two blocks), which the 16-byte loads of
+the keys can take from the store buffer. -/
 def deriveKeep : Prog isa :=
   .seq (.block (ptr .rsi .r15 revO ++ ptr .rdi .r15 akO ++ ([.mov .rcx (.reg .rbp)] : List Instr)))
-    (.loop (.block [.mov .rax (.mem (at_ .rsi 0)), .store (at_ .rdi 0) .rax, .alu .add .rsi (imm 16),
-      .alu .add .rdi (imm 8), .alu .sub .rcx (imm 1)]) .ne)
+    (.loop (.block [.movdquLoad .xmm0 (at_ .rsi 0), .movdquLoad .xmm1 (at_ .rsi 16),
+      .xop (.bin .punpcklqdq .xmm0 .xmm1), .movdquStore (at_ .rdi 0) .xmm0, .alu .add .rsi (imm 32),
+      .alu .add .rdi (imm 16), .alu .sub .rcx (imm 2)]) .ne)
 
 /-- The message keys (all their blocks encrypted by one call of
 `vg_aes_encrypt_blocks`), 8 bytes per block, from `W + akO`. -/
@@ -177,7 +191,7 @@ def hkey : List Instr :=
     .alu .and .rcx (imm 1), .mov32 .r8 (imm 0), .alu .sub .r8 (.reg .rcx), .shift .shr .rax 1,
     .mov .rcx (.reg .rdx), .alu .and .rcx (imm 1), .shift .ror .rcx 1, .alu .or .rax (.reg .rcx), .shift .shr .rdx 1,
     .movImm64 .rcx 0xE100000000000000, .alu .and .rcx (.reg .r8), .alu .xor .rdx (.reg .rcx), .bswap .rdx,
-    .bswap .rax, .store (at_ .r15 hO) .rdx, .store (at_ .r15 (hO + 8)) .rax] : List Instr) ++ zero16 yO
+    .bswap .rax] : List Instr) ++ store2 (at_ .r15 hO) .rdx .rax ++ zero16 yO
 
 /-! ## POLYVAL -/
 
@@ -188,9 +202,9 @@ def ghArgs : List Instr := ptr .rdi .r15 hO ++ ptr .rsi .r15 yO ++ ptr .r8 .r15 
 each reversed. -/
 def revLoop : Prog isa :=
   .seq (.block [.mov .rcx (.reg .r14)])
-    (.loop (.block [.mov .rax (.mem (at_ .rsi 0)), .mov .rdx (.mem (at_ .rsi 8)), .bswap .rax, .bswap .rdx,
-      .store (at_ .rdi 0) .rdx, .store (at_ .rdi 8) .rax, .alu .add .rsi (imm 16), .alu .add .rdi (imm 16),
-      .alu .sub .rcx (imm 1)]) .ne)
+    (.loop (.block (([.mov .rax (.mem (at_ .rsi 0)), .mov .rdx (.mem (at_ .rsi 8)), .bswap .rax, .bswap .rdx] :
+      List Instr) ++ store2 (at_ .rdi 0) .rdx .rax ++
+      ([.alu .add .rsi (imm 16), .alu .add .rdi (imm 16), .alu .sub .rcx (imm 1)] : List Instr))) .ne)
 
 /-- The mask with which `vpshufb` reverses the bytes of each 128-bit lane, in
 both lanes of `ymm1` (through `rax` and `xmm12`). -/
@@ -212,9 +226,8 @@ def revQuad : List Instr :=
 /-- The body of `revLoop`: one block at `rsi` copied to `rdi`, its bytes
 reversed; `rcx` one fewer. -/
 def revOne : List Instr :=
-  [.mov .rax (.mem (at_ .rsi 0)), .mov .rdx (.mem (at_ .rsi 8)), .bswap .rax, .bswap .rdx,
-    .store (at_ .rdi 0) .rdx, .store (at_ .rdi 8) .rax, .alu .add .rsi (imm 16), .alu .add .rdi (imm 16),
-    .alu .sub .rcx (imm 1)]
+  ([.mov .rax (.mem (at_ .rsi 0)), .mov .rdx (.mem (at_ .rsi 8)), .bswap .rax, .bswap .rdx] : List Instr) ++
+    store2 (at_ .rdi 0) .rdx .rax ++ ([.alu .add .rsi (imm 16), .alu .add .rdi (imm 16), .alu .sub .rcx (imm 1)] : List Instr)
 
 /-- The `rcx` (at least 1) blocks: if there are eight or more, four at a time
 with `quad` while there are four (after `pre`); then one at a time with
@@ -253,8 +266,8 @@ absorbed. -/
 def absorbTail : Prog isa :=
   .seq (.block (zero16 bO ++ ptr .rdi .r15 bO ++ ([.mov .rsi (.reg .r12), .mov .rcx (.reg .rbp)] : List Instr)))
   (.seq copyLoop
-  (.seq (.block (([.mov .rax (.mem (at_ .r15 bO)), .mov .rdx (.mem (at_ .r15 (bO + 8))), .bswap .rax, .bswap .rdx,
-      .store (at_ .r15 revO) .rdx, .store (at_ .r15 (revO + 8)) .rax] : List Instr) ++ ghArgs ++ ptr .rdx .r15 revO ++
+  (.seq (.block (([.mov .rax (.mem (at_ .r15 bO)), .mov .rdx (.mem (at_ .r15 (bO + 8))), .bswap .rax, .bswap .rdx] :
+      List Instr) ++ store2 (at_ .r15 revO) .rdx .rax ++ ghArgs ++ ptr .rdx .r15 revO ++
       ([.mov32 .rcx (imm 1)] : List Instr)))
     (callGh c)))
 
@@ -269,9 +282,9 @@ def absorb (wide : Bool) : Prog isa :=
 at `W + bO`, absorbed. -/
 def lens : Prog isa :=
   .seq (.block (([.mov .rax (.mem (at_ .r15 lenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
-      .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .r15 bO) .rax,
-      .mov .rax (.mem (at_ .r15 alenO)), .alu .add .rax (.reg .rax),
-      .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .r15 (bO + 8)) .rax] : List Instr) ++
+      .alu .add .rax (.reg .rax), .bswap .rax,
+      .mov .rdx (.mem (at_ .r15 alenO)), .alu .add .rdx (.reg .rdx),
+      .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .bswap .rdx] : List Instr) ++ store2 (at_ .r15 bO) .rax .rdx ++
       ghArgs ++ ptr .rdx .r15 bO ++ ([.mov32 .rcx (imm 1)] : List Instr)))
     (callGh c)
 
@@ -280,8 +293,8 @@ def lens : Prog isa :=
 def tagIn : List Instr :=
   [.mov .rax (.mem (at_ .r15 (yO + 8))), .bswap .rax, .mov .rdx (.mem (at_ .r15 yO)), .bswap .rdx,
     .mov .rcx (.mem (at_ .r15 nonceO)), .alu .xor .rax (.mem (at_ .rcx 0)), .mov32 .r8 (.mem (at_ .rcx 8)),
-    .alu .xor .rdx (.reg .r8), .movImm64 .r8 0x7FFFFFFFFFFFFFFF, .alu .and .rdx (.reg .r8),
-    .store (at_ .r15 cmO) .rax, .store (at_ .r15 (cmO + 8)) .rdx]
+    .alu .xor .rdx (.reg .r8), .movImm64 .r8 0x7FFFFFFFFFFFFFFF, .alu .and .rdx (.reg .r8)] ++
+    store2 (at_ .r15 cmO) .rax .rdx
 
 /-- The tag, the encryption of the tag input, at `W + o`. -/
 def tag (o : Nat) : Prog isa :=
@@ -354,10 +367,10 @@ def cryptTail : Prog isa :=
 /-- The data encrypted (or decrypted) in place, from the tag at `W` with the
 top bit of its last byte set. -/
 def crypt (wide : Bool) : Prog isa :=
-  .seq (.block [.mov .rax (.mem (at_ .r15 tagO)), .store (at_ .r15 cmO) .rax, .mov .rax (.mem (at_ .r15 (tagO + 8))),
-      .movImm64 .rcx 0x8000000000000000, .alu .or .rax (.reg .rcx), .store (at_ .r15 (cmO + 8)) .rax,
-      .mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
-      .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)])
+  .seq (.block (([.mov .rax (.mem (at_ .r15 tagO)), .mov .rdx (.mem (at_ .r15 (tagO + 8))),
+      .movImm64 .rcx 0x8000000000000000, .alu .or .rdx (.reg .rcx)] : List Instr) ++ store2 (at_ .r15 cmO) .rax .rdx ++
+      ([.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
+      .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)] : List Instr)))
   (.seq (.ite .e (.block []) (.loop (cryptChunk e wide) .ne))
   (.seq (.block [.alu .test .rbp (.reg .rbp)])
     (.ite .e (.block []) (cryptTail c))))
@@ -421,8 +434,8 @@ def stageTail : Prog isa :=
   .seq (.block (([.mov .rbx (.reg .rdi)] : List Instr) ++ zero16 bO ++ ptr .rdi .r15 bO ++
       ([.mov .rcx (.reg .rbp)] : List Instr)))
   (.seq copyLoop
-    (.block [.mov .rax (.mem (at_ .r15 bO)), .mov .rdx (.mem (at_ .r15 (bO + 8))), .bswap .rax, .bswap .rdx,
-      .store (at_ .rbx 0) .rdx, .store (at_ .rbx 8) .rax, .mov .rdi (.reg .rbx), .alu .add .rdi (imm 16)]))
+    (.block (([.mov .rax (.mem (at_ .r15 bO)), .mov .rdx (.mem (at_ .r15 (bO + 8))), .bswap .rax, .bswap .rdx] :
+      List Instr) ++ store2 (at_ .rbx 0) .rdx .rax ++ ([.mov .rdi (.reg .rbx), .alu .add .rdi (imm 16)] : List Instr))))
 
 /-- The `rbp` bytes at `r12`, padded with zeros to whole blocks, reversed at
 `rdi`; `rdi` past them. -/
@@ -437,10 +450,10 @@ def stage (wide : Bool) : Prog isa :=
 for the blocks from `W + revO` to it. -/
 def lensAt : List Instr :=
   [.mov .rax (.mem (at_ .r15 lenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
-    .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .rdi 0) .rax,
-    .mov .rax (.mem (at_ .r15 alenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
-    .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .rdi 8) .rax,
-    .mov .rcx (.reg .rdi), .alu .sub .rcx (.reg .r15), .shift .shr .rcx 4, .alu .sub .rcx (imm (revO / 16 - 1))] ++
+    .alu .add .rax (.reg .rax), .bswap .rax,
+    .mov .rdx (.mem (at_ .r15 alenO)), .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx),
+    .alu .add .rdx (.reg .rdx), .bswap .rdx] ++ store2 (at_ .rdi 0) .rax .rdx ++
+  [.mov .rcx (.reg .rdi), .alu .sub .rcx (.reg .r15), .shift .shr .rcx 4, .alu .sub .rcx (imm (revO / 16 - 1))] ++
   ghArgs ++ ptr .rdx .r15 revO
 
 /-- POLYVAL with one call of `vg_ghash`: the padded additional data, the

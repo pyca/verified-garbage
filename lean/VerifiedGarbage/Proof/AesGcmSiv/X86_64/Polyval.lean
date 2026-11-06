@@ -45,10 +45,10 @@ theorem lensArgs_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {al n : Nat}
     (hn : t.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) (hal' : al < 2 ^ 64) (hn' : n < 2 ^ 64) :
     ∃ t₁ : State,
       runBlock isa (([.mov .rax (.mem (at_ .r15 lenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
-        .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .r15 bO) .rax,
-        .mov .rax (.mem (at_ .r15 alenO)), .alu .add .rax (.reg .rax),
-        .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .r15 (bO + 8)) .rax] :
-          List Instr) ++ ghArgs ++ ptr .rdx .r15 bO ++ ([.mov32 .rcx (imm 1)] : List Instr)) t = some t₁ ∧
+        .alu .add .rax (.reg .rax), .bswap .rax,
+        .mov .rdx (.mem (at_ .r15 alenO)), .alu .add .rdx (.reg .rdx),
+        .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .bswap .rdx] : List Instr) ++
+          store2 (at_ .r15 bO) .rax .rdx ++ ghArgs ++ ptr .rdx .r15 bO ++ ([.mov32 .rcx (imm 1)] : List Instr)) t = some t₁ ∧
       t₁.mem = (t.mem.writeW (W + BitVec.ofNat 64 128) (bswap64 (BitVec.ofNat 64 (8 * n)))).writeW
         (W + BitVec.ofNat 64 128 + BitVec.ofNat 64 8) (bswap64 (BitVec.ofNat 64 (8 * al))) ∧
       t₁.gpr .rdi = W + BitVec.ofNat 64 64 ∧ t₁.gpr .rsi = W + BitVec.ofNat 64 80 ∧
@@ -58,18 +58,17 @@ theorem lensArgs_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {al n : Nat}
   have h15 := E.r15
   have r₁ := E.perm.wR (show 240 + 8 ≤ 3816 by decide)
   have r₂ := E.perm.wR (show 224 + 8 ≤ 3816 by decide)
-  have w₀ := E.perm.wW (show 128 + 8 ≤ 3816 by decide)
-  have w₈ := E.perm.wW (show 136 + 8 ≤ 3816 by decide)
-  refine ⟨_, by srun [ghArgs, h15, r₁, r₂, w₀, w₈, hal, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp only [mem_setReg, mem_arithFlags, add_ofNat_assoc, Proof.AesGcm.X86_64.times8_val,
-      toNat_ofNat_of_lt hal', toNat_ofNat_of_lt hn']
-  · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
-  · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
-  · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
-  · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
-  · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
+  have w₀ := E.perm.wW (show 128 + 16 ≤ 3816 by decide)
+  refine ⟨_, by srun [store2, ghArgs, h15, r₁, r₂, w₀, hal, hn, XOp.exec, State.store128, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, zf_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [mem_setReg, mem_arithFlags, mem_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne, punpck_movq, writeW128_app, gpr_setXmm, gpr_setReg, gpr_arithFlags, ite_true, ite_false,
+      reduceCtorEq, add_ofNat_assoc, Proof.AesGcm.X86_64.times8_val, toNat_ofNat_of_lt hal', toNat_ofNat_of_lt hn']
+  · simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq]
   · intro r hr; obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉⟩ := ne_of_calleeSaved hr
-    simp only [gpr_arithFlags, gpr_setReg, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
+    simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
   all_goals rfl
 
 theorem lens_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {al n : Nat}
@@ -112,24 +111,24 @@ theorem tagIn_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t)
   have r₀ := E.perm.wR (show 80 + 8 ≤ 3816 by decide)
   have r₈ := E.perm.wR (show 88 + 8 ≤ 3816 by decide)
   have rn := E.perm.wR (show 208 + 8 ≤ 3816 by decide)
-  have w₀ := E.perm.wW (show 96 + 8 ≤ 3816 by decide)
-  have w₈ := E.perm.wW (show 104 + 8 ≤ 3816 by decide)
+  have w₀ := E.perm.wW (show 96 + 16 ≤ 3816 by decide)
   have n₀ : InRegions (t.rd ++ t.wr) N 8 := by
     simpa using in_off (d := 0) (n := 8) hNb.rd (by decide) (by decide)
   have n₈ := in_off (d := 8) (n := 4) hNb.rd (by decide) (by decide)
-  refine ⟨_, by srun [tagIn, h15, r₀, r₈, rn, w₀, w₈, hN, n₀, n₈], ?_, ?_, ?_, ?_, ?_⟩
-  · simp only [mem_setReg, mem_arithFlags]
+  refine ⟨_, by srun [tagIn, store2, h15, r₀, r₈, rn, w₀, hN, n₀, n₈, XOp.exec, State.store128, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, zf_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne], ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [mem_setReg, mem_arithFlags, mem_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne, punpck_movq, writeW128_app, gpr_setXmm, gpr_setReg, gpr_arithFlags, ite_true, ite_false,
+      reduceCtorEq, add_ofNat_assoc]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains W (Nat.le_refl _) (by decide) (by omega_arith))).writeW (List.mem_singleton_self _) _
       (Offset.contains W (by decide) (by decide) (by omega_arith))
-  · simp only [mem_setReg, mem_arithFlags]
-    rw [show W + BitVec.ofNat 64 104 = W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 by rw [add_ofNat_assoc],
-      Proof.Cmac.bytesAt_store2, ← Proof.Gcm.X86_64.blockAt_bswap, BitVec.add_zero, add_ofNat_assoc,
+  · simp only [mem_setReg, mem_arithFlags, mem_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne, punpck_movq, writeW128_app, gpr_setXmm, gpr_setReg, gpr_arithFlags, ite_true, ite_false,
+      reduceCtorEq]
+    rw [Proof.Cmac.bytesAt_store2, ← Proof.Gcm.X86_64.blockAt_bswap, BitVec.add_zero, add_ofNat_assoc,
       GcmSiv.toBytes_append, show (12 : Nat) = 8 + 4 from rfl, Proof.Cmac.bytesAt_add, ← Proof.Cmac.le8_readW,
       ← Proof.Cmac.le4_readW, GcmSiv.tagOf_words]
     rfl
   · intro r hr; obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉⟩ := ne_of_calleeSaved hr
-    simp only [gpr_arithFlags, gpr_setReg, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
+    simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
   all_goals rfl
 
 /-- The slots, after code that writes only what absorbing writes. -/
@@ -296,22 +295,21 @@ theorem stageTail_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W S
       (StPost K W SP s [Spec.GcmSiv.ofBytes (bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r))] t) := by
   have h15 := E.r15
   have hw := L.ww
-  have w₀ := E.perm.wW (show 128 + 8 ≤ 3816 by decide)
-  have w₈ := E.perm.wW (show 136 + 8 ≤ 3816 by decide)
+  have w₀ := E.perm.wW (show 128 + 16 ≤ 3816 by decide)
   -- The destination kept, the block zeroed, and the copy's arguments.
   obtain ⟨t₁, run₁, hm₁, hdi₁, hsi₁, hcx₁, hbx₁, hg₁, hrd₁, hwr₁⟩ : ∃ t₁ : State,
       runBlock isa ([.mov .rbx (.reg .rdi)] ++ zero16 bO ++ ptr .rdi .r15 bO ++ [.mov .rcx (.reg .rbp)]) t = some t₁ ∧
       t₁.mem = Proof.Cmac.zero2 t.mem (W + BitVec.ofNat 64 128) ∧ t₁.gpr .rdi = W + BitVec.ofNat 64 128 ∧
       t₁.gpr .rsi = P ∧ t₁.gpr .rcx = BitVec.ofNat 64 r ∧ t₁.gpr .rbx = W + BitVec.ofNat 64 (488 + 16 * s) ∧
       (∀ q, q ≠ .rax → q ≠ .rdi → q ≠ .rbx → q ≠ .rcx → t₁.gpr q = t.gpr q) ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-    refine ⟨_, by srun [zero16, h15, w₀, w₈], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · simp only [mem_setReg, mem_arithFlags, Proof.Cmac.zero2, add_ofNat_assoc]
+    refine ⟨_, by srun [zero16, h15, w₀, pxor_self, XOp.exec, State.store128, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, zf_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [mem_setReg, mem_arithFlags, mem_setXmm, writeW128_app, Proof.Cmac.zero2, add_ofNat_assoc]
       rfl
-    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
-    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, hsi]
-    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, hbp]
-    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, hdi]
-    · intro q h₁ h₂ h₃ h₄; simp only [gpr_arithFlags, gpr_setReg, h₁, h₂, h₃, h₄, ite_false]
+    · simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq, h15]
+    · simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq, hsi]
+    · simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq, hbp]
+    · simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq, hdi]
+    · intro q h₁ h₂ h₃ h₄; simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, h₁, h₂, h₃, h₄, ite_false]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   have lp : Proof.AesGcm.X86_64.LoopPre t₁ P (W + BitVec.ofNat 64 128) r :=
@@ -336,27 +334,26 @@ theorem stageTail_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W S
   have hbx₂ : t₂.gpr .rbx = W + BitVec.ofNat 64 (488 + 16 * s) := by rw [hg₂ _ (by decide) (by decide), hbx₁]
   have r₀ := E.perm.wR (show 128 + 8 ≤ 3816 by decide)
   have r₈ := E.perm.wR (show 136 + 8 ≤ 3816 by decide)
-  have v₀ := E.perm.wW (d := 488 + 16 * s) (n := 8) (by omega_arith)
-  have v₈ := E.perm.wW (d := 488 + 16 * s + 8) (n := 8) (by omega_arith)
-  rw [← add_ofNat_assoc] at v₈
+  have v₀ := E.perm.wW (d := 488 + 16 * s) (n := 16) (by omega_arith)
   rw [← hrd₁, ← hwr₁, ← hrd₂, ← hwr₂] at r₀ r₈
-  rw [← hwr₁, ← hwr₂] at v₀ v₈
+  rw [← hwr₁, ← hwr₂] at v₀
   -- The block reversed at block `s`.
   obtain ⟨t₃, run₃, hm₃, hdi₃, hg₃, hrd₃, hwr₃⟩ : ∃ t₃ : State,
-      runBlock isa [.mov .rax (.mem (at_ .r15 bO)), .mov .rdx (.mem (at_ .r15 (bO + 8))), .bswap .rax, .bswap .rdx,
-        .store (at_ .rbx 0) .rdx, .store (at_ .rbx 8) .rax, .mov .rdi (.reg .rbx), .alu .add .rdi (imm 16)] t₂ =
+      runBlock isa (([.mov .rax (.mem (at_ .r15 bO)), .mov .rdx (.mem (at_ .r15 (bO + 8))), .bswap .rax, .bswap .rdx] :
+        List Instr) ++ store2 (at_ .rbx 0) .rdx .rax ++ ([.mov .rdi (.reg .rbx), .alu .add .rdi (imm 16)] : List Instr)) t₂ =
         some t₃ ∧
       t₃.mem = (t₂.mem.writeW (W + BitVec.ofNat 64 (488 + 16 * s))
           (bswap64 (t₂.mem.readW (W + BitVec.ofNat 64 136) 64))).writeW
         (W + BitVec.ofNat 64 (488 + 16 * s) + BitVec.ofNat 64 8) (bswap64 (t₂.mem.readW (W + BitVec.ofNat 64 128) 64)) ∧
       t₃.gpr .rdi = W + BitVec.ofNat 64 (488 + 16 * (s + 1)) ∧
       (∀ q ∈ [Reg.r13, .r15, .rsp], t₃.gpr q = t₂.gpr q) ∧ t₃.rd = t₂.rd ∧ t₃.wr = t₂.wr := by
-    refine ⟨_, by srun [h15₂, hbx₂, r₀, r₈, v₀, v₈], ?_, ?_, ?_, ?_, ?_⟩
-    · simp only [mem_setReg, mem_arithFlags, add_ofNat_assoc, hbx₂, BitVec.add_zero]
-    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, hbx₂, add_ofNat_assoc]
+    refine ⟨_, by srun [store2, h15₂, hbx₂, r₀, r₈, v₀, XOp.exec, State.store128, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, zf_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne], ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [mem_setReg, mem_arithFlags, mem_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne, punpck_movq, writeW128_app, gpr_setXmm, gpr_setReg, gpr_arithFlags, ite_true, ite_false,
+        reduceCtorEq, add_ofNat_assoc, hbx₂, BitVec.add_zero]
+    · simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq, hbx₂, add_ofNat_assoc]
       rw [show 488 + 16 * s + 16 = 488 + 16 * (s + 1) by omega_arith]
     · intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl <;> simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
+      rcases hq with rfl | rfl | rfl <;> simp only [gpr_arithFlags, gpr_setReg, gpr_setXmm, ite_true, ite_false, reduceCtorEq]
     all_goals rfl
   have E₃ : Env K W SP t₃ := E.keep (fun q hq => by
       rw [hg₃ q hq]
@@ -504,22 +501,21 @@ theorem lensAt_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {al n k : Nat} 
   have h15 := E.r15
   have r₁ := E.perm.wR (show 240 + 8 ≤ 3816 by decide)
   have r₂ := E.perm.wR (show 224 + 8 ≤ 3816 by decide)
-  have w₀ := E.perm.wW (d := 488 + 16 * k) (n := 8) (by omega_arith)
-  have w₈ := E.perm.wW (d := 488 + 16 * k + 8) (n := 8) (by omega_arith)
-  rw [← add_ofNat_assoc] at w₈
-  refine ⟨_, by srun [lensAt, ghArgs, h15, hdi, r₁, r₂, w₀, w₈, hal, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp only [mem_setReg, mem_arithFlags, mem_setFlags, add_ofNat_assoc, BitVec.add_zero,
+  have w₀ := E.perm.wW (d := 488 + 16 * k) (n := 16) (by omega_arith)
+  refine ⟨_, by srun [lensAt, store2, ghArgs, h15, hdi, r₁, r₂, w₀, hal, hn, XOp.exec, State.store128, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, zf_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [mem_setReg, mem_arithFlags, mem_setFlags, mem_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne, punpck_movq, writeW128_app, gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags,
+      ite_true, ite_false, reduceCtorEq, hdi, add_ofNat_assoc, BitVec.add_zero,
       Proof.AesGcm.X86_64.times8_val, toNat_ofNat_of_lt hal', toNat_ofNat_of_lt hn']
-  · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15]
-  · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15]
-  · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15]
-  · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15]
-  · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15, hdi]
+  · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, gpr_setXmm, ite_true, ite_false, reduceCtorEq, h15, hdi]
     rw [BitVec.add_comm W, BitVec.add_sub_cancel, Proof.AesGcm.X86_64.shr4 _ (by omega_arith),
       show 488 / 16 - 1 = 29 from rfl, Proof.AesGcm.X86_64.ofNat_sub (by omega_arith) (by omega_arith),
       show (488 + 16 * k) / 16 - 29 = k + 1 by omega_arith]
   · intro r hr; obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉⟩ := ne_of_calleeSaved hr
-    simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
+    simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, gpr_setXmm, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
   all_goals rfl
 
 /-- What staging writes, as what absorbing writes. -/

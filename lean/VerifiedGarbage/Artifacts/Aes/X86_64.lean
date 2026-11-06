@@ -57,10 +57,8 @@ def artifacts : List Artifact := [
     verified := Proof.Aes.X86_64.scalar_expandKey_framed },
   Spec.Aes.expandKeyApi.artifact X86_64.target {
     suffix := "_aesni"
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64
-      Impl.Aes.X86_64.AesNi.expandKey
-    stack := 520
-    verified := Proof.Aes.X86_64.aesni_expandKey_framed
+    code := Impl.Aes.X86_64.AesNi.expandKey
+    verified := Proof.Aes.X86_64.AesNi.Key.expandKey3_verified
     features := ["aes"] },
   Spec.Aes.encryptBlocksApi.artifact X86_64.target {
     code := Impl.Aes.X86_64.encryptBlocks
