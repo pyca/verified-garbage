@@ -191,6 +191,7 @@ call {vg_poly1305_update}
 .insn 2, 0x85e6
 .insn 2, 0x866a
 .insn 4, 0x04050693
+.insn 2, 0x8766
 call {vg_chacha20_xor}
 .insn 4, 0x18050513
 .insn 4, 0x00fc0593
@@ -536,6 +537,7 @@ call {vg_poly1305_finalize}
 .insn 2, 0x85e6
 .insn 2, 0x866a
 .insn 4, 0x04050693
+.insn 2, 0x8766
 call {vg_chacha20_xor}
 .insn 4, 0x18050513
 .insn 4, 0xe8050293

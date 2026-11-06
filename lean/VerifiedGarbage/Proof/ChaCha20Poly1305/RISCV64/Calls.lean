@@ -97,8 +97,9 @@ theorem block_call {s : State} {S B : Addr} (h0 : s.gpr .a0 = S) (h1 : s.gpr .a1
 
 /-! ## `vg_chacha20_xor` -/
 
+/-- `vg_chacha20_xor` in place (`Proof.ChaCha20.RISCV64.Xor.xor_call`). -/
 theorem xor_call {s : State} {S D B : Addr} {n : Nat} (h0 : s.gpr .a0 = S) (h1 : s.gpr .a1 = D)
-    (h2 : s.gpr .a2 = BitVec.ofNat 64 n) (h3 : s.gpr .a3 = B) (hn : n < 2 ^ 64)
+    (h2 : s.gpr .a2 = BitVec.ofNat 64 n) (h3 : s.gpr .a3 = B) (h4 : s.gpr .a4 = D) (hn : n < 2 ^ 64)
     (hSD : (⟨S, 64⟩ : Region).Disjoint ⟨D, n⟩)
     (hSB : (⟨S, 64⟩ : Region).Disjoint ⟨B, 320⟩)
     (hDB : (⟨D, n⟩ : Region).Disjoint ⟨B, 320⟩) (hD : D.toNat + n ≤ 2 ^ 64)
@@ -110,22 +111,9 @@ theorem xor_call {s : State} {S D B : Addr} {n : Nat} (h0 : s.gpr .a0 = S) (h1 :
       Spec.ChaCha20.bytesAt s'.mem D n =
         List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem D n)
           (keystream (stateAt s.mem S) n) → Q s') :
-    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.RISCV64.Xor.xor) s Q := by
-  have hn' : (BitVec.ofNat 64 n).toNat = n := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
-  have c0 : s.callEntry.gpr .a0 = S := (State.callEntry_gpr _ (by decide)).trans h0
-  have c1 : s.callEntry.gpr .a1 = D := (State.callEntry_gpr _ (by decide)).trans h1
-  have c2 : s.callEntry.gpr .a2 = BitVec.ofNat 64 n := (State.callEntry_gpr _ (by decide)).trans h2
-  have c3 : s.callEntry.gpr .a3 = B := (State.callEntry_gpr _ (by decide)).trans h3
-  refine WP.call (k := Proof.ChaCha20.xorRISCV64) Proof.ChaCha20.RISCV64.Xor.xor_correct
-    (rd := []) (wr := [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩]) ?_ hc hw ?_ (by decide +kernel)
-  · simp only [Proof.ChaCha20.xorRISCV64, State.withRegions_gpr, State.withRegions_rd,
-      State.withRegions_wr, c0, c1, c2, c3, hn']
-    exact ⟨trivial, trivial, hSD, hSB, hDB, hD, hSa, hBa⟩
-  · intro s' hrd hwr hsp hf hcs hk hpost
-    simp only [Proof.ChaCha20.xorRISCV64, State.withRegions_gpr, State.withRegions_mem,
-      State.callEntry_mem, c0, c1, c2, hn'] at hpost
-    exact hQ s' (kept_of xor_a0 hrd hwr hsp hf hcs hk) hpost
+    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.RISCV64.Xor.xor) s Q :=
+  Proof.ChaCha20.RISCV64.Xor.xor_call h0 h1 h2 h3 h4 hn hSD hSB hDB hD hSa hBa hc hw
+    fun s' hrd hwr hsp hf hcs hk hpost => hQ s' (kept_of xor_a0 hrd hwr hsp hf hcs hk) hpost
 
 /-! ## `vg_poly1305_init` -/
 

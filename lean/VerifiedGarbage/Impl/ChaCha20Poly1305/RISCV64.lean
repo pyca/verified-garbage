@@ -118,11 +118,12 @@ def macData (out : Instr) : Prog isa :=
   (.seq (.block (round16 .a1 .s8 ++ round16 .t0 .s10 ++ [.add .a1 .a1 .t0, .addi .a1 .a1 16, out]))
     (.call "vg_poly1305_finalize" Impl.Poly1305.RISCV64.finalize)))))))
 
-/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted, from
-`a0` at the Poly1305 state; `a0` back to it. -/
+/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted in
+place (`vg_chacha20_xor` with `dst = src`), from `a0` at the Poly1305 state;
+`a0` back to it. -/
 def crypt : Prog isa :=
   .seq (.block [.addi .a0 .a0 (-(polyOff : Int)), .li .t0 1, .store .b .t0 .a0 48, mov .a1 .s9,
-    mov .a2 .s10, .addi .a3 .a0 bufOff])
+    mov .a2 .s10, .addi .a3 .a0 bufOff, mov .a4 .s9])
   (.seq (.call "vg_chacha20_xor" Impl.ChaCha20.RISCV64.Xor.xor)
     (.block [.addi .a0 .a0 polyOff]))
 

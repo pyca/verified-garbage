@@ -177,6 +177,7 @@ vg_chacha20_poly1305_seal:
 	addi a1, s9, 0
 	addi a2, s10, 0
 	addi a3, a0, 64
+	addi a4, s9, 0
 	call {vg_chacha20_xor}
 	addi a0, a0, 384
 	addi a1, s8, 15
@@ -500,6 +501,7 @@ vg_chacha20_poly1305_open:
 	addi a1, s9, 0
 	addi a2, s10, 0
 	addi a3, a0, 64
+	addi a4, s9, 0
 	call {vg_chacha20_xor}
 	addi a0, a0, 384
 	addi t0, a0, -384
