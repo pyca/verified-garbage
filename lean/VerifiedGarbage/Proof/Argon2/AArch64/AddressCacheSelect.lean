@@ -148,14 +148,6 @@ structure Ready (p : Params) (pass lane slice old : Nat) (s : State) : Prop wher
   cached : counter (s.gpr .x23) = s.mem.readW (off (s.gpr .x19) 8) 64 →
     blockAt s.mem (off (AddressCalls.work s) 6144) = addressBlock p pass lane slice (wanted s)
 
-theorem ready_zero (p : Params) (pass lane slice : Nat) (s : State)
-    (layout : AddressCalls.Ready s)
-    (reads : ∀ d ∈ [0, 8, 72, 112, 240], InRegions (s.rd ++ s.wr) (off (s.gpr .x19) d) 8)
-    (write : InRegions s.wr (off (s.gpr .x19) 8) 8)
-    (words : AddressHeader.Words p pass lane slice 0 s) : Ready p pass lane slice 0 s :=
-  ⟨layout, reads, write, words, fun same => False.elim
-    (counter_ne_zero _ (same.trans words.counterWord))⟩
-
 structure Selected (s t : State) (p : Params) (pass lane slice : Nat) : Prop where
   block : blockAt t.mem (off (AddressCalls.work s) 6144) = addressBlock p pass lane slice (wanted s)
   layout : AddressCalls.Ready t

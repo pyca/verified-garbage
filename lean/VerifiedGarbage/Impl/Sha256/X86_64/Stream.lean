@@ -62,24 +62,6 @@ def init : Prog isa := initWith Spec.Sha256.H0
 /-- `vg_sha224_init`. -/
 def init224 : Prog isa := initWith Spec.Sha256.H0_224
 
-/-- The callee-saved registers, and where they are saved in `scratch`. -/
-def saved : List (Reg × Nat) := [(.rbx, 560), (.rbp, 568), (.r12, 576), (.r13, 584), (.r14, 592), (.r15, 600)]
-
-/-- Save them, with `scratch` in `b`. -/
-def save (b : Reg) : List Instr := saved.map fun (r, d) => .store (at_ b d) r
-
-/-- Restore them (`r15`, the base, last). -/
-def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .r15 d))
-
-/-- Compress the block at `rsi` into the hash value at `rbx`, with scratch
-space `r15`. (`rbx` and `r15` are copied back from `rdi` and `rcx`, which
-the compression function keeps, only for the constant-time analysis, which
-tracks which registers hold the base address of a region through registers
-but not through memory.) -/
-def compressAt (f : Callee) : Prog isa :=
-  .seq (.block [.mov .rdi (.reg .rbx), .mov32 .rdx (.imm 1), .mov .rcx (.reg .r15)])
-    (.seq (.call f.name f.code) (.block [.mov .rbx (.reg .rdi), .mov .r15 (.reg .rcx)]))
-
 /-- The sizes, the length field and the digest. -/
 def params : MdStream.X86_64.Params where
   N := 32

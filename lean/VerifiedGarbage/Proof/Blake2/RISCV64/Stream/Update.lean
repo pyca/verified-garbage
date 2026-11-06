@@ -145,14 +145,6 @@ theorem Common.of_gpr {s₀ : State} {c : Nat} {s s' : State} (h : Common w s₀
   frame := by rw [hm]; exact h.frame
   saved := by rw [hm]; exact h.saved
 
-theorem Inv.of_gpr {s₀ : State} {c r : Nat} {s s' : State} (h : Inv P s₀ c r s)
-    (hg : ∀ r ∈ .a7 :: commonRegs, s'.gpr r = s.gpr r)
-    (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp) :
-    Inv P s₀ c r s' :=
-  { h.toCommon.of_gpr (fun r hr => hg r (List.mem_cons_of_mem _ hr)) hm hrd hwr hsp with
-    a7 := by rw [hg _ (by simp)]; exact h.a7
-    repr := by rw [hm]; exact h.repr }
-
 /-- The data is unchanged. -/
 theorem Common.data {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : State} (h : Common w s₀ c s) {i : Nat}
     (hi : i < len s₀) : s.mem (dp s₀ + BitVec.ofNat 64 i) = s₀.mem (dp s₀ + BitVec.ofNat 64 i) :=

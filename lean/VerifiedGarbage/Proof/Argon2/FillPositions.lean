@@ -47,17 +47,4 @@ theorem reference_cell_lt (p : Params) (hl : 0 < p.lanes)
   obtain ⟨laneBound, columnBound⟩ := reference_bounds p hl hm pass lane slice index random hlane
   exact cell_lt p hl laneBound columnBound
 
-theorem cell_contains (base : VG.Addr) (p : Params) (hl : 0 < p.lanes)
-    (hm : p.memory < 2 ^ 32) {lane column : Nat}
-    (hlane : lane < p.lanes) (hcolumn : column < p.laneLen) :
-    (⟨base, p.blocks * 1024⟩ : VG.Region).Contains
-      (base + BitVec.ofNat 64 ((lane * p.laneLen + column) * 1024)) 1024 := by
-  have bytes := cell_bytes p hl hlane hcolumn
-  have blocks : p.blocks < 2 ^ 32 := Nat.lt_of_le_of_lt (blocks_le_memory p) hm
-  have total : p.blocks * 1024 < 2 ^ 64 :=
-    Nat.lt_trans (Nat.mul_lt_mul_of_pos_right blocks (by decide : 0 < 1024)) (by decide +kernel)
-  exact VG.Offset.contains_base base
-    (d := (lane * p.laneLen + column) * 1024) (n := 1024) (k := p.blocks * 1024)
-    bytes (Nat.lt_of_le_of_lt (Nat.le_trans (Nat.le_add_right _ _) bytes) total)
-
 end VG.Proof.Argon2

@@ -65,11 +65,6 @@ theorem movImm64_eq (x : BitVec 64) :
       show i - 32 < 32 by omega, show i - 32 - 16 < 16 by omega, show 48 + (i - 32 - 16) = i by omega,
       show ¬ i - 16 < 16 by omega, show i - 32 < 64 by omega]
 
-/-- Reassociate the independent constant/message sum before the state-dependent terms. -/
-theorem t1_add_tree (h k w s c : Word) :
-    h + (k + w) + s + c = h + s + c + k + w := by
-  ac_rfl
-
 theorem sigma512_bsig0 (x : Word) : VG.PPC64LE.sigma512 true false x = bsig0 x := rfl
 
 theorem sigma512_bsig1 (x : Word) : VG.PPC64LE.sigma512 true true x = bsig1 x := rfl
@@ -194,9 +189,6 @@ theorem round_ok (t : Nat) (ht : t < 80) (s : State) (v : HashValue) (w : Word)
   · intro r hr
     obtain ⟨h0,h1,h2,h3,h4,h5,h6⟩ := hpairs r hr
     simp only [h0,h1,h2,h3,h4,h5,h6,ite_false]
-
-theorem slot_ok (j : Nat) : slot j < 2 ^ 15 ∧ slot j % 4 = 0 := by
-  simp only [slot]; omega
 
 /-- The address of `W[j mod 16]`. -/
 abbrev slotAddr (scr : Addr) (j : Nat) : Addr := scr + BitVec.ofNat 64 (slot j)
@@ -412,31 +404,8 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp : Addr)
 
 /-! ## The 80 rounds -/
 
-theorem pubRegs_ne' : ∀ r ∈ pubRegs, r ≠ T0 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 ∧ r ≠ .r0 := by decide
-
-theorem pubRegs_ne {r : Reg} (h : r ∈ pubRegs) : r ≠ T0 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 ∧ r ≠ .r0 :=
-  pubRegs_ne' r h
-
 /-- The window `⟨scr, 128⟩`. -/
 abbrev winRegion (scr : Addr) : Region := ⟨scr, 128⟩
-
-theorem win_contains (scr : Addr) (j : Nat) : (winRegion scr).Contains (slotAddr scr j) 8 := by
-  simp only [Region.Contains, slotAddr, slot]
-  have : j % 16 < 16 := Nat.mod_lt _ (by omega)
-  generalize j % 16 = p at *
-  rw [show scr + BitVec.ofNat 64 (8 * p) - scr = BitVec.ofNat 64 (8 * p) by bv_omega]
-  simp only [BitVec.toNat_ofNat]
-  omega
-
-theorem slot_sep (scr : Addr) {i j : Nat} (h : i % 16 ≠ j % 16) :
-    Mem.Sep (slotAddr scr i) 8 (slotAddr scr j) 8 := by
-  intro x hx hy
-  simp only [slotAddr, slot] at hx hy
-  have hi : i % 16 < 16 := Nat.mod_lt _ (by omega)
-  have hj : j % 16 < 16 := Nat.mod_lt _ (by omega)
-  generalize i % 16 = p at *
-  generalize j % 16 = q at *
-  bv_omega
 
 /-- Rounds invariant, relative to the state `sB` at the start of the rounds. -/
 structure RInv (H : HashValue) (M : Block) (scr : Addr) (sB : State) (t : Nat) (s : State) : Prop where
@@ -644,6 +613,5 @@ theorem roundsLoop_ok (H : HashValue) (M : Block) (bp scr : Addr) (sB : State)
   · simp only [runBlock_cons, exec_li (show 4 < 2^15 by decide), runStep_some, runBlock_nil]
   · exact WP.loop (M := isa) Inv step 4 _
       ⟨by decide, by decide, h16.write_counter _, RegUpd.gpr_write_self _ _ _⟩
-
 
 end VG.Proof.Sha512.PPC64LE

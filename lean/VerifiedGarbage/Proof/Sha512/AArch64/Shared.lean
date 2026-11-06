@@ -16,11 +16,11 @@ The proofs are written against per-target contracts
 (`Proof/Sha512/AArch64/Compress.lean`); these theorems move them to the shared
 contracts of `Spec/Sha512/Contract.lean`, which the artifacts are emitted with.
 
-The shared contracts give the functions more scratch than these ones use (1328
-bytes for `compress`, 1376 for `update` and `finalize`, sized for the x86-64
-AVX2 compression function): the per-target contracts are first widened to
-that scratch (`Verified.widen`, the same code running with the same trace and
-result), then moved to the shared ones.
+The shared contracts give the functions more scratch than these ones use (1376
+bytes for `update` and `finalize`, sized for the x86-64 AVX2 compression
+function): the per-target contracts are first widened to that scratch
+(`Verified.widen`, the same code running with the same trace and result), then
+moved to the shared ones.
 
 `update_of` and `finalize_of` keep the working space in a frame of their
 own: they are `updateScratch_of` and `finalizeScratch_of` (the shared
@@ -34,16 +34,6 @@ Ed25519's code calls) run in a frame that allocates it
 namespace VG.Proof.Sha512.AArch64.Shared
 
 open _root_.VG.AArch64
-
-/-- `compressAArch64` with 1328 bytes of scratch. -/
-def compressWide : Contract AArch64.isa :=
-  { Proof.Sha512.compressAArch64 with
-    pre := fun s =>
-      let state : Region := ⟨s.gpr .x0, 64⟩
-      let blocks : Region := ⟨s.gpr .x1, 128 * (s.gpr .x2).toNat⟩
-      let scratch : Region := ⟨s.gpr .x3, 1328⟩
-      s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
-      state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch }
 
 /-- `updateAArch64` with 1376 bytes of scratch. -/
 def updateWide : Contract AArch64.isa :=
@@ -71,18 +61,8 @@ def finalizeWide : Contract AArch64.isa :=
 
 theorem pfx {a : Addr} {m n : Nat} (h : Nat.ble m n = true) : Region.Prefix ⟨a, m⟩ ⟨a, n⟩ :=
   ⟨rfl, Nat.le_of_ble_eq_true h⟩
-theorem subC (a : Addr) : Region.Sub ⟨a, Impl.Sha512.AArch64.scratchBytes⟩ ⟨a, 1328⟩ :=
-  Region.sub_prefix (by decide)
 theorem subS (a : Addr) : Region.Sub ⟨a, Impl.Sha512.AArch64.scratchBytes + 48⟩ ⟨a, 1376⟩ :=
   Region.sub_prefix (by decide)
-
-theorem compressWide_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.compressAArch64) (hsat : ∃ s, compressWide.pre s) :
-    Verified AArch64.target code compressWide :=
-  Verified.widen hv
-    (fun s => [⟨s.gpr .x0, 64⟩, ⟨s.gpr .x3, Impl.Sha512.AArch64.scratchBytes⟩])
-    (fun _ ⟨h₁, _, h₃, h₄, h₅⟩ => ⟨h₁, rfl, h₃.sub_right (subC _), h₄, h₅.sub_right (subC _)⟩)
-    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons (pfx rfl) (.cons (pfx rfl) .nil))
-    (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
 
 theorem updateWide_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.updateAArch64) (hsat : ∃ s, updateWide.pre s) :
     Verified AArch64.target code updateWide :=
@@ -105,9 +85,6 @@ theorem finalizeWide_of {code : Prog isa} (hv : Verified AArch64.target code Pro
       (.cons (pfx rfl) .nil)))
     (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
 
-/-- A state satisfying `compressWide.pre`. -/
-def compressSat : State := { Proof.Sha512.AArch64.satState with wr := [⟨0x1000, 64⟩, ⟨0x3000, 1328⟩] }
-
 /-- A state satisfying `updateWide.pre`. -/
 def updateSat : State :=
   { Proof.Sha512.AArch64.Stream.Update.sat with wr := [⟨0x1000, 192⟩, ⟨0x3000, 1376⟩] }
@@ -116,14 +93,6 @@ def updateSat : State :=
 def finalizeSat : State :=
   { Proof.Sha512.AArch64.Stream.Finalize.sat with
     wr := [⟨0x1000, 192⟩, ⟨0x2000, 64⟩, ⟨0x3000, 1376⟩] }
-
-theorem compress_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.compressAArch64) :
-    Verified AArch64.target code (Proof.Sha512.compressContract AArch64.abi) := by
-  have hi : compressWide.Implies (Proof.Sha512.compressContract AArch64.abi) := by
-    sig_implies [Proof.Sha512.compressContract, Proof.Sha512.compressSig, compressWide,
-      Proof.Sha512.compressAArch64, AArch64.abi, AArch64.argRegs]
-      [compressSat, Proof.Sha512.AArch64.satState] using compressSat
-  exact (compressWide_of hv hi.sat_left).of_implies hi
 
 theorem init (iv : Spec.Sha512.HashValue) :
     Verified AArch64.target (Impl.Sha512.AArch64.Stream.init iv) (Spec.Sha512.initContract AArch64.abi iv) :=
@@ -149,9 +118,6 @@ theorem finalizeScratch_of {code : Prog isa} (hv : Verified AArch64.target code 
       [finalizeSat, Proof.Sha512.AArch64.Stream.Finalize.sat, MdStream.AArch64.Finalize.sat,
         Impl.Sha512.AArch64.Stream.params] using finalizeSat
   exact (finalizeWide_of hv hi.sat_left).of_implies hi
-
-theorem compress : Verified AArch64.target Impl.Sha512.AArch64.compress (Proof.Sha512.compressContract AArch64.abi) :=
-  compress_of Proof.Sha512.AArch64.compress_verified
 
 /-- `update`: `updateScratch_of` with its working space in a frame of its own. -/
 theorem update_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.updateAArch64) :

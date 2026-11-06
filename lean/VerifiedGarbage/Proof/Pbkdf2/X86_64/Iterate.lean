@@ -150,7 +150,6 @@ theorem B_ge : 64 ≤ P.B := by rcases hz.dims.B with h | h <;> omega_arith
 `Nat` lemmas rather than by `omega` at each use. -/
 
 theorem Sizes.N_le_B : P.N ≤ P.B := Nat.le_trans (Nat.le_add_right _ _) hz.NL
-theorem Sizes.L_le_B : P.L ≤ P.B := Nat.le_trans (Nat.le_add_left _ _) hz.NL
 theorem Sizes.D_le_B : D ≤ P.B := Nat.le_trans hz.DN hz.N_le_B
 theorem Sizes.B_lt64 : P.B < 2 ^ 64 := Nat.lt_of_le_of_lt (B_le hz) (by decide)
 theorem Sizes.B_le32 : P.B ≤ 2 ^ 32 := Nat.le_trans (B_le hz) (by decide)

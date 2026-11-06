@@ -36,19 +36,6 @@ theorem ea_nat (s : State) (b : Reg) (o : Nat) : s.ea (at_ b o) = s.gpr b + BitV
 
 /-! ## Copies -/
 
-/-- `copy32 src so dst d n` writes the `4 n` bytes at `src + so` to `dst + d`. -/
-theorem copy32_ok {src dst : Reg} (hs : src ≠ .rax) (hd : dst ≠ .rax) (o₁ o₂ : Nat) (n : Nat) :
-    ∀ (rest : List Instr) (s : State) (Q : State → Prop),
-    (∀ k < n, InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 (4 * k)) 4) →
-    (∀ k < n, InRegions s.wr (s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 (4 * k)) 4) →
-    Mem.Sep (s.gpr src + BitVec.ofNat 64 o₁) (4 * n) (s.gpr dst + BitVec.ofNat 64 o₂) (4 * n) →
-    4 * n < 2 ^ 64 →
-    (∀ s', (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr →
-      s'.mem = writeBytes s.mem (s.gpr dst + BitVec.ofNat 64 o₂)
-        (bytesAt s.mem (s.gpr src + BitVec.ofNat 64 o₁) (4 * n)) → WP isa (.block rest) s' Q) →
-    WP isa (.block (Hash.copy32 src o₁ dst o₂ n ++ rest)) s Q := by
-  exact Pbkdf2.X86_64.copy32_ok hs hd o₁ o₂ n
-
 /-- `c` copies of 16-byte words (`cp128`) write the `16 c` bytes at `src + o₁` to `dst + o₂`. -/
 theorem copy128_ok {src dst : Reg} (o₁ o₂ : Nat) (c : Nat) :
     ∀ (rest : List Instr) (s : State) (Q : State → Prop),

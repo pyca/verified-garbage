@@ -21,8 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 The prologue and epilogue, `correct` (the loop over the blocks), constant time,
 and `compress_verified` against `compressX86 b`
-(`Proof/Blake2/X86/Contract.lean`), moved to the shared contract of
-`Spec/Blake2/Contract.lean` (`compressB_verified`).
+(`Proof/Blake2/X86/Contract.lean`).
 -/
 
 @[expose] public section
@@ -323,12 +322,5 @@ theorem compress_verified : Verified X86.target compress (compressX86 Spec.Blake
   ⟨fun s hs => correct (pre_of s hs),
     VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub) (by taint_decide),
     ⟨satState, sat_pre⟩⟩
-
-theorem compressB_verified :
-    Verified X86.target compress (Proof.Blake2.compressBContract X86.abi) :=
-  compress_verified.of_implies (by
-    sig_implies [Proof.Blake2.compressBContract, Proof.Blake2.compressBSig, Proof.Blake2.compressX86,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes, Spec.Blake2.blockBytes]
-      [satState, satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using satState)
 
 end VG.Proof.Blake2.X86.CompressB

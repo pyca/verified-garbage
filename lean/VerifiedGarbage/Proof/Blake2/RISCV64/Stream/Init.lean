@@ -38,8 +38,6 @@ variable (z : Size)
 
 theorem bufOff_eq : bufOff z.bits = 8 * zB z := by cases z <;> rfl
 
-theorem bb_eq : blockBytes z.bits = 16 * zB z := by cases z <;> rfl
-
 theorem word_in {j : Nat} (hj : j < 8) : zB z * j + zB z ≤ bufOff z.bits := by
   rw [bufOff_eq]; have := zB_mul_le z hj; omega
 

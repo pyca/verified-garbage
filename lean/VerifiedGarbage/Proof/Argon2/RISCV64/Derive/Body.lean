@@ -75,9 +75,6 @@ abbrev hiP : Addr := scrP s₀ + BitVec.ofNat 64 2048
 end
 
 theorem entry_sp (s₀ : State) : (entry s₀).sp = E s₀ := rfl
-theorem entry_gpr (s₀ : State) : (entry s₀).gpr = s₀.gpr := rfl
-theorem entry_mem (s₀ : State) : (entry s₀).mem = s₀.mem := rfl
-theorem entry_rd (s₀ : State) : (entry s₀).rd = s₀.rd := rfl
 theorem entry_wr (s₀ : State) : (entry s₀).wr = ⟨at' s₀ 0, 320⟩ :: s₀.wr := by
   rw [show at' s₀ 0 = E s₀ from BitVec.add_zero _]; rfl
 
@@ -132,10 +129,6 @@ theorem E_hi : (E s₀).toNat + 400 ≤ 2 ^ 64 := by
 
 theorem E_al : (E s₀).toNat % 16 = 0 := by
   rw [E_toNat hp]; have := hp.sp_al; have := hp.sp_lo; omega
-
-omit hp in
-/-- The stack the derivation uses, at offsets of `E`. -/
-theorem stk_eq : stkR0 s₀ = ⟨E s₀, 320⟩ := rfl
 
 omit hp in
 theorem stk_sub {d n : Nat} (h : d + n ≤ 320) : Region.Sub ⟨at' s₀ d, n⟩ (stkR0 s₀) :=

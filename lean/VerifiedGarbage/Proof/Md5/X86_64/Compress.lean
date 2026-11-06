@@ -343,7 +343,6 @@ def finalizeX86_64 : Contract X86_64.isa where
 
 end VG.Proof.Md5
 
-
 namespace VG.Proof.Md5.X86_64
 
 open VG VG.X86_64 VG.Impl.Md5.X86_64
@@ -354,18 +353,12 @@ open VG.Spec.Md5 (HashValue Word Block stateAt blockAt compressBlocks compress p
 theorem ofInt_natCast (n : Nat) : BitVec.ofInt 64 (n : Int) = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toInt_eq; simp
 
-theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
-
 theorem contains_offset {base : Addr} {len off n : Nat} (h : off + n ≤ len) (ho : off < 2 ^ 64) :
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofNat 64 off) n := Offset.contains_base base h ho
 
 theorem contains_offset' {base : Addr} {len off n : Nat} (h : off + n ≤ len) (ho : off < 2 ^ 64) :
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofInt 64 (off : Int)) n := by
   rw [ofInt_natCast]; exact contains_offset h ho
-
-theorem sub_offset {base : Addr} {off len len' : Nat} (h : off + len ≤ len') (_ho : off < 2 ^ 64) :
-    Region.Sub ⟨base + BitVec.ofNat 64 off, len⟩ ⟨base, len'⟩ := Offset.sub_base base h
 
 theorem word_sep (p : Addr) {j k : Nat} (hj : j < 4) (hk : k < 4) (h : j ≠ k) :
     Mem.Sep (p + BitVec.ofInt 64 ((4 * j : Nat) : Int)) 4 (p + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 := by
@@ -378,19 +371,6 @@ theorem readW_writeW_word (m : Mem) (p : Addr) (v : Word) {j k : Nat} (hj : j < 
       (p + BitVec.ofInt 64 ((4 * j : Nat) : Int)) 32 =
     m.readW (p + BitVec.ofInt 64 ((4 * j : Nat) : Int)) 32 :=
   Mem.readW_writeW_sep (word_sep p hj hk h) (by decide)
-
-theorem save_sep (p : Addr) {d e : Nat} (hd : d < 2 ^ 32) (he : e < 2 ^ 32)
-    (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
-    Mem.Sep (p + BitVec.ofInt 64 (d : Int)) 8 (p + BitVec.ofInt 64 (e : Int)) 8 := by
-  rw [ofInt_natCast, ofInt_natCast]
-  exact Offset.sep p h (by omega) (by omega)
-
-/-- Distinct 8-byte slots (where the streaming functions save registers). -/
-theorem readW_writeW_save (m : Mem) (p : Addr) (v : BitVec 64) {d e : Nat} (hd : d < 2 ^ 32)
-    (he : e < 2 ^ 32) (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
-    (m.writeW (p + BitVec.ofInt 64 (e : Int)) v).readW (p + BitVec.ofInt 64 (d : Int)) 64 =
-    m.readW (p + BitVec.ofInt 64 (d : Int)) 64 :=
-  Mem.readW_writeW_sep (save_sep p hd he h) (by decide)
 
 theorem stateAt_eq {m : Mem} {p : Addr} {v : HashValue}
     (h : ∀ k : Nat, (hk : k < 4) → m.readW (p + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 = v[k]) :

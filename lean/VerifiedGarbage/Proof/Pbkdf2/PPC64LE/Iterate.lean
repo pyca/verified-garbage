@@ -118,12 +118,6 @@ structure Pre (P : Params) (D Wi : Nat) (s₀ : State) : Prop where
   u_s : (uR D s₀).Disjoint (scR Wi s₀)
   t_s : (tR D s₀).Disjoint (scR Wi s₀)
 
-theorem pre_of {P : Params} {D Wi : Nat} {S : StreamingHash} (hS : S.stateBytes = P.N + P.B)
-    (hD : S.digestBytes = D) {s₀ : State} (h : (iterK S Wi).pre s₀) : Pre P D Wi s₀ := by
-  obtain ⟨h0, h1, h2, h3, h4, h5, h6⟩ := h
-  simp only [hS, hD] at *
-  exact ⟨h0, h1, h2, h3, h4, h5, h6⟩
-
 /-! ## The parts of the scratch space -/
 
 section
@@ -142,12 +136,8 @@ theorem B_ge : 64 ≤ P.B := by rcases hz.dims.B with h | h <;> omega_arith
 `Nat` lemmas rather than by `omega` at each use. -/
 
 theorem Sizes.N_le_B : P.N ≤ P.B := Nat.le_trans (Nat.le_add_right _ _) hz.NL
-theorem Sizes.L_le_B : P.L ≤ P.B := Nat.le_trans (Nat.le_add_left _ _) hz.NL
 theorem Sizes.D_le_B : D ≤ P.B := Nat.le_trans hz.DN hz.N_le_B
 theorem Sizes.B_lt64 : P.B < 2 ^ 64 := Nat.lt_of_le_of_lt (B_le hz) (by decide)
-theorem Sizes.B_le32 : P.B ≤ 2 ^ 32 := Nat.le_trans (B_le hz) (by decide)
-theorem Sizes.N_lt64 : P.N < 2 ^ 64 := Nat.lt_of_le_of_lt hz.N_le_B hz.B_lt64
-theorem Sizes.N_le32 : P.N ≤ 2 ^ 32 := Nat.le_trans hz.N_le_B hz.B_le32
 theorem Sizes.D_lt64 : D < 2 ^ 64 := Nat.lt_of_le_of_lt hz.D_le_B hz.B_lt64
 theorem Sizes.D_le64 : D ≤ 2 ^ 64 := Nat.le_of_lt hz.D_lt64
 theorem Sizes.hvN_W : P.so + 56 + P.N ≤ Wi := Nat.le_trans (Nat.le_add_right _ _) hz.fits
@@ -155,7 +145,6 @@ theorem Sizes.hv_W : P.so + 56 ≤ Wi := Nat.le_trans (Nat.le_add_right _ _) hz.
 theorem Sizes.so_W : P.so ≤ Wi := Nat.le_trans (Nat.le_add_right _ _) hz.hv_W
 theorem Sizes.W_le64 : Wi ≤ 2 ^ 64 := Nat.le_trans hz.W (by decide)
 theorem Sizes.hvN_64 : P.so + 56 + P.N ≤ 2 ^ 64 := Nat.le_trans hz.hvN_W hz.W_le64
-theorem Sizes.hvN_32 : P.so + 56 + P.N ≤ 2 ^ 32 := Nat.le_trans hz.hvN_W (Nat.le_trans hz.W (by decide))
 theorem Sizes.hvNB_64 : P.so + 56 + P.N + P.B ≤ 2 ^ 64 := Nat.le_trans hz.fits hz.W_le64
 theorem Sizes.hvNN_W : P.so + 56 + P.N + P.N ≤ Wi :=
   Nat.le_trans (Nat.add_le_add_left hz.N_le_B _) hz.fits

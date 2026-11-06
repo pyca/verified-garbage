@@ -99,9 +99,6 @@ theorem readW_writeW_self_w (m : Mem) (a : Addr) (v : BitVec w) : (m.writeW a v)
   · exact Mem.readW_writeW_self64 m a v
   · exact Mem.readW_writeW_self32 m a v
 
-theorem setWidth_back (x : BitVec w) : (x.setWidth 64).setWidth w = x := by
-  rw [BitVec.setWidth_setWidth_of_le _ (w_le hw), BitVec.setWidth_eq]
-
 /-- A shift left keeps the low bits of the shifted low bits. -/
 theorem setWidth_shl (x : BitVec 64) : (x <<< 8).setWidth w = x.setWidth w <<< 8 := by
   have := w_le hw

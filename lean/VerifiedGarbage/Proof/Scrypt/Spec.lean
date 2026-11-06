@@ -34,14 +34,6 @@ theorem stepN_get (x : Vector Word 16) {i j k : Nat} (n : Nat) (hi : i < 16) (hj
 
 /-! ## Bytes and words -/
 
-theorem eq_of_bytes32 {x y : BitVec 32}
-    (h : ∀ j < 4, x.extractLsb' (8 * j) 8 = y.extractLsb' (8 * j) 8) : x = y := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  have e := congrArg (fun z : BitVec 8 => z.getLsbD (i % 8)) (h (i / 8) (by omega))
-  simp only [BitVec.getLsbD_extractLsb'] at e
-  simpa [Nat.mod_lt i (show 8 > 0 by omega), show 8 * (i / 8) + i % 8 = i by omega] using e
-
 theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
     (bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
   simp [bytesAt, List.getD_eq_getElem?_getD, hi]

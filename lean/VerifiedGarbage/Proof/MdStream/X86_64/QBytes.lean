@@ -39,8 +39,6 @@ theorem qbyte_shr (x : BitVec 64) (k i : Nat) :
 theorem qbyte_or (a b : BitVec 64) (i : Nat) : qbyte (a ||| b) i = qbyte a i ||| qbyte b i :=
   BitVec.extractLsb'_or
 
-theorem qbyte_zero (i : Nat) : qbyte 0 i = 0 := BitVec.extractLsb'_zero
-
 /-- `0x80` shifted left by `r` bytes is byte `r`, and the others zeros. -/
 theorem qbyte_mark : ∀ r < 8, ∀ i < 8,
     qbyte (BitVec.ofNat 64 0x80 <<< (8 * r)) i = if i = r then 0x80 else 0 := by

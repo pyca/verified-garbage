@@ -55,9 +55,6 @@ def saved : List (Reg × Nat) := [(.ebx, 112), (.esi, 116), (.edi, 120), (.ebp, 
 /-- Save them, with `scratch` in `b`. -/
 def save (b : Reg) : List Instr := saved.map fun (r, d) => .store (at_ b d) r
 
-/-- Restore them, with `scratch` in `b` (which must not be one of them). -/
-def restore (b : Reg) : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ b d))
-
 /-- Compress the block at `eax` into the hash value at `st`, with the scratch
 space at `scr`: a call of `vg_sha256_compress(st, eax, 1, scr)`, its
 arguments pushed last to first. -/

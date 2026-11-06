@@ -29,26 +29,12 @@ no stack.
 
 namespace VG.Proof.Sha1.X86_64.Shared
 
-theorem compress :
-    Verified X86_64.target Impl.Sha1.X86_64.compress (Proof.Sha1.compressContract X86_64.abi) :=
-  Proof.Sha1.X86_64.compress_verified.of_implies (by
-    sig_implies [Proof.Sha1.compressContract, Proof.Sha1.compressSig,
-      Proof.Sha1.compressX86_64, X86_64.abi, X86_64.argRegs]
-      [Proof.Sha1.X86_64.satState] using Proof.Sha1.X86_64.satState)
-
 theorem init :
     Verified X86_64.target Impl.Sha1.X86_64.Stream.init (Spec.Sha1.initContract X86_64.abi) :=
   Proof.Sha1.X86_64.Stream.init_verified.of_implies (by
     contract_implies [Spec.Sha1.initContract, Spec.Sha1.initSig, Proof.Sha1.initX86_64,
       X86_64.abi, X86_64.argRegs]
       [Proof.Sha1.X86_64.Stream.initSat] using Proof.Sha1.X86_64.Stream.initSat)
-
-theorem compress_shani :
-    Verified X86_64.target Impl.Sha1.X86_64.ShaNi.compress (Proof.Sha1.compressContract X86_64.abi) :=
-  Proof.Sha1.X86_64.ShaNi.compress_verified.of_implies (by
-    sig_implies [Proof.Sha1.compressContract, Proof.Sha1.compressSig,
-      Proof.Sha1.compressX86_64, X86_64.abi, X86_64.argRegs]
-      [Proof.Sha1.X86_64.satState] using Proof.Sha1.X86_64.satState)
 
 theorem updateScratchImplies :
     Proof.Sha1.updateX86_64.Implies (Proof.Sha1.updateScratchContract X86_64.abi 8) := by

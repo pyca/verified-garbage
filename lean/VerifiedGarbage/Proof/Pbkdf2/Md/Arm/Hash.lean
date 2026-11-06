@@ -62,8 +62,6 @@ include hz
 theorem B_range : 64 ≤ H.B ∧ H.B ≤ 128 := by
   rcases hz.B with h | h <;> rw [h] <;> decide
 
-theorem B_ge : 64 ≤ H.B := hz.B_range.1
-
 theorem B4 : H.B % 4 = 0 := by
   rcases hz.B with h | h <;> rw [h] <;> decide
 
@@ -128,15 +126,9 @@ theorem B_le : H.B ≤ 128 := by rcases hH.sizes.B with h | h <;> omega
 include hH in
 theorem B_ge : 64 ≤ H.B := by rcases hH.sizes.B with h | h <;> omega
 
-include hH in
-theorem B4 : H.B % 4 = 0 := by rcases hH.sizes.B with h | h <;> omega
-
 /-- The hash function of the specification is `md` from `iv`. -/
 theorem link : hH.md.Link hH.SH hH.iv H.D :=
   ⟨hH.hB, hH.hS, hH.hD, hH.repr, hH.hash, hH.sizes.DN, by have := hH.sizes.pad; have := hH.sizes.NL; omega⟩
-
-/-- The length field's bytes, as stored. -/
-theorem lenBytes_eq : wordsBytes (lenWords H.be H.L (H.B + H.D)) = hH.md.lenBytes (H.B + H.D) := hH.len
 
 theorem lenWords_length : (lenWords H.be H.L (H.B + H.D)).length = H.L / 4 := by simp [lenWords]
 

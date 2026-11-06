@@ -218,9 +218,6 @@ theorem vmem : ((pushed args4 s).callEntry.withRegions (rd w s.sp blk n) (wr w s
 
 theorem hn' : (BitVec.ofNat 32 n).toNat = n := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h.hn
 
-omit h in
-theorem argsSub : Region.Sub ⟨State.addr s.sp - 16, 16⟩ (below s) := fun _ h => h
-
 theorem pre : (compressArm P).pre ((pushed args4 s).callEntry.withRegions (rd w s.sp blk n) (wr w st scr)) := by
   simp only [compressArm, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, ce0, ce1, ce2,
     pushed_gpr, h.arg3 _ vsp vmem, h.sa0 _ vsp, h.r0, h.r1, h.r2, h.hn']
@@ -473,10 +470,6 @@ theorem wp_movt {d : Reg} {imm : BitVec 16}
 
 end
 
-theorem op2_ror {s : State} {r : Reg} {n : Nat} (h : 1 ≤ n ∧ n ≤ 31) :
-    (Op2.shifted r .ror n).eval s = some ((s.gpr r).rotateRight n) := by
-  simp [Op2.eval, h]
-
 /-! ## 64-bit counts in register pairs -/
 
 theorem toNat_append32 (hi lo : BitVec 32) : (hi ++ lo : BitVec 64).toNat = hi.toNat * 2 ^ 32 + lo.toNat := by
@@ -497,11 +490,6 @@ theorem add64 (lo hi y : BitVec 32) :
   · simp only [hc, decide_false, Bool.false_eq_true, ite_false, toNat_append32, BitVec.toNat_add,
       BitVec.toNat_setWidth, e0]
     omega_arith
-
-/-- The low word of a 64-bit number. -/
-def lo32 (x : Nat) : BitVec 32 := BitVec.ofNat 32 x
-/-- The high word of a 64-bit number (below 2⁶⁴). -/
-def hi32 (x : Nat) : BitVec 32 := BitVec.ofNat 32 (x / 2 ^ 32)
 
 /-- Adding `y < 2³²` to a count `x` (modulo 2⁶⁴) in a register pair. -/
 theorem add64_ofNat {lo hi : BitVec 32} {x y : Nat} (h : (hi ++ lo : BitVec 64) = BitVec.ofNat 64 x)
@@ -597,11 +585,6 @@ theorem ne_iff (s : State) {k : Nat} (h : s.z = (BitVec.ofNat 32 k == 0)) (hk : 
   show VG.Arm.eval .ne s = _
   rw [eval_ne, h, ofNat_beq_zero hk]
   simp
-
-theorem eq_iff (s : State) {k : Nat} (h : s.z = (BitVec.ofNat 32 k == 0)) (hk : k < 2 ^ 32) :
-    isa.eval .eq s = some (decide (k = 0)) := by
-  show VG.Arm.eval .eq s = _
-  rw [eval_eq, h, ofNat_beq_zero hk]
 
 theorem contains_prefix (q : Addr) {j k : Nat} (h : j ≤ k) : (⟨q, k⟩ : Region).Contains q j := by
   simp [Region.Contains, h]

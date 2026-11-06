@@ -30,14 +30,6 @@ in a frame that allocates it (`Verified.stackScratch`).
 
 namespace VG.Proof.Sha1.Arm.Shared
 
-theorem compress :
-    Verified Arm.target Impl.Sha1.Arm.compress (Proof.Sha1.compressContract Arm.abi) :=
-  Proof.Sha1.Arm.compress_verified.of_implies (by
-    sig_implies [Proof.Sha1.compressContract, Proof.Sha1.compressSig,
-      Proof.Sha1.compressArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      [Proof.Sha1.Arm.satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
-      Mem.read] using Proof.Sha1.Arm.satState)
-
 theorem init : Verified Arm.target Impl.Sha1.Arm.Stream.init (Spec.Sha1.initContract Arm.abi) :=
   Proof.Sha1.Arm.Stream.init_verified.of_implies (by
     sig_implies [Spec.Sha1.initContract, Spec.Sha1.initSig, Proof.Sha1.initArm, Arm.abi,

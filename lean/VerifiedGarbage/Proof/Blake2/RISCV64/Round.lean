@@ -40,8 +40,6 @@ abbrev zW : Size → Width
 /-- The size of a word in bytes. -/
 abbrev zB (z : Size) : Nat := (zW z).bytes
 
-theorem sz_bits (z : Size) : sz z.bits = z := by cases z <;> rfl
-
 theorem wd_bits (z : Size) : wd z.bits = zW z := by cases z <;> rfl
 
 theorem ws_bits (z : Size) : ws z.bits = zB z := by cases z <;> rfl
@@ -178,7 +176,6 @@ theorem wreg_ne_of {q : Reg} (hq : q ∉ wregs) {k : Nat} (hk : k < 16) : wreg k
   fun e => hq (e ▸ wreg_mem hk)
 
 theorem T_not_mem : T ∉ wregs := by decide
-theorem RT_not_mem : RT ∉ wregs := by decide
 theorem SB_not_mem : SB ∉ wregs := by decide
 
 section Rounds

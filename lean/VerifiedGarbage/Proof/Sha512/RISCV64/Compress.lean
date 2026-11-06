@@ -275,9 +275,6 @@ structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends Common s₀ i
 
 /-! ## Loading the hash value -/
 
-theorem var0 {k : Nat} (hk : k < 8) : var 0 k = work.getD k .t0 := by
-  simp only [var, Nat.zero_mod, Nat.sub_zero, Nat.add_mod_right, Nat.mod_eq_of_lt hk]
-
 theorem var0_inj {j k : Nat} (hj : j < 8) (hk : k < 8) (h : var 0 j = var 0 k) : j = k := by
   have key : ∀ j < 8, ∀ k < 8, var 0 j = var 0 k → j = k := by decide
   exact key j hj k hk h

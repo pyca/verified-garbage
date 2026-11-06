@@ -145,10 +145,6 @@ theorem finalize512_224_verified :
       (fun _ _ h₁ h₂ hp => MdStream.X86.Finalize.agree₀D ⟨dims.1, dims.2, dims.3, dims.4, dims.5⟩
         (by decide) h₁ h₂ hp) (by taint_decide))
 
-/-- A state satisfying the precondition of `finalizeDigest` with a `D`-byte
-digest. -/
-abbrev satD (D : Nat) : State := MdStream.X86.Finalize.satRD params 272 D
-
 end Finalize
 
 end VG.Proof.Sha512.X86.Stream

@@ -342,8 +342,6 @@ include hp
 omit hp in
 theorem argR_eq : argR s₀ = ⟨addr (E s₀) 4, 32⟩ := rfl
 
-theorem stk_arg : (stkR s₀).Disjoint (argR s₀) := hp.b_a
-
 theorem KR.argEq {s : State} (hk : KR F s₀ s) {i : Nat} (hi : i < 8) : arg s i = arg s₀ i := by
   have hd : ∀ r ∈ wrs F s₀, Region.Disjoint ⟨addr (E s₀) 4, 32⟩ r := by
     rw [← argR_eq]

@@ -313,8 +313,6 @@ namespace VG.Proof.Sha1.X86
 open VG VG.X86 VG.Impl.Sha1.X86
 open VG.Spec.Sha1 (HashValue Word Block W stateAt blockAt compressBlocks compress parseBlock)
 
-theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = addr (s.gpr b) d := rfl
-
 theorem contains_offset {base : Addr} {len off n : Nat} (h : off + n ≤ len) (ho : off < 2 ^ 64) :
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofNat 64 off) n :=
   Offset.contains_base base h ho
@@ -492,12 +490,6 @@ theorem readW_writeW_scr_st {s₀ : State} (hp : Pre s₀) (m : Mem) (v : Word) 
     (he : e + 4 ≤ 20) (hd : d + 4 ≤ 112) :
     (m.writeW (addr (scr s₀) d) v).readW (addr (st s₀) e) 32 = m.readW (addr (st s₀) e) 32 :=
   Mem.readW_writeW_sep (st_scr_sep hp he hd) (by decide)
-
-/-- Reading the scratch buffer after writing the hash value. -/
-theorem readW_writeW_st_scr {s₀ : State} (hp : Pre s₀) (m : Mem) (v : Word) {e d : Nat}
-    (he : e + 4 ≤ 20) (hd : d + 4 ≤ 112) :
-    (m.writeW (addr (st s₀) e) v).readW (addr (scr s₀) d) 32 = m.readW (addr (scr s₀) d) 32 :=
-  Mem.readW_writeW_sep (fun x h₁ h₂ => st_scr_sep hp he hd x h₂ h₁) (by decide)
 
 /-! ## The loop invariant -/
 

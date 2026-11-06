@@ -39,9 +39,6 @@ theorem wp_movImm {d : Reg} {v : BitVec 32}
 
 end
 
-theorem iv_getD {k : Nat} (hk : k < 8) : Spec.Blake2.s.IV.toList.getD k 0 = Spec.Blake2.s.IV[k] := by
-  simp [List.getD_eq_getElem?_getD, hk]
-
 /-! ## Copying the block -/
 
 structure CInv (V B : BitVec 32) (s : State) (n : Nat) (s' : State) : Prop where

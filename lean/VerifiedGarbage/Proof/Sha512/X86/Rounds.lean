@@ -26,9 +26,6 @@ open VG.Impl.Sha512.X86 (at_ sc T Y0 Y1 Z0 Z1 ld st add64 add64m loadW)
 open VG.Proof.Sha512.Word64 (lo hi lo_add hi_add lo_append hi_append hi_append_lo)
 open VG.Proof.Sha256.X86.Stream (Upd Mupd Fupd WP.cons wp_store wp_bswap wp_shr)
 
-theorem lo_eq (x : BitVec 64) : Impl.Sha512.X86.lo x = lo x := rfl
-theorem hi_eq (x : BitVec 64) : Impl.Sha512.X86.hi x = hi x := rfl
-
 /-! ## States -/
 
 /-- `s'` is `s` with (at most) the registers `ds` changed (and the flags). -/
@@ -70,10 +67,6 @@ structure Wrote (ds : List Reg) (s s' : State) (m : Mem) : Prop where
 theorem Only.wrote {ds : List Reg} {s₁ s₂ s₃ : State} {m : Mem} (h : Only ds s₁ s₂) (u : Mupd s₂ s₃ m) :
     Wrote ds s₁ s₃ m :=
   ⟨fun r hr => by rw [u.gpr, h.gpr r hr], u.mem, u.rd.trans h.rd, u.wr.trans h.wr⟩
-
-theorem Wrote.mono' {ds es : List Reg} {s s' : State} {m : Mem} (w : Wrote ds s s' m)
-    (h : ∀ r ∈ ds, r ∈ es) : Wrote es s s' m :=
-  ⟨fun r hr => w.gpr r fun hd => hr (h r hd), w.mem, w.rd, w.wr⟩
 
 /-! ## Memory -/
 
@@ -141,11 +134,6 @@ theorem wp_andS {d : Reg} {src : Src} {v : BitVec 32} (h : readSrc s src = some 
     WP isa (.block (.alu .and d src :: is)) s Q :=
   WP.cons (by simp [exec, execAlu, h]; rfl) (k _ (Upd.flags _ _ _ _ _ _))
 
-theorem wp_orS {d : Reg} {src : Src} {v : BitVec 32} (h : readSrc s src = some v)
-    (k : ∀ s', Upd s s' d (s.gpr d ||| v) → WP isa (.block is) s' Q) :
-    WP isa (.block (.alu .or d src :: is)) s Q :=
-  WP.cons (by simp [exec, execAlu, h]; rfl) (k _ (Upd.flags _ _ _ _ _ _))
-
 theorem wp_ror {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 31)
     (k : ∀ s', Upd s s' d ((s.gpr d).rotateRight n) → WP isa (.block is) s' Q) :
     WP isa (.block (.shift .ror d n :: is)) s Q :=
@@ -158,18 +146,6 @@ theorem carry_eq (a b : BitVec 32) :
     (BitVec.ofBool (decide (2 ^ 32 ≤ a.toNat + b.toNat))).setWidth 32 =
       if 2 ^ 32 ≤ a.toNat + b.toNat then 1 else 0 := by
   by_cases h : 2 ^ 32 ≤ a.toNat + b.toNat <;> simp only [h, decide_true, decide_false, ↓reduceIte] <;> rfl
-
-/-- A left shift, as the code computes it: a rotation, masked. -/
-theorem ror_and (x : BitVec 32) {n : Nat} (h0 : 0 < n) (h : n < 32) :
-    x.rotateRight (32 - n) &&& (BitVec.allOnes 32 <<< n) = x <<< n := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [BitVec.getLsbD_and, BitVec.getLsbD_rotateRight, BitVec.getLsbD_shiftLeft,
-    BitVec.getLsbD_allOnes, Nat.mod_eq_of_lt (show 32 - n < 32 by omega)]
-  by_cases hc : i < n
-  · simp [hc, hi]
-  · simp [hc, hi, show ¬ i < 32 - (32 - n) by omega, show i - (32 - (32 - n)) = i - n by omega]
-    omega
 
 /-! ## Loads, stores and additions of 64-bit words in the scratch buffer -/
 

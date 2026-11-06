@@ -21,26 +21,10 @@ namespace VG.Proof.Sha512
 
 open VG.Spec VG.Spec.Sha512
 
-/-- `vg_sha512_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166])`.
-`scratch` is working space, sized for the tightest target: x86-64 with AVX2
-keeps the message schedules of two blocks in it (1280 bytes), and saves six
-callee-saved registers. The other SHA-512 functions, and the HMAC and PBKDF2
-functions of the SHA-512 family, pass theirs to it, so theirs have room for
-it and for what they keep across its calls. -/
-def compressSig : Sig where
-  params := [("state", .array true .u64 8), ("blocks", .slice false (.array .u8 128) "n"),
-    ("scratch", .array true .u64 166)]
-
-/-- Updates the hash value at `state` with the `n` 128-byte blocks at
-`blocks`. The hash value and the blocks are secret. -/
-def compressContract {M : ISA} (A : Abi M) : Contract M :=
-  compressSig.contract A (post := fun state blocks n _scratch m m' _ =>
-    stateAt m' state = compressBlocks (stateAt m state) m blocks n.toNat)
-
 /-- `vg_sha512_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172])`:
 `vg_sha512_update` with its working space passed in `scratch`, for functions
 that call it with theirs (HMAC's, PBKDF2's, Ed25519's): 1376 bytes, room for
-the compression function's scratch (`compressSig`, 1328 bytes) and the
+the compression function's scratch (1328 bytes) and the
 function's own spills (48 bytes: six saved registers). -/
 def updateScratchSig : Sig where
   params := [("state", .array true .u8 192), ("count", .int .u64 true),

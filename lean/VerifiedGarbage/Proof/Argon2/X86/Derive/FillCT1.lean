@@ -56,7 +56,6 @@ theorem arg_eq {i : Nat} (hi : i < 18) : arg s₀₁ i = arg s₀₂ i := h.2 i 
 theorem memP_eq : memP s₀₁ = memP s₀₂ := h.2 13 (by decide)
 theorem scrP_eq : scrP s₀₁ = scrP s₀₂ := h.2 15 (by decide)
 theorem outP_eq : outP s₀₁ = outP s₀₂ := h.2 16 (by decide)
-theorem outL_eq : outL s₀₁ = outL s₀₂ := by simp only [outL, h.2 17 (by decide)]
 theorem blocksN_eq : blocksN s₀₁ = blocksN s₀₂ := by simp only [blocksN, h.2 14 (by decide)]
 theorem lanesN_eq : lanesN s₀₁ = lanesN s₀₂ := by simp only [lanesN, h.2 7 (by decide)]
 theorem itersN_eq : itersN s₀₁ = itersN s₀₂ := by simp only [itersN, h.2 5 (by decide)]
@@ -64,8 +63,6 @@ theorem itersN_eq : itersN s₀₁ = itersN s₀₂ := by simp only [itersN, h.2
 theorem prm_eq : prm s₀₁ = prm s₀₂ := by
   simp only [prm, kindV, itersN, mcostN, lanesN, outL, h.2 0 (by decide), h.2 5 (by decide),
     h.2 6 (by decide), h.2 7 (by decide), h.2 17 (by decide)]
-
-theorem esp_eq : s₀₁.gpr .esp = s₀₂.gpr .esp := h.1
 
 end Pub2
 
@@ -391,14 +388,6 @@ theorem dependentWord_rel {pass slice lane index ctr : Nat} (hl : lane < lanesN 
     simp only [List.mem_singleton, forall_eq]; rw [h.1.2, h.2.2, pe, T.pb.memP_eq]⟩) ⟨_, by taint_decide⟩
 
 end Two
-
-theorem W.of_lw {s₀ s t : State} {pass slice lane index ctr : Nat} (h : W s₀ pass slice lane index ctr s)
-    (it : Inv s₀ t) (hl : ∀ d ∈ ws0, lw s₀ t d = lw s₀ s d) : W s₀ pass slice lane index ctr t :=
-  ⟨it, Prm.of_lw h.pr fun d hd => hl d (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; rcases hd with rfl | rfl | rfl | rfl <;> decide),
-    h.pos.of_lw fun d hd => hl d (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; rcases hd with rfl | rfl | rfl | rfl <;> decide),
-    (hl 88 (by decide)).trans h.ctr⟩
 
 /-! ## The address block -/
 

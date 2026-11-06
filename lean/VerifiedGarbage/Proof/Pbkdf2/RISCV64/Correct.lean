@@ -17,8 +17,7 @@ public meta import VerifiedGarbage.Impl.Pbkdf2.RISCV64
 `ct` is the taint analysis of `main` after the entry block, which
 zero-extends `n`: `n` is public only in its low 32 bits, so the two runs
 agree on the whole of `a2` only once correctness says what the block leaves
-there (`RelCT.wpDep`). `verified` moves `correct` (`IterateMain.lean`) to the
-shared contract of an instance of the hash function, with no stack.
+there (`RelCT.wpDep`).
 -/
 
 @[expose] public section
@@ -84,32 +83,6 @@ theorem iterImp {I : Spec.Hmac.Instance} (hs : ∃ s, (Proof.Pbkdf2.Instance.ite
     (iterK I.S (8 * I.scratch)).Implies (Proof.Pbkdf2.Instance.iterateContract I RISCV64.abi 0) := by
   generic_implies [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
     iterK, RISCV64.abi, RISCV64.argRegs] using hs
-
-/-- `iterate` against the shared contract of an instance `I` of the hash
-function, with the `Wi` bytes of scratch space it uses, given its constant
-time. -/
-theorem verified {P : It} {Wi L : Nat} {H : Md P.B P.N L} {iv : H.HV} {I : Spec.Hmac.Instance}
-    (ho : HashOk P Wi I.S H iv) (hf : CalleeOk H P.CW P.cmpC) (hfit : Wi ≤ 8 * I.scratch)
-    (ct : ConstantTime isa (iterK I.S Wi).pre (iterK I.S Wi).pub P.iterate)
-    (hs : ∃ s, (Proof.Pbkdf2.Instance.iterateContract I RISCV64.abi 0).pre s) :
-    Verified RISCV64.target P.iterate (Proof.Pbkdf2.Instance.iterateContract I RISCV64.abi 0) := by
-  have imp := iterImp hs
-  have hS : I.S.stateBytes = P.N + P.B := ho.link.hS
-  have hD : I.S.digestBytes = P.D := ho.link.hD
-  have wide : ∀ s, (iterK I.S (8 * I.scratch)).pre s →
-      (iterK I.S Wi).pre (s.withRegions s.rd [⟨s.gpr .a3, I.S.digestBytes⟩, ⟨s.gpr .a4, Wi⟩]) := by
-    intro s ⟨h1, _, h3, h4, h5, h6, h7⟩
-    exact ⟨h1, rfl, h3, h4.sub_right (Region.sub_prefix hfit), h5, h6.sub_right (Region.sub_prefix hfit),
-      h7.sub_right (Region.sub_prefix hfit)⟩
-  have v : Verified RISCV64.target P.iterate (iterK I.S Wi) :=
-    ⟨fun s hs => by
-      obtain ⟨t, s', he, h₁, h₂⟩ := correct ho hf (pre_of hS hD hs); exact ⟨t, s', he, h₁, h₂⟩, ct,
-      imp.sat_left.elim fun s h => ⟨_, wide s h⟩⟩
-  refine (Verified.widen v (fun s => [⟨s.gpr .a3, I.S.digestBytes⟩, ⟨s.gpr .a4, Wi⟩]) wide
-      (fun _ h => ?_) (fun _ _ _ h => h) (fun _ _ _ _ h => h) imp.sat_left).of_implies imp
-  obtain ⟨_, h2, _⟩ := h
-  rw [h2]
-  exact .cons ⟨rfl, Nat.le_refl _⟩ (.cons ⟨rfl, hfit⟩ .nil)
 
 /-- A state satisfying `iterate`'s precondition, with states of `S` bytes, a
 digest of `D` bytes and `sc` bytes of scratch space. -/

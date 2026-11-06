@@ -78,25 +78,6 @@ theorem inputArgs_rel (offset : Nat)
     (fun _ _ h => ⟨h.1, by
       intro r hr; simp only [Taint.ofRegs, RegSet.mem_ofList, List.mem_singleton] at hr; subst r; exact h.2⟩) check
 
-/-- All four concrete input blocks use their checked public base address. -/
-theorem inputs_rel :
-    RelCT isa AgreeBases (.block (lengthArgs passwordLenOffset)) (fun _ _ => True) ∧
-    RelCT isa AgreeBases (.block (lengthArgs saltLenOffset)) (fun _ _ => True) ∧
-    RelCT isa AgreeBases (.block (lengthArgs secretLenOffset)) (fun _ _ => True) ∧
-    RelCT isa AgreeBases (.block (lengthArgs adLenOffset)) (fun _ _ => True) ∧
-    RelCT isa (fun s t => s.sp = t.sp ∧ s.gpr .x19 = t.gpr .x19)
-      (.block (inputArgs passwordOffset)) (fun _ _ => True) ∧
-    RelCT isa (fun s t => s.sp = t.sp ∧ s.gpr .x19 = t.gpr .x19)
-      (.block (inputArgs saltOffset)) (fun _ _ => True) ∧
-    RelCT isa (fun s t => s.sp = t.sp ∧ s.gpr .x19 = t.gpr .x19)
-      (.block (inputArgs secretOffset)) (fun _ _ => True) ∧
-    RelCT isa (fun s t => s.sp = t.sp ∧ s.gpr .x19 = t.gpr .x19)
-      (.block (inputArgs adOffset)) (fun _ _ => True) :=
-  ⟨lengthArgs_rel _ ⟨_, by taint_decide⟩, lengthArgs_rel _ ⟨_, by taint_decide⟩,
-    lengthArgs_rel _ ⟨_, by taint_decide⟩, lengthArgs_rel _ ⟨_, by taint_decide⟩,
-    inputArgs_rel _ ⟨_, by taint_decide⟩, inputArgs_rel _ ⟨_, by taint_decide⟩,
-    inputArgs_rel _ ⟨_, by taint_decide⟩, inputArgs_rel _ ⟨_, by taint_decide⟩⟩
-
 end VG.Proof.Argon2.AArch64.Initial
 end
 

@@ -245,10 +245,6 @@ theorem chooseLength_rel : RelCT isa (AgreeRegs publicRegs) chooseLength
   RelCT.taintRegs (τ := Taint.ofRegs publicRegs)
     (fun _ _ hp => hp.taint) (.x1 :: publicRegs) (by taint_decide)
 
-theorem copy_rel : RelCT isa (AgreeRegs (.x8 :: publicRegs)) copy (AgreeRegs publicRegs) :=
-  RelCT.taintRegs (τ := Taint.ofRegs (.x8 :: publicRegs))
-    (fun _ _ hp => hp.taint) publicRegs (by taint_decide)
-
 theorem emitPrefix_rel : RelCT isa (AgreeRegs publicRegs) emitPrefix (AgreeRegs publicRegs) :=
   RelCT.taintRegs (τ := Taint.ofRegs publicRegs)
     (fun _ _ hp => hp.taint) publicRegs (by taint_decide)

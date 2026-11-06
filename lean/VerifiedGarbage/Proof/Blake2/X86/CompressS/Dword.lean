@@ -3,7 +3,6 @@ public import VerifiedGarbage.TCB.X86.Sse
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 
-
 /-!
 # BLAKE2s on x86 (32-bit): what the doubleword lemmas leave out
 
@@ -22,12 +21,6 @@ theorem dword_movd_0 (v : BitVec 32) : dword ((0 : BitVec 96) ++ v) 0 = v := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [dword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hj, decide_true,
     Bool.true_and, Nat.mul_zero, Nat.zero_add, ite_true]
-
-theorem dword_movd_1 (v : BitVec 32) : dword ((0 : BitVec 96) ++ v) 1 = 0 := by
-  apply BitVec.eq_of_getLsbD_eq; intro j hj
-  simp only [dword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hj, decide_true,
-    Bool.true_and, Nat.mul_one, show ¬ 32 + j < 32 by omega, ite_false]
-  simp
 
 /-- A rotation to the right as two shifts. -/
 theorem shr_or_shl (x : BitVec 32) {k : Nat} (hk : k < 32) :

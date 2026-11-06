@@ -22,7 +22,6 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Scrypt.Contract
 
 /-! Direct V-table filling, keeping the intermediate X in V[i]. -/
 
@@ -103,7 +102,6 @@ theorem loc_kept {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i ≤ NN s₀) {
 theorem complete {s₀ s : State} (h : Inv s₀ (NN s₀) s) : Inv2 s₀ (NN s₀) s :=
   ⟨h.le, h.regs.rd, h.regs.wr, h.regs.rsp, h.regs.rbx, h.regs.rbp, h.regs.r12,
     h.regs.r13, h.regs.r14, h.regs.r15, h.frame, h.kept, by simpa only [loc, ite_true] using h.x, h.done⟩
-
 
 theorem init_ok {s₀ : State} (hp : Pre s₀) {s : State} (h : Inv2 s₀ 0 s) :
     WP isa fillInit s (Inv s₀ 0) := by
@@ -221,7 +219,6 @@ theorem args_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < NN s₀) {s :
     have hl := of_decide_eq_false hb
     exact WP.block_nil ⟨⟨kr, di, tsi, cx, by rw [loc, ite_eq_right hl]; exact dx, r8⟩, mm⟩
 
-
 theorem step_ok {c : Prog isa} (hS : BlockMixSpec c) {s₀ : State} (hp : Pre s₀) {i : Nat}
     (hi : i < NN s₀) {s : State} (h : Inv s₀ i s) :
     WP isa (fillStep c) s fun s' => Inv s₀ (i + 1) s' ∧ s'.zf = some (decide (i + 1 = NN s₀)) := by
@@ -280,7 +277,6 @@ theorem fill_ok {c : Prog isa} (hS : BlockMixSpec c) {s₀ : State} (hp : Pre s�
   refine WP.seq (WP.mono (init_ok hp h) fun t ht => ?_)
   exact WP.mono (count_loop (NN_pos hp) (Inv s₀) (fun _ hi _ h => step_ok hS hp hi h) ht)
     fun _ h => complete h
-
 
 theorem call_pre {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < NN s₀) {s : State}
     (ha : Ready s₀ i s) :
@@ -492,23 +488,5 @@ theorem roMix_ct : ConstantTime isa Proof.Scrypt.roMixX86_64.pre Proof.Scrypt.ro
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂
   exact (roMix_rel (pre_of h₁) (pre_of h₂) (pubEq_of hpub) hpub.2.2.2.2.2.2.2
     _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
-
-theorem roMix_verified :
-    Verified X86_64.target Impl.Scrypt.X86_64.roMixDirect (Proof.Scrypt.roMixContract X86_64.abi 16) :=
-  Verified.of_correct roMix_correct roMix_ct
-    { pre := by
-        sig_implies_pre [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
-          Proof.Scrypt.roMixX86_64, X86_64.abi, X86_64.argRegs]
-      post := by
-        sig_implies_post [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
-          Proof.Scrypt.roMixX86_64, X86_64.abi, X86_64.argRegs]
-      pub := by
-        sig_implies_pub [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
-          Proof.Scrypt.roMixX86_64, X86_64.abi, X86_64.argRegs]
-      sat := by
-        sig_implies_sat [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig,
-          Proof.Scrypt.roMixX86_64, X86_64.abi, X86_64.argRegs,
-          Proof.Scrypt.X86_64.RoMix.satState]
-          [Proof.Scrypt.X86_64.RoMix.satState] using Proof.Scrypt.X86_64.RoMix.satState }
 
 end VG.Proof.Scrypt.X86_64.RoMix.DirectFill

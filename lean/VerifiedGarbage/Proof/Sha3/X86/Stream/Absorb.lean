@@ -103,8 +103,6 @@ theorem len_lt (s₀ : State) : len s₀ < 2 ^ 32 := (arg s₀ 4).isLt
 
 theorem argR_eq (s₀ : State) : argR s₀ = ⟨addr (E s₀) 4, 24⟩ := rfl
 
-theorem arg_eq (s₀ : State) (i : Nat) : s₀.mem.readW (addr (E s₀) (4 + 4 * i)) 32 = arg s₀ i := rfl
-
 namespace Pre
 variable {s₀ : State} (hp : Pre s₀)
 include hp

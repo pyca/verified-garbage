@@ -80,7 +80,6 @@ theorem count_loop {body : Prog isa} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^ 64) (
   · exact .inl ⟨by rw [hz]; simp [hl], hl ▸ hi'⟩
   · exact .inr ⟨by rw [hz]; simp; omega_nat, n - (k + 1), by omega_nat, k + 1, rfl, by omega_nat, hi'⟩
 
-
 /-- After `k` bytes of a byte copy from `A` to `B`, counted in `x24`. -/
 structure CopyInv (s : State) (A B : Addr) (k : Nat) (t : State) : Prop where
   rd : t.rd = s.rd
@@ -158,9 +157,6 @@ theorem SavedRegs.frame {scr : Addr} {s₀ : State} {m m' : Mem} (h : SavedRegs 
 theorem slot_in {rs : List Region} {scr : Addr} {L : Nat} (h : ⟨scr, L⟩ ∈ rs) (hL : 8 * H.W + 56 ≤ L)
     (hW : H.W ≤ 1024) {i : Nat} (hi : i < 7) : InRegions rs (slot H scr i) 8 :=
   ⟨_, h, contains_offset (by omega_nat) (by omega_nat)⟩
-
-theorem slot_eq (scr : Addr) {o : Nat} (i : Nat) (h : o = 8 * H.W + 8 * i) :
-    scr + BitVec.ofNat 64 o = slot H scr i := by rw [h]
 
 /-- Saving the registers, with `scratch` in `x4`. -/
 theorem save_ok {s : State} {scr : Addr} {L : Nat} (h4 : s.gpr .x4 = scr) (hW : H.W ≤ 1024)
@@ -287,7 +283,6 @@ theorem restore_ok {s : State} {scr : Addr} {L : Nat} (h23 : s.gpr .x23 = scr) (
     obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hr
     rw [u₇.other r h7, u₆.other r h6, u₅.other r h5, u₄.other r h4, u₃.other r h3, u₂.other r h2,
       u₁.other r h1]
-
 
 end VG.Proof.Pbkdf2.Md.AArch64.Calls
 

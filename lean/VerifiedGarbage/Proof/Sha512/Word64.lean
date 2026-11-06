@@ -258,24 +258,6 @@ theorem hi_evalOps (x : BitVec 64) (ops : List Term) (hv : ∀ o ∈ ops, o.vali
       foldl_xor_acc (hi acc) (Term.hiVals (lo x) (hi x) o), Term.hi_eval (hv o (by simp)), ← hi_xor]
     exact ih (fun o h => hv o (by simp [h])) _
 
-/-- The terms of `Σ₀`, `Σ₁`, `σ₀` and `σ₁`. -/
-def bsig0 : List Term := [.rotr 28, .rotr 34, .rotr 39]
-def bsig1 : List Term := [.rotr 14, .rotr 18, .rotr 41]
-def ssig0 : List Term := [.rotr 1, .rotr 8, .shr 7]
-def ssig1 : List Term := [.rotr 19, .rotr 61, .shr 6]
-
-theorem bsig0_eq (x : BitVec 64) : Spec.Sha512.bsig0 x = evalOps x bsig0 := by
-  simp [evalOps, bsig0, Spec.Sha512.bsig0, Term.eval]
-
-theorem bsig1_eq (x : BitVec 64) : Spec.Sha512.bsig1 x = evalOps x bsig1 := by
-  simp [evalOps, bsig1, Spec.Sha512.bsig1, Term.eval]
-
-theorem ssig0_eq (x : BitVec 64) : Spec.Sha512.ssig0 x = evalOps x ssig0 := by
-  simp [evalOps, ssig0, Spec.Sha512.ssig0, Term.eval]
-
-theorem ssig1_eq (x : BitVec 64) : Spec.Sha512.ssig1 x = evalOps x ssig1 := by
-  simp [evalOps, ssig1, Spec.Sha512.ssig1, Term.eval]
-
 /-! ## Words in memory -/
 
 theorem eq_of_bytes32 {x y : BitVec 32}
@@ -340,26 +322,5 @@ theorem hi_shr61 (x : BitVec 64) : hi (x >>> 61) = 0 := by
   simp only [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, show (0 : BitVec 32).toNat = 0 from rfl]
   have := x.isLt
   omega
-
-theorem lo_shl3 (x : BitVec 64) : lo (x <<< 3) = lo x <<< 3 := by
-  apply BitVec.eq_of_toNat_eq
-  rw [lo_toNat]
-  simp only [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, lo_toNat]
-  omega
-
-theorem hi_shl3 (x : BitVec 64) : hi (x <<< 3) = (hi x <<< 3) ||| (lo x >>> 29) := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi'
-  simp only [hi, lo, BitVec.getLsbD_extractLsb', BitVec.getLsbD_shiftLeft, BitVec.getLsbD_or,
-    BitVec.getLsbD_ushiftRight, hi', decide_true, Bool.true_and]
-  by_cases h : i < 3
-  · rw [decide_eq_true (by omega : 32 + i < 64), decide_eq_false (by omega : ¬ 32 + i < 3),
-      decide_eq_true (by omega : 29 + i < 32), show 32 + i - 3 = 29 + i by omega]
-    rw [decide_eq_true h, Nat.zero_add]
-    simp only [Bool.not_true, Bool.not_false, Bool.true_and, Bool.false_and, Bool.false_or]
-  · rw [decide_eq_true (by omega : 32 + i < 64), decide_eq_false (by omega : ¬ 32 + i < 3),
-      decide_eq_true (by omega : i - 3 < 32), decide_eq_false (by omega : ¬ 29 + i < 32),
-      show 32 + i - 3 = 32 + (i - 3) by omega]
-    rw [decide_eq_false h]
-    simp only [Bool.not_false, Bool.true_and, Bool.false_and, Bool.or_false]
 
 end VG.Proof.Sha512.Word64

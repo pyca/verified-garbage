@@ -34,7 +34,6 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
@@ -135,7 +134,6 @@ open VG.Impl.MlKem.AArch64.Noise (noiseOff)
 open VG.Proof.MlKem.AArch64.Optimized
 variable {P : KemLay}
 
-
 def rowFW (s₀ s : State) (fg : Nat × Nat) : Poly := polyAtW 16 s.mem (kA s₀ 3+BitVec.ofNat 64 fg.1)
 def rowGW (s₀ s : State) (fg : Nat × Nat) : Poly := polyAtW 16 s.mem (kA s₀ 3+BitVec.ofNat 64 fg.2)
 
@@ -195,8 +193,6 @@ theorem row_readyW {s₀ s : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64}
     exact cov_r hp h.c.kb (b := 3) (by decide) (by kl)
   · rw [h.c.kb.x28]
     exact cov_w hp h.c.kb (b := 3) (by decide) (by kl)
-
-
 
 theorem fused_rowW {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P)
     {mB : Mem} {v : BitVec 64} {n i : Nat} (hi : i < P.k) (h : TLW P s₀ mB v n i s)
@@ -273,7 +269,6 @@ theorem fused_row_readyW {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P)
   exact WP.mono (fused_rowW hp hr hi h (row_readyW hp hi hn h ht hc ha).data (row_sumW hn h) (he i hi))
     fun t ⟨h',hf⟩ => ⟨h',errors_rowW hp hr hi he hf,hf⟩
 
-
 structure EncodeInvW (P : KemLay) (s₀ : State) (mB mN : Mem) (v : BitVec 64) (n j : Nat) (s : State) : Prop where
   c : CInvW P s₀ mB v n s
   sp : ∀ j < P.k, PolyIsW 16 s.mem (kA s₀ 3+BitVec.ofNat 64 (sOff P j)) (KPke.kgS P.params (dB s₀) j)
@@ -321,8 +316,6 @@ theorem EncodeInvW.tl {s₀ s : State} {mB mN : Mem} {v : BitVec 64} {n : Nat}
     (h : EncodeInvW P s₀ mB mN v n P.k s) : TLW P s₀ mB v n 0 s :=
   ⟨h.c,h.sp,h.dk,fun _ hi => by omega⟩
 
-
-
 theorem noise_cinvW {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P)
     {mB : Mem} {v : BitVec 64} {n : Nat} (h : CInvW P s₀ mB v n s)
     (ht : Kept (Noise.allWrites P true (kA s₀ 3)) s t) : CInvW P s₀ mB v n t := by
@@ -352,6 +345,5 @@ theorem readonly_noise_encodeW {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Ro
     have hn : ¬P.k+j<P.k := by omega
     simpa only [Noise.outOff,ite_eq_right hn,Nat.add_sub_cancel_left,Noise.sampled,Noise.seedOff,
       Noise.transformed,Bool.true_or,ite_true,h.sig,KPke.kgE,cbd,KemLay.params] using p
-
 
 end VG.Proof.MlKem.AArch64.KeyGen

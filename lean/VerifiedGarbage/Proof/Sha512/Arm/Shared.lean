@@ -51,18 +51,6 @@ namespace VG.Proof.Sha512.Arm.Shared
 
 open _root_.VG.Arm
 
-/-- `compressArm` with 1328 bytes of scratch. -/
-def compressWide : Contract Arm.isa :=
-  { Proof.Sha512.compressArm with
-    pre := fun s =>
-      let state : Region := ⟨State.addr (s.gpr .r0), 64⟩
-      let blocks : Region := ⟨State.addr (s.gpr .r1), 128 * (s.gpr .r2).toNat⟩
-      let scratch : Region := ⟨State.addr (s.gpr .r3), 1328⟩
-      s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
-      state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
-      (s.gpr .r0).toNat + 64 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 128 * (s.gpr .r2).toNat ≤ 2 ^ 32 ∧
-      (s.gpr .r3).toNat + 1328 ≤ 2 ^ 32 }
-
 /-- `updateArm` with 1376 bytes of scratch. -/
 def updateWide : Contract Arm.isa :=
   { Proof.Sha512.updateArm with
@@ -93,32 +81,16 @@ def finalizeWide : Contract Arm.isa :=
 
 theorem pfx {a : Addr} {m n : Nat} (h : Nat.ble m n = true) : Region.Prefix ⟨a, m⟩ ⟨a, n⟩ :=
   ⟨rfl, Nat.le_of_ble_eq_true h⟩
-theorem sub224 (a : Addr) : Region.Sub ⟨a, 224⟩ ⟨a, 1328⟩ := Region.sub_prefix (by decide)
 theorem sub272 (a : Addr) : Region.Sub ⟨a, 272⟩ ⟨a, 1376⟩ := Region.sub_prefix (by decide)
-theorem le224 {x : Nat} (h : x + 1328 ≤ 2 ^ 32) : x + 224 ≤ 2 ^ 32 := by omega
 theorem le272 {x : Nat} (h : x + 1376 ≤ 2 ^ 32) : x + 272 ≤ 2 ^ 32 := by omega
 
 /-- Rewrites the per-target contracts at a narrowed state (`stackArg` does
 not unfold cheaply). -/
 macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| plain_simp_names simp only [Proof.Sha512.compressArm, Proof.Sha512.updateArm, Proof.Sha512.finalizeArm,
-                     Proof.Sha512.countArm, compressWide, updateWide, finalizeWide, VG.Arm.stackArg_withRegions,
+                     Proof.Sha512.countArm, updateWide, finalizeWide, VG.Arm.stackArg_withRegions,
                      VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp, State.withRegions_mem,
                      State.withRegions_rd, State.withRegions_wr] $(loc)?)
-
-theorem compressWide_verified (hsat : ∃ s, compressWide.pre s) :
-    Verified Arm.target Impl.Sha512.Arm.compress compressWide :=
-  Verified.widen Proof.Sha512.Arm.Compress.compress_verified
-    (fun s => [⟨State.addr (s.gpr .r0), 64⟩, ⟨State.addr (s.gpr .r3), 224⟩])
-    (fun _ h => by
-      obtain ⟨h₁, _, h₃, h₄, h₅, h₆, h₇, h₈⟩ := h
-      narrow
-      exact ⟨h₁, trivial, h₃.sub_right (sub224 _), h₄, h₅.sub_right (sub224 _), h₆, h₇, le224 h₈⟩)
-    (fun _ h => by
-      obtain ⟨_, h₂, _⟩ := h
-      rw [h₂]; exact .cons (pfx rfl) (.cons (pfx rfl) .nil))
-    (fun _ _ _ h => by narrow at h ⊢; exact h)
-    (fun _ _ _ _ h => by narrow; exact h) hsat
 
 theorem updateWide_verified (hsat : ∃ s, updateWide.pre s) :
     Verified Arm.target Impl.Sha512.Arm.Stream.update updateWide :=
@@ -151,26 +123,12 @@ theorem finalizeWide_verified (hsat : ∃ s, finalizeWide.pre s) :
     (fun _ _ _ h => by narrow at h ⊢; exact h)
     (fun _ _ _ _ h => by narrow; exact h) hsat
 
-/-- A state satisfying `compressWide.pre`. -/
-def compressSat : State :=
-  { Proof.Sha512.Arm.Compress.satState with wr := [⟨0x1000, 64⟩, ⟨0x3000, 1328⟩] }
-
 /-- A state satisfying `updateWide.pre`. -/
 def updateSat : State := { Proof.Sha512.Arm.Stream.Update.sat with wr := [⟨0x1000, 192⟩, ⟨0, 1376⟩] }
 
 /-- A state satisfying `finalizeWide.pre`. -/
 def finalizeSat : State :=
   { Proof.Sha512.Arm.Stream.Finalize.sat with wr := [⟨0x1000, 192⟩, ⟨0x2000, 64⟩, ⟨0x3000, 1376⟩] }
-
-theorem compressWide_implies : compressWide.Implies (Proof.Sha512.compressContract Arm.abi) := by
-  sig_implies [Proof.Sha512.compressContract, Proof.Sha512.compressSig, compressWide,
-    Proof.Sha512.compressArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-    [compressSat, Proof.Sha512.Arm.Compress.satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
-    Mem.read] using compressSat
-
-theorem compress :
-    Verified Arm.target Impl.Sha512.Arm.compress (Proof.Sha512.compressContract Arm.abi) :=
-  (compressWide_verified compressWide_implies.sat_left).of_implies compressWide_implies
 
 theorem init (iv : Spec.Sha512.HashValue) :
     Verified Arm.target (Impl.Sha512.Arm.Stream.init iv) (Spec.Sha512.initContract Arm.abi iv) :=

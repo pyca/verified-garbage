@@ -11,7 +11,6 @@ meta import Mathlib.Tactic.DefEqTransformations
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Scrypt.Contract
-public import VerifiedGarbage.Proof.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
 import all Init.Data.Nat.Power2.Basic
 import VerifiedGarbage.Proof.Framework.Omega
@@ -294,15 +293,6 @@ theorem exec_keeps {c : Prog isa} {rs : List Reg} (hc : c.allInstrs (free rs) = 
   have := hc i hi
   simp only [free, List.all_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] at this
   exact this r hr
-
-/-- `Base` survives code without calls that never writes `esp`. -/
-theorem Base.exec {c : Prog isa} (hc : c.allInstrs (free [.esp]) = true) (hn : c.noCalls = true)
-    {s₀ : State} (hp : Pre s₀) {s s' : State} {t : List Leak} (he : Exec isa c s t s') (h : Base s₀ s) :
-    Base s₀ s' := by
-  obtain ⟨rd, wr, f⟩ := Exec.regions he hn
-  refine ⟨rd.trans h.rd, wr.trans h.wr, by rw [exec_keeps hc he _ (by simp), h.esp],
-    h.frame.trans (f.mono ?_)⟩
-  rw [h.wr, hp.wr]; simp
 
 /-- `KR` survives code without calls that writes none of `esp`, `ebx` and `ebp`. -/
 theorem KR.exec {c : Prog isa} (hc : c.allInstrs (free [.esp, .ebx, .ebp]) = true)
@@ -666,130 +656,5 @@ theorem roMix_ct : ConstantTime isa Proof.Scrypt.roMixX86.pre Proof.Scrypt.roMix
     Impl.Scrypt.X86.roMix := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂
   exact (roMix_rel (pre_of h₁) (pre_of h₂) (pubEq_of hpub) hpub.2.2 _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
-
-/-- Memory holding the arguments `0x1000, 1, 0x2000, 1, 0x3000, 3` at `0x5004`: `b` at
-`0x1000`, `v` at `0x2000` (`N = 1`) and the scratch space at `0x3000` (384 bytes). -/
-def satMem : Mem := fun a =>
-  bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5008 then 1 else bif Nat.beq a.toNat 0x500d then 0x20 else
-  bif Nat.beq a.toNat 0x5010 then 1 else bif Nat.beq a.toNat 0x5015 then 0x30 else bif Nat.beq a.toNat 0x5018 then 3 else 0
-
-/-- A state satisfying the precondition. -/
-def sat : State where
-  gpr r := match r with
-    | .esp => 0x5000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := satMem
-  rd := [⟨0x5004, 24⟩]
-  wr := [⟨0x1000, 128⟩, ⟨0x2000, 128⟩, ⟨0x3000, 384⟩]
-
-theorem sat_pre : Proof.Scrypt.roMixX86.pre sat := by
-  have a0 : arg sat 0 = 0x1000 := by decide
-  have a1 : arg sat 1 = 1 := by decide
-  have a2 : arg sat 2 = 0x2000 := by decide
-  have a3 : arg sat 3 = 1 := by decide
-  have a4 : arg sat 4 = 0x3000 := by decide
-  have a5 : arg sat 5 = 3 := by decide
-  have e : argAddr sat 0 = 0x5004 := by decide
-  simp only [Proof.Scrypt.roMixX86, a0, a1, a2, a3, a4, a5, e]
-  refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide, by decide,
-    by decide, by decide, by decide, by decide, ⟨0, rfl⟩, by decide⟩ <;>
-  exact Region.disjoint_of_sep (by decide)
-
-/-! ## The shared contract -/
-
-/-- `roMixX86` with its arguments writable, as the shared contract lets them be. -/
-def roMixWide : Contract isa :=
-  { Proof.Scrypt.roMixX86 with
-    pre := fun s =>
-      let r := (arg s 1).toNat
-      let b : Region := ⟨(arg s 0).setWidth 64, r * 128⟩
-      let v : Region := ⟨(arg s 2).setWidth 64, (arg s 3).toNat * 128⟩
-      let scratch : Region := ⟨(arg s 4).setWidth 64, (arg s 5).toNat * 128⟩
-      let args : Region := ⟨argAddr s 0, 24⟩
-      let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-      let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 36, 36⟩
-      s.rd = [] ∧ s.wr = [b, v, scratch, args] ∧
-      b.Disjoint v ∧ b.Disjoint scratch ∧ v.Disjoint scratch ∧
-      args.Disjoint b ∧ args.Disjoint v ∧ args.Disjoint scratch ∧
-      ret.Disjoint b ∧ ret.Disjoint v ∧ ret.Disjoint scratch ∧
-      stack.Disjoint b ∧ stack.Disjoint v ∧ stack.Disjoint scratch ∧
-      (arg s 0).toNat + r * 128 ≤ 2 ^ 32 ∧ (arg s 2).toNat + (arg s 3).toNat * 128 ≤ 2 ^ 32 ∧
-      (arg s 4).toNat + (arg s 5).toNat * 128 ≤ 2 ^ 32 ∧ 36 ≤ (s.gpr .esp).toNat ∧
-      (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
-      0 < r ∧ (arg s 3).toNat % r = 0 ∧ ((arg s 3).toNat / r).isPowerOfTwo ∧ (arg s 5).toNat = r + 2 }
-
-/-- The regions `roMixX86` lets the code read and write. -/
-def narrowRd (s : State) : List Region := [⟨argAddr s 0, 24⟩]
-def narrowWr (s : State) : List Region :=
-  [⟨(arg s 0).setWidth 64, (arg s 1).toNat * 128⟩, ⟨(arg s 2).setWidth 64, (arg s 3).toNat * 128⟩,
-    ⟨(arg s 4).setWidth 64, (arg s 5).toNat * 128⟩]
-
-/-- Rewrites the contracts at a narrowed state (`arg` does not unfold
-cheaply). -/
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names simp only [Proof.Scrypt.roMixX86, VG.Proof.Scrypt.X86.RoMix.roMixWide,
-                     VG.Proof.Scrypt.X86.RoMix.narrowRd, VG.Proof.Scrypt.X86.RoMix.narrowWr, VG.X86.arg_withRegions,
-                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
-
-theorem roMixWide_pre (s : State) (h : roMixWide.pre s) :
-    Proof.Scrypt.roMixX86.pre (s.withRegions (narrowRd s) (narrowWr s)) := by
-  obtain ⟨_, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅, h₁₆, h₁₇, h₁₈, h₁₉, h₂₀,
-    h₂₁, h₂₂, h₂₃⟩ := h
-  narrow
-  exact ⟨trivial, trivial, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅, h₁₆, h₁₇, h₁₈, h₁₉,
-    h₂₀, h₂₁, h₂₂, h₂₃⟩
-
-/-- A state satisfying `roMixWide.pre`. -/
-def wideSat : State :=
-  { sat with rd := [], wr := [⟨0x1000, 128⟩, ⟨0x2000, 128⟩, ⟨0x3000, 384⟩, ⟨0x5004, 24⟩] }
-
-theorem roMixWide_implies : roMixWide.Implies (Proof.Scrypt.roMixContract X86.abi 36) := by
-  have a0 : arg wideSat 0 = 0x1000 := by decide
-  have a1 : arg wideSat 1 = 1 := by decide
-  have a2 : arg wideSat 2 = 0x2000 := by decide
-  have a3 : arg wideSat 3 = 1 := by decide
-  have a4 : arg wideSat 4 = 0x3000 := by decide
-  have a5 : arg wideSat 5 = 3 := by decide
-  have e : argAddr wideSat 0 = 0x5004 := by decide
-  have esp : wideSat.gpr .esp = 0x5000 := rfl
-  sig_implies [Proof.Scrypt.roMixContract, Proof.Scrypt.roMixSig, roMixWide,
-    Proof.Scrypt.roMixX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    [a0, a1, a2, a3, a4, a5, e, esp] using wideSat
-
-/-- The proof is written against `roMixX86`, widened to writable arguments. -/
-theorem roMix_verified :
-    Verified X86.target Impl.Scrypt.X86.roMix (Proof.Scrypt.roMixContract X86.abi 36) :=
-  have hsat := roMixWide_implies.sat_left
-  (Verified.narrowTo (Verified.of_correct roMix_correct roMix_ct (.refl ⟨sat, sat_pre⟩))
-    narrowRd narrowWr roMixWide_pre
-    (fun _ h => by
-      obtain ⟨h₁, h₂, _⟩ := h
-      rw [h₁, h₂]
-      refine Covers.of_sub fun r hr => ?_
-      simp only [narrowRd, narrowWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-        or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
-          List.mem_cons_self)), 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), 0, by simp,
-          by simp⟩)
-    (fun _ h => by
-      obtain ⟨_, h₂, _⟩ := h
-      rw [h₂]
-      refine Covers.of_sub fun r hr => ?_
-      simp only [narrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), 0, by simp,
-          by simp⟩)
-    (fun _ _ _ h => by narrow at h ⊢; exact h)
-    (fun _ _ _ _ h => by narrow; exact h) hsat).of_implies roMixWide_implies
 
 end VG.Proof.Scrypt.X86.RoMix

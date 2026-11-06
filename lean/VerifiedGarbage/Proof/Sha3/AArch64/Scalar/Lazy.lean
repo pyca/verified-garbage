@@ -127,10 +127,6 @@ theorem plans_iota : ∀ r : Fin 24,
     (plan r).iota = .xorRor lane.1 lane.1 (plan r).constantReg lane.2 ∧
     (∀ entry ∈ (plan r).output, entry.1 ≠ (plan r).constantReg) := by decide +kernel
 
-theorem plans_transition : ∀ r : Fin 23,
-    (plan ⟨r.val, by omega⟩).finish = (plan ⟨r.val+1, by omega⟩).input := by decide +kernel
-
-
 theorem plans_lane_zero : ∀ r : Fin 24, ∀ i < 25,
     ((plan r).output.getD i (.x0, 0)).1 =
       ((plan r).output.getD 0 (.x0, 0)).1 ↔ i = 0 := by decide +kernel
@@ -139,7 +135,6 @@ theorem normalize_symbolic : ∀ i < 25,
     ((symRun normalize (symbolicLayout (plan ⟨23, by decide⟩).finish)).regs
       (laneReg i)).rotateNormal 0 = (Expr.reg (laneReg i)).rotateNormal 0 := by decide +kernel
 
-
 def stageLayout (n : Nat) : Layout :=
   if h : n < 24 then (plan ⟨n, h⟩).input else (plan ⟨23, by decide⟩).finish
 
@@ -147,6 +142,5 @@ theorem plans_stage : ∀ r : Fin 24, (plan r).finish = stageLayout (r.val+1) :=
   decide +kernel
 
 theorem normalize_good : ∀ op ∈ normalize, Good op := by decide +kernel
-
 
 end VG.Proof.Sha3.AArch64.Scalar.Lazy

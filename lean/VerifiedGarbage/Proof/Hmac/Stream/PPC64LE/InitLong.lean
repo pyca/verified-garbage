@@ -49,8 +49,6 @@ abbrev kR : Region := ⟨kp s₀, kl s₀⟩
 abbrev scR : Region := ⟨scr s₀, H.lbytes⟩
 /-- The working space of HMAC's `init`. -/
 abbrev wI : Region := ⟨scr s₀, H.W + 48⟩
-/-- That of the streaming functions. -/
-abbrev wR : Region := ⟨scr s₀, H.W⟩
 /-- The streaming state the key is hashed in. -/
 abbrev stR : Region := ⟨scr s₀ + BitVec.ofNat 64 H.lst, H.S⟩
 /-- Its digest. -/
