@@ -1,6 +1,7 @@
-//! XTS-AES, including key expansion, the tweak's encryption and in-place
-//! encryption of a data unit, beside OpenSSL (aws-lc-rs has no XTS, and
-//! OpenSSL none with AES-192).
+//! XTS-AES, including key expansion, the tweak's encryption and the
+//! encryption of a data unit, in place (after copying the data to the
+//! buffer) and out of place, beside OpenSSL (aws-lc-rs has no XTS, and
+//! OpenSSL none with AES-192), up to a data unit of 1 MiB.
 
 use criterion::Criterion;
 
@@ -24,6 +25,10 @@ pub fn bench(c: &mut Criterion) {
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
+    // The sizes of the other benchmarks, and 1 MiB, where the copy before an
+    // in-place operation costs the most.
+    let sizes = SIZES.into_iter().chain([1 << 20]);
+
     let key: Vec<_> = (0..64).map(|i| (17 * i + 3) as u8).collect();
     let i = [0x3c; 16];
     for (key_len, cipher) in [
@@ -33,7 +38,7 @@ pub fn bench(c: &mut Criterion) {
     ] {
         let key = &key[..key_len];
         let mut group = c.benchmark_group(format!("aes-xts-{}", 4 * key_len));
-        for size in SIZES {
+        for size in sizes.clone() {
             group.throughput(Throughput::Bytes(size as u64));
             let data = vec![0x5a; size];
             let mut buffer = crate::InPlace::new(size, &data);
@@ -41,7 +46,8 @@ pub fn bench(c: &mut Criterion) {
                 b.iter(|| {
                     let ctx = AesXts::new(black_box(key)).unwrap();
                     buffer.copy_from_slice(black_box(&data));
-                    ctx.encrypt(black_box(&i), black_box(&mut buffer)).unwrap();
+                    ctx.encrypt_in_place(black_box(&i), black_box(&mut buffer))
+                        .unwrap();
                     black_box(&buffer);
                 })
             });
@@ -55,6 +61,21 @@ pub fn bench(c: &mut Criterion) {
                     let n = ctx.update(black_box(&data), &mut output).unwrap();
                     let n = n + ctx.finalize(&mut output[n..]).unwrap();
                     black_box(&output[..n]);
+                })
+            });
+        }
+        group.finish();
+        let mut group = c.benchmark_group(format!("aes-xts-{}-out-of-place", 4 * key_len));
+        for size in sizes.clone() {
+            group.throughput(Throughput::Bytes(size as u64));
+            let data = vec![0x5a; size];
+            let mut out = vec![0; size];
+            group.bench(BenchmarkId::new(VG, size), |b| {
+                b.iter(|| {
+                    let ctx = AesXts::new(black_box(key)).unwrap();
+                    ctx.encrypt(black_box(&i), black_box(&data), black_box(&mut out))
+                        .unwrap();
+                    black_box(&out);
                 })
             });
         }

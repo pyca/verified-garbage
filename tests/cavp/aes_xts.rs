@@ -33,10 +33,15 @@ fn check_file(text: &str) -> (usize, usize) {
         let ctx = AesXts::new(&unhex(fields["Key"])).unwrap();
         let i: [u8; 16] = unhex(fields["i"]).try_into().unwrap();
         let mut buffer = pt.clone();
-        ctx.encrypt(&i, &mut buffer).unwrap();
+        ctx.encrypt_in_place(&i, &mut buffer).unwrap();
         assert_eq!(buffer, ct);
-        ctx.decrypt(&i, &mut buffer).unwrap();
+        ctx.decrypt_in_place(&i, &mut buffer).unwrap();
         assert_eq!(buffer, pt);
+        let mut out = vec![0xa5; pt.len()];
+        ctx.encrypt(&i, &pt, &mut out).unwrap();
+        assert_eq!(out, ct);
+        ctx.decrypt(&i, &ct, &mut out).unwrap();
+        assert_eq!(out, pt);
         count += 1;
     }
     (count, skipped)
@@ -75,41 +80,82 @@ fn limits_and_lengths() {
         for n in 0..16 {
             let mut buffer = vec![0x5a; n];
             assert_eq!(
-                ctx.encrypt(&i, &mut buffer),
+                ctx.encrypt_in_place(&i, &mut buffer),
                 Err(XtsError::DataUnitTooShort)
             );
             assert_eq!(
-                ctx.decrypt(&i, &mut buffer),
+                ctx.decrypt_in_place(&i, &mut buffer),
                 Err(XtsError::DataUnitTooShort)
             );
             assert_eq!(buffer, [0x5a; 16][..n]);
+            let mut out = vec![0xa5; n];
+            assert_eq!(
+                ctx.encrypt(&i, &buffer, &mut out),
+                Err(XtsError::DataUnitTooShort)
+            );
+            assert_eq!(
+                ctx.decrypt(&i, &buffer, &mut out),
+                Err(XtsError::DataUnitTooShort)
+            );
+            assert_eq!(out, [0xa5; 16][..n]);
+        }
+        // An output of another length than the data unit's is refused.
+        for (n, m) in [(16, 15), (16, 17), (32, 0), (40, 41)] {
+            let src = vec![0x5a; n];
+            let mut out = vec![0xa5; m];
+            assert_eq!(
+                ctx.encrypt(&i, &src, &mut out),
+                Err(XtsError::InvalidOutputLength)
+            );
+            assert_eq!(
+                ctx.decrypt(&i, &src, &mut out),
+                Err(XtsError::InvalidOutputLength)
+            );
+            assert!(crate::bytes::all_equal(&out, 0xa5));
         }
         // Every length round-trips, and a data unit's whole blocks before
         // the last two do not depend on what follows them.
         let message: Vec<_> = crate::bytes::pattern(16 * 6, 7, 1);
         let mut whole = message.clone();
-        ctx.encrypt(&i, &mut whole).unwrap();
+        ctx.encrypt_in_place(&i, &mut whole).unwrap();
         for n in 16..=message.len() {
             let mut buffer = message[..n].to_vec();
-            ctx.encrypt(&i, &mut buffer).unwrap();
+            ctx.encrypt_in_place(&i, &mut buffer).unwrap();
             let settled = (n / 16).saturating_sub(1) * 16;
             assert_eq!(buffer[..settled], whole[..settled]);
             if n % 16 == 0 {
                 assert_eq!(buffer, whole[..n]);
             }
-            ctx.decrypt(&i, &mut buffer).unwrap();
+            // Out of place, the same.
+            let mut out = vec![0xa5; n];
+            ctx.encrypt(&i, &message[..n], &mut out).unwrap();
+            assert_eq!(out, buffer);
+            let mut back = vec![0xa5; n];
+            ctx.decrypt(&i, &out, &mut back).unwrap();
+            assert_eq!(back, message[..n]);
+            ctx.decrypt_in_place(&i, &mut buffer).unwrap();
             assert_eq!(buffer, message[..n]);
         }
     }
     let ctx = AesXts::new(&[[1; 16], [2; 16]].concat()).unwrap();
     let mut buffer = vec![0; 16 * XTS_MAX_BLOCKS + 1];
     assert_eq!(
-        ctx.encrypt(&[0; 16], &mut buffer),
+        ctx.encrypt_in_place(&[0; 16], &mut buffer),
         Err(XtsError::DataUnitTooLong)
     );
     assert_eq!(
-        ctx.decrypt(&[0; 16], &mut buffer),
+        ctx.decrypt_in_place(&[0; 16], &mut buffer),
         Err(XtsError::DataUnitTooLong)
     );
     assert!(crate::bytes::all_equal(&buffer, 0));
+    let mut out = vec![0xa5; buffer.len()];
+    assert_eq!(
+        ctx.encrypt(&[0; 16], &buffer, &mut out),
+        Err(XtsError::DataUnitTooLong)
+    );
+    assert_eq!(
+        ctx.decrypt(&[0; 16], &buffer, &mut out),
+        Err(XtsError::DataUnitTooLong)
+    );
+    assert!(crate::bytes::all_equal(&out, 0xa5));
 }

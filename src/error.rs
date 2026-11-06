@@ -217,6 +217,7 @@ mod tests {
             crate::cipher::aes::XtsError::DataUnitTooShort,
             crate::cipher::aes::XtsError::EqualKeyHalves,
             crate::cipher::aes::XtsError::InvalidKeyLength,
+            crate::cipher::aes::XtsError::InvalidOutputLength,
             crate::ec::Error::InvalidKey,
             crate::ec::Error::InvalidSignature,
             crate::aead::chacha20poly1305::Error::InvalidOutputLength,
