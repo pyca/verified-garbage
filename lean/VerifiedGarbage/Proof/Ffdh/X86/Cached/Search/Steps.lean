@@ -53,12 +53,6 @@ theorem wp_store8 {is : List Instr} {s : State} {Q : State → Prop} {r : Reg8} 
   cons (s' := {s with mem := s.mem.writeW a ((s.gpr r.reg).setWidth 8)})
     (by simp only [exec, ha, State.store8, hw, ite_true]) (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
 
-theorem Upd.keeps {s t : State} {d : Reg} {v : BitVec 32} (h : Upd s t d v) : Keeps [d] s t :=
-  ⟨fun r hr => h.other r fun e => hr (e ▸ List.mem_singleton_self _), h.rd, h.wr⟩
-
-theorem Mupd.keeps {s t : State} {m : Mem} (h : Mupd s t m) (rs : List Reg) : Keeps rs s t :=
-  ⟨fun r _ => by rw [h.gpr], h.rd, h.wr⟩
-
 /-- The output after `k` of its `n` bytes are zeroed. -/
 structure ZInv (s₀ : State) (P : BitVec 32) (n k : Nat) (t : State) : Prop where
   edx : t.gpr .edx = P + BitVec.ofNat 32 k

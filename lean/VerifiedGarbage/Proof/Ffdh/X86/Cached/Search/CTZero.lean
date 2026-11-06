@@ -72,8 +72,6 @@ def ZAt (a : Pw) (s : State) : Prop :=
   At a s ∧ Aligned a.2.1 ∧ xOff ∈ a.2.1 ∧ yOff ∈ a.2.1 ∧ lenOff ∈ a.2.1 ∧ a.2.2 xOff = a.1.xp ∧
     a.2.2 yOff = a.1.yp ∧ a.2.2 lenOff = BitVec.ofNat 32 a.1.len
 
-theorem zat_pins : Pins ZAt [.esi, .esp] := fun a _ _ h₁ h₂ => at_pins a _ _ h₁.1 h₂.1
-
 theorem zeroHead_ok {d : Nat} (hd4 : d + 4 ≤ 128) (a : Pw) (s : State) (h : At a s) (hd : d ∈ a.2.1)
     (hl : lenOff ∈ a.2.1) :
     WP isa (.block [.mov .edx (.mem (st d)), .mov .ecx (.mem (st lenOff)), .mov .eax (.imm 0)]) s fun t =>

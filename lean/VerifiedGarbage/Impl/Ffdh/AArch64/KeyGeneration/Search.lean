@@ -95,26 +95,7 @@ def room : List Instr := [
 
 variable (attempt : Prog isa)
 
-/-- The attempt, a call of `vg_ffdh_generate_key`, in a frame of its stack
-arguments. -/
-def attemptRun : Prog isa := .frame (.alloc 32) (.seq (.block arguments) attempt) (.free 32)
-
-def attemptOrRequest : Prog isa := .seq (.block room)
-  (.ite (.zero .x .x12) request (.seq (attemptRun attempt) classify))
-
-def branch : Prog isa :=
-  .ite (.zero .x .x9) exhausted (.seq (.block [ldf .x9 1])
-    (.ite (.zero .x .x9) exhausted (attemptOrRequest attempt)))
-
-/-- The loop goes on while the status is 4, a rejection: `x9 := status − 4`. -/
-def iteration : Prog isa :=
-  .seq (.block [ldf .x9 0]) (.seq (branch attempt) (.block [ldf .x9 14, .subImm .x .x9 .x9 4]))
-
-def search : Prog isa := .frame (.push .x30) (.loop (iteration attempt) (.zero .x .x9)) (.pop .x30)
-
 /-- All loads before the store of `used`, and the caller's `x19` restored. -/
 def finish : List Instr := [ldf .x1 15, ldf .x2 11, ldf .x0 14, ldf .x19 4, .str .x .x2 .x1 0]
-
-def code : Prog isa := .seq (.block entry) (.seq (search attempt) (.block finish))
 
 end VG.Impl.Ffdh.AArch64.KeyGeneration.Search

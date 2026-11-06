@@ -887,23 +887,6 @@ theorem _root_.VG.Proof.Ffdh.X86_64.ModCtx.store {s t : State} {B : Addr} {Z o w
     (VG.Proof.Ffdh.X86_64.child_frm hc.sub hc.wide hf fun r hr => by
       rw [List.mem_singleton.mp hr]; simp only; unfold tabBytes; omega).1⟩
 
-/-- The outer slot `oo` to the inner slot `i`, through the link. -/
-theorem fromOuter_ok {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat}
-    (hc : ModCtx s B Z o w mi P) {oo i : Nat} (hoo : oo < 32) (hi' : i < 32) {v : BitVec 64}
-    (hv : word s.mem B (8 * oo) = v) :
-    WP isa (.block (fromOuter oo i)) s fun t => t.mem = s.mem.writeW (off (off B o) (8 * i)) v ∧
-      t.gpr .rdx = v ∧ Keep [.rax, .rdx] s t := by
-  have hg := hc.sub.good
-  have hlo := hc.sub.lo
-  have hhi := hc.sub.hi
-  have hO : InRegions (s.rd ++ s.wr) (off B (8 * oo)) 8 := hc.sub.scr.ld (by
-    have := hdr_lt_slot w 8 hoo; omega)
-  refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t => t.mem = s.mem.writeW (off (off B o) (8 * i)) v ∧
-      t.gpr .rdx = v) (by
-    unfold fromOuter
-    xrun [State.ea, hdr, Crt.ws, hg.rdi, hdrOff, hg.scr.ld (d := 8 * Crt.sLink) (hdr_lt_slot _ 8 (by decide)),
-      hc.sub.link, hO, hv, hg.scr.st (d := 8 * i) (hdr_lt_slot _ 8 hi')]) rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2, k⟩
-
 theorem atOff' (b : Addr) (d : Nat) : b + BitVec.ofInt 64 (d : Int) = off b d := by
   rw [BitVec.ofInt_natCast]
 

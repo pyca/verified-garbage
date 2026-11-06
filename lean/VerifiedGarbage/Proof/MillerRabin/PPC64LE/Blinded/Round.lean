@@ -27,12 +27,6 @@ open VG.Proof.MillerRabin.PPC64LE (Env)
 open VG.Proof.MillerRabin.PPC64LE.Search (ge_val)
 open VG.Proof.Bignum (slot Frm word off writeW_outside word_writeW_self)
 
-/-- `(f₁ & f₂) · 3` subtracted from 4, for flags `f₁`, `f₂`: 1 if both, else 4. -/
-theorem stat_val (p q : Prop) [Decidable p] [Decidable q] :
-    BitVec.ofNat 64 4 - (BitVec.ofNat 64 (if p then 1 else 0) &&& BitVec.ofNat 64 (if q then 1 else 0)) *
-        BitVec.ofNat 64 3 = BitVec.ofNat 64 (if q ∧ p then 1 else 4) := by
-  by_cases hp : p <;> by_cases hq : q <;> simp [hp, hq] <;> decide
-
 /-- The registers `passed` writes. -/
 def passedRegs : List Reg := [.r0, .r3, .r4, .r5, .r7]
 

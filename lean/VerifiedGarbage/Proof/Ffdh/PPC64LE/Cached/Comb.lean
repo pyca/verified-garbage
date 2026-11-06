@@ -305,14 +305,6 @@ theorem hdr_of_comb {B : Addr} {w x : Nat} {m m' : Mem} (ho : Outs B (combOut w)
     simp only [combOut, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; simp only [slot, hdrBytes]; omega) (by omega)
 
-/-- A number apart from arrays 1 to 7 (array 0, or one from array 8). -/
-theorem val_of_comb {B : Addr} {w j : Nat} {m m' : Mem} (ho : Outs B (combOut w) m m') (hj : j = 0)
-    (hB : B.toNat + slot w 8 ≤ 2 ^ 64) : arr m' B w j = arr m B w j := by
-  subst hj
-  exact Outs.val32 ho (fun r hr => by
-    simp only [combOut, List.mem_cons, List.not_mem_nil, or_false] at hr
-    subst hr; simp only [slot]; omega) (by simp only [slot] at hB ⊢; omega)
-
 /-- x's octets, apart from the working space, are kept. -/
 theorem byte_of_outs {B X : Addr} {Z : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B rs m m')
     (hr : ∀ r ∈ rs, r.1 + r.2 ≤ Z) {n : Nat} (hsep : ∀ y, ofs B y < Z → off X n ≠ y) : m' (off X n) = m (off X n) :=

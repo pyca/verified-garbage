@@ -217,9 +217,6 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.Ffdh.X86_64.GenerateKey
 open VG.Proof.Rsa.X86_64 (OutOk Apart)
 
-theorem ofInt_zero' (b : Addr) : b + BitVec.ofInt 64 0 = off b 0 := rfl
-theorem ofInt_eight (b : Addr) : b + BitVec.ofInt 64 8 = off b 8 := rfl
-
 theorem toNat_mod64 {x : Nat} (hx : x < 2 ^ 64) : (BitVec.ofNat 64 x).toNat % 64 = x % 64 := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hx]
 

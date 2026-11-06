@@ -35,14 +35,6 @@ def row (m : Mem) (cp : Addr) (w j : Nat) : List (BitVec 64) :=
 theorem row_length (m : Mem) (cp : Addr) (w j : Nat) : (row m cp w j).length = w := by
   simp only [row, List.length_map, List.length_range]
 
-theorem row_congr {m m' : Mem} {cp : Addr} {w j : Nat}
-    (h : ∀ i < w, word m' cp (24 + 8 * w * j + 8 * i) = word m cp (24 + 8 * w * j + 8 * i)) :
-    row m' cp w j = row m cp w j := by
-  unfold row
-  apply List.map_congr_left
-  intro i hi
-  exact h i (List.mem_range.mp hi)
-
 /-- A row holds the words of its own number. -/
 theorem row_self (m : Mem) (cp : Addr) (w j : Nat) :
     row m cp w j = Spec.Rsa.toWords (wv m cp (24 + 8 * w * j) w) w := by

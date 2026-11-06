@@ -32,9 +32,6 @@ theorem ofNat_beq_zero {k : Nat} (hk : k < 2 ^ 64) : (BitVec.ofNat 64 k == 0) = 
   · intro h; have := congrArg BitVec.toNat h; simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk] at this; exact this
   · rintro rfl; rfl
 
-theorem sx1 : BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 1 := by decide
-theorem sx2 : BitVec.signExtend 64 (2 : BitVec 32) = BitVec.ofNat 64 2 := by decide
-
 /-- `[i] := [i] - 1`, and whether it is now zero. -/
 theorem dec_ok {T : TabP} {s : State} (he : Env T s) {i k : Nat} (hi' : i < 32)
     (hv : word s.mem (off T.B T.o) (8 * i) = BitVec.ofNat 64 (k + 1)) (hk : k + 1 < 2 ^ 64) :

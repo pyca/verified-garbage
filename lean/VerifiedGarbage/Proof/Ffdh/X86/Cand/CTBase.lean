@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
 The contract releases the tape, so every value the candidate branches on is
 public; the taint analysis, which keeps only the arguments, `edi` and `esp`
 public (`τA`), cannot see that. Each run is pinned to the same public
-values: registers that hold them are public in `τP rs` (`pinned_both`), and
+values: registers that hold them are public in `τP rs`, and
 a branch or a loop condition that both runs evaluate alike takes the same
 side (`ite_fixed`).
 -/
@@ -50,14 +50,6 @@ theorem agreeP {rs : List Reg} {s₁ s₂ : State} (R₁ : Run Ex base bytes len
   · exact G.rf.1 _ (by simp [τA])
   · exact R₁.2.2.trans R₂.2.2.symm
   · exact hr _ hr'
-
-/-- Code the taint analysis checks with the registers `rs` public, which the runs pin. -/
-theorem pinned_both {rs : List Reg} {P F : State → Prop} {c : Prog isa}
-    (hP : ∀ x, P x → Run Ex base bytes len args sp x)
-    (hv : ∀ x y, P x → P y → ∀ r ∈ rs, x.gpr r = y.gpr r)
-    (hc : PCheck rs c)
-    (hw : ∀ x, P x → WP isa c x F) : RelCT isa (Both P) c (Both F) :=
-  relCT_both (RelCT.taint (A := taint) (τP rs) (fun _ _ h => agreeP (hP _ h.1) (hP _ h.2) (hv _ _ h.1 h.2)) hc) hw
 
 /-- Code the taint analysis checks with the registers `rs` public, which the runs pin, at the end. -/
 theorem pinned_end {rs : List Reg} {P : State → Prop} {c : Prog isa}

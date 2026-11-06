@@ -104,9 +104,6 @@ def E1' (p : ExP) (xb : List Byte) (t : State) : Prop := E1 (p.D xb) t ∧ Dst p
 /-- After `domHead`. -/
 def CE' (p : ExP) (xb : List Byte) (t : State) : Prop := CE (p.D xb) t ∧ Dst p t ∧ Ok p xb
 
-/-- The working space, as the arithmetic sees it. -/
-abbrev ExP.ws (p : ExP) : Ws := ⟨off p.B (inner ((p.k + 7) / 8)), slot ((p.k + 7) / 8) 8, (p.k + 7) / 8⟩
-
 /-- The inner workspace's base. -/
 abbrev ExP.g (p : ExP) : Addr := off p.B (inner ((p.k + 7) / 8))
 

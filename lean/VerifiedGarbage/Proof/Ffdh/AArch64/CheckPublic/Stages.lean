@@ -272,11 +272,6 @@ theorem In.step {p : CpP} {mi : BitVec 64} {t u : State} (h : In p mi t) {rs : L
   exact ⟨hx.step hi hrd hwr, hc', hv.of_frmA hGn (by omega_arith) hf (fun r hr' => (hr r hr').2.2),
     by rw [hb _ (by decide)]; exact hWs, fun q hq => by rw [hb _ (hdQ_lt p q hq)]; exact hs q hq⟩
 
-theorem In.keep {p : CpP} {mi : BitVec 64} {t u : State} (h : In p mi t) (hm : u.mem = t.mem) {rs : List Reg}
-    (k : Keep rs t u) (h0 : .x0 ∉ rs) : In p mi u :=
-  h.step (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (fun _ h => absurd h List.not_mem_nil) k.rd k.wr
-    (k.gpr .x0 h0)
-
 theorem c1_in {p : CpP} {t : State} (h : C1 p t) : ∃ mi, In p mi t ∧ p.mv = true :=
   let ⟨mi, hx, hc, hv, hWs, hs, hm⟩ := h
   ⟨mi, ⟨hx, hc, hv, hWs, hs⟩, hm⟩

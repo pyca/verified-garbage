@@ -29,8 +29,6 @@ theorem hold_mem (j : Nat) : hold j ∈ wJs := by unfold hold; split <;> decide
 theorem hold_ne (j : Nat) : hold j ≠ hold (j + 1) := by unfold hold; split <;> split <;> first | decide | omega
 theorem hold_two (j : Nat) : hold (j + 2) = hold j := by unfold hold; congr 1; simp only [Nat.add_mod_right]
 theorem hold_lt (j : Nat) : hold j < aT0 := by unfold hold; split <;> decide
-theorem tab_mem : ∀ k < 16, aT0 + k ∈ wJs := by decide
-
 section
 variable {P : MP} {σ s : State} {A : Nat → Nat} {L : List Nat} {V : Nat → Nat} {LS : List Nat}
 
