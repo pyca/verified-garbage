@@ -2229,6 +2229,129 @@ bx lr",
     )
 }
 
+/// ML-DSA-65 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa65_verify_message_cached` takes.
+///
+/// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `tr` must be valid for reads and writes of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 103424 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `tr` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa65_pk_tr(pk: *const [u8; 1952], tr: *mut [u8; 64], scratch: *mut [u64; 12928]) {
+    core::arch::naked_asm!(
+        r"str r4, [r2, #840]
+str r5, [r2, #844]
+str r6, [r2, #848]
+str r7, [r2, #852]
+str r8, [r2, #856]
+str r9, [r2, #860]
+str r10, [r2, #864]
+str r11, [r2, #868]
+str lr, [r2, #872]
+mov r4, r0
+mov r5, r0
+mov r6, r1
+mov r7, r2
+mov r12, #0
+str r12, [r7, #0]
+str r12, [r7, #4]
+str r12, [r7, #8]
+str r12, [r7, #12]
+str r12, [r7, #16]
+str r12, [r7, #20]
+str r12, [r7, #24]
+str r12, [r7, #28]
+str r12, [r7, #32]
+str r12, [r7, #36]
+str r12, [r7, #40]
+str r12, [r7, #44]
+str r12, [r7, #48]
+str r12, [r7, #52]
+str r12, [r7, #56]
+str r12, [r7, #60]
+str r12, [r7, #64]
+str r12, [r7, #68]
+str r12, [r7, #72]
+str r12, [r7, #76]
+str r12, [r7, #80]
+str r12, [r7, #84]
+str r12, [r7, #88]
+str r12, [r7, #92]
+str r12, [r7, #96]
+str r12, [r7, #100]
+str r12, [r7, #104]
+str r12, [r7, #108]
+str r12, [r7, #112]
+str r12, [r7, #116]
+str r12, [r7, #120]
+str r12, [r7, #124]
+str r12, [r7, #128]
+str r12, [r7, #132]
+str r12, [r7, #136]
+str r12, [r7, #140]
+str r12, [r7, #144]
+str r12, [r7, #148]
+str r12, [r7, #152]
+str r12, [r7, #156]
+str r12, [r7, #160]
+str r12, [r7, #164]
+str r12, [r7, #168]
+str r12, [r7, #172]
+str r12, [r7, #176]
+str r12, [r7, #180]
+str r12, [r7, #184]
+str r12, [r7, #188]
+str r12, [r7, #192]
+str r12, [r7, #196]
+mov r2, #0
+mov r0, r7
+mov r1, #136
+add lr, r7, #200
+add r3, r5, #0
+mov r12, #1952
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+mov r2, r0
+mov r0, r7
+mov r1, #136
+add lr, r7, #200
+mov r3, #31
+push {{lr}}
+bl {vg_keccak_pad_scratch}
+ldr r12, [sp], #4
+mov r2, #0
+mov r0, r7
+mov r1, #136
+add lr, r7, #200
+add r3, r6, #0
+mov r12, #64
+push {{r12, lr}}
+bl {vg_keccak_squeeze_scratch}
+ldr r12, [sp], #8
+mov r0, r11
+mov r3, r7
+ldr r4, [r3, #840]
+ldr r5, [r3, #844]
+ldr r6, [r3, #848]
+ldr r7, [r3, #852]
+ldr r8, [r3, #856]
+ldr r9, [r3, #860]
+ldr r10, [r3, #864]
+ldr r11, [r3, #868]
+ldr lr, [r3, #872]
+bx lr",
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+    )
+}
+
 /// ML-DSA-65 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.

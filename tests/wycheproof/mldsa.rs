@@ -90,6 +90,13 @@ macro_rules! mldsa_tests {
                 let key = $SigningKey::from_seed(&seed).unwrap();
                 let pk = g.params.public_key.as_ref().map(|pk| &pk.0[..]);
                 assert_eq!(pk, Some(&key.verifying_key().as_bytes()[..]), "tcId {id}");
+                // `from_bytes` hashes the key (`pk_tr`) to the `tr` that key
+                // generation keeps in the private key: equality compares both.
+                assert_eq!(
+                    &$VerifyingKey::from_bytes(key.verifying_key().as_bytes()),
+                    key.verifying_key(),
+                    "tcId {id}"
+                );
                 let ctx = c.ctx.as_ref().map_or(&[][..], |x| &x.0[..]);
                 if test.result == Expectation::Valid {
                     let sig: Sig = c.sig.as_ref().unwrap().0[..].try_into().unwrap();
