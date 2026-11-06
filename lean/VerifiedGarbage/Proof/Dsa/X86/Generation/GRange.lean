@@ -79,14 +79,14 @@ theorem rRanges_apart {E : Env} (v : E.Valid) : E.Apart rRanges := by
   rcases ho with rfl | rfl | rfl <;> simp only [aTmp, aH, arr, fLo, fOut, fWitLen, hdr] <;> omega
 
 /-- The `pLen` bytes of `h` number `j` at its address in the tape. -/
-theorem h_bytes {E : Env} {s : State} (B : Base E s) {j : Nat} (hj : (j + 1) * E.pLen ≤ E.hsLen) :
+theorem h_bytes {E : Env} (v : E.Valid) {s : State} (B : Base E s) {j : Nat} (hj : (j + 1) * E.pLen ≤ E.hsLen) :
     Spec.Rsa.bytesAt s.mem (E.hs + BitVec.ofNat 64 (j * E.pLen)) E.pLen = hChunk E j := by
   rw [Nat.succ_mul] at hj
-  simp only [hChunk, ← B.hs, Spec.Rsa.bytesAt]
-  apply List.ext_getElem (by simp; omega)
-  intro i h₁ h₂
-  simp only [List.getElem_map, List.getElem_range, List.getElem_take, List.getElem_drop]
-  rw [VG.Offset.add_add]
+  have := v.hsIn
+  rw [Env.hs, VG.Offset.add_add, B.part (by omega)]
+  simp only [hChunk, Env.hT, List.drop_take, List.drop_drop, List.take_take]
+  congr 1
+  omega
 
 /-- `h` number `j` is loaded, and compared with 1 and `p − 1`. -/
 theorem gRange_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) {s : State} (B : Base E s)
@@ -102,7 +102,6 @@ theorem gRange_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
   have bd := G.bounds
   have nw := v.scratchFit
   have hf := v.hsFit
-  have hl := v.ptrs.2.2.1
   have n64 : g.n64 = g.pLen / 8 := rfl
   have n32 : g.n32 = g.pLen / 4 := rfl
   have h2 : 2 * g.n64 = g.n32 := by
@@ -110,6 +109,7 @@ theorem gRange_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
   have h8 : 8 * g.n64 = g.pLen := by
     rcases G.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> simp only [n64, h]
   have jq : j * E.pLen + E.pLen ≤ E.hsLen := by rw [Nat.succ_mul] at hj; omega_arith
+  have hl : E.hs.toNat < 2 ^ 32 := by have := v.pLen_ge; omega_arith
   have hW : ((E.hs + BitVec.ofNat 64 (j * E.pLen)).setWidth 32).setWidth 64 = E.hs + BitVec.ofNat 64 (j * E.pLen) := by
     apply BitVec.eq_of_toNat_eq
     have e : (E.hs + BitVec.ofNat 64 (j * E.pLen)).toNat = E.hs.toNat + j * E.pLen := by
@@ -136,11 +136,14 @@ theorem gRange_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
   refine WP.seq (VG.X86.WP.mono_syms (VG.Proof.Bignum.X86.loadBE_ok hs₂ (n := g.n64) (out := aH) (len := g.pLen)
     (by omega_arith) (by simp only [aH, arr]; omega_arith) (by omega_arith) (by omega_arith) (by rw [esi₂, hN]; omega_arith) u₂.gpr
     (by rw [esi₂, VG.Proof.Bignum.X86.byteAddr, hW, u₂.rd, u₂.wr, u₁.rd, u₁.wr, ← hp]
-        exact ⟨_, List.mem_append_left _ B.tapes.2.1, Offset.contains_base _ jq (by omega_arith)⟩)
+        have := v.hsIn; have := v.witLen32
+        exact ⟨_, List.mem_append_left _ B.tapes, by
+          rw [Env.hs, VG.Offset.add_add]
+          exact Offset.contains_base _ (show E.hsOff + j * E.pLen + E.pLen ≤ E.witLen by omega_arith) (by omega_arith)⟩)
     (by rw [esi₂, VG.Proof.Bignum.X86.byteAddr, hW, ← hp]
         exact ((v.tapesFar _ (by simp)).1.sub_left sub).sub_right (Offset.sub_base _ (by simp only [aH, arr]; omega_arith))))
     fun t₃ ⟨V₃, O₃, K₃⟩ sy₃ => ?_)
-  rw [esi₂, VG.Proof.Bignum.X86.byteAddr, hW, m₂, ← hp, h_bytes B hj, wordsVal_eq_val32, h2,
+  rw [esi₂, VG.Proof.Bignum.X86.byteAddr, hW, m₂, ← hp, h_bytes v B hj, wordsVal_eq_val32, h2,
     ← VG.Proof.Dsa.decodeBE_os2ip] at V₃
   have hs₃ := hs₂.of_keeps K₃ (by decide)
   have one₃ : val32 t₃.mem E.base aOne g.n32 = 1 := by

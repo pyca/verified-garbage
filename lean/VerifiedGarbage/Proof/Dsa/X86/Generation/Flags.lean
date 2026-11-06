@@ -56,6 +56,27 @@ theorem stImm_end {o v : Nat} (hs : Scr s base size) (ho : o + 4 ≤ size)
   rw [← List.append_nil (stImm o v)]
   exact stImm_ok hs ho fun s' a b c d e => WP.block_nil (k s' a b c d e)
 
+/-- The word at `o`, `w`, compared with `v`: CF is `w < v`. -/
+theorem cmpFb_ok {o v w : Nat} (hs : Scr s base size) (ho : o + 4 ≤ size)
+    (hw : s.mem.readW (off base o) 32 = BitVec.ofNat 32 w) (hwl : w < 2 ^ 32) (hv : v < 2 ^ 32)
+    (k : ∀ s', (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
+      s'.syms = s.syms → isa.eval .b s' = some (decide (w < v)) → WP isa (.block is) s' Q) :
+    WP isa (.block (cmpF o v ++ is)) s Q := by
+  simp only [cmpF, List.cons_append, List.nil_append]
+  refine ld_ok hs ho fun s₁ u₁ => wp_cmpi fun s₂ f₂ c₂ _ => k s₂ (fun r hr => by rw [f₂.gpr, u₁.other r hr])
+    (by rw [f₂.mem, u₁.mem]) (by rw [f₂.rd, u₁.rd]) (by rw [f₂.wr, u₁.wr]) (by rw [f₂.syms, u₁.syms]) ?_
+  show s₂.cf = _
+  rw [c₂, u₁.gpr, hw, toNat_ofNat_lt hwl, toNat_ofNat_lt hv]
+
+/-- `cmpF`, for CF, ending a block. -/
+theorem cmpFb_end {o v w : Nat} (hs : Scr s base size) (ho : o + 4 ≤ size)
+    (hw : s.mem.readW (off base o) 32 = BitVec.ofNat 32 w) (hwl : w < 2 ^ 32) (hv : v < 2 ^ 32)
+    (k : ∀ s', (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
+      s'.syms = s.syms → isa.eval .b s' = some (decide (w < v)) → Q s') :
+    WP isa (.block (cmpF o v)) s Q := by
+  rw [← List.append_nil (cmpF o v)]
+  exact cmpFb_ok hs ho hw hwl hv fun s' a b c d e f => WP.block_nil (k s' a b c d e f)
+
 end
 
 end VG.Proof.Dsa.X86.Generation

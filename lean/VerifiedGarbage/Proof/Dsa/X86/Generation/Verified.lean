@@ -17,7 +17,7 @@ open VG.Impl.Dsa.X86.Generation
 theorem body_noSp {g1 g2 g3 : Geo} (n1 : NoSp g1.generate) (n2 : NoSp g2.generate) (n3 : NoSp g3.generate) :
     NoSp (.seq (.seq (.block entry) (dispatch g1 g2 g3)) (.block VG.Impl.Mont.X86.Compact.restoreRegs)) := by
   apply NoSp.of_all
-  simp only [dispatch, Code.allInstrs, checked n1, checked n2, checked n3]
+  simp only [dispatch, seqs, Code.allInstrs, checked n1, checked n2, checked n3]
   rfl
 
 theorem generate1_noSp (v1 : Proof.Sha1.X86.Variants.Backend) (v : RoundImpl) : NoSp (geo1 v1 v).generate :=
