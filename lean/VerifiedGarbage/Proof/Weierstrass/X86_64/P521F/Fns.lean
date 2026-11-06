@@ -249,14 +249,14 @@ theorem sqrFn_ok (hZ : 4096 ≤ Z) {s : State} {base : Addr} (hs : Scr s base Z)
 /-- A block that writes no vector register keeps them. -/
 private theorem runBlock_xmm : ∀ (is : List Instr) {s s' : State}, is.all (fun i => !KeepReg.writesVec i) = true →
     runBlock isa is s = some s' → s'.xmm = s.xmm
-  | [], s, s', _, h => by simp only [runBlock, Option.some.injEq] at h; rw [h]
+  | [], s, s', _, h => by rw [runBlock_nil, Option.some.injEq] at h; rw [h]
   | i :: is, s, s', hw, h => by
     simp only [List.all_cons, Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] at hw
-    simp only [runBlock] at h
+    rw [runBlock_cons] at h
     cases he : exec i s with
-    | none => simp only [isa, he, Option.bind_none, reduceCtorEq] at h
+    | none => rw [he, runStep, Option.bind_none] at h; cases h
     | some t =>
-      simp only [isa, he, Option.bind_some] at h
+      rw [he, runStep_some] at h
       rw [runBlock_xmm is hw.2 h, KeepReg.exec_xmm hw.1 he]
 
 private theorem WP.keep_xmm {is : List Instr} (hw : is.all (fun i => !KeepReg.writesVec i) = true) {s : State}
