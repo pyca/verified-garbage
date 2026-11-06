@@ -31,6 +31,12 @@ open VG.Impl.MlKem.X86 (Buf leaf at_)
 open VG.Impl.MlDsa.X86.KeyGen (Arg callP callPR seqR)
 open VG.Spec.MlDsa (Params)
 
+/-- The name of `vg_mldsa*_verify_core`, for the module `module`. -/
+def coreName (module : String) : String := s!"vg_{module}_verify_core"
+
+/-- The name of `vg_mldsa*_verify_prepared`, for the module `module`. -/
+def preparedName (module : String) : String := s!"vg_{module}_verify_prepared"
+
 section
 variable (p : Params)
 

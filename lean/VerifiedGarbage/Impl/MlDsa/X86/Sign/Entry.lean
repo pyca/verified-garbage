@@ -29,6 +29,12 @@ open VG.X86
 open VG.Impl.MlKem.X86 (Buf copyW leaf at_)
 open VG.Spec.MlDsa (Params)
 
+/-- The name of `vg_mldsa*_sign_core`, for the module `module`. -/
+def coreName (module : String) : String := s!"vg_{module}_sign_core"
+
+/-- The name of `vg_mldsa*_sign_prepared`, for the module `module`. -/
+def preparedName (module : String) : String := s!"vg_{module}_sign_prepared"
+
 section
 variable (p : Params)
 

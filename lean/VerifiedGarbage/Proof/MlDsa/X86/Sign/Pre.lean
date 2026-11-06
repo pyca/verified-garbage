@@ -64,9 +64,6 @@ def signCoreContract (p : Params) {M : ISA} (A : Abi M) (stack : Nat := 0) : Con
       (if keysWord m scratch = 0 then 0 else 1) ::
         signLeak p (bytesAt m sk p.skLen) (bytesAt m mu 64) (bytesAt m rnd 32))
 
-/-- The name of `vg_mldsa*_sign_core`, for the module `module`. -/
-def signCoreName (module : String) : String := s!"vg_{module}_sign_core"
-
 set_option linter.unusedSimpArgs false in
 theorem pre_of {s₀ : State} (h : (signContract p X86.abi 96).pre s₀) : TPre (Y p) s₀ := by
   sig_pre [signContract, signSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h

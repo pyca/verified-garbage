@@ -290,9 +290,6 @@ def verifyCoreContract (p : Params) {M : ISA} (A : Abi M) (stack : Nat := 0) : C
     (leak := some fun pk mu sig _scratch _t1 m =>
       Spec.MlDsa.leakBytes (bytesAt m pk p.pkLen ++ bytesAt m mu 64 ++ bytesAt m sig p.sigLen))
 
-/-- The name of `vg_mldsa*_verify_core`, for the module `module`. -/
-def verifyCoreName (module : String) : String := s!"vg_{module}_verify_core"
-
 theorem pre_of {p : Params} {s₀ : State} (h : (verifyCoreContract p X86.abi 96).pre s₀) :
     TPre (YV p) s₀ ∧ T1In p s₀.mem ((arg s₀ 4).setWidth 64) (bytesAt s₀.mem ((arg s₀ 0).setWidth 64) p.pkLen) := by
   sig_pre [verifyCoreContract, verifyCoreSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
