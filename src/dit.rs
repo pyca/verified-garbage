@@ -1,40 +1,54 @@
-//! Data independent timing (on AArch64, PSTATE.DIT, FEAT_DIT): Arm
-//! guarantees the timing of the data-independent-time instructions, which
-//! the proofs' leakage model assumes, only while it is on.
+//! Data independent timing (on AArch64, PSTATE.DIT, `FEAT_DIT`): Arm
+//! guarantees the timing of the instructions the proofs' leakage model
+//! assumes constant time only while it is on.
 //!
-//! Every verified function takes a [`Dit`] token first, which only this
-//! module makes, so the compiler checks that every call of verified code
-//! comes from an operation that decided whether it needs the mode:
+//! Every operation of this library that may process secrets (MACs, AEADs,
+//! ciphers, KDFs, key generation, signing, key agreement, KEMs, RSA's
+//! private key and encryption) turns the mode on for the current thread,
+//! where the CPU has it, for as long as the call runs, and turns it off
+//! again after if it was off. A program making many short calls (an HMAC
+//! fed in small pieces, the records of a TLS connection) pays for that in
+//! every call: run them in a [`scope`], which turns the mode on once, so
+//! that the calls inside find it on and leave it on.
 //!
-//! * [`enter!`] (a [`Guard`]), for an operation that may process secrets
-//!   (it takes a key, or produces or hides a secret): MACs, AEADs, ciphers,
-//!   KDFs, key generation, signing, key agreement, KEMs and RSA's private
-//!   key and encryption. It turns data independent timing on for the
-//!   current thread, where the CPU has it, until the guard is dropped, with
-//!   the verified function `vg_dit_enter`, and turns it off again with
-//!   `vg_dit_clear` if it was off before (`lean/VerifiedGarbage/Spec/Dit.lean`,
-//!   and their effect on it, `VG.Proof.Dit.AArch64.enter_dit` and
-//!   `clear_dit`). Elsewhere it does nothing: no other target has such a
-//!   mode.
-//! * [`public`], for an operation whose inputs and outputs are all the
-//!   caller's public data, for the reason [`Why`] names: hashing without a
-//!   key, verifying a signature, checking or converting a public key, and
-//!   wiping memory. It leaves the mode as it is.
-//! * [`enter_if!`], for a type that is either, as its state says: BLAKE2,
-//!   keyed or not.
-//!
-//! `ci/check_dit.py` checks that each module uses only the reasons its
-//! algorithms' family allows (`docs/algorithms/`), so a new primitive gets
-//! the mode its family needs.
-//!
-//! An operation enters the mode once and passes its token down: the
-//! functions it shares with others take the token (`update_with`,
-//! `digest_with`, …) rather than deciding again. In the tests (debug builds
-//! with `cfg(test)` or `cpu-features-env`), entering a guard while another
-//! is live on the thread, or making a token for public work inside an
-//! operation that holds the mode, panics: the first would turn the mode on
-//! twice, the second would run part of a secret operation as if it were
-//! public. So each operation pays for the mode once.
+//! On other architectures, and on AArch64 CPUs without `FEAT_DIT`, there is
+//! no such mode, and none of this does anything.
+
+// How the library decides (for its developers):
+//
+// Every verified function takes a `Dit` token first, which only this
+// module makes, so the compiler checks that every call of verified code
+// comes from an operation that decided whether it needs the mode:
+//
+// * `enter!` (a `Guard`), for an operation that may process secrets (it
+//   takes a key, or produces or hides a secret). It turns data independent
+//   timing on for the current thread, where the CPU has it, until the
+//   guard is dropped, with the verified function `vg_dit_enter`, and turns
+//   it off again with `vg_dit_clear` if it was off before
+//   (`lean/VerifiedGarbage/Spec/Dit.lean`, and their effect on it,
+//   `VG.Proof.Dit.AArch64.enter_dit` and `clear_dit`). If it was on (in a
+//   `scope`), `vg_dit_enter` only reads it. Elsewhere it does nothing: no
+//   other target has such a mode.
+// * `public`, for an operation whose inputs and outputs are all the
+//   caller's public data, for the reason `Why` names: hashing without a
+//   key, verifying a signature, checking or converting a public key, and
+//   wiping memory. It leaves the mode as it is.
+// * `enter_if!`, for a type that is either, as its state says: BLAKE2,
+//   keyed or not.
+//
+// `ci/check_dit.py` checks that each module uses only the reasons its
+// algorithms' family allows (`docs/algorithms/`), so a new primitive gets
+// the mode its family needs.
+//
+// An operation enters the mode once and passes its token down: the
+// functions it shares with others take the token (`update_with`,
+// `digest_with`, …) rather than deciding again. In the tests (debug builds
+// with `cfg(test)` or `cpu-features-env`), entering a guard while another
+// is live on the thread, or making a token for public work inside an
+// operation that holds the mode, panics: the first would turn the mode on
+// twice, the second would run part of a secret operation as if it were
+// public. So each operation pays for the mode once. A `scope` is the
+// caller's, not an operation: the operations inside it decide as usual.
 
 use core::marker::PhantomData;
 
@@ -72,11 +86,89 @@ pub(crate) struct Guard {
     /// Whether this guard holds the mode: made by [`Guard::new`], or by
     /// [`Guard::new_if`] for secret work.
     active: bool,
-    /// Whether this guard turned the mode on, which it then turns off when
+    /// The mode it holds, if `active`.
+    _mode: Mode,
+}
+
+/// Data independent timing on the current thread while it lives, where the
+/// CPU has it, and back off when dropped if it was off: what a [`Guard`]
+/// for secret work and a [`scope`] hold.
+struct Mode {
+    /// Whether this turned the mode on, which it then turns off when
     /// dropped: it was off, and the CPU has it.
     #[cfg(target_arch = "aarch64")]
     clear: bool,
     _thread: PhantomData<*const ()>,
+}
+
+impl Mode {
+    /// Turns the mode on, where the CPU has it.
+    #[inline]
+    fn on() -> Self {
+        Mode {
+            #[cfg(target_arch = "aarch64")]
+            clear: aarch64::enter(),
+            _thread: PhantomData,
+        }
+    }
+
+    /// Leaves the mode as it is.
+    #[inline(always)]
+    fn kept() -> Self {
+        Mode {
+            #[cfg(target_arch = "aarch64")]
+            clear: false,
+            _thread: PhantomData,
+        }
+    }
+}
+
+impl Drop for Mode {
+    #[inline]
+    fn drop(&mut self) {
+        #[cfg(target_arch = "aarch64")]
+        if self.clear {
+            aarch64::clear();
+        }
+    }
+}
+
+/// Runs `f` with data independent timing on for the current thread (see
+/// the [module's documentation](self)), and returns what it returns.
+///
+/// The library's operations that `f` calls on this thread find the mode on
+/// and leave it on, so they only check that it is (on AArch64, one read of
+/// PSTATE.DIT each) rather than turning it on and off again. When `f`
+/// returns or unwinds, the mode is turned off again if it was off before
+/// the scope. Scopes may nest.
+///
+/// Only the current thread is affected: the library's operations on other
+/// threads turn the mode on for themselves, as outside a scope. Everything
+/// `f` does runs with the mode on, the caller's own code and the library's
+/// public operations (hashing without a key, verifying signatures)
+/// included, which on some CPUs makes them slower; so keep the scope around
+/// the secret work.
+///
+/// ```
+/// use verified_garbage::dit;
+/// use verified_garbage::hashes::sha256::Sha256;
+/// use verified_garbage::hmac::Hmac;
+///
+/// let key = [0x0b; 32];
+/// let records: [&[u8]; 3] = [b"one", b"two", b"three"];
+/// let mac = dit::scope(|| {
+///     let mut h = Hmac::<Sha256>::new(&key);
+///     for r in records {
+///         h.update(r);
+///     }
+///     h.finalize()
+/// });
+/// assert_eq!(mac, Hmac::<Sha256>::mac(&key, b"onetwothree"));
+/// ```
+#[inline]
+pub fn scope<R>(f: impl FnOnce() -> R) -> R {
+    let _mode = Mode::on();
+    f()
 }
 
 impl Guard {
@@ -88,9 +180,7 @@ impl Guard {
         check::enter();
         Guard {
             active: true,
-            #[cfg(target_arch = "aarch64")]
-            clear: aarch64::enter(),
-            _thread: PhantomData,
+            _mode: Mode::on(),
         }
     }
 
@@ -105,9 +195,7 @@ impl Guard {
             let _ = public(why);
             Guard {
                 active: false,
-                #[cfg(target_arch = "aarch64")]
-                clear: false,
-                _thread: PhantomData,
+                _mode: Mode::kept(),
             }
         }
     }
@@ -128,10 +216,7 @@ impl Drop for Guard {
         if self.active {
             check::leave();
         }
-        #[cfg(target_arch = "aarch64")]
-        if self.clear {
-            aarch64::clear();
-        }
+        // `_mode` turns the mode off after, if it turned it on.
     }
 }
 
@@ -353,6 +438,46 @@ mod tests {
             super::enter!(inner);
             let _ = inner;
         }
+        #[cfg(target_arch = "aarch64")]
+        assert!(!has || !on());
+    }
+
+    /// A scope keeps the mode on while `f` runs, where the CPU has it: a
+    /// guard inside finds it on and leaves it on, and so does a scope
+    /// inside; public work inside is allowed. After the scope, returning or
+    /// unwinding, the mode is off again, as it was.
+    #[test]
+    fn scope() {
+        extern crate std;
+
+        #[cfg(target_arch = "aarch64")]
+        let has = has();
+        #[cfg(target_arch = "aarch64")]
+        if has {
+            // SAFETY: the CPU has FEAT_DIT; it writes no memory.
+            unsafe { vg_dit_clear(super::public(Why::Test)) };
+        }
+        let r = super::scope(|| {
+            #[cfg(target_arch = "aarch64")]
+            assert!(!has || on());
+            {
+                super::enter!(dit);
+                let _ = dit;
+            }
+            #[cfg(target_arch = "aarch64")]
+            assert!(!has || on());
+            super::scope(|| {
+                let _ = super::public(Why::UnkeyedHash);
+            });
+            #[cfg(target_arch = "aarch64")]
+            assert!(!has || on());
+            7
+        });
+        assert_eq!(r, 7);
+        #[cfg(target_arch = "aarch64")]
+        assert!(!has || !on());
+        let unwound = std::panic::catch_unwind(|| super::scope(|| panic!("inside a scope")));
+        assert!(unwound.is_err());
         #[cfg(target_arch = "aarch64")]
         assert!(!has || !on());
     }

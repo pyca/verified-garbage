@@ -2780,17 +2780,15 @@ The tables are generated from the code by `ci/algorithms_table.py`.
   (Data Independent Timing, `FEAT_DIT`) is 1; with DIT = 0, "the
   architecture makes no statement about the timing properties of any
   instructions" (Arm ARM, `DIT`). The proofs assume DIT = 1
-  (`lean/VerifiedGarbage/TCB/AArch64/Isa.lean`), but nothing in this library
-  sets it, and nothing guarantees that it is set when it runs. On AArch64,
-  the constant-time guarantee therefore holds only if the application sets
-  DIT on each thread that calls this library, around the calls, as Apple's
-  [Writing ARM64 code for Apple platforms](https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms#Enable-DIT-for-constant-time-cryptographic-operations)
-  tells cryptographic code to: with `timingsafe_enable_if_supported` and
-  `timingsafe_restore_if_supported` (macOS 15.2, iOS 18.2 and later), or
-  elsewhere `msr DIT, #1` (allowed at EL0 on CPUs with `FEAT_DIT`, which
-  Linux reports as `HWCAP_DIT` and macOS as `hw.optional.arm.FEAT_DIT`),
-  restoring the previous value afterwards. On CPUs without `FEAT_DIT`, Arm
-  makes no timing statement at all.
+  (`lean/VerifiedGarbage/TCB/AArch64/Isa.lean`). Every operation that may
+  process secrets sets it for the current thread while it runs, on CPUs
+  with `FEAT_DIT` (which Linux reports as `HWCAP_DIT` and macOS as
+  `hw.optional.arm.FEAT_DIT`), and restores it after (`src/dit.rs`, with
+  the verified `vg_dit_enter` and `vg_dit_clear`). Operations on public
+  data alone (hashing without a key, verifying a signature) leave it as it
+  is. A program making many short calls can set it once around them with
+  `verified_garbage::dit::scope`. On CPUs without `FEAT_DIT`, Arm makes no
+  timing statement at all.
 * **PPC64LE's multiplies are constant time only on the cores surveyed.** The
   Power ISA makes no architectural promise about the timing of any
   instruction. The model has no division and only the 64-bit multiplies
