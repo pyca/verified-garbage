@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Weierstrass.JacMul
 does (`DblSpec`) and is constant-time given `x0` leaks the same trace in two
 runs with the same field values, as `stepRaw_relCT` for the field
 program's: the doubling's results are those values' doubling in both runs,
-and it writes only the loop's slots (`ro_unch`). `stepOfRaw_relCT`, for either.
+and it writes only the loop's slots (`ro_unch`).
 -/
 
 @[expose] public section
@@ -26,12 +26,6 @@ open VG.Impl.Weierstrass.AArch64.PubNaf
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 open Spec.Weierstrass
-
-/-- The doubling a window is given, if any, is constant-time given `x0`. -/
-def NafDblCT (dd : Option (Prog isa)) : Prop :=
-  ∀ d, dd = some d → ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0])) d
-
-theorem NafDblCT.none : NafDblCT none := fun _ h => by cases h
 
 /-- The read-only slots and the table's keep their numbers through what the
 loop writes. -/
@@ -174,21 +168,5 @@ theorem stepDRaw_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k j : Nat}
       · exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_left _ hx))
       · exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_right _ hx))
       · exact List.mem_append_left _ hx
-
-/-- An iteration, with the doubling given, if any, for the values it computes. -/
-theorem stepOfRaw_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k j : Nat}
-    (hL : NafLay K size) (hm : UnitMod C.p (2^(64*K.M.n))) (hone : K.one < C.p) (hc : StepChecks K)
-    {dd : Option (Prog isa)} (hD : NafDblOk K C base size dd) (hT : NafDblCT dd)
-    {P : Point C} {s₀ t₀ : State} (hF₁ : NafFixed K C base s₀ P k) (hF₂ : NafFixed K C base t₀ P k)
-    (hj : j < 64 * K.M.n + 1) :
-    RelCT isa (fun s t => (∃ E, FieldPair K.M base size C.p (· ∈ winSlots K) (loopLive K) E s t) ∧
-      NSt K C base size P s₀ s ∧ NSt K C base size P t₀ t ∧
-      CacheOk K C base s ∧ CacheOk K C base t ∧
-      s.gpr .x19 = BitVec.ofNat 64 (j + 1) ∧ t.gpr .x19 = BitVec.ofNat 64 (j + 1))
-      (PubNaf.stepOf K dd)
-      (fun s t => ∃ E', FieldPair K.M base size C.p (· ∈ winSlots K) (loopLive K) E' s t) := by
-  cases dd with
-  | none => exact stepRaw_relCT hL hm hone hc hF₁ hF₂ hj
-  | some d => exact stepDRaw_relCT hL hm hone hc (hD d rfl) (hT d rfl) hF₁ hF₂ hj
 
 end VG.Proof.Weierstrass.AArch64.PubNaf

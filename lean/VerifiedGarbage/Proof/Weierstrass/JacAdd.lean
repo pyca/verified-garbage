@@ -187,41 +187,6 @@ theorem InvJ.opposite (hC : Law C) {X1 Y1 Z1 X2 Y2 Z2 : Fe C} {P Q : Point C}
       have eyn : y2 = -y1 := by grind
       simp only [Spec.Weierstrass.add,ex,eyn,↓reduceIte,and_self]
 
-/-- Complete public-data Jacobian addition, including infinity and equal x coordinates. -/
-def jacAddComplete (X1 Y1 Z1 X2 Y2 Z2 : Fe C) : Fe C × Fe C × Fe C :=
-  if Z1 = 0 then (X2,Y2,Z2)
-  else if Z2 = 0 then (X1,Y1,Z1)
-  else if X2*(Z1*Z1)-X1*(Z2*Z2) = 0 then
-    if Y2*Z1*(Z1*Z1)-Y1*Z2*(Z2*Z2) = 0 then dblJF X1 Y1 Z1
-    else (0,1,0)
-  else jacAddF X1 Y1 Z1 X2 Y2 Z2
-
-theorem InvJ.add (hC : Law C) (ha : AM3 C) {X1 Y1 Z1 X2 Y2 Z2 : Fe C} {P Q : Point C}
-    (hP : onCurve C P = true) (hQ : onCurve C Q = true)
-    (h1 : InvJ C X1 Y1 Z1 P) (h2 : InvJ C X2 Y2 Z2 Q) :
-    let j := jacAddComplete X1 Y1 Z1 X2 Y2 Z2
-    InvJ C j.1 j.2.1 j.2.2 (Spec.Weierstrass.add P Q) := by
-  dsimp only [jacAddComplete]
-  split
-  next hz =>
-    rw [(h1.z_zero_iff hC).mp hz]
-    exact h2
-  next hz1 =>
-    split
-    next hz =>
-      rw [(h2.z_zero_iff hC).mp hz]
-      cases P <;> exact h1
-    next hz2 =>
-      split
-      next hx =>
-        split
-        next hy =>
-          rw [← h1.same hC h2 hz1 hz2 hx hy]
-          exact h1.dbl hC ha hP
-        next hy =>
-          exact Or.inl ⟨h1.opposite hC hP hQ h2 hz1 hz2 hx hy,rfl⟩
-      next hx => exact h1.add_ne hC ha hP hQ h2 hz1 hz2 hx
-
 open VG.Impl.Weierstrass
 
 def jacHeadN : List FOp := jacHead ⟨9,10,0,1,2,3,4,5⟩ ⟨11,12,13⟩ ⟨14,15,16⟩
@@ -274,7 +239,6 @@ theorem jacMixedN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
   simp only [jacAddF, Lean.Grind.Semiring.mul_one]
   rfl
 
-
 /-- The mixed header's two initial copies. -/
 def jacMixedInit {F : Type _} (S : RcbSlots) (p : Pt) (E : Nat → F) : Nat → F :=
   let E1 := Function.update E S.t2 (E p.x)
@@ -313,6 +277,5 @@ theorem jacMixedTail_eq (S : RcbSlots) (p q o : Pt) :
 theorem jacMixedHeadN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     let r := runOps jacMixedHeadN (jacMixedEnv e)
     r 3 = e 14*(e 13*e 13)-e 11 ∧ r 5 = e 15*e 13*(e 13*e 13)-e 12 := ⟨rfl,rfl⟩
-
 
 end VG.Proof.Weierstrass

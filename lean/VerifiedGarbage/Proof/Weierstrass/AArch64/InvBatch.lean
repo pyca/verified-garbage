@@ -182,9 +182,6 @@ abbrev fgCodeAt (P : InvCfg) (nf ng t : Nat) : List Instr :=
   (((maskOf .x16 .x6 ++ maskOf .x17 .x7 ++ lin .x6 .x7 .x16 .x17 t P.sF P.sG P.L P.L) ++ shr59 ng t P.L) ++
   (copyW P.sF nf P.L ++ copyW P.sG ng P.L))
 
-theorem fgUpdateAt_eq (P : InvCfg) (nf ng t : Nat) : P.fgUpdateAt nf ng t = fgCodeAt P nf ng t := by
-  simp only [fgCodeAt, InvCfg.fgUpdateAt, List.append_assoc]
-
 /-- The update of `f`, `g`. -/
 abbrev fgCode (P : InvCfg) : List Instr := fgCodeAt P P.sNF P.sNG P.sT
 

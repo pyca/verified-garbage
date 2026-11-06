@@ -175,8 +175,6 @@ theorem ySel_bounds_ok {K : WinCfg} {base : Addr} {size : Nat} (hn0 : 0 < K.M.n)
   · exact ((Keeps.regs k₁).mono (by decide)).trans (kt.mono (by decide))
   · rw [← k₁.mem]; exact O.unch.mono (by simp)
 
-
-
 /-- Conversion of the final Jacobian accumulator, including canonical infinity. -/
 theorem jacComb_finish_ok {K : TCombCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : CombLay K.toComb size) (hA : CombA K.toComb) (hC : Law C)
@@ -276,57 +274,5 @@ theorem jacComb_finish_ok {K : TCombCfg} {C : Curve} {base : Addr} {size : Nat}
     change Rep C (tmv C K.M.n base u K.A.x) _ (tmv C K.M.n base u K.A.z) _
     rw [vxv,ey,vzv]
     exact hR.out hC
-
-
-/-- The public Jacobian comb returns the existing homogeneous representation. -/
-theorem jacComb_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
-    {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb) (hC : Law C)
-    (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl)
-    (hpn : C.p < 2^(64*K.M.n)) (hn4 : K.M.n=4)
-    (hSum : JacCombSumCorrect K C base size) {s : State} (hs : Scr s base size)
-    (hM : ModOkA K.M size C.p s.mem base)
-    (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2^(64*K.M.n)) C.p tbl)) :
-    WP isa (Jacobian.jacComb K) s fun t => KeepRegs (tcombClob K.M.n) s t ∧
-      Unch base (tcombW K) s.mem t.mem ∧ ModOkA K.M size C.p t.mem base ∧
-      (∀ x ∈ [K.A.x,K.A.y,K.A.z], wordsVal t.mem base x K.M.n < C.p) ∧
-      Rep C (tmv C K.M.n base t K.A.x) (tmv C K.M.n base t K.A.y)
-        (tmv C K.M.n base t K.A.z) (mul k (G C)) := by
-  unfold Jacobian.jacComb
-  refine WP.seq (WP.mono (jacComb_loop_ok hL hA hC hG hV hpn hSum hs hM hF)
-    fun u ⟨ku,uu,mu,lu,ru⟩ => ?_)
-  have su := hs.of_keepRegs ku (by rw [hn4]; decide)
-  have hro : ∀ x ∈ combRo K.toComb, wordsVal u.mem base x K.M.n = wordsVal s.mem base x K.M.n := by
-    intro x hx
-    exact uu.wordsVal (tcombW_ro hL hx) (by
-      have he : x+8*K.M.n ≤ size := hL.comb.lay.le _ (combRo_slots _ hx)
-      have := hs.nowrap
-      omega)
-  have hlt : ∀ x ∈ rcbR K.S K.A ⟨K.zero,K.zero,K.zero⟩,
-      wordsVal u.mem base x K.M.n < C.p := by
-    intro x hx
-    simp only [rcbR,List.mem_cons,List.not_mem_nil,or_false] at hx
-    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · rw [hro _ (by simp [combRo,TCombCfg.toComb])]
-      exact hF.ro_lt _ (by simp [combRo,TCombCfg.toComb])
-    · rw [hro _ (by simp [combRo,TCombCfg.toComb])]
-      exact hF.ro_lt _ (by simp [combRo,TCombCfg.toComb])
-    · exact lu _ (by simp)
-    · exact lu _ (by simp)
-    · exact lu _ (by simp)
-    · rw [hro _ (by simp [combRo,TCombCfg.toComb])]
-      exact hF.ro_lt _ (by simp [combRo,TCombCfg.toComb])
-    · rw [hro _ (by simp [combRo,TCombCfg.toComb])]
-      exact hF.ro_lt _ (by simp [combRo,TCombCfg.toComb])
-    · rw [hro _ (by simp [combRo,TCombCfg.toComb])]
-      exact hF.ro_lt _ (by simp [combRo,TCombCfg.toComb])
-  have hz : wordsVal u.mem base K.zero K.M.n=0 := by
-    rw [hro _ (by simp [combRo,TCombCfg.toComb]),hF.zero]
-  refine WP.mono (jacComb_finish_ok hL.comb hA hC hV.unit hn4 hV.one_lt hV.one hpn su mu hlt hz ru)
-    fun t ⟨kt,ut,mt,lt,rt⟩ => ⟨ku.trans kt,?_,mt,lt,rt⟩
-  exact (uu.trans ut).mono (fun w hw => by
-    rcases List.mem_append.mp hw with hw | hw
-    · exact hw
-    · exact List.mem_append_left _ hw)
-
 
 end VG.Proof.Weierstrass.AArch64

@@ -108,22 +108,10 @@ functions (`vg_<curve>_<op>_mod_p`) the point functions call. -/
 abbrev modP (C : Impl.Weierstrass.Point.Curve) : Impl.Weierstrass.Mont.Modulus :=
   { curve := C.curve, which := "p", m := C.p, k := C.k, desc := C.desc }
 
-/-- `vg_<curve>_point_add`. -/
-def pointAdd (C : Impl.Weierstrass.Point.Curve) : Prog isa := fn (modP C) false
-
-/-- `vg_<curve>_point_double`. -/
-def pointDouble (C : Impl.Weierstrass.Point.Curve) : Prog isa := fn (modP C) true
-
 /-- The formulas for `a = 0`: Algorithm 9 doubles (`dbl`), Algorithm 8 adds. -/
 def ops0 (dbl : Bool) : List FOp := if dbl then dbl0 sId pId oId else rcb0m sId pId qId oId
 
 /-- `O = P + P` (`dbl`) or `P + Q` by the formulas for `a = 0`. -/
 def fn0 (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) : Prog isa := fnOps S dbl (ops0 dbl)
-
-/-- `vg_<curve>_point_a0_double`: `O = P + P` by Algorithm 9. -/
-def pointDouble0 (C : Impl.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) true
-
-/-- `vg_<curve>_point_a0_add_affine`: `O = P + Q` by Algorithm 8. -/
-def pointAdd0m (C : Impl.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) false
 
 end VG.Impl.Weierstrass.X86.Point

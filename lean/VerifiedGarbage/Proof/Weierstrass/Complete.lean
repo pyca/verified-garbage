@@ -166,17 +166,6 @@ theorem ZRep.y_ne_zero (hC : Good C) {X Y Z : ZMod C.p} {P : Point C}
     rw [hY]
     exact mul_ne_zero (Weierstrass.y_ne_zero hC.noTwoTorsion (onCurve_affine.mp hP)) hZ
 
-theorem rep_infinity : ZRep C 0 1 0 .infinity := ⟨rfl, one_ne_zero, rfl⟩
-
-theorem rep_affine (x y : Fe C) : ZRep C (toF x) (toF y) 1 (.affine x y) :=
-  ⟨one_ne_zero, (mul_one _).symm, (mul_one _).symm⟩
-
-theorem ZRep.z_eq_zero_iff {X Y Z : ZMod C.p} {P : Point C} (h : ZRep C X Y Z P) :
-    Z = 0 ↔ P = .infinity := by
-  cases P with
-  | infinity => exact ⟨fun _ => rfl, fun _ => h.2.2⟩
-  | affine x y => exact ⟨fun h0 => absurd h0 h.1, fun h' => nomatch h'⟩
-
 theorem mul_pow_sub_two {Z : ZMod C.p} (hZ : Z ≠ 0) : Z * Z ^ (C.p - 2) = 1 := by
   have h2 := (Fact.out : C.p.Prime).two_le
   rw [← pow_succ', show C.p - 2 + 1 = C.p - 1 by omega, ZMod.pow_card_sub_one_eq_one hZ]
@@ -191,9 +180,6 @@ theorem ZRep.y_eq {X Y Z : ZMod C.p} {x y : Fe C} (h : ZRep C X Y Z (.affine x y
     toF y = Y * Z ^ (C.p - 2) := by
   obtain ⟨hZ, -, hY⟩ := h
   rw [hY, mul_assoc, mul_pow_sub_two hZ, mul_one]
-
-theorem ZRep.infinity_x {X Y Z : ZMod C.p} (h : ZRep C X Y Z .infinity) : X * Z ^ (C.p - 2) = 0 := by
-  rw [h.1, zero_mul]
 
 end
 

@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointPairedTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Inplace
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
@@ -28,7 +27,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointPairedTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Inplace
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming

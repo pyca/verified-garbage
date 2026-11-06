@@ -44,19 +44,4 @@ theorem nafTable_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     · rw [show 8-(j-1)=8-j+1 from by omega]
       exact it
 
-/-- Table construction leaves the recoded scalar bytes intact. -/
-theorem NafTableInv.digits {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
-    {P : Point C} {β : Nat → BitVec 8} {s t : State} (hL : NafLay K size)
-    (hI : NafTableInv K C base size P s t m)
-    (hb : ∀ i<64*K.M.n+1, s.mem (off base (K.bits+i))=β i) :
-    ∀ i<64*K.M.n+1, t.mem (off base (K.bits+i))=β i := by
-  intro i hi
-  rw [hI.unch.byte (fun w hw => ?_) (by have := hL.bits; have := hI.field.scr.nowrap; omega),hb i hi]
-  simp only [nafTableWrites,List.mem_append,List.mem_map,List.mem_singleton] at hw
-  rcases hw with ⟨x,hx,rfl⟩ | rfl
-  · have hb' := hL.bits_w x hx
-    dsimp only; omega
-  · have hb' := hL.bits_tmp
-    dsimp only; omega
-
 end VG.Proof.Weierstrass.X86_64

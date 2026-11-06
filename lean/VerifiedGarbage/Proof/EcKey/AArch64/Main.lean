@@ -91,16 +91,6 @@ theorem finishWith_eq (c : Cfg) (x y : Nat) : Impl.EcKey.AArch64.Cfg.finishWith 
   simp only [Impl.EcKey.AArch64.Cfg.finishWith, List.append_assoc]; rfl
 
 /-- The result, the return value and the callee-saved registers. -/
-theorem finish_eq (c : Cfg) : Impl.EcKey.AArch64.Cfg.finish c =
-    ([ld .x3 (c.sl FLAG)] : List Instr) ++
-    (([.movz .x .x1 4 0, .logic .and .x .x1 .x1 .x3, .strb .x1 .x20 0] : List Instr) ++
-    (([.addImm .x .x6 .x20 1] : List Instr) ++
-    (storeBytes c.C.len c.n .x6 0 (c.sl X) ++ (storeBytes c.C.len c.n .x6 c.C.len (c.sl Impl.EcKey.AArch64.Y) ++
-    (Spill.restoreCode .x0 Cfg.saved ++
-    ([.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1] : List Instr)))))) := by
-  simp only [Impl.EcKey.AArch64.Cfg.finish, Impl.EcKey.AArch64.Cfg.finishWith, List.append_assoc]; rfl
-
-/-- The result, the return value and the callee-saved registers. -/
 theorem pointFinish_ok {c : Cfg} (hc : BaseCfgOk c) {x y : Nat} (hx : x < 45) (hy : y < 45) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
     (hx20 : s.gpr .x20 = out) (hfit : out.toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64)
     (hw : (⟨out, 1 + 2 * c.C.len⟩ : Region) ∈ s.wr)

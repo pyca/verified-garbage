@@ -47,19 +47,10 @@ theorem clob : ∀ r∈optimized.flatMap instrClob,r∈VG.Proof.Mont.AArch64.clo
 theorem checked : OptChecked 8192 original optimized :=
   ⟨rfl,wf,writes_of_bound leftBound,writes_of_bound rightBound⟩
 
-
 theorem caseProof : FieldCase VG.Impl.P256.EcdhJac.tc.outOps where
   checked := checked
   leftBound := leftBound
   rightBound := rightBound
   clob := clob
-
-
-theorem ct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0]))
-    (VG.Impl.P256.EcdhJac.arithmetic VG.Impl.P256.EcdhJac.tc.outOps) := by
-  change ConstantTime isa _ _ (.block optimized)
-  rw [optimized_lit]
-  exact VG.Taint.constantTime (A:=taint) (hc:=.block (List.replicate 5 (Taint.ofRegs [.x0])))
-    (Taint.ofRegs [.x0]) (fun _ _ _ _ h => h) (by decide +kernel)
 
 end VG.Proof.P256.EcdhJac.Out

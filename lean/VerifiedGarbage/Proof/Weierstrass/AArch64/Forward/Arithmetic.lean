@@ -53,32 +53,4 @@ theorem contract (certs : Cases) {M : Mod} {base : Addr} {size m : Nat} [NeZero 
   · rw [program,ite_eq_right sel]
     exact hb
 
-theorem field_ok (certs : Cases) {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
-    (hm : UnitMod m (2^(64*M.n))) (hsize : 8192≤size) (ops : List FOp)
-    {V : List Nat} {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s)
-    (hSl : ∀ op∈ops,∀ x∈op.out::op.ins,Sl x) (hLo : ∀ op∈ops, Low M (op.out::op.ins))
-    (hV : readsOk ops V=true) :
-    WP isa (program M ops) s fun t =>
-      ProgKeep M base (ops.map FOp.out) s t ∧
-      Inv M base size m Sl (validAfter ops V) (runOps ops E) t := by
-  have hb := fprogB_ok hL hAl hm ops hI hSl hLo hV
-  by_cases sel : selected M ops
-  · exact WP.mono (refinement certs sel hI.scr hsize hb)
-      fun _ ⟨_,⟨hk,hi⟩,he,kt⟩ => transfer_post he kt hk hi
-  · rw [program,ite_eq_right sel]
-    exact hb
-
-theorem field_relCT (certs : Cases) {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
-    (hm : UnitMod m (2^(64*M.n))) (hsize : 8192≤size) (ops : List FOp)
-    {V : List Nat} {E : Nat → Fin m}
-    (hSl : ∀ op∈ops,∀ x∈op.out::op.ins,Sl x) (hLo : ∀ op∈ops, Low M (op.out::op.ins))
-    (hV : readsOk ops V=true)
-    (hct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (program M ops)) :
-    RelCT isa (FieldPair M base size m Sl V E) (program M ops)
-      (FieldPair M base size m Sl (validAfter ops V) (runOps ops E)) := by
-  exact fieldWP_relCT hct fun _ hi => WP.mono (field_ok certs hL hAl hm hsize ops hi hSl hLo hV)
-    fun _ ⟨hk,it⟩ => ⟨it,hk.sp⟩
-
 end VG.Proof.Weierstrass.AArch64.Forward.Arithmetic

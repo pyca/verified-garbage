@@ -9,7 +9,6 @@ import Mathlib.Data.Nat.Prime.Defs
 import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract

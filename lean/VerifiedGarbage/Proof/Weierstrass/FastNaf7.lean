@@ -145,10 +145,6 @@ theorem residual_boundB {B k : Nat} (hk : k≤2^B) {j : Nat} (hj : j≤B) :
     rw [he] at hp
     exact next_pow_bound hp
 
-theorem residual_bound {k : Nat} (hk : k≤2^256) {j : Nat} (hj : j≤256) :
-    residual k j≤2^(256-j) :=
-  residual_boundB hk hj
-
 /-- A scalar of `B` bits has `B + 1` digits. -/
 theorem residual_zero_top {B k : Nat} (hk : k<2^B) : residual k (B+1)=0 := by
   have h := residual_boundB (Nat.le_of_lt hk) (j:=B) (by omega)
@@ -156,9 +152,6 @@ theorem residual_zero_top {B k : Nat} (hk : k<2^B) : residual k (B+1)=0 := by
   change next (residual k B)=0
   unfold next
   split <;> omega
-
-theorem residual_zero257 {k : Nat} (hk : k<2^256) : residual k 257=0 :=
-  residual_zero_top hk
 
 def point (C : Curve) (P : Point C) (k j : Nat) : Point C :=
   if negative k j then negPt (mul (magnitude k j) P) else mul (magnitude k j) P

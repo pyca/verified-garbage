@@ -86,11 +86,6 @@ structure TCombLay (K : TCombCfg) (size : Nat) : Prop where
   exy : K.E.y = K.E.x + 8 * K.M.n
   tbl : K.tblBytes < 2 ^ 31
 
-/-- The functions' own working space ends at byte 4096. -/
-theorem TCombLay.wk_le {K : TCombCfg} {size : Nat} (hL : TCombLay K size) : K.wk + 64 * K.M.n ≤ size := by
-  have := hL.n; have := hL.sz
-  simp only [TCombCfg.wk, Mont.own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega
-
 /-- The comb's slots, below the functions' own working space, as the field
 programs need them. -/
 theorem TCombLay.wkOk {K : TCombCfg} {size m : Nat} (hL : TCombLay K size)

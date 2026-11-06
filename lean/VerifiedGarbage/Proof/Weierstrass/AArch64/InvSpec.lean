@@ -17,7 +17,7 @@ inversion leaves `[acc] = [base]^(m - 2)` (in Montgomery form), which a prime
 proofs of the functions take it as a hypothesis, and a curve's variant on
 AArch64 (`HasLawInv`, `Variants/<Curve>/AArch64/Law.lean`) supplies it with
 its group law, as on x86-64. An inversion with a power's slots takes the
-power's place (`InvLay.of_chain`, `invW_eq`).
+power's place (`InvLay.of_chain`).
 -/
 
 @[expose] public section
@@ -92,8 +92,6 @@ theorem InvOk.ofMod {M : Mod} {acc base tbl m : Nat} (hC : 0 < (InvCfg.ofMod M a
 /-- The power with an inversion's slots. -/
 def _root_.VG.Impl.Weierstrass.AArch64.InvCfg.toChain (P : InvCfg) : ChainCfg :=
   ⟨P.M, P.acc, P.base, P.tbl, 1, []⟩
-
-theorem invW_eq (P : InvCfg) : invW P = chainW P.toChain := rfl
 
 theorem InvLay.of_chain {P : InvCfg} {size : Nat} (h : ChainLay P.toChain size) (h4 : 4 ≤ P.M.n)
     (h7 : P.M.n < 10) : InvLay P size := by

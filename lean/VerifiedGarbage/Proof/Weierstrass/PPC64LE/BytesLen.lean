@@ -36,8 +36,6 @@ namespace VG.Proof.Weierstrass.PPC64LE
 open VG VG.PPC64LE VG.Impl.Weierstrass VG.Impl.Weierstrass.PPC64LE VG.Proof.Mont VG.Proof.Mont.PPC64LE
   VG.Proof.Weierstrass
 
-theorem rev64_eq (w : BitVec 64) : rev64 w = byteRev64 w := rfl
-
 /-- `ldbrx r8, src, r9` from `r9 = e`. -/
 theorem wp_ldRev {s : State} {src : Reg} (hsrc0 : src ≠ .r0) (hsrc9 : src ≠ .r9) {e : Nat} (he : e < 2 ^ 15)
     (hr : InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 e) 8) {is : List Instr} {Q : State → Prop}

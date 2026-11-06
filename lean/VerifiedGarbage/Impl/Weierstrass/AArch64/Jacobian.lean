@@ -85,13 +85,6 @@ def jacFinish (K : WinCfg) : Prog isa :=
   .seq (.seq (fprogB K.M (fromJ K.S K.R (WinCfg.zeroPt K) K.E))
     (.block (copyPt 4 K.R K.E))) (.block (WinCfg.ySel {K with E := K.R}))
 
-def jacWindow (K : WinCfg) (w : Nat) : Prog isa :=
-  let j := (256+w)/w
-  let step := jacStep K w
-  .seq (jacBuildTree K (2^(w-1))) <|
-    .seq (.block (infinity K K.R ++ [.movz .x .x19 (BitVec.ofNat 16 j) 0])) <|
-    .seq (.loop step (.nonzero .x .x19)) (jacFinish K)
-
 def jacMixedAdd (K : WinCfg) (p q o : Pt) : Prog isa :=
   let head := jacMixedHead K.S p q
   let tail := jacMixedTail K.S p q o
@@ -112,19 +105,8 @@ def combWinCfg (K : TCombCfg) : WinCfg :=
 def jacCombSum (K : TCombCfg) : Prog isa :=
   .seq (jacMixedAdd (combWinCfg K) K.A K.E K.D) (.block (copyPt 4 K.A K.D))
 
-def jacCombStep (K : TCombCfg) : Prog isa :=
-  let add := .seq (.block (K.selectPublic ++ negYW K.M K.w K.neg K.zero K.E.y K.bits))
-    (jacCombSum K)
-  .seq (.block (decCounter :: K.digit)) (.ite (.nonzero .x .x2) add (.block []))
-
-def jacCombLoop (K : TCombCfg) : Prog isa :=
-  .seq (.block K.init) (.loop (jacCombStep K) (.nonzero .x .x19))
-
 def jacCombFinish (K : TCombCfg) : Prog isa :=
   .seq (.seq (fprogB K.M (fromJ K.S K.A (WinCfg.zeroPt (combWinCfg K)) K.E))
     (.block (copyPt 4 K.A K.E))) (.block (WinCfg.ySel {combWinCfg K with E := K.A}))
-
-def jacComb (K : TCombCfg) : Prog isa :=
-  .seq (jacCombLoop K) (jacCombFinish K)
 
 end VG.Impl.Weierstrass.AArch64.Jacobian
