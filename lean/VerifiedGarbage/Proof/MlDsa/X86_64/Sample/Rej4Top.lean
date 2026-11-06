@@ -411,10 +411,4 @@ theorem body_ok {s : State} (h : SqInv σ 0 s) :
 
 end
 
-theorem correct (σ : State) (hs : r4K.pre σ) :
-    ∃ t s', Exec isa rejNTT4Avx2 σ t s' ∧ abiPreserved σ s' ∧ r4K.post σ s' := by
-  have hp := pre_of (by dsimp only [r4K] at hs; exact hs)
-  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (start_ok hp) fun _ h => body_ok hp h)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he hF.2, hF.1⟩
-
 end VG.Proof.MlDsa.X86_64.Rej4

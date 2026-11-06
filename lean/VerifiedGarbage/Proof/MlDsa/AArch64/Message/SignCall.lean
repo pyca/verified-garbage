@@ -10,11 +10,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # ML-DSA on AArch64, `sign_message`: the call of the signing function on `μ`
 
-Untrusted: everything here is checked by Lean. Any code verified against
-`signContract p AArch64.abi 16` whose frames nest at most once (`SignFn`):
-its call on the key, `μ` at `X + 840`, `rnd`, `sig` and the first
-`scratchWords p` words of `scratch` (`signCall_ok`), after which the saves
-are intact (`Fin`).
+Untrusted: everything here is checked by Lean. The first `scratchWords p`
+words of `scratch` it is given (`sScr`), the arguments of the call on the
+key, `μ` at `X + 840`, `rnd` and `sig` (`signArgs`), its precondition
+(`signC_pre`), and the regions it may read and write (`signRd`, `signWr`).
 -/
 
 @[expose] public section
@@ -26,11 +25,6 @@ open VG.Proof.MlDsa.Message
 open VG.Proof.MlKem.AArch64 (Only)
 open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
-
-/-- A signing function on `μ` that `sign_message` can call. -/
-structure SignFn (p : Params) (c : Prog isa) : Prop where
-  ver : Verified AArch64.target c (signContract p AArch64.abi 16)
-  dle : DLe 1 c
 
 /-- The size of the working space of the signing function on `μ`. -/
 abbrev sScr (p : Params) : Nat := scratchWords p * 8
@@ -117,92 +111,6 @@ theorem signRegs_of {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : M
   rw [hc.slotV (f := fScr) (j := 7) rfl (by omega_arith)] at e4
   simp only [Lay.vals, slay, List.getD_cons_zero, List.getD_cons_succ] at e0 e2 e3 e4
   exact ⟨e0, e1, e2, e3, e4⟩
-
-/-- The precondition of the signing function on `μ`, on entry to it. -/
-theorem signK_pre (hp : p ∈ params) (h : SPre p s) (h8 : (s.gpr .x4).toNat < 256) {g : Reg → BitVec 64}
-    {vv : VReg → BitVec 128} {m₀ : Mem} {t t1 : State} (hc : Ctx (slay p s) g vv m₀ t)
-    (hA : ∀ da ∈ signArgs, t1.gpr da.1 = da.2.val t) (hsp1 : t1.sp = s.sp) :
-    (signContract p AArch64.abi 16).pre (t1.callEntry.withRegions (signRd p s) (signWr p s)) := by
-  have hL := slay_ok hp h h8
-  obtain ⟨e0, e1, e2, e3, e4⟩ := signRegs_of hc hA
-  have hmu := (mu_within p s).sub
-  have hsub := sScr_sub p s
-  have hstk : ∀ {rd wr : List Region} {r : Region}, (rStk s).Disjoint r →
-      (rStk (t1.callEntry.withRegions rd wr)).Disjoint r := by
-    intro rd wr r hr; simpa [rStk, hsp1] using hr
-  refine signC_pre ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
-    try simp only [gpr_ce t1 (r := .x0), gpr_ce t1 (r := .x1), gpr_ce t1 (r := .x2), gpr_ce t1 (r := .x3),
-      gpr_ce t1 (r := .x4), e0, e1, e2, e3, e4, State.withRegions_rd, State.withRegions_wr]
-  · simp only [State.withRegions_sp, State.callEntry_sp, hsp1]; exact h.sp
-  · exact h.skSig
-  · exact h.skScr.sub_right hsub
-  · exact h.sigScr.symm.sub_left hmu
-  · exact mu_sScr hp s
-  · exact h.rndSig
-  · exact h.rndScr.sub_right hsub
-  · exact h.sigScr.sub_right hsub
-  · exact hstk h.stkSk
-  · have km := k_mu hL
-    exact hstk km
-  · exact hstk h.stkRnd
-  · exact hstk h.stkSig
-  · exact hstk (h.stkScr.sub_right hsub)
-  · exact h.nSk
-  · exact mu_nowrap hL
-  · exact h.nRnd
-  · exact h.nSig
-  · have := h.nScr; simp only [mScrLen, sScr, messageScratchWords] at this ⊢; omega_arith
-
-/-- The call of the signing function on `μ`. -/
-theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ params) (h : SPre p s)
-    (h8 : (s.gpr .x4).toNat < 256) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
-    (hc : Ctx (slay p s) g vv m₀ t) :
-    WP isa (callA n c signArgs) t fun s' => Fin (slay p s) g vv s' ∧
-      Outcome (fun b => signMu p b (bytesAt t.mem (s.gpr .x0) p.skLen) (bytesAt t.mem (slay p s).MU 64)
-          (bytesAt t.mem (s.gpr .x5) 32)) ((s'.gpr .x0).setWidth 32) (bytesAt s'.mem (s.gpr .x6) p.sigLen) := by
-  have hL := slay_ok hp h h8
-  refine WP.seq (WP.mono (setArgs_ok signArgs (by decide) t (hc.xOk hL)) fun t1 ⟨hA, o⟩ => ?_)
-  have hc1 : Ctx (slay p s) g vv m₀ t1 :=
-    hc.regs o.rd o.wr o.sp o.mem o.vcs fun r hr _ => o.gpr r (by simp only [List.map_cons, List.map_nil]; exact not_pres hr _)
-  obtain ⟨e0, e1, e2, e3, _⟩ := signRegs_of hc hA
-  have hsp1 : t1.sp = s.sp := hc1.sp
-  have hd := hS.dle.1
-  have hpre := signK_pre hp h h8 hc hA hsp1
-  refine WP.callFV hS.ver.1 hpre ?_ ?_ (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega_arith)
-  · rw [hc1.rd, hc1.wr]
-    refine covers_of_within fun r hr => ?_
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact ⟨_, by simp [slay, h.rd], within_self _⟩
-    · exact ⟨_, by simp [slay, h.wr], mu_within p s⟩
-    · exact ⟨_, by simp [slay, h.rd], within_self _⟩
-    · exact ⟨_, by simp [slay, h.wr], within_self _⟩
-    · exact ⟨⟨s.gpr .x7, mScrLen p⟩, by simp [slay, h.wr], within_base _ (by rw [mScr_eq]; simp only [sScr, oE]; omega_arith)⟩
-  · rw [hc1.wr]
-    refine covers_of_within fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨_, by simp [slay, h.wr], within_self _⟩
-    · exact ⟨⟨s.gpr .x7, mScrLen p⟩, by simp [slay, h.wr], within_base _ (by rw [mScr_eq]; simp only [sScr, oE]; omega_arith)⟩
-  -- After the call.
-  have hsv : ∀ d, d + 8 ≤ 88 → s'.mem.readW ((slay p s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d) 64 =
-      t1.mem.readW ((slay p s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d) 64 := fun d hd' =>
-    hf.readW (Region.contains_self _ _) (fun r hr => by
-      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · rw [add_add]
-        exact (h.sigScr.symm.sub_left ((within_off (slay p s).X (d := 904 + d) (n := 8) (k := 1024)
-          (by omega_arith)).trans (slay_X p s)).sub)
-      · exact sv_sScr hp s hd'
-      · rw [hsp1]
-        exact (hL.sv_disj (r := below s.sp (16 * c.aarch64Depth)) (.inr (below_sub (by omega_arith) (by decide))) hd'))
-      (by decide)
-  refine ⟨⟨hrd.trans hc1.rd, hwr.trans hc1.wr, hsp.trans hc1.sp, (hcs .x28 (by decide) (by decide)).trans hc1.x28,
-    fun r hr h28 h30 => (hcs r hr h30).trans (hc1.cs r hr h28 h30), fun r hr => (hvs r hr).trans (hc1.vs r hr),
-    (hsv 0 (by omega_arith)).trans hc1.s28, (hsv 8 (by omega_arith)).trans hc1.s30⟩, ?_⟩
-  sig_reduce [signContract, signSig, AArch64.abi, AArch64.argRegs, List.range, List.range.loop] at hpost
-  simp only [e0, e1, e2, e3, o.mem] at hpost
-  exact hpost
 
 end
 

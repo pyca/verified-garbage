@@ -92,11 +92,6 @@ theorem ent_bytes {p : Params} {s₀ s : State} (hp : TPre (Y p) s₀) (h : Ctx 
       exact (Buf.stkD hp hb (N := 4 * n + 4) (by show _ + 16 ≤ 96; omega)).symm)
     (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega) hi
 
-/-- The callee's argument area is the frame of its arguments, below `esp`. -/
-theorem ent_argArea {p : Params} {s₀ s : State} (h : Ctx (Y p) s₀ s) {n : Nat} (hn : n ≤ 5) :
-    (⟨argAddr (ent n s) 0, 4 * n⟩ : Region) = below (E1 s₀) (4 * n) := by
-  rw [ent_arg0 h hn]
-
 /-- The regions a call writes, and the stack its frame and calls use, within `W`. -/
 theorem stk_W {p : Params} {s₀ : State} (hp : TPre (Y p) s₀) {N : Nat} (hN : N ≤ 80) :
     ∃ r' ∈ W (Y p) s₀, Region.Sub (below (E1 s₀) N) r' :=

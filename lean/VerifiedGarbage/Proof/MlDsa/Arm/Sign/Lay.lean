@@ -125,8 +125,6 @@ structure Lay (rbs wbs : List (Reg × Nat)) (s : State) : Prop where
 
 end
 
-theorem addr_toNat32 (a : BitVec 32) : (State.addr a).toNat = a.toNat := addr_toNat' a
-
 section
 variable {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D rbs wbs s)
 include L
@@ -350,11 +348,6 @@ theorem Lay.keepRed (hP : PPostB D s s' ws) (hc : keepB (rbs ++ wbs) ws p 1024 =
   rw [hP.pa (keepB_cs hc)]
   exact reduced_frame hP.frame (L.fdisj hc) h
 
-theorem Lay.keepPolyAt (hP : PPostB D s s' ws) (hc : keepB (rbs ++ wbs) ws p 1024 = true) :
-    polyAt s'.mem (pa s' p) = polyAt s.mem (pa s p) := by
-  rw [hP.pa (keepB_cs hc)]
-  exact polyAt_frame hP.frame (L.fdisj hc)
-
 theorem Lay.keepW (hP : PPostB D s s' ws) (hc : keepB (rbs ++ wbs) ws p 4 = true) :
     s'.mem.readW (pa s' p) 32 = s.mem.readW (pa s p) 32 := by
   rw [hP.pa (keepB_cs hc)]
@@ -375,10 +368,6 @@ theorem LRel.eq {D : Nat} {rbs wbs : List (Reg × Nat)} {x y : State} (h : LRel 
     (hp : inB (rbs ++ wbs) p l = true) : x.gpr p.1 = y.gpr p.1 := by
   obtain ⟨n, hn, _⟩ := inB_spec hp
   exact h.regs (p.1, n) hn
-
-theorem LRel.pa {D : Nat} {rbs wbs : List (Reg × Nat)} {x y : State} (h : LRel D rbs wbs x y) {p : Ptr} {l : Nat}
-    (hp : inB (rbs ++ wbs) p l = true) : pa x p = pa y p := by
-  simp only [VG.Proof.MlDsa.Arm.Sign.pa, h.eq hp]
 
 theorem LRel.post {D : Nat} {rbs wbs : List (Reg × Nat)} {x y x' y' : State} {W₁ W₂ : List Region}
     (h : LRel D rbs wbs x y) (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hx : PostB D x x' W₁) (hy : PostB D y y' W₂) :

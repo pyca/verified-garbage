@@ -22,8 +22,8 @@ working space, the output polynomial and the parameter kept in `x27`), whose
 regions are laid out as `SpOk` says. From the prologue on, `Env` holds: the
 registers of the layout, the caller's callee-saved registers (in their
 registers or saved in the working space), and the memory changed only in the
-output, the working space and the stack below `sp`. `sponge` then leaves
-`outlen` bytes of SHAKE of the message at `scratch + 840` (`sponge_ok`);
+output, the working space and the stack below `sp`. `spongeWith` then leaves
+`outlen` bytes of SHAKE of the message at `scratch + 840` (`spongeWith_ok`);
 `epi_ok` restores the registers.
 -/
 
@@ -544,10 +544,6 @@ theorem spongeWith_ok (v : Proof.Sha3.AArch64.Permutation) {rate outlen : Nat} (
     WP.seq (WP.mono ((call1With_ok (v := v)) hp hr h1) fun _ h2 => WP.seq (WP.mono (blk2_ok hr h2) fun _ h3 =>
       WP.seq (WP.mono ((call2With_ok (v := v)) hp hr h3) fun _ h4 =>
         WP.seq (WP.mono (blk3_ok hr (by omega_arith) h4) fun _ h5 => (call3With_ok (v := v)) hp hr ho h5)))))
-
-theorem sponge_ok {rate outlen : Nat} (hr : rate ∈ rates) (ho : 840 + outlen ≤ 2016) {s : State}
-    (h : J0 P σ s) : WP isa (sponge rate outlen) s (J6 rate outlen P σ) :=
-  spongeWith_ok (v := .scalar) hp hr ho h
 
 /-! ## The epilogue -/
 

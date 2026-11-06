@@ -68,9 +68,6 @@ theorem ksqzChk_spec {bs wbs : List (Reg × Nat)} {dst : Ptr} {len : Nat} (h : k
   simp only [ksqzChk, Bool.and_eq_true, decide_eq_true_eq] at h
   exact ⟨h.1.1.1.1.1, h.1.1.1.1.2, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
 
-theorem rate_small {rate : Nat} (h : rate ∈ rates) : rate < 2 ^ 31 := by
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega
-
 /-- The 8 bytes of stack of a call of a sponge function, apart from the layout. -/
 theorem k8 {s s1 : State} (L : Lay D rbs wbs s) (hD : 8 ≤ D) {p : Ptr} {l : Nat}
     (h : inB (rbs ++ wbs) p l = true) (hsp : s1.sp = s.sp) : (below s1 8).Disjoint ⟨pa s p, l⟩ := by

@@ -100,29 +100,4 @@ theorem mont_center_bounds {t : Nat} (ht : t < 9 * q ^ 2) :
     (mont t : Int) - 8380417 ≤ 147168
   omega
 
-/-- Up to seven products of a canonical matrix coefficient and a lazy NTT
-coefficient still admit a single unsigned Montgomery reduction. -/
-theorem dot_lt_qR {t : Nat} (ht : t < 21 * q ^ 2) : t < q * 2 ^ 32 :=
-  Nat.lt_trans ht (by decide)
-
-theorem matrix_product_lt {a b : Nat} (ha : a < q) (hb : b < 3 * q) :
-    a * b < 3 * q ^ 2 := by
-  have h := Nat.mul_lt_mul'' ha hb
-  have he : q*(3*q) = 3*q^2 := by decide
-  rwa [he] at h
-
-/-- The branchless unsigned interval check used by signing, including failure
-outputs. Its positive-bound premise is essential. -/
-theorem norm_interval {a bound : Int} (ha : -8380417 < a) (ha' : a < 8380417)
-    (hb : 0 < bound) (hb' : bound < 8380417) :
-    (a + bound - 1) % 4294967296 < 2 * bound - 1 ↔ -bound < a ∧ a < bound := by
-  omega
-
-/-- A final conditional subtraction is canonical after a lazy product. -/
-theorem lazy_product_canonical {a b : Nat} (ha : a < 3 * q) (hb : b < 3 * q) :
-    condSub (mont (a * b)) = mont (a * b) % q :=
-  condSub_mont (product_lt_qR ha hb)
-
-theorem inverse_final_bound : 256 * (q : Int) < 2147483648 := by decide
-
 end VG.Proof.MlDsa.AArch64.Optimized

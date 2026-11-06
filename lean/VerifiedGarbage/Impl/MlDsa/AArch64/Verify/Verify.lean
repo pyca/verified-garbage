@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
 /-!
 # ML-DSA on AArch64: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
 
-`verify P p (pk = x0, mu = x1, sig = x2, scratch = x3) -> w0`:
+`verifyWith c P p (pk = x0, mu = x1, sig = x2, scratch = x3) -> w0`:
 `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with the message
 representative `μ` given (`verifyMu`), for the parameter set `p`, as calls of
 the primitives `P` and of the SHA-3 sponge functions (`KeyGen/Frag.lean`).
@@ -150,9 +150,5 @@ def bodyWith : Prog isa :=
 def verifyWith : Prog isa := .seq (.block pro) (.seq ((bodyWith c) P p) (.block epi))
 
 end
-
-def compute := computeWith .scalar
-def body := bodyWith .scalar
-def verify := verifyWith .scalar
 
 end VG.Impl.MlDsa.AArch64.Verify

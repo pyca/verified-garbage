@@ -49,12 +49,8 @@ def streamWith (core : Prog isa) (words blocks : Nat) (a b base : Reg) : Prog is
       ([.addImm .x a a (8*words), .addImm .x b b (8*words),
        .subImm .x .x28 .x28 1] : List Instr)))) (.nonzero .x .x28)
 
-/-- The original schedule remains the default. -/
-def stream (words blocks : Nat) (a b base : Reg) : Prog isa := streamWith permute words blocks a b base
-
 /-- Load and store the packed states once around five SHAKE256 blocks. -/
 def maskPairWith (core : Prog isa) (p a b base : Reg) : Prog isa :=
   .seq (.block (VG.Impl.Sha3.AArch64.Neon.Pair.load p)) <|
   .seq (streamWith core 17 5 a b base) (.block (VG.Impl.Sha3.AArch64.Neon.Pair.store p))
-def maskPair (p a b base : Reg) : Prog isa := maskPairWith permute p a b base
 end VG.Impl.MlDsa.AArch64.Optimized.Resident

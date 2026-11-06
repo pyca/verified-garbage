@@ -37,7 +37,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallRound
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallSample
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
@@ -52,6 +51,9 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
+import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Frag
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
@@ -75,7 +77,6 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallRound
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallSample
 meta import VerifiedGarbage.Proof.MlDsa.DecideAt
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
@@ -90,6 +91,9 @@ meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 meta import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Frag
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
 
 /-!
 # ML-DSA verification on AArch64: the samplers
@@ -376,8 +380,5 @@ theorem ballTail_vpiece : VPiece p S (VB1 p) (VB p) (.seq (.block and24) (mask (
       · exact .inr hn
 
 end
-
-/-! ## The samplers -/
-
 
 end VG.Proof.MlDsa.AArch64.Verify

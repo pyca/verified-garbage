@@ -72,17 +72,6 @@ open VG.Impl.MlDsa.AArch64.Optimized.PairedBase
 def finalArithmetic : List Instr :=
   stageRunCode (fun i => 32*i.val) (List.finRange 7)++rootPair 224++scaleRunCode (List.finRange 4)
 
-theorem finalArithmetic_eq : finalArithmetic=
-    ([1,2,4].flatMap fun dist => (List.range (4/dist)).flatMap fun b =>
-      rootPair (32*(8-(8/dist)+b)) ++
-      (List.range dist).flatMap (fun j => batchPair (2*b*dist+j) (2*b*dist+j+dist))) ++
-    rootPair 224 ++
-    ((List.range 4).flatMap fun j =>
-      [.vop (.sqdmulh .v24 (vr j) .v29),.vop (.sqdmulh .v25 (vr (8+j)) .v29),
-       .vop (.mul (vr j) (vr j) .v28),.vop (.mul (vr (8+j)) (vr (8+j)) .v28),
-       .vop (.mls (vr j) .v24 .v31),.vop (.mls (vr (8+j)) .v25 .v31)]) := by
-  decide +kernel
-
 theorem finalArithmetic_ok {s : State} {rest : List Instr} {Q : State → Prop} {v : Values}
     (hv : Banks s v) (hr : ∀i:Fin 7,RootReady s (32*i.val) (Inverse.finalZ i.val))
     (hs : RootReady s 224 (fun _ => 16382))

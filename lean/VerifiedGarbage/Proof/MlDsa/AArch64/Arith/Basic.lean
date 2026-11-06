@@ -158,34 +158,6 @@ theorem toNat_setWidth32 {v : BitVec 64} (h : v.toNat < 2 ^ 32) : (v.setWidth 32
 theorem toNat_setWidth64 (v : BitVec 32) : (v.setWidth 64).toNat = v.toNat := by
   rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := v.isLt; omega)]
 
-/-- `csub` of a value less than `2q`, stored as a word. -/
-theorem csubX32 {v : BitVec 64} (h : v.toNat < 2 * q) :
-    ((csubX v).setWidth 32).toNat = v.toNat % q := by
-  have h1 := csubX_toNat h
-  have h2 : condSub v.toNat < q := condSub_lt h
-  rw [toNat_setWidth32 (by rw [h1]; rw [q_eq] at h2; omega), h1, condSub_eq h]
-
-/-- The sum of two words of values `x` and `y`, reduced. -/
-theorem csubX_add {a b : BitVec 32} {x y : Zq} (ha : a.toNat = x.val) (hb : b.toNat = y.val) :
-    ((csubX (a.setWidth 64 + b.setWidth 64)).setWidth 32).toNat = (x + y).val := by
-  have hx := x.isLt; have hy := y.isLt; have := a.isLt; have := b.isLt
-  have e : (a.setWidth 64 + b.setWidth 64).toNat = a.toNat + b.toNat := by
-    rw [BitVec.toNat_add, toNat_setWidth64, toNat_setWidth64]; omega
-  rw [csubX32 (by rw [e, ha, hb]; omega), e, ha, hb, val_add']
-
-/-- The difference of two words of values `x` and `y` (`x + q - y`), reduced. -/
-theorem csubX_sub {a b : BitVec 32} {x y : Zq} (ha : a.toNat = x.val) (hb : b.toNat = y.val) :
-    ((csubX (a.setWidth 64 + Qv - b.setWidth 64)).setWidth 32).toNat = (x - y).val := by
-  have hx := x.isLt; have hy := y.isLt; have := a.isLt; have := b.isLt
-  have hQ : Qv.toNat = q := rfl
-  have e1 : (a.setWidth 64 + Qv).toNat = a.toNat + q := by
-    rw [VG.Proof.MlKem.AArch64.toNat_add_n (by rw [toNat_setWidth64, hQ, q_eq]; omega), toNat_setWidth64,
-      hQ]
-  have e : (a.setWidth 64 + Qv - b.setWidth 64).toNat = a.toNat + q - b.toNat := by
-    rw [VG.Proof.MlKem.AArch64.toNat_sub_n (by rw [e1, toNat_setWidth64, hb]; omega), e1,
-      toNat_setWidth64]
-  rw [csubX32 (by rw [e, ha, hb]; omega), e, ha, hb, val_sub, condSub_eq (by omega)]
-
 /-! ## `reduce` -/
 
 /-- `M`, as a 64-bit value. -/
@@ -239,23 +211,9 @@ theorem redX32 {x : BitVec 64} (hx : x.toNat < q * q) : ((redX x).setWidth 32).t
   have : x.toNat % q < q := Nat.mod_lt _ (by decide)
   rw [toNat_setWidth32 (by rw [h]; exact Nat.lt_of_lt_of_le this (by decide)), h]
 
-/-- The product of a word of value `x` and a register of value `z`, reduced:
-the value of `z · x`. -/
-theorem redX_mul {u : BitVec 32} {x z : Zq} (hu : u.toNat = x.val) :
-    ((redX (u.setWidth 64 * BitVec.ofNat 64 z.val)).setWidth 32).toNat = (z * x).val := by
-  have hz := z.isLt
-  have hx := x.isLt
-  have e : (u.setWidth 64 * BitVec.ofNat 64 z.val).toNat = x.val * z.val := by
-    rw [BitVec.toNat_mul, toNat_setWidth64, hu, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := z.val)
-      (Nat.lt_of_lt_of_le hz (by decide))]
-    exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_lt hx hz) (by decide))
-  rw [redX32 (by rw [e]; exact Nat.mul_lt_mul_of_lt_of_lt hx hz), e, val_mul, Nat.mul_comm]
-
 /-! ## Constants -/
 
 theorem q32 : (BitVec.ofNat 32 8380417).setWidth 64 = Qv := by decide
-
-theorem toNat_Qv : Qv.toNat = q := rfl
 
 /-- A 16-bit immediate. -/
 theorem imm16 {k : Nat} (h : k < 65536) : (BitVec.ofNat 16 k).setWidth 64 = BitVec.ofNat 64 k := by

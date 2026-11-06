@@ -97,11 +97,6 @@ theorem sel_ok (r : Reg) (v : Nat) (p e : Prog isa) (s : State) {Q : State → P
   · rw [sub_beq_zero32, decide_eq_false_iff_not] at h
     exact he s' ⟨hg, hm, hrd, hwr⟩ h
 
-/-- The low 32 bits of `r` are `v` if its argument is. -/
-theorem lo_eq {s : State} {r : Reg} {v : Nat} (hv : v < 2 ^ 32) (h : dArg s r = v) :
-    (s.gpr r).setWidth 32 = BitVec.ofNat 32 v := by
-  apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv]; exact h
-
 theorem lo_ne {s : State} {r : Reg} {v : Nat} (h : (s.gpr r).setWidth 32 ≠ BitVec.ofNat 32 v) :
     dArg s r ≠ v := fun e => h (by
   apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat, ← e]; exact (Nat.mod_eq_of_lt (BitVec.isLt _)).symm)

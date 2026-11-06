@@ -4,7 +4,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseACT
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEndTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
@@ -17,7 +18,6 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseACT
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
@@ -26,6 +26,8 @@ meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
 meta import VerifiedGarbage.Proof.MlDsa.DecideAt
 meta import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEndTiming
 
 @[expose] public section
 
@@ -75,35 +77,5 @@ theorem positiveExpand_tr {P : Prims} {p : Params} {D : Nat} (hP : PrimsOk P D) 
   obtain ⟨_,rfl⟩ := Exec.det ey ev
   exact ⟨tr,out,ru,rv,by
     simpa only [RootSymbolsEq,VG.AArch64.Exec.syms ex,VG.AArch64.Exec.syms ey] using re⟩
-
-/-- The optimized signer adds only immutable artifact addresses to the public
-layout relation; the original signing leakage remains unchanged. -/
-theorem positiveSign_ct {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hp : Ok3 p)
-    {checks : Prog isa}
-    (hchecks : ∀σ s t,PositiveIB p D σ t s → (s.gpr .x0).setWidth 32=1 →
-      WP isa checks s fun u=>PositiveEP p D σ t u ∨ PositiveEF p D σ t u)
-    (hct : PositiveChecksCT p D checks) :
-    ConstantTime isa (fun s=>(signK p D).pre s ∧ StaticRoots D s)
-      (fun x y=>(signK p D).pub x y ∧ RootSymbolsEq x y)
-      (Impl.MlDsa.AArch64.Sign.Optimized.signWith keccak.callee P p checks) := by
-  have trace : RelCT isa (PositiveEntry p D)
-      (Impl.MlDsa.AArch64.Sign.Optimized.signWith keccak.callee P p checks) fun _ _=>True := by
-    unfold Impl.MlDsa.AArch64.Sign.Optimized.signWith
-    refine RelCT.seq (positivePro_tr hp) (RelCT.seq (positiveExpand_tr hP hp) ?_)
-    refine RelCT.seq (R := LRel D (sgR p) (sgW p)) ?_
-      (lrel_tr (fun _ _ h=>h) (by taint_decide))
-    unfold ifOk
-    refine ifOkElse_tr (P := PositiveRA p D) (fun _ _ h=>by rw [h.1.2])
-      (RelCT.mono (positiveRest_tr hP hp hchecks hct) ?_ (fun _ _ h=>h.1.lrel (fun _ _ h=>h.st)))
-      (RelCT.mono nil_tr (fun _ _ h=>h) (fun _ _ h=>h.1.1.lrel (fun _ _ h=>h.st)))
-    rintro x y ⟨⟨⟨⟨σ,τ,ps,pt,pub,hx,hy⟩,eq⟩,rx,ry,re⟩,hne⟩
-    have ex := x24_one hx.r01 hne
-    have ey : y.gpr .x24=1 := eq ▸ ex
-    obtain ⟨ox,fx⟩ := hx.ok ex
-    obtain ⟨oy,fy⟩ := hy.ok ey
-    exact ⟨⟨σ,τ,ps,pt,pub,pub_leq pub (expandA_max ox) (expandA_max oy),
-      ⟨⟨hx.st,ox,fx⟩,rx⟩,⟨⟨hy.st,oy,fy⟩,ry⟩⟩,re⟩
-  intro x y tx ty x' y' hx hy pub ex ey
-  exact (trace _ _ _ _ _ _ ⟨hx.1,hy.1,pub.1,hx.2,hy.2,pub.2⟩ ex ey).1
 
 end VG.Proof.MlDsa.AArch64.Sign

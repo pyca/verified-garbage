@@ -36,14 +36,4 @@ theorem addReduced_norm (a b : BitVec 32) (B : Nat) (ha : a.toNat<8380417)
   rw [norm_interval _ B hB hB' (by rw [hi]; omega) (by rw [hi]; omega),hi]
   exact (reduce32_norm_iff _ _ hl hh hB').symm
 
-/-- Acceptance makes the stored signed z small enough for the existing
-accepted-only canonicalization and signature packing adapter. -/
-theorem addReduced_accepted (a b : BitVec 32) (B : Nat) (ha : a.toNat<8380417)
-    (hb : -8380417<b.toInt ∧ b.toInt<2*8380417) (hB' : B≤524288)
-    (haccept : normZq (ofInt ((a.toNat:Int)+b.toInt))<B) :
-    -(B:Int)<(reduceWord (a+b)).toInt ∧ (reduceWord (a+b)).toInt<(B:Int) := by
-  have hi := addReduced_int a b ha hb
-  rw [hi]
-  exact (reduce32_norm_iff _ _ (by omega) (by omega) hB').mp haccept
-
 end VG.Proof.MlDsa.AArch64.Optimized.Response

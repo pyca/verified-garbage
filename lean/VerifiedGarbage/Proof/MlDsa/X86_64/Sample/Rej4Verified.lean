@@ -99,15 +99,8 @@ theorem rej4_verified (c : Prog isa) (hc : ∀ σ, r4K.pre σ → ∃ t s', Exec
         sig_implies_sat [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, r4K, MlKem.X86_64.sample4K, X86_64.abi,
           X86_64.argRegs] [MlKem.X86_64.sample4Sat] using MlKem.X86_64.sample4Sat }
 
-theorem rejNTT4Avx2_verified : Verified X86_64.target Impl.MlDsa.X86_64.Sample.Rej4.rejNTT4Avx2
-    (Proof.MlDsa.rejNTT4Contract X86_64.abi 24) := rej4_verified _ correct ct
-
 theorem rejNTT4_verified : Verified X86_64.target Impl.MlDsa.X86_64.Sample.Rej4.rejNTT4
     (Proof.MlDsa.rejNTT4Contract X86_64.abi 24) := rej4_verified _ correct_scalar ct_scalar
-
-theorem rejNTT4Avx2_ret {s s' : State} {t : List Leak} (h : (Proof.MlDsa.rejNTT4Contract X86_64.abi 24).pre s)
-    (e : Exec isa Impl.MlDsa.X86_64.Sample.Rej4.rejNTT4Avx2 s t s') :
-    (s'.gpr .rax).setWidth 32 = rej4Res s.mem (s.gpr .rdi) := rej4_ret correct h e
 
 theorem rejNTT4_ret {s s' : State} {t : List Leak} (h : (Proof.MlDsa.rejNTT4Contract X86_64.abi 24).pre s)
     (e : Exec isa Impl.MlDsa.X86_64.Sample.Rej4.rejNTT4 s t s') :

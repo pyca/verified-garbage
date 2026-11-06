@@ -307,9 +307,6 @@ structure Fin (L : Lay) (g : Reg → BitVec 32) (t : State) : Prop where
   s7 : t.mem.readW (L.X + BitVec.ofNat 64 (904 + 0)) 32 = g .r7
   sLR : t.mem.readW (L.X + BitVec.ofNat 64 (904 + 4)) 32 = g .lr
 
-theorem Ctx.fin {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m₀ t) : Fin L g t :=
-  ⟨hc.rd, hc.wr, hc.sp, hc.r7, hc.cs, hc.s7, hc.sLR⟩
-
 /-- The exit: `lr`, then `r7`, from the saves. -/
 theorem leave_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 32} {t : State} (hc : Fin L g t) :
     WP isa (.block leave) t fun t' => (∀ r ∈ preserved, t'.gpr r = g r) ∧ t'.sp = L.SP ∧ t'.mem = t.mem ∧

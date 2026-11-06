@@ -36,11 +36,6 @@ theorem ofInt_sub (a b : Int) : ofInt (a - b) = ofInt a - ofInt b := by
   change (a - b) % 8380417 = (a % 8380417 + (8380417 - b % 8380417)) % 8380417
   omega
 
-theorem positive_field (x : Int) : ofInt (positive x) = ofInt x := by
-  apply Fin.ext
-  apply Int.ofNat_inj.mp
-  rw [ofInt_val, ofInt_val, positive_mod]
-
 theorem fastMul_field (x z : Int) : ofInt (fastMul x z) = ofInt x * ofInt z := by
   rw [← ofInt_mul]
   apply Fin.ext

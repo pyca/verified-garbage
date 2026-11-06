@@ -72,9 +72,6 @@ theorem frIn {s₀ : State} (hp : TPre (Y p) s₀) {bs ds : List Buf} {N M : Nat
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
         stk_sub hp hNM (by show M + 16 ≤ 96; omega)⟩
 
-theorem Frame.trans' {rs : List Region} {m₁ m₂ m₃ : Mem} (h₁ : Frame rs m₁ m₂) (h₂ : Frame rs m₂ m₃) :
-    Frame rs m₁ m₃ := h₁.trans h₂
-
 /-! ## Families of slots -/
 
 /-- The `n` slots from `b` hold `f 0, …, f (n - 1)`. -/
@@ -151,10 +148,6 @@ include ps
 
 theorem slot_ok {j : Nat} (hj : j < nS p) : (Y p).okW (pS j) = true := by ofs
 theorem slot_ok' {j : Nat} (hj : j < nS p) : (Y p).ok (pS j) = true := (Lay.okW_iff.mp (slot_ok ps hj)).1
-
-omit ps in
-theorem slot_sep {i j : Nat} (h : i ≠ j) : (Y p).sep (pS i) (pS j) = true := by
-  simp only [Lay.sep_iff, oP, true_and, ne_eq, not_true_eq_false, false_and, or_false]; omega
 
 omit ps in
 /-- An entry of `Â` is a slot. -/

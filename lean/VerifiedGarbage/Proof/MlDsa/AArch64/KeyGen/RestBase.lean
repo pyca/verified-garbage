@@ -246,9 +246,6 @@ theorem KR.keep {p : Params} (hF : PFacts p) {S' : Nat} {σ : State} (hp : kgPre
 /-- After the copies, for some `A`, `S` and `R`. -/
 abbrev KR0 (p : Params) (σ s : State) : Prop := ∃ A S R, KR p σ A S R 0 0 0 s
 
-theorem b26 (o n : Nat) : ∀ w ∈ [(((.x26, o) : Ptr), n)], w.1.1 ∈ keptRegs := fun w hw => by
-  rw [List.mem_singleton] at hw; subst hw; show Reg.x26 ∈ keptRegs; decide
-
 theorem b27 (o n : Nat) : ∀ w ∈ [(((.x27, o) : Ptr), n)], w.1.1 ∈ keptRegs := fun w hw => by
   rw [List.mem_singleton] at hw; subst hw; show Reg.x27 ∈ keptRegs; decide
 
