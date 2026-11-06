@@ -293,16 +293,6 @@ theorem fieldCodeFree_ok (ops : List FieldOp) (hi : ops.all FieldOp.inline = tru
     refine WP.mono (ih hi.2 (ht.ctx hc) hlt) fun u ⟨hu, hru, hfu, hlu, eu⟩ => ?_
     exact ⟨ht.trans hu, hrt.trans hru, hft.trans hfu, hlu, by rw [eu, et]; rfl⟩
 
-theorem constField_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
-    (o : Slot) (v : Spec.X25519.Fe) :
-    WP isa (.block (constField o v)) s fun t => Keep b s t ∧ AllLim t.mem b ∧
-      env t.mem b = Function.update (env s.mem b) o v := fieldOp_ok hc hl (.const o v)
-
-theorem copyField_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
-    (o a : Slot) :
-    WP isa (.block (copyField o a)) s fun t => Keep b s t ∧ AllLim t.mem b ∧
-      env t.mem b = Function.update (env s.mem b) o (env s.mem b a) := fieldOp_ok hc hl (.copy o a)
-
 /-- Coordinates in four consecutive slots. -/
 def point (e : Env) (x y z t : Slot) : Spec.Ed25519.Point := ⟨e x, e y, e z, e t⟩
 

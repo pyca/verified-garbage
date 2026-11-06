@@ -209,8 +209,6 @@ theorem setWidth8_bit (w : BitVec 32) {b : Nat} (h : w.toNat = b) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, h, BitVec.toNat_ofNat]
 
-theorem and_one_le (n : Nat) : n &&& 1 ≤ 1 := Nat.le_of_lt_succ (Nat.and_lt_two_pow n (by decide : 1 < 2 ^ 1))
-
 theorem bitOf_ok {s₀ sA s : State} (hp : Pre s₀) (hsA : sA.wr = s₀.wr) {i j : Nat} (hi : i < 32) (hj : j < 8)
     (h : BInv s₀ sA (8 * i + j) s) (heax : s.gpr .eax = BitVec.ofNat 32 (sb s₀ i))
     (hebx : s.gpr .ebx = arg s₀ 3 + BitVec.ofNat 32 (BITS + 8 * i)) :

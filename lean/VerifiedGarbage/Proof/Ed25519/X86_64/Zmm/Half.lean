@@ -166,8 +166,6 @@ theorem zmm_half (s : State) (r : XReg) {h : Nat} (hh : h < 2) :
     · rw [ite_eq_right h, show 2 * 1 + 1 - 2 = 1 by rfl, Nat.mul_one, decide_eq_true (show j - 128 < 128 by omega_arith),
         Bool.true_and, show 128 + (j - 128) = j by omega_arith]
 
-theorem ymm_lanes (s : State) (r : XReg) : s.ymm r = s.lane r 1 ++ s.lane r 0 := rfl
-
 /-- `(x - (b + c)).toNat`, from `(x - b).toNat`. -/
 theorem sub_off (x b : Addr) (c : Nat) :
     (x - (b + BitVec.ofNat 64 c)).toNat = (2 ^ 64 - c % 2 ^ 64 + (x - b).toNat) % 2 ^ 64 := by
@@ -175,9 +173,6 @@ theorem sub_off (x b : Addr) (c : Nat) :
 
 theorem off_ofNat (b : Addr) {x : Nat} (hx : x < 2 ^ 64) : (b + BitVec.ofNat 64 x - b).toNat = x :=
   Mem.sub_ofNat_toNat b hx
-
-theorem eq_off (a b : Addr) : a = b + BitVec.ofNat 64 (a - b).toNat := by
-  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
 
 /-! ## The check: which registers a block leaves junk -/
 

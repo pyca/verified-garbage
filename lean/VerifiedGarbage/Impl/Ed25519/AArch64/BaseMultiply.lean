@@ -8,8 +8,7 @@ public import VerifiedGarbage.Spec.Ed25519
 # Cached points
 
 A cached point `[Y - X, Y + X, 2dT, 2Z]` is added with eight
-multiplications (`pointAddCached`), and stored from constants
-(`cachedPointStore`).
+multiplications (`pointAddCached`).
 -/
 
 @[expose] public section
@@ -33,13 +32,5 @@ def pointAddCached : List Instr := fieldCode pointAddCachedOps
 /-- The table entry addressed by `x8` to slots 4–7. -/
 def pointFromTableQ : List Instr :=
   (List.range 4).flatMap fun j => fromTableWords (32 * j) ++ stores (192 + 32 * j) .x4 .x5 .x6 .x7
-
-/-- A field constant to workspace byte `dst`. -/
-def cachedFieldStore (v : Spec.X25519.Fe) (dst : Nat) : List Instr := constWords v ++ store4 dst
-
-/-- A cached point to the table entry at workspace byte `dst`. -/
-def cachedPointStore (q : Spec.Ed25519.Point) (dst : Nat) : List Instr :=
-  cachedFieldStore q.X dst ++ (cachedFieldStore q.Y (dst + 32) ++
-    (cachedFieldStore q.Z (dst + 64) ++ cachedFieldStore q.T (dst + 96)))
 
 end VG.Impl.Ed25519.AArch64

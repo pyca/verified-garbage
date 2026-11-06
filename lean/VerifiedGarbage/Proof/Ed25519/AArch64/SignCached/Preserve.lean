@@ -76,10 +76,6 @@ theorem writes {rs : List Region}
 theorem field_scr (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 256) :
     (field L d).Disjoint L.SCR := hL.kc.sub_left (fieldWithin L hd).sub
 
-theorem field_mem {m n : Mem} (hm : n = m) (d : Nat) :
-    Spec.Ed25519.bytesAt n (L.E + BitVec.ofNat 64 d) 32 =
-      Spec.Ed25519.bytesAt m (L.E + BitVec.ofNat 64 d) 32 := by rw [hm]
-
 end VG.Proof.Ed25519.AArch64.SignCached
 end
 

@@ -24,11 +24,6 @@ def sqn (x : Fe) : Nat → Fe
   | 0 => x
   | n + 1 => sqn x n * sqn x n
 
-theorem sqn_succ' (x : Fe) (n : Nat) : sqn x (n + 1) = sqn (x * x) n := by
-  induction n with
-  | zero => rfl
-  | succ n ih => rw [sqn, ih, sqn]
-
 /-- ref10's `fe_invert(z)`: the exponents of `z` in the comments. -/
 def invert (z : Fe) : Fe :=
   let t0 := z * z                 -- 2

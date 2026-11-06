@@ -68,7 +68,6 @@ def vrowsK : List Instr := [ld 11 (offset 12), ld 12 (offset 13), ld 13 (offset 
 def vrowsKS : Sym := symOf vrowsK
 
 theorem vrowsKS_regs : ∀ l < 4, vrowsKS.reg (11 + l) = .ld (64 + 32 * (12 + l)) := by decide +kernel
-theorem vrowsKS_keep : ∀ r < 11, vrowsKS.reg r = .reg r := by decide +kernel
 theorem vrowsKS_st : vrowsKS.st = [] := by decide +kernel
 
 /-- The product's limbs to `ymm5–ymm9`. -/
