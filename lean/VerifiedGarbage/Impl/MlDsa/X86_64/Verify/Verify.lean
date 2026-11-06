@@ -1,18 +1,22 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Frag
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
 public import VerifiedGarbage.Spec.MlDsa
 
 /-!
-# ML-DSA on x86-64: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
+# ML-DSA on x86-64: `vg_mldsa{44,65,87}_verify_with_cache`
 
-`verify(pk = rdi, mu = rsi, sig = rdx, scratch = rcx) -> eax`:
+`verify(pk = rdi, mu = rsi, sig = rdx, scratch = rcx, prepared = r8) -> eax`:
 `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with the message
 representative `μ` given (`verifyMu`), for the parameter set `p`, as calls of
 the primitives `P` and of the sponge functions (`Frag.lean`). It keeps
 `scratch` in `rbx`, `pk` in `rbp`, `mu` in `r12` and `sig` in `r13`, and its
 result so far in `r15`; it saves its caller's values of them (and of `r14`)
-in `scratch`.
+in `scratch`, and `prepared` at `FL`. If `prepared ≠ 0`, `pk` is a prepared
+key (`Spec.MlDsa.PreparedPublicKey`), whose polynomials `NTT(t₁[r] · 2ᵈ)`
+step 4 copies instead of computing them (`keyRow`).
+`vg_mldsa{44,65,87}_verify` (`entry`) calls it with `prepared = 0`.
 
 1. `h ← HintBitUnpack` of the last `ω + k` bytes of `σ` to polynomials
    `0, …, k - 1` (`vg_mldsa_hint_bit_unpack`); `r15` is its result, and it
@@ -108,11 +112,17 @@ def samples : Prog isa :=
 def dot (r : Nat) : Prog isa :=
   .seq (mulAt P pW (pA p.ℓ r 0) (pZ 0)) (seqR (fun s => mulAddAt P pW (pA p.ℓ r s) (pZ s)) 1 (p.ℓ - 1))
 
+/-- `NTT(t₁[r] · 2ᵈ)` to `T`: copied from the prepared key after the encoded key
+at `pk` if the flag is set, and otherwise unpacked from `pk` and transformed. -/
+def keyRow (r : Nat) : Prog isa :=
+  .seq (.block testFlag) (.ite .ne (Impl.MlDsa.X86_64.Sign.copy pT (.rbp, p.pkLen + 1024 * r) 1024)
+    (.seq (unpackT1At P (.rbp, 32 + 320 * r) pT) (nttAt P pT)))
+
 /-- Row `r` of `w′`, `w′₁`, packed to `B`. -/
 def row (r : Nat) : Prog isa :=
-  .seq (dot P p r) (.seq (unpackT1At P (.rbp, 32 + 320 * r) pT) (.seq (nttAt P pT)
+  .seq (dot P p r) (.seq (keyRow P p r)
     (.seq (mulAt P pT2 pC pT) (.seq (subAt P pW pT2) (.seq (invNttAt P pW)
-      (.seq (useHintAt P (pH r) pW p.γ₂ pW1) (sbpAt P pW1 (w1Max p) (sc (oB + w1Len p * r)) (w1Len p))))))))
+      (.seq (useHintAt P (pH r) pW p.γ₂ pW1) (sbpAt P pW1 (w1Max p) (sc (oB + w1Len p * r)) (w1Len p)))))))
 
 /-- The NTTs of `z` and `c`, the rows, the hash and the comparison. -/
 def compute : Prog isa :=
@@ -123,9 +133,14 @@ def compute : Prog isa :=
 def body : Prog isa :=
   .seq (hint P p) (ifOk (.seq (seqR (zOne P p) 0 p.ℓ) (ifOk (.seq (samples P p) (compute P p)))))
 
-/-- `vg_mldsa*_verify` for the parameter set `p`, calling the primitives `P`. -/
-def verify : Prog isa := .seq (.block pro) (.seq (body P p) (.block epi))
+/-- `vg_mldsa*_verify_with_cache` for the parameter set `p`, calling the primitives `P`. -/
+def verify : Prog isa := .seq (.block proF) (.seq (body P p) (.block epi))
 
 end
+
+/-- An entry of the verification function `c` on `μ`, named `n`: `r8 ← flag`,
+then a call of `c` with the arguments as they are. -/
+def entry (n : String) (c : Prog isa) (flag : Nat) : Prog isa :=
+  .seq (.block [.mov32 .r8 (.imm (BitVec.ofNat 32 flag))]) (.call n c)
 
 end VG.Impl.MlDsa.X86_64.Verify

@@ -96,7 +96,7 @@ theorem hint_tr {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) :
     (block_nomem_tr fun i hi s => by simp only [List.mem_singleton] at hi; subst hi; rfl)
   have L := RV.lrel hp (fun _ _ h => h.1) h
   obtain ⟨σ₁, σ₂, _, _, pub, i₁, i₂⟩ := h
-  exact ⟨L.1, L.2.1, L.2.2, by rw [i₁.1.sigSlice c4, i₂.1.sigSlice c4, pub.2.2.2.2.2.2.2]⟩
+  exact ⟨L.1, L.2.1, L.2.2, by rw [i₁.1.sigSlice c4, i₂.1.sigSlice c4, pub.2.2.2.2.2.2.2.1]⟩
 
 /-! ## `z` -/
 
