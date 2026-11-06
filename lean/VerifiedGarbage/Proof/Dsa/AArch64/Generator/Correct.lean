@@ -51,7 +51,7 @@ theorem correct (M : Mont) (hb : Supported pLen) (s : State) (pre : (contract pL
   obtain ⟨trace, t, he, hpre, hst, hpk, hf⟩ := alloc_frame_ok (bytes := 272) (by decide)
     (by have := A.stackLower; unfold stack at this; omega)
     (Q := fun t => abiPreserved s t ∧
-      t.gpr .x0 = BitVec.ofNat 64 (if (result pLen s).isSome then 1 else 0) ∧
+      t.gpr .x0 = BitVec.ofNat 64 (endCode pLen s + 4 * (pLen * readCount pLen s)) ∧
       (∀ a, result pLen s = some a →
         Spec.Rsa.bytesAt t.mem (off (s.gpr .x0) packed) (2 * pLen + qLen pLen) = Spec.Dsa.encodeParams pLen (qLen pLen) a) ∧
       Frame (stageChanged pLen s ++ [⟨frameBase s, 272⟩, spillRegion s]) s.mem t.mem)
@@ -60,8 +60,6 @@ theorem correct (M : Mont) (hb : Supported pLen) (s : State) (pre : (contract pL
         rw [P.sp]; exact BitVec.sub_add_cancel .., P.vectors⟩, P.status, P.packed, P.frame⟩)
   refine ⟨trace, t, he, hpre, ?_⟩
   sig_post [contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs]
-  refine ⟨?_, keeps_of_frame hb A hf, fun a ha => hpk a ha⟩
-  rw [hst]
-  cases (result pLen s).isSome <;> rfl
+  exact ⟨hst, keeps_of_frame hb A hf, fun a ha => hpk a ha⟩
 
 end VG.Proof.Dsa.AArch64.Generator

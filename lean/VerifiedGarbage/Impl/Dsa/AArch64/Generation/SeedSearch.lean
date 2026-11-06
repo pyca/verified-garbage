@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorSearch
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Validate
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Pack
 
-/-! Native seed attempts and the complete finite parameter search. -/
+/-! The pieces of a seed's attempt: its arguments, the test of a phase's status, and `p`'s domain check. -/
 @[expose] public section
 namespace VG.Impl.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Impl.RsaOaep.AArch64
@@ -23,14 +23,5 @@ def onSuccess (next : Prog isa) : Prog isa :=
 
 def finishDomain (mul : Nat → Nat → Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (pack pLen qLen) (validate mul pLen qLen)
-
-def seedAttempt (G1 G256 : Hash) (gen : Nat → Prog isa)
-    (prime : Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
-  .seq (.seq (.block (seedArguments qLen)) (subgroup G1 G256 prime qLen))
-    (onSuccess (.seq (primeSearch G1 G256 prime pLen qLen) (onSuccess (generatorCall gen pLen))))
-
-def parameterSearch (G1 G256 : Hash) (gen : Nat → Prog isa)
-    (prime : Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
-  tapeLoop seedTape qLen (seedAttempt G1 G256 gen prime pLen qLen)
 
 end VG.Impl.Dsa.AArch64.Generation

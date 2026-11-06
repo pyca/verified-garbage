@@ -11,9 +11,9 @@ open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch6
 open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
 
 theorem generator_body_ok (M : Mont)
-    {p : GeneratorSearchPlan} {expected : Option Nat} {initial : State}
+    {p : GeneratorSearchPlan} {expected : Option Nat} {final : Nat} {initial : State}
     {used : Nat} {s t : State} {V : Nat → Byte} {W : Nat → BitVec 64}
-    (hi : GeneratorInvariant p expected initial used s) (room : used + p.core.len ≤ p.tape.length)
+    (hi : GeneratorInvariant p expected final initial used s) (room : used + p.core.len ≤ p.tape.length)
     (R : Rep s.mem p.core.F p.core.S V W)
     (Lt : Lay t p.core.F p.core.S)
     (Rt : Rep t.mem p.core.F p.core.S V
@@ -21,9 +21,9 @@ theorem generator_body_ok (M : Mont)
     (ft : Frame [⟨p.core.F, frameBytes⟩] s.mem t.mem) (kt : Keep [.x3, .x4, .x5, .x15] s t) :
     WP isa (Impl.Dsa.AArch64.Generation.generatorStep M.mm p.core.len) t fun u =>
       ∃ V' W', Lay u p.core.F p.core.S ∧ Rep u.mem p.core.F p.core.S V' W' ∧
-        (if W' 19 = 3 then GeneratorInvariant p expected initial (used + p.core.len) u
-          else GeneratorFinished p expected initial u) := by
-  obtain ⟨Wi, h, _, he, fi, ri, wi⟩ := hi
+        (if W' 19 = 3 then GeneratorInvariant p expected final initial (used + p.core.len) u
+          else GeneratorFinished p expected final initial u) := by
+  obtain ⟨Wi, h, _, he, hcount, fi, ri, wi⟩ := hi
   obtain ⟨Vi, Ri⟩ := h.rep
   have words : ∀ k < 34, W k = Wi k := fun k hk => (R.fr k hk).symm.trans (Ri.fr k hk)
   let Wt := upd (upd W 21 (VG.Proof.Bignum.off (W 11) used)) 20 (BitVec.ofNat 64 (used + p.core.len))
@@ -46,16 +46,20 @@ theorem generator_body_ok (M : Mont)
   have rd := ku.rd.trans (kt.rd.trans ri)
   have wr := ku.wr.trans (kt.wr.trans wi)
   have rem := he.trans (p.remaining_step room)
+  have cnt := hcount.trans (congrArg (used + p.core.len * ·) (p.count_step room))
+  have h20 : Wu 20 = BitVec.ofNat 64 (used + p.core.len) := by simp [Wu, Wt, upd]
   obtain ⟨Vu, Ru⟩ := mem.rep
   refine ⟨Vu, Wu, mem.layout, Ru, ?_⟩
   by_cases accepted : (p.chunk used room).accepts
   · have h19 : Wu 19 = 1 := by simp [Wu, upd, accepted]
     rw [ite_eq_right (by rw [h19]; decide)]
-    exact ⟨Wu, mem, Or.inr ⟨(p.chunk used room).value, h19,
+    rw [ite_eq_left accepted, Nat.mul_one] at cnt
+    exact ⟨Wu, mem, cnt ▸ h20, Or.inr ⟨(p.chunk used room).value, h19,
       by simpa only [accepted, ite_true] using rem, hg accepted⟩, frame, rd, wr⟩
   · have h19 : Wu 19 = 3 := by simp [Wu, upd, accepted]
     rw [ite_eq_left h19]
-    exact ⟨Wu, mem, by simp [Wu, Wt, upd],
-      by simpa only [accepted, ite_false] using rem, frame, rd, wr⟩
+    rw [ite_eq_right accepted, Nat.mul_succ] at cnt
+    exact ⟨Wu, mem, h20,
+      by simpa only [accepted, ite_false] using rem, by omega, frame, rd, wr⟩
 
 end VG.Proof.Dsa.AArch64.Generation

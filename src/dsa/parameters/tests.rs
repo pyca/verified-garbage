@@ -1,5 +1,10 @@
 use super::{Error, Parameters, Vec};
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "x86")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "aarch64"
+)))]
 use super::{Features, Generate, detected, select, vec};
 use crate::dsa::PrivateKey;
 use crate::dsa::tests::vectors::hex;
@@ -56,7 +61,12 @@ fn prime_vectors() -> Vec<Vector> {
 
 /// The three fixed tapes: the published seed in every seed chunk, h = 2 in
 /// every h chunk, and 0x02 witnesses.
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "x86")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "aarch64"
+)))]
 fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     match tape {
         0 => {
@@ -76,14 +86,24 @@ fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     }
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "x86")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "aarch64"
+)))]
 const KNOWN_ANSWER_FILLS: usize = 3;
 
 /// One refillable tape: the published seed, then 0x02 octets for its
 /// witnesses and generator candidates (deterministic, for known answers;
 /// production obtains independent bytes from the OS), and 0x02 octets in
 /// any refill.
-#[cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "x86"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "aarch64"
+))]
 fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     buf.fill(2);
     if tape == 0 {
@@ -91,7 +111,12 @@ fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
     }
 }
 
-#[cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "x86"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "aarch64"
+))]
 const KNOWN_ANSWER_FILLS: usize = 1;
 
 #[test]
@@ -104,9 +129,19 @@ fn cavp_generated_parameters() {
             Ok(())
         })
         .unwrap();
-        #[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "x86")))]
+        #[cfg(not(any(
+            target_arch = "x86_64",
+            target_arch = "powerpc64",
+            target_arch = "x86",
+            target_arch = "aarch64"
+        )))]
         assert_eq!(tape, KNOWN_ANSWER_FILLS);
-        #[cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "x86"))]
+        #[cfg(any(
+            target_arch = "x86_64",
+            target_arch = "powerpc64",
+            target_arch = "x86",
+            target_arch = "aarch64"
+        ))]
         assert!(tape >= KNOWN_ANSWER_FILLS);
         assert_eq!(parameters.p(), v.p);
         assert_eq!(parameters.q(), v.q);
@@ -118,9 +153,19 @@ fn cavp_generated_parameters() {
     }
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "x86")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "aarch64"
+)))]
 const FILLS: usize = 3;
-#[cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "x86"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "aarch64"
+))]
 const FILLS: usize = 2;
 
 #[test]
@@ -158,7 +203,12 @@ fn parameter_generation_errors() {
 }
 
 #[test]
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "x86")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "aarch64"
+)))]
 fn empty_tapes_zero_output() {
     for (p_len, q_len) in [(128, 20), (256, 32), (384, 32)] {
         let mut out = vec![0xa5; 2 * p_len + q_len];
@@ -240,7 +290,12 @@ fn check_empty_tapes(selected: Generate, p_len: usize) {
 }
 
 #[test]
-#[cfg(not(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "x86")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "powerpc64",
+    target_arch = "x86",
+    target_arch = "aarch64"
+)))]
 fn exhausted_tapes_after_prime_search_zero_output() {
     let v = prime_vectors().remove(0);
     assert_eq!(v.bits, 1024);
@@ -277,75 +332,6 @@ fn exhausted_tapes_after_prime_search_zero_output() {
         };
         assert_eq!(status, 0);
         assert!(out.iter().all(|&byte| byte == 0));
-    }
-}
-
-#[test]
-#[cfg(target_arch = "aarch64")]
-fn backend_combinations() {
-    use super::select_backends;
-    use crate::arch::dsa::{
-        VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_SHA256_SHA2_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA256_SHA2_FEATURES, vg_dsa_generate_parameters,
-        vg_dsa_generate_parameters_sha1_sha2, vg_dsa_generate_parameters_sha1_sha2_sha256_sha2,
-        vg_dsa_generate_parameters_sha256_sha2,
-    };
-    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
-    let cases: &[(H1, H256, Generate, Features)] = &[
-        (
-            H1::Scalar,
-            H256::Scalar,
-            vg_dsa_generate_parameters,
-            Features(0),
-        ),
-        (
-            H1::Scalar,
-            H256::Sha2,
-            vg_dsa_generate_parameters_sha256_sha2,
-            VG_DSA_GENERATE_PARAMETERS_SHA256_SHA2_FEATURES,
-        ),
-        (
-            H1::Sha2,
-            H256::Scalar,
-            vg_dsa_generate_parameters_sha1_sha2,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_FEATURES,
-        ),
-        (
-            H1::Sha2,
-            H256::Sha2,
-            vg_dsa_generate_parameters_sha1_sha2_sha256_sha2,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_SHA256_SHA2_FEATURES,
-        ),
-    ];
-    for &(h1, h256, expected, required) in cases {
-        let selected = select_backends(h1, h256);
-        assert!(core::ptr::fn_addr_eq(selected, expected));
-        if detected().contains(required) {
-            let mut out = [0xa5; 276];
-            let mut scratch = vec![0u64; 9216];
-            let empty: &[u8] = &[];
-            // SAFETY: supported dimensions, disjoint output and scratch,
-            // complete empty entropy tapes, and detected CPU requirements.
-            let status = unsafe {
-                selected(
-                    out.as_mut_ptr(),
-                    out.len(),
-                    128,
-                    20,
-                    empty.as_ptr(),
-                    0,
-                    empty.as_ptr(),
-                    0,
-                    empty.as_ptr(),
-                    0,
-                    scratch.as_mut_ptr(),
-                    scratch.len(),
-                )
-            };
-            assert_eq!(status, 0);
-            assert_eq!(out, [0; 276]);
-        }
     }
 }
 

@@ -16,8 +16,9 @@ the arithmetic workspace and the packed domain sit at the offsets
 Its 272-byte frame holds the generation's frame words: the stage reads its
 arguments (the working space, the h tape and its length, and the hash
 workspace the frame's layout names) from the slots where the generation keeps
-them, so that the stage is the generation's own code, and leaves its status
-(1 for parameters, 3 to go on) in the generation's status slot. It saves the
+them, so that the stage is the generation's own code, and returns its status (1 for
+parameters, 2 for an invalid domain, 3 without a generator) and the octets
+of the h candidates it read. It saves the
 callee-saved registers in the working space's control area, which the stage
 does not use, so that a caller's stack holds no more than the frame. -/
 
@@ -87,9 +88,10 @@ def entry : List Instr :=
   [.strSp .x0 40, .strSp .x2 88, .strSp .x3 104, movi .x4 Generation.Layout.hash,
    .add .x .x4 .x0 .x4, .strSp .x4 96, movi .x4 0] ++ zeroSlots.map fun k => .strSp .x4 (8 * k)
 
-/-- The generation's status, 1 or 3, returned as 1 or 0. -/
+/-- The status (1 for parameters, 2 for an invalid domain, 3 without a
+generator) plus four times the octets of the h candidates read. -/
 def exit : List Instr :=
-  [.ldrSp .x3 152, movi .x0 3, .sub .x .x0 .x0 .x3, .lsr .x .x0 .x0 1]
+  [.ldrSp .x3 152, .ldrSp .x4 160, .lsl .x .x4 .x4 2, .add .x .x0 .x3 .x4]
 
 /-- The stage the generation runs once p is accepted. -/
 def stage (mul : Nat → Nat → Nat → Prog isa) (pLen : Nat) : Prog isa :=
