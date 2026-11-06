@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ffdh.X86.KeySearch
 public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Words
 public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Steps of the key search (x86)
@@ -20,7 +21,6 @@ namespace VG.Proof.Ffdh.X86.KeySearch
 
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont.X86 VG.Impl.Mont.X86
 open VG.Impl.Ffdh.X86.KeySearch
-open VG.Proof.Dsa.X86 (argumentPointer)
 
 /-- The registers the controller uses for itself. -/
 abbrev Scratch (r : Reg) : Prop := r = .eax ∨ r = .ecx ∨ r = .edx

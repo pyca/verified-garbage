@@ -55,9 +55,6 @@ theorem liveF_pub (p : KPub) (e e' : BitVec 32) (used keys scalars : Nat) :
   rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
     rfl
 
-theorem St.at {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o ds f s) : At (ofState o, ds, f) s :=
-  ⟨o, rfl, h⟩
-
 /-- The public words of a loop state. -/
 abbrev liveAt (p : KPub) (used keys scalars : Nat) : Pw := (p, pubDs, liveF p 0 used keys scalars)
 

@@ -27,9 +27,8 @@ round's stack (`frm_widen`).
 namespace VG.Proof.MillerRabin.RISCV64.Blinded
 
 open VG VG.RISCV64 VG.Proof.Bignum.RISCV64
-open VG.Impl.Bignum VG.Impl.MillerRabin.RISCV64.Search VG.Impl.MillerRabin.RISCV64.Blinded
-open VG.Proof.MillerRabin.RISCV64 (Env A RoundImpl)
-open VG.Proof.MillerRabin.RISCV64.Search (Prep RcPost Kept keeps_word)
+open VG.Impl.Bignum VG.Impl.MillerRabin.RISCV64.Search
+open VG.Proof.MillerRabin.RISCV64 (Env A)
 open VG.Proof.Bignum (slot Frm word off wv writeW_outside word_writeW_self)
 
 /-- A change within ranges each inside one of `rs'`. -/

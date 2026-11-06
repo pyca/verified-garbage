@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyEntry
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyTail
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 
