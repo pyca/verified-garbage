@@ -4,7 +4,7 @@
 //! one tape until it finds parameters, gives up, or asks for a longer tape,
 //! which [`entropy::serve`] supplies.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "x86"))]
 
 use alloc::{vec, vec::Vec};
 
@@ -74,6 +74,29 @@ pub(super) fn select_backends(
         (H1::ShaNi, H256::Avx2, true) => vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx,
         (H1::ShaNi, H256::ShaNi, false) => vg_dsa_parameter_search_sha1_shani_sha256_shani,
         (H1::ShaNi, H256::ShaNi, true) => vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx,
+    }
+}
+
+#[cfg(target_arch = "powerpc64")]
+pub(super) type Search = unsafe extern "C" fn(
+    *mut u8,
+    usize,
+    *mut [u64; 1],
+    *const u8,
+    usize,
+    *mut u64,
+    usize,
+    *mut [u64; 4],
+) -> u32;
+
+/// The PPC64LE implementation: neither hash has a variant there, so the
+/// match names only their baselines, and a new hash backend does not compile
+/// until the search handles it.
+#[cfg(target_arch = "powerpc64")]
+pub(super) fn select(features: Features) -> Search {
+    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
+    match (H1::select(features), H256::select(features)) {
+        (H1::Scalar, H256::Scalar) => vg_dsa_parameter_search,
     }
 }
 
