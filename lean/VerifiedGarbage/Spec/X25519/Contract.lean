@@ -29,6 +29,12 @@ working space, as Ed25519's fixed-base multiplication does.
 The contract takes the number of bytes of stack below the stack pointer that
 an implementation's calls and frames use (`stack`, see `Sig.contract`), 0
 for one that uses none.
+
+`vg_x25519_exchange` is `vg_x25519` with the check RFC 7748 §6.1 allows
+of the shared secret: it writes `X25519(k, u)` as `vg_x25519` does, and
+returns 0 if that is all zero (which it is for a `u` of small order), 1
+otherwise. The return value depends on the scalar and the u-coordinate, but
+nothing else about them affects timing.
 -/
 
 @[expose] public section
@@ -91,6 +97,36 @@ def x25519BaseApi : Api where
     `*out`. The scalar is decoded (clamped).\n\n\
     Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect \
     timing, not the scalar."
+  safety := ["The contents of `scratch` on return are unspecified and may contain secrets; \
+    the caller must destroy them after use."]
+
+/-- `vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32`.
+`scratch` is working space. -/
+def exchangeSig : Sig where
+  params := x25519Sig.params
+  ret := some .u32
+
+/-- Writes `X25519(k, u)` to `out`, for the 32-byte scalar `k` at `scalar`
+and the 32-byte u-coordinate `u` at `point`, and returns 0 if it is all zero,
+1 otherwise (RFC 7748 §6.1). -/
+def exchangeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  exchangeSig.contract A (post := fun out scalar point _scratch m m' r =>
+    let z := x25519 (bytesAt m scalar 32) (bytesAt m point 32)
+    bytesAt m' out 32 = z ∧ r = if z = List.replicate 32 0 then 0 else 1)
+    (stack := stack)
+
+/-- `vg_x25519_exchange` on every target. -/
+def exchangeApi : Api where
+  module := "x25519"
+  name := "vg_x25519_exchange"
+  sig := exchangeSig
+  contracts := some fun A stack => exchangeContract A stack
+  summary := "Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to \
+    `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at \
+    `point`, as `vg_x25519` does, and returns 0 if it is all zero (for a `u` of small \
+    order), 1 otherwise.\n\n\
+    Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect \
+    timing, not the scalar or the u-coordinate; the return value depends on both."
   safety := ["The contents of `scratch` on return are unspecified and may contain secrets; \
     the caller must destroy them after use."]
 
