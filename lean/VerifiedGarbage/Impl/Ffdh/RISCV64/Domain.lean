@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.RISCV64
+public import VerifiedGarbage.Impl.Ffdh.RISCV64.GenerateKey
 public import VerifiedGarbage.Impl.Bignum.RISCV64.ModArith
 
 /-!
@@ -22,16 +23,19 @@ words, `w = ⌈p_len / 8⌉`.
 * a value's `p_len` bytes into array 4 (`PublicChecked.loadX`), and the mask
   of its being in `2 .. p − 2` into `s9` (`range`: the exchange's `zMask`,
   and `PublicChecked.checkX`'s mask of its being below p);
-* with q, `R² mod p` into array 1 (`r2`), the value raised to q's `p_len`
-  bytes (`ModExp.powWin`) and compared with 1 (`subgroup`);
+* with q, `R² mod p` into array 1 (`r2`), q's octets scanned for its first
+  nonzero one (`GenerateKey.scanBody`, at index `lead`), the value raised to
+  q's `p_len − lead` octets from there (`ModExp.powWin`) and compared with 1
+  (`subgroup`);
 * `vg_ffdh_check_domain` checks q's range and that it is odd, then that
   `p mod q = 1` (q into array 0, p's bytes reduced modulo q into array 1 by
   `ModArith.reduce64` and compared with 1, then p back into array 0), and g's
   range, before the subgroup.
 
 Everything is public, and the code branches on p's validity, the ranges and
-whether there is q. Registers kept throughout: `s6` the working space, `a7`
-array 0's base, `s5` an array's size, `t0` `w`, `s11` `p_len`.
+whether there is q; the power's length depends on q's leading zero octets.
+Registers kept throughout: `s6` the working space, `a7` array 0's base, `s5`
+an array's size, `t0` `w`, `s11` `p_len`.
 -/
 
 @[expose] public section
@@ -65,17 +69,32 @@ def range : Prog isa := .seq PublicChecked.loadX (.seq zMask PublicChecked.check
 def hasQ : List Instr :=
   [.load .d .t3 .s6 8, .shift .sll .d .t2 .s11 1, .add .t2 .t2 .s11, .sub .t3 .t3 .t2]
 
-/-- q's bytes (`domain + 2 p_len`) into `s9` and `p_len` into `s10`, for the
+/-- q's bytes (`domain + 2 p_len`) into `t3` and `p_len` into `a4`, for the
+scan (`GenerateKey.scanSetup`). -/
+def qScan : List Instr := [.load .d .t3 .s6 0, .add .t3 .t3 .s11, .add .t3 .t3 .s11, .addi .a4 .s11 0]
+
+/-- q's bytes from its first nonzero one, `domain + 2 p_len + lead` (`lead`
+in `s1`), into `s9`, and their number `p_len − lead` into `s10`, for the
 power. -/
-def qPtr : List Instr := [.load .d .s9 .s6 0, .add .s9 .s9 .s11, .add .s9 .s9 .s11, .addi .s10 .s11 0]
+def qPtr : List Instr :=
+  [.load .d .s9 .s6 0, .add .s9 .s9 .s11, .add .s9 .s9 .s11, .add .s9 .s9 .s1, .sub .s10 .s11 .s1]
+
+/-- q's octets (`t3`, `p_len` of them in `a4`) scanned without a branch for
+the first nonzero one (`s1`), then their pointer and number from there. -/
+def qSkip : Prog isa :=
+  .seq (.block GenerateKey.scanSetup) (.seq (countLoop .t5 GenerateKey.scanBody) (.block qPtr))
+
+/-- `R² mod p`, then q's leading zero octets skipped: q's octets from its
+first nonzero one in `s9` and `s10`. -/
+def sgPre : Prog isa := .seq (.seq r2 (.block qScan)) qSkip
 
 /-- `a0 := 1` if array 4 is 1, else 0: 1 into array 7, and their `eqMask`. -/
 def isOne : Prog isa :=
   .seq PublicChecked.one (.seq (.block [.li .s4 (-1)]) (.seq (eqMask 4 7) (.block [.li .a0 1, .logic .and .a0 .a0 .s4])))
 
 /-- `a0 := 1` if `v^q mod p = 1` for v in array 4, else 0: `R² mod p`, the
-power by q's bytes, compared with 1. -/
-def subgroup : Prog isa := .seq (.seq r2 (.block qPtr)) (.seq ModExp.powWin isOne)
+power by q's octets from its first nonzero one, compared with 1. -/
+def subgroup : Prog isa := .seq sgPre (.seq ModExp.powWin isOne)
 
 /-- The check of y (its address in the header's word 2), after p's. -/
 def checkY : Prog isa :=
