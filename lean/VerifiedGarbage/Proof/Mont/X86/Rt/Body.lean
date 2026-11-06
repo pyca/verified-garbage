@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
 
