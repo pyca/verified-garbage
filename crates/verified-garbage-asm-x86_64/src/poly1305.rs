@@ -50,6 +50,112 @@ jmp 21f
     )
 }
 
+/// Starts a Poly1305 computation (RFC 8439 §2.5): makes the streaming state `*state` represent the empty message under the 32-byte one-time key `*key`.
+///
+/// Contract: `VG.Spec.Poly1305.initContract`. The streaming state is the accumulator followed by the key (`VG.Spec.Poly1305.Repr`). Constant time: only the pointers may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `key` must be valid for reads of 32 bytes.
+/// * `state` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `state` nor `key` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_poly1305_init_scrub(state: *mut [u64; 16], key: *const [u8; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "SIsGSItOCEiLVhBMi0YYSIlHGEiJTyBIiVcoTIlHMLgAAAAASIkHSIlHCEiJRxBmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdsxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.p2align 6"#,
+    )
+}
+
+/// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
+///
+/// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_poly1305_update_scrub(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJHj///9JieBJg8AISYkYSYloCE2JYBBNiWgYTYlwIE2JeChJifRJg+QPSInWTYXk"
+je 20f
+.base64 "uBAAAABMKeBIOcE="
+jb 22f
+jmp 23f
+22:
+.base64 "SInI"
+23:
+.base64 "SCnBSIXA"
+je 24f
+26:
+.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "SYP8EA=="
+je 27f
+jmp 28f
+27:
+.base64 "SIl3SEiJT1BMiUdYSLj///8P/P//D0yLRxhJIcBIuPz//w/8//8PTItPIEkhwU2JyknB6gJNAcpMix9Ii18ISItvEEwDXzhIE19ASIPVAUyJ2En34UmJxkmJ10yJ2En34EmJw0mJ1UiJ2En34EkBxkkR10iJ2En34kkBw0kR1UiJ60kPr9pJAd5Jg9cATInrSQ+v6EwB80kR70yJ+EiD4PxMif1Ig+UDScHvAkwB+EkBw0iD0wBIg9UATInYSIPABUiJ2kiD0gBJiexJg9QATYnlScHtAkG+AAAAAE0p7kmD5ANMMdhMIfBJMcNIMdpMIfJIMdNJMexNIfRMMeVMiR9IiV8ISIlvEEiLd0hIi09QTItHWA=="
+28:
+jmp 21f
+20:
+21:
+.base64 "TYnHSIn7SIn1SYnMSInKSMHqBEiD+RA="
+jb 29f
+call {vg_poly1305_blocks}
+jmp 210f
+29:
+210:
+.base64 "SInfTInhSIPhD0yJ5kgpzkgB7kiFyQ=="
+je 211f
+.base64 "QbwAAAAASInI"
+213:
+.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+jne 213b
+jmp 212f
+211:
+212:
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCRg////8w9/hCSQAAAA8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQSI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.p2align 6"#,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+    )
+}
+
+/// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
+///
+/// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_poly1305_finalize_scrub(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJHj///9IieFIg8EISInRSInySIPiD0iJX0hIiW9QTIlnWEyJb2BMiXdoTIl/cEi4////D/z//w9Mi0cYSSHASLj8//8P/P//D0yLTyBJIcFNicpJweoCTQHKTIsfSItfCEiLbxBIhdI="
+je 20f
+.base64 "uAAAAABJidQ="
+22:
+.base64 "QohEJzhJg8QBSYP8EA=="
+jne 22b
+.base64 "uAEAAACIRBc4TANfOEgTX0BIg9UATInYSffhSYnGSYnXTInYSffgSYnDSYnVSInYSffgSQHGSRHXSInYSffiSQHDSRHVSInrSQ+v2kkB3kmD1wBMietJD6/oTAHzSRHvTIn4SIPg/EyJ/UiD5QNJwe8CTAH4SQHDSIPTAEiD1QA="
+jmp 21f
+20:
+21:
+.base64 "TInYSIPABUiJ2kiD0gBJiexJg9QATYnlScHtAkG+AAAAAE0p7kmD5ANMMdhMIfBJMcNIMdpMIfJIMdNJMexNIfRMMeVMA18oSBNfMEyJGUiJWQhIi19ISItvUEyLZ1hMi29gTIt3aEyLf3BIjaQkiAAAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCR4////SI2kJIgAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.p2align 6"#,
+    )
+}
+
 /// The CPU features `vg_poly1305_update_avx2` requires (`Artifact.features`).
 pub const VG_POLY1305_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
