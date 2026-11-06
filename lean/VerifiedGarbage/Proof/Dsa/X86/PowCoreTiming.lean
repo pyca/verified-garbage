@@ -69,16 +69,6 @@ theorem wk_taintX {cnt : Option Nat} {bs : List Nat} {c : Prog isa} {X F : State
     RelCT isa (Both fun u => Wk n base sp cnt bs u ∧ X u) c (Both F) :=
   relCT_both (RelCT.taint _ (fun _ _ h => Wk.agree h.1.1 h.2.1) hT) fun u h => hw u h.1 h.2
 
-/-- A piece that keeps the core's state, the counter and the slots `bs`. -/
-theorem Wk.next {cnt : Option Nat} {bs : List Nat} {u v : State} (W : Wk n base sp cnt bs u)
-    (hS : ∀ size m s₀, St n m size base s₀ u → St n m size base s₀ v) (hi : v.gpr .esi = u.gpr .esi)
-    (hb : ∀ b ∈ bs, ∀ k ≤ 2 * n, val32 v.mem base (slot n b) k = val32 u.mem base (slot n b) k) :
-    Wk n base sp cnt bs v := by
-  obtain ⟨size, m, s₀, S, e, c, B⟩ := W
-  refine ⟨size, m, s₀, hS _ _ _ S, e, fun c' h => by rw [hi]; exact c c' h, fun b hb' => ?_⟩
-  rw [wordsVal_eq_val32, hb b hb' _ (Nat.le_refl _), ← wordsVal_eq_val32]
-  exact B b hb'
-
 theorem wk_mul {cnt : Option Nat} {bs bs' : List Nat} (hn : 2 ≤ n) {o a b : Nat}
     (ho : 4 ≤ o) (ho7 : o ≤ 7) (ha : 4 ≤ a) (ha7 : a ≤ 7) (hb4 : 4 ≤ b) (hb7 : b ≤ 7) (hb : b ∈ bs)
     (hbs : ∀ x ∈ bs, 4 ≤ x ∧ x < 9) (hbs' : ∀ x ∈ bs', x = o ∨ (x ∈ bs ∧ x ≠ o)) :

@@ -218,7 +218,7 @@ jmp 21f
 21:
 .base64 "jaQkQAgAAIs8JItsJAiLdCQEW1tbW8M="
 .p2align 6"#,
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
 
@@ -448,7 +448,7 @@ jne 261b
 21:
 .base64 "jaQkQAgAAIs8JItsJAiLdCQEW1tbW8M="
 .p2align 6"#,
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
 
@@ -665,6 +665,6 @@ jne 257b
 255:
 .base64 "jaQkYAQAAIs8JItsJAiLdCQEW1tbW8M="
 .p2align 6"#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
     )
 }

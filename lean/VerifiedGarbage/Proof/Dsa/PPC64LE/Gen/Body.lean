@@ -59,9 +59,6 @@ theorem entry_vp : VP (AE G) (.block entry) (E1 G) := by
   subst hu hG
   exact entry_ok pre
 
-theorem toNat_eq_ofNat {x : BitVec 64} {n : Nat} (h : x.toNat = n) : x = BitVec.ofNat 64 n := by
-  rw [← h, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-
 /-- `subi r0, r12, x`: whether the modulus's width is `x`. -/
 theorem cmpP_vp {x : Nat} (hx : x ≤ 2 ^ 15) :
     VP (E1 G) (.block [.subi .r0 .r12 x])

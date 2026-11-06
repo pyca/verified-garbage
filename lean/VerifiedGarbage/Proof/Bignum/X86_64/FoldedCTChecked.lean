@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTCode
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedChecked
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 @[expose] public section
 
@@ -38,7 +39,7 @@ public data (`hfinal`). -/
 theorem checked_verified (M : Mont)
     (hmx : (Folded.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
     (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) :
-    Verified target (Folded.checked M.mm) (Spec.Rsa.publicPrecomputedCheckedContract abi) :=
+    Verified target (Folded.checked M.mm) (Proof.Rsa.publicPrecomputedCheckedContract abi) :=
   Verified.of_correct (k := pdChkContract) (checked_correct M hmx)
     (checked_ct M hfinal) precomputedChecked_implies
 

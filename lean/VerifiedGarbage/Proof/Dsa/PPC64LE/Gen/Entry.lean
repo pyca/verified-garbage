@@ -23,17 +23,6 @@ namespace VG.Proof.Dsa.PPC64LE.Gen
 open VG VG.PPC64LE
 open VG.Impl.Dsa.PPC64LE.Generation
 
-theorem write_write (s : State) (r : Reg) (a b : BitVec 64) : (s.write r a).write r b = s.write r b := by
-  simp only [State.write]
-  congr 1
-  funext x
-  split <;> rfl
-
-/-- `addSp`. -/
-theorem exec_addSp {s : State} {d : Reg} {imm : Nat} (h : imm < 2 ^ 15) :
-    exec (.addSp d imm) s = some (s.write d (s.sp + BitVec.ofNat 64 imm)) := by
-  simp only [exec, h, ↓reduceIte]
-
 /-- A list of stores of registers through `r8`, at distinct aligned offsets. -/
 theorem stores_ok {B : Addr} : ∀ (L : List (Reg × Nat)) (s : State) (rest : List Instr) (Q : State → Prop),
     s.gpr .r8 = B → (∀ p ∈ L, p.2 < 2 ^ 15 ∧ p.2 % 8 = 0 ∧ InRegions s.wr (B + BitVec.ofNat 64 p.2) 8) →
@@ -235,11 +224,5 @@ theorem restore_ok' {G : GP} {σ s : State} (h28 : s.gpr .r28 = G.scr)
   · show (t.write .r28 _).gpr .r3 = _
     simp only [State.write, show Reg.r3 ≠ .r28 by decide, ite_false]
     rw [o _ (by decide), g₂, u₁.other _ (by decide)]
-
-/-- `restore`: our caller's registers and return address back. -/
-theorem restore_ok {G : GP} {STK : Nat} {σ : State} {V : Nat → BitVec 64} {LS : List Nat} {s : State}
-    (h : GI G STK σ V LS s) :
-    WP isa (.block restore) s fun t => abiPreserved σ t ∧ t.mem = s.mem ∧ t.gpr .r3 = s.gpr .r3 :=
-  restore_ok' h.r28 h.saved h.lr h.sp fun o ho => h.inRdWr (by have := h.hEnd_le; omega)
 
 end VG.Proof.Dsa.PPC64LE.Gen

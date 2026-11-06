@@ -474,7 +474,7 @@ jne 2117b
 21:
 .base64 "SI2kJCgBAADD"
 .p2align 6"#,
-        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx,
+        vg_rsa_private_checked_adx = sym super::rsa::vg_rsa_private_checked_adx::vg_rsa_private_checked_adx,
     )
 }
 
@@ -945,7 +945,7 @@ jne 2117b
 21:
 .base64 "SI2kJCgBAADD"
 .p2align 6"#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
     )
 }
 
@@ -1420,7 +1420,7 @@ jne 2117b
 21:
 .base64 "SI2kJCgBAADD"
 .p2align 6"#,
-        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma,
+        vg_rsa_private_checked_ifma = sym super::rsa::vg_rsa_private_checked_ifma::vg_rsa_private_checked_ifma,
     )
 }
 
@@ -1896,7 +1896,7 @@ jne 2129b
 21:
 .base64 "SI2kJCgBAADD"
 .p2align 6"#,
-        vg_rsa_public_precomputed_checked_adx = sym super::rsa::vg_rsa_public_precomputed_checked_adx,
+        vg_rsa_public_precomputed_checked_adx = sym super::rsa::vg_rsa_public_precomputed_checked_adx::vg_rsa_public_precomputed_checked_adx,
     )
 }
 
@@ -2368,7 +2368,7 @@ jne 2129b
 21:
 .base64 "SI2kJCgBAADD"
 .p2align 6"#,
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
 
@@ -2844,6 +2844,6 @@ jne 2129b
 21:
 .base64 "SI2kJCgBAADD"
 .p2align 6"#,
-        vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma,
+        vg_rsa_public_precomputed_checked_ifma = sym super::rsa::vg_rsa_public_precomputed_checked_ifma::vg_rsa_public_precomputed_checked_ifma,
     )
 }

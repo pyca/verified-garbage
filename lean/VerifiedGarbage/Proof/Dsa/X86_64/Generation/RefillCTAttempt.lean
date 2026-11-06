@@ -75,11 +75,6 @@ theorem consumed_ready {pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State}
   refine WP.mono (refillConsumed_ok hm) fun t ⟨mt, ft, _, _⟩ => ?_
   exact ⟨⟨_, mt, by simpa [upd] using h19⟩, fun hs => domainFinishBefore_frame (next hs) mt ft⟩
 
-theorem consumed_ct (pLen qLen : Nat) :
-    RelCT isa (Two (SeedGeneratorAfter pLen qLen)) (.block Impl.Dsa.X86_64.Generation.Refill.windowConsumed)
-      (Two (SeedGeneratorAfter pLen qLen)) :=
-  two_piece [.rsp] (seedGeneratorAfter_pins pLen qLen) (by taint_decide) fun _ _ h => consumed_ready h
-
 /-! ## A window cut short -/
 
 /-- The status after `windowShort`: a window shorter than `windowBytes`
@@ -130,9 +125,6 @@ theorem shortLength_ready {pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State
   refine WP.mono (shortCheck_ok hm.layout R h12 g.seed.context.hs.size (windowBytes_lt _ pn))
     fun t ⟨hc, hmt, kt⟩ => ?_
   exact ⟨seedGeneratorAfter_keep hg hmt kt, ne, by simp only [eval, hc]⟩
-
-theorem seedGeneratorPublic_status (g : SeedGeneratorPublic) : g.status = 1 ∨ g.status = 3 := by
-  unfold SeedGeneratorPublic.status; split <;> simp
 
 theorem shortAccepted_ready {pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State}
     (h : ShortChecked pLen qLen g s) (he : isa.eval .e s = some true) :

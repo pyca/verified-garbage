@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcContract
 public import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_check_key` and `vg_rsa_check_crt_key` on PPC64LE: the shared contracts imply `ckP` and `cckP`
@@ -81,25 +83,25 @@ theorem ck_implies : ckP.Implies (Spec.Rsa.checkKeyContract abi) where
     sig_implies_sat [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, ckP, stackArgs_ten,
       List.append_eq] [ckSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using ckSatState
 
-theorem cck_implies : cckP.Implies (Spec.Rsa.checkCrtKeyContract abi) where
+theorem cck_implies : cckP.Implies (Proof.Rsa.checkCrtKeyContract abi) where
   pre := by
     intro s h
-    sig_pre [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, cckP, stackArgs_eight,
+    sig_pre [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argRegs, cckP, stackArgs_eight,
       List.append_eq] at h
-    sig_pre [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, cckP, stackArgs_eight,
+    sig_pre [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argRegs, cckP, stackArgs_eight,
       List.append_eq] at h
     sig_split h
-    sig_reduce [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, cckP, stackArgs_eight,
+    sig_reduce [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argRegs, cckP, stackArgs_eight,
       List.append_eq]
     sig_and_intros
     sig_close
     all_goals first | with_reducible assumption | omega
   post := by
-    sig_implies_post [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, cckP,
+    sig_implies_post [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argRegs, cckP,
       stackArgs_eight, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, cckP, stackArgs_eight,
+    sig_pub [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argRegs, cckP, stackArgs_eight,
       List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hl, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1, a2, a3, a4, a5, a6, a7⟩ := h
@@ -107,7 +109,7 @@ theorem cck_implies : cckP.Implies (Spec.Rsa.checkCrtKeyContract abi) where
     simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩
   sat := by
-    sig_implies_sat [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, cckP,
+    sig_implies_sat [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argRegs, cckP,
       stackArgs_eight, List.append_eq] [cckSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
       using cckSatState
 

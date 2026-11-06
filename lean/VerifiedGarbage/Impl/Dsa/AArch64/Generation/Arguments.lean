@@ -56,7 +56,4 @@ def checkPrime (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog 
     (w candidate len draw checks : Nat) : Prog isa :=
   .seq (workspace w) (primeFromFrame mul roundCode candidate len draw checks)
 
-def primeResult : List Instr :=
-  [ldh .x3 27, .strSp .x3 128, ldh .x3 31, .strSp .x3 152]
-
 end VG.Impl.Dsa.AArch64.Generation

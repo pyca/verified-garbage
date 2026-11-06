@@ -20,7 +20,6 @@ structure TapeSlots where
   used : Nat
   pointer : Nat
 
-def seedTape : TapeSlots := ⟨8, 9, 10, 1⟩
 def generatorTape : TapeSlots := ⟨11, 13, 20, 21⟩
 
 def tapeReset (slots : TapeSlots) : List Instr :=

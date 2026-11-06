@@ -42,18 +42,6 @@ theorem body_noSp (n e : Nat) : NoSp (body n e) :=
     nosp_seq (NoSp.of_all rfl) (mul_noSp n 6 6 7)) <|
   NoSp.of_all rfl
 
-theorem body_allNoSp (n e : Nat) : (body n e).allInstrs (fun i => !VG.X86.Taint.clobbers i .esp) = true := by
-  rw [Code.allInstrs_eq, List.all_eq_true]
-  intro i hi
-  rw [body_noSp n e i hi]
-  rfl
-
-theorem body_spSafe (n e : Nat) : (body n e).allInstrs (fun i => !isa.writesSp i) = true := by
-  have e' : (fun i : Instr => !isa.writesSp i) = fun i => !VG.X86.Taint.clobbers i .esp := by
-    funext i; cases i <;> rfl
-  rw [e']
-  exact body_allNoSp n e
-
 theorem squarings_stackUse (n : Nat) : ∀ k, stackUse (squarings n k) ≤ 96
   | 0 => by simp [squarings, stackUse]
   | k + 1 => by

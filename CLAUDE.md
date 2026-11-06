@@ -242,7 +242,7 @@ should add files, not edit lists that every other PR edits too.
   hash everywhere: its `Api`s' `module` is `<family>_<hash>` (so
   `crates/verified-garbage-asm-<target>/src/hmac_sha256.rs`), its registration files are
   `Artifacts/<Family><Hash>/<Target>.lean`, its Rust implementation is
-  `src/<family>/<hash>.rs` (`src/kdf/pbkdf2/<hash>.rs` for PBKDF2; the
+  `src/<family>/<hash>.rs` (`src/kdf/pbkdf2_hmac/<hash>.rs` for PBKDF2; the
   generic code stays in the family's `mod.rs`),
   and its tests, benchmarks and `docs/algorithms/` row are
   `<family>_<hash>.rs` and `<family>-<hash>.toml`.

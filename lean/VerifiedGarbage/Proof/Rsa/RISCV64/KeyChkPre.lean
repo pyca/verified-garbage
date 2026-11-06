@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkFn
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_check_key` and `vg_rsa_check_crt_key` on RISC-V: the preconditions
@@ -130,8 +132,8 @@ structure CckP (s : State) : Prop where
   hs : Spec.Rsa.scratchWords (s.gpr .a1).toNat ≤ (stackArg s 7).toNat
   al : (stackArg s 6).toNat % 8 = 0
 
-theorem cckP_of {s : State} (h : (Spec.Rsa.checkCrtKeyContract RISCV64.abi).pre s) : CckP s := by
-  sig_pre [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, RISCV64.abi, RISCV64.argRegs,
+theorem cckP_of {s : State} (h : (Proof.Rsa.checkCrtKeyContract RISCV64.abi).pre s) : CckP s := by
+  sig_pre [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_eight, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp16, sp2, hrd, hwr, dn, de, dp, dq, ddp, ddq, dqi, dsa, wn, we, wp, wq, wdp, wdq, wqi, ws,
     lv, e1, e2, p1, p2, q1, q2, hdp, hqi, hdq, hs, al⟩ := h

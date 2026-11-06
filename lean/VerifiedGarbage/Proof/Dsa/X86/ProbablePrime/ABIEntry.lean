@@ -157,10 +157,6 @@ theorem CallFacts.valid {bits : Nat} {s : State} (F : CallFacts bits s) (b : Bit
   · intro r mem
     exact (F.stackAll r mem).sub_right F.bodyStackSub
 
-theorem candidateAt_eq (bits : Nat) (s : State) (m : Mem) :
-    Proof.Dsa.ProbablePrime.candidateAt (layout bits) m ((arg s 0).setWidth 64) =
-      (callEnvironment bits s).candidate m := rfl
-
 theorem CallFacts.pushedArgument {bits : Nat} {s : State} (F : CallFacts bits s) {i : Nat} (index : i < 5) :
     readSrc (Compact.entered s) (.mem (VG.Impl.Mont.X86.Compact.arg i)) = some (arg s i) := by
   have fit : 16 ≤ (s.gpr .esp).toNat := by have := F.low; omega

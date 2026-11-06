@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # The callable ARMv7 checked private RSA operation is verified -/
 
@@ -43,11 +45,11 @@ def privateSatState : State where
     ⟨0x3300, 32⟩, ⟨0x3400, 32⟩, ⟨0x3500, 32⟩, ⟨0x8000, 64⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x4000, 8448⟩]
 
-theorem private_contract_sat : ∃ s, (Spec.Rsa.privateCheckedContract abi stackBytes).pre s := by
-  sig_implies_sat [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+theorem private_contract_sat : ∃ s, (Proof.Rsa.privateCheckedContract abi stackBytes).pre s := by
+  sig_implies_sat [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
     [privateSatState, stackBytes, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
       Spec.Rsa.scratchWords] using privateSatState
 
-theorem code_verified (v : CrtImpl) : Verified target (privCode v) (Spec.Rsa.privateCheckedContract abi stackBytes) :=
+theorem code_verified (v : CrtImpl) : Verified target (privCode v) (Proof.Rsa.privateCheckedContract abi stackBytes) :=
   ⟨private_contract_correct v, private_contract_ct v, private_contract_sat⟩
 end VG.Proof.Rsa.Arm

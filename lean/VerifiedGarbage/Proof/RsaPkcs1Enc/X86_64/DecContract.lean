@@ -15,7 +15,7 @@ the stack the frame and the calls use, `decStack`) on the registers and the
 stack (`decrypt_implies`).
 
 `privK` is the contract of `vg_rsa_private_checked` on the registers, using
-`privStack` bytes of stack: that of `Spec.Rsa.privateCheckedContract`. A
+`privStack` bytes of stack: that of `Proof.Rsa.privateCheckedContract`. A
 `PrivImpl` is an implementation of it, which the proof of decryption is
 written for.
 -/

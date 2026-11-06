@@ -77,10 +77,4 @@ theorem writeScalar_ct (offset : Nat) (second : Bool) (ho : offset < 2 ^ 16)
           · exact h.2.1
           · exact h.2.2)) (by taint_decide)
 
-theorem writeR_ct : RelCT isa (Two FailurePre) (SignVerify.writeScalar r false) (fun _ _ => True) :=
-  writeScalar_ct r false (by decide) (by taint_decide)
-
-theorem writeS_ct : RelCT isa (Two FailurePre) (SignVerify.writeScalar s true) (fun _ _ => True) :=
-  writeScalar_ct s true (by decide) (by taint_decide)
-
 end VG.Proof.Dsa.AArch64

@@ -89,23 +89,23 @@ theorem quadJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
   have body : ∀ j st, 1 ≤ j → j ≤ 2 → LI j st →
       WP isa (WinCfg.jacPairOn K K.R K.D).inline st fun st' => LI (j - 1) st' ∧ st'.cf = some (decide (j - 1 = 0)) := by
     intro j st hj hj' ⟨S, b, E, I, J⟩
-    simp only [WinCfg.jacPairOn, WinCfg.double, dblJSChoice_eq]
-    refine WP.seq (WP.mono (winN_ok hL hp (dblJSChoiceN_ok (K.M.n ≤ 6 : Bool)) aRD w2.1 w2.2 I (by
+    simp only [WinCfg.jacPairOn, WinCfg.double, dblJXChoice_eq]
+    refine WP.seq (WP.mono (winN_ok hL hp (dblJXChoiceN_ok (K.M.n ≤ 6 : Bool)) aRD w2.1 w2.2 I (by
       intro x hx
       simp only [rcbR, V, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
       rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
       fun st₁ ⟨k₁', U₁', E₁', I₁', _, v₁'⟩ => ?_)
     have S₁' := S.next hL I₁'.scr (k₁'.mono clob_powClob) U₁'
-    have J₁' := InvJ.dbl' hC hM3 (hQ _) J (v₁'.trans (dblJSChoiceN_run (K.M.n ≤ 6 : Bool) _))
+    have J₁' := InvJ.dbl' hC hM3 (hQ _) J (v₁'.trans (dblJXChoiceN_run (K.M.n ≤ 6 : Bool) _))
     rw [hC.double hP] at J₁'
-    refine WP.seq (WP.mono (winN_ok hL hp (dblJSChoiceN_ok (K.M.n ≤ 6 : Bool)) aDR w3.1 w3.2 I₁' (by
+    refine WP.seq (WP.mono (winN_ok hL hp (dblJXChoiceN_ok (K.M.n ≤ 6 : Bool)) aDR w3.1 w3.2 I₁' (by
       intro x hx
       simp only [rcbR, V, List.mem_cons, List.not_mem_nil, or_false, List.cons_append,
         List.nil_append] at hx ⊢
       rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
       fun st₂ ⟨k₂', U₂', E₂', I₂', _, v₂'⟩ => ?_)
     have S₂' := S₁'.next hL I₂'.scr (k₂'.mono clob_powClob) U₂'
-    have J₂' := InvJ.dbl' hC hM3 (hQ _) J₁' (v₂'.trans (dblJSChoiceN_run (K.M.n ≤ 6 : Bool) _))
+    have J₂' := InvJ.dbl' hC hM3 (hQ _) J₁' (v₂'.trans (dblJXChoiceN_run (K.M.n ≤ 6 : Bool) _))
     rw [hC.double hP] at J₂'
     have ar : 2 * (2 * (4 ^ (2 - j) * e)) = 4 ^ (2 - (j - 1)) * e := by
       have hj12 : j = 1 ∨ j = 2 := by omega_using [hj, hj']

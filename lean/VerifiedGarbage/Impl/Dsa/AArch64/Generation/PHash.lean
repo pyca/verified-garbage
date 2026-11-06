@@ -13,9 +13,6 @@ open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 def seedInputArgs (j : Nat) : List Instr :=
   [.ldrSp .x1 8, .ldrSp .x2 24, .ldrSp .x0 16, .addImm .x .x0 .x0 j]
 
-def useWrappedSeed : List Instr :=
-  [.ldrSp .x0 24, .strSp .x0 sLab]
-
 def hashCopyArgs (len count j : Nat) : List Instr :=
   [.ldrSp .x12 sScr, .addImm .x .x12 .x12 oDig,
    .ldrSp .x2 32, .addImm .x .x2 .x2 ((count - j) * len), movi .x9 len]

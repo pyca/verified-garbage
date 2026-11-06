@@ -89,18 +89,6 @@ theorem Saved.after_call {s₀ : State} (A : RandomABI s₀) {m m' : Mem} (sv : 
     (hf : Frame (callWrites s₀) m m') : Saved s₀ m' :=
   sv.of_slots fun _ _ hd => call_frame_slot A hf hd
 
-/-- Bytes of the frame, after the call. -/
-theorem call_frame_bytes {s₀ : State} (A : RandomABI s₀) {m m' : Mem} (hf : Frame (callWrites s₀) m m')
-    {d n : Nat} (hd : d + n ≤ frameBytes) :
-    Spec.Rsa.bytesAt m' (off (rBase s₀) d) n = Spec.Rsa.bytesAt m (off (rBase s₀) d) n := by
-  unfold Spec.Rsa.bytesAt
-  apply List.map_congr_left
-  intro i hi
-  rw [List.mem_range] at hi
-  rw [show off (rBase s₀) d + BitVec.ofNat 64 i = off (rBase s₀) (d + i) by
-    rw [off, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]]
-  exact call_frame_byte A hf (by omega)
-
 /-! ## The status -/
 
 /-- Record the signer's status `st`, and test it. -/

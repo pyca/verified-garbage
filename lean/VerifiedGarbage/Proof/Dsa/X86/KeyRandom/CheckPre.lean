@@ -68,9 +68,6 @@ theorem stk_sub (s₀ : State) {d n : Nat} (h : d + n ≤ 144) :
     Region.Sub ⟨off (rLow s₀) d, n⟩ (rStack s₀) := by
   rw [rLow_off]; exact Offset.sub_base _ (by omega)
 
-theorem low_sub (s₀ : State) : Region.Sub ⟨rLow s₀, 20⟩ (rStack s₀) := by
-  rw [rLow_eq]; exact Offset.sub_base _ (by decide)
-
 theorem call_pre {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) (C : CallSlots s₀ t) :
     (Proof.Dsa.checkParametersContract abi 108).pre (t.callEntry.withRegions (callRd s₀) (callWr s₀)) := by
   have he := esp_toNat A h

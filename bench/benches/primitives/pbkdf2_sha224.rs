@@ -17,12 +17,12 @@ pub const USES: &[&str] = &["pbkdf2_sha224", "hmac_sha224", "sha224", "sha256"];
 pub fn bench(c: &mut Criterion) {
     use openssl::hash::MessageDigest;
     use verified_garbage::hashes::sha224::Sha224;
-    use verified_garbage::kdf::pbkdf2::pbkdf2_hmac;
+    use verified_garbage::kdf::pbkdf2_hmac;
 
     crate::pbkdf2_group(
         c,
         "pbkdf2-hmac-sha224",
-        pbkdf2_hmac::<Sha224>,
+        pbkdf2_hmac::derive::<Sha224>,
         MessageDigest::sha224(),
         None,
         28,

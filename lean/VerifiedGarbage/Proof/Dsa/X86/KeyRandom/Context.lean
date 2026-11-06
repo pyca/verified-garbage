@@ -89,26 +89,6 @@ theorem keyABI_of {s : State} (h : (Spec.Dsa.generateKeyContract abi 232).pre s)
   sig_split h
   constructor <;> with_reducible assumption
 
-theorem KeyABI.stackOut {s : State} (A : KeyABI s) :
-    (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 0 (arg s 1).toNat) :=
-  A.stackOutWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
-
-theorem KeyABI.stackUsed {s : State} (A : KeyABI s) :
-    (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 2 8) :=
-  A.stackUsedWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
-
-theorem KeyABI.stackKey {s : State} (A : KeyABI s) :
-    (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 3 (arg s 4).toNat) :=
-  A.stackKeyWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
-
-theorem KeyABI.stackRand {s : State} (A : KeyABI s) :
-    (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 7 (arg s 8).toNat) :=
-  A.stackRandWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
-
-theorem KeyABI.stackScratch {s : State} (A : KeyABI s) :
-    (⟨(s.gpr .esp).setWidth 64 - 144#64, 144⟩ : Region).Disjoint (argRegion s 9 ((arg s 10).toNat * 8)) :=
-  A.stackScratchWide.sub_left (fun x hx => Offset.below_mono _ (a := 144) (b := 232) (by decide) (by decide) x hx)
-
 end VG.Proof.Dsa.X86.KeyRandom
 end
 
@@ -267,8 +247,6 @@ theorem args_apart : ∀ r ∈ rWrites s₀, Region.Disjoint ⟨argAddr s₀ 0, 
   · exact A.scratchArgs.symm
   · exact A.usedArgs.symm
 
-/-- The return address on entry is apart from the buffers. -/
-theorem stack_apart_key : (rStack s₀).Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) := A.stackKeyWide
 end
 
 theorem rBytes_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n).length = n := by
@@ -361,12 +339,6 @@ theorem Ready.key {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
   · exact A.outKey.symm
   · exact A.keyScratch
   · exact A.usedKey.symm
-
-theorem BytesIn.take {s : State} {p : BitVec 32} {bs : List Byte} (h : BytesIn s p bs) (n : Nat) :
-    BytesIn s p (bs.take n) := by
-  refine ⟨by rw [List.length_take]; have := h.fit; omega, fun i hi => ?_, fun i hi => ?_⟩
-  · rw [List.length_take] at hi; exact h.rd i (by omega)
-  · rw [List.length_take] at hi; rw [List.getElem_take]; exact h.val i (by omega)
 
 theorem rQBytes_length {s₀ : State} (A : KeyABI s₀) : (rQBytes s₀).length = (X86.arg s₀ 6).toNat := by
   simp only [rQBytes, rInput, List.length_take, List.length_drop, rBytes_length, A.keyLength]

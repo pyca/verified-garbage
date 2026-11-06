@@ -18,6 +18,8 @@ meta import VerifiedGarbage.TCB.X86.Isa
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # The trace of precomputed public RSA at a run-time width, from the entry to the return
 
@@ -274,9 +276,9 @@ theorem operation_trace {s t : State} (A : TopABI s) (B : TopABI t)
           have T3 := (publicRestore_relCT _ _ _ _ _ _ Agree E3 F3).1
           rw [T1, T2, T3]
 
-theorem publicArgs {s t : State} (H : (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pub s t) :
+theorem publicArgs {s t : State} (H : (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ ∀ i < 10, arg s i = arg t i := by
-  sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
+  sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
     argBytes] at H
   sig_split H
   constructor
@@ -285,16 +287,16 @@ theorem publicArgs {s t : State} (H : (Spec.Rsa.publicPrecomputedCheckedContract
     have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 := by omega_arith
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem keyLeak {s t : State} (H : (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pub s t) :
+theorem keyLeak {s t : State} (H : (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pub s t) :
     (Spec.Rsa.wordsAt s.mem (argumentPointer s 2) (arg s 3).toNat).map (·.toNat) ++
       (Spec.Rsa.bytesAt s.mem (argumentPointer s 4) (arg s 5).toNat).map (·.toNat) =
     (Spec.Rsa.wordsAt t.mem (argumentPointer t 2) (arg t 3).toNat).map (·.toNat) ++
       (Spec.Rsa.bytesAt t.mem (argumentPointer t 4) (arg t 5).toNat).map (·.toNat) := by
-  sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
+  sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal,
     argBytes] at H
   exact H.2.1
 
-theorem keyBytes {s t : State} (H : (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pub s t) :
+theorem keyBytes {s t : State} (H : (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pub s t) :
     Spec.Rsa.wordsAt s.mem (argumentPointer s 2) (arg s 3).toNat =
       Spec.Rsa.wordsAt t.mem (argumentPointer t 2) (arg t 3).toNat ∧
     Spec.Rsa.bytesAt s.mem (argumentPointer s 4) (arg s 5).toNat =
@@ -308,8 +310,8 @@ theorem keyBytes {s t : State} (H : (Spec.Rsa.publicPrecomputedCheckedContract a
   exact ⟨(List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h)).mp Both.1,
     (List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h)).mp Both.2⟩
 
-theorem constantTime : ConstantTime isa (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pre
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pub PrecomputedRt.code := by
+theorem constantTime : ConstantTime isa (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 96).pub PrecomputedRt.code := by
   intro s t tr ur sf tf S T H E F
   have Args := publicArgs H
   have Key := keyBytes H
