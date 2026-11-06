@@ -83,8 +83,8 @@ theorem sampleHAtM16_ok {m : Nat} {b : Prog isa} (hb : BatchHMOk16 m b) {oa oz :
   · rw [hm3]; exact hres j hj f hf
   · rw [hm3]; exact hhs
 
-/-- What the fragment computing two outputs of `PRF₂` leaves. -/
-structure SHPostP16 (oa oz : Nat) (s s' : State) : Prop where
+/-- What the fragment computing `m` outputs of `PRF₂`, from `PRF₂(σ, N₀)`, leaves. -/
+structure SHPostP16 (N₀ m oa oz : Nat) (s s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   cs : ∀ r ∈ calleeSaved, r ≠ .r15 → s'.gpr r = s.gpr r
@@ -92,10 +92,10 @@ structure SHPostP16 (oa oz : Nat) (s s' : State) : Prop where
   r15 : s'.gpr .r15 = BitVec.setWidth 64 ((s.gpr .r15).setWidth 32 &&& (if all3_16 s.mem (pa s (sc 0)) then 1 else 0))
   res : ∀ k < 3, ∀ f, sampleNTT minIterations (seed4 s.mem (pa s (sc 0)) k) = some f →
     PolyIsW 16 s'.mem (poly4W true (pa s (sc oa)) k) f
-  pout : ∀ N < 2, bytesAt s'.mem (pa s (sc oz) + BitVec.ofNat 64 (Sample4.oPO + 128 * N)) 128 =
-    prf 2 (bytesAt s.mem (pa s (sc oz) + BitVec.ofNat 64 Sample4.oPS) 32) (BitVec.ofNat 8 N)
+  pout : ∀ N < m, bytesAt s'.mem (pa s (sc oz) + BitVec.ofNat 64 (Sample4.oPO + 128 * N)) 128 =
+    prf 2 (bytesAt s.mem (pa s (sc oz) + BitVec.ofNat 64 Sample4.oPS) 32) (BitVec.ofNat 8 (N₀ + N))
 
-theorem SHPostP16.b {oa oz : Nat} {s s' : State} (h : SHPostP16 oa oz s s') :
+theorem SHPostP16.b {N₀ m oa oz : Nat} {s s' : State} (h : SHPostP16 N₀ m oa oz s s') :
     PPostB s s' [(sc oa, 2048), (sc oz, 8192)] :=
   ⟨h.rd, h.wr, fun r hr => h.cs r (by
       simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -104,21 +104,21 @@ theorem SHPostP16.b {oa oz : Nat} {s s' : State} (h : SHPostP16 oa oz s s') :
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
     h.cs .rsp (by decide) (by decide), h.frame⟩
 
-/-- The fragment computing `PRF₂(σ, 0)` and `PRF₂(σ, 1)` inlined, on the seeds
-at `scratch`, to the polynomials from `sc oa`. -/
-theorem sampleHAtP16_ok {b : Prog isa} (hb : BatchPOk16 b) {oa oz : Nat} {s : State}
-    (h : SHH16 oa oz s) : WP isa (Encaps.sampleHAt b (sc oa) (sc oz)) s (SHPostP16 oa oz s) := by
+/-- The fragment computing `PRF₂(σ, N₀)`, …, `PRF₂(σ, N₀ + m - 1)` inlined, on
+the seeds at `scratch`, to the polynomials from `sc oa`. -/
+theorem sampleHAtP16_ok {N₀ m : Nat} {b : Prog isa} (hb : BatchPOk16 N₀ m b) {oa oz : Nat} {s : State}
+    (h : SHH16 oa oz s) : WP isa (Encaps.sampleHAt b (sc oa) (sc oz)) s (SHPostP16 N₀ m oa oz s) := by
   refine WP.seq (WP.mono (s4Glue_ok oa oz h.offA h.offZ s) fun s1 ⟨⟨hv, hm⟩, k⟩ => ?_)
   have hc : Covers ([⟨pa s (sc 0), 136⟩] ++ [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩]) (s1.rd ++ s1.wr) := by
     rw [k.2.1, k.2.2]; exact h.c
   have hw : Covers [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩] s1.wr := by rw [k.2.2]; exact h.w
   refine WP.seq (WP.mono (WP.inline hb.ok (shPre16 h hv k) hc hw (Q := fun s2 => s2.rd = s1.rd ∧ s2.wr = s1.wr ∧
       abiPreserved s1 s2 ∧ Frame [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩] s1.mem s2.mem ∧
-      samplePKW.post (s1.withRegions [⟨pa s (sc 0), 136⟩] [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩])
+      (samplePNKW N₀ m).post (s1.withRegions [⟨pa s (sc 0), 136⟩] [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩])
         (s2.withRegions [⟨pa s (sc 0), 136⟩] [⟨pa s (sc oa), 2048⟩, ⟨pa s (sc oz), 8192⟩]))
     (fun s2 hrd hwr habi hf _ hpost => ⟨hrd, hwr, habi, hf, hpost⟩) hb.noCalls) fun s2 ⟨hrd, hwr, habi, hf, hpost⟩ => ?_)
   refine WP.mono (and15_ok s2) fun s3 ⟨⟨h15, hm3⟩, k3⟩ => ?_
-  simp only [samplePKW, SH.Post3, State.withRegions_gpr, State.withRegions_mem, hv.1, hv.2.1, hv.2.2, hm] at hpost
+  simp only [samplePNKW, SH.Post3, State.withRegions_gpr, State.withRegions_mem, hv.1, hv.2.1, hv.2.2, hm] at hpost
   obtain ⟨⟨hax, hres⟩, hpo⟩ := hpost
   have hcs : ∀ r ∈ calleeSaved, s2.gpr r = s1.gpr r := habi.1
   refine ⟨k3.2.1.trans (hrd.trans k.2.1), k3.2.2.trans (hwr.trans k.2.2), fun r hr h15' => ?_, ?_, ?_,
@@ -583,7 +583,8 @@ theorem seed0_ok {J : Nat} (hJ : J < 4) {s : State} (h : S0 K σ J s) :
   exact h.ps
 
 /-- Row 0 of `Â`, and `PRF₂(σ, 0)` and `PRF₂(σ, 1)`. -/
-theorem frag0_ok (v : Sample4Impl) {p : Prog isa} (hb : v.callee.batchP16 = some p) {s : State} (h : KN K 6 σ s) :
+theorem frag0_ok (v : Sample4Impl) {p : Nat → Nat → Prog isa} (hb : v.callee.batchP16 = some p) {s : State}
+    (h : KN K 6 σ s) :
     WP isa (frag0 K p) s (KG K σ 0 false) := by
   have k3 := W.k3
   have hc0 := W.c0
@@ -610,7 +611,7 @@ theorem frag0_ok (v : Sample4Impl) {p : Prog isa} (hb : v.callee.batchP16 = some
   obtain ⟨hkc, hr⟩ := keepAll_spec hsm.2
   have L₅ := i₅.km.kc.lay W.toKgWfB hp
   rw [Top16.aP, Nat.mul_zero, Nat.add_zero]
-  refine WP.mono (sampleHAtP16_ok (v.batchP16 p hb) (SHH16.of L₅ hsm.1)) fun s₆ h₆ => ?_
+  refine WP.mono (sampleHAtP16_ok (v.batchP16 p hb (0, 2) (by decide)) (SHH16.of L₅ hsm.1)) fun s₆ h₆ => ?_
   have km₆ := i₅.km.keep W hp h₆.b hkc hr
   refine ⟨km₆, fun _ h => absurd h (Nat.not_lt_zero _), ?_, fun N hN => ?_, fun h => absurd h (by decide)⟩
   · have m₀ := MatB16.zero K.L.k K.oA (rhoK K.L σ) i₅.r15
@@ -621,7 +622,7 @@ theorem frag0_ok (v : Sample4Impl) {p : Prog isa} (hb : v.callee.batchP16 = some
     · have := h₆.res t ht f (by rw [seed4_eq i₅.sd (by omega)]; simpa using hf)
       rwa [poly4W, pBytes_true, pa_off] at this
   · have e := h₆.pout N hN
-    rw [pa_off, pa_off, i₅.ps] at e
+    rw [pa_off, pa_off, i₅.ps, Nat.zero_add] at e
     rw [h₆.b.pa rbx_bases, poP, Nat.add_assoc]; exact e
 
 /-- The sponge's state zeroed. -/
@@ -716,7 +717,7 @@ theorem nttG_ok (hK : KgRowsOk K.L) {s : State} (h : KG K σ 2 true s) : WP isa 
 
 /-- The rows, and the tail if every `SampleNTT` succeeded. -/
 theorem rows_ok (hK : KgRowsOk K.L) (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b)
-    {p : Prog isa} (hpb : v.callee.batchP16 = some p) {s : State} (h : KN K 6 σ s) :
+    {p : Nat → Nat → Prog isa} (hpb : v.callee.batchP16 = some p) {s : State} (h : KN K 6 σ s) :
     WP isa (rows K b p v.callee.arith) s (KEnd K.L σ) := by
   unfold rows
   refine WP.seq (WP.mono (frag0_ok W hp v hpb h) fun s₁ h₁ => ?_)
@@ -732,8 +733,8 @@ theorem rows_ok (hK : KgRowsOk K.L) (v : Sample4Impl) {b : Nat → Prog isa} (hb
 end
 
 theorem kemKeyGenH16_correct {K : Kem16} (hK : KgRowsOk K.L) (v : Sample4Impl) (W : KgH16Wf K)
-    {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b) {p : Prog isa} (hpb : v.callee.batchP16 = some p)
-    (hctl : ctlOk (kemKeyGenH16 K v.callee b p) = true) (σ : State) (hp : (keyGenK K.L).pre σ) :
+    {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b) {p : Nat → Nat → Prog isa}
+    (hpb : v.callee.batchP16 = some p) (hctl : ctlOk (kemKeyGenH16 K v.callee b p) = true) (σ : State) (hp : (keyGenK K.L).pre σ) :
     ∃ t s', Exec isa (kemKeyGenH16 K v.callee b p) σ t s' ∧ abiPreserved σ s' ∧ (keyGenK K.L).post σ s' := by
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok W.toKgWfB hp) fun s₁ ⟨h₁, h15⟩ =>
     WP.seq (WP.mono (gRho_ok W.toKgWfB hp h₁ h15) fun s₂ ⟨h₂, h15'⟩ =>
