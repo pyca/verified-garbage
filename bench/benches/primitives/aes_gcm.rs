@@ -4,20 +4,17 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 
-/// One-shot AES-GCM encryption (in place, and out of place) and decryption
-/// (setup included), and streaming encryption, with a 16-byte key, a 12-byte
-/// nonce and 16 bytes of additional data. aws-lc-rs, which has no streaming
-/// AES-GCM, is measured one-shot only, with a separate tag as this library's
-/// is. Encryption with a key used for many messages, as a TLS or QUIC
-/// connection's is, is also measured at `REUSED_SIZES`, which are not
-/// multiples of 16 blocks (also out of place from two halves, whose second
-/// holds whole blocks). Short messages, from two pieces, and a key's setup
-/// are measured by `tls_records`.
-///
-/// Every group here runs from `ci/bench_compare.py`'s fresh copies of the
-/// binary (`FRESH_COPIES`), each side's 8 times, in one job (its shards
-/// count this whole file as one benchmark): add a size or a group only
-/// where it measures code the others do not.
+/// One-shot AES-GCM encryption (in place, and out of place from one piece
+/// and from two: a TLS 1.3 record's payload and its content type byte) and
+/// decryption (setup included), and streaming encryption, with a 16-byte
+/// key, a 12-byte nonce and 16 bytes of additional data. aws-lc-rs, which
+/// has no streaming AES-GCM, is measured one-shot only, with a separate tag
+/// as this library's is. The one-shot functions are also measured at `RECORD_SIZES`, the short
+/// messages of protocols such as TLS and QUIC, where the fixed costs of a
+/// call (the key's setup, the tag) weigh the most. Encryption with a key
+/// used for many messages, as a TLS or QUIC connection's is, is also
+/// measured at `REUSED_SIZES`, which are not multiples of 16 blocks (also
+/// out of place from two halves, whose second holds whole blocks).
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -38,6 +35,8 @@ pub fn bench(c: &mut Criterion) {
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
+    /// The sizes measured one-shot only, besides `SIZES`.
+    const RECORD_SIZES: [usize; 3] = [128, 192, 384];
     /// The sizes measured with a key reused across messages.
     const REUSED_SIZES: [usize; 3] = [600, 1350, 4000];
 
@@ -46,7 +45,9 @@ pub fn bench(c: &mut Criterion) {
     let aad = [0x5a; 16];
     let cipher = Cipher::aes_128_gcm();
     let aws_lc_key = |key: &[u8]| LessSafeKey::new(UnboundKey::new(&AES_128_GCM, key).unwrap());
-    for size in SIZES {
+    let mut sizes = [SIZES.as_slice(), RECORD_SIZES.as_slice()].concat();
+    sizes.sort_unstable();
+    for size in sizes {
         let data = vec![0u8; size];
         let mut buf = data.clone();
         let tag = AesGcm::new(&key)
@@ -149,6 +150,80 @@ pub fn bench(c: &mut Criterion) {
         });
         g.finish();
 
+        // Out of place from two pieces, `data` and one more byte: a TLS 1.3
+        // record, whose payload is followed by its content type.
+        let ty = [0x17u8];
+        let mut out = vec![0u8; size + 1];
+        let mut aws_lc_out = vec![0u8; size];
+        let mut aws_lc_extra = [0u8; 1 + 16];
+        let pieces_tag = AesGcm::new(&key)
+            .unwrap()
+            .encrypt(&nonce, &aad, &[&data, &ty], &mut out)
+            .unwrap();
+        aws_lc_key(&key)
+            .seal_out_of_place_scatter(
+                Nonce::assume_unique_for_key(nonce),
+                Aad::from(aad),
+                &data,
+                &mut aws_lc_out,
+                &ty,
+                &mut aws_lc_extra,
+            )
+            .unwrap();
+        assert_eq!(
+            (
+                [&aws_lc_out[..], &aws_lc_extra[..1]].concat(),
+                &aws_lc_extra[1..]
+            ),
+            (out.clone(), &pieces_tag[..])
+        );
+        let mut g = c.benchmark_group("aes-128-gcm-encrypt-two-pieces");
+        g.throughput(Throughput::Bytes(size as u64 + 1));
+        g.bench(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                let k = AesGcm::new(black_box(&key)).unwrap();
+                k.encrypt(
+                    black_box(&nonce),
+                    black_box(&aad),
+                    &[black_box(&data[..]), black_box(&ty[..])],
+                    black_box(&mut out),
+                )
+                .unwrap()
+            })
+        });
+        let mut ossl_out = vec![0u8; size + 1 + cipher.block_size()];
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                let mut s = Crypter::new(
+                    cipher,
+                    Mode::Encrypt,
+                    black_box(&key),
+                    Some(black_box(&nonce)),
+                )
+                .unwrap();
+                s.aad_update(black_box(&aad)).unwrap();
+                let n = s.update(black_box(&data), &mut ossl_out).unwrap();
+                let n = n + s.update(black_box(&ty), &mut ossl_out[n..]).unwrap();
+                s.finalize(&mut ossl_out[n..]).unwrap();
+                s.get_tag(&mut t).unwrap();
+            })
+        });
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                aws_lc_key(black_box(&key))
+                    .seal_out_of_place_scatter(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(&data),
+                        black_box(&mut aws_lc_out),
+                        black_box(&ty),
+                        &mut aws_lc_extra,
+                    )
+                    .unwrap()
+            })
+        });
+        g.finish();
+
         let mut g = c.benchmark_group("aes-128-gcm-decrypt");
         g.throughput(Throughput::Bytes(size as u64));
         g.bench(BenchmarkId::new(VG, size), |b| {
@@ -192,6 +267,9 @@ pub fn bench(c: &mut Criterion) {
         });
         g.finish();
 
+        if !SIZES.contains(&size) {
+            continue;
+        }
         let mut g = c.benchmark_group("aes-128-gcm-stream");
         g.throughput(Throughput::Bytes(size as u64));
         g.bench(BenchmarkId::new(VG, size), |b| {
@@ -223,13 +301,14 @@ pub fn bench(c: &mut Criterion) {
     }
 
     // A key reused for every message: in place, and out of place from two
-    // halves, each next to OpenSSL's context and aws-lc-rs's key, also set up
-    // once. (From a payload and its content type is `tls_records`'s seal.)
+    // pieces (a TLS 1.3 record's payload and its content type), each next to
+    // OpenSSL's context and aws-lc-rs's key, also set up once.
     let vg_key = AesGcm::new(&key).unwrap();
     let aws_lc_reused = aws_lc_key(&key);
     let mut ossl = CipherCtx::new().unwrap();
     ossl.encrypt_init(Some(OsslCipher::aes_128_gcm()), Some(&key), None)
         .unwrap();
+    let ty = [0x17u8];
     for size in REUSED_SIZES {
         let data = vec![0u8; size];
         let mut buf = data.clone();
@@ -269,6 +348,47 @@ pub fn bench(c: &mut Criterion) {
                         Nonce::assume_unique_for_key(*black_box(&nonce)),
                         Aad::from(black_box(&aad)),
                         black_box(&mut buf),
+                    )
+                    .unwrap()
+            })
+        });
+        g.finish();
+
+        let mut out = vec![0u8; size + 1];
+        let mut aws_lc_out = vec![0u8; size];
+        let mut aws_lc_extra = [0u8; 1 + 16];
+        let tag = vg_key
+            .encrypt(&nonce, &aad, &[&data, &ty], &mut out)
+            .unwrap();
+        let ossl_tag = ossl_seal(&[&data, &ty], &mut ossl_out);
+        assert_eq!((&out[..], &tag[..]), (&ossl_out[..size + 1], &ossl_tag[..]));
+        let mut g = c.benchmark_group("aes-128-gcm-encrypt-two-pieces-reused-key");
+        g.throughput(Throughput::Bytes(size as u64 + 1));
+        g.bench(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                vg_key
+                    .encrypt(
+                        black_box(&nonce),
+                        black_box(&aad),
+                        &[black_box(&data[..]), black_box(&ty[..])],
+                        black_box(&mut out),
+                    )
+                    .unwrap()
+            })
+        });
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| ossl_seal(&[black_box(&data), black_box(&ty)], &mut ossl_out))
+        });
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                aws_lc_reused
+                    .seal_out_of_place_scatter(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(&data),
+                        black_box(&mut aws_lc_out),
+                        black_box(&ty),
+                        &mut aws_lc_extra,
                     )
                     .unwrap()
             })
@@ -365,7 +485,7 @@ pub fn bench(c: &mut Criterion) {
 /// seals in place (the payload and the content type already in the record
 /// buffer), and OpenSSL streams the pieces through one context. A
 /// connection's records are also measured from its key's setup on
-/// (`aes-*-gcm-tls-connection`, of 1, 4 and 16 records), so that the cost
+/// (`aes-*-gcm-tls-connection`, of 1, 2, 4 and 16 records), so that the cost
 /// of a key used for a few records is counted too.
 ///
 /// Each record's buffers sit at fixed offsets from a 4 KiB boundary
@@ -382,14 +502,17 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "riscv64"
 ))]
 fn tls_records(c: &mut Criterion) {
-    /// The payloads, each sealed with its content type byte: of 15, 63, 127
-    /// and 255 bytes, records of 1 to 16 whole blocks (alerts, handshake
-    /// messages, small requests); of 256, 1024 and a full record's 16384,
-    /// a byte past whole blocks, as most records end in a partial block;
-    /// and of 4095 and 16383, whole blocks again. Each size costs four rows
-    /// per key, from fresh copies (see `bench`): measure another only where
-    /// its code differs.
-    const TLS_SIZES: [usize; 9] = [15, 63, 127, 255, 256, 1024, 4095, 16383, 16384];
+    /// The payloads: a full record, a common web record, and smaller ones,
+    /// each next to sizes that are not a multiple of 16 (as most records'
+    /// are), since the end of a record costs differently from its blocks;
+    /// and records of 16, 32, 48, 64 and 255 bytes with their content type
+    /// (alerts, handshake messages, small requests); records of 112 to 240
+    /// bytes with their content type, fewer than 16 blocks; a 2048-byte
+    /// record; and records of 288, 416, 432 and 448 bytes of text.
+    const TLS_SIZES: [usize; 29] = [
+        15, 31, 47, 63, 111, 127, 207, 239, 254, 255, 256, 257, 287, 415, 431, 447, 1023, 1024,
+        1025, 2047, 4095, 4096, 4097, 9999, 10000, 10001, 16383, 16384, 16385,
+    ];
 
     tls_record_rows(c, &TLS_SIZES, Offsets::DEFAULT, "");
     tls_connection_rows(c);
@@ -728,7 +851,7 @@ fn tls_connection_rows(c: &mut Criterion) {
         let mut ossl_out = [0u8; 256 + 16];
         let mut t = [0u8; 16];
         let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-connection"));
-        for records in [1, 4, 16] {
+        for records in [1, 2, 4, 16] {
             g.throughput(Throughput::Bytes((records * 256) as u64));
             g.bench(BenchmarkId::new(VG, records), |b| {
                 b.iter(|| {
