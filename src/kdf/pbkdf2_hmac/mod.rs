@@ -1,5 +1,5 @@
-//! PBKDF2 (RFC 8018 §5.2) with HMAC over MD5, SHA-1 or a SHA-2 hash function as
-//! its pseudorandom function.
+//! PBKDF2-HMAC (RFC 8018 §5.2): PBKDF2 with HMAC over MD5, SHA-1 or a SHA-2
+//! hash function ([`Pbkdf2Hash`]) as its pseudorandom function.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -26,7 +26,7 @@ mod sha512_256;
 /// A hash function with a verified PBKDF2-HMAC implementation.
 pub trait Pbkdf2Hash: HmacHash {
     /// Fills `out` with the key derived from `password` and `salt` with
-    /// `iterations` iterations (see [`pbkdf2_hmac`]).
+    /// `iterations` iterations (see [`derive()`]).
     #[doc(hidden)]
     fn pbkdf2_derive(password: &[u8], salt: &[u8], iterations: NonZeroU32, out: &mut [u8]);
 }
@@ -38,18 +38,13 @@ pub trait Pbkdf2Hash: HmacHash {
 ///
 /// If `out` is longer than (2³² − 1) times the digest size ("derived key too
 /// long" in RFC 8018).
-pub fn pbkdf2_hmac<H: Pbkdf2Hash>(
-    password: &[u8],
-    salt: &[u8],
-    iterations: NonZeroU32,
-    out: &mut [u8],
-) {
+pub fn derive<H: Pbkdf2Hash>(password: &[u8], salt: &[u8], iterations: NonZeroU32, out: &mut [u8]) {
     H::pbkdf2_derive(password, salt, iterations, out);
 }
 
 /// The key derived from a password did not match the expected one: the
 /// password (or the salt or iteration count) is not the one it was derived
-/// from. Returned by [`pbkdf2_hmac_verify`].
+/// from. Returned by [`verify`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct KeyMismatch;
 
@@ -63,12 +58,12 @@ impl core::error::Error for KeyMismatch {}
 
 /// Checks a password against a stored derived key: derives a key of `N`
 /// bytes from `password` and `salt` with `iterations` iterations of PBKDF2
-/// with HMAC over the hash function `H` (as [`pbkdf2_hmac`] does), and
+/// with HMAC over the hash function `H` (as [`derive()`] does), and
 /// compares it with `expected`.
 ///
 /// The comparison is constant time: the time taken does not depend on
 /// where, or whether, the keys differ. The derivation is
-/// [`pbkdf2_hmac`]'s, whose verified implementation leaks only the lengths
+/// [`derive()`]'s, whose verified implementation leaks only the lengths
 /// of the password and the salt and the iteration count. `N` is public too.
 /// The derived key is wiped before returning.
 ///
@@ -87,8 +82,8 @@ impl core::error::Error for KeyMismatch {}
 /// # Panics
 ///
 /// If `N` is more than (2³² − 1) times the digest size ("derived key too
-/// long" in RFC 8018), as [`pbkdf2_hmac`] does.
-pub fn pbkdf2_hmac_verify<H: Pbkdf2Hash, const N: usize>(
+/// long" in RFC 8018), as [`derive()`] does.
+pub fn verify<H: Pbkdf2Hash, const N: usize>(
     password: &[u8],
     salt: &[u8],
     iterations: NonZeroU32,
@@ -185,18 +180,18 @@ macro_rules! whole_pbkdf2 {
             /// functions without published PBKDF2 vectors too: a key of
             /// three blocks less a byte begins with the key of one block
             /// derived from the same inputs (block `i` of a derived key
-            /// depends on `i` alone), and `pbkdf2_hmac_verify` accepts it
-            /// and rejects it with a byte changed. The vectors are in
+            /// depends on `i` alone), and `verify` accepts it and rejects
+            /// it with a byte changed. The vectors are in
             /// `tests/wycheproof/pbkdf2_<hash>.rs`, where there are any.
             #[test]
             fn prefix_and_verify() {
                 let iterations = core::num::NonZeroU32::new(3).unwrap();
                 let mut long = [0; 3 * $output - 1];
-                super::super::pbkdf2_hmac::<$hash>(b"password", b"salt", iterations, &mut long);
+                super::super::derive::<$hash>(b"password", b"salt", iterations, &mut long);
                 let mut short = [0; $output];
-                super::super::pbkdf2_hmac::<$hash>(b"password", b"salt", iterations, &mut short);
+                super::super::derive::<$hash>(b"password", b"salt", iterations, &mut short);
                 assert_eq!(long[..$output], short);
-                let verify = super::super::pbkdf2_hmac_verify::<$hash, { 3 * $output - 1 }>;
+                let verify = super::super::verify::<$hash, { 3 * $output - 1 }>;
                 assert_eq!(verify(b"password", b"salt", iterations, &long), Ok(()));
                 long[$output] ^= 1;
                 assert_eq!(

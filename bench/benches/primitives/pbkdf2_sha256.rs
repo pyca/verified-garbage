@@ -6,7 +6,7 @@ pub const USES: &[&str] = &["pbkdf2_sha256", "hmac_sha256", "sha256"];
 
 /// PBKDF2-HMAC-SHA-256 of a 32-byte key (one block), with the sizes as the
 /// iteration counts: deriving it, and checking a password against it
-/// (`pbkdf2_hmac_verify`, one instance of the generic function; OpenSSL
+/// (`pbkdf2_hmac::verify`, one instance of the generic function; OpenSSL
 /// derives the key and compares it with `CRYPTO_memcmp`; aws-lc-rs's
 /// `pbkdf2::verify` derives it into a buffer it allocates, compares it in
 /// constant time and zeroes the buffer).
@@ -25,14 +25,14 @@ pub fn bench(c: &mut Criterion) {
     use criterion::{BenchmarkId, Throughput};
     use openssl::hash::MessageDigest;
     use verified_garbage::hashes::sha256::Sha256;
-    use verified_garbage::kdf::pbkdf2::{pbkdf2_hmac, pbkdf2_hmac_verify};
+    use verified_garbage::kdf::pbkdf2_hmac;
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
     crate::pbkdf2_group(
         c,
         "pbkdf2-hmac-sha256",
-        pbkdf2_hmac::<Sha256>,
+        pbkdf2_hmac::derive::<Sha256>,
         MessageDigest::sha256(),
         Some(aws_lc_rs::pbkdf2::PBKDF2_HMAC_SHA256),
         32,
@@ -45,10 +45,10 @@ pub fn bench(c: &mut Criterion) {
         g.throughput(Throughput::Elements(iterations as u64));
         let n = NonZeroU32::new(iterations as u32).unwrap();
         let mut expected = [0u8; 32];
-        pbkdf2_hmac::<Sha256>(&password, &salt, n, &mut expected);
+        pbkdf2_hmac::derive::<Sha256>(&password, &salt, n, &mut expected);
         g.bench(BenchmarkId::new(VG, iterations), |b| {
             b.iter(|| {
-                pbkdf2_hmac_verify::<Sha256, 32>(
+                pbkdf2_hmac::verify::<Sha256, 32>(
                     black_box(&password),
                     black_box(&salt),
                     n,

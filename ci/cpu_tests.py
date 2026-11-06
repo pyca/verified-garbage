@@ -364,11 +364,11 @@ GROUPS = {
         ],
     },
     "sha1": {
-        "lib": ["hashes::sha1", "hmac::sha1", "kdf::pbkdf2::sha1"],
+        "lib": ["hashes::sha1", "hmac::sha1", "kdf::pbkdf2_hmac::sha1"],
         "tests": ["cavp::sha1", "wycheproof::hmac_sha1", "wycheproof::pbkdf2_sha1"],
     },
     "sha224": {
-        "lib": ["hashes::sha224", "hmac::sha224", "kdf::pbkdf2::sha224"],
+        "lib": ["hashes::sha224", "hmac::sha224", "kdf::pbkdf2_hmac::sha224"],
         "tests": [
             "cavp::sha224",
             "rfc4231::hmac_sha224",
@@ -380,7 +380,7 @@ GROUPS = {
         ],
     },
     "sha256": {
-        "lib": ["hashes::sha256", "hmac::sha256", "kdf::pbkdf2::sha256"],
+        "lib": ["hashes::sha256", "hmac::sha256", "kdf::pbkdf2_hmac::sha256"],
         "tests": [
             "cavp::sha256",
             "secp256k1",
@@ -397,7 +397,7 @@ GROUPS = {
         ],
     },
     "sha3": {
-        "lib": ["hashes::sha3", "hashes::sha384", "hmac::sha384", "kdf::pbkdf2::sha384"],
+        "lib": ["hashes::sha3", "hashes::sha384", "hmac::sha384", "kdf::pbkdf2_hmac::sha384"],
         "tests": [
             "cavp::sha3",
             "cavp::sha384",
@@ -412,7 +412,7 @@ GROUPS = {
         ],
     },
     "sha384": {
-        "lib": ["hashes::sha384", "hmac::sha384", "kdf::pbkdf2::sha384"],
+        "lib": ["hashes::sha384", "hmac::sha384", "kdf::pbkdf2_hmac::sha384"],
         "tests": [
             "cavp::sha384",
             "rfc4231::hmac_sha384",
@@ -433,9 +433,9 @@ GROUPS = {
             "hmac::sha512",
             "hmac::sha512_224",
             "hmac::sha512_256",
-            "kdf::pbkdf2::sha512",
-            "kdf::pbkdf2::sha512_224",
-            "kdf::pbkdf2::sha512_256",
+            "kdf::pbkdf2_hmac::sha512",
+            "kdf::pbkdf2_hmac::sha512_224",
+            "kdf::pbkdf2_hmac::sha512_256",
         ],
         "tests": [
             "cavp::sha512",
