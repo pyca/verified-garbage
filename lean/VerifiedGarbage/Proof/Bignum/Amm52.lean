@@ -10,7 +10,7 @@ numbers: twenty limbs (`L j` for `j < 20`) whose value is
 `Σ L j 2^(52 j)` (`lval`), each limb a sum of 52-bit halves of products,
 never reduced below `2⁵²` until the end.
 
-A step for the limb `b` of the second operand: the low halves of
+A step (`step`) for the limb `b` of the second operand: the low halves of
 `a_j b` into limb `j`; `u = (L₀ k₀) mod 2⁵²`; the low halves of `m_j u`;
 the carry of limb 0 into limb 1; the limbs shifted down one; and the high
 halves of `a_j b` and `m_j u` into limb `j`. With `m₀ k₀ ≡ -1 (mod 2⁵²)`
@@ -108,6 +108,15 @@ def stepU (o : Ops) (L : Nat → Nat) (b : Nat) : Nat := lo (L 0 + lo (o.a 0) b)
 /-- The limbs after the low halves. -/
 def low (o : Ops) (L : Nat → Nat) (b : Nat) (j : Nat) : Nat :=
   L j + lo (o.a j) b + lo (o.m j) (stepU o L b)
+
+/-- Limbs shifted down one (of twenty), with the carry of limb 0 added to
+limb 1, which becomes limb 0. -/
+def shifted (l : Nat → Nat) (j : Nat) : Nat :=
+  if j < 19 then l (j + 1) + (if j = 0 then l 0 / 2 ^ 52 else 0) else 0
+
+/-- A step, for the limb `b` (of twenty limbs). -/
+def step (o : Ops) (L : Nat → Nat) (b : Nat) (j : Nat) : Nat :=
+  shifted (low o L b) j + hi (o.a j) b + hi (o.m j) (stepU o L b)
 
 theorem steps_alg {X V P L0 A M lb lu bn un : Nat} (hX : X = V + A * bn + M * un)
     (h : V * P = L0 + A * lb + M * lu) : X * P = L0 + A * (lb + bn * P) + M * (lu + un * P) := by
