@@ -239,6 +239,35 @@ theorem openZeroPost_curry (key nonce aad al data len tag : BitVec 64) (m m' : M
         (Spec.Poly1305.bytesAt m data (len.setWidth pb).toNat) (Spec.Poly1305.bytesAt m tag 16)
         (Spec.Poly1305.bytesAt m' data (len.setWidth pb).toNat) (len.setWidth pb).toNat r := rfl
 
+theorem openZeroPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).length →
+    (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openSig.words pb) (openZeroPost pb) vs m₁ m' r →
+      Curry.apply (openSig.words pb) (openZeroPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨key, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  replace h := Eq.mp (openZeroPost_curry pb key nonce aad al data len tag m₁ m' r) h
+  refine Eq.mpr (openZeroPost_curry pb key nonce aad al data len tag m₂ m' r) ?_
+  rw [bytesAt_congr (agree_of hb.1), bytesAt_congr (agree_of hb.2.1),
+    bytesAt_congr_len (agree_of hb.2.2.1), bytesAt_congr_len (p := data) (agree_of hb.2.2.2.1),
+    bytesAt_congr (p := tag) (agree_of hb.2.2.2.2)]
+  exact h
+
 theorem openZeroPost_out : ∀ vs m m₁ m₂ r, vs.length = (openSig.words pb).length →
     (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (openSig.words pb) (openZeroPost pb) vs m m₁ r →

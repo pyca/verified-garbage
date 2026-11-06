@@ -16,7 +16,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 688 .r10 81 Impl.ChaCha20Poly1305.PPC64LE.«seal»
     stack := 848
     verified := Proof.ChaCha20Poly1305.PPC64LE.seal_framed },
-  Spec.ChaCha20Poly1305.openApi.artifact PPC64LE.target {
+  Spec.ChaCha20Poly1305.openZeroApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 688 .r10 81 Impl.ChaCha20Poly1305.PPC64LE.«open»
     stack := 848
     verified := Proof.ChaCha20Poly1305.PPC64LE.open_framed },

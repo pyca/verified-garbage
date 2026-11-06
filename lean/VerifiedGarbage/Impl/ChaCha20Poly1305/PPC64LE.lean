@@ -46,7 +46,8 @@ XORs of their words.
 
 Constant time: only the pointers and the lengths can affect timing (the
 branches are on the lengths, and every address is a pointer plus a constant
-or a count).
+or a count), but for `open`'s branch on whether the tag is right, which its
+contract lets it leak, to zero the data (`zeroData`) if it is not.
 -/
 
 @[expose] public section
@@ -228,9 +229,20 @@ def compare : List Instr :=
    .logic .or .r3 .r3 .r4, .li .r4 0, .sub .r4 .r4 .r3, .logic .or .r3 .r3 .r4,
    .lsr .d .r3 .r3 63, .li .r4 1, .sub .r3 .r4 .r3]
 
-/-- The data decrypted, the tags compared, and the registers restored. -/
-def openEnd : Prog isa := .seq crypt (.block (compare ++ restore))
+/-- The `r28` bytes at `r27` zeroed, a byte at a time, with `r3` zero:
+through `r4` (the address) and `r5` (the count). -/
+def zeroData : Prog isa :=
+  .seq (.block [mov .r4 .r27, mov .r5 .r28])
+    (.ite (.zero .d .r5) (.block [])
+      (.loop (.block [.stb .r3 .r4 0, .addi .r4 .r4 1, .subi .r5 .r5 1]) (.nonzero .d .r5)))
 
-def «open» : Prog isa := .seq openMain (.seq finalize openEnd)
+/-- Everything but the epilogue: the tag computed, the data decrypted, and
+the tags compared, `r3` 1 if they are equal and 0 if not. -/
+def openBody : Prog isa := .seq openMain (.seq finalize (.seq crypt (.block compare)))
+
+/-- `open` zeroes the data if the tag is wrong, branching on the result of
+the comparison, which its contract lets it leak, then restores the
+registers. -/
+def «open» : Prog isa := .seq openBody (.seq (.ite (.zero .d .r3) zeroData (.block [])) (.block restore))
 
 end VG.Impl.ChaCha20Poly1305.PPC64LE
