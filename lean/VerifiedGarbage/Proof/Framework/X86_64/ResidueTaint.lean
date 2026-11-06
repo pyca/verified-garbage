@@ -3,11 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.X86_64.Reduce
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
-public import VerifiedGarbage.Proof.Framework.X86_64.ResidueKeep
 
 /-!
 # Taint tracking through stack frames, for returning without residue (x86-64)
@@ -26,7 +21,18 @@ window that may differ between two runs are those `sec` lists: those its
 code must zero to leave no residue.
 
 Instructions are the base analysis's (`X86_64.taint.step`), with the same
-soundness proof, and must not write the stack pointer.
+soundness proof, and must not write the stack pointer; `ResidueTaintSound.lean`
+proves the rest. On top of it, the analysis knows:
+
+* upper bounds of registers (`ub`), from constants, `and` with a constant,
+  and `cmp x, d; cmovb d, x`, which keeps the bound of `d`;
+* which regions an indexed store may reach: one whose base register points
+  into a region and whose index register is bounded writes only within
+  `[lo, hi)` of that region, and leaves its other slots public;
+* pointers kept in public slots (`mb`): a 64-bit store of a register holding
+  an address in a region, reloaded later, holds it again;
+* zeroing idioms (`xor r, r`, `pxor x, x`) and vector stores of public
+  registers.
 -/
 
 @[expose] public section
@@ -98,6 +104,13 @@ structure FT where
   sec : List (Nat × Nat)
   /-- Window indices of the return addresses of the calls in progress, innermost first. -/
   ras : List Nat
+  /-- Upper bounds of registers' values, in both runs. -/
+  ub : List (Reg × Nat) := []
+  /-- The flags are those of `cmp a, b` (64-bit), in both runs. -/
+  fl : Option (Reg × Reg) := none
+  /-- `(i, d, j, k)`: the 8 bytes at offset `d` of region `i` hold the address
+  of byte `k` of region `j`, in both runs. -/
+  mb : List (Nat × Nat × Nat × Nat) := []
   deriving DecidableEq, Lean.ToExpr
 
 /-- The base of the window. -/
@@ -108,6 +121,12 @@ def wa (s : State) (τ : FT) (j : Nat) : Addr := wb s τ + BitVec.ofNat 64 j
 
 /-- The 8 bytes at window index `j`. -/
 def raSlot (s : State) (τ : FT) (j : Nat) : Region := ⟨wa s τ j, 8⟩
+
+/-- What `τ` says of one state alone. -/
+structure One (τ : FT) (s : State) : Prop where
+  ub : ∀ p ∈ τ.ub, (s.gpr p.1).toNat ≤ p.2
+  fl : ∀ a b, τ.fl = some (a, b) → s.cf = some (decide ((s.gpr a).toNat < (s.gpr b).toNat))
+  mb : ∀ e ∈ τ.mb, s.mem.readW (byteAddr s e.1 e.2.1) 64 = (region s e.2.2.1).base + BitVec.ofNat 64 e.2.2.2
 
 structure RInv (τ : FT) (s₁ s₂ : State) : Prop where
   base : Taint.Agree τ.t s₁ s₂
@@ -126,42 +145,190 @@ structure RInv (τ : FT) (s₁ s₂ : State) : Prop where
   rasFr : ∀ j ∈ τ.ras, ∀ i < τ.nfr, (region s₁ i).Disjoint (raSlot s₁ τ j)
   dead : ∀ j < τ.room + τ.depth, ¬ InSec τ.sec j →
     (∀ r ∈ s₁.wr, ¬ r.Contains (wa s₁ τ j) 1) → s₁.mem (wa s₁ τ j) = s₂.mem (wa s₂ τ j)
+  mbFit : ∀ e ∈ τ.mb, e.2.1 + 8 ≤ τ.t.lens.getD e.1 0
+  one₁ : One τ s₁
+  one₂ : One τ s₂
 
 def Agree (τ : FT) (s₁ s₂ : State) : Prop := τ.ok = true → RInv τ s₁ s₂
 
 /-- No knowledge. -/
-def none' : FT := ⟨false, {regs := .empty, flags := false}, 0, 0, 0, [], []⟩
+def none' : FT := ⟨false, {regs := .empty, flags := false}, 0, 0, 0, [], [], [], none, []⟩
 
 /-! ## Transfer functions -/
 
+/-- The bound of `r`, if known. -/
+def ubOf (l : List (Reg × Nat)) (r : Reg) : Option Nat := (l.find? (·.1 == r)).map (·.2)
+
+/-- Bounds after an instruction that writes the registers `clobbers` says. -/
+def ubKill (l : List (Reg × Nat)) (i : Instr) : List (Reg × Nat) := l.filter fun p => !Taint.clobbers i p.1
+
+/-- The bound an instruction gives the register it writes, if any. -/
+def ubNew (τ : FT) : Instr → Option (Reg × Nat)
+  | .mov d (.imm v) => if v.msb then none else some (d, v.toNat)
+  | .mov32 d (.imm v) => some (d, v.toNat)
+  | .alu .and d (.imm v) => if v.msb then none else some (d, v.toNat)
+  | .alu32 .and d (.imm v) => some (d, v.toNat)
+  | .cmov .b d (.reg x) =>
+    if τ.fl == some (x, d) then (ubOf τ.ub d).map (d, ·) else none
+  | _ => none
+
+/-- The memory an instruction may write: its operand and width. -/
+def storeW : Instr → Option (MemOp × Nat)
+  | .store m _ => some (m, 8)
+  | .store32 m _ => some (m, 4)
+  | .store8 m _ => some (m, 1)
+  | .store16 m _ => some (m, 2)
+  | .movdquStore m _ => some (m, 16)
+  | .vmovdquStore .l128 m _ => some (m, 16)
+  | .vmovdquStore .l256 m _ => some (m, 32)
+  | .vmovdqu32Store m _ => some (m, 64)
+  | .evStore m _ => some (m, 32)
+  | .stmxcsr m => some (m, 4)
+  | _ => none
+
+/-- Whether an instruction may write memory: those of `storeW`, and the
+masked stores. -/
+def writesMem (i : Instr) : Bool :=
+  (storeW i).isSome || match i with
+    | .kStore .. | .kStore8 .. => true
+    | _ => false
+
+/-- The bytes `[lo, hi)` of region `ri` that a store through `m` of `w` bytes
+may write, if its base register points into region `ri` and its index
+register is bounded. -/
+def idxRange (τ : FT) (m : MemOp) (w : Nat) : Option (Nat × Nat × Nat) :=
+  match m.index with
+  | some x =>
+    match τ.t.bases.find? (·.1 == m.base), ubOf τ.ub x with
+    | some (_, ri, k), some B =>
+      if m.scale = 1 ∧ 0 ≤ m.disp ∧ k + m.disp.toNat + B + w ≤ τ.t.lens.getD ri 0 then
+        some (ri, k + m.disp.toNat, k + m.disp.toNat + B + w)
+      else none
+    | _, _ => none
+  | none => none
+
+/-- The bytes `[lo, hi)` of region `ri` a store may write, if known. -/
+def storeRange (τ : FT) (m : MemOp) (w : Nat) : Option (Nat × Nat × Nat) :=
+  match addrOf τ.t m with
+  | some (ri, d) => if d + w ≤ τ.t.lens.getD ri 0 then some (ri, d, d + w) else none
+  | none => idxRange τ m w
+
+def mbKill (mb : List (Nat × Nat × Nat × Nat)) (ri lo hi : Nat) : List (Nat × Nat × Nat × Nat) :=
+  mb.filter fun e => e.1 != ri || e.2.1 + 8 ≤ lo || hi ≤ e.2.1
+
+def mbAfter (τ : FT) (i : Instr) : List (Nat × Nat × Nat × Nat) :=
+  match storeW i with
+  | some (m, w) =>
+    match storeRange τ m w with
+    | some (ri, lo, hi) =>
+      let kept := mbKill τ.mb ri lo hi
+      match i with
+      | .store _ r =>
+        match τ.t.bases.find? (·.1 == r), addrOf τ.t m with
+        | some (_, pj, pk), some _ => (ri, lo, pj, pk) :: kept
+        | _, _ => kept
+      | _ => kept
+    | none => []
+  | none => if writesMem i then [] else τ.mb
+
+/-- The value a store writes is public: a register (or its low bytes) the
+base analysis says is, or an SSE register `xregs` says is. -/
+def storePub (t : Taint.T) : Instr → Bool
+  | .store _ r | .store8 _ r => pub t r
+  | .movdquStore _ x => xpub t x
+  | _ => false
+
+/-- The base taint after a store whose index register is bounded: only the
+slots of `[lo, hi)` of region `ri` are dropped (none if the value is public). -/
+def idxStore (t : Taint.T) (ri lo hi : Nat) (p : Bool) : Taint.T :=
+  { t with slots := if p then t.slots else t.slots.filter fun sl => sl.1 != ri || hi ≤ sl.2.1 || sl.2.1 + sl.2.2 ≤ lo }
+
+/-- The base taint after a store the base analysis is less precise about:
+an indexed store whose index register is bounded, or a vector store of a
+public register. -/
+def special (τ : FT) (i : Instr) : Option Taint.T :=
+  match i with
+  | .store m _ | .store8 m _ | .movdquStore m _ =>
+    match m.index, storeW i with
+    | some _, some (_, w) =>
+      match idxRange τ m w with
+      | some (ri, lo, hi) => if memPub τ.t m then some (idxStore τ.t ri lo hi (storePub τ.t i)) else none
+      | none => none
+    | none, _ =>
+      match i with
+      | .movdquStore m x => if xpub τ.t x then storeStep τ.t m 16 true else none
+      | _ => none
+    | _, _ => none
+  | _ => none
+
+/-- What the analysis adds to the base analysis's taint `t'` after `i`:
+zeroing idioms, and loads of pointers from public slots. -/
+def post (τ : FT) (i : Instr) (t' : Taint.T) : Taint.T :=
+  match i with
+  | .alu .xor d (.reg d') | .alu32 .xor d (.reg d') =>
+    if d == d' then { t' with regs := t'.regs.insert d } else t'
+  | .xop (.bin .pxor x x') => if x == x' then { t' with xregs := t'.xregs.insert x } else t'
+  | .mov d (.mem m) =>
+    match addrOf τ.t m with
+    | some (ri, o) =>
+      match τ.mb.find? (fun e => e.1 == ri && e.2.1 == o) with
+      | some (_, _, pj, pk) => { t' with bases := (d, pj, pk) :: t'.bases }
+      | none => t'
+    | none => t'
+  | _ => t'
+
+/-- The base taint after `i`. -/
+def baseStep (τ : FT) (i : Instr) : Option Taint.T :=
+  match special τ i with
+  | some t' => some t'
+  | none => (X86_64.taint.step τ.t i).map (post τ i)
+
 def step (τ : FT) (i : Instr) : Option FT :=
   if τ.ok && !isa.writesSp i then
-    match X86_64.taint.step τ.t i with
-    | some t' => if t'.lens == τ.t.lens then some { τ with t := t' } else none
+    match baseStep τ i with
+    | some t' =>
+      if t'.lens == τ.t.lens then
+        some { τ with
+          t := t'
+          ub := (ubNew τ i).toList ++ ubKill τ.ub i
+          fl := match i with
+            | .alu .cmp a (.reg b) => some (a, b)
+            | _ => none
+          mb := mbAfter τ i }
+      else none
     | none => none
   else none
 
 def meet (τ₁ τ₂ : FT) : FT :=
   if τ₁.ok && τ₂.ok && τ₁.nfr == τ₂.nfr && τ₁.depth == τ₂.depth && τ₁.room == τ₂.room &&
       τ₁.ras == τ₂.ras && τ₁.t.lens == τ₂.t.lens then
-    { τ₁ with t := Taint.meet τ₁.t τ₂.t, sec := τ₁.sec ++ τ₂.sec }
+    { τ₁ with
+      t := Taint.meet τ₁.t τ₂.t
+      sec := τ₁.sec ++ τ₂.sec
+      ub := τ₁.ub.filterMap fun p => (ubOf τ₂.ub p.1).map fun n => (p.1, max p.2 n)
+      fl := if τ₁.fl == τ₂.fl then τ₁.fl else none
+      mb := τ₁.mb.filter (τ₂.mb.contains ·) }
   else none'
 
 def le (τ σ : FT) : Bool :=
   !τ.ok || (σ.ok && τ.nfr == σ.nfr && τ.depth == σ.depth && τ.room == σ.room && τ.ras == σ.ras &&
-    Taint.leK τ.t σ.t && σ.sec.all (τ.sec.contains ·))
+    Taint.leK τ.t σ.t && σ.sec.all (τ.sec.contains ·) &&
+    τ.ub.all (fun p => (ubOf σ.ub p.1).any (· ≤ p.2)) &&
+    (τ.fl.isNone || τ.fl == σ.fl) && τ.mb.all (σ.mb.contains ·))
 
 /-- The base taint after a write of the stack pointer by a call or a return. -/
 def killSp (t : Taint.T) : Taint.T := { t with bases := kill t .rsp, lo := .empty }
 
 def callF (τ : FT) : Option FT :=
   if τ.ok && 8 ≤ τ.room then
-    some { τ with t := killSp τ.t, depth := τ.depth + 8, room := τ.room - 8, ras := (τ.room - 8) :: τ.ras }
+    some ⟨true, killSp τ.t, τ.nfr, τ.depth + 8, τ.room - 8, τ.sec, (τ.room - 8) :: τ.ras,
+      τ.ub.filter (·.1 != .rsp), none, τ.mb⟩
   else none
 
 def retF (τ : FT) : Option FT :=
   if τ.ok && τ.ras.head? == some τ.room && 8 ≤ τ.depth then
-    some { τ with t := killSp τ.t, depth := τ.depth - 8, room := τ.room + 8, ras := τ.ras.tail }
+    some ⟨true, killSp τ.t, τ.nfr, τ.depth - 8, τ.room + 8, τ.sec, τ.ras.tail,
+      τ.ub.filter (·.1 != .rsp), none, τ.mb⟩
   else none
 
 /-- The base taint with a frame of `b` bytes pushed at the head of the
@@ -196,8 +363,8 @@ def newSlots (sec : List (Nat × Nat)) (a b : Nat) : List (Nat × Nat × Nat) :=
 def pushF (τ : FT) : Instr → Option FT
   | .alloc b =>
     if τ.ok && 0 < b && b < 4096 && b % 8 == 0 && b ≤ τ.room then
-      let fs := newSlots τ.sec (τ.room - b) b
-      some { τ with t := shiftIn τ.t b fs, nfr := τ.nfr + 1, depth := τ.depth + b, room := τ.room - b }
+      some ⟨true, shiftIn τ.t b (newSlots τ.sec (τ.room - b) b), τ.nfr + 1, τ.depth + b, τ.room - b, τ.sec,
+        τ.ras, τ.ub.filter (·.1 != .rsp), none, τ.mb.map fun e => (e.1 + 1, e.2.1, e.2.2.1 + 1, e.2.2.2)⟩
     else none
   | _ => none
 
@@ -209,150 +376,11 @@ def popF (τ : FT) : Instr → Option FT
   | .free b =>
     if τ.ok && 1 ≤ τ.nfr && τ.t.lens.head? == some b && b ≤ τ.depth && τ.ras.all (τ.room + b ≤ ·) then
       let sec' := τ.sec ++ gaps (frameSlots τ.t τ.room) [(τ.room, b)]
-      some ⟨true, shiftOut τ.t, τ.nfr - 1, τ.depth - b, τ.room + b, sec', τ.ras⟩
+      let mb' := τ.mb.filterMap fun e =>
+        if e.1 = 0 ∨ e.2.2.1 = 0 then none else some (e.1 - 1, e.2.1, e.2.2.1 - 1, e.2.2.2)
+      some ⟨true, shiftOut τ.t, τ.nfr - 1, τ.depth - b, τ.room + b, sec', τ.ras,
+        τ.ub.filter (·.1 != .rsp), none, mb'⟩
     else none
   | _ => none
-
-/-! ## Soundness: instructions -/
-
-open VG.X86_64.Residue (Pres Pres.none' Pres.some' Pres.map' Pres.bind')
-
-macro "uk_leaf" : tactic => `(tactic| first
-  | exact Pres.none'
-  | (apply Pres.some'; rfl)
-  | (apply Pres.map'; intro _; rfl)
-  | (apply Pres.map'; intro _; split <;> rfl))
-
-syntax "uk_go" : tactic
-macro_rules
-  | `(tactic| uk_go) => `(tactic| first
-    | uk_leaf
-    | (apply Pres.bind'; intro _; uk_go)
-    | (split <;> uk_go))
-
-theorem exec_unknowns_pres (i : Instr) (s : State) :
-    Pres (fun x => x.unknowns = s.unknowns) (exec i s) := by
-  cases i
-  case vop op => simp only [reduceExec]; rw [Taint.VOp.exec_eq]; exact Pres.some' rfl
-  case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' rfl
-  case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' rfl
-  case eop op => simp only [reduceExec]; rw [Taint.EOp.exec_eq]; exact Pres.some' rfl
-  case vmovdquLoad len _ _ | vmovdquStore len _ _ | vbinLoad _ len _ _ _ =>
-    cases len <;> simp only [reduceExec, State.store128, State.store256] <;> uk_go
-  case evLoad d _ | evMadd52Load _ d _ _ =>
-    simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVy_eq]
-  all_goals simp only [reduceExec, execAlu, execAluW, execAlu32, execShift32, execShift, execRorx32,
-      execRorx, execShld, execBtr, execMulx, execAdcx, execAdox, execCmov, State.store64,
-      State.store32, State.store8, State.store16, State.store128, State.store256, State.store512,
-      State.storeMasked512, State.storeMasked512B]
-  all_goals uk_go
-
-theorem exec_unknowns {i : Instr} {s s' : State} (h : exec i s = some s') : s'.unknowns = s.unknowns :=
-  exec_unknowns_pres i s s' h
-
-theorem exec_frame {i : Instr} {s s' : State} (h : exec i s = some s') :
-    s'.wr = s.wr ∧ Frame s.wr s.mem s'.mem := by
-  have e : execBlock isa [i] s = some (s', (addrs i s).map Leak.addr) := by
-    simp only [execBlock, isa, h, Option.map_some, List.append_nil]
-  obtain ⟨-, hw, hf⟩ := execBlock_regions e
-  exact ⟨hw, hf⟩
-
-theorem wa_eq {s₁ s₂ : State} {τ : FT} (h : s₁.gpr .rsp = s₂.gpr .rsp) (j : Nat) : wa s₁ τ j = wa s₂ τ j := by
-  simp only [wa, wb, h]
-
-theorem step_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
-    (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
-    addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
-  unfold step at hs
-  split at hs <;> [rename_i hok; cases hs]
-  simp only [Bool.and_eq_true, Bool.not_eq_true'] at hok
-  obtain ⟨hok, hsp⟩ := hok
-  split at hs <;> [rename_i t' ht; cases hs]
-  split at hs <;> [rename_i hl; cases hs]
-  cases hs
-  have hl : t'.lens = τ.t.lens := by simpa using hl
-  have inv := ha hok
-  obtain ⟨had, hb⟩ := X86_64.taint.step_sound inv.base ht e₁ e₂
-  have r₁ := exec_rsp hsp e₁
-  have r₂ := exec_rsp hsp e₂
-  obtain ⟨w₁, f₁⟩ := exec_frame e₁
-  obtain ⟨w₂, f₂⟩ := exec_frame e₂
-  refine ⟨had, fun _ => ⟨hb, by rw [r₁, r₂, inv.rsp], by rw [exec_unknowns e₁, exec_unknowns e₂, inv.unk],
-    by rw [w₁, w₂, inv.wr], fun h => by rw [w₁]; exact inv.lens (hl ▸ h), by rw [w₁]; exact inv.nfr,
-    by rw [r₁]; exact inv.room, by rw [r₁]; exact inv.top, ?_, ?_, inv.rasIn, inv.rasSorted, ?_, ?_⟩⟩
-  · intro i hi; simp only [region, w₁, r₁]; exact inv.frames i hi
-  · intro i h₁ h₂; simp only [region, w₁, wb, r₁]; rw [w₁] at h₂; exact inv.others i h₁ h₂
-  · intro j hj i hi; simp only [region, raSlot, wa, wb, w₁, r₁]; exact inv.rasFr j hj i hi
-  · intro j hj hn hw
-    have d := inv.dead j hj hn
-    simp only [wa, wb] at hw d ⊢
-    rw [w₁, r₁] at hw
-    rw [r₁, r₂, f₁ _ hw, f₂ _ (by rw [← inv.wr, ← inv.rsp]; exact hw)]
-    exact d hw
-
-/-! ## Soundness: branches, joins and order -/
-
-theorem cond_sound {τ : FT} {c : Cond} {s₁ s₂ : State} (ha : Agree τ s₁ s₂)
-    (h : (τ.ok && τ.t.flags) = true) : eval c s₁ = eval c s₂ := by
-  simp only [Bool.and_eq_true] at h
-  exact Taint.cond_sound (ha h.1).base h.2
-
-theorem inSec_append_left {l₁ l₂ : List (Nat × Nat)} {j : Nat} (h : ¬ InSec (l₁ ++ l₂) j) : ¬ InSec l₁ j :=
-  fun ⟨p, hp, h'⟩ => h ⟨p, List.mem_append_left _ hp, h'⟩
-
-theorem inSec_append_right {l₁ l₂ : List (Nat × Nat)} {j : Nat} (h : ¬ InSec (l₁ ++ l₂) j) : ¬ InSec l₂ j :=
-  fun ⟨p, hp, h'⟩ => h ⟨p, List.mem_append_right _ hp, h'⟩
-
-theorem meet_left {τ₁ τ₂ : FT} {s₁ s₂ : State} (h : Agree τ₁ s₁ s₂) : Agree (meet τ₁ τ₂) s₁ s₂ := by
-  unfold meet
-  split
-  · rename_i hc
-    simp only [Bool.and_eq_true, beq_iff_eq] at hc
-    obtain ⟨⟨⟨⟨⟨⟨h1, -⟩, -⟩, -⟩, -⟩, -⟩, hl⟩ := hc
-    intro _
-    have inv := h h1
-    exact { inv with
-      base := Taint.meet_left inv.base
-      lens := fun e => inv.lens (by simpa [Taint.meet, hl] using e)
-      dead := fun j hj hn hw => inv.dead j hj (inSec_append_left hn) hw }
-  · intro h; cases h
-
-theorem meet_right {τ₁ τ₂ : FT} {s₁ s₂ : State} (h : Agree τ₂ s₁ s₂) : Agree (meet τ₁ τ₂) s₁ s₂ := by
-  unfold meet
-  split
-  · rename_i hc
-    simp only [Bool.and_eq_true, beq_iff_eq] at hc
-    obtain ⟨⟨⟨⟨⟨⟨-, h2⟩, hn⟩, hd⟩, hr⟩, hra⟩, hl⟩ := hc
-    intro _
-    have inv := h h2
-    have e : ({ τ₁ with t := Taint.meet τ₁.t τ₂.t, sec := τ₁.sec ++ τ₂.sec } : FT) =
-        { τ₂ with t := Taint.meet τ₁.t τ₂.t, sec := τ₁.sec ++ τ₂.sec, ok := τ₁.ok } := by
-      cases τ₁; cases τ₂; simp_all
-    rw [e]
-    exact { inv with
-      base := Taint.meet_right inv.base
-      lens := fun e => inv.lens (by simpa [Taint.meet, hl] using e)
-      dead := fun j hj hn hw => inv.dead j hj (inSec_append_right hn) hw }
-  · intro h; cases h
-
-theorem le_sound {τ σ : FT} {s₁ s₂ : State} (hle : le τ σ = true) (h : Agree σ s₁ s₂) : Agree τ s₁ s₂ := by
-  intro hτ
-  simp only [le, hτ, Bool.not_true, Bool.false_or, Bool.and_eq_true, beq_iff_eq, List.all_eq_true,
-    List.contains_iff_mem] at hle
-  obtain ⟨⟨⟨⟨⟨⟨hs, hn⟩, hd⟩, hr⟩, hra⟩, hb⟩, hsec⟩ := hle
-  have inv := h hs
-  have hbase := Taint.le_sound (Taint.leK_eq ▸ hb) inv.base
-  have hl : τ.t.lens = σ.t.lens := by
-    have hb' := hb
-    rw [Taint.leK_eq] at hb'; simp only [Taint.le, Bool.and_eq_true, beq_iff_eq] at hb'; exact hb'.1.1.1.1.2
-  have e : ∀ s, wa s τ = wa s σ := fun s => by funext j; simp only [wa, wb, hr]
-  have e' : ∀ s, raSlot s τ = raSlot s σ := fun s => by funext j; simp only [raSlot, e]
-  refine ⟨hbase, inv.rsp, inv.unk, inv.wr, fun x => inv.lens (hl ▸ x), hn ▸ inv.nfr, hr ▸ inv.room,
-    hd ▸ inv.top, hn ▸ hd ▸ inv.frames, ?_, hra ▸ hr ▸ hd ▸ inv.rasIn, hra ▸ inv.rasSorted, ?_, ?_⟩
-  · intro i h₁ h₂; simp only [wb, hr, hd]; exact inv.others i (hn ▸ h₁) h₂
-  · rw [e', hra, hn]; exact inv.rasFr
-  · intro j hj hnot hw
-    rw [e] at hw ⊢; rw [e]
-    refine inv.dead j (hr ▸ hd ▸ hj) (fun ⟨p, hp, h'⟩ => hnot ⟨p, hsec p hp, h'⟩) hw
 
 end VG.X86_64.RTaint
