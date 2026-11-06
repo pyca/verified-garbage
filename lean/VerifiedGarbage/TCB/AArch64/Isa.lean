@@ -76,7 +76,9 @@ Modelling choices:
   data-independent-time instructions). So the leakage model's assumption that
   the other instructions' timing depends on nothing but what they leak is what
   Arm specifies for code run with PSTATE.DIT 1, and the model does not check
-  that it is. `Target.abiPreserved` says nothing about it.
+  that it is. `Target.abiPreserved` says nothing about it. The calling
+  convention gives it as the mode (`Abi.mode`, `TCB/AArch64/Target.lean`),
+  which a contract may make public.
 * Calls are `bl`, or indirect through a register, `blr` (`icall`, the
   instruction of an indirect call, `Code.icall`), and returns `ret` (DDI
   0487, C6.2 "BL", "BLR", "RET"). The return addresses are the next of the
