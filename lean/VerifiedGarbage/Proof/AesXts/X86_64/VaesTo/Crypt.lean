@@ -523,9 +523,9 @@ theorem GInv.congr {enc : Bool} {KP : State → Prop} {s₀ : State} (hst : Stab
   rdx := by rw [hg _ (by decide), h.rdx]
 
 /-- The tweak registers from the buffer: `TwR 0`. -/
-theorem ldT_twr {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s₀) (hst : Stable KP s₀) {s : State}
-    (h : GInv enc KP s₀ 0 0 s) (hK : ∀ l < 2, qword (s.lane .xmm11 l) 0 = 0x87) :
-    WP isa (.block (ldT tws 0)) s fun s' => GInv enc KP s₀ 0 0 s' ∧ TwR s₀ 0 s' := by
+theorem ldT_twr {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s₀) (hst : Stable KP s₀) {b : Nat}
+    {s : State} (h : GInv enc KP s₀ b b s) (hK : ∀ l < 2, qword (s.lane .xmm11 l) 0 = 0x87) :
+    WP isa (.block (ldT tws 0)) s fun s' => GInv enc KP s₀ b b s' ∧ TwR s₀ b s' := by
   have hsw := hp.scr_wrap
   have hW : s.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [h.wr, hp.wr]
   refine WP.mono (Vaes.ldT_ok tws 0 s (by decide) fun k hk => inRegions_wr ⟨scrR s₀, by rw [hW]; simp, by
@@ -540,8 +540,8 @@ theorem ldT_twr {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s�
     ← bytesAt_b16, h.buf _ (by omega)]
 
 /-- The tweak registers back to the buffer: `GInv c c`. -/
-theorem stT_ginv {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s₀) (hst : Stable KP s₀) {c : Nat}
-    {s : State} (h : GInv enc KP s₀ 0 c s) (ht : TwR s₀ c s) :
+theorem stT_ginv {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s₀) (hst : Stable KP s₀) {b c : Nat}
+    {s : State} (h : GInv enc KP s₀ b c s) (ht : TwR s₀ c s) :
     WP isa (.block (stT tws 0)) s (GInv enc KP s₀ c c) := by
   have hsw := hp.scr_wrap
   have hW : s.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [h.wr, hp.wr]
@@ -576,27 +576,27 @@ theorem stT_ginv {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s�
 
 /-- The eight-block loop, if eight blocks are left. -/
 theorem groups_wp {enc : Bool} {KP : State → Prop} {f8 : List XReg → Prog isa} {s₀ : State} (hp : UPre s₀)
-    (hst : Stable KP s₀) (hf : Blk8 enc f8 KP s₀) {s : State} (h : GInv enc KP s₀ 0 0 s)
-    (hcf : s.cf = some (decide (N s₀ < 8))) :
+    (hst : Stable KP s₀) (hf : Blk8 enc f8 KP s₀) {b : Nat} {s : State} (h : GInv enc KP s₀ b b s)
+    (hcf : s.cf = some (decide (N s₀ - b < 8))) :
     WP isa (Impl.AesXts.X86_64VaesTo.loop8 f8) s fun s' => ∃ c, N s₀ - c < 8 ∧ GInv enc KP s₀ c c s' := by
-  refine WP.ite (decide (N s₀ < 8)) (by simp [eval, hcf]) (fun hb => ?_) (fun hb => ?_)
-  · exact WP.block_nil ⟨0, by simpa using hb, h⟩
+  refine WP.ite (decide (N s₀ - b < 8)) (by simp [eval, hcf]) (fun hb => ?_) (fun hb => ?_)
+  · exact WP.block_nil ⟨b, by simpa using hb, h⟩
   · simp at hb
     refine WP.seq ?_
     rw [WP.block_append_iff]
     refine WP.mono (constK_ok s) fun s₁ ⟨k₁, g₁, m₁, rd₁, wr₁⟩ => ?_
-    have h₁ : GInv enc KP s₀ 0 0 s₁ := h.congr hst (fun r h1 => g₁ r h1) m₁ rd₁ wr₁
+    have h₁ : GInv enc KP s₀ b b s₁ := h.congr hst (fun r h1 => g₁ r h1) m₁ rd₁ wr₁
     refine WP.mono (ldT_twr hp hst h₁ k₁) fun s₂ ⟨h₂, t₂⟩ => ?_
-    let I : Nat → State → Prop := fun m t => ∃ c, m = N s₀ - c ∧ c + 8 ≤ N s₀ ∧ GInv enc KP s₀ 0 c t ∧ TwR s₀ c t
+    let I : Nat → State → Prop := fun m t => ∃ c, m = N s₀ - c ∧ c + 8 ≤ N s₀ ∧ GInv enc KP s₀ b c t ∧ TwR s₀ c t
     have hstep : ∀ m t, I m t → WP isa (group f8) t (fun t' =>
-        (eval .ae t' = some false ∧ ∃ c, N s₀ - c < 8 ∧ GInv enc KP s₀ 0 c t' ∧ TwR s₀ c t') ∨
+        (eval .ae t' = some false ∧ ∃ c, N s₀ - c < 8 ∧ GInv enc KP s₀ b c t' ∧ TwR s₀ c t') ∨
         (eval .ae t' = some true ∧ ∃ m' < m, I m' t')) := by
       rintro m t ⟨c, rfl, hc, hI, hT⟩
       refine WP.mono (group_wp hp hst hf hc hI hT) fun t' ⟨⟨hI', hT'⟩, hcf'⟩ => ?_
       by_cases hlt : N s₀ - (c + 8) < 8
       · exact .inl ⟨by simp [eval, hcf', hlt], c + 8, hlt, hI', hT'⟩
       · exact .inr ⟨by simp [eval, hcf', hlt], N s₀ - (c + 8), by omega, c + 8, rfl, by omega, hI', hT'⟩
-    refine WP.seq (WP.mono (WP.loop (M := isa) I hstep (N s₀) s₂ ⟨0, by simp, by omega, h₂, t₂⟩)
+    refine WP.seq (WP.mono (WP.loop (M := isa) I hstep (N s₀ - b) s₂ ⟨b, rfl, by omega, h₂, t₂⟩)
       fun s₃ ⟨c, hc, h₃, t₃⟩ => ?_)
     rw [WP.block_append_iff]
     refine WP.mono (stT_ginv hp hst h₃ t₃) fun s₄ h₄ => ?_
@@ -1083,7 +1083,7 @@ def LoopOk (enc : Bool) (L : Prog isa) (KP : State → Prop) (s₀ : State) : Pr
 
 theorem loop8_ok {enc : Bool} {KP : State → Prop} {f8 : List XReg → Prog isa} {s₀ : State} (hp : UPre s₀)
     (hst : Stable KP s₀) (hf8 : Blk8 enc f8 KP s₀) : LoopOk enc (loop8 f8) KP s₀ :=
-  fun _ h hcf => groups_wp hp hst hf8 h hcf
+  fun _ h hcf => groups_wp hp hst hf8 h (by rw [hcf, Nat.sub_zero])
 
 /-- The function's body, with at least one block. -/
 theorem body_wp {enc : Bool} {KP : State → Prop} {pre L : Prog isa} {f : List XReg → Prog isa} {s₀ : State}

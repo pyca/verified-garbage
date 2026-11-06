@@ -40,6 +40,13 @@ use crate::arch::aes_xts::{
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::aes_xts::{
+    VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES,
+    VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES,
+    vg_aes_xts_decrypt_unit_to_vaes_vpclmul_avx512, vg_aes_xts_decrypt_unit_vaes_vpclmul_avx512,
+    vg_aes_xts_encrypt_unit_to_vaes_vpclmul_avx512, vg_aes_xts_encrypt_unit_vaes_vpclmul_avx512,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes_xts::{
     VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES, VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES,
     vg_aes_xts_decrypt_unit_vaes_vpclmul, vg_aes_xts_encrypt_unit_vaes_vpclmul,
 };
@@ -86,6 +93,10 @@ enum Impl {
     /// `vg_aes_xts_decrypt_unit_vaes_vpclmul`.
     #[cfg(target_arch = "x86_64")]
     VaesVpclmul,
+    /// `vg_aes_xts_encrypt_unit_vaes_vpclmul_avx512` and
+    /// `vg_aes_xts_decrypt_unit_vaes_vpclmul_avx512`.
+    #[cfg(target_arch = "x86_64")]
+    VaesVpclmulAvx512,
     /// `vg_aes_xts_encrypt_unit_aesni_pclmul` and
     /// `vg_aes_xts_decrypt_unit_aesni_pclmul`.
     #[cfg(target_arch = "x86_64")]
@@ -98,7 +109,7 @@ impl Impl {
         match self {
             Impl::Blocks(backend) => backend,
             #[cfg(target_arch = "x86_64")]
-            Impl::VaesVpclmul => Backend::Vaes,
+            Impl::VaesVpclmul | Impl::VaesVpclmulAvx512 => Backend::Vaes,
             #[cfg(target_arch = "x86_64")]
             Impl::AesNiPclmul => Backend::AesNi,
         }
@@ -106,19 +117,24 @@ impl Impl {
 }
 
 /// The best XTS functions a CPU with the features `f` can run: the
-/// `_vaes_vpclmul` or `_aesni_pclmul` ones if it has their features and
-/// those of the `_vaes` or `_aesni` ones.
+/// `_vaes_vpclmul_avx512`, `_vaes_vpclmul` or `_aesni_pclmul` ones if it has
+/// their features and those of the `_vaes` or `_aesni` ones.
 #[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Impl {
     const VAES: Features = Features::all(&[
         VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES,
         VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES,
     ]);
+    const AVX512: Features = Features::all(&[
+        VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES,
+        VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES,
+    ]);
     const AESNI: Features = Features::all(&[
         VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES,
         VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES,
     ]);
     match select_aes(f) {
+        Backend::Vaes if f.contains(AVX512) => Impl::VaesVpclmulAvx512,
         Backend::Vaes if f.contains(VAES) => Impl::VaesVpclmul,
         Backend::AesNi if f.contains(AESNI) => Impl::AesNiPclmul,
         backend => Impl::Blocks(backend),
@@ -333,6 +349,8 @@ impl AesXts {
             #[cfg(target_arch = "x86_64")]
             Impl::VaesVpclmul => vg_aes_xts_encrypt_unit_vaes_vpclmul,
             #[cfg(target_arch = "x86_64")]
+            Impl::VaesVpclmulAvx512 => vg_aes_xts_encrypt_unit_vaes_vpclmul_avx512,
+            #[cfg(target_arch = "x86_64")]
             Impl::AesNiPclmul => vg_aes_xts_encrypt_unit_aesni_pclmul,
         };
         self.unit(f, i, buffer)
@@ -352,6 +370,8 @@ impl AesXts {
             ),
             #[cfg(target_arch = "x86_64")]
             Impl::VaesVpclmul => vg_aes_xts_decrypt_unit_vaes_vpclmul,
+            #[cfg(target_arch = "x86_64")]
+            Impl::VaesVpclmulAvx512 => vg_aes_xts_decrypt_unit_vaes_vpclmul_avx512,
             #[cfg(target_arch = "x86_64")]
             Impl::AesNiPclmul => vg_aes_xts_decrypt_unit_aesni_pclmul,
         };
@@ -419,6 +439,8 @@ impl AesXts {
             (Impl::Blocks(Backend::Vaes), false) => vg_aes_xts_decrypt_unit_to_vaes,
             (Impl::VaesVpclmul, true) => vg_aes_xts_encrypt_unit_to_vaes_vpclmul,
             (Impl::VaesVpclmul, false) => vg_aes_xts_decrypt_unit_to_vaes_vpclmul,
+            (Impl::VaesVpclmulAvx512, true) => vg_aes_xts_encrypt_unit_to_vaes_vpclmul_avx512,
+            (Impl::VaesVpclmulAvx512, false) => vg_aes_xts_decrypt_unit_to_vaes_vpclmul_avx512,
             (Impl::AesNiPclmul, true) => vg_aes_xts_encrypt_unit_to_aesni_pclmul,
             (Impl::AesNiPclmul, false) => vg_aes_xts_decrypt_unit_to_aesni_pclmul,
         };
@@ -512,6 +534,12 @@ mod tests {
             );
             assert_eq!(select(one_pass), Impl::VaesVpclmul);
             assert_eq!(Impl::VaesVpclmul.aes(), Backend::Vaes);
+            let avx512 = Features(one_pass.0 | feature::AVX512F | feature::AVX512BW);
+            assert_eq!(select(avx512), Impl::VaesVpclmulAvx512);
+            assert_eq!(Impl::VaesVpclmulAvx512.aes(), Backend::Vaes);
+            // AVX-512F without AVX512BW.
+            let no_bw = Features(one_pass.0 | feature::AVX512F);
+            assert_eq!(select(no_bw), Impl::VaesVpclmul);
             let aesni_pclmul =
                 Features(feature::AES | feature::AVX | feature::PCLMULQDQ | feature::SSSE3);
             assert_eq!(select(aesni_pclmul), Impl::AesNiPclmul);

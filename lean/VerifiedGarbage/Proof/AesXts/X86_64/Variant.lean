@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.AesXts.X86_64.CT
 public import VerifiedGarbage.Proof.AesXts.X86_64.To.Copy
 public import VerifiedGarbage.Proof.AesXts.X86_64.VaesTo.Verified
+public import VerifiedGarbage.Proof.AesXts.X86_64.VaesZ.Verified
 
 /-!
 # Implementations of `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt` on x86-64
@@ -171,6 +172,28 @@ def aesniPclmul : XtsImpl where
   to := VaesTo.toAesNi
   suffix := "_aesni_pclmul"
   features := ["aes", "avx", "pclmulqdq"]
+
+/-- The one-pass functions with AVX-512 VAES, sixteen blocks at a time,
+`vg_aes_xts_encrypt_vaes_vpclmul_avx512` and
+`vg_aes_xts_decrypt_vaes_vpclmul_avx512`. -/
+def vaesVpclmulAvx512 : XtsImpl where
+  enc := ⟨"vg_aes_xts_encrypt" ++ "_vaes_vpclmul_avx512", Impl.AesXts.X86_64VaesZ.encrypt⟩
+  encDepth := by rw [VaesZ.encrypt_depth]; decide
+  encOk := VaesZ.encrypt_correct
+  encCt := VaesZ.encrypt_ct
+  encNosp := VaesZ.encrypt_nosp
+  encMxcsr := VaesZ.encrypt_mx
+  encSpSafe := VaesZ.encrypt_spSafe
+  dec := ⟨"vg_aes_xts_decrypt" ++ "_vaes_vpclmul_avx512", Impl.AesXts.X86_64VaesZ.decrypt⟩
+  decDepth := by rw [VaesZ.decrypt_depth]; decide
+  decOk := VaesZ.decrypt_correct
+  decCt := VaesZ.decrypt_ct
+  decNosp := VaesZ.decrypt_nosp
+  decMxcsr := VaesZ.decrypt_mx
+  decSpSafe := VaesZ.decrypt_spSafe
+  to := VaesZ.toZ
+  suffix := "_vaes_vpclmul_avx512"
+  features := ["aes", "avx", "avx2", "vaes", "vpclmulqdq", "avx512f", "avx512bw"]
 
 end XtsImpl
 
