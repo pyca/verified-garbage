@@ -27,6 +27,15 @@ theorem read_one (m : Mem) (a : Addr) : (m.read a 1 : BitVec 8) = m a := by
   rw [BitVec.toNat_append]
   simp
 
+theorem read_four (m : Mem) (a : Addr) : m.read a 4 = m.readW a 32 := by
+  simp only [Mem.readW, BitVec.setWidth_eq]
+
+theorem read_eight (m : Mem) (a : Addr) : m.read a 8 = m.readW a 64 := by
+  simp only [Mem.readW, BitVec.setWidth_eq]
+
+theorem write_four (m : Mem) (a : Addr) (v : BitVec 32) : m.write a 4 v = m.writeW a v := by
+  simp only [Mem.writeW, BitVec.setWidth_eq]
+
 theorem write_eight (m : Mem) (a : Addr) (v : BitVec 64) : m.write a 8 v = m.writeW a v := by
   simp only [Mem.writeW, BitVec.setWidth_eq]
 
