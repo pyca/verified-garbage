@@ -80,10 +80,6 @@ theorem sqIter_pow (c z : Nat) : ∀ t, 1 ≤ t → sqIter c z t = z ^ (2 ^ t) %
     rw [sqIter, sqIter_pow c z (t + 1) (by omega_arith), ← Nat.mul_mod, ← Nat.pow_two, ← Nat.pow_mul,
       show 2 ^ (t + 1) * 2 = 2 ^ (t + 2) by rw [← Nat.pow_succ]]
 
-theorem sqIter_lt {c : Nat} (hc : 0 < c) (z : Nat) : ∀ t, 1 ≤ t → sqIter c z t < c
-  | 0, h => absurd h (by decide)
-  | t + 1, _ => Nat.mod_lt _ hc
-
 theorem sixteen_pow (t : Nat) : (16 : Nat) ^ t = 2 ^ (4 * t) := by rw [Nat.pow_mul]
 
 /-- A squaring: `y := y²`, the flag or'ed with `y = c − 1` if `m`. -/
@@ -256,8 +252,6 @@ theorem sigOf_le {a : Nat} (ha : 1 ≤ a) : sigOf a ≤ a := by unfold sigOf; sp
 
 theorem sigOf_sub {a : Nat} : (a - sigOf a) % 4 = 0 := by unfold sigOf; split <;> omega_arith
 
-theorem sigOf_lt {a : Nat} (ha : 1 ≤ a) : a - sigOf a + sigOf a = a := by have := sigOf_le ha; omega_arith
-
 theorem wSq_iter (c z n : Nat) (m P : Bool) :
     wSq c m (sqIter c z n, P) = (sqIter c z (n + 1), P || (m && decide (sqIter c z (n + 1) = c - 1))) := rfl
 
@@ -333,32 +327,6 @@ theorem wEnd_eq {c W : Nat} (b : Nat) (hc : 3 ≤ c) (hodd : c % 2 = 1) (haw : m
     exact powMod_pow2 b m c hmp (4 * v)
   apply Bool.eq_iff_iff.mpr
   rw [wEnd_flag hsig.1 hsig.2 hflag hyz, mrIteration_iff hc ha1 haw, has]
-
-/-- For a candidate of `64 w` bits: the windows of its `16 w` digits. -/
-theorem wEnd_cand {w c : Nat} (b : Nat) (hw : 1 ≤ w) (hc : PrimeShape (64 * w) c) :
-    (wEnd c (wRun c b (mrE c) (16 * w) (16 * w))).2 =
-      mrIteration c (splitTwos (c - 1)).1 (splitTwos (c - 1)).2 b := by
-  obtain ⟨hb, _, _⟩ := cand_bits hw hc
-  obtain ⟨hodd, hlo, hhi⟩ := hc
-  have : 4 ≤ 2 ^ (64 * w - 2) := by
-    calc 4 = 2 ^ 2 := rfl
-      _ ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega_arith)
-  obtain ⟨hN, _⟩ := splitTwos_spec (c - 1) (by omega_arith)
-  change c - 1 = (splitTwos (c - 1)).2 * 2 ^ mrA c at hN
-  have haT : mrA c < 64 * w := by
-    rcases Nat.lt_or_ge (mrA c) (64 * w) with h | h
-    · exact h
-    exfalso
-    have : 2 ^ (64 * w) ≤ 2 ^ mrA c := Nat.pow_le_pow_right (by decide) h
-    have : 2 ^ mrA c ≤ (splitTwos (c - 1)).2 * 2 ^ mrA c :=
-      Nat.le_mul_of_pos_left _ (by rcases Nat.eq_zero_or_pos (splitTwos (c - 1)).2 with h0 | h0
-                                   · rw [h0, Nat.zero_mul] at hN; omega_arith
-                                   · exact h0)
-    omega_arith
-  refine wEnd_eq b (by omega_arith) hodd (by rw [hb]; omega_arith) ?_
-  have : mrE c ≤ c - 1 := Nat.div_le_self _ _
-  rw [sixteen_pow, show 4 * (16 * w) = 64 * w by omega_arith]
-  omega_arith
 
 /-! ## The lowest set bit -/
 

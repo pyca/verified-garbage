@@ -99,11 +99,6 @@ theorem e_w {d n : Nat} (hp : MFacts p) (h : d + n ≤ 1024) :
   have := hp.e
   rw [e_add]; exact Offset.base_disjoint _ (by simp only [oE]; omega_arith) (by omega_arith)
 
-theorem e_w0 {n : Nat} (hp : MFacts p) (h : n ≤ 1024) :
-    Region.Disjoint ⟨x, scratchWords p * 8⟩ ⟨eAt p x, n⟩ := by
-  have := e_w (x := x) (d := 0) (n := n) hp (by omega_arith)
-  rwa [BitVec.add_zero] at this
-
 /-- Two regions of the 1 KiB. -/
 theorem e_e {d n d' n' : Nat} (h : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d + n ≤ 1024) (h₂ : d' + n' ≤ 1024) :
     Region.Disjoint ⟨eAt p x + BitVec.ofNat 64 d, n⟩ ⟨eAt p x + BitVec.ofNat 64 d', n'⟩ :=

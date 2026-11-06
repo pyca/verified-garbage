@@ -17,8 +17,6 @@ structure WinWk (K : WinCfg) (F : Impl.Weierstrass.Mont.Modulus) (m size wk : Na
 
 def winWX (K : WinCfg) (wk : Nat) : List (Nat × Nat) :=
   (winWs K).map (·, 8 * K.M.n) ++ [(K.M.tmp, 8 * K.M.n), (wk, 64 * K.M.n), Mont.outW]
-def loopW (K : WinCfg) : List (Nat × Nat) :=
-  (winOther K).map (·, 8 * K.M.n) ++ [(K.M.tmp, 8 * K.M.n)]
 def loopWX (K : WinCfg) (wk : Nat) : List (Nat × Nat) :=
   (winOther K).map (·, 8 * K.M.n) ++ [(K.M.tmp, 8 * K.M.n), (wk, 64 * K.M.n), Mont.outW]
 

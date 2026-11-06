@@ -30,12 +30,6 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ghashFrom ghash blocks zeros padLen ofBytes toBytes)
 open VG.Proof.Gcm (Absorbed lensBlock)
 
-theorem lensBlock_mod (a c : Nat) : lensBlock (a % 2 ^ 64) (c % 2 ^ 64) = lensBlock a c := by
-  simp only [lensBlock]
-  rw [← Proof.Gcm.be64_mod (8 * (a % 2 ^ 64)), ← Proof.Gcm.be64_mod (8 * a), ← Proof.Gcm.be64_mod (8 * (c % 2 ^ 64)),
-    ← Proof.Gcm.be64_mod (8 * c)]
-  congr 2 <;> omega
-
 theorem lensBlock_mod_left (a c : Nat) : lensBlock (a % 2 ^ 64) c = lensBlock a c := by
   simp only [lensBlock]
   rw [← Proof.Gcm.be64_mod (8 * (a % 2 ^ 64)), ← Proof.Gcm.be64_mod (8 * a)]

@@ -372,18 +372,6 @@ theorem lowRun_read_other (g : Nat) (v : Values) (out aux : Addr) (c : LowConsta
     have h := hs i (by simp)
     exact lowPair_read_other _ _ _ _ _ _ _ _ _ _ h.1 h.2.1 h.2.2.1 h.2.2.2
 
-theorem lowRun_count (g : Nat) (v : Values) (out aux : Addr) (c : LowConstants)
-    (d : CheckData) (is : List LowIndex) : (lowRun g v out aux c d is).count=d.count := by
-  induction is generalizing d with
-  | nil => rfl
-  | cons i is ih => exact ih _
-
-theorem lowPass_count (g : Nat) (work out aux : Addr) (c : LowConstants) (d : CheckData) (n : Nat) :
-    (lowPassData g work out aux c d n).count=d.count := by
-  induction n with
-  | zero => rfl
-  | succ n ih => rw [lowPassData,lowRun_count,ih]
-
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
 end
@@ -472,13 +460,6 @@ theorem lowPair_flag_zero (g : Nat) (raw0 raw1 : BitVec 128) (out0 out1 aux0 aux
       (vword d.flags e=0 ∧ lowMask g d.mem out0 raw0 c e=0) ∧ lowMask g d.mem out1 raw1 c e=0 := by
   rw [lowPair_flag _ _ _ _ _ _ _ _ _ he]
   exact BitVec.or_eq_zero_iff.trans (and_congr_left fun _ => BitVec.or_eq_zero_iff)
-
-theorem lowRun_flag_zero_initial (g : Nat) (v : Values) (out aux : Addr)
-    (c : LowConstants) (d : CheckData) (is : List LowIndex) {e : Nat} (he : e<4)
-    (hz : vword (lowRun g v out aux c d is).flags e=0) : vword d.flags e=0 := by
-  induction is generalizing d with
-  | nil => exact hz
-  | cons i is ih => exact ((lowPair_flag_zero _ _ _ _ _ _ _ _ _ he).mp (ih _ hz)).1.1
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 

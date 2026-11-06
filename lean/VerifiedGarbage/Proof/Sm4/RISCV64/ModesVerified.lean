@@ -118,10 +118,6 @@ theorem keyArgs_of {post : State → State → Prop} {M : Mode} (d : Dir) (hstep
     rw [hstep]; exact dKD
   · exact dSK.symm
 
-/-- The data in blocks, as the modes' steps. -/
-theorem blocksAt_eq (m : Mem) (p : Addr) (n : Nat) :
-    Spec.Cbc.blocksAt m p n = Proof.Modes.chunksAt 16 m p n := rfl
-
 /-! ## Correctness -/
 
 theorem cipher_enc (k : Spec.Sm4.Schedule) : (dirCoreSpec .encrypt).cipher k = Spec.Sm4.cipher k := rfl

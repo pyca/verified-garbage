@@ -83,7 +83,6 @@ theorem RArg.frame {s s' : State} {R : Nat} {rs : List Region} (h : RArg s R) (h
   rw [hea, hf.readW (Region.contains_self _ _) (fun r hr => by
     obtain ⟨r', hr', hs⟩ := hsub r hr; exact (hd r' hr').sub_right hs) (by decide), hv]
 
-theorem dirCore_slots (d : Dir) : (dirCore d).slots = 672 := rfl
 theorem dirCore_total (d : Dir) : (dirCore d).total = 682 := rfl
 theorem dirCore_ka (d : Dir) : (dirCore d).ka = 2 := rfl
 @[simp] theorem dirCore_bw (d : Dir) : (dirCore d).bw = 4 := rfl
@@ -209,17 +208,6 @@ theorem prepare_wp (d : Dir) {s : State} {B : BitVec 32} {rs : List Region} {k :
 def dirCipher : Dir → Spec.Camellia.Subkeys → Spec.Cbc.Cipher
   | .encrypt => Spec.Camellia.cipher
   | .decrypt => Spec.Camellia.invCipher
-
-/-- The cipher on a block in memory: `crypt8`'s words. -/
-theorem dirCipher_bytes (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) (ws : List (BitVec 64)) (m : Mem) (p : Addr) :
-    dirCipher d (Spec.Camellia.subkeysOfWords R ws) (Spec.Aes.bytesAt m p 16) =
-      (Spec.Camellia.encodeBlock (cryptWords (R / 6) (fun i => ws.getD (permOf d (R / 6) i) 0)
-        (Spec.Camellia.decodeBlock (Spec.Camellia.blockAt m p)))).toList := by
-  cases d
-  · rw [dirCipher, Spec.Camellia.cipher, bytesAt_eq_blockAt, ofFn_toList, Spec.Camellia.encryptBlock,
-      encryptWith_eq hR]; rfl
-  · rw [dirCipher, Spec.Camellia.invCipher, bytesAt_eq_blockAt, ofFn_toList, Spec.Camellia.decryptBlock,
-      decryptWith_eq hR]; rfl
 
 /-- The cipher on a block in memory: its block function. -/
 theorem dirCipher_blockFn (d : Dir) (K : Spec.Camellia.Subkeys) (m : Mem) (p : Addr) :

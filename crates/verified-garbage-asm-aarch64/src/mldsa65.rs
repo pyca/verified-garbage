@@ -409,6 +409,40 @@ bl {vg_keccak_squeeze_scratch}
     )
 }
 
+/// ML-DSA-65 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa65_verify_message_cached` takes.
+///
+/// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `tr` must be valid for reads and writes of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 103424 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `tr` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa65_pk_tr(pk: *const [u8; 1952], tr: *mut [u8; 64], scratch: *mut [u64; 12928]) {
+    core::arch::naked_asm!(
+        r".inst 0x91000043,0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b,0xf901b47c,0xf901b87e,0x91000019
+.inst 0x9100003a,0x9100005b,0x9100007c,0xd2800038,0x91000380,0xd2800009,0xf9000009,0xf9000409
+.inst 0xf9000809,0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409
+.inst 0xf9002809,0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409
+.inst 0xf9004809,0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002
+.inst 0x91000380,0xd2801101,0x91032385,0x91000323,0xd280f404
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032384,0xd28003e3
+bl {vg_keccak_pad_scratch}
+.inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x91000343,0xd2800804
+bl {vg_keccak_squeeze_scratch}
+.inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xd65f03c0
+.p2align 6",
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+    )
+}
+
 /// ML-DSA-65 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
@@ -1785,6 +1819,44 @@ bl {vg_keccak_squeeze_scratch_sha3}
         vg_mldsa_add = sym super::mldsa44::vg_mldsa_add::vg_mldsa_add,
         vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
         vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
+    )
+}
+
+/// The CPU features `vg_mldsa65_pk_tr_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA65_PK_TR_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// ML-DSA-65 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa65_verify_message_cached` takes.
+///
+/// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `tr` must be valid for reads and writes of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 103424 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `tr` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa65_pk_tr_sha3(pk: *const [u8; 1952], tr: *mut [u8; 64], scratch: *mut [u64; 12928]) {
+    core::arch::naked_asm!(
+        r".inst 0x91000043,0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b,0xf901b47c,0xf901b87e,0x91000019
+.inst 0x9100003a,0x9100005b,0x9100007c,0xd2800038,0x91000380,0xd2800009,0xf9000009,0xf9000409
+.inst 0xf9000809,0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409
+.inst 0xf9002809,0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409
+.inst 0xf9004809,0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002
+.inst 0x91000380,0xd2801101,0x91032385,0x91000323,0xd280f404
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0x91032384,0xd28003e3
+bl {vg_keccak_pad_scratch_sha3}
+.inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x91000343,0xd2800804
+bl {vg_keccak_squeeze_scratch_sha3}
+.inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xd65f03c0
+.p2align 6",
+        vg_keccak_absorb_scratch_sha3 = sym super::ed448::vg_keccak_absorb_scratch_sha3::vg_keccak_absorb_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
     )
 }
 

@@ -75,8 +75,6 @@ theorem store_ok {c v : Nat} (hc : c = 18 ∨ c = 20) (hv : v < 2 ^ c) {k : Nat}
   split <;> omega_arith
 
 
-theorem hc_even {c : Nat} (hc : c = 18 ∨ c = 20) : c = 2 * (c / 2) := by omega_arith
-
 /-- Field `4g + k` of `X`, from the group `D` of `X` from byte `g c/2`. -/
 theorem F_group (X : List Byte) {c : Nat} (hc : c = 18 ∨ c = 20) (g k : Nat) :
     F X c (4 * g + k) = leNat (X.drop (g * (c / 2))) / 2 ^ (k * c) % 2 ^ c := by

@@ -13,11 +13,10 @@ public import VerifiedGarbage.Spec.RsaPkcs1Sig
 * `verifyUnpad_eq_verify`: BoringSSL's verification (`verifyUnpad`: check
   the padding, then compare what follows with the `DigestInfo`) is RFC 8017
   §8.2.2's (`verify`: encode, then compare).
-* `verify_iff`: verification accepts exactly when `sig` is `k` octets, the
-  key is valid, `s < n` and `s^e mod n` is the integer of the encoding of
-  the given hash value: there is no other accepted `s`, so nothing a lax
-  parser of the `DigestInfo` would accept (trailing or hidden octets,
-  other lengths, other parameters) is accepted.
+* `verify_iff_publicOpChecked`: verification accepts exactly when `sig` is
+  `k` octets and RSAVP1 of it is the encoding of the given hash value, so
+  nothing a lax parser of the `DigestInfo` would accept (trailing or hidden
+  octets, other lengths, other parameters) is accepted.
 * `recover_eq_some_iff`: `recover` returns `H` exactly when `verify`
   accepts `H`.
 -/
@@ -193,33 +192,6 @@ theorem verify_iff_publicOpChecked (nB eB : List Byte) (h : Hash) (H sig : List 
         ∃ em, encode h H nB.length = some em ∧ publicOpChecked nB eB sig = some em := by
   rw [verify_true]
   exact and_congr_right fun _ => exists_congr fun _ => And.comm
-
-/-- Verification accepts exactly when `sig` is `k` octets, the public key is
-valid (`modulusValid`, `exponentValid`), `s = OS2IP(sig) < n`, and
-`s^e mod n` is the integer of the encoding of `H` (which exists: `H` is
-`hLen` octets and `k ≥ tLen + 11`). -/
-theorem verify_iff (nB eB : List Byte) (h : Hash) (H sig : List Byte) :
-    verify nB eB h H sig = true ↔
-      sig.length = nB.length ∧ modulusValid (os2ip nB) nB.length = true ∧
-        exponentValid (os2ip eB) = true ∧ os2ip sig < os2ip nB ∧
-        ∃ em, encode h H nB.length = some em ∧
-          powMod (os2ip sig) (os2ip eB) (os2ip nB) = os2ip em := by
-  rw [verify_iff_publicOpChecked]
-  refine and_congr_right fun _ => ?_
-  simp only [publicOpChecked, publicOp, encrypt]
-  by_cases he : exponentValid (os2ip eB) = true
-  · by_cases hv : modulusValid (os2ip nB) nB.length = true
-    · have hn : 0 < os2ip nB := by
-        unfold modulusValid at hv
-        simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv
-        omega
-      by_cases hlt : os2ip sig < os2ip nB
-      · simp only [he, hv, hlt, ite_true, Option.map_some, Option.some.injEq, true_and]
-        refine exists_congr fun em => and_congr_right fun he => ?_
-        exact i2osp_eq_iff (Nat.lt_trans (powMod_lt _ _ _ hn) (os2ip_lt nB)) (encode_length he)
-      · simp [he, hv, hlt]
-    · simp [he, hv]
-  · simp [he]
 
 /-! ## Recovery -/
 

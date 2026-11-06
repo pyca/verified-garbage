@@ -29,9 +29,7 @@ open VG.Proof.Curve448.AArch64
 open VG.Impl.X448.AArch64.Weak
 abbrev F (m : Mem) (base : Addr) (o : Nat) : Spec.X448.Fe :=
   VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN (limbs m base o) 8)
-abbrev fe (m : Mem) (base : Addr) (o : Nat) : Nat := VG.Proof.X448.Wide.valN (limbs m base o) 8
 abbrev Bounded := VG.Proof.Curve448.AArch64.Bounded
-abbrev valN := VG.Proof.X448.Wide.valN
 theorem valN_congr {f g : Nat → Nat} {n : Nat} (h : ∀ i < n, f i = g i) :
     VG.Proof.X448.Wide.valN f n = VG.Proof.X448.Wide.valN g n := VG.Proof.X448.Wide.valN_congr h
 

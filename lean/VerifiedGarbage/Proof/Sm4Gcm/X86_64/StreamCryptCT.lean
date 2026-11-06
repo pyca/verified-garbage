@@ -82,20 +82,6 @@ theorem PartI.absIn {s : State} (h : PartI Ctx St W SP P₀ D n s) :
   ⟨h.1.1, h.2.1, h.2.2.1, by rw [List.length_replicate]; exact h.2.2.2, h.1.2.1.dw.ok, rfl⟩
 
 omit L in
-theorem PartI.agree {s₁ s₂ : State} (h₁ : PartI Ctx St W SP P₀ D n s₁) (h₂ : PartI Ctx St W SP P₀ D n s₂) :
-    ∀ r ∈ absRegs, s₁.gpr r = s₂.gpr r := by
-  intro r hr
-  simp only [absRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · rw [h₁.2.1, h₂.2.1]
-  · rw [h₁.2.2.1, h₂.2.2.1]
-  · rw [h₁.2.2.2, h₂.2.2.2]
-  · rw [h₁.1.1.r13, h₂.1.1.r13]
-  · rw [h₁.1.1.r14, h₂.1.1.r14]
-  · rw [h₁.1.1.r15, h₂.1.1.r15]
-  · rw [h₁.1.1.rsp, h₂.1.1.rsp]
-
-omit L in
 /-- The data reloaded. -/
 theorem partM_load {s : State} (h : PartM Ctx St W SP P₀ D n s) :
     WP isa (.block streamLoad) s (PartI Ctx St W SP P₀ D n) := by

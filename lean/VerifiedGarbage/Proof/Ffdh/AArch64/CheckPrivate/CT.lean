@@ -72,8 +72,6 @@ theorem k1_lpre' (p : KpP) (xb : List Byte) (t : State) (h : K1 p xb t) :
   rw [h.2.1] at this
   exact this
 
-theorem In.x0 {D : FD} {mi : BitVec 64} {t : State} (h : In D mi t) : t.gpr .x0 = off D.B (inner D.w) := h.2.1.x0
-
 /-- `g^x`'s public data. -/
 abbrev KpP.pwG (p : KpP) : PowPub :=
   ⟨⟨p.B, p.Z, inner ((p.k + 7) / 8), (p.k + 7) / 8, (p.k + 7) / 8⟩, p.dp + BitVec.ofNat 64 p.k, p.k, p.xp, p.xl⟩

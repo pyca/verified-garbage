@@ -89,18 +89,4 @@ def result : List Instr := [.subImm .x .x0 .x12 1, .lsr .x .x0 .x0 63]
 def tail : Prog isa :=
   .ite (.zero .x .x0) ret0 (.seq (.block cmpArgs) (.seq compare (.block result)))
 
-/-- After the call. -/
-def afterPub : Prog isa :=
-  .ite (.zero .w .x0) ret0 (.seq (.block encArgs) (.seq encode tail))
-
-/-- The body of the frame. -/
-def body (pubName : String) (pub : Prog isa) : Prog isa :=
-  .seq (.block pubArgs) (.seq (.call pubName pub) (.seq afterPub (.block restore)))
-
-/-- `vg_rsa_pkcs1_verify`, calling `vg_rsa_public_checked` (`pub`) by its
-name. -/
-def code (pubName : String) (pub : Prog isa) : Prog isa :=
-  .seq (.block lenCheck)
-    (.ite (.nonzero .x .x8) ret0 (.frame (.alloc frameBytes) (body pubName pub) (.free frameBytes)))
-
 end VG.Impl.RsaPkcs1Sig.AArch64.Verify

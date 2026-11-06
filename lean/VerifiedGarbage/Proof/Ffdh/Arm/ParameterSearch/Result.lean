@@ -13,9 +13,6 @@ public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Spec.Ffdh VG.Proof.Ffdh.SievedGeneration VG.Proof.Ffdh.ParameterCandidate
 
-theorem SearchParams.tail_zero (p : SearchParams) (used : Nat) :
-    p.tail used 0 = .exhausted used := rfl
-
 theorem candidateUsed_bound (p : SearchParams) (used : Nat) :
     candidateUsed p used ≤ p.c.bytes.length - used := by
   unfold candidateUsed

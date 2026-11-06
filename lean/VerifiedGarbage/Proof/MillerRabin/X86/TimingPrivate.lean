@@ -21,11 +21,6 @@ theorem private_lift {α : Type} {g : Geometry} {F G : α → State → Prop} {c
   obtain ⟨same, P⟩ := trace _ _ _ _ _ _ H E B
   exact ⟨same, P, ⟨σ, wp_result (step σ s S) E⟩, ⟨ρ, wp_result (step ρ t T) B⟩⟩
 
-theorem private_mono {α : Type} {g : Geometry} {F G : α → State → Prop}
-    (imp : ∀ σ s, F σ s → G σ s) {s t : State} (H : Two g F s t) : Two g G s t := by
-  obtain ⟨P, ⟨σ, S⟩, ⟨ρ, T⟩⟩ := H
-  exact ⟨P, ⟨σ, imp σ s S⟩, ⟨ρ, imp ρ t T⟩⟩
-
 theorem private_count_loop {α : Type} {g : Geometry} {F : Nat → α → State → Prop} {code : Prog isa}
     (step : ∀ q, 0 < q → RelCT isa (Two g (F q)) code fun s t =>
       Two g (F (q - 1)) s t ∧ isa.eval .ne s = some (decide (1 < q)) ∧ isa.eval .ne t = some (decide (1 < q)))

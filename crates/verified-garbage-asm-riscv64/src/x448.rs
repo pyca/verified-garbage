@@ -33903,6 +33903,154 @@ bnez t1, 214b
     )
 }
 
+/// Computes an X448 shared secret (RFC 7748 §6.2): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`, as `vg_x448` does, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise.
+///
+/// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 56 bytes.
+/// * `scalar` must be valid for reads of 56 bytes.
+/// * `point` must be valid for reads of 56 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x1141
+.insn 2, 0xe406
+.insn 2, 0x828a
+.insn 4, 0x00a2b023
+call {vg_x448}
+.insn 2, 0x828a
+.insn 4, 0x0002b283
+.insn 2, 0x4301
+.insn 4, 0x0002c383
+.insn 4, 0x00736333
+.insn 4, 0x0012c383
+.insn 4, 0x00736333
+.insn 4, 0x0022c383
+.insn 4, 0x00736333
+.insn 4, 0x0032c383
+.insn 4, 0x00736333
+.insn 4, 0x0042c383
+.insn 4, 0x00736333
+.insn 4, 0x0052c383
+.insn 4, 0x00736333
+.insn 4, 0x0062c383
+.insn 4, 0x00736333
+.insn 4, 0x0072c383
+.insn 4, 0x00736333
+.insn 4, 0x0082c383
+.insn 4, 0x00736333
+.insn 4, 0x0092c383
+.insn 4, 0x00736333
+.insn 4, 0x00a2c383
+.insn 4, 0x00736333
+.insn 4, 0x00b2c383
+.insn 4, 0x00736333
+.insn 4, 0x00c2c383
+.insn 4, 0x00736333
+.insn 4, 0x00d2c383
+.insn 4, 0x00736333
+.insn 4, 0x00e2c383
+.insn 4, 0x00736333
+.insn 4, 0x00f2c383
+.insn 4, 0x00736333
+.insn 4, 0x0102c383
+.insn 4, 0x00736333
+.insn 4, 0x0112c383
+.insn 4, 0x00736333
+.insn 4, 0x0122c383
+.insn 4, 0x00736333
+.insn 4, 0x0132c383
+.insn 4, 0x00736333
+.insn 4, 0x0142c383
+.insn 4, 0x00736333
+.insn 4, 0x0152c383
+.insn 4, 0x00736333
+.insn 4, 0x0162c383
+.insn 4, 0x00736333
+.insn 4, 0x0172c383
+.insn 4, 0x00736333
+.insn 4, 0x0182c383
+.insn 4, 0x00736333
+.insn 4, 0x0192c383
+.insn 4, 0x00736333
+.insn 4, 0x01a2c383
+.insn 4, 0x00736333
+.insn 4, 0x01b2c383
+.insn 4, 0x00736333
+.insn 4, 0x01c2c383
+.insn 4, 0x00736333
+.insn 4, 0x01d2c383
+.insn 4, 0x00736333
+.insn 4, 0x01e2c383
+.insn 4, 0x00736333
+.insn 4, 0x01f2c383
+.insn 4, 0x00736333
+.insn 4, 0x0202c383
+.insn 4, 0x00736333
+.insn 4, 0x0212c383
+.insn 4, 0x00736333
+.insn 4, 0x0222c383
+.insn 4, 0x00736333
+.insn 4, 0x0232c383
+.insn 4, 0x00736333
+.insn 4, 0x0242c383
+.insn 4, 0x00736333
+.insn 4, 0x0252c383
+.insn 4, 0x00736333
+.insn 4, 0x0262c383
+.insn 4, 0x00736333
+.insn 4, 0x0272c383
+.insn 4, 0x00736333
+.insn 4, 0x0282c383
+.insn 4, 0x00736333
+.insn 4, 0x0292c383
+.insn 4, 0x00736333
+.insn 4, 0x02a2c383
+.insn 4, 0x00736333
+.insn 4, 0x02b2c383
+.insn 4, 0x00736333
+.insn 4, 0x02c2c383
+.insn 4, 0x00736333
+.insn 4, 0x02d2c383
+.insn 4, 0x00736333
+.insn 4, 0x02e2c383
+.insn 4, 0x00736333
+.insn 4, 0x02f2c383
+.insn 4, 0x00736333
+.insn 4, 0x0302c383
+.insn 4, 0x00736333
+.insn 4, 0x0312c383
+.insn 4, 0x00736333
+.insn 4, 0x0322c383
+.insn 4, 0x00736333
+.insn 4, 0x0332c383
+.insn 4, 0x00736333
+.insn 4, 0x0342c383
+.insn 4, 0x00736333
+.insn 4, 0x0352c383
+.insn 4, 0x00736333
+.insn 4, 0x0362c383
+.insn 4, 0x00736333
+.insn 4, 0x0372c383
+.insn 4, 0x00736333
+.insn 2, 0x4381
+.insn 4, 0x0063b533
+.insn 2, 0x60a2
+.insn 2, 0x0141
+.insn 2, 0x8082
+.option pop",
+        vg_x448 = sym super::x448::vg_x448,
+    )
+}
+
 /// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
 ///
 /// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.

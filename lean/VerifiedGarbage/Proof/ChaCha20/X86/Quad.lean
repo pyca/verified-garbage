@@ -49,8 +49,6 @@ def Holds4 (buf : Addr) (vs : Nat → CState) (m : Mem) : Prop :=
 
 theorem ea_setXmm (s : State) (r : XReg) (v : BitVec 128) (m : MemOp) : (s.setXmm r v).ea m = s.ea m := rfl
 
-theorem ea_withMem (s : State) (m : Mem) (o : MemOp) : ({ s with mem := m } : State).ea o = s.ea o := rfl
-
 theorem ea_gpr {s s' : State} (h : s'.gpr = s.gpr) (m : MemOp) : s'.ea m = s.ea m := by
   simp only [State.ea, h]
 
@@ -82,11 +80,6 @@ theorem slots_frame_write {rs : List Region} {m m' : Mem} {buf : Addr} (h : Fram
   h.writeW hr _ (Offset.contains_base buf (by simp only [slot]; omega_arith) (by simp only [slot]; lit_omega))
 
 /-! ## One quarter round on the four states -/
-
-theorem lane_qr {m : Mem} {buf : Addr} {vs : Nat → CState} (h : Holds4 buf vs m) {x : Nat}
-    (hx : x < 16) {l : Nat} (hl : l < 4) :
-    dword (m.readW (buf + BitVec.ofNat 64 (slot x)) 128) l = (vs l)[x] := by
-  rw [lane_load _ _ _ hl]; exact h x hx l hl
 
 /-- Reading lane `l` of slot `k` after writing slot `k'`. -/
 theorem lane_other (m : Mem) (buf : Addr) (v : BitVec 128) {k k' l : Nat} (hk : k < 16)

@@ -23,9 +23,6 @@ theorem getElem!_set!_ne (f : Poly) {i j : Nat} (hj : j < n) (h : i ≠ j) (x : 
     (f.set! i x)[j]! = f[j]! := by
   rw [getElem!_eq _ hj, getElem!_eq _ hj, Vector.getElem_set!, ite_eq_right h]
 
-theorem ext_getElem! {f g : Poly} (h : ∀ i < n, f[i]! = g[i]!) : f = g :=
-  Vector.ext fun i hi => by rw [← getElem!_eq f hi, ← getElem!_eq g hi]; exact h i hi
-
 
 def bfly (op : Word → Word → Zq → Word × Word) (w : Poly) (j len : Nat) (z : Zq) : Poly :=
   let r := op w[j]! w[j + len]! z
@@ -93,49 +90,6 @@ def layF (blk : Poly → Nat → Nat → Nat → Nat → Poly) (F : Poly) (len :
     Poly :=
   (List.range b).foldl (fun f c => blk f len (zi c) (2 * len * c) len) F
 
-/-- Each coefficient after the first `b` blocks of the layer with `len = 1`. -/
-theorem layF1_get {blk : Poly → Nat → Nat → Nat → Nat → Poly}
-    {op : Word → Word → Zq → Word × Word} (hblk : BlkOk blk op) (F : Poly) (zi : Nat → Nat) {b : Nat} (hb : b ≤ 128) {j : Nat} (hj : j < 256) :
-    (layF blk F 1 zi b)[j]! = if j < 2 * b then
-      (if j % 2 = 0 then (op F[j]! F[j + 1]! (zetas (zi (j / 2)))).1
-        else (op F[j - 1]! F[j]! (zetas (zi (j / 2)))).2) else F[j]! := by
-  induction b generalizing j with
-  | zero => rw [ite_eq_right (by omega)]; rfl
-  | succ b ih =>
-    rw [layF, foldl_range_succ, ← layF,
-      hblk.get _ 1 _ _ 1 (by decide) (by decide) (by rw [n_eq]; omega) j (by rw [n_eq]; exact hj)]
-    by_cases h1 : 2 * 1 * b ≤ j ∧ j < 2 * 1 * b + 1
-    · rw [ite_eq_left h1, ih (by omega) hj, ih (by omega) (by omega), show j / 2 = b by omega]
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-    · rw [ite_eq_right h1]
-      by_cases h2 : 2 * 1 * b + 1 ≤ j ∧ j < 2 * 1 * b + 1 + 1
-      · rw [ite_eq_left h2, ih (by omega) (by omega), ih (by omega) hj, show j / 2 = b by omega]
-        simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-      · rw [ite_eq_right h2, ih (by omega) hj]
-        by_cases h3 : j < 2 * b <;> simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-
-
-/-- Each coefficient after the first `b` blocks of a length-two layer. -/
-theorem layF2_get {blk : Poly → Nat → Nat → Nat → Nat → Poly}
-    {op : Word → Word → Zq → Word × Word} (hblk : BlkOk blk op) (F : Poly) (zi : Nat → Nat)
-    {b : Nat} (hb : b ≤ 64) {j : Nat} (hj : j < 256) :
-    (layF blk F 2 zi b)[j]! = if j < 4*b then
-      (if j%4 < 2 then (op F[j]! F[j+2]! (zetas (zi (j/4)))).1
-       else (op F[j-2]! F[j]! (zetas (zi (j/4)))).2) else F[j]! := by
-  induction b generalizing j with
-  | zero => rw [ite_eq_right (by omega)]; rfl
-  | succ b ih =>
-    rw [layF,foldl_range_succ,← layF,
-      hblk.get _ 2 _ _ 2 (by decide) (by decide) (by rw [n_eq]; omega) j (by rw [n_eq]; exact hj)]
-    by_cases h1 : 2*2*b ≤ j ∧ j < 2*2*b+2
-    · rw [ite_eq_left h1,ih (by omega) hj,ih (by omega) (by omega),show j/4 = b by omega]
-      simp (disch := omega) only [↓ite_eq_left,↓ite_eq_right]
-    · rw [ite_eq_right h1]
-      by_cases h2 : 2*2*b+2 ≤ j ∧ j < 2*2*b+2+2
-      · rw [ite_eq_left h2,ih (by omega) (by omega),ih (by omega) hj,show j/4 = b by omega]
-        simp (disch := omega) only [↓ite_eq_left,↓ite_eq_right]
-      · rw [ite_eq_right h2,ih (by omega) hj]
-        by_cases h3 : j < 4*b <;> simp (disch := omega) only [↓ite_eq_left,↓ite_eq_right]
 
 
 /-! ## A layer, coefficient by coefficient -/

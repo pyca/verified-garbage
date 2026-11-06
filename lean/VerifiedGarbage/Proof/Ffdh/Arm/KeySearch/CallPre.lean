@@ -14,10 +14,6 @@ variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
 
 open VG VG.Arm VG.Proof.Mont VG.Spec.Ffdh
 
-theorem call_gpr (p : KeyPublic sampling) (used : Nat) (s : State) {r : Reg} (keep : r ∉ linkRegs) :
-    (callState p used s).gpr r = s.gpr r :=
-  State.callEntry_gpr s keep
-
 theorem call_pre_legacy {p : KeyPublic sampling} {used keys scalars : Nat} {s : State} {m : Mem}
     (notcached : sampling.cachedContext = false) (facts : CallFacts p used) (h : ArgumentContext p used keys scalars s)
     (sp : s.sp = callSp p) (mem : s.mem = callMem p used m (callSp p)) :

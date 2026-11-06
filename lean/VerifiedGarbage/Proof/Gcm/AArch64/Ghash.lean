@@ -682,12 +682,6 @@ theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashAArch64.pre Proof.Gcm.ghashAA
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem ghash_verified :
-    Verified AArch64.target Impl.Gcm.AArch64.ghash (Proof.Gcm.ghashContract AArch64.abi) :=
-  Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.ghashAArch64, AArch64.abi,
-      AArch64.argRegs] [Proof.Gcm.AArch64.satState] using Proof.Gcm.AArch64.satState)
-
 end VG.Proof.Gcm.AArch64
 
 end

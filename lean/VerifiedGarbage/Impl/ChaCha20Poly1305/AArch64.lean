@@ -12,7 +12,7 @@ arguments, returning `w0`), composed of calls of the verified ChaCha20 and
 Poly1305 functions. `work` is the working space, which the artifact's frame
 allocates on the stack (`withStackScratchWiped`).
 
-The working space (`workLen` = 1280 bytes, called the context below):
+The working space (1280 bytes, called the context below):
 
 * `[0, 16)`: the lengths block;
 * `[16, 32)`: the padded last block of the additional data or the data;
@@ -57,9 +57,6 @@ namespace VG.Impl.ChaCha20Poly1305.AArch64
 open VG.AArch64
 open VG.Impl.ChaCha20.AArch64 (XorCallee)
 open VG.Impl.ChaCha20.AArch64.Xor (mov)
-
-/-- The size of the working space, in bytes. -/
-def workLen : Nat := 1280
 
 /-- The registers saved in the context, and where: our caller's, our return
 address and `tag` (`x6`). -/
@@ -199,7 +196,6 @@ def openTail : Prog isa :=
 
 def openWith (c : XorCallee) : Prog isa := .seq (openMain c) openTail
 
-def crypt := cryptWith .scalar
 def «seal» := sealWith .scalar
 def «open» := openWith .scalar
 

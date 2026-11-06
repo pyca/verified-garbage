@@ -53,7 +53,6 @@ registers: `t0 + 2⁶⁴ a5 := a6 · a4 + a7 + a5` (`mac_ok`), which cannot
 overflow two words.
 -/
 
-
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
 open VG VG.RISCV64 VG.RISCV64.Wide
@@ -117,7 +116,6 @@ with `a3 = b` (`Ctx`): word `j < n` of `T` becomes word `j` of
 with the carry out in `a5` (`row_ok`). Only the first `n` words of `T` are
 written.
 -/
-
 
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
@@ -256,7 +254,6 @@ end VG.Proof.Weierstrass.RISCV64.GenWide
 `mulRound k i` (`Impl/Weierstrass/RISCV64/GenWide.lean`): the `k + 2` words of
 `T` become the `k + 1` words of `T` before plus `a bᵢ` (`mulRound_ok`).
 -/
-
 
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
@@ -410,7 +407,6 @@ end VG.Proof.Weierstrass.RISCV64.GenWide
 `T` become `(T + q m) / 2⁶⁴` (`redRound_ok`), but for a carry out of the top
 word, which the caller's bounds rule out.
 -/
-
 
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
@@ -649,7 +645,6 @@ theorem redRound_ok {k : Nat} {b : Addr} {m' : Nat} {s : State} (h : RedOk k b m
     simp only [Nat.mul_assoc] at alg ⊢
     exact alg
 
-
 end VG.Proof.Weierstrass.RISCV64.GenWide
 
 /-!
@@ -660,7 +655,6 @@ The `k` rounds of `mulCore` (`Impl/Weierstrass/RISCV64/GenWide.lean`) from
 `V 2^(64 i) = a (b mod 2^(64 i)) + Q m` for some `Q < 2^(64 i)`, and
 `V < 2^(64 k) + m` (`loop_ok`), Montgomery's operand scanning (CIOS).
 -/
-
 
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
@@ -838,7 +832,6 @@ from a state with `a3 = b` (`Ctx`): the words at `b + d` become those of
 borrow out in `a5` (`sbbRow_ok`). Only those `n` words are written.
 -/
 
-
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.RISCV64.Wide VG.Impl.Weierstrass.RISCV64.GenWide
@@ -951,7 +944,6 @@ end VG.Proof.Weierstrass.RISCV64.GenWide
 (`sbbRow_ok`), the mask `T_k - borrow`, then each word of `T` or of the
 difference by the mask (`selRow_ok`).
 -/
-
 
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
@@ -1217,7 +1209,6 @@ words at `yb + yo`, under the mask if `mk` takes it, with the carry out in `a5`
 (`adcRow_ok`). Only those `n` words are written.
 -/
 
-
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.RISCV64.Wide VG.Impl.Weierstrass.RISCV64.GenWide
@@ -1230,11 +1221,6 @@ def mkOf (msk : Bool) : List Instr := if msk then [.logic .and .a7 .a7 .a2] else
 
 /-- A word of the second operand, under the mask `M` or not. -/
 def yw (msk : Bool) (M : BitVec 64) (y : Nat) : Nat := if msk then (BitVec.ofNat 64 y &&& M).toNat else y
-
-theorem yw_lt (msk : Bool) (M : BitVec 64) (y : Nat) (hy : y < 2 ^ 64) : yw msk M y < 2 ^ 64 := by
-  unfold yw; split
-  · exact BitVec.isLt _
-  · exact hy
 
 /-- The destination of a row: `n` words at `Dst + d + 8 j`, through `db`. -/
 structure DstOk (Dst : Addr) (db : Reg) (d n : Nat) (s0 : State) : Prop where
@@ -1360,7 +1346,6 @@ end VG.Proof.Weierstrass.RISCV64.GenWide
 `m` at `N` (`fillN_ok`), and `mulInit k m` the `k + 1` zero words of `T` and
 `m'` into `t6` (`mulInit_ok`).
 -/
-
 
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
@@ -1517,7 +1502,6 @@ from a state with `a3 = b`, `t4`, `t5` and `t2` pointing to `[a]`, `[b]` and
 modulo `m` (`mulCore_ok`, `addCore_ok`, `subCore_ok`), and only `[o]` and the
 own working space at `b + T` are written.
 -/
-
 
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
@@ -1676,8 +1660,6 @@ theorem mulCore_ok {k m : Nat} {b A B O : Addr} {s : State} (hC : CoreOk k b A B
 
 theorem colsV_yw_false (M : BitVec 64) (f : Nat → Nat) (n : Nat) :
     colsV (fun i => yw false M (f i)) n = colsV f n := by simp [yw]
-
-theorem add_zero_addr (O : Addr) : O + BitVec.ofNat 64 0 = O := by simp
 
 /-- The own working space's frames within it. -/
 theorem sub_own {k : Nat} {b O : Addr} (hk : 1 ≤ k) (hk' : k ≤ 30) {d n : Nat} (hd : T k ≤ d)
@@ -1932,7 +1914,6 @@ bits: the `8 k` bytes of the element at `a` (from `a3`) to `p + dst`
 (`pack_ok`), and back (`unpack_ok`), any of them unaligned.
 -/
 
-
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Weierstrass.RISCV64.GenWide VG.Proof.X25519.RISCV64
@@ -2062,7 +2043,6 @@ number below the own working space at `8192 - 64 k` (`fn_ok`): `core` on the
 pointers if they are multiples of 8, else on byte-wise copies in the own
 working space, as P-384's (`Proof/Weierstrass/RISCV64/P384Field/Fn.lean`).
 -/
-
 
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 
@@ -2339,12 +2319,6 @@ abbrev clobF : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, .a
 abbrev fnW (k : Nat) (W : Addr) (o : Nat) : List Region :=
   [⟨W + BitVec.ofNat 64 (8192 - 64 * k), 64 * k⟩, ⟨W + BitVec.ofNat 64 o, 8 * k⟩]
 
-theorem fnW_sub (k : Nat) (hk : 1 ≤ k) (hk' : k ≤ 30) (W : Addr) (o : Nat) {d n : Nat} (hd : 8192 - 64 * k ≤ d)
-    (hn : d + n ≤ 8192) :
-    ∀ r ∈ [(⟨W + BitVec.ofNat 64 d, n⟩ : Region)], ∃ r' ∈ fnW k W o, Region.Sub r r' := fun r hr => by
-  rw [List.mem_singleton] at hr; subst hr
-  exact ⟨_, List.mem_cons_self .., Offset.sub W hd (by omega)⟩
-
 theorem core_fnW {k : Nat} (hk : 1 ≤ k) (hk' : k ≤ 30) (W : Addr) {o : Nat} (O : Addr)
     (hO : O = W + BitVec.ofNat 64 o ∨ ∃ e, 8192 - 64 * k ≤ e ∧ e + 8 * k ≤ 8192 ∧ O = W + BitVec.ofNat 64 e) :
     ∀ r ∈ [ownR k (W + BitVec.ofNat 64 6144), ⟨O, 8 * k⟩], ∃ r' ∈ fnW k W o, Region.Sub r r' := fun r hr => by
@@ -2496,7 +2470,6 @@ theorem fnWith_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {fast : Prog isa} {c
     · rw [r4.wr, wr3, r2.wr, r1.wr]
     · rw [r4.sp, sp3, r2.sp, r1.sp]
 
-
 /-- `fnA k fast`, from the working space at `W` and offsets below the own working space that are
 zero-extended multiples of 8. -/
 theorem fnA_ok {k : Nat} (hk : 7 ≤ k) (hk' : k ≤ 30) {fast : Prog isa}
@@ -2603,7 +2576,6 @@ For a modulus `S` of `k ≥ 7` words, `mulFn k m`, `addFn k m` and `subFn k m`
 the regions the functions write, the top `64 k` bytes of the working space
 (`rvOwn k`) and the result, keep every other byte (`keeps_of_frame`).
 -/
-
 
 namespace VG.Proof.Weierstrass.RISCV64.GenWide
 

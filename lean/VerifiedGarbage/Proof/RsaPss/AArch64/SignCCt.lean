@@ -63,10 +63,6 @@ namespace E
 variable {tsH tsG : List FnTable} {K : Nat} {a s : State} (h : E tsH tsG K a s)
 include h
 
-theorem k : (s.gpr .x3).toNat = (a.gpr .x3).toNat := by rw [h.gpr (r := .x3) (by decide)]
-
-theorem nx : nx s = nx a := congrArg BitVec.toNat h.n0
-
 theorem eb : ebS s = ebS a := by unfold ebS; rw [h.n0, h.gpr (r := .x3) (by decide)]
 
 theorem el : elS s = elS a := by unfold elS; rw [h.eb]

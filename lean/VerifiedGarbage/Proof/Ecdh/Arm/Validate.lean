@@ -323,72 +323,9 @@ theorem validate_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
 ## `[d]P` and `Z^(p-2)`
 
 The signature's ladder with its point at `PX`, `PY`, `ONEP` (`ladderQ`),
-whose slots are apart as `ladder_ok` needs (`ladLayQ`, `ladWkQ`), then the
-signature's power (`ladPow_ok`, as `stage₂`), for any invariant of the ladder: `Main.lean` gives the one of the
-group law, that `R` represents `[k >>> j]P`.
+then the signature's power (`ladPow_ok`, as `stage₂`), for any invariant of
+the ladder: `Main.lean` gives the one of the group law, that `R` represents `[k >>> j]P`.
 -/
-
-theorem ladLayQ (hc : CfgOk c) : LadLay (Impl.Ecdh.Arm.Cfg.ladderQ c) size 8192 := by
-  have hn := hc.n0
-  have h7 := hc.n10
-  refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
-      (lr := [AP, B3P, RX, RY, RZ, RX, RY, RZ]) rfl rfl (by decide) (by decide),
-    rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, TX, TY, TZ])
-      (lr := [AP, B3P, DX, DY, DZ, PX, PY, ONEP]) rfl rfl (by decide) (by decide), ?_,
-    ⟨fun h => by have := sl_inj c hn h; exact absurd this (by decide),
-      fun h => by have := sl_inj c hn h; exact absurd this (by decide),
-      fun h => by have := sl_inj c hn h; exact absurd this (by decide)⟩, ?_,
-    ⟨show 1 ≤ 8 * c.C.len by have := hc.len8; omega_arith,
-      show 8 * c.C.len < 2 ^ 16 by have := hc.len_hi; omega_arith⟩,
-    (by have := bitsAt_le c h7 (j := 0) (by decide); have := hc.len_hi;
-        change bitsAt c.n 0 + 8 * c.C.len ≤ 8192; omega_arith), ?_⟩
-  · exact lay_map hc rfl rfl rfl (l := [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
-      DX, DY, DZ, TX, TY, TZ]) (by decide)
-  · exact map_sl_disj hn (l₁ := [AP, B3P, PX, PY, ONEP])
-      (l₂ := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ])
-      (by decide)
-  · exact map_sl_disj hn (l₁ := [RX, RY, RZ]) (l₂ := [DX, DY, DZ, TX, TY, TZ]) (by decide)
-  · intro w hw
-    simp only [ladW, List.mem_append, List.mem_map, List.mem_singleton] at hw
-    rcases hw with ⟨y, hy, rfl⟩ | rfl
-    · have hy' : y ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX,
-          TY, TZ].map c.sl := hy
-      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy'
-      have hl : ∀ i ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX,
-          TY, TZ], i < 45 := by decide
-      exact Or.inr (sl_below_bits c hc.n10 (hl i hi) 0 0)
-    · exact Or.inr (sl_below_bits c hc.n10 (i := TMP) (by decide) 0 0)
-
-theorem ladWkQ (hc : CfgOk c) : LadWk (Impl.Ecdh.Arm.Cfg.ladderQ c) size c.wk where
-  le := wk_le c hc.n10 rfl
-  sl := by
-    have e : ladSlots (Impl.Ecdh.Arm.Cfg.ladderQ c) = [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3,
-      T4, T5, DX, DY, DZ, TX, TY, TZ].map c.sl := rfl
-    rw [e]
-    intro x hx
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    have : ∀ i ∈ [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ],
-      i < 45 := by decide
-    exact sl_below_wk c hc.n10 (this i hi)
-  mo := sl_below_wk c hc.n10 (i := MP) (by decide)
-  tmp := sl_below_wk c hc.n10 (i := TMP) (by decide)
-  bits := wk_below_bits c hc.n10 rfl 0
-
-theorem ladWxQ_eq (c : Cfg) : ladWx (Impl.Ecdh.Arm.Cfg.ladderQ c) c.wk = slW c [RX, RY, RZ, T0, T1, T2, T3,
-    T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] ++ [(c.wk, 64 * c.n)] := rfl
-
-/-- The ladder's slots are below the point functions'. -/
-theorem ladPtQ (h6 : c.n ≤ 6) : VG.Proof.Weierstrass.Arm.Point.LadPt (Impl.Ecdh.Arm.Cfg.ladderQ c) where
-  sl := by
-    have e : ladSlots (Impl.Ecdh.Arm.Cfg.ladderQ c) = [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3,
-      T4, T5, DX, DY, DZ, TX, TY, TZ].map c.sl := rfl
-    rw [e]
-    intro x hx
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    have : ∀ i ∈ [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ],
-      i < 45 := by decide
-    exact sl_below_pt h6 (this i hi)
-  mo := sl_below_pt h6 (i := MP) (by decide)
 
 /-- What the ladder and the power leave: `Q 0` accepts what `R` holds. -/
 structure LadPost (c : Cfg) (base : Addr) (Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop) (s s' : State) :

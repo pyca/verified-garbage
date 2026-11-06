@@ -100,10 +100,6 @@ theorem expTest_val {v : Nat} (hv : v < 2 ^ 64) :
 
 /-! ## `expCheck` -/
 
-theorem eByte_ea (t : State) {ep : Addr} {j : Nat} (h8 : t.gpr .r8 = ep) (h10 : t.gpr .r10 = BitVec.ofNat 64 j) :
-    t.ea eByte = ep + BitVec.ofNat 64 j := by
-  simp only [State.ea, eByte, h8, h10, BitVec.mul_one, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero]
-
 /-- One byte of `e`. -/
 theorem expStep_ok {t : State} {ep : Addr} {L j x : Nat} {b : Byte} (h8 : t.gpr .r8 = ep)
     (h9 : t.gpr .r9 = BitVec.ofNat 64 L) (h10 : t.gpr .r10 = BitVec.ofNat 64 j)

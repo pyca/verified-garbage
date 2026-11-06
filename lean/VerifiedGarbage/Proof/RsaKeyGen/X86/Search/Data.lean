@@ -70,12 +70,6 @@ abbrev SearchPublic.S1 (p : SearchPublic) : BitVec 32 := p.sp - BitVec.ofNat 32 
 /-- The candidate's frame. -/
 abbrev SearchPublic.S2 (p : SearchPublic) : BitVec 32 := p.sp - BitVec.ofNat 32 60
 
-/-- The search from octet `used` of `rand`, with `remaining` counted
-candidates left. -/
-abbrev SearchPublic.tail (p : SearchPublic) (pB rand : List Byte) (used remaining : Nat) :
-    PrimeSearchResult :=
-  primeSearch p.len p.eB pB remaining (rand.drop used)
-
 /-- The registers the search pushes, in order. -/
 abbrev pushRegs : List Reg := [.ebx, .ebp, .esi, .edi]
 

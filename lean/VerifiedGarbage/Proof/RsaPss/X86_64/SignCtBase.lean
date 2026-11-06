@@ -231,6 +231,4 @@ theorem SS.sub {s t : State} {ks ks' : List Nat} {rs : List (Reg × BitVec 64)}
   obtain ⟨V, W, R, hw, hx⟩ := h.W
   exact ⟨h.L, h.wr, ⟨V, W, R, fun k hk => hw k (hks k hk), hX V W hx⟩, hrs, h.sy⟩
 
-theorem slo_le (s : State) : slo s ≤ 1 := by unfold slo loV; split <;> omega
-
 end VG.Proof.RsaPss.X86_64

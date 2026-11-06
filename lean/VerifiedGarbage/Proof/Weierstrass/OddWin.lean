@@ -157,15 +157,6 @@ theorem oS_le_32 {J k j : Nat} (hk : k % 2 = 1) (hj : j ≤ J) (h1 : 1 ≤ j) : 
       _ ≤ 32 ^ j := Nat.pow_le_pow_right (by decide) h1) (by decide)
   omega_arith
 
-/-- For `j ≥ 2`, `S_j ≤ k / 1024 + 1`. -/
-theorem oS_le_1024 {J k j : Nat} (hk : k % 2 = 1) (hj : j ≤ J) (h2 : 2 ≤ j) :
-    oS J k j ≤ k / 1024 + 1 := by
-  have := oS_le hk (by omega_arith) hj
-  have : k / 32 ^ j ≤ k / 1024 := Nat.div_le_div_left (by
-    calc 1024 = 32 ^ 2 := rfl
-      _ ≤ 32 ^ j := Nat.pow_le_pow_right (by decide) h2) (by decide)
-  omega_arith
-
 /-- The top window is 16, its digit 1, for `k ≤ 2 · 32^(J-1)`. -/
 theorem oe_top {J k : Nat} (hk : k % 2 = 1) (hJ : 1 ≤ J) (hkb : k ≤ 2 * 32 ^ (J - 1)) :
     oe J k (J - 1) = 16 ∧ oS J k (J - 1) = 1 := by

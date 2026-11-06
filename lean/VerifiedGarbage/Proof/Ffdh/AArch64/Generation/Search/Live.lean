@@ -163,14 +163,4 @@ theorem SPub.tail_reject {p : SPub} {used k : Nat} {rest : List Byte} (hk : k �
   simp only [List.length_drop, hl] at this
   exact this
 
-/-- The octets a candidate reads are in the tape. -/
-theorem candidate_used_le {p : SPub} {used : Nat} {value : Option Nat} {rest : List Byte}
-    (hl : p.rand.length = p.randLen)
-    (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = some (value, rest)) :
-    rest.length ≤ p.randLen - used := by
-  obtain ⟨n, _, hr⟩ := Proof.Ffdh.SievedGeneration.candidate_suffix hc
-  rw [hr]
-  simp only [List.length_drop, hl]
-  omega
-
 end VG.Proof.Ffdh.AArch64.Generation

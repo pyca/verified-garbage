@@ -106,20 +106,6 @@ theorem and_zero' (y : BitVec 32) : y &&& 0 = 0 := BitVec.eq_of_getLsbD_eq (by s
 theorem and_ones' (y : BitVec 32) : y &&& 0xFFFFFFFF = y := by
   rw [show (0xFFFFFFFF : BitVec 32) = BitVec.allOnes 32 by decide, BitVec.and_allOnes]
 
-theorem acc_succ (m : Mem) (T : Addr) (idx : Nat → BitVec 32) {j : Nat} (hj : j < 2 ^ 32) (k : Nat) :
-    (acc m T idx j k ||| ((ent m T j k) &&& if idx k = BitVec.ofNat 32 j then 0xFFFFFFFF else 0)) =
-      acc m T idx (j + 1) k := by
-  unfold acc
-  by_cases h : idx k = BitVec.ofNat 32 j
-  · have hn : (idx k).toNat = j := by rw [h, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hj
-    rw [ite_eq_left h, ite_eq_right (by omega), ite_eq_left (by omega), hn, and_ones', zero_or']
-  · have hn : (idx k).toNat ≠ j := fun h' => h (BitVec.eq_of_toNat_eq (by
-      rw [h', BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj]))
-    rw [ite_eq_right h, and_zero', or_zero']
-    by_cases h2 : (idx k).toNat < j
-    · rw [ite_eq_left h2, ite_eq_left (by omega)]
-    · rw [ite_eq_right h2, ite_eq_right (by omega)]
-
 /-- A replicated mask for the low bit, without a branch. -/
 def bitMask (x : BitVec 32) : BitVec 32 := 0 - (x &&& 1)
 
@@ -188,8 +174,6 @@ structure ScanKeep (s t : State) : Prop where
   mem : t.mem = s.mem
   rd : t.rd = s.rd
   wr : t.wr = s.wr
-
-theorem ScanKeep.refl (s : State) : ScanKeep s s := ⟨fun _ _ _ => rfl, fun _ _ _ _ _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
 
 theorem ScanKeep.trans {s t u : State} (h : ScanKeep s t) (h' : ScanKeep t u) : ScanKeep s u :=
   ⟨fun r a b => (h'.gpr r a b).trans (h.gpr r a b),

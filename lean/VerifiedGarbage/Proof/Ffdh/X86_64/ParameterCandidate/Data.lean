@@ -63,8 +63,6 @@ theorem CandidateFrame.of_bytes {p : CandidateP} {m m' : Mem}
 def CandidateSaved (p : CandidateP) (m m' : Mem) : Prop :=
   ∀ j < 12, word m' p.B (8 * j) = word m p.B (8 * j)
 
-theorem CandidateSaved.refl (p : CandidateP) (m : Mem) : CandidateSaved p m m := fun _ _ => rfl
-
 theorem CandidateSaved.trans {p : CandidateP} {m₁ m₂ m₃ : Mem}
     (h : CandidateSaved p m₁ m₂) (h' : CandidateSaved p m₂ m₃) : CandidateSaved p m₁ m₃ :=
   fun j hj => (h' j hj).trans (h j hj)

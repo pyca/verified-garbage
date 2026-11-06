@@ -43,10 +43,6 @@ def phaseWith (sve : Bool) (start : Instr) (restore : Reg) (lead k : Nat) : Prog
         (.nonzero .x .x1))
       (.block [.addImm .x .x20 .x0 64, .addImm .x .x1 restore 0]))
 
-/-- The phase of a whole chunk: sixteen blocks, one and then three after each
-double round. -/
-def phase (sve : Bool) (start : Instr) (restore : Reg) : Prog isa := phaseWith sve start restore 1 3
-
 /-- Where the 512 bytes a chunk absorbs start, relative to the chunk's data
 (`x26` during the chunk): the chunk itself when decrypting, the previous chunk
 when encrypting. -/

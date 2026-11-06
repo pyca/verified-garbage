@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressMain
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.InverseVerified
 public import VerifiedGarbage.Spec.EcKey.P256
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.InverseLit
-import VerifiedGarbage.Proof.Ecdh.X86_64.P256.CheckVerified
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.X86_64.Lit

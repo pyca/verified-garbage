@@ -47,11 +47,6 @@ def started (s0 : State) : State := allocated 176 (pushed .r0 (s0.write .r0 s0.l
 abbrev bodyWr (s0 : State) : List Region :=
   ⟨off (cB s0) 208, 144⟩ :: ⟨off (cB s0) 384, 16⟩ :: s0.wr
 
-theorem sp_eq (s0 : State) {d : Nat} (hd : d ≤ 400) :
-    s0.sp - BitVec.ofNat 64 d = off (cB s0) (400 - d) := by
-  simp only [off, cB]
-  rw [← Offset.ofNat_sub_ofNat hd, Offset.sub_add_sub_cancel]
-
 /-- What holds through the body. -/
 structure Bx (s0 s : State) : Prop where
   pre : CIn s0

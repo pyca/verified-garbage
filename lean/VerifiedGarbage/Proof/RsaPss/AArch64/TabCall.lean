@@ -338,7 +338,4 @@ theorem HT.keep {H : Impl.Pbkdf2.Md.AArch64.Hash} {dn : String} {f : MdFns} {F :
   exact ⟨(k _ (by decide)).trans h.wi, (k _ (by decide)).trans h.wc, (k _ (by decide)).trans h.wd, h.fi, h.fc,
     h.fd⟩
 
-theorem HT.congr {H : Impl.Pbkdf2.Md.AArch64.Hash} {dn : String} {f : MdFns} {F : Addr} {m m' : Mem}
-    {sy : String → Addr} (h : HT H dn f F m sy) (hm : m' = m) : HT H dn f F m' sy := hm ▸ h
-
 end VG.Proof.RsaPss.AArch64

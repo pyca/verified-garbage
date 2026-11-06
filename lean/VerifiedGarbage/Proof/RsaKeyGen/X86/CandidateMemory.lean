@@ -22,18 +22,6 @@ theorem Environment.Valid.readFit {E : Environment} (v : E.Valid) {r : Region} (
   · change 8192 ≤ 2 ^ 64
     decide
 
-theorem Environment.Valid.readWorkFar {E : Environment} (v : E.Valid) {R : Region} (mem : R ∈ E.readRegions) :
-    ∀ r ∈ [E.workspaceRegion, below E.p 136], R.Disjoint r := by
-  intro r member
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at member
-  rcases member with rfl | rfl
-  · exact v.readWorkspace mem
-  · exact v.stackFar R (List.mem_append_right _ mem)
-
-theorem WorkFrame.bytes {E : Environment} (v : E.Valid) {m m' : Mem} (F : WorkFrame E m m')
-    {r : Region} (mem : r ∈ E.readRegions) : Spec.Rsa.bytesAt m' r.base r.len = Spec.Rsa.bytesAt m r.base r.len :=
-  VG.Proof.RsaKeyGen.frame_bytesAt F (v.readWorkFar mem) (v.readFit mem)
-
 theorem Environment.Valid.readMutableFar {E : Environment} (v : E.Valid) {R : Region} (mem : R ∈ E.readRegions) :
     ∀ r ∈ E.writeRegions ++ [below E.p 136], R.Disjoint r := by
   intro r member

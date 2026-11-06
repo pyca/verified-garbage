@@ -126,10 +126,6 @@ theorem openPrepared16Code_verified {c : Prog isa}
           | exact Region.disjoint_of_sep (by decide)
           | exact preparedPowers16Repr_of_zero fun _ _ => rfl⟩ }
 
-theorem openPrepared16_verified (v : GcmImpl) (B : BlkFn CtxMode.prepared16) :
-    Verified X86_64.target («open» (v.withBlk B)) (Proof.AesGcm.openPrepared16ScratchContract X86_64.abi 24) :=
-  openPrepared16Code_verified (openM_correct v B) (openM_ct v B)
-
 theorem streamEncryptPrepared16_verified (v : GcmImpl) (B : BlkFn CtxMode.prepared16) :
     Verified X86_64.target (streamEncrypt (v.withBlk B))
       (Proof.AesGcm.streamEncryptPrepared16ScratchContract X86_64.abi 24) :=
@@ -251,12 +247,6 @@ theorem openPrepared16Code_framed {c : Prog isa}
     (by decide) (by decide) (by decide) hsp hxd
     (Proof.AesGcm.openPrepared16Pre_local _) (Proof.AesGcm.openPrecomputedPost_local _) openFrameSatPrepared16_pre
     (hleak := Proof.AesGcm.openPrecomputedLeak_local _)
-
-theorem openPrepared16_framed (v : GcmImpl) (B : BlkFn CtxMode.prepared16) :
-    Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» (v.withBlk B)))
-      (Proof.AesGcm.openPrepared16RoundsContract X86_64.abi 2632) :=
-  openPrepared16Code_framed (openPrepared16_verified v B) (openM_spSafe v B) (openM_xdepth v B)
 
 theorem streamEncryptFrameSatPrepared16_pre : ∃ s, (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pre s := by
   refine ⟨crFrameSatP, ?_⟩

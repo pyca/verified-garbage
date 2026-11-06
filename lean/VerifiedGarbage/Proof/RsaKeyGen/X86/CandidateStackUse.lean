@@ -36,20 +36,12 @@ theorem fastR2At {square : Prog isa} {limit : Nat} (bound : stackUse square ≤ 
   rw [doubles]
   omega
 
-theorem fastR2 {square : Prog isa} {limit : Nat} (bound : stackUse square ≤ limit)
-    (M : VG.Impl.Mont.Mod) (acc out : Nat) : stackUse (FastR2.code M acc out square) ≤ limit :=
-  fastR2At bound M _ acc out
-
 theorem r2At {mont : Prog isa} (bound : stackUse mont ≤ 56) (e w : Nat) (name : String) :
     stackUse (PreparedR2.codeAt e w name mont) ≤ 80 := by
   have main := fastR2At (mulY bound name 6) (VG.Impl.Bignum.X86.PublicContext.modulus w) e
     (VG.Impl.Bignum.X86.PublicContext.slot w 2) (VG.Impl.Bignum.X86.PublicContext.slot w 6)
   change max (stackUse (FastR2.codeAt _ _ _ _ _)) 0 ≤ 80
   omega
-
-theorem r2 {mont : Prog isa} (bound : stackUse mont ≤ 56) (w : Nat) (name : String) :
-    stackUse (PreparedR2.code w name mont) ≤ 80 :=
-  r2At bound _ w name
 
 theorem lowPairs (src start count : Nat) : stackUse (LowPair.steps src start count) = 0 := by
   induction count generalizing start with
@@ -80,10 +72,6 @@ theorem prepareAt {mont : Prog isa} (bound : stackUse mont ≤ 56) (e w : Nat) (
   rw [exponentZero]
   omega
 
-theorem prepare {mont : Prog isa} (bound : stackUse mont ≤ 56) (w : Nat) (name : String) :
-    stackUse (Prepare.code w name mont) ≤ 80 :=
-  prepareAt bound _ w name
-
 end VG.Proof.RsaKeyGen.X86.CandidateStackUse
 end
 
@@ -101,25 +89,12 @@ theorem witnessAt {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stac
     (max 0 (stackUse round + 4 + 8))))) 0) ≤ 108
   omega
 
-theorem witness {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
-    (w : Nat) (montName roundName : String) : stackUse (WitnessStep.code w montName mont roundName round) ≤ 108 :=
-  witnessAt Hm Hr _ _ w montName roundName
-
 theorem millerRabinWith {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (checks D k w : Nat) (montName roundName : String) :
     stackUse (MillerRabinLoop.codeWith checks D k w montName mont roundName round) ≤ 108 := by
   have bound := witnessAt Hm Hr D k w montName roundName
   change max 0 (max 0 (max (max 0 (stackUse (WitnessStep.codeAt D k w montName mont roundName round))) 0)) ≤ 108
   omega
-
-theorem millerRabinOf {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
-    (checks w : Nat) (montName roundName : String) :
-    stackUse (MillerRabinLoop.codeOf checks w montName mont roundName round) ≤ 108 :=
-  millerRabinWith Hm Hr checks _ _ w montName roundName
-
-theorem millerRabin {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
-    (w : Nat) (montName roundName : String) : stackUse (MillerRabinLoop.code w montName mont roundName round) ≤ 108 :=
-  millerRabinOf Hm Hr _ w montName roundName
 
 theorem coreWith {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (e checks D k w : Nat) (montName roundName : String) :
@@ -130,30 +105,12 @@ theorem coreWith {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stack
     (stackUse (MillerRabinLoop.codeWith checks D k w montName mont roundName round)) ≤ 108
   omega
 
-theorem coreOf {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
-    (checks w : Nat) (montName roundName : String) :
-    stackUse (CandidateTest.coreOf checks w montName mont roundName round) ≤ 108 :=
-  coreWith Hm Hr _ checks _ _ w montName roundName
-
-theorem core {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
-    (w : Nat) (montName roundName : String) : stackUse (CandidateTest.core w montName mont roundName round) ≤ 108 :=
-  coreOf Hm Hr _ w montName roundName
-
 theorem testWith {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (e checks D k w : Nat) (montName roundName : String) :
     stackUse (CandidateTest.codeWith e checks D k w montName mont roundName round) ≤ 136 := by
   have bound := coreWith Hm Hr e checks D k w montName roundName
   change max 0 (max 0 (stackUse (CandidateTest.coreWith e checks D k w montName mont roundName round)) + 28) ≤ 136
   omega
-
-theorem testOf {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
-    (checks w : Nat) (montName roundName : String) :
-    stackUse (CandidateTest.codeOf checks w montName mont roundName round) ≤ 136 :=
-  testWith Hm Hr _ checks _ _ w montName roundName
-
-theorem test {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
-    (w : Nat) (montName roundName : String) : stackUse (CandidateTest.code w montName mont roundName round) ≤ 136 :=
-  testOf Hm Hr _ w montName roundName
 
 theorem exponentRt : stackUse ExponentRt.code = 20 := rfl
 

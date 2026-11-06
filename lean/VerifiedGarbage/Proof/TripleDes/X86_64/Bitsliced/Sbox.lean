@@ -64,8 +64,6 @@ theorem inputAt_bit (s : State) (p k : Nat) (hk : k < 6) :
     (inputAt s p).toNat.testBit k = (s.gpr (inReg k)).getLsbD p := by
   simp only [inputAt, BitVec.testBit_toNat, getLsbD_ofBits, hk, decide_true, Bool.true_and]
 
-theorem inReg_inj : ∀ a < 6, ∀ b < 6, inReg a = inReg b → a = b := by decide
-
 /-- Every S-box output bit, for arbitrary input words and spill slots. Only
 the spill slots change in memory, and `rcx`, `rsp` and `r15` are left alone. -/
 theorem sbox_ok (j : Nat) (hj : j < 8) {s : State} (hok : Ok sboxCfg s) :

@@ -14,14 +14,6 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.KeyCheck
 open VG.Proof.Rsa.X86.Keys
 
-theorem Inputs.keepOutside {g : CallGeometry} {s : State} {m : Mem} {js ds : List Nat}
-    (h : Inputs g s) (keep : Keep g.base (2 * g.n) js ds s.mem m)
-    (hj : ∀ j ∈ js, j < nArr) (hd : ∀ d ∈ ds, d + 4 ≤ hdr) :
-    Outside g.base 0 g.size s.mem m := by
-  intro a ha
-  apply keep.out (fun j hj' => h.ws.arr_fit (hj j hj')) (fun d hd' => Nat.le_trans (hd d hd') h.ws.hdr_le)
-  omega
-
 theorem Inputs.keepBody {g : CallGeometry} {s : State} {m : Mem} {js ds : List Nat}
     (h : Inputs g s) (keep : Keep g.base (2 * g.n) js ds s.mem m)
     (hj : ∀ j ∈ js, j < nArr) (hd : ∀ d ∈ ds, 16 ≤ d ∧ d + 4 ≤ hdr) :

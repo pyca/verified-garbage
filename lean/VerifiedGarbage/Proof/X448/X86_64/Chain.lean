@@ -507,14 +507,6 @@ theorem ldStable_sc {X : List Reg} {s : State} {base : Addr} (hs : Scr s base) (
   have ht : Scr t base := ⟨(hg _ hX).trans hs.rdi, hwr ▸ hs.wr, hs.nowrap⟩
   simp only [reduceExec, readSrc_sc ht hd, hm, Option.map_some]
 
-theorem ldStable_sc32 {X : List Reg} {s : State} {base : Addr} (hs : Scr s base) (hX : .rdi ∉ X)
-    {d : Nat} (hd : d + 8 ≤ 8192) :
-    LdStable X s (.mov32 .rax (.mem (sc d))) ((s.mem.readW (off base d) 32).setWidth 64) :=
-  fun t hg hm _ hwr => by
-    have ht : Scr t base := ⟨(hg _ hX).trans hs.rdi, hwr ▸ hs.wr, hs.nowrap⟩
-    simp only [reduceExec, readSrc32, State.load32, ea_sc, ht.rdi, ht.read (d := d) (n := 4) (by omega_arith),
-      ite_true, hm, Option.map_some, State.setReg32]
-
 /-- Multiply-accumulate steps along `ts`: `ts + 2^(64n) rbp = ts + rbp + rcx · vs`. -/
 theorem mulSteps_ok (X : List Reg) (s₀ : State) :
     ∀ (ts : List Reg) (lds : List Instr) (vs : List (BitVec 64)) (s : State),

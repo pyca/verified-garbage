@@ -88,9 +88,6 @@ theorem ptrsN_ok (s : State) :
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg_of_ne _ _ hr.2, RegUpd.gpr_arithFlags, RegUpd.gpr_setReg_of_ne _ _ hr.1]
 
-theorem ea_sc' {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (d : Nat) : s.ea (sc d) = off base d := by
-  simp only [State.ea, sc, BitVec.ofInt_natCast, hs.rdi]
-
 /-- Word `d` into `r`, through `rax`. -/
 theorem saveStep_ok {s : State} {base : Addr} {Z d : Nat} (hs : Scr s base Z) (hd : d + 8 ≤ Z) (r : XReg) :
     WP isa (.block [.mov .rax (.mem (sc d)), .xop (.movq r .rax)]) s fun t =>

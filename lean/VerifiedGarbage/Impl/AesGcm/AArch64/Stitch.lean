@@ -8,17 +8,16 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
 # AES-GCM on AArch64: the path for TLS records, interleaved
 
 The path for TLS records (`Fast.lean`) of the functions with the powers
-(`_with_powers`, `_store_powers`), for CPUs with FEAT_AES, FEAT_PMULL and
+(`_with_powers`), for CPUs with FEAT_AES, FEAT_PMULL and
 FEAT_SHA3: the first `128 ⌊len / 128⌋` bytes of the
 text encrypted (or decrypted) and hashed by the interleaved loops of
 `Impl.Gcm.AArch64.Stitch`, then the rest as `Fast.lean` does.
 
 * The loops read the table of keys at `W + 512` (`Stitch.tbl`), which
   `tbl` writes from `H'` to `H'⁸` in `tReg`/`sReg`
-  (`Impl.Gcm.AArch64.Pmull`): computed as `vg_ghash_aes` computes them
-  (`powTbl`, for `_store_powers`), or loaded from `pw` (`pwTbl`, for
-  `_with_powers`). Plain `seal` and `open`, which would compute the powers
-  on every call, keep `Fast.lean`'s path.
+  (`Impl.Gcm.AArch64.Pmull`), loaded from `pw` (`pwTbl`). Plain `seal` and
+  `open`, which would compute the powers on every call, keep `Fast.lean`'s
+  path.
 * Only a text of at least `minLen` bytes takes the loops (`thr`); a shorter
   one takes `Fast.lean`'s path, as the `_aes` functions do. Writing the
   table and the loops' first and last steps cost about as much as 3.4 to 6.2
@@ -49,9 +48,6 @@ def tbl : List Instr :=
     [.vop (.logic .eor .v2 (sReg (Gcm.AArch64.Stitch.pk p)) (tReg (Gcm.AArch64.Stitch.pk p))),
      .vop (.logic .eor .v3 (sReg (Gcm.AArch64.Stitch.pl p)) (tReg (Gcm.AArch64.Stitch.pl p))),
      .vop (.ext .v4 .v2 .v3 8), .strq .v4 .x19 (Gcm.AArch64.Stitch.kOff p)]
-
-/-- The table, from the powers computed from `H'` (kept at `W + hO`). -/
-def powTbl : List Instr := hReload ++ powers ++ tbl
 
 /-- The table, from the powers in `pw`, the stack argument at `sp + k`. -/
 def pwTbl (k : Nat) : List Instr :=
@@ -277,8 +273,7 @@ def openShortF (tb : List Instr) : Prog isa :=
 
 /-- `vg_aes_gcm_seal`, with `work` at `sp + k`: with `sh`, from 17 to
 `shortMax` bytes, `sealShort`; otherwise below `minLen` bytes, `Fast.lean`'s
-path. Only `_with_powers` takes `sealShort`: `_store_powers` must store the
-powers, which only the call `cl` does, and is called only on longer texts. -/
+path. -/
 def sealWithS (k : Nat) (tb : List Instr) (cl : Prog isa) (sh : Bool := false) : Prog isa :=
   .seq (.block (oneEntry k ++ stashArg 0))
     (.seq cond (.ite (.zero .x .x10)
@@ -307,11 +302,5 @@ def sealWithPw (gh : Fn) : Prog isa := sealWithS c 16 (pwTbl 8) (pwSel c 8 gh) t
 
 /-- `vg_aes_gcm_open_with_powers`, hashing the rest by `gh`. -/
 def openWithPw (gh : Fn) : Prog isa := openWithS c 24 (pwTbl 16) (pwSel c 16 gh) true
-
-/-- `vg_aes_gcm_seal_store_powers`, `gh` storing the powers. -/
-def sealStorePw (gh : Fn) : Prog isa := sealWithS c 16 powTbl (pwCall 8 gh)
-
-/-- `vg_aes_gcm_open_store_powers`, `gh` storing the powers. -/
-def openStorePw (gh : Fn) : Prog isa := openWithS c 24 powTbl (pwCall 16 gh)
 
 end VG.Impl.AesGcm.AArch64.Stitch

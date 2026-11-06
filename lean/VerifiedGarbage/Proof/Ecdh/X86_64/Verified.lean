@@ -38,8 +38,8 @@ P-256 is a curve the proof supports (`p256_ok`, and `Law` for its group law
 and `InvSounds` for its inversions, which the registration file supplies:
 `Proof.P256.law` and the variant's `inv`), so `exchangeWith_ok`, given the
 `MulOk` of its scalar multiplication (`ecdh_x86_of`), gives the contract's
-postcondition: `exchangeP256` multiplies by the Jacobian window method
-(`mulQJ_ok`), which needs P-256's prime order, with the doubling by halving
+postcondition: `exchangeP256` multiplies by the odd Jacobian window method
+(`mulQJO_ok`), which needs P-256's prime order, with the doubling by halving
 (`mulQJP256_ok`); the callee-saved registers are restored,
 `rsp` is never written, and every store is to `out` or `scratch`, which the
 return address is apart from (`abiPreserved`). Constant time by taint

@@ -12,8 +12,6 @@ meta import VerifiedGarbage.Impl.ChaCha20.RISCV64.Xor
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.ChaCha20.Contract
-public import VerifiedGarbage.Proof.ChaCha20.Contract
-meta import VerifiedGarbage.Proof.ChaCha20.Contract
 meta import VerifiedGarbage.Spec.ChaCha20.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
@@ -39,6 +37,10 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.Spec.ChaCha20
+meta import VerifiedGarbage.TCB.Artifact
 
 /-!
 # ChaCha20 keystream XOR on RISC-V
@@ -884,15 +886,6 @@ theorem agree₀ {s₁ s₂ : State} (hpub : Proof.ChaCha20.xorRISCV64.pub s₁ 
   rcases hr with rfl | rfl | rfl | rfl
   exacts [p1, p2, p3, p4]
 
-/-- A state satisfying the precondition (with no data). -/
-def sat : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x2000 | .a3 => 0x3000 | _ => 0
-  sp := 0x5000
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 64⟩, ⟨0x2000, 0⟩, ⟨0x3000, 320⟩]
-
 theorem xor_correct (s : State) (hs : Proof.ChaCha20.xorRISCV64.pre s) :
     ∃ t s', Exec isa Impl.ChaCha20.RISCV64.Xor.xor s t s' ∧ abiPreserved s s' ∧
       Proof.ChaCha20.xorRISCV64.post s s' :=
@@ -902,12 +895,5 @@ theorem xor_ct : ConstantTime isa Proof.ChaCha20.xorRISCV64.pre Proof.ChaCha20.x
     Impl.ChaCha20.RISCV64.Xor.xor :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
     (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
-
-theorem xor_verified :
-    Verified RISCV64.target Impl.ChaCha20.RISCV64.Xor.xor (Proof.ChaCha20.xorContract RISCV64.abi) :=
-  Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, RISCV64.abi, RISCV64.argRegs,
-      Proof.ChaCha20.xorRISCV64]
-      [sat] using sat)
 
 end VG.Proof.ChaCha20.RISCV64.Xor

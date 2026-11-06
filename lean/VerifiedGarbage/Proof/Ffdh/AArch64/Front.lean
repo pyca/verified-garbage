@@ -123,12 +123,6 @@ theorem room_k {k Z : Nat} (hk : 64 ≤ k) (hZ : 128 * k + 256 ≤ Z) :
   rw [e]
   omega_arith
 
-/-- The outer workspace, once back from the inner one. -/
-theorem Outer.of_sub {t : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64} (hc : SubCtx t B Z o w wx mi)
-    (h0 : t.gpr .x0 = B) (hroom : inner w + slot w 8 + tabBytes32 w ≤ Z) (hw2 : 2 ≤ w) (hw : w < 2 ^ 28) :
-    Outer t B Z w :=
-  ⟨hc.scr, h0, hc.nw, hc.narr, hroom, hw2, hw⟩
-
 /-- `head`, then the inner workspace for p, entered, with p, `-p⁻¹` and the
 number 1. -/
 theorem setup_ok {s : State} {B : Addr} {Z k : Nat} {dp : Addr} {pb : List Byte} (hs : Scr s B Z)
@@ -300,13 +294,6 @@ theorem SubMem.of_parent {s t : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 
     (hh _ (by decide)).trans hc.link, (hp _ (by decide)).trans hc.nw,
     fun j hj => (hp _ (by unfold sArr; omega_arith)).trans (hc.narr j hj), hc.lo, hc.hi⟩
 
-/-- `SubCtx` after a change of the outer header's own slots. -/
-theorem _root_.VG.Proof.Bignum.AArch64.SubCtx.of_parent {s t : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64}
-    {rs : List (Nat × Nat)} (hc : SubCtx s B Z o w wx mi) (hf : Frm B rs s.mem t.mem)
-    (hr : ∀ r ∈ rs, 8 * 16 ≤ r.1 ∧ r.1 + r.2 ≤ 256) (hwr : t.wr = s.wr) (h0 : t.gpr .x0 = s.gpr .x0) :
-    SubCtx t B Z o w wx mi :=
-  (hc.toMem.of_parent hf hr hwr).ctx (h0.trans hc.x0)
-
 /-- The outer workspace, from the inner one's memory. -/
 theorem Outer.of_mem {t : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64} (hc : SubMem t B Z o w wx mi)
     (h0 : t.gpr .x0 = B) (hroom : inner w + slot w 8 + tabBytes32 w ≤ Z) (hw2 : 2 ≤ w) (hw : w < 2 ^ 28) :
@@ -375,14 +362,6 @@ theorem wp_ite_bit {th el : Prog isa} {s : State} {Q : State → Prop} {r : Reg}
     WP isa (.ite (.zero .x r) th el) s Q := by
   refine WP.ite (!decide P) (by rw [VG.Proof.MlKem.AArch64.eval_zero, h]; by_cases hp : P <;> simp [hp]) (fun hb => ?_)
     (fun hb => ?_)
-  · exact ht (by simpa using hb)
-  · exact he (by simpa using hb)
-
-/-- A branch on a register holding a Boolean's 0 or 1. -/
-theorem wp_ite_bool {th el : Prog isa} {s : State} {Q : State → Prop} {r : Reg} {b : Bool}
-    (h : s.gpr r = BitVec.ofNat 64 b.toNat) (ht : b = false → WP isa th s Q) (he : b = true → WP isa el s Q) :
-    WP isa (.ite (.zero .x r) th el) s Q := by
-  refine WP.ite (!b) (by rw [VG.Proof.MlKem.AArch64.eval_zero, h]; cases b <;> rfl) (fun hb => ?_) (fun hb => ?_)
   · exact ht (by simpa using hb)
   · exact he (by simpa using hb)
 

@@ -87,15 +87,6 @@ section
 variable {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp)
 include L
 
-theorem ctx_j0Frame : ∀ r ∈ j0Frame st w sp, (⟨State.addr c + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact L.cs.sub_left (Lay.ctxSub (by decide))
-  · exact L.ctx_w (by decide) (by decide)
-  · exact L.ctx_w (by decide) (by decide)
-  · exact (L.stk_ctx (by decide)).symm
-
 omit L in
 theorem st_j0Frame {m m' : Mem} {d k : Nat} (h : Frame [⟨State.addr st + BitVec.ofNat 64 d, k⟩] m m')
     (hk : d + k ≤ 80) : Frame (j0Frame st w sp) m m' :=

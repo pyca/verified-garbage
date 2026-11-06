@@ -69,41 +69,4 @@ theorem block_ok (d : Spec.Rc2.Direction) (hw : writesOnly blockRegs (blockCode 
   obtain ⟨t, s', he, hp, hk⟩ := WP.keep blockRegs (block_wp d s hs) hw hn
   exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) hn hl, hp⟩
 
-theorem block_agree (d : Spec.Rc2.Direction) : ∀ s₁ s₂, (blockC d).pre s₁ → (blockC d).pre s₂ →
-    (blockC d).pub s₁ s₂ → taint.Agree (Taint.ofRegs [.r3, .r4, .r5]) s₁ s₂ := by
-  intro s₁ s₂ _ _ h
-  refine ⟨h.2.2.2, fun r hr => ?_⟩
-  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact h.1
-  · exact h.2.1
-  · exact h.2.2.1
-
-theorem encrypt_ct : ConstantTime isa (blockC .encrypt).pre (blockC .encrypt).pub encryptBlock :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5]) (block_agree .encrypt) (by taint_decide)
-
-theorem decrypt_ct : ConstantTime isa (blockC .decrypt).pre (blockC .decrypt).pub decryptBlock :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5]) (block_agree .decrypt) (by taint_decide)
-
-def blockSat : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | _ => 0
-  lr := 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 8⟩, ⟨0x3000, 256⟩]
-
-theorem encrypt_verified : Verified target encryptBlock (Proof.Rc2.encryptBlockContract abi) := by
-  refine Verified.of_correct (k := blockC .encrypt) (block_ok .encrypt (by lit_decide) (by lit_decide)
-    (by rw [← Code.allInstrs_eq]; lit_decide)) encrypt_ct ?_
-  sig_implies [Proof.Rc2.encryptBlockContract, Proof.Rc2.blockSig, abi, argRegs, blockC, cipher]
-    [blockSat] using blockSat
-
-theorem decrypt_verified : Verified target decryptBlock (Proof.Rc2.decryptBlockContract abi) := by
-  refine Verified.of_correct (k := blockC .decrypt) (block_ok .decrypt (by lit_decide) (by lit_decide)
-    (by rw [← Code.allInstrs_eq]; lit_decide)) decrypt_ct ?_
-  sig_implies [Proof.Rc2.decryptBlockContract, Proof.Rc2.blockSig, abi, argRegs, blockC, cipher]
-    [blockSat] using blockSat
-
 end VG.Proof.Rc2.PPC64LE

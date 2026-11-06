@@ -265,11 +265,6 @@ theorem sx32 {n : Nat} (h : n < 2 ^ 31) : (BitVec.ofNat 32 n).signExtend 64 = Bi
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   omega
 
-theorem zx32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
-
 /-- Byte `i` of a region the return address of a call misses, on entry to the callee. -/
 theorem ce_byte (t : State) {R : Region} (hd : (below (t.gpr .rsp) 8).Disjoint R)
     (hR : R.len ≤ 2 ^ 64) {i : Nat} (hi : i < R.len) :

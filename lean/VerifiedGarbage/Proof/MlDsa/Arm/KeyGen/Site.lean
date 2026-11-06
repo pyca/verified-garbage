@@ -52,9 +52,6 @@ structure OkW (L : Lay) (Wb : List Nat) : Prop where
   disj : ∀ i < L.sizes.length, ∀ j < L.sizes.length, i ≠ j → (i ∈ Wb ∨ j ∈ Wb) →
     (⟨State.addr (L.ptr i), L.size i⟩ : Region).Disjoint ⟨State.addr (L.ptr j), L.size j⟩
 
-theorem OkW.ok {L : Lay} {Wb : List Nat} (h : OkW L Wb) (hall : ∀ i < L.sizes.length, i ∈ Wb) : L.Ok :=
-  ⟨h.fit, fun i hi j hj hij => h.disj i hi j hj hij (.inl (hall i hi))⟩
-
 /-- Two regions apart, one of them in a buffer of `Wb`, or both in the same. -/
 theorem disjW' {L : Lay} {Wb : List Nat} (hL : OkW L Wb) {i o l j o' l' : Nat}
     (h : sepB L.sizes (i, o, l) (j, o', l') = true) (hw : i ∈ Wb ∨ j ∈ Wb ∨ i = j) :

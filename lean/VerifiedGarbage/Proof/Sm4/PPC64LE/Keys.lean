@@ -380,12 +380,6 @@ theorem keyPairs_wp (dir : Dir) {s₀ : State} {b sched : Addr} :
     obtain ⟨s', e', hi'⟩ := keyIter_ok dir (by omega_arith) hi
     exact WP.seq (WP.of_runBlock ⟨s', e', keyPairs_wp dir n (m + 1) (by omega_arith) s' hi'⟩)
 
-theorem keyBody_eq (dir : Dir) :
-    (match dir with | .encrypt => encKeys | .decrypt => decKeys) =
-      .seq (.block (slotAddr kr (match dir with | .encrypt => tableSlot | .decrypt => tableSlot + 8 * 31)))
-        (keyPairs (krStep dir) 16) := by
-  cases dir <;> rfl
-
 theorem keysGen_wp (dir : Dir) (k : Nat) (hk : 8 * k = rsiAt dir 0) (hse : 8 * k < 2 ^ 15)
     {s₀ : State} {b sched : Addr} (hp : SchedPre s₀ b sched) (hrdi : s₀.gpr .r3 = sched) (hm : MasksOk s₀) :
     WP isa (.seq (.seq (.block (slotAddr kr k)) (keyPairs (krStep dir) 16))

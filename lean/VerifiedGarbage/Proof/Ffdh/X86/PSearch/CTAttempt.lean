@@ -168,8 +168,6 @@ def ClsAt (q : Lp) (u : State) : Prop :=
 def CmpAt (j : Nat) (q : Lp) (t : State) : Prop :=
   LiveAt q.adv t ∧ t.gpr .edx = BitVec.ofNat 32 q.status ∧ isa.eval .e t = some (decide (q.status = j))
 
-theorem cmpAt_pins (j : Nat) : Pins (CmpAt j) [.esi, .esp] := any_pins (fun q => q.1) fun _ _ h => h.1.any
-
 theorem cmp_ok {q : Lp} {t : State} {i : Nat} (h : CmpAt i q t) (j : Nat) (hj : j ≤ 2) :
     WP isa (.block [.alu .cmp .edx (.imm (BitVec.ofNat 32 j))]) t (CmpAt j q) := by
   obtain ⟨⟨o, L⟩, he, _⟩ := h

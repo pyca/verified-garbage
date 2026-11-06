@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Key.Verified
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.VerifiedBlock
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Ecb.Verified
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Framework.Registration

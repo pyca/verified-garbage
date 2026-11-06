@@ -51,15 +51,11 @@ theorem room_setReg {s : State} (h : Room s) {r : Reg} (hr : r ≠ sb) (v : BitV
 
 theorem room_setMem {s : State} (h : Room s) (m : Mem) : Room (setMem s m) := h.congr rfl rfl
 
-theorem lane_slot' {k b : Nat} (hk : k ∈ arrays) (hb : b < 8) : k + b < slots := lane_slot hk hb
-
 /-- Reading a lane after a write to another. -/
 theorem readW_writeW_lane {s : State} (h : Room s) {m : Mem} {k b k' b' : Nat} (hk : k ∈ arrays)
     (hb : b < 8) (hk' : k' ∈ arrays) (hb' : b' < 8) (hne : k ≠ k' ∨ b ≠ b') (v : BitVec 32) :
     (m.writeW (slotA s (k' + b')) v).readW (slotA s (k + b)) 32 = m.readW (slotA s (k + b)) 32 :=
   Mem.readW_writeW_sep (lane_sep h hk hb hk' hb' hne) (by decide)
-
-theorem lv_eq (s : State) (k b : Nat) : s.mem.readW (slotA s (k + b)) 32 = lv s k b := rfl
 
 def sp1 (r : Nat) (k0 k1 : BitVec 32) : LaneSpec :=
   [(aSlot, fun x => x r ^^^ k0), (tSlot 0, fun x => x r ^^^ k0 ^^^ x (r + 8) ^^^ k1)]
@@ -73,8 +69,6 @@ def sp4 (l : Nat) : LaneSpec :=
 
 /-- The round key's halves are in `u7` and `lr`. -/
 def KeysIn (k0 k1 : BitVec 32) (s : State) : Prop := Room s ∧ s.gpr .r12 = k0 ∧ s.gpr .lr = k1
-
-theorem gpr_t0_sb : ∀ r ∈ [t0, t1], r ≠ sb := by decide
 
 theorem step1_ok {r : Nat} (hr : r ∈ halves) (k0 k1 : BitVec 32) {b : Nat} (hb : b < 8) (s : State)
     (h : KeysIn k0 k1 s) :

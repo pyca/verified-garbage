@@ -107,14 +107,6 @@ def SpongeCursor (c : Impl.Sha3.AArch64.Callee) : Prop :=
   RelCT isa (VectorTaint.Agree SpongePublic) (Impl.MlDsa.AArch64.Sample.spongeWith c 136 136)
     (fun s t => s.gpr .x0=t.gpr .x0)
 
- theorem sha3_spongeCursor : SpongeCursor Proof.Sha3.AArch64.Sha3.callee := by
-  obtain ⟨hint,τ,hcheck,hpost,_⟩ := firstSponge SpongePublic (by decide)
-  have hlo : VectorTaint.taint.le (VectorTaint.ofRegs [.x0]) τ=true :=
-    Taint.Mono.le_R (A := VectorTaint.taint) (by decide) hpost
-  intro s t ts tt u v hp hs ht
-  obtain ⟨he,ha⟩ := Taint.check_sound hcheck hp hs ht
-  have hh := VectorTaint.taint.le_sound hlo ha
-  exact ⟨he,hh.1.2 .x0 (by decide)⟩
 end VG.Proof.MlDsa.AArch64.Optimized.Ball
 
 end

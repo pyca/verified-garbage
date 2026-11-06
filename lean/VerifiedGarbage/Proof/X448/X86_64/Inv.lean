@@ -48,9 +48,6 @@ theorem WKeep.scr {base : Addr} {s s' : State} (h : WKeep base s s') (hs : Scr s
 theorem IKeep.out {base : Addr} {s s' : State} (h : IKeep base s s') : Outside base 960 688 s.mem s'.mem :=
   fun p hp => h.mem p (by omega) (by simp only [ACC]; omega)
 
-theorem IKeep.weak {base : Addr} {s s' : State} (h : IKeep base s s') : WKeep base s s' :=
-  ⟨h.gpr, h.rd, h.wr, h.out⟩
-
 theorem IKeep.trans {base : Addr} {s₁ s₂ s₃ : State} (h₁ : IKeep base s₁ s₂)
     (h₂ : IKeep base s₂ s₃) : IKeep base s₁ s₃ :=
   ⟨fun r hr hb => (h₂.gpr r hr hb).trans (h₁.gpr r hr hb), h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr,
@@ -107,11 +104,6 @@ include hf in
 theorem mulI (base : Addr) (o a b : Index) (ho : ISlot o) :
     ISpec base (.block (fld.mul (slot o.val) (slot a.val) (slot b.val))) (opMul o a b) :=
   fun _ hs => WP.mono (mulI_ok hf hs o a b ho) fun _ ⟨k, _, e⟩ => ⟨k, e⟩
-
-include hf in
-theorem sqrI (base : Addr) (o a : Index) (ho : ISlot o) :
-    ISpec base (.block (fld.sqr (slot o.val) (slot a.val))) (opMul o a a) :=
-  fun _ hs => WP.mono (sqrI_ok hf hs o a ho) fun _ ⟨k, _, e⟩ => ⟨k, e⟩
 
 /-! ## Runs of squarings -/
 

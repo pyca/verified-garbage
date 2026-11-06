@@ -88,12 +88,6 @@ theorem n16 : 128 * nb s₀ < 2 ^ 64 := by
       omega) (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_ofNat]; omega)
     exact this
 
-/-- The regions the loops leave, apart from the data. -/
-theorem k_frame {m : Mem} (hf : Frame [dR s₀] s₀.mem m) {i : Nat} (hi : i < 256) :
-    m (kc s₀ + BitVec.ofNat 64 i) = s₀.mem (kc s₀ + BitVec.ofNat 64 i) :=
-  hf.bytes (R := kR s₀) (by simp only [List.mem_singleton, forall_eq]; exact hp.d_k.symm)
-    (by show (256 : Nat) ≤ 2 ^ 64; decide) hi
-
 theorem c_frame {m : Mem} (hf : Frame [dR s₀] s₀.mem m) :
     blockAt m (stp s₀ + BitVec.ofNat 64 48) = icb s₀ :=
   Proof.Gcm.blockAt_congr fun _ hk => hf.bytes (R := cR s₀)

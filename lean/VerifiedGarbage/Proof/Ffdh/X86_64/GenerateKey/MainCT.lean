@@ -31,11 +31,6 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Ffdh.X86_64.Domain
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 VG.Proof.MlKem.X86_64
 
-/-- A checked public modulus with uninitialized output buffers. -/
-def ZeroPre (p : GkP) (s : State) : Prop := ∃ rb, Base p rb s ∧ s.gpr .rdi = p.B ∧
-  word s.mem p.B (8 * sG) = off p.dp p.k ∧ word s.mem p.B (8 * sQ) = off p.dp (2 * p.k) ∧ p.mv = true ∧
-    p.Bounded
-
 def zeroLoads : List Instr :=
   [.mov .rsi (.mem (hdr sY)), .mov .rcx (.mem (hdr sK)), .mov32 .rax (.imm 0)]
 
@@ -59,32 +54,5 @@ theorem zero_regs (p : GkP) (s : State) (h : ∃ rb, Base p rb s ∧ s.gpr .rdi 
   rcases hr with rfl | rfl
   · exact hy
   · exact hk
-
-private theorem zero_inputs (p : GkP) (s : State) (h : ZeroPre p s) :
-    WP isa (VG.Impl.Rsa.X86_64.Keys.zeroOut sY sK) s (IV p) := by
-  obtain ⟨rb, hb, hd, hG, hQ, hm, hbd⟩ := h
-  have hZ := hb.hZ
-  refine WP.mono (zero_ok hb hd) fun t ⟨hb', hy, _, hh, k⟩ => ?_
-  exact ⟨⟨rb, hb', (k.gpr (by decide)).trans hd, hy,
-    (hh _ (by change 224 ≤ p.Z; omega)).trans hG,
-    (hh _ (by change 232 ≤ p.Z; omega)).trans hQ⟩, hm, hbd⟩
-
-private theorem zero_ct : RelCT isa (Two ZeroPre) (VG.Impl.Rsa.X86_64.Keys.zeroOut sY sK) (Two IV) :=
-  pin_ct [.rdi] [.rsi, .rcx] zeroVal (pins_rdiB GkP.B fun _ _ h => by obtain ⟨_, _, hd, _⟩ := h; exact hd)
-    (by taint_decide) (fun p s h => zero_regs p s (by obtain ⟨rb, hb, hd, _⟩ := h; exact ⟨rb, hb, hd⟩))
-    (by taint_decide) zero_inputs
-
-theorem main_ct (M : Mont) (E : CrtExpL M) (R : R2Impl M) (hE : ExpCTL E sX sXl) :
-    RelCT isa (Two ZeroPre)
-      (VG.Impl.Ffdh.X86_64.Domain.GenerateKey.main M.mm E.code (.seq (.block r2Head) R.code))
-      fun _ _ => True := by
-  change RelCT isa (Two ZeroPre) (.seq (VG.Impl.Rsa.X86_64.Keys.zeroOut sY sK)
-    (seqs (VG.Impl.Ffdh.X86_64.Domain.GenerateKey.scalar ++
-      VG.Impl.Ffdh.X86_64.Domain.GenerateKey.core M.mm E.code (.seq (.block r2Head) R.code)))) _
-  exact RelCT.seq zero_ct (RelCT.seqs_append
-    (a := VG.Impl.Ffdh.X86_64.Domain.GenerateKey.scalar)
-    (by simp [VG.Impl.Ffdh.X86_64.Domain.GenerateKey.scalar])
-    (by simp [VG.Impl.Ffdh.X86_64.Domain.GenerateKey.core, pSetup])
-    (RelCT.seq sample_ct (core_ct M E R hE)))
 
 end VG.Proof.Ffdh.X86_64.GenerateKey

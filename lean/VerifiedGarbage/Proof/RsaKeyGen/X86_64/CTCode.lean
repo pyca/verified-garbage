@@ -12,10 +12,9 @@ meta import VerifiedGarbage.Proof.Bignum.Octets
 /-!
 # A candidate on x86-64: constant time
 
-`code` leaks the same in runs that agree on the arguments, `e` and
-`candidateLeak` (`code_constantTime`): the entry, the zeros to `out` and the
-length check depend on the arguments alone, and `kMain` on the schedule the
-leak fixes (`schedOf_eq`).
+For runs that agree on the arguments, `e` and `candidateLeak`: the entry,
+the zeros to `out` and the length check depend on the arguments alone, and
+`kMainWith` on the schedule the leak fixes (`schedOf_eq`).
 -/
 
 @[expose] public section
@@ -75,20 +74,8 @@ theorem kw_of {s : State} (h : candPre s) : KW (arg s 3) s.wr := by
     · dsimp only; decide
     · dsimp only; omega
 
-/-- After `kEntry`'s first instruction. -/
-def C1 (p : CPub) (t : State) : Prop :=
-  ∃ s, CRel p s ∧ t.gpr .r11 = p.f.B ∧ t.gpr .rsp = p.rsp ∧
-    WP isa (.block (kEntry.drop 1)) t (EntryPost s · (arg s 3))
-
-/-- After `kEntry`. -/
-def C2 (p : CPub) (t : State) : Prop := ∃ s, CRel p s ∧ EntryPost s t (arg s 3)
-
 /-- After the zeros to `out` and the length check. -/
 def C3 (p : CPub) (t : State) : Prop := ∃ s t₁, CRel p s ∧ EntryPost s t₁ (arg s 3) ∧ Front s t₁ t
-
-theorem C3.cf {p : CPub} {t : State} (h : C3 p t) : t.cf = some (decide (p.f.rl < 8 * p.f.w)) := by
-  obtain ⟨s, t₁, hs, -, hf⟩ := h
-  rw [hf.cf, hs.rl, hs.w]
 
 theorem WP.and' {c : Prog isa} {s : State} {Q₁ Q₂ : State → Prop} (h₁ : WP isa c s Q₁) (h₂ : WP isa c s Q₂) :
     WP isa c s fun t => Q₁ t ∧ Q₂ t := by
@@ -99,7 +86,7 @@ theorem WP.and' {c : Prog isa} {s : State} {Q₁ Q₂ : State → Prop} (h₁ : 
 
 theorem kEntry_split : kEntry = ([.mov .r11 (.mem { base := .rsp, disp := 32 })] : List Instr) ++ kEntry.drop 1 := rfl
 
-/-- What `kMain` needs, from a state past the length check with enough
+/-- What `kMainWith` needs, from a state past the length check with enough
 octets. -/
 theorem C3.k0 {p : CPub} {t : State} (h : C3 p t) (hlt : ¬ p.f.rl < 8 * p.f.w) : K0 p.f t := by
   obtain ⟨s, t₁, hs, he, hf⟩ := h
@@ -120,65 +107,6 @@ theorem C3.k0 {p : CPub} {t : State} (h : C3 p t) (hlt : ¬ p.f.rl < 8 * p.f.w) 
   · rw [← hs.eB, bytesAt_length]; exact c.el1
   · rw [← hs.eB, bytesAt_length]; exact c.el8
   · rw [← hs.pl, ← hs.w]; exact c.pl
-
-/-- `vg_rsa_keygen_candidate` leaks the same in runs that agree on the public
-data. -/
-theorem code_ct (M : Mont) : RelCT isa (Two CRel) (VG.Impl.RsaKeyGen.X86_64.Candidate.code M.mm) fun _ _ => True := by
-  unfold VG.Impl.RsaKeyGen.X86_64.Candidate.code
-  simp only [seqs]
-  refine RelCT.seq (R := Two C2) ?_ (RelCT.assoc (RelCT.seq (R := Two C3) ?_ ?_))
-  · -- The entry: the scratch space's base from the stack, then the header.
-    rw [kEntry_split]
-    refine RelCT.block_append (RelCT.seq (two_piece (Ψ := C1) [.rsp] (fun p s₁ s₂ h₁ h₂ r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; rw [h₁.rsp, h₂.rsp]) (by taint_decide) ?_)
-      (two_piece [.r11, .rsp] (fun p s₁ s₂ ⟨_, _, a₁, b₁, _⟩ ⟨_, _, a₂, b₂, _⟩ r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · rw [a₁, a₂]
-        · rw [b₁, b₂]) (by taint_decide) fun p t ⟨s, hs, _, _, hw⟩ => WP.mono hw fun t' h => ⟨s, hs, h⟩))
-    intro p s hs
-    have c := kctx_of hs.pre
-    have hn := c.hs.nowrap
-    have hZ := c.hZ
-    have hk1 := c.k1
-    have hhw : ∀ i < 32, InRegions s.wr (off (arg s 3) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
-    have hh : WP isa (.block ([.mov .r11 (.mem { base := .rsp, disp := 32 })] ++ kEntry.drop 1)) s
-        (EntryPost s · (arg s 3)) := by
-      rw [← kEntry_split]; exact kEntry_ok rfl hhw c.ha c.hsep
-    have e3 : s.gpr .rsp + BitVec.ofInt 64 32 = stackArgAddr s 3 := rfl
-    have hB' : s.mem.readW (stackArgAddr s 3) 64 = stackArg s 3 := rfl
-    refine WP.mono (WP.and' (WP.block_append_iff.mp hh) (WP.keep [.r11] (Q := fun t => t.gpr .r11 = stackArg s 3)
-      (by xrun [State.ea, e3, c.ha 3 (by decide), hB']) rfl)) fun t ⟨hw, h11, k⟩ =>
-        ⟨s, hs, h11.trans hs.B, (k.gpr (by decide)).trans hs.rsp, hw⟩
-  · -- The zeros to `out` and the length check.
-    refine kt_piece (fun p : CPub => p.f.B) (fun p => p.f.wr) [kOut, kLen, kRandLen]
-      (fun p => [(kOut, p.f.op), (kLen, BitVec.ofNat 64 (8 * p.f.w)), (kRandLen, BitVec.ofNat 64 p.f.rl)]) []
-      (by decide) (fun _ => rfl) ?_ (pins_nil _) (by taint_decide) ?_
-    · rintro p t ⟨s, hs, he⟩
-      refine ⟨by rw [← hs.B, ← hs.wr]; exact kw_of hs.pre, by rw [he.rdi, hs.B], by rw [he.keep.2.2, hs.wr],
-        fun e he' => ?_⟩
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at he'
-      rcases he' with rfl | rfl | rfl
-      · rw [← hs.B, he.out, hs.op]
-      · rw [← hs.B, he.len, ← hs.w, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-      · rw [← hs.B, he.rlen, ← hs.rl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-    · rintro p t ⟨s, hs, he⟩
-      exact WP.mono (front_ok (kctx_of hs.pre) he) fun t' hf => ⟨s, t, hs, he, hf⟩
-  refine two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.cf, h₂.cf]) ?_ ?_
-  · -- Too few octets.
-    refine kt_ct (fun p : CPub => p.f.B) (fun p => p.f.wr) [kUsedP] (fun p => [(kUsedP, p.f.up)]) [] (by decide)
-      (fun _ => rfl) ?_ (pins_nil _) (by taint_decide)
-    rintro p t ⟨⟨s, t₁, hs, he, hf⟩, -⟩
-    have c := kctx_of hs.pre
-    refine ⟨by rw [← hs.B, ← hs.wr]; exact kw_of hs.pre, by rw [hf.keep.gpr (by decide), he.rdi, hs.B],
-      by rw [hf.keep.2.2, he.keep.2.2, hs.wr], fun e he' => ?_⟩
-    simp only [List.mem_singleton] at he'
-    subst he'
-    show word t.mem p.f.B (8 * kUsedP) = p.f.up
-    rw [← hs.B, hf.word c (i := kUsedP) (by decide), he.usedP, hs.up]
-  · exact (kMain_ct M).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
-      ⟨p.f, h₁.1.k0 (by have := h₁.2; simpa [eval, h₁.1.cf] using this),
-        h₂.1.k0 (by have := h₂.2; simpa [eval, h₂.1.cf] using this)⟩) h) fun _ _ h => h
 
 /-- The public data of a state. -/
 def cpubOf (s : State) : CPub :=
@@ -212,12 +140,5 @@ theorem crel_of {s₁ s₂ : State} (h₁ : candPre s₁) (h₂ : candPre s₂) 
     rw [show 8 * ((s₁.gpr .rsi).toNat / 8) = (s₁.gpr .rsi).toNat by omega] at hk ⊢
     refine (VG.Proof.RsaKeyGen.schedOf_eq (by omega) (by rw [bytesAt_length, bytesAt_length, ha 2 (by decide)])
       (by rw [bytesAt_length]; omega) hl').symm
-
-/-- `vg_rsa_keygen_candidate` is constant time but for the arguments, `e` and
-`candidateLeak`. -/
-theorem code_constantTime (M : Mont) :
-    ConstantTime isa candPre candPub (VG.Impl.RsaKeyGen.X86_64.Candidate.code M.mm) :=
-  RelCT.constantTime ((code_ct M).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ => ⟨cpubOf s₁, crel_self h₁, crel_of h₁ h₂ hp⟩)
-    fun _ _ h => h)
 
 end VG.Proof.RsaKeyGen.X86_64

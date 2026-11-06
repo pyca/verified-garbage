@@ -113,14 +113,4 @@ def maskLoop : Prog isa :=
     .mov32 .rax (.imm 0), .store8 (bx .rsp .r10 oEM) .rax, .alu .add .r10 (.imm 1),
     .alu .cmp .r10 (.reg .rcx)]) .ne
 
-/-- The body of the frame. -/
-def body (pubName : String) (pub : Prog isa) : Prog isa :=
-  .seq (.block setup) (.seq psLoop (.seq (.block sep) (.seq msgCopy (.seq (.block callArgs)
-    (.seq (.call pubName pub) (.seq (.block maskArgs) (.seq maskLoop (.block [.mov .rax (.reg .r11)]))))))))
-
-/-- `vg_rsa_pkcs1_encrypt`, calling `vg_rsa_public_checked`'s code `pub` by
-its name. -/
-def code (pubName : String) (pub : Prog isa) : Prog isa :=
-  .frame (.alloc frameBytes) (body pubName pub) (.free frameBytes)
-
 end VG.Impl.RsaPkcs1Enc.X86_64.Encrypt

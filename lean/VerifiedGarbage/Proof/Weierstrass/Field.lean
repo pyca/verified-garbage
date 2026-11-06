@@ -50,9 +50,6 @@ theorem toF_injective : Function.Injective (toF : Fin m → ZMod m) := by
 
 theorem toF_inj {x y : Fin m} : toF x = toF y ↔ x = y := toF_injective.eq_iff
 
-theorem val_toF (x : Fin m) : (toF x).val = x.val := by
-  rw [toF, ZMod.val_natCast, Nat.mod_eq_of_lt x.isLt]
-
 variable [NeZero m]
 
 theorem toF_ofNat (a : Nat) : toF (Fin.ofNat m a) = (a : ZMod m) := by
@@ -93,10 +90,6 @@ theorem toF_npow (x : Fin m) (e : Nat) : toF (x ^ e) = toF x ^ e := by
   | zero => rw [_root_.pow_zero, _root_.pow_zero, toF_one]
   | succ e ih => rw [_root_.pow_succ, _root_.pow_succ, toF_mul, ih]
 
-/-- `pow` modulo any `m`, as a power in `ZMod m`. -/
-theorem val_pow (x : Fin m) (e : Nat) : ((pow x e).val : ZMod m) = (x.val : ZMod m) ^ e :=
-  toF_pow x e
-
 end
 
 section
@@ -113,10 +106,6 @@ variable {C : Curve} [Fact C.p.Prime]
 
 theorem toF_inv (hp : 2 < C.p) (x : Fe C) : toF (inv x) = (toF x)⁻¹ := by
   rw [inv, toF_pow, pow_sub_two_eq_inv hp]
-
-theorem inv_zero' (hp : 2 < C.p) : inv (0 : Fe C) = 0 := by
-  apply toF_injective
-  rw [toF_inv hp, toF_zero, inv_zero]
 
 end
 

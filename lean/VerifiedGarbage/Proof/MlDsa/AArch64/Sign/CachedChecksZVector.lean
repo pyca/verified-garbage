@@ -141,27 +141,6 @@ theorem optimizedZ_rooted_ok {p : Params} {S : Nat} {σ s : State} {t r : Nat}
   rw [hflagc,bit_and (h24b.trans (h24a.trans hflag)) hret]
   exact bit_congr forall_lt_succ
 
-theorem optimizedZ_paired_vector_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
-    (hp : Ok3 p) (roots : Roots p S f s) (h : PositiveIZ p S σ t 0 s) :
-    WP isa (Impl.MlDsa.AArch64.Sign.Optimized.zPairedVector p) s fun u =>
-      PositiveIZ p S σ t p.ℓ u ∧ Roots p S f u := by
-  unfold Impl.MlDsa.AArch64.Sign.Optimized.zPairedVector
-  refine WP.seq (WP.mono (seqR_ok (I:=fun j s => PositiveIZ p S σ t (2*j) s ∧ Roots p S f s)
-    (p.ℓ/2) 0 (fun j _ hj a ha => ?_) s ⟨by simpa only [Nat.mul_zero] using h,roots⟩) ?_)
-  · simpa only [Nat.mul_add,Nat.mul_one] using optimizedZ_pair_ok hp (by omega : 2*j+1<p.ℓ) ha.2 ha.1
-  · intro a ha
-    simp only [Nat.zero_add] at ha
-    split
-    · rename_i hodd
-      have he : 2*(p.ℓ/2)=p.ℓ-1 := by omega
-      have hend : p.ℓ-1+1=p.ℓ := by omega
-      rw [he] at ha
-      simpa only [hend] using optimizedZ_rooted_ok hp (by omega : p.ℓ-1<p.ℓ) ha.2 ha.1
-    · rename_i heven
-      have he : 2*(p.ℓ/2)=p.ℓ := by omega
-      rw [he] at ha
-      exact WP.block_nil ha
-
 end VG.Proof.MlDsa.AArch64.Sign.CachedChecks
 
 end

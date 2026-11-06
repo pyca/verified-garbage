@@ -7,8 +7,8 @@ public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 
 Not trusted: what the code of the curves' internal functions (`Rust.Internal`),
 which only verified code calls, is generated from, and where it keeps its
-numbers. Their contracts are in `Proof/Weierstrass/PointContract.lean`, in these
-namespaces.
+numbers. The definitions their proofs share are in
+`Proof/Weierstrass/PointContract.lean`, in these namespaces.
 -/
 
 @[expose] public section
@@ -59,9 +59,6 @@ variable (C : Curve)
 /-- `R = 2^(64 k)`. -/
 def R : Nat := 2 ^ (64 * C.k)
 
-/-- The name of the function `op`. -/
-def fn (op : String) : String := s!"vg_{C.curve}_point_{op}"
-
 end Curve
 
 /-! ## The curves -/
@@ -79,12 +76,5 @@ def brainpoolp256r1 : Curve :=
 
 def brainpoolp384r1 : Curve :=
   { curve := "brainpoolp384r1", p := Spec.BrainpoolP384r1.p, k := 6, desc := "brainpoolP384r1" }
-
-def brainpoolp512r1 : Curve :=
-  { curve := "brainpoolp512r1", p := Spec.BrainpoolP512r1.p, k := 8, desc := "brainpoolP512r1" }
-
-/-- Every curve. -/
-def curves : List Curve := [p192, p224, p256, p384, brainpoolp256r1, brainpoolp384r1,
-  brainpoolp512r1]
 
 end VG.Impl.Weierstrass.Point

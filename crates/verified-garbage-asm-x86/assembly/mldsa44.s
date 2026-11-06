@@ -1673,6 +1673,93 @@ vg_mldsa44_keygen:
 	ret
 	.p2align 6
 
+vg_mldsa44_pk_tr:
+	push ebx
+	push esi
+	push edi
+	push ebp
+	mov esi, DWORD PTR [esp+28]
+	mov edx, esi
+	add edx, 0
+	mov eax, 0
+	mov ecx, 50
+20:
+	mov DWORD PTR [edx], eax
+	add edx, 4
+	sub ecx, 1
+	jne 20b
+	mov eax, esi
+	add eax, 0
+	mov ecx, 136
+	mov edx, 0
+	mov ebx, DWORD PTR [esp+20]
+	add ebx, 0
+	mov ebp, 1312
+	mov edi, esi
+	add edi, 200
+	push edi
+	push ebp
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_keccak_absorb_scratch}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, esi
+	add eax, 0
+	mov ecx, 136
+	mov edx, 88
+	mov ebx, 31
+	mov edi, esi
+	add edi, 200
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_keccak_pad_scratch}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, esi
+	add eax, 0
+	mov ecx, 136
+	mov edx, 0
+	mov ebx, DWORD PTR [esp+24]
+	add ebx, 0
+	mov ebp, 64
+	mov edi, esi
+	add edi, 200
+	push edi
+	push ebp
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_keccak_squeeze_scratch}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, DWORD PTR [esp+8]
+	mov edi, DWORD PTR [esp+4]
+	mov ebp, DWORD PTR [esp]
+	pop ebx
+	pop ebx
+	pop ebx
+	pop ebx
+	ret
+	.p2align 6
+
 vg_mldsa44_sign:
 	push ebx
 	push esi

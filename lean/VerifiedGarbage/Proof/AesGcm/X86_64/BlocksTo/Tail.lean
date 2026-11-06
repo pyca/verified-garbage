@@ -54,14 +54,6 @@ theorem n16_lt : n s * 16 < 2 ^ 64 := by
     have := (K s - Dst s).isLt
     omega_arith
 
-omit hp in
-theorem dq_sub {q : Nat} (hq : q ≤ n s) : Region.Sub ⟨dq s q, (n s - q) * 16⟩ (dR s) :=
-  Offset.sub_base _ (by omega_arith)
-
-omit hp in
-theorem sq_sub {q : Nat} (hq : q ≤ n s) : Region.Sub ⟨sq s q, (n s - q) * 16⟩ (srcR s) :=
-  Offset.sub_base _ (by omega_arith)
-
 /-- With nothing left, `Mid` is the end. -/
 theorem done_of {q : Nat} {st : State} (h : Mid s q q st) (h0 : n s - q = 0) : Done s st := by
   have hq : q = n s := by have := h.q_le; omega_arith

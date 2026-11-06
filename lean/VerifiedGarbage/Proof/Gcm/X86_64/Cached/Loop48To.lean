@@ -186,29 +186,6 @@ theorem bigRestTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat 
   refine WP.mono (drainStepTo_ok hp hf (by omega) hG₆) fun s₇ hG₇ => ⟨e + 1 + 1, ?_⟩
   exact EGenTo.einv (by rw [show 16 * (e + 1 + 1) = 16 * (e + 2) by omega]; exact hG₇)
 
-theorem loopETo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    {e : Nat} {s : State} (hI : EInvTo s₀ P e s) (hcf : s.cf = some (decide (nb s₀ - 16 * (e - 1) < 32)))
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
-    WP isa (.ite .b (.block []) (.loop bodyTo .ae)) s fun s' => ∃ e, nb s₀ = 16 * e ∧ EInvTo s₀ P e s' := by
-  have h1e := hI.one
-  have hle := hI.a.le
-  have fin : ∀ e, nb s₀ - 16 * (e - 1) < 32 → ∀ t, EInvTo s₀ P e t → ∃ e, nb s₀ = 16 * e ∧ EInvTo s₀ P e t :=
-    fun e he t hI => ⟨e, by have := hI.a.le; have := hI.one; omega, hI⟩
-  refine WP.ite (decide (nb s₀ - 16 * (e - 1) < 32)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
-  · exact WP.block_nil (fin e (by simpa using h) s hI)
-  · let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ EInvTo s₀ P e s ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s
-    have hstep : ∀ m s, I m s → WP isa bodyTo s (fun s' =>
-        (eval .ae s' = some false ∧ ∃ e, nb s₀ = 16 * e ∧ EInvTo s₀ P e s') ∨
-        (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
-      rintro m s ⟨e, rfl, he, hI, hCI⟩
-      refine WP.mono (bodyTo_ok hp hf he hI hCI) fun s' ⟨hI', hcf', hCI'⟩ => ?_
-      by_cases hlt : nb s₀ - 16 * e < 32
-      · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true],
-          fin (e + 1) (by simpa using hlt) s' hI'⟩
-      · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
-          nb s₀ - 16 * (e + 1), by have := hI.one; omega, e + 1, rfl, by omega, hI', hCI'⟩
-    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e) s ⟨e, rfl, by simp at h; omega, hI, hCache⟩
-
 /-- The loop of one group, for any number of blocks: it stops with fewer than
 32 blocks from the last group still to hash. -/
 theorem loopERTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
@@ -234,25 +211,5 @@ theorem loopERTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
       · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
           nb s₀ - 16 * (e + 1), by have := hI.one; omega, e + 1, rfl, by omega, hI', hCI'⟩
     exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e) s ⟨e, rfl, by simp at h; omega, hI, hCache⟩
-
-theorem encTailGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    {bigC : Prog isa} {i : BitVec 32} (t : Nat) (hi : BitVec.signExtend 64 i = BitVec.ofNat 64 t)
-    (ht : t < 2 ^ 64) (hbig : ∀ s, t ≤ nb s₀ → EInvTo s₀ P 1 s → VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s → WP isa bigC s fun s' => ∃ e, EInvTo s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s')
-    {s : State} (hR : ReadyTo s₀ P s)
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
-    WP isa (.seq firstTo (.seq (.block [.alu .cmp .r9 (.imm i)]) (.seq (.ite .b (.block []) bigC)
-      (.seq (.block [.alu .cmp .r9 (.imm 32)])
-        (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (.block (storeCtr ++ lastG ++ storeY))))))) s (EPostTo s₀) := by
-  have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  refine WP.seq (WP.mono (firstTo_ok hp hR hCache) fun s₂ ⟨hI₂, hCache₂⟩ => ?_)
-  refine WP.seq (WP.mono (WP.hkeep rfl (cmp_ok s₂ i t hi)) fun s₃ ⟨⟨hcf, g, l, m, rd, wr⟩, hh⟩ => ?_)
-  have hI₃ := hI₂.of_eq g l m rd wr
-  have hCache₃ := hCache₂.keep hh (hI₃.a.keys hp)
-  rw [hI₂.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt ht] at hcf
-  refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, EInvTo s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * (1 - 1) < t))
-    (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨1, hI₃, hCache₃⟩)
-    (fun h => hbig _ (by simp at h; omega) hI₃ hCache₃)) fun s₄ ⟨e, hI₄, hCache₄⟩ => ?_)
-  refine WP.seq (WP.mono (WP.hkeep (by decide) (cmpE_ok hI₄)) fun s₅ ⟨⟨hI₅, hcf₅⟩, hh₅⟩ => ?_)
-  exact WP.seq (WP.mono (loopETo_ok hp hm hf hI₅ hcf₅ (hCache₄.keep hh₅ (hI₅.a.keys hp))) fun s₆ ⟨e, he, hI₆⟩ => finalTo_ok hp hf he hI₆)
 
 end VG.Proof.Gcm.X86_64.StitchZHTo

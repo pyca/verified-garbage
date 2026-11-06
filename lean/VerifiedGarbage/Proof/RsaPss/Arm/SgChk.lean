@@ -195,7 +195,8 @@ theorem par_vp (P : EP) : VP (C0 h P) (.block (params ++ saltFits)) (C1 h P) := 
 theorem nB_length {D : Nat} {P : EP} {σ : State} (hi : In D P σ) : P.nB.length = P.K := by
   rw [← hi.nB, RsaPkcs1Sig.Arm.bytesAt_length]
 
-/-- `sign_long`, with MGF1's hash function `G` another. -/
+/-- `sign` refuses a salt that does not fit, with MGF1's hash function `G`
+another. -/
 theorem sign_long₂ (H G : Spec.Mgf1.Hash) {nB : List Byte} (eB pB qB dPB dQB qInvB mHash salt : List Byte)
     (h : Spec.RsaPss.emLength (Spec.RsaPss.bitLength (Spec.Rsa.os2ip nB) - 1) < H.len + salt.length + 2) :
     Spec.RsaPss.sign H G nB eB pB qB dPB dQB qInvB mHash salt = .invalid := by

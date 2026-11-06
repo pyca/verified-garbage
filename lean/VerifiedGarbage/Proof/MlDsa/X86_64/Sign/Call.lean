@@ -116,16 +116,6 @@ theorem ce_below {sp : Addr} {D S : Nat} {R : Region} (h : (below sp D).Disjoint
     (hDs : D < 2 ^ 32) : (below (sp - 8) S).Disjoint R :=
   (h.sub_left (below_sub hS (by omega))).sub_left (below_callee sp S)
 
-theorem ce_stackBelow {sp : Addr} {D S : Nat} {R : Region} (h : (below sp D).Disjoint R) (hS : S + 8 ≤ D)
-    (hDs : D < 2 ^ 32) : ∀ r ∈ stackBelow (sp - 8) S, r.Disjoint R := by
-  intro r hr
-  cases S with
-  | zero => simp [stackBelow] at hr
-  | succ S =>
-    simp only [stackBelow, List.mem_singleton] at hr
-    subst hr
-    exact ce_below h hS hDs
-
 theorem ce_wf {sp : Addr} {D S : Nat} (hS : S + 8 ≤ D) (hsp : D ≤ sp.toNat) :
     S ≤ (sp - 8).toNat := by
   rw [BitVec.toNat_sub]

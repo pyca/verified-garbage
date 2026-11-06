@@ -87,8 +87,6 @@ def roundG (M : Mod) (ra : Reg) (bs : List Reg) (sp : Bool) (i : Nat) : List Ins
     | .friendly ws => row .x0 (win M.n i 0) (wins M.n i).tail (ws.map (fWord (firstGen ws))) ++
       [.movz .x (win M.n i 0) 0 0]
 
-theorem roundF_eq (n m i : Nat) : roundF n m i = roundG (mod n m) (raF n) (bRegsF n) (sparseOk n m) i := rfl
-
 /-! ## P-384's sparse reduction -/
 
 /-- P-384's `p`, `2^384 - 2^128 - 2^96 + 2^32 - 1`. -/
@@ -96,9 +94,6 @@ abbrev p384 : Nat := 39402006196394479212279040100143613805079739270465446667948
 
 /-- `2^384 + 2^32`, `sparseWords`' value. -/
 abbrev sparseVal : Nat := 39402006196394479212279040100143613805079739270465446667948293404245721771497210611414266254884915640806632285274112
-
-/-- `p = 2^384 + 2^32 - (2^128 + 2^96 + 1)`. -/
-theorem p384_eq : p384 + 2 ^ 128 + 2 ^ 64 * 2 ^ 32 + 1 = sparseVal := by decide +kernel
 
 /-- `2^512`. -/
 theorem pow512 : 2 ^ (64 * (6 + 2)) = 13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084096 := by decide +kernel

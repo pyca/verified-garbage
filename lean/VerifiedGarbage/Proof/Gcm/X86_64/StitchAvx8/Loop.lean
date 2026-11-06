@@ -149,8 +149,6 @@ def body8 (dec : Bool) (nr : Nat) (ix : Bool) : Prog isa :=
       .alu .cmp .r9 (.imm (if dec then 16 else 24))]))
 
 theorem body8_enc (nr : Nat) (ix : Bool) : body8 false nr ix = Impl.Gcm.X86_64.StitchAvx8.encBody8 nr ix := rfl
-theorem body8_dec (nr : Nat) : body8 true nr false = Impl.Gcm.X86_64.StitchAvx8.decBody8 nr := rfl
-
 theorem loopStep_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {g : Nat}
     (hp : SPre s₀) (hS : SrcOk s₀ ix) (hlaw : HashLaw s₀ P) (h : LoopInv s₀ ix P dec g s)
     (hn : g + threshold dec ≤ nb s₀) :

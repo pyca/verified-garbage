@@ -78,14 +78,6 @@ theorem recover_eq {s t : State} (hp : PreR s) (hsig : stackArg s 0 = s.gpr .r6)
       · rw [ite_eq_right (fun h => e (Option.some.inj h).symm)]
         exact (ite_eq_right e).symm
 
-theorem written_of {m : Mem} {out : Addr} {L : Nat} {r : BitVec 32} {c : Prop} [Decidable c] {H : List Byte}
-    (hr : r = if c then 1 else 0)
-    (hb : Spec.Rsa.bytesAt m out L = if c then H else List.replicate L 0) :
-    Spec.Rsa.written m out L r (if c then some H else none) := by
-  by_cases hc : c
-  · rw [ite_eq_left hc] at hr hb ⊢; exact ⟨hr, hb⟩
-  · rw [ite_eq_right hc] at hr hb ⊢; exact ⟨hr, hb⟩
-
 /-! ## The steps -/
 
 theorem add_ofNat_sub (a : Addr) {k L : Nat} (h : L ≤ k) :

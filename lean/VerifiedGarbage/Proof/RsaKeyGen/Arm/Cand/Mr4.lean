@@ -101,7 +101,7 @@ theorem St.pandNotSM {d a b : Nat} {X Y : State → Bool} (cert : Cert (.block (
       apply BitVec.eq_of_toNat_eq; rw [b2n_xor, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (b2n_lt _)]
     rwa [u4.gpr, dpVal, u3.gpr, x1, hY σ e, b2n_and] at ht
 
-/-- `St.porTwo`, keeping `MS`. -/
+/-- `orTwo j`: bit 1 of `[j]` set, keeping `MS`. -/
 theorem St.porTwoM {j : Nat} (cert : Cert (.block (orTwo j))) (hj : j ∈ L) (hM : MOk j) :
     VP (fun σ s => St P E A L V LS σ s ∧ MS P σ s) (.block (orTwo j))
       (fun σ s => St P E (fun σ => upd (A σ) j (A σ j ||| 2)) (j :: L) V LS σ s ∧ MS P σ s) :=

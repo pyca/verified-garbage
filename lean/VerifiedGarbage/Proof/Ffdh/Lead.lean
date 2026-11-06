@@ -80,8 +80,4 @@ theorem os2ip_drop_lead (bs : List Byte) : Spec.Rsa.os2ip (bs.drop (lead bs)) = 
     · have e : lead (b :: c :: bs) = 0 := by simp only [lead]; exact ite_eq_right hb
       rw [e, List.drop_zero]
 
-/-- The scan's result: the octets from `lead bs`. -/
-theorem lead_drop_length (bs : List Byte) : (bs.drop (lead bs)).length = bs.length - lead bs := by
-  simp
-
 end VG.Proof.Ffdh

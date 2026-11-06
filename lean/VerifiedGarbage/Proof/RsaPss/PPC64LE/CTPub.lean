@@ -14,7 +14,7 @@ Untrusted: everything here is checked by Lean. The shared contract's public
 data (`PubP`, `pubP_of`): the stack pointer, the pointers and lengths, the
 salt-length mode, the modulus, `e` and `pre`. An entry state with the
 anchor's public data has its modulus' first byte (`PubP.byte`), so its
-`lo`, `c` and `dbLen`, and agrees with it on what `Base` fixes (`pssOk`).
+`lo`, `c` and `dbLen`, and agrees with it on what `Base` fixes (`PubP.agree`).
 -/
 
 @[expose] public section
@@ -96,8 +96,6 @@ theorem PubP.pCm (hk : 1 ≤ kk s) : cm s = cm a := by rw [cm, cm, p.pLo hk]; si
 
 theorem PubP.pLoN (hk : 1 ≤ kk s) : loN s = loN a := by rw [loN, loN, p.byte hk]
 
-theorem PubP.pCB (hk : 1 ≤ kk s) : cB s = cB a := by rw [cB, cB, p.byte hk]
-
 theorem PubP.pKk : kk s = kk a := by rw [kk, kk, p.g .r4 (by decide)]
 
 theorem PubP.pSp : Sp s = Sp a := p.args 2 (by decide) (by decide)
@@ -119,10 +117,5 @@ end
 
 /-- `PubP`, for a nonempty modulus. -/
 def PubK (a s : State) : Prop := PubP a s ∧ 1 ≤ kk s
-
-/-- `PubK` gives what the shared code needs. -/
-theorem pssOk (D : Nat) {Pre : State → Prop} (hP : ∀ {s}, Pre s → PreP D s) : Ok Sp (vP D) Pre PubK where
-  fits P := (hP P).fits
-  agree p := p.1.agree p.2
 
 end VG.Proof.RsaPss.PPC64LE

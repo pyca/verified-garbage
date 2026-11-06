@@ -53,14 +53,6 @@ variable {p : Params} {P : Prims}
 section
 variable {s₀ : State}
 
-theorem seedE_ij {i j : Nat} (hj : j < p.ℓ) : seedE p s₀ (p.ℓ * i + j) = aSeed (rhoS p s₀) i j := by
-  have hl : 0 < p.ℓ := by omega
-  have e1 : (p.ℓ * i + j) / p.ℓ = i := by
-    rw [Nat.add_comm, Nat.add_mul_div_left _ _ hl, Nat.div_eq_of_lt hj, Nat.zero_add]
-  have e2 : (p.ℓ * i + j) % p.ℓ = j := by
-    rw [Nat.add_comm, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hj]
-  simp only [seedE, e1, e2]
-
 theorem signMu_min_A (h : ∃ e < p.k * p.ℓ, rejNTTPoly minBounds.rejNTT (seedE p s₀ e) = none) :
     signMu p minBounds (skOf p s₀) (muOf s₀) (rndOf s₀) = none := by
   obtain ⟨e, he, hn⟩ := h

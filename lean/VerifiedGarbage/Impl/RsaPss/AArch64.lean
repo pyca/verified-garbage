@@ -23,7 +23,7 @@ slots of their frame (`tabSlots`, `scall`), and MGF1 is
 frame of its own (`mgfXor`). The RSA operation is `vg_rsa_private_checked`
 when signing, a precomputed public operation when verifying.
 
-The first 8192 bytes of `scratch` are ours (`oCW`, …); the RSA operation
+The first 8192 bytes of `scratch` are ours; the RSA operation
 gets the rest. The callees preserve `x19`–`x28`, which hold our variables:
 
 * `x19`: the hash value the compression function updates (`scratch + oSt`),
@@ -155,8 +155,6 @@ def scall (args : List Instr) (s : Nat) (ts : List (String × Prog isa)) : Prog 
 
 /-! ## Our part of `scratch` -/
 
-/-- The compression function's working space (less than 2048 bytes). -/
-def oCW : Nat := 0
 /-- The streaming state `init` sets: its first `N` bytes are the hash value. -/
 def oSt : Nat := 2048
 /-- The hash value selected after the last block. -/

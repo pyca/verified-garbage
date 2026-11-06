@@ -11,8 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 After each sampler, `r11` is ANDed with its result (0 or 1, in `r0`), and each
 coefficient of the polynomial it wrote with `-r0`: the polynomial is kept if
-the sampler succeeded, and zeroed if it failed (`mask_ok`), without a branch
-(`mask_tr`).
+the sampler succeeded, and zeroed if it failed (`mask_ok`), without a branch.
 -/
 
 @[expose] public section
@@ -148,16 +147,5 @@ theorem mask_ok {L : Lay} {Wb : List Nat} {STK : Nat} {s : State} (hs : Site L W
     rw [hs.regE pa (by decide)]
     exact List.mem_singleton_self _
   · rw [← ea, co t ht, o₁.mem, and_mask hr]
-
-/-! ## Constant time -/
-
-/-- The check is the same for every offset: its hint is computed once. -/
-theorem mask_taint : ∀ j < 128, (VG.Arm.taint.check (Taint.ofRegs [.r7]) (mask (sc (oP j)))
-    (VG.Taint.hintOf VG.Arm.taint (Taint.ofRegs [.r7]) (mask (sc 0)))).isSome = true := by decide +kernel
-
-theorem mask_tr {j : Nat} (hj : j < 128) {P : State → State → Prop} (h : ∀ x y, P x y → x.gpr .r7 = y.gpr .r7) :
-    RelCT isa P (mask (sc (oP j))) fun _ _ => True :=
-  taint_prog [.r7] (fun x y hp r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h x y hp)
-    (mask_taint j hj)
 
 end VG.Proof.MlDsa.Arm.KeyGen

@@ -24,30 +24,6 @@ def portResult (g : OutputGeometry) (m : Mem) (accept : Bool) (i : Nat) : List B
 def portWrites (g : OutputGeometry) (i : Nat) : List Region :=
   [⟨off g.base (arr g.n (outputIndex i)), S g.n⟩, g.region i]
 
-theorem writePort_ok {g : OutputGeometry} {s : State} {i : Nat} (h : OutputInput g s) (hi : i < 7)
-    (zero : num s.mem g.base g.n aZero = 0) (accept : Bool)
-    (mask : slot s.mem g.base kOk = if accept then 1 else 0) :
-    WP isa (writePort g.n i) s fun t =>
-      OutputInput g t ∧ Spec.Rsa.bytesAt t.mem (g.region i).base (g.region i).len = portResult g s.mem accept i ∧
-      Frame (portWrites g i) s.mem t.mem ∧
-      (∀ d, d + 4 ≤ hdr → slot t.mem g.base d = slot s.mem g.base d) ∧
-      (∀ k, k < 32 → k ≠ outputIndex i → num t.mem g.base g.n k = num s.mem g.base g.n k) ∧
-      Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
-  have pointer : s.mem.readW (off g.base (8 * i)) 32 = g.pointer i := by
-    have H := h.arguments (2 * i) (by omega)
-    rw [show 4 * (2 * i) = 8 * i by omega] at H
-    exact H
-  have length : s.mem.readW (off g.base (8 * i + 4)) 32 = BitVec.ofNat 32 (g.length i) := by
-    have H := h.arguments (2 * i + 1) (by omega)
-    rw [show 4 * (2 * i + 1) = 8 * i + 4 by omega] at H
-    simpa only [OutputGeometry.length, BitVec.ofNat_toNat, BitVec.setWidth_eq] using H
-  refine WP.mono (writeArray_ok h.ws (outputIndex_bound hi)
-    (by unfold hdr; omega) (by unfold hdr; omega) pointer length
-    (h.valid.lengthPositive i hi) (h.valid.lengthBound i hi) (h.valid.fit i hi)
-    (h.writable i hi) (h.valid.scratchApart i hi) zero accept mask)
-    fun t ⟨ht, value, F, header, other, K⟩ => ?_
-  exact ⟨h.after ht K header, value, F, header, other, K⟩
-
 theorem portFrame_global {g : OutputGeometry} {s : State} {m m' : Mem} {i : Nat}
     (h : OutputInput g s) (hi : i < 7) (F : Frame (portWrites g i) m m') : Frame g.writes m m' := by
   apply F.sub

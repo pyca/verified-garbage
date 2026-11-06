@@ -30,17 +30,6 @@ structure FieldCase (ops : List FOp) where
     ((fprogB_wp _ _ (callOf_small (by decide))).mp hq)
   exact WP.mono h fun t ⟨u,hu,he,hk⟩ => ⟨u,hu,he,hk.mono cert.clob⟩
 
- theorem field_contract {ops : List FOp} (cert : FieldCase ops)
-    {base : Addr} {m : Nat} [NeZero m] {Sl : Nat → Prop} {V W : List Nat}
-    {E : Nat → Fin m} {s : State} {A : Prop} (hs : Scr s base 8192)
-    (hb : WP isa (fprogB K.M ops) s fun t =>
-      ProgKeep K.M base W s t ∧ Inv K.M base 8192 m Sl V E t ∧ A) :
-    WP isa (arithmetic ops) s fun t =>
-      ProgKeep K.M base W s t ∧ Inv K.M base 8192 m Sl V E t ∧ A := by
-  exact WP.mono (field_refinement cert hs hb) fun _ ⟨_,⟨hk,hi,ha⟩,he,kt⟩ =>
-    have h := Forward.transfer_post (M := K.M) he kt hk hi
-    ⟨h.1,h.2,ha⟩
-
 /-- The forwarded code realizes the ordinary field compiler contract. -/
 theorem field_ok {ops : List FOp} (cert : FieldCase ops)
     {base : Addr} {m : Nat} [NeZero m] {Sl : Nat → Prop}

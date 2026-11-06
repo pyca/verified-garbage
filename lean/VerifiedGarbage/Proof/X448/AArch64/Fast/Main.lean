@@ -3,13 +3,9 @@ module
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
-import VerifiedGarbage.Proof.X448.AArch64.Ladder
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Bits
 import VerifiedGarbage.Proof.X448.AArch64.Finish
-import VerifiedGarbage.Proof.X448.AArch64.Inv
 public import VerifiedGarbage.Impl.X448.AArch64.Field56
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -18,6 +14,10 @@ public import VerifiedGarbage.Impl.X448.AArch64.Weak
 public import VerifiedGarbage.Proof.X448.AArch64.Main
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
+import VerifiedGarbage.Proof.X448.AArch64.Env
+import VerifiedGarbage.Proof.X448.AArch64.Iter
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Iter
+import VerifiedGarbage.Proof.X448.Invert
 
 /-!
 # X448 on AArch64: the whole function, with register-resident field arithmetic

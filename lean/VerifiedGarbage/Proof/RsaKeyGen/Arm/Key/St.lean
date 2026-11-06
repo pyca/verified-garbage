@@ -49,9 +49,6 @@ set_option hygiene false in
 /-- `j ∈ l'` from `hj : j ∈ l` for literal lists. -/
 macro "mem_sub" : tactic => `(tactic| (revert hj; revert j; decide))
 
-/-- The working space's registers. -/
-abbrev kRegs : List Reg := [.r7, .r8, .r9]
-
 /-- A stage with the working space's registers. -/
 abbrev St (P : KP) (E : State → Prop) (A : State → Nat → Nat) (L : List Nat) (V : State → Nat → Nat)
     (LS : List Nat) (σ s : State) : Prop :=

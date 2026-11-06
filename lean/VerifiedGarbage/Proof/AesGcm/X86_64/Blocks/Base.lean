@@ -103,8 +103,6 @@ theorem BP.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.blocksPreM M s) : BP 
   exact ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,
     a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃⟩
 
-theorem BP.of {s : State} (h : Proof.AesGcm.blocksPre s) : BP CtxMode.base s := BP.ofM (Proof.AesGcm.blocksPreM_base h)
-
 /-! ## The arguments kept -/
 
 /-- The arguments kept in `scratch` at `S`: the data and the number of blocks
@@ -157,18 +155,6 @@ theorem keep_r {m m' : Mem} (hf : Frame (wR s) m m') : m'.readW (SP s) 64 = m.re
     · exact hp.r_y
     · exact hp.r_d
     · exact hp.r_s) (by decide)
-
-/-- The key context, through a frame of the regions written. -/
-theorem keep_k {m m' : Mem} (hf : Frame (wR s) m m') {d k : Nat} (h : d + k ≤ 256) :
-    Spec.Aes.bytesAt m' (K s + BitVec.ofNat 64 d) k = Spec.Aes.bytesAt m (K s + BitVec.ofNat 64 d) k :=
-  bytesAt_frame hf (fun r hr => by
-    have hs : Region.Sub ⟨K s + BitVec.ofNat 64 d, k⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; omega)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact hp.k_c.sub_left hs
-    · exact hp.k_y.sub_left hs
-    · exact hp.k_d.sub_left hs
-    · exact hp.k_s.sub_left hs) (by omega)
 
 omit hp in
 theorem arg_eq : s.mem.readW (SP s + BitVec.ofNat 64 8) 64 = S s := rfl

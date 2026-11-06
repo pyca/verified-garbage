@@ -185,8 +185,6 @@ theorem In.fit (h : In P σ) {j : Nat} (hj : j < nArr) : arr P.W j + S P.W ≤ 2
 
 theorem In.rS_mem (h : In P σ) : P.rS ∈ σ.wr := by rw [h.wr]; simp
 
-theorem In.rM_mem (h : In P σ) : P.rM ∈ σ.wr := by rw [h.wr]; simp
-
 /-- Montgomery multiplication's working space: 256 bytes before the key array
 `mBase`, its arrays within the working space. -/
 theorem In.oM_eq (h : In P σ) : P.oM + 256 = arr P.W mBase := by

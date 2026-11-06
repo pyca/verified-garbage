@@ -44,9 +44,6 @@ def withTable (s : State) (vs : List MdHash) (w : MdHash) : State :=
       ((tw vs w).getD 3 0) ((tw vs w).getD 4 0)
     syms := symsOf (names vs) }
 
-theorem withTable_gpr (s : State) (vs : List MdHash) (w : MdHash) : (withTable s vs w).gpr = s.gpr := rfl
-theorem withTable_rd (s : State) (vs : List MdHash) (w : MdHash) : (withTable s vs w).rd = s.rd := rfl
-theorem withTable_wr (s : State) (vs : List MdHash) (w : MdHash) : (withTable s vs w).wr = s.wr := rfl
 theorem withTable_addr (s : State) (vs : List MdHash) (w : MdHash) (j : Nat) :
     stackArgAddr (withTable s vs w) j = stackArgAddr s j := rfl
 

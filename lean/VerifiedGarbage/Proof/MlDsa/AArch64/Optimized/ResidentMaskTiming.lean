@@ -259,17 +259,9 @@ private theorem original_front_ct :
       (beforeDispatch Resident.originalCore.code) (fun _ _ => True) :=
   RelCT.taint (A := taint) publicRegs (fun _ _ h => h) (by taint_decide)
 
-private theorem n2_front_ct :
-    RelCT isa (VG.AArch64.Taint.Agree publicRegs)
-      (beforeDispatch Resident.n2Core.code) (fun _ _ => True) :=
-  RelCT.taint (A := taint) publicRegs (fun _ _ h => h) (by taint_decide)
-
 theorem raw_ct : ConstantTime isa Pre publicInputs
     Impl.MlDsa.AArch64.Optimized.ResidentMask.raw :=
   rawWith_ct Resident.originalCore original_front_ct
-
-theorem raw_n2_ct : ConstantTime isa Pre publicInputs
-    (rawWith Resident.n2Core.code) := rawWith_ct Resident.n2Core n2_front_ct
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask
 

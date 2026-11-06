@@ -34,10 +34,6 @@ def scheduled (sve : Bool) : List Op → Prog isa
 def roundOps : List Op := interleave Rows6.roundOps (Mixed5.roundOps ++ Mixed5.roundOps)
 def parallelRound (sve : Bool) : Prog isa := scheduled sve roundOps
 
-def rounds (sve : Bool) : Nat → Prog isa
-  | 0 => .block []
-  | n + 1 => .seq (rounds sve n) (parallelRound sve)
-
 /-- Keep one phase in the instruction cache; x1 is free until the scalar spill. -/
 def phase (sve : Bool) (restore : Reg) : Prog isa :=
   .seq (.block [.movz .x .x1 5 0])

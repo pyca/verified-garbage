@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Rc2.Memory
 
 The hash function's sizes (`PssHash.B`, …); ranges of our part of
 `scratch` as buffers (`Geo.wbuf`); facts about memory that writes elsewhere
-keep (`bytes_keep`, `slot_keep`); and the bytes of `Y` after the padding
+keep (`slot_keep`); and the bytes of `Y` after the padding
 loop (`padY`), which are the padded message over its blocks (`padY_eq`).
 -/
 
@@ -32,9 +32,6 @@ abbrev D : Nat := h.H.md.st.D
 abbrev N : Nat := h.H.md.N
 abbrev L : Nat := h.H.md.L
 
-/-- `omega` does not see through abbreviations: the sizes as one form. -/
-theorem eqs : h.H.md.B = h.B ∧ h.H.md.D = h.D ∧ blk h.sh = h.B ∧ dig h.sh = h.D ∧ hvN h.sh = h.N ∧ lenL h.sh = h.L :=
-  ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
 abbrev md : Md h.B h.N h.L := h.ok.md
 
 theorem B_cases : h.B = 64 ∨ h.B = 128 := h.ok.sizes.B
@@ -59,9 +56,6 @@ theorem pow_lg : 2 ^ lgB h.sh = h.B := by rcases h.lg with ⟨a, b⟩ | ⟨a, b�
 theorem lg_range : 1 ≤ lgB h.sh ∧ lgB h.sh ≤ 31 := by rcases h.lg with ⟨a, _⟩ | ⟨a, _⟩ <;> rw [a] <;> decide
 
 end PssHash
-
-theorem offs : oCW = 4096 ∧ oSt = 4608 ∧ oSel = 4864 ∧ oDig = 4928 ∧ oLen = 4992 ∧ oEm = 0 ∧ oY = 1024 ∧
-    oRsa = 8192 ∧ frameBytes = 128 := ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 /-- `omega`, with the offsets of our part of `scratch` and of the frame as
 numbers, and the hash function's sizes in one form. -/
@@ -98,11 +92,6 @@ theorem rbuf {o n : Nat} (h : o + n ≤ oRsa) (hn : 0 < n) : RBuf L (scr + BitVe
 end Geo
 
 /-! ## Facts that writes elsewhere keep -/
-
-theorem bytes_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {a : Addr} {n : Nat}
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨a, n⟩ r) (hn : n ≤ 2 ^ 64) {f : Nat → Byte}
-    (h : ∀ i < n, m (a + BitVec.ofNat 64 i) = f i) : ∀ i < n, m' (a + BitVec.ofNat 64 i) = f i :=
-  fun i hi => (hf.bytes (R := ⟨a, n⟩) hd hn hi).trans (h i hi)
 
 theorem slot_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {d : Nat} {v : BitVec 32}
     (hd : ∀ r ∈ rs, (slotR L d).Disjoint r) (h : m.readW (L.fr d) 32 = v) : m'.readW (L.fr d) 32 = v := by

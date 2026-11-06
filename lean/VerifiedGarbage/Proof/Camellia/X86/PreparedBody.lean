@@ -66,8 +66,6 @@ theorem keyEntry_eq (w : List (BitVec 64)) (g : Nat) (d : Dir) (e : Nat) :
 
 theorem ofSpecDir_specDir (d : Dir) : ofSpecDir (specDir d) = d := by cases d <;> rfl
 
-theorem specDir_ofSpecDir (d : Spec.Camellia.Direction) : specDir (ofSpecDir d) = d := by cases d <;> rfl
-
 /-- The table of subkeys of `R` rounds in the order of `d`: the words of
 the working space at `B` from `keySlot` on. -/
 def TableWordsAt (R : Nat) (m : Mem) (B : BitVec 32) (w : List (BitVec 64)) (d : Dir) : Prop :=

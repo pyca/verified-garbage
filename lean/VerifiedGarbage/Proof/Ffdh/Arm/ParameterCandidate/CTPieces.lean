@@ -32,9 +32,6 @@ theorem shapeLastTail_taint : CandidateCert [.r4, .r5]
 theorem tableWrites_taint : CandidateCert [.r11]
     (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.tableWrites 1024)) := ⟨_, by taint_decide⟩
 
-theorem sieveEntry_taint : CandidateCert [.r10]
-    (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveEntry) := ⟨_, by taint_decide⟩
-
 theorem clearOutputLoop_taint : CandidateCert [.r0, .lr] VG.Impl.Ffdh.Arm.Domain.GenerateKey.zeros := ⟨_, by taint_decide⟩
 
 theorem finishTail_taint (status : Nat) (bound : status ≤ 2) : CandidateCert [.r2]
@@ -43,8 +40,6 @@ theorem finishTail_taint (status : Nat) (bound : status ≤ 2) : CandidateCert [
 
 theorem halveLoop_taint : CandidateCert [.r0, .lr]
     (.loop (.block VG.Impl.Ffdh.Arm.ParameterCandidate.halfByte) .ne) := ⟨_, by taint_decide⟩
-
-theorem trialDigit_taint : CandidateCert [.r0, .r1] VG.Impl.Ffdh.Arm.ParameterCandidate.trialDigit := ⟨_, by taint_decide⟩
 
 theorem trialLoop_taint : CandidateCert [.r0, .r1]
     (.loop VG.Impl.Ffdh.Arm.ParameterCandidate.trialStep .ne) := ⟨_, by taint_decide⟩

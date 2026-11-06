@@ -96,9 +96,4 @@ theorem SPre.ndR {s₀ : State} (hT : SPre s₀) {k : Nat} (hk : k < SL s₀) :
     ¬ (dR s₀).Contains (sp s₀ + BitVec.ofNat 64 k) 1 :=
   fun hc => hT.s_d _ (Offset.contains_base _ (by omega) (by have := hT.wrap_s; omega)) hc
 
-/-- A byte of `src` is not in the stack below `rsp`. -/
-theorem SPre.nstk {s₀ : State} (hT : SPre s₀) {k : Nat} (hk : k < SL s₀) :
-    ¬ (stkR s₀).Contains (sp s₀ + BitVec.ofNat 64 k) 1 :=
-  fun hc => hT.s_k _ (Offset.contains_base _ (by omega) (by have := hT.wrap_s; omega)) hc
-
 end VG.Proof.ChaCha20Poly1305.X86_64.Split

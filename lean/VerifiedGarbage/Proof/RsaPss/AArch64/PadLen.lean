@@ -29,23 +29,6 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (wp_ldrSp wp_countdown wp_mov)
 open VG.Proof.MdStream (Md)
 open VG.Proof.RsaPkcs1Sig (frame_writeBytes)
 
-/-! ## `0x80` at a public offset -/
-
-theorem v80_fixed (V : Nat → Byte) {ℓ n : Nat} (h : ℓ < n) :
-    upd V (oY + ℓ) (V (oY + ℓ) ||| 0x80) = v80 V ℓ n := by
-  funext o
-  simp only [upd, v80]
-  by_cases e : o = oY + ℓ
-  · subst e
-    simp only [ite_true, show oY ≤ oY + ℓ ∧ oY + ℓ < oY + n from ⟨by omega, by omega⟩, Nat.add_sub_cancel_left,
-      and_self]
-  · simp only [e, ite_false]
-    split
-    · rw [ite_eq_right (by omega)]; simp
-    · rfl
-
-theorem or80 (b : Byte) : (BitVec.setWidth 64 b ||| (BitVec.ofNat 16 0x80).setWidth 64).setWidth 8 = b ||| 0x80 := by
-  revert b; decide
 
 /-! ## The length field -/
 

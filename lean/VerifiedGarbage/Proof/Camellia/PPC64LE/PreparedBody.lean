@@ -69,14 +69,6 @@ theorem specDir_ofSpecDir (d : Spec.Camellia.Direction) : specDir (ofSpecDir d) 
 /-- The direction `vg_camellia_prepare_keys`'s `decrypt` selects. -/
 def dirOf (decrypt : BitVec 64) : Dir := if decrypt = 0 then .encrypt else .decrypt
 
-theorem specDir_dirOf (decrypt : BitVec 64) :
-    specDir (dirOf decrypt) = Proof.Camellia.Prepared.directionOf decrypt.toNat := by
-  unfold dirOf Proof.Camellia.Prepared.directionOf
-  by_cases h : decrypt = 0
-  · subst h; rfl
-  · have h' : decrypt.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq h')
-    simp only [h, h', ite_false]; rfl
-
 /-- The masks and the table of subkeys of `R` rounds in the order of `d`:
 what ECB's rounds read. -/
 def ReadyAt (d : Dir) (R : Nat) (m : Mem) (B : Addr) (w : List (BitVec 64)) : Prop :=

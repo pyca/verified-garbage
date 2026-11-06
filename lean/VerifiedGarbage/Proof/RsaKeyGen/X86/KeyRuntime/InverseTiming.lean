@@ -174,11 +174,6 @@ theorem step_trace {c : Prog isa} {P Q : State → Prop} (pub : Public c) (ok : 
   (((public_trace pub).mono (fun _ _ h => h.2.2) (fun _ _ h => h)).wp
     (fun s t h => ⟨ok s h.1, ok t h.2.1⟩)).mono (fun _ _ h => h) (fun _ _ ⟨A, q₁, q₂⟩ => ⟨q₁, q₂, A⟩)
 
-/-- A last step whose trace the taint analysis checks. -/
-theorem last_trace {c : Prog isa} {P : State → Prop} (pub : Public c) :
-    RelCT isa (Both P) c (VG.X86.Taint.Agree runtimeTaint) :=
-  (public_trace pub).mono (fun _ _ h => h.2.2) (fun _ _ h => h)
-
 /-- Number `j` is odd and more than one. -/
 def OddAt (B : Addr) (n j : Nat) (s : State) : Prop := num s.mem B n j % 2 = 1 ∧ 1 < num s.mem B n j
 

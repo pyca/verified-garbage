@@ -32,9 +32,6 @@ theorem Arrs.get {m : Mem} {B : Addr} {w : Nat} {A : Nat → Nat} {live : List N
     (h : Arrs m B w A live) {j : Nat} (hj : j ∈ live) : num m B w j = A j :=
   VG.Proof.Rsa.KeyWorkspace.Arrs.get h hj
 
-theorem Arrs.nil (m : Mem) (B : Addr) (w : Nat) (A : Nat → Nat) : Arrs m B w A [] :=
-  VG.Proof.Rsa.KeyWorkspace.Arrs.nil m B w A
-
 /-- Tracking one more array. -/
 theorem Arrs.add {m : Mem} {B : Addr} {w : Nat} {A : Nat → Nat} {live : List Nat}
     (h : Arrs m B w A live) {o v : Nat} (e : num m B w o = v) : Arrs m B w (upd A o v) (o :: live) :=

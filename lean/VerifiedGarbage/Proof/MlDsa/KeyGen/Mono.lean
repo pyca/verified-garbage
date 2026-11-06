@@ -9,8 +9,7 @@ import VerifiedGarbage.Proof.Sha3.Stream
 The XOF output a sampler draws within a larger bound extends the output within
 a smaller one (`H_take`, `G_take`), so a sampler that finishes within a bound
 finishes with the same result within any larger one (`rejNTTPoly_mono`,
-`rejBoundedPoly_mono`), and so does `ML-DSA.KeyGen_internal`
-(`keyGenInternal_mono`).
+`rejBoundedPoly_mono`).
 -/
 
 @[expose] public section
@@ -43,9 +42,6 @@ theorem G_eq (s : List Byte) (d : Nat) :
 
 theorem H_length (s : List Byte) (d : Nat) : (H s d).length = d := by
   rw [H_eq]; exact Proof.Sha3.length_squeeze (by decide) (by decide) _ _
-
-theorem G_length (s : List Byte) (d : Nat) : (G s d).length = d := by
-  rw [G_eq]; exact Proof.Sha3.length_squeeze (by decide) (by decide) _ _
 
 theorem H_take (s : List Byte) {d d' : Nat} (h : d ≤ d') : (H s d').take d = H s d := by
   rw [H_eq, H_eq]; exact squeeze_take (by decide) (by decide) _ h
@@ -155,22 +151,6 @@ theorem mapM_none {α β : Type} {f : α → Option β} :
       | none => rfl
       | some _ => rw [mapM_none ⟨y, hy, hn⟩]; rfl
 
-theorem mapM_mono {α β : Type} {f g : α → Option β} (hfg : ∀ x y, f x = some y → g x = some y) :
-    ∀ {l : List α} {r : List β}, l.mapM f = some r → l.mapM g = some r
-  | [], _, h => h
-  | x :: l, r, h => by
-    rw [List.mapM_cons] at h ⊢
-    cases e : f x with
-    | none => rw [e] at h; cases h
-    | some y =>
-      rw [e] at h
-      cases e' : l.mapM f with
-      | none => rw [e'] at h; cases h
-      | some ys =>
-        rw [e'] at h
-        rw [hfg x y e, mapM_mono hfg e']
-        exact h
-
 /-! ## `ExpandA`, `ExpandS` and key generation -/
 
 /-- The seed of `Â[r, s]`. -/
@@ -178,10 +158,6 @@ abbrev seedA (ρ : List Byte) (r s : Nat) : List Byte := ρ ++ integerToBytes s 
 
 /-- The seed of entry `r` of `s₁ ‖ s₂`. -/
 abbrev seedS (ρ' : List Byte) (r : Nat) : List Byte := ρ' ++ integerToBytes r 2
-
-theorem expandA_mono {p : Params} {b b' : Bounds} (h : Bounds.Le b b') {ρ : List Byte} {x : List (List Poly)}
-    (hx : expandA p b ρ = some x) : expandA p b' ρ = some x :=
-  mapM_mono (fun _ _ hr => mapM_mono (fun _ _ hs => rejNTTPoly_mono h.rejNTT hs) hr) hx
 
 theorem expandS_eq (p : Params) (b : Bounds) (ρ : List Byte) :
     expandS p b ρ = ((List.range p.ℓ).mapM fun r => rejBoundedPoly p.η b.rejBounded (seedS ρ r)).bind
@@ -194,15 +170,6 @@ theorem expandS_eq (p : Params) (b : Bounds) (ρ : List Byte) :
     cases (List.range p.k).mapM fun r => rejBoundedPoly p.η b.rejBounded (seedS ρ (r + p.ℓ)) with
     | none => rfl
     | some s₂ => rfl
-
-theorem expandS_mono {p : Params} {b b' : Bounds} (h : Bounds.Le b b') {ρ : List Byte} {x : List IPoly × List IPoly}
-    (hx : expandS p b ρ = some x) : expandS p b' ρ = some x := by
-  rw [expandS_eq] at hx ⊢
-  obtain ⟨s₁, h₁, hx⟩ := Option.bind_eq_some_iff.mp hx
-  obtain ⟨s₂, h₂, rfl⟩ := Option.map_eq_some_iff.mp hx
-  rw [mapM_mono (fun _ _ hs => rejBoundedPoly_mono h.rejBounded hs) h₁, Option.bind_some,
-    mapM_mono (fun _ _ hs => rejBoundedPoly_mono h.rejBounded hs) h₂]
-  rfl
 
 /-- `ExpandA` when every entry is sampled. -/
 theorem expandA_some {p : Params} {b : Bounds} {ρ : List Byte} {A : Nat → Nat → Poly}
@@ -253,14 +220,6 @@ theorem keyGenInternal_eq (p : Params) (b : Bounds) (ξ : List Byte) :
     cases expandS p b (List.take 64 (List.drop 32 (H (ξ ++ integerToBytes p.k 1 ++ integerToBytes p.ℓ 1) 128))) with
     | none => rfl
     | some s => rfl
-
-theorem keyGenInternal_mono {p : Params} {b b' : Bounds} (h : Bounds.Le b b') {ξ : List Byte}
-    {x : List Byte × List Byte} (hx : keyGenInternal p b ξ = some x) : keyGenInternal p b' ξ = some x := by
-  rw [keyGenInternal_eq] at hx ⊢
-  obtain ⟨Â, hA, hx⟩ := Option.bind_eq_some_iff.mp hx
-  obtain ⟨s, hS, rfl⟩ := Option.map_eq_some_iff.mp hx
-  rw [expandA_mono h hA, Option.bind_some, expandS_mono h hS]
-  rfl
 
 end VG.Proof.MlDsa.KeyGen
 

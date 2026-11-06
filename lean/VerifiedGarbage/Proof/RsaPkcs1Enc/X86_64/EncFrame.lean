@@ -68,13 +68,6 @@ structure EPre (s : State) : Prop where
   hpl : (stackArg s 3).toNat = (s.gpr .rcx).toNat - (stackArg s 1).toNat - 3
   hsl : Spec.Rsa.publicScratchWords (s.gpr .rcx).toNat ≤ (stackArg s 5).toNat
 
-theorem ePre_of {s : State} (h : encK.pre s) : EPre s := by
-  simp only [encK] at h
-  obtain ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOm, dOp, dOs, dOa, dns, des, dms, dps, dsa, dRo, -, -, -, -, dRs, -,
-    dKo, dKn, dKe, dKm, dKp, dKs, dKa, wO, wN, wE, wM, wP, wS, ⟨k1, k2⟩, hsi, L1, L2, hml, hpl, hsl⟩ := h
-  exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, hwr, dOn, dOe, dOm, dOp, dOs, dOa, dns, des, dms, dps, dsa, dRo, dRs, dKo, dKn, dKe, dKm,
-    dKp, dKs, dKa, wO, wN, wE, wM, wP, wS, k1, k2, hsi, L1, L2, hml, hpl, hsl⟩
-
 /-- The length of `PS`. -/
 theorem EPre.psLen {s : State} (hp : EPre s) :
     (stackArg s 3).toNat + (stackArg s 1).toNat + 3 = (s.gpr .rcx).toNat := by
@@ -171,28 +164,6 @@ theorem arg_in {s : State} (hp : EPre s) {rd : List Region} (hrd : rd = s.rd) (w
     rw [hrd]
     exact hp.hrd.left _ _ ⟨⟨stackArgAddr s 0, 48⟩, by simp,
       by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
-
-/-- What the first block leaves. -/
-structure Setup (s t : State) : Prop where
-  rsp : t.gpr .rsp = fb s
-  rd : t.rd = s.rd
-  wr : t.wr = ⟨fb s, frameBytes⟩ :: s.wr
-  out : Outside (fb s) 0 frameBytes s.mem t.mem
-  sOut : word t.mem (fb s) oOut = s.gpr .rdi
-  sN : word t.mem (fb s) oN = s.gpr .rdx
-  sK : word t.mem (fb s) oK = s.gpr .rcx
-  sE : word t.mem (fb s) oE = s.gpr .r8
-  sEl : word t.mem (fb s) oEl = s.gpr .r9
-  a0 : word t.mem (fb s) 0 = off (fb s) oEM
-  a1 : word t.mem (fb s) 8 = s.gpr .rcx
-  a2 : word t.mem (fb s) 16 = stackArg s 4
-  a3 : word t.mem (fb s) 24 = stackArg s 5
-  b0 : byte t.mem (fb s) oEM = 0
-  b1 : byte t.mem (fb s) (oEM + 1) = 2
-  rsi : t.gpr .rsi = stackArg s 2
-  rcx : t.gpr .rcx = stackArg s 3
-  r10 : t.gpr .r10 = BitVec.ofNat 64 0
-  rdx : t.gpr .rdx = 0
 
 /-- The memory after the first block. -/
 def setupMem (s : State) : Mem :=

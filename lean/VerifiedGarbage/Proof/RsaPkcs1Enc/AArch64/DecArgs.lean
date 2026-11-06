@@ -31,11 +31,6 @@ def Weak (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Me
     ∀ d, oI ≤ d → d + 8 ≤ frameBytes →
       t.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = t₀.mem.readW (L.Q + BitVec.ofNat 64 d) 64
 
-theorem Weak.trans {t₀ t u : State} (h : Weak L g vv m₀ t₀ t) (h' : Weak L g vv m₀ t u) : Weak L g vv m₀ t₀ u :=
-  ⟨h'.1, fun d h₁ h₂ => (h'.2 d h₁ h₂).trans (h.2 d h₁ h₂)⟩
-
-theorem Weak.refl {t : State} (hc : Post L g vv m₀ R EM t) : Weak L g vv m₀ t t := ⟨⟨_, _, hc⟩, fun _ _ _ => rfl⟩
-
 /-- What a call writing only in `scratch` keeps. -/
 theorem Post.weak (hL : L.Ok) (hP : 16 ≤ L.P) {t u : State} (hc : Post L g vv m₀ R EM t) {ws : List Region}
     (h : After t ws u) (hs : ∀ r ∈ ws, Region.Sub r L.SC) : Weak L g vv m₀ t u :=
@@ -101,17 +96,6 @@ theorem finA (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀ R 
   stk_st := hc.stk hL hP (a := sSt) (m := 96) (by decide)
   stk_o := hc.stk hL hP (a := o) (m := 32) ho2
   stk_sc := hc.stk hL hP (a := sWork) (m := 160) (by decide)
-
-theorem finW (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀ R EM t) {o : Nat} (ho2 : o + 32 ≤ scrBytes)
-    (a : Proof.Pbkdf2.Md.AArch64.Calls.FinArgs (OK v).stream t (scA L sSt) (scA L o) (scA L sWork)) :
-    WP isa (.call (HH v).finN (HH v).finC) t (Weak L g vv m₀ t) :=
-  Proof.Pbkdf2.Md.AArch64.Calls.fin_call (OK v).stream a fun _ a' _ =>
-    hc.weak hL hP a' fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact scSub (a := sSt) (n := 96) (by decide)
-      · exact scSub (a := o) (n := 32) ho2
-      · exact scSub (a := sWork) (n := 160) (by decide)
 
 /-! ## HMAC's functions -/
 

@@ -148,8 +148,4 @@ theorem baseEntry_ok (j n : Nat) (hj : j < 57) (hn : n < 16) :
     rw [e, natCast_zsmul]
     exact hr
 
-theorem zsmul_16 (v w : ℤ) (P : EPoint dZ) :
-    (16 : Nat) • (v • P) + w • P = (16 * v + w) • P := by
-  rw [add_smul, mul_smul, ← natCast_zsmul]; rfl
-
 end VG.Proof.X448

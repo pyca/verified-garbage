@@ -28,8 +28,6 @@ theorem iter_succ (K : Schedule) (order : Nat → Nat) (m : Nat) (st : Word × W
     iter K order (m + 1) st = roundStep K order (iter K order m st) m := by
   simp only [iter, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
 
-theorem iter_zero (K : Schedule) (order : Nat → Nat) (st : Word × Word) : iter K order 0 st = st := rfl
-
 theorem feistel_eq (K : Schedule) (order : Nat → Nat) (xL xR : Word) :
     feistel K order xL xR =
       ((iter K order 16 (xL, xR)).2 ^^^ pEntry K (order 17),

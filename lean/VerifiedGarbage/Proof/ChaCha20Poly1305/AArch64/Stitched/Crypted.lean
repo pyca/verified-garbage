@@ -12,15 +12,16 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Chunk
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Finish
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Tail
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Poly1305.AArch64.Init
 import VerifiedGarbage.Proof.ChaCha20.Stream
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Chunk
+import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `cryptStitched`
@@ -57,8 +58,6 @@ def pre (o : Nat) (enc : Bool) (T : Nat) : Nat := o + if enc then 512 * (T - 1) 
 
 theorem pre_le (o : Nat) (enc : Bool) (T : Nat) : pre o enc T ≤ o + 512 * T := by
   cases enc <;> simp only [pre, Bool.false_eq_true, ite_false, ite_true] <;> omega
-
-theorem pre_ge (o : Nat) (enc : Bool) (T : Nat) : o ≤ pre o enc T := Nat.le_add_right _ _
 
 theorem pre_zero (o : Nat) (enc : Bool) : pre o enc 0 = o := by
   cases enc <;> simp [pre]
@@ -141,24 +140,6 @@ theorem data_frame {s₀ : State} {rs : List Region} {m m' : Mem} (hf : Frame rs
     (hd : ∀ r ∈ rs, (dR s₀).Disjoint r) {k : Nat} (hk : k < L s₀) :
     m' (dp s₀ + BitVec.ofNat 64 k) = m (dp s₀ + BitVec.ofNat 64 k) :=
   hf.bytes hd (Nat.le_of_lt (s₀.gpr .x5).isLt) hk
-
-/-- The parts of the context `cryptStitched` writes, besides the stream's. -/
-abbrev ctxW (s₀ : State) : List Region := [sub s₀ 64 408, sub s₀ 32 16]
-
-theorem ctxW_data {s₀ : State} (hp : APre e s₀) : ∀ r ∈ ctxW s₀, (dR s₀).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> exact hp.c_d.symm.sub_right (sub_ctx s₀ (by lit_omega))
-
-theorem ctxW_sub (s₀ : State) : ∀ r ∈ ctxW s₀, ∃ r' ∈ [workR s₀, dR s₀], Region.Sub r r' := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
-
-theorem ctxW_saved (s₀ : State) : ∀ r ∈ ctxW s₀, (sub s₀ 576 56).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
 
 /-- The state after `cryptSetup`. -/
 theorem setup_ok {s₀ : State} {w : State} (hx21 : w.gpr .x21 = cx s₀) :

@@ -90,14 +90,6 @@ theorem polyIs_congr {m m' : Mem} {p : Addr} {f : Poly}
     (h : ∀ k < 1024, m' (p + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k)) (hf : PolyIs m p f) : PolyIs m' p f :=
   polyIs_congr₂ h hf
 
-theorem polyAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
-    (hd : ∀ r ∈ rs, (pR p).Disjoint r) : polyAt m' p = polyAt m p :=
-  polyAt_congr (bytes_frame hf hd (by decide))
-
-theorem natPolyAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
-    (hd : ∀ r ∈ rs, (pR p).Disjoint r) : natPolyAt m' p = natPolyAt m p :=
-  natPolyAt_congr (bytes_frame hf hd (by decide))
-
 theorem reduced_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, (pR p).Disjoint r) (hr : Reduced m p) : Reduced m' p :=
   reduced_congr (bytes_frame hf hd (by decide)) hr

@@ -89,12 +89,7 @@ theorem done_append {m m₀ : Mem} {ciph : Block → Block} {icb : Block} {P : N
 theorem disjoint_zero_right {r : Region} {a : Addr} : r.Disjoint ⟨a, 0⟩ := fun _ _ h => by
   simp only [Region.Contains] at h; omega_arith
 
-theorem disjoint_zero_left {r : Region} {a : Addr} : (⟨a, 0⟩ : Region).Disjoint r := fun _ h _ => by
-  simp only [Region.Contains] at h; omega_arith
-
 theorem zero_xor' (x : Block) : (0 : Block) ^^^ x = x := by simp
-
-theorem mz0 : BitVec.setWidth 64 (0 : BitVec 16) <<< (16 * 0) = 0 := by decide
 
 theorem ctr32_single (ciph : Block → Block) (icb x : Block) : Spec.Gcm.ctr32 ciph icb [x] = [x ^^^ ciph icb] := by
   simp [Spec.Gcm.ctr32, Spec.Gcm.keystream, Nat.repeat]

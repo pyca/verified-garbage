@@ -29,9 +29,6 @@ theorem r2_doublesAt (M : VG.Impl.Mont.Mod) (e acc out : Nat) : NoSp (FastR2.dou
   unfold FastR2.doublesAt FastR2.seedAt
   exact sequence (constant _ _ _) (NoSp.of_all (by rfl))
 
-theorem r2_doubles (M : VG.Impl.Mont.Mod) (acc out : Nat) : NoSp (FastR2.doubles M acc out) :=
-  r2_doublesAt M _ acc out
-
 theorem fastR2At {square : Prog isa} (H : NoSp square) (M : VG.Impl.Mont.Mod) (e acc out : Nat) :
     NoSp (FastR2.codeAt M e acc out square) := by
   unfold FastR2.codeAt
@@ -39,16 +36,9 @@ theorem fastR2At {square : Prog isa} (H : NoSp square) (M : VG.Impl.Mont.Mod) (e
   change NoSp (.seq square (.seq square (.seq square (.seq square (.seq square square)))))
   exact sequence H (sequence H (sequence H (sequence H (sequence H H))))
 
-theorem fastR2 {square : Prog isa} (H : NoSp square) (M : VG.Impl.Mont.Mod) (acc out : Nat) :
-    NoSp (FastR2.code M acc out square) :=
-  fastR2At H M _ acc out
-
 theorem r2At {mont : Prog isa} (H : NoSp mont) (e w : Nat) (name : String) : NoSp (PreparedR2.codeAt e w name mont) := by
   unfold PreparedR2.codeAt
   exact sequence (fastR2At (mulY H name 6) _ _ _ _) (NoSp.of_all (by rfl))
-
-theorem r2 {mont : Prog isa} (H : NoSp mont) (w : Nat) (name : String) : NoSp (PreparedR2.code w name mont) :=
-  r2At H _ w name
 
 theorem constants {mont : Prog isa} (H : NoSp mont) (w : Nat) (name : String) : NoSp (Constants.code w name mont) := by
   unfold Constants.code
@@ -70,8 +60,5 @@ theorem prepareAt {mont : Prog isa} (H : NoSp mont) (e w : Nat) (name : String) 
   unfold Prepare.codeAt
   exact sequence (NoSp.of_all (by rfl)) (sequence (r2At H e w name)
     (sequence (constants H w name) (exponent _ _ _ _)))
-
-theorem prepare {mont : Prog isa} (H : NoSp mont) (w : Nat) (name : String) : NoSp (Prepare.code w name mont) :=
-  prepareAt H _ w name
 
 end VG.Proof.RsaKeyGen.X86.CandidateNoSp

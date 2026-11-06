@@ -166,9 +166,6 @@ def mulAddAt (h f g : Ptr) : Prog isa :=
 
 def subAt (f g : Ptr) : Prog isa := callAt ("vg_mldsa_sub" ++ P.sfx) P.sub [(.rdi, .ptr f), (.rsi, .ptr g)]
 
-def rejNttAt (a : Ptr) : Prog isa :=
-  callAt "vg_mldsa_rej_ntt_poly" P.rejNtt [(.rdi, .ptr (sc oSB)), (.rsi, .ptr a), (.rdx, .ptr (sc oSS))]
-
 def rej4At (a w : Ptr) : Prog isa :=
   callAt ("vg_mldsa_rej_ntt_poly4" ++ P.sfx) P.rej4 [(.rdi, .ptr (sc oSB4)), (.rsi, .ptr a), (.rdx, .ptr w)]
 

@@ -270,11 +270,6 @@ theorem Lay.stkD {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) :
   obtain ⟨n, hn, hsub⟩ := L.sub h
   exact (L.stk _ hn).sub_right hsub
 
-theorem Lay.retD {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) :
-    (Region.mk (s.gpr .rsp) 8).Disjoint ⟨pa s p, l⟩ := by
-  obtain ⟨n, hn, hsub⟩ := L.sub h
-  exact (L.ret _ hn).sub_right hsub
-
 theorem Lay.nwp {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : (pa s p).toNat + l ≤ 2 ^ 64 := by
   obtain ⟨n, hn, hl⟩ := inB_spec h
   have h1 := L.nw _ hn

@@ -3,6 +3,35 @@
 //! `assembly/mldsa44.s`.
 #![allow(dead_code)]
 
+/// ML-DSA-44 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa44_verify_message_cached` takes.
+///
+/// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1312 bytes.
+/// * `tr` must be valid for reads and writes of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `tr` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_mldsa44_pk_tr(pk: *const [u8; 1312], tr: *mut [u8; 64], scratch: *mut [u64; 9728]) {
+    core::arch::naked_asm!(
+        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInTSYn8SYn1Qb8BAAAAuAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEyJ4UiDwQBBuCAFAABJidlJgcHIAAAA"
+call {vg_keccak_absorb_scratch}
+.base64 "SInfSIPHAL6IAAAAulgAAAC5HwAAAEmJ2EmBwMgAAAA="
+call {vg_keccak_pad_scratch}
+.base64 "SInfSIPHAL6IAAAAugAAAABMielIg8EAQbhAAAAASYnZSYHByAAAAA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+    )
+}
+
 /// The CPU features `vg_mldsa44_keygen_avx2` requires (`Artifact.features`).
 pub const VG_MLDSA44_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 

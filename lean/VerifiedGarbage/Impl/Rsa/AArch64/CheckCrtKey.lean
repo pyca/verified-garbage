@@ -33,39 +33,9 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64 VG.
 open VG.Impl.Rsa.AArch64.CheckKey (sD sE sElen sDlen sP sPlen sQ sQlen sDP sDQ sQI aX aR aM aA aRem aT aOne aE
   ltA mulE mulXR)
 
-/-- Public byte capacity: enough for either factor and half the modulus.
-The wide arrays hold twice this many limbs, plus two carry limbs. -/
-def capacity (k pl ql : Nat) : Nat := max ((k + 1) / 2) (max pl ql)
-
-/-- Size validation arithmetic from the factor lengths, retaining enough
-space to load the entire modulus even for malformed factors. -/
-def wide : List Instr :=
-  [ldh .x3 Public.sK, .addImm .x .x12 .x3 15, .lsr .x .x12 .x12 4,
-    ldh .x3 sPlen, .addImm .x .x3 .x3 7, .lsr .x .x3 .x3 3,
-    .subs .x .x4 .x12 .x3, .csel .x .x12 .x12 .x3,
-    ldh .x3 sQlen, .addImm .x .x3 .x3 7, .lsr .x .x3 .x3 3,
-    .subs .x .x4 .x12 .x3, .csel .x .x12 .x12 .x3,
-    .add .x .x12 .x12 .x12, .addImm .x .x12 .x12 2, sth .x12 sW]
-
-/-- Header initialization for the compact CRT layout. -/
-def head : List Instr := wide ++ setBases ++
-  [.addImm .x .x3 .x12 2, .lsl .x .x3 .x3 3, sth .x3 sStride, movi .x7 0, .subImm .x .x4 .x7 1,
-    sth .x4 Public.sMask]
-
 /-- The quotient's register of `reduceTop`. -/
 def aQ : Nat := 9
 
-/-! ## Entry -/
-
-/-- The arguments in `vg_rsa_check_key`'s header slots at `scratch` (the
-seventh stack argument), `p` also in `d`'s, whose base goes in `x0`; then
-`e` and `e_len` into `x4` and `x5` for `expCheck`. -/
-def entry : List Instr :=
-  [.ldrSp .x8 48, .str .x .x0 .x8 (8 * Public.sN), .str .x .x1 .x8 (8 * Public.sK), .str .x .x2 .x8 (8 * sE),
-    .str .x .x3 .x8 (8 * sElen), .str .x .x4 .x8 (8 * sD), .str .x .x5 .x8 (8 * sDlen), .str .x .x4 .x8 (8 * sP),
-    .str .x .x5 .x8 (8 * sPlen), .str .x .x6 .x8 (8 * sQ), .str .x .x7 .x8 (8 * sQlen),
-    .ldrSp .x9 0, .str .x .x9 .x8 (8 * sDP), .ldrSp .x9 16, .str .x .x9 .x8 (8 * sDQ),
-    .ldrSp .x9 32, .str .x .x9 .x8 (8 * sQI), mov .x0 .x8, mov .x4 .x2, mov .x5 .x3]
 
 /-! ## The shortened remainder -/
 
@@ -108,22 +78,5 @@ slots `sX` and `sXlen`) and its exponent `dX` (pointer in `sDX`):
 def modChecks (sX sXlen sDX : Nat) : List (Prog isa) :=
   loadA aM sX sXlen ++ [.block (decA aM)] ++
   loadA aX sDX sXlen ++ ltA aX aM ++ mulE ++ modOne topE
-
-/-- The computation, once `n` and `e` are known valid. -/
-def main : Prog isa := seqs (
-  [.block head] ++ loadA 0 Public.sN Public.sK ++ loadA aE sE sElen ++ [zeroA aOne, .block (setOneA aOne)] ++
-  -- `p q = n`
-  loadA aX sP sPlen ++ loadA aR sQ sQlen ++ mulXR ++ eqA aA 0 ++ [.block andZero] ++
-  -- modulo `p - 1` and `q - 1`
-  modChecks sP sPlen sDP ++ modChecks sQ sQlen sDQ ++
-  -- `qInv < p` and `q qInv ≡ 1 (mod p)`
-  loadA aM sP sPlen ++ loadA aX sQI sPlen ++ ltA aX aM ++
-  loadA aR sQ sQlen ++ mulXR ++ modOne topQ ++
-  [.block retMask])
-
-/-- `vg_rsa_check_crt_key`. -/
-def code : Prog isa :=
-  .seq (.block entry) (.seq Checked.expCheck (.ite (.zero .x .x9) (.block CheckKey.fail)
-    (.seq (.block ([ldh .x2 Public.sN, ldh .x3 Public.sK] ++ invalid)) (.ite (.zero .x .x9) (.block CheckKey.fail) main))))
 
 end VG.Impl.Rsa.AArch64.CheckCrtKey

@@ -277,26 +277,28 @@ theorem pshufb_idxV (a : BitVec 128) {m c : Nat} (hc : c < (setBits m).length) :
 
 /-! ## The static -/
 
-open VG.Impl.MlKem.X86_64.Sample4 (tblWords consts) in
-theorem tblWords_length : tblWords.length = 780 := by simp [tblWords, consts]
+open VG.Impl.MlKem.X86_64.Sample4 (tblWords consts zconsts) in
+theorem tblWords_length : tblWords.length = 792 := by simp [tblWords, consts, zconsts]
 
 open VG.Impl.MlKem.X86_64.Sample4 (tblWords consts) in
 theorem tblWords_idx {m h : Nat} (hm : m < 256) (hh : h < 2) : tblWords.getD (2 * m + h) 0 = idxQ m h := by
-  rw [tblWords, List.getD_eq_getElem?_getD, List.append_assoc,
-    List.getElem?_append_left (by simp; omega_arith)]
+  rw [tblWords, List.getD_eq_getElem?_getD, List.getElem?_append_left (by simp [consts]; omega_arith),
+    List.append_assoc, List.getElem?_append_left (by simp; omega_arith)]
   simp only [List.getElem?_map, List.getElem?_range (show 2 * m + h < 512 by omega_arith), Option.map_some,
     Option.getD_some, show (2 * m + h) / 2 = m by omega_arith, show (2 * m + h) % 2 = h by omega_arith]
 
 open VG.Impl.MlKem.X86_64.Sample4 (tblWords consts) in
 theorem tblWords_cst {i : Nat} (hi : i < 12) : tblWords.getD (512 + i) 0 = consts.getD i 0 := by
-  rw [tblWords, List.getD_eq_getElem?_getD, List.append_assoc, List.getElem?_append_right (by simp),
+  rw [tblWords, List.getD_eq_getElem?_getD, List.getElem?_append_left (by simp [consts]; omega_arith),
+    List.append_assoc, List.getElem?_append_right (by simp),
     List.getElem?_append_left (by simp [consts]; omega_arith)]
   simp [List.getD_eq_getElem?_getD]
 
 open VG.Impl.MlKem.X86_64.Sample4 (tblWords consts) in
 theorem tblWords_cnt {m : Nat} (hm : m < 256) :
     tblWords.getD (524 + m) 0 = BitVec.ofNat 64 (setBits m).length := by
-  rw [tblWords, List.getD_eq_getElem?_getD, List.append_assoc, List.getElem?_append_right (by simp; omega_arith),
+  rw [tblWords, List.getD_eq_getElem?_getD, List.getElem?_append_left (by simp [consts]; omega_arith),
+    List.append_assoc, List.getElem?_append_right (by simp; omega_arith),
     List.getElem?_append_right (by simp [consts]; omega_arith)]
   simp only [List.length_map, List.length_range, consts, List.length_cons, List.length_nil, Nat.reduceAdd,
     show 524 + m - 512 - 12 = m by omega_arith, List.getElem?_map, List.getElem?_range hm, Option.map_some,

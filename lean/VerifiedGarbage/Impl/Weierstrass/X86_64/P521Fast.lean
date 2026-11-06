@@ -214,9 +214,6 @@ def sSub (o a b : Nat) : List Instr :=
 /-- The words of `cmsF`'s accumulator `N`: `r8 … r15`, `rbx` (s2n-bignum's). -/
 def CW : List Reg := [.r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15, .rbx]
 
-/-- Word `k` of `N`. -/
-def cw (k : Nat) : Reg := CW.getD k .rax
-
 /-- `N`'s words from the top down. -/
 def CWr : List Reg := [.rbx, .r15, .r14, .r13, .r12, .r11, .r10, .r9, .r8]
 

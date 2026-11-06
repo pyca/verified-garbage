@@ -82,10 +82,4 @@ theorem fb_toNat (hp : PreC D tsH tsG s) : (fb s).toNat + frameBytes = s.sp.toNa
   have := hp.sp1
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold chkStack stk at this; omega
 
-theorem kb_toNat (hp : PreC D tsH tsG s) : (kb 288 s).toNat + chkStack = s.sp.toNat := by
-  have := hp.sp1
-  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  unfold chkStack stk frameBytes at *
-  omega
-
 end VG.Proof.RsaPss.AArch64.Chk

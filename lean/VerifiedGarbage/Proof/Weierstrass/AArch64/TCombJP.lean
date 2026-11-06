@@ -27,7 +27,7 @@ pass and then the addition; the addition and its corrections (`tailJ_ok`)
 leave the vector registers alone, so the pass's accumulators survive to be
 stored after the corrections (`tentryJFin_ok`, `stepJP_ok`). Window `J - 1`
 is added alone (`tailJ_ok`). `tcombJP_ok`: the pipelined comb computes
-`[k]G`, as `combJWith` does.
+`[k]G`.
 -/
 
 @[expose] public section
@@ -481,7 +481,7 @@ theorem combJPLoop_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List In
     · simpa only [show K.J-1-(r-1)=K.J-1-r+1 by omega_arith] using ht
     · simpa only [show K.J-1-(r-1)=K.J-1-r+1 by omega_arith] using et
 
-/-- The pipelined comb computes `[k]G`, as `combJWith` does (`tcombJWith_ok`). -/
+/-- The pipelined comb computes `[k]G`. -/
 theorem tcombJP_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List Instr} {K : TCombCfg} {C : Curve}
     {base : Addr} {size k : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb)

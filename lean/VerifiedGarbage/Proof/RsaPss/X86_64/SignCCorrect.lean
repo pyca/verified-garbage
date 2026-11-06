@@ -79,12 +79,6 @@ theorem em_input {m : Mem} {S : Addr} {V : Nat → Byte} {lo el k : Nat} {e : Li
 /-- The slots after `idxSlot`. -/
 def proW1 (s : State) : Nat → BitVec 64 := upd (proW s) 47 (s.mem.readW (off (stackArg s 16) 40) 64)
 
-/-- The slots after `emBitsB` and `encArgs`, from `W`. -/
-def encW (W : Nat → BitVec 64) (s : State) (eb : Nat) : Nat → BitVec 64 :=
-  upd (upd (upd (upd (upd (upd (upd W 27 (BitVec.ofNat 64 eb)) 28 (BitVec.ofNat 64 (Spec.RsaPss.emLength eb))) 26
-    (BitVec.ofNat 64 ((s.gpr .rcx).toNat - Spec.RsaPss.emLength eb))) 0 (off (stackArg s 14) oEnc)) 1
-    (stackArg s 15 - BitVec.ofNat 64 (oEnc / 8))) 2 (stackArg s 16)) 3 (stackArg s 17)
-
 /-- The table `hash` to `r11`, the flags kept. -/
 theorem r11Arg_ok {s u : State} (hp : SPre tsH tsG s) (hsp : u.gpr .rsp = fb s) (hrd : u.rd = s.rd)
     (hA : ArgsKept s u.mem) :

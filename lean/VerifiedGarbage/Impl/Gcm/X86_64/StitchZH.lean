@@ -63,15 +63,6 @@ def bigP : Prog isa :=
 def bigDP : Prog isa :=
   .seq (.block powP48) (.seq (.loop dbody48 .ae) (.block [.vmovdqu32Load .xmm1 (at_ .r11 832)]))
 
-def enc : Prog isa :=
-  .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
-    (.seq first
-      (.seq (.block [.alu .cmp .r9 (.imm 256)])
-        (.seq (.ite .b (.block []) bigP)
-          (.seq (.block [.alu .cmp .r9 (.imm 32)])
-            (.seq (.ite .b (.block []) (.loop body .ae))
-              (.block (storeCtr ++ lastG ++ storeY)))))))
-
 /-! ## The blocks after the last group -/
 
 /-- The counter after the last of the `r = r9 - 16` blocks, stored; `r10 =
@@ -184,7 +175,8 @@ def rem : Prog isa := remG [] .rdx
 def tailR (r : Prog isa) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (.imm 16)]) (.ite .e (.block (storeCtr ++ lastG ++ storeY)) r)
 
-/-- `enc`, for any number of blocks from 16 on. -/
+/-- Encryption, for any number of blocks from 16 on: the blocks after the
+last group, if any, by `rem`. -/
 def encR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
     (.seq first
@@ -239,7 +231,7 @@ def ksSelGD : Prog isa :=
 already hashed, hashed and decrypted as a masked group, and `Y` stored. -/
 def remGD : Prog isa := .seq (.block remSetup) (.seq ksSelGD (.block storeY))
 
-/-- `dec`, for any number of blocks from 16 on: the `r9` blocks after the
+/-- Decryption, for any number of blocks from 16 on: the `r9` blocks after the
 last group, if any, by `remGD`. -/
 def decR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
@@ -250,13 +242,5 @@ def decR : Prog isa :=
             (.seq (.block [.alu .test .r9 (.reg .r9)])
               (.ite .e (.block (storeCtr ++ storeY))
                 (.seq (.block [.alu .add .r9 (.imm 16)]) remGD)))))))
-
-def dec : Prog isa :=
-  .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
-    (.seq (.block [.alu .cmp .r9 (.imm 256)])
-      (.seq (.ite .b (.block []) bigDP)
-        (.seq (.block [.alu .cmp .r9 (.imm 16)])
-          (.seq (.ite .b (.block []) (.loop dbody .ae))
-            (.block (storeCtr ++ storeY))))))
 
 end VG.Impl.Gcm.X86_64.StitchZH

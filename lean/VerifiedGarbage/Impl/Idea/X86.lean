@@ -46,10 +46,10 @@ subkeys and the spilled words. The subkeys are read with 32-bit loads at
 their own offsets, of which the code uses the low 16 bits (the last reads
 into `t₀`'s slot, which follows them).
 
-`cryptBlock` replaces the block at the address in `dataSlot` by its
+`cryptBlockWith` replaces the block at the address in `dataSlot` by its
 encryption under the subkeys at `esi`, writing only `eax`, `ebx`, `ecx`,
-`edx`, `edi`, `ebp` and `t₀`'s slot (`cryptBlockWith` runs given code just
-before the stores, which ECB uses to read the count). The block is loaded into `ebx`, `ecx`,
+`edx`, `edi`, `ebp` and `t₀`'s slot, and runs given code just before the
+stores, which ECB uses to read the count. The block is loaded into `ebx`, `ecx`,
 `edi`, `ebp` (one 16-bit word each, two 32-bit loads and `bswap`), run
 through the eight rounds (unrolled) and the output transformation, and
 stored by two 32-bit stores. Round `j` keeps `X₂` and `X₃` in `ecx` and
@@ -223,8 +223,6 @@ def store : List Instr :=
 def cryptBlockWith (pre : List Instr) : List Instr :=
   load ++ (List.range 8).flatMap round ++ output ++ ([.mov .eax (.mem (at_ .esi dataSlot))] : List Instr) ++
     pre ++ store
-
-def cryptBlock : List Instr := cryptBlockWith []
 
 /-! ## ECB -/
 

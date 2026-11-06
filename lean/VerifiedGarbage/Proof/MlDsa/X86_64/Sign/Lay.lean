@@ -181,11 +181,6 @@ theorem Lay.stkD {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) :
   obtain ⟨n, hn, hsub⟩ := L.sub h
   exact (L.stk _ hn).sub_right hsub
 
-theorem Lay.retD {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) :
-    (retR s).Disjoint ⟨pa s p, l⟩ := by
-  obtain ⟨n, hn, hsub⟩ := L.sub h
-  exact (L.ret _ hn).sub_right hsub
-
 theorem Lay.nwp {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : (pa s p).toNat + l ≤ 2 ^ 64 := by
   obtain ⟨n, hn, hl⟩ := inB_spec h
   have h1 := L.nw _ hn
@@ -323,11 +318,6 @@ theorem Lay.keepRed (hP : PPostB D s s' ws) (hc : keepB (rbs ++ wbs) ws p 1024 =
     (h : Reduced s.mem (pa s p)) : Reduced s'.mem (pa s' p) := by
   rw [hP.pa (keepB_cs hc)]
   exact reduced_frame hP.frame (L.fdisj hc) h
-
-theorem Lay.keepPolyAt (hP : PPostB D s s' ws) (hc : keepB (rbs ++ wbs) ws p 1024 = true) :
-    polyAt s'.mem (pa s' p) = polyAt s.mem (pa s p) := by
-  rw [hP.pa (keepB_cs hc)]
-  exact polyAt_frame hP.frame (L.fdisj hc)
 
 theorem Lay.keepW (hP : PPostB D s s' ws) (hc : keepB (rbs ++ wbs) ws p 8 = true) :
     s'.mem.readW (pa s' p) 64 = s.mem.readW (pa s p) 64 := by

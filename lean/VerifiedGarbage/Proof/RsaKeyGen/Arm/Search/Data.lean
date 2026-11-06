@@ -69,12 +69,6 @@ abbrev SearchPublic.S1 (p : SearchPublic) : BitVec 32 := p.sp - BitVec.ofNat 32 
 /-- The candidate's frame. -/
 abbrev SearchPublic.S2 (p : SearchPublic) : BitVec 32 := p.sp - BitVec.ofNat 32 72
 
-/-- The search from octet `used` of `rand`, with `remaining` counted
-candidates left. -/
-abbrev SearchPublic.tail (p : SearchPublic) (pB rand : List Byte) (used remaining : Nat) :
-    PrimeSearchResult :=
-  primeSearch p.len p.eB pB remaining (rand.drop used)
-
 /-- The registers the search pushes, in order. -/
 abbrev pushRegs : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]
 
@@ -107,8 +101,6 @@ variable {p : SearchPublic} {s : State}
 theorem facts (h : SearchInput p s) : PreFacts p := by
   obtain ⟨⟨room, top, -, -, -, -, -, nO, nU, nE, nP, nR, nS, nT, valid, e1, e8, plen, scr, rem, -, -, rl⟩, rfl⟩ := h
   exact ⟨room, top, nO, nU, nE, nP, nR, nS, nT, valid, e1, e8, plen, scr, rem, rl⟩
-
-theorem pre (h : SearchInput p s) : searchPre s := h.1
 
 theorem sp_eq (h : SearchInput p s) : p.sp = s.sp := by rw [← h.2]; rfl
 

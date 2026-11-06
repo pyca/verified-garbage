@@ -77,12 +77,6 @@ theorem done_of_live {p : SearchPublic} {original s : State} {used remaining : N
 
 /-! ## The frame's stores -/
 
-/-- The frame's words but `values`, through stores of them. -/
-theorem stores_words (m : Mem) (B : Addr) (values : List (Nat × BitVec 64))
-    (hb : ∀ e ∈ values, e.1 < 20) {j : Nat} (hj : j < 20) (hnot : ∀ e ∈ values, j ≠ e.1) :
-    word (writeFrame m B values) B (8 * j) = word m B (8 * j) := by
-  rw [writeFrame_word _ _ _ hb j hj, frameValue_unchanged _ _ _ hnot]
-
 /-- `terminal k`: no counted candidates, no request, and the status `k`. -/
 theorem search_terminal {p : SearchPublic} {original s : State} {used remaining : Nat}
     (h : SearchLive p original used remaining s) (k : Nat) :

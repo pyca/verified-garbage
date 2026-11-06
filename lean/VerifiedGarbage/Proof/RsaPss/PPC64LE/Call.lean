@@ -230,10 +230,6 @@ end
 
 theorem reE_sp (s : State) (m : Mem) : (reE s m).sp = s.sp := rfl
 theorem reE_gpr (s : State) (m : Mem) : (reE s m).gpr = s.gpr := rfl
-theorem reE_rd (s : State) (m : Mem) : (reE s m).rd = s.rd := rfl
-theorem reE_wr (s : State) (m : Mem) : (reE s m).wr = s.wr := rfl
-theorem reE_mem (s : State) (m : Mem) : (reE s m).mem = m := rfl
-
 theorem Saves.reE {s t : State} (h : Saves s t) (m : Mem) : Saves (reE s m) t :=
   ⟨h.sp, h.wr, h.hi, h.sv, h.ls⟩
 

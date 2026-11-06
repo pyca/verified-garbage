@@ -54,8 +54,6 @@ theorem flag01 (c : Prop) [Decidable c] : (if c then 1 else 0 : Nat) ≤ 1 := by
 /-- `a - b` modulo `2^(64 w)`. -/
 def subW (w a b : Nat) : Nat := (a + 2 ^ (64 * w) - b) % 2 ^ (64 * w)
 
-theorem subW_lt (w a b : Nat) : subW w a b < 2 ^ (64 * w) := Nat.mod_lt _ (Nat.two_pow_pos _)
-
 theorem sub_val {x a b c M : Nat} (e : x + b = a + M * c) (hc : c ≤ 1) (hx : x < M) (ha : a < M)
     (hb : b < M) : x = (a + M - b) % M ∧ c = (if a < b then 1 else 0) := by
   rcases (show c = 0 ∨ c = 1 by omega) with rfl | rfl

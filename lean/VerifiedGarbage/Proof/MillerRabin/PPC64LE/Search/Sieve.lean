@@ -82,8 +82,6 @@ theorem trials_ok {B : Addr} {Z o w x : Nat} (hw1 : 1 ≤ w) (hw : w < 2 ^ 31) (
     rw [tb, List.forall_mem_cons]
     exact ⟨fun ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩, fun ⟨a, b, c⟩ => ⟨⟨a, b⟩, c⟩⟩
 
-theorem oddPrimes256_bounds : ∀ d ∈ oddPrimes256, 2 ≤ d ∧ d < 2 ^ 15 := by decide
-
 theorem sieve_ok {s : State} {B : Addr} {Z o w x : Nat} (ds : List Nat) (hds : ∀ d ∈ ds, 2 ≤ d ∧ d < 2 ^ 15)
     (hs : Scr s B Z) (h31 : s.gpr .r31 = B) (h10 : s.gpr .r10 = off B o)
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hx : wv s.mem B o w = x) (hw1 : 1 ≤ w)

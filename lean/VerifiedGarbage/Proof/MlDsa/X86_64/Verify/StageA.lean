@@ -116,30 +116,6 @@ def aChk (p : Params) (e : Nat) : Bool :=
 
 theorem aChk_all : ∀ p ∈ params, ∀ e < p.k * p.ℓ, aChk p e = true := by decide +kernel
 
-/-- The slot of entry `j` is kept by the writes of a later entry `e`: apart from
-its own slot (`slotKeep`), they write the slot of `e`, after it. -/
-theorem keep_prev {p : Params} {j e : Nat} (hj : j < e) (he : inB (vB p) (pS (20 + e)) 1024 = true)
-    (hk : slotKeep p j = true) :
-    keepB (vB p) wsB (pS (20 + j)) 1024 = true ∧ keepB (vB p) (wsA e) (pS (20 + j)) 1024 = true := by
-  simp only [slotKeep, Bool.and_eq_true] at hk
-  refine ⟨hk.1.1.1, ?_⟩
-  have h2 := hk.1.1.2
-  simp only [keepB, sepB, List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true] at h2 ⊢
-  simp only [h2, he, true_and, and_true]
-  simp only [oP, bne_self_eq_false, Bool.false_and, beq_self_eq_true, Bool.true_and, Bool.false_or,
-    Bool.or_eq_true]
-  exact .inl (decide_eq_true (by omega_arith))
-
-/-- The entries done before `e` are kept by the writes of entry `e`. -/
-theorem keep_done {p : Params} (hp : p ∈ params) {e r' c' : Nat} (he : e < p.k * p.ℓ)
-    (hin : inB (vB p) (pS (20 + e)) 1024 = true) (hd : Done p.ℓ e r' c') :
-    keepB (vB p) wsB (pA p.ℓ r' c') 1024 = true ∧ keepB (vB p) (wsA e) (pA p.ℓ r' c') 1024 = true := by
-  unfold Done at hd
-  have hj := aChk_all p hp _ (show p.ℓ * r' + c' < p.k * p.ℓ by omega_arith)
-  simp only [aChk, Bool.and_eq_true] at hj
-  rw [pA_eq]
-  exact keep_prev hd hin hj.2
-
 /-- The entries done before `e` are kept by the writes of seed `j`'s bytes. -/
 theorem keep_slot_done {p : Params} (hp : p ∈ params) {e j r' c' : Nat} (hj : j < 4) (he : e ≤ p.k * p.ℓ)
     (hd : Done p.ℓ e r' c') : keepB (vB p) (wsS j) (pA p.ℓ r' c') 1024 = true := by
@@ -193,18 +169,7 @@ theorem setB2At_ok {p : Params} {s : State} (L : Lay (vR p) (vW p) s) (B : Nat)
       (List.mem_cons_of_mem _ (List.mem_cons_self ..)) _ (hc _)
   · rw [hm₂, hm₁, e₁, e32, e33]
 
-theorem setB2_ok {p : Params} {s : State} (L : Lay (vR p) (vW p) s) (h32 : inB (vW p) (sc (oSB + 32)) 1 = true)
-    (h33 : inB (vW p) (sc (oSB + 33)) 1 = true) (x y : Nat) (hx : x < 256) (hy : y < 256) :
-    WP isa (.block (setB (sc (oSB + 32)) x ++ setB (sc (oSB + 33)) y)) s fun s' => PPostB s s' wsB ∧
-      s'.gpr .r15 = s.gpr .r15 ∧
-      s'.mem = (s.mem.writeW (pa s (sc oSB) + BitVec.ofNat 64 32) (BitVec.ofNat 8 x)).writeW
-        (pa s (sc oSB) + BitVec.ofNat 64 33) (BitVec.ofNat 8 y) :=
-  setB2At_ok L oSB h32 h33 x y hx hy
-
 theorem kl_le : ∀ p ∈ params, p.ℓ ≤ 7 ∧ p.k ≤ 8 := by decide
-
-theorem done_succ {l e r' c' : Nat} : Done l (e + 1) r' c' ↔ Done l e r' c' ∨ l * r' + c' = e := by
-  unfold Done; omega_arith
 
 /-! ## Four entries at a time -/
 

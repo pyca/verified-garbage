@@ -19,7 +19,6 @@ open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchXor
 
 def groupHead : Prog isa := .seq SerialCbc.count SerialCbc.core
-abbrev proHead := SerialCfbHead.proHead
 abbrev HeadPre := SerialCfbHead.HeadPre
 abbrev HeadPost := SerialCfbHead.HeadPost
 theorem head_wp {s : State} {B D : BitVec 32} {n : Nat} (hn : 1 ≤ n) (_hn32 : n < 2 ^ 32)

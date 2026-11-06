@@ -205,9 +205,6 @@ theorem b2n_nor (p q : Prop) [Decidable p] [Decidable q] :
     (if b2n (decide p) = 0 ∧ b2n (decide q) = 0 then 1 else 0) = b2n (!(decide p || decide q)) := by
   unfold b2n; by_cases a : p <;> by_cases b : q <;> simp [a, b]
 
-theorem b2n_and (p q : Bool) : (if b2n p = 1 ∧ b2n q = 1 then 1 else 0) = b2n (p && q) := by
-  cases p <;> cases q <;> rfl
-
 theorem deMinus_ok {σ s : State}
     (h : KS P σ (Aload P σ) [VG.Impl.Rsa.Arm.Recover.aN] (AWp P σ)
       [VG.Impl.Rsa.Arm.Recover.wM, VG.Impl.Rsa.Arm.Recover.wMod, VG.Impl.Rsa.Arm.Recover.wZ] (fun _ => 0) [] s)

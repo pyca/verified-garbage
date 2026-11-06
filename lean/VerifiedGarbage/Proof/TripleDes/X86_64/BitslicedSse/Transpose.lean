@@ -250,8 +250,6 @@ structure Keep (s₀ s : State) : Prop where
   wr : s.wr = s₀.wr
   frame : Frame [stateR s₀] s₀.mem s.mem
 
-theorem Keep.refl (s : State) : Keep s s := ⟨fun _ _ _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
-
 /-- A group's slots are in the state words. -/
 theorem frame_state {s₀ : State} {m m' : Mem} {a n : Nat} (ha : a + n ≤ 64)
     (hf : Frame [⟨xAddr (s₀.gpr .rsi) a, 16 * n⟩] m m') : Frame [stateR s₀] m m' :=

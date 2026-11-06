@@ -18,8 +18,9 @@ public import VerifiedGarbage.Spec.Weierstrass
 
 /-! # The inverse at a run-time width: `32 w` iterations of two steps
 
-`inverse_ok` states what `Keys.inverse_ok` does, for the run-time width's
-`inverse` on `RtWs`.
+`inverse_ok`: for the run-time width's `inverse` on `RtWs`, from
+`(a, m, 1, 0)` in arrays 0–3, for an odd `m > 1`, array 1 ends as
+`gcd(a, m)` and array 3 as `x < m` with `x a ≡ gcd(a, m) (mod m)`.
 -/
 
 @[expose] public section

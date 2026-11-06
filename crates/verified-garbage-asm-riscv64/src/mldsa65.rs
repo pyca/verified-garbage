@@ -2216,6 +2216,105 @@ call {vg_keccak_squeeze}
     )
 }
 
+/// ML-DSA-65 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa65_verify_message_cached` takes.
+///
+/// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `tr` must be valid for reads and writes of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 103424 bytes, and aligned for `u64`.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `tr` and `scratch` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa65_pk_tr(pk: *const [u8; 1952], tr: *mut [u8; 64], scratch: *mut [u64; 12928]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0x51363423
+.insn 4, 0x51463823
+.insn 4, 0x51563c23
+.insn 4, 0x53663023
+.insn 4, 0x53763423
+.insn 4, 0x53863823
+.insn 4, 0x53963c23
+.insn 4, 0x55a63023
+.insn 4, 0x55b63423
+.insn 4, 0x54163823
+.insn 2, 0x8d2a
+.insn 2, 0x8caa
+.insn 2, 0x8c2e
+.insn 2, 0x8db2
+.insn 2, 0x4281
+.insn 4, 0x005db023
+.insn 4, 0x005db423
+.insn 4, 0x005db823
+.insn 4, 0x005dbc23
+.insn 4, 0x025db023
+.insn 4, 0x025db423
+.insn 4, 0x025db823
+.insn 4, 0x025dbc23
+.insn 4, 0x045db023
+.insn 4, 0x045db423
+.insn 4, 0x045db823
+.insn 4, 0x045dbc23
+.insn 4, 0x065db023
+.insn 4, 0x065db423
+.insn 4, 0x065db823
+.insn 4, 0x065dbc23
+.insn 4, 0x085db023
+.insn 4, 0x085db423
+.insn 4, 0x085db823
+.insn 4, 0x085dbc23
+.insn 4, 0x0a5db023
+.insn 4, 0x0a5db423
+.insn 4, 0x0a5db823
+.insn 4, 0x0a5dbc23
+.insn 4, 0x0c5db023
+.insn 2, 0x4601
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 2, 0x86e6
+.insn 4, 0x40000713
+call {vg_keccak_absorb}
+.insn 2, 0x862a
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 4, 0x400c8693
+.insn 4, 0x3a000713
+call {vg_keccak_absorb}
+.insn 2, 0x862a
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 2, 0x46fd
+call {vg_keccak_pad}
+.insn 2, 0x4601
+.insn 2, 0x856e
+.insn 4, 0x08800593
+.insn 2, 0x86e2
+.insn 4, 0x04000713
+call {vg_keccak_squeeze}
+.insn 2, 0x8552
+.insn 4, 0x550db083
+.insn 4, 0x508db983
+.insn 4, 0x510dba03
+.insn 4, 0x518dba83
+.insn 4, 0x520dbb03
+.insn 4, 0x528dbb83
+.insn 4, 0x530dbc03
+.insn 4, 0x538dbc83
+.insn 4, 0x540dbd03
+.insn 4, 0x548dbd83
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
+        vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
+        vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
+    )
+}
+
 /// ML-DSA-65 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.

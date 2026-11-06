@@ -77,14 +77,6 @@ theorem oneFacts {σ₁ σ₂ : State} {n w : Nat} (hw : w < n) (h₁ : oneCore 
   · have := o₂.dataW; rw [← q5, ← q6] at this; exact this
   · have := o₂.args; rw [← qw] at this; exact this
 
-/-- A stack argument, at `sp + j` with `j < 8 * n`, is outside `work`. -/
-theorem OneFacts.argW {σ σ₀ : State} {n w : Nat} (f : OneFacts σ σ₀ n w) {j : Nat} (hj : j + 8 ≤ 8 * n) :
-    (⟨σ.sp + BitVec.ofNat 64 j, 8⟩ : Region).Disjoint (workR (stackArg σ₀ w)) := by
-  refine f.args.sub_left ?_
-  show Region.Sub ⟨σ.sp + BitVec.ofNat 64 j, 8⟩ ⟨σ.sp + BitVec.ofNat 64 (8 * 0), 8 * n⟩
-  rw [show σ.sp + BitVec.ofNat 64 (8 * 0) = σ.sp by rw [Nat.mul_zero, BitVec.add_zero]]
-  exact Offset.sub_base _ hj
-
 /-- What the entry of `seal` and `open` leaves in a run from `σ`, with the
 values of the first run `σ₀`. -/
 abbrev Entered (w : Nat) (σ σ₀ τ : State) : Prop :=

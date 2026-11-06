@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindowTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrepTiming
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst

@@ -107,10 +107,6 @@ def Kept (n : Nat) (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
 theorem own_eq {n : Nat} (h : n ≤ 9) : own n + 64 * n = 4096 := by
   simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega_arith
 
-theorem ModOkS.n9 {n m : Nat} (h : ModOkS n m) : n ≤ 9 := by rcases h.hn with h | h <;> omega_arith
-theorem ModOkS.n4 {n m : Nat} (h : ModOkS n m) : 4 ≤ n := by rcases h.hn with h | h <;> omega_arith
-theorem ModOkS.hn' {n m : Nat} (h : ModOkS n m) : n = 4 ∨ n = 6 ∨ n = 9 := .inr h.hn
-
 theorem minv_lt (m : Nat) : minv m < 2 ^ 64 := Nat.mod_lt _ (by decide)
 
 /-! ## Facts of the registers, for each number of words -/

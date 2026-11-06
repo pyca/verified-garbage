@@ -110,20 +110,9 @@ theorem sl_arithFlags {w : Nat} (s : State) (x : BitVec w) (c o : Bool) (j : Nat
     sl (arithFlags s x c o) j = sl s j := by
   simp only [sl, mem_arithFlags, gpr_arithFlags]
 
-theorem sl_setFlags (s : State) (a b c d : Option Bool) (j : Nat) :
-    sl (s.setFlags a b c d) j = sl s j := by
-  simp only [sl, mem_setFlags, gpr_setFlags]
-
 theorem sl_st (s : State) {k : Nat} (hk : k < 128) (v : BitVec 64) {j : Nat} (hj : j < 128) :
     sl { s with mem := stMem s k v } j = if j = k then v else sl s j :=
   readW_stMem s hk v hj
-
-theorem exec_movMem {s : State} (d b : Reg) (k : Nat)
-    (hr : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 k) 8) :
-    exec (.mov d (.mem { base := b, disp := (k : Int) })) s =
-      some (s.setReg d (s.mem.readW (s.gpr b + BitVec.ofNat 64 k) 64)) := by
-  have hea : s.ea { base := b, disp := (k : Int) } = s.gpr b + BitVec.ofNat 64 k := rfl
-  simp only [exec, readSrc, State.load64, hea, hr, ite_true, Option.map_some]
 
 theorem exec_movImm (s : State) (d : Reg) (v : BitVec 32) :
     exec (.mov d (.imm v)) s = some (s.setReg d (v.signExtend 64)) := rfl
@@ -204,11 +193,6 @@ theorem varRel_slot {V : Nat → BitVec 64} {N : Nat} {e : Env Nat} {s : State}
     (hrel : Rel (VarRel V N) varsCfg (fun _ => none) e s) {k a : Nat} (hk : k < 128)
     (ha : e.slot k = some a) : sl s k = xorSet V a N :=
   hrel.slot k a hk ha
-
-theorem varRel_reg {V : Nat → BitVec 64} {N : Nat} {e : Env Nat} {s : State}
-    (hrel : Rel (VarRel V N) varsCfg (fun _ => none) e s) {r : Reg} {a : Nat}
-    (ha : e.reg r = some a) : s.gpr r = xorSet V a N :=
-  hrel.reg r a ha
 
 theorem xorSet_two_pow_xor {V : Nat → BitVec 64} {a b N : Nat} (ha : a < N) (hb : b < N) :
     xorSet V (2 ^ a ^^^ 2 ^ b) N = V a ^^^ V b := by

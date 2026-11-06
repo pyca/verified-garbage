@@ -11,21 +11,6 @@ namespace VG.Impl.Ed448.X86_64.Window
 open VG.X86_64
 open VG.Impl.X448.X86_64 (W sc)
 
-/-- Read a signed five-bit magnitude once, keeping it in `r15` throughout coordinate selection. -/
-def loadDigit (o : Nat) : List Instr :=
-  [.movzx8 .rax { base := .rdi, index := some .rbx, disp := ((o + 3 : Nat) : Int) },
-   .movzx8 .rdx { base := .rdi, index := some .rbx, disp := ((o + 2 : Nat) : Int) },
-   .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rdx),
-   .movzx8 .rdx { base := .rdi, index := some .rbx, disp := ((o + 1 : Nat) : Int) },
-   .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rdx),
-   .movzx8 .rdx { base := .rdi, index := some .rbx, disp := (o : Int) },
-   .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rdx),
-   .movzx8 .rdx { base := .rdi, index := some .rbx, disp := ((o - 1 : Nat) : Int) },
-   .alu .add .rax (.reg .rdx),
-   .movzx8 .rdx { base := .rdi, index := some .rbx, disp := ((o + 4 : Nat) : Int) },
-   .mov32 .r15 (.imm 16), .alu .sub .r15 (.reg .rax),
-   .alu .test .rdx (.reg .rdx), .cmov .e .r15 (.reg .rax)]
-
 def compareDigit (i : Nat) : List Instr := [.alu .cmp .r15 (.imm (BitVec.ofNat 32 i))]
 
 /-- Replace the seven register words exactly when the last comparison matched. -/

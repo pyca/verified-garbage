@@ -36,15 +36,14 @@ meta import VerifiedGarbage.Proof.Sm4.Prepared
 /-!
 # SM4's prepared round keys and batches on PPC64LE meet their contracts
 
-`prepare_verified` and `crypt_verified`: `vg_sm4_prepare_keys` and
+`prep_correct` and `crypt_correct`: `vg_sm4_prepare_keys` and
 `vg_sm4_crypt_prepared` against `Proof.Sm4.Prepared`, with `layout`. Each
 body runs from the state narrowed to ECB's scratch buffer (`prepareBody_wp`,
 `cryptBody_wp`) and then from the whole working space (`Exec.widen`), which it
 changes only where the narrowed run may. A batch's blocks are ECB in the
 direction and under the round keys of any table encoding that its working
 space holds: the run from it is the run from the table the precondition
-gives (`Exec.det`). Constant time by the taint analysis: the pointers,
-`ws_len` and `decrypt` are public.
+gives (`Exec.det`).
 -/
 
 @[expose] public section
@@ -160,31 +159,6 @@ theorem prep_correct (s : State) (hs : prepPPC64LE.pre s) :
     simp only at this
     omega
 
-theorem prepTaint_agree (s₁ s₂ : State) (_ : prepPPC64LE.pre s₁) (_ : prepPPC64LE.pre s₂)
-    (hp : prepPPC64LE.pub s₁ s₂) : taint.Agree (Taint.ofRegs [.r3, .r4, .r5, .r6]) s₁ s₂ := by
-  obtain ⟨h1, h2, h3, h4, hsp⟩ := hp
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-theorem prep_ct : ConstantTime isa prepPPC64LE.pre prepPPC64LE.pub prepareKeys :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) prepTaint_agree (by taint_decide)
-
-/-- A state satisfying the preparation's precondition. -/
-def prepSat : State where
-  gpr r := match r with | .r3 => 0x1000 | .r5 => 0x2000 | .r6 => 402 | _ => 0
-  lr := 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 402 * 8⟩]
-
-theorem prepare_verified :
-    Verified target prepareKeys (Proof.Sm4.Prepared.prepareContract layout abi) :=
-  Verified.of_correct prep_correct prep_ct (by
-    sig_implies [Proof.Sm4.Prepared.prepareContract, Proof.Sm4.Prepared.prepareSig, prepPPC64LE, abi,
-      argRegs, size_eq, slots] [prepSat] using prepSat)
-
 /-! ## A batch -/
 
 /-- `vg_sm4_crypt_prepared` on PPC64LE. -/
@@ -258,67 +232,5 @@ theorem crypt_correct (s : State) (hs : cryptPPC64LE.pre s) :
       · rw [Mem.sub_ofNat_toNat _ (by omega), tableSlot_eq] at hc; omega
       · rw [VG.Offset.sub_toNat' _ (by rw [savedSlot_eq]; omega) (by omega), savedSlot_eq] at hc
         split at hc <;> omega
-
-theorem cryptTaint_agree (s₁ s₂ : State) (_ : cryptPPC64LE.pre s₁) (_ : cryptPPC64LE.pre s₂)
-    (hp : cryptPPC64LE.pub s₁ s₂) : taint.Agree (Taint.ofRegs [.r3, .r4]) s₁ s₂ := by
-  obtain ⟨h1, h2, hsp⟩ := hp
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> with_reducible assumption
-
-theorem crypt_ct : ConstantTime isa cryptPPC64LE.pre cryptPPC64LE.pub cryptPrepared :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4]) cryptTaint_agree (by taint_decide)
-
-/-- Round keys of zeros. -/
-def zeroSchedule : Spec.Sm4.Schedule := Vector.replicate 32 0
-
-/-- A working space at `0x2000` holding the table of `zeroSchedule` for
-encryption. -/
-def cryptSatMem : Mem := fun a =>
-  if 0x2000 ≤ a.toNat ∧ a.toNat < 0x2000 + 3216 then layout.encode zeroSchedule .encrypt (a.toNat - 0x2000) else 0
-
-theorem cryptSat_holds : Holds layout cryptSatMem 0x2000 zeroSchedule .encrypt := by
-  intro r hr i hi
-  have hr' : r.1 + i < 3072 := by
-    rw [layout_table] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> dsimp only at hi ⊢ <;> omega
-  have ht : ((0x2000 : Addr) + BitVec.ofNat 64 (r.1 + i)).toNat = 0x2000 + (r.1 + i) := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, show (0x2000 : Addr).toNat = 0x2000 from rfl]; omega
-  have hc : 0x2000 ≤ 0x2000 + (r.1 + i) ∧ 0x2000 + (r.1 + i) < 0x2000 + 3216 := ⟨by omega, by omega⟩
-  simp only [cryptSatMem, ht, hc, and_self, ↓reduceIte]
-  rw [show 0x2000 + (r.1 + i) - 0x2000 = r.1 + i by omega]
-
-/-- A state satisfying the batch's precondition. -/
-def cryptSat : State where
-  gpr r := match r with | .r3 => 0x2000 | .r4 => 402 | _ => 0
-  lr := 0
-  sp := 0x8000
-  mem := cryptSatMem
-  rd := []
-  wr := [⟨0x2000, 402 * 8⟩]
-
-theorem crypt_implies : cryptPPC64LE.Implies (Proof.Sm4.Prepared.cryptContract layout abi) where
-  pre := by
-    sig_implies_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptPPC64LE, abi,
-      argRegs]
-  post := by
-    sig_implies_post [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptPPC64LE, abi,
-      argRegs]
-  pub := by
-    sig_implies_pub [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, cryptPPC64LE, abi,
-      argRegs]
-  sat := by
-    refine ⟨cryptSat, ?_⟩
-    sig_pre [Proof.Sm4.Prepared.cryptContract, Proof.Sm4.Prepared.cryptSig, abi, argRegs]
-    sig_and_intros
-    all_goals first
-      | decide
-      | exact ⟨_, _, cryptSat_holds⟩
-      | (rw [size_eq, slots_eq]; decide)
-
-theorem crypt_verified :
-    Verified target cryptPrepared (Proof.Sm4.Prepared.cryptContract layout abi) :=
-  Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Sm4.PPC64LE

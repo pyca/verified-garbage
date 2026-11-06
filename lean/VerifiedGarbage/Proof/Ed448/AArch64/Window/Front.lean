@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.X448.AArch64.Fast.SaveX
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
 public import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.X448.AArch64.Ladder
 import VerifiedGarbage.Proof.Ed448.AArch64.DecodeOps
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBytes
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
@@ -37,6 +36,7 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Proof.X448.AArch64.Setup
 public import VerifiedGarbage.Spec.X448
 public import VerifiedGarbage.TCB.Code
+import VerifiedGarbage.Proof.X448.AArch64.Iter
 
 /-!
 # Ed448 verification on AArch64: the entry and the decodings
@@ -100,13 +100,6 @@ theorem kb_ofs (base : Addr) {i : Nat} (hi : i < 57) : ofs base (off base (KB + 
 
 theorem bits_ofs (base : Addr) {t : Nat} (ht : t < 456) : ofs base (off base (BITS + t)) = BITS + t :=
   ofs_off0' base (by simp only [BITS]; omega_arith)
-
-theorem Bits.dframe {base : Addr} {k : Nat} {m m' : Mem} (h : DFrame base m m') (hb : Bits 57 base k m) :
-    Bits 57 base k m' := fun t ht => by
-  rw [h _ (by rw [bits_ofs base (by omega_arith)]; simp only [BITS]; omega_arith)
-    (by rw [bits_ofs base (by omega_arith)]; simp only [BITS, ACC]; omega_arith)
-    (by rw [bits_ofs base (by omega_arith)]; simp only [BITS, CAN]; omega_arith)]
-  exact hb t ht
 
 /-! ## The front -/
 

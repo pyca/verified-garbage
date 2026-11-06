@@ -466,8 +466,6 @@ def zeroOut (sPtr sLen : Nat) : Prog isa :=
 /-- The mask's low bit returned, and the saved registers restored. -/
 def retMask : List Instr := ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit
 
-/-! ## `vg_rsa_crt_values` -/
-
 end VG.Impl.Rsa.X86_64.Keys
 
 namespace VG.Impl.Rsa.X86_64.WordDivide
@@ -582,11 +580,6 @@ def aC : Nat := 9
 /-- The mask of `rbp = 0` and'ed into `sMask`. -/
 def andZero : List Instr :=
   [.alu .cmp .rbp (.imm 1), .alu .sbb .rbp (.reg .rbp), .alu .and .rbp (.mem (hdr sMask)), .store (hdr sMask) .rbp]
-
-/-- The mask of `[j]` odd and'ed into `sMask`. -/
-def andOdd (j : Nat) : List Instr :=
-  ws ++ base j .rbx ++ ([.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm 1), .mov32 .rdx (.imm 0),
-    .alu .sub .rdx (.reg .rax), .alu .and .rdx (.mem (hdr sMask)), .store (hdr sMask) .rdx] : List Instr)
 
 /-- The factors' bases and widths for `mulRows`, and the product's base.
 The product occupies arrays 2 and 3, leaving the factors and `d` alone. -/

@@ -5,9 +5,10 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # Camellia with its subkeys prepared once, in a working space
 
-Not trusted: the contracts that the proofs of internal functions (`Rust.Internal`),
-which only verified code calls, are of, and that the proofs of their callers
-compose. Only the callers' contracts, in `Spec/`, are trusted.
+Not trusted: the layout and the predicates in which the proofs of internal
+functions (`Rust.Internal`), which only verified code calls, state what
+those functions do, and which the proofs of their callers compose. Only the
+callers' contracts, in `Spec/`, are trusted.
 
 Two callable pieces of Camellia's modes. A bitsliced implementation turns
 the subkeys into a table of its own (their bits as masks of its lanes)
@@ -25,8 +26,8 @@ many rounds in the order of a direction, and what
 `vg_camellia_crypt_prepared` needs to find there to transform its blocks in
 that direction. It also gives the offset of the batch's `blocks` blocks, and
 the ranges each function may change. The two functions are only ever
-composed, so the encoding is the implementation's: whatever it is, the
-batch's postcondition holds only where the table encodes the subkeys of a
+composed, so the encoding is the implementation's: whatever it is, what a
+batch's proof shows holds only where the table encodes the subkeys of a
 direction, and then says that the batch is ECB in that direction
 (`Spec/Camellia.lean`).
 
@@ -74,9 +75,6 @@ uses them: the words of `subkeysAt m p rounds`. -/
 def wordsAt (m : Mem) (p : Addr) (rounds : Nat) : List (BitVec 64) :=
   (List.range (scheduleLength rounds)).map fun i => wordAt m (p + BitVec.ofNat 64 (8 * i))
 
-theorem subkeysAt_eq (m : Mem) (p : Addr) (rounds : Nat) :
-    subkeysAt m p rounds = subkeysOfWords rounds (wordsAt m p rounds) := rfl
-
 /-- Where an implementation keeps the prepared subkeys and the batch's
 blocks in its working space, and how it encodes the subkeys, for each
 number of rounds. -/
@@ -109,95 +107,5 @@ def Holds (L : Layout) (m : Mem) (ws : Addr) (rounds : Nat) (w : List (BitVec 64
 def Keeps (ws : Addr) (wsLen : Nat) (rs : List (Nat × Nat)) (m m' : Mem) : Prop :=
   ∀ i < 8 * wsLen, (∀ r ∈ rs, i < r.1 ∨ r.1 + r.2 ≤ i) →
     m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
-
-/-! ## The preparation -/
-
-/-- `vg_camellia_prepare_keys(schedule, rounds, decrypt, ws, ws_len)`: the
-subkeys, the number of rounds and the direction (0 to encrypt, 1 to
-decrypt), both public, and the working space, in 64-bit words. -/
-def prepareSig : Sig where
-  params := [("schedule", .array false .u8 272), ("rounds", .int .usize true), ("decrypt", .int .usize true),
-    ("ws", .slice true .u64 "ws_len")]
-
-/-- For `rounds` of 18 or 24, `decrypt` of 0 or 1 and a working space of at
-least `L.size` bytes: the table encodes the words of the subkeys of
-`rounds` rounds at `schedule` in the order of the direction `decrypt` selects. Only the bytes
-of `L.prepScratch` change. -/
-def prepareContract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contract I :=
-  prepareSig.contract A
-    (pre := fun _schedule rounds decrypt _ws wsLen _ =>
-      (rounds.toNat = 18 ∨ rounds.toNat = 24) ∧ decrypt.toNat ≤ 1 ∧ L.size ≤ 8 * wsLen.toNat)
-    (post := fun schedule rounds decrypt ws wsLen m m' _ =>
-      Holds L m' ws rounds.toNat (wordsAt m schedule rounds.toNat) (directionOf decrypt.toNat) ∧
-        Keeps ws wsLen.toNat L.prepScratch m m')
-    (stack := stack)
-
-/-! ## A batch -/
-
-/-- `vg_camellia_crypt_prepared(rounds, ws, ws_len)`: the number of rounds,
-public, and the working space, in 64-bit words. -/
-def cryptSig : Sig where
-  params := [("rounds", .int .usize true), ("ws", .slice true .u64 "ws_len")]
-
-/-- For `rounds` of 18 or 24 and a working space of at least `L.size` bytes
-whose table encodes some words of `rounds` rounds in the order of some
-direction (as `vg_camellia_prepare_keys` leaves it): wherever the table
-encodes the words `w` of `rounds` rounds in the order of the direction `d`,
-the `L.blocks` blocks at `L.buf` are replaced by their ECB in direction `d`
-under the subkeys of `rounds` rounds of those words,
-`subkeysOfWords rounds w`. Only the bytes of `L.cryptScratch` change. -/
-def cryptContract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contract I :=
-  cryptSig.contract A
-    (pre := fun rounds ws wsLen m => (rounds.toNat = 18 ∨ rounds.toNat = 24) ∧ L.size ≤ 8 * wsLen.toNat ∧
-      ∃ w d, Holds L m ws rounds.toNat w d)
-    (post := fun rounds ws wsLen m m' _ =>
-      (∀ w d, Holds L m ws rounds.toNat w d →
-        blocksAt m' (ws + BitVec.ofNat 64 L.buf) L.blocks =
-          ecb (subkeysOfWords rounds.toNat w) d (blocksAt m (ws + BitVec.ofNat 64 L.buf) L.blocks)) ∧
-      Keeps ws wsLen.toNat L.cryptScratch m m')
-    (stack := stack)
-
-/-! ## Encryption only: the preparation -/
-
-/-- `vg_camellia_prepare_encrypt_keys(schedule, rounds, ws, ws_len)`: the
-subkeys, the number of rounds, public, and the working space, in 64-bit
-words. -/
-def prepareEncryptSig : Sig where
-  params := [("schedule", .array false .u8 272), ("rounds", .int .usize true),
-    ("ws", .slice true .u64 "ws_len")]
-
-/-- For `rounds` of 18 or 24 and a working space of at least `L.size`
-bytes: the table encodes the words of the subkeys of `rounds` rounds at
-`schedule` in the order of encryption. Only the bytes of `L.prepScratch`
-change. -/
-def prepareEncryptContract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contract I :=
-  prepareEncryptSig.contract A
-    (pre := fun _schedule rounds _ws wsLen _ =>
-      (rounds.toNat = 18 ∨ rounds.toNat = 24) ∧ L.size ≤ 8 * wsLen.toNat)
-    (post := fun schedule rounds ws wsLen m m' _ =>
-      Holds L m' ws rounds.toNat (wordsAt m schedule rounds.toNat) .encrypt ∧
-        Keeps ws wsLen.toNat L.prepScratch m m')
-    (stack := stack)
-
-/-! ## Encryption only: a batch -/
-
-/-- For `rounds` of 18 or 24 and a working space of at least `L.size` bytes
-whose table encodes some words of `rounds` rounds in the order of
-encryption (as `vg_camellia_prepare_encrypt_keys` leaves it): wherever the
-table encodes the words `w` of `rounds` rounds in that order, the
-`L.blocks` blocks at `L.buf` are replaced by their ECB encryption under the
-subkeys of `rounds` rounds of those words, `subkeysOfWords rounds w`. Only
-the bytes of `L.cryptScratch` change. Its signature is
-`vg_camellia_crypt_prepared`'s, `cryptSig`. -/
-def encryptPreparedContract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contract I :=
-  cryptSig.contract A
-    (pre := fun rounds ws wsLen m => (rounds.toNat = 18 ∨ rounds.toNat = 24) ∧ L.size ≤ 8 * wsLen.toNat ∧
-      ∃ w, Holds L m ws rounds.toNat w .encrypt)
-    (post := fun rounds ws wsLen m m' _ =>
-      (∀ w, Holds L m ws rounds.toNat w .encrypt →
-        blocksAt m' (ws + BitVec.ofNat 64 L.buf) L.blocks =
-          ecb (subkeysOfWords rounds.toNat w) .encrypt (blocksAt m (ws + BitVec.ofNat 64 L.buf) L.blocks)) ∧
-      Keeps ws wsLen.toNat L.cryptScratch m m')
-    (stack := stack)
 
 end VG.Proof.Camellia.Prepared

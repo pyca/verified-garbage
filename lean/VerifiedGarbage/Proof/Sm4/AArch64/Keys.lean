@@ -172,14 +172,6 @@ def kpStep : Dir → Instr
   | .encrypt => .addImm .x kp kp 64
   | .decrypt => .subImm .x kp kp 64
 
-theorem keyBody_eq (dir : Dir) :
-    (match dir with | .encrypt => encKeys | .decrypt => decKeys) =
-      .seq (.block (slotAddr kp (match dir with | .encrypt => tableSlot | .decrypt => tableSlot + 8 * 31) ++
-          ([.movz .x .x3 16 0] : List Instr)))
-        (.loop (.block (keyOne 0 ++ ([kpStep dir] : List Instr) ++ keyOne 1 ++
-          ([kpStep dir, .addImm .x .x0 .x0 8, .subImm .x .x3 .x3 1] : List Instr))) (.nonzero .x .x3)) := by
-  cases dir <;> rfl
-
 /-- `kp` moves from `x` to `y`. -/
 def RsiStep : Dir → Nat → Nat → Prop
   | .encrypt, x, y => y = x + 64

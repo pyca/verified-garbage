@@ -22,14 +22,6 @@ open VG VG.Arm VG.Impl.MlDsa.Arm.Sign
 open VG.Spec.MlDsa (integerToBytes)
 open VG.Spec.Sha3 (bytesAt)
 
-/-- What a block that writes only registers other than the callee-saved
-ones, and memory within `W`, leaves. -/
-theorem postB_of_keep {D : Nat} {rs : List Reg} {s s' : State} (k : Keep rs s s')
-    (hcs : ∀ r ∈ preserved, r ≠ .lr → r ∉ rs) {W : List Region} (hf : Frame W s.mem s'.mem) :
-    PostB D s s' W ∧ CS s s' :=
-  have c : CS s s' := fun r hr hl => k.gpr r (hcs r hr hl)
-  ⟨PostB.of_cs c k.rd k.wr k.sp hf, c⟩
-
 section
 variable {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D rbs wbs s)
 include L

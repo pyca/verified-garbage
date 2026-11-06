@@ -32,15 +32,6 @@ open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32 ghas
   padLen)
 open VG.Proof.Gcm (Absorbed xorKs lensBlock padded)
 
-/-- The keystream from the counter block `q` blocks on. -/
-theorem xorKs_shift (ciph : Block → Block) (icb : Block) (q : Nat) (d : List Byte) :
-    xorKs ciph icb (16 * q) d = xorKs ciph (Nat.repeat inc32 q icb) 0 d := by
-  simp only [xorKs]
-  refine List.map_congr_left fun i _ => ?_
-  simp only [Proof.Gcm.ksByte, Nat.zero_add]
-  rw [show (16 * q + i) / 16 = i / 16 + q by omega_arith, show (16 * q + i) % 16 = i % 16 by omega_arith,
-    Proof.Gcm.repeat_add]
-
 /-- The total length put back. -/
 theorem fixTlen_ok {Ctx W SP : Addr} {N : Nat} {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
     (haux : s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 N) :

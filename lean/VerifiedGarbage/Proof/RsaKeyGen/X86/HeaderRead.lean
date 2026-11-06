@@ -29,13 +29,6 @@ theorem pointers_read64 (indices : List Nat) {base : Addr} {p : BitVec 32} {w d 
     · have := bound i (List.mem_cons_self ..)
       omega
 
-theorem header_inverse {base : Addr} {p : BitVec 32} {w : Nat} {m : Mem} :
-    (headerMemory base p w m).readW (off base 56) 64 = m.readW (off base 56) 64 := by
-  unfold headerMemory
-  rw [pointers_read64 _ (fun _ mem => List.mem_range.mp mem) (by decide) (by decide),
-    read64_write (by decide) (by decide) (by decide),
-    read64_write (by decide) (by decide) (by decide)]
-
 theorem header_width {base : Addr} {p : BitVec 32} {w : Nat} {m : Mem} :
     (headerMemory base p w m).readW (off base 48) 64 = 0#32 ++ BitVec.ofNat 32 w := by
   unfold headerMemory

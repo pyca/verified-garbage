@@ -27,15 +27,6 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Pr
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.WriteBytes (writeW8_apply)
 
-theorem ea_at10 (t : State) {b : Reg} {p : Addr} {j : Nat} (hb : t.gpr b = p)
-    (hi : t.gpr .r10 = BitVec.ofNat 64 j) : t.ea (at10 b) = p + BitVec.ofNat 64 j := by
-  simp only [State.ea, at10, hb, hi, BitVec.mul_one, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero]
-
-theorem ea_mByte (t : State) {S : Addr} {j : Nat} (hb : t.gpr .rsp = S) (hi : t.gpr .r10 = BitVec.ofNat 64 j) :
-    t.ea mByte = off S oM + BitVec.ofNat 64 j := by
-  simp only [State.ea, mByte, hb, hi, BitVec.mul_one, BitVec.ofInt_natCast, off]
-  rw [BitVec.add_assoc, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 64 j)]
-
 /-- The comparison's registers. -/
 theorem cmpArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
     WP isa (.block cmpArgs) t fun t' => t'.mem = t.mem ∧

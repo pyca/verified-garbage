@@ -40,8 +40,6 @@ theorem callE_gpr (s t : State) {r : Reg} (hr : r ∉ linkRegs := by decide) : (
   State.callEntry_gpr t hr
 
 theorem callE_sp (s t : State) : (callE s t).sp = t.sp := rfl
-theorem callE_mem (s t : State) : (callE s t).mem = t.mem := rfl
-
 theorem callE_stackArg {s t : State} (A : AtPriv s t) {i : Nat} (hi : i < 12) :
     stackArg (callE s t) i = psa s i := by
   show t.mem.readW (stackArgAddr (callE s t) i) 64 = _
@@ -51,17 +49,9 @@ theorem callE_stackArg {s t : State} (A : AtPriv s t) {i : Nat} (hi : i < 12) :
 theorem callE_addr {s t : State} (A : AtPriv s t) : stackArgAddr (callE s t) 0 = pb s + BitVec.ofNat 64 96 := by
   rw [stackArgAddr, callE_sp, A.sp]
 
-/-- The private operation's frame, below ours. -/
-theorem privK (s : State) :
-    Rsa.PPC64LE.Priv.kR { s with sp := pb s } = ⟨s.sp - BitVec.ofNat 64 stackBytes,
-      Impl.Rsa.PPC64LE.Priv.frameBytes⟩ := by
-  simp only [Rsa.PPC64LE.Priv.kR, Rsa.PPC64LE.Priv.fb, pb_base, BitVec.add_sub_cancel]
-
 section
 variable {s : State} (P : PreD s)
 include P
-
-theorem kk_le : kk s ≤ 1024 := P.k2
 
 theorem em_sub : Region.Sub (emR s) (scR s) :=
   Region.sub_prefix (by show kk s ≤ _; have := scLen P; have := P.k2; unfold kk oRsa at *; omega)

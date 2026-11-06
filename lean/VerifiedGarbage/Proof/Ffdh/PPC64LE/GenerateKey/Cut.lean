@@ -7,10 +7,9 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
-# `vg_ffdh_generate_key` on PPC64LE: the smear and the cut
+# `vg_ffdh_generate_key` on PPC64LE: the cut
 
-`smear_ok`: the bits of the octet in `r14` below its top one, that one too
-(`smearN`). `cut_ok`: `rand`'s `k` octets at `R` to x at `X`, zeros before
+`cut_ok`: `rand`'s `k` octets at `R` to x at `X`, zeros before
 the index `ld` in `r22`, and'ed with the octet in `r14` at it, kept after it
 (`KeyScalar.cut`), without a branch.
 -/
@@ -24,26 +23,6 @@ open VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Ffdh.KeyScalar
 open VG.Proof.MillerRabin.PPC64LE (mask)
 
 /-! ## The smear -/
-
-theorem smear_nat : ∀ n < 256, (let a := BitVec.ofNat 64 n ||| BitVec.ofNat 64 n >>> 1
-    let b := a ||| a >>> 2
-    b ||| b >>> 4) = BitVec.ofNat 64 (smearN n) := by decide +kernel
-
-/-- `smear`: `r14 :=` `smearN` of its octet. -/
-theorem smear_ok (s : State) {b : Byte} (h14 : s.gpr .r14 = b.setWidth 64) :
-    WP isa (.block smear) s fun t =>
-      (t.gpr .r14 = (BitVec.ofNat 8 (smearN b.toNat)).setWidth 64 ∧ t.mem = s.mem) ∧ Keep [.r14, .r16] s t := by
-  refine WP.keep _ ?_ (by decide)
-  unfold smear
-  prun [h14]
-  have e : b.setWidth 64 = BitVec.ofNat 64 b.toNat := by apply BitVec.eq_of_toNat_eq; simp
-  have e2 : (BitVec.ofNat 8 (smearN b.toNat)).setWidth 64 = BitVec.ofNat 64 (smearN b.toNat) := by
-    apply BitVec.eq_of_toNat_eq
-    have := smearN_lt _ b.isLt
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
-  rw [e, e2]
-  exact smear_nat _ b.isLt
 
 /-! ## Masks of the index -/
 

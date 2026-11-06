@@ -33,8 +33,6 @@ theorem freed_rsp (bytes : Nat) (s : State) :
 theorem freed_reg (bytes : Nat) (s : State) (r : Reg) (hr : r ≠ .rsp) :
     (freed bytes s).gpr r = s.gpr r := ite_eq_right hr
 
-theorem freed_mem (bytes : Nat) (s : State) : (freed bytes s).mem = s.mem := rfl
-
 theorem frame_alloc {bytes : Nat} {s : State} {body : Prog isa} {Q : State → Prop}
     (hpos : 0 < bytes) (hsmall : bytes < 4096) (halign : bytes % 8 = 0)
     (hroom : bytes ≤ (s.gpr .rsp).toNat)

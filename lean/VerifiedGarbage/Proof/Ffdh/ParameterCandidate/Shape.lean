@@ -56,12 +56,6 @@ theorem half_bitLength {bits : Nat} (hb : 2 ≤ bits) (x : Nat) :
   have he : bits - 2 + 1 = bits - 1 := by omega
   simpa only [he] using bitLength_of hql (by simpa only [he] using hqu)
 
-/-- Witnesses for p use p's exact byte width. -/
-theorem candidate_witnessOctets {bits : Nat} (hb : 2 ≤ bits) (x : Nat) :
-    witnessOctets (candidateOf bits x) = (bits + 7) / 8 := by
-  unfold witnessOctets
-  rw [(candidate_bitLength hb x).2]
-
 /-- Subtracting one preserves an odd q's significant width. -/
 theorem half_pred_bitLength {bits : Nat} (hb : 3 ≤ bits) (x : Nat)
     (ho : ((candidateOf bits x - 1) / 2) % 2 = 1) :

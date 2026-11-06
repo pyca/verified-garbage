@@ -63,8 +63,6 @@ theorem covers_cons {r : Region} {rs ts : List Region} (h₁ : Covers [r] ts) (h
 
 theorem covers_nil {ts : List Region} : Covers [] ts := fun _ _ ⟨_, h, _⟩ => by cases h
 
-theorem covers_one {r : Region} {ts : List Region} (h : Covers [r] ts) : Covers [r] ts := h
-
 /-! ## The layout -/
 
 /-- The regions: the context, the state and `W`, and the `K` bytes of stack
@@ -180,9 +178,6 @@ namespace Env
 variable {Ctx St W SP : BitVec 32} {s : State} (E : Env Ctx St W SP s)
 include E
 
-theorem ctxIn {d n : Nat} (h : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (w64 Ctx + BitVec.ofNat 64 d) n :=
-  in_off E.ctxR h (by decide)
-
 theorem stIn {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (w64 St + BitVec.ofNat 64 d) n :=
   in_off E.stW h (by decide)
 
@@ -194,9 +189,6 @@ theorem wIn {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (w64 W + BitVec.of
 
 theorem wIn' {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 d) n :=
   in_left (E.wIn h)
-
-theorem ctxC {d n : Nat} (h : d + n ≤ 256) : Covers [⟨w64 Ctx + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
-  covers_off E.ctxR h (by decide)
 
 theorem stC {d n : Nat} (h : d + n ≤ 80) : Covers [⟨w64 St + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off E.stW h (by decide)
@@ -229,11 +221,6 @@ theorem readW_writeW_off (m : Mem) (p : Addr) (v : BitVec 32) {a b : Nat} (h : a
     (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
     (m.writeW (p + BitVec.ofNat 64 b) v).readW (p + BitVec.ofNat 64 a) 32 = m.readW (p + BitVec.ofNat 64 a) 32 :=
   Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
-
-/-- A word at `p + a`, after a byte written at `q` elsewhere. -/
-theorem readW_writeB_sep (m : Mem) {p q : Addr} (v : BitVec 8) (h : Mem.Sep p 4 q 1) :
-    (m.writeW q v).readW p 32 = m.readW p 32 :=
-  Mem.readW_writeW_sep h (by decide)
 
 /-! ## Arithmetic -/
 
@@ -269,19 +256,6 @@ theorem shr4 {n : Nat} (hn : n < 2 ^ 32) : BitVec.ofNat 32 n >>> 4 = BitVec.ofNa
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn,
     Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
-
-/-- `16 k`, by four doublings. -/
-theorem times16 (x : BitVec 32) :
-    x + x + (x + x) + (x + x + (x + x)) + (x + x + (x + x) + (x + x + (x + x))) =
-      BitVec.ofNat 32 (16 * x.toNat) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
-
-/-- `CF` after `a - b`, as natural numbers. -/
-theorem lt_ofNat {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
-    ((BitVec.ofNat 32 a).toNat < (BitVec.ofNat 32 b).toNat) = (a < b) := by
-  rw [toNat_ofNat32 ha, toNat_ofNat32 hb]
 
 /-! ## Running a block -/
 

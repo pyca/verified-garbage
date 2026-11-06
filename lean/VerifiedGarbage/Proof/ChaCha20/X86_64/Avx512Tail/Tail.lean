@@ -87,12 +87,6 @@ theorem not_win {p n k : Nat} (h : p + n ≤ eL s₀) (hk : k < eL s₀) (ho : k
   rw [Offset.sub_toNat' _ (by omega_arith) (by omega_arith)]
   split <;> omega_arith
 
-theorem win_byte {p k : Nat} : edp s₀ + BitVec.ofNat 64 p + BitVec.ofNat 64 (k - p) =
-    edp s₀ + BitVec.ofNat 64 k ∨ k < p := by
-  by_cases h : p ≤ k
-  · exact .inl (by rw [add_ofNat, Nat.add_sub_cancel' h])
-  · exact .inr (by omega_arith)
-
 theorem ea_win {p k : Nat} (h : p ≤ k) : edp s₀ + BitVec.ofNat 64 k =
     edp s₀ + BitVec.ofNat 64 p + BitVec.ofNat 64 (k - p) := by
   rw [add_ofNat, Nat.add_sub_cancel' h]
@@ -658,19 +652,6 @@ theorem ret_frR {s₀ : State} (hp : APre s₀) : ∀ r ∈ frR s₀, (eret s₀
 
 /-! ## At most 64 bytes, by `vg_chacha20_xor` -/
 
-theorem cmp65_ok {s₀ : State} {p : Nat} {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
-    WP isa (.block [.alu .cmp .rdx (.imm 65)]) s fun s' =>
-      TInv s₀ p s' ∧ s'.gpr .r9 = ebp s₀ ∧ s'.cf = some (decide (eL s₀ - p < 65)) := by
-  have hL := eL_lt s₀
-  have se : BitVec.signExtend 64 (65 : BitVec 32) = 65 := by decide
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
-    State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', se]
-  refine ⟨⟨h.rdi, h.rcx, h.rsi, h.rdx, h.le, h.dvd, h.keep, h.rd, h.wr, h.cnt, h.data, h.incs, h.frame⟩,
-    hr9, ?_⟩
-  rw [h.rdx, toNat_ofNat_lt (by omega_arith)]
-  rfl
-
 section
 variable {s₀ : State} {p : Nat}
 
@@ -705,9 +686,6 @@ structure SInv (s₀ : State) (p : Nat) (s : State) : Prop where
   data : ∀ k < eL s₀, s.mem (edp s₀ + BitVec.ofNat 64 k) =
     if k < p then D0 s₀ k ^^^ (KS s₀).getD k 0 else D0 s₀ k
   frame : Frame (frR s₀) s₀.mem s.mem
-
-theorem TInv.sinv {s₀ : State} {p : Nat} {s : State} (h : TInv s₀ p s) : SInv s₀ p s :=
-  ⟨h.rdi, h.rcx, h.rsi, h.rdx, h.le, h.dvd, h.keep, h.rd, h.wr, h.cnt, h.data, h.frame⟩
 
 /-- `vg_chacha20_xor` XORs the last bytes into the data, and returns with
 `rsi` pointing at `buf`. -/

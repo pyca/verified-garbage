@@ -35,10 +35,6 @@ theorem idx_lt {p : Params} {i j : Nat} (hi : i < p.k) (hj : j < p.ℓ) : p.ℓ 
   rw [Nat.mul_succ, Nat.mul_comm p.ℓ p.k] at this
   omega_arith
 
-/-- In row `i`, with `f` holding what the row computed so far. -/
-def KRow (p : Params) (i : Nat) (f : (Nat → Poly) → (Nat → IPoly) → State → Prop) (σ s : State) : Prop :=
-  ∃ A S R, KR p σ A S R (p.ℓ + p.k) p.ℓ i s ∧ f A S s
-
 /-- The `t` so far. -/
 abbrev tIs (p : Params) (g : (Nat → Poly) → (Nat → IPoly) → Poly) (A : Nat → Poly) (S : Nat → IPoly) (s : State) :
     Prop := PolyIs s.mem (pa s (tP p)) (g A S)

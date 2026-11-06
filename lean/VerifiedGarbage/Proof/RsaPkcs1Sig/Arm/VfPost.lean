@@ -166,12 +166,6 @@ theorem St1.frame {σ : State} {m m' : Mem} {rs : List Region} (hf : Frame rs m 
   let ⟨rc, cr, sl⟩ := h
   ⟨rc, cr.frame hf (fun x hx => (hd x hx).1) hK, (slot_frame hf fun x hx => (hd x hx).2).trans sl⟩
 
-theorem Ok1.frame {σ : State} {m m' : Mem} {rs : List Region} (hf : Frame rs m m') (hK : P.K ≤ 1024)
-    (hd : ∀ x ∈ rs, Region.Disjoint ⟨P.lay.fr oEM2, P.K⟩ x ∧ Region.Disjoint ⟨P.lay.fr oOk, 4⟩ x)
-    (h : Ok1 P σ m) : Ok1 P σ m' :=
-  let ⟨ok, er, sl⟩ := h
-  ⟨ok, er.frame hf (fun x hx => (hd x hx).1) hK, (slot_frame hf fun x hx => (hd x hx).2).trans sl⟩
-
 theorem frame1 {m : Mem} {d : Nat} {v : BitVec 32} :
     Frame [⟨P.lay.fr d, 4⟩] m (m.writeW (P.lay.fr d) v) :=
   (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)

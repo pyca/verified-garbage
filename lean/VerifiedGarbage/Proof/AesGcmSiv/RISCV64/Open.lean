@@ -45,10 +45,6 @@ theorem decrypt_eq (hti : TagInputEq) (ciph : Spec.GcmSiv.Cipher) (kl : Nat) (no
   obtain ⟨a, e⟩ := dk
   simp only [hti]
 
-theorem setWidth_ind (P : Prop) [Decidable P] :
-    (BitVec.ofNat 64 (if P then 1 else 0)).setWidth 32 = if P then 1 else 0 := by
-  split <;> rfl
-
 /-- A buffer missing `W` and the data misses what counter mode writes. -/
 theorem buf_cryR {c : Cx} {P : Addr} {len : Nat} (hw : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 3840⟩)
     (hd : (⟨P, len⟩ : Region).Disjoint ⟨c.D, c.n⟩) : ∀ r ∈ cryR c.W c.D c.n, (⟨P, len⟩ : Region).Disjoint r := by
