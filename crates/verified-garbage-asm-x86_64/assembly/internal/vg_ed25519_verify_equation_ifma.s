@@ -127,8 +127,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -226,8 +227,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -307,8 +309,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -396,8 +399,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -477,8 +481,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -548,8 +553,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -629,8 +635,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -710,8 +717,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -808,8 +816,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -907,8 +916,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -988,8 +998,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1077,8 +1088,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1158,8 +1170,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1229,8 +1242,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1310,8 +1324,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1391,8 +1406,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1462,8 +1478,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1533,8 +1550,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1604,8 +1622,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1675,8 +1694,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1746,8 +1766,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1817,8 +1838,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1898,8 +1920,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -1979,8 +2002,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2060,8 +2084,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2141,8 +2166,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2212,8 +2238,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2283,8 +2310,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2364,8 +2392,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2445,8 +2474,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2516,8 +2546,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2587,8 +2618,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2660,8 +2692,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2731,8 +2764,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2814,8 +2848,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2895,8 +2930,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -2966,8 +3002,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3037,8 +3074,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3110,8 +3148,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3181,8 +3220,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3264,8 +3304,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3345,8 +3386,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3416,8 +3458,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3487,8 +3530,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3560,8 +3604,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3631,8 +3676,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3714,8 +3760,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3795,8 +3842,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3866,8 +3914,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -3937,8 +3986,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4010,8 +4060,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4081,8 +4132,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4164,8 +4216,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4245,8 +4298,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4316,8 +4370,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4387,8 +4442,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4460,8 +4516,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4531,8 +4588,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4614,8 +4672,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4695,8 +4754,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4766,8 +4826,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4837,8 +4898,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4910,8 +4972,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -4981,8 +5044,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5064,8 +5128,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5145,8 +5210,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5216,8 +5282,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5287,8 +5354,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5360,8 +5428,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5431,8 +5500,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5514,8 +5584,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5595,8 +5666,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5666,8 +5738,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5737,8 +5810,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5810,8 +5884,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5881,8 +5956,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -5964,8 +6040,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -6045,8 +6122,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -6173,8 +6251,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -6272,8 +6351,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -6353,8 +6433,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -6442,8 +6523,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -6523,8 +6605,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -6633,8 +6716,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -6714,8 +6798,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -6795,8 +6880,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -6876,8 +6962,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -7102,8 +7189,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -7314,8 +7402,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -7485,8 +7574,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -7706,8 +7796,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -7877,8 +7968,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -8057,8 +8149,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -8156,8 +8249,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -8237,8 +8331,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -8326,8 +8421,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -8407,8 +8503,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -8517,8 +8614,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -8598,8 +8696,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -8679,8 +8778,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -8760,8 +8860,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -8986,8 +9087,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -9198,8 +9300,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -9369,8 +9472,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -9590,8 +9694,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -9761,8 +9866,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -14012,8 +14118,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -14093,8 +14200,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -14174,8 +14282,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
@@ -14255,8 +14364,9 @@ vg_ed25519_verify_equation_ifma:
 	adox r11, rax
 	adcx r12, rbp
 	adox r12, rbp
-	shld r12, r11, 1
-	btr r11, 63
+	shl r11, 1
+	adc r12, r12
+	shr r11, 1
 	imul rax, r12, 19
 	add r8, rax
 	adc r9, 0
