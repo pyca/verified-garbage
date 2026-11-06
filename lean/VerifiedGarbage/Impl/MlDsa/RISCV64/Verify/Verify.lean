@@ -1,21 +1,24 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.RISCV64.KeyGen.Frag
+public import VerifiedGarbage.Impl.MlDsa.RISCV64.CacheCopy
 public import VerifiedGarbage.Spec.MlDsa
 
 /-!
-# ML-DSA on RISC-V: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
+# ML-DSA on RISC-V: `vg_mldsa44_verify_with_cache`, `vg_mldsa65_verify_with_cache`, `vg_mldsa87_verify_with_cache`
 
 As on PPC64LE (`Impl/MlDsa/PPC64LE/Verify/Verify.lean`).
 
-`verify P p (pk = a0, mu = a1, sig = a2, scratch = a3) -> a0`:
+`verify P p (pk = a0, mu = a1, sig = a2, scratch = a3, cache = a4,
+cache_len = a5) -> a0`, the kernel `vg_mldsa*_verify` and
+`vg_mldsa*_verify_prepared` share (`PreparedKey/Entry.lean`):
 `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with the message
 representative `μ` given (`verifyMu`), for the parameter set `p`, as calls of
 the primitives `P` and of the sponge functions. Its entry and exit are key
 generation's (`KeyGen/Frag.lean`), so it keeps `pk` in `s10`, `mu` in `s9`,
 `sig` in `s8`, `scratch` in `s11`, and its result so far in `s4`, and saves
 our caller's `s3`–`s11` and our return address in `scratch` (at 1288,
-`oSave`).
+`oSave`); it keeps in `s3` the cache, or 0 if `cache_len` is 0.
 
 The layout of `scratch` (in bytes): the Keccak state at 0, the seed of
 `RejNTTPoly` (`SB`, 34 bytes) at 920, the saved registers at 1288 (as
@@ -37,6 +40,8 @@ primitives at 4096 (2048 bytes); and polynomials of 1024 bytes from 8192
    (`sampled`).
 4. `ẑ[i] = NTT(z[i])`, `ĉ = NTT(c)`; for each row `r`:
    `w′ = NTT⁻¹(Σₛ Â[r, s] ẑ[s] - ĉ · NTT(t₁[r] · 2ᵈ))` (polynomial 18),
+   with `NTT(t₁[r] · 2ᵈ)` decoded and transformed, or copied from the
+   cache a byte at a time (`CacheCopy.lean`), since it need not be aligned,
    `w′₁ = UseHint(h[r], w′)` (polynomial 19), and its `SimpleBitPack` to
    `2048 + r · 32 bitlen b`.
 5. `c̃′ = H(μ ‖ w1Encode(w′₁), λ/4)` to `3072`, and `s4 ← 0` unless
@@ -53,7 +58,7 @@ namespace VG.Impl.MlDsa.RISCV64.Verify
 
 open VG.RISCV64
 open VG.Impl.MlKem.RISCV64 (hash copy topEnd cmpBody)
-open VG.Impl.MlDsa.RISCV64.KeyGen (Ptr Arg callAt setB seqR and24 sampled pro)
+open VG.Impl.MlDsa.RISCV64.KeyGen (Ptr Arg callAt setB seqR and24 sampled)
 open VG.Spec.MlDsa
 
 /-- The code of the primitives `vg_mldsa_*` that verification calls. -/
@@ -207,11 +212,18 @@ def samples : Prog isa :=
 def dot (r : Nat) : Prog isa :=
   .seq (mulAt P pW (pA r 0) (pZ 0)) (seqR (fun s => mulAddAt P pW (pA r s) (pZ s)) 1 (p.ℓ - 1))
 
+/-- `NTT(t₁[r] · 2ᵈ)` to `T`: copied a byte at a time from polynomial `r` of
+the cache at `s3` (which need not be aligned) if `s3 ≠ 0`, and otherwise
+decoded from `pk` and transformed. -/
+def keyRow (r : Nat) : Prog isa :=
+  .ite (.nonzero .s3) (CacheCopy.cacheCopy (1024 * r) pT 1024)
+    (.seq (unpackT1At P (.s10, 32 + 320 * r) pT) (nttAt P pT))
+
 /-- Row `r` of `w′`, `w′₁`, packed to `B`. -/
 def row (r : Nat) : Prog isa :=
-  .seq (dot P p r) (.seq (unpackT1At P (.s10, 32 + 320 * r) pT) (.seq (nttAt P pT)
+  .seq (dot P p r) (.seq (keyRow P r)
     (.seq (mulAt P pT2 pC pT) (.seq (subAt P pW pT2) (.seq (invNttAt P pW)
-      (.seq (useHintAt P (pH r) pW p.γ₂ pW1) (sbpAt P pW1 (w1Max p) (sc (oB + w1Len p * r)) (w1Len p))))))))
+      (.seq (useHintAt P (pH r) pW p.γ₂ pW1) (sbpAt P pW1 (w1Max p) (sc (oB + w1Len p * r)) (w1Len p)))))))
 
 /-- The NTTs of `z` and `c`, the rows, the hash and the comparison. -/
 def compute : Prog isa :=
@@ -222,7 +234,14 @@ def compute : Prog isa :=
 def body : Prog isa :=
   .seq (hint P p) (ifOk (.seq (seqR (zOne P p) 0 p.ℓ) (ifOk (.seq (samples P p) (compute P p)))))
 
-/-- `vg_mldsa*_verify` for the parameter set `p`, calling the primitives `P`. -/
+/-- Key generation's prologue (`KeyGen/Frag.lean`), then `s3 ←` the cache
+pointer (`a4`) if its length (`a5`) is not zero, and 0 otherwise, without a
+branch. -/
+def pro : List Instr :=
+  KeyGen.pro ++ ([.li .t2 0, .sltu .t0 .t2 .a5, .sub .t0 .t2 .t0, .logic .and .s3 .a4 .t0] : List Instr)
+
+/-- `vg_mldsa*_verify_with_cache` for the parameter set `p`, calling the
+primitives `P`. -/
 def verify : Prog isa := .seq (.block pro) (.seq (body P p) (.block topEnd))
 
 end

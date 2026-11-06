@@ -1,15 +1,18 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.RISCV64.KeyGen.Frag
+public import VerifiedGarbage.Impl.MlDsa.RISCV64.CacheCopy
 public import VerifiedGarbage.Spec.MlDsa
 
 /-!
-# ML-DSA on RISC-V: `vg_mldsa44_sign`, `vg_mldsa65_sign`, `vg_mldsa87_sign`
+# ML-DSA on RISC-V: `vg_mldsa44_sign_with_cache`, `vg_mldsa65_sign_with_cache`, `vg_mldsa87_sign_with_cache`
 
 As on PPC64LE (`Impl/MlDsa/PPC64LE/Sign/Sign.lean`), on the pieces of key
 generation (`KeyGen/Frag.lean`).
 
-`sign P p (sk = a0, mu = a1, rnd = a2, sig = a3, scratch = a4) -> a0`:
+`sign P p (sk = a0, mu = a1, rnd = a2, sig = a3, scratch = a4, cache = a5,
+cache_len = a6) -> a0`, the kernel `vg_mldsa*_sign` and
+`vg_mldsa*_sign_prepared` share (`PreparedKey/Entry.lean`):
 `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with the message
 representative `μ` given (`Spec.MlDsa.signMu`), for the parameter set `p`,
 as calls of the primitives `P` and of the sponge functions. It keeps
@@ -19,7 +22,8 @@ longer needed; the AND of the results so far in `s4`; and, in the loop, the
 iterations left in `s5`, the number of 1s of the hint in `s6` and the
 counter `κ` in `s7`. It saves our caller's `s3`–`s11` and our return
 address in `scratch`, as key generation does: callee-saved registers, which
-the functions it calls preserve.
+the functions it calls preserve. Until step 2 it keeps in `s3` the cache, or
+0 if `cache_len` is 0.
 
 1. `ρ` (the first 32 bytes of `sk`) to `RS`, the seed of `RejNTTPoly`, and
    `Â[r, s] = RejNTTPoly(ρ ‖ s ‖ r)` for the `kℓ` entries, with `s4` the
@@ -27,7 +31,9 @@ the functions it calls preserve.
 2. `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`, with `rnd ‖ μ` first copied to `W1`
    (so that the sponge reads one argument besides `scratch`, as its proof
    requires of arguments that may overlap), then `sig` to `s8`; and `ŝ₁`, `ŝ₂`
-   and `t̂₀`: the `NTT` of the `BitUnpack` of their pieces of `sk`.
+   and `t̂₀`: the `NTT` of the `BitUnpack` of their pieces of `sk`, or, with a
+   cache, its bytes, copied a byte at a time (`CacheCopy.lean`), since the
+   cache need not be aligned.
 3. The rejection sampling loop, at most 814 iterations (`minBounds.sign`):
    the commitment (`y ← ExpandMask(ρ″, κ)`, `ŷ = NTT(y)`, `w = NTT⁻¹(Â ŷ)`,
    and `c̃ = H(μ ‖ w1Encode(HighBits(w)), λ/4)` at `CT`), then
@@ -229,7 +235,8 @@ def ifOk (c : Prog isa) : Prog isa := ifOkElse c (.block [])
 `s4 ← 1`. -/
 def pro : List Instr :=
   Impl.MlKem.RISCV64.topSave .a4 ++
-    ([mov .s10 .a0, mov .s9 .a1, mov .s8 .a2, mov .s11 .a4, .store .d .a3 .s11 oSIG, .li .s4 1] : List Instr)
+    ([mov .s10 .a0, mov .s9 .a1, mov .s8 .a2, mov .s11 .a4, .store .d .a3 .s11 oSIG, .li .s4 1,
+      .li .t2 0, .sltu .t0 .t2 .a6, .sub .t0 .t2 .t0, .logic .and .s3 .a5 .t0] : List Instr)
 
 /-- Run checks in order, stopping at the first failing polynomial. -/
 def seqOk (f : Nat → Prog isa) (a : Nat) : Nat → Prog isa
@@ -265,9 +272,19 @@ def decS2 (i : Nat) : Prog isa :=
 def decT0 (i : Nat) : Prog isa :=
   .seq (bitUnpackAt P (.s10, skT0 p i) 416 4095 4096 (t0P p i)) (nttAt P (t0P p i))
 
-/-- `ρ″` and `sig`, then `ŝ₁`, `ŝ₂` and `t̂₀`. -/
+/-- `ŝ₁`, `ŝ₂` and `t̂₀`, decoded from `sk` and transformed. -/
+def decodeKey : Prog isa :=
+  .seq (seqR (decS1 P p) 0 p.ℓ) (.seq (seqR (decS2 P p) 0 p.k) (seqR (decT0 P p) 0 p.k))
+
+/-- `ŝ₁`, `ŝ₂` and `t̂₀`, copied a byte at a time (the cache need not be
+aligned) from the `ℓ + 2k` polynomials of the cache at `s3` to their slots,
+which follow one another. -/
+def cached : Prog isa := CacheCopy.cacheCopy 0 (s1P p 0) (1024 * (p.ℓ + 2 * p.k))
+
+/-- `ρ″` and `sig`, then `ŝ₁`, `ŝ₂` and `t̂₀`: from the cache if `s3 ≠ 0`,
+and otherwise from `sk`. -/
 def decode : Prog isa :=
-  .seq (rhoPP) (.seq (seqR (decS1 P p) 0 p.ℓ) (.seq (seqR (decS2 P p) 0 p.k) (seqR (decT0 P p) 0 p.k)))
+  .seq (rhoPP) (.ite (.nonzero .s3) (cached p) (decodeKey P p))
 
 /-! ### An iteration -/
 

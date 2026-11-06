@@ -137,7 +137,7 @@ theorem hbu_piece :
   intro σ₁ _ _ _ _ _ pub h₁ h₂
   refine ⟨σ₁, vc_twoL pub h₁.1 h₂.1, ?_⟩
   show bytesAt _ ((vlay p STK σ₁).A 4 (oHint p)) _ = bytesAt _ ((vlay p STK σ₁).A 4 (oHint p)) _
-  rw [sig_slice h₁.1 (by rw [hF.sig]), pub.2.2.2.2.2.2.2, vlay_pub pub, sig_slice h₂.1 (by rw [hF.sig])]
+  rw [sig_slice h₁.1 (by rw [hF.sig]), pub.2.2.2.2.2.2.2.1, vlay_pub pub, sig_slice h₂.1 (by rw [hF.sig])]
 
 omit hP hF hS in
 theorem and24_piece : VPiece p STK (H1 p STK) (V1 p STK) (.block and24) := by

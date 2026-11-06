@@ -86,7 +86,7 @@ theorem sinv_regs {p : Params} {STK : Nat} {s₁ s₂ a b : State} (h : ∀ r �
   (ha.regs r hr).trans ((signV_eq h r hr).trans (hb.regs r hr).symm)
 
 /-- The hash of `μ` may run. -/
-theorem ms1_hashOk {p : Params} {STK : Nat} {s t : State} (hF : MFacts p) (hp : MSPre p STK s) (h48 : 1168 ≤ STK)
+theorem ms1_hashOk {p : Params} {q : Bool} {STK : Nat} {s t : State} (hF : MFacts p) (hp : MSPre p q STK s) (h48 : 1168 ≤ STK)
     (h : MS1 p STK s t) :
     HashOk 840 64 .s8 .s8 oMU ((⟨.s0, 64, .imm 64⟩ : Piece) :: fmtPieces) t := by
   have hi := h.inv
@@ -96,14 +96,14 @@ theorem ms1_hashOk {p : Params} {STK : Nat} {s t : State} (hF : MFacts p) (hp : 
     by rw [g30]; exact e_cov hp hi.wr (by decide), by rw [g30]; exact (e_e0 (by decide) (by decide)).symm,
     by rw [g30, hi.sp]; exact (hp.bx.sub_left (below48 hp h48)).sub_right (e_sub (by decide))⟩
 
-theorem signMessage_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 ≤ STK) {f : Prog isa}
-    (hf : Callee f (fun stk => signContract p RISCV64.abi stk) S) (hS : S ≤ STK) {n : String} :
-    ConstantTime isa (MSPre p STK) (MSPub p) (signMessage n f p) := by
+theorem signMessage_ct {p : Params} {q : Bool} {STK S : Nat} (hF : MFacts p) (h48 : 1168 ≤ STK) {f : Prog isa}
+    (hf : Callee f (fun stk => PreparedKey.signEK p q stk) S) (hS : S ≤ STK) {n : String} :
+    ConstantTime isa (MSPre p q STK) (MSPub p) (signMessage n f p) := by
   obtain ⟨stk, hstk, hver⟩ := hf.verified
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
-  refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧ MSPre p STK x.1 ∧ MSPre p STK x.2 ∧
+  refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧ MSPre p q STK x.1 ∧ MSPre p q STK x.2 ∧
     MSPub p x.1 x.2) (RelCT.exists_ fun ⟨s₁, s₂⟩ => ?_) (fun a b h => ⟨(a, b), rfl, rfl, h⟩) (fun _ _ h => h)
-  by_cases hH : MSPre p STK s₁ ∧ MSPre p STK s₂ ∧ MSPub p s₁ s₂
+  by_cases hH : MSPre p q STK s₁ ∧ MSPre p q STK s₂ ∧ MSPub p s₁ s₂
   swap
   · exact RelCT.of_false fun a b h => hH h.2.2
   obtain ⟨hp₁, hp₂, psp, pl, pr⟩ := hH
@@ -153,10 +153,10 @@ theorem signMessage_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 �
       (relct_wp (ct_prog [.s0, .s5, .s6, .s7, .s8] (fun a b hab => hab.1.inv.sp.trans (psp.trans hab.2.inv.sp.symm))
         (fun a b hab r hr => sinv_regs pr hab.1.inv hab.2.inv r (by revert r hr; decide)) (by taint_decide))
         fun a b hab => ⟨signArgs_ok hab.1, signArgs_ok hab.2⟩) ?_
-    refine RelCT.call hver.1 hver.2.1 (sRd p s₁) (sWr p s₁) fun a b hab => ?_
+    refine RelCT.call hver.1 hver.2.1 (sRd p q s₁) (sWr p s₁) fun a b hab => ?_
     have hpre₁ := signCall_pre hF hp₁ (Nat.le_trans hstk hS) hab.1
     have hpre₂ := signCall_pre hF hp₂ (Nat.le_trans hstk hS) hab.2
-    have eRd : sRd p s₂ = sRd p s₁ := by simp only [sRd, skR, rndR, pr _ (by decide : Reg.a0 ∈ mArgs),
+    have eRd : sRd p q s₂ = sRd p q s₁ := by simp only [sRd, skR, rndR, pr _ (by decide : Reg.a0 ∈ mArgs),
       pr _ (by decide : Reg.a5 ∈ mArgs), pr _ (by decide : Reg.a7 ∈ mArgs)]
     have eWr : sWr p s₂ = sWr p s₁ := by simp only [sWr, sigR, pr _ (by decide : Reg.a6 ∈ mArgs),
       pr _ (by decide : Reg.a7 ∈ mArgs)]
@@ -173,9 +173,13 @@ theorem signMessage_ct {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 �
     · simp only [State.withRegions_mem, State.callEntry_mem, ce_gpr _ _ _ (show Reg.a0 ∉ linkRegs by decide),
         ce_gpr _ _ _ (show Reg.a1 ∉ linkRegs by decide), ce_gpr _ _ _ (show Reg.a2 ∉ linkRegs by decide),
         hab.1.a0, hab.1.a1, hab.1.a2, hab.2.a0, hab.2.a1, hab.2.a2]
-      rw [s_keep k₁ (R := skR p s₁) (by have := hF.skl; show p.skLen < 2 ^ 64; omega) hp₁.kg hp₁.kc hp₁.bk,
+      have ks := skE_sub hF q
+      have hl : p.skLen < 2 ^ 64 := by have := hF.skl; omega
+      rw [s_keep k₁ (R := ⟨s₁.gpr .a0, p.skLen⟩) hl (hp₁.kg.sub_left (ks s₁)) (hp₁.kc.sub_left (ks s₁))
+          (hp₁.bk.sub_right (ks s₁)),
         hab.1.ms.mu, s_keep k₁ (R := rndR s₁) (show (32 : Nat) < 2 ^ 64 by decide) hp₁.rg hp₁.rc hp₁.br,
-        s_keep k₂ (R := skR p s₂) (by have := hF.skl; show p.skLen < 2 ^ 64; omega) hp₂.kg hp₂.kc hp₂.bk,
+        s_keep k₂ (R := ⟨s₂.gpr .a0, p.skLen⟩) hl (hp₂.kg.sub_left (ks s₂)) (hp₂.kc.sub_left (ks s₂))
+          (hp₂.bk.sub_right (ks s₂)),
         hab.2.ms.mu, s_keep k₂ (R := rndR s₂) (show (32 : Nat) < 2 ^ 64 by decide) hp₂.rg hp₂.rc hp₂.br]
       simp only [signMessageLeak] at pl
       rw [Proof.MlDsa.Message.formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact hcl),

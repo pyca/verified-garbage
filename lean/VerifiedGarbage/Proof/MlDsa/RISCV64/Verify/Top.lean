@@ -137,7 +137,7 @@ theorem inner_piece :
     VPiece p STK (V2 p STK p.ℓ) (VFin p STK) (ifOk (.seq (samples P p) (compute P p))) := by
   refine ifOk_piece (v := fun σ => flag (zOk p σ p.ℓ)) (fun _ _ _ h => h.s4) (fun σ₁ σ₂ _ _ pub => ?_)
     ?_ fun σ s _ h hv => ⟨h.vc, .inr ⟨h.s4.trans hv, ?_⟩⟩
-  · have e : sgOf p σ₁ = sgOf p σ₂ := pub.2.2.2.2.2.2.2
+  · have e : sgOf p σ₁ = sgOf p σ₂ := pub.2.2.2.2.2.2.2.1
     dsimp only [zOk]
     rw [e]
   · refine Piece.mono (pieceFrame ((samples_piece hP hF hS).seq (Piece.mono (compute_piece hP hF hS)
@@ -171,7 +171,7 @@ theorem body_piece : VPiece p STK (fun σ s => VC p STK σ s ∧ s.gpr .s4 = 1) 
   unfold body
   refine (hint_piece hP hF hS).seq (ifOk_piece (v := fun σ => flag (hintOf p σ).isSome) (fun _ _ _ h => h.s4)
     (fun σ₁ σ₂ _ _ pub => ?_) ?_ fun _ _ _ h hv => v1_out h hv)
-  · have e : sgOf p σ₁ = sgOf p σ₂ := pub.2.2.2.2.2.2.2
+  · have e : sgOf p σ₁ = sgOf p σ₂ := pub.2.2.2.2.2.2.2.1
     dsimp only [hintOf]
     rw [e]
   · refine Piece.seq (Piece.mono (Piece.seqR (I := fun j => V2 p STK j) p.ℓ 0
@@ -185,7 +185,7 @@ end
 
 theorem vepi_ok {p : Params} (hF : VFacts p) {STK : Nat} {σ s : State} (h : VFin p STK σ s) :
     WP isa (.block topEnd) s fun s' =>
-      RISCV64.target.abiPreserved σ s' ∧ (Spec.MlDsa.verifyContract p RISCV64.abi STK).post σ s' := by
+      RISCV64.target.abiPreserved σ s' ∧ (Proof.MlDsa.verifyWithCacheContract p RISCV64.abi STK).post σ s' := by
   obtain ⟨vc, hr⟩ := h
   have hs := vc.site
   have hscr := hF.scr
@@ -195,7 +195,8 @@ theorem vepi_ok {p : Params} (hF : VFacts p) {STK : Nat} {σ s : State} (h : VFi
       (by rw [vlay_size0]; omega) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
   refine WP.mono (topEnd_ok hs.s11 hs.al0 vc.sav hin vc.pres)
     fun s' ⟨pr, lr, r3, _, sp', _, _⟩ => ⟨⟨pr, sp'.trans vc.sp, lr⟩, ?_⟩
-  sig_post [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, RISCV64.abi, RISCV64.argRegs]
+  sig_post [Proof.MlDsa.verifyWithCacheContract, Proof.MlDsa.verifyWithCacheSig, Spec.MlDsa.verifySig, RISCV64.abi,
+    RISCV64.argRegs]
   rw [r3]
   rcases hr with ⟨e, h⟩ | ⟨e, h⟩ <;> rw [e]
   · exact .inl ⟨rfl, h⟩
@@ -203,7 +204,7 @@ theorem vepi_ok {p : Params} (hF : VFacts p) {STK : Nat} {σ s : State} (h : VFi
 
 theorem vepi_piece {p : Params} (hF : VFacts p) {STK : Nat} :
     VPiece p STK (VFin p STK)
-      (fun σ s => RISCV64.target.abiPreserved σ s ∧ (Spec.MlDsa.verifyContract p RISCV64.abi STK).post σ s)
+      (fun σ s => RISCV64.target.abiPreserved σ s ∧ (Proof.MlDsa.verifyWithCacheContract p RISCV64.abi STK).post σ s)
       (.block topEnd) :=
   ⟨fun _ _ _ h => vepi_ok hF h, vrel31 (fun _ _ h => h.1) (by taint_decide)⟩
 
@@ -212,38 +213,40 @@ theorem vepi_piece {p : Params} (hF : VFacts p) {STK : Nat} :
 theorem verify_piece {P : Prims} {S : Nat} (hP : VPrimsOk P S) {p : Params} (hF : VFacts p) {STK : Nat}
     (hS : S ≤ STK) (h48 : 1168 ≤ STK) :
     VPiece p STK (fun σ s => s = σ)
-      (fun σ s => RISCV64.target.abiPreserved σ s ∧ (Spec.MlDsa.verifyContract p RISCV64.abi STK).post σ s)
+      (fun σ s => RISCV64.target.abiPreserved σ s ∧ (Proof.MlDsa.verifyWithCacheContract p RISCV64.abi STK).post σ s)
       (verify P p) :=
   (vpro_piece hF h48).seq ((body_piece hP hF hS).seq (vepi_piece hF))
 
-/-- A state satisfying `verifyContract`'s precondition. -/
+/-- A state satisfying `verifyWithCacheContract`'s precondition, with an
+empty cache. -/
 def verifySat (p : Params) : State where
   gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x2000 | .a2 => 0x3000 | .a3 => 0x10000 | _ => 0
+    | .a0 => 0x1000 | .a1 => 0x2000 | .a2 => 0x3000 | .a3 => 0x10000 | .a4 => 0x9000 | _ => 0
   sp := 0x80000
   mem _ := 0
-  rd := [⟨0x1000, p.pkLen⟩, ⟨0x2000, 64⟩, ⟨0x3000, p.sigLen⟩]
+  rd := [⟨0x1000, p.pkLen⟩, ⟨0x2000, 64⟩, ⟨0x3000, p.sigLen⟩, ⟨0x9000, 0⟩]
   wr := [⟨0x10000, scrLen p⟩]
 
-/-- `vg_mldsa*_verify` of the parameter set `p` meets its contract with `S`
+/-- `vg_mldsa*_verify_with_cache` of the parameter set `p` meets its contract with `S`
 bytes of stack, for any verified implementations `P` of the primitives it
 calls with at most `S` bytes of stack, and `S` at least the 1168 bytes the
 sponge needs. The contract's satisfiability (`hsat`, by `verifySat`) is
 evaluated once `S` is known. -/
 theorem verify_verified {P : Prims} {S : Nat} (hP : VPrimsOk P S) (h48 : 1168 ≤ S) (p : Spec.MlDsa.Params)
     (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87)
-    (hsat : (Spec.MlDsa.verifyContract p RISCV64.abi S).pre (verifySat p)) :
-    Verified RISCV64.target (verify P p) (Spec.MlDsa.verifyContract p RISCV64.abi S) := by
+    (hsat : (Proof.MlDsa.verifyWithCacheContract p RISCV64.abi S).pre (verifySat p)) :
+    Verified RISCV64.target (verify P p) (Proof.MlDsa.verifyWithCacheContract p RISCV64.abi S) := by
   have hF := vfacts hp
   have hk := verify_piece hP hF (Nat.le_refl _) h48
   obtain ⟨n, rfl⟩ : ∃ n, S = n + 1 := ⟨S - 1, by omega⟩
   refine ⟨fun s hs => hk.ok s s (vpre_of hs) rfl, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_,
     ⟨verifySat p, hsat⟩⟩
-  sig_pub [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, RISCV64.abi, RISCV64.argRegs] at hpub
-  obtain ⟨hsp, hl, h3, h4, h5, h6⟩ := hpub
+  sig_pub [Proof.MlDsa.verifyWithCacheContract, Proof.MlDsa.verifyWithCacheSig, Spec.MlDsa.verifySig, RISCV64.abi,
+    RISCV64.argRegs] at hpub
+  obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8⟩ := hpub
   obtain ⟨e12, e3⟩ := List.append_inj (Proof.MlDsa.KeyGen.leakBytes_inj hl)
     (by simp only [List.length_append, Proof.MlKem.bytesAt_length])
   obtain ⟨e1, e2⟩ := List.append_inj e12 (by simp only [Proof.MlKem.bytesAt_length])
-  exact relStart hk.tr s₁ s₂ t₁ t₂ s₁' s₂' (vpre_of h₁) (vpre_of h₂) ⟨hsp, h3, h4, h5, h6, e1, e2, e3⟩ e₁ e₂
+  exact relStart hk.tr s₁ s₂ t₁ t₂ s₁' s₂' (vpre_of h₁) (vpre_of h₂) ⟨hsp, h3, h4, h5, h6, e1, e2, e3, h7, h8⟩ e₁ e₂
 
 end VG.Proof.MlDsa.RISCV64.Verify

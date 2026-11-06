@@ -83,7 +83,8 @@ theorem VC.regs2 {p : Params} {STK : Nat} {σ s s' : State} (h : VC p STK σ s) 
       have : r ≠ .a0 ∧ r ≠ .s4 := ⟨fun e => by subst e; simp [preserved] at hp,
         fun e => by subst e; simp [savedTop] at hs⟩
       rw [hr.gpr r this.1 this.2]; exact h.pres r hp hs,
-    by rw [hr.mem]; exact h.sav, by rw [hr.mem]; exact h.pk, by rw [hr.mem]; exact h.mu, by rw [hr.mem]; exact h.sg⟩
+    by rw [hr.mem]; exact h.sav, by rw [hr.mem]; exact h.pk, by rw [hr.mem]; exact h.mu, by rw [hr.mem]; exact h.sg,
+    h.pre, by rw [hr.gpr .s3 (by decide) (by decide)]; exact h.s3, by rw [hr.mem]; exact h.cache⟩
 
 /-! ## A branch on `s4` -/
 

@@ -310,7 +310,7 @@ theorem leak_rho {p : Params} {sk₁ sk₂ μ₁ μ₂ r₁ r₂ : List Byte} (h
   rw [Proof.MlDsa.Sign.leakBytes_length, Proof.MlDsa.Sign.leakBytes_length, List.length_take, List.length_take, h1, h2]
 
 theorem pub_rho {p : Params} {σ₁ σ₂ : State} (h : sPub p σ₁ σ₂) : (skOf p σ₁).take 32 = (skOf p σ₂).take 32 :=
-  leak_rho (Proof.MlKem.bytesAt_length _ _ _) (Proof.MlKem.bytesAt_length _ _ _) h.2.2.2.2.2.2
+  leak_rho (Proof.MlKem.bytesAt_length _ _ _) (Proof.MlKem.bytesAt_length _ _ _) h.2.2.2.2.2.2.1
 
 /-! ## The state, but for `a0` and `s4` -/
 
@@ -322,7 +322,8 @@ theorem SC1.regs2 {p : Params} {STK : Nat} {σ s s' : State} (h : SC1 p STK σ s
         fun e => by subst e; simp [savedTop] at hs⟩
       rw [hr.gpr r this.1 this.2]; exact h.pres r hp hs,
     by rw [hr.mem]; exact h.sav, by rw [hr.mem]; exact h.sig, by rw [hr.mem]; exact h.sk, by rw [hr.mem]; exact h.mu,
-    by rw [hr.mem]; exact h.rnd⟩
+    by rw [hr.mem]; exact h.rnd, h.pre, by rw [hr.gpr .s3 (by decide) (by decide)]; exact h.s3,
+    by rw [hr.mem]; exact h.cache⟩
 
 theorem SC2.regs2 {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ s) (hr : Regs2 s s') :
     SC2 p STK σ s' :=
@@ -331,7 +332,8 @@ theorem SC2.regs2 {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ s
       have : r ≠ .a0 ∧ r ≠ .s4 := ⟨fun e => by subst e; simp [preserved] at hp,
         fun e => by subst e; simp [savedTop] at hs⟩
       rw [hr.gpr r this.1 this.2]; exact h.pres r hp hs,
-    by rw [hr.mem]; exact h.sav, by rw [hr.mem]; exact h.sk, by rw [hr.mem]; exact h.mu⟩
+    by rw [hr.mem]; exact h.sav, by rw [hr.mem]; exact h.sk, by rw [hr.mem]; exact h.mu, h.pre,
+    by rw [hr.gpr .s3 (by decide) (by decide)]; exact h.s3, by rw [hr.mem]; exact h.cache⟩
 
 /-! ## Two runs -/
 
