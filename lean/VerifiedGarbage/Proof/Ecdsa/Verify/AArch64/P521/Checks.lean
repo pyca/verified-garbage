@@ -11,6 +11,11 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedLayout
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedLayout
+meta import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
