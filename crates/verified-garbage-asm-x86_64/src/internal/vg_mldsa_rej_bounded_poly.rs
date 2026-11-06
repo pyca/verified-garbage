@@ -152,7 +152,7 @@ jmp 232f
 21:
 .base64 "ww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym crate::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )

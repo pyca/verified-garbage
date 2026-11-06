@@ -212,7 +212,7 @@ jne 223b
 218:
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem16_sample_ntt4_avx2 = sym super::mlkem1024::vg_mlkem16_sample_ntt4_avx2::vg_mlkem16_sample_ntt4_avx2,
@@ -390,7 +390,7 @@ call {vg_mlkem1024_kpke_encrypt}
 jne 223b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem16_sample_ntt4_avx2 = sym super::mlkem1024::vg_mlkem16_sample_ntt4_avx2::vg_mlkem16_sample_ntt4_avx2,
@@ -1437,7 +1437,7 @@ jne 2295b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
         vg_mlkem16_sample_ntt4_avx2 = sym super::mlkem1024::vg_mlkem16_sample_ntt4_avx2::vg_mlkem16_sample_ntt4_avx2,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem16_cbd2_avx2 = sym super::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
@@ -2488,7 +2488,7 @@ jne 2296b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
         vg_mlkem1024_kpke_decrypt = sym super::mlkem1024::vg_mlkem1024_kpke_decrypt::vg_mlkem1024_kpke_decrypt,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem16_sample_ntt4_avx2 = sym super::mlkem1024::vg_mlkem16_sample_ntt4_avx2::vg_mlkem16_sample_ntt4_avx2,
@@ -2659,7 +2659,7 @@ jne 223b
 218:
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem16_sample_ntt4_avx512 = sym super::mlkem1024::vg_mlkem16_sample_ntt4_avx512::vg_mlkem16_sample_ntt4_avx512,
@@ -2837,7 +2837,7 @@ call {vg_mlkem1024_kpke_encrypt}
 jne 223b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem16_sample_ntt4_avx512 = sym super::mlkem1024::vg_mlkem16_sample_ntt4_avx512::vg_mlkem16_sample_ntt4_avx512,
@@ -3884,7 +3884,7 @@ jne 2295b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
         vg_mlkem16_sample_ntt4_avx512 = sym super::mlkem1024::vg_mlkem16_sample_ntt4_avx512::vg_mlkem16_sample_ntt4_avx512,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem16_cbd2_avx2 = sym super::mlkem1024::vg_mlkem16_cbd2_avx2::vg_mlkem16_cbd2_avx2,
@@ -4935,7 +4935,7 @@ jne 2296b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
         vg_mlkem1024_kpke_decrypt = sym super::mlkem1024::vg_mlkem1024_kpke_decrypt::vg_mlkem1024_kpke_decrypt,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem16_sample_ntt4_avx512 = sym super::mlkem1024::vg_mlkem16_sample_ntt4_avx512::vg_mlkem16_sample_ntt4_avx512,
@@ -5169,7 +5169,7 @@ jne 221b
 218:
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_sample_ntt4 = sym super::mlkem1024::vg_mlkem_sample_ntt4::vg_mlkem_sample_ntt4,
@@ -5431,7 +5431,7 @@ jne 221b
 jne 222b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_sample_ntt4 = sym super::mlkem1024::vg_mlkem_sample_ntt4::vg_mlkem_sample_ntt4,
@@ -5696,7 +5696,7 @@ jne 220b
 jne 221b
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_sample_ntt4 = sym super::mlkem1024::vg_mlkem_sample_ntt4::vg_mlkem_sample_ntt4,
@@ -5986,7 +5986,7 @@ jne 220b
         vg_mlkem1024_decrypt_mul = sym super::mlkem1024::vg_mlkem1024_decrypt_mul::vg_mlkem1024_decrypt_mul,
         vg_mlkem_sub = sym super::mlkem1024::vg_mlkem_sub::vg_mlkem_sub,
         vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_sample_ntt4 = sym super::mlkem1024::vg_mlkem_sample_ntt4::vg_mlkem_sample_ntt4,
