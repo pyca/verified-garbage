@@ -15,11 +15,10 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 /-!
 # Ed448 verification on AArch64: the table of `[n](-A)`
 
-Untrusted: everything here is checked by Lean. The table's 16 entries are
-`tabPts P` for the point `P` (`-A`) in slots 6–8: the neutral point, `P`, and
-each later entry the one before (in slots 3–5) plus `P`, by a call of
-`vg_ed448_r56_point_add` (`tabPts`, with the specification's `addPt`). `TInv` holds after each entry is stored
-(`tabBody_ok`), and after the loop for all 16 (`tabLoop_ok`).
+Untrusted: everything here is checked by Lean. Entry `e` of the table as a
+point (`TPt`) and its words' bounds (`TBnd`); a store of slots 3–5 to an
+entry (`tabStore_pt`, `tabStore_bnd`), which keeps the other entries
+(`TPt_outside`).
 -/
 
 @[expose] public section
@@ -48,18 +47,6 @@ def TPt (m : Mem) (base : Addr) (e : Nat) : Point :=
 
 /-- Entry `e`'s words below `Ib`. -/
 def TBnd (m : Mem) (base : Addr) (e : Nat) : Prop := ∀ w < 24, (tw m base e w).toNat < Ib
-
-/-- The entries from `P`: the neutral point, `P`, and each later one the one before plus `P`. -/
-def tabPts (P : Point) : Nat → Point
-  | 0 => ⟨0, 1, 1⟩
-  | 1 => P
-  | e + 2 => addPt (tabPts P (e + 1)) P
-
-theorem tabPts_succ (P : Point) (j : Nat) : tabPts P (j + 2) = addPt (tabPts P (j + 1)) P := rfl
-
-/-- Entries `e < k` are `tabPts P e`, their words below `Ib`. -/
-def TabOk (m : Mem) (base : Addr) (P : Point) (k : Nat) : Prop :=
-  ∀ e < k, TPt m base e = tabPts P e ∧ TBnd m base e
 
 /-- Coordinate `c` of entry `e` from the words `8c`, …, `8c + 7` of the entry. -/
 theorem FV_entry (m m' : Mem) (base : Addr) {e c o : Nat} (ho : o = TAB + 192 * e + 64 * c)
@@ -120,113 +107,5 @@ theorem TPt_of_tw {m m' : Mem} {base : Addr} {e : Nat} (h : ∀ w < 24, tw m' ba
 theorem TPt_outside {m m' : Mem} {base : Addr} {e : Nat} (h : Outside base (TAB + 192 * e) 192 m m')
     {e' : Nat} (he : e' ≠ e) (he' : e' < 16) : TPt m' base e' = TPt m base e' :=
   TPt_of_tw fun _ hw => tw_outside h he he' hw
-
-/-! ## The loop -/
-
-/-- What the working space outside the slots, the products' working space and the table
-keeps from `s₀`. -/
-def TFrame (base : Addr) (m₀ m : Mem) : Prop :=
-  ∀ x, (ofs base x < 64 ∨ 2880 ≤ ofs base x) → (ofs base x < ACC ∨ ACC + 1152 ≤ ofs base x) →
-    (ofs base x < TAB ∨ TAB + 3072 ≤ ofs base x) → m x = m₀ x
-
-theorem TFrame.trans {base : Addr} {m₁ m₂ m₃ : Mem} (h₁ : TFrame base m₁ m₂) (h₂ : TFrame base m₂ m₃) :
-    TFrame base m₁ m₃ := fun x a b c => (h₂ x a b c).trans (h₁ x a b c)
-
-theorem TFrame.of_outside2 {base : Addr} {m m' : Mem} (h : Outside2 base 64 2816 ACC 1152 m m') :
-    TFrame base m m' := fun x a b _ => h x a b
-
-theorem TFrame.of_entry {base : Addr} {m m' : Mem} {e : Nat} (he : e < 16)
-    (h : Outside base (TAB + 192 * e) 192 m m') : TFrame base m m' := fun x _ _ c =>
-  h x (by simp only [TAB] at c ⊢; omega_arith)
-
-/-- The table's loop before entry `k`, from the state `s₀` at its start. -/
-structure TInv (s₀ : State) (base : Addr) (P : Point) (k : Nat) (s : State) : Prop where
-  bound : 2 ≤ k ∧ k ≤ 16
-  scr : Scr s base
-  env : BEnv s.mem base
-  zero : ∀ w < 8, limbs s.mem base (slot (19 : Index).val) w = 0
-  counter : s.gpr .x19 = BitVec.ofNat 64 k
-  acc : pt (EV s.mem base) 3 4 5 = tabPts P (k - 1)
-  pnt : pt (EV s.mem base) 6 7 8 = P
-  one : EV s.mem base 20 = EV s₀.mem base 20
-  tab : TabOk s.mem base P k
-  chk : s.gpr .x20 = s₀.gpr .x20
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  mem : TFrame base s₀.mem s.mem
-
-theorem tabBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : TInv s₀ base P k s) (hk : k < 16) :
-    WP isa tabBody s fun t => (t.gpr .x9 != 0) = decide (k + 1 ≠ 16) ∧ TInv s₀ base P (k + 1) t := by
-  obtain ⟨hb2, hs, hb, hz, hc, hacc, hpnt, hone, htab, hchk, hrd, hwr, hmem⟩ := h
-  rw [tabBody, WP.seq_iff]
-  refine WP.mono (Point56.addCall_ok hs hb (zero_env hz).2) fun t1 ⟨k1, b1, s1, _, _, _, e1, _⟩ => ?_
-  have hs1 := k1.scr hs
-  have hc1 : t1.gpr .x19 = BitVec.ofNat 64 k := by rw [k1.regs.1 _ (by decide)]; exact hc
-  rw [WP.block_append_iff]
-  refine WP.mono (tabStore_ok hs1 hk hc1) fun t2 ⟨w2, o2, k2⟩ => ?_
-  have hs2 : Scr t2 base := hs1.of_keeps k2 (by decide)
-  have hc2 : t2.gpr .x19 = BitVec.ofNat 64 k := by rw [k2.1 _ (by decide)]; exact hc1
-  refine WP.mono (next_ok t2 (n := 16) (by decide) hk hc2) fun t3 ⟨c3, n3, k3, m3⟩ => ⟨n3, ?_⟩
-  -- The slots after the addition, and the entries after the store.
-  have z1 : ∀ w < 8, limbs t1.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
-    rw [s1 19 (by decide) w hw]; exact hz w hw
-  have e3 : ∀ i : Index, EV t3.mem base i = EV t1.mem base i := fun i => by
-    have := i.isLt
-    simp only [VG.Proof.X448.AArch64.Weak.E, VG.Proof.X448.AArch64.Weak.F]
-    refine congrArg _ (VG.Proof.X448.Wide.valN_congr fun w hw => ?_)
-    rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega_arith)) (by simp only [slot]; omega_arith) (by omega_arith)]
-  have hacc1 : pt (EV t1.mem base) 3 4 5 = tabPts P k := by
-    rw [e1, Point56.genEnv_pt, (zero_env hz).1, VG.Proof.X448.AArch64.Base.genPt_eq, hacc, hpnt]
-    obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega_arith⟩
-    rw [show j + 2 - 1 = j + 1 by omega_arith, tabPts_succ]
-  have hpnt1 : pt (EV t1.mem base) 6 7 8 = P := by
-    rw [← hpnt]; simp only [pt]
-    rw [Same.env s1 (i := 6) (by decide), Same.env s1 (i := 7) (by decide), Same.env s1 (i := 8) (by decide)]
-  refine ⟨⟨by omega_arith, by omega_arith⟩, hs2.of_keeps k3 (by decide), ?_, fun w hw => ?_, c3, ?_, ?_, ?_, fun e he => ?_,
-    ?_, ?_, ?_, ?_⟩
-  · intro i w hw
-    have := i.isLt
-    show limbs t3.mem base (slot i.val) w < Ib
-    rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega_arith)) (by simp only [slot]; omega_arith) (by omega_arith)]
-    exact b1 i w hw
-  · rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega_arith)) (by simp only [slot]; omega_arith) (by omega_arith)]
-    exact z1 w hw
-  · simp only [pt]; rw [e3 3, e3 4, e3 5, Nat.add_sub_cancel]; exact hacc1
-  · simp only [pt]; rw [e3 6, e3 7, e3 8]; exact hpnt1
-  · rw [e3 20, ← hone]; exact Same.env s1 (i := 20) (by decide)
-  · rw [m3]
-    by_cases hek : e = k
-    · subst hek
-      exact ⟨by rw [tabStore_pt w2, hacc1], tabStore_bnd b1 w2⟩
-    · have ⟨te, tb⟩ := htab e (by omega_arith)
-      have hmem1 : ∀ w < 24, tw t1.mem base e w = tw s.mem base e w := fun w hw => by
-        unfold tw
-        exact k1.mem.word (Or.inr (by simp only [TAB]; omega_arith)) (Or.inr (by simp only [ACC, TAB]; omega_arith))
-          (by simp only [TAB]; omega_arith)
-      refine ⟨?_, fun w hw => ?_⟩
-      · rw [TPt_outside o2 hek (by omega_arith), TPt_of_tw hmem1, te]
-      · rw [tw_outside o2 hek (by omega_arith) hw, hmem1 w hw]; exact tb w hw
-  · rw [k3.1 _ (by decide), k2.1 _ (by decide), k1.regs.1 _ (by decide)]; exact hchk
-  · rw [k3.2.1, k2.2.1, k1.regs.2.1]; exact hrd
-  · rw [k3.2.2, k2.2.2, k1.regs.2.2]; exact hwr
-  · rw [m3]
-    exact hmem.trans ((TFrame.of_outside2 k1.mem).trans (TFrame.of_entry hk o2))
-
-theorem tabLoop_ok {s₀ : State} {base : Addr} {P : Point} :
-    ∀ m, ∀ s, 1 ≤ m → m ≤ 14 → TInv s₀ base P (16 - m) s →
-      WP isa (.loop tabBody (.nonzero .x .x9)) s fun t => TInv s₀ base P 16 t := by
-  intro m s h1 h2 hi
-  refine WP.loop (M := isa) (body := tabBody) (c := .nonzero .x .x9)
-    (Q := fun t => TInv s₀ base P 16 t)
-    (fun m (s : State) => 1 ≤ m ∧ m ≤ 14 ∧ TInv s₀ base P (16 - m) s) ?_ m s ⟨h1, h2, hi⟩
-  intro m s ⟨h1, h2, hi⟩
-  refine WP.mono (tabBody_ok hi (by omega_arith)) fun t ⟨hz, ht⟩ => ?_
-  simp only [eval, State.read, BitVec.setWidth_eq, hz]
-  by_cases hm : m = 1
-  · subst hm
-    exact .inl ⟨by decide, ht⟩
-  · refine .inr ⟨congrArg some (decide_eq_true (by omega_arith)), m - 1, by omega_arith, by omega_arith, by omega_arith, ?_⟩
-    rw [show 16 - (m - 1) = 16 - m + 1 by omega_arith]
-    exact ht
 
 end VG.Proof.Ed448.AArch64.Window

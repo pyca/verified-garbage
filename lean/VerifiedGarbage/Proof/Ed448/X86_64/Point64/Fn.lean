@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Point56Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 public import VerifiedGarbage.Impl.Ed448.X86_64.Point64
 public import VerifiedGarbage.Proof.Ed448.Formulas
@@ -10,17 +9,19 @@ import VerifiedGarbage.Proof.X448.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Ed448
+public import VerifiedGarbage.Spec.X448
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Ed448's point functions on x86-64: what they compute
 
 Untrusted: everything here is checked by Lean. A function running the field
 program `ops` (`fn ops`) changes the slots as `evalOps ops` (`fieldCode_ok`)
-and nothing else but the registers `clob` (`Keep`): `saves` changes only
-`xmm0`–`xmm4`, and `restores` only registers of `clob` (`fn_ok`). Its bytes
-change only in the slots its operations write and in the product's words
-(`fieldCode_frame`), and it restores `rbp` and `r12`–`r15`, which
-`KeepReg.keeps` follows through `xmm0`–`xmm4` (`fn_regs`). The doubling's
+and nothing else but the registers `clob` (`fnWith_ok`): `saves` changes only
+`xmm0`–`xmm4` (`saves_ok`), and `restores` only registers of `clob`
+(`restores_ok`). Its bytes change only in the slots its operations write and
+in the product's words (`fieldCode_frame`). The doubling's
 values are RFC 8032's (`doubleOps_eval`), the affine addition's `addOps`'s
 for a second point with `Z = 1` (`addAffineOps_eval`).
 -/
@@ -143,28 +144,7 @@ theorem fnWith_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) (ops : List FOp)
   · intro x hx
     rw [m₃, k₂.mem x hx, m₁]
 
-theorem fn_ok (ops : List FOp) (hv : ∀ op ∈ ops, fopValid op) {s : State} {base : Addr}
-    (hs : Scr s base) :
-    WP isa (fn ops) s fun t =>
-      Keep base s t ∧ E t.mem base = evalOps ops (E s.mem base) ∧
-        ∀ x, (∀ op ∈ ops, OutOf base x op) → (ofs base x < ACC ∨ ACC + 112 ≤ ofs base x) →
-          t.mem x = s.mem x :=
-  fnWith_ok Proof.X448.X86_64.baseline_ok ops hv hs
-
-/-- `fn_ok`, with the registers the function restores kept too (`KeepReg.keeps`). -/
-theorem fn_regs (ops : List FOp) (hv : ∀ op ∈ ops, fopValid op)
-    (hk : ∀ r ∈ keptRegs, KeepReg.keeps r (fn ops) = true) {s : State} {base : Addr}
-    (hs : Scr s base) :
-    ∃ t s', Exec isa (fn ops) s t s' ∧ (∀ r, (r ∉ clob ∨ r ∈ keptRegs) → s'.gpr r = s.gpr r) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ E s'.mem base = evalOps ops (E s.mem base) ∧
-      ∀ x, (∀ op ∈ ops, OutOf base x op) → (ofs base x < ACC ∨ ACC + 112 ≤ ofs base x) →
-        s'.mem x = s.mem x := by
-  obtain ⟨t, s', he, k, e, f⟩ := fn_ok ops hv hs
-  exact ⟨t, s', he, fun r hr => hr.elim (k.gpr r) fun hm => Exec.gpr_keeps (hk r hm) he, k.rd, k.wr, e, f⟩
-
 /-! ## The programs' values -/
-
-theorem addAffineOps_valid : ∀ op ∈ addAffineOps, fopValid op := by decide
 
 /-- `addWith` of a point with `Z = 1`, with `Z₁` for `Z₁ · 1`. -/
 def addAffineWith (dd : Spec.X448.Fe) (p : Spec.Ed448.Point) (x y : Spec.X448.Fe) : Spec.Ed448.Point :=
@@ -184,8 +164,6 @@ theorem addWith_affine (dd : Spec.X448.Fe) (p : Spec.Ed448.Point) (x y : Spec.X4
 theorem addAffineOps_eval (e : Env) :
     pt (evalOps addAffineOps e) 3 4 5 = addWith (e 11) (pt e 0 1 2) ⟨e 8, e 9, 1⟩ := by
   rw [addWith_affine]; rfl
-
-theorem double_eq (p : Spec.Ed448.Point) : double p = Proof.Ed448.Point56.pointDouble p := rfl
 
 end VG.Proof.Ed448.X86_64.Point64
 

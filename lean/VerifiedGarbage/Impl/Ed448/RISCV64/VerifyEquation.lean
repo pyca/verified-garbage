@@ -92,10 +92,6 @@ def BAD : Nat := 1696
 def SIGN : Nat := 1704
 /-- The output of `freeze`, at `a0`. -/
 def OUT : Nat := 2048
-/-- The four entries of each of the 458 bits: the mask of each iteration,
-addressed from `a0`. -/
-def TAB : Nat := 2104
-
 /-- The slots decoding uses. -/
 def DY : Nat := 168
 def DON : Nat := 224

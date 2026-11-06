@@ -64,9 +64,6 @@ theorem uzp_words (lo hi : BitVec 128) (c : Nat) (hc : c < 4) :
 theorem scr_setV {s : State} {base : Addr} (hs : Scr s base) (r : VReg) (x : BitVec 128) :
     Scr (s.setV r x) base := ⟨hs.x3, hs.mask, hs.wr, hs.nowrap⟩
 
-theorem scr_mem {s : State} {base : Addr} (hs : Scr s base) (m : Mem) : Scr { s with mem := m } base :=
-  ⟨hs.x3, hs.mask, hs.wr, hs.nowrap⟩
-
 theorem exec_vo_of {op : VOp} {s : State} {d : VReg} {x : BitVec 128} (h : op.eval s = some (d, x)) :
     isa.exec (vo op) s = some (s.setV d x) := by
   show (op.eval s).map (fun p => s.setV p.1 p.2) = _

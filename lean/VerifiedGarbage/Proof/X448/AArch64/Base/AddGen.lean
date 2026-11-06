@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Inline
 Untrusted: everything here is checked by Lean. `addOps` (`Impl/X448/AArch64/Base.lean`),
 scalar field operations only, for the four doublings and the last addition: the
 environment afterwards is `genEnv` of the one before, which for the slots used is
-`addPt` of the two points (`genEnv_dbl`, `genEnv_add`, `genPt_eq`).
+`addPt` of the two points (`genPt_eq`).
 -/
 
 @[expose] public section
@@ -63,9 +63,6 @@ theorem addOps_eq (x1 y1 z1 x2 y2 z2 : Index) :
      .mul (slot (13 : Index).val) (slot (10 : Index).val) (slot (11 : Index).val),
      .mul (slot y1.val) (slot (13 : Index).val) (slot (16 : Index).val),
      .mul (slot z1.val) (slot (15 : Index).val) (slot (11 : Index).val)] := rfl
-
-theorem ne_of_lt10 {i : Index} (hi : i.val < 10) (k : Nat) (hk : 10 ≤ k) (hk' : k < 22) :
-    (⟨k, hk'⟩ : Index) ≠ i := fun h => by rw [← h] at hi; exact absurd hi (by simp; omega)
 
 section
 variable {s : State} {base : Addr}
@@ -167,10 +164,6 @@ def genPt (p q : Point) (z0 : Spec.X448.Fe) : Point :=
   let f := b + Spec.X448.a24 * (c * e)
   let g := b + Spec.X448.a24 * (z0 - c * e)
   ⟨a * f * (p.X * q.Y + p.Y * q.X), a * g * (e - c), f * g⟩
-
-theorem genEnv_dbl (e : Env) : pt (genEnv 0 1 2 0 1 2 e) 0 1 2 = genPt (pt e 0 1 2) (pt e 0 1 2) (e 19) := rfl
-
-theorem genEnv_add (e : Env) : pt (genEnv 0 1 2 3 4 5 e) 0 1 2 = genPt (pt e 0 1 2) (pt e 3 4 5) (e 19) := rfl
 
 theorem genPt_eq (p q : Point) : genPt p q 0 = addPt p q := rfl
 

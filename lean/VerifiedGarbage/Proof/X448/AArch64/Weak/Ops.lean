@@ -70,13 +70,4 @@ theorem ops_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.me
     rw [ue, te]
     rfl
 
-/-- The arithmetic part of one Montgomery-ladder step. -/
-def stepFields : List FieldOp :=
-  [.add 5 1 2, .mul 9 5 5, .sub 6 1 2, .mul 10 6 6, .sub 11 9 10,
-    .add 7 3 4, .sub 8 3 4, .mul 12 8 5, .mul 13 7 6,
-    .add 3 12 13, .mul 3 3 3, .sub 4 12 13, .mul 4 4 4, .mul 4 0 4,
-    .mul 1 9 10, .mulSmall 2 11, .add 2 9 2, .mul 2 11 2]
-
-theorem stepFields_impl : stepFields.map FieldOp.impl = stepOps := by decide +kernel
-
 end VG.Proof.X448.AArch64.Weak

@@ -1,5 +1,4 @@
 module
-public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarWord
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
@@ -10,12 +9,13 @@ import VerifiedGarbage.Proof.X448.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Ed448.Contract
 
 /-!
 # Ed448 scalar multiply-add on x86-64: the whole function
 
-The contract the proof is written against (the facts of
-`Proof.Ed448.scalarMulAddContract` it uses, stated for x86-64), and the
+The contract the proof is written against (`scalarMulAddLocal`, stated for
+x86-64), and the
 correctness of `vg_ed448_scalar_mul_add` against it.
 -/
 

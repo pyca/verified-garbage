@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 
 /-!
 # Ed448 base-point multiplication on x86-64: the contract the proof is written against
 
-The facts of `Proof.Ed448.scalarBaseContract` the proof uses, stated for
-x86-64, in a module of their own: callers proven for any code meeting them
+`scalarBaseLocal`, the contract of `vg_ed448_scalar_base` the proof is written
+against, stated for x86-64, in a module of their own: callers proven for any code meeting them
 need not import the proof, and the group theory it imports.
 -/
 

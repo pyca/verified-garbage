@@ -18,22 +18,6 @@ def code : Op → Prog isa
 def ops : List Op → Prog isa
   | [] => .block []
   | o :: os => .seq (code o) (ops os)
-def stepOps : List Op :=
-  [.add A X2 Z2, .mul AA A A, .sub B X2 Z2, .mul BB B B, .sub E AA BB,
-    .add C X3 Z3, .sub D X3 Z3, .mul DA D A, .mul CB C B,
-    .add X3 DA CB, .mul X3 X3 X3, .sub Z3 DA CB, .mul Z3 Z3 Z3, .mul Z3 X1 Z3,
-    .mul X2 AA BB, .mulSmall Z2 E, .add Z2 AA Z2, .mul Z2 E Z2]
-
-def stepHead : List Instr :=
-  [.subImm .x .x19 .x19 1, .add .x .x11 .x3 .x19, .ldrb .x4 .x11 BITS,
-    ld .x5 SWAP, .logic .eor .x .x5 .x5 .x4, st .x4 SWAP,
-    .movz .x .x6 0 0, .sub .x .x6 .x6 .x5] ++ cswap X2 X3 ++ cswap Z2 Z3
-
-def step : Prog isa := .seq (.block stepHead) (ops stepOps)
-
-def ladder : Prog isa :=
-  .seq (.block [.movz .x .x19 448 0]) (.loop step (.nonzero .x .x19))
-
 def lastSwap : List Instr :=
   [ld .x5 SWAP, .movz .x .x6 0 0, .sub .x .x6 .x6 .x5] ++ cswap X2 X3 ++ cswap Z2 Z3
 
@@ -62,10 +46,4 @@ def invert : Prog isa :=
 def convert : List Instr := (List.range 22).flatMap fun i => Curve448.AArch64.fromLegacy (slot i)
 def setup : List Instr := AArch64.setup ++ convert
 
-def finish : Prog isa := .seq (Curve448.AArch64.mul X2 X2 T7)
-  (.block (Curve448.AArch64.toLegacy X2 ++ AArch64.freeze ++
-    (List.range 8).flatMap AArch64.packPair ++ [ld .x19 0, ld .x20 8]))
-def x448 : Prog isa :=
-  .seq (.block setup) <| .seq AArch64.bits <| .seq (.block [.addImm .x .x1 .x20 0]) <|
-    .seq ladder <| .seq (.block lastSwap) <| .seq invert finish
 end VG.Impl.X448.AArch64.Weak

@@ -13,8 +13,6 @@ open VG VG.AArch64
 open VG.Impl.X448.AArch64 (ld st ACC TMP)
 
 def PACKA : Nat := 3968
-def PACKB : Nat := 4032
-
 /-- Accumulate x6 × x9 in the two-word x4:x5 coefficient. -/
 def termFrom (a b : Reg) : List Instr :=
   [.mul .x .x10 a b, .umulh .x11 a b,
@@ -79,13 +77,5 @@ def pass (o : Nat) (unpack : Bool) : List Instr :=
 def fold : List Instr :=
   [0, 4].flatMap fun i =>
     [ld .x4 (TMP + 16 * i), .add .x .x4 .x4 .x6, st .x4 (TMP + 16 * i)]
-
-def normalize (o : Nat) : List Instr :=
-  pass TMP false ++ fold ++ pass TMP false ++ fold ++ pass o true
-
-/-- Adapter retaining the existing sixteen-limb field-slot interface. -/
-def mul (o a b : Nat) : Prog isa := .block (
-  pack PACKA a ++ pack PACKB b ++ (List.range 16).flatMap (column PACKA PACKB) ++
-  (List.range 8).flatMap reduceCol ++ normalize o)
 
 end VG.Impl.X448.AArch64.Wide

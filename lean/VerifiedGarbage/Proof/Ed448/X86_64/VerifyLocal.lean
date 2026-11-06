@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -10,8 +9,8 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # Ed448 verification's equation on x86-64: the contract the proof is written against
 
-The facts of `Proof.Ed448.verifyEquationContract` the proof uses, stated for
-x86-64, in a module of their own: callers proven for any code meeting them
+`verifyEquationLocal`, the contract of `vg_ed448_verify_equation` the proof is
+written against, stated for x86-64, in a module of their own: callers proven for any code meeting them
 need not import the proof, and the group theory it imports.
 -/
 

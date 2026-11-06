@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -21,6 +20,7 @@ meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Spec.Ed448.Contract
 
 /-!
 # Ed448 scalar arithmetic on ARMv7: `Verified`
@@ -35,18 +35,6 @@ signature contract is satisfiable.
 namespace VG.Proof.Ed448.Arm
 
 open VG VG.Arm VG.Impl.Ed448.Arm
-
-def scalarReduceSat : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | _ => 0
-  sp := 0x8000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x2000, 114⟩]
-  wr := [⟨0x1000, 57⟩, ⟨0x3000, 8192⟩]
 
 theorem scalarReduce_ok (s : State) (hs : scalarReduceLocal.pre s) :
     ∃ t s', Exec isa scalarReduce s t s' ∧ abiPreserved s s' ∧ scalarReduceLocal.post s s' :=
@@ -87,14 +75,6 @@ theorem scalarReduce_ct :
     · exact h1
     · exact h2
   · rw [(ReducePre.of hs).wr, (ReducePre.of ht).wr, h0, h2]
-
-theorem scalarReduce_verified : Verified Arm.target scalarReduce
-    (Proof.Ed448.scalarReduceContract Arm.abi) :=
-  Verified.of_correct scalarReduce_ok scalarReduce_ct (by
-    sig_implies [Proof.Ed448.scalarReduceContract, Proof.Ed448.scalarReduceSig,
-      Spec.Ed448.scratchWords, scalarReduceLocal, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      [scalarReduceSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scalarReduceSat)
 
 theorem scalarMulAdd_ok (s : State) (hs : scalarMulAddLocal.pre s) :
     ∃ t s', Exec isa scalarMulAdd s t s' ∧ abiPreserved s s' ∧ scalarMulAddLocal.post s s' :=
@@ -150,25 +130,5 @@ theorem scalarMulAdd_ct :
   · rw [(MulAddPre.of hs).wr, (MulAddPre.of ht).wr, h0, ha]
   · rw [scalarMulAdd_argByte, scalarMulAdd_argByte, Mem.readW_byte s.mem _ hk, Mem.readW_byte t.mem _ hk]
     exact congrArg (fun v : BitVec 32 => v.extractLsb' (8 * k) 8) ha
-
-def scalarMulAddSat : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | .r3 => 0x4000 | _ => 0
-  sp := 0x8000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem a := if a = 0x8001 then 0x50 else 0
-  rd := [⟨0x2000, 57⟩, ⟨0x3000, 57⟩, ⟨0x4000, 57⟩, ⟨0x8000, 4⟩]
-  wr := [⟨0x1000, 57⟩, ⟨0x5000, 8192⟩]
-
-theorem scalarMulAdd_verified : Verified Arm.target scalarMulAdd
-    (Proof.Ed448.scalarMulAddContract Arm.abi) :=
-  Verified.of_correct scalarMulAdd_ok scalarMulAdd_ct (by
-    sig_implies [Proof.Ed448.scalarMulAddContract, Proof.Ed448.scalarMulAddSig,
-      Spec.Ed448.scratchWords, scalarMulAddLocal, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
-      [scalarMulAddSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scalarMulAddSat)
 
 end VG.Proof.Ed448.Arm
