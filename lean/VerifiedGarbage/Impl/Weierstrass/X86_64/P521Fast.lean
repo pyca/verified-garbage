@@ -27,7 +27,7 @@ for P-521's `p = 2⁵²¹ - 1` in Montgomery's form (`R = 2⁵⁷⁶`):
 namespace VG.Impl.Weierstrass.X86_64.P521F
 
 open VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64
-open VG.Impl.Weierstrass.X86_64.Mont (fnTmp copyW fnMod)
+open VG.Impl.Weierstrass.X86_64.Mont (fnTmp fnMod)
 
 /-- Word `k` of the functions' temporary area. -/
 def T (k : Nat) : Nat := fnTmp + 8 * k
@@ -132,25 +132,18 @@ def sqTop : List Instr :=
 `9 … 16` in `xAcc 9 … 16`. -/
 def sqrS : List Instr := sqRow0 ++ sqRow 1 ++ sqRow 2 ++ sqRow 3 ++ sqDiag ++ sqTop
 
-/-- Two steps of `P_lo >> 55`, words `2j + 1` and `2j`, from the top down:
-`rax` holds word `2j + 2` before and word `2j` after, each `shld` writing the
-register of the word it no longer needs. -/
-def redPair (j : Nat) : List Instr :=
-  [.mov .rcx (.mem (sc (T (2 * j + 1)))), .shld .rax .rcx 9, .store (sc (T (2 * j + 1))) .rax,
-    .mov .rax (.mem (sc (T (2 * j)))), .shld .rcx .rax 9, .store (sc (T (2 * j))) .rcx]
-
 /-- `P R⁻¹` (plus one if `carry`) into `xWin 9`, for `P` with its words
 `0 … 8` in the temporary area and `9 … 16` in `xAcc 9 … 16` (`17` zero):
 `T = P_hi + (P₀ mod 2⁵⁵) 2⁴⁶⁶` (the two apart, `P` below `2¹⁰⁴²`), and
-`q = P_lo >> 55` (by `shld`, word by word over the temporary area, from the
-top word down: `redPair`), added. Each word is loaded rather than copied
-between registers, which costs an ALU port on cores without move
-elimination. -/
+`q = P_lo >> 55` (by `shld`, word by word over the temporary area), added.
+Each word is loaded again rather than copied between registers, which costs
+an ALU port on cores without move elimination. -/
 def redS (carry : Bool) : List Instr :=
-  [.mov .rcx (.mem (sc (T 0))), .shift .shl .rcx 18, .alu .or .r14 (.reg .rcx),
-    .mov .r15 (.mem (sc (T 0))), .shift .shr .r15 46, .alu32 .and .r15 (.imm 511), .mov .rax (.mem (sc (T 8)))] ++
-  (List.range 4).reverse.flatMap redPair ++
-  [.mov .rax (.mem (sc (T 8))), .shift .shr .rax 55] ++
+  [.mov .rax (.mem (sc (T 0))), .mov .rcx (.mem (sc (T 0))), .shift .shl .rcx 18, .alu .or .r14 (.reg .rcx),
+    .mov .r15 (.mem (sc (T 0))), .shift .shr .r15 46, .alu32 .and .r15 (.imm 511)] ++
+  (List.range 8).flatMap (fun i => [.mov .rcx (.mem (sc (T (i + 1)))), .shld .rcx .rax 9,
+    .store (sc (T i)) .rcx, .mov .rax (.mem (sc (T (i + 1))))]) ++
+  [.shift .shr .rax 55] ++
   (if carry then [.alu32 .xor .rdx (.reg .rdx), .alu .cmp .rdx (.imm (-1))] else [.alu32 .xor .rdx (.reg .rdx)]) ++
   ((List.range 8).map fun i => .alu .adc (xAcc (9 + i)) (.mem (sc (T i)))) ++ [.alu .adc .r15 (.reg .rax)]
 
@@ -160,10 +153,11 @@ def exitS : List Instr := [.alu .add .rdi (.reg .rsi)] ++ xCanon 0 0 ++ [.alu .s
 /-- The result, below `2p`, at `[rdi + rsi]`. -/
 def exitW : List Instr := [.alu .add .rdi (.reg .rsi)] ++ storesC 0 (xWin 9) 0 ++ [.alu .sub .rdi (.reg .rsi)]
 
-/-- `mulPX`'s rows: `[rbx]` copied into the temporary area, then the rows
-by `[rcx]`'s words (through `rbx`). -/
+/-- `mulPX`'s rows: `[rbx]`'s words times `[rcx]` (through `rsi`, the
+output's offset kept in `xmm13` meanwhile). -/
 def mulRows : List Instr :=
-  copyW 9 0 ++ [.mov .rbx (.reg .rcx)] ++ (List.range 9).flatMap (xRowV (fnMod true) .rdi .rbx 0 fnTmp 0)
+  [.xop (.movq .xmm13 .rsi), .mov .rsi (.reg .rcx)] ++ (List.range 9).flatMap (xRowV (fnMod true) .rbx .rsi 0 0 0) ++
+    [.movqR .rsi .xmm13]
 
 /-- `vg_p521_sqr_adx`. -/
 def sqrFn : Prog isa := .block (sqrS ++ [.store (sc (T 8)) .r15] ++ redS true ++ exitS)
