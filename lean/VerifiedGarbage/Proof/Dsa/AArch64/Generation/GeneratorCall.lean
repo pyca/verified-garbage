@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStage
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorCall
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedOutcome
-public import VerifiedGarbage.Proof.Dsa.Generation.SeedResult
 public import VerifiedGarbage.Proof.Dsa.Generation.PDomain
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
@@ -22,6 +21,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCall
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 public import VerifiedGarbage.Proof.Dsa.ModPowContract
 public import VerifiedGarbage.Proof.Dsa.GeneratorStageContract
+public import VerifiedGarbage.Spec.Dsa
 
 /-! # Calling the generator stage from the generation frame
 

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Sized
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 
 /-! # DSA parameter generation over refillable random tapes on x86-64
 

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Generation.SeedResult
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
+public import VerifiedGarbage.Spec.Dsa
 
 /-! # A seed leaves a suffix of the witness tape it is given -/
 
@@ -31,26 +31,5 @@ theorem primeSearch_suffix {l n q : Nat} (seed : List Byte) :
         | true =>
           have : remain = rest := by simpa using congrArg (fun z => z.map (·.2)) h
           exact this ▸ hs
-
-theorem seedResult_suffix {l n : Nat} {seed : List Byte} {hs : List Nat} {rand rest : List Byte}
-    {x : Option Spec.Dsa.Params} (h : seedResult l n seed hs rand = some (x, rest)) : rest <:+ rand := by
-  unfold seedResult at h
-  dsimp only at h
-  rcases hq : Spec.Dsa.probablePrime (Spec.Dsa.qCandidate n seed) rand with _ | ⟨_ | _, r⟩ <;> rw [hq] at h
-  · cases h
-  · simp only [Option.some.injEq, Prod.mk.injEq] at h
-    obtain ⟨-, rfl⟩ := h; exact probablePrime_suffix hq
-  · have hr := probablePrime_suffix hq
-    dsimp only at h
-    unfold primeResult at h
-    split at h
-    · cases h
-    · next r' hp => exact (Prod.mk.inj (Option.some.inj h)).2 ▸ (primeSearch_suffix seed _ r hp).trans hr
-    · next p r' hp =>
-      have hr' := (primeSearch_suffix seed _ r hp).trans hr
-      unfold generatorResult at h
-      split at h
-      · exact (Prod.mk.inj (Option.some.inj h)).2 ▸ hr'
-      · split at h <;> exact (Prod.mk.inj (Option.some.inj h)).2 ▸ hr'
 
 end VG.Proof.Dsa.Generation

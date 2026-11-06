@@ -42,11 +42,6 @@ theorem seedAdd_safe (n : Nat) : generationSafe (seedAdd n) := by
   · unfold seedAddTail
     split <;> rfl
 
-theorem seedHash_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256) :
-    generationSafe (seedHash H1 H256) := by
-  exact (show generationSafe (.block hashTest) from rfl).seq
-    ((hashLabel_safe h1 _).ite (hashLabel_safe h256 _) _)
-
 theorem seedHashAt_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256) (len : Nat) :
     generationSafe (seedHashAt H1 H256 len) := by
   unfold seedHashAt

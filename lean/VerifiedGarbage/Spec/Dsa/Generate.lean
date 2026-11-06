@@ -4,7 +4,7 @@ public import VerifiedGarbage.Spec.Dsa.Random
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-!
-# DSA key and parameter generation contracts (trusted)
+# DSA key generation contract and generation helpers (trusted)
 
 Key generation consumes fresh independent random octets, samples x by
 FIPS 186-4 B.1.2 rejection sampling, and computes y = g^x mod p. Imported
@@ -12,21 +12,11 @@ parameters undergo algebraic consistency checks, not primality certification.
 The private scalar and its random tape are secret; only public parameters,
 sampling decisions and success/failure may affect timing.
 
-Parameter generation wraps the existing generateParameters specification
-(A.1.1.2 and A.2.1), without replacing its prime test or witness policy.
-Seed candidates are N/8-byte chunks and h candidates L/8-byte chunks of
-separate tapes. The witness tape is threaded through successive prime tests
-by generateParameters. Its h tape retains that specification's semantics:
-each generator search starts at the front of the supplied h candidates.
-The three tapes must be independent uniform random octets. All parameter
-search inputs may affect timing: these are public-domain parameters, not
-private keys. Never use these tapes to generate private scalars or nonces.
-No primality certificate or Miller–Rabin error bound is asserted.
+The generated widths, the p||q||g encoding and the scratch size here are also
+those of parameter generation over a refillable tape (`ParameterSearch.lean`).
 
-Both operations are bounded by finite input tapes (and, for key generation,
-128 scalar draws). Failure zeros output. Parameter generation returns 0 for
-unsupported size, rejected search or exhausted tapes, following the existing
-Option-valued specification; it does not pretend to distinguish these cases.
+Key generation is bounded by its finite input tape and 128 scalar draws.
+Failure zeros output.
 -/
 
 @[expose] public section
@@ -87,16 +77,6 @@ instance (pLen qLen : Nat) : Decidable (generationLengthsValid pLen qLen) := by
   unfold generationLengthsValid
   infer_instance
 
-/-- Byte adapter for the already-reviewed mathematical parameter generator.
-Malformed partial candidates are refused rather than silently dropped. -/
-def generateParametersBytes (pLen qLen : Nat) (seeds hs witnesses : List Byte) :
-    Option (List Byte) := do
-  if !(generationLengthsValid pLen qLen) || seeds.length % qLen != 0 ||
-      hs.length % pLen != 0 then none else do
-    let a ← generateParameters (8 * pLen) (generationChunks qLen seeds)
-      ((generationChunks pLen hs).map decodeBE) witnesses
-    return encodeParams pLen qLen a
-
 /-- Caller-provided working space, including arithmetic and hash workspaces. -/
 def generationScratchWords (pLen : Nat) : Nat := 64 * pLen + 1024
 
@@ -142,53 +122,5 @@ def generateKeyApi : Api where
     "params_len must be 2*p_len + q_len; out_len must be 3*p_len + 2*q_len.",
     "scratch_len must be at least 64*p_len + 1024 words; destroy scratch after use.",
     "Caller must assure domain validity and supply fresh independent random bytes."]
-
-def generateParametersSig : Sig where
-  params := [("out", .slice true .u8 "out_len"), ("p_len", .int .usize true),
-    ("q_len", .int .usize true), ("seeds", .slice false .u8 "seeds_len"),
-    ("hs", .slice false .u8 "hs_len"), ("witnesses", .slice false .u8 "witnesses_len"),
-    ("scratch", .slice true .u64 "scratch_len")]
-  ret := some .u32
-
-def generateParametersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  generateParametersSig.contract A
-    (pre := fun _out outLen pLen qLen _seeds seedsLen _hs hsLen _witnesses _witnessesLen
-        _scratch scratchLen _ =>
-      generationLengthsValid pLen.toNat qLen.toNat ∧
-        outLen.toNat = 2 * pLen.toNat + qLen.toNat ∧
-        seedsLen.toNat % qLen.toNat = 0 ∧ hsLen.toNat % pLen.toNat = 0 ∧
-        generationScratchWords pLen.toNat ≤ scratchLen.toNat)
-    (post := fun out outLen pLen qLen seeds seedsLen hs hsLen witnesses witnessesLen
-        _scratch _scratchLen m m' r =>
-      let res := generateParametersBytes pLen.toNat qLen.toNat (bytesAt m seeds seedsLen.toNat)
-        (bytesAt m hs hsLen.toNat) (bytesAt m witnesses witnessesLen.toNat)
-      r.toNat = signStatus res ∧
-        bytesAt m' out outLen.toNat = res.getD (List.replicate outLen.toNat 0))
-    (writeArgs := true) (stack := stack)
-    (leak := some fun _out _outLen _pLen _qLen seeds seedsLen hs hsLen witnesses witnessesLen
-        _scratch _scratchLen m =>
-      (bytesAt m seeds seedsLen.toNat).map (·.toNat) ++
-        (bytesAt m hs hsLen.toNat).map (·.toNat) ++
-        (bytesAt m witnesses witnessesLen.toNat).map (·.toNat))
-
-def generateParametersApi : Api where
-  module := "dsa"
-  name := "vg_dsa_generate_parameters"
-  sig := generateParametersSig
-  writeArgs := true
-  contracts := some fun A stack => generateParametersContract A stack
-  summary := "DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are \
-    q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate \
-    random-octet tape consumed by the existing probable-prime specification. Returns \
-    1 with p||q||g, or 0 with zero output if no parameters are produced, including tape \
-    exhaustion. Accepted parameters pass probable-prime tests, not primality certification. \
-    All three parameter-search tapes may affect timing. \
-    Contract: `VG.Spec.Dsa.generateParametersContract`."
-  safety := ["(p_len, q_len) must be (128,20), (256,32), or (384,32).",
-    "out_len must be 2*p_len + q_len; seeds_len must be a multiple of q_len; \
-      hs_len must be a multiple of p_len.",
-    "scratch_len must be at least 64*p_len + 1024 words.",
-    "The three tapes must contain independent uniform random bytes. They are not \
-      secret under this contract and must never be reused for private scalars or nonces."]
 
 end VG.Spec.Dsa
