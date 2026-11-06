@@ -6,7 +6,8 @@ import VerifiedGarbage.Proof.MlKem.PolyW
 
 /-! # The fused dot product of 16-bit polynomials in 1024-byte buffers
 
-`ReadyW`: `Dot.Ready` for polynomials stored with 16 bits in the first half of
+`ReadyW`: what the fused dot product needs of polynomials stored with 16 bits
+in the first half of
 buffers of 1024 bytes, from which `ReadyW.data` gives `dotW`'s `LoopDataW`. -/
 
 @[expose] public section

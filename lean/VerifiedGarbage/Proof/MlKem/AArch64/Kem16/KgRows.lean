@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.DotReady
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgCommon
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenRow
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
@@ -13,8 +13,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTables
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
-import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
@@ -52,79 +50,8 @@ fused dot product, the sum with `ê` and the encodings), which
 `KgH/` composes into `Kem16P.keyGen`. -/
 
 -- Formerly `VerifiedGarbage/Proof/MlKem/AArch64/Optimized/KeyGenMatrix.lean`, which only this module imported.
-section
-
-/-! # The complete paired key-generation matrix satisfies the existing invariant -/
-section
-namespace VG.Proof.MlKem.AArch64.KeyGen
-open VG VG.AArch64 VG.Impl.MlKem.AArch64
-variable {P : KemLay}
-
-theorem paired_matrix_ok {w16 : Bool} {s₀ s : State} (hp : Pre P s₀)
-    (h : BInvW w16 P s₀ 0 s) (tb : MatrixTable P s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Paired.matrix P true w16) s fun t =>
-      BInvW w16 P s₀ (P.k*P.k) t ∧ MatrixTable P s₀ t := by
-  have hk : 0<P.k := hp.wf.facts.1
-  have hn : 0<P.k*P.k := Nat.mul_pos hk hk
-  apply WPs.seqs
-  · intro hh
-    have parts := List.append_eq_nil_iff.mp hh
-    by_cases ho : P.k*P.k%2=1
-    · simpa only [ite_eq_left ho,List.cons_ne_nil] using parts.2
-    · have np : 0<P.k*P.k/2 := by omega
-      exact map_range_ne_nil np _ parts.1
-  · apply WPs.append
-    refine WPs.mono (WPs.range (I := fun i t => BInvW w16 P s₀ (2*i) t ∧ MatrixTable P s₀ t)
-      (fun i hi t ht => ?_) ⟨h,tb⟩) fun t ht => ?_
-    · refine WP.mono (matrix_pair hp (by omega : 2*i+1<P.k*P.k) ht.1 ht.2) fun u hu => ?_
-      simpa only [Nat.mul_add,Nat.mul_one] using hu
-    · by_cases ho : P.k*P.k%2=1
-      · rw [ite_eq_left ho]
-        apply WPs.single
-        rw [Paired.lastSample_eq]
-        have idx : 2*(P.k*P.k/2)=P.k*P.k-1 := by omega
-        rw [idx] at ht
-        refine WP.mono (matrix_singleton hp (by omega : P.k*P.k-1<P.k*P.k) ht.1 ht.2) fun u hu => ?_
-        simpa only [Nat.sub_add_cancel hn] using hu
-      · rw [ite_eq_right ho]
-        have idx : 2*(P.k*P.k/2)=P.k*P.k := by omega
-        simpa only [WPs,idx] using ht
-
-end VG.Proof.MlKem.AArch64.KeyGen
-end
-
-end
 
 -- Formerly `VerifiedGarbage/Proof/MlKem/AArch64/Optimized/KeyGenFinish.lean`, which only this module imported.
-section
-
-/-! # Key generation after paired noise sampling -/
-
-section
-namespace VG.Proof.MlKem.AArch64.KeyGen
-open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
-open VG.Spec.MlKem
-variable {P : KemLay}
-variable {keccak : VG.Proof.Sha3.AArch64.Permutation}
-
-theorem RowTable.encode_frame {s₀ s t : State}
-    (h : RowTable P s₀ s) (hs : t.syms=s.syms) (hk : KB P s₀ s) (hk' : KB P s₀ t)
-    (hf : Frame [R (kA s₀) 2 0 (384*P.k)] s.mem t.mem)
-    (ha : (⟨s.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint (R (kA s₀) 2 0 (384*P.k))) :
-    RowTable P s₀ t := by
-  refine ⟨?_,?_,?_⟩
-  · rw [hs]
-    intro j hj
-    rw [←h.table j hj]
-    exact hf.readW (r := ⟨s.syms "VG_MLKEM_GAMMA",512⟩)
-      (contains_off (by omega) (by decide)) (fun r hr => by rw [List.mem_singleton.mp hr]; exact ha) (by decide)
-  · simpa only [hs,hk'.rd,hk'.wr,←hk.rd,←hk.wr] using h.read
-  · simpa only [hs] using h.apart
-
-end VG.Proof.MlKem.AArch64.KeyGen
-end
-
-end
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.KeyGen
@@ -311,39 +238,5 @@ theorem encode_okW {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P)
     {mB mN : Mem} {v : BitVec 64} {n : Nat} (h : EncodeInvW P s₀ mB mN v n 0 s) :
     WPs ((List.range P.k).map fun j => Kem16.enc12WAt (sOff P j) .x27 (384*j)) s (EncodeInvW P s₀ mB mN v n P.k) :=
   WPs.range (fun _ hj _ h => encode_stepW hp hr hj h) h
-
-theorem EncodeInvW.tl {s₀ s : State} {mB mN : Mem} {v : BitVec 64} {n : Nat}
-    (h : EncodeInvW P s₀ mB mN v n P.k s) : TLW P s₀ mB v n 0 s :=
-  ⟨h.c,h.sp,h.dk,fun _ hi => by omega⟩
-
-theorem noise_cinvW {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P)
-    {mB : Mem} {v : BitVec 64} {n : Nat} (h : CInvW P s₀ mB v n s)
-    (ht : Kept (Noise.allWrites P true (kA s₀ 3)) s t) : CInvW P s₀ mB v n t := by
-  have hw := hp.wf
-  have hroom := hr.kg
-  refine h.frame (noise_kb hp hr h.kb ht) (ht.cs .x24 (by decide) (by decide)) ht.frame ?_
-  intro r hh
-  exact ⟨noise_far hp hr (by decide) (by kl) (.inr (by lom)) r hh,
-    noise_far hp hr (by decide) (by kl) (.inr (by lom)) r hh,
-    noise_far hp hr (by decide) (by kl) (.inr (by lom)) r hh⟩
-
-theorem readonly_noise_encodeW {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) (ht : Optimized.TransformTables s)
-    {mB : Mem} {v : BitVec 64} {n : Nat} (h : CInvW P s₀ mB v n s) :
-    WP isa (Impl.MlKem.AArch64.Noise.noiseAllWith Ntt16.Readonly.nttAtWithW P true) s fun t =>
-      Kept (Noise.allWrites P true (kA s₀ 3)) s t ∧ EncodeInvW P s₀ mB t.mem v n 0 t := by
-  have hc : Covers [⟨kA s₀ 3,P.scl⟩] s.wr := by
-    have hh := cov_w hp h.kb (b := 3) (o := 0) (l := P.scl) (by decide) (by kl)
-    simpa only [R,ptr_zero] using hh
-  refine WP.mono (Noise.readonly_noiseAll_tables hp.wf hr true h.kb.x28 hc ht) fun t ⟨kt,pt⟩ => ?_
-  refine ⟨kt,noise_cinvW hp hr h kt,?_,?_,fun _ hj => by omega,Frame.refl _ _⟩
-  · intro j hj
-    have p : PolyIsW 16 _ _ _ := pt j (by omega)
-    simpa only [Noise.outOff,ite_eq_left hj,ite_true,Noise.sampled,Noise.seedOff,Noise.transformed,
-      Bool.true_or,h.sig,KPke.kgS,cbd] using p
-  · intro j hj
-    have p : PolyIsW 16 _ _ _ := pt (P.k+j) (by omega)
-    have hn : ¬P.k+j<P.k := by omega
-    simpa only [Noise.outOff,ite_eq_right hn,Nat.add_sub_cancel_left,Noise.sampled,Noise.seedOff,
-      Noise.transformed,Bool.true_or,ite_true,h.sig,KPke.kgE,cbd,KemLay.params] using p
 
 end VG.Proof.MlKem.AArch64.KeyGen

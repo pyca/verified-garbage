@@ -20,11 +20,6 @@ theorem Same.wp {a b : Prog M} (h : Same a b) {s : M.State} {Q : M.State→Prop}
  · exact ⟨tr,t,(h s tr t).mp he,hq⟩
  · exact ⟨tr,t,(h s tr t).mpr he,hq⟩
 
-theorem Same.relCT {a b : Prog M} (h : Same a b) {P Q : M.State→M.State→Prop}
- (hc : RelCT M P a Q) : RelCT M P b Q := by
- intro s u tr ur t v hp he hf
- exact hc s u tr ur t v hp ((h s tr t).mpr he) ((h u ur v).mpr hf)
-
 theorem seq_congr {a b c d : Prog M} (h : Same a b) (g : Same c d) :
  Same (.seq a c) (.seq b d) := by
  intro s tr t
@@ -139,28 +134,6 @@ theorem of_normalize_eq {a b : Prog M} (h : normalize a=normalize b) : Same a b 
 holes (`Code.fillHoles`) keeps, so they commute with it: two programs whose
 code with holes has the same normal form are the same with the holes filled
 by any callee (`Same.of_fillHoles`). -/
-
-/-- Filling holes keeps blocks, and makes no block of anything else. -/
-theorem fillHoles_block {n : String} {b : Prog M} {a : Prog M} {xs : List M.Instr}
-    (h : Code.fillHoles n b a = .block xs) : a = .block xs := by
-  cases a with
-  | block is => exact h
-  | call m body =>
-    cases body with
-    | block is => cases is <;> cases h
-    | _ => cases h
-  | _ => cases h
-
-/-- Filling holes keeps sequences, and makes no sequence of anything else. -/
-theorem fillHoles_seq {n : String} {b : Prog M} {a x y : Prog M}
-    (h : Code.fillHoles n b a = .seq x y) : ∃ a₁ a₂, a = .seq a₁ a₂ := by
-  cases a with
-  | seq a₁ a₂ => exact ⟨a₁, a₂, rfl⟩
-  | call m body =>
-    cases body with
-    | block is => cases is <;> cases h
-    | _ => cases h
-  | _ => cases h
 
 theorem fillHoles_append (n : String) (b : Prog M) (a c : Prog M) :
     Code.fillHoles n b (append a c) = append (Code.fillHoles n b a) (Code.fillHoles n b c) := by

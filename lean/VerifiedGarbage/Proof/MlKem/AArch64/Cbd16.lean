@@ -31,13 +31,4 @@ theorem correct (s : State) (hs : cbd2AArch64.pre s) :
   exact ⟨t,s',he,abi_of rfl (by decide +kernel) he,
     (show CoeffsUpTo s'.mem (Cbd2.fP s) 256 _ _ from hi.out).polyIs fun _ _ => rfl⟩
 
-theorem ct : ConstantTime isa cbd2AArch64.pre cbd2AArch64.pub code :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0,.x1])
-    (fun _ _ _ _ ⟨h0,h1,hsp⟩ => agree_of hsp (by simp [h0,h1])) (by taint_decide)
-
-theorem verified : Verified AArch64.target code (Proof.MlKem.cbd2Contract AArch64.abi) :=
-  Verified.of_correct correct ct (by
-    mlkem_implies [Proof.MlKem.cbd2Contract,Proof.MlKem.cbd2Sig,cbd2AArch64,AArch64.abi,
-      AArch64.argRegs] [Cbd2.sat] using Cbd2.sat)
-
 end VG.Proof.MlKem.AArch64.Cbd16

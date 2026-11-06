@@ -48,8 +48,4 @@ theorem decaps_verifiedWith :
       KemLay.params, Spec.MlKem.mlKem1024, KemLay.dkLen, KemLay.ctLen, AArch64.abi, AArch64.argRegs] [sat]
       using sat)
 
-theorem decaps_verified :
-    Verified AArch64.target decaps (Spec.MlKem1024.decapsContract AArch64.abi 16) :=
-  decaps_verifiedWith (keccak := .scalar)
-
 end VG.Proof.MlKem1024.AArch64.Decaps

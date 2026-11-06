@@ -464,9 +464,6 @@ theorem LS.keep {N : Nat} {s₀ s s' : State} (hp : Pre s₀) {L : List Zq} (h :
   ⟨h.env.regs hp hk.mem hk.gp hk.rd hk.wr hk.sp, h.hN, hk.mem ▸ h.buf, h4.trans h.a1, h5.trans h.a2,
     hk.t3.trans h.t3, h.len, fun k hk' => hk.mem ▸ h.coeff k hk'⟩
 
-theorem Keep.env' {s₀ s s' : State} (hk : Keep s s') (hp : Pre s₀) (h : SEnv s₀ s) : SEnv s₀ s' :=
-  h.regs hp hk.mem hk.gp hk.rd hk.wr hk.sp
-
 /-- The first candidate of a chunk. -/
 def cand1 (b₀ b₁ : Byte) : BitVec 64 := b₀.setWidth 64 + (b₁.setWidth 64 <<< 60) >>> 52
 

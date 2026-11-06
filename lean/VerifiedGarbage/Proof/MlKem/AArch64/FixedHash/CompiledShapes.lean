@@ -40,25 +40,11 @@ theorem kgG768_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
         [⟨.x25,0,32⟩,⟨.x28,KG.BK,1⟩] [⟨.x28,KG.SB,32⟩,⟨.x28,KG.SG,32⟩]) :=
  compiled_same (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
 
-theorem kgH768_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
- (compiled c .x28 KG.ST KG.WK 136 6
-        [⟨.x26,0,lay768.ekLen⟩] [⟨.x27,2336,32⟩])
- (Impl.MlKem.AArch64.FixedHash.code c .x28 KG.ST KG.WK 136 6
-        [⟨.x26,0,lay768.ekLen⟩] [⟨.x27,2336,32⟩]) :=
- compiled_same (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
-
 theorem prf768_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
  (compiled c .x28 KEM.ST KEM.WK 136 0x1f
         [⟨.x28,KEM.RB,33⟩] [⟨.x28,KEM.PB,128⟩])
  (Impl.MlKem.AArch64.FixedHash.code c .x28 KEM.ST KEM.WK 136 0x1f
         [⟨.x28,KEM.RB,33⟩] [⟨.x28,KEM.PB,128⟩]) :=
- compiled_same (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
-
-theorem enH768_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
- (compiled c .x28 KEM.ST KEM.WK 136 6
-        [⟨.x25,0,lay768.ekLen⟩] [⟨.x28,KEM.HB,32⟩])
- (Impl.MlKem.AArch64.FixedHash.code c .x28 KEM.ST KEM.WK 136 6
-        [⟨.x25,0,lay768.ekLen⟩] [⟨.x28,KEM.HB,32⟩]) :=
  compiled_same (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
 
 theorem enG768_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
@@ -81,27 +67,6 @@ theorem kgG1024_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
  (Impl.MlKem.AArch64.FixedHash.code c .x28 KG.ST KG.WK 72 6
         [⟨.x25,0,32⟩,⟨.x28,KG.BK,1⟩] [⟨.x28,KG.SB,32⟩,⟨.x28,KG.SG,32⟩]) :=
  kgG768_compiled c
-
-theorem kgH1024_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
- (compiled c .x28 KG.ST KG.WK 136 6
-        [⟨.x26,0,Impl.MlKem1024.AArch64.lay1024.ekLen⟩] [⟨.x27,3104,32⟩])
- (Impl.MlKem.AArch64.FixedHash.code c .x28 KG.ST KG.WK 136 6
-        [⟨.x26,0,Impl.MlKem1024.AArch64.lay1024.ekLen⟩] [⟨.x27,3104,32⟩]) :=
- compiled_same (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
-
-theorem prf1024_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
- (compiled c .x28 KEM.ST KEM.WK 136 0x1f
-        [⟨.x28,KEM.RB,33⟩] [⟨.x28,KEM.PB,128⟩])
- (Impl.MlKem.AArch64.FixedHash.code c .x28 KEM.ST KEM.WK 136 0x1f
-        [⟨.x28,KEM.RB,33⟩] [⟨.x28,KEM.PB,128⟩]) :=
- prf768_compiled c
-
-theorem enH1024_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
- (compiled c .x28 KEM.ST KEM.WK 136 6
-        [⟨.x25,0,Impl.MlKem1024.AArch64.lay1024.ekLen⟩] [⟨.x28,KEM.HB,32⟩])
- (Impl.MlKem.AArch64.FixedHash.code c .x28 KEM.ST KEM.WK 136 6
-        [⟨.x25,0,Impl.MlKem1024.AArch64.lay1024.ekLen⟩] [⟨.x28,KEM.HB,32⟩]) :=
- compiled_same (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
 
 theorem enG1024_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
  (compiled c .x28 KEM.ST KEM.WK 72 6

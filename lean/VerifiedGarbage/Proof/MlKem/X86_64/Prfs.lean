@@ -63,7 +63,6 @@ theorem all_seq {p : Instr → Bool} {a b : Prog isa} (ha : a.all p = true) (hb 
     (Code.seq a b : Prog isa).all p = true := by
   simp only [Code.all, ha, hb, Bool.and_self]
 
-
 /-! ## What a piece writes, weakened -/
 
 /-- `PPost` for larger regions. -/

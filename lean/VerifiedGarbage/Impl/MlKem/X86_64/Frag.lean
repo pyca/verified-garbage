@@ -192,9 +192,6 @@ def Arith.sse : Arith where
 with AVX2 call, whose top-level functions run with 16-bit polynomials. -/
 def Arith.sse16 : Arith := { Arith.sse with cbd16N := "vg_mlkem16_cbd2_avx2", cbd16 := cbd2_16Avx2 }
 
-def nttInvAt (A : Arith) (f : Ptr) : Prog isa :=
-  .seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call A.nttInvN A.nttInv)
-
 def addAt (A : Arith) (f g : Ptr) : Prog isa := .seq (.block (lea .rdi f ++ lea .rsi g)) (.call A.addN A.add)
 
 def subAt (A : Arith) (f g : Ptr) : Prog isa := .seq (.block (lea .rdi f ++ lea .rsi g)) (.call A.subN A.sub)

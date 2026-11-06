@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 /-!
 # A hashing pair leaks only public pointers and `ρ`
 
-`hashPair_relCT`, as `Kem.paired_matrix_relCT`'s pairs, relating two runs from
+`hashPair_relCT`, relating two runs from
 states that agree on the pointers and `ρ`, with each run's invariant (`HRel`),
 by `pairMCode_relCT`. The two runs' messages may differ; only their pointer
 is public.

@@ -65,8 +65,4 @@ theorem encaps_verifiedWith :
       KemLay.params, Spec.MlKem.mlKem1024, KemLay.ekLen, KemLay.ctLen, AArch64.abi, AArch64.argRegs] [sat]
       using sat)
 
-theorem encaps_verified :
-    Verified AArch64.target encaps (Spec.MlKem1024.encapsContract AArch64.abi 16) :=
-  encaps_verifiedWith (keccak := .scalar)
-
 end VG.Proof.MlKem1024.AArch64.Encaps

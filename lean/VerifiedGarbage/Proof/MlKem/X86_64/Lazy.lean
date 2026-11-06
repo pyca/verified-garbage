@@ -26,7 +26,7 @@ open W (montW caddW)
 /-- 256 words. -/
 abbrev WPoly := Vector (BitVec 16) n
 
-/-- The word of the zeta `ζ`, `ζ · 2¹⁶ mod q`, as `TZ` holds it. -/
+/-- The word of the zeta `ζ`, `ζ · 2¹⁶ mod q`, as the table of zetas holds it. -/
 def zw (ζ : Zq) : BitVec 16 := BitVec.ofNat 16 (ζ.val * 65536 % 3329)
 
 /-- The butterfly of the lazy layers of `NTT` on words. -/
@@ -160,9 +160,6 @@ theorem invW_rep {k : Nat} (hk : 2 * k * 3329 ≤ 32768) {a b : BitVec 16} {x y 
 
 /-- Each word of `W` represents the coefficient of `F`, within `b · q`. -/
 def PolyRep (b : Nat) (W : WPoly) (F : Poly) : Prop := ∀ i < 256, Rep b W[i]! F[i]!
-
-theorem PolyRep.mono {b b' : Nat} {W : WPoly} {F : Poly} (h : PolyRep b W F) (hb : b ≤ b') : PolyRep b' W F :=
-  fun i hi => (h i hi).mono hb
 
 /-- A layer of butterflies `wop` on words, each representing the
 specification's `sop`, represents the layer of the specification. -/

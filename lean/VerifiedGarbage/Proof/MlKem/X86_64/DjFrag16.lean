@@ -66,14 +66,6 @@ def dcXG {L : Kem} {oc : Nat} (W : DcWfB L oc) (σ : State) : Ctx (dcR L) (dcW L
   lay h := h.2.dc.lay W h.1
   step h hP hc := ⟨h.1, h.2.step W h.1 hP hc⟩
 
-/-- The context before `K̄`, in any run. -/
-def dcXGA {L : Kem} {oc : Nat} (W : DcWfB L oc) : Ctx (dcR L) (dcW L) where
-  Out s := ∃ σ, (decapsK L).pre σ ∧ DCG L σ s
-  chk := dcgChk L
-  bs := dcB_bases L
-  lay := fun ⟨_, hp, h⟩ => h.dc.lay W hp
-  step := fun ⟨σ, hp, h⟩ hP hc => ⟨σ, hp, h.step W hp hP hc⟩
-
 /-- `z ‖ c`. -/
 abbrev zcE (L : Kem) (σ : State) : List Byte := KPke.dkZ L.p (dcDk L σ) ++ dcC L σ
 

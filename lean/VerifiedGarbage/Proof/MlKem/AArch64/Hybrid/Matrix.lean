@@ -77,8 +77,6 @@ structure HInvW (w16 : Bool) (P : KemLay) (L : Layout) (M : Msg) (s₀ : State) 
   hash : stateAt s.mem (kA s₀ L.sc) = hstate E (3 * j) (dB M.S)
   ek : bytesAt s.mem (M.reg s₀).base M.S.len = E
 
-abbrev HInv := HInvW false
-
 /-- The rejection table, apart from the frame too. -/
 structure MT3 (P : KemLay) (L : Layout) (s₀ s : State) : Prop where
   t : MatrixTable P L s₀ s
@@ -239,17 +237,6 @@ theorem paired_step3 {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀)
       rcases hr with rfl | rfl
       · exact .inl (by rw [stR_sc]; exact scratch_sub hp (by lom))
       · exact .inr rfl
-
-theorem bW_st {s₀ : State} (hp : Pre P L s₀) :
-    ∀ r ∈ bW P L s₀, (stR (kA s₀ L.sc)).Disjoint r := by
-  have hw := hp.wf
-  intro r hr
-  rw [stR_sc]
-  rcases mem4 hr with rfl | rfl | rfl | rfl
-  · exact sdisj hp (by lom) (by lom) (by lom)
-  · exact sdisj hp (by lom) (by lom) (by lom)
-  · exact sdisj hp (by lom) (by lom) (by lom)
-  · exact below_R hp hp.scb (hp.fs (by lom))
 
 theorem bW_sub {s₀ : State} : ∀ r ∈ bW P L s₀, r ∈ bW3 P L s₀ :=
   fun _ hr => List.mem_append_left _ hr

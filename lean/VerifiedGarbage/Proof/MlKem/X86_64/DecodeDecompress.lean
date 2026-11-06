@@ -292,22 +292,4 @@ theorem decodeDecompress_ct :
       fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact hp.2.2.2.2)
     (by taint_decide)
 
-/-- A state satisfying the precondition. -/
-def decodeDecompressSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 32 | .rdx => 1 | .rcx => 0x2000 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 32⟩]
-  wr := [⟨0x2000, 1024⟩]
-
-theorem decodeDecompress_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.decodeDecompress (Proof.MlKem.decodeDecompressContract X86_64.abi) :=
-  Verified.of_correct decodeDecompress_correct decodeDecompress_ct (by
-    mlkem_implies [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, decodeDecompressK,
-      X86_64.abi, X86_64.argRegs] [decodeDecompressSat] using decodeDecompressSat)
-
 end VG.Proof.MlKem.X86_64

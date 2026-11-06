@@ -89,11 +89,6 @@ tactic_template "win_eval" : tactic => `(tactic| (
                      | exact congrArg (BitVec.ofNat 8) (by omega_arith)
                      | exact congrArg (decompress _) (by omega_arith)))
 
-/-- The digits of an explicit list. -/
-theorem digits_map_range {w c : Nat} (g : Nat → Nat) :
-    digits w ((List.range (c + 1)).map g) = g 0 + 2 ^ w * digits w ((List.range c).map (g ∘ (· + 1))) := by
-  rw [List.range_succ_eq_map, List.map_cons, List.map_map, digits_cons]
-
 theorem byte_lt (b : Byte) : b.toNat < 256 := b.isLt
 
 /-! ## ByteEncode₁₂ and ByteDecode₁₂ -/

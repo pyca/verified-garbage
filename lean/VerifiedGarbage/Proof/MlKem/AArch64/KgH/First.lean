@@ -53,11 +53,6 @@ theorem FInv.zero {s₀ s : State} (h : AfterA P s₀ s) (ta : Tables s) (tk : T
     fun e he => absurd he (Nat.not_lt_zero e), fun e he => absurd he (Nat.not_lt_zero e)⟩,
     fun N hN => absurd hN (Nat.not_lt_zero N), ta, tk⟩
 
-/-- The buffers of PRF outputs `N₀`, `N₀ + 1` and `N₀ + 2`. -/
-theorem bufR_k (s₀ : State) (N₀ : Nat) :
-    bufR (kA s₀ 3 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀)) =
-      R (kA s₀) 3 (TP P + 168 * N₀) 504 := rfl
-
 /-- Two regions of `scratch`. -/
 theorem sdisjK {s₀ : State} (hp : Pre P s₀) {o₁ l₁ o₂ l₂ : Nat} (f₁ : o₁ + l₁ ≤ kL P 3) (f₂ : o₂ + l₂ ≤ kL P 3)
     (h : o₁ + l₁ ≤ o₂ ∨ o₂ + l₂ ≤ o₁) : (R (kA s₀) 3 o₁ l₁).Disjoint (R (kA s₀) 3 o₂ l₂) :=
@@ -225,11 +220,5 @@ theorem first_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {p :
         show TP P + 168 * (3 * p) + 168 * (N - 3 * p) = TP P + 168 * N by omega_arith]
   · exact Hybrid.tables_frame128 H.tables H.tstk sy post.keep.rd post.keep.wr post.keep.sp
       (fr.sub (pairK_wr hp kb he hN))
-
-/-- **The first two pairs** of key generation's matrix, computing the first six PRF outputs. -/
-theorem first_ok {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hk3 : 3 ≤ P.k) (H : FInv P s₀ 0 0 s) :
-    WP isa (.seq (Impl.MlKem.AArch64.Kem16P.kgPairP P 0) (Impl.MlKem.AArch64.Kem16P.kgPairP P 1)) s
-      (FInv P s₀ 4 6) :=
-  WP.seq (WP.mono (first_step hp hk (p := 0) (by decide) hk3 H) fun _ h => first_step hp hk (p := 1) (by decide) hk3 h)
 
 end VG.Proof.MlKem.AArch64.KeyGen

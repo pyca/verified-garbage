@@ -37,7 +37,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 public import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-public import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
 public import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 public import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 public import VerifiedGarbage.Proof.Sha3.Arith
@@ -73,7 +72,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 import VerifiedGarbage.Proof.Sha3.Arith

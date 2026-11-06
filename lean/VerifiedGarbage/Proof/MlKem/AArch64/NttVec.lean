@@ -8,8 +8,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # ML-KEM on AArch64: polynomials in vectors
 
-Four coefficients of a polynomial loaded into a vector (`lanes_load`) and two
-vectors stored into it (`polyIs_write16x2`). The butterflies of a block of the
+Four coefficients of a polynomial loaded into a vector (`lanes_load`) and a
+vector stored into it (`coeffAt_write16`, `CoeffsUpTo.write16`). The butterflies of a block of the
 NTT and its inverse some at a time are in `Proof/MlKem/Ntt.lean`
 (`nttBlockN_add`, `nttBlockN_get'`).
 -/
@@ -51,23 +51,6 @@ theorem coeffAt_write16 (m : Mem) (p : Addr) {j : Nat} (hj : j + 4 ≤ 256) (x :
     h | rfl | rfl | rfl | rfl | h <;>
     simp (disch := omega) only [ite_eq_left, ite_eq_right, ↓reduceIte, Nat.sub_self,
       Nat.add_sub_cancel_left, ofVWords_vword]
-
-/-- Two vectors stored into a polynomial, with the lanes `a` and `b`. -/
-theorem polyIs_write16x2 {m : Mem} {p : Addr} {P R : Poly} (hP : PolyIs m p P) {j j' : Nat}
-    (hj : j + 4 ≤ 256) (hj' : j' + 4 ≤ 256) (hsep : j + 4 ≤ j' ∨ j' + 4 ≤ j) {x y : BitVec 128}
-    {a b : Nat → Zq} (hx : Lanes x fun e => (a e).val) (hy : Lanes y fun e => (b e).val)
-    (hR : ∀ i < 256, R[i]! = if j ≤ i ∧ i < j + 4 then a (i - j)
-      else if j' ≤ i ∧ i < j' + 4 then b (i - j') else P[i]!) :
-    PolyIs ((m.write (coeffAddr p j) 16 x).write (coeffAddr p j') 16 y) p R :=
-  polyIs_of_toNat fun i hi => by
-    rw [n_eq] at hi
-    rw [coeffAt_write16 _ _ hj' _ hi, coeffAt_write16 _ _ hj _ hi, hR i hi]
-    by_cases h1 : j' ≤ i ∧ i < j' + 4
-    · rw [ite_eq_left h1, ite_eq_right (by omega), ite_eq_left h1, hy _ (by omega)]
-    · rw [ite_eq_right h1]
-      by_cases h2 : j ≤ i ∧ i < j + 4
-      · rw [ite_eq_left h2, ite_eq_left h2, hx _ (by omega)]
-      · rw [ite_eq_right h2, ite_eq_right h2, ite_eq_right h1, polyIs_toNat hP (by rw [n_eq]; exact hi)]
 
 theorem frame16 {m m' : Mem} {p : Addr} (hf : Frame [polyRegion p] m m') {j : Nat} (hj : j + 4 ≤ 256)
     (x : BitVec 128) : Frame [polyRegion p] m (m'.write (coeffAddr p j) 16 x) :=

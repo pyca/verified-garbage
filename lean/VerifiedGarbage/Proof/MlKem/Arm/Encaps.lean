@@ -298,7 +298,6 @@ theorem setup_ok {K : KemLay} {s₀ s₁ : State} (hp : Pre K s₀) (h12 : s₁.
       simpa only [Lay.RL, List.map_cons, List.map_nil, Lay.R, lay_ptr0, layM_ptr0] using this
     exact Lay.bytes_keep (layM_ok hp) fM (by edecide) (by decide)
 
-
 /-! ## `m` copied -/
 
 /-- `m`. -/
@@ -444,7 +443,6 @@ theorem encW_ok {K : KemLay} (hK : K.WF) :
   have := hK.scr
   constructor <;> edecide
 
-
 /-! ## The phases, from the copy of `m` on -/
 
 section
@@ -558,7 +556,6 @@ theorem correct {K : KemLay} {s₀ s₁ : State} (hp : Pre K s₀) (hl : Loaded 
   refine WP.seq (WP.mono (copyM_ok hp h₂ g5 m₂) fun s₃ ⟨h₃, m₃, _⟩ => ?_)
   refine WP.seq (WP.mono (s4_ok hp h₃ m₃) fun s₄ h₄ => ?_)
   exact WP.seq (WP.mono (s5_ok hp h₄) fun s₅ h₅ => tail_ok hp h₅)
-
 
 /-! ## `encapsH`: `H(ek)` given at `h`
 
@@ -720,7 +717,6 @@ theorem setupH_ok {s₁ : State} (h12 : s₁.gpr .r12 = pScr (args e)) (hr : ∀
         (s₂.mem.writeW ((lay (args e) K).A 0 872) (s₂.gpr .lr)) := by
       simpa only [Lay.RL, List.map_cons, List.map_nil, Lay.R, lay_ptr0, layH_ptr0] using fr₁
     exact Lay.bytes_keep (layH_ok hq) fH (by rw [layH_sizes]; edecide) (by decide)
-
 
 theorem copyH_ok {s : State} (h : EnEnv K (args e) s) (h9 : s.gpr .r9 = pH e)
     (hh : bytesAt s.mem ((layH K e).A 2 0) 32 = bytesAt e.mem ((layH K e).A 2 0) 32)

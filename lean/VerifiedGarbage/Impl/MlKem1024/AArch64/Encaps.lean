@@ -19,7 +19,6 @@ open VG.AArch64
 abbrev enAWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay1024.enAWith c
 abbrev enCWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay1024.enCWith c
 abbrev encapsWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay1024.encapsWith c
-abbrev encaps : Prog isa := encapsWith .scalar
 abbrev encapsHWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay1024.encapsHWith c
 
 end VG.Impl.MlKem1024.AArch64

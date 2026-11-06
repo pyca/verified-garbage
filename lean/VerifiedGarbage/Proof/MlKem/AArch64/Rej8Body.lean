@@ -61,8 +61,6 @@ structure ResultW (w16 : Bool) (initial : List Zq) (N : Nat) (B : Nat → Byte) 
   keep : Keep Scalar.lRegs s₀ u
   constants : Constants u
 
-abbrev Result := ResultW false
-
 private theorem constants_of_vec {s u : State} (h : Constants s) (hv : u.v=s.v) : Constants u :=
   ⟨by rw [hv]; exact h.index,by rw [hv]; exact h.mask,
    by simpa only [hv] using h.q,by simpa only [hv] using h.weights,by simpa only [hv] using h.zero⟩
