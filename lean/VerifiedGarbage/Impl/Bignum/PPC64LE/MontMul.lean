@@ -66,22 +66,7 @@ the scratch buffer's address. -/
 def saved (i : Nat) : Reg :=
   [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22, .r21].getD i .r14
 
-/-- Save them in the scratch buffer at `r8`, and keep its address in `r21`. -/
-def save : List Instr :=
-  (List.range 9).flatMap (fun i => [.store .d (saved i) .r8 (8 * i)]) ++ [.addi .r21 .r8 0]
-
-/-- Restore them, through `r21`, which is restored last. -/
-def restore : List Instr :=
-  (List.range 8).flatMap (fun i => [.load .d (saved i) .r21 (8 * i)]) ++ [.load .d .r21 .r21 64]
-
 /-! ## The arguments -/
-
-/-- The address of the header word of the array whose index is in the low
-half of `r`, less 64, into `r`. -/
-def slotOf (r : Reg) : List Instr := [.lsr .w r r 0, .lsl r r 3, .add r .r3 r]
-
-/-- The indices of `o`, `a` and `b` into addresses in the header. -/
-def args : List Instr := slotOf .r5 ++ slotOf .r6 ++ slotOf .r7
 
 /-- The bases, `n = 2 w`, `-m⁻¹ mod 2³²` (the low half of the header's
 word) and the rounds' count, from the header. -/
@@ -89,8 +74,6 @@ def loads : List Instr :=
   [.load .d .r5 .r5 64, .load .d .r6 .r6 64, .load .d .r7 .r7 64,
     .load .d .r8 .r3 (8 * sArr 2), .load .d .r9 .r3 (8 * sArr 3), .load .d .r10 .r3 (8 * sArr 0),
     .load .d .r11 .r3 (8 * sW), .lsl .r11 .r11 1, .load .w .r12 .r3 (8 * sMinv), .addi .r4 .r11 0]
-
-def bases : List Instr := args ++ loads
 
 /-! ## Loops -/
 
@@ -208,10 +191,5 @@ def selectAcc64 : Prog isa :=
 
 /-- The arithmetic, after the bases are loaded. -/
 def tail : Prog isa := .seq zeroAcc (.seq rounds (.seq subMod64 selectAcc64))
-
-/-- `vg_rsa_mont_mul(ws, ws_len, o, a, b, scratch)`: `[o] = [a] [b] R⁻¹ mod m`
-for `R = 2^(64 w)`. -/
-def mul : Prog isa :=
-  .seq (.block save) (.seq (.seq (.block args) (.seq (.block loads) tail)) (.block restore))
 
 end VG.Impl.Bignum.PPC64LE

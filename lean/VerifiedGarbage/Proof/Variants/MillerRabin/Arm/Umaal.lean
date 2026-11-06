@@ -41,10 +41,8 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontRoundsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PrepareZero
 public import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
-public import VerifiedGarbage.Proof.Bignum.Arm.QuotientStage
 public import VerifiedGarbage.Proof.Bignum.Arm.ReduceChoice
 public import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ReductionStage
 public import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 public import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
 public import VerifiedGarbage.Proof.Bignum.Arm.ReverseByteStep
@@ -75,13 +73,9 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SelectWord
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmall
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
-public import VerifiedGarbage.Proof.Bignum.Arm.Shift
-public import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeft
 public import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftStep
-public import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
 public import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareBody
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
@@ -180,10 +174,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontRoundsCT
 import VerifiedGarbage.Proof.Bignum.Arm.PrepareZero
 import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
 import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
-import VerifiedGarbage.Proof.Bignum.Arm.QuotientStage
 import VerifiedGarbage.Proof.Bignum.Arm.ReduceChoice
 import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ReductionStage
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
 import VerifiedGarbage.Proof.Bignum.Arm.ReverseByteStep
@@ -214,13 +206,9 @@ import VerifiedGarbage.Proof.Bignum.Arm.SelectWord
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmall
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallArgs
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
-import VerifiedGarbage.Proof.Bignum.Arm.Shift
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeft
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftCT
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftStep
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.SquareBody
 import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
@@ -278,6 +266,12 @@ import VerifiedGarbage.Proof.Rsa.MulModArithmetic
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Impl.Bignum.Arm.Round
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Impl.Bignum.Arm.Shift
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 /-!
 # The shared round on ARMv7 with `umaal`: the variant's code and proofs

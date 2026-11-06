@@ -58,13 +58,9 @@ and the fused ADX multiplication otherwise. -/
 def alignedChoice (o a b : Nat) : Prog isa :=
   .seq (.block AdxSquare.redcTest) (.ite .e (montMul o a b) (Adx.fused o a b))
 
-/-- `Adx.montMulAdx`, with the tiles for multiples of 8. -/
+/-- The ADX Montgomery multiplication, with the tiles for multiples of 8. -/
 def choice (o a b : Nat) : Prog isa :=
   .seq (.block Adx.sizeTest)
     (.ite .e (alignedChoice o a b) (X86_64.montMul Public.aN Public.aAcc Public.aTmp o a b))
-
-/-- Keep the specialized square while using rectangular tiles for products. -/
-def dispatch (o a b : Nat) : Prog isa :=
-  if a=b then AdxSquare.montMul o a b else choice o a b
 
 end VG.Impl.Bignum.X86_64.AdxTiledProduct

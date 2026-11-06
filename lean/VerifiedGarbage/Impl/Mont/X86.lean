@@ -12,16 +12,13 @@ other targets, so the slots, the modulus `[M.mo]` and the temporary area
 `[M.tmp]` are laid out as theirs). `-m⁻¹ mod 2³²` is the low word of
 `M.minv`. With `R = 2^(32 N) = 2^(64 n)`:
 
-* `mul acc o a b`: `[o] = [a] [b] R⁻¹ mod m`, by coarsely integrated operand
-  scanning (CIOS) with the accumulator in memory: `2N + 1` words at
-  `[acc]`, cleared, and a window of them at `[ebp + acc]`, `ebp` starting at
-  `edi`. Each of the `N` iterations of the loop (`row`) adds `a_i [b]` to
-  the window, then `u m` for `u = t₀ m' mod 2³²`, which clears the window's
-  low word, and moves the window up a word (`ebp += 4`) instead of shifting
-  the accumulator. Its last `N + 1` words are then below `2m` and reduced by
-  `csub`.
-* `add acc o a b`, `sub acc o a b`: `[a] ± [b] mod m`, through the
-  accumulator, with a conditional subtraction (`csub`) or addition of `m`.
+* The parts of a multiplication `[a] [b] R⁻¹ mod m` by coarsely integrated
+  operand scanning (CIOS) with the accumulator in memory, `2N + 1` words at
+  `[acc]` with a window of them at `[ebp + acc]`: a row adding `a_i [b]` to
+  the window (`mulRow`), and the digit `u = t₀ m' mod 2³²` whose multiple of
+  `m` clears the window's low word (`redDigit`).
+* `chain`: `[a] ± [b]` through the accumulator; `sub acc o a b`:
+  `[a] - [b] mod m`, with a conditional addition of `m`.
 * `csub src o`: the number below `2m` at `[src]` (`N` words and a top word,
   0 or 1) reduced below `m` into `[o]`: its difference with `m` is computed
   into `[M.tmp]`, then selected with a mask if it did not borrow.
@@ -74,22 +71,6 @@ def redDigit (M : Mod) (acc : Nat) : List Instr :=
   if minv32 M = 1 then [.mov .ecx (.mem (at_ .ebp acc))]
   else [.mov .eax (.mem (at_ .ebp acc)), .mov .ecx (.imm (minv32 M)), .mul .ecx, .mov .ecx (.reg .eax)]
 
-/-- Add the reduction multiple using P-256's sparse identity when certified. -/
-def redRow (M : Mod) (acc : Nat) : List Instr :=
-  if p256RedEnabled M then p256Red acc else mulRow acc M.mo (words M)
-
-/-- An iteration of `mul`: the window `+= a_i [b]`, then `+= u m` with
-`u = t₀ m' mod 2³²`, after which its low word is zero; then the window
-moves up a word, and `ebp` is compared with `edi + 4N` (the end of the
-loop). -/
-def row (M : Mod) (acc a b : Nat) : List Instr :=
-  let N := words M
-  ([.mov .ecx (.mem (at_ .ebp a))] : List Instr) ++ mulRow acc b N ++
-  redDigit M acc ++
-    redRow M acc ++
-  ([.alu .add .ebp (.imm 4), .mov .edx (.reg .edi), .alu .add .edx (.imm (BitVec.ofNat 32 (4 * N))),
-    .alu .cmp .ebp (.reg .edx)] : List Instr)
-
 /-- `[acc]`, `k` words, cleared (through `eax`). -/
 def zeros (acc k : Nat) : List Instr :=
   .mov .eax (.imm 0) :: (List.range k).map fun j => .store (sc (acc + 4 * j)) .eax
@@ -116,24 +97,12 @@ def csub (M : Mod) (src o : Nat) : List Instr :=
     .alu .xor .eax (.imm (-1))] : List Instr) ++
   selects M src o
 
-/-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`). -/
-def mul (M : Mod) (acc o a b : Nat) : Prog isa :=
-  .seq (.block (zeros acc (2 * words M + 1) ++ ([.mov .ebp (.reg .edi)] : List Instr))) <|
-  .seq (.loop (.block (row M acc a b)) .ne) <|
-    .block (csub M (acc + 4 * words M) o)
-
 /-- `[acc] = [a] op [b]`, `N` words, with `op` on the first word and `op'`
 on the others (`add` and `adc`, `sub` and `sbb`), through `eax`. -/
 def chain (M : Mod) (op op' : AluOp) (acc a b : Nat) : List Instr :=
   (List.range (words M)).flatMap fun j =>
     [.mov .eax (.mem (sc (a + 4 * j))), .alu (if j = 0 then op else op') .eax (.mem (sc (b + 4 * j))),
       .store (sc (acc + 4 * j)) .eax]
-
-/-- `[o] = [a] + [b] mod m`. -/
-def add (M : Mod) (acc o a b : Nat) : List Instr :=
-  chain M .add .adc acc a b ++
-  ([.mov .eax (.imm 0), .alu .adc .eax (.imm 0), .store (sc (acc + 4 * words M)) .eax] : List Instr) ++
-  csub M acc o
 
 /-- `[tmp] = [mo]` masked with `eax`, `N` words. -/
 def masked (M : Mod) : List Instr :=

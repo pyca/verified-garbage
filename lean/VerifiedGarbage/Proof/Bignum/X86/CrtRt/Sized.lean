@@ -151,24 +151,6 @@ theorem front_ok (h : RIn base bytes len args s) {P : Prog isa} {Q : State → P
     rw [show (u₂.mem.readW (off base accOff) 32).toNat = w32 u₂.mem base accOff from rfl, A₂]
     rfl
 
-/-- A power keeps the acceptance mask. -/
-theorem stR_acc (h : RIn base bytes len args s) {sp : BitVec 32} {o : Nat} (ho : o ≤ 19) {m m' : Mem}
-    (F : Frame (frameR base sp (stR len o)) m m') (R : CallRoom sp base bytes) :
-    m'.readW (off base accOff) 32 = m.readW (off base accOff) 32 := by
-  have f := h.slot_fit .wide (j := 8) (by decide)
-  have W := h.wide_fit (j := o) ho
-  have t0 : te len .wide 0 = lo len (.slot .wide 20) := by simp [te]
-  have e20 : lo len (.slot .wide 20) = numBase + 20 * st len .wide := rfl
-  have e8 : lo len (.slot .wide 8) = numBase + 8 * st len .wide := rfl
-  have nb : numBase = 3336 := rfl
-  have eo : lo len (.slot .wide o) = numBase + o * st len .wide := rfl
-  apply BitVec.eq_of_toNat_eq
-  show w32 m' base accOff = w32 m base accOff
-  rw [← w32_val32_one, ← w32_val32_one]
-  refine frameR_val32 F R h.scratch.nowrap (by simp only [accOff]; omega) ?_ (stR_fit h ho)
-  intro q hq; simp only [stR, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl <;> simp only [accOff] <;> omega
-
 theorem stR_body (h : RIn base bytes len args s) {o : Nat} (ho : o ≤ 19) : ∀ q ∈ stR len o, Body bytes q := by
   have fit := stR_fit h ho
   have T := h.table_fit .wide
@@ -191,23 +173,6 @@ theorem fits_half {m : Mem} {i : Nat} (hl : (args (i + 1)).toNat ≤ bc len .hal
   have := comp_lt m args i
   have bh := bc_eq_cwc len .half
   exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
-
-/-- A power keeps the components. -/
-theorem Comps.stR (h : RIn base bytes len args s) {o : Nat} (ho16 : 16 ≤ o) (ho : o ≤ 17) {sp : BitVec 32}
-    {m₀ m m' : Mem} (F : Frame (frameR base sp (stR len o)) m m') (R : CallRoom sp base bytes)
-    (c : Comps base len args m₀ m) : Comps base len args m₀ m' :=
-  Comps.keep c fun {j w} hj9 hj hw => by
-    have W := wide_hi h hj9 (by omega) hw
-    have a := Nat.mul_le_mul_right (st len .wide) (show j + 1 ≤ 16 by omega)
-    have b := Nat.mul_le_mul_right (st len .wide) ho16
-    rw [Nat.succ_mul] at a
-    have ej : lo len (.slot .wide j) = numBase + j * st len .wide := rfl
-    have eo : lo len (.slot .wide o) = numBase + o * st len .wide := rfl
-    have est : st len .wide = 2 * bc len .wide + 32 := rfl
-    have bw := bc_eq_cwc len .wide
-    have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
-    have := Nat.mul_le_mul_right (st len .wide) hj9
-    exact stR_keep h ho16 ho F R (by omega) (by omega) (.inl (by omega))
 
 /-- The wide slots `a` and `b` exchanged through the wide slot 18, which only the wide slots 9 to 18
 change. -/

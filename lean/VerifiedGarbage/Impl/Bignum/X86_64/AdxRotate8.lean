@@ -50,17 +50,6 @@ def headN : Nat → Prog isa
 def addChain (src : Nat → Src) : List Instr :=
   [.adcx .r8 (src 0), .adcx .r9 (src 1), .adcx .r10 (src 2), .adcx .r11 (src 3), .adcx .r12 (src 4), .adcx .r13 (src 5), .adcx .r14 (src 6), .adcx .r15 (src 7)]
 
-/-- Add the next input block, retaining overflow in `rax`. -/
-def addMem : List Instr :=
-  ([.alu32 .xor .rax (.reg .rax)] : List Instr) ++ addChain (fun k => .mem (at_ .rsi (8 * k))) ++
-  ([.adcx .rax (.reg .rax)] : List Instr)
-
-/-- Add a word to the columns, accumulating its overflow in `rax`.
-The incoming CF is clear and `rax` is a small carry count. -/
-def addWord (src : MemOp) : List Instr :=
-  ([.mov32 .rdx (.imm 0)] : List Instr) ++ addChain (fun k => if k = 0 then .mem src else .reg .rdx) ++
-  ([.adcx .rax (.reg .rdx)] : List Instr)
-
 def blockCarry : MemOp := { base := .rcx, disp := -8 }
 def tileCarry : MemOp := { base := .rcx, disp := -16 }
 

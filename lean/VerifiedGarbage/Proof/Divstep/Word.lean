@@ -35,13 +35,6 @@ theorem shl1 (x : BitVec 64) : x <<< 1 = x + x := by
 theorem ofInt_two_mul (a : Int) : BitVec.ofInt 64 (2 * a) = BitVec.ofInt 64 a <<< 1 := by
   rw [shl1, two_mul, BitVec.ofInt_add]
 
-/-- Congruence modulo `2^k` (`k ≤ 64`) of a word's value and an integer it is
-congruent to modulo `2^64`. -/
-theorem toNat_cong {x : BitVec 64} {a : Int} {k : Nat} (hk : k ≤ 64)
-    (h : (x.toNat : Int) % 2 ^ 64 = a % 2 ^ 64) : (x.toNat : Int) % 2 ^ k = a % 2 ^ k := by
-  have hd : (2 : Int) ^ k ∣ 2 ^ 64 := pow_dvd_pow 2 hk
-  rw [← Int.emod_emod_of_dvd _ hd, h, Int.emod_emod_of_dvd _ hd]
-
 theorem lowered {x : BitVec 64} {a : Int} {k : Nat} (h : (x.toNat : Int) % 2 ^ (k + 1) = a % 2 ^ (k + 1)) :
     (x.toNat : Int) % 2 ^ k = a % 2 ^ k := by
   have hd : (2 : Int) ^ k ∣ 2 ^ (k + 1) := pow_dvd_pow 2 (by omega)
@@ -77,9 +70,7 @@ theorem half_word {x : BitVec 64} {a : Int} {k : Nat} (hk : k + 1 ≤ 64)
 
 theorem c_allOnes : (0 : BitVec 64) - 1 = BitVec.allOnes 64 := by decide
 theorem c_one : (1 : BitVec 64) - 1 = 0 := by decide
-theorem c_zero : (0 : BitVec 64) - 0 = 0 := by decide
 theorem and0 (x : BitVec 64) : x &&& 0 = 0 := by simp
-theorem and0' (x : BitVec 64) : 0 &&& x = 0 := by simp
 theorem xor0 (x : BitVec 64) : x ^^^ 0 = x := by simp
 theorem ofInt_two : BitVec.ofInt 64 2 = 2 := by decide
 theorem two64 : (2#64 : BitVec 64) = 2 := rfl

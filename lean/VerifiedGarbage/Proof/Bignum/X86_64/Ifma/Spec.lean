@@ -72,14 +72,6 @@ theorem OutN.rebaseN {B : Addr} {o n : Nat} {m m' : Mem} (h : OutN l (off B o) 0
   · rcases hx p hp with h3 | h3 <;> omega_arith
   · omega_arith
 
-/-- A frame at `B + o` as one at `B`. -/
-theorem Out2.rebase {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l (off B o) 0 n m m')
-    (hn : o + l.D + n < 2 ^ 64) : Out2 l B o n m m' := fun x hx => h x fun p hp => by
-  have hDp : l.D * p ≤ l.D := by rcases (by omega_arith : p = 0 ∨ p = 1) with rfl | rfl <;> simp
-  rcases ofs_rebase' B x (o := o) (by omega_arith) with ⟨h1, h2⟩ | ⟨h1, h2⟩
-  · rcases hx p hp with h3 | h3 <;> omega_arith
-  · omega_arith
-
 /-- A multiplication `c` (`ammCore`, or `ammCoreU`) with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of `B = rbx`. -/
 theorem ammCoreSpecN_ok (hl : AmmOk l) {c : Prog isa} (hc : CoreOk l c) {s : State} {B : Addr} {Z o a b : Nat} {k : Nat → Nat}
     (hB : s.gpr .rbx = B) (r8₃ : s.gpr .r8 = off B a) (r9₃ : s.gpr .r9 = off B b) (r11₃ : s.gpr .r11 = off B o)

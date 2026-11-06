@@ -19,15 +19,6 @@ theorem crt_workspace_end (w : Nat) : arrAt w 8 ≤ stride w := by
   simp only [arrAt, Proof.Rsa.Mont.hdrBytes, stride, workspaceWords]
   omega
 
-theorem crt_buffer_sizes (w : Nat) :
-    productWords w = 2 * w + 2 * w + 2 ∧
-    productOffset w + productBytes w = compareOffset w ∧
-    compareOffset w + productBytes w = modulusOffset w ∧
-    modulusOffset w + productBytes w = narrowOffset w := by
-  refine ⟨?_, rfl, rfl, rfl⟩
-  simp only [productWords]
-  omega
-
 /-- The zero-extended modulus buffer ends before the narrow workspace. -/
 theorem crt_modulus_end_le (w : Nat) : modulusOffset w + 4 * (4 * w + 2) ≤ totalBytes w := by
   simp only [totalBytes, narrowOffset, productBytes, productWords]

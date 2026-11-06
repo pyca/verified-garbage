@@ -40,10 +40,6 @@ def widthB (k : Nat) (r : Reg) : List Instr :=
   [.mov r (.mem (argAt k 1)), .alu .add r (.imm 7), .shift .shr r 3, .alu .add r (.reg r),
     .alu .add r (.reg r), .alu .add r (.reg r)]
 
-/-- `r = 256 + j B`, the offset of number `j`, and `t = B`. -/
-def offAt (r : Reg) (j : Nat) (t : Reg) : List Instr :=
-  widthB 0 t ++ .mov r (.imm (BitVec.ofNat 32 numOff)) :: List.replicate j (.alu .add r (.reg t))
-
 /-- `r = edi + 256 + j B`, a pointer to number `j`, and `t = B`. -/
 def slotPtr (r : Reg) (j : Nat) (t : Reg) : List Instr :=
   widthB 0 t ++ [.mov r (.reg .edi), .alu .add r (.imm (BitVec.ofNat 32 numOff))] ++

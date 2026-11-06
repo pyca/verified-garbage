@@ -29,12 +29,4 @@ theorem adx_final_ct : RelCT isa (Two GoodL) (Mont.adxSquare.mm aY aX aY) (fun _
 theorem base_final_ct : RelCT isa (Two GoodL) (Mont.base.mm aY aX aY) (fun _ _ => True) :=
   RelCT.ofW (mm_ct (o := aY) (a := aX) (b := aY) (by decide) (by decide) (by decide) (by taint_decide))
 
-theorem adx_verified : Verified target (Impl.Rsa.X86_64.Folded.checked Mont.adxSquare.mm)
-    (Proof.Rsa.publicPrecomputedCheckedContract abi) :=
-  checked_verified Mont.adxSquare (by decide +kernel) adx_final_ct
-
-theorem base_verified : Verified target (Impl.Rsa.X86_64.Folded.checked Mont.base.mm)
-    (Proof.Rsa.publicPrecomputedCheckedContract abi) :=
-  checked_verified Mont.base (by decide +kernel) base_final_ct
-
 end VG.Proof.Bignum.X86_64.FoldedPublic

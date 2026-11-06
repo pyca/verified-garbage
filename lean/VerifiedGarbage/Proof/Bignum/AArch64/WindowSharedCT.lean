@@ -1,29 +1,29 @@
 module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContract
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedGuard
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTCore
 
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTFast
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCorrect
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContext
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCT
-meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContract
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedGuard
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTCore
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTFast
-meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCorrect
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
-meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContext
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Rsa.MontWindowContract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Rsa.MontWindowContract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowShared
@@ -72,16 +72,5 @@ theorem code_ct : RelCT isa (Two RawWindowPre) code (fun _ _ => True) := by
         (WindowFive.windowBody_raw_ct Mont.productEight WindowVector.selector)
   · exact two_map id (fun _ _ h => h.1.raw)
       (WindowFive.windowBody_raw_ct Mont.productEight WindowVector.selector)
-
-theorem fn_ct : ConstantTime isa WindowHelper.fnContract.pre WindowHelper.fnContract.pub code := by
-  apply RelCT.constantTime (code_ct.mono ?_ (fun _ _ h => h))
-  rintro s t ⟨hs,ht,hsp,h0,h1,hw⟩
-  refine ⟨⟨s.gpr .x0,(s.gpr .x1).toNat*8,0,0,Proof.Rsa.Mont.wOf s.mem (s.gpr .x0)⟩,
-    WindowHelper.fn_context hs,?_,hsp⟩
-  rw [hw,h0,h1]
-  exact WindowHelper.fn_context ht
-
-theorem verified : Verified target code (Proof.Rsa.MontWindow.windowContract abi) :=
-  Verified.of_correct fn_correct fn_ct WindowHelper.fn_implies
 
 end VG.Proof.Bignum.AArch64.WindowShared

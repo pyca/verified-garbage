@@ -40,9 +40,6 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.Public VG.Impl.Bignum.AArch64 V
 open VG.Proof.Bignum
 open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 
-theorem arr_fixed (w : Nat) {j : Nat} : 8 * 22 ≤ slot w j ∨ (8 * 6 ≤ slot w j ∧ slot w j + 8 * (w + 2) ≤ 8 * 16) :=
-  Or.inl (by unfold slot hdrBytes; omega_arith)
-
 theorem slot0_ge (w : Nat) : 8 * 31 + 8 ≤ slot w 0 ∧ slot w 0 + 8 * (w + 2) ≤ slot w 8 :=
   ⟨hdr_lt_slot w 0 (by decide), slot_le (by decide)⟩
 
@@ -81,9 +78,6 @@ theorem PcM.congr {p : PcPub} {s t : State} (h : PcM p s) {rs : List (Nat × Nat
   exact ⟨hs.congr k.wr, (k.gpr .x0 hr).trans h0, hZ, hk1, hk2, (hfx sOut (by decide)).trans hO,
     (hfx sK (by decide)).trans hK, (hfx sN (by decide)).trans hN, hn.congrK hi k, hnl, hv,
     fun i hi => by rw [k.wr]; exact hpw i hi, hps, by rw [k.rd, k.wr]; exact hsp⟩
-
-theorem pins_PcM : Pins PcM [.x0] := fun _ _ _ h₁ h₂ r hr => by
-  simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1]
 
 /-- What the load of `m` and `-m⁻¹` needs: `PcM` but for `pre`. -/
 def PcL (p : PcPub) (s : State) : Prop :=

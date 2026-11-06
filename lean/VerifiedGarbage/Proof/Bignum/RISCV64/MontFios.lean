@@ -37,11 +37,6 @@ theorem carry_toNat (x y : BitVec 64) :
       rw [BitVec.lt_def, BitVec.toNat_add]; omega
     simp only [this, h, ite_false, decide_false, Bool.toNat_false]; rfl
 
-/-- The carry out of `y + x`, as `sltu` of the sum and `y` computes it. -/
-theorem carry_toNat' (x y : BitVec 64) :
-    (if y + x < y then (1 : BitVec 64) else 0).toNat = (decide (2 ^ 64 ≤ x.toNat + y.toNat)).toNat := by
-  rw [BitVec.add_comm, carry_toNat]
-
 /-- The arithmetic of one of a step's two sums: with `c₁ = c + x` and its
 carry `k₁`, and `l = p q + c₁` and its carry `k₂`, the low word `l` and
 `2⁶⁴` times the high word of `p q` plus both carries make `x + p q + c`,

@@ -72,9 +72,4 @@ theorem sound {τ τ' : VG.Arm.Taint.T} {i : Instr}
 /-- This untrusted analysis changes no ISA semantics and is proved against the original execution model. -/
 def analysis : VG.Taint isa := { taint with step := step, step_sound := sound }
 
-/-- The initial relation is the original ARM register agreement, with no extra assumptions. -/
-theorem initialAgree {s t : State} (h : ∀ r ∈ publicRegs, s.gpr r = t.gpr r) :
-    VG.Arm.Taint.Agree (VG.Arm.Taint.ofRegs publicRegs) s t :=
-  VG.Arm.Taint.agree_ofRegs h
-
 end VG.Proof.Bignum.Arm.FiosTaint

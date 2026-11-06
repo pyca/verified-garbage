@@ -46,10 +46,6 @@ theorem ctl_num {m m' : Mem} {base : BitVec 32} {len w q : Nat} (ctl : CtlOnly b
   · right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
   · omega
 
-theorem ctl_readW {m m' : Mem} {base : BitVec 32} {d : Nat} (ctl : CtlOnly base m m') (hd : d + 4 ≤ 128) :
-    m'.readW (off (State.addr base) d) 32 = m.readW (off (State.addr base) d) 32 :=
-  outside_read32 ctl (Or.inl hd) (by omega)
-
 theorem ArithmeticReady.after_ctl {s t : State} {base : BitVec 32} {len w : Nat} {rs : List Reg}
     (h : ArithmeticReady base len w s) (ctl : CtlOnly base s.mem t.mem) (rest : Rest rs s t)
     (ptr : t.gpr .r0 = base) :

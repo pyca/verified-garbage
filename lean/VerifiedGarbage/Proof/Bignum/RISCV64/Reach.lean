@@ -12,7 +12,7 @@ code's list of programs (`Code.flat`) where such values are loaded: `At Φ F n`
 holds of the state after the first `n` programs of `F` from a state
 satisfying `Φ`. Each run that terminates goes through these states
 (`at_step`, by determinism), so the relational proof needs no correctness
-facts between the cuts, only the registers each cut fixes (`pins_at`): the
+facts between the cuts, only the registers each cut fixes: the
 values a correctness proof gives them from the initial state, for the same
 public data.
 -/
@@ -57,20 +57,7 @@ theorem at_step {Φ : α → State → Prop} {F : List (Prog isa)}
   obtain ⟨_, _, v, -, e₃, -⟩ := exec_seqL_append.mp e₂
   exact ⟨_, v, e₃, s₀, _, h₀, by rw [take_split F hnm]; exact exec_seqL_append.mpr ⟨_, _, _, rfl, e, e₃⟩⟩
 
-/-- The registers a cut fixes: each has a value, from the initial state, that
-two initial states for the same `a` agree on. -/
-theorem pins_at {Φ : α → State → Prop} {F : List (Prog isa)} {n : Nat} {rs : List Reg}
-    (V : State → Reg → BitVec 64)
-    (hv : ∀ a s₀, Φ a s₀ → WP isa (Code.seqL (F.take n)) s₀ fun u => ∀ r ∈ rs, u.gpr r = V s₀ r)
-    (hV : ∀ a s₀ s₀', Φ a s₀ → Φ a s₀' → ∀ r ∈ rs, V s₀ r = V s₀' r) : Pins (At Φ F n) rs := by
-  rintro a u₁ u₂ ⟨s₁, t₁, h₁, e₁⟩ ⟨s₂, t₂, h₂, e₂⟩ r hr
-  obtain ⟨_, _, x₁, y₁⟩ := hv a s₁ h₁
-  obtain ⟨_, _, x₂, y₂⟩ := hv a s₂ h₂
-  obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
-  obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  rw [y₁ r hr, y₂ r hr, hV a s₁ s₂ h₁ h₂ r hr]
-
-/-- `pins_at`, the values as a list. -/
+/-- The registers a cut fixes, the values as a list. -/
 theorem pins_at_list {Φ : α → State → Prop} {F : List (Prog isa)} {n : Nat} {rs : List Reg}
     (vs : State → List (BitVec 64))
     (hv : ∀ a s₀, Φ a s₀ → WP isa (Code.seqL (F.take n)) s₀ fun u => rs.map u.gpr = vs s₀)

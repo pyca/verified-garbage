@@ -72,14 +72,4 @@ theorem CrtBuffers.after_frame {s t : State} {g : CrtGeometry} {bs : Fin 7 → L
   · rw [rest.wr]; exact h.write
   · rw [rest.sp]; exact h.outputStack
 
-theorem CrtBuffers.after_scratch {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {rs : List Reg}
-    (h : CrtBuffers g bs s) (frame : Frame [⟨State.addr g.base, g.size⟩] s.mem t.mem) (rest : Rest rs s t) :
-    CrtBuffers g bs t :=
-  h.after_frame frame rest (by intro i r hr; simp only [List.mem_singleton] at hr; subst r; exact h.sourceSeparate i)
-
-theorem CrtBuffers.after_stack {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {rs : List Reg}
-    (h : CrtBuffers g bs s) (frame : Frame [⟨State.addr s.sp, 56⟩] s.mem t.mem) (rest : Rest rs s t) :
-    CrtBuffers g bs t :=
-  h.after_frame frame rest (by intro i r hr; simp only [List.mem_singleton] at hr; subst r; exact h.sourceStack i)
-
 end VG.Proof.Bignum.Arm

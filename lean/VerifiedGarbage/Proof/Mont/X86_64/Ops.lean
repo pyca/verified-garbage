@@ -214,17 +214,6 @@ theorem subW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
 
 /-! ## The operations -/
 
-/-- Below seven words, the operations are the register ones. -/
-theorem mul_of_lt {M : Mod} (h : M.n < 7) (o a b : Nat) : mul M o a b = mulR M o a b := by
-  simp only [mul, h, ↓reduceIte]
-
-theorem add_of_lt {M : Mod} (h : M.n < 7) (o a b : Nat) : add M o a b = addR M o a b := by
-  simp only [add, h, ↓reduceIte]
-
-theorem sub_of_lt {M : Mod} (h : M.n < 7) (hred : M.red ≠ .friendly p256Ws) (hsp : M.sparse = false)
-    (o a b : Nat) : sub M o a b = subR M o a b := by
-  simp only [sub, hred, and_false, h, hsp, Bool.false_eq_true, false_and, ↓reduceIte]
-
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
 theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
     (hM : ModOkW M size m s.mem base) {o a b : Nat} (ho : o + 8 * M.n ≤ size)

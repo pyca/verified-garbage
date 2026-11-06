@@ -85,27 +85,4 @@ theorem ea_ix0 (s : State) {b i : Reg} {p : Addr} {e j : Nat} (hb : s.gpr b = of
   have := ea_ix s hb hi 0
   rwa [Nat.add_zero] at this
 
-theorem ea_ix8 (s : State) {b i : Reg} {p : Addr} {e j : Nat} (hb : s.gpr b = off p e)
-    (hi : s.gpr i = BitVec.ofNat 64 j) : s.ea (ix b i 8) = off p (e + 8 * j + 8) :=
-  ea_ix s hb hi 8
-
-/-- `[b + 8 i - 8]` for `b = p + e` and `i = j ≥ 1`. -/
-theorem ea_ixm8 (s : State) {b i : Reg} {p : Addr} {e j : Nat} (hb : s.gpr b = off p e)
-    (hi : s.gpr i = BitVec.ofNat 64 j) (hj : 1 ≤ j) :
-    s.ea (ix b i (-8)) = off p (e + 8 * (j - 1)) := by
-  have h8 : BitVec.ofNat 64 (8 * j) + BitVec.ofInt 64 (-8) = BitVec.ofNat 64 (8 * (j - 1)) := by
-    rw [show (-8 : Int) = - ((8 : Nat) : Int) by rfl, BitVec.ofInt_neg, BitVec.ofInt_natCast,
-      ← BitVec.sub_eq_add_neg, show 8 * j = 8 * (j - 1) + 8 by omega, BitVec.ofNat_add,
-      BitVec.add_sub_cancel]
-  simp only [State.ea, ix, hb, hi, off, ofNat_mul8, BitVec.add_assoc, h8, BitVec.ofNat_add]
-
-theorem ea_at0 (s : State) {b : Reg} {p : Addr} {e : Nat} (hb : s.gpr b = off p e) :
-    s.ea (at0 b) = off p e := by
-  simp only [State.ea, at0, hb, BitVec.ofInt_ofNat, BitVec.add_zero]
-
-theorem ea_hdr (s : State) {p : Addr} (hb : s.gpr .rdi = p) (i : Nat) :
-    s.ea (hdr i) = off p (8 * i) := by
-  simp only [State.ea, hdr, hb, off]
-  rw [show (8 * (i : Int)) = ((8 * i : Nat) : Int) by omega, BitVec.ofInt_natCast]
-
 end VG.Proof.Bignum.X86_64

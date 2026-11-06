@@ -94,28 +94,6 @@ theorem twice_ok (s : State) {base : BitVec 32} {len w M E : Nat}
       Nat.pow_succ', Nat.mul_assoc]
   exact ⟨powerT, bound, candidate, header_of_keeps h.ready keeps, frame, rest⟩
 
-def inlineKernel (base : BitVec 32) (len w : Nat) :
-    Kernel base len w (fun _ => True) [⟨State.addr base, 8 * len⟩] where
-  square := squareOp 6 6
-  twice := twice
-  workspace := by simp
-  stable := fun _ _ _ => trivial
-  square_ok := by
-    intro s E M h _
-    refine WP.mono (squareOp_ok s h.ready
-      (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
-      (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
-      (by rw [h.modulus]; exact h.bound)) ?_
-    rintro t ⟨ready, modulus, bound, value, keeps, frame, rest⟩
-    rw [h.modulus] at modulus bound value
-    exact ⟨square_value h ready modulus bound value keeps, trivial,
-      header_of_keeps h.ready keeps, frame, rest⟩
-  twice_ok := by
-    intro s E M h _
-    refine WP.mono (twice_ok s h) ?_
-    rintro t ⟨power, bound, value, header, frame, rest⟩
-    exact ⟨power, bound, value, trivial, header, frame, rest⟩
-
 /-- Supply a shared square without changing the exponent loop or its
 linear doubling operation. -/
 def kernelOfSquare {base : BitVec 32} {len w : Nat} {P : State → Prop}

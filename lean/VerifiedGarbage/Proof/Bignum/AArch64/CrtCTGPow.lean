@@ -324,10 +324,6 @@ theorem GSl.good {sl : Nat} {p : GPub} {t : State} (h : GSl sl p t) :
   exact ⟨⟨hs.1.scr.congr k.wr, (k.gpr .x0 (by decide)).trans hs.1.x0,
     by rw [hm]; exact Hdr.store hs.1.hdr (by decide) (by decide) _⟩, hs.2.1⟩
 
-theorem GPre.hyp {sl : Nat} {p : GPub} {s : State} (h : GPre sl p s) : GHyp s p.B p.Z p.w p.minv p.N p.wx := by
-  obtain ⟨hg, hZ, hw, hw30, hn, hinv, hodd, hN1, hr2, hone, _, _, _, _, hwx, hwx'⟩ := h
-  exact ⟨hg, hZ, hw, hw30, hn, hinv, hodd, hN1, hr2, hone, hwx, hwx'⟩
-
 /-- `GSl` past a step that keeps the memory and the registers but `rs`. -/
 theorem GSl.step {sl : Nat} {p : GPub} {t t' : State} {rs : List Reg} (h : GSl sl p t) (hm : t'.mem = t.mem)
     (k : Keep rs t t') (hrs : ∀ r ∈ rs, r ∈ mmRegs) : GSl sl p t' := by
