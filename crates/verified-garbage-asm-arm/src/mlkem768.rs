@@ -401,7 +401,7 @@ ldr r10, [r3, #864]
 ldr r11, [r3, #868]
 ldr lr, [r3, #872]
 bx lr",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,
@@ -938,7 +938,7 @@ ldr r10, [r3, #864]
 ldr r11, [r3, #868]
 ldr lr, [r3, #872]
 bx lr",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
@@ -1414,7 +1414,7 @@ ldr r10, [r3, #864]
 ldr r11, [r3, #868]
 ldr lr, [r3, #872]
 bx lr",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_decode12 = sym super::mlkem1024::vg_mlkem_decode12::vg_mlkem_decode12,
@@ -2058,7 +2058,7 @@ bx lr",
         vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
         vg_mlkem_sub = sym super::mlkem1024::vg_mlkem_sub::vg_mlkem_sub,
         vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_cbd2 = sym super::mlkem1024::vg_mlkem_cbd2::vg_mlkem_cbd2,

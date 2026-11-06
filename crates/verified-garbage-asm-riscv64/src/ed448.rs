@@ -112,8 +112,8 @@ call {vg_ed448_scalar_base}
 .insn 2, 0x8082
 .option pop",
         vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
-        vg_keccak_pad = sym super::sha3::vg_keccak_pad,
-        vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
+        vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
+        vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
     )
 }
@@ -544,8 +544,8 @@ call {vg_ed448_scalar_mul_add}
 .insn 2, 0x8082
 .option pop",
         vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
-        vg_keccak_pad = sym super::sha3::vg_keccak_pad,
-        vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
+        vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
+        vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
         vg_ed448_scalar_mul_add = sym super::ed448::vg_ed448_scalar_mul_add::vg_ed448_scalar_mul_add,
@@ -1030,8 +1030,8 @@ call {vg_ed448_verify_equation}
 .insn 2, 0x8082
 .option pop",
         vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
-        vg_keccak_pad = sym super::sha3::vg_keccak_pad,
-        vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
+        vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
+        vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
         vg_ed448_verify_equation = sym super::ed448::vg_ed448_verify_equation::vg_ed448_verify_equation,
     )
@@ -1060,3 +1060,11 @@ pub(crate) mod vg_keccak_absorb;
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_f1600.rs"]
 pub(crate) mod vg_keccak_f1600;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_pad.rs"]
+pub(crate) mod vg_keccak_pad;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_squeeze.rs"]
+pub(crate) mod vg_keccak_squeeze;

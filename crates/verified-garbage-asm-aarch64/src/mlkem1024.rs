@@ -319,7 +319,7 @@ bl {vg_keccak_squeeze_scratch}
 .inst 0xf9401329,0xf9062369,0xf9401729,0xf9062769,0xf9401b29,0xf9062b69,0xf9401f29,0xf9062f69
 .inst 0x91000300,0xf976279e,0xf9761398,0xf9761799,0xf9761b9a,0xf9761f9b,0xf976239c,0xd65f03c0
 .p2align 6",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
@@ -654,7 +654,7 @@ bl {vg_mlkem_add}
 bl {vg_mlkem1024_compress_encode}
 .inst 0x91000300,0xf97b5f98,0xf97b639e,0xf97b6799,0xf97b6b9a,0xf97b6f9b,0xf97b739c,0xd65f03c0
 .p2align 6",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
@@ -994,7 +994,7 @@ bl {vg_mlkem_add}
 bl {vg_mlkem1024_compress_encode}
 .inst 0x91000300,0xf97b5f98,0xf97b639e,0xf97b6799,0xf97b6b9a,0xf97b6f9b,0xf97b739c,0xd65f03c0
 .p2align 6",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,
@@ -1393,7 +1393,7 @@ cbnz x2, 20b
         vg_mlkem_inv_ntt = sym super::mlkem1024::vg_mlkem_inv_ntt::vg_mlkem_inv_ntt,
         vg_mlkem_sub = sym super::mlkem1024::vg_mlkem_sub::vg_mlkem_sub,
         vg_mlkem_compress_encode = sym super::mlkem1024::vg_mlkem_compress_encode::vg_mlkem_compress_encode,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mlkem_sample_ntt = sym super::mlkem1024::vg_mlkem_sample_ntt::vg_mlkem_sample_ntt,

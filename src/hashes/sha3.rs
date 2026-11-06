@@ -1,5 +1,13 @@
 //! SHA3-224, SHA3-256, SHA3-384 and SHA3-512, and the extendable-output
 //! functions SHAKE128 and SHAKE256 (FIPS 202).
+//!
+//! Each function has verified functions of its own, whose code has its rate
+//! and domain-separation suffix and whose contracts name the function of
+//! FIPS 202 they compute (`VG.Spec.Sha3`): `update` absorbs a piece of the
+//! message, and `finalize` writes the digest (SHA-3) or pads the message for
+//! `squeeze` to output it in pieces (SHAKE). This module keeps the state, the
+//! position in the block that each call returns for the next, and the
+//! implementation chosen.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -10,23 +18,36 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::sha3::{vg_keccak_absorb_scratch, vg_keccak_pad, vg_keccak_squeeze};
+use crate::arch::sha3::{
+    vg_sha3_224_finalize, vg_sha3_224_update, vg_sha3_256_finalize, vg_sha3_256_update,
+    vg_sha3_384_finalize, vg_sha3_384_update, vg_sha3_512_finalize, vg_sha3_512_update,
+    vg_shake128_finalize, vg_shake128_squeeze, vg_shake128_update, vg_shake256_finalize,
+    vg_shake256_squeeze, vg_shake256_update,
+};
 use core::mem::MaybeUninit;
 
 #[cfg(target_arch = "aarch64")]
 use crate::arch::sha3::{
-    VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES, VG_KECCAK_PAD_SHA3_FEATURES,
-    VG_KECCAK_SQUEEZE_SHA3_FEATURES, vg_keccak_absorb_scratch_sha3, vg_keccak_pad_sha3,
-    vg_keccak_squeeze_sha3,
+    VG_SHA3_224_FINALIZE_SHA3_FEATURES, VG_SHA3_224_UPDATE_SHA3_FEATURES,
+    VG_SHA3_256_FINALIZE_SHA3_FEATURES, VG_SHA3_256_UPDATE_SHA3_FEATURES,
+    VG_SHA3_384_FINALIZE_SHA3_FEATURES, VG_SHA3_384_UPDATE_SHA3_FEATURES,
+    VG_SHA3_512_FINALIZE_SHA3_FEATURES, VG_SHA3_512_UPDATE_SHA3_FEATURES,
+    VG_SHAKE128_FINALIZE_SHA3_FEATURES, VG_SHAKE128_SQUEEZE_SHA3_FEATURES,
+    VG_SHAKE128_UPDATE_SHA3_FEATURES, VG_SHAKE256_FINALIZE_SHA3_FEATURES,
+    VG_SHAKE256_SQUEEZE_SHA3_FEATURES, VG_SHAKE256_UPDATE_SHA3_FEATURES, vg_sha3_224_finalize_sha3,
+    vg_sha3_224_update_sha3, vg_sha3_256_finalize_sha3, vg_sha3_256_update_sha3,
+    vg_sha3_384_finalize_sha3, vg_sha3_384_update_sha3, vg_sha3_512_finalize_sha3,
+    vg_sha3_512_update_sha3, vg_shake128_finalize_sha3, vg_shake128_squeeze_sha3,
+    vg_shake128_update_sha3, vg_shake256_finalize_sha3, vg_shake256_squeeze_sha3,
+    vg_shake256_update_sha3,
 };
 
-/// The working space of `vg_keccak_absorb_scratch`, aligned to a cache
-/// line.
+/// The working space of the `update` functions, aligned to a cache line.
 #[repr(C, align(128))]
 struct Scratch(MaybeUninit<[u64; 80]>);
 
-/// The implementations of the sponge's functions, the same for every phase
-/// of a sponge.
+/// The implementations of the functions, the same for every function and
+/// every phase of a computation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     /// The baseline implementation.
@@ -74,9 +95,20 @@ impl Backend {
             && features.contains(
                 const {
                     verified_garbage_cpu::Features::all(&[
-                        VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES,
-                        VG_KECCAK_PAD_SHA3_FEATURES,
-                        VG_KECCAK_SQUEEZE_SHA3_FEATURES,
+                        VG_SHA3_224_UPDATE_SHA3_FEATURES,
+                        VG_SHA3_224_FINALIZE_SHA3_FEATURES,
+                        VG_SHA3_256_UPDATE_SHA3_FEATURES,
+                        VG_SHA3_256_FINALIZE_SHA3_FEATURES,
+                        VG_SHA3_384_UPDATE_SHA3_FEATURES,
+                        VG_SHA3_384_FINALIZE_SHA3_FEATURES,
+                        VG_SHA3_512_UPDATE_SHA3_FEATURES,
+                        VG_SHA3_512_FINALIZE_SHA3_FEATURES,
+                        VG_SHAKE128_UPDATE_SHA3_FEATURES,
+                        VG_SHAKE128_FINALIZE_SHA3_FEATURES,
+                        VG_SHAKE128_SQUEEZE_SHA3_FEATURES,
+                        VG_SHAKE256_UPDATE_SHA3_FEATURES,
+                        VG_SHAKE256_FINALIZE_SHA3_FEATURES,
+                        VG_SHAKE256_SQUEEZE_SHA3_FEATURES,
                     ])
                 },
             )
@@ -88,30 +120,20 @@ impl Backend {
     }
 }
 
-/// The domain-separation suffix of SHA-3 and the first bit of the padding
-/// (FIPS 202 §6.1 and Appendix B.2).
-const SHA3_SUFFIX: u32 = 0x06;
-/// The domain-separation suffix of SHAKE and the first bit of the padding
-/// (FIPS 202 §6.2 and Appendix B.2).
-const SHAKE_SUFFIX: u32 = 0x1f;
-
-/// A Keccak sponge with a rate of `RATE` bytes, absorbing a message.
-///
-/// `RATE` is always one of the rates of FIPS 202 (72, 104, 136, 144 or 168
-/// bytes), and `pos` is the message length modulo `RATE`.
+/// The state of a computation absorbing a message: `state` represents the
+/// message so far for the function's rate, and `pos` is the position its
+/// `update` returned (the message's length modulo the rate, less than it).
 #[derive(Clone)]
-struct Sponge<const RATE: usize> {
-    /// The state, representing the message so far for `RATE`.
+struct Absorbing {
     state: [u64; 25],
-    /// The length of the message so far, modulo `RATE`.
     pos: usize,
     backend: Option<Backend>,
 }
 
-impl<const RATE: usize> Sponge<RATE> {
-    /// The sponge of the empty message: the all-zero state.
+impl Absorbing {
+    /// The empty message: the all-zero state, at position 0.
     const fn new() -> Self {
-        Sponge {
+        Absorbing {
             state: [0; 25],
             pos: 0,
             backend: None,
@@ -122,130 +144,85 @@ impl<const RATE: usize> Sponge<RATE> {
     fn backend(&mut self) -> Backend {
         *self.backend.get_or_insert_with(Backend::detected)
     }
-
-    /// Absorbs `data`.
-    fn absorb(&mut self, data: &[u8]) {
-        let backend = self.backend();
-        // Uninitialized: the contract holds whatever the scratch holds, so
-        // filling it first would only cost time.
-        let mut scratch = Scratch(MaybeUninit::uninit());
-        // SAFETY: `RATE` is one of the rates of FIPS 202 and `self.pos` is
-        // less than it, and is the length modulo `RATE` of the message that
-        // `self.state` represents. `self.state` is valid for reads and
-        // writes of 200 bytes, `data` for reads of `data.len()` bytes and
-        // `scratch` for reads and writes of 640 bytes (the state and
-        // `scratch`, arrays of `u64`, are aligned for it); they are distinct
-        // objects, so they do not overlap each other or the stack
-        // below the stack pointer. The result is the new length modulo
-        // `RATE`. Backend selection checks every CPU feature required by the
-        // hardware variant.
-        self.pos = unsafe {
-            match backend {
-                Backend::Scalar => vg_keccak_absorb_scratch(
-                    &mut self.state,
-                    RATE,
-                    self.pos,
-                    data.as_ptr(),
-                    data.len(),
-                    scratch.0.as_mut_ptr(),
-                ),
-                #[cfg(target_arch = "aarch64")]
-                Backend::Sha3 => vg_keccak_absorb_scratch_sha3(
-                    &mut self.state,
-                    RATE,
-                    self.pos,
-                    data.as_ptr(),
-                    data.len(),
-                    scratch.0.as_mut_ptr(),
-                ),
-            }
-        };
-    }
-
-    /// Pads the message with the domain-separation suffix `suffix`, ready
-    /// to squeeze its output.
-    fn pad(mut self, suffix: u32) -> Squeezer<RATE> {
-        let backend = self.backend();
-        // SAFETY: as in `absorb`: `RATE` is one of the rates of FIPS 202 and
-        // `self.pos` is less than it, and is the length modulo `RATE` of the
-        // message `self.state` represents; `self.state` is valid for reads
-        // and writes of its size. Backend
-        // selection checked every CPU feature required by the chosen variant.
-        unsafe {
-            match backend {
-                Backend::Scalar => vg_keccak_pad(&mut self.state, RATE, self.pos, suffix),
-                #[cfg(target_arch = "aarch64")]
-                Backend::Sha3 => vg_keccak_pad_sha3(&mut self.state, RATE, self.pos, suffix),
-            }
-        };
-        Squeezer {
-            state: self.state,
-            pos: 0,
-            backend,
-        }
-    }
 }
 
-impl<const RATE: usize> Drop for Sponge<RATE> {
+impl Drop for Absorbing {
     fn drop(&mut self) {
         crate::zeroize::zeroize(&mut self.state);
     }
 }
 
-/// A Keccak sponge with a rate of `RATE` bytes, squeezing output.
-///
-/// `RATE` is always one of the rates of FIPS 202, `pos ≤ RATE`, and the
-/// output from `state` from byte `pos` on is the rest of the output.
+/// The state of an extendable-output function's output: squeezed from
+/// `pos`, the position its `finalize` or `squeeze` left (at most the rate),
+/// `state` gives the rest of the output.
 #[derive(Clone)]
-struct Squeezer<const RATE: usize> {
-    /// The state.
+struct Squeezing {
     state: [u64; 25],
-    /// The position of the next byte of output in the output of `state`.
     pos: usize,
     backend: Backend,
 }
 
-impl<const RATE: usize> Drop for Squeezer<RATE> {
+impl Drop for Squeezing {
     fn drop(&mut self) {
         crate::zeroize::zeroize(&mut self.state);
     }
 }
 
-impl<const RATE: usize> Squeezer<RATE> {
-    /// Writes the next `out.len()` bytes of output to `out`.
-    fn squeeze(&mut self, out: &mut [u8]) {
-        // SAFETY: `RATE` is one of the rates of FIPS 202 and `self.pos` is at
-        // most `RATE`. `self.state` is valid for reads and writes of 200
-        // bytes and `out` for writes of `out.len()` bytes; they are distinct
-        // objects, so they do not overlap each other or the stack below the
-        // stack pointer.
-        // The state left and the result continue the output. The backend was
-        // selected only after checking every required CPU feature.
-        self.pos = unsafe {
-            match self.backend {
-                Backend::Scalar => {
-                    vg_keccak_squeeze(&mut self.state, RATE, self.pos, out.as_mut_ptr(), out.len())
-                }
+/// `update`, through the implementation `backend`: absorbs `data` into
+/// `$s` (an `Absorbing`), with the function's `update` or its `_sha3`
+/// variant.
+macro_rules! absorb {
+    ($s:expr, $data:expr, $update:ident, $update_sha3:ident) => {{
+        let s: &mut Absorbing = $s;
+        let data: &[u8] = $data;
+        let backend = s.backend();
+        // Uninitialized: the contract holds whatever the scratch holds, so
+        // filling it first would only cost time.
+        let mut scratch = Scratch(MaybeUninit::uninit());
+        // SAFETY: `s.pos` is the position the function's `update` returned
+        // for the message `s.state` represents (0 for the all-zero state, the
+        // empty message), so it is less than the function's rate.
+        // `s.state` is valid for reads and writes of 200 bytes, `data` for
+        // reads of `data.len()` bytes and `scratch` for reads and writes of
+        // 640 bytes (the state and `scratch`, arrays of `u64`, are aligned
+        // for it); they are distinct objects, so they do not overlap each
+        // other or the stack below the stack pointer. Backend selection
+        // checked every CPU feature the hardware variant requires.
+        s.pos = unsafe {
+            match backend {
+                Backend::Scalar => $update(
+                    &mut s.state,
+                    s.pos,
+                    data.as_ptr(),
+                    data.len(),
+                    scratch.0.as_mut_ptr(),
+                ),
                 #[cfg(target_arch = "aarch64")]
-                Backend::Sha3 => vg_keccak_squeeze_sha3(
-                    &mut self.state,
-                    RATE,
-                    self.pos,
-                    out.as_mut_ptr(),
-                    out.len(),
+                Backend::Sha3 => $update_sha3(
+                    &mut s.state,
+                    s.pos,
+                    data.as_ptr(),
+                    data.len(),
+                    scratch.0.as_mut_ptr(),
                 ),
             }
         };
-    }
+    }};
 }
 
-/// Defines a SHA-3 hash function with a rate of `$rate` bytes and
-/// `$output`-byte digests.
+/// Defines a SHA-3 hash function with a rate of `$rate` bytes,
+/// `$output`-byte digests, and the verified functions `$update` and
+/// `$finalize` (and their `_sha3` variants).
 macro_rules! sha3 {
-    ($(#[$doc:meta])* $name:ident { rate: $rate:literal, output: $output:literal $(,)? }) => {
+    ($(#[$doc:meta])* $name:ident {
+        rate: $rate:literal,
+        output: $output:literal,
+        update: ($update:ident, $update_sha3:ident),
+        finalize: ($finalize:ident, $finalize_sha3:ident) $(,)?
+    }) => {
         $(#[$doc])*
         #[derive(Clone)]
-        pub struct $name(Sponge<$rate>);
+        pub struct $name(Absorbing);
 
         impl Default for $name {
             fn default() -> Self {
@@ -261,18 +238,33 @@ macro_rules! sha3 {
 
             /// Starts a new computation.
             pub const fn new() -> Self {
-                $name(Sponge::new())
+                $name(Absorbing::new())
             }
 
             /// Absorbs `data`.
             pub fn update(&mut self, data: &[u8]) {
-                self.0.absorb(data);
+                absorb!(&mut self.0, data, $update, $update_sha3);
             }
 
             /// Pads the message and returns its digest.
-            pub fn finalize(self) -> [u8; $output] {
+            pub fn finalize(mut self) -> [u8; $output] {
+                let backend = self.0.backend();
                 let mut digest = [0; $output];
-                self.0.pad(SHA3_SUFFIX).squeeze(&mut digest);
+                // SAFETY: as in `update`, `self.0.pos` is the position
+                // `update` returned for the message `self.0.state`
+                // represents; `self.0.state` is valid for reads and writes of
+                // 200 bytes and `digest` for writes of its size, distinct
+                // objects. Backend selection checked every CPU feature the
+                // hardware variant requires.
+                unsafe {
+                    match backend {
+                        Backend::Scalar => $finalize(&mut self.0.state, self.0.pos, &mut digest),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::Sha3 => {
+                            $finalize_sha3(&mut self.0.state, self.0.pos, &mut digest)
+                        }
+                    }
+                };
                 digest
             }
 
@@ -305,21 +297,46 @@ macro_rules! sha3 {
 }
 
 /// Defines a SHAKE extendable-output function with a rate of `$rate` bytes,
-/// and the reader of its output.
+/// the reader of its output, and the verified functions `$update`,
+/// `$finalize` and `$squeeze` (and their `_sha3` variants).
 macro_rules! shake {
-    ($(#[$doc:meta])* $name:ident, $(#[$rdoc:meta])* $reader:ident { rate: $rate:literal $(,)? }) => {
+    ($(#[$doc:meta])* $name:ident, $(#[$rdoc:meta])* $reader:ident {
+        rate: $rate:literal,
+        update: ($update:ident, $update_sha3:ident),
+        finalize: ($finalize:ident, $finalize_sha3:ident),
+        squeeze: ($squeeze:ident, $squeeze_sha3:ident) $(,)?
+    }) => {
         $(#[$doc])*
         #[derive(Clone)]
-        pub struct $name(Sponge<$rate>);
+        pub struct $name(Absorbing);
 
         $(#[$rdoc])*
         #[derive(Clone)]
-        pub struct $reader(Squeezer<$rate>);
+        pub struct $reader(Squeezing);
 
         impl $reader {
             /// Writes the next `out.len()` bytes of output to `out`.
             pub fn squeeze(&mut self, out: &mut [u8]) {
-                self.0.squeeze(out);
+                let s = &mut self.0;
+                // SAFETY: `s.pos` is the position `finalize` (0) or the last
+                // `squeeze` left, at most the rate, from which `s.state`
+                // continues the output. `s.state` is valid for reads and
+                // writes of 200 bytes and `out` for writes of `out.len()`
+                // bytes; they are distinct objects, so they do not overlap
+                // each other or the stack below the stack pointer. The
+                // backend was selected only after checking every required CPU
+                // feature.
+                s.pos = unsafe {
+                    match s.backend {
+                        Backend::Scalar => {
+                            $squeeze(&mut s.state, s.pos, out.as_mut_ptr(), out.len())
+                        }
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::Sha3 => {
+                            $squeeze_sha3(&mut s.state, s.pos, out.as_mut_ptr(), out.len())
+                        }
+                    }
+                };
             }
         }
 
@@ -335,18 +352,38 @@ macro_rules! shake {
 
             /// Starts a new computation.
             pub const fn new() -> Self {
-                $name(Sponge::new())
+                $name(Absorbing::new())
             }
 
             /// Absorbs `data`.
             pub fn update(&mut self, data: &[u8]) {
-                self.0.absorb(data);
+                absorb!(&mut self.0, data, $update, $update_sha3);
             }
 
             /// Pads the message and returns a reader of its output, which
             /// can be squeezed in pieces.
-            pub fn finalize_xof(self) -> $reader {
-                $reader(self.0.pad(SHAKE_SUFFIX))
+            pub fn finalize_xof(mut self) -> $reader {
+                let backend = self.0.backend();
+                let mut state = self.0.state;
+                // SAFETY: as in `update`, `self.0.pos` is the position
+                // `update` returned for the message `state` represents;
+                // `state` is valid for reads and writes of 200 bytes. Backend
+                // selection checked every CPU feature the hardware variant
+                // requires.
+                unsafe {
+                    match backend {
+                        Backend::Scalar => $finalize(&mut state, self.0.pos),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::Sha3 => $finalize_sha3(&mut state, self.0.pos),
+                    }
+                };
+                // From position 0, the padded state gives the output from its
+                // first byte on.
+                $reader(Squeezing {
+                    state,
+                    pos: 0,
+                    backend,
+                })
             }
 
             /// Pads the message and fills `out` with the first `out.len()`
@@ -368,31 +405,61 @@ macro_rules! shake {
 
 sha3!(
     /// An incremental SHA3-224 computation.
-    Sha3_224 { rate: 144, output: 28 }
+    Sha3_224 {
+        rate: 144,
+        output: 28,
+        update: (vg_sha3_224_update, vg_sha3_224_update_sha3),
+        finalize: (vg_sha3_224_finalize, vg_sha3_224_finalize_sha3),
+    }
 );
 sha3!(
     /// An incremental SHA3-256 computation.
-    Sha3_256 { rate: 136, output: 32 }
+    Sha3_256 {
+        rate: 136,
+        output: 32,
+        update: (vg_sha3_256_update, vg_sha3_256_update_sha3),
+        finalize: (vg_sha3_256_finalize, vg_sha3_256_finalize_sha3),
+    }
 );
 sha3!(
     /// An incremental SHA3-384 computation.
-    Sha3_384 { rate: 104, output: 48 }
+    Sha3_384 {
+        rate: 104,
+        output: 48,
+        update: (vg_sha3_384_update, vg_sha3_384_update_sha3),
+        finalize: (vg_sha3_384_finalize, vg_sha3_384_finalize_sha3),
+    }
 );
 sha3!(
     /// An incremental SHA3-512 computation.
-    Sha3_512 { rate: 72, output: 64 }
+    Sha3_512 {
+        rate: 72,
+        output: 64,
+        update: (vg_sha3_512_update, vg_sha3_512_update_sha3),
+        finalize: (vg_sha3_512_finalize, vg_sha3_512_finalize_sha3),
+    }
 );
 shake!(
     /// An incremental SHAKE128 computation.
     Shake128,
     /// The output of SHAKE128, squeezed in pieces.
-    Shake128Reader { rate: 168 }
+    Shake128Reader {
+        rate: 168,
+        update: (vg_shake128_update, vg_shake128_update_sha3),
+        finalize: (vg_shake128_finalize, vg_shake128_finalize_sha3),
+        squeeze: (vg_shake128_squeeze, vg_shake128_squeeze_sha3),
+    }
 );
 shake!(
     /// An incremental SHAKE256 computation.
     Shake256,
     /// The output of SHAKE256, squeezed in pieces.
-    Shake256Reader { rate: 136 }
+    Shake256Reader {
+        rate: 136,
+        update: (vg_shake256_update, vg_shake256_update_sha3),
+        finalize: (vg_shake256_finalize, vg_shake256_finalize_sha3),
+        squeeze: (vg_shake256_squeeze, vg_shake256_squeeze_sha3),
+    }
 );
 
 #[cfg(test)]
@@ -423,43 +490,60 @@ mod tests {
         }
     }
 
-    /// Compare the baseline and `_sha3` sponges at every rate boundary,
-    /// with split updates and multi-block output.
+    /// Compare the baseline and `_sha3` implementations of each function at
+    /// every rate boundary, with split updates and multi-block output.
     #[cfg(target_arch = "aarch64")]
     #[test]
-    fn scalar_sponge_matches_sha3() {
-        if super::Backend::select(crate::cpu::detected(), true, true) != super::Backend::Sha3 {
+    fn scalar_matches_sha3() {
+        use super::Backend;
+        if Backend::select(crate::cpu::detected(), true, true) != Backend::Sha3 {
             return;
         }
-        fn check<const RATE: usize>() {
-            use super::{Backend, SHA3_SUFFIX, SHAKE_SUFFIX, Sponge};
-            let msg: [u8; 3 * 168 + 1] = core::array::from_fn(|i| (i * 37 + 11) as u8);
-            for len in [0, 1, RATE - 1, RATE, RATE + 1, 2 * RATE, 3 * RATE + 1] {
-                for split in [0, 1.min(len), len / 2, len] {
-                    for suffix in [SHA3_SUFFIX, SHAKE_SUFFIX] {
-                        let mut outputs = [[0u8; 2 * 168 + 1]; 2];
-                        for (backend, out) in [Backend::Scalar, Backend::Sha3]
-                            .into_iter()
-                            .zip(&mut outputs)
-                        {
-                            let mut sponge = Sponge::<RATE>::new();
-                            sponge.backend = Some(backend);
-                            sponge.absorb(&msg[..split]);
-                            sponge.absorb(&msg[split..len]);
-                            let mut reader = sponge.pad(suffix);
-                            reader.squeeze(&mut out[..RATE - 1]);
-                            reader.squeeze(&mut out[RATE - 1..]);
-                        }
-                        assert_eq!(outputs[0], outputs[1]);
+        let msg: [u8; 3 * 168 + 1] = core::array::from_fn(|i| (i * 37 + 11) as u8);
+        macro_rules! check_hash {
+            ($h:ident) => {
+                let rate = $h::BLOCK_SIZE;
+                for len in [0, 1, rate - 1, rate, rate + 1, 2 * rate, 3 * rate + 1] {
+                    for split in [0, 1.min(len), len / 2, len] {
+                        let [a, b] = [Backend::Scalar, Backend::Sha3].map(|backend| {
+                            let mut h = $h::new();
+                            h.0.backend = Some(backend);
+                            h.update(&msg[..split]);
+                            h.update(&msg[split..len]);
+                            h.finalize()
+                        });
+                        assert_eq!(a, b);
                     }
                 }
-            }
+            };
         }
-        check::<72>();
-        check::<104>();
-        check::<136>();
-        check::<144>();
-        check::<168>();
+        macro_rules! check_xof {
+            ($h:ident) => {
+                let rate = $h::BLOCK_SIZE;
+                for len in [0, 1, rate - 1, rate, rate + 1, 2 * rate, 3 * rate + 1] {
+                    for split in [0, 1.min(len), len / 2, len] {
+                        let [a, b] = [Backend::Scalar, Backend::Sha3].map(|backend| {
+                            let mut h = $h::new();
+                            h.0.backend = Some(backend);
+                            h.update(&msg[..split]);
+                            h.update(&msg[split..len]);
+                            let mut reader = h.finalize_xof();
+                            let mut out = [0u8; 2 * 168 + 1];
+                            reader.squeeze(&mut out[..rate - 1]);
+                            reader.squeeze(&mut out[rate - 1..]);
+                            out
+                        });
+                        assert_eq!(a, b);
+                    }
+                }
+            };
+        }
+        check_hash!(Sha3_224);
+        check_hash!(Sha3_256);
+        check_hash!(Sha3_384);
+        check_hash!(Sha3_512);
+        check_xof!(Shake128);
+        check_xof!(Shake256);
     }
 
     /// Every way of splitting a message into two updates, or into single

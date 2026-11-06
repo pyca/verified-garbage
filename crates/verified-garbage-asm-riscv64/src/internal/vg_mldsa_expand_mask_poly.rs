@@ -197,7 +197,7 @@ bnez t2, 23b
 .insn 2, 0x8082
 .option pop",
         vg_keccak_absorb = sym crate::ed448::vg_keccak_absorb::vg_keccak_absorb,
-        vg_keccak_pad = sym crate::sha3::vg_keccak_pad,
-        vg_keccak_squeeze = sym crate::sha3::vg_keccak_squeeze,
+        vg_keccak_pad = sym crate::ed448::vg_keccak_pad::vg_keccak_pad,
+        vg_keccak_squeeze = sym crate::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
     )
 }
