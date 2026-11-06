@@ -61,7 +61,8 @@ impl Backend {
 #[cfg(any(
     target_arch = "aarch64",
     target_arch = "x86_64",
-    target_arch = "riscv64"
+    target_arch = "riscv64",
+    target_arch = "x86"
 ))]
 #[repr(C, align(64))]
 pub(crate) struct Aligned<T>(pub(crate) T);
@@ -72,8 +73,8 @@ pub(crate) struct Aligned<T>(pub(crate) T);
 /// functions (which takes the hash `tr` of the public key the
 /// `VerifyingKey` keeps, from `keygen` or from `pk_tr`), its `sign` and
 /// `verify` functions (which take a precomputed `μ`) and its sizes; and its
-/// `PreparedSigningKey` and `PreparedVerifyingKey`, which on AArch64, x86-64
-/// and RISC-V keep the prepared key that `prepare_sign` and `prepare_verify`
+/// `PreparedSigningKey` and `PreparedVerifyingKey`, which on AArch64, x86-64,
+/// x86 and RISC-V keep the prepared key that `prepare_sign` and `prepare_verify`
 /// write and sign and verify with it (`sign_message_prepared`,
 /// `verify_message_prepared`), and elsewhere sign and verify as the keys they
 /// were prepared from do.
@@ -518,7 +519,7 @@ macro_rules! ml_dsa {
             /// This key, prepared for many verifications: see
             #[doc = concat!("[`", stringify!($PreparedVerifyingKey), "`].")]
             pub fn prepare(self) -> $PreparedVerifyingKey {
-                #[cfg(any(target_arch = "aarch64", target_arch = "riscv64"))]
+                #[cfg(any(target_arch = "aarch64", target_arch = "riscv64", target_arch = "x86"))]
                 {
                     let mut prepared = $crate::mldsa_common::Aligned([0u8; $prepared_pk]);
                     // The verified contract accepts arbitrary initial scratch bytes.
@@ -557,7 +558,7 @@ macro_rules! ml_dsa {
                     };
                     $PreparedVerifyingKey { prepared, key: self }
                 }
-                #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64")))]
+                #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86")))]
                 {
                     $PreparedVerifyingKey { key: self }
                 }
@@ -568,13 +569,13 @@ macro_rules! ml_dsa {
             "An ", $name, " public key prepared for many verifications ([`",
             stringify!($VerifyingKey), "::prepare`]), which may make each faster than \
             [`", stringify!($VerifyingKey), "::verify`]'s: for a key that verifies a stream of \
-            signatures. It is immutable, so threads can share it. On AArch64, x86-64 and RISC-V it holds ",
+            signatures. It is immutable, so threads can share it. On AArch64, x86-64, x86 and RISC-V it holds ",
             stringify!($prepared_pk), " more bytes than the key."
         )]
         pub struct $PreparedVerifyingKey {
             // The prepared key of `key.bytes`, which `prepare_verify` wrote
             // (`VG.Spec.MlDsa.PreparedPublicKey`), never changed since.
-            #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64"))]
+            #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86"))]
             prepared: $crate::mldsa_common::Aligned<[u8; $prepared_pk]>,
             key: $VerifyingKey,
         }
@@ -593,7 +594,7 @@ macro_rules! ml_dsa {
 
             #[doc = concat!("What [`", stringify!($VerifyingKey), "::verify`] says of the key it was prepared from.")]
             pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
-                #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64"))]
+                #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86"))]
                 {
                     // The verified contracts accept arbitrary initial scratch bytes.
                     let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
@@ -622,7 +623,7 @@ macro_rules! ml_dsa {
                     // 2 is a context longer than 255 bytes.
                     if r == 1 { Ok(()) } else { Err(InvalidSignature) }
                 }
-                #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64")))]
+                #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86")))]
                 {
                     self.key.verify(msg, ctx, sig)
                 }
@@ -633,7 +634,7 @@ macro_rules! ml_dsa {
             /// This key, prepared for many signatures: see
             #[doc = concat!("[`", stringify!($PreparedSigningKey), "`].")]
             pub fn prepare(self) -> $PreparedSigningKey {
-                #[cfg(any(target_arch = "aarch64", target_arch = "riscv64"))]
+                #[cfg(any(target_arch = "aarch64", target_arch = "riscv64", target_arch = "x86"))]
                 {
                     let mut prepared = $crate::mldsa_common::Aligned([0u8; $prepared_sk]);
                     // The verified contract accepts arbitrary initial scratch bytes.
@@ -677,7 +678,7 @@ macro_rules! ml_dsa {
                     unsafe { $crate::zeroize::zeroize_raw(work.as_mut_ptr().cast(), core::mem::size_of_val(&work)) };
                     $PreparedSigningKey { prepared, key: self }
                 }
-                #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64")))]
+                #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86")))]
                 {
                     $PreparedSigningKey { key: self }
                 }
@@ -689,12 +690,12 @@ macro_rules! ml_dsa {
             stringify!($SigningKey), "::prepare`]), which may make each faster than \
             [`", stringify!($SigningKey), "::sign`]'s: for a key that signs a stream of \
             messages. It is immutable, so threads can share it, and is destroyed when it is \
-            dropped. On AArch64, x86-64 and RISC-V it holds ", stringify!($prepared_sk), " more bytes than the key."
+            dropped. On AArch64, x86-64, x86 and RISC-V it holds ", stringify!($prepared_sk), " more bytes than the key."
         )]
         pub struct $PreparedSigningKey {
             // The prepared key of `key.sk`, which `prepare_sign` wrote
             // (`VG.Spec.MlDsa.PreparedSecretKey`), never changed since.
-            #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64"))]
+            #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86"))]
             prepared: $crate::mldsa_common::Aligned<[u8; $prepared_sk]>,
             key: $SigningKey,
         }
@@ -705,7 +706,7 @@ macro_rules! ml_dsa {
             }
         }
 
-        #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64"))]
+        #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86"))]
         impl Drop for $PreparedSigningKey {
             fn drop(&mut self) {
                 zeroize(&mut self.prepared.0);
@@ -732,12 +733,12 @@ macro_rules! ml_dsa {
                 self.sign_with(msg, ctx, &[0; 32])
             }
 
-            #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64")))]
+            #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86")))]
             fn sign_with(&self, msg: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
                 self.key.sign_with(msg, ctx, rnd)
             }
 
-            #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64"))]
+            #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86"))]
             fn sign_with(&self, msg: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
                 let mut sig = [0u8; $sig];
                 // The verified contracts accept arbitrary initial scratch bytes.
