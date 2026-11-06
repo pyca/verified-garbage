@@ -101,12 +101,6 @@ theorem ctlWord_write_other (m : Mem) (F : Addr) {j k : Nat} (hj : j < 4)
   rw [Mem.readW_writeW_sep (Offset.sep F (d := 448 + 8 * j) (n := 8) (e := 448 + 8 * k) (k := 8) (by omega)
     (by omega) (by omega)) (by decide)]
 
-theorem ctlWord_write_frame (m : Mem) (F : Addr) {d : Nat} (hd : d + 8 ≤ frameBytes) {k : Nat} (hk : k < 4)
-    (v : BitVec 64) : ctlWord (m.writeW (off F d) v) F k = ctlWord m F k := by
-  unfold ctlWord
-  rw [Mem.readW_writeW_sep (Offset.sep F (d := 448 + 8 * k) (n := 8) (e := d) (k := 8)
-    (by unfold frameBytes at hd; omega) (by omega) (by unfold frameBytes at hd; omega)) (by decide)]
-
 theorem rep_ctl {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep m F S V W)
     (hS : (ctlRegion F).Disjoint ⟨S, oRsa⟩) {k : Nat} (hk : k < 4) (v : BitVec 64) :
     Rep (m.writeW (off F (448 + 8 * k)) v) F S V W :=

@@ -39,8 +39,4 @@ theorem searchSlots_generator {k : Nat} (h : k ∈ searchSlots) : k ∈ generato
   rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp [generatorSlots]
 
-theorem searchSlots_not_status {k : Nat} (h : k ∈ searchSlots) : k ≠ 19 := by
-  simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-
 end VG.Proof.Dsa.AArch64.Generation

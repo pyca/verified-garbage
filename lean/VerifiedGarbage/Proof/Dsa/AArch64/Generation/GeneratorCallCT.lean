@@ -67,44 +67,4 @@ theorem GeneratorReady.entry {pLen : Nat} {a : SeedGeneratorPublic} {u : State} 
   obtain ⟨_, s, ⟨⟨W, hm⟩, bp, be, bq⟩, h0, h1, h2, h3, hmem, hsp, hrd, hwr⟩ := h
   exact generatorCall_entry hm a.value a.qValue a.domain a.q_bounds.2 a.q_bounds.1 bp be bq h0 h1 h2 h3 hmem hsp hrd hwr
 
-theorem generatorCall_ct (G : GeneratorStage) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
-    RelCT isa (Two (SeedGeneratorBefore pLen qLen)) (Impl.Dsa.AArch64.Generation.generatorCall G.run pLen)
-      fun _ _ => True := by
-  unfold Impl.Dsa.AArch64.Generation.generatorCall
-  -- The arguments.
-  have args : RelCT isa (Two (SeedGeneratorBefore pLen qLen))
-      (.block (Impl.Dsa.AArch64.Generation.generatorCallArgs pLen)) (Two (GeneratorReady pLen)) := by
-    have wp : ∀ a s, SeedGeneratorBefore pLen qLen a s →
-        WP isa (.block (Impl.Dsa.AArch64.Generation.generatorCallArgs pLen)) s (GeneratorReady pLen a) := by
-      intro a s ⟨⟨⟨⟨W, hm, _⟩, _, _⟩, hp, bq⟩, bp, be⟩
-      subst hp
-      exact WP.mono (generatorCallArgs_ok hm) fun u ⟨h0, h1, h2, h3, hmem, ku⟩ =>
-        ⟨rfl, s, ⟨⟨W, hm⟩, bp, be, bq⟩, h0, h1, h2, h3, hmem, ku.sp.trans hm.layout.sp, ku.rd, ku.wr⟩
-    rcases sizes with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
-      exact two_piece [] (fun _ _ _ _ _ _ hr => nomatch hr) (by taint_decide) wp
-  -- The call.
-  have hb : Generator.Supported pLen := by rcases sizes with h | h | h <;> simp [h.1, Generator.Supported]
-  have call : RelCT isa (Two (GeneratorReady pLen)) (G.run pLen)
-      (Two fun (_ : SeedGeneratorPublic) (_ : State) => True) := by
-    refine two_post ?_ fun a u h => ?_
-    · refine RelCT.callEx (G.verified pLen hb).1 (G.verified pLen hb).2.1 fun u₁ u₂ ⟨a, h₁, h₂, _⟩ => ?_
-      have E₁ := h₁.entry
-      have E₂ := h₂.entry
-      obtain ⟨hp, s₁, _, h0₁, h1₁, h2₁, h3₁, _, hsp₁, _, _⟩ := h₁
-      obtain ⟨_, s₂, _, h0₂, h1₂, h2₂, h3₂, _, hsp₂, _, _⟩ := h₂
-      subst hp
-      refine ⟨_, _, _, _, E₁.pre, E₂.pre, ?_, E₁.reads, E₁.writes, E₂.reads, E₂.writes⟩
-      sig_pub [Generator.contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs]
-      rw [hsp₁, hsp₂, h0₁, h0₂, h1₁, h1₂, h2₁, h2₂, h3₁, h3₂]
-      have hl : (BitVec.ofNat 64 a.seed.context.hs.bytes.length).toNat = a.seed.context.hs.bytes.length := by
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt a.seed.context.hs.size]
-      rw [hl, E₁.pv, E₂.pv, E₁.qv, E₂.qv, E₁.tape, E₂.tape]
-      exact ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
-    · obtain ⟨hp, s, ⟨⟨W, hm⟩, bp, be, bq⟩, h0, h1, h2, h3, hmem, hsp, hrd, hwr⟩ := h
-      subst hp
-      exact WP.mono (generatorCall_call_ok G hm a.value a.qValue a.domain a.q_bounds.2 a.q_bounds.1 bp be bq
-        h0 h1 h2 h3 hmem hsp hrd hwr) fun _ _ => True.intro
-  refine RelCT.seq args (RelCT.seq call ?_)
-  exact two_taint [] (fun _ _ _ _ _ _ hr => nomatch hr) (by taint_decide)
-
 end VG.Proof.Dsa.AArch64.Generation

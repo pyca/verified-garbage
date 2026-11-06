@@ -99,13 +99,6 @@ theorem refillBase_low (s : State) : refillBase s = off (low s) 288 := by
   simp only [refillBase, low, off]
   rw [Offset.sub_ofNat_eq s.sp (by decide : 480 ≤ 768)]
 
-theorem low_toNat {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
-    (low s).toNat = s.sp.toNat - refillStack := by
-  have hl := h.stackLower
-  simp only [low, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  have := s.sp.isLt
-  omega
-
 theorem refillBase_toNat {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
     (refillBase s).toNat = s.sp.toNat - 480 := by
   have hl : 768 ≤ s.sp.toNat := h.stackLower

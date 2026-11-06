@@ -35,15 +35,6 @@ open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Impl.RsaOaep.AArch64 VG.Proof.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
 open VG.Impl.Bignum.AArch64 (movi)
 
-/-- The generator search's result, by the stage's. -/
-theorem generatorResult_stage (value q : Nat) (hs : List Nat) (rest : List Byte) :
-    VG.Proof.Dsa.Generation.generatorResult value q hs rest =
-      some (Proof.Dsa.GeneratorStage.stage value q hs, rest) := by
-  unfold VG.Proof.Dsa.Generation.generatorResult Proof.Dsa.GeneratorStage.stage
-  cases Spec.Dsa.generator value q hs with
-  | none => rfl
-  | some g => by_cases hv : Spec.Dsa.parametersValid ⟨value, q, g⟩ <;> simp [hv]
-
 theorem GenerationGeometry.supported (p : GenerationGeometry) : Generator.Supported p.pLen := p.width
 
 theorem GenerationGeometry.qLen_eq (p : GenerationGeometry) : Impl.Dsa.AArch64.Generator.qLen p.pLen = p.qLen := by
