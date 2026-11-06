@@ -40,6 +40,90 @@ pub unsafe extern "sysv64" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce
     )
 }
 
+/// The CPU features `vg_chacha20_apply_avx512_scrub` requires (`Artifact.features`).
+pub const VG_CHACHA20_APPLY_AVX512_SCRUB_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F);
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+///
+/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx512f` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_chacha20_apply_avx512_scrub(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHgAAAAEg50A=="
+jb 20f
+.base64 "SImfQAIAAEiJr0gCAABMiadQAgAASIn7SIn1SYnUSInBSCnRSImLWAIAAEiD4D9IOdA="
+jb 22f
+jmp 23f
+22:
+.base64 "SInC"
+23:
+.base64 "SIneSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
+je 24f
+26:
+.base64 "TItEDQBMMwQOTIlEDQBIg8EISIPoAQ=="
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "SDnR"
+je 27f
+29:
+.base64 "D7ZEDQBED7YEDkwxwIhEDQBIg8EBSDnR"
+jne 29b
+jmp 28f
+27:
+28:
+.base64 "SAHVSSnUTIniSIPiwA=="
+je 210f
+.base64 "SIsDSItLCEiLcxBIi3sYTItDIEyLSyhMi1MwTItbOEiJg8AAAABIiYvIAAAASImz0AAAAEiJu9gAAABMiYPgAAAATImL6AAAAEyJk/AAAABMiZv4AAAARInQSInRSMHpBgHIiUMwSInfSIHHwAAAAEiJ7kiJ2UiBwQABAABIAdVJKdQ="
+call {vg_chacha20_xor_avx512}
+jmp 211f
+210:
+211:
+.base64 "TYXk"
+je 212f
+.base64 "SInfSIneSIPGQA=="
+call {vg_chacha20_block}
+.base64 "i0Mwg8ABiUMwSIneSIPGQEyJ4rkAAAAASInQSMHoAw=="
+je 214f
+216:
+.base64 "TItEDQBMMwQOTIlEDQBIg8EISIPoAQ=="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "SDnR"
+je 217f
+219:
+.base64 "D7ZEDQBED7YEDkwxwIhEDQBIg8EBSDnR"
+jne 219b
+jmp 218f
+217:
+218:
+.base64 "SAHVSSnU"
+jmp 213f
+212:
+213:
+.base64 "SIuDWAIAAEiJg4AAAABIi6tIAgAATIujUAIAAEiLm0ACAAC4AQAAAA=="
+jmp 21f
+20:
+.base64 "uAAAAAA="
+21:
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.p2align 6"#,
+        vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512::vg_chacha20_xor_avx512,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+    )
+}
+
 /// The CPU features `vg_chacha20_apply_avx2` requires (`Artifact.features`).
 pub const VG_CHACHA20_APPLY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
