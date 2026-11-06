@@ -12,7 +12,8 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 /// has no streaming AES-GCM, is measured one-shot only, with a separate tag
 /// as this library's is. The one-shot functions are also measured at `RECORD_SIZES`, the short
 /// messages of protocols such as TLS and QUIC, where the fixed costs of a
-/// call (the key's setup, the tag) weigh the most. Encryption with a key
+/// call (the key's setup, the tag) weigh the most, and at `LARGE_SIZES`,
+/// whose input and output do not fit in the caches. Encryption with a key
 /// used for many messages, as a TLS or QUIC connection's is, is also
 /// measured at `REUSED_SIZES`, which are not multiples of 16 blocks (also
 /// out of place from two halves, whose second holds whole blocks).
@@ -38,6 +39,8 @@ pub fn bench(c: &mut Criterion) {
 
     /// The sizes measured one-shot only, besides `SIZES`.
     const RECORD_SIZES: [usize; 3] = [128, 192, 384];
+    /// The sizes measured one-shot only whose buffers outgrow the caches.
+    const LARGE_SIZES: [usize; 1] = [1 << 20];
     /// The sizes measured with a key reused across messages.
     const REUSED_SIZES: [usize; 3] = [600, 1350, 4000];
 
@@ -46,7 +49,12 @@ pub fn bench(c: &mut Criterion) {
     let aad = [0x5a; 16];
     let cipher = Cipher::aes_128_gcm();
     let aws_lc_key = |key: &[u8]| LessSafeKey::new(UnboundKey::new(&AES_128_GCM, key).unwrap());
-    let mut sizes = [SIZES.as_slice(), RECORD_SIZES.as_slice()].concat();
+    let mut sizes = [
+        SIZES.as_slice(),
+        RECORD_SIZES.as_slice(),
+        LARGE_SIZES.as_slice(),
+    ]
+    .concat();
     sizes.sort_unstable();
     for size in sizes {
         let data = vec![0u8; size];
