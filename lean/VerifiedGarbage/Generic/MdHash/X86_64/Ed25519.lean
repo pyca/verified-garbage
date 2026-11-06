@@ -63,7 +63,7 @@ def keyPairWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     suffix := c.suffix ++ fs
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ c.suffix)
-      (Proof.Ed25519.X86_64.KeyPair.dgCode c) (Spec.Ed25519.publicKeyExpandedApi.name ++ fs)
+      (Proof.Ed25519.X86_64.KeyPair.dgCode c) ("vg_ed25519_public_key_expanded" ++ fs)
       (Impl.Ed25519.X86_64.publicKeyExpanded bs fs)
     stack := 1632
     verified := Proof.Ed25519.X86_64.KeyPair.verified c bs fs

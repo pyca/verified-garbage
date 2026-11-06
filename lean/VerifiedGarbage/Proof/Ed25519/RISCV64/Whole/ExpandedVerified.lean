@@ -16,7 +16,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Whole
-public import VerifiedGarbage.Spec.Ed25519.ExpandedKey
+public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
 public import VerifiedGarbage.TCB.Artifact
 
@@ -42,7 +42,8 @@ contract itself. Their contracts read the memory on return only at `out`
 namespace VG.Proof.Ed25519.RISCV64.Whole
 
 open VG VG.RISCV64 VG.Impl.Ed25519.RISCV64.Whole
-open VG.Spec.Ed25519 (bytesAt publicKeyExpandedSig signExpandedSig)
+open VG.Spec.Ed25519 (bytesAt signExpandedSig)
+open VG.Proof.Ed25519 (publicKeyExpandedSig)
 open VG.Impl.Ed25519.RISCV64 (combSym combWords combConsts)
 open VG.Proof.Ed25519.RISCV64 (combWords_length)
 open VG.Proof.Ed25519.WholeLocal (satSeed satKey bytesAt_congr)
@@ -269,7 +270,7 @@ theorem publicKeyExpanded_verified :
 /-- A state satisfying `vg_ed25519_public_key_expanded`'s precondition, without the frame. -/
 def pkFrameSatE : State := { pkSatCE with wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩] }
 
-theorem pkFrameSatE_pre : ∃ s, (Spec.Ed25519.publicKeyExpandedContract (RISCV64.abi.withConsts combConsts)
+theorem pkFrameSatE_pre : ∃ s, (Proof.Ed25519.publicKeyExpandedContract (RISCV64.abi.withConsts combConsts)
     (208 + 144)).pre s := by
   refine ⟨pkFrameSatE, ?_⟩
   have hl := combWords_length
@@ -278,7 +279,7 @@ theorem pkFrameSatE_pre : ∃ s, (Spec.Ed25519.publicKeyExpandedContract (RISCV6
   rw [show combConsts = [(combSym, combWords)] from rfl]
   generalize combWords = W' at hl held ⊢
   generalize e : pkFrameSatE = s
-  sig_pre [Spec.Ed25519.publicKeyExpandedContract, publicKeyExpandedSig, Spec.Ed25519.scratchWords,
+  sig_pre [Proof.Ed25519.publicKeyExpandedContract, publicKeyExpandedSig, Spec.Ed25519.scratchWords,
     RISCV64.abi, RISCV64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst e
   rw [hl]
@@ -297,7 +298,7 @@ theorem pkFrameSatE_pre : ∃ s, (Spec.Ed25519.publicKeyExpandedContract (RISCV6
 /-- In its frame of 144 bytes, whose first 136 it zeroes before returning. -/
 theorem publicKeyExpanded_framed :
     Verified RISCV64.target publicKeyExpandedCode
-      (Spec.Ed25519.publicKeyExpandedContract (RISCV64.abi.withConsts combConsts) (208 + 144)) :=
+      (Proof.Ed25519.publicKeyExpandedContract (RISCV64.abi.withConsts combConsts) (208 + 144)) :=
   Verified.stackScratchWipedC (sig := publicKeyExpandedSig) (nm := "frame") (e := .u64) (n := 18)
     (pre := pkEPre RISCV64.abi.ptrBits) (post := pkEPost RISCV64.abi.ptrBits) (wa := true) (stack := 208)
     (bytes := 144) (words := 17) publicKeyExpanded_verified (by decide) (by decide) (by decide)
