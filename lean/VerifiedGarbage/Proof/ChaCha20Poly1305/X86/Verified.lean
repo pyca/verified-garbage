@@ -180,7 +180,7 @@ theorem seal_correct (v : XorImpl) {s₀ : State} (hp : APre true s₀) :
 theorem openBody_eq (v : Impl.ChaCha20.X86.Callee) : openBody v =
     .seq prologue (.seq (macPad (4 + 4 * 2) (8 + 4 * 2)) (.seq (macPad (4 + 4 * 4) (8 + 4 * 4))
     (.seq (.block lengths) (.seq (absorbOne 32) (.seq (crypt v) (.seq (finalizeWith (ptr .ecx .edi 16))
-      (.seq (.block loadTag) (.block (Impl.ChaCha20Poly1305.X86.compare ++ [.alu .cmp .eax (.imm 0)]))))))))) :=
+      (.seq (.block loadTag) (.block (Impl.ChaCha20Poly1305.X86.compare ++ ([.alu .cmp .eax (.imm 0)] : List Instr)))))))))) :=
   rfl
 
 /-- The tag computed by `open`, and `tag` still in memory and on the stack. -/
@@ -963,7 +963,7 @@ end
 
 Correctness and constant time (both above), and a state satisfying the
 precondition, of the code with its working space as its last argument
-(`sealScratchContract`, `openScratchContract`), and then of the functions,
+(`sealScratchContract`, `openZeroScratchContract`), and then of the functions,
 which allocate it in a frame of 740 bytes on the stack (the return address,
 the seven other arguments and the 704 bytes of working space) and wipe it
 after the code (`Verified.stackScratchWiped`).

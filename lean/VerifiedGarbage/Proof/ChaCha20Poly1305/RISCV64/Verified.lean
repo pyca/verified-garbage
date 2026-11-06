@@ -634,7 +634,7 @@ theorem open_ct : ConstantTime isa openRISCV64.pre openRISCV64.pub Impl.ChaCha20
       refine ct_taint _ σ₁.gpr σ₁.sp (fun s ⟨_, e0, e1, e2, e3, e4, e5, e6, e7, esp, _⟩ => ⟨esp, ?_⟩) hc
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
     · intro s hs
       have ⟨hpre, _, _, _, _, e4, e5, _, e7, esp, eok⟩ := hs
       refine WP.mono (body_ok (APre.of s hpre)) fun s' ⟨i, t0, t1, _⟩ => ⟨by rw [i.sp, esp], ?_, ?_,

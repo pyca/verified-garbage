@@ -574,7 +574,7 @@ end
 
 Correctness (above), constant time, and a state satisfying the precondition,
 of the code with its working space as its last argument
-(`sealScratchContract`, `openScratchContract`), and then of the functions,
+(`sealScratchContract`, `openZeroScratchContract`), and then of the functions,
 which allocate it in a frame of 656 bytes on the stack and wipe it after the
 code (`Verified.stackScratchWiped`).
 

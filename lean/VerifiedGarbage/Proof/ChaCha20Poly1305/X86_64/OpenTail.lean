@@ -47,7 +47,7 @@ theorem cmp32_ok (s : State) : WP isa (.block [.alu32 .cmp .rax (.imm 0)]) s fun
     s'.zf = some ((s.gpr .rax).setWidth 32 == 0) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32,
     execAlu32, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
     RegUpd.zf_arithFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨by rw [show (BitVec.setWidth 32 (s.gpr .rax) - 0 : BitVec 32) = BitVec.setWidth 32 (s.gpr .rax) from
@@ -60,7 +60,7 @@ theorem zeroArgs_ok (s : State) :
       (∀ q, q ≠ .rdx → q ≠ .rcx → s'.gpr q = s.gpr q) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.mxcsr = s.mxcsr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
     RegUpd.zf_arithFlags, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left', ite_true, ite_false,
@@ -77,7 +77,7 @@ theorem zeroStep_run {s : State} {a : Addr} (hd : s.gpr .rdx = a) (hw : InRegion
         s'.mxcsr = s.mxcsr := by
   have he : s.ea { base := .rdx } = a := by rw [ea_disp, hd]; exact BitVec.add_zero _
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, State.store8, he, hw, ite_true, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
     RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
     RegUpd.zf_arithFlags, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
@@ -172,7 +172,7 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s
 /-- The tags compared, and `ZF` whether they differ: `eax` is 1 if the tag
 is right. -/
 theorem cmpTail_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : TailIn s₀ s) :
-    WP isa (.block (compare ++ [.alu32 .cmp .rax (.imm 0)])) s fun s' => Inv s₀ s' ∧
+    WP isa (.block (compare ++ ([.alu32 .cmp .rax (.imm 0)] : List Instr))) s fun s' => Inv s₀ s' ∧
       (s'.gpr .rax).setWidth 32 = (if mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀ then 1 else 0) ∧
       s'.zf = some ((s'.gpr .rax).setWidth 32 == 0) ∧ s'.gpr .rdi = off (cx s₀) 448 ∧ s'.mem = s.mem ∧
       s'.mxcsr = s.mxcsr := by

@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 Correctness and constant time (both from `CT.lean`), and a state satisfying
 the precondition, for any implementation `v` of `vg_chacha20_xor`: of the
 code with its working space as its last argument
-(`sealScratchContract`, `openScratchContract`), and then of the functions,
+(`sealScratchContract`, `openZeroScratchContract`), and then of the functions,
 which allocate it in a frame on the stack and wipe it after the code
 (`Verified.stackArgScratchWipedX`): `work` is passed on the stack after `tag`,
 so the frame holds a copy of `tag` and the address of `work`, and the 1696

@@ -2844,10 +2844,6 @@ implementation, but in some algorithms it does part of the cryptography:
   (`μ = H(tr ‖ M′)`, with `M′ = 0 ‖ |ctx| ‖ ctx ‖ M` and `tr = H(pk)`: FIPS
   204's `formatMessage`, `messageRep` and `pkTr`) is Rust
   (`src/mldsa_common.rs`) over the verified SHAKE256.
-* **ChaCha20-Poly1305 decryption** is in place, and when the tag is wrong
-  the verified function's contract leaves the data unspecified (it may
-  already hold the decryption); it is the Rust wrapper that then zeroes it,
-  so that no unauthenticated plaintext is released.
 * **HMAC** with a key longer than a block hashes it first, in Rust (with the
   verified hash).
 
