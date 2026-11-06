@@ -51,19 +51,6 @@ theorem sign_input {s t : State} (h : SignInv s t) {p : Addr} {n : Nat} (hn : n 
     · exact hF
     · exact hB
 
-/-- A region of the frame kept by steps that write within `[F, F + 192)`, the scratch space and
-the callees' frames. -/
-theorem keep_hi {s : State} (hp : SignPre sl s) {d n : Nat} (hd : 192 ≤ d) (hdn : d + n ≤ 288) :
-    ∀ r ∈ [(⟨s.gpr .a5, 8192⟩ : Region), ⟨s.gpr .a6, 192⟩, below s.sp 208],
-      Region.Disjoint ⟨s.gpr .a6 + BitVec.ofNat 64 d, n⟩ r := by
-  have hs : Region.Sub ⟨s.gpr .a6 + BitVec.ofNat 64 d, n⟩ ⟨s.gpr .a6, 288⟩ := Offset.sub_base _ hdn
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact hp.cF.symm.sub_left hs
-  · exact Offset.disjoint_base _ hd (by omega_arith)
-  · exact hp.bF.symm.sub_left hs
-
 /-- What the first step and the expansion write: the scratch space, the frame below its copy of
 `pk`, the callees' frames. -/
 abbrev expW (s : State) : List Region := [⟨s.gpr .a5, 8192⟩, ⟨s.gpr .a6, 192⟩, below s.sp 208]

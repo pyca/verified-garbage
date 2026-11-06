@@ -73,11 +73,6 @@ theorem wp_and {d n m : Reg}
     WP isa (.block (.logic .and d n m :: is)) s Q :=
   Proof.ChaCha20.PPC64LE.Xor.WP.cons exec_logic (k _ (Upd.write _ _ _))
 
-theorem wp_add {d n m : Reg}
-    (k : ∀ s', Upd s s' d (s.gpr n + s.gpr m) → WP isa (.block is) s' Q) :
-    WP isa (.block (.add d n m :: is)) s Q :=
-  Proof.ChaCha20.PPC64LE.Xor.WP.cons exec_add (k _ (Upd.write _ _ _))
-
 theorem wp_lsl {d n : Reg} {sh : Nat} (h : sh < 64)
     (k : ∀ s', Upd s s' d (s.gpr n <<< sh) → WP isa (.block is) s' Q) :
     WP isa (.block (.lsl d n sh :: is)) s Q :=

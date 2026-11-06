@@ -33,7 +33,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 # X448 on x86-64 with BMI2 and ADX: `Verified`
 
 The proof of `vg_x448` (`Proof/X448/X86_64/Verified.lean`) for the field
-multiplications `adx` (`adx_ok`): correctness from `correct`, constant time by
+multiplications `adx` (`adx_ok`): correctness from `correct_of`, constant time by
 taint tracking (the only branches are on the loop counters, and every address
 is an argument plus a constant or a counter), satisfiability, and the shared
 contract.

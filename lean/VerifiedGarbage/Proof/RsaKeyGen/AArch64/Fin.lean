@@ -89,7 +89,7 @@ def TestEnd (s t : State) (op up : Addr) (k : Nat) (r : List Byte) (c : Nat) :
   | some (true, rest) => KEnd s t op up k 1 (r.length - rest.length) (some c)
   | some (false, rest) => KEnd s t op up k 3 (r.length - rest.length) none
 
-/-- `mrResult`, after `millerRabin` ended with `res`. -/
+/-- `mrResult`, after `millerRabinWith` ended with `res`. -/
 theorem mrResult_ok {s : State} {B : Addr} {Z w c : Nat} {op up : Addr} {r : List Byte}
     {res : Option (Bool × List Byte)} (h : Ws s B Z w) (hw64 : w ≤ 64)
     (hn : wv s.mem B (slot w aN) w = c) (ho : OutUp s B Z op up (8 * w))

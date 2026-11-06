@@ -64,16 +64,6 @@ theorem out {n : Nat} {N : List FOp} (hN : ∀ op∈N,op.out<9) {S : RcbSlots} {
   rw [FOp.out_rename]
   exact rename_out n S p q o dst _ (hN op' hop')
 
-theorem head_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
-    (h2 : E 17=E 16*E 16) (h3 : E 18=E 17*E 16) :
-    runOps headN E 3=E 14*(E 13*E 13)-E 11*(E 16*E 16) ∧
-    runOps headN E 5=E 15*E 13*(E 13*E 13)-E 12*E 16*(E 16*E 16) := by
-  simp only [headN,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_apply]
-  simp only [ite_true,h3,h2]
-  constructor
-  · rfl
-  · grind
-
 theorem full_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
     (h2 : E 17=E 16*E 16) (h3 : E 18=E 17*E 16) :
     (runOps (headN++jacTailN) E 6,runOps (headN++jacTailN) E 7,runOps (headN++jacTailN) E 8)=
@@ -84,19 +74,6 @@ theorem full_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
   constructor
   · grind
   constructor <;> grind
-
-theorem head_run {F : Type _} [Lean.Grind.CommRing F] {n : Nat} {S : RcbSlots} {p q o : Pt} {dst : Nat}
-    (hA : RcbApart S p q o) (h2a : dst∉rcbW S o) (h3a : dst+8*n∉rcbW S o)
-    (E : Nat → F) (h2 : E dst=E q.z*E q.z) (h3 : E (dst+8*n)=E dst*E q.z) :
-    runOps (Impl.Weierstrass.X86.CachedJac.head n S p q dst) E S.t3=
-      E q.x*(E p.z*E p.z)-E p.x*(E q.z*E q.z) ∧
-    runOps (Impl.Weierstrass.X86.CachedJac.head n S p q dst) E S.t5=
-      E q.y*E p.z*(E p.z*E p.z)-E p.y*E q.z*(E q.z*E q.z) := by
-  rw [head_eq n S p q o dst]
-  have he := runOps_rename (rename n S p q o dst) headN E
-    (fun op hop => rename_inj hA h2a h3a ((show ∀ op∈headN,op.out<9 by decide) op hop))
-  have hv := head_values (fun i => E (rename n S p q o dst i)) h2 h3
-  exact ⟨(congrFun he 3).trans hv.1,(congrFun he 5).trans hv.2⟩
 
 theorem full_run {F : Type _} [Lean.Grind.CommRing F] {n : Nat} {S : RcbSlots} {p q o : Pt} {dst : Nat}
     (hA : RcbApart S p q o) (h2a : dst∉rcbW S o) (h3a : dst+8*n∉rcbW S o)
@@ -112,13 +89,5 @@ theorem full_run {F : Type _} [Lean.Grind.CommRing F] {n : Nat} {S : RcbSlots} {
   exact (congrArg₂ Prod.mk (congrFun he 6)
     (congrArg₂ Prod.mk (congrFun he 7) (congrFun he 8))).trans
       (full_values (fun i => E (rename n S p q o dst i)) h2 h3)
-
-theorem head_readonly {F : Type _} [Lean.Grind.CommRing F] {n : Nat} {S : RcbSlots} {p q o : Pt}
-    {dst : Nat} (hA : RcbApart S p q o) (E : Nat → F) {x : Nat} (hx : x∈rcbR S p q) :
-    runOps (Impl.Weierstrass.X86.CachedJac.head n S p q dst) E x=E x := by
-  apply runOps_of_not_out
-  intro op hop he
-  rw [head_eq n S p q o dst] at hop
-  exact hA.apart x hx (he ▸ out (show ∀ op∈headN,op.out<9 by decide) hop)
 
 end VG.Proof.Weierstrass.X86.CachedJac

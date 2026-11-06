@@ -52,9 +52,6 @@ def oE (p : Params) : Nat := 8 * Spec.MlDsa.scratchWords p
 
 /-! ## The 1 KiB, from `E` -/
 
-/-- The bytes `hash` uses (the Keccak state, then the sponge functions'
-working space). -/
-def nK : Nat := 840
 /-- `μ`. -/
 def oMU : Nat := 840
 /-- Our caller's registers and the link register. -/

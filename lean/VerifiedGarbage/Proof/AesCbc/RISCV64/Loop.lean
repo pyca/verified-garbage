@@ -31,9 +31,6 @@ function's working space and the saved block have changed since the
 registers were saved, the first `k` blocks are the mode's (`Mode.out`) of
 the first `k` blocks on entry and the rest are unchanged, and the chaining
 value is the mode's after them (`Mode.chain`).
-
-`whole_wp`: if one run of `body` takes the invariant from `k` to `k + 1`
-blocks (`BodyOk`), `whole body` meets the contract.
 -/
 
 @[expose] public section
@@ -177,9 +174,6 @@ theorem sv_add (s₀ : State) (d : Nat) :
 theorem sv_eq (s₀ : State) : sv s₀ = S s₀ + BitVec.ofNat 64 (2048 + q s₀) := by
   rw [← ofNat_zero_add (sv s₀), sv_add, Nat.add_zero]
 
-theorem sv_al (s₀ : State) {d : Nat} (hd : d % 8 = 0) : (sv s₀ + BitVec.ofNat 64 d).toNat % 8 = 0 :=
-  align_al_add _ hd
-
 /-- The precondition, by name. -/
 structure UPre (s₀ : State) : Prop where
   rd : s₀.rd = [schR s₀]
@@ -258,11 +252,6 @@ theorem cR_sub : Region.Sub (cR s₀) (scrR s₀) := by
 
 theorem wsR_sub : Region.Sub (wsR s₀) (scrR s₀) := Region.sub_prefix (by decide)
 
-theorem UPre.blk_disjoint (hp : UPre s₀) {j k : Nat} (hj : j < N s₀) (hk : k < N s₀) (hjk : j ≠ k) :
-    (⟨blk s₀ j, 16⟩ : Region).Disjoint ⟨blk s₀ k, 16⟩ := by
-  have := hp.data_wrap
-  exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-
 theorem UPre.cR_wsR (hp : UPre s₀) : (cR s₀).Disjoint (wsR s₀) := by
   have := q_lt s₀
   have := hp.scr_wrap
@@ -321,42 +310,7 @@ theorem UPre.big_of {m : Mem} (hf : Frame (Mut s₀) (savedMem s₀) m) : Frame 
     · exact ⟨scrR s₀, by simp, wsR_sub⟩
     · exact ⟨scrR s₀, by simp, cR_sub⟩)
 
-/-- The blocks after a step that changed only block `k`, the chaining
-value, the working space and the saved block. -/
-theorem UPre.blocksAt_step {m m' : Mem} {k : Nat} (hk : k < N s₀)
-    (hf : Frame [⟨blk s₀ k, 16⟩, ivR s₀, wsR s₀, cR s₀] m m') :
-    Spec.Cbc.blocksAt m' (Dp s₀) (N s₀) =
-      (Spec.Cbc.blocksAt m (Dp s₀) (N s₀)).set k (bytesAt m' (blk s₀ k) 16) := by
-  refine blocksAt_set fun j hj hjk => bytesAt_frame hf (fun r hr => ?_) (by decide)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact hp.blk_disjoint hj hk hjk
-  · exact hp.iv_data.symm.sub_left (UPre.data_sub hj)
-  · exact (hp.data_scr.sub_left (UPre.data_sub hj)).sub_right wsR_sub
-  · exact (hp.data_scr.sub_left (UPre.data_sub hj)).sub_right cR_sub
-
-omit hp in
-/-- Block `k` before the step, from the invariant. -/
-theorem LInv.block {M : Mode} {k : Nat} {s : State} (h : LInv M s₀ k s) (hk : k < N s₀) :
-    bytesAt s.mem (blk s₀ k) 16 = (blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk) := by
-  have hl : (outK M s₀ k).length = k := by
-    rw [outK, M.length_out]; simp [Spec.Cbc.blocksAt]; omega_arith
-  have := congrArg (·[k]?) h.data
-  simp only [List.getElem?_eq_getElem (show k < (Spec.Cbc.blocksAt s.mem (Dp s₀) (N s₀)).length by
-      rw [length_blocksAt]; exact hk),
-    List.getElem?_append_right (show (outK M s₀ k).length ≤ k by omega_arith), hl, Nat.sub_self,
-    List.getElem?_drop, Nat.add_zero,
-    List.getElem?_eq_getElem (show k < (blks s₀).length by simp [Spec.Cbc.blocksAt]; exact hk)] at this
-  show bytesAt s.mem (Dp s₀ + BitVec.ofNat 64 (16 * k)) 16 = _
-  rw [← getElem_blocksAt _ _ hk]
-  exact Option.some.inj this
-
 end
-
-theorem take_succ_blks (s₀ : State) {k : Nat} (hk : k < N s₀) :
-    (blks s₀).take (k + 1) = (blks s₀).take k ++ [(blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk)] := by
-  rw [List.take_add_one, List.getElem?_eq_getElem (by simp [Spec.Cbc.blocksAt]; exact hk)]
-  rfl
 
 theorem a1_ofNat (s₀ : State) : s₀.gpr .a1 = BitVec.ofNat 64 (R s₀) := by
   apply BitVec.eq_of_toNat_eq; simp [R]
@@ -365,28 +319,6 @@ theorem a4_ofNat (s₀ : State) : s₀.gpr .a4 = BitVec.ofNat 64 (N s₀) := by
   apply BitVec.eq_of_toNat_eq; simp [N]
 
 /-! ## The loop -/
-
-/-- One run of `body` takes the invariant from `k` blocks to `k + 1`. -/
-def BodyOk (M : Mode) (body : Prog isa) : Prop :=
-  ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv M s₀ k s →
-    WP isa body s (LInv M s₀ (k + 1))
-
-theorem loop_ok {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (hp : UPre s₀) {k : Nat}
-    (hk : k < N s₀) {s : State} (h : LInv M s₀ k s) :
-    WP isa (.loop body (.nonzero .s5)) s (LInv M s₀ (N s₀)) := by
-  have hN := (s₀.gpr .a4).isLt
-  refine WP.loop (M := isa) (body := body) (c := .nonzero .s5) (Q := LInv M s₀ (N s₀))
-    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv M s₀ j t) ?_ (N s₀ - k) s
-    ⟨k, rfl, hk, h⟩
-  rintro n s ⟨k, rfl, hk, h⟩
-  refine WP.mono (hb hp hk h) fun s' h' => ?_
-  have ev := eval_nonzero_ofNat s' .s5 (k := N s₀ - (k + 1)) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hN) h'.s5
-  by_cases hz : N s₀ - (k + 1) = 0
-  · left
-    refine ⟨by rw [ev]; simp [hz], ?_⟩
-    rwa [show N s₀ = k + 1 by omega_arith]
-  · right
-    refine ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, h'⟩
 
 /-! ## Saving and restoring the registers -/
 
@@ -539,7 +471,7 @@ theorem epilogue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {s₂ : State} (h
 
 /-- The registers saved and the arguments set up, `mid` run unless there are
 no blocks, and the registers restored, when `mid` takes the invariant from no
-blocks to all of them (as `body`'s loop does, `whole_wp`). -/
+blocks to all of them (as `body`'s loop does). -/
 theorem ends_wp {M : Mode} {mid : Prog isa} {s₀ : State} (h0 : (modeRISCV64 M).pre s₀)
     (hm : UPre s₀ → 0 < N s₀ → ∀ {s₁ : State}, LInv M s₀ 0 s₁ → WP isa mid s₁ (LInv M s₀ (N s₀))) :
     WP isa (.seq (.block (save ++ setup)) (.seq (.ite (.zero .s5) (.block []) mid) (.block restore)))
@@ -547,9 +479,5 @@ theorem ends_wp {M : Mode} {mid : Prog isa} {s₀ : State} (h0 : (modeRISCV64 M)
   have hp := UPre.of h0
   exact WP.seq (WP.mono (prologue_wp hp) fun s₁ h₁ =>
     WP.seq (WP.mono (ends_mid_wp (fun hn => hm hp hn h₁) h₁) fun _ h₂ => epilogue_wp hp h₂))
-
-theorem whole_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State}
-    (h0 : (modeRISCV64 M).pre s₀) : WP isa (whole body) s₀ (Done M s₀) :=
-  ends_wp h0 fun hp hn _ h => loop_ok hb hp hn h
 
 end VG.Proof.AesCbc.RISCV64

@@ -62,11 +62,6 @@ theorem Fr3.store {s : State} (h : DPre s) {R : BitVec 64} {t u : State} (hc : F
       rw [List.mem_singleton.mp hr]; exact hk.sub_left (frame_sub s (by decide))) (by decide)]
     exact hc.r
 
-theorem Fr3.regs {s : State} {R : BitVec 64} {t u : State} (hc : Fr3 s R t) (hk : Keep [.r0, .r3, .r4, .r5, .r6,
-    .r7, .r8, .r9, .r10, .r11, .r12] t u) (hm : u.mem = t.mem) : Fr3 s R u :=
-  ⟨hk.sp.trans hc.sp, hk.rd.trans hc.rd, hk.wr.trans hc.wr,
-    fun r hr => (hk.gpr r (by revert r; decide)).trans (hc.hi r hr), hm ▸ hc.mem, hm ▸ hc.sl, hm ▸ hc.r⟩
-
 /-! ## A byte of the output -/
 
 /-- The first part of `selBody`: the byte, in `r6`. -/

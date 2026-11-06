@@ -37,10 +37,6 @@ theorem f_eq (i : Nat) (d km kr : Word) :
   unfold f roundI
   rcases (show i % 3 = 0 ∨ i % 3 = 1 ∨ i % 3 = 2 by omega) with h | h | h <;> simp only [h] <;> rfl
 
-/-- `mix` and `comb` of type 3 are those of type 0. -/
-theorem mix_three (km d : Word) : mix 3 km d = mix 0 km d := rfl
-theorem comb_three (a b c d : Word) : comb 3 a b c d = comb 0 a b c d := rfl
-
 /-! ## The rounds in order -/
 
 /-- Rounds `1 … m` of encryption. -/

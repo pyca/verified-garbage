@@ -16,7 +16,7 @@ Everything runs in one stack frame of seven words, pushed from `rdi`, `rsi`,
 then `scratch`, `digest` and `out`, which the calls cannot change. The
 pruned scalar must lie outside `scratch` and `out`, which
 `vg_ed25519_scalar_base` writes; it is cleared before the frame
-is popped. Signing and verification use `scrPtr` and `callWith` too, with the
+is popped. Signing and verification use `callWith` too, with the
 SHA-512 streaming state (192 bytes) and the working space of `update` and
 `finalize` (1376 bytes) at the start of `scratch`.
 -/
@@ -38,10 +38,6 @@ def fOut : Nat := 48
 /-- Where in `scratch` the SHA-512 working space and the digest are. -/
 def shaScratch : Nat := 192
 def digestAt : Nat := 1568
-
-/-- `d ← scratch + o`. -/
-def scrPtr (d : Reg) (o : Nat) : List Instr :=
-  [.mov d (.mem (stk fScratch)), .alu .add d (.imm (BitVec.ofNat 32 o))]
 
 /-- `scalar_base(out, scalar = rsp, scratch)`. -/
 def pkBaseArgs : List Instr :=

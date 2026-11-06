@@ -196,23 +196,6 @@ theorem andZero_ct : RelCT isa (Two GA) (.block andZero) (Two GA) :=
     exact WP.mono (andZero_ok (z := s.gpr .rbp = 0) h'.ws hmw Iff.rfl) fun _ ⟨hm, k⟩ =>
       h.mask rfl hm k (by decide)
 
-theorem andOdd_ct {j : Nat} (hj : j < 16) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.block (base j .rbx ++ ([.mov .rax (.mem (at0 .rbx)),
-      .alu .and .rax (.imm 1), .mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .rax),
-      .alu .and .rdx (.mem (hdr Impl.Bignum.X86_64.Public.sMask)),
-      .store (hdr Impl.Bignum.X86_64.Public.sMask) .rdx] : List Instr))) hc).isSome = true) :
-    RelCT isa (Two GA) (.block (andOdd j)) (Two GA) := by
-  have e : andOdd j = ws ++ (base j .rbx ++ ([.mov .rax (.mem (at0 .rbx)),
-      .alu .and .rax (.imm 1), .mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .rax),
-      .alu .and .rdx (.mem (hdr Impl.Bignum.X86_64.Public.sMask)),
-      .store (hdr Impl.Bignum.X86_64.Public.sMask) .rdx] : List Instr)) := by
-    simp only [andOdd, List.append_assoc]
-  rw [e]
-  exact ws_block_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.ws) ht fun _ _ h => by
-    rw [← e]
-    obtain ⟨I, m₀, c, rfl, h', L, O, hmw⟩ := id h
-    exact WP.mono (andOdd_ok h'.ws hj hmw) fun _ ⟨hm, k⟩ => h.mask rfl hm k (by decide)
-
 /-- `GA` after a store of a word to array `j`. -/
 theorem GA.word {p : CvP} {s t : State} (h : GA p s) {j : Nat} (hj : j < 16) {v : BitVec 64}
     (hm : t.mem = s.mem.writeW (off p.B (slot (wk p.k) j)) v) {regs : List Reg} (k : Keep regs s t)

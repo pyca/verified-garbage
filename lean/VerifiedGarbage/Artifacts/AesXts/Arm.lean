@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.Arm.Verified
 public import VerifiedGarbage.Proof.AesXts.Arm.Unit.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print

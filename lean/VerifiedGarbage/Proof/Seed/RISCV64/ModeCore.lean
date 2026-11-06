@@ -129,9 +129,6 @@ theorem coreOut_eq (d : Direction) (g : Nat) : coreOut d g =
       ([.addi .s1 .a1 0, .addi .s2 .a2 0, .addi .s3 .ra 0, .load .d .ra sb (raOff g),
         .addi Impl.Modes.RISCV64.sb sb (-(ecbOff : Int))] : List Instr) := rfl
 
-/-- The registers the prologue saves: all those the caller expects preserved. -/
-theorem savedOffs_kept : ∀ r ∈ kept, r ≠ .a0 → r ≠ .ra → r ∈ savedOffs.map Prod.fst := by decide
-
 /-- What the core does to its block, and keeps. -/
 theorem crypt_ok (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) {s : State} {B : Addr}
     (hB : s.gpr .s4 = B) (hS : ScrIn s B (bufSlot + 1 + 2 * g)) (hk : (keyR s).Disjoint ⟨B, 1088 + 16 * g⟩)

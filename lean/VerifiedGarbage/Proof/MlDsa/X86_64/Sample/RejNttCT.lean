@@ -243,47 +243,10 @@ theorem loop_ct (n : Nat) :
         rw [z₁] at this; simpa using this
       exact ⟨336 - (t + 1), by omega_arith, σ₁, σ₂, t + 1, p₁, p₂, hq, rfl, by omega_arith, l₁', l₂'⟩
 
-/-- After the first block of the loop's setup. -/
-def IA (σ s : State) : Prop :=
-  Env (spOf σ) σ s ∧ bytesAt s.mem ((spOf σ).at' 840) 1008 = X σ ∧ s.gpr .rsi = (spOf σ).at' 840 ∧
-    s.gpr .rdi = 0
-
-theorem latB {σ s : State} (h : IA σ s) : WP isa (.block [.mov32 .rcx (.imm 336)]) s (LAt σ 0) := by
-  refine WP.mono (WP.keep [.rcx] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .rcx = BitVec.ofNat 64 336)
-    (by xrun) (by decide)) fun s2 ⟨⟨hm2, hcx⟩, k2⟩ => ?_
-  exact ⟨h.1.keep hm2 (k2.mono (by decide)), by rw [hm2]; exact h.2.1, by rw [k2.gpr (by decide), h.2.2.1]; simp,
-    by rw [k2.gpr (by decide), h.2.2.2]; rfl, hcx, by rw [hm2]; exact stored_nil _ _⟩
-
-theorem hok : ∀ σ, rnK.pre σ → SpOk (spOf σ) σ := fun _ hp => spOk hp
-
 theorem hpub : ∀ σ₁ σ₂, rnK.pre σ₁ → rnK.pre σ₂ → rnK.pub σ₁ σ₂ → SpPub (spOf σ₁) (spOf σ₂) σ₁ σ₂ :=
   fun _ _ _ _ hq => spPub hq
 
-/-- The loop and the end. -/
-theorem tail_ct : RelCT isa (Rel2 rnK.pre rnK.pub fun σ => J6 168 1008 (spOf σ) σ)
-    (.seq rnLoop (.block (retJ ++ epi))) fun _ _ => True := by
-  refine RelCT.seq (RelCT.seq (relInv (I' := IA) (fun σ s _ h => lat0 h)
-      (taintSp hpub (fun _ _ h => h.env) [] nil_regs (by taint_decide)))
-    (RelCT.seq (RelCT.mono (relInv (I' := fun σ s => LAt σ 0 s) (fun σ s _ h => latB h)
-        (taintSp hpub (J := fun P σ s => Env P σ s ∧ bytesAt s.mem ((spOf σ).at' 840) 1008 = X σ ∧
-          s.gpr .rsi = (spOf σ).at' 840 ∧ s.gpr .rdi = 0) (fun _ _ h => h.1) [] nil_regs (by taint_decide)))
-      (fun _ _ h => h) fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, l₁, l₂⟩ => ⟨σ₁, σ₂, 0, p₁, p₂, hq, rfl, by omega_arith, l₁, l₂⟩)
-      (loop_ct 336))) ?_
-  exact taintSp hpub (J := fun P σ s => LAt σ 336 s) (fun _ _ h => h.env) [] nil_regs (by taint_decide)
-
 end RejNtt
-
-open RejNtt RejNttCT in
-theorem rejNTT_ct : ConstantTime isa rnK.pre rnK.pub Impl.MlDsa.X86_64.Sample.rejNTT := by
-  refine relStart (Q := fun _ _ => True) (RelCT.seq (relInv (I' := fun σ => J0 (spOf σ) σ)
-    (fun σ s hp h => by subst h; exact pro_ok hp)
-    (taintRel [.rdi, .rsi, .rdx, .rsp] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
-      subst h₁ h₂
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      exacts [hq.1, hq.2.1, hq.2.2.1, hq.2.2.2.1]) (by taint_decide))) ?_)
-  exact RelCT.seq (sponge_ct hok hpub (.inr rfl) (by decide) (by taint_decide) (by taint_decide) (by taint_decide))
-    tail_ct
 
 end VG.Proof.MlDsa.X86_64.Sample
 
@@ -313,32 +276,5 @@ def rnSat : State where
   mem _ := 0
   rd := [⟨0x1000, 34⟩]
   wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
-
-theorem rejNTT_verified :
-    Verified X86_64.target Impl.MlDsa.X86_64.Sample.rejNTT (Proof.MlDsa.rejNTTContract X86_64.abi 16) :=
-  Verified.of_correct rejNTT_correct rejNTT_ct
-    { pre := by sig_implies_pre [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, X86_64.abi,
-        X86_64.argRegs]
-      post := by
-        intro s s' _ h
-        sig_post [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, X86_64.abi, X86_64.argRegs]
-        dsimp only [rnK] at h
-        obtain ⟨hr, hp⟩ := h
-        by_cases hf : (rnFold [] (G (bytesAt s.mem (s.gpr .rdi) 34) 1008)).length = 256
-        · rw [ifT hf] at hr
-          obtain ⟨hred, hpoly⟩ := hp hf
-          exact ⟨fun _ => hred, .inl ⟨hr, { Spec.MlDsa.minBounds with rejNTT := 1008 }, by
-            show Spec.MlDsa.rejNTTPoly 1008 _ = _
-            rw [rejNTT_some hf, hpoly]⟩⟩
-        · rw [ifF hf] at hr
-          exact ⟨fun h1 => absurd (hr.symm.trans h1) (by decide),
-            .inr ⟨hr, rejNTT_none (B := 1008) (by decide) (by decide) hf⟩⟩
-      pub := by
-        intro s₁ s₂ _ _ h
-        sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, X86_64.abi, X86_64.argRegs] at h
-        obtain ⟨hsp, hb, hdi, hsi, hdx⟩ := h
-        exact ⟨hdi, hsi, hdx, hsp, leakBytes_inj hb⟩
-      sat := by sig_implies_sat [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, rnK, X86_64.abi,
-        X86_64.argRegs] [rnSat] using rnSat }
 
 end VG.Proof.MlDsa.X86_64.Sample

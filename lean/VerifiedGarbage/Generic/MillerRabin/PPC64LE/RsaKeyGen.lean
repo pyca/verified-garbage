@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Backend
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Instances
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Framework.Registration

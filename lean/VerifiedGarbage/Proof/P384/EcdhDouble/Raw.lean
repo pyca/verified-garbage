@@ -30,8 +30,6 @@ open VG.Proof.P384.Ops (clobX ProgKeepX OpKeepX)
 open VG.Proof.Weierstrass.AArch64.Mont (p384)
 open Spec.Weierstrass
 
-theorem K_M : K.M = Impl.P384.Ops.M := rfl
-
 theorem _root_.VG.Proof.P384.Ops.ProgKeepX.ofOp {base : Addr} {o : Nat} {s t : State} (h : OpKeepX base o s t) :
     ProgKeepX base [o] s t :=
   ⟨h.gpr, h.rd, h.wr, h.sp, fun x hx ht => h.mem x (hx o (List.mem_singleton_self _)) ht⟩

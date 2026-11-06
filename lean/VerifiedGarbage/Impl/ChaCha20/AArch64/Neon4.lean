@@ -73,10 +73,6 @@ def quarters (qs : List (Fin 16 × Fin 16 × Fin 16 × Fin 16)) : List Op :=
 def doubleRound (sve : Bool := false) : List Instr :=
   (quarters cols ++ quarters diags).flatMap (Op.codeFor sve)
 
-def rounds : Nat → Prog isa
-  | 0 => .block []
-  | n + 1 => .seq (rounds n) (.block doubleRound)
-
 /-- Keep the double-round instruction body compact and repeat it ten times. -/
 def roundLoop (sve : Bool := false) : Prog isa :=
   .seq (.block [.movz .x .x4 10 0])

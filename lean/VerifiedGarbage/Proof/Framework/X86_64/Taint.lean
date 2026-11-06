@@ -314,7 +314,7 @@ def step (τ : T) : Instr → Option T
   -- from a public register (`xregs`): what `vpmovmskb` moves from one into a
   -- general-purpose register is secret, and no modelled instruction moves
   -- them into the flags.
-  | .vpmovmskb _ d _ => some { τ with regs := set τ d false, bases := kill τ d, lo := .empty }
+  | .vpmovmskb _ d _ | .vpcmpltuw d .. => some { τ with regs := set τ d false, bases := kill τ d, lo := .empty }
   | .movqR d r => some { τ with regs := set τ d (xpub τ r), bases := kill τ d, lo := .empty }
   | .movdquLoad _ m => if memPub τ m then some (noX τ) else none
   | .movdquStore m _ => storeStep τ m 16 false
@@ -836,7 +836,7 @@ def dstOf : Instr → Option Reg
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _
-  | .vpmovmskb _ d _ | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _ | .aluTbl _ d .. => some d
+  | .vpmovmskb _ d _ | .vpcmpltuw d .. | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _ | .aluTbl _ d .. => some d
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
@@ -1044,6 +1044,9 @@ theorem exec_nonstore_xmm {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : 
     simp only [reduceExec, Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
   case vpmovmskb len r =>
+    simp only [reduceExec, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case vpcmpltuw a b =>
     simp only [reduceExec, Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
   case movqR r =>
@@ -1852,6 +1855,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     subst e₁ e₂
     exact ⟨regs_set (p := false) ha.rf.1 (fun h => by cases h), by simpa only [setReg_cf, setReg_zf,
                                                            setReg_sf, setReg_of] using ha.rf.2⟩
+  | vpcmpltuw d a b =>
+    simp only [step, Option.some.injEq] at hs
+    subst hs
+    refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
+    simp only [reduceExec, State.setReg32, Option.some.injEq] at e₁ e₂
+    subst e₁ e₂
+    exact ⟨regs_set (p := false) ha.rf.1 (fun h => by cases h), by simpa only [setReg_cf, setReg_zf,
+                                                           setReg_sf, setReg_of] using ha.rf.2⟩
   | movqR d r =>
     simp only [step, Option.some.injEq] at hs
     subst hs
@@ -2149,7 +2160,7 @@ def stepK (τ : T) : Instr → Option T
   | .aluTbl _ d m .. =>
     bif idxPub τ m then some { τ with regs := setK τ d false, flags := false, bases := killK τ d, lo := .empty }
     else none
-  | .vpmovmskb _ d _ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
+  | .vpmovmskb _ d _ | .vpcmpltuw d .. => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
   | .movqR d r => some { τ with regs := setK τ d (xpub τ r), bases := killK τ d, lo := .empty }
   | .movdquLoad _ m => bif memPub τ m then some (noX τ) else none
   | .movdquStore m _ => storeStepK τ m 16 false
@@ -2443,7 +2454,7 @@ def stepKDFn : Instr → Step
     match τ with
     | ⟨_, _, l, _, sl, _, x⟩ =>
       bif idxPub τ m then some ⟨setK τ d false, false, l, killK τ d, sl, .empty, x⟩ else none⟩
-  | .vpmovmskb _ d _ => ⟨fun τ => match τ with
+  | .vpmovmskb _ d _ | .vpcmpltuw d .. => ⟨fun τ => match τ with
     | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d false, f, l, killK τ d, sl, .empty, x⟩⟩
   | .movqR d r => ⟨fun τ => match τ with
     | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d (xpub τ r), f, l, killK τ d, sl, .empty, x⟩⟩

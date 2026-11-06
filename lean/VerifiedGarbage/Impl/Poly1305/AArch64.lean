@@ -16,11 +16,11 @@ The state (`x0`, 128 bytes, see `VG.Spec.Poly1305.Buffered`):
   (`h < p`) between calls, in three 64-bit words;
 * `[24, 56)`: the key: `r` (`[24, 40)`) and `s` (`[40, 56)`);
 * `[56, 72)`: the buffer: the message's last bytes that do not fill a block,
-  padded in place in `finalize`;
+  padded in place in `Radix64.finalize`;
 * `[72, 108)`: the limbs `r0, …, r4` and `s1, …, s4` (`sj = 5 rj`) of the
   clamped `r`, as 32-bit words, computed on entry.
 
-`update` and `finalize` do not use their working space (`scratch`).
+`Radix64.update` and `Radix64.finalize` do not use their working space (`scratch`).
 
 Registers: `x4`–`x8` hold the limbs of `h`, `x9`–`x13` the sums of products
 `d0, …, d4` (and other limbs in between), `x14`–`x16` are temporaries and
@@ -109,7 +109,7 @@ def moveH : List Instr :=
 
 def loadH : List Instr := load2 .x0 0 ++ split ++ moveH
 
-/-- Everything `blocks` and `finalize` do first. -/
+/-- Everything `blocks` does first. -/
 def setup : List Instr := mask ++ coeffs ++ loadH
 
 /-! ## Absorbing a block -/
@@ -238,33 +238,6 @@ def count : Prog isa :=
     (.block [.sub .x .x3 .x3 .x10, .add .x .x11 .x0 .x9, .add .x .x9 .x9 .x10,
       .addImm .x .x1 .x2 0]))
 
-/-- Fills the buffer with `min(16 - x9, x3)` bytes of the data, and absorbs it
-if that fills it. -/
-def fill : Prog isa :=
-  .seq count
-  (.seq (.ite (.zero .x .x10) (.block []) copyIn)
-  (.seq (.block [.addImm .x .x2 .x1 0, .subImm .x .x12 .x9 16])
-    (.ite (.zero .x .x12) (.block (([.addImm .x .x1 .x0 56] : List Instr) ++ absorb true)) (.block []))))
-
-/-- Absorbs the whole blocks of the data, from `x1`, counting them in `x2`. -/
-def whole : Prog isa :=
-  .seq (.block [.addImm .x .x1 .x2 0, .lsr .x .x2 .x3 4])
-    (.ite (.zero .x .x2) (.block [])
-      (.loop (.block (absorb true ++ ([.addImm .x .x1 .x1 16, .subImm .x .x3 .x3 16,
-        .lsr .x .x2 .x3 4] : List Instr))) (.nonzero .x .x2)))
-
-/-- Copies the rest of the data into the (empty) buffer. -/
-def rest : Prog isa :=
-  .ite (.zero .x .x3) (.block [])
-    (.seq (.block [.addImm .x .x10 .x3 0, .addImm .x .x11 .x0 0]) copyIn)
-
-def update : Prog isa :=
-  .seq (.block (setup ++ ([.movz .x .x9 15 0, .logic .and .x .x9 .x1 .x9] : List Instr)))
-  (.seq (.ite (.zero .x .x9) (.block []) fill)
-  (.seq whole
-  (.seq rest
-    (.block (reduce ++ pack ++ storeH)))))
-
 /-! ## `finalize(state = x0, count = x1, out = x2)`
 
 `out` is moved to `x3`, and `count mod 16`, the number of bytes in the
@@ -274,22 +247,5 @@ carries), and the low 128 bits of the sum are the tag. -/
 
 /-- Zeros the buffer from `[x9 + 56]` on, for `x10 > 0` bytes. -/
 def zeroBody : List Instr := [.strb .x11 .x9 56, .addImm .x .x9 .x9 1, .subImm .x .x10 .x10 1]
-
-def lastBlock : Prog isa :=
-  .seq (.block [.movz .x .x11 0 0, .add .x .x9 .x0 .x2, .movz .x .x10 16 0, .sub .x .x10 .x10 .x2])
-  (.seq (.loop (.block zeroBody) (.nonzero .x .x10))
-    (.block (([.movz .x .x11 1 0, .add .x .x9 .x0 .x2, .strb .x11 .x9 56, .addImm .x .x1 .x0 56] : List Instr) ++
-      absorb false)))
-
-/-- `h += s`, with the carries propagated up to `h4`. -/
-def addS : List Instr := load2 .x0 40 ++ split ++ addLimbs ++ carryStep .x4 .x4 .x5 ++ normalize
-
-/-- The tag stored. -/
-def storeTag : List Instr := [.str .x .x14 .x3 0, .str .x .x15 .x3 8]
-
-def finalize : Prog isa :=
-  .seq (.block (([.addImm .x .x3 .x2 0, .movz .x .x2 15 0, .logic .and .x .x2 .x1 .x2] : List Instr) ++ setup))
-  (.seq (.ite (.zero .x .x2) (.block []) lastBlock)
-    (.block (reduce ++ addS ++ pack ++ storeTag)))
 
 end VG.Impl.Poly1305.AArch64

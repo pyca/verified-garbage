@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointPoints
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 public import VerifiedGarbage.Proof.P256.VerifyTable.Build
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTableTimingStep
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks

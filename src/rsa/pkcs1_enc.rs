@@ -57,7 +57,7 @@ use crate::arch::rsa_pkcs1_enc::{
 };
 use crate::cpu::detected;
 use crate::hashes::sha256::Sha256Backend;
-use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words, trim};
+use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words};
 use crate::zeroize::zeroize;
 
 /// Why an encryption or a decryption was refused. An invalid padding is
@@ -323,8 +323,9 @@ impl PrivateKey {
         if ciphertext.len() != k {
             return Err(Error::InvalidLength);
         }
-        // Loading the key checked that `0 < d < n` (`RSA_check_key`).
-        let d = trim(&self.d);
+        // Loading the key checked that `0 < d < n` (`RSA_check_key`), and
+        // holds it in `n_len` bytes.
+        let d = &self.d;
         let f = decrypt_fn(
             Sha256Backend::select(detected()),
             Backend::select(detected()),
@@ -336,7 +337,7 @@ impl PrivateKey {
         // `scratch` for writes), and none overlaps another or wraps around, as
         // they are distinct Rust allocations; loading the key and the check
         // above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
-        // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ d_len ≤ n_len`, `1 ≤ p_len < n_len`,
+        // `1 ≤ e_len ≤ 5 ≤ n_len`, `d_len = n_len`, `1 ≤ p_len < n_len`,
         // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len`, `dq_len = q_len`
         // and `scratch_len = 16 n_len + 32`; and the CPU has the features of the
         // implementations of SHA-256 and of the private-key operation that

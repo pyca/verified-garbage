@@ -9,8 +9,8 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 
 /-! # The inverse at a run-time width: one step is `invStep`
 
-`invStep_ok` states what `Keys.invStep_ok` does, for the run-time width's
-`invStep` on `RtWs`.
+`invStep_ok`: the run-time width's `invStep` on `RtWs` takes the bank at
+`A` to the bank at `D` by `Proof/Rsa/KeyMath.lean`'s `invStep`.
 -/
 
 @[expose] public section

@@ -120,7 +120,7 @@ theorem sharedCode_correct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (h
       unfold candRes Spec.RsaKeyGen.candidateOp
       rw [VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega), ite_f (by rw [bytesAt_length]; omega)]
     rw [hnone]; exact (KEnd.of_fin ho₃ ht).shared
-  · -- `kMain`.
+  · -- `kMainWith`.
     simp only [decide_eq_false_iff_not, Nat.not_lt] at hlt
     refine WP.mono (sharedKMain_ok M hmc R (henv.kept k13 (by decide))
       (by simp only [slot, hdrBytes]; omega_arith) (mainCtx_of c he hf hw hlt)) fun t ht => sharedCandEnd_post c hsv hf.zero hret hsp hext ?_

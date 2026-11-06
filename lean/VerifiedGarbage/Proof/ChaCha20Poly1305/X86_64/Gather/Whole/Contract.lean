@@ -89,10 +89,4 @@ def gatherPost (s s' : State) : Prop :=
   encrypt (bytesAt s.mem (K s) 32) (bytesAt s.mem (Nn s) 12) (bytesAt s.mem (Ad s) (AL s)) (pt s (Cnt s)) =
     (bytesAt s'.mem (Dst s) (L s), bytesAt s'.mem (Tg s) 16)
 
-/-- `vg_chacha20_poly1305_seal_gather`. -/
-def gatherX86_64 : Contract isa where
-  pre := gatherPre
-  post := gatherPost
-  pub := gatherPub
-
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather.Whole

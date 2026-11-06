@@ -63,12 +63,6 @@ open VG.Impl.MlKem.RISCV64 (zeroState)
 
 /-! ## The layout and the sponge -/
 
-/-- Where the XOF output starts in `scratch`. -/
-abbrev outOff : Nat := 840
-
-/-- Where our caller's registers are saved in `scratch`. -/
-abbrev saveOff : Nat := 2000
-
 /-- Save `s7`–`s11` and the return address at `scr + 2000`, and set up the
 layout: `s11` = `scr`, `s10` = `a`, `s9` = `msg`, then `len` (which sets
 `s8`) and `prm` (which sets `s7`). -/

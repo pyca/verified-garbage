@@ -56,8 +56,6 @@ theorem mask_check : ACheck (Prog.chain [Impl.Ffdh.X86.CheckPrivate.scalarMask, 
 theorem ret2_check : ACheck (ret 2) := by dsimp only [ACheck]; taint_decide
 theorem range_check : ACheck (Impl.Ffdh.X86.rangeMask 12) := by dsimp only [ACheck]; taint_decide
 theorem store_check : ACheck (.block [.store (sc accOff) .ecx]) := by dsimp only [ACheck]; taint_decide
-theorem copy13_check : ACheck (copy (.slot .wide 13) (.slot .wide 8) (one .wide)) := by
-  dsimp only [ACheck]; taint_decide
 theorem topLoads_check : ACheck (Prog.chain [copy (.slot .wide 10) (.slot .wide 5) (one .wide),
     loadTop (.slot .wide 8) (one .wide) 10 11] (.block [])) := by dsimp only [ACheck]; taint_decide
 theorem count_check : ACheck (.block (lenCount 11)) := by dsimp only [ACheck]; taint_decide

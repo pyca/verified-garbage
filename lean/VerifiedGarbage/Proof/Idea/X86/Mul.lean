@@ -77,10 +77,6 @@ def SrcOk (s : State) (src : Src) (v : BitVec 32) : Prop :=
   ∀ t : State, t.mem = s.mem → t.rd = s.rd → t.wr = s.wr → (∀ r, r ≠ .eax → t.gpr r = s.gpr r) →
     readSrc t src = some v
 
-theorem mul_ofNat32 (x y : BitVec 32) : x * y = BitVec.ofNat 32 (x.toNat * y.toNat) := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_mul, BitVec.toNat_ofNat]
-
 theorem mul_run (src : Src) (v : BitVec 32) (s : State) (hsrc : SrcOk s src v) :
     ∃ s', runBlock isa (mulCode src) s = some s' ∧
       s'.gpr .edx = (Spec.Idea.mul ((s.gpr .eax).setWidth 16) (v.setWidth 16)).setWidth 32 ∧

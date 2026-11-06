@@ -193,17 +193,6 @@ theorem Kept.widen {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32}
     {s : State} (h : Kept s₀ C W SP R D n ext s) (e : Region) : Kept s₀ C W SP R D n (ext ++ [e]) s :=
   { h with big := h.big.mono fun r hr => by rw [← List.append_assoc]; exact List.mem_append_left _ hr }
 
-/-- The IV at `W`, while no piece names it. -/
-theorem Kept.iv {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat} {ext : List Region}
-    {s : State} (L : Lay C W SP) (h : Kept s₀ C W SP R D n ext s)
-    (he : ∀ r ∈ ext, (⟨w64 W, 16⟩ : Region).Disjoint r) : bytesAt s.mem (w64 W) 16 = bytesAt s₀.mem (w64 W) 16 :=
-  Proof.AesGcm.X86.bytesAt_frame h.big (fun r hr => by
-    simp only [List.cons_append, List.nil_append, List.mem_cons] at hr
-    rcases hr with rfl | rfl | hr
-    · simpa using Lay.w_w (W := W) (a := 0) (n := 16) (.inl (by decide)) (by decide) (by decide)
-    · exact (L.stk_w.sub_right (Region.sub_prefix (by decide))).symm
-    · exact he r hr) (by decide)
-
 /-- What `finish out` writes: the IV at `W` (which the pieces name in `ext`) or
 the IV at `W + 112`, and parts of `W` the pieces write. -/
 theorem finR_wR {W SP : BitVec 32} {out : Nat} {ext : List Region}

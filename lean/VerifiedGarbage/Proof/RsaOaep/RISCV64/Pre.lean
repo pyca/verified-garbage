@@ -28,10 +28,6 @@ namespace VG.Proof.RsaOaep.RISCV64
 open VG VG.RISCV64 VG.Impl.RsaOaep.RISCV64
 open VG.Proof.RsaPkcs1Sig.RISCV64 (Only Kept MemTo wp_ld wp_mov wp_addSp wp_nil)
 
-theorem stackArgs_seven (s : State) :
-    List.map (stackArg s) (List.range 7) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
-      stackArg s 4, stackArg s 5, stackArg s 6] := rfl
-
 theorem stackArgs_ten (s : State) :
     List.map (stackArg s) (List.range 10) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
       stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9] := rfl

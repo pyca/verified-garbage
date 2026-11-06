@@ -14,7 +14,7 @@ Constant time is proven piece by piece (`RelCT`) for two runs from entry
 states that satisfy `signK`'s precondition and agree on its public data, each
 satisfying the invariant `I` of the correctness proof, and related by `E`
 (`RR`): each piece leaks the same, correctness gives each run's next
-invariant, and the piece's own proof the next relation (`relInvE`). The runs
+invariant, and the piece's own proof the next relation. The runs
 are in the same layout (`RR.lrel`) and agree on `ρ` (`RR.rho`), which the
 leakage begins with.
 -/
@@ -49,18 +49,6 @@ theorem lrel_of {σ₁ σ₂ x y : State} (hpub : (signK p D).pub σ₁ σ₂) (
   · rw [r₁ (.x26, .x1) (by decide), r₂ (.x26, .x1) (by decide), h2]
   · rw [r₁ (.x27, .x2) (by decide), r₂ (.x27, .x2) (by decide), h3]
   · rw [r₁ (.x28, .x4) (by decide), r₂ (.x28, .x4) (by decide), h5]
-
-theorem relInvE {I J E E' : State → State → Prop} {c : Prog isa}
-    (hw : ∀ σ s, (signK p D).pre σ → I σ s → WP isa c s (J σ))
-    (ht : RelCT isa (RR p D I E) c E') : RelCT isa (RR p D I E) c (RR p D J E') := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' hr e₁ e₂
-  obtain ⟨ht', he⟩ := ht _ _ _ _ _ _ hr e₁ e₂
-  obtain ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, _⟩ := hr
-  obtain ⟨_, u₁, f₁, g₁⟩ := hw σ₁ s₁ p₁ i₁
-  obtain ⟨_, u₂, f₂, g₂⟩ := hw σ₂ s₂ p₂ i₂
-  obtain ⟨-, rfl⟩ := Exec.det e₁ f₁
-  obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
-  exact ⟨ht', ⟨σ₁, σ₂, p₁, p₂, hpub, g₁, g₂⟩, he⟩
 
 theorem RR.mono {I I' E E' : State → State → Prop} {x y : State} (h : RR p D I E x y)
     (hI : ∀ σ s, I σ s → I' σ s) (hE : E x y → E' x y) : RR p D I' E' x y := by
@@ -117,34 +105,6 @@ theorem RS.mono {E I E' I' : State → State → Prop} {x y : State} (h : RS p D
   obtain ⟨σ₁, σ₂, p₁, p₂, hpub, e, i₁, i₂⟩ := h
   exact ⟨σ₁, σ₂, p₁, p₂, hpub, hE _ _ e, hI _ _ i₁, hI _ _ i₂⟩
 
-/-- A piece that leaks the same from two runs in the layout that satisfy `T`, and takes each run from
-`I` to `J`. -/
-theorem liftL {E I J : State → State → Prop} {T : State → Prop} {c : Prog isa}
-    (hI : ∀ σ s, I σ s → St p D σ s ∧ T s) (hw : ∀ σ s, (signK p D).pre σ → I σ s → WP isa c s (J σ))
-    (ht : RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ T x ∧ T y) c fun _ _ => True) :
-    RelCT isa (RS p D E I) c (RS p D E J) := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' hr e₁ e₂
-  obtain ⟨σ₁, σ₂, p₁, p₂, hpub, he, i₁, i₂⟩ := hr
-  obtain ⟨ht', -⟩ := ht _ _ _ _ _ _ ⟨lrel_of hpub (hI _ _ i₁).1 (hI _ _ i₂).1, (hI _ _ i₁).2, (hI _ _ i₂).2⟩ e₁ e₂
-  obtain ⟨_, u₁, f₁, g₁⟩ := hw σ₁ s₁ p₁ i₁
-  obtain ⟨_, u₂, f₂, g₂⟩ := hw σ₂ s₂ p₂ i₂
-  obtain ⟨-, rfl⟩ := Exec.det e₁ f₁
-  obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
-  exact ⟨ht', σ₁, σ₂, p₁, p₂, hpub, he, g₁, g₂⟩
-
-/-- `liftL`, with a leakage proof from any relation the runs satisfy. -/
-theorem liftR {E I J : State → State → Prop} {c : Prog isa}
-    (hw : ∀ σ s, (signK p D).pre σ → I σ s → WP isa c s (J σ))
-    (ht : RelCT isa (RS p D E I) c fun _ _ => True) : RelCT isa (RS p D E I) c (RS p D E J) := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' hr e₁ e₂
-  obtain ⟨ht', -⟩ := ht _ _ _ _ _ _ hr e₁ e₂
-  obtain ⟨σ₁, σ₂, p₁, p₂, hpub, he, i₁, i₂⟩ := hr
-  obtain ⟨_, u₁, f₁, g₁⟩ := hw σ₁ s₁ p₁ i₁
-  obtain ⟨_, u₂, f₂, g₂⟩ := hw σ₂ s₂ p₂ i₂
-  obtain ⟨-, rfl⟩ := Exec.det e₁ f₁
-  obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
-  exact ⟨ht', σ₁, σ₂, p₁, p₂, hpub, he, g₁, g₂⟩
-
 /-- Two pieces in sequence, from two runs in the layout that satisfy `I` (what the first piece needs),
 each piece leaving the layout. -/
 theorem seqL {c₁ c₂ : Prog isa} {I J : State → Prop} {Q : State → State → Prop}
@@ -155,11 +115,6 @@ theorem seqL {c₁ c₂ : Prog isa} {I J : State → Prop} {Q : State → State 
   RelCT.seq (RelCT.postDep h₁ (F := fun x x' => (∃ W, PostB D x x' W) ∧ J x')
     (fun x y h => ⟨w₁ x h.1.lx h.2.1, w₁ y h.1.ly h.2.2⟩)
     fun _ _ _ _ h ⟨⟨_, hx⟩, jx⟩ ⟨⟨_, hy⟩, jy⟩ => ⟨h.1.post hx hy, jx, jy⟩) h₂
-
-theorem trL_mono {c : Prog isa} {I I' : State → Prop}
-    (h : RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ I x ∧ I y) c fun _ _ => True) (hI : ∀ s, I' s → I s) :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ I' x ∧ I' y) c fun _ _ => True :=
-  RelCT.mono h (fun _ _ h => ⟨h.1, hI _ h.2.1, hI _ h.2.2⟩) fun _ _ h => h
 
 end
 

@@ -83,12 +83,4 @@ theorem positiveReject_ok {D : Nat} {p : Params} (hp : Ok3 p) (hc : ksChk p = tr
     by rw [L.keepW hP c20,h.cnt],sampled,fail,by rw [k.get .x24,flag],h.t_lt,h.rej⟩
   rw [hP.pa (by decide),hm,Mem.readW_writeW_self64,h.kap,ofNat64_add,Nat.mul_succ]
 
-/-- A passing checks branch supplies the exact precondition of the
-accepted-only conversion and signature-packing phase. -/
-theorem PositiveEP.outputReady {p : Params} {S : Nat} {σ s : State} {t : Nat}
-    (h : PositiveEP p S σ t s) :
-    AcceptedConversion p S σ (p.ℓ*t) (-(q:Int)+1) ((q:Int)-1) 0 s := by
-  exact ⟨⟨⟨h.k.d.im.st,h.k.d.roots⟩,by intro j hj; omega,
-    fun j _ hj => h.z j hj,h.x24⟩,h.ct,h.h⟩
-
 end VG.Proof.MlDsa.AArch64.Sign

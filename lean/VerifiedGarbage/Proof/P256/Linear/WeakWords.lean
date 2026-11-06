@@ -9,7 +9,6 @@ namespace VG.Proof.P256.Linear.Weak
 open VG.Proof.Ed25519.Word64
 abbrev p : Nat := VG.Spec.P256.curve.p
 abbrev R : Nat := 2^256
-abbrev B : Nat := 2^64
 abbrev W4 := Word × Word × Word × Word
 def value (a : W4) : Nat := val4 a.1 a.2.1 a.2.2.1 a.2.2.2
 

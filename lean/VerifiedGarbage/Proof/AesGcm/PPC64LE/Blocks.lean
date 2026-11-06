@@ -2516,13 +2516,6 @@ theorem CoreLayout.input_read {base : State} {n : Nat} (hs : CoreLayout base n)
     m'.read p len=m.read p len := by
   exact hf.read hp (by simpa only [List.mem_singleton,forall_eq] using hs.scratch r hr) hl
 
-theorem CoreLayout.key_block {base : State} {n offset : Nat} (hs : CoreLayout base n)
-    {m m' : Mem} (hf : Frame [coreWork base] m m') (ho : offset+16 ≤ 256) :
-    Spec.Gcm.blockAt m' (base.gpr .r3+BitVec.ofNat 64 offset)=
-      Spec.Gcm.blockAt m (base.gpr .r3+BitVec.ofNat 64 offset) := by
-  rw [← VG.Proof.Aes.PPC64LE.Crypto.read_blockAt,← VG.Proof.Aes.PPC64LE.Crypto.read_blockAt]
-  rw [hs.input_read (r := coreKey base) hf (by simp) (Offset.contains_base _ ho (by omega)) (by decide)]
-
 theorem CoreLayout.saved_frame {base : State} {n : Nat} (_hs : CoreLayout base n) :
     Frame [coreWork base] base.mem
       (Spill.saveMem base.mem (base.gpr .r10) base.gpr Impl.AesGcm.PPC64LE.Blocks.saved) := by
@@ -3352,19 +3345,12 @@ def hashPrefixWith (base : State) (nr : Nat) (plaintext : Nat → Spec.Gcm.Block
   Spec.Gcm.ghashFrom (Spec.Gcm.ctxH base.mem (base.gpr .r3)) (Spec.Gcm.blockAt base.mem (base.gpr .r9))
     ((List.range k).map (cipherBlockWith base nr plaintext))
 
-abbrev hashPrefix (base : State) (nr : Nat) := hashPrefixWith base nr (defaultPlaintext base)
-
 theorem hashPrefixWith_add (base : State) (nr : Nat) (plaintext : Nat → Spec.Gcm.Block) (k j : Nat) :
     hashPrefixWith base nr plaintext (k+j)=Spec.Gcm.ghashFrom (Spec.Gcm.ctxH base.mem (base.gpr .r3))
       (hashPrefixWith base nr plaintext k)
       ((List.range j).map (fun i => cipherBlockWith base nr plaintext (k+i))) := by
   simp only [hashPrefixWith,List.range_add,List.map_append,List.map_map,Spec.Gcm.ghashFrom,List.foldl_append]
   rfl
-
-theorem hashPrefix_add (base : State) (nr k j : Nat) :
-    hashPrefix base nr (k+j)=Spec.Gcm.ghashFrom (Spec.Gcm.ctxH base.mem (base.gpr .r3))
-      (hashPrefix base nr k) ((List.range j).map (fun i => cipherBlock base nr (k+i))) :=
-  hashPrefixWith_add base nr (defaultPlaintext base) k j
 
 theorem repeat_counter_add (cb : Spec.Gcm.Block) (k i : Nat) :
     Nat.repeat Spec.Gcm.inc32 i (Nat.repeat Spec.Gcm.inc32 k cb)=Nat.repeat Spec.Gcm.inc32 (k+i) cb := by
@@ -3584,11 +3570,6 @@ theorem LoopInvWith.initial {base entry ready : State} {n nr : Nat} {plaintext :
   · exact hf.mono (by simp)
 
 
-theorem LoopInv.initial {base entry ready : State} {n nr : Nat} (lay : CoreLayout base n)
-    (hr : CacheResult base entry nr ready) (hn : base.gpr .r7=BitVec.ofNat 64 n) :
-    LoopInv base ready n nr 0 ready :=
-  LoopInvWith.initial lay hr hn trivial
-
 
 theorem batchWithStore_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {base ready s : State} {n nr k : Nat} {plaintext : Nat → Spec.Gcm.Block}
@@ -3707,14 +3688,6 @@ theorem batchesWith_ok
       exact he (by change n-(j+8)=0 at hh; omega)
     exact ⟨hev.trans (by simpa using hne),n-(j+8),by omega,j+8,rfl,by omega,by omega,hu⟩
 
-
-theorem batches_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
-    {base ready s : State} {n nr k : Nat} (lay : CoreLayout base n)
-    (hmin : 9<nr) (hmax : nr<15) (hk : k+8≤n) (hm : (n-k)%8=0)
-    (hs : LoopInv base ready n nr k s) :
-    WP isa (.loop Impl.AesGcm.PPC64LE.Blocks.batch (.nonzero .d .r7)) s
-      (LoopInv base ready n nr n) :=
-  batchesWith_ok lay Impl.AesGcm.PPC64LE.Blocks.batch (fun hj ht => batch_ok lay hmin hmax hj ht) hk hm hs
 
 
 def exitMem (s : State) : Mem :=
@@ -5230,10 +5203,6 @@ theorem shared_pre (s : State) (hs : (Proof.Gcm.encryptBlocksContract PPC64LE.ab
     exacts [hks,hcs,hys,hds]
 
 
-theorem code_taint : ∃ h, (VG.Taint.check vectorTaint
-    (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10])
-    Impl.AesGcm.PPC64LE.Blocks.code h).isSome = true := ⟨_, by taint_decide⟩
-
 theorem encrypt_taint : ∃ h, (VG.Taint.check vectorTaint
     (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9])
     Impl.AesGcm.PPC64LE.Blocks.encrypt h).isSome = true := ⟨_, by taint_decide⟩
@@ -5263,25 +5232,7 @@ theorem encrypt_ct : ConstantTime isa (Proof.Gcm.encryptBlocksContract PPC64LE.a
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 
-def encryptSat : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 10 | .r5 => 0x2000 | .r6 => 0x3000 | .r7 => 0x4000 | .r9 => 0x5000 | _ => 0
-  lr := 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000,256⟩]
-  wr := [⟨0x2000,16⟩,⟨0x3000,16⟩,⟨0x4000,0⟩,⟨0x5000,2112⟩]
 
-
-theorem encrypt_sat : (Proof.Gcm.encryptBlocksContract PPC64LE.abi).pre encryptSat := by
-  sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs,encryptSat]
-  refine ⟨rfl,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,by decide,by decide,by decide,by decide,by decide,by decide⟩
-  all_goals exact Offset.disjoint_of_le (by decide) (by decide)
-
-
-theorem encrypt_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
-    Verified PPC64LE.target Impl.AesGcm.PPC64LE.Blocks.encrypt (Proof.Gcm.encryptBlocksContract PPC64LE.abi) :=
-  ⟨encrypt_correct,encrypt_ct,⟨encryptSat,encrypt_sat⟩⟩
 
 
 end VG.Proof.AesGcm.PPC64LE.Blocks

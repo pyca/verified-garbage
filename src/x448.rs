@@ -13,18 +13,19 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use crate::arch::x448::vg_x448;
 use crate::arch::x448::vg_x448_base;
+use crate::arch::x448::vg_x448_exchange;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::x448::{
-    VG_X448_ADX_FEATURES, VG_X448_BASE_ADX_FEATURES, vg_x448_adx, vg_x448_base_adx,
+    VG_X448_BASE_ADX_FEATURES, VG_X448_EXCHANGE_ADX_FEATURES, vg_x448_base_adx,
+    vg_x448_exchange_adx,
 };
 use crate::cpu::detected;
 use crate::error::XdhError;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
-/// The implementations of `vg_x448` and `vg_x448_base`.
+/// The implementations of `vg_x448_exchange` and `vg_x448_base`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {
     /// The baseline implementation.
@@ -38,7 +39,9 @@ impl Backend {
     /// The best implementation a CPU with the features `f` can run.
     #[cfg(target_arch = "x86_64")]
     fn select(f: Features) -> Backend {
-        if f.contains(const { Features::all(&[VG_X448_ADX_FEATURES, VG_X448_BASE_ADX_FEATURES]) }) {
+        if f.contains(
+            const { Features::all(&[VG_X448_EXCHANGE_ADX_FEATURES, VG_X448_BASE_ADX_FEATURES]) },
+        ) {
             Backend::Adx
         } else {
             Backend::Baseline
@@ -53,24 +56,27 @@ impl Backend {
     }
 }
 
-/// `X448(scalar, u)` (RFC 7748 §5), which may be all zero.
-fn x448(scalar: &[u8; 56], u: &[u8; 56]) -> [u8; 56] {
+/// `X448(scalar, u)` (RFC 7748 §5), by `vg_x448_exchange`, which also checks
+/// it: `None` if it is all zero (§6.2).
+fn exchange(scalar: &[u8; 56], u: &[u8; 56]) -> Option<[u8; 56]> {
     let mut out = [0u8; 56];
     let mut scratch = [0u64; 1024];
     let f = match Backend::select(detected()) {
-        Backend::Baseline => vg_x448,
+        Backend::Baseline => vg_x448_exchange,
         // `select` chose it because the CPU has the features it needs.
         #[cfg(target_arch = "x86_64")]
-        Backend::Adx => vg_x448_adx,
+        Backend::Adx => vg_x448_exchange_adx,
     };
     // SAFETY: `out` and `scratch` are valid for reads and writes of 56 and
     // 8192 bytes, and `scalar` and `u` for reads of 56 bytes; the writable
     // buffers are disjoint from each other and from the inputs.
     // No buffer overlaps the callee's stack or wraps around the address space.
     // The CPU has the features of the function `select` chose.
-    unsafe { f(&mut out, scalar, u, &mut scratch) };
+    let nonzero = unsafe { f(&mut out, scalar, u, &mut scratch) };
     zeroize(&mut scratch);
-    out
+    // The contract: 0 if and only if `out` is all zero, so there is no
+    // secret in it to destroy.
+    (nonzero != 0).then_some(out)
 }
 
 /// `X448(scalar, 5)`, by `vg_x448_base`.
@@ -141,15 +147,10 @@ impl PrivateKey {
 
     /// The shared secret with the peer whose public key is `peer`,
     /// `X448(k, peer)` (RFC 7748 §6.2); [`XdhError::ZeroSharedSecret`] if it
-    /// is all zero, which is checked without revealing anything else about
-    /// it.
+    /// is all zero, which the verified code checks without revealing
+    /// anything else about it.
     pub fn exchange(&self, peer: &PublicKey) -> Result<[u8; 56], XdhError> {
-        let mut bytes = x448(&self.bytes, &peer.bytes);
-        if crate::ct::eq(&bytes, &[0; 56]) {
-            zeroize(&mut bytes);
-            return Err(XdhError::ZeroSharedSecret);
-        }
-        Ok(bytes)
+        exchange(&self.bytes, &peer.bytes).ok_or(XdhError::ZeroSharedSecret)
     }
 }
 
@@ -179,9 +180,9 @@ impl PublicKey {
 
 #[cfg(test)]
 mod tests {
-    use super::{Backend, Features, PrivateKey, PublicKey, x448};
+    use super::{Backend, Features, PrivateKey, PublicKey};
     #[cfg(target_arch = "x86_64")]
-    use super::{VG_X448_ADX_FEATURES, VG_X448_BASE_ADX_FEATURES};
+    use super::{VG_X448_BASE_ADX_FEATURES, VG_X448_EXCHANGE_ADX_FEATURES};
     use crate::error::XdhError;
 
     /// The u-coordinate of the base point, 5 (RFC 7748 §4.2), encoded.
@@ -206,14 +207,17 @@ mod tests {
         assert_eq!(PublicKey::from_bytes(ka.as_bytes()), ka);
     }
 
-    /// The public key is `X448(k, 5)` for many scalars: random ones, and ones
+    /// The public key is the shared secret with the base point, `X448(k, 5)`,
+    /// for many scalars: random ones, and ones
     /// with every nibble the same.
     #[test]
     fn public_key_is_x448_of_base_point() {
         let check = |k: &[u8; 56]| {
             assert_eq!(
                 *PrivateKey::from_bytes(k).public_key().as_bytes(),
-                x448(k, &BASE_POINT)
+                PrivateKey::from_bytes(k)
+                    .exchange(&PublicKey::from_bytes(&BASE_POINT))
+                    .unwrap()
             );
         };
         for n in 0..=15u8 {
@@ -231,7 +235,7 @@ mod tests {
         assert_eq!(Backend::select(Features(0)), Backend::Baseline);
         #[cfg(target_arch = "x86_64")]
         {
-            let adx = Features::all(&[VG_X448_ADX_FEATURES, VG_X448_BASE_ADX_FEATURES]);
+            let adx = Features::all(&[VG_X448_EXCHANGE_ADX_FEATURES, VG_X448_BASE_ADX_FEATURES]);
             assert_eq!(Backend::select(adx), Backend::Adx);
             assert_eq!(
                 Backend::select(Features(verified_garbage_cpu::feature::BMI2)),
@@ -246,6 +250,5 @@ mod tests {
         let a = PrivateKey::from_bytes(&[0x42; 56]);
         let zero = PublicKey::from_bytes(&[0; 56]);
         assert_eq!(a.exchange(&zero).unwrap_err(), XdhError::ZeroSharedSecret);
-        assert_eq!(x448(a.as_bytes(), &[0; 56]), [0; 56]);
     }
 }

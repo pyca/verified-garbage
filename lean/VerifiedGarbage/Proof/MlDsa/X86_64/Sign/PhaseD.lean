@@ -58,9 +58,6 @@ theorem IM.step {p : Params} {D : Nat} {σ s s' : State} (h : IM p D σ s) {ws :
   simp only [imChk, Bool.and_eq_true] at hc
   exact ⟨h.st.step hP hc.1, h.ok, Fam.keep h.st.lay hP hc.2 h.A⟩
 
-theorem IA.im {p : Params} {D : Nat} {σ s : State} (h : IA p D σ (p.k * p.ℓ) s) (h1 : s.gpr .r15 = 1) :
-    IM p D σ s := ⟨h.st, (h.ok h1).1, (h.ok h1).2⟩
-
 /-! ## The private key -/
 
 /-- `Â`, the first `a` polynomials of `ŝ₁`, `b` of `ŝ₂` and `c` of `t̂₀`. -/

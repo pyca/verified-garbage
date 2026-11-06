@@ -85,11 +85,4 @@ theorem verified (sha3 : Bool) : Verified AArch64.target (Impl.MlDsa.AArch64.Sam
         sig_implies_sat [Proof.MlDsa.rejNTT4Contract,Proof.MlDsa.rejNTT4Sig,AArch64.abi,AArch64.argRegs]
           [r4Sat] using r4Sat }
 
-theorem ret {sha3 : Bool} {s t : State} {tr : List Leak}
-    (hp : (Proof.MlDsa.rejNTT4Contract AArch64.abi).pre s)
-    (he : Exec isa (Impl.MlDsa.AArch64.Sample.Rej4.rejNTT4With sha3) s tr t) :
-    (t.gpr .x0).setWidth 32 = rej4Res s.mem (seedP s) := by
-  obtain ⟨_,_,he',_,hq⟩ := correct sha3 s (r4_pre s hp)
-  obtain ⟨_,rfl⟩ := Exec.det he he'
-  exact hq.1.trans (mask_cast s)
 end VG.Proof.MlDsa.AArch64.Sample.Rej4

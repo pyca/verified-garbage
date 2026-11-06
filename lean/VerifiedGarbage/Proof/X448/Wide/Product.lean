@@ -66,24 +66,6 @@ theorem rows_val (f g : Nat → Nat) {n : Nat} (hn : n ≤ 8) :
   | succ n ih =>
     rw [rows, addRow_val _ _ _ (by omega), ih (by omega), valN_succ f n, Nat.add_mul]
 
-theorem rows_bound {f g : Nat → Nat} (hf : ∀ i < 8, f i < radix)
-    (hg : ∀ i < 8, g i < radix) {n : Nat} (hn : n ≤ 8) (k : Nat) :
-    rows f g n k ≤ n * (radix - 1) ^ 2 := by
-  induction n with
-  | zero => simp only [rows, Nat.zero_mul, Nat.le_refl]
-  | succ n ih =>
-    rw [rows, addRow_at]
-    have hp := ih (by omega)
-    split
-    · rename_i hk
-      have h1 := hf n (by omega)
-      have h2 := hg (k - n) (by omega)
-      have hprod : f n * g (k - n) ≤ (radix - 1) ^ 2 := by
-        rw [Nat.pow_two]
-        exact Nat.mul_le_mul (by omega) (by omega)
-      rw [Nat.succ_mul]; omega
-    · rw [Nat.succ_mul]; omega
-
 /-- Coefficients of degree 8–11 fold once; 12–15 fold twice. -/
 def reduced (f : Nat → Nat) (k : Nat) : Nat :=
   f k + f (k + 8) + if k < 4 then f (k + 12) else f (k + 4) + f (k + 8)

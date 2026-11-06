@@ -178,10 +178,6 @@ structure KS (P : MP) (σ : State) (A : Nat → Nat) (live : List Nat) (V : Nat 
 section
 variable {P : MP} {σ s t : State} {A : Nat → Nat} {live : List Nat} {V : Nat → Nat} {ls : List Nat}
 
-theorem In.ks (h : In P σ) : KS P σ (fun _ => 0) [] (fun _ => 0) [] σ :=
-  ⟨h, rfl, rfl, rfl, Keep.refl _ _ _ _ _, Arrs.nil _ _ _ _, fun _ h => absurd h List.not_mem_nil,
-    fun _ h => absurd h List.not_mem_nil, fun _ h => absurd h List.not_mem_nil⟩
-
 /-- The key view's context. -/
 theorem KS.ws (h : KS P σ A live V ls s) (r7 : s.gpr .r7 = BitVec.ofNat 32 (S P.W)) (r8 : s.gpr .r8 = P.B)
     (r9 : s.gpr .r9 = BitVec.ofNat 32 P.W) : Ws s P.B P.Z P.W nArr :=

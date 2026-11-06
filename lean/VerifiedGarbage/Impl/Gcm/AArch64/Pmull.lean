@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Gcm.Clmul -- shake: keep (exports the existin
 # GHASH with PMULL on AArch64
 
 `vg_ghash_aes(h = x0, y = x1, data = x2, n = x3, scratch = x4)`, with the
-contract of `vg_ghash` (`Proof.Gcm.ghashContract`), for CPUs with FEAT_PMULL
+contract of `vg_ghash` (`Proof.Gcm.ghashAArch64`), for CPUs with FEAT_PMULL
 (Rust's `aes` feature, hence the suffix: see `Artifacts/Gcm/AArch64.lean`).
 
 The arithmetic is that of `Impl.Gcm.X86_64.Pclmul`. A block is loaded with
@@ -117,11 +117,6 @@ def consts : List Instr :=
    .movz .x .x6 3 0, .movz .x .x7 0x4600 3,
    .vop (.ins .d2 (tReg 2) 0 .x6), .vop (.ins .d2 (tReg 2) 1 .x7),
    .vop (.ins .d2 (sReg 2) 0 .x7), .vop (.ins .d2 (sReg 2) 1 .x6)]
-
-/-- `H` (as loaded), the constants, `H' = mul(H, x⁻²)` and `Y`. -/
-def prologue : List Instr :=
-  loadRev A .x0 0 ++ consts ++ mul (sReg 1) A (sReg 2) (tReg 2) ++
-  ([.vop (.ext (tReg 1) (sReg 1) (sReg 1) 8)] : List Instr) ++ loadRev Y .x1 0 ++ ([.lsr .x .x5 .x3 3] : List Instr)
 
 /-- `H'²` to `H'⁸`. -/
 def powers : List Instr :=
@@ -294,5 +289,29 @@ def storesS : List Instr :=
     storePw 8
 
 def ghashS : Prog isa := ghashAll prologueS storesS
+
+/-! ## The powers from a key context
+
+`vg_aes_gcm_store_powers_aes(ctx = x0, pw = x1)`: the hash subkey `H`,
+bytes 240–255 of the key context (`Spec.Gcm.ctxH`), loaded as
+`vg_ghash_aes` loads its `h`, `H'` by `twist`, `H'²` to `H'⁸` by
+`powersS`, and the eight stored to `pw` as `storesS` stores them, from `x1`.
+It is straight-line, and writes only `x5`, `v1`, `v3`–`v7` and
+`v16`–`v31`. -/
+
+/-- `H'ᵏ` stored to `pw` (`x1`). -/
+def storeKeyPw (k : Nat) : List Instr := [.strq (tReg k) .x1 (pwOff k)]
+
+/-- `H'` to `H'⁸` stored. -/
+def keyStores : List Instr :=
+  storeKeyPw 1 ++ storeKeyPw 2 ++ storeKeyPw 3 ++ storeKeyPw 4 ++ storeKeyPw 5 ++ storeKeyPw 6 ++
+    storeKeyPw 7 ++ storeKeyPw 8
+
+/-- `H` from the key context, the reduction constant, and `H'` by `twist`. -/
+def keyPrologue : List Instr :=
+  loadRev A .x0 240 ++ constC ++ twist (sReg 1) ++
+    ([.vop (.ext (tReg 1) (sReg 1) (sReg 1) 8)] : List Instr)
+
+def keyPowers : Prog isa := .block (keyPrologue ++ powersS ++ keyStores)
 
 end VG.Impl.Gcm.AArch64.Pmull

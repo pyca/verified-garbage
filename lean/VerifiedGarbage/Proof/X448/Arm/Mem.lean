@@ -134,8 +134,6 @@ def FieldMem (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
   ∀ x, (ofs base x < o ∨ o + 112 ≤ ofs base x) →
     (ofs base x < ACC ∨ ACC + 512 ≤ ofs base x) → m' x = m x
 
-theorem FieldMem.refl (base : Addr) (o : Nat) (m : Mem) : FieldMem base o m m := fun _ _ _ => rfl
-
 theorem FieldMem.trans {base : Addr} {o : Nat} {m₁ m₂ m₃ : Mem} (h₁ : FieldMem base o m₁ m₂)
     (h₂ : FieldMem base o m₂ m₃) : FieldMem base o m₁ m₃ :=
   fun x hx hw => (h₂ x hx hw).trans (h₁ x hx hw)

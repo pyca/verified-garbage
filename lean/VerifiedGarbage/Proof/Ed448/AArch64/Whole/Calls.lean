@@ -3,12 +3,17 @@ module
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
 public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMain
 public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMulAddMain
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448's complete operations on AArch64: calls of the Ed448 primitives
@@ -80,9 +85,6 @@ theorem reduce_noFrames : Impl.Ed448.AArch64.scalarReduce.noFrames = true := by 
 theorem base_noFrames : Impl.Ed448.AArch64.scalarBase.noFrames = true :=
   Proof.Ed448.AArch64.scalarBase_noFrames
 theorem mulAdd_noFrames : Impl.Ed448.AArch64.scalarMulAdd.noFrames = true := by lit_decide
-theorem equation_noFrames : Impl.Ed448.AArch64.verifyEquation.noFrames = true :=
-  Proof.Ed448.AArch64.verifyEquation_noFrames
-
 /-! ## `vg_ed448_scalar_reduce(out, wide, scratch)` -/
 
 theorem reduce_pre {op wp scr : Addr} (h0 : u.gpr .x0 = op) (h1 : u.gpr .x1 = wp) (h2 : u.gpr .x2 = scr)
@@ -202,57 +204,6 @@ theorem mulAdd_call (hV : V.Ok) (hu : WCtx V g vec m₀ u) {op rp kp sp scr : Ad
     State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.x3 ∉ linkRegs), h0, h1, h2, h3] at hp
-  exact hp
-
-/-! ## `vg_ed448_verify_equation(pk, signature, challenge, scratch)` -/
-
-theorem equation_pre {pk sig ch scr T : Addr} (h0 : u.gpr .x0 = pk) (h1 : u.gpr .x1 = sig)
-    (h2 : u.gpr .x2 = ch) (h3 : u.gpr .x3 = scr)
-    (hp : Region.Disjoint ⟨pk, 57⟩ ⟨scr, 8192⟩) (hs : Region.Disjoint ⟨sig, 114⟩ ⟨scr, 8192⟩)
-    (hc : Region.Disjoint ⟨ch, 57⟩ ⟨scr, 8192⟩) (hn : scr.toNat + 8192 ≤ 2 ^ 64) (hT : u.syms combSym = T)
-    (ht : CombHeld (u.callEntry.withRegions [⟨pk, 57⟩, ⟨sig, 114⟩, ⟨ch, 57⟩, TBL T] [⟨scr, 8192⟩])
-      [⟨scr, 8192⟩]) :
-    Proof.Ed448.AArch64.verifyEquationLocal.pre
-      (u.callEntry.withRegions [⟨pk, 57⟩, ⟨sig, 114⟩, ⟨ch, 57⟩, TBL T] [⟨scr, 8192⟩]) := by
-  have e3 := State.callEntry_gpr u (by decide : Reg.x3 ∉ linkRegs)
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals simp only [State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
-    State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
-    State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs),
-    State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs),
-    State.callEntry_gpr _ (by decide : Reg.x3 ∉ linkRegs), h0, h1, h2, h3, syms_entry, hT]
-  exacts [hp, hs, hc, hn, by rw [e3, h3] at *; exact ht]
-
-theorem equation_call (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok) (hcfg:V.sym=combSym ∧ V.words=combWords)
-    (hu : WCtx V g vec m₀ u) {pk sig ch scr : Addr}
-    (h0 : u.gpr .x0 = pk) (h1 : u.gpr .x1 = sig) (h2 : u.gpr .x2 = ch) (h3 : u.gpr .x3 = scr)
-    (hdp : Region.Disjoint ⟨pk, 57⟩ ⟨scr, 8192⟩) (hds : Region.Disjoint ⟨sig, 114⟩ ⟨scr, 8192⟩)
-    (hdc : Region.Disjoint ⟨ch, 57⟩ ⟨scr, 8192⟩) (hn : scr.toNat + 8192 ≤ 2 ^ 64)
-    (hrp : Readable V ⟨pk, 57⟩) (hrs : Readable V ⟨sig, 114⟩) (hrc : Readable V ⟨ch, 57⟩)
-    (hws : Writable V ⟨scr, 8192⟩) (hm : TblWords V.T m₀) :
-    WP isa (.call "vg_ed448_verify_equation" Impl.Ed448.AArch64.verifyEquation) u fun w =>
-      WCtx V g vec m₀ w ∧ Frame ([⟨scr, 8192⟩] ++ [CK V.E]) u.mem w.mem ∧
-      w.gpr .x0 = if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt u.mem pk 57)
-        (Spec.Ed448.bytesAt u.mem sig 114) (Spec.Ed448.bytesAt u.mem ch 57) then 1 else 0 := by
-  have hw : ∀ r ∈ [(⟨scr, 8192⟩ : Region)], Writable V r := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r rfl; exact hws
-  have hrd : ∀ r ∈ [(⟨pk, 57⟩ : Region), ⟨sig, 114⟩, ⟨ch, 57⟩, TBL V.T], Readable V r := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl)
-    exact hrp
-    · exact hrs
-    · exact hrc
-    · simpa only [hcfg.2] using tbl_readable hV
-  refine wcall hV hu (hQ.ok) (noFrames_depth equation_noFrames)
-    (equation_pre h0 h1 h2 h3 hdp hds hdc hn (by simpa only [hcfg.1] using hu.2.2) (combHeld_of hV hcfg hu hm hw _ _))
-    (covers_rw hrd hw) hw fun w hw' hf hp => ⟨hw', hf, ?_⟩
-  change w.gpr .x0 = if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt u.mem (u.callEntry.gpr .x0) 57)
-    (Spec.Ed448.bytesAt u.mem (u.callEntry.gpr .x1) 114)
-    (Spec.Ed448.bytesAt u.mem (u.callEntry.gpr .x2) 57) then 1 else 0 at hp
-  rw [State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
-    State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs),
-    State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), h0, h1, h2] at hp
   exact hp
 
 end VG.Proof.Ed448.AArch64.Whole

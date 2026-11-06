@@ -97,18 +97,6 @@ def evalOp (op : FieldOp) (e : Env) : Env :=
   | .add o a b => Function.update e o (e a + e b)
   | .sub o a b => Function.update e o (e a - e b)
 
-theorem evalOp_mul_apply (e : Env) (o a b i : Slot) :
-    evalOp (.mul o a b) e i = if i = o then e a * e b else e i := by
-  simp only [evalOp, Function.update_apply]
-
-theorem evalOp_add_apply (e : Env) (o a b i : Slot) :
-    evalOp (.add o a b) e i = if i = o then e a + e b else e i := by
-  simp only [evalOp, Function.update_apply]
-
-theorem evalOp_sub_apply (e : Env) (o a b i : Slot) :
-    evalOp (.sub o a b) e i = if i = o then e a - e b else e i := by
-  simp only [evalOp, Function.update_apply]
-
 def evalOps (ops : List FieldOp) (e : Env) : Env := ops.foldl (fun e op => evalOp op e) e
 
 structure FieldKeep (x : BitVec 32) (s t : State) : Prop where
@@ -205,13 +193,6 @@ structure CallKeep (x : BitVec 32) (s t : State) : Prop where
   keep : Keep s t
   frame : Frame [sub x 64 960, callStk s] s.mem t.mem
 
-theorem CallKeep.refl (x : BitVec 32) (s : State) : CallKeep x s s :=
-  ⟨Keep.refl _, Frame.refl _ _⟩
-
-theorem CallKeep.trans {x : BitVec 32} {s t u : State}
-    (h : CallKeep x s t) (k : CallKeep x t u) : CallKeep x s u :=
-  ⟨h.keep.trans k.keep, h.frame.trans (by rw [callStk, ← h.keep.esp]; exact k.frame)⟩
-
 theorem CallKeep.ctx {x : BitVec 32} {s t : State}
     (h : CallKeep x s t) (hc : Ctx x s c) : Ctx x t c := h.keep.ctx hc
 
@@ -282,10 +263,6 @@ theorem pointAdd_formula (e : Env) :
     point (evalOps pointAddOps e) 0 1 2 3 = addResult e 4 (by decide) := by
   rfl
 
-theorem pointDouble_formula (e : Env) :
-    point (evalOps pointDoubleOps e) 0 1 2 3 = addResult e 0 (by decide) := by
-  rfl
-
 theorem addResult_eq (e : Env) (q : Nat) (hq : q + 3 < 22) (hd : e 16 = Spec.Ed25519.d) :
     addResult e q hq = Spec.Ed25519.pointAdd (point e 0 1 2 3)
       (point e ⟨q, by omega⟩ ⟨q + 1, by omega⟩ ⟨q + 2, by omega⟩ ⟨q + 3, hq⟩) := by
@@ -296,10 +273,5 @@ theorem pointAdd_eval (e : Env) (hd : e 16 = Spec.Ed25519.d) :
     point (evalOps pointAddOps e) 0 1 2 3 =
       Spec.Ed25519.pointAdd (point e 0 1 2 3) (point e 4 5 6 7) :=
   (pointAdd_formula e).trans (addResult_eq e 4 (by decide) hd)
-
-theorem pointDouble_eval (e : Env) (hd : e 16 = Spec.Ed25519.d) :
-    point (evalOps pointDoubleOps e) 0 1 2 3 =
-      Spec.Ed25519.pointAdd (point e 0 1 2 3) (point e 0 1 2 3) :=
-  (pointDouble_formula e).trans (addResult_eq e 0 (by decide) hd)
 
 end VG.Proof.Ed25519.X86

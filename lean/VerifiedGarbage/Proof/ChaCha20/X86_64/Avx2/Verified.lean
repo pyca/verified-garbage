@@ -10,7 +10,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.ChaCha20.Contract
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # `vg_chacha20_xor_avx2` verified
@@ -107,45 +108,9 @@ theorem xor_rsi (s : State) (hs : xorAvx2X86_64.pre s) :
       (xorAvx2X86_64.post s s' ∧ s'.gpr .rsi = s.gpr .rcx) :=
   xorWith_rsi false (by lit_decide) s hs
 
-theorem xor_correct (s : State) (hs : xorAvx2X86_64.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xor s t s' ∧ abiPreserved s s' ∧
-      xorAvx2X86_64.post s s' :=
-  (xor_rsi s hs).imp fun _ ⟨s', he, ha, h, _⟩ => ⟨s', he, ha, h⟩
-
-/-- The kernel with `vprold` returns as `xor_rsi` says. -/
-theorem xorVL_rsi (s : State) (hs : xorAvx2X86_64.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xorVL s t s' ∧ abiPreserved s s' ∧
-      (xorAvx2X86_64.post s s' ∧ s'.gpr .rsi = s.gpr .rcx) :=
-  xorWith_rsi true (by lit_decide) s hs
-
-theorem xorVL_correct (s : State) (hs : xorAvx2X86_64.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xorVL s t s' ∧ abiPreserved s s' ∧
-      xorAvx2X86_64.post s s' :=
-  (xorVL_rsi s hs).imp fun _ ⟨s', he, ha, h, _⟩ => ⟨s', he, ha, h⟩
-
 theorem xor_ct : ConstantTime isa xorAvx2X86_64.pre xorAvx2X86_64.pub
     Impl.ChaCha20.X86_64.Avx2.xor :=
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
 
-theorem xor_verified :
-    Verified X86_64.target Impl.ChaCha20.X86_64.Avx2.xor
-      (Proof.ChaCha20.xorContract X86_64.abi 16) :=
-  Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, X86_64.abi, X86_64.argRegs,
-      xorAvx2X86_64, Proof.ChaCha20.xorX86_64]
-      [sat] using sat)
-
-
-theorem xorVL_ct : ConstantTime isa xorAvx2X86_64.pre xorAvx2X86_64.pub
-    Impl.ChaCha20.X86_64.Avx2.xorVL :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
-
-theorem xorVL_verified :
-    Verified X86_64.target Impl.ChaCha20.X86_64.Avx2.xorVL
-      (Proof.ChaCha20.xorContract X86_64.abi 16) :=
-  Verified.of_correct xorVL_correct xorVL_ct
-    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, X86_64.abi, X86_64.argRegs,
-      xorAvx2X86_64, Proof.ChaCha20.xorX86_64]
-      [sat] using sat)
 
 end VG.Proof.ChaCha20.X86_64.Avx2

@@ -136,18 +136,6 @@ theorem vin_apart {s : State} {R : Region} (hK : (vstkR s).Disjoint R) (hS : R.D
   · exact hK.symm
   · exact hS
 
-/-- An address of an input: in no writable region of the frame's state, nor
-below the frame. -/
-theorem VPre.outside {s : State} (hp : VPre tsH tsG s) {R : Region}
-    (hS : R.Disjoint ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩) (hK : (vstkR s).Disjoint R) {a : Addr}
-    (ha : R.Contains a 1) : Outside (⟨fb s, frameBytes⟩ :: s.wr) (fb s) a := by
-  refine ⟨fun r hr hc => ?_, fun hc => hK a (vret_sub s a hc) ha⟩
-  rw [List.mem_cons, hp.hwr] at hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact hK a (vframe_sub s a hc) ha
-  · exact hS a ha hc
-
 
 theorem vfb_toNat {s : State} (hp : VPre tsH tsG s) : (fb s).toNat + frameBytes = (s.gpr .rsp).toNat := by
   have := hp.sp1; unfold verifyStack at this

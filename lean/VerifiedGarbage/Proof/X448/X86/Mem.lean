@@ -124,9 +124,6 @@ def FieldMem (base : Addr) (o : Nat) (m m' : Mem) (n : Nat := 512) : Prop :=
   ∀ x, (ofs base x < o ∨ o + 112 ≤ ofs base x) →
     (ofs base x < ACC ∨ ACC + n ≤ ofs base x) → m' x = m x
 
-theorem FieldMem.refl (base : Addr) (o : Nat) (m : Mem) {n : Nat} : FieldMem base o m m n :=
-  fun _ _ _ => rfl
-
 theorem FieldMem.trans {base : Addr} {o n : Nat} {m₁ m₂ m₃ : Mem} (h₁ : FieldMem base o m₁ m₂ n)
     (h₂ : FieldMem base o m₂ m₃ n) : FieldMem base o m₁ m₃ n :=
   fun x hx hw => (h₂ x hx hw).trans (h₁ x hx hw)
@@ -152,10 +149,6 @@ theorem FieldMem.limbs {base : Addr} {o n : Nat} {m m' : Mem} (h : FieldMem base
     limbs m' base d i = limbs m base d i :=
   congrArg BitVec.toNat (h.word (by omega) (by omega))
 
-theorem FieldMem.fe {base : Addr} {o n : Nat} {m m' : Mem} (h : FieldMem base o m m' n) {d : Nat}
-    (hd : d + 112 ≤ o ∨ o + 112 ≤ d) (hw : d + 112 ≤ ACC) : fe m' base d = fe m base d :=
-  valN_congr fun _ hi => h.limbs hd hw hi
-
 /-- `FieldMem` in the working space alone: what a call of a field function
 changes there (it also writes the stack). -/
 def WsField (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
@@ -164,10 +157,6 @@ def WsField (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
 
 theorem FieldMem.ws {base : Addr} {o n : Nat} {m m' : Mem} (h : FieldMem base o m m' n) (hn : n ≤ 512) :
     WsField base o m m' := fun x _ hx hw => h x hx (by omega)
-
-theorem WsField.trans {base : Addr} {o : Nat} {m₁ m₂ m₃ : Mem} (h₁ : WsField base o m₁ m₂)
-    (h₂ : WsField base o m₂ m₃) : WsField base o m₁ m₃ :=
-  fun x h8 hx hw => (h₂ x h8 hx hw).trans (h₁ x h8 hx hw)
 
 theorem WsField.word {base : Addr} {o : Nat} {m m' : Mem} (h : WsField base o m m') {d : Nat}
     (hd : d + 4 ≤ o ∨ o + 112 ≤ d) (hw : d + 4 ≤ ACC) : word m' base d = word m base d :=
@@ -218,13 +207,6 @@ theorem WsOut2.refl (base : Addr) (x nx y ny : Nat) (m : Mem) : WsOut2 base x nx
 theorem WsOut2.trans {base : Addr} {x nx y ny : Nat} {m₁ m₂ m₃ : Mem}
     (h₁ : WsOut2 base x nx y ny m₁ m₂) (h₂ : WsOut2 base x nx y ny m₂ m₃) :
     WsOut2 base x nx y ny m₁ m₃ := fun p h8 hx hy => (h₂ p h8 hx hy).trans (h₁ p h8 hx hy)
-
-theorem WsOut2.mono {base : Addr} {x nx y ny nx' ny' : Nat} {m m' : Mem}
-    (h : WsOut2 base x nx y ny m m') (hx : nx ≤ nx') (hy : ny ≤ ny') :
-    WsOut2 base x nx' y ny' m m' := fun p h8 hp hq => h p h8 (by omega) (by omega)
-
-theorem Outside2.ws {base : Addr} {x nx y ny : Nat} {m m' : Mem} (h : Outside2 base x nx y ny m m') :
-    WsOut2 base x nx y ny m m' := fun p _ hp hq => h p hp hq
 
 theorem WsOut2.word {base : Addr} {x nx y ny : Nat} {m m' : Mem} (h : WsOut2 base x nx y ny m m')
     {d : Nat} (hx : d + 4 ≤ x ∨ x + nx ≤ d) (hy : d + 4 ≤ y ∨ y + ny ≤ d) (hd : d + 4 ≤ 8192) :

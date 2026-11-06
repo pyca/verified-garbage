@@ -126,22 +126,4 @@ read/write disjointness for all seven concrete arithmetic groups. -/
 theorem stage_shape (i : Fin 7) : BatchShape (stagePairs i.val) (stageProducts i.val) := by
   constructor <;> revert i <;> first | (decide +kernel) | exact fun i p hp => stage_products i p hp
 
-theorem stage_lengths (i : Fin 8) : (before i.val).regs.length=8 ∧ (before i.val).free.length=4 := by
-  exact (show ∀ i : Fin 8, (before i.val).regs.length=8 ∧ (before i.val).free.length=4 by decide +kernel) i
-
-theorem batch_code (st : CS) (ij : List (Nat × Nat)) :
-    (batch st ij).code = st.code ++ (pairs st ij).flatMap PairRegs.code ++ multiplyCode (products st ij) := by
-  simp only [batch,pairs,products,PairRegs.code,multiplyCode,List.flatMap_map,List.map_map,
-    Function.comp_def,List.append_assoc]
-
-theorem stage_empty (i : Fin 8) : (before i.val).code=[] := by
-  exact (show ∀ i : Fin 8, (before i.val).code=[] by decide +kernel) i
-
-theorem stage_next (i : Fin 7) :
-    (batch (before i.val) (indices steps[i.val]!.1 steps[i.val]!.2)).regs=(before (i.val+1)).regs ∧
-    (batch (before i.val) (indices steps[i.val]!.1 steps[i.val]!.2)).free=(before (i.val+1)).free := by
-  exact (show ∀ i : Fin 7,
-    (batch (before i.val) (indices steps[i.val]!.1 steps[i.val]!.2)).regs=(before (i.val+1)).regs ∧
-    (batch (before i.val) (indices steps[i.val]!.1 steps[i.val]!.2)).free=(before (i.val+1)).free by decide +kernel) i
-
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse

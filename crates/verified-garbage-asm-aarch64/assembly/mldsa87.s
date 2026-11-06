@@ -2834,6 +2834,76 @@ vg_mldsa87_keygen:
 	ret
 	.p2align 6
 
+vg_mldsa87_pk_tr:
+	add x3, x2, #0
+	str x24, [x3, #840]
+	str x25, [x3, #848]
+	str x26, [x3, #856]
+	str x27, [x3, #864]
+	str x28, [x3, #872]
+	str x30, [x3, #880]
+	add x25, x0, #0
+	add x26, x1, #0
+	add x27, x2, #0
+	add x28, x3, #0
+	movz x24, #1, lsl #0
+	add x0, x28, #0
+	movz x9, #0, lsl #0
+	str x9, [x0, #0]
+	str x9, [x0, #8]
+	str x9, [x0, #16]
+	str x9, [x0, #24]
+	str x9, [x0, #32]
+	str x9, [x0, #40]
+	str x9, [x0, #48]
+	str x9, [x0, #56]
+	str x9, [x0, #64]
+	str x9, [x0, #72]
+	str x9, [x0, #80]
+	str x9, [x0, #88]
+	str x9, [x0, #96]
+	str x9, [x0, #104]
+	str x9, [x0, #112]
+	str x9, [x0, #120]
+	str x9, [x0, #128]
+	str x9, [x0, #136]
+	str x9, [x0, #144]
+	str x9, [x0, #152]
+	str x9, [x0, #160]
+	str x9, [x0, #168]
+	str x9, [x0, #176]
+	str x9, [x0, #184]
+	str x9, [x0, #192]
+	movz x2, #0, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x5, x28, #200
+	add x3, x25, #0
+	movz x4, #2592, lsl #0
+	bl {vg_keccak_absorb_scratch}
+	add x2, x0, #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x4, x28, #200
+	movz x3, #31, lsl #0
+	bl {vg_keccak_pad_scratch}
+	movz x2, #0, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x5, x28, #200
+	add x3, x26, #0
+	movz x4, #64, lsl #0
+	bl {vg_keccak_squeeze_scratch}
+	add x0, x24, #0
+	ldr x30, [x28, #880]
+	ldr x24, [x28, #840]
+	ldr x25, [x28, #848]
+	ldr x26, [x28, #856]
+	ldr x27, [x28, #864]
+	ldr x28, [x28, #872]
+	ret
+	.p2align 6
+
 vg_mldsa87_sign:
 	str x23, [x4, #840]
 	str x24, [x4, #848]
@@ -10687,6 +10757,76 @@ vg_mldsa87_keygen_sha3:
 	movz x1, #136, lsl #0
 	add x5, x28, #200
 	add x3, x27, #64
+	movz x4, #64, lsl #0
+	bl {vg_keccak_squeeze_scratch_sha3}
+	add x0, x24, #0
+	ldr x30, [x28, #880]
+	ldr x24, [x28, #840]
+	ldr x25, [x28, #848]
+	ldr x26, [x28, #856]
+	ldr x27, [x28, #864]
+	ldr x28, [x28, #872]
+	ret
+	.p2align 6
+
+vg_mldsa87_pk_tr_sha3:
+	add x3, x2, #0
+	str x24, [x3, #840]
+	str x25, [x3, #848]
+	str x26, [x3, #856]
+	str x27, [x3, #864]
+	str x28, [x3, #872]
+	str x30, [x3, #880]
+	add x25, x0, #0
+	add x26, x1, #0
+	add x27, x2, #0
+	add x28, x3, #0
+	movz x24, #1, lsl #0
+	add x0, x28, #0
+	movz x9, #0, lsl #0
+	str x9, [x0, #0]
+	str x9, [x0, #8]
+	str x9, [x0, #16]
+	str x9, [x0, #24]
+	str x9, [x0, #32]
+	str x9, [x0, #40]
+	str x9, [x0, #48]
+	str x9, [x0, #56]
+	str x9, [x0, #64]
+	str x9, [x0, #72]
+	str x9, [x0, #80]
+	str x9, [x0, #88]
+	str x9, [x0, #96]
+	str x9, [x0, #104]
+	str x9, [x0, #112]
+	str x9, [x0, #120]
+	str x9, [x0, #128]
+	str x9, [x0, #136]
+	str x9, [x0, #144]
+	str x9, [x0, #152]
+	str x9, [x0, #160]
+	str x9, [x0, #168]
+	str x9, [x0, #176]
+	str x9, [x0, #184]
+	str x9, [x0, #192]
+	movz x2, #0, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x5, x28, #200
+	add x3, x25, #0
+	movz x4, #2592, lsl #0
+	bl {vg_keccak_absorb_scratch_sha3}
+	add x2, x0, #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x4, x28, #200
+	movz x3, #31, lsl #0
+	bl {vg_keccak_pad_scratch_sha3}
+	movz x2, #0, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x5, x28, #200
+	add x3, x26, #0
 	movz x4, #64, lsl #0
 	bl {vg_keccak_squeeze_scratch_sha3}
 	add x0, x24, #0

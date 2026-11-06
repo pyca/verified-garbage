@@ -2189,6 +2189,82 @@ vg_mldsa65_keygen:
 	ld %r31, 896(%r31)
 	blr
 
+vg_mldsa65_pk_tr:
+	addi %r6, %r5, 0
+	mflr %r0
+	std %r24, 840(%r6)
+	std %r25, 848(%r6)
+	std %r26, 856(%r6)
+	std %r27, 864(%r6)
+	std %r28, 872(%r6)
+	std %r29, 880(%r6)
+	std %r30, 888(%r6)
+	std %r31, 896(%r6)
+	std %r0, 904(%r6)
+	addi %r30, %r3, 0
+	addi %r29, %r3, 0
+	addi %r28, %r4, 0
+	addi %r31, %r6, 0
+	li %r24, 1
+	li %r0, 0
+	std %r0, 0(%r31)
+	std %r0, 8(%r31)
+	std %r0, 16(%r31)
+	std %r0, 24(%r31)
+	std %r0, 32(%r31)
+	std %r0, 40(%r31)
+	std %r0, 48(%r31)
+	std %r0, 56(%r31)
+	std %r0, 64(%r31)
+	std %r0, 72(%r31)
+	std %r0, 80(%r31)
+	std %r0, 88(%r31)
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	std %r0, 112(%r31)
+	std %r0, 120(%r31)
+	std %r0, 128(%r31)
+	std %r0, 136(%r31)
+	std %r0, 144(%r31)
+	std %r0, 152(%r31)
+	std %r0, 160(%r31)
+	std %r0, 168(%r31)
+	std %r0, 176(%r31)
+	std %r0, 184(%r31)
+	std %r0, 192(%r31)
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r29, 0
+	li %r7, 1952
+	addi %r8, %r31, 200
+	bl {vg_keccak_absorb_scratch}
+	addi %r5, %r3, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	li %r6, 31
+	addi %r7, %r31, 200
+	bl {vg_keccak_pad_scratch}
+	li %r5, 0
+	addi %r3, %r31, 0
+	li %r4, 136
+	addi %r6, %r28, 0
+	li %r7, 64
+	addi %r8, %r31, 200
+	bl {vg_keccak_squeeze_scratch}
+	addi %r3, %r24, 0
+	ld %r0, 904(%r31)
+	mtlr %r0
+	ld %r24, 840(%r31)
+	ld %r25, 848(%r31)
+	ld %r26, 856(%r31)
+	ld %r27, 864(%r31)
+	ld %r28, 872(%r31)
+	ld %r29, 880(%r31)
+	ld %r30, 888(%r31)
+	ld %r31, 896(%r31)
+	blr
+
 vg_mldsa65_sign:
 	mflr %r0
 	std %r24, 840(%r7)

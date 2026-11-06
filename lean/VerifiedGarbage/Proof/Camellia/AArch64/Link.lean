@@ -101,14 +101,6 @@ theorem WP.gprs' {c : Prog isa} {s : State} {Q : State → Prop} (hk : KeepsReg 
   exact ⟨t, s', he, hq, fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hk _ _ _ he⟩
 
-/-- The callee-saved registers and the rest of the ABI, from what a mode
-keeps. -/
-theorem modeAbi_of {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa c s t s')
-    (h₁ : ∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
-      s.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19))
-    (h₃ : ∀ r ∈ [Reg.x30], s'.gpr r = s.gpr r) (hv : c.allInstrs keepsV = true) : abiPreserved s s' :=
-  ⟨Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he hv⟩
-
 /-- `KeepsReg .x30` of a mode's code: its structure, down to the core's code
 and blocks that do not write `x30`. -/
 tactic_template "camellia_keeps_x30" : tactic => `(tactic| repeat (first

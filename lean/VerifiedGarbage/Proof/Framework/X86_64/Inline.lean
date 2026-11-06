@@ -245,6 +245,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [e₁, e₂, e₃]
     exact ite_eq_left_of_eq_true _ _ (eq_true hc') |>.trans rfl
   | vpmovmskb len d r => simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; rfl
+  | vpcmpltuw d a b => simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; rfl
   | movqR d r => simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; rfl
   | movdquLoad d m =>
     simp only [reduceExec, Option.map_eq_some_iff] at h

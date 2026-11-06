@@ -34,9 +34,6 @@ open VG.Proof.Aes.X86_64.AesNi (Keys aesWith_eq blockAt_frame)
 open VG.Proof.Gcm.X86_64.StitchZ (AInv aregs_ok)
 open VG.Spec.Gcm (Block blockAt inc32)
 
-/-- Where the keystream goes, in the working space. -/
-abbrev ksR (s₀ : State) : Region := ⟨pp s₀ + BitVec.ofNat 64 768, 256⟩
-
 /-- The key schedule is not in the data, the working space or the counter. -/
 theorem sch_frame3 {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {m : Mem} (hf : Frame [dR s₀, pR s₀, cR s₀] s₀.mem m) :
     Spec.Aes.bytesAt m (kp s₀) (16 * (nr s₀ + 1)) = sch s₀ := by

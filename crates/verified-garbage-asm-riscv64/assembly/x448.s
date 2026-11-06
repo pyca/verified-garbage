@@ -33887,6 +33887,136 @@ vg_x448:
 	ret
 	.option pop
 
+vg_x448_exchange:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -16
+	sd ra, 8(sp)
+	addi t0, sp, 0
+	sd a0, 0(t0)
+	call {vg_x448}
+	addi t0, sp, 0
+	ld t0, 0(t0)
+	addi t1, zero, 0
+	lbu t2, 0(t0)
+	or t1, t1, t2
+	lbu t2, 1(t0)
+	or t1, t1, t2
+	lbu t2, 2(t0)
+	or t1, t1, t2
+	lbu t2, 3(t0)
+	or t1, t1, t2
+	lbu t2, 4(t0)
+	or t1, t1, t2
+	lbu t2, 5(t0)
+	or t1, t1, t2
+	lbu t2, 6(t0)
+	or t1, t1, t2
+	lbu t2, 7(t0)
+	or t1, t1, t2
+	lbu t2, 8(t0)
+	or t1, t1, t2
+	lbu t2, 9(t0)
+	or t1, t1, t2
+	lbu t2, 10(t0)
+	or t1, t1, t2
+	lbu t2, 11(t0)
+	or t1, t1, t2
+	lbu t2, 12(t0)
+	or t1, t1, t2
+	lbu t2, 13(t0)
+	or t1, t1, t2
+	lbu t2, 14(t0)
+	or t1, t1, t2
+	lbu t2, 15(t0)
+	or t1, t1, t2
+	lbu t2, 16(t0)
+	or t1, t1, t2
+	lbu t2, 17(t0)
+	or t1, t1, t2
+	lbu t2, 18(t0)
+	or t1, t1, t2
+	lbu t2, 19(t0)
+	or t1, t1, t2
+	lbu t2, 20(t0)
+	or t1, t1, t2
+	lbu t2, 21(t0)
+	or t1, t1, t2
+	lbu t2, 22(t0)
+	or t1, t1, t2
+	lbu t2, 23(t0)
+	or t1, t1, t2
+	lbu t2, 24(t0)
+	or t1, t1, t2
+	lbu t2, 25(t0)
+	or t1, t1, t2
+	lbu t2, 26(t0)
+	or t1, t1, t2
+	lbu t2, 27(t0)
+	or t1, t1, t2
+	lbu t2, 28(t0)
+	or t1, t1, t2
+	lbu t2, 29(t0)
+	or t1, t1, t2
+	lbu t2, 30(t0)
+	or t1, t1, t2
+	lbu t2, 31(t0)
+	or t1, t1, t2
+	lbu t2, 32(t0)
+	or t1, t1, t2
+	lbu t2, 33(t0)
+	or t1, t1, t2
+	lbu t2, 34(t0)
+	or t1, t1, t2
+	lbu t2, 35(t0)
+	or t1, t1, t2
+	lbu t2, 36(t0)
+	or t1, t1, t2
+	lbu t2, 37(t0)
+	or t1, t1, t2
+	lbu t2, 38(t0)
+	or t1, t1, t2
+	lbu t2, 39(t0)
+	or t1, t1, t2
+	lbu t2, 40(t0)
+	or t1, t1, t2
+	lbu t2, 41(t0)
+	or t1, t1, t2
+	lbu t2, 42(t0)
+	or t1, t1, t2
+	lbu t2, 43(t0)
+	or t1, t1, t2
+	lbu t2, 44(t0)
+	or t1, t1, t2
+	lbu t2, 45(t0)
+	or t1, t1, t2
+	lbu t2, 46(t0)
+	or t1, t1, t2
+	lbu t2, 47(t0)
+	or t1, t1, t2
+	lbu t2, 48(t0)
+	or t1, t1, t2
+	lbu t2, 49(t0)
+	or t1, t1, t2
+	lbu t2, 50(t0)
+	or t1, t1, t2
+	lbu t2, 51(t0)
+	or t1, t1, t2
+	lbu t2, 52(t0)
+	or t1, t1, t2
+	lbu t2, 53(t0)
+	or t1, t1, t2
+	lbu t2, 54(t0)
+	or t1, t1, t2
+	lbu t2, 55(t0)
+	or t1, t1, t2
+	addi t2, zero, 0
+	sltu a0, t2, t1
+	ld ra, 8(sp)
+	addi sp, sp, 16
+	ret
+	.option pop
+
 vg_x448_base:
 	.option push
 	.option arch, +m, +c

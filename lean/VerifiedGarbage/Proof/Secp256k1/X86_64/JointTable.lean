@@ -130,26 +130,6 @@ theorem fixed_tbl : ∀ a, 1≤a → a≤8 → ∀ x∈tcFixed, x∉jacCoords (p
 
 theorem mem_tcLive_fixed {m x : Nat} (h : x∈tcFixed) : x∈tcLive m := List.mem_append_left _ h
 
-theorem tblPt_mem_tcLive {m a : Nat} (h1 : 1≤a) (ha : a≤m) :
-    ∀ x∈jacCoords (publicJoint.K.tblPt a), x∈tcLive m := by
-  intro x hx
-  apply List.mem_append_right
-  simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx
-  simp only [nafTableSlots,List.mem_map,List.mem_range]
-  rcases hx with rfl|rfl|rfl
-  · exact ⟨3*(a-1),by omega,by rw [k_n]; omega⟩
-  · exact ⟨3*(a-1)+1,by omega,by rw [k_n]; omega⟩
-  · exact ⟨3*(a-1)+2,by omega,by rw [k_n]; omega⟩
-
-theorem tcLive_sl {m : Nat} (hm : m≤9) : ∀ x∈tcLive m, x∈jointSlots publicJoint := by
-  intro x hx
-  rcases List.mem_append.mp hx with hx|hx
-  · exact fixed_sl x hx
-  · simp only [nafTableSlots,List.mem_map,List.mem_range] at hx
-    obtain ⟨i,hi,rfl⟩ := hx
-    have h : ∀ i<27, publicJoint.K.tbl+8*publicJoint.K.M.n*i∈jointSlots publicJoint := by decide +kernel
-    exact h i (by omega)
-
 /-! ## The invariant through the steps -/
 
 section

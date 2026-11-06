@@ -121,9 +121,6 @@ theorem red_toNat (x : BitVec 64) : (red x).toNat = x.toNat % q := by
   unfold red
   rw [fixd_subq (by rw [bar_toNat]; exact h1), bar_toNat, ← reduce_barrett x.isLt, condSub_eq h1]
 
-theorem red_lt (x : BitVec 64) : (red x).toNat < q := by
-  rw [red_toNat]; exact Nat.mod_lt _ (by decide)
-
 theorem toNat_val64 (x : Zq) : (BitVec.ofNat 64 x.val).toNat = x.val := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
 
@@ -165,10 +162,6 @@ theorem setWidth32_ofNat {x : BitVec 64} {v : Nat} (h : x.toNat = v) (hv : v < 2
     x.setWidth 32 = BitVec.ofNat 32 v := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv]
-
-/-- A reduced coefficient, as loaded. -/
-theorem coeff64 (x : Zq) : (BitVec.ofNat 32 x.val).setWidth 64 = BitVec.ofNat 64 x.val :=
-  setWidth64_ofNat (by have := val_lt x; omega)
 
 /-! ## Tables -/
 

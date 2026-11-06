@@ -47,9 +47,6 @@ theorem mask_eq (c0 c1 c2 c3 c4 c5 c6 : Bool) :
     ((((((!c0 && !c1) && c2) && c3) && !c4) && !c5) && c6) = (!(c0 || c1) && c2 && (c3 && !(c4 || c5) && c6)) := by
   revert c0 c1 c2 c3 c4 c5 c6; decide
 
-theorem b2n_dec (p : Prop) [Decidable p] : (if p then 1 else 0) = b2n (decide p) := by
-  simp only [b2n, decide_eq_true_eq]
-
 /-- The bytes of a factor. -/
 abbrev outB (b : Bool) (v k : Nat) : List Byte := if b then Spec.Rsa.i2osp v k else List.replicate k 0
 

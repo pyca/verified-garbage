@@ -71,10 +71,7 @@ theorem dirCipher_bytes (d : Dir) (k : Spec.Sm4.Schedule) (m : Mem) (p : Addr) :
   · rw [dirCipher, Spec.Sm4.cipher, bytesAt_eq_blockAt, ofFn_toList, Spec.Sm4.encryptBlock, crypt_eq]; rfl
   · rw [dirCipher, Spec.Sm4.invCipher, bytesAt_eq_blockAt, ofFn_toList, Spec.Sm4.decryptBlock, crypt_eq]; rfl
 
-theorem dirCore_slots (d : Dir) : (dirCore d).slots = 358 := rfl
 theorem dirCore_total (d : Dir) : (dirCore d).total = 368 := rfl
-theorem dirCore_stack (d : Dir) : (dirCore d).stack = 20 := rfl
-
 /-- The table, ready, the core's slots not wrapping around, and the stack
 the calls use apart from them. -/
 def Ready (d : Dir) (s : State) (B : BitVec 32) (k : Spec.Sm4.Schedule) : Prop :=
@@ -191,8 +188,6 @@ theorem blockAt_of_ecb {K : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction} {m m' : 
 
 theorem modeDSlot_eq : modeDSlot = 362 := rfl
 theorem modeNSlot_eq : modeNSlot = 363 := rfl
-
-theorem below_eq (E : BitVec 32) (n : Nat) : below E n = stkRegion E n := rfl
 
 theorem prepare_wp (d : Dir) {s : State} {B : BitVec 32} {rs : List Region} {k : Spec.Sm4.Schedule}
     (hB : s.gpr VG.Impl.Modes.X86.sb = B) (hs : VG.Proof.Modes.X86.ScrIn s B (dirCore d).total)

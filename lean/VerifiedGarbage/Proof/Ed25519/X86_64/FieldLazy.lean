@@ -8,8 +8,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 # Ed25519 field programs on the wide scratch, with bounds
 
 `field_liftB` lifts a field program's proof on the narrow scratch (4096 bytes)
-to the wide one (8192), with bounds on the memory before and after; and
-`wp_and` joins two postconditions of the same code.
+to the wide one (8192), with bounds on the memory before and after.
 -/
 
 @[expose] public section
@@ -20,14 +19,6 @@ open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 open VG.Proof.X25519.X86_64 (Scr Outside Op clob F fe)
 
 variable {fld : Arith} [EdArith fld]
-
-/-- Two postconditions of the same code (which runs deterministically). -/
-theorem wp_and {c : Prog isa} {s : State} {Q₁ Q₂ : State → Prop} (h₁ : WP isa c s Q₁)
-    (h₂ : WP isa c s Q₂) : WP isa c s fun t => Q₁ t ∧ Q₂ t := by
-  obtain ⟨t₁, s₁, e₁, q₁⟩ := h₁
-  obtain ⟨t₂, s₂, e₂, q₂⟩ := h₂
-  obtain ⟨-, rfl⟩ := Exec.det e₁ e₂
-  exact ⟨t₁, s₁, e₁, q₁, q₂⟩
 
 /-- `field_lift`, with bounds before and after. -/
 theorem field_liftB {s : State} {base : Addr} (hs : Scratch s base) (code : List Instr)

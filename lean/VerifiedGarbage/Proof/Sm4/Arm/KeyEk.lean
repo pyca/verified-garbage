@@ -211,8 +211,6 @@ theorem ckEntries_mem {e j : Nat} (he : e < 32) (hj : j < 8) :
 
 theorem ckEntries_lt : ∀ kv ∈ ckEntries, kv.1 < tableEnd := by decide +kernel
 
-theorem ckEntries_ge : ∀ kv ∈ ckEntries, tableSlot ≤ kv.1 := by decide +kernel
-
 theorem ckEntries_nodup : (ckEntries.map (·.1)).Nodup := by
   -- The slots are consecutive: a linear check, not the quadratic `Nodup` search.
   rw [show ckEntries.map (·.1) = List.range' tableSlot 256 by decide +kernel]

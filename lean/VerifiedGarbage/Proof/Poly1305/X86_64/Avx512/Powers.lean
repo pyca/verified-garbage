@@ -274,8 +274,6 @@ def powersV : List Instr :=
 theorem powers_eq : powers = loadRg ++ powersV := by
   simp only [powers, powersV, List.append_assoc]
 
-theorem hv_ge' (s : State) (k : Nat) {j : Nat} (h : 4 ≤ j) : hv s k j = hv s k 4 := hv_ge s k h
-
 /-- Limb functions equal below 5 (and both repeating limb 4) are equal. -/
 theorem fext {f g : Nat → Nat} (hf : ∀ j, 4 ≤ j → f j = f 4) (hg : ∀ j, 4 ≤ j → g j = g 4)
     (h : ∀ i < 5, f i = g i) : f = g := ext5 hf hg h

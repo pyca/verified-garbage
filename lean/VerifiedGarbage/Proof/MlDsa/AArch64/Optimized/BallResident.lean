@@ -112,10 +112,6 @@ open VG.Proof.Sha3.AArch64.Sha3
 def PrefixTiming (c : Impl.Sha3.AArch64.Callee) : Prop :=
   RelCT isa (VectorTaint.Agree (VectorTaint.ofRegs [.x0,.x25])) (secondPrefix c) (fun _ _ => True)
 
- theorem sha3_prefixTiming : PrefixTiming callee := by
-  have hh : ∃hint, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x25]) (secondPrefix callee) hint).isSome=true := by sponge_taint_decide Sha3Sums
-  obtain ⟨hint,hh⟩ := hh
-  exact RelCT.taint (A := VectorTaint.taint) _ (fun _ _ h => h) hh
 end VG.Proof.MlDsa.AArch64.Optimized.Ball
 
 end
@@ -265,9 +261,6 @@ open VG.Proof.MlDsa.AArch64.Sample.Ball (spOf pub_eq)
   exact relTaint [.x25] (fun σ₁ σ₂ s₁ s₂ _ _ hq h₁ h₂ => ⟨by rw [h₁.env.sp,h₂.env.sp,hq.2.2.2.2.2.1],
     fun r hr => by rw [List.mem_singleton.mp hr,h₁.env.x25,h₂.env.x25,pub_eq hq]⟩) (by taint_decide)
 
- theorem sha3_ct : ConstantTime isa sbK.pre sbK.pub
-    (Impl.MlDsa.AArch64.Optimized.Ball.codeWith Proof.Sha3.AArch64.Sha3.callee) :=
-  ctWith Proof.Sha3.AArch64.Sha3.backend sha3_spongeCursor sha3_prefixTiming
 end VG.Proof.MlDsa.AArch64.Optimized.Ball
 
 end
@@ -314,11 +307,6 @@ theorem sampleInBall_verifiedWith (v : Proof.Sha3.AArch64.Permutation) (hc : Spo
       sat := by sig_implies_sat [Proof.MlDsa.sampleInBallContract, Proof.MlDsa.sampleInBallSig, sbK,
         AArch64.abi, AArch64.argRegs] [sbSat] using sbSat }
 
-/-- The optimized sampler has the unchanged public SampleInBall contract. -/
-theorem sampleInBall_verified : Verified AArch64.target
-    (Impl.MlDsa.AArch64.Optimized.Ball.codeWith Proof.Sha3.AArch64.Sha3.callee)
-    (Proof.MlDsa.sampleInBallContract AArch64.abi 16) :=
-  sampleInBall_verifiedWith Proof.Sha3.AArch64.Sha3.backend sha3_spongeCursor sha3_prefixTiming
 end VG.Proof.MlDsa.AArch64.Optimized.Ball
 
 end

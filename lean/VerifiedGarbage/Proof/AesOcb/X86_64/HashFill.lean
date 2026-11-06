@@ -32,14 +32,6 @@ open VG.Proof.Ocb (offAt)
 open VG.Proof.Cmac (le8)
 open VG.Proof.AesCcm.X86_64 (runBlock_append toNat_ofNat_of_lt imm_eq)
 
-theorem add_ofNat_imm (p : Addr) (a k : Nat) (hk : k < 2 ^ 31) :
-    p + BitVec.ofNat 64 a + BitVec.signExtend 64 (BitVec.ofNat 32 k) = p + BitVec.ofNat 64 (a + k) := by
-  rw [imm_eq hk, Offset.add_add]
-
-theorem ofNat_imm (a k : Nat) (hk : k < 2 ^ 31) :
-    BitVec.ofNat 64 a + BitVec.signExtend 64 (BitVec.ofNat 32 k) = BitVec.ofNat 64 (a + k) := by
-  rw [imm_eq hk, ← BitVec.ofNat_add]
-
 /-- What one `hashFill` leaves. -/
 structure FillPost (W A : Addr) (l : Block) (j i c : Nat) (t t' : State) : Prop where
   frame : Frame [⟨W + BitVec.ofNat 64 ohO, 16⟩, ⟨W + BitVec.ofNat 64 (384 + 16 * i), 16⟩] t.mem t'.mem

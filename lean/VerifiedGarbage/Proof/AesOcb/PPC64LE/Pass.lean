@@ -108,13 +108,6 @@ theorem blockAtMem_ofs_ck {W : Addr} {m m' : Mem}
     simp only [List.mem_singleton] at hr; subst hr
     exact Offset.disjoint W (d := 16) (n := 16) (e := 32) (k := 16) (.inl (by decide)) (by omega_arith) (by omega_arith)
 
-theorem blockAtMem_B_ck {W B : Addr} (hBW : (⟨B, 16⟩ : Region).Disjoint ⟨W, 2560⟩) {m m' : Mem}
-    (h : Frame [⟨B + BitVec.ofNat 64 0, 16⟩] m m') {d : Nat} (hd : d + 16 ≤ 2560) :
-    blockAtMem m' (W + BitVec.ofNat 64 d) = blockAtMem m (W + BitVec.ofNat 64 d) :=
-  blockAtMem_frame h fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr
-    rw [add0]; exact (hBW.sub_right (Lay.wSub hd)).symm
-
 theorem xorOfs_ok {W : Addr} : BodyOk W xorOfs (fun b o => b ^^^ o) (fun c _ _ => c) := by
   intro t B h24 h31 rB₀ rB₈ wB₀ wB₈ hw hBW
   refine WP.mono (xorOfs_ok' h24 h31 rB₀ rB₈ wB₀ wB₈ hw hBW) fun t' Bk => ?_

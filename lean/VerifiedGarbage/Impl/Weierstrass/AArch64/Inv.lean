@@ -40,22 +40,6 @@ open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 `d` in `x1`, the words of `f` and `g` in `x2`, `x3`, the matrix `u, v, q, r`
 in `x4`–`x7`; `x11 = 1`, `x12 = 0`; through `x8`–`x10`. -/
 
-/-- One divstep on words, branch-free by the flags: `x8`–`x10` are the
-addends of `g`, `q`, `r` (`f`, `u`, `v`, negated if `d ≥ 0`, and zero if `g`
-is even), `ge` after the `ccmp` says that the step swaps (`g` odd and
-`d ≥ 0`), and then `f, u, v` take `g, q, r`'s. -/
-def wstepCode : List Instr :=
-  [.tst .x .x1 .x1, .csneg .x .x8 .x2 .x2 .lt, .csneg .x .x9 .x4 .x4 .lt, .csneg .x .x10 .x5 .x5 .lt,
-    .tst .x .x3 .x11, .cselc .x .x8 .x8 .x12 .ne, .cselc .x .x9 .x9 .x12 .ne, .cselc .x .x10 .x10 .x12 .ne,
-    .ccmp .x .x1 0 8 .ne, .cselc .x .x2 .x3 .x2 .ge, .cselc .x .x4 .x6 .x4 .ge, .cselc .x .x5 .x7 .x5 .ge,
-    .csneg .x .x1 .x1 .x1 .lt, .add .x .x3 .x3 .x8, .add .x .x6 .x6 .x9, .add .x .x7 .x7 .x10,
-    .addImm .x .x1 .x1 2, .lsr .x .x3 .x3 1, .lsl .x .x4 .x4 1, .lsl .x .x5 .x5 1]
-
-/-- `N` word divsteps, counted down in `x13`. -/
-def wsteps (N : Nat) : Prog isa :=
-  .seq (.block [.movz .x .x13 (BitVec.ofNat 16 N) 0])
-    (.loop (.block (.subImm .x .x13 .x13 1 :: wstepCode)) (.nonzero .x .x13))
-
 /-! ## Packed divsteps
 
 A batch's `59` divsteps run in chunks of `n ≤ 15` steps (`15, 15, 15, 14`),

@@ -167,8 +167,9 @@ def ctxHdr : List Instr :=
 
 /-- `vg_ffdh_generate_key_cached(x, x_len, y, y_len, domain, domain_len,
 p_len, rand, rand_len, scratch, scratch_len, ctx, ctx_len)`, the last five on
-the stack: `GenerateKey.gkFront` with the context's pointer and its three
-metadata words in the header. -/
+the stack: the working space's address loaded from the stack, the nonvolatile
+registers saved, and the context's pointer and its three metadata words in
+the header. -/
 def front : List Instr :=
   ([.addSp .r11 104, .load .d .r11 .r11 0] : List Instr) ++ ([.addSp .r12 120, .load .d .r12 .r12 0] : List Instr) ++
     save .r11 ++ ctxHdr ++

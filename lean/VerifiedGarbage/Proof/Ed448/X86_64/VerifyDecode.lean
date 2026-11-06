@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.X448.X86_64.Lit
 
 `decode fld xo yo` on the 57 bytes at `rsi` (RFC 8032 §5.2.3): `y`'s words
 and the sign bit (`decodeY_ok`), `u`, `v`, `u³v` and `u⁵v³` (`decodeUV`),
-the power by `(p-3)/4` (`root_spec`), `x` and the check `v x² = u`
+the power by `(p-3)/4` (`RootOk`), `x` and the check `v x² = u`
 (`decodeX_ok`), and the sign (`decodeSign_ok`). `decode_ok`: `BAD` gains a
 word that is 0 exactly when the bytes decode, and then slots `xo` and `yo`
 hold the decoded point's coordinates (`Z = 1`).

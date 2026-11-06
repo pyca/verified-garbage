@@ -104,8 +104,6 @@ Keccak state at `scratch + 0` and its working space at `scratch + 200`. -/
 def shakeAtWith (c : Impl.Sha3.AArch64.Callee) (ins : List Impl.MlKem.AArch64.Piece) (out : Impl.MlKem.AArch64.Piece) : Prog isa :=
   Impl.MlKem.AArch64.hashWith c .x28 0 200 136 0x1f ins [out]
 
-/-! ## Sequences -/
-
 /-! ## The polynomial primitives
 
 Each takes its working space (if any) at `PS`. -/
@@ -118,8 +116,6 @@ def nttAt (f : Ptr) : Prog isa := callAt "vg_mldsa_ntt" P.ntt [(.x0, .ptr f), (.
 def invNttAt (f : Ptr) : Prog isa := callAt "vg_mldsa_inv_ntt" P.invNtt [(.x0, .ptr f), (.x1, .ptr (sc oPS))]
 
 def mulAt (h f g : Ptr) : Prog isa := callAt "vg_mldsa_multiply_ntt" P.mul [(.x0, .ptr h), (.x1, .ptr f), (.x2, .ptr g)]
-
-def mulAddAt (h f g : Ptr) : Prog isa := callAt "vg_mldsa_multiply_add_ntt" P.mulAdd [(.x0, .ptr h), (.x1, .ptr f), (.x2, .ptr g)]
 
 def addAt (f g : Ptr) : Prog isa := callAt "vg_mldsa_add" P.add [(.x0, .ptr f), (.x1, .ptr g)]
 
@@ -152,12 +148,6 @@ def maskAt (gamma1 : Nat) (a : Ptr) : Prog isa :=
 def ballAt (len tau : Nat) (c : Ptr) : Prog isa :=
   callAt ("vg_mldsa_sample_in_ball" ++ P.suffix) P.ball [(.x0, .ptr (sc oCT)), (.x1, .imm len), (.x2, .imm tau), (.x3, .ptr c), (.x4, .ptr (sc oPS))]
 
-def highBitsAt (r : Ptr) (gamma2 : Nat) (out : Ptr) : Prog isa :=
-  callAt "vg_mldsa_high_bits" P.highBits [(.x0, .ptr r), (.x1, .imm gamma2), (.x2, .ptr out)]
-
-def lowBitsAt (r : Ptr) (gamma2 : Nat) (out : Ptr) : Prog isa :=
-  callAt "vg_mldsa_low_bits" P.lowBits [(.x0, .ptr r), (.x1, .imm gamma2), (.x2, .ptr out)]
-
 /-- `‖f‖∞ < bound`, and `x24 ← x24 ∧ result`. -/
 def normAt (f : Ptr) (bound : Nat) : Prog isa :=
   .seq (callAt "vg_mldsa_norm_lt" P.normLt [(.x0, .ptr f), (.x1, .imm bound)]) (.block and24)
@@ -168,9 +158,6 @@ def onesAdd : List Instr := [.ldr .x .x9 .x28 oONES, .add .w .x9 .x9 .x0, .str .
 /-- `MakeHint` of `z` and `r` to `h`, and the number of 1s added to `ONES`. -/
 def makeHintAt (z r : Ptr) (gamma2 : Nat) (h : Ptr) : Prog isa :=
   .seq (callAt "vg_mldsa_make_hint" P.makeHint [(.x0, .ptr z), (.x1, .ptr r), (.x2, .imm gamma2), (.x3, .ptr h)]) (.block onesAdd)
-
-def simpleBitPackAt (f : Ptr) (b : Nat) (out : Ptr) (len : Nat) : Prog isa :=
-  callAt "vg_mldsa_simple_bit_pack" P.simpleBitPack [(.x0, .ptr f), (.x1, .imm b), (.x2, .ptr out), (.x3, .imm len)]
 
 def bitPackAt (f : Ptr) (a b : Nat) (out : Ptr) (len : Nat) : Prog isa :=
   callAt "vg_mldsa_bit_pack" P.bitPack [(.x0, .ptr f), (.x1, .imm a), (.x2, .imm b), (.x3, .ptr out), (.x4, .imm len)]
@@ -205,7 +192,5 @@ def pro : List Instr :=
 /-- Return `x24` (in `x0`), and restore the caller's registers (`x28` last). -/
 def epi : List Instr :=
   .addImm .x .x0 .x24 0 :: (List.range 7).map fun k => .ldr .x (savedRegs.getD k .x0) .x28 (oSV + 8 * k)
-
-def shakeAt := shakeAtWith .scalar
 
 end VG.Impl.MlDsa.AArch64.Sign

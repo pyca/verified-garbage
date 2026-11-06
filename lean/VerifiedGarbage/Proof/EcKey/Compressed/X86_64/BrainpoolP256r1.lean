@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.InverseVerified
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.InverseLit
-import VerifiedGarbage.Proof.Ecdh.X86_64.BrainpoolP256r1.CheckVerified
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified

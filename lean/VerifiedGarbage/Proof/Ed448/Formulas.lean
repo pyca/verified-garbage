@@ -60,13 +60,8 @@ def addWith (dd : Fe) (p q : Spec.Ed448.Point) : Spec.Ed448.Point :=
 theorem addWith_d (p q : Spec.Ed448.Point) : addWith Spec.Ed448.d p q = Spec.Ed448.pointAdd p q := rfl
 
 theorem doubleOps_valid : ∀ op ∈ doubleOps, fopValid op := by decide
-theorem addOps_valid : ∀ op ∈ addOps, fopValid op := by decide
-
 theorem doubleOps_eval (e : Fin 22 → Fe) :
     pt (evalOps doubleOps e) 0 1 2 = double (pt e 0 1 2) := rfl
-
-theorem addOps_eval (e : Fin 22 → Fe) :
-    pt (evalOps addOps e) 3 4 5 = addWith (e 11) (pt e 0 1 2) (pt e 8 9 10) := rfl
 
 /-- The slot an operation writes. -/
 def fopDest : FOp → Nat
@@ -87,13 +82,6 @@ theorem doubleOps_keep (e : Fin 22 → Fe) (i : Fin 22) (hi : 3 ≤ i.val ∧ i.
     evalOps doubleOps e i = e i :=
   evalOps_keep _ _ _ fun op hop => by
     have : ∀ op ∈ doubleOps, fopDest op < 3 ∨ (12 ≤ fopDest op ∧ fopDest op < 20) := by decide
-    have := this op hop
-    omega
-
-theorem addOps_keep (e : Fin 22 → Fe) (i : Fin 22) (hi : i.val < 3 ∨ (6 ≤ i.val ∧ i.val < 12) ∨ i.val = 21) :
-    evalOps addOps e i = e i :=
-  evalOps_keep _ _ _ fun op hop => by
-    have : ∀ op ∈ addOps, (3 ≤ fopDest op ∧ fopDest op < 6) ∨ (12 ≤ fopDest op ∧ fopDest op < 21) := by decide
     have := this op hop
     omega
 

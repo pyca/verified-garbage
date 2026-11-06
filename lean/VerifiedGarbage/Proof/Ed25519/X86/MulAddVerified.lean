@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Impl.Ed25519.X86.MulAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
@@ -28,6 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-! Merged from `Proof.Ed25519.X86.MulAddMain`. -/
 
@@ -244,90 +244,8 @@ theorem scalarMulAdd_ct : ConstantTime isa scalarMulAddLocal.pre scalarMulAddLoc
   rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
   exacts [a0, a1, a2, a3, a4]
 
-def mulAddSatMem : Mem := fun a =>
-  if a = 0x8005 then 0x10 else if a = 0x8009 then 0x20 else if a = 0x800d then 0x30 else
-  if a = 0x8011 then 0x38 else if a = 0x8015 then 0x40 else 0
-
-def mulAddSatState : State where
-  gpr r := match r with | .esp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := mulAddSatMem
-  rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x3800, 32⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩, ⟨0x8004, 20⟩]
-
 theorem scalarMulAdd_ok (s : State) (h : scalarMulAddLocal.pre s) :
     ∃ tr t, Exec isa scalarMulAdd s tr t ∧ abiPreserved s t ∧ scalarMulAddLocal.post s t :=
   scalarMulAdd_correct h
-
-def scalarMulAddWide : Contract isa :=
-  { scalarMulAddLocal with
-  pre := fun s =>
-    let out : Region := ⟨(arg s 0).setWidth 64, 32⟩
-    let r : Region := ⟨(arg s 1).setWidth 64, 32⟩
-    let k : Region := ⟨(arg s 2).setWidth 64, 32⟩
-    let a : Region := ⟨(arg s 3).setWidth 64, 32⟩
-    let scratch : Region := ⟨(arg s 4).setWidth 64, 8192⟩
-    let args : Region := ⟨argAddr s 0, 20⟩
-    let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stk : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩
-    s.rd = [r, k, a] ∧ s.wr = [out, scratch, args] ∧ out.Disjoint scratch ∧
-      r.Disjoint scratch ∧ k.Disjoint scratch ∧ a.Disjoint scratch ∧
-      args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
-      (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧
-      (arg s 2).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 3).toNat + 32 ≤ 2 ^ 32 ∧
-      (arg s 4).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧
-      8 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint scratch ∧ stk.Disjoint r ∧ stk.Disjoint k ∧ stk.Disjoint a }
-
-def scalarMulAddRd (s : State) : List Region := [⟨(arg s 1).setWidth 64, 32⟩, ⟨(arg s 2).setWidth 64, 32⟩, ⟨(arg s 3).setWidth 64, 32⟩, ⟨argAddr s 0, 20⟩]
-def scalarMulAddWr (s : State) : List Region := [⟨(arg s 0).setWidth 64, 32⟩, ⟨(arg s 4).setWidth 64, 8192⟩]
-
-theorem scalarMulAddWide_pre (s : State) (h : scalarMulAddWide.pre s) :
-    scalarMulAddLocal.pre (s.withRegions (scalarMulAddRd s) (scalarMulAddWr s)) := by
-  obtain ⟨-, -, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h20, ks, kr, kk, ka⟩ := h
-  simp only [scalarMulAddLocal, scalarMulAddRd, scalarMulAddWr, arg_withRegions, argAddr_withRegions,
-    State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr]
-  have be : ∀ rd wr, callStk (s.withRegions rd wr) =
-      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩ := fun _ _ => by
-    simp only [callStk, State.withRegions_gpr, VG.X86.Taint.sub_setWidth h20]
-  exact ⟨True.intro, True.intro, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h20,
-    by rw [be]; exact ks, by rw [be]; exact kr, by rw [be]; exact kk, by rw [be]; exact ka⟩
-
-theorem scalarMulAddWide_implies : scalarMulAddWide.Implies (Proof.Ed25519.scalarMulAddContract X86.abi 8) := by
-    have a0 : arg mulAddSatState 0 = 0x1000 := by decide
-    have a1 : arg mulAddSatState 1 = 0x2000 := by decide
-    have a2 : arg mulAddSatState 2 = 0x3000 := by decide
-    have a3 : arg mulAddSatState 3 = 0x3800 := by decide
-    have a4 : arg mulAddSatState 4 = 0x4000 := by decide
-    have e : argAddr mulAddSatState 0 = 0x8004 := by decide
-    have esp : mulAddSatState.gpr .esp = 0x8000 := rfl
-    sig_implies [Proof.Ed25519.scalarMulAddContract, Proof.Ed25519.scalarMulAddSig,
-      Spec.Ed25519.scratchWords, scalarMulAddWide, scalarMulAddLocal, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
-      stackBelow] [a0, a1, a2, a3, a4, e, esp] using mulAddSatState
-
-theorem scalarMulAdd_verified : Verified X86.target scalarMulAdd (Proof.Ed25519.scalarMulAddContract X86.abi 8) := by
-  have hsat := scalarMulAddWide_implies.sat_left
-  have satLocal : ∃ s, scalarMulAddLocal.pre s := hsat.elim fun s h => ⟨_, scalarMulAddWide_pre s h⟩
-  have verifiedLocal : Verified X86.target scalarMulAdd scalarMulAddLocal :=
-    Verified.of_correct scalarMulAdd_ok scalarMulAdd_ct (.refl satLocal)
-  apply Verified.of_implies (Verified.narrowTo verifiedLocal scalarMulAddRd scalarMulAddWr scalarMulAddWide_pre
-    ?_ ?_ ?_ ?_ hsat) scalarMulAddWide_implies
-  · intro s h a n ⟨r, hr, hc⟩
-    rw [h.1, h.2.1]
-    refine ⟨r, ?_, hc⟩
-    simp only [scalarMulAddRd, scalarMulAddWr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
-    rcases hr with (rfl | rfl | rfl | rfl) | rfl | rfl <;> simp only [true_or, or_true]
-  · intro s h a n ⟨r, hr, hc⟩
-    rw [h.2.1]
-    refine ⟨r, ?_, hc⟩
-    simp only [scalarMulAddWr, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp
-  · intro s t _ h
-    simpa only [scalarMulAddWide, scalarMulAddLocal, arg_withRegions, State.withRegions_mem] using h
-  · intro s t _ _ h
-    simpa only [scalarMulAddWide, scalarMulAddLocal, arg_withRegions, State.withRegions_gpr] using h
 
 end VG.Proof.Ed25519.X86

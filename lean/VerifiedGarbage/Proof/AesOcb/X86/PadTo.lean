@@ -38,9 +38,6 @@ structure SBuf (p : Prm) (s : State) (S : BitVec 32) (n : Nat) : Prop where
   w : (⟨w64 S, n⟩ : Region).Disjoint ⟨w64 p.W, 2560⟩
   rd : Covers [⟨w64 S, n⟩] (s.rd ++ s.wr)
 
-theorem SBuf.of_eq {p : Prm} {s s' : State} {S : BitVec 32} {n : Nat} (h : SBuf p s S n) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : SBuf p s' S n := ⟨h.fit, h.w, by rw [hrd, hwr]; exact h.rd⟩
-
 /-- The head of `padTo`: `W + d` zeroed, the copy's arguments. -/
 theorem padToHead_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32} {n d cO : Nat}
     (hd : d + 16 ≤ 2560) (hc : cO + 4 ≤ 2560) (hcd : cO + 4 ≤ d ∨ d + 16 ≤ cO)

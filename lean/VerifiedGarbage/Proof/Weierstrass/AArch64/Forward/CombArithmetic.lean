@@ -39,20 +39,6 @@ theorem refinement (certs : Cases) {M : Mod} {ops : List FOp}
     (fun i hi => Nat.le_trans (c.rightBound i hi) hsize) ((fprogB_wp _ _ (callOf_small (by decide))).mp hq)
   exact WP.mono h fun t ⟨u,hu,he,hk⟩ => ⟨u,hu,he,hk.mono c.clob⟩
 
-/-- Lift a field contract, including algebraic facts independent of machine state. -/
-theorem contract (certs : Cases) {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} {V W : List Nat} {E : Nat → Fin m} {s : State} {ops : List FOp}
-    {A : Prop} (hs : Scr s base size) (hsize : 8192≤size)
-    (hb : WP isa (fprogB M ops) s fun t =>
-      ProgKeep M base W s t ∧ Inv M base size m Sl V E t ∧ A) :
-    WP isa (program M ops) s fun t =>
-      ProgKeep M base W s t ∧ Inv M base size m Sl V E t ∧ A := by
-  by_cases sel : selected M ops
-  · exact WP.mono (refinement certs sel hs hsize hb)
-      fun _ ⟨_,⟨hk,hi,ha⟩,he,kt⟩ => ⟨(transfer_post he kt hk hi).1,(transfer_post he kt hk hi).2,ha⟩
-  · rw [program,ite_eq_right sel]
-    exact hb
-
 theorem field_ok (certs : Cases) {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
     (hm : UnitMod m (2^(64*M.n))) (hsize : 8192≤size) (ops : List FOp)
@@ -68,17 +54,5 @@ theorem field_ok (certs : Cases) {M : Mod} {base : Addr} {size m : Nat} [NeZero 
       fun _ ⟨_,⟨hk,hi⟩,he,kt⟩ => transfer_post he kt hk hi
   · rw [program,ite_eq_right sel]
     exact hb
-
-theorem field_relCT (certs : Cases) {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
-    (hm : UnitMod m (2^(64*M.n))) (hsize : 8192≤size) (ops : List FOp)
-    {V : List Nat} {E : Nat → Fin m}
-    (hSl : ∀ op∈ops,∀ x∈op.out::op.ins,Sl x) (hLo : ∀ op∈ops, Low M (op.out::op.ins))
-    (hV : readsOk ops V=true)
-    (hct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (program M ops)) :
-    RelCT isa (FieldPair M base size m Sl V E) (program M ops)
-      (FieldPair M base size m Sl (validAfter ops V) (runOps ops E)) := by
-  exact fieldWP_relCT hct fun _ hi => WP.mono (field_ok certs hL hAl hm hsize ops hi hSl hLo hV)
-    fun _ ⟨hk,it⟩ => ⟨it,hk.sp⟩
 
 end VG.Proof.Weierstrass.AArch64.Forward.CombArithmetic

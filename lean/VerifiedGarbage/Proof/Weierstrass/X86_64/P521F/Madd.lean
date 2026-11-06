@@ -78,9 +78,6 @@ theorem progKeep_of (H : StepCtx M size m Sl) {Ws : List Nat} {s t : State} (k :
   ⟨by rw [H.n9]; exact k.gpr, k.rd, k.wr, fun x hx ht => h.mem x (by rw [H.n9] at hx; exact hx)
     (by rw [H.tmp, H.n9] at ht; exact ht)⟩
 
-theorem KeepW.mono {Ws Ws' : List Nat} {s t : State} (h : KeepW base Ws s t) (hW : ∀ w ∈ Ws, w ∈ Ws') :
-    KeepW base Ws' s t := ⟨h.gpr, h.rd, h.wr, fun x hx ht => h.mem x (fun w hw => hx w (hW w hw)) ht⟩
-
 /-- A field program by the fast steps with `rbx` and `rsi` kept in `xmm15`, `xmm14`. -/
 theorem savedF_ok (H : StepCtx M size m Sl) {ops : List FOp} {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) (hS : ∀ op ∈ ops, ∀ x ∈ op.out :: op.ins, Sl x ∧ x + 72 ≤ 3520)

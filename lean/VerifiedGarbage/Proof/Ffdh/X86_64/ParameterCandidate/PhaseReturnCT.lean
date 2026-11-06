@@ -69,15 +69,4 @@ theorem phaseReturned (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) 
   exact WP.mono (leaveStatus_ok ht hd hl) fun t ⟨htt, hdt, hzt, hmt, _, _, k⟩ =>
     ⟨⟨n, htt, hdt, hr.congr (by rw [hmt])⟩, k.2.2.trans hw, hk, by simpa only [hs, hflag] using hzt⟩
 
-theorem leaveReturned_ct (q : Bool) (c : Checks) : RelCT isa (Two (PhaseDone q c)) leaveStatus (Two (PhaseReturned q c)) :=
-  two_post (two_map (fun d : CandidatePublic => (⟨d.p.B, d.wr⟩ : LinkPublic)) (fun _ _ h => h.link) leaveStatus_ct)
-    (phaseReturned q c)
-
-theorem PhaseReturned.outer {q : Bool} {c : Checks} {d : CandidatePublic} {s : State} (h : PhaseReturned q c d s) :
-    OuterHeader d.outer s := by
-  obtain ⟨n, ht, hd, _⟩ := h.1
-  let d' : CandidatePublic := { d with used := d.used + n }
-  have hs : OuterState d' s := ⟨⟨ht, h.2.1, h.2.2.1⟩, hd⟩
-  exact hs.header
-
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

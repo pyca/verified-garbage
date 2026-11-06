@@ -80,10 +80,6 @@ structure ScEnv (sc : Addr) (t : State) : Prop where
   sp : 208 ≤ t.sp.toNat
   d : (below t.sp 208).Disjoint ⟨sc, 8192⟩
 
-theorem ScEnv.of {sc : Addr} {t u : State} (h : ScEnv sc t) (hw : u.wr = t.wr) (hs : u.sp = t.sp) :
-    ScEnv sc u :=
-  ⟨hw ▸ h.w, hs ▸ h.al, hs ▸ h.sp, hs ▸ h.d⟩
-
 theorem sub_sc0 (sc : Addr) {n : Nat} (h : n ≤ 8192) : Region.Sub ⟨sc, n⟩ ⟨sc, 8192⟩ := by
   simpa using Offset.sub_base sc (d := 0) (n := n) (k := 8192) (by omega)
 

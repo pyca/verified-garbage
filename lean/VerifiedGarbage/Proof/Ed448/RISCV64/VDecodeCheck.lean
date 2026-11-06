@@ -45,14 +45,6 @@ theorem fs_zero {m : Mem} {b : Addr} {o : Nat} {w : Nat → Nat} (hw : val32 w 1
     FS m b o = 0 ↔ val32 w 14 = 0 := by
   rw [hw, FS, ← VG.Proof.X448.toFe_zero, VG.Proof.X448.toFe_eq_iff, Nat.zero_mod]
 
-theorem dcW_sub {b : Addr} : ∀ r ∈ [⟨b + BitVec.ofNat 64 Y, 56⟩, ⟨b + BitVec.ofNat 64 OUT, 56⟩],
-    ∃ r' ∈ yW b, Region.Sub r r' := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by decide)⟩
-  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.sub_prefix (Nat.le_refl _)⟩
-
 /-- The slots `decodeCheck` keeps. -/
 def CQ : List Nat := [DXX, DV, DU, DY, DK, DTMP]
 

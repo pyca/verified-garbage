@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 
 `sign` and `verifyPrecomputed`, for a Merkle–Damgård hash function `H` as
 both the hash function and MGF1's, with the design of ARMv7
-(`Impl/RsaPss/Arm.lean`): every hash is computed by `ctHash`, from `H`'s
+(`Impl/RsaPss/Arm.lean`): every hash is computed from `H`'s
 streaming `init`, its compression function and its digest code, without
 revealing the length of the message; the RSA operation is
 `vg_rsa_private_checked` when signing and the precomputed public operation
@@ -27,7 +27,7 @@ comparison of a secret is the borrow of a subtraction (`sub`, then `sbb` of
 a register with itself), and every selection a mask. Only the public key,
 the lengths, `salt_len` and `any_salt_len` decide a branch or an address.
 
-## Hashing a message of secret length (`ctHash`)
+## Hashing a message of secret length
 
 The message is the first `ℓ` bytes (slot `sL`) of `Y` (`scratch + oY`),
 whose bytes after it are zero up to `nbm` blocks (slot `sNb`), with
@@ -38,8 +38,8 @@ block at `oLen` gets zeros and the length field of `ℓ`
 `i mod B` of the block at `oLen` under the mask of `⌊i / B⌋` being
 `⌊(ℓ + L) / B⌋` (slot `sLb`, `padLoop`); every block is copied after the
 hash value at `oSt` and compressed into it, and the hash value copied to
-`oSel` under the mask of being the last block of the padded message
-(`compLoop`); and the digest of `oSel` is written to `oDig`.
+`oSel` under the mask of being the last block of the padded message;
+and the digest of `oSel` is written to `oDig`.
 -/
 
 @[expose] public section
@@ -69,11 +69,11 @@ def sLo : Nat := 40
 def sC : Nat := 44
 /-- `dbLen = emLen - hLen - 1`. -/
 def sDb : Nat := 48
-/-- The length `ℓ` of the message `ctHash` hashes. -/
+/-- The length `ℓ` of the message hashed. -/
 def sL : Nat := 92
 /-- The number of its blocks `nbm`. -/
 def sNb : Nat := 96
-/-- The block `ctHash` compresses. -/
+/-- The block compressed. -/
 def sBi : Nat := 100
 /-- MGF1's counter. -/
 def sCtr : Nat := 104
@@ -91,7 +91,7 @@ def sD : Nat := 124
 def sPc : Nat := 128
 /-- 1 if `any_salt_len` is not zero (verifying). -/
 def sAny : Nat := 52
-/-- The last block of the padded message `ctHash` hashes. -/
+/-- The last block of the padded message hashed. -/
 def sLb : Nat := 136
 /-- The value of the first nonzero byte of `DB`'s padding (verifying). -/
 def sVal : Nat := 140
@@ -111,7 +111,7 @@ def oDig : Nat := 832
 def oLen : Nat := 896
 /-- `EM` (signing), or the signature's RSAVP1 (verifying): `k` bytes. -/
 def oEm : Nat := 1024
-/-- The message hashed by `ctHash`, and its padding: 2048 bytes. -/
+/-- The message hashed, and its padding: 2048 bytes. -/
 def oY : Nat := 2048
 /-- Where the RSA operation's working space starts. -/
 def oRsa : Nat := 8192
@@ -160,13 +160,10 @@ variable (H : Hash)
 /-- `log₂ B`. -/
 def lgB : Nat := Nat.log2 H.B
 
-/-! ## `ctHash` -/
+/-! ## Hashing a message of secret length -/
 
 /-- `ebx := scratch + oSt`, for `init`. -/
 def initArgs : List Instr := atS .ebx oSt
-
-/-- The hash value set to the initial one. -/
-def initPart : Prog isa := .seq (.block initArgs) (H.st.callInit .ebx)
 
 /-- The length field of `ℓ` bytes, in the last 8 bytes of the block at
 `oLen` (the others zero), and the last block of the padded message. -/
@@ -221,22 +218,11 @@ def selBody : List Instr :=
 /-- The next block, and the flags of whether it was the last. -/
 def compNext : List Instr := [ld .eax sBi, addi .eax 1, st .eax sBi, .alu .cmp .eax (.mem (stk sNb))]
 
-def compBody : Prog isa :=
-  seqs [.block (blkSet H), copyBytes, .block (cmpSet H), H.cmp, .block (selSet H), countLoop selBody,
-    .block compNext]
-
-/-- Every block compressed, the last one's hash value selected. -/
-def compLoop : Prog isa := .seq (.block compInit) (.loop (compBody H) .ne)
-
 /-- The digest code's registers: the selected hash value `ebx`, the digest `eax`. -/
 def outSet : List Instr := atS .ebx oSel ++ atS .eax oDig
 
 /-- The digest of the selected hash value. -/
 def outPart : Prog isa := .block (outSet ++ H.out)
-
-/-- The digest of the first `ℓ` bytes of `Y`, padded in `nbm` blocks, to
-`scratch + oDig`, without revealing `ℓ`. -/
-def ctHash : Prog isa := seqs [initPart H, lenPart H, padPart H, compLoop H, outPart H]
 
 /-! ## MGF1 -/
 
@@ -247,7 +233,7 @@ def mgfInit : List Instr := [mi .eax 0, st .eax sCtr, st .eax sDone]
 def mgfSeed : List Instr := atDb .esi ++ [addSlot .esi sDb] ++ atS .ebx oY ++ [mi .ecx H.D]
 
 /-- The counter, big-endian, after `H` in `Y`; the message's length
-`hLen + 4` and its one block, for `ctHash`. -/
+`hLen + 4` and its one block. -/
 def ctrSet : List Instr :=
   [ld .eax sCtr, .bswap .eax, .store (at_ .ebp (oY + H.D)) .eax, mi .eax (H.D + 4), st .eax sL, mi .eax 1,
     st .eax sNb]
@@ -269,13 +255,6 @@ def xorBody : List Instr :=
 def mgfNext : List Instr :=
   [ld .eax sCtr, addi .eax 1, st .eax sCtr, ld .eax sDone, addi .eax H.D, st .eax sDone,
     .alu .cmp .eax (.mem (stk sDb))]
-
-def mgfBody : Prog isa :=
-  seqs [.block (clrArgs oY H.B), zeroLoop, .block (mgfSeed H), copyBytes, .block (ctrSet H), ctHash H,
-    .block (xorSet H), countLoop xorBody, .block (mgfNext H)]
-
-/-- `DB ⊕= MGF1(H, dbLen)`. -/
-def mgfXor : Prog isa := .seq (.block mgfInit) (.loop (mgfBody H) .b)
 
 /-- `DB`'s first byte (`esi`). -/
 def topSet : List Instr := atDb .esi

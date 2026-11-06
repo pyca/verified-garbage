@@ -60,8 +60,6 @@ abbrev a0A (B : Addr) : Addr := ecbA B + BitVec.ofNat 64 (8 * a0Slot)
 
 theorem ecbOff_eq : ecbOff = 48 := rfl
 theorem raSlot_eq : raSlot = 92 := rfl
-theorem a0Slot_eq : a0Slot = 93 := rfl
-
 /-! ## Parking the modes' state -/
 
 /-- `park`: ECB's base to `t0`, `ra` and `a0` to their slots, and the modes'
@@ -240,10 +238,6 @@ theorem crypt_spec (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) (w : List (BitVe
 
 /-! ## Memory around the parked values -/
 
-theorem slotsOf {B : Addr} {i : Nat} (hi : i < 2) :
-    Region.Sub ⟨ecbA B + BitVec.ofNat 64 (8 * (raSlot + i)), 8⟩ ⟨ecbA B, 8 * slots⟩ :=
-  VG.Offset.sub_base _ (by rw [raSlot_eq, slots_eq]; omega)
-
 /-- What `park` writes keeps everything else. -/
 theorem park_frame (m : Mem) (B : Addr) (v₁ v₂ : BitVec 64) :
     Frame [⟨raA B, 16⟩] m ((m.writeW (raA B) v₁).writeW (a0A B) v₂) := by
@@ -263,19 +257,6 @@ theorem park_read (m : Mem) (B : Addr) (v₁ v₂ : BitVec 64) :
   rw [f.readW (r := ⟨raA B, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide), Mem.readW_writeW_self64]
   simp only [List.mem_singleton] at hr; subst hr
   exact VG.Offset.disjoint (ecbA B) (.inl (by decide)) (by decide) (by decide)
-
-/-- A word at slot `k` of ECB's scratch buffer, outside what the key setup
-writes, its prologue's saves and `park`'s slots. -/
-theorem word_out (b : Addr) {k : Nat} (hk : savedSlot + 14 ≤ k ∧ k < keySlot) :
-    ∀ r ∈ keyRegions b ++ [⟨b, 8 * savedSlot⟩, savedRegion b], Region.Disjoint ⟨b + BitVec.ofNat 64 (8 * k), 8⟩ r := by
-  rw [savedSlot_eq, keySlot_eq] at hk
-  intro r hr
-  simp only [keyRegions, savedRegion, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with (rfl | rfl) | rfl | rfl
-  · exact VG.Offset.disjoint_base b (by rw [savedSlot_eq]; omega) (by omega)
-  · exact VG.Offset.disjoint b (.inl (by rw [keySlot_eq]; omega)) (by omega) (by rw [keySlot_eq, slots_eq]; decide)
-  · exact VG.Offset.disjoint_base b (by rw [savedSlot_eq]; omega) (by omega)
-  · exact VG.Offset.disjoint b (.inr (by rw [savedSlot_eq]; omega)) (by omega) (by rw [savedSlot_eq]; decide)
 
 /-! ## The key setup -/
 

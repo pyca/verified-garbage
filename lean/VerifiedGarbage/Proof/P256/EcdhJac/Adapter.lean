@@ -134,13 +134,6 @@ theorem mulWithInverse_of_window (hc : CfgOk p256) {ip : Prog isa} {W : List (Na
   exact finishInverse_ok hc hfixed hslots hflag ready
     (hip ready.scr (modP_of hc.toBaseCfgOk ready.fixed.mp) ready.rz_lt) h
 
-theorem mul_of_window (hc : CfgOk p256)
-    (hw : ∀ {base : Addr} {P : Point C} {k : Nat} {s : State},onCurve C P=true → k<2^256 →
-      Fixed base P k s → WP isa Impl.P256.EcdhJac.window s (WindowPost base P k s)) :
-    MulOk p256 mq :=
-  mulWithInverse_of_window hc (fixedOk_chainWc hc) (fun _ hi hn => apart_chainWc hc hi hn)
-    (by decide) (pPow_ok hc) hw
-
 end VG.Proof.P256.EcdhJac
 
 end

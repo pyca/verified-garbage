@@ -99,10 +99,6 @@ theorem Rest.upd {ws : List Reg} {s s' : State} {d : Reg} {v : BitVec 64} (u : U
     Rest ws s s' :=
   ⟨fun r hr => u.other r fun e => hr (e ▸ hd), u.mem, u.rd, u.wr, u.sp⟩
 
-theorem Rest.mono {ws ws' : List Reg} {s s' : State} (h : Rest ws s s') (hs : ∀ r ∈ ws, r ∈ ws') :
-    Rest ws' s s' :=
-  ⟨fun r hr => h.other r fun h' => hr (hs r h'), h.mem, h.rd, h.wr, h.sp⟩
-
 /-! ## The entry state -/
 
 section

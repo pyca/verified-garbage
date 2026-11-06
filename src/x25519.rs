@@ -15,23 +15,23 @@
 
 #[cfg(target_arch = "aarch64")]
 use crate::arch::x25519::VG_X25519_BASE_SCRATCH_WRITTEN;
-use crate::arch::x25519::vg_x25519;
 use crate::arch::x25519::vg_x25519_base;
+use crate::arch::x25519::vg_x25519_exchange;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::x25519::{
-    VG_X25519_ADX_FEATURES, VG_X25519_BASE_ADX_FEATURES, VG_X25519_BASE_IFMA_FEATURES,
-    VG_X25519_IFMA_FEATURES, vg_x25519_adx, vg_x25519_base_adx, vg_x25519_base_ifma,
-    vg_x25519_ifma,
+    VG_X25519_BASE_ADX_FEATURES, VG_X25519_BASE_IFMA_FEATURES, VG_X25519_EXCHANGE_ADX_FEATURES,
+    VG_X25519_EXCHANGE_IFMA_FEATURES, vg_x25519_base_adx, vg_x25519_base_ifma,
+    vg_x25519_exchange_adx, vg_x25519_exchange_ifma,
 };
 #[cfg(target_arch = "arm")]
-use crate::arch::x25519::{VG_X25519_UMAAL_FEATURES, vg_x25519_umaal};
+use crate::arch::x25519::{VG_X25519_EXCHANGE_UMAAL_FEATURES, vg_x25519_exchange_umaal};
 use crate::cpu::detected;
 use crate::error::XdhError;
 use crate::zeroize::{zeroize, zeroize_raw};
 use core::mem::{MaybeUninit, size_of};
 use verified_garbage_cpu::Features;
 
-/// The implementations of `vg_x25519`.
+/// The implementations of `vg_x25519_exchange` and `vg_x25519_base`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {
     /// The baseline implementation.
@@ -42,7 +42,7 @@ enum Backend {
     /// `_ifma`.
     #[cfg(target_arch = "x86_64")]
     Ifma,
-    /// `_umaal`, of `vg_x25519` alone.
+    /// `_umaal`, of `vg_x25519_exchange` alone.
     #[cfg(target_arch = "arm")]
     Umaal,
 }
@@ -52,11 +52,11 @@ impl Backend {
     #[cfg(target_arch = "x86_64")]
     fn select(f: Features) -> Backend {
         if f.contains(
-            const { Features::all(&[VG_X25519_IFMA_FEATURES, VG_X25519_BASE_IFMA_FEATURES]) },
+            const { Features::all(&[VG_X25519_EXCHANGE_IFMA_FEATURES, VG_X25519_BASE_IFMA_FEATURES]) },
         ) {
             Backend::Ifma
         } else if f.contains(
-            const { Features::all(&[VG_X25519_ADX_FEATURES, VG_X25519_BASE_ADX_FEATURES]) },
+            const { Features::all(&[VG_X25519_EXCHANGE_ADX_FEATURES, VG_X25519_BASE_ADX_FEATURES]) },
         ) {
             Backend::Adx
         } else {
@@ -67,7 +67,7 @@ impl Backend {
     /// The best implementation a CPU with the features `f` can run.
     #[cfg(target_arch = "arm")]
     fn select(f: Features) -> Backend {
-        if f.contains(VG_X25519_UMAAL_FEATURES) {
+        if f.contains(VG_X25519_EXCHANGE_UMAAL_FEATURES) {
             Backend::Umaal
         } else {
             Backend::Baseline
@@ -82,37 +82,40 @@ impl Backend {
     }
 }
 
-/// `X25519(scalar, u)` (RFC 7748 §5), which may be all zero.
-fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
+/// `X25519(scalar, u)` (RFC 7748 §5), by `vg_x25519_exchange`, which also
+/// checks it: `None` if it is all zero (§6.1).
+fn exchange(scalar: &[u8; 32], u: &[u8; 32]) -> Option<[u8; 32]> {
     let mut out = [0u8; 32];
     // Uninitialized: the function's contract holds whatever the scratch
     // holds, so filling it with zeros first would only cost time.
     let mut scratch = MaybeUninit::<[u64; 512]>::uninit();
     let f = match Backend::select(detected()) {
-        Backend::Baseline => vg_x25519,
+        Backend::Baseline => vg_x25519_exchange,
         // `select` chose it because the CPU has the features it needs.
         #[cfg(target_arch = "x86_64")]
-        Backend::Adx => vg_x25519_adx,
+        Backend::Adx => vg_x25519_exchange_adx,
         #[cfg(target_arch = "x86_64")]
-        Backend::Ifma => vg_x25519_ifma,
+        Backend::Ifma => vg_x25519_exchange_ifma,
         #[cfg(target_arch = "arm")]
-        Backend::Umaal => vg_x25519_umaal,
+        Backend::Umaal => vg_x25519_exchange_umaal,
     };
     // SAFETY: `out` and `scratch` are valid for reads and writes of 32 and
     // 4096 bytes, and `scalar` and `u` for reads of 32 bytes; they are
     // distinct Rust objects, so they do not overlap each other or the stack,
     // or wrap around the end of the address space; and the CPU has the
     // features of the function `select` chose.
-    unsafe { f(&mut out, scalar, u, scratch.as_mut_ptr()) };
+    let nonzero = unsafe { f(&mut out, scalar, u, scratch.as_mut_ptr()) };
     // SAFETY: `scratch` is writable for its whole length.
     unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 512]>()) };
-    out
+    // The contract: 0 if and only if `out` is all zero, so there is no
+    // secret in it to destroy.
+    (nonzero != 0).then_some(out)
 }
 
 /// `X25519(scalar, 9)`, by `vg_x25519_base`.
 fn base(scalar: &[u8; 32]) -> [u8; 32] {
     let mut out = [0u8; 32];
-    // Uninitialized, as in `x25519`.
+    // Uninitialized, as in `exchange`.
     let mut scratch = MaybeUninit::<[u64; 1024]>::uninit();
     #[cfg(target_arch = "x86_64")]
     let f = match Backend::select(detected()) {
@@ -189,15 +192,10 @@ impl PrivateKey {
 
     /// The shared secret with the peer whose public key is `peer`,
     /// `X25519(k, peer)` (RFC 7748 §6.1); [`XdhError::ZeroSharedSecret`] if it
-    /// is all zero, which is checked without revealing anything else about
-    /// it.
+    /// is all zero, which the verified code checks without revealing
+    /// anything else about it.
     pub fn exchange(&self, peer: &PublicKey) -> Result<[u8; 32], XdhError> {
-        let mut bytes = x25519(&self.bytes, &peer.bytes);
-        if crate::ct::eq(&bytes, &[0; 32]) {
-            zeroize(&mut bytes);
-            return Err(XdhError::ZeroSharedSecret);
-        }
-        Ok(bytes)
+        exchange(&self.bytes, &peer.bytes).ok_or(XdhError::ZeroSharedSecret)
     }
 }
 
@@ -228,12 +226,12 @@ impl PublicKey {
 #[cfg(test)]
 mod tests {
     #[cfg(target_arch = "arm")]
-    use super::VG_X25519_UMAAL_FEATURES;
-    use super::{Backend, Features, PrivateKey, PublicKey, x25519};
+    use super::VG_X25519_EXCHANGE_UMAAL_FEATURES;
+    use super::{Backend, Features, PrivateKey, PublicKey};
     #[cfg(target_arch = "x86_64")]
     use super::{
-        VG_X25519_ADX_FEATURES, VG_X25519_BASE_ADX_FEATURES, VG_X25519_BASE_IFMA_FEATURES,
-        VG_X25519_IFMA_FEATURES,
+        VG_X25519_BASE_ADX_FEATURES, VG_X25519_BASE_IFMA_FEATURES, VG_X25519_EXCHANGE_ADX_FEATURES,
+        VG_X25519_EXCHANGE_IFMA_FEATURES,
     };
     use crate::error::XdhError;
 
@@ -259,7 +257,8 @@ mod tests {
         assert_eq!(PublicKey::from_bytes(ka.as_bytes()), ka);
     }
 
-    /// The public key is `X25519(k, 9)` for many scalars: random ones, ones
+    /// The public key is the shared secret with the base point, `X25519(k,
+    /// 9)`, for many scalars: random ones, ones
     /// with every nibble the same, and each individual bit (including the
     /// bits that clamping overrides).
     #[test]
@@ -267,7 +266,9 @@ mod tests {
         let check = |k: &[u8; 32]| {
             assert_eq!(
                 *PrivateKey::from_bytes(k).public_key().as_bytes(),
-                x25519(k, &BASE_POINT)
+                PrivateKey::from_bytes(k)
+                    .exchange(&PublicKey::from_bytes(&BASE_POINT))
+                    .unwrap()
             );
         };
         for n in 0..=15u8 {
@@ -290,16 +291,20 @@ mod tests {
         assert_eq!(Backend::select(Features(0)), Backend::Baseline);
         #[cfg(target_arch = "x86_64")]
         {
-            let adx = Features(VG_X25519_ADX_FEATURES.0 | VG_X25519_BASE_ADX_FEATURES.0);
+            let adx = Features(VG_X25519_EXCHANGE_ADX_FEATURES.0 | VG_X25519_BASE_ADX_FEATURES.0);
             assert_eq!(Backend::select(adx), Backend::Adx);
-            // `vg_x25519_adx`'s features alone, without the AVX2 of
+            // `vg_x25519_exchange_adx`'s features alone, without the AVX2 of
             // `vg_x25519_base_adx`'s.
-            assert_eq!(Backend::select(VG_X25519_ADX_FEATURES), Backend::Baseline);
+            assert_eq!(
+                Backend::select(VG_X25519_EXCHANGE_ADX_FEATURES),
+                Backend::Baseline
+            );
             assert_eq!(
                 Backend::select(Features(verified_garbage_cpu::feature::BMI2)),
                 Backend::Baseline
             );
-            let ifma = Features(VG_X25519_IFMA_FEATURES.0 | VG_X25519_BASE_IFMA_FEATURES.0);
+            let ifma =
+                Features(VG_X25519_EXCHANGE_IFMA_FEATURES.0 | VG_X25519_BASE_IFMA_FEATURES.0);
             assert_eq!(Backend::select(ifma), Backend::Ifma);
             assert_eq!(
                 Backend::select(Features(
@@ -316,7 +321,10 @@ mod tests {
             );
         }
         #[cfg(target_arch = "arm")]
-        assert_eq!(Backend::select(VG_X25519_UMAAL_FEATURES), Backend::Umaal);
+        assert_eq!(
+            Backend::select(VG_X25519_EXCHANGE_UMAAL_FEATURES),
+            Backend::Umaal
+        );
     }
 
     /// The point 0 has small order: the shared secret is zero.
@@ -325,6 +333,5 @@ mod tests {
         let a = PrivateKey::from_bytes(&[0x42; 32]);
         let zero = PublicKey::from_bytes(&[0; 32]);
         assert_eq!(a.exchange(&zero).unwrap_err(), XdhError::ZeroSharedSecret);
-        assert_eq!(x25519(a.as_bytes(), &[0; 32]), [0; 32]);
     }
 }

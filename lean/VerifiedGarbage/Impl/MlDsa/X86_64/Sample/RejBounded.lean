@@ -5,13 +5,15 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Common
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_bounded_poly`
 
-`rejBounded(seed = rdi, eta = esi, a = rdx, scratch = rcx) -> eax` (see
-`Common.lean` for the layout) squeezes 544 bytes of SHAKE256 of the 66 bytes
-of the seed (4 blocks; the least bound of FIPS 204 Appendix C is 481 bytes,
-the contract's largest 1088), which the 544 iterations of
-`RejBoundedPoly`'s loop take a byte at a time. The loop (`rbLoop η`, one for
-each `η`, chosen by a branch on the public `η`) runs 544 times, with `rsi` at
-the byte of the iteration, `rdi` = `j`, the number of coefficients sampled,
+`rejBoundedShort(seed = rdi, eta = esi, a = rdx, scratch = rcx) -> eax` (see
+`Common.lean` for the layout) squeezes 272 bytes of SHAKE256 of the 66 bytes
+of the seed (2 blocks), which the first 272 iterations of `RejBoundedPoly`'s
+loop take a byte at a time; if fewer than 256 coefficients were accepted, it
+squeezes 272 more bytes of the same stream, to 544 (4 blocks; the least
+bound of FIPS 204 Appendix C is 481 bytes, the contract's largest 1088), and
+resumes the loop for the other 272 (`rbContinue`). Each `η` has its own
+code (`rbShort η`, chosen by a branch on the public `η`). The loop has `rsi`
+at the byte of the iteration, `rdi` = `j`, the number of coefficients sampled,
 and `rcx` counting down: while `j < 256`, each half-byte `b` of the byte (low
 first, in `rdx`) that `CoeffFromHalfByte` accepts (`b < 15` for `η = 2`,
 `b < 9` for `η = 4`) gives the coefficient `η - (b mod 5)` or `η - b`,
@@ -74,15 +76,6 @@ def rbBody (η : Nat) : Prog isa :=
 def rbLoopCount (η count : Nat) : Prog isa :=
   .seq (.block [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm 840), .mov32 .rdi (.imm 0)])
     (.seq (.block [.mov32 .rcx (.imm (BitVec.ofNat 32 count))]) (.loop (rbBody η) .ne))
-
-/-- Parse all four blocks. -/
-def rbLoop (η : Nat) : Prog isa := rbLoopCount η 544
-
-def rejBounded : Prog isa :=
-  .seq (.block (pro .rcx .rdx (.reg .rsi) (.imm 66)))
-    (.seq (sponge 136 544)
-      (.seq (.seq (.block [.alu32 .cmp .r12 (.imm 2)]) (.ite .e (rbLoop 2) (rbLoop 4)))
-        (.block (retJ ++ epi))))
 
 /-- Save the ordinary sampler layout. -/
 def rbShortPro : List Instr :=

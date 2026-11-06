@@ -21,8 +21,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 Untrusted: everything here is checked by Lean. Once the tag length is allowed
 and the received tag is at `W`, for a 12-byte nonce and at most 16 bytes of
-additional data, `openRunWith gh` computes the tag as `seal`'s path does
-(`front_ok`; the ciphertext's whole blocks by one call of `gh`, its last bytes
+additional data, `openRunWithP c cl` computes the tag as `seal`'s path does
+(`front_ok`; the ciphertext's whole blocks by `cl`, its last bytes
 and the lengths block in registers; `tagSeg_ok`, `tagCall_ok`), into `W + uO`
 where `openMain` puts it, and compares it as `openMain` does (`cmp_ok`):
 `openRunA_ok` leaves what `openMain` leaves at its branch on the tag (`MidO`),
@@ -89,7 +89,7 @@ theorem fast_hi {W : Addr} {d k : Nat} (h₁ : 256 ≤ d) (h₂ : d + k ≤ 2560
 
 variable (c : Callees) (cl : Prog isa)
 
-/-- `openRunWith` up to the branch on the tag. -/
+/-- `openRunWithP` up to the branch on the tag. -/
 def openRunA : Prog isa :=
   .seq Impl.AesGcm.AArch64.Fast.front
   (.seq (.block ([mov .x24 .x26, imm .x25 0] ++ absSeg2 16))
@@ -102,7 +102,7 @@ def openRunA : Prog isa :=
   (.seq cmp
     (.block [imm .x27 1, .sub .x .x27 .x27 .x10]))))))))
 
-/-- `openRunWith` is `openRunA` then `omBWith (Tail.cryptAlT c)`. -/
+/-- `openRunWithP` is `openRunA` then `omBWith (Tail.cryptAlT c)`. -/
 theorem openRunWith_split :
     PEq (.seq (openRunA c cl) (omBWith (Impl.AesGcm.AArch64.Tail.cryptAlT c)))
       (Impl.AesGcm.AArch64.Fast.openRunWithP c cl) := by
@@ -495,7 +495,7 @@ theorem omBXT_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
 
 /-! ## `open` -/
 
-/-- `openRunWith`, once the received tag is at `W`, for a `gh` that hashes as
+/-- `openRunWithP`, once the received tag is at `W`, for a `cl` that hashes as
 `vg_ghash` called with memory changed since the entry `s₀` only in the
 working space and the text. -/
 theorem openRunWith_post (v : GcmImpl) (hMK : MulKey) {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat}
@@ -613,41 +613,6 @@ theorem openRunWith_postE (v : GcmImpl) (hMK : MulKey) {Ctx W SP Np A D Tg : Add
   WP.mono (openRunWith_postX cl v hMK (I := fun _ => True) o h12 h4 h5 h6 h7 hal hT₃ hok hexW hexD hexC
     (fun _ _ => trivial) fun s' _ _ _ _ hc sY sS hr hw hsp hf hd =>
       WP.mono (hgh s' hc sY sS hr hw hsp hf hd) fun _ g => ⟨g, trivial⟩) fun _ q => q.1
-
-/-- `openWithE_wp` for a TLS record with an allowed tag length, whose call
-may also write `ex` and establish `I` (`openRunWith_postX`). -/
-theorem openWithEX_wp (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region}
-    {s : State} {ex : List Region} {I : Mem → Prop} (hs : openPreXW w extra s extraW)
-    (hc : (s.gpr .x5).toNat ≤ 16 ∧ (s.gpr .x3).toNat = 12) (htl : Spec.Gcm.tagLenOk (stackArg s 1).toNat = true)
-    (hexW : ∀ r ∈ ex, (workR (stackArg s w)).Disjoint r)
-    (hexD : ∀ r ∈ ex, (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint r)
-    (hexC : ∀ r ∈ ex, (⟨s.gpr .x0, 256⟩ : Region).Disjoint r)
-    (hI : ∀ {m m' : Mem}, I m → Frame [workR (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] m m' → I m')
-    (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s w)) →
-      s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
-      Frame [workR (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
-      Region.Sub ⟨Dd, 16 * nb⟩ (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region) →
-      WP isa cl s' fun u => GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb u ex ∧ I u.mem) :
-    WP isa (Impl.AesGcm.AArch64.Fast.openWithE v.callees (8 * w) cl) s fun s' =>
-      (GprAbi s s' ∧ openAArch64.post s s') ∧ I s'.mem := by
-  unfold Impl.AesGcm.AArch64.Fast.openWithE
-  refine WP.seq (WP.mono (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntry_ok hw hs)
-    (by rcases hw with rfl | rfl <;> decide) (by rcases hw with rfl | rfl <;> decide))
-    fun s₁ ⟨⟨o₁, x12₁⟩, hx₁⟩ => ?_)
-  refine WP.seq (WP.mono (cond_ok (al := (s.gpr .x5).toNat) (nl := (s.gpr .x3).toNat)
-    (by rw [hx₁ .x5 (by simp), ofNat_toNat']) (s.gpr .x5).isLt o₁.x24 (s.gpr .x3).isLt)
-    fun s₂ ⟨x10₂, r₂⟩ => ?_)
-  have o₂ := o₁.of_regs r₂
-  have x12₂ : s₂.gpr .x12 = stackArg s 0 := by rw [r₂.others _ (by decide), x12₁]
-  have hx₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₂.gpr r = s.gpr r := fun r hr => by
-    rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₁ r hr]
-  refine WP.ite true (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun _ => ?_) (fun h => by cases h)
-  unfold Impl.AesGcm.AArch64.Fast.openFastP
-  refine openRestWithX_wp o₂ x12₂ htl fun o' hT hx' => ?_
-  have hx (r : Reg) (hr : r ∈ [Reg.x4, .x5, .x6, .x7]) := (hx' r hr).trans (hx₂ r hr)
-  exact openRunWith_postX cl v hMK o' hc.2 (hx .x4 (by simp)) (by rw [hx .x5 (by simp), ofNat_toNat'])
-    (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 hT htl hexW hexD hexC hI hgh
 
 /-- `vg_aes_gcm_open` with the path for TLS records, `work` the stack
 argument `w`, and its whole blocks hashed by `cl`, which hashes as a call of

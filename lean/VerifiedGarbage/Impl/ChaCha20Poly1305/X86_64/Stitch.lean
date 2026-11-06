@@ -234,7 +234,7 @@ def leave : List Instr :=
 If 1 to 256 bytes are left after the whole chunks, `tailS` computes their
 keystream with `Avx2Tail`'s code for one set of two blocks (up to 128 bytes)
 or two sets (up to 256), whose double rounds absorb the 32 blocks of the
-last chunk at `rsi`, one after each half of a round (`tround`, as many in
+last chunk at `rsi`, one after each half of a round (`troundG`, as many in
 each double round as `chunk`'s); the rounds are bound by their latency, which
 the blocks of Poly1305 fill. Its setup reads `buf` through `r9`, which holds
 part of the key: `r12`, free until the first block, keeps it meanwhile.
@@ -262,9 +262,6 @@ def troundG (two : Bool) (bl fb : Nat → Nat) (n : Nat) : List Instr :=
 def troundsG (two : Bool) (bl fb : Nat → Nat) : Nat → Prog isa
   | 0 => .block []
   | n + 1 => .seq (troundsG two bl fb n) (.block (troundG two bl fb n))
-
-/-- `troundG` with the schedule of a chunk's rounds (`blocks`). -/
-abbrev tround (two pre : Bool) (n : Nat) : List Instr := troundG two (blocks pre) (firstBlock pre) n
 
 abbrev trounds (two pre : Bool) : Nat → Prog isa := troundsG two (blocks pre) (firstBlock pre)
 

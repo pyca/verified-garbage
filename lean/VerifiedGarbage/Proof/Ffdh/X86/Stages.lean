@@ -543,10 +543,6 @@ def Gate (u : State) (C : Prop) : Prop := ∃ b, isa.eval .e u = some b ∧ (b =
 theorem Gate.of_eval {u : State} {C : Prop} {b : Bool} (h : isa.eval .e u = some b) (hb : b = true ↔ C) :
     Gate u C := ⟨b, h, hb⟩
 
-theorem Gate.keep {u v : State} {C : Prop} (G : Gate u C) (z : v.zf = u.zf) : Gate v C := by
-  obtain ⟨b, h, hb⟩ := G
-  exact ⟨b, by show v.zf = _; rw [z]; exact h, hb⟩
-
 theorem Gate.congr {u : State} {C C' : Prop} (G : Gate u C) (h : C ↔ C') : Gate u C' :=
   let ⟨b, e, i⟩ := G
   ⟨b, e, i.trans h⟩

@@ -562,10 +562,6 @@ abbrev aDivN (v : Vals) (X₁ X₂ : Nat) : Nat → Nat := upd (upd (upd (vals v
 abbrev aFin (v : Vals) : Nat → Nat := upd (upd (vals v) aM1 (2 * (v.p / 2))) aM2 (2 * (v.q / 2))
 abbrev liveFin : List Nat := [aZ, aN, aD, aDP, aDQ, aM1, aM2]
 
-theorem mulIdx_m1 : MulIdx nArr aZ aY aX aA aM1 aT := by decide
-theorem mulIdx_m2 : MulIdx nArr aZ aY aX aA aM2 aT := by decide
-theorem mulIdx_p : MulIdx nArr aZ aY aX aA aP aT := by decide
-
 theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {X₁ X₂ : Nat}
     (h : Stg g s0 (aDivN v X₁ X₂) (aVR :: aVQ :: live0) (decide (v.p % 2 = 1)) s)
     (hq : ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ v.q < 2 ^ (8 * a) ∧

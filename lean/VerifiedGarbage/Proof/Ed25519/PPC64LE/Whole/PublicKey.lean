@@ -100,11 +100,6 @@ theorem pkSetup_ok {n : Nat} {s : State} (hp : PkPre n s) :
     obtain ⟨a, b, c, d⟩ := hn
     rw [g r a b c d, gu r fun e => r0_pres (e ▸ hr)]
 
-theorem pkV_r20 (s : State) : pkV s .r20 = s.gpr .r3 := rfl
-theorem pkV_r21 (s : State) : pkV s .r21 = s.gpr .r4 := rfl
-theorem pkV_r22 (s : State) : pkV s .r22 = s.gpr .r5 := rfl
-theorem pkV_r23 (s : State) : pkV s .r23 = s.gpr .r6 := rfl
-
 /-- The digest, while the body runs. -/
 theorem pk_seed {n : Nat} {s t : State} (hp : PkPre n s) (h : PkInv s t) (hn : n < 2 ^ 64) :
     bytesAt t.mem (s.gpr .r4) n = bytesAt s.mem (s.gpr .r4) n :=

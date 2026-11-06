@@ -9,8 +9,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.MillerRabin
 `candidateStep` for a prime of `L = 8 w` octets, restated with the octets of
 the randomness at offsets (`seg r a n`, the `n` octets from `a`):
 `candidateStep_eq`. Its Miller–Rabin loop, one witness at a time from an
-offset (`mrLoop_step`, `mrLoop_done`), each witness's test by the flag of
-`Proof/MillerRabin/Contract.lean` (`mrIteration_cand`).
+offset (`mrLoop_step`, `mrLoop_done`).
 -/
 
 @[expose] public section
@@ -121,17 +120,6 @@ theorem cand_bits {w c : Nat} (hw : 1 ≤ w) (hc : PrimeShape (64 * w) c) :
   unfold witnessBytes
   rw [hb2, show 64 * w - 1 + 1 = 64 * w by omega]
   omega
-
-/-- A witness's test, by the flag over the bits of `c − 1` from the top
-(`T = 64 w`). -/
-theorem mrIteration_cand {w c b : Nat} (hw : 1 ≤ w) (hc : PrimeShape (64 * w) c) (P : Bool) :
-    mrIteration c (splitTwos (c - 1)).1 (splitTwos (c - 1)).2 b = mrRun c b (64 * w - 1) P := by
-  obtain ⟨hb, hb1, _⟩ := cand_bits hw hc
-  obtain ⟨hodd, hlo, hhi⟩ := hc
-  have : 4 ≤ 2 ^ (64 * w - 2) := by
-    calc 4 = 2 ^ 2 := rfl
-      _ ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega)
-  exact (mrRun_eq (T := 64 * w) (by omega) hodd (by omega) (by rw [hb]; exact Nat.le_refl _) P).symm
 
 /-- `primalityTest` of a candidate: the witnesses' loop from `(1, 0)`. -/
 theorem primalityTest_cand {w c : Nat} (hw : 1 ≤ w) (hc : PrimeShape (64 * w) c) (r : Rand) :

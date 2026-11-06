@@ -20,10 +20,8 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Transpose
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Chunk
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Finish
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Tail
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -31,6 +29,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Poly1305.AArch64.Init
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Chunk
+import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: the rest of the data

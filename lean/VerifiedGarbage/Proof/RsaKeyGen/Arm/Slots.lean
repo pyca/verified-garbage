@@ -57,15 +57,6 @@ theorem slot_writeSlots (m : Mem) (B : Addr) {N : Nat} (hN : 4 * N ≤ 2 ^ 64)
       slot_store _ _ _ hN (bounds e (List.mem_cons_self ..)) hj]
     rfl
 
-theorem slotValue_unchanged (values : List (Nat × BitVec 32)) (j : Nat) (initial : BitVec 32)
-    (absent : ∀ e ∈ values, j ≠ e.1) : slotValue values j initial = initial := by
-  induction values generalizing initial with
-  | nil => rfl
-  | cons e tail ih =>
-    change slotValue tail j (if j = e.1 then e.2 else initial) = initial
-    rw [ite_eq_right (absent e (List.mem_cons_self ..))]
-    exact ih initial (fun v hv => absent v (List.mem_cons_of_mem _ hv))
-
 theorem writeSlots_frame (m : Mem) (B : Addr) {N : Nat} (hN : 4 * N < 2 ^ 64)
     (values : List (Nat × BitVec 32)) (bounds : ∀ e ∈ values, e.1 < N) :
     Frame [⟨B, 4 * N⟩] m (writeSlots m B values) := by

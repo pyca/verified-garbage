@@ -53,8 +53,6 @@ theorem addr_sub {o : State} (A : KeySearchABI o) {k d : Nat} (hk : k ≤ 228) (
   simp only [addr, BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, hl]
   omega_arith
 
-theorem lowR_eq {o : State} : lowR o = ⟨low o, 228⟩ := rfl
-
 /-- A range at offsets of `low o` lies in the stack the controller uses. -/
 theorem low_sub {o : State} {d n : Nat} (h : d + n ≤ 228) : Region.Sub ⟨low o + BitVec.ofNat 64 d, n⟩ (lowR o) :=
   Offset.sub_base _ h

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.VerifiedBlock
 public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Ecb
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec

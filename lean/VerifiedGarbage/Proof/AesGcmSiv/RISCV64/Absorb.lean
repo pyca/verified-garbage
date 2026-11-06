@@ -62,12 +62,6 @@ theorem writeW64_at (m : Mem) (P : Addr) (v : BitVec 64) {i : Nat} (hi : i < 8) 
   rw [Nat.mod_eq_of_lt (by omega)]
   simp [show i < 64 / 8 by omega, BitVec.setWidth_eq]
 
-theorem writeW64_off (m : Mem) (P : Addr) (v : BitVec 64) {i : Nat} (hi : 8 ≤ i) (hi' : i < 2 ^ 64 - 8) :
-    (m.writeW P v) (P + BitVec.ofNat 64 i) = m (P + BitVec.ofNat 64 i) := by
-  simp only [Mem.writeW, Mem.write, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega)]
-  simp [show ¬ i < 64 / 8 by omega]
-
 theorem writeW64_below (m : Mem) (P : Addr) (v : BitVec 64) {i : Nat} (hi : i < 8) :
     (m.writeW (P + BitVec.ofNat 64 8) v) (P + BitVec.ofNat 64 i) = m (P + BitVec.ofNat 64 i) := by
   simp only [Mem.writeW, Mem.write, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]

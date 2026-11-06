@@ -131,12 +131,6 @@ theorem argsKept_of {s : State} (hp : SPre tsH tsG s) {m : Mem} (hM : Frame (wrR
   have := hp.sp2
   exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
-/-- An input's bytes, unchanged. -/
-theorem bytesF_eq {s : State} {m : Mem} (hM : Frame (wrR s) s.mem m) {p : Addr} {n : Nat}
-    (hd : ∀ r ∈ wrR s, (⟨p, n⟩ : Region).Disjoint r) (hn : n ≤ 2 ^ 64) :
-    (List.range n).map (bytesF m p) = Spec.Rsa.bytesAt s.mem p n :=
-  bytesAt_frame hM hd hn
-
 variable {H : Impl.Pbkdf2.Md.X86_64.Hash} (hH : Pbkdf2.Md.X86_64.HashOK H) (K : Pbkdf2.Md.X86_64.Callees H)
 
 /-- The state after the frame's pop. -/

@@ -28,7 +28,7 @@ entry of `n` pairs a coordinate, `n` even with `n / 2 ≤ 3`, whose selection
 takes two passes (`pass2_ok`), both woven into the addition, with the table's
 address in `x30` (`prepNext2_ok`); the first pass's accumulators wait in
 `selKeep` until both are stored (`tentryJFin2_ok`). `tcombJP2_ok`: it
-computes `[k]G`, as `combJWith` does.
+computes `[k]G`.
 -/
 
 @[expose] public section
@@ -356,7 +356,7 @@ theorem combJP2Loop_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List I
     · simpa only [show K.J-1-(r-1)=K.J-1-r+1 by omega_arith] using ht
     · simpa only [show K.J-1-(r-1)=K.J-1-r+1 by omega_arith] using et
 
-/-- The pipelined comb computes `[k]G`, as `combJWith` does (`tcombJWith_ok`). -/
+/-- The pipelined comb computes `[k]G`. -/
 theorem tcombJP2_ok {arithmetic : Mod → List FOp → Prog isa} {mc : List Instr} {K : TCombCfg} {C : Curve}
     {base : Addr} {size k : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb)

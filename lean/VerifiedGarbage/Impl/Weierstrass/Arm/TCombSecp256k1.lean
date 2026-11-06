@@ -29,6 +29,4 @@ def secp256k1CombConsts : List (String × List (BitVec 64)) :=
 
 def mulGeneratorSecp256k1With (u : Bool) : Prog VG.Arm.isa := (secp256k1CombWith u).comb
 
-def mulGeneratorSecp256k1 : Prog VG.Arm.isa := mulGeneratorSecp256k1With false
-
 end VG.Impl.Weierstrass.Arm

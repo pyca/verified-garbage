@@ -52,12 +52,6 @@ theorem entry_bounds {K : JacWinCfg} {m c : Nat} (hm : m<16) (hc : c<5) :
   unfold JacWinCfg.entry
   split <;> omega_arith
 
-theorem entry_apart {K : JacWinCfg} {m n c d : Nat} (hm : m<16) (hn : n<16)
-    (hc : c<5) (hd : d<5) (hne : m≠n ∨ c≠d) :
-    K.entry m c+32≤K.entry n d ∨ K.entry n d+32≤K.entry m c := by
-  unfold JacWinCfg.entry
-  split <;> split <;> omega_arith
-
 /-- A field program cannot modify a cached table coordinate above its workspace. -/
 theorem field_keep_entry {K : JacWinCfg} {base : Addr} {size wk : Nat} (hL : Layout K size wk)
     {s t : State} {W : List Nat} (hs : Scr s base size) (hk : ProgKeep K.M base wk W s t)
@@ -269,7 +263,6 @@ theorem Cached.congr {C : Curve} {base : Addr} {s t : State} {o p : Nat → Nat}
   · rw [e 3 (by decide),e 2 (by decide)]; exact h.z2
   · rw [e 4 (by decide),e 3 (by decide),e 2 (by decide)]; exact h.z3
 
-
 /-- Turn an arithmetic environment into the memory predicate used by table IO. -/
 theorem Cached.of_inv {K : JacWinCfg} {C : Curve} {base : Addr} {size : Nat}
     {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fe C} {s : State}
@@ -300,18 +293,6 @@ theorem Table.field_keep {K : JacWinCfg} {C : Curve} {base : Addr} {size wk M : 
     {P : Point C} (hT : Table K C base P M s) (hM : M≤16) : Table K C base P M t := by
   intro m h1 hm
   exact (hT m h1 hm).congr fun c hc => field_keep_entry hL hs hk hW (by omega_arith) hc
-
-/-- The selected nonzero magnitude represents the corresponding point,
-with both cached powers carried along by the two scans. -/
-theorem select_nonzero_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size a : Nat}
-    {s : State} (hs : Scr s base size) (ha : 1≤a) (ha16 : a≤16)
-    (hb : s.gpr .ebx=BitVec.ofNat 32 a) (ht : K.tbl+2560≤size) (ho : K.T+160≤size)
-    (hsep : K.T+160≤K.tbl) {P : Point C} (hT : Table K C base P 16 s) :
-    WP isa (.block K.select) s fun t =>
-      Cached C base t (fun c => K.T+32*c) (mul a P) ∧
-      Outside base K.T 160 s.mem t.mem ∧ KeepRegs [.ecx,.edx] s t := by
-  refine WP.mono (select_ok hs ha16 hb ht ho hsep) fun t ⟨et,ot,kt⟩ => ⟨?_,ot,kt⟩
-  exact (hT a ha ha16).congr fun c hc => by simpa only [ha,ite_true] using et c hc
 
 end VG.Proof.Weierstrass.X86.JWin
 
@@ -573,7 +554,6 @@ theorem Frame.field {K : JacWinCfg} {C : Curve} {base : Addr} {size wk : Nat}
   h.next hL hW (hk.scr h.scr)
     ⟨fun r hr => hk.gpr r (fun hc => hr (List.mem_append_left _ hc)),hk.rd,hk.wr⟩ (field_allW hk hw)
 
-
 theorem Frame.keeps {K : JacWinCfg} {C : Curve} {base : Addr} {size wk : Nat}
     {s₀ s t : State} (h : Frame K C base size wk s₀ s) (hk : CKeeps [.esi] s t) :
     Frame K C base size wk s₀ t := by
@@ -613,23 +593,6 @@ theorem Frame.store {K : JacWinCfg} {C : Curve} {base : Addr} {size wk m : Nat}
   apply hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at he
   rcases he with rfl|rfl|rfl <;> decide
-
-/-- Compose table growth with the frame needed by subsequent arithmetic. -/
-theorem store_framed_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk M : Nat}
-    (hL : Layout K size wk) (hW : WkOk K.F K.M C.p size wk (·∈slots K))
-    {s₀ s : State} (h : Frame K C base size wk s₀ s) (hM : M<16)
-    (hb : s.gpr .esi=BitVec.ofNat 32 (M+1)) {P : Point C}
-    (hOld : Table K C base P M s)
-    (hNew : Cached C base s (fun c => K.T+32*c) (mul (M+1) P)) :
-    WP isa (.block K.storeEntry) s fun t =>
-      Table K C base P (M+1) t ∧ Frame K C base size wk s₀ t ∧
-      t.gpr .esi=BitVec.ofNat 32 (M+1) := by
-  have hT : K.T+160≤K.tbl := by
-    have := hL.low K.z3 (by simp [slots,work,JacWinCfg.z3])
-    simp only [JacWinCfg.z3] at this
-    omega_arith
-  refine WP.mono (store_table_ok h.scr hM hb hL.table hT hOld hNew)
-    fun t ⟨ht,hu,hk⟩ => ⟨ht,h.store hL hW hM hu hk,(hk.gpr _ (by decide)).trans hb⟩
 
 end VG.Proof.Weierstrass.X86.JWin
 

@@ -43,8 +43,6 @@ def writes (m : Mem) (ps : List (Addr × BitVec 32)) : Mem := ps.foldl (fun m p 
 theorem writes_cons (m : Mem) (p : Addr × BitVec 32) (ps : List (Addr × BitVec 32)) :
     writes m (p :: ps) = writes (m.writeW p.1 p.2) ps := rfl
 
-theorem writes_nil (m : Mem) : writes m [] = m := rfl
-
 section
 variable (Pa : Reg → Addr)
 

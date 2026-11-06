@@ -509,7 +509,6 @@ theorem exec_umov_x {d : Reg} {n : VReg} {i : Nat} (h : i < 2) :
     exec (.umov .x d n i) s = some (s.write .x d ((s.v n).extractLsb' (64 * i) 64)) := by
   simp only [exec, Size.bits, show i * 64 < 128 by omega, ite_true]
 
-
 end
 
 /-- Code that writes no vector register keeps them all. -/
@@ -1585,20 +1584,6 @@ theorem apart3 {w j a b c L la lb lc : Nat} (hja : j ≠ a) (hjb : j ≠ b) (hjc
   · exact slot_apart (w := w) hja (by omega) ha
   · exact slot_apart (w := w) hjb (by omega) hb
   · exact slot_apart (w := w) hjc (by omega) hc
-
-/-- Array `j` is apart from the batches' arrays. -/
-theorem apart5 {w j a b c d e L : Nat} (hja : j ≠ a) (hjb : j ≠ b) (hjc : j ≠ c) (hjd : j ≠ d) (hje : j ≠ e)
-    (hL : L ≤ w + 2) :
-    ∀ r ∈ [(slot w a, 8 * (w + 2)), (slot w b, 8 * (w + 2)), (slot w c, 8 * (w + 2)), (slot w d, 8 * (w + 2)),
-      (slot w e, 8 * (w + 2))], slot w j + 8 * L ≤ r.1 ∨ r.1 + r.2 ≤ slot w j := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact slot_apart (w := w) hja (by omega) (Nat.le_refl _)
-  · exact slot_apart (w := w) hjb (by omega) (Nat.le_refl _)
-  · exact slot_apart (w := w) hjc (by omega) (Nat.le_refl _)
-  · exact slot_apart (w := w) hjd (by omega) (Nat.le_refl _)
-  · exact slot_apart (w := w) hje (by omega) (Nat.le_refl _)
 
 /-- A batch keeps `LInv`, one batch on. -/
 theorem batch_ok {C : ICfg} (hC : C.Ok) {s₀ s : State} {k : Nat} (hk : k < 3 * C.n + 2) (hI : LInv C s₀ k s) :

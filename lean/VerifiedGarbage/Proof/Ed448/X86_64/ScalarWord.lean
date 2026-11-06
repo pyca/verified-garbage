@@ -153,9 +153,6 @@ theorem wordFold_ok (s : State) (hr : rem s < L) :
 
 theorem kWords_val : wv kWords = 2 ^ 448 - L := by decide +kernel
 
-theorem kWords_lit : kWords = [0xdc873d6d54a7bb0d, 0xde933d8d723a70aa, 0x3bb124b65129c96f,
-    0x8335dc16, 0, 0, 0xc000000000000000] := rfl
-
 theorem sbbMask_ok (s : State) {c : Bool} (hc : s.cf = some c) :
     WP isa (.block [.alu .sbb .r15 (.reg .r15)]) s fun s' =>
       s'.gpr .r15 = mask c ∧ Keeps [.r15] s s' := by

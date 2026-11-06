@@ -68,22 +68,4 @@ theorem trialSmall_value_ok (s : State) (dst : BitVec 32) {n prime : Nat}
   apply Bool.eq_iff_iff.mpr
   simpa only [decide_eq_true_eq] using divides.symm
 
-theorem trialSmall_ok (s : State) (dst : BitVec 32) {n prime : Nat}
-    (positive : 0 < n) (fits : n < 2 ^ 32) (bufferFits : dst.toNat + n ≤ 2 ^ 32)
-    (primeBound : prime < 1024)
-    (divisor : s.gpr .r7 = BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry prime))
-    (readOut : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 4)) 4)
-    (readWidth : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 12)) 4)
-    (out : s.mem.readW (State.addr (s.sp + 4)) 32 = dst)
-    (width : s.mem.readW (State.addr (s.sp + 12)) 32 = BitVec.ofNat 32 n)
-    (read : TrialReadable s (dst + BitVec.ofNat 32 n) n) :
-    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.trialSmall s fun t =>
-      t.z = decide (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n) %
-        VG.Impl.RsaKeyGen.tabEntry prime = 0) ∧ t.mem = s.mem ∧
-        Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7] s t := by
-  refine WP.mono (trialSmall_value_ok s dst positive fits bufferFits primeBound divisor
-    readOut readWidth out width read) ?_
-  rintro t ⟨_, _, _, _, _, flag, mem, rest⟩
-  exact ⟨flag, mem, rest⟩
-
 end VG.Proof.Ffdh.Arm.ParameterCandidate

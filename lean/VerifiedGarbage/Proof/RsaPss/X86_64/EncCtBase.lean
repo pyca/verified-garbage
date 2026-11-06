@@ -35,8 +35,6 @@ def EPub (s₁ s₂ : State) : Prop :=
     (List.range 4).map (stackArg s₁) = (List.range 4).map (stackArg s₂) ∧
     tabWords s₁.mem (stackArg s₁ 2) (stackArg s₁ 3) = tabWords s₂.mem (stackArg s₂ 2) (stackArg s₂ 3)
 
-theorem epub_eq (Hs Gs : Spec.Mgf1.Hash) : (encK T Hs Gs).pub = EPub := rfl
-
 /-- The entry state `s` of a run, and the first's, `a`. -/
 def Sib (a s : State) : Prop := Pre T a ∧ EPub a s ∧ Pre T s
 

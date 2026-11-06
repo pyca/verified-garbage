@@ -52,22 +52,6 @@ structure TInv (s₀ : State) (p : Nat) (s : State) : Prop where
   incs : Incs s.mem (ebp s₀)
   frame : Frame (frR s₀) s₀.mem s.mem
 
-/-- The constants survive a memory whose bytes of `buf` are unchanged. -/
-theorem consts_of_bytes {buf : Addr} {m m' : Mem} (h : ∀ i < 80, m'.readW (buf + BitVec.ofNat 64 (4 * i)) 32 =
-    m.readW (buf + BitVec.ofNat 64 (4 * i)) 32) (hc : Consts m buf) (hi : Incs m buf) :
-    Consts m' buf ∧ Incs m' buf := by
-  have hb : ∀ k < 320, m' (buf + BitVec.ofNat 64 k) = m (buf + BitVec.ofNat 64 k) := fun k hk => by
-    rw [Avx512.byte_dword m', Avx512.byte_dword m, h _ (by omega_arith)]
-  have hr : ∀ d n, d + n / 8 ≤ 320 → m'.readW (buf + BitVec.ofNat 64 d) n = m.readW (buf + BitVec.ofNat 64 d) n :=
-    fun d n hdn => Mem.readW_congr fun i hi => by rw [add_ofNat, hb _ (by omega_arith)]
-  refine ⟨⟨?_, ?_, ⟨?_, ?_⟩, ?_⟩, fun k hk p hp => ?_⟩
-  · rw [hr 128 256 (by omega_arith)]; exact hc.lo16
-  · rw [hr 128 256 (by omega_arith)]; exact hc.hi16
-  · rw [hr 160 256 (by omega_arith)]; exact hc.m8.1
-  · rw [hr 160 256 (by omega_arith)]; exact hc.m8.2
-  · intro l q hl hq; rw [hr _ 32 (by omega_arith)]; exact hc.inc l q hl hq
-  · rw [hr _ 32 (by omega_arith)]; exact hi k hk p hp
-
 theorem TInv.cst {s₀ : State} {p : Nat} {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
     Consts s.mem (s.gpr .r9) ∧ Incs s.mem (s.gpr .r9) := by
   rw [hr9]; exact ⟨h.consts, h.incs⟩

@@ -102,7 +102,6 @@ structure Ok : Prop where
 
 end ELay
 
-theorem ro_N (L : ELay) : L.N ∈ L.ro := by simp [ELay.ro]
 theorem ro_E (L : ELay) : L.E ∈ L.ro := by simp [ELay.ro]
 theorem ro_LAB (L : ELay) : L.LAB ∈ L.ro := by simp [ELay.ro]
 theorem ro_MSG (L : ELay) : L.MSG ∈ L.ro := by simp [ELay.ro]

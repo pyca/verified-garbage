@@ -231,13 +231,6 @@ theorem alloc_args_frame {p : SearchPublic} {original s : State} {used remaining
   rw [← h.input.sp_eq]
   exact Offset.sub_below p.sp (by decide) (by decide)
 
-/-- The frame's words, through what a candidate call may write. -/
-theorem SearchLive.call_word {p : SearchPublic} {original s : State} {used remaining : Nat}
-    (h : SearchLive p original used remaining s) {m : Mem}
-    (hf : Frame (SearchInput.callChanges original) s.mem m) {j : Nat} {v : BitVec 64}
-    (hj : (j, v) ∈ p.headers used remaining) : m.readW (p.F + BitVec.ofNat 64 (8 * j)) 64 = v :=
-  (h.input.frame_words hf j (SearchPublic.headers_bound _ _ _ _ hj)).trans (h.headers (j, v) hj)
-
 theorem search_arguments_ok {p : SearchPublic} {original s : State} {used remaining : Nat}
     (h : SearchLive p original used remaining s) :
     WP isa (.block arguments) (allocd 32 s) fun u =>

@@ -73,8 +73,6 @@ theorem Two.eqNB {a b : State} (h : Two a b) : NB a = NB b := by
   show (L a - H a) / 64 = (L b - H b) / 64; rw [h.eqH, h.eqL]
 theorem Two.eqT {a b : State} (h : Two a b) : T a = T b := by
   show (L a - H a) % 64 = (L b - H b) % 64; rw [h.eqH, h.eqL]
-theorem Two.st64 {a b : State} (h : Two a b) : st a = st b := by simp only [st, h.hst]
-
 /-- The callee's public data: `esp` and the arguments, which are the
 registers pushed. -/
 theorem entry_pub {rs : List Reg} {x y : State} (rd wr : List Region) (hrs : Reg.esp ∉ rs)

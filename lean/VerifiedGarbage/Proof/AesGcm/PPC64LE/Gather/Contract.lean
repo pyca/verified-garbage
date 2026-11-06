@@ -91,10 +91,4 @@ def gatherPost (s s' : State) : Prop :=
       (bytesAt s.mem (Ad s) (AL s)) =
     (bytesAt s'.mem (Dst s) (L s), bytesAt s'.mem (Tg s) 16)
 
-/-- `vg_aes_gcm_seal_gather`. -/
-def gatherPPC64LE : Contract isa where
-  pre := gatherPre
-  post := gatherPost
-  pub := gatherPub
-
 end VG.Proof.AesGcm.PPC64LE.Gather

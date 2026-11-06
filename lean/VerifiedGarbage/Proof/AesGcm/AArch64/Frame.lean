@@ -148,15 +148,6 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract AArch64.abi 2
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
-theorem seal_framed (v : GcmImpl) :
-    Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 («seal» v.callees))
-      (Proof.AesGcm.sealRoundsContract AArch64.abi 2576) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.sealPre AArch64.abi.ptrBits)
-    (post := Proof.AesGcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2576)
-    (seal_verified v) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
-
 /-- A state satisfying `vg_aes_gcm_open`'s precondition, without the working
 space: `tag` at 0 and `tag_len` 0, its two stack arguments. -/
 def openFrameSat : State :=
@@ -168,16 +159,5 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract AArch64.abi 2
     Spec.Gcm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
     List.getD, List.range, List.range.loop] [openFrameSat, openSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
-
-theorem open_framed (v : GcmImpl) :
-    Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 («open» v.callees))
-      (Proof.AesGcm.openRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.openPre AArch64.abi.ptrBits)
-    (post := Proof.AesGcm.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
-    (leak := some (Spec.Gcm.openLeak AArch64.abi.ptrBits))
-    (open_verified v) (by decide) (by decide) (openPre_local _) (openPost_local _) openFrameSat_pre
-    (hleak := openLeak_local _)
 
 end VG.Proof.AesGcm.AArch64

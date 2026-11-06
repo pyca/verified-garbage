@@ -69,10 +69,6 @@ theorem streamVerify_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : s
     ∃ t s', Exec isa streamVerify s t s' ∧ abiPreserved s s' ∧ streamVerifyPPC64LE.post s s' :=
   streamVerify_wp hs
 
-theorem seal_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : sealPPC64LE.pre s) :
-    ∃ t s', Exec isa «seal» s t s' ∧ abiPreserved s s' ∧ sealPPC64LE.post s s' :=
-  seal_wp hs
-
 theorem sealFused_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     (s : State) (hs : sealPPC64LE.pre s) :
     ∃ t s', Exec isa Impl.AesGcm.PPC64LE.SealFused.seal s t s' ∧
@@ -198,14 +194,6 @@ def sealSat : State where
   mem a := bif Nat.beq a.toNat 0x9061 then 0x50 else bif Nat.beq a.toNat 0x9069 then 0x60 else 0
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x9060, 16⟩]
   wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩, ⟨0x6000, 2560⟩]
-
-theorem seal_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target «seal» (Proof.AesGcm.sealScratchContract PPC64LE.abi) :=
-  Verified.of_correct seal_correct seal_ct (by
-    sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
-      Proof.AesGcm.sealRoundsPost, sealPPC64LE, sealPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
-      stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
-      [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
 theorem sealFused_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     Verified PPC64LE.target Impl.AesGcm.PPC64LE.SealFused.seal

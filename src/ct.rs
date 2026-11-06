@@ -19,6 +19,15 @@ pub(crate) fn eq(a: &[u8], b: &[u8]) -> bool {
     unsafe { vg_ct_eq(a.as_ptr(), a.len(), b.as_ptr(), b.len()) != 0 }
 }
 
+/// Whether every byte of `a` is zero, by the verified comparison with as many
+/// zeros: it leaks only `a`'s length, not which byte is not zero. RSA and
+/// FFDH check with it that a secret given in more bytes than its fixed width
+/// has only zeros before them.
+#[cfg(feature = "alloc")]
+pub(crate) fn is_zero(a: &[u8]) -> bool {
+    eq(a, &alloc::vec![0; a.len()])
+}
+
 /// Fails to compile unless `N`, the length of a key a password KDF's
 /// `verify` checks, is at least 16 bytes (128 bits; SP 800-132 asks
 /// for at least 112). The length is a type parameter so that it is fixed in
@@ -59,6 +68,8 @@ pub(crate) use assert_verify_len;
 #[cfg(test)]
 mod tests {
     use super::eq;
+    #[cfg(feature = "alloc")]
+    use super::is_zero;
 
     #[test]
     fn compares() {
@@ -69,6 +80,18 @@ mod tests {
         assert!(!eq(&[1, 2, 3], &[1, 2]));
         assert!(!eq(&[], &[0]));
         assert!(!eq(&[0], &[]));
+    }
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn zeros() {
+        assert!(is_zero(&[]));
+        assert!(is_zero(&[0; 33]));
+        for i in 0..33 {
+            let mut a = [0; 33];
+            a[i] = 0x80;
+            assert!(!is_zero(&a));
+        }
     }
 
     #[test]

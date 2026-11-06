@@ -55,16 +55,6 @@ theorem StackContext.store {p : BitVec 32} {s : State} (C : StackContext p s)
   · rw [T.mem, Nat.zero_add]
     exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega)
 
-theorem StackContext.readAfter {p : BitVec 32} {s t : State} (C : StackContext p s)
-    {rs : List Reg} (K : Keeps rs s t) (sp : .esp ∉ rs) {a b : Nat}
-    (O : Outside (p.setWidth 64) a 4 s.mem t.mem) (fit : b + 4 ≤ 20)
-    (apart : b + 4 ≤ a ∨ a + 4 ≤ b) :
-    readSrc t (.mem (slot b)) = some (s.mem.readW (off (p.setWidth 64) b) 32) := by
-  have read := (C.keep K sp).read b fit
-  have same := BitVec.eq_of_toNat_eq (O.w32 (d := b) apart (by omega))
-  rw [same] at read
-  exact read
-
 theorem StackContext.literal {p : BitVec 32} {s : State} (C : StackContext p s)
     (d : Nat) (fit : d + 4 ≤ 20) (value : BitVec 32) :
     WP isa (.block [.mov .eax (.imm value), .store (slot d) .eax]) s fun t =>

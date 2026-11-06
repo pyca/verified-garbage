@@ -22,10 +22,5 @@ def after (S : RcbSlots) (p : Pt) : List FOp :=
   [.add S.t4 S.t2 S.t2, .mul p.x S.t3 S.t3, .sub p.x p.x S.t4,
    .sub p.y S.t2 p.x, .mul p.y S.t3 p.y, .sub p.y p.y S.t1]
 
-/-- The original coordinates are consumed before their slots are overwritten. -/
-def code (M : Mod) (S : RcbSlots) (p : Pt) : Prog isa :=
-  .seq (fprogB M (before S p))
-    (.seq (.block (half S.t1 S.t1)) (fprogB M (after S p)))
-
 end DoubleHalf
 end VG.Impl.P256.X86_64

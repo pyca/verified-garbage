@@ -21,9 +21,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 `Table.mgfXor lay f` is constant time in two runs with the same frame,
 regions, `src` and `dst`, the same table (its address in the slot `sTab`)
 and the hash function's functions at the same addresses (`MQT`), whatever
-the bytes they hold (`mgfT_ct`), as `mgfXor lay G` is (`mgf_ct`): each
-indirect call is to the same address in both runs, and so of the same
-function (`two_tcall`), and the rest is as `round_ct`.
+the bytes they hold (`mgfT_ct`): each indirect call is to the same address
+in both runs, and so of the same function (`two_tcall`).
 -/
 
 @[expose] public section

@@ -13,8 +13,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 Untrusted: everything here is checked by Lean. After the entry
 (`fastEntry_ok`), `cond` sets `x10` to 0 exactly for a 12-byte nonce and at
-most 16 bytes of additional data (`cond_ok`); then `run` (`run_ok`) or
-`sealRest` (`sealRest_ok`) (`seal_wp`).
+most 16 bytes of additional data (`cond_ok`); then `runWithP`
+(`runWithP_ok`) or `sealRest` (`sealRest_ok`) (`sealWithE_wp`, `seal_wp`).
 -/
 
 @[expose] public section
@@ -119,34 +119,6 @@ theorem sealWithE_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmul
     exact runWithP_ok v cl hMK hs hgh h₂ hx₂ hc.2 hc.1
   · refine WP.ite false (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun h => by cases h) (fun _ => ?_)
     exact sealRest_ok v hs h₂
-
-/-- `sealWithE_wp` for a TLS record (a 12-byte nonce and at most 16 bytes of
-additional data), whose call may also write `ex` and establish `I`
-(`runWithPX_ok`). -/
-theorem sealWithEX_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {w : Nat}
-    (hw : w = 1 ∨ w = 2) {extra extraW : List Region} {s : State} {ex : List Region} {I : Mem → Prop}
-    (hs : sealPreXW w extra s extraW) (hc : (s.gpr .x5).toNat ≤ 16 ∧ (s.gpr .x3).toNat = 12)
-    (hexW : ∀ r ∈ ex, (workR (stackArg s w)).Disjoint r)
-    (hexD : ∀ r ∈ ex, (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint r)
-    (hexC : ∀ r ∈ ex, (⟨s.gpr .x0, 256⟩ : Region).Disjoint r)
-    (hI : ∀ {m m' : Mem}, I m → Frame [workR (stackArg s w), ⟨stackArg s 0, 16⟩] m m' → I m')
-    (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s w)) →
-      s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
-      Frame [workR (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
-      Region.Sub ⟨Dd, 16 * nb⟩ (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region) →
-      WP isa cl s' fun t => GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb t ex ∧ I t.mem) :
-    WP isa (Impl.AesGcm.AArch64.Fast.sealWithE v.callees (8 * w) cl) s fun s' =>
-      (GprAbi s s' ∧ sealAArch64.post s s') ∧ I s'.mem := by
-  refine WP.seq (WP.mono (fastEntry_ok hw hs) fun s₁ ⟨h₁, hx⟩ => ?_)
-  refine WP.seq (WP.mono (cond_ok (al := (s.gpr .x5).toNat) (nl := (s.gpr .x3).toNat)
-    (by rw [hx .x5 (by simp), ofNat_toNat']) (s.gpr .x5).isLt (by rw [h₁.x24, ofNat_toNat']) (s.gpr .x3).isLt)
-    fun s₂ ⟨x10₂, r₂⟩ => ?_)
-  have h₂ := SealEntry.of_regs h₁ r₂
-  have hx₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₂.gpr r = s.gpr r := fun r hr => by
-    rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx r hr]
-  refine WP.ite true (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun _ => ?_) (fun h => by cases h)
-  exact runWithPX_ok v cl hMK hs hexW hexD hexC hI hgh h₂ hx₂ hc.2 hc.1
 
 /-- `vg_aes_gcm_seal` with the path for TLS records, its whole blocks hashed
 by `gh`, which hashes as `vg_ghash` when called with memory changed since the

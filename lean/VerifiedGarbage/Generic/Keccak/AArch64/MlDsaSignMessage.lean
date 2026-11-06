@@ -7,7 +7,6 @@ import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedVerified
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedHints
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
@@ -30,7 +29,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallSample
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
@@ -111,7 +109,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductRepresentation
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
@@ -212,24 +209,19 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintEnd
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSignTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedArtifactDepth
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignSat
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
@@ -268,7 +260,6 @@ public import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.MlDsa.ResponseLowContract
 public import VerifiedGarbage.TCB.Axioms
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedHints
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
@@ -291,7 +282,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallSample
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
@@ -372,7 +362,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedVec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductRepresentation
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
@@ -473,24 +462,19 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintEnd
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSignTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedArtifactDepth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignSat
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame

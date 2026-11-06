@@ -18,14 +18,14 @@ meta import VerifiedGarbage.Proof.Framework.OmegaLit
 /-!
 # RSAES-OAEP on AArch64: MGF1 with the hash function of a table, in constant time
 
-As `mgfXor_tr` (`Proof/RsaOaep/AArch64/MgfCT.lean`), for `Table.mgfXor`: the
-pieces between calls are checked by the taint analysis as there (the digest
-length is now loaded from a slot, so no immediate depends on the hash
-function), and each indirect call is related across the two runs by
+`Table.mgfXor` in constant time, each round (`roundT_tr`) and the whole
+(`mgfXorT_tr`): the pieces between calls are checked by the taint analysis
+(the digest length is loaded from a slot, so no immediate depends on the
+hash function), and each indirect call is related across the two runs by
 `RelCT.icalls_of_call` (`lr_tcall`): both runs hold the same table, at the
 same address, and their functions are at the same addresses (`MXT`'s `ai`,
 `au` and `af`), so both call the same function, whose call is constant time
-as before (`lr_init`, `lr_upd`, `lr_fin`).
+(`lr_init`, `lr_upd`, `lr_fin`).
 -/
 
 @[expose] public section

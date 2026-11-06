@@ -40,14 +40,6 @@ theorem sample_mask {N : Nat} (positive : 0<N) : (sampleMask N).setWidth 8=Scala
  simp only [BitVec.toNat_setWidth,BitVec.toNat_ofNat]
  omega
 
-theorem sample_octets {a : Spec.Ffdh.Parameters} {r : List Byte}
- (positive : 0<Spec.Ffdh.generationScalarBits a) :
- KeyScalar.cut r (r.length-(Spec.Ffdh.generationScalarBits a+7)/8)
-  ((sampleMask (Spec.Ffdh.generationScalarBits a)).setWidth 8)=VettedPolicy.octets a r := by
- rw [sample_mask positive]
- unfold VettedPolicy.octets
- rw [sample_width positive]
-
 end VG.Proof.Ffdh.AArch64.Cached
 end
 

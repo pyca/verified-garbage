@@ -15,18 +15,12 @@ All calls and the release run regardless of secret acceptance or comparison.
 namespace VG.Impl.Rsa.Arm.PrivChecked
 open VG VG.Arm
 
-def seqs : List (Prog isa) → Prog isa
-  | [] => .block []
-  | [c] => c
-  | c :: cs => .seq c (seqs cs)
-
 /-- Encodable, ABI-aligned inner frame, with outgoing arguments at 0..55. -/
 def frameBytes : Nat := 3328
 def oOut : Nat := 64
 def oN : Nat := 68
 def oK : Nat := 72
 def oE : Nat := 76
-def oEl : Nat := 80
 def oIn : Nat := 84
 def oR1 : Nat := 88
 def oR3 : Nat := 92
@@ -80,8 +74,6 @@ def maskCore : List Instr :=
    .dp .sub .r4 .r12 (.reg .r4), .mov .r12 (.imm 2), .dp .sub .r3 .r12 (.reg .r3),
    .dp .and .r4 .r4 (.reg .r3)]
 def releaseArgs : List Instr := [.ldrSp .r0 oOut, .addSp .r1 oM, .ldrSp .lr oK, .mov .r12 (.imm 0)]
-def masks : List Instr := maskCore ++ releaseArgs
-
 /-- Write only masked private bytes, clearing each temporary byte after use. -/
 def releaseStep : List Instr :=
   [.ldrb .r3 .r1 0, .dp .and .r3 .r3 (.reg .r2), .strb .r3 .r0 0, .strb .r12 .r1 0,

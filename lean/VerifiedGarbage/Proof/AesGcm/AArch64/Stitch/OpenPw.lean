@@ -4,23 +4,24 @@ public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.SealPw
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortOpenCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenSh
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenStore
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenW
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.SealPw
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortOpenCT
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenStore
 import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Verified
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Verified
 import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenCT
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
+meta import VerifiedGarbage.Proof.AesGcm.Rounds
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
 
 /-!
-# AES-GCM on AArch64, interleaved: `vg_aes_gcm_open_with_powers` and `vg_aes_gcm_open_store_powers`
+# AES-GCM on AArch64, interleaved: `vg_aes_gcm_open_with_powers`
 
 Untrusted: everything here is checked by Lean. As `Stitch/SealPw.lean`, for
-`open` (`Fast/OpenPw.lean`, `Fast/OpenStore.lean`).
+`open` (`Fast/OpenPw.lean`).
 -/
 
 @[expose] public section
@@ -180,126 +181,5 @@ theorem openPwS_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch6
     (openPwS_verified v g hMK gh) (by decide) (by decide) (Proof.AesGcm.openWithPowersPre_local _)
     (Proof.AesGcm.openWithPowersPost_local _) openFrameSatPw_pre
     (hleak := Proof.AesGcm.openWithPowersLeak_local _)
-
-/-! ## `vg_aes_gcm_open_store_powers` -/
-
-section
-variable (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
-  (hP : Proof.Gcm.AArch64.Pmull.PrepPow) (gh : Gh8Ok)
-include hMK hP gh
-
-theorem openStS_correctN (s : State) (hs : openStN s) :
-    ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.openStorePw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
-      openStAArch64.post s s' := by
-  have hs' := hs
-  obtain ⟨hpx, pd, pw, pc, h16, h12, htl⟩ := hs'
-  exact WP.withPreservedV (WP.mono (openWithSX_wp (w := 3) v _ hMK gh (.inr rfl) (ex := [pwRO s]) hpx ⟨h16, h12⟩ htl
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact pw.symm)
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact pd.symm)
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact pc.symm)
-      (fun hi hf => powers_keepO hs hi hf)
-      (fun s' _ _ _ _ hc sY sS hrd hwr hsp hf hd =>
-        have q := gsCallO_of hs sY sS hrd hwr hsp hf hd
-        WP.mono (pwS_call g (k := 16) (by decide) q.1 q.2.1 hc q.2.2.1) fun _ ⟨gp, pp⟩ =>
-          ⟨gp, by rw [← q.2.2.2]; exact pp⟩) (powTbl_forO hP _ _ _ _ _ s)) fun _ ⟨⟨ga, p⟩, q⟩ => ⟨ga, p, q⟩)
-    (stitchOpenWithS_keepsV v (.inr rfl) powTbl_keepsV (pwCallS16_keepsV g))
-
-theorem openStS_ctN :
-    ConstantTime isa openStN (fun s₁ s₂ => onePub 4 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
-      (Impl.AesGcm.AArch64.Stitch.openStorePw v.callees g.fn) :=
-  openWithSX_ct (w := 3) v _ hMK gh (.inr rfl) (extra := fun _ => []) (extraW := fun s => [pwRO s])
-    (ex := fun s => [pwRO s]) (fun _ h => h.1)
-    (fun h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.1.symm)
-    (fun h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.2.1.symm)
-    (fun h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.2.1.symm)
-    (fun hq => by obtain ⟨-, -, -, -, -, -, -, -, -, qa⟩ := hq; simp only [pwRO, qa 2 (by decide)])
-    (fun p hc sY sS hrd hwr hsp hf hd =>
-      have q := gsCallO_of p sY sS hrd hwr hsp hf hd
-      WP.mono (pwS_call g (k := 16) (by decide) q.1 q.2.1 hc q.2.2.1) fun _ q' => q'.1)
-    (fun {σ₁ σ₂ s₁ s₂ _ _ _ _} p₁ p₂ hq c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd => by
-      obtain ⟨q0, -, -, -, -, -, q6, q7, qsp, qa⟩ := hq
-      have e3 : stackArg σ₁ 3 = stackArg σ₂ 3 := qa 3 (by decide)
-      have e2 : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by decide)
-      obtain ⟨hP₁, hs₁, k₁, -⟩ := gsCallO_of p₁ sY sS r₁ w₁ sp₁ f₁ hd
-      obtain ⟨hP₂, hs₂, k₂, -⟩ := gsCallO_of p₂ (by rw [← e3]; exact sY) (by rw [← e3]; exact sS) r₂ w₂
-        (sp₂.trans qsp) (by rw [← e3, ← q6, ← q7]; exact f₂) (by rw [← q6, ← q7]; exact hd)
-      rw [← e2] at hP₂ k₂
-      rw [← q0] at k₂
-      exact pwS_rel g (.inr rfl) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm))
-    (fun {σ} _ => powTbl_forO hP _ _ _ _ _ σ)
-    fun _ _ _ _ _ sp₁ sp₂ hr _ _ _ _ _ _ => powTblDec_rel (sp₁.trans sp₂.symm) hr
-
-end
-
-section
-variable (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
-  (hP : Proof.Gcm.AArch64.Pmull.PrepPow) (gh : Gh8Ok)
-include hMK hP gh
-
-theorem openStS_correct (s : State) (hs : openStAArch64.pre s) :
-    ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.openStorePw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
-      openStAArch64.post s s' := by
-  obtain ⟨t, s₁, he, ha, hp⟩ := openStS_correctN v g hMK hP gh _ (narrowSO_pre hs)
-  exact ⟨t, _, narrowSO_exec hs he, ha, hp⟩
-
-theorem openStS_ct :
-    ConstantTime isa openStAArch64.pre openStAArch64.pub (Impl.AesGcm.AArch64.Stitch.openStorePw v.callees g.fn) := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂
-  obtain ⟨u₁, r₁, f₁, -⟩ := openStS_correctN v g hMK hP gh _ (narrowSO_pre h₁)
-  obtain ⟨u₂, r₂, f₂, -⟩ := openStS_correctN v g hMK hP gh _ (narrowSO_pre h₂)
-  rw [(Exec.det e₁ (narrowSO_exec h₁ f₁)).1, (Exec.det e₂ (narrowSO_exec h₂ f₂)).1]
-  exact openStS_ctN v g hMK hP gh _ _ _ _ _ _ (narrowSO_pre h₁) (narrowSO_pre h₂) hq f₁ f₂
-
-theorem openStS_verified :
-    Verified AArch64.target (Impl.AesGcm.AArch64.Stitch.openStorePw v.callees g.fn)
-      (Proof.AesGcm.openStorePowersScratchContract AArch64.abi) :=
-  Verified.of_correct (openStS_correct v g hMK hP gh) (openStS_ct v g hMK hP gh)
-    { pre := by
-        sig_implies_pre [Proof.AesGcm.openStorePowersScratchContract, Proof.AesGcm.openStorePowersScratchSig,
-          Proof.AesGcm.openStorePowersPreP, Spec.Gcm.openPre, Spec.Gcm.storePowersOk,
-          Proof.AesGcm.openStorePowersRoundsPost, Proof.AesGcm.openRoundsPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
-          openStAArch64, openStW, pwRO, openAArch64, onePub, openRes, openLeakOf, args, rounds, AArch64.abi,
-          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      post := by
-        intro s s' _ h
-        sig_post [Proof.AesGcm.openStorePowersScratchContract, Proof.AesGcm.openStorePowersScratchSig,
-          Proof.AesGcm.openStorePowersPreP, Spec.Gcm.openPre, Spec.Gcm.storePowersOk,
-          Proof.AesGcm.openStorePowersRoundsPost, Proof.AesGcm.openRoundsPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
-          openStAArch64, openStW, pwRO, openAArch64, onePub, openRes, openLeakOf, args, rounds, AArch64.abi,
-          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-        sig_reduce [openStAArch64, openAArch64, openRes, AArch64.stackArg, AArch64.stackArgAddr] at h
-        sig_simp [openStAArch64, openAArch64, openRes, AArch64.stackArg, AArch64.stackArgAddr] [] at h
-        exact ⟨fun _ => h.1, h.2⟩
-      pub := by
-        sig_implies_pub [Proof.AesGcm.openStorePowersScratchContract, Proof.AesGcm.openStorePowersScratchSig,
-          Proof.AesGcm.openStorePowersPreP, Spec.Gcm.openPre, Spec.Gcm.storePowersOk,
-          Proof.AesGcm.openStorePowersRoundsPost, Proof.AesGcm.openRoundsPost, Proof.AesGcm.openStorePowersLeakP, Spec.Gcm.openLeak,
-          openStAArch64, openStW, pwRO, openAArch64, onePub, openRes, openLeakOf, args, rounds, AArch64.abi,
-          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      sat := ⟨openSatSt, by
-        sig_pre [Proof.AesGcm.openStorePowersScratchContract, Proof.AesGcm.openStorePowersScratchSig,
-          Proof.AesGcm.openStorePowersPreP, Spec.Gcm.openPre, Spec.Gcm.storePowersOk, AArch64.abi,
-          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop,
-          openSatSt, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
-        sig_and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact Region.disjoint_of_sep (by decide)⟩ }
-
-end
-
-theorem openStS_framed (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
-    (hP : Proof.Gcm.AArch64.Pmull.PrepPow) (gh : Gh8Ok) :
-    Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (Impl.AesGcm.AArch64.Stitch.openStorePw v.callees g.fn))
-      (Proof.AesGcm.openStorePowersRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openStorePowersSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Proof.AesGcm.openStorePowersPreP AArch64.abi.ptrBits)
-    (post := Proof.AesGcm.openStorePowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
-    (leak := some (Proof.AesGcm.openStorePowersLeakP AArch64.abi.ptrBits))
-    (openStS_verified v g hMK hP gh) (by decide) (by decide) (Proof.AesGcm.openStorePowersPre_local _)
-    (Proof.AesGcm.openStorePowersPost_local _) openFrameSatSt_pre
-    (hleak := Proof.AesGcm.openStorePowersLeak_local _)
 
 end VG.Proof.AesGcm.AArch64.Fast

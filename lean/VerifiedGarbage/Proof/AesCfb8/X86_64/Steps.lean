@@ -73,9 +73,6 @@ theorem decPost_eq : decPost = decByte ++ (shift ++ Impl.AesCfb8.X86_64.advance)
 theorem low_xor (a b : Byte) : (a.setWidth 64 ^^^ b.setWidth 64).setWidth 8 = a ^^^ b := by
   ext i hi; simp
 
-theorem low_zext (a : Byte) : (a.setWidth 64).setWidth 8 = a := by
-  ext i hi; simp
-
 theorem encByte_ok (s : State) {P T : Addr} (hp : s.gpr .r13 = P) (ht : s.gpr .r15 + BitVec.ofNat 64 2048 = T)
     (rP : InRegions (s.rd ++ s.wr) P 1) (rT : InRegions (s.rd ++ s.wr) T 1) (wP : InRegions s.wr P 1) :
     ∃ s', runBlock isa encByte s = some s' ∧ (s'.gpr .rax).setWidth 8 = s.mem P ^^^ s.mem T ∧

@@ -23,15 +23,6 @@ def chain {w : Nat} (d : Direction) (K : Schedule) : Nat → (Nat → BitVec w) 
   | 0, W => W
   | n + 1, W => passW (componentSchedule K (passComp d (3 - n)).1) (passComp d (3 - n)).2 (chain d K n W)
 
-theorem chain_congr {w : Nat} (d : Direction) (K : Schedule) (n : Nat) {W W' : Nat → BitVec w}
-    (hW : ∀ x < 64, W x = W' x) : ∀ x < 64, chain d K n W x = chain d K n W' x := by
-  induction n with
-  | zero => exact hW
-  | succ n ih =>
-    intro x hx
-    simp only [chain, passW]
-    exact swapW_congr (pairs_congr _ 8 ih) x hx
-
 structure PassesInv (d : Direction) (s₀ : State) (p : Nat) (s : State) : Prop where
   room : Room s
   rcx : s.gpr .rcx = s₀.gpr .rcx

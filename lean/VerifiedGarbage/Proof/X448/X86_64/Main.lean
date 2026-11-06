@@ -307,11 +307,6 @@ theorem correctBase_of {lad inv : Prog isa}
     tail_ok hf hlad hinv ⟨by rw [hp.rd]; simp, by rw [hp.wr]; simp, hp.out_sc, hp.scalar_sc,
       hp.ret_out, hp.ret_sc, hp.sc_fit⟩ h₁)
 
-include hf in
-theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa (x448With fld) s₀ fun s' => gprPreserved s₀ s' ∧ Proof.X448.x448X86_64.post s₀ s' :=
-  correct_of hf (fun h => ladder_post hf h) (fun hs => invert_post hf hs) hp
-
 theorem x448_inline : Impl.X448.X86_64.x448.inline =
     x448Of baseline (ladder baseline) (invertCall baseline []).inline := rfl
 

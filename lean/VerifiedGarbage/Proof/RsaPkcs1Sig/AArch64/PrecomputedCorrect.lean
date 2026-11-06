@@ -305,10 +305,6 @@ theorem _root_.VG.Proof.RsaPkcs1Sig.AArch64.Ver.Mid.frameW {K : Nat} {s t w : St
       rw [List.mem_singleton.mp hr]
       exact Offset.disjoint _ (by omega_arith) (by decide) (by unfold frameBytes at hdn; omega_arith) }
 
-theorem and01 (c : Bool) (r : BitVec 32) (hr : r = 1 ∨ r = 0) :
-    ((if c then (1 : BitVec 32) else 0) &&& r) = if c ∧ r = 1 then 1 else 0 := by
-  rcases hr with rfl | rfl <;> cases c <;> decide
-
 theorem afterPubP_ok {K : Nat} {s t : State} (hp : PreP K s) (hsig : stackArg s 0 = s.gpr .x1)
     (ha : AfterCallP K s t) :
     WP isa afterPub t fun w => Mid K s w ∧

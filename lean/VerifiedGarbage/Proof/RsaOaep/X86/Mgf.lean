@@ -260,17 +260,6 @@ theorem away_low : Away L scr so sl dOff dl L.LOW := by
   exact ⟨Lay.fr_low (by decide) hC, Lay.fr_low (by decide) hC, P.hg.low ok (by oomega), P.hg.low ok (by oomega),
     Lay.fr_low (by decide) hC, Lay.fr_low (by decide) hC⟩
 
-/-- So does a slot other than theirs. -/
-theorem away_slot {d : Nat} (hd : d + 4 ≤ frameBytes) (h₁ : d + 4 ≤ sCtr ∨ sDone + 4 ≤ d)
-    (h₂ : d + 4 ≤ sTab ∨ sHl + 4 ≤ d) : Away L scr so sl dOff dl (slotR L d) := by
-  have := P.fs; have := P.fd
-  obtain ⟨σ', ok⟩ := P.hg.ok
-  have hF : d + 4 ≤ L.F + 16 := by rw [P.hg.F]; omega_arith
-  refine ⟨slotSep (by decide) hd (by unfold sCtr sDone at *; omega_arith),
-    slotSep (by decide) hd (by unfold sCtr sDone at *; omega_arith), (P.hg.slot ok (by oomega) hF).symm,
-    (P.hg.slot ok (by oomega) hF).symm, slotSep (by decide) hd (by unfold sTab sHl at *; omega_arith),
-    slotSep (by decide) hd (by unfold sTab sHl at *; omega_arith)⟩
-
 end MP
 
 /-- The counter's bytes at `oCtr`. -/

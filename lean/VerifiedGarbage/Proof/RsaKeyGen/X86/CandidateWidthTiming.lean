@@ -24,9 +24,4 @@ theorem ClearedPair.keepMem {E : Environment} (v : E.Valid) {eBytes pBytes qByte
   · rw [MU]; exact P.zerosLeft
   · rw [MZ]; exact P.zerosRight
 
-theorem ClearedPair.keepFlags {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
-    {s t u z : State} (P : ClearedPair E eBytes pBytes qBytes rBytes sBytes s t) (U : Fupd s u) (Z : Fupd t z) :
-    ClearedPair E eBytes pBytes qBytes rBytes sBytes u z :=
-  P.keepMem v U.mem Z.mem (U.keeps []) (Z.keeps []) (by decide) (by decide) U.syms Z.syms
-
 end VG.Proof.RsaKeyGen.X86.Candidate

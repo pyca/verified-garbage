@@ -151,8 +151,6 @@ theorem getD_xorFrom (ciph : Ccm.Cipher) (nonce : List Byte) (j : Nat) (d : List
     (hi : i < d.length) : (xorFrom ciph nonce j d).getD i 0 = d.getD i 0 ^^^ ksb ciph nonce j i := by
   simp [xorFrom, List.getD_eq_getElem?_getD, hi]
 
-theorem xorFrom_nil (ciph : Ccm.Cipher) (nonce : List Byte) (j : Nat) : xorFrom ciph nonce j [] = [] := rfl
-
 /-- A text of `a` whole blocks followed by more: the rest from `Ctrⱼ₊ₐ`. -/
 theorem xorFrom_append (ciph : Ccm.Cipher) (nonce : List Byte) (j : Nat) {d e : List Byte} {a : Nat}
     (hd : d.length = 16 * a) :

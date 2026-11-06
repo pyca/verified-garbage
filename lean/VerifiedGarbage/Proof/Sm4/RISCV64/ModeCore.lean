@@ -204,9 +204,6 @@ theorem dirCipher_bytes (d : Dir) (k : Spec.Sm4.Schedule) (m : Mem) (p : Addr) :
   · rw [dirCipher, Spec.Sm4.cipher, Proof.Sm4.bytesAt_eq_blockAt, Proof.Sm4.ofFn_toList]; rfl
   · rw [dirCipher, Spec.Sm4.invCipher, Proof.Sm4.bytesAt_eq_blockAt, Proof.Sm4.ofFn_toList]; rfl
 
-theorem total_eq (d : Dir) : (dirCore d).total = 404 := rfl
-theorem buf_eq (d : Dir) : (dirCore d).buf = 103 := rfl
-
 theorem layout (d : Dir) : Layout (dirCore d) :=
   ⟨by cases d <;> decide, .inr rfl, by cases d <;> decide, by cases d <;> decide, by cases d <;> decide,
     by cases d <;> decide, by cases d <;> decide⟩

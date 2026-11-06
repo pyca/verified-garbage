@@ -104,8 +104,7 @@ theorem M_eq {P : EP} {τ : State} (hf : lzF h P τ < dbN h P) (hs : P.any = 0 �
   · rw [ite_eq_right ha, Ma]
     simp only [pzF, pzJ, hf, ite_true]
 
-/-- `verify` with the hash function `H` and MGF1 with `G`, byte by byte
-(`RsaPss.verify_bytes` with two hash functions). -/
+/-- `verify` with the hash function `H` and MGF1 with `G`, byte by byte. -/
 theorem verify_bytes₂ (G H : Spec.Mgf1.Hash) (hG : Proof.Mgf1.Valid G) {n₀ : Byte} {rest eB mHash sB : List Byte}
     {sLen : Option Nat} (hm : mHash.length = H.len) (hs : sB.length = (n₀ :: rest).length) {emBits emLen lo : Nat}
     (hb : Spec.RsaPss.bitLength (Spec.Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : Spec.RsaPss.emLength emBits = emLen)

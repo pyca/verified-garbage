@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedInit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
@@ -37,7 +36,6 @@ import VerifiedGarbage.Impl.Weierstrass.AArch64.ArithmeticTable
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTableStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 /-! ## `JointPrep` -/
 

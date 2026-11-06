@@ -100,14 +100,4 @@ def tail : Prog isa :=
 def afterPub : Prog isa :=
   .seq (.block test0) (.ite .e ret0 (.seq (.block encArgs) (.seq encode tail)))
 
-/-- The body of the frame. -/
-def body (pubName : String) (pub : Prog isa) : Prog isa :=
-  .seq (.block pubArgs) (.seq (.call pubName pub) afterPub)
-
-/-- `vg_rsa_pkcs1_verify`, calling `vg_rsa_public_checked` (`pub`) by its
-name. -/
-def code (pubName : String) (pub : Prog isa) : Prog isa :=
-  .seq (.block lenCheck)
-    (.ite .ne ret0 (.frame (.alloc frameBytes) (body pubName pub) (.free frameBytes)))
-
 end VG.Impl.RsaPkcs1Sig.X86_64.Verify

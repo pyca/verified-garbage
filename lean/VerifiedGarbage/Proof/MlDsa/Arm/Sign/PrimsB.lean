@@ -89,28 +89,6 @@ theorem ipAt_tr {t : Poly → Poly} {n : String} {c : Prog isa}
   sig_pub [inPlaceContract, inPlaceSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   simp only [kx.sp, ky.sp, hx1, hx2, hy1, hy2, Arg.val, R.eq i1, R.eq i2, R.sp, and_self]
 
-theorem nttAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {f : Ptr}
-    (hc : ipChk (rbs ++ wbs) wbs f = true) (hr : Reduced s.mem (pa s f)) :
-    WP isa (nttAt P f) s fun s' => PPostB D s s' [(f, 1024), (sc oPS, 1024)] ∧ CS s s' ∧
-      PolyIs s'.mem (pa s f) (ntt (polyAt s.mem (pa s f))) :=
-  ipAt_ok hP.ntt L hc hr
-
-theorem invNttAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {f : Ptr}
-    (hc : ipChk (rbs ++ wbs) wbs f = true) (hr : Reduced s.mem (pa s f)) :
-    WP isa (invNttAt P f) s fun s' => PPostB D s s' [(f, 1024), (sc oPS, 1024)] ∧ CS s s' ∧
-      PolyIs s'.mem (pa s f) (nttInv (polyAt s.mem (pa s f))) :=
-  ipAt_ok hP.invNtt L hc hr
-
-theorem nttAt_tr {P : Prims} (hP : PrimsOk P D) {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
-      (nttAt P f) fun _ _ => True :=
-  ipAt_tr hP.ntt hc
-
-theorem invNttAt_tr {P : Prims} (hP : PrimsOk P D) {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
-      (invNttAt P f) fun _ _ => True :=
-  ipAt_tr hP.invNtt hc
-
 /-! ## Products -/
 
 /-- What a call of `vg_mldsa_multiply_ntt` or `vg_mldsa_multiply_add_ntt` on

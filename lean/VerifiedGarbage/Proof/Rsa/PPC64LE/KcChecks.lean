@@ -145,8 +145,6 @@ theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {X₁ X₂ : Nat}
 
 theorem aFin_d (v : Vals) : aFin v aD = v.d := rfl
 theorem aFin_n (v : Vals) : aFin v aN = v.n := rfl
-theorem aFin_dP (v : Vals) : aFin v aDP = v.dP := rfl
-theorem aFin_dQ (v : Vals) : aFin v aDQ = v.dQ := rfl
 theorem aFin_m1 (v : Vals) : aFin v aM1 = 2 * (v.p / 2) := rfl
 theorem aFin_m2 (v : Vals) : aFin v aM2 = 2 * (v.q / 2) := rfl
 

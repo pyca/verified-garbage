@@ -24,7 +24,6 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
 public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
 public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Main
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyMain
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
 public import VerifiedGarbage.Proof.Ed448.ScalarWords
 public import VerifiedGarbage.Proof.Ed448.VerifyEq
@@ -43,7 +42,6 @@ import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
 import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
 import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Main
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyMain
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.CallsCT
 import VerifiedGarbage.Proof.Ed448.ScalarWords
 import VerifiedGarbage.Proof.Ed448.VerifyEq

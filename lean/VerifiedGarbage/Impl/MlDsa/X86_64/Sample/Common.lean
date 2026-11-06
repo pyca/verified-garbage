@@ -34,9 +34,6 @@ open VG.Impl.MlKem.X86_64 (at_)
 /-- `q = 8380417`, as an immediate. -/
 def qImm : BitVec 32 := 8380417
 
-/-- Where the XOF output starts in `scratch`. -/
-abbrev outOff : Nat := 840
-
 /-- Save `rbx`, `rbp` and `r12` at `scr + 2024`, and set up the layout: `rbx`
 = `scr`, `rbp` = `a`, `r12` = the parameter, `rcx` = the message (from `rdi`)
 and `r8` = its length. -/

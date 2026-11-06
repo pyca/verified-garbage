@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Impl.AesXts.X86
 public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 public import VerifiedGarbage.Spec.Xts.Contract
-public import VerifiedGarbage.Proof.Xts.Contract
 
 import VerifiedGarbage.Proof.AesCbc.X86.Verified
 import VerifiedGarbage.Proof.AesXts.X86.CT
@@ -32,70 +31,8 @@ theorem encrypt_spSafe (v : BlocksImpl) : (encrypt v.enc).all (fun i => !isa.wri
   simp only [encrypt, crypt, batch, pass, Impl.AesOcb.X86.blocksFrame, Code.all, v.encSpSafe]
   decide +kernel
 
-theorem encrypt_verified (v : BlocksImpl) :
-    Verified X86.target (encrypt v.enc) (Proof.Xts.aesEncryptContract X86.abi 24) :=
-  Verified.of_correct
-    (fun _ hs => crypt_wp true v.encOk v.encNosp v.encStack (fun R w m p => (aesWith_state R w m p).symm) hs)
-    (crypt_ct true v.encOk v.encCt v.encNosp v.encStack fun R w m p => (aesWith_state R w m p).symm)
-    { pre := by sig_implies_pre [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, X86.abi, X86.argSlots,
-        X86.argVal, X86.argBytes, modeX86]
-      -- `xtsMode.chain` counts the blocks, which are `n`.
-      post := by
-        intro s s' _ h
-        sig_post [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, X86.abi, X86.argSlots, X86.argVal,
-          X86.argBytes, modeX86, AesXts.xtsMode, ciphOf]
-        sig_reduce [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, X86.abi, X86.argSlots, X86.argVal,
-          X86.argBytes, modeX86, AesXts.xtsMode, ciphOf] at h
-        sig_simp [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, X86.abi, X86.argSlots, X86.argVal,
-          X86.argBytes, modeX86, AesXts.xtsMode, ciphOf] [] at h
-        rwa [VG.Proof.AesCbc.length_blocksAt] at h
-      pub := by sig_implies_pub [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, X86.abi, X86.argSlots,
-        X86.argVal, X86.argBytes, modeX86]
-      sat := by
-        have a0 : arg sat 0 = 0x1000 := by decide
-        have a1 : arg sat 1 = 10 := by decide
-        have a2 : arg sat 2 = 0x2000 := by decide
-        have a3 : arg sat 3 = 0x3000 := by decide
-        have a4 : arg sat 4 = 0 := by decide
-        have a5 : arg sat 5 = 0x4000 := by decide
-        have e : argAddr sat 0 = 0x8004 := by decide
-        have esp : sat.gpr .esp = 0x8000 := rfl
-        sig_implies_sat [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, X86.abi, X86.argSlots,
-          X86.argVal, X86.argBytes, modeX86] [a0, a1, a2, a3, a4, a5, e, esp] using sat }
-
 theorem decrypt_spSafe (v : BlocksImpl) : (decrypt v.dec).all (fun i => !isa.writesSp i) = true := by
   simp only [decrypt, crypt, batch, pass, Impl.AesOcb.X86.blocksFrame, Code.all, v.decSpSafe]
   decide +kernel
-
-theorem decrypt_verified (v : BlocksImpl) :
-    Verified X86.target (decrypt v.dec) (Proof.Xts.aesDecryptContract X86.abi 24) :=
-  Verified.of_correct
-    (fun _ hs => crypt_wp false v.decOk v.decNosp v.decStack (fun R w m p => (aesInvWith_state R w m p).symm) hs)
-    (crypt_ct false v.decOk v.decCt v.decNosp v.decStack fun R w m p => (aesInvWith_state R w m p).symm)
-    { pre := by sig_implies_pre [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, X86.abi, X86.argSlots,
-        X86.argVal, X86.argBytes, modeX86]
-      -- `xtsMode.chain` counts the blocks, which are `n`.
-      post := by
-        intro s s' _ h
-        sig_post [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, X86.abi, X86.argSlots, X86.argVal,
-          X86.argBytes, modeX86, AesXts.xtsMode, ciphOf]
-        sig_reduce [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, X86.abi, X86.argSlots, X86.argVal,
-          X86.argBytes, modeX86, AesXts.xtsMode, ciphOf] at h
-        sig_simp [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, X86.abi, X86.argSlots, X86.argVal,
-          X86.argBytes, modeX86, AesXts.xtsMode, ciphOf] [] at h
-        rwa [VG.Proof.AesCbc.length_blocksAt] at h
-      pub := by sig_implies_pub [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, X86.abi, X86.argSlots,
-        X86.argVal, X86.argBytes, modeX86]
-      sat := by
-        have a0 : arg sat 0 = 0x1000 := by decide
-        have a1 : arg sat 1 = 10 := by decide
-        have a2 : arg sat 2 = 0x2000 := by decide
-        have a3 : arg sat 3 = 0x3000 := by decide
-        have a4 : arg sat 4 = 0 := by decide
-        have a5 : arg sat 5 = 0x4000 := by decide
-        have e : argAddr sat 0 = 0x8004 := by decide
-        have esp : sat.gpr .esp = 0x8000 := rfl
-        sig_implies_sat [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, X86.abi, X86.argSlots,
-          X86.argVal, X86.argBytes, modeX86] [a0, a1, a2, a3, a4, a5, e, esp] using sat }
 
 end VG.Proof.AesXts.X86

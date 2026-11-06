@@ -52,38 +52,4 @@ theorem Inputs.keep {p : GkP} {rb : List Byte} {s t : State} {rs : List Reg} (h 
   rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;>
     exact hh _ (by dsimp only; decide) (by dsimp only; decide) (by dsimp only; decide) (by dsimp only; decide)
 
-/-- Return the public leading byte and exponent length without changing inputs. -/
-theorem scan_inputs {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s) (hb : p.Bounded) :
-    WP isa (seqs VG.Impl.Ffdh.X86_64.Domain.GenerateKey.bound) s fun t =>
-      Inputs p rb t ∧ word t.mem p.B (8 * sEl) = BitVec.ofNat 64 p.n ∧
-      t.gpr .rax = p.bc.setWidth 64 ∧ Frm p.B scanRanges s.mem t.mem ∧
-      Keep [.rsi, .rcx, .rax, .rbp, .rdx] s t := by
-  have hk := h.base.k1
-  have hk' := h.base.k2
-  have hZ := h.base.hZ
-  refine WP.mono (bound_ok (B := p.B) (Z := p.Z) (k := p.k) (dl := p.dl) (dp := p.dp) (dom := p.dom)
-    h.base.scr h.rdi (by omega) (by omega) (by omega) h.base.dl h.base.doml
-    (h.base.hdr (sDom, p.dp) (by simp [GkP.headers])) h.q
-    (h.base.hdr (sK, BitVec.ofNat 64 p.k) (by simp [GkP.headers]))
-    (h.base.hdr (sDomLen, BitVec.ofNat 64 p.dl) (by simp [GkP.headers])) h.base.dom)
-    fun t ⟨hne, _, hn, hax, hf, k⟩ => ?_
-  have hf' : Frm p.B scanRanges s.mem t.mem := hf.mono (by simp [scanRanges])
-  refine ⟨h.keep hf' k (by decide), by rw [GkP.n, hb.1]; exact hn, ?_, hf', k⟩
-  rw [hax]
-  simp only [GkP.bc, hb.1, List.getD_eq_getElem?_getD,
-    List.getElem?_eq_getElem (lead_lt hne), Option.getD_some]
-
-/-- Save the exact leading-byte mask, preserving the scanned length. -/
-theorem smear_inputs {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s) (hb : p.Bounded)
-    (hn : word s.mem p.B (8 * sEl) = BitVec.ofNat 64 p.n) (hax : s.gpr .rax = p.bc.setWidth 64) :
-    WP isa (.block VG.Impl.Ffdh.X86_64.Domain.GenerateKey.smear) s fun t =>
-      Inputs p rb t ∧ word t.mem p.B (8 * sEl) = BitVec.ofNat 64 p.n ∧
-      word t.mem p.B (8 * sMsk) = p.msk ∧ Frm p.B scanRanges s.mem t.mem ∧ Keep [.rax, .rdx] s t := by
-  have hZ := h.base.hZ
-  refine WP.mono (smear_ok h.base.scr h.rdi (by omega) hax) fun t ⟨hm, hf, k⟩ => ?_
-  have hf' : Frm p.B scanRanges s.mem t.mem := hf.mono (by simp [scanRanges])
-  refine ⟨h.keep hf' k (by decide), ?_, by rw [hb.2]; exact hm, hf', k⟩
-  rw [hf.word_eq (by simp; decide) (by decide)]
-  exact hn
-
 end VG.Proof.Ffdh.X86_64.GenerateKey

@@ -68,12 +68,6 @@ structure PCtx (b A B : Addr) (s : State) : Prop where
   adis : ∀ i < 9, Region.Disjoint ⟨A + BitVec.ofNat 64 (8 * i), 8⟩ (own b)
   bdis : ∀ i < 9, Region.Disjoint ⟨B + BitVec.ofNat 64 (8 * i), 8⟩ (own b)
 
-theorem PCtx.of {b A B : Addr} {s s' : State} (h : PCtx b A B s) (h3 : s'.gpr .a3 = s.gpr .a3)
-    (h4 : s'.gpr .t4 = s.gpr .t4) (h5 : s'.gpr .t5 = s.gpr .t5) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
-    PCtx b A B s' :=
-  ⟨ctx_of h.ctx h3 hwr, h.nowrap, h4.trans h.a, h5.trans h.bb, h.aal, h.bal, by rw [hrd, hwr]; exact h.ain,
-    by rw [hrd, hwr]; exact h.bin, h.adis, h.bdis⟩
-
 /-- A part of the own working space within it. -/
 theorem own_sub {b : Addr} {d n : Nat} (hd : P ≤ d) (hn : d + n ≤ P + 160) :
     Region.Sub ⟨b + BitVec.ofNat 64 d, n⟩ (own b) :=
@@ -938,7 +932,6 @@ structure FoldInv (b : Addr) (s0 : State) (j : Nat) (s : State) : Prop where
   cy : (s.gpr .a5).toNat ≤ 1
   val : pw s.mem b 0 j + (2 ^ 64) ^ j * (s.gpr .a5).toNat =
     colsV (fun i => lw s0.mem b i + hw s0.mem b i) j + (s0.gpr .a5).toNat
-
 
 set_option linter.unusedSimpArgs false in
 /-- The end of a word of the fold: `a6 + a7 + a5`, for `a6` the low word and

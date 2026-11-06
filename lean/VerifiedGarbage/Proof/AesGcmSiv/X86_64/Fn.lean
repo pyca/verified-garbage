@@ -263,19 +263,6 @@ theorem buf_mutW {K W SP : Addr} {s : State} {P : Addr} {len : Nat} (hP : Buf K 
     · exact hP.w.sub_right (Lay.wSub (by decide))
     · exact hP.stk.symm) (by have := hP.lt; omega_arith)
 
-theorem mutW_frame {K W SP : Addr} (L : Lay K W SP) {d k : Nat}
-    (hd : 144 ≤ d ∧ d + k ≤ 192 ∨ 200 ≤ d ∧ d + k ≤ 248) :
-    ∀ r ∈ mutW W SP, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · simpa using L.w_w (a := d) (n := k) (d := 0) (k := 144) (.inr (by omega_arith)) (by omega_arith) (by decide)
-  · rcases hd with hd | hd
-    · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
-    · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
-  · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
-  · exact (L.stk_w' (by omega_arith)).symm
-
 /-- What `keys` writes: the keys, GHASH's key and accumulator, the blocks
 the calls use, the encryption key's schedule and the working spaces. -/
 abbrev keyR (W SP : Addr) : List Region := [⟨W + BitVec.ofNat 64 16, 128⟩, wC W, below SP 8]

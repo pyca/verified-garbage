@@ -46,9 +46,6 @@ def combIdx (c : Nat) : Nat := if c < 26 then 2 * c + 1 else 2 * (c - 26)
 /-- The table step `c` reads. -/
 def combTblIdx (c : Nat) : Nat := if c < 26 then c else c - 26
 
-theorem combIdx_lt {c : Nat} (hc : c < 52) : combIdx c < 52 := by
-  unfold combIdx; split <;> omega_arith
-
 theorem combTblIdx_lt {c : Nat} (hc : c < 52) : combTblIdx c < 26 := by
   unfold combTblIdx; split <;> omega_arith
 
@@ -535,23 +532,6 @@ theorem comb_sum {S : Nat} (hS : S < 2 ^ 256) : combVal S 52 = S := by
   push_cast
   linear_combination h'
 
-theorem combIdx_nib (S c : Nat) (hc : c < 52) :
-    sdig S (combIdx c) * 1024 ^ (combTblIdx c) +
-      (if c = 26 then 32 * combVal S c + combGVal else combVal S c) = combVal S (c + 1) := by
-  unfold combIdx combTblIdx combVal
-  by_cases h : c < 26
-  · simp only [h, ↓reduceIte, show c ≠ 26 by omega_arith, show c ≤ 26 by omega_arith, show c + 1 ≤ 26 by omega_arith,
-      oddSumZ]
-    ring
-  · have hs : c + 1 - 26 = (c - 26) + 1 := by omega_arith
-    by_cases h26 : c = 26
-    · subst h26
-      simp only [show ¬ 26 < 26 by decide, ↓reduceIte, le_refl, show ¬ 27 ≤ 26 by decide,
-        show 27 - 26 = 0 + 1 from rfl, evenSumZ, show 26 - 26 = 0 from rfl]
-      ring
-    · simp only [h, h26, ↓reduceIte, show ¬ c ≤ 26 by omega_arith, show ¬ c + 1 ≤ 26 by omega_arith, hs, evenSumZ]
-      ring
-
 /-- Bit 255 of `S`, which the comb's start holds (`combStart`). -/
 def topBit (S : Nat) : Bool := decide ((S / 2 ^ 255) % 2 = 1)
 
@@ -666,10 +646,6 @@ theorem affBody_ok {s : State} {base : Addr} (hs : Scratch s base) (q : Spec.Ed2
   WP.mono (Point64.fn_keep hs pointAddAffineOps Point64.addAffineFn_keeps (by decide)) fun t ⟨kt, vt⟩ => by
     rw [vt]
     exact ⟨kt, pointAddAffine_eval _ q hq, pointAddAffine_high _⟩
-
-theorem zsmul_32 (v : ℤ) (g : Nat) (P : EPoint dZ) :
-    (32 : Nat) • (v • P) + g • P = (32 * v + g) • P := by
-  rw [add_smul, mul_smul, ← natCast_zsmul, ← natCast_zsmul]; rfl
 
 theorem zsmul_32' (v : ℤ) (P : EPoint dZ) : (32 : Nat) • (v • P) = (32 * v) • P := by
   rw [mul_smul, ← natCast_zsmul]; rfl

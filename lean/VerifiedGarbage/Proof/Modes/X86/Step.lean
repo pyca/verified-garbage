@@ -99,8 +99,6 @@ structure Inv (cs : CoreSpec c) (s₀ : State) (B D : BitVec 32) (n st : Nat) (k
 
 /-! ## Areas -/
 
-theorem rd_cont (A : Loc → Addr) (m : Mem) (l : Loc) (n : Nat) : rd (cont A m) l n = bytesAt m (A l) n := rfl
-
 theorem rd_agree {len : Loc → Nat} {a a' : Areas} (h : Agree len a a') {l : Loc} {n : Nat} (hn : n ≤ len l) :
     rd a l n = rd a' l n :=
   List.map_congr_left fun i hi => h l i (by have := List.mem_range.mp hi; omega_using [hn, this])

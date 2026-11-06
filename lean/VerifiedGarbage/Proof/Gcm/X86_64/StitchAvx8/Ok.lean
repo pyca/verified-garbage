@@ -96,17 +96,6 @@ def setupGS : List Instr :=
 def lowsS (n : Nat) : List Instr :=
   (List.range n).map fun i => .movdquStore (at_ .r11 (16 * (15 - i))) (preg i)
 
-/-- The SSE code of `highs n`. -/
-def highsS (n : Nat) : List Instr :=
-  (List.range n).flatMap fun i =>
-    Impl.Gcm.X86_64.Pclmul.mul .xmm7 .xmm15 (preg i) ++ [.movdquStore (at_ .r11 (16 * (7 - i))) .xmm7]
-
-theorem lane0_setup : lane0Block (setupG ++ lows 8 ++ highs 8) = some (setupGS ++ lowsS 8 ++ highsS 8) := by
-  decide +kernel
-
-theorem only_trans' {rs rs' : List XReg} {s s' s'' : State} (h : Only rs s s') (h' : Only rs' s' s'') :
-    Only (rs ++ rs') s s'' := h.trans h'
-
 theorem setupGS_ok (t : State) (hin : InRegions (t.rd ++ t.wr) (t.gpr .rdi + BitVec.ofInt 64 ((240 : Nat) : Int)) 16) :
     WP isa (.block setupGS) t fun t' =>
       t'.xmm .xmm0 = revMask ∧ t'.xmm .xmm1 = poly ∧

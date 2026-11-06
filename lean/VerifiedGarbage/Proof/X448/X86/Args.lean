@@ -56,10 +56,4 @@ theorem Scr.ea_ptr {s : State} {base : Addr} (hs : Scr s base) {r : Reg} {d k : 
   rw [hr, Offset.add_add]
   exact hs.ea hdk
 
-/-- An offset plus the working space, as `add r, edi` computes it. -/
-theorem ofNat_add_edi {s : State} {d k : Nat} {p : BitVec 32}
-    (hp : p = s.gpr .edi + BitVec.ofNat 32 k) :
-    BitVec.ofNat 32 d + p = s.gpr .edi + BitVec.ofNat 32 (k + d) := by
-  rw [hp, BitVec.add_comm, Offset.add_add]
-
 end VG.Proof.X448.X86

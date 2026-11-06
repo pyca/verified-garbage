@@ -31,11 +31,6 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 /-- The stack `vg_rsa_private_checked` uses below its return address. -/
 def privStack : Nat := 3256
 
-theorem stackArgs_fourteen (s : State) :
-    List.map (stackArg s) (List.range 14) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
-      stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
-      stackArg s 11, stackArg s 12, stackArg s 13] := rfl
-
 /-- `vg_rsa_private_checked(out = rdi, out_len = rsi, n = rdx, n_len = rcx,
 e = r8, e_len = r9, input = [rsp + 8], input_len = [rsp + 16],
 p = [rsp + 24], p_len = [rsp + 32], q = [rsp + 40], q_len = [rsp + 48],

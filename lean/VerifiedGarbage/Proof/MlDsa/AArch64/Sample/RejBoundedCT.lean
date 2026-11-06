@@ -259,9 +259,6 @@ theorem ctWith (v : Proof.Sha3.AArch64.Permutation) : ConstantTime isa rbK.pre r
   exact relTaint [.x25] (fun σ₁ σ₂ s₁ s₂ _ _ hq h₁ h₂ => ⟨by rw [h₁.base.env.sp, h₂.base.env.sp, hq.2.2.2.2.1],
     fun r hr => by rw [List.mem_singleton.mp hr, h₁.base.env.x25, h₂.base.env.x25, pub_eq hq]⟩) (by taint_decide)
 
-theorem ct : ConstantTime isa rbK.pre rbK.pub rejBounded :=
-  ctWith .scalar
-
 end RejBounded
 
 /-- A state satisfying the precondition. -/
@@ -303,9 +300,5 @@ theorem rejBounded_verifiedWith (v : Proof.Sha3.AArch64.Permutation) : Verified 
         exact ⟨hx0, hx1, hx2, hx3, hsp, hb⟩
       sat := by sig_implies_sat [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, rbK,
         AArch64.abi, AArch64.argRegs] [rbSat] using rbSat }
-
-theorem rejBounded_verified : Verified AArch64.target Impl.MlDsa.AArch64.Sample.rejBounded
-    (Proof.MlDsa.rejBoundedContract AArch64.abi 16) :=
-  rejBounded_verifiedWith .scalar
 
 end VG.Proof.MlDsa.AArch64.Sample

@@ -10483,6 +10483,106 @@ bnez t1, 29b
     )
 }
 
+/// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, as `vg_x25519` does, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise.
+///
+/// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `scalar` must be valid for reads of 32 bytes.
+/// * `point` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 4096 bytes, and aligned for `u64`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x1141
+.insn 2, 0xe406
+.insn 2, 0x828a
+.insn 4, 0x00a2b023
+call {vg_x25519}
+.insn 2, 0x828a
+.insn 4, 0x0002b283
+.insn 2, 0x4301
+.insn 4, 0x0002c383
+.insn 4, 0x00736333
+.insn 4, 0x0012c383
+.insn 4, 0x00736333
+.insn 4, 0x0022c383
+.insn 4, 0x00736333
+.insn 4, 0x0032c383
+.insn 4, 0x00736333
+.insn 4, 0x0042c383
+.insn 4, 0x00736333
+.insn 4, 0x0052c383
+.insn 4, 0x00736333
+.insn 4, 0x0062c383
+.insn 4, 0x00736333
+.insn 4, 0x0072c383
+.insn 4, 0x00736333
+.insn 4, 0x0082c383
+.insn 4, 0x00736333
+.insn 4, 0x0092c383
+.insn 4, 0x00736333
+.insn 4, 0x00a2c383
+.insn 4, 0x00736333
+.insn 4, 0x00b2c383
+.insn 4, 0x00736333
+.insn 4, 0x00c2c383
+.insn 4, 0x00736333
+.insn 4, 0x00d2c383
+.insn 4, 0x00736333
+.insn 4, 0x00e2c383
+.insn 4, 0x00736333
+.insn 4, 0x00f2c383
+.insn 4, 0x00736333
+.insn 4, 0x0102c383
+.insn 4, 0x00736333
+.insn 4, 0x0112c383
+.insn 4, 0x00736333
+.insn 4, 0x0122c383
+.insn 4, 0x00736333
+.insn 4, 0x0132c383
+.insn 4, 0x00736333
+.insn 4, 0x0142c383
+.insn 4, 0x00736333
+.insn 4, 0x0152c383
+.insn 4, 0x00736333
+.insn 4, 0x0162c383
+.insn 4, 0x00736333
+.insn 4, 0x0172c383
+.insn 4, 0x00736333
+.insn 4, 0x0182c383
+.insn 4, 0x00736333
+.insn 4, 0x0192c383
+.insn 4, 0x00736333
+.insn 4, 0x01a2c383
+.insn 4, 0x00736333
+.insn 4, 0x01b2c383
+.insn 4, 0x00736333
+.insn 4, 0x01c2c383
+.insn 4, 0x00736333
+.insn 4, 0x01d2c383
+.insn 4, 0x00736333
+.insn 4, 0x01e2c383
+.insn 4, 0x00736333
+.insn 4, 0x01f2c383
+.insn 4, 0x00736333
+.insn 2, 0x4381
+.insn 4, 0x0063b533
+.insn 2, 0x60a2
+.insn 2, 0x0141
+.insn 2, 0x8082
+.option pop",
+        vg_x25519 = sym super::x25519::vg_x25519,
+    )
+}
+
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
 ///
 /// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.

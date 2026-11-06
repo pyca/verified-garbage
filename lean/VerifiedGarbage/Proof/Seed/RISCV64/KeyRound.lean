@@ -39,10 +39,6 @@ theorem Upd.other {s t : State} {d : Reg} {v : BitVec 64} (h : Upd s t d v) {x :
     t.gpr x = s.gpr x := by
   rw [h.gpr]; simp [hx]
 
-theorem Upd.lane {s t : State} {d : Reg} {v : BitVec 64} (h : Upd s t d v) (hd : d ≠ sb) (k b : Nat) :
-    lv t k b = lv s k b := by
-  simp only [lv, laneA, h.mem, h.other (Ne.symm hd)]
-
 theorem upd_write (s : State) (d : Reg) (v : BitVec 64) : Upd s (s.write d v) d v :=
   ⟨fun _ => gpr_write _ _ _ _, rfl, rfl, rfl, rfl⟩
 

@@ -51,35 +51,6 @@ theorem stack_far {sp : BitVec 32} {B : Addr} {Z : Nat} (D : DeepStk sp B Z) (no
   have := B.isLt
   constructor <;> omega
 
-theorem outs_of_below {sp : BitVec 32} {B : Addr} {Z : Nat} {m m' : Mem} (D : DeepStk sp B Z)
-    (nowrap : B.toNat + Z ≤ 2 ^ 32) (F : Frame [below sp 52] m m') : Outs B [stackRange B sp] m m' := by
-  intro x hx
-  apply F x
-  intro r hr c
-  obtain rfl := List.mem_singleton.mp hr
-  have H := (stack_contains D nowrap x).mp c
-  have := hx _ (List.mem_singleton_self _)
-  omega
-
-theorem frame_of_outs {sp : BitVec 32} {B : Addr} {Z : Nat} {m m' : Mem} {rs : List (Nat × Nat)}
-    (D : DeepStk sp B Z) (nowrap : B.toNat + Z ≤ 2 ^ 32) (fits : ∀ r ∈ rs, r.1 + r.2 ≤ Z)
-    (O : Outs B (rs ++ [stackRange B sp]) m m') : Frame [⟨B, Z⟩, below sp 52] m m' := by
-  intro x hx
-  have outside : Z ≤ ofs B x := by
-    have H := hx ⟨B, Z⟩ List.mem_cons_self
-    simp only [Region.Contains] at H
-    unfold ofs
-    omega
-  have stack := hx (below sp 52) (List.mem_cons_of_mem _ List.mem_cons_self)
-  apply O x
-  intro r hr
-  rcases List.mem_append.mp hr with hr | hr
-  · have := fits r hr
-    omega
-  · obtain rfl := List.mem_singleton.mp hr
-    by_contra c
-    exact stack ((stack_contains D nowrap x).mpr (by omega))
-
 theorem argument_keepBelow {s t : State} {B : Addr} {Z i : Nat} {v : BitVec 32} {rs : List Reg}
     (A : CallArgument s B Z i v) (K : Keeps rs s t) (esp : .esp ∉ rs)
     (F : Frame [⟨B, Z⟩, below (s.gpr .esp) 52] s.mem t.mem) (low : 52 ≤ (s.gpr .esp).toNat) (fit : (s.gpr .esp).toNat + 8 + 4 * i ≤ 2 ^ 32) :
@@ -154,11 +125,6 @@ theorem mono (h : OutsS B sp rs m₁ m₂) (hr : ∀ r ∈ rs, r ∈ rs' := by d
 
 theorem of_outs (h : Outs B rs m₁ m₂) : OutsS B sp rs m₁ m₂ := fun x hx _ => h x hx
 
-theorem widen (h : OutsS B sp rs m₁ m₂)
-    (hr : ∀ y : Nat, (∀ r ∈ rs', y < r.1 ∨ r.1 + r.2 ≤ y) → ∀ r ∈ rs, y < r.1 ∨ r.1 + r.2 ≤ y) :
-    OutsS B sp rs' m₁ m₂ :=
-  fun x hx hz => h x (hr _ hx) hz
-
 /-- What `Outs` lets change within some ranges, it lets change within others: so does `OutsS`. -/
 theorem lift (f : ∀ m m' : Mem, Outs B rs m m' → Outs B rs' m m') (h : OutsS B sp rs m₁ m₂) :
     OutsS B sp rs' m₁ m₂ := by
@@ -206,18 +172,6 @@ theorem outs {Z : Nat} (h : OutsS B sp rs m₁ m₂) (D : DeepStk sp B Z) (nowra
   have far : (x - B).toNat < Z ∨ Z + (2 ^ 64 - Z) ≤ (x - B).toNat :=
     hx _ (List.mem_append_right _ (List.mem_singleton_self _))
   have := (x - B).isLt
-  omega
-
-/-- A frame of the workspace's ranges and the stack. -/
-theorem frame {Z : Nat} (h : OutsS B sp rs m₁ m₂) (fits : ∀ r ∈ rs, r.1 + r.2 ≤ Z) :
-    Frame [⟨B, Z⟩, below sp 52] m₁ m₂ := by
-  intro x hx
-  apply h x _ (hx _ (List.mem_cons_of_mem _ List.mem_cons_self))
-  intro r hr
-  have := fits r hr
-  have H := hx _ List.mem_cons_self
-  simp only [Region.Contains] at H
-  unfold ofs
   omega
 
 end OutsS

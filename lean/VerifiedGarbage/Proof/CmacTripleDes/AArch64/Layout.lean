@@ -39,7 +39,6 @@ theorem getLsbD_spreadW (w : BitVec 32) {p : Nat} (hp : p < 64) :
 def boxOf (l : Nat) : Nat := [2, 0, 6, 4, 1, 7, 5, 3].getD l 0
 
 theorem boxOf_laneOf : ∀ i < 8, boxOf (laneOf i) = i := by decide
-theorem laneOf_boxOf : ∀ l < 8, laneOf (boxOf l) = l := by decide
 theorem laneOf_lt : ∀ i < 8, laneOf i < 8 := by decide
 theorem boxOf_lt : ∀ l < 8, boxOf l < 8 := by decide
 theorem tableOf_lt : ∀ i < 8, boxTable i < 4 := by decide

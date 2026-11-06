@@ -86,9 +86,6 @@ def GoodW1 (L : Ws) (s : State) : Prop := GoodW L s ∧ 1 ≤ L.w ∧ L.w < 2 ^ 
 
 theorem two_goodW1 {s₁ s₂ : State} (h : Two GoodW1 s₁ s₂) : Two GoodW s₁ s₂ := two_mono (fun _ _ h => h.1) h
 
-/-- The workspace, with `x16` the temporary array's base. -/
-def TmpReg (L : Ws) (t : State) : Prop := GoodW L t ∧ t.gpr .rbx = off L.B (slot L.w aTmp)
-
 theorem tmpPtr_ok (L : Ws) (s : State) (h : GoodW1 L s) :
     WP isa (.block [.mov .rbx (.mem (hdr (sArr aTmp)))]) s fun t => GoodW1 L t ∧ t.gpr .rbx = off L.B (slot L.w aTmp) := by
   obtain ⟨⟨mi, hg, hZ⟩, hw⟩ := h
@@ -157,21 +154,6 @@ theorem stF_ok {sl : Nat} (hsl : 16 ≤ sl) (hsl' : sl < 32) (L : Ws) (s : State
   refine WP.mono (WP.keep [] (Q := fun t' => t'.mem = s.mem.writeW (off L.B (8 * sl)) (s.gpr .rax))
     (by xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.st (show 8 * sl + 8 ≤ L.Z by omega)]) rfl) fun t ⟨hm, k⟩ => ?_
   have o := writeW_outside s.mem L.B (d := 8 * sl) (s.gpr .rax) (by omega)
-  rw [← hm] at o
-  exact GoodW1.of_outside ⟨⟨mi, hg, hZ⟩, hw⟩ (by omega) o k.2.2 (k.gpr (by decide))
-
-/-- `andF`. -/
-theorem andF_ok (L : Ws) (s : State) (h : GoodW1 L s) : WP isa (.block andF) s (GoodW1 L) := by
-  obtain ⟨⟨mi, hg, hZ⟩, hw⟩ := h
-  have hn := hg.scr.nowrap
-  have h8 := hdr_lt_slot L.w 0 (show sF < 32 by decide)
-  have h8' := hdr_lt_slot L.w 8 (show sF < 32 by decide)
-  have eF : sF = 30 := rfl
-  refine WP.mono (WP.keep [.rax] (Q := fun t' => ∃ v : BitVec 64, t'.mem = s.mem.writeW (off L.B (8 * sF)) v)
-    (by unfold andF; xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (show 8 * sF + 8 ≤ L.Z by omega),
-      hg.scr.st (show 8 * sF + 8 ≤ L.Z by omega)]; exact ⟨_, rfl⟩) rfl)
-    fun t ⟨⟨v, hm⟩, k⟩ => ?_
-  have o := writeW_outside s.mem L.B (d := 8 * sF) v (by omega)
   rw [← hm] at o
   exact GoodW1.of_outside ⟨⟨mi, hg, hZ⟩, hw⟩ (by omega) o k.2.2 (k.gpr (by decide))
 

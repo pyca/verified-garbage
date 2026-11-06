@@ -31,8 +31,6 @@ variable {e : Bool}
 
 theorem savOff_eq : savOff = 464 := rfl
 theorem stOff_eq : stOff = 320 := rfl
-theorem keyOff_eq : keyOff = 384 := rfl
-
 /-- A register not callee-saved is not a callee-saved one. -/
 theorem ne_of_pres {r d : Reg} (hr : r ∈ preserved) (hd : d ∉ preserved := by decide) : r ≠ d := by
   rintro rfl; exact hd hr

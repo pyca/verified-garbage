@@ -13,6 +13,10 @@ name: Benchmarks
 #
 #   gh workflow run bench.yml --ref BRANCH -f base_commit=SHA \
 #     -f arches=aarch64 -f cpu_features='- neon' -f modules=chacha20
+#
+# A module with many benchmarks (AES-GCM's) is narrowed further, to the
+# groups a change affects, with `groups`: a job that would measure past
+# ci/bench_compare.py's budget fails before measuring, naming its groups.
 on:
   workflow_dispatch:
     inputs:
@@ -27,6 +31,9 @@ on:
         required: false
       modules:
         description: Space-separated library modules whose benchmarks run, e.g. `chacha20 poly1305` (empty for every benchmark; `python3 ci/bench_arches.py --choices` lists them)
+        required: false
+      groups:
+        description: Space-separated regular expressions over benchmark group names, each matching a whole name, e.g. `aes-(128|256)-gcm-tls-seal`; only the groups they match run (needs `modules`; empty for every group of the modules)
         required: false
       rounds:
         description: Interleaved comparison rounds (empty for the platform default)
@@ -74,8 +81,15 @@ jobs:
           ARCHES: ${{ inputs.arches }}
           CPU_FEATURES: ${{ inputs.cpu_features }}
           MODULES: ${{ inputs.modules }}
+          BENCH_GROUPS: ${{ inputs.groups }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Without modules every benchmark runs, in shards that the groups
+          # would leave mostly empty.
+          if [ -n "$BENCH_GROUPS" ] && [ -z "$MODULES" ]; then
+            echo "::error::groups needs modules: name the modules whose groups they select"
+            exit 1
+          fi
           matrix=$(python3 ci/bench_arches.py --all --arches "$ARCHES" --cpu-features "$CPU_FEATURES" --modules "$MODULES")
           echo "$matrix"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
@@ -195,6 +209,7 @@ jobs:
         id: benchmark
         env:
           MODULES: ${{ matrix.modules }}
+          BENCH_GROUPS: ${{ inputs.groups }}
           SHARD: ${{ matrix.shard }}
           ARCH: ${{ matrix.arch }}
           # Interleaved runs of each side (ci/bench_arches.py's platforms say
@@ -210,7 +225,7 @@ jobs:
           if [ -n "$IA32CAP" ]; then export OPENSSL_ia32cap="$IA32CAP"; fi
           # The `openssl` crate needs Homebrew's OpenSSL on macOS.
           if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
-          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL $OPENSSL_WITH_FEATURES
+          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --groups "$BENCH_GROUPS" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL $OPENSSL_WITH_FEATURES
       - name: Save raw benchmark samples
         if: ${{ always() && !cancelled() && (steps.benchmark.outcome == 'success' || steps.benchmark.outcome == 'failure') }}
         uses: ./head/.github/actions/upload-artifact

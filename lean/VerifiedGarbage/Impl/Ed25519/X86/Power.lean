@@ -13,9 +13,6 @@ open VG.Impl.X25519.X86 (mul)
 def Z2 : Nat := 128
 def T0 : Nat := 512
 def T1 : Nat := 544
-def T2 : Nat := 576
-def T3 : Nat := 608
-
 /-- From z in Z2, leave z^(2^250 - 1) in T1 and z^11 in T0: a call of
 `vg_gf25519_r32_pow250`, which keeps them at these offsets. -/
 def power250 : Prog isa := VG.Impl.X25519.X86.Field32.pow250Call

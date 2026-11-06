@@ -27,7 +27,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
-public import VerifiedGarbage.Proof.ChaCha20.Contract
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # ChaCha20 keystream XOR on x86 (32-bit)
@@ -122,8 +123,6 @@ abbrev D0 (k : Nat) : Byte := s₀.mem (dp s₀ + BitVec.ofNat 64 k)
 abbrev KS : List Byte := keystream (S0 s₀) (L s₀)
 /-- The bytes of data done before block `j`. -/
 abbrev P (j : Nat) : Nat := min (64 * j) (L s₀)
-/-- How many bytes of block `j` are used. -/
-abbrev C (j : Nat) : Nat := min 64 (L s₀ - P s₀ j)
 end
 
 theorem L_lt (s₀ : State) : L s₀ < 2 ^ 32 := (LN s₀).isLt
@@ -1309,23 +1308,6 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.ChaCha20.xorX86.pre s₁) (h�
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by lit_omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by lit_omega))]
     exact congrArg _ (ha _ (by lit_omega))
 
-/-- Memory whose four argument slots (at `0x5004`) hold `0x1000`, `0x2000`,
-`0` and `0x3000`. -/
-def satMem : Mem := fun a =>
-  bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5009 then 0x20 else bif Nat.beq a.toNat 0x5011 then 0x30 else 0
-
-/-- A state satisfying the precondition (with no data). -/
-def sat : State where
-  gpr r := match r with
-    | .esp => 0x5000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := satMem
-  rd := []
-  wr := [⟨0x1000, 64⟩, ⟨0x2000, 0⟩, ⟨0x3000, 320⟩, ⟨0x5004, 16⟩]
-
 theorem xor_correct (s : State) (hs : Proof.ChaCha20.xorX86.pre s) :
     ∃ t s', Exec isa Impl.ChaCha20.X86.Xor.xor s t s' ∧ abiPreserved s s' ∧
       Proof.ChaCha20.xorX86.post s s' :=
@@ -1343,23 +1325,5 @@ theorem xor_ct : ConstantTime isa Proof.ChaCha20.xorX86.pre Proof.ChaCha20.xorX8
 theorem xorSsse3_ct : ConstantTime isa Proof.ChaCha20.xorX86.pre Proof.ChaCha20.xorX86.pub
     Impl.ChaCha20.X86.Xor.xorSsse3 :=
   VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by native_taint_decide)
-
-theorem xorX86_implies : Proof.ChaCha20.xorX86.Implies (Proof.ChaCha20.xorContract X86.abi 12) := by
-  have a0 : arg sat 0 = 0x1000 := by decide
-  have a1 : arg sat 1 = 0x2000 := by decide
-  have a2 : arg sat 2 = 0 := by decide
-  have a3 : arg sat 3 = 0x3000 := by decide
-  have e : argAddr sat 0 = 0x5004 := by decide
-  have esp : sat.gpr .esp = 0x5000 := rfl
-  sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes, Proof.ChaCha20.xorX86] [a0, a1, a2, a3, e, esp] using sat
-
-theorem xor_verified :
-    Verified X86.target Impl.ChaCha20.X86.Xor.xor (Proof.ChaCha20.xorContract X86.abi 12) :=
-  Verified.of_correct xor_correct xor_ct xorX86_implies
-
-theorem xorSsse3_verified :
-    Verified X86.target Impl.ChaCha20.X86.Xor.xorSsse3 (Proof.ChaCha20.xorContract X86.abi 12) :=
-  Verified.of_correct xorSsse3_correct xorSsse3_ct xorX86_implies
 
 end VG.Proof.ChaCha20.X86.Xor

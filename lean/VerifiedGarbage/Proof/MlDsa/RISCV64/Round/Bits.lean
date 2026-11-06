@@ -79,8 +79,6 @@ def Step (s : State) (x z c : BitVec 64) (v : BitVec 32) (s' : State) : Prop :=
     s'.mem = s.mem.writeW z v ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.gpr .ra = s.gpr .ra ∧
     ∀ r ∈ preserved, s'.gpr r = s.gpr r
 
-theorem dMod_le (g : Nat) : dMod g ≤ 44 := by unfold dMod; split <;> decide
-
 section
 variable {g : Nat} {s : State} {x z c : BitVec 64} (h3 : s.gpr .a0 = x) (h5 : s.gpr .a2 = z) (h6 : s.gpr .a3 = c)
   (h10 : s.gpr .a7 = BitVec.ofNat 64 (dMul g)) (h11 : s.gpr .t1 = BitVec.ofNat 64 (dAdd g))

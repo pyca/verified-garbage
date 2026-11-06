@@ -19,7 +19,7 @@ entry, the loads of the call's arguments and of the return address are at
 the stack pointer or our frame; the gathering is constant time by
 `gather_rel` (`Proof/Gather/PPC64LE/LoopCT.lean`); and the call is constant
 time by its callee's contract, whose public arguments agree
-(`sealGather_ct`). As for ChaCha20-Poly1305
+(`body_rel`). As for ChaCha20-Poly1305
 (`Proof/ChaCha20Poly1305/PPC64LE/Gather/CT.lean`).
 -/
 
@@ -80,23 +80,5 @@ theorem body_rel (hv : SealOk)
   -- The return address.
   exact rel_taint [] (by rw [hz₁.sp, hz₂.sp, hP]) (by simp) (by taint_decide)
 
-
-theorem sealGather_ct (hv : SealOk)
-    (hct : ConstantTime isa (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre
-      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pub sealCode) :
-    ConstantTime isa gatherPre gatherPub sealGather := by
-  refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
-  have h₁ := lay p₁
-  have h₂ := lay p₂
-  obtain ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp, a0, a1, a2, hdesc⟩ := hq
-  have hP : Pf σ₁ = Pf σ₂ := by simp only [Pf, Bs, qsp]
-  refine (RelCT.alloc (P := Eq2 σ₁ σ₂) (R := TT) (fun a b ⟨ha, hb⟩ => by subst ha hb; exact qsp)
-    ((?_ : RelCT isa (Eq2 (allocated 160 σ₁) (allocated 160 σ₂)) _ TT).mono
-      (fun a b ⟨s, t, ⟨hs, ht⟩, ha, hb⟩ => by subst hs ht; exact ⟨ha, hb⟩) fun _ _ h => h)).mono
-    (fun _ _ h => h) fun _ _ _ => trivial
-  -- The entry.
-  refine rel_seq (rel_taint [] (show σ₁.sp - BitVec.ofNat 64 160 = σ₂.sp - BitVec.ofNat 64 160 by rw [qsp]) (by simp)
-    (by taint_decide)) (entered_wp h₁) (entered_wp h₂) fun e₁ e₂ he₁ he₂ => ?_
-  exact body_rel hv hct h₁ h₂ ⟨q3,q4,q5,q6,q7,q8,q9,q10,qsp,a0,a1,a2,hdesc⟩ he₁ he₂
 
 end VG.Proof.AesGcm.PPC64LE.Gather

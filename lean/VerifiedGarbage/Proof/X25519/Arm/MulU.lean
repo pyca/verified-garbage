@@ -98,15 +98,6 @@ theorem umaal_lt {n m h l : Nat} (hn : n < 2 ^ 32) (hm : m < 2 ^ 32) (hh : h < 2
   have : n * m ≤ (2 ^ 32 - 1) * (2 ^ 32 - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
   omega_arith
 
-theorem mc_lt {a : Nat} {b t : Nat → Nat} {n : Nat} (ha : a < 2 ^ 32) (hb : ∀ j < n, b j < 2 ^ 32)
-    (ht : ∀ j < n, t j < 2 ^ 32) : ∀ j ≤ n, mc a b t j < 2 ^ 32
-  | 0, _ => (by decide : (0 : Nat) < 2 ^ 32)
-  | j + 1, hj => by
-    have := mc_lt ha hb ht j (by omega_arith)
-    have := umaal_lt ha (hb j (by omega_arith)) this (ht j (by omega_arith))
-    rw [mc_succ, Nat.div_lt_iff_lt_mul (by decide)]
-    omega_arith
-
 theorem mc_val (a : Nat) (b t : Nat → Nat) :
     ∀ n, val32 (mo a b t) n + 2 ^ (32 * n) * mc a b t n = a * val32 b n + val32 t n
   | 0 => by simp [val32, mc]

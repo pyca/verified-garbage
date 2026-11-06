@@ -17,8 +17,8 @@ operations `ops`, on slots named by number, each slot `x` at the offset
 (`Fprog.lean`), what the slots stand for (`toM`) follows `runOps ops`
 (`fprogR_ok`), but the offsets may coincide: only the slots the program
 writes (`W`) must be apart from every other (`LayR`), so that two slots it
-only reads may be one (a point doubled). `rcbR_ok` is the complete
-addition.
+only reads may be one (a point doubled). `opsR_ok` runs a formula on the
+function's slots (`OpsOk`), such as the complete addition (`rcbIds_opsOk`).
 -/
 
 @[expose] public section
@@ -216,22 +216,6 @@ theorem rcbIds_ok : ∀ op ∈ rcb sId pId qId oId, op.out ∈ wIds ∧ ∀ x �
 theorem rcbIds_reads : readsOk (rcb sId pId qId oId) rIds = true := by decide
 
 theorem rcbIds_apart : RcbApart sId pId qId oId := ⟨by decide, by decide⟩
-
-/-- `o = p + q` by `rcb` on the slots numbered as the function numbers them,
-from a state holding `E` in `p`, `q`, `a` and `3b`: `o` holds `rcbAdd` of
-their values. -/
-theorem rcbR_ok {k : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus}
-    [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) (hL : LayR k 17 wIds σ)
-    (hm : UnitMod S.m (2 ^ (64 * k))) {E : Nat → Fin S.m} {s : State}
-    (hI : InvR k 17 σ base S.m rIds E s) {u : Bool} :
-    WP isa (fprogR σ S (rcb sId pId qId oId) u) s fun s' => KeepR k σ base wIds s s' ∧
-      InvR k 17 σ base S.m (validAfter (rcb sId pId qId oId) rIds) (runOps (rcb sId pId qId oId) E) s' ∧
-      (runOps (rcb sId pId qId oId) E 0, runOps (rcb sId pId qId oId) E 1, runOps (rcb sId pId qId oId) E 2) =
-        VG.Proof.Weierstrass.rcbAdd (E 9) (E 10) (E 3) (E 4) (E 5) (E 6) (E 7) (E 8) := by
-  refine WP.mono (fprogR_ok hM hk hL hm _ hI rcbIds_ok rcbIds_reads) fun s' ⟨hk', hI'⟩ =>
-    ⟨hk'.mono fun w hw => ?_, hI', rcb_run rcbIds_apart E⟩
-  obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw
-  exact (rcbIds_ok op hop).1
 
 /-! ## The formulas for `a = 0` -/
 

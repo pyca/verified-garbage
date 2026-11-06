@@ -43,10 +43,6 @@ theorem control_scr (h : KeyInput p s) {t : State} (hw : t.wr = s.wr) : Scr t p.
 /-- The regions the controller (and its callee) may write, and its stack. -/
 def changes (s : State) : List Region := inWrites s ++ [below (s.gpr .rsp) stackUse]
 
-theorem changes_of_wr (h : KeyInput p s) {t : State} (hw : t.wr = s.wr) :
-    t.wr ++ [below (s.gpr .rsp) stackUse] = changes s := by
-  rw [hw, h.1.2.2.2.1]; rfl
-
 theorem read_disjoint (h : KeyInput p s) {r : Region} (hr : r ∈ inReads s) :
     ∀ w ∈ changes s, r.Disjoint w := by
   intro w hw

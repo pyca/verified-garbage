@@ -1000,6 +1000,54 @@ class Interleaving(unittest.TestCase):
                          [('head', None, None), ('base', None, None)])
 
 
+class Budget(unittest.TestCase):
+    """Narrowing a job to groups, and refusing one too long to finish."""
+
+    GROUPS = {'aes-128-gcm-tls-seal': 29, 'aes-256-gcm-tls-seal': 29, 'aes-128-gcm-encrypt': 6,
+              'aes-128-gcm-siv-encrypt': 3, 'sha1': 3}
+
+    def test_groups_match_whole_names(self):
+        match = bench_compare.matching_groups
+        self.assertEqual(match(self.GROUPS, ''), self.GROUPS)
+        self.assertEqual(list(match(self.GROUPS, r'aes-(128|256)-gcm-tls-seal')),
+                         ['aes-128-gcm-tls-seal', 'aes-256-gcm-tls-seal'])
+        # A prefix is not a match: `aes-128-gcm-encrypt` names one group.
+        self.assertEqual(list(match(self.GROUPS, 'aes-128-gcm-encrypt aes-128-gcm')), ['aes-128-gcm-encrypt'])
+        self.assertEqual(list(match(self.GROUPS, 'sha1 aes-.*-siv-.*')), ['aes-128-gcm-siv-encrypt', 'sha1'])
+        self.assertEqual(match(self.GROUPS, 'sha3'), {})
+
+    def test_each_run_of_each_benchmark_is_counted(self):
+        planned = bench_compare.planned_seconds
+        per = bench_compare.SECONDS_PER_RUN
+        # A group without copies: each side's rounds, and the references once.
+        self.assertAlmostEqual(planned({'sha1': 3}, 2, 1, 8, 0), 3 * 2 * per)
+        self.assertAlmostEqual(planned({'sha1': 3}, 2, 5, 8, 2), 3 * 12 * per)
+        self.assertAlmostEqual(planned({'sha1': 3}, 1, 1, 8, 2), 3 * 3 * per)
+        # AES-GCM's run from 7 more copies of each side's binary.
+        self.assertAlmostEqual(planned({'aes-128-gcm-encrypt': 6}, 2, 1, 8, 0), 6 * 16 * per)
+        self.assertAlmostEqual(planned({'aes-128-gcm-encrypt': 6}, 2, 1, 1, 0), 6 * 2 * per)
+
+    def test_every_aes_gcm_benchmark_is_over_budget_but_a_few_groups_are_not(self):
+        # AES-GCM's 183 benchmarks, all from copies, in one comparison.
+        gcm = {f'aes-128-gcm-g{i}': 1 for i in range(183)}
+        self.assertGreater(bench_compare.planned_seconds(gcm, 2, 1, 8, 0), 20 * 60)
+        seal = bench_compare.matching_groups(self.GROUPS, 'aes-128-gcm-tls-seal')
+        self.assertLess(bench_compare.planned_seconds(seal, 2, 5, 8, 0), 20 * 60)
+
+    def test_the_error_names_the_largest_groups(self):
+        message = bench_compare.over_budget(self.GROUPS, 25 * 60, 20)
+        self.assertIn('70 benchmarks for about 25 minutes, more than the budget of 20', message)
+        self.assertIn('`aes-128-gcm-tls-seal` (29), `aes-256-gcm-tls-seal` (29), `aes-128-gcm-encrypt` (6)', message)
+        self.assertIn('`groups` input', message)
+        many = {f'g{i:02}': 1 for i in range(15)}
+        self.assertTrue(bench_compare.over_budget(many, 1, 20).endswith('`g11` (1) and 3 more.'))
+
+    def test_the_workflow_passes_its_groups_on(self):
+        workflow = (pathlib.Path(__file__).parent.parent / '.github/workflows/bench.yml').read_text()
+        self.assertIn('BENCH_GROUPS: ${{ inputs.groups }}', workflow)
+        self.assertIn('--groups "$BENCH_GROUPS"', workflow)
+
+
 class CpuFeatures(unittest.TestCase):
     """`VG_CPU_FEATURES` less the features a checkout's src/cpu.rs does not
     know, from its table of names and bits or an older list of names."""

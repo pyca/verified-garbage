@@ -96,19 +96,6 @@ structure Top (σ s : State) : Prop where
   saved : ∀ k < 6, s.mem.readW (pa s (sc (oSV + 8 * k))) 64 = σ.gpr (savedReg k)
   ret : s.mem.readW (σ.gpr .rsp) 64 = σ.mem.readW (σ.gpr .rsp) 64
 
-theorem pairwise_sym {α : Type} {R : α → α → Prop} (hs : ∀ a b, R a b → R b a) :
-    ∀ {l : List α}, l.Pairwise R → ∀ {a b : α}, a ∈ l → b ∈ l → a ≠ b → R a b
-  | [], _, _, _, ha, _, _ => absurd ha List.not_mem_nil
-  | x :: l, h, a, b, ha, hb, hne => by
-    rw [List.pairwise_cons] at h
-    rcases List.mem_cons.mp ha with e | ha'
-    · rcases List.mem_cons.mp hb with e' | hb'
-      · exact absurd (e.trans e'.symm) hne
-      · rw [e]; exact h.1 _ hb'
-    · rcases List.mem_cons.mp hb with e' | hb'
-      · rw [e']; exact hs _ _ (h.1 _ ha')
-      · exact pairwise_sym hs h.2 ha' hb' hne
-
 section
 variable {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ)
 include hp

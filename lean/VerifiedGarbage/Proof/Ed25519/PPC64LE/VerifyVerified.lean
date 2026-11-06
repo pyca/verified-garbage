@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Verify
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 
 /-!
@@ -75,21 +74,5 @@ theorem verify_ct : ConstantTime isa verifyPPC.pre verifyPPC.pub Impl.Ed25519.PP
     _ _ _ _ _ _ ⟨⟨pre _ h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩,
       ⟨pre _ h₂, p3.symm, p4.symm, p5.symm, p6.symm, psp.symm, by rw [b3, p3], by rw [b4, p4],
         by rw [b5, p5]⟩⟩ e₁ e₂
-
-/-- A state satisfying the precondition. -/
-def verifySat : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | .r6 => 0x4000 | _ => 0
-  lr := 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x1000, 32⟩, ⟨0x2000, 64⟩, ⟨0x3000, 64⟩]
-  wr := [⟨0x4000, 8192⟩]
-
-theorem verifyEquation_verified :
-    Verified PPC64LE.target Impl.Ed25519.PPC64LE.verifyEquation (Proof.Ed25519.verifyEquationContract PPC64LE.abi) :=
-  Verified.of_correct verify_ok' verify_ct (by
-    contract_implies [Proof.Ed25519.verifyEquationContract, Proof.Ed25519.verifyEquationSig, verifyPPC,
-      Spec.Ed25519.scratchWords, PPC64LE.abi, PPC64LE.argRegs] [verifySat] using verifySat)
 
 end VG.Proof.Ed25519.PPC64LE

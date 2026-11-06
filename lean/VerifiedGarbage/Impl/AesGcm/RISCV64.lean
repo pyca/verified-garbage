@@ -74,7 +74,6 @@ def mov (d n : Reg) : Instr := .addi d n 0
 /-! ## The working space -/
 
 def tO : Nat := 96
-def uO : Nat := 112
 def scrO : Nat := 512
 def raO : Nat := 224
 def aadO : Nat := 232

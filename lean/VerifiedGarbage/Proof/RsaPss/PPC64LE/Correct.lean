@@ -23,11 +23,11 @@ public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Prefix
 # RSASSA-PSS verification on PPC64LE: correctness
 
 Untrusted: everything here is checked by Lean. The checks (`checks_done`): a
-modulus whose first byte is zero (`verify_zero`), and an encoding too short
+modulus whose first byte is zero (`verify_zero₂`), and an encoding too short
 for the digest (`chkEm`) or the salt length expected (`expLen`, `chkSalt`:
-`verify_short`) return 0; otherwise RSAVP1 of the signature (`call_ok`) and
+`verify_short₂`) return 0; otherwise RSAVP1 of the signature (`call_ok`) and
 the checks of `EM` (`post_ok`) return 1 exactly when EMSA-PSS-VERIFY accepts
-it (`res_iff`, `verify_bytes`), if `pre` holds the modulus' values.
+it (`res_iff`, `verify_bytes₂`), if `pre` holds the modulus' values.
 `code_correct`: the function against its shared contract.
 -/
 

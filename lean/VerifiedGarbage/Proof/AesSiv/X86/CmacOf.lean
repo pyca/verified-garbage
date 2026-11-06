@@ -290,9 +290,6 @@ theorem cmacR_buf {W SP : BitVec 32} {s : State} {P : BitVec 32} {k : Nat} (B : 
   · exact B.w.sub_right (Lay.wSub (by decide))
   · exact B.stk.symm
 
-theorem sub_cmacR {W SP : BitVec 32} {rs : List Region} (h : ∀ r ∈ rs, ∃ r' ∈ cmacR W SP, Region.Sub r r')
-    {m m' : Mem} (hf : Frame rs m m') : Frame (cmacR W SP) m m' := hf.sub h
-
 /-- The CMAC of the string at `W + strO`. -/
 theorem cmacOf_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {P : BitVec 32} {k : Nat} {s : State} (h : CmacPre C W SP R P k s) :

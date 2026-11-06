@@ -3,6 +3,49 @@
 //! `assembly/ed25519.s`.
 #![allow(dead_code)]
 
+/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the 480 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x1101
+.insn 2, 0x828a
+.insn 4, 0x0012b023
+.insn 4, 0x00a2b423
+.insn 4, 0x00b2b823
+.insn 4, 0x00d2bc23
+.insn 2, 0x8532
+.insn 2, 0x862e
+.insn 4, 0x02000593
+call {vg_sha512_digest}
+.insn 2, 0x828a
+.insn 4, 0x0082b503
+.insn 4, 0x0102b583
+.insn 4, 0x0182b603
+call {vg_ed25519_public_key_expanded}
+.insn 2, 0x828a
+.insn 4, 0x0002b083
+.insn 2, 0x6105
+.insn 2, 0x8082
+.option pop",
+        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded,
+    )
+}
+
 /// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
 ///
 /// # Safety

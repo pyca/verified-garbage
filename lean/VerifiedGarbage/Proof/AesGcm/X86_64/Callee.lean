@@ -483,8 +483,6 @@ def StitchImpl.code (st : StitchImpl) (M : CtxMode) : StitchCode M :=
 
 namespace StitchImpl
 
-theorem any_false {α : Type} (st : Option α) : st.any (fun _ => false) = false := by cases st <;> rfl
-
 theorem encFull_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
     encFull (st.map (·.code M)) = st.any (·.full) := by cases st <;> rfl
 
@@ -496,12 +494,6 @@ theorem encSmall_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
 
 theorem decSmall_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
     decSmall (st.map (·.code M)) = false := by cases st <;> rfl
-
-theorem encSmall4_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
-    encSmall4 (st.map (·.code M)) = false := by cases st <;> rfl
-
-theorem decSmall4_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
-    decSmall4 (st.map (·.code M)) = false := by cases st <;> rfl
 
 /-- A property of `Blocks.blocks` for the loops of `st`, from its three
 shapes: no loops, loops taking the first `16 ⌊n / 16⌋` blocks, and loops

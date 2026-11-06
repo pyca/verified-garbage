@@ -76,33 +76,6 @@ theorem limb_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {B : Add
     (hd : ∀ r ∈ rs, ∀ k < 16, (⟨B + BitVec.ofNat 64 (o + 4 * k), 4⟩ : Region).Disjoint r) :
     ∀ k < 16, limb m' B o k = limb m B o k := fun k hk => wd_frame hf fun r hr => hd r hr k hk
 
-/-- The words of `[o, o + 64)` are outside the ranges `[p.1, p.1 + p.2)`
-of `l`, all within the working space. -/
-def Outside (o : Nat) (l : List (Nat × Nat)) : Bool :=
-  l.all fun p => o + 64 ≤ p.1 || p.1 + p.2 ≤ o
-
-/-- The ranges `l` of the working space at `B`. -/
-def offR (B : Addr) (l : List (Nat × Nat)) : List Region :=
-  l.map fun p => ⟨B + BitVec.ofNat 64 p.1, p.2⟩
-
-theorem limb_offR {l : List (Nat × Nat)} {m m' : Mem} {B : Addr} (hf : Frame (offR B l) m m') {o : Nat}
-    (ho : Outside o l = true) (hl : (l.all fun p => p.1 + p.2 ≤ 4096) = true) (ho' : o + 64 ≤ 4096) :
-    ∀ k < 16, limb m' B o k = limb m B o k := by
-  refine limb_frame hf fun r hr k hk => ?_
-  obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
-  have h1 := List.all_eq_true.mp ho p hp
-  have h2 := List.all_eq_true.mp hl p hp
-  simp only [Bool.or_eq_true, decide_eq_true_eq] at h1 h2
-  exact Offset.disjoint B (by omega_using [hk, h1]) (by omega_using [ho', hk]) (by omega_using [h2])
-
-theorem Lim_offR {l : List (Nat × Nat)} {m m' : Mem} {B : Addr} (hf : Frame (offR B l) m m') {o : Nat}
-    (ho : Outside o l = true) (hl : (l.all fun p => p.1 + p.2 ≤ 4096) = true) (ho' : o + 64 ≤ 4096)
-    (h : Lim m B o) : Lim m' B o := fun k hk => by rw [limb_offR hf ho hl ho' k hk]; exact h k hk
-
-theorem V_offR {l : List (Nat × Nat)} {m m' : Mem} {B : Addr} (hf : Frame (offR B l) m m') {o : Nat}
-    (ho : Outside o l = true) (hl : (l.all fun p => p.1 + p.2 ≤ 4096) = true) (ho' : o + 64 ≤ 4096) :
-    V m' B o = V m B o := val16_congr (limb_offR hf ho hl ho')
-
 /-- The clobbered registers of the field operations. -/
 abbrev clob : List Reg := [.r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9]
 

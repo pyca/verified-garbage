@@ -42,13 +42,11 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 /-!
 # A candidate on AArch64: constant time, the stages before Montgomery setup
 
-`kMain_ct`: `kMain` leaks the same in runs that agree on the public data
-(`K0`), given that Montgomery setup, Miller–Rabin and the result do from
-`TS` (`kTail_ct`). `loadC` runs from `K0` (`loadC_ct`), then each check from
-`KSt` (`closeCheck_ct`, `trial_ct`, `gcdCheck_ct`); after each, correctness
-gives `KSt` again and the flag its branch tests as the schedule's
-(`closeStage_ok`, `trialStage_ok`, `gcdStage_ok`), so both runs take the same
-branch (`two_ite`).
+For runs that agree on the public data (`K0`): `loadC` runs from `K0`
+(`loadC_ct`), then each check from `KSt` (`closeCheck_ct`, `trial_ct`,
+`gcdCheck_ct`); after each, correctness gives `KSt` again and the flag its
+branch tests as the schedule's (`closeStage_ok`, `trialStage_ok`,
+`gcdStage_ok`), so both runs take the same branch (`two_ite`).
 
 The taint analysis knows only registers, and every load gives a secret, so
 each piece is checked from registers pinned to values of the public data by
@@ -74,7 +72,6 @@ open VG.Proof.MlKem.AArch64 (Keep eval_zero eval_nonzero)
 open VG.Proof.RsaKeyGen (Sched schedOf)
 open VG.Impl.Bignum.Public (aN aX aAcc aTmp aY)
 
-/-! ## Tools, and the stages' correctness -/
 
 /-! ### Tools -/
 
@@ -105,12 +102,6 @@ theorem Mid.wp {α : Type} {Φ : α → State → Prop} {c₁ c₂ : Prog isa} {
   | seq x₁ x₂ =>
     obtain ⟨-, rfl⟩ := Exec.det e x₁
     exact ⟨_, _, x₂, y⟩
-
-/-- `Mid` of two pieces in sequence. -/
-theorem Mid.seq {α : Type} {Φ : α → State → Prop} {c₁ c₂ : Prog isa} {a : α} {s : State}
-    (h : Mid c₂ (Mid c₁ Φ) a s) : Mid (.seq c₁ c₂) Φ a s := by
-  obtain ⟨t, tr, ⟨u, tr', hu, e₁⟩, e₂⟩ := h
-  exact ⟨u, _, hu, .seq e₁ e₂⟩
 
 theorem RelCT.assoc_r {P Q : State → State → Prop} {a b c : Prog isa}
     (h : RelCT isa P (.seq a (.seq b c)) Q) : RelCT isa P (.seq (.seq a b) c) Q := by
@@ -356,11 +347,6 @@ theorem seqs_cons_ct {P Q : State → State → Prop} {e : Prog isa} {l : List (
 
 /-- The working space of the public data. -/
 def KW (q : FPub) (s : State) : Prop := Ws s q.B q.Z q.w
-
-/-- A piece that changes only memory in ranges `KMut` allows keeps `KW`. -/
-theorem KW.frm {q : FPub} {s t : State} (h : Ws s q.B q.Z q.w) {rs : List (Nat × Nat)} (hf : Frm q.B rs s.mem t.mem)
-    (hm : ∀ r ∈ rs, KMut r) {regs : List Reg} (k : Keep regs s t) (hr : .x0 ∉ regs) : KW q t :=
-  h.congr' hf hm k hr
 
 /-- `subA o a b`, from the working space. -/
 theorem subA_ct0 {α : Type} {Φ : α → State → Prop} (B : α → Addr) (Z w : α → Nat)
@@ -858,44 +844,10 @@ theorem gcdCheck_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KS
     (RelCT.block_nil fun _ _ h => two_mono (fun _ _ h => h.1.1.1) h) ?_
   exact gcdE_ct.mono (fun _ _ h => two_mono (fun _ _ h => GE2.gg h) h) fun _ _ h => h
 
-/-! ## `kMain` -/
+/-! ## `kMainWith` -/
 
 theorem nonzero_false {s : State} {r : Reg} {b : Bool} (h : (s.gpr r != 0) = b)
     (he : isa.eval (.nonzero .x r) s = some false) : b = false := by
   rw [eval_nonzero, h] at he; simpa using he
-
-/-- `kMain` leaks the same in runs that agree on the public data, given that
-Montgomery setup, Miller–Rabin and the result do from `TS`. -/
-theorem kMain_ct (M : Mont)
-    (hT : RelCT isa (Two TS) (seqs (montSetup M.mm ++ expSetup ++ millerRabin M.mm ++ [mrResult])) fun _ _ => True) :
-    RelCT isa (Two K0) (kMain M.mm) fun _ _ => True := by
-  unfold kMain
-  rw [List.append_assoc]
-  refine RelCT.seqs_append (by simp [loadC]) (by simp [closeCheck])
-    (RelCT.seq (two_post loadC_ct fun _ _ h => loadCStage_ok h) ?_)
-  -- Too close to `p`.
-  refine RelCT.seqs_append (by simp [closeCheck]) (by simp)
-    (RelCT.seq (two_post closeCheck_ct fun _ _ h => closeStage_ok h) ?_)
-  refine two_ite (fun q s₁ s₂ h₁ h₂ => by rw [eval_nonzero, eval_nonzero, h₁.2, h₂.2])
-    (finUsed2_ct fun _ _ h => h.1.1) ?_
-  -- Trial division.
-  refine RelCT.seqs_append (by simp [trial]) (by simp) (RelCT.seq (two_post (Ψ := fun q t =>
-      (KSt q t ∧ (t.gpr .x1 != 0) = q.sch.comp) ∧ q.sch.close = false) (trial_ct fun _ _ h => h.1.1)
-    fun q s h => ?_) ?_)
-  · have hcl : q.sch.close = false := nonzero_false (by rw [h.1.2]; exact mask_bne _) h.2
-    exact WP.mono (trialStage_ok h.1.1 hcl) fun t ht => ⟨ht, hcl⟩
-  refine two_ite (fun q s₁ s₂ h₁ h₂ => by rw [eval_nonzero, eval_nonzero, h₁.1.2, h₂.1.2])
-    (finUsed3_ct fun _ _ h => h.1.1.1) ?_
-  -- `gcd(c − 1, e)`.
-  refine RelCT.seqs_append (by simp [gcdCheck, loadE]) (by simp) (RelCT.seq (two_post (Ψ := fun q t =>
-      (KSt q t ∧ (t.gpr .x3 != 0) = q.sch.gbad) ∧ q.sch.close = false ∧ q.sch.comp = false)
-    (gcdCheck_ct fun _ _ h => h.1.1.1) fun q s h => ?_) ?_)
-  · have hco : q.sch.comp = false := nonzero_false h.1.1.2 h.2
-    exact WP.mono (gcdStage_ok h.1.1.1 h.1.2 hco) fun t ht => ⟨ht, h.1.2, hco⟩
-  refine two_ite (fun q s₁ s₂ h₁ h₂ => by rw [eval_nonzero, eval_nonzero, h₁.1.2, h₂.1.2])
-    (finUsed3_ct fun _ _ h => h.1.1.1) ?_
-  -- Montgomery setup and Miller–Rabin.
-  exact hT.mono (fun _ _ h => two_mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1, h.1.2.2, nonzero_false h.1.1.2 h.2⟩) h)
-    fun _ _ h => h
 
 end VG.Proof.RsaKeyGen.AArch64

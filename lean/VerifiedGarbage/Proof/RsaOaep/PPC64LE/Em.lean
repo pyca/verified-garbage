@@ -66,8 +66,6 @@ section
 variable {D : Nat} {s : State} (P : PreO D s)
 include P
 
-theorem k_lt : (s.gpr .r6).toNat ≤ 1024 := P.k2
-
 /-- `clearEm`: 1024 zeros at `S`. -/
 theorem clear_ok {t : State} (h : Base S vO s t) :
     WP isa clearEm t fun t' => Base S vO s t' ∧ Keep [.r4, .r5, .r6] t t' ∧

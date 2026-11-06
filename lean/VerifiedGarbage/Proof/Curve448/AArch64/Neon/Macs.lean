@@ -38,8 +38,6 @@ def prodVal (A B : Nat → BitVec 128) (p : Prod) (e : Nat) : Nat :=
 def prodSum (A B : Nat → BitVec 128) (tgt : Nat → Nat) (ps : List Prod) (r e : Nat) : Int :=
   ((ps.filter fun p => tgt p.pos == r).map fun p => (prodVal A B p e : Int)).sum
 
-theorem prodSum_nil (A B : Nat → BitVec 128) (tgt : Nat → Nat) (r e : Nat) : prodSum A B tgt [] r e = 0 := rfl
-
 theorem prodSum_append (A B : Nat → BitVec 128) (tgt : Nat → Nat) (ps qs : List Prod) (r e : Nat) :
     prodSum A B tgt (ps ++ qs) r e = prodSum A B tgt ps r e + prodSum A B tgt qs r e := by
   simp [prodSum, List.filter_append]
@@ -65,8 +63,6 @@ abbrev M64 : Int := 2 ^ 64
 
 theorem lane_lt (x : BitVec 128) (e : Nat) : lane x e < M64 := by
   have := (vdword x e).isLt; simp only [lane, M64]; omega
-
-theorem lane_nonneg (x : BitVec 128) (e : Nat) : 0 ≤ lane x e := Int.natCast_nonneg _
 
 /-- One product: `umull` the first time a register it starts is aimed at, `umlal` after. -/
 theorem mac_lane (t : State) (tgt : Nat → Nat) (fresh seen : List Nat) (p : Prod) :

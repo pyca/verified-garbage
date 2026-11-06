@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Verified
 public import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
 public import VerifiedGarbage.Proof.X25519.X86_64.Verified
+public import VerifiedGarbage.Proof.X25519.X86_64.Exchange
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Nat.Totient
 import Mathlib.Data.Sym.Sym2.Init
@@ -43,6 +44,22 @@ def artifacts : List Artifact := [
     code := Impl.X25519.X86_64.x25519Ifma
     stack := 8
     verified := Proof.X25519.X86_64.x25519Ifma_verified
+    features := ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"] },
+  Spec.X25519.exchangeApi.artifact X86_64.target {
+    code := Impl.Xdh.X86_64.exchange "vg_x25519" Impl.X25519.X86_64.x25519 32
+    stack := 24
+    verified := Proof.X25519.X86_64.Exchange.exchange_baseline },
+  Spec.X25519.exchangeApi.artifact X86_64.target {
+    suffix := "_adx"
+    code := Impl.Xdh.X86_64.exchange "vg_x25519_adx" Impl.X25519.X86_64.x25519Adx 32
+    stack := 24
+    verified := Proof.X25519.X86_64.Exchange.exchange_adx
+    features := ["bmi2", "adx"] },
+  Spec.X25519.exchangeApi.artifact X86_64.target {
+    suffix := "_ifma"
+    code := Impl.Xdh.X86_64.exchange "vg_x25519_ifma" Impl.X25519.X86_64.x25519Ifma 32
+    stack := 24
+    verified := Proof.X25519.X86_64.Exchange.exchange_ifma
     features := ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"] },
   Spec.X25519.x25519BaseApi.artifact X86_64.target {
     consts := Impl.Ed25519.X86_64.combConsts

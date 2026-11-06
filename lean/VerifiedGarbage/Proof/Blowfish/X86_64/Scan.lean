@@ -59,20 +59,6 @@ theorem word_low (a : BitVec 128) {i : Nat} (hi : i < 8) :
   · simp only [h, decide_false, Bool.false_and]
     rw [show (255 : Nat) = 2 ^ 8 - 1 by rfl, Nat.testBit_two_pow_sub_one]; simp [h]
 
-/-- The odd bytes of a value, as words. -/
-theorem word_psrlw8 (a : BitVec 128) {i : Nat} (hi : i < 8) :
-    word (XShiftOp.eval .psrlw a (BitVec.ofNat 8 8)) i = (byte a (2 * i + 1)).setWidth 16 := by
-  simp only [XShiftOp.eval, BitVec.toNat_ofNat, show 8 % 2 ^ 8 = 8 by rfl, show ¬ 15 < 8 by decide,
-    ite_false, word_ofWords _ hi]
-  apply BitVec.eq_of_getLsbD_eq; intro j hj
-  simp only [BitVec.getLsbD_ushiftRight, getLsbD_word, byte, BitVec.getLsbD_setWidth,
-    BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and]
-  by_cases h : j < 8
-  · simp only [h, decide_true, Bool.true_and]
-    rw [decide_eq_true (show 8 + j < 16 by omega), Bool.true_and]
-    exact congrArg _ (by omega)
-  · simp [h, show ¬ 8 + j < 16 by omega]
-
 /-- The word of a mask. -/
 theorem word_mask (x : Byte) (k : Nat) (hk : k < 256) :
     ((BitVec.ofNat 16 k ^^^ x.setWidth 16) - 1).sshiftRight 15 =

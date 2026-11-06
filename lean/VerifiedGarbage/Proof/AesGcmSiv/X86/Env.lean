@@ -167,13 +167,6 @@ theorem aN {o : Nat} (ho : o < 12) : w64 (p.N + BitVec.ofNat 32 o) = w64 p.N + B
 theorem k_w' {d k : Nat} (hd : d + k ≤ 2816) : (⟨w64 p.K, 240⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
 
-theorem n_w' {d k : Nat} (hd : d + k ≤ 2816) : (⟨w64 p.N, 12⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
-  L.n_w.sub_right (wSub hd)
-
-theorem a_w' {d k : Nat} (hd : d + k ≤ 2816) :
-    (⟨w64 p.A, p.al⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
-  L.a_w.sub_right (wSub hd)
-
 theorem d_w' {d k : Nat} (hd : d + k ≤ 2816) :
     (⟨w64 p.D, p.n⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.d_w.sub_right (wSub hd)
@@ -187,9 +180,6 @@ theorem stkSub {k : Nat} (hk : k ≤ 28) : Region.Sub (below p.SP k) (stk p) := 
 theorem rounds_le : 16 * (p.R + 1) ≤ 240 := by rcases L.rounds with h | h <;> rw [h] <;> decide
 
 theorem rounds3 : p.R = 10 ∨ p.R = 12 ∨ p.R = 14 := by rcases L.rounds with h | h <;> simp [h]
-
-theorem toNat_R : (BitVec.ofNat 32 p.R).toNat = p.R := by
-  rcases L.rounds with h | h <;> rw [h] <;> rfl
 
 theorem R_lt : p.R < 2 ^ 32 := by rcases L.rounds with h | h <;> rw [h] <;> decide
 

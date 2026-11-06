@@ -121,8 +121,6 @@ end
 theorem in_of_cov {rs : List Region} {a : Addr} {n : Nat} (h : Covers [⟨a, n⟩] rs) : InRegions rs a n :=
   h _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
 
-theorem cov_mono {rs rs' : List Region} {r : Region} (h : Covers [r] rs) (e : rs = rs') : Covers [r] rs' := e ▸ h
-
 /-! ## Saving the registers -/
 
 /-- The registers `finalize` saves, and where. -/

@@ -30,7 +30,7 @@ What `phase1` leaves (`PhaseOne`) needs the field's algebra for the powers
 the setup stores and for the 48-block loop's: it is proved where that
 algebra is imported (`StitchZHTo.phase1_ok`, `StitchZ/OkP.lean`) and passed
 to the proofs of `encN`, which so need not import it. `phase1G_ok` proves it
-of any setup and 48-block loop meeting what `encTailGTo_ok` takes of them.
+of any setup and 48-block loop that keep `EInvTo` and the cached keys.
 -/
 
 @[expose] public section
@@ -47,8 +47,8 @@ open VG.Proof.Gcm.X86_64.StitchR (nState nMem nR NPre NPost nState_gpr nState_r8
 open VG.Proof.Gcm.X86_64.Pclmul (toNat_ofNat_lt)
 open VG.Spec.Gcm (Block blockAt)
 
-/-- `phase1` after its setup, for any 48-block loop `bigC` as `encTailGTo_ok`
-takes it. -/
+/-- `phase1` after its setup, for any 48-block loop `bigC` that keeps `EInvTo`
+and the cached keys. -/
 theorem phase1G_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block}
     (hf : FinOk (hk s₀) P) {bigC : Prog isa} {i : BitVec 32} (t : Nat) (hi : BitVec.signExtend 64 i = BitVec.ofNat 64 t)
     (ht : t < 2 ^ 64) (hbig : ∀ s, t ≤ nb s₀ → EInvTo s₀ P 1 s → VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s →

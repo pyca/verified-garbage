@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
 public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
@@ -32,6 +31,10 @@ public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.TCB.X86_64.Gpr
 public import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Spec.X448
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
 /-!
 # Ed448 verification on x86-64: correctness

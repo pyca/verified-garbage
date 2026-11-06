@@ -34,7 +34,7 @@ mod vetted_tests;
 use crate::error::InvalidKey;
 use crate::zeroize::zeroize;
 use alloc::vec::Vec;
-use arithmetic::{canonical, scalar};
+use arithmetic::canonical;
 use core::fmt;
 use domain::Domain;
 
@@ -249,7 +249,7 @@ impl PrivateKey {
     pub fn from_private_components(params: &Parameters, x: &[u8]) -> Result<Self, InvalidKey> {
         let exponent_len = x.len().min(params.p.len());
         let (zeros, scalar) = x.split_at(x.len() - exponent_len);
-        if scalar.is_empty() || zeros.iter().any(|&b| b != 0) {
+        if scalar.is_empty() || !crate::ct::is_zero(zeros) {
             return Err(InvalidKey);
         }
         let mut y = alloc::vec![0; params.p.len()];
@@ -275,7 +275,7 @@ impl PrivateKey {
         let exponent_len = x.len().min(params.p.len());
         let (zeros, x) = x.split_at(x.len() - exponent_len);
         let y = canonical(y);
-        if zeros.iter().any(|&b| b != 0) {
+        if !crate::ct::is_zero(zeros) {
             return Err(InvalidKey);
         }
         if !params.domain.check_private(y, x) {
@@ -284,15 +284,18 @@ impl PrivateKey {
         Ok(Self::assemble(params, y, x, exponent_len))
     }
 
-    /// The key of a checked pair: canonical `y`, and `x` without the zeros
-    /// before its `exponent_len` bytes.
+    /// The key of a checked pair: canonical `y`, and `x`, its `exponent_len`
+    /// bytes, padded to the modulus' width. Its leading zero bytes are kept,
+    /// never counted.
     fn assemble(params: &Parameters, y: &[u8], x: &[u8], exponent_len: usize) -> Self {
+        let mut padded = alloc::vec![0; params.p.len()];
+        padded[params.p.len() - x.len()..].copy_from_slice(x);
         Self {
             public: PublicKey {
                 params: params.clone(),
                 y: y.to_vec(),
             },
-            x: scalar(x, params.p.len()),
+            x: padded,
             exponent_len,
         }
     }

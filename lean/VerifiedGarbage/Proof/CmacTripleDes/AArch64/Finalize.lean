@@ -487,7 +487,4 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeAArch64.pre s₀) :
     macFull_split8 _ hml (by rw [Proof.Cmac.bytesAt_length]; exact hp.len)
       (by rw [Proof.Cmac.bytesAt_length]; exact hne), ← hst, ← k1, ← k2, xor_comm]
 
-/-- The stack pointer is unchanged. -/
-theorem finalize_sp {s₀ s : State} {t : List Leak} (h : Exec isa finalize s₀ t s) : s.sp = s₀.sp := Exec.sp h
-
 end VG.Proof.CmacTripleDes.AArch64

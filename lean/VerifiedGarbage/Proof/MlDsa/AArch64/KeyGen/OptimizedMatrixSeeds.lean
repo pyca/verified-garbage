@@ -79,17 +79,6 @@ theorem matrixNonce_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
   · rw [L.keepBytes ht (by layd)]
     exact hs.done k (by omega)
 
-/-- Both full groups and the two-stream tail reuse the same prepared prefixes. -/
-theorem matrixNonces_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
-    (hp : kgPre p S σ) {e n : Nat} (he : e+n≤p.k*p.ℓ) (hn : n≤4)
-    (hs : KSamp p σ e 0 s) (hr : MatrixPrefixes p σ 4 s) :
-    WP isa (seqR (fun j => .block (setSR p e j)) 0 n) s fun t =>
-      GS p σ e n t ∧ MatrixPrefixes p σ 4 t := by
-  simpa only [Nat.zero_add] using seqR_ok
-    (I := fun j t => GS p σ e j t ∧ MatrixPrefixes p σ 4 t)
-    n 0 (fun j _ hj t ht => matrixNonce_ok hF hp (by omega) (by omega) ht.1 ht.2)
-    s ⟨⟨hs,fun _ hj => False.elim (Nat.not_lt_zero _ hj)⟩,hr⟩
-
 theorem matrixPrefixes_tr {Q : State → State → Prop}
     (hq : ∀x y,Q x y → x.sp=y.sp ∧ x.gpr .x28=y.gpr .x28) :
     RelCT isa Q (.block ((List.range 4).flatMap copySeed4)) fun _ _ => True := by

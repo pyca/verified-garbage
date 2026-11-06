@@ -61,7 +61,8 @@ ARCHES = {
 # Paths that no Rust test reads or runs: the Lean sources (whose output is
 # the crates of generated code), the benchmarks (a crate of their own, which only `rust-lint`
 # builds, for every target: see `output`), documentation (agents' skills
-# too), and the workflows and actions of the Lean build and the benchmarks.
+# too), the workflows and actions of the Lean build and the benchmarks, and
+# the workflow that comments on conflicting pull requests.
 NOT_RUST_PREFIXES = (
     "lean/",
     "bench/",
@@ -80,6 +81,7 @@ NOT_RUST_FILES = {
     "logo.svg",
     "logo-dark.svg",
     ".github/workflows/bench.yml",
+    ".github/workflows/conflicts.yml",
     ".github/workflows/lean-cache.yml",
 }
 

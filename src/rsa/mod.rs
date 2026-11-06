@@ -13,7 +13,10 @@
 //! private-key operation releases its result only if raising it to `e` gives
 //! back the input, so a fault, or a key with a composite factor, never
 //! releases one. The timing may depend on the public key and the lengths of
-//! the private values, but not on the private values themselves.
+//! the primes `p` and `q`, but not on the private values themselves: as
+//! BoringSSL does, a key holds `d` in as many bytes as `n` and the CRT values
+//! in as many as their primes, whatever lengths they were given in, and its
+//! arithmetic modulo each prime is at that prime's length.
 
 #![cfg(all(
     any(
@@ -255,7 +258,8 @@ pub(crate) fn public_scratch_words(n_len: usize) -> usize {
     8 * n_len.div_ceil(8) + 48
 }
 
-/// `x` without its leading zero bytes.
+/// `x` without its leading zero bytes, for the public exponent and the
+/// primes, whose lengths are public.
 pub(crate) fn trim(x: &[u8]) -> &[u8] {
     let z = x.iter().take_while(|&&b| b == 0).count();
     &x[z..]

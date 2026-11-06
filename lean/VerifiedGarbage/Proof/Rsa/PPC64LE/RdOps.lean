@@ -797,11 +797,6 @@ theorem DS.set11 (h : DS s0 false A live V ls s) :
   exact h.reg [.r11] (by prun [exec_addi (show Reg.r29 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), r29,
     BitVec.add_zero]) (by decide)
 
-theorem bv01 (x : BitVec 32) (h : x.toNat ≤ 1) : x = 0#32 ∨ x = 1#32 := by
-  rcases (show x.toNat = 0 ∨ x.toNat = 1 by omega) with e | e
-  · exact .inl (BitVec.eq_of_toNat_eq e)
-  · exact .inr (BitVec.eq_of_toNat_eq e)
-
 /-- A slot of the header as a 32-bit word. -/
 theorem slot_bv (m : Mem) (B : Addr) {d : Nat} {c : Bool} (h : slot m B d = b2n c) :
     m.readW (off B d) 32 = BitVec.ofNat 32 (b2n c) := by

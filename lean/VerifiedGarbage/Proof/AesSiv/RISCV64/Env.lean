@@ -109,11 +109,6 @@ theorem PK.ofSaved {s t : State} (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) (hsp : 
     (hs : ∀ r ∈ preserved, t.gpr r = s.gpr r) : PK s t :=
   ⟨hrd, hwr, hsp, fun r hr => hs r (keep_preserved r hr)⟩
 
-/-- After code that writes only the registers `rs`, none of `keepRegs`. -/
-theorem PK.ofKeep {s t : State} {rs : List Reg} (h : Keep rs s t) (hsp : t.sp = s.sp)
-    (hr : ∀ r ∈ keepRegs, r ∉ rs := by decide) : PK s t :=
-  ⟨h.2.1, h.2.2, hsp, fun r hk => h.gpr (hr r hk)⟩
-
 /-! ## The environment -/
 
 /-- The registers holding the public values throughout, and what the state
@@ -172,17 +167,9 @@ theorem wrapW {d : Nat} (hd : d < 2576) : (c.W + BitVec.ofNat 64 d).toNat = c.W.
   have := L.ww
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
 
-theorem wrapC {d : Nat} (hd : d < 512) : (c.C + BitVec.ofNat 64 d).toNat = c.C.toNat + d := by
-  have := L.cw
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
-
 /-- Doublewords of `W` are aligned. -/
 theorem alW {d : Nat} (hd : d % 8 = 0) (hlt : d < 2576) : (c.W + BitVec.ofNat 64 d).toNat % 8 = 0 := by
   rw [L.wrapW hlt]; have := L.wal; omega
-
-/-- Doublewords of the key context are aligned. -/
-theorem alC {d : Nat} (hd : d % 8 = 0) (hlt : d < 512) : (c.C + BitVec.ofNat 64 d).toNat % 8 = 0 := by
-  rw [L.wrapC hlt]; have := L.cal; omega
 
 theorem rb : 16 * (c.R + 1) ≤ 240 := by rcases L.rounds with h | h | h <;> rw [h] <;> decide
 

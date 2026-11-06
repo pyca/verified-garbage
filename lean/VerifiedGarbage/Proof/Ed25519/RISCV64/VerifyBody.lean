@@ -272,15 +272,6 @@ abbrev verW (b : Addr) : List Region :=
 
 abbrev verR : List Reg := .s4 :: .s7 :: .s8 :: .s3 :: sideR
 
-theorem verW_sub : ∀ r ∈ verW b, Region.Sub r ⟨b, 8192⟩ := by
-  intro r hr
-  have hS : SIGN = 24 := rfl
-  rcases List.mem_cons.mp hr with rfl | hr
-  · exact Offset.sub_base _ (by omega_arith)
-  rcases List.mem_cons.mp hr with rfl | hr
-  · exact Offset.sub_base _ (by omega_arith)
-  exact sideW_sub (by decide) r hr
-
 theorem eqResult_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') (hs : ∀ r ∈ rs, Region.Sub r ⟨b, 8192⟩)
     {s : State} (h : VCtx b pk sig ch s) : eqResult m' pk sig ch = eqResult m pk sig ch := by
   unfold eqResult

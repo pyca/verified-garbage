@@ -60,8 +60,8 @@ impl Backend {
 /// `VerifyingKey`, whose functions fail with `crate::error::MlDsaError`,
 /// over its verified `keygen`, `sign_message` and `verify_message_cached`
 /// functions (which takes the hash `tr` of the public key the
-/// `VerifyingKey` keeps), its `sign` and `verify` functions (which take a
-/// precomputed `μ`) and its sizes.
+/// `VerifyingKey` keeps, from `keygen` or from `pk_tr`), its `sign` and
+/// `verify` functions (which take a precomputed `μ`) and its sizes.
 macro_rules! ml_dsa {
     (
         name: $name:literal,
@@ -72,11 +72,13 @@ macro_rules! ml_dsa {
         verify: $verify:path,
         sign_message: $sign_message:path,
         verify_message_cached: $verify_message_cached:path,
+        pk_tr: $pk_tr:path,
         keygen_sha3: ($keygen_sha3:path, $keygen_sha3_features:path),
         sign_sha3: ($sign_sha3:path, $sign_sha3_features:path),
         verify_sha3: ($verify_sha3:path, $verify_sha3_features:path),
         sign_message_sha3: ($sign_message_sha3:path, $sign_message_sha3_features:path),
         verify_message_cached_sha3: ($verify_message_cached_sha3:path, $verify_message_cached_sha3_features:path),
+        pk_tr_sha3: ($pk_tr_sha3:path, $pk_tr_sha3_features:path),
         keygen_avx2: ($keygen_avx2:path, $keygen_avx2_features:path),
         keygen_avx512: ($keygen_avx512:path, $keygen_avx512_features:path),
         sign_avx2: ($sign_avx2:path, $sign_avx2_features:path),
@@ -106,6 +108,7 @@ macro_rules! ml_dsa {
                 $verify_sha3_features,
                 $sign_message_sha3_features,
                 $verify_message_cached_sha3_features,
+                $pk_tr_sha3_features,
             ];
             #[cfg(target_arch = "x86_64")]
             const REQUIRED: &[verified_garbage_cpu::Features] = &[
@@ -143,7 +146,8 @@ macro_rules! ml_dsa {
         #[derive(Clone, PartialEq, Eq)]
         pub struct $VerifyingKey {
             bytes: [u8; $pk],
-            // Constructors maintain tr = SHAKE256(bytes, 64).
+            // Constructors maintain tr = H(bytes, 64), from the verified
+            // `pk_tr` or `keygen`.
             tr: [u8; 64],
         }
 
@@ -162,14 +166,29 @@ macro_rules! ml_dsa {
             /// The public key `bytes` (every byte string of this size is
             /// one).
             pub fn from_bytes(bytes: &[u8; $pk]) -> Self {
-                $VerifyingKey {
-                    bytes: *bytes,
-                    tr: {
-                        let mut tr = [0; 64];
-                        $crate::hashes::sha3::Shake256::digest(bytes, &mut tr);
-                        tr
-                    },
+                let mut tr = [0; 64];
+                // The verified contract accepts arbitrary initial scratch bytes.
+                let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
+                // SAFETY: `bytes`, `tr` and `scratch` are valid for reads
+                // (and, for `tr` and `scratch`, writes) of their sizes; they
+                // are distinct Rust objects, so they do not overlap each other
+                // or the stack, or wrap around the end of the address space.
+                // `backend()` chose an implementation whose features the CPU
+                // has. `pk_tr` writes `tr = H(bytes, 64)`
+                // (`VG.Spec.MlDsa.pkTrContract`), which
+                // `verify_message_cached` requires.
+                unsafe {
+                    match backend() {
+                        Backend::Scalar => $pk_tr(bytes, &mut tr, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::Sha3 => $pk_tr_sha3(bytes, &mut tr, scratch.as_mut_ptr()),
+                        // x86-64 has one implementation of `pk_tr`: its
+                        // sponge has no variants.
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx2 | Backend::Avx512 => $pk_tr(bytes, &mut tr, scratch.as_mut_ptr()),
+                    }
                 }
+                $VerifyingKey { bytes: *bytes, tr }
             }
 
             /// The bytes of the key.
@@ -196,8 +215,9 @@ macro_rules! ml_dsa {
                 // Backend selection checks the generated CPU feature requirements.
                 let r = unsafe {
                     match backend() {
-                        // Both constructors establish tr = SHAKE256(bytes, 64);
-                        // the key and digest remain private and immutable.
+                        // Both constructors establish tr = H(bytes, 64) with
+                        // verified code (`pk_tr`, `keygen`); the key and digest
+                        // remain private and immutable.
                         Backend::Scalar => $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),

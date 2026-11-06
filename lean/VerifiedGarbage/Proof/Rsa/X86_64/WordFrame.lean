@@ -26,16 +26,6 @@ theorem range_ws {s t : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W)
     (hf : Frm B (ranges W) s.mem t.mem) (hk : Keep mmRegs s t) : Ws t B Z W :=
   h.congr hf (fun _ hr => range_mut hr) hk (by decide)
 
-/-- The loop does not alter either source array. -/
-theorem range_wv {m m' : Mem} {B : Addr} {W d n : Nat}
-    (hf : Frm B (ranges W) m m') (h : d + 8 * n ≤ 2 ^ 64)
-    (hd : slot W aD ≤ d) (hn : d + 8 * n ≤ slot W aD + 8 * (W + 2)) :
-    wv m' B d n = wv m B d n := by
-  apply hf.wv_eq _ h
-  intro r hr
-  simp only [ranges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> simp only [slot, aD, aR, aT, aV] at * <;> omega_arith
-
 theorem range_modulus {m m' : Mem} {B : Addr} {W : Nat}
     (hf : Frm B (ranges W) m m') (h : slot W aM + 8 * (W / 2) ≤ 2 ^ 64) :
     wv m' B (slot W aM) (W / 2) = wv m B (slot W aM) (W / 2) := by

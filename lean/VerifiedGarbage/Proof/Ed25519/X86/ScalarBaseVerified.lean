@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
 import VerifiedGarbage.Proof.Ed25519.X86.CombCT
 import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
@@ -20,6 +19,7 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-! Merged from `Proof.Ed25519.X86.ScalarBaseCT`. -/
 
@@ -151,151 +151,13 @@ theorem scalarBase_correct {s : State} (h : scalarBaseLocal.pre s) :
   rw [P.args 0 (by decide), P.args 1 (by decide), P.input] at hq
   exact hq
 
-def baseSatMem : Mem := fun a =>
-  if a = 0x8005 then 0x10 else if a = 0x8009 then 0x20 else if a = 0x800d then 0x40 else 0
-
-def baseSatState : State where
-  gpr r := match r with | .esp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := satMemWith baseSatMem
-  rd := [⟨0x2000, 32⟩, ⟨0x100000, 24576⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩, ⟨0x8004, 12⟩]
-  syms _ := 0x100000
-
-theorem baseSat_arg (j : Nat) (hj : j < 3) :
-    arg baseSatState j = baseSatMem.readW (argAddr baseSatState j) 32 := by
-  unfold arg
-  apply Mem.readW_congr
-  intro b hb
-  change satMemWith baseSatMem _ = _
-  rw [satMemWith_out]
-  have : ∀ j < 3, ∀ b < 4, 8 * 32 * 96 ≤ (argAddr baseSatState j + BitVec.ofNat 64 b - 0x100000).toNat := by
-    decide
-  exact this j hj b (by omega)
-
 theorem scalarBase_ok (s : State) (h : scalarBaseLocal.pre s) :
     ∃ tr t, Exec isa scalarBase s tr t ∧ abiPreserved s t ∧ scalarBaseLocal.post s t :=
   scalarBase_correct h
-
-/-- The shared contract's precondition, with the arguments' area writable (as the calling
-convention gives it): the proof narrows it to `scalarBaseLocal`'s. -/
-def scalarBaseWide : Contract isa :=
-  { scalarBaseLocal with
-  pre := fun s =>
-    let out : Region := ⟨(arg s 0).setWidth 64, 32⟩
-    let input : Region := ⟨(arg s 1).setWidth 64, 32⟩
-    let scratch : Region := ⟨(arg s 2).setWidth 64, 8192⟩
-    let args : Region := ⟨argAddr s 0, 12⟩
-    let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stk : Region := callStk s
-    s.rd = [input, TBL ((s.syms combSym).setWidth 64)] ∧ s.wr = [out, scratch, args] ∧
-      out.Disjoint scratch ∧ input.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
-      ret.Disjoint out ∧ ret.Disjoint scratch ∧ (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧
-      (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 8192 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ 8 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint input ∧
-      stk.Disjoint scratch ∧ stk.Disjoint out ∧ CombHeld s [out, scratch, stk] }
-
-def scalarBaseRd (s : State) : List Region :=
-  [⟨(arg s 1).setWidth 64, 32⟩, ⟨argAddr s 0, 12⟩, TBL ((s.syms combSym).setWidth 64)]
-def scalarBaseWr (s : State) : List Region := [⟨(arg s 0).setWidth 64, 32⟩, ⟨(arg s 2).setWidth 64, 8192⟩]
-
-theorem scalarBaseWide_pre (s : State) (h : scalarBaseWide.pre s) :
-    scalarBaseLocal.pre (s.withRegions (scalarBaseRd s) (scalarBaseWr s)) := by
-  obtain ⟨-, -, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩ := h
-  simp only [scalarBaseLocal, BaseRegions, scalarBaseRd, scalarBaseWr, arg_withRegions,
-    argAddr_withRegions, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-    State.withRegions_syms, callStk]
-  exact ⟨⟨True.intro, True.intro, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩, h16, h17⟩
 
 /-- The `n` bytes below `sp`, as the contract states them. -/
 theorem below_eq {sp : BitVec 32} {n : Nat} (h : n ≤ sp.toNat) :
     below sp n = ⟨sp.setWidth 64 - BitVec.ofNat 64 n, n⟩ := by
   simp only [below, Taint.sub_setWidth h]
-
-theorem scalarBase_sat :
-    (Proof.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 8).pre baseSatState := by
-  have hl := combWords_length
-  have a0 : arg baseSatState 0 = 0x1000 := (baseSat_arg 0 (by decide)).trans (by decide)
-  have a1 : arg baseSatState 1 = 0x2000 := (baseSat_arg 1 (by decide)).trans (by decide)
-  have a2 : arg baseSatState 2 = 0x4000 := (baseSat_arg 2 (by decide)).trans (by decide)
-  have held : TblWords ((baseSatState.syms combSym).setWidth 64) baseSatState.mem :=
-    satMemWith_held baseSatMem
-  generalize e : baseSatState = s
-  sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig,
-    Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
-    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
-  subst s
-  refine ⟨by decide, by decide, by rw [hl]; rfl, held, by rw [hl]; decide, ?_, ?_, ?_, by decide, ?_⟩
-  · rw [hl]
-    intro r hr
-    change r ∈ [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩, ⟨0x8004, 12⟩] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
-  · rw [hl]; exact Region.disjoint_of_sep (by decide)
-  · rw [hl]; exact Region.disjoint_of_sep (by decide)
-  · rw [a0, a1, a2]
-    refine ⟨rfl, rfl, ?_⟩
-    repeat' apply And.intro
-    all_goals first | exact Region.disjoint_of_sep (by decide) | decide
-
-theorem scalarBaseWide_implies :
-    scalarBaseWide.Implies (Proof.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 8) where
-  pre s h := by
-    sig_pre [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig,
-      Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
-      Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-    obtain ⟨h4, hsp, hd, held, hfit, hdw, -, hstk, -, ht, hw, -, o2, o3, i2, -, s3, r0, -, r2, -,
-      b0, b1, b2, -, f0, f1, f2⟩ := h
-    have be : callStk s = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩ := below_eq (sp := s.gpr .esp) h4
-    refine ⟨?_, hw, o2, i2, o3.symm, s3.symm, r0, r2, f0, f1, f2, by omega, h4, by rw [be]; exact b1,
-      by rw [be]; exact b2, by rw [be]; exact b0, held, hfit, ?_⟩
-    · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact hdw _ (by rw [hw]; simp)
-      · exact hdw _ (by rw [hw]; simp)
-      · rw [be]; exact hstk
-  post := by
-    intro s t _ h
-    sig_post [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig,
-      Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
-      Abi.withConsts]
-    exact h
-  pub s t _ _ h := by
-    sig_pub [Proof.Ed25519.scalarBaseContract, Proof.Ed25519.scalarBaseSig,
-      Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
-      Abi.withConsts] at h
-    obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
-    exact ⟨hsp, h0, h1, h2, hsy⟩
-  sat := ⟨baseSatState, scalarBase_sat⟩
-
-theorem scalarBase_verified :
-    Verified X86.target scalarBase (Proof.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 8) := by
-  have hsat := scalarBaseWide_implies.sat_left
-  have satLocal : ∃ s, scalarBaseLocal.pre s := hsat.elim fun s h => ⟨_, scalarBaseWide_pre s h⟩
-  have verifiedLocal : Verified X86.target scalarBase scalarBaseLocal :=
-    Verified.of_correct scalarBase_ok scalarBase_ct (.refl satLocal)
-  apply Verified.of_implies (Verified.narrowTo verifiedLocal scalarBaseRd scalarBaseWr scalarBaseWide_pre
-    ?_ ?_ ?_ ?_ hsat) scalarBaseWide_implies
-  · intro s h a n ⟨r, hr, hc⟩
-    rw [h.1, h.2.1]
-    refine ⟨r, ?_, hc⟩
-    simp only [scalarBaseRd, scalarBaseWr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
-    rcases hr with (rfl | rfl | rfl) | rfl | rfl <;> simp only [true_or, or_true]
-  · intro s h a n ⟨r, hr, hc⟩
-    rw [h.2.1]
-    refine ⟨r, ?_, hc⟩
-    simp only [scalarBaseWr, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp
-  · intro s t _ h
-    simpa only [scalarBaseWide, scalarBaseLocal, arg_withRegions, State.withRegions_mem] using h
-  · intro s t _ _ h
-    simpa only [scalarBaseWide, scalarBaseLocal, arg_withRegions, State.withRegions_gpr,
-      State.withRegions_syms] using h
 
 end VG.Proof.Ed25519.X86

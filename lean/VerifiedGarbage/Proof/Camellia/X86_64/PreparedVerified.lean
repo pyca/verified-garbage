@@ -22,16 +22,13 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # Camellia's batches under prepared subkeys on x86-64 meet their contract
 
-`crypt_verified`: `vg_camellia_crypt_prepared` against
-`Proof.Camellia.Prepared.cryptContract` with `layout`. The body runs from
+`crypt_correct`: `vg_camellia_crypt_prepared` meets `cryptX86_64`, with
+`layout`. The body runs from
 the state narrowed to ECB's scratch buffer (`cryptBody_wp`) and then from
 the whole working space (`Exec.widen`), which it changes only where the
 narrowed run may. A batch's blocks are ECB in the direction and under the
 subkeys of any words that its working space's table encodes: the run from
-it is the run from the words the precondition gives (`Exec.det`). Constant
-time by the taint analysis: `rounds`, the pointer, `ws_len` and `rsp` are
-public, and so is the postwhitening's address, which the body keeps in a
-slot of the working space.
+it is the run from the words the precondition gives (`Exec.det`).
 -/
 
 @[expose] public section
@@ -183,120 +180,5 @@ theorem cryptCall_correct (s : State) (hs : cryptCallX86_64.pre s) :
     (by show (s.gpr .rsi).toNat + 8 * slots ≤ 2 ^ 64; omega) hR (readyAt_of_words (words_of_holds hH))
   obtain ⟨-, rfl⟩ := Exec.det he (exec_widen hwr hl he₂)
   exact ⟨t, _, he, ha, hp, hsb⟩
-
-/-- The initial taint: `rounds`, the working space's address and length and
-the stack pointer are public, and the working space is a region of at least
-`8 * slots` bytes at `rsi`. -/
-def cryptTaint : X86_64.Taint.T :=
-  { regs := .ofList [.rdi, .rsi, .rdx, .rsp], flags := false, lens := [8 * slots], bases := [(.rsi, 0, 0)] }
-
-theorem cryptTaint_wf (s : State) (hs : cryptX86_64.pre s) : Taint.Wf cryptTaint s := by
-  obtain ⟨_, hwr, _, fitW, _, hsz, _⟩ := hs
-  rw [size_eq] at hsz
-  refine ⟨fun _ => ?_, ?_⟩
-  · rw [hwr]
-    refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 8 * slots ≤ (s.gpr .rdx).toNat * 8; omega) List.Forall₂.nil
-    · exact List.Pairwise.cons (by simp) List.Pairwise.nil
-    · intro r hr
-      simp only [List.mem_singleton] at hr
-      subst hr
-      change (s.gpr .rdx).toNat * 8 ≤ 2 ^ 64
-      omega
-  · intro p hp
-    simp only [cryptTaint, List.mem_singleton] at hp
-    subst p
-    unfold Taint.region
-    rw [hwr]
-    change s.gpr .rsi = s.gpr .rsi + (0 : BitVec 64)
-    exact (BitVec.add_zero _).symm
-
-theorem cryptTaint_agree (s t : State) (hs : cryptX86_64.pre s) (ht : cryptX86_64.pre t)
-    (hp : cryptX86_64.pub s t) : X86_64.Taint.Agree cryptTaint s t := by
-  obtain ⟨p1, p2, p3, p4⟩ := hp
-  refine ⟨?_, ?_, cryptTaint_wf s hs, cryptTaint_wf t ht, ?_, ?_, ?_, X86_64.Taint.noXr⟩
-  · constructor
-    · intro r hr
-      simp only [cryptTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      exacts [p1, p2, p3, p4]
-    · intro h
-      change false = true at h
-      contradiction
-  · intro _
-    rw [hs.2.1, ht.2.1, p2, p3]
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro r hr
-    simp only [cryptTaint, RegSet.not_mem_empty] at hr
-
-theorem crypt_taint : ∃ h, (taintS.check cryptTaint cryptPrepared h).isSome = true := by
-  taint_decide_sum [pairSum]
-
-theorem crypt_ct : ConstantTime isa cryptX86_64.pre cryptX86_64.pub cryptPrepared :=
-  let ⟨_, h⟩ := crypt_taint
-  VG.Taint.constantTime (A := taintS) cryptTaint cryptTaint_agree h
-
-/-- Schedule words of zeros. -/
-def zeroWords : List (BitVec 64) := List.replicate 26 0
-
-/-- A working space at `0x2000` holding the table of `zeroWords` for 18
-rounds and encryption. -/
-def cryptSatMem : Mem := fun a =>
-  if 0x2000 ≤ a.toNat ∧ a.toNat < 0x2000 + 3208 then layout.encode 18 zeroWords .encrypt (a.toNat - 0x2000)
-  else 0
-
-theorem cryptSat_holds : Holds layout cryptSatMem 0x2000 18 zeroWords .encrypt := by
-  intro r hr i hi
-  have hr' : r.1 + i < 3208 := by
-    rw [layout_table] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> dsimp only at hi ⊢ <;> omega
-  have ht : ((0x2000 : Addr) + BitVec.ofNat 64 (r.1 + i)).toNat = 0x2000 + (r.1 + i) := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, show (0x2000 : Addr).toNat = 0x2000 from rfl]; omega
-  have hc : 0x2000 ≤ 0x2000 + (r.1 + i) ∧ 0x2000 + (r.1 + i) < 0x2000 + 3208 := ⟨by omega, by omega⟩
-  simp only [cryptSatMem, ht, hc, and_self, ↓reduceIte]
-  rw [show 0x2000 + (r.1 + i) - 0x2000 = r.1 + i by omega]
-
-/-- A state satisfying the batch's precondition. -/
-def cryptSat : State where
-  gpr r := match r with | .rdi => 18 | .rsi => 0x2000 | .rdx => 401 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := cryptSatMem
-  rd := []
-  wr := [⟨0x2000, 401 * 8⟩]
-
-theorem crypt_implies :
-    cryptX86_64.Implies (Proof.Camellia.Prepared.cryptContract layout X86_64.abi) where
-  pre := by
-    sig_implies_pre [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptX86_64,
-      X86_64.abi, X86_64.argRegs]
-  post := by
-    sig_implies_post [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptX86_64,
-      X86_64.abi, X86_64.argRegs]
-  pub := by
-    sig_implies_pub [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptX86_64,
-      X86_64.abi, X86_64.argRegs]
-  sat := by
-    refine ⟨cryptSat, ?_⟩
-    sig_pre [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, X86_64.abi,
-      X86_64.argRegs]
-    sig_and_intros
-    all_goals first
-      | decide
-      | exact Region.disjoint_of_sep (by decide)
-      | exact ⟨_, _, cryptSat_holds⟩
-      | (rw [size_eq, slots_eq]; decide)
-
-theorem crypt_verified :
-    Verified X86_64.target cryptPrepared (Proof.Camellia.Prepared.cryptContract layout X86_64.abi) :=
-  Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Camellia.X86_64

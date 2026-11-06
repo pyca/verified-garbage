@@ -633,16 +633,6 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
       rw [fm₂.bytes (R := ⟨ctr, 16⟩) dcM (by simp) hk, f₁.bytes (R := ⟨ctr, 16⟩) dcS (by simp) hk, m₁]
     · rw [e7]
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 10 | .a2 => 0x2000 | .a3 => 0x3000 | .a4 => 1 | .a5 => 0x4000
-    | _ => 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 240⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 2048⟩]
-
 theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32RISCV64.pre s) :
     ∃ t s', Exec isa Impl.Aes.RISCV64.ctr32 s t s' ∧ abiPreserved s s' ∧
       Proof.Aes.ctr32RISCV64.post s s' := by

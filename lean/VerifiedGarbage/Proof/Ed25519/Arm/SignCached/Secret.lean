@@ -426,14 +426,6 @@ theorem reduce_out_bytes (hL : L.Ok) {d : Nat} (hf : Frame (reduceWr L d) m n) (
   · exact ((hL.ko.sub_left (fieldWithin L hd).sub).sub_right (baseWithin L).sub).symm
   · exact hL.oc.sub_left (baseWithin L).sub
 
-theorem mul_out_bytes (hL : L.Ok) (hf : Frame (mulWr L) m n) :
-    Spec.Ed25519.bytesAt n (State.addr L.out) 32 = Spec.Ed25519.bytesAt m (State.addr L.out) 32 := by
-  apply frame_bytes hf (baseOut L) _ (by change 32 ≤ 2 ^ 64; decide)
-  simp only [mulWr, List.mem_cons, List.not_mem_nil, or_false]
-  rintro r (rfl | rfl)
-  · exact Offset.base_disjoint _ (by decide) (by decide)
-  · exact hL.oc.sub_left (baseWithin L).sub
-
 end VG.Proof.Ed25519.Arm.SignCached
 end
 

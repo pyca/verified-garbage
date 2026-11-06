@@ -82,10 +82,7 @@ theorem sign_slot {s : State} (hp : SignPre sl s) :
   refine ⟨(hp.oF.symm.sub_left hs), (hp.cF.symm.sub_left hs), (hp.bF.symm.sub_left hs), fun d n h => ?_⟩
   exact Offset.disjoint _ (.inr h) (by decide) (by omega)
 
-theorem signV_s1 (s : State) : signV s .s1 = s.gpr .a1 := rfl
 theorem signV_s7 (s : State) : signV s .s7 = s.gpr .a0 := rfl
-theorem signV_s8 (s : State) : signV s .s8 = s.gpr .a3 := rfl
-theorem signV_s9 (s : State) : signV s .s9 = s.gpr .a4 := rfl
 theorem signV_s10 (s : State) : signV s .s10 = s.gpr .a5 := rfl
 theorem signV_s11 (s : State) : signV s .s11 = s.gpr .a6 := rfl
 

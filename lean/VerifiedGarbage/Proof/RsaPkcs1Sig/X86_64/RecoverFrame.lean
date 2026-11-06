@@ -63,13 +63,6 @@ structure PreR (s : State) : Prop where
   hash : ∃ h, Spec.RsaPkcs1Sig.Hash.ofId ((stackArg s 0).setWidth 32).toNat = some h ∧ (s.gpr .rsi).toNat = h.len
   hsl : Spec.Rsa.publicScratchWords (s.gpr .rcx).toNat ≤ (stackArg s 4).toNat
 
-theorem preR_of {s : State} (h : recContract.pre s) : PreR s := by
-  simp only [recContract] at h
-  obtain ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOg, dOs, dOa, dns, des, dgs, dsa, dRo, -, -, -, dRs, -, dKo, dKn, dKe,
-    dKg, dKs, dKa, wO, wN, wE, wG, wS, ⟨k1, k2⟩, L1, L2, hash, hsl⟩ := h
-  exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, hwr, dOn, dOe, dOg, dOs, dOa, dns, des, dgs, dsa, dRo, dRs, dKo, dKn, dKe, dKg, dKs, dKa,
-    wO, wN, wE, wG, wS, k1, k2, L1, L2, hash, hsl⟩
-
 /-- `out_len` is the length of the hash function's values: from 16 to 64. -/
 theorem PreR.ol {s : State} (hp : PreR s) : 16 ≤ (s.gpr .rsi).toNat ∧ (s.gpr .rsi).toNat ≤ 64 := by
   obtain ⟨h, -, hl⟩ := hp.hash
