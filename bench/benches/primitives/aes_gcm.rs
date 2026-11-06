@@ -6,7 +6,8 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 
 /// One-shot AES-GCM encryption (in place, and out of place from one piece
 /// and from two: a TLS 1.3 record's payload and its content type byte) and
-/// decryption (setup included), and streaming encryption, with a 16-byte
+/// decryption (in place and out of place; setup included), and streaming
+/// encryption, with a 16-byte
 /// key, a 12-byte nonce and 16 bytes of additional data. aws-lc-rs, which
 /// has no streaming AES-GCM, is measured one-shot only, with a separate tag
 /// as this library's is. The one-shot functions are also measured at `RECORD_SIZES`, the short
@@ -263,6 +264,54 @@ pub fn bench(c: &mut Criterion) {
                         black_box(&mut buf),
                     )
                     .unwrap();
+            })
+        });
+        g.finish();
+
+        // Out of place: from `ct` into a separate buffer.
+        let mut out = vec![0u8; size];
+        let mut ossl_out = vec![0u8; size + cipher.block_size()];
+        let mut g = c.benchmark_group("aes-128-gcm-decrypt-out-of-place");
+        g.throughput(Throughput::Bytes(size as u64));
+        g.bench(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                let k = AesGcm::new(black_box(&key)).unwrap();
+                k.decrypt(
+                    black_box(&nonce),
+                    black_box(&aad),
+                    black_box(&ct),
+                    &tag,
+                    black_box(&mut out),
+                )
+                .unwrap()
+            })
+        });
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                let mut s = Crypter::new(
+                    cipher,
+                    Mode::Decrypt,
+                    black_box(&key),
+                    Some(black_box(&nonce)),
+                )
+                .unwrap();
+                s.aad_update(black_box(&aad)).unwrap();
+                s.set_tag(&tag).unwrap();
+                let n = s.update(black_box(&ct), &mut ossl_out).unwrap();
+                s.finalize(&mut ossl_out[n..]).unwrap();
+            })
+        });
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                aws_lc_key(black_box(&key))
+                    .open_separate_gather(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(&ct),
+                        &tag,
+                        black_box(&mut out),
+                    )
+                    .unwrap()
             })
         });
         g.finish();
