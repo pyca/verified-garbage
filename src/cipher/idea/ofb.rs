@@ -93,8 +93,8 @@ impl Key {
         let (blocks, rest) = buffer.split_at_mut(whole);
         self.crypt(iv, blocks);
         if !rest.is_empty() {
-            // The next output block, as OFB of a zero block, XORed into the
-            // last bytes.
+            // The last bytes, padded to a block: OFB XORs them with the first
+            // bytes of the next output block.
             let mut last = [0; 8];
             last[..rest.len()].copy_from_slice(rest);
             self.crypt(iv, &mut last);

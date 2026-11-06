@@ -2833,23 +2833,44 @@ The public APIs are Rust around the verified functions, and that Rust is
 tested, not proven. Most of it only lays out buffers and selects an
 implementation, but in some algorithms it does part of the cryptography:
 
-* **AES-GCM**: the length limits of SP 800-38D §5.2.1.1 (a nonempty
-  nonce, at most `2^36 − 32` bytes of text and `2^61 − 1` of additional
-  data) and the order of the streaming calls are checked in Rust
-  (`src/aead/aes_gcm.rs`); the mode itself, including `J0`, the padding, the
-  length block and the comparison of the tag, is verified end to end, as
-  are ChaCha20-Poly1305 and ML-KEM.
-* **ML-DSA**: the verified functions take the message representative `μ`.
-  Binding it to the public key, the context string and the message
-  (`μ = H(tr ‖ M′)`, with `M′ = 0 ‖ |ctx| ‖ ctx ‖ M` and `tr = H(pk)`: FIPS
-  204's `formatMessage`, `messageRep` and `pkTr`) is Rust
-  (`src/mldsa_common.rs`) over the verified SHAKE256.
+* **AES-GCM and SM4-GCM**: the length limits of SP 800-38D §5.2.1.1 (a
+  nonempty nonce, at most `2^36 − 32` bytes of text and `2^61 − 1` of
+  additional data) and the order of the streaming calls are checked in Rust
+  (`src/aead/aes_gcm.rs`, `src/aead/sm4_gcm.rs`); the mode itself,
+  including `J0`, the padding, the length block and the comparison of the
+  tag, is verified end to end, as are ChaCha20-Poly1305 and ML-KEM. On
+  AArch64, the powers of the hash subkey that AES-GCM's `_with_powers`
+  functions require are computed by Rust's call of
+  `vg_ghash_store_powers_aes` on the subkey it reads from the key context.
+* **ML-DSA**: the verified functions format the message and compute `μ`,
+  but verification takes `tr = H(pk)` (FIPS 204's `pkTr`) as computed by
+  Rust (`src/mldsa_common.rs`) with SHAKE256, when the public key is made.
+* **SHA-3 and SHAKE** are composed in Rust (`src/hashes/sha3.rs`) from the
+  verified Keccak sponge (absorb, pad, squeeze): each instance's rate,
+  output length and domain-separation suffix (FIPS 202 §6) are Rust's.
 * **ChaCha20-Poly1305 decryption** is in place, and when the tag is wrong
   the verified function's contract leaves the data unspecified (it may
   already hold the decryption); it is the Rust wrapper that then zeroes it,
   so that no unauthenticated plaintext is released.
-* **HMAC** with a key longer than a block hashes it first, in Rust (with the
-  verified hash).
+* **CFB** with a partial last segment (every cipher's `cfb.rs`): the
+  verified functions take whole blocks, and Rust XORs the last bytes with
+  `CIPH_K` of the last ciphertext block, which it computes as the CFB
+  encryption of a zero block. OFB and CTR pad a partial last block with
+  zeros for the verified function and keep the bytes it covers.
+* **Ed25519**: the signing key's `SHA-512(seed)` (RFC 8032 §5.1.5, step 1)
+  is hashed in Rust, with the verified SHA-512, and it is Rust that keeps
+  the expanded key and the public key that signing takes together
+  (`src/ed25519.rs`).
+* **X25519 and X448**: the rejection of an all-zero shared secret (RFC 7748
+  §6) is Rust's, with the verified comparison.
+* **RSA key generation**: the verified functions search for each prime and
+  derive the key from two; Rust runs the generation around them
+  (`src/rsa/keygen.rs`, `VG.Spec.RsaKeyGen.generate`): the parameters, `q`
+  drawn against `p`, both drawn again when `d` is too small, the limit of
+  four generations, and the random octets each search reads.
+* **RSAES-PKCS1-v1_5 encryption**: the padding string's random nonzero
+  octets are drawn in Rust (`src/rsa/pkcs1_enc.rs`); the verified function
+  only refuses one that holds a zero octet.
 
 ### Unsupported platform features
 
