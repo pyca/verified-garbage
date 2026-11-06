@@ -391,4 +391,199 @@ theorem cfbEncryptFinal_wp {s₀ : State} (hp : finalPre s₀) :
           ite_eq_right hr]
         rfl
 
+
+theorem cfbDecrypt_correct (s : State) (hs : cfbDecX86_64.pre s) :
+    ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ cfbDecX86_64.post s s' := by
+  obtain ⟨t, s', he, hg, hpost⟩ := cfbDecrypt_wp hs
+  exact ⟨t, s', he, abiPreserved_of_exec (c := cfbDecrypt) (by lit_decide) he hg, hpost⟩
+
+theorem cfbDecrypt_spSafe : SpSafe cfbDecrypt := SpSafe.of_all (Code.all_of_allInstrs (by lit_decide))
+
+/-- The final decryption's contract on x86-64: `finalPre`, and the data and
+the IV as `Spec.Cfb.DecryptFinal` says. -/
+def cfbDecFinalX86_64 : Contract isa where
+  pre := finalPre
+  post s s' := Spec.Cfb.DecryptFinal (ciphOf s) 8 s.mem s'.mem (s.gpr .rsi) (s.gpr .rdx) (s.gpr .rcx).toNat
+  pub := fbPub
+
+/-- `vg_idea_cfb64_decrypt_final` on x86-64. -/
+theorem cfbDecryptFinal_wp {s₀ : State} (hp : finalPre s₀) :
+    WP isa cfbDecryptFinal s₀ fun s' => gprPreserved s₀ s' ∧ cfbDecFinalX86_64.post s₀ s' := by
+  have hp' := hp
+  obtain ⟨⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩, h80, hfr⟩ := hp'
+  have fitD' : (s₀.gpr .rdx).toNat + (s₀.gpr .rcx).toNat ≤ 2 ^ 64 := fitD
+  have hlen := (s₀.gpr .rcx).isLt
+  have hmul : 8 * ((s₀.gpr .rcx).toNat / 8) ≤ (s₀.gpr .rcx).toNat := by
+    rw [Nat.mul_comm]; exact Nat.div_mul_le_self _ _
+  have hsubD : Region.Sub ⟨s₀.gpr .rdx, 8 * ((s₀.gpr .rcx).toNat / 8)⟩ ⟨s₀.gpr .rdx, (s₀.gpr .rcx).toNat⟩ :=
+    Region.sub_prefix hmul
+  have fK : ∀ r ∈ ([⟨s₀.gpr .rdi, 104⟩, ⟨s₀.gpr .rsi, 8⟩, ⟨s₀.gpr .rdx, (s₀.gpr .rcx).toNat⟩, ⟨s₀.gpr .r8, 8 * 22⟩] :
+      List Region), Region.Disjoint (slotsRegion s₀) r := fun r hr => (hfr r hr).sub_left (slots_sub_frame s₀)
+  have slotsW : ∀ r ∈ wrW s₀, r.Disjoint (slotsRegion s₀) := by
+    intro r hr
+    simp only [wrW, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact (fK _ (by simp)).symm
+    · exact ((fK _ (by simp)).sub_right hsubD).symm
+    · exact (fK _ (by simp)).symm
+  have slotsE : ∀ r ∈ wrE s₀, r.Disjoint (slotsRegion s₀) := by
+    intro r hr
+    simp only [wrE, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact (fK _ (by simp)).symm
+    · exact block_slots s₀ (by decide)
+    · exact (fK _ (by simp)).symm
+  have hL : s₀.gpr (finalArgs.arg finalArgs.lenIx) = BitVec.ofNat 64 (s₀.gpr .rcx).toNat :=
+    (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm
+  refine WP.mono (cfbFinal_wp finalArgs_ok cfbDecrypt_correct cfbEncrypt_correct cfbDecrypt_spSafe cfbEncrypt_spSafe
+    (by rw [cfbDecrypt_depth]; decide) (by rw [cfbEncrypt_depth]; decide) (D := s₀.gpr .rdx) rfl hL hlen h80
+    (by rw [hwr]; simp) fitD' (hfr _ (by simp)).symm (fun u hu => call₁_pre hp hu) slotsW
+    (rdE := rdW s₀) (wrE := wrE s₀)
+    (fun u₁' v u hA _ vrd vwr hu => call₂_pre hp (.inr hA) vrd vwr hu) slotsE) fun s' d => ?_
+  rw [cfbDecrypt_depth, cfbEncrypt_depth] at d
+  have retF : Region.Disjoint ⟨s₀.gpr .rsp, 8⟩ (frameRegion s₀) :=
+    VG.Offset.base_disjoint_below _ (by decide)
+  have dSF : Region.Disjoint ⟨s₀.gpr .rdi, 104⟩ (frameRegion s₀) := (hfr _ (by simp)).symm
+  have dVF : Region.Disjoint ⟨s₀.gpr .rsi, 8⟩ (frameRegion s₀) := (hfr _ (by simp)).symm
+  have dDF : Region.Disjoint ⟨s₀.gpr .rdx, (s₀.gpr .rcx).toNat⟩ (frameRegion s₀) := (hfr _ (by simp)).symm
+  have dBF : Region.Disjoint ⟨s₀.gpr .r8, 8 * 22⟩ (frameRegion s₀) := (hfr _ (by simp)).symm
+  have hKF : Region.Sub ⟨blockAddr s₀, 8⟩ (frameRegion s₀) := by
+    rw [blockAddr_eq, frameRegion]; exact VG.Offset.sub_base _ (by decide)
+  refine ⟨⟨d.cs, ?_⟩, ?_⟩
+  · -- The return address.
+    refine (d.frame finalArgs_ok).readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+    simp only [wrW, wrE, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact retF
+    · exact disjoint_empty _ _
+    · exact disjoint_empty _ _
+    · exact dRD
+    · exact dRV
+    · exact dRD.sub_right hsubD
+    · exact dRS
+    · exact dRV
+    · exact retF.sub_right hKF
+    · exact dRS
+  · -- The first function's results, in terms of `s₀`.
+    obtain ⟨u₁', hA, h0, h1⟩ := d.run
+    obtain ⟨u₁, hu₁, post₁, f₁⟩ := hA.run
+    have g0 : u₁.gpr .rdi = s₀.gpr .rdi := hu₁.args 0 (by decide) (by decide)
+    have g1 : u₁.gpr .rsi = s₀.gpr .rsi := hu₁.args 1 (by decide) (by decide)
+    have g2 : u₁.gpr .rdx = s₀.gpr .rdx := hu₁.args 2 (by decide) (by decide)
+    have hlt : (s₀.gpr .rcx).toNat / 8 < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hlen
+    have g3 : (u₁.gpr .rcx).toNat = (s₀.gpr .rcx).toNat / 8 := by
+      rw [show u₁.gpr .rcx = _ from hu₁.blocks, finalArgs_blk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt]
+    have one : ∀ {X : Region}, X.Disjoint (frameRegion s₀) → ∀ r ∈ [frameRegion s₀], X.Disjoint r := fun h r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h
+    have sch₁ : Spec.Idea.scheduleAt u₁.mem (s₀.gpr .rdi) = Spec.Idea.scheduleAt s₀.mem (s₀.gpr .rdi) :=
+      scheduleAt_frame hu₁.frame (one dSF)
+    have iv₁ : bytesAt u₁.mem (s₀.gpr .rsi) 8 = bytesAt s₀.mem (s₀.gpr .rsi) 8 := bytesAt_frame hu₁.frame (one dVF) (by decide)
+    have bl₁ : Modes.blocksOf 8 u₁.mem (s₀.gpr .rdx) ((s₀.gpr .rcx).toNat / 8) =
+        Modes.blocksOf 8 s₀.mem (s₀.gpr .rdx) ((s₀.gpr .rcx).toNat / 8) :=
+      blocksOf_frame hu₁.frame (one (dDF.sub_left hsubD))
+    obtain ⟨H1, H2⟩ := post₁
+    simp only [blocksOf, ciphOf, ivOf, State.withRegions_gpr, State.withRegions_mem, g0, g1, g2, g3, sch₁, iv₁,
+      cbcBlocksAt_eq, bl₁] at H1 H2
+    unfold cfbDecFinalX86_64 Spec.Cfb.DecryptFinal
+    simp only [ciphOf]
+    by_cases hr : (s₀.gpr .rcx).toNat % 8 = 0
+    · -- No partial last segment.
+      have hs' : s'.mem = u₁'.mem := h0 (by rw [finalArgs_blk]; exact hr)
+      refine ⟨?_, ?_⟩
+      · rw [hs']
+        refine Modes.cfbDecFinal_of _ _ _ _ _ _ H1 ?_
+        rw [hr]; rfl
+      · rw [hs', H2, ← Modes.cfbDecFinalNext_of, ite_eq_left hr]
+    · -- A partial last segment.
+      obtain ⟨v, u₂', vm, vrd, vwr, -, hA₂, hx, f₃⟩ := h1 (by rw [finalArgs_blk]; exact hr)
+      obtain ⟨u₂, hu₂, post₂, f₂⟩ := hA₂.run
+      rw [finalArgs_blk] at hx f₃
+      have hlen8 : 8 * ((s₀.gpr .rcx).toNat / 8) + (s₀.gpr .rcx).toNat % 8 = (s₀.gpr .rcx).toNat :=
+        Nat.div_add_mod _ _
+      have hr8 : (s₀.gpr .rcx).toNat % 8 < 8 := Nat.mod_lt _ (by decide)
+      -- Regions.
+      have hRsub : Region.Sub ⟨restAddr finalArgs (s₀.gpr .rdx) (s₀.gpr .rcx).toNat, (s₀.gpr .rcx).toNat % 8⟩
+          ⟨s₀.gpr .rdx, (s₀.gpr .rcx).toNat⟩ := VG.Offset.sub_base _ (by rw [finalArgs_blk]; omega)
+      have dWR : Region.Disjoint ⟨s₀.gpr .rdx, 8 * ((s₀.gpr .rcx).toNat / 8)⟩
+          ⟨restAddr finalArgs (s₀.gpr .rdx) (s₀.gpr .rcx).toNat, (s₀.gpr .rcx).toNat % 8⟩ :=
+        VG.Offset.base_disjoint _ (by rw [finalArgs_blk]) (by rw [finalArgs_blk]; omega)
+      have dRV' := (dVD.sub_right hRsub)
+      have dRS' := (dDS.sub_left hRsub)
+      have dRF := (dDF.sub_left hRsub)
+      have dKK : Region.Disjoint ⟨s₀.gpr .rdi, 104⟩ ⟨blockAddr s₀, 8⟩ := dSF.sub_right hKF
+      have dKV' : Region.Disjoint ⟨s₀.gpr .rsi, 8⟩ ⟨blockAddr s₀, 8⟩ := dVF.sub_right hKF
+      -- The second function's results.
+      have q0 : u₂.gpr .rdi = s₀.gpr .rdi := hu₂.args 0 (by decide) (by decide) (by decide)
+      have q1 : u₂.gpr .rsi = s₀.gpr .rsi := hu₂.args 1 (by decide) (by decide) (by decide)
+      have q2 : u₂.gpr .rdx = blockAddr s₀ := hu₂.data
+      have q3 : (u₂.gpr .rcx).toNat = 1 := by rw [show u₂.gpr .rcx = _ from hu₂.blocks]; rfl
+      have memb : ∀ {X : Region} {rs : List Region}, (∀ r ∈ rs, X.Disjoint r) → ∀ r ∈ rs, X.Disjoint r := id
+      have dW1 : ∀ {X : Region}, X.Disjoint ⟨s₀.gpr .rsi, 8⟩ → X.Disjoint ⟨s₀.gpr .rdx, 8 * ((s₀.gpr .rcx).toNat / 8)⟩ →
+          X.Disjoint ⟨s₀.gpr .r8, 8 * 22⟩ → ∀ r ∈ wrW s₀ ++ [below (frameSp s₀) 0], X.Disjoint r :=
+        fun h1 h2 h3 r hr => by
+          simp only [wrW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl | rfl
+          exacts [h1, h2, h3, disjoint_empty _ _]
+      have dE1 : ∀ {X : Region}, X.Disjoint ⟨s₀.gpr .rsi, 8⟩ → X.Disjoint ⟨blockAddr s₀, 8⟩ →
+          X.Disjoint ⟨s₀.gpr .r8, 8 * 22⟩ → ∀ r ∈ wrE s₀ ++ [below (frameSp s₀) 0], X.Disjoint r :=
+        fun h1 h2 h3 r hr => by
+          simp only [wrE, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl | rfl
+          exacts [h1, h2, h3, disjoint_empty _ _]
+      have oneK : ∀ {X : Region}, X.Disjoint ⟨blockAddr s₀, 8⟩ → ∀ r ∈ [(⟨blockAddr s₀, 8⟩ : Region)], X.Disjoint r :=
+        fun h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h
+      have sch₂ : Spec.Idea.scheduleAt u₂.mem (s₀.gpr .rdi) = Spec.Idea.scheduleAt s₀.mem (s₀.gpr .rdi) := by
+        rw [scheduleAt_frame hu₂.frame (oneK dKK), vm, scheduleAt_frame f₁ (dW1 dKV (dKD.sub_right hsubD) dKS), sch₁]
+      have iv₂ : bytesAt u₂.mem (s₀.gpr .rsi) 8 = bytesAt u₁'.mem (s₀.gpr .rsi) 8 := by
+        rw [bytesAt_frame hu₂.frame (oneK dKV') (by decide), vm]
+      have blk₂ : Modes.blocksOf 8 u₂.mem (blockAddr s₀) 1 = [List.replicate 8 0] := by
+        have := hu₂.zero 0 (by rw [finalArgs_blk]; decide)
+        simp only [Modes.blocksOf, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero] at this ⊢
+        rw [bytes_zero this]
+      obtain ⟨H3, H4⟩ := post₂
+      simp only [blocksOf, ciphOf, ivOf, State.withRegions_gpr, State.withRegions_mem, q0, q1, q2, q3, sch₂, iv₂,
+        H2, cbcBlocksAt_eq, blk₂, encrypt_zero] at H3 H4
+      have K₂ : bytesAt u₂'.mem (blockAddr s₀) 8 =
+          Spec.Idea.cipher (Spec.Idea.scheduleAt s₀.mem (s₀.gpr .rdi))
+            (Spec.Cbc.next (bytesAt s₀.mem (s₀.gpr .rsi) 8)
+              (Modes.blocksOf 8 s₀.mem (s₀.gpr .rdx) ((s₀.gpr .rcx).toNat / 8))) := by
+        simp only [Modes.blocksOf, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero,
+          List.cons.injEq, and_true] at H3
+        exact H3
+      have dWK : Region.Disjoint ⟨s₀.gpr .rdx, 8 * ((s₀.gpr .rcx).toNat / 8)⟩ ⟨blockAddr s₀, 8⟩ :=
+        (dDF.sub_left hsubD).sub_right hKF
+      have dRK : Region.Disjoint ⟨restAddr finalArgs (s₀.gpr .rdx) (s₀.gpr .rcx).toNat, (s₀.gpr .rcx).toNat % 8⟩
+          ⟨blockAddr s₀, 8⟩ := dRF.sub_right hKF
+      have two : ∀ {X : Region}, X.Disjoint ⟨restAddr finalArgs (s₀.gpr .rdx) (s₀.gpr .rcx).toNat, (s₀.gpr .rcx).toNat % 8⟩ →
+          X.Disjoint ⟨blockAddr s₀, 8⟩ → ∀ r ∈ [(⟨restAddr finalArgs (s₀.gpr .rdx) (s₀.gpr .rcx).toNat,
+            (s₀.gpr .rcx).toNat % 8⟩ : Region), ⟨blockAddr s₀, 8⟩], X.Disjoint r := fun h1 h2 r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        exacts [h1, h2]
+      -- The rest's bytes on entry, where the second function left them.
+      have rest₂ : bytesAt u₂'.mem (restAddr finalArgs (s₀.gpr .rdx) (s₀.gpr .rcx).toNat) ((s₀.gpr .rcx).toNat % 8) =
+          bytesAt s₀.mem (restAddr finalArgs (s₀.gpr .rdx) (s₀.gpr .rcx).toNat) ((s₀.gpr .rcx).toNat % 8) := by
+        rw [bytesAt_frame f₂ (dE1 dRV'.symm dRK dRS') (by omega), bytesAt_frame hu₂.frame (oneK dRK) (by omega), vm,
+          bytesAt_frame f₁ (dW1 dRV'.symm dWR.symm dRS') (by omega),
+          bytesAt_frame hu₁.frame (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dRF) (by omega)]
+      refine ⟨Modes.cfbDecFinal_of _ _ _ _ _ _ ?_ ?_, ?_⟩
+      · rw [blocksOf_frame f₃ (two dWR dWK), blocksOf_frame f₂ (dE1 (dVD.sub_right hsubD).symm dWK
+          (dDS.sub_left hsubD)), blocksOf_frame hu₂.frame (oneK dWK), vm]
+        exact H1
+      · apply List.ext_getElem (by simp [bytesAt, Spec.Cbc.xor, cipher_length]; omega)
+        intro q h1 h2
+        have hq : q < (s₀.gpr .rcx).toNat % 8 := by simpa [bytesAt] using h1
+        have e1 := hx q hq
+        have e2 := congrArg (fun l => l[q]?) rest₂
+        have e3 := congrArg (fun l => l[q]?) K₂
+        simp only [bytesAt, List.getElem?_map, List.getElem?_range, hq, Option.map_some,
+          show q < 8 by omega, Option.some.injEq] at e2 e3
+        rw [List.getElem?_eq_getElem (by rw [cipher_length]; omega), Option.some.injEq] at e3
+        simp only [bytesAt, List.getElem_map, List.getElem_range, Spec.Cbc.xor, List.getElem_zipWith]
+        rw [← e3]
+        exact e1.trans (congrArg (· ^^^ u₂'.mem (blockAddr s₀ + BitVec.ofNat 64 q)) e2)
+      · rw [bytesAt_frame f₃ (two (dVD.sub_right hRsub) dKV') (by decide), H4, ← Modes.cfbDecFinalNext_of,
+          ite_eq_right hr]
+        rfl
+
 end VG.Proof.Idea.X86_64
