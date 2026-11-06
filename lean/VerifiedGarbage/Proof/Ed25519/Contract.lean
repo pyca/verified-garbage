@@ -11,7 +11,8 @@ compose. Only the callers' contracts, in `Spec/`, are trusted.
 
 The scalar and group primitives that the complete operations are built from:
 `vg_ed25519_scalar_base`, `_scalar_reduce`, `_scalar_mul_add` and
-`_verify_equation`. `verifyEquation` alone checks a supplied challenge, which
+`_verify_equation`, and `vg_ed25519_public_key_expanded`, the public key
+from the seed's digest, which `vg_ed25519_key_pair` calls. `verifyEquation` alone checks a supplied challenge, which
 `verify`'s predicate needs reduced modulo `L` (with `scalarReduce`) before the
 call. They take the complete operations' 8 KiB of scratch space, whose
 contents are unspecified on return.
@@ -78,5 +79,27 @@ def verifyEquationContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M
     (writeArgs := true) (stack := stack)
     (leak := some fun pk signature challenge _scratch m =>
       (bytesAt m pk 32 ++ bytesAt m signature 64 ++ bytesAt m challenge 64).map (·.toNat))
+
+/-! ## `vg_ed25519_public_key_expanded`
+
+The public key from the seed's SHA-512 digest (RFC 8032 §5.1.5), which
+`vg_ed25519_key_pair` calls after hashing the seed. As in
+`Spec.Ed25519.signExpandedContract`, some seed must have the digest at
+`expanded`, and the postcondition is the public key of every such seed. -/
+
+/-- `(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024])`. -/
+def publicKeyExpandedSig : Sig where
+  params := [("out", .array true .u8 32), ("expanded", .array false .u8 64),
+    ("scratch", .array true .u64 scratchWords)]
+
+/-- Derive the public key from the SHA-512 digest of a seed, including pruning. -/
+def publicKeyExpandedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  publicKeyExpandedSig.contract A
+    (pre := fun _out expanded _scratch m =>
+      ∃ seed : List Byte, seed.length = 32 ∧ bytesAt m expanded 64 = Sha512.sha512 seed)
+    (post := fun out expanded _scratch m m' _ =>
+      ∀ seed : List Byte, seed.length = 32 → bytesAt m expanded 64 = Sha512.sha512 seed →
+        bytesAt m' out 32 = publicKey seed)
+    (writeArgs := true) (stack := stack)
 
 end VG.Proof.Ed25519

@@ -413,7 +413,7 @@ theorem pk_pre {s t : State} (h : Pre s) (hc : Ctx s t) (hx0 : t.gpr .r0 = s.gpr
     (hE : Spec.Ed25519.bytesAt t.mem (State.addr (s.gpr .r1)) 64 =
       Spec.Sha512.sha512 (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 32)) :
     pkK.pre (t.callEntry.withRegions (pkRd s) (pkWr s)) := by
-  sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+  sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
     Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Proof.Ed25519.Arm.combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   have hle : 280 ≤ t.sp.toNat := by rw [hc.sp_toNat h]; have := h.sp; omega
@@ -468,7 +468,7 @@ theorem pk_ok {s t : State} (h : Pre s) (hc : Ctx s t) {pn : String} (hx0 : t.gp
     · exact h.oe.symm
     · exact h.ec
     · exact (h.kE (by omega)).symm
-  · sig_post [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+  · sig_post [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Proof.Ed25519.Arm.combConsts_eq, Abi.withConsts] at hpost
     rw [hx0, hx1] at hpost
@@ -606,7 +606,7 @@ theorem body_ct {dn pn : String} :
     obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨e₁, d₁, i₁, x₁⟩, ⟨e₂, d₂, i₂, x₂⟩⟩ := hr
     refine ⟨_, _, _, _, pk_pre h₁ c₁ d₁ i₁ x₁ e₁, pk_pre h₂ c₂ d₂ i₂ x₂ e₂, ?_, (pk_cov h₁ c₁).1,
       (pk_cov h₁ c₁).2, (pk_cov h₂ c₂).1, (pk_cov h₂ c₂).2⟩
-    sig_pub [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_pub [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Proof.Ed25519.Arm.combConsts_eq, Abi.withConsts]
     rw [c₁.sp, c₂.sp, d₁, d₂, i₁, i₂, x₁, x₂, c₁.sym, c₂.sym, hp.sp, hp.r0, hp.r1, hp.r3, hp.sy]

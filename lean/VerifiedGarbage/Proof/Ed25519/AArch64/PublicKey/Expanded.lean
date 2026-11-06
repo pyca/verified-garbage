@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CopyDigest
-public import VerifiedGarbage.Spec.Ed25519.ExpandedKey
+public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -10,8 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Verified
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CopyDigest
-meta import VerifiedGarbage.Spec.Ed25519.ExpandedKey
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+meta meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 meta import VerifiedGarbage.Proof.Ed25519.Expanded
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -228,15 +227,15 @@ theorem spec_preE {s : State} (hsp : 352 ≤ s.sp.toNat)
       (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64)
     (hk : ∃ seed : List Byte, seed.length = 32 ∧
       Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 64 = Spec.Sha512.sha512 seed) :
-    (Spec.Ed25519.publicKeyExpandedContract (AArch64.abi.withConsts combConsts) 352).pre s := by
-  sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    (Proof.Ed25519.publicKeyExpandedContract (AArch64.abi.withConsts combConsts) 352).pre s := by
+  sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
     Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs,
     combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨r1, r2, r3, r4, r5, r6, r7, r8, r9⟩ := hrest
   exact ⟨hsp, by rw [hrd]; rfl, hheld, hfit, hdw, hds, hal, by rw [hrd]; rfl, hw, r1, r2, r3, r4, r5, r6, r7,
     r8, r9, hk⟩
 
-theorem satE : ∃ s, (Spec.Ed25519.publicKeyExpandedContract (AArch64.abi.withConsts combConsts) 352).pre s := by
+theorem satE : ∃ s, (Proof.Ed25519.publicKeyExpandedContract (AArch64.abi.withConsts combConsts) 352).pre s := by
   have hl := combWords_length
   refine ⟨satStateE, spec_preE (by decide) (by rw [hl]; rfl) rfl satMemTE_held (by rw [hl]; decide) ?_
     (by rw [hl]; exact Region.disjoint_of_sep (by decide)) (by decide) ?_ ⟨satSeedE, by simp [satSeedE], ?_⟩⟩
@@ -250,9 +249,9 @@ theorem satE : ∃ s, (Spec.Ed25519.publicKeyExpandedContract (AArch64.abi.withC
     rfl
 
 theorem pkE_implies : pkLocalE.Implies
-    (Spec.Ed25519.publicKeyExpandedContract (AArch64.abi.withConsts combConsts) 352) where
+    (Proof.Ed25519.publicKeyExpandedContract (AArch64.abi.withConsts combConsts) 352) where
   pre s h := by
-    sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs,
       combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨hsp, hd, held, fit, hdw, hds, -, ht, hw, os, oc, sc, ko, ks, kc, no, ns, nc, -⟩ := h
@@ -265,18 +264,18 @@ theorem pkE_implies : pkLocalE.Implies
       · exact hdw _ (by rw [hw]; simp)
       · exact hds
   post := by
-    sig_implies_post [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_implies_post [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, pkLocalE, pkLocalWith, below, AArch64.abi, AArch64.argRegs,
       combConsts_eq, Abi.withConsts]
   pub := by
-    sig_implies_pub [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_implies_pub [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, pkLocalE, pkLocalWith, below, AArch64.abi, AArch64.argRegs,
       combConsts_eq, Abi.withConsts]
   sat := satE
 
 theorem publicKeyExpanded_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
     Verified AArch64.target codeExpanded
-      (Spec.Ed25519.publicKeyExpandedContract (AArch64.abi.withConsts combConsts) 352) :=
+      (Proof.Ed25519.publicKeyExpandedContract (AArch64.abi.withConsts combConsts) 352) :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => pkE_ok h) pkE_ct (.refl pkE_implies.sat_left))
     pkE_implies

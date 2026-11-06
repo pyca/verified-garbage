@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
-public import VerifiedGarbage.Spec.Ed25519.ExpandedKey
+public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
-meta import VerifiedGarbage.Spec.Ed25519.ExpandedKey
-meta import VerifiedGarbage.Proof.Ed25519.Expanded
+meta meta import VerifiedGarbage.Proof.Ed25519.Expanded
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 meta import VerifiedGarbage.Proof.Framework.ConstMem
@@ -269,9 +268,9 @@ theorem sat_localPE : pkLocalE.pre satStatePE := by
 
 /-- The shared contract's precondition, from `pkLocalE`'s. -/
 theorem pkE_spec_pre {s : State} (h : pkLocalE.pre s) (hal : (s.syms Impl.Ed25519.X86_64.combSym).toNat % 64 = 0) :
-    (Spec.Ed25519.publicKeyExpandedContract (X86_64.abi.withConsts combConsts) 72).pre s := by
+    (Proof.Ed25519.publicKeyExpandedContract (X86_64.abi.withConsts combConsts) 72).pre s := by
   obtain ⟨h72, hrd, hw, h1, h2, h3, r1, r2, r3, k1, k2, k3, f0, f1, f2, pk, held, fit, hdw⟩ := h
-  sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+  sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
     Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, Proof.Ed25519.X86_64.combWords_length]
   exact ⟨h72, by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (by
@@ -279,9 +278,9 @@ theorem pkE_spec_pre {s : State} (h : pkLocalE.pre s) (hal : (s.syms Impl.Ed2551
     hdw _ (by simp), hdw _ (by simp), hal, by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, k1, k2, k3, f0, f1, f2, pk⟩
 
 theorem impliesE :
-    pkLocalE.Implies (Spec.Ed25519.publicKeyExpandedContract (X86_64.abi.withConsts combConsts) 72) where
+    pkLocalE.Implies (Proof.Ed25519.publicKeyExpandedContract (X86_64.abi.withConsts combConsts) 72) where
   pre s h := by
-    sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, Proof.Ed25519.X86_64.combWords_length] at h
     obtain ⟨h72, hd, hheld, hfit, hdw, hdr, hdk, -, ht, hw, d1, d2, d3, d4, d5, d6, d7, d8, d9, f0, f1, f2, pk⟩ := h
@@ -295,12 +294,12 @@ theorem impliesE :
       · exact hdk
   post := by
     intro s s' _ h
-    sig_post [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_post [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
       Abi.withConsts, pkLocalE, pkLocalWith]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_pub [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
       Abi.withConsts] at h
     obtain ⟨h0, hs, h1, h2, h3⟩ := h
@@ -309,7 +308,7 @@ theorem impliesE :
 
 theorem publicKeyExpanded_verified :
     Verified X86_64.target (publicKeyExpanded bs fs)
-      (Spec.Ed25519.publicKeyExpandedContract (X86_64.abi.withConsts combConsts) 72) :=
+      (Proof.Ed25519.publicKeyExpandedContract (X86_64.abi.withConsts combConsts) 72) :=
   Verified.of_correct (fun _ h => publicKeyExpanded_ok h) publicKeyExpanded_ct impliesE
 
 /-- No instruction writes `rsp` but the frame's push and pop. -/
