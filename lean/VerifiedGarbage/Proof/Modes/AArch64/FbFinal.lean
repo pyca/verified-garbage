@@ -33,14 +33,14 @@ scratch buffer, the data and the IV. As `fb_wp` (`Fb.lean`), and as on
 x86-64 (`Proof/Modes/X86_64/FbFinal.lean`); `Proof/Modes/FbFinal.lean`
 states these as the specification's.
 
-The partial segment (`xorLoop_wp`, as `Proof/Modes/X86_64/FbFinalTail.lean`):
+The partial segment (`xorLoop_wp`, as `Proof/Modes/X86_64/FbFinal.lean`):
 from the block at `K` (in `x9`) and the `r > 0` bytes left at `R` (in `Rd`,
 their count in `Rl`), the loop of `xorByte` XORs each byte of the block into
 the byte at the same offset of `R`, and changes memory only there; it ends
 with `Rl` zero.
 
 The loop (`fbSeg_wp`, `fbFinalLoop_wp`, as
-`Proof/Modes/X86_64/FbFinalLoop.lean`): one segment enciphers its input block
+`Proof/Modes/X86_64/FbFinal.lean`): one segment enciphers its input block
 `Iⱼ` in the buffer (`BlockSpec.crypt_wp`), giving `Oⱼ`; `x8 := leftReg >> lg`
 is zero exactly when fewer than `L` bytes are left (`lsr_beq`,
 `two_pow_fbLg`). If a whole block of the `len` bytes is left, it makes the
