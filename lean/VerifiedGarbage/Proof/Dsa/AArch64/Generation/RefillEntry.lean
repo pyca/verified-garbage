@@ -233,6 +233,7 @@ structure EntryDone {pBytes : Nat} {s₀ : State} (h : RefillABI pBytes s₀) (W
   rep : ∃ V, Rep v.mem (refillBase s₀) (refillGeometry h).hash V W
   slots : ∀ k ∈ generationSlots, k ≠ 18 → k ≠ 26 → W k = refillWords pBytes s₀ k
   w16 : W 16 = 0
+  w10 : W 10 = 0
   scratch : Scr v (s₀.gpr .x5) (VG.Impl.Dsa.Generation.Layout.usedBytes pBytes)
   rand : GenerationTapeMemory (randTape h) v
   wr : v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr
@@ -311,7 +312,7 @@ theorem entry_ok {pBytes : Nat} {s₀ u : State} (h : RefillABI pBytes s₀) (a 
     · have := Offset.sub_base (refillBase s₀) (d := 0) (n := frameBytes) (k := 480) (by decide)
       simpa only [BitVec.add_zero] using this
     · exact Offset.sub_base (refillBase s₀) (d := 448) (n := 32) (k := 480) (by decide)
-  refine ⟨_, ⟨?_, ⟨_, Rv⟩, ?_, ?_, scr, a.randMemory fV480 kV.rd, wrv, kV.rd.trans a.rd, ?_, ?_, ?_⟩, fV, kV⟩
+  refine ⟨_, ⟨?_, ⟨_, Rv⟩, ?_, ?_, by simp [workspaceWords, derivedWords, workspaceSlots, headerWords, upd], scr, a.randMemory fV480 kV.rd, wrv, kV.rd.trans a.rd, ?_, ?_, ?_⟩, fV, kV⟩
   · exact { sp := spv
             fr := by rw [kv.wr]; exact frt
             sc := Covers.one (scr.region hh (by decide))
@@ -338,7 +339,7 @@ theorem widthHeader_ok {pBytes qBytes : Nat} {s₀ v : State} {h : RefillABI pBy
     (E : EntryDone h W v) (hq : qBytes = Spec.Dsa.generationQLen pBytes) :
     WP isa (.block (Impl.Dsa.AArch64.Generation.Refill.widthHeader qBytes)) v fun w =>
       GenerationMemory (refillContext h) (upd (upd W 18 (BitVec.ofNat 64 qBytes)) 26 (BitVec.ofNat 64 qBytes)) w ∧
-      W 16 = 0 ∧ ctlWord w.mem (refillBase s₀) 0 = s₀.gpr .x2 ∧ ctlWord w.mem (refillBase s₀) 1 = s₀.gpr .x7 ∧
+      W 16 = 0 ∧ W 10 = 0 ∧ ctlWord w.mem (refillBase s₀) 0 = s₀.gpr .x2 ∧ ctlWord w.mem (refillBase s₀) 1 = s₀.gpr .x7 ∧
       ctlWord w.mem (refillBase s₀) 2 = s₀.mem.readW (s₀.gpr .x7) 64 ∧
       Frame [⟨refillBase s₀, frameBytes⟩] v.mem w.mem ∧ Keep [.x3] v w := by
   have L := E.layout
@@ -370,7 +371,7 @@ theorem widthHeader_ok {pBytes qBytes : Nat} {s₀ v : State} {h : RefillABI pBy
   have randW : GenerationTapeMemory (randTape h) w :=
     E.rand.frame (p := refillContext h) fc kw.rd kw.wr
   refine ⟨⟨lay_of_rep L R Rw (by simp [upd]) kw.sp kw.wr, ⟨V, Rw⟩, ?_, E.scratch.congr kw.wr, randW,
-    randW.slice (Nat.zero_le _), randW⟩, E.w16, by rw [cw 0 (by decide)]; exact E.c0,
+    randW.slice (Nat.zero_le _), randW⟩, E.w16, E.w10, by rw [cw 0 (by decide)]; exact E.c0,
     by rw [cw 1 (by decide)]; exact E.c1, by rw [cw 2 (by decide)]; exact E.c2, fw, kw⟩
   intro k hk
   by_cases h18 : k = 18

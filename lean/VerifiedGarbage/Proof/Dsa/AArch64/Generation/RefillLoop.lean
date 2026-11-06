@@ -107,20 +107,24 @@ theorem seedStart_run {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → B
     (L : Lay s F S) (R : Rep s.mem F S V W) {c q : Nat} {ptr : Addr} (hx0 : s.gpr .x0 = BitVec.ofNat 64 c)
     (h14 : W 14 = ptr) (hq2 : q = 20 ∨ q = 32) :
     WP isa (.block (Impl.Dsa.AArch64.Generation.Refill.seedStart q)) s fun t =>
-      t.mem = (s.mem.writeW (off F 8) (off ptr c)).writeW (off F 128) (BitVec.ofNat 64 (c + q)) ∧
-        Keep [.x0, .x3, .x4] s t := by
+      t.mem = ((((s.mem.writeW (off F 88) ptr).writeW (off F 8) (off ptr c)).writeW (off F 128)
+        (BitVec.ofNat 64 (c + q))).writeW (off F 104) (0 : BitVec 64)) ∧ Keep [.x0, .x3, .x4] s t := by
   have w14 : s.mem.readW (s.sp + BitVec.ofNat 64 112) 64 = ptr := by
     rw [L.sp]; exact (R.fr 14 (by decide)).trans h14
   have l112 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 112) 8 := by rw [L.sp]; exact L.ld (d := 112) (by decide)
   have s8 : InRegions s.wr (s.sp + BitVec.ofNat 64 8) 8 := by rw [L.sp]; exact L.st (d := 8) (by decide)
   have s128 : InRegions s.wr (s.sp + BitVec.ofNat 64 128) 8 := by rw [L.sp]; exact L.st (d := 128) (by decide)
+  have s88 : InRegions s.wr (s.sp + BitVec.ofNat 64 88) 8 := by rw [L.sp]; exact L.st (d := 88) (by decide)
+  have s104 : InRegions s.wr (s.sp + BitVec.ofNat 64 104) 8 := by rw [L.sp]; exact L.st (d := 104) (by decide)
   have hm := movi_small (show q < 2 ^ 16 by omega)
   refine WP.keep [.x0, .x3, .x4] ?_ (by rcases hq2 with rfl | rfl <;> decide) rfl
     (by rcases hq2 with rfl | rfl <;> decide +kernel)
   unfold Impl.Dsa.AArch64.Generation.Refill.seedStart
   brun [State.write, exec_ldrSp (off := 112) (by decide), exec_storeSp (off := 8) (by decide),
-    exec_storeSp (off := 128) (by decide), w14, l112, s8, s128, hx0, hm]
+    exec_storeSp (off := 128) (by decide), exec_storeSp (off := 88) (by decide), exec_storeSp (off := 104) (by decide),
+    w14, l112, s8, s128, s88, s104, hx0, hm, movi_small (show 0 < 2 ^ 16 by decide)]
   rw [L.sp, ← BitVec.ofNat_add]
+  rfl
 
 /-- A rejected seed: one fewer left. -/
 theorem rejected_run {s : State} {F : Addr} (hsp : s.sp = F) (hv : (⟨F, 480⟩ : Region) ∈ s.wr)
@@ -227,26 +231,47 @@ theorem statusTest_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State
 def total : Spec.Dsa.ParameterSearchResult :=
   Spec.Dsa.parameterSearch pBytes (s₀.mem.readW (s₀.gpr .x7) 64).toNat (randTape h).bytes
 
-/-- The controller's invariant with `n` seeds it may still reject, from the loop's entry `v`. -/
-def LoopInv (v : State) (n : Nat) (t : State) : Prop :=
-  ∃ (hs : GenerationTape (refillGeometry h)) (W : Nat → BitVec 64) (c : Nat), HsIn h hs ∧
-    GenerationMemory ((refillContext h).withHs hs) W t ∧ W 16 = BitVec.ofNat 64 c ∧ c ≤ (randTape h).bytes.length ∧
+/-- The `refillAttempt` of the seed at `c`. -/
+def seedResult (c : Nat) : Option (Option Spec.Dsa.Params × List Byte) :=
+  VG.Proof.Dsa.Generation.refillAttempt pBytes (Spec.Dsa.generationQLen pBytes)
+    (((randTape h).bytes.drop c).take (Spec.Dsa.generationQLen pBytes))
+    ((randTape h).bytes.drop (c + Spec.Dsa.generationQLen pBytes))
+
+/-- Where the next seed starts after a rejected one at `c`. -/
+def nextUsed (c : Nat) : Nat :=
+  match seedResult h c with
+  | some (_, rest) => (randTape h).bytes.length - rest.length
+  | none => c
+
+/-- The status the controller ends with, from `n` seeds left at `c`. -/
+def exitStatus (n c : Nat) : Nat :=
+  if n = 0 then 2 else if (randTape h).bytes.length - c < Spec.Dsa.generationQLen pBytes then 0 else
+    match seedResult h c with
+    | some (some _, _) => 1
+    | _ => 0
+
+/-- The controller's state with `n` seeds it may still reject, the next
+starting at `c`, from the loop's entry `v`. -/
+def LoopState (v : State) (n c : Nat) (t : State) : Prop :=
+  ∃ (hs : GenerationTape (refillGeometry h)) (W : Nat → BitVec 64), HsIn h hs ∧
+    GenerationMemory ((refillContext h).withHs hs) W t ∧ W 16 = BitVec.ofNat 64 c ∧ W 10 = 0 ∧
+    c ≤ (randTape h).bytes.length ∧
     ctlWord t.mem (refillBase s₀) 0 = s₀.gpr .x2 ∧ ctlWord t.mem (refillBase s₀) 1 = s₀.gpr .x7 ∧
     ctlWord t.mem (refillBase s₀) 2 = BitVec.ofNat 64 n ∧ n ≤ Spec.Dsa.parameterSeeds ∧
     total h = (Spec.Dsa.parameterSearch pBytes n ((randTape h).bytes.drop c)).consume c [] ∧
     Frame (ctlRegion (refillBase s₀) :: (refillContext h).changed) v.mem t.mem ∧ t.rd = v.rd ∧ t.wr = v.wr
 
-/-- How the controller's loop ends. -/
-def LoopDone (v t : State) : Prop :=
+/-- How the controller's loop ends, from its last iteration's `n` and `c`. -/
+def LoopDone (v : State) (n c : Nat) (t : State) : Prop :=
   ∃ (hs : GenerationTape (refillGeometry h)) (W : Nat → BitVec 64), HsIn h hs ∧
     GenerationMemory ((refillContext h).withHs hs) W t ∧
     ctlWord t.mem (refillBase s₀) 0 = s₀.gpr .x2 ∧ ctlWord t.mem (refillBase s₀) 1 = s₀.gpr .x7 ∧
     Frame (ctlRegion (refillBase s₀) :: (refillContext h).changed) v.mem t.mem ∧ t.rd = v.rd ∧ t.wr = v.wr ∧
-    ((W 19 = 2 ∧ ∃ c, c ≤ (randTape h).bytes.length ∧ ctlWord t.mem (refillBase s₀) 3 = BitVec.ofNat 64 c ∧
-        total h = ⟨.exhausted, c, []⟩) ∨
-      (W 19 = 0 ∧ ∃ c k, c ≤ (randTape h).bytes.length ∧ ctlWord t.mem (refillBase s₀) 3 = BitVec.ofNat 64 c ∧
-        ctlWord t.mem (refillBase s₀) 2 = BitVec.ofNat 64 k ∧ k ≤ Spec.Dsa.parameterSeeds ∧
-        total h = VG.Proof.Dsa.Generation.ranOutResult pBytes k ((randTape h).bytes.length - c) c) ∨
+    W 19 = BitVec.ofNat 64 (exitStatus h n c) ∧ ctlWord t.mem (refillBase s₀) 3 = BitVec.ofNat 64 c ∧
+    ((W 19 = 2 ∧ c ≤ (randTape h).bytes.length ∧ total h = ⟨.exhausted, c, []⟩) ∨
+      (W 19 = 0 ∧ c ≤ (randTape h).bytes.length ∧
+        ctlWord t.mem (refillBase s₀) 2 = BitVec.ofNat 64 n ∧ n ≤ Spec.Dsa.parameterSeeds ∧
+        total h = VG.Proof.Dsa.Generation.ranOutResult pBytes n ((randTape h).bytes.length - c) c) ∨
       (W 19 = 1 ∧ ∃ a u, u ≤ (randTape h).bytes.length ∧ W 16 = BitVec.ofNat 64 u ∧
         total h = ⟨.accepted a, u, []⟩ ∧
         Spec.Rsa.bytesAt t.mem (off (s₀.gpr .x5) VG.Impl.Dsa.Generation.Layout.packed)
@@ -265,17 +290,16 @@ def AttemptOk (attempt : Prog isa) : Prop :=
 theorem ctlWord_eq_of_mem {m m' : Mem} (he : m' = m) (F : Addr) (k : Nat) : ctlWord m' F k = ctlWord m F k := by
   rw [he]
 
-theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {attempt : Prog isa}
-    (hA : AttemptOk h attempt) {v : State} (hv : (⟨refillBase s₀, 480⟩ : Region) ∈ v.wr) (n : Nat) (t : State)
-    (hi : LoopInv h v n t) :
-    WP isa (Impl.Dsa.AArch64.Generation.Refill.iteration attempt qBytes) t fun t' =>
-      (eval (.zero .x .x0) t' = some false ∧ LoopDone h v t') ∨
-        (eval (.zero .x .x0) t' = some true ∧ ∃ m < n, LoopInv h v m t') := by
-  obtain ⟨hs, W, c, hin, hm, h16, hc, c0, c1, c2, hn, htot, hf, hrd, hwr⟩ := hi
+theorem step_ok {attempt : Prog isa}
+    (hA : AttemptOk h attempt) {v : State} (hv : (⟨refillBase s₀, 480⟩ : Region) ∈ v.wr) (n c : Nat) (t : State)
+    (hi : LoopState h v n c t) :
+    WP isa (Impl.Dsa.AArch64.Generation.Refill.iteration attempt (Spec.Dsa.generationQLen pBytes)) t fun t' =>
+      (eval (.zero .x .x0) t' = some false ∧ LoopDone h v n c t') ∨
+        (eval (.zero .x .x0) t' = some true ∧ ∃ m, n = m + 1 ∧ LoopState h v m (nextUsed h c) t') := by
+  obtain ⟨hs, W, hin, hm, h16, h10, hc, c0, c1, c2, hn, htot, hf, hrd, hwr⟩ := hi
   have hlen := (randTape h).size
-  have hq2 : qBytes = 20 ∨ qBytes = 32 := by
-    have := h.lengths; subst hq; unfold Spec.Dsa.generationLengthsValid at this
-    rcases this with ⟨_, e⟩ | ⟨_, e⟩ | ⟨_, e⟩ <;> simp [e]
+  have hq2 : Spec.Dsa.generationQLen pBytes = 20 ∨ Spec.Dsa.generationQLen pBytes = 32 := by
+    unfold Spec.Dsa.generationQLen; split <;> simp
   have hpos : 0 < pBytes := by have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
   have hseeds : n < 2 ^ 63 := by unfold Spec.Dsa.parameterSeeds at hn; omega
   have h15 : W 15 = BitVec.ofNat 64 (randTape h).bytes.length :=
@@ -309,7 +333,7 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
     refine WP.mono (statusMem_ok hm₁ 2 (by decide)) fun t₂ ⟨hm₂, f₂, k₂⟩ => ?_
     refine WP.mono (statusTest_ok hm₂) fun t₃ ⟨z₃, hm₃, mem₃, k₃⟩ => Or.inl ⟨z₃.trans rfl, ?_⟩
     refine ⟨hs, _, hin, hm₃, ?_, ?_, ?_, k₃.rd.trans (k₂.rd.trans rd₁), k₃.wr.trans (k₂.wr.trans wr₁),
-      Or.inl ⟨rfl, c, hc, ?_, ?_⟩⟩
+      by simp [upd, exitStatus], ?_, Or.inl ⟨rfl, hc, ?_⟩⟩
     · rw [ctlWord_eq_of_mem mem₃, ctlWord_changed h f₂ (by decide), ctl₁ 0 (by decide), c0]
     · rw [ctlWord_eq_of_mem mem₃, ctlWord_changed h f₂ (by decide), ctl₁ 1 (by decide), c1]
     · rw [mem₃]; exact fv₁.trans (f₂.mono fun r hr => List.mem_cons_of_mem _ hr)
@@ -319,15 +343,16 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
   refine WP.ite false (ev₁.trans (by simp)) (fun hh => Bool.noConfusion hh) (fun _ => ?_)
   obtain ⟨V₁, R₁⟩ := hm₁.rep
   apply WP.seq
-  refine WP.mono (roomCheck_run hm₁.layout R₁ x0₁ h15 hc hlen (hq ▸ hq2 |> fun e => by rw [← hq] at e; exact e))
+  refine WP.mono (roomCheck_run hm₁.layout R₁ x0₁ h15 hc hlen hq2)
     fun t₂ ⟨⟨x3₂, mem₂⟩, k₂⟩ => ?_
   have hm₂ := genMem_keep hm₁ mem₂ k₂
   have rd₂ : t₂.rd = v.rd := k₂.rd.trans rd₁
   have wr₂ : t₂.wr = v.wr := k₂.wr.trans wr₁
-  have ev₂ : eval (.nonzero .x .x3) t₂ = some (decide ((randTape h).bytes.length - c < qBytes)) := by
+  have ev₂ : eval (.nonzero .x .x3) t₂ =
+      some (decide ((randTape h).bytes.length - c < Spec.Dsa.generationQLen pBytes)) := by
     simp only [eval, State.read, x3₂, BitVec.setWidth_eq]
-    by_cases hr : (randTape h).bytes.length - c < qBytes <;> simp [hr]
-  by_cases hr : (randTape h).bytes.length - c < qBytes
+    by_cases hr : (randTape h).bytes.length - c < Spec.Dsa.generationQLen pBytes <;> simp [hr]
+  by_cases hr : (randTape h).bytes.length - c < Spec.Dsa.generationQLen pBytes
   · refine WP.ite true (ev₂.trans (by simp [hr])) (fun _ => ?_) (fun hh => Bool.noConfusion hh)
     refine WP.mono (statusMem_ok hm₂ 0 (by decide)) fun t₃ ⟨hm₃, f₃, k₃⟩ => ?_
     refine WP.mono (statusTest_ok hm₃) fun t₄ ⟨z₄, hm₄, mem₄, k₄⟩ => Or.inl ⟨z₄.trans rfl, ?_⟩
@@ -335,58 +360,71 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
       rw [ctlWord_eq_of_mem mem₄, ctlWord_changed h f₃ hj, ctlWord_eq_of_mem mem₂]
     refine ⟨hs, _, hin, hm₄, by rw [cw 0 (by decide), ctl₁ 0 (by decide), c0],
       by rw [cw 1 (by decide), ctl₁ 1 (by decide), c1], ?_, k₄.rd.trans (k₃.rd.trans rd₂),
-      k₄.wr.trans (k₃.wr.trans wr₂), Or.inr (Or.inl ⟨rfl, c, n' + 1, hc, by rw [cw 3 (by decide), c3],
-        by rw [cw 2 (by decide), ctl₁ 2 (by decide), c2], hn, ?_⟩)⟩
+      k₄.wr.trans (k₃.wr.trans wr₂), by simp [upd, exitStatus, hr], by rw [cw 3 (by decide), c3],
+      Or.inr (Or.inl ⟨rfl, hc, by rw [cw 2 (by decide), ctl₁ 2 (by decide), c2], hn, ?_⟩)⟩
     · rw [mem₄]; exact (mem₂ ▸ fv₁).trans (f₃.mono fun r hr => List.mem_cons_of_mem _ hr)
-    · rw [htot]; exact VG.Proof.Dsa.Generation.search_short (hq ▸ hr)
+    · rw [htot]; exact VG.Proof.Dsa.Generation.search_short hr
   refine WP.ite false (ev₂.trans (by simp [hr])) (fun hh => Bool.noConfusion hh) (fun _ => ?_)
-  have room : c + qBytes ≤ (randTape h).bytes.length := by omega
+  have room : c + Spec.Dsa.generationQLen pBytes ≤ (randTape h).bytes.length := by omega
   obtain ⟨V₂, R₂⟩ := hm₂.rep
   apply WP.seq
   refine WP.mono (seedStart_run hm₂.layout R₂ ((k₂.gpr .x0 (by decide)).trans x0₁) h14 hq2)
     fun t₃ ⟨mem₃, k₃⟩ => ?_
   have L₂ := hm₂.layout
-  have R₃ : Rep t₃.mem (refillBase s₀) (refillGeometry h).hash V₂
-      (upd (upd W 1 (off (randTape h).ptr c)) 16 (BitVec.ofNat 64 (c + qBytes))) := by
-    rw [mem₃]; exact (R₂.wf L₂.geo (k := 1) (by decide) _).wf L₂.geo (k := 16) (by decide) _
+  let W₃ := upd (upd (upd (upd W 11 (randTape h).ptr) 1 (off (randTape h).ptr c)) 16
+    (BitVec.ofNat 64 (c + Spec.Dsa.generationQLen pBytes))) 13 0
+  have R₃ : Rep t₃.mem (refillBase s₀) (refillGeometry h).hash V₂ W₃ := by
+    rw [mem₃]
+    exact (((R₂.wf L₂.geo (k := 11) (by decide) _).wf L₂.geo (k := 1) (by decide) _).wf L₂.geo (k := 16)
+      (by decide) _).wf L₂.geo (k := 13) (by decide) _
   have f₃ : Frame [⟨refillBase s₀, frameBytes⟩] t₂.mem t₃.mem := by
     rw [mem₃]
-    exact ((Frame.refl _ _).writeW List.mem_cons_self _ (cF _ (d := 8) (by decide))).writeW
-      List.mem_cons_self _ (cF _ (d := 128) (by decide))
-  have hm₃ : GenerationMemory ((refillContext h).withHs hs)
-      (upd (upd W 1 (off (randTape h).ptr c)) 16 (BitVec.ofNat 64 (c + qBytes))) t₃ := by
-    refine hm₂.frame (lay_of_rep L₂ R₂ R₃ (by simp [upd]) k₃.sp k₃.wr) ⟨V₂, R₃⟩ ?_
-      (GenerationContext.frame_single f₃) k₃.rd k₃.wr
+    exact ((((Frame.refl _ _).writeW List.mem_cons_self _ (cF _ (d := 88) (by decide))).writeW
+      List.mem_cons_self _ (cF _ (d := 8) (by decide))).writeW
+      List.mem_cons_self _ (cF _ (d := 128) (by decide))).writeW List.mem_cons_self _ (cF _ (d := 104) (by decide))
+  have fc₃ : Frame (refillContext h).changed t₂.mem t₃.mem := GenerationContext.frame_single f₃
+  have rand₃ := hm₂.rand.frame (p := (refillContext h).withHs hs) fc₃ k₃.rd k₃.wr
+  have hm₃ : GenerationMemory (refillContext h) W₃ t₃ := by
+    refine ⟨lay_of_rep L₂ R₂ R₃ (by simp [W₃, upd]) k₃.sp k₃.wr, ⟨V₂, R₃⟩, ?_, hm₂.scratch.congr k₃.wr,
+      hm₂.seeds.frame (p := (refillContext h).withHs hs) fc₃ k₃.rd k₃.wr, rand₃.slice (Nat.zero_le _), rand₃⟩
     intro k hk
-    simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+    by_cases e11 : k = 11
+    · subst e11; simp [W₃, upd, refillContext, refillWords, randTape]
+    by_cases e13 : k = 13
+    · subst e13; simp [W₃, upd, refillContext, refillWords]
+    have e1 : k ≠ 1 := by rintro rfl; simp [generationSlots] at hk
+    have e16 : k ≠ 16 := by rintro rfl; simp [generationSlots] at hk
+    simp only [W₃, upd, e11, e13, e1, e16, ite_false]
+    rw [hm₂.slots k hk]
+    simp [GenerationContext.withHs, e11, e13]
+  have hm₃' : GenerationMemory ((refillContext h).withHs (refillContext h).hs) W₃ t₃ := by
+    rw [GenerationContext.withHs_self]; exact hm₃
+  have hin₀ : HsIn h (refillContext h).hs := by
+    intro a ha
+    simp [Region.Contains, refillContext, GenerationTape.slice] at ha
   have cw₃ : ∀ j < 4, ctlWord t₃.mem (refillBase s₀) j = ctlWord t₁.mem (refillBase s₀) j := fun j hj => by
-    rw [ctlWord_changed h (GenerationContext.frame_single f₃) hj, ctlWord_eq_of_mem mem₂]
+    rw [ctlWord_changed h fc₃ hj, ctlWord_eq_of_mem mem₂]
   have fv₃ : Frame (ctlRegion (refillBase s₀) :: (refillContext h).changed) v.mem t₃.mem :=
-    (mem₂ ▸ fv₁).trans ((GenerationContext.frame_single f₃).mono fun r hr => List.mem_cons_of_mem _ hr)
-  let seed := (randTape h).slice c qBytes room
+    (mem₂ ▸ fv₁).trans (fc₃.mono fun r hr => List.mem_cons_of_mem _ hr)
+  let seed := (randTape h).slice c (Spec.Dsa.generationQLen pBytes) room
   have seedLen : seed.bytes.length = Spec.Dsa.generationQLen pBytes := by
-    change ((((randTape h).bytes.drop c).take qBytes)).length = _
-    simp only [List.length_take, List.length_drop]; omega
+    simp only [seed, GenerationTape.slice, List.length_take, List.length_drop]; omega
   apply WP.seq
-  refine WP.mono (hA hs _ t₃ seed hin hm₃ seedLen (hm₃.rand.slice room) (by simp [upd, seed, GenerationTape.slice])
-    (c + qBytes) (by simp [upd]) room) fun t₅ hfin => ?_
-  obtain ⟨hs', W', u, sub', hm₅', hu, h16', -, outcome, f₅, rd₅, wr₅⟩ := hfin
+  refine WP.mono (hA _ W₃ t₃ seed hin₀ hm₃' seedLen (hm₃.rand.slice room) (by simp [W₃, upd, seed, GenerationTape.slice])
+    (c + Spec.Dsa.generationQLen pBytes) (by simp [W₃, upd]) room) fun t₅ hfin => ?_
+  obtain ⟨hs', W', u, sub', hm₅', hu, h16', slots₅, outcome, f₅, rd₅, wr₅⟩ := hfin
   have hm₅ : GenerationMemory ((refillContext h).withHs hs') W' t₅ :=
-    GenerationContext.withHs_withHs (refillContext h) hs hs' ▸ hm₅'
+    GenerationContext.withHs_withHs (refillContext h) _ hs' ▸ hm₅'
   have hin' : HsIn h hs' := sub'
+  have w10 : W' 10 = 0 := by
+    rw [slots₅ 10 (by simp [refillSlots])]; simpa [W₃, upd] using h10
   have cw₅ : ∀ j < 4, ctlWord t₅.mem (refillBase s₀) j = ctlWord t₁.mem (refillBase s₀) j := fun j hj => by
     rw [ctlWord_changed h f₅ hj, cw₃ j hj]
   have fv₅ : Frame (ctlRegion (refillBase s₀) :: (refillContext h).changed) v.mem t₅.mem :=
     fv₃.trans (f₅.mono fun r hr => List.mem_cons_of_mem _ hr)
   have rd₅' : t₅.rd = v.rd := rd₅.trans (k₃.rd.trans rd₂)
   have wr₅' : t₅.wr = v.wr := wr₅.trans (k₃.wr.trans wr₂)
-  have hseed : seed.bytes = ((randTape h).bytes.drop c).take (Spec.Dsa.generationQLen pBytes) := by
-    rw [← hq]; rfl
-  change SeedOutcome _ (VG.Proof.Dsa.Generation.refillAttempt pBytes
-    (Spec.Dsa.generationQLen pBytes) seed.bytes ((randTape h).bytes.drop (c + qBytes))) W' u t₅ at outcome
-  rw [hseed, hq] at outcome
-  rw [hq] at room
+  change SeedOutcome _ (seedResult h c) W' u t₅ at outcome
   apply WP.seq
   refine WP.mono (statusTest_ok hm₅) fun t₆ ⟨z₆, hm₆, mem₆, k₆⟩ => ?_
   have cw₆ : ∀ j < 4, ctlWord t₆.mem (refillBase s₀) j = ctlWord t₁.mem (refillBase s₀) j := fun j hj => by
@@ -397,8 +435,8 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
     refine ⟨hs', W', hin', hm₇, by rw [ctlWord_eq_of_mem mem₇, cw₆ 0 (by decide), ctl₁ 0 (by decide), c0],
       by rw [ctlWord_eq_of_mem mem₇, cw₆ 1 (by decide), ctl₁ 1 (by decide), c1], by rw [mem₇, mem₆]; exact fv₅,
       k₇.rd.trans (k₆.rd.trans rd₅'), k₇.wr.trans (k₆.wr.trans wr₅'),
-      Or.inr (Or.inl ⟨h19, c, n' + 1, hc, by rw [ctlWord_eq_of_mem mem₇, cw₆ 3 (by decide), c3],
-        by rw [ctlWord_eq_of_mem mem₇, cw₆ 2 (by decide), ctl₁ 2 (by decide), c2], hn, ?_⟩)⟩
+      by rw [h19]; simp [exitStatus, hr, hres], by rw [ctlWord_eq_of_mem mem₇, cw₆ 3 (by decide), c3],
+      Or.inr (Or.inl ⟨h19, hc, by rw [ctlWord_eq_of_mem mem₇, cw₆ 2 (by decide), ctl₁ 2 (by decide), c2], hn, ?_⟩)⟩
     rw [htot]; exact VG.Proof.Dsa.Generation.search_attemptNone hpos room hres
   · refine WP.ite true (z₆.trans (by rw [h19]; rfl)) (fun _ => ?_) (fun hh => Bool.noConfusion hh)
     have c2₆ : ctlWord t₆.mem (refillBase s₀) 2 = BitVec.ofNat 64 (n' + 1) := by
@@ -410,8 +448,15 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
     have hm₇ := GenerationMemory.ctlFrame h hin' hm₆ fr₇ k₇.sp k₇.rd k₇.wr
     have cw₇ : ∀ j < 2, ctlWord t₇.mem (refillBase s₀) j = ctlWord t₆.mem (refillBase s₀) j := fun j hj => by
       rw [mem₇]; exact ctlWord_write_other t₆.mem _ (k := 2) (by omega) (by decide) (by omega) _
-    refine WP.mono (statusTest_ok hm₇) fun t₈ ⟨z₈, hm₈, mem₈, k₈⟩ => Or.inr ⟨z₈.trans (by rw [h19]; rfl), n', by omega, ?_⟩
-    refine ⟨hs', W', u, hin', hm₈, h16', hu,
+    have hu' : u ≤ (randTape h).bytes.length := hu
+    have next : nextUsed h c = u := by
+      simp only [nextUsed, hres, List.length_drop]
+      change (randTape h).bytes.length - ((randTape h).bytes.length - u) = u
+      omega
+    refine WP.mono (statusTest_ok hm₇) fun t₈ ⟨z₈, hm₈, mem₈, k₈⟩ =>
+      Or.inr ⟨z₈.trans (by rw [h19]; rfl), n', rfl, ?_⟩
+    rw [next]
+    refine ⟨hs', W', hin', hm₈, h16', w10, hu,
       by rw [ctlWord_eq_of_mem mem₈, cw₇ 0 (by decide), cw₆ 0 (by decide), ctl₁ 0 (by decide), c0],
       by rw [ctlWord_eq_of_mem mem₈, cw₇ 1 (by decide), cw₆ 1 (by decide), ctl₁ 1 (by decide), c1],
       by rw [ctlWord_eq_of_mem mem₈, mem₇]; exact ctlWord_write_self t₆.mem _ 2 _, by omega, ?_, ?_,
@@ -424,22 +469,28 @@ theorem step_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {a
     refine ⟨hs', W', hin', hm₇, by rw [ctlWord_eq_of_mem mem₇, cw₆ 0 (by decide), ctl₁ 0 (by decide), c0],
       by rw [ctlWord_eq_of_mem mem₇, cw₆ 1 (by decide), ctl₁ 1 (by decide), c1], by rw [mem₇, mem₆]; exact fv₅,
       k₇.rd.trans (k₆.rd.trans rd₅'), k₇.wr.trans (k₆.wr.trans wr₅'),
+      by rw [h19]; simp [exitStatus, hr, hres], by rw [ctlWord_eq_of_mem mem₇, cw₆ 3 (by decide), c3],
       Or.inr (Or.inr ⟨h19, a, u, hu, h16', ?_, by rw [mem₇, mem₆]; exact bytes⟩)⟩
     rw [htot]; exact VG.Proof.Dsa.Generation.search_accepted hpos room hu hres
 
-theorem controller_ok {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {attempt : Prog isa}
-    (hA : AttemptOk h attempt) {v : State} (hv : (⟨refillBase s₀, 480⟩ : Region) ∈ v.wr) (n : Nat) (t : State)
-    (hi : LoopInv h v n t) :
-    WP isa (.loop (Impl.Dsa.AArch64.Generation.Refill.iteration attempt qBytes) (.zero .x .x0)) t (LoopDone h v) :=
-  WP.loop (M := isa) (Q := LoopDone h v) (LoopInv h v) (fun n t hi => step_ok h hq hA hv n t hi) n t hi
+theorem controller_ok {attempt : Prog isa}
+    (hA : AttemptOk h attempt) {v : State} (hv : (⟨refillBase s₀, 480⟩ : Region) ∈ v.wr) (n c : Nat) (t : State)
+    (hi : LoopState h v n c t) :
+    WP isa (.loop (Impl.Dsa.AArch64.Generation.Refill.iteration attempt (Spec.Dsa.generationQLen pBytes))
+      (.zero .x .x0)) t (fun t' => ∃ n c, LoopDone h v n c t') :=
+  WP.loop (M := isa) (Q := fun t' => ∃ n c, LoopDone h v n c t') (fun n t => ∃ c, LoopState h v n c t)
+    (fun n t ⟨c, hi⟩ => WP.mono (step_ok h hA hv n c t hi) fun t' r => by
+      rcases r with ⟨e, d⟩ | ⟨e, m, hm, st⟩
+      · exact Or.inl ⟨e, n, c, d⟩
+      · exact Or.inr ⟨e, m, by omega, _, st⟩) n t ⟨c, hi⟩
 
-/-- The controller's invariant on entry. -/
+/-- The controller's state on entry. -/
 theorem loop_initial {W : Nat → BitVec 64} {v : State} (hm : GenerationMemory (refillContext h) W v)
-    (h16 : W 16 = 0) (c0 : ctlWord v.mem (refillBase s₀) 0 = s₀.gpr .x2)
+    (h16 : W 16 = 0) (h10 : W 10 = 0) (c0 : ctlWord v.mem (refillBase s₀) 0 = s₀.gpr .x2)
     (c1 : ctlWord v.mem (refillBase s₀) 1 = s₀.gpr .x7)
     (c2 : ctlWord v.mem (refillBase s₀) 2 = s₀.mem.readW (s₀.gpr .x7) 64) :
-    LoopInv h v (s₀.mem.readW (s₀.gpr .x7) 64).toNat v := by
-  refine ⟨(refillContext h).hs, W, 0, ?_, (GenerationContext.withHs_self _).symm ▸ hm, h16, Nat.zero_le _, c0, c1,
+    LoopState h v (s₀.mem.readW (s₀.gpr .x7) 64).toNat 0 v := by
+  refine ⟨(refillContext h).hs, W, ?_, (GenerationContext.withHs_self _).symm ▸ hm, h16, h10, Nat.zero_le _, c0, c1,
     by rw [c2, BitVec.ofNat_toNat, BitVec.setWidth_eq], h.seeds, ?_, Frame.refl _ _, rfl, rfl⟩
   · intro a ha
     simp [Region.Contains, refillContext, GenerationTape.slice] at ha

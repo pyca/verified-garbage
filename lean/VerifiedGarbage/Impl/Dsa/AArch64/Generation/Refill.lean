@@ -92,9 +92,11 @@ def roomCheck (qLen : Nat) : List Instr :=
   [.ldrSp .x3 120, .sub .x .x3 .x3 .x0, movi .x4 qLen, .subs .x .x3 .x3 .x4, movi .x4 1, movi .x5 0,
    .csel .x .x3 .x5 .x4]
 
-/-- The seed's octets at `W 1 = rand + start`, and its witnesses after them. -/
+/-- The seed's octets at `W 1 = rand + start`, its witnesses after them,
+and an empty `h` tape at `rand` (words 11 and 13), as on entry. -/
 def seedStart (qLen : Nat) : List Instr :=
-  [.ldrSp .x3 112, .add .x .x3 .x3 .x0, .strSp .x3 8, movi .x4 qLen, .add .x .x0 .x0 .x4, .strSp .x0 128]
+  [.ldrSp .x3 112, .strSp .x3 88, .add .x .x3 .x3 .x0, .strSp .x3 8, movi .x4 qLen, .add .x .x0 .x0 .x4,
+   .strSp .x0 128, movi .x4 0, .strSp .x4 104]
 
 /-- A rejected seed counts against the seeds left. -/
 def rejected : List Instr := [.ldrSp .x3 (ctl 2), .subImm .x .x3 .x3 1, .strSp .x3 (ctl 2)]

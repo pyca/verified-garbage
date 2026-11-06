@@ -258,9 +258,9 @@ def ResultsDone (v t : State) : Prop :=
           Spec.Dsa.encodeParams pBytes (Spec.Dsa.generationQLen pBytes) a)) ∧
     t.sp = refillBase s₀ ∧ t.rd = v.rd ∧ t.wr = v.wr
 
-theorem results_ok {v t : State} (hv : v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr)
-    (hd : LoopDone h v t) : WP isa (Impl.Dsa.AArch64.Generation.Refill.results pBytes) t (ResultsDone h v) := by
-  obtain ⟨hs, W, hin, hm, c0, c1, fv, rdv, wrv, cases⟩ := hd
+theorem results_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr)
+    (hd : LoopDone h v n c t) : WP isa (Impl.Dsa.AArch64.Generation.Refill.results pBytes) t (ResultsDone h v) := by
+  obtain ⟨hs, W, hin, hm, c0, c1, fv, rdv, wrv, -, c3, cases⟩ := hd
   have hp3 : pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384 := by
     have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
   have hp : pBytes ≤ 384 := by omega
@@ -322,7 +322,7 @@ theorem results_ok {v t : State} (hv : v.wr = ⟨refillBase s₀, 480⟩ :: s₀
   have sp₁ : t₁.sp = refillBase s₀ := k₁.sp.trans hm.layout.sp
   have ev₁ : eval (.zero .x .x3) t₁ = some (W 19 == 0) := by simp only [eval, State.read, x3₁, BitVec.setWidth_eq]
   have cw₁ : ∀ k, ctlWord t₁.mem (refillBase s₀) k = ctlWord t.mem (refillBase s₀) k := fun k => by rw [m₁]
-  rcases cases with ⟨h19, c, hc, c3, htot⟩ | ⟨h19, c, k, hc, c3, c2, hk, htot⟩ | ⟨h19, a, u, hu, h16, htot, bytes⟩
+  rcases cases with ⟨h19, hc, htot⟩ | ⟨h19, hc, c2, hk, htot⟩ | ⟨h19, a, u, hu, h16, htot, bytes⟩
   · -- no seeds left
     refine WP.ite false (ev₁.trans (by rw [h19]; rfl)) (fun hh => Bool.noConfusion hh) (fun _ => ?_)
     refine WP.seq (WP.mono minusOne_run fun t₂ ⟨⟨ev₂, m₂⟩, k₂⟩ => ?_)
@@ -435,7 +435,7 @@ def FinishDone (v t : State) : Prop :=
         (List.replicate (s₀.gpr .x1).toNat 0) ∧
     t.sp = refillBase s₀ ∧ t.rd = v.rd ∧ t.wr = v.wr
 
-theorem finish_ok {v t : State} (hv : v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr) (hd : LoopDone h v t) :
+theorem finish_ok {v t : State} {n c : Nat} (hv : v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr) (hd : LoopDone h v n c t) :
     WP isa (Impl.Dsa.AArch64.Generation.Refill.finish pBytes) t (FinishDone h v) := by
   have o := refillOutputPlan h
   have outLen : 2 * pBytes + Spec.Dsa.generationQLen pBytes = (s₀.gpr .x1).toNat := by

@@ -214,7 +214,7 @@ def refillWords (pBytes : Nat) (s : State) : Nat → BitVec 64
   | 7 => s.gpr .x1
   | 8 => s.gpr .x3
   | 9 => s.gpr .x4
-  | 11 => off (s.gpr .x3) 0
+  | 11 => s.gpr .x3
   | 12 => off (s.gpr .x5) VG.Impl.Dsa.Generation.Layout.hash
   | 13 => 0
   | 14 => s.gpr .x3
@@ -235,7 +235,7 @@ def refillContext {pBytes : Nat} {s : State} (h : RefillABI pBytes s) : Generati
   baseSlot := rfl
   seedsSlot := rfl
   seedsLengthSlot := by simp [refillWords, randTape, bytesAt_length]
-  hSlot := rfl
+  hSlot := by simp [refillWords, GenerationTape.slice, randTape, off]
   hLengthSlot := by simp [refillWords, GenerationTape.slice]
   randSlot := rfl
   randLengthSlot := by simp [refillWords, randTape, bytesAt_length]

@@ -151,11 +151,11 @@ theorem search_ok (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest) {W
   simp only [Impl.Dsa.AArch64.Generation.Refill.search, Impl.Dsa.AArch64.Generation.Refill.controller,
     VG.Impl.Bignum.AArch64.seqs]
   apply WP.seq
-  refine WP.mono (widthHeader_ok E rfl) fun v ⟨hm, h16, c0, c1, c2, fv, kv⟩ => ?_
+  refine WP.mono (widthHeader_ok E rfl) fun v ⟨hm, h16, h10, c0, c1, c2, fv, kv⟩ => ?_
   have wv : v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr := kv.wr.trans E.wr
   apply WP.seq
-  refine WP.mono (controller_ok h rfl hA (by rw [wv]; exact List.mem_cons_self ..) _ v
-    (loop_initial h hm (by simpa [upd] using h16) c0 c1 c2)) fun t hd => ?_
+  refine WP.mono (controller_ok h hA (by rw [wv]; exact List.mem_cons_self ..) _ _ v
+    (loop_initial h hm (by simpa [upd] using h16) (by simpa [upd] using h10) c0 c1 c2)) fun t ⟨_, _, hd⟩ => ?_
   refine WP.mono (finish_ok h wv hd) fun t' F' => ?_
   obtain ⟨m₁, r0, r3, uv, fm₁, e0, e3, eu, ft, x0, bytes, sp', rd', wr'⟩ := F'
   have fs₁ : Frame (priorRegions h) s₀.mem m₁ := by
@@ -229,7 +229,7 @@ theorem EntryDone.congr {pBytes : Nat} {s₀ : State} {h : RefillABI pBytes s₀
     (E : EntryDone h W v) (hm : t.mem = v.mem) (hk : Keep [.x3, .x4] v t) : EntryDone h W t := by
   obtain ⟨V, R⟩ := E.rep
   have Rt : Rep t.mem (refillBase s₀) (refillGeometry h).hash V W := hm ▸ R
-  exact ⟨lay_of_rep E.layout R Rt rfl hk.sp hk.wr, ⟨V, Rt⟩, E.slots, E.w16, E.scratch.congr hk.wr,
+  exact ⟨lay_of_rep E.layout R Rt rfl hk.sp hk.wr, ⟨V, Rt⟩, E.slots, E.w16, E.w10, E.scratch.congr hk.wr,
     ⟨by rw [hk.rd, hk.wr]; exact E.rand.cover, by rw [hm]; exact E.rand.bytes⟩,
     hk.wr.trans E.wr, hk.rd.trans E.rd, by rw [hm]; exact E.c0, by rw [hm]; exact E.c1, by rw [hm]; exact E.c2⟩
 
