@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.InvBatch
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Verified
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SearchInit
-public import Aesop.BuiltinRules
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KeyInit
+public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
@@ -15,11 +13,8 @@ public import VerifiedGarbage.TCB.AArch64.Print
 namespace VG.Artifacts.RsaKeyGen.AArch64
 
 def artifacts : List Artifact := [
-  Spec.RsaKeyGen.keyApi.artifact AArch64.target {
-    code := Impl.RsaKeyGen.AArch64.Key.code
-    verified := Proof.RsaKeyGen.AArch64.Key.key_verified },
-  Spec.RsaKeyGen.primeInitApi.artifact AArch64.target {
-    code := Impl.RsaKeyGen.AArch64.SearchInit.init
-    verified := Proof.RsaKeyGen.AArch64.SearchInit.init_verified }]
+  Spec.RsaKeyGen.keyInitApi.artifact AArch64.target {
+    code := Impl.RsaKeyGen.AArch64.KeyInit.init
+    verified := Proof.RsaKeyGen.AArch64.KeyInit.init_verified }]
 
 end VG.Artifacts.RsaKeyGen.AArch64
