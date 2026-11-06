@@ -26,7 +26,8 @@ contracts (`cfbEncX86_64`, `cfbDecX86_64`) hold where it inlines them
 namespace VG.Proof.Idea.X86_64
 
 open VG VG.X86_64 VG.Impl.Idea.X86_64
-open VG.Proof.Modes.X86_64 (FinalOk Call₁ Call₂ After₁ frameRegion blockAddr slotsRegion frameSp sub_add_ofNat)
+open VG.Proof.Modes.X86_64 (FinalOk Call₁ Call₂ After₁ After₂ FinalDone frameRegion blockAddr slotsRegion frameSp
+  sub_add_ofNat restAddr)
 open VG.Spec.Aes (bytesAt)
 
 /-- The precondition of the final functions on x86-64: the feedback modes'
@@ -154,5 +155,20 @@ theorem call₂_pre {s₀ : State} (hp : finalPre s₀) {u₁' v u : State}
     · exact sub_self_mem (by simp)
     · exact ⟨frameRegion s₀, by simp, 8, blockAddr_eq s₀, show 8 + 8 ≤ 80 by decide⟩
     · exact sub_self_mem (by simp)
+
+theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
+    (hd : ∀ r ∈ rs, (⟨p, n⟩ : Region).Disjoint r) (hn : n ≤ 2 ^ 64) : bytesAt m' p n = bytesAt m p n := by
+  simp only [bytesAt]
+  exact List.map_congr_left fun i hi => hf.bytes (R := ⟨p, n⟩) hd hn (List.mem_range.mp hi)
+
+theorem blocksOf_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
+    (hd : ∀ r ∈ rs, (⟨p, 8 * n⟩ : Region).Disjoint r) :
+    Modes.blocksOf 8 m' p n = Modes.blocksOf 8 m p n := by
+  simp only [Modes.blocksOf]
+  refine List.map_congr_left fun i hi => bytesAt_frame hf (fun r hr => (hd r hr).sub_left
+    (VG.Offset.sub_base p (by have := List.mem_range.mp hi; omega))) (by decide)
+
+theorem cipher_length (k : Spec.Idea.Schedule) (b : List Byte) : (Spec.Idea.cipher k b).length = 8 := by
+  simp [Spec.Idea.cipher]
 
 end VG.Proof.Idea.X86_64
