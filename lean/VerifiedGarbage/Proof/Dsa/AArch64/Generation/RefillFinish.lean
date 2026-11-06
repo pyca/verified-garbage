@@ -416,4 +416,73 @@ theorem results_ok {v t : State} (hv : v.wr = ⟨refillBase s₀, 480⟩ :: s₀
 
 end
 
+section
+variable {pBytes : Nat} {s₀ : State} (h : RefillABI pBytes s₀)
+
+/-- The search's end, from the controller's: what `results` wrote, the
+output, and the status in `x0`. -/
+def FinishDone (v t : State) : Prop :=
+  ∃ (m₁ : Mem) (r0 r3 uv : BitVec 64), Frame (ctlRegion (refillBase s₀) :: (refillContext h).changed) v.mem m₁ ∧
+    r0 = BitVec.ofNat 64 (total h).remaining ∧
+    r3 = BitVec.ofNat 64 (VG.Proof.Dsa.Generation.requested pBytes (total h)) ∧
+    uv = BitVec.ofNat 64 (total h).used ∧
+    Frame [⟨refillBase s₀, frameBytes⟩, inOut s₀]
+      ((written m₁ (s₀.gpr .x7) (s₀.gpr .x2) r0 r3 uv).writeW (off (refillBase s₀) 472)
+        (BitVec.ofNat 64 (total h).status)) t.mem ∧
+    t.gpr .x0 = BitVec.ofNat 64 (total h).status ∧
+    Spec.Rsa.bytesAt t.mem (s₀.gpr .x0) (s₀.gpr .x1).toNat =
+      ((expectedOf (total h)).map (Spec.Dsa.encodeParams pBytes (Spec.Dsa.generationQLen pBytes))).getD
+        (List.replicate (s₀.gpr .x1).toNat 0) ∧
+    t.sp = refillBase s₀ ∧ t.rd = v.rd ∧ t.wr = v.wr
+
+theorem finish_ok {v t : State} (hv : v.wr = ⟨refillBase s₀, 480⟩ :: s₀.wr) (hd : LoopDone h v t) :
+    WP isa (Impl.Dsa.AArch64.Generation.Refill.finish pBytes) t (FinishDone h v) := by
+  have o := refillOutputPlan h
+  have outLen : 2 * pBytes + Spec.Dsa.generationQLen pBytes = (s₀.gpr .x1).toNat := by
+    rw [← h.width]; exact h.outLength.symm
+  unfold Impl.Dsa.AArch64.Generation.Refill.finish
+  simp only [VG.Impl.Bignum.AArch64.seqs]
+  refine WP.seq (WP.mono (results_ok h hv hd) fun t₁ D => ?_)
+  obtain ⟨hs, W, m₁, r0, r3, uv, st, hin, hm, fv, mt₁, hr0, hr3, huv, hst, out, sp₁, rd₁, wr₁⟩ := D
+  have o' : OutputPlan ((refillContext h).withHs hs) := ⟨o.lengthSlot, o.bound, o.separate⟩
+  have hw : (⟨((refillContext h).withHs hs).saved 6,
+      2 * ((refillContext h).withHs hs).geo.pLen + ((refillContext h).withHs hs).geo.qLen⟩ : Region) ∈ t₁.wr := by
+    change (⟨s₀.gpr .x0, 2 * pBytes + Spec.Dsa.generationQLen pBytes⟩ : Region) ∈ t₁.wr
+    rw [outLen, wr₁, hv]; exact List.mem_cons_of_mem _ (by rw [h.wr]; simp [inOut])
+  refine WP.seq (WP.mono (finishOutput_ok hm o' hw (expectedOf (total h)) out) fun t₂ ⟨_, bytes₂, f₂, k₂⟩ => ?_)
+  have f₂' : Frame [⟨refillBase s₀, frameBytes⟩, inOut s₀] t₁.mem t₂.mem := by
+    refine f₂.mono fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with rfl | rfl
+    · exact Or.inl rfl
+    · right; change _ = (⟨s₀.gpr .x0, (s₀.gpr .x1).toNat⟩ : Region); rw [← outLen]; rfl
+  have c3 : ctlWord t₂.mem (refillBase s₀) 3 = BitVec.ofNat 64 (total h).status := by
+    rw [ctlWord_frame f₂' (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ctl_frame _
+      · exact (h.frame_disjoint (r := inOut s₀) (by simp) (d := 448) (n := 32) (by decide)).symm) (by decide),
+      mt₁, hst]
+    exact ctlWord_write_self _ _ 3 _
+  have sp₂ : t₂.sp = refillBase s₀ := k₂.sp.trans sp₁
+  have l : InRegions (t₂.rd ++ t₂.wr) (t₂.sp + BitVec.ofNat 64 472) 8 := by
+    rw [sp₂]
+    exact ctl_in' (s := t₂) (F := refillBase s₀) (by rw [k₂.wr, wr₁, hv]; exact List.mem_cons_self ..) (k := 3) (by decide)
+  have w : t₂.mem.readW (t₂.sp + BitVec.ofNat 64 472) 64 = BitVec.ofNat 64 (total h).status := by
+    rw [sp₂]; exact c3
+  refine WP.mono (WP.keep [.x0] (Q := fun t₃ => t₃.gpr .x0 = BitVec.ofNat 64 (total h).status ∧ t₃.mem = t₂.mem) (by
+    simp only [Impl.Dsa.AArch64.Generation.Refill.ctl, Nat.reduceMul, Nat.reduceAdd]
+    brun [State.write, exec_ldrSp (off := 472) (by decide), l, w]) (by decide)) fun t₃ ⟨⟨x0₃, m₃⟩, k₃⟩ => ?_
+  refine ⟨m₁, r0, r3, uv, fv, hr0, hr3, huv, by rw [m₃, ← hst, ← mt₁]; exact f₂', x0₃, ?_,
+    k₃.sp.trans sp₂, k₃.rd.trans (k₂.rd.trans rd₁), k₃.wr.trans (k₂.wr.trans wr₁)⟩
+  rw [m₃]
+  have := bytes₂
+  change Spec.Rsa.bytesAt t₂.mem (s₀.gpr .x0) (2 * pBytes + Spec.Dsa.generationQLen pBytes) =
+    ((expectedOf (total h)).map (Spec.Dsa.encodeParams pBytes (Spec.Dsa.generationQLen pBytes))).getD
+      (List.replicate (2 * pBytes + Spec.Dsa.generationQLen pBytes) 0) at this
+  rw [outLen] at this
+  exact this
+
+end
+
 end VG.Proof.Dsa.AArch64.Generation.Refill
