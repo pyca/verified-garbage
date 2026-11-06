@@ -189,12 +189,4 @@ theorem exchangeWith_ok' (hc : CfgOk c) (hC : Law c.C) {mq : Prog isa} (hm : Mul
     rw [ite_eq_right hcond]
     exact ⟨by rw [ret, hok]; rfl, by rw [bytes, hok]; rfl⟩
 
-theorem exchangeWith_ok (hc : CfgOk c) (hC : Law c.C) {mq : Prog isa} (hm : MulOk c mq) (hn4 : c.n = 4)
-    (hmc : CallsKeep (Impl.Ecdh.AArch64.Cfg.middle c))
-    (hmu : KeepsUntouched (Impl.Ecdh.AArch64.Cfg.middle c)) {s₀ : State} (hp : EPre c s₀) :
-    WP isa (Impl.Ecdh.AArch64.Cfg.exchangeWith c mq) s₀ fun s' =>
-      (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧
-      (∀ r ∈ untouched, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' :=
-  exchangeWith_ok' hc hC hm (by rw [hn4]; decide) hmc hmu hp
-
 end VG.Proof.Ecdh.AArch64

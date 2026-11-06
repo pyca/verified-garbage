@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.JointJ
 public import VerifiedGarbage.Spec.Ecdsa.Verify
 public import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP512r1.CheckVerified
 import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP512r1.CheckLit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset

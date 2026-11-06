@@ -119,9 +119,6 @@ def validate : Prog isa :=
   .seq (mulCall c.SP (c.sl QYM) (c.sl QY) (c.sl R2P)) <|
   .seq (fprog c.SP (curveOps c)) (.block (checkZero c (c.sl W1) ++ select c))
 
-/-- The ladder of the signature, from the point at `PX`, `PY`, `ONEP`. -/
-def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
-
 /-- `x` (or zeros) to `out` (in `r14`), the flag's low bit to `r3`, and the
 callee-saved registers restored. -/
 def finish : List Instr :=
