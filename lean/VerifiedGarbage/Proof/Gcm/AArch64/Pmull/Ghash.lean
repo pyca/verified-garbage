@@ -1428,3 +1428,273 @@ theorem ghashS_written (s : State) (t : List Leak) (s' : State)
   exact hsc _ (Offset.contains_base _ (by omega) (by omega))
 
 end VG.Proof.Gcm.AArch64.Pmull
+
+/-!
+# The powers of the hash subkey from a key context, with PMULL
+
+`keyPowers_verified` proves `Impl.Gcm.AArch64.Pmull.keyPowers`
+(`vg_aes_gcm_store_powers_aes`) against `Spec.Gcm.storePowersContract`: it
+loads `H` from byte 240 of the key context, and computes and stores its
+powers as `vg_ghash_store_powers_aes` does (`Pmull/Ghash.lean`), keeping
+them, as `Inv` does, in `tReg k` with `x · Tₖ = Hᵏ` and in `sReg k` with
+their halves swapped (`KP`).
+-/
+
+namespace VG.Proof.Gcm.AArch64.Pmull
+
+open VG VG.AArch64 VG.Proof.Gcm VG.Proof.Gcm.Poly
+open VG.Impl.Gcm.AArch64.Pmull (LO MID HI A T C Y tReg sReg poly pwOff)
+open VG.Spec.Gcm (Block blockAt)
+
+/-- `vg_aes_gcm_store_powers(ctx = x0, pw = x1)` on AArch64: the 256-byte
+key context readable, the 128-byte powers' buffer writable and apart from
+it; the powers of `ctxH` at `pw`. -/
+def keyPowersAArch64 : Contract AArch64.isa where
+  pre s :=
+    let ctx : Region := ⟨s.gpr .x0, 256⟩
+    let pw : Region := ⟨s.gpr .x1, 128⟩
+    s.rd = [ctx] ∧ s.wr = [pw] ∧ ctx.Disjoint pw
+  post s s' := Spec.Gcm.Powers8Repr s'.mem (s.gpr .x1) (Spec.Gcm.ctxH s.mem (s.gpr .x0))
+  pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.sp = s₂.sp
+
+/-! ## The powers -/
+
+/-- The powers of `H` up to `K`, as `Inv` holds them. -/
+structure KP (H : Block) (K : Nat) (s : State) : Prop where
+  c : s.v C = ofVDwords poly poly
+  t : ∀ k, 1 ≤ k → k ≤ K → x * φ (s.v (tReg k)) = φ H ^ k
+  sw : ∀ k, 1 ≤ k → k ≤ K → s.v (sReg k) = ext8 (s.v (tReg k)) (s.v (tReg k))
+
+/-- `s'` has the general-purpose registers, memory and regions of `s`. -/
+structure Same (s s' : State) : Prop where
+  gpr : s'.gpr = s.gpr
+  mem : s'.mem = s.mem
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+
+theorem Same.trans {s s' s'' : State} (h : Same s s') (h' : Same s' s'') : Same s s'' :=
+  ⟨h'.gpr.trans h.gpr, h'.mem.trans h.mem, h'.rd.trans h.rd, h'.wr.trans h.wr⟩
+
+theorem VOnly.same {rs : List VReg} {s s' : State} (h : VOnly rs s s') : Same s s' :=
+  ⟨h.gpr, h.mem, h.rd, h.wr⟩
+
+/-- `H'ᴷ⁺¹ = mul(H'ⁱ, H'ʲ)`, from code `m` that computes the product into
+`sReg (K + 1)` (`powWith_ok`, for `KP`). -/
+theorem powWithKP_ok (m : List Instr) {H : Block} {K i j : Nat} (hi : 1 ≤ i) (hiK : i ≤ K)
+    (hj : 1 ≤ j) (hjK : j ≤ K) (hij : i + j = K + 1) (hK : K + 1 ≤ 8) {s : State} (hI : KP H K s)
+    (hm : WP isa (.block m) s fun s' =>
+      ρ (s'.v (sReg (K + 1))) = x * ρ (s.v (sReg i)) * φ (s.v (tReg j)) ∧
+        VOnly [LO, MID, HI, T, sReg (K + 1)] s s') :
+    WP isa (.block (m ++ ([.vop (.ext (tReg (K + 1)) (sReg (K + 1)) (sReg (K + 1)) 8)] : List Instr)))
+      s fun s' => KP H (K + 1) s' ∧ Same s s' := by
+  rw [WP.block_append_iff]
+  refine WP.mono hm fun s₁ ⟨m₁, o₁⟩ => ?_
+  refine WP.mono (swap_ok (tReg (K + 1)) (sReg (K + 1)) s₁) fun s' ⟨w, o₂⟩ => ?_
+  have O := o₁.trans o₂
+  have kv : ∀ r, r ∉ [LO, MID, HI, T] → r ≠ tReg (K + 1) → r ≠ sReg (K + 1) → s'.v r = s.v r :=
+    fun r h1 h2 h3 => O.v r (nmem_pow h1 h3 h2)
+  have ks : s'.v (sReg (K + 1)) = s₁.v (sReg (K + 1)) := o₂.v _ (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun e => tReg_ne_sReg _ _ e.symm)
+  have told : ∀ k, 1 ≤ k → k ≤ K → s'.v (tReg k) = s.v (tReg k) := fun k hk hkK =>
+    kv _ (tReg_nmem' k) (tReg_ne hk (by omega) (by omega) hK (by omega)) (tReg_ne_sReg _ _)
+  have sold : ∀ k, 1 ≤ k → k ≤ K → s'.v (sReg k) = s.v (sReg k) := fun k hk hkK =>
+    kv _ (sReg_nmem' k) (fun e => tReg_ne_sReg _ _ e.symm) (sReg_ne hk (by omega) (by omega) hK (by omega))
+  refine ⟨⟨by rw [kv C (by decide) (ne_tReg _) (ne_sReg _), hI.c], fun k hk hkK => ?_,
+    fun k hk hkK => ?_⟩, O.same⟩
+  · rcases (by omega : k = K + 1 ∨ k ≤ K) with rfl | hkK'
+    · rw [w, φ_ext8_self, m₁, hI.sw i hi hiK, ρ_ext8_self, ← hij, pow_add, ← hI.t i hi hiK,
+        ← hI.t j hj hjK]
+      ring
+    · rw [told k hk hkK', hI.t k hk hkK']
+  · rcases (by omega : k = K + 1 ∨ k ≤ K) with rfl | hkK'
+    · rw [ks, w, ext8_ext8]
+    · rw [told k hk hkK', sold k hk hkK', hI.sw k hk hkK']
+
+/-- `H'ᴷ⁺¹ = mul(H'ⁱ, H'ʲ)`, by `powS` (`powS_ok`, for `KP`). -/
+theorem powSKP_ok {H : Block} {K i j : Nat} (hi : 1 ≤ i) (hiK : i ≤ K) (hj : 1 ≤ j) (hjK : j ≤ K)
+    (hij : i + j = K + 1) (hK : K + 1 ≤ 8) {s : State} (hI : KP H K s) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.powS (K + 1) i j)) s fun s' =>
+      KP H (K + 1) s' ∧ Same s s' := by
+  rw [Impl.Gcm.AArch64.Pmull.powS]
+  refine powWithKP_ok _ hi hiK hj hjK hij hK hI ?_
+  split
+  · next he =>
+    subst he
+    refine WP.mono (sqr_ok (sReg (K + 1)) (sReg i) s (sReg_free _) hI.c) fun _ ⟨h, o⟩ => ⟨?_, o⟩
+    rw [h, sqr_mulV _ _ (hI.sw i hi hiK), mulV, ρ_reduce, Prod.val_acc, Prod.val_zero, zero_add]
+  · refine WP.mono (mulD_ok (sReg (K + 1)) (sReg i) (sReg j) (tReg j) s (sReg_free _) (sReg_free _)
+      (tReg_free _) (hI.sw j hj hjK) hI.c) fun _ ⟨h, o⟩ => ⟨?_, o⟩
+    rw [h, mulV, ρ_reduce, Prod.val_acc, Prod.val_zero, zero_add]
+
+/-- One step of `powersS`, composed after the steps before it. -/
+theorem powSKP_then {H : Block} {K i j : Nat} (hi : 1 ≤ i) (hiK : i ≤ K) (hj : 1 ≤ j) (hjK : j ≤ K)
+    (hij : i + j = K + 1) (hK : K + 1 ≤ 8) {rest : List Instr} {s₀ s : State} (hI : KP H K s)
+    (h₀ : Same s₀ s) {Q : State → Prop}
+    (hr : ∀ s', KP H (K + 1) s' → Same s₀ s' → WP isa (.block rest) s' Q) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.powS (K + 1) i j ++ rest)) s Q := by
+  rw [WP.block_append_iff]
+  exact WP.mono (powSKP_ok hi hiK hj hjK hij hK hI) fun s' ⟨h, o⟩ => hr s' h (h₀.trans o)
+
+theorem powersSKP_ok {H : Block} {s : State} (hI : KP H 1 s) :
+    WP isa (.block Impl.Gcm.AArch64.Pmull.powersS) s fun s' => KP H 8 s' ∧ Same s s' := by
+  simp only [Impl.Gcm.AArch64.Pmull.powersS, List.append_assoc]
+  refine powSKP_then (K := 1) (i := 1) (j := 1) le_rfl le_rfl le_rfl le_rfl rfl (by decide) hI
+    ⟨rfl, rfl, rfl, rfl⟩ fun s₂ h₂ o₂ => ?_
+  refine powSKP_then (K := 2) (i := 2) (j := 1) (by decide) le_rfl le_rfl (by decide) rfl
+    (by decide) h₂ o₂ fun s₃ h₃ o₃ => ?_
+  refine powSKP_then (K := 3) (i := 2) (j := 2) (by decide) (by decide) (by decide) (by decide)
+    rfl (by decide) h₃ o₃ fun s₄ h₄ o₄ => ?_
+  refine powSKP_then (K := 4) (i := 3) (j := 2) (by decide) (by decide) (by decide) (by decide)
+    rfl (by decide) h₄ o₄ fun s₅ h₅ o₅ => ?_
+  refine powSKP_then (K := 5) (i := 3) (j := 3) (by decide) (by decide) (by decide) (by decide)
+    rfl (by decide) h₅ o₅ fun s₆ h₆ o₆ => ?_
+  refine powSKP_then (K := 6) (i := 4) (j := 3) (by decide) (by decide) (by decide) (by decide)
+    rfl (by decide) h₆ o₆ fun s₇ h₇ o₇ => ?_
+  exact WP.mono (powSKP_ok (K := 7) (i := 4) (j := 4) (by decide) (by decide) (by decide)
+    (by decide) rfl (by decide) h₇) fun s' ⟨h, o⟩ => ⟨h, o₇.trans o⟩
+
+/-! ## The prologue -/
+
+/-- `H` loaded from byte 240 of the key context, and `H'`. -/
+theorem keyPrologue_ok {s₀ : State} (hp : keyPowersAArch64.pre s₀) :
+    WP isa (.block Impl.Gcm.AArch64.Pmull.keyPrologue) s₀ fun s =>
+      KP (Spec.Gcm.ctxH s₀.mem (s₀.gpr .x0)) 1 s ∧
+        (∀ r, r ≠ .x5 → s.gpr r = s₀.gpr r) ∧ s.mem = s₀.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr := by
+  obtain ⟨hrd, -, -⟩ := hp
+  simp only [Impl.Gcm.AArch64.Pmull.keyPrologue, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (ldrev_ok A .x0 240 s₀ rfl (by decide)
+    ⟨⟨s₀.gpr .x0, 256⟩, by simp [hrd], contains_offset (by decide) (by decide)⟩)
+    fun s₁ ⟨l₁, o₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (constC_ok s₁) fun s₂ ⟨c₂, kv₂, kg₂, m₂, rd₂, wr₂⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (twist_ok (sReg 1) s₂ c₂) fun s₃ ⟨m₃, o₃⟩ => ?_
+  refine WP.mono (swap_ok (tReg 1) (sReg 1) s₃) fun s' ⟨w₄, o₄⟩ => ?_
+  have hA₂ : s₂.v A = s₁.v A := kv₂ A (by decide)
+  have s₁' : s'.v (sReg 1) = s₃.v (sReg 1) :=
+    o₄.v _ (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun e => tReg_ne_sReg _ _ e.symm)
+  refine ⟨⟨?_, fun k hk hk1 => ?_, fun k hk hk1 => ?_⟩, fun r h5 => by
+      rw [o₄.gpr, o₃.gpr, kg₂ r h5, o₁.gpr],
+    by rw [o₄.mem, o₃.mem, m₂, o₁.mem], by rw [o₄.rd, o₃.rd, rd₂, o₁.rd],
+    by rw [o₄.wr, o₃.wr, wr₂, o₁.wr]⟩
+  · have h : C ∉ [LO, MID, HI, T, sReg 1] := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
+      exact ⟨by decide, by decide, by decide, by decide, ne_sReg 1⟩
+    rw [o₄.v C (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact ne_tReg 1),
+      o₃.v C h, c₂]
+  · obtain rfl : k = 1 := by omega
+    rw [w₄, φ_ext8_self, m₃, twistV_ρ, hA₂, l₁, pow_one]
+    rfl
+  · obtain rfl : k = 1 := by omega
+    rw [w₄, s₁', ext8_ext8]
+
+/-! ## The stores -/
+
+/-- The powers below `K` stored at `pw`. -/
+structure KS (s₀ : State) (H : Block) (K : Nat) (s : State) : Prop where
+  x1 : s.gpr .x1 = s₀.gpr .x1
+  wr : s.wr = s₀.wr
+  t : ∀ k, 1 ≤ k → k ≤ 8 → s.v (tReg k) = pp H k
+  pw : ∀ k, 1 ≤ k → k ≤ K → s.mem.read (s₀.gpr .x1 + BitVec.ofNat 64 (pwOff k)) 16 = pp H k
+
+/-- `H'ᴷ⁺¹` stored. -/
+theorem storeKey_ok {s₀ : State} (hp : keyPowersAArch64.pre s₀) {H : Block} {K : Nat}
+    (hK : K + 1 ≤ 8) {s : State} (hS : KS s₀ H K s) :
+    WP isa (.block (Impl.Gcm.AArch64.Pmull.storeKeyPw (K + 1))) s (KS s₀ H (K + 1)) := by
+  obtain ⟨-, hwr, -⟩ := hp
+  have hc : ∀ k, k ≤ 8 → Region.Contains ⟨s₀.gpr .x1, 128⟩ (s₀.gpr .x1 + BitVec.ofNat 64 (pwOff k)) 16 :=
+    fun k hk => contains_offset (by have := pwOff_le k (by omega); omega)
+      (by have := pwOff_le k (by omega); omega)
+  have hout : InRegions s.wr (s.gpr .x1 + BitVec.ofNat 64 (pwOff (K + 1))) 16 := by
+    rw [hS.wr, hwr, hS.x1]; exact ⟨⟨s₀.gpr .x1, 128⟩, by simp, hc (K + 1) hK⟩
+  have ho' : pwOff (K + 1) < 4096 * 16 := by have := pwOff_le (K + 1) (by omega); omega
+  refine WP.block_cons_iff.mpr ⟨_, exec_strq (pwOff_mod (K + 1)) ho' hout, WP.block_nil ?_⟩
+  refine ⟨hS.x1, hS.wr, hS.t, fun k hk hkK => ?_⟩
+  show (s.mem.write (s.gpr .x1 + BitVec.ofNat 64 (pwOff (K + 1))) 16 (s.v (tReg (K + 1)))).read _ 16 = _
+  rw [hS.x1]
+  rcases (by omega : k = K + 1 ∨ k ≤ K) with rfl | hkK'
+  · rw [read_write16, hS.t _ hk hK]
+  · rw [Mem.read_write_sep (Offset.sep _ (pwOff_sep k (by omega) (K + 1) (by omega) hk (by omega)
+        (by omega)) (by have := pwOff_le k (by omega); omega)
+        (by have := pwOff_le (K + 1) (by omega); omega)) (by decide),
+      hS.pw k hk hkK']
+
+/-- The eight powers stored: `Powers8Repr`. -/
+theorem keyStores_ok {s₀ : State} (hp : keyPowersAArch64.pre s₀) {H : Block} {s : State}
+    (hS : KS s₀ H 0 s) :
+    WP isa (.block Impl.Gcm.AArch64.Pmull.keyStores) s fun s' =>
+      Spec.Gcm.Powers8Repr s'.mem (s₀.gpr .x1) H := by
+  simp only [Impl.Gcm.AArch64.Pmull.keyStores, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (storeKey_ok hp (K := 0) (by decide) hS) fun s₁ h₁ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (storeKey_ok hp (K := 1) (by decide) h₁) fun s₂ h₂ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (storeKey_ok hp (K := 2) (by decide) h₂) fun s₃ h₃ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (storeKey_ok hp (K := 3) (by decide) h₃) fun s₄ h₄ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (storeKey_ok hp (K := 4) (by decide) h₄) fun s₅ h₅ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (storeKey_ok hp (K := 5) (by decide) h₅) fun s₆ h₆ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (storeKey_ok hp (K := 6) (by decide) h₆) fun s₇ h₇ => ?_
+  refine WP.mono (storeKey_ok hp (K := 7) (by decide) h₇) fun s' h' => ?_
+  intro j hj
+  have e : ∀ k, 1 ≤ k → k ≤ 8 → s'.mem.readW (s₀.gpr .x1 + BitVec.ofNat 64 (pwOff k)) 128 =
+      pp H k := fun k hk1 hk8 => by rw [Mem.readW, ← h'.pw k hk1 hk8]; rfl
+  refine ⟨?_, ?_⟩
+  · have := e (2 * j + 2) (by omega) (by omega)
+    rw [show pwOff (2 * j + 2) = 32 * j by
+      simp only [pwOff, show (2 * j + 2) % 2 = 0 by omega, ↓reduceIte]; omega] at this
+    exact this
+  · have := e (2 * j + 1) (by omega) (by omega)
+    rw [show pwOff (2 * j + 1) = 16 + 32 * j by
+      simp only [pwOff, show (2 * j + 1) % 2 = 1 by omega, Nat.one_ne_zero, ↓reduceIte]; omega] at this
+    exact this
+
+/-! ## The whole function -/
+
+theorem keyPowers_post {s₀ : State} (hp : keyPowersAArch64.pre s₀) :
+    WP isa Impl.Gcm.AArch64.Pmull.keyPowers s₀ (keyPowersAArch64.post s₀) := by
+  simp only [Impl.Gcm.AArch64.Pmull.keyPowers, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (keyPrologue_ok hp) fun s₁ ⟨k₁, g₁, m₁, rd₁, wr₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (powersSKP_ok k₁) fun s₂ ⟨k₂, o₂⟩ => ?_
+  refine keyStores_ok hp ⟨by rw [o₂.gpr, g₁ .x1 (by decide)], by rw [o₂.wr, wr₁],
+    fun k hk1 hk8 => φ_inj (x_cancel (by rw [k₂.t k hk1 hk8, x_φ_pp])),
+    fun _ _ h => absurd h (by omega)⟩
+
+theorem keyPowers_correct (s : State) (hs : keyPowersAArch64.pre s) :
+    ∃ t s', Exec isa Impl.Gcm.AArch64.Pmull.keyPowers s t s' ∧ abiPreserved s s' ∧
+      keyPowersAArch64.post s s' := by
+  obtain ⟨t, s', he, h₁, h₂⟩ := WP.gprs (rs := preserved) (keyPowers_post hs) (by decide) (by decide)
+  exact ⟨t, s', he, ⟨h₂, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₁⟩
+
+theorem keyPowers_ct : ConstantTime isa keyPowersAArch64.pre keyPowersAArch64.pub
+    Impl.Gcm.AArch64.Pmull.keyPowers := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1]) ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact h1
+  · exact h2
+
+/-- A state satisfying `keyPowersAArch64`'s precondition, with zero memory. -/
+def satStateK : State :=
+  { Proof.Gcm.AArch64.satState with
+    gpr := fun r => if r = .x0 then 0x1000 else if r = .x1 then 0x2000 else 0
+    rd := [⟨0x1000, 256⟩]
+    wr := [⟨0x2000, 128⟩] }
+
+theorem keyPowers_verified :
+    Verified AArch64.target Impl.Gcm.AArch64.Pmull.keyPowers (Spec.Gcm.storePowersContract AArch64.abi) :=
+  Verified.of_correct keyPowers_correct keyPowers_ct (by
+    sig_implies [Spec.Gcm.storePowersContract, Spec.Gcm.storePowersSig, Spec.Gcm.storePowersParam,
+      Spec.Gcm.storePowersPost, keyPowersAArch64, AArch64.abi, AArch64.argRegs]
+      [satStateK, Proof.Gcm.AArch64.satState] using satStateK)
+
+end VG.Proof.Gcm.AArch64.Pmull

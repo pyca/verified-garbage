@@ -290,4 +290,28 @@ def storesS : List Instr :=
 
 def ghashS : Prog isa := ghashAll prologueS storesS
 
+/-! ## The powers from a key context
+
+`vg_aes_gcm_store_powers_aes(ctx = x0, pw = x1)`: the hash subkey `H`,
+bytes 240–255 of the key context (`Spec.Gcm.ctxH`), loaded as
+`vg_ghash_aes` loads its `h`, `H'` by `twist`, `H'²` to `H'⁸` by
+`powersS`, and the eight stored to `pw` as `storesS` stores them, from `x1`.
+It is straight-line, and writes only `x5`, `v1`, `v3`–`v7` and
+`v16`–`v31`. -/
+
+/-- `H'ᵏ` stored to `pw` (`x1`). -/
+def storeKeyPw (k : Nat) : List Instr := [.strq (tReg k) .x1 (pwOff k)]
+
+/-- `H'` to `H'⁸` stored. -/
+def keyStores : List Instr :=
+  storeKeyPw 1 ++ storeKeyPw 2 ++ storeKeyPw 3 ++ storeKeyPw 4 ++ storeKeyPw 5 ++ storeKeyPw 6 ++
+    storeKeyPw 7 ++ storeKeyPw 8
+
+/-- `H` from the key context, the reduction constant, and `H'` by `twist`. -/
+def keyPrologue : List Instr :=
+  loadRev A .x0 240 ++ constC ++ twist (sReg 1) ++
+    ([.vop (.ext (tReg 1) (sReg 1) (sReg 1) 8)] : List Instr)
+
+def keyPowers : Prog isa := .block (keyPrologue ++ powersS ++ keyStores)
+
 end VG.Impl.Gcm.AArch64.Pmull
