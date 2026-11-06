@@ -47,7 +47,7 @@ theorem padCall_ct {P : State → State → Prop}
     (hP : ∀ a b, P a b → a.sp = b.sp ∧ PadArgs a st rate pos ∧ PadArgs b st rate pos ∧
       Covers ([] ++ [⟨st, 200⟩]) (a.rd ++ a.wr) ∧ Covers [⟨st, 200⟩] a.wr ∧
       Covers ([] ++ [⟨st, 200⟩]) (b.rd ++ b.wr) ∧ Covers [⟨st, 200⟩] b.wr) :
-    RelCT isa P (.call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad) fun _ _ => True := by
+    RelCT isa P (.call "vg_keccak_pad" Impl.Sha3.RISCV64.Stream.pad) fun _ _ => True := by
   refine RelCT.call (k := Proof.Sha3.padRISCV64) pad_verified'.1 pad_ct [] [⟨st, 200⟩] fun a b hab => ?_
   obtain ⟨hsp, ha, hb, ca, wa, cb, wb⟩ := hP a b hab
   refine ⟨pad_pre ha, pad_pre hb, ?_, ca, wa, cb, wb⟩
@@ -60,7 +60,7 @@ theorem squeezeCall_ct {P : State → State → Prop}
     (hP : ∀ a b, P a b → a.sp = b.sp ∧ SqueezeArgs a st pa rate pos pl ∧ SqueezeArgs b st pa rate pos pl ∧
       Covers ([] ++ [⟨st, 200⟩, ⟨pa, pl⟩]) (a.rd ++ a.wr) ∧ Covers [⟨st, 200⟩, ⟨pa, pl⟩] a.wr ∧
       Covers ([] ++ [⟨st, 200⟩, ⟨pa, pl⟩]) (b.rd ++ b.wr) ∧ Covers [⟨st, 200⟩, ⟨pa, pl⟩] b.wr) :
-    RelCT isa P (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze) fun _ _ => True := by
+    RelCT isa P (.call "vg_keccak_squeeze" Impl.Sha3.RISCV64.Stream.squeeze) fun _ _ => True := by
   refine RelCT.call (k := Proof.Sha3.squeezeRISCV64) squeeze_verified'.1 squeeze_ct [] [⟨st, 200⟩, ⟨pa, pl⟩]
     fun a b hab => ?_
   obtain ⟨hsp, ha, hb, ca, wa, cb, wb⟩ := hP a b hab

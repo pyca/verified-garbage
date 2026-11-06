@@ -215,7 +215,7 @@ theorem absorbPhase_ct :
 theorem padPhase_ct :
     RelCT isa (fun a b => (SEnv s₁ a ∧ Spec.Sha3.Repr a.mem (S s₁) 168 (B s₁) ∧ (a.gpr .a0).toNat = 34) ∧
       (SEnv s₂ b ∧ Spec.Sha3.Repr b.mem (S s₂) 168 (B s₂) ∧ (b.gpr .a0).toNat = 34))
-      (.seq (.block padArgs) (.call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad)) fun _ _ => True := by
+      (.seq (.block padArgs) (.call "vg_keccak_pad" Impl.Sha3.RISCV64.Stream.pad)) fun _ _ => True := by
   have hw : ∀ s₀ s, Pre s₀ → SEnv s₀ s → (s.gpr .a0).toNat = 34 → WP isa (.block padArgs) s (FP s₀) :=
     fun s₀ s hp hs h3 => WP.mono (padArgs_ok hp hs h3) fun _ ⟨ht, _, ha, a3⟩ => ⟨ht, ha, a3⟩
   refine RelCT.seq (R := fun a b => FP s₁ a ∧ FP s₂ b) (relct_wp ?_ fun a b hab =>
@@ -236,7 +236,7 @@ theorem squeezePhase_ct {len : Nat} (hl' : len = 504 ∨ len = 840) :
     RelCT isa (fun a b =>
       (SEnv s₁ a ∧ stateAt a.mem (S s₁) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₁)) ∧
       (SEnv s₂ b ∧ stateAt b.mem (S s₂) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₂)))
-      (.seq (.block (squeezeArgs len)) (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze))
+      (.seq (.block (squeezeArgs len)) (.call "vg_keccak_squeeze" Impl.Sha3.RISCV64.Stream.squeeze))
       fun _ _ => True := by
   have hl : len ≤ 840 := by omega
   have hw : ∀ s₀ s, Pre s₀ → SEnv s₀ s → WP isa (.block (squeezeArgs len)) s (FS len s₀) := fun s₀ s hp hs =>

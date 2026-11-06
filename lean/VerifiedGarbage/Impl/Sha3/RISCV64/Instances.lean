@@ -69,9 +69,9 @@ def finRestore : List Instr :=
 
 def finBody (rate len : Nat) : Prog isa :=
   .seq (.block (finPadArgs rate)) <|
-  .seq (.call Spec.Sha3.padApi.name Stream.pad) <|
+  .seq (.call "vg_keccak_pad" Stream.pad) <|
   .seq (.block (finSqzArgs rate len)) <|
-  .seq (.call Spec.Sha3.squeezeApi.name Stream.squeeze) (.block finRestore)
+  .seq (.call "vg_keccak_squeeze" Stream.squeeze) (.block finRestore)
 
 def finalize (rate len : Nat) : Prog isa :=
   StackScratch.RISCV64.withStackScratch 32 .a3 (finBody rate len)

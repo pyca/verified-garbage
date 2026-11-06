@@ -142,7 +142,7 @@ theorem pad_call (h : PadArgs s st rate pos)
       Frame [⟨st, 200⟩, below s.sp 1168] s.mem s'.mem →
       (∀ msg, Spec.Sha3.Repr s.mem st rate msg → pos = msg.length % rate →
         stateAt s'.mem st = absorb rate (pad rate ((s.gpr .a3).setWidth 8) msg)) → Q s') :
-    WP isa (.call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad) s Q := by
+    WP isa (.call "vg_keccak_pad" Impl.Sha3.RISCV64.Stream.pad) s Q := by
   have hr := rate_lt h.hrate
   refine call1168 (k := Proof.Sha3.padRISCV64) pad_verified'.1 pad_sdepth
     (pad_pre h) hc hw fun s' hrd hwr hsp hf hcs hpost => ?_
@@ -194,7 +194,7 @@ theorem squeeze_call (h : SqueezeArgs s st op rate pos len)
       (s'.gpr .a0).toNat ≤ rate →
       (∀ d, squeezeFrom rate (stateAt s'.mem st) (s'.gpr .a0).toNat d =
         squeezeFrom rate (stateAt s.mem st) (pos + len) d) → Q s') :
-    WP isa (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze) s Q := by
+    WP isa (.call "vg_keccak_squeeze" Impl.Sha3.RISCV64.Stream.squeeze) s Q := by
   have hr := rate_lt h.hrate
   refine call1168 (k := Proof.Sha3.squeezeRISCV64) squeeze_verified'.1 squeeze_sdepth
     (squeeze_pre h) hc hw fun s' hrd hwr hsp hf hcs hpost => ?_
