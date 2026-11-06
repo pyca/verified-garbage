@@ -39,7 +39,7 @@ use core::fmt;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_keygen::VG_RSA_PRIME_SEARCH_ADX_FEATURES;
+use crate::arch::rsa_keygen::VG_RSA_GENERATE_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_sig::{
     VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SIGN_IFMA_FEATURES,
@@ -64,8 +64,8 @@ use verified_garbage_cpu::Features;
 /// built on the verified code's own RSA operations,
 /// `vg_rsa_public_precomputed_checked` and `vg_rsa_private_checked` (which
 /// only verified code calls): the padding schemes' (`vg_rsa_pkcs1_sign`,
-/// `crate::rsa::pkcs1_sig`, …) and `vg_rsa_prime_search`
-/// (`crate::rsa::keygen`).
+/// `crate::rsa::pkcs1_sig`, …) and key generation's (`crate::rsa::keygen`):
+/// `vg_rsa_generate` on x86-64, `vg_rsa_prime_search` elsewhere.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     /// The baseline implementation.
@@ -101,7 +101,7 @@ impl Backend {
             VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES,
             VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES,
             VG_RSA_PKCS1_SIGN_ADX_FEATURES,
-            VG_RSA_PRIME_SEARCH_ADX_FEATURES,
+            VG_RSA_GENERATE_ADX_FEATURES,
         ]);
         let ifma = Features::all(&[
             adx,

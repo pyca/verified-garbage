@@ -64,7 +64,7 @@ def clearAround : Prog isa := seqs [
     .shift .shl .rcx 2, .store (field 13) .rcx],
   clear,
   .block [.mov .rax (.mem (field 1)), .mov .rcx (.reg .rax), .shift .shl .rcx 2, .alu .add .rax (.reg .rcx),
-    .alu .add .rax (.mem (field 0)), .store (field 12) .rax, .mov .rcx (.mem (field 1)),
+    .mov .rcx (.mem (field 0)), .alu .add .rax (.reg .rcx), .store (field 12) .rax, .mov .rcx (.mem (field 1)),
     .shift .shl .rcx 2, .store (field 13) .rcx],
   clear]
 

@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedVerified
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedSafety
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Verified
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Generate.Verified
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Verified
+public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Bignum.LazyMath
 public import VerifiedGarbage.Proof.Bignum.Octets
@@ -155,19 +158,19 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Trial
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 
-/-! # The RSA prime search on x86-64, its candidates calling each shared Miller–Rabin implementation -/
+/-! # RSA key generation on x86-64, its prime searches' candidates calling each shared Miller–Rabin implementation -/
 
 @[expose] public section
 
 namespace VG.Generic.MillerRabin.X86_64.RsaKeyGen
 
 def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
-  Spec.RsaKeyGen.primeSearchApi.artifact X86_64.target {
+  Spec.RsaKeyGen.keySearchApi.artifact X86_64.target {
     suffix := v.suffix
-    code := Proof.RsaKeyGen.X86_64.Search.searchCode v
-    stack := 336
-    verified := Proof.RsaKeyGen.X86_64.Search.search_verified v
-    spSafe := Proof.RsaKeyGen.X86_64.Search.searchCode_sp v
+    code := Proof.RsaKeyGen.X86_64.Generate.genCode v
+    stack := 552
+    verified := Proof.RsaKeyGen.X86_64.Generate.gen_verified v
+    spSafe := Proof.RsaKeyGen.X86_64.Generate.genCode_sp v
     features := v.features }]
 
 end VG.Generic.MillerRabin.X86_64.RsaKeyGen

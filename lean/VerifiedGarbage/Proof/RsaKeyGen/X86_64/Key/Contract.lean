@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
 /-!
 # An RSA key from its primes on x86-64: the contract the proofs use
@@ -105,5 +107,16 @@ def keyCtr : Contract isa where
   pre := keyPre
   post := keyPost
   pub := keyPub
+
+/-- What a caller's proofs use of `vg_rsa_keygen_key`'s: `keyCode_correct`
+and `keyCode_constantTime`, an instance in `Verified.lean`. A caller's proofs
+assume it, so that they need not import that proof, nor the algebra of its
+inverses, which the speed check keeps out of all but a few modules; only its
+registration file imports it. -/
+class KeyProof : Prop where
+  correct : VG.Impl.RsaKeyGen.X86_64.Key.code.allInstrs (fun i => !loadsMxcsr i) = true →
+    ∀ s, keyCtr.pre s → ∃ t s', Exec isa VG.Impl.RsaKeyGen.X86_64.Key.code s t s' ∧
+      abiPreserved s s' ∧ keyCtr.post s s'
+  ct : ConstantTime isa keyCtr.pre keyCtr.pub VG.Impl.RsaKeyGen.X86_64.Key.code
 
 end VG.Proof.RsaKeyGen.X86_64.Key

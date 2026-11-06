@@ -118,7 +118,7 @@ theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
     exact this.trans hst.e
   · rw [hL]; exact hr
 
-theorem gen_correct_ok (v : RoundImpl) {s : State} (h : genPre s) :
+theorem gen_correct_ok [Key.KeyProof] (v : RoundImpl) {s : State} (h : genPre s) :
     WP isa (genCode v) s fun t => genPost s t ∧
       (∀ reg ∈ calleeSaved, t.gpr reg = s.gpr reg) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have hp : GenInput (genOfState s) s := ⟨h, rfl⟩
@@ -129,7 +129,7 @@ theorem gen_correct_ok (v : RoundImpl) {s : State} (h : genPre s) :
     rw [← hp.sp_eq]; have : 552 ≤ (genOfState s).sp.toNat := hroom; show 160 ≤ _; omega)
   simp only [VG.Impl.Bignum.X86_64.seqs]
   refine WP.seq (WP.mono (gen_start hp) fun u ⟨hu, hfu⟩ => ?_)
-  refine WP.seq (WP.mono (clearAround_ok hu ?_) fun w hw => ?_)
+  refine WP.seq (WP.mono (clearAround_ok hu ?_) fun w ⟨hw, _⟩ => ?_)
   · intro pB hpB
     simp only [genProgress, keyProgressAt] at hpB
     split at hpB
@@ -216,7 +216,7 @@ theorem gen_return_address (v : RoundImpl) {s t : State} {tr : List Leak}
   · obtain rfl := List.mem_singleton.mp hr
     exact Offset.base_disjoint_below _ (by omega)
 
-theorem gen_correct (v : RoundImpl) (s : State) (h : genContract.pre s) :
+theorem gen_correct [Key.KeyProof] (v : RoundImpl) (s : State) (h : genContract.pre s) :
     ∃ tr t, Exec isa (genCode v) s tr t ∧ abiPreserved s t ∧ genContract.post s t := by
   obtain ⟨tr, t, he, hp, hg, _, _⟩ := gen_correct_ok v h
   exact ⟨tr, t, he, abiPreserved_of_exec (genCode_mx v) he ⟨hg, gen_return_address v h he⟩, hp⟩

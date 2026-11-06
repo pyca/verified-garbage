@@ -1926,6 +1926,14 @@ pub(crate) mod vg_rsa_mont_mul;
 pub(crate) mod vg_rsa_mont_mul_adx;
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_prime_search.rs"]
+pub(crate) mod vg_rsa_prime_search;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_prime_search_adx.rs"]
+pub(crate) mod vg_rsa_prime_search_adx;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_private_checked.rs"]
 pub(crate) mod vg_rsa_private_checked;
 
