@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.TripleDes.Contract
-public import VerifiedGarbage.Proof.TripleDes.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
@@ -59,11 +58,6 @@ def ecbEncryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contrac
 
 def ecbDecryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   ecbScratchContract A .decrypt stack
-
-/-- `ecbScratchContract` is the ECB cores' contract in `Spec/`, under the
-name the proofs on every target use. -/
-theorem ecbScratchContract_eq {M : ISA} (A : Abi M) (direction : Direction) (stack : Nat) :
-    ecbScratchContract A direction stack = ecbCoreContract A direction stack := rfl
 
 /-! ## Locality -/
 

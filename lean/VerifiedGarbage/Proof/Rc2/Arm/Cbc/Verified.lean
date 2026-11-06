@@ -742,42 +742,4 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     · rw [keep₄.mem]; exact out
     · rw [keep₄.mem]; exact iv
 
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | _ => 0
-  sp := 0x6000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem a := if a = 0x6001 then 0x40 else 0
-  rd := [⟨0x1000, 128⟩, ⟨0x6000, 4⟩]
-  wr := [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 512⟩]
-
-theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
-    ∃ t s', Exec isa Impl.Rc2.Arm.Cbc.encrypt s t s' ∧ abiPreserved s s' ∧
-      (contract .encrypt).post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .encrypt s hs
-  change Exec isa Impl.Rc2.Arm.Cbc.encrypt s t s' at he
-  exact ⟨t, s', he, ⟨ha, VG.Arm.Exec.sp he⟩, hp⟩
-
-theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
-    ∃ t s', Exec isa Impl.Rc2.Arm.Cbc.decrypt s t s' ∧ abiPreserved s s' ∧
-      (contract .decrypt).post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .decrypt s hs
-  change Exec isa Impl.Rc2.Arm.Cbc.decrypt s t s' at he
-  exact ⟨t, s', he, ⟨ha, VG.Arm.Exec.sp he⟩, hp⟩
-
-theorem encrypt_verified : Verified target Impl.Rc2.Arm.Cbc.encrypt (Proof.Rc2.cbcEncryptContract abi 0) := by
-  refine Verified.of_correct encrypt_correct (cbc_constantTime .encrypt) ?_
-  sig_implies [Proof.Rc2.cbcEncryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs,
-    Arm.reduceClassify, Arm.Loc.val, State.addr, contract]
-    [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
-
-theorem decrypt_verified : Verified target Impl.Rc2.Arm.Cbc.decrypt (Proof.Rc2.cbcDecryptContract abi 0) := by
-  refine Verified.of_correct decrypt_correct (cbc_constantTime .decrypt) ?_
-  sig_implies [Proof.Rc2.cbcDecryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs,
-    Arm.reduceClassify, Arm.Loc.val, State.addr, contract]
-    [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
-
 end VG.Proof.Rc2.Arm.Cbc

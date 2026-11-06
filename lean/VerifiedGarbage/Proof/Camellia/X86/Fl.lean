@@ -41,10 +41,6 @@ theorem Keeps.slotW {s t : State} {d : Reg} (h : Keeps s t d) (hd : d ≠ sb) (k
     slotW t k = slotW s k := by
   simp only [X86.slotW, h.mem, h.gpr sb (Ne.symm hd)]
 
-theorem Keeps.keyW {s t : State} {d : Reg} (h : Keeps s t d) (hd : d ≠ kp) (k : Nat) :
-    keyW t k = keyW s k := by
-  simp only [X86.keyW, h.mem, h.gpr kp (Ne.symm hd)]
-
 theorem keeps_setReg (s : State) (d : Reg) (v : BitVec 32) : Keeps s (s.setReg d v) d :=
   ⟨fun _ h => RegUpd.gpr_setReg_of_ne _ _ h, rfl, rfl, rfl⟩
 

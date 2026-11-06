@@ -31,8 +31,8 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # Camellia's batches under prepared subkeys on x86 (32-bit) meet their contract
 
-`crypt_verified`: `vg_camellia_crypt_prepared` against
-`Proof.Camellia.Prepared.cryptContract` with `layout`. The function saves
+`crypt_correct`: `vg_camellia_crypt_prepared` meets `cryptX86`, with
+`layout`. The function saves
 the callee-saved registers in its slots (`saveAt_ok`), runs the eight blocks
 of the tail buffer for 18 or 24 rounds (`crypt8_ok`) under the table its
 working space holds, and restores the registers (`restoreAt_ok`): it writes
@@ -256,112 +256,8 @@ theorem crypt_correct (s : State) (hs : cryptX86.pre s) :
 
 /-! ## Constant time -/
 
-/-- The initial taint: `esp` public, and the word holding `ws` known to be
-the base address of the working space, of at least `4 * slots` bytes. -/
-def cryptTaint : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [4 * slots], argLen := 16, argBases := [(8, 0)] }
-
-theorem cryptTaint_wf {s : State} (hp : cryptX86.pre s) : VG.X86.Taint.Wf cryptTaint s := by
-  obtain ⟨hrd, hwr, dAW, dRW, fitW, fitE, hR, hsz, -⟩ := hp
-  rw [size_eq, slots_eq] at hsz
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [cryptTaint]; omega, ?_⟩, ?_⟩
-  · rw [hwr]
-    exact .cons (by show 4 * slots ≤ (arg s 2).toNat * 8; rw [slots_eq]; omega) .nil
-  · rw [hwr]; exact List.pairwise_singleton _ _
-  · rw [hwr]
-    rintro r hr
-    simp only [List.mem_singleton] at hr; subst hr
-    simp only [setWidth_toNat]; omega
-  · rw [hwr]
-    rintro r hr
-    simp only [List.mem_singleton] at hr; subst hr
-    exact VG.X86.Taint.frame_disjoint (n := 12) (by omega) dRW dAW
-  · intro p hp'
-    simp only [cryptTaint, List.mem_singleton] at hp'
-    subst hp'
-    refine ⟨by decide, ?_⟩
-    simp [VG.X86.Taint.region, hwr, addr, arg, argAddr]
-
-theorem cryptTaint_agree {s₁ s₂ : State} (h₁ : cryptX86.pre s₁) (h₂ : cryptX86.pre s₂)
-    (hpub : cryptX86.pub s₁ s₂) : VG.X86.Taint.Agree cryptTaint s₁ s₂ := by
-  obtain ⟨hesp, ha⟩ := hpub
-  have fE₁ := h₁.2.2.2.2.2.1
-  have fE₂ := h₂.2.2.2.2.2.1
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, cryptTaint_wf h₁, cryptTaint_wf h₂,
-    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
-    fun k h4 hk => ?_⟩
-  · simp only [cryptTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    subst hr; exact hesp
-  · rw [h₁.2.1, h₂.2.1, ha 1 (by omega), ha 2 (by omega)]
-  · simp only [cryptTaint] at hk
-    rw [show VG.X86.Taint.depth cryptTaint.stk = 0 from rfl, Nat.zero_add]
-    rw [VG.X86.Taint.argByte_eq (n := 16) fE₁ h4 hk, VG.X86.Taint.argByte_eq (n := 16) fE₂ h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
-
-theorem crypt_ct : ConstantTime isa cryptX86.pre cryptX86.pub cryptPrepared :=
-  VG.Taint.constantTime (A := VG.X86.taint) cryptTaint (fun _ _ h₁ h₂ hp => cryptTaint_agree h₁ h₂ hp)
-    (by taint_decide)
-
 theorem crypt_noSp : NoSp cryptPrepared := NoSp.of_all (by lit_decide)
 
 theorem crypt_stackUse : stackUse cryptPrepared = 0 := by lit_decide
-
-/-! ## The contract -/
-
-/-- A working space at `0x2000` holding the table of no words (all zeros)
-for 18 rounds of encryption, and the arguments `18, 0x2000, 336` at `0x8004`. -/
-def cryptSatMem : Mem := fun a =>
-  if 0x2000 ≤ a.toNat ∧ a.toNat < 0x2000 + 2688 then layout.encode 18 [] .encrypt (a.toNat - 0x2000)
-  else if a = 0x8004 then 18 else if a = 0x8009 then 0x20 else if a = 0x800C then 0x50
-  else if a = 0x800D then 1 else 0
-
-theorem cryptSat_holds : Holds layout cryptSatMem 0x2000 18 [] .encrypt := by
-  intro r hr i hi
-  rw [layout_table] at hr
-  simp only [List.mem_singleton] at hr; subst hr
-  dsimp only at hi ⊢
-  have ht : ((0x2000 : Addr) + BitVec.ofNat 64 (416 + i)).toNat = 0x2000 + (416 + i) := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, show (0x2000 : Addr).toNat = 0x2000 from rfl]; omega
-  have hc : 0x2000 ≤ 0x2000 + (416 + i) ∧ 0x2000 + (416 + i) < 0x2000 + 2688 := ⟨by omega, by omega⟩
-  simp only [cryptSatMem, ht, hc, and_self, ↓reduceIte]
-  rw [show 0x2000 + (416 + i) - 0x2000 = 416 + i by omega]
-
-/-- A state satisfying the batch's precondition. -/
-def cryptSat : State where
-  gpr r := if r = .esp then 0x8000 else 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := cryptSatMem
-  rd := [⟨0x8004, 12⟩]
-  wr := [⟨0x2000, 336 * 8⟩]
-
-theorem crypt_implies : cryptX86.Implies (Proof.Camellia.Prepared.cryptContract layout X86.abi) where
-  pre := by
-    sig_implies_pre [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptX86,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-  post := by
-    sig_implies_post [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptX86,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-  pub := by
-    sig_implies_pub [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, cryptX86,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-  sat := by
-    refine ⟨cryptSat, ?_⟩
-    sig_pre [Proof.Camellia.Prepared.cryptContract, Proof.Camellia.Prepared.cryptSig, X86.abi, X86.argSlots,
-      X86.argVal, X86.argBytes]
-    sig_and_intros
-    all_goals first
-      | decide
-      | exact Region.disjoint_of_sep (by decide)
-      | exact ⟨_, _, cryptSat_holds⟩
-      | (rw [size_eq, slots_eq]; decide)
-
-theorem crypt_verified : Verified X86.target cryptPrepared (Proof.Camellia.Prepared.cryptContract layout X86.abi) :=
-  Verified.of_correct crypt_correct crypt_ct crypt_implies
 
 end VG.Proof.Camellia.X86

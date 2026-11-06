@@ -28,8 +28,6 @@ open VG.Proof.Sm4.Prepared (Holds)
 
 def groupHead : Prog isa := .seq BatchCtr.count (.seq BatchCfb.fill BatchCtr.crypt)
 def groupTail : Prog isa := .seq BatchCtr.xorGroup (.block [.subs .r7 .r7 (.reg .r11)])
-def proHead : Prog isa := .seq (.block BatchCtr.entry) BatchCtr.prepare
-
 structure HeadPre (B D : BitVec 32) (n : Nat) (s : State) : Prop where
   base : s.gpr sb = B
   left : s.gpr .r7 = BitVec.ofNat 32 n

@@ -312,8 +312,6 @@ theorem kept_out : ∀ r ∈ kept, r ∉ saved2.map Prod.fst → r ∉ [Reg.s1, 
   decide
 
 theorem saved_out : ∀ p ∈ saved2, p.1 ∉ [Reg.a7, .a1, .t0] := by decide
-theorem parked_out : ∀ r ∈ [Reg.s1, .s2, .s3, .s4], r ∉ saved2.map Prod.fst := by decide
-
 theorem blkAddr2_eq (up : Bool) (B : Addr) (j : Nat) :
     blkAddr (dirCore2 up) B j = B + BitVec.ofNat 64 (48 + 8 * j) := by
   simp only [blkAddr, slotA, dirCore2, bufSlot]

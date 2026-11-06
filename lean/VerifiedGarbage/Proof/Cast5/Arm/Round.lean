@@ -30,9 +30,6 @@ open VG.Impl.Cast5 (s1234Sym)
 /-- The address of the slot at `off` of the working space at `r12`. -/
 scoped notation:max "slot " s:max off:max => State.addr (State.gpr s Reg.r12 + BitVec.ofNat 32 off)
 
-theorem eval_eq (s : State) : eval .eq s = some s.z := rfl
-theorem eval_ne (s : State) : eval .ne s = some !s.z := rfl
-
 theorem byType_ok (s : State) (f : Nat → List Instr) {t : Nat} (ht : t = 1 ∨ t = 2 ∨ t = 3)
     (hin : InRegions (s.rd ++ s.wr) (slot s 20) 4) (hv : s.mem.readW (slot s 20) 32 = BitVec.ofNat 32 t)
     {Q : State → Prop} (hQ : ∀ u, Keep [.r0] s u → u.mem = s.mem → WP isa (.block (f t)) u Q) :
@@ -173,10 +170,6 @@ theorem feistel_ok (s : State) (up : Bool) :
 def nextT (up : Bool) (t : Nat) : Nat :=
   if up then (if t = 3 then 1 else t + 1) else (if t = 1 then 3 else t - 1)
 
-theorem nextT_mem {up : Bool} {t : Nat} (ht : t = 1 ∨ t = 2 ∨ t = 3) :
-    nextT up t = 1 ∨ nextT up t = 2 ∨ nextT up t = 3 := by
-  cases up <;> rcases ht with rfl | rfl | rfl <;> decide
-
 /-- The type `v` (in `r0`) to its slot, then the count of rounds left down. -/
 theorem nextTail_ok (s : State) {v cnt : BitVec 32} (h0 : s.gpr .r0 = v)
     (hinT : InRegions s.wr (slot s 20) 4)
@@ -261,9 +254,6 @@ structure RoundPre (s : State) (km kr l r : Spec.Cast5.Word) (t : Nat) (cnt : Bi
 theorem RoundPre.inT' {s : State} {km kr l r : Spec.Cast5.Word} {t : Nat} {cnt : BitVec 32}
     (h : RoundPre s km kr l r t cnt) : InRegions (s.rd ++ s.wr) (slot s 20) 4 := by
   obtain ⟨g, hg, hc⟩ := h.inT; exact ⟨g, List.mem_append_right _ hg, hc⟩
-
-theorem mem_r12 : Reg.r12 ∉ [Reg.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr] := by
-  decide
 
 /-- The registers a round writes before its Feistel step. -/
 def preRegs : List Reg := [.r0, .r1, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]

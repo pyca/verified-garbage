@@ -120,12 +120,6 @@ theorem addKey_ok {r : Reg} (hr : r ≠ .r12 ∧ r ≠ .r0) (d : Nat) (hd : d < 
 /-- The registers a round writes. -/
 abbrev roundWrites : List Reg := [.r6, .r7, .r8, .r9, .r10, .r11, .r12]
 
-theorem keep_weaken {rs : List Reg} {s s' : State} (h : Keep rs s s')
-    (hs : (rs.all fun r => roundWrites.contains r) = true) : Keep roundWrites s s' :=
-  h.mono fun r hr => by
-    have := List.all_eq_true.mp hs r hr
-    simpa using this
-
 /-- Subkey `6j + i` of a round, at its offset. -/
 theorem key_at {z : Spec.Idea.Schedule} {s : State} (hk : KeyOk z s) (j i : Nat) (h : 6 * j + i ≤ 50) :
     InRegions (s.rd ++ s.wr) (s.gpr .r3 + BitVec.ofNat 64 (12 * j + 2 * i)) 4 ∧

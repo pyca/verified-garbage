@@ -117,10 +117,6 @@ theorem keyArgs_of {post : State → State → Prop} {M : Mode} (d : Spec.Seed.D
     rw [hstep]; exact dKD
   · rw [scr_eq]; exact dSK.symm
 
-/-- The data in blocks, as the modes' steps. -/
-theorem blocksAt_eq (m : Mem) (p : Addr) (n : Nat) :
-    Spec.Cbc.blocksAt m p n = Proof.Modes.chunksAt 16 m p n := rfl
-
 /-! ## Correctness -/
 
 theorem cipher_enc {g : Nat} {h1 : 1 ≤ g} {h2 : g ≤ 16} (k : Spec.Seed.Schedule) :

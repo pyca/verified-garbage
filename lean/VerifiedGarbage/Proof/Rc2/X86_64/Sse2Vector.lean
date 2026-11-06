@@ -70,10 +70,6 @@ structure KeepX (regs : List Reg) (xregs : List XReg) (s s' : State) : Prop wher
   keep : Keep regs s s'
   xmm : ∀ r, r ∉ xregs → s'.xmm r = s.xmm r
 
-theorem KeepX.trans {rs : List Reg} {xs : List XReg} {s s' s'' : State}
-    (h : KeepX rs xs s s') (h' : KeepX rs xs s' s'') : KeepX rs xs s s'' :=
-  ⟨h.keep.trans h'.keep, fun r hr => (h'.xmm r hr).trans (h.xmm r hr)⟩
-
 theorem loadConst_ok (s : State) (dst : XReg) (hd : dst ≠ .xmm5) (v : BitVec 128) :
     ∃ s', runBlock isa (Impl.Rc2.X86_64.Sse2.loadConst dst v) s = some s' ∧
       s'.xmm dst = v ∧ KeepX [.r10] [dst, .xmm5] s s' := by
