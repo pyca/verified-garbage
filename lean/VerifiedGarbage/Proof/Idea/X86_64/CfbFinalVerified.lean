@@ -26,7 +26,7 @@ contracts (`cfbEncX86_64`, `cfbDecX86_64`) hold where it inlines them
 namespace VG.Proof.Idea.X86_64
 
 open VG VG.X86_64 VG.Impl.Idea.X86_64
-open VG.Proof.Modes.X86_64 (FinalOk Call₁ Call₂ After₁ frameRegion blockAddr slotsRegion frameSp)
+open VG.Proof.Modes.X86_64 (FinalOk Call₁ Call₂ After₁ frameRegion blockAddr slotsRegion frameSp sub_add_ofNat)
 open VG.Spec.Aes (bytesAt)
 
 /-- The precondition of the final functions on x86-64: the feedback modes'
@@ -93,6 +93,66 @@ theorem call₁_pre {s₀ : State} (hp : finalPre s₀) {u : State} (hu : Call�
     rcases hr with rfl | rfl | rfl
     · exact sub_self_mem (by simp)
     · exact ⟨⟨s₀.gpr .rdx, (s₀.gpr .rcx).toNat⟩, by simp, 0, (BitVec.add_zero _).symm, by simp only; omega⟩
+    · exact sub_self_mem (by simp)
+
+/-- The second function's writable regions: the IV, the working block and
+the scratch buffer. -/
+def wrE (s₀ : State) : List Region := [⟨s₀.gpr .rsi, 8⟩, ⟨blockAddr s₀, 8⟩, ⟨s₀.gpr .r8, 8 * 22⟩]
+
+theorem blockAddr_eq (s₀ : State) : blockAddr s₀ = s₀.gpr .rsp - BitVec.ofNat 64 80 + BitVec.ofNat 64 8 := by
+  rw [blockAddr, sub_add_ofNat _ (by decide)]
+
+/-- The second function's precondition, where `cfbFinal` inlines it. -/
+theorem call₂_pre {s₀ : State} (hp : finalPre s₀) {u₁' v u : State}
+    (hA : After₁ finalArgs s₀ (s₀.gpr .rcx).toNat cfbEncX86_64 (rdW s₀) (wrW s₀) cfbEncrypt.x86_64Depth u₁' ∨
+      After₁ finalArgs s₀ (s₀.gpr .rcx).toNat cfbDecX86_64 (rdW s₀) (wrW s₀) cfbDecrypt.x86_64Depth u₁')
+    (vrd : v.rd = u₁'.rd) (vwr : v.wr = u₁'.wr) (hu : Call₂ finalArgs s₀ v u) :
+    fbPre blkLen (u.withRegions (rdW s₀) (wrE s₀)) ∧ Covers (rdW s₀ ++ wrE s₀) (u.rd ++ u.wr) ∧
+      Covers (wrE s₀) u.wr := by
+  obtain ⟨⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩, h80, hfr⟩ := hp
+  have hurd : u.rd = s₀.rd := by rw [hu.rd, vrd]; rcases hA with h | h <;> exact h.rd
+  have huwr : u.wr = frameRegion s₀ :: s₀.wr := by rw [hu.wr, vwr]; rcases hA with h | h <;> exact h.wr
+  have g0 : u.gpr .rdi = s₀.gpr .rdi := hu.args 0 (by decide) (by decide) (by decide)
+  have g1 : u.gpr .rsi = s₀.gpr .rsi := hu.args 1 (by decide) (by decide) (by decide)
+  have g4 : u.gpr .r8 = s₀.gpr .r8 := hu.args 4 (by decide) (by decide) (by decide)
+  have g2 : u.gpr .rdx = blockAddr s₀ := hu.data
+  have hrcx : (u.gpr .rcx).toNat = 1 := by rw [show u.gpr .rcx = _ from hu.blocks]; rfl
+  have hK : Region.Sub ⟨blockAddr s₀, 8⟩ (frameRegion s₀) := by
+    rw [blockAddr_eq, frameRegion]; exact VG.Offset.sub_base _ (by decide)
+  have hret : Region.Sub ⟨u.gpr .rsp, 8⟩ (frameRegion s₀) := by
+    rw [hu.rsp]; exact Region.sub_prefix (by decide)
+  have dRK : Region.Disjoint ⟨u.gpr .rsp, 8⟩ ⟨blockAddr s₀, 8⟩ := by
+    rw [hu.rsp, blockAddr_eq]
+    have := VG.Offset.disjoint (s₀.gpr .rsp - BitVec.ofNat 64 80) (d := 0) (n := 8) (e := 8) (k := 8)
+      (.inl (by decide)) (by decide) (by decide)
+    rwa [BitVec.add_zero] at this
+  have fK : ∀ r ∈ ([⟨s₀.gpr .rdi, 104⟩, ⟨s₀.gpr .rsi, 8⟩, ⟨s₀.gpr .rdx, (s₀.gpr .rcx).toNat⟩, ⟨s₀.gpr .r8, 8 * 22⟩] :
+      List Region), Region.Disjoint ⟨blockAddr s₀, 8⟩ r := fun r hr => (hfr r hr).sub_left hK
+  have fR : ∀ r ∈ ([⟨s₀.gpr .rdi, 104⟩, ⟨s₀.gpr .rsi, 8⟩, ⟨s₀.gpr .rdx, (s₀.gpr .rcx).toNat⟩, ⟨s₀.gpr .r8, 8 * 22⟩] :
+      List Region), Region.Disjoint ⟨u.gpr .rsp, 8⟩ r := fun r hr => (hfr r hr).sub_left hret
+  have hKfit : (blockAddr s₀).toNat + 8 ≤ 2 ^ 64 := by
+    rw [blockAddr, toNat_sub_ofNat (by omega)]
+    have := (s₀.gpr .rsp).isLt
+    omega
+  refine ⟨?_, ?_, ?_⟩
+  · simp only [fbPre, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, blkLen, hrcx, g0, g1, g2,
+      g4, rdW, wrE]
+    exact ⟨trivial, trivial, dKV, (fK _ (by simp)).symm, dKS, (fK _ (by simp)).symm, dVS, fK _ (by simp),
+      fR _ (by simp), dRK, fR _ (by simp), fitK, fitV, hKfit, fitB⟩
+  · rw [hurd, huwr, hrd, hwr]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [rdW, wrE, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact sub_self_mem (by simp)
+    · exact sub_self_mem (by simp)
+    · exact ⟨frameRegion s₀, by simp, 8, blockAddr_eq s₀, show 8 + 8 ≤ 80 by decide⟩
+    · exact sub_self_mem (by simp)
+  · rw [huwr, hwr]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [wrE, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact sub_self_mem (by simp)
+    · exact ⟨frameRegion s₀, by simp, 8, blockAddr_eq s₀, show 8 + 8 ≤ 80 by decide⟩
     · exact sub_self_mem (by simp)
 
 end VG.Proof.Idea.X86_64
