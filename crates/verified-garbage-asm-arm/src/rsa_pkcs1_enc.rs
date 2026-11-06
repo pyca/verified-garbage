@@ -542,6 +542,194 @@ bx lr",
     )
 }
 
+/// RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with the padding string drawn from the random tape `rand` (`rand_len` bytes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), and `pre`, the `pre_len` words `vg_rsa_public_precompute` wrote for `n`, takes as the padding string `PS` the first `n_len - msg_len - 3` nonzero bytes of `rand`, encrypts the encoded message `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 2 if `n` or `e` is not such a number. Writes to `tape[0]` the bytes of `rand` it consumed, up to the last byte of `PS`. If `rand` has fewer nonzero bytes, writes zeros to `out` and: if `rand_len` is the entropy budget, `n_len - msg_len + 125` bytes, returns 3 (which only a broken random number generator makes likely); otherwise consumes none of `rand`, writes to `tape[1]` the length of the next tape, more than `rand_len` and at most the budget, and returns 0: keep `rand`, append fresh random bytes up to that length, and call again. `tape[1]` is 0 but for 0. If `pre` does not hold the values for `n`, what it writes to `out` and returns once it has drawn `PS` is unspecified; memory safety, `tape` and the timing guarantee still apply.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.encryptRandomContract`. Constant time but for the public key and the tape's zero bytes: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which bytes of `rand` are zero, not on the message or the other bytes of `rand`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `tape` must be valid for reads and writes of 16 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `msg_len + 11` must be at most `n_len`.
+/// * `rand_len` must be at most `n_len - msg_len + 125`.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
+/// * `rand` must hold independent uniform random bytes, fresh for this encryption, extended only as `tape[1]` asks; never reuse them for another encryption.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `tape` and `scratch` must not overlap each other, `n`, `e`, `msg`, `rand`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the 2312 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_rsa_pkcs1_encrypt_random(out: *mut u8, out_len: usize, tape: *mut [u64; 2], n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+sub sp, sp, #1088
+add r12, sp, #0
+ldr r1, [sp, #1164]
+ldr r8, [sp, #1168]
+ldr r3, [sp, #1144]
+ldr r4, [sp, #1160]
+sub r3, r3, r4
+sub r3, r3, #3
+add r0, r12, #40
+mov r4, #0
+mov r5, #0
+cmp r8, #0
+bne 20f
+b 21f
+20:
+22:
+ldrb r6, [r1, #0]
+add r1, r1, #1
+add r4, r4, #1
+cmp r6, #0
+bne 23f
+b 24f
+23:
+strb r6, [r0, #0]
+add r0, r0, #1
+add r5, r5, #1
+24:
+cmp r5, r3
+beq 25f
+cmp r4, r8
+b 26f
+25:
+cmp r5, r5
+26:
+bne 22b
+21:
+cmp r5, r3
+beq 27f
+add r12, sp, #0
+ldr r0, [sp, #1088]
+ldr lr, [sp, #1144]
+mov r2, #0
+29:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 29b
+cmp r5, #0
+beq 210f
+add r12, sp, #0
+add r0, r12, #40
+mov lr, r5
+212:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 212b
+b 211f
+210:
+211:
+ldr r7, [sp, #1096]
+add r6, r3, #128
+cmp r8, r6
+beq 213f
+add r9, r3, r8
+sub r9, r9, r5
+sub r10, r6, r9
+lsr r10, r10, #31
+sub r10, r10, #1
+sub r11, r9, r6
+and r11, r11, r10
+add r11, r11, r6
+mov r10, #0
+str r10, [r7, #0]
+str r10, [r7, #4]
+str r11, [r7, #8]
+str r10, [r7, #12]
+mov r0, #0
+b 214f
+213:
+mov r9, #0
+str r8, [r7, #0]
+str r9, [r7, #4]
+str r9, [r7, #8]
+str r9, [r7, #12]
+mov r0, #3
+214:
+b 28f
+27:
+ldr r7, [sp, #1096]
+mov r6, #0
+str r4, [r7, #0]
+str r6, [r7, #4]
+str r6, [r7, #8]
+str r6, [r7, #12]
+add r12, sp, #0
+ldr r0, [sp, #1148]
+str r0, [r12, #0]
+ldr r0, [sp, #1152]
+str r0, [r12, #4]
+ldr r0, [sp, #1156]
+str r0, [r12, #8]
+ldr r0, [sp, #1160]
+str r0, [r12, #12]
+add r0, r12, #40
+str r0, [r12, #16]
+str r3, [r12, #20]
+ldr r0, [sp, #1172]
+str r0, [r12, #24]
+ldr r0, [sp, #1176]
+str r0, [r12, #28]
+ldr r0, [sp, #1180]
+str r0, [r12, #32]
+ldr r0, [sp, #1184]
+str r0, [r12, #36]
+ldr r0, [sp, #1088]
+ldr r1, [sp, #1144]
+ldr r2, [sp, #1100]
+ldr r3, [sp, #1144]
+bl {vg_rsa_pkcs1_encrypt_precomputed}
+mov r4, #2
+sub r4, r4, r0
+add r12, sp, #0
+add r0, r12, #40
+ldr r1, [sp, #1144]
+ldr r2, [sp, #1160]
+sub lr, r1, r2
+sub lr, lr, #3
+mov r2, #0
+215:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 215b
+mov r0, r4
+28:
+add sp, sp, #1088
+ldr r4, [sp, #16]
+ldr r5, [sp, #20]
+ldr r6, [sp, #24]
+ldr r7, [sp, #28]
+ldr r8, [sp, #32]
+ldr r9, [sp, #36]
+ldr r10, [sp, #40]
+ldr r11, [sp, #44]
+ldr lr, [sp, #52]
+ldr r12, [sp], #56
+bx lr",
+        vg_rsa_pkcs1_encrypt_precomputed = sym super::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_precomputed,
+    )
+}
+
 /// The CPU features `vg_rsa_pkcs1_decrypt_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 pub const VG_RSA_PKCS1_DECRYPT_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
@@ -1090,5 +1278,199 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_rsa_public_precomputed_checked_umaal = sym super::rsa::vg_rsa_public_precomputed_checked_umaal::vg_rsa_public_precomputed_checked_umaal,
+    )
+}
+
+/// The CPU features `vg_rsa_pkcs1_encrypt_random_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub const VG_RSA_PKCS1_ENCRYPT_RANDOM_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+
+/// RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with the padding string drawn from the random tape `rand` (`rand_len` bytes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), and `pre`, the `pre_len` words `vg_rsa_public_precompute` wrote for `n`, takes as the padding string `PS` the first `n_len - msg_len - 3` nonzero bytes of `rand`, encrypts the encoded message `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 2 if `n` or `e` is not such a number. Writes to `tape[0]` the bytes of `rand` it consumed, up to the last byte of `PS`. If `rand` has fewer nonzero bytes, writes zeros to `out` and: if `rand_len` is the entropy budget, `n_len - msg_len + 125` bytes, returns 3 (which only a broken random number generator makes likely); otherwise consumes none of `rand`, writes to `tape[1]` the length of the next tape, more than `rand_len` and at most the budget, and returns 0: keep `rand`, append fresh random bytes up to that length, and call again. `tape[1]` is 0 but for 0. If `pre` does not hold the values for `n`, what it writes to `out` and returns once it has drawn `PS` is unspecified; memory safety, `tape` and the timing guarantee still apply.
+///
+/// Contract: `VG.Spec.RsaPkcs1Enc.encryptRandomContract`. Constant time but for the public key and the tape's zero bytes: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which bytes of `rand` are zero, not on the message or the other bytes of `rand`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `tape` must be valid for reads and writes of 16 bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `msg_len + 11` must be at most `n_len`.
+/// * `rand_len` must be at most `n_len - msg_len + 125`.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * For the result to be encryption's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
+/// * `rand` must hold independent uniform random bytes, fresh for this encryption, extended only as `tape[1]` asks; never reuse them for another encryption.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `tape` and `scratch` must not overlap each other, `n`, `e`, `msg`, `rand`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the 2312 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_rsa_pkcs1_encrypt_random_umaal(out: *mut u8, out_len: usize, tape: *mut [u64; 2], n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+sub sp, sp, #1088
+add r12, sp, #0
+ldr r1, [sp, #1164]
+ldr r8, [sp, #1168]
+ldr r3, [sp, #1144]
+ldr r4, [sp, #1160]
+sub r3, r3, r4
+sub r3, r3, #3
+add r0, r12, #40
+mov r4, #0
+mov r5, #0
+cmp r8, #0
+bne 20f
+b 21f
+20:
+22:
+ldrb r6, [r1, #0]
+add r1, r1, #1
+add r4, r4, #1
+cmp r6, #0
+bne 23f
+b 24f
+23:
+strb r6, [r0, #0]
+add r0, r0, #1
+add r5, r5, #1
+24:
+cmp r5, r3
+beq 25f
+cmp r4, r8
+b 26f
+25:
+cmp r5, r5
+26:
+bne 22b
+21:
+cmp r5, r3
+beq 27f
+add r12, sp, #0
+ldr r0, [sp, #1088]
+ldr lr, [sp, #1144]
+mov r2, #0
+29:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 29b
+cmp r5, #0
+beq 210f
+add r12, sp, #0
+add r0, r12, #40
+mov lr, r5
+212:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 212b
+b 211f
+210:
+211:
+ldr r7, [sp, #1096]
+add r6, r3, #128
+cmp r8, r6
+beq 213f
+add r9, r3, r8
+sub r9, r9, r5
+sub r10, r6, r9
+lsr r10, r10, #31
+sub r10, r10, #1
+sub r11, r9, r6
+and r11, r11, r10
+add r11, r11, r6
+mov r10, #0
+str r10, [r7, #0]
+str r10, [r7, #4]
+str r11, [r7, #8]
+str r10, [r7, #12]
+mov r0, #0
+b 214f
+213:
+mov r9, #0
+str r8, [r7, #0]
+str r9, [r7, #4]
+str r9, [r7, #8]
+str r9, [r7, #12]
+mov r0, #3
+214:
+b 28f
+27:
+ldr r7, [sp, #1096]
+mov r6, #0
+str r4, [r7, #0]
+str r6, [r7, #4]
+str r6, [r7, #8]
+str r6, [r7, #12]
+add r12, sp, #0
+ldr r0, [sp, #1148]
+str r0, [r12, #0]
+ldr r0, [sp, #1152]
+str r0, [r12, #4]
+ldr r0, [sp, #1156]
+str r0, [r12, #8]
+ldr r0, [sp, #1160]
+str r0, [r12, #12]
+add r0, r12, #40
+str r0, [r12, #16]
+str r3, [r12, #20]
+ldr r0, [sp, #1172]
+str r0, [r12, #24]
+ldr r0, [sp, #1176]
+str r0, [r12, #28]
+ldr r0, [sp, #1180]
+str r0, [r12, #32]
+ldr r0, [sp, #1184]
+str r0, [r12, #36]
+ldr r0, [sp, #1088]
+ldr r1, [sp, #1144]
+ldr r2, [sp, #1100]
+ldr r3, [sp, #1144]
+bl {vg_rsa_pkcs1_encrypt_precomputed_umaal}
+mov r4, #2
+sub r4, r4, r0
+add r12, sp, #0
+add r0, r12, #40
+ldr r1, [sp, #1144]
+ldr r2, [sp, #1160]
+sub lr, r1, r2
+sub lr, lr, #3
+mov r2, #0
+215:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 215b
+mov r0, r4
+28:
+add sp, sp, #1088
+ldr r4, [sp, #16]
+ldr r5, [sp, #20]
+ldr r6, [sp, #24]
+ldr r7, [sp, #28]
+ldr r8, [sp, #32]
+ldr r9, [sp, #36]
+ldr r10, [sp, #40]
+ldr r11, [sp, #44]
+ldr lr, [sp, #52]
+ldr r12, [sp], #56
+bx lr",
+        vg_rsa_pkcs1_encrypt_precomputed_umaal = sym super::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_precomputed_umaal,
     )
 }
