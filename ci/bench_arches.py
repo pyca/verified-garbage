@@ -270,7 +270,11 @@ CPU_FEATURES = {
 # of them was split in two. With AES-GCM's groups from copies too, those
 # took about 7.7 minutes of each half (14 runs of about 75 benchmark ids),
 # and the slower runners passed the timeout again, so it is split in three.
-# A targeted run, of fewer, stays one job.
+# A targeted run, of fewer, stays one job. Entries are counted because the
+# planner cannot list benchmarks without building, but one entry can hold
+# many (AES-GCM's held 183): bench_compare.py fails a job whose benchmarks
+# would take longer than its budget, before measuring, and `--groups`
+# narrows such a run.
 BENCHMARKS_PER_JOB = 40
 
 # Changes to this script choose benchmarks but are not measured by any:
