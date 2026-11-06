@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 /-!
 # ECDSA verification over brainpoolP512r1 on PPC64LE: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract` for PPC64LE, by name:
+The facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst` for PPC64LE, by name:
 `vg_ecdsa_brainpoolp512r1_verify(public, digest, sig, scratch)`, with the arguments in
 `r3`–`r6` and the result in `r3` (ELFv2). Only the pointers are public here:
 the proof shows that nothing else affects timing, although the contract

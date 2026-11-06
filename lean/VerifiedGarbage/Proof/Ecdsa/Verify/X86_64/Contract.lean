@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Tables
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # ECDSA verification over P-256 on x86-64: the contract the proof is written against
 
-The facts of `Spec.Ecdsa.P256.inst.verifyContract` for x86-64, under the
+The facts of `Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst` for x86-64, under the
 calling convention with the comb's tables (`Abi.withConsts p256.combConsts`),
 by name: `vg_ecdsa_p256_verify(public = rdi, digest = rsi, sig = rdx,
 scratch = rcx)`, the result in `eax`, and the tables at the address of the
@@ -74,8 +75,8 @@ theorem spec_pre {s : State}
     (f2 : (s.gpr .rdx).toNat + 64 ≤ 2 ^ 64) (f3 : (s.gpr .rcx).toNat + 8192 ≤ 2 ^ 64)
     (ht : TblHeld s [⟨s.gpr .rcx, 8192⟩, ⟨s.gpr .rsp, 8⟩])
     (hal : (s.syms "VG_P256_COMB").toNat % 64 = 0) :
-    (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pre s := by
-  sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts)).pre s := by
+  sig_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P256.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p256_combConsts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
@@ -83,7 +84,7 @@ theorem spec_pre {s : State}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; simp [hr]),
     hdw _ (by simp), hal, by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, r4, f0, f1, f2, f3⟩
 
-theorem sat_spec : (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pre
+theorem sat_spec : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts)).pre
     satState := by
   have hl := p256W_length
   have held : ∀ i < p256W.length, satState.mem.readW (satState.syms "VG_P256_COMB" +
@@ -99,9 +100,9 @@ theorem sat_spec : (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p
     rintro r (rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
 
 theorem implies :
-    verifyX86_64.Implies (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)) where
+    verifyX86_64.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86_64.abi.withConsts p256.combConsts)) where
   pre s h := by
-    sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    sig_pre [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
       Spec.P256.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p256_combConsts,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨hd, hheld, hfit, hdw, hdr, -, ht, hw, h1, h2, h3, -, -, -, r4, -, -, -, f4⟩ := h
@@ -112,11 +113,11 @@ theorem implies :
       · exact hdw _ (by rw [hw]; simp)
       · exact hdr
   post := by
-    sig_implies_post [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
+    sig_implies_post [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
       X86_64.argRegs, p256_combConsts, Abi.withConsts, verifyX86_64, vf]
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    sig_pub [Spec.Ecdsa.P256.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
       Spec.P256.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p256_combConsts,
       Abi.withConsts] at h
     obtain ⟨h0, hs, -, h1, h2, h3, h4⟩ := h

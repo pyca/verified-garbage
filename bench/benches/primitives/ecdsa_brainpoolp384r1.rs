@@ -34,8 +34,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
     use openssl::hash::MessageDigest;
     use openssl::nid::Nid;
-    use verified_garbage::ec::BrainpoolP384r1;
-    use verified_garbage::ecdsa::SigningKey;
+    use verified_garbage::ec::{BrainpoolP384r1, PrivateKey};
     use verified_garbage::hashes::sha384::Sha384;
 
     use crate::{BenchDyn, OPENSSL, VG};
@@ -50,7 +49,7 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("ec_brainpoolp384r1_public_key");
     g.bench(BenchmarkId::new(VG, 97), |b| {
         b.iter(|| {
-            SigningKey::<BrainpoolP384r1>::from_bytes(black_box(&d))
+            PrivateKey::<BrainpoolP384r1>::from_bytes(black_box(&d))
                 .public_key()
                 .unwrap()
         })
@@ -77,7 +76,7 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::BrainpoolP384r1>>(
+fn hash<H: verified_garbage::ec::SignatureHash<verified_garbage::ec::BrainpoolP384r1>>(
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
@@ -92,12 +91,11 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::Brainpoo
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use openssl::sign::{Signer, Verifier};
-    use verified_garbage::ec::BrainpoolP384r1;
-    use verified_garbage::ecdsa::SigningKey;
+    use verified_garbage::ec::{BrainpoolP384r1, PrivateKey};
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
-    let key = SigningKey::<BrainpoolP384r1>::from_bytes(d);
+    let key = PrivateKey::<BrainpoolP384r1>::from_bytes(d);
     let group = EcGroup::from_curve_name(Nid::BRAINPOOL_P384R1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let d_bn = BigNum::from_slice(d).unwrap();

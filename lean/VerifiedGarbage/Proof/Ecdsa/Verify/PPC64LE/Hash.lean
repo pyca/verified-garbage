@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Hash
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
@@ -810,26 +812,26 @@ section
 variable {I}
 
 /-- The verification's precondition under `abi`, from `KPre`. -/
-theorem core_pre {s : State} (h : KPre I s) : (I.verifyContract abi 0).pre s := by
-  sig_pre [Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig, Spec.Ecdsa.scratchWords,
+theorem core_pre {s : State} (h : KPre I s) : (Proof.Ecdsa.verifyContract I abi 0).pre s := by
+  sig_pre [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
     PPC64LE.abi, PPC64LE.argRegs]
   exact ⟨h.rd, h.wr, h.d36, h.d46, h.d56, h.f3, h.f4, h.f5, h.f6⟩
 
-theorem core_post {s s' : State} (h : (I.verifyContract abi 0).post s s') :
+theorem core_post {s s' : State} (h : (Proof.Ecdsa.verifyContract I abi 0).post s s') :
     (s'.gpr .r3).setWidth 32 = vres I s.mem (s.gpr .r3)
       (Spec.Ecdsa.hashToInt I.curve (Spec.Ecdsa.bytesAt s.mem (s.gpr .r4) I.curve.len)) (s.gpr .r5) := by
-  sig_post [Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig, Spec.Ecdsa.scratchWords,
+  sig_post [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
     PPC64LE.abi, PPC64LE.argRegs] at h
   exact h
 
-theorem core_pub {s₁ s₂ : State} (h : (coreR I).pub s₁ s₂) : (I.verifyContract abi 0).pub s₁ s₂ := by
-  sig_pub [Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig, Spec.Ecdsa.scratchWords,
+theorem core_pub {s₁ s₂ : State} (h : (coreR I).pub s₁ s₂) : (Proof.Ecdsa.verifyContract I abi 0).pub s₁ s₂ := by
+  sig_pub [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
     PPC64LE.abi, PPC64LE.argRegs]
   obtain ⟨psp, p3, p4, p5, p6, pl⟩ := h
   exact ⟨psp, pl, p3, p4, p5, p6⟩
 
 /-- The verification, run as `coreR` describes it, from its proof under `abi`. -/
-theorem coreR_of {core : Prog isa} (h : Verified target core (I.verifyContract abi 0)) :
+theorem coreR_of {core : Prog isa} (h : Verified target core (Proof.Ecdsa.verifyContract I abi 0)) :
     (∀ s, (coreR I).pre s → ∃ t s', Exec isa core s t s' ∧ abiPreserved s s' ∧ (coreR I).post s s') ∧
       ConstantTime isa (coreR I).pre (coreR I).pub core := by
   obtain ⟨hc, hct, -⟩ := h
@@ -876,7 +878,7 @@ theorem inner_pub {s₁ s₂ : State} (h : (innerA (I := I)).pub s₁ s₂) : (h
 /-- `hashed` under `abi`. -/
 theorem hashed_verified {wide : Bool} {core : Prog isa}
     (hL : 8 * I.curve.len = Spec.Ecdsa.nBits I.curve + if wide then 7 else 0) (h66 : I.curve.len ≤ 66)
-    (hcore : Verified target core (I.verifyContract abi 0)) {hc : Taint.Hint taint.T}
+    (hcore : Verified target core (Proof.Ecdsa.verifyContract I abi 0)) {hc : Taint.Hint taint.T}
     (htc : (taint.check (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8]) (convert I.curve.len wide) hc).isSome = true)
     (hsat : ∃ s, (innerA (I := I)).pre s) :
     Verified target (hashed I.curve.len wide core) (innerA (I := I)) := by
@@ -986,7 +988,7 @@ theorem hashSat (h66 : I.curve.len ≤ 66) : (I.verifyHashContract abi 112).pre 
 /-- `vg_ecdsa_<curve>_verify`, from the verification of the `len` bytes. -/
 theorem verifyHash_verified {wide : Bool} {core : Prog isa}
     (hL : 8 * I.curve.len = Spec.Ecdsa.nBits I.curve + if wide then 7 else 0) (h66 : I.curve.len ≤ 66)
-    (hcore : Verified target core (I.verifyContract abi 0)) {hc : Taint.Hint taint.T}
+    (hcore : Verified target core (Proof.Ecdsa.verifyContract I abi 0)) {hc : Taint.Hint taint.T}
     (htc : (taint.check (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8]) (convert I.curve.len wide) hc).isSome = true) :
     Verified target (verifyHash I.curve.len wide core) (I.verifyHashContract abi 112) := by
   have hk : (I.verifyHashSig.words abi.ptrBits).length < 8 := by rw [hashSig_words]; decide

@@ -21,8 +21,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcKey, EcPoint};
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
-    use verified_garbage::ec::{P192, PublicKey};
-    use verified_garbage::ecdh::PrivateKey;
+    use verified_garbage::ec::{P192, PrivateKey, PublicKey};
 
     use crate::{BenchDyn, OPENSSL, VG};
 

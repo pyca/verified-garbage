@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP384r1.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP384r1.Verified
@@ -112,20 +114,20 @@ theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifyBra
   · exact h0
 
 /-- The contract with 8 bytes of stack, for the calls' return address. -/
-theorem implies8 : verifyX86_64.Implies (Spec.Ecdsa.BrainpoolP384r1.inst.verifyContract X86_64.abi 8) :=
+theorem implies8 : verifyX86_64.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP384r1.inst X86_64.abi 8) :=
   implies.stack8_abi (by
-    sig_implies_sat [Spec.Ecdsa.BrainpoolP384r1.inst, Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP384r1.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
+    sig_implies_sat [Spec.Ecdsa.BrainpoolP384r1.inst, Proof.Ecdsa.verifyContract,
+      Proof.Ecdsa.verifySig, Spec.BrainpoolP384r1.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
       X86_64.argRegs, satState] [satState] using satState)
 
 theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Verified X86_64.target verifyBrainpoolP384r1 (Spec.Ecdsa.BrainpoolP384r1.inst.verifyContract X86_64.abi 8) :=
+    Verified X86_64.target verifyBrainpoolP384r1 (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP384r1.inst X86_64.abi 8) :=
   Verified.of_inline_ct verify_inlineOk (verify_x86 hL hI) verify_ct implies8
     (fun _ h => Sig.clear_of_pre h) fun _ _ _ _ _ hp => hp
 
 /-- `satState` satisfies the precondition with 8 bytes of stack. -/
-theorem verify_pre8 : (Spec.Ecdsa.BrainpoolP384r1.inst.verifyContract X86_64.abi 8).pre satState := by
-  sig_pre [Spec.Ecdsa.BrainpoolP384r1.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+theorem verify_pre8 : (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP384r1.inst X86_64.abi 8).pre satState := by
+  sig_pre [Spec.Ecdsa.BrainpoolP384r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.BrainpoolP384r1.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, satState]
   repeat' (first | exact Region.disjoint_of_sep (by decide) | decide | rfl | constructor)
 

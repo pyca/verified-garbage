@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
@@ -179,7 +181,7 @@ theorem allocatedVerify_verified (hL : Law Spec.P256.curve) (hO : PrimeOrder Spe
     (hN : InvToM p256.C.n)
     (hT : CombOkW Spec.P256.curve 9 1 Impl.P256.p256G9 Impl.P256.p256G9Start) :
     Verified AArch64.target P256Allocated.verify
-      (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts P256Joint.p256v.combConsts)) := by
+      (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts P256Joint.p256v.combConsts)) := by
   refine ⟨fun s hs => ?_,?_,impliesG.sat⟩
   · obtain ⟨tr,t,he,ha,hp⟩ := allocatedVerify_a64_of_wp
       (fun _ hp => allocatedVerify_ok hL hO hI hN hT hp)

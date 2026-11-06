@@ -142,23 +142,18 @@ theorem Base.keep {E : Env} (v : E.Valid) {s t : State} (B : Base E s) {os : Lis
     (F : E.Chg os s.mem t.mem) (A : E.Apart os) (edi : t.gpr .edi = s.gpr .edi) (sp : t.gpr .esp = s.gpr .esp)
     (rd : t.rd = s.rd) (wr : t.wr = s.wr) (sy : t.syms = s.syms) : Base E t := by
   have hos : ∀ o ∈ os, o.1 + o.2 ≤ E.size := fun o ho => (A o ho).1
-  have word : ∀ d, d = fOut ∨ (fHs ≤ d ∧ d + 4 ≤ fWitLen + 4) →
+  have word : ∀ d, d = fOut ∨ (fUsedP ≤ d ∧ d + 4 ≤ fWitLen + 4) →
       t.mem.readW (off E.base d) 32 = s.mem.readW (off E.base d) 32 :=
-    fun d h => Env.Chg.word v F (by have := v.room; simp only [fOut, fHs, fWitLen, hdr] at h; omega)
+    fun d h => Env.Chg.word v F (by have := v.room; simp only [fOut, fUsedP, fWitLen, hdr] at h; omega)
       fun o ho => ⟨(A o ho).1, by
         have := (A o ho).2
-        simp only [fOut, fHs, fWitLen, hdr] at h this ⊢
+        simp only [fOut, fUsedP, fWitLen, hdr] at h this ⊢
         omega⟩
-  have tapeEq : ∀ R ∈ [E.seedsRegion, E.hsRegion, E.witRegion],
-      Spec.Rsa.bytesAt t.mem R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len := fun R hR =>
-    Env.Chg.bytesAt F (v.tapesFar R hR).1 (v.tapesFar R hR).2.2 hos (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
-      have := v.seedsFit; have := v.hsFit; have := v.witFit
-      rcases hR with rfl | rfl | rfl <;> simp only [Env.seedsRegion, Env.hsRegion, Env.witRegion] <;> omega)
-  refine ⟨Scr.of_eq B.scr edi sp wr, sp.trans B.sp, rd ▸ B.tapes, rd ▸ B.table, wr ▸ B.out, sy ▸ B.syms, ?_,
-    (tapeEq E.seedsRegion (by simp)).trans B.seeds, (tapeEq E.hsRegion (by simp)).trans B.hs,
-    (tapeEq E.witRegion (by simp)).trans B.wit, (word fOut (.inl rfl)).trans B.outW,
-    (word fHs (.inr (by decide))).trans B.hsW, (word fHsLen (.inr (by decide))).trans B.hsLenW,
+  have witEq : Spec.Rsa.bytesAt t.mem E.wit E.witLen = Spec.Rsa.bytesAt s.mem E.wit E.witLen :=
+    Env.Chg.bytesAt (R := E.witRegion) F v.witFar.1 v.witFar.2.2 hos (by have := v.witFit; simp only [Env.witRegion]; omega)
+  refine ⟨Scr.of_eq B.scr edi sp wr, sp.trans B.sp, rd ▸ B.tapes, rd ▸ B.table, wr ▸ B.out, wr ▸ B.usedW,
+    wr ▸ B.stW, sy ▸ B.syms, ?_, witEq.trans B.wit, (word fOut (.inl rfl)).trans B.outW,
+    (word fUsedP (.inr (by decide))).trans B.usedPW, (word fStP (.inr (by decide))).trans B.stPW,
     (word fWit (.inr (by decide))).trans B.witW, (word fWitLen (.inr (by decide))).trans B.witLenW⟩
   intro c hc i hi
   have h := B.held c hc i hi
@@ -178,9 +173,9 @@ theorem Base.regs {E : Env} {s t : State} (B : Base E s) (hm : t.mem = s.mem) (e
     (sp : t.gpr .esp = s.gpr .esp) (rd : t.rd = s.rd) (wr : t.wr = s.wr) (sy : t.syms = s.syms) : Base E t := by
   have := B.scr.nowrap
   refine ⟨Scr.of_eq B.scr edi sp wr, by rw [sp, B.sp], by rw [rd]; exact B.tapes, by rw [rd]; exact B.table,
-    by rw [wr]; exact B.out, by rw [sy]; exact B.syms, by rw [hm, sy]; exact B.held, by rw [hm]; exact B.seeds,
-    by rw [hm]; exact B.hs, by rw [hm]; exact B.wit, by rw [hm]; exact B.outW, by rw [hm]; exact B.hsW,
-    by rw [hm]; exact B.hsLenW, by rw [hm]; exact B.witW, by rw [hm]; exact B.witLenW⟩
+    by rw [wr]; exact B.out, by rw [wr]; exact B.usedW, by rw [wr]; exact B.stW, by rw [sy]; exact B.syms,
+    by rw [hm, sy]; exact B.held, by rw [hm]; exact B.wit, by rw [hm]; exact B.outW, by rw [hm]; exact B.usedPW,
+    by rw [hm]; exact B.stPW, by rw [hm]; exact B.witW, by rw [hm]; exact B.witLenW⟩
 
 /-- The words of `scratch` apart from every range of a change. -/
 theorem Env.Chg.val32 {E : Env} (v : E.Valid) {os : List (Nat × Nat)} {m m' : Mem} (h : E.Chg os m m')
@@ -198,5 +193,37 @@ theorem Env.Chg.widen {E : Env} {os os' : List (Nat × Nat)} {m m' : Mem} (h : E
     rcases hr with ⟨o, ho, rfl⟩ | rfl
     · obtain ⟨o', ho', h1, h2⟩ := hw o ho; exact Env.in_range ho' h1 h2
     · exact Env.in_stack (fun _ h => h)
+
+/-! ## A seed's and a window's environments
+
+The same arguments, with the seeds or the `h` candidates another part of
+`rand`: nothing `Base` or `Env.Chg` reads changes. -/
+
+theorem Env.Valid.window {E : Env} (v : E.Valid) {u : Nat} (hu : u ≤ E.witLen) : (E.window u).Valid := by
+  have := v.witFit
+  exact ⟨v.lengths, v.room, v.scratchFit, v.outFit, v.witFit, v.seedsIn, by simp only [Env.window]; omega, v.low,
+    v.stackScratch, v.outScratch, v.witFar, v.outStack, v.scratchStack, v.tableFit, v.outPtr, v.witPtr, v.witLen32,
+    v.tableFar, v.tableAligned, v.usedFit, v.stFit, v.usedFar, v.stFar, v.k0le⟩
+
+theorem Env.Valid.atSeed {E : Env} (v : E.Valid) {c : Nat} (hc : c + E.qLen ≤ E.witLen) : (E.atSeed c).Valid :=
+  ⟨v.lengths, v.room, v.scratchFit, v.outFit, v.witFit, hc, v.hsIn, v.low, v.stackScratch, v.outScratch, v.witFar,
+    v.outStack, v.scratchStack, v.tableFit, v.outPtr, v.witPtr, v.witLen32, v.tableFar, v.tableAligned, v.usedFit,
+    v.stFit, v.usedFar, v.stFar, v.k0le⟩
+
+theorem Base.toWindow {E : Env} {s : State} (B : Base E s) (u : Nat) : Base (E.window u) s :=
+  ⟨B.scr, B.sp, B.tapes, B.table, B.out, B.usedW, B.stW, B.syms, B.held, B.wit, B.outW, B.usedPW, B.stPW, B.witW,
+    B.witLenW⟩
+
+theorem Base.ofWindow {E : Env} {s : State} {u : Nat} (B : Base (E.window u) s) : Base E s :=
+  ⟨B.scr, B.sp, B.tapes, B.table, B.out, B.usedW, B.stW, B.syms, B.held, B.wit, B.outW, B.usedPW, B.stPW, B.witW,
+    B.witLenW⟩
+
+theorem Base.toSeed {E : Env} {s : State} (B : Base E s) (c : Nat) : Base (E.atSeed c) s :=
+  ⟨B.scr, B.sp, B.tapes, B.table, B.out, B.usedW, B.stW, B.syms, B.held, B.wit, B.outW, B.usedPW, B.stPW, B.witW,
+    B.witLenW⟩
+
+theorem Base.ofSeed {E : Env} {s : State} {c : Nat} (B : Base (E.atSeed c) s) : Base E s :=
+  ⟨B.scr, B.sp, B.tapes, B.table, B.out, B.usedW, B.stW, B.syms, B.held, B.wit, B.outW, B.usedPW, B.stPW, B.witW,
+    B.witLenW⟩
 
 end VG.Proof.Dsa.X86.Generation

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointAbi
@@ -46,9 +48,9 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.P521.curve) (hO : Weierstrass.Prim
 
 /-- The contract's public inputs: the pointers, the table, and the key, digest and signature. -/
 theorem jacPublic_of_spec {s₁ s₂ : State}
-    (pub : (Spec.Ecdsa.P521.inst.verifyContract (AArch64.abi.withConsts p521.combConsts)).pub s₁ s₂) :
+    (pub : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (AArch64.abi.withConsts p521.combConsts)).pub s₁ s₂) :
     JacPublic p521 s₁ s₂ := by
-  sig_pub [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+  sig_pub [Spec.Ecdsa.P521.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P521.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p521_combConsts,
     Abi.withConsts] at pub
   obtain ⟨hsp, hsy, inputs, h0, h1, h2, h3⟩ := pub

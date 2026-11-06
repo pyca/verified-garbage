@@ -17,6 +17,7 @@
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 )))]
 use alloc::vec;
@@ -26,23 +27,21 @@ use super::{Error, Secret};
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 )))]
 use crate::arch::dsa::vg_dsa_generate_parameters;
-#[cfg(target_arch = "x86")]
-use crate::arch::dsa::{
-    vg_dsa_generate_parameters_sha1_shani, vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-    vg_dsa_generate_parameters_sha256_shani,
-};
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 )))]
 use crate::cpu::detected;
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 )))]
 use verified_garbage_cpu::Features;
@@ -104,12 +103,14 @@ impl Parameters {
         #[cfg(any(
             target_arch = "x86_64",
             target_arch = "powerpc64",
+            target_arch = "x86",
             target_arch = "aarch64"
         ))]
         let packed = search::generate(p_len, q_len, random)?;
         #[cfg(not(any(
             target_arch = "x86_64",
             target_arch = "powerpc64",
+            target_arch = "x86",
             target_arch = "aarch64"
         )))]
         let packed = tapes(p_len, q_len, random)?;
@@ -139,6 +140,7 @@ impl Parameters {
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 )))]
 type Generate = unsafe extern "C" fn(
@@ -161,6 +163,7 @@ type Generate = unsafe extern "C" fn(
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 )))]
 fn tapes(
@@ -205,29 +208,6 @@ fn tapes(
 
 #[cfg(test)]
 mod tests;
-
-#[cfg(target_arch = "x86")]
-fn select(features: Features) -> Generate {
-    use crate::hashes::{sha1::Sha1Backend, sha256::Sha256Backend};
-    select_backends(
-        Sha1Backend::select(features),
-        Sha256Backend::select(features),
-    )
-}
-
-#[cfg(target_arch = "x86")]
-fn select_backends(
-    sha1: crate::hashes::sha1::Sha1Backend,
-    sha256: crate::hashes::sha256::Sha256Backend,
-) -> Generate {
-    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
-    match (sha1, sha256) {
-        (H1::Scalar, H256::Scalar) => vg_dsa_generate_parameters,
-        (H1::Scalar, H256::ShaNi) => vg_dsa_generate_parameters_sha256_shani,
-        (H1::ShaNi, H256::Scalar) => vg_dsa_generate_parameters_sha1_shani,
-        (H1::ShaNi, H256::ShaNi) => vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-    }
-}
 
 /// The ARMv7 implementations: `vg_dsa_generate_parameters_umaal` where the
 /// operating system runs on A-profile cores alone, on CPUs with the features

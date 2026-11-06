@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -20,9 +21,9 @@ open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Ecdsa.AArch64
 
 theorem jacPublic_of_spec {s₁ s₂ : State}
-    (pub : (Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts p256.combConsts)).pub s₁ s₂) :
+    (pub : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (AArch64.abi.withConsts p256.combConsts)).pub s₁ s₂) :
     JacPublic p256 s₁ s₂ := by
-  sig_pub [Spec.Ecdsa.P256.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
+  sig_pub [Spec.Ecdsa.P256.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.P256.curve,Spec.Ecdsa.scratchWords,AArch64.abi,AArch64.argRegs,p256_combConsts,
     Abi.withConsts] at pub
   obtain ⟨hsp,hsy,inputs,h0,h1,h2,h3⟩ := pub

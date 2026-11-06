@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
@@ -185,15 +187,15 @@ theorem verify_abi_of_wp {code : Prog isa} {s : State} (hs : verifyX86_64.pre s)
 /-- The shared contract, but with `verifyX86_64`'s postcondition: what the
 proofs of the inlined code give. -/
 def verifyK₀ : Contract isa :=
-  { pre := (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)).pre
+  { pre := (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts)).pre
     post := verifyX86_64.post
-    pub := (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)).pub }
+    pub := (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts)).pub }
 
 theorem sat_spec8 :
-    (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts) 8).pre satState := by
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts) 8).pre satState := by
   have held : ∀ i < p521W.length, satState.mem.readW (satState.syms "VG_P521_COMB" +
       BitVec.ofNat 64 (8 * i)) 64 = p521W.getD i 0 := satMem_held
-  sig_pre [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+  sig_pre [Spec.Ecdsa.P521.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P521.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p521_combConsts,
     Abi.withConsts, p521_constRegions, Abi.constsHeld, stackBelow]
   sig_and_intros
@@ -201,7 +203,7 @@ theorem sat_spec8 :
 
 /-- The contract with 8 bytes of stack, for the calls' return address. -/
 theorem implies8 :
-    verifyK₀.Implies (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts) 8) :=
+    verifyK₀.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts) 8) :=
   ⟨fun _ hs => Sig.pre_stack0 hs, fun s s' hs hp => implies.post s s' (Sig.pre_stack0 hs) hp,
     fun _ _ _ _ hp => hp, ⟨satState, sat_spec8⟩⟩
 
@@ -222,13 +224,13 @@ theorem jointVerify_x86_adx (s : State) (hs : verifyX86_64.pre s) :
     (by rw [Code.allInstrs_inline]; exact jointVerifyP521Adx_rspMxcsr) (Code.noCalls_inline jointVerifyP521Adx_inlineOk)
 
 theorem jointVerify_verified : Verified X86_64.target jointVerifyP521
-    (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts) 8) :=
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts) 8) :=
   Verified.of_inline (k₀ := verifyK₀) jointVerifyP521_inlineOk (fun s hs => jointVerify_x86 hL hT hI s (implies.pre _ hs))
     (jointVerify_ct hL hT hI) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
     fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1
 
 theorem jointVerify_verified_adx : Verified X86_64.target jointVerifyP521Adx
-    (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts) 8) :=
+    (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86_64.abi.withConsts p521.combConsts) 8) :=
   Verified.of_inline (k₀ := verifyK₀) jointVerifyP521Adx_inlineOk (fun s hs => jointVerify_x86_adx hL hT hI s (implies.pre _ hs))
     (jointVerify_adx_ct hL hT hI) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
     fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1

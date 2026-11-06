@@ -144,11 +144,11 @@ validate!(
 #[cfg(test)]
 mod tests {
     use super::{Backend, Features};
+    use crate::ec::PrivateKey;
     use crate::ec::{
         BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, P192, P224, P256, P384, P521, PublicKey,
         Secp256k1,
     };
-    use crate::ecdh::PrivateKey;
     use verified_garbage_cpu::feature;
 
     #[test]

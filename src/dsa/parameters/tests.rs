@@ -2,6 +2,7 @@ use super::{Error, Parameters, Vec};
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 )))]
 use super::{Features, Generate, detected, select, vec};
@@ -63,6 +64,7 @@ fn prime_vectors() -> Vec<Vector> {
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 )))]
 fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
@@ -87,6 +89,7 @@ fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 )))]
 const KNOWN_ANSWER_FILLS: usize = 3;
@@ -98,6 +101,7 @@ const KNOWN_ANSWER_FILLS: usize = 3;
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 ))]
 fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
@@ -110,6 +114,7 @@ fn fill_known_answer(v: &Vector, tape: usize, buf: &mut [u8]) {
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 ))]
 const KNOWN_ANSWER_FILLS: usize = 1;
@@ -127,12 +132,14 @@ fn cavp_generated_parameters() {
         #[cfg(not(any(
             target_arch = "x86_64",
             target_arch = "powerpc64",
+            target_arch = "x86",
             target_arch = "aarch64"
         )))]
         assert_eq!(tape, KNOWN_ANSWER_FILLS);
         #[cfg(any(
             target_arch = "x86_64",
             target_arch = "powerpc64",
+            target_arch = "x86",
             target_arch = "aarch64"
         ))]
         assert!(tape >= KNOWN_ANSWER_FILLS);
@@ -149,12 +156,14 @@ fn cavp_generated_parameters() {
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 )))]
 const FILLS: usize = 3;
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 ))]
 const FILLS: usize = 2;
@@ -197,6 +206,7 @@ fn parameter_generation_errors() {
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 )))]
 fn empty_tapes_zero_output() {
@@ -239,68 +249,15 @@ fn generated_parameters_with_os_randomness() {
     );
 }
 
-#[test]
-#[cfg(target_arch = "x86")]
-fn backend_combinations() {
-    use super::select_backends;
-    use crate::arch::dsa::{
-        VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_FEATURES,
-        VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_FEATURES, vg_dsa_generate_parameters,
-        vg_dsa_generate_parameters_sha1_shani, vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-        vg_dsa_generate_parameters_sha256_shani,
-    };
-    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
-    // The mixed SHA pairs cannot be selected by a real CPU today because
-    // the hash instructions share feature requirements. Check the complete
-    // dispatch table, including those pairs, against emitted feature sets.
-    let cases: &[(H1, H256, Generate, Features)] = &[
-        (
-            H1::Scalar,
-            H256::Scalar,
-            vg_dsa_generate_parameters,
-            Features(0),
-        ),
-        (
-            H1::Scalar,
-            H256::ShaNi,
-            vg_dsa_generate_parameters_sha256_shani,
-            VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::Scalar,
-            vg_dsa_generate_parameters_sha1_shani,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_FEATURES,
-        ),
-        (
-            H1::ShaNi,
-            H256::ShaNi,
-            vg_dsa_generate_parameters_sha1_shani_sha256_shani,
-            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_FEATURES,
-        ),
-    ];
-    for &(h1, h256, expected, required) in cases {
-        let selected = select_backends(h1, h256);
-        assert!(core::ptr::fn_addr_eq(selected, expected));
-        if detected().contains(required) {
-            check_empty_tapes(selected, 128);
-        }
-    }
-}
-
 /// An implementation given empty tapes zeroes `out` and returns 0.
-#[cfg(any(
-    target_arch = "x86",
-    all(
-        target_arch = "arm",
-        any(
-            target_os = "linux",
-            target_os = "android",
-            target_os = "freebsd",
-            target_os = "netbsd",
-            target_os = "openbsd"
-        )
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
     )
 ))]
 fn check_empty_tapes(selected: Generate, p_len: usize) {
@@ -336,6 +293,7 @@ fn check_empty_tapes(selected: Generate, p_len: usize) {
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "powerpc64",
+    target_arch = "x86",
     target_arch = "aarch64"
 )))]
 fn exhausted_tapes_after_prime_search_zero_output() {

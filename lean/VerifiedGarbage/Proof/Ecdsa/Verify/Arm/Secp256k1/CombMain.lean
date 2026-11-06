@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
@@ -26,20 +27,20 @@ open VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.Secp256k1
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm VG.Proof.Weierstrass.Arm.TComb
 
 abbrev combVerifySpec : Contract isa :=
-  Spec.Ecdsa.Secp256k1.inst.verifyContract (abi.withConsts secp256k1CombConsts)
+  Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (abi.withConsts secp256k1CombConsts)
 
 def combVerifyPre (um : Bool) (s : State) : Prop :=
   VPre (secp256k1With um) s (constRegs secp256k1CombConsts s) ∧ ConstsOk secp256k1CombConsts 0 s
 
 theorem verify_spec_pre {um : Bool} {s : State}
-    (h : (Spec.Ecdsa.Secp256k1.inst.verifyContract abi).pre s) : VPre (secp256k1With um) s := by
-  sig_pre [Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
+    (h : (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst abi).pre s) : VPre (secp256k1With um) s := by
+  sig_pre [Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h
   obtain ⟨_sp,rd,wr,ps,ds,ss,fp,fd,fs,fc⟩ := h
   exact ⟨rd,wr,ps,ds,ss,fp,fd,fs,fc⟩
 
 theorem combVerify_pre {um : Bool} {s : State} (h : combVerifySpec.pre s) : combVerifyPre um s := by
-  have hp : (Spec.Ecdsa.Secp256k1.inst.verifyContract abi).pre (stripConsts secp256k1CombConsts s) ∧
+  have hp : (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst abi).pre (stripConsts secp256k1CombConsts s) ∧
       ConstsOk secp256k1CombConsts 0 s := pre_consts.mp h
   have p := verify_spec_pre (um := um) hp.1
   refine ⟨⟨?_,p.wr,p.pk_sc,p.dg_sc,p.sig_sc,p.pk_fit,p.dg_fit,p.sig_fit,p.sc_fit⟩,hp.2⟩

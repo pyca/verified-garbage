@@ -83,9 +83,9 @@ theorem digits_value (m : Mem) (p : Addr) (T q : Nat) (v : Nat → Nat) (c : Nat
     rw [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul, Nat.mul_comm 8, Nat.mul_assoc, Nat.mul_comm q 8]
 
 /-- Seed `k` is `qLen` bytes. -/
-theorem chunk_length {E : Env} {s : State} (B : Base E s) {k : Nat} (hk : (k + 1) * E.qLen ≤ E.seedsLen) :
+theorem chunk_length {E : Env} (v : E.Valid) {s : State} (B : Base E s) {k : Nat} (hk : (k + 1) * E.qLen ≤ E.seedsLen) :
     (chunk E k).length = E.qLen := by
-  have hl : E.seedT.length = E.seedsLen := by rw [← B.seeds, VG.Proof.Bignum.bytesAt_length]
+  have hl : E.seedT.length = E.seedsLen := by rw [← B.seeds v, VG.Proof.Bignum.bytesAt_length]
   rw [Nat.succ_mul] at hk
   simp only [chunk, List.length_take, List.length_drop, hl]
   omega
@@ -163,7 +163,7 @@ theorem pX_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.q
       simp only [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map,
         List.getElem?_range hi, Option.map_some, Option.getD_some]
     -- The value of the hashes.
-    have cl := chunk_length B hk
+    have cl := chunk_length v B hk
     have digits := digits_value t.mem E.base (sX + g.pLen) g.qLen (pDigest (8 * g.qLen) (chunk E k) offset)
       g.count hcq fun j hj => by
         rw [show sX + g.pLen - (j + 1) * g.qLen = hashAt g j from rfl, Ht j (by omega_arith), pDig, pDigest, cl, hq]

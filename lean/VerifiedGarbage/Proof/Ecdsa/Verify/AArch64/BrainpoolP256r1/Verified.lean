@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
@@ -57,7 +59,7 @@ theorem verify_ct : ConstantTime isa verifyAArch64.pre verifyAArch64.pub VG.Impl
       · exact h3⟩) (by taint_decide)
 
 theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.AArch64.InvSounds) :
-    Verified AArch64.target VG.Impl.Ecdsa.Verify.AArch64.BrainpoolP256r1.verify (Spec.Ecdsa.BrainpoolP256r1.inst.verifyContract AArch64.abi) :=
+    Verified AArch64.target VG.Impl.Ecdsa.Verify.AArch64.BrainpoolP256r1.verify (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst AArch64.abi) :=
   Verified.of_correct (verify_a64 hL hI) verify_ct implies
 
 end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1

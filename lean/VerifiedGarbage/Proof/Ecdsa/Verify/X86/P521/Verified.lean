@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Hash
 public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
@@ -186,19 +188,19 @@ def satState : State where
   rd := [⟨0x1000, 133⟩, ⟨0x2000, 66⟩, ⟨0x3000, 132⟩]
   wr := [⟨0x8000, 8192⟩, ⟨0x20004, 16⟩]
 
-theorem verifyWide_implies : verifyWide.Implies (Spec.Ecdsa.P521.inst.verifyContract X86.abi 28) := by
+theorem verifyWide_implies : verifyWide.Implies (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst X86.abi 28) := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x2000 := by decide
   have a2 : arg satState 2 = 0x3000 := by decide
   have a3 : arg satState 3 = 0x8000 := by decide
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
-  sig_implies [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+  sig_implies [Spec.Ecdsa.P521.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.P521.curve, Spec.Ecdsa.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow, verifyWide,
     verifyX86, vf] [a0, a1, a2, a3, e, esp] using satState
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P521.curve) :
-    Verified X86.target verifyP521 (Spec.Ecdsa.P521.inst.verifyContract X86.abi 28) := by
+    Verified X86.target verifyP521 (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst X86.abi 28) := by
   have hsat := verifyWide_implies.sat_left
   have satLocal : ∃ s, verifyX86.pre s := hsat.elim fun s h => ⟨_, verifyWide_pre s h⟩
   have verifiedLocal : Verified X86.target verifyP521 verifyX86 :=
