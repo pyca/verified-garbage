@@ -2969,6 +2969,148 @@ bx lr",
     )
 }
 
+/// Computes an X448 shared secret (RFC 7748 §6.2): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`, as `vg_x448` does, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise.
+///
+/// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 56 bytes.
+/// * `scalar` must be valid for reads of 56 bytes.
+/// * `point` must be valid for reads of 56 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{lr}}
+push {{r0}}
+bl {vg_x448}
+ldr r1, [sp], #4
+movw r3, #0
+ldrb r2, [r1, #0]
+orr r3, r3, r2
+ldrb r2, [r1, #1]
+orr r3, r3, r2
+ldrb r2, [r1, #2]
+orr r3, r3, r2
+ldrb r2, [r1, #3]
+orr r3, r3, r2
+ldrb r2, [r1, #4]
+orr r3, r3, r2
+ldrb r2, [r1, #5]
+orr r3, r3, r2
+ldrb r2, [r1, #6]
+orr r3, r3, r2
+ldrb r2, [r1, #7]
+orr r3, r3, r2
+ldrb r2, [r1, #8]
+orr r3, r3, r2
+ldrb r2, [r1, #9]
+orr r3, r3, r2
+ldrb r2, [r1, #10]
+orr r3, r3, r2
+ldrb r2, [r1, #11]
+orr r3, r3, r2
+ldrb r2, [r1, #12]
+orr r3, r3, r2
+ldrb r2, [r1, #13]
+orr r3, r3, r2
+ldrb r2, [r1, #14]
+orr r3, r3, r2
+ldrb r2, [r1, #15]
+orr r3, r3, r2
+ldrb r2, [r1, #16]
+orr r3, r3, r2
+ldrb r2, [r1, #17]
+orr r3, r3, r2
+ldrb r2, [r1, #18]
+orr r3, r3, r2
+ldrb r2, [r1, #19]
+orr r3, r3, r2
+ldrb r2, [r1, #20]
+orr r3, r3, r2
+ldrb r2, [r1, #21]
+orr r3, r3, r2
+ldrb r2, [r1, #22]
+orr r3, r3, r2
+ldrb r2, [r1, #23]
+orr r3, r3, r2
+ldrb r2, [r1, #24]
+orr r3, r3, r2
+ldrb r2, [r1, #25]
+orr r3, r3, r2
+ldrb r2, [r1, #26]
+orr r3, r3, r2
+ldrb r2, [r1, #27]
+orr r3, r3, r2
+ldrb r2, [r1, #28]
+orr r3, r3, r2
+ldrb r2, [r1, #29]
+orr r3, r3, r2
+ldrb r2, [r1, #30]
+orr r3, r3, r2
+ldrb r2, [r1, #31]
+orr r3, r3, r2
+ldrb r2, [r1, #32]
+orr r3, r3, r2
+ldrb r2, [r1, #33]
+orr r3, r3, r2
+ldrb r2, [r1, #34]
+orr r3, r3, r2
+ldrb r2, [r1, #35]
+orr r3, r3, r2
+ldrb r2, [r1, #36]
+orr r3, r3, r2
+ldrb r2, [r1, #37]
+orr r3, r3, r2
+ldrb r2, [r1, #38]
+orr r3, r3, r2
+ldrb r2, [r1, #39]
+orr r3, r3, r2
+ldrb r2, [r1, #40]
+orr r3, r3, r2
+ldrb r2, [r1, #41]
+orr r3, r3, r2
+ldrb r2, [r1, #42]
+orr r3, r3, r2
+ldrb r2, [r1, #43]
+orr r3, r3, r2
+ldrb r2, [r1, #44]
+orr r3, r3, r2
+ldrb r2, [r1, #45]
+orr r3, r3, r2
+ldrb r2, [r1, #46]
+orr r3, r3, r2
+ldrb r2, [r1, #47]
+orr r3, r3, r2
+ldrb r2, [r1, #48]
+orr r3, r3, r2
+ldrb r2, [r1, #49]
+orr r3, r3, r2
+ldrb r2, [r1, #50]
+orr r3, r3, r2
+ldrb r2, [r1, #51]
+orr r3, r3, r2
+ldrb r2, [r1, #52]
+orr r3, r3, r2
+ldrb r2, [r1, #53]
+orr r3, r3, r2
+ldrb r2, [r1, #54]
+orr r3, r3, r2
+ldrb r2, [r1, #55]
+orr r3, r3, r2
+sub r3, r3, #1
+lsr r0, r3, #31
+eor r0, r0, #1
+ldr lr, [sp], #4
+bx lr",
+        vg_x448 = sym super::x448::vg_x448,
+    )
+}
+
 /// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
 ///
 /// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.

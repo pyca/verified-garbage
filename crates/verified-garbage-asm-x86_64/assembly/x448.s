@@ -4898,6 +4898,130 @@ vg_x448_adx:
 	ret
 	.p2align 6
 
+vg_x448_exchange_adx:
+	push rdi
+	call {vg_x448_adx}
+	pop rdx
+	mov rcx, 0
+	movzx eax, BYTE PTR [rdx]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+1]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+2]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+3]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+4]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+5]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+6]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+7]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+8]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+9]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+10]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+11]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+12]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+13]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+14]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+15]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+16]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+17]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+18]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+19]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+20]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+21]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+22]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+23]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+24]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+25]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+26]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+27]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+28]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+29]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+30]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+31]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+32]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+33]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+34]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+35]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+36]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+37]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+38]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+39]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+40]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+41]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+42]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+43]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+44]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+45]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+46]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+47]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+48]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+49]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+50]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+51]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+52]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+53]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+54]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+55]
+	or rcx, rax
+	sub rcx, 1
+	shr rcx, 63
+	xor rcx, 1
+	mov rax, rcx
+	ret
+	.p2align 6
+
 vg_x448_base_adx:
 	mov rcx, rdx
 	mov QWORD PTR [rcx], rbx
@@ -15884,6 +16008,130 @@ vg_x448:
 	mov r13, QWORD PTR [rdi+24]
 	mov r14, QWORD PTR [rdi+32]
 	mov r15, QWORD PTR [rdi+40]
+	ret
+	.p2align 6
+
+vg_x448_exchange:
+	push rdi
+	call {vg_x448}
+	pop rdx
+	mov rcx, 0
+	movzx eax, BYTE PTR [rdx]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+1]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+2]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+3]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+4]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+5]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+6]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+7]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+8]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+9]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+10]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+11]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+12]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+13]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+14]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+15]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+16]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+17]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+18]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+19]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+20]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+21]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+22]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+23]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+24]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+25]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+26]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+27]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+28]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+29]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+30]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+31]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+32]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+33]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+34]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+35]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+36]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+37]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+38]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+39]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+40]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+41]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+42]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+43]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+44]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+45]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+46]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+47]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+48]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+49]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+50]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+51]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+52]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+53]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+54]
+	or rcx, rax
+	movzx eax, BYTE PTR [rdx+55]
+	or rcx, rax
+	sub rcx, 1
+	shr rcx, 63
+	xor rcx, 1
+	mov rax, rcx
 	ret
 	.p2align 6
 

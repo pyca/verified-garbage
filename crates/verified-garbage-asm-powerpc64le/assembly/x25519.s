@@ -3551,6 +3551,89 @@ vg_x25519:
 	stw %r5, 28(%r3)
 	blr
 
+vg_x25519_exchange:
+	mflr %r0
+	stdu %r1, -48(%r1)
+	std %r0, 32(%r1)
+	addi %r12, %r1, 0
+	std %r3, 40(%r12)
+	bl {vg_x25519}
+	addi %r12, %r1, 0
+	ld %r12, 40(%r12)
+	li %r11, 0
+	lbz %r10, 0(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 1(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 2(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 3(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 4(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 5(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 6(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 7(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 8(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 9(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 10(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 11(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 12(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 13(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 14(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 15(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 16(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 17(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 18(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 19(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 20(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 21(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 22(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 23(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 24(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 25(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 26(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 27(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 28(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 29(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 30(%r12)
+	or %r11, %r11, %r10
+	lbz %r10, 31(%r12)
+	or %r11, %r11, %r10
+	addi %r11, %r11, -1
+	rldicl %r3, %r11, 1, 63
+	li %r10, 1
+	xor %r3, %r3, %r10
+	ld %r0, 32(%r1)
+	addi %r1, %r1, 48
+	mtlr %r0
+	blr
+
 vg_x25519_base:
 	std %r14, 1024(%r5)
 	std %r15, 1032(%r5)

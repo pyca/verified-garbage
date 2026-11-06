@@ -107,6 +107,86 @@ call {vg_gf25519_r64_invert}
     )
 }
 
+/// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, as `vg_x25519` does, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise.
+///
+/// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `scalar` must be valid for reads of 32 bytes.
+/// * `point` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 4096 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "Vw=="
+call {vg_x25519}
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIww=="
+.p2align 6"#,
+        vg_x25519 = sym super::x25519::vg_x25519,
+    )
+}
+
+/// The CPU features `vg_x25519_exchange_adx` requires (`Artifact.features`).
+pub const VG_X25519_EXCHANGE_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, as `vg_x25519` does, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise.
+///
+/// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `scalar` must be valid for reads of 32 bytes.
+/// * `point` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 4096 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_x25519_exchange_adx(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "Vw=="
+call {vg_x25519_adx}
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIww=="
+.p2align 6"#,
+        vg_x25519_adx = sym super::x25519::vg_x25519_adx,
+    )
+}
+
+/// The CPU features `vg_x25519_exchange_ifma` requires (`Artifact.features`).
+pub const VG_X25519_EXCHANGE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+
+/// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, as `vg_x25519` does, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise.
+///
+/// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `scalar` must be valid for reads of 32 bytes.
+/// * `point` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 4096 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_x25519_exchange_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "Vw=="
+call {vg_x25519_ifma}
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBSIPpAUjB6T9Ig/EBSInIww=="
+.p2align 6"#,
+        vg_x25519_ifma = sym super::x25519::vg_x25519_ifma,
+    )
+}
+
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
 ///
 /// Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect timing, not the scalar.

@@ -747,6 +747,45 @@ bl {vg_gf448_r56_mul}
     )
 }
 
+/// Computes an X448 shared secret (RFC 7748 §6.2): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`, as `vg_x448` does, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise.
+///
+/// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 56 bytes.
+/// * `scalar` must be valid for reads of 56 bytes.
+/// * `point` must be valid for reads of 56 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0x910003e9,0xf9000520
+bl {vg_x448}
+.inst 0x910003e9,0xf9400529,0xd280000a,0x3940012b,0xaa0b014a,0x3940052b,0xaa0b014a,0x3940092b
+.inst 0xaa0b014a,0x39400d2b,0xaa0b014a,0x3940112b,0xaa0b014a,0x3940152b,0xaa0b014a,0x3940192b
+.inst 0xaa0b014a,0x39401d2b,0xaa0b014a,0x3940212b,0xaa0b014a,0x3940252b,0xaa0b014a,0x3940292b
+.inst 0xaa0b014a,0x39402d2b,0xaa0b014a,0x3940312b,0xaa0b014a,0x3940352b,0xaa0b014a,0x3940392b
+.inst 0xaa0b014a,0x39403d2b,0xaa0b014a,0x3940412b,0xaa0b014a,0x3940452b,0xaa0b014a,0x3940492b
+.inst 0xaa0b014a,0x39404d2b,0xaa0b014a,0x3940512b,0xaa0b014a,0x3940552b,0xaa0b014a,0x3940592b
+.inst 0xaa0b014a,0x39405d2b,0xaa0b014a,0x3940612b,0xaa0b014a,0x3940652b,0xaa0b014a,0x3940692b
+.inst 0xaa0b014a,0x39406d2b,0xaa0b014a,0x3940712b,0xaa0b014a,0x3940752b,0xaa0b014a,0x3940792b
+.inst 0xaa0b014a,0x39407d2b,0xaa0b014a,0x3940812b,0xaa0b014a,0x3940852b,0xaa0b014a,0x3940892b
+.inst 0xaa0b014a,0x39408d2b,0xaa0b014a,0x3940912b,0xaa0b014a,0x3940952b,0xaa0b014a,0x3940992b
+.inst 0xaa0b014a,0x39409d2b,0xaa0b014a,0x3940a12b,0xaa0b014a,0x3940a52b,0xaa0b014a,0x3940a92b
+.inst 0xaa0b014a,0x3940ad2b,0xaa0b014a,0x3940b12b,0xaa0b014a,0x3940b52b,0xaa0b014a,0x3940b92b
+.inst 0xaa0b014a,0x3940bd2b,0xaa0b014a,0x3940c12b,0xaa0b014a,0x3940c52b,0xaa0b014a,0x3940c92b
+.inst 0xaa0b014a,0x3940cd2b,0xaa0b014a,0x3940d12b,0xaa0b014a,0x3940d52b,0xaa0b014a,0x3940d92b
+.inst 0xaa0b014a,0x3940dd2b,0xaa0b014a,0xd100054a,0xd37ffd40,0xd280002b,0xca0b0000,0xf84107fe
+.inst 0xd65f03c0
+.p2align 6",
+        vg_x448 = sym super::x448::vg_x448,
+    )
+}
+
 /// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
 ///
 /// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
