@@ -32,7 +32,7 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 
 namespace VG.Proof.Bignum.AArch64.MontFn
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Impl.Bignum
-open VG.Impl.Bignum.AArch64 VG.Impl.Bignum.AArch64.MontFn
+open VG.Impl.Bignum.AArch64
 open VG.Proof.Rsa.Mont (numAt wOf wordAt Layout Operand Keeps arrAt aM minvWord)
 
 /-- The `k` words at offset `d` of `B` are the `8 k` bytes there. -/
@@ -45,7 +45,5 @@ theorem read_eq_wv (m : Mem) (B : Addr) (d : Nat) : ∀ k, (m.read (off B d) (8 
 
 theorem numAt_eq (m : Mem) (B : Addr) (w j : Nat) : numAt m B w j = wv m B (slot w j) w := by
   rw [← read_eq_wv]; rfl
-
-
 
 end VG.Proof.Bignum.AArch64.MontFn
