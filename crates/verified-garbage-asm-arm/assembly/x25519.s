@@ -14867,6 +14867,158 @@ vg_x25519_umaal:
 	ldr r11, [r0, #28]
 	bx lr
 
+vg_x25519_exchange:
+	push {lr}
+	push {r0}
+	bl {vg_x25519}
+	ldr r1, [sp], #4
+	movw r3, #0
+	ldrb r2, [r1, #0]
+	orr r3, r3, r2
+	ldrb r2, [r1, #1]
+	orr r3, r3, r2
+	ldrb r2, [r1, #2]
+	orr r3, r3, r2
+	ldrb r2, [r1, #3]
+	orr r3, r3, r2
+	ldrb r2, [r1, #4]
+	orr r3, r3, r2
+	ldrb r2, [r1, #5]
+	orr r3, r3, r2
+	ldrb r2, [r1, #6]
+	orr r3, r3, r2
+	ldrb r2, [r1, #7]
+	orr r3, r3, r2
+	ldrb r2, [r1, #8]
+	orr r3, r3, r2
+	ldrb r2, [r1, #9]
+	orr r3, r3, r2
+	ldrb r2, [r1, #10]
+	orr r3, r3, r2
+	ldrb r2, [r1, #11]
+	orr r3, r3, r2
+	ldrb r2, [r1, #12]
+	orr r3, r3, r2
+	ldrb r2, [r1, #13]
+	orr r3, r3, r2
+	ldrb r2, [r1, #14]
+	orr r3, r3, r2
+	ldrb r2, [r1, #15]
+	orr r3, r3, r2
+	ldrb r2, [r1, #16]
+	orr r3, r3, r2
+	ldrb r2, [r1, #17]
+	orr r3, r3, r2
+	ldrb r2, [r1, #18]
+	orr r3, r3, r2
+	ldrb r2, [r1, #19]
+	orr r3, r3, r2
+	ldrb r2, [r1, #20]
+	orr r3, r3, r2
+	ldrb r2, [r1, #21]
+	orr r3, r3, r2
+	ldrb r2, [r1, #22]
+	orr r3, r3, r2
+	ldrb r2, [r1, #23]
+	orr r3, r3, r2
+	ldrb r2, [r1, #24]
+	orr r3, r3, r2
+	ldrb r2, [r1, #25]
+	orr r3, r3, r2
+	ldrb r2, [r1, #26]
+	orr r3, r3, r2
+	ldrb r2, [r1, #27]
+	orr r3, r3, r2
+	ldrb r2, [r1, #28]
+	orr r3, r3, r2
+	ldrb r2, [r1, #29]
+	orr r3, r3, r2
+	ldrb r2, [r1, #30]
+	orr r3, r3, r2
+	ldrb r2, [r1, #31]
+	orr r3, r3, r2
+	sub r3, r3, #1
+	lsr r0, r3, #31
+	eor r0, r0, #1
+	ldr lr, [sp], #4
+	bx lr
+
+vg_x25519_exchange_umaal:
+	push {lr}
+	push {r0}
+	bl {vg_x25519_umaal}
+	ldr r1, [sp], #4
+	movw r3, #0
+	ldrb r2, [r1, #0]
+	orr r3, r3, r2
+	ldrb r2, [r1, #1]
+	orr r3, r3, r2
+	ldrb r2, [r1, #2]
+	orr r3, r3, r2
+	ldrb r2, [r1, #3]
+	orr r3, r3, r2
+	ldrb r2, [r1, #4]
+	orr r3, r3, r2
+	ldrb r2, [r1, #5]
+	orr r3, r3, r2
+	ldrb r2, [r1, #6]
+	orr r3, r3, r2
+	ldrb r2, [r1, #7]
+	orr r3, r3, r2
+	ldrb r2, [r1, #8]
+	orr r3, r3, r2
+	ldrb r2, [r1, #9]
+	orr r3, r3, r2
+	ldrb r2, [r1, #10]
+	orr r3, r3, r2
+	ldrb r2, [r1, #11]
+	orr r3, r3, r2
+	ldrb r2, [r1, #12]
+	orr r3, r3, r2
+	ldrb r2, [r1, #13]
+	orr r3, r3, r2
+	ldrb r2, [r1, #14]
+	orr r3, r3, r2
+	ldrb r2, [r1, #15]
+	orr r3, r3, r2
+	ldrb r2, [r1, #16]
+	orr r3, r3, r2
+	ldrb r2, [r1, #17]
+	orr r3, r3, r2
+	ldrb r2, [r1, #18]
+	orr r3, r3, r2
+	ldrb r2, [r1, #19]
+	orr r3, r3, r2
+	ldrb r2, [r1, #20]
+	orr r3, r3, r2
+	ldrb r2, [r1, #21]
+	orr r3, r3, r2
+	ldrb r2, [r1, #22]
+	orr r3, r3, r2
+	ldrb r2, [r1, #23]
+	orr r3, r3, r2
+	ldrb r2, [r1, #24]
+	orr r3, r3, r2
+	ldrb r2, [r1, #25]
+	orr r3, r3, r2
+	ldrb r2, [r1, #26]
+	orr r3, r3, r2
+	ldrb r2, [r1, #27]
+	orr r3, r3, r2
+	ldrb r2, [r1, #28]
+	orr r3, r3, r2
+	ldrb r2, [r1, #29]
+	orr r3, r3, r2
+	ldrb r2, [r1, #30]
+	orr r3, r3, r2
+	ldrb r2, [r1, #31]
+	orr r3, r3, r2
+	sub r3, r3, #1
+	lsr r0, r3, #31
+	eor r0, r0, #1
+	ldr lr, [sp], #4
+	bx lr
+
 vg_x25519_base:
 	str r4, [r2, #0]
 	str r5, [r2, #4]

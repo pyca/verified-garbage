@@ -5233,6 +5233,86 @@ vg_x25519:
 	ret
 	.p2align 6
 
+vg_x25519_exchange:
+	str x30, [sp, #-16]!
+	add x9, sp, #0
+	str x0, [x9, #8]
+	bl {vg_x25519}
+	add x9, sp, #0
+	ldr x9, [x9, #8]
+	movz x10, #0, lsl #0
+	ldrb w11, [x9, #0]
+	orr x10, x10, x11
+	ldrb w11, [x9, #1]
+	orr x10, x10, x11
+	ldrb w11, [x9, #2]
+	orr x10, x10, x11
+	ldrb w11, [x9, #3]
+	orr x10, x10, x11
+	ldrb w11, [x9, #4]
+	orr x10, x10, x11
+	ldrb w11, [x9, #5]
+	orr x10, x10, x11
+	ldrb w11, [x9, #6]
+	orr x10, x10, x11
+	ldrb w11, [x9, #7]
+	orr x10, x10, x11
+	ldrb w11, [x9, #8]
+	orr x10, x10, x11
+	ldrb w11, [x9, #9]
+	orr x10, x10, x11
+	ldrb w11, [x9, #10]
+	orr x10, x10, x11
+	ldrb w11, [x9, #11]
+	orr x10, x10, x11
+	ldrb w11, [x9, #12]
+	orr x10, x10, x11
+	ldrb w11, [x9, #13]
+	orr x10, x10, x11
+	ldrb w11, [x9, #14]
+	orr x10, x10, x11
+	ldrb w11, [x9, #15]
+	orr x10, x10, x11
+	ldrb w11, [x9, #16]
+	orr x10, x10, x11
+	ldrb w11, [x9, #17]
+	orr x10, x10, x11
+	ldrb w11, [x9, #18]
+	orr x10, x10, x11
+	ldrb w11, [x9, #19]
+	orr x10, x10, x11
+	ldrb w11, [x9, #20]
+	orr x10, x10, x11
+	ldrb w11, [x9, #21]
+	orr x10, x10, x11
+	ldrb w11, [x9, #22]
+	orr x10, x10, x11
+	ldrb w11, [x9, #23]
+	orr x10, x10, x11
+	ldrb w11, [x9, #24]
+	orr x10, x10, x11
+	ldrb w11, [x9, #25]
+	orr x10, x10, x11
+	ldrb w11, [x9, #26]
+	orr x10, x10, x11
+	ldrb w11, [x9, #27]
+	orr x10, x10, x11
+	ldrb w11, [x9, #28]
+	orr x10, x10, x11
+	ldrb w11, [x9, #29]
+	orr x10, x10, x11
+	ldrb w11, [x9, #30]
+	orr x10, x10, x11
+	ldrb w11, [x9, #31]
+	orr x10, x10, x11
+	sub x10, x10, #1
+	lsr x0, x10, #63
+	movz x11, #1, lsl #0
+	eor x0, x0, x11
+	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
 vg_x25519_base:
 	str x19, [x2, #0]
 	str x20, [x2, #8]
