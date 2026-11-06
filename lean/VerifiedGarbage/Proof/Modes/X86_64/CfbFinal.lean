@@ -332,4 +332,125 @@ theorem tail_wp {a : FinalArgs} (ha : FinalOk a) {enc : Prog isa} {kE : Contract
     rw [one f₃ (block_slots s₀ (by omega)), one d₂.frame dRS, mem₀, slots_keep hu.rsp f slotsE dE hj,
       one hu.frame (block_slots s₀ (by omega)), vslots j hj]
 
+theorem WP.seq_assoc {c₁ c₂ c₃ : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa (.seq (.seq c₁ c₂) c₃) s Q) : WP isa (.seq c₁ (.seq c₂ c₃)) s Q := by
+  obtain ⟨t, s', he, hq⟩ := h
+  cases he with
+  | seq h12 h3 =>
+    cases h12 with
+    | seq h1 h2 => exact ⟨_, _, .seq h1 (.seq h2 h3), hq⟩
+
+/-- Before `exit`: the frame's `rsp` and slots, and the data. -/
+structure PreExit (a : FinalArgs) (s₀ : State) (D : Addr) (len : Nat) (kE : Contract isa)
+    (rdE wrE : List Region) (dE : Nat) (u₁' w : State) : Prop where
+  rsp : w.gpr .rsp = frameSp s₀
+  slots : ∀ j < 6, w.mem.readW (s₀.gpr .rsp - BitVec.ofNat 64 (8 * (j + 1))) 64 = s₀.gpr (FinalArgs.saved j)
+  rd : w.rd = s₀.rd
+  wr : w.wr = frameRegion s₀ :: s₀.wr
+  mx : w.mxcsr.extractLsb' 6 10 = s₀.mxcsr.extractLsb' 6 10
+  whole : len % a.blk = 0 → w.mem = u₁'.mem
+  part : len % a.blk ≠ 0 → ∃ v u₂', v.mem = u₁'.mem ∧ v.rd = u₁'.rd ∧ v.wr = u₁'.wr ∧ v.mxcsr = u₁'.mxcsr ∧
+    After₂ a s₀ v kE rdE wrE dE u₂' ∧
+    (∀ q < len % a.blk, w.mem (restAddr a D len + BitVec.ofNat 64 q) =
+      u₂'.mem (restAddr a D len + BitVec.ofNat 64 q) ^^^ u₂'.mem (blockAddr s₀ + BitVec.ofNat 64 q)) ∧
+    Frame [⟨restAddr a D len, len % a.blk⟩, ⟨blockAddr s₀, a.blk⟩] u₂'.mem w.mem
+
+theorem exit_mxcsr : ∀ i ∈ FinalArgs.exit, loadsMxcsr i = false := by
+  intro i hi
+  simp only [FinalArgs.exit, List.mem_map] at hi
+  obtain ⟨_, _, rfl⟩ := hi
+  rfl
+
+theorem rest_mxcsr (a : FinalArgs) : ∀ i ∈ a.rest, loadsMxcsr i = false := by
+  intro i hi
+  simp only [FinalArgs.rest, List.mem_cons, List.not_mem_nil, or_false] at hi
+  rcases hi with rfl | rfl | rfl | rfl | rfl <;> rfl
+
+/-- `cfbFinal a whole enc` (see above). -/
+theorem cfbFinal_wp {a : FinalArgs} (ha : FinalOk a) {whole enc : Prog isa} {kW kE : Contract isa}
+    (hW : ∀ s, kW.pre s → ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ kW.post s s')
+    (hE : ∀ s, kE.pre s → ∃ t s', Exec isa enc s t s' ∧ abiPreserved s s' ∧ kE.post s s')
+    (spW : SpSafe whole) (spE : SpSafe enc) (dW : whole.x86_64Depth + 80 ≤ 2 ^ 64)
+    (dE : enc.x86_64Depth + 80 ≤ 2 ^ 64) {s₀ : State} {D : Addr} {len : Nat}
+    (hD : s₀.gpr (a.arg a.dataIx) = D) (hL : s₀.gpr (a.arg a.lenIx) = BitVec.ofNat 64 len) (hlen : len < 2 ^ 64)
+    (h80 : 80 ≤ (s₀.gpr .rsp).toNat) (hwD : (⟨D, len⟩ : Region) ∈ s₀.wr) (hfitD : D.toNat + len ≤ 2 ^ 64)
+    (hDF : Region.Disjoint ⟨D, len⟩ (frameRegion s₀))
+    {rdW wrW : List Region}
+    (preW : ∀ u, Call₁ a s₀ len u →
+      kW.pre (u.withRegions rdW wrW) ∧ Covers (rdW ++ wrW) (u.rd ++ u.wr) ∧ Covers wrW u.wr)
+    (slotsW : ∀ r ∈ wrW, r.Disjoint (slotsRegion s₀))
+    {rdE wrE : List Region}
+    (preE : ∀ u₁' v u, After₁ a s₀ len kW rdW wrW whole.x86_64Depth u₁' → v.mem = u₁'.mem → v.rd = u₁'.rd →
+      v.wr = u₁'.wr → Call₂ a s₀ v u →
+      kE.pre (u.withRegions rdE wrE) ∧ Covers (rdE ++ wrE) (u.rd ++ u.wr) ∧ Covers wrE u.wr)
+    (slotsE : ∀ r ∈ wrE, r.Disjoint (slotsRegion s₀)) :
+    WP isa (cfbFinal a whole enc) s₀
+      (FinalDone a s₀ D len kW kE rdW wrW rdE wrE whole.x86_64Depth enc.x86_64Depth) := by
+  have hlen6 := ha.length
+  have dD6 : a.dataIx < 6 := by have := ha.data; omega
+  have dL6 : a.lenIx < 6 := by have := ha.len; omega
+  have hlg1 : 1 ≤ a.lg := by rcases ha.lg with h | h <;> omega
+  have hlg2 : a.lg ≤ 63 := by rcases ha.lg with h | h <;> omega
+  have hblk : a.blk = 2 ^ a.lg := rfl
+  unfold cfbFinal
+  refine WP.frame (by decide) (by decide) (by decide) (by rw [pushRegs_length]; omega) ?_
+  refine WP.seq_assoc (WP.seq (WP.mono (first_wp ha hW spW dW hL hlen h80 preW slotsW) fun u₁' hA => ?_))
+  -- `rest`.
+  obtain ⟨v, e, vD, vL, vz, vo, vm, vrd, vwr⟩ := rest_ok u₁' hlg1 hlg2
+    (fun h => ha.dl (saved_inj _ dD6 _ dL6 h)) (saved_scratch _ dD6).1 (saved_scratch _ dL6).1
+    (by rw [hA.saved _ ha.data, hD]) (by rw [hA.saved _ ha.len, hL]) hlen
+  have vmx : v.mxcsr = u₁'.mxcsr := runBlock_mxcsr _ _ _ (rest_mxcsr a) e
+  have vsp : v.gpr .rsp = frameSp s₀ := by
+    rw [vo _ (by decide) (saved_ne_rsp _ dD6).symm (saved_ne_rsp _ dL6).symm, hA.rsp]
+  rw [← hblk] at vD vL vz
+  refine WP.seq (WP.of_runBlock ⟨v, e, ?_⟩)
+  refine WP.seq (WP.mono (Q := PreExit a s₀ D len kE rdE wrE enc.x86_64Depth u₁')
+    (WP.ite (decide (len % a.blk = 0)) (by simp [X86_64.eval, vz]) (fun h => ?_) (fun h => ?_)) fun w hw => ?_)
+  · -- No partial last segment.
+    have h0 : len % a.blk = 0 := by simpa using h
+    exact WP.block_nil ⟨vsp, fun j hj => by rw [vm, hA.slots j hj], by rw [vrd, hA.rd], by rw [vwr, hA.wr],
+      by rw [vmx, hA.mx], fun _ => vm, fun h' => absurd h0 h'⟩
+  · -- A partial last segment.
+    have hr : len % a.blk ≠ 0 := by simpa using h
+    refine WP.mono (tail_wp ha hE spE dE hr hwD hfitD hDF h80 vD vL (fun i hi h1 h2 => ?_) vsp
+      (by rw [vrd, hA.rd]) (by rw [vwr, hA.wr]) (fun j hj => by rw [vm, hA.slots j hj])
+      (fun u hu => preE u₁' v u hA vm vrd vwr hu) slotsE) fun w d => ?_
+    · rw [vo _ (saved_scratch i (by omega)).1 (fun e' => h2 (saved_inj _ (by omega) _ dD6 e'))
+        (fun e' => h1 (saved_inj _ (by omega) _ dL6 e')), hA.saved i hi]
+    · obtain ⟨u₂', hA₂, hx, hf⟩ := d.run
+      exact ⟨d.rsp, d.slots, by rw [d.rd, vrd, hA.rd], by rw [d.wr, vwr, hA.wr],
+        by rw [d.mx, vmx, hA.mx], fun h' => absurd h' hr, fun _ => ⟨v, u₂', vm, vrd, vwr, vmx, hA₂, hx, hf⟩⟩
+  -- `exit`.
+  have hin : ∀ j < 6, InRegions (w.rd ++ w.wr) (s₀.gpr .rsp - BitVec.ofNat 64 (8 * (j + 1))) 8 := fun j hj =>
+    ⟨frameRegion s₀, List.mem_append_right _ (by rw [hw.wr]; exact List.mem_cons_self), by
+      rw [slot_eq_frame s₀ hj, frameRegion]
+      exact VG.Offset.contains_base _ (by simp only [FinalArgs.savedOff]; omega) (by simp only [FinalArgs.savedOff]; omega)⟩
+  obtain ⟨w', e', v', o', m', rd', wr'⟩ := exit_ok hw.rsp hw.slots hin
+  have mx' : w'.mxcsr = w.mxcsr := runBlock_mxcsr _ _ _ exit_mxcsr e'
+  refine WP.of_runBlock ⟨w', e', ?_⟩
+  have rsp' : w'.gpr .rsp = frameSp s₀ := by rw [o' _ fun j hj => (saved_ne_rsp j hj).symm, hw.rsp]
+  refine ⟨by rw [rsp', pushed_rsp, pushRegs_length], by rw [wr', hw.wr, pushed_wr, pushRegs_length]; rfl, ?_⟩
+  refine ⟨⟨u₁', hA, fun h0 => by rw [popped_mem, m', hw.whole h0], fun hr => ?_⟩, fun r hr => ?_,
+    by rw [popped_rd, rd', hw.rd], by rw [popped_wr, wr', hw.wr]; rfl, by rw [popped_mxcsr, mx', hw.mx]⟩
+  · obtain ⟨v₁, u₂', h1, h2, h3, h4, h5, h6, h7⟩ := hw.part hr
+    exact ⟨v₁, u₂', h1, h2, h3, h4, h5, fun q hq => by rw [popped_mem, m', h6 q hq], by rw [popped_mem, m']; exact h7⟩
+  · by_cases hsp : r = .rsp
+    · subst hsp
+      rw [popped_rsp, rsp', frameSp, pushRegs_length]
+      exact BitVec.sub_add_cancel _ _
+    · have hrax : r ≠ .rax := by rintro rfl; simp [calleeSaved] at hr
+      rw [popped_gpr _ _ _ hsp hrax]
+      have : ∃ j < 6, r = FinalArgs.saved j := by
+        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+        · exact ⟨0, by decide, rfl⟩
+        · exact ⟨1, by decide, rfl⟩
+        · exact absurd rfl hsp
+        · exact ⟨2, by decide, rfl⟩
+        · exact ⟨3, by decide, rfl⟩
+        · exact ⟨4, by decide, rfl⟩
+        · exact ⟨5, by decide, rfl⟩
+      obtain ⟨j, hj, rfl⟩ := this
+      exact v' j hj
+
 end VG.Proof.Modes.X86_64
