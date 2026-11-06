@@ -17,14 +17,38 @@ use core::fmt;
 use super::{BigUint, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
 use crate::arch::rsa::{vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_recover_primes_det};
 
-/// `x` (big-endian) in `len` bytes, if it fits.
-fn widen(x: &[u8], len: usize) -> Option<Vec<u8>> {
-    let x = trim(x);
-    (x.len() <= len).then(|| {
-        let mut v = vec![0; len];
+/// The secret `x` (big-endian) in exactly `len` bytes, a public width, if it
+/// fits: the bytes before its last `len` must be zero, which the verified
+/// comparison checks (`ct::is_zero`). The time depends on `x.len()` and
+/// `len`, not on `x`'s value or its number of leading zero bytes.
+fn fixed(x: &[u8], len: usize) -> Option<Vec<u8>> {
+    let mut v = vec![0; len];
+    if x.len() <= len {
         v[len - x.len()..].copy_from_slice(x);
-        v
-    })
+        return Some(v);
+    }
+    let (high, low) = x.split_at(x.len() - len);
+    v.copy_from_slice(low);
+    if crate::ct::is_zero(high) {
+        Some(v)
+    } else {
+        crate::zeroize::zeroize(&mut v);
+        None
+    }
+}
+
+/// The primes `p` and `q` without their leading zero bytes, if each is
+/// shorter than the `k`-byte modulus and not empty. Their lengths are public:
+/// the verified functions' arithmetic modulo each prime is at its length, as
+/// BoringSSL's is at its minimal width (`freeze_private_key`), so trimming
+/// them leaks nothing their use does not.
+fn primes<'a>(p: &'a [u8], q: &'a [u8], k: usize) -> Result<(&'a [u8], &'a [u8]), Error> {
+    let (p, q) = (trim(p), trim(q));
+    if p.is_empty() || p.len() >= k || q.is_empty() || q.len() >= k {
+        Err(Error::InvalidPrivateKey)
+    } else {
+        Ok((p, q))
+    }
 }
 
 /// Whether SP 800-56B Rev. 2 Appendix C.2's method
@@ -196,25 +220,26 @@ impl PrivateKey {
             return Err(Error::InvalidModulus);
         }
         let e = exponent(e)?;
-        let (d, p, q) = (trim(d), trim(p), trim(q));
-        if d.is_empty()
-            || d.len() > k
-            || p.is_empty()
-            || p.len() >= k
-            || q.is_empty()
-            || q.len() >= k
-        {
+        let (p, q) = primes(p, q, k)?;
+        // `d` at the modulus' width and the CRT values at their primes', as
+        // BoringSSL holds them: their own lengths are not public.
+        let values = [
+            fixed(d, k),
+            fixed(dp, p.len()),
+            fixed(dq, q.len()),
+            fixed(qinv, p.len()),
+        ];
+        if values.iter().any(Option::is_none) {
+            for mut x in values.into_iter().flatten() {
+                crate::zeroize::zeroize(&mut x);
+            }
             return Err(Error::InvalidPrivateKey);
         }
-        let (Some(dp), Some(dq), Some(qinv)) =
-            (widen(dp, p.len()), widen(dq, q.len()), widen(qinv, p.len()))
-        else {
-            return Err(Error::InvalidPrivateKey);
-        };
+        let [d, dp, dq, qinv] = values.map(Option::unwrap_or_default);
         let key = PrivateKey {
             n: n.to_vec(),
             e: e.to_vec(),
-            d: d.to_vec(),
+            d,
             p: p.to_vec(),
             q: q.to_vec(),
             dp,
@@ -239,7 +264,7 @@ impl PrivateKey {
         // SAFETY: each pointer is valid for its length (`scratch` for
         // writes), and none overlaps another or wraps around, as they are
         // distinct Rust allocations; `from_crt`'s checks give
-        // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ d_len ≤ n_len`,
+        // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, `d_len = n_len`,
         // `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
         // `dp_len = qinv_len = p_len`, `dq_len = q_len`, and
         // `scratch_len = 16 n_len + 32`.
@@ -284,23 +309,17 @@ impl PrivateKey {
             return Err(Error::InvalidModulus);
         }
         let e = exponent(e)?;
-        let (d, p, q) = (trim(d), trim(p), trim(q));
-        if d.is_empty()
-            || d.len() > k
-            || p.is_empty()
-            || p.len() >= k
-            || q.is_empty()
-            || q.len() >= k
-        {
+        let (p, q) = primes(p, q, k)?;
+        let Some(mut d) = fixed(d, k) else {
             return Err(Error::InvalidPrivateKey);
-        }
+        };
         let (mut dp, mut dq, mut qinv) = (vec![0; p.len()], vec![0; q.len()], vec![0; p.len()]);
         let mut scratch = vec![0u64; scratch_words(k)];
         // SAFETY: each pointer is valid for its length (`dp`, `dq`, `qinv`
         // and `scratch` for writes), and none overlaps another or wraps
         // around, as they are distinct Rust allocations; the checks above
         // give `64 ≤ n_len ≤ 1024`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`
-        // and `1 ≤ d_len ≤ n_len`, and `dp_len = qinv_len = p_len`,
+        // and `d_len = n_len`, and `dp_len = qinv_len = p_len`,
         // `dq_len = q_len` and `scratch_len = 16 n_len + 32`.
         let r = unsafe {
             vg_rsa_crt_values(
@@ -325,11 +344,11 @@ impl PrivateKey {
         // The working space holds the private key.
         crate::zeroize::zeroize(&mut scratch);
         let key = if r == 1 {
-            PrivateKey::from_crt_bytes(n, e, d, p, q, &dp, &dq, &qinv)
+            PrivateKey::from_crt_bytes(n, e, &d, p, q, &dp, &dq, &qinv)
         } else {
             Err(Error::InvalidPrivateKey)
         };
-        for x in [&mut dp, &mut dq, &mut qinv] {
+        for x in [&mut d, &mut dp, &mut dq, &mut qinv] {
             crate::zeroize::zeroize(x);
         }
         key
@@ -342,24 +361,24 @@ impl PrivateKey {
         if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
             return Err(Error::InvalidModulus);
         }
-        let (e, d) = (exponent(e)?, trim(d));
-        if d.is_empty() || d.len() > k {
+        let e = exponent(e)?;
+        let Some(mut d) = fixed(d, k) else {
             return Err(Error::InvalidPrivateKey);
-        }
+        };
         let (mut p, mut q) = (vec![0; k], vec![0; k]);
         let mut scratch = vec![0u64; scratch_words(k)];
         // SAFETY: the checks above give `64 ≤ n_len ≤ 1024`,
-        // `1 ≤ e_len ≤ 5` and `1 ≤ d_len ≤ n_len`, and `p_len = q_len = n_len`
+        // `1 ≤ e_len ≤ 5` and `d_len = n_len`, and `p_len = q_len = n_len`
         // and `scratch_len = scratch_words(n_len)`.
-        let found = unsafe { recover(&mut p, &mut q, n, e, d, &mut scratch) };
+        let found = unsafe { recover(&mut p, &mut q, n, e, &d, &mut scratch) };
         // The working space holds the private key.
         crate::zeroize::zeroize(&mut scratch);
         let key = if found {
-            PrivateKey::from_primes_bytes(n, e, d, &p, &q)
+            PrivateKey::from_primes_bytes(n, e, &d, &p, &q)
         } else {
             Err(Error::InvalidPrivateKey)
         };
-        for x in [&mut p, &mut q] {
+        for x in [&mut d, &mut p, &mut q] {
             crate::zeroize::zeroize(x);
         }
         key
@@ -372,7 +391,8 @@ impl PrivateKey {
     }
 
     /// The key's values as it holds them, `[n, e, d, p, q, dP, dQ, qInv]`
-    /// (`dP` and `qInv` in as many bytes as `p`, `dQ` as `q`; `p > q` for a
+    /// (`d` in as many bytes as `n`, `p` and `q` without leading zero bytes,
+    /// `dP` and `qInv` in as many bytes as `p`, `dQ` as `q`; `p > q` for a
     /// key loaded by [`from_components`](Self::from_components) or generated
     /// by [`keygen::generate`](super::keygen::generate)).
     pub fn components(&self) -> [BigUint<'_>; 8] {
@@ -613,6 +633,20 @@ mod tests {
         let again =
             PrivateKey::from_crt_bytes(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7]).unwrap();
         assert_eq!(again.components().map(BigUint::as_be_bytes), c);
+        // `d` is held in `n`'s bytes, and the CRT values in their primes',
+        // whatever lengths they are given in; `fixed` holds a value in fewer
+        // bytes than its width, and in more if they are zeros.
+        let key = PrivateKey::from_crt_bytes(&n, &[3], &z(&z(&d)), &p, &q, &z(&dp), &dq, &qi);
+        let k = n.len();
+        assert_eq!(
+            key.unwrap().components().map(|x| x.as_be_bytes().len()),
+            [k, 1, k, 32, 33, 32, 33, 32]
+        );
+        let mut short = vec![0; k];
+        short[k - 2..].copy_from_slice(&[1, 1]);
+        assert_eq!(super::fixed(&[1, 1], k), Some(short.clone()));
+        assert_eq!(super::fixed(&z(&z(&short)), k), Some(short));
+        assert_eq!(super::fixed(&[1, 0, 1], 2), None);
     }
 
     #[test]
