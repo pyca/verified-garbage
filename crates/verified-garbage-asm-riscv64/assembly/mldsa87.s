@@ -3508,6 +3508,86 @@ vg_mldsa87_keygen:
 	ret
 	.option pop
 
+vg_mldsa87_pk_tr:
+	.option push
+	.option arch, +m, +c
+	sd s3, 1288(a2)
+	sd s4, 1296(a2)
+	sd s5, 1304(a2)
+	sd s6, 1312(a2)
+	sd s7, 1320(a2)
+	sd s8, 1328(a2)
+	sd s9, 1336(a2)
+	sd s10, 1344(a2)
+	sd s11, 1352(a2)
+	sd ra, 1360(a2)
+	addi s10, a0, 0
+	addi s9, a0, 0
+	addi s8, a1, 0
+	addi s11, a2, 0
+	addi t0, zero, 0
+	sd t0, 0(s11)
+	sd t0, 8(s11)
+	sd t0, 16(s11)
+	sd t0, 24(s11)
+	sd t0, 32(s11)
+	sd t0, 40(s11)
+	sd t0, 48(s11)
+	sd t0, 56(s11)
+	sd t0, 64(s11)
+	sd t0, 72(s11)
+	sd t0, 80(s11)
+	sd t0, 88(s11)
+	sd t0, 96(s11)
+	sd t0, 104(s11)
+	sd t0, 112(s11)
+	sd t0, 120(s11)
+	sd t0, 128(s11)
+	sd t0, 136(s11)
+	sd t0, 144(s11)
+	sd t0, 152(s11)
+	sd t0, 160(s11)
+	sd t0, 168(s11)
+	sd t0, 176(s11)
+	sd t0, 184(s11)
+	sd t0, 192(s11)
+	addi a2, zero, 0
+	addi a0, s11, 0
+	addi a1, zero, 136
+	addi a3, s9, 0
+	addi a4, zero, 1024
+	call {vg_keccak_absorb}
+	addi a2, a0, 0
+	addi a0, s11, 0
+	addi a1, zero, 136
+	addi a3, s9, 1024
+	addi a4, zero, 1568
+	call {vg_keccak_absorb}
+	addi a2, a0, 0
+	addi a0, s11, 0
+	addi a1, zero, 136
+	addi a3, zero, 31
+	call {vg_keccak_pad}
+	addi a2, zero, 0
+	addi a0, s11, 0
+	addi a1, zero, 136
+	addi a3, s8, 0
+	addi a4, zero, 64
+	call {vg_keccak_squeeze}
+	addi a0, s4, 0
+	ld ra, 1360(s11)
+	ld s3, 1288(s11)
+	ld s4, 1296(s11)
+	ld s5, 1304(s11)
+	ld s6, 1312(s11)
+	ld s7, 1320(s11)
+	ld s8, 1328(s11)
+	ld s9, 1336(s11)
+	ld s10, 1344(s11)
+	ld s11, 1352(s11)
+	ret
+	.option pop
+
 vg_mldsa87_sign:
 	.option push
 	.option arch, +m, +c

@@ -4,6 +4,81 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
+vg_mldsa65_pk_tr:
+	mov QWORD PTR [rdx+840], rbx
+	mov QWORD PTR [rdx+848], rbp
+	mov QWORD PTR [rdx+856], r12
+	mov QWORD PTR [rdx+864], r13
+	mov QWORD PTR [rdx+872], r14
+	mov QWORD PTR [rdx+880], r15
+	mov rbx, rdx
+	mov r12, rdi
+	mov r13, rsi
+	mov r15d, 1
+	mov eax, 0
+	mov QWORD PTR [rbx], rax
+	mov QWORD PTR [rbx+8], rax
+	mov QWORD PTR [rbx+16], rax
+	mov QWORD PTR [rbx+24], rax
+	mov QWORD PTR [rbx+32], rax
+	mov QWORD PTR [rbx+40], rax
+	mov QWORD PTR [rbx+48], rax
+	mov QWORD PTR [rbx+56], rax
+	mov QWORD PTR [rbx+64], rax
+	mov QWORD PTR [rbx+72], rax
+	mov QWORD PTR [rbx+80], rax
+	mov QWORD PTR [rbx+88], rax
+	mov QWORD PTR [rbx+96], rax
+	mov QWORD PTR [rbx+104], rax
+	mov QWORD PTR [rbx+112], rax
+	mov QWORD PTR [rbx+120], rax
+	mov QWORD PTR [rbx+128], rax
+	mov QWORD PTR [rbx+136], rax
+	mov QWORD PTR [rbx+144], rax
+	mov QWORD PTR [rbx+152], rax
+	mov QWORD PTR [rbx+160], rax
+	mov QWORD PTR [rbx+168], rax
+	mov QWORD PTR [rbx+176], rax
+	mov QWORD PTR [rbx+184], rax
+	mov QWORD PTR [rbx+192], rax
+	mov rdi, rbx
+	add rdi, 0
+	mov esi, 136
+	mov edx, 0
+	mov rcx, r12
+	add rcx, 0
+	mov r8d, 1952
+	mov r9, rbx
+	add r9, 200
+	call {vg_keccak_absorb_scratch}
+	mov rdi, rbx
+	add rdi, 0
+	mov esi, 136
+	mov edx, 48
+	mov ecx, 31
+	mov r8, rbx
+	add r8, 200
+	call {vg_keccak_pad_scratch}
+	mov rdi, rbx
+	add rdi, 0
+	mov esi, 136
+	mov edx, 0
+	mov rcx, r13
+	add rcx, 0
+	mov r8d, 64
+	mov r9, rbx
+	add r9, 200
+	call {vg_keccak_squeeze_scratch}
+	mov eax, r15d
+	mov r15, QWORD PTR [rbx+880]
+	mov r14, QWORD PTR [rbx+872]
+	mov r13, QWORD PTR [rbx+864]
+	mov r12, QWORD PTR [rbx+856]
+	mov rbp, QWORD PTR [rbx+848]
+	mov rbx, QWORD PTR [rbx+840]
+	ret
+	.p2align 6
+
 vg_mldsa65_keygen_avx2:
 	mov QWORD PTR [rcx+840], rbx
 	mov QWORD PTR [rcx+848], rbp
