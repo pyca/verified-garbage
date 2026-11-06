@@ -480,6 +480,41 @@ call {vg_keccak_squeeze_scratch}
     )
 }
 
+/// ML-DSA-65 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa65_verify_message_cached` takes.
+///
+/// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `tr` must be valid for reads and writes of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 103424 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `tr` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa65_pk_tr(pk: *const [u8; 1952], tr: *mut [u8; 64], scratch: *mut [u64; 12928]) {
+    core::arch::naked_asm!(
+        r#".base64 "U1ZXVYt0JByJ8oPCALgAAAAAuTIAAAA="
+20:
+.base64 "iQKDwgSD6QE="
+jne 20b
+.base64 "ifCDwAC5iAAAALoAAAAAi1wkFIPDAL2gBwAAifeBx8gAAABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifCDwAC5iAAAALowAAAAux8AAACJ94HHyAAAAFdTUlFQ"
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8IPAALmIAAAAugAAAACLXCQYg8MAvUAAAACJ94HHyAAAAFdVU1JRUA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYi3QkCIt8JASLLCRbW1tbww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+    )
+}
+
 /// ML-DSA-65 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.

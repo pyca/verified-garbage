@@ -383,11 +383,6 @@ structure Prods (a0 a1 a2 r0 q : Nat) (s : State) : Prop where
     y0 + 2 ^ 64 * y1 = a0 * (4 * q) + a1 * r0 + a2 * (5 * q) ∧ y0 < 2 ^ 64 ∧
     (s.gpr .rbx).toNat + 2 ^ 64 * c1 = y0 + x1 ∧ (s.gpr .r15).toNat = y1 + a2 * r0 + c1
 
-/-- `Prods` reads only registers. -/
-theorem Prods.of_gpr {a0 a1 a2 r0 q : Nat} {s s' : State} (hg : s'.gpr = s.gpr)
-    (h : Prods a0 a1 a2 r0 q s) : Prods a0 a1 a2 r0 q s' :=
-  ⟨h.ha0, h.ha1, h.ha2, h.hr0, h.hq, by rw [hg]; exact h.w⟩
-
 /-- The block at `b + d` added to `h` (with `h2 ≤ 4`) and the products of the
 sum, under the clamped `r0, r1 = 4 q` in `r8, r9` and `s1 = 5 q` in `r10`. -/
 theorem prods_ok (s : State) {b : Reg} (hb : b ≠ .r11) {d : Nat} {pad : BitVec 32}
@@ -1028,10 +1023,6 @@ def Saved (st : Addr) (s : State) (m : Mem) : Prop :=
 theorem save_eq : save = [
     .store (at_ .rdi 72) .rbx, .store (at_ .rdi 80) .rbp, .store (at_ .rdi 88) .r12,
     .store (at_ .rdi 96) .r13, .store (at_ .rdi 104) .r14, .store (at_ .rdi 112) .r15] := rfl
-
-theorem restore_eq : restore = [
-    .mov .rbx (.mem (at_ .rdi 72)), .mov .rbp (.mem (at_ .rdi 80)), .mov .r12 (.mem (at_ .rdi 88)),
-    .mov .r13 (.mem (at_ .rdi 96)), .mov .r14 (.mem (at_ .rdi 104)), .mov .r15 (.mem (at_ .rdi 112))] := rfl
 
 set_option simprocs false in
 theorem save_ok (s : State) (hw : sR (s.gpr .rdi) ∈ s.wr) :

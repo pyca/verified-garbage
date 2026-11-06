@@ -51,13 +51,6 @@ theorem msb_shiftLeft (R : BitVec 64) {n : Nat} (hn : n < 64) : (R <<< n).msb = 
   have : ¬ 63 < n := by omega_arith
   simp [this, show (63 : Nat) < 64 by decide]
 
-theorem word_in {s : State} (h : Room s) {w : Nat} (hw : w < 64) :
-    InRegions (s.rd ++ s.wr) (s.ea (word w)) 64 := by
-  obtain ⟨r, hr, hc⟩ := h.state.slotIn w hw
-  have e : s.ea (word w) = zAddr (s.gpr stateCfg.base) w := ea_of rfl rfl rfl
-  rw [e]
-  exact ⟨r, List.mem_append_right _ hr, hc⟩
-
 /-- A round's pointers: `r12` at the half it reads, `r13` at the one it XORs into. -/
 structure Ptrs (ρ : Role) (s : State) : Prop where
   rd : s.gpr .r12 = s.gpr .rsi + BitVec.ofNat 64 (64 * rdOff ρ)

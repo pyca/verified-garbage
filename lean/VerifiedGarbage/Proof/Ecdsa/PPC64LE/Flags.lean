@@ -85,9 +85,6 @@ theorem negOr_shr (x : BitVec 64) : ((BitVec.ofNat 64 0 - x) ||| x) >>> 63 = if 
     show _ = 1
     omega
 
-theorem neg_bit64 (b : Bool) : BitVec.ofNat 64 0 - (if b then 1 else 0) = mask64 (b = true) := by
-  cases b <;> decide
-
 /-- `r5` is all ones iff `[a] ≠ 0`; `r4` changes too. -/
 theorem nonzero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (h3 : At s base .r3 0)
     {a : Nat} (ha4 : a % 4 = 0) (hn : 0 < c.n) (ha : a + 8 * c.n ≤ size) :

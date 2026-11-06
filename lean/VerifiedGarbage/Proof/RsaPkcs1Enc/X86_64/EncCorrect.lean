@@ -7,9 +7,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: correctness
 
-The frame's push, `EM` (`em_ok`), the call (`callArgs_run`, `pub_call`),
-the mask (`tail_ok`) and the pop: `enc_correct`, for every implementation
-of `vg_rsa_public_checked`.
+Pieces of the proof of correctness: the frame's push and pop (`wp_alloc`),
+the postcondition from the result of the call masked by the zero test of
+`PS` (`result_ok`), and the return address (`ret_frame`).
 -/
 
 @[expose] public section
@@ -51,11 +51,6 @@ theorem wp_seq4 {a b c d rest : Prog isa} {s : State} {P Q : State → Prop}
   refine WP.mono h₂ fun t₃ h₃ => ?_
   rw [VG.WP.seq_iff]
   exact WP.mono h₃ hk
-
-theorem body_eq (pubName : String) (pub : Prog isa) :
-    body pubName pub = .seq (.block setup) (.seq psLoop (.seq (.block sep) (.seq msgCopy (.seq (.block callArgs)
-      (.seq (.call pubName pub) (.seq (.block maskArgs) (.seq maskLoop (.block [.mov .rax (.reg .r11)])))))))) :=
-  rfl
 
 /-! ## The result -/
 
@@ -113,42 +108,5 @@ theorem ret_frame {s : State} (hp : EPre s) {m : Mem} (h : Frame [stkR s, outR s
     simpa only [stkR, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   · exact hp.dRo
   · exact hp.dRs
-
-theorem enc_correct (v : PubImpl) (s : State) (h : encK.pre s) :
-    ∃ t s', Exec isa (code v.name v.code) s t s' ∧ abiPreserved s s' ∧ encK.post s s' := by
-  have hp := ePre_of h
-  suffices hw : WP isa (code v.name v.code) s fun s' => abiPreserved s s' ∧ encK.post s s' by
-    obtain ⟨t, s', he, hq⟩ := hw
-    exact ⟨t, s', he, hq⟩
-  refine wp_alloc (by decide) (by decide) (by decide) (by have := hp.sp1; unfold encStack at this; omega) ?_
-  rw [body_eq]
-  refine wp_seq4 (WP.mono_mx (by decide +kernel)
-    (WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r10, .r11] (em_ok hp) (by decide +kernel))
-    fun t ⟨hpc, k⟩ hmx => (⟨hpc, k, hmx⟩ : PreCall s t ∧ Keep _ (allocState frameBytes s) t ∧ _)) ?_
-  intro t₁ ⟨hpc, k₁, hmx₁⟩
-  refine WP.seq (WP.mono_mx (by decide +kernel) (callArgs_run hp hpc)
-    fun t₂ ⟨hm₂, hdi, hsi, hdx, hcx, h8, h9, k₂⟩ hmx₂ => ?_)
-  have hpc₂ : PreCall s t₂ := ⟨(k₂.gpr (by decide)).trans hpc.rsp, k₂.2.1.trans hpc.rd, k₂.2.2.trans hpc.wr,
-    hm₂ ▸ hpc.out, hm₂ ▸ hpc.slots, hm₂ ▸ hpc.sZ, hm₂ ▸ hpc.em⟩
-  refine WP.seq (WP.mono (pub_call v hp hpc₂ hdi hsi hdx hcx h8 h9) fun t₃ ⟨hpost, hcs₃, hmx₃⟩ => ?_)
-  refine WP.mono_mx (by decide +kernel) (tail_ok hp hpost.toAfterCall) fun t₄ ht hmx₄ => ?_
-  refine ⟨ht.rsp, by rw [ht.wr]; rfl, ⟨fun r hr => ?_, ret_frame hp ht.mem, ?_⟩, ?_⟩
-  · by_cases hr' : r = .rsp
-    · subst hr'
-      show t₄.gpr .rsp + BitVec.ofNat 64 frameBytes = s.gpr .rsp
-      rw [ht.rsp, BitVec.sub_add_cancel]
-    · show (if r = .rsp then _ else t₄.gpr r) = s.gpr r
-      have hnr : r ∉ [Reg.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] := by
-        simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-      simp only [hr', ↓reduceIte]
-      rw [ht.keep.gpr (not_mem_of hnr (by decide)), hcs₃ r hr, k₂.gpr (not_mem_of hnr (by decide)),
-        k₁.gpr (not_mem_of hnr (by decide))]
-      simp only [allocState_gpr, hr', ↓reduceIte]
-  · show t₄.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
-    rw [hmx₄, hmx₃, hmx₂, hmx₁]; rfl
-  · have := result_ok hp hpost ht
-    simp only [encK] at this ⊢
-    rw [freed_mem, freed_rax]; exact this
 
 end VG.Proof.RsaPkcs1Enc.X86_64

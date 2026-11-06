@@ -73,11 +73,6 @@ theorem lo_add (x y : BitVec 64) : lo (x + y) = lo x + lo y := lo32_add x y
 
 theorem lo_ext (x : BitVec 32) : lo (x.setWidth 64) = x := lo32_ext x
 
-theorem lo_ofNat (n : Nat) : lo (BitVec.ofNat 64 n) = BitVec.ofNat 32 n := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  rw [Nat.mod_mod_of_dvd _ (by decide)]
-
 /-- Whether bit `c` of `q` is set, as the mask `0 - ((q << (63 - c)) >> 63)`. -/
 theorem bitMask_eq (q : BitVec 64) {c : Nat} (hc : c < 64) :
     0#64 - (q <<< (63 - c)) >>> 63 = if q.getLsbD c then BitVec.allOnes 64 else 0 := by

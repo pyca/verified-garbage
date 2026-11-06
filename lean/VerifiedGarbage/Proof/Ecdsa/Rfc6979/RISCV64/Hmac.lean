@@ -178,13 +178,6 @@ theorem St.part {s t : State} (h : St P s₀ s t) {p : Part} (hp' : PartOk P p) 
     bytesAt t.mem (pA s₀ p) (plen P p) = bytesAt s.mem (pA s₀ p) (plen P p) :=
   h.bytes (hp'.apart hp) (by have := hp'.len; omega)
 
-theorem St.msg {s t : State} (h : St P s₀ s t) : ∀ {ps : List Part}, (∀ p ∈ ps, PartOk P p) →
-    msgOf P t.mem s₀ ps = msgOf P s.mem s₀ ps
-  | [], _ => rfl
-  | p :: ps, hps => by
-    simp only [msgOf]
-    rw [h.part hp (hps p (by simp)), h.msg (fun q hq => hps q (by simp [hq]))]
-
 omit hp in
 theorem St.refl {s : State} (h : KR P s₀ s) : St P s₀ s s := ⟨h, Frame.refl _ _, fun _ _ => rfl⟩
 

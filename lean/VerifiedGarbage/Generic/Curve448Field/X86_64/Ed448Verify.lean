@@ -22,7 +22,6 @@ public import VerifiedGarbage.Proof.Ed448.VerifyEq
 public import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseEncode
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.CT
@@ -31,12 +30,8 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyChecks
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Digit
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.DirectKey
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.First
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Register
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Round
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Digit
@@ -59,7 +54,6 @@ import VerifiedGarbage.Proof.Ed448.VerifyEq
 import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseEncode
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
 import VerifiedGarbage.Proof.Ed448.X86_64.Verify.CT
@@ -68,12 +62,8 @@ import VerifiedGarbage.Proof.Ed448.X86_64.VerifyChecks
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Digit
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.DirectKey
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.First
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Register
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Round
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Digit

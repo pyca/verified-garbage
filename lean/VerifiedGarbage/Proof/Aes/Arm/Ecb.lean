@@ -442,10 +442,6 @@ theorem load_wp {s : State} {Dp : BitVec 32} {n g : Nat} (hg : 2 * g < n)
         rcases (show c = 0 by omega_arith) with rfl
         exact v₁ k hk) (fun r hr => o₁ _ (hr 0 (by omega_arith))) m₁ rd₁ wr₁ sp₁
 
-theorem q_keep (r : Reg) (hr : ∀ c < 2, ∀ k < 4, r ≠ q (2 * k + c)) : r ∉ layerWrites ∨ r = .r10 ∨
-    r = .r11 ∨ r = .r12 ∨ r = .lr := by
-  revert hr; cases r <;> decide
-
 /-- One group: from before group `g`, to after the last group or before
 group `g + 1`. -/
 theorem group_ok {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}

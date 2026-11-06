@@ -149,14 +149,6 @@ theorem r4_taint (h : Pins Φ []) : RelCT isa (Two Φ)
     (.block [.addi .a0 .s0 oSt, .addi .a1 .s7 4, .addi .a2 .s0 oDig]) fun _ _ => True :=
   two_taint [] h (by taint_decide)
 
-theorem xorOut_taint (h : Pins Φ [.s0, .s8, .s9, .s11]) : RelCT isa (Two Φ) (xorOut G) fun _ _ => True :=
-  two_taint [.s0, .s8, .s9, .s11] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [.s0, .s8, .s9, .s11])
-    (c := xorOut G) (c' := xorOut Hd) (by rfl) (by taint_decide))
-
-theorem nextCtr_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (nextCtr G)) fun _ _ => True :=
-  two_taint [] h (isSome_check_of_zImm (τ := VG.RISCV64.Taint.ofRegs [])
-    (c := .block (nextCtr G)) (c' := .block (nextCtr Hd)) (by rfl) (by taint_decide))
-
 /-- The first two loads of a table's word, through our stack argument `j`. -/
 theorem twA_taint {d : Reg} (j : Nat) (hd : d = .a6 ∨ d = .t1 ∨ d = .a0) (h : Pins Φ []) :
     RelCT isa (Two Φ) (.block [.addSp d (frameBytes + 8 * j), .load .d d d 0]) fun _ _ => True := by

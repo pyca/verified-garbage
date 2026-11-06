@@ -264,12 +264,6 @@ theorem wsOut {s t : State} {B : Addr} {Z w j L : Nat} (h : Ws s B Z w) (o : Out
   h.congr (rs := [(slot w j, L)]) (Frm.of_outside o (List.mem_singleton.mpr rfl))
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact Mut.ofSlot w j L) k hr
 
-/-- A number of `w + 2` words whose top two are zero and below `2^(64 k)`. -/
-theorem wv_top0 {m : Mem} {B : Addr} {e w k : Nat} (hk : k ≤ w + 2) (h0 : word m B (e + 8 * w) = 0)
-    (h1 : word m B (e + 8 * w + 8) = 0) (hv : wv m B e w < 2 ^ (64 * k)) : wv m B e k = wv m B e w := by
-  have e2 : wv m B e (w + 2) = wv m B e w := by rw [wv_top2, h0, h1]; rfl
-  rw [wv_low_of_lt hk (by rw [e2]; exact hv), e2]
-
 /-- The words of a number that is zero. -/
 theorem wv_zero_word {m : Mem} {p : Addr} {e : Nat} : ∀ {N : Nat}, wv m p e N = 0 → ∀ i < N, word m p (e + 8 * i) = 0
   | 0, _, i, hi => absurd hi (by omega)

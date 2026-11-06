@@ -89,9 +89,6 @@ theorem LCtx.hL (C : LCtx a s0 σ) (C' : LCtx a s0' σ') : sL s0 = sL s0' := by
 theorem LCtx.hw (C : LCtx a s0 σ) (C' : LCtx a s0' σ') : cw s0 = cw s0' := by
   simp only [cw, C.krel.oL_eq C'.krel]
 
-theorem LCtx.hR (C : LCtx a s0 σ) (C' : LCtx a s0' σ') : s0.gpr .a7 = s0'.gpr .a7 :=
-  C.krel.reg C'.krel (by decide)
-
 theorem LCtx.hrl (C : LCtx a s0 σ) (C' : LCtx a s0' σ') : rL s0 = rL s0' := C.krel.rL_eq C'.krel
 
 theorem candS_eq (hp : CIn s0) (hav : oL s0 ≤ rL s0) : candS s0 = candOf s0 := by

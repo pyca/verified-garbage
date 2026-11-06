@@ -116,16 +116,6 @@ theorem ctx_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D
   · exact L.cw'.sub_right (Lay.wSub (by decide))
   · exact L.kc.symm
 
-theorem rounds_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D n) :
-    ∀ r ∈ crFrame St W SP D n, (⟨W + BitVec.ofNat 64 176, 8⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact (hd.ok.w.sub_right (Lay.wSub (by decide))).symm
-  · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.stk_w (by decide)).symm
-
 omit L in
 theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') (hd : ∀ r ∈ rs, (⟨Ctx, 256⟩ : Region).Disjoint r)
     {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : ciphOf m' Ctx R = ciphOf m Ctx R := by

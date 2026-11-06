@@ -146,18 +146,4 @@ theorem codeAt_trace {mont round : Prog isa} {montName roundName : String}
     (RelCT.seq (convert_pair montVerified montNoSp montStack v length)
       (RoundCall.code_trace roundVerified roundNoSp roundStack v length fit far lengthFar)))
 
-theorem code_trace {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
-    {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} {input : Import.Geometry}
-    (width : input.count = g.words) (length : g.L = 8 * capacity) (fit : 108 ≤ p.toNat)
-    (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108))
-    (lengthFar : (lengthRegion p).Disjoint (below p 108)) :
-    RelCT isa (InitialPair g capacity p input) (code g.w montName mont roundName round) (Pair g [.edi]) :=
-  codeAt_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v
-    (by rw [width]; unfold Geometry.words; omega) (by have := v.minWidth; omega)
-    (by rw [width]; unfold Geometry.words; omega) (by rw [width]) length fit far lengthFar
-
 end VG.Proof.RsaKeyGen.X86.WitnessRound

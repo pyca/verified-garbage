@@ -36,8 +36,6 @@ def CPub (s₁ s₂ : State) : Prop :=
     (List.range 4).map (stackArg s₁) = (List.range 4).map (stackArg s₂) ∧
     tabWords s₁.mem (stackArg s₁ 2) (stackArg s₁ 3) = tabWords s₂.mem (stackArg s₂ 2) (stackArg s₂ 3)
 
-theorem cpub_eq (Hs Gs : Spec.Mgf1.Hash) : (chkK T Hs Gs).pub = CPub := rfl
-
 /-- The entry state `s` of a run, and the first's, `a`: both meet the
 precondition, and their public data agree. -/
 def VSib (a s : State) : Prop := Pre T a ∧ CPub a s ∧ Pre T s
@@ -172,9 +170,6 @@ theorem vw {H : Hash} (k : Nat) : vw H s k = vw H a k := by
   split <;> simp only [h.gpr (r := .rsi) (by decide), h.gpr (r := .rdi) (by decide),
     h.gpr (r := .rdx) (by decide), h.gpr (r := .r8) (by decide), h.r9, h.arg0, h.vlo, h.vdb, h.vnb, h.cmask,
     h.tws.1, h.tws.2.1, h.tws.2.2.1, h.tws.2.2.2.1, h.tws.2.2.2.2.1, h.tws.2.2.2.2.2.1, h.tws.2.2.2.2.2.2]
-
-theorem pw {H : Hash} (ks : List Nat) : pw H s ks = pw H a ks := by
-  simp only [VG.Proof.RsaPss.X86_64.Chk.pw, h.vw]
 
 /-- The frame and the working space are apart. -/
 theorem rest : RestOk 1 (VG.Proof.RsaPss.X86_64.fb a) a.wr := by

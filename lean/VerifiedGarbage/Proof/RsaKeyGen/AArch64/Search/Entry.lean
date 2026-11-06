@@ -49,11 +49,6 @@ theorem entryValues_bound (s : State) : ∀ e ∈ entryValues s, e.1 < 20 := by
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl) <;> dsimp only <;> decide
 
-theorem entryValues_four (s : State) : ∀ e ∈ (entryValues s).tail, 4 ≠ e.1 := by
-  simp only [entryValues, List.tail_cons, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-    rfl) <;> dsimp only <;> decide
-
 /-- The stack arguments' addresses, from the frame's base. -/
 theorem arg_addr (sp : Addr) (k : Nat) :
     sp - BitVec.ofNat 64 160 + BitVec.ofNat 64 (160 + 8 * k) = sp + BitVec.ofNat 64 (8 * k) := by

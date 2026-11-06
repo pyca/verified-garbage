@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 # The blocks after the last group, decrypted
 
 `loopDR_ok`: the decryption loop, for any number of blocks, stops with
-fewer than 16 left (`DInv`). `decTailRG_ok` is `dec` after its setup for any
+fewer than 16 left (`DInv`). `decTailRG_ok` is `decR` after its setup for any
 number of blocks from 16 on: the blocks after the last group, if any, by
 `remGD_ok`.
 -/

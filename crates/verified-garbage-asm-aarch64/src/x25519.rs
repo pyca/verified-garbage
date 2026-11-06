@@ -681,6 +681,39 @@ cbnz x20, 21b
     )
 }
 
+/// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, as `vg_x25519` does, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise.
+///
+/// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `scalar` must be valid for reads of 32 bytes.
+/// * `point` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 4096 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0x910003e9,0xf9000520
+bl {vg_x25519}
+.inst 0x910003e9,0xf9400529,0xd280000a,0x3940012b,0xaa0b014a,0x3940052b,0xaa0b014a,0x3940092b
+.inst 0xaa0b014a,0x39400d2b,0xaa0b014a,0x3940112b,0xaa0b014a,0x3940152b,0xaa0b014a,0x3940192b
+.inst 0xaa0b014a,0x39401d2b,0xaa0b014a,0x3940212b,0xaa0b014a,0x3940252b,0xaa0b014a,0x3940292b
+.inst 0xaa0b014a,0x39402d2b,0xaa0b014a,0x3940312b,0xaa0b014a,0x3940352b,0xaa0b014a,0x3940392b
+.inst 0xaa0b014a,0x39403d2b,0xaa0b014a,0x3940412b,0xaa0b014a,0x3940452b,0xaa0b014a,0x3940492b
+.inst 0xaa0b014a,0x39404d2b,0xaa0b014a,0x3940512b,0xaa0b014a,0x3940552b,0xaa0b014a,0x3940592b
+.inst 0xaa0b014a,0x39405d2b,0xaa0b014a,0x3940612b,0xaa0b014a,0x3940652b,0xaa0b014a,0x3940692b
+.inst 0xaa0b014a,0x39406d2b,0xaa0b014a,0x3940712b,0xaa0b014a,0x3940752b,0xaa0b014a,0x3940792b
+.inst 0xaa0b014a,0x39407d2b,0xaa0b014a,0xd100054a,0xd37ffd40,0xd280002b,0xca0b0000,0xf84107fe
+.inst 0xd65f03c0
+.p2align 6",
+        vg_x25519 = sym super::x25519::vg_x25519,
+    )
+}
+
 /// The bytes of `scratch` that `vg_x25519_base` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_X25519_BASE_SCRATCH_WRITTEN: usize = 1024;
 

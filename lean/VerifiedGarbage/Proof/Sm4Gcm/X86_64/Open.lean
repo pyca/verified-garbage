@@ -127,17 +127,6 @@ theorem OutWS.tagFrame {W SP : Addr} {X : Region} (h : OutWS W SP X) {o : Nat} (
   · exact h _ (.inl (Lay.wSub (by decide)))
   · exact h _ (.inr fun _ h => h)
 
-theorem OutWDS.oneFrame {W D SP : Addr} {n : Nat} {X : Region} (h : OutWDS W D SP n X) :
-    ∀ r ∈ oneFrame W D SP n, X.Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact h _ (.inl (Region.sub_prefix (by decide)))
-  · exact h _ (.inl (Lay.wSub (by decide)))
-  · exact h _ (.inl (Lay.wSub (by decide)))
-  · exact h _ (.inr (.inl fun _ h => h))
-  · exact h _ (.inr (.inr fun _ h => h))
-
 theorem ite_ofNat (p : Prop) [Decidable p] :
     (if p then 1 else 0 : BitVec 64) = BitVec.ofNat 64 (if p then 1 else 0) := by split <;> rfl
 

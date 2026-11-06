@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmComb
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.Verified
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified

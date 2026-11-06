@@ -124,7 +124,7 @@ theorem KSt.step {q : FPub} {s t : State} {rs : List (Nat × Nat)} {regs : List 
 def TS (q : FPub) (s : State) : Prop :=
   KSt q s ∧ q.sch.close = false ∧ q.sch.comp = false ∧ q.sch.gbad = false
 
-/-- Before `loadC`: what `kMain` needs, for the public data `q`. -/
+/-- Before `loadC`: what `kMainWith` needs, for the public data `q`. -/
 def K0 (q : FPub) (s : State) : Prop :=
   s.wr = q.wr ∧ FDims q ∧ ∃ pB r : List Byte,
     MainCtx s q.B q.Z q.w q.op q.up q.eP q.pP q.rP q.eB pB r ∧ pB.length = q.pl ∧ r.length = q.rl ∧

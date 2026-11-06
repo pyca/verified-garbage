@@ -3,26 +3,25 @@ module
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortCT
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealStore
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.CT
 import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Verified
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortCT
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealStore
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.CT
 meta import VerifiedGarbage.Proof.Framework.RelSplit
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
+meta import VerifiedGarbage.Proof.AesGcm.Rounds
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
 
 /-!
-# AES-GCM on AArch64, interleaved: `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_seal_store_powers`
+# AES-GCM on AArch64, interleaved: `vg_aes_gcm_seal_with_powers`
 
-Untrusted: everything here is checked by Lean. As `Fast/SealPw.lean` and
-`Fast/SealStore.lean`, for the code with the interleaved path for TLS
-records: `with_powers` writes the table of keys from the powers in `pw`
-(`pwTbl`, `pwTbl_for`), whose pointer, loaded from the stack, is public
-(`pwTbl_rel`); `store_powers` computes them from `H'`, as `seal` does
-(`powTbl`).
+Untrusted: everything here is checked by Lean. As `Fast/SealPw.lean`, for
+the code with the interleaved path for TLS records: it writes the table of
+keys from the powers in `pw` (`pwTbl`, `pwTbl_for`), whose pointer, loaded
+from the stack, is public (`pwTbl_rel`).
 -/
 
 @[expose] public section
@@ -223,122 +222,5 @@ theorem sealPwS_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch6
     (post := Proof.AesGcm.sealWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
     (sealPwS_verified v g hMK gh) (by decide) (by decide) (Proof.AesGcm.sealWithPowersPre_local _)
     (Proof.AesGcm.sealWithPowersPost_local _) sealFrameSatPw_pre
-
-/-! ## `vg_aes_gcm_seal_store_powers` -/
-
-section
-variable (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
-  (hP : Proof.Gcm.AArch64.Pmull.PrepPow) (gh : Gh8Ok)
-include hMK hP gh
-
-theorem sealStS_correctN (s : State) (hs : sealStN s) :
-    ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.sealStorePw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
-      sealStAArch64.post s s' := by
-  have hs' := hs
-  obtain ⟨hpx, pd, pw, pc, -, h16, h12⟩ := hs'
-  exact WP.withPreservedV (WP.mono (sealWithSX_wp (w := 2) v _ hMK gh (.inr rfl) (ex := [pwR s]) hpx ⟨h16, h12⟩
-    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact pw.symm)
-    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact pd.symm)
-    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact pc.symm)
-    (fun hi hf => powers_keep hs hi hf)
-    (fun s' _ _ _ _ hc sY sS hrd hwr hsp hf hd =>
-      have q := gsCall_of hs sY sS hrd hwr hsp hf hd
-      WP.mono (pwS_call g (k := 8) (by decide) q.1 q.2.1 hc q.2.2.1) fun _ ⟨gp, pp⟩ =>
-        ⟨gp, by rw [← q.2.2.2]; exact pp⟩) (powTbl_for hP 2 s)) fun _ ⟨⟨ga, p⟩, q⟩ => ⟨ga, p, q⟩)
-    (stitchSealWithS_keepsV v (.inr rfl) powTbl_keepsV (pwCallS_keepsV g))
-
-theorem sealStS_ctN :
-    ConstantTime isa sealStN (onePub 3) (Impl.AesGcm.AArch64.Stitch.sealStorePw v.callees g.fn) :=
-  sealWithSX_ct (w := 2) v _ hMK gh (.inr rfl) (extra := fun _ => []) (extraW := fun s => [pwR s])
-    (ex := fun s => [pwR s]) (fun _ h => h.1)
-    (fun h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.1.symm)
-    (fun h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.2.2.2.1.symm)
-    (fun hq => by obtain ⟨-, -, -, -, -, -, -, -, -, qa⟩ := hq; simp only [pwR, qa 1 (by decide)])
-    (fun p hc sY sS hrd hwr hsp hf hd =>
-      have q := gsCall_of p sY sS hrd hwr hsp hf hd
-      WP.mono (pwS_call g (k := 8) (by decide) q.1 q.2.1 hc q.2.2.1) fun _ q' => q'.1)
-    (fun {σ₁ σ₂ s₁ s₂ _ _ _ _} p₁ p₂ hq c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd => by
-      obtain ⟨q0, -, -, -, -, -, q6, q7, qsp, qa⟩ := hq
-      have e2 : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by decide)
-      have e1 : stackArg σ₁ 1 = stackArg σ₂ 1 := qa 1 (by decide)
-      obtain ⟨hP₁, hs₁, k₁, -⟩ := gsCall_of p₁ sY sS r₁ w₁ sp₁ f₁ hd
-      obtain ⟨hP₂, hs₂, k₂, -⟩ := gsCall_of p₂ (by rw [← e2]; exact sY) (by rw [← e2]; exact sS) r₂ w₂
-        (sp₂.trans qsp) (by rw [← e2, ← q6, ← q7]; exact f₂) (by rw [← q6, ← q7]; exact hd)
-      rw [← e1] at hP₂ k₂
-      rw [← q0] at k₂
-      exact pwS_rel g (.inl rfl) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm))
-    (fun {σ} _ => powTbl_for hP 2 σ)
-    fun _ _ _ _ _ sp₁ sp₂ hr _ _ _ _ _ _ => powTblEnc_rel (sp₁.trans sp₂.symm) hr
-
-end
-
-section
-variable (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
-  (hP : Proof.Gcm.AArch64.Pmull.PrepPow) (gh : Gh8Ok)
-include hMK hP gh
-
-theorem sealStS_correct (s : State) (hs : sealStAArch64.pre s) :
-    ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.sealStorePw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
-      sealStAArch64.post s s' := by
-  obtain ⟨t, s₁, he, ha, hp⟩ := sealStS_correctN v g hMK hP gh _ (narrowS_pre hs)
-  exact ⟨t, _, narrowS_exec hs he, ha, hp⟩
-
-theorem sealStS_ct :
-    ConstantTime isa sealStAArch64.pre sealStAArch64.pub (Impl.AesGcm.AArch64.Stitch.sealStorePw v.callees g.fn) := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂
-  obtain ⟨u₁, r₁, f₁, -⟩ := sealStS_correctN v g hMK hP gh _ (narrowS_pre h₁)
-  obtain ⟨u₂, r₂, f₂, -⟩ := sealStS_correctN v g hMK hP gh _ (narrowS_pre h₂)
-  rw [(Exec.det e₁ (narrowS_exec h₁ f₁)).1, (Exec.det e₂ (narrowS_exec h₂ f₂)).1]
-  exact sealStS_ctN v g hMK hP gh _ _ _ _ _ _ (narrowS_pre h₁) (narrowS_pre h₂) hq f₁ f₂
-
-theorem sealStS_verified :
-    Verified AArch64.target (Impl.AesGcm.AArch64.Stitch.sealStorePw v.callees g.fn)
-      (Proof.AesGcm.sealStorePowersScratchContract AArch64.abi) :=
-  Verified.of_correct (sealStS_correct v g hMK hP gh) (sealStS_ct v g hMK hP gh)
-    { pre := by
-        sig_implies_pre [Proof.AesGcm.sealStorePowersScratchContract, Proof.AesGcm.sealStorePowersScratchSig,
-          Proof.AesGcm.sealStorePowersPreP, Spec.Gcm.sealPre, Spec.Gcm.storePowersOk,
-          Proof.AesGcm.sealStorePowersRoundsPost, Proof.AesGcm.sealRoundsPost,
-          sealStAArch64, sealStW, pwR, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
-          AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      post := by
-        intro s s' _ h
-        sig_post [Proof.AesGcm.sealStorePowersScratchContract, Proof.AesGcm.sealStorePowersScratchSig,
-          Proof.AesGcm.sealStorePowersPreP, Spec.Gcm.sealPre, Spec.Gcm.storePowersOk,
-          Proof.AesGcm.sealStorePowersRoundsPost, Proof.AesGcm.sealRoundsPost,
-          sealStAArch64, sealStW, pwR, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
-          AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-        sig_reduce [sealStAArch64, sealAArch64, AArch64.stackArg, AArch64.stackArgAddr] at h
-        sig_simp [sealStAArch64, sealAArch64, AArch64.stackArg, AArch64.stackArgAddr] [] at h
-        exact ⟨fun _ => h.1, h.2⟩
-      pub := by
-        sig_implies_pub [Proof.AesGcm.sealStorePowersScratchContract, Proof.AesGcm.sealStorePowersScratchSig,
-          Proof.AesGcm.sealStorePowersPreP, Spec.Gcm.sealPre, Spec.Gcm.storePowersOk,
-          Proof.AesGcm.sealStorePowersRoundsPost, Proof.AesGcm.sealRoundsPost,
-          sealStAArch64, sealStW, pwR, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
-          AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      sat := ⟨sealSatSt, by
-        sig_pre [Proof.AesGcm.sealStorePowersScratchContract, Proof.AesGcm.sealStorePowersScratchSig,
-          Proof.AesGcm.sealStorePowersPreP, Spec.Gcm.sealPre, Spec.Gcm.storePowersOk, AArch64.abi,
-          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop,
-          sealSatSt, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
-        sig_and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact Region.disjoint_of_sep (by decide)⟩ }
-
-end
-
-theorem sealStS_framed (v : GcmImpl) (g : GhashStoreImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
-    (hP : Proof.Gcm.AArch64.Pmull.PrepPow) (gh : Gh8Ok) :
-    Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesGcm.AArch64.Stitch.sealStorePw v.callees g.fn))
-      (Proof.AesGcm.sealStorePowersRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealStorePowersSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Proof.AesGcm.sealStorePowersPreP AArch64.abi.ptrBits)
-    (post := Proof.AesGcm.sealStorePowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
-    (sealStS_verified v g hMK hP gh) (by decide) (by decide) (Proof.AesGcm.sealStorePowersPre_local _)
-    (Proof.AesGcm.sealStorePowersPost_local _) sealFrameSatSt_pre
 
 end VG.Proof.AesGcm.AArch64.Fast

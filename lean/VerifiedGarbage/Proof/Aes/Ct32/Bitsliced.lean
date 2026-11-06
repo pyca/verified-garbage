@@ -65,12 +65,6 @@ theorem keyRel_congr {K K' : Nat → BitVec 32} {rk : List Byte} (h : KeyRel K r
   rw [← h b hb i hi]
   exact byte_ext fun j hj => by rw [getLsbD_bsByte _ _ hj, getLsbD_bsByte _ _ hj, he j hj]
 
-theorem bsRel_congr {Q Q' : Nat → BitVec 32} {S : Nat → State} (h : BsRel Q S)
-    (he : ∀ k < 8, Q' k = Q k) : BsRel Q' S := by
-  intro b hb i hi
-  rw [← h b hb i hi]
-  exact byte_ext fun j hj => by rw [getLsbD_bsByte _ _ hj, getLsbD_bsByte _ _ hj, he j hj]
-
 /-! ## The layers -/
 
 theorem bs_subBytes {Q Q' : Nat → BitVec 32} {S : Nat → State}

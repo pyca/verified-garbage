@@ -275,8 +275,9 @@ theorem avx512_s16 : S16Ok (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true true) 
   ⟨S4.correct (w16 := true) (fast := true), S4.ct (w16 := true) (fast := true), (codeChecks_spec avx512_checks16).1,
     (codeChecks_spec avx512_checks16).2.1, (codeChecks_spec avx512_checks16).2.2.1, (codeChecks_spec avx512_checks16).2.2.2⟩
 
-/-- The AVX-512VL implementation, `vg_mlkem16_sample_ntt4_avx512`: as `avx2`, with
-AVX-512VL quadword rotates. -/
+/-- The AVX-512 implementation, `vg_mlkem16_sample_ntt4_avx512`: as `avx2`, with
+AVX-512VL quadword rotates, and sixteen iterations of `SampleNTT`'s loop at a
+time with AVX512BW (`Sample4.zgrp`). -/
 def avx512 : Sample4Impl where
   callee := .avx512
   ok := sample4_scalar_correct
@@ -297,7 +298,7 @@ def avx512 : Sample4Impl where
   batchP16 := fun _ h _ hq => Option.some.inj h ▸ samplePN16_ok true hq
   suffix := "_avx512"
   prfsDoc := "four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own)"
-  features := ["avx", "avx2", "avx512f", "avx512vl"]
+  features := ["avx", "avx2", "avx512f", "avx512vl", "avx512bw"]
 
 end Sample4Impl
 

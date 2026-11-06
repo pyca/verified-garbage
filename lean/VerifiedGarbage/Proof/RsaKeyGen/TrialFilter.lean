@@ -11,8 +11,6 @@ open VG VG.Impl.RsaKeyGen
 def entryDivides (c i : Nat) : Bool := decide (c % tabEntry i = 0)
 def trialPrefix (c n : Nat) : Bool := (List.range n).any (entryDivides c)
 
-theorem trialPrefix_zero (c : Nat) : trialPrefix c 0 = false := rfl
-
 theorem trialPrefix_succ (c n : Nat) : trialPrefix c (n + 1) = (trialPrefix c n || entryDivides c n) := by
   simp only [trialPrefix, List.range_succ, List.any_append, List.any_cons, List.any_nil, Bool.or_false]
 

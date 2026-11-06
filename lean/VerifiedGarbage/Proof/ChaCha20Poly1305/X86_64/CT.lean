@@ -200,10 +200,6 @@ theorem ifma_keeps : ((instrs Impl.Poly1305.X86_64.Ifma.blocksIfma).all fun i =>
 
 theorem ifma_depth : Impl.Poly1305.X86_64.Ifma.blocksIfma.depth = 2 := by lit_decide
 
-/-- The stack below `rsp` that a call of `vg_poly1305_blocks` uses (24 bytes
-for `vg_poly1305_blocks_avx512`, which calls `vg_poly1305_blocks_avx2`,
-which calls `vg_poly1305_blocks`). -/
-theorem below8_16 (sp : Addr) : Region.Sub (below sp 8) (below sp 16) := below_sub (by lit_omega) (by lit_omega)
 theorem below8_24' (sp : Addr) : Region.Sub (below sp 8) (below sp 24) := below_sub (by lit_omega) (by lit_omega)
 theorem below16_24 (sp : Addr) : Region.Sub (below sp 16) (below sp 24) := below_sub (by lit_omega) (by lit_omega)
 
@@ -377,33 +373,6 @@ theorem finalize_call {s : State} {P O : Addr} (hrdi : s.gpr .rdi = P) (hrsi : s
     refine hpost key msg (Proof.Poly1305.Repr.buffered
       (Repr.frame (callEntry_frame s) (h := hr) (by simpa using hsP.symm))) ?_
     rw [show (0 : BitVec 64).toNat = 0 from rfl, hr.1]
-
-/-! ## `vg_chacha20_block` -/
-
-theorem block_call {s : State} {S B : Addr} (hrdi : s.gpr .rdi = S) (hrsi : s.gpr .rsi = B)
-    (hdj : (⟨B, 256⟩ : Region).Disjoint ⟨S, 64⟩)
-    (hsB : (below (s.gpr .rsp) 8).Disjoint ⟨B, 256⟩) (hsS : (below (s.gpr .rsp) 8).Disjoint ⟨S, 64⟩)
-    (hc : Covers ([⟨S, 64⟩] ++ [⟨B, 256⟩]) (s.rd ++ s.wr)) (hw : Covers [⟨B, 256⟩] s.wr)
-    {Q : State → Prop}
-    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
-      Frame [⟨B, 256⟩, below (s.gpr .rsp) 8] s.mem s'.mem → s'.gpr .rsi = B →
-      stateAt s'.mem B = Spec.ChaCha20.block (stateAt s.mem S) → Q s') :
-    WP isa (.call "vg_chacha20_block" Impl.ChaCha20.X86_64.block) s Q := by
-  refine WP.call (k := Proof.ChaCha20.blockX86_64) Proof.ChaCha20.X86_64.block_correct
-    (Proof.ChaCha20.X86_64.Xor.block_keeps_reg (by simp [Proof.ChaCha20.X86_64.Xor.kept]))
-    (by rw [Proof.ChaCha20.X86_64.Xor.block_depth]; decide) (rd := [⟨S, 64⟩]) (wr := [⟨B, 256⟩]) ?_ hc hw ?_
-  · simp only [Proof.ChaCha20.blockX86_64, State.withRegions_gpr, State.withRegions_rd,
-      State.withRegions_wr, State.callEntry_rsp, callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp),
-      callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp), hrdi, hrsi]
-    exact ⟨trivial, trivial, hdj, hsB⟩
-  · intro s' hrd hwr hcs hf hkeep ⟨s₂, hm₂, _, hpost⟩
-    rw [Proof.ChaCha20.X86_64.Xor.block_depth] at hf
-    refine hQ s' hrd hwr hcs hf (by rw [hkeep .rsi (Proof.ChaCha20.X86_64.Xor.block_keeps_reg
-      (by simp [Proof.ChaCha20.X86_64.Xor.kept])), hrsi]) ?_
-    simp only [Proof.ChaCha20.blockX86_64, State.withRegions_gpr, State.withRegions_mem,
-      callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp), hrdi,
-      hrsi, hm₂] at hpost
-    rwa [stateAt_frame (callEntry_frame s) (by simpa using hsS.symm)] at hpost
 
 /-! ## `vg_chacha20_xor` -/
 
@@ -674,8 +643,6 @@ theorem APre.of {enc : Bool} (s₀ : State) (h : preX86_64 enc s₀) : APre enc 
 
 theorem APre.a_d {enc : Bool} {s₀ : State} (hp : APre enc s₀) : (aR s₀).Disjoint (dR s₀) := hp.d_a.symm
 
-theorem stkR_eq (s₀ : State) : stkR s₀ = ⟨s₀.gpr .rsp - 24, 24⟩ := rfl
-
 variable {e : Bool}
 
 theorem APre.ctx_wr {s₀ : State} (hp : APre e s₀) : ctxR s₀ ∈ s₀.wr := by
@@ -736,17 +703,11 @@ theorem APre.off_toNat {s₀ : State} (hp : APre e s₀) {k : Nat} (hk : k < 169
 /-- The stack below `rsp` that the calls use. -/
 theorem below8_stk (s₀ : State) : Region.Sub (below (s₀.gpr .rsp) 8) (stkR s₀) := below_sub (by lit_omega) (by lit_omega)
 
-theorem below16_stk (s₀ : State) : Region.Sub (below (s₀.gpr .rsp) 16) (stkR s₀) :=
-  below_sub (by lit_omega) (by lit_omega)
-
 theorem APre.stk_sub {s₀ : State} (hp : APre e s₀) {k n : Nat} (h : k + n ≤ 1696) :
     (stkR s₀).Disjoint (sub s₀ k n) := hp.stk_c.sub_right (sub_ctx s₀ h)
 
 theorem APre.below8_sub {s₀ : State} (hp : APre e s₀) {k n : Nat} (h : k + n ≤ 1696) :
     (below (s₀.gpr .rsp) 8).Disjoint (sub s₀ k n) := (hp.stk_sub h).sub_left (below8_stk s₀)
-
-theorem APre.below16_sub {s₀ : State} (hp : APre e s₀) {k n : Nat} (h : k + n ≤ 1696) :
-    (below (s₀.gpr .rsp) 16).Disjoint (sub s₀ k n) := (hp.stk_sub h).sub_left (below16_stk s₀)
 
 /-! ## The saved registers and the invariant -/
 
@@ -1186,18 +1147,6 @@ theorem stateAt_initState {s₀ : State} (hp : APre e s₀) {m₁ m' : Mem} {o :
   · rw [r₁ hp.c_n _ (by lit_omega), show (N s₀) = Spec.ChaCha20.bytesAt s₀.mem (np s₀) 12 from rfl,
       wordLE_bytesAt s₀.mem (np s₀) (n := 12) (j := i - 13) (by lit_omega), off_eq]
 
-/-- The first `n ≤ 64` bytes of a ChaCha20 state in memory. -/
-theorem bytesAt_serialize (m : Mem) (p : Addr) {n : Nat} (hn : n ≤ 64) :
-    bytesAt m p n = (Spec.ChaCha20.serialize (stateAt m p)).take n := by
-  apply List.ext_getElem
-  · simp [bytesAt, VG.Proof.ChaCha20.length_serialize]; omega_using [hn]
-  · intro i h₁ h₂
-    simp only [bytesAt, List.length_map, List.length_range] at h₁
-    have e := VG.Proof.ChaCha20.serialize_stateAt m p (i := i) (by lit_omega)
-    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by
-      rw [VG.Proof.ChaCha20.length_serialize]; omega_using [hn, h₁]), Option.getD_some] at e
-    simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_take, e]
-
 /-! ## The keystream from counter 0 -/
 
 /-- For a pass of 512 bytes (`fold` 448), the lengths whose first `fold`
@@ -1395,20 +1344,6 @@ theorem cmpLen_ok {n len : Nat} (hn : n < 2 ^ 31) (hl : len < 2 ^ 64) {s : State
   refine ⟨fun q _ => trivial, trivial, trivial, trivial, ?_⟩
   rw [toNat_ofNat_lt hl, toNat_ofNat_lt (by omega_using [hn])]
 
-theorem mov32fold_ok {fold : Nat} (hf : fold < 2 ^ 32) (s : State) :
-    WP isa (.block [.mov32 .rdx (.imm (BitVec.ofNat 32 fold))]) s fun s' =>
-      s'.gpr .rdx = BitVec.ofNat 64 fold ∧ (∀ q, q ≠ .rdx → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧
-      s'.wr = s.wr ∧ s'.mem = s.mem := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32, RegUpd.gpr_setReg,
-    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some, Option.some.injEq,
-    exists_eq_left']
-  refine ⟨?_, fun q hq => by simp [hq], trivial, trivial, trivial⟩
-  simp only [ite_true]
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by lit_omega),
-    Nat.mod_eq_of_lt (by lit_omega), Nat.mod_eq_of_lt (by lit_omega)]
-
 /-- `mask`: `CF` as `0` or `fold`. -/
 theorem sbb_mask (a : BitVec 64) (c : Bool) :
     (a - a - (BitVec.ofBool c).setWidth 64) &&& BitVec.signExtend 64 (BitVec.ofNat 32 448) =
@@ -1556,8 +1491,6 @@ theorem mLoad_ok {n : Nat} {c : Addr} {s : State} (hr15 : s.gpr .r15 = c) (hw : 
     ite_true, hm, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun q hq => by simp [hq], trivial, trivial, trivial⟩
-
-theorem se16' : BitVec.signExtend 64 (16 : BitVec 32) = 16 := by decide
 
 /-- A store of `N` bytes of zeros. -/
 theorem writeW_zero_apply (m : Mem) (a x : Addr) (N : Nat) :
@@ -2215,8 +2148,6 @@ theorem macD_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
     Option.some.injEq, exists_eq_left', ite_true, ite_false, hps]
   exact ⟨trivial, fun q hq => by simp [hq], trivial⟩
 
-theorem se0' : BitVec.signExtend 64 (0 : BitVec 32) = 0 := by decide
-
 theorem se1' : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide
 
 /-! ## The padded block, built in registers -/
@@ -2551,9 +2482,6 @@ theorem copy_step {s₀ : State} (hp : APre e s₀) {s₂ : State} {Q : Addr} {t
         exact he this
       simp only [he, decide_false, beq_eq_false_iff_ne, ne_eq]
       exact this
-
-theorem copyLoop_eq : (Code.loop (.block [.movzx8 .rax copyByte, .store8 padByte .rax, .alu .add .rcx (.imm 1),
-    .alu .cmp .rcx (.reg .rdx)]) .ne : Prog isa) = .loop (.block copyBody) .ne := rfl
 
 theorem padCopy_eq (b : Impl.Poly1305.X86_64.Blocks) (k : Nat) : padCopy b k =
     .seq (.block [.mov32 .rax (.imm 0), .store (at_ .r15 576) .rax, .store (at_ .r15 584) .rax,
@@ -3342,16 +3270,6 @@ theorem tag_eq (m : Mem) (p q : Addr) :
   · intro h
     exact List.append_inj h (by rw [VG.Proof.Poly1305.length_bytesAt, VG.Proof.Poly1305.length_bytesAt])
 
-theorem ea_disp (s : State) (b : Reg) (d : Int) :
-    s.ea { base := b, disp := d } = s.gpr b + BitVec.ofInt 64 d := rfl
-
-theorem off_neg {p : Addr} {a d : Nat} (h : d ≤ a) :
-    off p a + BitVec.ofInt 64 (-(d : Int)) = off p (a - d) := by
-  rw [off_eq, off_eq]
-  have : BitVec.ofInt 64 (-(d : Int)) = -BitVec.ofNat 64 d := by
-    rw [BitVec.ofInt_neg, BitVec.ofInt_natCast]
-  rw [this, BitVec.add_assoc, ← BitVec.sub_eq_add_neg, Offset.ofNat_sub_ofNat h]
-
 set_option simprocs false in
 theorem compare_ok {s₀ : State} (hp : APre false s₀) {s : State} (hrcx : s.gpr .rcx = off (cx s₀) 48)
     (hr12 : s.gpr .r12 = tp s₀) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
@@ -3474,9 +3392,6 @@ structure Crypted (s₀ s : State) (s' : State) : Prop where
   wr : s'.wr = s.wr
   frame : Frame [sub s₀ 64 384, dR s₀, stkR s₀] s.mem s'.mem
   data : bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀))
-
-theorem C1_eq : ptr .rsi .r15 736 ++ ([.mov .rdx (.reg .r13)] : List Instr) =
-    ptr .rsi .r15 736 ++ ([.mov .rdx (.reg .r13)] : List Instr) := rfl
 
 /-- At most `fold` bytes: the keystream from the prologue XORed into them. -/
 theorem cryptSmall_ok {fold pass w : Nat} (hf : fold ≤ 960) (hw : w = 4 ∨ w = 5 ∨ w = 6) {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)

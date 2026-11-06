@@ -69,8 +69,6 @@ def xorWith (c : Callee) : Prog isa :=
   (.seq (.ite (.zero .x .x20) (.block []) (.loop (bodyWith c) (.nonzero .x .x20)))
     (.block restore))
 
-/-- The baseline implementation. -/
-def body := bodyWith .scalar
 def xor := xorWith .scalar
 
 end VG.Impl.ChaCha20.AArch64.Xor

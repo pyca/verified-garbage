@@ -105,12 +105,6 @@ theorem mul_bit (w : BitVec 32) (c : Prop) [Decidable c] :
   · exact BitVec.mul_one w
   · exact BitVec.mul_zero
 
-theorem or_ite_zero (a w : BitVec 32) (c : Prop) [Decidable c] :
-    (a ||| if c then w else 0) = if c then a ||| w else a := by
-  split
-  · rfl
-  · exact BitVec.or_zero
-
 theorem xor_select (a b : BitVec 32) (c : Prop) [Decidable c] :
     a ^^^ (b ^^^ a) * (if c then 1 else 0 : BitVec 32) = if c then b else a := by
   rw [mul_bit]

@@ -333,10 +333,6 @@ structure XPre (s : State) : Prop where
   sc_ws : Region.Disjoint ⟨s.gpr .a1, 56⟩ ⟨s.gpr .a3, 8192⟩
   pt_ws : Region.Disjoint ⟨s.gpr .a2, 56⟩ ⟨s.gpr .a3, 8192⟩
 
-/-- A region disjoint from the working space is disjoint from its first 2048 bytes. -/
-theorem disj2048 {r : Region} {b : Addr} (h : Region.Disjoint r ⟨b, 8192⟩) : Region.Disjoint r ⟨b, 2048⟩ :=
-  h.sub_right (Region.sub_prefix (by decide))
-
 /-- The u-coordinate, decoded. -/
 def uOf (s : State) : Fe :=
   toFe (VG.Spec.X448.decodeUCoordinate (bytesAt s.mem (s.gpr .a2) 56))

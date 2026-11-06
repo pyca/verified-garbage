@@ -54,8 +54,6 @@ theorem dst_mem (s₀ : State) : (dst s₀).mem = s₀.mem := rfl
 theorem dst_gpr_ne (s₀ : State) {r : Reg} (h : r ≠ .r8) : (dst s₀).gpr r = s₀.gpr r := by
   simp [dst, State.setReg, h]
 theorem nb_dst (s₀ : State) : nb (dst s₀) = nb s₀ := rfl
-theorem dp_dst (s₀ : State) : dp (dst s₀) = op s₀ := rfl
-
 theorem inRegions_prefix {rs : List Region} {a : Addr} {n L : Nat} (h : InRegions rs a L) (hn : n ≤ L) :
     InRegions rs a n := by
   obtain ⟨r, hr, hc⟩ := h

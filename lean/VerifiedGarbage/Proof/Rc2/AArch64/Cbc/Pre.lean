@@ -45,11 +45,6 @@ theorem StepPre.transport {s s' : State} {n : Nat} (hp : StepPre s n)
   · simpa only [keyR, ivR, dataR, bufR, rd, wr, a, b, c, d] using hp.ivBuf
   · simpa only [keyR, ivR, dataR, bufR, rd, wr, a, b, c, d] using hp.dataBuf
 
-theorem StepPre.keep {s s' : State} {m : Mem} {n : Nat} (hp : StepPre s n) (h : Keep [.x8, .x9] {s with mem := m} s') : StepPre s' n :=
-  hp.transport h.rd h.wr fun r hr => h.reg r (by
-    have sep : ∀ r ∈ kept, r ∉ [.x8, .x9] := by decide
-    exact sep r hr)
-
 theorem StepPre.call {s : State} (hp : StepPre s) : CallPre s := by
   constructor
   · have hc : Covers [⟨s.gpr .x0, 128⟩, ⟨s.gpr .x1, 8⟩, ⟨s.gpr .x2, 256⟩]

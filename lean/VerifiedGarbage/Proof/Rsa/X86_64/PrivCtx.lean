@@ -15,8 +15,7 @@ public import VerifiedGarbage.Proof.Rsa.Contract
 # `vg_rsa_private_checked` on x86-64: the contract on the registers
 
 `chkContract` states the shared contract (with the stack the frame and the
-calls use, `stackBytes`) on the registers and the stack
-(`private_checked_implies`).
+calls use, `stackBytes`) on the registers and the stack.
 -/
 
 @[expose] public section
@@ -29,11 +28,6 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 return address of its calls, and that of their calls of Montgomery
 multiplication (which use none). -/
 def stackBytes : Nat := 3256
-
-theorem stackArgs_fourteen (s : State) :
-    List.map (stackArg s) (List.range 14) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
-      stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
-      stackArg s 11, stackArg s 12, stackArg s 13] := rfl
 
 /-- `vg_rsa_private_checked(out = rdi, out_len = rsi, n = rdx, n_len = rcx,
 e = r8, e_len = r9, input = [rsp + 8], input_len = [rsp + 16],
@@ -97,49 +91,5 @@ def chkContract : Contract isa where
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .rdx) (s₂.gpr .rcx).toNat ∧
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r8) (s₁.gpr .r9).toNat =
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r8) (s₂.gpr .r9).toNat
-
-/-- A state meeting `chkContract.pre`: a 512-bit modulus, a one-byte `e`,
-one-byte primes, exponents and `qInv`, and the stack arguments at
-`0x10008`. -/
-def chkSatState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 64 | .rdx => 0x2000 | .rcx => 64 | .r8 => 0x3000 | .r9 => 1
-    | .rsp => 0x10000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem a := bif Nat.beq a.toNat 0x10070 then 0x20
-    else bif Nat.beq a.toNat 0x10009 then 0x40 else bif Nat.beq a.toNat 0x10010 then 0x40
-    else bif Nat.beq a.toNat 0x10019 then 0x41 else bif Nat.beq a.toNat 0x10020 then 1
-    else bif Nat.beq a.toNat 0x10029 then 0x42 else bif Nat.beq a.toNat 0x10030 then 1
-    else bif Nat.beq a.toNat 0x10039 then 0x43 else bif Nat.beq a.toNat 0x10040 then 1
-    else bif Nat.beq a.toNat 0x10049 then 0x44 else bif Nat.beq a.toNat 0x10050 then 1
-    else bif Nat.beq a.toNat 0x10059 then 0x45 else bif Nat.beq a.toNat 0x10060 then 1
-    else bif Nat.beq a.toNat 0x1006A then 0x02 else bif Nat.beq a.toNat 0x10071 then 0x04 else 0
-  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 64⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩,
-    ⟨0x4500, 1⟩, ⟨0x10008, 112⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x20000, 8448⟩]
-
-theorem private_checked_implies : chkContract.Implies (Proof.Rsa.privateCheckedContract abi stackBytes) where
-  pre := by
-    intro s h
-    sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, chkContract, stackBytes, stackArgs_fourteen, List.append_eq, List.range, List.range.loop] at h
-    sig_split h
-    sig_reduce [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, chkContract, stackBytes, stackArgs_fourteen, List.append_eq, List.range, List.range.loop]
-    sig_and_intros
-    sig_close
-    all_goals with_reducible assumption
-  post := by sig_implies_post [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, chkContract, stackBytes, stackArgs_fourteen, List.append_eq, List.range, List.range.loop]
-  pub := by
-    rintro s₁ s₂ - - h
-    sig_pub [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, chkContract, stackBytes, stackArgs_fourteen, List.append_eq, List.range, List.range.loop] at h
-    obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13⟩ := h
-    obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hcx]) hl
-    refine ⟨?_, by simp only [stackArgs_fourteen, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13],
-      hn, he⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := by sig_implies_sat [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, chkContract, stackBytes, stackArgs_fourteen, List.append_eq] [chkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using chkSatState
 
 end VG.Proof.Rsa.X86_64

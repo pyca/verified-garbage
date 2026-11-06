@@ -55,10 +55,6 @@ def zeroOff : Nat := 512
 def lenOff : Nat := 528
 def tagOff : Nat := 544
 def savOff : Nat := 560
-/-- The size of the working space, in doublewords: the context and the
-rounding. -/
-def workWords : Nat := 77
-
 /-! ## Entry and exit -/
 
 /-- The context into `t0`, and our caller's `s7`–`s11` and our return

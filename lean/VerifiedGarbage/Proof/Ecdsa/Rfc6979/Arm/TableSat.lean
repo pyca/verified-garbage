@@ -143,15 +143,6 @@ theorem constRegions_symT (vs : List HVar) (n : String) (W : List (BitVec 64)) (
     Abi.constRegions (fun name => (symT vs name).setWidth 64) [(n, W)] = [⟨0x100000, 8 * W.length⟩] := by
   simp only [Abi.constRegions, List.map_cons, List.map_nil, symT, hna, ite_false]; rfl
 
-/-- Regions at literal addresses, one below the other. -/
-theorem sep_lit {a n b k : Nat} (h : a + n ≤ b ∨ b + k ≤ a) (ha : a + n ≤ 2 ^ 64) (hb : b + k ≤ 2 ^ 64)
-    (ha' : a < 2 ^ 64) (hb' : b < 2 ^ 64) :
-    Region.Disjoint ⟨BitVec.ofNat 64 a, n⟩ ⟨BitVec.ofNat 64 b, k⟩ :=
-  Region.disjoint_of_sep (by
-    simp only [Region.sep, BitVec.toNat_ofNat, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]
-    rw [Nat.mod_eq_of_lt ha', Nat.mod_eq_of_lt hb']
-    omega)
-
 theorem sat_nil {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} {w : HVar} (hv : w ∈ vs)
     (hl : (names vs).length < 2 ^ 24) (hD : w.F.H.D ≤ 64)
     (hQ : T.ecdsa.curve.len ≤ 66) (hsw : T.scratchWords = 1024) : ∃ s, (specK T [] vs).pre s := by

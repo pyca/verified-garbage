@@ -94,9 +94,6 @@ abbrev finSlots (S : Addr) : Region := ⟨svOf S + BitVec.ofNat 64 16, 16⟩
 theorem finMem_frame (s₀ : State) (S : Addr) : Frame [finSlots S] s₀.mem (finMem s₀ S) :=
   Spill.saveMem_frame (lo := 16) (n := 16) fin_bound (by decide) _ _ _
 
-theorem wr_in {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegions (s.rd ++ s.wr) a n := by
-  obtain ⟨r, hr, hc⟩ := h; exact ⟨r, List.mem_append_right _ hr, hc⟩
-
 theorem FPre.slots_scr {S : Addr} : Region.Sub (finSlots S) ⟨S, 2176⟩ := svOf_sub S (by decide)
 
 theorem FPre.key_sub {W : Addr} {d n : Nat} (h : d + n ≤ 272) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 272⟩ :=
@@ -137,10 +134,6 @@ theorem FPre.last_frame {m m' : Mem} (hf : Frame [⟨St, 16⟩, ⟨S, 2176⟩] m
   rcases hr with rfl | rfl
   · exact hp.last_st
   · exact hp.last_scr
-
-/-- The last block, from the memory after saving the registers. -/
-theorem FPre.mn_frame {m : Mem} (hf : Frame [⟨St, 16⟩, ⟨S, 2176⟩] s₀.mem m) : mn m W P L = mn s₀.mem W P L := by
-  rw [mn, mn, hp.key_frame hf (by decide), hp.key_frame hf (by decide), hp.last_frame hf]
 
 end
 

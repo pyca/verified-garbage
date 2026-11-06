@@ -46,16 +46,6 @@ open VG.Proof.AesGcm.RISCV64 (CtrCall CtrPost ctr_call LoopPre LoopOut xorLoop_o
 open VG.Spec.Aes (bytesAt)
 open VG.WriteBytes (writeBytes)
 
-theorem ctr32_single (ciph : Spec.Gcm.Block → Spec.Gcm.Block) (icb x : Spec.Gcm.Block) :
-    Spec.Gcm.ctr32 ciph icb [x] = [x ^^^ ciph icb] := by
-  simp [Spec.Gcm.ctr32, Spec.Gcm.keystream, Nat.repeat]
-
-theorem toBytes_xor (a b : Spec.Gcm.Block) :
-    Spec.Gcm.toBytes (a ^^^ b) = Spec.Cmac.xor (Spec.Gcm.toBytes a) (Spec.Gcm.toBytes b) := by
-  apply List.ext_getElem (by simp [Spec.Gcm.toBytes, Spec.Cmac.xor])
-  intro i h₁ h₂
-  simp [Spec.Gcm.toBytes, Spec.Cmac.xor, BitVec.extractLsb'_xor]
-
 theorem inc32_word (x : BitVec 32) : ((x.setWidth 64 + BitVec.ofNat 64 1).setWidth 32 : BitVec 32) = x + 1#32 := by
   apply BitVec.eq_of_toNat_eq
   have := x.isLt

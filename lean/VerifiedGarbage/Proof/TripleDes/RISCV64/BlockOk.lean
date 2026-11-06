@@ -16,12 +16,6 @@ namespace VG.Proof.TripleDes.RISCV64
 open VG VG.RISCV64 VG.RISCV64.ByteLoad VG.Impl.TripleDes.RISCV64
 open VG.Spec.TripleDes (Direction Schedule)
 
-theorem saved_region (B : Addr) : ∀ p ∈ savedSlots,
-    Region.Sub ⟨B + BitVec.ofNat 64 p.2, 8⟩ ⟨B + BitVec.ofNat 64 56, 48⟩ := by
-  intro p hp
-  have := savedSlots_in p hp
-  exact Offset.sub B this.1 (by omega)
-
 theorem roundConsts_length : roundConsts.length = 55 := by
   rw [roundConsts.lit_eq]; decide +kernel
 

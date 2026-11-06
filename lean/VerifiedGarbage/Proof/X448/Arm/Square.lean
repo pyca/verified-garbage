@@ -25,9 +25,6 @@ structure IKeep (base : Addr) (s t : State) : Prop where
   regs : Keeps (.r11 :: workRegs) s t
   mem : Outside2 base 64 2816 ACC 512 s.mem t.mem
 
-theorem IKeep.refl (base : Addr) (s : State) : IKeep base s s :=
-  ⟨Keeps.refl _ _, Outside2.refl _ _ _ _ _ _⟩
-
 theorem IKeep.trans {base : Addr} {s t u : State} (h : IKeep base s t) (h' : IKeep base t u) :
     IKeep base s u := ⟨h.regs.trans h'.regs, h.mem.trans h'.mem⟩
 

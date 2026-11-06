@@ -85,12 +85,6 @@ theorem fnsD_of : FnsD (MdHashTable.AArch64.fnsOf vs) (HashTable.AArch64.fnsOf v
   gu q hq := by obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hq; exact (hok.2.2.2.2.2 w hw).2.2.2.1
   gf q hq := by obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hq; exact (hok.2.2.2.2.2 w hw).2.2.2.2
 
-theorem idx_lt (w : MdHash) : idx w < 2 ^ 64 := by
-  have hm := w.mgf.mem
-  simp only [idx]
-  simp only [Proof.Pbkdf2.Md.AArch64.mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hm
-  rcases hm with e | e | e | e | e | e | e | e <;> rw [e] <;> decide
-
 /-! ## `encode` and `checkEncoding` for the index of `w` -/
 
 section

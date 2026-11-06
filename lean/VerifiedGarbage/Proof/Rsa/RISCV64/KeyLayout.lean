@@ -179,12 +179,6 @@ theorem Frame.out {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
   · have := hj k hk; dsimp only; omega_arith
   · have := hd d hd'; dsimp only; omega_arith
 
-/-- Memory outside the frame's bytes. -/
-theorem Frame.outside {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
-    (h : Frame B w js ds m m') {Z : Nat} (hj : ∀ j ∈ js, arr w j + S w ≤ Z) (hd : ∀ d ∈ ds, d + 8 ≤ Z) :
-    Outside B 0 Z m m' :=
-  fun x hx => h.out hj hd (by omega_arith)
-
 /-! ## The registers of the working space -/
 
 structure Ws (s : State) (B : Addr) (Z w N : Nat) : Prop where
@@ -195,9 +189,6 @@ structure Ws (s : State) (B : Addr) (Z w N : Nat) : Prop where
   s9 : s.gpr .s9 = BitVec.ofNat 64 w
   s10 : s.gpr .s10 = BitVec.ofNat 64 (S w)
   s11 : s.gpr .s11 = B
-
-/-- The registers the key operations keep. -/
-abbrev wsRegs : List Reg := [.s9, .s10, .s11]
 
 theorem Ws.of_keep {s t : State} {B : Addr} {Z w N : Nat} {rs : List Reg} (h : Ws s B Z w N)
     (k : Keep rs s t) (h9 : .s9 ∉ rs := by decide) (h10 : .s10 ∉ rs := by decide)
@@ -218,12 +209,6 @@ theorem Ws.fit64 {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj :
 
 theorem Ws.hdr_le {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) : hdr ≤ Z :=
   Nat.le_trans (hdr_le_arr _ _) h.fits
-
-/-- The frame of a step, the arrays below `N` and the slots in the header. -/
-theorem Ws.frame_out {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) {js ds : List Nat}
-    {m m' : Mem} (f : Frame B w js ds m m') (hj : ∀ j ∈ js, j < N) (hd : ∀ d ∈ ds, d + 8 ≤ hdr) :
-    Outside B 0 Z m m' :=
-  f.outside (fun j hj' => h.arr_fit (hj j hj')) fun d hd' => by have := hd d hd'; have := h.hdr_le; omega_arith
 
 /-! ## Array addresses -/
 

@@ -34,9 +34,6 @@ namespace SearchInput
 
 variable {p : SearchPublic} {s : State}
 
-theorem frame_state (h : SearchInput p s) : p.frame.Disjoint (inState s) := fun x hx hy =>
-  (h.stack_disjoint (r := inState s) (by simp [inWrites])).2 x (h.frame_sub x hx) hy
-
 theorem state_used (h : SearchInput p s) : (inState s).Disjoint (inUsed s) := by
   have hpw := h.writes_pairwise
   simp only [inWrites, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,

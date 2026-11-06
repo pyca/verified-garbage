@@ -35,16 +35,11 @@ def entered (F : Nat) (s : State) : State := allocated F (pcPushed s)
 /-- The push's 56 bytes below the stack pointer on entry. -/
 abbrev pushRegion (s : State) : Region := FrameStack.belowA s.sp 56
 
-theorem entered_sp (F : Nat) (s : State) :
-    (entered F s).sp = s.sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 F := rfl
-
 theorem entered_wr (F : Nat) (s : State) :
     (entered F s).wr = ⟨State.addr (s.sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 F), F⟩ ::
       ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ :: s.wr := rfl
 
 theorem entered_rd (F : Nat) (s : State) : (entered F s).rd = s.rd := rfl
-
-theorem entered_gpr (F : Nat) (s : State) : (entered F s).gpr = s.gpr := rfl
 
 theorem entered_mem (F : Nat) (s : State) : (entered F s).mem = (pcPushed s).mem := rfl
 

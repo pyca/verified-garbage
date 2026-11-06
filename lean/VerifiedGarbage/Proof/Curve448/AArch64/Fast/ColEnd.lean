@@ -28,11 +28,6 @@ theorem extr56 (lo hi : BitVec 64) :
   congr 2
   omega
 
-theorem mask_val : (BitVec.ofNat 64 (2 ^ 56 - 1) : BitVec 64) =
-    (0x00ff : BitVec 16).setWidth 64 <<< 48 ||| ((0xffff : BitVec 16).setWidth 64 <<< 32 |||
-      ((0xffff : BitVec 16).setWidth 64 <<< 16 ||| (0xffff : BitVec 16).setWidth 64)) := by
-  decide
-
 /-- Add the carry `c`: `ZERO` holds zero. -/
 theorem carryIn_ok (s : State) (a : Acc) (c : Reg) (h₁ : a.lo ≠ a.hi) (h₂ : a.lo ≠ ZERO)
     (hz : s.gpr ZERO = 0) (hlt : accVal s a + (s.gpr c).toNat < 2 ^ 128) :

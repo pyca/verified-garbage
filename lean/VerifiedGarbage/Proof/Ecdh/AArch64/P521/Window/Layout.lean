@@ -29,10 +29,6 @@ theorem aligned (hc : CfgOk c) : WinA cfg := by
   have h := winAQ hc
   exact ⟨h.sl,h.mod,by decide,h.call⟩
 
-theorem doubles_ok (hc : CfgOk c) (base : Addr) :
-    DblsOk cfg c.C base size (some doubles) :=
-  scheduled_doubles (layout hc) (aligned hc) (unitMod_pow_two hc.p_odd _)
-
 theorem inverse_spec (hc : CfgOk c) (base : Addr) :
     InvSpecW cfg c.C base size (Impl.Ecdh.AArch64.Cfg.invJ c) (invJClob c.n) (invJW c) :=
   inverse_for c hc cfg.bits cfg.J (by decide +kernel) (by decide +kernel)

@@ -74,17 +74,6 @@ theorem scalar_eq (c : Cfg) : c.scalar =
     (.seq (c.mulNP (c.sl SS) (c.sl SM) (c.sl ONE))
     (.block (c.checkNonzero (c.sl SS) ++ c.finish)))))))) := rfl
 
-/-- What `scalar`'s field operations leave. -/
-structure ScPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
-  scr : Scr s' base size
-  gpr : ∀ r, r ∉ clob c.n → s'.gpr r = s.gpr r
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-  unch : Unch base ([RM, DM, EM, TT, SM, SS, TMP].map fun i => (c.sl i, 8 * c.n)) s.mem s'.mem
-  ss_lt : sv c base s' SS < c.C.n
-  ss : Fin.ofNat c.C.n (sv c base s' SS) = toM c.C.n (2 ^ (64 * c.n)) (sv c base s ACC) *
-    (Fin.ofNat c.C.n (sv c base s E) + Fin.ofNat c.C.n (sv c base s RR) * Fin.ofNat c.C.n (sv c base s D))
-
 /-- The first three multiplications by `R² mod n`. -/
 theorem scalarIn_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hMN : ModOkA c.MN' size c.C.n s.mem base)

@@ -107,11 +107,6 @@ theorem VPre.setup {s : State} {extra : List Region} (hp : VPre c s extra) : Set
   e_fit := hp.dg_fit
   sc_fit := hp.sc_fit
 
-/-- Ranges of the working space, as one. -/
-theorem unch_whole {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
-    (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, size)] m m' :=
-  (h.outside fun w hw => ⟨Nat.zero_le _, by have := hW w hw; omega_arith⟩).unch
-
 theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
   intro w hw
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw

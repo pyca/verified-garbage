@@ -45,6 +45,22 @@ gh workflow run bench.yml --ref my-branch -f base_commit=$(git rev-parse origin/
   -f arches=aarch64 -f cpu_features='- none sha3' -f modules=ecdsa_p256
 ```
 
+A module with many benchmarks is narrowed further to the groups the change
+affects (`<primitive>` in `<primitive>/verified-garbage/<size>`; the
+binary's `--list` names them), with `groups`, space-separated regular
+expressions each matching a whole name:
+
+```sh
+gh workflow run bench.yml --ref my-branch -f base_commit=$(git rev-parse origin/main) \
+  -f arches=x86_64 -f modules=aes_gcm -f groups='aes-(128|256)-gcm-tls-(seal|open)'
+```
+
+A job that would measure for longer than `bench_compare.py`'s budget (20
+minutes, by `SECONDS_PER_RUN` for each run of each benchmark) fails before
+measuring, naming its largest groups: every AES-GCM benchmark at once is
+over it. Narrow the run with `groups`, or split it into several runs; never
+raise the budget or trim a benchmark's sizes to fit.
+
 `--ref` is the branch (or tag) measured, at its tip; `base_commit` is any
 commit to compare it with, as a full or abbreviated SHA, a branch or a tag,
 which the workflow resolves to the full SHA (empty to run the branch alone,

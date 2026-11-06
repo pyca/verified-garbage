@@ -32,8 +32,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 brainpoolp256r1 as the proof's curve (`brainpoolp256r1`): scalars of 32 bytes in 4 words, the
 order `n` of exactly 256 bits with `2^256 < 2 n`, and `vg_ecdsa_brainpoolp256r1_sign`,
-proven correct (given the group law, the inversions' soundness) and constant time against its contract (`coreK` at brainpoolP256r1's sizes,
-which is `Proof.Ecdsa.AArch64.BrainpoolP256r1.signAArch64`).
+proven correct (given the group law, the inversions' soundness) and constant time against its contract (`coreK` at brainpoolP256r1's sizes).
 -/
 
 @[expose] public section

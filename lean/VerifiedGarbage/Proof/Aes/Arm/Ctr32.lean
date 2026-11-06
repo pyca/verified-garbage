@@ -107,10 +107,6 @@ theorem save_check12 :
     check (names 32) (saveCfg .r12) (fun _ => none) (saveRegs .r12) saveEnv savePost = true := by
   decide +kernel
 
-theorem save_check8 :
-    check (names 32) (saveCfg .r8) (fun _ => none) (saveRegs .r8) saveEnv savePost = true := by
-  decide +kernel
-
 def restoreEnv : Env Nat :=
   { reg := fun _ => none, slot := fun k => if 32 ≤ k ∧ k < 41 then some (k - 32) else none }
 
@@ -530,10 +526,6 @@ theorem shl4 (x : BitVec 32) : x <<< 4 = BitVec.ofNat 32 (16 * x.toNat) := by
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
   omega_arith
 
-theorem off_disjoint' (B : Addr) {x lx y ly : Nat} (h : x + lx ≤ y ∨ y + ly ≤ x)
-    (hx : x + lx < 2 ^ 64) (hy : y + ly < 2 ^ 64) :
-    Region.Disjoint ⟨B + BitVec.ofNat 64 x, lx⟩ ⟨B + BitVec.ofNat 64 y, ly⟩ := off_disjoint B h hx hy
-
 theorem sub_scr (B : Addr) {x lx : Nat} (h : x + lx ≤ 2048) :
     Region.Sub ⟨B + BitVec.ofNat 64 x, lx⟩ ⟨B, 2048⟩ := scr_sub B h
 
@@ -889,26 +881,5 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Aes.ctr32Arm.pre s₁) (h₂ 
 
 theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32Arm.pre Proof.Aes.ctr32Arm.pub Impl.Aes.Arm.ctr32 :=
   VG.Taint.constantTime (A := VG.Arm.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by native_taint_decide)
-
-/-- A state satisfying the precondition (with no data, and the scratch buffer at 0). -/
-def sat : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x2000 | .r3 => 0x3000 | _ => 0
-  sp := 0x8000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x1000, 240⟩, ⟨0x8000, 8⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0, 2048⟩]
-
-theorem ctr32_verified :
-    Verified Arm.target Impl.Aes.Arm.ctr32 (Proof.Gcm.ctr32Contract Arm.abi) :=
-  Verified.of_correct ctr32_correct ctr32_ct (by
-    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, Proof.Aes.ctr32Arm, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      [Proof.Aes.Arm.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
-      using Proof.Aes.Arm.sat)
 
 end VG.Proof.Aes.Arm

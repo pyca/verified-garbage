@@ -328,49 +328,11 @@ def mrWitness : List (Prog isa) := [
         .alu .xor .rax (.imm (BitVec.ofInt 32 (-1))),
     .alu .and .rax (.mem (ix .rbx .r12 (-8))), .store (ix .rbx .r12 (-8)) .rax]]
 
-/-- One witness: its Montgomery form into `aXm`, the table, `y := 1`, the
-flag; `kStat := 3` if it is clear; otherwise the witness counts, and
-`kStat := 4` to go on (fewer than 16 witnesses, or fewer uniform ones than
-needed) or 1. -/
-def mrRound (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  mrWitness ++ [mul aXm aX aR2] ++ preparedRound mul ++ ([
-  .block [.mov32 .rcx (.imm 3), .mov .rax (.mem (hdr kFlag)), .alu .test .rax (.reg .rax)],
-  .ite .e (.block [])
-    (.block [.mov .rax (.mem (hdr kI)), .alu .add .rax (.imm 1), .store (hdr kI) .rax,
-      .mov .rdx (.mem (hdr kU)), .alu .and .rdx (.imm 1), .alu .add .rdx (.mem (hdr kUni)), .store (hdr kUni) .rdx,
-      -- `rcx := 4` if `i ≤ 16` or `uniform < checks`, else 1.
-      .alu .cmp .rax (.imm 17), .alu .sbb .rcx (.reg .rcx), .alu .cmp .rdx (.mem (hdr kChecks)),
-      .alu .sbb .rax (.reg .rax), .alu .or .rcx (.reg .rax), .alu .and .rcx (.imm 3), .alu .add .rcx (.imm 1)]),
-  .block [.store (hdr kStat) .rcx]] : List (Prog isa))
-
-/-- Miller–Rabin: witnesses while `kStat = 4`; 0 when fewer than `out_len`
-octets of `rand` are left (`rand_len − used`, which does not wrap). -/
-def millerRabin (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
-  .block [.mov32 .rax (.imm 1), .store (hdr kI) .rax, .mov32 .rax (.imm 0), .store (hdr kUni) .rax],
-  .loop (seqs [
-    .block [.mov .rcx (.mem (hdr kRandLen)), .mov .rax (.mem (hdr kUsed)), .alu .sub .rcx (.reg .rax),
-      .mov .rax (.mem (hdr kLen)), .alu .cmp .rcx (.reg .rax)],
-    .ite .b (.block [.mov32 .rax (.imm 0), .store (hdr kStat) .rax]) (seqs (mrRound mul)),
-    .block [.mov .rax (.mem (hdr kStat)), .alu .cmp .rax (.imm 4)]]) .e]
-
 /-! ## `vg_rsa_keygen_candidate` -/
 
 /-- The result of Miller–Rabin, from `kStat`. -/
 def mrResult : Prog isa :=
   .seq (.block [.mov .rax (.mem (hdr kStat)), .alu .test .rax (.reg .rax)])
     (.ite .e finNone (.seq (.block [.alu .cmp .rax (.imm 1)]) (.ite .e finPrime (finUsed 3))))
-
-/-- Once `rand` has the candidate's octets. -/
-def kMain (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs (loadC ++ closeCheck ++ ([.ite .ne (finUsed 2) (seqs (trial ++
-    ([.ite .ne (finUsed 3) (seqs (gcdCheck ++
-      ([.ite .ne (finUsed 3) (seqs (montSetup mul ++ expSetup ++ millerRabin mul ++
-        [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))
-
-/-- `vg_rsa_keygen_candidate`. -/
-def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs [.block kEntry, zeroOut,
-    .block [.mov .rax (.mem (hdr kRandLen)), .mov .rcx (.mem (hdr kLen)), .alu .cmp .rax (.reg .rcx)],
-    .ite .b finNone (kMain mul)]
 
 end VG.Impl.RsaKeyGen.X86_64.Candidate

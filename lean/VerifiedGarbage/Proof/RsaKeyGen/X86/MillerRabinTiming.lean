@@ -69,10 +69,6 @@ theorem codeOf_trace (checks : Nat) : RelCT isa (VG.X86.Taint.Agree (roundTaint 
     (.block (VG.Impl.RsaKeyGen.X86.WitnessChecks.codeOf checks)) (VG.X86.Taint.Agree (roundTaint [.edi])) :=
   erased_relCT _ (.block (VG.Impl.RsaKeyGen.X86.WitnessChecks.codeOf 0)) (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
 
-theorem code_trace (w : Nat) : RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi]))
-    (.block (VG.Impl.RsaKeyGen.X86.WitnessChecks.code w)) (VG.X86.Taint.Agree (roundTaint [.edi])) :=
-  codeOf_trace _
-
 end VG.Proof.RsaKeyGen.X86.WitnessChecks
 end
 

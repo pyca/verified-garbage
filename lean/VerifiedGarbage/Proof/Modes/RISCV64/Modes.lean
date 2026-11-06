@@ -168,53 +168,6 @@ theorem cbcDecChained_wp (hp : SeqPre c (Mode.cbcDecChained c.bw) s₀)
 
 /-! ## What each mode changes besides its result -/
 
-theorem ofb_changes (hp : SeqPre c (Mode.ofb c.bw) s₀)
-    (hk : cs.KeyArgs s₀ (wrs0 c (Mode.ofb c.bw) s₀) k) :
-    WP isa (c.seq (Mode.ofb c.bw)) s₀ (Changes c (Mode.ofb c.bw) s₀) := by
-  have b := blk_bounds (c := c) (st := (Mode.ofb c.bw).step) rfl
-  exact WP.mono (seq_changes_wp cs hp ((copyBlk_inBounds (b _) (b _)))
-    ((append_ok (copyBlk_inBounds (b _) (b _)) (xorBlk_inBounds (b _) (b _) (b _))))
-    ((copyBlk_wordAl _ _ _)) ((append_ok (copyBlk_wordAl _ _ _) (xorBlk_wordAl _ _ _ _)))
-    (ofb_computes (cs.cipher_len k)) hk) fun _ h => h.2.2.2
-
-theorem cfbEnc_changes (hp : SeqPre c (Mode.cfbEnc c.bw) s₀)
-    (hk : cs.KeyArgs s₀ (wrs0 c (Mode.cfbEnc c.bw) s₀) k) :
-    WP isa (c.seq (Mode.cfbEnc c.bw)) s₀ (Changes c (Mode.cfbEnc c.bw) s₀) := by
-  have b := blk_bounds (c := c) (st := (Mode.cfbEnc c.bw).step) rfl
-  exact WP.mono (seq_changes_wp cs hp ((copyBlk_inBounds (b _) (b _)))
-    ((append_ok (xorBlk_inBounds (b _) (b _) (b _)) (copyBlk_inBounds (b _) (b _))))
-    ((copyBlk_wordAl _ _ _)) ((append_ok (xorBlk_wordAl _ _ _ _) (copyBlk_wordAl _ _ _)))
-    (cfbEnc_computes (cs.cipher_len k)) hk) fun _ h => h.2.2.2
-
-theorem cfbDec_changes (hp : SeqPre c (Mode.cfbDec c.bw) s₀)
-    (hk : cs.KeyArgs s₀ (wrs0 c (Mode.cfbDec c.bw) s₀) k) :
-    WP isa (c.seq (Mode.cfbDec c.bw)) s₀ (Changes c (Mode.cfbDec c.bw) s₀) := by
-  have b := blk_bounds (c := c) (st := (Mode.cfbDec c.bw).step) rfl
-  exact WP.mono (seq_changes_wp cs hp ((copyBlk_inBounds (b _) (b _)))
-    ((append_ok (copyBlk_inBounds (b _) (b _)) (xorBlk_inBounds (b _) (b _) (b _))))
-    ((copyBlk_wordAl _ _ _)) ((append_ok (copyBlk_wordAl _ _ _) (xorBlk_wordAl _ _ _ _)))
-    (cfbDec_computes (cs.cipher_len k)) hk) fun _ h => h.2.2.2
-
-theorem cbcEncChained_changes (hp : SeqPre c (Mode.cbcEncChained c.bw) s₀)
-    (hk : cs.KeyArgs s₀ (wrs0 c (Mode.cbcEncChained c.bw) s₀) k) :
-    WP isa (c.seq (Mode.cbcEncChained c.bw)) s₀ (Changes c (Mode.cbcEncChained c.bw) s₀) := by
-  have b := blk_bounds (c := c) (st := (Mode.cbcEncChained c.bw).step) rfl
-  exact WP.mono (seq_changes_wp cs hp ((xorBlk_inBounds (b _) (b _) (b _)))
-    ((append_ok (copyBlk_inBounds (b _) (b _)) (copyBlk_inBounds (b _) (b _))))
-    ((xorBlk_wordAl _ _ _ _)) ((append_ok (copyBlk_wordAl _ _ _) (copyBlk_wordAl _ _ _)))
-    (cbcEncChained_computes (cs.cipher_len k)) hk) fun _ h => h.2.2.2
-
-theorem cbcDecChained_changes (hp : SeqPre c (Mode.cbcDecChained c.bw) s₀)
-    (hk : cs.KeyArgs s₀ (wrs0 c (Mode.cbcDecChained c.bw) s₀) k) :
-    WP isa (c.seq (Mode.cbcDecChained c.bw)) s₀ (Changes c (Mode.cbcDecChained c.bw) s₀) := by
-  have b := blk_bounds (c := c) (st := (Mode.cbcDecChained c.bw).step) rfl
-  exact WP.mono (seq_changes_wp cs hp ((copyBlk_inBounds (b _) (b _)))
-    ((append_ok (append_ok (xorBlk_inBounds (b _) (b _) (b _)) (copyBlk_inBounds (b _) (b _)))
-        (copyBlk_inBounds (b _) (b _))))
-    ((copyBlk_wordAl _ _ _)) ((append_ok (append_ok (xorBlk_wordAl _ _ _ _) (copyBlk_wordAl _ _ _))
-        (copyBlk_wordAl _ _ _)))
-    (cbcDecChained_computes (cs.cipher_len k)) hk) fun _ h => h.2.2.2
-
 end
 
 end VG.Proof.Modes.RISCV64

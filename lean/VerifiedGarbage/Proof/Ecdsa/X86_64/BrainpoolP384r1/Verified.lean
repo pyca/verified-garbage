@@ -150,13 +150,6 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signBrainpoolP3
       · exact h5
       · exact h0) rfl (by taint_decide)
 
-/-- The contract with 8 bytes of stack, for the calls' return address. -/
-theorem implies8 : signX86_64.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP384r1.inst X86_64.abi 8) :=
-  implies.stack8_abi (by
-    sig_implies_sat [Spec.Ecdsa.BrainpoolP384r1.inst, Proof.Ecdsa.Instance.signContract,
-      Proof.Ecdsa.Instance.signSig, Spec.BrainpoolP384r1.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
-      X86_64.argRegs, satState] [satState] using satState)
-
 /-- The output is apart from the calls' return address. -/
 theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX86_64.pre s)
     (hc : Clear (hole (s.gpr .rsp)) s) (hp : signX86_64.post s b) :
@@ -171,20 +164,5 @@ theorem sign_call_x86 (hL : Law Spec.BrainpoolP384r1.curve) (hI : InvSounds) (s 
     ∃ t s', Exec isa signBrainpoolP384r1 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
   ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86 hL hI)
     (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
-
-theorem sign_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
-    (hs : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP384r1.inst X86_64.abi 8).pre s)
-    (hp : signX86_64.post s b) : signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
-  obtain ⟨-, hwr, -⟩ := implies8.pre s hs
-  have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdi) (n := 96)
-    (by rw [hwr]; simp) (by decide)
-  simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
-
-theorem sign_verified (hL : Law Spec.BrainpoolP384r1.curve)
-    (hI : InvSounds) :
-    Verified X86_64.target signBrainpoolP384r1
-      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP384r1.inst X86_64.abi 8) :=
-  Verified.of_inline_ct (by lit_decide) (sign_x86 hL hI) sign_ct implies8
-    (fun _ h => Sig.clear_of_pre h) sign_patch
 
 end VG.Proof.Ecdsa.X86_64.BrainpoolP384r1

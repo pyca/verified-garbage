@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBranch
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDispatch
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -54,30 +53,10 @@ theorem branch_false {P Q : State → State → Prop} {c : Cond} {th el : Prog i
     cases impossible
   · exact H.mono (fun _ _ P => P.1.1) (fun _ _ P => P)
 
-def WithValue (P : State → State → Prop) (value : BitVec 32) (s t : State) : Prop :=
-  P s t ∧ s.gpr .eax = value ∧ t.gpr .eax = value
-
 theorem compare_value_ok {s : State} (value : BitVec 32) :
     WP isa (.block [.alu .cmp .eax (.imm value)]) s fun t =>
       Fupd s t ∧ isa.eval .e t = some (s.gpr .eax - value == 0#32) := by
   refine wp_cmpS rfl fun _ T Z => WP.block_nil ⟨T, ?_⟩
   exact Z
-
-theorem compare_value_trace {P : State → State → Prop} (value immediate : BitVec 32)
-    (keep : ∀ s t u z, P s t → Fupd s u → Fupd t z → P u z) :
-    RelCT isa (WithValue P value) (.block [.alu .cmp .eax (.imm immediate)])
-      (WithCondition (WithValue P value) .e (value - immediate == 0#32)) := by
-  intro s t tr ur u z ⟨H, valueS, valueT⟩ A B
-  have raw : RelCT isa (VG.X86.Taint.Agree (τr [])) (.block [.alu .cmp .eax (.imm immediate)])
-      (VG.X86.Taint.Agree (τr [])) :=
-    erased_relCT _ (.block [.alu .cmp .eax (.imm 0)]) (.block []) rfl rfl rfl (by decide +kernel)
-  have empty : VG.X86.Taint.Agree (τr []) s t := agree_regs (by intro r mem; cases mem)
-  obtain ⟨U, flagU⟩ := wp_result (compare_value_ok immediate) A
-  obtain ⟨Z, flagZ⟩ := wp_result (compare_value_ok immediate) B
-  refine ⟨(raw _ _ _ _ _ _ empty A B).1, ⟨keep _ _ _ _ H U Z, ?_, ?_⟩, ?_, ?_⟩
-  · rw [U.gpr]; exact valueS
-  · rw [Z.gpr]; exact valueT
-  · rw [flagU, valueS]
-  · rw [flagZ, valueT]
 
 end VG.Proof.RsaKeyGen.X86.Candidate

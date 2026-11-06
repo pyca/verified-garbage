@@ -129,10 +129,6 @@ theorem VW_xor {s s' : State} {w x : Nat} {v u : BitVec 64 × BitVec 64} (hv : V
   · simp only [itePos h8, byteOf_xor, BitVec.getLsbD_xor]
   · simp only [iteNeg h8, byteOf_xor, BitVec.getLsbD_xor]
 
-theorem kaSlot_eq : kaSlot = 644 := rfl
-theorem kbSlot_eq : kbSlot = 648 := rfl
-theorem cntSlot_eq : cntSlot = 616 := rfl
-
 /-! ## Under the rounds' context -/
 
 /-- Four words of an operation in the tail buffer, under `Ctx`. -/
@@ -193,11 +189,6 @@ structure KaMid (s₀ : State) (KL KR : BitVec 64 × BitVec 64) (i : Nat) (s : S
   ka : 1 ≤ i → VW s kaSlot (kaD2 KL KR)
   kb : i = 2 → VW s kbSlot (kaD3 KL KR)
   cnt : slotW s cntSlot = BitVec.ofNat 32 (3 - i)
-
-theorem VW.keep {s s' : State} {a : Nat} {v : BitVec 64 × BitVec 64} (h : VW s a v)
-    (hk : ∀ j < slots, j < wSlot ∨ wSlot + 4 ≤ j → slotW s' j = slotW s j)
-    (ha : a + 4 ≤ wSlot ∨ wSlot + 4 ≤ a) (has : a + 4 ≤ slots) : VW s' a v :=
-  h.congr fun i hi => hk _ (by omega_arith) (by omega_arith)
 
 /-- `cmp r, #v`. -/
 theorem cmpImm_ok (s : State) (r : Reg) {v : BitVec 32} (hv : encodable v = true) :

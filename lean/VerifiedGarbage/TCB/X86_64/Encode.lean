@@ -435,6 +435,14 @@ def ZOp.encode : ZOp → Option (List Nat)
   | .vprorq d s n => evex 1 1 true 2 (xreg d) 0x72 0 (.reg (xreg s)) (imm := [n.toNat])
   | .vpermq d s o => evex 1 3 true 2 0 0x00 (xreg d) (.reg (xreg s)) (imm := [o.toNat])
   | .vpmadd52 hi d a b => evex 1 2 true 2 (xreg a) (if hi then 0xB5 else 0xB4) (xreg d) (.reg (xreg b))
+  -- "VPERMB/VPERMW/VPERMD/VPERMQ" (`EVEX.512.66.0F38.W1 8D /r`: `zmm1` in
+  -- `reg`, the indices `zmm2` in `vvvv`, `zmm3` in `r/m`), "VPSRLVW"
+  -- (`EVEX.512.66.0F38.W1 10 /r`), and "VEXTRACTI32x4"
+  -- (`EVEX.512.66.0F3A.W0 39 /r ib`: the source `zmm2` in `reg`, the
+  -- destination `xmm1` in `r/m`).
+  | .vpermw d a b => evex 1 2 true 2 (xreg a) 0x8D (xreg d) (.reg (xreg b))
+  | .vpsrlvw d a b => evex 1 2 true 2 (xreg a) 0x10 (xreg d) (.reg (xreg b))
+  | .vextracti32x4 d s n => evex 1 3 false 2 0 0x39 (xreg s) (.reg (xreg d)) (imm := [n.toNat])
 
 /-- Whether a register of `Evex.lean` is one of `xmm0`–`xmm15`. -/
 def VReg.isLo : VReg → Bool
@@ -594,6 +602,13 @@ def Instr.encode : Instr → Option (List (List Nat))
   | .kStore8 m k r => do
     return [← vex 3 1 true 0 0 0x92 1 (.reg (reg k)),
       ← evex 3 1 false 2 0 0x7F (xreg r) (.mem m) 64 (aaa := 1)]
+  -- "VPCMPW/VPCMPUW" (`EVEX.512.66.0F3A.W1 3E /r ib`: `k1` in `reg`, `zmm2`
+  -- in `vvvv`, `zmm3` in `r/m`), with the predicate `1`; then "KMOVD"
+  -- (`VEX.L0.F2.0F.W0 93 /r`: the general-purpose register in `reg`, `k1`
+  -- in `r/m`).
+  | .vpcmpltuw d a b => do
+    return [← evex 1 3 true 2 (xreg a) 0x3E 1 (.reg (xreg b)) (imm := [1]),
+      ← vex 3 1 false 0 0 0x93 (reg d) (.reg 1)]
   -- "STMXCSR" (`NP 0F AE /3`), "LDMXCSR" (`NP 0F AE /2`), "LFENCE" (`NP 0F AE
   -- E8`).
   | .stmxcsr m => (legacy [] false [0x0F, 0xAE] 3 (.mem m)).map ([·])

@@ -29,19 +29,4 @@ theorem save_ok {s : State} {base : Addr} {size n src dst : Nat} (scratch : Scr 
   rw [value] at V
   exact ⟨V, Oa.trans (Ot.mono (by omega) (by omega)), Ka.widen Kt⟩
 
-theorem restore_ok {s : State} {base : Addr} {size n src dst : Nat} (scratch : Scr s base size)
-    (positive : 0 < n) (srcFit : src + 4 * n ≤ size) (dstFit : dst + 4 * n ≤ size)
-    (sep : dst = src ∨ dst + 4 * n ≤ src ∨ src + 4 * n ≤ dst)
-    (even : val32 s.mem base src n % 2 = 0) :
-    WP isa (restore n src dst) s fun t =>
-      val32 t.mem base dst n = val32 s.mem base src n + 1 ∧
-      Outside base dst (4 * n) s.mem t.mem ∧ Keeps [.eax, .ecx, .edx, .ebp] s t := by
-  refine WP.seq (WP.mono (VG.Proof.Rsa.X86.Div.copyWords_ok scratch positive srcFit dstFit sep)
-    fun a ⟨Oa, value, Ka⟩ => ?_)
-  have low : w32 a.mem base dst + 1 < 2 ^ 32 := LowWord.even_low positive (by rw [value]; exact even)
-  refine WP.mono (LowWord.increment_ok (scratch.of_keeps Ka (by decide)) positive dstFit low)
-    fun t ⟨V, Ot, Kt⟩ => ?_
-  rw [value] at V
-  exact ⟨V, Oa.trans (Ot.mono (by omega) (by omega)), Ka.widen Kt⟩
-
 end VG.Proof.RsaKeyGen.X86.CandidateSave

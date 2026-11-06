@@ -281,38 +281,6 @@ def sealGatherPrepared16RoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) 
     (post := sealGatherRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
-/-- `sealRoundsPost`, and the powers of the key context's hash subkey at `pw`. -/
-def sealStorePowersRoundsPost (pb : Nat) : sealStorePowersSig.Post pb :=
-  fun ctx rounds nonce nonceLen aad aadLen data len tag pw m m' r =>
-    sealRoundsPost pb ctx rounds nonce nonceLen aad aadLen data len tag m m' r ∧
-      Powers8Repr m' pw (ctxH m ctx)
-
-/-- `sealPre` and `storePowersOk`, and `sealStorePowersRoundsPost`. -/
-def sealStorePowersRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealStorePowersSig.contract A
-    (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag _pw m =>
-      sealPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag m ∧
-        storePowersOk nonceLen aadLen)
-    (post := sealStorePowersRoundsPost A.ptrBits) (writeArgs := true) (stack := stack)
-
-/-- `openRoundsPost`, and the powers of the key context's hash subkey at `pw`,
-whether or not the tag matches: they depend only on the key. -/
-def openStorePowersRoundsPost (pb : Nat) : openStorePowersSig.Post pb :=
-  fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen pw m m' r =>
-    openRoundsPost pb ctx rounds nonce nonceLen aad aadLen data len tag tagLen m m' r ∧
-      Powers8Repr m' pw (ctxH m ctx)
-
-/-- `openPre`, `storePowersOk` and a supported tag length (`tagLenOk`),
-`openStorePowersRoundsPost`, and what `openRoundsContract` may leak. -/
-def openStorePowersRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openStorePowersSig.contract A
-    (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _pw m =>
-      openPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen m ∧
-        storePowersOk nonceLen aadLen ∧ tagLenOk tagLen.toNat)
-    (post := openStorePowersRoundsPost A.ptrBits) (writeArgs := true) (stack := stack)
-    (leak := some fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _pw =>
-      openLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
-
 /-- `sealRoundsPost`, which does not depend on `pw`. -/
 def sealWithPowersRoundsPost (pb : Nat) : sealWithPowersSig.Post pb :=
   fun ctx rounds nonce nonceLen aad aadLen data len tag _pw m m' r =>
@@ -406,16 +374,6 @@ theorem streamVerifyPost_imp (pb : Nat) : streamVerifySig.PostImp pb (streamVeri
     rw [hc, hh] at h'
     exact h'
 
-theorem sealStorePowersPost_imp (pb : Nat) :
-    sealStorePowersSig.PostImp pb (sealStorePowersRoundsPost pb) (Spec.Gcm.sealStorePowersPost pb) :=
-  fun ctx rounds nonce nonceLen aad aadLen data len tag _ m m' r hp =>
-    ⟨sealPost_imp pb ctx rounds nonce nonceLen aad aadLen data len tag m m' r hp.1, hp.2⟩
-
-theorem openStorePowersPost_imp (pb : Nat) :
-    openStorePowersSig.PostImp pb (openStorePowersRoundsPost pb) (Spec.Gcm.openStorePowersPost pb) :=
-  fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _ m m' r hp =>
-    ⟨openPost_imp pb ctx rounds nonce nonceLen aad aadLen data len tag tagLen m m' r hp.1, hp.2⟩
-
 theorem sealWithPowersPost_imp (pb : Nat) :
     sealWithPowersSig.PostImp pb (sealWithPowersRoundsPost pb) (Spec.Gcm.sealWithPowersPost pb) :=
   fun ctx rounds nonce nonceLen aad aadLen data len tag _ m m' r hp =>
@@ -445,11 +403,6 @@ theorem openPrepared16_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stac
 theorem openPrepared_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
     (h : Verified T c (openPreparedRoundsContract A stack)) : Verified T c (Spec.Gcm.openPreparedContract A stack) :=
   h.post_mono (openPost_imp _)
-
-/-- `Spec.Gcm.openStorePowersContract` from `openStorePowersRoundsContract`. -/
-theorem openStorePowers_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
-    (h : Verified T c (openStorePowersRoundsContract A stack)) : Verified T c (Spec.Gcm.openStorePowersContract A stack) :=
-  h.post_mono (openStorePowersPost_imp _)
 
 /-- `Spec.Gcm.openWithPowersContract` from `openWithPowersRoundsContract`. -/
 theorem openWithPowers_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
@@ -495,11 +448,6 @@ theorem sealPrepared16_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stac
 theorem sealPrepared_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
     (h : Verified T c (sealPreparedRoundsContract A stack)) : Verified T c (Spec.Gcm.sealPreparedContract A stack) :=
   h.post_mono (sealPost_imp _)
-
-/-- `Spec.Gcm.sealStorePowersContract` from `sealStorePowersRoundsContract`. -/
-theorem sealStorePowers_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
-    (h : Verified T c (sealStorePowersRoundsContract A stack)) : Verified T c (Spec.Gcm.sealStorePowersContract A stack) :=
-  h.post_mono (sealStorePowersPost_imp _)
 
 /-- `Spec.Gcm.sealWithPowersContract` from `sealWithPowersRoundsContract`. -/
 theorem sealWithPowers_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}

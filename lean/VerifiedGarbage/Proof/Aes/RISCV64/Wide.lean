@@ -264,18 +264,8 @@ section Foot
 
 variable {s₀ : State} {b : Addr} {s₁ s₂ s₃ : State}
 
-theorem Foot.rfl' (s : State) : Foot s₀ b s s := ⟨fun _ _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _⟩
-
-theorem Foot.trans (h₁ : Foot s₀ b s₁ s₂) (h₂ : Foot s₀ b s₂ s₃) : Foot s₀ b s₁ s₃ :=
-  ⟨fun r h h' => (h₂.keep r h h').trans (h₁.keep r h h'), h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr,
-    h₂.sp.trans h₁.sp, h₁.frame.trans h₂.frame⟩
-
 theorem Foot.upd {d : Reg} {v : BitVec 64} (u : Upd s₁ s₂ d v) (hd : d ∈ sboxWrites) : Foot s₀ b s₁ s₂ :=
   ⟨fun r h _ => u.other r (fun e => h (e ▸ hd)), u.rd, u.wr, u.sp, by rw [u.mem]; exact Frame.refl _ _⟩
-
-theorem Foot.mupd {m : Mem} (u : Mupd s₁ s₂ m)
-    (hf : Frame (wRegions b (s₀.gpr .a3) (s₀.gpr .a4).toNat) s₁.mem m) : Foot s₀ b s₁ s₂ :=
-  ⟨fun r _ _ => by rw [u.gpr], u.rd, u.wr, u.sp, by rw [u.mem]; exact hf⟩
 
 /-- A slot of 78–87 written. -/
 theorem wSlot_frame (m : Mem) {k : Nat} (h₁ : 78 ≤ k) (h₂ : k < 88) (v : BitVec 64) :
@@ -351,12 +341,6 @@ theorem FSetup.slotW_data {k : Nat} (hk : k < 88) :
     ∀ r ∈ [(⟨s₀.gpr .a3, 16 * (s₀.gpr .a4).toNat⟩ : Region)],
       Region.Disjoint ⟨b + BitVec.ofNat 64 (8 * k), 8⟩ r := fun r hr => by
   simp only [List.mem_singleton] at hr; subst hr; exact (hs.dScr (by omega)).symm
-
-/-- The data outside slots 78–87. -/
-theorem FSetup.data_slots :
-    ∀ r ∈ [(⟨b + BitVec.ofNat 64 624, 80⟩ : Region)],
-      Region.Disjoint ⟨s₀.gpr .a3, 16 * (s₀.gpr .a4).toNat⟩ r := fun r hr => by
-  simp only [List.mem_singleton] at hr; subst hr; exact hs.dScr (by omega)
 
 theorem FSetup.wMasks : ∀ r ∈ wRegions b (s₀.gpr .a3) (s₀.gpr .a4).toNat,
     Region.Disjoint ⟨b + BitVec.ofNat 64 416, 48⟩ r ∧ Region.Disjoint ⟨b + BitVec.ofNat 64 512, 96⟩ r := by

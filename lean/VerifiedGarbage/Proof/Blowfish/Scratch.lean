@@ -79,14 +79,6 @@ section
 
 variable {m₁ m₂ : Mem} {p : Addr}
 
-private theorem foldl_congr {α β : Type} {f g : β → α → β} :
-    ∀ (l : List α) (b : β), (∀ x ∈ l, ∀ b, f b x = g b x) → l.foldl f b = l.foldl g b
-  | [], _, _ => rfl
-  | x :: l, b, h => by
-    simp only [List.foldl_cons]
-    rw [h x List.mem_cons_self]
-    exact foldl_congr l _ fun y hy => h y (List.mem_cons_of_mem _ hy)
-
 private theorem bytesAt_congr {n : Nat}
     (h : ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     bytesAt m₂ p n = bytesAt m₁ p n := by

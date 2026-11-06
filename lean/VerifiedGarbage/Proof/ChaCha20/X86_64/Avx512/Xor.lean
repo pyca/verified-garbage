@@ -12,7 +12,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.ChaCha20.Contract
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # ChaCha20 keystream XOR on x86-64 with AVX-512
@@ -451,22 +452,9 @@ theorem xor_rsi (s : State) (hs : xorAvx2X86_64.pre s) :
   obtain ⟨t, s', he, ⟨h, hpost⟩, hr⟩ := correct (Avx2.APre.of s hs)
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h, hpost, hr⟩
 
-theorem xor_correct (s : State) (hs : xorAvx2X86_64.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx512.xor s t s' ∧ abiPreserved s s' ∧
-      xorAvx2X86_64.post s s' :=
-  (xor_rsi s hs).imp fun _ ⟨s', he, ha, h, _⟩ => ⟨s', he, ha, h⟩
-
 theorem xor_ct : ConstantTime isa xorAvx2X86_64.pre xorAvx2X86_64.pub
     Impl.ChaCha20.X86_64.Avx512.xor :=
   VG.Taint.constantTime (A := taint) Avx2.τ₀ (fun _ _ h₁ h₂ hp => Avx2.agree₀ h₁ h₂ hp)
     (by taint_decide)
-
-theorem xor_verified :
-    Verified X86_64.target Impl.ChaCha20.X86_64.Avx512.xor
-      (Proof.ChaCha20.xorContract X86_64.abi 16) :=
-  Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, X86_64.abi, X86_64.argRegs,
-      xorAvx2X86_64, Proof.ChaCha20.xorX86_64]
-      [Avx2.sat] using Avx2.sat)
 
 end VG.Proof.ChaCha20.X86_64.Avx512

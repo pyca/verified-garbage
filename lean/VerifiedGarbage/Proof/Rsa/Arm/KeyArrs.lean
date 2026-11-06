@@ -33,11 +33,6 @@ theorem Arrs.get {m : Mem} {B : BitVec 32} {w : Nat} {A : Nat → Nat} {live : L
 theorem Arrs.nil (m : Mem) (B : BitVec 32) (w : Nat) (A : Nat → Nat) : Arrs m B w A [] :=
   VG.Proof.Rsa.KeyWorkspace.Arrs.nil m (State.addr B) w A
 
-/-- Tracking one more array. -/
-theorem Arrs.add {m : Mem} {B : BitVec 32} {w : Nat} {A : Nat → Nat} {live : List Nat}
-    (h : Arrs m B w A live) {o v : Nat} (e : num m B w o = v) : Arrs m B w (upd A o v) (o :: live) :=
-  VG.Proof.Rsa.KeyWorkspace.Arrs.add h e
-
 /-- One more array, whose value is already `A`'s. -/
 theorem Arrs.cons {m : Mem} {B : BitVec 32} {w : Nat} {A : Nat → Nat} {live : List Nat}
     (h : Arrs m B w A live) {o : Nat} (e : num m B w o = A o) : Arrs m B w A (o :: live) :=

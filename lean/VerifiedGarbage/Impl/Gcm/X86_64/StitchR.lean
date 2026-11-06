@@ -104,9 +104,9 @@ def remD : Prog isa :=
           (.seq (.ite .e (.block []) (.seq (.loop (.block (remPairD ++ remNextPair)) .ne) (.block foldLanes)))
             (.block (StitchAvx.reduceHash ++ ([.alu .add .r11 (.imm 512)] : List Instr) ++ storeY))))))
 
-/-- `dec`, for any number of blocks from 1 on: with fewer than 16, all of them
-by `remD` after the setup, without the loop; otherwise the blocks after the
-last group, if any, by `remD`. -/
+/-- `Stitch.dec`, for any number of blocks from 1 on: with fewer than 16, all
+of them by `remD` after the setup, without the loop; otherwise the blocks
+after the last group, if any, by `remD`. -/
 def decR : Prog isa :=
   .seq (.block setup)
     (.seq (.block [.alu .cmp .r9 (.imm 16)])

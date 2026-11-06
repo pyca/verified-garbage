@@ -69,8 +69,6 @@ def addOps : List FOp :=
     .sub TF TY TZ, .add TG TY TZ, .add TH RX RY, .add TX PX PY, .mul TH TH TX, .mul TX TA TF,
     .sub TH TH TC, .sub TH TH TD, .mul TX TX TH, .mul TY TA TG, .sub TH TD TC, .mul TY TY TH]
 
-theorem addition_eq : addition = opsCode addOps (FOp.mul TZ TF TG).code := rfl
-
 theorem addOps_ok : opsOk addOps SQ = true := by decide
 
 /-- The slots after the addition. -/

@@ -113,37 +113,9 @@ Montgomery's form at slot 40 (`Impl/Ecdh/RISCV64.lean`'s `BP`) in place of
 `3 b`. -/
 def rcb3Slots : RcbSlots := { c.rcbSlots with b3 := c.sl 40 }
 
-/-- The ladder over every bit of the `n` words at `K`'s slot, from the
-point at `ACC`, `PT`, `ONEP`. -/
-def mulLadder : LadderCfg where
-  M := c.MP'
-  S := c.rcbSlots
-  G := c.pt ACC PT ONEP
-  R := c.pt RX RY RZ
-  D := c.pt DX DY DZ
-  T := c.pt TX TY TZ
-  bits := c.sl K
-  nbits := 64 * c.n
-
 /-- Where `vg_<curve>_mul` keeps `s0`, `s1` and `ra`: past the numbered
 slots. -/
 def mulSave : Nat := c.sl nslots
-
-/-- `vg_<curve>_mul`'s body: `Q` (in `R`'s first two slots) copied to `ACC`
-and `PT`, `R = O = (0 : 1 : 0)` (from zero and one), then `R = [k]Q` by the
-ladder. -/
-def mulBody : Prog isa :=
-  .seq (.block (copy c.n (c.sl ACC) (c.sl RX) ++ copy c.n (c.sl PT) (c.sl RY) ++
-    copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO)))
-    (ladder c.mulLadder c.FP)
-
-/-- `vg_<curve>_mul(ws = a0)`: `s0`, `s1` and `ra` kept around the body,
-with the working space's base in `s0`. -/
-def mulFn : Prog isa :=
-  .seq (.block (sdAt .s0 .a0 c.mulSave ++ sdAt .s1 .a0 (c.mulSave + 8) ++ sdAt .ra .a0 (c.mulSave + 16) ++
-    [.addi .s0 .a0 0])) <|
-  .seq c.mulBody (.block (ldAt .ra .s0 (c.mulSave + 16) ++ ldAt .s1 .s0 (c.mulSave + 8) ++
-    ldAt .s0 .s0 c.mulSave))
 
 end Cfg
 

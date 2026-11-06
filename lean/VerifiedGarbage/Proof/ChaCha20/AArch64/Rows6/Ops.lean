@@ -36,15 +36,8 @@ structure Same (s s' : State) : Prop where
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
 
-theorem Same.trans {s₀ s₁ s₂ : State} (h : Same s₀ s₁) (h' : Same s₁ s₂) : Same s₀ s₂ :=
-  ⟨h'.gpr.trans h.gpr, h'.mem.trans h.mem, h'.rd.trans h.rd,
-    h'.wr.trans h.wr, h'.sp.trans h.sp⟩
-
 structure RoundSame (s s' : State) : Prop extends Same s s' where
   v30 : s'.v .v30 = s.v .v30
-
-theorem RoundSame.trans {s₀ s₁ s₂ : State} (h : RoundSame s₀ s₁) (h' : RoundSame s₁ s₂) :
-    RoundSame s₀ s₂ := ⟨h.toSame.trans h'.toSame, h'.v30.trans h.v30⟩
 
 def step (vs : Nat → Rows) : Op → Nat → Rows
   | .add d a b => fun j => (vs j).set d ((vs j)[a] + (vs j)[b])
@@ -120,15 +113,6 @@ theorem op_ok (op : Op) {vs : Nat → Rows} {s : State} (h : Holds vs s) (ht : s
         h d ((j + n.val) % 4) (Nat.mod_lt _ (by decide))]
     · exact h k j hj
 
-theorem ops_ok : ∀ (ops : List Op) {vs : Nat → Rows} {s : State}, Holds vs s →
-    s.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table →
-    WP isa (.block (ops.flatMap Op.code)) s fun s' =>
-      Holds (ops.foldl step vs) s' ∧ RoundSame s s'
-  | [], _, _, h, _ => WP.block_nil ⟨h, ⟨⟨rfl,rfl,rfl,rfl,rfl⟩,rfl⟩⟩
-  | op :: ops, _, _, h, ht => by
-    exact WP.block_append ((op_ok op h ht).mono fun _ ⟨h', hs⟩ =>
-      (ops_ok ops h' (hs.v30.trans ht)).mono fun _ ⟨h'', hs'⟩ => ⟨h'', hs.trans hs'⟩)
-
 theorem ror_sub (x : BitVec 32) {n : Nat} (h0 : 0 < n) (hn : n < 32) :
     x.rotateRight (32 - n) = x.rotateLeft n := by
   rw [BitVec.rotateRight_def, BitVec.rotateLeft_def, Nat.mod_eq_of_lt (show 32 - n < 32 by omega),
@@ -165,14 +149,5 @@ theorem op_ok_for (sve : Bool) (op : Op) {vs : Nat → Rows} {s : State} (h : Ho
         · exact h k j hj
       · rw [show Op.codeFor true (.xorRol d a b n) = (Op.xorRol d a b n).code from ite_eq_right hda]
         exact op_ok _ h ht
-
-theorem ops_ok_for (sve : Bool) : ∀ (ops : List Op) {vs : Nat → Rows} {s : State}, Holds vs s →
-    s.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table →
-    WP isa (.block (ops.flatMap (Op.codeFor sve))) s fun s' =>
-      Holds (ops.foldl step vs) s' ∧ RoundSame s s'
-  | [], _, _, h, _ => WP.block_nil ⟨h, ⟨⟨rfl,rfl,rfl,rfl,rfl⟩,rfl⟩⟩
-  | op :: ops, _, _, h, ht => by
-    exact WP.block_append ((op_ok_for sve op h ht).mono fun _ ⟨h', hs⟩ =>
-      (ops_ok_for sve ops h' (hs.v30.trans ht)).mono fun _ ⟨h'', hs'⟩ => ⟨h'', hs.trans hs'⟩)
 
 end VG.Proof.ChaCha20.AArch64.Rows6

@@ -177,9 +177,6 @@ theorem spec_rdwr {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State}
       (lay H.len P s).X ++ [(lay H.len P s).ARGS] ∧ s.wr = [(lay H.len P s).OUT, (lay H.len P s).SCR] :=
   ⟨(lay_pre h hH).2.1, (lay_pre h hH).2.2.1⟩
 
-/-- The frame's words as the prologue leaves them. -/
-abbrev Prologued (L : ELay) (W : Nat → BitVec 64) : Prop := Slots L W
-
 theorem prologue_ok {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec ts P).pre s)
     (hH : Spec.HashTable.hashAt 64 s.mem (stackArg s 8) = some H) :
     WP isa (.block encPrologue) (entered s) fun t => Ctx (lay H.len P s) s.gpr s.v s.mem t ∧

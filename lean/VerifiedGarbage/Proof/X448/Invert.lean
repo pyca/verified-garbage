@@ -22,11 +22,6 @@ def sqn (x : Fe) : Nat → Fe
   | 0 => x
   | n + 1 => sqn x n * sqn x n
 
-theorem sqn_succ' (x : Fe) (n : Nat) : sqn x (n + 1) = sqn (x * x) n := by
-  induction n with
-  | zero => rfl
-  | succ n ih => rw [sqn, ih, sqn]
-
 /-- An addition chain for `z^(P - 2)`. The comments give the exponent
 of each intermediate result. -/
 def invert (z : Fe) : Fe :=
@@ -100,12 +95,5 @@ def c222 (z : Fe) : Fe :=
 
 /-- `z^(2²²³ - 1)`, from `c222`. -/
 def c223 (z : Fe) : Fe := sqn (c222 z) 1 * z
-
-theorem c222_eq (z : Fe) : c222 z = pw z (2 ^ 222 - 1) := by
-  rw [← congrArg c222 (pw_one z)]
-  simp only [c222, pw_mul, sqn_pw]
-
-theorem c223_eq (z : Fe) : c223 z = pw z (2 ^ 223 - 1) := by
-  rw [c223, c222_eq, sqn_pw, ← congrArg (_ * ·) (pw_one z), pw_mul]
 
 end VG.Proof.X448

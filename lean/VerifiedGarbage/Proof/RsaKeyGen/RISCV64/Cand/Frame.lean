@@ -85,7 +85,6 @@ theorem svL_le : ∀ p ∈ svL, p.2 + 8 ≤ 104 := by decide
 theorem argL_le : ∀ p ∈ argL, 104 ≤ p.2 ∧ p.2 + 8 ≤ 104 + 64 := by decide
 theorem rsL_sub : ∀ p ∈ rsL, p ∈ svL := by decide
 theorem rsL_saved : ∀ r ∈ preserved, (r, 8 * preserved.idxOf r) ∈ rsL := by decide
-theorem rsL_t2 : ∀ p ∈ rsL, p.1 ≠ .t2 := by decide
 theorem svL_t2 : ∀ p ∈ svL, p.1 ≠ .t2 := by decide
 theorem argL_ne : ∀ p ∈ argL, p.1 ≠ .t2 ∧ p.1 ≠ .s11 := by decide
 

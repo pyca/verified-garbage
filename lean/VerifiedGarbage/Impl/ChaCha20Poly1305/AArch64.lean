@@ -16,7 +16,7 @@ the working space, which the artifact's frame allocates on the stack
 (`saveData`) for the zeroing (`zeroData`), as no register keeps them through
 every path of its code.
 
-The working space (`workLen` = 1280 bytes, called the context below):
+The working space (1280 bytes, called the context below):
 
 * `[0, 16)`: the lengths block;
 * `[16, 32)`: the padded last block of the additional data or the data;
@@ -61,9 +61,6 @@ namespace VG.Impl.ChaCha20Poly1305.AArch64
 open VG.AArch64
 open VG.Impl.ChaCha20.AArch64 (XorCallee)
 open VG.Impl.ChaCha20.AArch64.Xor (mov)
-
-/-- The size of the working space, in bytes. -/
-def workLen : Nat := 1280
 
 /-- The registers saved in the context, and where: our caller's, our return
 address and `tag` (`x6`). -/
@@ -220,7 +217,6 @@ def openTail : Prog isa :=
   (.seq (.ite (.zero .w .x0) zeroData (.block []))
     (.block restore)))
 
-def crypt := cryptWith .scalar
 def «seal» := sealWith .scalar
 
 end VG.Impl.ChaCha20Poly1305.AArch64

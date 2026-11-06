@@ -61,8 +61,6 @@ def BMem (base : Addr) (m m' : Mem) : Prop :=
   ∀ p, ofs base p < 8192 → (ofs base p < BAD ∨ BAD + 4 ≤ ofs base p) →
     (ofs base p < 64 ∨ 2880 ≤ ofs base p) → (ofs base p < ACC ∨ ACC + 512 ≤ ofs base p) → m' p = m p
 
-theorem BMem.refl (base : Addr) (m : Mem) : BMem base m m := fun _ _ _ _ _ => rfl
-
 theorem BMem.trans {base : Addr} {m₁ m₂ m₃ : Mem} (h₁ : BMem base m₁ m₂) (h₂ : BMem base m₂ m₃) :
     BMem base m₁ m₃ := fun p w a b c => (h₂ p w a b c).trans (h₁ p w a b c)
 
@@ -86,8 +84,6 @@ theorem BMem.word {base : Addr} {m m' : Mem} (h : BMem base m m') {d : Nat}
 structure CKeep (base : Addr) (s t : State) : Prop where
   regs : Keeps (.esi :: workRegs) s t
   mem : BMem base s.mem t.mem
-
-theorem CKeep.refl (base : Addr) (s : State) : CKeep base s s := ⟨Keeps.refl _ _, BMem.refl _ _⟩
 
 theorem CKeep.trans {base : Addr} {s t u : State} (h : CKeep base s t) (h' : CKeep base t u) :
     CKeep base s u := ⟨h.regs.trans h'.regs, h.mem.trans h'.mem⟩

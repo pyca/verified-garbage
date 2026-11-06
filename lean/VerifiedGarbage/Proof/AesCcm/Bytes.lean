@@ -76,10 +76,6 @@ theorem ctrBlock_drop12 {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : non
       show 11 - nonce.length = (15 - nonce.length) - min (15 - nonce.length) 4 by omega,
       be_drop (by omega) hi, List.nil_append]
 
-theorem length_ctrBlock' {nonce : List Byte} (h13 : nonce.length ≤ 13) (i : Nat) :
-    (Spec.Ccm.ctrBlock nonce i).length = 16 := by
-  simp only [Spec.Ccm.ctrBlock, List.length_cons, List.length_append, length_be]; omega
-
 /-- `Ctrᵢ`, for `i < 2³²` (and `i < 2^(8q)`), from `Ctr₀`: its first 12 bytes, and
 its last 4 ORed with `[i]₃₂`. -/
 theorem ctrBlock_split {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13) {i : Nat}

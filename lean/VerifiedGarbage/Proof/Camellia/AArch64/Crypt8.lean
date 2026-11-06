@@ -122,9 +122,6 @@ theorem mask_lt {kv : Nat × BitVec 64} (hkv : kv ∈ layerMasks) : kv.1 < keySl
   simp [layerMasks] at hkv; rcases hkv with h | h | h | h | h <;> subst h <;>
     simp [keySlot, evenSlot, oddSlot, m4Slot, m2Slot, m3Slot]
 
-theorem mask_ne_tail {kv : Nat × BitVec 64} (hkv : kv ∈ layerMasks) (k : Nat) : kv.1 ≠ tailSlot + k := by
-  have := mask_lt hkv; rw [keySlot_eq] at this; rw [tailSlot_eq]; omega_arith
-
 /-! ## The steps -/
 
 /-- `loadWords h`. -/

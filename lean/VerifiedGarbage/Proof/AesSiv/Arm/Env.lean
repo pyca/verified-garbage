@@ -141,9 +141,6 @@ theorem wR {d n : Nat} (h : d + n ≤ 2576) : InRegions (s.rd ++ s.wr) (State.ad
 theorem wC {d n : Nat} (h : d + n ≤ 2576) : Covers [⟨State.addr w + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)
 
-theorem cR {d n : Nat} (h : d + n ≤ 512) : InRegions (s.rd ++ s.wr) (State.addr c + BitVec.ofNat 64 d) n :=
-  in_off P.c h (by decide)
-
 theorem cC {d n : Nat} (h : d + n ≤ 512) : Covers [⟨State.addr c + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   covers_off P.c h (by decide)
 
@@ -165,8 +162,6 @@ namespace Buf
 
 variable {w sp : BitVec 32} {s : State} {D : BitVec 32} {n : Nat} (h : Buf w sp s D n)
 include h
-
-theorem lt32 : n ≤ 2 ^ 32 := by have := h.fit; omega
 
 theorem lt : n < 2 ^ 64 := by have := h.fit; omega
 

@@ -78,8 +78,6 @@ def breg : Nat → VReg
 
 def batchRegs (n : Nat) : List VReg := (List.range n).map breg
 
-def regs : List VReg := batchRegs 8
-
 /-- Insert the low 32 bits of the integer counter into the original
 counter prefix. `vperm` selects only defined bytes of `mtvsrd`. -/
 def counter (v : VReg) : List Instr :=

@@ -79,9 +79,6 @@ def dirCore (up : Bool) : Modes.RISCV64.Core where
 /-- The schedule's copy for two blocks, after the buffer's two. -/
 def schOff2 : Nat := bufOff + 16
 
-/-- The saved registers' slots, after the copy. -/
-def savedOff2 : Nat := schOff2 + 4168
-
 /-- The schedule (at `a0`) to its copy at `schOff2`. -/
 def modePrepare2 : Prog isa :=
   .seq (.block ([.addi rowPtr sb schOff2, .addi .t2 .a0 0] ++ li4168)) (copyLoop .t1 .t2 rowPtr tmp)

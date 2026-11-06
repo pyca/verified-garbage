@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-! # One candidate of the search (ARMv7)
 
 `classify`, after a candidate: the search ends (`SearchDone`), or goes on
-past a rejected candidate from a later offset (`SearchIter`), as
+past a rejected candidate from a later offset, as
 `VG.Spec.RsaKeyGen.primeSearch` does (`Proof/RsaKeyGen/SearchSpec.lean`).
 -/
 
@@ -30,11 +30,6 @@ open VG.Spec.RsaKeyGen (primeSearch primeEntropy PrimeSearchResult candidateOp)
 candidates left. -/
 abbrev tailOf (p : SearchPublic) (o : State) (used remaining : Nat) : PrimeSearchResult :=
   primeSearch p.len p.eB (searchP o) remaining ((searchRand o).drop used)
-
-/-- A loop state, whose search from there finishes as `final`. -/
-def SearchIter (p : SearchPublic) (o : State) (final : PrimeSearchResult) (used remaining : Nat)
-    (s : State) : Prop :=
-  SearchLive p o used remaining s ∧ ∃ tr, final = (tailOf p o used remaining).consume used tr
 
 /-- The candidate from `used`. -/
 abbrev candOp (p : SearchPublic) (o : State) (used : Nat) : Option (Spec.RsaKeyGen.Candidate × List Byte) :=

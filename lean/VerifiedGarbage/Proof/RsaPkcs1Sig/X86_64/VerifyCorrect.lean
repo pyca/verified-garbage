@@ -10,10 +10,11 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: correctness
 
-After the call (`afterPub_ok`): the encoding of the hash value into `EM₂`
-(`encode_ok`) and the comparison with `EM₁` (`compare_ok`), which is RFC 8017
-§8.2.2's verification (`verify`). With the length check, the
-frame's push, the call (`pub_call`) and the pop: `code_correct`.
+After the call (`afterPub_checked`): the encoding of the hash value into
+`EM₂` (`encode_ok`) and the comparison with `EM₁` (`compare_ok`), which is
+RFC 8017 §8.2.2's verification (`verify`). And the length check
+(`lenCheck_ok`), the frame's push and pop (`wp_alloc`) and the return
+address (`ret_frame`).
 -/
 
 @[expose] public section
@@ -269,27 +270,6 @@ theorem afterPub_checked (out : Option (List Byte)) {s t : State} (hp : PreV s) 
         rw [List.mem_singleton.mp hr, hl']
         exact Offset.disjoint _ (.inl (by unfold oEM2; omega_arith)) (by decide) (by unfold oEM2 at *; omega_arith)
 
-theorem afterPub_ok {s t : State} (hp : PreV s) (he : Env s t)
-    (hw : Spec.Rsa.written t.mem (off (fb s) oEM1) (s.gpr .rsi).toNat ((t.gpr .rax).setWidth 32)
-      (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
-        (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-        (Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .rsi).toNat))) :
-    WP isa afterPub t fun u => Env s u ∧ (u.gpr .rax).setWidth 32 =
-      if verifyId (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
-          (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) ((s.gpr .r8).setWidth 32).toNat
-          (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .rsi).toNat) then 1 else 0 := by
-  let nB := Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat
-  let eB := Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat
-  let gB := Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .rsi).toNat
-  rw [verifyId_eq nB eB _ _ gB (by simp [nB, gB, bytesAt_length]), bytesAt_length]
-  refine WP.mono (afterPub_checked (Spec.Rsa.publicOpChecked nB eB gB) hp he ?_) (fun _ h => ⟨h.1, h.2.1⟩)
-  cases ho : Spec.Rsa.publicOpChecked nB eB gB with
-  | none => exact (show Spec.Rsa.written _ _ _ _ none from ho ▸ hw).1
-  | some em =>
-    have h := (show Spec.Rsa.written _ _ _ _ (some em) from ho ▸ hw)
-    exact ⟨by rw [h.1]; decide, h.2⟩
-
 /-! ## The arguments and the frame -/
 
 theorem word_wo0 (m : Mem) (base : Addr) (v : BitVec 64) {d' : Nat} (h : 8 ≤ d') (hd' : d' + 8 ≤ 4096) :
@@ -390,59 +370,5 @@ theorem verifyId_len {nB eB H sig : List Byte} (x : Nat) (h : sig.length ≠ nB.
   split
   · unfold verify; rw [ite_eq_right_iff.mpr (fun h' => absurd h' h)]
   · rfl
-
-theorem code_correct (v : PubImpl) (s : State) (h : verContract.pre s) :
-    ∃ t s', Exec isa (code v.name v.code) s t s' ∧ abiPreserved s s' ∧ verContract.post s s' := by
-  have hp := preV_of h
-  have hk2 := hp.k2
-  suffices hw : WP isa (code v.name v.code) s fun s' => abiPreserved s s' ∧ verContract.post s s' by
-    obtain ⟨t, s', he, hq⟩ := hw
-    exact ⟨t, s', he, hq⟩
-  unfold code
-  refine WP.seq (WP.mono_mx (by decide) (lenCheck_ok hp) fun t₀ ⟨k₀, hm₀, hz₀⟩ hmx₀ => ?_)
-  by_cases hsig : stackArg s 2 = s.gpr .rsi
-  · refine WP.ite false (by simp [eval, hz₀, hsig]) (by simp) (fun _ => ?_)
-    have g₀ : ∀ r, r ≠ .rax → t₀.gpr r = s.gpr r := fun r h => k₀.gpr (by simpa using h)
-    have hsp₀ : t₀.gpr .rsp = s.gpr .rsp := g₀ _ (by decide)
-    have hA : Keep [.rax] (allocState frameBytes s) (allocState frameBytes t₀) :=
-      ⟨fun r hr => by
-        simp only [allocState_gpr, fb, hsp₀]
-        split
-        · rfl
-        · exact g₀ r (by simpa using hr), k₀.2.1, by simp only [allocState, hsp₀, k₀.2.2]⟩
-    have hfb : fb t₀ = fb s := by simp only [fb, hsp₀]
-    refine wp_alloc (s := t₀) (by rw [hsp₀]; have := hp.sp1; unfold verStack at this; unfold frameBytes; omega_arith) ?_
-    unfold body
-    refine WP.seq (WP.mono_mx (by decide) (pubArgs_ok hp hA hm₀)
-      fun t₁ ⟨he₁, hw0, hw1, hw2, hw3, hdi, hsi, hdx, hcx, h8, h9, hcs₁⟩ hmx₁ => ?_)
-    refine WP.seq (WP.mono (pub_call v hp hsig he₁ hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9)
-      fun t₂ ⟨he₂, hw, hcs₂, hmx₂⟩ => ?_)
-    refine WP.mono_mx (by decide +kernel) (WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
-      (afterPub_ok hp he₂ hw) (by decide +kernel)) fun t₃ ⟨⟨he₃, hax⟩, k₃⟩ hmx₃ => ?_
-    refine ⟨he₃.rsp.trans hfb.symm, by rw [he₃.wr]; simp only [allocState, hsp₀, k₀.2.2],
-      ⟨fun r hr => ?_, ret_frame hp he₃.mem, ?_⟩, ?_⟩
-    · by_cases hr' : r = .rsp
-      · subst hr'
-        show t₃.gpr .rsp + BitVec.ofNat 64 frameBytes = s.gpr .rsp
-        rw [he₃.rsp, BitVec.sub_add_cancel]
-      · show (if r = .rsp then _ else t₃.gpr r) = s.gpr r
-        simp only [hr', ↓reduceIte]
-        have hr'' : r ∉ [Reg.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] := by
-          simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | decide | simp_all
-        rw [k₃.gpr hr'', hcs₂ r hr, hcs₁ r hr hr']
-    · show t₃.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
-      rw [hmx₃, hmx₂, hmx₁]; exact congrArg _ hmx₀
-    · have hfr : (freed frameBytes t₃).gpr .rax = t₃.gpr .rax := rfl
-      simp only [verContract, hfr, hax, hsig]
-  · refine WP.ite true (by simp [eval, hz₀, hsig]) (fun _ => ?_) (by simp)
-    refine WP.mono_mx (by decide) (ret0_ok t₀) fun u ⟨hK, hm, hax⟩ hmx =>
-      ⟨⟨fun r hr => ?_, by rw [hm, hm₀], by rw [hmx, hmx₀]⟩, ?_⟩
-    · rw [hK.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp),
-        k₀.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp)]
-    · simp only [verContract, hax]
-      rw [verifyId_len _ (by
-        simp only [bytesAt_length]
-        intro h'; exact hsig (BitVec.eq_of_toNat_eq h'))]
-      rfl
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Ver

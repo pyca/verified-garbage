@@ -33,8 +33,6 @@ def frameBase (s : State) : Addr := s.sp - BitVec.ofNat 64 2032 - BitVec.ofNat 6
 theorem inner_sp (s : State) : (inner s).sp = frameBase s := rfl
 theorem inner_gpr (s : State) : (inner s).gpr = s.gpr := rfl
 theorem inner_mem (s : State) : (inner s).mem = s.mem := rfl
-theorem inner_rd (s : State) : (inner s).rd = s.rd := rfl
-
 theorem inner_wr (s : State) : (inner s).wr =
     ⟨frameBase s, 112⟩ :: ⟨s.sp - BitVec.ofNat 64 2032 - BitVec.ofNat 64 2032, 2032⟩ ::
       ⟨s.sp - BitVec.ofNat 64 2032, 2032⟩ :: s.wr := rfl

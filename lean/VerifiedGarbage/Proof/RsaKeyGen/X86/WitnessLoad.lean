@@ -91,19 +91,4 @@ theorem codeAt_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p
       (Ob.mono (by omega) (by omega))).trans Ot',
     ((K.mono (by unfold clob; decide)).widen Kb).widen Kt⟩
 
-theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
-    (S : Prepare.Data g c capacity p s) {input : Import.Geometry}
-    (C : Import.Context input s) (width : input.count = g.words)
-    (source : s.gpr .esi = input.src)
-    (destination : s.gpr .edi + BitVec.ofNat 32 (g.array 6) = input.dst)
-    (odd : c % 2 = 1) (shape : Spec.RsaKeyGen.bitLength (c - 1) = 64 * g.w) :
-    WP isa (VG.Impl.RsaKeyGen.X86.WitnessLoad.code g.w) s fun t =>
-      let sampled := Spec.RsaKeyGen.witness (c - 1)
-        (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (input.src.setWidth 64) (8 * g.w)))
-      Prepare.Data g c capacity p t ∧ val32 t.mem g.W (g.array 6) g.words = sampled.1 ∧
-      t.gpr .eax = cmask sampled.2 ∧ Outside g.W (g.array 6) (4 * g.words) s.mem t.mem ∧ Keeps clob s t :=
-  codeAt_ok v S C (by rw [width]; unfold Geometry.words; omega) (by have := v.minWidth; omega)
-    (by rw [width]; unfold Geometry.words; omega) (by rw [width])
-    source destination odd (by rw [shape]; omega)
-
 end VG.Proof.RsaKeyGen.X86.WitnessLoad

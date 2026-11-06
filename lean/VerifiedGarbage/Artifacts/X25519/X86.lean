@@ -10,6 +10,7 @@ import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.X25519.X86.Exchange
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.X25519.X86.Base.Lit
@@ -25,6 +26,10 @@ def artifacts : List Artifact := [
     code := Impl.X25519.X86.x25519
     stack := 8
     verified := Proof.X25519.X86.x25519_verified },
+  Spec.X25519.exchangeApi.artifact X86.target {
+    code := Impl.Xdh.X86.exchange "vg_x25519" Impl.X25519.X86.x25519 32
+    stack := 28
+    verified := Proof.X25519.X86.Exchange.exchange_verified },
   Spec.X25519.x25519BaseApi.artifact X86.target {
     consts := Impl.Ed25519.X86.combConsts
     code := Impl.X25519.X86.Base.x25519Base

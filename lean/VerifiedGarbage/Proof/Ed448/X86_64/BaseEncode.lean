@@ -71,8 +71,6 @@ theorem byte56_ok {s : State} {q : Addr} (hq : s.gpr .rax = q)
 theorem rv_mod2 (s : State) : rv s W % 2 = (s.gpr .r8).toNat % 2 := by
   simp only [rv, W]; omega
 
-theorem toFe_val' (x : Nat) : (toFe x).val = x % Spec.X448.P := rfl
-
 theorem bytes56_write {m : Mem} {q : Addr} (v : Byte) :
     bytesAt (m.writeW (q + BitVec.ofNat 64 56) v) q 56 = bytesAt m q 56 := by
   simp only [bytesAt]

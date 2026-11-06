@@ -121,7 +121,9 @@ pub fn verify<const N: usize>(
     }
 }
 
-/// The memory scrypt works in, for parameters [`Memory::new`] checked.
+/// The memory scrypt works in, for parameters [`Memory::new`] checked,
+/// wiped when it is dropped: `vg_scrypt` leaves values derived from the
+/// password in it (its contract leaves its contents unspecified).
 struct Memory {
     /// The block size parameter `r`.
     r: usize,
@@ -189,6 +191,14 @@ impl Memory {
             &mut self.scratch,
             out,
         );
+    }
+}
+
+impl Drop for Memory {
+    fn drop(&mut self) {
+        crate::zeroize::zeroize(self.b.as_flattened_mut());
+        crate::zeroize::zeroize(self.v.as_flattened_mut());
+        crate::zeroize::zeroize(self.scratch.as_flattened_mut());
     }
 }
 

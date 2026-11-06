@@ -1090,8 +1090,6 @@ theorem ptrs3_ok {a b : Nat} (ha : a < 4096) (hb : b < 4096) (v : BitVec 16) (s 
 
 /-! ## Zeroing the padded block -/
 
-theorem zero16 : ((0 : BitVec 16).setWidth 64 : BitVec 64) = 0 := rfl
-
 theorem padZ_ok {s₀ : State} (hp : APre e s₀) {s : State} (hx21 : s.gpr .x21 = cx s₀) (hwr : s.wr = s₀.wr) :
     WP isa (.block [.movz .x .x11 0 0, .str .x .x11 .x21 16, .str .x .x11 .x21 24,
       .addImm .x .x9 .x21 16]) s fun s' =>

@@ -28,8 +28,8 @@ it from that run's entry state, which has the same public data as an anchor
 (`EAt`, as in `Proof/RsaPkcs1Sig/X86_64/SignCT.lean`). The pieces between the
 calls are checked by the taint analysis from the frame's public slots
 (`e_taintF`); the branches are on `k` and the message's length, which are
-public; MGF1 and the label's hash are constant time for the same public data
-in both runs (`mgf_ct`, `hashLabel_ct`); and the call of
+public; MGF1 and the label's hash (`hashLabel_ct`) are constant time for the
+same public data in both runs; and the call of
 `vg_rsa_public_checked` is constant time for its contract, whose public data
 (its registers, its stack arguments, `n` and `e`) are the same in both runs.
 The code with `hLen` as an immediate is checked for every `hLen` up to 64.
@@ -227,16 +227,8 @@ statics. -/
 def EK (D : Nat) (s t : State) : Prop :=
   EW s t ∧ 2 * D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat ∧ t.syms = s.syms
 
-/-- Before MGF1. -/
-def EKM (D : Nat) (src srcLen dst dstLen : State → Nat) (s t : State) : Prop :=
-  EWM s t (src s) (srcLen s) (dst s) (dstLen s) ∧ 2 * D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat
-
 /-- The label's hash's public data. -/
 def lq (a : State) : LQ := ⟨fb a, stackArg a 6, [outR a, scrR a], stackArg a 0, (stackArg a 1).toNat⟩
-
-/-- MGF1's public data. -/
-def mq (src srcLen dst dstLen : State → Nat) (a : State) : MQ :=
-  ⟨fb a, stackArg a 6, [outR a, scrR a], src a, srcLen a, dst a, dstLen a⟩
 
 /-- The label's hash's public data with its table, the stack argument 10. -/
 def lqtE (Hm : Hash) (a : State) : LQT :=

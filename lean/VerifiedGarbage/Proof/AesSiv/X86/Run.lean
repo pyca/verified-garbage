@@ -76,10 +76,6 @@ theorem eval_ne {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .ne s = so
 
 theorem eval_b {s : State} {b : Bool} (h : s.cf = some b) : isa.eval .b s = some b := h
 
-theorem seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq (.seq a b) c) s Q) :
-    WP isa (.seq a (.seq b c)) s Q :=
-  WP.seq (WP.mono (WP.seq_iff.mp (WP.seq_iff.mp h)) fun _ h => WP.seq h)
-
 /-- A block, then code: the block constant time by the taint analysis from
 the registers `rs`, which `I` pins, and the code from what the block leaves
 (`F`, from the state it started in). -/
@@ -89,26 +85,6 @@ theorem CT.block_seq {I : State → Prop} {is : List Instr} {c : Prog isa} {F : 
     (blk : ∀ s, I s → ∃ s', runBlock isa is s = some s' ∧ F s s') (h₂ : CT (fun s' => ∃ s, I s ∧ F s s') c) :
     CT I (.seq (.block is) c) :=
   CT.seq (CT.taint rs hr h) (fun s hs => let ⟨s', r, f⟩ := blk s hs; WP.of_runBlock ⟨s', r, s, hs, f⟩) h₂
-
-/-- `a; (b; (c; d))` from `(a; (b; c)); d`. -/
-theorem CT.assoc3 {I : State → Prop} {a b c d : Prog isa}
-    (h : Proof.AesGcm.X86.CT I (.seq (.seq a (.seq b c)) d)) : Proof.AesGcm.X86.CT I (.seq a (.seq b (.seq c d))) := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
-  cases e₁ with
-  | seq a₁ e₁ =>
-    cases e₁ with
-    | seq b₁ e₁ =>
-      cases e₁ with
-      | seq c₁ d₁ =>
-        cases e₂ with
-        | seq a₂ e₂ =>
-          cases e₂ with
-          | seq b₂ e₂ =>
-            cases e₂ with
-            | seq c₂ d₂ =>
-              obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq (.seq a₁ (.seq b₁ c₁)) d₁) (.seq (.seq a₂ (.seq b₂ c₂)) d₂)
-              simp only [List.append_assoc] at ht
-              exact ⟨ht, hq⟩
 
 /-- A register pinned. -/
 theorem pin1 {I : State → Prop} {a : Reg} {x : BitVec 32} (h : ∀ s, I s → s.gpr a = x) :

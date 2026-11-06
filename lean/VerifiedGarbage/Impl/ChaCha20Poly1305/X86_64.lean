@@ -19,7 +19,7 @@ calls `vg_chacha20_xor` and `vg_poly1305_blocks`, and
 `vg_chacha20_poly1305_seal_avx2` calls `vg_chacha20_xor_avx2` and
 `vg_poly1305_blocks_avx2`).
 
-The working space (`workLen` = 1696 bytes, called the context below):
+The working space (1696 bytes, called the context below):
 
 * `[0, 48)`: our caller's `rbx, rbp, r13, r14, r15, r12`;
 * `[48, 64)`: the tag computed by `open`;
@@ -85,9 +85,6 @@ def ptr (d' r : Reg) (k : Nat) : List Instr := [.mov d' (.reg r), .alu .add d' (
 
 /-- The context's address into `r15`, from `r = r15 + k`. -/
 def anchor (r : Reg) (k : Nat) : List Instr := [.mov .r15 (.reg r), .alu .sub .r15 (.imm (BitVec.ofNat 32 k))]
-
-/-- The size of the working space, in bytes. -/
-def workLen : Nat := 1696
 
 def saved : List (Reg × Nat) :=
   [(.rbx, 0), (.rbp, 8), (.r13, 16), (.r14, 24), (.r15, 32), (.r12, 40)]

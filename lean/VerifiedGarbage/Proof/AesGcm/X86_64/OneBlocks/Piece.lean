@@ -140,11 +140,6 @@ namespace CtxExt
 
 variable {M : CtxMode} {Ctx St W SP D : Addr} {n : Nat} {s : State}
 
-/-- The key context of `vg_aes_gcm_init`, from the layout. -/
-theorem base (L : Lay Ctx St W SP) (P : Perm Ctx St W s) (hd : (⟨Ctx, 256⟩ : Region).Disjoint ⟨D, n⟩)
-    (ht : (below SP 24).Disjoint ⟨Ctx, 256⟩) : CtxExt CtxMode.base Ctx St W SP D n s :=
-  ⟨L.cw, L.cs, L.cw', hd, ht, P.ctx, trivial⟩
-
 /-- After code that keeps the permissions and the context. -/
 theorem keep (h : CtxExt M Ctx St W SP D n s) {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     {rs : List Region} (hf : Frame rs s.mem s'.mem) (hd : ∀ r ∈ rs, (⟨Ctx, M.len⟩ : Region).Disjoint r) :

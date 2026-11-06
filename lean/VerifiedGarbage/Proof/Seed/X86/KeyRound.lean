@@ -115,9 +115,6 @@ def rorF (s : State) (d : Reg) (n : Nat) : State :=
 
 theorem gpr_rorF (s : State) (d : Reg) (n : Nat) : (rorF s d n).gpr = s.gpr := rfl
 theorem mem_rorF (s : State) (d : Reg) (n : Nat) : (rorF s d n).mem = s.mem := rfl
-theorem rd_rorF (s : State) (d : Reg) (n : Nat) : (rorF s d n).rd = s.rd := rfl
-theorem wr_rorF (s : State) (d : Reg) (n : Nat) : (rorF s d n).wr = s.wr := rfl
-
 theorem exec_rorI {n : Nat} (h1 : 1 ≤ n) (h2 : n ≤ 31) (s : State) (d : Reg) :
     exec (rorI d n) s = some ((rorF s d n).setReg d ((s.gpr d).rotateRight n)) := by
   simp only [rorI, exec, execShift, h1, h2, and_self, ite_true]; rfl

@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PubNaf
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 public import VerifiedGarbage.Impl.P384.EcdhAllocatedCode
 public import VerifiedGarbage.Impl.P384.GTable9

@@ -130,9 +130,6 @@ theorem fr_sep (B : Addr) {x y : Nat} (h : x + 4 ≤ y ∨ y + 4 ≤ x) (hx : x 
 /-- `h`'s place, from `B`. -/
 abbrev hB : Nat := 76 + fH
 
-theorem fHo_eq (hA : P.R.big = false) : (cfgOf P).fHo = fH := by
-  simp only [Cfg.fHo, cfgOf, hA, Bool.false_eq_true, ite_false]
-
 theorem subWord_ok (hA : P.R.big = false) (hL : L.Ok) {t u : State}
     {j : Nat} (hj : j < P.k)
     (h : SubInv P.R.E.C.n P.k hB L g m₀ t j u) :

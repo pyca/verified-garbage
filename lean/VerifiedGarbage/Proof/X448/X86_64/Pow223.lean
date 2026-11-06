@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 `SAVE` (bytes 1472–1519, which the chain never writes: it writes only the
 slots 14–21 and the product's words), runs `chain223` of slot 12, and
 restores them: it changes only `rax`, `rcx`, `rdx` and `r8`–`r11` and the
-bytes `[960, 1648)`, and the slots as `chain223` does (`pow223Fn_ok`): slots 20
+bytes `[960, 1648)`, and the slots as `chain223` does (`pow223FnWith_ok`): slots 20
 and 21 end as `c222` and `c223` of slot 12 (`chainEnv_20`, `chainEnv_21`).
 -/
 
@@ -82,12 +82,6 @@ theorem pow223FnWith_ok {F : Field} (hf : FieldOk F) {s : State} {base : Addr} (
     rw [m₃, k₂.out x hx, o₁ x (by omega)]
   · rw [m₃, e₂, e₁]
 
-theorem pow223Fn_ok {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa pow223Fn s fun s' =>
-      (∀ r, r ∉ powClob → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Outside base 960 688 s.mem s'.mem ∧ E s'.mem base = chainEnv 12 (E s.mem base) :=
-  pow223FnWith_ok baseline_ok hs
-
 /-! ## Keeping words across the call -/
 
 /-- Writing back the 8 bytes just read changes nothing. -/
@@ -140,16 +134,12 @@ theorem pow223KeepWith_inline (F : Field) (name : String) (keep : List Nat) : (p
     .seq (.block ((keepRegs.zip keep).map fun (r, d) => .mov r (.mem (sc d))))
       (.seq (pow223FnWith F) (.block ((keepRegs.zip keep).map fun (r, d) => .store (sc d) r))) := rfl
 
-theorem pow223Keep_inline (keep : List Nat) : (pow223Keep keep).inline =
-    .seq (.block ((keepRegs.zip keep).map fun (r, d) => .mov r (.mem (sc d))))
-      (.seq pow223Fn (.block ((keepRegs.zip keep).map fun (r, d) => .store (sc d) r))) := rfl
-
 theorem keepRegs_zip_fst (keep : List Nat) : ∀ p ∈ keepRegs.zip keep, p.1 = .r12 ∨ p.1 = .r13 := by
   intro p hp
   have := List.of_mem_zip hp
   simpa [keepRegs] using this.1
 
-/-- The call, keeping the words at `keep` (outside the function's bytes): as `pow223Fn_ok`,
+/-- The call, keeping the words at `keep` (outside the function's bytes): as `pow223FnWith_ok`,
 but for `r12` and `r13`. -/
 theorem pow223KeepWith_ok {F : Field} (hf : FieldOk F) (name : String) (keep : List Nat) (hk : ∀ d ∈ keep, d + 8 ≤ 960 ∨ (1648 ≤ d ∧ d + 8 ≤ 8192))
     {s : State} {base : Addr} (hs : Scr s base) :

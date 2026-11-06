@@ -55,14 +55,6 @@ def ghashSig : Sig where
   params := [("h", .array false .u8 16), ("y", .array true .u8 16),
     ("data", .slice false (.array .u8 16) "n"), ("scratch", .array true .u64 32)]
 
-/-- With the hash subkey `H` at `h` and a block `Y` at `y`: replaces `Y`
-with `GHASH_H` continued from `Y` over the `n` blocks at `data`
-(`Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H`). The hash subkey, `Y` and the data are secret. -/
-def ghashContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  ghashSig.contract A (post := fun h y data n _scratch m m' _ =>
-    blockAt m' y = ghashFrom (blockAt m h) (blockAt m y) (blocksAt m data n.toNat))
-    (stack := stack)
-
 /-- `vg_aes_gcm_encrypt_blocks(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264])`,
 and `vg_aes_gcm_decrypt_blocks` with the same signature. `rounds` is public;
 `scratch` is working space. -/
@@ -84,23 +76,6 @@ def encryptBlocksContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
     (post := fun ctx rounds counter y data n _scratch m m' _ =>
       let c := ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) (blocksAt m data n.toNat)
       blocksAt m' data n.toNat = c ∧
-        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
-        blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
-    (stack := stack)
-
-/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: replaces the
-block `Y` at `y` with `GHASH_H` continued from `Y` over the `n` blocks `C`
-at `data` (as `vg_ghash`), replaces them with `ctr32 CIPH_K CB₁ C`, where
-`CB₁` is the block at `counter` (as `vg_aes_ctr32`), and leaves
-`inc₃₂ⁿ(CB₁)` at `counter`. The key context, the counter, `Y` and the data
-are secret. -/
-def decryptBlocksContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cryptBlocksSig.contract A
-    (pre := fun _ctx rounds _counter _y _data _n _scratch _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun ctx rounds counter y data n _scratch m m' _ =>
-      let c := blocksAt m data n.toNat
-      blocksAt m' data n.toNat = ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) c ∧
         blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
         blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
     (stack := stack)

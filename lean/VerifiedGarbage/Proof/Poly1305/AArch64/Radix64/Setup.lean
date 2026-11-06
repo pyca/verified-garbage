@@ -20,8 +20,6 @@ def Keys (R : Nat) (s : State) : Prop :=
 
 def Bounds (s : State) : Prop := (s.gpr .x6).toNat ≤ 4
 
-abbrev hv := hval
-
 theorem key0_lt (k : BitVec 64) : (k &&& M0).toNat < 2 ^ 60 := by
   rw [BitVec.toNat_and]
   exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)

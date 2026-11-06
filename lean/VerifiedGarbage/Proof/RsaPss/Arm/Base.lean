@@ -57,9 +57,6 @@ structure Ctx (L : Lay) (scr : BitVec 32) (σ s : State) : Prop where
 section
 variable {L : Lay} {scr : BitVec 32}
 
-theorem sR0 (scr : BitVec 32) (n : Nat) : sR scr 0 n = ⟨State.addr scr, n⟩ := by
-  simp only [sR, sa, BitVec.add_zero]
-
 namespace Geo
 variable (hg : Geo L scr)
 include hg
@@ -128,9 +125,6 @@ theorem write {σ s t : State} (h : Ctx L scr σ s) {rs : List Region} (hf : Fra
     rw [hf.readW (r := slotR L sS) (Region.contains_self _ _) hd (by decide)]; exact h.slotS⟩
 
 theorem setReg_iff {σ s : State} {r : Reg} {v : BitVec 32} : Ctx L scr σ (s.setReg r v) ↔ Ctx L scr σ s :=
-  ⟨fun h => h.regs rfl rfl rfl rfl, fun h => h.regs rfl rfl rfl rfl⟩
-
-theorem subFlags_iff {σ s : State} {x y : BitVec 32} : Ctx L scr σ (subFlags s x y) ↔ Ctx L scr σ s :=
   ⟨fun h => h.regs rfl rfl rfl rfl, fun h => h.regs rfl rfl rfl rfl⟩
 
 /-- A slot's address, for the symbolic execution of a block. -/

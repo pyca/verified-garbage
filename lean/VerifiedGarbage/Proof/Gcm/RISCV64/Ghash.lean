@@ -116,9 +116,8 @@ theorem blockAt_store (m : Mem) (q : Addr) (z0 z1 : BitVec 64) :
 
 /-! ## The contract -/
 
-/-- The contract the proof of `vg_ghash` is written against: as
-`Proof.Gcm.ghashContract`, with the frame of 2048 bytes below the stack
-pointer. -/
+/-- The contract the proof of `vg_ghash` is written against, with the frame
+of 2048 bytes below the stack pointer. -/
 def ghashX : Contract isa where
   pre s :=
     let h : Region := ⟨s.gpr .a0, 16⟩

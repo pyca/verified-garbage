@@ -520,9 +520,6 @@ theorem entry_pub {rs : List Reg} {x y : State} (rd wr : List Region) (hrs : Reg
   ⟨by simp only [State.withRegions_gpr, callEntry_esp', hsp],
    fun i hi => by simp only [arg_withRegions]; exact callEntry_arg_eq hrs hfit hsp hr hi⟩
 
-theorem regs_eq {x y : State} {rs : List Reg} (h : ∀ r ∈ rs, x.gpr r = y.gpr r) :
-    ∀ r ∈ rs, x.gpr r = y.gpr r := h
-
 /-! ## The calls -/
 
 section

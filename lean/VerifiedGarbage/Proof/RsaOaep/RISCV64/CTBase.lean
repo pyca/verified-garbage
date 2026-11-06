@@ -220,10 +220,6 @@ theorem B.spS {a t : State} (h : B S vf Pre Pub a t) : t.sp = fb a :=
 theorem B.s0S {a t : State} (h : B S vf Pre Pub a t) : t.gpr .s0 = S a :=
   let ⟨_, _, p, b⟩ := h; b.s0.trans (X.S p)
 
-theorem B.onlyS {a t t' : State} {rs : List Reg} (h : B S vf Pre Pub a t) (o : Only rs t t')
-    (hrs : ∀ r ∈ rs, r ∉ fixed := by decide) : B S vf Pre Pub a t' :=
-  let ⟨s, P, p, b⟩ := h; ⟨s, P, p, b.only (X.fits P) o hrs⟩
-
 end
 
 section
@@ -241,11 +237,6 @@ theorem pins_of {α : Type} {Φ : α → State → Prop} {an : α → State} (h 
   · exact g₁.trans g₂.symm
   · exact (v₁ r hr').trans (v₂ r hr').symm
 
-/-- `a0 := S + oSt`. -/
-theorem st_wp {a t : State} (h : B S vf Pre Pub a t) :
-    WP isa (.block [.addi .a0 .s0 oSt]) t fun t' => B S vf Pre Pub a t' ∧ t'.gpr .a0 = off (S a) oSt :=
-  wp_addi (imm := oSt) fun t' o e => wp_nil ⟨h.only X o, by rw [e, (h.agree X).2.1]⟩
-
 end
 
 /-- A piece of code checked for both runs, then the rest from what each run
@@ -254,28 +245,5 @@ theorem two_seq {α : Type} {Φ Ψ : α → State → Prop} {R : State → State
     (h₁ : RelCT isa (Two Φ) c₁ fun _ _ => True) (hw : ∀ a s, Φ a s → WP isa c₁ s (Ψ a))
     (h₂ : RelCT isa (Two Ψ) c₂ R) : RelCT isa (Two Φ) (.seq c₁ c₂) R :=
   RelCT.seq (two_post h₁ hw) h₂
-
-section
-variable {S : State → Addr} {vf : State → Reg → BitVec 64} {Pre : State → Prop} {Pub : State → State → Prop}
-  (X : Ok S vf Pre Pub) {H : Hash} (hH : HashOK H) (cH : HashCT hH) (hF : H.F ≤ 208)
-
-include X cH in
-/-- `init` on the state at `S + oSt`, in both runs. -/
-theorem init_two {Φ : State → State → Prop}
-    (h : ∀ a t, Φ a t → B S vf Pre Pub a t ∧ t.gpr .a0 = off (S a) oSt) :
-    RelCT isa (Two Φ) H.callInit fun _ _ => True :=
-  init_ct (S := S) (vf := vf) cH fun t₁ t₂ ⟨a, h₁, h₂⟩ => by
-    obtain ⟨⟨s₁, P₁, p₁, b₁⟩, e₁⟩ := h a t₁ h₁
-    obtain ⟨⟨s₂, P₂, p₂, b₂⟩, e₂⟩ := h a t₂ h₂
-    exact ⟨s₁, s₂, X.fits P₁, b₁, by rw [e₁, (X.agree p₁).S], X.fits P₂, b₂, by rw [e₂, (X.agree p₂).S],
-      e₁.trans e₂.symm, (b₁.agree (X.agree p₁)).1.trans (b₂.agree (X.agree p₂)).1.symm⟩
-
-include X hH hF in
-theorem init_wp {a t : State} (h : B S vf Pre Pub a t) (h0 : t.gpr .a0 = off (S a) oSt) :
-    WP isa H.callInit t (B S vf Pre Pub a) := by
-  obtain ⟨s, P, p, b⟩ := h
-  exact WP.mono (init_ok (X.fits P) hH hF b (by rw [h0, (X.agree p).S])) fun t' ⟨b', _⟩ => ⟨s, P, p, b'⟩
-
-end
 
 end VG.Proof.RsaOaep.RISCV64

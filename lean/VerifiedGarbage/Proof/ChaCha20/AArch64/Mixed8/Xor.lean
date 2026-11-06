@@ -3,8 +3,6 @@ public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed8
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Spec.ChaCha20.Contract
-public import VerifiedGarbage.Proof.ChaCha20.Contract
-meta import VerifiedGarbage.Proof.ChaCha20.Contract
 
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
@@ -22,6 +20,10 @@ meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.Spec.ChaCha20
+meta import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 
@@ -90,9 +92,4 @@ theorem xor_ct : ConstantTime isa xorAArch64.pre xorAArch64.pub (Impl.ChaCha20.A
   exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0,.x1,.x2,.x3])
     (fun _ _ _ _ hp => Xor.agree₀ hp) (by taint_decide)
 
-theorem xor_verified : Verified AArch64.target (Impl.ChaCha20.AArch64.Mixed8.xor sve)
-    (Proof.ChaCha20.xorContract AArch64.abi) :=
-  Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Proof.ChaCha20.xorContract,Proof.ChaCha20.xorSig,AArch64.abi,AArch64.argRegs,
-      xorAArch64] [Xor.sat] using Xor.sat)
 end VG.Proof.ChaCha20.AArch64.Mixed8

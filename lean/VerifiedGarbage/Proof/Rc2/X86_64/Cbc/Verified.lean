@@ -100,11 +100,6 @@ theorem StepPre.transport {s s' : State} {n : Nat} (hp : StepPre s n)
   · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.stackData
   · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.stackBuf
 
-theorem StepPre.keep {s s' : State} {m : Mem} {n : Nat} (hp : StepPre s n) (h : Keep [.rax] {s with mem := m} s') : StepPre s' n :=
-  hp.transport h.rd h.wr fun r hr => h.reg r (by
-    have sep : ∀ r ∈ kept, r ∉ [.rax] := by decide
-    exact sep r hr)
-
 theorem StepPre.call {s : State} (hp : StepPre s) : CallPre s := by
   constructor
   · have hc : Covers [⟨s.gpr .rdi, 128⟩, ⟨s.gpr .rsi, 8⟩, ⟨s.gpr .rdx, 256⟩]
@@ -923,17 +918,6 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     · rw [keep₄.mem]; exact out
     · rw [keep₄.mem]; exact iv
 
-def satState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .r8 => 0x4000 | .rsp => 0x6000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 512⟩]
-
 theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
     ∃ t s', Exec isa Impl.Rc2.X86_64.Cbc.encrypt s t s' ∧ abiPreserved s s' ∧
       (contract .encrypt).post s s' := by
@@ -947,20 +931,5 @@ theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
   obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .decrypt s hs
   change Exec isa Impl.Rc2.X86_64.Cbc.decrypt s t s' at he
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ha, hp⟩
-
-theorem publicRegs_six (s₁ s₂ : State) : PublicRegs [.rdi, .rsi, .rdx, .rcx, .r8, .rsp] s₁ s₂ ↔
-    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
-    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp := by
-  simp [PublicRegs]
-
-theorem encrypt_verified : Verified target Impl.Rc2.X86_64.Cbc.encrypt (Proof.Rc2.cbcEncryptContract abi 8) := by
-  refine Verified.of_correct encrypt_correct (encrypt_constantTime _) ?_
-  sig_implies [Proof.Rc2.cbcEncryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs,
-    contract, publicRegs_six] [satState] using satState
-
-theorem decrypt_verified : Verified target Impl.Rc2.X86_64.Cbc.decrypt (Proof.Rc2.cbcDecryptContract abi 8) := by
-  refine Verified.of_correct decrypt_correct (decrypt_constantTime _) ?_
-  sig_implies [Proof.Rc2.cbcDecryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs,
-    contract, publicRegs_six] [satState] using satState
 
 end VG.Proof.Rc2.X86_64.Cbc

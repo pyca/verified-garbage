@@ -64,10 +64,6 @@ theorem pw_blk {S : Nat} {e : Env} {c : Prog isa} {X X' : State → Prop} (rs : 
   pw_wp (RelCT.taint (A := taint) (Taint.ofRegs rs) (fun _ _ ⟨_, _, ⟨_, _, f₁⟩, ⟨_, _, f₂⟩, x₁, x₂⟩ =>
     ⟨f₁.ctx.sp.trans f₂.ctx.sp.symm, fun r hr => hag _ _ x₁ x₂ r (Taint.mem_ofRegs.mp hr)⟩) h) hw
 
-theorem pw_sp {S : Nat} {e : Env} {X : State → Prop} {a b : State} (h : PW S e X a b) : a.sp = b.sp := by
-  obtain ⟨_, _, ⟨_, _, f₁⟩, ⟨_, _, f₂⟩, _, _⟩ := h
-  exact f₁.ctx.sp.trans f₂.ctx.sp.symm
-
 /-! ## `DH = SHA256(D)` -/
 
 /-- The registers `shaUpdArgs` sets. -/

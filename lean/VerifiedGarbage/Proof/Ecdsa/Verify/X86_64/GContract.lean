@@ -48,13 +48,7 @@ open VG.Impl.P256.X86_64 (p256v p256vx p256GTab)
 /-- The words of the verifier's table. -/
 abbrev p256GW : List (BitVec 64) := p256v.combWords p256GTab
 
-theorem p256v_gtab : p256v.gtab = some p256GTab := rfl
-
-theorem p256vx_gtab : p256vx.gtab = some p256GTab := rfl
-
 theorem p256v_combConsts : p256v.combConsts = [("VG_P256_GTAB", p256GW)] := rfl
-
-theorem p256vx_combConsts : p256vx.combConsts = [("VG_P256_GTAB", p256GW)] := rfl
 
 /-- The table at the static `VG_P256_GTAB`, held, not wrapping around, and
 apart from the regions `wr`. -/

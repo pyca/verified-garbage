@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Sha3.X86_64.Stream
 /-!
 # Ed448 public-key derivation on x86-64
 
-`publicKey (out = rdi, seed = rsi, scratch = rdx)` computes
+`publicKeyFor v (out = rdi, seed = rsi, scratch = rdx)` computes
 `SHAKE256(seed, 114)` with the sponge functions (`vg_keccak_absorb`,
 `vg_keccak_pad` and `vg_keccak_squeeze`, rate 136), prunes the first 57
 bytes of the hash (RFC 8032 §5.2.5) and encodes `[s]B` with
@@ -121,8 +121,5 @@ def pkBodyFor (v : FieldVariant) : Prog isa :=
 /-- `vg_ed448_public_key`. -/
 def publicKeyFor (v : FieldVariant) : Prog isa :=
   .frame (.push [.rdi, .rsi, .rdx, .rax, .rax, .rax, .rax, .rax, .rax, .rax, .rax]) (pkBodyFor v) (.pop .rax 11)
-
-def pkBody : Prog isa := pkBodyFor .scalar
-def publicKey : Prog isa := publicKeyFor .scalar
 
 end VG.Impl.Ed448.X86_64

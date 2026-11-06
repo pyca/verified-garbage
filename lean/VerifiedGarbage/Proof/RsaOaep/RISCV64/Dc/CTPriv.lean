@@ -101,9 +101,4 @@ theorem priv_ct : RelCT isa (Two AEnt) priv fun _ _ => True := by
     (fun a u ⟨t, ⟨s, P, p, E⟩, e⟩ => by subst e; exact WP.mono (privArgs_ok P E) fun u' A => ⟨s, P, p, A⟩)
     call_ct
 
-/-- After the private operation's result. -/
-theorem priv_dx {a t : State} (h : AEnt a t) : WP isa priv t fun v => ∃ s, PreD s ∧ PubD a s ∧ AfterPriv s v :=
-  let ⟨s, P, p, E⟩ := h
-  WP.mono (priv_ok P E) fun _ A => ⟨s, P, p, A⟩
-
 end VG.Proof.RsaOaep.RISCV64.Dec

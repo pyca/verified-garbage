@@ -32,10 +32,4 @@ theorem sqrSum_le {n m : Nat} (hn : n ≤ m) (f : Nat → Nat) (k : Nat) :
     · subst n; exact Nat.le_refl _
     · exact Nat.le_trans (ih (by omega)) (by rw [sqrSum]; omega)
 
-theorem sqrSum_bound {f : Nat → Nat} (hf : ∀ i < 8, f i < radix)
-    {n k : Nat} (hn : n ≤ 8) (hk : k < 16) : sqrSum f k n < 2 ^ 116 := by
-  have h := sqrSum_le hn f k
-  rw [sqrSum_eq f hk] at h
-  exact Nat.lt_of_le_of_lt (Nat.le_trans h (rows_bound hf hf (by decide) k)) (by decide)
-
 end VG.Proof.X448.Wide

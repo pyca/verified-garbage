@@ -29,10 +29,6 @@ def TblHeld (s : State) (wr : List Region) : Prop :=
   (s.syms combCfg.tsym).toNat + 8 * combCfg.combWords.length ≤ 2 ^ 64 ∧
   ∀ r ∈ wr, Region.Disjoint ⟨s.syms combCfg.tsym, 8 * combCfg.combWords.length⟩ r
 
-theorem combCfg_combConsts : combCfg.combConsts = [(combCfg.tsym, combCfg.combWords)] := rfl
-
-theorem combCfg_tsym : combCfg.tsym = "VG_BRAINPOOLP256R1_COMB7" := rfl
-
 theorem combCfg_tbl_len : Impl.BrainpoolP256r1.comb7.length = 37 :=
   by decide +kernel
 

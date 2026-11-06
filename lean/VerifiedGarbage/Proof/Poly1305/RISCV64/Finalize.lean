@@ -432,21 +432,4 @@ theorem finalize_verified : Verified RISCV64.target finalize Proof.Poly1305.fina
     finalize_ct fun _ _ h => h,
     ⟨finalizeSat, rfl, rfl, Region.disjoint_of_sep (by decide), by decide⟩⟩
 
-/-- A state satisfying the precondition, with a working space. -/
-def finalizeScratchSat : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a2 => 0x2000 | .a3 => 0x3000 | _ => 0
-  sp := 0x8000
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 128⟩, ⟨0x2000, 16⟩, ⟨0x3000, 128⟩]
-
-theorem finalizeScratch_verified :
-    Verified RISCV64.target finalize Proof.Poly1305.finalizeScratchRISCV64 :=
-  ⟨fun s hs => finalize_ok s ⟨by rw [hs.2.1]; exact List.mem_cons_self,
-      by rw [hs.2.1]; exact List.mem_cons_of_mem _ List.mem_cons_self, hs.2.2.1, hs.2.2.2.2.2⟩,
-    finalize_ct fun _ _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.2⟩,
-    ⟨finalizeScratchSat, rfl, rfl, Region.disjoint_of_sep (by decide),
-      Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), by decide⟩⟩
-
 end VG.Proof.Poly1305.RISCV64

@@ -115,10 +115,6 @@ theorem Outside.limbs {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o
     limbs m' base d i = limbs m base d i :=
   congrArg BitVec.toNat (h.word (by omega) (by omega))
 
-theorem Outside.fe {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
-    (hd : d + 128 ≤ o ∨ o + n ≤ d) (hd' : d + 128 ≤ 8192) : fe m' base d = fe m base d :=
-  valN_congr fun _ hi => h.limbs hd hd' hi
-
 theorem writeW_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 64) (h : d + 8 ≤ 8192) :
     Outside base d 8 m (m.writeW (off base d) v) := by
   intro x hx
@@ -142,8 +138,6 @@ def FieldMem (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
   ∀ x, (ofs base x < o ∨ o + 128 ≤ ofs base x) →
     (ofs base x < ACC ∨ ACC + 512 ≤ ofs base x) → m' x = m x
 
-theorem FieldMem.refl (base : Addr) (o : Nat) (m : Mem) : FieldMem base o m m := fun _ _ _ => rfl
-
 theorem FieldMem.trans {base : Addr} {o : Nat} {m₁ m₂ m₃ : Mem} (h₁ : FieldMem base o m₁ m₂)
     (h₂ : FieldMem base o m₂ m₃) : FieldMem base o m₁ m₃ :=
   fun x hx hw => (h₂ x hx hw).trans (h₁ x hx hw)
@@ -164,10 +158,6 @@ theorem FieldMem.limbs {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o
     (hd : d + 128 ≤ o ∨ o + 128 ≤ d) (hw : d + 128 ≤ ACC) {i : Nat} (hi : i < 16) :
     limbs m' base d i = limbs m base d i :=
   congrArg BitVec.toNat (h.word (by omega) (by omega))
-
-theorem FieldMem.fe {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o m m') {d : Nat}
-    (hd : d + 128 ≤ o ∨ o + 128 ≤ d) (hw : d + 128 ≤ ACC) : fe m' base d = fe m base d :=
-  valN_congr fun _ hi => h.limbs hd hw hi
 
 /-- Memory outside two ranges, used by the conditional swap. -/
 def Outside2 (base : Addr) (x nx y ny : Nat) (m m' : Mem) : Prop :=

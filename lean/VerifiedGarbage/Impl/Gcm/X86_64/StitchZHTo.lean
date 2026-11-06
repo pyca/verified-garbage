@@ -34,22 +34,11 @@ def bigRestTo : Prog isa :=
 
 def bigPTo : Prog isa := .seq (.block powP48) bigRestTo
 
-def encWith (su : List Instr) (bigC : Prog isa) : Prog isa :=
-  .seq (.seq (.block su) Aes.X86_64.VaesZH.loadKeys)
-    (.seq firstTo
-      (.seq (.block [.alu .cmp .r9 (.imm 256)])
-        (.seq (.ite .b (.block []) bigC)
-          (.seq (.block [.alu .cmp .r9 (.imm 32)])
-            (.seq (.ite .b (.block []) (.loop bodyTo .ae))
-              (.block (storeCtr ++ lastG ++ storeY)))))))
-
-def encP : Prog isa := encWith setupP bigPTo
-
 /-- The blocks after the last group, as `StitchZH.rem`'s, read at
 `rdx + r8` (`r8` is `src - dst`). -/
 def remTo : Prog isa := StitchZH.remG [.alu .add .r8 (.reg .rdx)] .r8
 
-/-- `encP`, for any number of blocks from 16 on. -/
+/-- `StitchZH.encR`, the data read at `rdx + r8`. -/
 def encR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
     (.seq firstTo

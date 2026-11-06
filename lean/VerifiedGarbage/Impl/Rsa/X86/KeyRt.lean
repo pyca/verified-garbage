@@ -242,7 +242,7 @@ def div (q r d t : Nat) : Prog isa :=
 
 /-! ## The inverse
 
-`Keys.inverse`'s schedule and arrays, every operation the run-time width's. -/
+The inverse's schedule and arrays, every operation the run-time width's. -/
 
 /-- `[o] := [a] - [b] mod m` for `[a], [b] < m`, through `aT1` and `aT4`. -/
 def subModP (o a b : Nat) : List (Prog isa) :=

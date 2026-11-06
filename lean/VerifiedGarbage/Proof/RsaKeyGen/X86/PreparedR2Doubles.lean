@@ -27,10 +27,6 @@ theorem seedAt_lt {e m : Nat} (positive : 1 ≤ e) (odd : m % 2 = 1) (top : 2 ^ 
     rw [show e = (e - 1) + 1 by omega, Nat.pow_succ, Nat.mul_mod_left]
   omega
 
-theorem seed_lt {n m : Nat} (positive : 0 < n) (odd : m % 2 = 1)
-    (top : 2 ^ (64 * n - 1) ≤ m) : 2 ^ (64 * n - 1) < m :=
-  seedAt_lt (by omega) odd top
-
 theorem seedAt_ok {s : State} {base : Addr} {size n e out : Nat} (scratch : Scr s base size)
     (positive : 0 < n) (below : e < 64 * n) (fit : out + 8 * n ≤ size) :
     WP isa (seedAt n e out) s fun t => wordsVal t.mem base out n = 2 ^ e ∧
@@ -39,12 +35,6 @@ theorem seedAt_ok {s : State} {base : Addr} {size n e out : Nat} (scratch : Scr 
     (show 2 ^ e < 2 ^ (32 * (2 * n)) from
       Nat.pow_lt_pow_right (by decide) (by omega))) fun t ⟨value, K, O⟩ => ?_
   exact ⟨by rw [wordsVal_eq_val32]; exact value, by simpa only [show 4 * (2 * n) = 8 * n by omega] using O, K⟩
-
-theorem seed_ok {s : State} {base : Addr} {size n out : Nat} (scratch : Scr s base size)
-    (positive : 0 < n) (fit : out + 8 * n ≤ size) :
-    WP isa (seed n out) s fun t => wordsVal t.mem base out n = 2 ^ (64 * n - 1) ∧
-      Outside base out (8 * n) s.mem t.mem ∧ Keeps [.eax, .ebp, .edx] s t :=
-  seedAt_ok scratch positive (by omega) fit
 
 end VG.Proof.RsaKeyGen.X86.FastR2
 end
@@ -89,19 +79,6 @@ theorem doublesAt_ok {s : State} {base : Addr} {size m e acc out : Nat} {M : Mod
   · have Oab : Outside base out (8 * M.n) s.mem b.mem := B.mem ▸ Oa
     exact (Outs.of_outside Oab (List.mem_cons_self ..)).trans T.mem
 
-theorem doubles_ok {s : State} {base : Addr} {size m acc out : Nat} {M : Mod}
-    (scratch : Scr s base size) (modulus : Modulus M size m s.mem base)
-    (layout : OpLay M size acc out out out)
-    (apart : out + 8 * M.n ≤ M.mo ∨ M.mo + 8 * M.n ≤ out)
-    (bound : M.n ≤ 64) (odd : m % 2 = 1) (top : 2 ^ (64 * M.n - 1) ≤ m) :
-    WP isa (doubles M acc out) s fun t =>
-      wordsVal t.mem base out M.n = 2 ^ M.n * 2 ^ (64 * M.n) % m ∧
-      Modulus M size m t.mem base ∧
-      Outs base [(out, 8 * M.n), (M.tmp, 8 * M.n), (acc, accLen M)] s.mem t.mem ∧
-      Keeps powerClob s t :=
-  doublesAt_ok scratch modulus layout apart bound odd (by have := modulus.n0; omega)
-    (by have := modulus.n0; omega) top
-
 end VG.Proof.RsaKeyGen.X86.FastR2
 end
 
@@ -143,14 +120,5 @@ theorem doublesAt_ready {g : Geometry} (v : g.Valid) {s : State} {c capacity : N
   unfold Geometry.words
   rw [← wordsVal_eq_val32]
   exact value
-
-theorem doubles_ready {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
-    (S : Ready g c capacity p s) (bound : g.w ≤ 64) (odd : c % 2 = 1)
-    (top : 2 ^ (64 * g.w - 1) ≤ c) :
-    WP isa (VG.Impl.RsaKeyGen.X86.FastR2.doubles (modulus g.w) (g.array 2) (g.array 6)) s fun t =>
-      Ready g c capacity p t ∧
-      val32 t.mem g.W (g.array 6) g.words = 2 ^ g.w * 2 ^ (64 * g.w) % c ∧
-      Outs g.W (phaseRanges g) s.mem t.mem ∧ Keeps VG.Proof.Mont.X86.Dynamic.powerClob s t :=
-  doublesAt_ready v S bound odd (e := 64 * g.w - 1) (by have := v.minWidth; omega) (by have := v.minWidth; omega) top
 
 end VG.Proof.RsaKeyGen.X86.PreparedR2

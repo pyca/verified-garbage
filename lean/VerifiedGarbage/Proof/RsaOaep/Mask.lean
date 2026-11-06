@@ -28,12 +28,6 @@ open VG.Proof.Mgf1 (Valid xorBytes_getD mgf1_length getD_append ifp ifn)
 def mixV (V : Nat → Byte) (mk : List Byte) (e n : Nat) (o : Nat) : Byte :=
   if e ≤ o ∧ o < e + n then V o ^^^ mk.getD (o - e) 0 else V o
 
-theorem map_range_getD {f : Nat → Byte} {n : Nat} {xs : List Byte} (h : (List.range n).map f = xs) {j : Nat}
-    (hj : j < n) : f j = xs.getD j 0 := by
-  subst h
-  rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj]
-  rfl
-
 /-- The bytes of `src`, as `V` has them. -/
 def srcB (V : Nat → Byte) (src srcLen : Nat) : List Byte := (List.range srcLen).map fun i => V (src + i)
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.Frame
-public import VerifiedGarbage.Proof.TripleDes.X86.VerifiedBlock
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 public import VerifiedGarbage.Proof.Framework.CallLay
@@ -26,7 +25,6 @@ public import VerifiedGarbage.Proof.TripleDes.Permutation
 public import VerifiedGarbage.Proof.TripleDes.Round
 public import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.TripleDes.Word
-public import VerifiedGarbage.Proof.TripleDes.X86.BlockCT
 public import VerifiedGarbage.Proof.TripleDes.X86.Bytes
 public import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
 public import VerifiedGarbage.Proof.TripleDes.X86.RestoredOutput
@@ -54,7 +52,6 @@ import VerifiedGarbage.Proof.TripleDes.Permutation
 import VerifiedGarbage.Proof.TripleDes.Round
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.TripleDes.Word
-import VerifiedGarbage.Proof.TripleDes.X86.BlockCT
 import VerifiedGarbage.Proof.TripleDes.X86.Bytes
 import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
 import VerifiedGarbage.Proof.TripleDes.X86.RestoredOutput

@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ed448.PPC64LE.VMain
 public import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.PPC64LE.VCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -62,24 +61,5 @@ theorem verifyEquation_ok (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyE
     simpa using this
   exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (hd r hr) he (.inl (by decide +kernel)), Exec.sp he,
     Exec.lr he (by decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
-
-/-- A state satisfying the precondition. -/
-def verifySat : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | .r6 => 0x4000 | _ => 0
-  lr := 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x1000, 57⟩, ⟨0x2000, 114⟩, ⟨0x3000, 57⟩]
-  wr := [⟨0x4000, 8192⟩]
-
-theorem verifyEquation_verified (hR : Proof.Ed448.RecoverOk) (hV : Proof.Ed448.VerifyEq4Ok) :
-    Verified PPC64LE.target Impl.Ed448.PPC64LE.verifyEquation (Proof.Ed448.verifyEquationContract PPC64LE.abi) :=
-  Verified.of_correct (verifyEquation_ok hR hV)
-    (verifyEquation_ct fun _ _ _ _ ⟨h3, h4, h5, h6, hsp, _⟩ => ⟨hsp, fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption⟩) (by
-    contract_implies [Proof.Ed448.verifyEquationContract, Proof.Ed448.verifyEquationSig, verifyPPC,
-      Spec.Ed448.scratchWords, PPC64LE.abi, PPC64LE.argRegs] [verifySat] using verifySat)
 
 end VG.Proof.Ed448.PPC64LE

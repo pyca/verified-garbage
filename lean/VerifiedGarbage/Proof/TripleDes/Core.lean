@@ -15,9 +15,6 @@ theorem fp_bounds : ∀ k < 64, 1 ≤ fp.getD k 1 ∧ fp.getD k 1 ≤ 64 := by d
 theorem ip_fp_positions : ∀ j < 64,
     64 - fp.getD (64 - 1 - (64 - ip.getD (64 - 1 - j) 1)) 1 = j := by decide +kernel
 
-theorem fp_ip_positions : ∀ j < 64,
-    64 - ip.getD (64 - 1 - (64 - fp.getD (64 - 1 - j) 1)) 1 = j := by decide +kernel
-
 theorem ip_fp (x : BitVec 64) : permute ip (permute fp x) = x := by
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
@@ -26,15 +23,6 @@ theorem ip_fp (x : BitVec 64) : permute ip (permute fp x) = x := by
   have hk : 64 - ip.getD (64 - 1 - j) 1 < 64 := by omega
   rw [permute_bit ip _ (by decide) j hj,
     permute_bit fp _ (by decide) _ hk, ip_fp_positions j hj]
-
-theorem fp_ip (x : BitVec 64) : permute fp (permute ip x) = x := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro j hj
-  have hj' : 64 - 1 - j < 64 := by omega
-  obtain ⟨lo, hi⟩ := fp_bounds _ hj'
-  have hk : 64 - fp.getD (64 - 1 - j) 1 < 64 := by omega
-  rw [permute_bit fp _ (by decide) j hj,
-    permute_bit ip _ (by decide) _ hk, fp_ip_positions j hj]
 
 def feistelStep (k : BitVec 48) (state : BitVec 32 × BitVec 32) : BitVec 32 × BitVec 32 :=
   (state.2, state.1 ^^^ roundFunction state.2 k)
@@ -71,9 +59,6 @@ def roundKey (keys : DesSchedule) (direction : Direction) (j : Nat) : BitVec 48 
 def roundPrefix (keys : DesSchedule) (direction : Direction) (n : Nat)
     (v : BitVec 32 × BitVec 32) : BitVec 32 × BitVec 32 :=
   (List.range n).foldl (fun state j => feistelStep (roundKey keys direction j) state) v
-
-theorem roundPrefix_zero (keys : DesSchedule) (direction : Direction)
-    (v : BitVec 32 × BitVec 32) : roundPrefix keys direction 0 v = v := rfl
 
 theorem roundPrefix_succ (keys : DesSchedule) (direction : Direction) (n : Nat)
     (v : BitVec 32 × BitVec 32) :

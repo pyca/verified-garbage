@@ -31,9 +31,6 @@ theorem Keep.trans {rs : List Reg} {s s' s'' : State}
   ⟨fun r hr => (h'.reg r hr).trans (h.reg r hr), h'.mem.trans h.mem,
     h'.rd.trans h.rd, h'.wr.trans h.wr⟩
 
-theorem byte_imm (b : Byte) : (BitVec.ofNat 16 b.toNat).setWidth 64 = b.setWidth 64 := by
-  simp
-
 theorem index_imm (i : Nat) (hi : i < 256) :
     (BitVec.ofNat 16 i).setWidth 64 = (BitVec.ofNat 8 i).setWidth 64 := by
   have h : BitVec.ofNat 16 i = (BitVec.ofNat 8 i).setWidth 16 := by bv_omega

@@ -9,8 +9,6 @@ public import VerifiedGarbage.Proof.ChaCha20.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Spec.ChaCha20.Contract
-public import VerifiedGarbage.Proof.ChaCha20.Contract
-meta import VerifiedGarbage.Proof.ChaCha20.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -26,6 +24,10 @@ meta import VerifiedGarbage.Spec.ChaCha20.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.Spec.ChaCha20
+meta import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 
@@ -809,18 +811,6 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     rw [hm']
     exact block_post fun j hj => by simpa [hj] using hA.out j hj
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 64⟩]
-  wr := [⟨0x2000, 256⟩]
-
 theorem block_correct (s : State) (hs : Proof.ChaCha20.blockX86_64.pre s) :
     ∃ t s', Exec isa block s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.blockX86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
@@ -832,12 +822,5 @@ theorem block_ct : ConstantTime isa Proof.ChaCha20.blockX86_64.pre Proof.ChaCha2
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> with_reducible assumption
-
-theorem block_verified :
-    Verified X86_64.target Impl.ChaCha20.X86_64.block (Proof.ChaCha20.blockContract X86_64.abi) :=
-  Verified.of_correct block_correct block_ct (by
-    sig_implies [Proof.ChaCha20.blockContract, Proof.ChaCha20.blockSig, X86_64.abi, X86_64.argRegs,
-      Proof.ChaCha20.blockX86_64]
-      [satState] using satState)
 
 end VG.Proof.ChaCha20.X86_64

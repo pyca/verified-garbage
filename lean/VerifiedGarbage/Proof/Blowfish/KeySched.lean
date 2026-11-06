@@ -31,12 +31,6 @@ def ksIter (key : List Byte) (j : Nat) : Schedule × Word × Word :=
 theorem ksIter_succ (key : List Byte) (j : Nat) : ksIter key (j + 1) = ksStep (ksIter key j) j := by
   simp only [ksIter, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
 
-theorem foldl_congr_fn {α β : Type} {f g : α → β → α} (h : ∀ a b, f a b = g a b) (l : List β) (a : α) :
-    l.foldl f a = l.foldl g a := by
-  induction l generalizing a with
-  | nil => rfl
-  | cons b l ih => simp only [List.foldl_cons, h, ih]
-
 /-- The step of `expandKey`'s fold is `ksStep`. -/
 theorem expandKey_step : (fun ((k : Schedule), xL, xR) j =>
     let (xL, xR) := encryptWords k xL xR

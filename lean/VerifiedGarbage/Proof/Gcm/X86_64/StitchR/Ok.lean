@@ -136,6 +136,4 @@ theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encTo
 theorem setupFinN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) (h8 : 8 ≤ np := by decide) : SetupFin np hn := fun hp =>
   WP.mono (setupTo_ok hp h8) fun _ ⟨P, hR, hpw⟩ => ⟨P, hR, finE hpw⟩
 
-theorem setupFin : SetupFin := setupFinN 24
-
 end VG.Proof.Gcm.X86_64.StitchR

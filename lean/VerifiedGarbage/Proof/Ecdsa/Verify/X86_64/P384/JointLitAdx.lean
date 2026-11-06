@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
 import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
@@ -8,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
 meta import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals

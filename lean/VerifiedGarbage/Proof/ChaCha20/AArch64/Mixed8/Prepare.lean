@@ -130,17 +130,4 @@ structure Prepared (s₀ s : State) (n : Nat := 0) : Prop where
     rw [hab.mem,hm₀] at hfc
     exact hfc
 
-theorem compute_ok {sve : Bool} (s : State) (hp : CP s) :
-    WP isa (.seq prepare (rounds sve 5)) s fun u => Prepared s u 5 := by
-  apply WP.seq
-  refine (prepare_ok s hp).mono fun a h => ?_
-  refine (phase_ok h.vec h.scalar h.table).mono fun b ⟨hv,hc,hsp,ht⟩ => ?_
-  refine ⟨hv,ht,hc.holds,?_,?_,?_,hc.rd.trans h.rd,hc.wr.trans h.wr,hsp.trans h.sp,?_⟩
-  · rw [source,hc.mem,hc.keep _ VG.Proof.ChaCha20.AArch64.not_words_x0]
-    exact h.cnt
-  · exact ⟨by rw [hc.keep _ (VG.Proof.ChaCha20.AArch64.not_words_preserved (by decide))]; exact h.saved.len,
-      by rw [hc.keep _ (VG.Proof.ChaCha20.AArch64.not_words_preserved (by decide))]; exact h.saved.data⟩
-  · intro r hr h21 h22; rw [hc.keep r hr,h.keep r hr h21 h22]
-  · rw [hc.mem]; exact h.frame
-
 end VG.Proof.ChaCha20.AArch64.Mixed8

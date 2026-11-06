@@ -60,7 +60,4 @@ theorem scr : scr s = scr a := h.2.args 12 (by decide)
 
 end E
 
-/-- The first byte of `n`. -/
-abbrev nx (s : State) : Nat := (s.mem (s.gpr .x2)).toNat
-
 end VG.Proof.RsaPss.AArch64.Sgn

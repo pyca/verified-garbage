@@ -47,27 +47,6 @@ theorem advanceCounter_ok (m : Mem) (p : Addr) (n : Nat) :
       ite_eq_left (show k - 12 < 32 / 8 by omega_arith), ite_eq_right h, BitVec.setWidth_eq]
     rw [BitVec.setWidth_ofNat_of_le (by decide)]
 
-/-- Copying all sixteen bytes keeps the counter's big-endian value. -/
-theorem copyCounter_ok (m : Mem) (src dst : Addr) :
-    blockAt (m.writeW dst (m.readW src 128)) dst = blockAt m src := by
-  rw [VG.Proof.Gcm.X86_64.blockAt_eq, Mem.readW_writeW_self m dst 16 _ (by decide),
-    VG.Proof.Gcm.X86_64.blockAt_eq]
-
-/-- The native low-counter word can be read from a copied template. -/
-theorem copyCounter_low (m : Mem) (src dst : Addr) :
-    (m.writeW dst (m.readW src 128)).readW (dst + BitVec.ofNat 64 12) 32 =
-      m.readW (src + BitVec.ofNat 64 12) 32 := by
-  rw [readW_writeW_inside m dst (m.readW src 128) (k := 12) (n := 4) (by decide) (by decide),
-    readW_extract m src (k := 12) (n := 4) (by decide)]
-
-/-- One template, filled directly from the original numeric counter. -/
-theorem counterTemplate_ok (m : Mem) (src dst : Addr) (n : Nat) :
-    blockAt ((m.writeW dst (m.readW src 128)).writeW (dst + BitVec.ofNat 64 12)
-      (bswap32 (bswap32 (m.readW (src + BitVec.ofNat 64 12) 32) + BitVec.ofNat 32 n))) dst =
-        Nat.repeat inc32 n (blockAt m src) := by
-  have h := advanceCounter_ok (m.writeW dst (m.readW src 128)) dst n
-  simpa only [advanceCounter, copyCounter_low, copyCounter_ok] using h
-
 theorem inc32_add (C : Spec.Gcm.Block) (n d : Nat) :
     Nat.repeat inc32 d (Nat.repeat inc32 n C) = Nat.repeat inc32 (n + d) C := by
   induction d with
