@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 
 /-!
-# ML-DSA with prepared keys, for batches of signatures and verifications
+# ML-DSA with prepared keys, for keys that sign or verify many messages
 
 `vg_mldsa*_prepare_signing_key` and `vg_mldsa*_prepare_verifying_key` copy an
 encoded key and append the NTTs of the key polynomials that signing (FIPS 204
@@ -13,8 +13,8 @@ from it on every call: `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` for a private ke
 `vg_mldsa*_verify_message_prepared` take such a prepared key in place of the
 encoded key, and are otherwise `vg_mldsa*_sign_message` and
 `vg_mldsa*_verify_message_cached`: the same results, failures and permitted
-leakage. The caller prepares a key once for a batch of messages, so each
-signature or verification of the batch does not decode and transform the key
+leakage. A caller that keeps a key for many signatures or verifications
+prepares it once, so that each of them does not decode and transform the key
 again. Nothing here changes the encoded keys or the existing contracts; the
 expanded matrix `Â` is not cached.
 -/
