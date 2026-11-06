@@ -188,6 +188,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | movzx16 d m => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | aluTbl _ d m _ _ => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | vpmovmskb _ d _ => cases hs; exact k d
+  | vpcmpltuw d _ _ => cases hs; exact k d
   | movqR d _ => cases hs; exact k d
   | movdquLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | movdquStore m _ => exact storeStepKD_nil h hs
