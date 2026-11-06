@@ -199,7 +199,7 @@ theorem runBlock_mxcsr : ∀ (is : List Instr) (s s' : State), (∀ i ∈ is, lo
   | i :: is, s, s', hc, h => by
     rw [runBlock_cons] at h
     cases e : exec i s with
-    | none => rw [e] at h; simp [runStep] at h
+    | none => rw [e] at h; cases h
     | some s₁ =>
       rw [e, runStep_some] at h
       rw [runBlock_mxcsr is s₁ s' (fun j hj => hc j (List.mem_cons_of_mem _ hj)) h,
