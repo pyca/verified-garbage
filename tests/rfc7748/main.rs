@@ -45,8 +45,9 @@ fn values(from: &str, to: &str, label: &str) -> Vec<[u8; 32]> {
 /// `X25519(k, u)` through the API: the shared secret of the private key `k`
 /// and the public key `u`, which is not all zero in any of these vectors.
 fn x25519(k: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
-    let shared = PrivateKey::from_bytes(k).exchange(&PublicKey::from_bytes(u));
-    *shared.unwrap().as_bytes()
+    PrivateKey::from_bytes(k)
+        .exchange(&PublicKey::from_bytes(u))
+        .unwrap()
 }
 
 fn hex(s: &str) -> [u8; 32] {
@@ -100,19 +101,15 @@ fn exchange() {
     let k = v("Their shared secret, K:");
     assert_eq!(a.public_key(), ka);
     assert_eq!(b.public_key(), kb);
-    assert_eq!(a.exchange(&kb).unwrap().as_bytes(), &k);
-    assert_eq!(b.exchange(&ka).unwrap().as_bytes(), &k);
+    assert_eq!(a.exchange(&kb).unwrap(), k);
+    assert_eq!(b.exchange(&ka).unwrap(), k);
 }
 
-/// Neither a private key nor a shared secret prints its bytes; a public key
-/// does.
+/// A private key does not print its bytes; a public key does.
 #[test]
 fn debug() {
     let a = PrivateKey::from_bytes(&[0x42; 32]);
     assert_eq!(format!("{a:?}"), "PrivateKey { .. }");
-    let b = PrivateKey::from_bytes(&[0x24; 32]);
-    let shared = a.exchange(&b.public_key()).unwrap();
-    assert_eq!(format!("{shared:?}"), "SharedSecret { .. }");
     let public = PublicKey::from_bytes(&[1; 32]);
     assert_eq!(
         format!("{public:?}"),

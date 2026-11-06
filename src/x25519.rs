@@ -191,13 +191,13 @@ impl PrivateKey {
     /// `X25519(k, peer)` (RFC 7748 §6.1); [`XdhError::ZeroSharedSecret`] if it
     /// is all zero, which is checked without revealing anything else about
     /// it.
-    pub fn exchange(&self, peer: &PublicKey) -> Result<SharedSecret, XdhError> {
+    pub fn exchange(&self, peer: &PublicKey) -> Result<[u8; 32], XdhError> {
         let mut bytes = x25519(&self.bytes, &peer.bytes);
         if crate::ct::eq(&bytes, &[0; 32]) {
             zeroize(&mut bytes);
             return Err(XdhError::ZeroSharedSecret);
         }
-        Ok(SharedSecret { bytes })
+        Ok(bytes)
     }
 }
 
@@ -220,34 +220,6 @@ impl PublicKey {
     }
 
     /// The bytes of the key.
-    pub fn as_bytes(&self) -> &[u8; 32] {
-        &self.bytes
-    }
-}
-
-/// The shared secret of an X25519 exchange, never all zero. It is wiped
-/// when dropped.
-pub struct SharedSecret {
-    bytes: [u8; 32],
-}
-
-impl core::fmt::Debug for SharedSecret {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("SharedSecret").finish_non_exhaustive()
-    }
-}
-
-impl Drop for SharedSecret {
-    fn drop(&mut self) {
-        zeroize(&mut self.bytes);
-    }
-}
-
-impl SharedSecret {
-    /// The size of a shared secret, in bytes.
-    pub const SIZE: usize = 32;
-
-    /// The bytes of the secret.
     pub fn as_bytes(&self) -> &[u8; 32] {
         &self.bytes
     }
@@ -281,10 +253,7 @@ mod tests {
         assert_ne!(a.as_bytes(), b.as_bytes());
         let ka = a.public_key();
         let kb = b.public_key();
-        assert_eq!(
-            a.exchange(&kb).unwrap().as_bytes(),
-            b.exchange(&ka).unwrap().as_bytes()
-        );
+        assert_eq!(a.exchange(&kb).unwrap(), b.exchange(&ka).unwrap());
         assert_eq!(PrivateKey::from_bytes(a.as_bytes()).public_key(), ka);
         assert_eq!(a.clone().public_key(), ka);
         assert_eq!(PublicKey::from_bytes(ka.as_bytes()), ka);

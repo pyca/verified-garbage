@@ -41,7 +41,6 @@ fn x25519_test() {
         };
         let key = PrivateKey::from_bytes(&private);
         let got = key.exchange(&PublicKey::from_bytes(&public));
-        let got = got.map(|shared| *shared.as_bytes());
         assert_eq!(got, expected, "tcId {}", test.tc_id);
         checked.add();
     });
