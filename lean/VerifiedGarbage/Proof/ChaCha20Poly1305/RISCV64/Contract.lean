@@ -62,7 +62,23 @@ def sealRISCV64 : Contract RISCV64.isa where
   pub := pubRISCV64
 
 open VG.RISCV64 in
-/-- `open(key, nonce, aad, aad_len, data, len, tag, work) -> u32`. -/
+/-- Whether the message is authenticated, in `open`'s state on entry. -/
+def okRISCV64 (s : RISCV64.State) : Bool :=
+  (decrypt (bytesAt s.mem (s.gpr .a0) 32) (bytesAt s.mem (s.gpr .a1) 12)
+    (bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) (bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat)
+    (bytesAt s.mem (s.gpr .a6) 16)).isSome
+
+open VG.RISCV64 in
+/-- What `open` may leak (`Spec.ChaCha20Poly1305.openLeak`): whether the
+message is authenticated. -/
+def openLeakRISCV64 (s : RISCV64.State) : List Nat :=
+  [if (decrypt (bytesAt s.mem (s.gpr .a0) 32) (bytesAt s.mem (s.gpr .a1) 12)
+    (bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) (bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat)
+    (bytesAt s.mem (s.gpr .a6) 16)).isSome then 1 else 0]
+
+open VG.RISCV64 in
+/-- `open(key, nonce, aad, aad_len, data, len, tag, work) -> u32`: zeros at
+`data` if the tag is wrong; it may leak whether it is (`openLeakRISCV64`). -/
 def openRISCV64 : Contract RISCV64.isa where
   pre := preRISCV64 false
   post s s' :=
@@ -70,7 +86,8 @@ def openRISCV64 : Contract RISCV64.isa where
         (bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) (bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat)
         (bytesAt s.mem (s.gpr .a6) 16) with
     | some pt => s'.gpr .a0 = 1 ∧ bytesAt s'.mem (s.gpr .a4) (s.gpr .a5).toNat = pt
-    | none => s'.gpr .a0 = 0
-  pub := pubRISCV64
+    | none => s'.gpr .a0 = 0 ∧
+        bytesAt s'.mem (s.gpr .a4) (s.gpr .a5).toNat = List.replicate (s.gpr .a5).toNat 0
+  pub s₁ s₂ := pubRISCV64 s₁ s₂ ∧ openLeakRISCV64 s₁ = openLeakRISCV64 s₂
 
 end VG.Proof.ChaCha20Poly1305

@@ -84,7 +84,25 @@ def sealArm : Contract Arm.isa where
   pub := pubArm
 
 open VG.Arm in
-/-- `vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag, work) -> u32`. -/
+/-- Whether the message is authenticated, in `open`'s state on entry. -/
+def okArm (s : Arm.State) : Bool :=
+  (decrypt (bytesAt s.mem (State.addr (s.gpr .r0)) 32) (bytesAt s.mem (State.addr (s.gpr .r1)) 12)
+    (bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
+    (bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat)
+    (bytesAt s.mem (State.addr (stackArg s 2)) 16)).isSome
+
+open VG.Arm in
+/-- What `open` may leak (`Spec.ChaCha20Poly1305.openLeak`): whether the
+message is authenticated. -/
+def openLeakArm (s : Arm.State) : List Nat :=
+  [if (decrypt (bytesAt s.mem (State.addr (s.gpr .r0)) 32) (bytesAt s.mem (State.addr (s.gpr .r1)) 12)
+    (bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
+    (bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat)
+    (bytesAt s.mem (State.addr (stackArg s 2)) 16)).isSome then 1 else 0]
+
+open VG.Arm in
+/-- `vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag, work) -> u32`:
+zeros at `data` if the tag is wrong; it may leak whether it is (`openLeakArm`). -/
 def openArm : Contract Arm.isa where
   pre := preArm false
   post s s' :=
@@ -93,8 +111,9 @@ def openArm : Contract Arm.isa where
         (bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat)
         (bytesAt s.mem (State.addr (stackArg s 2)) 16) with
     | some pt => s'.gpr .r0 = 1 ∧ bytesAt s'.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat = pt
-    | none => s'.gpr .r0 = 0
-  pub := pubArm
+    | none => s'.gpr .r0 = 0 ∧
+        bytesAt s'.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat = List.replicate (stackArg s 1).toNat 0
+  pub s₁ s₂ := pubArm s₁ s₂ ∧ openLeakArm s₁ = openLeakArm s₂
 
 end VG.Proof.ChaCha20Poly1305
 

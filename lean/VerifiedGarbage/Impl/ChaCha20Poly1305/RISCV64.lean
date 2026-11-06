@@ -34,7 +34,9 @@ with the message's length so far as `count`.
 
 Constant time: only the pointers and the lengths can affect timing (the
 branches are on the lengths, in the callees, and every address is a pointer
-plus a constant or a count). `open` compares the tags without a branch.
+plus a constant or a count). `open` compares the tags without a branch,
+then, if they differ, zeroes the data (`zeroData`): that branch is on
+whether it returns 1, which its contract lets it leak.
 -/
 
 @[expose] public section
@@ -146,13 +148,28 @@ def compare : List Instr :=
       .logic .xor .t2 .t2 .t3, .logic .or .t1 .t1 .t2]) ++
     [.li .t2 1, .sltu .t1 .t1 .t2]
 
-def «open» : Prog isa :=
+/-- The `s10` bytes at `s9` zeroed, a byte at a time, with `t1` zero:
+through `t2` (the address) and `t3` (the count). -/
+def zeroData : Prog isa :=
+  .seq (.block [mov .t2 .s9, mov .t3 .s10])
+    (.ite (.zero .t3) (.block [])
+      (.loop (.block [.store .b .t1 .t2 0, .addi .t2 .t2 1, .addi .t3 .t3 (-1)]) (.nonzero .t3)))
+
+/-- Everything but the epilogue: `t1` is 1 if the tag is right, else 0. -/
+def openBody : Prog isa :=
   .seq (.block (save ++ moves ++ setup))
   (.seq keyGen
   (.seq polyInit
   (.seq macAad
   (.seq (macData (.addi .a2 .a0 (tagOff - polyOff)))
   (.seq crypt
-    (.block (compare ++ restore ++ [mov .a0 .t1])))))))
+    (.block compare))))))
+
+/-- `open` zeroes the data if the tag is wrong, branching on the result of
+the comparison, which its contract lets it leak. -/
+def «open» : Prog isa :=
+  .seq openBody
+  (.seq (.ite (.zero .t1) zeroData (.block []))
+    (.block (restore ++ [mov .a0 .t1])))
 
 end VG.Impl.ChaCha20Poly1305.RISCV64

@@ -2839,10 +2839,6 @@ implementation, but in some algorithms it does part of the cryptography:
   (`src/aead/aes_gcm.rs`); the mode itself, including `J0`, the padding, the
   length block and the comparison of the tag, is verified end to end, as
   are ChaCha20-Poly1305 and ML-KEM.
-* **ChaCha20-Poly1305 decryption** is in place, and when the tag is wrong
-  the verified function's contract leaves the data unspecified (it may
-  already hold the decryption); it is the Rust wrapper that then zeroes it,
-  so that no unauthenticated plaintext is released.
 * **HMAC** with a key longer than a block hashes it first, in Rust (with the
   verified hash).
 

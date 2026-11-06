@@ -239,7 +239,9 @@ open VG.AArch64 in
 aad_len = x3, data = x4, len = x5, tag = x6, work = x7)`: `work` (1280 bytes)
 and `data` may be read and written, `key`, `nonce` and `aad` read, and `tag`
 written if `enc` (`seal`) and read if not (`open`); no writable one overlaps
-another; nothing wraps around the end of the address space. -/
+another; nothing wraps around the end of the address space. `open` may also
+write the 16 bytes after `work` (`slot`), where it saves `data` and `len`,
+which overlap no other argument either. -/
 def preAArch64 (enc : Bool) (s : AArch64.State) : Prop :=
   let key : Region := ⟨s.gpr .x0, 32⟩
   let nonce : Region := ⟨s.gpr .x1, 12⟩
@@ -247,14 +249,17 @@ def preAArch64 (enc : Bool) (s : AArch64.State) : Prop :=
   let data : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let tag : Region := ⟨s.gpr .x6, 16⟩
   let work : Region := ⟨s.gpr .x7, 1280⟩
+  let slot : Region := ⟨s.gpr .x7 + BitVec.ofNat 64 1280, 16⟩
   s.rd = (if enc then [key, nonce, aad] else [key, nonce, aad, tag]) ∧
-  s.wr = (if enc then [data, tag, work] else [data, work]) ∧
+  s.wr = (if enc then [data, tag, work] else [data, work, slot]) ∧
   work.Disjoint key ∧ work.Disjoint nonce ∧ work.Disjoint aad ∧ work.Disjoint data ∧
   work.Disjoint tag ∧
   data.Disjoint key ∧ data.Disjoint nonce ∧ data.Disjoint aad ∧ data.Disjoint tag ∧
   (s.gpr .x7).toNat + 1280 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
   (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + 16 ≤ 2 ^ 64 ∧
-  (s.gpr .x0).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 12 ≤ 2 ^ 64
+  (s.gpr .x0).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 12 ≤ 2 ^ 64 ∧
+  (if enc then True else slot.Disjoint key ∧ slot.Disjoint nonce ∧ slot.Disjoint aad ∧
+    slot.Disjoint data ∧ slot.Disjoint tag ∧ (s.gpr .x7).toNat + 1296 ≤ 2 ^ 64)
 
 open VG.AArch64 in
 def pubAArch64 (s₁ s₂ : AArch64.State) : Prop :=
@@ -273,7 +278,23 @@ def sealAArch64 : Contract AArch64.isa where
   pub := pubAArch64
 
 open VG.AArch64 in
-/-- `vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag, work) -> u32`. -/
+/-- Whether the message is authenticated, in `open`'s state on entry. -/
+def okAArch64 (s : AArch64.State) : Bool :=
+  (decrypt (bytesAt s.mem (s.gpr .x0) 32) (bytesAt s.mem (s.gpr .x1) 12)
+    (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat)
+    (bytesAt s.mem (s.gpr .x6) 16)).isSome
+
+open VG.AArch64 in
+/-- What `open` may leak (`Spec.ChaCha20Poly1305.openLeak`): whether the
+message is authenticated. -/
+def openLeakAArch64 (s : AArch64.State) : List Nat :=
+  [if (decrypt (bytesAt s.mem (s.gpr .x0) 32) (bytesAt s.mem (s.gpr .x1) 12)
+    (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat)
+    (bytesAt s.mem (s.gpr .x6) 16)).isSome then 1 else 0]
+
+open VG.AArch64 in
+/-- `vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag, work) -> u32`:
+zeros at `data` if the tag is wrong; it may leak whether it is (`openLeakAArch64`). -/
 def openAArch64 : Contract AArch64.isa where
   pre := preAArch64 false
   post s s' :=
@@ -281,8 +302,9 @@ def openAArch64 : Contract AArch64.isa where
         (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat)
         (bytesAt s.mem (s.gpr .x6) 16) with
     | some pt => (s'.gpr .x0).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .x4) (s.gpr .x5).toNat = pt
-    | none => (s'.gpr .x0).setWidth 32 = 0
-  pub := pubAArch64
+    | none => (s'.gpr .x0).setWidth 32 = 0 ∧
+        bytesAt s'.mem (s.gpr .x4) (s.gpr .x5).toNat = List.replicate (s.gpr .x5).toNat 0
+  pub s₁ s₂ := pubAArch64 s₁ s₂ ∧ openLeakAArch64 s₁ = openLeakAArch64 s₂
 
 end VG.Proof.ChaCha20Poly1305
 
@@ -381,12 +403,23 @@ abbrev dR : Region := ⟨dp s₀, L s₀⟩
 abbrev tR : Region := ⟨tp s₀, 16⟩
 /-- `ctx[k, k + n)`. -/
 abbrev sub (k n : Nat) : Region := ⟨off (cx s₀) k, n⟩
+/-- Where `open` saves `data` and `len`, after the context. -/
+abbrev slotR : Region := sub s₀ 1280 16
 end
+
+/-- What `open`'s precondition says of `slotR`. -/
+structure SlotPre (s₀ : State) : Prop where
+  s_k : (slotR s₀).Disjoint (kR s₀)
+  s_n : (slotR s₀).Disjoint (nR s₀)
+  s_a : (slotR s₀).Disjoint (aR s₀)
+  s_d : (slotR s₀).Disjoint (dR s₀)
+  s_t : (slotR s₀).Disjoint (tR s₀)
+  wrap_s : (cx s₀).toNat + 1296 ≤ 2 ^ 64
 
 /-- What the proof uses of the precondition; `enc` for `seal`. -/
 structure APre (enc : Bool) (s₀ : State) : Prop where
   rd : s₀.rd = if enc then [kR s₀, nR s₀, aR s₀] else [kR s₀, nR s₀, aR s₀, tR s₀]
-  wr : s₀.wr = if enc then [dR s₀, tR s₀, ctxR s₀] else [dR s₀, ctxR s₀]
+  wr : s₀.wr = if enc then [dR s₀, tR s₀, ctxR s₀] else [dR s₀, ctxR s₀, slotR s₀]
   c_k : (ctxR s₀).Disjoint (kR s₀)
   c_n : (ctxR s₀).Disjoint (nR s₀)
   c_a : (ctxR s₀).Disjoint (aR s₀)
@@ -402,10 +435,15 @@ structure APre (enc : Bool) (s₀ : State) : Prop where
   wrap_t : (tp s₀).toNat + 16 ≤ 2 ^ 64
   wrap_k : (kp s₀).toNat + 32 ≤ 2 ^ 64
   wrap_n : (np s₀).toNat + 12 ≤ 2 ^ 64
+  slot : enc = false → SlotPre s₀
 
 theorem APre.of {enc : Bool} (s₀ : State) (h : preAArch64 enc s₀) : APre enc s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩ := h
+  refine ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, fun he => ?_⟩
+  subst he
+  simp only [Bool.false_eq_true, ↓reduceIte] at h18
+  obtain ⟨a, b, c, d, e, f⟩ := h18
+  exact ⟨a, b, c, d, e, f⟩
 
 variable {e : Bool}
 

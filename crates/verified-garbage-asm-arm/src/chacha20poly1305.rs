@@ -384,9 +384,9 @@ bx lr",
     )
 }
 
-/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
-/// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
+/// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
 ///
 /// # Safety
 ///
@@ -607,6 +607,23 @@ orr r0, r0, r1
 lsr r0, r0, #31
 mov r1, #1
 sub r0, r1, r0
+cmp r0, #0
+beq 26f
+b 27f
+26:
+mov r2, r10
+mov r3, r11
+cmp r3, #0
+beq 28f
+210:
+strb r0, [r2, #0]
+add r2, r2, #1
+subs r3, r3, #1
+bne 210b
+b 29f
+28:
+29:
+27:
 mov r12, r7
 ldr r4, [r12, #464]
 ldr r5, [r12, #468]

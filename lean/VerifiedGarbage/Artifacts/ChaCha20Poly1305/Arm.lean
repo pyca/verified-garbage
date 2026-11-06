@@ -16,7 +16,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 Impl.ChaCha20Poly1305.Arm.«seal»
     stack := 664
     verified := Proof.ChaCha20Poly1305.Arm.seal_framed },
-  Spec.ChaCha20Poly1305.openApi.artifact Arm.target {
+  Spec.ChaCha20Poly1305.openZeroApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 Impl.ChaCha20Poly1305.Arm.«open»
     stack := 664
     verified := Proof.ChaCha20Poly1305.Arm.open_framed },

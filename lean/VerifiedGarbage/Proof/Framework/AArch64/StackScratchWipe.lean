@@ -193,7 +193,7 @@ theorem wipe_spSafe (words : Nat) : (wipe words).all (fun i => !isa.writesSp i) 
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
-  {stack bytes words : Nat}
+  {stack bytes words : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
 
 /-- Code verified for a function whose last argument, in a register, is a
 scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
@@ -202,7 +202,7 @@ for the function without it, which allocates the buffer in a frame of
 the code (`withStackScratchWiped`), if the postcondition reads the memory on
 return only within the function's buffers (`hpost`). -/
 theorem Verified.stackScratchWiped {c : Prog isa}
-    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack))
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hk : (sig.words abi.ptrBits).length < 8)
     (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes)
     (hw : 8 * words ≤ n * e.size)
@@ -213,16 +213,16 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s) :
     Verified target
       (withStackScratchWiped bytes (argRegs.getD (sig.words abi.ptrBits).length .x0) words c)
-      (sig.contract abi pre post wa (stack + bytes)) := by
+      (sig.contract abi pre post wa (stack + bytes) leak) := by
   obtain ⟨hcor, hct, -⟩ := h
   have hlen := regArgs_length sig
-  have hsb : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s → stack + bytes ≤ s.sp.toNat :=
+  have hsb : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → stack + bytes ≤ s.sp.toNat :=
     fun s hs => by
       rw [pre_regs (by omega_using [hk])] at hs
       rcases hs.1 with h | h <;> omega_using [h]
   -- The buffer, below the stack the contract without it reserves, so apart
   -- from its buffers.
-  have hdisj : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s →
+  have hdisj : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s →
       ∀ b ∈ Sig.bufs sig.params (regArgs sig s),
         b.1.Disjoint ⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩ := by
     intro s hs b hb'
@@ -235,9 +235,9 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       Offset.sub_below _ (by omega_using []) (by omega_using [hb])
     exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right hscrSub
   -- Every run is the code's run from `narrow`, then the wipe.
-  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s → ∃ t s₃ s₄,
+  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃ s₄,
       Exec isa c (narrow sig e n bytes s) t s₃ ∧
-      (Sig.scratchContract abi sig nm e n pre post wa stack).post (narrow sig e n bytes s) s₃ ∧
+      (Sig.scratchContract abi sig nm e n pre post wa stack leak).post (narrow sig e n bytes s) s₃ ∧
       Frame [⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩] s₃.mem s₄.mem ∧
       s₃.sp = s.sp - BitVec.ofNat 64 bytes ∧
       Exec isa (withStackScratchWiped bytes (argRegs.getD (sig.words abi.ptrBits).length .x0) words c) s

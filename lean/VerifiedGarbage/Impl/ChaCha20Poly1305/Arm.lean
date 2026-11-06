@@ -48,8 +48,10 @@ and `bne`, and the tags are compared without a branch, as
 
 Constant time: only the pointers and the lengths can affect timing (the
 branches are on the lengths, and every address is a pointer plus a constant
-or a count). The callees save our registers in memory and restore them, so
-for the taint analysis, which follows them through public slots of known
+or a count), but for `open`'s branch on whether the tag is right, which its
+contract lets it leak, to zero the data if it is not. The callees save our
+registers in memory and restore them, so for the taint analysis, which
+follows them through public slots of known
 regions, every callee's working space starts at the context (`[0, 320)` for
 ChaCha20, the Poly1305 state at `[0, 128)`), and `r7` is set from the
 callee's pointer that it keeps (`r1` for ChaCha20, `r0` for Poly1305) after
@@ -243,8 +245,21 @@ def compare : List Instr :=
   ([.mov .r1 (.imm 0), .dp .sub .r1 .r1 (.reg .r0), .dp .orr .r0 .r0 (.reg .r1),
    .mov .r0 (.shifted .r0 .lsr 31), .mov .r1 (.imm 1), .dp .sub .r0 .r1 (.reg .r0)] : List Instr)
 
-/-- The data decrypted, the tags compared, and the registers restored. -/
-def openEnd : Prog isa := .seq crypt (.block (compare ++ restore))
+/-- The `r11` bytes at `r10` zeroed, a byte at a time, with `r0` zero:
+through `r2` (the address) and `r3` (the count). -/
+def zeroData : Prog isa :=
+  .seq (.block [.mov .r2 (.reg .r10), .mov .r3 (.reg .r11), .cmp .r3 (.imm 0)])
+    (.ite .eq (.block [])
+      (.loop (.block [.strb .r0 .r2 0, .dp .add .r2 .r2 (.imm 1), .subs .r3 .r3 (.imm 1)]) .ne))
+
+/-- If the tag is wrong (`r0` is 0, which sets `Z`), the data zeroed; then
+the registers restored. -/
+def openTail : Prog isa := .seq (.ite .eq zeroData (.block [])) (.block restore)
+
+/-- The data decrypted, the tags compared, the data zeroed if they differ,
+branching on the result, which `open`'s contract lets it leak, and the
+registers restored. -/
+def openEnd : Prog isa := .seq (.seq crypt (.block (compare ++ [.cmp .r0 (.imm 0)]))) openTail
 
 def «open» : Prog isa := .seq openMain (.seq finalize openEnd)
 

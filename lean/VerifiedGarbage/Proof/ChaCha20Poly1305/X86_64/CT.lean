@@ -506,7 +506,23 @@ def sealX86_64 : Contract X86_64.isa where
   pub := pubX86_64
 
 open VG.X86_64 in
-/-- `vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag, work) -> u32`. -/
+/-- Whether the message is authenticated, in `open`'s state on entry. -/
+def okX86_64 (s : X86_64.State) : Bool :=
+  (decrypt (bytesAt s.mem (s.gpr .rdi) 32) (bytesAt s.mem (s.gpr .rsi) 12)
+    (bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+    (bytesAt s.mem (stackArg s 0) 16)).isSome
+
+open VG.X86_64 in
+/-- What `open` may leak (`Spec.ChaCha20Poly1305.openLeak`): whether the
+message is authenticated. -/
+def openLeakX86_64 (s : X86_64.State) : List Nat :=
+  [if (decrypt (bytesAt s.mem (s.gpr .rdi) 32) (bytesAt s.mem (s.gpr .rsi) 12)
+    (bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+    (bytesAt s.mem (stackArg s 0) 16)).isSome then 1 else 0]
+
+open VG.X86_64 in
+/-- `vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag, work) -> u32`:
+zeros at `data` if the tag is wrong; it may leak whether it is (`openLeakX86_64`). -/
 def openX86_64 : Contract X86_64.isa where
   pre := preX86_64 false
   post s s' :=
@@ -514,8 +530,9 @@ def openX86_64 : Contract X86_64.isa where
         (bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
         (bytesAt s.mem (stackArg s 0) 16) with
     | some pt => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .r8) (s.gpr .r9).toNat = pt
-    | none => (s'.gpr .rax).setWidth 32 = 0
-  pub := pubX86_64
+    | none => (s'.gpr .rax).setWidth 32 = 0 ∧
+        bytesAt s'.mem (s.gpr .r8) (s.gpr .r9).toNat = List.replicate (s.gpr .r9).toNat 0
+  pub s₁ s₂ := pubX86_64 s₁ s₂ ∧ openLeakX86_64 s₁ = openLeakX86_64 s₂
 
 end VG.Proof.ChaCha20Poly1305
 
@@ -4212,8 +4229,19 @@ theorem seal_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : AP
   simp only [Spec.ChaCha20Poly1305.encrypt, macData, List.nil_append,
     List.append_assoc, VG.Proof.Poly1305.length_bytesAt, length_encrypt]
 
-theorem open_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre false s₀) :
-    WP isa («open» v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ openX86_64.post s₀ s' := by
+/-- What holds when `open`'s tag is computed (`openBody`, and the stitched
+code's `openStitchedBody`), from which `openTail` compares the tags, zeroes
+the data if they differ, and restores the registers. -/
+structure TailIn (s₀ s : State) : Prop where
+  inv : Inv s₀ s
+  rcx : s.gpr .rcx = off (cx s₀) 48
+  rdi : s.gpr .rdi = off (cx s₀) 448
+  tag : bytesAt s.mem (off (cx s₀) 48) 16 = mac (otk s₀) (macData (A s₀) (D s₀))
+  pt : bytesAt s.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀)
+  mx : s.mxcsr.extractLsb' 6 10 = s₀.mxcsr.extractLsb' 6 10
+
+theorem body_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre false s₀) :
+    WP isa (openBody v.callee v.poly) s₀ (TailIn s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .r9).isLt)
   refine WP.seq (WP.mono_mx (by decide +kernel) (entry_ok hp) fun s₀' e₀ mx₀ => ?_)
   subst e₀
@@ -4237,36 +4265,24 @@ theorem open_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : AP
   have hM := Nat.le_trans (mOf_le v.callee.fold v.callee.pass (L s₀)) v.fold_le
   have ks₅ := ks_frame f₅ (by rdisj_all) hM (ks_frame f₃ (by rdisj_all) hM (ks_frame f₂ (by rdisj_all) hM h₁.ks))
   refine WP.seq (WP.mono_mx (crypt_mx v) (crypt_ok v hp i₅ st₅ ks₅) fun s₆ ⟨i₆, _, f₆, pt₆⟩ mx₆ => ?_)
-  refine WP.seq (WP.mono_mx (by decide +kernel) (finalizeTo_ok hp i₆ (out := 48) (.inl (by omega_using [])))
-    fun s₇ ⟨cs₇, rd₇, wr₇, rdi₇, rcx₇, f₇, tag₇⟩ mx₇ => ?_)
-  refine WP.block_append (WP.mono_mx (by decide +kernel) (compare_ok hp rcx₇
-    (by rw [cs₇ _ (by decide), i₆.r12]) (by rw [rd₇, i₆.rd])
-    (by rw [wr₇, i₆.wr])) fun s₈ ⟨rax₈, g₈, m₈, rd₈, wr₈⟩ mx₈ => ?_)
-  refine WP.mono_mx (by decide +kernel) (restore_ok hp (by rw [g₈ _ (by decide) (by decide), rdi₇])
-    (by rw [m₈]; exact i₆.saved.frame f₇ (by rdisj_all))
-    (by rw [g₈ _ (by decide) (by decide), cs₇ _ calleeSaved_rsp, i₆.rsp])
-    (by rw [rd₈, rd₇, i₆.rd]) (by rw [wr₈, wr₇, i₆.wr])) fun s₉ ⟨cs₉, rax₉, m₉⟩ mx₉ => ?_
-  -- The tag computed, and the one received.
+  refine WP.mono_mx (by decide +kernel) (finalizeTo_ok hp i₆ (out := 48) (.inl (by omega_using [])))
+    fun s₇ ⟨cs₇, rd₇, wr₇, rdi₇, rcx₇, f₇, tag₇⟩ mx₇ => ?_
+  -- The tag computed.
   have R₂ := r₂ (otk s₀) [] h₁.poly
   have T₇ := tag₇ _ _ (Repr.frame f₆ (by rdisj_all) (r₅ _ _ (Repr.frame f₃ (by rdisj_all) R₂)))
   have L₃ : bytesAt s₃.mem (off (cx s₀) 592) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := len₃
-  have T0₇ : bytesAt s₇.mem (tp s₀) 16 = T0 s₀ := by
-    rw [bytesAt_frame f₇ (by rdisj_all) (by lit_omega), bytesAt_frame i₆.frame (by rdisj_all) (by lit_omega)]
-  have P₉ : bytesAt s₉.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
-    rw [m₉, m₈, bytesAt_frame f₇ (by rdisj_all) hL', pt₆, bytesAt_frame f₅ (by rdisj_all) hL', D₃]
+  have P₇ : bytesAt s₇.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
+    rw [bytesAt_frame f₇ (by rdisj_all) hL', pt₆, bytesAt_frame f₅ (by rdisj_all) hL', D₃]
   rw [L₃, D₃, hA] at T₇
-  refine ⟨⟨cs₉, by rw [m₉, m₈]; exact ret_kept hp i₆.frame (hp.ret_c.sub_right (sub_ctx _ (by lit_omega))) f₇,
-    by rw [mx₉, mx₈, mx₇, mx₆, mx₅, mx₃, mx₂, mx₁, mx₀]⟩, ?_⟩
-  have hm : mac (otk s₀) (macData (A s₀) (D s₀)) = bytesAt s₇.mem (off (cx s₀) 48) 16 := by
-    rw [T₇]
+  refine ⟨i₆.step cs₇ rd₇ wr₇ f₇ (fun r hr => ?_) (by rdisj_all), rcx₇, rdi₇, ?_, P₇,
+    by rw [mx₇, mx₆, mx₅, mx₃, mx₂, mx₁, mx₀]⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨stkR s₀, by simp, fun _ h => h⟩
+  · rw [T₇]
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt]
-  rw [openX86_64, Contract.post_mk]
-  rw [rax₉, rax₈]
-  split
-  next pt hpt =>
-    obtain ⟨hmac, rfl⟩ := decrypt_eq_some hpt
-    exact ⟨ite_eq_left (hm.symm.trans (hmac.trans T0₇.symm)), P₉⟩
-  next hn => exact ite_eq_right fun he => decrypt_eq_none hn ((hm.trans he).trans T0₇)
 
 end VG.Proof.ChaCha20Poly1305.X86_64
 
@@ -4397,9 +4413,9 @@ def wipe (fold pass w : Nat) : Prog isa :=
 def sealPost (fold pass w : Nat) (b : Impl.Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (wipe fold pass w) (.seq (macPadLengths b .r14 .r13) (.seq finalizeTag (.block restore)))
 
-/-- `open` after the branch. -/
+/-- `openBody` after the branch. -/
 def openPost (fold pass w : Nat) : Prog isa :=
-  .seq (wipe fold pass w) (.seq (finalizeTo 48) (.block (compare ++ restore)))
+  .seq (wipe fold pass w) (finalizeTo 48)
 
 theorem seal_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
     {t : List Leak} (h : Exec isa («seal» x b) s t s') :
@@ -4417,17 +4433,17 @@ theorem seal_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Bl
   exact this
 
 theorem open_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
-    {t : List Leak} (h : Exec isa («open» x b) s t s') :
+    {t : List Leak} (h : Exec isa (openBody x b) s t s') :
     Exec isa (.seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq (.call x.name x.code)
       (.seq (openMid x.fold b) (.seq (cryptIte x) (openPost x.fold x.pass x.wide)))))) s t s' := by
   cases h with | seq e₀ h => cases h with | seq hP h => cases hP with | seq ePA hP => cases hP with
   | seq eC ePB => cases h with | seq eMA h => cases h with | seq eLEN h => cases h with | seq eMC h =>
-  cases h with | seq hC h =>
+  cases h with | seq hC eFIN =>
   cases hC with | seq eCMP hC => cases hC with | seq eITE hC => cases hC with | seq eANC hC =>
-  cases hC with | seq eFM hC => cases hC with | seq eADD eZK => cases h with | seq eFIN eCR =>
+  cases hC with | seq eFM hC => cases hC with | seq eADD eZK =>
   have := Exec.seq e₀ (Exec.seq ePA (Exec.seq eC (Exec.seq
     (Exec.seq ePB (Exec.seq eMA (Exec.seq eLEN (Exec.seq eMC eCMP))))
-    (Exec.seq eITE (Exec.seq (Exec.seq eANC (Exec.seq eFM (Exec.seq eADD eZK))) (Exec.seq eFIN eCR))))))
+    (Exec.seq eITE (Exec.seq (Exec.seq eANC (Exec.seq eFM (Exec.seq eADD eZK))) eFIN)))))
   simp only [List.append_assoc] at this ⊢
   exact this
 
@@ -4887,8 +4903,8 @@ theorem seal_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (hq
     simp only [List.append_assoc] at this ⊢
     exact this) this
 
-theorem open_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') (hq : pubX86_64 s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («open» v.callee v.poly) fun _ _ => True := by
+theorem body_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') (hq : pubX86_64 s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openBody v.callee v.poly) fun _ _ => True := by
   have hp := APre.of _ h₀
   have hp' := APre.of _ h₀'
   have hfl := v.fold_le

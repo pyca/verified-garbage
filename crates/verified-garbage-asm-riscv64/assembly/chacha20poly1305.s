@@ -570,6 +570,21 @@ vg_chacha20_poly1305_open:
 	or t1, t1, t2
 	addi t2, zero, 1
 	sltu t1, t1, t2
+	beqz t1, 20f
+	j 21f
+20:
+	addi t2, s9, 0
+	addi t3, s10, 0
+	beqz t3, 22f
+24:
+	sb t1, 0(t2)
+	addi t2, t2, 1
+	addi t3, t3, -1
+	bnez t3, 24b
+	j 23f
+22:
+23:
+21:
 	ld s7, 560(t0)
 	ld s8, 568(t0)
 	ld s9, 576(t0)

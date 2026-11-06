@@ -20,7 +20,7 @@ def artifacts (v : Proof.ChaCha20.X86.XorImpl) : List Artifact := [
     spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
       (Proof.ChaCha20Poly1305.X86.seal_spSafe v)
     features := v.features },
-  Spec.ChaCha20Poly1305.openApi.artifact X86.target {
+  Spec.ChaCha20Poly1305.openZeroApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» v.callee)
     stack := 772
