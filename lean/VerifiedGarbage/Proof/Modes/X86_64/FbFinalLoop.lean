@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
 public import VerifiedGarbage.Impl.Modes.X86_64.FbFinal
 public import VerifiedGarbage.Proof.Modes.X86_64.FbFinalTail
+public import VerifiedGarbage.Proof.Modes.FbFinal
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 import VerifiedGarbage.Proof.Modes.X86_64.Words
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
@@ -43,20 +44,6 @@ structure FPre (c : Core) (s₀ : State) (B D : Addr) (len : Nat) : Prop where
   fitD : D.toNat + len ≤ 2 ^ 64
   small : len < 2 ^ 64
   stk : StkOk c s₀
-
-/-- The block left in the buffer after the `len` bytes: the input block
-after the whole blocks if there is no partial segment, and otherwise the
-partial segment's output block. -/
-def fbNextF (mo : FbMode) (L : Nat) (ciph : Spec.Cbc.Cipher) (m₀ : Mem) (D : Addr) (iv : List Byte) (len : Nat) :
-    List Byte :=
-  if len % L = 0 then fbIn mo L ciph m₀ D iv (len / L) else ciph (fbIn mo L ciph m₀ D iv (len / L))
-
-theorem fbNextF_length {mo : FbMode} {L : Nat} {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = L) (m₀ : Mem)
-    (D : Addr) {iv : List Byte} (hiv : iv.length = L) (len : Nat) : (fbNextF mo L ciph m₀ D iv len).length = L := by
-  unfold fbNextF
-  split
-  · exact fbIn_length hc m₀ D hiv _
-  · exact hc _
 
 /-- The loop, before segment `j`; `m₀` is the memory on entry, `iv` the IV. -/
 structure FInvF (cs : BlockSpec c) (mo : FbMode) (s₀ : State) (m₀ : Mem) (B D : Addr) (len : Nat) (k : cs.Key)
