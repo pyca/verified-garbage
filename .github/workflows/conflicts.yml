@@ -45,4 +45,5 @@ jobs:
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
-        run: python3 ci/conflict_comments.py "$REPO" "$SHA" $DRY_RUN
+        # -u: print as it goes, not all at the end.
+        run: python3 -u ci/conflict_comments.py "$REPO" "$SHA" $DRY_RUN
