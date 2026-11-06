@@ -73,7 +73,7 @@ theorem zeroStep_run {s : State} {a : Addr} (hd : s.gpr .rdx = a) (hw : InRegion
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) ∧
         (∀ q, q ≠ .rdx → q ≠ .rcx → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
         s'.mxcsr = s.mxcsr := by
-  have he : s.ea { base := .rdx } = a := by rw [ea_disp, hd]; exact BitVec.add_zero _
+  have he : s.ea { base := .rdx } = a := by show s.gpr .rdx + BitVec.ofInt 64 0 = a; rw [hd]; exact BitVec.add_zero _
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, State.store8, he, hw, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
