@@ -24,7 +24,8 @@ the data's length, which is `len` bytes rather than `n` blocks of
 * If `r ≠ 0`: the block at `rsp` is zeroed and `enc` runs on it, one block,
   leaving `CIPH_K(c)` both there and in the IV; its first `r` bytes are
   XORed into the rest of the data, a byte at a time, and the block is zeroed
-  again.
+  again. The XOR loop walks the block from `rsp` in `rax` and the rest in
+  the register that holds its address, counting down the bytes left.
 
 Only the pointers and `len` (and what is computed from them) are public: the
 only branches are on `r` and the inlined functions' own, on `n`.
@@ -98,15 +99,17 @@ address, `rsp`, and the number of blocks, 1. -/
 def oneBlock : List Instr :=
   a.reload ++ [.mov (a.arg a.dataIx) (.reg .rsp), .mov (a.arg a.lenIx) (.imm 1)]
 
-/-- Byte `rax` of the working block XORed into byte `rax` of the rest; on to
-the next, ZF set after the last. -/
+/-- The byte at `rax` (in the working block) XORed into the byte at the rest's
+address; both on to the next byte, and one byte fewer left, ZF set after
+the last. -/
 def xorByte : List Instr :=
-  [.movzx8 .r10 { base := .rsp, index := some .rax },
-    .movzx8 .r11 { base := saved a.dataIx, index := some .rax },
+  [.movzx8 .r10 { base := .rax },
+    .movzx8 .r11 { base := saved a.dataIx },
     .alu .xor .r11 (.reg .r10),
-    .store8 { base := saved a.dataIx, index := some .rax } .r11,
+    .store8 { base := saved a.dataIx } .r11,
     .alu .add .rax (.imm 1),
-    .alu .cmp .rax (.reg (saved a.lenIx))]
+    .alu .add (saved a.dataIx) (.imm 1),
+    .alu .sub (saved a.lenIx) (.imm 1)]
 
 /-- The caller's callee-saved registers back from the frame. -/
 def exit : List Instr := (List.range 6).map fun i => .mov (saved i) (.mem (blockOp (16 + 8 * i)))
@@ -115,7 +118,7 @@ def exit : List Instr := (List.range 6).map fun i => .mov (saved i) (.mem (block
 zero block), its first `r` bytes XORed into the rest, and the block zeroed. -/
 def tail (enc : Prog isa) : Prog isa :=
   .seq (.block (a.zeroBlock ++ a.oneBlock)) (.seq enc
-    (.seq (.block [.mov32 .rax (.imm 0)]) (.seq (.loop (.block a.xorByte) .ne) (.block a.zeroBlock))))
+    (.seq (.block [.mov .rax (.reg .rsp)]) (.seq (.loop (.block a.xorByte) .ne) (.block a.zeroBlock))))
 
 end FinalArgs
 
