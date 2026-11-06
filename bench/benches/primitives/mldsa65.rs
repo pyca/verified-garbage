@@ -12,7 +12,10 @@
 //! loop rather than one message's luck. `mldsa65_sign` signs hedged, with
 //! fresh randomness, in every library; `mldsa65_sign_deterministic` is
 //! verified-garbage's deterministic signing (`rnd` all zeros), whose time
-//! for the same messages repeats exactly from run to run.
+//! for the same messages repeats exactly from run to run. The `_prepared`
+//! groups sign and verify with keys prepared once (`prepare`), whose cost
+//! `mldsa65_prepare` measures (with the key generation, for a signing
+//! key).
 
 use criterion::Criterion;
 
@@ -174,6 +177,42 @@ pub fn bench(c: &mut Criterion) {
                 .verify_sig(black_box(&msg), black_box(&sig))
                 .unwrap()
         })
+    });
+    g.finish();
+    // Keys prepared once, for a stream of signatures and verifications, as
+    // the other libraries' keys are used above.
+    let prepared = SigningKey65::from_seed(&seed).unwrap().prepare();
+    let prepared_public = key.verifying_key().clone().prepare();
+    let mut g = c.benchmark_group("mldsa65_sign_prepared");
+    g.bench(BenchmarkId::new(VG, 3309), |b| {
+        b.iter(|| {
+            i = (i + 1) % MESSAGES;
+            prepared.sign(black_box(&msgs[i]), b"").unwrap()
+        })
+    });
+    g.finish();
+    let mut g = c.benchmark_group("mldsa65_sign_deterministic_prepared");
+    g.bench(BenchmarkId::new(VG, 3309), |b| {
+        b.iter(|| {
+            i = (i + 1) % MESSAGES;
+            prepared
+                .sign_deterministic(black_box(&msgs[i]), b"")
+                .unwrap()
+        })
+    });
+    g.finish();
+    let mut g = c.benchmark_group("mldsa65_verify_prepared");
+    g.bench(BenchmarkId::new(VG, 64), |b| {
+        b.iter(|| prepared_public.verify(black_box(&msg), b"", &sig).unwrap())
+    });
+    g.finish();
+    // Preparing a key, the cost a stream of operations shares.
+    let mut g = c.benchmark_group("mldsa65_prepare");
+    g.bench(BenchmarkId::new(VG, "signing"), |b| {
+        b.iter(|| SigningKey65::from_seed(black_box(&seed)).unwrap().prepare())
+    });
+    g.bench(BenchmarkId::new(VG, "verifying"), |b| {
+        b.iter(|| key.verifying_key().clone().prepare())
     });
     g.finish();
     // A public key from its bytes: verified-garbage hashes it (`tr`), which

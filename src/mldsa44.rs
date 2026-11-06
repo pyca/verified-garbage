@@ -7,6 +7,9 @@
 //! provided. [`SigningKey44::sign_mu`] and [`VerifyingKey44::verify_mu`] take a
 //! message representative `μ` that the caller computes (formatting the message
 //! and hashing the public key), and the caller supplies the signing randomness.
+//! A key that signs or verifies many messages can be prepared for them
+//! ([`SigningKey44::prepare`], [`VerifyingKey44::prepare`]), which may make
+//! each signature or verification faster.
 //! Key generation's and signing's timing may depend on values that SHAKE
 //! derives from secrets (see the README's "What the constant-time guarantee
 //! assumes"). An operation fails with [`MlDsaError::LoopBound`] if it reaches
@@ -25,18 +28,26 @@ crate::mldsa_common::ml_dsa! {
     name: "ML-DSA-44",
     signing_key: SigningKey44,
     verifying_key: VerifyingKey44,
+    prepared_signing_key: PreparedSigningKey44,
+    prepared_verifying_key: PreparedVerifyingKey44,
     keygen: crate::arch::mldsa44::vg_mldsa44_keygen,
     sign: crate::arch::mldsa44::vg_mldsa44_sign,
     verify: crate::arch::mldsa44::vg_mldsa44_verify,
     sign_message: crate::arch::mldsa44::vg_mldsa44_sign_message,
     verify_message_cached: crate::arch::mldsa44::vg_mldsa44_verify_message_cached,
     pk_tr: crate::arch::mldsa44::vg_mldsa44_pk_tr,
+    prepare_sign: crate::arch::mldsa44::vg_mldsa44_prepare_signing_key,
+    prepare_verify: crate::arch::mldsa44::vg_mldsa44_prepare_verifying_key,
+    sign_message_prepared: crate::arch::mldsa44::vg_mldsa44_sign_message_prepared,
+    verify_message_prepared: crate::arch::mldsa44::vg_mldsa44_verify_message_prepared,
     keygen_sha3: (crate::arch::mldsa44::vg_mldsa44_keygen_sha3, crate::arch::mldsa44::VG_MLDSA44_KEYGEN_SHA3_FEATURES),
     sign_sha3: (crate::arch::mldsa44::vg_mldsa44_sign_sha3, crate::arch::mldsa44::VG_MLDSA44_SIGN_SHA3_FEATURES),
     verify_sha3: (crate::arch::mldsa44::vg_mldsa44_verify_sha3, crate::arch::mldsa44::VG_MLDSA44_VERIFY_SHA3_FEATURES),
     sign_message_sha3: (crate::arch::mldsa44::vg_mldsa44_sign_message_sha3, crate::arch::mldsa44::VG_MLDSA44_SIGN_MESSAGE_SHA3_FEATURES),
     verify_message_cached_sha3: (crate::arch::mldsa44::vg_mldsa44_verify_message_cached_sha3, crate::arch::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_CACHED_SHA3_FEATURES),
     pk_tr_sha3: (crate::arch::mldsa44::vg_mldsa44_pk_tr_sha3, crate::arch::mldsa44::VG_MLDSA44_PK_TR_SHA3_FEATURES),
+    sign_message_prepared_sha3: (crate::arch::mldsa44::vg_mldsa44_sign_message_prepared_sha3, crate::arch::mldsa44::VG_MLDSA44_SIGN_MESSAGE_PREPARED_SHA3_FEATURES),
+    verify_message_prepared_sha3: (crate::arch::mldsa44::vg_mldsa44_verify_message_prepared_sha3, crate::arch::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_PREPARED_SHA3_FEATURES),
     keygen_avx2: (crate::arch::mldsa44::vg_mldsa44_keygen_avx2, crate::arch::mldsa44::VG_MLDSA44_KEYGEN_AVX2_FEATURES),
     keygen_avx512: (crate::arch::mldsa44::vg_mldsa44_keygen_avx512, crate::arch::mldsa44::VG_MLDSA44_KEYGEN_AVX512_FEATURES),
     sign_avx2: (crate::arch::mldsa44::vg_mldsa44_sign_avx2, crate::arch::mldsa44::VG_MLDSA44_SIGN_AVX2_FEATURES),
@@ -50,6 +61,8 @@ crate::mldsa_common::ml_dsa! {
     pk: 1312,
     sk: 2560,
     sig: 2420,
+    prepared_sk: 14848,
+    prepared_pk: 5408,
     scratch: 9728,
     message_scratch: 9856,
 }
