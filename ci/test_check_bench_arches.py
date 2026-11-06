@@ -601,6 +601,28 @@ class Selection(unittest.TestCase):
                 self.assertEqual(len(self.rows(['bench/support/shared.rs'])), self.full_matrix())
                 del self.files[includer]
 
+    def test_kdf_files_are_named_by_their_path_at_the_root(self):
+        # `kdf::pbkdf2::sha256` is `pbkdf2_sha256`, the code PBKDF2's
+        # hashes share is theirs, and `src/kdf/mod.rs` is a list of modules.
+        self.assertEqual(planner.logical('src/kdf/pbkdf2/sha256.rs'), 'src/pbkdf2/sha256.rs')
+        self.assertEqual(planner.logical('src/kdf/scrypt.rs'), 'src/scrypt.rs')
+        self.assertEqual(planner.logical('src/kdf/mod.rs'), 'src/kdf/mod.rs')
+        self.assertEqual(planner.physical('src/pbkdf2/mod.rs'), 'src/kdf/pbkdf2/mod.rs')
+        self.assertEqual(planner.physical('src/hmac/mod.rs'), 'src/hmac/mod.rs')
+        self.assertEqual(planner.crate_path('pbkdf2'), 'kdf::pbkdf2')
+        self.assertEqual(planner.crate_path('hmac'), 'hmac')
+        self.catalog.update({'pbkdf2_sha256': {'pbkdf2_sha256', 'sha256'},
+                             'scrypt': {'scrypt', 'pbkdf2_sha256'}})
+        self.files.update({
+            'src/pbkdf2/mod.rs': 'mod sha256;\npub(crate) fn pbkdf2() {}\n',
+            'src/pbkdf2/sha256.rs': 'super::pbkdf2();\n',
+            'src/scrypt.rs': 'crate::kdf::pbkdf2::pbkdf2();\n',
+        })
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/sha256.rs'])}, {'pbkdf2_sha256'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/mod.rs'])},
+                         {'pbkdf2_sha256 scrypt'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/mod.rs'])}, {'triple_des_ecb'})
+
     def test_manifest_target_tables_select_their_architectures(self):
         manifest = '[package]\nname = "b"\n\n[dependencies]\nx = "1"\n'
         target = ('\n[target.\'cfg(any(target_arch = "x86_64", target_arch = "aarch64"))\'.dependencies]\n'

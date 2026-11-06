@@ -21,7 +21,7 @@ fn matches_openssl() {
                     let salt: Vec<u8> = (0..19).map(|i| (i * 11 + p) as u8).collect();
                     let mut actual = vec![0; len];
                     let mut expected = vec![0; len];
-                    verified_garbage::scrypt::derive(
+                    verified_garbage::kdf::scrypt::derive(
                         &password,
                         &salt,
                         n,

@@ -11,7 +11,7 @@
 ))]
 
 use verified_garbage::hashes::sha1::Sha1;
-use verified_garbage::pbkdf2::pbkdf2_hmac;
+use verified_garbage::kdf::pbkdf2::pbkdf2_hmac;
 
 use super::pbkdf2::check_with;
 use crate::require_vectors;
@@ -31,7 +31,7 @@ fn pbkdf2_hmac_sha1_vectors() {
 fn pbkdf2_hmac_sha1_verify() {
     use core::num::NonZeroU32;
 
-    use verified_garbage::pbkdf2::{KeyMismatch, pbkdf2_hmac_verify};
+    use verified_garbage::kdf::pbkdf2::{KeyMismatch, pbkdf2_hmac_verify};
 
     let c = NonZeroU32::new(3).unwrap();
     let mut dk = [0u8; 41];
