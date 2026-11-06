@@ -74,9 +74,6 @@ theorem verified_of {f : Callee} (hf : CalleeOk (P := params) md f.code)
   have h := MdStream.X86_64.Update.verified dims taints hf hm
   Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sha1.H0 m hr hc, fun _ _ _ _ h => h, h.2.2⟩
 
-theorem update_verified : Verified X86_64.target (update .scalar) Proof.Sha1.updateX86_64 :=
-  verified_of scalar_ok (by decide +kernel)
-
 /-- A state satisfying `update`'s precondition. -/
 abbrev sat : State := MdStream.X86_64.Update.sat params
 
@@ -90,9 +87,6 @@ theorem verified_of {f : Callee} (hf : CalleeOk (P := params) md f.code)
     Verified X86_64.target (finalize f) Proof.Sha1.finalizeX86_64 :=
   have h := MdStream.X86_64.Finalize.verified dims shape taints hf hm
   Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sha1.H0 m hr trivial hc, fun _ _ _ _ h => h, h.2.2⟩
-
-theorem finalize_verified : Verified X86_64.target (finalize .scalar) Proof.Sha1.finalizeX86_64 :=
-  verified_of scalar_ok (by decide +kernel)
 
 /-- A state satisfying `finalize`'s precondition. -/
 abbrev sat : State := MdStream.X86_64.Finalize.sat params

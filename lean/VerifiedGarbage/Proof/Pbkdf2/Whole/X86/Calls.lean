@@ -45,14 +45,6 @@ structure Sound (c : Prog isa) (k : Contract isa) : Prop where
 theorem Sound.of_verified {c : Prog isa} {k : Contract isa} (h : Verified X86.target c k) : Sound c k :=
   ⟨h.1, h.2.1⟩
 
-/-- `Sound` for a contract that asks no more and gives no less. -/
-theorem Sound.weaken {c : Prog isa} {k k' : Contract isa} (h : Sound c k) (hpre : ∀ s, k'.pre s → k.pre s)
-    (hpost : ∀ s s', k'.pre s → k.post s s' → k'.post s s')
-    (hpub : ∀ s₁ s₂, k'.pre s₁ → k'.pre s₂ → k'.pub s₁ s₂ → k.pub s₁ s₂) : Sound c k' :=
-  ⟨fun s hs => (h.ok s (hpre s hs)).elim fun t ⟨s', he, ha, hp⟩ => ⟨t, s', he, ha, hpost s s' hs hp⟩,
-    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ =>
-      h.ct s₁ s₂ t₁ t₂ s₁' s₂' (hpre _ h₁) (hpre _ h₂) (hpub _ _ h₁ h₂ hp) e₁ e₂⟩
-
 /-! ## The stack below `esp` -/
 
 /-- The 76 bytes below `esp`, where our frames and calls go. -/
@@ -144,12 +136,6 @@ theorem entry_bytes {rs : List Reg} {s : State} (hrs : Reg.esp ∉ rs) (hn : rs.
   simp only [bytesAt]
   exact List.map_congr_left fun i hi => (entry_frame hrs hn h76).bytes (R := ⟨p, k⟩)
     (by simp only [List.mem_singleton]; rintro q rfl; exact hd.symm) hk (List.mem_range.mp hi)
-
-/-- From `WP.callWith`'s frame, our `After`. -/
-theorem after_of {s s' : State} {ws : List Region} {n : Nat} (h76 : 76 ≤ (s.gpr .esp).toNat) (hn : n ≤ 76)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hcs : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r)
-    (hf : Frame (ws ++ [below (s.gpr .esp) n]) s.mem s'.mem) : After s ws s' :=
-  ⟨hrd, hwr, hcs, Frame.below_mono hf hn h76⟩
 
 /-! ## HMAC's `init`, in a frame of its arguments -/
 

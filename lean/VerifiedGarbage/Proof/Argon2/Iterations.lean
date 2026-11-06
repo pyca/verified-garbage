@@ -13,8 +13,6 @@ open VG.Spec.Argon2
 def iterations (p : Params) (start count : Nat) (state : FillState) : FillState :=
   (List.range' start count).foldl (fillPass p) state
 
-theorem iterations_zero (p : Params) (start : Nat) (state : FillState) : iterations p start 0 state = state := rfl
-
 theorem iterations_succ (p : Params) (start count : Nat) (state : FillState) :
     iterations p start (count + 1) state = iterations p (start + 1) count (fillPass p state start) := by
   unfold iterations

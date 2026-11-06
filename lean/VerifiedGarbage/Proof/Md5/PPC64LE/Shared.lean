@@ -29,13 +29,6 @@ frame's 32-byte header.
 
 namespace VG.Proof.Md5.PPC64LE.Shared
 
-theorem compress :
-    Verified PPC64LE.target Impl.Md5.PPC64LE.compress (Proof.Md5.compressContract PPC64LE.abi) :=
-  Proof.Md5.PPC64LE.compress_verified.of_implies (by
-    contract_implies [Proof.Md5.compressContract, Proof.Md5.compressSig,
-      Proof.Md5.compressPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
-      [Proof.Md5.PPC64LE.satState] using Proof.Md5.PPC64LE.satState)
-
 theorem init :
     Verified PPC64LE.target Impl.Md5.PPC64LE.Stream.init (Spec.Md5.initContract PPC64LE.abi) :=
   Proof.Md5.PPC64LE.Stream.init_verified.of_implies (by

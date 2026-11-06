@@ -67,7 +67,6 @@ theorem CalleeOk.of_verified {code : Prog isa} (hv : Verified X86.target code (c
     (hn : NoSp code) (hs : stackUse code = 0) : CalleeOk P code :=
   ⟨hv.1, hn, hs⟩
 
-
 /-! ## Instructions that keep the flags -/
 
 section
@@ -80,12 +79,6 @@ theorem wp_ldmF {d b : Reg} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B)
       WP isa (.block is) s' Q) :
     WP isa (.block (.mov d (.mem ⟨b, o⟩) :: is)) s Q :=
   cons (s' := s.setReg d _) (by simp [exec, readSrc_mem hb hin]) (k _ (Upd.setReg _ _ _) rfl rfl)
-
-/-- `mov d, r`, which keeps the flags. -/
-theorem wp_movF {d r : Reg}
-    (k : ∀ s', Upd s s' d (s.gpr r) → s'.cf = s.cf → s'.zf = s.zf → WP isa (.block is) s' Q) :
-    WP isa (.block (.mov d (.reg r) :: is)) s Q :=
-  cons rfl (k _ (Upd.setReg _ _ _) rfl rfl)
 
 /-- `mov d, v`, which keeps the flags. -/
 theorem wp_moviF {d : Reg} {v : BitVec 32}
@@ -112,12 +105,6 @@ theorem wp_adc0 {d : Reg} {c : Bool} (hc : s.cf = some c)
   refine cons hx (k _ ⟨?_, fun r h => ?_, rfl, rfl, rfl, rfl⟩)
   · simp [State.setReg]
   · simp [State.setReg, arithFlags, State.setFlags, h]
-
-/-- `and d, v`, and ZF. -/
-theorem wp_andiZ {d : Reg} {v : BitVec 32}
-    (k : ∀ s', Upd s s' d (s.gpr d &&& v) → s'.zf = some (s.gpr d &&& v == 0) → WP isa (.block is) s' Q) :
-    WP isa (.block (.alu .and d (.imm v) :: is)) s Q :=
-  cons rfl (k _ (Upd.flags _ _ _ _ _ _) rfl)
 
 /-- `or d, r`, and ZF. -/
 theorem wp_orZ {d r : Reg}
@@ -168,8 +155,6 @@ theorem lo_append (a b : BitVec 32) : BitVec.ofNat 32 (a ++ b).toNat = b := by
 
 theorem hi_append (a b : BitVec 32) : BitVec.ofNat 32 ((a ++ b).toNat / 2 ^ 32) = a := by
   apply BitVec.eq_of_toNat_eq; rw [lo_ofNat, append_toNat_div, Nat.mod_eq_of_lt a.isLt]
-
-
 
 /-! ## Addresses and bytes -/
 

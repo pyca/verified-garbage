@@ -29,8 +29,7 @@ Constant time puts together the taint analysis of each piece, from what
 both runs agree on (`RelCT`): the pointers are public; the passes over the
 rows and columns depend only on `scratch` (`rounds_ct`); and `out`, loaded
 from `scratch` after the rounds, is the same in both runs, by correctness. `compress_verified'` is the proof against `compressArm`, which the
-derivation uses for its calls; the shared contract
-`Proof.Argon2.compressContract` implies it (`compress_verified`).
+derivation uses for its calls.
 -/
 
 @[expose] public section
@@ -172,15 +171,5 @@ theorem compress_verified' : Verified Arm.target Impl.Argon2.Arm.compress compre
   refine ⟨fun s hs => ?_, compress_ct, ⟨satState, sat_pre⟩⟩
   obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
   exact ⟨t, s', he, ⟨h₁, Exec.sp he⟩, h₂⟩
-
-theorem compress_implies : compressArm.Implies (Proof.Argon2.compressContract Arm.abi) := by
-  sig_implies [Proof.Argon2.compressContract, Proof.Argon2.compressSig, compressArm, Arm.abi, Arm.argRegs,
-    Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-    [satState, Mem.readW, Mem.read] using satState
-
-/-- The emitted function, against the shared contract. -/
-theorem compress_verified :
-    Verified Arm.target Impl.Argon2.Arm.compress (Proof.Argon2.compressContract Arm.abi) :=
-  compress_verified'.of_implies compress_implies
 
 end VG.Proof.Argon2.Arm

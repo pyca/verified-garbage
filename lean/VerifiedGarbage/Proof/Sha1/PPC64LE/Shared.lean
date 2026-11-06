@@ -29,13 +29,6 @@ frame's 32-byte header.
 
 namespace VG.Proof.Sha1.PPC64LE.Shared
 
-theorem compress :
-    Verified PPC64LE.target Impl.Sha1.PPC64LE.compress (Proof.Sha1.compressContract PPC64LE.abi) :=
-  Proof.Sha1.PPC64LE.compress_verified.of_implies (by
-    contract_implies [Proof.Sha1.compressContract, Proof.Sha1.compressSig,
-      Proof.Sha1.compressPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
-      [Proof.Sha1.PPC64LE.satState] using Proof.Sha1.PPC64LE.satState)
-
 theorem init :
     Verified PPC64LE.target Impl.Sha1.PPC64LE.Stream.init (Spec.Sha1.initContract PPC64LE.abi) :=
   Proof.Sha1.PPC64LE.Stream.init_verified.of_implies (by

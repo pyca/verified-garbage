@@ -23,13 +23,6 @@ open VG.Spec.Pbkdf2 (xorBytes)
 open VG.Proof.Sha256.Stream (writeBytes writeBytes_nil)
 open VG.Proof.MdStream.AArch64 (wp_addImm wp_subImm eval_nonzero ofNat_beq_zero ofNat_pred)
 open VG.Proof.Scrypt.Memory (toNat_ofNat_lt add_ofNat)
-theorem add_zero' (p : Addr) : p + BitVec.ofNat 64 0 = p := BitVec.add_zero _
-
-/-- A pointer advanced by one word. -/
-theorem next_ptr (p : Addr) (k : Nat) :
-    p + BitVec.ofNat 64 (8 * k) + BitVec.ofNat 64 8 = p + BitVec.ofNat 64 (8 * (k + 1)) := by
-  rw [add_ofNat, Nat.mul_succ]
-
 /-- The count after one more iteration of `n`. -/
 theorem dec_count {n k : Nat} (hk : k < n) :
     BitVec.ofNat 64 (n - k) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - (k + 1)) := by
@@ -42,9 +35,6 @@ theorem dec_ne {n k : Nat} (hk : k < n) (hn : n < 2 ^ 64) :
   · simp only [h, Nat.sub_self, decide_true, Bool.not_true, ne_eq, not_true_eq_false, decide_false]
   · simp only [show n - (k + 1) ≠ 0 by omega_arith, decide_false, Bool.not_false, ne_eq, h,
       not_false_eq_true, decide_true]
-
-theorem ofNat_zero_add (p : Addr) : p + BitVec.ofNat 64 (8 * 0) = p := by
-  rw [Nat.mul_zero]; exact BitVec.add_zero _
 
 /-! ## Counted loops -/
 
@@ -64,7 +54,6 @@ theorem count_loop {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (I : Nat 
   · refine .inl ⟨by rw [hz]; simp [hl], ?_⟩
     rwa [hl] at hi'
   · exact .inr ⟨by rw [hz]; simp [hl], n - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, hi'⟩
-
 
 theorem in_packet {rs : List Region} {p : Addr} (h : InRegions rs p 64) {j : Nat} (hj : j < 4) :
     InRegions rs (p + BitVec.ofNat 64 (16*j)) 16 := by

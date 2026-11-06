@@ -103,13 +103,7 @@ abbrev roundRegs : List Reg :=
 
 theorem lane_mem (j : Fin 16) : lane j ∈ roundRegs := by revert j; decide
 
-theorem t5_mem : Reg.t5 ∈ roundRegs := by decide
-theorem t6_mem : Reg.t6 ∈ roundRegs := by decide
-
 theorem lane_ne_r6 (j : Fin 16) : lane j ≠ .a3 := by revert j; decide
-theorem lane_ne_t5 (j : Fin 16) : lane j ≠ .t5 := by revert j; decide
-theorem lane_ne_t6 (j : Fin 16) : lane j ≠ .t6 := by revert j; decide
-
 theorem word_offset (i : Nat) (hi : i < 128) : 1024 + 8 * i < 2048 := by
   omega
 

@@ -38,7 +38,6 @@ theorem arg_eq {i : Nat} (hi : i < 18) : arg s₀₁ i = arg s₀₂ i := h.2 i 
 theorem memP_eq : memP s₀₁ = memP s₀₂ := h.2 13 (by decide)
 theorem scrP_eq : scrP s₀₁ = scrP s₀₂ := h.2 15 (by decide)
 theorem outP_eq : outP s₀₁ = outP s₀₂ := h.2 16 (by decide)
-theorem outL_eq : outL s₀₁ = outL s₀₂ := by simp only [outL, h.2 17 (by decide)]
 theorem blocksN_eq : blocksN s₀₁ = blocksN s₀₂ := by simp only [blocksN, h.2 14 (by decide)]
 theorem lanesN_eq : lanesN s₀₁ = lanesN s₀₂ := by simp only [lanesN, h.2 7 (by decide)]
 theorem itersN_eq : itersN s₀₁ = itersN s₀₂ := by simp only [itersN, h.2 5 (by decide)]

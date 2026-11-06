@@ -34,13 +34,6 @@ theorem isPowerOfTwo_of_and (n : Nat) (hn : 0 < n) (h : n &&& (n - 1) = 0) : n.i
 theorem valid_pow {N r p dk : Nat} (h : valid N r p dk) : N.isPowerOfTwo :=
   isPowerOfTwo_of_and N (by have := h.1; omega) h.2.1
 
-theorem valid_r {N r p dk : Nat} (h : valid N r p dk) : 0 < r := by
-  have h₁ := h.1
-  have h₃ := h.2.2.1
-  rcases Nat.eq_zero_or_pos r with rfl | hr
-  · simp at h₃; omega
-  · exact hr
-
 /-! ## Indices -/
 
 theorem mixLoop_snd_length (r N : Nat) (v : List (List Byte)) :

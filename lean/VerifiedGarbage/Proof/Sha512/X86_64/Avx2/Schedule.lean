@@ -189,37 +189,4 @@ theorem msg_nodup (n : Nat) :
 theorem ea_at (s : State) (b : Reg) (d : Nat) :
     s.ea (at_ b d) = s.gpr b + BitVec.ofInt 64 (d : Int) := rfl
 
-/-- The schedule of words `2i, 2i+1`, from lanes 0 (`a …`) and 1 (`a' …`) of
-`msg i`, `msg (i+1)`, `msg (i+4)`, `msg (i+5)` and `msg (i+7)`. -/
-theorem schedule_ok (i : Nat) (s : State) (a b c d e a' b' c' d' e' : BitVec 128)
-    (ha : s.xmm (msg i) = a) (hb : s.xmm (msg (i + 1)) = b) (hc : s.xmm (msg (i + 4)) = c)
-    (hd : s.xmm (msg (i + 5)) = d) (he : s.xmm (msg (i + 7)) = e)
-    (ha' : s.ymmHi (msg i) = a') (hb' : s.ymmHi (msg (i + 1)) = b') (hc' : s.ymmHi (msg (i + 4)) = c')
-    (hd' : s.ymmHi (msg (i + 5)) = d') (he' : s.ymmHi (msg (i + 7)) = e')
-    (hout : InRegions s.wr (s.gpr .rcx + BitVec.ofInt 64 ((32 * i : Nat) : Int)) 32) :
-    WP isa (.block (schedule i)) s fun s' =>
-      s'.xmm (msg i) = xupd a b c d e ∧ s'.ymmHi (msg i) = xupd a' b' c' d' e' ∧
-      (∀ r, r ≠ msg i → r ≠ t0 → r ≠ t1 → r ≠ t2 → r ≠ t3 → s'.xmm r = s.xmm r ∧ s'.ymmHi r = s.ymmHi r) ∧
-      s'.gpr = s.gpr ∧
-      s'.mem = s.mem.writeW (s.gpr .rcx + BitVec.ofInt 64 ((32 * i : Nat) : Int))
-        (xupd a' b' c' d' e' ++ xupd a b c d e) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hn := msg_nodup i
-  have hn' := VG.nodup_reverse hn
-  apply WP.of_runBlock
-  simp only [schedule, vb, vs]
-  generalize msg i = x₀ at *
-  generalize msg (i + 1) = x₁ at *
-  generalize msg (i + 4) = x₄ at *
-  generalize msg (i + 5) = x₅ at *
-  generalize msg (i + 7) = x₇ at *
-  simp only [t0, t1, t2, t3, mBswap, tmp, List.nodup_cons, List.mem_cons, List.not_mem_nil,
-    or_false, not_or, List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
-    List.cons_append] at hn hn' ⊢
-  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, and_self, runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpExec,
-    isa, RegUpd.xmm_setV, RegUpd.ymmHi_setV_256, RegUpd.gpr_setV, RegUpd.mem_setV,
-    RegUpd.rd_setV, RegUpd.wr_setV, State.lane, State.ymm, State.store256, ea_at, hout, hn, hn',
-    ha, hb, hc, hd, he, ha', hb', hc', hd', he', Option.some.injEq, exists_eq_left']
-  refine ⟨rfl, rfl, fun r h0 h1 h2 h3 h4 => by simp [h0, h1, h2, h3, h4], trivial, rfl, trivial⟩
-
 end VG.Proof.Sha512.X86_64.Avx2

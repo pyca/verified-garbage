@@ -204,9 +204,6 @@ theorem Sizes.uO_lt (hz : Sizes F) : F.uO < F.L8 := Nat.lt_of_lt_of_le (Nat.lt_a
 theorem Sizes.tO_lt (hz : Sizes F) : F.tO < F.L8 := Nat.lt_of_lt_of_le (Nat.lt_add_of_pos_right hz.D.1) hz.tO_D
 theorem Sizes.hkO_lt (hz : Sizes F) : F.hkO < F.L8 := Nat.lt_of_lt_of_le (Nat.lt_add_of_pos_right hz.D.1) hz.hkO_D
 theorem Sizes.intO_lt (hz : Sizes F) : F.intO < F.L8 := Nat.lt_of_lt_of_le (Nat.lt_add_of_pos_right (by decide)) (end_le hz)
-theorem Sizes.stWO_S_intO (_hz : Sizes F) : F.stWO + F.H.S ≤ F.intO :=
-  show F.uO ≤ F.intO from Nat.le_trans (Nat.le_add_right F.uO F.H.D)
-    (Nat.le_trans (Nat.le_add_right F.tO F.H.D) (Nat.le_add_right F.hkO F.H.F))
 theorem Sizes.lt16 (hz : Sizes F) {o : Nat} (h : o < F.L8) : o < 2 ^ 16 :=
   Nat.lt_of_lt_of_le h (Nat.le_trans hz.reach (by decide))
 theorem Sizes.st0O_lt16 (hz : Sizes F) : F.st0O < 2 ^ 16 := hz.lt16 hz.st0O_lt

@@ -41,13 +41,6 @@ theorem sel4_44 {m : Nat} (hm : m < 4) : sel4 (0x44 : BitVec 8).toNat m = m % 2 
   rcases cases4 hm with rfl | rfl | rfl | rfl <;> rfl
 theorem sel4_ee {m : Nat} (hm : m < 4) : sel4 (0xee : BitVec 8).toNat m = 2 + m % 2 := by
   rcases cases4 hm with rfl | rfl | rfl | rfl <;> rfl
-theorem sel4_d8 {m : Nat} (hm : m < 4) : sel4 (0xd8 : BitVec 8).toNat m = 2 * (m % 2) + m / 2 := by
-  rcases cases4 hm with rfl | rfl | rfl | rfl <;> rfl
-theorem sel4_88 {m : Nat} (hm : m < 4) : sel4 (0x88 : BitVec 8).toNat m = 2 * (m % 2) := by
-  rcases cases4 hm with rfl | rfl | rfl | rfl <;> rfl
-theorem sel4_dd {m : Nat} (hm : m < 4) : sel4 (0xdd : BitVec 8).toNat m = 2 * (m % 2) + 1 := by
-  rcases cases4 hm with rfl | rfl | rfl | rfl <;> rfl
-
 theorem vreg_ne4 (i : Nat) : vreg i ≠ .xmm4 := by unfold vreg; split <;> decide
 
 @[simp] theorem State.setMem_mxcsr' (s : State) (m : Mem) : (s.setMem m).mxcsr = s.mxcsr := by

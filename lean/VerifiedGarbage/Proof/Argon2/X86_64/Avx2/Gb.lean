@@ -179,7 +179,6 @@ theorem rot63_eq (x : Word) : (x + x) ^^^ x >>> 63 = x.rotateRight 63 := by
   · simp only [BitVec.getLsbD_of_ge x (63 + j) (by omega), Bool.xor_false]
     simp [h]
 
-
 /-! ## Quadwords of registers after an instruction -/
 
 theorem qw_vpshufd (s : State) (d a r : XReg) (o : BitVec 8) (k : Nat) :
@@ -227,7 +226,6 @@ theorem addMul_qw {a b : XReg} (ha : a ≠ .xmm4) (hb : b ≠ .xmm4) (s : State)
   split
   · rw [addMul_eq]
   · rfl
-
 
 theorem xorRot32_qw {d a : XReg} (s : State) (r : XReg) (k : Nat) :
     qw (vrun (xorRot32Ops d a) s) r k =
@@ -304,8 +302,6 @@ def gbOps : List VOp :=
   addMulOps x0 x1 ++ xorRot32Ops x3 x0 ++ addMulOps x2 x3 ++ xorRot24Ops x1 x2 ++
   addMulOps x0 x1 ++ xorRot16Ops x3 x0 ++ addMulOps x2 x3 ++ xorRot63Ops x1 x2
 
-theorem gb_eq : gb = gbOps.map .vop := rfl
-
 section
 variable {s : State} (h : Masks s) {a b : XReg} (h14 : a ≠ .xmm14) (h15 : a ≠ .xmm15)
 include h h14 h15
@@ -343,7 +339,6 @@ theorem gb_qw {s : State} (h : Masks s) {k : Nat} (hk : k < 4) :
     xorRot16_qw (d := x3) (by decide) _ m5 _ hk, xorRot63_qw (d := x1) (by decide),
     ↓reduceIte, reduceCtorEq]
   rfl
-
 
 /-! ## P -/
 

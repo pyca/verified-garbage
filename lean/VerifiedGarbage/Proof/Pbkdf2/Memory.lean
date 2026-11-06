@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Hmac
+public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Spec.Pbkdf2
 import VerifiedGarbage.Proof.Hmac.Common
 meta import Lean.Elab.Tactic.Omega.Frontend
@@ -67,45 +67,9 @@ theorem sep_after {p x : Addr} {a n : Nat} (h₁ : (x - (p + BitVec.ofNat 64 a))
     toNat_ofNat_lt (by omega), Nat.mod_eq_of_lt (by omega)] at h₂
   omega
 
-/-- A block of 32 bytes followed by the padding. -/
-theorem blockAt_eq {m : Mem} {p : Addr} (h : bytesAt m (p + 32) 32 = pad96) :
-    blockAt m p = block96 (bytesAt m p 32) := by
-  simp only [Spec.Sha256.blockAt, block96]
-  apply Proof.Sha256.Stream.parseBlock_congr
-  intro k hk
-  have e := bytesAt_add m p 32 32
-  rw [show BitVec.ofNat 64 32 = (32 : Addr) from rfl, h] at e
-  rw [← e, bytesAt_getD' _ _ (by omega : k < 32 + 32)]
-
-theorem writeW_xor (m m' : Mem) (d a b : Addr) :
-    m.writeW d (m'.readW a 64 ^^^ m'.readW b 64) =
-      writeBytes m d (Spec.Pbkdf2.xorBytes (bytesAt m' b 8) (bytesAt m' a 8)) := by
-  simp only [Mem.writeW, Mem.readW]
-  rw [show (64 : Nat) / 8 = 8 from rfl, BitVec.setWidth_eq, BitVec.setWidth_eq, BitVec.setWidth_eq,
-    write_eq_writeBytes]
-  congr 1
-  apply List.ext_getElem (by simp [Spec.Pbkdf2.xorBytes, bytesAt])
-  intro j h₁ h₂
-  simp only [List.length_map, List.length_range] at h₁
-  simp only [Spec.Pbkdf2.xorBytes, bytesAt, List.getElem_map, List.getElem_range, List.getElem_zipWith]
-  rw [BitVec.extractLsb'_xor, Mem.extractLsb'_read _ _ h₁, Mem.extractLsb'_read _ _ h₁, BitVec.xor_comm]
-
 theorem xorBytes_length (a b : List Byte) (h : a.length = b.length) :
     (Spec.Pbkdf2.xorBytes a b).length = a.length := by
   simp [Spec.Pbkdf2.xorBytes, h]
-
-/-- A copied hash value. -/
-theorem stateAt_copy (m m' : Mem) (q p : Addr) :
-    stateAt (writeBytes m q (bytesAt m' p 32)) q = stateAt m' p := by
-  apply stateAt_eq_of_bytes
-  intro i hi
-  rw [writeBytes_at _ _ _ (by rw [bytesAt_length]; exact hi) (by rw [bytesAt_length]; omega),
-    bytesAt_getD' _ _ hi]
-
-theorem digest_self (m : Mem) (q : Addr) (H : HashValue) :
-    bytesAt (writeBytes m q (Pbkdf2.digest H)) q 32 = Pbkdf2.digest H := by
-  have := bytesAt_writeBytes_self m q (Pbkdf2.digest H) (by rw [Pbkdf2.digest_length]; omega)
-  rwa [Pbkdf2.digest_length] at this
 
 theorem writeW_bytes (m : Mem) (a : Addr) {w : Nat} (v : BitVec w) (xs : List Byte)
     (h : ((List.range (w / 8)).map fun j => (v.setWidth (8 * (w / 8))).extractLsb' (8 * j) 8) = xs) :
@@ -122,18 +86,6 @@ theorem add_ofNat (a : Addr) (o j : Nat) : a + BitVec.ofNat 64 o + BitVec.ofNat 
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
 
 /-! ## The result -/
-
-theorem iterate_congr {f g : List Byte → List Byte} (hfg : ∀ u, u.length = 32 → f u = g u)
-    (hg : ∀ u, (g u).length = 32) :
-    ∀ n u t, u.length = 32 → Spec.Pbkdf2.iterate f n u t = Spec.Pbkdf2.iterate g n u t := by
-  intro n
-  induction n with
-  | zero => intro _ _ _; rfl
-  | succ n ih =>
-    intro u t hu
-    simp only [Spec.Pbkdf2.iterate]
-    rw [hfg u hu]
-    exact ih _ _ (hg u)
 
 /-- A byte of the low 32 bits of `i`: `INT (i)`'s bytes. -/
 theorem mod32_div_mod8 (i k : Nat) (hk : k + 8 ≤ 32) : i % 2 ^ 32 / 2 ^ k % 2 ^ 8 = i / 2 ^ k % 2 ^ 8 := by

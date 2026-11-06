@@ -184,8 +184,6 @@ structure StreamOK (H : Stream) where
 
 variable {H : Stream} (hH : StreamOK H)
 
-theorem stk_eq (s : State) : stk s = below s.sp 16 := rfl
-
 /-- The ABI-preserved low halves of v8–v15. -/
 abbrev VecKept (s s' : State) : Prop :=
   ∀ r ∈ VG.AArch64.preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64

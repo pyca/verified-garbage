@@ -25,7 +25,6 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store

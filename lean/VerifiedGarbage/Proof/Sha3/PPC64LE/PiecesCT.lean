@@ -94,8 +94,6 @@ structure Rg (s₀ s : State) : Prop where
   sp : s.sp = s₀.sp
   cs : ∀ r ∈ preserved, s.gpr r = s₀.gpr r
 
-theorem Rg.refl (s : State) : Rg s s := ⟨rfl, rfl, rfl, fun _ _ => rfl⟩
-
 theorem Rg.of {s₀ s s' : State} (hg : Rg s₀ s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hsp : s'.sp = s.sp) (hcs : ∀ r ∈ preserved, s'.gpr r = s.gpr r) : Rg s₀ s' :=
   ⟨hrd.trans hg.rd, hwr.trans hg.wr, hsp.trans hg.sp, fun r hr => (hcs r hr).trans (hg.cs r hr)⟩
