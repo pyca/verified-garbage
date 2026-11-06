@@ -208,7 +208,6 @@ theorem mid_ct : RelCT isa (R1 w16)
     intro x y x' y' ⟨⟨_, _, _, _, _, _, ecx⟩, _⟩ f1 f2
     rw [f1, f2]; exact ecx
 
-
 /-! ## An iteration -/
 
 /-- The hypotheses of `snBody_ok`. -/
@@ -256,7 +255,6 @@ theorem step_ct : RelCT isa (fun s₁ s₂ => s₁.gpr .rcx = s₂.gpr .rcx)
 
 theorem body_ct : RelCT isa (BRel w16) (snBody w16) fun s₁ s₂ => s₁.zf = s₂.zf :=
   RelCT.seq (load_ct w16) (RelCT.seq (mid_ct w16) step_ct)
-
 
 /-! ## The whole function -/
 
@@ -423,54 +421,5 @@ theorem sampleW_ct : ConstantTime isa (sampleKW w16).pre (sampleKW w16).pub (Imp
 
 theorem sample_ct : ConstantTime isa sampleK.pre sampleK.pub Impl.MlKem.X86_64.sampleNTT := by
   rw [sampleK_eq]; exact sampleW_ct false
-
-end VG.Proof.MlKem.X86_64
-
-namespace VG.Proof.MlKem.X86_64
-
-open VG VG.X86_64
-
-/-- A state satisfying the precondition. -/
-def sampleSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 34⟩]
-  wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
-
-theorem sample_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.sampleNTT (Proof.MlKem.sampleNTTContract X86_64.abi 16) :=
-  Verified.of_correct sample_correct sample_ct
-    { pre := by sig_implies_pre [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, sampleK, X86_64.abi,
-        X86_64.argRegs]
-      post := by
-        intro s s' _ h
-        sig_post [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, sampleK, X86_64.abi, X86_64.argRegs]
-        dsimp only [sampleK] at h
-        obtain ⟨hr, hp⟩ := h
-        cases e : Spec.MlKem.sampleNTT Spec.MlKem.minIterations (Spec.Sha3.bytesAt s.mem (s.gpr .rdi) 34) with
-        | none =>
-          rw [e] at hr
-          have h0 : BitVec.setWidth 32 (s'.gpr .rax) = 0 := hr
-          exact ⟨fun h1 => absurd (h0.symm.trans h1) (by decide : (0 : BitVec 32) ≠ 1), .inr ⟨h0, e⟩⟩
-        | some f =>
-          rw [e] at hr
-          have h1 : BitVec.setWidth 32 (s'.gpr .rax) = 1 := hr
-          obtain ⟨hred, hf⟩ := hp f e
-          exact ⟨fun _ => hred, .inl ⟨h1, Spec.MlKem.minIterations, by
-            show Spec.MlKem.sampleNTT _ _ = _
-            rw [e, hf]⟩⟩
-      pub := by
-        intro s₁ s₂ _ _ h
-        sig_pub [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, sampleK, X86_64.abi,
-          X86_64.argRegs] at h
-        obtain ⟨hsp, hb, hdi, hsi, hdx⟩ := h
-        exact ⟨hdi, hsi, hdx, hsp, map_toNat_inj hb⟩
-      sat := by sig_implies_sat [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, sampleK, X86_64.abi,
-        X86_64.argRegs] [sampleSat] using sampleSat }
 
 end VG.Proof.MlKem.X86_64

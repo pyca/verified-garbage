@@ -291,8 +291,4 @@ theorem decaps_verifiedWith :
     mlkem_implies [Spec.MlKem.decapsContract, Spec.MlKem.decapsSig, decapsAArch64, lay768, KemLay.params,
       Spec.MlKem.mlKem768, KemLay.dkLen, KemLay.ctLen, AArch64.abi, AArch64.argRegs] [sat] using sat)
 
-theorem decaps_verified :
-    Verified AArch64.target decaps (Spec.MlKem.decapsContract AArch64.abi 16) :=
-  decaps_verifiedWith (keccak := .scalar)
-
 end VG.Proof.MlKem.AArch64.Decaps

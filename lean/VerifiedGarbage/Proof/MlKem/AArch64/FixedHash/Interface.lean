@@ -14,8 +14,4 @@ def HashCorrect (hash : HashFn) (sc : Reg) (st wk rate sfx : Nat) (ins outs : Li
   Kept (STr sc st s₀::WKr sc wk s₀::below s₀.sp 16::outs.map (preg s₀)) s₀ s' ∧
   Outs s₀ s'.mem rate (absorb rate (pad rate (BitVec.ofNat 8 sfx) (ins.map (pbytes s₀)).flatten)) 0 outs
 
-theorem hashWith_correct (v : Proof.Sha3.AArch64.Permutation) (sc : Reg)
- (st wk rate sfx : Nat) (ins outs : List Piece) :
- HashCorrect (hashWith v.callee) sc st wk rate sfx ins outs :=
- fun hS hsfx hne hin hout hpw=>hashWith_ok v hS hsfx hne hin hout hpw
 end VG.Proof.MlKem.AArch64.FixedHash

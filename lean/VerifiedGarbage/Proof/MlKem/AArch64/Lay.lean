@@ -109,8 +109,6 @@ theorem div_lt {k e : Nat} (he : e < k * k) : e / k < k := Nat.div_lt_of_lt_mul 
 theorem mod_lt {k e : Nat} (he : e < k * k) : e % k < k :=
   Nat.mod_lt _ (Nat.pos_of_ne_zero fun h => by subst h; simp at he)
 
-theorem div_add_mod' {k e : Nat} : k * (e / k) + e % k = e := Nat.div_add_mod e k
-
 /-- `a i + a ≤ a k` for `i < k`. -/
 theorem mul_succ_le {a i k : Nat} (hi : i < k) : a * i + a ≤ a * k := by
   rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi

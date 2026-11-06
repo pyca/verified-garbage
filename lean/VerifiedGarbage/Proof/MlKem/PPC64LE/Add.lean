@@ -213,32 +213,6 @@ theorem polyIs_of_inv {out : Nat → BitVec 32} {s₀ s : State} {g : Poly}
 
 /-! ## Verified -/
 
-theorem pre_of {s : State} (h : (Proof.MlKem.addContract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.addContract, Proof.MlKem.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
-
-theorem pre_of_sub {s : State} (h : (Proof.MlKem.subContract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.subContract, Proof.MlKem.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | _ => 0
-  lr := 0
-  sp := 0x4000
-  mem _ := 0
-  rd := [⟨0x2000, 1024⟩]
-  wr := [⟨0x1000, 1024⟩]
-
-theorem reduced_zero (p : Addr) : Reduced (fun _ => 0) p := fun i _ => by
-  rw [coeffAt_eq]
-  have : Mem.readW (fun _ => (0 : Byte)) (coeffAddr p i) 32 = 0 := by
-    simp [Mem.readW, Mem.read]
-  rw [this]; decide
-
 /-- The taint analysis, with the registers `rs` public. -/
 theorem ctRegs {k : Contract isa} (rs : List Reg)
     (hpub : ∀ s₁ s₂, k.pub s₁ s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r)
@@ -248,55 +222,5 @@ theorem ctRegs {k : Contract isa} (rs : List Reg)
     ConstantTime isa k.pre k.pub c :=
   VG.Taint.constantTime (A := VG.PPC64LE.taint) (Taint.ofRegs rs)
     (fun s₁ s₂ _ _ hp => ⟨hsp s₁ s₂ hp, fun r hr => hpub s₁ s₂ hp r (Taint.mem_ofRegs.mp hr)⟩) h
-
-theorem add_verified : Verified PPC64LE.target Impl.MlKem.PPC64LE.add (Proof.MlKem.addContract PPC64LE.abi) := by
-  refine ⟨fun s hs => ?_, ctRegs [.r3, .r4] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · have hp := pre_of hs
-    obtain ⟨t, s', he, h⟩ := loop_ok hp (add_hb hp)
-    refine ⟨t, s', he, ⟨h.pres, h.sp, h.lr⟩, ?_⟩
-    sig_post [Proof.MlKem.addContract, Proof.MlKem.accSig, PPC64LE.abi, PPC64LE.argRegs]
-    exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Proof.MlKem.addContract, Proof.MlKem.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact h.2.1
-    · exact h.2.2
-  · sig_pub [Proof.MlKem.addContract, Proof.MlKem.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
-    exact h.1
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.addContract, Proof.MlKem.accSig, PPC64LE.abi, PPC64LE.argRegs]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | exact reduced_zero _
-        | decide +kernel
-
-theorem sub_verified : Verified PPC64LE.target Impl.MlKem.PPC64LE.sub (Proof.MlKem.subContract PPC64LE.abi) := by
-  refine ⟨fun s hs => ?_, ctRegs [.r3, .r4] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · have hp := pre_of_sub hs
-    obtain ⟨t, s', he, h⟩ := loop_ok hp (sub_hb hp)
-    refine ⟨t, s', he, ⟨h.pres, h.sp, h.lr⟩, ?_⟩
-    sig_post [Proof.MlKem.subContract, Proof.MlKem.accSig, PPC64LE.abi, PPC64LE.argRegs]
-    exact polyIs_of_inv h fun j _ => rfl
-  · sig_pub [Proof.MlKem.subContract, Proof.MlKem.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact h.2.1
-    · exact h.2.2
-  · sig_pub [Proof.MlKem.subContract, Proof.MlKem.accSig, PPC64LE.abi, PPC64LE.argRegs] at h
-    exact h.1
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.subContract, Proof.MlKem.accSig, PPC64LE.abi, PPC64LE.argRegs]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | exact reduced_zero _
-        | decide +kernel
 
 end VG.Proof.MlKem.PPC64LE.Add

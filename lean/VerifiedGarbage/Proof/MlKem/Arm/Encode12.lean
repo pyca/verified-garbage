@@ -177,49 +177,4 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa encode12 s₀ (Inv s₀ 
   rw [ite_eq_right]
   intro e; subst e; simp [preserved] at hr
 
-/-! ## Verified -/
-
-theorem pre_of {s : State} (h : (Proof.MlKem.encode12Contract Arm.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, Arm.abi, Arm.argRegs,
-    Arm.reduceClassify, Arm.Loc.val] at h
-  obtain ⟨-, h1, h2, h3, h4, h5, h6⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6⟩
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0
-  sp := 0x4000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x1000, 1024⟩]
-  wr := [⟨0x2000, 384⟩]
-
-theorem verified :
-    Verified Arm.target Impl.MlKem.Arm.encode12 (Proof.MlKem.encode12Contract Arm.abi) := by
-  refine ⟨fun s hs => ?_, Add.ct (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · have hp := pre_of hs
-    obtain ⟨t, s', he, h⟩ := loop_ok hp
-    refine ⟨t, s', he, ⟨h.pres, h.sp⟩, ?_⟩
-    sig_post [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val]
-    exact bytesAt_eq! (p := O s) (encode12_length _) fun k hk => by
-      rw [h.bytes k hk, ite_eq_left (by omega_arith)]; rfl
-  · sig_pub [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val] at h
-    exact ⟨h.2.1, h.2.2⟩
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, Arm.abi, Arm.argRegs,
-        Arm.reduceClassify, Arm.Loc.val]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | exact reduced_zero _
-        | decide +kernel
-
 end VG.Proof.MlKem.Arm.Encode12

@@ -188,46 +188,4 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa cbd2 s₀ (Inv s₀ 128)
   have : r ≠ .r5 ∧ r ≠ .r8 := by revert r hr; decide
   simp [State.write, this.1, this.2]
 
-/-! ## Verified -/
-
-theorem pre_of {s : State} (h : (Proof.MlKem.cbd2Contract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.cbd2Contract, Proof.MlKem.cbd2Sig, PPC64LE.abi, PPC64LE.argRegs] at h
-  obtain ⟨h1, h2, h3, h4, h5⟩ := h
-  exact ⟨h1, h2, h3, h4, h5⟩
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | _ => 0
-  lr := 0
-  sp := 0x4000
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 1024⟩]
-
-theorem verified :
-    Verified PPC64LE.target Impl.MlKem.PPC64LE.cbd2 (Proof.MlKem.cbd2Contract PPC64LE.abi) := by
-  refine ⟨fun s hs => ?_, Add.ctRegs [.r3, .r4] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · obtain ⟨t, s', he, h⟩ := loop_ok (pre_of hs)
-    refine ⟨t, s', he, ⟨h.pres, h.sp, h.lr⟩, ?_⟩
-    sig_post [Proof.MlKem.cbd2Contract, Proof.MlKem.cbd2Sig, PPC64LE.abi, PPC64LE.argRegs]
-    exact polyIs_of_coeffAt (p := F s) fun j hj => by
-      rw [h.coeff j (by rw [n_eq] at hj; exact hj), ite_eq_left (by rw [n_eq] at hj; omega)]; rfl
-  · sig_pub [Proof.MlKem.cbd2Contract, Proof.MlKem.cbd2Sig, PPC64LE.abi, PPC64LE.argRegs] at h
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact h.2.1
-    · exact h.2.2
-  · sig_pub [Proof.MlKem.cbd2Contract, Proof.MlKem.cbd2Sig, PPC64LE.abi, PPC64LE.argRegs] at h
-    exact h.1
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.cbd2Contract, Proof.MlKem.cbd2Sig, PPC64LE.abi, PPC64LE.argRegs]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | decide +kernel
-
 end VG.Proof.MlKem.PPC64LE.Cbd2

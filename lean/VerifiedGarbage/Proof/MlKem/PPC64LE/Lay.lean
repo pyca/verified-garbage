@@ -105,11 +105,6 @@ theorem bytes_keep (hL : L.Ok) {W : List (Nat × Nat × Nat)} {m m' : Mem} (hf :
     Spec.Sha3.bytesAt m' (L.ptr i + BitVec.ofNat 64 o) l = Spec.Sha3.bytesAt m (L.ptr i + BitVec.ofNat 64 o) l :=
   bytesAt_frame hf (disjAll hL h) hl
 
-theorem dword_keep (hL : L.Ok) {W : List (Nat × Nat × Nat)} {m m' : Mem} (hf : Frame (L.RL W) m m')
-    {i o : Nat} (h : sepAll L.sizes (i, o, 8) W = true) :
-    m'.readW (L.ptr i + BitVec.ofNat 64 o) 64 = m.readW (L.ptr i + BitVec.ofNat 64 o) 64 :=
-  hf.readW (Region.contains_self _ _) (disjAll hL h) (by decide)
-
 /-- `Ok` from the disjointness of the buffers `i < j`. -/
 theorem ok_of (hfit : ∀ i < L.sizes.length, (L.ptr i).toNat + L.size i ≤ 2 ^ 64)
     (hd : ∀ i < L.sizes.length, ∀ j < L.sizes.length, i < j →
@@ -162,13 +157,6 @@ structure Only (s s' : State) : Prop where
 theorem Only.kept {s s' : State} (h : Only s s') (rs : List Region) : Kept rs s s' :=
   ⟨h.cs, h.sp, h.rd, h.wr, by rw [h.mem]; exact Frame.refl _ _⟩
 
-theorem Only.trans {s₁ s₂ s₃ : State} (h₁ : Only s₁ s₂) (h₂ : Only s₂ s₃) : Only s₁ s₃ :=
-  ⟨fun r hr => by rw [h₂.cs r hr, h₁.cs r hr], by rw [h₂.mem, h₁.mem], by rw [h₂.rd, h₁.rd],
-    by rw [h₂.wr, h₁.wr], by rw [h₂.sp, h₁.sp]⟩
-
-theorem Kept.only {rs : List Region} {s₁ s₂ s₃ : State} (h₁ : Kept rs s₁ s₂) (h₂ : Only s₂ s₃) :
-    Kept rs s₁ s₃ := h₁.trans (h₂.kept rs)
-
 /-! ## The setting of the parts -/
 
 /-- `s` runs a part of a top-level function: `scratch` (buffer 0, writable,
@@ -196,11 +184,5 @@ theorem Ctx.only {L : Lay} {s s' : State} (h : Ctx L s) (hk : Only s s') : Ctx L
 /-- A part of `scratch` the state may write. -/
 theorem Ctx.cs {L : Lay} {s : State} (h : Ctx L s) {o l : Nat} (hl : o + l ≤ 32768) :
     Covers [L.R 0 o l] s.wr := Lay.covers h.cw (Nat.le_trans hl h.sz0)
-
-theorem Ctx.fit {L : Lay} {s : State} (h : Ctx L s) : (L.ptr 0).toNat + 32768 ≤ 2 ^ 64 := by
-  have := h.ok.fit 0 (by have := h.len; omega); have := h.sz0; omega
-
-theorem Ctx.disj {L : Lay} {s : State} (h : Ctx L s) {a b : Nat × Nat × Nat} (hs : sepB L.sizes a b = true) :
-    (L.R a.1 a.2.1 a.2.2).Disjoint (L.R b.1 b.2.1 b.2.2) := Lay.disj h.ok hs
 
 end VG.Proof.MlKem.PPC64LE

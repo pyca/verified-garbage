@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.FragK
 /-!
 # ML-KEM-768 on x86-64: the calls, in a layout
 
-What each call of the top-level functions needs (`IpH`, `TwoH`, …) from a
-layout (`Lay`) and a check of its pointers that evaluates to `true` (`ipChk`,
-`twoChk`, …), and two runs in the same layout (`LRel`), with the same
+What each call of the top-level functions needs (`TwoH`, …) from a
+layout (`Lay`) and a check of its pointers that evaluates to `true`
+(`twoChk`, …), and two runs in the same layout (`LRel`), with the same
 addresses in its registers, which every call keeps.
 -/
 
@@ -27,9 +27,6 @@ def rdOk (bs : List (Reg × Nat)) (p : Ptr) (l : Nat) : Bool := decide (p.2 < 2 
 
 /-- A pointer to bytes that a call writes. -/
 def wrOk (bs wbs : List (Reg × Nat)) (p : Ptr) (l : Nat) : Bool := rdOk bs p l && inB wbs p l
-
-def ipChk (bs wbs : List (Reg × Nat)) (f : Ptr) : Bool :=
-  wrOk bs wbs f 1024 && wrOk bs wbs (sc oSS) 1024 && sepB bs f 1024 (sc oSS) 1024
 
 def accChk (bs wbs : List (Reg × Nat)) (f g : Ptr) : Bool :=
   wrOk bs wbs f 1024 && rdOk bs g 1024 && sepB bs f 1024 g 1024
@@ -58,11 +55,6 @@ def ksqzChk (bs wbs : List (Reg × Nat)) (dst : Ptr) (len : Nat) : Bool :=
 section
 variable {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s)
 include L
-
-theorem IpH.of {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true) (red : Reduced s.mem (pa s f)) : IpH f s := by
-  simp only [ipChk, wrOk, rdOk, Bool.and_eq_true, decide_eq_true_eq] at hc
-  obtain ⟨⟨⟨⟨ho, hr⟩, hw⟩, ⟨_, hr2⟩, hw2⟩, hs⟩ := hc
-  exact ⟨ho, red, L.disj hs, L.stkD hr, L.stkD hr2, covers_cons (L.cW hw) (covers_cons (L.cW hw2) covers_nil)⟩
 
 theorem AccH.of {f g : Ptr} (hc : accChk (rbs ++ wbs) wbs f g = true) (redF : Reduced s.mem (pa s f))
     (redG : Reduced s.mem (pa s g)) : AccH f g s := by
@@ -139,10 +131,6 @@ theorem LRel.eq {rbs wbs : List (Reg × Nat)} {x y : State} (h : LRel rbs wbs x 
     (hin : inB (rbs ++ wbs) p l = true) : x.gpr p.1 = y.gpr p.1 := by
   obtain ⟨n, hn, _⟩ := inB_spec hin
   exact h.2.2.1 (p.1, n) hn
-
-theorem LRel.pa {rbs wbs : List (Reg × Nat)} {x y : State} (h : LRel rbs wbs x y) {p : Ptr} {l : Nat}
-    (hin : inB (rbs ++ wbs) p l = true) : pa x p = pa y p := by
-  simp only [VG.Proof.MlKem.X86_64.pa, h.eq hin]
 
 theorem LRel.post {rbs wbs : List (Reg × Nat)} {x y x' y' : State} {W₁ W₂ : List Region} (h : LRel rbs wbs x y)
     (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hx : PostB x x' W₁) (hy : PostB y y' W₂) : LRel rbs wbs x' y' :=

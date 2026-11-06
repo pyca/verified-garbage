@@ -77,11 +77,6 @@ def breg : Nat → Reg
   | 2 => .x27
   | _ => .x28
 
-theorem kL0 : kL P 0 = 64 := rfl
-theorem kL1 : kL P 1 = P.ekLen := rfl
-theorem kL2 : kL P 2 = P.dkLen := rfl
-theorem kL3 : kL P 3 = P.scl := rfl
-
 /-- The arguments' regions `⟨A b, len b⟩` (for `b < nb`) are pairwise
 disjoint, at most 64 KiB, and apart from the 16 bytes below `sp`. -/
 structure Args (A : Nat → Addr) (ln : Nat → Nat) (nb : Nat) (sp : Addr) : Prop where

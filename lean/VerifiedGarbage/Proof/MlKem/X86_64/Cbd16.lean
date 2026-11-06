@@ -372,16 +372,4 @@ theorem cbd2_16_ct : ConstantTime isa Cbd16.cbd2_16K.pre Cbd16.cbd2_16K.pub Impl
       exacts [hp.1, hp.2.1, hp.2.2])
     (by taint_decide)
 
-/-- A state satisfying the precondition. -/
-def cbd2_16Sat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 512⟩]
-
 end VG.Proof.MlKem.X86_64

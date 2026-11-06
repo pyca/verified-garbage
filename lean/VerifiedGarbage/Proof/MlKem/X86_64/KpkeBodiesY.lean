@@ -29,15 +29,6 @@ namespace VG.Proof.MlKem.X86_64
 open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Spec.MlKem
 
-/-- `mov rdi, r10`, keeping both lanes of the vector registers. -/
-theorem movDiR10Y_ok (s : State) :
-    WP isa (.block [.mov .rdi (.reg .r10)]) s fun s' => s'.gpr .rdi = s.gpr .r10 ∧ s'.mem = s.mem ∧
-      (∀ r l, s'.lane r l = s.lane r l) ∧ Keep [.rdi] s s' := by
-  vrunm [lane_setReg]
-  refine ⟨fun _ _ => trivial, fun r hr => ?_, rfl, rfl⟩
-  simp only [List.mem_singleton] at hr
-  simp only [RegUpd.gpr_setReg, hr, ite_false]
-
 theorem nttOBY_correct (s : State) (hs : nttOK.pre s) :
     ∃ t s', Exec isa nttOBY s t s' ∧ abiPreserved s s' ∧ nttOK.post s s' := by
   have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp

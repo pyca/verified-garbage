@@ -49,8 +49,6 @@ structure StepPostW (w16 : Bool) (A B : Spec.Sha3.State) (L M : List Zq) (p a b 
  flagBoth : (t.gpr .x6).toNat=if L.length=256 ∧ M.length=256 then 1 else 0
  constants : Rej8.Constants t
 
-abbrev StepPost := StepPostW false
-
 theorem extraStep_ok {w16 : Bool} {s : State} {p a b c : Addr} {A B : Spec.Sha3.State} {L M : List Zq}
  (ctx : Context p a b c s) (hp : s.gpr .x19=p) (sym : s.syms "VG_MLKEM_REJ_SHUFFLE"=c)
  (pair : PairAt s.mem p A B) (hl : L.length≤256) (hm : M.length≤256)

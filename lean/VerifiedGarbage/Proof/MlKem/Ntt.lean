@@ -20,7 +20,6 @@ implementation runs, so that its proof is only about its instructions:
   `t` iterations (`…_zero`, `…_succ`), for loop invariants, and
   `nttBlockN_get` says what each coefficient is after `t` butterflies of a
   block. Likewise `nttInvLayer`, `nttInvBlock`, `nttInvBlockN`;
-* the flat list of butterflies (`ntt_eq_ops`, `nttInv_eq_ops`);
 * `MultiplyNTTs` coefficient by coefficient (`multiplyNTTs_even`,
   `multiplyNTTs_odd`).
 
@@ -111,19 +110,8 @@ theorem zetas_getD {k : Nat} (hk : k < 128) : zetas.getD k 0 = (zeta k).val := b
 theorem gammas_getD {i : Nat} (hi : i < 128) : gammas.getD i 0 = (gamma i).val := by
   rw [gammas_nat i hi, gamma, val_pow]; rfl
 
-theorem zetas_getElem {k : Nat} (hk : k < 128) :
-    zetas[k]'(by rw [zetas_length]; exact hk) = (zeta k).val := by
-  rw [← zetas_getD hk, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem, Option.getD_some]
-
-theorem gammas_getElem {i : Nat} (hi : i < 128) :
-    gammas[i]'(by rw [gammas_length]; exact hi) = (gamma i).val := by
-  rw [← gammas_getD hi, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem, Option.getD_some]
-
 theorem zeta_eq {k : Nat} (hk : k < 128) : zeta k = ofNat (zetas.getD k 0) := by
   rw [zetas_getD hk, ofNat_val]
-
-theorem gamma_eq {i : Nat} (hi : i < 128) : gamma i = ofNat (gammas.getD i 0) := by
-  rw [gammas_getD hi, ofNat_val]
 
 /-! ## Butterflies -/
 
@@ -285,17 +273,6 @@ theorem ntt_eq_layers (f : Poly) : ntt f = nttLens.foldl nttLayer f := by
   simp only [nttLens, List.foldl_cons, List.foldl_nil, nttOuter_eq, nttLayer, nttLayerN, n,
     Nat.reduceMul, Nat.reduceDiv, Nat.reduceAdd]
 
-/-- The butterflies of Algorithm 9, in order: `(j, len, k)` for the
-butterfly on `f[j]` and `f[j + len]` with the zeta `zeta k`. -/
-def nttOps : List (Nat × Nat × Nat) :=
-  nttLens.flatMap fun len => (List.range (128 / len)).flatMap fun c =>
-    (List.range' (2 * len * c) len).map fun j => (j, len, 128 / len + c)
-
-/-- `NTT` is its 896 butterflies, in order. -/
-theorem ntt_eq_ops (f : Poly) : ntt f = nttOps.foldl (fun f o => bfly f o.1 o.2.1 (zeta o.2.2)) f := by
-  simp only [ntt_eq_layers, nttOps, List.foldl_flatMap, List.foldl_map]
-  rfl
-
 /-! ## NTT⁻¹ -/
 
 /-- The first `t` iterations of the innermost loop of Algorithm 10 for the
@@ -396,19 +373,6 @@ theorem nttInv_eq_layers (f : Poly) :
   rw [nttInv_eq_outer]
   simp only [nttInvLens, List.foldl_cons, List.foldl_nil, nttInvOuter_eq, nttInvLayer,
     nttInvLayerN, n, Nat.reduceMul, Nat.reduceDiv, Nat.reduceSub]
-
-/-- The butterflies of Algorithm 10, in order: `(j, len, k)` for the
-inverse butterfly on `f[j]` and `f[j + len]` with the zeta `zeta k`. -/
-def nttInvOps : List (Nat × Nat × Nat) :=
-  nttInvLens.flatMap fun len => (List.range (128 / len)).flatMap fun c =>
-    (List.range' (2 * len * c) len).map fun j => (j, len, 256 / len - 1 - c)
-
-/-- `NTT⁻¹` is its 896 butterflies, in order, and the multiplication by
-3303. -/
-theorem nttInv_eq_ops (f : Poly) :
-    nttInv f = (nttInvOps.foldl (fun f o => bflyInv f o.1 o.2.1 (zeta o.2.2)) f).map (· * 3303) := by
-  simp only [nttInv_eq_layers, nttInvOps, List.foldl_flatMap, List.foldl_map]
-  rfl
 
 /-- The last step of `NTT⁻¹`, coefficient by coefficient. -/
 theorem map_mul_get (f : Poly) {i : Nat} (hi : i < n) : (f.map (· * 3303))[i]! = f[i]! * 3303 := by

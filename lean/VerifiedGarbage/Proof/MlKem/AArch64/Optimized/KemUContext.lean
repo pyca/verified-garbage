@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 
@@ -32,12 +31,6 @@ theorem encW_noise_far {s₀ : State} (hp : Pre P L s₀) (hr : Noise.Room P)
       have hcfit := A.fC
       have hct : CB P+P.ctLen≤SV P := by lom
       exact .inr (.inr (by rw [hc]; omega))
-
-theorem Errors.frame_enc {s₀ s t : State} (hp : Pre P L s₀) (hr : Noise.Room P)
-    {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co) {rv : List Byte}
-    (h : Errors P L s₀ rv s) (hf : Frame (encW P L s₀ kC co) s.mem t.mem) : Errors P L s₀ rv t := by
-  intro j hj
-  exact polyIs_frame hf (encW_noise_far hp hr A hj) (h j hj)
 
 theorem gamma_frame {m m' : Mem} {p : Addr} {W : List Region}
     (h : Dot.GammaArtifact m p) (hf : Frame W m m')

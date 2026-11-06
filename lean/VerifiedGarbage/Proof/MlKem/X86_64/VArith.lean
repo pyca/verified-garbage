@@ -63,14 +63,6 @@ theorem toInt32 (x : BitVec 32) :
 theorem toInt16_bounds (x : BitVec 16) : -32768 ≤ x.toInt ∧ x.toInt < 32768 := by
   rw [toInt16]; have := x.isLt; split <;> omega_arith
 
-/-- A word is determined by its value modulo `2¹⁶` and its range. -/
-theorem toInt16_eq {x : BitVec 16} {v : Int} (h1 : -32768 ≤ v) (h2 : v < 32768)
-    (h : ((x.toNat : Int) - v) % 65536 = 0) : x.toInt = v := by
-  rw [toInt16]; have := x.isLt; split <;> omega_arith
-
-theorem toNat16_eq {x : BitVec 16} : (x.toNat : Int) % 65536 = x.toInt % 65536 := by
-  rw [toInt16]; have := x.isLt; split <;> omega_arith
-
 /-- The product of two words is at most `2³⁰` in magnitude. -/
 theorem mul_bounds (a b : BitVec 16) : -(2 ^ 30 : Int) ≤ a.toInt * b.toInt ∧ a.toInt * b.toInt ≤ 2 ^ 30 := by
   have ha := toInt16_bounds a

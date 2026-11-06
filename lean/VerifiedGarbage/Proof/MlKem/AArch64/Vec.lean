@@ -194,13 +194,6 @@ theorem vword_trn2_d2 (x y : BitVec 128) {e : Nat} (he : e < 4) :
   · rw [itT h, itT h, vdword_word _ _ (Nat.mod_lt _ (by decide))]; exact congrArg _ (by bdd_omega)
   · rw [itF h, itF h, vdword_word _ _ (Nat.mod_lt _ (by decide))]; exact congrArg _ (by bdd_omega)
 
-theorem vword_dup_d2 (g : BitVec 64) {e : Nat} (he : e < 4) :
-    vword (ofVDwords g g) e = g.extractLsb' (32 * (e % 2)) 32 := by
-  rw [vword_ofVDwords _ _ he]
-  by_cases h : e < 2
-  · rw [itT h]
-  · rw [itF h]
-
 private theorem eval_zip1_s4 (x y : BitVec 128) :
     VPermOp.eval .zip1 .s4 x y = ofVWords (vword x 0) (vword y 0) (vword x 1) (vword y 1) := by
   simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceDiv]
@@ -393,10 +386,6 @@ theorem wp_scalar {is rest : List Instr} {s : State} {P Q : State → Prop}
   exact WP.mono (WP.keepV hno h) fun s' ⟨p, v⟩ => hq s' p v
 
 /-! ## Arithmetic modulo `q` -/
-
-/-- `min(d, d - q)` in 32 bits is `d mod q`, for `d < 2q`. -/
-theorem csub_nat {d : Nat} (h : d < 2 * 3329) : min d ((d + (2 ^ 32 - 3329)) % 2 ^ 32) = d % 3329 := by
-  omega
 
 private theorem barrett_sum (t : Nat) :
     (t * 2147483648 + 2147483648) * 3329 + 3329 * 2147483648 = (t * 3329 + 2 * 3329) * 2147483648 := by

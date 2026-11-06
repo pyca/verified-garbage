@@ -34,7 +34,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
 
@@ -137,29 +136,5 @@ theorem PrimsOk.avx2 : PrimsOk .avx2 where
     Code.all_of_allInstrs (by lit_decide)⟩
   enc12 := ⟨encode12Y_correct, encode12Y_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
     Code.all_of_allInstrs (by lit_decide)⟩
-
-/-- A call of `vg_mlkem*_decrypt_mul` keeps MXCSR's control bits. -/
-theorem ArithOk.dm_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
-    ctlOk (.call n (A.decMul k)) = true := (hA.dm k hk).ctl
-
-/-- A call of `vg_mlkem*_decrypt_mul` never writes the stack pointer. -/
-theorem ArithOk.dm_sp {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
-    (Code.call n (A.decMul k) : Prog isa).all (fun i => !isa.writesSp i) = true := (hA.dm k hk).sp
-
-/-- A call of `vg_mlkem*_encrypt_mul` keeps MXCSR's control bits. -/
-theorem ArithOk.em_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
-    ctlOk (.call n (A.encMul k)) = true := (hA.em k hk).ctl
-
-/-- A call of `vg_mlkem*_encrypt_mul` never writes the stack pointer. -/
-theorem ArithOk.em_sp {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
-    (Code.call n (A.encMul k) : Prog isa).all (fun i => !isa.writesSp i) = true := (hA.em k hk).sp
-
-/-- A call of `vg_mlkem*_keygen_mul` keeps MXCSR's control bits. -/
-theorem ArithOk.km_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
-    ctlOk (.call n (keygenMul A.bodies k)) = true := (hA.km k hk).ctl
-
-/-- A call of `vg_mlkem*_keygen_mul` never writes the stack pointer. -/
-theorem ArithOk.km_sp {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
-    (Code.call n (keygenMul A.bodies k) : Prog isa).all (fun i => !isa.writesSp i) = true := (hA.km k hk).sp
 
 end VG.Proof.MlKem.X86_64

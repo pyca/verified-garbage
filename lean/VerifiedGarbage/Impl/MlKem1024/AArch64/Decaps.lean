@@ -19,6 +19,4 @@ open VG.AArch64
 abbrev deAWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay1024.deAWith c
 abbrev deCWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay1024.deCWith c
 abbrev decapsWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay1024.decapsWith c
-abbrev decaps : Prog isa := decapsWith .scalar
-
 end VG.Impl.MlKem1024.AArch64

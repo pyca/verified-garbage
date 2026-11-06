@@ -158,6 +158,4 @@ end KemLay
 abbrev kgAWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay768.kgAWith c
 abbrev kgCWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay768.kgCWith c
 abbrev keyGenWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay768.keyGenWith c
-abbrev keyGen : Prog isa := keyGenWith .scalar
-
 end VG.Impl.MlKem.AArch64

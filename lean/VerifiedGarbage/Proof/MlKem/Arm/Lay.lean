@@ -130,11 +130,6 @@ theorem bytes_keep (hL : L.Ok) {W : List (Nat × Nat × Nat)} {m m' : Mem} (hf :
       Spec.Sha3.bytesAt m (State.addr (L.ptr i) + BitVec.ofNat 64 o) l :=
   bytesAt_frame hf (disjAll hL h) hl
 
-theorem word_keep (hL : L.Ok) {W : List (Nat × Nat × Nat)} {m m' : Mem} (hf : Frame (L.RL W) m m')
-    {i o : Nat} (h : sepAll L.sizes (i, o, 4) W = true) :
-    m'.readW (State.addr (L.ptr i) + BitVec.ofNat 64 o) 32 = m.readW (State.addr (L.ptr i) + BitVec.ofNat 64 o) 32 :=
-  hf.readW (Region.contains_self _ _) (disjAll hL h) (by decide)
-
 /-- `Ok` from the disjointness of the buffers `i < j`. -/
 theorem ok_of (hfit : ∀ i < L.sizes.length, (L.ptr i).toNat + L.size i ≤ 2 ^ 32)
     (hd : ∀ i < L.sizes.length, ∀ j < L.sizes.length, i < j →
@@ -177,13 +172,6 @@ structure Only (s s' : State) : Prop where
 
 theorem Only.kept {s s' : State} (h : Only s s') (rs : List Region) : Kept rs s s' :=
   ⟨h.cs, h.sp, h.rd, h.wr, by rw [h.mem]; exact Frame.refl _ _⟩
-
-theorem Only.trans {s₁ s₂ s₃ : State} (h₁ : Only s₁ s₂) (h₂ : Only s₂ s₃) : Only s₁ s₃ :=
-  ⟨fun r hr h => by rw [h₂.cs r hr h, h₁.cs r hr h], by rw [h₂.mem, h₁.mem], by rw [h₂.rd, h₁.rd],
-    by rw [h₂.wr, h₁.wr], by rw [h₂.sp, h₁.sp]⟩
-
-theorem Kept.only {rs : List Region} {s₁ s₂ s₃ : State} (h₁ : Kept rs s₁ s₂) (h₂ : Only s₂ s₃) :
-    Kept rs s₁ s₃ := h₁.trans (h₂.kept rs)
 
 theorem Only.of_gpr {s : State} (g : Reg → BitVec 32) (h : ∀ r ∈ preserved, r ≠ .lr → g r = s.gpr r) :
     Only s { s with gpr := g } :=
@@ -231,8 +219,5 @@ theorem Ctx.fit {L : Lay} {s : State} (h : Ctx L s) : (L.ptr 0).toNat + 32768 �
 theorem Ctx.fitO {L : Lay} {s : State} (h : Ctx L s) {o l : Nat} (hl : o + l ≤ 32768) (hl0 : 0 < l) :
     (L.ptr 0 + BitVec.ofNat 32 o).toNat + l ≤ 2 ^ 32 :=
   Lay.fit_off h.ok (by have := h.len; omega) (Nat.le_trans hl h.sz0) hl0
-
-theorem Ctx.disj {L : Lay} {s : State} (h : Ctx L s) {a b : Nat × Nat × Nat} (hs : sepB L.sizes a b = true) :
-    (L.R a.1 a.2.1 a.2.2).Disjoint (L.R b.1 b.2.1 b.2.2) := Lay.disj h.ok hs
 
 end VG.Proof.MlKem.Arm

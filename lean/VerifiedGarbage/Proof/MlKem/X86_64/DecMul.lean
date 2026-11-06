@@ -147,10 +147,6 @@ theorem dis_sc {j o n : Nat} (hj : j < k) (h : o + n ≤ 4096) :
     (pR (sP s₀ + BitVec.ofNat 64 (1024 * j))).Disjoint ⟨cP s₀ + BitVec.ofNat 64 o, n⟩ :=
   (hp.2.2.2.2.2.1.sub_left (sub_v _ hj)).sub_right (sub_c h)
 
-theorem dis_uc {j o n : Nat} (hj : j < k) (h : o + n ≤ 4096) :
-    (pR (uP s₀ + BitVec.ofNat 64 (1024 * j))).Disjoint ⟨cP s₀ + BitVec.ofNat 64 o, n⟩ :=
-  (hp.2.2.2.2.2.2.1.sub_left (sub_v _ hj)).sub_right (sub_c h)
-
 theorem dis_sc0 {j : Nat} (hj : j < k) : (pR (sP s₀ + BitVec.ofNat 64 (1024 * j))).Disjoint (pR (cP s₀)) :=
   (hp.2.2.2.2.2.1.sub_left (sub_v _ hj)).sub_right (sub_c0 _)
 
@@ -170,9 +166,6 @@ theorem ret_c0 : (retR s₀).Disjoint (pR (cP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.1
 
 theorem ret_s {j : Nat} (hj : j < k) : (retR s₀).Disjoint (pR (sP s₀ + BitVec.ofNat 64 (1024 * j))) :=
   hp.2.2.2.2.2.2.2.2.1.sub_right (sub_v _ hj)
-
-theorem ret_u {j : Nat} (hj : j < k) : (retR s₀).Disjoint (pR (uP s₀ + BitVec.ofNat 64 (1024 * j))) :=
-  hp.2.2.2.2.2.2.2.2.2.1.sub_right (sub_v _ hj)
 
 /-- A polynomial of `s` or `u`, as at the start, in any memory that differs
 only in `w` and `scratch`. -/
@@ -226,8 +219,6 @@ abbrev inner (B : Bodies) : Prog isa :=
 theorem save_eq : KpkeMul.save = Spill.saveCode .rcx KpkeMul.slots := rfl
 
 theorem restore_eq : KpkeMul.restore = Spill.restoreCode .rbx KpkeMul.slots := rfl
-
-theorem sx3328 : BitVec.signExtend 64 (BitVec.ofNat 32 3328) = BitVec.ofNat 64 3328 := by decide
 
 theorem slot_dis_tab {C : Addr} {d : Nat} (h3 : 3072 ≤ d) (h8 : d + 8 ≤ 3120) :
     Region.Disjoint ⟨C + BitVec.ofNat 64 d, 8⟩ (tabR C) :=
@@ -466,73 +457,6 @@ theorem start_ok {s : State} (hbx : s.gpr .rbx = cP s₀) (hbp : s.gpr .rbp = wP
   · refine T.frame hf4 (fun r hr => ?_) hT2
     simp only [List.mem_singleton] at hr; subst hr
     exact (dis_wc hp (by decide)).symm
-
-/-- The function but for the restore of the callee-saved registers, inline. -/
-theorem body_ok (hk0 : 0 < k)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14] (inner B) = true) :
-    WP isa (.seq (.block (KpkeMul.save ++ ([.mov .rbx (.reg .rcx), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi),
-      .mov .r13 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))] : List Instr)))
-      (withMxcsr .rbx oMx (inner B))) s₀ fun s5 => s5.gpr .rbx = cP s₀ ∧ s5.gpr .rsp = s₀.gpr .rsp ∧
-      s5.rd = s₀.rd ∧ s5.wr = s₀.wr ∧ Frame [pR (wP s₀), cR (cP s₀)] s₀.mem s5.mem ∧
-      PolyIs s5.mem (wP s₀) (nttInv (dot (sv k s₀) (uv k s₀))) := by
-  have hcw : cR (cP s₀) ∈ s₀.wr := by rw [hp.2.1]; simp
-  refine WP.seq ?_
-  rw [save_eq]
-  refine Spill.save_then .rcx KpkeMul.slots (fun p hp' => ⟨_, hcw, in_c (by have := slots_bound p hp'; omega)⟩) ?_
-  refine WP.mono (Q := fun (s1 : State) => s1.gpr .rbx = cP s₀ ∧ s1.gpr .rbp = wP s₀ ∧ s1.gpr .r12 = sP s₀ ∧
-      s1.gpr .r13 = uP s₀ ∧ s1.gpr .r14 = BitVec.ofNat 64 k ∧ s1.gpr .rsp = s₀.gpr .rsp ∧ s1.rd = s₀.rd ∧
-      s1.wr = s₀.wr ∧ s1.mem = Spill.saveMem s₀.mem (cP s₀) s₀.gpr KpkeMul.slots) (by
-        vrunm
-        apply BitVec.eq_of_toNat_eq
-        rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-        omega) fun s1 ⟨h1bx, h1bp, h112, h113, h114, h1sp, h1rd, h1wr, hm1⟩ => ?_
-  have h0 : InRegions s1.wr (cP s₀ + BitVec.ofNat 64 768) 4 := by rw [h1wr]; exact ⟨_, hcw, in_c (by decide)⟩
-  have h4 : InRegions s1.wr (cP s₀ + BitVec.ofNat 64 772) 4 := by rw [h1wr]; exact ⟨_, hcw, in_c (by decide)⟩
-  refine WP.mono (withMxcsr_ok' (r := .rbx) (by decide) _ (by decide) h1bx h0 h4 hwo
-    (Q := fun s' => s'.gpr .rbx = cP s₀ ∧ s'.gpr .rsp = s₀.gpr .rsp ∧ s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧
-      Frame [pR (wP s₀), cR (cP s₀)] s₀.mem s'.mem ∧ Spill.Saved s'.mem (cP s₀) s₀.gpr KpkeMul.slots ∧
-      PolyIs s'.mem (wP s₀) (nttInv (dot (sv k s₀) (uv k s₀))))
-    (fun s2 k2 f2 => ?_)) fun s5 ⟨s4, hq4, hf5, k5⟩ => ?_
-  · -- the table and the accumulator of zero, the loop, `NTT⁻¹`
-    refine WP.seq (WP.mono (start_ok hp hB (s := s2) (by rw [k2.gpr (by decide), h1bx])
-      (by rw [k2.gpr (by decide), h1bp]) (by rw [k2.gpr (by decide), h1sp]) (by rw [k2.2.2, h1wr])) fun s3 ⟨g3, hrd3, hwr3, hf3, hT3, hz⟩ => ?_)
-    have e3 : ∀ r ∈ calleeSaved, s3.gpr r = s1.gpr r := fun r hr => by
-      rw [g3 r hr]; exact k2.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with h | h | h | h | h | h | h <;> simp [h])
-    refine WP.seq (wp_countdown (cnt := .r14) (N := k) (by omega) hk0 (DInv k s₀ R T)
-      (fun j hj u hI _ => term_ok hp hk hB hj hI) (fun u hI => fin_ok hp hB hI) ?_
-      (by rw [e3 .r14 (by decide), h114]))
-    have hsv : Spill.Saved (Spill.saveMem s₀.mem (cP s₀) s₀.gpr KpkeMul.slots) (cP s₀) s₀.gpr KpkeMul.slots :=
-      Spill.saveMem_saved _ _ _ _ (by decide)
-    rw [← hm1] at hsv
-    refine ⟨by rw [e3 .rbx (by decide), h1bx], by rw [e3 .rbp (by decide), h1bp],
-      by rw [e3 .r12 (by decide), h112, Nat.mul_zero, add_ofNat_zero],
-      by rw [e3 .r13 (by decide), h113, Nat.mul_zero, add_ofNat_zero], by rw [e3 .rsp (by decide), h1sp],
-      by rw [hrd3, k2.2.1, h1rd], by rw [hwr3, k2.2.2, h1wr], ?_, ?_, hT3, by rw [dotP_zero]; exact hz⟩
-    · refine (Spill.saveMem_frame_base s₀.mem (cP s₀) s₀.gpr KpkeMul.slots
-        (L := 4096) (fun p hp' => by have := slots_bound p hp'; omega) (by decide)).sub
-        (fun r hr => ⟨_, by simp at hr ⊢; exact .inr hr, fun _ h => h⟩) |>.trans ?_
-      rw [← hm1]
-      refine (f2.sub fun r hr => ⟨cR (cP s₀), by simp, ?_⟩).trans
-        (hf3.sub fun r hr => ?_)
-      · simp only [List.mem_singleton] at hr; subst hr
-        exact sub_c (by decide)
-      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        exacts [⟨_, by simp, fun _ h => h⟩, ⟨_, by simp, sub_c (by decide)⟩]
-    · refine saved_keep (saved_keep hsv f2 ?_) hf3 ?_ <;> intro r hr d h3 h8
-      · simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        exacts [(dis_wc hp (o := d) (n := 8) (by omega)).symm, slot_dis_tab h3 h8]
-  · obtain ⟨h4bx, h4sp, h4rd, h4wr, hf4, _, hW4⟩ := hq4
-    have hmx : ∀ r ∈ [mxR (cP s₀)], Region.Sub r (cR (cP s₀)) := fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact sub_c (by decide)
-    refine ⟨by rw [k5.gpr (by decide), h4bx], by rw [k5.gpr (by decide), h4sp], by rw [k5.2.1, h4rd],
-      by rw [k5.2.2, h4wr], hf4.trans (hf5.sub fun r hr => ⟨cR (cP s₀), by simp, hmx r hr⟩), ?_⟩
-    refine polyIs_frame hf5 (fun r hr => ?_) hW4
-    simp only [List.mem_singleton] at hr; subst hr
-    exact dis_wc hp (by decide)
 
 /-- The whole function. -/
 theorem wp_all (hk0 : 0 < k)

@@ -213,26 +213,7 @@ theorem map_correct {op : List Instr} {F : Nat → Nat → Nat} (hop : VOpSpec o
   rw [hI.f i hi, ite_eq_left (by rw [n_eq] at hi; omega_arith), newC, hG _ _ i hi, polyAt_val hp.f hi,
     polyAt_val hp.g hi]
 
-theorem map_ct {op : List Instr} {G : Poly → Poly → Poly}
-    (h : (Taint.check taint (Taint.ofRegs [.x0, .x1]) (vmapLoop op)
-      (Taint.hintOf taint (Taint.ofRegs [.x0, .x1]) (vmapLoop op))).isSome = true) :
-    ConstantTime isa (accAArch64 G).pre (accAArch64 G).pub (vmapLoop op) := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1]) ?_ h
-  intro s₁ s₂ _ _ ⟨h0, h1, hsp⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> with_reducible assumption
-
 /-! ## `add` and `sub` -/
-
-/-- A state satisfying the preconditions: two polynomials of zeros. -/
-def accSat : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | _ => 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x2000, 1024⟩]
-  wr := [⟨0x1000, 1024⟩]
 
 theorem add_correct : ∀ s, (accAArch64 Spec.MlKem.add).pre s →
     ∃ t s', Exec isa Impl.MlKem.AArch64.add s t s' ∧ abiPreserved s s' ∧
@@ -243,17 +224,5 @@ theorem sub_correct : ∀ s, (accAArch64 Spec.MlKem.sub).pre s →
     ∃ t s', Exec isa Impl.MlKem.AArch64.sub s t s' ∧ abiPreserved s s' ∧
       (accAArch64 Spec.MlKem.sub).post s s' :=
   map_correct vsubOp_spec (fun P R i hi => by rw [sub_get _ _ hi, val_sub]) (by decide +kernel)
-
-theorem add_verified :
-    Verified AArch64.target Impl.MlKem.AArch64.add (Proof.MlKem.addContract AArch64.abi) :=
-  Verified.of_correct add_correct (map_ct (by taint_decide)) (by
-    mlkem_implies [Proof.MlKem.addContract, Proof.MlKem.accSig, accAArch64, AArch64.abi,
-      AArch64.argRegs] [accSat] using accSat)
-
-theorem sub_verified :
-    Verified AArch64.target Impl.MlKem.AArch64.sub (Proof.MlKem.subContract AArch64.abi) :=
-  Verified.of_correct sub_correct (map_ct (by taint_decide)) (by
-    mlkem_implies [Proof.MlKem.subContract, Proof.MlKem.accSig, accAArch64, AArch64.abi,
-      AArch64.argRegs] [accSat] using accSat)
 
 end VG.Proof.MlKem.AArch64

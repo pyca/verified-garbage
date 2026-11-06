@@ -61,14 +61,6 @@ theorem sepAll_bounds {sz : List Nat} {i o l : Nat} {w : Nat × Nat × Nat} {W :
     (h : sepAll sz (i, o, l) (w :: W) = true) : i < sz.length ∧ o + l ≤ sz.getD i 0 :=
   sepB_bounds (List.all_eq_true.mp h w (List.mem_cons_self ..))
 
-/-- A part of a buffer inside a bigger one. -/
-theorem KeptX.subOff {L : Lay} {xs : List Reg} {s s' : State} (hL : L.Ok) {i o l k n : Nat}
-    (hb : i < L.sizes.length ∧ o + l ≤ L.size i) (hk : k + n ≤ l) (h : KeptX xs (L.RL [(i, o + k, n)]) s s') :
-    KeptX xs (L.RL [(i, o, l)]) s s' :=
-  h.sub fun r hr => by
-    simp only [Lay.RL, List.map_cons, List.map_nil, List.mem_singleton] at hr; subst hr
-    exact ⟨L.R i o l, List.mem_singleton_self _, Lay.R_sub_R hL hb.1 (by omega_arith) (by omega_arith) hb.2⟩
-
 /-! ## Copying from an offset -/
 
 theorem copyLo {L : Lay} {s : State} (hL : L.Ok) {sb db : Reg} {bo so dO len i j : Nat}
