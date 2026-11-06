@@ -20,11 +20,12 @@ on:
 
 permissions: {}
 
-# Each run checks every open pull request against the latest main, so a newer
-# merge supersedes a run still waiting for GitHub to work out mergeability.
+# One run at a time, and at most one waiting: each checks every open pull
+# request against the latest main. A newer merge waits rather than cancels,
+# so that a run waiting for GitHub to work out mergeability still finishes.
 concurrency:
   group: ${{ github.workflow }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   comment:
@@ -45,4 +46,5 @@ jobs:
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
           DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
-        run: python3 ci/conflict_comments.py "$REPO" "$SHA" $DRY_RUN
+        # -u: print as it goes, not all at the end.
+        run: python3 -u ci/conflict_comments.py "$REPO" "$SHA" $DRY_RUN

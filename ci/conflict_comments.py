@@ -8,7 +8,9 @@ merge to main.
 GitHub works out whether a pull request can merge in the background, after
 its base moves, and reports `UNKNOWN` until it has: the script asks again
 (`--attempts` times, `--delay` seconds apart) for those it has not, and skips
-any still unknown at the end (the next merge checks them again).
+any still unknown at the end (the next merge checks them again). A pull
+request in the merge queue stays `UNKNOWN` until it leaves, and the queue
+removes one that conflicts, so those are skipped without waiting.
 
 Each comment carries a hidden marker naming the pull request's head commit.
 A pull request that already has this token's comment for its current head is
@@ -34,6 +36,7 @@ query($owner: String!, $name: String!, $after: String) {
       pageInfo { hasNextPage endCursor }
       nodes {
         number
+        isInMergeQueue
         mergeable
         headRefOid
         baseRefName
@@ -99,19 +102,27 @@ def open_pulls(api, repo):
 def resolve(api, repo, attempts, delay):
     """The open pull requests whose mergeability GitHub knows, by number,
     asking again for those it does not yet; and the numbers still unknown."""
-    known, unknown = {}, set()
-    for attempt in range(attempts):
-        if attempt:
+    known, queued, unknown = {}, set(), set()
+    for attempt in range(1, attempts + 1):
+        if attempt > 1:
             time.sleep(delay)
         unknown = set()
         for pr in open_pulls(api, repo):
-            if pr["mergeable"] == "UNKNOWN":
-                if pr["number"] not in known:
-                    unknown.add(pr["number"])
-            else:
-                known[pr["number"]] = pr
+            number = pr["number"]
+            if pr["isInMergeQueue"]:
+                if number not in queued:
+                    print(f"#{number}: in the merge queue: skipped")
+                queued.add(number)
+            elif pr["mergeable"] != "UNKNOWN":
+                if number not in known:
+                    print(f"#{number}: {pr['mergeable'].lower()} at {pr['headRefOid']}")
+                known[number] = pr
+            elif number not in known:
+                unknown.add(number)
         if not unknown:
             break
+        waiting = ", ".join(f"#{n}" for n in sorted(unknown))
+        print(f"attempt {attempt}/{attempts}: still unknown: {waiting}")
     return known, sorted(unknown)
 
 
@@ -136,21 +147,22 @@ def run(api, repo, sha, attempts, delay, dry_run):
     known, unknown = resolve(api, repo, attempts, delay)
     for number, pr in sorted(known.items()):
         if needs_comment(pr):
-            print(f"#{number}: conflicts at {pr['headRefOid']}: commenting")
+            print(f"#{number}: newly conflicting: commenting")
             if not dry_run:
                 api.comment(repo, number, body(pr, repo, sha))
         elif pr["mergeable"] == "CONFLICTING":
-            print(f"#{number}: conflicts at {pr['headRefOid']}: already told")
+            print(f"#{number}: already told about this head")
     for number in unknown:
         print(f"#{number}: mergeability still unknown: skipped")
+    print(f"{len(known)} checked, {len(unknown)} unknown")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("repo", help="OWNER/REPO")
     parser.add_argument("sha", help="the commit of main that was just pushed")
-    parser.add_argument("--attempts", type=int, default=20)
-    parser.add_argument("--delay", type=float, default=15)
+    parser.add_argument("--attempts", type=int, default=24)
+    parser.add_argument("--delay", type=float, default=5)
     parser.add_argument("--dry-run", action="store_true", help="print what it would comment on")
     args = parser.parse_args()
     api = Api(os.environ["GITHUB_TOKEN"])
