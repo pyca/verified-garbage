@@ -167,14 +167,8 @@ theorem stk_SCR {d n : Nat} (h₁ : d + n ≤ 536) :
 theorem stk_OUT {d n : Nat} (h₁ : d + n ≤ 536) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.OUT := h.ko.sub_left (Offset.sub_base _ h₁)
 
-theorem stk_D {d n : Nat} (h₁ : d + n ≤ 536) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.D := h.kd.sub_left (Offset.sub_base _ h₁)
-
 theorem stk_DG {d n : Nat} (h₁ : d + n ≤ 536) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.DG := h.kg.sub_left (Offset.sub_base _ h₁)
-
-theorem stk_TAB {d n : Nat} (h₁ : d + n ≤ 536) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.TAB := (h.tk.sub_right (Offset.sub_base _ h₁)).symm
 
 end Lay.Ok
 
@@ -207,11 +201,6 @@ def Safe {dn : Nat} (L : Lay dn) (r : Region) : Prop :=
 theorem safe_low {dn : Nat} (L : Lay dn) {d n : Nat} (h : d + n ≤ 492) : Safe L ⟨L.B + BitVec.ofNat 64 d, n⟩ :=
   .inr (.inr (Offset.sub_base _ h))
 
-theorem Safe.of_sub {dn : Nat} {L : Lay dn} {r r' : Region} (hs : Safe L r') (h : Region.Sub r r') : Safe L r := by
-  rcases hs with hs | hs | hs
-  exacts [.inl fun x hx => hs x (h x hx), .inr (.inl fun x hx => hs x (h x hx)),
-    .inr (.inr fun x hx => hs x (h x hx))]
-
 theorem safe_scr {dn : Nat} (L : Lay dn) {d n : Nat} (h : d + n ≤ 8192) :
     Safe L ⟨State.addr L.scr + BitVec.ofNat 64 d, n⟩ :=
   .inr (.inl (Offset.sub_base _ h))
@@ -228,24 +217,6 @@ theorem top_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
   · exact (h.stk_OUT (by omega)).sub_right hs
   · exact (h.stk_SCR (by omega)).sub_right hs
   · exact (Offset.disjoint_base _ (by omega) (by omega)).sub_right hs
-
-theorem d_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.D.Disjoint r := by
-  rcases hs with hs | hs | hs
-  · exact h.od.symm.sub_right hs
-  · exact h.dc.sub_right hs
-  · exact (h.kd.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
-
-theorem dg_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.DG.Disjoint r := by
-  rcases hs with hs | hs | hs
-  · exact h.og.symm.sub_right hs
-  · exact h.gc.sub_right hs
-  · exact (h.kg.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
-
-theorem tab_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.TAB.Disjoint r := by
-  rcases hs with hs | hs | hs
-  · exact h.to.sub_right hs
-  · exact h.tc.sub_right hs
-  · exact (h.tk.sub_right (Region.sub_prefix (by omega))).sub_right hs
 
 end Lay.Ok
 
@@ -364,10 +335,6 @@ theorem inFrW (hc : Ctx L g m₀ t) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n 
     InRegions t.wr (L.B + BitVec.ofNat 64 d) n :=
   ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
 
-theorem inScr (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
-    InRegions (t.rd ++ t.wr) (State.addr L.scr + BitVec.ofNat 64 o) n :=
-  ⟨L.SCR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
-
 theorem inScrW (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
     InRegions t.wr (State.addr L.scr + BitVec.ofNat 64 o) n :=
   ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
@@ -375,10 +342,6 @@ theorem inScrW (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
 theorem inD (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ L.q) (ho : o ≤ 64) :
     InRegions (t.rd ++ t.wr) (State.addr L.d + BitVec.ofNat 64 o) n :=
   ⟨L.D, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
-
-theorem inDg (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ dn) (ho : o ≤ 64) :
-    InRegions (t.rd ++ t.wr) (State.addr L.dg + BitVec.ofNat 64 o) n :=
-  ⟨L.DG, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
 
 theorem inTab (hL : L.Ok) (hc : Ctx L g m₀ t) {o : Nat} (h : o + 4 ≤ 24) :
     InRegions (t.rd ++ t.wr) (tA L.tab o) 4 := by

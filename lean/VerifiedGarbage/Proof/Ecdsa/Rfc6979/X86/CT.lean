@@ -186,9 +186,6 @@ theorem seq (h₁ : Piece P Φ a Ψ) (h₂ : Piece P Ψ b Χ) : Piece P Φ (.seq
   ⟨h₁.ct.seq h₂.ct, fun L g m₀ t hL hk hc hφ =>
     WP.seq (WP.mono (h₁.wp L g m₀ t hL hk hc hφ) fun _ ⟨c', ψ⟩ => h₂.wp L g m₀ _ hL hk c' ψ)⟩
 
-theorem pre {Φ' : Pr P} (h : Piece P Φ c Ψ) (hp : ∀ L m₀ t, Φ' L m₀ t → Φ L m₀ t) : Piece P Φ' c Ψ :=
-  ⟨h.ct.mono (fun _ _ => Two.mono hp) fun _ _ h => h, fun L g m₀ t hL hk hc hφ => h.wp L g m₀ t hL hk hc (hp _ _ _ hφ)⟩
-
 /-- What the relational proofs of the loop use. -/
 theorem rel (h : Piece P Φ c Ψ) {Φ' : Pr P} (hp : ∀ L m₀ t, Φ' L m₀ t → Φ L m₀ t) :
     RelCT isa (Two P Φ') c fun _ _ => True :=
@@ -806,12 +803,6 @@ theorem rest_ct :
     WP.mono (stageG_ok hL hk.1 hc h) fun _ ⟨c, x, _⟩ => ⟨c, i, x⟩
 
 /-! ## The frame's entry -/
-
-/-- Two runs from states that satisfy the precondition and agree on public
-data, after the frame's allocation. -/
-def Entered (P : RfcHash) (ns : List String) (a b : State) : Prop :=
-  ∃ s₁ s₂, ((rfcP P ns).pre s₁ ∧ (rfcP P ns).pre s₂ ∧ (rfcP P ns).pub s₁ s₂) ∧ a = allocState 512 s₁ ∧
-    b = allocState 512 s₂
 
 theorem entry_taint : TaintOk [.esp] Cfg.entry := ⟨_, by taint_decide⟩
 

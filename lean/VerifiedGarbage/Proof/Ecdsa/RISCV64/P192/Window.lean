@@ -376,8 +376,6 @@ abbrev ent (e : Nat) : Pt := Cfg.entry p192 e
 theorem ent_eq (e : Nat) : ent e = ⟨2048 + 96 * e, 2048 + 96 * e + 32, 2048 + 96 * e + 64⟩ := rfl
 
 theorem rcbW_S3 (o : Pt) : rcbW S3 o = [800, 832, 864, 896, 928, 960, o.x, o.y, o.z] := rfl
-theorem rcbR_S3 (p q : Pt) : rcbR S3 p q = [256, 1344, p.x, p.y, p.z, q.x, q.y, q.z] := rfl
-
 /-- `[n + 1]Q = [n]Q + Q`. -/
 theorem mul_succ' (hL : Law W) {Q : Point W} (hQ : onCurve W Q = true) (n : Nat) :
     Spec.Weierstrass.add (mul n Q) Q = mul (n + 1) Q := by
@@ -961,23 +959,5 @@ theorem mul_rv (hL : Law W) (s : State) (hs : mulRVc.pre s) :
     · show _ < W.p; rw [Impl.Weierstrass.Point.Curve.pointAt, x2]; exact R₅.z
     · rw [Impl.Weierstrass.Point.Curve.pointAt, x0, x1, x2, dq, dq, dq]
       exact represents_of_rep R₅.rep
-
-theorem mul_ct : ConstantTime isa mulRVc.pre mulRVc.pub Impl.Ecdsa.RISCV64.mulP192 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0])
-    (fun _ _ _ _ hp => ⟨hp.1, fun r hr => by
-      simp only [Taint.mem_ofRegs, List.mem_singleton] at hr; subst hr; exact hp.2⟩) (by taint_decide)
-
-theorem mul_verified (hL : Law W) :
-    Verified RISCV64.target Impl.Ecdsa.RISCV64.mulP192 (MC.mulInRangeContract RISCV64.abi) :=
-  Verified.of_correct (mul_rv hL) mul_ct
-    { pre := by sig_implies_pre [Impl.Weierstrass.Mul.Curve.mulInRangeContract, Impl.Weierstrass.MulBase.sig,
-        mulRVc, RISCV64.abi, RISCV64.argRegs]
-      post := by sig_implies_post [Impl.Weierstrass.Mul.Curve.mulInRangeContract, Impl.Weierstrass.MulBase.sig,
-        mulRVc, RISCV64.abi, RISCV64.argRegs]
-      pub := by sig_implies_pub [Impl.Weierstrass.Mul.Curve.mulInRangeContract, Impl.Weierstrass.MulBase.sig,
-        mulRVc, RISCV64.abi, RISCV64.argRegs]
-      sat := ⟨satState, Sig.contract_pre_of_check (by decide +kernel) (by
-        sig_reduce [Sig.wfPre, Impl.Weierstrass.MulBase.sig, RISCV64.abi, RISCV64.argRegs, satState]
-        exact ⟨by decide, sat_consts, sat_point hL⟩)⟩ }
 
 end VG.Proof.Ecdsa.RISCV64.P192.Window

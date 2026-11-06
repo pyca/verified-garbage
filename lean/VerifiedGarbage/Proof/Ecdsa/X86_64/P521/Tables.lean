@@ -27,8 +27,6 @@ open VG.Impl.Ecdsa.X86_64 (p521 CombData)
 /-- P-521's comb. -/
 abbrev p521d : CombData := ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false, false⟩
 
-theorem p521_comb : p521.comb = some p521d := rfl
-
 /-- The words of P-521's tables. -/
 abbrev p521W : List (BitVec 64) := p521.combWords p521d
 

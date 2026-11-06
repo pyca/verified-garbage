@@ -54,8 +54,6 @@ open VG.Impl.Words.RISCV64 (li64)
 
 abbrev P : Nat := Spec.Secp256k1.p
 
-theorem p_eq : P = 2 ^ 256 - c := by decide
-
 theorem p_ok : Ok P := ⟨by decide, by decide, by decide⟩
 
 theorem ni_eq : (BitVec.ofNat 64 (Impl.Weierstrass.RISCV64.Gen4.negInv P)).toNat =

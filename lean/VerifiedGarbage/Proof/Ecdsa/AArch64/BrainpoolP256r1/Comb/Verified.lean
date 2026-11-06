@@ -59,10 +59,4 @@ theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signComb :=
       · exact h4⟩, fun n hn => by
       simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
-theorem sign_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.AArch64.InvSounds)
-    :
-    Verified AArch64.target signComb
-      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP256r1.inst (AArch64.abi.withConsts combCfg.combConsts)) :=
-  Verified.of_correct (sign_a64 hL hI) sign_ct implies
-
 end VG.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb

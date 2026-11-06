@@ -15,11 +15,6 @@ open VG.Impl.Ecdsa.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64
 open VG.Impl.Ecdsa.Verify.AArch64
 
-/-- Both recoders use all nine words, including the carry digit. -/
-theorem dimensions : P521Joint.K.M.n=9 ∧ P521Joint.KG.M.n=9 ∧
- P521Joint.K.bits=4024 ∧ P521Joint.KG.bits=3304 ∧
- PubNaf.cacheAt P521Joint.K 1+128*P521Joint.K.M.n=8056 := by decide
-
 /-- The generator digits stop before the arithmetic temporary at slot54. -/
 theorem generator_apart : ∀w∈winW P521Joint.K ++ PubNaf.cacheW P521Joint.K,
  P521Joint.KG.bits+577≤w.1 ∨ w.1+w.2≤P521Joint.KG.bits := by decide

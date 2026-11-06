@@ -121,7 +121,6 @@ theorem mask64_and (p q : Prop) [Decidable p] [Decidable q] : mask64 p &&& mask6
 is `A.hs`: `c.sh` for the slot `hs` holding a hash, 0 for the others. -/
 abbrev shAt (c : Cfg) (hs : Option Nat) (i : Nat) : Nat := if hs = some i then c.sh else 0
 
-theorem shAt_none (c : Cfg) (i : Nat) : shAt c none i = 0 := rfl
 theorem shAt_self (c : Cfg) (i : Nat) : shAt c (some i) i = c.sh := ite_eq_left_of_eq_true _ _ (eq_true rfl)
 theorem shAt_E_D (c : Cfg) : shAt c (some E) D = 0 := rfl
 theorem shAt_E_K (c : Cfg) : shAt c (some E) K = 0 := rfl

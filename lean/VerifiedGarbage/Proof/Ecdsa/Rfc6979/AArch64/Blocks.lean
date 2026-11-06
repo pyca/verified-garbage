@@ -103,9 +103,6 @@ theorem kv_bytes (m : Mem) (q : Addr) (w : BitVec 64) (o : Nat)
 theorem replicate_take (n k : Nat) (b : Byte) (h : n ≤ k) : (List.replicate k b).take n = List.replicate n b := by
   rw [List.take_replicate, Nat.min_eq_left h]
 
-theorem movz_imm {n : Nat} (hn : n < 2 ^ 16) :
-    (BitVec.ofNat 16 n).setWidth Size.x.bits <<< (16 * 0) = BitVec.ofNat 64 n := movz_val hn
-
 /-- `V = 0x01…` and `K = 0x00…`: their first `n` bytes, for any `n ≤ 64`. -/
 theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block Cfg.initKV) t fun t' => Ctx L g m₀ t' ∧ Frame [⟨L.B + BitVec.ofNat 64 16, 128⟩] t.mem t'.mem ∧

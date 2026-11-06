@@ -323,9 +323,8 @@ theorem validate_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
 ## `[d]P` and `Z^(p-2)`
 
 The signature's ladder with its point at `PX`, `PY`, `ONEP` (`ladderQ`),
-whose slots are apart as `ladder_ok` needs (`ladLayQ`, `ladWkQ`, as
-`ladLay` and `ladWk`), then the signature's power (`ladPow_ok`, as
-`stage₂`), for any invariant of the ladder: `Main.lean` gives the one of the
+whose slots are apart as `ladder_ok` needs (`ladLayQ`, `ladWkQ`), then the
+signature's power (`ladPow_ok`, as `stage₂`), for any invariant of the ladder: `Main.lean` gives the one of the
 group law, that `R` represents `[k >>> j]P`.
 -/
 

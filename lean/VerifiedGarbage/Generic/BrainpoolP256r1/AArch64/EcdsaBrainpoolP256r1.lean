@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.V
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.Verified
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
@@ -15,7 +14,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP256r1
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Verified
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
@@ -29,8 +27,6 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 public import VerifiedGarbage.Proof.Ecdsa.Projective
 public import VerifiedGarbage.Proof.Ecdsa.Verify
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Points
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Sum
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
@@ -49,8 +45,6 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Ecdsa.Projective
 import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Points
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Sum
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst

@@ -83,14 +83,6 @@ theorem fixedOk_flag : FixedOk c [(c.sl FLAG, 8)] := by
   rw [List.mem_singleton.mp hw]
   exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (show 12 < FLAG by decide)))
 
-theorem fixedOk_whole (h7 : c.n < 10) : FixedOk c [(size, 2 ^ 64)] := by
-  intro w hw
-  rw [List.mem_singleton.mp hw]
-  refine Or.inr ?_
-  have := sl_le c (i := 12) h7 (by decide)
-  show c.sl 12 ≤ size
-  omega_arith
-
 /-- A constant's slot is apart from what a phase writes. -/
 theorem fixed_apart {W : List (Nat × Nat)} (hW : FixedOk c W) {i : Nat} (hi : i < 12) (hit : i ≠ TMP) :
     ∀ w ∈ W, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
@@ -168,27 +160,6 @@ theorem tbl_apart_slW {l : List Nat} (hl : ∀ i ∈ l, i < 45 ∧ i ≠ TMP) (j
   intro w hw
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
   exact Or.inr (sl_below_bits c (hl i hi).1 j t (hl i hi).2)
-
-theorem tbl_apart_flag (h0 : 0 < c.n) (j t : Nat) :
-    ∀ w ∈ [(c.sl FLAG, 8)], bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
-  intro w hw
-  rw [List.mem_singleton.mp hw]
-  have := sl_below_bits c (i := FLAG) (by decide) j t
-  exact Or.inr (by dsimp only; omega_arith)
-
-/-- Tables `j ≠ j'` are apart. -/
-theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
-    ∀ w ∈ [(bitsAt c.n j', 64 * c.n)], bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
-  intro w hw
-  rw [List.mem_singleton.mp hw]
-  simp only [bitsAt_eq]
-  rcases Nat.lt_or_gt_of_ne hjj with h | h
-  · have := Nat.mul_le_mul_left (64 * c.n) h
-    rw [Nat.mul_succ] at this
-    omega_arith
-  · have := Nat.mul_le_mul_left (64 * c.n) h
-    rw [Nat.mul_succ] at this
-    omega_arith
 
 /-- What a power writes: `ACC`, its table (and, for a function, where it
 keeps registers) and the temporary area. -/

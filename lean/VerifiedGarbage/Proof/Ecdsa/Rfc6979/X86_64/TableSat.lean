@@ -95,19 +95,6 @@ theorem symT_distinct {vs : List MdHash} (hl : (names vs).length < 2 ^ 32) :
   (symsOf_distinct hl).imp_of_mem fun {f g} hf hg h hne => by
     simp only [symT, hf, hg, ite_true]; exact h hne
 
-/-- Regions at literal addresses, one below the other. -/
-theorem sep_lit {a n b k : Nat} (h : a + n ≤ b ∨ b + k ≤ a) (ha : a + n ≤ 2 ^ 64) (hb : b + k ≤ 2 ^ 64)
-    (ha' : a < 2 ^ 64) (hb' : b < 2 ^ 64) :
-    Region.Disjoint ⟨BitVec.ofNat 64 a, n⟩ ⟨BitVec.ofNat 64 b, k⟩ :=
-  Region.disjoint_of_sep (by
-    simp only [Region.sep, BitVec.toNat_ofNat, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]
-    rw [Nat.mod_eq_of_lt ha', Nat.mod_eq_of_lt hb']
-    omega)
-
-
-theorem satT_sym (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q : Nat) (Tr : List Region) {n : String}
-    (h : n ∉ names vs) : (satT vs w m₀ Q Tr).syms n = 0x100000 := by
-  simp only [satT, symT, h, ite_false]
 
 theorem constRegions_symT (vs : List MdHash) (n : String) (W : List (BitVec 64)) (hna : n ∉ names vs) :
     Abi.constRegions (fun name => symT vs name) [(n, W)] = [⟨0x100000, 8 * W.length⟩] := by

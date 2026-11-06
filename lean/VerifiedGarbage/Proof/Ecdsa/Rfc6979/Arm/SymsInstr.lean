@@ -67,11 +67,4 @@ theorem wp_ldrS {t n : Reg} {off : Nat} {a : Addr} (ho : off<4096)
     WP isa (.block (.ldr t n off::is)) s Q :=
   prefix_syms (wp_ldr ho ha hr (fun _ u => WP.block_nil u)) (fun _ u sy => k _ ⟨u,sy⟩)
 
-theorem wp_subsS {d n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s=some y)
-    (k : ∀ t,UpdS s t d (s.gpr n-y) → t.z=(s.gpr n-y==0) → WP isa (.block is) t Q) :
-    WP isa (.block (.subs d n o::is)) s Q := by
-  refine prefix_syms (P := fun t => Upd s t d (s.gpr n-y) ∧ t.z=(s.gpr n-y==0))
-    (wp_subs ho (fun _ u z => WP.block_nil ⟨u,z⟩)) ?_
-  exact fun _ ⟨u,z⟩ sy => k _ ⟨u,sy⟩ z
-
 end VG.Proof.Ecdsa.Rfc6979.Arm

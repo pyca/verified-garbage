@@ -222,33 +222,4 @@ theorem tbl_of {d : CombData} (hcd : c.comb = some d) {s₀ s : State} (hp : Pre
       size ≤ ofs (s₀.gpr .r8) (s₀.syms d.tsym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) :=
   tbl_of_held hcd hp.tbls (by rw [hp.wr]; simp) (fun r hr => by rw [hrd, hp.rd]; simp [hr]) hu
 
-/-- The cleared word of the table of bits is apart from the slots. -/
-theorem apart_zw {d : CombData} (hd : CombOk c d) {i : Nat} (hi : i < 45) :
-    ∀ w ∈ [(bitsAt c.n 0 + 64 * c.n, 8 * (c.combCfg d).zw)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
-  intro w hw
-  rw [List.mem_singleton.mp hw]
-  by_cases hT : i = TMP
-  · subst hT
-    have := zw_le hd
-    rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (by decide) (64 * c.n + 8 * (c.combCfg d).zw) (by omega) with h | h
-    · exact Or.inl (by dsimp only; omega)
-    · exact Or.inr (by dsimp only; omega)
-  · exact Or.inl (sl_below_bits c hi 0 _ (.inl hT))
-
-theorem fixedOk_tcombW (d : CombData) : FixedOk c (tcombW (c.combCfg d)) := by
-  rw [tcombW_eq]
-  refine FixedOk.append (fixedOk_slW (by decide)) fun w hw => ?_
-  rw [List.mem_singleton.mp hw]
-  exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_bits c (by decide) 0 _))
-
-/-- The tables of bits `1` and `2` are apart from the cleared word. -/
-theorem tbl_apart_zw {d : CombData} (hd : CombOk c d) {j t : Nat} (hj : j = 1 ∨ j = 2) :
-    ∀ w ∈ [(bitsAt c.n 0 + 64 * c.n, 8 * (c.combCfg d).zw)],
-      bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
-  intro w hw
-  rw [List.mem_singleton.mp hw]
-  have := zw_le hd
-  simp only [bitsAt_eq]
-  rcases hj with rfl | rfl <;> exact Or.inr (by omega)
-
 end VG.Proof.Ecdsa.X86_64

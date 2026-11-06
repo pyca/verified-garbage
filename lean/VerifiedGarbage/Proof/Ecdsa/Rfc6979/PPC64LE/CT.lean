@@ -270,10 +270,6 @@ theorem two_call {n : String} {c : Prog isa} {k : Contract isa}
 /-- Nothing. -/
 abbrev Tt (P : RfcHash) : Pred P := fun _ _ _ _ _ => True
 
-theorem two_any {c : Prog isa} {Φ : Pred P} (h : RelCT isa (Two P (Tt P)) c fun _ _ => True) :
-    RelCT isa (Two P Φ) c fun _ _ => True :=
-  h.mono (fun _ _ => Two.mono fun _ _ _ _ _ _ => trivial) fun _ _ h => h
-
 variable {g : Reg → BitVec 64} {lr : Addr} {m₀ : Mem}
 
 /-! ## The blocks whose contents depend on the curve -/
@@ -646,15 +642,6 @@ theorem fin_ct {Φ : Pred P} {len dst : Nat} (hlen : len < 2 ^ 14) (hdst : 32 �
 
 /-! ## The states' copies -/
 
-theorem scrBase_taint : TaintOk [] Cfg.scrBase := ⟨_, by taint_decide⟩
-
-/-- `scratch` in `r12`. -/
-theorem scrBase_two {L : Lay P.I.hashLen} {t : State} (hc : Ctx L g lr m₀ t) :
-    WP isa (.block Cfg.scrBase) t fun t' => t'.sp = t.sp ∧ ∀ r ∈ [Reg.r12], t'.gpr r = L.scr := by
-  rw [show Cfg.scrBase = Cfg.scrBase ++ [] from rfl]
-  exact scrBase_ok hc fun t' k _ _ h12 => wp_nil ⟨k.sp, fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact h12⟩
-
 theorem copyLoop_taint :
     ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.r4, .r5, .r6]) Impl.RsaOaep.PPC64LE.copyLoop hc).isSome = true :=
   ⟨_, by taint_decide⟩
@@ -762,15 +749,6 @@ def msgP (L : Lay P.I.hashLen) : Reg → BitVec 64
 
 theorem msgPtrs_taint : TaintOk [] Cfg.msgPtrs := ⟨_, by taint_decide⟩
 
-theorem msgPtrs_two {L : Lay P.I.hashLen} {t : State} (hL : L.Ok) (hc : Ctx L g lr m₀ t) :
-    WP isa (.block Cfg.msgPtrs) t fun t' => t'.sp = t.sp ∧ ∀ r ∈ [Reg.r9, .r10, .r11], t'.gpr r = msgP L r :=
-  WP.mono (msgPtrs_ok hL hc) fun _ ⟨c, _, _, h11, h9, h10⟩ => ⟨c.sp.trans hc.sp.symm, fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact h9
-    · exact h10
-    · exact h11⟩
-
 /-- What a message keeps: the saved states, and `K`. -/
 def KS (P : RfcHash) (b : Prop) : Pred P := fun L _ _ _ t => b → SavedK P L t.mem (kOf P L t.mem)
 
@@ -831,9 +809,6 @@ theorem rekey_ct {Φ : Pred P} : RelCT isa (Two P Φ) (cfgOf P).rekey fun _ _ =>
     (fun _ _ => Two.mono fun _ _ _ _ _ _ h => absurd h (by decide)) fun _ _ h => h
 
 /-! ## The byte loops and the conversions -/
-
-/-- `scratch` in `r3`. -/
-def ScrIn (P : RfcHash) : Pred P := fun L _ _ _ u => u.gpr .r3 = L.scr
 
 theorem ldScr_taint : TaintOk [] [.addSp .r11 0, .load .d .r3 .r11 fScratch] := ⟨_, by taint_decide⟩
 

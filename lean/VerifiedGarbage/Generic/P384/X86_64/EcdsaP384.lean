@@ -38,7 +38,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTail
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFlags
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
@@ -89,7 +88,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTail
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFlags
 import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Main

@@ -124,12 +124,6 @@ theorem args_ok (c : Cfg) (s : State) (hl : c.C.len < 4096) :
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
 
-theorem verify_eq' (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.verify c =
-    .seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
-      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
-    (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
-    (.seq (Impl.Ecdh.AArch64.Cfg.validate c) (Impl.Ecdsa.Verify.AArch64.Cfg.back c))))) := rfl
-
 /-- Ranges of the working space, as one. -/
 theorem unch_whole {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
     (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, size)] m m' :=

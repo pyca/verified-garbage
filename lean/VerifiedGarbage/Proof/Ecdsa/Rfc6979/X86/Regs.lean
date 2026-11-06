@@ -33,16 +33,6 @@ theorem sub_refl (r : Region) : Region.Sub r r := fun _ h => h
 theorem sub_trans {a b c : Region} (h₁ : Region.Sub a b) (h₂ : Region.Sub b c) : Region.Sub a c :=
   fun x hx => h₂ x (h₁ x hx)
 
-/-- `p + d` does not wrap. -/
-theorem toNat_add_of {p : Addr} {d : Nat} (h : p.toNat + d < 2 ^ 64) :
-    (p + BitVec.ofNat 64 d).toNat = p.toNat + d := by
-  rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt h]
-
-/-- The 76 bytes below the frame, which the calls use. -/
-theorem Ctx.below_eq {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem} {u : State} (hL : L.Ok)
-    (hc : Ctx L g m₀ u) : below (u.gpr .esp) 76 = ⟨L.B, 76⟩ := by
-  rw [hc.esp, hL.below_F]
-
 theorem Lay.Ok.low_scr {dn : Nat} {L : Lay dn} (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B, 76⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
   (h.kc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ h₂)
@@ -110,17 +100,5 @@ theorem movi_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d 
 theorem arg_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) {i : Nat} (hi : i < 6) :
     WP isa (.block [.mov d (argM i)]) u (Upd L g m₀ u d (L.a i)) :=
   wp_movS (hc.readArg hL hi) fun _ v₁ _ => WP.block_nil (Upd.of_wp hL hc hd v₁)
-
-/-- Two pieces of code, each setting one register. -/
-theorem upd_append {is js : List Instr} {u : State} {d e : Reg} {v w : BitVec 32}
-    (h₁ : WP isa (.block is) u (Upd L g m₀ u d v))
-    (h₂ : ∀ u', Ctx L g m₀ u' → WP isa (.block js) u' (Upd L g m₀ u' e w)) {Q : State → Prop}
-    (hQ : ∀ u'', Ctx L g m₀ u'' → u''.mem = u.mem → u''.gpr e = w →
-      (∀ r, r ≠ e → r ≠ d → u''.gpr r = u.gpr r) → (e ≠ d → u''.gpr d = v) → u''.syms = u.syms → Q u'') :
-    WP isa (.block (is ++ js)) u Q := by
-  rw [WP.block_append_iff]
-  refine WP.mono h₁ fun u' h => WP.mono (h₂ u' h.ctx) fun u'' h' => hQ u'' h'.ctx (h'.mem.trans h.mem) h'.val
-    (fun r hre hrd => (h'.keep r hre).trans (h.keep r hrd)) (fun hne => (h'.keep d hne.symm).trans h.val)
-    (h'.syms.trans h.syms)
 
 end VG.Proof.Ecdsa.Rfc6979.X86

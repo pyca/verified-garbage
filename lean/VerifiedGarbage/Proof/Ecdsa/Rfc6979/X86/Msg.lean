@@ -47,16 +47,6 @@ theorem wp_store8 {r : Reg8} {m : MemOp} {a : Addr} (ha : s.ea m = a) (hw : InRe
 
 end
 
-/-- A range of `scratch`, as the code addresses it from `scratch` in a register. -/
-theorem scr_addr (hL : L.Ok) {d j : Nat} (h : d + 4 * j < 8192) :
-    addr L.sc (d + 4 * j) = L.scr + BitVec.ofNat 64 d + BitVec.ofNat 64 (4 * j) := by
-  rw [addr_eq (by have := hL.nc; omega_arith), Offset.add_add]
-
-/-- A range of the frame, as the code addresses it from `esp`. -/
-theorem fr_addr (hL : L.Ok) {o j : Nat} (h : o + 4 * j < 540) :
-    addr L.F (o + 4 * j) = L.B + BitVec.ofNat 64 (76 + o) + BitVec.ofNat 64 (4 * j) := by
-  rw [hL.addrF h, Offset.add_add, Nat.add_assoc]
-
 /-- `Q` bytes copied to `scratch + d` by `copyBytes`, with `Ctx` kept. -/
 theorem copyB_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {src : Reg} {S : BitVec 32} {SA : Addr}
     (hs : u.gpr src = S) (hsr : src ≠ .eax) (hdi : u.gpr .edi = L.sc) {so d Q : Nat} (h4 : 4 ≤ Q)

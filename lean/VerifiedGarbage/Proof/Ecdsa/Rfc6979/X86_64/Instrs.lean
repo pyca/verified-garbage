@@ -32,8 +32,6 @@ theorem okP_loop {cnd : Cond} {a : Prog isa} (ha : OkP a) : OkP (.loop a cnd) :=
 
 theorem okP_call {n : String} {a : Prog isa} (ha : OkP a) : OkP (.call n a) := ha
 
-theorem okP_block {is : List Instr} (h : OkB is) : OkP (.block is) := h
-
 /-- Neither in any of the functions `ts`. -/
 def FnsOk (ts : List (String × Prog isa)) : Prop := ∀ q ∈ ts, OkP q.2
 

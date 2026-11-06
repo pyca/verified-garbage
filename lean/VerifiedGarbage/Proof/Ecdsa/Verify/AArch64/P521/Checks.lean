@@ -11,8 +11,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedTiming
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedTiming
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
@@ -38,7 +36,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 meta import VerifiedGarbage.Proof.Ecdsa.Projective
 meta import VerifiedGarbage.Proof.Ecdsa.Verify
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedMul
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -119,11 +116,10 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PackedNaf
 /-!
 # ECDSA verification over P-521 on AArch64: what taint tracking checks
 
-Each piece of the verifier whose timing the relational proof
-(`packedNafVerify_public_ct`) takes from taint tracking, with the registers it
-may branch on or address by: the pointer `x0` for the field arithmetic, and
-the loop counters, the digits' and entries' registers and the recoding's
-residual elsewhere.
+Each piece of the verifier whose timing a relational proof takes from
+taint tracking, with the registers it may branch on or address by: the
+pointer `x0` for the field arithmetic, and the loop counters, the digits'
+and entries' registers and the recoding's residual elsewhere.
 -/
 
 @[expose] public section
@@ -135,8 +131,8 @@ open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64 VG.Proof.Weierstrass.AArch64
 open VG.Impl.Weierstrass.AArch64
 
 /- The constant-time analyses of the field functions, and of the parts of the
-verifier's prefix that `before_checks` and the joint verifier's `before_ct`
-share, are done once here (`taint_summary`, `Proof/Framework/TaintSum.lean`),
+verifier's prefix that the joint verifier's `before_ct` uses, are done once
+here (`taint_summary`, `Proof/Framework/TaintSum.lean`),
 rather than in every check that calls them. The functions start from the
 pointer `x0` and the offsets `x1`–`x3` public, and keep public `x0` and the
 counters `x19` and `x20` that they do not write. -/
@@ -190,16 +186,6 @@ theorem add_checks : AddCChecks Kq Kq.D Kq.E Kq.R := {
     tail := by reg_ct [.x0]
     double := by reg_ct [.x0]
     infinity := by reg_ct [.x0] }
-
-theorem keep_of {c : Prog isa}
-    (h : (instrs c).all (fun i => decide (clobbers i .x19 = false ∧ clobbers i .x20 = false)) = true) :
-    ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs c, clobbers i r = false := by
-  intro r hr i hi
-  have hh := of_decide_eq_true (List.all_eq_true.mp h i hi)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact hh.1
-  · exact hh.2
 
 theorem dblu_keep : ∀ r ∈ [Reg.x19, .x20], ∀ {s t tr},
     Exec isa (fprogB Kq.M (PubNaf.dbluOps Kq)) s tr t → t.gpr r = s.gpr r := by
@@ -255,24 +241,5 @@ theorem prep_checks : PubNaf.PrepChecks Kq (p521.sl V) where
   init := by reg_ct [.x0]
   step := by reg_ct (PubNaf.prepPublic Kq.M.n)
 
-
-/-- Everything up to the public comb, with the summaries of its parts. -/
-theorem before_checks : ConstantTime isa (fun _ => True)
-    (AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x3])) (verifyPrefix p521) :=
-  VG.Taint.constantTime_of_exists (A := VectorTaint.taint) (Taint.ofRegs [.x0, .x1, .x2, .x3], RegSet.empty)
-    (fun _ _ _ _ h => VectorTaint.agree_initial h)
-    (by taint_decide_sum [mulPSum, mulNSum, sqrPSum, validateSum, scalarsSum, nPowSum, uvSum])
-
-/-- The public comb's iterations, and the code before and after the multiplications. -/
-theorem packed_verify_checks : PackedNafVerifyChecks p521 where
-  before := before_checks
-  comb := {
-    init := by reg_ct [.x0]
-    head := by reg_ct [.x0, .x19]
-    tail := by reg_ct [.x0, .x19, .x16] }
-  save := by reg_ct [.x0]
-  prep := prep_checks
-  window := window_checks
-  tail := by reg_ct [.x0]
 
 end VG.Proof.Ecdsa.Verify.AArch64.P521

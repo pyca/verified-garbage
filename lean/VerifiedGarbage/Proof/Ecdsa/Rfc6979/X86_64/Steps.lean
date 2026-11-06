@@ -202,14 +202,6 @@ theorem wd_save (hL : L.Ok) {dst : Nat} (hdst : dst + P.H.D ≤ 184) :
   · simp only [List.mem_singleton] at hr; subst hr
     exact (hL.stk_scr (by have := L.he; nums) (by decide)).symm
 
-/-- `V`'s `D` bytes survive HMAC's writes. -/
-theorem v_W (hL : L.Ok) {m m' : Mem} (hf : Frame (W L) m m') : vOf P L m' = vOf P L m :=
-  bytesAt_frame hf (fun r hr => by
-    simp only [W, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact hL.stk_scr0 (by have := L.he; nums) (by decide)
-    · exact Offset.disjoint_base _ (by omega) (by nums)) (by nums)
-
 /-- The message's bytes survive HMAC's writes. -/
 theorem msg_W (hL : L.Ok) {m m' : Mem} (hf : Frame (W L) m m') {len : Nat} (hlen : 2256 + len ≤ 8192) :
     Spec.Sha256.bytesAt m' (L.scr + BitVec.ofNat 64 2256) len = Spec.Sha256.bytesAt m (L.scr + BitVec.ofNat 64 2256) len :=
@@ -218,11 +210,6 @@ theorem msg_W (hL : L.Ok) {m m' : Mem} (hf : Frame (W L) m m') {len : Nat} (hlen
     rcases hr with rfl | rfl
     · exact Offset.disjoint_base _ (Nat.le_refl _) (by omega)
     · exact (hL.low_scr (by omega)).symm) (by omega)
-
-/-- The copy survives HMAC's writes. -/
-theorem saved_W (hL : L.Ok) {m m' : Mem} {k0 : List Byte} (hS : SavedB P L m k0) (hf : Frame (W L) m m') :
-    SavedB P L m' k0 :=
-  hS.frame hf (W_save hL)
 
 /-- `update` with `V`, then `finalize` into the frame at `dst`: `HMAC(K₀, V)`. -/
 theorem vfin_ok (hL : L.Ok) (hT : TabL P L) {k0 : List Byte} {u : State} (hu : St P L g m₀ k0 [] u) {dst : Nat}

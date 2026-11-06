@@ -82,9 +82,6 @@ theorem packedCacheAt (c : Cfg) : PubNaf.cacheAt (packedQ c) 1 = 64+8*c.n*95 := 
  change slot c.n 71 + 8*(24*c.n) + 16*c.n*(1-1) = _
  simp only [slot]; omega_arith
 
-theorem packedCacheW (c : Cfg) : PubNaf.cacheW (packedQ c) = [(64+8*c.n*95,128*c.n)] := by
- rw [PubNaf.cacheW,packedCacheAt]; rfl
-
 theorem packed_below (hn : c.n=9) {i : Nat} (hi : i≤94) : c.sl i + 8*c.n ≤ 64+8*c.n*95 := by
  by_cases h : i=TMP
  · subst h; rw [sl_tmp c (.inr (.inr hn)),hn]; decide
@@ -117,12 +114,4 @@ theorem packedNafLay (hc : CfgOk c) (hn : c.n=9) : PubNaf.NafLay (packedQ c) siz
  exz := by change c.sl TZ=c.sl TX+16*c.n; simp (disch:=decide) only [sl_eq]; unfold TX TZ; omega
  cache := packedCacheLay hc hn
 
-theorem fixedOk_packedCache (hn : c.n=9) : FixedOk c (PubNaf.cacheW (packedQ c)) := by
- intro w hw; rw [packedCacheW,List.mem_singleton] at hw; subst hw
- right; have := packed_below hn (i:=12) (by decide); simp only; omega
-
-theorem apart_packedCache (hn : c.n=9) {i : Nat} (hi : i<45) :
- ∀ w∈PubNaf.cacheW (packedQ c),c.sl i+8*c.n≤w.1 ∨ w.1+w.2≤c.sl i := by
- intro w hw; rw [packedCacheW,List.mem_singleton] at hw; subst hw
- exact Or.inl (packed_below hn (by omega))
 end VG.Proof.Ecdsa.Verify.AArch64.P521
