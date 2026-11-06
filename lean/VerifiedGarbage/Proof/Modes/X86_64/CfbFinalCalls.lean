@@ -271,4 +271,56 @@ theorem tailSetup_ok {a : FinalArgs} (ha : FinalOk a) {s₀ v : State}
   · rw [rd₅, rd₄, rd₃, rd₂, rd₁]
   · rw [wr₅, wr₄, wr₃, wr₂, wr₁]
 
+/-- `mov d, [rsp + off]`. -/
+theorem ldRsp_ok (s : State) (d : Reg) (off : Nat)
+    (hr : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 off) 8) :
+    ∃ s', runBlock isa [.mov d (.mem (FinalArgs.blockOp off))] s = some s' ∧
+      s'.gpr d = s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 off) 64 ∧
+      (∀ r, r ≠ d → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨s.setReg d (s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 off) 64), ?_, by simp only [RegUpd.gpr_setReg_self],
+    fun r h => by simp only [RegUpd.gpr_setReg_of_ne _ _ h], rfl, rfl, rfl⟩
+  simp only [FinalArgs.blockOp, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, State.ea,
+    BitVec.ofInt_natCast, hr, ite_true, Option.map_some]
+
+/-- The slot of `savedRegs[i]`, from the frame's `rsp`. -/
+theorem slot_addr (s₀ : State) {i : Nat} (hi : i < 6) :
+    s₀.gpr .rsp - BitVec.ofNat 64 80 + BitVec.ofNat 64 (FinalArgs.savedOff i) =
+      s₀.gpr .rsp - BitVec.ofNat 64 (8 * (i + 1)) := by
+  rw [sub_add_ofNat _ (by simp only [FinalArgs.savedOff]; omega)]
+  congr 2
+  simp only [FinalArgs.savedOff]
+  omega
+
+/-- `exit`, from a state `w` whose `rsp` is the frame's and whose slots hold
+the caller's callee-saved registers: those registers back, and nothing else
+changed but them. -/
+theorem exit_ok {s₀ w : State} (hsp : w.gpr .rsp = s₀.gpr .rsp - BitVec.ofNat 64 80)
+    (hslots : ∀ j < 6, w.mem.readW (s₀.gpr .rsp - BitVec.ofNat 64 (8 * (j + 1))) 64 = s₀.gpr (FinalArgs.saved j))
+    (hin : ∀ j < 6, InRegions (w.rd ++ w.wr) (s₀.gpr .rsp - BitVec.ofNat 64 (8 * (j + 1))) 8) :
+    ∃ w', runBlock isa FinalArgs.exit w = some w' ∧ (∀ j < 6, w'.gpr (FinalArgs.saved j) = s₀.gpr (FinalArgs.saved j)) ∧
+      (∀ r, (∀ j < 6, r ≠ FinalArgs.saved j) → w'.gpr r = w.gpr r) ∧ w'.mem = w.mem ∧ w'.rd = w.rd ∧ w'.wr = w.wr := by
+  -- Each load, in order; none writes `rsp`.
+  have step : ∀ k ≤ 6, ∃ w', runBlock isa ((List.range k).map fun i =>
+      Instr.mov (FinalArgs.saved i) (.mem (FinalArgs.blockOp (FinalArgs.savedOff i)))) w = some w' ∧
+      (∀ j < k, w'.gpr (FinalArgs.saved j) = s₀.gpr (FinalArgs.saved j)) ∧
+      (∀ r, (∀ j < k, r ≠ FinalArgs.saved j) → w'.gpr r = w.gpr r) ∧ w'.mem = w.mem ∧ w'.rd = w.rd ∧ w'.wr = w.wr := by
+    intro k hk
+    induction k with
+    | zero => exact ⟨w, rfl, fun _ h => absurd h (Nat.not_lt_zero _), fun _ _ => rfl, rfl, rfl, rfl⟩
+    | succ k ih =>
+      obtain ⟨w₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := ih (by omega)
+      have hsp₁ : w₁.gpr .rsp = w.gpr .rsp := o₁ _ fun j hj => (saved_ne_rsp j (by omega)).symm
+      obtain ⟨w₂, e₂, v₂, o₂, m₂, rd₂, wr₂⟩ := ldRsp_ok w₁ (FinalArgs.saved k) (FinalArgs.savedOff k) (by
+        rw [rd₁, wr₁, hsp₁, hsp, slot_addr s₀ (by omega)]; exact hin k (by omega))
+      refine ⟨w₂, ?_, fun j hj => ?_, fun r hr => ?_, by rw [m₂, m₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
+      · rw [List.range_succ, List.map_append, runBlock_app, e₁, Option.bind_some]
+        exact e₂
+      · by_cases hjk : j = k
+        · subst hjk
+          rw [v₂, m₁, hsp₁, hsp, slot_addr s₀ (by omega), hslots j (by omega)]
+        · rw [o₂ _ (fun h => hjk (saved_inj j (by omega) k (by omega) h)), v₁ j (by omega)]
+      · rw [o₂ _ (hr k (by omega)), o₁ _ (fun j hj => hr j (by omega))]
+  obtain ⟨w', e, v, o, m, rd, wr⟩ := step 6 (Nat.le_refl _)
+  exact ⟨w', e, v, o, m, rd, wr⟩
+
 end VG.Proof.Modes.X86_64
