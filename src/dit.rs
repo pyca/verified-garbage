@@ -222,7 +222,72 @@ impl Drop for Guard {
 
 #[cfg(target_arch = "aarch64")]
 mod aarch64 {
-    use crate::arch::dit::{vg_dit_clear, vg_dit_enter};
+    #[cfg(test)]
+    use crate::arch::dit::VG_DIT_ENTER_FEATURES;
+    use crate::arch::dit::{
+        VG_DIT_ENTER_SB_FEATURES, vg_dit_clear, vg_dit_enter, vg_dit_enter_dsb, vg_dit_enter_sb,
+    };
+    use verified_garbage_cpu::Features;
+
+    /// The implementations of `vg_dit_enter`, all with its contract, which
+    /// differ in the barrier after turning the mode on.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub(super) enum Enter {
+        /// `vg_dit_enter`: none, as Arm specifies that a write of a PSTATE
+        /// field takes effect for the instructions after it.
+        Plain,
+        /// `vg_dit_enter_dsb`: DSB SY and ISB.
+        Dsb,
+        /// `vg_dit_enter_sb`: SB (FEAT_SB).
+        Sb,
+    }
+
+    impl Enter {
+        /// The implementation for a CPU with `features`, on an Apple target
+        /// if `apple`. Apple's documentation asks for a speculation barrier
+        /// after turning the mode on, "to ensure that subsequent instruction
+        /// timing reflects the updated DIT processor state": there, SB where
+        /// the CPU has it, else DSB SY and ISB, as Apple's corecrypto does.
+        /// Elsewhere none, as Go's runtime does (`dit_arm64.s`).
+        pub(super) fn choose(features: Features, apple: bool) -> Self {
+            if !apple {
+                Enter::Plain
+            } else if features.contains(VG_DIT_ENTER_SB_FEATURES) {
+                Enter::Sb
+            } else {
+                Enter::Dsb
+            }
+        }
+
+        /// The features it requires.
+        #[cfg(test)]
+        pub(super) fn features(self) -> Features {
+            match self {
+                Enter::Plain => VG_DIT_ENTER_FEATURES,
+                Enter::Dsb => crate::arch::dit::VG_DIT_ENTER_DSB_FEATURES,
+                Enter::Sb => VG_DIT_ENTER_SB_FEATURES,
+            }
+        }
+
+        /// Turns PSTATE.DIT on, and returns 1 if it was on, 0 if off.
+        ///
+        /// # Safety
+        ///
+        /// The CPU must have [`Enter::features`].
+        pub(super) unsafe fn run(self) -> u32 {
+            // SAFETY: the caller says the CPU has the features, and none of
+            // them writes memory. They are what turn the mode on and read no
+            // data, and they have no dispatcher (their base needs FEAT_DIT),
+            // so the generated crate exports them without a token.
+            unsafe {
+                match self {
+                    Enter::Plain => vg_dit_enter(),
+                    Enter::Dsb => vg_dit_enter_dsb(),
+                    Enter::Sb => vg_dit_enter_sb(),
+                }
+            }
+        }
+    }
 
     /// Turns PSTATE.DIT on if the CPU has FEAT_DIT, `vg_dit_enter`'s one
     /// feature (`VG_DIT_ENTER_FEATURES`), whatever `VG_CPU_FEATURES` says
@@ -230,21 +295,25 @@ mod aarch64 {
     /// then.
     #[inline]
     pub(super) fn enter() -> bool {
-        enter_if(verified_garbage_cpu::detect::dit())
+        enter_if(
+            verified_garbage_cpu::detect::dit(),
+            Enter::choose(
+                verified_garbage_cpu::detected(),
+                cfg!(target_vendor = "apple"),
+            ),
+        )
     }
 
-    /// `enter`, given whether the CPU has FEAT_DIT, so that the tests run
-    /// the case without it on any CPU.
+    /// `enter`, given whether the CPU has FEAT_DIT and the implementation
+    /// chosen for it, so that the tests run the case without it on any CPU.
     #[inline(always)]
-    pub(super) fn enter_if(has: bool) -> bool {
+    pub(super) fn enter_if(has: bool, enter: Enter) -> bool {
         if !has {
             return false;
         }
-        // SAFETY: the CPU has FEAT_DIT, which `vg_dit_enter` requires, and it
-        // writes no memory. It is what turns the mode on and reads no data,
-        // and it has no dispatcher (its base needs FEAT_DIT), so the
-        // generated crate exports it without a token.
-        unsafe { vg_dit_enter() == 0 }
+        // SAFETY: the CPU has FEAT_DIT, and `Enter::choose` chose SB only
+        // where it has FEAT_SB too.
+        unsafe { enter.run() == 0 }
     }
 
     /// Turns PSTATE.DIT off, after `enter` found it off and turned it on.
@@ -418,7 +487,48 @@ mod tests {
     #[cfg(target_arch = "aarch64")]
     #[test]
     fn enter_without_dit() {
-        assert!(!super::aarch64::enter_if(false));
+        assert!(!super::aarch64::enter_if(
+            false,
+            super::aarch64::Enter::Plain
+        ));
+    }
+
+    /// The implementation chosen: a barrier on Apple's targets alone, SB
+    /// where the CPU has it.
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn enter_choice() {
+        use super::aarch64::Enter;
+        use verified_garbage_cpu::{Features, feature};
+        let dit = Features(feature::DIT);
+        let sb = Features(feature::DIT | feature::SB);
+        assert_eq!(Enter::choose(dit, false), Enter::Plain);
+        assert_eq!(Enter::choose(sb, false), Enter::Plain);
+        assert_eq!(Enter::choose(dit, true), Enter::Dsb);
+        assert_eq!(Enter::choose(sb, true), Enter::Sb);
+    }
+
+    /// Each implementation of `vg_dit_enter` the CPU can run, whatever this
+    /// target would choose and whatever `VG_CPU_FEATURES` says, turns the mode
+    /// on and reports what it was. This leaves PSTATE.DIT off.
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn enter_variants() {
+        use super::aarch64::Enter;
+        let detected = verified_garbage_cpu::Features(verified_garbage_cpu::detect::runtime());
+        for enter in [Enter::Plain, Enter::Dsb, Enter::Sb] {
+            if detected.contains(enter.features()) {
+                // SAFETY: the CPU has FEAT_DIT, which `vg_dit_clear`
+                // requires, and `enter`'s features.
+                unsafe {
+                    vg_dit_clear();
+                    assert_eq!(enter.run(), 0);
+                    assert!(on());
+                    assert_eq!(enter.run(), 1);
+                    vg_dit_clear();
+                }
+            }
+        }
     }
 
     /// A guard turns the mode on while it lives, where the CPU has it, and
@@ -474,7 +584,7 @@ mod tests {
         #[cfg(target_arch = "aarch64")]
         if has {
             // SAFETY: the CPU has FEAT_DIT; it writes no memory.
-            unsafe { vg_dit_clear(super::public(Why::Test)) };
+            unsafe { vg_dit_clear() };
         }
         let r = super::scope(|| {
             #[cfg(target_arch = "aarch64")]

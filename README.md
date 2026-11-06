@@ -2784,7 +2784,9 @@ The tables are generated from the code by `ci/algorithms_table.py`.
   process secrets sets it for the current thread while it runs, on CPUs
   with `FEAT_DIT` (which Linux reports as `HWCAP_DIT` and macOS as
   `hw.optional.arm.FEAT_DIT`), and restores it after (`src/dit.rs`, with
-  the verified `vg_dit_enter` and `vg_dit_clear`). Operations on public
+  the verified `vg_dit_enter` and `vg_dit_clear`; on Apple's targets with a
+  speculation barrier after turning it on, `sb` or else `dsb sy; isb`, as
+  Apple's documentation asks, though Arm requires none). Operations on public
   data alone (hashing without a key, verifying a signature) leave it as it
   is. A program making many short calls can set it once around them with
   `verified_garbage::dit::scope`. On CPUs without `FEAT_DIT`, Arm makes no
