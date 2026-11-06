@@ -208,7 +208,9 @@ pub fn bench(c: &mut Criterion) {
         let k = sig.len();
         g.bench(BenchmarkId::new(VG, k), |b| {
             b.iter(|| {
-                assert!(black_box(vg_public).verify_pkcs1v15(black_box(sig), &digest, Hash::Sha256))
+                black_box(vg_public)
+                    .verify_pkcs1v15(black_box(sig), &digest, Hash::Sha256)
+                    .unwrap()
             })
         });
         let mut c = ctx(pkey, |c| c.verify_init().unwrap());
@@ -241,7 +243,8 @@ pub fn bench(c: &mut Criterion) {
                     BigUint::from_be_bytes(black_box(&e)),
                 )
                 .unwrap();
-                assert!(key.verify_pkcs1v15(black_box(sig), &digest, Hash::Sha256))
+                key.verify_pkcs1v15(black_box(sig), &digest, Hash::Sha256)
+                    .unwrap()
             })
         });
         g.bench(BenchmarkId::new(OPENSSL, k), |b| {

@@ -9,7 +9,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{BrainpoolP384r1, Error, PrivateKey, PublicKey};
+use verified_garbage::ec::{BrainpoolP384r1, PrivateKey, PublicKey};
+use verified_garbage::error::InvalidKey;
 
 use super::value;
 
@@ -49,15 +50,12 @@ fn invalid_keys() {
     invalid[0] = 0;
     assert_eq!(
         PrivateKey::<BrainpoolP384r1>::from_bytes(&da).exchange(&PublicKey::from_bytes(&invalid)),
-        Err(Error::InvalidKey)
+        Err(InvalidKey)
     );
     // 0 and 2³⁸⁴ − 1 (above n) are not in [1, n − 1].
     for d in [[0; 48], [0xff; 48]] {
         let bad = PrivateKey::<BrainpoolP384r1>::from_bytes(&d);
-        assert_eq!(bad.public_key(), Err(Error::InvalidKey));
-        assert_eq!(
-            bad.exchange(&PublicKey::from_bytes(&qa)),
-            Err(Error::InvalidKey)
-        );
+        assert_eq!(bad.public_key(), Err(InvalidKey));
+        assert_eq!(bad.exchange(&PublicKey::from_bytes(&qa)), Err(InvalidKey));
     }
 }

@@ -49,6 +49,7 @@ use crate::arch::rsa_pkcs1_sig::{
     vg_rsa_pkcs1_verify_precomputed_umaal,
 };
 use crate::cpu::detected;
+use crate::error::InvalidSignature;
 use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words};
 
 /// The hash function of a hash value (`VG.Spec.RsaPkcs1Sig.Hash`), each with
@@ -96,7 +97,7 @@ impl Hash {
     }
 }
 
-/// Why a signature was not made or not recovered.
+/// Why a signature was not made.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     /// The hash value is not as long as the hash function's values.
@@ -108,9 +109,6 @@ pub enum Error {
     /// public exponent (a factor of the key is not prime, or the computation
     /// was faulted) and is not released.
     Fault,
-    /// The signature is not a valid signature of a hash value of the hash
-    /// function with the key.
-    InvalidSignature,
 }
 
 impl fmt::Display for Error {
@@ -119,7 +117,6 @@ impl fmt::Display for Error {
             Error::InvalidDigestLength => "hash value length is not the hash function's",
             Error::ModulusTooShort => "RSA modulus is too short for the hash function",
             Error::Fault => "RSA signature failed its check against the public exponent",
-            Error::InvalidSignature => "invalid RSA PKCS #1 v1.5 signature",
         })
     }
 }
@@ -198,12 +195,22 @@ impl PrivateKey {
 }
 
 impl PublicKey {
-    /// RSASSA-PKCS1-V1_5-VERIFY (RFC 8017 §8.2.2): whether `signature` is a
-    /// valid signature of the hash value `digest` of the hash function `hash`.
+    /// RSASSA-PKCS1-V1_5-VERIFY (RFC 8017 §8.2.2): checks that `signature`
+    /// is a valid signature of the hash value `digest` of the hash function
+    /// `hash`.
     ///
     /// Reuses the public key's verification buffer, which holds only public
     /// values and is not wiped.
-    pub fn verify_pkcs1v15(&self, signature: &[u8], digest: &[u8], hash: Hash) -> bool {
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidSignature`] if it is not.
+    pub fn verify_pkcs1v15(
+        &self,
+        signature: &[u8],
+        digest: &[u8],
+        hash: Hash,
+    ) -> Result<(), InvalidSignature> {
         let k = self.n.len();
         let mut scratch = self.verify_scratch.take(public_scratch_words(k), false);
         let pre = self.pre(&mut scratch);
@@ -249,12 +256,25 @@ impl PublicKey {
             )
         };
         // ScratchLease wipes the working space before returning it to the self.
-        r == 1
+        if r == 1 {
+            Ok(())
+        } else {
+            Err(InvalidSignature)
+        }
     }
 
     /// The hash value of the hash function `hash` that `signature` signs with
-    /// the key, if it is a valid signature of one.
-    pub fn recover_pkcs1v15(&self, signature: &[u8], hash: Hash) -> Result<Vec<u8>, Error> {
+    /// the key.
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidSignature`] if `signature` is not a valid signature of a hash
+    /// value of `hash` with the key.
+    pub fn recover_pkcs1v15(
+        &self,
+        signature: &[u8],
+        hash: Hash,
+    ) -> Result<Vec<u8>, InvalidSignature> {
         let k = self.n.len();
         let mut out = vec![0; hash.digest_len()];
         let mut scratch = vec![0u64; public_scratch_words(k)];
@@ -306,14 +326,14 @@ impl PublicKey {
         if r == 1 {
             Ok(out)
         } else {
-            Err(Error::InvalidSignature)
+            Err(InvalidSignature)
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, Hash, vec};
+    use super::{Error, Hash, InvalidSignature, vec};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 
@@ -366,13 +386,19 @@ mod tests {
             one[63] = 1;
             one
         }] {
-            assert!(!public.verify_pkcs1v15(&s, &[0; 20], Hash::Sha1));
+            assert_eq!(
+                public.verify_pkcs1v15(&s, &[0; 20], Hash::Sha1),
+                Err(InvalidSignature)
+            );
             assert_eq!(
                 public.recover_pkcs1v15(&s, Hash::Sha1),
-                Err(Error::InvalidSignature)
+                Err(InvalidSignature)
             );
         }
-        assert!(!public.verify_pkcs1v15(&[], &[0; 20], Hash::Sha1));
+        assert_eq!(
+            public.verify_pkcs1v15(&[], &[0; 20], Hash::Sha1),
+            Err(InvalidSignature)
+        );
     }
 
     #[test]
@@ -381,7 +407,6 @@ mod tests {
             Error::InvalidDigestLength,
             Error::ModulusTooShort,
             Error::Fault,
-            Error::InvalidSignature,
         ] {
             assert!(!e.to_string().is_empty());
         }

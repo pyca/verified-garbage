@@ -9,7 +9,8 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use verified_garbage::ed448::{Error, VerifyingKey};
+use verified_garbage::ed448::VerifyingKey;
+use verified_garbage::error::InvalidSignature;
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{EdGroup, SigCase};
@@ -28,7 +29,7 @@ fn ed448_test() {
         let expected = if test.result == Expectation::Valid {
             Ok(())
         } else {
-            Err(Error::InvalidSignature)
+            Err(InvalidSignature)
         };
         let actual = key.verify(&test.case.msg.0, &test.case.sig.0);
         assert_eq!(actual, expected, "tcId {}", test.tc_id);

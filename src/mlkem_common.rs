@@ -126,7 +126,7 @@ macro_rules! ml_kem {
             decaps: $decaps_written:expr $(,)?
         })? $(,)?
     ) => {
-        use $crate::error::MlKemError;
+        use $crate::error::{InvalidKey, MlKemError};
         use $crate::mlkem_common::Backend;
         use $crate::zeroize::zeroize;
 
@@ -227,8 +227,8 @@ macro_rules! ml_kem {
 
             /// The encapsulation key `bytes`, if it passes the encapsulation
             /// key check of FIPS 203 §7.2 (every integer it encodes is less
-            /// than `q`); [`MlKemError::InvalidKey`] otherwise.
-            pub fn from_bytes(bytes: &[u8; $ek]) -> Result<Self, MlKemError> {
+            /// than `q`); [`InvalidKey`] otherwise.
+            pub fn from_bytes(bytes: &[u8; $ek]) -> Result<Self, InvalidKey> {
                 // SAFETY: `bytes` is valid for reads of its size, and a Rust
                 // object, so it does not overlap the stack or wrap around the
                 // end of the address space. The CPU has the features of
@@ -246,7 +246,7 @@ macro_rules! ml_kem {
                 if r == 1 {
                     Ok($EncapsulationKey { bytes: *bytes, h: None })
                 } else {
-                    Err(MlKemError::InvalidKey)
+                    Err(InvalidKey)
                 }
             }
 

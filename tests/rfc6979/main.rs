@@ -25,12 +25,9 @@ use verified_garbage_test_vectors::unhex;
 
 #[test]
 fn errors() {
-    use verified_garbage::ec::Error;
-    assert_eq!(Error::InvalidKey.to_string(), "invalid elliptic-curve key");
-    assert_eq!(
-        Error::InvalidSignature.to_string(),
-        "invalid ECDSA signature"
-    );
+    use verified_garbage::error::{InvalidKey, InvalidSignature};
+    assert_eq!(InvalidKey.to_string(), "invalid key");
+    assert_eq!(InvalidSignature.to_string(), "invalid signature");
 }
 
 /// The hex value of the first line from `lines[*i..]` that begins with
@@ -116,7 +113,8 @@ where
     C: verified_garbage::ec::Curve<PrivateKey = [u8; Q], PublicKey = [u8; U], Signature = [u8; S]>,
     H: verified_garbage::ec::SignatureHash<C>,
 {
-    use verified_garbage::ec::{Error, PrivateKey, PublicKey};
+    use verified_garbage::ec::{PrivateKey, PublicKey};
+    use verified_garbage::error::InvalidSignature;
     let (_, x, u, signatures) = section::<Q, U, S>(title, &[hash]);
     let key = PrivateKey::<C>::from_bytes(&x);
     let public = PublicKey::<C>::from_bytes(&u);
@@ -135,10 +133,7 @@ where
             Ok(()),
             "{hash} {message}"
         );
-        assert_eq!(
-            public.verify::<H>(b"other", rs),
-            Err(Error::InvalidSignature)
-        );
+        assert_eq!(public.verify::<H>(b"other", rs), Err(InvalidSignature));
     }
 }
 
@@ -151,7 +146,8 @@ where
     C: verified_garbage::ec::Curve<PrivateKey = [u8; Q], PublicKey = [u8; U], Signature = [u8; S]>,
     H: verified_garbage::ec::SignatureHash<C>,
 {
-    use verified_garbage::ec::{Error, PrivateKey, PublicKey};
+    use verified_garbage::ec::{PrivateKey, PublicKey};
+    use verified_garbage::error::InvalidSignature;
     let (_, x, u, _) = section::<Q, U, S>(title, &[]);
     let key = PrivateKey::<C>::from_bytes(&x);
     let public = PublicKey::<C>::from_bytes(&u);
@@ -159,10 +155,7 @@ where
         let rs = key.sign::<H>(m).unwrap();
         assert_eq!(key.sign_prehashed::<H>(&H::digest(m)), Ok(rs));
         assert_eq!(public.verify::<H>(m, &rs), Ok(()));
-        assert_eq!(
-            public.verify::<H>(b"other", &rs),
-            Err(Error::InvalidSignature)
-        );
+        assert_eq!(public.verify::<H>(b"other", &rs), Err(InvalidSignature));
     }
 }
 

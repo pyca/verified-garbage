@@ -11,7 +11,8 @@
 ))]
 
 use crate::json_struct;
-use verified_garbage::ec::{Error, PrivateKey, PublicKey, Secp256k1};
+use verified_garbage::ec::{PrivateKey, PublicKey, Secp256k1};
+use verified_garbage::error::InvalidKey;
 
 use super::harness::{self, Count, Expectation, Hex};
 use super::schema::CurveGroup;
@@ -96,7 +97,7 @@ fn ecdh_secp256k1_webcrypto_test() {
                 checked.add();
             }
             Expectation::Invalid | Expectation::Acceptable => {
-                assert_eq!(result, Err(Error::InvalidKey), "tcId {}", test.tc_id);
+                assert_eq!(result, Err(InvalidKey), "tcId {}", test.tc_id);
                 refused.add();
             }
         }
@@ -110,7 +111,7 @@ fn secp256k1_private_keys_out_of_range() {
     for d in [[0; 32], [0xff; 32]] {
         assert_eq!(
             PrivateKey::<Secp256k1>::from_bytes(&d).public_key(),
-            Err(Error::InvalidKey)
+            Err(InvalidKey)
         );
     }
 }

@@ -12,7 +12,8 @@
 
 mod ed448;
 
-use verified_garbage::ed25519::{Error, SigningKey, VerifyingKey};
+use verified_garbage::ed25519::{SigningKey, VerifyingKey};
+use verified_garbage::error::InvalidSignature;
 
 /// The vectors' file (`crate::vectors`).
 fn text() -> String {
@@ -64,7 +65,7 @@ fn ed25519_vectors() {
         changed_message.push(0);
         assert_eq!(
             key.verifying_key().verify(&changed_message, &signature),
-            Err(Error::InvalidSignature)
+            Err(InvalidSignature)
         );
         assert_eq!(format!("{key:?}"), "SigningKey { .. }");
         count += 1;

@@ -105,7 +105,7 @@ pub fn bench(c: &mut Criterion) {
             ssl_sig.s().to_vec_padded(q_len as i32).unwrap(),
         ]
         .concat();
-        assert!(key.public_key().verify(&digest, &fixed));
+        key.public_key().verify(&digest, &fixed).unwrap();
         // CI interprets the final benchmark ID component as a numeric size.
         let size = p_len * 8;
 

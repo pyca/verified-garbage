@@ -81,7 +81,10 @@ fn cavp_signatures_batch(batch: usize) {
         let signature = sign_with_nonce(&key, &digest, &hex(&v["K"], q.len())).unwrap();
         let expected = [hex(&v["R"], q.len()), hex(&v["S"], q.len())].concat();
         assert_eq!(signature, expected, "vector {i}");
-        assert!(key.public_key().verify(&digest, &signature), "vector {i}");
+        assert!(
+            key.public_key().verify(&digest, &signature).is_ok(),
+            "vector {i}"
+        );
     }
 }
 
@@ -122,7 +125,7 @@ fn random_tape_rejection_and_replay() {
         .unwrap();
     assert_eq!(draws, 2);
     assert_eq!(signature, sample_signature());
-    assert!(key.public_key().verify(&digest, &signature));
+    assert!(key.public_key().verify(&digest, &signature).is_ok());
 }
 
 #[test]
@@ -137,11 +140,11 @@ fn random_signing_and_digest_lengths() {
         vec![17; 129],
     ] {
         let signature = key.sign(&digest).unwrap();
-        assert!(key.public_key().verify(&digest, &signature));
-        assert!(!key.public_key().verify(&[21; 32], &signature));
+        assert!(key.public_key().verify(&digest, &signature).is_ok());
+        assert!(!key.public_key().verify(&[21; 32], &signature).is_ok());
     }
-    assert!(!key.public_key().verify(&[], &[]));
-    assert!(!key.public_key().verify(&[], &[0; 40]));
+    assert!(!key.public_key().verify(&[], &[]).is_ok());
+    assert!(!key.public_key().verify(&[], &[0; 40]).is_ok());
     assert!(format!("{key:?}").contains("PrivateKey"));
     assert!(format!("{:?}", key.public_key().clone()).contains("PublicKey"));
 }
@@ -158,9 +161,9 @@ fn padded_domain_and_scalars() {
     let x = hex(&v["X"], 32);
     let padded = PrivateKey::from_components(&p, &q, &g, &y, &x).unwrap();
     let signature = sign_with_nonce(&padded, &digest, &hex(&v["K"], 32)).unwrap();
-    assert!(padded.public_key().verify(&digest, &signature));
+    assert!(padded.public_key().verify(&digest, &signature).is_ok());
     let fresh = padded.sign(&digest).unwrap();
-    assert!(padded.public_key().verify(&digest, &fresh));
+    assert!(padded.public_key().verify(&digest, &fresh).is_ok());
 }
 
 #[test]
@@ -182,7 +185,7 @@ fn public_subgroup_windows() {
     // checks must reject them independently for the odd subgroup order.
     for (generator, public) in [(&minus_one, &y), (&g, &minus_one), (&minus_one, &minus_one)] {
         let key = PublicKey::from_components(&p, &q, generator, public).unwrap();
-        assert!(!key.verify(&digest, &signature));
+        assert!(!key.verify(&digest, &signature).is_ok());
     }
     // Malformed odd orders, of sparse and dense bit patterns. With g = -1
     // and odd q, subgroup validation must always fail.
@@ -194,7 +197,7 @@ fn public_subgroup_windows() {
             order[1..9].copy_from_slice(&[0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]);
         }
         let key = PrivateKey::from_components(&p, &order, &minus_one, &y, &x).unwrap();
-        assert!(!key.public_key().verify(&digest, &signature));
+        assert!(!key.public_key().verify(&digest, &signature).is_ok());
         assert_eq!(
             sign_with_nonce(&key, &digest, &nonce),
             Err(Error::InvalidKeyOrNonce)
@@ -235,7 +238,7 @@ fn signing_key_consistency_implies_public_subgroup() {
     // The same boundary private scalar succeeds when y = g.
     let key = PrivateKey::from_components(&p, &q, &g, &g, &one).unwrap();
     let signature = sign_with_nonce(&key, &digest, &nonce).unwrap();
-    assert!(key.public_key().verify(&digest, &signature));
+    assert!(key.public_key().verify(&digest, &signature).is_ok());
 }
 
 #[test]
@@ -290,7 +293,12 @@ fn malformed_keys_nonces_and_bounded_retries() {
         sign_with_nonce(&even_p, &digest, &nonce),
         Err(Error::InvalidKeyOrNonce)
     );
-    assert!(!even_p.public_key().verify(&digest, &sample_signature()));
+    assert!(
+        !even_p
+            .public_key()
+            .verify(&digest, &sample_signature())
+            .is_ok()
+    );
 }
 
 #[test]
@@ -357,21 +365,22 @@ fn legacy_2048_160_signatures() {
                 })
                 .unwrap();
             assert_eq!(signature.len(), 2 * q_len);
-            assert!(key.public_key().verify(&digest, &signature));
+            assert!(key.public_key().verify(&digest, &signature).is_ok());
             let mut wrong = digest.clone();
             wrong.insert(0, 1);
-            assert!(!key.public_key().verify(&wrong, &signature));
+            assert!(!key.public_key().verify(&wrong, &signature).is_ok());
             assert!(
                 !key.public_key()
                     .verify(&digest, &signature[..signature.len() - 1])
+                    .is_ok()
             );
             let mut zero_r = signature.clone();
             zero_r[..q_len].fill(0);
-            assert!(!key.public_key().verify(&digest, &zero_r));
+            assert!(!key.public_key().verify(&digest, &zero_r).is_ok());
             if digest.len() == 32 {
                 let mut same_prefix = digest.clone();
                 same_prefix[20..].fill(0xff);
-                assert!(key.public_key().verify(&same_prefix, &signature));
+                assert!(key.public_key().verify(&same_prefix, &signature).is_ok());
             }
         }
     }
@@ -384,28 +393,28 @@ fn immutable_public_validation_cache() {
     let public = key.public_key();
     let unchecked = public.clone();
     assert_eq!(unchecked.validated.load(Ordering::Relaxed), 0);
-    assert!(!public.verify(&digest, &signature[1..]));
+    assert!(!public.verify(&digest, &signature[1..]).is_ok());
     assert_eq!(public.validated.load(Ordering::Relaxed), 0);
-    assert!(public.verify(&digest, &signature));
+    assert!(public.verify(&digest, &signature).is_ok());
     assert_eq!(public.validated.load(Ordering::Relaxed), 1);
     let validated = public.clone();
     assert_eq!(validated.validated.load(Ordering::Relaxed), 1);
-    assert!(validated.verify(&digest, &signature));
+    assert!(validated.verify(&digest, &signature).is_ok());
     let mut bad_signature = signature.clone();
     bad_signature[..public.q_len].fill(0);
-    assert!(!validated.verify(&digest, &bad_signature));
+    assert!(!validated.verify(&digest, &bad_signature).is_ok());
     bad_signature.copy_from_slice(&signature);
     bad_signature[public.q_len..].fill(0);
-    assert!(!validated.verify(&digest, &bad_signature));
-    assert!(validated.verify(&digest, &signature));
+    assert!(!validated.verify(&digest, &bad_signature).is_ok());
+    assert!(validated.verify(&digest, &signature).is_ok());
 
     let invalid = PublicKey::from_components(&[0; 128], &[0; 20], &[0; 128], &[0; 128]).unwrap();
-    assert!(!invalid.verify(&digest, &signature));
+    assert!(!invalid.verify(&digest, &signature).is_ok());
     assert_eq!(invalid.validated.load(Ordering::Relaxed), 2);
-    assert!(!invalid.verify(&digest, &signature));
+    assert!(!invalid.verify(&digest, &signature).is_ok());
     let rejected = invalid.clone();
     assert_eq!(rejected.validated.load(Ordering::Relaxed), 2);
-    assert!(!rejected.verify(&digest, &signature));
+    assert!(!rejected.verify(&digest, &signature).is_ok());
 
     // PublicKey remains Send + Sync; simultaneous first calls may each validate.
     let shared = std::sync::Arc::new(unchecked);
@@ -418,7 +427,7 @@ fn immutable_public_validation_cache() {
             let signature = signature.clone();
             std::thread::spawn(move || {
                 barrier.wait();
-                assert!(key.verify(&digest, &signature));
+                assert!(key.verify(&digest, &signature).is_ok());
             })
         })
         .collect();

@@ -13,7 +13,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{Error, P192, PublicKey};
+use verified_garbage::ec::{P192, PublicKey};
+use verified_garbage::error::InvalidSignature;
 use verified_garbage::hashes::sha256::Sha256;
 
 use super::harness::{self, Count, Expectation};
@@ -43,7 +44,7 @@ fn ecdsa_secp192r1_sha256_p1363_test() {
                 verified.add();
             }
             Expectation::Invalid | Expectation::Acceptable => {
-                assert_eq!(result, Err(Error::InvalidSignature), "tcId {}", test.tc_id);
+                assert_eq!(result, Err(InvalidSignature), "tcId {}", test.tc_id);
                 refused.add();
             }
         }

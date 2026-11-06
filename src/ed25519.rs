@@ -28,6 +28,7 @@ use crate::arch::ed25519::{
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ed25519::{vg_ed25519_sign_expanded_sha3, vg_ed25519_verify_sha3};
 use crate::cpu::detected;
+use crate::error::InvalidSignature;
 use crate::hashes::sha512::{Sha512, Sha512Backend};
 use crate::zeroize::{zeroize, zeroize_raw};
 use core::mem::{MaybeUninit, size_of};
@@ -200,19 +201,6 @@ const _: () = assert!(
     "an Ed25519 operation needs a CPU feature SHA-512's _sha3 is not chosen for"
 );
 
-/// Why signature verification failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    /// The signature has the wrong length, a noncanonical encoding, or an invalid equation.
-    InvalidSignature,
-}
-
-crate::error::impl_error! {
-    Error {
-        InvalidSignature => "invalid Ed25519 signature",
-    }
-}
-
 /// An encoded Ed25519 public key.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct VerifyingKey {
@@ -238,13 +226,18 @@ impl VerifyingKey {
     /// subgroup order, following RFC 8032 §6. No additional subgroup or
     /// small-order rejection policy is imposed.
     /// Verification timing may depend on the public key, message, and signature.
-    pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<(), Error> {
-        let signature: &[u8; 64] = signature.try_into().map_err(|_| Error::InvalidSignature)?;
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidSignature`] if the signature is not 64 bytes long, an
+    /// encoding is not canonical, or the equation does not hold.
+    pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<(), InvalidSignature> {
+        let signature: &[u8; 64] = signature.try_into().map_err(|_| InvalidSignature)?;
         let valid = verify_message(&self.bytes, message, signature);
         if valid == 1 {
             Ok(())
         } else {
-            Err(Error::InvalidSignature)
+            Err(InvalidSignature)
         }
     }
 }

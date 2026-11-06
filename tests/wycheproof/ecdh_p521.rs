@@ -15,7 +15,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{Error, P521, PrivateKey, PublicKey};
+use verified_garbage::ec::{P521, PrivateKey, PublicKey};
+use verified_garbage::error::InvalidKey;
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{CurveGroup, EcdhCase};
@@ -63,7 +64,7 @@ fn ecdh_secp521r1_ecpoint_test() {
                 checked.add();
             }
             Expectation::Invalid | Expectation::Acceptable => {
-                assert_eq!(result, Err(Error::InvalidKey), "tcId {}", test.tc_id);
+                assert_eq!(result, Err(InvalidKey), "tcId {}", test.tc_id);
                 refused.add();
             }
         }
