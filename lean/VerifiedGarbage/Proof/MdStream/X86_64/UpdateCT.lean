@@ -522,8 +522,8 @@ theorem write_frame (hd : Dims P) (s₀ : State) (c : Nat) (mI : Mem) (j : Nat) 
 set_option simprocs false in
 theorem copy_step (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {c : Nat} {sI : State} (hI : Inv H s₀ c sI)
     {j : Nat} (hj : j < tt P s₀ c) {s : State} (h : Copy P s₀ c sI.mem j s) :
-    WP isa (.block ([.movzx8 .r9 { base := .rbp }] ++ clamp P 1 ++ [.store8 (bufByte P) .r9, .alu .add .rbp (.imm 1),
-      .alu .add .r13 (.imm 1), .alu .sub .rax (.imm 1)])) s fun s' =>
+    WP isa (.block (([.movzx8 .r9 { base := .rbp }] : List Instr) ++ clamp P 1 ++ ([.store8 (bufByte P) .r9, .alu .add .rbp (.imm 1),
+      .alu .add .r13 (.imm 1), .alu .sub .rax (.imm 1)] : List Instr))) s fun s' =>
       Copy P s₀ c sI.mem (j + 1) s' ∧ s'.zf = some (decide (tt P s₀ c - (j + 1) = 0)) := by
   have hlen := len_lt s₀
   have hc := hI.c_le
@@ -743,8 +743,8 @@ set_option simprocs false in
 /-- Eight bytes copied. -/
 theorem copy_word_step (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {c : Nat} {sI : State} (hI : Inv H s₀ c sI)
     {j : Nat} (hj : j + 8 ≤ tt P s₀ c) {s : State} (h : Copy P s₀ c sI.mem j s) :
-    WP isa (.block ([.mov .r9 (.mem { base := .rbp })] ++ clamp P 8 ++ [.store (bufByte P) .r9, .alu .add .rbp (.imm 8),
-      .alu .add .r13 (.imm 8), .alu .sub .rax (.imm 8), .alu .cmp .rax (.imm 8)])) s fun s' =>
+    WP isa (.block (([.mov .r9 (.mem { base := .rbp })] : List Instr) ++ clamp P 8 ++ ([.store (bufByte P) .r9, .alu .add .rbp (.imm 8),
+      .alu .add .r13 (.imm 8), .alu .sub .rax (.imm 8), .alu .cmp .rax (.imm 8)] : List Instr))) s fun s' =>
       Copy P s₀ c sI.mem (j + 8) s' ∧ s'.cf = some (decide (tt P s₀ c - (j + 8) < 8)) := by
   have hlen := len_lt s₀
   have hc := hI.c_le

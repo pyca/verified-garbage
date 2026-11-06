@@ -209,7 +209,7 @@ theorem Zero.upd10 {s₀ sI : State} {n lim j : Nat} {s s' : State} {v : BitVec 
 
 theorem zero_step (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State} (hC : Common P s₀ sI) {n lim j : Nat}
     (hlim : lim ≤ P.B) (hj : j < lim - n) {s : State} (h : Zero P s₀ sI n lim j s) :
-    WP isa (.block (clamp P 1 ++ [.store8 (bufByte P) .r9, .alu .add .r13 (.imm 1), .alu .sub .rax (.imm 1)])) s fun s' =>
+    WP isa (.block (clamp P 1 ++ ([.store8 (bufByte P) .r9, .alu .add .r13 (.imm 1), .alu .sub .rax (.imm 1)] : List Instr))) s fun s' =>
       Zero P s₀ sI n lim (j + 1) s' ∧ s'.zf = some (decide (lim - n - (j + 1) = 0)) := by
   have := hd.N; have := hd.B
   refine wp_clamp P (w := 1) (c := n + j) (by omega_arith) (by omega_arith) h.r13 fun s v _ => ?_
@@ -259,8 +259,8 @@ set_option simprocs false in
 /-- Eight bytes zeroed. -/
 theorem zero_word_step (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State} (hC : Common P s₀ sI)
     {n lim j : Nat} (hlim : lim ≤ P.B) (hj : j + 8 ≤ lim - n) {s : State} (h : Zero P s₀ sI n lim j s) :
-    WP isa (.block (clamp P 8 ++ [.store (bufByte P) .r9, .alu .add .r13 (.imm 8), .alu .sub .rax (.imm 8),
-      .alu .cmp .rax (.imm 8)])) s fun s' =>
+    WP isa (.block (clamp P 8 ++ ([.store (bufByte P) .r9, .alu .add .r13 (.imm 8), .alu .sub .rax (.imm 8),
+      .alu .cmp .rax (.imm 8)] : List Instr))) s fun s' =>
       Zero P s₀ sI n lim (j + 8) s' ∧ s'.cf = some (decide (lim - n - (j + 8) < 8)) := by
   have := hd.N; have := hd.B
   refine wp_clamp P (w := 8) (c := n + j) (by omega_arith) (by omega_arith) h.r13 fun s v _ => ?_

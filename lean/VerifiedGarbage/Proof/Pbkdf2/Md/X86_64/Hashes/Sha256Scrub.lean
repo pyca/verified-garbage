@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Spec.Sha256.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.ScrubStream
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Sha256.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
@@ -8,11 +9,13 @@ import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
-# SHA-256's postconditions read the memory on return only within the buffers
+# SHA-256's streaming and one-shot functions on x86-64, without secret residue
 
-What `X86_64.Verified.scrub` needs of a postcondition (`X86_64.PostOut`,
-from `X86_64.postOut_of_local`): the streaming state (`reprFrom_congr`) and
-the digest (`Stream.bytesAt_congr`) are bytes of the function's buffers.
+What `StreamFn.scrub` needs of `updFn`, `finFn` and `digFn` beyond their
+code: their postconditions read the memory on return only within the
+buffers (`X86_64.Scrub.PostOut`). Each variant
+(`Proof/Variants/MdHash/X86_64/Sha256*.lean`) scrubs them with the granules
+the residue analysis of its own code selects.
 -/
 
 @[expose] public section
@@ -20,6 +23,9 @@ the digest (`Stream.bytesAt_congr`) are bytes of the function's buffers.
 namespace VG.Proof.Sha256
 
 open VG.Spec.Sha256
+
+/-! The streaming state (`reprFrom_congr`) and the digest
+(`Stream.bytesAt_congr`) are bytes of the function's buffers. -/
 
 theorem updatePost_out (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (updateSig.words pb).length →
     (∀ b ∈ Sig.bufs updateSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -83,3 +89,18 @@ theorem digestPost_out (D : Nat) (digest : List Byte → List Byte) (pb : Nat) (
   exact h
 
 end VG.Proof.Sha256
+
+namespace VG.Proof.Pbkdf2.Md.X86_64.Sha256
+
+open VG.X86_64 VG.X86_64.Scrub
+
+theorem updOut (v : Proof.Sha256.X86_64.Compress) : PostOut (updFn v).contract (updFn v).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.updatePost_out 64)
+
+theorem finOut (v : Proof.Sha256.X86_64.Compress) : PostOut (finFn v).contract (finFn v).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.finalizePost_out 64)
+
+theorem digOut (v : Proof.Sha256.X86_64.Compress) : PostOut (digFn v).contract (digFn v).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.digestPost_out 32 Spec.Sha256.hash 64 (by decide))
+
+end VG.Proof.Pbkdf2.Md.X86_64.Sha256

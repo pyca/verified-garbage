@@ -23,7 +23,7 @@ jmp 21f
 22:
 .base64 "TInoSIPgDw=="
 je 23f
-.base64 "RohMK0BJg8UBuIAAAABNhfY="
+.base64 "Qbp/AAAATTnVTQ9C1UaITBNASYPFAbiAAAAATYX2"
 je 25f
 jmp 26f
 25:
@@ -32,7 +32,7 @@ jmp 26f
 .base64 "QbkAAAAATCnoSIP4CA=="
 jb 27f
 29:
-.base64 "TolMK0BJg8UISIPoCEiD+Ag="
+.base64 "Qbp4AAAATTnVTQ9C1U6JTBNASYPFCEiD6AhIg/gI"
 jae 29b
 jmp 28f
 27:
@@ -40,7 +40,7 @@ jmp 28f
 .base64 "SIXA"
 je 210f
 212:
-.base64 "RohMK0BJg8UBSIPoAQ=="
+.base64 "Qbp/AAAATTnVTQ9C1UaITBNASYPFAUiD6AE="
 jne 212b
 jmp 211f
 210:
@@ -56,7 +56,7 @@ jmp 24f
 .base64 "ZkkPbsFJg/1w"
 jae 215f
 217:
-.base64 "80IPf0QrQGYP78BJg8UQSYP9cA=="
+.base64 "QbpwAAAATTnVTQ9C1fNCD39EE0BmD+/ASYPFEEmD/XA="
 jb 217b
 jmp 216f
 215:

@@ -193,23 +193,29 @@ theorem satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256S, Spec.Hmac.sha256, X86_64.abi,
     X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
-/-- The streaming `update` and `finalize` made with `v`, which keep their
-working space in a frame of their own, and the one-shot `digest`. -/
-def stream : List StreamFn := [
+/-- The streaming `update` made with `v`, which keeps its working space in a
+frame of its own. -/
+def updFn : StreamFn :=
   { api := Spec.Sha256.updateApi
     code := Impl.StackScratch.X86_64.withStackScratch 616 .r8 (Impl.Sha256.X86_64.Stream.update v.callee)
     contract := Spec.Sha256.updateContract X86_64.abi (8 + 616)
     stack := 8 + 616
     verified := Proof.Sha256.X86_64.Shared.update v.ok v.mxcsr v.spSafe v.noStack
     spSafe := X86_64.withStackScratch_spSafe (by decide)
-      (Proof.Sha256.X86_64.Shared.update_spSafe v.spSafe) },
+      (Proof.Sha256.X86_64.Shared.update_spSafe v.spSafe) }
+
+/-- The streaming `finalize` made with `v`, likewise. -/
+def finFn : StreamFn :=
   { api := Spec.Sha256.finalizeApi
     code := Impl.StackScratch.X86_64.withStackScratch 616 .rcx (Impl.Sha256.X86_64.Stream.finalize v.callee)
     contract := Spec.Sha256.finalizeContract X86_64.abi (8 + 616)
     stack := 8 + 616
     verified := Proof.Sha256.X86_64.Shared.finalize v.ok v.mxcsr v.spSafe v.noStack
     spSafe := X86_64.withStackScratch_spSafe (by decide)
-      (Proof.Sha256.X86_64.Shared.finalize_spSafe v.spSafe) },
+      (Proof.Sha256.X86_64.Shared.finalize_spSafe v.spSafe) }
+
+/-- The one-shot `digest` made with `v`. -/
+def digFn : StreamFn :=
   { api := Spec.Sha256.digest256Api
     code := Proof.Sha256.X86_64.OneShot.digest (Impl.MdStream.X86_64.out32 8 true) Spec.Sha256.H0 v.callee
     contract := Spec.Sha256.digestContract X86_64.abi 32 Spec.Sha256.hash (8 + Proof.Sha256.X86_64.OneShot.frame)
@@ -217,7 +223,11 @@ def stream : List StreamFn := [
     verified := Proof.Sha256.X86_64.OneShot.verified Proof.Sha256.X86_64.OneShot.code256
       Proof.Sha256.X86_64.OneShot.init_check256 Proof.Sha256.X86_64.OneShot.hash_take v.ok v.mxcsr v.spSafe
       v.noStack
-    spSafe := Proof.Sha256.X86_64.OneShot.spSafe Proof.Sha256.X86_64.OneShot.code256 Spec.Sha256.H0 v.spSafe }]
+    spSafe := Proof.Sha256.X86_64.OneShot.spSafe Proof.Sha256.X86_64.OneShot.code256 Spec.Sha256.H0 v.spSafe }
+
+/-- The streaming `update` and `finalize` made with `v`, and the one-shot
+`digest`. -/
+def stream : List StreamFn := [updFn v, finFn v, digFn v]
 
 /-- SHA-256 with the implementation `v` of its compression function, which it
 carries for the functions built on SHA-256 alone (`MdHash.sha256`). -/

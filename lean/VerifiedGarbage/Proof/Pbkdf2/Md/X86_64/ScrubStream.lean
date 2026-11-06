@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 
+-- separate module: generic over the hash functions, of which SHA-256 is the first to use it
+
 /-!
 # Streaming functions that return without secret residue (x86-64)
 

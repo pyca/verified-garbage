@@ -48,6 +48,7 @@ import Lean.Elab.Tactic.Omega
 import Lean.Elab.Tactic.Omega.Frontend
 import Lean.Elab.Tactic.Rewrite
 import Lean.Elab.Tactic.Simp
+import Lean.Elab.Term
 import Lean.Elab.Term.TermElabM
 import Lean.Environment
 import Lean.Level
