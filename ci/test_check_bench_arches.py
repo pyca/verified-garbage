@@ -376,32 +376,26 @@ class Selection(unittest.TestCase):
             self.assertIn('src/rsa/pss/x86_64.rs', planner.sources('rsa_pss'))
             self.assertEqual(planner.requirements('x86_64', {'rsa_pss'}, [None]), {frozenset({'adx'})})
 
-    def test_moved_files_are_named_by_their_path_at_the_root(self):
+    def test_cipher_files_are_named_by_their_real_paths(self):
         # `cipher::aes`'s private file of CBC is `aes_cbc`; the code AES's
         # modes share is theirs and that of the modules using it outside
         # their tests; and `src/cipher/mod.rs` is a list of modules.
-        self.assertEqual(planner.logical('src/cipher/aes/cbc.rs'), 'src/aes/cbc.rs')
-        self.assertEqual(planner.logical('src/cipher/rc4.rs'), 'src/rc4.rs')
-        self.assertEqual(planner.logical('src/cipher/mod.rs'), 'src/cipher/mod.rs')
-        self.assertEqual(planner.physical('src/aes/mod.rs'), 'src/cipher/aes/mod.rs')
-        self.assertEqual(planner.physical('src/aes_gcm.rs'), 'src/aead/aes_gcm.rs')
-        self.assertEqual(planner.crate_path('aes'), 'cipher::aes')
-        self.assertEqual(planner.crate_path('rc4'), 'cipher::rc4')
-        self.assertEqual(planner.crate_path('aes_gcm'), 'aead::aes_gcm')
         self.catalog.update({'aes_cbc': {'aes_cbc', 'aes'}, 'aes_xts': {'aes_xts', 'aes'},
                              'aes_gcm': {'aes_gcm', 'aes'}})
         self.files.update({
-            'src/aes/mod.rs': 'mod cbc;\nmod xts;\npub use cbc::AesCbcEncryptor;\npub(crate) enum Backend {}\n',
-            'src/aes/cbc.rs': 'use crate::cipher::aes::Backend;\n',
-            'src/aes/xts.rs': '',
-            'src/aes_gcm.rs': 'use crate::cipher::aes::Backend;\n',
+            'src/lib.rs': 'pub mod aead;\npub mod cipher;\n',
+            'src/aead/mod.rs': 'pub mod aes_gcm;\n',
+            'src/cipher/mod.rs': 'pub mod aes;\n',
+            'src/cipher/aes/mod.rs': 'mod cbc;\nmod xts;\npub use cbc::AesCbcEncryptor;\npub(crate) enum Backend {}\n',
+            'src/cipher/aes/cbc.rs': 'use crate::cipher::aes::Backend;\n',
+            'src/cipher/aes/xts.rs': '',
+            'src/aead/aes_gcm.rs': 'use crate::cipher::aes::Backend;\n',
             'src/error.rs': '#[cfg(test)]\nmod tests {\n    crate::cipher::aes::XtsError;\n}\n',
         })
         self.assertEqual({r['modules'] for r in self.rows(['src/cipher/aes/cbc.rs'])}, {'aes_cbc'})
         self.assertEqual({r['modules'] for r in self.rows(['src/cipher/aes/mod.rs'])},
                          {'aes aes_cbc aes_gcm aes_xts'})
         self.assertEqual({r['modules'] for r in self.rows(['src/cipher/mod.rs'])}, {'triple_des_ecb'})
-
     def test_shared_hash_code_selects_every_hash(self):
         # `hmac_sha256`'s benchmark follows through its `USES` of `sha256`.
         self.files['src/hashes/sha256.rs'] = ''
@@ -434,28 +428,74 @@ class Selection(unittest.TestCase):
         with mock.patch.object(planner, 'read', self.read):
             self.assertFalse(planner.test_only('unknown', 'base'))
 
-    def test_ec_files_are_named_by_their_path_at_the_root(self):
-        # ECDSA's private file of P-256, under `ec`, is `ecdsa_p256`; the
-        # code ECDSA's curves share is theirs and that of the modules using
-        # it outside their tests.
-        self.assertEqual(planner.logical('src/ec/ecdsa/p256.rs'), 'src/ecdsa/p256.rs')
-        self.assertEqual(planner.logical('src/ec/p256.rs'), 'src/ec/p256.rs')
-        self.assertEqual(planner.physical('src/ecdh/mod.rs'), 'src/ec/ecdh/mod.rs')
-        self.assertEqual(planner.physical('src/ec.rs'), 'src/ec.rs')
-        self.assertEqual(planner.crate_path('ecdsa'), 'ec::ecdsa')
-        self.assertEqual(planner.crate_path('ec'), 'ec')
+    def test_a_family_in_another_modules_directory_selects_its_members(self):
+        # ECDSA, in `ec`'s directory: its file of P-256 is `ecdsa_p256`, the
+        # code its curves share is theirs and that of the modules using it
+        # (`crate::ec::ecdsa::…`) outside their tests, and a private
+        # submodule follows its parent.
         self.catalog.update({'ecdsa_p256': {'ecdsa_p256', 'ec_p256'}, 'ecdsa_p384': {'ecdsa_p384'},
                              'rsa': {'rsa'}})
         self.files.update({
-            'src/ecdsa/mod.rs': 'mod p256;\nmod p384;\npub(crate) fn digest() {}\n',
-            'src/ecdsa/p256.rs': 'use super::digest;\n',
-            'src/ecdsa/p384.rs': '',
+            'src/ec.rs': 'mod compressed;\nmod ecdsa;\nmod keys;\npub struct PublicKey;\n',
+            'src/ec/compressed.rs': '',
+            # A private submodule's own submodule, of no benchmark's module.
+            'src/ec/keys.rs': 'mod tests;\n',
+            'src/ec/keys/tests.rs': 'use crate::ec::PublicKey;\n',
+            'src/ec/ecdsa/mod.rs': 'mod p256;\nmod p384;\nmod table;\npub(crate) fn digest() {}\n',
+            'src/ec/ecdsa/p256.rs': 'use super::digest;\n',
+            'src/ec/ecdsa/p384.rs': 'use crate::ec::PublicKey;\n',
+            'src/ec/ecdsa/table.rs': 'pub(super) fn sign_with() {}\n',
             'src/rsa.rs': 'use crate::ec::ecdsa::digest;\n',
             'src/error.rs': '#[cfg(test)]\nmod tests {\n    crate::ec::ecdsa::digest();\n}\n',
         })
         self.assertEqual({r['modules'] for r in self.rows(['src/ec/ecdsa/p256.rs'])}, {'ecdsa_p256'})
-        self.assertEqual({r['modules'] for r in self.rows(['src/ec/ecdsa/mod.rs'])},
-                         {'ecdsa_p256 ecdsa_p384 rsa'})
+        for path in ['src/ec/ecdsa/mod.rs', 'src/ec/ecdsa/table.rs']:
+            self.assertEqual({r['modules'] for r in self.rows([path])}, {'ecdsa_p256 ecdsa_p384 rsa'})
+        # `ec`'s own private submodule: its code is `ec`'s, which ECDSA's
+        # files, in its directory too, use (and `src/ec/keys/tests.rs`, of
+        # no benchmark's module, does not select every benchmark).
+        self.assertEqual({r['modules'] for r in self.rows(['src/ec/compressed.rs'])},
+                         {'ec_p256 ecdsa_p384 rsa'})
+        with mock.patch.object(planner, 'read', self.read), mock.patch.object(
+                planner, 'rust_files', lambda root='.': sorted(p for p in self.files if p.startswith('src/'))):
+            self.assertEqual(planner.sources('ecdsa_p256'),
+                             ['src/hashes/mod.rs', 'src/ec/ecdsa/mod.rs', 'src/ec/ecdsa/p256.rs'])
+
+    def test_a_directory_that_lists_modules_names_them_by_their_files(self):
+        # `src/aead/mod.rs` only lists modules: `src/aead/aes_gcm.rs` is
+        # `aes_gcm`, and a change to the list is one to its modules. In a
+        # module's directory that also lists its modes (`src/cipher/aes/`),
+        # a mode's file is `aes_cbc`, and the module's code is its modes'
+        # and that of the modules using it, by its path in the crate.
+        self.catalog.update({'aes_gcm': {'aes_gcm'}, 'aes_cbc': {'aes_cbc'},
+                             'pbkdf2_sha256': {'pbkdf2_sha256', 'sha256'}})
+        self.files.update({
+            'src/lib.rs': 'pub mod aead;\npub mod cipher;\npub mod kdf;\n',
+            'src/aead/mod.rs': '//! AEADs.\n\npub mod aes_gcm;\n#[cfg(target_arch = "x86_64")]\npub mod sm4_gcm;\n',
+            'src/aead/aes_gcm.rs': 'use crate::cipher::aes::Backend;\n',
+            'src/cipher/mod.rs': '//! Ciphers.\n\npub mod aes;\n',
+            'src/cipher/aes/mod.rs': 'mod cbc;\n\npub use cbc::AesCbc;\n\npub(crate) enum Backend {}\n',
+            'src/cipher/aes/cbc.rs': 'use super::Backend;\n',
+            'src/kdf/mod.rs': 'pub mod pbkdf2;\n',
+            'src/kdf/pbkdf2/mod.rs': 'pub mod sha256;\nfn pbkdf2() {}\n',
+            'src/kdf/pbkdf2/sha256.rs': '',
+        })
+        self.base_files['src/aead/mod.rs'] = self.files['src/aead/mod.rs'].replace('pub mod aes_gcm;\n', '')
+        with mock.patch.object(planner, 'read', self.read):
+            self.assertTrue(planner.lists_modules('src/aead/mod.rs'))
+            self.assertFalse(planner.lists_modules('src/cipher/aes/mod.rs'))
+            self.assertFalse(planner.lists_modules('src/lib.rs'))
+            self.assertEqual(planner.module_name('src/aead/aes_gcm.rs'), 'aes_gcm')
+            self.assertEqual(planner.module_name('src/hashes/sha256.rs'), 'sha256')
+            self.assertIsNone(planner.module_name('src/cipher/aes/cbc.rs'))
+            self.assertIsNone(planner.module_name('src/cipher/aes/mod.rs'))
+            self.assertEqual(planner.registrations('src/aead/mod.rs', 'base', 'x86_64'), {'aes_gcm'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/aead/aes_gcm.rs'])}, {'aes_gcm'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/aead/mod.rs'], registered=None)}, {'aes_gcm'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/cipher/aes/cbc.rs'])}, {'aes_cbc'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/cipher/aes/mod.rs'])}, {'aes_cbc aes_gcm'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/sha256.rs'])}, {'pbkdf2_sha256'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/mod.rs'])}, {'pbkdf2_sha256'})
 
     def test_external_test_file_uses_its_parent_gate_and_path(self):
         # #1417: the file's name differs from its module, and its test gate
@@ -532,26 +572,20 @@ class Selection(unittest.TestCase):
                 self.files['src/old.rs'] = parent
                 self.assertEqual(len(self.rows(['src/shared.rs'])), self.full_matrix())
 
-    def test_aead_files_are_named_by_their_path_at_the_root(self):
-        # `aead::aes_gcm` is `aes_gcm`, and `src/aead/mod.rs` is a list of
-        # modules.
-        self.assertEqual(planner.logical('src/aead/aes_gcm.rs'), 'src/aes_gcm.rs')
-        self.assertEqual(planner.logical('src/aead/mod.rs'), 'src/aead/mod.rs')
-        self.assertEqual(planner.physical('src/aes_gcm_siv.rs'), 'src/aead/aes_gcm_siv.rs')
-        self.assertEqual(planner.physical('src/aes_cbc.rs'), 'src/aes_cbc.rs')
-        self.assertEqual(planner.crate_path('aes_gcm'), 'aead::aes_gcm')
-        self.assertEqual(planner.crate_path('aes'), 'cipher::aes')
+    def test_aead_files_are_named_by_their_real_paths(self):
+        # `aead::aes_gcm` is `aes_gcm`, `src/aead/mod.rs` is a list of
+        # modules, and AES's shared code, `cipher::aes`, is a family's, so
+        # its `aes_*` modules are among its users.
         self.catalog.update({'aes_gcm': {'aes_gcm'}, 'aes_gcm_siv': {'aes_gcm_siv', 'aes_gcm'}})
         self.files.update({
             'src/lib.rs': 'pub mod aead;\npub mod cipher;\n',
-            'src/aes/mod.rs': 'pub(crate) enum Backend {}\n',
-            'src/aes_gcm.rs': 'use crate::cipher::aes::Backend;\n',
-            'src/aes_gcm_siv.rs': 'use crate::aead::aes_gcm::Backend;\n',
+            'src/aead/mod.rs': 'pub mod aes_gcm;\npub mod aes_gcm_siv;\n',
+            'src/cipher/mod.rs': 'pub mod aes;\n',
+            'src/cipher/aes/mod.rs': 'pub(crate) enum Backend {}\n',
+            'src/aead/aes_gcm.rs': 'use crate::cipher::aes::Backend;\n',
+            'src/aead/aes_gcm_siv.rs': 'use crate::aead::aes_gcm::Backend;\n',
         })
         self.assertEqual({r['modules'] for r in self.rows(['src/aead/aes_gcm_siv.rs'])}, {'aes_gcm_siv'})
-        # A private helper's users, at their paths in the crate: AES's
-        # shared code, `cipher::aes`, is a family's, so its `aes_*` modules
-        # are among them.
         self.assertEqual({r['modules'] for r in self.rows(['src/cipher/aes/mod.rs'])},
                          {'aes_gcm aes_gcm_siv'})
         self.assertEqual({r['modules'] for r in self.rows(['src/aead/mod.rs'])}, {'triple_des_ecb'})
@@ -630,22 +664,17 @@ class Selection(unittest.TestCase):
                 self.assertEqual(len(self.rows(['bench/support/shared.rs'])), self.full_matrix())
                 del self.files[includer]
 
-    def test_kdf_files_are_named_by_their_path_at_the_root(self):
+    def test_kdf_files_are_named_by_their_real_paths(self):
         # `kdf::pbkdf2::sha256` is `pbkdf2_sha256`, the code PBKDF2's
         # hashes share is theirs, and `src/kdf/mod.rs` is a list of modules.
-        self.assertEqual(planner.logical('src/kdf/pbkdf2/sha256.rs'), 'src/pbkdf2/sha256.rs')
-        self.assertEqual(planner.logical('src/kdf/scrypt.rs'), 'src/scrypt.rs')
-        self.assertEqual(planner.logical('src/kdf/mod.rs'), 'src/kdf/mod.rs')
-        self.assertEqual(planner.physical('src/pbkdf2/mod.rs'), 'src/kdf/pbkdf2/mod.rs')
-        self.assertEqual(planner.physical('src/hmac/mod.rs'), 'src/hmac/mod.rs')
-        self.assertEqual(planner.crate_path('pbkdf2'), 'kdf::pbkdf2')
-        self.assertEqual(planner.crate_path('hmac'), 'hmac')
         self.catalog.update({'pbkdf2_sha256': {'pbkdf2_sha256', 'sha256'},
                              'scrypt': {'scrypt', 'pbkdf2_sha256'}})
         self.files.update({
-            'src/pbkdf2/mod.rs': 'mod sha256;\npub(crate) fn pbkdf2() {}\n',
-            'src/pbkdf2/sha256.rs': 'super::pbkdf2();\n',
-            'src/scrypt.rs': 'crate::kdf::pbkdf2::pbkdf2();\n',
+            'src/lib.rs': 'pub mod kdf;\n',
+            'src/kdf/mod.rs': 'pub mod pbkdf2;\npub mod scrypt;\n',
+            'src/kdf/pbkdf2/mod.rs': 'mod sha256;\npub(crate) fn pbkdf2() {}\n',
+            'src/kdf/pbkdf2/sha256.rs': 'super::pbkdf2();\n',
+            'src/kdf/scrypt.rs': 'crate::kdf::pbkdf2::pbkdf2();\n',
         })
         self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/sha256.rs'])}, {'pbkdf2_sha256'})
         self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/mod.rs'])},
