@@ -128,8 +128,6 @@ theorem rel_flagsC {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {
 theorem eval_e_eq {s₁ s₂ : State} (h : s₁.zf = s₂.zf) : isa.eval .e s₁ = isa.eval .e s₂ := h
 theorem eval_ne_eq {s₁ s₂ : State} (h : s₁.zf = s₂.zf) : isa.eval .ne s₁ = isa.eval .ne s₂ := by
   show s₁.zf.map _ = s₂.zf.map _; rw [h]
-theorem eval_b_eq {s₁ s₂ : State} (h : s₁.cf = s₂.cf) : isa.eval .b s₁ = isa.eval .b s₂ := h
-
 /-- `a; (b; (c; d))`, related as `(a; (b; c)); d`. -/
 theorem rel_assoc3 {P Q : State → State → Prop} {a b c d : Prog isa}
     (h : RelCT isa P (.seq (.seq a (.seq b c)) d) Q) : RelCT isa P (.seq a (.seq b (.seq c d))) Q := by
@@ -154,12 +152,6 @@ theorem Both.of {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {rs 
     (o₁ : One K W SP R N A D nl al n tl s₁) (o₂ : One K W SP R N A D nl al n tl s₂)
     (h : ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) : Both K W SP R N A D nl al n tl rs s₁ s₂ :=
   ⟨o₁.env, o₂.env, o₁.sl, o₂.sl, o₁.wr, o₂.wr, h⟩
-
-theorem Both.one₁ {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {rs : List Reg} {s₁ s₂ : State}
-    (h : Both K W SP R N A D nl al n tl rs s₁ s₂) : One K W SP R N A D nl al n tl s₁ := ⟨h.e₁, h.sl₁, h.wr₁⟩
-
-theorem Both.one₂ {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {rs : List Reg} {s₁ s₂ : State}
-    (h : Both K W SP R N A D nl al n tl rs s₁ s₂) : One K W SP R N A D nl al n tl s₂ := ⟨h.e₂, h.sl₂, h.wr₂⟩
 
 /-- Registers with the same value in both runs agree. -/
 theorem agree_of {s₁ s₂ : State} {l : List (Reg × BitVec 64)} (h₁ : ∀ p ∈ l, s₁.gpr p.1 = p.2)

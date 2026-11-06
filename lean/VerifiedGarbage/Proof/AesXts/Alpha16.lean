@@ -15,7 +15,7 @@ little-endian word `v` (its bytes are `b16 v`) times `α` is `mulA128 v`: `v`
 shifted left by one, and `0x87` XORed in if its top bit was set
 (`mulAlpha_b16`). Sixteen of them at once are `v` shifted left by sixteen,
 XORed with `P (v >>> 112)`, where `P c = c ⊕ c ≪ 1 ⊕ c ≪ 2 ⊕ c ≪ 7` is the
-carry-less product of `c` and `0x87` (`repeat_mulA128`, `next_b16`); eight
+carry-less product of `c` and `0x87` (`repeat_mulA128`); eight
 are `v` shifted left by eight, XORed with `P (v >>> 120)` (`next_b8`).
 -/
 
@@ -98,9 +98,5 @@ theorem repeat_mulAlpha_b16 (v : BitVec 128) (k : Nat) :
 /-- The tweak eight blocks on. -/
 theorem next_b8 (v : BitVec 128) : Spec.Xts.next (b16 v) 8 = b16 ((v <<< 8) ^^^ P (v >>> 120)) := by
   rw [Spec.Xts.next, repeat_mulAlpha_b16, repeat_mulA128 v 8 (by decide)]
-
-/-- The tweak sixteen blocks on. -/
-theorem next_b16 (v : BitVec 128) : Spec.Xts.next (b16 v) 16 = b16 ((v <<< 16) ^^^ P (v >>> 112)) := by
-  rw [Spec.Xts.next, repeat_mulAlpha_b16, repeat_mulA128 v 16 (by decide)]
 
 end VG.Proof.AesXts

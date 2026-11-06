@@ -34,8 +34,6 @@ theorem blocks_eq (bs : List Byte) : Ccm.blocks bs = Cmac.blocks 16 bs := rfl
 
 theorem xor_eq : Ccm.xor = Cmac.xor := rfl
 
-theorem zeros_eq (n : Nat) : Ccm.zeros n = Cmac.zeros n := rfl
-
 theorem length_be (k x : Nat) : (Ccm.be k x).length = k := by simp [Ccm.be]
 
 theorem length_zeros (n : Nat) : (Ccm.zeros n).length = n := by simp [Ccm.zeros]

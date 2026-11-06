@@ -91,8 +91,6 @@ structure Off0Post (W : Addr) (o : Block) (s s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
-theorem blockAtMem_eq_gcm (m : Mem) (p : Addr) : blockAtMem m p = Spec.Gcm.blockAt m p := rfl
-
 theorem offset0_ok {K W : Addr} (L : Lay K W) {s : State} (h19 : s.gpr .x19 = W) (hw : Covers [⟨W, 2560⟩] s.wr)
     {v : Nat} (hv : v < 64) (hbot : s.mem.readW (W + BitVec.ofNat 64 botO) 64 = BitVec.ofNat 64 v) :
     ∃ s', runBlock isa offset0 s = some s' ∧

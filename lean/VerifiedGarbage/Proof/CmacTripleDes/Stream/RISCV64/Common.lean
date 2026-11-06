@@ -201,11 +201,6 @@ theorem sv_contains (S : Addr) {d n L : Nat} (h : d + n ≤ 49) (hL : 56 ≤ L) 
   have := Align.pad_lt S
   rw [sv_add]; exact Offset.contains_base _ (by omega) (by omega)
 
-/-- Slots holding registers whose values agree hold either's. -/
-theorem saved_congr {B : Addr} {g g' : Reg → BitVec 64} {l : List (Reg × Nat)} {m : Mem}
-    (h : Spill.Saved B g l m) (hg : ∀ p ∈ l, g p.1 = g' p.1) : Spill.Saved B g' l m :=
-  fun p hp => (h p hp).trans (hg p hp)
-
 /-! ## Copying bytes -/
 
 open VG.WriteBytes

@@ -209,9 +209,6 @@ namespace Perm
 variable {c : Cx} {s : State} (P : Perm c s)
 include P
 
-theorem kR {d n : Nat} (h : d + n ≤ 240) : InRegions (s.rd ++ s.wr) (c.K + BitVec.ofNat 64 d) n :=
-  in_off P.k h (by decide)
-
 theorem wW {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (c.W + BitVec.ofNat 64 d) n :=
   in_off P.w h (by decide)
 

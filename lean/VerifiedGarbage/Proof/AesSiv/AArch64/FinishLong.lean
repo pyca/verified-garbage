@@ -34,8 +34,6 @@ open VG.Proof.CmacAes.Stream.AArch64 (UArgs FArgs Copied copy_ok toNat_ofNat toN
 
 variable {s₀ : State} {C D P W : Addr} {R L : Nat}
 
-theorem mz1 : BitVec.setWidth 64 (1 : BitVec 16) <<< (16 * 0) = BitVec.ofNat 64 1 := by decide
-
 /-- `(L − 1) >> 4`, the whole blocks before the last 1 to 16 bytes. -/
 theorem nb_bv {L : Nat} (h : 0 < L) (hL : L < 2 ^ 64) :
     (BitVec.ofNat 64 L - BitVec.ofNat 64 1) >>> 4 = BitVec.ofNat 64 ((L - 1) / 16) := by

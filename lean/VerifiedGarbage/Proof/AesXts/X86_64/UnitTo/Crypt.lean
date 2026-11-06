@@ -232,8 +232,6 @@ theorem t_sub : Region.Sub (tR s) ⟨S s, 2208⟩ := Offset.sub_base _ (by decid
 omit hp in
 theorem z_sub : Region.Sub (zR s) ⟨S s, 2208⟩ := Offset.sub_base _ (by decide)
 omit hp in
-theorem wk_sub' : Region.Sub (wkR s) ⟨S s, 2208⟩ := Region.sub_prefix (by decide)
-omit hp in
 theorem s_sub : Region.Sub ⟨S s, 2208⟩ (scrR s) := Region.sub_prefix (by decide)
 
 theorem UPre.wrapD : (D s).toNat + 16 * M s + B s ≤ 2 ^ 64 := by
@@ -269,10 +267,6 @@ theorem UPre.hd_l : (⟨D s, 16 * (M s - 1)⟩ : Region).Disjoint ⟨L s, 16⟩ 
 omit hp in
 theorem tl_l : (⟨L s + 16, B s⟩ : Region).Disjoint ⟨L s, 16⟩ :=
   Offset.disjoint_base (L s) (d := 16) (n := B s) (k := 16) (Nat.le_refl _) (by simp only [B]; omega)
-
-theorem UPre.tl_blocks : (⟨L s + 16, B s⟩ : Region).Disjoint ⟨D s, 16 * M s⟩ := by
-  rw [hp.tl_eq]
-  exact Offset.disjoint_base _ (Nat.le_refl _) (by have := hp.wrapD; omega)
 
 end
 
@@ -354,9 +348,6 @@ theorem pinned_ne {r : Reg} (h : r ∈ pinned) :
 theorem rsi_ofNat (s₀ : State) : BitVec.ofNat 64 (R s₀) = s₀.gpr .rdx := by
   rw [R, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
-theorem cS (s₀ : State) (d n : Nat) (h : d + n ≤ 2432) : (scrR s₀).Contains (S s₀ + BitVec.ofNat 64 d) n :=
-  Offset.contains_base _ h (by omega)
-
 section
 variable {s₀ : State} (hp : UPre s₀)
 include hp
@@ -424,13 +415,6 @@ theorem UPre.rdwr {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
   rw [hrd, hwr, hp.rd, hp.wr]; rfl
 
 theorem UPre.wr' {s : State} (hwr : s.wr = s₀.wr) : s.wr = [dstR s₀, scrR s₀] := by rw [hwr, hp.wr]
-
-/-- The stack arguments are readable. -/
-theorem UPre.argAddr_toNat : (stackArgAddr s₀ 0).toNat = (s₀.gpr .rsp).toNat + 8 := by
-  have := hp.rsp_hi
-  unfold stackArgAddr
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * (0 + 1)) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
 
 theorem UPre.inArg {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {d : Nat} (hd : d + 8 ≤ 24) :
     InRegions (s.rd ++ s.wr) (stackArgAddr s₀ 0 + BitVec.ofNat 64 d) 8 := by

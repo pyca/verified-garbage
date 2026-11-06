@@ -17,7 +17,7 @@ the code between calls is related by the taint analysis, from the registers
 the environment pins to the same public values in both runs and those the
 correctness proofs pin (`rel_env`); each call by its callee's proof
 (`rel_upd`, `rel_fin`, `rel_ctr`), after which the environment and the
-registers the pieces keep across calls still hold (`upd_runs`, `fin_runs`,
+registers the pieces keep across calls still hold (`upd_runs`,
 `ctr_runs`). As on PPC64LE (`Proof/AesSiv/PPC64LE/Rel.lean`).
 -/
 
@@ -88,35 +88,5 @@ theorem rel_ctr {σ₁ σ₂ : State} {K C D S : Addr} {R n : Nat}
   Proof.AesCtr.RISCV64.ctr_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨h₁, h₂, hsp⟩
 
 /-! ## After the calls -/
-
-/-- The callee-saved registers the pieces keep across calls, besides the
-environment's. -/
-abbrev callKept : List Reg := [.s0, .s4, .s5, .s6, .s7, .s8]
-
-theorem callKept_preserved : ∀ r ∈ callKept, r ∈ preserved := by decide
-
-/-- After a call of `vg_cmac_aes_update`: the environment and our registers. -/
-theorem upd_runs {c : Cx} {s : State} {K C D S : Addr} {R n : Nat} (E : Env c s)
-    (h : Proof.CmacAes.Stream.RISCV64.UArgs s K C D S R n) :
-    Runs Impl.CmacAes.Stream.RISCV64.updCall s fun s' => Env c s' ∧ s'.sp = s.sp ∧
-      ∀ r ∈ callKept, s'.gpr r = s.gpr r :=
-  Runs.of_wp (WP.mono (Proof.CmacAes.Stream.RISCV64.upd_call h) fun _ U =>
-    ⟨E.of_pk (PK.ofSaved U.rd U.wr U.sp U.saved), U.sp, fun r hr => U.saved r (callKept_preserved r hr)⟩)
-
-/-- After a call of `vg_cmac_aes_finalize`: the environment and our registers. -/
-theorem fin_runs {c : Cx} {s : State} {K St Q S : Addr} {L R : Nat} (E : Env c s)
-    (h : Proof.CmacAes.Stream.RISCV64.FArgs s K St Q S L R) :
-    Runs Impl.CmacAes.Stream.RISCV64.finCall s fun s' => Env c s' ∧ s'.sp = s.sp ∧
-      ∀ r ∈ callKept, s'.gpr r = s.gpr r :=
-  Runs.of_wp (WP.mono (Proof.CmacAes.Stream.RISCV64.fin_call h) fun _ U =>
-    ⟨E.of_pk (PK.ofSaved U.rd U.wr U.sp U.saved), U.sp, fun r hr => U.saved r (callKept_preserved r hr)⟩)
-
-/-- After a call of `vg_aes_ctr32`: the environment and our registers. -/
-theorem ctr_runs {c : Cx} {s : State} {K C D S : Addr} {R n : Nat} (E : Env c s)
-    (h : Proof.AesCtr.RISCV64.CtrCall s K C D S R n) :
-    Runs Impl.AesCtr.RISCV64.ctrCall s fun s' => Env c s' ∧ s'.sp = s.sp ∧
-      ∀ r ∈ callKept, s'.gpr r = s.gpr r :=
-  Runs.of_wp (WP.mono (Proof.AesCtr.RISCV64.ctr_call h) fun _ U =>
-    ⟨E.of_pk (PK.ofSaved U.rd U.wr U.sp U.saved), U.sp, fun r hr => U.saved r (callKept_preserved r hr)⟩)
 
 end VG.Proof.AesSiv.RISCV64

@@ -5,8 +5,9 @@ public import VerifiedGarbage.Impl.Modes.X86_64.Ctr
 /-!
 # CBC encryption on x86-64, for any block cipher with blocks of 8 or 16 bytes
 
-`cbcEncrypt core regs`: CBC encryption (SP 800-38A §6.2) over a block
-cipher's core (`Core`, as for CTR), whose `crypt` applies the forward cipher
+The pieces of CBC encryption (SP 800-38A §6.2), which `cbcEncryptChained`
+(`CbcChained.lean`) puts together, over a block cipher's core (`Core`, as
+for CTR), whose `crypt` applies the forward cipher
 `CIPH_K` to the `G` blocks of its buffer. Encryption is sequential: each
 block's input is the previous block's output, so each call of `crypt`
 encrypts one block, in the buffer's first, and the other `G - 1` are wasted.
@@ -62,14 +63,6 @@ the next. -/
 def cbcEncBlock : Prog isa :=
   .seq (.block c.encIn) (.seq c.crypt (.seq (.block c.encOut)
     (.seq (.ite .e (.block []) (.block c.encChain)) (.block c.encNext))))
-
-/-- The whole function: the IV into the first block, the key, then the
-blocks. -/
-def cbcEncrypt (r : CtrRegs) : Prog isa :=
-  .seq (.block (c.ctrEntry r)) (.seq (c.cbcWhiten r) (.seq (.block (c.ctrArgs r))
-    (.seq c.prepare
-      (.seq (.block [.alu .test c.leftReg (.reg c.leftReg)])
-        (.seq (.ite .e (.block []) (.loop c.cbcEncBlock .ne)) (.block c.restoreRegs))))))
 
 end Core
 

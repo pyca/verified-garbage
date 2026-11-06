@@ -42,8 +42,6 @@ theorem Hold2.of {s s' : State} (h : ∀ r ∈ preserved, r ≠ .x25 → r ≠ .
     Hold2 s s' :=
   ⟨h _ (by decide) (by decide) (by decide) (by decide), h _ (by decide) (by decide) (by decide) (by decide)⟩
 
-theorem Hold.hold2 {s s' : State} (h : Hold s s') : Hold2 s s' := ⟨h _ (by decide), h _ (by decide)⟩
-
 /-! ## The tail -/
 
 theorem shortB1_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s) :

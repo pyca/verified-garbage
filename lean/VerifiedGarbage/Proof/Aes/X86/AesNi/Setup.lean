@@ -48,13 +48,6 @@ theorem scratch_in {s : State} (hp : CPre s) {d n : Nat} (h : d + n ≤ 2048) (h
   refine ⟨scrR s, ?_, scratch_contains hp h hn⟩
   simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false, or_true]
 
-theorem scratch_sep {s : State} (hp : CPre s) {d n e k : Nat}
-    (hd : d + n ≤ 2048) (he : e + k ≤ 2048) (h : d + n ≤ e ∨ e + k ≤ d) (hn : 0 < n := by decide) (hk : 0 < k := by decide) :
-    Mem.Sep (addr (scrP s) d) n (addr (scrP s) e) k := by
-  have hf := hp.fB
-  rw [addr_eq (by omega), addr_eq (by omega)]
-  exact Offset.sep _ h (by omega) (by omega)
-
 theorem arg_contains {s : State} (hp : CPre s) {i : Nat} (hi : i < 6) :
     (argR s).Contains (argAddr s i) 4 := by
   have hf := hp.fSp

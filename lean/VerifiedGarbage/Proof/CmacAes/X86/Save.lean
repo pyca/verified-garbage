@@ -303,10 +303,6 @@ theorem ofBytes_zeros : Spec.Gcm.ofBytes (Spec.Cmac.zeros 16) = 0 := by decide
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 32 R).toNat = R := by
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
 
-theorem ctr_nosp : NoSp v.callee.code := v.nosp
-
-theorem ctr_stack : stackUse v.callee.code = 0 := v.stack
-
 /-- The registers the call pushes, as `vg_aes_ctr32`'s arguments. -/
 abbrev ctrRegs : List Reg := [.ebp, .edi, .ebx, .edx, .ecx, .eax]
 
@@ -485,8 +481,6 @@ theorem saved_fits : Spill.Fits 2080 saved := by decide
 theorem saved_bound : ∀ p ∈ saved, 2064 ≤ p.2 ∧ p.2 + 4 ≤ 2080 := by decide
 
 theorem saved_ne_eax : ∀ p ∈ saved, p.1 ≠ .eax := by decide
-
-theorem save_eq : save = Spill.saveCode .eax saved := rfl
 
 theorem restore_eq (i : Nat) : restore i = .mov .eax (argOp i) :: (Spill.restoreCode .eax saved ++ []) := rfl
 

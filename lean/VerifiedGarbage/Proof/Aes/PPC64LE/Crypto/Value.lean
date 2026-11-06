@@ -79,9 +79,6 @@ theorem flip_load (v : BitVec 128) : flip (swapDwords v) = rev128 v := by
 theorem flip_store (v : BitVec 128) : swapDwords (flip v) = rev128 v := by
   rw [flip, ← rev128_swapDwords, swapDwords_involutive]
 
-theorem flip_flip (v : BitVec 128) : flip (flip v) = v := by
-  simp only [flip, rev128_swapDwords, rev128_rev128, swapDwords_involutive]
-
 theorem exec_flip (d n : VReg) (s : State)
     (hm : s.vpr Impl.Aes.PPC64LE.Crypto.mask = Impl.Aes.PPC64LE.Crypto.byteMask) :
     exec (.vop (.perm d n n Impl.Aes.PPC64LE.Crypto.mask)) s = some (s.writeV d (flip (s.vpr n))) := by
@@ -99,11 +96,6 @@ theorem stateAt_read16 (m : Mem) (p : Addr) :
 
 theorem load_state (m : Mem) (p : Addr) : aesState (rev128 (m.read p 16)) = Spec.Aes.stateAt m p := by
   rw [aesState, rev128_rev128, stateAt_read16]
-
-theorem stateAt_store (m : Mem) (p : Addr) (v : BitVec 128) :
-    Spec.Aes.stateAt (m.write p 16 (swapDwords (flip v))) p = aesState v := by
-  rw [flip_store, ← stateAt_read16, VG.Proof.VectorCrypto.read_write16]
-  rfl
 
 theorem key_read (m : Mem) (p : Addr) {L j : Nat} (hj : 16*j+16 ≤ L) :
     IsKey (rev128 (m.read (p + BitVec.ofNat 64 (16*j)) 16))

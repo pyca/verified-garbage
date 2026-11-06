@@ -473,9 +473,6 @@ theorem UPre.data_sub {k : Nat} (hk : k < N s₀) :
     Region.Sub ⟨Dp s₀ + BitVec.ofNat 64 (16 * k), 16⟩ (dataR s₀) :=
   Offset.sub_base _ (by omega)
 
-theorem UPre.sch_sub {R' : Nat} (h : R' ≤ 240) : Region.Sub ⟨W s₀, R'⟩ (schR s₀) :=
-  Region.sub_prefix h
-
 end
 
 theorem slot_contains (b : Addr) {d : Nat} (h₁ : 2064 ≤ d) (h₂ : d + 8 ≤ 2112) :

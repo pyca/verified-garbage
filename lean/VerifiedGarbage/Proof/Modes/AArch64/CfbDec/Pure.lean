@@ -18,13 +18,6 @@ theorem input_eq (L : Nat) (cipher : Spec.Cbc.Cipher) (m : Mem) (D : Addr)
   | succ j =>
     simp only [fbIn,fbStep,cbcPrev,Nat.add_one_ne_zero,ite_false,Nat.add_sub_cancel]
 
-theorem output_eq (L : Nat) (cipher : Spec.Cbc.Cipher) (m : Mem) (D : Addr)
-    (iv : List Byte) (j : Nat) :
-    fbOut .cfbDec L cipher m D iv j =
-      Spec.Cbc.xor (Spec.Aes.bytesAt m (D+BitVec.ofNat 64 (L*j)) L)
-        (cipher (cbcPrev L m D iv j)) := by
-  rw [fbOut,input_eq]
-
 /-- A completed byte invariant gives the public CFB-decryption result. -/
 theorem of_dinv {L : Nat} {cipher : Spec.Cbc.Cipher}
     (hc : ∀ b, (cipher b).length = L) {m₀ m : Mem} {D : Addr} {n : Nat} {iv : List Byte}
