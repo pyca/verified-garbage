@@ -400,7 +400,7 @@ theorem tag_eq0 {s₀ s : State} (hp : APre e s₀) (h : Inv s₀ s) : bytesAt s
 /-- The data decrypted and the tags compared: `r0` is whether the tag is
 right, and `Z` whether it is not. -/
 theorem endBody_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : PostFo s₀ s) :
-    WP isa (.seq crypt (.block (Impl.ChaCha20Poly1305.Arm.compare ++ [.cmp .r0 (.imm 0)]))) s fun s₃ =>
+    WP isa (.seq crypt (.block (Impl.ChaCha20Poly1305.Arm.compare ++ ([.cmp .r0 (.imm 0)] : List Instr)))) s fun s₃ =>
       Inv s₀ s₃ ∧ s₃.gpr .r0 = (if mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀ then 1 else 0) ∧
       s₃.z = (s₃.gpr .r0 == 0) ∧
       bytesAt s₃.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by

@@ -426,6 +426,24 @@ vg_chacha20_poly1305_open:
 	rldicl %r3, %r3, 1, 63
 	li %r4, 1
 	subf %r3, %r3, %r4
+	cmpldi %cr0, %r3, 0
+	beq %cr0, 26f
+	b 27f
+26:
+	addi %r4, %r27, 0
+	addi %r5, %r28, 0
+	cmpldi %cr0, %r5, 0
+	beq %cr0, 28f
+210:
+	stb %r3, 0(%r4)
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 210b
+	b 29f
+28:
+29:
+27:
 	addi %r12, %r24, 0
 	ld %r0, 512(%r12)
 	mtlr %r0

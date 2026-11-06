@@ -571,6 +571,23 @@ vg_chacha20_poly1305_open:
 	lsr r0, r0, #31
 	mov r1, #1
 	sub r0, r1, r0
+	cmp r0, #0
+	beq 26f
+	b 27f
+26:
+	mov r2, r10
+	mov r3, r11
+	cmp r3, #0
+	beq 28f
+210:
+	strb r0, [r2, #0]
+	add r2, r2, #1
+	subs r3, r3, #1
+	bne 210b
+	b 29f
+28:
+29:
+27:
 	mov r12, r7
 	ldr r4, [r12, #464]
 	ldr r5, [r12, #468]

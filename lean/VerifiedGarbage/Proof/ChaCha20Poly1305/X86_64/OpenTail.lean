@@ -53,7 +53,6 @@ theorem cmp32_ok (s : State) : WP isa (.block [.alu32 .cmp .rax (.imm 0)]) s fun
   exact ⟨by rw [show (BitVec.setWidth 32 (s.gpr .rax) - 0 : BitVec 32) = BitVec.setWidth 32 (s.gpr .rax) from
     BitVec.sub_zero _], trivial, trivial, trivial, trivial, rfl⟩
 
-set_option simprocs false in
 theorem zeroArgs_ok (s : State) :
     WP isa (.block [.mov .rdx (.reg .r14), .mov .rcx (.reg .r13), .alu .cmp .rcx (.imm 0)]) s fun s' =>
       s'.gpr .rdx = s.gpr .r14 ∧ s'.gpr .rcx = s.gpr .r13 ∧ s'.zf = some (s.gpr .r13 == 0) ∧
@@ -63,12 +62,11 @@ theorem zeroArgs_ok (s : State) :
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
     RegUpd.zf_arithFlags, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-    Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left', ite_true, ite_false,
+    Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left', reduceCtorEq, ↓reduceIte,
     show BitVec.signExtend 64 (0 : BitVec 32) = 0 by decide]
   exact ⟨trivial, trivial, by rw [show (s.gpr .r13 - 0 : BitVec 64) = s.gpr .r13 from BitVec.sub_zero _],
     fun q a b => by simp [a, b], trivial, trivial, trivial, rfl⟩
 
-set_option simprocs false in
 theorem zeroStep_run {s : State} {a : Addr} (hd : s.gpr .rdx = a) (hw : InRegions s.wr a 1) :
     WP isa (.block [.store8 { base := .rdx } .rax, .alu .add .rdx (.imm 1), .alu .sub .rcx (.imm 1)]) s
       fun s' => s'.mem = s.mem.writeW a ((s.gpr .rax).setWidth 8) ∧ s'.gpr .rdx = a + 1 ∧
@@ -78,10 +76,10 @@ theorem zeroStep_run {s : State} {a : Addr} (hd : s.gpr .rdx = a) (hw : InRegion
   have he : s.ea { base := .rdx } = a := by rw [ea_disp, hd]; exact BitVec.add_zero _
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-    execAlu, State.store8, he, hw, ite_true, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
+    execAlu, State.store8, he, hw, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
     RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
     RegUpd.zf_arithFlags, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-    Option.bind_some, Option.some.injEq, exists_eq_left', ite_true, ite_false,
+    Option.bind_some, Option.some.injEq, exists_eq_left', reduceCtorEq, ↓reduceIte,
     RegUpd.zf_setReg, RegUpd.mxcsr_setReg,
     show BitVec.signExtend 64 (1 : BitVec 32) = 1 by decide]
   exact ⟨trivial, by rw [hd], trivial, trivial, fun q a b => by simp [a, b], trivial, trivial, rfl⟩
