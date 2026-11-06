@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Top
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Entry
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Sign.Inst
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Ntt
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.NttInv
@@ -31,8 +32,11 @@ most 96 bytes of stack, and their frames use no more; with the 48 bytes they
 are verified with, the two samplers whose results signing branches on return
 what depends only on their public data, and succeed only if their algorithm
 finishes within `maxBounds` (`rn_ret`, `sb_ret`, from what their own proofs
-say they return). So signing with them is verified with 96
-(`sign44_verified`, …).
+say they return). So the kernels with them are verified with 96, and the 96
+of their own frames (`withCache44_verified`, …), and the entries calling
+them with 48 more (`sign44_verified`, `signPrepared44_verified`, …): the
+precondition of a prepared key's holds of the memory its preparation writes
+(`PreparedKey.secret_mem`).
 -/
 
 @[expose] public section
@@ -117,22 +121,98 @@ theorem prims_ok : SPrimsOk prims 96 where
       · rw [sampleInBall_mono (show 272 ≤ maxBounds.ball by decide) (sampleInBall_some _ (by decide) hf)]; rfl
       · rw [ifn hf] at h1; exact absurd h1 zero_ne_one32⟩
 
-theorem sign44_sat : (signContract mlDsa44 PPC64LE.abi 96).pre (signSat mlDsa44) := by
-  sig_sat_check [signContract, signSig, PPC64LE.abi, PPC64LE.argRegs, signSat]
+theorem withCache44_sat : (Proof.MlDsa.signWithCacheContract mlDsa44 PPC64LE.abi (96 + 96)).pre (kSat mlDsa44) := by
+  sig_pre [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, signSig, PPC64LE.abi,
+    PPC64LE.argRegs]
+  sig_and_intros
+  all_goals first
+    | exact .inl rfl
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
 
-theorem sign44_verified : Verified PPC64LE.target sign44 (signContract mlDsa44 PPC64LE.abi 96) :=
-  sign_verified prims_ok (by decide) _ (.inl rfl) sign44_sat
+theorem withCache44_verified :
+    Verified PPC64LE.target withCache44 (Proof.MlDsa.signWithCacheContract mlDsa44 PPC64LE.abi (96 + 96)) :=
+  withCache_verified prims_ok (by decide) _ (.inl rfl) (by decide +kernel) withCache44_sat
 
-theorem sign65_sat : (signContract mlDsa65 PPC64LE.abi 96).pre (signSat mlDsa65) := by
-  sig_sat_check [signContract, signSig, PPC64LE.abi, PPC64LE.argRegs, signSat]
+theorem withCache65_sat : (Proof.MlDsa.signWithCacheContract mlDsa65 PPC64LE.abi (96 + 96)).pre (kSat mlDsa65) := by
+  sig_pre [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, signSig, PPC64LE.abi,
+    PPC64LE.argRegs]
+  sig_and_intros
+  all_goals first
+    | exact .inl rfl
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
 
-theorem sign65_verified : Verified PPC64LE.target sign65 (signContract mlDsa65 PPC64LE.abi 96) :=
-  sign_verified prims_ok (by decide) _ (.inr (.inl rfl)) sign65_sat
+theorem withCache65_verified :
+    Verified PPC64LE.target withCache65 (Proof.MlDsa.signWithCacheContract mlDsa65 PPC64LE.abi (96 + 96)) :=
+  withCache_verified prims_ok (by decide) _ (.inr (.inl rfl)) (by decide +kernel) withCache65_sat
 
-theorem sign87_sat : (signContract mlDsa87 PPC64LE.abi 96).pre (signSat mlDsa87) := by
-  sig_sat_check [signContract, signSig, PPC64LE.abi, PPC64LE.argRegs, signSat]
+theorem withCache87_sat : (Proof.MlDsa.signWithCacheContract mlDsa87 PPC64LE.abi (96 + 96)).pre (kSat mlDsa87) := by
+  sig_pre [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, signSig, PPC64LE.abi,
+    PPC64LE.argRegs]
+  sig_and_intros
+  all_goals first
+    | exact .inl rfl
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
 
-theorem sign87_verified : Verified PPC64LE.target sign87 (signContract mlDsa87 PPC64LE.abi 96) :=
-  sign_verified prims_ok (by decide) _ (.inr (.inr rfl)) sign87_sat
+theorem withCache87_verified :
+    Verified PPC64LE.target withCache87 (Proof.MlDsa.signWithCacheContract mlDsa87 PPC64LE.abi (96 + 96)) :=
+  withCache_verified prims_ok (by decide) _ (.inr (.inr rfl)) (by decide +kernel) withCache87_sat
+
+/-! ## The entries -/
+
+/-- A state that satisfies `preparedSignContract`'s precondition, with the
+memory `m`, a prepared private key at `0x10000`. -/
+def psSat (p : Params) (m : Mem) : State where
+  gpr r := match r with
+    | .r3 => 0x10000 | .r4 => 0x8000 | .r5 => 0x9000 | .r6 => 0xA000 | .r7 => 0x20000 | _ => 0
+  lr := 0
+  sp := 0x100000
+  mem := m
+  rd := [⟨0x10000, preparedSecretKeyBytes p⟩, ⟨0x8000, 64⟩, ⟨0x9000, 32⟩]
+  wr := [⟨0xA000, p.sigLen⟩, ⟨0x20000, KeyGen.scrLen p⟩]
+
+theorem prepared_sat {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    ∃ s, (Proof.MlDsa.preparedSignContract p PPC64LE.abi (191 + 1 + 48)).pre s := by
+  obtain ⟨m, hm⟩ := PreparedKey.secret_mem hp3
+  refine ⟨psSat p m, ?_⟩
+  rcases hp3 with rfl | rfl | rfl
+  all_goals
+    sig_pre [Proof.MlDsa.preparedSignContract, Proof.MlDsa.preparedSignSig, PPC64LE.abi, PPC64LE.argRegs, psSat]
+    sig_and_intros
+    all_goals first
+      | exact hm
+      | rfl
+      | decide
+      | exact Region.disjoint_of_sep (by decide)
+
+theorem sign_sat {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    ∃ s, (signContract p PPC64LE.abi (191 + 1 + 48)).pre s := by
+  refine ⟨signSat p, ?_⟩
+  rcases hp3 with rfl | rfl | rfl
+  all_goals sig_sat_check [signContract, signSig, PPC64LE.abi, PPC64LE.argRegs, signSat]
+
+theorem sign44_verified : Verified PPC64LE.target sign44 (signContract mlDsa44 PPC64LE.abi 240) :=
+  sign_entry_verified withCache44_verified (by decide +kernel) (by decide) (sign_sat (.inl rfl))
+theorem sign65_verified : Verified PPC64LE.target sign65 (signContract mlDsa65 PPC64LE.abi 240) :=
+  sign_entry_verified withCache65_verified (by decide +kernel) (by decide) (sign_sat (.inr (.inl rfl)))
+theorem sign87_verified : Verified PPC64LE.target sign87 (signContract mlDsa87 PPC64LE.abi 240) :=
+  sign_entry_verified withCache87_verified (by decide +kernel) (by decide) (sign_sat (.inr (.inr rfl)))
+
+theorem signPrepared44_verified :
+    Verified PPC64LE.target signPrepared44 (Proof.MlDsa.preparedSignContract mlDsa44 PPC64LE.abi 240) :=
+  prepared_entry_verified withCache44_verified (by decide +kernel) (by decide) (.inl rfl) (prepared_sat (.inl rfl))
+theorem signPrepared65_verified :
+    Verified PPC64LE.target signPrepared65 (Proof.MlDsa.preparedSignContract mlDsa65 PPC64LE.abi 240) :=
+  prepared_entry_verified withCache65_verified (by decide +kernel) (by decide) (.inr (.inl rfl))
+    (prepared_sat (.inr (.inl rfl)))
+theorem signPrepared87_verified :
+    Verified PPC64LE.target signPrepared87 (Proof.MlDsa.preparedSignContract mlDsa87 PPC64LE.abi 240) :=
+  prepared_entry_verified withCache87_verified (by decide +kernel) (by decide) (.inr (.inr rfl))
+    (prepared_sat (.inr (.inr rfl)))
 
 end VG.Proof.MlDsa.PPC64LE.Sign

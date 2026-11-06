@@ -12,8 +12,10 @@ public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Sample.Ball
 /-!
 # ML-DSA signing on PPC64LE, with this library's primitives
 
-`sign` (`Sign.lean`) called with the PPC64LE implementations of the
-primitives it calls.
+`withCache` (`Sign.lean`) called with the PPC64LE implementations of the
+primitives it calls, the kernels `vg_mldsa*_sign_with_cache`, and the
+entries calling them: `vg_mldsa*_sign` (`sign44`, …) and
+`vg_mldsa*_sign_prepared` (`signPrepared44`, …).
 -/
 
 @[expose] public section
@@ -42,11 +44,24 @@ def prims : Prims where
   bitUnpack := Pack.bitUnpack
   hintBitPack := Pack.hintBitPack
 
+/-- `vg_mldsa44_sign_with_cache` -/
+def withCache44 : Prog isa := withCache prims Spec.MlDsa.mlDsa44
+/-- `vg_mldsa65_sign_with_cache` -/
+def withCache65 : Prog isa := withCache prims Spec.MlDsa.mlDsa65
+/-- `vg_mldsa87_sign_with_cache` -/
+def withCache87 : Prog isa := withCache prims Spec.MlDsa.mlDsa87
+
 /-- `vg_mldsa44_sign` -/
-def sign44 : Prog isa := sign prims Spec.MlDsa.mlDsa44
+def sign44 : Prog isa := entry "vg_mldsa44_sign_with_cache" withCache44 Spec.MlDsa.mlDsa44 false
 /-- `vg_mldsa65_sign` -/
-def sign65 : Prog isa := sign prims Spec.MlDsa.mlDsa65
+def sign65 : Prog isa := entry "vg_mldsa65_sign_with_cache" withCache65 Spec.MlDsa.mlDsa65 false
 /-- `vg_mldsa87_sign` -/
-def sign87 : Prog isa := sign prims Spec.MlDsa.mlDsa87
+def sign87 : Prog isa := entry "vg_mldsa87_sign_with_cache" withCache87 Spec.MlDsa.mlDsa87 false
+/-- `vg_mldsa44_sign_prepared` -/
+def signPrepared44 : Prog isa := entry "vg_mldsa44_sign_with_cache" withCache44 Spec.MlDsa.mlDsa44 true
+/-- `vg_mldsa65_sign_prepared` -/
+def signPrepared65 : Prog isa := entry "vg_mldsa65_sign_with_cache" withCache65 Spec.MlDsa.mlDsa65 true
+/-- `vg_mldsa87_sign_prepared` -/
+def signPrepared87 : Prog isa := entry "vg_mldsa87_sign_with_cache" withCache87 Spec.MlDsa.mlDsa87 true
 
 end VG.Impl.MlDsa.PPC64LE.Sign

@@ -8,8 +8,18 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
+import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Copy
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.ExpA
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+meta import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
+meta import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
+meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Copy
+meta import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA signing on PPC64LE: `ρ″` and the private key
@@ -18,7 +28,14 @@ As on 32-bit ARM (`Proof/MlDsa/Arm/Sign/PhaseD.lean`), once `Â` is sampled
 (`IM`): `rnd ‖ μ` to `W1`, `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`, and `sig` to
 `r28`, which takes the layout from `slay1` to `slay2` (`SC1.toSC2`); then
 `ŝ₁[r]`, `ŝ₂[i]` and `t̂₀[i]`, each the `NTT` of the `BitUnpack` of its piece
-of `sk`, in their slots (`ID`).
+of `sk`, in their slots (`ID`, `keys_piece`).
+
+In a kernel (`withCache`), with the precondition `CPre` (`SCache`: `r15`
+bytes at `r14` are none or the polynomials of `sk`, in a region to read apart
+from the buffers written and the stack) and the public data `cPub` (with the
+cache's pointer and length): if `r15 ≠ 0`, the polynomials are copied from
+the cache instead (`cp_piece`), which memory outside the buffers written and
+the stack still holds (`FC`, by `Exec.frameAny`: `cache_poly`).
 -/
 
 @[expose] public section
@@ -27,10 +44,11 @@ namespace VG.Proof.MlDsa.PPC64LE.Sign
 
 open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
 open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 rel_of taint4 hashLay
-  hashLay_ptr hashS hashS_tr pieceS ix_ne1 shake31 polyIs_keepW bytes_keepW copyS)
+  hashLay_ptr hashS hashS_tr pieceS ix_ne1 shake31 polyIs_keepW bytes_keepW copyS reg relInv)
 open VG.Impl.MlDsa.PPC64LE.Sign
 open VG.Impl.MlDsa.PPC64LE.KeyGen (seqR callAt)
 open VG.Impl.MlKem.PPC64LE (copy hash)
+open VG.Impl.MlDsa.PPC64LE (copyW)
 open VG.Spec.MlDsa
 open VG.Proof.MlDsa.Sign (s1F s2F t0F)
 open VG.Spec.Sha3 (bytesAt)
@@ -73,7 +91,8 @@ theorem SC1.toSC2 {p : Params} {STK : Nat} {σ s s' : State} (hp : SPre p STK σ
     · exact absurd rfl hi1
     · simp [Lay.buf, slay2]
   · show _ ∈ s'.rd ++ s'.wr
-    rw [hrd, hwr, h.rd, h.wr, hp.rd, hp.wr]
+    obtain ⟨X, hX⟩ := hp.rd
+    rw [hrd, hwr, h.rd, h.wr, hX, hp.wr]
     rcases (by omega_arith : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, slay2]
   · have : r ≠ .r28 := fun e => by subst e; simp [savedTop] at hs'
     rw [go r this]; exact h.pres r hr hs'
@@ -410,15 +429,238 @@ theorem decT0_piece {i : Nat} (hi : i < p.k) :
     rw [e] at hq
     exact hq
 
-/-- Decoding, from `Â`: `ρ″`, `ŝ₁`, `ŝ₂` and `t̂₀`. -/
-theorem decode_piece : SPiece p STK (IM p STK) (ID p STK · p.ℓ p.k p.k) (decode P p) := by
-  unfold decode
-  refine (rhoPP_piece hF).seq ((Piece.mono (Piece.seqR (I := fun r σ s => ID p STK σ r 0 0 s) p.ℓ 0
+/-- `ŝ₁`, `ŝ₂` and `t̂₀`, decoded from `sk`. -/
+theorem keys_piece : SPiece p STK (ID p STK · 0 0 0) (ID p STK · p.ℓ p.k p.k) (keys P p) := by
+  unfold keys
+  exact (Piece.mono (Piece.seqR (I := fun r σ s => ID p STK σ r 0 0 s) p.ℓ 0
     fun r _ hr => decS1_piece hP hF hS (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
     ((Piece.mono (Piece.seqR (I := fun i σ s => ID p STK σ p.ℓ i 0 s) p.k 0
       fun i _ hi => decS2_piece hP hF hS (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
       (Piece.mono (Piece.seqR (I := fun i σ s => ID p STK σ p.ℓ p.k i s) p.k 0
-        fun i _ hi => decT0_piece hP hF hS (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h)))
+        fun i _ hi => decT0_piece hP hF hS (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h))
+
+end
+
+/-! ## A kernel's cache -/
+
+/-- What a kernel's entry state holds of its cache, the `r15` bytes at `r14`:
+nothing, or the `ℓ + 2k` polynomials of `sk`; a region it may read, apart
+from the buffers it writes and the stack. -/
+structure SCache (p : Params) (STK : Nat) (σ : State) : Prop where
+  polys : σ.gpr .r15 = 0 ∨ ((σ.gpr .r15).toNat = 4 * n * (p.ℓ + 2 * p.k) ∧
+    Proof.MlDsa.CachedSecretPolys p σ.mem (σ.gpr .r14) (skOf p σ))
+  rd : reg (σ.gpr .r14) (σ.gpr .r15).toNat ∈ σ.rd
+  d_g : (reg (σ.gpr .r14) (σ.gpr .r15).toNat).Disjoint (reg (sSig σ) p.sigLen)
+  d_c : (reg (σ.gpr .r14) (σ.gpr .r15).toNat).Disjoint (reg (sScr σ) (scrLen p))
+  b : (reg (σ.gpr .r14) (σ.gpr .r15).toNat).Disjoint (below σ.sp STK)
+
+/-- The precondition of a kernel's signing. -/
+abbrev CPre (p : Params) (STK : Nat) (σ : State) : Prop := SPre p STK σ ∧ SCache p STK σ
+
+/-- Its public data: `signContract`'s, and the cache's pointer and length. -/
+def cPub (p : Params) (σ₁ σ₂ : State) : Prop :=
+  sPub p σ₁ σ₂ ∧ σ₁.gpr .r14 = σ₂.gpr .r14 ∧ σ₁.gpr .r15 = σ₂.gpr .r15
+
+/-- The pieces of a kernel's signing. -/
+abbrev CPiece (p : Params) (STK : Nat) := Piece (CPre p STK) (cPub p)
+
+theorem SPiece.cache {p : Params} {STK : Nat} {I J : State → State → Prop} {c : Prog isa}
+    (h : SPiece p STK I J c) : CPiece p STK I J c :=
+  ⟨fun σ s hp hs => h.ok σ s hp.1 hs, RelCT.mono h.tr (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩ =>
+    ⟨σ₁, σ₂, p₁.1, p₂.1, pub.1, i₁, i₂⟩) fun _ _ h => h⟩
+
+/-- Memory but the buffers written and the stack is as on entry. -/
+abbrev FC (STK : Nat) (σ s : State) : Prop := Frame (σ.wr ++ [below σ.sp STK]) σ.mem s.mem
+
+/-- A run of code, with what it changes in memory. -/
+theorem wp_frame {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) (hd : sdepth c < 2 ^ 64) :
+    WP isa c s fun s' => Q s' ∧ Frame (s.wr ++ [below s.sp (sdepth c)]) s.mem s'.mem := by
+  obtain ⟨t, s', he, hq⟩ := h
+  exact ⟨t, s', he, hq, Exec.frameAny he hd⟩
+
+/-- `FC` after code that changes memory only in the buffers written and its
+stack. -/
+theorem FC.step {STK : Nat} {σ s s' : State} (h : FC STK σ s) (hw : s.wr = σ.wr) (hsp : s.sp = σ.sp) {d : Nat}
+    (hd : d ≤ STK) (hS : STK < 2 ^ 64) (hf : Frame (s.wr ++ [below s.sp d]) s.mem s'.mem) : FC STK σ s' :=
+  Frame.trans h (hf.sub fun r hr => by
+    rw [hw, hsp] at hr
+    rcases List.mem_append.mp hr with hr | hr
+    · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+    · rw [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub hd hS⟩)
+
+/-- Polynomial `i` of the cache, in memory with `FC`. -/
+theorem cache_poly {p : Params} {STK : Nat} {σ s : State} (hp : SPre p STK σ) (hc : SCache p STK σ)
+    (fc : FC STK σ s) (hne : σ.gpr .r15 ≠ 0) {i : Nat} (hi : i < p.ℓ + 2 * p.k) :
+    PolyIs s.mem (σ.gpr .r14 + BitVec.ofNat 64 (1024 * i)) (preparedSecretPolys p (skOf p σ))[i]! := by
+  obtain ⟨hl, hpoly⟩ := hc.polys.resolve_left hne
+  have hsub : Region.Sub (Proof.MlDsa.Verify.polyRegion (σ.gpr .r14 + BitVec.ofNat 64 (1024 * i)))
+      (reg (σ.gpr .r14) (σ.gpr .r15).toNat) :=
+    Offset.sub_base _ (by rw [hl]; show 1024 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega)
+  refine Proof.MlDsa.Verify.polyIs_frame fc (fun r hr => ?_) ?_
+  · rw [hp.wr] at hr
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact hc.d_g.sub_left hsub
+    · exact hc.d_c.sub_left hsub
+    · exact hc.b.sub_left hsub
+  · have := hpoly i hi
+    rwa [show 4 * n * i = 1024 * i by show 4 * 256 * i = 1024 * i; omega] at this
+
+section
+variable {p : Params} (hF : SFacts p) {STK : Nat}
+include hF
+
+/-- Polynomial `i` of the cache copied to slot `j`. -/
+theorem cp_piece {a b c j i : Nat} (hj : s1Base p ≤ j ∧ j < aBase p) (ha : a ≤ p.ℓ) (hb : b ≤ p.k) (hc : c ≤ p.k)
+    (h1 : ∀ r < a, s1Base p + r ≠ j) (h2 : ∀ i < b, s2Base p + i ≠ j) (h3 : ∀ i < c, t0Base p + i ≠ j)
+    (hi : i < p.ℓ + 2 * p.k) :
+    CPiece p STK (fun σ s => (ID p STK σ a b c s ∧ FC STK σ s) ∧ σ.gpr .r15 ≠ 0)
+      (fun σ s => ((ID p STK σ a b c s ∧ FC STK σ s) ∧ σ.gpr .r15 ≠ 0) ∧
+        PolyIs s.mem ((slay2 p STK σ).A 0 (oP j)) (preparedSecretPolys p (skOf p σ))[i]!)
+      (copyW (.r14, 1024 * i) (pS j) 128) := by
+  have hk' := hF.k; have hl := hF.l; have hkl := hF.kl
+  have hscr := hF.scr
+  have hj' := hj
+  dsimp only [s1Base, aBase] at hj'
+  have hoj : oP j + 1024 ≤ scrLen p := by simp only [oP]; omega_arith
+  refine ⟨fun σ s hp ⟨⟨h, fc⟩, hne⟩ => ?_, ?_⟩
+  · have hs := h.sc.site
+    have g14 : s.gpr .r14 = σ.gpr .r14 := h.sc.pres .r14 (by decide) (by decide)
+    have g31 : s.gpr .r31 = sScr σ := hs.r31
+    obtain ⟨hlen, -⟩ := hp.2.polys.resolve_left hne
+    have hsub : Region.Sub ⟨σ.gpr .r14 + BitVec.ofNat 64 (1024 * i), 8 * 128⟩
+        (reg (σ.gpr .r14) (σ.gpr .r15).toNat) :=
+      Offset.sub_base _ (by rw [hlen]; show 1024 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega)
+    have dsub : Region.Sub ⟨sScr σ + BitVec.ofNat 64 (oP j), 8 * 128⟩ (reg (sScr σ) (scrLen p)) :=
+      Offset.sub_base _ (by show oP j + 1024 ≤ scrLen p; exact hoj)
+    have cr : PPC64LE.Covers [⟨s.gpr .r14 + BitVec.ofNat 64 (1024 * i), 8 * 128⟩] (s.rd ++ s.wr) := by
+      rw [g14, h.sc.rd]
+      exact Covers.of_sub fun r hr => by
+        rw [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_append_left _ hp.2.rd, 1024 * i, rfl,
+          by rw [hlen]; show 1024 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega⟩
+    have cw : PPC64LE.Covers [⟨s.gpr .r31 + BitVec.ofNat 64 (oP j), 8 * 128⟩] s.wr := by
+      rw [g31, h.sc.wr, hp.1.wr]
+      exact Covers.of_sub fun r hr => by
+        rw [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), oP j, rfl, hoj⟩
+    have hd : (⟨s.gpr .r14 + BitVec.ofNat 64 (1024 * i), 8 * 128⟩ : Region).Disjoint
+        ⟨s.gpr .r31 + BitVec.ofNat 64 (oP j), 8 * 128⟩ := by
+      rw [g14, g31]; exact (hp.2.d_c.sub_left hsub).sub_right dsub
+    refine WP.mono (copyW_ok (sb := .r14) (db := .r31) (by decide) (by decide)
+      (by omega_arith) (by simp only [oP]; omega_arith) (by decide) (by decide) cr cw hd) fun s' ⟨k, hbt⟩ => ?_
+    rw [g31] at k hbt
+    rw [g14] at hbt
+    have k' : Kept ((slay2 p STK σ).RL [tri (pS j) 1024, tri (sc oPS) 1024, (1, 0, STK)]) s s' :=
+      k.mono fun r hr => by
+        rw [List.mem_singleton] at hr; subst hr
+        exact List.mem_cons_self ..
+    refine ⟨⟨⟨id_keep hF h k' (k.cs .r24 (by decide)) hj ha hb hc h1 h2 h3, ?_⟩, hne⟩, ?_⟩
+    · refine FC.step fc (h.sc.wr) (h.sc.sp) (Nat.zero_le STK) (by have := hs.spk; have := σ.sp.isLt; omega_arith)
+        (k.frame.sub fun r hr => ?_)
+      rw [List.mem_singleton] at hr; subst hr
+      rw [h.sc.wr, hp.1.wr]
+      exact ⟨_, List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)), dsub⟩
+    · exact Proof.MlDsa.PreparedKey.polyIs_of_copy hbt (cache_poly hp.1 hp.2 fc hne hi)
+  · refine rel_of (copyW_tr (by decide) (by decide) (by decide) (by omega_arith) (by simp only [oP]; omega_arith)
+      (by decide) (P := fun x y => x.sp = y.sp ∧ x.gpr .r14 = y.gpr .r14 ∧ x.gpr .r31 = y.gpr .r31) fun _ _ h => h)
+      fun σ₁ σ₂ x y p₁ p₂ pub ⟨⟨h₁, _⟩, _⟩ ⟨⟨h₂, _⟩, _⟩ => ⟨?_, ?_, ?_⟩
+    · rw [h₁.sc.sp, h₂.sc.sp, pub.1.1]
+    · rw [h₁.sc.pres .r14 (by decide) (by decide), h₂.sc.pres .r14 (by decide) (by decide), pub.2.1]
+    · rw [h₁.sc.site.r31, h₂.sc.site.r31]; exact pub.1.2.2.2.2.2.1
+
+/-- `ŝ₁`, `ŝ₂` and `t̂₀`, copied from the cache. -/
+theorem cached_piece :
+    CPiece p STK (fun σ s => (ID p STK σ 0 0 0 s ∧ FC STK σ s) ∧ σ.gpr .r15 ≠ 0)
+      (fun σ s => (ID p STK σ p.ℓ p.k p.k s ∧ FC STK σ s) ∧ σ.gpr .r15 ≠ 0) (cached p) := by
+  have hk' := hF.k; have hl := hF.l
+  unfold cached
+  refine (Piece.mono (Piece.seqR (I := fun r σ s => (ID p STK σ r 0 0 s ∧ FC STK σ s) ∧ σ.gpr .r15 ≠ 0) p.ℓ 0
+    fun r _ hr => ?_) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
+    ((Piece.mono (Piece.seqR (I := fun i σ s => (ID p STK σ p.ℓ i 0 s ∧ FC STK σ s) ∧ σ.gpr .r15 ≠ 0) p.k 0
+      fun i _ hi => ?_) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h).seq
+      (Piece.mono (Piece.seqR (I := fun i σ s => (ID p STK σ p.ℓ p.k i s ∧ FC STK σ s) ∧ σ.gpr .r15 ≠ 0) p.k 0
+        fun i _ hi => ?_) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h))
+  · rw [Nat.zero_add] at hr
+    refine Piece.mono (cp_piece hF (j := s1Base p + r) (i := r) ⟨by omega_arith, by simp only [s1Base, aBase]; omega_arith⟩
+      (Nat.le_of_lt hr) (Nat.zero_le _) (Nat.zero_le _) (fun _ _ => by omega_arith)
+      (fun _ h => absurd h (Nat.not_lt_zero _)) (fun _ h => absurd h (Nat.not_lt_zero _)) (by omega_arith))
+      (fun _ _ _ h => h) fun σ s _ ⟨⟨⟨I, fc⟩, hne⟩, hq⟩ => ⟨⟨⟨I.sc, I.r24, I.ok, I.A, I.rpp, fun r' hr' => ?_, I.s2, I.t0⟩,
+        fc⟩, hne⟩
+    rcases (by omega_arith : r' < r ∨ r' = r) with h' | rfl
+    · exact I.s1 r' h'
+    · rw [Proof.MlDsa.PreparedKey.secret_s1 p _ hr] at hq; exact hq
+  · rw [Nat.zero_add] at hi
+    have h1 : ∀ r < p.ℓ, s1Base p + r ≠ s2Base p + i := fun r hr => by simp only [s1Base, s2Base]; omega_arith
+    refine Piece.mono (cp_piece hF (j := s2Base p + i) (i := p.ℓ + i)
+      ⟨by simp only [s1Base, s2Base]; omega_arith, by simp only [s2Base, aBase]; omega_arith⟩
+      (Nat.le_refl _) (Nat.le_of_lt hi) (Nat.zero_le _) h1 (fun i' hi' => by omega_arith)
+      (fun _ h => absurd h (Nat.not_lt_zero _)) (by omega_arith))
+      (fun _ _ _ h => h) fun σ s _ ⟨⟨⟨I, fc⟩, hne⟩, hq⟩ => ⟨⟨⟨I.sc, I.r24, I.ok, I.A, I.rpp, I.s1, fun i' hi' => ?_, I.t0⟩,
+        fc⟩, hne⟩
+    rcases (by omega_arith : i' < i ∨ i' = i) with h' | rfl
+    · exact I.s2 i' h'
+    · rw [Proof.MlDsa.PreparedKey.secret_s2 p _ hi] at hq; exact hq
+  · rw [Nat.zero_add] at hi
+    have h1 : ∀ r < p.ℓ, s1Base p + r ≠ t0Base p + i := fun r hr => by simp only [s1Base, t0Base]; omega_arith
+    have h2 : ∀ i' < p.k, s2Base p + i' ≠ t0Base p + i := fun i' hi' => by simp only [s2Base, t0Base]; omega_arith
+    refine Piece.mono (cp_piece hF (j := t0Base p + i) (i := p.ℓ + p.k + i)
+      ⟨by simp only [s1Base, t0Base]; omega_arith, by simp only [t0Base, aBase]; omega_arith⟩
+      (Nat.le_refl _) (Nat.le_refl _) (Nat.le_of_lt hi) h1 h2 (fun i' hi' => by omega_arith) (by omega_arith))
+      (fun _ _ _ h => h) fun σ s _ ⟨⟨⟨I, fc⟩, hne⟩, hq⟩ => ⟨⟨⟨I.sc, I.r24, I.ok, I.A, I.rpp, I.s1, I.s2, fun i' hi' => ?_⟩,
+        fc⟩, hne⟩
+    rcases (by omega_arith : i' < i ∨ i' = i) with h' | rfl
+    · exact I.t0 i' h'
+    · rw [Proof.MlDsa.PreparedKey.secret_t0 p _ hi] at hq; exact hq
+
+end
+
+section
+variable {P : Prims} {S : Nat} (hP : SPrimsOk P S) {p : Params} (hF : SFacts p) {STK : Nat} (hS : S ≤ STK)
+include hP hF hS
+
+omit hP hF hS in
+/-- A branch on the cache's length, which the entry states fix. -/
+theorem Piece.ite15 {I J : State → State → Prop} {t e : Prog isa}
+    (h15 : ∀ σ s, CPre p STK σ → I σ s → s.gpr .r15 = σ.gpr .r15)
+    (ht : CPiece p STK (fun σ s => I σ s ∧ σ.gpr .r15 ≠ 0) J t)
+    (he : CPiece p STK (fun σ s => I σ s ∧ σ.gpr .r15 = 0) J e) :
+    CPiece p STK I J (.ite (.nonzero .d .r15) t e) := by
+  refine ⟨fun σ s hp hs => WP.ite _ (eval_nonzero s .r15) (fun hb => ht.ok σ s hp ⟨hs, ?_⟩)
+    fun hb => he.ok σ s hp ⟨hs, ?_⟩, ?_⟩
+  · rw [← h15 σ s hp hs]; simpa using hb
+  · rw [← h15 σ s hp hs]; simpa using hb
+  · refine RelCT.ite (fun x y ⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩ => by
+      rw [eval_nonzero, eval_nonzero, h15 _ _ p₁ i₁, h15 _ _ p₂ i₂, pub.2.2]) ?_ ?_
+    · exact RelCT.mono ht.tr (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩, hb⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, ⟨i₁, by
+        rw [eval_nonzero, h15 _ _ p₁ i₁] at hb; simpa using hb⟩, ⟨i₂, by
+        rw [eval_nonzero, h15 _ _ p₁ i₁] at hb; rw [← pub.2.2]; simpa using hb⟩⟩) fun _ _ h => h
+    · exact RelCT.mono he.tr (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩, hb⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, ⟨i₁, by
+        rw [eval_nonzero, h15 _ _ p₁ i₁] at hb; simpa using hb⟩, ⟨i₂, by
+        rw [eval_nonzero, h15 _ _ p₁ i₁] at hb; rw [← pub.2.2]; simpa using hb⟩⟩) fun _ _ h => h
+
+omit hP hF hS in
+theorem sdepth_rhoPP : sdepth rhoPP ≤ 48 := by decide
+
+omit hP hS in
+/-- `ρ″`, keeping `FC`. -/
+theorem rhoPPC_piece :
+    CPiece p STK (fun σ s => IM p STK σ s ∧ FC STK σ s) (fun σ s => ID p STK σ 0 0 0 s ∧ FC STK σ s) rhoPP := by
+  have r := (rhoPP_piece (STK := STK) hF).cache
+  refine ⟨fun σ s hp ⟨h, fc⟩ => WP.mono (wp_frame (r.ok σ s hp h) (by have := sdepth_rhoPP; omega))
+    fun s' ⟨h', fr⟩ => ⟨h', FC.step fc h.sc.wr h.sc.sp (Nat.le_trans sdepth_rhoPP h.sc.site.s48)
+      (by have := h.sc.site.spk; have := σ.sp.isLt; rw [h.sc.sp] at *; omega_arith) fr⟩,
+    RelCT.mono r.tr (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, i₁.1, i₂.1⟩) fun _ _ h => h⟩
+
+/-- Decoding, from `Â`: `ρ″`, then `ŝ₁`, `ŝ₂` and `t̂₀`, copied from the cache
+if `r15 ≠ 0` and decoded from `sk` otherwise. -/
+theorem decode_piece :
+    CPiece p STK (fun σ s => IM p STK σ s ∧ FC STK σ s) (ID p STK · p.ℓ p.k p.k) (decode P p) := by
+  unfold decode
+  refine (rhoPPC_piece hF).seq (Piece.ite15 (fun σ s _ h => h.1.sc.pres .r15 (by decide) (by decide))
+    (Piece.mono (cached_piece hF) (fun _ _ _ h => ⟨h.1, h.2⟩) fun _ _ _ h => h.1.1)
+    (Piece.mono (keys_piece hP hF hS).cache (fun _ _ _ h => h.1.1) fun _ _ _ h => h))
 
 end
 
