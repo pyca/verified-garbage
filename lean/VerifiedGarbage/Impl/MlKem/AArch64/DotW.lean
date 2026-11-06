@@ -5,13 +5,13 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Top
 /-!
 # ML-KEM on AArch64: the fused dot product of polynomials stored with 16 bits
 
-`dotW bo bf bg out terms` is `dot out terms` for polynomials stored with 16-bit
-coefficients: each iteration takes 16 coefficients (8 pairs) of each
+`dotW bo bf bg out terms` is the sum of the products `f ×_T g` of `terms`, for
+polynomials stored with 16-bit coefficients: each iteration takes 16 coefficients (8 pairs) of each
 polynomial (the first of each term at `bf` plus its offset, the second at
 `bg` plus its offset), two vectors, splits them into the even and odd coefficients of
 the pairs (UZP1, UZP2 of halfwords), and accumulates the products of pairs
-`0 … 3` (UMLAL) and `4 … 7` (UMLAL2) in words, as `dot` does: `v21`–`v23`
-and `v25`–`v27`. Each group is reduced as in `dot` (`finishR`), narrowed to
+`0 … 3` (UMLAL) and `4 … 7` (UMLAL2) in words: `v21`–`v23` and
+`v25`–`v27`. Each group is reduced (`finishR`), narrowed to
 halfwords (UZP1) and interleaved (ZIP1, ZIP2) into 16 output coefficients, at `bo + out`.
 -/
 
@@ -19,7 +19,7 @@ halfwords (UZP1) and interleaved (ZIP1, ZIP2) into 16 output coefficients, at `b
 
 namespace VG.Impl.MlKem.AArch64.DotW
 
-open VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.Dot
+open VG.AArch64 VG.Impl.MlKem.AArch64
 
 /-- The products of the pairs of one term, accumulated. -/
 def termW (bf bg : Reg) (fg : Nat × Nat) : List Instr :=
@@ -32,7 +32,7 @@ def termW (bf bg : Reg) (fg : Nat × Nat) : List Instr :=
  .vop (.umlalH false .v22 .v7 .v20),.vop (.umlalH true .v26 .v7 .v20),
  .vop (.umlalH false .v23 .v6 .v20),.vop (.umlalH true .v27 .v6 .v20),
  .vop (.umlalH false .v23 .v7 .v19),.vop (.umlalH true .v27 .v7 .v19)]
-/-- `a + b · γ` and `c`, reduced to `[0, q)`, with the temporary `t`: `finish` of `dot`. -/
+/-- `a + b · γ` and `c`, reduced to `[0, q)`, with the temporary `t`. -/
 def finishR (a b c g t : VReg) : List Instr :=
  [.vop (.sqdmulh t b .v17),.vop (.mls b t .v16),.vop (.mla a b g)] ++
  [.vop (.sqdmulh t a .v17),.vop (.mls a t .v16)] ++ vcsub a t ++

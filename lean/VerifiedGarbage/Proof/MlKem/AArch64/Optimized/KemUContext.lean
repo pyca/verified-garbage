@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
+public import VerifiedGarbage.Impl.MlKem.AArch64.Noise
 
 /-! # Readonly data and retained errors survive ciphertext rows -/
 

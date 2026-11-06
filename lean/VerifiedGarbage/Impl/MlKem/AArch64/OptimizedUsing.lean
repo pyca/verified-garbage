@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
 @[expose] public section
 namespace VG.Impl.MlKem.AArch64.Optimized
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM
-open VG.Impl.MlKem.AArch64.Dot VG.Impl.MlKem.AArch64.Noise
+open VG.Impl.MlKem.AArch64.Noise
 
 def prfCbdUsing (hash : Prog isa) (N off : Nat) : Prog isa :=
  .seq (.block [.movz .x .x9 (BitVec.ofNat 16 N) 0,.strb .x9 .x28 (RB+32)])
