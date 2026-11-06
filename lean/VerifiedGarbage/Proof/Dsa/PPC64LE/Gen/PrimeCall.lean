@@ -200,8 +200,6 @@ abbrev tRdK (G : GP) (u : Nat) : List Region := tRd G u ++ [G.rTab]
 /-- The test's entry. -/
 abbrev tEntryK (G : GP) (u : Nat) (s : State) : State := s.callEntry.withRegions (tRdK G u) (tWr G)
 
-theorem strip_tEntryK (G : GP) (u : Nat) (s : State) : stripConsts kT (tEntryK G u s) = tEntry G u s := rfl
-
 section
 variable {G : GP} {σ s : State} {c : Cfg}
 

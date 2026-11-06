@@ -152,12 +152,6 @@ theorem SB.frame {G : GP} {m m' : Mem} {cl : Claims} {rs : List Region} (h : SB 
 theorem SB.sub {G : GP} {m : Mem} {cl cl' : Claims} (h : SB G m cl) (hs : ∀ x ∈ cl', x ∈ cl) : SB G m cl' :=
   fun x hx => h x (hs x hx)
 
-theorem SB.cons {G : GP} {m : Mem} {cl : Claims} (h : SB G m cl) {o : Nat} {bs : List Byte}
-    (e : Spec.Rsa.bytesAt m (G.sa o) bs.length = bs) : SB G m ((o, bs) :: cl) := fun x hx => by
-  rcases List.mem_cons.mp hx with rfl | hx
-  · exact e
-  · exact h x hx
-
 /-- A claim apart from the range `[o, o + n)`. -/
 abbrev Apart (o n : Nat) (x : Nat × List Byte) : Prop := x.1 + x.2.length ≤ o ∨ o + n ≤ x.1
 

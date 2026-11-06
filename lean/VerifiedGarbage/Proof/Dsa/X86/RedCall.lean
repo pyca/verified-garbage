@@ -40,12 +40,6 @@ theorem argAddr_entry (s : State) (i : Nat) (hi : i < 4) :
   have := (s.gpr .esp).isLt
   omega
 
-theorem sub_toNat64 (e : BitVec 32) {k : Nat} (h : k ≤ e.toNat) :
-    ((e - BitVec.ofNat 32 k).setWidth 64).toNat = e.toNat - k := by
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  have := e.isLt
-  omega
-
 /-- What the caller provides for a reduction of the `len` bytes at `p`, with
 the modulus `m` in slot 0. -/
 structure CallIn (n m : Nat) (s : State) (base : Addr) (size : Nat) (p : BitVec 32) (len : Nat) : Prop where
@@ -145,8 +139,6 @@ theorem entry_bodyIn {n m : Nat} {s : State} {base : Addr} {size sz : Nat} {p : 
 theorem body_noSp (n : Nat) : NoSp (reduceBody n) := NoSp.of_all rfl
 
 theorem body_stackUse (n : Nat) : stackUse (reduceBody n) = 0 := rfl
-
-theorem body_spSafe (n : Nat) : (reduceBody n).allInstrs (fun i => !isa.writesSp i) = true := rfl
 
 theorem CallIn.eax {n m : Nat} {s t : State} {base : Addr} {size : Nat} {p : BitVec 32} {len : Nat}
     (C : CallIn n m s base size p len) (K : Keeps [.eax] s t) (M : t.mem = s.mem) :

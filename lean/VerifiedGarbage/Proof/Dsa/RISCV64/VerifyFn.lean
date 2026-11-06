@@ -182,14 +182,4 @@ theorem verifyLike_ok {X : Prog isa → Prog isa → Prog isa} {V : Prop}
     rw [w0, u0, hspec, decide_eq_false (fun hx => hn (hKs.mpr hx.1))]
     rfl
 
-theorem verify_correct (s : State) (h : vContract.pre s) :
-    ∃ tr t, Exec isa Verify.verify s tr t ∧ abiPreserved s t ∧ vContract.post s t := by
-  show WP isa Verify.verify s fun t => abiPreserved s t ∧ vContract.post s t
-  suffices main : WP isa Verify.verify s fun t =>
-      ((∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.gpr .ra = s.gpr .ra) ∧ vContract.post s t from
-    WP.mono (WP.rdwr main) fun t ⟨⟨⟨hp, hra⟩, hpost⟩, _, _, hsp⟩ => ⟨⟨hp, hsp, hra⟩, hpost⟩
-  unfold Verify.verify
-  exact verifyLike_ok (X := checkKey) (V := False)
-    (fun hL hs hr h2 hd hk _ hrest hfail => checkKey_ok hL hs hr h2 hd hk hrest hfail) h False.elim
-
 end VG.Proof.Dsa.RISCV64

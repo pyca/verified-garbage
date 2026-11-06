@@ -36,16 +36,4 @@ theorem generationDispatch_relCT (sized : Nat → Nat → Prog isa) (widths : Li
     · simp only [Both, decide_false]
       exact ih (by simpa only [List.mem_cons, Prod.mk.injEq, Both, false_or] using member) Brest
 
-theorem checkDispatch_relCT (widths : List (Nat × Nat)) (pLen qLen : Nat)
-    (base : Addr) (size : Nat) (R Q : State → State → Prop)
-    (I : CompareInvariant base size R) (hz : Layout.saved ≤ size)
-    (member : (pLen, qLen) ∈ widths) (bound : ∀ w ∈ widths, w.1 < 2 ^ 32 ∧ w.2 < 2 ^ 32)
-    (P : ∀ s t, R s t → (pointerValue base s (.input .pLen)).toNat = pLen ∧
-      (pointerValue base t (.input .pLen)).toNat = pLen)
-    (Qlen : ∀ s t, R s t → (pointerValue base s (.input .qLen)).toNat = qLen ∧
-      (pointerValue base t (.input .qLen)).toNat = qLen)
-    (body : RelCT isa R (Generate.checkSized pLen qLen) Q) :
-    RelCT isa R (Generate.checkDispatch widths) Q :=
-  generationDispatch_relCT Generate.checkSized widths pLen qLen base size R Q I hz member bound P Qlen body
-
 end VG.Proof.Dsa.X86

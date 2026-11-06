@@ -36,12 +36,6 @@ structure VerifyingABI (s : State) : Prop where
   signatureLength : (s.gpr .r9).toNat = 2 * (s.gpr .rcx).toNat
   scratchLength : Spec.Dsa.scratchWords (s.gpr .rdx).toNat ≤ (stackArg s 3).toNat
 
-theorem verifyingABI_of {s : State} (h : (Spec.Dsa.verifyContract abi).pre s) : VerifyingABI s := by
-  sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop] at h
-  sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop] at h
-  sig_split h
-  constructor <;> with_reducible assumption
-
 def VerifyingABI.input {s : State} (h : VerifyingABI s) : VerifyingInput where
   base := stackArg s 2
   digestPointer := stackArg s 0

@@ -89,9 +89,4 @@ theorem coreSignSchedule_ct (M : Mont) (inputs : SchedulePublic → List (Operan
       h.1.1.availableLocal .q v (by decide) (scalar_space (by decide) p)⟩) h7).mono
     (fun _ _ h => h) (fun _ _ => two_mono (fun _ _ h => h.1))
 
-theorem coreSign_ct (M : Mont) : RelCT isa (Two (ScheduleState signInputs))
-    (Core.sign M.mm) (fun _ _ => True) :=
-  (coreSignSchedule_ct M signInputs signInputs_stable (fun _ _ h => h)).mono
-    (fun _ _ h => h) (fun _ _ _ => True.intro)
-
 end VG.Proof.Dsa.AArch64

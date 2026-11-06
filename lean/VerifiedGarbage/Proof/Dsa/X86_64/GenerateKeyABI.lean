@@ -179,12 +179,6 @@ theorem keygen_initial_rand {extra : Nat} {s : State} (h : GenerateKeyABI extra 
     Src (allocState Random.frameBytes s) (randomBase s) Random.frameBytes (stackArg s 1) (keygenInput s).rand :=
   keygen_initial_source h (by rw [h.rd]; simp) (Nat.le_of_lt (stackArg s 2).isLt) h.stackRand
 
-theorem keygen_initial_q {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
-    Src (allocState Random.frameBytes s) (randomBase s) Random.frameBytes
-      (s.gpr .rcx + s.gpr .r9) (keygenQBytes s) := by
-  have hh := random_src_take (random_src_drop (keygen_initial_params h) (keygenInput s).pLen) (keygenInput s).qLen
-  simpa only [keygenQBytes, keygenInput, ofNat_toNat64] using hh
-
 def keygenContextOf {extra : Nat} {s : State} (h : GenerateKeyABI extra s) (m : Mem)
     (hq : 1 < Spec.Dsa.decodeBE (keygenQBytes s)) : RandomContext where
   B := randomBase s

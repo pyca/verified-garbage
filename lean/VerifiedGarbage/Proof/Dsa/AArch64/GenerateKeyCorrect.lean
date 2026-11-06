@@ -72,19 +72,6 @@ theorem keygen_sp (v : Backend) :
       (Generate.deriveKey v.mul)).all (fun i => !isa.writesSp i) = true :=
   Code.all_of_forall (fun _ => rfl) _
 
-theorem keygen_depth (v : Backend) :
-    16 * (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.mul)
-      (Generate.deriveKey v.mul)).aarch64Depth ≤ v.stack + 256 := by
-  simp only [GenerateKey.code, GenerateKey.body, GenerateKey.generate, Code.aarch64Depth,
-    show Random.prepare.aarch64Depth = 0 from rfl,
-    show Random.sample.aarch64Depth = 0 from rfl,
-    show RandomSign.finish.aarch64Depth = 0 from rfl,
-    Nat.zero_max, Nat.max_zero]
-  change 16 * (max (Generate.checkParameters v.mul).aarch64Depth
-    (Generate.deriveKey v.mul).aarch64Depth + 16) ≤ _
-  rw [Nat.mul_add, ← Nat.mul_max_mul_left]
-  exact Nat.add_le_add_right (Nat.max_le.mpr ⟨v.parametersDepth, v.deriveDepth⟩) 256
-
 structure KeygenCodePost (s : State) (result : Spec.Dsa.GenerateKeyResult) (t : State) : Prop where
   rd : t.rd = s.rd
   wr : t.wr = s.wr

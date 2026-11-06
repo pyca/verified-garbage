@@ -55,8 +55,6 @@ def dispatch (sized : Nat → Nat → Prog isa) : List (Nat × Nat) → Prog isa
     .seq (Entry.widthMatch pLen qLen)
       (.ite .e (sized pLen qLen) (dispatch sized rest))
 
-def checkDispatch (widths : List (Nat × Nat)) : Prog isa := dispatch checkSized widths
-
 def checkParametersWith (sized : Nat → Nat → Prog isa) : Prog isa := Core.sequence [
   .block checkEntry,
   dispatch sized [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)],
@@ -121,8 +119,6 @@ def deriveSizedWith (compute : Nat → Nat → Prog isa) (pLen qLen : Nat) : Pro
     (.ite .e (deriveFailure pLen qLen) (.seq (compute pLen qLen) (writeKey pLen qLen)))
 
 def deriveSized (pLen qLen : Nat) : Prog isa := deriveSizedWith deriveCompute pLen qLen
-
-def deriveDispatch (widths : List (Nat × Nat)) : Prog isa := dispatch deriveSized widths
 
 def deriveKeyWith (sized : Nat → Nat → Prog isa) : Prog isa := Core.sequence [
   .block deriveEntry,

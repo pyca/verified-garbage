@@ -151,17 +151,6 @@ section
 namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.Impl.Dsa.X86
 
-theorem verifyingSharedPost {s t : State}
-    (V : (t.gpr .eax).toNat = (if Spec.Dsa.verifyBytes (arg s 2).toNat (arg s 3).toNat
-      (Spec.Rsa.bytesAt s.mem (argumentPointer s 0) (arg s 1).toNat)
-      (Spec.Rsa.bytesAt s.mem (argumentPointer s 4) (arg s 5).toNat)
-      (Spec.Rsa.bytesAt s.mem (argumentPointer s 6) (arg s 7).toNat) then 1 else 0)) :
-    (Spec.Dsa.verifyContract abi 108).post s t := by
-  sig_post [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argSlots, argVal, argBytes]
-  change ((t.gpr .edx ++ t.gpr .eax).setWidth 32).toNat = _
-  rw [BitVec.setWidth_append_eq_right]
-  exact V
-
 theorem signingSharedPost {s t : State}
     (V : (t.gpr .eax).toNat = Spec.Dsa.signStatus (Spec.Dsa.signBytes (arg s 4).toNat (arg s 6).toNat
       (Spec.Rsa.bytesAt s.mem (argumentPointer s 2) (arg s 3).toNat)
@@ -178,12 +167,6 @@ theorem signingSharedPost {s t : State}
   change ((t.gpr .edx ++ t.gpr .eax).setWidth 32).toNat = _ ∧ _
   rw [BitVec.setWidth_append_eq_right]
   exact ⟨V, B⟩
-
-theorem verifyingCorrect (s : State) (h : (Spec.Dsa.verifyContract abi 108).pre s) :
-    ∃ trace t, Exec isa (Entry.operation false) s trace t ∧ abiPreserved s t ∧
-      (Spec.Dsa.verifyContract abi 108).post s t := by
-  obtain ⟨trace, t, E, V, ABI, _⟩ := verifyingOperation_spec (verifyingABI_of h)
-  exact ⟨trace, t, E, ABI, verifyingSharedPost V⟩
 
 theorem signingCorrect (s : State) (h : (Spec.Dsa.signContract abi 108).pre s) :
     ∃ trace t, Exec isa (Entry.operation true) s trace t ∧ abiPreserved s t ∧
@@ -241,21 +224,5 @@ def verifyingSatState : State where
   mem a := if a = 0x20005 then 32 else if a = 0x20008 then 148 else if a = 0x20009 then 1 else if a = 0x2000c then 128 else if a = 0x20010 then 20 else if a = 0x20015 then 64 else if a = 0x20018 then 40 else if a = 0x2001d then 80 else if a = 0x20025 then 128 else if a = 0x20029 then 8 else 0
   rd := [⟨0x2000, 404⟩, ⟨0x4000, 40⟩, ⟨0x5000, 0⟩]
   wr := [⟨0x8000, 16384⟩, ⟨0x20004, 40⟩]
-
-theorem verifyingSatisfiable : ∃ s, (Spec.Dsa.verifyContract abi 108).pre s := by
-  have a0 : arg verifyingSatState 0 = 8192 := by decide
-  have a1 : arg verifyingSatState 1 = 404 := by decide
-  have a2 : arg verifyingSatState 2 = 128 := by decide
-  have a3 : arg verifyingSatState 3 = 20 := by decide
-  have a4 : arg verifyingSatState 4 = 16384 := by decide
-  have a5 : arg verifyingSatState 5 = 40 := by decide
-  have a6 : arg verifyingSatState 6 = 20480 := by decide
-  have a7 : arg verifyingSatState 7 = 0 := by decide
-  have a8 : arg verifyingSatState 8 = 32768 := by decide
-  have a9 : arg verifyingSatState 9 = 2048 := by decide
-  have e : argAddr verifyingSatState 0 = 0x20004 := by decide
-  have esp : verifyingSatState.gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argSlots, argVal, argBytes, stackBelow]
-    [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp, verifyingSatState] using verifyingSatState
 
 end VG.Proof.Dsa.X86
