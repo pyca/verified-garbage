@@ -71,9 +71,6 @@ def qN : Nat := 3329
 /-- `q⁻¹ mod 2¹⁶`. -/
 def qinvN : Nat := 62209
 
-/-- The terms `vmont` leaves of `b` and the zetas `z`, `z'` (`ζ` and `ζ q⁻¹`). -/
-def mt (b : E) (z z' : Nat) : E := .sub (.mhi b (.c z)) (.mhi (.mlo b (.c z')) (.c qN))
-
 /-! ## The layers -/
 
 /-- A layer of the transform: Cooley–Tukey butterflies at distance `len`
@@ -256,13 +253,6 @@ structure St where
   regs : List Y
   /-- The terms of the words of each region, sixteen at a time. -/
   mem : List (List Y)
-
-/-- The vector register numbered `i`. -/
-def xr : Nat → XReg
-  | 0 => .xmm0 | 1 => .xmm1 | 2 => .xmm2 | 3 => .xmm3
-  | 4 => .xmm4 | 5 => .xmm5 | 6 => .xmm6 | 7 => .xmm7
-  | 8 => .xmm8 | 9 => .xmm9 | 10 => .xmm10 | 11 => .xmm11
-  | 12 => .xmm12 | 13 => .xmm13 | 14 => .xmm14 | _ => .xmm15
 
 /-- The number of a vector register. -/
 def xi : XReg → Nat

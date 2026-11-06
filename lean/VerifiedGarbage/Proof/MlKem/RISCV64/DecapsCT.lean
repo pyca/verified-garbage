@@ -73,8 +73,6 @@ include two
 theorem Two.layEq : lay s₂ K = lay s₁ K := by
   simp only [Decaps.lay, pScr, pDk, pKey, two.a0, two.a2, two.a3, two.sp]
 
-theorem Two.p0 : (lay s₁ K).ptr 0 = (lay s₂ K).ptr 0 := by rw [two.layEq]
-
 theorem Two.aEq (i o : Nat) : (lay s₁ K).A i o = (lay s₂ K).A i o := by rw [two.layEq]
 
 theorem Two.regs {a b : State} (ha : DEnv K s₁ a) (hb : DEnv K s₂ b) : a.gpr .s11 = b.gpr .s11 := by

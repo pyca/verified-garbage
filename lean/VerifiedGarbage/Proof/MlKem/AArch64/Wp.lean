@@ -332,10 +332,6 @@ theorem toNat_mul_n {a b : BitVec 64} (h : a.toNat * b.toNat < 2 ^ 64) :
     (a * b).toNat = a.toNat * b.toNat := by
   rw [BitVec.toNat_mul, Nat.mod_eq_of_lt h]
 
-theorem toNat_madd_n {a b c : BitVec 64} (h : a.toNat + b.toNat * c.toNat < 2 ^ 64) :
-    (a + b * c).toNat = a.toNat + b.toNat * c.toNat := by
-  rw [BitVec.toNat_add, BitVec.toNat_mul, Nat.add_mod_mod, Nat.mod_eq_of_lt h]
-
 theorem toNat_lsr (a : BitVec 64) (n : Nat) : (a >>> n).toNat = a.toNat / 2 ^ n := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
 

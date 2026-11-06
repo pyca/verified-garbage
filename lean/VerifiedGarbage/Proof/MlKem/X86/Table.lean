@@ -89,8 +89,4 @@ theorem table_spec (T : List Nat) {b : Reg} (hb : b ≠ .edx) {p : Addr} (is : L
   rw [table_eq]
   exact tableN_spec T hb 128 is s P (Nat.le_refl _) hea hin fun s' o f c _ => k s' o f c
 
-theorem zetaTable_eq : zetaTable = zetas := rfl
-
-theorem gammaTable_eq : gammaTable = gammas := rfl
-
 end VG.Proof.MlKem.X86

@@ -90,20 +90,6 @@ theorem montSquareWith_ok {diag red : Prog isa} {P : Nat → Prop} (hd : DiagOk 
       omega_using [h1, h2, hAT])
 
 
-theorem montSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
-    (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv)
-    (hZ : slot w 8 ≤ Z) (hw1 : 2 ≤ w) (hw : w < 2 ^ 31)
-    {o a : Nat} (ho : o < 8) (ha : a < 8) (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp)
-    (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
-    (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
-    (hA : wv s.mem B (slot w a) w < wv s.mem B (slot w aN) w) :
-    WP isa (AdxSquare.montSquare o a) s fun t =>
-      wv t.mem B (slot w o) w < wv s.mem B (slot w aN) w ∧
-      wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w aN) w =
-        wv s.mem B (slot w a) w * wv s.mem B (slot w a) w % wv s.mem B (slot w aN) w ∧
-      Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t :=
-  montSquareWith_ok diagonalChoice_diag (redcChoice_red _) hs hdi hH hZ hw1 hw trivial ho ha ho1 ho2 ha1 ha2 hinv hA
-
 /-- `montSquare4`: `montSquare` for `w` a multiple of 4. -/
 theorem montSquare4_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv)

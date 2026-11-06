@@ -62,9 +62,6 @@ theorem lay_sizes (K : KemLay) (s₀ : State) : (lay s₀ K).sizes = eSz K := rf
 
 theorem layM_sizes (K : KemLay) (s₀ : State) : (layM s₀ K).sizes = [K.scratch, 48, 32] := rfl
 
-theorem lay_ptr0 (K : KemLay) (s₀ : State) : (lay s₀ K).ptr 0 = pScr s₀ := rfl
-theorem layM_ptr0 (K : KemLay) (s₀ : State) : (layM s₀ K).ptr 0 = pScr s₀ := rfl
-
 /-- The precondition of the contract. -/
 structure Pre (K : KemLay) (s : State) : Prop where
   wf : K.WF

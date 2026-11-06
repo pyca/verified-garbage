@@ -16,7 +16,7 @@ What holds during the loop of `vg_mlkem_sample_ntt4_avx2` on the buffer of
 seed `k` (`LAt`), and an iteration of `vg_mlkem_sample_ntt`'s loop on it
 (`lat_step`, as `SampleNtt.lean`'s); the rest of that loop is in
 `S4Loop.lean`. Then what holds between the calls of `vg_mlkem_sample_ntt`
-of the baseline implementation (`PC`), and the calls.
+of the baseline implementation (`PCW`), and the calls.
 -/
 
 @[expose] public section
@@ -49,9 +49,6 @@ structure PCW (w16 : Bool) (X : Mem → Prop) (σ : State) (K : Nat) (s : State)
   r14 : s.gpr .r14 = BitVec.ofNat 64 (okN σ K)
   polys : ∀ k < K, ∀ f, sampleNTT minIterations (B σ k) = some f → PolyIsW (cw w16) s.mem (poly4W w16 (aP σ) k) f
 
-/-- `PCW` with 32-bit coefficients. -/
-abbrev PC := PCW false
-
 /-- The coefficients of seed `K` after `t` iterations. -/
 abbrev Lt (σ : State) (K t : Nat) : List Zq := sampleAfter [] (xofByte (B σ K)) t
 
@@ -64,9 +61,6 @@ structure LBW (w16 : Bool) (σ s₀ : State) (K b : Nat) (s : State) : Prop wher
   out : ∀ p < 504, 3 * b + p < 840 → s.mem (at' σ (oBuf + 504 * K + p)) = xofByte (B σ K) (3 * b + p)
   fr : Frame [cRegion w16 (poly4W w16 (aP σ) K)] s₀.mem s.mem
 
-/-- `LBW` with 32-bit coefficients. -/
-abbrev LB := LBW false
-
 /-- At iteration `b + t` of the loop on seed `K`, at byte `3 t` of its buffer. -/
 structure LAtW (w16 : Bool) (σ s₀ : State) (K b t : Nat) (s : State) : Prop where
   lb : LBW w16 σ s₀ K b s
@@ -74,9 +68,6 @@ structure LAtW (w16 : Bool) (σ s₀ : State) (K b t : Nat) (s : State) : Prop w
   rdi : s.gpr .rdi = BitVec.ofNat 64 (Lt σ K (b + t)).length
   rbp : s.gpr .rbp = poly4W w16 (aP σ) K
   stored : Stored w16 s.mem (poly4W w16 (aP σ) K) (Lt σ K (b + t))
-
-/-- `LAtW` with 32-bit coefficients. -/
-abbrev LAt := LAtW false
 
 /-- A byte apart from the regions of a frame. -/
 theorem byte_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Region} (hd : ∀ r ∈ rs, R.Disjoint r)
@@ -116,7 +107,7 @@ theorem EnvW.poly {K : Nat} (hK : K < 4) {s s' : State} (he : EnvW w16 σ s)
     exact he.saved i hi
   · simp only [List.mem_singleton] at hr; subst hr; exact ⟨aRW w16 σ, by simp, sub_poly hK⟩
 
-/-- Writes to polynomial `K` keep `LB`. -/
+/-- Writes to polynomial `K` keep `LBW`. -/
 theorem LBW.poly {s₀ : State} {K b : Nat} (hK : K < 4) {s s' : State} (h : LBW w16 σ s₀ K b s)
     (hf : Frame [cRegion w16 (poly4W w16 (aP σ) K)] s.mem s'.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14, .r11], s'.gpr r = s.gpr r) (hsy : s'.syms = s.syms) :
@@ -132,7 +123,7 @@ theorem LBW.poly {s₀ : State} {K b : Nat} (hK : K < 4) {s s' : State} (h : LBW
     h.fr.trans hf⟩
 
 omit hp in
-/-- `LB` after code that writes no memory and keeps its registers. -/
+/-- `LBW` after code that writes no memory and keeps its registers. -/
 theorem LBW.keep {s₀ : State} {K b : Nat} {s s' : State} (h : LBW w16 σ s₀ K b s) (hm : s'.mem = s.mem) {rs : List Reg}
     (k : Keep rs s s') (hsy : s'.syms = s.syms)
     (hrs : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14, .r11], r ∉ rs := by decide) :
@@ -196,7 +187,7 @@ theorem lat_step {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t < 168) (hbt :
     by rw [hk.gpr (by decide), h.rbp], hst⟩, hcx, hz⟩
 
 omit hp in
-/-- `PC` after code that writes no memory and keeps its registers. -/
+/-- `PCW` after code that writes no memory and keeps its registers. -/
 theorem PCW.keep {X : Mem → Prop} {K : Nat} {s s' : State} (h : PCW w16 X σ K s) (hm : s'.mem = s.mem) {rs : List Reg}
     (hk : Keep rs s s') (hrs : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], r ∉ rs) : PCW w16 X σ K s' :=
   ⟨h.env.keep hm hk fun r hr => hrs r (by
@@ -254,7 +245,7 @@ theorem c_disjW {K : Nat} (hK : K < 4) {a n : Nat} (h : a + n ≤ oScalar) :
   · exact Offset.disjoint _ (.inl h) (by simp only [oScalar] at h; omega_arith) (by simp only [oScalar]; omega_arith)
   · exact (hp.stk_scr.sub_right (sub_scr (by simp only [oScalar] at h; omega_arith))).symm
 
-/-- `PC` after the call. -/
+/-- `PCW` after the call. -/
 theorem PCW.call {X : Mem → Prop} {K : Nat} (hK : K < 4) {s s' : State} (h : PCW w16 X σ K s) (hrd : s'.rd = s.rd)
     (hwr : s'.wr = s.wr) (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s'.gpr r = s.gpr r)
     (hf : Frame (cWrW w16 σ K ++ [stkR σ]) s.mem s'.mem)
@@ -322,9 +313,6 @@ structure ArgIW (w16 : Bool) (X : Mem → Prop) (σ : State) (K : Nat) (s : Stat
   rsi : s.gpr .rsi = poly4W w16 (aP σ) K
   rdx : s.gpr .rdx = at' σ oScalar
 
-/-- `ArgIW` with 32-bit coefficients. -/
-abbrev ArgI := ArgIW false
-
 omit hp in
 theorem argsK_ok {X : Mem → Prop} {K : Nat} (hK : K < 4) {s : State} (h : PCW w16 X σ K s) :
     WP isa (.block [.mov .rdi (.reg .r12), .alu .add .rdi (.imm (BitVec.ofNat 32 (34 * K))),
@@ -362,9 +350,6 @@ structure CallIW (w16 : Bool) (X : Mem → Prop) (σ : State) (K : Nat) (s : Sta
   pinv : PCW w16 X σ K s
   rax : (s.gpr .rax).setWidth 32 = if (sampleNTT minIterations (B σ K)).isSome then 1 else 0
   poly : ∀ f, sampleNTT minIterations (B σ K) = some f → PolyIsW (cw w16) s.mem (poly4W w16 (aP σ) K) f
-
-/-- `CallIW` with 32-bit coefficients. -/
-abbrev CallI := CallIW false
 
 theorem callK_ok {X : Mem → Prop} {K : Nat} (hK : K < 4)
     (hX : ∀ m m', Frame (cWrW w16 σ K ++ [stkR σ]) m m' → X m → X m') {s : State} (h : ArgIW w16 X σ K s) :

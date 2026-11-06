@@ -142,10 +142,6 @@ theorem some_cond {b : Bool} {x τ' : T} (hs : (bif b then some x else none) = s
   · cases hs
   · exact ⟨rfl, Option.some.inj hs⟩
 
-theorem storeStepK_nil (h : τ.bases = []) {m : MemOp} {w : Nat} {p : Bool} {τ' : T}
-    (hs : storeStepK τ m w p = some τ') : τ'.bases = [] := by
-  obtain ⟨-, rfl⟩ := some_cond hs; exact h
-
 theorem storeStepKD_nil (h : τ.bases = []) {m : MemOp} {w : Nat} {p : Bool} {τ' : T}
     (hs : storeStepKD τ m w p = some τ') : τ'.bases = [] := by
   obtain ⟨-, rfl⟩ := some_cond hs; exact h

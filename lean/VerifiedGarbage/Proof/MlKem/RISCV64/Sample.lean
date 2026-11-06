@@ -350,7 +350,7 @@ theorem padArgs_ok {s : State} (h : SEnv s₀ s) (h0 : (s.gpr .a0).toNat = 34) :
   rw [sp, h.sp]; exact stk_st hp
 
 theorem pad_phase {s : State} (h : SEnv s₀ s) (hr : Repr s.mem (S s₀) 168 (B s₀)) (h0 : (s.gpr .a0).toNat = 34) :
-    WP isa (.seq (.block padArgs) (.call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad)) s
+    WP isa (.seq (.block padArgs) (.call "vg_keccak_pad" Impl.Sha3.RISCV64.Stream.pad)) s
       fun s' => SEnv s₀ s' ∧ stateAt s'.mem (S s₀) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₀) := by
   refine WP.seq (WP.mono (padArgs_ok hp h h0) fun t ⟨ht, hm, ha, a3⟩ => ?_)
   obtain ⟨hc, hw⟩ := call_covers hp ht (rd := []) (wr := [⟨S s₀, 200⟩])
@@ -394,7 +394,7 @@ theorem squeezeArgs_ok {s : State} {len : Nat} (hl : len ≤ 840) (h : SEnv s₀
 
 theorem squeeze_phase {s : State} {len : Nat} (hl : len ≤ 840) (h : SEnv s₀ s)
     (hst : stateAt s.mem (S s₀) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₀)) :
-    WP isa (.seq (.block (squeezeArgs len)) (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze)) s
+    WP isa (.seq (.block (squeezeArgs len)) (.call "vg_keccak_squeeze" Impl.Sha3.RISCV64.Stream.squeeze)) s
       fun s' => SEnv s₀ s' ∧ Spec.Sha3.bytesAt s'.mem (S s₀ + BitVec.ofNat 64 840) len = xof (B s₀) len := by
   refine WP.seq (WP.mono (squeezeArgs_ok hp hl h) fun t ⟨ht, hm, ha⟩ => ?_)
   obtain ⟨hc, hw⟩ := call_covers hp ht (rd := []) (wr := [⟨S s₀, 200⟩, ⟨S s₀ + BitVec.ofNat 64 840, len⟩])
@@ -463,9 +463,6 @@ theorem LS.keep {N : Nat} {s₀ s s' : State} (hp : Pre s₀) {L : List Zq} (h :
     (h4 : s'.gpr .a1 = s.gpr .a1) (h5 : s'.gpr .a2 = s.gpr .a2) : LS N s₀ L s' :=
   ⟨h.env.regs hp hk.mem hk.gp hk.rd hk.wr hk.sp, h.hN, hk.mem ▸ h.buf, h4.trans h.a1, h5.trans h.a2,
     hk.t3.trans h.t3, h.len, fun k hk' => hk.mem ▸ h.coeff k hk'⟩
-
-theorem Keep.env' {s₀ s s' : State} (hk : Keep s s') (hp : Pre s₀) (h : SEnv s₀ s) : SEnv s₀ s' :=
-  h.regs hp hk.mem hk.gp hk.rd hk.wr hk.sp
 
 /-- The first candidate of a chunk. -/
 def cand1 (b₀ b₁ : Byte) : BitVec 64 := b₀.setWidth 64 + (b₁.setWidth 64 <<< 60) >>> 52

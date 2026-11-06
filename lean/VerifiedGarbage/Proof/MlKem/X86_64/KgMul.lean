@@ -158,7 +158,6 @@ theorem dEC : (eR (eP s₀)).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.1
 theorem rT : (retR s₀).Disjoint (vR (tP s₀) k) := hp.2.2.2.2.2.2.2.2.2.2.2.1
 theorem rS : (retR s₀).Disjoint (vR (sP s₀) k) := hp.2.2.2.2.2.2.2.2.2.2.2.2.1
 theorem rA : (retR s₀).Disjoint (aR (aP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem rE : (retR s₀).Disjoint (eR (eP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 theorem rC : (retR s₀).Disjoint (cR (cP s₀)) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 theorem redS : VecReduced s₀.mem (sP s₀) k := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 theorem redA : aRed s₀.mem (aP s₀) := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
@@ -840,7 +839,6 @@ theorem wp_allg (hk0 : 0 < k) {term row : Prog isa} {se ra : Nat} {rA : Nat → 
     · simp [addVec, mulMatVec, hM, hEl]
     · rw [hm', tgt_eqG _ hi hM _ _ (by rw [List.length_map, hEl]), hrA i hi]
       exact polyIs_frame hf5 (hmxv (dTC hp :) hi) (ht4 i hi)
-
 
 end
 

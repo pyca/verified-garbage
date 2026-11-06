@@ -27,9 +27,6 @@ def reductionArgs : List Instr :=
   [.ldr .lr .r0 16, .ldr .r12 .r0 24, .ldr .r1 .r0 28,
    .ldr .r0 .r0 44, .ldr .r2 .r0 0, .mul .r1 .r1 .r2, .mov .r11 (.imm 0)]
 
-def shiftArgs : List Instr :=
-  [.ldr .lr .r0 16, .dp .add .lr .lr (.imm 1), .ldr .r0 .r0 44]
-
 /-- After shifting `n + 1` words, clear the vacated word, advance the
 first operand pointer, and decrement the public outer-loop count. -/
 def clearTop : List Instr :=
@@ -44,10 +41,6 @@ def decrementRounds : List Instr :=
 def roundFinish : List Instr := clearTop ++ advanceOperand ++ decrementRounds
 
 def productStage : Prog isa := .seq (.block productArgs) rowFull
-
-def reductionStage : Prog isa := .seq (.block reductionArgs) rowFull
-
-def quotientStage : Prog isa := .seq (.block shiftArgs) (.seq shift (.block roundFinish))
 
 def fusedReductionStage : Prog isa := .seq (.block reductionArgs) FusedReduction.code
 

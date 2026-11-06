@@ -13,8 +13,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.URow
 /-! # The 16-bit encryption after the matrix computed PRF outputs
 
 `encrypt_restP`: `Kem16P.encryptRestP`, the noise from the buffers
-(`noiseP_ok`), then the rows of `u` and `v` (`after_noiseP`), as
-`Kem.encrypt_restW`. -/
+(`noiseP_ok`), then the rows of `u` and `v` (`after_noiseP`). -/
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Kem16P

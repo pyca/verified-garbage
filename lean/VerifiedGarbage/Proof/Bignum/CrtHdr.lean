@@ -34,26 +34,12 @@ theorem keepsHdr_slot {j : Nat} (hj : j < 32) (hf : hFixed j = false) : KeepsHdr
 /-- The arguments' slots, unchanged. -/
 def HFix (B : Addr) (m m' : Mem) : Prop := ∀ i < 32, hFixed i = true → word m' B (8 * i) = word m B (8 * i)
 
-theorem HFix.refl (B : Addr) (m : Mem) : HFix B m m := fun _ _ _ => rfl
-
 theorem HFix.trans {B : Addr} {m₁ m₂ m₃ : Mem} (h₁ : HFix B m₁ m₂) (h₂ : HFix B m₂ m₃) : HFix B m₁ m₃ :=
   fun i hi hf => (h₂ i hi hf).trans (h₁ i hi hf)
 
 theorem HFix.of_frm {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m')
     (hr : ∀ r ∈ rs, KeepsHdr r) : HFix B m m' := fun i hi hf =>
   h.word_eq (fun r hr' => hr r hr' i hi hf) (by omega)
-
-theorem keepsHdr_gRanges (w : Nat) : ∀ r ∈ gRanges w, KeepsHdr r := by
-  have := hdr_lt_slot w Public.aAcc (show 31 < 32 by decide)
-  have := hdr_lt_slot w Public.aTmp (show 31 < 32 by decide)
-  have := hdr_lt_slot w Public.aY (show 31 < 32 by decide)
-  simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl)
-  · exact keepsHdr_ge (by simp only; omega)
-  · exact keepsHdr_ge (by simp only; omega)
-  · exact keepsHdr_ge (by simp only; omega)
-  · exact keepsHdr_slot (by decide) (by decide)
-  · exact keepsHdr_slot (by decide) (by decide)
 
 theorem keepsHdr_setupRanges (w : Nat) : ∀ r ∈ setupRanges w, KeepsHdr r := by
   have := hdr_lt_slot w Public.aN (show 31 < 32 by decide)

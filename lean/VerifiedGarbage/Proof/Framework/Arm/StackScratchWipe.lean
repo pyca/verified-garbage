@@ -58,9 +58,10 @@ allocates the buffer in a frame of `bytes` more bytes of stack and zeroes
 its first `words` words after the code (`withStackScratchWiped`), if its
 precondition reads memory only within the function's buffers (`hpre`), and
 its postcondition both the memory on entry and the memory on return
-(`hpost`, `hpostOut`). -/
+(`hpost`, `hpostOut`), and so must its leak, if any (`hleak`). -/
 theorem Verified.stackScratchWiped {c : Prog isa}
-    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack))
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n)
     (hw : 4 * words ≤ n * e.size)
@@ -75,10 +76,11 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs mm m₁ r →
         Curry.apply (sig.words abi.ptrBits) post vs mm m₂ r)
-    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
-    (hl : Sig.noLists sig.params = true := by decide) :
+    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s)
+    (hl : Sig.noLists sig.params = true := by decide)
+    (hleak : Sig.LeakLocalL abi.ptrBits sig leak := by trivial) :
     Verified target (withStackScratchWiped bytes m words c)
-      (sig.contract abi pre post wa (stack + bytes)) := by
+      (sig.contract abi pre post wa (stack + bytes) leak) := by
   obtain ⟨hcor, hct, -⟩ := h
   have hpreL : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -151,6 +153,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, s₄, -, hq, hfr, -, hex, ha, hm, hr0, hr1⟩ := hrun s hs
     refine ⟨_, _, hex, ha, ?_⟩
+    show (sig.contract abi pre post wa (stack + bytes)).post s _
     rw [post_arm]
     have hq' := (post_arm (sig := sig.withScratch nm e n)
       (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
@@ -168,10 +171,10 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       exact hdisj s hs b hb' a ha').symm
   · obtain ⟨u₁, _, _, f₁, _, _, p₁, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂, ((pub_arm hl).mp hp).1,
+    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂, ((pubL_arm hl).mp hp).1.1,
       hct _ _ _ _ _ _ (narrow_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpreL h₁)
         (narrow_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpreL h₂)
-        (narrow_pub hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ h₁ h₂ hp) f₁ f₂]
+        (narrow_pub hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ h₁ h₂ hp hleak) f₁ f₂]
 
 end
 

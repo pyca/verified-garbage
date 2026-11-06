@@ -32,9 +32,6 @@ open VG.Spec.MlKem
 /-- The constant of `consts`. -/
 def C : BitVec 64 := 161270
 
-theorem consts_val : ((0x2 : BitVec 16) ++ (0 : BitVec 16)).signExtend 64 ||| (0x75F6 : BitVec 16).setWidth 64 = C := by
-  decide
-
 /-- What `barrett d t` leaves in `d`. -/
 def bar (x : BitVec 64) : BitVec 64 := x - (x >>> 11 * C) >>> 18 * 3329
 
@@ -57,9 +54,6 @@ theorem red_toNat {x : BitVec 64} (hx : x.toNat < 2 ^ 25) : (red x).toNat = x.to
   unfold red
   rw [fixq_subq (by rw [bar_toNat hx]; exact h1), bar_toNat hx, ← reduce32 hx, condSub_eq h1]
 
-theorem red_lt {x : BitVec 64} (hx : x.toNat < 2 ^ 25) : (red x).toNat < q := by
-  rw [red_toNat hx]; exact Nat.mod_lt _ (by decide)
-
 theorem toNat_val64 (x : Zq) : (BitVec.ofNat 64 x.val).toNat = x.val := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
 
@@ -78,10 +72,6 @@ theorem red_mul {a b : Zq} :
 theorem zetaTable_eq : zetaTable = zetas := rfl
 
 theorem gammaTable_eq : gammaTable = gammas := rfl
-
-theorem zetaTable_lt : ∀ k < 128, zetaTable.getD k 0 < q := by decide +kernel
-
-theorem gammaTable_lt : ∀ k < 128, gammaTable.getD k 0 < q := by decide +kernel
 
 /-- After the first `k` entries of a table at `B`. -/
 structure TabInv (T : List Nat) (B : Addr) (s₀ : State) (k : Nat) (s : State) : Prop where

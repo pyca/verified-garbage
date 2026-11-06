@@ -205,7 +205,6 @@ theorem allOkD_of {K : KemLay} (hK : K.WF) {W : List (Nat × Nat × Nat)}
     rw [okD, Bool.and_eq_true]
     exact ⟨okW_of hK this.1, sepB_mono (sepB_scr this.2 hK.scr) (inB_len (ct_le hK)) (inB_refl w)⟩
 
-
 /-! ### The offsets the phases use, proven in a small context -/
 
 theorem ctLen_split (K : KemLay) : K.ctLen = K.uLen * K.k + 32 * K.dv := rfl
@@ -221,8 +220,6 @@ theorem oAcc_le_oNtt : K.oAcc + 1024 ≤ K.oNtt := by offs
 theorem oP3_le_oAcc : oPoly (3 * K.k) + 1024 ≤ K.oAcc := by offs
 theorem oP3_le_cin : oPoly (3 * K.k) + 1024 ≤ oCin := by offs
 theorem oMsg_le_oP3 : oMsg + 32 ≤ oPoly (3 * K.k) := by offs
-theorem oCt_lt : K.oCt < 32768 := by offs
-
 theorem vIn_fit : oCin + K.uLen * K.k + 32 * K.dv ≤ 32768 := by
   have h := hK.cin
   rw [ctLen_split, ← Nat.add_assoc] at h

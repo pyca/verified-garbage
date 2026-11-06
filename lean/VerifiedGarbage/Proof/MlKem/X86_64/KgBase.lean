@@ -54,7 +54,6 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
 meta import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
@@ -127,9 +126,6 @@ def kcChk (ws : List (Ptr × Nat)) : Bool :=
   topChk (kgB L) ws && keepB (kgB L) ws (.rbp, 0) 32 && keepB (kgB L) ws (.rbp, 32) 32
 
 /-! ## The checks of the pieces -/
-
-/-- `ρ` of `Â`'s entry `e`. -/
-abbrev aE (e : Nat) : Ptr := L.aS (e / L.k) (e % L.k)
 
 /-- What entry `e` of `Â` writes. -/
 abbrev ijW (e : Nat) : List (Ptr × Nat) :=

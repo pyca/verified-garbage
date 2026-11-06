@@ -33,8 +33,6 @@ theorem mem_write (r : Reg) (v : BitVec 64) : (s.write r v).mem = s.mem := rfl
 theorem rd_write (r : Reg) (v : BitVec 64) : (s.write r v).rd = s.rd := rfl
 theorem wr_write (r : Reg) (v : BitVec 64) : (s.write r v).wr = s.wr := rfl
 theorem sp_write (r : Reg) (v : BitVec 64) : (s.write r v).sp = s.sp := rfl
-theorem unknowns_write (r : Reg) (v : BitVec 64) : (s.write r v).unknowns = s.unknowns := rfl
-
 theorem write_write (r : Reg) (v w : BitVec 64) : (s.write r v).write r w = s.write r w := by
   simp only [State.write, State.mk.injEq, and_true]
   funext r'; split <;> rfl

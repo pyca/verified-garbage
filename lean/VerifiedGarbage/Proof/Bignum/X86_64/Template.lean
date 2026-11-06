@@ -20,14 +20,6 @@ namespace VG.Proof.Bignum.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 
-theorem noCalls_seqs (l : List (Prog isa)) : (seqs l).noCalls = l.all Code.noCalls := by
-  induction l with
-  | nil => rfl
-  | cons a l ih =>
-    cases l with
-    | nil => simp only [seqs, List.all_cons, List.all_nil, Bool.and_true]
-    | cons b l => simp only [seqs, Code.noCalls, List.all_cons] at ih ⊢; rw [ih]
-
 theorem inlineOk_seqs (l : List (Prog isa)) : (seqs l).InlineOk = l.all Code.InlineOk := by
   induction l with
   | nil => rfl

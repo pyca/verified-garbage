@@ -25,10 +25,4 @@ def entryContract (base : Contract isa) : Contract isa where
  post := base.post
  pub s t := base.pub s t ∧ ∀c∈constants,s.syms c.1=t.syms c.1
 
-theorem entry_tables {base : Contract isa} {s : State}
- (h : (entryContract base).pre s) : Tables s := tables_of_consts h.2
-
-theorem entry_keygen {P : KemLay} (hw : P.Wf) {s : State}
- (h : (entryContract (keyGenAArch64 P)).pre s) : KeyGen.Pre P s ∧ Tables s :=
- ⟨keygen_unstrip (KeyGen.pre_of hw h.1),entry_tables h⟩
 end VG.Proof.MlKem.AArch64.Optimized

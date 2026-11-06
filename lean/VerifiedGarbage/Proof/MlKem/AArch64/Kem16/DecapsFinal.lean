@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsStart
 
@@ -31,7 +30,6 @@ import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Decaps
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsChecks
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat

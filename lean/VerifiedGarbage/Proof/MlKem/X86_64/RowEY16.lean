@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 (`PolyIsW 16`) as `rowLdY` loads those of `u32`s: two loads, `vpermq` with
 `0xD8`, which brings quadwords `0, 2` of the block to lane 0 and `1, 3` to
 lane 1, and `de16Y`, the low and high words of each lane's doublewords
-(`de16_words`). So `rowEY16` is `rowEg` of `FRep.u16` (`rowEY16_ok`).
+(`de16_words`). So `rowEY16` is `rowEg` of `FRep.u16` (`rowEY16_wo`).
 -/
 
 @[expose] public section
@@ -158,15 +158,6 @@ def FRep.u16 (o : Nat) : FRep o where
   hst := by decide
   frame := fun hf _ _ hd h => polyIsW16_frame hf hd h
   ok := fun hb hrsi hF rF => ld16_ok hb hrsi hF rF
-
-/-- `rowEY16 o k`: the accumulator at `aP` of the sum of the products of the
-`k` polynomials of `u16`s from `fB` and accumulators from `gB`. -/
-theorem rowEY16_ok {o k : Nat} {fB gB aP C : Addr} {fs gs : List Poly} {s : State}
-    (hx : RowEY.CtxG (FRep.u16 o) k fB gB aP C fs gs s.mem s.rd s.wr) (hrsi : s.gpr .rsi = fB)
-    (hrdx : s.gpr .rdx = gB) (hrdi : s.gpr .rdi = aP) (hrcx : s.gpr .rcx = C) :
-    WP isa (rowEY16 o k) s fun s' => Acc16 s'.mem aP (dotP fs gs k) ∧
-      Frame [sR aP] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
-  RowEY.rowEg_ok (FRep.u16 o) hx hrsi hrdx hrdi hrcx
 
 /-- What `rowEY16` may write: `rax` (the constants), `rcx` (the count) and the
 pointers. -/

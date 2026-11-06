@@ -25,12 +25,4 @@ def bases : List Instr :=
 
 def body : Prog isa := .seq (.block bases) montBody
 
-def restore : List Instr :=
-  [.ldrSp .r5 4, .ldrSp .r6 8, .ldrSp .r7 12, .ldrSp .r8 16,
-   .ldrSp .r9 20, .ldrSp .r10 24, .ldrSp .r11 28, .ldrSp .lr 32]
-
-def mul : Prog isa :=
-  .frame (.push [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr])
-    (.seq (.block [.ldrSp .r12 36]) (.seq body (.block restore))) (.pop .r4 36)
-
 end VG.Impl.Bignum.Arm.MontFn

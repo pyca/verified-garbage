@@ -115,7 +115,6 @@ theorem start_ct : RelCT isa (R4W w16 fun σ s => s = σ)
       rcases hr with rfl | rfl | rfl
       exacts [hq.1, hq.2.1, hq.2.2.1]) (by taint_decide))
 
-
 theorem env_rbx {σ₁ σ₂ s₁ s₂ : State} (hq : sample4K.pub σ₁ σ₂) (e₁ : EnvW w16 σ₁ s₁) (e₂ : EnvW w16 σ₂ s₂) :
     s₁.gpr .rbx = s₂.gpr .rbx := by rw [e₁.rbx, e₂.rbx, pub_scr hq]
 
@@ -174,9 +173,6 @@ def GIW (w16 : Bool) (X : State → State → Prop) (K b t : Nat) (c : BitVec 64
     s₂.gpr .r10 = c ∧ (w16 = true → ¬ (Lt σ₁ K (b + t)).length < 241) ∧
     (w16 = true → ¬ (Lt σ₂ K (b + t)).length < 241)
 
-/-- `GIW` with 32-bit coefficients. -/
-abbrev GI := GIW false
-
 theorem gi_brel {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} {n : Nat} (hK : K < 4) (ht : t + 8 ≤ 168)
     (hbt : b + t + 8 ≤ 280) {s₁ s₂ : State} (h : GIW w16 X K b t c n s₁ s₂) : BRel w16 s₁ s₂ := by
   obtain ⟨σ₁, σ₂, s₀₁, s₀₂, u, p₁, p₂, hq, _, hu, _, _, l₁, l₂, c₁, c₂, -⟩ := h
@@ -225,9 +221,6 @@ theorem iloop_ct {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} (h
 coefficients while there are fewer than 241, and `r10 = c`. -/
 abbrev RVW (w16 : Bool) (X : State → State → Prop) (K b t : Nat) (c : BitVec 64) : State → State → Prop :=
   RXW w16 X fun σ s₀ s => LVW w16 σ s₀ K b t s ∧ s.gpr .r10 = c
-
-/-- `RVW` with 32-bit coefficients. -/
-abbrev RV := RVW false
 
 theorem cmpG_ok {σ s₀ : State} {K b t : Nat} {c : BitVec 64} {s : State} (h : LVW w16 σ s₀ K b t s ∧ s.gpr .r10 = c) :
     WP isa (.block [.alu .cmp .rdi (.imm 241)]) s fun s' => (LVW w16 σ s₀ K b t s' ∧ s'.gpr .r10 = c) ∧

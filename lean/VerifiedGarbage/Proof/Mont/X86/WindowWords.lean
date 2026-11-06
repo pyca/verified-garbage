@@ -67,26 +67,6 @@ theorem val32_top_bits (m : Mem) (base : Addr) (d j : Nat) :
   generalize val32 m base d j * 16 / 2 ^ (32 * j) = q at hq
   omega
 
-/-- The top four bits of the `k`-word number at `exp`, into the window word. -/
-theorem topWindow_ok {s : State} {base : Addr} {size exp k : Nat} (hs : Scr s base size)
-    (hk : 0 < k) (he : exp + 4 * k ≤ size) (hw : 8 ≤ size) :
-    WP isa (.block (VG.Impl.Mont.X86.Dynamic.topWindow exp k)) s fun t =>
-      Outside base 4 4 s.mem t.mem ∧
-      w32 t.mem base 4 = val32 s.mem base exp k * 16 / 2 ^ (32 * k) ∧
-      Keeps [.eax] s t := by
-  have hn := hs.nowrap
-  unfold VG.Impl.Mont.X86.Dynamic.topWindow VG.Impl.Mont.X86.Dynamic.windowOffset
-  refine wp_movS (readSrc_sc hs (d := exp + 4 * (k - 1)) (by omega)) fun s₁ u₁ _ => ?_
-  refine wp_shr (by decide) fun s₂ u₂ _ => ?_
-  have k₂ : Keeps [.eax] s s₂ := (u₁.keeps.mono (by decide)).widen u₂.keeps
-  have hs₂ := hs.of_keeps k₂ (by decide)
-  refine wp_storeS (hs₂.ea (by omega)) (hs₂.write (d := 4) (by omega)) fun t mt =>
-    WP.block_nil ⟨?_, ?_, k₂.trans (mt.keeps _)⟩
-  · rw [mt.mem, u₂.mem, u₁.mem]
-    exact writeW32_outside _ _ _ (by omega)
-  · obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
-    rw [mt.mem, w32_write_self, u₂.gpr, u₁.gpr, shr28_toNat, Nat.add_sub_cancel, val32_top_bits]
-
 /-- The exponent's next window, from its top bits. -/
 theorem window_exponent (X P : Nat) (hP : 0 < P) : X * 16 / P = 16 * (X / P) + X % P * 16 / P := by
   have e : X * 16 = X % P * 16 + P * (16 * (X / P)) := by

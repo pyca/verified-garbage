@@ -254,9 +254,6 @@ theorem tabTail_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i < l.T)
 /-- A state that differs from `s` only in the flags. -/
 def Flags (s t : State) : Prop := t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr
 
-theorem Flags.keep {s t : State} (h : Flags s t) (rs : List Reg) : VG.Proof.MlKem.X86_64.Keep rs s t :=
-  ⟨fun r _ => by rw [h.1], h.2.2.1, h.2.2.2.1⟩
-
 /-- The head of entry `i`: the conversion's operands below 2, the table's
 from 2. -/
 theorem bodyHead_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i < l.T) {R : Prog isa} {Q : State → Prop}

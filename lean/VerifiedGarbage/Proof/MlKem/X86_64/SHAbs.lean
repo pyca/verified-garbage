@@ -71,11 +71,6 @@ theorem HR.word {σ : State} {m : Mem} (h : HR σ m) {d : Nat} (hd : d + 8 ≤ 6
     rw [at', Offset.add_add, Nat.add_assoc]
     exact h _ (by omega_arith)
 
-theorem HR.blk {σ : State} {m : Mem} (h : HR σ m) {i : Nat} (hi : i < 3) : bytesAt m (hbA σ i) 136 = hblk σ i :=
-  VG.Proof.MlKem.bytesAt_congr fun j hj => by
-    rw [hbA, at', Offset.add_add, ← at', show oHB + 136 * i + j = oHS + (200 + 136 * i + j) by simp only [oHB, oHS]; omega_arith]
-    exact h _ (by omega_arith)
-
 /-- The low scratch space is apart from the sponge's. -/
 theorem low_hR (σ : State) : (lowR σ).Disjoint (hR σ) :=
   Offset.base_disjoint (scr σ) (by simp only [oSave, oHS]; omega_arith) (by simp only [oHS]; omega_arith)

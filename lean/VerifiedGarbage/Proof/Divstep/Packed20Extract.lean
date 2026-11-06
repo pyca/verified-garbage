@@ -80,18 +80,4 @@ theorem packed20_extract_high {n a b : Nat} {u v : Int}
   rcases hn with rfl | rfl <;> norm_num at *
   all_goals omega
 
-/-- Packed rows fit in a signed word before coefficient extraction. -/
-theorem packed20_row_signed {n a b : Nat} {u v : Int}
-    (hn : n=19 ∨ n=20) (ha : a<2^20) (hb : b<2^20)
-    (h : |u|+|v| ≤ (2:Int)^n) :
-    let z := (u*((a:Int)-2^41)+v*((b:Int)-2^62))/2^n;
-    -(2:Int)^63 ≤ z ∧ z<2^63 := by
-  obtain ⟨hl,hh,hz⟩ := packed20_row hn ha hb h
-  have hu := abs_le.mp (le_trans (le_add_of_nonneg_right (abs_nonneg v)) h)
-  have hv := abs_le.mp (le_trans (le_add_of_nonneg_left (abs_nonneg u)) h)
-  dsimp only
-  rw [hz]
-  rcases hn with rfl | rfl <;> norm_num at *
-  all_goals omega
-
 end VG.Proof.Divstep

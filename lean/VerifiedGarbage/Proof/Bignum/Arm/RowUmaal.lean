@@ -40,11 +40,6 @@ structure NoFlags (a b : State) : Prop where
   unknowns : a.unknowns = b.unknowns
   syms : a.syms = b.syms
 
-theorem NoFlags.refl (a : State) : NoFlags a a := ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
-
-theorem NoFlags.symm {a b : State} (h : NoFlags a b) : NoFlags b a :=
-  ⟨h.gpr.symm, h.sp.symm, h.mem.symm, h.rd.symm, h.wr.symm, h.unknowns.symm, h.syms.symm⟩
-
 theorem NoFlags.trans {a b c : State} (h : NoFlags a b) (h' : NoFlags b c) : NoFlags a c :=
   ⟨h.gpr.trans h'.gpr, h.sp.trans h'.sp, h.mem.trans h'.mem, h.rd.trans h'.rd, h.wr.trans h'.wr,
     h.unknowns.trans h'.unknowns, h.syms.trans h'.syms⟩
@@ -577,11 +572,6 @@ theorem row_sim : Sim (M := isa) row rowU := by
         (by rw [k2 _ (.inr (.inr rfl)), a9]) e)
     | iteF hc e => exact .iteF hc e
   exact .seq e₁ (.seq e₂ (.seq e₃ (.seq E₄ e₅)))
-
-/-- Code with `umaal` rows is verified as it is with `row`s. -/
-theorem umaalRows_verified {c : Prog isa} {k : Contract isa} (h : Verified Arm.target c k) :
-    Verified Arm.target (umaalRows c) k :=
-  h.subst row_sim
 
 /-- Rows have no frames: replacing them takes no more stack. -/
 theorem armStack_umaalRows (c : Prog isa) :

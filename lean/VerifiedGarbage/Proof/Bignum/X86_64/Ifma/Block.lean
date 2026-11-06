@@ -42,10 +42,6 @@ theorem AmmOk.steps (hl : AmmOk l) :
 theorem LayOk.bounds (hl : LayOk l) : 2 ≤ l.R ∧ l.R ≤ 10 := by
   rcases hl with rfl | rfl | rfl <;> decide
 
-theorem LayOk.steps (hl : LayOk l) :
-    1 ≤ l.S / l.R ∧ l.S / l.R ≤ 4 ∧ 2 ≤ l.S ∧ l.S ≤ l.L ∧ l.R * (l.S / l.R) + l.S % l.R = l.S ∧
-      l.S % l.R < l.R := hl.amm.steps
-
 theorem regOf_lt {p k i : Nat} (hp : p < l.nl) (hR : 2 ≤ l.R) : regOf l p k i < l.nl * l.R := by
   have := Nat.mod_lt (k + i) (show 0 < l.R by omega_arith)
   have := Nat.mul_le_mul_left l.R (show p + 1 ≤ l.nl by omega_arith)

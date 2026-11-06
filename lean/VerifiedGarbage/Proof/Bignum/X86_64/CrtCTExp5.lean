@@ -33,10 +33,6 @@ open VG.Proof.MlKem.X86_64
 def ExpCT5S (M : Mont) (Sq : MontS) (S : CrtSel 32) (sp sl : Nat) : Prop :=
   RelCT isa (Two (EPre5 sp sl)) (seqs (Crt.expLoop5S Sq.mm M.mm S.code sp sl)) fun _ _ => True
 
-/-- `expLoop5 M.mm S.code sp sl` is constant time. -/
-def ExpCT5 (M : Mont) (S : CrtSel 32) (sp sl : Nat) : Prop :=
-  RelCT isa (Two (EPre5 sp sl)) (seqs (Crt.expLoop5 M.mm S.code sp sl)) fun _ _ => True
-
 /-- The number of windows of an exponent of `a.len` bytes. -/
 def K5 (a : BPub) : Nat := (padBits a.len + 8 * a.len) / 5
 
@@ -63,10 +59,6 @@ def W5Cmp (q : BPub × Nat) (s : State) : Prop :=
 def W5Ld (q : BPub × Nat) (s : State) : Prop :=
   s.gpr .rdi = off q.1.x.B q.1.x.o ∧ s.gpr .rax = q.1.ptr ∧
     ∃ i b, padBits q.1.len + 8 * i = 5 * q.2 + b ∧ b < 8 ∧ s.gpr .rcx = BitVec.ofNat 64 i
-
-theorem pins_w5Cmp : Pins W5Cmp [.rdi] :=
-  pins_rdi (fun q : BPub × Nat => off q.1.x.B q.1.x.o) fun _ _ ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, hI⟩ =>
-    hI.ctx.good.rdi
 
 theorem pins_w5Ld : Pins W5Ld [.rdi, .rax, .rcx] := by
   rintro q s₁ s₂ ⟨d₁, a₁, i₁, b₁, h₁, hb₁, c₁⟩ ⟨d₂, a₂, i₂, b₂, h₂, hb₂, c₂⟩ r hr
@@ -339,21 +331,6 @@ theorem crtExpLoop5S_ct (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) {sp 
   exact WP.mono (crtWin5_ok M Sq S hw hw' hR rfl hL' he.rd he.val hout (K := K5 a) (by rw [hK, hL]) hj hib hb hiL hI)
     fun s' ⟨hz, i', b', hib', hb', hiL', hI'⟩ => ⟨eval_ne_count hj hz,
       fun _ => ⟨t₀, minv, X, Xc, eb, ⟨i', b', hib', hb', hiL', hI'⟩, hw, hw', hR, hL, hL', he, hout⟩, fun _ => trivial⟩
-
-/-- `crtExpLoop5S_ct` with the squarings by `M`: `expLoop5 M.mm`. -/
-theorem crtExpLoop5_ct (M : Mont) (S : CrtSel 32) (hS : S.CT) {sp sl : Nat}
-    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.rdi, .rax]) (.block [.mov .rdx (.mem (Crt.ws .rax sp)),
-      .store (hdr Crt.sExp) .rdx, .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx,
-      .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]) hc).isSome = true) :
-    ExpCT5 M S sp sl :=
-  crtExpLoop5S_ct M M.toS S hS hT
-
-theorem expLoop5_ct_P (M : Mont) (S : CrtSel 32) (hS : S.CT) : ExpCT5 M S sDp sPlen :=
-  crtExpLoop5_ct M S hS (by taint_decide)
-
-theorem expLoop5_ct_Q (M : Mont) (S : CrtSel 32) (hS : S.CT) : ExpCT5 M S sDq sQlen :=
-  crtExpLoop5_ct M S hS (by taint_decide)
 
 theorem expLoop5S_ct_P (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) : ExpCT5S M Sq S sDp sPlen :=
   crtExpLoop5S_ct M Sq S hS (by taint_decide)

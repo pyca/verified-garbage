@@ -194,7 +194,4 @@ theorem ctW {fast : Bool} : ConstantTime isa (sampleHKW w16).pre (sampleHKW w16)
   refine RelCT.seq (run1Y_ct (K := 2) (by decide) (by taint_decide)) ?_
   exact tail3_ct
 
-theorem ct {fast : Bool} : ConstantTime isa sampleHK.pre sampleHK.pub (sampleH fast) := by
-  rw [sampleHK_eq]; exact ctW (w16 := false)
-
 end VG.Proof.MlKem.X86_64.SH

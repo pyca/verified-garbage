@@ -51,8 +51,6 @@ structure PreparedW (w16 : Bool) (A B : Spec.Sha3.State) (oa ob : Nat) (p table 
  pointer : t.gpr .x19=p
  tablePtr : t.gpr .x16=table
 
-abbrev Prepared := PreparedW false
-
 theorem prepare_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0)
     (h : BeginInput sb ss oa ob p seed outA outB table s) :

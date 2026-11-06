@@ -43,12 +43,6 @@ theorem exponentValid_sat (v : Nat) : Spec.Rsa.exponentValid (sat v) = Spec.Rsa.
     simp only [Spec.Rsa.exponentValid, h2, Bool.and_false]
     decide
 
-theorem mask_and (a c : Bool) :
-    (BitVec.ofNat 64 0 - BitVec.ofNat 64 (if a then 1 else 0)) &&&
-        (BitVec.ofNat 64 0 - BitVec.ofNat 64 (if c then 1 else 0)) =
-      BitVec.ofNat 64 0 - BitVec.ofNat 64 (if (a && c) then 1 else 0) := by
-  cases a <;> cases c <;> decide
-
 /-- `k` bytes reversed from the low bytes of a number of `2 w` digits below
 `256^k`: its I2OSP. -/
 theorem out_bytes {m m' : Mem} {O B : Addr} {d k w v : Nat} (hkw : k ≤ 8 * w)

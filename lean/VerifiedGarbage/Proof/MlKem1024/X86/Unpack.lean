@@ -27,9 +27,6 @@ open VG.Proof.MlKem
 open VG.Proof.MlKem.X86
 open VG.Spec.MlKem
 
-theorem dv_lt' {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) {y : Nat} (hy : y < 2 ^ d) : dv d y < q :=
-  (decompress1024_val hd hy).2
-
 theorem dv_eq' {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) {y : Nat} (hy : y < 2 ^ d) :
     dv d y = (decompress d y).val := (decompress1024_val hd hy).1.symm
 

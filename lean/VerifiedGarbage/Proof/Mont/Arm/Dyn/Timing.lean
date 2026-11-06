@@ -127,23 +127,6 @@ theorem zeros_relCT (p q : Bool) (k o : Nat) :
     cases p <;> cases q <;> exact ⟨_, by taint_decide⟩
   exact erased_relCT h (zeros_eraseOff ..) (wsT_noBase p q) H
 
-theorem selectW_check (p q : Bool) :
-    ∃ h, (VG.Taint.check taint (wsT p q) (selectW 1 0 0 0) h).map (taint.le (wsT p q)) = some true := by
-  cases p <;> cases q <;> exact ⟨_, by taint_decide⟩
-
-theorem selectW_relCT (p q : Bool) (k src tmp o : Nat) :
-    RelCT isa (VG.Arm.Taint.Agree (wsT p q)) (selectW k src tmp o) (VG.Arm.Taint.Agree (wsT p q)) := by
-  obtain ⟨h, H⟩ := selectW_check p q
-  exact erased_relCT h (selectW_eraseOff ..) (wsT_noBase p q) H
-
-/-- The context's setup, whose doublings count in `lr`. -/
-theorem contextSetup_relCT (p q : Bool) (n : Nat) :
-    RelCT isa (VG.Arm.Taint.Agree (wsT p q)) (contextSetup n) (VG.Arm.Taint.Agree (wsT p q)) := by
-  obtain ⟨h, H⟩ : ∃ h, (VG.Taint.check taint (wsT p q) (contextSetup 1) h).map (taint.le (wsT p q)) =
-      some true := by
-    cases p <;> cases q <;> exact ⟨_, by taint_decide⟩
-  exact erased_relCT h (contextSetup_eraseOff n) (wsT_noBase p q) H
-
 /-! ## The exponentiation -/
 
 /-- A sequence whose second part's analysis satisfies `P`. -/

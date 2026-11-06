@@ -195,9 +195,6 @@ end
 def Hi (s s' : State) : Prop :=
   ∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → r ≠ .xmm3 → r ≠ .xmm4 → ∀ l < 2, s'.lane r l = s.lane r l
 
-theorem Hi.trans {s₁ s₂ s₃ : State} (h₁ : Hi s₁ s₂) (h₂ : Hi s₂ s₃) : Hi s₁ s₃ :=
-  fun r a b c d e l hl => by rw [h₂ r a b c d e l hl, h₁ r a b c d e l hl]
-
 theorem Hi.of_lane {s s' : State} (h : ∀ x l, s'.lane x l = s.lane x l) : Hi s s' := fun r _ _ _ _ _ l _ => h r l
 
 /-- The constants of `d = 10`. -/

@@ -55,9 +55,6 @@ theorem toNat_setWidth64 (x : BitVec 32) : (BitVec.setWidth 64 x).toNat = x.toNa
 theorem toNat_setWidth64_8 (x : BitVec 8) : (BitVec.setWidth 64 x).toNat = x.toNat := by
   simp only [BitVec.toNat_setWidth]; omega
 
-theorem toNat_setWidth32_8 (x : BitVec 8) : (BitVec.setWidth 32 x).toNat = x.toNat := by
-  simp only [BitVec.toNat_setWidth]; omega
-
 theorem toNat_setWidth32_64 {x : BitVec 64} (h : x.toNat < 2 ^ 32) : (BitVec.setWidth 32 x).toNat = x.toNat := by
   simp only [BitVec.toNat_setWidth]; omega
 

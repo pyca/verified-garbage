@@ -21,9 +21,6 @@ namespace VG.Proof.MlKem.AArch64.NttR
 
 open VG VG.AArch64
 
-/-- The polynomial at `x0`, the working space at `x1`, the table at `sym`. -/
-def rsUs (sym : String) : List Rg := [⟨.reg .x0, 0, 64, true⟩, ⟨.reg .x1, 0, 32, true⟩, ⟨.sym sym, 0, 32, false⟩]
-
 def rsN : List Rg :=
   [⟨.reg .x0, 0, 64, true⟩, ⟨.reg .x1, 0, 32, true⟩, ⟨.reg .x1, 512, 32, false⟩]
 

@@ -25,11 +25,4 @@ theorem PublicPair.agree {base : Addr} {bytes len : Nat} {args : Nat → BitVec 
     exact H.left.scratch.edi_toNat.trans H.right.scratch.edi_toNat.symm
   · exact H.sp
 
-theorem PublicPair.keep {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {s t u v : State}
-    (H : PublicPair base bytes len args s t) {regs : List Reg}
-    (Ks : Keeps regs s u) (Kt : Keeps regs t v) (di : .edi ∉ regs) (sp : .esp ∉ regs)
-    (Os : Outside base 0 bytes s.mem u.mem) (Ot : Outside base 0 bytes t.mem v.mem) :
-    PublicPair base bytes len args u v :=
-  ⟨H.left.keep Ks di sp Os, H.right.keep Kt di sp Ot, (Ks.1 _ sp).trans (H.sp.trans (Kt.1 _ sp).symm)⟩
-
 end VG.Proof.Bignum.X86

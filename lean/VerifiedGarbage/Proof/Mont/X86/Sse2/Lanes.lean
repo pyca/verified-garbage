@@ -55,12 +55,6 @@ theorem qword_psrldq_0 (a : BitVec 128) : qword (XShiftOp.eval .psrldq a 8) 0 = 
   simp only [getLsbD_qword, hi, decide_true, Bool.true_and, BitVec.getLsbD_ushiftRight]
   exact congrArg _ (by omega)
 
-theorem qword_psrldq_1 (a : BitVec 128) : qword (XShiftOp.eval .psrldq a 8) 1 = 0 := by
-  rw [psrldq_eq]
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [getLsbD_qword, hi, decide_true, Bool.true_and, BitVec.getLsbD_ushiftRight]
-  rw [BitVec.getLsbD_of_ge a _ (by omega)]; simp
-
 theorem qword_pmuludq_0 (a b : BitVec 128) :
     qword (pmuludq a b) 0 = (dword a 0).setWidth 64 * (dword b 0).setWidth 64 :=
   qword_append_0 _ _
@@ -97,20 +91,6 @@ theorem dword_movd_2 (r : BitVec 32) : dword ((0 : BitVec 96) ++ r) 2 = 0 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [getLsbD_dword, hi, decide_true, Bool.true_and, BitVec.getLsbD_append]
   simp [show ¬ 64 + i < 32 by omega]
-
-/-- `pshufd` with `0x10`: doublewords 0 and 1 into doublewords 0 and 2. -/
-theorem dword_shuf10_0 (a : BitVec 128) : dword (shufDwords a 0x10) 0 = dword a 0 := by
-  rw [dword_shufDwords _ _ (by decide)]; rfl
-
-theorem dword_shuf10_2 (a : BitVec 128) : dword (shufDwords a 0x10) 2 = dword a 1 := by
-  rw [dword_shufDwords _ _ (by decide)]; rfl
-
-/-- `pshufd` with `0x01`: doublewords 1 and 0 into doublewords 0 and 2. -/
-theorem dword_shuf01_0 (a : BitVec 128) : dword (shufDwords a 0x01) 0 = dword a 1 := by
-  rw [dword_shufDwords _ _ (by decide)]; rfl
-
-theorem dword_shuf01_2 (a : BitVec 128) : dword (shufDwords a 0x01) 2 = dword a 0 := by
-  rw [dword_shufDwords _ _ (by decide)]; rfl
 
 /-- The two words of an 8-byte read. -/
 theorem readW64_lo (m : Mem) (a : Addr) : (m.readW a 64).extractLsb' 0 32 = m.readW a 32 := by

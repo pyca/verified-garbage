@@ -33,10 +33,6 @@ theorem oneEntry_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Ta
     (.block oneEntry) :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs []) (fun _ _ _ _ h=>h) (hc:=.block []) rfl
 
-theorem oneNext_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
-    (.block oneNext) :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs []) (fun _ _ _ _ h=>h) (hc:=.block []) rfl
-
 theorem initialEnd_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
     (.block [mov .x6 .x22]) :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs []) (fun _ _ _ _ h=>h) (hc:=.block []) rfl

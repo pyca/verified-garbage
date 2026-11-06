@@ -35,8 +35,6 @@ open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
-theorem ceMul_eq : ceMul = compressMul := rfl
-
 namespace CE
 
 section
@@ -275,23 +273,5 @@ theorem compressEncode_ct :
       exacts [hp.1, hp.2.1, hp.2.2.1, hp.2.2.2.1])
       fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact hp.2.2.2.2)
     (by taint_decide)
-
-/-- A state satisfying the precondition. -/
-def compressEncodeSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 1 | .rdx => 0x2000 | .rcx => 32 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 1024⟩]
-  wr := [⟨0x2000, 32⟩]
-
-theorem compressEncode_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.compressEncode (Proof.MlKem.compressEncodeContract X86_64.abi) :=
-  Verified.of_correct compressEncode_correct compressEncode_ct (by
-    mlkem_implies [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, compressEncodeK,
-      X86_64.abi, X86_64.argRegs] [compressEncodeSat] using compressEncodeSat)
 
 end VG.Proof.MlKem.X86_64

@@ -21,27 +21,6 @@ def WindowPost (s : State) (P : Addr) (w : Nat) (mi : BitVec 64) (X Xc : Nat)
   (∀ k < 32, k ≠ Crt.sEnt → k ≠ Crt.sJ → k ≠ Crt.sNib → k ≠ Crt.sBit →
     word t.mem P (8 * k) = word s.mem P (8 * k))
 
-theorem windowBody_ok (M : Mont) (S : Selector) {s : State} {P : Addr} {w : Nat}
-    {mi : BitVec 64} {X Xc x E v : Nat} {Q : Prop}
-    (hc : TableCtx s P w mi X Xc) (ht : CrtWindowFive.CTab s.mem P w X Q x)
-    (hw : 2 ≤ w) (hw' : w < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * w)) X)
-    (hy : wv s.mem P (slot w aY) w < X)
-    (hyv : Q → wv s.mem P (slot w aY) w % X = x ^ E * 2 ^ (64 * w) % X)
-    (hv : v < 32) (hnib : word s.mem P (8 * Crt.sNib) = BitVec.ofNat 64 v) :
-    WP isa (VG.Impl.Rsa.AArch64.WindowFive.windowBody M.mm S.code) s
-      (WindowPost s P w mi X Xc Q x E v) := by
-  unfold VG.Impl.Rsa.AArch64.WindowFive.windowBody
-  refine WP.seq (WP.mono (windowCore_ok M S hc ht hw hw' hR hy hyv hv hnib)
-    fun u ⟨cu,tu,yu,vu,fu,ku,hu⟩ => ?_)
-  refine WP.mono (resetWindow_ok cu) fun t ⟨ct,yt,nt,bt,ft,kt,hh⟩ => ?_
-  refine ⟨ct,tu.of_win ft cu.scrT.nowrap,yt.symm ▸ yu,?_,(fu.trans ft).window_tight ?_,
-    (ku.trans kt).mono (by decide),nt,bt,?_⟩
-  · intro hQ; rw [yt]; exact vu hQ
-  · exact (hh _ (by decide) (by decide) (by decide)).trans
-      (hu _ (by decide) (by decide) (by decide))
-  · intro k hk he hj hn hb
-    exact (hh k hk hn hb).trans (hu k hk he hj)
-
 /-- Internal proof interface for the inline or outlined arithmetic window. -/
 structure Window where
   code : Prog isa
@@ -53,8 +32,5 @@ structure Window where
     v < 32 → word s.mem P (8 * Crt.sNib) = BitVec.ofNat 64 v →
     WP isa code s (WindowPost s P w mi X Xc Q x E v)
   ct : RelCT isa (Two RawWindowPre) code (fun _ _ => True)
-
-def Window.inline (M : Mont) (S : Selector) : Window :=
-  ⟨VG.Impl.Rsa.AArch64.WindowFive.windowBody M.mm S.code, windowBody_ok M S, windowBody_raw_ct M S⟩
 
 end VG.Proof.Bignum.AArch64.WindowFive

@@ -632,47 +632,4 @@ theorem zext_rel : RelCT isa LoAgree (.block (zext32 .a1))
   · rw [g1 _ (by decide), g2 _ (by decide), hr _ (by decide)]
   · rw [g1 _ (by decide), g2 _ (by decide), hr _ (by decide)]
 
-theorem pre_of {s : State} (h : (Proof.MlKem.compressEncodeContract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, RISCV64.abi, RISCV64.argRegs] at h
-  obtain ⟨-, h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 1 | .a2 => 0x2000 | .a3 => 32 | _ => 0
-  sp := 0x4000
-  mem _ := 0
-  rd := [⟨0x1000, 1024⟩]
-  wr := [⟨0x2000, 32⟩]
-
-theorem verified : Verified RISCV64.target Impl.MlKem.RISCV64.compressEncode
-    (Proof.MlKem.compressEncodeContract RISCV64.abi) := by
-  refine ⟨fun s hs => ?_, RelCT.constantTime (Q := fun _ _ => True) ?_, ?_⟩
-  · obtain ⟨t, s', he, hpres, hsp, hra, h⟩ := correct (pre_of hs)
-    refine ⟨t, s', he, ⟨hpres, hsp, hra⟩, ?_⟩
-    sig_post [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, RISCV64.abi, RISCV64.argRegs]
-    exact bytesAt_eq! (compressEncode_length _ _ ▸ (pre_of hs).len.symm) h
-  · refine RelCT.seq (zext_rel.mono (fun s₁ s₂ ⟨_, _, hp⟩ => ?_) fun _ _ h => h)
-      (RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
-        (fun _ _ ⟨hsp, hr⟩ => ⟨hsp, fun r h => hr r (Taint.mem_ofRegs.mp h)⟩) (by taint_decide))
-    sig_pub [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, RISCV64.abi, RISCV64.argRegs] at hp
-    obtain ⟨hsp, h3, h4, h5, h6⟩ := hp
-    refine ⟨hsp, fun r hr => ?_, h4⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact h3
-    · exact h5
-    · exact h6
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.compressEncodeContract, Proof.MlKem.compressEncodeSig, RISCV64.abi,
-        RISCV64.argRegs]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | exact Add.reduced_zero _
-        | decide +kernel
-
 end VG.Proof.MlKem.RISCV64.CompressEncode

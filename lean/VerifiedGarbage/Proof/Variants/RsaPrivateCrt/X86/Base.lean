@@ -38,8 +38,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.ExponentLoopTiming
 public import VerifiedGarbage.Proof.Bignum.X86.ExponentSaturate
 public import VerifiedGarbage.Proof.Bignum.X86.ExponentTest
 public import VerifiedGarbage.Proof.Bignum.X86.ExponentTests
-public import VerifiedGarbage.Proof.Bignum.X86.ExportArray
-public import VerifiedGarbage.Proof.Bignum.X86.ExportArrayArgs
 public import VerifiedGarbage.Proof.Bignum.X86.ExportBE
 public import VerifiedGarbage.Proof.Bignum.X86.LoadBE
 public import VerifiedGarbage.Proof.Bignum.X86.LoadBEArgs
@@ -70,23 +68,16 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPostFrame
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedResources
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicControls
-public import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
-public import VerifiedGarbage.Proof.Bignum.X86.PublicDispatchTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicEntry
 public import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
-public import VerifiedGarbage.Proof.Bignum.X86.PublicImport
-public import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicMath
 public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 public import VerifiedGarbage.Proof.Bignum.X86.PublicSave
-public import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseByteStep
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseEncoding
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseTiming
 public import VerifiedGarbage.Proof.Bignum.X86.StoreBE
 public import VerifiedGarbage.Proof.Bignum.X86.StoreBEArgs
 public import VerifiedGarbage.Proof.Dsa.Arithmetic
@@ -241,8 +232,6 @@ import VerifiedGarbage.Proof.Bignum.X86.ExponentLoopTiming
 import VerifiedGarbage.Proof.Bignum.X86.ExponentSaturate
 import VerifiedGarbage.Proof.Bignum.X86.ExponentTest
 import VerifiedGarbage.Proof.Bignum.X86.ExponentTests
-import VerifiedGarbage.Proof.Bignum.X86.ExportArray
-import VerifiedGarbage.Proof.Bignum.X86.ExportArrayArgs
 import VerifiedGarbage.Proof.Bignum.X86.ExportBE
 import VerifiedGarbage.Proof.Bignum.X86.LoadBE
 import VerifiedGarbage.Proof.Bignum.X86.LoadBEArgs
@@ -273,23 +262,16 @@ import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPostFrame
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedResources
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.X86.PublicControls
-import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
-import VerifiedGarbage.Proof.Bignum.X86.PublicDispatchTiming
 import VerifiedGarbage.Proof.Bignum.X86.PublicEntry
 import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
 import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
 import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
-import VerifiedGarbage.Proof.Bignum.X86.PublicImport
-import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
-import VerifiedGarbage.Proof.Bignum.X86.PublicMath
 import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 import VerifiedGarbage.Proof.Bignum.X86.PublicSave
-import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
 import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
 import VerifiedGarbage.Proof.Bignum.X86.ReverseByteStep
 import VerifiedGarbage.Proof.Bignum.X86.ReverseEncoding
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
-import VerifiedGarbage.Proof.Bignum.X86.ReverseTiming
 import VerifiedGarbage.Proof.Bignum.X86.StoreBE
 import VerifiedGarbage.Proof.Bignum.X86.StoreBEArgs
 import VerifiedGarbage.Proof.Dsa.Arithmetic
@@ -407,6 +389,22 @@ import VerifiedGarbage.Proof.Rsa.ZeroTest32
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
 import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Impl.Bignum.X86.CopyBytes
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Bignum.X86.PublicPair
+public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
+public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+public import VerifiedGarbage.Impl.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-! # Baseline i686 RSA private CRT and its public verification callees -/
 

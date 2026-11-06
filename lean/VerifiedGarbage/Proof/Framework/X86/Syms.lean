@@ -18,8 +18,6 @@ same addresses as before it.
 
 namespace VG.X86
 
-theorem setReg_syms (s : State) (r : Reg) (v : BitVec 32) : (s.setReg r v).syms = s.syms := rfl
-
 theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms = s.syms := by
   cases i with
   | store m r | store8 m r | movdquStore m r | movqStore m r =>

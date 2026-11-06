@@ -30,20 +30,8 @@ def noiseInit (_L : KemLay) (kg : Bool) (n : Nat) : List Instr :=
  ptrTo .x2 .x28 ss ++ (Paired.saved.zipIdx.map fun (r,i) => .str .x r .x2 (1800+8*i)) ++
  [mov .x19 .x2] ++ initCore sb n ++
  [.addImm .x .x20 .x19 400,.addImm .x .x21 .x19 528]
-def noiseOut (L : KemLay) (kg : Bool) (n buf : Nat) : Prog isa :=
- let off := if n < L.k then (if kg then KG.sOff L n else KEM.yOff L n) else noiseOff L (n-L.k)
- let ns := if kg then KG.NS else KEM.NS
- seqs [.block ([.addImm .x .x0 .x19 buf] ++ ptrTo .x1 .x28 off),.call "vg_mlkem_cbd2" cbd2,
-  if kg || n < L.k then .seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 .x28 ns))
-   (.call "vg_mlkem_ntt" Ntt16.ntt) else .block []]
 def squeezePair : Prog isa :=
  .seq (VG.Impl.Sha3.AArch64.Neon.X2.call true .x19 .x19 1536)
   (.block (VG.Impl.Sha3.AArch64.Neon.X2.squeeze 16 .x19 .x20 .x21))
-
-def noisePair (L : KemLay) (kg : Bool) (n : Nat) : Prog isa :=
- seqs [.block (noiseInit L kg n),squeezePair,
-  noiseOut L kg n 400,noiseOut L kg (n+1) 528,
-  .block (Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i))]
-def noiseAll (L : KemLay) (kg : Bool) : Prog isa := seqs ((List.range L.k).map fun i => noisePair L kg (2*i))
 
 end VG.Impl.MlKem.AArch64.Noise

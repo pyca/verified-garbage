@@ -160,7 +160,7 @@ def vRestP (prf : Nat → Nat → Prog isa) (L : KemLay) (e2 : Bool) (ek : Reg) 
     widenAt (TP L) (PP L),
     ddAt m mo 1 (EP L), addAt (PP L) (EP L), L.ceLAt (PP L) L.dv ct (co + 32 * L.du * L.k)])
 
-/-- The noise, `u` and `v` (`Kem16.encryptRest`), the first `n` PRF outputs in their buffers. -/
+/-- The noise, `u` and `v`, the first `n` PRF outputs in their buffers. -/
 def encryptRestP (prf : Nat → Nat → Prog isa) (L : KemLay) (n : Nat) (ek : Reg) (eo : Nat) (m : Reg)
     (mo : Nat) (ct : Reg) (co : Nat) : Prog isa :=
   .seq (noiseP prf L n) (seqs (((List.range L.k).map (uRow L ct co)) ++

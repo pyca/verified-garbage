@@ -11,9 +11,9 @@ import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 /-!
 # ML-KEM's fused dot product of polynomials stored with 16 bits, on AArch64: a term
 
-`termW bf bg fg` (pointers to `bf` and `bg` plus the offsets `fg`, the loads of `dot`, `gatherW` and `accumulateW`)
+`termW bf bg fg` (pointers to `bf` and `bg` plus the offsets `fg`, the loads, `gatherW` and `accumulateW`)
 adds the products of the eight pairs of 16 coefficients of `F` and `G` to
-the sums of pairs `0 … 3` (`v21`–`v23`, as `dot`) and `4 … 7` (`v25`–`v27`):
+the sums of pairs `0 … 3` (`v21`–`v23`) and `4 … 7` (`v25`–`v27`):
 `fullTermW_ok`.
 -/
 

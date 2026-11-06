@@ -274,25 +274,9 @@ theorem Split.isSome {c c' : Prog isa} (hs : Split c c') {τ : (taintS L).T} {h 
   obtain ⟨h', r', e', _⟩ := hs.le e
   exact ⟨h', by rw [e']; rfl⟩
 
-/-- The analysis of `c` from that of `c'`, ending with at least `m` public. -/
-theorem Split.map_le {c c' : Prog isa} (hs : Split c c') {τ m : (taintS L).T} {h : VG.Taint.Hint (taintS L).T}
-    (hc : ((taintS L).check τ c' h).map ((taintS L).le m) = some true) :
-    ∃ h', ((taintS L).check τ c h').map ((taintS L).le m) = some true := by
-  cases e : (taintS L).check τ c' h with
-  | none => rw [e] at hc; cases hc
-  | some r =>
-    rw [e, Option.map_some, Option.some.injEq] at hc
-    obtain ⟨h', r', e', s⟩ := hs.le e
-    exact ⟨h', by rw [e', Option.map_some]; exact congrArg some (RegSet.subset_trans hc s)⟩
-
 theorem Split.exists_isSome {c c' : Prog isa} (hs : Split c c') {τ : (taintS L).T}
     (hc : ∃ h, ((taintS L).check τ c' h).isSome = true) : ∃ h', ((taintS L).check τ c h').isSome = true :=
   let ⟨_, e⟩ := hc; hs.isSome e
-
-theorem Split.exists_map_le {c c' : Prog isa} (hs : Split c c') {τ m : (taintS L).T}
-    (hc : ∃ h, ((taintS L).check τ c' h).map ((taintS L).le m) = some true) :
-    ∃ h', ((taintS L).check τ c h').map ((taintS L).le m) = some true :=
-  let ⟨_, e⟩ := hc; hs.map_le e
 
 theorem exists_isSome_of_eraseT {τ : (taintS L).T} {c : Prog isa}
     (e : ∃ h, ((taintS L).check τ (Code.eraseT c) h).isSome = true) :
@@ -303,10 +287,6 @@ theorem exists_map_le_of_eraseT {τ m : (taintS L).T} {c : Prog isa}
     (e : ∃ h, ((taintS L).check τ (Code.eraseT c) h).map ((taintS L).le m) = some true) :
     ∃ h, ((taintS L).check τ c h).map ((taintS L).le m) = some true := by
   simp only [check_eraseT] at e; exact e
-
-theorem isSome_of_eraseT {τ : (taintS L).T} {c : Prog isa} {h : VG.Taint.Hint (taintS L).T}
-    (e : ((taintS L).check τ (Code.eraseT c) h).isSome = true) : ((taintS L).check τ c h).isSome = true := by
-  rw [← check_eraseT]; exact e
 
 end
 

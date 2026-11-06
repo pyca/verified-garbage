@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
-public import VerifiedGarbage.Spec.Ed25519.ExpandedKey
+public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
-meta import VerifiedGarbage.Spec.Ed25519.ExpandedKey
+meta import VerifiedGarbage.Proof.Ed25519.Contract
 meta import VerifiedGarbage.Proof.Ed25519.Expanded
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
@@ -205,31 +205,11 @@ theorem publicKeyExpanded_ct :
     ConstantTime isa pkLocalE.pre pkLocalE.pub (publicKeyExpanded bs fs) :=
   bodyFrom_pk_ct (by decide) copy_ct fun _ _ => rfl
 
-/-! ## A witness, the shared contract, and the stack -/
+/-! ## The comb's tables in memory, for the witnesses of callers, and the stack -/
 
-def satSeedE : List Byte := Spec.Ed25519.bytesAt (fun _ => 0) 0x2000 32
-def satDigestE : List Byte := Spec.Sha512.sha512 satSeedE
-
-/-- The witness's memory: the digest at `0x2000`, the comb's tables at `0x100000`. -/
+/-- The comb's tables at `0x100000`, zeros below. -/
 @[irreducible] def satMemPE : Mem := fun a =>
-  if 0x100000 ≤ a.toNat then constMem 0x100000 combWords a
-  else if 0x2000 ≤ a.toNat ∧ a.toNat < 0x3000 then satDigestE[a.toNat - 0x2000]?.getD 0 else 0
-
-theorem satSeedE_length : satSeedE.length = 32 := by
-  simp only [satSeedE, Spec.Ed25519.bytesAt, List.length_map, List.length_range]
-
-theorem satPE_digest : Spec.Ed25519.bytesAt satMemPE 0x2000 64 = satDigestE := by
-  apply List.ext_getElem
-  · simp only [Spec.Ed25519.bytesAt, List.length_map, List.length_range, satDigestE, sha512_length]
-  · intro i hi hj
-    have hi' : i < 64 := by simpa only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] using hi
-    have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
-      change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-      omega
-    unfold satMemPE
-    simp only [Spec.Ed25519.bytesAt, List.getElem_map, List.getElem_range, ha,
-      show ¬ 0x100000 ≤ 0x2000 + i from by omega, show 0x2000 ≤ 0x2000 + i ∧ 0x2000 + i < 0x3000 from by omega,
-      ite_false, and_self, ite_true, Nat.add_sub_cancel_left, List.getElem?_eq_getElem hj, Option.getD_some]
+  if 0x100000 ≤ a.toNat then constMem 0x100000 combWords a else 0
 
 theorem satMemPE_held : ∀ i < combWordCount,
     satMemPE.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
@@ -244,73 +224,6 @@ theorem satMemPE_held : ∀ i < combWordCount,
     BitVec.toNat_ofNat]
   simp only [combWordCount] at hi
   omega
-
-/-- A state satisfying the precondition. -/
-def satStatePE : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem := satMemPE
-  rd := [⟨0x2000, 64⟩, ⟨0x100000, 40448⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x3000, 8192⟩]
-  syms _ := 0x100000
-
-theorem sat_localPE : pkLocalE.pre satStatePE := by
-  refine ⟨by decide, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), by decide, by decide, by decide,
-    ⟨satSeedE, satSeedE_length, satPE_digest⟩, satMemPE_held, by decide, ?_⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false]
-  rintro r (rfl | rfl | rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
-
-/-- The shared contract's precondition, from `pkLocalE`'s. -/
-theorem pkE_spec_pre {s : State} (h : pkLocalE.pre s) (hal : (s.syms Impl.Ed25519.X86_64.combSym).toNat % 64 = 0) :
-    (Spec.Ed25519.publicKeyExpandedContract (X86_64.abi.withConsts combConsts) 72).pre s := by
-  obtain ⟨h72, hrd, hw, h1, h2, h3, r1, r2, r3, k1, k2, k3, f0, f1, f2, pk, held, fit, hdw⟩ := h
-  sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
-    Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
-    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, Proof.Ed25519.X86_64.combWords_length]
-  exact ⟨h72, by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]),
-    hdw _ (by simp), hdw _ (by simp), hal, by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, k1, k2, k3, f0, f1, f2, pk⟩
-
-theorem impliesE :
-    pkLocalE.Implies (Spec.Ed25519.publicKeyExpandedContract (X86_64.abi.withConsts combConsts) 72) where
-  pre s h := by
-    sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
-      Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, Proof.Ed25519.X86_64.combWords_length] at h
-    obtain ⟨h72, hd, hheld, hfit, hdw, hdr, hdk, -, ht, hw, d1, d2, d3, d4, d5, d6, d7, d8, d9, f0, f1, f2, pk⟩ := h
-    refine ⟨h72, ?_, hw, d1, d2, d3, d4, d5, d6, d7, d8, d9, f0, f1, f2, pk, hheld, hfit, fun r hr => ?_⟩
-    · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact hdw _ (by rw [hw]; simp)
-      · exact hdw _ (by rw [hw]; simp)
-      · exact hdr
-      · exact hdk
-  post := by
-    intro s s' _ h
-    sig_post [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
-      Abi.withConsts, pkLocalE, pkLocalWith]
-    exact h
-  pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
-      Abi.withConsts] at h
-    obtain ⟨h0, hs, h1, h2, h3⟩ := h
-    exact ⟨h0, h1, h2, h3, hs⟩
-  sat := ⟨_, pkE_spec_pre sat_localPE (by decide)⟩
-
-theorem publicKeyExpanded_verified :
-    Verified X86_64.target (publicKeyExpanded bs fs)
-      (Spec.Ed25519.publicKeyExpandedContract (X86_64.abi.withConsts combConsts) 72) :=
-  Verified.of_correct (fun _ h => publicKeyExpanded_ok h) publicKeyExpanded_ct impliesE
 
 /-- No instruction writes `rsp` but the frame's push and pop. -/
 theorem publicKeyExpanded_spSafe :

@@ -15,6 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+public import VerifiedGarbage.Proof.Zeroize.Common
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 import VerifiedGarbage.Proof.Poly1305.X86.Lit
 meta import VerifiedGarbage.Proof.Poly1305.X86.Lit
@@ -37,6 +38,8 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Reduce
+import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
@@ -174,10 +177,11 @@ theorem seal_correct (v : XorImpl) {s₀ : State} (hp : APre true s₀) :
   simp only [Spec.ChaCha20Poly1305.encrypt, macData, List.nil_append,
     List.append_assoc, VG.Proof.Poly1305.length_bytesAt, length_encrypt]
 
-theorem open_eq (v : Impl.ChaCha20.X86.Callee) : «open» v =
+theorem openBody_eq (v : Impl.ChaCha20.X86.Callee) : openBody v =
     .seq prologue (.seq (macPad (4 + 4 * 2) (8 + 4 * 2)) (.seq (macPad (4 + 4 * 4) (8 + 4 * 4))
     (.seq (.block lengths) (.seq (absorbOne 32) (.seq (crypt v) (.seq (finalizeWith (ptr .ecx .edi 16))
-      (.seq (.block loadTag) (.block (Impl.ChaCha20Poly1305.X86.compare ++ restore))))))))) := rfl
+      (.seq (.block loadTag) (.block (Impl.ChaCha20Poly1305.X86.compare ++ ([.alu .cmp .eax (.imm 0)] : List Instr)))))))))) :=
+  rfl
 
 /-- The tag computed by `open`, and `tag` still in memory and on the stack. -/
 theorem finalize_open_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s₀ s) :
@@ -193,10 +197,150 @@ theorem finalize_open_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : 
     exact h.arg hp (by lit_omega)
   · rw [bytesAt_frame f' (by rdisj_all) (by lit_omega), bytesAt_frame h.frame (by rdisj_all) (by lit_omega)]
 
-theorem open_correct (v : XorImpl) {s₀ : State} (hp : APre false s₀) :
-    WP isa («open» v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ openX86.post s₀ s' := by
+/-! ## Zeroing the data -/
+
+/-- `[ecx]`, a byte store from `al`. -/
+theorem wp_stb {is : List Instr} {s : State} {Q : State → Prop} {B : BitVec 32} (hb : s.gpr .ecx = B)
+    (hout : InRegions s.wr (addr B 0) 1)
+    (k : ∀ s', Wp.Mupd s s' (s.mem.writeW (addr B 0) ((s.gpr .eax).setWidth 8)) → WP isa (.block is) s' Q) :
+    WP isa (.block (.store8 { base := .ecx } .al :: is)) s Q := by
+  refine Wp.cons (s' := { s with mem := s.mem.writeW (addr B 0) ((s.gpr .eax).setWidth 8) }) ?_
+    (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
+  simp [reduceExec, State.store8, ea_mk, hb, hout, Reg8.reg]
+
+theorem addr_off {x : BitVec 32} {j : Nat} (h : x.toNat + j < 2 ^ 32) :
+    addr (x + BitVec.ofNat 32 j) 0 = x.setWidth 64 + BitVec.ofNat 64 j := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [addr, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega
+
+theorem ofNat32_sub_one {n : Nat} (h : 0 < n) (hn : n < 2 ^ 32) :
+    BitVec.ofNat 32 n - 1 = BitVec.ofNat 32 (n - 1) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
+  omega
+
+theorem ofNat32_ne_zero {n : Nat} (h : 0 < n) (hn : n < 2 ^ 32) : BitVec.ofNat 32 n ≠ 0 := by
+  intro e
+  have := congrArg BitVec.toNat e
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn] at this
+  exact Nat.ne_of_gt h this
+
+/-- What a step of the loop keeps: `Fin`, `eax` zero, and memory changed
+only in the data. -/
+structure ZK (s₀ s u : State) : Prop where
+  fin : Fin s₀ u
+  eax : u.gpr .eax = 0
+  frame : Frame [dR s₀] s.mem u.mem
+
+/-- One step of `zeroLoop`: the byte at `dp + j` zeroed. -/
+theorem zeroStep_ok {s₀ : State} (hp : APre false s₀) {s u : State} (hu : ZK s₀ s u) {j : Nat}
+    (hj : j < L s₀) (h1 : u.gpr .ecx = DP s₀ + BitVec.ofNat 32 j)
+    (hz : Proof.Zeroize.Prefix u.mem (dp s₀) j) :
+    WP isa (.block [.store8 { base := .ecx } .al, .alu .add .ecx (.imm 1), .alu .sub .edx (.imm 1)]) u
+      fun u' => ZK s₀ s u' ∧ u'.gpr .ecx = DP s₀ + BitVec.ofNat 32 (j + 1) ∧
+        u'.gpr .edx = u.gpr .edx - 1 ∧ u'.zf = some (u.gpr .edx - 1 == 0) ∧
+        Proof.Zeroize.Prefix u'.mem (dp s₀) (j + 1) := by
+  have hfit := hp.fit_d
+  have ha : addr (DP s₀ + BitVec.ofNat 32 j) 0 = dp s₀ + BitVec.ofNat 64 j := addr_off (by omega)
+  have hd : (dp s₀).toNat = (DP s₀).toNat := by
+    simp only [dp, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (DP s₀).isLt; omega)
+  have hc : (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 j) 1 :=
+    Offset.contains_base _ (by omega) (by omega)
+  refine wp_stb h1 (by rw [ha]; exact ⟨dR s₀, by rw [hu.fin.at_.wr]; exact hp.d_wr, hc⟩) fun u₁ m₁ => ?_
+  refine Wp.wp_addi fun u₂ v₂ => Wp.wp_subi fun u₃ v₃ _ z₃ => WP.block_nil ?_
+  have f₃ : Frame [dR s₀] u.mem u₃.mem := by
+    rw [v₃.mem, v₂.mem, m₁.mem, ha]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hc
+  have g₃ : ∀ r, r ≠ .ecx → r ≠ .edx → u₃.gpr r = u.gpr r := fun r a b => by
+    rw [v₃.other r b, v₂.other r a, m₁.gpr]
+  refine ⟨⟨⟨⟨by rw [g₃ _ (by decide) (by decide), hu.fin.at_.esp], by rw [v₃.rd, v₂.rd, m₁.rd, hu.fin.at_.rd],
+      by rw [v₃.wr, v₂.wr, m₁.wr, hu.fin.at_.wr]⟩, by rw [g₃ _ (by decide) (by decide), hu.fin.edi],
+      hu.fin.saved.frame f₃ (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rdisj)⟩,
+      by rw [g₃ _ (by decide) (by decide), hu.eax], hu.frame.trans f₃⟩, ?_,
+    by rw [v₃.gpr, v₂.other _ (by decide), m₁.gpr], by rw [z₃, v₂.other _ (by decide), m₁.gpr], ?_⟩
+  · rw [v₃.other _ (by decide), v₂.gpr, m₁.gpr, h1, BitVec.add_assoc, BitVec.ofNat_add]; rfl
+  · rw [v₃.mem, v₂.mem, m₁.mem, ha, hu.eax, show BitVec.setWidth 8 (0 : BitVec 32) = 0 by decide]
+    exact Proof.Zeroize.prefix_writeW hz (by omega)
+
+/-- `zeroData`'s arguments: `data` into `ecx`, `len` into `edx`, and `ZF`
+whether `len` is zero. -/
+theorem zeroArgs_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Fin s₀ s) (h0 : s.gpr .eax = 0)
+    (hd : s.mem.readW (argAddr s₀ 4) 32 = DP s₀) (hl : s.mem.readW (argAddr s₀ 5) 32 = LN s₀) :
+    WP isa (.block zeroArgs) s fun u₃ => ZK s₀ s u₃ ∧ u₃.gpr .ecx = DP s₀ ∧
+      u₃.gpr .edx = BitVec.ofNat 32 (L s₀) ∧ u₃.zf = some (BitVec.ofNat 32 (L s₀) == 0) := by
+  unfold zeroArgs
+  refine (Wp.wp_ldm (B := E s₀) h.at_.esp
+    (by rw [h.at_.rd, h.at_.wr]; exact hp.in_arg (i := 4) (by lit_omega)) fun u₁ v₁ => ?_)
+  refine Wp.wp_ldm (B := E s₀) (by rw [v₁.other _ (by decide), h.at_.esp])
+    (by rw [v₁.rd, v₁.wr, h.at_.rd, h.at_.wr]; exact hp.in_arg (i := 5) (by lit_omega)) fun u₂ v₂ => ?_
+  refine Wp.wp_cmpi fun u₃ f₃ _ z₃ => WP.block_nil ?_
+  have c₃ : u₃.gpr .ecx = DP s₀ := by rw [f₃.gpr, v₂.other _ (by decide), v₁.gpr, ← hd]; rfl
+  have d₃ : u₃.gpr .edx = BitVec.ofNat 32 (L s₀) := by
+    rw [f₃.gpr, v₂.gpr, v₁.mem, show addr (E s₀) 24 = argAddr s₀ 5 from rfl, hl, BitVec.ofNat_toNat,
+      BitVec.setWidth_eq]
+  have z₃' : u₃.zf = some (BitVec.ofNat 32 (L s₀) == 0) := by
+    rw [z₃, show u₂.gpr .edx = u₃.gpr .edx by rw [f₃.gpr], d₃,
+      show (BitVec.ofNat 32 (L s₀) - 0 : BitVec 32) = BitVec.ofNat 32 (L s₀) from BitVec.sub_zero _]
+  have g₃ : ∀ r, r ≠ .ecx → r ≠ .edx → u₃.gpr r = s.gpr r := fun r a b => by
+    rw [f₃.gpr, v₂.other r b, v₁.other r a]
+  have k₃ : ZK s₀ s u₃ := ⟨⟨⟨by rw [g₃ _ (by decide) (by decide), h.at_.esp],
+      by rw [f₃.rd, v₂.rd, v₁.rd, h.at_.rd], by rw [f₃.wr, v₂.wr, v₁.wr, h.at_.wr]⟩,
+      by rw [g₃ _ (by decide) (by decide), h.edi], by rw [f₃.mem, v₂.mem, v₁.mem]; exact h.saved⟩,
+    by rw [g₃ _ (by decide) (by decide), h0], by rw [f₃.mem, v₂.mem, v₁.mem]; exact Frame.refl _ _⟩
+  exact ⟨k₃, c₃, d₃, z₃'⟩
+
+/-- `zeroData`, with `eax` zero and the stack arguments `data` and `len` in
+memory: zeros at `data`, which is the only memory written. -/
+theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Fin s₀ s) (h0 : s.gpr .eax = 0)
+    (hd : s.mem.readW (argAddr s₀ 4) 32 = DP s₀) (hl : s.mem.readW (argAddr s₀ 5) 32 = LN s₀) :
+    WP isa zeroData s fun s' => ZK s₀ s s' ∧ bytesAt s'.mem (dp s₀) (L s₀) = List.replicate (L s₀) 0 := by
+  have hL : L s₀ < 2 ^ 32 := (LN s₀).isLt
+  unfold zeroData
+  refine WP.seq (WP.mono (zeroArgs_ok hp h h0 hd hl) fun u₃ ⟨k₃, c₃, d₃, z₃'⟩ => ?_)
+  by_cases hz : L s₀ = 0
+  · refine WP.ite true (by show u₃.zf = some true; rw [z₃', hz]; rfl)
+      (fun _ => WP.block_nil ⟨k₃, ?_⟩) (by simp)
+    rw [hz]; rfl
+  · have hne := ofNat32_ne_zero (n := L s₀) (by omega) hL
+    refine WP.ite false (by show u₃.zf = some false; rw [z₃', beq_false_of_ne hne]) (by simp) fun _ => ?_
+    unfold zeroLoop
+    refine WP.loop (M := isa) (fun rem u => ∃ j, j < L s₀ ∧ rem = L s₀ - j ∧ ZK s₀ s u ∧
+      u.gpr .ecx = DP s₀ + BitVec.ofNat 32 j ∧ u.gpr .edx = BitVec.ofNat 32 (L s₀ - j) ∧
+      Proof.Zeroize.Prefix u.mem (dp s₀) j) ?_ (L s₀) u₃
+      ⟨0, by omega, by omega, k₃, by rw [c₃]; exact (BitVec.add_zero _).symm, by rw [d₃, Nat.sub_zero],
+        fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
+    intro rem u ⟨j, hj, hr, hu, e1, e2, hpz⟩
+    refine WP.mono (zeroStep_ok hp hu hj e1 hpz) fun u' ⟨k', c', d', z', p'⟩ => ?_
+    have hsub : BitVec.ofNat 32 (L s₀ - j) - 1 = BitVec.ofNat 32 (L s₀ - (j + 1)) := by
+      rw [ofNat32_sub_one (by omega) (by omega), Nat.sub_sub]
+    rw [e2, hsub] at d' z'
+    by_cases he : j + 1 = L s₀
+    · left
+      refine ⟨by show u'.zf.map (!·) = some false; rw [z', he, Nat.sub_self]; rfl, k', ?_⟩
+      rw [he] at p'
+      exact Proof.Zeroize.prefix_spec p'
+    · right
+      have hne := ofNat32_ne_zero (n := L s₀ - (j + 1)) (by omega) (by omega)
+      refine ⟨by show u'.zf.map (!·) = some true; rw [z', beq_false_of_ne hne]; rfl,
+        L s₀ - (j + 1), by omega, j + 1, by omega, rfl, k', c', d', p'⟩
+
+/-- What holds after `openBody`: `eax` is whether the tag is right, `ZF`
+whether it is not, the plaintext is at `data`, and the return address and the
+stack arguments `data` and `len` are as on entry. -/
+structure BodyOk (s₀ s₈ : State) : Prop where
+  fin : Fin s₀ s₈
+  eax : s₈.gpr .eax = (if mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀ then 1 else 0)
+  zf : s₈.zf = some (s₈.gpr .eax == 0)
+  pt : bytesAt s₈.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀)
+  ret : s₈.mem.readW ((E s₀).setWidth 64) 32 = s₀.mem.readW ((E s₀).setWidth 64) 32
+  dp : s₈.mem.readW (argAddr s₀ 4) 32 = DP s₀
+  ln : s₈.mem.readW (argAddr s₀ 5) 32 = LN s₀
+
+theorem body_ok (v : XorImpl) {s₀ : State} (hp : APre false s₀) :
+    WP isa (openBody v.callee) s₀ (BodyOk s₀) := by
   have hL' := hL s₀
-  rw [open_eq]
+  rw [openBody_eq]
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ h₁ => ?_)
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ := bytesAt_frame h₁.fine (by rdisj_all) (Nat.le_of_lt (hAL s₀))
   refine WP.seq (WP.mono (macPad_ok hp (i := 2) (by lit_omega) (srcA hp) h₁.inv) fun s₂ ⟨i₂, f₂, r₂⟩ => ?_)
@@ -214,28 +358,64 @@ theorem open_correct (v : XorImpl) {s₀ : State} (hp : APre false s₀) :
   refine WP.seq (WP.mono (crypt_ok v hp i₅) fun s₆ ⟨i₆, f₆, pt₆⟩ => ?_)
   refine WP.seq (WP.mono (finalize_open_ok hp i₆) fun s₇ ⟨h₇, f₇, tag₇, tp₇, T0₇⟩ => ?_)
   refine WP.seq (WP.mono (loadTag_ok hp h₇ tp₇) fun s₇' ⟨h₇', edx₇', m₇', _⟩ => ?_)
-  refine WP.block_append (WP.mono (compare_ok hp h₇' edx₇') fun s₈ ⟨rax₈, g₈, m₈, rd₈, wr₈⟩ => ?_)
-  have h₈ : Fin s₀ s₈ := ⟨⟨by rw [g₈ _ (by decide) (by decide), h₇'.at_.esp], by rw [rd₈, h₇'.at_.rd],
-    by rw [wr₈, h₇'.at_.wr]⟩, by rw [g₈ _ (by decide) (by decide), h₇'.edi], by rw [m₈]; exact h₇'.saved⟩
-  refine WP.mono (restore_ok hp h₈) fun s₉ ⟨cs₉, rax₉, m₉⟩ => ?_
+  have dp₇ : s₇.mem.readW (argAddr s₀ 4) 32 = DP s₀ := by
+    rw [f₇.readW (hp.arg_contains (by lit_omega)) (by rdisj_all) (by decide)]; exact i₆.arg hp (by lit_omega)
+  have ln₇ : s₇.mem.readW (argAddr s₀ 5) 32 = LN s₀ := by
+    rw [f₇.readW (hp.arg_contains (by lit_omega)) (by rdisj_all) (by decide)]; exact i₆.arg hp (by lit_omega)
+  have hb : WP isa (.block (Impl.ChaCha20Poly1305.X86.compare ++ [.alu .cmp .eax (.imm 0)])) s₇' fun s₈ =>
+      Fin s₀ s₈ ∧ s₈.gpr .eax = (if bytesAt s₇.mem (cx s₀ + BitVec.ofNat 64 16) 16 = T0 s₀ then 1 else 0) ∧
+      s₈.zf = some (s₈.gpr .eax == 0) ∧ s₈.mem = s₇.mem :=
+    WP.block_append (WP.mono (compare_ok hp h₇' edx₇') fun s₈ ⟨rax₈, g₈, m₈, rd₈, wr₈⟩ =>
+      Wp.wp_cmpi fun s₈' f₈ _ z₈ => WP.block_nil ⟨⟨⟨by rw [f₈.gpr, g₈ _ (by decide) (by decide), h₇'.at_.esp],
+        by rw [f₈.rd, rd₈, h₇'.at_.rd], by rw [f₈.wr, wr₈, h₇'.at_.wr]⟩,
+        by rw [f₈.gpr, g₈ _ (by decide) (by decide), h₇'.edi], by rw [f₈.mem, m₈]; exact h₇'.saved⟩,
+        by rw [f₈.gpr, rax₈, m₇', T0₇],
+        by rw [z₈, f₈.gpr, show (s₈.gpr .eax - 0 : BitVec 32) = s₈.gpr .eax from BitVec.sub_zero _],
+        by rw [f₈.mem, m₈, m₇']⟩)
+  refine WP.mono hb fun s₈ ⟨h₈, rax₈, z₈, m₈⟩ => ?_
   -- The tag computed, and the one received.
   have R₃ := r₃ _ _ (r₂ (otk s₀) [] h₁.poly)
   have T₇ := tag₇ _ _ (Repr.frame f₆ (by rdisj_all) (r₅ _ _ (Repr.frame f₄ (by rdisj_all) R₃)))
-  have P₉ : bytesAt s₉.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
-    rw [m₉, m₈, m₇', bytesAt_frame f₇ (by rdisj_all) hL', pt₆ st₅, bytesAt_frame f₅ (by rdisj_all) hL',
+  have P₈ : bytesAt s₈.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
+    rw [m₈, bytesAt_frame f₇ (by rdisj_all) hL', pt₆ st₅, bytesAt_frame f₅ (by rdisj_all) hL',
       bytesAt_frame f₄ (by rdisj_all) hL', bytesAt_frame f₃ (by rdisj_all) hL', D₂]
   rw [len₄, D₂, hA] at T₇
-  refine ⟨⟨cs₉, by rw [m₉, m₈, m₇']; exact ret_kept hp i₆.frame (hp.ret_sub (by lit_omega)) f₇⟩, ?_⟩
   have hm : mac (otk s₀) (macData (A s₀) (D s₀)) = bytesAt s₇.mem (cx s₀ + BitVec.ofNat 64 16) 16 := by
     rw [T₇]
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt]
-  rw [openX86, Contract.post_mk]
-  rw [rax₉, rax₈, m₇', T0₇]
-  split
-  next pt hpt =>
-    obtain ⟨hmac, rfl⟩ := decrypt_eq_some hpt
-    exact ⟨ite_eq_left (hm.symm.trans hmac), P₉⟩
-  next hn => exact ite_eq_right fun he => decrypt_eq_none hn (hm.trans he)
+  have ret₈ : s₈.mem.readW ((E s₀).setWidth 64) 32 = s₀.mem.readW ((E s₀).setWidth 64) 32 := by
+    rw [m₈]; exact ret_kept hp i₆.frame (hp.ret_sub (by lit_omega)) f₇
+  rw [← hm] at rax₈
+  exact ⟨h₈, rax₈, z₈, P₈, ret₈, by rw [m₈]; exact dp₇, by rw [m₈]; exact ln₇⟩
+
+theorem open_correct (v : XorImpl) {s₀ : State} (hp : APre false s₀) :
+    WP isa («open» v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ openX86.post s₀ s' := by
+  refine WP.seq (WP.mono (body_ok v hp) fun s₈ ⟨h₈, rax₈, z₈, P₈, ret₈, dp₈, ln₈⟩ => ?_)
+  unfold openTail
+  refine WP.seq ?_
+  by_cases hc : mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀
+  · simp only [hc, ↓reduceIte] at rax₈
+    refine WP.ite false (by show s₈.zf = some false; rw [z₈, rax₈]; rfl) (by simp) fun _ => WP.block_nil ?_
+    refine WP.mono (restore_ok hp h₈) fun s₉ ⟨cs₉, rax₉, m₉⟩ => ?_
+    refine ⟨⟨cs₉, by rw [m₉]; exact ret₈⟩, ?_⟩
+    rw [openX86, Contract.post_mk]
+    split
+    next pt hpt =>
+      obtain ⟨-, rfl⟩ := decrypt_eq_some hpt
+      exact ⟨by rw [rax₉, rax₈], by rw [m₉, P₈]⟩
+    next hn => exact absurd hc (decrypt_eq_none hn)
+  · simp only [hc, ↓reduceIte] at rax₈
+    refine WP.ite true (by show s₈.zf = some true; rw [z₈, rax₈]; rfl) (fun _ => ?_) (by simp)
+    refine WP.mono (zeroData_ok hp h₈ rax₈ dp₈ ln₈)
+      fun s₉ ⟨k₉, z₉⟩ => ?_
+    refine WP.mono (restore_ok hp k₉.fin) fun s₁₀ ⟨cs₁₀, rax₁₀, m₁₀⟩ => ?_
+    have r₁₀ : s₁₀.mem.readW ((E s₀).setWidth 64) 32 = s₀.mem.readW ((E s₀).setWidth 64) 32 := by
+      rw [m₁₀, k₉.frame.readW (Region.contains_self _ _) (by rdisj_all) (by lit_omega)]; exact ret₈
+    refine ⟨⟨cs₁₀, r₁₀⟩, ?_⟩
+    rw [openX86, Contract.post_mk]
+    split
+    next pt hpt => exact absurd (decrypt_eq_some hpt).1 hc
+    next hn => exact ⟨by rw [rax₁₀, k₉.eax], by rw [m₁₀, z₉]⟩
 
 end VG.Proof.ChaCha20Poly1305.X86
 
@@ -267,6 +447,8 @@ namespace VG.Proof.ChaCha20Poly1305.X86
 open VG VG.X86 VG.Impl.ChaCha20Poly1305.X86
 open VG.Proof.ChaCha20.X86 (XorImpl)
 open VG.Impl.ChaCha20.X86 (at_)
+open VG.Spec.Poly1305 (bytesAt mac)
+open VG.Spec.ChaCha20Poly1305 (macData)
 
 variable {e : Bool}
 
@@ -636,9 +818,9 @@ theorem seal_rel {a b : State} (ha : APre true a) (hb : APre true b) (hq : Pub a
       WP.mono (finalizeWith_ok hb hy (outOk_tag hb) (out_tag hb hy)) fun _ h => h.1⟩) ?_
   exact taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.fin hx hy) (by taint_decide)
 
-theorem open_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq : Pub a b) (v : XorImpl) :
-    RelCT isa (fun x y => x = a ∧ y = b) («open» v.callee) fun _ _ => True := by
-  rw [open_eq]
+theorem body_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq : Pub a b) (v : XorImpl) :
+    RelCT isa (fun x y => x = a ∧ y = b) (openBody v.callee) fun _ _ => True := by
+  rw [openBody_eq]
   refine RelCT.seq (R := fun x y => Inv a x ∧ Inv b y) (RelCT.mono (prologue_rel ha hb hq) (fun _ _ h => h) fun x y ⟨hx, hy⟩ => ⟨hx.inv, hy.inv⟩) ?_
   refine RelCT.seq (inv_rel ha hb (macPad_rel ha hb hq (.inl rfl) (srcA ha) (srcA hb))
     (fun s₀ _ hp h => WP.mono (macPad_ok hp (by lit_omega) (srcA hp) h) fun _ h => h.1)) ?_
@@ -668,13 +850,106 @@ theorem open_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq : Pub
     · rw [hx.1.edi, hy.1.edi]; exact hq.cx.symm
     · exact hq.at_ hx.1.at_ hy.1.at_) (by taint_decide)
 
+theorem ok_iff (s₀ : State) :
+    okX86 s₀ = true ↔ mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀ := by
+  unfold okX86
+  constructor
+  · intro h
+    obtain ⟨pt, hpt⟩ := Option.isSome_iff_exists.mp h
+    exact (decrypt_eq_some hpt).1
+  · intro h
+    cases hd : Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (D s₀) (T0 s₀) with
+    | none => exact absurd h (decrypt_eq_none hd)
+    | some _ => rfl
+
+theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true then 1 else 0]) : a = b := by
+  cases a <;> cases b <;> simp_all
+
+/-- The result in two runs whose leaks agree. -/
+theorem bit_eq {s₁ s₂ : State} (h : openLeakX86 s₁ = openLeakX86 s₂) :
+    (if mac (otk s₁) (macData (A s₁) (D s₁)) = T0 s₁ then (1 : BitVec 32) else 0) =
+      if mac (otk s₂) (macData (A s₂) (D s₂)) = T0 s₂ then 1 else 0 := by
+  have e : okX86 s₁ = okX86 s₂ := leak_bool h
+  by_cases h₁ : okX86 s₁ = true
+  · have h₂ : okX86 s₂ = true := e ▸ h₁
+    simp only [(ok_iff s₁).mp h₁, (ok_iff s₂).mp h₂, ↓reduceIte]
+  · have h₂ : ¬okX86 s₂ = true := e ▸ h₁
+    simp only [show ¬mac (otk s₁) (macData (A s₁) (D s₁)) = T0 s₁ from fun h' => h₁ ((ok_iff s₁).mpr h'),
+      show ¬mac (otk s₂) (macData (A s₂) (D s₂)) = T0 s₂ from fun h' => h₂ ((ok_iff s₂).mpr h'), ↓reduceIte]
+
+/-- An empty block, in two runs: the same (empty) trace, and the states
+unchanged. -/
+theorem skip_rel {P Q : State → State → Prop} (h : ∀ x y, P x y → Q x y) : RelCT isa P (.block []) Q := by
+  intro _ _ _ _ _ _ hp x₁ x₂
+  cases x₁ with
+  | block h₁ =>
+    cases x₂ with
+    | block h₂ =>
+      simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h₁ h₂
+      rw [← h₁.1, ← h₂.1]
+      exact ⟨h₁.2.symm.trans h₂.2, h _ _ hp⟩
+
+theorem eax0 {s₀ x : State} (h : BodyOk s₀ x) (he : isa.eval .e x = some true) : x.gpr .eax = 0 := by
+  have : x.zf = some true := he
+  rw [h.zf] at this
+  exact beq_iff_eq.mp (Option.some.inj this)
+
+/-- The zeroing, in two runs that take its branch: the stack arguments are
+loaded from public addresses, and the loop is on the public length. -/
+theorem zeroData_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq : Pub a b)
+    (hl : openLeakX86 a = openLeakX86 b) :
+    RelCT isa (fun x y => (BodyOk a x ∧ BodyOk b y) ∧ isa.eval .e x = some true) zeroData
+      fun _ _ => True := by
+  have he : ∀ {x y : State}, BodyOk a x → BodyOk b y → isa.eval .e x = some true →
+      isa.eval .e y = some true := fun {x y} hx hy h => by
+    show y.zf = some true
+    rw [hy.zf, hy.eax, ← bit_eq hl, ← hx.eax, ← hx.zf]; exact h
+  unfold zeroData
+  refine RelCT.seq (R := fun (u w : State) => (u.gpr .ecx = DP a ∧ u.gpr .edx = BitVec.ofNat 32 (L a) ∧
+      u.zf = some (BitVec.ofNat 32 (L a) == 0)) ∧
+      (w.gpr .ecx = DP b ∧ w.gpr .edx = BitVec.ofNat 32 (L b) ∧ w.zf = some (BitVec.ofNat 32 (L b) == 0)))
+    (RelCT.post (taintRel [.esp] (fun x y h r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact hq.at_ h.1.1.fin.at_ h.1.2.fin.at_) (by taint_decide))
+      fun x y h => ⟨WP.mono (zeroArgs_ok ha h.1.1.fin (eax0 h.1.1 h.2) h.1.1.dp h.1.1.ln) fun _ h' => h'.2,
+        WP.mono (zeroArgs_ok hb h.1.2.fin (eax0 h.1.2 (he h.1.1 h.1.2 h.2)) h.1.2.dp h.1.2.ln)
+          fun _ h' => h'.2⟩) ?_
+  have hL : L b = L a := by simp only [L, LN, hq.ln]
+  have hD : DP b = DP a := hq.dp
+  refine RelCT.ite (fun x y h => by
+    show x.zf = y.zf; rw [h.1.2.2, h.2.2.2, hL]) (skip_rel fun _ _ _ => trivial) ?_
+  unfold zeroLoop
+  exact taintRel [.ecx, .edx] (fun x y h r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · rw [h.1.1.1, h.1.2.1, hD]
+    · rw [h.1.1.2.1, h.1.2.2.1, hL]) (by taint_decide)
+
+theorem open_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq : Pub a b)
+    (hl : openLeakX86 a = openLeakX86 b) (v : XorImpl) :
+    RelCT isa (fun x y => x = a ∧ y = b) («open» v.callee) fun _ _ => True := by
+  refine RelCT.seq (R := fun x y => BodyOk a x ∧ BodyOk b y)
+    (RelCT.post (body_rel ha hb hq v) fun x y ⟨ex, ey⟩ => by
+      subst ex; subst ey; exact ⟨body_ok v ha, body_ok v hb⟩) ?_
+  unfold openTail
+  refine RelCT.seq (R := fun x y => Fin a x ∧ Fin b y) (RelCT.ite (fun x y h => by
+      show x.zf = y.zf; rw [h.1.zf, h.2.zf, h.1.eax, h.2.eax, bit_eq hl])
+    (RelCT.post (zeroData_rel ha hb hq hl) fun x y h =>
+      ⟨WP.mono (zeroData_ok ha h.1.1.fin (eax0 h.1.1 h.2) h.1.1.dp h.1.1.ln) fun _ h' => h'.1.fin,
+       WP.mono (zeroData_ok hb h.1.2.fin (eax0 h.1.2 (by
+          show y.zf = some true
+          rw [h.1.2.zf, h.1.2.eax, ← bit_eq hl, ← h.1.1.eax, ← h.1.1.zf]; exact h.2)) h.1.2.dp h.1.2.ln)
+        fun _ h' => h'.1.fin⟩)
+    (skip_rel fun _ _ h => ⟨h.1.1.fin, h.1.2.fin⟩)) ?_
+  exact taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.fin hx hy) (by taint_decide)
+
 theorem seal_ct (v : XorImpl) : ConstantTime isa sealX86.pre sealX86.pub («seal» v.callee) :=
   fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ =>
     (seal_rel (APre.of _ h₁) (APre.of _ h₂) (Pub.of hp) v _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 theorem open_ct (v : XorImpl) : ConstantTime isa openX86.pre openX86.pub («open» v.callee) :=
   fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ =>
-    (open_rel (APre.of _ h₁) (APre.of _ h₂) (Pub.of hp) v _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+    (open_rel (APre.of _ h₁) (APre.of _ h₂) (Pub.of hp.1) hp.2 v _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.ChaCha20Poly1305.X86
 
@@ -685,7 +960,7 @@ end
 
 Correctness and constant time (both above), and a state satisfying the
 precondition, of the code with its working space as its last argument
-(`sealScratchContract`, `openScratchContract`), and then of the functions,
+(`sealScratchContract`, `openZeroScratchContract`), and then of the functions,
 which allocate it in a frame of 740 bytes on the stack (the return address,
 the seven other arguments and the 704 bytes of working space) and wipe it
 after the code (`Verified.stackScratchWiped`).
@@ -760,16 +1035,17 @@ theorem seal_verified (v : XorImpl) :
 /-- The postconditions match on `decrypt` through different auxiliary
 functions, so the implication splits on it. -/
 theorem open_verified (v : XorImpl) :
-    Verified X86.target (Impl.ChaCha20Poly1305.X86.«open» v.callee) (openScratchContract X86.abi 88 32) :=
+    Verified X86.target (Impl.ChaCha20Poly1305.X86.«open» v.callee) (openZeroScratchContract X86.abi 88 32) :=
   Verified.of_correct (open_ok v) (open_ct v)
     { pre := by
-        sig_implies_pre [Proof.ChaCha20Poly1305.openScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
-          Spec.ChaCha20Poly1305.openPost, Proof.ChaCha20Poly1305.openX86, Proof.ChaCha20Poly1305.preX86,
+        sig_implies_pre [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
+          Spec.ChaCha20Poly1305.openZeroPost, Spec.ChaCha20Poly1305.openLeak, Proof.ChaCha20Poly1305.openX86,
+          Proof.ChaCha20Poly1305.openLeakX86, Proof.ChaCha20Poly1305.preX86,
           Proof.ChaCha20Poly1305.pubX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       post := by
         intro s s' _ h
-        sig_eval [Proof.ChaCha20Poly1305.openScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
-          Spec.ChaCha20Poly1305.openPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+        sig_eval [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
+          Spec.ChaCha20Poly1305.openZeroPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
         simp only [Proof.ChaCha20Poly1305.openX86] at h
         split at h
         next _ pt e₁ =>
@@ -781,10 +1057,11 @@ theorem open_verified (v : XorImpl) :
         next _ e₁ =>
           split
           next _ pt' e₂ => exact absurd (e₁.symm.trans e₂) (by simp)
-          next _ e₂ => rw [h]; exact low32 _ _
+          next _ e₂ => exact ⟨by rw [h.1]; exact low32 _ _, h.2⟩
       pub := by
-        sig_implies_pub [Proof.ChaCha20Poly1305.openScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
-          Spec.ChaCha20Poly1305.openPost, Proof.ChaCha20Poly1305.openX86, Proof.ChaCha20Poly1305.preX86,
+        sig_implies_pub [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
+          Spec.ChaCha20Poly1305.openZeroPost, Spec.ChaCha20Poly1305.openLeak, Proof.ChaCha20Poly1305.openX86,
+          Proof.ChaCha20Poly1305.openLeakX86, Proof.ChaCha20Poly1305.preX86,
           Proof.ChaCha20Poly1305.pubX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       sat := by
         have a0 : arg openSat 0 = 0x1000 := by decide
@@ -797,8 +1074,9 @@ theorem open_verified (v : XorImpl) :
         have a7 : arg openSat 7 = 0x6000 := by decide
         have e : argAddr openSat 0 = 0x5004 := by decide
         have esp : openSat.gpr .esp = 0x5000 := rfl
-        sig_implies_sat [Proof.ChaCha20Poly1305.openScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
-          Spec.ChaCha20Poly1305.openPost, Proof.ChaCha20Poly1305.openX86, Proof.ChaCha20Poly1305.preX86,
+        sig_implies_sat [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
+          Spec.ChaCha20Poly1305.openZeroPost, Spec.ChaCha20Poly1305.openLeak, Proof.ChaCha20Poly1305.openX86,
+          Proof.ChaCha20Poly1305.openLeakX86, Proof.ChaCha20Poly1305.preX86,
           Proof.ChaCha20Poly1305.pubX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
           [a0, a1, a2, a3, a4, a5, a6, a7, e, esp] using openSat }
 
@@ -809,7 +1087,9 @@ theorem seal_spSafe (v : XorImpl) : (Impl.ChaCha20Poly1305.X86.«seal» v.callee
   lit_decide
 
 theorem open_spSafe (v : XorImpl) : (Impl.ChaCha20Poly1305.X86.«open» v.callee).all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [Impl.ChaCha20Poly1305.X86.«open», Impl.ChaCha20Poly1305.X86.crypt,
+  simp only [Impl.ChaCha20Poly1305.X86.«open», Impl.ChaCha20Poly1305.X86.openBody,
+    Impl.ChaCha20Poly1305.X86.openTail, Impl.ChaCha20Poly1305.X86.zeroData, Impl.ChaCha20Poly1305.X86.zeroLoop,
+    Impl.ChaCha20Poly1305.X86.crypt,
     Impl.ChaCha20Poly1305.X86.callWith, Code.all, v.spSafe, Bool.and_true]
   lit_decide
 
@@ -839,7 +1119,9 @@ theorem seal_noEsp (v : XorImpl) :
 
 theorem open_noEsp (v : XorImpl) :
     (Impl.ChaCha20Poly1305.X86.«open» v.callee).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
-  simp only [Impl.ChaCha20Poly1305.X86.«open», Impl.ChaCha20Poly1305.X86.crypt,
+  simp only [Impl.ChaCha20Poly1305.X86.«open», Impl.ChaCha20Poly1305.X86.openBody,
+    Impl.ChaCha20Poly1305.X86.openTail, Impl.ChaCha20Poly1305.X86.zeroData, Impl.ChaCha20Poly1305.X86.zeroLoop,
+    Impl.ChaCha20Poly1305.X86.crypt,
     Impl.ChaCha20Poly1305.X86.callWith, Code.allInstrs, noEsp_of v.nosp, Bool.and_true]
   lit_decide
 
@@ -849,7 +1131,9 @@ theorem seal_stackUse (v : XorImpl) : stackUse (Impl.ChaCha20Poly1305.X86.«seal
   lit_decide
 
 theorem open_stackUse (v : XorImpl) : stackUse (Impl.ChaCha20Poly1305.X86.«open» v.callee) ≤ 32 := by
-  simp only [Impl.ChaCha20Poly1305.X86.«open», Impl.ChaCha20Poly1305.X86.crypt,
+  simp only [Impl.ChaCha20Poly1305.X86.«open», Impl.ChaCha20Poly1305.X86.openBody,
+    Impl.ChaCha20Poly1305.X86.openTail, Impl.ChaCha20Poly1305.X86.zeroData, Impl.ChaCha20Poly1305.X86.zeroLoop,
+    Impl.ChaCha20Poly1305.X86.crypt,
     Impl.ChaCha20Poly1305.X86.callWith, stackUse, v.stack, Nat.max_le]
   lit_decide
 
@@ -873,18 +1157,20 @@ theorem seal_framed (v : XorImpl) :
 /-- A state satisfying `open`'s precondition, without the working space. -/
 def openFrameSat : State := { openSat with wr := [⟨0x2100, 0⟩, ⟨0x5004, 28⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openContract X86.abi 772).pre s := by
-  implies_sat [Spec.ChaCha20Poly1305.openContract, Spec.ChaCha20Poly1305.openSig,
-    Spec.ChaCha20Poly1305.openPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openZeroContract X86.abi 772).pre s := by
+  implies_sat [Spec.ChaCha20Poly1305.openZeroContract, Spec.ChaCha20Poly1305.openSig,
+    Spec.ChaCha20Poly1305.openZeroPost, Spec.ChaCha20Poly1305.openLeak, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [openFrameSat, openSat, sealSat, satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using openFrameSat
 
 theorem open_framed (v : XorImpl) :
     Verified X86.target
       (Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» v.callee))
-      (Spec.ChaCha20Poly1305.openContract X86.abi 772) :=
+      (Spec.ChaCha20Poly1305.openZeroContract X86.abi 772) :=
   X86.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
-    (n := 88) (post := Spec.ChaCha20Poly1305.openPost X86.abi.ptrBits) (wa := true) (stack := 32)
+    (n := 88) (post := Spec.ChaCha20Poly1305.openZeroPost X86.abi.ptrBits) (wa := true) (stack := 32)
+    (leak := some (Spec.ChaCha20Poly1305.openLeak X86.abi.ptrBits))
     (bytes := 740) (words := 176) (open_verified v) (by decide) (open_noEsp v) (open_stackUse v) (by decide)
-    (pre_local _ _) (openPost_local _) (openPost_out _) openFrameSat_pre
+    (pre_local _ _) (openZeroPost_local _) (openZeroPost_out _) openFrameSat_pre
+    (hleak := openLeak_local _)
 
 end VG.Proof.ChaCha20Poly1305.X86

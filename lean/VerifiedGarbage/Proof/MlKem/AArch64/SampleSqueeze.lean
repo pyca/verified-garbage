@@ -9,12 +9,12 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # ML-KEM on AArch64: `SampleNTT` up to its loop
 
-`sampleSqueezeN len setup` saves our caller's `x25`, `x26`, `x30` and `x24` in
+`sampleSqueezeNWith c len setup` saves our caller's `x25`, `x26`, `x30` and `x24` in
 `scratch`, computes `len` bytes of SHAKE128 of the seed into `scratch[0, len)`
 with the verified Keccak functions from the all-zero state
 (`Proof/MlKem/KPke.lean`), sets `a` to zeros, and sets up the loop: it leaves
 what the loop needs (`LPre`), and either the registers restored
-(`sampleSqueeze`, `rest_ok`) or still saved (`sampleFast`'s, `restN_ok`).
+(`sampleSqueezeWith`, `rest_ok`) or still saved (`sampleFastWith`'s, `restN_ok`).
 -/
 
 @[expose] public section
@@ -168,8 +168,6 @@ structure Mid (s₀ s : State) : Prop where
   sv : Saved s₀ s.mem
   frame : Frame [scR s₀, below s₀.sp 16] s₀.mem s.mem
   vcs : ∀ r ∈ preservedV, (s.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64
-
-theorem preserved_ne : ∀ r ∈ preserved, r ≠ .x30 → r ∉ linkRegs := by decide
 
 /-- A call that writes parts of `scratch` apart from the saved registers,
 and the stack below it. -/
@@ -537,8 +535,6 @@ theorem MidA.keep {s₀ s s' : State} (hp : Pre s₀) (h : MidA s₀ s) {regs : 
     h.sv.frame hf (sv_a hp),
     by rw [← h.seed]; exact bytesAt_frame hf (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact hp.d_sa) (by decide), fun r hr => (hk.vcs r hr).trans (h.vcs r hr)⟩
-
-theorem pres_x34 : ∀ r ∈ preserved, r ∉ [Reg.x3, .x4] := by decide
 
 /-- `a` set to zeros, and the loop's registers for `N` iterations. -/
 theorem restN_ok {s₀ : State} (hp : Pre s₀) {len N : Nat} (hN : 3 * N ≤ len) (hl : len ≤ 840)

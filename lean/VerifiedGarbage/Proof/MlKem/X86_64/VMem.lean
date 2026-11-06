@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 # ML-KEM on x86-64: polynomials as words in the working space
 
 A polynomial stored as 256 words (`S16`), 16-byte loads of eight of its
-coefficients (`lanes_load`) and stores of them (`s16_write2`), and the table
+coefficients (`lanes_load`) and stores of them (`s16_write2R`), and the table
 of the zetas as words (`T16`), from which `vzeta` loads the zetas of up to
 four blocks (`vzeta_ok`).
 -/
@@ -84,14 +84,6 @@ theorem s16_write2R {α : Type} [Inhabited α] {R : BitVec 16 → α → Prop} {
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false h2),
         ite_eq_right_of_eq_false _ _ (eq_false h1)]
       exact hP i hi
-
-theorem s16_write2 {m : Mem} {p : Addr} {P R : Poly} (hP : S16 m p P) {j j' : Nat}
-    (hj : j + 8 ≤ 256) (hj' : j' + 8 ≤ 256) (hsep : j + 8 ≤ j' ∨ j' + 8 ≤ j) {x y : BitVec 128}
-    {a b : Nat → Zq} (hx : Lanes x a) (hy : Lanes y b)
-    (hR : ∀ i < 256, R[i]! = if j ≤ i ∧ i < j + 8 then a (i - j)
-      else if j' ≤ i ∧ i < j' + 8 then b (i - j') else P[i]!) :
-    S16 ((m.writeW (wAddr p j) x).writeW (wAddr p j') y) p R :=
-  s16_write2R (R := canW) hP hj hj' hsep hx hy hR
 
 theorem sR_contains (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) : (sR p).Contains (wAddr p j) 16 :=
   Offset.contains_base p (by bdd_omega) (by bdd_omega)

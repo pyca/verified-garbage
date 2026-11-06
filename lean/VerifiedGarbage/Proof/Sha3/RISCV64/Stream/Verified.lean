@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sha3.RISCV64.Contract
 meta import VerifiedGarbage.Impl.Sha3.RISCV64.Stream
 meta import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Proof.Sha3.Contract
+meta import VerifiedGarbage.Proof.Sha3.Contract
 
 /-!
 # The SHA-3 sponge on RISC-V: `Verified`
@@ -96,10 +98,10 @@ theorem absorbWs_verified' :
 
 theorem absorbWs_verified :
     Verified RISCV64.target Impl.Sha3.RISCV64.Stream.absorbWs
-      (Spec.Sha3.absorbScratchContract RISCV64.abi 608) :=
+      (Proof.Sha3.absorbScratchContract RISCV64.abi 608) :=
   absorbWs_verified'.of_implies (by
-    contract_implies [Spec.Sha3.absorbScratchContract, Spec.Sha3.absorbScratchSig, Spec.Sha3.absorbPre,
-      Spec.Sha3.absorbPost, Proof.Sha3.absorbWsRISCV64, Proof.Sha3.absorbRISCV64, RISCV64.abi,
+    contract_implies [Proof.Sha3.absorbScratchContract, Proof.Sha3.absorbScratchSig, Proof.Sha3.absorbPre,
+      Proof.Sha3.absorbPost, Proof.Sha3.absorbWsRISCV64, Proof.Sha3.absorbRISCV64, RISCV64.abi,
       RISCV64.argRegs] [absorbWsSat] using absorbWsSat)
 
 /-! ## `pad` -/
@@ -130,9 +132,9 @@ theorem pad_verified' :
   · exact Region.disjoint_of_sep (by decide)
 
 theorem pad_verified :
-    Verified RISCV64.target Impl.Sha3.RISCV64.Stream.pad (Spec.Sha3.padContract RISCV64.abi 1136) :=
+    Verified RISCV64.target Impl.Sha3.RISCV64.Stream.pad (Proof.Sha3.padContract RISCV64.abi 1136) :=
   pad_verified'.of_implies (by
-    contract_implies [Spec.Sha3.padContract, Spec.Sha3.padSig, Spec.Sha3.padPre, Spec.Sha3.padPost,
+    contract_implies [Proof.Sha3.padContract, Proof.Sha3.padSig, Proof.Sha3.padPre, Proof.Sha3.padPost,
       Proof.Sha3.padRISCV64, RISCV64.abi, RISCV64.argRegs] [padSat] using padSat)
 
 /-! ## `squeeze` -/
@@ -165,10 +167,10 @@ theorem squeeze_verified' :
 
 theorem squeeze_verified :
     Verified RISCV64.target Impl.Sha3.RISCV64.Stream.squeeze
-      (Spec.Sha3.squeezeContract RISCV64.abi 1168) :=
+      (Proof.Sha3.squeezeContract RISCV64.abi 1168) :=
   squeeze_verified'.of_implies (by
-    contract_implies [Spec.Sha3.squeezeContract, Spec.Sha3.squeezeSig, Spec.Sha3.squeezePre,
-      Spec.Sha3.squeezePost, Proof.Sha3.squeezeRISCV64, RISCV64.abi, RISCV64.argRegs] [squeezeSat]
+    contract_implies [Proof.Sha3.squeezeContract, Proof.Sha3.squeezeSig, Proof.Sha3.squeezePre,
+      Proof.Sha3.squeezePost, Proof.Sha3.squeezeRISCV64, RISCV64.abi, RISCV64.argRegs] [squeezeSat]
       using squeezeSat)
 
 end VG.Proof.Sha3.RISCV64.Stream

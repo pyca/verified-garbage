@@ -36,12 +36,4 @@ theorem Blocks.xof {m input : Mem} {p seed : Addr} {a k blocks : Nat}
     m (p+BitVec.ofNat 64 j)=Proof.MlKem.xofByte (seedBytes input seed a k) j :=
   (h.byte hj).trans (stream_seedState input seed hk hk256 j)
 
-/-- One continuation block can be passed directly to the incremental rejection loop. -/
-theorem Rate21.xof {m input : Mem} {p seed : Addr} {a k block : Nat}
-    (hk : 0<k) (hk256 : k≤256)
-    (h : Rate21 m p (Proof.Sha3.iterF (block+1) (seedState input seed a k)))
-    {j : Nat} (hj : j<168) :
-    m (p+BitVec.ofNat 64 j)=Proof.MlKem.xofByte (seedBytes input seed a k) (168*block+j) :=
-  (h.byte hj).trans (xofByte_seedState input seed hk hk256 hj).symm
-
 end VG.Proof.MlKem.AArch64.Paired

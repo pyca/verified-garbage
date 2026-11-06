@@ -45,9 +45,4 @@ structure PrecomputedABI (s : State) : Prop where
   eLength : (arg s 5).toNat ≤ (arg s 1).toNat
   scratchLength : Spec.Rsa.publicScratchWords (arg s 1).toNat ≤ (arg s 9).toNat
 
-theorem precomputedABI_of {s : State} (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 20).pre s) : PrecomputedABI s := by
-  sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes, stackBelow] at h
-  sig_split h
-  constructor <;> with_reducible assumption
-
 end VG.Proof.Bignum.X86

@@ -5,11 +5,13 @@ import VerifiedGarbage.Proof.Framework.ContractPost
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+public import VerifiedGarbage.Proof.Zeroize.Common
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -52,6 +54,7 @@ open VG VG.Arm VG.Impl.ChaCha20Poly1305.Arm
 open VG.Spec.Poly1305 (Repr bytesAt mac leBytes)
 open VG.Spec.ChaCha20 (stateAt)
 open VG.Spec.ChaCha20Poly1305 (pad16 macData polyKeyGen)
+open VG.Proof.MdStream.Arm (Upd wp_cmp wp_strb wp_mov wp_add wp_subs op2_imm op2_reg)
 
 variable {e : Bool}
 
@@ -394,9 +397,13 @@ theorem tag_eq0 {s₀ s : State} (hp : APre e s₀) (h : Inv s₀ s) : bytesAt s
     · exact hp.d_t.symm
     · exact hp.b_t.symm) (by omega)
 
-theorem openEnd_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : PostFo s₀ s) :
-    WP isa openEnd s fun s' => abiPreserved s₀ s' ∧ openArm.post s₀ s' := by
-  unfold openEnd
+/-- The data decrypted and the tags compared: `r0` is whether the tag is
+right, and `Z` whether it is not. -/
+theorem endBody_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : PostFo s₀ s) :
+    WP isa (.seq crypt (.block (Impl.ChaCha20Poly1305.Arm.compare ++ ([.cmp .r0 (.imm 0)] : List Instr)))) s fun s₃ =>
+      Inv s₀ s₃ ∧ s₃.gpr .r0 = (if mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀ then 1 else 0) ∧
+      s₃.z = (s₃.gpr .r0 == 0) ∧
+      bytesAt s₃.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
   refine WP.seq (WP.mono (crypt_ok hp h.inv h.st) fun s₁ ⟨i₁, k₁, c₁⟩ => ?_)
   have hc : ∀ {a n : Nat}, stOff + 64 ≤ a → a + n ≤ 632 → ∀ r ∈ [sub s₀ 0 (stOff + 64), dR s₀],
       (∃ k l, k + l ≤ 632 ∧ (k + l ≤ a ∨ a + n ≤ k) ∧ r = sub s₀ k l) ∨ r = dR s₀ ∨ r = belR s₀ :=
@@ -411,19 +418,146 @@ theorem openEnd_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : PostFo
   refine WP.block_append (WP.mono (compare_ok hp i₁)
     fun s₂ ⟨r0₂, g₂, sp₂, m₂, rd₂, wr₂⟩ => ?_)
   have i₂ : Inv s₀ s₂ := i₁.step0 ⟨fun r hr _ => g₂ r hr, sp₂, rd₂, wr₂, by rw [m₂]; exact Frame.refl _ _⟩
-  refine WP.mono (restore_ok hp i₂.regs.r7 i₂.saved i₂.rd i₂.wr) fun s₃ ⟨g₃, o₃, m₃, sp₃, _, _⟩ =>
-    ⟨abi_of g₃ (by rw [sp₃, i₂.sp]), ?_⟩
-  have r0₃ : s₃.gpr .r0 = if mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀ then 1 else 0 := by
-    rw [o₃ .r0 (by decide) (by decide), r0₂, t₁, tag_eq0 hp i₁]
-  have d₃ : bytesAt s₃.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
-    rw [m₃, m₂, c₁]
-  rw [openArm, Contract.post_mk]
-  rw [r0₃]
-  split
-  next pt hpt =>
-    obtain ⟨hmac, rfl⟩ := decrypt_eq_some hpt
-    exact ⟨ite_eq_left hmac, d₃⟩
-  next hn => exact ite_eq_right (decrypt_eq_none hn)
+  refine wp_cmp (op2_imm (by decide)) fun s₃ f₃ z₃ => WP.block_nil ?_
+  have i₃ : Inv s₀ s₃ := i₂.step0 ⟨fun r _ _ => by rw [f₃.gpr], f₃.sp, f₃.rd, f₃.wr,
+    by rw [f₃.mem]; exact Frame.refl _ _⟩
+  refine ⟨i₃, by rw [f₃.gpr, r0₂, t₁, tag_eq0 hp i₁],
+    by rw [z₃, f₃.gpr, show (s₂.gpr .r0 - 0 : BitVec 32) = s₂.gpr .r0 from BitVec.sub_zero _],
+    by rw [f₃.mem, m₂, c₁]⟩
+
+/-- A write of a temporary register (not one we keep) is kept. -/
+theorem kept_upd {s s' : State} {d : Reg} {v : BitVec 32} (rs : List Region) (u : Upd s s' d v)
+    (hd : d ∉ preserved := by decide) : Kept rs s s' :=
+  ⟨fun r hr _ => u.other r fun e => hd (e ▸ hr), u.sp, u.rd, u.wr, by rw [u.mem]; exact Frame.refl _ _⟩
+
+theorem ofNat32_sub_one {n : Nat} (h : 0 < n) (hn : n < 2 ^ 32) :
+    BitVec.ofNat 32 n - 1 = BitVec.ofNat 32 (n - 1) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
+  omega
+
+theorem ofNat32_ne_zero {n : Nat} (h : 0 < n) (hn : n < 2 ^ 32) : BitVec.ofNat 32 n ≠ 0 := by
+  intro e
+  have := congrArg BitVec.toNat e
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn] at this
+  exact Nat.ne_of_gt h this
+
+/-- One step of `zeroData`'s loop: the byte at `dp + j` zeroed, with `r0`
+zero and `r2` at it. -/
+theorem zeroStep_ok {s₀ : State} (hp : APre false s₀) {u : State} (hu : Inv s₀ u) {j : Nat}
+    (hj : j < L s₀) (h0 : u.gpr .r0 = 0) (h2 : u.gpr .r2 = dP s₀ + BitVec.ofNat 32 j)
+    (hz : Proof.Zeroize.Prefix u.mem (dp s₀) j) :
+    WP isa (.block [.strb .r0 .r2 0, .dp .add .r2 .r2 (.imm 1), .subs .r3 .r3 (.imm 1)]) u fun u' =>
+      Inv s₀ u' ∧ u'.gpr .r0 = 0 ∧ u'.gpr .r2 = dP s₀ + BitVec.ofNat 32 (j + 1) ∧
+      u'.gpr .r3 = u.gpr .r3 - 1 ∧ u'.z = (u.gpr .r3 - 1 == 0) ∧
+      (∀ r, r ≠ .r2 → r ≠ .r3 → u'.gpr r = u.gpr r) ∧ Proof.Zeroize.Prefix u'.mem (dp s₀) (j + 1) := by
+  have hfit := hp.fit_d
+  have h2' : u.gpr .r2 + BitVec.ofNat 32 0 = dP s₀ + BitVec.ofNat 32 j := by
+    rw [h2]; exact BitVec.add_zero _
+  have ha : State.addr (u.gpr .r2 + BitVec.ofNat 32 0) = dp s₀ + BitVec.ofNat 64 j := by
+    rw [h2', addr_add (by omega)]
+  have hd : (dp s₀).toNat = (dP s₀).toNat := addr_toNat _
+  have hc : (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 j) 1 :=
+    Offset.contains_base _ (by omega) (by omega)
+  refine wp_strb (by decide) ha ⟨dR s₀, by rw [hu.wr]; exact hp.d_wr, hc⟩ fun u₁ m₁ => ?_
+  refine wp_add (op2_imm (by decide)) fun u₂ v₂ =>
+    wp_subs (op2_imm (by decide)) fun u₃ v₃ z₃ => WP.block_nil ?_
+  have st₁ : Kept [dR s₀] u u₁ :=
+    ⟨fun r _ _ => by rw [m₁.gpr], m₁.sp, m₁.rd, m₁.wr,
+      by rw [m₁.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hc⟩
+  have st : Kept [dR s₀] u u₃ := (st₁.trans (kept_upd _ v₂)).trans (kept_upd _ v₃)
+  have o : ∀ r, r ≠ .r2 → r ≠ .r3 → u₃.gpr r = u.gpr r := fun r a b => by
+    rw [v₃.other r b, v₂.other r a, m₁.gpr]
+  have e3 : u₂.gpr .r3 = u.gpr .r3 := by rw [v₂.other _ (by decide), m₁.gpr]
+  refine ⟨hu.step st (fun r hr => ⟨dR s₀, by simp, by
+      simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
+      (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact hp.c_d.sub_left (sub_ctx s₀ (by decide))),
+    by rw [o _ (by decide) (by decide), h0], ?_, by rw [v₃.gpr, e3], by rw [z₃, e3], o, ?_⟩
+  · rw [v₃.other _ (by decide), v₂.gpr, m₁.gpr, h2, BitVec.add_assoc, BitVec.ofNat_add]; rfl
+  · rw [v₃.mem, v₂.mem, m₁.mem, h0, show BitVec.setWidth 8 (0 : BitVec 32) = 0 by decide]
+    exact Proof.Zeroize.prefix_writeW hz (by omega)
+
+/-- `zeroData`, with `r0` zero: zeros at `data`, and only `r2`, `r3` and the
+flags written. -/
+theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s₀ s) (h0 : s.gpr .r0 = 0) :
+    WP isa zeroData s fun s' => Inv s₀ s' ∧ bytesAt s'.mem (dp s₀) (L s₀) = List.replicate (L s₀) 0 ∧
+      (∀ r, r ≠ .r2 → r ≠ .r3 → s'.gpr r = s.gpr r) := by
+  have hL : L s₀ < 2 ^ 32 := (stackArg s₀ 1).isLt
+  unfold zeroData
+  refine WP.seq (wp_mov (op2_reg _ _) fun u₁ v₁ => wp_mov (op2_reg _ _) fun u₂ v₂ =>
+    wp_cmp (op2_imm (by decide)) fun u₃ f₃ z₃ => WP.block_nil ?_)
+  have r2₃ : u₃.gpr .r2 = dP s₀ := by rw [f₃.gpr, v₂.other _ (by decide), v₁.gpr, h.regs.r10]
+  have r3₃ : u₃.gpr .r3 = BitVec.ofNat 32 (L s₀) := by
+    rw [f₃.gpr, v₂.gpr, v₁.other _ (by decide), h.regs.r11, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have z₃' : u₃.z = (BitVec.ofNat 32 (L s₀) == 0) := by
+    rw [z₃, show u₂.gpr .r3 = u₃.gpr .r3 by rw [f₃.gpr], r3₃,
+      show (BitVec.ofNat 32 (L s₀) - 0 : BitVec 32) = BitVec.ofNat 32 (L s₀) from BitVec.sub_zero _]
+  have i₃ : Inv s₀ u₃ := h.step0 (((kept_upd [] v₁).trans (kept_upd [] v₂)).trans
+    ⟨fun r _ _ => by rw [f₃.gpr], f₃.sp, f₃.rd, f₃.wr, by rw [f₃.mem]; exact Frame.refl _ _⟩)
+  have o₃ : ∀ r, r ≠ .r2 → r ≠ .r3 → u₃.gpr r = s.gpr r := fun r a b => by
+    rw [f₃.gpr, v₂.other r b, v₁.other r a]
+  by_cases hz : L s₀ = 0
+  · refine WP.ite true (by show some u₃.z = some true; rw [z₃', hz]; rfl)
+      (fun _ => WP.block_nil ⟨i₃, ?_, o₃⟩) (by simp)
+    rw [hz]; rfl
+  · have hne := ofNat32_ne_zero (n := L s₀) (by omega) hL
+    refine WP.ite false (by show some u₃.z = some false; rw [z₃', beq_false_of_ne hne])
+      (by simp) fun _ => ?_
+    refine WP.loop (M := isa) (fun rem u => ∃ j, j < L s₀ ∧ rem = L s₀ - j ∧ Inv s₀ u ∧ u.gpr .r0 = 0 ∧
+      u.gpr .r2 = dP s₀ + BitVec.ofNat 32 j ∧ u.gpr .r3 = BitVec.ofNat 32 (L s₀ - j) ∧
+      (∀ r, r ≠ .r2 → r ≠ .r3 → u.gpr r = s.gpr r) ∧ Proof.Zeroize.Prefix u.mem (dp s₀) j) ?_ (L s₀) u₃
+      ⟨0, by omega, by omega, i₃, by rw [o₃ _ (by decide) (by decide), h0],
+        by rw [r2₃]; exact (BitVec.add_zero _).symm, by rw [r3₃, Nat.sub_zero], o₃,
+        fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
+    intro rem u ⟨j, hj, hr, hu, e0, e2, e3, ho, hpz⟩
+    refine WP.mono (zeroStep_ok hp hu hj e0 e2 hpz) fun u' ⟨i', r0', r2', r3', z', o', p'⟩ => ?_
+    have hsub : BitVec.ofNat 32 (L s₀ - j) - 1 = BitVec.ofNat 32 (L s₀ - (j + 1)) := by
+      rw [ofNat32_sub_one (by omega) (by omega), Nat.sub_sub]
+    rw [e3, hsub] at r3' z'
+    have o'' : ∀ r, r ≠ .r2 → r ≠ .r3 → u'.gpr r = s.gpr r := fun r a b => by rw [o' r a b, ho r a b]
+    by_cases he : j + 1 = L s₀
+    · left
+      refine ⟨by show some (!u'.z) = some false; rw [z', he, Nat.sub_self]; rfl, i', ?_, o''⟩
+      rw [he] at p'
+      exact Proof.Zeroize.prefix_spec p'
+    · right
+      have hne := ofNat32_ne_zero (n := L s₀ - (j + 1)) (by omega) (by omega)
+      refine ⟨by show some (!u'.z) = some true; rw [z', beq_false_of_ne hne]; rfl,
+        L s₀ - (j + 1), by omega, j + 1, by omega, rfl, i', r0', r2', r3', o'', p'⟩
+
+/-- The epilogue, from the invariant: our caller's registers restored. -/
+theorem restoreEnd_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s₀ s) :
+    WP isa (.block restore) s fun s' => abiPreserved s₀ s' ∧ s'.gpr .r0 = s.gpr .r0 ∧ s'.mem = s.mem :=
+  WP.mono (restore_ok hp h.regs.r7 h.saved h.rd h.wr) fun _ ⟨g, o, m, sp, _, _⟩ =>
+    ⟨abi_of g (by rw [sp, h.sp]), o .r0 (by decide) (by decide), m⟩
+
+theorem openEnd_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : PostFo s₀ s) :
+    WP isa openEnd s fun s' => abiPreserved s₀ s' ∧ openArm.post s₀ s' := by
+  unfold openEnd
+  refine WP.seq (WP.mono (endBody_ok hp h) fun s₃ ⟨i₃, r0₃, z₃, d₃⟩ => ?_)
+  unfold openTail
+  refine WP.seq ?_
+  by_cases hc : mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀
+  · simp only [hc, ↓reduceIte] at r0₃
+    refine WP.ite false (by show some s₃.z = some false; rw [z₃, r0₃]; rfl) (by simp)
+      fun _ => WP.block_nil ?_
+    refine WP.mono (restoreEnd_ok hp i₃) fun s₄ ⟨ha, r0₄, m₄⟩ => ⟨ha, ?_⟩
+    rw [openArm, Contract.post_mk]
+    split
+    next pt hpt =>
+      obtain ⟨-, rfl⟩ := decrypt_eq_some hpt
+      exact ⟨by rw [r0₄, r0₃], by rw [m₄, d₃]⟩
+    next hn => exact absurd hc (decrypt_eq_none hn)
+  · simp only [hc, ↓reduceIte] at r0₃
+    refine WP.ite true (by show some s₃.z = some true; rw [z₃, r0₃]; rfl) (fun _ => ?_) (by simp)
+    refine WP.mono (zeroData_ok hp i₃ r0₃) fun s₄ ⟨i₄, z₄, o₄⟩ => ?_
+    refine WP.mono (restoreEnd_ok hp i₄) fun s₅ ⟨ha, r0₅, m₅⟩ => ⟨ha, ?_⟩
+    rw [openArm, Contract.post_mk]
+    split
+    next pt hpt => exact absurd (decrypt_eq_some hpt).1 hc
+    next hn => exact ⟨by rw [r0₅, o₄ _ (by decide) (by decide), r0₃], by rw [m₅, z₄]⟩
 
 theorem open_correct {s₀ : State} (hp : APre false s₀) :
     WP isa Impl.ChaCha20Poly1305.Arm.«open» s₀ fun s' => abiPreserved s₀ s' ∧ openArm.post s₀ s' :=
@@ -440,7 +574,7 @@ end
 
 Correctness (above), constant time, and a state satisfying the precondition,
 of the code with its working space as its last argument
-(`sealScratchContract`, `openScratchContract`), and then of the functions,
+(`sealScratchContract`, `openZeroScratchContract`), and then of the functions,
 which allocate it in a frame of 656 bytes on the stack and wipe it after the
 code (`Verified.stackScratchWiped`).
 
@@ -696,8 +830,42 @@ theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub Impl.ChaCha20Poly1305
 
 /-! ## Open -/
 
+/-- What `endBody_ok` gives, from the state on entry `s₀`. -/
+def EB (s₀ s₃ : State) : Prop := Inv s₀ s₃ ∧
+  s₃.gpr .r0 = (if mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀ then 1 else 0) ∧
+  s₃.z = (s₃.gpr .r0 == 0) ∧
+  bytesAt s₃.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀)
+
+theorem ok_iff (s₀ : State) :
+    okArm s₀ = true ↔ mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀ := by
+  unfold okArm
+  constructor
+  · intro h
+    obtain ⟨pt, hpt⟩ := Option.isSome_iff_exists.mp h
+    exact (decrypt_eq_some hpt).1
+  · intro h
+    cases hd : Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (D s₀) (T0 s₀) with
+    | none => exact absurd h (decrypt_eq_none hd)
+    | some _ => rfl
+
+theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true then 1 else 0]) : a = b := by
+  cases a <;> cases b <;> simp_all
+
+/-- The result in two runs whose leaks agree. -/
+theorem bit_eq {s₁ s₂ : State} (h : openLeakArm s₁ = openLeakArm s₂) :
+    (if mac (otk s₁) (macData (A s₁) (D s₁)) = T0 s₁ then (1 : BitVec 32) else 0) =
+      if mac (otk s₂) (macData (A s₂) (D s₂)) = T0 s₂ then 1 else 0 := by
+  have e : okArm s₁ = okArm s₂ := leak_bool h
+  by_cases h₁ : okArm s₁ = true
+  · have h₂ : okArm s₂ = true := e ▸ h₁
+    simp only [(ok_iff s₁).mp h₁, (ok_iff s₂).mp h₂, ↓reduceIte]
+  · have h₂ : ¬okArm s₂ = true := e ▸ h₁
+    simp only [show ¬mac (otk s₁) (macData (A s₁) (D s₁)) = T0 s₁ from fun h' => h₁ ((ok_iff s₁).mpr h'),
+      show ¬mac (otk s₂) (macData (A s₂) (D s₂)) = T0 s₂ from fun h' => h₂ ((ok_iff s₂).mpr h'), ↓reduceIte]
+
 theorem open_ct : ConstantTime isa openArm.pre openArm.pub Impl.ChaCha20Poly1305.Arm.«open» := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂
+  intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂
+  obtain ⟨hpub, hlk⟩ := hq
   have hp₁ := APre.of s₁ h₁
   have hp₂ := APre.of s₂ h₂
   have hlen : (macData (A s₁) (D s₁)).length = (macData (A s₂) (D s₂)).length := by
@@ -715,9 +883,42 @@ theorem open_ct : ConstantTime isa openArm.pre openArm.pub Impl.ChaCha20Poly1305
       fun _ _ h => ⟨h.2.1.inv, h.2.2.inv, h.2.1.r0, h.2.1.r1, h.2.1.r12, h.2.2.r0,
       h.2.2.r1, h.2.2.r12, by rw [h.2.1.cnt, h.2.2.cnt, hlen]⟩).wp
       fun _ _ h => ⟨finalize_open_ok hp₁ h.2.1, finalize_open_ok hp₂ h.2.2⟩
-  have B : RelCT isa (fun a b => True ∧ PostFo s₁ a ∧ PostFo s₂ b) openEnd fun _ _ => True :=
-    RelCT.taint (A := taint) τB (fun a b h => agreeB hp₁ hp₂ hpub h.2.1.inv h.2.2.inv) (by native_taint_decide)
-  exact ((A.seq (F.seq B)) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+  have B₁ : RelCT isa (fun a b => True ∧ PostFo s₁ a ∧ PostFo s₂ b)
+      (.seq crypt (.block (Impl.ChaCha20Poly1305.Arm.compare ++ [.cmp .r0 (.imm 0)])))
+      fun a b => True ∧ EB s₁ a ∧ EB s₂ b :=
+    (RelCT.taint (A := taint) τB (fun a b h => agreeB hp₁ hp₂ hpub h.2.1.inv h.2.2.inv)
+      (by native_taint_decide)).wp fun a b h => ⟨endBody_ok hp₁ h.2.1, endBody_ok hp₂ h.2.2⟩
+  have r0 : ∀ {s₀ a : State}, EB s₀ a → isa.eval .eq a = some true → a.gpr .r0 = 0 := fun {_ a} h he => by
+    have : a.z = true := Option.some.inj he
+    rw [h.2.2.1] at this
+    exact beq_iff_eq.mp this
+  have he₂ : ∀ {a b : State}, (True ∧ EB s₁ a ∧ EB s₂ b) → isa.eval .eq a = some true →
+      isa.eval .eq b = some true := fun {_ b} h he => by
+    show some b.z = some true
+    rw [h.2.2.2.2.1, h.2.2.2.1, ← bit_eq hlk, ← h.2.1.2.1, ← h.2.1.2.2.1]; exact he
+  have Z : RelCT isa (fun a b => (True ∧ EB s₁ a ∧ EB s₂ b) ∧ isa.eval .eq a = some true) zeroData
+      fun a b => Inv s₁ a ∧ Inv s₂ b :=
+    ((RelCT.taint (A := taint) τB (fun a b h => agreeB hp₁ hp₂ hpub h.1.2.1.1 h.1.2.2.1)
+      (by native_taint_decide)).wp (F₁ := Inv s₁) (F₂ := Inv s₂) fun a b h =>
+        ⟨WP.mono (zeroData_ok hp₁ h.1.2.1.1 (r0 h.1.2.1 h.2)) fun _ h' => h'.1,
+         WP.mono (zeroData_ok hp₂ h.1.2.2.1 (r0 h.1.2.2 (he₂ h.1 h.2))) fun _ h' => h'.1⟩).mono
+      (fun _ _ h => h) fun _ _ h => h.2
+  have S : RelCT isa (fun a b => (True ∧ EB s₁ a ∧ EB s₂ b) ∧ isa.eval .eq a = some false) (.block [])
+      fun a b => Inv s₁ a ∧ Inv s₂ b := by
+    intro _ _ _ _ _ _ h x₁ x₂
+    cases x₁ with
+    | block h₁ =>
+      cases x₂ with
+      | block h₂ =>
+        simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h₁ h₂
+        rw [← h₁.1, ← h₂.1]
+        exact ⟨h₁.2.symm.trans h₂.2, h.1.2.1.1, h.1.2.2.1⟩
+  have B₂ : RelCT isa (fun a b => True ∧ EB s₁ a ∧ EB s₂ b) openTail fun _ _ => True :=
+    (RelCT.ite (fun a b h => by
+        show some (State.z a) = some (State.z b)
+        rw [h.2.1.2.2.1, h.2.2.2.2.1, h.2.1.2.1, h.2.2.2.1, bit_eq hlk]) Z S).seq
+      (RelCT.taint (A := taint) τB (fun a b h => agreeB hp₁ hp₂ hpub h.1 h.2) (by native_taint_decide))
+  exact ((A.seq (F.seq (B₁.seq B₂))) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 /-! ## `Verified` -/
 
@@ -763,16 +964,17 @@ theorem seal_verified :
 /-- The postconditions match on `decrypt`; the result is the low word of
 `r1:r0`. -/
 theorem open_verified :
-    Verified Arm.target Impl.ChaCha20Poly1305.Arm.«open» (openScratchContract Arm.abi 79 8) :=
+    Verified Arm.target Impl.ChaCha20Poly1305.Arm.«open» (openZeroScratchContract Arm.abi 79 8) :=
   Verified.of_correct open_ok open_ct
     { pre := by
-        sig_implies_pre [Proof.ChaCha20Poly1305.openScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
-          Spec.ChaCha20Poly1305.openPost, Proof.ChaCha20Poly1305.openArm, Proof.ChaCha20Poly1305.preArm,
+        sig_implies_pre [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
+          Spec.ChaCha20Poly1305.openZeroPost, Spec.ChaCha20Poly1305.openLeak, Proof.ChaCha20Poly1305.openArm,
+          Proof.ChaCha20Poly1305.openLeakArm, Proof.ChaCha20Poly1305.preArm,
           Proof.ChaCha20Poly1305.pubArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       post := by
         intro s s' _ h
-        sig_eval [Proof.ChaCha20Poly1305.openScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
-          Spec.ChaCha20Poly1305.openPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
+        sig_eval [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
+          Spec.ChaCha20Poly1305.openZeroPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
         simp only [Proof.ChaCha20Poly1305.openArm, Arm.State.addr] at h
         have e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right
@@ -786,16 +988,17 @@ theorem open_verified :
         next _ e₁ =>
           split
           next _ pt' e₂ => exact absurd (e₁.symm.trans e₂) (by simp)
-          next _ e₂ => exact (e _ _).trans h
+          next _ e₂ => exact ⟨(e _ _).trans h.1, h.2⟩
       pub := by
-        sig_implies_pub [Proof.ChaCha20Poly1305.openScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
-          Spec.ChaCha20Poly1305.openPost, Proof.ChaCha20Poly1305.openArm, Proof.ChaCha20Poly1305.preArm,
+        sig_implies_pub [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
+          Spec.ChaCha20Poly1305.openZeroPost, Spec.ChaCha20Poly1305.openLeak, Proof.ChaCha20Poly1305.openArm,
+          Proof.ChaCha20Poly1305.openLeakArm, Proof.ChaCha20Poly1305.preArm,
           Proof.ChaCha20Poly1305.pubArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       sat := by
-        sig_implies_sat [Proof.ChaCha20Poly1305.openScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
-          Spec.ChaCha20Poly1305.openPost, Proof.ChaCha20Poly1305.openArm, Proof.ChaCha20Poly1305.preArm,
-          Proof.ChaCha20Poly1305.pubArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
-          Arm.State.addr]
+        sig_implies_sat [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
+          Spec.ChaCha20Poly1305.openZeroPost, Spec.ChaCha20Poly1305.openLeak, Proof.ChaCha20Poly1305.openArm,
+          Proof.ChaCha20Poly1305.openLeakArm, Proof.ChaCha20Poly1305.preArm,
+          Proof.ChaCha20Poly1305.pubArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [Proof.ChaCha20Poly1305.Arm.openSat, Proof.ChaCha20Poly1305.Arm.sealSat, Arm.stackArg,
             Arm.stackArgAddr, Mem.readW, Mem.read]
           using Proof.ChaCha20Poly1305.Arm.openSat }
@@ -827,19 +1030,21 @@ def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x3000, 16⟩, ⟨0x5000, 12⟩],
                  wr := [⟨0, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openContract Arm.abi 664).pre s := by
-  implies_sat [Spec.ChaCha20Poly1305.openContract, Spec.ChaCha20Poly1305.openSig,
-    Spec.ChaCha20Poly1305.openPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openZeroContract Arm.abi 664).pre s := by
+  implies_sat [Spec.ChaCha20Poly1305.openZeroContract, Spec.ChaCha20Poly1305.openSig,
+    Spec.ChaCha20Poly1305.openZeroPost, Spec.ChaCha20Poly1305.openLeak, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [openFrameSat, sealSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
     using openFrameSat
 
 theorem open_framed :
     Verified Arm.target
       (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 Impl.ChaCha20Poly1305.Arm.«open»)
-      (Spec.ChaCha20Poly1305.openContract Arm.abi 664) :=
+      (Spec.ChaCha20Poly1305.openZeroContract Arm.abi 664) :=
   Arm.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
-    (n := 79) (post := Spec.ChaCha20Poly1305.openPost Arm.abi.ptrBits) (wa := true) (stack := 8)
+    (n := 79) (post := Spec.ChaCha20Poly1305.openZeroPost Arm.abi.ptrBits) (wa := true) (stack := 8)
+    (leak := some (Spec.ChaCha20Poly1305.openLeak Arm.abi.ptrBits))
     (bytes := 656) (m := 3) (words := 158) open_verified (by decide) (by decide) (by decide)
-    (by decide) (by decide) (pre_local _ _) (openPost_local _) (openPost_out _) openFrameSat_pre
+    (by decide) (by decide) (pre_local _ _) (openZeroPost_local _) (openZeroPost_out _) openFrameSat_pre
+    (hleak := Sig.LeakLocal.toL (openLeak_local _))
 
 end VG.Proof.ChaCha20Poly1305.Arm

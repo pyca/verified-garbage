@@ -43,8 +43,6 @@ def stackUse : Prog isa → Nat
 /-- The `n` bytes below `sp`. -/
 abbrev below (sp : BitVec 32) (n : Nat) : Region := ⟨(sp - BitVec.ofNat 32 n).setWidth 64, n⟩
 
-theorem belowSp_eq (s : State) (n : Nat) : Taint.belowSp s n = below (s.gpr .esp) n := rfl
-
 /-- No instruction writes `esp` (frames move it, and restore it). -/
 abbrev NoSp (c : Prog isa) : Prop := ∀ i ∈ instrs c, Taint.clobbers i .esp = false
 

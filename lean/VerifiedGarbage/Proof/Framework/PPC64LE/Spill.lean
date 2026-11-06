@@ -71,10 +71,6 @@ theorem forall_slots {regs : Nat → Reg} {n : Nat} {P : Reg × Nat → Prop}
 theorem mem_slots {regs : Nat → Reg} {n i : Nat} (hi : i < n) : (regs i, 8 * i) ∈ slots regs n :=
   List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩
 
-theorem slots_fst (regs : Nat → Reg) (n : Nat) :
-    (slots regs n).map Prod.fst = (List.range n).map regs := by
-  simp only [slots, List.map_map]; rfl
-
 /-! ## The slots -/
 
 /-- The memory after storing `g r` at `B + d` for each `(r, d)`, in order. -/

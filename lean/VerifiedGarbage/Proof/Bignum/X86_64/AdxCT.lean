@@ -142,39 +142,4 @@ theorem fused_ct {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
   exact WP.mono (finishBases_ok hg.scr hg.rdi hg.hdr hZ ho) fun t ⟨h12, h8', hsi, hbx', _, k⟩ =>
     ⟨h12, h8', hsi, hbx', (k.gpr (by decide)).trans h10⟩
 
-/-- `montMulAdx` is constant time, given that the taint analysis checks its
-header loads from `rdi` (and `montMul`'s). -/
-theorem montMulAdx_ct {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
-    (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp)
-    {hc₀ hc₁ hc₂ hc₃ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hM : (taint.check (Taint.ofRegs [.rdi]) (.block (bases o a b aN aAcc aTmp)) hc₀).isSome = true)
-    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (setup b)) hc₁).isSome = true)
-    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (rowBase a)) hc₂).isSome = true)
-    (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (finishBases o)) hc₃).isSome = true) :
-    RelCT isa (Two GoodW) (montMulAdx o a b) fun _ _ => True := by
-  unfold montMulAdx
-  refine RelCT.seq (two_piece (Ψ := fun L s => GoodW L s ∧ s.zf = some (decide (SizeOk L.w))) [.rdi] pins_goodW
-    (by taint_decide) fun L s ⟨mi, hg, hZ⟩ => WP.mono (sizeTest_ok hg.scr hg.rdi hg.hdr hZ) fun t ⟨hz, hm, k⟩ =>
-      ⟨⟨mi, ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi, hm ▸ hg.hdr⟩, hZ⟩, hz⟩) ?_
-  refine two_ite (fun L s₁ s₂ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_
-  · refine two_map id (fun L s ⟨⟨hg, hz⟩, he⟩ => ⟨hg, ?_⟩) (fused_ct ho ha hb ha1 ha2 hb1 hb2 hS hR hF)
-    simp only [eval, hz, Option.some.injEq, decide_eq_true_eq] at he
-    exact he
-  · exact two_map id (fun L s h => h.1.1) (montMul_ctW (by decide) (by decide) (by decide) ho ha hb hM)
-
-/-- Montgomery multiplication with BMI2 and ADX (`montMulAdx`), for RSA. -/
-def Mont.adx : Mont where
-  mm := montMulAdx
-  ok hg hZ hw hw' _ _ _ ho ha hb d1 d2 d3 d4 d5 d6 hinv hB :=
-    WP.mono (montMulAdx_ok hg.scr hg.rdi hg.hdr hZ hw hw' ho ha hb d1 d2 d3 d4 d5 d6 hinv hB)
-      fun t' ⟨h1, h2, h3, k⟩ => ⟨⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi, h3.hdr hg.hdr⟩,
-        h1, h2, h3, k⟩
-  ct := by
-    intro o a b h
-    rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
-      ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
-      ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
-    exact montMulAdx_ct (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)
-
 end VG.Proof.Bignum.X86_64

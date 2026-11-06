@@ -71,45 +71,4 @@ theorem kpkeKg768Y_correct : ∀ s, (kpkeKgK kem768).pre s →
     ∃ t s', Exec isa (kpkeKg kem768 .avx2 keygenMul16Y) s t s' ∧ abiPreserved s s' ∧ (kpkeKgK kem768).post s s' :=
   KpkeKg.kpkeKg_correct PrimsOk.avx2 keWf768 kgMul16Y3_correct (by lit_decide) (by lit_decide) (by lit_decide)
 
-/-- A state the contract permits. -/
-def kpkeKgSat (L : Kem) : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x6000 | .r8 => 0x10000 | .rsp => 0x20000
-    | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x3000, 512 * (L.k * L.k)⟩]
-  wr := [⟨0x1000, 384 * L.k⟩, ⟨0x2000, 384 * L.k⟩, ⟨0x6000, 1024 * L.k⟩, ⟨0x10000, 20480⟩]
-
-theorem kpkeKg768_of {c : Prog isa}
-    (hc : ∀ s, (kpkeKgK kem768).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (kpkeKgK kem768).post s s')
-    (hct : ConstantTime isa (kpkeKgK kem768).pre (kpkeKgK kem768).pub c) :
-    Verified X86_64.target c (Proof.MlKem.kpkeKeyGenContract 3 X86_64.abi) :=
-  Verified.of_correct hc hct
-    { pre := by sig_implies_pre [kpkeKeyGenContract, kpkeKeyGenSig, kpkeKgK, X86_64.abi,
-        X86_64.argRegs, kScrE, Kem.k, kem768, retR, mlKem768]
-      post := by sig_implies_post [kpkeKeyGenContract, kpkeKeyGenSig, kpkeKgK, X86_64.abi,
-        X86_64.argRegs, kScrE, Kem.k, kem768, retR, mlKem768]
-      pub := by sig_implies_pub [kpkeKeyGenContract, kpkeKeyGenSig, kpkeKgK, X86_64.abi,
-        X86_64.argRegs, kScrE, Kem.k, kem768, retR, mlKem768]
-      sat := by
-        refine ⟨kpkeKgSat kem768, ?_⟩
-        sig_pre [kpkeKeyGenContract, kpkeKeyGenSig, kpkeKgK, X86_64.abi, X86_64.argRegs]
-        and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact Region.disjoint_of_sep (by decide)
-          | exact vecReducedW16_zero _ _
-          | (intro a h₁ h₂
-             simp only [Region.Contains] at h₁ h₂
-             bv_omega) }
-
-theorem kpkeKg768Y_verified :
-    Verified X86_64.target (kpkeKg kem768 .avx2 keygenMul16Y) (Proof.MlKem.kpkeKeyGenContract 3 X86_64.abi) :=
-  kpkeKg768_of kpkeKg768Y_correct kpkeKg768Y_ct
-
 end VG.Proof.MlKem.X86_64

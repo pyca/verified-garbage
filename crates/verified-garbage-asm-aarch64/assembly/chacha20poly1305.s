@@ -13348,8 +13348,10 @@ vg_chacha20_poly1305_seal_neon:
 	.p2align 6
 
 vg_chacha20_poly1305_open_neon:
-	sub sp, sp, #1280
+	sub sp, sp, #1296
 	add x7, sp, #0
+	str x4, [x7, #1280]
+	str x5, [x7, #1288]
 	sub x9, x5, #1
 	sub x10, x5, #64
 	orr x9, x9, x10
@@ -24565,6 +24567,22 @@ vg_chacha20_poly1305_open_neon:
 	lsr x9, x9, #63
 	movz x10, #1, lsl #0
 	sub x0, x10, x9
+	cbz w0, 2183f
+	b 2184f
+2183:
+	ldr x9, [x21, #1280]
+	ldr x10, [x21, #1288]
+	movz x11, #0, lsl #0
+	cbz x10, 2185f
+2187:
+	strb w11, [x9, #0]
+	add x9, x9, #1
+	sub x10, x10, #1
+	cbnz x10, 2187b
+	b 2186f
+2185:
+2186:
+2184:
 	ldr x22, [x21, #584]
 	ldr x23, [x21, #592]
 	ldr x24, [x21, #600]
@@ -24623,7 +24641,7 @@ vg_chacha20_poly1305_open_neon:
 	stp x17, x17, [x16, #208]
 	stp x17, x17, [x16, #224]
 	stp x17, x17, [x16, #240]
-	add sp, sp, #1280
+	add sp, sp, #1296
 	ret
 214:
 	add x8, x20, #0
@@ -29430,8 +29448,10 @@ vg_chacha20_poly1305_seal:
 	.p2align 6
 
 vg_chacha20_poly1305_open:
-	sub sp, sp, #1280
+	sub sp, sp, #1296
 	add x7, sp, #0
+	str x4, [x7, #1280]
+	str x5, [x7, #1288]
 	sub x9, x5, #1
 	sub x10, x5, #64
 	orr x9, x9, x10
@@ -34246,6 +34266,22 @@ vg_chacha20_poly1305_open:
 	lsr x9, x9, #63
 	movz x10, #1, lsl #0
 	sub x0, x10, x9
+	cbz w0, 256f
+	b 257f
+256:
+	ldr x9, [x21, #1280]
+	ldr x10, [x21, #1288]
+	movz x11, #0, lsl #0
+	cbz x10, 258f
+260:
+	strb w11, [x9, #0]
+	add x9, x9, #1
+	sub x10, x10, #1
+	cbnz x10, 260b
+	b 259f
+258:
+259:
+257:
 	ldr x22, [x21, #584]
 	ldr x23, [x21, #592]
 	ldr x24, [x21, #600]
@@ -34304,7 +34340,7 @@ vg_chacha20_poly1305_open:
 	stp x17, x17, [x16, #208]
 	stp x17, x17, [x16, #224]
 	stp x17, x17, [x16, #240]
-	add sp, sp, #1280
+	add sp, sp, #1296
 	ret
 	.p2align 6
 
@@ -46053,8 +46089,10 @@ vg_chacha20_poly1305_seal_sve2:
 	.p2align 6
 
 vg_chacha20_poly1305_open_sve2:
-	sub sp, sp, #1280
+	sub sp, sp, #1296
 	add x7, sp, #0
+	str x4, [x7, #1280]
+	str x5, [x7, #1288]
 	sub x9, x5, #1
 	sub x10, x5, #1
 	orr x9, x9, x10
@@ -56107,6 +56145,22 @@ vg_chacha20_poly1305_open_sve2:
 	lsr x9, x9, #63
 	movz x10, #1, lsl #0
 	sub x0, x10, x9
+	cbz w0, 2197f
+	b 2198f
+2197:
+	ldr x9, [x21, #1280]
+	ldr x10, [x21, #1288]
+	movz x11, #0, lsl #0
+	cbz x10, 2199f
+2201:
+	strb w11, [x9, #0]
+	add x9, x9, #1
+	sub x10, x10, #1
+	cbnz x10, 2201b
+	b 2200f
+2199:
+2200:
+2198:
 	ldr x22, [x21, #584]
 	ldr x23, [x21, #592]
 	ldr x24, [x21, #600]
@@ -56165,7 +56219,7 @@ vg_chacha20_poly1305_open_sve2:
 	stp x17, x17, [x16, #208]
 	stp x17, x17, [x16, #224]
 	stp x17, x17, [x16, #240]
-	add sp, sp, #1280
+	add sp, sp, #1296
 	ret
 214:
 	add x8, x20, #0

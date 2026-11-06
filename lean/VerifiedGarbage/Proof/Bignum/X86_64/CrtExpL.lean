@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelVExp
 for the exponent's pointer and length in `n`'s slots `sp` and `sl`: `expLoop`
 by windows of 4 bits with a table of 16 entries (`CrtExpL.w4`), or
 `expLoop5` by windows of 5 bits with a table of 32 read with AVX2
-(`CrtExpL.w5`). A `CrtExpL` is such a code with what the phases need of
+(`CrtExpL.w5S`). A `CrtExpL` is such a code with what the phases need of
 it: `Y := x^e R` in the prime's `aY`, changing only `crtExpRanges5`, within
 the room for a table of 32 entries.
 -/
@@ -67,13 +67,6 @@ def CrtExpL.w4 (M : Mont) : CrtExpL M where
     WP.mono (crtExpLoop_ok M CrtSel.sse hc hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc hsp hsl hep hel hL1 hL2 he)
       fun _ ⟨h1, h2, h3, f, k⟩ => ⟨h1, h2, h3, f.widen (crtExpRanges_widen5 _), k⟩
 
-/-- `expLoop5` by windows of 5 bits, its table of 32 read with AVX2. -/
-def CrtExpL.w5 (M : Mont) : CrtExpL M where
-  code := Crt.expLoop5 M.mm Crt.tabSelectV
-  ne _ _ := by simp [Crt.expLoop5, Crt.expLoop5S]
-  ok hc hT hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc _ _ hsp hsl _ _ hep hel hL1 hL2 he :=
-    crtExpLoop5_ok M CrtSel.avx hc hT hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc hsp hsl hep hel hL1 hL2 he
-
 /-- `CrtExpL.w4` with its squarings by `Sq`. -/
 def CrtExpL.w4S (M : Mont) (Sq : MontS) : CrtExpL M where
   code := Crt.expLoopS Sq.mm M.mm Crt.tabSelect
@@ -82,7 +75,7 @@ def CrtExpL.w4S (M : Mont) (Sq : MontS) : CrtExpL M where
     WP.mono (crtExpLoopS_ok M Sq CrtSel.sse hc hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc hsp hsl hep hel hL1 hL2 he)
       fun _ ⟨h1, h2, h3, f, k⟩ => ⟨h1, h2, h3, f.widen (crtExpRanges_widen5 _), k⟩
 
-/-- `CrtExpL.w5` with its squarings by `Sq`. -/
+/-- The loop by windows of 5 bits, with its squarings by `Sq`. -/
 def CrtExpL.w5S (M : Mont) (Sq : MontS) : CrtExpL M where
   code := Crt.expLoop5S Sq.mm M.mm Crt.tabSelectV
   ne _ _ := by simp [Crt.expLoop5S]

@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDecV
-public import VerifiedGarbage.Proof.MlKem.X86_64.Sample16
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified16
 public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
 public import VerifiedGarbage.Proof.Framework.Registration

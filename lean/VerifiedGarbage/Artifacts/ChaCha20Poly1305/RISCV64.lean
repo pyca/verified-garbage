@@ -16,7 +16,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 77 Impl.ChaCha20Poly1305.RISCV64.«seal»
     stack := 624
     verified := Proof.ChaCha20Poly1305.RISCV64.seal_framed },
-  Spec.ChaCha20Poly1305.openApi.artifact RISCV64.target {
+  Spec.ChaCha20Poly1305.openZeroApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 77 Impl.ChaCha20Poly1305.RISCV64.«open»
     stack := 624
     verified := Proof.ChaCha20Poly1305.RISCV64.open_framed },

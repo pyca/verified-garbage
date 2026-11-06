@@ -110,16 +110,6 @@ structure Indeps (M : ISA) (P : M.State → Prop) (a b : List M.Instr) : Prop wh
   right : ∀ y ∈ b, Preserves M P y
   comm : ∀ x ∈ a, ∀ y ∈ b, CommuteOn M P x y
 
-theorem runBlock_preserves {P : M.State → Prop} {a : List M.Instr} (ha : ∀ x ∈ a, Preserves M P x) :
-    ∀ {s s' : M.State}, P s → runBlock M a s = some s' → P s' := by
-  induction a with
-  | nil => intro s s' hs h; cases h; exact hs
-  | cons x a ih =>
-    intro s s' hs h
-    simp only [runBlock, Option.bind_eq_some_iff] at h
-    obtain ⟨u, hu, h⟩ := h
-    exact ih (fun x' hx' => ha x' (List.mem_cons_of_mem _ hx')) (ha x List.mem_cons_self s u hs hu) h
-
 theorem comm_block {P : M.State → Prop} {y : M.Instr} {a : List M.Instr}
     (ha : ∀ x ∈ a, Preserves M P x ∧ CommuteOn M P x y) {s : M.State} (hs : P s) :
     (M.exec y s).bind (runBlock M a) = (runBlock M a s).bind (M.exec y) := by

@@ -500,12 +500,6 @@ theorem setArgs_run {bytes m : Nat} {u : State} (hb : bytes % 8 = 0) (hbl : byte
     exact hv j hj
   · rw [hmem, Mem.readW_writeW_self64]
 
-/-- `withStackArgScratch` writes `sp` only in its frame (no AArch64
-instruction writes it). -/
-theorem withStackArgScratch_spSafe (bytes m : Nat) (c : Prog isa) :
-    (withStackArgScratch bytes m c).all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_forall (fun _ => rfl) _
-
 
 /-! ## The run from `narrowS` -/
 

@@ -32,15 +32,4 @@ theorem checked_ct (M : Mont)
     ConstantTime isa pdContract.pre pdContract.pub (Folded.checked M.mm) :=
   guardedPd_ct (code_constantTime M hfinal)
 
-/-- `vg_rsa_public_precomputed_checked` with Montgomery multiplication `M`,
-given that its code never loads MXCSR (which the registration file
-evaluates) and that the last multiplication, by the input, leaks only the
-public data (`hfinal`). -/
-theorem checked_verified (M : Mont)
-    (hmx : (Folded.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) :
-    Verified target (Folded.checked M.mm) (Proof.Rsa.publicPrecomputedCheckedContract abi) :=
-  Verified.of_correct (k := pdChkContract) (checked_correct M hmx)
-    (checked_ct M hfinal) precomputedChecked_implies
-
 end VG.Proof.Bignum.X86_64.FoldedPublic
