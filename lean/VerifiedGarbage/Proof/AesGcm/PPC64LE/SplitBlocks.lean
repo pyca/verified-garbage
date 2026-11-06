@@ -439,12 +439,4 @@ theorem core_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     exact ht.restored p hp
   · exact hk.gpr (by simpa only [List.mem_append,not_or] using And.intro hr hs)
 
-theorem load_taint : ∃ h, (VG.Taint.check vectorTaint
-    (Taint.ofRegs [.r0,.r6,.r11,.r17,.r18,.r19,.r20,.r21,.r22,.r23,.r24])
-    Impl.AesGcm.PPC64LE.SplitBlocks.load h).isSome=true := ⟨_,by taint_decide⟩
-
-theorem code_taint : ∃ h, (VG.Taint.check vectorTaint
-    (Taint.ofRegs [.r3,.r4,.r5,.r6,.r7,.r8,.r9,.r10,.r17,.r19])
-    Impl.AesGcm.PPC64LE.SplitBlocks.code h).isSome=true := ⟨_,by taint_decide⟩
-
 end VG.Proof.AesGcm.PPC64LE.SplitBlocks

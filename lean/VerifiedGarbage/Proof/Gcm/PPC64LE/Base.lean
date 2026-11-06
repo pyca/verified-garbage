@@ -85,9 +85,6 @@ theorem rev64_rev64 (a : BitVec 64) : rev64 (rev64 a) = a := byteRev64_byteRev64
 theorem contains_offset {base : Addr} {len off n : Nat} (h : off + n ≤ len) (ho : off < 2 ^ 64) :
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofNat 64 off) n := Offset.contains_base base h ho
 
-theorem sub_offset {base : Addr} {off len len' : Nat} (h : off + len ≤ len') (_ho : off < 2 ^ 64) :
-    Region.Sub ⟨base + BitVec.ofNat 64 off, len⟩ ⟨base, len'⟩ := Offset.sub_base base h
-
 /-! ## The precondition -/
 
 section
@@ -123,14 +120,6 @@ theorem pre_of (s₀ : State) (h : Proof.Gcm.ghashPPC64LE.pre s₀) : Pre s₀ :
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
-/-- The precondition depends only on the registers and the permissions. -/
-theorem Pre.congr {s₀ s : State} (h : Pre s₀) (hg : s.gpr = s₀.gpr) (hrd : s.rd = s₀.rd)
-    (hwr : s.wr = s₀.wr) : Pre s := by
-  have e : ∀ r, s.gpr r = s₀.gpr r := fun r => by rw [hg]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [hR, yR, dR, scrR, hA, yp, dp, nb, scr, e, hrd, hwr]
-  exacts [h.rd, h.wr, h.h_y, h.h_scr, h.y_d, h.y_scr, h.d_scr]
-
 namespace Pre
 variable {s₀ : State} (h : Pre s₀)
 include h
@@ -143,47 +132,9 @@ theorem nb_lt : 16 * nb s₀ < 2 ^ 64 := by
   have := (yp s₀ - dp s₀).isLt
   omega
 
-theorem in_h {d : Nat} (hd : d + 8 ≤ 16) :
-    InRegions (s₀.rd ++ s₀.wr) (hA s₀ + BitVec.ofNat 64 d) 8 :=
-  ⟨hR s₀, by simp [h.rd], contains_offset hd (by omega)⟩
-
-theorem in_y {d : Nat} (hd : d + 8 ≤ 16) :
-    InRegions (s₀.rd ++ s₀.wr) (yp s₀ + BitVec.ofNat 64 d) 8 :=
-  ⟨yR s₀, by simp [h.wr], contains_offset hd (by omega)⟩
-
-theorem out_y {d : Nat} (hd : d + 8 ≤ 16) :
-    InRegions s₀.wr (yp s₀ + BitVec.ofNat 64 d) 8 :=
-  ⟨yR s₀, by simp [h.wr], contains_offset hd (by omega)⟩
-
-theorem out_scr {d : Nat} (hd : d + 8 ≤ 256) :
-    InRegions s₀.wr (scr s₀ + BitVec.ofNat 64 d) 8 :=
-  ⟨scrR s₀, by simp [h.wr], contains_offset hd (by omega)⟩
-
-theorem blk_sub {i : Nat} (hi : i < nb s₀) : Region.Sub ⟨blkAddr s₀ i, 16⟩ (dR s₀) := by
-  have := h.nb_lt
-  exact sub_offset (by omega) (by omega)
-
-theorem in_blk {i d : Nat} (hi : i < nb s₀) (hd : d + 8 ≤ 16) :
-    InRegions (s₀.rd ++ s₀.wr) (blkAddr s₀ i + BitVec.ofNat 64 d) 8 := by
-  have := h.nb_lt
-  refine ⟨dR s₀, by simp [h.rd], ?_⟩
-  rw [blkAddr, Offset.add_add]
-  exact contains_offset (by omega) (by omega)
-
 end Pre
 
 /-! ## Memory outside a frame -/
-
-theorem blockAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
-    (hd : ∀ r ∈ rs, (⟨p, 16⟩ : Region).Disjoint r) : blockAt m' p = blockAt m p :=
-  blockAt_congr fun _ hk => hf.bytes (R := ⟨p, 16⟩) hd (by show (16 : Nat) ≤ 2 ^ 64; decide) hk
-
-theorem blocksAt_frame {s₀ : State} (hp : Pre s₀) {rs : List Region} {m m' : Mem}
-    (hf : Frame rs m m') (hd : ∀ r ∈ rs, (dR s₀).Disjoint r) :
-    blocksAt m' (dp s₀) (nb s₀) = blocksAt m (dp s₀) (nb s₀) := by
-  simp only [blocksAt]
-  refine List.map_congr_left fun i hi => blockAt_frame hf fun r hr => ?_
-  exact (hd r hr).sub_left (hp.blk_sub (List.mem_range.mp hi))
 
 
 end VG.Proof.Gcm.PPC64LE

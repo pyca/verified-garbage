@@ -121,12 +121,6 @@ theorem cryptHead_ok {icb : Block} {P : Nat} {D : BitVec 32} {n : Nat} {s : Stat
       exact ⟨_, List.mem_cons_self .., Region.sub_prefix hkn⟩
 
 omit L in
-theorem CrMid.data_eq {icb : Block} {P : Nat} {D : BitVec 32} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : CrMid c st w sp k7 k8 icb P D n m₀ j s) : bytesAt s.mem (State.addr D) n =
-      bytesAt s.mem (State.addr D) j ++ bytesAt s.mem (State.addr D + BitVec.ofNat 64 j) (n - j) := by
-  rw [← bytesAt_add, Nat.add_sub_cancel' h.le]
-
-omit L in
 /-- The split of the rest into whole blocks for `vg_sm4_ctr32` and the last bytes. -/
 theorem splitCtr_ok {s : State} {D : BitVec 32} {n j : Nat} (hj : j ≤ n) (hn : n < 2 ^ 32)
     (h4 : s.gpr .r4 = D + BitVec.ofNat 32 j) (h5 : s.gpr .r5 = BitVec.ofNat 32 (n - j)) :

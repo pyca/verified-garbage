@@ -219,26 +219,6 @@ theorem loopE_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Na
   WP.mono (loopER_ok hp hf hI hcf hCache) fun _ ⟨e, he, hI', _⟩ =>
     ⟨e, by have := hI'.a.le; have := hI'.one; omega_arith, hI'⟩
 
-theorem encTailG_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    {bigC : Prog isa} {i : BitVec 32} (t : Nat) (hi : BitVec.signExtend 64 i = BitVec.ofNat 64 t)
-    (ht : t < 2 ^ 64) (hbig : ∀ s, t ≤ nb s₀ → EInv s₀ P 1 s → VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s → WP isa bigC s fun s' => ∃ e, EInv s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s')
-    {s : State} (hR : Ready s₀ P s)
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
-    WP isa (.seq first (.seq (.block [.alu .cmp .r9 (.imm i)]) (.seq (.ite .b (.block []) bigC)
-      (.seq (.block [.alu .cmp .r9 (.imm 32)])
-        (.seq (.ite .b (.block []) (.loop body .ae)) (.block (storeCtr ++ lastG ++ storeY))))))) s (EPost s₀) := by
-  have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  refine WP.seq (WP.mono (first_ok hp hR hCache) fun s₂ ⟨hI₂, hCache₂⟩ => ?_)
-  refine WP.seq (WP.mono (WP.hkeep rfl (cmp_ok s₂ i t hi)) fun s₃ ⟨⟨hcf, g, l, m, rd, wr⟩, hh⟩ => ?_)
-  have hI₃ := hI₂.of_eq g l m rd wr
-  have hCache₃ := hCache₂.keep hh (hI₃.a.keys hp)
-  rw [hI₂.r9, toNat_ofNat_lt (by omega_arith), toNat_ofNat_lt ht] at hcf
-  refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, EInv s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * (1 - 1) < t))
-    (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨1, hI₃, hCache₃⟩)
-    (fun h => hbig _ (by simp at h; omega_arith) hI₃ hCache₃)) fun s₄ ⟨e, hI₄, hCache₄⟩ => ?_)
-  refine WP.seq (WP.mono (WP.hkeep (by decide) (cmpE_ok hI₄)) fun s₅ ⟨⟨hI₅, hcf₅⟩, hh₅⟩ => ?_)
-  exact WP.seq (WP.mono (loopE_ok hp hm hf hI₅ hcf₅ (hCache₄.keep hh₅ (hI₅.a.keys hp))) fun s₆ ⟨e, he, hI₆⟩ => final_ok hp hf he hI₆)
-
 theorem dbody48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) {e : Nat}
     (he : 16 * (e + 3) ≤ nb s₀) {s : State} (hI : DInv3 s₀ T e s)
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
@@ -375,49 +355,5 @@ theorem bigDRest_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} 
       rw [f₃.mem, h, hT2],
     p₃, by rw [f₃.zlane _ (by decide) 0 (by decide)]; exact hI₂.y,
     fun l h1 h4 => by rw [f₃.zlane _ (by decide) l h4]; exact hI₂.y1 l h1 h4⟩
-
-theorem loopD_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat} {s : State}
-    (hI : DInv s₀ P e s) (hcf : s.cf = some (decide (nb s₀ - 16 * e < 16)))
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
-    WP isa (.ite .b (.block []) (.loop dbody .ae)) s fun s' => ∃ e, nb s₀ = 16 * e ∧ DInv s₀ P e s' := by
-  have hle := hI.a.le
-  refine WP.ite (decide (nb s₀ - 16 * e < 16)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
-  · exact WP.block_nil ⟨e, by simp at h; omega_arith, hI⟩
-  · let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ DInv s₀ P e s ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s
-    have hstep : ∀ m s, I m s → WP isa dbody s (fun s' =>
-        (eval .ae s' = some false ∧ ∃ e, nb s₀ = 16 * e ∧ DInv s₀ P e s') ∨
-        (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
-      rintro m s ⟨e, rfl, he, hI, hCI⟩
-      refine WP.mono (dbody_ok hp hf he hI hCI) fun s' ⟨hI', hcf', hCI'⟩ => ?_
-      by_cases hlt : nb s₀ - 16 * (e + 1) < 16
-      · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true],
-          e + 1, by omega_arith, hI'⟩
-      · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
-          nb s₀ - 16 * (e + 1), by omega_arith, e + 1, rfl, by omega_arith, hI', hCI'⟩
-    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e) s ⟨e, rfl, by simp at h; omega_arith, hI, hCache⟩
-
-theorem decTailG_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    {bigC : Prog isa} {i : BitVec 32} (t : Nat) (hi : BitVec.signExtend 64 i = BitVec.ofNat 64 t)
-    (ht : t < 2 ^ 64) (hbig : ∀ s, t ≤ nb s₀ → DInv s₀ P 0 s → VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s → WP isa bigC s fun s' => ∃ e, DInv s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s')
-    {s : State} (hR : Ready s₀ P s)
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
-    WP isa (.seq (.block [.alu .cmp .r9 (.imm i)]) (.seq (.ite .b (.block []) bigC)
-      (.seq (.block [.alu .cmp .r9 (.imm 16)])
-        (.seq (.ite .b (.block []) (.loop dbody .ae)) (.block (storeCtr ++ storeY)))))) s (DPost s₀) := by
-  have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  have hI₁ : DInv s₀ P 0 s :=
-    ⟨hR.a, by rw [hR.rdx]; simp, by rw [hR.gpr _ (by decide) (by decide) (by decide)]; simp, hR.rax,
-      fun r h1 h2 _ h4 => hR.gpr r h1 h2 h4, hR.pw, hR.m1, by rw [hR.y]; simp [ghashFrom], hR.y1⟩
-  refine WP.seq (WP.mono (WP.hkeep rfl (cmp_ok s i t hi)) fun s₂ ⟨⟨hcf, g, l, m, rd, wr⟩, hh⟩ => ?_)
-  have hI₂ := hI₁.of_eq g l m rd wr
-  have hCache₂ := hCache.keep hh (hI₂.a.keys hp)
-  rw [hI₁.r9, toNat_ofNat_lt (by omega_arith), toNat_ofNat_lt ht] at hcf
-  refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, DInv s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * 0 < t))
-    (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨0, hI₂, hCache₂⟩)
-    (fun h => hbig _ (by simp at h; omega_arith) hI₂ hCache₂)) fun s₃ ⟨e, hI₃, hCache₃⟩ => ?_)
-  refine WP.seq (WP.mono (WP.hkeep (by decide) (cmp_ok s₃ 16 16 (by decide))) fun s₄ ⟨⟨hcf₄, g₄, l₄, m₄, rd₄, wr₄⟩, hh₄⟩ => ?_)
-  have hI₄ := hI₃.of_eq g₄ l₄ m₄ rd₄ wr₄
-  rw [hI₃.r9, toNat_ofNat_lt (by omega_arith), toNat_ofNat_lt (by decide)] at hcf₄
-  exact WP.seq (WP.mono (loopD_ok hp hm hf hI₄ hcf₄ (hCache₃.keep hh₄ (hI₄.a.keys hp))) fun s₅ ⟨e, he, hI₅⟩ => dfinal_ok hp he hI₅)
 
 end VG.Proof.Gcm.X86_64.StitchZH

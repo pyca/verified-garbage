@@ -359,29 +359,6 @@ theorem tail_prefix {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t u : State
   · exact (hd.take hj).ok.st.sub_right (Lay.stSub (d := 48) (n := 32) (by decide))
   · exact (hd.take hj).ok.w.sub_right (Lay.wSub (d := 512) (n := 2048) (by decide))
 
-theorem whole_tail_ciphertext {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t u : State}
-    {icb : Spec.Gcm.Block} (hw : WholeOut V sp R s.mem t)
-    (ht : CrOut V sp R icb (16*((V .r23).toNat/16))
-      (V .r27+BitVec.ofNat 64 (16*((V .r23).toNat/16))) ((V .r23).toNat%16) t.mem u)
-    (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat)
-    (hc : ciphOf t.mem (V .r29) R=Spec.Gcm.ctxCiph s.mem (V .r29) R)
-    (hctr : Proof.Gcm.Ctr s.mem (V .r30+48) (V .r30+64)
-      (Spec.Gcm.ctxCiph s.mem (V .r29) R) icb 0) :
-    Spec.Aes.bytesAt u.mem (V .r27) (V .r23).toNat =
-      Spec.Gcm.gctr (Spec.Gcm.ctxCiph s.mem (V .r29) R) icb
-        (Spec.Aes.bytesAt s.mem (V .r27) (V .r23).toNat) := by
-  obtain ⟨hp,hc₁⟩ := hw.ctr hctr
-  have hc₂ : Proof.Gcm.Ctr t.mem (V .r30+48) (V .r30+64) (ciphOf t.mem (V .r29) R) icb
-      (16*((V .r23).toNat/16)) := by rw [hc]; exact hc₁
-  have htail := ht.out hc₂
-  rw [hc,hw.rest hd] at htail
-  have hprefix := tail_prefix ht hd
-  have hp' := hprefix.trans hp
-  have hall := done_append (m₀ := s.mem) (P := 0) hp' (by simpa only [Nat.zero_add] using htail)
-  have he : 16*((V .r23).toNat/16)+(V .r23).toNat%16=(V .r23).toNat := by omega
-  rw [he,← Proof.Gcm.gctr_eq] at hall
-  exact hall
-
 theorem whole_ctx_disjoint {V : Reg → BitVec 64} {s : State}
     (L : Lay (V .r29) (V .r30) (V .r31))
     (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat) :

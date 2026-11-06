@@ -236,9 +236,6 @@ theorem entryRest_check : ∃ h, (taint.check (Taint.ofRegs [.x9, .x0, .x1, .x2,
       Impl.AesGcm.AArch64.mov .x24 .x4, Impl.AesGcm.AArch64.mov .x25 .x5, Impl.AesGcm.AArch64.mov .x26 .x6,
       .str .x .x7 .x19 tagPO])) h).isSome = true := ⟨_, by taint_decide⟩
 
-theorem restore_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs [])) (.block Impl.AesGcm.AArch64.restore) h).isSome =
-    true := ⟨_, by taint_decide⟩
-
 theorem openEnd_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs []))
     (.seq (.block cmp) (.seq mask (.block ([Impl.AesGcm.AArch64.mov .x0 .x27] ++ Impl.AesGcm.AArch64.restore)))) h).isSome =
     true := ⟨_, by taint_decide⟩

@@ -78,13 +78,6 @@ theorem ret_sub : Region.Sub ⟨SP s - BitVec.ofNat 64 8, 8⟩ (tR s) := Offset.
 theorem stk_sub' {n : Nat} (hn : n + 8 ≤ 4888) : Region.Sub (below (SP s - BitVec.ofNat 64 8) n) (tR s) :=
   fun a h => below_sub (sp := SP s) (by omega_arith) (by decide) a (below_callee (SP s) n a h)
 
-/-- The memory a call from `rsp = SP` enters with, from the entry's. -/
-theorem entry_frame {st : State} (hsp : st.gpr .rsp = SP s) (hf : Frame (wR s ++ [tR s]) s.mem st.mem)
-    (rd wr : List Region) : Frame (wR s ++ [tR s]) s.mem (st.callEntry.withRegions rd wr).mem := by
-  refine hf.trans ((callEntry_frame st).sub fun r hr => ?_)
-  simp only [List.mem_singleton] at hr; subst hr
-  exact ⟨tR s, by simp, by rw [hsp]; exact below_sub (by decide) (by decide)⟩
-
 /-- What the return address leaves as it was. -/
 theorem entry_keep {st : State} (hsp : st.gpr .rsp = SP s) (rd wr : List Region) :
     Frame [tR s] st.mem (st.callEntry.withRegions rd wr).mem :=

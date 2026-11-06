@@ -60,10 +60,6 @@ theorem powSj {pw gh : Prog isa} {tm : Mem → Mem} (C : OneCtx s₀ k Ctx W SP 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide)) rd wr, z0, z1⟩
 
-theorem powers_sj (hF : ShortFacts) (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (h32 : nb16 al + nb16 n < 32)
-    (S : SM s₀ Ctx W SP A D R al n J tl s) : WP isa powers s (SJ s₀ Ctx W SP A D R al n J tl) :=
-  powSj C (powFrom_powers hF) h32 S
-
 theorem zeroG_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (S : SJ s₀ Ctx W SP A D R al n J tl s) :
     WP isa (.block zeroG) s (SJ s₀ Ctx W SP A D R al n J tl) :=
   WP.mono (zeroG_ok s S.sm.env.r15 (S.sm.env.perm.wC (by decide))) fun t ⟨m, g, rd, wr, z⟩ =>
@@ -208,10 +204,6 @@ theorem gh_sj {gh : Prog isa} {tm : Mem → Mem} (hgh : GhFrom gh tm s₀ Ctx W 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide) (by decide)) rd wr,
       fun l hl => by rw [z _ (by decide) l hl, S.z0 l hl], fun l hl => by rw [z _ (by decide) l hl, S.z1 l hl]⟩
-
-theorem ghash_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (h32 : nb16 al + nb16 n < 32)
-    (S : SJ s₀ Ctx W SP A D R al n J tl s) : WP isa ghash s (SJ s₀ Ctx W SP A D R al n J tl) :=
-  gh_sj ghFrom_ghash C h32 S
 
 theorem tagK_sm (C : OneCtx s₀ k Ctx W SP Np A D nl al n) {o : Nat} (ho : o = 0 ∨ o = 112)
     (S : SJ s₀ Ctx W SP A D R al n J tl s) : WP isa (.block (tagK o)) s (SM s₀ Ctx W SP A D R al n J tl) := by

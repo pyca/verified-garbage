@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ops
 public import VerifiedGarbage.Proof.Gcm.Clmul.Arith
-public import VerifiedGarbage.Proof.Gcm.Powers8Contract
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.PrepKey
 import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
@@ -31,6 +30,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Gcm.Contract
+public import VerifiedGarbage.Spec.Gcm.Powers8
 
 
 @[expose] public section
@@ -75,14 +75,6 @@ theorem ρ_load (m : Mem) (p : Addr) :
 theorem φ_store (m : Mem) (p : Addr) (v : BitVec 128) :
     φ (Spec.Gcm.blockAt (m.write p 16 (VRevOp.eval .rev64b v)) p) = ρ v := by
   rw [← ρ_load, read_write16, rev64b_rev64b]
-
-/-- `d ← mul(a, t)` with its halves swapped, a block of class `x · a · t` (`a` as loaded). -/
-theorem mul_ok (d a sk t : VReg) (s : State) (ha : Free a) (hs : Free sk) (ht : Free t)
-    (hst : s.v sk = ext8 (s.v t) (s.v t)) (hc : s.v C = ofVDwords poly poly) :
-    WP isa (.block (Impl.Gcm.AArch64.Pmull.mul d a sk t)) s fun s' =>
-      ρ (s'.v d) = x * ρ (s.v a) * φ (s.v t) ∧ VOnly [LO, MID, HI, T, d] s s' :=
-  WP.mono (mulV_ok d a sk t s ha hs ht hst hc) fun _ ⟨h, o⟩ =>
-    ⟨by rw [h, mulV, ρ_reduce, Prod.val_acc, Prod.val_zero, zero_add], o⟩
 
 /-- A 16-byte load at `[n, #off]`, and `rev64`. -/
 theorem ldrev_ok (d : VReg) (n : Reg) (off : Nat) (s : State) (ho : off % 16 = 0)
@@ -199,7 +191,7 @@ end
 /-!
 # GHASH with PMULL: the whole function
 
-`ghash_verified` proves `Impl.Gcm.AArch64.Pmull.ghash` against
+`ghash_correct` and `ghash_ct` prove `Impl.Gcm.AArch64.Pmull.ghash` against
 `Proof.Gcm.ghashAArch64` (the contract of `vg_ghash`,
 `Proof/Gcm/AArch64/Ghash.lean`).
 
@@ -389,13 +381,6 @@ theorem powWith_ok (m : List Instr) {s₀ : State} {K i j n : Nat} (hi : 1 ≤ i
     · rw [ks, w, ext8_ext8]
     · rw [told k hk hkK', sold k hk hkK', hI.sw k hk hkK']
 
-/-- `H'ᴷ⁺¹ = mul(H'ⁱ, H'ʲ)`. -/
-theorem pow_ok {s₀ : State} {K i j n : Nat} (hi : 1 ≤ i) (hiK : i ≤ K) (hj : 1 ≤ j) (hjK : j ≤ K)
-    (hij : i + j = K + 1) (hK : K + 1 ≤ 8) {s : State} (hI : Inv s₀ K n s) :
-    WP isa (.block (Impl.Gcm.AArch64.Pmull.pow (K + 1) i j)) s (Inv s₀ (K + 1) n) :=
-  powWith_ok _ hi hiK hj hjK hij hK hI (mul_ok (sReg (K + 1)) (sReg i) (sReg j) (tReg j) s
-    (sReg_free _) (sReg_free _) (tReg_free _) (hI.sw j hj hjK) hI.c)
-
 /-- The square `sqr` computes is the product `mulV` would: its middle products cancel. -/
 theorem sqr_mulV (a t : BitVec 128) (h : a = ext8 t t) :
     reduce ⟨polyMul (vdword a 1) (vdword a 1), 0, polyMul (vdword a 0) (vdword a 0)⟩ = mulV a t := by
@@ -442,30 +427,6 @@ theorem powersS_ok {s₀ : State} {n : Nat} {s : State} (hI : Inv s₀ 1 n s) :
   refine WP.mono (powS_ok (K := 6) (i := 4) (j := 3) (by decide) (by decide) (by decide) (by decide)
     rfl (by decide) h₆) fun s₇ h₇ => ?_
   exact powS_ok (K := 7) (i := 4) (j := 4) (by decide) (by decide) (by decide) (by decide) rfl
-    (by decide) h₇
-
-theorem powers_ok {s₀ : State} {n : Nat} {s : State} (hI : Inv s₀ 1 n s) :
-    WP isa (.block Impl.Gcm.AArch64.Pmull.powers) s (Inv s₀ 8 n) := by
-  simp only [Impl.Gcm.AArch64.Pmull.powers, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (pow_ok (K := 1) (i := 1) (j := 1) le_rfl le_rfl le_rfl le_rfl rfl (by decide) hI)
-    fun s₂ h₂ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (pow_ok (K := 2) (i := 2) (j := 1) (by decide) le_rfl le_rfl (by decide) rfl
-    (by decide) h₂) fun s₃ h₃ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (pow_ok (K := 3) (i := 2) (j := 2) (by decide) (by decide) (by decide) (by decide)
-    rfl (by decide) h₃) fun s₄ h₄ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (pow_ok (K := 4) (i := 4) (j := 1) (by decide) le_rfl le_rfl (by decide) rfl
-    (by decide) h₄) fun s₅ h₅ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (pow_ok (K := 5) (i := 4) (j := 2) (by decide) (by decide) (by decide) (by decide)
-    rfl (by decide) h₅) fun s₆ h₆ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (pow_ok (K := 6) (i := 4) (j := 3) (by decide) (by decide) (by decide) (by decide)
-    rfl (by decide) h₆) fun s₇ h₇ => ?_
-  exact pow_ok (K := 7) (i := 4) (j := 4) (by decide) (by decide) (by decide) (by decide) rfl
     (by decide) h₇
 
 /-! ## The blocks -/
@@ -569,63 +530,6 @@ theorem body_ok {s₀ : State} (hp : Pm s₀) {K k i : Nat} (hk : 1 ≤ k) (hkK 
   · rw [f3, O.gpr, hI.x3, Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
 
 /-! ## The prologue and the epilogue -/
-
-theorem prologue_ok {s₀ : State} (hp : Pm s₀) :
-    WP isa (.block Impl.Gcm.AArch64.Pmull.prologue) s₀ (Inv s₀ 1 0) := by
-  simp only [Impl.Gcm.AArch64.Pmull.prologue, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (ldrev_ok A .x0 0 s₀ rfl (by decide)
-    hp.h_in) fun s₁ ⟨l₁, o₁⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (consts_ok s₁) fun s₂ ⟨c₂, t₂, w₂, kv₂, kg₂, m₂, rd₂, wr₂⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (mul_ok (sReg 1) A (sReg 2) (tReg 2) s₂ free_A (sReg_free _) (tReg_free _)
-    (by rw [w₂, t₂]) c₂) fun s₃ ⟨m₃, o₃⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (swap_ok (tReg 1) (sReg 1) s₃) fun s₄ ⟨w₄, o₄⟩ => ?_
-  have g₄ : ∀ r, r ≠ .x5 → r ≠ .x6 → r ≠ .x7 → s₄.gpr r = s₀.gpr r := fun r h5 h6 h7 => by
-    rw [o₄.gpr, o₃.gpr, kg₂ r h5 h6 h7, o₁.gpr]
-  have mem₄ : s₄.mem = s₀.mem := by rw [o₄.mem, o₃.mem, m₂, o₁.mem]
-  rw [WP.block_append_iff]
-  refine WP.mono (ldrev_ok Y .x1 0 s₄ rfl (by decide)
-    (by rw [o₄.rd, o₄.wr, o₃.rd, o₃.wr, rd₂, wr₂, o₁.rd, o₁.wr,
-      g₄ .x1 (by decide) (by decide) (by decide)]
-        exact ⟨yR s₀, List.mem_append_right _ hp.y_in, contains_offset (by decide) (by decide)⟩))
-    fun s₅ ⟨l₅, o₅⟩ => ?_
-  refine WP.mono (lsr_ok .x5 .x3 3 (by decide) s₅) fun s' ⟨f5, fg, fv, fm, frd, fwr⟩ => ?_
-  have g : ∀ r, r ≠ .x5 → r ≠ .x6 → r ≠ .x7 → s'.gpr r = s₀.gpr r := fun r h5 h6 h7 => by
-    rw [fg r h5, o₅.gpr, g₄ r h5 h6 h7]
-  have O : VOnly ([tReg 1] ++ [Y]) s₃ s₅ := o₄.trans o₅
-  have t₁ : s'.v (tReg 1) = ext8 (s₃.v (sReg 1)) (s₃.v (sReg 1)) := by
-    rw [fv, o₅.v _ (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false]
-      exact (ne_tReg (r := Y) 1).symm), w₄]
-  have s₁' : s'.v (sReg 1) = s₃.v (sReg 1) := by
-    rw [fv, O.v _ (by
-      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, not_or]
-      exact ⟨fun e => tReg_ne_sReg _ _ e.symm, (ne_sReg (r := Y) 1).symm⟩)]
-  have hA₂ : s₂.v A = s₁.v A := kv₂ A (by decide) (ne_tReg 2) (ne_sReg 2)
-  refine ⟨Nat.zero_le _, ?_, fun k hk hk1 => ?_, fun k hk hk1 => ?_, ?_,
-    by rw [g .x0 (by decide) (by decide) (by decide)],
-    by rw [g .x1 (by decide) (by decide) (by decide)],
-    by rw [g .x2 (by decide) (by decide) (by decide)]; simp [blkAddr],
-    by rw [g .x3 (by decide) (by decide) (by decide)]; simp [nb],
-    by rw [f5, fg .x3 (by decide)], by rw [fm, o₅.mem, mem₄],
-    by rw [frd, o₅.rd, o₄.rd, o₃.rd, rd₂, o₁.rd], by rw [fwr, o₅.wr, o₄.wr, o₃.wr, wr₂, o₁.wr]⟩
-  · have h : C ∉ [LO, MID, HI, T, sReg 1] := by
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-      exact ⟨by decide, by decide, by decide, by decide, ne_sReg 1⟩
-    have h' : C ∉ [tReg 1] ++ [Y] := by
-      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, not_or]
-      exact ⟨ne_tReg 1, by decide⟩
-    rw [fv, O.v C h', o₃.v C h, c₂]
-  · obtain rfl : k = 1 := by omega
-    rw [t₁, φ_ext8_self, m₃, hA₂, l₁, t₂, add_ofNat_zero]
-    linear_combination φ (H₀ s₀) * x2_φ_xInv2
-  · obtain rfl : k = 1 := by omega
-    rw [t₁, s₁', ext8_ext8]
-  · rw [fv, l₅, mem₄, g₄ .x1 (by decide) (by decide) (by decide), add_ofNat_zero]
-    exact congrArg φ (ghashFrom_blocksAt_zero _ _ _ _).symm
 
 /-- `prologue`, with `H'` by `twist`. -/
 theorem prologueT_ok {s₀ : State} (hp : Pm s₀) :
@@ -848,12 +752,6 @@ theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashAArch64.pre Proof.Gcm.ghashAA
   · exact h4
   · exact h5
 
-theorem ghash_verified :
-    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghash (Proof.Gcm.ghashContract AArch64.abi) :=
-  Verified.of_correct ghash_correct ghash_ct (by
-    sig_implies [Proof.Gcm.ghashContract, Proof.Gcm.ghashSig, Proof.Gcm.ghashAArch64, AArch64.abi,
-      AArch64.argRegs] [Proof.Gcm.AArch64.satState] using Proof.Gcm.AArch64.satState)
-
 /-! ## With the prepared powers
 
 `vg_ghash_prepared_aes` loads `H'ᵏ = pp H k` from the context
@@ -1031,49 +929,12 @@ theorem ghashP_ct : ConstantTime isa Proof.Gcm.ghashPreparedAArch64.pre Proof.Gc
   · exact h4
   · exact h5
 
-/-- Zero memory has the eight prepared powers of the zero subkey. -/
-theorem preparedPowersRepr_zero (p : Addr) : Proof.Gcm.PreparedPowers8Repr (fun _ => 0) p := by
-  intro k hk
-  have z : ∀ q : Addr, Spec.Gcm.blockAt (fun _ => 0) q = 0 := fun q => by
-    simp [Spec.Gcm.blockAt, Spec.Aes.bytesAt, Spec.Gcm.ofBytes]
-  have w : ∀ q : Addr, Mem.readW (fun _ => 0) q 128 = 0 := fun q => by
-    simp [Mem.readW, Mem.read]
-  have hz : ∀ k, Spec.Gcm.hpow 0 (k + 1) = 0 := fun k => φ_inj (by
-    rw [φ_hpow, φ_zero, zero_pow (Nat.succ_ne_zero k)])
-  simp only [Spec.Gcm.ctxH, z, hz, w]
-  constructor <;> decide
-
-/-- A state satisfying `vg_ghash_prepared`'s precondition, with zero memory. -/
-def satStateP : State := { Proof.Gcm.AArch64.satState with rd := [⟨0x1000, 144⟩, ⟨0x3000, 0⟩] }
-
-theorem ghashP_verified :
-    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghashP (Proof.Gcm.ghashPrepared8Contract AArch64.abi) :=
-  Verified.of_correct ghashP_correct ghashP_ct
-    { pre := by
-        sig_implies_pre [Proof.Gcm.ghashPrepared8Contract, Proof.Gcm.ghashPrepared8Sig,
-          Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
-      post := by
-        sig_implies_post [Proof.Gcm.ghashPrepared8Contract, Proof.Gcm.ghashPrepared8Sig,
-          Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
-      pub := by
-        sig_implies_pub [Proof.Gcm.ghashPrepared8Contract, Proof.Gcm.ghashPrepared8Sig,
-          Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
-      sat := ⟨satStateP, by
-        sig_pre [Proof.Gcm.ghashPrepared8Contract, Proof.Gcm.ghashPrepared8Sig, AArch64.abi, AArch64.argRegs,
-          satStateP, Proof.Gcm.AArch64.satState]
-        sig_and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact preparedPowersRepr_zero _
-          | exact Region.disjoint_of_sep (by decide)⟩ }
-
 end VG.Proof.Gcm.AArch64.Pmull
 
 /-!
 # GHASH with PMULL and the powers in their own buffer
 
-`ghashW_verified` and `ghashS_verified` prove
+`ghashW_correct`, `ghashW_ct` and `ghashS_verified` prove
 `Impl.Gcm.AArch64.Pmull.ghashW` (`vg_ghash_with_powers_aes`) and
 `Impl.Gcm.AArch64.Pmull.ghashS` (`vg_ghash_store_powers_aes`) against their
 AArch64 contracts, `Proof.Gcm.ghashWithAArch64` and
@@ -1294,51 +1155,6 @@ theorem ghashW_ct : ConstantTime isa Proof.Gcm.ghashWithAArch64.pre Proof.Gcm.gh
   · exact h4
   · exact h5
   · exact h6
-
-/-- Zero memory has the eight prepared powers of the zero subkey. -/
-theorem powers8Repr_zero (p : Addr) : Spec.Gcm.Powers8Repr (fun _ => 0) p 0 := by
-  intro k hk
-  have w : ∀ q : Addr, Mem.readW (fun _ => 0) q 128 = 0 := fun q => by
-    simp [Mem.readW, Mem.read]
-  have hz : ∀ k, Spec.Gcm.hpow 0 (k + 1) = 0 := fun k => φ_inj (by
-    rw [φ_hpow, φ_zero, zero_pow (Nat.succ_ne_zero k)])
-  simp only [hz, w]
-  constructor <;> decide
-
-theorem blockAt_zero (q : Addr) : Spec.Gcm.blockAt (fun _ => 0) q = 0 := by
-  simp [Spec.Gcm.blockAt, Spec.Aes.bytesAt, Spec.Gcm.ofBytes]
-
-/-- A state satisfying `vg_ghash_with_powers`'s precondition, with zero memory. -/
-def satStateW : State :=
-  { Proof.Gcm.AArch64.satState with
-    gpr := fun r => if r = .x5 then 0x6000 else Proof.Gcm.AArch64.satState.gpr r
-    rd := [⟨0x1000, 16⟩, ⟨0x3000, 0⟩, ⟨0x6000, 128⟩] }
-
-theorem ghashW_verified :
-    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghashW (Proof.Gcm.ghashWithPowersContract AArch64.abi) :=
-  Verified.of_correct ghashW_correct ghashW_ct
-    { pre := by
-        sig_implies_pre [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig,
-          Proof.Gcm.ghashSig, Spec.Gcm.withPowersParam, Proof.Gcm.ghashWithAArch64,
-          Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
-      post := by
-        sig_implies_post [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig,
-          Proof.Gcm.ghashSig, Spec.Gcm.withPowersParam, Proof.Gcm.ghashWithAArch64,
-          Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
-      pub := by
-        sig_implies_pub [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig,
-          Proof.Gcm.ghashSig, Spec.Gcm.withPowersParam, Proof.Gcm.ghashWithAArch64,
-          Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
-      sat := ⟨satStateW, by
-        sig_pre [Proof.Gcm.ghashWithPowersContract, Proof.Gcm.ghashWithPowersSig, Proof.Gcm.ghashSig,
-          Spec.Gcm.withPowersParam, AArch64.abi, AArch64.argRegs, satStateW,
-          Proof.Gcm.AArch64.satState]
-        sig_and_intros
-        all_goals first
-          | rfl
-          | decide
-          | (rw [blockAt_zero]; exact powers8Repr_zero _)
-          | exact Region.disjoint_of_sep (by decide)⟩ }
 
 
 /-! ## Storing the powers -/

@@ -359,9 +359,6 @@ structure Src (s₀ : State) (P : Addr) (len : Nat) : Prop where
   bel : (belR s₀).Disjoint ⟨P, len⟩
   cov : Covers [⟨P, len⟩] (s₀.rd ++ s₀.wr)
 
-theorem self_contains (a : Addr) : (⟨a, 1⟩ : Region).Contains a 1 := by
-  simp only [Region.Contains]; rw [BitVec.sub_self]; simp
-
 /-- The `len` bytes at `P` (in `p` and `n`), padded with zeros, absorbed. -/
 theorem macPad_ok {s₀ : State} (hp : APre e s₀) {p n : Reg} (hr : MacRegs p n) {P : Addr} {len : Nat}
     (hs : Src s₀ P len) {s : State} (h : Inv s₀ s) (hP : s.gpr p = P) (hn : s.gpr n = BitVec.ofNat 64 len) :

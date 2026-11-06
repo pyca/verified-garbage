@@ -444,16 +444,4 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : xorAvx2X86_64.pre s₁) (h₂ : xor
   · intro sl h; simp [τ₀] at h
   · intro sl h; simp [τ₀] at h
 
-/-- A state satisfying the precondition (with no data). -/
-def sat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rcx => 0x3000 | .rsp => 0x5000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 64⟩, ⟨0x2000, 0⟩, ⟨0x3000, 320⟩]
-
 end VG.Proof.ChaCha20.X86_64.Avx2

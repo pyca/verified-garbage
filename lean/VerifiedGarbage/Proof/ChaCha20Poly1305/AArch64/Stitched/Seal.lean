@@ -30,10 +30,8 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Transpose
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Chunk
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Finish
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Chunk
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
@@ -56,6 +54,9 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Chunk
+import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `seal`
@@ -265,9 +266,5 @@ theorem sealWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   · refine (congrArg (Repr s₁₁.mem (off (cx s₀) 448) (otk s₀)) ?_).mp R₁₁
     simp only [macData, List.append_assoc, VG.Proof.Poly1305.length_bytesAt, length_encrypt]
   · rw [bytesAt_frame k₁₁.frame (by rdisj_all) hL', bytesAt_frame k₁₀.frame (by rdisj_all) hL', ct₉]
-
-theorem sealStitched_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀) :
-    WP isa (sealStitched v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ sealAArch64.post s₀ s' :=
-  WP.seq (WP.mono (sealStitchedMain_ok v hp) fun _ h => sealTail_ok hp h)
 
 end VG.Proof.ChaCha20Poly1305.AArch64

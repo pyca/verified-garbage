@@ -205,20 +205,12 @@ theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 25
     (⟨w + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by omega) (by omega)
 
-omit L in
-theorem ctx_ctx {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 256) (hd : d + k ≤ 256) :
-    (⟨c + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨c + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by omega) (by omega)
-
 end Lay
 
 namespace Perm
 
 variable {c st w : Addr} {s : State} (P : Perm c st w s)
 include P
-
-theorem ctxR {d n : Nat} (h : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (c + BitVec.ofNat 64 d) n :=
-  in_off P.ctx h (by decide)
 
 theorem stW {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (st + BitVec.ofNat 64 d) n :=
   in_off P.st h (by decide)
@@ -337,11 +329,6 @@ theorem bytesAt_writeBytes_prefix (m : Mem) (p : Addr) (xs : List Byte) {n : Nat
 theorem writeBytes_frame' (m : Mem) {q : Addr} {xs : List Byte} {n : Nat} (hn : xs.length = n) :
     Frame [⟨q, n⟩] m (writeBytes m q xs) :=
   writeBytes_frame m q xs (by rw [hn]; exact Region.contains_self _ _)
-
-/-- Running a block with what is known of its result. -/
-theorem WP.run {is : List Instr} {s : State} {Q R : State → Prop}
-    (h : ∃ s', runBlock isa is s = some s' ∧ Q s') (hq : ∀ s', Q s' → R s') : WP isa (.block is) s R := by
-  obtain ⟨s', h₁, h₂⟩ := h; exact WP.of_runBlock ⟨s', h₁, hq _ h₂⟩
 
 /-! ## Arithmetic -/
 

@@ -84,14 +84,6 @@ theorem readW64_writeW_off (m : Mem) (p : Addr) (v : BitVec 64) {d e : Nat} (hd 
     (m.writeW (off p e) v).readW (off p d) 64 = m.readW (off p d) 64 :=
   Mem.readW_writeW_sep (off_sep p hd he (by decide) (by decide) h) (by decide)
 
-/-- Reading after writing a 64-bit word in another region. -/
-theorem readW64_writeW_disj (m : Mem) {a b : Addr} (v : BitVec 64) {w : Nat}
-    {R R' : Region} (hR : R.Contains a (w / 8)) (hR' : R'.Contains b 8) (hd : R.Disjoint R')
-    (hw : w / 8 < 2 ^ 64) :
-    (m.writeW b v).readW a w = m.readW a w :=
-  Frame.readW (rs := [R']) ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ hR') hR
-    (by simpa using hd) hw
-
 /-! ## The number of bytes left -/
 
 /-- `64 × (2³² − c)`, computed by doubling six times. -/

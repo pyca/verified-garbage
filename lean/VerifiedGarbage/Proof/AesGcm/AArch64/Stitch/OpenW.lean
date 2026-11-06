@@ -8,12 +8,12 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
-# AES-GCM on AArch64, interleaved: `open`'s code with the interleaved loops (`openWithS`)
+# AES-GCM on AArch64, interleaved: `open`'s code with the interleaved loops (`openRunWithS`)
 
 Untrusted: everything here is checked by Lean. `openRunWithS` is `openRunAS`
 then `omBS` (`openRunWithS_split`), which together leave `OpenPost`, as
-`openRunWithP` does (`openRunWithS_postX`); then `openWithS` as `openWithE`
-(`openWithSX_wp`, `openWithS_wp`), for any `tb` that writes the table of keys.
+`openRunWithP` does (`openRunWithS_postX`), for any `tb` that writes the table
+of keys.
 -/
 
 @[expose] public section
@@ -94,106 +94,5 @@ theorem openRunWithS_postX (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch6
     · rw [ite_eq_right hc]
       simp only [hc, decide_false, Bool.false_eq_true, ite_false] at x0₄ d₄
       exact ⟨by rw [x0₄]; rfl, d₄⟩
-
-/-- `openWithEX_wp` for `openWithS`. -/
-theorem openWithSX_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
-    {tb : List Instr} {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region}
-    {s : State} {ex : List Region} {I : Mem → Prop} (hs : openPreXW w extra s extraW)
-    (hc : (s.gpr .x5).toNat ≤ 16 ∧ (s.gpr .x3).toNat = 12) (htl : Spec.Gcm.tagLenOk (stackArg s 1).toNat = true)
-    (hexW : ∀ r ∈ ex, (workR (stackArg s w)).Disjoint r)
-    (hexD : ∀ r ∈ ex, (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint r)
-    (hexC : ∀ r ∈ ex, (⟨s.gpr .x0, 256⟩ : Region).Disjoint r)
-    (hI : ∀ {m m' : Mem}, I m → Frame [workR (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] m m' → I m')
-    (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s w)) →
-      s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
-      Frame [workR (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
-      Region.Sub ⟨Dd, 16 * nb⟩ (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region) →
-      WP isa cl s' fun u => GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb u ex ∧ I u.mem)
-    (htb : TbForO tb (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x6) (s.gpr .x7).toNat s) :
-    WP isa (Impl.AesGcm.AArch64.Stitch.openWithS v.callees (8 * w) tb cl) s fun s' =>
-      (GprAbi s s' ∧ openAArch64.post s s') ∧ I s'.mem := by
-  unfold Impl.AesGcm.AArch64.Stitch.openWithS
-  refine WP.seq (WP.mono (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntry_ok hw hs)
-    (by rcases hw with rfl | rfl <;> decide) (by rcases hw with rfl | rfl <;> decide))
-    fun s₁ ⟨⟨o₁, x12₁⟩, hx₁⟩ => ?_)
-  refine WP.seq (WP.mono (cond_ok (al := (s.gpr .x5).toNat) (nl := (s.gpr .x3).toNat)
-    (by rw [hx₁ .x5 (by simp), ofNat_toNat']) (s.gpr .x5).isLt o₁.x24 (s.gpr .x3).isLt)
-    fun s₂ ⟨x10₂, r₂⟩ => ?_)
-  have o₂ := o₁.of_regs r₂
-  have x12₂ : s₂.gpr .x12 = stackArg s 0 := by rw [r₂.others _ (by decide), x12₁]
-  have hx₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₂.gpr r = s.gpr r := fun r hr => by
-    rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₁ r hr]
-  refine WP.ite true (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun _ => ?_) (fun h => by cases h)
-  refine WP.seq (WP.mono (Stitch.thr_ok s₂) fun s₃ ⟨_, r₃⟩ => ?_)
-  have o₃ := o₂.of_regs r₃
-  have x12₃ : s₃.gpr .x12 = stackArg s 0 := by rw [r₃.others _ (by decide), x12₂]
-  have hx₃ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₃.gpr r = s.gpr r := fun r hr => by
-    rw [r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₂ r hr]
-  refine WP.ite _ (eval_zero (a := (s₃.gpr .x9).toNat) (by rw [ofNat_toNat']) (s₃.gpr .x9).isLt)
-    (fun _ => ?_) (fun _ => ?_)
-  · unfold Impl.AesGcm.AArch64.Fast.openFastP
-    refine openRestWithX_wp o₃ x12₃ htl fun o' hT hx' => ?_
-    have hx (r : Reg) (hr : r ∈ [Reg.x4, .x5, .x6, .x7]) := (hx' r hr).trans (hx₃ r hr)
-    exact openRunWith_postX cl v hMK o' hc.2 (hx .x4 (by simp)) (by rw [hx .x5 (by simp), ofNat_toNat'])
-      (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 hT htl hexW hexD hexC hI hgh
-  · unfold Impl.AesGcm.AArch64.Stitch.openFastS
-    refine openRestWithX_wp o₃ x12₃ htl fun o' hT hx' => ?_
-    have hx (r : Reg) (hr : r ∈ [Reg.x4, .x5, .x6, .x7]) := (hx' r hr).trans (hx₃ r hr)
-    exact openRunWithS_postX v cl hMK gh o' hc.2 (hx .x4 (by simp)) (by rw [hx .x5 (by simp), ofNat_toNat'])
-      (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 hT htl hexW hexD hexC hI hgh htb
-
-/-- `openWithE_wp` for `openWithS`. -/
-theorem openWithS_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
-    {tb : List Instr} {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region}
-    {s : State} (hs : openPreXW w extra s extraW)
-    (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s w)) →
-      s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
-      Frame [workR (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
-      WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
-    (htb : TbForO tb (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x6) (s.gpr .x7).toNat s) :
-    WP isa (Impl.AesGcm.AArch64.Stitch.openWithS v.callees (8 * w) tb cl) s fun s' =>
-      GprAbi s s' ∧ openAArch64.post s s' := by
-  unfold Impl.AesGcm.AArch64.Stitch.openWithS
-  refine WP.seq (WP.mono (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntry_ok hw hs)
-    (by rcases hw with rfl | rfl <;> decide) (by rcases hw with rfl | rfl <;> decide))
-    fun s₁ ⟨⟨o₁, x12₁⟩, hx₁⟩ => ?_)
-  refine WP.seq (WP.mono (cond_ok (al := (s.gpr .x5).toNat) (nl := (s.gpr .x3).toNat)
-    (by rw [hx₁ .x5 (by simp), ofNat_toNat']) (s.gpr .x5).isLt o₁.x24 (s.gpr .x3).isLt)
-    fun s₂ ⟨x10₂, r₂⟩ => ?_)
-  have o₂ := o₁.of_regs r₂
-  have x12₂ : s₂.gpr .x12 = stackArg s 0 := by rw [r₂.others _ (by decide), x12₁]
-  have hx₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₂.gpr r = s.gpr r := fun r hr => by
-    rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₁ r hr]
-  by_cases hc : (s.gpr .x5).toNat ≤ 16 ∧ (s.gpr .x3).toNat = 12
-  · refine WP.ite true (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun _ => ?_) (fun h => by cases h)
-    refine WP.seq (WP.mono (Stitch.thr_ok s₂) fun s₃ ⟨_, r₃⟩ => ?_)
-    have o₃ := o₂.of_regs r₃
-    have x12₃ : s₃.gpr .x12 = stackArg s 0 := by rw [r₃.others _ (by decide), x12₂]
-    have hx₃ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₃.gpr r = s.gpr r := fun r hr => by
-      rw [r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₂ r hr]
-    refine WP.ite _ (eval_zero (a := (s₃.gpr .x9).toNat) (by rw [ofNat_toNat']) (s₃.gpr .x9).isLt)
-      (fun _ => ?_) (fun _ => ?_)
-    · unfold Impl.AesGcm.AArch64.Fast.openFastP
-      refine openRestWith_wp o₃ x12₃ fun o' hT hok hx' => ?_
-      have hx (r : Reg) (hr : r ∈ [Reg.x4, .x5, .x6, .x7]) := (hx' r hr).trans (hx₃ r hr)
-      exact openRunWith_post cl v hMK o' hc.2 (hx .x4 (by simp)) (by rw [hx .x5 (by simp), ofNat_toNat'])
-        (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 hT hok hgh
-    · unfold Impl.AesGcm.AArch64.Stitch.openFastS
-      refine openRestWith_wp o₃ x12₃ fun o' hT hok hx' => ?_
-      have hx (r : Reg) (hr : r ∈ [Reg.x4, .x5, .x6, .x7]) := (hx' r hr).trans (hx₃ r hr)
-      exact WP.mono (openRunWithS_postX v cl hMK gh (ex := []) (I := fun _ => True) o' hc.2 (hx .x4 (by simp))
-        (by rw [hx .x5 (by simp), ofNat_toNat']) (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 hT
-        hok (by simp) (by simp) (by simp) (fun _ _ => trivial)
-        (fun s' _ _ _ _ hc sY sS hr hw hsp hf _ => WP.mono (hgh s' hc sY sS hr hw hsp hf) fun _ g => ⟨g, trivial⟩)
-        htb) fun _ q => q.1
-  · refine WP.ite false (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun h => by cases h) (fun _ => ?_)
-    exact openRestWith_wp o₂ x12₂ fun o' hT hok _ => openMain_post v o' hT hok
-
-/-- `powTbl` writes the table, in `open`. -/
-theorem powTbl_forO (hP : Proof.Gcm.AArch64.Pmull.PrepPow) (Ctx W SP D : Addr) (n : Nat) (s : State) :
-    TbForO Impl.AesGcm.AArch64.Stitch.powTbl Ctx W SP D n s :=
-  fun _ he _ _ _ key => Stitch.powTbl_ok hP he key
 
 end VG.Proof.AesGcm.AArch64.Fast

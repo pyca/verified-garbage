@@ -36,10 +36,6 @@ open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.Poly1305 (bytesAt)
 open VG.Spec.ChaCha20 (stateAt keystream)
 
-theorem sub_ofNat_ofNat {a b : Nat} (hb : b ≤ a) (ha : a < 2 ^ 64) :
-    BitVec.ofNat 64 a - BitVec.ofNat 64 (a - b) = BitVec.ofNat 64 b := by
-  rw [Offset.ofNat_sub_ofNat (by omega_arith), show a - (a - b) = b by omega_arith]
-
 /-- `stackArgAddr s₀ j`, as `rsp + 8 (j + 1)`. -/
 theorem argAddr_eq (s₀ : State) (j : Nat) :
     off (s₀.gpr .rsp) (8 * (j + 1)) = stackArgAddr s₀ j := by

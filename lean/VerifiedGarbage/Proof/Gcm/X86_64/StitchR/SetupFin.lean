@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 Untrusted: everything here is checked by Lean. What `StitchR.setupTo`
 leaves, with the powers it stores stated by the products they give
 (`Stitch.FinOk`) rather than in the field (`StitchR.setupTo_ok`): proved
-where that algebra is imported (`setupFin`, `StitchR/Ok.lean`) and passed to
+where that algebra is imported (`setupFinN`, `StitchR/Ok.lean`) and passed to
 the proofs of the one-pass loop (`OnePass.lean`), which so need not import
 it. -/
 

@@ -22,7 +22,8 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.ChaCha20.Contract
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # ChaCha20 keystream XOR on x86-64
@@ -164,8 +165,6 @@ structure OInv (s₀ : State) (j : Nat) (s : State) : Prop where
 
 /-! ## Memory -/
 
-theorem XPre.w_st {s₀ : State} (hp : XPre s₀) : stR s₀ ∈ s₀.wr := by simp [hp.wr]
-theorem XPre.w_d {s₀ : State} (hp : XPre s₀) : dR s₀ ∈ s₀.wr := by simp [hp.wr]
 theorem XPre.w_b {s₀ : State} (hp : XPre s₀) : bR s₀ ∈ s₀.wr := by simp [hp.wr]
 
 /-- The state after its counter (word 12) is stored. -/
@@ -197,12 +196,6 @@ theorem stateAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   exact hf.readW (contains_ofNat (by lit_omega) (by lit_omega)) hd (by decide)
 
 /-! ## The prologue -/
-
-theorem save_eq : save ++ ([.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
-    .mov .rsi (.reg .rcx), .alu .test .r12 (.reg .r12)] : List Instr) =
-    [.store (at_ .rcx 256) .rbx, .store (at_ .rcx 264) .rbp, .store (at_ .rcx 272) .r12,
-    .mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
-    .mov .rsi (.reg .rcx), .alu .test .r12 (.reg .r12)] := rfl
 
 theorem prologue_ok {s₀ : State} (hp : XPre s₀) :
     WP isa (.block (save ++ ([.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
@@ -699,32 +692,8 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.ChaCha20.xorX86_64.pre s₁)
   · intro sl h; simp [τ₀] at h
   · intro sl h; simp [τ₀] at h
 
-/-- A state satisfying the precondition (with no data). -/
-def sat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rcx => 0x3000 | .rsp => 0x5000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 64⟩, ⟨0x2000, 0⟩, ⟨0x3000, 320⟩]
-
-theorem xor_correct (s : State) (hs : Proof.ChaCha20.xorX86_64.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Xor.xor s t s' ∧ abiPreserved s s' ∧
-      Proof.ChaCha20.xorX86_64.post s s' :=
-  (xor_rsi s hs).imp fun _ ⟨s', he, ha, h, _⟩ => ⟨s', he, ha, h⟩
-
 theorem xor_ct : ConstantTime isa Proof.ChaCha20.xorX86_64.pre Proof.ChaCha20.xorX86_64.pub
     Impl.ChaCha20.X86_64.Xor.xor :=
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
-
-theorem xor_verified :
-    Verified X86_64.target Impl.ChaCha20.X86_64.Xor.xor (Proof.ChaCha20.xorContract X86_64.abi 8) :=
-  Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, X86_64.abi, X86_64.argRegs,
-      Proof.ChaCha20.xorX86_64]
-      [sat] using sat)
 
 end VG.Proof.ChaCha20.X86_64.Xor

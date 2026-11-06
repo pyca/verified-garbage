@@ -128,11 +128,6 @@ theorem FC.flags {s₀ s s' : State} (h : FC s₀ s) (u : Fupd s s') : FC s₀ s
   ⟨by rw [u.gpr, h.r0], by rw [u.gpr, h.lr], u.rd.trans h.rd, u.wr.trans h.wr, u.sp.trans h.sp,
     by rw [u.mem]; exact h.frame, by rw [u.mem]; exact h.saved⟩
 
-theorem FC.keeps {s₀ s s' : State} (h : FC s₀ s) {ws : List Reg} (k : Keeps ws s s')
-    (hws : Reg.r0 ∉ ws ∧ Reg.lr ∉ ws) : FC s₀ s' :=
-  ⟨by rw [k.gpr _ hws.1, h.r0], by rw [k.gpr _ hws.2, h.lr], k.rd.trans h.rd, k.wr.trans h.wr, k.sp.trans h.sp,
-    by rw [k.mem]; exact h.frame, by rw [k.mem]; exact h.saved⟩
-
 /-- The address of stack argument `i`. -/
 theorem argAddr {s₀ : State} (hp : FPre s₀) {i : Nat} (hi : i < 2) :
     stackArgAddr s₀ i = stackArgAddr s₀ 0 + BitVec.ofNat 64 (4 * i) := by
@@ -169,14 +164,6 @@ theorem FPre.arg {s₀ : State} (hp : FPre s₀) {m : Mem}
     rcases hr with rfl | rfl
     · exact hp.a_o
     · exact hp.a_scr
-
-theorem FC.frame' {s₀ s : State} (h : FC s₀ s) :
-    Frame (offR (stB s₀) wkL ++ [oR s₀, scrR (sc s₀)]) s₀.mem s.mem :=
-  h.frame.mono fun r hr => by
-    rcases List.mem_append.mp hr with hr | hr
-    · exact List.mem_append_left _ hr
-    · simp only [List.mem_singleton] at hr; subst hr
-      exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
 
 /-! ## Prologue -/
 

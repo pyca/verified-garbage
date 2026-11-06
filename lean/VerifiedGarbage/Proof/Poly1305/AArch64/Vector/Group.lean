@@ -23,8 +23,6 @@ open VG VG.AArch64
 open VG.Impl.Poly1305.AArch64.Vector
 open VG.Proof.Poly1305.Limbs26 (val)
 
-theorem iV_ne_hV : ∀ i < 5, ∀ j < 5, iV i ≠ hV j := by decide
-
 /-- Only the operand vectors change. -/
 structure IKeep (s t : State) : Prop where
   gpr : t.gpr = s.gpr
@@ -217,14 +215,6 @@ theorem Mults.mulOk {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (
   split
   · exact (h.regR (k - i) (by omega_arith) j hj).2.1
   · exact (h.regS (k + 5 - i) (by omega_arith) (by omega_arith) j hj).2.1
-
-theorem Mults.mul_regs {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (h : Mults s R S y)
-    {i k : Nat} (hi : i < 5) (hk : k < 5) : ∀ j < 5, mulV R S i k ≠ iV j ∧ mulV R S i k ≠ dV j ∧ mulV R S i k ≠ hV j := by
-  intro j hj
-  simp only [mulV]
-  split
-  · exact h.regR (k - i) (by omega_arith) j hj
-  · exact h.regS (k + 5 - i) (by omega_arith) (by omega_arith) j hj
 
 theorem Mults.wd_mul {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (h : Mults s R S y)
     {i k c : Nat} (hi : i < 5) (hk : k < 5) (hc : c < 4) : wd (s.v (mulV R S i k)) c = Pair.mulL (y c) i k := by

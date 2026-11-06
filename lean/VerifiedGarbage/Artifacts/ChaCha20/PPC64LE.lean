@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Shared
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.ApplyCT

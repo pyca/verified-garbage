@@ -17,40 +17,6 @@ namespace VG.Proof.Gcm
 
 open VG.Spec VG.Spec.Gcm
 
-/-- `vg_aes_gcm_encrypt_blocks_to(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264])`.
-`rounds` is public; `scratch` is working space. -/
-def encryptBlocksToSig : Sig where
-  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
-    ("counter", .array true .u8 16), ("y", .array true .u8 16),
-    ("src", .slice false (.array .u8 16) "n"), ("dst", .slice true (.array .u8 16) "dst_n"),
-    ("scratch", .array true .u64 264)]
-
-/-- `rounds` is 10, 12 or 14, and the output has as many blocks as the
-input. -/
-def encryptBlocksToPre (pb : Nat) : Curry (encryptBlocksToSig.words pb) (Mem → Prop) :=
-  fun _ctx rounds _counter _y _src n _dst dstN _scratch _ =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧ dstN = n
-
-/-- With the key context at `ctx`: writes `C = ctr32 CIPH_K CB₁ P` to the
-`n` blocks at `dst`, where `P` is the `n` blocks at `src` and `CB₁` the
-block at `counter` (as `vg_aes_ctr32`), leaves `inc₃₂ⁿ(CB₁)` at `counter`,
-and replaces the block `Y` at `y` with `GHASH_H` continued from `Y` over
-`C` (as `vg_ghash`): `encryptBlocksContract`'s postcondition, with the
-plaintext read from `src`. -/
-def encryptBlocksToPost (pb : Nat) : encryptBlocksToSig.Post pb :=
-  fun ctx rounds counter y src n dst _dstN _scratch m m' _ =>
-    let c := ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) (blocksAt m src n.toNat)
-    blocksAt m' dst n.toNat = c ∧
-      blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
-      blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c
-
-/-- For `rounds` of 10, 12 or 14 and as many blocks at `dst` as at `src`
-(`encryptBlocksToPre`): `encryptBlocksToPost`. The key context, the
-counter, `Y` and the data are secret. -/
-def encryptBlocksToContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  encryptBlocksToSig.contract A (pre := encryptBlocksToPre A.ptrBits)
-    (post := encryptBlocksToPost A.ptrBits) (stack := stack)
-
 /-- `vg_aes_gcm_stream_encrypt_to(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize)`.
 `rounds`, `aad_len` and `text_len` are public. -/
 def streamEncryptToSig : Sig where
@@ -123,26 +89,6 @@ the additional data and the data are secret. -/
 def sealSplitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealSplitSig.contract A (pre := sealSplitPre A.ptrBits) (post := sealSplitPost A.ptrBits)
     (writeArgs := true) (stack := stack)
-
-/-- `vg_aes_gcm_encrypt_blocks_to_precomputed(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264])`:
-`encryptBlocksToSig` with the larger key context. -/
-def encryptBlocksToPrecomputedSig : Sig where
-  params := [("ctx", .array false .u64 128), ("rounds", .int .usize true),
-    ("counter", .array true .u8 16), ("y", .array true .u8 16),
-    ("src", .slice false (.array .u8 16) "n"), ("dst", .slice true (.array .u8 16) "dst_n"),
-    ("scratch", .array true .u64 264)]
-
-/-- `encryptBlocksToPre`, and the key context at `ctx` holds the powers of
-its hash subkey. -/
-def encryptBlocksToPrecomputedPre (pb : Nat) :
-    Curry (encryptBlocksToPrecomputedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _counter _y _src n _dst dstN _scratch m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧ dstN = n ∧ PowersRepr m ctx
-
-/-- `encryptBlocksToContract`, with the larger key context. -/
-def encryptBlocksToPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  encryptBlocksToPrecomputedSig.contract A (pre := encryptBlocksToPrecomputedPre A.ptrBits)
-    (post := encryptBlocksToPost A.ptrBits) (stack := stack)
 
 /-- `vg_aes_gcm_stream_encrypt_to_precomputed(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize)`:
 `streamEncryptToSig` with the larger key context. -/

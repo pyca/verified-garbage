@@ -232,8 +232,6 @@ structure Stable (s s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
-theorem Stable.refl (s : State) : Stable s s := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
-
 theorem Stable.trans {s t u : State} (h : Stable s t) (h' : Stable t u) : Stable s u :=
   ⟨fun r hr => (h'.regs r hr).trans (h.regs r hr),
    h'.mem.trans h.mem, h'.rd.trans h.rd, h'.wr.trans h.wr⟩

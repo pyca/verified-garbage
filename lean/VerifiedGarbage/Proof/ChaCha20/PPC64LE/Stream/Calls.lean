@@ -34,14 +34,6 @@ structure Kept (rs : List Region) (s s' : State) : Prop where
 theorem callEntry_gpr' (s : State) {r : Reg} (h : r ∉ linkRegs) : s.callEntry.gpr r = s.gpr r :=
   State.callEntry_gpr _ h
 
-/-- Bytes outside a frame are unchanged. -/
-theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
-    (hd : ∀ r ∈ rs, (⟨p, n⟩ : Region).Disjoint r) (hn : n ≤ 2 ^ 64) : bytesAt m' p n = bytesAt m p n := by
-  simp only [bytesAt]
-  apply List.map_congr_left
-  intro i hi
-  exact hf.bytes (R := ⟨p, n⟩) hd hn (List.mem_range.mp hi)
-
 theorem block_call {s : State} {S B : Addr} (hr3 : s.gpr .r3 = S) (hr4 : s.gpr .r4 = B)
     (hdj : (⟨B, 256⟩ : Region).Disjoint ⟨S, 64⟩)
     (hc : Covers ([⟨S, 64⟩] ++ [⟨B, 256⟩]) (s.rd ++ s.wr)) (hw : Covers [⟨B, 256⟩] s.wr)

@@ -250,11 +250,6 @@ theorem Env.of_saved {p : Prm} {s s' : State} (h : Env p s)
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact hg _ (by decide) (by decide))
     hsp hrd hwr
 
-/-- An environment, after a block that writes only the registers `rs`. -/
-theorem Env.of_regs {p : Prm} {s s' : State} {rs : List Reg} (h : Env p s) (hr : Regs rs s s')
-    (hd : ∀ r ∈ envRegs, r ∉ rs := by decide) : Env p s' :=
-  h.keep (fun r h' => hr.others r (hd r h')) hr.sp hr.rd hr.wr
-
 namespace Lay
 
 theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 3808) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 3808⟩ :=
@@ -351,9 +346,5 @@ theorem contains_at (p : Addr) {d n k : Nat} (h : d + n ≤ k) (hk : k < 2 ^ 64)
 theorem contains_at0 (p : Addr) {n k : Nat} (h : n ≤ k) (hk : k < 2 ^ 64) :
     (⟨p, k⟩ : Region).Contains p n := by
   simpa using contains_at p (d := 0) (by omega : 0 + n ≤ k) hk
-
-/-- A block that writes only registers, with what is known of its result. -/
-theorem WP.regs {is : List Instr} {s : State} {Q : State → Prop} {s' : State}
-    (h : runBlock isa is s = some s') (hq : Q s') : WP isa (.block is) s Q := WP.of_runBlock ⟨s', h, hq⟩
 
 end VG.Proof.AesGcmSiv.AArch64

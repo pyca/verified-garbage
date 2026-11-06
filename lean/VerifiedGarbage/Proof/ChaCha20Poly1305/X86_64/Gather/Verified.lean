@@ -21,9 +21,7 @@ stack pointer that its frames and its call use (48 for our frame, 24 for
 `dst`, `len` and `tag` pushed for the call, 8 for its return address and
 1800 for the callee's contract) (`Spec.ChaCha20Poly1305.sealGatherContract`),
 implies the one the proof is written against (`gatherX86_64`,
-`gather_implies`), and so the code, calling an instance of
-`vg_chacha20_poly1305_seal_split` by its shared contract (`SealSplitFn`), is
-`Verified` against it (`sealGather_verified`).
+`gather_implies`).
 -/
 
 @[expose] public section
@@ -33,11 +31,6 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Gather
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.SealGather
-
-theorem sealGather_correct (w : Width) (F : SealSplitFn) (s : State) (hs : gatherX86_64.pre s) :
-    ∃ t s', Exec isa (sealGather w F.name F.code) s t s' ∧ abiPreserved s s' ∧ gatherX86_64.post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := sealGather_wp w F hs
-  exact ⟨t, s', he, ha, hp⟩
 
 theorem filter_true' (l : List Region) : l.filter (fun _ => true) = l := List.filter_eq_self.mpr (by simp)
 
@@ -118,10 +111,5 @@ theorem gatherSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealGatherContract X86_64.
 
 theorem gather_implies : gatherX86_64.Implies (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880) :=
   ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
-
-theorem sealGather_verified (w : Width) (F : SealSplitFn) :
-    Verified X86_64.target (sealGather w F.name F.code)
-      (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880) :=
-  Verified.of_correct (k := gatherX86_64) (sealGather_correct w F) (sealGather_ct w F) gather_implies
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather

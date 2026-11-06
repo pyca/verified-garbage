@@ -12,7 +12,7 @@ len = [sp + 4], tag = [sp + 8], work = [sp + 12])` and `vg_chacha20_poly1305_ope
 ChaCha20 and Poly1305 functions. `work` is the working space, which the
 artifact's frame allocates on the stack (`withStackScratchWiped`).
 
-The working space (`workLen` = 632 bytes, called the context below):
+The working space (632 bytes, called the context below):
 
 * `[0, 320)`: the working space of `vg_chacha20_block` and `vg_chacha20_xor`
   (the first 32 bytes of the block with counter 0 are the one-time Poly1305
@@ -78,9 +78,6 @@ def tagOff : Nat := 448
 def savOff : Nat := 464
 /-- The working space of `vg_poly1305_finalize_scratch`. -/
 def scrOff : Nat := 500
-/-- The size of the working space, in bytes. -/
-def workLen : Nat := 632
-
 /-! ## Saving and restoring the registers -/
 
 /-- The registers saved in the context, and where. -/

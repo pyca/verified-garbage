@@ -127,29 +127,6 @@ theorem rel_taintC {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {P : St
   obtain ⟨_, hc⟩ := hc
   exact RelCT.taint (A := taint) (sivT rs) (fun s₁ s₂ h => both_agree hDW hn (hP _ _ h)) hc
 
-/-- Code the taint analysis checks from `sivT rs`, leaving the flags public. -/
-theorem rel_flagsC {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {P : State → State → Prop}
-    {c : Prog isa} (rs : List Reg) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64)
-    (hP : ∀ s₁ s₂, P s₁ s₂ → Both K W SP R N A D al n rs s₁ s₂)
-    (hc : ∃ hc, ((taint.check (sivT rs) c hc).map (·.flags)) = some true) :
-    RelCT isa P c fun s₁ s₂ => s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf := by
-  obtain ⟨_, h⟩ := hc
-  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
-  obtain ⟨τ', hc', hs⟩ := Option.map_eq_some_iff.mp h
-  obtain ⟨ht, ha⟩ := VG.Taint.check_sound hc' (both_agree hDW hn (hP _ _ hp)) e₁ e₂
-  obtain ⟨hcf, hzf, -, -⟩ := ha.rf.2 hs
-  exact ⟨ht, hcf, hzf⟩
-
-theorem eval_e_eq {s₁ s₂ : State} (h : s₁.zf = s₂.zf) : isa.eval .e s₁ = isa.eval .e s₂ := h
-theorem eval_ne_eq {s₁ s₂ : State} (h : s₁.zf = s₂.zf) : isa.eval .ne s₁ = isa.eval .ne s₂ := by
-  show s₁.zf.map _ = s₂.zf.map _; rw [h]
-theorem eval_b_eq {s₁ s₂ : State} (h : s₁.cf = s₂.cf) : isa.eval .b s₁ = isa.eval .b s₂ := h
-
-/-- Runs related from each pair of states. -/
-theorem rel_of_pt {P Q : State → State → Prop} {c : Prog isa}
-    (h : ∀ σ₁ σ₂, P σ₁ σ₂ → RelCT isa (fun t₁ t₂ => t₁ = σ₁ ∧ t₂ = σ₂) c Q) : RelCT isa P c Q :=
-  fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ hp _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
-
 end VG.Proof.AesGcmSiv.X86_64
 
 /-!

@@ -1333,15 +1333,6 @@ theorem kept_mac {s₀ s s' : State} {k n : Nat} (hk : Kept [sub s₀ k n] s s')
 theorem kept_mac0 {s₀ s s' : State} (hk : Kept [] s s') : Kept (macR s₀) s s' :=
   hk.sub fun _ hr => absurd hr List.not_mem_nil
 
-theorem mac_inv {s₀ s s' : State} (h : Inv s₀ s) (hk : Kept (macR s₀) s s') : Inv s₀ s' :=
-  h.step hk (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact sub_inv s₀ (by decide))
-    (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact sub_disj s₀ (by decide) (by decide)
-        (by decide))
-
 /-! ## Absorbing whole blocks -/
 
 /-- `n` blocks at `p` absorbed, from `r1 = p` and `r2 = n`. -/
@@ -1460,8 +1451,6 @@ structure CpInv (s₀ s₂ : State) (Q : BitVec 32) (t i : Nat) (s : State) : Pr
 def copyBody : List Instr :=
   [.ldrb .r12 .r1 0, .strb .r12 .r2 0, .dp .add .r1 .r1 (.imm 1), .dp .add .r2 .r2 (.imm 1),
    .subs .r3 .r3 (.imm 1)]
-
-theorem copyLoop_eq : copyLoop = .loop (.block copyBody) .ne := rfl
 
 theorem byte_rt (b : Byte) : ((b.setWidth 32).setWidth 8 : Byte) = b := by
   rw [BitVec.setWidth_setWidth_of_le _ (by lit_omega), BitVec.setWidth_eq]

@@ -25,7 +25,7 @@ address in the seven doublewords at `Pf + 104` (`slot`), and `tag`, from
 the slices to `dst` (`gathered_wp`); and calls `vg_aes_gcm_seal` on them in
 place, by its contract (`sealSpec_pre`, `sealSpec_post`), whose frame is in
 the 2672 bytes below ours, so the return address comes back from it
-(`sealGather_wp`). As for ChaCha20-Poly1305
+(`called_wp`, `ret_wp`). As for ChaCha20-Poly1305
 (`Proof/ChaCha20Poly1305/PPC64LE/Gather/Fn.lean`).
 -/
 
@@ -637,15 +637,5 @@ theorem ret_wp {s z : State} (h : Lay s) (hz : Called s z) :
     have out := hz.out
     rw [h.gMem_encrypt] at out
     exact out
-
-theorem sealGather_wp (hv : SealOk) {s : State} (hs : gatherPre s) :
-    WP isa sealGather s fun z => abiPreserved s z ∧ gatherPost s z := by
-  have h := lay hs
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.w₁; omega_arith) ?_
-  refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
-  refine WP.seq (WP.mono (gathered_wp h he) fun g hg => ?_)
-  refine WP.seq (WP.mono (ready_wp h hg) fun c hc => ?_)
-  refine WP.seq (WP.mono (called_wp hv h hc) fun z hz => ?_)
-  exact ret_wp h hz
 
 end VG.Proof.AesGcm.PPC64LE.Gather
