@@ -20,12 +20,11 @@ on:
 
 permissions: {}
 
-# One run at a time, and at most one waiting: each checks every open pull
-# request against the latest main. A newer merge waits rather than cancels,
-# so that a run waiting for GitHub to work out mergeability still finishes.
+# Each run checks every open pull request against the latest main, so a newer
+# merge supersedes a run still waiting for GitHub to work out mergeability.
 concurrency:
   group: ${{ github.workflow }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   comment:
