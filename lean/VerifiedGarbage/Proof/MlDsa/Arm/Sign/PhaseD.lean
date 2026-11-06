@@ -7,13 +7,18 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
+import VerifiedGarbage.Proof.MlKem.Arm.Loops
+import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA signing on ARMv7: the private key and `ρ″`
 
 Once `Â` is sampled (`IM`), `ŝ₁[r]`, `ŝ₂[i]` and `t̂₀[i]`, each the `NTT` of
 the `BitUnpack` of its piece of `sk` (`dec_ok`), in their slots (`ID`), and
-`ρ″ = H(K ‖ rnd ‖ μ, 64)` at `MS` (`decode_ok`).
+`ρ″ = H(K ‖ rnd ‖ μ, 64)` at `MS` (`decode_ok`); or, with prepared polynomials
+(`r9 ≠ 0`), the three copied from them at once (`decodeC_ok`).
 -/
 
 @[expose] public section
@@ -197,5 +202,110 @@ theorem decode_ok {s : State} (h : IM p D σ s) : WP isa (decode P p) s (IK p D 
   exact rpp_ok hP hc hs3
 
 end
+
+/-! ## Prepared polynomials -/
+
+/-- What `decodeC` needs of the layout. -/
+def dcChk (p : Params) : Bool :=
+  inB (sgW p) (s1P p 0) (cacheLen p) && inB (sgB p) (s1P p 0) (cacheLen p) && imChk p [] && imChk p [(s1P p 0, cacheLen p)] &&
+    decide (0 < cacheLen p ∧ cacheLen p < 2 ^ 32) && decide (s1Base p + p.ℓ = s2Base p) &&
+    decide (s2Base p + p.k = t0Base p)
+
+theorem dcChk_ok {p : Params} (h : Ok3 p) : dcChk p = true := by
+  rcases h with rfl | rfl | rfl <;> decide +kernel
+
+theorem cmp9_ok (s : State) (D : Nat) :
+    WP isa (.block [.cmp .r9 (.imm 0)]) s fun s₁ => PPostB D s s₁ [] ∧ CS s s₁ ∧ s₁.mem = s.mem ∧
+      s₁.z = (s.gpr .r9 == 0) := by
+  have h : WP isa (.block [.cmp .r9 (.imm 0)]) s fun s₁ => s₁.gpr = s.gpr ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧
+      s₁.wr = s.wr ∧ s₁.sp = s.sp ∧ s₁.z = (s.gpr .r9 == 0) := by
+    run_block []
+    simp
+  refine WP.mono h fun s₁ ⟨g, m, rd, wr, sp, z⟩ => ?_
+  have hcs : CS s s₁ := fun r _ _ => by rw [g]
+  exact ⟨PostB.of_cs hcs rd wr sp (by rw [m]; exact Frame.refl _ _), hcs, m, z⟩
+
+theorem oP_s1 (p : Params) (j : Nat) : (pS (s1Base p + j)) = (.r7, oP (s1Base p) + 1024 * j) := by
+  simp only [pS, sc, oP, Nat.mul_add, Nat.add_assoc]
+
+/-- After the copy: the slots of `ŝ₁ ‖ ŝ₂ ‖ t̂₀` hold the prepared polynomials. -/
+theorem cachedSlot {D : Nat} {p : Params} {σ : State} {s : State} (hpre : (signK p D).pre σ) (hne : stackArg σ 1 ≠ 0)
+    (hb : bytesAt s.mem (pa s (s1P p 0)) (cacheLen p) = bytesAt σ.mem (State.addr (stackArg σ 1)) (cacheLen p))
+    {j : Nat} (hj : j < p.ℓ + 2 * p.k) :
+    Pl s (s1Base p + j) (preparedSecretPolys p (skOf p σ))[j]! := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hcp⟩ := hpre
+  obtain ⟨-, -, -, -, hpol⟩ := hcp hne
+  have hpj := hpol j hj
+  rw [show 4 * Spec.MlDsa.n * j = 1024 * j by simp only [Spec.MlDsa.n]] at hpj
+  refine VG.Proof.MlDsa.PreparedKey.polyIs_of_copy ?_ hpj
+  have hk : 1024 * j + 1024 ≤ cacheLen p := by simp only [cacheLen]; omega
+  rw [oP_s1, pa_add, ← VG.Proof.MlKem.bytesAt_slice _ _ hk, ← VG.Proof.MlKem.bytesAt_slice _ _ hk]
+  show ((bytesAt s.mem (pa s (s1P p 0)) (cacheLen p)).drop (1024 * j)).take 1024 = _
+  rw [hb]
+
+theorem cacheR_rd {p : Params} {D : Nat} {σ : State} (hpre : (signK p D).pre σ) (hne : stackArg σ 1 ≠ 0) :
+    cacheR p σ ∈ σ.rd := by
+  rw [hpre.1]; simp only [cacheRd, hne, ite_false]; simp
+
+/-- The copy of the prepared polynomials to their slots. -/
+theorem cachedCopy_ok {D : Nat} {p : Params} (hc : dcChk p = true) {σ s : State} (hpre : (signK p D).pre σ)
+    (hne : stackArg σ 1 ≠ 0) (h : IM p D σ s) :
+    WP isa (copy (s1P p 0) (.r9, 0) (cacheLen p)) s (ID p D σ p.ℓ p.k p.k) := by
+  simp only [dcChk, Bool.and_eq_true, decide_eq_true_eq] at hc
+  obtain ⟨⟨⟨⟨⟨⟨hin, iw⟩, -⟩, him⟩, hlen0, hlen⟩, e1⟩, e2⟩ := hc
+  have L := h.st.lay
+  have ht := h.st.top
+  obtain ⟨d1, d2, -, -, hb⟩ := h.st.ck hne
+  have hpre' := hpre
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hcp⟩ := hpre'
+  obtain ⟨-, -, -, hfit, -⟩ := hcp hne
+  have e9 : s.gpr .r9 = stackArg σ 1 := ht.regs .r9 (by decide)
+  unfold copy
+  refine WP.seq (WP.mono (copySetup_ok (src := (.r9, 0)) (dst := s1P p 0) (by decide) (pS_bases _) s)
+    fun s1 ⟨g0, g1, g2, k⟩ => ?_)
+  have ad := L.pa32 iw hlen0
+  have as : State.addr (s.gpr .r9 + BitVec.ofNat 32 0) = State.addr (stackArg σ 1) := by
+    rw [e9]; simp
+  refine WP.mono (VG.Proof.MlKem.Arm.copy_loop (by rw [e9]; simpa using hfit) (L.fit iw hlen0) hlen hlen0
+    (by rw [as, ad]; exact cacheR_disj d1 d2 ht hin)
+    (by rw [as, k.rd, k.wr]
+        exact Covers.one ⟨_, List.mem_append_left _ (by rw [ht.rd]; exact cacheR_rd hpre hne),
+          Region.contains_self _ _⟩)
+    (by rw [ad, k.wr]; exact L.cW hin) g0 g1 g2) fun s' ⟨hcs, rd, wr, sp, hf, hbs⟩ => ?_
+  rw [ad, k.mem] at hf
+  rw [ad, as, k.mem] at hbs
+  have c : CS s s' := fun r hr hl => (hcs r hr).trans (k.cs r hr hl)
+  have hP : PPostB D s s' [(s1P p 0, cacheLen p)] :=
+    PostB.of_cs c (rd.trans k.rd) (wr.trans k.wr) (sp.trans k.sp) hf
+  have I' := h.step hP him
+  have hb' : bytesAt s'.mem (pa s' (s1P p 0)) (cacheLen p) =
+      bytesAt σ.mem (State.addr (stackArg σ 1)) (cacheLen p) := by
+    rw [hP.pa (pS_bases _), hbs, hb]
+  refine ⟨I', fun j hj => ?_, fun j hj => ?_, fun j hj => ?_⟩
+  · have := cachedSlot hpre hne hb' (j := j) (by omega)
+    rwa [VG.Proof.MlDsa.PreparedKey.secret_s1 _ _ hj] at this
+  · have := cachedSlot hpre hne hb' (j := p.ℓ + j) (by omega)
+    rwa [VG.Proof.MlDsa.PreparedKey.secret_s2 _ _ hj, ← Nat.add_assoc, e1] at this
+  · have := cachedSlot hpre hne hb' (j := p.ℓ + p.k + j) (by omega)
+    rwa [VG.Proof.MlDsa.PreparedKey.secret_t0 _ _ hj, ← Nat.add_assoc, ← Nat.add_assoc, e1, e2] at this
+
+theorem decodeC_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hd : dChk p = true)
+    (hc : dcChk p = true) {σ s : State} (hpre : (signK p D).pre σ) (h : IM p D σ s) :
+    WP isa (decodeC P p) s (IK p D σ) := by
+  have him0 : imChk p [] = true := by
+    simp only [dcChk, Bool.and_eq_true, decide_eq_true_eq] at hc
+    obtain ⟨⟨⟨⟨⟨⟨-, -⟩, h0⟩, -⟩, -⟩, -⟩, -⟩ := hc
+    exact h0
+  unfold decodeC
+  refine WP.seq (WP.mono (cmp9_ok s D) fun s₁ ⟨hP₁, _, _, hz⟩ => ?_)
+  have h₁ := h.step hP₁ him0
+  refine WP.ite (M := isa) (!(s.gpr .r9 == 0)) (show some (!s₁.z) = _ by rw [hz]) (fun hb => ?_)
+    fun _ => decode_ok hP hd h₁
+  have hne : stackArg σ 1 ≠ 0 := by
+    have e := h.st.top.regs .r9 (by decide)
+    simp only [ptrOf] at e
+    rw [← e]; simpa using hb
+  unfold cached
+  exact WP.seq (WP.mono (cachedCopy_ok hc hpre hne h₁) fun s₂ h₂ => rpp_ok hP hd h₂)
 
 end VG.Proof.MlDsa.Arm.Sign

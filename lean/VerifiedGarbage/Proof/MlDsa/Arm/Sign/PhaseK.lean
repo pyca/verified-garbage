@@ -727,7 +727,7 @@ theorem onesOk_ok {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t :
   rw [ao, J6.ones, sign_bit (by omega_arith) (by omega_arith), h156, bit_and rfl rfl, bit_congr passV_iff] at h157
   have hP7 : PPostB D s s7 [] := ⟨k7.rd, k7.wr, fun r hr => k7.gpr r (by
       simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide), k7.sp,
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide), k7.sp,
       by rw [k7.mem]; exact Frame.refl _ _⟩
   exact ⟨J6.b.step hP7 c13, (fun _ => Fam.keep L6 hP7 c16 J6.z), (fun _ => HFam.keep L6 hP7 c17 J6.h), h157⟩
 
