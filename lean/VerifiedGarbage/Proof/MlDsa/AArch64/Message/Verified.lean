@@ -7,13 +7,11 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
 
 /-!
-# ML-DSA on AArch64, `sign_message`: verified
+# ML-DSA on AArch64, `sign_message` and `verify_message_cached`: the functions on `μ`
 
-Untrusted: everything here is checked by Lean. `signMessage v.callee n c p`,
-for any signing function on `μ` `c` it can call (`SignFn`), is verified
-against `signMessageContract p AArch64.abi 16`; the functions on `μ` with
-the Keccak permutation of `v` are functions that `sign_message` and
-`verify_message_cached` can call (`signFn`, `verifyFn`).
+Untrusted: everything here is checked by Lean. `vg_mldsa*_verify`, with the
+Keccak permutation of `v`, is a function that `verify_message_cached` can
+call (`verifyFn`); `signSat` satisfies the precondition of signing.
 -/
 
 @[expose] public section
@@ -33,35 +31,10 @@ def signSat (p : Params) : State where
   rd := [⟨0x1000, p.skLen⟩, ⟨0x3000, 0⟩, ⟨0x3100, 0⟩, ⟨0x3200, 32⟩]
   wr := [⟨0x4000, p.sigLen⟩, ⟨0x10000, mScrLen p⟩]
 
-theorem signMessage_sat {p : Params} (hp : p ∈ params) : ∃ s, (signMessageContract p AArch64.abi 16).pre s := by
-  simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl
-  · sig_implies_sat [signMessageContract, signMessageSig, AArch64.abi, AArch64.argRegs, List.range,
-      List.range.loop] [signSat] using signSat mlDsa44
-  · sig_implies_sat [signMessageContract, signMessageSig, AArch64.abi, AArch64.argRegs, List.range,
-      List.range.loop] [signSat] using signSat mlDsa65
-  · sig_implies_sat [signMessageContract, signMessageSig, AArch64.abi, AArch64.argRegs, List.range,
-      List.range.loop] [signSat] using signSat mlDsa87
-
-theorem signMessage_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params} {n : String} {c : Prog isa}
-    (hS : SignFn p c) (hp : p ∈ params) :
-    Verified AArch64.target (signMessage v.callee n c p) (signMessageContract p AArch64.abi 16) :=
-  ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := signMessage_wp v hS hp h; ⟨t, s', he, ha, hq⟩,
-    signMessage_ct v hS hp, signMessage_sat hp⟩
-
 /-! ## The functions on `μ` -/
 
 theorem params3 {p : Params} (hp : p ∈ params) : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87 := by
   simpa only [params, List.mem_cons, List.not_mem_nil, or_false] using hp
-
-/-- `vg_mldsa*_sign`, with the Keccak permutation of `v`. -/
-theorem signFn (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : p ∈ params) :
-    SignFn p (Impl.MlDsa.AArch64.Sign.signWith v.callee (Sign.primsWith v.callee) p) := by
-  refine ⟨?_, signWith_dle v p⟩
-  rcases params3 hp with rfl | rfl | rfl
-  · exact Sign.sign44_verifiedWith' (keccak := v)
-  · exact Sign.sign65_verifiedWith' (keccak := v)
-  · exact Sign.sign87_verifiedWith' (keccak := v)
 
 /-- `vg_mldsa*_verify`, with the Keccak permutation of `v`. -/
 theorem verifyFn (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : p ∈ params) :

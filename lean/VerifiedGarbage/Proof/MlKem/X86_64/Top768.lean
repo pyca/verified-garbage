@@ -4,6 +4,8 @@ public import VerifiedGarbage.Spec.MlKem.EncapsH
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
 public import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
 public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop16
+public import VerifiedGarbage.Proof.MlKem.X86_64.EcP16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EcP16
 import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
 import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
 import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
@@ -64,6 +66,7 @@ theorem dcWf768 : Decaps.DcWf kem768 := by kem_wf kemWf768
 theorem kpke768 : KpkeOk kem768w.L := KpkeOk.k768
 theorem kg16Wf768 : KeyGen16.Kg16Wf kem768w := by kem_wf kemWf768
 theorem ec16Wf768 : Encaps16.Ec16Wf kem768w := by kem_wf kemWf768
+theorem ecP16Wf768 : EncP16.EcP16Wf kem768w := by kem_wf ec16Wf768
 theorem dc16Wf768 : Decaps16.Dc16Wf kem768w := by kem_wf kemWf768
 theorem ekWf768 : Ek.EkWf kem768 := by kem_wf ecWf768
 
@@ -187,8 +190,8 @@ theorem encapsHImp768 : (encapsK kem768).Implies (Spec.MlKem.encapsHContract X86
 
 theorem encapsH_verified (v : Sample4Impl) :
     Verified X86_64.target (Impl.MlKem.X86_64.encapsH v.callee) (Spec.MlKem.encapsHContract X86_64.abi 32) :=
-  encapsHSel_verified (n := kem768.scr) (Nat.le_refl _) kpke768 v ec16Wf768 ecWf768 calls768 encapsHImp768
-    (fun _ c S => by s16_ctl v c S kpke768) (by s4_ctl v)
+  encapsHPSel_verified kpke768 v ecP16Wf768 ec16Wf768 ecWf768 calls768 encapsHImp768
+    (fun p P => by ecp_ctl v p P kpke768) (fun _ c S => by s16_ctl v c S kpke768) (by s4_ctl v)
 
 theorem encaps_ctl (v : Sample4Impl) : ctlOk (kemEncaps kem768 v.callee) = true := by
   s4_ctl v

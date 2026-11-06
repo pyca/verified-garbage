@@ -160,10 +160,6 @@ theorem JacWinLay.Tz3 (hL : JacWinLay K size) : K.z2 + 8 * K.M.n = jg K 84 := by
 
 theorem JacWinLay.T80 (hL : JacWinLay K size) : K.T = jg K 80 := hL.Tx
 
-/-- Coordinate `c` of `T`. -/
-theorem JacWinLay.Tc (hL : JacWinLay K size) (c : Nat) : K.T + 8 * K.M.n * c = jg K (80 + c) := by
-  rw [hL.T]; unfold jg JacWinCfg.st; rw [Nat.mul_add]; omega
-
 /-- Entry `m`'s address. -/
 theorem entry_addr (K : JacWinCfg) (m c : Nat) :
     K.tbl + K.st * (m - 1) + 8 * K.M.n * c = jg K (5 * (m - 1) + c) := by

@@ -33,11 +33,6 @@ open VG.Proof.Weierstrass.X86_64 (InvSounds)
 /-! The fields of `p384v` and `p384vx` that are `p384`'s, rewritten rather than
 compared by unfolding (which would evaluate the order's bits). -/
 
-theorem p384v_C : p384v.C = p384.C := rfl
-theorem p384v_n : p384v.n = p384.n := rfl
-theorem p384vx_C : p384vx.C = p384.C := rfl
-theorem p384vx_n : p384vx.n = p384.n := rfl
-
 theorem p384v_ok (hI : InvSounds) : CfgOk p384v := cfgOk_gtab (cfgOk_pubVerify (p384_ok hI) true) _
 
 theorem p384vx_ok (hI : InvSounds) : CfgOk p384vx := cfgOk_gtab (cfgOk_pubVerify (p384x_ok hI) true) _

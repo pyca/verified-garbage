@@ -5,9 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.DerivingVerified
 public import VerifiedGarbage.Spec.Dsa.RandomSign
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.KeyVerified
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.Registration
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicVerified
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.PrivateVerified
 public import VerifiedGarbage.Proof.Dsa.X86.RandomSignInstance
 public import VerifiedGarbage.Proof.Dsa.X86.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Init

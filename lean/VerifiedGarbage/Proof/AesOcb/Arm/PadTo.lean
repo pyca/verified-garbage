@@ -42,8 +42,6 @@ open VG.Proof.AesGcm.Arm (copyLoop_ok LoopPre mem_store gpr_store rd_store wr_st
 /-- The registers `padTo` writes. -/
 abbrev padRegs : List Reg := [.r0, .r1, .r2, .r3, .r12]
 
-theorem toBytes_zero : Spec.Ocb.toBytes 0 = Spec.Ocb.zeros 16 := by decide
-
 /-- `padTo d`: `W + d ← pad(S)`, for the `n` bytes `S` at `r4`, `0 < n < 16`. -/
 theorem padTo_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32} {n d : Nat} (hn : 0 < n)
     (hn' : n < 16) (hd : d + 16 ≤ 2560) (he : encodable (BitVec.ofNat 32 d) = true)

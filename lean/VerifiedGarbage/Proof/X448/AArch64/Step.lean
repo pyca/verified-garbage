@@ -65,45 +65,4 @@ theorem carryStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2, ite_false]
 
-/-- A bounded multiply-add is an ordinary natural-number multiply-add. -/
-theorem mul_add_nat (a b c : BitVec 64) (h : a.toNat * b.toNat + c.toNat < 2 ^ 64) :
-    (c + a * b).toNat = a.toNat * b.toNat + c.toNat := by
-  have hp : a.toNat * b.toNat < 2 ^ 64 := by omega
-  rw [BitVec.toNat_add, BitVec.toNat_mul, Nat.mod_eq_of_lt hp, Nat.add_comm c.toNat,
-    Nat.mod_eq_of_lt h]
-
-/-- One multiply-add updates exactly one coefficient. -/
-theorem rowStep_ok {s : State} {base : Addr} (hs : Scr s base) {b i j : Nat}
-    (hb : b + 8 * j + 8 ≤ 8192) (hb8 : b % 8 = 0) (hi : i < 16) (hj : j < 16)
-    (hr : s.gpr .x10 = off base (8 * i))
-    (hv : (word s.mem base (b + 8 * j)).toNat * (s.gpr .x6).toNat +
-      (word s.mem base (ACC + 8 * (i + j))).toNat < 2 ^ 64) :
-    let v := (word s.mem base (b + 8 * j)).toNat * (s.gpr .x6).toNat +
-      (word s.mem base (ACC + 8 * (i + j))).toNat
-    WP isa (.block (rowStep b j)) s fun s' =>
-      s'.mem = s.mem.writeW (off base (ACC + 8 * (i + j))) (BitVec.ofNat 64 v) ∧
-      Keeps [.x4, .x5] s s' := by
-  intro v
-  have hd : ACC + 8 * (i + j) + 8 ≤ 8192 := by simp only [ACC]; omega
-  have l := hs.read hb
-  have r := hs.read hd
-  have w := hs.write hd
-  have be : (b + 8 * j) % 8 = 0 ∧ b + 8 * j < 4096 * 8 := ⟨by omega, by omega⟩
-  have ce : (ACC + 8 * j) % 8 = 0 ∧ ACC + 8 * j < 4096 * 8 := by
-    simp only [ACC]; omega
-  apply WP.of_runBlock
-  simp only [rowStep, ld, runBlock_cons, runStep_some, runBlock_nil, exec,
-    Size.bytes, Size.bits, addr, be, ce, State.read, State.load, State.store, hs.x3, hr,
-    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
-    BitVec.setWidth_eq, Option.map_some, Option.bind_some,
-    off, Offset.add_add, show 8 * i + (ACC + 8 * j) = ACC + 8 * (i + j) by omega,
-    l, r, w, and_self, ite_true, ite_false, reduceCtorEq,
-    read8_eq, write8_eq, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, (fun r hr => ?_), rfl, rfl⟩
-  · apply congrArg (s.mem.writeW (off base (ACC + 8 * (i + j))))
-    apply BitVec.eq_of_toNat_eq
-    rw [mul_add_nat _ _ _ hv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv]
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
-
 end VG.Proof.X448.AArch64

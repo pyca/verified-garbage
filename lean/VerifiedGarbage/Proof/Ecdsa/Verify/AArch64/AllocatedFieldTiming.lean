@@ -46,19 +46,7 @@ theorem layout : Weierstrass.AArch64.JointLayout P256Joint.cfg 8192 where
   stableSep := by decide +kernel
   gw := Or.inr rfl
 
-theorem live_slots : ∀ x∈jointLive P256Joint.cfg,x∈jointSlots P256Joint.cfg := by decide +kernel
-
-theorem work_slots : ∀ x∈jointWork P256Joint.cfg,x∈jointSlots P256Joint.cfg := by decide +kernel
-
-theorem generator_bits : P256Joint.cfg.gBits=2112 := rfl
-
-theorem peer_bits : P256Joint.cfg.K.bits=1824 := rfl
-
 theorem bits_disjoint : P256Joint.cfg.K.bits+264≤P256Joint.cfg.gBits := by decide
-
-theorem gprep_bounds : P256Joint.cfg.gBits<4096 ∧ P256Joint.cfg.gBits%8=0 ∧ P256Joint.cfg.gBits+520≤8192 := by decide
-
-theorem qprep_bounds : P256Joint.cfg.K.bits<4096 ∧ P256Joint.cfg.K.bits%8=0 ∧ P256Joint.cfg.K.bits+264≤8192 := by decide
 
 theorem fixedLayout : JointFixedLayout P256Joint.cfg 8192 where
   layout := layout
@@ -159,18 +147,6 @@ namespace VG.Proof.Ecdsa.Verify.AArch64.Allocated
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 open VG.Impl.P256.VerifyArithmetic Spec.Weierstrass
-
-theorem field_relCT (raw : RawCorrect) {k : Kind} (cert : Proof.P256.VerifyAllocated.Case k)
-    {base : Addr} {V Out : List Nat} {E : Nat → Fe C}
-    (hslots : ∀ op∈operations k,∀ x∈op.out::op.ins,Sl x)
-    (hreads : readsOk (operations k) V=true)
-    (hout : ∀ x∈Out,x∈validAfter (operations k) V)
-    (hobs : ∀ x∈Out,∀ i<4,Proof.P256.VerifyAllocated.observe k (x+8*i))
-    (hct : FieldCT (VG.Impl.P256.VerifyAllocated.program k)) :
-    RelCT isa (FieldPair K.M base 8192 C.p Sl V E) (VG.Impl.P256.VerifyAllocated.program k)
-      (FieldPair K.M base 8192 C.p Sl Out (runOps (operations k) E)) :=
-  fieldWP_relCT hct fun _ hi => WP.mono (field_ok raw cert hi hslots hreads hout hobs)
-    fun _ ⟨hk,it⟩ => ⟨it,hk.regs.sp⟩
 
 theorem field_all_relCT (raw : RawCorrect) {k : Kind} (cert : Proof.P256.VerifyAllocated.Case k)
     (hk : k≠.doubleRR) {base : Addr} {V : List Nat} {E : Nat → Fe C}

@@ -90,14 +90,6 @@ theorem fixedOk_wk (hn : c.n < 10 := by n10) : FixedOk c (wkW c) := by
   simp only [wkW, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl <;> exact Or.inr (by simp only; omega)
 
-theorem fixedOk_whole (h7 : c.n < 10) : FixedOk c [(size, 2 ^ 64)] := by
-  intro w hw
-  rw [List.mem_singleton.mp hw]
-  refine Or.inr ?_
-  have := sl_le c (i := 12) h7 (by decide)
-  show c.sl 12 ≤ size
-  omega
-
 /-- A constant's slot is apart from what a phase writes. -/
 theorem fixed_apart {W : List (Nat × Nat)} (hW : FixedOk c W) {i : Nat} (hi : i < 12) (hit : i ≠ TMP) :
     ∀ w ∈ W, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by

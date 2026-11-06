@@ -9,7 +9,8 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use verified_garbage::ed25519::{Error, VerifyingKey};
+use verified_garbage::ed25519::VerifyingKey;
+use verified_garbage::error::InvalidSignature;
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{EdGroup, SigCase};
@@ -35,7 +36,7 @@ fn ed25519_test() {
                 assert!(test.flags.iter().all(order), "tcId {}", test.tc_id);
                 Ok(())
             }
-            Expectation::Invalid => Err(Error::InvalidSignature),
+            Expectation::Invalid => Err(InvalidSignature),
         };
         let actual = key.verify(&test.case.msg.0, &test.case.sig.0);
         assert_eq!(actual, expected, "tcId {}", test.tc_id);

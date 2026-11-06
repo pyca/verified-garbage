@@ -174,9 +174,6 @@ theorem feistel_ok (s : State) (up : Bool) :
 def nextT (up : Bool) (t : Nat) : Nat :=
   if up then (if t = 2 then 0 else t + 1) else (if t = 0 then 2 else t - 1)
 
-theorem nextT_lt {up : Bool} {t : Nat} (ht : t < 3) : nextT up t < 3 := by
-  unfold nextT; split <;> split <;> omega
-
 theorem next_ok (s : State) (up : Bool) {t : Nat} (ht : t < 3) (hv : s.gpr typ = BitVec.ofNat 64 t) :
     WP isa (next up) s fun u =>
       u.gpr typ = BitVec.ofNat 64 (nextT up t) ∧ u.gpr left = s.gpr left - 1#64 ∧

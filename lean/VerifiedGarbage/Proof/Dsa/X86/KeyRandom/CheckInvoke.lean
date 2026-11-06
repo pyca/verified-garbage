@@ -18,9 +18,4 @@ structure CheckInvoke (I : State → Mem → Prop) where
       u.gpr .eax=(if CheckCall.callResult s₀ t then 1 else 0) ∧
       (CheckCall.callResult s₀ t=true → I s₀ u.mem)
 
-def CheckCall.CheckFn.invoke (F : CheckCall.CheckFn) : CheckInvoke (fun _ _ => True) where
-  code := .call F.name F.code
-  correct := fun A R C => WP.mono (CheckCall.call_ok F A R C) fun _ ⟨R,F,K,V⟩ =>
-    ⟨R,F,K,V,fun _ => trivial⟩
-
 end VG.Proof.Dsa.X86.KeyRandom

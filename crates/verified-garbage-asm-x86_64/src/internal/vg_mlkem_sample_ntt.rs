@@ -60,7 +60,7 @@ jne 27b
 26:
 .base64 "SIn4SMHoCEiLq5gGAABIi5uQBgAAww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym crate::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )

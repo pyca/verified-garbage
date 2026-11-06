@@ -53,10 +53,6 @@ theorem HKey.of_vonly {H : Block} {rs : List VReg} {s s' : State} (h : HKey H s)
     (hc : C ∉ rs) (ht : tReg 1 ∉ rs) (hs : sReg 1 ∉ rs) : HKey H s' :=
   h.of_v (o.v C hc) (o.v _ ht) (o.v _ hs)
 
-theorem c_nmem : C ∉ [A, LO, MID, HI, T, Y] := by decide
-theorem t1_nmem : tReg 1 ∉ [A, LO, MID, HI, T, Y] := by decide
-theorem s1_nmem : sReg 1 ∉ [A, LO, MID, HI, T, Y] := by decide
-
 /-- `mulT`: `Y ← mul(Y ⊕ T, H')`, the block at `T` (`x19 + 96`) absorbed. -/
 theorem mulT_ok (hM : MulKey) {H y : Block} {s : State} (hk : HKey H s) (hy : s.v Y = ext8 y y)
     (hT : InRegions (s.rd ++ s.wr) (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.tO) 16) :

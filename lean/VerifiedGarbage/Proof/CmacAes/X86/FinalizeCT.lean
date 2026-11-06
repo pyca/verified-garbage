@@ -297,9 +297,6 @@ theorem FMid.f {s₀ s : State} (h : FMid s₀ s) :
     · exact ⟨⟨(S s₀).setWidth 64, 2064⟩, by simp, Offset.sub_base _ (by decide)⟩
     · exact ⟨stR s₀, by simp, fun _ h => h⟩
 
-theorem FMid.pt {s₀ : State} (hp : FPre s₀) {s : State} (h : FMid s₀ s) : Pt s₀ s :=
-  ⟨h.esp, h.wr, fun _ hi => hp.arg_keep (UPre.big_of h.f) hi⟩
-
 theorem fcall_after {s₀ : State} (hp : FPre s₀) {s : State} (h : FMid s₀ s) : WP isa (ctrCall v.callee) s (Pt s₀) :=
   WP.mono (ctr_call v h.pre) fun s' hc => by
     have hb : below (s.gpr .esp) 28 = stkR s₀ := by rw [h.esp]; exact hp.below_eq

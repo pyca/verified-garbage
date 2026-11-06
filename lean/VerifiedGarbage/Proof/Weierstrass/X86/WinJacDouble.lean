@@ -74,18 +74,4 @@ theorem dbl_field_ok {K : JacWinCfg} {base : Addr} {size wk : Nat} {C : Curve} {
     · exact Or.inl hx
   · exact dbl_run hN hA E
 
-theorem dbl_ok {K : JacWinCfg} {base : Addr} {size wk : Nat} {C : Curve} {Sl : Nat → Prop}
-    (hL : Lay K.M size Sl) (hW : WkOk K.F K.M C.p size wk Sl)
-    (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
-    {p : Pt} (hN : (rcbW K.S p).Nodup) (hA : K.S.a∉rcbW K.S p)
-    (hSl : ∀ x∈rcbW K.S p,Sl x) {V : List Nat} {E : Nat → Fe C} {s : State}
-    (hI : Inv K.M base size C.p Sl V E s) (hV : ∀ x∈[p.x,p.y,p.z],x∈V)
-    {P : Point C} (hP : onCurve C P=true) (hJ : InvJ C (E p.x) (E p.y) (E p.z) P) :
-    WP isa (K.dbl p) s fun t => ProgKeep K.M base wk (rcbW K.S p) s t ∧
-      Inv K.M base size C.p Sl ([p.x,p.y,p.z]++V) (runOps (dblJMul K.S p p) E) t ∧
-      InvJ C (runOps (dblJMul K.S p p) E p.x) (runOps (dblJMul K.S p p) E p.y)
-        (runOps (dblJMul K.S p p) E p.z) (Spec.Weierstrass.add P P) := by
-  refine WP.mono (dbl_field_ok hL hW hm hN hA hSl hI hV) fun t ⟨kt,it,et⟩ =>
-    ⟨kt,it,InvJ.dbl' hC ha hP hJ et⟩
-
 end VG.Proof.Weierstrass.X86.JWin

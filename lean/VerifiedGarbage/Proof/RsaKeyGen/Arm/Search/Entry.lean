@@ -38,9 +38,6 @@ theorem remaining_le (h : SearchInput p o) : p.remaining ≤ 32768 := by
   change searchRemaining o ≤ 32768
   split at hr <;> simp only [searchOfState] at hv <;> omega
 
-theorem randLen_le (h : SearchInput p o) : p.randLen ≤ primeEntropy p.len := by
-  rw [← h.2]; exact h.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
-
 /-- The `n` bytes `a` below the stack pointer are in the search's stack. -/
 theorem stack_sub (_h : SearchInput p o) {a n : Nat} (ha : a ≤ stackUse) (hn : stackUse - a + n ≤ stackUse) :
     Region.Sub ⟨State.addr o.sp - BitVec.ofNat 64 a, n⟩ (inStack o) :=

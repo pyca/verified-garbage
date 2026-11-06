@@ -30,9 +30,6 @@ def optimizedDotChk (p : Params) (i : Nat) : Bool :=
   sepB (sgR p) (sgW p) a (1024*p.ℓ) z 1024 &&
   sepB (sgR p) (sgW p) b (1024*p.ℓ) z 1024 && stChk p (dotWrites p i)
 
-theorem optimizedDotChk_ok {p : Params} (hp : Ok3 p) : ∀i<p.k,optimizedDotChk p i=true := by
-  rcases hp with rfl | rfl | rfl <;> decide +kernel
-
 theorem optimizedDotReady {p : Params} {S : Nat} {σ s : State} {i : Nat}
     (hc : optimizedDotChk p i=true) (hs : RootedSt p S σ s)
     (ha : ∀j<p.ℓ,PositiveReduced s.mem (pa s (aP p i 0)+BitVec.ofNat 64 (1024*j)))
@@ -82,52 +79,6 @@ theorem optimizedDot_ok {p : Params} {S : Nat} {σ s : State} {i : Nat}
 theorem dot_pS_addr (s : State) (b j : Nat) :
     pa s (pS (b+j))=pa s (pS b)+BitVec.ofNat 64 (1024*j) := by
   simp only [pa,oP, Nat.mul_add,BitVec.ofNat_add,BitVec.add_assoc]
-
-private theorem dotNTT_congr {f g f' g' : Nat → Poly} {count : Nat}
-    (hf : ∀j<count,f j=f' j) (hg : ∀j<count,g j=g' j) : dotNTT f g count=dotNTT f' g' count := by
-  unfold dotNTT
-  congr 1
-  apply List.map_congr_left
-  intro j hj
-  rw [List.mem_range] at hj
-  rw [hf j hj,hg j hj]
-
-/-- Canonical matrix rows and lazy mask transforms feed the fused dot directly.
-Both input families survive the call unchanged. -/
-theorem optimizedDot_families {p : Params} {S : Nat} {σ s : State} {i : Nat} {f g : Nat → Poly}
-    (hp : Ok3 p) (hc : optimizedDotChk p i=true) (hs : RootedSt p S σ s)
-    (ha : Fam s (5+4*p.k+3*p.ℓ+p.ℓ*i) p.ℓ f)
-    (hb : PosFam s (5+p.k+p.ℓ) p.ℓ g)
-    (hka : famChk (sgR p) (sgW p) (dotWrites p i) (5+4*p.k+3*p.ℓ+p.ℓ*i) p.ℓ=true)
-    (hkb : famChk (sgR p) (sgW p) (dotWrites p i) (5+p.k+p.ℓ) p.ℓ=true) :
-    WP isa (Impl.MlDsa.AArch64.Sign.Optimized.rowW p i) s fun t =>
-      RootedSt p S σ t ∧ t.gpr .x24=s.gpr .x24 ∧
-      Fam t (5+4*p.k+3*p.ℓ+p.ℓ*i) p.ℓ f ∧ PosFam t (5+p.k+p.ℓ) p.ℓ g ∧
-      PolyIs t.mem (pa t (wP p i)) (nttInv (dotNTT f g p.ℓ)) := by
-  have hA j (hj : j<p.ℓ) : PolyIs s.mem
-      (pa s (aP p i 0)+BitVec.ofNat 64 (1024*j)) (f j) := by
-    have h := ha j hj
-    change PolyIs s.mem (pa s (pS ((5+4*p.k+3*p.ℓ+p.ℓ*i)+j))) (f j) at h
-    rw [dot_pS_addr] at h
-    simpa only [aP,Nat.add_zero] using h
-  have hB j (hj : j<p.ℓ) : PosPolyIs s.mem
-      (pa s (yhP p 0)+BitVec.ofNat 64 (1024*j)) (g j) := by
-    have h := hb j hj
-    change PosPolyIs s.mem (pa s (pS ((5+p.k+p.ℓ)+j))) (g j) at h
-    rw [dot_pS_addr] at h
-    simpa only [yhP,Nat.add_zero] using h
-  refine WP.mono (optimizedDot_ok hp hc hs
-    (fun j hj => (PosPolyIs.of_canonical (hA j hj)).bound)
-    (fun j hj => (hB j hj).bound)) fun t ⟨hst,h24,hP,hv⟩ => ?_
-  refine ⟨hst,h24,ha.keep hs.1.lay hP hka,hb.keep hs.1.lay hP hkb,?_⟩
-  have he := dotNTT_congr (fun j hj => (hA j hj).2) (fun j hj => (hB j hj).value)
-  rw [he] at hv
-  exact hv
-
-theorem optimizedDot_preserves {p : Params} (hp : Ok3 p) : ∀i<p.k,
-    famChk (sgR p) (sgW p) (dotWrites p i) (5+4*p.k+3*p.ℓ+p.ℓ*i) p.ℓ=true ∧
-    famChk (sgR p) (sgW p) (dotWrites p i) (5+p.k+p.ℓ) p.ℓ=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
 
 /-- Only public addresses and static table identity enter the call trace. -/
 theorem optimizedDot_tr {p : Params} {S : Nat} {i : Nat} (hp : Ok3 p)

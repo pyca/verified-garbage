@@ -26,8 +26,6 @@ open VG.Impl.Ecdsa.X86_64 (p256 CombData)
 /-- P-256's comb. -/
 abbrev p256d : CombData := ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true, true⟩
 
-theorem p256_comb : p256.comb = some p256d := rfl
-
 /-- The words of P-256's tables. -/
 abbrev p256W : List (BitVec 64) := p256.combWords p256d
 

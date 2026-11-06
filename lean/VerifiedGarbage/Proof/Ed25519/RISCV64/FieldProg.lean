@@ -24,8 +24,7 @@ and the code of a list of operations doing that (`fieldCode_ok`), keeping
 every register but `fclob` and every byte outside the field area `FA`
 (`Keep`). A call of `vg_gf25519_r32_mul` (`mulCall_ok`) is the inlined
 product's equal, for a working space whose 4096 bytes are writable (`WS`)
-and whose address is a multiple of 8 (`Ctx`). The extended Edwards addition
-of the slots is `Spec.Ed25519.pointAdd` (`pointAdd_eval`).
+and whose address is a multiple of 8 (`Ctx`).
 -/
 
 @[expose] public section
@@ -265,84 +264,9 @@ theorem fieldCode_ok (ops : List FieldOp) {s : State} {b : Addr} (hc : Ctx b s) 
     refine WP.mono (ih (ht.ctx hc) (hw.of_rest ht.rest)) fun u ⟨hu, eu⟩ => ?_
     exact ⟨ht.trans hu, by rw [eu, et]; rfl⟩
 
-/-! ## Inline programs, framed by the slots they write -/
-
-/-- The slot an operation writes. -/
-def opOut : FieldOp → Slot
-  | .copy o _ | .const o _ | .mul o _ _ | .mulc o _ _ | .add o _ _ | .sub o _ _ => o
-
-/-- An inline operation changes no register but the field code's `clob64`, and no memory but its result
-and the product's limbs. -/
-theorem fieldOpW_ok {b : Addr} {s : State} (hc : Ctx b s) (op : FieldOp) (hi : op.inline = true) :
-    WP isa op.code s fun t => Rest clob64 s t ∧ Frame (opFrame b (offset (opOut op))) s.mem t.mem ∧
-      env t.mem b = evalOp op (env s.mem b) := by
-  have hA := eACC_eq
-  cases op with
-  | copy o a =>
-    refine WP.mono (copyField_op hc o a) fun t ⟨hr, hf, hv⟩ => ⟨hr.mono (by decide), frame_o hf, ?_⟩
-    rw [field_update o (by omega) (by omega) (frame_o hf), hv]; rfl
-  | const o v =>
-    refine WP.mono (constField_op hc o v) fun t ⟨hr, hf, hv⟩ => ⟨hr.mono (by decide), frame_o hf, ?_⟩
-    rw [field_update o (by omega) (by omega) (frame_o hf), hv]; rfl
-  | mul o a c =>
-    have ho := slot_range o
-    have ha := slot_range a
-    have hb := slot_range c
-    refine WP.mono (R64.mulAt_ok (by omega) (by omega) (by omega) (by omega) (by omega)
-      (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc) fun t ⟨hr, hf, hv⟩ => ⟨hr, hf, ?_⟩
-    rw [field_update o (by omega) (by omega) hf]; exact congrArg _ (Proof.X25519.toFe_mul hv)
-  | mulc => simp [FieldOp.inline] at hi
-  | add o a c =>
-    have ho := slot_range o
-    have ha := slot_range a
-    have hb := slot_range c
-    refine WP.mono (R64.add_ok (by omega) (by omega) (by omega)
-      (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc)
-      fun t ⟨hr, hf, hv⟩ => ⟨hr, frame_o hf, ?_⟩
-    rw [field_update o (by omega) (by omega) (frame_o hf)]; exact congrArg _ (Proof.X25519.toFe_add hv)
-  | sub o a c =>
-    have ho := slot_range o
-    have ha := slot_range a
-    have hb := slot_range c
-    refine WP.mono (R64.sub_ok (by omega) (by omega) (by omega)
-      (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc)
-      fun t ⟨hr, hf, hv⟩ => ⟨hr, frame_o hf, ?_⟩
-    rw [field_update o (by omega) (by omega) (frame_o hf)]; exact congrArg _ (Proof.X25519.toFe_sub hv)
-
-/-- Inline field code, framed by any regions `R` that hold the results and the product's limbs. -/
-theorem fieldCodeW_ok (ops : List FieldOp) (hi : ops.all FieldOp.inline = true) {b : Addr}
-    (R : List Region) (hR : ∀ op ∈ ops, ∀ r ∈ opFrame b (offset (opOut op)), ∃ r' ∈ R, r.Sub r')
-    {s : State} (hc : Ctx b s) :
-    WP isa (fieldCode ops) s fun t =>
-      Rest clob64 s t ∧ Frame R s.mem t.mem ∧ env t.mem b = evalOps ops (env s.mem b) := by
-  induction ops generalizing s with
-  | nil => exact WP.block_nil ⟨Rest.refl _ _, Frame.refl _ _, rfl⟩
-  | cons op ops ih =>
-    simp only [List.all_cons, Bool.and_eq_true] at hi
-    refine WP.seq (WP.mono (fieldOpW_ok hc op hi.1) fun t ⟨rt, ft, et⟩ => ?_)
-    refine WP.mono (ih hi.2 (fun op' h' => hR op' (List.mem_cons_of_mem _ h')) (hc.of_rest rt (by decide)))
-      fun u ⟨ru, fu, eu⟩ => ⟨rt.trans ru, (ft.sub (hR op List.mem_cons_self)).trans fu, by rw [eu, et]; rfl⟩
-
 /-! ## The addition formula -/
 
 /-- Coordinates in four consecutive slots. -/
 def point (e : Env) (x y z t : Slot) : Spec.Ed25519.Point := ⟨e x, e y, e z, e t⟩
-
-/-- The sum of the points at slots 0–3 and 4–7, as the formula computes it. -/
-def addResult (e : Env) : Spec.Ed25519.Point :=
-  let a := (e 1 - e 0) * (e 5 - e 4)
-  let b := (e 1 + e 0) * (e 5 + e 4)
-  let c := (e 3 * e 16 + e 3 * e 16) * e 7
-  let dd := (e 2 + e 2) * e 6
-  ⟨(b - a) * (dd - c), (dd + c) * (b + a), (dd - c) * (dd + c), (b - a) * (b + a)⟩
-
-theorem pointAdd_formula (e : Env) : point (evalOps pointAddOps e) 0 1 2 3 = addResult e := rfl
-
-theorem pointAdd_eval (e : Env) (hd : e 16 = Spec.Ed25519.d) :
-    point (evalOps pointAddOps e) 0 1 2 3 =
-      Spec.Ed25519.pointAdd (point e 0 1 2 3) (point e 4 5 6 7) := by
-  rw [pointAdd_formula]
-  simp only [addResult, point, Spec.Ed25519.pointAdd, hd]
-  congr 1 <;> grind
 
 end VG.Proof.Ed25519.RISCV64

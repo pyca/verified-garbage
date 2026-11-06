@@ -152,10 +152,6 @@ structure MPost (s : State) (S D : BitVec 32) (out : Spec.Cast5.Block) (v : Stat
   wr : v.wr = s.wr
   syms : v.syms = s.syms
 
-/-- The modes' data pointer and steps left (`4 dSlot`, `4 nSlot`), past the
-working space and the block. -/
-theorem modeSlots : 4 * dSlot = 280 ∧ 4 * nSlot = 284 := ⟨rfl, rfl⟩
-
 theorem store_ok {s u : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n : Nat}
     {lr : Spec.Cast5.Word × Spec.Cast5.Word} (h : BPre s S K D k n) (hu : RInv s S K k n lr u)
     (hW : InRegions s.wr (S.setWidth 64) 304) (hfit : S.toNat + 304 ≤ 2 ^ 32)

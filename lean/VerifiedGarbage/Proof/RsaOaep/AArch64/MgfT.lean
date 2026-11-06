@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 As on x86-64 (`Proof/RsaOaep/X86_64/MgfT.lean`): `Table.mgfXor lay sArg sTab
 sD f` (`Impl/RsaOaep/AArch64/Mgf1/Table.lean`) XORs `MGF1(src, dstLen)` into
-`dst` as `mgfXor lay G` does (`mgfXorT_ok`, as `mgfXor_ok`), for `G` the hash
+`dst` as `mgfXor lay G` does (`mgfXorT_ok`), for `G` the hash
 function whose functions' addresses the table holds (`Tab`): the table's
 address is in the slot `sTab` (word 32) and `G`'s digest length in `sD`
 (word 33), and the table holds the addresses of `G`'s `init`, `update` and

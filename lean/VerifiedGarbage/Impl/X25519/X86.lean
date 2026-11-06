@@ -78,10 +78,6 @@ def BB : Nat := 608
 def E : Nat := 640
 def DA : Nat := 672
 def CB : Nat := 704
-def T0 : Nat := 736
-def T1 : Nat := 768
-def T2 : Nat := 800
-def T3 : Nat := 832
 /-- The 16 words of a product. -/
 def T : Nat := 864
 

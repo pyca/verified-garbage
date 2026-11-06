@@ -17,7 +17,7 @@ on the working space at `edi`, then loads `edi` again from the caller's
 argument holding it (`ptCall_ok`): it changes only `eax`, `ecx` and `edx`,
 `O`, the point functions' own working space and the 28 bytes of stack below
 `esp`, and `O` then holds `rcbAdd` of what `a`, `3b`, `P` and `Q` (or `P`)
-stood for (`fn_ok`).
+stood for (`ptVal`).
 -/
 
 @[expose] public section
@@ -124,9 +124,6 @@ theorem fnOps_noSp {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (dbl : Bool
   · simp only [restore, List.mem_cons, List.not_mem_nil, or_false] at hi
     rw [hi]; rfl
 
-theorem fn_noSp {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (dbl : Bool) : NoSp (fn S dbl) :=
-  fnOps_noSp hF dbl _
-
 /-- A point function's calls use 20 bytes of stack. -/
 theorem fnOps_stackUse (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : List FOp) :
     stackUse (fnOps S dbl ops) ≤ 20 := by
@@ -137,9 +134,6 @@ theorem fnOps_stackUse (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : L
   | mul => exact Nat.le_of_eq (stackUse_callB (mulFn_stackUse _ _))
   | add => exact Nat.le_of_eq (stackUse_callB rfl)
   | sub => exact Nat.le_of_eq (stackUse_callB rfl)
-
-theorem fn_stackUse (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) : stackUse (fn S dbl) ≤ 20 :=
-  fnOps_stackUse S dbl _
 
 /-- The 8 bytes below `esp` (a push and a return address) are past the
 working space, given 28 bytes below `esp` apart from it. -/

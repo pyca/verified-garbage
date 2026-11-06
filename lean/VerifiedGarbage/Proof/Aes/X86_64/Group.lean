@@ -449,8 +449,6 @@ theorem q_distinct : ∀ c < 4, ∀ d < 4, c ≠ d →
     q c ≠ q d ∧ q c ≠ q (d + 4) ∧ q (c + 4) ≠ q d ∧ q (c + 4) ≠ q (d + 4) := by
   decide
 
-theorem q_not_sb : ∀ c < 8, q c ≠ sb := by decide
-
 /-- The four counter blocks. -/
 theorem ctrBlocks_wp {s : State} {b : Addr} (hb : s.gpr sb = b) (hw : (⟨b, 2048⟩ : Region) ∈ s.wr) :
     WP isa (.block ctrBlocks) s fun s' =>

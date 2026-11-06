@@ -69,9 +69,4 @@ theorem initialization_ct : RelCT isa (Two InitializationPre) SignVerify.workspa
       p.pLength p.qLength p.pValue p.qValue p.pOdd p.qOdd)
       fun t ⟨pi, qi, hr, _, hm, _⟩ => ⟨pi, qi, hr, hm.trans (h.fields .mask)⟩
 
-theorem initialization_related {s₁ s₂ : State} (h : Two InitializationDone s₁ s₂) : Two Ready s₁ s₂ := by
-  obtain ⟨p, ⟨pi₁, qi₁, h₁, _⟩, ⟨pi₂, qi₂, h₂, _⟩, hsp⟩ := h
-  obtain ⟨rfl, rfl⟩ := readyInverses_eq h₁ h₂ p.pOdd p.qOdd
-  exact ⟨_, h₁, h₂, hsp⟩
-
 end VG.Proof.Dsa.AArch64

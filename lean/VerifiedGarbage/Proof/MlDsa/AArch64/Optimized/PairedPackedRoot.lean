@@ -91,12 +91,6 @@ theorem RootReady.chg {s t : State} {off : Nat} {z : Nat → Int} (h : RootReady
 
 def packedRootClobs (i j : Fin 8) : List VReg := [.v28,.v29]++packedBothClobs i j
 
-theorem packedRoot_q (i j : Fin 8) : VReg.v31∉packedRootClobs i j := by
-  have h0 := (packed_readonly 0 i j).2.2
-  have h1 := (packed_readonly 1 i j).2.2
-  simp only [packedRootClobs,packedBothClobs,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *
-  grind only
-
 theorem packedRoot_ok (i j : Fin 8) (len off : Nat) (hij : i≠j)
     {s : State} {rest : List Instr} {Q : State → Prop} {v : Values} {z : Nat → Int}
     (hv : Banks s v) (hr : RootReady s off z)

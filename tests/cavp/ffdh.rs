@@ -11,6 +11,7 @@
     feature = "alloc"
 ))]
 use std::collections::BTreeMap;
+use verified_garbage::error::InvalidKey;
 use verified_garbage::ffdh::{Error, Parameters, PrivateKey, PublicKey};
 use verified_garbage_test_vectors::{cavp_fields, unhex};
 
@@ -58,14 +59,18 @@ fn check(text: &str, expected: usize) {
         let params = Parameters::from_components(&p, &hex(&v["G"]), Some(&hex(&v["Q"]))).unwrap();
         let key = PrivateKey::from_components(&params, &hex(&v["YstatIUT"]), &hex(&v["XstatIUT"]));
         let peer = PublicKey::from_components(&params, &hex(&v["YstatCAVS"]));
-        let result = key.and_then(|k| k.exchange(&peer?));
+        // The shared secret, if both keys are valid and the exchange succeeds.
+        let result = key
+            .ok()
+            .zip(peer.ok())
+            .and_then(|(k, peer)| k.exchange(&peer).ok());
         let z = hex(&v["Z"]);
         assert_eq!(z.len(), p.len());
         if v["Result"].starts_with('P') {
-            assert_eq!(result, Ok(z), "COUNT {}", v["COUNT"]);
+            assert_eq!(result, Some(z), "COUNT {}", v["COUNT"]);
             passed += 1;
         } else {
-            assert_ne!(result, Ok(z), "COUNT {}: invalid case", v["COUNT"]);
+            assert_ne!(result, Some(z), "COUNT {}: invalid case", v["COUNT"]);
             failed += 1;
         }
     }
@@ -141,7 +146,7 @@ fn components_generation_and_padding() {
     padded_x[0] = 1;
     assert_eq!(
         PrivateKey::from_components(&params, &[4], &padded_x).unwrap_err(),
-        Error::InvalidKey
+        InvalidKey
     );
     let z = key.exchange(key.public_key()).unwrap();
     assert_eq!(z.len(), p.len());
@@ -182,7 +187,7 @@ fn malformed_components_and_domains() {
     for x in [vec![], vec![0], q.clone(), p.clone()] {
         assert_eq!(
             PrivateKey::from_components(&params, &hex(&v["YstatIUT"]), &x).unwrap_err(),
-            Error::InvalidKey
+            InvalidKey
         );
     }
     let mut long = vec![1];
@@ -190,17 +195,17 @@ fn malformed_components_and_domains() {
     for y in [vec![], vec![0], vec![1], vec![2], p.clone(), long.clone()] {
         assert_eq!(
             PublicKey::from_components(&params, &y).unwrap_err(),
-            Error::InvalidKey
+            InvalidKey
         );
     }
     assert_eq!(
         PrivateKey::from_components(&params, &long, &hex(&v["XstatIUT"])).unwrap_err(),
-        Error::InvalidKey
+        InvalidKey
     );
     let y = hex(&v["YstatIUT"]);
     assert_eq!(
         PrivateKey::from_components(&params, &y, &[1]).unwrap_err(),
-        Error::InvalidKey
+        InvalidKey
     );
     let key =
         PrivateKey::from_components(&params, &hex(&v["YstatIUT"]), &hex(&v["XstatIUT"])).unwrap();
@@ -215,7 +220,6 @@ fn malformed_components_and_domains() {
     }
     for error in [
         Error::InvalidParameters,
-        Error::InvalidKey,
         Error::ParametersMismatch,
         Error::InvalidSharedSecret,
         Error::Randomness,
@@ -282,13 +286,13 @@ fn imported_private_components() {
             for bad in [vec![], vec![0], p.clone(), vec![1; p.len() + 1]] {
                 assert_eq!(
                     PrivateKey::from_private_components(&params, &bad).unwrap_err(),
-                    Error::InvalidKey
+                    InvalidKey
                 );
             }
             if let Some(q) = q {
                 assert_eq!(
                     PrivateKey::from_private_components(&params, q).unwrap_err(),
-                    Error::InvalidKey
+                    InvalidKey
                 );
             }
         }

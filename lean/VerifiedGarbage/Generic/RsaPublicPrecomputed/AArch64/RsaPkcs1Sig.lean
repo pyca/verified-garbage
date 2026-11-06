@@ -14,16 +14,12 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcVerified
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverVerified
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverVerified
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyVerified
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify

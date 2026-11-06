@@ -43,5 +43,4 @@ def sbb (d : Reg) : List Instr := ([.sbcs .x d d d] : List Instr) ++ mark d
 def mul (n : Reg) : List Instr := [.umulh .x2 .x8 n, .mul .x .x8 .x8 n]
 def shr (d : Reg) (n : Nat) : List Instr := ([.lsr .x d d n] : List Instr) ++ mark d
 
-def xorm (d n : Reg) (off : Nat) : List Instr := load .x13 n off ++ logic .eor d .x13
 end VG.Impl.Argon2.AArch64.Instructions

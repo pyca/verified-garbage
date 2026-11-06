@@ -127,7 +127,7 @@ def dec : Prog isa :=
 /-! ## `vg_aes_gcm_siv_open` with the interleaved loop -/
 
 open VG.Impl.AesGcm.X86_64 (imm ptr Callees Fn)
-open VG.Impl.AesGcmSiv.X86_64 (entry recv keys absorb lens tagIn tag tagOut cmp mask restore crypt polyval cryptChunk
+open VG.Impl.AesGcmSiv.X86_64 (entry recv keys keysS expand absorb lens tagIn tag tagOut cmp mask restore crypt polyval cryptChunk
   cryptTail okO tagO cmO yO hO skO scrO ghO roundsO aadO alenO dataO lenO bO)
 
 variable (c : Callees) (e : Fn) (wide : Bool)
@@ -253,10 +253,10 @@ def cryptS : Prog isa :=
 
 /-- `vg_aes_gcm_siv_seal`, with the loops from 256 bytes of data. -/
 def «seal» : Prog isa :=
-  .seq (.block entry) (.seq (keys c e)
+  .seq (.block entry) (.seq (keysS e)
     (.seq (.block lenCmp) (.seq (.ite .b (polyval c wide) (hashS c wide))
-    (.seq (tag c tagO)
+    (.seq (expand c) (.seq (tag c tagO)
     (.seq (.block lenCmp) (.seq (.ite .b (crypt c e wide) (cryptS c e wide))
-    (.block (tagOut ++ restore))))))))
+    (.block (tagOut ++ restore)))))))))
 
 end VG.Impl.AesGcmSiv.X86_64Stitch

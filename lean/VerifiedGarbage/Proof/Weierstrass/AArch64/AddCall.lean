@@ -32,7 +32,6 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Mont
 open VG.Proof.Ed25519.AArch64 (Keeps)
 
-
 /-! ## Environments -/
 
 /-- `rcbσ` of the slots with `b` at `b`, but for `b`'s index. -/
@@ -79,14 +78,6 @@ theorem runOps_rcb3_b3 {F : Type _} [Lean.Grind.CommRing F] {S : RcbSlots} {p q 
       Function.update_of_ne hx]
 
 /-! ## The call -/
-
-/-- The modulus survives a change of memory apart from it. -/
-theorem _root_.VG.Proof.Mont.AArch64.ModOkA.outside {M : Mod} {size m : Nat} {base : Addr} {mem mem' : Mem}
-    (hM : ModOkA M size m mem base) {o : Nat} (hO : Outside base o (8 * M.n) mem mem')
-    (ho : o + 8 * M.n ≤ M.mo ∨ M.mo + 8 * M.n ≤ o) (hn : base.toNat + size ≤ 2 ^ 64) :
-    ModOkA M size m mem' base :=
-  ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep,
-    by rw [hO.wordsVal (by omega) (by have := hM.mo; omega)]; exact hM.val, hM.inv, hM.red, hM.call⟩
 
 /-- `x30` into lane 0 of `v29`. -/
 theorem insLr_ok (s : State) :
@@ -338,7 +329,6 @@ theorem _root_.VG.Proof.Mont.AArch64.ModOkA.unch {M : Mod} {size m : Nat} {base 
     ModOkA M size m mem' base :=
   ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep,
     by rw [hU.wordsVal hW (by have := hM.mo; omega)]; exact hM.val, hM.inv, hM.red, hM.call⟩
-
 
 /-- `o = a`, a point, for `o`'s slots apart from each other and from `a`'s. -/
 theorem copyPt_ok {s : State} {base : Addr} {size n : Nat} (hs : Scr s base size) {o a : Pt}

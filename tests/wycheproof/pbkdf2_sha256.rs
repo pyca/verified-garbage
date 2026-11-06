@@ -10,7 +10,7 @@
 ))]
 
 use verified_garbage::hashes::sha256::Sha256;
-use verified_garbage::kdf::pbkdf2::pbkdf2_hmac;
+use verified_garbage::kdf::pbkdf2_hmac;
 
 use super::pbkdf2::check_with;
 use crate::require_vectors;
@@ -18,5 +18,5 @@ use crate::require_vectors;
 #[test]
 fn pbkdf2_hmac_sha256_vectors() {
     require_vectors!();
-    check_with("pbkdf2_hmacsha256_test.json", pbkdf2_hmac::<Sha256>);
+    check_with("pbkdf2_hmacsha256_test.json", pbkdf2_hmac::derive::<Sha256>);
 }

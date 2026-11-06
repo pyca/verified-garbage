@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # RSASSA-PSS signing on ARMv7: the call of `vg_rsa_private_checked`
@@ -38,8 +39,8 @@ open Mgf1 (Hash xorBytes mgf1)
 open Proof.Mgf1 (Valid xorBytes_length mgf1_length)
 open VG.Proof.RsaPss (emT eq_range_map zeros_getD db_getD getD_app ifn zeros_length)
 
-/-- `encodeK_eq` (`Proof/RsaPss/EncBytes.lean`), with MGF1's hash function `G`
-another than `H`. -/
+/-- `encodeK`, byte by byte (as in `Proof/RsaPss/EncBytes.lean`), with MGF1's
+hash function `G` another than `H`. -/
 theorem encodeK_eq₂ (H G : Hash) (hH : Valid H) (hG : Valid G) {n₀ : Byte} {rest mHash salt : List Byte} (h0 : n₀ ≠ 0)
     (hm : mHash.length = H.len) {emBits emLen lo db : Nat}
     (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
@@ -90,8 +91,8 @@ theorem encodeK_eq₂ (H G : Hash) (hH : Valid H) (hG : Valid G) {n₀ : Byte} {
     · simp only [h4, ↓reduceIte]
       rw [show i - lo - (db + H.len) = 0 by omega_arith]; rfl
 
-/-- `sign_eq` (`Proof/RsaPss/SignCases.lean`), with MGF1's hash function `G`
-another than `H`. -/
+/-- `sign`, byte by byte (as in `Proof/RsaPss/SignCases.lean`), with MGF1's
+hash function `G` another than `H`. -/
 theorem sign_eq₂ (H G : Hash) (hH : Valid H) (hG : Valid G) {n₀ : Byte}
     {rest eB pB qB dPB dQB qInvB mHash salt : List Byte} (h0 : n₀ ≠ 0)
     (hm : mHash.length = H.len) {emBits emLen lo db : Nat}
@@ -297,7 +298,7 @@ theorem call_geo {P : EP} {σ : State} (hi : In h.D P σ) :
       (by unfold oRsa; omega_arith)
 
 theorem call_pre {G : Spec.Mgf1.Hash} {P : EP} {σ s : State} (hr : R1 h G P σ s) :
-    (Spec.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
+    (Proof.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
       (s.callEntry.withRegions (privRd P.B P.n P.e (P.scr + BitVec.ofNat 32 oEm) P.p P.q P.dp P.dq P.qinv P.K P.el
         P.pl P.ql) (privWr P.out (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024))) := by
   obtain ⟨hc, hk, -, pa⟩ := hr

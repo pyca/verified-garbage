@@ -75,13 +75,4 @@ theorem verified {mont round : Prog isa} {montName roundName : String}
     constantTime montVerified montNoSp montStack roundVerified roundNoSp roundStack ⟨low, high, whole⟩,
     satisfiable ⟨low, high, whole⟩⟩
 
-theorem code_all {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (bits : Nat) (montName roundName : String) :
-    (VG.Impl.Dsa.X86.ProbablePrime.code bits montName mont roundName round).all (fun i => !isa.writesSp i) = true := by
-  have equal : (fun i => !isa.writesSp i) = (fun i => !VG.X86.Taint.clobbers i .esp) := by
-    funext i
-    cases i <;> rfl
-  refine Code.all_of_allInstrs ?_
-  rw [equal]
-  exact VG.Proof.RsaKeyGen.X86.CandidateNoSp.checked (code_noSp Hm Hr bits montName roundName)
-
 end VG.Proof.Dsa.X86.ProbablePrime

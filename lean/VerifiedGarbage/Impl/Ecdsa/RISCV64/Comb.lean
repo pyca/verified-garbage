@@ -68,15 +68,9 @@ open VG.RISCV64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.RISCV64 VG.
 /-- The slot of the copy of `k`, which a zero word follows. -/
 def KC := 46
 
-/-- The width of a window. -/
-def w : Nat := 7
-
 /-- The number of windows of `n` words: `⌈64 n / 7⌉` (37 for four, 55 for
 six). -/
 def nwin (n : Nat) : Nat := (64 * n + 6) / 7
-
-/-- The entries of a table: `2^(w-1)`. -/
-def H : Nat := 64
 
 /-- The register of the mask of bit `c` of the entry's number (`c < 6`). -/
 def maskReg : Nat → Reg

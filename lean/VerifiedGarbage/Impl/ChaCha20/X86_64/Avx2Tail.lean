@@ -105,10 +105,6 @@ def doubleRound2 : List Instr :=
   half2 .xmm8 12 ++ half2 .xmm9 7 ++ rot2 0x39 0x4e 0x93 ++
   half2 .xmm8 12 ++ half2 .xmm9 7 ++ rot2 0x93 0x4e 0x39
 
-def rounds2 : Nat → Prog isa
-  | 0 => .block []
-  | n + 1 => .seq (rounds2 n) (.block doubleRound2)
-
 /-- `half2` on the first set only. -/
 def half1 (m : XReg) (n : Nat) : List Instr :=
   [v .vpaddd .xmm0 .xmm0 .xmm1, v .vpxor .xmm3 .xmm3 .xmm0] ++ rotB .xmm3 m ++
@@ -121,10 +117,6 @@ def rot1 (o₁ o₂ o₃ : BitVec 8) : List Instr :=
 def doubleRound1 : List Instr :=
   half1 .xmm8 12 ++ half1 .xmm9 7 ++ rot1 0x39 0x4e 0x93 ++
   half1 .xmm8 12 ++ half1 .xmm9 7 ++ rot1 0x93 0x4e 0x39
-
-def rounds1 : Nat → Prog isa
-  | 0 => .block []
-  | n + 1 => .seq (rounds1 n) (.block doubleRound1)
 
 /-- The rows into the first set, with its lane increments, and the masks. -/
 def setup1 : List Instr :=
@@ -193,10 +185,6 @@ def rot3 (o₁ o₂ o₃ : BitVec 8) : List Instr :=
 def doubleRound3 : List Instr :=
   half3 .xmm14 12 ++ half3 .xmm15 7 ++ rot3 0x39 0x4e 0x93 ++
   half3 .xmm14 12 ++ half3 .xmm15 7 ++ rot3 0x93 0x4e 0x39
-
-def rounds3 : Nat → Prog isa
-  | 0 => .block []
-  | n + 1 => .seq (rounds3 n) (.block doubleRound3)
 
 /-- The rows into the three sets, with their lane increments, and the masks. -/
 def setup3 : List Instr :=

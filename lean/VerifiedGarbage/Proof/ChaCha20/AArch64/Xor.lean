@@ -11,7 +11,8 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.ChaCha20.Contract
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 
@@ -723,15 +724,6 @@ theorem agree₀ {s₁ s₂ : State} (hpub : Proof.ChaCha20.xorAArch64.pub s₁ 
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-/-- A state satisfying the precondition (with no data). -/
-def sat : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | .x3 => 0x3000 | _ => 0
-  sp := 0x5000
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 64⟩, ⟨0x2000, 0⟩, ⟨0x3000, 320⟩]
-
 theorem xor_correct (v : BlockImpl) (s : State) (hs : Proof.ChaCha20.xorAArch64.pre s) :
     ∃ t s', Exec isa (Impl.ChaCha20.AArch64.Xor.xorWith v.callee) s t s' ∧ abiPreserved s s' ∧
       Proof.ChaCha20.xorAArch64.post s s' :=
@@ -742,12 +734,5 @@ theorem xor_ct (v : BlockImpl) : ConstantTime isa Proof.ChaCha20.xorAArch64.pre 
   obtain ⟨h, hh⟩ := v.xorTaint
   exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
     (fun _ _ _ _ hp => agree₀ hp) hh
-
-theorem xor_verified (v : BlockImpl) :
-    Verified AArch64.target (Impl.ChaCha20.AArch64.Xor.xorWith v.callee) (Proof.ChaCha20.xorContract AArch64.abi) :=
-  Verified.of_correct (xor_correct v) (xor_ct v)
-    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, AArch64.abi, AArch64.argRegs,
-      Proof.ChaCha20.xorAArch64]
-      [sat] using sat)
 
 end VG.Proof.ChaCha20.AArch64.Xor

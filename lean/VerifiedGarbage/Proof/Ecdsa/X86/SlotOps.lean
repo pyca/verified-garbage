@@ -25,10 +25,6 @@ variable {c : Cfg}
 theorem MP'_n (c : Cfg) : c.MP'.n = c.n := rfl
 theorem MN'_n (c : Cfg) : c.MN'.n = c.n := rfl
 theorem MP'_tmp (c : Cfg) : c.MP'.tmp = c.sl TMP := rfl
-theorem MN'_tmp (c : Cfg) : c.MN'.tmp = c.sl TMP := rfl
-theorem MP'_mo (c : Cfg) : c.MP'.mo = c.sl MP := rfl
-theorem MN'_mo (c : Cfg) : c.MN'.mo = c.sl MN := rfl
-
 /-- A slot apart from what an operation writes keeps its number. -/
 theorem sv_keep {M : Mod} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) (h7 : c.n < 10)
     {base : Addr} (hn : base.toNat + size ≤ 2 ^ 32) {o : Nat} {s s' : State}

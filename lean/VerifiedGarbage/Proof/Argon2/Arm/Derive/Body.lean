@@ -82,7 +82,6 @@ abbrev lw (s : State) (d : Nat) : BitVec 32 := s.mem.readW (State.addr (E s₀ +
 
 end
 
-theorem entry_gpr (s₀ : State) : (entry s₀).gpr = s₀.gpr := rfl
 theorem entry_rd (s₀ : State) : (entry s₀).rd = s₀.rd := rfl
 
 theorem entry_sp' (s₀ : State) : (entry s₀).sp = E s₀ := by

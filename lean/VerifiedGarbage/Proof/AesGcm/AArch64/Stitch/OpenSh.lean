@@ -22,8 +22,8 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortSeal
 
 Untrusted: everything here is checked by Lean. `openWithS` with `sh` takes
 `openShortF` for records of 17 to `shortMax` bytes (`shortThr`, `shortMin`), which
-leaves what `open` must (`openShort_post`), and otherwise the paths of
-`openWithS_wp`.
+leaves what `open` must (`openShort_post`), and otherwise the other paths of
+`openWithS` (`openWithSh_wp`).
 -/
 
 @[expose] public section

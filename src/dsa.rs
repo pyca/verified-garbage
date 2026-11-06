@@ -34,6 +34,7 @@ use crate::arch::dsa::{
 use crate::arch::dsa::{vg_dsa_validate_public_key, vg_dsa_verify_prevalidated};
 use crate::cpu::detected;
 use crate::entropy::{self, Step, Stop};
+use crate::error::InvalidSignature;
 use crate::zeroize::{Int, zeroize};
 use verified_garbage_cpu::Features;
 
@@ -139,16 +140,20 @@ impl PublicKey {
     }
 
     /// Verify a prehashed digest and a fixed-width big-endian `r || s`
-    /// signature. Invalid keys, signatures and signature lengths return false.
-    /// The first verification validates the immutable public key;
+    /// signature. The first verification validates the immutable public key;
     /// later calls reuse that result while checking every signature independently.
-    pub fn verify(&self, digest: &[u8], signature: &[u8]) -> bool {
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidSignature`] if the signature is not valid, is not twice as
+    /// long as `q`, or the key is not valid.
+    pub fn verify(&self, digest: &[u8], signature: &[u8]) -> Result<(), InvalidSignature> {
         if signature.len() != 2 * self.q_len {
-            return false;
+            return Err(InvalidSignature);
         }
         let validation = self.validated.load(Ordering::Relaxed);
         if validation == 2 {
-            return false;
+            return Err(InvalidSignature);
         }
         let mut scratch = Secret(vec![0u64; 16 * self.p_len]);
         if validation == 0 {
@@ -176,7 +181,7 @@ impl PublicKey {
             self.validated
                 .store(if valid { 1 } else { 2 }, Ordering::Relaxed);
             if !valid {
-                return false;
+                return Err(InvalidSignature);
             }
         }
         macro_rules! verify {
@@ -208,7 +213,11 @@ impl PublicKey {
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => verify!(vg_dsa_verify_prevalidated_adx),
         };
-        result == 1
+        if result == 1 {
+            Ok(())
+        } else {
+            Err(InvalidSignature)
+        }
     }
 }
 

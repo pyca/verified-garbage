@@ -156,63 +156,6 @@ theorem Exec.xmm_of {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa 
   | call => intro _ hn; simp [Code.noCalls] at hn
   | frame => intro _ hn; simp [Code.noCalls] at hn
 
-/-- `wrap body` restores the registers it saves, if `body` writes no vector
-register and calls nothing: `saves` copies each into its `xmm` register,
-which `body` keeps, and `restores` copies it back. -/
-theorem wrap_gpr {body : Prog isa} (hv : body.allInstrs (fun i => !KeepReg.writesVec i) = true)
-    (hn : body.noCalls = true) {s s' : State} {t : List Leak} (he : Exec isa (wrap body) s t s') :
-    ∀ r ∈ keptRegs, s'.gpr r = s.gpr r := by
-  intro r hr
-  cases he with
-  | seq h₁ h₂ =>
-    cases h₂ with
-    | seq h₂ h₃ =>
-      have hs := KeepReg.Exec.holds (v := s.gpr r) h₁ (a := ⟨true, .empty⟩) rfl
-        ⟨fun _ => rfl, fun x hx => absurd hx (RegSet.not_mem_empty x)⟩
-      let A := KeepReg.run r saves true 0
-      have hA : KeepReg.Holds r (s.gpr r) ⟨false, A.xs⟩ _ :=
-        hs.mono (a := ⟨false, A.xs⟩) (by
-          simp only [KeepReg.le, Bool.not_false, Bool.true_or, Bool.true_and]
-          rw [RegSet.subset_eq]
-          simp only [A, show (RegSet.empty : RegSet XReg).bits = 0 from rfl, Nat.and_self, beq_self_eq_true])
-      have hx := Exec.xmm_of h₂ hv hn
-      have hB : KeepReg.Holds r (s.gpr r) ⟨false, A.xs⟩ _ := ⟨nofun, fun x h => by
-        rw [hx]; exact hA.2 x h⟩
-      have hr' := KeepReg.Exec.holds (v := s.gpr r) h₃ (a := ⟨false, A.xs⟩) rfl hB
-      refine hr'.1 ?_
-      simp only [keptRegs, kept, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
-        or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide
-
-/-- What the functions' checks ask of their code `wrap b`, in one pass: no
-instruction loads MXCSR, and `b` writes no vector register. -/
-noncomputable def wrapOk : Prog isa → Bool
-  | .seq (.block sv) (.seq b (.block rs)) =>
-    sv.all (fun i => !loadsMxcsr i) && rs.all (fun i => !loadsMxcsr i) &&
-      b.allInstrs (fun i => !KeepReg.writesVec i && !loadsMxcsr i)
-  | _ => false
-
-theorem allInstrs_and {p q : Instr → Bool} : ∀ (c : Prog isa),
-    c.allInstrs (fun i => p i && q i) = true → c.allInstrs p = true ∧ c.allInstrs q = true := by
-  intro c h
-  rw [Code.allInstrs_eq, List.all_eq_true] at h
-  refine ⟨?_, ?_⟩ <;> rw [Code.allInstrs_eq, List.all_eq_true] <;> intro i hi <;>
-    have := h i hi <;> simp only [Bool.and_eq_true] at this
-  · exact this.1
-  · exact this.2
-
-theorem wrapOk_spec {b : Prog isa} (h : wrapOk (wrap b) = true) :
-    b.allInstrs (fun i => !KeepReg.writesVec i) = true ∧
-      (wrap b).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [wrapOk, wrap, Bool.and_eq_true] at h
-  obtain ⟨⟨h₁, h₂⟩, h₃⟩ := h
-  obtain ⟨hv, hm⟩ := allInstrs_and b h₃
-  refine ⟨hv, ?_⟩
-  show ((Code.block saves : Prog isa).allInstrs _ && (b.allInstrs _ &&
-    (Code.block restores : Prog isa).allInstrs _)) = true
-  rw [allInstrs_block, allInstrs_block, h₁, h₂, hm]
-  rfl
-
 /-! ## Timing -/
 
 theorem saves_ct : ScratchCT (.block saves) :=

@@ -55,13 +55,6 @@ theorem finishWith_eq (c : Cfg) (x y : Nat) : Impl.EcKey.X86.Cfg.finishWith c x 
     (([.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] : List Instr) ++ Cfg.restore))) := by
   simp only [Impl.EcKey.X86.Cfg.finishWith, List.append_assoc, List.cons_append, List.nil_append]
 
-theorem finish_eq (c : Cfg) : Impl.EcKey.X86.Cfg.finish c =
-    .mov .ecx (.mem (sc (c.sl FLAG))) :: .mov .ebx (.mem (Cfg.argOp 0)) :: .mov .eax (.imm 4) ::
-    .alu .and .eax (.reg .ecx) :: .store8 (at_ .ebx 0) .al ::
-    (storeBytes c.C.len c.n .ebx 1 (c.sl X) ++ (storeBytes c.C.len c.n .ebx (1 + c.C.len) (c.sl Y) ++
-    (([.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] : List Instr) ++ Cfg.restore))) := by
-  simp only [Impl.EcKey.X86.Cfg.finish, Impl.EcKey.X86.Cfg.finishWith, List.append_assoc, List.cons_append, List.nil_append]
-
 /-- The result, the return value and the callee-saved registers. -/
 theorem pointFinish_ok (hc : CfgOk c) {x y : Nat} (hx : x < 45) (hy : y < 45) {base : Addr} {s : State} (hs : Scr s base size) {o32 : BitVec 32}
     (hout : readSrc s (.mem (Cfg.argOp 0)) = some o32) (hofit : o32.toNat + (1 + 2 * c.C.len) ≤ 2 ^ 32)

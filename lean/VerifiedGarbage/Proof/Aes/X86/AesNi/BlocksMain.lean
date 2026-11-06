@@ -49,8 +49,6 @@ open VG.Proof.Aes.X86.AesNi.Ecb
 
 namespace Ecb
 
-theorem arg_eq' (s : State) (i : Nat) : arg s i = s.mem.readW (addr (s.gpr .esp) (4 + 4 * i)) 32 := rfl
-
 /-! ## The prologue -/
 
 /-- After the prologue. -/

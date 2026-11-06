@@ -35,12 +35,6 @@ namespace VG.Proof.AesXts.Arm.Unit
 
 open VG VG.Arm VG.Impl.AesXts.ArmUnit
 
-theorem encCall_eq : encCall =
-    .frame (.push [.r12, .lr]) (.call (xname true) (xcode true)) (.pop .r12 (4 * [Reg.r12, .lr].length)) := rfl
-
-theorem decCall_eq : decCall =
-    .frame (.push [.r12, .lr]) (.call (xname false) (xcode false)) (.pop .r12 (4 * [Reg.r12, .lr].length)) := rfl
-
 /-- A call of a whole-block function, with the same arguments in both runs,
 and what each run leaves. -/
 theorem xcall_rel (enc : Bool) {P : State → State → Prop} {F₁ F₂ : State → Prop}

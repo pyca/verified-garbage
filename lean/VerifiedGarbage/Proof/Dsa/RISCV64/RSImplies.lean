@@ -10,9 +10,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 
 As on PPC64LE (`Proof/Dsa/PPC64LE/RandomSign/Contract.lean`).
 `randomSign_implies`: `rsContract` implies the shared contract, with
-`rsStack` bytes of stack; `randomSign_wp`: `vg_dsa_sign_random` meets the
-shared contract's precondition and postcondition, and the calling
-convention.
+`rsStack` bytes of stack.
 -/
 
 @[expose] public section
@@ -85,12 +83,5 @@ theorem randomSign_implies : rsContract.Implies (Spec.Dsa.randomSignContract RIS
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow]
           [rsSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using rsSatState }
-
-/-- `vg_dsa_sign_random` under the shared contract. -/
-theorem randomSign_wp (s : State) (h : (Spec.Dsa.randomSignContract RISCV64.abi rsStack).pre s) :
-    WP isa RandomSign.code s fun t =>
-      abiPreserved s t ∧ (Spec.Dsa.randomSignContract RISCV64.abi rsStack).post s t := by
-  obtain ⟨tr, t, he, ha, hp⟩ := randomSign_correct s (randomSign_implies.pre s h)
-  exact ⟨tr, t, he, ha, randomSign_implies.post s t h hp⟩
 
 end VG.Proof.Dsa.RISCV64

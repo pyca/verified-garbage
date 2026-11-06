@@ -45,13 +45,6 @@ theorem write_off (m : Mem) (b : Addr) {o j n : Nat} (v : BitVec (8 * n)) (ho : 
     · simp only [show ¬ j - o < n by omega, ite_false, h']
   · simp only [h, ite_false, false_and, show ¬ 2 ^ 64 + j - o < n by omega]
 
-theorem writeW64_off (m : Mem) (b : Addr) {o j : Nat} (v : BitVec 64) (ho : o + 8 < 2 ^ 64)
-    (hj : j < 2 ^ 64) :
-    m.writeW (b + BitVec.ofNat 64 o) v (b + BitVec.ofNat 64 j) =
-      if o ≤ j ∧ j < o + 8 then v.extractLsb' (8 * (j - o)) 8 else m (b + BitVec.ofNat 64 j) := by
-  simp only [Mem.writeW]
-  exact write_off m b _ ho hj
-
 theorem writeW128_off (m : Mem) (b : Addr) {o j : Nat} (v : BitVec 128) (ho : o + 16 < 2 ^ 64)
     (hj : j < 2 ^ 64) :
     m.writeW (b + BitVec.ofNat 64 o) v (b + BitVec.ofNat 64 j) =
@@ -115,8 +108,6 @@ abbrev whl : Nat := B * (xs.length / B)
 
 theorem rest_getD {k : Nat} : (Md.rest B xs).getD k 0 = xs.getD (whl B xs + k) 0 := by
   simp only [Md.rest, List.getD_eq_getElem?_getD, List.getElem?_drop]
-
-theorem whl_rem : whl B xs + rem B xs = xs.length := Nat.div_add_mod _ _
 
 /-- Byte `k < B` of the last block, if one: the bytes left, `0x80`, zeros and
 the length field `lb`. -/

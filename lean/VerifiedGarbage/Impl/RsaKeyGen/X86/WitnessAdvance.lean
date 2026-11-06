@@ -15,6 +15,4 @@ def codeAt (D : Nat) : List Instr :=
   [.mov .esi (.mem (sc 28)), .mov .eax (.mem (sc usedOffset)), .alu .add .esi (.reg .eax),
     .alu .add .eax (.imm (BitVec.ofNat 32 D)), .store (sc usedOffset) .eax]
 
-def code (w : Nat) : List Instr := codeAt (8 * w)
-
 end VG.Impl.RsaKeyGen.X86.WitnessAdvance

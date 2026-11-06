@@ -86,10 +86,6 @@ abbrev Iv : BitVec 32 := s₀.gpr .r2
 
 abbrev ivR : Region := ⟨State.addr (Iv s₀), 16⟩
 
-/-- The cipher of the direction. -/
-abbrev ciph (enc : Bool) : Spec.Cbc.Cipher :=
-  ciphOf enc (R s₀) (bytesAt s₀.mem (State.addr (W s₀)) (16 * (R s₀ + 1)))
-
 /-- The blocks on entry. -/
 abbrev blks : List (List Byte) := Spec.Cbc.blocksAt s₀.mem (State.addr (Dp s₀)) (N s₀)
 

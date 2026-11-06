@@ -22,19 +22,23 @@ mod p521;
 mod secp256k1;
 mod table;
 
-use crate::ec::{Curve, Error, PrivateKey, PublicKey};
+use crate::ec::{Curve, PrivateKey, PublicKey};
+use crate::error::{InvalidKey, InvalidSignature};
 
 mod sealed {
     /// The verified functions of the curve `C` with a hash function: signing
     /// its hash `digest` with the private key `d`, and verifying a signature
     /// of it with the public key `q`.
     pub trait Functions<C: super::Curve>: crate::hashes::HashFunction {
-        fn sign(d: &C::PrivateKey, digest: &Self::Output) -> Result<C::Signature, super::Error>;
+        fn sign(
+            d: &C::PrivateKey,
+            digest: &Self::Output,
+        ) -> Result<C::Signature, super::InvalidKey>;
         fn verify(
             q: &C::PublicKey,
             digest: &Self::Output,
             signature: &C::Signature,
-        ) -> Result<(), super::Error>;
+        ) -> Result<(), super::InvalidSignature>;
     }
 }
 
@@ -59,8 +63,11 @@ impl<C: Curve> PrivateKey<C> {
     ///
     /// # Errors
     ///
-    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
-    pub fn sign<H: SignatureHash<C>>(&self, message: &[u8]) -> Result<C::Signature, Error> {
+    /// [`InvalidKey`] if the key is not in `[1, n − 1]`. For a valid key,
+    /// signing fails only if none of the candidates for `k` it tries is
+    /// suitable: for P-224, with probability under 2⁻⁸⁸⁸, for P-256 under
+    /// 2⁻²⁴⁸, for P-384 under 2⁻¹⁵⁴⁴, and for P-521 under 2⁻²⁰⁸⁸.
+    pub fn sign<H: SignatureHash<C>>(&self, message: &[u8]) -> Result<C::Signature, InvalidKey> {
         self.sign_prehashed::<H>(&H::digest(message))
     }
 
@@ -69,11 +76,11 @@ impl<C: Curve> PrivateKey<C> {
     ///
     /// # Errors
     ///
-    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
+    /// [`InvalidKey`], as [`sign`](Self::sign) returns it.
     pub fn sign_prehashed<H: SignatureHash<C>>(
         &self,
         digest: &H::Output,
-    ) -> Result<C::Signature, Error> {
+    ) -> Result<C::Signature, InvalidKey> {
         H::sign(&self.d, digest)
     }
 }
@@ -87,13 +94,13 @@ impl<C: Curve> PublicKey<C> {
     ///
     /// # Errors
     ///
-    /// [`Error::InvalidSignature`] if the signature does not verify with
+    /// [`InvalidSignature`] if the signature does not verify with
     /// this key, or the key is not a valid public key.
     pub fn verify<H: SignatureHash<C>>(
         &self,
         message: &[u8],
         signature: &C::Signature,
-    ) -> Result<(), Error> {
+    ) -> Result<(), InvalidSignature> {
         self.verify_prehashed::<H>(&H::digest(message), signature)
     }
 
@@ -102,13 +109,13 @@ impl<C: Curve> PublicKey<C> {
     ///
     /// # Errors
     ///
-    /// [`Error::InvalidSignature`] if the signature does not verify with
+    /// [`InvalidSignature`] if the signature does not verify with
     /// this key, or the key is not a valid public key.
     pub fn verify_prehashed<H: SignatureHash<C>>(
         &self,
         digest: &H::Output,
         signature: &C::Signature,
-    ) -> Result<(), Error> {
+    ) -> Result<(), InvalidSignature> {
         H::verify(&self.q, digest, signature)
     }
 }

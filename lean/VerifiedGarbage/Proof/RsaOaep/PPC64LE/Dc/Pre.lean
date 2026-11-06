@@ -27,11 +27,6 @@ namespace VG.Proof.RsaOaep.PPC64LE.Dec
 
 open VG VG.PPC64LE VG.Impl.RsaOaep.PPC64LE VG.Impl.RsaOaep.PPC64LE.Dec
 
-theorem stackArgs_fifteen (s : State) :
-    List.map (stackArg s) (List.range 15) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
-      stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
-      stackArg s 11, stackArg s 12, stackArg s 13, stackArg s 14] := rfl
-
 theorem stackArgs_seventeen (s : State) :
     List.map (stackArg s) (List.range 17) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
       stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
@@ -252,7 +247,6 @@ section
 variable {s s' t : State} {rc : Nat} (h : Base (SD s) (VD s rc) s' t)
 include h
 
-theorem Base.r14 : t.gpr .r14 = Sd s := h.r14
 theorem Base.r15 : t.gpr .r15 = s.gpr .r7 := h.vs .r15 (by decide)
 theorem Base.r16 : t.gpr .r16 = s.gpr .r3 := h.vs .r16 (by decide)
 theorem Base.r17 : t.gpr .r17 = s.gpr .r5 := h.vs .r17 (by decide)

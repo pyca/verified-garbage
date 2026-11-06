@@ -30,10 +30,6 @@ theorem decodeLE_byte : ∀ (bs : List Byte) (i : Nat),
 theorem div_split (x i : Nat) : x / 256 ^ i = 256 * (x / 256 ^ (i + 1)) + x / 256 ^ i % 256 := by
   rw [Nat.pow_succ, ← Nat.div_div_eq_div_mul]; omega
 
-theorem byte_split (K i : Nat) (b : Byte) (hb : (b.toNat) = K / 256 ^ i % 256) :
-    K / 256 ^ i = 256 * (K / 256 ^ (i + 1)) + (16 * (b.toNat / 16) + b.toNat % 16) := by
-  have := div_split K i; omega
-
 theorem high_zero {S i : Nat} (hS : S < 256 ^ 32) (hi : 32 ≤ i) : S / 256 ^ i = 0 :=
   Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hS (Nat.pow_le_pow_right (by decide) hi))
 

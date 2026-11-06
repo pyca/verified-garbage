@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvBatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareHelper
-public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
-public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdVerified
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
 public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
@@ -25,9 +23,6 @@ def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputeApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Precompute.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Bignum.AArch64.precompute_verified _ },
-  Spec.Rsa.publicPrecomputedCheckedApi.artifact AArch64.target {
-    code := Impl.Rsa.AArch64.Folded.checked Proof.Bignum.AArch64.Mont.productEight.mm
-    verified := Proof.Rsa.AArch64.FoldedPublic.checked_verified _ },
   Spec.Rsa.crtValuesApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Keys.CrtValues.code
     verified := Proof.Rsa.AArch64.cv_verified },
@@ -36,9 +31,6 @@ def artifacts : List Artifact := [
     verified := Proof.Rsa.AArch64.Rd.rd_verified },
   Spec.Rsa.checkKeyApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.CheckKey.code
-    verified := Proof.Rsa.AArch64.ck_verified },
-  Spec.Rsa.checkCrtKeyApi.artifact AArch64.target {
-    code := Impl.Rsa.AArch64.CheckCrtKey.code
-    verified := Proof.Rsa.AArch64.ckc_verified }]
+    verified := Proof.Rsa.AArch64.ck_verified }]
 
 end VG.Artifacts.Rsa.AArch64

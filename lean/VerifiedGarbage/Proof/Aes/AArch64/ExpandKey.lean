@@ -268,10 +268,6 @@ theorem rot_byte (x c : BitVec 64) {t : Nat} (ht : t < 4) :
       Te h]
     simp [Tc]
 
-theorem ld_byte (m : Mem) (a : Addr) {t : Nat} (ht : t < 4) :
-    (m.readW a 32).extractLsb' (8 * t) 8 = m (a + BitVec.ofNat 64 t) :=
-  (Mem.readW_byte m a ht).symm
-
 theorem st_byte (m : Mem) (a : Addr) (v : BitVec 32) {t : Nat} (ht : t < 4) :
     m.writeW a v (a + BitVec.ofNat 64 t) = v.extractLsb' (8 * t) 8 := by
   rw [Mem.readW_byte (m.writeW a v) a ht, Mem.readW_writeW_self32]

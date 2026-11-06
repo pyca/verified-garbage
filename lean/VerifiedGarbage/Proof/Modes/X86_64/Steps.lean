@@ -46,9 +46,6 @@ theorem signExtend_small {x : Nat} (h : x < 2 ^ 31) : (BitVec.ofNat 32 x).signEx
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   rw [Nat.mod_eq_of_lt (by omega : x < 2 ^ 32), Nat.mod_eq_of_lt (by omega : x < 2 ^ 64)]
 
-/-- Slot `k` of the scratch buffer at `sb`. -/
-abbrev slotW (s : State) (k : Nat) : BitVec 64 := s.mem.readW (wordAddr (s.gpr sb) k) 64
-
 theorem movR_ok (s : State) (d r : Reg) :
     ∃ s', runBlock isa [movR d r] s = some s' ∧ s'.gpr d = s.gpr r ∧
       (∀ r', r' ≠ d → s'.gpr r' = s.gpr r') ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
@@ -120,16 +117,6 @@ theorem stReg_ok {s : State} {b : Addr} {k : Nat} (r : Reg) (hb : s.gpr sb = b)
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hw' : InRegions s.wr (b + BitVec.ofNat 64 (8 * k)) 8 := hw
   refine ⟨{ s with mem := s.mem.writeW (wordAddr b k) (s.gpr r) }, ?_, rfl, rfl, rfl, rfl⟩
-  simp only [st, Impl.Aes.X86_64.slotAt, runBlock_cons, runStep_some, runBlock_nil, exec,
-    State.store64, State.ea, ofInt_nat, hb, hw', ite_true]
-
-/-- `mov [sb + 8 k], r`, which keeps the flags. -/
-theorem stReg_zf {s : State} {b : Addr} {k : Nat} (r : Reg) (hb : s.gpr sb = b)
-    (hw : InRegions s.wr (wordAddr b k) 8) :
-    ∃ s', runBlock isa [st k r] s = some s' ∧ s'.mem = s.mem.writeW (wordAddr b k) (s.gpr r) ∧
-      s'.gpr = s.gpr ∧ s'.zf = s.zf ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hw' : InRegions s.wr (b + BitVec.ofNat 64 (8 * k)) 8 := hw
-  refine ⟨{ s with mem := s.mem.writeW (wordAddr b k) (s.gpr r) }, ?_, rfl, rfl, rfl, rfl, rfl⟩
   simp only [st, Impl.Aes.X86_64.slotAt, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.store64, State.ea, ofInt_nat, hb, hw', ite_true]
 

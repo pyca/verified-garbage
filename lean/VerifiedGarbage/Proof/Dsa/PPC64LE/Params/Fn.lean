@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # DSA domain checks on PPC64LE: the function
 
 `checkParameters_correct`: `vg_dsa_check_parameters` meets `pcContract`.
-After `entry` (`pfront_ok`), `checkParams` leaves 1 or 0 as the domain
+After `entry`, `checkParams` leaves 1 or 0 as the domain
 passes `ParamsOk` or not (`checkParams_ok`), which is the specification's
 `checkParametersBytes` (`checkParameters_spec`, by `Proof/Dsa/Derive.lean`'s
 `checkParametersBytes_eq`), and `restore` gives back the nonvolatile

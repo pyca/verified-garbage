@@ -326,10 +326,6 @@ theorem w_wFrame {W SP : Addr} {d k : Nat}
   · exact ⟨⟨W + BitVec.ofNat 64 216, 8⟩, by simp, Offset.sub _ h₁ (by omega_arith)⟩
   · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, Offset.sub _ h₁ (by omega_arith)⟩
 
-theorem st_wFrame {W SP : Addr} {d k : Nat} (h : d + k ≤ 80) :
-    ∃ r ∈ wFrame W SP, Region.Sub ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 d, k⟩ r := by
-  rw [add_ofNat_assoc]; exact w_wFrame (.inl ⟨by omega_arith, by omega_arith⟩)
-
 /-- What the pieces write, inside `W` and the stack. -/
 theorem wFrame_w {W SP : Addr} {m m' : Mem} (h : Frame (wFrame W SP) m m') :
     Frame [⟨W, 2560⟩, below SP stkN] m m' := h.sub fun r hr => by

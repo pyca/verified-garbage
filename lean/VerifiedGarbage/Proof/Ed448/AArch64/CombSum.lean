@@ -15,9 +15,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
 
 The comb (`vg_ed448_r56_comb_base`) is called by the base-point multiplications of
 X448 and Ed448 and by the verifier's `[S]B`. `combSum` analyses it once, without
-what the analysis does not read, for all of them (`taint_decide_sum [combSum]`), and
-for the comb's own check (`CombBase.comb_check`); `x20`, which the comb does not
-write, stays as public as it was. The comb's step is built once, as a literal, which
+what the analysis does not read, for all of them (`taint_decide_sum [combSum]`); `x20`,
+which the comb does not write, stays as public as it was. The comb's step is built once, as a literal, which
 the summary and the check of the step's stores read.
 -/
 

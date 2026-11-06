@@ -73,13 +73,6 @@ theorem constFieldWide_ok {s : State} {base : Addr} (hs : Scratch s base) (o : S
     refine WP.mono (constField_op h o v) fun t ⟨hk, hv, _⟩ => ?_
     exact ⟨op_keep hk, by rw [env_update o hk.mem, hv]⟩)
 
-theorem copyFieldWide_ok {s : State} {base : Addr} (hs : Scratch s base) (o a : Slot) :
-    WP isa (.block (copyField o a)) s fun t =>
-      Keep base s t ∧ env t.mem base = Function.update (env s.mem base) o (env s.mem base a) :=
-  field_lift hs (copyField o a) (fun e => Function.update e o (e a)) (fun _ h => by
-    refine WP.mono (copyField_op h o a) fun t ⟨hk, hv⟩ => ?_
-    exact ⟨op_keep hk, by rw [env_update o hk.mem, hv]; rfl⟩)
-
 structure RbxKeep (base : Addr) (s t : State) : Prop where
   gpr : ∀ r, r ∉ clob → r ≠ .rbx → t.gpr r = s.gpr r
   rd : t.rd = s.rd

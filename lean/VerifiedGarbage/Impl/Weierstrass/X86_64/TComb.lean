@@ -28,7 +28,7 @@ For secret scalars, entries are selected in constant time: every
 entry of the table is loaded, 16 bytes at a time, at an address that depends
 only on `j` (public), into `xmm14`, and kept (`pand`, `por`) under a mask in
 both quadwords of `xmm15` that is all ones exactly when its index is the
-magnitude (`selEntry`); the entry accumulates in `xmm0`, `xmm1`, …, and is
+magnitude (`selEntryAt`); the entry accumulates in `xmm0`, `xmm1`, …, and is
 stored to `E`'s `x` and `y`, which are adjacent. The entry's `Z` is `1`
 (Montgomery's, `R mod p`) unless the magnitude is zero, when the entry is
 `(0 : 1 : 0)`. The negation computes `0 - y` and selects it by the mask of the
@@ -169,10 +169,6 @@ def H : Nat := 2 ^ (K.w - 1)
 
 /-- The bytes of a table. -/
 def tblBytes : Nat := 16 * K.M.n * K.H
-
-/-- Entry `m` (from 1) of the table at `rdx`, its `n` pairs of words kept in
-the accumulators under the mask of `r8 = m`. -/
-def selEntry (m : Nat) : List Instr := selEntryAt (16 * K.M.n) K.M.n (16 * ·) m
 
 /-- `rdx` = table `rbx`'s address, from the static `tsym`'s, through `rax` and
 `rcx`. -/

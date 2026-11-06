@@ -93,10 +93,6 @@ theorem xorBytes_length' (a b : List Byte) (h : a.length = b.length) :
     (Spec.Pbkdf2.xorBytes a b).length = a.length := by
   simp [Spec.Pbkdf2.xorBytes, h]
 
-theorem take_map_xor {K : List Byte} {n : Nat} (h : K.length = n) (p : Byte) :
-    (K.take n).map (· ^^^ p) = xorPad K p := by
-  rw [List.take_of_length_le (by omega_nat)]; rfl
-
 /-! ## Addresses and regions -/
 
 theorem add_ofNat_ne (p : Addr) {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) (h : a ≠ b) :

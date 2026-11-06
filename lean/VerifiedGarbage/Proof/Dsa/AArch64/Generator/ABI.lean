@@ -19,9 +19,6 @@ open VG VG.AArch64
 /-- The widths of p parameter generation produces. -/
 def Supported (pLen : Nat) : Prop := pLen = 128 ∨ pLen = 256 ∨ pLen = 384
 
-theorem Supported.of_mem {pLen : Nat} (h : pLen ∈ ([128, 256, 384] : List Nat)) : Supported pLen := by
-  simpa only [Supported, List.mem_cons, List.not_mem_nil, or_false] using h
-
 /-- The stack the stage's contract asks for. -/
 abbrev stack : Nat := 288
 

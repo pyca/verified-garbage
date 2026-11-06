@@ -146,9 +146,6 @@ theorem maskLoop_vp : VP (MI P 0) maskLoop (MK P) := by
 
 /-! ## The candidates -/
 
-theorem clV_length (P : EP) (σ : State) : (clV P σ).length = 256 := by
-  rw [clV_eq, flatMap_blocks_length]
-
 theorem altStep_and (K : Nat) (CL : List Byte) (al i : Nat) :
     altStep K CL al i =
       (let c := (256 * (CL.getD (2 * i) 0).toNat + (CL.getD (2 * i + 1) 0).toNat) &&& bitMask (K - 11);

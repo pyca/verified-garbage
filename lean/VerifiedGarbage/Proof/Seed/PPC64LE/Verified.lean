@@ -33,12 +33,10 @@ public import VerifiedGarbage.Spec.Seed
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
-# The ECB functions meet their contracts, with the scratch buffer as an argument
+# The ECB functions are correct, with the scratch buffer as an argument
 
-`encrypt_blocks_verified` and `decrypt_blocks_verified`: `ecb d` is correct
-(`ecb_ok`) and constant time, by the taint analysis with the pointers, `n`
-and the stack pointer public, against `vg_seed_{en,de}crypt_blocks`'s
-contract, whose working space has 136 words (the code uses 130).
+`ecb_correct`: `ecb d` is correct (`ecb_ok`) against `contract d`, with a
+working space at least as large as the code's scratch buffer.
 `ecb_correct'` adds what the modes' core needs of the call beyond the
 contract (`EcbPost`).
 -/
@@ -126,41 +124,5 @@ theorem ecb_correct (d : Spec.Seed.Direction) {n : Nat} (hn : 8 * Impl.Seed.PPC6
     ∃ t s', Exec isa (Impl.Seed.PPC64LE.ecb d) s t s' ∧ abiPreserved s s' ∧ (contract d n).post s s' := by
   obtain ⟨t, s', he, ha, hp, -⟩ := ecb_correct' d hn s hs
   exact ⟨t, s', he, ha, hp⟩
-
-theorem ecb_ct (d : Spec.Seed.Direction) (n : Nat) :
-    ConstantTime isa (contract d n).pre (contract d n).pub (Impl.Seed.PPC64LE.ecb d) := by
-  have hag : ∀ s₁ s₂, (contract d n).pre s₁ → (contract d n).pre s₂ → (contract d n).pub s₁ s₂ →
-      taint.Agree (Taint.ofRegs [.r3, .r4, .r5, .r6]) s₁ s₂ := by
-    intro s₁ s₂ _ _ hp
-    obtain ⟨hsp, h3, h4, h5, h6⟩ := hp
-    refine ⟨hsp, fun r hr => ?_⟩
-    simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-  cases d
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) hag (by taint_decide)
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) hag (by taint_decide)
-
-def satState : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | .r6 => 0x3000 | _ => 0
-  lr := 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 0⟩, ⟨0x3000, 1088⟩]
-
-/-- ECB against `vg_seed_encrypt_blocks`'s contract: its working space is 136
-words, of which the code uses the first 130. -/
-theorem encrypt_blocks_verified : Verified target Impl.Seed.PPC64LE.encrypt
-    (Proof.Seed.blocksContract abi .encrypt) := by
-  refine Verified.of_correct (ecb_correct .encrypt (n := 1088) (by decide)) (ecb_ct .encrypt 1088) ?_
-  sig_implies [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs,
-    contract] [satState] using satState
-
-theorem decrypt_blocks_verified : Verified target Impl.Seed.PPC64LE.decrypt
-    (Proof.Seed.blocksContract abi .decrypt) := by
-  refine Verified.of_correct (ecb_correct .decrypt (n := 1088) (by decide)) (ecb_ct .decrypt 1088) ?_
-  sig_implies [Proof.Seed.blocksContract, Proof.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs,
-    contract] [satState] using satState
 
 end VG.Proof.Seed.PPC64LE

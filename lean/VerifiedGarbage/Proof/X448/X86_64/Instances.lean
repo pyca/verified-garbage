@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.X448.X86_64.Adx.Verified
 import VerifiedGarbage.Proof.X448.X86_64.Verified
@@ -21,7 +22,7 @@ def code : Impl.Ed448.X86_64.FieldVariant → Prog X86_64.isa
   | .adx => Impl.X448.X86_64.x448Adx
 
 theorem code_verified (v : Impl.Ed448.X86_64.FieldVariant) :
-    Verified X86_64.target (code v) (Spec.X448.x448Contract X86_64.abi 8) := by
+    Verified X86_64.target (code v) (Proof.X448.x448Contract X86_64.abi 8) := by
   cases v
   · exact x448_verified
   · exact x448Adx_verified

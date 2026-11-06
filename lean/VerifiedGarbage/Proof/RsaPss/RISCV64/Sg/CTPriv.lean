@@ -22,7 +22,7 @@ Untrusted: everything here is checked by Lean. As on PPC64LE
 contract's public data (`PubS`, `pubS_of`): the stack pointer, the pointers
 and lengths (all the arguments), the modulus and `e`. An entry state with
 the anchor's public data has its modulus' first byte (`PubS.byte`), so its
-`lo`, and agrees with it on what `Base` fixes (`signOk`). `priv_ct`: two
+`lo`, and agrees with it on what `Base` fixes (`PubS.agree`). `priv_ct`: two
 runs of the private operation from states with `Base` and the saved
 arguments (`BP`) leak alike: its frame's arguments by the taint analysis, and
 the call of `vg_rsa_private_checked` by its constant time (`RelCT.callEx`),
@@ -117,11 +117,6 @@ end
 
 /-- `PubS`, for a nonempty modulus. -/
 def PubK (a s : State) : Prop := PubS a s ∧ 1 ≤ kk s
-
-/-- `PubK` gives what the shared code needs. -/
-theorem signOk (D : Nat) : Ok Ss vS (PreS D) PubK where
-  fits P := fits P
-  agree p := p.1.agree p.2
 
 /-- The precondition, with the tables on entry: `hash`, our stack argument
 14, and `mgf1`, 15. -/

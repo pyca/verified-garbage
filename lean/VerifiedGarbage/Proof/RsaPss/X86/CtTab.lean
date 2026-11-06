@@ -26,8 +26,7 @@ the addresses `ai`, `ac` and `ad` of `h`'s streaming `init`, compression
 function and digest (`dn`), which an indirect call of `f`'s functions to
 them reaches. With the table's address in `sTab`, each call through it is the
 call of `h`'s function (`tcallP_vp`): `init` (`initT_vp`), one compression
-(`cmpT_vp`) and the digest (`outT_vp`), as `init_vp`, `comp_vp` and
-`out_vp` are for the direct calls. Every stage keeps the addresses of the
+(`cmpT_vp`) and the digest (`outT_vp`). Every stage keeps the addresses of the
 statics (`VP.syms`), which the indirect calls need.
 -/
 
@@ -534,7 +533,7 @@ open VG.Proof.RsaOaep.X86 (VP.syms)
 
 variable {L : Lay} {scr : BitVec 32} (h : PssHash) {dn : String} {f : MdFns} {p ai ac ad : BitVec 32}
 
-/-- `ctHash`: the digest of the message in `Y`, of a length in its slot,
+/-- The digest of the message in `Y`, of a length in its slot,
 padded in `nbm` blocks. -/
 theorem ctHashR_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0 < nbm)
     {msg : State → List Byte} (hfit : ∀ σ, (msg σ).length + 1 + h.L ≤ nbm * h.B) {Inv : State → Mem → Prop}
@@ -650,7 +649,7 @@ theorem ctHashR_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0
   rw [key, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hi]
   rfl
 
-/-- What `ctHashT` writes: `ctHash`'s and the slot of the table. -/
+/-- What `ctHashT` writes: `ctW` and the slot of the table. -/
 abbrev ctWT (L : Lay) (scr : BitVec 32) (T : Nat) : List Region := slotR L sTab :: ctW h L scr T
 
 /-- `ctHashT f h.H j`: the digest of the message in `Y`, of a length in its

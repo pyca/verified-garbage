@@ -42,11 +42,6 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 /-- Memory that changes only outside the working space. -/
 def OutScr (B : Addr) (Z : Nat) (m m' : Mem) : Prop := ∀ x, ofs B x < Z → m' x = m x
 
-theorem OutScr.refl (B : Addr) (Z : Nat) (m : Mem) : OutScr B Z m m := fun _ _ => rfl
-
-theorem OutScr.trans {B : Addr} {Z : Nat} {m₁ m₂ m₃ : Mem} (h₁ : OutScr B Z m₁ m₂)
-    (h₂ : OutScr B Z m₂ m₃) : OutScr B Z m₁ m₃ := fun x hx => (h₂ x hx).trans (h₁ x hx)
-
 theorem OutScr.word_eq {B : Addr} {Z : Nat} {m m' : Mem} (h : OutScr B Z m m') {d : Nat} (hd : d + 8 ≤ Z)
     (hn : B.toNat + Z ≤ 2 ^ 64) : Bignum.word m' B d = Bignum.word m B d :=
   Mem.readW_congr fun i hi => h _ (by rw [ofs_off B (d := d) (i := i) (by omega)]; omega)

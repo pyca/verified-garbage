@@ -60,8 +60,6 @@ theorem isqrt_spec (x : Nat) : isqrt x * isqrt x ≤ x ∧ x < (isqrt x + 1) * (
       · rename_i c
         refine ⟨by omega, by omega⟩
 
-theorem isqrt_zero : isqrt 0 = 0 := by rw [isqrt]; simp
-
 theorem isqrt_sq_le (x : Nat) : isqrt x * isqrt x ≤ x := (isqrt_spec x).1
 
 theorem lt_succ_isqrt_sq (x : Nat) : x < (isqrt x + 1) * (isqrt x + 1) := (isqrt_spec x).2

@@ -22,6 +22,8 @@ meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_checked` on x86-64: constant time
@@ -83,11 +85,6 @@ theorem pins_rsp {J : State → State → Prop} (hJ : ∀ s t, J s t → Env s t
   fun _ _ _ h₁ h₂ r hr => by
     rw [List.mem_singleton.mp hr]
     exact pin fb (fun s t h => (hJ s t h).rsp) (fun _ _ h => h.fb) h₁ h₂
-
-theorem Env.congr {s t t' : State} (he : Env s t) (hm : t'.mem = t.mem) (hk : Keep [.rax, .r11, .rdi, .rsi, .rcx, .r10, .rdx] t t') :
-    Env s t' :=
-  ⟨(hk.gpr (by decide)).trans he.rsp, hk.2.1.trans he.rd, hk.2.2.trans he.wr, hm ▸ he.mem, hm ▸ he.sOut,
-    hm ▸ he.sN, hm ▸ he.sK, hm ▸ he.sE, hm ▸ he.sEl⟩
 
 /-- A caller's buffer, read by a callee: the same as at the entry. -/
 theorem Env.entryBytes {s t : State} (he : Env s t) (rd wr : List Region) {p : Addr} {len : Nat}
@@ -408,16 +405,6 @@ theorem code_constantTime (v : CrtImpl) (pcName pdName : String) :
     fun _ _ h => h))
 
 /-! ## `Verified` -/
-
-/-- `vg_rsa_private_checked`, calling the implementation `v` of the CRT and
-its independently verified public operation, meets the shared
-contract. -/
-theorem code_verified (v : CrtImpl) (pcName pdName : String) :
-    Verified target (code v.name v.code pcName v.pc pdName
-      (v.pubOp.code)) (Spec.Rsa.privateCheckedContract abi stackBytes) :=
-  have hct : ConstantTime isa chkContract.pre chkContract.pub (code v.name v.code pcName
-      v.pc pdName (v.pubOp.code)) := code_constantTime v pcName pdName
-  Verified.of_correct (k := chkContract) (code_correct v pcName pdName) hct private_checked_implies
 
 /-- It writes `rsp` only in its frame's push and pop. -/
 theorem code_spSafe (v : CrtImpl) (pcName pdName : String) :

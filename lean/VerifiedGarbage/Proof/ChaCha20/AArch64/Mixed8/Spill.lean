@@ -92,18 +92,4 @@ theorem spill_ok {s₀ s : State} (hp : CP s₀) (h : Prepared s₀ s 5) :
   · rw [ha.mem] at hfb
     exact (h.frame.mono (by simp)).trans (hfb.mono (by simp))
 
-theorem Spilled.read16 {s₀ s : State} (h : Spilled s₀ s) (r : Fin 4) :
-    s.mem.read (s₀.gpr .x3 + BitVec.ofNat 64 (16 * r)) 16 =
-      VG.Proof.ChaCha20.AArch64.Neon4.output (fun _ => block (ctr (source s₀) 6)) r := by
-  rw [VG.AArch64.read16]
-  have hw : ∀ e (he : e < 4), s.mem.readW
-      (s₀.gpr .x3 + BitVec.ofNat 64 (16 * r) + BitVec.ofNat 64 (4 * e)) 32 =
-        (block (ctr (source s₀) 6))[4 * r.val + e]'(by omega) := by
-    intro e he
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add,
-      show 16 * r.val + 4 * e = 4 * (4 * r.val + e) by omega]
-    exact h.words _ (by omega)
-  rw [hw 0 (by decide),hw 1 (by decide),hw 2 (by decide),hw 3 (by decide)]
-  simp only [VG.Proof.ChaCha20.AArch64.Neon4.output,Nat.mod_eq_of_lt r.isLt,Nat.add_zero]
-
 end VG.Proof.ChaCha20.AArch64.Mixed8

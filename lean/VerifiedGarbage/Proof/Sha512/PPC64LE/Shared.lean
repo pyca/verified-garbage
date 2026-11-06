@@ -41,16 +41,6 @@ namespace VG.Proof.Sha512.PPC64LE.Shared
 
 open _root_.VG.PPC64LE
 
-/-- `compressPPC64LE` with 1328 bytes of scratch. -/
-def compressWide : Contract PPC64LE.isa :=
-  { Proof.Sha512.compressPPC64LE with
-    pre := fun s =>
-      let state : Region := ⟨s.gpr .r3, 64⟩
-      let blocks : Region := ⟨s.gpr .r4, 128 * (s.gpr .r5).toNat⟩
-      let scratch : Region := ⟨s.gpr .r6, 1328⟩
-      s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
-      state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch }
-
 /-- `updatePPC64LE` with 1376 bytes of scratch. -/
 def updateWide : Contract PPC64LE.isa :=
   { Proof.Sha512.updatePPC64LE with
@@ -73,16 +63,7 @@ def finalizeWide : Contract PPC64LE.isa :=
 
 theorem pfx {a : Addr} {m n : Nat} (h : Nat.ble m n = true) : Region.Prefix ⟨a, m⟩ ⟨a, n⟩ :=
   ⟨rfl, Nat.le_of_ble_eq_true h⟩
-theorem sub176 (a : Addr) : Region.Sub ⟨a, 176⟩ ⟨a, 1328⟩ := Region.sub_prefix (by decide)
 theorem sub224 (a : Addr) : Region.Sub ⟨a, 224⟩ ⟨a, 1376⟩ := Region.sub_prefix (by decide)
-
-theorem compressWide_verified (hsat : ∃ s, compressWide.pre s) :
-    Verified PPC64LE.target Impl.Sha512.PPC64LE.compress compressWide :=
-  Verified.widen Proof.Sha512.PPC64LE.compress_verified
-    (fun s => [⟨s.gpr .r3, 64⟩, ⟨s.gpr .r6, 176⟩])
-    (fun _ ⟨h₁, _, h₃, h₄, h₅⟩ => ⟨h₁, rfl, h₃.sub_right (sub176 _), h₄, h₅.sub_right (sub176 _)⟩)
-    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons (pfx rfl) (.cons (pfx rfl) .nil))
-    (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
 
 theorem updateWide_verified (hsat : ∃ s, updateWide.pre s) :
     Verified PPC64LE.target Impl.Sha512.PPC64LE.Stream.update updateWide :=
@@ -101,9 +82,6 @@ theorem finalizeWide_verified (hsat : ∃ s, finalizeWide.pre s) :
       (.cons (pfx rfl) .nil)))
     (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
 
-/-- A state satisfying `compressWide.pre`. -/
-def compressSat : State := { Proof.Sha512.PPC64LE.satState with wr := [⟨0x1000, 64⟩, ⟨0x3000, 1328⟩] }
-
 /-- A state satisfying `updateWide.pre`. -/
 def updateSat : State :=
   { Proof.Sha512.PPC64LE.Stream.Update.sat with wr := [⟨0x1000, 192⟩, ⟨0x3000, 1376⟩] }
@@ -112,14 +90,6 @@ def updateSat : State :=
 def finalizeSat : State :=
   { Proof.Sha512.PPC64LE.Stream.Finalize.sat with
     wr := [⟨0x1000, 192⟩, ⟨0x2000, 64⟩, ⟨0x3000, 1376⟩] }
-
-theorem compress :
-    Verified PPC64LE.target Impl.Sha512.PPC64LE.compress (Proof.Sha512.compressContract PPC64LE.abi) := by
-  have hi : compressWide.Implies (Proof.Sha512.compressContract PPC64LE.abi) := by
-    contract_implies [Proof.Sha512.compressContract, Proof.Sha512.compressSig, compressWide,
-      Proof.Sha512.compressPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
-      [compressSat, Proof.Sha512.PPC64LE.satState] using compressSat
-  exact (compressWide_verified hi.sat_left).of_implies hi
 
 theorem init (iv : Spec.Sha512.HashValue) :
     Verified PPC64LE.target (Impl.Sha512.PPC64LE.Stream.init iv) (Spec.Sha512.initContract PPC64LE.abi iv) :=

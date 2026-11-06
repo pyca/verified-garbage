@@ -101,23 +101,11 @@ def searchContract (policy : GenerationPolicy) {M : ISA} (A : Abi M) (stack : Na
   | .cached => Spec.Ffdh.cachedKeySearchContract A stack
   | .full | .vetted => legacySearchContract policy A stack
 
-theorem attemptContract_full {M : ISA} (A : Abi M) (stack : Nat) :
-    attemptContract .full A stack = generateKeyContract A stack := rfl
-
-theorem attemptContract_vetted {M : ISA} (A : Abi M) (stack : Nat) :
-    attemptContract .vetted A stack = vettedGenerateKeyContract A stack := rfl
-
 theorem searchContract_full {M : ISA} (A : Abi M) (stack : Nat) :
     searchContract .full A stack = keySearchContract A stack := rfl
 
 theorem searchContract_vetted {M : ISA} (A : Abi M) (stack : Nat) :
     searchContract .vetted A stack = vettedKeySearchContract A stack := rfl
-
-theorem attemptContract_cached {M : ISA} (A : Abi M) (stack : Nat) :
-    attemptContract .cached A stack = cachedGenerateKeyContract A stack := rfl
-
-theorem searchContract_cached {M : ISA} (A : Abi M) (stack : Nat) :
-    searchContract .cached A stack = cachedKeySearchContract A stack := rfl
 
 end GenerationPolicy
 end VG.Proof.Ffdh

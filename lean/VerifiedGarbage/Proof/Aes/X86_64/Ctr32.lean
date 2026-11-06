@@ -653,19 +653,6 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32X86_64.pre s₀) :
         exact dCS.sub_right (Region.sub_prefix (by omega_arith))
     · simp
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x2000 | .rcx => 0x3000 | .r8 => 1 | .r9 => 0x4000
-    | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 240⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 2048⟩]
-
 theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32X86_64.pre s) :
     ∃ t s', Exec isa Impl.Aes.X86_64.ctr32 s t s' ∧ abiPreserved s s' ∧
       Proof.Aes.ctr32X86_64.post s s' := by
@@ -680,11 +667,5 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32X86_64.pre Proof.Aes.ctr32X86
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-theorem ctr32_verified :
-    Verified X86_64.target Impl.Aes.X86_64.ctr32 (Proof.Gcm.ctr32Contract X86_64.abi) :=
-  Verified.of_correct ctr32_correct ctr32_ct (by
-    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, Proof.Aes.ctr32X86_64, X86_64.abi,
-      X86_64.argRegs] [Proof.Aes.X86_64.satState] using Proof.Aes.X86_64.satState)
 
 end VG.Proof.Aes.X86_64

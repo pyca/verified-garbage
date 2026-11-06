@@ -72,10 +72,6 @@ theorem sign63 {x k : Nat} (hx : x < 2 ^ 63) (hk : k < 2 ^ 63) :
   · rw [toNat_ofNat_of_lt (by decide)]; omega
   · rw [toNat_ofNat_of_lt (by decide)]; omega
 
-theorem movz_lit (k : Nat) (hk : k < 2 ^ 16) :
-    BitVec.setWidth 64 (BitVec.ofNat 16 k) <<< (16 * 0) = BitVec.ofNat 64 k :=
-  Proof.AesGcm.AArch64.movz_ofNat hk
-
 /-- `B` zeroed, then the encoding of the length `a` of the associated data
 (`x24`) at its start, and its length in `x25`. -/
 theorem header_ok {c : Cx} {s : State} (E : Env c s) {a : Nat} (ha0 : 0 < a) (ha : a < 2 ^ 64)

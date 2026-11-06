@@ -55,8 +55,6 @@ end
 
 /-! ## The layouts -/
 
-theorem sA0 (p : Params) (STK : Nat) (σ : State) (o : Nat) : (slay1 p STK σ).A 0 o = (slay2 p STK σ).A 0 o := rfl
-
 /-- `sig` to `r28`: from `SC1` to `SC2`. -/
 theorem SC1.toSC2 {p : Params} {STK : Nat} {σ s s' : State} (hp : SPre p STK σ) (h : SC1 p STK σ s)
     (g28 : s'.gpr .r28 = sSig σ) (go : ∀ r, r ≠ .r28 → s'.gpr r = s.gpr r) (hm : s'.mem = s.mem)
@@ -200,8 +198,6 @@ theorem rppHash_ok {σ s : State} (h : IW p STK σ s) :
   rw [e1, e2, shake31, ← List.append_assoc]
   exact (Proof.MlKem.shake256_eq _ _).symm
 
-
-/-! ## The private key -/
 
 end
 

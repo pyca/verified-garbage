@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointPoints
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 public import VerifiedGarbage.Proof.P256.VerifyTable.Build
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTableTimingStep
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
@@ -23,144 +22,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 /-! ## `ArithmeticTableChecks` -/
 
 -- Formerly `VerifiedGarbage/Proof/Weierstrass/AArch64/ArithmeticTableTiming.lean`, which only this module imported.
-section
-
-section
-
-namespace VG.Proof.Weierstrass.AArch64
-open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
-open VG.Impl.Weierstrass.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass
-open VG.Proof.Ed25519.AArch64 (Keeps read_x)
-
-/-- Every table-building branch and address is determined by public paired fields. -/
-theorem arithmeticTable_relCT (certs : Forward.Arithmetic.Cases) {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
-    (hL : JacWinLay K size) (hJ : K.J=52) (hAl : Aligned K.M (·∈jacWinSlots K))
-    (hm : UnitMod C.p (2^(64*K.M.n))) (hsize : 8192≤size) (ht : K.tbl<4096) (hOne : K.one<C.p)
-    (hc : ArithmeticTableChecks K)
-    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), clobbers i r = false)
-    {E : Nat → Fe C} :
-    RelCT isa (FieldPair K.M base size C.p (·∈jacWinSlots K) (winRo K) E)
-      (ArithmeticTable.table K)
-      (fun s t => ∃ E', FieldPair K.M base size C.p (·∈jacWinSlots K) (nafLive K) E' s t) := by
-  let I := fun j s t => 1≤j ∧ j≤7 ∧ NafTablePair K C base size (8-j) s t
-  have step : ∀ j, RelCT isa (I j) (ArithmeticTable.tableStep K) (fun s t =>
-      eval (.nonzero .x .x19) s=eval (.nonzero .x .x19) t ∧
-      (eval (.nonzero .x .x19) s=some false → ∃ E', FieldPair K.M base size C.p
-        (·∈jacWinSlots K) (nafLive K) E' s t) ∧
-      (eval (.nonzero .x .x19) s=some true → ∃ n<j, I n s t)) := by
-    intro j
-    by_cases hj : 1≤j
-    · by_cases hj7 : j≤7
-      · refine (arithmeticTable_step_relCT certs hL hJ hAl hm hsize hOne (m:=8-j) (by omega) (by omega) hc hcopy).mono
-          (P':=I j) (fun _ _ h => h.2.2) ?_
-        intro s t hp
-        have hp' := hp
-        obtain ⟨e,p,s19,t19,s20,t20⟩ := hp
-        have cn : 8-(8-j+1)=j-1 := by omega
-        rw [cn] at s19 t19
-        refine ⟨by simp only [eval,State.read,s19,t19],fun he => ?_,fun he => ?_⟩
-        · have hz : j-1=0 := by
-            by_contra hn
-            have hb : (BitVec.ofNat 64 (j-1) != 0)=true := by
-              rw [bne_iff_ne]
-              intro hh
-              have hh' := congrArg BitVec.toNat hh
-              simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : j-1<2^64)] at hh'
-              exact hn hh'
-            have htrue : eval (.nonzero .x .x19) s=some true := by
-              change some (s.read .x .x19 != 0)=some true
-              rw [read_x,s19,hb]
-            rw [htrue] at he; cases he
-          have hx : 8-j+1=8 := by omega
-          rw [hx] at p
-          exact ⟨e,p.sub (nafTableLive_full K)⟩
-        · have hz : j-1≠0 := by
-            intro hz; simp only [eval,State.read,s19,hz] at he; cases he
-          refine ⟨j-1,by omega,by omega,by omega,?_⟩
-          have hx : 8-j+1=8-(j-1) := by omega
-          exact hx ▸ hp'
-      · exact RelCT.of_false (fun _ _ h => hj7 h.2.1)
-    · exact RelCT.of_false (fun _ _ h => hj h.1)
-  unfold ArithmeticTable.table
-  apply RelCT.assoc
-  apply RelCT.seq (nafTable_init_relCT hL hAl hJ hm ht hc.base)
-  exact (RelCT.loop I step 7).mono (fun _ _ ⟨e,p,s19,t19,s20,t20⟩ =>
-    ⟨by decide,by decide,e,p,s19,t19,by simpa only [Nat.mul_one] using s20,
-      by simpa only [Nat.mul_one] using t20⟩) (fun _ _ h => h)
-
-end VG.Proof.Weierstrass.AArch64
-end
-
-end
 
 @[expose] public section
-
-section
-
-namespace VG.Proof.Ecdsa.Verify.AArch64
-open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
-open VG.Proof.Weierstrass.AArch64 VG.Impl.Weierstrass.AArch64
-
-private abbrev Kc := VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256
-
-/-- The forwarded blocks of the table addition are the Forward framework's
-literals, so the kernel never runs the optimizer here. -/
-private theorem head_lit : VG.Impl.P256.VerifyArithmetic.program Kc.M (VG.Impl.Weierstrass.jacHead Kc.S Kc.R (Naf.twice Kc)) =
-    .block Forward.ArithmeticTableHead.rightCode.lit := by
-  have hs : VG.Impl.P256.VerifyArithmetic.selected VG.Impl.P256.VerifyDouble.M
-      (VG.Impl.P256.VerifyArithmetic.operations .tableHead) :=
-    ⟨rfl,List.mem_map.mpr ⟨.tableHead,by simp [VG.Impl.P256.VerifyArithmetic.kinds],rfl⟩⟩
-  change VG.Impl.P256.VerifyArithmetic.program VG.Impl.P256.VerifyDouble.M
-    (VG.Impl.P256.VerifyArithmetic.operations .tableHead) = _
-  rw [VG.Impl.P256.VerifyArithmetic.program,ite_eq_left hs]
-  exact congrArg Code.block Forward.ArithmeticTableHead.optimized_lit
-
-private theorem tail_lit : VG.Impl.P256.VerifyArithmetic.program Kc.M (VG.Impl.Weierstrass.jacTail Kc.S Kc.R (Naf.twice Kc) Kc.D) =
-    .block Forward.ArithmeticTableTail.rightCode.lit := by
-  have hs : VG.Impl.P256.VerifyArithmetic.selected VG.Impl.P256.VerifyDouble.M
-      (VG.Impl.P256.VerifyArithmetic.operations .tableTail) :=
-    ⟨rfl,List.mem_map.mpr ⟨.tableTail,by simp [VG.Impl.P256.VerifyArithmetic.kinds],rfl⟩⟩
-  change VG.Impl.P256.VerifyArithmetic.program VG.Impl.P256.VerifyDouble.M
-    (VG.Impl.P256.VerifyArithmetic.operations .tableTail) = _
-  rw [VG.Impl.P256.VerifyArithmetic.program,ite_eq_left hs]
-  exact congrArg Code.block Forward.ArithmeticTableTail.optimized_lit
-
-private theorem arithmeticTable_add_preserves : ∀ r∈[Reg.x19,Reg.x20],
-    ∀ i∈instrs (ArithmeticAdd.add Kc Kc.R (Naf.twice Kc) Kc.D),clobbers i r = false := by
-  rw [ArithmeticAdd.add,head_lit,tail_lit,jacWinCfg_double_lit]
-  have h : (instrs (.seq (.block (zeroMask Kc.M.n Kc.R.z)) <|
-      .ite (.nonzero .x .x2) (.block (copyPt Kc.M.n Kc.D (Naf.twice Kc))) <|
-      .seq (.block (zeroMask Kc.M.n (Naf.twice Kc).z)) <|
-      .ite (.nonzero .x .x2) (.block (copyPt Kc.M.n Kc.D Kc.R)) <|
-      .seq (.block Forward.ArithmeticTableHead.rightCode.lit) <|
-      .seq (.block (zeroMask Kc.M.n Kc.S.t3)) <|
-      .ite (.nonzero .x .x2)
-        (.seq (.block (zeroMask Kc.M.n Kc.S.t5)) <|
-          .ite (.nonzero .x .x2) (.block Forward.P256Bounds.rightRD.lit) (.block (Jacobian.infinity Kc Kc.D)))
-        (.block Forward.ArithmeticTableTail.rightCode.lit) : Prog isa)).all
-      (fun i => decide (clobbers i .x19 = false ∧ clobbers i .x20 = false))=true := by decide +kernel
-  intro r hr i hi
-  have hh := of_decide_eq_true (List.all_eq_true.mp h i hi)
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl
-  · exact hh.1
-  · exact hh.2
-
-theorem arithmeticTable_checks : ArithmeticTableChecks (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256) where
-  base := nafTable_checks
-  add := {
-    zero := nafTable_checks.add.zero
-    copyP := nafTable_checks.add.copyP
-    copyQ := nafTable_checks.add.copyQ
-    head := Forward.ArithmeticTableHead.ct
-    tail := Forward.ArithmeticTableTail.ct
-    double := nafTable_checks.add.double
-    infinity := nafTable_checks.add.infinity }
-  keepAdd := arithmeticTable_add_preserves
-
-end VG.Proof.Ecdsa.Verify.AArch64
-
-end
 
 /-! ## `JointPrepTiming` -/
 
@@ -208,50 +71,6 @@ theorem JointPrepPost.fields {base : Addr} {g : Reg → BitVec 64} {P : Point p2
   exacts [e AP (by decide),e BM (by decide),e ZERO (by decide),e VG.Impl.Ecdh.AArch64.PX (by decide),e VG.Impl.Ecdh.AArch64.PY (by decide),
     e ONEP (by decide)]
 
-/-- Shared table values and the exact public scalar digits after preparation. -/
-def JointTablePair (base : Addr) (P : Point p256.C) (u v : Nat) (a b s t : State) : Prop :=
-  ∃ E,FieldPair P256Joint.cfg.K.M base size p256.C.p (·∈jointSlots P256Joint.cfg)
-    (nafLive P256Joint.cfg.K) E s t ∧
-  ∃ g₁ g₂ a' b', JointPrepPost base g₁ P a a' ∧ JointPrepPost base g₂ P b b' ∧
-    JointTablePost base g₁ P u v a' s ∧ JointTablePost base g₂ P u v b' t
-
-theorem jointPrepTable_relCT (certs : Forward.Arithmetic.Cases) (hc : CfgOk p256) (hC : Law p256.C)
-    {base : Addr} {P : Point p256.C} {u v : Nat} {a b : State} (hP : onCurve p256.C P=true) :
-    RelCT isa (fun s t => s=a ∧ t=b ∧ JacWinPublic p256 base P v s t ∧
-      sv p256 base s U=u ∧ sv p256 base t U=u)
-      (.seq jointPrepProgram (ArithmeticTable.table P256Joint.cfg.K))
-      (JointTablePair base P u v a b) := by
-  intro s t ts tt s' t' ⟨rfl,rfl,hp,us,ut⟩ es et
-  obtain ⟨g₁,fs⟩ := hp.left.fixed
-  obtain ⟨g₂,ft⟩ := hp.right.fixed
-  cases es with | seq ps ws =>
-    cases et with | seq pt wt =>
-      have he := (jointPrep_trace _ _ _ _ _ _ ⟨hp.left.scr,hp.right.scr,hp.sp,
-        us.trans ut.symm,hp.left.scalar.trans hp.right.scalar.symm⟩ ps pt).1
-      obtain ⟨_,_,xs,is⟩ := jointPrepStage_ok hc hC hp.left.scr fs hp.left.px hp.left.py hp.left.rep
-      obtain ⟨_,_,xt,it⟩ := jointPrepStage_ok hc hC hp.right.scr ft hp.right.px hp.right.py hp.right.rep
-      obtain ⟨_,rfl⟩ := Exec.det ps xs
-      obtain ⟨_,rfl⟩ := Exec.det pt xt
-      have pair : FieldPair P256Joint.cfg.K.M base size p256.C.p (·∈jacWinSlots P256Joint.cfg.K)
-          (winRo P256Joint.cfg.K) _ _ _ :=
-        ⟨is.field,it.field.congr_env (fun x hx => (it.fields x hx).trans
-          ((hp.fields x hx).symm.trans (is.fields x hx).symm)),is.keep.sp.trans (hp.sp.trans it.keep.sp.symm)⟩
-      obtain ⟨hw,E,pair'⟩ := arithmeticTable_relCT certs (jacLay hc rfl) rfl (jacAligned p256 rfl)
-        (unitMod_pow_two hc.p_odd _) (by decide) (by decide)
-        (by change 2^(64*4)%p256.C.p<p256.C.p; exact Nat.mod_lt _ (by have := hc.p_ge; omega))
-        arithmeticTable_checks nafWindow_checks.treeCopy _ _ _ _ _ _ pair ws wt
-      obtain ⟨_,_,ys,js⟩ := jointTableStage_ok certs hc hC hP is
-      obtain ⟨_,_,yt,jt⟩ := jointTableStage_ok certs hc hC hP it
-      obtain ⟨_,rfl⟩ := Exec.det ws ys
-      obtain ⟨_,rfl⟩ := Exec.det wt yt
-      rw [us,hp.left.scalar] at js
-      rw [ut,hp.right.scalar] at jt
-      refine ⟨by rw [he,hw],E,?_,g₁,g₂,_,_,is,it,js,jt⟩
-      exact ⟨⟨pair'.left.scr,pair'.left.mod,
-        fun x hx => List.mem_append_left _ (List.mem_append_left _ (pair'.left.sl x hx)),pair'.left.lt,pair'.left.val⟩,
-        ⟨pair'.right.scr,pair'.right.mod,
-        fun x hx => List.mem_append_left _ (List.mem_append_left _ (pair'.right.sl x hx)),pair'.right.lt,pair'.right.val⟩,pair'.sp⟩
-
 end VG.Proof.Ecdsa.Verify.AArch64
 
 end
@@ -295,19 +114,6 @@ theorem jointGenerator_unch {c : Joint.Cfg} {C : Curve} {base T : Addr} {size : 
     exact h.bounds a ha ha32
   · intro a ha ha32; rw [val a 0 ha ha32 (by simp),val a 32 ha ha32 (by simp)]
     exact h.point a ha ha32
-
-
-theorem JointTablePair.generators {base T : Addr} {P G : Point p256.C} {u v : Nat}
-    {a b s t : State} (h : JointTablePair base P u v a b s t)
-    (ga : Weierstrass.AArch64.JointGenerator P256Joint.cfg p256.C base size G T a)
-    (gb : Weierstrass.AArch64.JointGenerator P256Joint.cfg p256.C base size G T b) :
-    Weierstrass.AArch64.JointGenerator P256Joint.cfg p256.C base size G T s ∧
-    Weierstrass.AArch64.JointGenerator P256Joint.cfg p256.C base size G T t := by
-  obtain ⟨_,_,_,_,_,_,pa,pb,ta,tb⟩ := h
-  have ga' := jointGenerator_unch ga pa.unch pa.keep.rd pa.keep.wr pa.syms (by decide +kernel)
-  have gb' := jointGenerator_unch gb pb.unch pb.keep.rd pb.keep.wr pb.syms (by decide +kernel)
-  exact ⟨jointGenerator_unch ga' ta.table.unch ta.table.keep.rd ta.table.keep.wr ta.syms (by decide +kernel),
-    jointGenerator_unch gb' tb.table.unch tb.table.keep.rd tb.table.keep.wr tb.syms (by decide +kernel)⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64
 
@@ -371,76 +177,6 @@ end VG.Proof.Ecdsa.Verify.AArch64
 end
 
 /-! ## `JointPointsTiming` -/
-
-section
-
-namespace VG.Proof.Ecdsa.Verify.AArch64
-open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
-open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
-open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64
-open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 Spec.Weierstrass
-open P256Joint
-
-theorem jointAfterTable_relCT (hc : CfgOk p256) (hC : Law p256.C)
-    {base T : Addr} {P Q : Point p256.C} {u v : Nat} {a b : State}
-    (hP : onCurve p256.C P=true) (hQ : onCurve p256.C Q=true)
-    (hu : u<2^256) (hv : v<2^256)
-    (ga : Weierstrass.AArch64.JointGenerator cfg p256.C base 8192 P T a)
-    (gb : Weierstrass.AArch64.JointGenerator cfg p256.C base 8192 P T b) :
-    RelCT isa (JointTablePair base Q u v a b)
-      (.seq (CachedJac.cache cfg.K)
-        (.seq (.block (Jacobian.infinity cfg.K cfg.K.R++([.movz .x .x19 256 0] : List Instr)))
-          (.seq (Joint.run cfg ops) (Jacobian.jacFinish cfg.K))))
-      (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
-  have hm : UnitMod p256.C.p (2^(64*cfg.K.M.n)) := unitMod_pow_two hc.p_odd _
-  have one : cfg.K.one<p256.C.p := Nat.mod_lt _ (by have := hc.p_ge; omega)
-  have cache : RelCT isa (JointTablePair base Q u v a b) (CachedJac.cache cfg.K)
-      (JointCachePair p256.C base T P Q u v) := by
-    intro s t ts tt s' t' h es et
-    have ⟨gs,gt⟩ := h.generators ga gb
-    obtain ⟨E,hp,_,_,_,_,_,_,ps,pt⟩ := h
-    exact jointCache_relCT hm _ _ _ _ _ _
-      ⟨hp,ps.stable,pt.stable,ps.generator,pt.generator,ps.one,pt.one,gs,gt⟩ es et
-  apply RelCT.seq cache
-  apply RelCT.seq (jointInit_relCT one)
-  exact RelCT.seq (jointRun_timing hm hC hc.am3 one hP hQ hu hv) (jointFinish_relCT hc hC)
-
-theorem jointPoints_inputCT (hc : CfgOk p256) (hC : Law p256.C)
-    {base T : Addr} {P Q : Point p256.C} {u v : Nat} {a b : State}
-    (hP : onCurve p256.C P=true) (hQ : onCurve p256.C Q=true)
-    (hu : u<2^256) (hv : v<2^256)
-    (ga : Weierstrass.AArch64.JointGenerator cfg p256.C base 8192 P T a)
-    (gb : Weierstrass.AArch64.JointGenerator cfg p256.C base 8192 P T b) :
-    RelCT isa (fun s t => s=a ∧ t=b ∧ JacWinPublic p256 base Q v s t ∧
-      sv p256 base s U=u ∧ sv p256 base t U=u)
-      P256Joint.points (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
-  change RelCT isa _ (.seq _ (.seq _ (.seq _ _))) _
-  apply RelCT.assoc
-  apply RelCT.assoc
-  exact RelCT.seq (jointPrepTable_relCT Forward.Arithmetic.cases hc hC hQ)
-    (jointAfterTable_relCT hc hC hP hQ hu hv ga gb)
-
-/-- The complete joint points stage depends only on the original public inputs. -/
-theorem jointPoints_relCT (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
-    {s₀ t₀ : State} (ps : VPreG s₀) (pt : VPreG t₀) :
-    RelCT isa (JointBoundaryG s₀ t₀) P256Joint.points
-      (AArch64.Taint.Agree (Taint.ofRegs [.x0])) := by
-  intro s t ts tt s' t' hb es et
-  obtain ⟨hp,us,ut⟩ := jointBoundary_input hc hC hb
-  obtain ⟨gs,gt⟩ := jointBoundary_generators hc hC hT ps pt hb
-  have hu : publicU p256 s₀<2^256 := by
-    rw [←us]
-    exact wordsVal_lt s.mem (s₀.gpr .x3) (p256.sl U) 4
-  have hv : publicV p256 s₀<2^256 := by
-    rw [←hp.left.scalar]
-    exact wordsVal_lt s.mem (s₀.gpr .x3) (p256.sl V) 4
-  exact jointPoints_inputCT hc hC hc.onG (peerPt_onCurve hc _ _ _) hu hv gs gt
-    _ _ _ _ _ _ ⟨rfl,rfl,hp,us,ut⟩ es et
-
-end VG.Proof.Ecdsa.Verify.AArch64
-
-end
 
 /-! ## `AllocatedPointsTiming` -/
 
@@ -570,7 +306,6 @@ theorem allocatedPointsBody_relCT (raw : RawCorrect) (hc : CfgOk p256) (hC : Law
     exact wordsVal_lt s.mem (s₀.gpr .x3) (p256.sl V) 4
   exact allocatedPoints_inputCT raw hc hC hO hc.onG (peerPt_onCurve hc _ _ _) hu hv gs gt
     _ _ _ _ _ _ ⟨rfl,rfl,hp,us,ut⟩ es et
-
 
 private theorem saveBoundary_relCT {s₀ t₀ : State} :
     RelCT isa (JointBoundaryG s₀ t₀) (.block P256Allocated.saveExtra)

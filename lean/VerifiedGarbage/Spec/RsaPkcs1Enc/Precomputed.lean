@@ -10,7 +10,7 @@ public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 key setup and call `vg_rsa_public_precomputed_checked` and its variants.
 The ciphertext and result are exactly those of `encryptContract` when `pre`
 holds the values for `n`. An inconsistent `pre` leaves the ciphertext and
-result unspecified, as in `Rsa.publicPrecomputedCheckedContract`; memory
+result unspecified, as in `Proof.Rsa.publicPrecomputedCheckedContract`; memory
 safety and the timing guarantee still apply. Existing contracts are
 unchanged.
 -/

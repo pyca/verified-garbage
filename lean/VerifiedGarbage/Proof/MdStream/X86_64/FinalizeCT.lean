@@ -92,15 +92,8 @@ structure PreD (P : Params) (D : Nat) (s₀ : State) : Prop where
   stk_out : (stkR s₀).Disjoint (outR s₀ D)
   stk_scr : (stkR s₀).Disjoint (scR P s₀)
 
-/-- The precondition for the whole final hash value (`finK`). -/
-abbrev Pre (P : Params) (s₀ : State) : Prop := PreD P P.N s₀
-
 theorem pre_ofD {P : Params} {H : Md P.B P.N P.L} {D : Nat} {s₀ : State} (h : (finKD H D).pre s₀) :
     PreD P D s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩
-
-theorem pre_of {P : Params} {H : Md P.B P.N P.L} {s₀ : State} (h : (finK H).pre s₀) : Pre P s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩
 
@@ -975,15 +968,6 @@ theorem correctD (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog is
     · rw [hC.rbx, hC.rbp]
       exact hp.st_out.sub_left (Region.sub_prefix (by omega_arith))
 
-/-- `finalize` is correct, and leaves `rdi` and `rcx` as they were (which code
-inlining it relies on). -/
-theorem correct (hd : Dims P) (hs : Shape H) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    {s₀ : State} (hp : Pre P s₀) :
-    WP isa (finalize P name code) s₀ fun s' => gprPreserved s₀ s' ∧ (finK H).post s₀ s' ∧
-      s'.gpr .rdi = s₀.gpr .rdi ∧ s'.gpr .rcx = s₀.gpr .rcx :=
-  (correctD hd hs.toD hf hp).mono fun _ ⟨g, h, di, cx⟩ => ⟨g, fun iv m hr hl hc =>
-    (h iv m hr hl hc).trans (List.take_of_length_le (by rw [Md.hash, H.digest_length])), di, cx⟩
-
 /-- A state satisfying the precondition of `finKD H D`. -/
 def satD (P : Params) (D : Nat) : State where
   gpr r := match r with
@@ -1182,11 +1166,6 @@ theorem finKD_implies {P : Params} (H : Md P.B P.N P.L) (h : ∃ s, (finK H).pre
   ⟨fun _ h => h, fun _ _ _ h iv m hr hl hc =>
     (h iv m hr hl hc).trans (List.take_of_length_le (by rw [Md.hash, H.digest_length])),
     fun _ _ _ _ h => h, h⟩
-
-theorem constantTime {P : Params} {H : Md P.B P.N P.L} (hd : Dims P) (hs : Shape H) (ht : Taints P)
-    {name : String} {code : Prog isa} (hf : CalleeOk H code) :
-    ConstantTime isa (finK H).pre (finK H).pub (finalize P name code) :=
-  constantTimeD hd hs.toD ht hf
 
 /-- `finalize` is verified if it never loads MXCSR. -/
 theorem verified {P : Params} {H : Md P.B P.N P.L} (hd : Dims P) (hs : Shape H) (ht : Taints P)

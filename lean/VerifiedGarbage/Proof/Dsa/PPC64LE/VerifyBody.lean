@@ -61,12 +61,6 @@ theorem QBuf.arrP {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBuf L m m') {j : Nat}
   exact Outside.val32 (h.keepP hL) (Or.inl (by simp only [Lay.qOff] at *; omega_arith))
     (by have := hL.nowrap; have := hL.buf_end; simp only [Lay.bOff, Lay.qOff] at *; omega_arith)
 
-theorem QBuf.ptop {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBuf L m m') :
-    word m' L.S (slot L.wp 0 + 8 * L.wp) = word m L.S (slot L.wp 0 + 8 * L.wp) := by
-  have := slot_lt (w := L.wp) (show 0 < 28 by decide)
-  exact Outside.word (h.keepP hL) (Or.inl (by simp only [Lay.qOff] at *; omega_arith))
-    (by have := hL.nowrap; have := hL.buf_end; simp only [Lay.bOff, Lay.qOff] at *; omega_arith)
-
 /-- A buffer's first `min n k` octets. -/
 theorem bytesAt_take (m : Mem) (D : Addr) (n k : Nat) :
     (Spec.Rsa.bytesAt m D n).take k = Spec.Rsa.bytesAt m D (min n k) := by

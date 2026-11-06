@@ -55,7 +55,7 @@ see is public (it compares the number of bytes left, kept in memory, with
 (`LI`), as are the conditions on the bytes left after the loop
 (`rest_rel`). The tail is checked in two parts: `tailAB` with only the
 pointers public, and the XOR into the bytes left with their address and
-number, loaded from memory, public by correctness (`TailMid`). `bulk_rel` is stated with `bulk`'s permissions (`bulkWr`), and
+number, loaded from memory, public by correctness (`TailMidG`). `bulk_rel` is stated with `bulk`'s permissions (`bulkWr`), and
 `relCT_narrow` moves it to `seal`'s.
 -/
 
@@ -803,10 +803,6 @@ theorem sealMidM_ok {fold pass : Nat} (hf : fold ≤ 960) (b : Impl.Poly1305.X86
   · rw [m₄, f₃.readW (r := sub s₀ 48 8) (Region.contains_self _ _) (by rdisj_all) (by decide),
       f₂.readW (r := sub s₀ 48 8) (Region.contains_self _ _) (by rdisj_all) (by decide)]
     exact h₁.mslot hps
-
-theorem sealMidS_ok {fold pass : Nat} (hf : fold ≤ 960) (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State}
-    (hp : APre e s₀) {s : State} (h : AfterF fold pass s₀ s) : WP isa (sealMid fold b) s (AtIteS fold pass s₀) :=
-  WP.mono (sealMidM_ok hf b hp h) fun _ h => h.1
 
 /-- At `open`'s branch on the length: as `AtIteS`, and the keystream `twoKs` left
 at `ctx + 736`. -/
@@ -1869,7 +1865,6 @@ theorem sealS_verified (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2)
       X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
       [sealSat] using sealSat)
 
-theorem bulk_xdepth (vl : Bool) : (bulk vl).x86_64Depth = 0 := by cases vl <;> lit_decide
 theorem bigS_xdepth (vl : Bool) : (bigS vl).x86_64Depth = 0 := by cases vl <;> lit_decide
 theorem bulkP_xdepth (vl : Bool) : (bulkP vl).x86_64Depth = 0 := by cases vl <;> lit_decide
 theorem twoKs_xdepth (vl : Bool) : (twoKs vl).x86_64Depth = 0 := by cases vl <;> lit_decide
@@ -3865,11 +3860,6 @@ theorem smallO_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
 theorem wipeL_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
     (wipeL v.callee.fold 192).allInstrs (fun i => !loadsMxcsr i) = true := by
   rcases v.fold_poly with ⟨hf, -, -⟩ | ⟨hf, -, -⟩ | ⟨hf, -, -⟩ <;> (rw [hf]; lit_decide)
-
-theorem foldM_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
-    (foldM v.callee.fold v.callee.pass).allInstrs (fun i => !loadsMxcsr i) = true := by
-  rcases v.fold_poly with ⟨hf, hpass, -⟩ | ⟨hf, hpass, -⟩ | ⟨hf, hpass, -⟩ <;>
-    (rw [hf, hpass]; lit_decide)
 
 /-- `cryptO`: as `open`'s `macPadLengths` and then `crypt`, by any
 implementation `v` of `vg_chacha20_xor` and its `vg_poly1305_blocks`. -/

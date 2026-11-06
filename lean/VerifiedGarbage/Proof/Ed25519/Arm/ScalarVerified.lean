@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
@@ -28,6 +27,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarMain`. -/
 
@@ -165,18 +165,6 @@ preserves the ABI, and keeps all scalar bytes secret. -/
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 
-def scalarSatState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | _ => 0
-  sp := 0x8000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x2000, 64⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x3000, 8192⟩]
-
 theorem scalarReduce_ok (s : State) (hs : scalarReduceLocal.pre s) :
     ∃ t s', Exec isa scalarReduce s t s' ∧ abiPreserved s s' ∧ scalarReduceLocal.post s s' :=
   scalarReduce_correct (ScalarReducePre.of hs)
@@ -209,13 +197,5 @@ theorem scalarReduce_ct : ConstantTime isa scalarReduceLocal.pre scalarReduceLoc
   · simp only [scalarTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> assumption
   · rw [(ScalarReducePre.of hs).wr, (ScalarReducePre.of ht).wr, h0, h2]
-
-theorem scalarReduce_verified : Verified Arm.target scalarReduce
-    (Proof.Ed25519.scalarReduceContract Arm.abi) :=
-  Verified.of_correct scalarReduce_ok scalarReduce_ct (by
-    sig_implies [Proof.Ed25519.scalarReduceContract, Proof.Ed25519.scalarReduceSig,
-      Spec.Ed25519.scratchWords, scalarReduceLocal, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      [scalarSatState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scalarSatState)
 
 end VG.Proof.Ed25519.Arm

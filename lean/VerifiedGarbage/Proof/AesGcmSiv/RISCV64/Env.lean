@@ -172,9 +172,6 @@ theorem a_w' {d k : Nat} (hd : d + k ≤ 3840) : (⟨c.A, c.al⟩ : Region).Disj
 theorem d_w' {d k : Nat} (hd : d + k ≤ 3840) : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.d_w.sub_right (wSub hd)
 
-theorem t_w' {d k : Nat} (hd : d + k ≤ 3840) : (⟨c.T, 16⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
-  L.t_w.sub_right (wSub hd)
-
 theorem b_w' {d k : Nat} (hd : d + k ≤ 3840) : (below c.SP 2048).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.b_w.sub_right (wSub hd)
 
@@ -211,64 +208,6 @@ theorem wCR {d n : Nat} (h : d + n ≤ 3840) : Covers [⟨c.W + BitVec.ofNat 64 
 theorem wR {d n : Nat} (h : d + n ≤ 3840) : InRegions (s.rd ++ s.wr) (c.W + BitVec.ofNat 64 d) n :=
   P.wCR h _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
 
-theorem nR {d n : Nat} (h : d + n ≤ 12) : InRegions (s.rd ++ s.wr) (c.N + BitVec.ofNat 64 d) n :=
-  in_off P.nc h (by decide)
-
-theorem tR {d n : Nat} (h : d + n ≤ 16) : InRegions (s.rd ++ s.wr) (c.T + BitVec.ofNat 64 d) n :=
-  in_off P.t h (by decide)
-
 end Perm
-
-/-! ## Buffers -/
-
-/-- A buffer of `len` bytes at `P` that the code may read, apart from `W`
-and the stack below `SP`. -/
-structure Buf (c : Cx) (s : State) (P : Addr) (len : Nat) : Prop where
-  rd : Covers [⟨P, len⟩] (s.rd ++ s.wr)
-  lt : len < 2 ^ 64
-  wrap : P.toNat + len ≤ 2 ^ 64
-  w : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 3840⟩
-  b : (below c.SP 2048).Disjoint ⟨P, len⟩
-
-namespace Buf
-
-variable {c : Cx} {s : State} {P : Addr} {len : Nat} (h : Buf c s P len)
-include h
-
-theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Buf c s' P len :=
-  { h with rd := by rw [hrd, hwr]; exact h.rd }
-
-/-- The bytes from `k` on. -/
-theorem drop {k : Nat} (hk : k ≤ len) : Buf c s (P + BitVec.ofNat 64 k) (len - k) where
-  rd := covers_off h.rd (by omega) h.lt
-  lt := by have := h.lt; omega
-  wrap := by
-    have := h.wrap
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega)]
-    have := Nat.mod_le (P.toNat + k) (2 ^ 64)
-    omega
-  w := h.w.sub_left (Offset.sub_base P (by omega))
-  b := h.b.sub_right (Offset.sub_base P (by omega))
-
-/-- The first `k` bytes. -/
-theorem take {k : Nat} (hk : k ≤ len) : Buf c s P k where
-  rd := covers_prefix h.rd hk
-  lt := by have := h.lt; omega
-  wrap := by have := h.wrap; omega
-  w := h.w.sub_left (Region.sub_prefix hk)
-  b := h.b.sub_right (Region.sub_prefix hk)
-
-theorem wd {d k : Nat} (hd : d + k ≤ 3840) : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
-  h.w.sub_right (Lay.wSub hd)
-
-end Buf
-
-/-- The additional data as a buffer. -/
-theorem Lay.bufA {c : Cx} (L : Lay c) {s : State} (P : Perm c s) : Buf c s c.A c.al :=
-  ⟨P.a, L.al_lt, L.aw, L.a_w, L.b_a⟩
-
-/-- The data as a buffer. -/
-theorem Lay.bufD {c : Cx} (L : Lay c) {s : State} (P : Perm c s) : Buf c s c.D c.n :=
-  ⟨Covers.right P.d, L.n_lt, L.dw, L.d_w, L.b_d⟩
 
 end VG.Proof.AesGcmSiv.RISCV64

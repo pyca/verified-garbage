@@ -118,11 +118,6 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Sm4.Schedule} 
 
 /-! ## Around the calls -/
 
-theorem inRegions_right {rd wr : List Region} {a : Addr} {n : Nat} (h : InRegions wr a n) :
-    InRegions (rd ++ wr) a n := by
-  obtain ⟨r, hr, hc⟩ := h
-  exact ⟨r, List.mem_append_right _ hr, hc⟩
-
 /-- The functions' slots, the core's, as the calls' working space. -/
 theorem ws_covers {s : State} {B : Addr} {d : Dir} (hs : ScrIn s B (dirCore d).total) :
     Covers [⟨B, 8 * slots⟩] s.wr := Covers.of_sub fun r hr => by

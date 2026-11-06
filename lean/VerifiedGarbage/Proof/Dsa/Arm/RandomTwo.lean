@@ -109,9 +109,6 @@ theorem two_loop {α : Type} {Φ : α → Nat → State → Prop} {Ψ : α → S
   obtain ⟨a, ⟨h0, h₁⟩, ⟨-, h₂⟩⟩ := hp
   exact key (N a - 0) _ _ _ _ _ _ ⟨a, 0, rfl, h0, h₁, h₂⟩ e₁ e₂
 
-theorem nil_relCT {P : State → State → Prop} : RelCT isa P (.block []) fun _ _ => True :=
-  RelCT.block_nil fun _ _ _ => trivial
-
 /-! ## What two runs share -/
 
 /-- The public data of an entry state. -/
@@ -147,7 +144,6 @@ theorem pub_rLow : rLow s₁ = rLow s₂ := by rw [rLow, rLow, pub_sp h]
 theorem pub_rBase : rBase s₁ = rBase s₂ := by rw [rBase, rBase, pub_rLow h]
 theorem pub_rQ : rQ s₁ = rQ s₂ := by rw [rQ, rQ, pub_r3 h, pub_arg h 1 (by decide)]
 theorem pub_rWidth : rWidth s₁ = rWidth s₂ := by rw [rWidth, rWidth, pub_qBytes h]
-theorem pub_rLead : rLead s₁ = rLead s₂ := by rw [rLead, rLead, pub_qBytes h]
 theorem pub_rq : rq s₁ = rq s₂ := by rw [rq, rq, pub_qBytes h]
 theorem pub_randLen : (rInput s₁).rand.length = (rInput s₂).rand.length := by
   simp only [rInput, rBytes_length, pub_arg h 6 (by decide)]

@@ -64,17 +64,6 @@ theorem genT_succ (H : Spec.Hmac.HashFunction) (K : List Byte) : ∀ (k : Nat) (
     rw [genT_succ H K k (Spec.Hmac.hmac H K V)]
     simp
 
-theorem mac_length (P : Rfc) (K t : List Byte) : (Spec.Hmac.hmac P.hH.SH.H K t).length = P.H.D := by
-  simp only [Spec.Hmac.hmac]
-  exact P.hH.hashLen _
-
-theorem genT_length (P : Rfc) (K : List Byte) : ∀ (k : Nat) (V : List Byte),
-    (Spec.Ecdsa.Rfc6979.genT P.hH.SH.H K k V).1.length = k * P.H.D
-  | 0, V => by simp [Spec.Ecdsa.Rfc6979.genT]
-  | k + 1, V => by
-    rw [genT_succ, List.length_append, genT_length P K k V, mac_length]
-    rw [Nat.succ_mul]
-
 /-- The number of `V`s in a candidate: `⌈Q / D⌉`. -/
 abbrev Rfc.nV (P : Rfc) : Nat := (P.Q + P.H.D - 1) / P.H.D
 

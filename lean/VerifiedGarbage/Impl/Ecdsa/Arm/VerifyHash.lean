@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.StackScratch.Arm
 (`Instance.verifyHashContract`, `Spec/Ecdsa/Verify/Generic.lean`; AAPCS:
 `public`, `digest`, `digest_len` and `sig` in `r0`–`r3`, `scratch` on the
 stack): in a frame of `frameBytes` bytes on the stack (`withStackScratch`,
-which passes the address of its buffer of `bufBytes` bytes as a stack
+which passes the address of its buffer of 80 bytes as a stack
 argument after `scratch`), the `len` bytes of the hash that the verification
 of a curve takes (`Proof.Ecdsa.Verify.fixedDigest`), then that verification,
 `core`, run with them in place of the hash (`hashed`):
@@ -41,10 +41,6 @@ namespace VG.Impl.Ecdsa.Arm.VerifyHash
 
 open VG.Arm
 open VG.Impl.AesGcm.Arm (imm copyLoop)
-
-/-- The buffer's bytes: the 72 that the zeros take (at least `len + 1`, 67
-for P-521), then the word holding `sig`. -/
-def bufBytes : Nat := 80
 
 /-- Where in the buffer `sig` is kept. -/
 def sigOff : Nat := 76

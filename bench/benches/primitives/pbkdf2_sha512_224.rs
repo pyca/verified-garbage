@@ -22,12 +22,12 @@ pub const USES: &[&str] = &[
 pub fn bench(c: &mut Criterion) {
     use openssl::hash::MessageDigest;
     use verified_garbage::hashes::sha512_224::Sha512_224;
-    use verified_garbage::kdf::pbkdf2::pbkdf2_hmac;
+    use verified_garbage::kdf::pbkdf2_hmac;
 
     crate::pbkdf2_group(
         c,
         "pbkdf2-hmac-sha512-224",
-        pbkdf2_hmac::<Sha512_224>,
+        pbkdf2_hmac::derive::<Sha512_224>,
         MessageDigest::from_name("SHA512-224").unwrap(),
         None,
         28,

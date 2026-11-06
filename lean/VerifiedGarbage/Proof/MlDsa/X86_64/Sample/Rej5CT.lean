@@ -49,10 +49,6 @@ structure Checked (σ s : State) : Prop where
   r14 : s.gpr .r14 = if allFull σ 280 then 1 else 0
   zf : s.zf = some (!allFull σ 280)
 
-theorem Checked.env {σ s : State} (h : Checked σ s) : VG.Proof.MlKem.X86_64.S4.Env σ s := by
-  obtain ⟨_, hb, hm, hk⟩ := h.prior
-  exact hb.sq.env.keep hm hk (by simp)
-
 theorem check_ok {σ s : State} (hp : Pre σ) (h : Batch σ 2 0 112 4 s) :
     WP isa (.block (flags ++ ([.alu32 .cmp .r14 (.imm 0)] : List Instr))) s (Checked σ) := by
   have hj : ∀ k < 4, s.mem.readW (at' σ (oJ + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 280).length :=

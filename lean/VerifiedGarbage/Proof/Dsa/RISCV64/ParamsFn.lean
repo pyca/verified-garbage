@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 # DSA domain checks on RISC-V: the function
 
 As on PPC64LE (`Proof/Dsa/PPC64LE/Params/Fn.lean`). `checkParameters_correct`:
-`vg_dsa_check_parameters` meets `pcContract`. After `entry` (`pfront_ok`),
+`vg_dsa_check_parameters` meets `pcContract`. After `entry`,
 `checkParams` leaves 1 or 0 as the domain passes `ParamsOk` or not
 (`checkParams_ok`), which is the specification's `checkParametersBytes`
 (`checkParameters_spec`), and `restore` gives back the callee-saved

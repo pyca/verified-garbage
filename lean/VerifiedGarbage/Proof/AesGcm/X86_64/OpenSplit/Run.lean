@@ -628,6 +628,18 @@ theorem WP.seq8 {a b c d e f g h T : Prog isa} {s : State} {P Q : State → Prop
   WP.seq (WP.mono (WP.seq_iff.mp hw) fun _ hw => WP.seq (WP.mono (WP.seq_iff.mp hw) fun _ hw =>
     WP.seq6 hw k))
 
+/-- The slots of our caller's registers are apart from what `oneCrypt`
+writes. -/
+theorem saved_crFrame {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {s : State} {D : Addr} {n : Nat}
+    (hd : DataW Ctx St W SP s D n) : ∀ r ∈ crFrame St W SP D n, (savedR W).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact (hd.ok.w.sub_right (Lay.wSub (by decide))).symm
+  · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
+  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+  · exact (L.stk_w (by decide)).symm
+
 /-- `open_split` after the entry, for a tag length it allows: `frontS`, then
 the bytes left decrypted if the tags match. -/
 theorem midS_ok (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M) {s₀ s₁ : State}

@@ -115,18 +115,6 @@ theorem inv_of {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} {s : State}
     Inv K.M base size C.p (· ∈ winSlots K) V (tmv C K.M.n base s) s :=
   ⟨hs, hM, hsl, hlt, fun _ _ => rfl⟩
 
-/-- A slot written by the loop keeps its number through what the loop writes elsewhere. -/
-theorem words_keep {K : WinCfg} {size : Nat} (hL : WinLay K size) {base : Addr} {m m' : Mem}
-    {W : List Nat} (hU : Unch base (W.map (·, 8 * K.M.n) ++ [(K.M.tmp, 8 * K.M.n)]) m m')
-    (hW : ∀ y ∈ W, y ∈ winSlots K) {x : Nat} (hx : x ∈ winSlots K) (hxW : x ∉ W)
-    (hn : base.toNat + size ≤ 2 ^ 64) :
-    wordsVal m' base x K.M.n = wordsVal m base x K.M.n := by
-  refine hU.wordsVal (fun w hw => ?_) (by have := hL.lay.le x hx; omega_arith)
-  simp only [List.mem_append, List.mem_map, List.mem_singleton] at hw
-  rcases hw with ⟨y, hy, rfl⟩ | rfl
-  · exact hL.lay.apart x y hx (hW y hy) (fun e => hxW (e ▸ hy))
-  · exact hL.lay.tmp x hx
-
 theorem winRo_lt {K : WinCfg} {C : Curve} {size k : Nat} (hL : WinLay K size) {base : Addr}
     {P : Point C} {s₀ s : State} (hF : NafFixed K C base s₀ P k) (hU : Unch base (winW K) s₀.mem s.mem)
     (hn : base.toNat + size ≤ 2 ^ 64) : ∀ x ∈ winRo K, wordsVal s.mem base x K.M.n < C.p :=
@@ -174,11 +162,5 @@ theorem tbl_not_tbl {K : WinCfg} {size : Nat} (hL : WinLay K size) {a j : Nat} (
     have : a - 1 < j ∧ j - 1 < a := by omega_arith
     omega_arith
   exact hL.tbl_ne₂ this e
-
-theorem add_self_mul {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P = true) :
-    Spec.Weierstrass.add P P = mul 2 P := by
-  have := hC.add_mul_mul hP 1 1
-  rw [mul_one_pt] at this
-  exact this
 
 end VG.Proof.Weierstrass.AArch64.PubNaf

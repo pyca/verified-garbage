@@ -19,7 +19,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombLit
@@ -48,7 +47,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 meta import VerifiedGarbage.Proof.Weierstrass.Law
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombGenerator
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi

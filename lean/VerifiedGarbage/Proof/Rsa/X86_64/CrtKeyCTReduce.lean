@@ -127,34 +127,6 @@ theorem reduceTopK_ct {sl : Nat} {top : List Instr} (fl fc : KPub → Nat) (hsl 
   exact regsAre_cons a (regsAre_cons b (regsAre_cons c (regsAre_cons ((k.gpr (by decide)).trans h.2.1)
     (regsAre_cons d (regsAre_cons e (regsAre_cons ((k.gpr (by decide)).trans h.2.2) regsAre_nil))))))
 
-theorem ckModChecks_ct {sX sXlen sDX : Nat} (hsXl : sXlen < 32) (nXl : sXlen ≠ sMask) (fl : KPub → Nat)
-    (hX : ∀ p s, KS p s → word s.mem p.B (8 * sXlen) = BitVec.ofNat 64 (fl p) ∧ 1 ≤ fl p ∧ fl p ≤ 8 * p.w)
-    (hM : RelCT isa (Two KK) (seqs (loadNum aM sX sXlen)) (Two KK))
-    (hDX : RelCT isa (Two KK) (seqs (loadNum aX sDX sXlen)) (Two KK))
-    {hc₁ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (Impl.Rsa.X86_64.CheckCrtKey.lenWords sXlen ++
-      Impl.Rsa.X86_64.CheckCrtKey.topE ++
-      ([.mov .rax (.reg .r13), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
-        .alu .add .rax (.reg .rax), .mov .rsi (.mem (hdr (sArr aAcc))), .alu .add .rsi (.reg .rax),
-        .mov .rbx (.mem (hdr (sArr aR)))] : List Instr))) hc₁).isSome = true)
-    :
-    RelCT isa (Two KK) (seqs (Impl.Rsa.X86_64.CheckCrtKey.modChecks sX sXlen sDX)) (Two KK) := by
-  unfold Impl.Rsa.X86_64.CheckCrtKey.modChecks
-  have hR : RelCT isa (Two KK) (seqs (Impl.Rsa.X86_64.CheckCrtKey.reduceTop sXlen
-      Impl.Rsa.X86_64.CheckCrtKey.topE)) (Two KK) :=
-    reduceTopK_ct fl (fun _ => 1) hsXl nXl hX (fun p s h => by have := (hX p s h).2.2; omega_arith) (fun _ t _ => topE_ok t)
-      (fun p s h => by
-        obtain ⟨s₀, minv, N, c, hs⟩ := h
-        obtain ⟨a, c1, c2⟩ := hX p s₀ hs
-        have := c.w2
-        exact WP.mono (reduceTopK c (Nx := p.w + 2) hsXl nXl a c1 c2 (fun t _ _ => topE_ok t) (Nat.le_refl _) (by omega_arith)
-          (by omega_arith)) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩) hT
-  refine kk_app (by simp [loadNum]) (by simp [eqOne])
-    (kk_app (by simp [loadNum]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])
-    (kk_app (by simp [loadNum]) (by simp [mulE]) (kk_app (by simp [loadNum]) (by simp [ltMask])
-    (kk_app (by simp [loadNum]) (by simp [loadNum])
-    (kk_app (by simp [loadNum]) (by simp [decM]) hM decMK_ct) hDX) ltXM) mulEK_ct) hR) eqOneK_ct
-
 theorem topQK_ok {p : KPub} {t : State} (h : KK p t) :
     WP isa (.block Impl.Rsa.X86_64.CheckCrtKey.topQ) t fun t' => t'.gpr .r13 = BitVec.ofNat 64 ((p.ql + 7) / 8) ∧
       t'.mem = t.mem ∧ Keep [.r13] t t' := by

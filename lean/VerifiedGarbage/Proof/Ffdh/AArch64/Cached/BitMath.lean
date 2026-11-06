@@ -29,8 +29,4 @@ theorem byte_bit : ∀ (b : Byte), ∀ n<8,
  ((BitVec.ofNat 64 b.toNat >>> n) &&& 1#64).toNat = b.toNat / 2^n % 2 := by
  decide +kernel
 
-theorem mask_bits : ∀ n<8,
- (255#64 >>> (7-n)).toNat = 2^(n+1)-1 := by
- decide +kernel
-
 end VG.Proof.Ffdh.AArch64.Cached

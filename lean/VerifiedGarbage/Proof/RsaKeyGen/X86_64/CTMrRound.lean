@@ -24,13 +24,12 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # A candidate on x86-64: constant time of a round of Miller–Rabin
 
-`mrRound`, from what `mrRound_ok` needs (`R0`), for runs that agree on the
+A round, from what it needs (`R0`), for runs that agree on the
 public data, the witness passing or not among them (`RPub.pass`): its
 witness, the witness in Montgomery form, the exponentiation, and the end,
 which branches on the flag. Between the pieces, what each run keeps is
 little (the header, `Good`); the facts that make the next pieces run come
-from the correctness lemmas of whole stretches (`roundPre_ok`,
-`roundMid_ok`).
+from the correctness lemmas of whole stretches.
 -/
 
 @[expose] public section
@@ -86,7 +85,7 @@ structure RPub where
   u : Nat
   pass : Bool
 
-/-- What a round needs (`mrRound_ok`'s hypotheses). -/
+/-- What a round needs. -/
 def R0 (q : RPub) (s : State) : Prop :=
   KW q.p.B q.p.wr ∧ HP q.p.B q.p.wr (q.p.vs q.i q.u) s ∧ MrDims q.p.B q.p.Z q.p.w ∧
     ∃ (mi : BitVec 64) (c bm : Nat) (r : List Byte) (uni : Nat), MrCtx s q.p.B q.p.Z q.p.w mi c bm ∧
@@ -150,10 +149,6 @@ theorem mrWitness_ct : RelCT isa (Two R0) (seqs mrWitness) (Two W2) := by
 def W3 (q : RPub) (s : State) : Prop :=
   W1 q s ∧ MrDims q.p.B q.p.Z q.p.w ∧ ∃ (mi : BitVec 64) (c bm b : Nat), MrCtx s q.p.B q.p.Z q.p.w mi c bm ∧
     wv s.mem q.p.B (slot q.p.w aXm) q.p.w = Spec.Rsa.powMod b 1 c * 2 ^ (64 * q.p.w) % c ∧ c % 2 = 1 ∧ 1 < c
-
-theorem preRanges_mrh (w : Nat) :
-    ∀ k ∈ [kOut, kLen, kUsedP, kRand, kRandLen, kChecks, kI], ∀ r ∈ preRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k :=
-  fun k hk r hr => midRanges_mrh w k hk r (List.mem_append_left _ hr)
 
 /-- The table's public header words: the entry pointer and the count. -/
 abbrev RPub.tvs (q : RPub) (j : Nat) : List (Nat × BitVec 64) :=
@@ -339,64 +334,12 @@ theorem tabBuild_ct (M : Mont) : RelCT isa (Two W3) (seqs (tabBuild M.mm)) fun _
       (by decide) (fun q => vs_fst0 _ _ _) (fun _ _ h => ⟨let ⟨_, _, _, _, _, hk, _⟩ := h; hk, tl_hp0 h⟩)
       (pins_nil _) (by taint_decide)
 
-/-- The round up to the exponentiation leaks the same in runs that agree on
-the public data. -/
-theorem roundPre_ct (M : Mont) : RelCT isa (Two R0) (seqs (mrWitness ++ [M.mm aXm aX aR2] ++ tabBuild M.mm))
-    (Two fun (q : RPub) s => ExpPre ⟨q.p, q.i, q.u + 8 * q.p.w⟩ s) := by
-  refine two_post ?_ ?_
-  · rw [roundPre_eq]
-    refine RelCT.seqs_app (by simp [mrWitness]) (by simp) (RelCT.seq mrWitness_ct ?_)
-    refine RelCT.seqs_app (by simp) (by simp [tabBuild]) (RelCT.seq (R := Two W3) ?_ (tabBuild_ct M))
-    simp only [seqs]
-    refine two_post (two_map (fun q : RPub => (⟨q.p.B, q.p.Z, q.p.w⟩ : Ws))
-      (fun _ _ h => let ⟨_, hd, mi, _, _, hc, _⟩ := h; ⟨mi, hc.good, hd.z⟩)
-      (M.ct (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨rfl, rfl, rfl⟩))))))) ?_
-    rintro q s ⟨⟨hk, hp⟩, hd, mi, c, bm, hc, hR2, hodd, hc1⟩
-    have hw' : q.p.w < 2 ^ 31 := by have := hd.w128; omega_arith
-    have hRc : Nat.Coprime (2 ^ (64 * q.p.w)) c := VG.Proof.Bignum.coprime_pow2 hodd _
-    have hc0 : 0 < c := by omega_arith
-    refine WP.mono (M.mm_ok hc.good hd.z (by have := hd.w4; omega_arith) hw' (o := aXm) (a := aX) (b := aR2) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
-      (by rw [hR2, hc.n]; exact Nat.mod_lt _ hc0)) fun t ⟨hg, hlt, hy, ha', k⟩ => ?_
-    have hf : Frm q.p.B [(slot q.p.w aAcc, 8 * (q.p.w + 2)), (slot q.p.w aTmp, 8 * (q.p.w + 2)),
-        (slot q.p.w aXm, 8 * (q.p.w + 2))] s.mem t.mem := Frm.of_arrays ha' (by simp)
-    rw [hc.n] at hlt hy
-    rw [hR2] at hy
-    refine ⟨⟨hk, hp.frm hf ((VG.Proof.RsaKeyGen.mm_shape _ _).geD rfl rfl) (q.p.vs_lt _ _ [] (by simp) |> fun h e he => h e (by simpa using he))
-      hg.rdi k.2.2⟩, hd, mi, c, bm, wv s.mem q.p.B (slot q.p.w aX) q.p.w,
-      hc.of_frm hd hf hg.scr hg.rdi ((VG.Proof.RsaKeyGen.mm_shape _ _).geD rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl), ?_, hodd, hc1⟩
-    rw [← Nat.mod_eq_of_lt hlt, VG.Proof.Bignum.powMod_eq, Nat.pow_one, Nat.mod_mul_mod]
-    refine VG.Proof.Bignum.mont_cancel hRc ?_
-    rw [hy, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
-  · rintro q s ⟨hk, hp, hd, mi, c, bm, r, uni, hc, hE, hR2, hc1, hsh, hsrc, -, hlen, -⟩
-    have hm := (hp0 hp).mrh
-    have hw4 := hd.w4
-    have hn := hc.good.scr.nowrap
-    obtain ⟨_, hb, _⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_arith) hsh
-    refine WP.mono (roundPre_ok M hd hc hR2 hsh.1 hc1 hb hm.rand hm.used hm.len hsrc hlen)
-      fun t ⟨hc', hT, hy, _, _, hu, hf, k⟩ => ⟨hk, hp_used hp hc'.good k.2.2 hf (preRanges_mrh _) hu, hd, mi, c, _, _,
-        hc', hT, hE.of_frm hf (fun r hr => Or.inr (preRanges_lt _ r hr)) (by
-          have := aE_fits hd; have := hd.z; omega_arith), hsh.1, hc1, hy⟩
-
 /-- After the exponentiation: the flag, the witness passing or not. -/
 def Rmid (q : RPub) (s : State) : Prop :=
   KW q.p.B q.p.wr ∧ HP q.p.B q.p.wr (q.p.vs q.i (q.u + 8 * q.p.w)) s ∧ MrDims q.p.B q.p.Z q.p.w ∧
     ∃ (mi : BitVec 64) (uni : Nat) (u : Bool), Good s q.p.B q.p.Z q.p.w mi ∧
       word s.mem q.p.B (8 * kFlag) = mask q.pass ∧ word s.mem q.p.B (8 * kUni) = BitVec.ofNat 64 uni ∧
       word s.mem q.p.B (8 * kU) = mask u ∧ uni < 2 ^ 61
-
-/-- The round up to its flag leaks the same in runs that agree on the public
-data. -/
-theorem roundMid_ct (M : Mont) : RelCT isa (Two R0) (seqs ((mrWitness ++ [M.mm aXm aX aR2] ++ tabBuild M.mm) ++
-      mrExpLoop M.mm)) (Two Rmid) := by
-  refine two_post (RelCT.seqs_app (by simp [mrWitness]) (by simp [mrExpLoop]) (RelCT.seq (roundPre_ct M)
-    ((mrExpLoop_ct M).mono (fun _ _ h => two_bind (fun q _ _ h₁ h₂ => ⟨⟨q.p, q.i, q.u + 8 * q.p.w⟩, h₁, h₂⟩) h)
-      fun _ _ _ => trivial))) ?_
-  rintro q s ⟨hk, hp, hd, mi, c, bm, r, uni, hc, hE, hR2, hc1, hsh, hsrc, -, hlen, hun, -, huni, -, hpass⟩
-  have hm := (hp0 hp).mrh
-  refine WP.mono (roundMid_ok M hd hc hE hR2 hc1 hsh hm.rand hm.used hm.len hsrc hlen hm.ki hun hm.chk)
-    fun t ⟨⟨_, hc'⟩, hfl, _, hN, _, hU, hu, _, hf, k⟩ => ⟨hk, hp_used hp hc'.good k.2.2 hf (midRanges_mrh _) hu, hd, mi,
-      uni, _, hc'.good, by rw [hfl, hpass], hN, hU, huni⟩
 
 /-- The test of the flag. -/
 theorem flagTest_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z)
@@ -433,11 +376,5 @@ theorem roundTail_ct : RelCT isa (Two Rmid) (seqs [
   rintro q s ⟨hk, hp, hd, mi, uni, u, hg, hF, -⟩
   exact WP.mono (flagTest_ok hg hd.z hF) fun t ⟨hz, hm, k⟩ =>
     ⟨⟨hk, ⟨(k.gpr (by decide)).trans hp.rdi, k.2.2.trans hp.wr, fun e he => by rw [hm]; exact hp.hdr e he⟩⟩, hz⟩
-
-/-- A round leaks the same in runs that agree on the public data, the
-witness passing or not among them. -/
-theorem mrRound_ct (M : Mont) : RelCT isa (Two R0) (seqs (mrRound M.mm)) fun _ _ => True := by
-  rw [mrRound_eq, ← List.append_assoc]
-  exact RelCT.seqs_app (by simp [mrWitness]) (by simp) (RelCT.seq (roundMid_ct M) roundTail_ct)
 
 end VG.Proof.RsaKeyGen.X86_64

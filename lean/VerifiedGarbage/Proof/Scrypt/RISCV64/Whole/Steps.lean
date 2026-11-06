@@ -55,11 +55,6 @@ theorem pp_pos : 0 < L.pp := h.valid.2.2.2.1
 theorem blen_lt : L.blen.toNat * 128 < 2 ^ 64 :=
   toNat_le_of_disjoint h.kb.symm (by show (0 : Nat) < 1248; omega)
 
-theorem r_le : L.r.toNat ≤ L.blen.toNat := by
-  rw [h.blen_eq]; exact Nat.le_mul_of_pos_right _ h.pp_pos
-
-theorem r_lt : L.r.toNat * 128 < 2 ^ 64 := by have := h.blen_lt; have := h.r_le; omega
-
 /-- `128 r p`, the length of `b`. -/
 theorem len_b : 128 * L.r.toNat * L.pp = L.blen.toNat * 128 := by
   rw [h.blen_eq, Nat.mul_comm 128, Nat.mul_assoc, Nat.mul_comm 128, Nat.mul_assoc]
@@ -72,8 +67,6 @@ theorem ol1 : L.blen.toNat * 128 ≤ (2 ^ 32 - 1) * 32 := by
     Nat.mul_le_mul_right _ h₁
   rw [← h.len_b, Nat.mul_comm (128 * L.r.toNat)]
   omega
-
-theorem slen17 : 17 ≤ L.slen.toNat := by have := h.slen; have := h.rpos; omega
 
 end Lay.Ok
 

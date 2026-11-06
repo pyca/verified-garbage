@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Bits
 
 namespace VG.Proof.EcKey.Compressed.X86
 
-
 open VG.Impl.Ecdsa.X86 VG.Impl.Ecdh.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
 open VG.Proof.Ecdsa.X86 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86
@@ -36,12 +35,6 @@ theorem rootPow_wk {c : Cfg} (hc : CfgOk c) {j : Nat} (hj : j < 3) :
 abbrev rootPowerWrites (c : Cfg) (j : Nat) : List (Nat × Nat) :=
   [(c.sl EXPP, 8 * c.n), (bitsAt c.n j, 64 * c.n)] ++
     powWx (Impl.EcKey.Compressed.X86.rootPow c j) c.wk
-
-theorem rootPower_fixed {c : Cfg} (hc : CfgOk c) (j : Nat) : FixedOk c (rootPowerWrites c j) := by
-  change FixedOk c ([(c.sl EXPP, 8 * c.n)] ++ [(bitsAt c.n j, 64 * c.n)] ++
-    (slW c [ACC, PT, TMP] ++ wkW c))
-  exact ((fixedOk_slW (l := [EXPP]) (by decide)).append (fixedOk_tbl j)).append
-    ((fixedOk_slW (l := [ACC, PT, TMP]) (by decide)).append (fixedOk_wk))
 
 theorem rootPower_apart {c : Cfg} (hc : CfgOk c) {i j : Nat} (hi : i < 45)
     (hw : i ∉ [EXPP, ACC, PT, TMP]) :

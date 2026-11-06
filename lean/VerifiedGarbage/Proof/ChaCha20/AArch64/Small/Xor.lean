@@ -179,12 +179,6 @@ theorem check3_nonzero {s : State} {n : Nat}
   rw [show isa.eval (.nonzero .x .x5) s = some (!(s.gpr .x5 == 0)) from Xor.eval_nonzero s .x5,h]
   by_cases hn : n < 192 <;> simp [hn]
 
-theorem stepped {sve : Bool} (s : State) (hp : xorAArch64.pre s) (n : Nat) (hn : n ≤ 4) (hl : 64*n ≤ L s) :
-    WP isa (.seq (Impl.ChaCha20.AArch64.Small.step n sve) Impl.ChaCha20.AArch64.Xor.xor) s fun u =>
-      GprAbi s u ∧ xorAArch64.post s u ∧ u.gpr .x0=s.gpr .x0 ∧ u.gpr .x1=s.gpr .x3 := by
-  apply WP.seq
-  exact (step_ok (sve := sve) s (XPre.of s hp) n hn hl).mono fun _ h => tail_ok (XPre.of s hp) h hl
-
 theorem short_ok {sve : Bool} (s : State) (hp : xorAArch64.pre s) (hl : L s < 256) :
     WP isa (Impl.ChaCha20.AArch64.Small.short sve) s fun u =>
       GprAbi s u ∧ xorAArch64.post s u ∧ u.gpr .x0=s.gpr .x0 ∧ u.gpr .x1=s.gpr .x3 := by

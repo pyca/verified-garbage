@@ -78,12 +78,6 @@ end
 
 /-! ## Helpers -/
 
-theorem wp_seqs {c : Prog isa} {l : List (Prog isa)} (hl : l ≠ []) {s : State} {Q : State → Prop} :
-    WP isa (VG.Impl.RsaKeyGen.RISCV64.Candidate.seqs (c :: l)) s Q ↔
-      WP isa c s (fun t => WP isa (VG.Impl.RsaKeyGen.RISCV64.Candidate.seqs l) t Q) := by
-  match l, hl with
-  | _ :: _, _ => exact WP.seq_iff
-
 theorem slot_lin (w j : Nat) : slot w j = 256 + j * (8 * w) + j * 16 := by
   show VG.Impl.Bignum.hdrBytes + j * (8 * (w + 2)) = _
   rw [Nat.mul_add 8 w 2, Nat.mul_add, ← Nat.add_assoc]; rfl
@@ -177,12 +171,6 @@ theorem rd_keep (hp : CIn s0) {m m' : Mem} (f : Frame [cS s0] m m') :
   f.readW (r := ⟨fw s0 oRead, 8⟩) (Region.contains_self _ _) (fun ρ hρ => by
     simp only [List.mem_singleton] at hρ; subst hρ
     exact hp.FS.sub_left (fw_sub s0 (by decide))) (by decide)
-
-/-- A word of the header within `scratch`, through what changes only its
-arrays from `slot w 0` on. -/
-theorem outside_scr {B : Addr} {d n : Nat} {m m' : Mem} (o : Outside B d n m m') {e : Nat} (he : e + 8 ≤ d)
-    (hB : B.toNat + e + 8 ≤ 2 ^ 64) : word m' B e = word m B e :=
-  o.word (.inl he) (by omega)
 
 end
 

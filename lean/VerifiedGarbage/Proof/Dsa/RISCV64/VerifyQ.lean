@@ -126,11 +126,6 @@ theorem QArr.arr0 {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QArr L m m') : arrQ m'
   h.wordsVal (Or.inl (by simp only [Lay.slot_eq]; omega_arith))
     (by have := hL.wq_ge; simp only [Lay.slot_eq]; omega_arith)
 
-theorem QArr.top0 {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QArr L m m') :
-    word m' L.Q (slot L.wq 0 + 8 * L.wq) = word m L.Q (slot L.wq 0 + 8 * L.wq) :=
-  h.word (Or.inl (by simp only [Lay.slot_eq]; omega_arith))
-    (by have := hL.wq_ge; simp only [Lay.slot_eq]; omega_arith)
-
 /-- `loadArr j` in the Q space, from a buffer apart from `scratch`. -/
 theorem loadQ_ok {s : State} {L : Lay} {key sig N : Addr} {k j : Nat} (h : QS s L key sig) (hL : L.Ok)
     (hj : j < 28) (hsrc : Src s L N k) (h7 : s.gpr .s7 = N) (h8 : s.gpr .s8 = BitVec.ofNat 64 k)
@@ -311,11 +306,6 @@ theorem QBuf.body {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBuf L m m') : Body L 
 
 theorem QBuf.arr0 {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBuf L m m') : arrQ m' L 0 = arrQ m L 0 :=
   h.wordsVal (Or.inl (by simp only [Lay.slot_eq]; omega_arith))
-    (by have := hL.wq_ge; simp only [Lay.slot_eq]; omega_arith)
-
-theorem QBuf.top0 {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBuf L m m') :
-    word m' L.Q (slot L.wq 0 + 8 * L.wq) = word m L.Q (slot L.wq 0 + 8 * L.wq) :=
-  h.word (Or.inl (by simp only [Lay.slot_eq]; omega_arith))
     (by have := hL.wq_ge; simp only [Lay.slot_eq]; omega_arith)
 
 /-- The buffer's bytes are past the Q space. -/

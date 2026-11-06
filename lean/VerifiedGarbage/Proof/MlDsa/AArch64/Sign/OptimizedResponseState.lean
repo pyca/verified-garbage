@@ -105,14 +105,6 @@ theorem responseProductChk_r0 {p : Params} (hp : Ok3 p) :
     ∀r<p.k,responseProductChk p t1P (s2P p r)=true := by
   rcases hp with rfl | rfl | rfl <;> decide
 
-theorem responseProductChk_h {p : Params} (hp : Ok3 p) :
-    ∀r<p.k,responseProductChk p t3P (t0P p r)=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
-
-theorem responseProductChk_hint {p : Params} (hp : Ok3 p) :
-    ∀r<p.k,responseProductChk p t1P (t0P p r)=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
-
 theorem responseProduct_ok {p : Params} {S : Nat} {σ s : State} {out secret : Ptr} {f g : Poly}
     (hs : RootedSt p S σ s) (hc : responseProductChk p out secret=true)
     (hf : PosPolyIs s.mem (pa s cP) f) (hg : PosPolyIs s.mem (pa s secret) g) :

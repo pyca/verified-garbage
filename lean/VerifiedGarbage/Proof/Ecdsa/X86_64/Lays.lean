@@ -20,9 +20,6 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Wei
 
 variable {c : Cfg}
 
-/-- `x` and `y`, `k` and `k'` bytes long, are apart. -/
-abbrev Apart (x k y k' : Nat) : Prop := x + k ≤ y ∨ y + k' ≤ x
-
 theorem sl_mem_map (hn : 0 < c.n) {i : Nat} {l : List Nat} : c.sl i ∈ l.map c.sl ↔ i ∈ l := by
   constructor
   · intro h
@@ -124,13 +121,6 @@ theorem sl_apart_bits (c : Cfg) {i : Nat} (hi : i < 45) {j : Nat} (hj : i ≠ TM
   by_cases hT : i = TMP
   · subst hT; exact tmp_apart_bits c (hj.resolve_left fun h => h rfl) hj4 t ht
   · exact .inl (by simpa only [Nat.add_zero] using sl_below_bits c hi j 0 (.inl hT))
-
-/-- A numbered slot is apart from the word past the table of `k`'s bits. -/
-theorem sl_apart_pad (c : Cfg) {i : Nat} (hi : i < 45) :
-    c.sl i + 8 * c.n ≤ bitsAt c.n 0 + 64 * c.n ∨ bitsAt c.n 0 + 64 * c.n + 8 ≤ c.sl i := by
-  rcases sl_apart_bits c hi (j := 0) (.inr (.inl (by decide))) (64 * c.n + 8) (by omega) with h | h
-  · exact .inl (by omega)
-  · exact .inr (by omega)
 
 theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat}
     (hw : rcbW S o = lw.map c.sl) (hr : rcbR S p q = lr.map c.sl) (hnd : lw.Nodup)

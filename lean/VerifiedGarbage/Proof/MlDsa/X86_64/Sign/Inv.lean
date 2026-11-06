@@ -112,25 +112,4 @@ theorem Fam.keep {D : Nat} {rbs wbs : List (Reg × Nat)} {s s' : State} (L : Lay
     (hc : famChk (rbs ++ wbs) ws b m = true) (h : Fam s b m f) : Fam s' b m f :=
   fun j hj => L.keepPoly hP (famChk_one hc hj) (h j hj)
 
-theorem Pl.keep {D : Nat} {rbs wbs : List (Reg × Nat)} {s s' : State} (L : Lay D rbs wbs s)
-    {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) {j : Nat} {f : Poly}
-    (hc : keepB (rbs ++ wbs) ws (pS j) 1024 = true) (h : Pl s j f) : Pl s' j f :=
-  L.keepPoly hP hc h
-
-theorem Fam.congr {s : State} {b m : Nat} {f g : Nat → Poly} (h : Fam s b m f) (e : ∀ j < m, f j = g j) :
-    Fam s b m g := fun j hj => e j hj ▸ h j hj
-
-/-- The first `r` slots of a family, and the rest. -/
-theorem Fam.split {s : State} {b m r : Nat} {f : Nat → Poly} (hr : r ≤ m) :
-    Fam s b m f ↔ Fam s b r f ∧ Fam s (b + r) (m - r) fun j => f (r + j) := by
-  constructor
-  · intro h
-    exact ⟨fun j hj => h j (by omega), fun j hj => by rw [Nat.add_assoc]; exact h (r + j) (by omega)⟩
-  · rintro ⟨h1, h2⟩ j hj
-    by_cases e : j < r
-    · exact h1 j e
-    · have := h2 (j - r) (by omega)
-      simp only [show b + r + (j - r) = b + j by omega, show r + (j - r) = j by omega] at this
-      exact this
-
 end VG.Proof.MlDsa.X86_64.Sign

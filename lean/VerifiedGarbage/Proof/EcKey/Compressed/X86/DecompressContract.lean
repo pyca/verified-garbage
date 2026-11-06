@@ -56,6 +56,4 @@ theorem decompress_implies (I : Spec.EcKey.Instance)
       abi, argSlots, argVal, argBytes, stackBelow, decompressContract, codecPre]
   sat := hsat
 
-def decompressSatState (len : Nat) : State := satState (len + 1) (2 * len + 1)
-
 end VG.Proof.EcKey.Compressed.X86

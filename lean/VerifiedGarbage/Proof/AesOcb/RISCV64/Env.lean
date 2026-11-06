@@ -72,10 +72,8 @@ variable {V : Reg → BitVec 64} {sp : Addr} {s : State} (h : Env V sp s)
 include h
 
 theorem Env.s0 : s.gpr .s0 = V .s0 := h.fr _ (by decide)
-theorem Env.s1 : s.gpr .s1 = V .s1 := h.fr _ (by decide)
 theorem Env.s2 : s.gpr .s2 = V .s2 := h.fr _ (by decide)
 theorem Env.s3 : s.gpr .s3 = V .s3 := h.fr _ (by decide)
-theorem Env.s7 : s.gpr .s7 = V .s7 := h.fr _ (by decide)
 theorem Env.s8 : s.gpr .s8 = V .s8 := h.fr _ (by decide)
 theorem Env.s9 : s.gpr .s9 = V .s9 := h.fr _ (by decide)
 theorem Env.s10 : s.gpr .s10 = V .s10 := h.fr _ (by decide)
@@ -139,9 +137,6 @@ theorem wW {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 6
 
 theorem wR {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
-
-theorem kC {d n : Nat} (h : d + n ≤ 256) : Covers [⟨K + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
-  covers_off P.k h (by decide)
 
 theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)
@@ -248,11 +243,6 @@ theorem in_mutW {W D : Addr} {n d k : Nat} (h : d + k ≤ 128 ∨ (256 ≤ d ∧
 /-- The data, as a part the pieces may write. -/
 theorem in_mutD {W D : Addr} {n : Nat} {r : Region} (h : Region.Sub r ⟨D, n⟩) :
     ∃ r' ∈ mutR W D n, Region.Sub r r' := ⟨_, by simp, h⟩
-
-/-- A frame within a part of `W` the pieces may write. -/
-theorem frame_mutW {W D : Addr} {n d k : Nat} (h : d + k ≤ 128 ∨ (256 ≤ d ∧ d + k ≤ 2560)) {m m' : Mem}
-    (f : Frame [⟨W + BitVec.ofNat 64 d, k⟩] m m') : Frame (mutR W D n) m m' :=
-  f.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact in_mutW h
 
 /-- The part of `W` at `[d, d + k)`, when it misses the parts the pieces write. -/
 theorem kept_mut {K W D : Addr} {n : Nat} (L : Lay K W) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)

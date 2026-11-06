@@ -68,16 +68,6 @@ theorem decompress_key (c : Cfg) (root : Fe c.C → Fe c.C) (s : State) :
     (by change (Spec.Ecdsa.bytesAt _ _ _).head? = _; rw [hb]; rfl)
     (by change ofBytes ((Spec.Ecdsa.bytesAt _ _ _).drop 1) = _; rw [hb]; rfl)
 
-def decompressFront (c : Cfg) : Prog isa :=
-  .seq (.block (c.setupWith Impl.EcKey.Compressed.X86.args))
-    (.seq (.block (Impl.EcKey.Compressed.X86.decompressPeer c))
-      (Impl.Weierstrass.X86.fprog c.SP (Impl.EcKey.Compressed.X86.rhsOps c)))
-
-theorem decompressFront_prefix_ok {c : Cfg} (hc : CfgOk c) {s : State}
-    (hp : InputPre c (1 + c.C.len) s) : WP isa (decompressFront c) s (DecompressFront c s) := by
-  have h := decompressFront_ok hc hp (rest := .block []) (fun _ F => WP.block_nil F)
-  simpa only [decompressFront, WP.seq_iff (M := isa), WP.block_nil_iff (M := isa)] using h
-
 def decompressBody (c : Cfg) : Prog isa :=
   .seq (.block (c.setupWith Impl.EcKey.Compressed.X86.args))
     (.seq (.block (Impl.EcKey.Compressed.X86.decompressPeer c))

@@ -16,9 +16,6 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 namespace VG.Proof.TripleDes.X86
 open VG VG.X86 VG.Impl.TripleDes.X86
 
-def blockTaint : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [8, 512],
-    argLen := 16, argBases := [(8, 0), (12, 1)] }
 def keyTaint : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [384, 512],
     argLen := 20, argBases := [(12, 0), (16, 1)] }
@@ -52,18 +49,6 @@ taint_summary roundEnc : taint roundTaint (.block (roundBody ++ roundAdvance .en
 taint_summary roundDec : taint roundTaint (.block (roundBody ++ roundAdvance .decrypt))
 taint_summary ecbRoundEnc : taint ecbRoundTaint (.block (roundBody ++ roundAdvance .encrypt))
 taint_summary ecbRoundDec : taint ecbRoundTaint (.block (roundBody ++ roundAdvance .decrypt))
-
-theorem encryptBlock_constantTime (pre : State → Prop) (pub : State → State → Prop)
-    (h : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → VG.X86.Taint.Agree blockTaint s₁ s₂) :
-    ConstantTime isa pre pub encryptBlock :=
-  let ⟨_, hc⟩ := (by taint_decide_sum [roundEnc, roundDec] : ∃ h, (taint.check blockTaint encryptBlock h).isSome = true)
-  VG.Taint.constantTime (A := taint) blockTaint h hc
-
-theorem decryptBlock_constantTime (pre : State → Prop) (pub : State → State → Prop)
-    (h : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → VG.X86.Taint.Agree blockTaint s₁ s₂) :
-    ConstantTime isa pre pub decryptBlock :=
-  let ⟨_, hc⟩ := (by taint_decide_sum [roundEnc, roundDec] : ∃ h, (taint.check blockTaint decryptBlock h).isSome = true)
-  VG.Taint.constantTime (A := taint) blockTaint h hc
 
 theorem expandKey_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (h : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → VG.X86.Taint.Agree keyTaint s₁ s₂) :

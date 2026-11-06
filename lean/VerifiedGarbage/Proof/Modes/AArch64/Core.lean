@@ -89,8 +89,6 @@ structure Layout (c : Core) : Prop where
 
 theorem Layout.G_pos {c : Core} (_ : Layout c) : 0 < c.G := Nat.two_pow_pos _
 
-theorem Layout.G_lt {c : Core} (h : Layout c) : c.G < 2 ^ 16 := Nat.pow_lt_pow_right (by decide) h.lgG_lt
-
 /-- The registers the modes write between the core's code: their own and
 the two the core keeps for them. -/
 def modeRegs (c : Core) : List Reg :=

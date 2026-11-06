@@ -19,7 +19,7 @@ that they are public). `scratch` holds, from byte 0, the
 Keccak state (200 bytes), the working space of the sponge functions (640
 bytes) and, from byte 840, the XOF output.
 
-`sponge rate outlen` hashes the message at `x3` of `x4` bytes: it zeroes the
+`spongeWith c rate outlen` hashes the message at `x3` of `x4` bytes: it zeroes the
 state (the empty message), absorbs the message with `vg_keccak_absorb`, pads
 it with `vg_keccak_pad` (SHAKE's suffix `0x1f`) from the position absorbing
 returns, and squeezes `outlen` bytes to `scratch + 840` with
@@ -36,9 +36,6 @@ namespace VG.Impl.MlDsa.AArch64.Sample
 
 open VG.AArch64
 open VG.Impl.MlKem.AArch64 (mov)
-
-/-- Where the XOF output starts in `scratch`. -/
-abbrev outOff : Nat := 840
 
 /-- Save `x25`, `x26`, `x27` and `x30` at `scr + 2016`, and set up the layout:
 `x25` = `scr`, `x26` = `a`, `x27` = the parameter (`prm`), `x3` = the
@@ -73,8 +70,6 @@ def spongeWith (c : Impl.Sha3.AArch64.Callee) (rate outlen : Nat) : Prog isa :=
         (.seq (.call ("vg_keccak_pad_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c))
           (.seq (.block (sqzArgs rate outlen))
             (.call ("vg_keccak_squeeze_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c))))))
-
-def sponge := spongeWith .scalar
 
 /-- `x30`, `x26`, `x27` and `x25` restored. -/
 def epi : List Instr :=

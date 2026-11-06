@@ -51,9 +51,8 @@ caller's registers in `scratch` (`setup_ok`); one block (`body_ok`: `init_ok`,
 `rounds_ok`, `fin_ok` and `advance_ok`), whose loop invariant is all in
 `scratch`; and the epilogue (`restore_ok`). The loop is proven against
 `Proof.Blake2.compressArm Spec.Blake2.s` (`compress_verified'`), which the
-streaming functions use for their calls; `compress_verified` moves it to the
-shared contract of `Spec/Blake2/Contract.lean`. Constant time is the taint
-analysis on the literal code (`LitS.lean`).
+streaming functions use for their calls. Constant time is the taint analysis
+on the literal code (`LitS.lean`).
 -/
 
 namespace VG.Proof.Blake2.ArmS
@@ -762,16 +761,5 @@ theorem compress_verified' :
 
 theorem compress_noCalls : Impl.Blake2.Arm.S.compress.noCalls = true := by
   lit_decide
-
-theorem compress_implies :
-    (compressArm Spec.Blake2.s).Implies (Proof.Blake2.compressSContract Arm.abi) := by
-  sig_implies [Proof.Blake2.compressSContract, Proof.Blake2.compressSSig, compressArm, tArm, Arm.abi,
-    Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Spec.Blake2.blockBytes]
-    [sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sat
-
-/-- The proof, against the shared contract of `Spec/Blake2/Contract.lean`. -/
-theorem compress_verified :
-    Verified Arm.target Impl.Blake2.Arm.S.compress (Proof.Blake2.compressSContract Arm.abi) :=
-  compress_verified'.of_implies compress_implies
 
 end VG.Proof.Blake2.ArmS

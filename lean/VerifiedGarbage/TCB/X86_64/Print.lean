@@ -217,6 +217,9 @@ def ZOp.asm : ZOp → String
   | .vpermq d r o => s!"vpermq {d.zname}, {r.zname}, {o.toNat}"
   | .vpmadd52 hi d a b =>
     s!"{if hi then "vpmadd52huq" else "vpmadd52luq"} {d.zname}, {a.zname}, {b.zname}"
+  | .vpermw d a b => s!"vpermw {d.zname}, {a.zname}, {b.zname}"
+  | .vpsrlvw d a b => s!"vpsrlvw {d.zname}, {a.zname}, {b.zname}"
+  | .vextracti32x4 d r n => s!"vextracti32x4 {d.name}, {r.zname}, {n.toNat}"
 
 /-- The name of the `xmm` register of a `VReg`. -/
 def VReg.name : VReg → String
@@ -329,6 +332,7 @@ def Instr.asm : Instr → List String
   | .kStore m k r => [s!"kmovw k1, {k.name32}", s!"vmovdqu64 {m.str512} " ++ "{k1}" ++ s!", {r.zname}"]
   | .kLoad8 k d m => [s!"kmovq k1, {k.name}", s!"vmovdqu8 {d.zname} " ++ "{k1}{z}" ++ s!", {m.str512}"]
   | .kStore8 m k r => [s!"kmovq k1, {k.name}", s!"vmovdqu8 {m.str512} " ++ "{k1}" ++ s!", {r.zname}"]
+  | .vpcmpltuw d a b => [s!"vpcmpuw k1, {a.zname}, {b.zname}, 1", s!"kmovd {d.name32}, k1"]
   | .stmxcsr m => [s!"stmxcsr {m.str32}"]
   | .ldmxcsr m => [s!"ldmxcsr {m.str32}"]
   | .lfence => ["lfence"]
@@ -378,7 +382,7 @@ def Instr.memOps : Instr → List MemOp
   | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .shiftCl .. | .shiftx .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _
-  | .vpmovmskb .. | .zop _ | .eop _
+  | .vpmovmskb .. | .zop _ | .eop _ | .vpcmpltuw ..
   | .lfence | .mul _ | .imul .. | .imul3 .. | .shld .. | .btr ..
   | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => []
 

@@ -16,8 +16,6 @@ structure KeyRetries where
   keys : Nat
   scalars : Nat
 
-def initialKeyRetries : KeyRetries := ⟨128, 128⟩
-
 def keyInit (len : Nat) : Option (List Nat) :=
   if 64 ≤ len && len ≤ 1024 then some [128, 128, len, len] else none
 

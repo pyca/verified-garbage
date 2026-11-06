@@ -50,8 +50,6 @@ open VG.Proof.Sha3 (Lanes laneAddr lane_contains contains_offset sub_offset off_
 open VG.Proof.MdStream.PPC64LE (Upd Mupd WP.cons wp_li wp_std wp_addi wp_subi)
 
 abbrev KState := Spec.Sha3.State
-abbrev Lane := Spec.Sha3.Lane
-
 /-! ## The precondition -/
 
 section
@@ -446,16 +444,6 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   · exact .inr ⟨by show eval (.nonzero .d .r20) s' = _; rw [he]; simp [hlast],
       12 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, hl⟩
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | _ => 0
-  lr := 0
-  sp := 0x4000
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 200⟩, ⟨0x2000, 512⟩]
-
 theorem permute_correct (s : State) (hs : Proof.Sha3.permutePPC64LE.pre s) :
     ∃ t s', Exec isa Impl.Sha3.PPC64LE.permute s t s' ∧ abiPreserved s s' ∧
       Proof.Sha3.permutePPC64LE.post s s' := by
@@ -464,23 +452,5 @@ theorem permute_correct (s : State) (hs : Proof.Sha3.permutePPC64LE.pre s) :
     (by rw [← Code.allInstrs_eq]; lit_decide)⟩, h₂⟩
 
 theorem permute_noFrames : Impl.Sha3.PPC64LE.permute.noFrames = true := by lit_decide
-
-theorem permute_ct : ConstantTime isa Proof.Sha3.permutePPC64LE.pre Proof.Sha3.permutePPC64LE.pub
-    Impl.Sha3.PPC64LE.permute := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h1, h2, hsp⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> with_reducible assumption
-
-theorem permute_verified' :
-    Verified PPC64LE.target Impl.Sha3.PPC64LE.permute Proof.Sha3.permutePPC64LE :=
-  ⟨permute_correct, permute_ct, satState, rfl, rfl, Region.disjoint_of_sep (by decide)⟩
-
-theorem permute_verified :
-    Verified PPC64LE.target Impl.Sha3.PPC64LE.permute (Proof.Sha3.permuteContract PPC64LE.abi) :=
-  permute_verified'.of_implies (by
-    contract_implies [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, Proof.Sha3.permutePPC64LE,
-      PPC64LE.abi, PPC64LE.argRegs] [satState] using satState)
 
 end VG.Proof.Sha3.PPC64LE

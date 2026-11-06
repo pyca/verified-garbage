@@ -166,7 +166,7 @@ theorem sharedMrLoop_ct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc 
       rw [← hu'] at hI'
       exact ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni', hI', hS, hrlen, hc1, hsh, ho, hu, hl0, hw, by rw [hu']; omega⟩
 
-/-- What `millerRabin` needs (`millerRabin_ok`'s hypotheses), for the shape
+/-- What `millerRabinWith` needs, for the shape
 of its result. -/
 def SharedMrPre (a : SharedLPub) (s : State) : Prop :=
   KW a.p.B a.p.wr ∧ HP a.p.B a.p.wr [] s ∧ MrDims a.p.B a.p.Z a.p.w ∧ a.p.ch < 2 ^ 62 ∧ a.p.rl < 2 ^ 64 ∧
@@ -180,7 +180,7 @@ def SharedMrPre (a : SharedLPub) (s : State) : Prop :=
       word s.mem a.p.B (8 * kUsed) = BitVec.ofNat 64 a.u0 ∧ 8 * a.p.w ≤ a.u0 ∧ a.u0 ≤ r.length ∧
       shapeOf (mrRest c a.p.ch r 1 0 a.u0) = a.S ∧ SharedEnv a.p.B a.p.Z a.sp s
 
-/-- `millerRabin` leaks the same in runs that agree on the public data and on
+/-- `millerRabinWith` leaks the same in runs that agree on the public data and on
 the shape of the result. -/
 theorem sharedMillerRabin_ct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) : RelCT isa (Two SharedMrPre) (seqs (millerRabinWith mm R.run)) (Two SharedLoopEnd) := by
   unfold millerRabinWith

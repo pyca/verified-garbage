@@ -70,9 +70,6 @@ the registers the pieces pass on. -/
 abbrev Kept (c : Cx) (s s' : State) : Prop :=
   Env c s' ∧ s'.sp = s.sp ∧ ∀ r ∈ [Reg.s9, .s10, .s11], s'.gpr r = s.gpr r
 
-theorem Kept.trans {c : Cx} {s t u : State} (h₁ : Kept c s t) (h₂ : Kept c t u) : Kept c s u :=
-  ⟨h₂.1, h₂.2.1.trans h₁.2.1, fun r hr => (h₂.2.2 r hr).trans (h₁.2.2 r hr)⟩
-
 /-- Code without calls that writes none of the environment's registers, nor
 `s9`–`s11`. -/
 theorem Runs.kept {c : Cx} {code : Prog isa} {s : State} (E : Env c s) (rs : List Reg)
@@ -104,17 +101,9 @@ theorem rel_key {σ₁ σ₂ : State} {K : Addr} {kl : Nat} {C S : Addr} (h₁ :
     (h₂ : KeyCall σ₂ K kl C S) (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) Impl.AesGcm.RISCV64.keyCall TT :=
   Proof.AesGcm.RISCV64.key_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, kl, C, S, h₁, h₂, hsp⟩
 
-theorem ctr_runs {c : Cx} {s : State} {K C D S : Addr} {R n : Nat} (E : Env c s) (h : CtrCall s K C D S R n) :
-    Runs Impl.AesGcm.RISCV64.ctrCall s (Kept c s) :=
-  Runs.of_wp (WP.mono (Proof.AesGcm.RISCV64.ctr_call h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
-
 theorem gh_runs [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} {s : State} {H Y D S : Addr} {n : Nat} (E : Env c s) (h : GhCall s H Y D S n) :
     Runs Impl.AesGcm.RISCV64.ghCall s (Kept c s) :=
   Runs.of_wp (WP.mono (Proof.AesGcm.RISCV64.gh_call h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
-
-theorem key_runs {c : Cx} {s : State} {K : Addr} {kl : Nat} {C S : Addr} (E : Env c s) (h : KeyCall s K kl C S) :
-    Runs Impl.AesGcm.RISCV64.keyCall s (Kept c s) :=
-  Runs.of_wp (WP.mono (Proof.AesGcm.RISCV64.key_call h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
 
 theorem rel_enc {σ₁ σ₂ : State} {K D S : Addr} {R n : Nat} (h₁ : Proof.AesOcb.RISCV64.BCall σ₁ K D S R n)
     (h₂ : Proof.AesOcb.RISCV64.BCall σ₂ K D S R n) (hsp : σ₁.sp = σ₂.sp) :

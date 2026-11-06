@@ -32,17 +32,4 @@ def jacAdd (K : WinCfg) (p q o : Pt) (dbl : RcbSlots → Pt → Pt → List FOp 
     (.seq (.block (zeroTest K.M.n K.S.t5)) <|
       .ite .e (fprogB K.M (dbl K.S p o)) (.block (infinity K o)))
     (fprogB K.M (jacTail K.S p q o))
-def jacMixedAdd (K : WinCfg) (p q o : Pt) : Prog isa :=
-  let head := jacMixedHead K.S p q
-  let tail := jacMixedTail K.S p q o
-  .seq (.block (zeroTest K.M.n p.z)) <|
-  .ite .e (.block (copyPt K.M.n o q)) <|
-  .seq (.block (copy K.M.n K.S.t2 p.x ++ copy K.M.n K.S.t4 p.y)) <|
-  .seq (fprogB K.M head) <|
-  .seq (.block (zeroTest K.M.n K.S.t3)) <|
-  .ite .e
-    (.seq (.block (zeroTest K.M.n K.S.t5)) <|
-      .ite .e (fprogB K.M (dblJMul K.S p o)) (.block (infinity K o)))
-    (fprogB K.M tail)
-
 end VG.Impl.Weierstrass.X86_64.Jacobian

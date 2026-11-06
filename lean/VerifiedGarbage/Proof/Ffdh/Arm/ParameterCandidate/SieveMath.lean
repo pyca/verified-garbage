@@ -21,11 +21,6 @@ theorem sieveAny_mono {value a b : Nat} (bound : a ≤ b) (hit : sieveAny value 
   obtain ⟨i, hi, divides⟩ := hit
   exact ⟨i, by omega, divides⟩
 
-theorem sieveNext_progress {n value i : Nat} (more : i < trialCount n) :
-    i < sieveNext n value i ∧ sieveNext n value i ≤ trialCount n := by
-  unfold sieveNext
-  split <;> omega
-
 theorem sieveAny_rsa {value bits : Nat} (large : 8161 < value) :
     sieveAny value (trialCount ((bits+7)/8)) = Spec.RsaKeyGen.obviouslyComposite bits value := by
   by_cases small : bits ≤ 1024

@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 # `vg_rsa_pkcs1_verify` on x86-64: the contract on the registers
 
 `verContract` states the shared contract (with the stack the frame and the
-call use, `verStack`) on the registers and the stack (`verify_implies`).
+call use, `verStack`) on the registers and the stack.
 -/
 
 @[expose] public section
@@ -101,29 +101,5 @@ theorem leak_eq4 {a b c d a' b' c' d' : List Byte} (ha : a.length = a'.length) (
   obtain ⟨h₂, rfl⟩ := List.append_inj h₁ (by simp [ha, hb])
   obtain ⟨rfl, rfl⟩ := List.append_inj h₂ ha
   exact ⟨rfl, rfl, rfl, rfl⟩
-
-theorem verify_implies : verContract.Implies (Spec.RsaPkcs1Sig.verifyContract abi verStack) where
-  pre := by
-    intro s h
-    -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.RsaPkcs1Sig.verifyContract, Spec.RsaPkcs1Sig.verifySig, abi, argRegs, verContract, verStack, stackArgs_five, List.append_eq] at h
-    sig_pre [Spec.RsaPkcs1Sig.verifyContract, Spec.RsaPkcs1Sig.verifySig, abi, argRegs, verContract, verStack, stackArgs_five, List.append_eq] at h
-    sig_split h
-    sig_reduce [Spec.RsaPkcs1Sig.verifyContract, Spec.RsaPkcs1Sig.verifySig, abi, argRegs, verContract, verStack, stackArgs_five, List.append_eq]
-    sig_and_intros
-    sig_close
-    all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaPkcs1Sig.verifyContract, Spec.RsaPkcs1Sig.verifySig, abi, argRegs, verContract, verStack, stackArgs_five, List.append_eq]
-  pub := by
-    rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPkcs1Sig.verifyContract, Spec.RsaPkcs1Sig.verifySig, abi, argRegs, verContract, verStack, stackArgs_five, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-    obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4⟩ := h
-    obtain ⟨hn, he, hd, hs⟩ := leak_eq4 (by simp [Spec.Rsa.bytesAt, hsi]) (by simp [Spec.Rsa.bytesAt, hcx])
-      (by simp [Spec.Rsa.bytesAt, a0]) hl
-    refine ⟨?_, h8, by simp only [stackArgs_five, a0, a1, a2, a3, a4], hn, he, hd, hs⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    exact ⟨hdi, hsi, hdx, hcx, h9, hsp⟩
-  sat := by sig_implies_sat [Spec.RsaPkcs1Sig.verifyContract, Spec.RsaPkcs1Sig.verifySig, abi, argRegs, verContract, verStack, stackArgs_five, List.append_eq] [verSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verSatState
 
 end VG.Proof.RsaPkcs1Sig.X86_64

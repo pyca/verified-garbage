@@ -143,7 +143,4 @@ def verifyFor (v : FieldVariant) : Prog isa :=
         (.frame (.push regs) (bodyFor v) (.pop .r11 32)))
       (.block [.mov32 .rax (.imm 0)]))
 
-def body : Prog isa := bodyFor .scalar
-def verify : Prog isa := verifyFor .scalar
-
 end VG.Impl.Ed448.X86_64.Verify

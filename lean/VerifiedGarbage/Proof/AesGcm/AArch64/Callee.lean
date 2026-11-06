@@ -219,62 +219,6 @@ theorem gh_rel (g : GhashImpl) {P : State → State → Prop}
     h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₁.x4, h₂.x0, h₂.x1, h₂.x2, h₂.x3, h₂.x4, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
 
-/-! ## `vg_ghash_prepared` -/
-
-/-- What a call of `vg_ghash_prepared` needs beyond `GhCall` with the hash
-subkey at `Ctx + 240`: the 144 bytes from there readable, apart from the
-accumulator and the working space, and the eight prepared powers at `Ctx`. -/
-structure GhPCall (s : State) (Ctx Y S : Addr) : Prop where
-  reads : Covers [⟨Ctx + BitVec.ofNat 64 240, 144⟩] (s.rd ++ s.wr)
-  hy : (⟨Ctx + BitVec.ofNat 64 240, 144⟩ : Region).Disjoint ⟨Y, 16⟩
-  hs : (⟨Ctx + BitVec.ofNat 64 240, 144⟩ : Region).Disjoint ⟨S, 256⟩
-  repr : Proof.Gcm.PreparedPowers8Repr s.mem Ctx
-
-section
-variable {s : State} {Ctx Y D S : Addr} {n : Nat} (h : GhCall s (Ctx + BitVec.ofNat 64 240) Y D S n)
-  (p : GhPCall s Ctx Y S)
-include h p
-
-theorem GhPCall.pre : Proof.Gcm.ghashPreparedAArch64.pre (s.callEntry.withRegions
-    [⟨Ctx + BitVec.ofNat 64 240, 144⟩, ⟨D, 16 * n⟩] [⟨Y, 16⟩, ⟨S, 256⟩]) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
-  have e : Ctx + BitVec.ofNat 64 240 - 240 = Ctx := BitVec.add_sub_cancel _ _
-  simp only [Proof.Gcm.ghashPreparedAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-    State.withRegions_mem, State.callEntry_mem, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3,
-    callEntry_x4, h.x0, h.x1, h.x2, h.x3, h.x4, hn, e]
-  exact ⟨trivial, trivial, p.hy, p.hs, h.yd, h.ys, h.ds, p.repr⟩
-
-theorem GhPCall.covers : Covers ([⟨Ctx + BitVec.ofNat 64 240, 144⟩, ⟨D, 16 * n⟩] ++ [⟨Y, 16⟩, ⟨S, 256⟩])
-    (s.rd ++ s.wr) :=
-  Covers.cons p.reads ((Covers.of_mem fun _ hr => List.mem_cons_of_mem _ hr).trans h.reads)
-
-theorem gp_call (g : GhashPreparedImpl) :
-    WP isa (.call g.fn.name g.fn.code) s (GhPost s (Ctx + BitVec.ofNat 64 240) Y D S n) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.n_lt; omega)
-  refine WP.call (k := Proof.Gcm.ghashPreparedAArch64) g.ok (rd := [⟨Ctx + BitVec.ofNat 64 240, 144⟩, ⟨D, 16 * n⟩])
-    (wr := [⟨Y, 16⟩, ⟨S, 256⟩]) (GhPCall.pre h p) (GhPCall.covers h p) h.writes ?_ g.noFrames
-  intro s' hrd hwr hsp hf hsaved _ hpost
-  refine ⟨hrd, hwr, hsp, hsaved, hf, ?_⟩
-  simp only [Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, State.withRegions_gpr, State.withRegions_mem,
-    State.callEntry_mem, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, h.x0, h.x1, h.x2, h.x3, hn] at hpost
-  exact hpost
-
-end
-
-theorem gp_rel (g : GhashPreparedImpl) {σ₁ σ₂ : State} {Ctx Y D S : Addr} {n : Nat}
-    (h₁ : GhCall σ₁ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₁ : GhPCall σ₁ Ctx Y S)
-    (h₂ : GhCall σ₂ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₂ : GhPCall σ₂ Ctx Y S) (hsp : σ₁.sp = σ₂.sp) :
-    RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) (.call g.fn.name g.fn.code) fun _ _ => True := by
-  refine RelCT.call g.ok g.ct [⟨Ctx + BitVec.ofNat 64 240, 144⟩, ⟨D, 16 * n⟩] [⟨Y, 16⟩, ⟨S, 256⟩]
-    fun a b hab => ?_
-  obtain ⟨rfl, rfl⟩ := hab
-  refine ⟨GhPCall.pre h₁ p₁, GhPCall.pre h₂ p₂, ?_, GhPCall.covers h₁ p₁, h₁.writes, GhPCall.covers h₂ p₂,
-    h₂.writes⟩
-  simp only [Proof.Gcm.ghashPreparedAArch64, Proof.Gcm.ghashAArch64, State.withRegions_gpr, State.withRegions_sp,
-    State.callEntry_sp, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4,
-    h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₁.x4, h₂.x0, h₂.x1, h₂.x2, h₂.x3, h₂.x4, hsp]
-  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
-
 /-! ## `vg_aes_ctr32` -/
 
 /-- What a call of `vg_aes_ctr32` needs: the key schedule at `K` for `R`

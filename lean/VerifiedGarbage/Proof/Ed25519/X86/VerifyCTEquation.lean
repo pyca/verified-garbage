@@ -46,28 +46,6 @@ private theorem ctEqualOps_eval (e : Env) :
     evalOps pointEqualOps e 8 = e 0 * e 6 ∧ evalOps pointEqualOps e 9 = e 4 * e 2 ∧
     evalOps pointEqualOps e 10 = e 1 * e 6 ∧ evalOps pointEqualOps e 11 = e 5 * e 2 := ⟨rfl, rfl, rfl, rfl⟩
 
-theorem equalFirst_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
-    WP isa (.block (fieldCode pointEqualOps ++ fieldEqual 8 9)) s fun t =>
-      FieldKeep base s t ∧
-      t.zf = some (decide (env s.mem base 0 * env s.mem base 6 = env s.mem base 4 * env s.mem base 2)) ∧
-      env t.mem base 10 = env s.mem base 1 * env s.mem base 6 ∧
-      env t.mem base 11 = env s.mem base 5 * env s.mem base 2 := by
-  rw [WP.block_append_iff]
-  refine WP.mono (fieldCode_ok pointEqualOps hs) fun a ⟨ka, va⟩ => ?_
-  refine WP.mono (fieldEqual_ok (ka.ctx hs) 8 9) fun t ⟨kt, te, tz⟩ => ?_
-  refine ⟨ka.trans kt, ?_, ?_, ?_⟩
-  · rw [tz, va, (ctEqualOps_eval _).1, (ctEqualOps_eval _).2.1]
-  · rw [te 10 (by decide), va, (ctEqualOps_eval _).2.2.1]
-  · rw [te 11 (by decide), va, (ctEqualOps_eval _).2.2.2]
-
-theorem returnFlag_ct (b : Bool) :
-    RelCT isa (fun _ _ => True) (.block [.mov .eax (.imm (if b then 1 else 0))]) (fun _ _ => True) := by
-  cases b
-  · apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by native_taint_decide)
-    exact fun _ _ _ => regsTaint_agree (by simp)
-  · apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by native_taint_decide)
-    exact fun _ _ _ => regsTaint_agree (by simp)
-
 /-- Two points representing `P` and `Q` in slots 0–3 and 4–7. -/
 def EqRepPre (base : BitVec 32) (P Q : Edwards.EPoint VG.Proof.Ed25519.dZ) (s : State) : Prop :=
   Ctx base s ∧ VG.Proof.Ed25519.RepP (point (env s.mem base) 0 1 2 3) P ∧

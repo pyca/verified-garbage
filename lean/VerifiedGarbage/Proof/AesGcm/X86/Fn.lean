@@ -16,11 +16,6 @@ from its stack arguments, saves our caller's `ebx, esi, edi, ebp` at
 `W + 128` (`save_ok`), copies arguments to their slots in `W` (`keeps_ok`)
 and in the end restores the registers (`exit_ok`); the pieces it runs in
 between never write `W + 128` to `W + 240` (`keptR`).
-
-The postconditions quantify over what the state represents (the nonce, the
-additional data, the text so far), which the code never looks at: each
-function runs the same for all of them, so one run satisfies each instance
-of its proof (`WP.forall_det`).
 -/
 
 @[expose] public section
@@ -31,16 +26,6 @@ namespace VG.Proof.AesGcm.X86
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcm.X86 VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
-
-/-- A run that satisfies `R`, and for each `i` with `P i`, `Q i`. -/
-theorem WP.forall_det {c : Prog isa} {s : State} {ι : Sort _} {P : ι → Prop} {Q : ι → State → Prop}
-    {R : State → Prop} (h₀ : WP isa c s R) (h : ∀ i, P i → WP isa c s (Q i)) :
-    WP isa c s fun s' => R s' ∧ ∀ i, P i → Q i s' := by
-  obtain ⟨t, s', e, r⟩ := h₀
-  refine ⟨t, s', e, r, fun i hi => ?_⟩
-  obtain ⟨t', s'', e', q⟩ := h i hi
-  obtain ⟨-, rfl⟩ := Exec.det e e'
-  exact q
 
 /-- The address of the stack argument `i` on entry, with `esp = SP`. -/
 abbrev argA (SP : BitVec 32) (i : Nat) : Addr := w64 (SP + BitVec.ofNat 32 (4 + 4 * i))

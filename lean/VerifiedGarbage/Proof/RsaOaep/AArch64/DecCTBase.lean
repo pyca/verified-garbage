@@ -21,9 +21,9 @@ Inside the decoding, two runs in a layout are related by `PW`: each is `In`
 the frames (`Ctx`, the pieces' `Rep` with our arguments in their slots) and
 satisfies `X`, which fixes the registers the next piece's addresses and
 arguments depend on as functions of the layout. A block is checked by the
-taint analysis from those registers (`pw_blk`); one that dereferences a
-pointer it loads is split there (`pw_split`), the registers its second
-part dereferences fixed by its first part.
+taint analysis from those registers; one that dereferences a pointer it
+loads is split there (`pw_seq`), the registers its second part
+dereferences fixed by its first part.
 -/
 
 @[expose] public section
@@ -142,23 +142,6 @@ theorem pw_sp {S : Nat} {e : Env} {X : (Nat → BitVec 64) → State → Prop} {
     a.sp = b.sp :=
   h.2.2.1.1.sp.trans h.2.2.2.1.sp.symm
 
-/-- Code checked by the taint analysis from the registers `rs`, which `X` fixes. -/
-theorem pw_taint {S : Nat} {e : Env} {c : Prog isa} {X : (Nat → BitVec 64) → State → Prop} (rs : List Reg)
-    {hc : VG.Taint.Hint VG.AArch64.Taint.T} (h : (taint.check (Taint.ofRegs rs) c hc).isSome = true)
-    (hag : ∀ W₁ W₂ a b, X W₁ a → X W₂ b → ∀ r ∈ rs, a.gpr r = b.gpr r) :
-    RelCT isa (PW S e X) c fun _ _ => True :=
-  RelCT.taint (A := taint) (Taint.ofRegs rs) (fun _ _ hp => by
-    have hs := pw_sp hp
-    obtain ⟨_, _, ⟨_, _, _, _, _, x₁⟩, ⟨_, _, _, _, _, x₂⟩⟩ := hp
-    exact ⟨hs, fun r hr => hag _ _ _ _ x₁ x₂ r (Taint.mem_ofRegs.mp hr)⟩) h
-
-/-- A block checked by the taint analysis from the registers `rs`, which `X` fixes. -/
-theorem pw_blk {S : Nat} {e : Env} {c : Prog isa} {X X' : (Nat → BitVec 64) → State → Prop} (rs : List Reg)
-    {hc : VG.Taint.Hint VG.AArch64.Taint.T} (h : (taint.check (Taint.ofRegs rs) c hc).isSome = true)
-    (hag : ∀ W₁ W₂ a b, X W₁ a → X W₂ b → ∀ r ∈ rs, a.gpr r = b.gpr r) (hw : PWStep S e c X X') :
-    RelCT isa (PW S e X) c (PW S e X') :=
-  pw_wp (pw_taint rs h hag) hw
-
 /-- Code whose second part `c₂` dereferences the registers `rs`, which its
 first part `c₁` sets to `pin` in both runs. -/
 theorem pw_seq_tr {S : Nat} {e : Env} {c₁ c₂ : Prog isa} {X : (Nat → BitVec 64) → State → Prop}
@@ -191,22 +174,6 @@ theorem pw_seq {S : Nat} {e : Env} {c₁ c₂ : Prog isa} {X X' : (Nat → BitVe
     (hw : PWStep S e (.seq c₁ c₂) X X') :
     RelCT isa (PW S e X) (.seq c₁ c₂) (PW S e X') :=
   pw_wp (pw_seq_tr rs pin t₁ t₂ hA) hw
-
-/-- A block whose second part dereferences the registers `rs`, which its
-first part sets to `pin` in both runs. -/
-theorem pw_split {S : Nat} {e : Env} {A B : List Instr} {X X' : (Nat → BitVec 64) → State → Prop}
-    (rs : List Reg) (pin : Reg → BitVec 64) {h₁ h₂ : VG.Taint.Hint VG.AArch64.Taint.T}
-    (tA : (taint.check (Taint.ofRegs []) (.block A) h₁).isSome = true)
-    (tB : (taint.check (Taint.ofRegs rs) (.block B) h₂).isSome = true)
-    (hA : ∀ g vv m₀ (t : State) V W, e.L.Ok → e.L.P = S + 1 → Ctx e.L g vv m₀ t → Rep t.mem e.L.Q e.L.scr V W →
-      Slots e.L W → X W t → WP isa (.block A) t fun u => u.sp = t.sp ∧ ∀ r ∈ rs, u.gpr r = pin r)
-    (hw : PWStep S e (.block (A ++ B)) X X') :
-    RelCT isa (PW S e X) (.block (A ++ B)) (PW S e X') :=
-  pw_wp (RelCT.block_append (pw_seq_tr rs pin tA tB hA)) hw
-
-/-- Facts `X` fixes in both runs. -/
-theorem pin {a b : State} {r : Reg} {x : BitVec 64} (ha : a.gpr r = x) (hb : b.gpr r = x) :
-    a.gpr r = b.gpr r := ha.trans hb.symm
 
 /-- `In`, from a piece's `Lay`, `Step` and `Rep`. -/
 theorem In.of_step {L : DLay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t u : State}

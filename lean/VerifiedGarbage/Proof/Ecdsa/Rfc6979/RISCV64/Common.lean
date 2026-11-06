@@ -516,17 +516,6 @@ theorem KR.dBytes (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) :
     · exact hp.d_c
     · exact hp.b_d.symm) (by have := (sizes P).Q; omega)
 
-theorem KR.dgBytes (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) {n : Nat} (hn : n ≤ P.H.D) :
-    bytesAt s.mem (dg s₀) n = bytesAt s₀.mem (dg s₀) n :=
-  hk.bytes (fun r hr => by
-    have sub : Region.Sub ⟨dg s₀, n⟩ (dgR P s₀) := Region.sub_prefix hn
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact (hp.f_g.sub_right sub).symm
-    · exact (hp.o_g.sub_right sub).symm
-    · exact hp.g_c.sub_left sub
-    · exact (hp.b_g.sub_right sub).symm) (by have := (sizes P).D; omega)
-
 /-- A word of the table is as on entry. -/
 theorem KR.tabW (hp : Pre P s₀) {s : State} (hk : KR P s₀ s) {o : Nat} (ho : o + 8 ≤ 48) :
     s.mem.readW (tab s₀ + BitVec.ofNat 64 o) 64 = s₀.mem.readW (tab s₀ + BitVec.ofNat 64 o) 64 :=

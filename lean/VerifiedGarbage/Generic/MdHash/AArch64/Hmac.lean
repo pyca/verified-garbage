@@ -15,7 +15,6 @@ public import VerifiedGarbage.Proof.Hmac.AnyKey
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
 public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
-public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
@@ -34,7 +33,6 @@ import VerifiedGarbage.Proof.Hmac.AnyKey
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
 import VerifiedGarbage.Proof.Sha256.AArch64.Compress
-import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest

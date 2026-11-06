@@ -20,11 +20,9 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointVerified
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Verified
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 public import VerifiedGarbage.Impl.Ecdh.P521.AArch64
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
 public import VerifiedGarbage.Impl.P256.VerifyRegisters
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Proof.EcKey.PublicKey
@@ -41,7 +39,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Projective
 public import VerifiedGarbage.Proof.Ecdsa.Sign
 public import VerifiedGarbage.Proof.Ecdsa.Verify
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Checks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointAbi
@@ -65,7 +62,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointTopTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointWindow
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointWindowTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedMul
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
 public import VerifiedGarbage.Proof.P521.Point
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
@@ -127,7 +123,6 @@ public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 import VerifiedGarbage.Impl.Ecdh.P521.AArch64
-import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
 import VerifiedGarbage.Impl.P256.VerifyRegisters
 import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 import VerifiedGarbage.Proof.EcKey.PublicKey
@@ -144,7 +139,6 @@ import VerifiedGarbage.Proof.Ecdsa.Projective
 import VerifiedGarbage.Proof.Ecdsa.Sign
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Checks
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointAbi
@@ -168,8 +162,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointTopTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointWindow
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointWindowTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedMul
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
 import VerifiedGarbage.Proof.P521.Point
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst

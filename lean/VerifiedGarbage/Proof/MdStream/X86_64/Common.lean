@@ -799,8 +799,4 @@ theorem extractLsb'_readW (m : Mem) (a : Addr) {k : Nat} (hk : k < 8) :
 
 theorem sx8 : BitVec.signExtend 64 (8 : BitVec 32) = BitVec.ofNat 64 8 := by decide
 
-theorem WP.seq_assoc {M : ISA} {a b c : Prog M} {s : M.State} {Q : M.State → Prop} :
-    WP M (.seq (.seq a b) c) s Q ↔ WP M (.seq a (.seq b c)) s Q := by
-  simp only [WP.seq_iff]
-
 end VG.Proof.MdStream.X86_64

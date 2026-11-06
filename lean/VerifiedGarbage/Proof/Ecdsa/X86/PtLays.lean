@@ -74,11 +74,4 @@ theorem fixedOk_ptW : FixedOk c (Point.ptW c.n) := by
     exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_pt h.2 (i := 12) (by decide)))
   · simp at hw
 
-theorem ptW_le : ∀ w ∈ Point.ptW c.n, w.1 + w.2 ≤ size := by
-  intro w hw
-  unfold Point.ptW at hw
-  split at hw
-  · rw [List.mem_singleton.mp hw]; have := oAt_le c; dsimp only [size]; omega
-  · simp at hw
-
 end VG.Proof.Ecdsa.X86

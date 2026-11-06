@@ -249,11 +249,4 @@ theorem doubleRound3_ok {vs : Nat → CState} {s : State} (h : HB 3 vs s) (hm : 
     ⟨hb_of3 h' (fun k hk l hl => ?_) (by decide), hm', f⟩
   rw [dr3_words _ hk, blk_wordsOf h hk hl]
 
-theorem rounds3_ok {vs : Nat → CState} {s₀ : State} (h : HB 3 vs s₀) (hm : YM3 s₀) :
-    ∀ n, WP isa (rounds3 n) s₀ fun s =>
-      HB 3 (fun j => Nat.repeat innerBlock n (vs j)) s ∧ YM3 s ∧ Frame' s₀ s
-  | 0 => WP.block_nil ⟨h, hm, rfl, rfl, rfl, rfl⟩
-  | n + 1 => WP.seq (WP.mono (rounds3_ok h hm n) fun _ ⟨h₁, hm₁, f₁⟩ =>
-      WP.mono (doubleRound3_ok h₁ hm₁) fun _ ⟨h₂, hm₂, f₂⟩ => ⟨h₂, hm₂, f₁.trans f₂⟩)
-
 end VG.Proof.ChaCha20.X86_64.Avx2Tail

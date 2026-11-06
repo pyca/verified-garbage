@@ -14,8 +14,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Syms
 The prologue, the checks of `emLen` and the salt's length (their branches
 are on public values), the encoding (`enc_signEnc_ct`), its copy to `em` and
 the epilogue, in two runs whose entry states agree on the public data
-(`enc_ct`). With `enc_correct`, `encode` meets
-`Proof.RsaPss.encodeContract` (`enc_verified`).
+(`enc_ct`).
 -/
 
 @[expose] public section

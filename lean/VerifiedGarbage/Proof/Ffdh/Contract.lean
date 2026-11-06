@@ -66,11 +66,4 @@ def sievedParameterCandidateContract {M : ISA} (A : Abi M) (stack : Nat := 0) : 
     (leak := some fun _out _outLen _used _bits _generator rand randLen _scratch _scratchLen m =>
       (bytesAt m rand randLen.toNat).map (·.toNat))
 
-def chooseSig : Sig where
-  params := [("a", .int .u64 false), ("b", .int .u64 false), ("bit", .int .u64 false)]
-  ret := some .u64
-
-def chooseContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  chooseSig.contract A (post := fun a b bit m m' r => r = choose a b bit ∧ m' = m) (stack := stack)
-
 end VG.Proof.Ffdh

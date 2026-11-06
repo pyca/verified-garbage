@@ -61,33 +61,4 @@ theorem expandKey_ok (s : State) (hs : keyC.pre s) :
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl <;> simp [keySaved] at hm ⊢
 
-theorem key_agree : ∀ s₁ s₂, keyC.pre s₁ → keyC.pre s₂ → keyC.pub s₁ s₂ →
-    taint.Agree (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) s₁ s₂ := by
-  intro s₁ s₂ _ _ h
-  refine ⟨h.2.2.2.2.2, fun r hr => ?_⟩
-  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact h.1
-  · exact h.2.1
-  · exact h.2.2.1
-  · exact h.2.2.2.1
-  · exact h.2.2.2.2.1
-
-theorem expandKey_ct : ConstantTime isa keyC.pre keyC.pub expandKey :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) key_agree (by taint_decide)
-
-def keySat : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 16 | .r5 => 128 | .r6 => 0x2000 | .r7 => 0x4000 | _ => 0
-  lr := 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 16⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x4000, 512⟩]
-
-theorem key_verified : Verified target expandKey (Proof.Rc2.expandKeyContract abi) := by
-  refine Verified.of_correct (k := keyC) expandKey_ok expandKey_ct ?_
-  sig_implies [Proof.Rc2.expandKeyContract, Proof.Rc2.expandKeySig, Spec.Rc2.validKey, abi, argRegs, keyC]
-    [keySat] using keySat
-
 end VG.Proof.Rc2.PPC64LE

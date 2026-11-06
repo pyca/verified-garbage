@@ -59,8 +59,6 @@ theorem ushr7 {n : Nat} (h : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 7 = BitVec.ofNa
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h,
     Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_arith)]
 
-theorem poly_movz : (0xc200#16).setWidth 64 <<< (16 * 3) = Impl.Gcm.AArch64.Pmull.poly := by decide
-
 theorem setup_ok {s₀ : State} (hp : KPre s₀) (hb : Nat → Block) :
     WP isa (.block setup) s₀ (LInv s₀ hb 0 0) := by
   have hn := hp.n16
@@ -106,8 +104,6 @@ theorem setup_ok {s₀ : State} (hp : KPre s₀) (hb : Nat → Block) :
     exact BitVec.xor_zero.symm
 
 /-! ## The loops -/
-
-theorem rounds_lt {s₀ : State} (hp : KPre s₀) : rounds s₀ ≤ 14 := by have := hp.rounds; omega_arith
 
 /-- `seal`'s loop: the first batch encrypted, then each next one while the one before is hashed, then the last hashed. -/
 theorem encLoop_ok {s₀ : State} (hp : KPre s₀) (gh : Gh8Ok) {s : State} (hI : LInv s₀ (blockC s₀) 0 0 s) :

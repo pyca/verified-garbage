@@ -96,15 +96,4 @@ theorem checkWitnesses_eq (w : Nat) : ∀ n r,
       · have hf : mrRound w a = false := Bool.eq_false_iff.mpr hm
         simp [hf]
 
-/-- Once trial division has passed, this Boolean is the specified probable-prime result. -/
-theorem checkWitnesses_probable {w : Nat} {r rest : Rand} {pass : Bool}
-    (hs : primeShape w = true)
-    (he : checkWitnesses w (primeChecks (bitLength w)) r = some (pass, rest)) :
-    ∃ as, drawWitnesses w (primeChecks (bitLength w)) r = some (as, rest) ∧ probablePrime w as = pass := by
-  rw [checkWitnesses_eq, Option.map_eq_some_iff] at he
-  obtain ⟨⟨as, rest'⟩, ha, he⟩ := he
-  simp only [Prod.mk.injEq] at he
-  obtain ⟨hpass, rfl⟩ := he
-  exact ⟨as, ha, (drawWitnesses_probable hs ha).trans hpass⟩
-
 end VG.Proof.Ffdh.ParameterCandidate

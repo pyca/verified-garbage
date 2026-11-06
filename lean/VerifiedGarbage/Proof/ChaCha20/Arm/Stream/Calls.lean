@@ -162,14 +162,6 @@ theorem not_in_prefix (p : Addr) {k c : Nat} (hk : c ≤ k) (hk' : k < 2 ^ 64) :
 
 theorem prefix_sub (p : Addr) {c n : Nat} (h : c ≤ n) : Region.Sub ⟨p, c⟩ ⟨p, n⟩ := Region.sub_prefix h
 
-/-- Bytes outside a frame are unchanged. -/
-theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
-    (hd : ∀ r ∈ rs, (⟨p, n⟩ : Region).Disjoint r) (hn : n ≤ 2 ^ 64) : bytesAt m' p n = bytesAt m p n := by
-  simp only [bytesAt]
-  apply List.map_congr_left
-  intro i hi
-  exact hf.bytes (R := ⟨p, n⟩) hd hn (List.mem_range.mp hi)
-
 /-! ## The calls -/
 
 /-- `s'` differs from `s` only in memory within `rs` and in registers that

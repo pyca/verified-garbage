@@ -10,13 +10,14 @@
 ))]
 
 use super::table::{HmacHash, sign_with};
-use super::{Error, SignatureHash, sealed};
+use super::{SignatureHash, sealed};
 use crate::arch::ecdsa_p192::vg_ecdsa_p192_sign;
 use crate::arch::ecdsa_p192::vg_ecdsa_p192_verify;
 use crate::ec::P192;
+use crate::error::{InvalidKey, InvalidSignature};
 
 /// Whether `signature` verifies with `q` for the hash `digest`.
-fn verify_with(q: &[u8; 49], digest: &[u8], signature: &[u8; 48]) -> Result<(), Error> {
+fn verify_with(q: &[u8; 49], digest: &[u8], signature: &[u8; 48]) -> Result<(), InvalidSignature> {
     let mut scratch = [0u64; 1024];
     // SAFETY: `q` is valid for reads of 49 bytes, `digest` of `digest.len()`,
     // `signature` of 48 and `scratch` for reads and writes of 8192; `scratch`
@@ -28,19 +29,23 @@ fn verify_with(q: &[u8; 49], digest: &[u8], signature: &[u8; 48]) -> Result<(), 
     if ok == 1 {
         Ok(())
     } else {
-        Err(Error::InvalidSignature)
+        Err(InvalidSignature)
     }
 }
 
 impl<H: HmacHash> sealed::Functions<P192> for H {
-    fn sign(d: &[u8; 24], digest: &H::Output) -> Result<[u8; 48], Error> {
+    fn sign(d: &[u8; 24], digest: &H::Output) -> Result<[u8; 48], InvalidKey> {
         // SAFETY: `vg_ecdsa_p192_sign` needs no CPU feature.
         unsafe { sign_with::<H, 24, 48>(vg_ecdsa_p192_sign, crate::cpu::detected(), d, digest) }
     }
 
     /// The verified function takes the hash itself, of any length, and
     /// uses as many of its leftmost bits as the order has (FIPS 186-5 §6.4.2).
-    fn verify(q: &[u8; 49], digest: &H::Output, signature: &[u8; 48]) -> Result<(), Error> {
+    fn verify(
+        q: &[u8; 49],
+        digest: &H::Output,
+        signature: &[u8; 48],
+    ) -> Result<(), InvalidSignature> {
         verify_with(q, digest.as_ref(), signature)
     }
 }

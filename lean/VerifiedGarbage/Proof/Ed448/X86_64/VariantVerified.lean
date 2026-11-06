@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
@@ -37,6 +36,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+public import VerifiedGarbage.Spec.Ed448.Contract
 
 /-! The same scalar and verification contracts for every field backend. -/
 
@@ -76,12 +76,6 @@ theorem scalarBaseFor_ct (v : Impl.Ed448.X86_64.FieldVariant) :
   fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ =>
     scalarBaseFor_ct0 v s₁ s₂ t₁ t₂ s₁' s₂' h₁.1 h₂.1 hp e₁ e₂
 
-theorem scalarBaseFor_verified (v : Impl.Ed448.X86_64.FieldVariant) (hL : Proof.Ed448.BaseLadderOk) :
-    Verified X86_64.target (scalarBaseFor v) (Proof.Ed448.scalarBaseContract X86_64.abi 8) :=
-  Verified.of_inline_ct (scalarBaseFor_inlineOk v) (scalarBaseFor_okI v hL) (scalarBaseFor_ct0 v)
-    scalarBase_implies8 (fun _ h => Sig.clear_of_pre h)
-    (fun s b hv u hs hp => scalarBase_patch s b hv u (scalarBase_implies8.pre s hs) (Sig.clear_of_pre hs) hp)
-
 theorem verifyEquationFor_inlineOk (v : Impl.Ed448.X86_64.FieldVariant) :
     (verifyEquationFor v).InlineOk = true := by
   cases v
@@ -107,12 +101,5 @@ theorem verifyEquationFor_ct (v : Impl.Ed448.X86_64.FieldVariant)
   ct_of_inline (verifyEquationFor_inlineOk v)
     (fun s hs => let ⟨t, u, he, _⟩ := verifyEquationFor_okI v hR hE s hs; ⟨t, u, he⟩)
     (fun _ _ h => h.1) (verifyEquationFor_ctI v hR)
-
-theorem verifyEquationFor_verified (v : Impl.Ed448.X86_64.FieldVariant)
-    (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) :
-    Verified X86_64.target (verifyEquationFor v) (Proof.Ed448.verifyEquationContract X86_64.abi 8) :=
-  Verified.of_inline (verifyEquationFor_inlineOk v) (verifyEquationFor_okI v hR hE)
-    (verifyEquationFor_ctI v hR) verifyEquation_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ _ hp => hp)
-    (fun s t hs ht hp => (verifyEquation_implies8.pub s t hs ht hp).1)
 
 end VG.Proof.Ed448.X86_64

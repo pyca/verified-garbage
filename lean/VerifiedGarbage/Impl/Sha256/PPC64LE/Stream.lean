@@ -161,8 +161,6 @@ def finalizeWith (n : Nat) : Prog isa :=
   .seq (.block [.mflr .r0])
     (.seq (.frame (.push .r0) (finalizeMainWith n) (.pop .r0)) (.block [.mtlr .r0]))
 
-/-- SHA-256's `finalize`, all of the final hash value (8 words). -/
-def finalizeMain : Prog isa := finalizeMainWith 8
 def finalize : Prog isa := finalizeWith 8
 
 /-- SHA-224's `finalize`, its first 7 words (28 bytes). -/

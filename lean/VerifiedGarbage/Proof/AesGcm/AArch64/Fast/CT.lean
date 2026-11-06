@@ -159,21 +159,6 @@ theorem Mid.crypt {H : Block} {R n : Nat} {D Tg X : Addr} {ρ s s' : State} {icb
   · exact ⟨_, List.mem_cons_self .., stW (by decide)⟩
   · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
 
-/-- `Mid` after the call of `vg_ghash` on the whole blocks. -/
-theorem Mid.absorb {H : Block} {R n : Nat} {D Tg X : Addr} {ρ s s' : State} {x : List Byte} {j : Nat}
-    (h : Mid Ctx W SP H R n D Tg X ρ s)
-    (o : AbsMid Ctx (W + BitVec.ofNat 64 16) W SP s.gpr 16 H x D n 0 s.mem j s')
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Mid Ctx W SP H R n D Tg X ρ s' := by
-  refine ⟨o.env, by rw [o.kept .x22 (by decide), h.x22], h.rounds, by rw [o.kept .x26 (by decide), h.x26],
-    by rw [o.kept .x27 (by decide), h.x27], by rw [o.kept .x28 (by decide), h.x28], o.hH,
-    h.key.frame o.frame fun r hr => ?_, h.data.of_eq hrd hwr, h.fr.trans (absFrame_wd o.frame),
-    hrd.trans h.rd, hwr.trans h.wr⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact (L.st_w (a := 16) (n := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact (L.st_w (a := 32) (n := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
-
 /-- `Mid` after a call on the whole blocks that may also write `ex`, apart
 from where `H'` is kept: from the state after the call. -/
 theorem Mid.absorbX {H : Block} {R n : Nat} {D Tg X : Addr} {ρ s s' : State} {x : List Byte} {j : Nat}

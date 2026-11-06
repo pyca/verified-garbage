@@ -63,10 +63,6 @@ theorem slotW_setReg (s : State) {r : Reg} (x : BitVec 32) (h : r ≠ sb) (k : N
     slotW (s.setReg r x) k = slotW s k := by
   simp only [slotW, RegUpd.mem_setReg, RegUpd.gpr_setReg_of_ne s x (Ne.symm h)]
 
-theorem keyW_setReg (s : State) {r : Reg} (x : BitVec 32) (h : r ≠ kp) (k : Nat) :
-    keyW (s.setReg r x) k = keyW s k := by
-  simp only [keyW, RegUpd.mem_setReg, RegUpd.gpr_setReg_of_ne s x (Ne.symm h)]
-
 /-! Running a block one instruction at a time. -/
 
 theorem run_ldS {u : State} (hu : Ok layerCfg u) {r : Reg} {k : Nat} (hk : k < keySlot) (is : List Instr) :
@@ -162,10 +158,6 @@ theorem keeps_setReg (s : State) {d : Reg} (x : BitVec 32) (h1 : d ≠ sb) (h2 :
 theorem Keeps.slotW {s s' : State} {d : Reg} (h : Keeps s s' d) (hd : d ≠ sb) (k : Nat) :
     slotW s' k = slotW s k := by
   simp only [Arm.slotW, h.mem, h.gpr sb (Ne.symm hd)]
-
-theorem Keeps.keyW {s s' : State} {d : Reg} (h : Keeps s s' d) (hd : d ≠ kp) (k : Nat) :
-    keyW s' k = keyW s k := by
-  simp only [Arm.keyW, h.mem, h.gpr kp (Ne.symm hd)]
 
 theorem flRotStep_ok {s : State} (hok : Ok layerCfg s) {d off j : Nat}
     (hk : d + 8 + j < keySlot) (hw : off + 8 ≤ 32) :

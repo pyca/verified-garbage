@@ -62,11 +62,4 @@ theorem doubleRound_ok {sve : Bool} {vs : Nat → CState} {s : State} (h : Holds
       fun j => innerBlock (vs j) := funext fun j => innerBlock_eq (vs j)
   exact (ops_ok_for sve _ h ht).mono fun _ ⟨h', hs⟩ => ⟨e ▸ h', hs⟩
 
-theorem rounds_ok {vs : Nat → CState} {s : State} (h : Holds vs s) (ht : s.v .v30 = rol8Table) :
-    ∀ n, WP isa (rounds n) s fun s' =>
-      Holds (fun j => Nat.repeat innerBlock n (vs j)) s' ∧ RoundSame s s'
-  | 0 => WP.block_nil ⟨h, ⟨⟨rfl, rfl, rfl, rfl, rfl⟩, rfl⟩⟩
-  | n + 1 => WP.seq ((rounds_ok h ht n).mono fun _ ⟨h', hs⟩ =>
-      (doubleRound_ok h' (hs.v30.trans ht)).mono fun _ ⟨h'', hs'⟩ => ⟨h'', hs.trans hs'⟩)
-
 end VG.Proof.ChaCha20.AArch64.Neon4

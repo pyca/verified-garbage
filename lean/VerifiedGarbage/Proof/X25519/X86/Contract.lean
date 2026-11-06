@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.X86.Basic
 public import VerifiedGarbage.Spec.X25519.Contract
 public import VerifiedGarbage.TCB.X86.Target
@@ -7,7 +8,7 @@ public import VerifiedGarbage.TCB.X86.Target
 /-!
 # X25519 on x86 (32-bit): the contract the proof is written against
 
-The facts of the shared contract (`Spec.X25519.x25519Contract`) the proof
+The facts of the shared contract (`Proof.X25519.x25519Contract`) the proof
 uses, stated for x86; the shared contract implies it (`sig_implies`, in
 `Main.lean`).
 -/
@@ -81,8 +82,6 @@ structure Pre (s₀ : State) : Prop where
 theorem Pre.of (s₀ : State) (h : Proof.X25519.x25519X86.pre s₀) : Pre s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩
-
-theorem argAddr_eq (s : State) (i : Nat) : argAddr s i = addr (s.gpr .esp) (4 + 4 * i) := rfl
 
 /-- An argument slot's address, in the argument region. -/
 theorem arg_contains {s : State} (hfit : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32) {i : Nat}

@@ -9,10 +9,10 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 /-!
 # Ed25519's comb with AVX512_IFMA: the blocks, run symbolically
 
-The vector blocks of `Ifma.combMultiply` but X25519's products and carries and
-the doublings' blocks, run symbolically (`Proof/X25519/X86_64/Ifma/Sym.lean`):
-each output limb, lane by lane, as a number (`rfl`), and its bounds
-(`decide`).
+The vector blocks of an addition in the lanes (`vaddA`, `vstA`, `vaddB`) but
+X25519's products and carries, run symbolically
+(`Proof/X25519/X86_64/Ifma/Sym.lean`): each output limb, lane by lane, as a
+number (`rfl`), and its bounds (`decide`).
 -/
 
 @[expose] public section
@@ -25,45 +25,9 @@ open VG.Proof.X25519.X86_64.Ifma (Sym T Env Bnds symOf limbNat)
 
 /-! ## The entry's limbs -/
 
-def eloadS : Sym := symOf eload
-
-/-- Word `k` of row `l` of the entry: `y - x`, `y + x` (each with `rax` or'd into its first
-word), `2dt`, and the words of `2` at `K2`. -/
-def erow (E : Env) (l k : Nat) : Nat :=
-  match l with
-  | 0 => E.v 11 k ||| (if k = 0 then E.g .rax else 0)
-  | 1 => E.v 12 k ||| (if k = 0 then E.g .rax else 0)
-  | 2 => E.v 13 k
-  | _ => E.m K2 k
-
-theorem eloadS_regs (E : Env) : ∀ j < 5, ∀ l < 4, (eloadS.reg (5 + j)).nat E l =
-    limbNat (erow E l) (E.m KM l) j := by
-  intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
-    rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
-
 def eloadB : Bnds :=
   ⟨fun _ => 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1, fun d => if d = KM then 2 ^ 51 - 1 else 2 ^ 64 - 1,
     fun _ => 0, fun _ => 2 ^ 64 - 1⟩
-
-theorem eloadS_ok : ∀ j < 5, ∀ l < 4, (eloadS.reg (5 + j)).ok eloadB l = true ∧
-    (eloadS.reg (5 + j)).bnd eloadB l < 2 ^ 52 := by
-  decide +kernel
-
-theorem eloadS_keep : ∀ r < 5, eloadS.reg r = .reg r := by decide +kernel
-theorem eloadS_st : eloadS.st = [] := by decide +kernel
-
-/-! ## The negation -/
-
-def vnegS : Sym := symOf vneg
-
-theorem vnegS_regs : ∀ j < 5, vnegS.reg (5 + j) = .xor (.reg (5 + j))
-    (.and (.xor (.blend (.perm (.reg (5 + j)) (ord 1 0 2 3).toNat) (.sub (.ld (kb j)) (.reg (5 + j)))
-      (lanes false false true false).toNat) (.reg (5 + j))) (.bc (.lane0 (.gpr .rcx)))) := by
-  decide +kernel
-
-theorem vnegS_keep : ∀ r < 5, vnegS.reg r = .reg r := by decide +kernel
-theorem vnegS_st : vnegS.st = [] := by decide +kernel
 
 /-! ## An addition's first operands -/
 

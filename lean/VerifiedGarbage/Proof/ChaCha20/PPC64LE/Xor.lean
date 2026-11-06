@@ -11,8 +11,6 @@ meta import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.ChaCha20.Contract
-public import VerifiedGarbage.Proof.ChaCha20.Contract
-meta import VerifiedGarbage.Proof.ChaCha20.Contract
 meta import VerifiedGarbage.Spec.ChaCha20.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
@@ -24,6 +22,10 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.Spec.ChaCha20
+meta import VerifiedGarbage.TCB.Artifact
 
 /-!
 # ChaCha20 keystream XOR on PPC64LE
@@ -975,16 +977,6 @@ theorem agree₀ {s₁ s₂ : State} (hpub : Proof.ChaCha20.xorPPC64LE.pub s₁ 
   simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-/-- A state satisfying the precondition (with no data). -/
-def sat : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | .r6 => 0x3000 | _ => 0
-  lr := 0
-  sp := 0x5000
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 64⟩, ⟨0x2000, 0⟩, ⟨0x3000, 320⟩]
-
 theorem xor_correct (s : State) (hs : Proof.ChaCha20.xorPPC64LE.pre s) :
     ∃ t s', Exec isa Impl.ChaCha20.PPC64LE.Xor.xor s t s' ∧ abiPreserved s s' ∧
       Proof.ChaCha20.xorPPC64LE.post s s' :=
@@ -994,12 +986,5 @@ theorem xor_ct : ConstantTime isa Proof.ChaCha20.xorPPC64LE.pre Proof.ChaCha20.x
     Impl.ChaCha20.PPC64LE.Xor.xor :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
     (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
-
-theorem xor_verified :
-    Verified PPC64LE.target Impl.ChaCha20.PPC64LE.Xor.xor (Proof.ChaCha20.xorContract PPC64LE.abi) :=
-  Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Proof.ChaCha20.xorContract, Proof.ChaCha20.xorSig, PPC64LE.abi, PPC64LE.argRegs,
-      Proof.ChaCha20.xorPPC64LE]
-      [sat] using sat)
 
 end VG.Proof.ChaCha20.PPC64LE.Xor

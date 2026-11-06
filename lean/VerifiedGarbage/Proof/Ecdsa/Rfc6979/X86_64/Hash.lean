@@ -132,9 +132,6 @@ theorem sizesW (h : P.R.big = true) : P.w = 9 ∧ P.Q = 66 ∧ P.H.D < P.Q := by
   have h₂ := P.sizes.2.2.2.2.2.2.2.1
   exact ⟨h₁.1, h₁.2.1, by simp only [Q]; omega⟩
 
-/-- The digest is at least 16 bytes. -/
-theorem len16 : 16 ≤ P.I.hashLen := by rw [P.len]; exact P.sizes.2.2.2.2.2.2.1
-
 /-- The curve's scalars are `Q` bytes. -/
 theorem curveLen : P.I.ecdsa.curve.len = P.Q := by rw [P.ecdsa, P.R.curve]
 

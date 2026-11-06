@@ -134,9 +134,6 @@ variable {c : Core} {ds : Nat} {Dp S : BitVec 32} {wr : List Region} (h : Lay c 
 include h
 
 omit h in
-theorem bs_eq : c.bs = 4 * c.bw := rfl
-
-omit h in
 /-- The block of each `x`, within the regions of the blocks. -/
 theorem sub (x : Blk) : ∃ r ∈ blkRegions c ds Dp S, Region.Sub ⟨addrOf c Dp S x, sz c ds x⟩ r := by
   cases x
@@ -540,47 +537,6 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
       rw [hx, hk, hn, e1]
       simp only [bytesAt, List.range_succ_eq_map, List.map_cons, List.tail_cons, List.map_map, List.headD_cons, add0]
       rfl
-
-theorem runOp_length {c : Core} {op : Op} {byte : Bool} (hok : opOk c.bs byte op = true) {b : Blks} {ds : Nat}
-    (hpos : ∀ x, 0 < sz c ds x) (hl : ∀ x, (b.get x).length = sz c ds x)
-    (hds : byte = false → ds = c.bs) : ∀ x, ((runOp op b).get x).length = sz c ds x := by
-  intro z
-  cases op with
-  | inc =>
-    have hbs : c.bs = 16 := by simpa [opOk] using hok
-    cases z with
-    | d => exact hl .d
-    | t => exact hl .t
-    | o => simp [runOp, Blks.set, Blks.get, Spec.Ctr.inc, Spec.Ctr.ofNat, sz, hbs]
-
-  | copy x y =>
-    by_cases hz : z = x
-    · subst hz; simp only [runOp, Blks.get_set_self, hl]
-      simp only [opOk, Bool.and_eq_true, bne_iff_ne, ne_eq, Bool.or_eq_true, Bool.not_eq_true'] at hok
-      rcases hok.2 with hb' | hb'
-      · cases z <;> cases y <;> simp [sz, hds hb']
-      · cases z <;> cases y <;> simp_all [sz]
-    · simp [runOp, Blks.get_set_of_ne _ _ hz, hl]
-  | xor x y =>
-    by_cases hz : z = x
-    · subst hz; simp only [runOp, Blks.get_set_self, Spec.Cbc.xor, List.length_zipWith, hl]
-      simp only [opOk, Bool.and_eq_true, bne_iff_ne, ne_eq, Bool.or_eq_true, Bool.not_eq_true'] at hok
-      rcases hok.2 with hb' | hb'
-      · cases z <;> cases y <;> simp [sz, hds hb']
-      · cases z <;> cases y <;> simp_all [sz]
-    · simp [runOp, Blks.get_set_of_ne _ _ hz, hl]
-  | xorB x y =>
-    by_cases hz : z = x
-    · subst hz; simp only [runOp, Blks.get_set_self]
-      have := hl z
-      cases hh : b.get z <;> simp_all [xorHead]
-    · simp [runOp, Blks.get_set_of_ne _ _ hz, hl]
-  | shift x y =>
-    by_cases hz : z = x
-    · subst hz; simp only [runOp, Blks.get_set_self, List.length_append, List.length_tail, hl,
-        List.length_singleton]
-      have := hpos z; omega_arith
-    · simp [runOp, Blks.get_set_of_ne _ _ hz, hl]
 
 /-- The code of a list of operations. -/
 theorem opsCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds = c.bs) {Dp S : BitVec 32}

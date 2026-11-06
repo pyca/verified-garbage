@@ -36,10 +36,6 @@ def stepOpsEnv (e : Env) : Env :=
   let e := Function.update e 4 (e 0 * e 15)
   Function.update (Function.update e 2 (e 11 * e 16)) 3 (e 14 * e 14)
 
-/-- What the step's operations keep. -/
-def Post (base : Addr) (s t : State) : Prop :=
-  FKeep base s t ∧ BEnv t.mem base
-
 theorem Same.append {base : Addr} {l₁ l₂ : List Index} {m₁ m₂ m₃ : Mem} (h : Same base l₁ m₁ m₂)
     (h' : Same base l₂ m₂ m₃) : Same base (l₁ ++ l₂) m₁ m₃ := fun i hi j hj => by
   rw [h' i (fun e => hi (List.mem_append_right _ e)) j hj, h i (fun e => hi (List.mem_append_left _ e)) j hj]

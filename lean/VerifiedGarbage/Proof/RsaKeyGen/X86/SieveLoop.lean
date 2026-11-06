@@ -79,11 +79,4 @@ theorem loop_full_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
   · rw [U.mem]; exact O
   · rw [U.mem]; exact candidate
 
-theorem loop_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
-    (H : StateAt g c 0 g.limit s) :
-    WP isa (loop stackSlots) s fun t =>
-      t.gpr .eax = BitVec.ofNat 32 (VG.Proof.RsaKeyGen.trialPrefix c g.limit).toNat ∧
-      Outside (g.sp.setWidth 64) 0 20 s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t :=
-  WP.mono (loop_full_ok v H) fun _ ⟨result, O, K, _⟩ => ⟨result, O, K⟩
-
 end VG.Proof.RsaKeyGen.X86.Sieve

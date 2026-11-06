@@ -114,9 +114,6 @@ theorem leNum_key (m : Mem) (p : Addr) :
 
 theorem off_24 (p : Addr) : off p 24 = p + 24 := rfl
 
-theorem off_off (p : Addr) (d e : Nat) : off (off p d) e = off p (d + e) := by
-  simp only [off, BitVec.add_assoc, ← BitVec.ofNat_add]
-
 /-- The clamping mask of `r1`. -/
 abbrev M1 : BitVec 64 := 0x0ffffffc0ffffffc
 

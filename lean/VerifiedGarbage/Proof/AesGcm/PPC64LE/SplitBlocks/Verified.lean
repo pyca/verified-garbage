@@ -81,26 +81,6 @@ theorem encrypt_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vp
 
 
 
-def encryptSat : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 10 | .r5 => 0x2000 | .r6 => 0x3000 | .r7 => 0x4000 | .r9 => 0x5000 | _ => 0
-  lr := 0
-  sp := 0x8000
-  mem := Mem.writeW (fun _ => 0) (0x8000+96) (0x6000#64)
-  rd := [⟨0x1000,256⟩,⟨0x4000,0⟩,⟨0x8000+96,8⟩]
-  wr := [⟨0x2000,16⟩,⟨0x3000,16⟩,⟨0x5000,0⟩,⟨0x6000,2112⟩]
 
-
-theorem encrypt_sat : (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi).pre encryptSat := by
-  sig_eval [Proof.Gcm.encryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.encryptBlocksSplitPre,
-    PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop,encryptSat]
-  refine ⟨by decide,rfl,rfl,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,
-    by decide,by decide,by decide,by decide,by decide,by decide,by decide,by decide⟩
-  all_goals exact Offset.disjoint_of_le (by decide) (by decide)
-
-
-theorem encrypt_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
-    Verified PPC64LE.target Impl.AesGcm.PPC64LE.SplitBlocks.encrypt (Proof.Gcm.encryptBlocksSplitContract PPC64LE.abi) :=
-  ⟨encrypt_correct,encrypt_ct,⟨encryptSat,encrypt_sat⟩⟩
 
 end VG.Proof.AesGcm.PPC64LE.SplitBlocks

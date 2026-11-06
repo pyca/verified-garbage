@@ -1861,7 +1861,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512VL, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX-512BW, AVX2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -1881,7 +1881,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512VL, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX-512BW, AVX2</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2665,7 +2665,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
+<td>✅ BMI2, ADX</td>
 
 <td>✅</td>
 
@@ -2839,11 +2839,6 @@ implementation, but in some algorithms it does part of the cryptography:
   (`src/aead/aes_gcm.rs`); the mode itself, including `J0`, the padding, the
   length block and the comparison of the tag, is verified end to end, as
   are ChaCha20-Poly1305 and ML-KEM.
-* **ML-DSA**: the verified functions take the message representative `μ`.
-  Binding it to the public key, the context string and the message
-  (`μ = H(tr ‖ M′)`, with `M′ = 0 ‖ |ctx| ‖ ctx ‖ M` and `tr = H(pk)`: FIPS
-  204's `formatMessage`, `messageRep` and `pkTr`) is Rust
-  (`src/mldsa_common.rs`) over the verified SHAKE256.
 * **ChaCha20-Poly1305 decryption** is in place, and when the tag is wrong
   the verified function's contract leaves the data unspecified (it may
   already hold the decryption); it is the Rust wrapper that then zeroes it,

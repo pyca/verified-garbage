@@ -23,16 +23,6 @@ open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 def cacheWin := p256.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP
 def cacheWinAdx := p256x.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP
 
-theorem nafCachedEntry_ct :
-    ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.r8]))
-      (.block (Naf.cachedEntry cacheWin 4000 5408)) :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.r8])
-    (fun _ _ _ _ h => h) (by taint_decide)
-
-theorem nafCachedEntry_adx_ct :
-    ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.r8]))
-      (.block (Naf.cachedEntry cacheWinAdx 4000 5408)) := nafCachedEntry_ct
-
 theorem nafSignedCachedEntry_ct :
     ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.r8]))
       (Naf.signedCachedEntry cacheWin 4000 5408) :=

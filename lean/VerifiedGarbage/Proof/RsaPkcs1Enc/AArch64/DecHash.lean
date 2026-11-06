@@ -57,8 +57,6 @@ theorem sizes : (HH v).S = 96 ∧ (HH v).W = 104 ∧ (HH v).D = 32 ∧ (HH v).P.
     (HH v).stream.F = 32 ∧ (HH v).stream.D = 32 ∧ (OK v).stream.Wb = 160 := by
   refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
-theorem sh_hash : (OK v).SH.H = Spec.Hmac.sha256 := rfl
-
 variable {v}
 
 /-! ## The arguments -/

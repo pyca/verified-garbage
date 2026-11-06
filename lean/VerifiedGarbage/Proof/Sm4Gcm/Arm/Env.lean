@@ -64,8 +64,6 @@ theorem covers_cons {r : Region} {rs ts : List Region} (h₁ : Covers [r] ts) (h
   · exact h₁ a n ⟨x, List.mem_singleton_self _, hc⟩
   · exact h₂ a n ⟨x, hx, hc⟩
 
-theorem covers_nil {ts : List Region} : Covers [] ts := fun _ _ ⟨_, h, _⟩ => by cases h
-
 theorem covers_of_mem {r : Region} {ts : List Region} (h : r ∈ ts) : Covers [r] ts := by
   intro a n ⟨x, hx, hc⟩
   simp only [List.mem_singleton] at hx; subst hx; exact ⟨x, h, hc⟩
@@ -239,9 +237,6 @@ namespace Perm
 
 variable {c st w : BitVec 32} {s : State} (P : Perm c st w s)
 include P
-
-theorem ctxR {d n : Nat} (h : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (State.addr c + BitVec.ofNat 64 d) n :=
-  in_off P.ctx h (by decide)
 
 theorem stW {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (State.addr st + BitVec.ofNat 64 d) n :=
   in_off P.st h (by decide)

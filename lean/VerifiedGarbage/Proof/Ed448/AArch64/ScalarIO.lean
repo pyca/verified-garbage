@@ -142,11 +142,6 @@ theorem init114_ok (s : State)
 
 /-! ## The result -/
 
-theorem word_write_byte (m : Mem) (q : Addr) {d e : Nat} (h : d + 8 ≤ e) (he : e < 2 ^ 64)
-    (v : BitVec (8 * 1)) : word (m.write (off q e) 1 v) q d = word m q d := by
-  simp only [word, Mem.readW]
-  rw [Mem.read_write_sep (Offset.sep q (Or.inl h) (by omega) (by omega)) (by decide)]
-
 theorem readW_write_byte (m : Mem) (q : Addr) {d e : Nat} (h : d + 8 ≤ e) (he : e < 2 ^ 64)
     (v : BitVec (8 * 1)) :
     (m.write (q + BitVec.ofNat 64 e) 1 v).readW (q + BitVec.ofNat 64 d) 64 =

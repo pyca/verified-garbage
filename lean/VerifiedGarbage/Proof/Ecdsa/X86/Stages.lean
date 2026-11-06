@@ -220,8 +220,6 @@ theorem powWxP_eq (c : Cfg) : powWx c.powP c.wk = slW c [ACC, PT, TMP] ++ wkW c 
 theorem powWxN_eq (c : Cfg) : powWx c.powN c.wk = slW c [ACC, PT, TMP] ++ wkW c := rfl
 
 theorem accLen_MP' (c : Cfg) : accLen c.MP' = 16 * c.n + 4 := accLen_eq _
-theorem accLen_MN' (c : Cfg) : accLen c.MN' = 16 * c.n + 4 := accLen_eq _
-
 /-- The flag word apart from numbered slots and the accumulator. -/
 theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem}
     (hu : Unch base (slW c l ++ wkW c) m m')
@@ -244,12 +242,6 @@ theorem frame_of_unch {L : List Region} {base : Addr} {W : List (Nat × Nat)} {m
   have hx' : size ≤ ofs base x := by
     have := hx _ hin; simp only [Region.Contains] at this; simp only [ofs]; omega_arith
   exact hu x (fun w hw => Or.inr (by have := hW w hw; omega_arith))
-
-/-- A stage writes in the working space only. -/
-theorem whole_of {L : List Region} {base : Addr} {W : List (Nat × Nat)} {m₀ m m' : Mem} (h₀ : Frame L m₀ m)
-    (hu : Unch base W m m') (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) (hin : (⟨base, size⟩ : Region) ∈ L) :
-    Frame L m₀ m' :=
-  h₀.trans (frame_of_unch hu hW hin)
 
 /-- A hash of `len` bytes is its number without the bits that are not
 `e`'s. -/

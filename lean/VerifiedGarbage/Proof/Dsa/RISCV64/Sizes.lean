@@ -133,12 +133,6 @@ theorem scanAcc_all (m : Mem) (N : Addr) (k : Nat) :
   rw [scanAcc, List.take_of_length_le (by rw [bytesAt_length]), scan_foldl]
   simp
 
-theorem scanAcc_le (bs : List Byte) (i : Nat) : (scanAcc bs i).2 ≤ i := by
-  rw [scanAcc, scan_foldl]
-  have := significant_fits (bs.take i)
-  simp only [Bool.false_eq_true, ite_false, Nat.zero_add, List.length_take] at this ⊢
-  omega_arith
-
 theorem scanStep_or {c : Bool × Nat} {x : Nat} (b : Byte) (hx : x = 0 ↔ c.1 = false) :
     (x ||| b.toNat = 0 ↔ (scanStep c b).1 = false) ∧
       (scanStep c b).2 = c.2 + if x ||| b.toNat = 0 then 0 else 1 := by

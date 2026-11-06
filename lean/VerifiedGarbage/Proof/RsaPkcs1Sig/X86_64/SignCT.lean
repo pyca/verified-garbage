@@ -56,20 +56,6 @@ open VG.Proof.RsaPkcs1Sig.X86_64.Ver (test0_ok entry_regs regs_eq)
 
 /-! ## The taint checks -/
 
-theorem head_taint {Φ : State → State → Prop} (h : Pins Φ [.rsp]) :
-    RelCT isa (Two Φ) (.block (slotStores ++ encArgs)) fun _ _ => True := two_taint [.rsp] h (by taint_decide)
-
-theorem zeroHead_taint {Φ : State → State → Prop} (h : Pins Φ [.rsp]) :
-    RelCT isa (Two Φ) (.block [.mov .rdi (.mem (sp oOut)), .mov .rsi (.mem (sp oOl))]) fun _ _ => True :=
-  two_taint [.rsp] h (by taint_decide)
-
-theorem callArgs_taint {Φ : State → State → Prop} (h : Pins Φ [.rsp]) :
-    RelCT isa (Two Φ) (.block callArgs) fun _ _ => True := two_taint [.rsp] h (by taint_decide)
-
-theorem wipeHead_taint {Φ : State → State → Prop} (h : Pins Φ [.rsp]) :
-    RelCT isa (Two Φ) (.block (([.mov .r11 (.mem (sp oK)), .mov32 .rdx (.imm 0)] : List Instr) ++ lea .r10 oEM))
-      fun _ _ => True := two_taint [.rsp] h (by taint_decide)
-
 theorem wipeLoop_taint {Φ : State → State → Prop} (h : Pins Φ [.r10, .r11]) :
     RelCT isa (Two Φ)
       (.loop (.block [.store8 { base := .r10 } .rdx, .alu .add .r10 (.imm 1), .alu .sub .r11 (.imm 1)]) .ne)

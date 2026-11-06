@@ -96,26 +96,4 @@ theorem boundedFour_none_iff (η B : Nat) (m : Mem) (seed : Addr) :
   rw [mapM_none_iff]
   simp only [List.mem_range]
 
-/-- Ignoring a duplicated fourth lane retains exactly the three requested
-samplers, including their failure result. -/
-theorem mapM_duplicate_tail {α : Type} (a b c : Option α) :
-    (([a,b,c,a].mapM id).map (List.take 3))=[a,b,c].mapM id := by
-  cases a <;> cases b <;> cases c <;> rfl
-
-theorem mapM_duplicate_none {α : Type} (a b c : Option α) :
-    [a,b,c,a].mapM id=none ↔ [a,b,c].mapM id=none := by
-  cases a <;> cases b <;> cases c <;> simp
-
-/-- Duplicating a stream cannot introduce a failure or make failure depend on
-an additional secret stream. The successful output keeps the first three. -/
-theorem outcome_duplicate_tail {α : Type} {f g h : Bounds→Option α} {r : BitVec 32} {out : List α}
-    (ho : Outcome (fun B=>[f B,g B,h B,f B].mapM id) r out) :
-    Outcome (fun B=>[f B,g B,h B].mapM id) r (out.take 3) := by
-  rcases ho with ⟨hr,B,hB⟩|⟨hr,hB⟩
-  · refine Or.inl ⟨hr,B,?_⟩
-    dsimp only at hB ⊢
-    rw [←mapM_duplicate_tail,hB]
-    rfl
-  · exact Or.inr ⟨hr,(mapM_duplicate_none _ _ _).mp hB⟩
-
 end VG.Proof.MlDsa.AArch64.KeyGen.Optimized

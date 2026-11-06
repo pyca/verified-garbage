@@ -42,10 +42,6 @@ theorem bytesAt_writeBytes (m : Mem) (p : Addr) (xs : List Byte) (hn : xs.length
     Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : i < 2 ^ 64),
     hi, ite_true, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some]
 
-theorem bytesAt_take (m : Mem) (p : Addr) (n k : Nat) (hn : n ≤ k) :
-    (bytesAt m p k).take n = bytesAt m p n := by
-  simp only [bytesAt, ← List.map_take, List.take_range, Nat.min_eq_left hn]
-
 /-- The state of the body. -/
 structure Body (s₀ s : State) : Prop where
   r4 : s.gpr .r4 = scr s₀

@@ -65,8 +65,6 @@ open VG.Proof.Argon2.X86_64.Avx2 (VKeep VKeep.refl ifp ifn save_ok set_ok restor
 /-- The output chunk of word `i`. -/
 def fchunk (i : Nat) : Nat := 4 * (i % 16 / 8) + i / 32
 
-theorem finish_eq : Impl.Argon2.X86_64.Avx512.finish = (List.range 8).flatMap fun i => finishChunk (i / 4) (i % 4) := rfl
-
 /-- Finish the first `m` chunks, preserving scratch. -/
 theorem finish_prefix (m : Nat) (hm : m ≤ 8) {s : State} {p out : Addr} (hs : Scratch s p)
     (ho : s.gpr .rdx = out) (hw : (⟨out, 1024⟩ : Region) ∈ s.wr)
@@ -294,10 +292,5 @@ theorem compress_ct : ConstantTime isa compressLocal.pre compressLocal.pub
     Impl.Argon2.X86_64.Avx512.compress :=
   VG.Taint.constantTime (A := taint) initialTaint (fun _ _ hs ht hp => initial_agree hs ht hp)
     (by taint_decide)
-
-/-- `vg_argon2_compress_avx512` meets the contract of `vg_argon2_compress`. -/
-theorem compress_verified : Verified X86_64.target Impl.Argon2.X86_64.Avx512.compress
-    (Proof.Argon2.compressContract X86_64.abi) :=
-  Verified.of_correct compress_correct compress_ct compress_implies
 
 end VG.Proof.Argon2.X86_64.Avx512

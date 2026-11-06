@@ -37,7 +37,10 @@ files changed:
   * `…/<family>/<hash>.rs`, in a module's directory: `<family>_<hash>` (as
     in `src/asm/`, e.g. `src/ec/ecdsa/p256.rs`: `ecdsa_p256`), and
     `…/<family>/mod.rs`: every `<family>_<hash>`, and `<family>` itself if
-    it is a module (e.g. `src/rsa/mod.rs`: `rsa`, and `rsa_pss`, …);
+    it is a module (e.g. `src/rsa/mod.rs`: `rsa`, and `rsa_pss`, …); where
+    the directory is not named as its generated modules are, `<family>` is
+    the name its files import them by (`src/kdf/pbkdf2_hmac/sha256.rs`
+    imports `crate::arch::pbkdf2_sha256`: `pbkdf2`, see `family_prefix`);
   * a submodule of a family's member, `…/<family>/<member>/<name>.rs`
     (e.g. `src/rsa/pss/x86_64.rs`): `<family>_<member>`;
   * a private submodule of a module, `…/<module>/<name>.rs` with no
@@ -267,7 +270,11 @@ CPU_FEATURES = {
 # of them was split in two. With AES-GCM's groups from copies too, those
 # took about 7.7 minutes of each half (14 runs of about 75 benchmark ids),
 # and the slower runners passed the timeout again, so it is split in three.
-# A targeted run, of fewer, stays one job.
+# A targeted run, of fewer, stays one job. Entries are counted because the
+# planner cannot list benchmarks without building, but one entry can hold
+# many (AES-GCM's held 183): bench_compare.py fails a job whose benchmarks
+# would take longer than its budget, before measuring, and `--groups`
+# narrows such a run.
 BENCHMARKS_PER_JOB = 40
 
 # Changes to this script choose benchmarks but are not measured by any:
@@ -296,6 +303,10 @@ FAMILY = re.compile(r"(src/(?!asm/|hashes/)(?:[a-z0-9_]+/)*?)([a-z0-9_]+)/([a-z0
 # A file of a member's own submodules, `…/<family>/<member>/<name>.rs`
 # (e.g. `src/rsa/pss/x86_64.rs`, of `src/rsa/pss.rs`, the module `rsa_pss`).
 NESTED = re.compile(r"(src/(?!asm/|hashes/)(?:[a-z0-9_]+/)*?)([a-z0-9_]+)/([a-z0-9_]+)/[a-z0-9_]+\.rs$")
+# The name of an external module a file declares (`mod <name>;`).
+MOD_NAME = re.compile(r"^[ \t]*(?:pub(?:\([a-z]+\))?\s+)?mod\s+([a-z0-9_]+)\s*;", re.M)
+# A generated module Rust code imports (`crate::arch::<module>`).
+ARCH_MODULE = re.compile(r"\bcrate::arch::([a-z0-9_]+)\b")
 # A line of a list of modules: a declaration of one, or an attribute.
 LIST_LINE = re.compile(r"(?:pub(?:\([a-z]+\))? )?mod [a-z0-9_]+;|#!?\[[^\n]*\]")
 # One algorithm's benchmark, and the modules it lists in its `USES`.
@@ -748,6 +759,35 @@ def members(family, known):
     return {m for m in known if m.startswith(f"{family}_")}
 
 
+def family_prefix(directory, root="."):
+    """The `<family>` the generated modules of the family whose directory is
+    `directory` are named by, `<family>_<name>` for its file `<name>.rs`:
+    the name its files (those its `mod.rs` declares) import them by, if they
+    agree on one (`src/kdf/pbkdf2_hmac/sha256.rs` imports
+    `crate::arch::pbkdf2_sha256`: `pbkdf2`), else the directory's name
+    (`src/ec/ecdsa`: `ecdsa`)."""
+    parent = read(f"{directory}/mod.rs", None, root) or read(f"{directory}.rs", None, root) or ""
+    found = set()
+    for name in code_names(parent, MOD_NAME):
+        imported = code_names(read(f"{directory}/{name}.rs", None, root) or "", ARCH_MODULE)
+        found |= {m[:-len(name) - 1] for m in imported if m.endswith(f"_{name}") and len(m) > len(name) + 1}
+    return found.pop() if len(found) == 1 else posixpath.basename(directory)
+
+
+@functools.lru_cache(None)
+def code_names(text, pattern):
+    """The names `pattern` finds in `text` without its comments (for each
+    text once: `family_prefix` reads a family's files for each file of the
+    library)."""
+    return frozenset(pattern.findall(without_comments(text)))
+
+
+def family_member(match, root="."):
+    """The module `<family>_<name>` of a family's file (a `FAMILY` match of
+    `…/<family>/<name>.rs`), its family named as `family_prefix` says."""
+    return f"{family_prefix(match[1] + match[2], root)}_{match[3]}"
+
+
 def submodule_arches(parent, name, base, root="."):
     """The benchmarked architectures that compile a `mod <name>;` of the
     module whose directory is `parent` (`src/rsa`: `src/rsa/mod.rs` or
@@ -874,7 +914,7 @@ def parent_code(directory, known, root=".", seen=frozenset()):
     `<family>`, which no benchmark uses, if none. `seen` are the
     directories whose users are already being found."""
     family = posixpath.basename(directory)
-    found = members(family, known) | ({family} & known)
+    found = members(family_prefix(directory, root), known) | ({family} & known)
     if directory not in seen:
         found |= users(directory, known, root, seen)
     return found or {family}
@@ -907,12 +947,12 @@ def users(directory, known, root=".", seen=frozenset()):
         elif nested and f"{nested[2]}_{nested[3]}" in known:
             found = {f"{nested[2]}_{nested[3]}"}
         elif other and other[3] == "mod":
-            found = members(other[2], known) or {path}
-        elif other and f"{other[2]}_{other[3]}" not in known and submodule_arches(
+            found = members(family_prefix(other[1] + other[2], root), known) or {path}
+        elif other and family_member(other, root) not in known and submodule_arches(
                 other[1] + other[2], other[3], None, root):
             found = parent_code(other[1] + other[2], known, root, seen)
         else:
-            found = {f"{other[2]}_{other[3]}" if other else path}
+            found = {family_member(other, root) if other else path}
         # Below the module's own files, only the modules benchmarks use
         # (not, e.g., a private submodule's tests, `src/dsa/keygen/tests.rs`).
         names |= found & known if path.startswith(f"{directory}/") else found
@@ -976,8 +1016,9 @@ def sources(module):
         m, nested = FAMILY.match(path), NESTED.match(path)
         if (module_name(path) == module
                 or nested and f"{nested[2]}_{nested[3]}" == module
-                or m and m[3] == "mod" and (m[2] == module or module.startswith(f"{m[2]}_"))
-                or m and f"{m[2]}_{m[3]}" == module
+                or m and m[3] == "mod" and (
+                    m[2] == module or module.startswith(f"{family_prefix(m[1] + m[2])}_"))
+                or m and family_member(m) == module
                 or m and m[2] == module and submodule_arches(m[1] + m[2], m[3], None)):
             paths.append(path)
     return paths
@@ -1147,12 +1188,12 @@ def arches(changed, base=None):
             # A private submodule (no `<family>_<name>`, but declared by
             # the parent) is part of the parent's code, where it is compiled.
             directory = family[1] + family[2]
-            submodule = family[3] != "mod" and f"{family[2]}_{family[3]}" not in known and (
+            submodule = family[3] != "mod" and family_member(family) not in known and (
                 sub_arches := submodule_arches(directory, family[3], base))
             if submodule:
                 targets = [a for a in targets if a in sub_arches]
             names = (parent_code(directory, known) if family[3] == "mod" or submodule
-                     else {f"{family[2]}_{family[3]}"})
+                     else {family_member(family)})
             for a in targets:
                 for name in names:
                     need(a, name)

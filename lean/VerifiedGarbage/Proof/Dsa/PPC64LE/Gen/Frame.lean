@@ -138,14 +138,6 @@ theorem GI.fixedV (h : GI G STK σ V LS s) {o : Nat} {v : BitVec 64} (hp : (o, v
 
 theorem GI.slotV (h : GI G STK σ V LS s) {o : Nat} (ho : o ∈ LS) : fw s.mem G o = V o := h.slots o ho
 
-/-- `ld t, o(r28)` of a header word whose value `v` is known. -/
-theorem GI.ldV (h : GI G STK σ V LS s) {o : Nat} (ho : o + 8 ≤ hEnd) (h8 : o % 8 = 0) {v : BitVec 64}
-    (hv : fw s.mem G o = v) {t : Reg} {rest : List Instr} {Q : State → Prop}
-    (k : ∀ s', Upd s s' t v → WP isa (.block rest) s' Q) : WP isa (.block (ld t o :: rest)) s Q := by
-  have := h.hEnd_le
-  refine wp_ld (by decide) ⟨by simp only [hEnd, fSave] at ho; omega, by omega⟩ (by rw [h.r28])
-    (h.inRdWr (by omega)) fun s' u => k s' (by rw [← hv]; exact u)
-
 /-- A state of the search through a step that changes registers other than
 `r28` alone. -/
 theorem GI.of_keep {t : State} {ws : List Reg} (h : GI G STK σ V LS s) (r : Keep ws s t) (m : t.mem = s.mem)

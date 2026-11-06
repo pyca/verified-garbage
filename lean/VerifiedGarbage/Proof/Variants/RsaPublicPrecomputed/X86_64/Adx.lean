@@ -20,7 +20,7 @@ namespace VG.Proof.Variants.RsaPublicPrecomputed.X86_64.Adx
 open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 def variant : PublicImpl where
-  name := Spec.Rsa.publicPrecomputedCheckedApi.name ++ "_adx"
+  name := "vg_rsa_public_precomputed_checked" ++ "_adx"
   code := Impl.Rsa.X86_64.Folded.checked Mont.adxSquare.mm
   ok := FoldedPublic.checked_correct _ (by decide +kernel)
   ct := FoldedPublic.checked_ct _ FoldedPublic.adx_final_ct

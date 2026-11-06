@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVerified
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 public import VerifiedGarbage.TCB.X86_64.Print
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubLit
 import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
 
 /-! # RSA (RFC 8017) on x86-64 -/
@@ -26,19 +23,6 @@ def artifacts : List Artifact := [
     stack := 8
     verified := Proof.Rsa.X86_64.Instances.precomputeAdx_verified
     features := ["bmi2", "adx"] },
-  Spec.Rsa.publicPrecomputedCheckedApi.artifact X86_64.target {
-    code := Impl.Rsa.X86_64.Folded.checked Proof.Bignum.X86_64.Mont.base.mm
-    verified := Proof.Bignum.X86_64.FoldedPublic.base_verified },
-  Spec.Rsa.publicPrecomputedCheckedApi.artifact X86_64.target {
-    suffix := "_adx"
-    code := Impl.Rsa.X86_64.Folded.checked Proof.Bignum.X86_64.Mont.adxSquare.mm
-    verified := Proof.Bignum.X86_64.FoldedPublic.adx_verified
-    features := ["bmi2", "adx"] },
-  Spec.Rsa.publicPrecomputedCheckedApi.artifact X86_64.target {
-    suffix := "_ifma"
-    code := Impl.Rsa.X86_64.PubIfma.checked Proof.Bignum.X86_64.Mont.adxSquare.mm
-    verified := Proof.Bignum.X86_64.Ifma.Pub.ifma_verified
-    features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"] },
   Spec.Rsa.crtValuesApi.artifact X86_64.target {
     code := Impl.Rsa.X86_64.Keys.CrtValues.code
     verified := Proof.Rsa.X86_64.Instances.crtValues_verified },
@@ -47,9 +31,6 @@ def artifacts : List Artifact := [
     verified := Proof.Rsa.X86_64.Instances.recoverDet_verified },
   Spec.Rsa.checkKeyApi.artifact X86_64.target {
     code := Impl.Rsa.X86_64.CheckKey.code
-    verified := Proof.Rsa.X86_64.Instances.checkKey_verified },
-  Spec.Rsa.checkCrtKeyApi.artifact X86_64.target {
-    code := Impl.Rsa.X86_64.CheckCrtKey.code
-    verified := Proof.Rsa.X86_64.Instances.checkCrtKey_verified }]
+    verified := Proof.Rsa.X86_64.Instances.checkKey_verified }]
 
 end VG.Artifacts.Rsa.X86_64

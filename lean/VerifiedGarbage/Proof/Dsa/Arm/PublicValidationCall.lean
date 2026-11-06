@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
 import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationTrace
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationBody
-import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationABI
 
 /-! # Calls of the shared public-key validator -/
 

@@ -3,6 +3,35 @@
 //! `assembly/ed25519.s`.
 #![allow(dead_code)]
 
+/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "i0QkDLkgAAAAi1QkCFJRUA=="
+call {vg_sha512_digest}
+.base64 "WFhYi0QkBItMJAiLVCQQUlFQ"
+call {vg_ed25519_public_key_expanded}
+.base64 "WFhYww=="
+.p2align 6"#,
+        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded,
+    )
+}
+
 /// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.

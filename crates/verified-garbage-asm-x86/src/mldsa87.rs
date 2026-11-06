@@ -728,7 +728,7 @@ call {vg_keccak_pad_scratch}
 call {vg_keccak_squeeze_scratch}
 .base64 "WFhYWFhYi4aEAwAAi3QkCIt8JASLLCRbW1tbww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mldsa_rej_ntt_poly = sym super::mldsa44::vg_mldsa_rej_ntt_poly::vg_mldsa_rej_ntt_poly,
@@ -741,6 +741,41 @@ call {vg_keccak_squeeze_scratch}
         vg_mldsa_add = sym super::mldsa44::vg_mldsa_add::vg_mldsa_add,
         vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
         vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
+    )
+}
+
+/// ML-DSA-87 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa87_verify_message_cached` takes.
+///
+/// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 2592 bytes.
+/// * `tr` must be valid for reads and writes of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `tr` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa87_pk_tr(pk: *const [u8; 2592], tr: *mut [u8; 64], scratch: *mut [u64; 18048]) {
+    core::arch::naked_asm!(
+        r#".base64 "U1ZXVYt0JByJ8oPCALgAAAAAuTIAAAA="
+20:
+.base64 "iQKDwgSD6QE="
+jne 20b
+.base64 "ifCDwAC5iAAAALoAAAAAi1wkFIPDAL0gCgAAifeBx8gAAABXVVNSUVA="
+call {vg_keccak_absorb_scratch}
+.base64 "WFhYWFhYifCDwAC5iAAAALoIAAAAux8AAACJ94HHyAAAAFdTUlFQ"
+call {vg_keccak_pad_scratch}
+.base64 "WFhYWFiJ8IPAALmIAAAAugAAAACLXCQYg8MAvUAAAACJ94HHyAAAAFdVU1JRUA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "WFhYWFhYi3QkCIt8JASLLCRbW1tbww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -1628,7 +1663,7 @@ call {vg_mldsa_hint_bit_pack}
         vg_mldsa_rej_ntt_poly = sym super::mldsa44::vg_mldsa_rej_ntt_poly::vg_mldsa_rej_ntt_poly,
         vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mldsa_expand_mask_poly = sym super::mldsa44::vg_mldsa_expand_mask_poly::vg_mldsa_expand_mask_poly,
@@ -1693,7 +1728,7 @@ jmp 21f
 21:
 .base64 "i3QkCIt8JASLLCRbW1tbww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mldsa87_sign = sym super::mldsa87::vg_mldsa87_sign,
@@ -2376,7 +2411,7 @@ jne 263b
         vg_mldsa_inv_ntt = sym super::mldsa44::vg_mldsa_inv_ntt::vg_mldsa_inv_ntt,
         vg_mldsa_use_hint = sym super::mldsa44::vg_mldsa_use_hint::vg_mldsa_use_hint,
         vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
@@ -2426,7 +2461,7 @@ jmp 21f
 21:
 .base64 "i3QkCIt8JASLLCRbW1tbww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mldsa87_verify = sym super::mldsa87::vg_mldsa87_verify,

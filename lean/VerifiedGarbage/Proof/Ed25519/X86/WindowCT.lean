@@ -158,13 +158,6 @@ theorem digitNibble_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {P₁ P
 
 /-! ## Adding a digit's entry -/
 
-theorem digitTest_ok {s : State} {v : Nat} (hv : v < 16) {B : BitVec 32}
-    (hs : s.gpr .eax = BitVec.ofNat 32 v ∧ s.gpr .edi = B) :
-    WP isa (.block [.alu .test .eax (.reg .eax)]) s fun t =>
-      (t.gpr .eax = BitVec.ofNat 32 v ∧ t.gpr .edi = B) ∧ t.zf = some (decide (v = 0)) :=
-  Wp.wp_test fun t ht zt => WP.block_nil ⟨⟨by rw [ht.gpr]; exact hs.1, by rw [ht.gpr]; exact hs.2⟩,
-    by rw [zt, hs.1, digit_test_fact v hv]⟩
-
 /-- The digit's test keeps the call's context. -/
 theorem digitTest_call {s : State} {v : Nat} (hv : v < 16) {B : BitVec 32}
     (hs : s.gpr .eax = BitVec.ofNat 32 v ∧ s.gpr .edi = B) :

@@ -46,16 +46,8 @@ theorem vbyte_or (x y : BitVec 128) (e : Nat) : vbyte (x ||| y) e = vbyte x e ||
 theorem vbyte_and (x y : BitVec 128) (e : Nat) : vbyte (x &&& y) e = vbyte x e &&& vbyte y e := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [vbyte, hi]
 
-theorem vbyte_not (x : BitVec 128) {e : Nat} (he : e < 16) : vbyte (~~~x) e = ~~~vbyte x e := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_not, hi, decide_true, Bool.true_and,
-    show 8 * e + i < 128 by omega]
-
 theorem bc_xor (a b : BitVec 8) : bc a ^^^ bc b = bc (a ^^^ b) :=
   vbyte_ext fun e he => by rw [vbyte_xor, vbyte_bc _ he, vbyte_bc _ he, vbyte_bc _ he]
-
-theorem bc_or (a b : BitVec 8) : bc a ||| bc b = bc (a ||| b) :=
-  vbyte_ext fun e he => by rw [vbyte_or, vbyte_bc _ he, vbyte_bc _ he, vbyte_bc _ he]
 
 theorem vbyte_map2 (f : (w : Nat) → BitVec w → BitVec w → BitVec w) (x y : BitVec 128) {e : Nat}
     (he : e < 16) : vbyte (VArr.b16.map2 f x y) e = f 8 (vbyte x e) (vbyte y e) := by

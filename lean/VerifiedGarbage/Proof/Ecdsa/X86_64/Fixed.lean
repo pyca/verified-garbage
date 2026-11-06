@@ -71,14 +71,6 @@ theorem fixedOk_flag : FixedOk c [(c.sl FLAG, 8)] := by
   rw [List.mem_singleton.mp hw]
   exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (by decide)))
 
-theorem fixedOk_whole (h7 : c.n < 10) : FixedOk c [(size, 2 ^ 64)] := by
-  intro w hw
-  rw [List.mem_singleton.mp hw]
-  refine Or.inr ?_
-  have := sl_le c (i := 12) h7 (by decide)
-  show c.sl 12 ≤ size
-  omega
-
 /-- A constant's slot is apart from what a phase writes. -/
 theorem fixed_apart {W : List (Nat × Nat)} (hW : FixedOk c W) {i : Nat} (hi : i < 12) (hit : i ≠ TMP) :
     ∀ w ∈ W, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by

@@ -134,8 +134,6 @@ end
 theorem sv8 (b : Addr) : b + BitVec.ofNat 64 (2048 + 8) = b + BitVec.ofNat 64 2048 + BitVec.ofNat 64 8 := by
   rw [Offset.add_add]
 
-theorem zero8 (b : Addr) : b + BitVec.ofNat 64 (0 + 8) = b + BitVec.ofNat 64 8 := rfl
-
 /-- What the code before a call leaves: the call's arguments, the
 nonvolatile registers, and the memory `m`. -/
 structure Pre (s₀ : State) (D : Addr) (m : Mem) (s s₁ : State) : Prop where

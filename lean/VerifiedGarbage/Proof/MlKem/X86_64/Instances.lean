@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
 
 import VerifiedGarbage.Proof.MlKem.X86_64.Top768
+public import VerifiedGarbage.Impl.MlKem.X86_64.EncapsHP16
+import VerifiedGarbage.Proof.MlKem.X86_64.EcP16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EcP16
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Sel
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Sel
 import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
@@ -35,7 +38,8 @@ theorem keyGen_spSafe (v : Sample4Impl) :
 
 theorem encapsH_spSafe (v : Sample4Impl) :
     (Impl.MlKem.X86_64.encapsH v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
-  encapsHSel_sp v (fun _ c S => by s16_sp v c S kpke768) (by s4_sp v)
+  encapsHPSel_sp v (fun p P => by ecp_sp v p P kpke768)
+    (encapsHSel_sp v (fun _ c S => by s16_sp v c S kpke768) (by s4_sp v))
 
 theorem encaps_spSafe (v : Sample4Impl) :
     (Impl.MlKem.X86_64.encaps v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=

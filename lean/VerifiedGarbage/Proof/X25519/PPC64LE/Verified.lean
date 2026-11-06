@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Main
 public import VerifiedGarbage.Spec.X25519.Contract
 import VerifiedGarbage.Proof.X25519.PPC64LE.CT
@@ -49,9 +50,9 @@ def x25519Sat : State where
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 4096⟩]
 
 theorem x25519_verified :
-    Verified PPC64LE.target Impl.X25519.PPC64LE.x25519 (Spec.X25519.x25519Contract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.X25519.PPC64LE.x25519 (Proof.X25519.x25519Contract PPC64LE.abi) :=
   Verified.of_correct x25519_ok x25519_ct' (by
-    contract_implies [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, Proof.X25519.PPC64LE.x25519PPC64LE,
+    contract_implies [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, Proof.X25519.PPC64LE.x25519PPC64LE,
       PPC64LE.abi, PPC64LE.argRegs] [Proof.X25519.PPC64LE.x25519Sat] using Proof.X25519.PPC64LE.x25519Sat)
 
 end VG.Proof.X25519.PPC64LE

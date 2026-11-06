@@ -91,7 +91,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.CombExpInitialCT
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyCallMemory
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyPowerAt
 /-! Cached attempts inherit every callable RSA Montgomery backend and caller transform. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/CachedKeyPrograms.lean`, which only this module imported.

@@ -476,21 +476,6 @@ theorem vputB_ok {s t : State} {X : BitVec 256} (hv : VPA X s t) (ht : s.gpr .r1
   · rw [u11.syms, u10.syms, y9, u8.syms, hv.syms]
   · rw [u11.other r h4, u10.other r h3, g9, u8.gpr, hv.gpr r h1 h2 h3]
 
-/-- The candidates less than `q` of each lane to `a[j..]` in turn, `j` advanced by their number and `rsi` by 24. -/
-theorem vput_ok {s : State} (hc : VC s) {X : BitVec 256} (h0 : ∀ l < 2, s.lane .xmm0 l = candD X l)
-    (hrax : (s.gpr .rax).toNat = maskL X 0 + 65536 * maskL X 1)
-    (ht : s.gpr .r11 = s.syms tblName) (hdi : (s.gpr .rdi).toNat < 2 ^ 32)
-    (hout0 : InRegions s.wr (s.gpr .rbp + BitVec.ofNat 64 (4 * (s.gpr .rdi).toNat)) 16)
-    (hout1 : InRegions s.wr (s.gpr .rbp + BitVec.ofNat 64 (4 * ((s.gpr .rdi).toNat + cntL X 0))) 16) :
-    WP isa (.block vput) s fun s' =>
-      s'.mem = (s.mem.writeW (s.gpr .rbp + BitVec.ofNat 64 (4 * (s.gpr .rdi).toNat)) (compD X 0)).writeW
-        (s.gpr .rbp + BitVec.ofNat 64 (4 * ((s.gpr .rdi).toNat + cntL X 0))) (compD X 1) ∧
-      (s'.gpr .rdi).toNat = (s.gpr .rdi).toNat + cntL X 0 + cntL X 1 ∧ s'.gpr .rsi = s.gpr .rsi + 24 ∧ VC s' ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.syms = s.syms ∧
-      ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rdi → r ≠ .rsi → s'.gpr r = s.gpr r := by
-  rw [show vput = vputA ++ vputB from rfl, WP.block_append_iff]
-  exact WP.mono (vputA_ok hc h0 hrax ht hdi hout0) fun t hv => vputB_ok hv ht hdi hout1
-
 end
 
 /-! ## The coefficients -/

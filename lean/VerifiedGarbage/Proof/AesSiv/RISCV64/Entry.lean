@@ -56,16 +56,6 @@ theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 240 ≤ d) (h₂ : d + k ≤ 2576) :
 
 theorem sub_data {c : Cx} : ∃ r' ∈ mutR c, Region.Sub ⟨c.D, c.n⟩ r' := ⟨_, by simp, fun _ h => h⟩
 
-/-- A buffer missing `W` and the data misses what the pieces write. -/
-theorem buf_mut {c : Cx} {P : Addr} {k : Nat} (hw : (⟨P, k⟩ : Region).Disjoint ⟨c.W, 2576⟩)
-    (hd : (⟨P, k⟩ : Region).Disjoint ⟨c.D, c.n⟩) : ∀ r ∈ mutR c, (⟨P, k⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact hw.sub_right (Region.sub_prefix (by decide))
-  · exact hw.sub_right (Lay.wSub (by decide))
-  · exact hd
-
 /-! ## The entry -/
 
 /-- What the entry writes: the saved registers and the return address. -/

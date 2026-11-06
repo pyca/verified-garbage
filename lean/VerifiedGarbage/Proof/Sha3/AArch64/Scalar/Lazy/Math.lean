@@ -71,17 +71,6 @@ theorem layout_at (layout : Layout) (logical physical : File)
   apply List.mk_mem_zipIdx_iff_getElem?.mpr
   simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some]
 
-/-- Building a public constant does not change any lane of this layout. -/
-theorem layout_write_constant (layout : Layout) (logical physical : File)
-    (h : LayoutHolds layout logical physical) (d : Reg) (v : Lane)
-    (hd : ∀ entry ∈ layout, entry.1 ≠ d) :
-    LayoutHolds layout logical (physical.write d v) := by
-  intro entry i he
-  have hm := List.mem_of_getElem? (List.mk_mem_zipIdx_iff_getElem?.mp he)
-  simp only [File.write, ite_eq_right (hd entry hm)]
-  exact h entry i he
-
-
 theorem layout_of_at (layout : Layout) (logical physical : File)
     (h : ∀ i < layout.length,
       physical.regs (layout.getD i (.x0, 0)).1 =
@@ -124,7 +113,6 @@ theorem plan_iota_state (r : Fin 24) (A : Spec.Sha3.State) (f : File)
     simp only [ite_eq_right hn, ite_eq_right (hc _ memi), hval,
       Spec.Sha3.iota, Vector.getElem_set, Ne.symm hz, ite_false]
 
-
 def abstractRound (r : Fin 24) (f : File) : File :=
   step ((run (plan r).core f).write (plan r).constantReg (Spec.Sha3.RC r.val))
     (plan r).iota
@@ -141,6 +129,5 @@ theorem layout_of_regs (layout : Layout) (logical f g : File)
   intro entry i he
   rw [hr]
   exact h entry i he
-
 
 end VG.Proof.Sha3.AArch64.Scalar.Lazy

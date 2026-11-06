@@ -50,11 +50,6 @@ theorem relInvE {I J E E' : State → State → Prop} {c : Prog isa}
   obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
   exact ⟨ht', ⟨σ₁, σ₂, p₁, p₂, hpub, g₁, g₂⟩, he⟩
 
-theorem RR.mono {I I' E E' : State → State → Prop} {x y : State} (h : RR p D I E x y)
-    (hI : ∀ σ s, I σ s → I' σ s) (hE : E x y → E' x y) : RR p D I' E' x y := by
-  obtain ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, e⟩ := h
-  exact ⟨⟨σ₁, σ₂, p₁, p₂, hpub, hI _ _ i₁, hI _ _ i₂⟩, hE e⟩
-
 theorem RR.lrel {I E : State → State → Prop} (hI : ∀ σ s, I σ s → St p D σ s) {x y : State}
     (h : RR p D I E x y) : LRel D (sgR p) (sgW p) x y := by
   obtain ⟨⟨σ₁, σ₂, _, _, hpub, i₁, i₂⟩, _⟩ := h
@@ -169,11 +164,6 @@ theorem seqL {c₁ c₂ : Prog isa} {I J : State → Prop} {Q : State → State 
   RelCT.seq (postDep h₁ (F := fun x x' => (∃ W, PostB D x x' W) ∧ J x')
     (fun x y h => ⟨w₁ x h.1.lx h.2.1, w₁ y h.1.ly h.2.2⟩)
     fun _ _ _ _ h ⟨⟨_, hx⟩, jx⟩ ⟨⟨_, hy⟩, jy⟩ => ⟨h.1.post (sgB_bases p) hx hy, jx, jy⟩) h₂
-
-theorem trL_mono {c : Prog isa} {I I' : State → Prop}
-    (h : RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ I x ∧ I y) c fun _ _ => True) (hI : ∀ s, I' s → I s) :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ I' x ∧ I' y) c fun _ _ => True :=
-  RelCT.mono h (fun _ _ h => ⟨h.1, hI _ h.2.1, hI _ h.2.2⟩) fun _ _ h => h
 
 end
 

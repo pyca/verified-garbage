@@ -42,8 +42,6 @@ variable {G : GP}
 /-- A stage: a state of the search with the contents `c`, and `X` of the run. -/
 abbrev St (G : GP) (c : Cfg) (X : State → Prop) (σ s : State) : Prop := SS G σ c s ∧ X σ
 
-theorem St.ss {c : Cfg} {X : State → Prop} : ∀ σ s, St G c X σ s → SS G σ c s := fun _ _ h => h.1
-
 theorem varOk_of {o : Nat}
     (h : 40 ≤ o ∧ o + 4 ≤ F ∧ o % 4 = 0 ∧ o ∉ [fOut, fUsedP, fStP, fScratch, fWit, fWitLen]) : VarOk G o := by
   refine ⟨h.1, h.2.1, h.2.2.1, fun p hp e => h.2.2.2 ?_⟩
@@ -168,18 +166,6 @@ theorem targs4_vp {L u bits : Nat} :
   · refine VP.block_nil fun σ s ⟨⟨hx, ⟨r0, r1, r5⟩, r2, r3, r4, z⟩, e⟩ => ⟨hx, r0, r1, ?_, r3, r4, r5⟩
     have hu : u ≠ G.witLen := by rw [eval_eq, z] at e; simpa using e
     rw [r2, GP.randP, ite_eq_right hu]
-
-/-- The test's arguments. -/
-theorem targs_vp {L u bits : Nat} (hL : L = G.pLen) (hb : bits < 2 ^ 16) (hu : u ≤ G.witLen) (hU : fUsed ∈ c.LS)
-    (hUv : c.V fUsed = BitVec.ofNat 32 u) :
-    VP (St G c X) (VG.Impl.Rsa.Arm.Keys.seqs [
-        .block (scr L .r0 sA ++
-          ([.movw .r1 (BitVec.ofNat 16 (wa L / 8)), .movw .r5 (BitVec.ofNat 16 bits)] : List Instr)),
-        .block [ld .r4 fUsed, ld .r2 fWit, ld .r3 fWitLen],
-        .block [.dp .add .r2 .r2 (.reg .r4), .dp .sub .r3 .r3 (.reg .r4), .addSp .r4 fUsedOut, .cmp .r3 (.imm 0)],
-        .ite .eq (.block [ld .r2 fWit]) (.block [])])
-      (fun σ s => St G c X σ s ∧ TArgs G L u bits s) :=
-  VP.seq (targs1_vp hL hb) (VP.seq (targs2_vp hU hUv) (VP.seq (targs3_vp hu) targs4_vp))
 
 /-! ## The call -/
 

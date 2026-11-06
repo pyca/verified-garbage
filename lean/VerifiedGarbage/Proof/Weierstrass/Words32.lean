@@ -14,8 +14,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 
 For the targets with 32-bit registers, what `Proof/Weierstrass/Words.lean`
 says of 64-bit words: the bits of a number of 32-bit words (`val32`), and its
-big-endian encodings through byte-reversed words (`val32_eq_ofBytes`,
-`bytesAt_eq_toBytes32`).
+big-endian encodings through byte-reversed words (`val32_eq_ofBytes`).
 -/
 
 @[expose] public section
@@ -76,42 +75,6 @@ theorem val32_eq_ofBytes (m m' : Mem) (base p : Addr) : ∀ (o k : Nat),
 theorem getLsbD_byteRev32 (w : BitVec 32) {i : Nat} (hi : i < 32) :
     (byteRev32 w).getLsbD i = w.getLsbD (8 * (3 - i / 8) + i % 8) :=
   VG.byteRev32_getLsbD w hi
-
-/-- The `4 n` bytes at `q`, the word `j` of each is the byte reversal of the
-masked word `j` of a number, are the number big-endian, or zeros. -/
-theorem bytesAt_eq_toBytes32 (m m₀ : Mem) (base q : Addr) {a n : Nat} (c : Bool)
-    (h : ∀ j < n, m.readW (q + BitVec.ofNat 64 (4 * (n - 1 - j))) 32 =
-      byteRev32 (m₀.readW (off base (a + 4 * j)) 32 &&& (if c then BitVec.allOnes 32 else 0))) :
-    bytesAt m q (4 * n) =
-      if c then Spec.Weierstrass.toBytes (4 * n) (val32 m₀ base a n) else List.replicate (4 * n) 0 := by
-  have hb : ∀ k (hk : k < 4 * n), m (q + BitVec.ofNat 64 k) =
-      (byteRev32 (m₀.readW (off base (a + 4 * (n - 1 - k / 4))) 32 &&&
-        (if c then BitVec.allOnes 32 else 0))).extractLsb' (8 * (k % 4)) 8 := fun k hk => by
-    have e := byte_word32 m q (k / 4) (r := k % 4) (Nat.mod_lt _ (by decide))
-    rw [show 4 * (k / 4) + k % 4 = k by omega,
-      show 4 * (k / 4) = 4 * (n - 1 - (n - 1 - k / 4)) by omega, h _ (by omega)] at e
-    exact e
-  cases c
-  · simp only [Bool.false_eq_true, ite_false] at hb ⊢
-    refine List.ext_getElem (by rw [length_bytesAt, List.length_replicate]) fun k h₁ _ => ?_
-    rw [length_bytesAt] at h₁
-    rw [getElem_bytesAt, List.getElem_replicate, hb k h₁]
-    apply BitVec.eq_of_getLsbD_eq
-    intro i hi
-    have : 8 * (k % 4) + i < 32 := by omega
-    have z : ∀ {w} j, (0 : BitVec w).getLsbD j = false := fun _ => BitVec.getLsbD_zero
-    simp only [BitVec.getLsbD_extractLsb', getLsbD_byteRev32 _ this, BitVec.getLsbD_and, z, Bool.and_false]
-  · simp only [ite_true, BitVec.and_allOnes] at hb ⊢
-    refine List.ext_getElem (by rw [length_bytesAt, length_toBytes]) fun k h₁ _ => ?_
-    rw [length_bytesAt] at h₁
-    rw [getElem_bytesAt, getElem_toBytes, hb k h₁]
-    apply BitVec.eq_of_getLsbD_eq
-    intro i hi
-    rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_ofNat, decide_eq_true hi, Bool.true_and, Bool.true_and,
-      getLsbD_byteRev32 _ (by omega), Nat.testBit_shiftRight,
-      show 8 * (4 * n - 1 - k) + i = 32 * (n - 1 - k / 4) + (8 * (3 - (8 * (k % 4) + i) / 8) + (8 * (k % 4) + i) % 8)
-        by omega,
-      testBit_val32 _ _ _ _ _ _ (by omega) (by omega), BitVec.testBit_toNat]
 
 /-- A number is zero iff its words are. -/
 theorem val32_eq_zero_iff (m : Mem) (base : Addr) : ∀ (a n : Nat),

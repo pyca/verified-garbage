@@ -57,9 +57,6 @@ open VG.Proof.Ecdsa.RISCV64.Secp256k1.Window (copyPt_ok)
 open VG.Proof.X25519.RISCV64 (Rest)
 open VG.Spec.Weierstrass (Point Fe mul onCurve)
 
-/-- The curve as the code has it. -/
-abbrev c : Cfg := secp256k1
-
 /-- Code without frames keeps the comb's table, apart from the regions it may write. -/
 theorem wp_tab {cd : Prog isa} (hn : cd.noFrames = true) {s : State} {base : Addr} {Q : State → Prop}
     (hT : TabAt base s) (hwr : s.wr = [⟨base, 8192⟩]) (h : WP isa cd s Q) :

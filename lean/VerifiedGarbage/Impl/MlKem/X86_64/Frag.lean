@@ -377,10 +377,11 @@ structure Callee4 where
   blocks of `ek` into `H`'s sponge (`Sample4.sampleHM fast m`), if the
   implementation has one. -/
   batchHM16 : Option (Nat → Prog isa)
-  /-- The fragment key generation inlines to sample three entries of the
-  matrix with 16-bit coefficients while computing `PRF₂(σ, 0)` and
-  `PRF₂(σ, 1)` (`Sample4.sampleP fast`), if the implementation has one. -/
-  batchP16 : Option (Prog isa)
+  /-- The fragment key generation and encapsulation inline to sample three
+  entries of the matrix with 16-bit coefficients while computing
+  `PRF₂(σ, N₀)`, …, `PRF₂(σ, N₀ + m - 1)` for `m ≤ 3`
+  (`Sample4.samplePN fast N₀ m`), if the implementation has one. -/
+  batchP16 : Option (Nat → Nat → Prog isa)
 
 def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, prfsScalar, .sse, none,
   none, none, none⟩
@@ -389,13 +390,13 @@ def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, p
 def Callee4.avx2 : Callee4 :=
   ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, (fun n k o w => prfsAvx2 n k o w), .sse16,
     some ("vg_mlkem16_sample_ntt4_avx2", Sample4.sampleNTT4Avx2 false true),
-    some (Sample4.sampleH false true), some (Sample4.sampleHM false), some (Sample4.sampleP false)⟩
+    some (Sample4.sampleH false true), some (Sample4.sampleHM false), some (Sample4.samplePN false)⟩
 
 /-- Four-way sampling with AVX-512VL quadword rotates. -/
 def Callee4.avx512 : Callee4 :=
   ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, (fun n k o w => prfsAvx2 n k o w true), .sse16,
     some ("vg_mlkem16_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true true),
-    some (Sample4.sampleH true true), some (Sample4.sampleHM true), some (Sample4.sampleP true)⟩
+    some (Sample4.sampleH true true), some (Sample4.sampleHM true), some (Sample4.samplePN true)⟩
 
 /-- `SampleNTT` of the four seeds at `scratch` to the four polynomials from
 `a`, with the working space `scr` (8192 bytes), and `r15 ← r15 ∧ result`. -/

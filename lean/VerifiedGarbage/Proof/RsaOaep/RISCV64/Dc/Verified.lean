@@ -403,9 +403,6 @@ def AC (G H : Hash) (f : Fns) (D : Nat) (a v : State) : Prop :=
   ∃ s, PreD s ∧ TT G H f s ∧ PubD a s ∧ SymGH G H a s ∧ AfterPriv s v ∧ v.syms = s.syms ∧
     (v.gpr .a0 != 0) = decide (kk s < 2 * D + 2)
 
-theorem AP.dx {G H : Hash} {f : Fns} {a v : State} (h : AP G H f a v) : DX a v :=
-  let ⟨_, P, _, p, _, A, _⟩ := h; DX.of_after P p A
-
 theorem AC.dxt {G H : Hash} {f : Fns} {D : Nat} {a v : State} (h : AC G H f D a v) : DXT G H f a v :=
   let ⟨s, P, T, p, y, A, sy, _⟩ := h; ⟨s, v.mem, P, T, p, y, A.mem, A.base, sy⟩
 

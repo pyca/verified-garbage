@@ -25,9 +25,8 @@ public import VerifiedGarbage.Proof.Gcm.Contract
 /-!
 # AES counter mode with the Armv8 Cryptographic Extension
 
-`ctr32_verified` proves `Impl.Aes.AArch64.Aese.ctr32` against
-`Proof.Aes.ctr32AArch64` (the contract `vg_aes_ctr32` is proven against), and
-so against the shared contract.
+`ctr32_correct` and `ctr32_ct` prove `Impl.Aes.AArch64.Aese.ctr32` against
+`Proof.Aes.ctr32AArch64` (the contract `vg_aes_ctr32` is proven against).
 
 `ctrs_ok`: `ctrs regs i` puts the counter blocks `inc₃₂^(c+i)(CB)`, … into
 the registers `regs`; `xorData_ok`: `xorData regs j` XORs them, encrypted,
@@ -138,9 +137,6 @@ theorem Fr.mono {gs gs' : List Reg} {vs vs' : List VReg} {s s' : State} (h : Fr 
     (hg : ∀ r ∈ gs, r ∈ gs') (hv : ∀ r ∈ vs, r ∈ vs') : Fr gs' vs' s s' :=
   ⟨fun r hr => h.gpr r fun h' => hr (hg r h'), fun r hr => h.v r fun h' => hr (hv r h'),
     h.sp, h.mem, h.rd, h.wr⟩
-
-theorem VFrame.fr {vs : List VReg} {s s' : State} (h : VFrame vs s s') : Fr [] vs s s' :=
-  ⟨fun r _ => by rw [h.gpr], h.v, h.sp, h.mem, h.rd, h.wr⟩
 
 /-- The counter block `C + i` into `b`, `C` the counter in `w10`. -/
 theorem ctr1_ok (b : VReg) (i : Nat) (s : State) (hi : i < 4096)
@@ -686,11 +682,5 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AA
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-theorem ctr32_verified :
-    Verified AArch64.target ctr32 (Proof.Gcm.ctr32Contract AArch64.abi) :=
-  Verified.of_correct ctr32_correct ctr32_ct (by
-    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, Proof.Aes.ctr32AArch64, AArch64.abi,
-      AArch64.argRegs] [Proof.Aes.AArch64.satState] using Proof.Aes.AArch64.satState)
 
 end VG.Proof.Aes.AArch64.Aese

@@ -354,16 +354,6 @@ theorem body_eq : finalizeBody =
     (.seq (.block [.addi .a1 .s1 64])
     (.seq compressAt (.block [.li .s5 0, .addi .s6 .s6 (-(1 : Nat) : Int)]))))))) := rfl
 
-theorem lenStore_nv : ∀ r ∈ [Reg.s1, .s2, .s3, .s4, .s6] ++ nvRegs,
-    ∀ i ∈ instrs (.block lenStore : Prog isa), dstOf i ≠ some r := by
-  intro r hr i hi e
-  have hc : ((instrs (.block lenStore : Prog isa)).all fun i => dstOf i == none || dstOf i == some .t1 || dstOf i == some .t3) = true := by
-    decide
-  have := List.all_eq_true.mp hc i hi
-  rw [e] at this
-  simp only [List.cons_append, nvRegs, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> simp at this
-
 theorem body_ok {s₀ : State} (hp : Pre D s₀) {k n : Nat} {s : State} (h : LInv s₀ k n s) :
     WP isa finalizeBody s fun s' => Step s₀ k s' ∧ ∀ r ∈ nvRegs, s'.gpr r = s.gpr r := by
   have hk := h.k_le; have hn := h.n_le

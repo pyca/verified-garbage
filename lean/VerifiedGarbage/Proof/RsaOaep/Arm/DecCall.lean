@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.RsaPss.Arm.Step
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # RSAES-OAEP decryption on ARMv7: the call of `vg_rsa_private_checked`
@@ -278,7 +279,7 @@ theorem call_geo {P : EP} {σ : State} (hi : In P σ) :
       (by unfold oRsa; omega)
 
 theorem call_pre {P : EP} {σ s : State} (hr : R1 P σ s) :
-    (Spec.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
+    (Proof.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
       (s.callEntry.withRegions (privRd P.B P.n P.e P.ct P.p P.q P.dp P.dq P.qinv P.K P.el P.pl P.ql)
         (privWr (P.scr + BitVec.ofNat 32 oEm) (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024))) := by
   obtain ⟨hc, hi, pa⟩ := hr

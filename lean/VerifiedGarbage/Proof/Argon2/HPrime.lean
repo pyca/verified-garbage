@@ -69,12 +69,6 @@ def chainPrefixes : Nat → List Byte → List Byte
   | 0, _ => []
   | r + 1, v => (H 64 v).take 32 ++ chainPrefixes r (H 64 v)
 
-theorem chainDigest_length (r : Nat) (v : List Byte) (hv : v.length = 64) :
-    (chainDigest r v).length = 64 := by
-  induction r generalizing v with
-  | zero => exact hv
-  | succ r ih => exact ih _ (H_length _ _ (by decide))
-
 theorem chainPrefixes_length (r : Nat) (v : List Byte) :
     (chainPrefixes r v).length = 32 * r := by
   induction r generalizing v with

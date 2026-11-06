@@ -355,10 +355,6 @@ structure Mid (s u : State) : Prop where
   mem : Frame [kR s, sR s] s.mem u.mem
   sv : Spill.Saved (fb s) s.gpr saved u.mem
 
-theorem AtCrt.mid {s t : State} (A : AtCrt s t) : Mid s t :=
-  ⟨A.sp, A.rd, A.wr, A.s1, A.s2, A.s3, A.s4, A.s5, A.s6, A.hi,
-    A.mem.mono fun r hr => by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self .., A.sv⟩
-
 /-- A buffer of the caller that the function does not write. -/
 theorem bytes_of_frame {s : State} {rs : List Region} {m : Mem} (hf : Frame rs s.mem m) {p : Addr}
     {len : Nat} (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, len⟩ r) (hl : len ≤ 2 ^ 64) :

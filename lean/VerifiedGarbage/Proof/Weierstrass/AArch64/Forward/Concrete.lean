@@ -43,9 +43,6 @@ structure Equiv (e₁ e₂ : Env CVal) : Prop where
 
 theorem Equiv.refl (e : Env CVal) : Equiv e e := ⟨fun _ => rfl,fun _ => rfl,rfl⟩
 
-theorem Equiv.symm {e₁ e₂ : Env CVal} (h : Equiv e₁ e₂) : Equiv e₂ e₁ :=
-  ⟨fun r => (h.reg r).symm,fun off => (h.slot off).symm,h.carry.symm⟩
-
 theorem Equiv.trans {e₁ e₂ e₃ : Env CVal} (h : Equiv e₁ e₂) (h' : Equiv e₂ e₃) : Equiv e₁ e₃ :=
   ⟨fun r => (h.reg r).trans (h'.reg r),fun off => (h.slot off).trans (h'.slot off),h.carry.trans h'.carry⟩
 
@@ -148,24 +145,6 @@ theorem decodedStep_equiv {e₁ e₂ : Env CVal} (h : Equiv e₁ e₂) (size : N
     · have hr := h.reg r
       cases h1 : e₁.reg r <;> cases h2 : e₂.reg r <;> simp_all [ORel]
       exact h.setSlot off hr
-
-theorem ORel.bind {β γ : Type} {R : β → β → Prop} {S : γ → γ → Prop} {a b : Option β}
-    (h : ORel R a b) {g₁ g₂ : β → Option γ} (hg : ∀ x y,R x y → ORel S (g₁ x) (g₂ y)) :
-    ORel S (a.bind g₁) (b.bind g₂) := by
-  cases a <;> cases b <;> first | trivial | exact absurd h id | exact hg _ _ h
-
-/-- Running a block from equivalent environments: both fail, or end equivalent. -/
-theorem eval_equiv {size : Nat} {e₁ e₂ : Env CVal} (h : Equiv e₁ e₂) (is : List Instr) :
-    ORel Equiv (eval concDom size is e₁) (eval concDom size is e₂) := by
-  induction is generalizing e₁ e₂ with
-  | nil => exact h
-  | cons i is ih =>
-    simp only [eval]
-    refine ORel.bind ?_ fun _ _ h' => ih h'
-    simp only [step]
-    cases decode i with
-    | none => trivial
-    | some v => exact decodedStep_equiv h size v.val
 
 /-- `refine_wp` with the final slots equal as words. -/
 theorem refine_words {α : Type} {D : Dom α} {v : α → BitVec 64 × Bool}

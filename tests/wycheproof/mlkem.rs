@@ -58,7 +58,7 @@ json_struct! {
 /// `mlkem1024`) and its key types.
 macro_rules! mlkem_tests {
     ($n:literal, verified_garbage::$module:ident, $DecapsulationKey:ident, $EncapsulationKey:ident) => {
-        use verified_garbage::error::MlKemError;
+        use verified_garbage::error::InvalidKey;
         use verified_garbage::hashes::sha3::Sha3_256;
         use verified_garbage::$module::{$DecapsulationKey, $EncapsulationKey};
 
@@ -109,12 +109,7 @@ macro_rules! mlkem_tests {
                     _ => {
                         assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
                         if let Ok(key) = key {
-                            assert_eq!(
-                                key.err(),
-                                Some(MlKemError::InvalidKey),
-                                "tcId {}",
-                                test.tc_id
-                            );
+                            assert_eq!(key.err(), Some(InvalidKey), "tcId {}", test.tc_id);
                         }
                     }
                 }

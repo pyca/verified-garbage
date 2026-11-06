@@ -885,10 +885,6 @@ theorem covers_self {r : Region} {rs : List Region} (h : r ∈ rs) :
     ∃ r' ∈ rs, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧ off + r.len ≤ r'.len :=
   ⟨r, h, 0, by simp, by omega⟩
 
-theorem covers_prefix {B : Addr} {n k : Nat} {rs : List Region} (h : (⟨B, k⟩ : Region) ∈ rs) (hn : n ≤ k) :
-    ∃ r' ∈ rs, ∃ off, (⟨B, n⟩ : Region).base = r'.base + BitVec.ofNat 64 off ∧ off + (⟨B, n⟩ : Region).len ≤ r'.len :=
-  ⟨_, h, 0, by simp, by simp only; omega⟩
-
 /-! ## The state after the conversion and the moves -/
 
 section

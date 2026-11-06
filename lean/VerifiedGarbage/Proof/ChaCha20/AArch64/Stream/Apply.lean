@@ -73,8 +73,6 @@ theorem write64_eq (m : Mem) (a : Addr) (v : BitVec 64) : m.write a 8 v = m.writ
 theorem write32_eq (m : Mem) (a : Addr) (v : BitVec 32) : m.write a 4 v = m.writeW a v := by
   simp [Mem.writeW]
 theorem read64_eq (m : Mem) (a : Addr) : m.read a 8 = m.readW a 64 := by simp [Mem.readW]
-theorem read32_eq (m : Mem) (a : Addr) : m.read a 4 = m.readW a 32 := by simp [Mem.readW]
-
 /-! ## The entry state -/
 
 section
@@ -215,10 +213,6 @@ theorem kept_ne {r : Reg} (hr : r ∈ kept) {r' : Reg} (h : r' ∉ kept := by de
 /-- What `apply` guarantees (`applyAArch64`), and the registers it keeps. -/
 def Final (s₀ s : State) : Prop :=
   (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ Proof.ChaCha20.applyAArch64.post s₀ s
-
-/-- The low halves of v8–v15 are those on entry. -/
-abbrev VKeep (s₀ s : State) : Prop :=
-  ∀ r ∈ preservedV, (s.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64
 
 theorem fail_ok {s₀ : State} (hlt : N s₀ < L s₀) {s : State} (h : Q0 s₀ s) :
     WP isa (.block [.movz .x .x0 0 0]) s (Final s₀) := by

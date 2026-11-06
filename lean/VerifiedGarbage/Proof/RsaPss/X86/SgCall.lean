@@ -241,7 +241,7 @@ theorem eB_at {P : EP} {σ s : State} (hi : In h.D P σ) (hs : (P.lay h.D).St σ
     Spec.Rsa.bytesAt s.mem (P.e.setWidth 64) P.el = P.eB := (hs.ro (R := P.E) (by simp)).trans hi.eB
 
 /-- The name of `vg_rsa_private_checked` over `v`. -/
-def privName (v : Proof.Rsa.X86.PrivChecked.CrtImpl) : String := Spec.Rsa.privateCheckedApi.name ++ v.suffix
+def privName (v : Proof.Rsa.X86.PrivChecked.CrtImpl) : String := "vg_rsa_private_checked" ++ v.suffix
 
 /-- `out` and the result: the call. -/
 theorem call_vp (hG : Proof.Mgf1.Valid G) (P : EP) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :

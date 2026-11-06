@@ -45,7 +45,7 @@ jmp 25f
 jne 21b
 .base64 "SIn4SMHoCEiLq/AHAABMi6P4BwAASIub6AcAAMM="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym crate::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )

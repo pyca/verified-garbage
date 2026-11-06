@@ -31,12 +31,6 @@ def valRegs : List Reg :=
   [.r10, .r11, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29,
     .r30, .r31]
 
-theorem arrReg_ne {j : Nat} (hj : j < 8) :
-    arrReg j ≠ .r0 ∧ arrReg j ≠ .r3 ∧ arrReg j ≠ .r5 ∧ arrReg j ≠ .r6 ∧ arrReg j ≠ .r7 ∧ arrReg j ≠ .r10 ∧
-      arrReg j ≠ .r11 ∧ arrReg j ≠ .r14 ∧ arrReg j ≠ .r15 ∧ arrReg j ≠ .r16 ∧ arrReg j ≠ .r17 ∧
-      arrReg j ≠ .r18 ∧ arrReg j ≠ .r19 ∧ arrReg j ≠ .r20 ∧ arrReg j ≠ .r21 ∧ arrReg j ≠ .r29 ∧ arrReg j ≠ .r31 := by
-  revert j; decide
-
 /-- The header's values in the registers, for the working space at `ws`. -/
 structure HRegs (bits : Nat) (ws : Addr) (g : Reg → BitVec 64) : Prop where
   r31 : g .r31 = ws + BitVec.ofNat 64 keyOff

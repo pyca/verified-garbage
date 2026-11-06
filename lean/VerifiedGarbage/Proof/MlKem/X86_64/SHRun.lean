@@ -157,12 +157,18 @@ theorem run1EndY_ok {Y : Spec.Sha3.State} {H : Mem → Prop} {K : Nat} (hK : K <
     · exact st_poly (by omega) (by omega) e h₂.lb.fr (h.st k (by omega)) (hL _ _)
 
 /-- The first 168 iterations on seed `K`, and its count kept. -/
-theorem run1Y_ok {Y : Spec.Sha3.State} {H : Mem → Prop} {K : Nat} (hK : K < 3) {s : State} (h : Q1 w16 σ Y H K s) :
-    WP isa (run1 K w16) s (Q1 w16 σ Y H (K + 1)) := by
+theorem run1Y_ok {Y : Spec.Sha3.State} {H : Mem → Prop} {K : Nat} (hK : K < 3) {z : Bool} {s : State}
+    (h : Q1 w16 σ Y H K s) : WP isa (run1 K w16 z) s (Q1 w16 σ Y H (K + 1)) := by
   unfold run1
-  exact WP.seq (WP.mono (setup_ok hp (by omega) (lbY1 hK h)) fun s₁ ⟨h₁, h10⟩ =>
-    WP.seq (WP.mono (loop_ok hp (by omega) (N := 21) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
-      run1EndY_ok hp hK h h₂))
+  split
+  · rename_i hz
+    exact WP.seq (WP.mono (setupZ_ok hp (by omega) (lbY1 hK h)) fun s₁ ⟨h₁, h10⟩ =>
+      WP.seq (WP.mono (zloop_ok hp hz.2 (by omega) (N := 10) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
+        WP.seq (WP.mono (vgrp_ok hp (by omega) (by decide) (by decide) h₂.lv) fun _ ⟨h₃, _⟩ =>
+          run1EndY_ok hp hK h h₃.lat)))
+  · exact WP.seq (WP.mono (setup_ok hp (by omega) (lbY1 hK h)) fun s₁ ⟨h₁, h10⟩ =>
+      WP.seq (WP.mono (loop_ok hp (by omega) (N := 21) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
+        run1EndY_ok hp hK h h₂))
 
 /-! ## The check -/
 
@@ -302,16 +308,21 @@ theorem run2EndY_ok {Y : Spec.Sha3.State} {H : Mem → Prop} {K : Nat} (hK : K <
       · rw [ite_eq_right hk'] at this; rwa [ite_eq_right (by omega)]
 
 /-- 112 more iterations on seed `K`, and its count kept. -/
-theorem run2Y_ok {Y : Spec.Sha3.State} {H : Mem → Prop} {K : Nat} (hK : K < 3) {s : State} (h : Q2 w16 σ Y H K s) :
-    WP isa (run2 K w16) s (Q2 w16 σ Y H (K + 1)) := by
+theorem run2Y_ok {Y : Spec.Sha3.State} {H : Mem → Prop} {K : Nat} (hK : K < 3) {z : Bool} {s : State}
+    (h : Q2 w16 σ Y H K s) : WP isa (run2 K w16 z) s (Q2 w16 σ Y H (K + 1)) := by
   have hj : s.mem.readW (at' σ (oCnt + 8 * K)) 64 = BitVec.ofNat 64 (Lt σ K 168).length := by
     rw [h.j K hK, ite_eq_right (by omega)]
   have hst : Stored w16 s.mem (poly4W w16 (aP σ) K) (Lt σ K 168) := by
     have := h.st K hK; rwa [ite_eq_right (by omega)] at this
   unfold run2
-  exact WP.seq (WP.mono (contSetup_ok hp (by omega) (lbY2 hK h) hj hst) fun s₁ ⟨h₁, h10⟩ =>
-    WP.seq (WP.mono (loop_ok hp (by omega) (N := 14) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
-      run2EndY_ok hp hK h h₂))
+  split
+  · rename_i hz
+    exact WP.seq (WP.mono (contSetupZ_ok hp (by omega) (lbY2 hK h) hj hst) fun s₁ ⟨h₁, h10⟩ =>
+      WP.seq (WP.mono (zloop_ok hp hz.2 (by omega) (N := 7) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
+        run2EndY_ok hp hK h h₂.lv.lat))
+  · exact WP.seq (WP.mono (contSetup_ok hp (by omega) (lbY2 hK h) hj hst) fun s₁ ⟨h₁, h10⟩ =>
+      WP.seq (WP.mono (loop_ok hp (by omega) (N := 14) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
+        run2EndY_ok hp hK h h₂))
 
 /-- The counts' AND, after the second runs. -/
 theorem last3_ok {Y : Spec.Sha3.State} {H : Mem → Prop} {s : State} (h : Q2 w16 σ Y H 3 s) : WP isa (.block cntFlags3) s (Done3 w16 σ H) := by

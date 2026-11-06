@@ -64,8 +64,6 @@ end
 theorem stk_eq {s : State} {n : Nat} (h : n ≤ (s.gpr .esp).toNat) : sStk s n = below (s.gpr .esp) n := by
   simp only [sStk, below]; rw [Taint.sub_setWidth h]
 
-theorem args_eq (s : State) (n : Nat) : sArgs s n = ⟨((s.gpr .esp) + BitVec.ofNat 32 4).setWidth 64, n⟩ := rfl
-
 /-! ## Signing -/
 
 /-- The precondition of `signMessageContract p X86.abi 136`. -/

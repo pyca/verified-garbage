@@ -332,7 +332,6 @@ def finalizeArm : Contract Arm.isa where
 
 end VG.Proof.Md5
 
-
 namespace VG.Proof.Md5.Arm
 
 open VG VG.Arm VG.Impl.Md5.Arm
@@ -456,8 +455,6 @@ theorem saved_slots : Spill.Slots 0 24 saved := by decide
 
 /-- The registers the code never writes. -/
 def keptRegs : List Reg := [.r0, .r3, .r10, .r11, .lr]
-
-theorem keptRegs_pub : ∀ r ∈ keptRegs, r ∈ pubRegs := by decide
 
 /-- What holds between blocks, after `i` of them. -/
 structure Common (s₀ : State) (i : Nat) (s : State) : Prop where

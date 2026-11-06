@@ -51,10 +51,6 @@ theorem wp_xori {d : Reg} {v : BitVec 32} (k : ∀ s', Upd s s' d (s.gpr d ^^^ v
     WP isa (.block (.alu .xor d (.imm v) :: is)) s Q :=
   WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _))
 
-theorem wp_xor {d r : Reg} (k : ∀ s', Upd s s' d (s.gpr d ^^^ s.gpr r) → WP isa (.block is) s' Q) :
-    WP isa (.block (.alu .xor d (.reg r) :: is)) s Q :=
-  WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _))
-
 end
 
 /-- The zero flag of `test x, x`. -/
@@ -80,9 +76,6 @@ theorem addr3 {a : BitVec 32} {k o : Nat} (h : a.toNat + o + k < 2 ^ 32) :
 theorem count_z {n k : Nat} (hk : k < n) (hn : n < 2 ^ 32) :
     (BitVec.ofNat 32 (k + 1) - BitVec.ofNat 32 n == 0) = decide (k + 1 = n) :=
   sub_beq (by omega_nat) hn
-
-/-- The registers the loops write. -/
-abbrev clob : List Reg := [.eax, .ecx, .edx, .ebx]
 
 /-- The registers `copy` writes. -/
 abbrev cclob : List Reg := [.eax, .ecx, .edx]
@@ -174,90 +167,6 @@ theorem copy_ok {src dst : Reg} (hs : src ∉ cclob) (hd : dst ∉ cclob)
     rw [f₈.mem, u₇.mem, m₆.mem, show Reg8.dl.reg = .edx from rfl, v, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem,
       h.mem, bytesAt_snoc', e']
   · rw [z₈, h7, count_z hk hn']
-
-/-! ## The exclusive-or of `U` into `T` -/
-
-theorem xor_byte32 (a b : Byte) : ((a.setWidth 32 ^^^ b.setWidth 32).setWidth 8) = b ^^^ a := by
-  ext i hi
-  simp [BitVec.getElem_xor, Bool.xor_comm]
-
-/-- After `k` bytes of the exclusive-or of `[U]` into `[T]`. -/
-structure XorInv (s : State) (U T : Addr) (k : Nat) (t : State) : Prop where
-  rd : t.rd = s.rd
-  wr : t.wr = s.wr
-  other : ∀ r ∉ clob, t.gpr r = s.gpr r
-  ecx : t.gpr .ecx = BitVec.ofNat 32 k
-  mem : t.mem = writeBytes s.mem T (Spec.Pbkdf2.xorBytes (bytesAt s.mem T k) (bytesAt s.mem U k))
-
-/-- `T ← T ⊕ U`, `n` bytes, with `U` at `ebp + uo` and `T` at `esi`. -/
-theorem xor_ok {uo n : Nat} (hn : 0 < n) (hn' : n < 2 ^ 32) {s : State}
-    (huw : (s.gpr .ebp).toNat + uo + n ≤ 2 ^ 32) (htw : (s.gpr .esi).toNat + n ≤ 2 ^ 32)
-    (hinU : ∀ k < n, InRegions (s.rd ++ s.wr) ((s.gpr .ebp).setWidth 64 + BitVec.ofNat 64 uo + BitVec.ofNat 64 k) 1)
-    (houtT : ∀ k < n, InRegions s.wr ((s.gpr .esi).setWidth 64 + BitVec.ofNat 64 k) 1)
-    (hsep : Region.Disjoint ⟨(s.gpr .ebp).setWidth 64 + BitVec.ofNat 64 uo, n⟩ ⟨(s.gpr .esi).setWidth 64, n⟩) :
-    WP isa (.seq (.block [.mov .ecx (.imm 0)])
-      (.loop (.block [.mov .eax (.reg .ebp), .alu .add .eax (.reg .ecx), .movzx8 .edx (at_ .eax uo),
-        .mov .eax (.reg .esi), .alu .add .eax (.reg .ecx), .movzx8 .ebx (at_ .eax 0), .alu .xor .edx (.reg .ebx),
-        .store8 (at_ .eax 0) .dl, .alu .add .ecx (.imm 1), .alu .cmp .ecx (.imm (BitVec.ofNat 32 n))]) .ne)) s
-      fun t => XorInv s ((s.gpr .ebp).setWidth 64 + BitVec.ofNat 64 uo) ((s.gpr .esi).setWidth 64) n t := by
-  let U := (s.gpr .ebp).setWidth 64 + BitVec.ofNat 64 uo
-  try rewrite [show (s.gpr .ebp).setWidth 64 + BitVec.ofNat 64 uo = U from rfl] at *
-  let T := (s.gpr .esi).setWidth 64
-  try rewrite [show (s.gpr .esi).setWidth 64 = T from rfl] at *
-  refine WP.seq (wp_movi fun s₀ u₀ => WP.block_nil ?_)
-  have i0 : XorInv s U T 0 s₀ :=
-    ⟨u₀.rd, u₀.wr, fun r hr => u₀.other r (nm hr .ecx), u₀.gpr,
-      by rw [u₀.mem]; simp [bytesAt, Spec.Pbkdf2.xorBytes, writeBytes_nil]⟩
-  refine count_loop hn (XorInv s U T) (fun k hk t h => ?_) i0
-  have hl : (bytesAt s.mem T k).length = k := bytesAt_length _ _ _
-  have hl' : (Spec.Pbkdf2.xorBytes (bytesAt s.mem T k) (bytesAt s.mem U k)).length = k := by
-    rw [xorBytes_length' _ _ (by simp [bytesAt_length]), hl]
-  have rU : t.mem (U + BitVec.ofNat 64 k) = s.mem (U + BitVec.ofNat 64 k) := by
-    rw [h.mem]; simp only [writeBytes, hl', not_mem_of_disjoint hsep hk (Nat.le_of_lt hk) (by omega_nat), ↓reduceIte]
-  have rT : t.mem (T + BitVec.ofNat 64 k) = s.mem (T + BitVec.ofNat 64 k) := by
-    rw [h.mem]
-    simp only [writeBytes, hl', Offset.add_sub_cancel_left,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega_nat), Nat.lt_irrefl, ↓reduceIte]
-  have gb := h.other .ebp (by decide)
-  have gs := h.other .esi (by decide)
-  refine wp_mov fun t₁ u₁ => wp_add fun t₂ u₂ => ?_
-  refine wp_movzx8 (a := U + BitVec.ofNat 64 k)
-    (by rw [ea_at, u₂.gpr, u₁.gpr, u₁.other _ (by decide), gb, h.ecx, addr3 (by omega_nat)])
-    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr, h.rd, h.wr]; exact hinU k hk) fun t₃ u₃ => ?_
-  refine wp_mov fun t₄ u₄ => wp_add fun t₅ u₅ => ?_
-  have a₅ : t₅.ea (at_ .eax 0) = T + BitVec.ofNat 64 k := by
-    rw [ea_at, u₅.gpr, u₄.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
-      u₁.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), gs, h.ecx,
-      addr3 (by omega_nat)]
-    exact congrArg (· + BitVec.ofNat 64 k) (BitVec.add_zero _)
-  refine wp_movzx8 (a := T + BitVec.ofNat 64 k) a₅
-    (by rw [u₅.rd, u₅.wr, u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr, h.rd, h.wr]
-        exact InRegions.right' (houtT k hk)) fun t₆ u₆ => ?_
-  refine wp_xor fun t₇ u₇ => ?_
-  refine wp_store8 (a := T + BitVec.ofNat 64 k)
-    (by rw [ea_at, u₇.other _ (by decide), u₆.other _ (by decide)]; exact a₅)
-    (by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]; exact houtT k hk) fun t₈ m₈ => ?_
-  refine wp_addi fun t₉ u₉ => wp_cmpi fun t₁₀ f₁₀ _ z₁₀ => WP.block_nil ?_
-  have h9 : t₉.gpr .ecx = BitVec.ofNat 32 (k + 1) := by
-    rw [u₉.gpr, m₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
-      u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h.ecx,
-      ofNat_succ32]
-  refine ⟨⟨by rw [f₁₀.rd, u₉.rd, m₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd],
-    by rw [f₁₀.wr, u₉.wr, m₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr],
-    fun r hr => by
-      rw [f₁₀.gpr, u₉.other r (nm hr .ecx), m₈.gpr, u₇.other r (nm hr .edx), u₆.other r (nm hr .ebx),
-        u₅.other r (nm hr .eax), u₄.other r (nm hr .eax), u₃.other r (nm hr .edx), u₂.other r (nm hr .eax),
-        u₁.other r (nm hr .eax), h.other r hr],
-    by rw [f₁₀.gpr, h9], ?_⟩, ?_⟩
-  · have hv : (t₇.gpr .edx).setWidth 8 = s.mem (T + BitVec.ofNat 64 k) ^^^ s.mem (U + BitVec.ofNat 64 k) := by
-      rw [u₇.gpr, u₆.other .edx (by decide), u₆.gpr, u₅.other .edx (by decide),
-        u₄.other .edx (by decide), u₃.gpr, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, xor_byte32, rU, rT]
-    have e' := writeBytes_snoc s.mem T (Spec.Pbkdf2.xorBytes (bytesAt s.mem T k) (bytesAt s.mem U k))
-      (s.mem (T + BitVec.ofNat 64 k) ^^^ s.mem (U + BitVec.ofNat 64 k)) (by rw [hl']; omega_nat)
-    rw [hl'] at e'
-    rw [f₁₀.mem, u₉.mem, m₈.mem, show Reg8.dl.reg = .edx from rfl, hv, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem,
-      u₂.mem, u₁.mem, h.mem, e', bytesAt_snoc', bytesAt_snoc', xorBytes_snoc _ _ _ _ (by simp [bytesAt_length])]
-  · rw [z₁₀, h9, count_z hk hn']
 
 end VG.Proof.Pbkdf2.Stream.X86
 
@@ -462,10 +371,6 @@ theorem restore_ok {s : State} {scr : BitVec 32} {L : Nat} (hbp : s.gpr .ebp = s
   · rw [ho r (by rw [saved_fst]; exact hr), u₁.other r hr']
 
 /-! ## Odds and ends -/
-
-theorem toNat_setWidth (a : BitVec 32) : (a.setWidth 64).toNat = a.toNat := by
-  simp only [BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := a.isLt; omega_nat)
 
 /-- `x + o`, as a register holds it, where nothing wraps around. -/
 theorem setWidth_add {x : BitVec 32} {o : Nat} (h : x.toNat + o < 2 ^ 32) :

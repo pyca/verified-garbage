@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 public import VerifiedGarbage.Proof.X25519.X86_64.Ops
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # X25519 on x86-64: multiplication with BMI2 and ADX
@@ -92,9 +94,7 @@ theorem reduceLo_ok (s : State) :
     (k3.mono (by decide))).trans (k4.mono (by decide))).trans (k5.mono (by decide))).trans
     (k6.mono (by decide))⟩
 
-theorem reduceX_eq :
-    reduceX = reduceLo ++ (([.mulx .rcx .rax (.reg .r12)] : List Instr) ++ carry19 .rbp) := by
-  simp only [reduceX, List.append_assoc]
+theorem reduceX_eq : reduceX = reduceLo ++ fold19X := rfl
 
 open VG.Spec.X25519 (P) in
 /-- The last fold: `r8–r11 + 2²⁵⁶ r12` with `r12 < 79` and `rdx = 38`, folded into `r8–r11`. -/
@@ -114,26 +114,63 @@ theorem foldX_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) (hd : (s.gpr .rdx).
   rw [e8, hax, k7.1 .r8 (by decide), k7.1 .r9 (by decide), k7.1 .r10 (by decide),
     k7.1 .r11 (by decide), fold256]
 
+/-- `adc a, a` of `a < 2⁶³` with the carry `c`: `2 a + c`. -/
+theorem adcSelf_toNat (a : BitVec 64) (c : Bool) (ha : a.toNat < 2 ^ 63) :
+    (a + a + (BitVec.ofBool c).setWidth 64).toNat = 2 * a.toNat + c.toNat := by
+  have hc : ((BitVec.ofBool c).setWidth 64).toNat = c.toNat := by cases c <;> rfl
+  have := Bool.toNat_le c
+  rw [BitVec.toNat_add, BitVec.toNat_add, hc,
+    Nat.mod_eq_of_lt (show a.toNat + a.toNat < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show a.toNat + a.toNat + c.toNat < 2 ^ 64 by omega_arith)]
+  omega_arith
+
+/-- `imul r, q, 19` of a small `q`: `19 q`. -/
+theorem imul19_toNat (q : BitVec 64) (hq : q.toNat < 2 ^ 58) :
+    (BitVec.ofInt 64 (q.toInt * ((19 : BitVec 32).signExtend 64).toInt)).toNat = 19 * q.toNat := by
+  have hi : q.toInt = (q.toNat : Int) := by
+    rw [BitVec.toInt_eq_toNat_cond]; simp only [show 2 * q.toNat < 2 ^ 64 by omega_arith, ↓reduceIte]
+  rw [hi, show ((19 : BitVec 32).signExtend 64).toInt = ((19 : Nat) : Int) by decide,
+    ← Int.natCast_mul, BitVec.ofInt_natCast, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
+
 open VG.Spec.X25519 (P) in
-/-- `reduceX`'s last fold: `r8–r11 + 2²⁵⁶ r12` with `r12 < 79` and `rdx = 38`, folded into
-`r8–r11` at bit 255, at most `2p`. -/
-theorem foldX19_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) (hd : (s.gpr .rdx).toNat = 38) :
-    WP isa (.block (([.mulx .rcx .rax (.reg .r12)] : List Instr) ++ carry19 .rbp)) s fun s' =>
+/-- `fold19X`: `r8–r11 + 2²⁵⁶ r12` with `r12 < 79`, folded into `r8–r11` at bit 255, at
+most `2p`. -/
+theorem fold19X_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) :
+    WP isa (.block fold19X) s fun s' =>
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) % P =
         (val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) + 2 ^ 256 * (s.gpr .r12).toNat) % P ∧
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) ≤ 2 * P ∧
-      Keeps [.r8, .r9, .r10, .r11, .rax, .rcx, .rbp] s s' := by
-  rw [WP.block_append_iff]
-  refine WP.mono (mulx_ok s rfl (noImm_reg _) (by decide)) fun s7 ⟨e7, _, _, k7⟩ => ?_
-  rw [hd] at e7
-  have hax : (s7.gpr .rax).toNat = 38 * (s.gpr .r12).toNat := by
-    have := (s7.gpr .rax).isLt
-    omega_arith
-  refine WP.mono (carry19_ok s7 (m := .rbp) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by omega_arith)) fun s8 ⟨e8, b8, k8⟩ => ?_
-  refine ⟨?_, b8, (k7.mono (by decide)).trans (k8.mono (by decide))⟩
-  rw [e8, hax, k7.1 .r8 (by decide), k7.1 .r9 (by decide), k7.1 .r10 (by decide),
-    k7.1 .r11 (by decide), fold256]
+      Keeps [.r8, .r9, .r10, .r11, .r12, .rax] s s' := by
+  apply WP.of_runBlock
+  simp only [fold19X, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu,
+    execShift, execImul3, Option.map_some, Option.bind_some, RegUpd.gpr_setReg,
+    RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg,
+    RegUpd.cf_setFlags, ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left', se0,
+    Nat.le_refl, and_self, Nat.reduceLeDiff]
+  obtain ⟨hsh, hu⟩ := shl_shr_one (s.gpr .r11)
+  generalize (s.gpr .r11).getLsbD (64 - 1) = c at hsh hu ⊢
+  have hq := adcSelf_toNat (s.gpr .r12) c (by omega_arith)
+  generalize s.gpr .r12 + s.gpr .r12 + (BitVec.ofBool c).setWidth 64 = q at hq ⊢
+  have hc := Bool.toNat_le c
+  have hr := imul19_toNat q (by omega_arith)
+  generalize BitVec.ofInt 64 (q.toInt * ((19 : BitVec 32).signExtend 64).toInt) = r at hr ⊢
+  generalize s.gpr .r11 <<< 1 >>> 1 = u at hsh hu ⊢
+  have e := chain_add (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) u r 0 0 0
+  simp only at e
+  generalize decide (2 ^ 64 ≤ u.toNat + BitVec.toNat 0 + _) = c3 at e
+  have hz : (0 : BitVec 64).toNat = 0 := rfl
+  have h3 := Bool.toNat_le c3
+  have := (s.gpr .r8).isLt; have := (s.gpr .r9).isLt; have := (s.gpr .r10).isLt
+  simp only [hz, val4] at e ⊢
+  refine ⟨?_, ?_, fun x hx => ?_, rfl, rfl, rfl⟩
+  · have key : ∀ A B k : Nat, A + P * k = B → A % P = B % P := fun A B k h => by
+      rw [← h, Nat.add_mul_mod_self_left]
+    exact key _ _ (q.toNat) (by simp only [P]; omega_arith)
+  · simp only [P]; omega_arith
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hx
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hx.1, hx.2.1,
+      hx.2.2.1, hx.2.2.2.1, hx.2.2.2.2.1, hx.2.2.2.2.2, ite_false]
 
 open VG.Spec.X25519 (P) in
 /-- `r8–r11 + 2²⁵⁶ r12–r15`, reduced into `r8–r11` (modulo `p`), at most `2p`. -/
@@ -146,7 +183,7 @@ theorem reduceX_ok (s : State) :
       Keeps [.r8, .r9, .r10, .r11, .r12, .rax, .rcx, .rdx, .rbp] s s' := by
   rw [reduceX_eq, WP.block_append_iff]
   refine WP.mono (reduceLo_ok s) fun s6 ⟨hv, h12, hd, k6⟩ => ?_
-  refine WP.mono (foldX19_ok s6 (by omega) hd) fun s8 ⟨e8, b8, k8⟩ => ?_
+  refine WP.mono (fold19X_ok s6 (by omega)) fun s8 ⟨e8, b8, k8⟩ => ?_
   refine ⟨?_, b8, k6.trans (k8.mono (by decide))⟩
   rw [e8, hv, fold256]
 

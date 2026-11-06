@@ -923,13 +923,6 @@ abbrev innerK (c₀ : String × List (BitVec 64)) (cs : List (String × List (Bi
   Sig.scratchContract (abi.withConsts (c₀ :: cs)) I.verifyHashSig "buf" .u8 80 (Curry.const (fun _ => True) _)
     (hPost I) true 0 (some (hLeak I))
 
-theorem pre_leak {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits}
-    {wa : Bool} {st : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {s : State} :
-    (sig.contract abi pre post wa st leak).pre s ↔ (sig.contract abi pre post wa st none).pre s := Iff.rfl
-
-theorem hashSig_words : ((I.verifyHashSig.withScratch "buf" .u8 80).words abi.ptrBits).length ≤ 8 := by
-  simp [Spec.Ecdsa.Instance.verifyHashSig, Sig.withScratch, Sig.words, Param.words]
-
 theorem inner_ipre {s : State} (h : (innerA (I := I)).pre s) : IPre I 0 s := by
   sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, hPost,
     Spec.Ecdsa.Instance.verifyHashSig, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs] at h

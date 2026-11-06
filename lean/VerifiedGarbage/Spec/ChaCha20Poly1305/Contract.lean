@@ -88,6 +88,49 @@ def openContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (writeArgs := true)
     (stack := stack)
 
+/-! ## `open`, zeroing the data on a wrong tag
+
+`openZeroContract` strengthens `openContract`: on a wrong tag the bytes at
+`data` are zeros, not unspecified, as in every other AEAD's `open` here
+(`vg_aes_ccm_open`, `vg_aes_gcm_siv_open`, `vg_aes_ocb_open`), so that the
+decryption of a forged ciphertext is never released, whatever the caller
+does. In exchange, the function may leak whether it returns 1 (as those
+functions do): it may branch on the result of the comparison of the tags to
+zero the data only when they differ. The result is returned to the caller,
+which branches on it anyway. `openZeroApi` is `vg_chacha20_poly1305_open`
+with this contract; it replaces `openApi` once every implementation is
+proven to meet it. -/
+
+/-- With the key at `key`, the nonce at `nonce` and the received tag at
+`tag`: if the message (the `len` bytes of ciphertext at `data`, with the
+`aad_len` bytes of additional data at `aad`) is authenticated, the result is
+1 and the plaintext is at `data`; otherwise the result is 0, and the `len`
+bytes at `data` are zeros. -/
+def openZeroPost (pb : Nat) : openSig.Post pb :=
+  fun key nonce aad aadLen data len tag m m' r =>
+    match decrypt (bytesAt m key 32) (bytesAt m nonce 12) (bytesAt m aad aadLen.toNat)
+        (bytesAt m data len.toNat) (bytesAt m tag 16) with
+    | some pt => r = 1 ∧ bytesAt m' data len.toNat = pt
+    | none => r = 0 ∧ bytesAt m' data len.toNat = List.replicate len.toNat 0
+
+/-- What `vg_chacha20_poly1305_open` may leak (`openZeroContract`): whether
+it returns 1 (`decrypt`'s outcome). -/
+def openLeak (pb : Nat) : Curry (openSig.words pb) (Mem → List Nat) :=
+  fun key nonce aad aadLen data len tag m =>
+    [if (decrypt (bytesAt m key 32) (bytesAt m nonce 12) (bytesAt m aad aadLen.toNat)
+        (bytesAt m data len.toNat) (bytesAt m tag 16)).isSome then 1 else 0]
+
+/-- With the key at `key`, the nonce at `nonce` and the received tag at
+`tag`: if the message (the `len` bytes of ciphertext at `data`, with the
+`aad_len` bytes of additional data at `aad`) is authenticated, returns 1 and
+leaves the plaintext at `data`; otherwise returns 0 and leaves zeros at
+`data`. May leak which (`openLeak`). -/
+def openZeroContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  openSig.contract A (post := openZeroPost A.ptrBits)
+    (writeArgs := true)
+    (stack := stack)
+    (leak := some (openLeak A.ptrBits))
+
 /-- `vg_chacha20_poly1305_seal` on every target. -/
 def sealApi : Api where
   module := "chacha20poly1305"
@@ -118,6 +161,25 @@ def openApi : Api where
     must not be used). The tags are compared without a branch.\n\n\
     Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the \
     lengths may affect timing, not the key, the nonce, the tag or the data."
+  safety := []
+
+/-- `vg_chacha20_poly1305_open` on every target, zeroing the data on a wrong
+tag (`openZeroContract`): replaces `openApi` once every implementation is
+proven to meet it. -/
+def openZeroApi : Api where
+  module := "chacha20poly1305"
+  name := "vg_chacha20_poly1305_open"
+  sig := openSig
+  writeArgs := true
+  contracts := some fun A stack => openZeroContract A stack
+  summary := "ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce \
+    `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of \
+    ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted \
+    the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The \
+    tags are compared without a branch.\n\n\
+    Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: \
+    only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, \
+    not the key, the nonce, the additional data, the tag or the data."
   safety := []
 
 end VG.Spec.ChaCha20Poly1305

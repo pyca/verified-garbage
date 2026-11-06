@@ -120,18 +120,4 @@ theorem toNat_X {scr : Addr} {e n : Nat} (h : scr.toNat + n ≤ 2 ^ 64) (he : e 
     (scr + BitVec.ofNat 64 e).toNat + 1024 ≤ 2 ^ 64 := by
   rw [toNat_add_ofNat (by omega_arith)]; omega_arith
 
-theorem slay_ok {p : Params} (hp : p ∈ params) {s : State} (h : SPre p s) (h8 : (s.gpr .x4).toNat < 256) :
-    (slay p s).Ok := by
-  have hX := slay_X p s
-  have hXs := hX.sub
-  have hE := oE_lt hp
-  refine ⟨h8, hE, skLen_ge hp, h.sp, toNat_X (e := oE p) h.nScr (by rw [mScr_eq]),
-    ⟨_, by simp [slay, h.wr], hX⟩, by simp [slay, h.rd], by simp [slay, h.rd], by simp [slay, h.rd],
-    h.skScr.symm.sub_left hXs, h.msgScr.symm.sub_left hXs, h.ctxScr.symm.sub_left hXs, h.stkScr.sub_right hXs,
-    h.stkSk, h.stkMsg, h.stkCtx, h.nSk, h.nMsg, h.nCtx, ?_⟩
-  intro R hR
-  simp only [slay, h.wr, List.mem_cons, List.not_mem_nil, or_false] at hR
-  have := h.nSig; have := h.nScr
-  rcases hR with rfl | rfl <;> simp only <;> omega_arith
-
 end VG.Proof.MlDsa.AArch64.Message

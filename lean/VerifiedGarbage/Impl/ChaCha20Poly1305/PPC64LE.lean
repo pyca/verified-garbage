@@ -14,7 +14,7 @@ ChaCha20 and Poly1305 functions, as on ARMv7 (`Impl/ChaCha20Poly1305/Arm.lean`).
 `work` is the working space, which the artifact's frame allocates on the
 stack (`withStackScratchWiped`).
 
-The working space (`workLen` = 648 bytes, called the context below):
+The working space (648 bytes, called the context below):
 
 * `[0, 320)`: the buffer of `vg_chacha20_block` and `vg_chacha20_xor` (the
   first 32 bytes of the block with counter 0 are the one-time Poly1305 key),
@@ -72,9 +72,6 @@ def tagOff : Nat := 448
 def savOff : Nat := 464
 /-- The working space of `vg_poly1305_finalize_scratch`. -/
 def scrOff : Nat := 520
-/-- The size of the working space, in bytes. -/
-def workLen : Nat := 648
-
 /-! ## Saving and restoring the registers -/
 
 /-- The registers saved in the context, in order. -/

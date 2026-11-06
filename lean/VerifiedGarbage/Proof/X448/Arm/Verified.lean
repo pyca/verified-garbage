@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 public import VerifiedGarbage.Proof.X448.Arm.Main
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -17,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+meta import VerifiedGarbage.Proof.X448.Contract
 
 /-!
 # X448 on ARMv7: `Verified`
@@ -62,9 +64,9 @@ theorem x448_ct : ConstantTime isa Proof.X448.x448Arm.pre Proof.X448.x448Arm.pub
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem x448_verified :
-    Verified Arm.target Impl.X448.Arm.x448 (Spec.X448.x448Contract Arm.abi) :=
+    Verified Arm.target Impl.X448.Arm.x448 (Proof.X448.x448Contract Arm.abi) :=
   Verified.of_correct x448_ok x448_ct (by
-    sig_implies [Spec.X448.x448Contract, Spec.X448.x448Sig, Arm.abi, Arm.argRegs,
+    sig_implies [Proof.X448.x448Contract, Proof.X448.x448Sig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Proof.X448.x448Arm]
       [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState)
 

@@ -49,21 +49,4 @@ theorem StreamInput.bytes {s t : State} {base : Addr} {size len : Nat} {p : BitV
   intro i hi
   exact I.byte (List.mem_range.mp hi) O
 
-theorem streamRanges_constants {n j size : Nat} {base : Addr} {s t : State}
-    (O : Outs base (streamRanges n) s.mem t.mem) (hj : j = 3 ∨ j = 4) (hz : contextBytes n ≤ size)
-    (hn : base.toNat + size ≤ 2 ^ 32) :
-    wordsVal t.mem base (slot n j) n = wordsVal s.mem base (slot n j) n := by
-  have h1 := slot_le (n := n) (i := 1) (j := j) (by omega)
-  have h2 := slot_le (n := n) (i := 2) (j := j) (by omega)
-  have h6 := slot_le (n := n) (i := j) (j := 6) (by omega)
-  have h7 := slot_le (n := n) (i := j) (j := 7) (by omega)
-  have bd := slot_bound (n := n) (i := j) (by omega)
-  simp only [stride] at *
-  rw [wordsVal_eq_val32, wordsVal_eq_val32]
-  apply O.val32
-  · intro r hr
-    simp only [streamRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> omega
-  · omega
-
 end VG.Proof.Dsa.X86

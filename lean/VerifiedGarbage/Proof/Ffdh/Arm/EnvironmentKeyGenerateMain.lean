@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.SampleResult
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleMemory
 public import VerifiedGarbage.Impl.Ffdh.Arm.SampleKeyGenerate
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyMain
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySample
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyTail
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyFail
 import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange

@@ -152,9 +152,6 @@ theorem stk_arg : (stkR s₀).Disjoint (argR s₀) := stk_args hp.sp48 (by have 
 
 theorem stk_ret' : (stkR s₀).Disjoint (retR s₀) := stk_ret hp.sp48 (by have hp_spf := hp.spf; omega_using [hp_spf])
 
-theorem t_hv {n : Nat} (h : n ≤ H.N + H.B) : Region.Disjoint (tR H s₀) ⟨(hv H s₀).setWidth 64, n⟩ :=
-  hp.t_s.sub_right fun a ha => hvR_sub hp a (Region.sub_prefix h a ha)
-
 theorem t_blk : Region.Disjoint (tR H s₀) ⟨(hv H s₀).setWidth 64 + BitVec.ofNat 64 H.N, H.B⟩ := by
   obtain ⟨hb, hf, hw, -⟩ := bounds hp
   refine hp.t_s.sub_right fun a ha => hvR_sub hp a (Offset.sub_base _ (Nat.le_refl _) a ha)

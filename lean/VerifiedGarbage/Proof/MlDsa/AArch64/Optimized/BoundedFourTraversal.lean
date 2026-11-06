@@ -11,8 +11,6 @@ open VG VG.Spec.MlDsa VG.Proof.MlDsa.Sample
 def parsed (η : Nat) (L : List Zq) (X : List Byte) (done : Nat) : List Zq :=
  rbFold η L (X.take done)
 
-theorem parsed_zero (η : Nat) (L : List Zq) (X : List Byte) : parsed η L X 0=L := rfl
-
 theorem parsed_bound {η : Nat} {L : List Zq} {X : List Byte} (hL : L.length≤256) (done : Nat) :
     (parsed η L X done).length≤256 := rbFold_length_le hL _
 

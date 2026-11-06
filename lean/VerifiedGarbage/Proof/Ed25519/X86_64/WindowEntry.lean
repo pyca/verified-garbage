@@ -11,11 +11,9 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
-# Adding a table entry
+# Loading a table entry
 
-An addition `add` adds `q` to the accumulator when slots 4–7 hold `f q`
-(`AddSpec`): `pointAdd` with `f = id`, `pointAddCached` with `f = cache`.
-`pointFromTableQ` copies a table entry to slots 4–7.
+`pointFromTableQ` copies a table entry to slots 4–7 (`pointFromTableQ_ok`).
 -/
 
 @[expose] public section
@@ -27,20 +25,6 @@ open VG.Proof.X25519.X86_64 (off F fe_st4 st4_outside Outside Keeps clob)
 open VG.Impl.X25519.X86_64 (stores)
 
 variable {fld : Arith} [EdArith fld]
-
-/-- `add` adds `q` to the accumulator in slots 0–3 when slots 4–7 hold `f q`. -/
-def AddSpec (add : List Instr) (f : Spec.Ed25519.Point → Spec.Ed25519.Point) : Prop :=
-  ∀ (s : State) (base : Addr) (q : Spec.Ed25519.Point), Scratch s base →
-    env s.mem base 16 = Spec.Ed25519.d → point (env s.mem base) 4 5 6 7 = f q →
-    WP isa (.block add) s fun t => Keep base s t ∧
-      point (env t.mem base) 0 1 2 3 = Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) q ∧
-      ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i
-
-theorem pointAdd_spec : AddSpec (pointAdd fld) id := fun _ _ _ hs hd hq =>
-  WP.mono (pointAddWide_ok hs hd) fun _ ⟨k, v, h⟩ => ⟨k, v.trans (by rw [hq]; rfl), h⟩
-
-theorem pointAddCached_spec : AddSpec (pointAddCached fld) cache := fun _ _ q hs _ hq =>
-  pointAddCachedWide_ok hs q hq
 
 theorem fromTableQuarterQ_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
     (hp : s.gpr .rax = off base o) (j : Nat) (hj : j < 4) (ho : o + 128 ≤ 8192) :

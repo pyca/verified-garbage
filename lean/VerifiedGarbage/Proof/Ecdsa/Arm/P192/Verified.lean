@@ -159,25 +159,4 @@ theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signP192 := by
   · rw [argByte_eq, argByte_eq, Mem.readW_byte s.mem _ hk, Mem.readW_byte t.mem _ hk]
     exact congrArg (fun v : BitVec 32 => v.extractLsb' (8 * k) 8) ha
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | .r3 => 0x4000 | _ => 0
-  sp := 0x20000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem a := if a = 0x20001 then 0x80 else 0
-  rd := [⟨0x2000, 24⟩, ⟨0x3000, 24⟩, ⟨0x4000, 24⟩, ⟨0x20000, 4⟩]
-  wr := [⟨0x1000, 48⟩, ⟨0x8000, 8192⟩]
-
-theorem sign_verified (hL : Weierstrass.Law Spec.P192.curve) :
-    Verified Arm.target signP192 (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P192.inst Arm.abi) :=
-  Verified.of_correct (sign_arm hL) sign_ct (by
-    sig_implies [Spec.Ecdsa.P192.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
-      Spec.P192.curve, Spec.Ecdsa.scratchWords, signArm, sig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-      Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
-      [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState)
-
 end VG.Proof.Ecdsa.Arm.P192

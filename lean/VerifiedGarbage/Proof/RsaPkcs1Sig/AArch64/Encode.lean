@@ -221,8 +221,6 @@ theorem dispatch_ok (t : Reg) (c : Nat → Hash → Prog isa) (d : Prog isa) {Q 
         | zero => simpa using he
         | succ j => have := hn j (by simp at hj; omega_arith); omega_arith
 
-theorem hashes_length : hashes.length = 12 := rfl
-
 theorem setWidth_ofNat16 {v : Nat} (h : v < 2 ^ 16) :
     (BitVec.ofNat 16 v).setWidth 64 = BitVec.ofNat 64 v := by
   apply BitVec.eq_of_toNat_eq; simp; omega_arith
@@ -343,12 +341,6 @@ theorem fail_ok (s : State) :
 theorem borrow_ne {a b : Nat} (ha : a < 2 ^ 63) (hb : b < 2 ^ 63) :
     ((BitVec.ofNat 64 a - BitVec.ofNat 64 b) >>> 63 != 0) = decide (a < b) := by
   rw [ne_zero_iff, BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  apply decide_eq_decide.mpr
-  constructor <;> intro h <;> omega_arith
-
-theorem sub_ne {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
-    (BitVec.ofNat 64 a - BitVec.ofNat 64 b != 0) = decide (a ≠ b) := by
-  rw [ne_zero_iff, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   apply decide_eq_decide.mpr
   constructor <;> intro h <;> omega_arith
 

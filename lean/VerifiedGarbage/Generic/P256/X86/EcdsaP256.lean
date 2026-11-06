@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombContract
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombContract
-import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdh.X86.Peer
 import VerifiedGarbage.Proof.Ecdsa.Sign

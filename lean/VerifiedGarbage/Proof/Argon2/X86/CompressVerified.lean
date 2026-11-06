@@ -164,9 +164,7 @@ end
 /-!
 # Argon2 compression on x86 (32-bit): verified
 
-Constant time, against `compressX86`; then `compressWide`, which lets the
-code write its arguments (`Verified.narrowTo`: it only reads them), and the
-shared contract `Proof.Argon2.compressContract`, which implies it.
+Constant time, and the proof against `compressX86`.
 -/
 
 namespace VG.Proof.Argon2.X86
@@ -240,87 +238,5 @@ theorem sat_pre : compressX86.pre satState := by
 
 theorem compress_verified : Verified X86.target Impl.Argon2.X86.compress compressX86 :=
   ⟨fun s hs => correct (pre_of s hs), compress_ct, ⟨satState, sat_pre⟩⟩
-
-/-! ## Writable arguments, and the shared contract -/
-
-/-- `compressX86`, with the arguments writable, as `Sig.contract` lays the
-regions out. -/
-def compressWide : Contract X86.isa :=
-  { compressX86 with
-    pre := fun s =>
-      let x : Region := ⟨(arg s 0).setWidth 64, 1024⟩
-      let y : Region := ⟨(arg s 1).setWidth 64, 1024⟩
-      let out : Region := ⟨(arg s 2).setWidth 64, 1024⟩
-      let scratch : Region := ⟨(arg s 3).setWidth 64, 4096⟩
-      let args : Region := ⟨argAddr s 0, 16⟩
-      let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-      s.rd = [x, y] ∧ s.wr = [out, scratch, args] ∧
-      out.Disjoint scratch ∧ x.Disjoint out ∧ x.Disjoint scratch ∧ y.Disjoint out ∧
-      y.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧
-      ret.Disjoint scratch ∧
-      (arg s 0).toNat + 1024 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 1024 ≤ 2 ^ 32 ∧
-      (arg s 2).toNat + 1024 ≤ 2 ^ 32 ∧ (arg s 3).toNat + 4096 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 4 + 16 ≤ 2 ^ 32 }
-
-/-- A state satisfying `compressWide.pre`. -/
-def satWide : State :=
-  { satState with rd := [⟨0x1000, 1024⟩, ⟨0x1400, 1024⟩], wr := [⟨0x2000, 1024⟩, ⟨0x3000, 4096⟩, ⟨0x5004, 16⟩] }
-
-tactic_template "narrow" loc:Lean.Parser.Tactic.location : tactic =>
-  `(tactic| plain_simp_names simp only [compressX86, compressWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
-                     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $loc)
-
-theorem compressWide_verified : Verified X86.target Impl.Argon2.X86.compress compressWide :=
-  Verified.narrowTo compress_verified
-    (fun s => [⟨(arg s 0).setWidth 64, 1024⟩, ⟨(arg s 1).setWidth 64, 1024⟩, ⟨argAddr s 0, 16⟩])
-    (fun s => [⟨(arg s 2).setWidth 64, 1024⟩, ⟨(arg s 3).setWidth 64, 4096⟩])
-    (fun _ h => by
-      obtain ⟨_, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅, h₁₆⟩ := h
-      narrow at ⊢
-      exact ⟨trivial, trivial, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅,
-        by omega⟩)
-    (fun _ h => by
-      obtain ⟨h₁, h₂, _⟩ := h
-      rw [h₁, h₂]
-      refine Covers.of_sub fun r hr => ?_
-      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
-      · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
-          (List.mem_singleton_self _))), 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_append_right _ List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_append_right _ (List.mem_cons_of_mem _ List.mem_cons_self), 0, by simp,
-          by simp⟩)
-    (fun _ h => by
-      obtain ⟨_, h₂, _⟩ := h
-      rw [h₂]
-      refine Covers.of_sub fun r hr => ?_
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩)
-    (fun _ _ _ h => by narrow at h ⊢; exact h)
-    (fun _ _ _ _ h => by narrow at ⊢; exact h)
-    ⟨satWide, by
-      have a0 : arg satWide 0 = 0x1000 := by decide
-      have a1 : arg satWide 1 = 0x1400 := by decide
-      have a2 : arg satWide 2 = 0x2000 := by decide
-      have a3 : arg satWide 3 = 0x3000 := by decide
-      have e : argAddr satWide 0 = 0x5004 := by decide
-      simp only [compressWide, a0, a1, a2, a3, e]
-      refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide, by decide,
-        by decide, by decide⟩ <;>
-      exact Region.disjoint_of_sep (by decide)⟩
-
-theorem compress_implies : compressWide.Implies (Proof.Argon2.compressContract X86.abi) := by
-  sig_implies [Proof.Argon2.compressContract, Proof.Argon2.compressSig, compressWide, compressX86,
-    X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    [satWide, satState, satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using satWide
-
-/-- The emitted function, against the shared contract. -/
-theorem compressShared_verified :
-    Verified X86.target Impl.Argon2.X86.compress (Proof.Argon2.compressContract X86.abi) :=
-  compressWide_verified.of_implies compress_implies
 
 end VG.Proof.Argon2.X86

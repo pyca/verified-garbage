@@ -92,11 +92,6 @@ structure VUpd (s s' : State) (d : XReg) (v : Nat → BitVec 64) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
-theorem VUpd.trans {s₁ s₂ s₃ : State} {d : XReg} {v w : Nat → BitVec 64} (h₁ : VUpd s₁ s₂ d v)
-    (h₂ : VUpd s₂ s₃ d w) : VUpd s₁ s₃ d w :=
-  ⟨h₂.val, fun r h k hk => (h₂.other r h k hk).trans (h₁.other r h k hk), h₂.gpr.trans h₁.gpr,
-    h₂.mem.trans h₁.mem, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr⟩
-
 theorem q4_vbin (op : VBinOp) (s : State) (d a b r : XReg) (k : Nat) :
     q4 ((VOp.vbin op .l256 d a b).exec s) r k =
       if r = d then qword (op.sse.eval (s.lane a (k / 2)) (s.lane b (k / 2))) (k % 2) else q4 s r k := by
@@ -125,17 +120,6 @@ theorem VUpd.vshift (op : XShiftOp) (s : State) (d a : XReg) (n : BitVec 8) {v :
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
-
-/-- Four independent quadword rotates with AVX-512VL. -/
-theorem wp_vror {d a : XReg} {n : Nat} (hn : n < 64)
-    (k : ∀ s', VUpd s s' d (fun i => (q4 s a i).rotateRight n) → WP isa (.block is) s' Q) :
-    WP isa (.block (.vop (.vprorq .l256 d a (BitVec.ofNat 8 n)) :: is)) s Q := by
-  have en : (BitVec.ofNat 8 n).toNat % 64 = n := by rw [BitVec.toNat_ofNat]; omega
-  refine WP.cons rfl (k _ ⟨fun j hj => ?_, fun r hr j hj => ?_,
-    VOp.exec_gpr _ _, VOp.exec_mem _ _, VOp.exec_rd _ _, VOp.exec_wr _ _⟩)
-  · rcases cases4 hj with rfl | rfl | rfl | rfl <;>
-      simp [q4, VOp.exec, State.lane_setV256, rorQwords]
-  · simp only [q4, VOp.exec, State.lane_setV256, ite_eq_right hr]
 
 theorem wp_vxor {d a b : XReg} (k : ∀ s', VUpd s s' d (fun i => q4 s a i ^^^ q4 s b i) → WP isa (.block is) s' Q) :
     WP isa (.block (vb .vpxor d a b :: is)) s Q :=
@@ -230,12 +214,5 @@ theorem wp_vst {m : MemOp} {r : XReg} {a : Addr} (ha : s.ea m = a) (hout : InReg
   simp [exec, State.store256, ha, hout]
 
 end
-
-/-- Element `k` of a stored register, read back. -/
-theorem readW_st (m : Mem) (a : Addr) (s : State) (r : XReg) {k : Nat} (hk : k < 4) :
-    (m.writeW a (s.ymm r)).readW (a + BitVec.ofNat 64 (8 * k)) 64 = q4 s r k := by
-  have e := readW_writeW_inside m a (s.ymm r) (k := 8 * k) (n := 8) (by omega) (by decide)
-  rw [show 8 * (8 * k) = 64 * k by omega, q4_ymm _ _ hk] at e
-  exact e
 
 end VG.Proof.Sha3.X86_64.X4

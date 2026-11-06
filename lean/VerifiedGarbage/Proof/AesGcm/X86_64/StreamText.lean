@@ -866,30 +866,6 @@ theorem dsub_obFrame {s : State} {D : Addr} {n j q e l : Nat} (hd : DataOk St W 
   · exact (hd.w.sub_left hsub).sub_right (Lay.wSub (by decide))
   · exact (t_d.sub_right hsub).symm
 
-theorem buf_obFrame {Dj : Addr} {k q : Nat} (hD : (⟨Dj, k⟩ : Region).Disjoint ⟨St, 80⟩) (hq : q * 16 ≤ k)
-    (t_s : (below SP 24).Disjoint ⟨St, 80⟩) :
-    ∀ r ∈ obFrame St W SP Dj q, (⟨St + BitVec.ofNat 64 32, 16⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [obFrame, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact L.st_st (.inl (by decide)) (by decide) (by decide)
-  · exact L.st_st (.inr (by decide)) (by decide) (by decide)
-  · exact ((hD.sub_left (Region.sub_prefix hq)).sub_right (Lay.stSub (by decide))).symm
-  · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
-  · exact (t_s.sub_right (Lay.stSub (by decide))).symm
-
-theorem ks_obFrame {Dj : Addr} {k q : Nat} (hD : (⟨Dj, k⟩ : Region).Disjoint ⟨St, 80⟩) (hq : q * 16 ≤ k)
-    (t_s : (below SP 24).Disjoint ⟨St, 80⟩) :
-    ∀ r ∈ obFrame St W SP Dj q, (⟨St + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint r := by
-  intro r hr
-  simp only [obFrame, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact L.st_st (.inr (by decide)) (by decide) (by decide)
-  · exact L.st_st (.inr (by decide)) (by decide) (by decide)
-  · exact ((hD.sub_left (Region.sub_prefix hq)).sub_right (Lay.stSub (by decide))).symm
-  · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
-  · exact (t_s.sub_right (Lay.stSub (by decide))).symm
-
 end
 
 section

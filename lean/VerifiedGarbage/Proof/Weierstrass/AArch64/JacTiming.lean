@@ -96,7 +96,6 @@ theorem fieldBranch_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
           obtain ⟨hb,hq⟩ := hn he _ _ _ _ _ _ pair bs bt
           exact ⟨by rw [hz,hb],hq⟩
 
-
 /-- Any exact field-environment transition with fixed timing lifts to two runs. -/
 theorem fieldWP_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} {V V' : List Nat} {E E' : Nat → Fin m} {c : Prog isa}
@@ -111,29 +110,6 @@ theorem fieldWP_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
   obtain ⟨_,rfl⟩ := Exec.det et xt
   exact ⟨hct _ _ _ _ _ _ trivial trivial hp.public es et,is,it,
     ks.trans (hp.sp.trans kt.symm)⟩
-
-/-- Copying a public field slot preserves exact equality, including aliasing. -/
-theorem copyField_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
-    {V : List Nat} {E : Nat → Fin m} {o a : Nat} (ho : Sl o) (ha : a ∈ V)
-    (hct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (.block (copy M.n o a))) :
-    RelCT isa (FieldPair M base size m Sl V E) (.block (copy M.n o a))
-      (FieldPair M base size m Sl (o :: V) (Function.update E o (E a))) := by
-  apply fieldWP_relCT hct
-  intro s hs
-  exact WP.mono (copyField_ok hL hAl hs ho ha) fun _ ⟨hk,hi⟩ => ⟨hi,hk.sp⟩
-
-/-- A fixed field constant supplies the same canonical value to both runs. -/
-theorem setField_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
-    {V : List Nat} {E : Nat → Fin m} {o v : Nat} (ho : Sl o) (hv : v < m)
-    (hR : m < 2^(64*M.n))
-    (hct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (.block (setConst M.n o v))) :
-    RelCT isa (FieldPair M base size m Sl V E) (.block (setConst M.n o v))
-      (FieldPair M base size m Sl (o :: V) (Function.update E o (toM m (2^(64*M.n)) v))) := by
-  apply fieldWP_relCT hct
-  intro s hs
-  exact WP.mono (setField_ok hL hAl hs ho hv hR) fun _ ⟨hk,hi⟩ => ⟨hi,hk.sp⟩
 
 /-- Only values in initialized slots are relevant to the relational invariant. -/
 theorem Inv.congr_env {M : Mod} {base : Addr} {size m : Nat} [NeZero m]

@@ -38,7 +38,6 @@ variable (s₀ : State)
 
 abbrev esp₀ : BitVec 32 := s₀.gpr .esp
 abbrev st : BitVec 32 := arg s₀ 0
-abbrev cnt : Nat := (countX86 s₀).toNat
 abbrev op : BitVec 32 := arg s₀ 3
 abbrev scr : BitVec 32 := arg s₀ 4
 abbrev stA : Addr := (st s₀).setWidth 64

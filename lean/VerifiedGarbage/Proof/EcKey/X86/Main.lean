@@ -40,13 +40,6 @@ open VG.Impl.EcKey.X86 (YM Y Args.publicKey)
 
 variable {c : Cfg}
 
-theorem middle_eq (c : Cfg) : Impl.EcKey.X86.Cfg.middle c =
-    .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC))
-    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE))
-    (.seq (Mont.mulCall c.SP (c.sl YM) (c.sl RY) (c.sl ACC))
-    (.seq (Mont.mulCall c.SP (c.sl Y) (c.sl YM) (c.sl ONE))
-    (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.EcKey.X86.Cfg.finish c))))) := rfl
-
 /-- What `middle`'s field operations leave. -/
 structure OpsPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
   scr : Scr s' base size

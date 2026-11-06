@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-import VerifiedGarbage.Proof.X448.AArch64.Ladder
 public import VerifiedGarbage.Proof.Ed448.Formulas
 import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 import VerifiedGarbage.Proof.X448.AArch64.Finish
@@ -29,6 +28,7 @@ public import VerifiedGarbage.Proof.X448.AArch64.Env
 public import VerifiedGarbage.Proof.X448.AArch64.Setup
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
 public import VerifiedGarbage.Spec.X448
+import VerifiedGarbage.Proof.X448.AArch64.Iter
 
 /-!
 # Ed448 base-point multiplication on AArch64: the encoding
@@ -62,8 +62,6 @@ local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 
 /-- The inversion's addition chain keeps slots 0 and 3. -/
 theorem invEnv_0 (e : Env) : invEnv e 0 = e 0 := invEnv_keep e 0 (by decide)
-theorem invEnv_3 (e : Env) : invEnv e 3 = e 3 := invEnv_keep e 3 (by decide)
-
 /-- A fully reduced slot (sixteen limbs below `2^28`) is below `Ib`. -/
 theorem bnd_of_bounded {m : Mem} {base : Addr} {o : Nat} (h : VG.Proof.X448.AArch64.Bounded m base o) :
     Bnd Ib m base o := fun i hi => Nat.lt_trans (h i (by omega)) (by decide)

@@ -38,26 +38,6 @@ open VG.Proof.AesGcm.X86 (w64 slotv slotv_eq runBlock_app_of readW_writeW_off)
 def stv (m : Mem) (W : BitVec 32) : BitVec 192 :=
   cat6 (slotv m W 240) (slotv m W 244) (slotv m W 248) (slotv m W 252) (slotv m W 256) (slotv m W 260)
 
-/-- Six words stored at `W + stO`. -/
-def put6 (m : Mem) (W : BitVec 32) (y0 y1 y2 y3 y4 y5 : BitVec 32) : Mem :=
-  (((((m.writeW (w64 W + BitVec.ofNat 64 240) y0).writeW (w64 W + BitVec.ofNat 64 244) y1).writeW
-    (w64 W + BitVec.ofNat 64 248) y2).writeW (w64 W + BitVec.ofNat 64 252) y3).writeW
-    (w64 W + BitVec.ofNat 64 256) y4).writeW (w64 W + BitVec.ofNat 64 260) y5
-
-theorem stv_put6 (m : Mem) (W : BitVec 32) (y0 y1 y2 y3 y4 y5 : BitVec 32) :
-    stv (put6 m W y0 y1 y2 y3 y4 y5) W = cat6 y0 y1 y2 y3 y4 y5 := by
-  simp (disch := first | decide | omega) only [stv, put6, slotv_eq, Mem.readW_writeW_self32, readW_writeW_off]
-
-theorem frame_put6 (m : Mem) (W : BitVec 32) (y0 y1 y2 y3 y4 y5 : BitVec 32) :
-    Frame [⟨w64 W + BitVec.ofNat 64 stO, 24⟩] m (put6 m W y0 y1 y2 y3 y4 y5) := by
-  have c : ∀ d, 240 ≤ d → d + 4 ≤ 264 →
-      (⟨w64 W + BitVec.ofNat 64 stO, 24⟩ : Region).Contains (w64 W + BitVec.ofNat 64 d) (32 / 8) := fun d h₁ h₂ =>
-    Offset.contains (w64 W) (e := 240) (k := 24) (d := d) (n := 4) (by omega) (by omega) (by decide)
-  have hm := List.mem_singleton_self (⟨w64 W + BitVec.ofNat 64 stO, 24⟩ : Region)
-  exact (((((((Frame.refl _ m).writeW hm _ (c 240 (by decide) (by decide))).writeW hm _ (c 244 (by decide)
-    (by decide))).writeW hm _ (c 248 (by decide) (by decide))).writeW hm _ (c 252 (by decide)
-    (by decide))).writeW hm _ (c 256 (by decide) (by decide))).writeW hm _ (c 260 (by decide) (by decide)))
-
 /-- The mask of a stage: all ones if bit `k` of `bottom` is set. -/
 theorem stageMask_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {k v : Nat} (hk : k < 6) (hv : v < 64)
     (hb : slotv s.mem p.W botO = BitVec.ofNat 32 v) :

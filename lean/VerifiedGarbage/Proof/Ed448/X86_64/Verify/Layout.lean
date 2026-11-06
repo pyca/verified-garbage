@@ -196,8 +196,6 @@ theorem sp_sub8 (B : Addr) : B + BitVec.ofNat 64 16 - 8 = B + BitVec.ofNat 64 8 
 theorem sp_sub8' (B : Addr) : B + BitVec.ofNat 64 16 - BitVec.ofNat 64 8 = B + BitVec.ofNat 64 8 :=
   sp_sub8 B
 
-theorem sub88 (B : Addr) : B + BitVec.ofNat 64 8 - 8 = B := by bv_omega
-
 /-- The stack a call from `rsp = B + 16` uses. -/
 theorem below_call_sub (B : Addr) {m : Nat} (hm : m ≤ 16) :
     Region.Sub (below (B + BitVec.ofNat 64 16) m) ⟨B, 16⟩ := by

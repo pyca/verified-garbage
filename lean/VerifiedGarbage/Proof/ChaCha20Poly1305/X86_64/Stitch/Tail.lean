@@ -595,40 +595,6 @@ theorem absorb_last (m : Mem) (dp : Addr) {R0 R1 : BitVec 64} {A T : Nat} (ht : 
   rw [show 512 * T = 512 * (T - 1) + 512 by omega_arith, VG.Proof.Poly1305.bytesAt_add,
     VG.Proof.Poly1305.absorbAll_append (by rw [VG.Proof.Poly1305.length_bytesAt]; omega_arith)]
 
-/-- After `tailAB`, from `s` (`LI` with `1` to `256` bytes left): the
-keystream of the bytes left in `buf`, the last chunk absorbed, the
-accumulator stored, `rbx`, `rbp`, `rdx` the bytes left, `rsi` at `buf`. -/
-structure TailMid (c dp : Addr) (L : Nat) (R0 R1 : BitVec 64) (A : Nat) (sp : Addr) (T : Nat)
-    (s s' : State) : Prop where
-  ks : ∀ k < L - 512 * T, s'.mem (bfA c + BitVec.ofNat 64 k) =
-    (keystream (stateAt s.mem (stA c)) (L - 512 * T)).getD k 0
-  acc : leNum (bytesAt s'.mem (psA c) 24) = absorbAll (rN R0 R1) A (bytesAt s.mem dp (512 * T)) % P
-  frame : Frame [accR c, bufR (bfA c)] s.mem s'.mem
-  rbx : s'.gpr .rbx = dp + BitVec.ofNat 64 (512 * T)
-  rbp : s'.gpr .rbp = BitVec.ofNat 64 (L - 512 * T)
-  rdx : s'.gpr .rdx = BitVec.ofNat 64 (L - 512 * T)
-  rsi : s'.gpr .rsi = bfA c
-  r9 : s'.gpr .r9 = bfA c
-  rcx : s'.gpr .rcx = bfA c
-  r12 : s'.gpr .r12 = s.mem.readW (c + BitVec.ofNat 64 520) 64
-  r13 : s'.gpr .r13 = s.mem.readW (c + BitVec.ofNat 64 528) 64
-  r14 : s'.gpr .r14 = s.mem.readW (c + BitVec.ofNat 64 536) 64
-  r15 : s'.gpr .r15 = c
-  rsp : s'.gpr .rsp = sp
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-
-/-- `tailAB`, after the whole chunks with `1` to `128 S` bytes left. -/
-theorem tailAB_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
-    {m₀ : Mem} {sp : Addr} {T : Nat} (two : Bool)
-    (hhi : L - 512 * T ≤ 128 * (if two then 2 else 1)) {s : State} (h : LI c dp L R0 R1 A m₀ sp T s) :
-    WP isa (tailAB two false) s (TailMid c dp L R0 R1 A sp T s) := by
-  have ht := h.t1
-  have e : 512 * (T - 1) + 512 = 512 * T := by omega_arith
-  refine WP.mono (tailABg_ok hl hk two false (N := 512) rfl hhi (TP.of_LI h)) fun s' t => ?_
-  exact ⟨t.ks, by rw [t.acc, absorb_last _ _ ht], t.frame, by rw [t.rbx, e], t.rbp, t.rdx, t.rsi, t.r9, t.rcx,
-    t.r12, t.r13, t.r14, t.r15, t.rsp, t.rd, t.wr⟩
-
 /-- `tailS`, after the whole chunks with `1` to `128 S` bytes left: those
 bytes encrypted, the last chunk absorbed (so all the chunks' ciphertext),
 the accumulator stored, `rbx`, `rbp` the bytes left, and the stashed
@@ -863,41 +829,6 @@ theorem tailKXg_ok (vl pre : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0
     · exact ⟨bufR (bfA c), by simp, slotsR_sub _⟩
     · exact ⟨kR (bfA c), by simp, fun _ h => h⟩
     · exact ⟨accR c, by simp, fun _ h => h⟩
-
-/-- After `tailKAB`, from `s` (`LI` with 257 to 448 bytes left): the
-keystream of the bytes left at `kA`, the last chunk absorbed, the accumulator
-stored, `rbx`, `rbp`, `rdx` the bytes left, `rsi` at `kA`. -/
-structure TailMidK (c dp : Addr) (L : Nat) (R0 R1 : BitVec 64) (A : Nat) (sp : Addr) (T : Nat)
-    (s s' : State) : Prop where
-  ks : ∀ k < L - 512 * T, s'.mem (kA (bfA c) + BitVec.ofNat 64 k) =
-    (keystream (stateAt s.mem (stA c)) (L - 512 * T)).getD k 0
-  acc : leNum (bytesAt s'.mem (psA c) 24) = absorbAll (rN R0 R1) A (bytesAt s.mem dp (512 * T)) % P
-  frame : Frame [slotsR (bfA c), kR (bfA c), accR c] s.mem s'.mem
-  rbx : s'.gpr .rbx = dp + BitVec.ofNat 64 (512 * T)
-  rbp : s'.gpr .rbp = BitVec.ofNat 64 (L - 512 * T)
-  rdx : s'.gpr .rdx = BitVec.ofNat 64 (L - 512 * T)
-  rsi : s'.gpr .rsi = kA (bfA c)
-  r9 : s'.gpr .r9 = bfA c
-  r12 : s'.gpr .r12 = s.mem.readW (c + BitVec.ofNat 64 520) 64
-  r13 : s'.gpr .r13 = s.mem.readW (c + BitVec.ofNat 64 528) 64
-  r14 : s'.gpr .r14 = s.mem.readW (c + BitVec.ofNat 64 536) 64
-  r15 : s'.gpr .r15 = c
-  rsp : s'.gpr .rsp = sp
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-
-/-- `tailKAB`, after the whole chunks with 257 to 448 bytes left. -/
-theorem tailKAB_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1)
-    {A : Nat} {m₀ : Mem} {sp : Addr} {T : Nat} (hlo : 257 ≤ L - 512 * T) (hhi : L - 512 * T ≤ 448) {s : State}
-    (h : LI c dp L R0 R1 A m₀ sp T s) :
-    WP isa (tailKAB vl false) s (TailMidK c dp L R0 R1 A sp T s) := by
-  have ht := h.t1
-  have hTL := h.le
-  have e : 512 * (T - 1) + 512 = 512 * T := by omega_arith
-  refine WP.mono (tailKABg_ok vl false hl hk (N := 512) rfl (by omega_arith) (by omega_arith) (TP.of_LI h)
-    h.consts (by rw [h.wr]; simp)) fun s' t => ?_
-  exact ⟨t.ks, by rw [t.acc, absorb_last _ _ ht], t.frame, by rw [t.rbx, e], t.rbp, t.rdx, t.rsi, t.r9,
-    t.r12, t.r13, t.r14, t.r15, t.rsp, t.rd, t.wr⟩
 
 /-- `tailK`, after the whole chunks with 257 to 448 bytes left: those bytes
 encrypted from the keystream stored at `kA`, the last chunk absorbed, the

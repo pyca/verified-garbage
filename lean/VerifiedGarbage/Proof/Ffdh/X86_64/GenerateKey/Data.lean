@@ -37,24 +37,6 @@ theorem smear64_value (b : Byte) : (smear64 b).toNat = KeyScalar.smearN b.toNat 
   simp only [smear64, KeyScalar.smearN, BitVec.toNat_or, BitVec.toNat_ushiftRight, BitVec.toNat_setWidth]
   rw [Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by have := b.isLt; omega)]
 
-/-- Store the exact bit-length mask without changing the public pointers. -/
-theorem smear_ok {s : State} {B : Addr} {Z : Nat} {b : Byte}
-    (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hZ : 256 ≤ Z)
-    (hax : s.gpr .rax = b.setWidth 64) :
-    WP isa (.block smear) s fun t =>
-      word t.mem B (8 * sMsk) = smear64 b ∧
-      Frm B [(8 * sMsk, 8)] s.mem t.mem ∧ Keep [.rax, .rdx] s t := by
-  have hd : 8 * sMsk + 8 ≤ Z := by unfold sMsk sFn; omega
-  let m := s.mem.writeW (off B (8 * sMsk)) (smear64 b)
-  refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t => t.mem = m) (by
-    unfold smear
-    xrun [State.ea, hdr, hdi, hdrOff, hax, hs.st hd, m, smear64]) rfl)
-    fun t ⟨hm, k⟩ => ?_
-  refine ⟨by rw [hm]; exact word_writeW_self _ _ _ _, ?_, k⟩
-  intro a ha
-  rw [hm]
-  exact writeW_outside (d := 8 * sMsk) s.mem B (smear64 b) (by decide) a (ha (8 * sMsk, 8) (by simp))
-
 end VG.Proof.Ffdh.X86_64.GenerateKey
 end
 
@@ -139,9 +121,6 @@ structure Base (p : GkP) (rb : List Byte) (s : State) : Prop where
 theorem Base.plen {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) : p.pb.length = p.k := by
   simp only [GkP.pb, List.length_take, h.doml]
   rcases h.dl with hd | hd <;> rw [hd] <;> omega
-
-theorem Base.bb_length {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) : p.bb.length = p.k :=
-  KeyScalar.bnd_length (by rw [h.doml]; exact h.dl)
 
 theorem Base.ld_lt {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) : p.ld < p.k := h.ldk
 

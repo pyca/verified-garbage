@@ -31,7 +31,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 `smallMask` (`smallMask_ct`): the constant 1, word `w` of `[aC]` set
 (`smallBlk_k`, whose base the taint analysis sees from `w` and the stride),
 `ltA`, and `kOk` and'ed in; the facts after it from `smallMask_k`
-(`KG FF`, which is `KFront` but for `KS`: `FF.front`). The mask in `x15`,
+(`KG FF`, which is `KFront` but for `KS`). The mask in `x15`,
 on which the code branches, is the status' (`FF.x15`).
 -/
 
@@ -48,9 +48,6 @@ open VG.Impl.RsaKeyGen.AArch64.Candidate (loadE kE kElen)
 abbrev FF : KIn → State → Prop := fun I t => PF I t ∧ DRes I I.E I.L t.mem ∧
   ∃ ok : Bool, word t.mem I.B (8 * kOk) = mask ok ∧ ((∃ d, Spec.Rsa.inverse I.E I.L = some d) ↔ ok = true) ∧
     t.gpr .x15 = mask (decide (av I t.mem aDd ≤ 2 ^ (8 * I.pl)) && ok)
-
-theorem FF.front {I : KIn} {s₀ t : State} (h : KS I s₀ t) (hf : FF I t) : KFront I s₀ t :=
-  ⟨h, hf.1.1, hf.1.2.1, hf.1.2.2.1, hf.1.2.2.2.1, hf.1.2.2.2.2.1, hf.2.1, hf.2.2⟩
 
 theorem smallMask_eq : smallMask = constA 1 ++ (([.block (ws ++ (base aC .x16 ++ ([.lsr .x .x3 .x12 1,
     .lsl .x .x3 .x3 3, .add .x .x16 .x16 .x3, movi .x3 1, st .x3 .x16] : List Instr)))] : List (Prog isa)) ++

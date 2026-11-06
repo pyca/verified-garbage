@@ -476,9 +476,9 @@ class Selection(unittest.TestCase):
             'src/cipher/mod.rs': '//! Ciphers.\n\npub mod aes;\n',
             'src/cipher/aes/mod.rs': 'mod cbc;\n\npub use cbc::AesCbc;\n\npub(crate) enum Backend {}\n',
             'src/cipher/aes/cbc.rs': 'use super::Backend;\n',
-            'src/kdf/mod.rs': 'pub mod pbkdf2;\n',
-            'src/kdf/pbkdf2/mod.rs': 'pub mod sha256;\nfn pbkdf2() {}\n',
-            'src/kdf/pbkdf2/sha256.rs': '',
+            'src/kdf/mod.rs': 'pub mod pbkdf2_hmac;\n',
+            'src/kdf/pbkdf2_hmac/mod.rs': 'pub mod sha256;\nfn pbkdf2() {}\n',
+            'src/kdf/pbkdf2_hmac/sha256.rs': 'use crate::arch::pbkdf2_sha256;\n',
         })
         self.base_files['src/aead/mod.rs'] = self.files['src/aead/mod.rs'].replace('pub mod aes_gcm;\n', '')
         with mock.patch.object(planner, 'read', self.read):
@@ -494,8 +494,8 @@ class Selection(unittest.TestCase):
         self.assertEqual({r['modules'] for r in self.rows(['src/aead/mod.rs'], registered=None)}, {'aes_gcm'})
         self.assertEqual({r['modules'] for r in self.rows(['src/cipher/aes/cbc.rs'])}, {'aes_cbc'})
         self.assertEqual({r['modules'] for r in self.rows(['src/cipher/aes/mod.rs'])}, {'aes_cbc aes_gcm'})
-        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/sha256.rs'])}, {'pbkdf2_sha256'})
-        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/mod.rs'])}, {'pbkdf2_sha256'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2_hmac/sha256.rs'])}, {'pbkdf2_sha256'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2_hmac/mod.rs'])}, {'pbkdf2_sha256'})
 
     def test_external_test_file_uses_its_parent_gate_and_path(self):
         # #1417: the file's name differs from its module, and its test gate
@@ -665,21 +665,34 @@ class Selection(unittest.TestCase):
                 del self.files[includer]
 
     def test_kdf_files_are_named_by_their_real_paths(self):
-        # `kdf::pbkdf2::sha256` is `pbkdf2_sha256`, the code PBKDF2's
-        # hashes share is theirs, and `src/kdf/mod.rs` is a list of modules.
+        # `kdf::pbkdf2_hmac::sha256` is `pbkdf2_sha256`, the generated module
+        # it imports (its directory is not named as the modules are), the
+        # code PBKDF2's hashes share is theirs, and `src/kdf/mod.rs` is a
+        # list of modules.
         self.catalog.update({'pbkdf2_sha256': {'pbkdf2_sha256', 'sha256'},
                              'scrypt': {'scrypt', 'pbkdf2_sha256'}})
         self.files.update({
             'src/lib.rs': 'pub mod kdf;\n',
-            'src/kdf/mod.rs': 'pub mod pbkdf2;\npub mod scrypt;\n',
-            'src/kdf/pbkdf2/mod.rs': 'mod sha256;\npub(crate) fn pbkdf2() {}\n',
-            'src/kdf/pbkdf2/sha256.rs': 'super::pbkdf2();\n',
-            'src/kdf/scrypt.rs': 'crate::kdf::pbkdf2::pbkdf2();\n',
+            'src/kdf/mod.rs': 'pub mod pbkdf2_hmac;\npub mod scrypt;\n',
+            'src/kdf/pbkdf2_hmac/mod.rs': '// mod sha1;\nmod sha256;\npub(crate) fn pbkdf2() {}\n',
+            'src/kdf/pbkdf2_hmac/sha256.rs': 'use crate::arch::pbkdf2_sha256::vg_pbkdf2_hmac_sha256;\n'
+                                             'use crate::arch::sha256;\nsuper::pbkdf2();\n',
+            'src/kdf/scrypt.rs': 'crate::kdf::pbkdf2_hmac::pbkdf2();\n',
         })
-        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/sha256.rs'])}, {'pbkdf2_sha256'})
-        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/mod.rs'])},
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2_hmac/sha256.rs'])}, {'pbkdf2_sha256'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2_hmac/mod.rs'])},
                          {'pbkdf2_sha256 scrypt'})
         self.assertEqual({r['modules'] for r in self.rows(['src/kdf/mod.rs'])}, {'triple_des_ecb'})
+        with mock.patch.object(planner, 'read', self.read), mock.patch.object(
+                planner, 'rust_files', lambda root='.': sorted(p for p in self.files if p.startswith('src/'))):
+            self.assertEqual(planner.family_prefix('src/kdf/pbkdf2_hmac'), 'pbkdf2')
+            self.assertEqual(planner.sources('pbkdf2_sha256'),
+                             ['src/hashes/mod.rs', 'src/kdf/pbkdf2_hmac/mod.rs', 'src/kdf/pbkdf2_hmac/sha256.rs'])
+            # Files that agree on no name, or import none: the directory's.
+            self.files['src/kdf/pbkdf2_hmac/sha1.rs'] = 'use crate::arch::hmac_sha1;\n'
+            self.files['src/kdf/pbkdf2_hmac/mod.rs'] = 'mod sha1;\nmod sha256;\n'
+            self.assertEqual(planner.family_prefix('src/kdf/pbkdf2_hmac'), 'pbkdf2_hmac')
+            self.assertEqual(planner.family_prefix('src/kdf'), 'kdf')
 
     def test_manifest_target_tables_select_their_architectures(self):
         manifest = '[package]\nname = "b"\n\n[dependencies]\nx = "1"\n'
@@ -985,6 +998,54 @@ class Interleaving(unittest.TestCase):
         self.assertEqual(bench_compare.units(None, None), [(None, None)])
         self.assertEqual(list(bench_compare.interleaved([(None, None)], both, 1)),
                          [('head', None, None), ('base', None, None)])
+
+
+class Budget(unittest.TestCase):
+    """Narrowing a job to groups, and refusing one too long to finish."""
+
+    GROUPS = {'aes-128-gcm-tls-seal': 29, 'aes-256-gcm-tls-seal': 29, 'aes-128-gcm-encrypt': 6,
+              'aes-128-gcm-siv-encrypt': 3, 'sha1': 3}
+
+    def test_groups_match_whole_names(self):
+        match = bench_compare.matching_groups
+        self.assertEqual(match(self.GROUPS, ''), self.GROUPS)
+        self.assertEqual(list(match(self.GROUPS, r'aes-(128|256)-gcm-tls-seal')),
+                         ['aes-128-gcm-tls-seal', 'aes-256-gcm-tls-seal'])
+        # A prefix is not a match: `aes-128-gcm-encrypt` names one group.
+        self.assertEqual(list(match(self.GROUPS, 'aes-128-gcm-encrypt aes-128-gcm')), ['aes-128-gcm-encrypt'])
+        self.assertEqual(list(match(self.GROUPS, 'sha1 aes-.*-siv-.*')), ['aes-128-gcm-siv-encrypt', 'sha1'])
+        self.assertEqual(match(self.GROUPS, 'sha3'), {})
+
+    def test_each_run_of_each_benchmark_is_counted(self):
+        planned = bench_compare.planned_seconds
+        per = bench_compare.SECONDS_PER_RUN
+        # A group without copies: each side's rounds, and the references once.
+        self.assertAlmostEqual(planned({'sha1': 3}, 2, 1, 8, 0), 3 * 2 * per)
+        self.assertAlmostEqual(planned({'sha1': 3}, 2, 5, 8, 2), 3 * 12 * per)
+        self.assertAlmostEqual(planned({'sha1': 3}, 1, 1, 8, 2), 3 * 3 * per)
+        # AES-GCM's run from 7 more copies of each side's binary.
+        self.assertAlmostEqual(planned({'aes-128-gcm-encrypt': 6}, 2, 1, 8, 0), 6 * 16 * per)
+        self.assertAlmostEqual(planned({'aes-128-gcm-encrypt': 6}, 2, 1, 1, 0), 6 * 2 * per)
+
+    def test_every_aes_gcm_benchmark_is_over_budget_but_a_few_groups_are_not(self):
+        # AES-GCM's 183 benchmarks, all from copies, in one comparison.
+        gcm = {f'aes-128-gcm-g{i}': 1 for i in range(183)}
+        self.assertGreater(bench_compare.planned_seconds(gcm, 2, 1, 8, 0), 20 * 60)
+        seal = bench_compare.matching_groups(self.GROUPS, 'aes-128-gcm-tls-seal')
+        self.assertLess(bench_compare.planned_seconds(seal, 2, 5, 8, 0), 20 * 60)
+
+    def test_the_error_names_the_largest_groups(self):
+        message = bench_compare.over_budget(self.GROUPS, 25 * 60, 20)
+        self.assertIn('70 benchmarks for about 25 minutes, more than the budget of 20', message)
+        self.assertIn('`aes-128-gcm-tls-seal` (29), `aes-256-gcm-tls-seal` (29), `aes-128-gcm-encrypt` (6)', message)
+        self.assertIn('`groups` input', message)
+        many = {f'g{i:02}': 1 for i in range(15)}
+        self.assertTrue(bench_compare.over_budget(many, 1, 20).endswith('`g11` (1) and 3 more.'))
+
+    def test_the_workflow_passes_its_groups_on(self):
+        workflow = (pathlib.Path(__file__).parent.parent / '.github/workflows/bench.yml').read_text()
+        self.assertIn('BENCH_GROUPS: ${{ inputs.groups }}', workflow)
+        self.assertIn('--groups "$BENCH_GROUPS"', workflow)
 
 
 class CpuFeatures(unittest.TestCase):

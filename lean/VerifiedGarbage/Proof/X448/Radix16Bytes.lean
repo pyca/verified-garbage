@@ -47,11 +47,6 @@ theorem decoded_lt (m : Mem) (p : Addr) (k : Nat) : decoded m p k < radix := by
   simp only [decoded, byteN, radix]
   omega
 
-theorem decode_val (m : Mem) (p : Addr) :
-    valN (decoded m p) 28 = decodeUCoordinate (bytesAt m p 56) := by
-  rw [decodeUCoordinate_eq (length_bytesAt m p 56)]
-  exact (decoded_val m p 28).symm
-
 theorem packed_bytes {m : Mem} {p : Addr} {f : Nat → Nat}
     (h : ∀ i < 28, decoded m p i = f i) : bytesAt m p 56 = leBytes 56 (valN f 28) := by
   have hv : leNum (bytesAt m p 56) = valN f 28 :=

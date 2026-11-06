@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RISCV64.RelBlock
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.Proof.Ed448.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Framework.RegionsSub

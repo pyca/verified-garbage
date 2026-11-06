@@ -71,12 +71,6 @@ theorem k_st (hL : L.Ok) : Region.Disjoint ⟨L.B, 40⟩ ⟨L.ST, 200⟩ := by
 theorem k_ks (hL : L.Ok) : Region.Disjoint ⟨L.B, 40⟩ ⟨L.KS, 640⟩ := k32x hL (by omega_arith)
 theorem k_mu (hL : L.Ok) : Region.Disjoint ⟨L.B, 40⟩ ⟨L.MU, 64⟩ := k32x hL (by omega_arith)
 
-/-- The return address of a call from the frame, apart from what a region
-apart from the 32 bytes below the frame. -/
-theorem ret_of_k {r : Region} (h : Region.Disjoint ⟨L.B, 40⟩ r) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 32, 8⟩ r :=
-  h.sub_left (Offset.sub_base _ (by omega_arith))
-
 /-! ## Zeroing the state -/
 
 theorem zeroSt_ok (hL : L.Ok) (hE : oE p = L.E) {t : State} (hc : Ctx L g mx m₀ t) :

@@ -67,10 +67,6 @@ theorem srcW {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (P : Perm K W s) 
 theorem srcBuf {W SP : BitVec 32} {s : State} {Q : BitVec 32} {k : Nat} (h : Buf W SP s Q k) : Src W SP s Q k :=
   ⟨h.rd, h.wrap, h.w.sub_right (Lay.wSub (by decide)), h.stk⟩
 
-theorem Src.of_eq {W SP : BitVec 32} {s s' : State} {Q : BitVec 32} {k : Nat} (h : Src W SP s Q k)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Src W SP s' Q k :=
-  { h with rd := by rw [hrd, hwr]; exact h.rd }
-
 /-! ## `vg_cmac_aes_update` -/
 
 /-- `W + d`, as the 64-bit address it is. -/

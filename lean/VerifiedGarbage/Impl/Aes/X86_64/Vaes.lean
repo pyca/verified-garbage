@@ -101,13 +101,6 @@ def xorDataK (t : XReg) (base : Reg) : List XReg → Nat → List Instr
   | b :: bs, j => ([.vmovdquLoad .l256 t (at_ base (32 * j)), .vop (.vbin .vpxor .l256 b b t),
       .vmovdquStore .l256 (at_ base (32 * j)) b] : List Instr) ++ xorDataK t base bs (j + 1)
 
-/-- A round key into both lanes of `ymm8`, then `op b, b, ymm8` for each
-block register `b`. -/
-def keyOp (regs : List XReg) (op : VBinOp) (a : MemOp) : List Instr := keyOpK .xmm8 regs op a
-
-/-- Round `j` (`1 ≤ j < Nr`) of each block. -/
-def round (regs : List XReg) (j : Nat) : List Instr := roundK .xmm8 regs j
-
 /-- AES of both lanes of each block register, with `rounds` (10, 12 or 14) in
 `rsi`, the key schedule at `rdi`, and its last round key at `r10`. -/
 def aes (regs : List XReg) : Prog isa := aesK .xmm8 regs

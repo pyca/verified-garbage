@@ -44,9 +44,6 @@ open VG.Spec.Aes (bytesAt)
 /-- What S2V's end writes: `wR` and its result at `W + out`. -/
 abbrev oR (c : Cx) (out : Nat) : List Region := ⟨c.W + BitVec.ofNat 64 out, 16⟩ :: wR c
 
-theorem frame_oR {c : Cx} {m m' : Mem} (out : Nat) (h : Frame (wR c) m m') : Frame (oR c out) m m' :=
-  h.mono fun _ hr => List.mem_cons_of_mem _ hr
-
 theorem copyRegs_keep : ∀ r ∈ keepRegs, r ∉ VG.Proof.Gather.PPC64LE.copyRegs := by decide
 
 theorem PK.ofKeeps {s t : State} (h : Keeps s t) : PK s t :=
@@ -85,15 +82,6 @@ theorem shortIte_wp {c : Cx} {s₁ : State} (E₁ : Env c s₁) {P : Addr} {n : 
     refine WP.seq (WP.mono A fun s₄ ⟨pk₄, m₄, r20₄, hb⟩ => WP.mono (copyBytes_wp s₄ hb) fun s₅ ⟨m₅, _, k₅⟩ =>
       ⟨pk₄.trans (PK.ofKeeps k₅), by rw [k₅.gpr .r20 (by decide), r20₄], ?_⟩)
     rw [m₅, m₄, pmem, m₁]
-
-/-- The memory after `0x80` after `P` in the tail. -/
-abbrev paddedMem (m : Mem) (W : Addr) (xs : List Byte) : Mem :=
-  (copiedMem m W xs).writeW (W + BitVec.ofNat 64 tailO + BitVec.ofNat 64 xs.length) (0x80 : Byte)
-
-/-- The memory after `shortTail`. -/
-abbrev shortMem (m : Mem) (W : Addr) (xs : List Byte) : Mem :=
-  Proof.Cmac.xor2Mem (Proof.CmacAes.PPC64LE.dblMem (paddedMem m W xs) W dO dbO) (W + BitVec.ofNat 64 tailO)
-    (W + BitVec.ofNat 64 tailO) (W + BitVec.ofNat 64 dbO)
 
 /-- `0x80` after `P`, `dbl(D)` and the XOR, but for the stack pointer. -/
 theorem shortPad_wp' {c : Cx} {s : State} (E : Env c s) {xs : List Byte} (hn : xs.length < 16)

@@ -316,11 +316,6 @@ theorem inFr {d n : Nat} (hd : d + n ≤ frameBytes) :
 theorem inFrR {d n : Nat} (hd : d + n ≤ frameBytes) : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 d) n :=
   ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ hd (by unfold frameBytes at hd; omega)⟩
 
-theorem inArgs (hL : L.Ok) {d : Nat} (h₁ : 1088 ≤ d) (h₂ : d + 8 ≤ 1120) :
-    InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 d) 8 :=
-  ⟨L.ARGS, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by have := hL.al32; omega)
-    (by have := hL.al64; omega)⟩
-
 end Ctx
 
 /-- The registers a block writes, other than the callee-saved ones. -/

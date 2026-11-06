@@ -783,11 +783,6 @@ theorem xs_step (hp : XPre m₀ D n g ks s₃) {k : Nat} (hk : k < 4) (hkn : 4 *
     fun s' d f o rd wr => h s' ⟨d, hs.frame.trans f, fun r hr => (o r hr).trans (hs.keep r hr),
       rd.trans hs.rd, wr.trans hs.wr⟩
 
-theorem xs_zero (hp : XPre m₀ D n g ks s₃) {s : State} (hg : s.gpr = s₃.gpr) (hm : s.mem = s₃.mem)
-    (hrd : s.rd = s₃.rd) (hwr : s.wr = s₃.wr) : XS m₀ D n g ks s₃ 0 s :=
-  ⟨by rw [hm, Nat.add_zero]; exact hp.data, by rw [hm]; exact Frame.refl _ _,
-    fun r _ => by rw [hg], hrd, hwr⟩
-
 theorem advance_ok (s : State) :
     ∃ s', runBlock isa [.addImm .x .x3 .x3 64, .subImm .x .x4 .x4 4] s = some s' ∧
       s'.gpr .x3 = s.gpr .x3 + 64 ∧ s'.gpr .x4 = s.gpr .x4 - 4 ∧

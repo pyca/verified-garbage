@@ -30,14 +30,6 @@ theorem setWidth_append32 (a b : BitVec 32) : (a ++ b).setWidth 32 = b := by
     ← Nat.two_pow_add_eq_or_of_lt b.isLt]
   omega
 
-theorem permute :
-    Verified X86.target Impl.Sha3.X86.permute (Proof.Sha3.permuteContract X86.abi) :=
-  Proof.Sha3.X86.permute_verified.of_implies (by
-    contract_implies [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, Proof.Sha3.permuteX86,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      [Proof.Sha3.X86.satState, Proof.Sha3.X86.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
-      using Proof.Sha3.X86.satState)
-
 theorem absorb :
     Verified X86.target Impl.Sha3.X86.Stream.absorb (Spec.Sha3.absorbScratchContract X86.abi 12) :=
   Proof.Sha3.X86.Stream.Absorb.absorb_verified.of_implies (by

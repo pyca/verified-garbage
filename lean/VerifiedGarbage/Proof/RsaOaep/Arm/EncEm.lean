@@ -63,15 +63,6 @@ abbrev lhB (P : EP) (σ : State) : List Byte := h.G.hash (labB P σ)
 /-- The facts that do not change in the body. -/
 abbrev K0 (P : EP) (σ : State) : Prop := In h.H.D P σ ∧ fits h P
 
-section
-variable {P : EP} {σ : State}
-
-theorem K0.hg (k : K0 h P σ) : Geo (P.lay h.H.D) P.scr := k.1.geo
-theorem K0.kD (k : K0 h P σ) : 2 * h.H.D + 2 + P.ml ≤ P.K ∧ P.K ≤ 1024 ∧ 64 ≤ P.K ∧ 0 < h.H.D ∧ h.H.D ≤ 64 :=
-  ⟨k.2, k.1.k1024, k.1.k64, h.D_pos, h.D_le⟩
-
-end
-
 /-- The arguments read in this file. -/
 theorem argV {P : EP} {σ s : State} (hi : In h.H.D P σ) (hs : (P.lay h.H.D).St σ s) :
     (State.addr (P.B + BitVec.ofNat 32 (arg 3)) = (P.lay h.H.D).fr (arg 3) ∧

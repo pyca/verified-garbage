@@ -359,10 +359,6 @@ theorem inRegions_left {rs ws : List Region} {a : Addr} {n : Nat} (h : InRegions
     InRegions (rs ++ ws) a n :=
   let ⟨r, hr, hc⟩ := h; ⟨r, List.mem_append_left _ hr, hc⟩
 
-theorem inRegions_right {rs ws : List Region} {a : Addr} {n : Nat} (h : InRegions ws a n) :
-    InRegions (rs ++ ws) a n :=
-  let ⟨r, hr, hc⟩ := h; ⟨r, List.mem_append_right _ hr, hc⟩
-
 /-! ## The modulus' check -/
 
 /-- `n`'s bytes, as the function reads them. -/
@@ -453,8 +449,6 @@ structure CE (s0 s : State) : Prop where
   rd : s.rd = s0.rd
   wr : s.wr = s0.wr
   hdr : ∀ i < 12, word s.mem (bOf s0) (8 * i) = s0.gpr (saved i)
-
-theorem CB.ce {s0 s : State} {M : Mem} (c : CB s0 M s) : CE s0 s := ⟨c.s11, c.ra, c.rd, c.wr, c.hdr⟩
 
 theorem fail_ok {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s) :
     WP isa fail s fun t => CE s0 t ∧

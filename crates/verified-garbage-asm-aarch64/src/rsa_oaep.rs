@@ -578,7 +578,7 @@ cbnz x12, 293b
 21:
 .inst 0x910443ff,0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
     )
 }
 
@@ -1143,6 +1143,6 @@ cbnz x12, 2105b
 21:
 .inst 0x910443ff,0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }

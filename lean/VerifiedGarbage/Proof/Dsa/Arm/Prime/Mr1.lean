@@ -91,24 +91,6 @@ theorem lt_bit {x k : Nat} (hx : x < 2 ^ 31) (hk : k < 2 ^ 31) :
   unfold VG.Proof.Rsa.b2n
   by_cases h : x < k <;> simp [h] <;> omega
 
-/-- `ltAdd k`: `r1 +=` whether `W < k`. -/
-theorem ltAdd_ok {u : State} {W x k : Nat} (r9 : u.gpr .r9 = BitVec.ofNat 32 W) (hW : W < 2 ^ 31) (hk : k < 256)
-    (r1 : u.gpr .r1 = BitVec.ofNat 32 x) (hx : x < 2 ^ 30) {rest : List Instr} {Q : State → Prop}
-    (kk : ∀ u', Rest [.r1, .r2] u u' → u'.mem = u.mem →
-      u'.gpr .r1 = BitVec.ofNat 32 (x + VG.Proof.Rsa.b2n (decide (W < k))) → WP isa (.block rest) u' Q) :
-    WP isa (.block (ltAdd k ++ rest)) u Q := by
-  simp only [ltAdd, List.cons_append, List.nil_append]
-  refine wp_dp (op2_imm (VG.Proof.Rsa.Arm.Keys.encodable_lt hk)) fun u1 v1 => wp_mov (op2_lsr (by decide)) fun u2 v2 =>
-    wp_dp (op2_reg _ _) fun u3 v3 => kk u3 ((v1.rest (by simp)).trans ((v2.rest (by simp)).trans (v3.rest (by simp))))
-      (by rw [v3.mem, v2.mem, v1.mem]) ?_
-  have x2 : u2.gpr .r1 = BitVec.ofNat 32 x := by rw [v2.other _ (by decide), v1.other _ (by decide), r1]
-  have b2 : u2.gpr .r2 = (BitVec.ofNat 32 W - BitVec.ofNat 32 k) >>> 31 := by rw [v2.gpr, v1.gpr, dpVal, r9]
-  rw [v3.gpr, dpVal, x2, b2]
-  apply BitVec.eq_of_toNat_eq
-  have hb := VG.Proof.Rsa.b2n_le (decide (W < k))
-  rw [BitVec.toNat_add, lt_bit hW (by omega), ofNat_toNat_lt (by omega), ofNat_toNat_lt (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-
 /-- `str r, [r8, #d]` of a header word, keeping `MS`. -/
 theorem KS.strM {σ s : State} {A : Nat → Nat} {live : List Nat} {V : Nat → Nat} {ls : List Nat}
     (h : KS P σ A live V ls s) (m : MS P σ s) (hw : Ws s P.B P.Z P.W nArr) {d : Nat} (hd : LsOk d) {r : Reg}

@@ -10,9 +10,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 
 As on PPC64LE (`Proof/Dsa/PPC64LE/Generate/Contract.lean`).
 `generate_implies`: `gkContract` implies the shared contract, with
-`gkStack` bytes of stack; `generate_wp`: `vg_dsa_generate_key` meets the
-shared contract's precondition and postcondition, and the calling
-convention.
+`gkStack` bytes of stack.
 -/
 
 @[expose] public section
@@ -83,12 +81,5 @@ theorem generate_implies : gkContract.Implies (Spec.Dsa.generateKeyContract RISC
       List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
       List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, stackBelow]
           [gkSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using gkSatState }
-
-/-- `vg_dsa_generate_key` under the shared contract. -/
-theorem generate_wp (s : State) (h : (Spec.Dsa.generateKeyContract RISCV64.abi gkStack).pre s) :
-    WP isa Generate.code s fun t =>
-      abiPreserved s t ∧ (Spec.Dsa.generateKeyContract RISCV64.abi gkStack).post s t := by
-  obtain ⟨tr, t, he, ha, hp⟩ := generate_correct s (generate_implies.pre s h)
-  exact ⟨tr, t, he, ha, generate_implies.post s t h hp⟩
 
 end VG.Proof.Dsa.RISCV64

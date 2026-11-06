@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedInit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
@@ -24,7 +23,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPrep
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointGenerator
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
@@ -38,49 +36,10 @@ import VerifiedGarbage.Impl.Weierstrass.AArch64.ArithmeticTable
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTableStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 /-! ## `JointPrep` -/
 
 -- Formerly `VerifiedGarbage/Proof/Weierstrass/AArch64/ArithmeticTable.lean`, which only this module imported.
-section
-
-section
-
-namespace VG.Proof.Weierstrass.AArch64
-open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
-open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass
-
-/-- Build the eight odd multiples and the cached double. -/
-theorem arithmeticTable_ok (certs : Forward.Arithmetic.Cases) {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
-    (hL : JacWinLay K size) (hJ : K.J=52) (hAl : Aligned K.M (·∈jacWinSlots K))
-    (hm : UnitMod C.p (2^(64*K.M.n))) (hsize : 8192≤size) (hC : Law C) (ha : AM3 C)
-    (ht : K.tbl<4096) (hOne : K.one<C.p) {P : Point C} (hP : onCurve C P=true)
-    {s : State} (hI : Inv K.M base size C.p (·∈jacWinSlots K) (winRo K) (tmv C K.M.n base s) s)
-    (hJP : InvJ C (tmv C K.M.n base s K.P.x) (tmv C K.M.n base s K.P.y)
-      (tmv C K.M.n base s K.P.z) P) :
-    WP isa (ArithmeticTable.table K) s (fun t => NafTableInv K C base size P s t 8) := by
-  unfold ArithmeticTable.table
-  apply WP.assoc
-  refine WP.seq (WP.mono (nafTable_init_ok hL hJ hAl hm hC ha ht hP hI hJP) fun a ia => ?_)
-  apply countLoop_ok (Inv := fun j t => NafTableInv K C base size P s t (8-j))
-    (n := 7) (by decide)
-  · intro j u hj hj7 hu
-    refine WP.mono (arithmeticTable_step_ok certs hL hJ hAl hm hsize hC ha hOne hP (by omega) (by omega) hu)
-      fun t it => ?_
-    have he : 8-j+1=8-(j-1) := by omega
-    refine ⟨he ▸ it,?_⟩
-    have hc := it.counter
-    have he' : 8-(8-j+1)=j-1 := by omega
-    rwa [he'] at hc
-  · intro t it; exact it
-  · decide
-  · exact ia
-
-end VG.Proof.Weierstrass.AArch64
-end
-
-end
 
 @[expose] public section
 
@@ -187,56 +146,8 @@ open VG.Proof.Ecdsa.AArch64 Spec.Weierstrass
 def jointPointRanges : List (Nat×Nat) :=
   [(128,32),(512,544),(1824,808),(2848,1536),(5400,64),(6000,512)]
 
-theorem jointPoint_fixed : FixedOk p256 jointPointRanges := by unfold FixedOk; decide +kernel
-
-theorem jointPoint_bounds : ∀ w∈jointPointRanges,w.1+w.2≤size := by decide +kernel
-
 theorem jointPoint_prep : ∀ w∈jointPrepRanges,∃ r∈jointPointRanges,
     r.1≤w.1 ∧ w.1+w.2≤r.1+r.2 := by decide +kernel
-
-theorem jointPoint_table : ∀ w∈jacTreeWrites P256Joint.cfg.K,∃ r∈jointPointRanges,
-    r.1≤w.1 ∧ w.1+w.2≤r.1+r.2 := by decide +kernel
-
-theorem jointPoint_cache : ∀ w∈CachedInit.outputs.map (·,32)++[(128,32)],∃ r∈jointPointRanges,
-    r.1≤w.1 ∧ w.1+w.2≤r.1+r.2 := by decide +kernel
-
-theorem jointPoint_loop : ∀ w∈(jointWork P256Joint.cfg).map (·,32)++[(128,32)],∃ r∈jointPointRanges,
-    r.1≤w.1 ∧ w.1+w.2≤r.1+r.2 := by decide +kernel
-
-theorem jointPoint_finish : ∀ w∈jacLoopWrites P256Joint.cfg.K,∃ r∈jointPointRanges,
-    r.1≤w.1 ∧ w.1+w.2≤r.1+r.2 := by decide +kernel
-
-theorem jointPoint_union {base : Addr} {a b c : Mem}
-    (h : Unch base jointPointRanges a b) (h' : Unch base jointPointRanges b c) :
-    Unch base jointPointRanges a c :=
-  (h.trans h').mono fun _ hw => (List.mem_append.mp hw).elim id id
-
-/-- The point calculation preserves every scalar and flag needed by the final check. -/
-theorem finalState_of_joint {s₀ s t : State} {base : Addr} {g : Reg → BitVec 64}
-    (h : Mid p256 s₀ base g s) (hs : Scr t base size)
-    (hr : t.rd=s.rd) (hw : t.wr=s.wr)
-    (hu : Unch base jointPointRanges s.mem t.mem)
-    (hx : sv p256 base t RX<p256.C.p) (hz : sv p256 base t RZ<p256.C.p) :
-    FinalState p256 s₀ base g t := by
-  have same (i : Nat) (hi : i∈[RM',K]) : sv p256 base t i=sv p256 base s i := by
-    apply hu.wordsVal
-    · have he : ∀ i∈[RM',K],∀ w∈jointPointRanges,p256.sl i+32≤w.1 ∨ w.1+w.2≤p256.sl i := by decide +kernel
-      exact he i hi
-    · have he : ∀ i∈[RM',K],p256.sl i+32≤2^64 := by decide +kernel
-      exact he i hi
-  refine ⟨hs,hw.trans h.wr,hr.trans h.rd,h.fixed.unch (by decide) h.scr.nowrap jointPoint_fixed hu,
-    ?_,?_,?_,hz,?_,?_,hx⟩
-  · rw [hu.word (by decide +kernel) (by decide)]
-    exact h.flag
-  · rw [same RM' (by simp)]; exact h.rm_lt
-  · change toM _ _ (sv p256 base t RM')=_
-    rw [same RM' (by simp)]; exact h.rm
-  · exact unch_whole (h.unch.trans hu) (by
-      intro w hw
-      rcases List.mem_append.mp hw with hw | hw
-      · rw [List.mem_singleton.mp hw]; exact Nat.zero_add size |>.le
-      · exact jointPoint_bounds w hw)
-  · rw [same K (by simp)]; exact h.k
 
 end VG.Proof.Ecdsa.Verify.AArch64
 
@@ -244,164 +155,7 @@ end
 
 /-! ## `JointTable` -/
 
-section
-
-namespace VG.Proof.Ecdsa.Verify.AArch64
-open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
-open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
-open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
-open VG.Proof.Ecdsa.AArch64 Spec.Weierstrass
-
-structure JointTablePost (base : Addr) (g : Reg → BitVec 64) (P : Point p256.C) (u v : Nat)
-    (s t : State) : Prop where
-  table : NafTableInv P256Joint.cfg.K p256.C base size P s t 8
-  field : Inv P256Joint.cfg.K.M base size p256.C.p (·∈jointSlots P256Joint.cfg)
-    (nafLive P256Joint.cfg.K) (tmv p256.C 4 base t) t
-  stable : NafStable P256Joint.cfg.K p256.C base P (FastNaf.byte 5 v) t
-  generator : ∀ j<jointGLen P256Joint.cfg,t.mem (off base (P256Joint.cfg.gBits+j))=jointGByte P256Joint.cfg u j
-  one : tmv p256.C 4 base t P256Joint.cfg.onep=1
-  fixed : Fixed p256 base g t.mem
-  syms : t.syms=s.syms
-
-theorem jointTableStage_ok (certs : Forward.Arithmetic.Cases) (hc : CfgOk p256) (hC : Law p256.C)
-    {base : Addr} {g : Reg → BitVec 64} {P : Point p256.C} (hP : onCurve p256.C P=true)
-    {s₀ s : State} (h : JointPrepPost base g P s₀ s) :
-    WP isa (ArithmeticTable.table P256Joint.cfg.K) s
-      (JointTablePost base g P (sv p256 base s₀ U) (sv p256 base s₀ V) s) := by
-  have hL := jacLay hc rfl
-  refine WP.mono_syms (arithmeticTable_ok certs hL rfl (jacAligned p256 rfl)
-    (unitMod_pow_two hc.p_odd _) (by decide) hC hc.am3 (by decide) (by change 2^(64*4)%p256.C.p<p256.C.p; exact Nat.mod_lt _ (by have := hc.p_ge; omega))
-    hP h.field h.peer.2.2) fun t ht sy => ?_
-  obtain ⟨hi,hstable⟩ := ht.ready hL h.peer.1 h.peer.2.1
-  have F := h.fixed.unch hc.n10 h.field.scr.nowrap (W:=jacTreeWrites P256Joint.cfg.K)
-    (by unfold FixedOk; decide +kernel) ht.unch
-  have hone : tmv p256.C 4 base t P256Joint.cfg.onep=1 := by
-    change toM _ _ (wordsVal t.mem base P256Joint.cfg.onep 4)=1
-    have he := jacTree_ro_words hL ht.unch ht.field.scr.nowrap (x:=P256Joint.cfg.onep) (by decide +kernel)
-    change wordsVal t.mem base P256Joint.cfg.onep 4=wordsVal s.mem base P256Joint.cfg.onep 4 at he
-    rw [he]
-    exact h.one
-  refine ⟨ht,⟨hi.scr,hi.mod,?_,hi.lt,hi.val⟩,hstable,?_,hone,F,sy⟩
-  · intro x hx
-    exact List.mem_append_left _ (List.mem_append_left _ (hi.sl x hx))
-  · intro j hj
-    change j<514 at hj
-    rw [ht.unch.byte (fun w hw => ?_) (by change 2112+j<2^64; omega),h.generator j hj]
-    have ha : ∀ w∈jacTreeWrites P256Joint.cfg.K,
-        2632≤w.1 ∨ w.1+w.2≤2112 := by decide +kernel
-    have hw' := ha w hw
-    change 2112+j<w.1 ∨ w.1+w.2≤2112+j
-    omega
-
-end VG.Proof.Ecdsa.Verify.AArch64
-
-end
-
 /-! ## `JointSetup` -/
-
-section
-
-namespace VG.Proof.Ecdsa.Verify.AArch64
-open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
-open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
-open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
-open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64 Spec.Weierstrass
-open VG.Impl.Ecdh.AArch64 (PX PY)
-
-def jointSetup : Prog isa := .seq jointPrepProgram <|
-  .seq (ArithmeticTable.table P256Joint.cfg.K) (CachedJac.cache P256Joint.cfg.K)
-
-structure JointSetupPost (base T : Addr) (P : Point p256.C) (u v : Nat) (s t : State) : Prop where
-  field : Inv P256Joint.cfg.K.M base size p256.C.p (·∈jointSlots P256Joint.cfg)
-    (jointLive P256Joint.cfg) (tmv p256.C 4 base t) t
-  stable : JointStable P256Joint.cfg p256.C base P u v t
-  generator : Weierstrass.AArch64.JointGenerator P256Joint.cfg p256.C base size (G p256.C) T t
-  rd : t.rd=s.rd
-  wr : t.wr=s.wr
-  sp : t.sp=s.sp
-  unch : Unch base jointPointRanges s.mem t.mem
-  syms : t.syms=s.syms
-
-theorem jointSetup_ok (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
-    {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (hM : Mid p256 s₀ base g s)
-    (hTP : TblPre P256Joint.p256v s₀ (s₀.syms P256Joint.p256v.tsym) base)
-    {P : Point p256.C} (hP : onCurve p256.C P=true)
-    (hrep : Rep p256.C (tmv p256.C 4 base s (p256.sl PX)) (tmv p256.C 4 base s (p256.sl PY))
-      (tmv p256.C 4 base s (p256.sl ONEP)) P) :
-    WP isa jointSetup s (JointSetupPost base (s₀.syms P256Joint.p256v.tsym) P (sv p256 base s U) (sv p256 base s V) s) := by
-  unfold jointSetup
-  refine WP.seq (WP.mono (jointPrepStage_ok hc hC hM.scr hM.fixed hM.px_lt hM.py_lt hrep)
-    fun a ia => ?_)
-  refine WP.seq (WP.mono (jointTableStage_ok Forward.Arithmetic.cases hc hC hP ia) fun b ib => ?_)
-  refine WP.mono_syms (jointCache_ok JointLayout.layout (unitMod_pow_two hc.p_odd _)
-    ib.field ib.stable ib.generator ib.one) fun t ⟨kt,it,st⟩ sy => ?_
-  have u1 := ia.unch.cover jointPoint_prep
-  have u2 := ib.table.unch.cover jointPoint_table
-  have u3 : Unch base jointPointRanges b.mem t.mem := kt.unch.cover jointPoint_cache
-  have un := jointPoint_union (jointPoint_union u1 u2) u3
-  have rd : t.rd=s.rd := kt.rd.trans (ib.table.keep.rd.trans ia.keep.rd)
-  have wr : t.wr=s.wr := kt.wr.trans (ib.table.keep.wr.trans ia.keep.wr)
-  have ss : t.syms=s.syms := sy.trans (ib.syms.trans ia.syms)
-  have whole : Unch base [(0,size)] s₀.mem t.mem := unch_whole (hM.unch.trans un) (by
-    intro w hw
-    rcases List.mem_append.mp hw with hw | hw
-    · rw [List.mem_singleton.mp hw]; exact Nat.zero_add size |>.le
-    · exact jointPoint_bounds w hw)
-  obtain ⟨table,outside⟩ := tbl_of hTP (rd.trans hM.rd) whole
-  have gen := JointGenerator.of_table hc hC hT table outside (by rw [ss,hM.syms]; rfl)
-  exact ⟨it,st,gen,rd,wr,kt.sp.trans (ib.table.keep.sp.trans ia.keep.sp),un,ss⟩
-
-end VG.Proof.Ecdsa.Verify.AArch64
-
-end
 
 /-! ## `JointPoints` -/
 
-section
-
-namespace VG.Proof.Ecdsa.Verify.AArch64
-open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
-open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
-open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
-open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64 Spec.Weierstrass
-open VG.Impl.Ecdh.AArch64 (PX PY)
-
-/-- The interleaved multiplication returns the sum required by ECDSA verification. -/
-theorem jointPoints_ok (hc : CfgOk p256) (hC : Law p256.C)
-    (hT : CombOkW p256.C 9 1 P256Joint.p256v.tbl P256Joint.p256v.start)
-    {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (hM : Mid p256 s₀ base g s)
-    (hTP : TblPre P256Joint.p256v s₀ (s₀.syms P256Joint.p256v.tsym) base)
-    {P : Point p256.C} (hP : onCurve p256.C P=true)
-    (hrep : Rep p256.C (tmv p256.C 4 base s (p256.sl PX)) (tmv p256.C 4 base s (p256.sl PY))
-      (tmv p256.C 4 base s (p256.sl ONEP)) P) :
-    WP isa P256Joint.points s fun t => FinalState p256 s₀ base g t ∧
-      Rep p256.C (tmv p256.C 4 base t (p256.sl RX)) (tmv p256.C 4 base t (p256.sl RY))
-        (tmv p256.C 4 base t (p256.sl RZ))
-        (add (mul (sv p256 base s U) (G p256.C)) (mul (sv p256 base s V) P)) := by
-  have hm := unitMod_pow_two hc.p_odd (64*p256.n)
-  have hOne : P256Joint.cfg.K.one<p256.C.p := by
-    change 2^256%p256.C.p<p256.C.p
-    exact Nat.mod_lt _ (by have := hc.p_ge; omega)
-  have hone : toM p256.C.p (2^(64*P256Joint.cfg.K.M.n)) P256Joint.cfg.K.one=1 := toM_cmont hc.toBaseCfgOk 1
-  rw [P256Joint.points,Joint.points,Joint.window]
-  apply WP.assoc
-  apply WP.assoc
-  apply WP.assoc
-  refine WP.seq (WP.mono (WP.assoc' (jointSetup_ok hc hC hT hM hTP hP hrep)) fun a ia => ?_)
-  apply WP.assoc
-  refine WP.seq (WP.mono (jointInitializedRun_ok hm hC hc.am3 hOne hc.onG hP
-    (show sv p256 base s U<2^256 from wordsVal_lt ..)
-    (show sv p256 base s V<2^256 from wordsVal_lt ..) ia.field ia.stable ia.generator)
-    fun b ⟨kb,ib,_⟩ => ?_)
-  refine WP.mono (jointFinish_ok (jacLay hc rfl) rfl (jacAligned p256 rfl) hm hC hOne hone
-    (by decide) ib) fun t ⟨kt,ut,_,lt,rep⟩ => ?_
-  have un := jointPoint_union (jointPoint_union ia.unch (kb.unch.cover jointPoint_loop))
-    (ut.cover jointPoint_finish)
-  have hs := ib.field.scr.of_keepRegs kt (by decide)
-  exact ⟨finalState_of_joint hM hs (kt.rd.trans (kb.regs.rd.trans ia.rd))
-    (kt.wr.trans (kb.regs.wr.trans ia.wr)) un (lt _ (by decide)) (lt _ (by decide)),rep⟩
-
-end VG.Proof.Ecdsa.Verify.AArch64
-
-end

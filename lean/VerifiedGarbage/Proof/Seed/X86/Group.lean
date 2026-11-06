@@ -106,11 +106,6 @@ theorem blockAt_getD (m : Mem) (p : Addr) {i : Nat} (hi : i < 16) :
     (Spec.Seed.blockAt m p).getD i 0 = m (p + BitVec.ofNat 64 i) := by
   simp [Spec.Seed.blockAt, Vector.getD, hi]
 
-/-- The registers other than the ones the steps of a group write. -/
-theorem keep_regs (r : Reg) (h1 : r ≠ .esi) (h2 : r ≠ .ebp) (h3 : r ≠ .ecx) (h4 : r ≠ .edx) (h5 : r ≠ .ebx)
-    (h6 : r ≠ .eax) : r = .esp ∨ r = .edi := by
-  cases r <;> simp_all
-
 /-- The scratch buffer at `b` and the `n` blocks at `D`. -/
 structure GPre (s₀ : State) (b D : BitVec 32) (n : Nat) : Prop where
   scr : ScrIn s₀.wr b

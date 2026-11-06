@@ -41,10 +41,4 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32RISCV64.pre Proof.Aes.ctr32RI
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   exacts [h0, h1, h2, h3, h4, h5]
 
-theorem ctr32_verified :
-    Verified RISCV64.target Impl.Aes.RISCV64.ctr32 (Proof.Gcm.ctr32Contract RISCV64.abi) :=
-  Verified.of_correct ctr32_correct ctr32_ct (by
-    sig_implies [Proof.Gcm.ctr32Contract, Proof.Gcm.ctr32Sig, Proof.Aes.ctr32RISCV64, RISCV64.abi,
-      RISCV64.argRegs] [Proof.Aes.RISCV64.satState] using Proof.Aes.RISCV64.satState)
-
 end VG.Proof.Aes.RISCV64

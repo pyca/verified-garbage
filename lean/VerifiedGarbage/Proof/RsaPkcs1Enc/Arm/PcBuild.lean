@@ -25,8 +25,6 @@ open VG.Proof.X25519.Arm (Rest Upd Mupd wp_mov wp_dp wp_ldrb wp_strb wp_subs wp_
 it has one, 0 if not. -/
 def zf (bs : List Byte) : BitVec 32 := if bs.all (· != 0) = true then 0 else 1
 
-theorem zf_nil : zf [] = 0 := rfl
-
 /-- The top bit of `b - 1`: 1 exactly when the byte `b` is zero. -/
 theorem top_sub_one (b : Byte) : (b.setWidth 32 - 1) >>> 31 = if b = 0 then 1 else 0 := by
   have hb := b.isLt

@@ -114,10 +114,6 @@ theorem finalize_raw_wp (v : Ctr32Impl) {s₀ : State} (h0 : finalizeX86.pre s�
   · show Spec.Aes.bytesAt s₄.mem ((St s₀).setWidth 64) 16 = _
     rw [r₄.mem, u₃.mem, h₂.out, sch, cA, h₁.blk]
 
-theorem finalize_raw_correct (v : Ctr32Impl) (s : State) (hs : finalizeRawX86.pre s) :
-    ∃ t s', Exec isa (finalize v.callee) s t s' ∧ abiPreserved s s' ∧ finalizeRawX86.post s s' :=
-  finalize_raw_wp v hs
-
 /-- What a call of `vg_cmac_aes_finalize` leaves, from any subkeys. -/
 structure FRPost (s : State) (K St P S : BitVec 32) (L R : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd

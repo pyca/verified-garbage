@@ -16,7 +16,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
 # ML-DSA on AArch64: key generation and verification with this library's primitives
 
 `vg_mldsa{44,65,87}_keygen` and `vg_mldsa{44,65,87}_verify`, calling the
-AArch64 implementations of the primitives (`prims`).
+AArch64 implementations of the primitives (`primsWith`).
 -/
 
 @[expose] public section
@@ -61,13 +61,5 @@ def keyGen87With (c : Impl.Sha3.AArch64.Callee) : Prog isa := keyGenWith c (prim
 def verify44With (c : Impl.Sha3.AArch64.Callee) : Prog isa := Verify.verifyWith c (primsWith c) Spec.MlDsa.mlDsa44
 def verify65With (c : Impl.Sha3.AArch64.Callee) : Prog isa := Verify.verifyWith c (primsWith c) Spec.MlDsa.mlDsa65
 def verify87With (c : Impl.Sha3.AArch64.Callee) : Prog isa := Verify.verifyWith c (primsWith c) Spec.MlDsa.mlDsa87
-
-def prims := primsWith .scalar
-def keyGen44 := keyGen44With .scalar
-def keyGen65 := keyGen65With .scalar
-def keyGen87 := keyGen87With .scalar
-def verify44 := verify44With .scalar
-def verify65 := verify65With .scalar
-def verify87 := verify87With .scalar
 
 end VG.Impl.MlDsa.AArch64.KeyGen

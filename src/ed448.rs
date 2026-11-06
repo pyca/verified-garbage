@@ -19,6 +19,7 @@ use crate::arch::ed448::{
     vg_ed448_verify_sha3,
 };
 use crate::arch::ed448::{vg_ed448_public_key, vg_ed448_sign_cached, vg_ed448_verify};
+use crate::error::InvalidSignature;
 #[cfg(not(target_arch = "x86_64"))]
 use crate::hashes::sha3::Backend;
 use crate::zeroize::zeroize;
@@ -83,20 +84,16 @@ fn backend() -> Backend {
 /// The longest context RFC 8032 allows.
 pub const MAX_CONTEXT_LEN: usize = 255;
 
-/// Why an operation failed.
+/// Why signing failed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
-    /// The signature has the wrong length, a noncanonical encoding, or an
-    /// invalid equation, or the context is longer than 255 bytes.
-    InvalidSignature,
     /// The context to sign with is longer than 255 bytes.
     ContextTooLong,
 }
 
 crate::error::impl_error! {
     Error {
-        InvalidSignature => "invalid Ed448 signature",
-        ContextTooLong => "Ed448 context is longer than 255 bytes",
+        ContextTooLong => "context is longer than 255 bytes",
     }
 }
 
@@ -120,7 +117,12 @@ impl VerifyingKey {
     /// Verify an Ed448 signature with an empty context (RFC 8032 §5.2.7).
     ///
     /// See [`VerifyingKey::verify_with_context`].
-    pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<(), Error> {
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidSignature`], as [`VerifyingKey::verify_with_context`]
+    /// returns it.
+    pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<(), InvalidSignature> {
         self.verify_with_context(&[], message, signature)
     }
 
@@ -132,13 +134,19 @@ impl VerifyingKey {
     /// or small-order rejection policy is imposed. Nothing verifies with a
     /// context longer than 255 bytes. Verification timing may depend on the
     /// public key, context, message, and signature.
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidSignature`] if the signature is not 114 bytes long, an
+    /// encoding is not canonical, the equation does not hold, or the context
+    /// is longer than 255 bytes.
     pub fn verify_with_context(
         &self,
         context: &[u8],
         message: &[u8],
         signature: &[u8],
-    ) -> Result<(), Error> {
-        let signature: &[u8; 114] = signature.try_into().map_err(|_| Error::InvalidSignature)?;
+    ) -> Result<(), InvalidSignature> {
+        let signature: &[u8; 114] = signature.try_into().map_err(|_| InvalidSignature)?;
         let mut scratch = [0u64; 1024];
         let verify = match backend() {
             Backend::Scalar => vg_ed448_verify,
@@ -166,7 +174,7 @@ impl VerifyingKey {
         if valid == 1 {
             Ok(())
         } else {
-            Err(Error::InvalidSignature)
+            Err(InvalidSignature)
         }
     }
 }
@@ -235,6 +243,10 @@ impl SigningKey {
 
     /// Sign `message` deterministically with the context `context` (RFC 8032
     /// §5.2.6), which may be at most 255 bytes long.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::ContextTooLong`] if `context` is longer than 255 bytes.
     pub fn sign_with_context(&self, context: &[u8], message: &[u8]) -> Result<[u8; 114], Error> {
         if context.len() > MAX_CONTEXT_LEN {
             return Err(Error::ContextTooLong);

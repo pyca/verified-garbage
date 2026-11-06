@@ -137,8 +137,6 @@ theorem Inv.done {cs : CoreSpec c} {s₀ : State} {B D : Addr} {n st : Nat} {W :
 
 /-! ## Areas -/
 
-theorem rd_cont (A : Loc → Addr) (m : Mem) (l : Loc) (n : Nat) : rd (cont A m) l n = bytesAt m (A l) n := rfl
-
 theorem rd_agree {len : Loc → Nat} {a a' : Areas} (h : Agree len a a') {l : Loc} {n : Nat} (hn : n ≤ len l) :
     rd a l n = rd a' l n :=
   List.map_congr_left fun i hi => h l i (by have := List.mem_range.mp hi; omega_using [hn, this])
@@ -157,11 +155,6 @@ theorem Agree.trans {len : Loc → Nat} {a b c : Areas} (h₁ : Agree len a b) (
 /-- `omega_arith`, with the mode's slots unfolded. -/
 local macro "slot_omega" : tactic =>
   `(tactic| plain_simp_names ((try simp only [Core.chnSlot, Core.savedSlot, coreSlot]); omega_arith))
-
-theorem slot_contains {B : Addr} {total d n : Nat}
-    (h : d + n ≤ min (8 * total) 2032) :
-    (⟨B, min (8 * total) 2032⟩ : Region).Contains (B + BitVec.ofNat 64 d) n :=
-  VG.Offset.contains_base _ h (by omega_using [h])
 
 theorem slot_sub {B : Addr} {total d n : Nat} (h : d + n ≤ 8 * total) :
     Region.Sub ⟨B + BitVec.ofNat 64 d, n⟩ ⟨B, 8 * total⟩ :=

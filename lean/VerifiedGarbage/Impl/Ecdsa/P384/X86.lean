@@ -21,7 +21,4 @@ def p384 : Cfg where
 /-- `vg_ecdsa_p384_sign`. -/
 def signP384 : Prog isa := p384.sign
 
-/-- `vg_p384_mul`. -/
-def mulP384 : Prog isa := p384.mulFn
-
 end VG.Impl.Ecdsa.X86

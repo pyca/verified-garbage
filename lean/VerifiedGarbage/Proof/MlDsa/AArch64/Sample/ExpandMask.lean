@@ -135,10 +135,6 @@ theorem correctWith (v : Proof.Sha3.AArch64.Permutation) (σ : State) (hp : emK.
     refine WP.ite false (by rw [eval_zero, eq_zero_iff, x9, hg]; rfl) (fun h => nomatch h) (fun _ => ?_)
     rw [ec]; exact loop_ok' hp h6 ec.symm
 
-theorem correct (σ : State) (hp : emK.pre σ) :
-    ∃ t s', Exec isa expandMask σ t s' ∧ abiPreserved σ s' ∧ emK.post σ s' :=
-  correctWith .scalar σ hp
-
 /-! ## Constant time -/
 
 theorem pub_eq {σ₁ σ₂ : State} (hq : emK.pub σ₁ σ₂) : spOf σ₁ = spOf σ₂ := by
@@ -163,9 +159,6 @@ theorem ctWith (v : Proof.Sha3.AArch64.Permutation) : ConstantTime isa emK.pre e
       · rw [h₁.x3, h₂.x3, pub_eq hq]
       · exact toNat_inj h₁.x4 h₂.x4) hhint
 
-theorem ct : ConstantTime isa emK.pre emK.pub expandMask :=
-  ctWith .scalar
-
 end ExpandMask
 
 /-- A state satisfying the precondition. -/
@@ -188,9 +181,5 @@ theorem expandMask_verifiedWith (v : Proof.Sha3.AArch64.Permutation) : Verified 
         AArch64.abi, AArch64.argRegs]
       sat := by sig_implies_sat [Proof.MlDsa.expandMaskContract, Proof.MlDsa.expandMaskSig, emK,
         AArch64.abi, AArch64.argRegs] [emSat] using emSat }
-
-theorem expandMask_verified : Verified AArch64.target Impl.MlDsa.AArch64.Sample.expandMask
-    (Proof.MlDsa.expandMaskContract AArch64.abi 16) :=
-  expandMask_verifiedWith .scalar
 
 end VG.Proof.MlDsa.AArch64.Sample

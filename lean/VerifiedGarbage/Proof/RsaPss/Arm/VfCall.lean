@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # RSASSA-PSS verification with a precomputed public key on ARMv7: the call
@@ -177,7 +178,7 @@ theorem call_geo {P : EP} {σ : State} (hi : In h.D P σ) :
       (by unfold oRsa; omega_arith)
 
 theorem call_pre {P : EP} {σ s : State} (hr : V1 h P σ s) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 56).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre
       (s.callEntry.withRegions (pdRd P.B P.pre P.e P.sig P.K P.el P.rl)
         (pdWr (P.scr + BitVec.ofNat 32 oEm) (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024))) := by
   obtain ⟨⟨hc, hi, -, -⟩, pa⟩ := hr

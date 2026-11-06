@@ -54,16 +54,6 @@ theorem test_bit_ok {s : State} {P : Prop} [Decidable P] (hp : s.gpr .rax = bit 
     · subst h; exact hax
     · exact k.gpr (by simpa using h), k.2⟩⟩
 
-/-- Branch on a Boolean, exposing the unchanged data to either continuation. -/
-theorem branchZero_ok {s : State} {P : Prop} [Decidable P] {th el : Prog isa} {Q : State → Prop}
-    (hp : s.gpr .rax = bit P)
-    (ht : ∀ t, t.mem = s.mem → Keep [] s t → ¬P → WP isa th t Q)
-    (he : ∀ t, t.mem = s.mem → Keep [] s t → P → WP isa el t Q) :
-    WP isa (branchZero th el) s Q := by
-  refine WP.seq (WP.mono (test_bit_ok hp) fun t ⟨hz, hm, k⟩ => ?_)
-  refine WP.ite (!decide P) (by simp [eval, hz]) (fun h => ht t hm k (by simpa using h))
-    (fun h => he t hm k (by simpa using h))
-
 /-- Test whether the packed domain contains a subgroup order. -/
 theorem qTest_ok {s : State} {B : Addr} {Z dl k : Nat} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hZ : 256 ≤ Z)

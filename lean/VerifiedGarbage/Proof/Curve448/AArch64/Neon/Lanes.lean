@@ -39,9 +39,6 @@ theorem vdword_words (x : BitVec 128) (e : Nat) :
 theorem vword_lo (x : BitVec 128) (e : Nat) : (vword x (2 * e)).toNat = (vdword x e).toNat % 2 ^ 32 := by
   rw [vdword_words]; have := (vword x (2 * e)).isLt; omega
 
-theorem vword_hi (x : BitVec 128) (e : Nat) : (vword x (2 * e + 1)).toNat = (vdword x e).toNat / 2 ^ 32 := by
-  rw [vdword_words]; have := (vword x (2 * e)).isLt; omega
-
 /-! ## Permutations -/
 
 theorem trn1_0 (x y : BitVec 128) : vdword (VPermOp.eval .trn1 .d2 x y) 0 = vdword x 0 := by
@@ -73,10 +70,6 @@ theorem uzp1_3 (x y : BitVec 128) : vword (VPermOp.eval .uzp1 .s4 x y) 3 = vword
 theorem vdword_and (x y : BitVec 128) (e : Nat) : vdword (x &&& y) e = vdword x e &&& vdword y e := by
   ext i hi
   simp [vdword, BitVec.getElem_extractLsb', BitVec.getElem_and]
-
-theorem vword_and (x y : BitVec 128) (c : Nat) : vword (x &&& y) c = vword x c &&& vword y c := by
-  ext i hi
-  simp [vword, BitVec.getElem_extractLsb', BitVec.getElem_and]
 
 theorem map2_0 (f : (w : Nat) → BitVec w → BitVec w → BitVec w) (x y : BitVec 128) :
     vdword (VArr.d2.map2 f x y) 0 = f 64 (vdword x 0) (vdword y 0) := by

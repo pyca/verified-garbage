@@ -348,26 +348,6 @@ theorem keep_wp {c : Cx} (L : Lay c) {σ ρ : State} (C : CallOut c σ ρ) :
 abbrev derR (W : Addr) : List Region :=
   [⟨W + BitVec.ofNat 64 16, 48⟩, ⟨W + BitVec.ofNat 64 496, 1024⟩, ⟨W + BitVec.ofNat 64 1792, 2048⟩]
 
-/-- Buffers apart from `W` are kept by `derive`. -/
-theorem bytesAt_derR {c : Cx} {P : Addr} {len : Nat} (hP : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 3840⟩)
-    (hl : len ≤ 2 ^ 64) {m m' : Mem} (hf : Frame (derR c.W) m m') : bytesAt m' P len = bytesAt m P len :=
-  Proof.Cmac.bytesAt_frame hf (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact hP.sub_right (Lay.wSub (by decide))) hl
-
-/-- The nonce's copy is kept by `derive`. -/
-theorem bytesAt_derN {c : Cx} (L : Lay c) {m m' : Mem} (hf : Frame (derR c.W) m m') :
-    bytesAt m' (nP c.W) 12 = bytesAt m (nP c.W) 12 :=
-  Proof.Cmac.bytesAt_frame hf (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact L.w_w (by decide) (by decide) (by decide)) (by decide)
-
-/-- The key schedule is kept by `derive`. -/
-theorem ciph_derR {c : Cx} (L : Lay c) {m m' : Mem} (hf : Frame (derR c.W) m m') :
-    Spec.GcmSiv.ctxCiph m' c.K c.R = Spec.GcmSiv.ctxCiph m c.K c.R := by
-  unfold Spec.GcmSiv.ctxCiph
-  rw [bytesAt_derR (L.k_w.sub_left (Region.sub_prefix L.rb)) (by have := L.rb; omega) hf]
-
 /-- What `derive` leaves, from `σ`: the halves of `derive_keys` at `W + 16`. -/
 structure DOut (c : Cx) (σ t : State) : Prop where
   env : Env c t
