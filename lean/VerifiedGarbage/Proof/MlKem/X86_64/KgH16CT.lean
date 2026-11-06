@@ -57,7 +57,7 @@ theorem sampleHAtM16_tr {m : Nat} {b : Prog isa} (hb : BatchHMOk16 m b) {oa oz :
   simp only [pa, e1, and_self]
 
 /-- Two runs of the fragment computing outputs of `PRF₂` inlined, from the same seeds and pointers. -/
-theorem sampleHAtP16_tr {b : Prog isa} (hb : BatchPOk16 b) {oa oz : Nat} :
+theorem sampleHAtP16_tr {N₀ m : Nat} {b : Prog isa} (hb : BatchPOk16 N₀ m b) {oa oz : Nat} :
     RelCT isa (fun x y => SHH16 oa oz x ∧ SHH16 oa oz y ∧ x.gpr .rbx = y.gpr .rbx ∧ x.gpr .rsp = y.gpr .rsp ∧
       bytesAt x.mem (pa x (sc 0)) 136 = bytesAt y.mem (pa y (sc 0)) 136)
       (Encaps.sampleHAt b (sc oa) (sc oz)) fun _ _ => True := by
@@ -69,8 +69,8 @@ theorem sampleHAtP16_tr {b : Prog isa} (hb : BatchPOk16 b) {oa oz : Nat} :
         Keep argRegs y y1))
     (block_nomem_tr (nomem_append (nomem_append (lea_nomem _ _) (lea_nomem _ _)) (lea_nomem _ _)))
     (fun x y ⟨hx, hy, _⟩ => ⟨s4Glue_ok oa oz hx.offA hx.offZ x, s4Glue_ok oa oz hy.offA hy.offZ y⟩)
-    fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩) (RelCT.seq (regionModel.relCT_inline (Pre := samplePKW.pre)
-      (Pub := samplePKW.pub) (fun s hs => let ⟨t, s', e, _, p⟩ := hb.ok s hs; ⟨t, s', e, p⟩) hb.ct ?_)
+    fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩) (RelCT.seq (regionModel.relCT_inline (Pre := (samplePNKW N₀ m).pre)
+      (Pub := (samplePNKW N₀ m).pub) (fun s hs => let ⟨t, s', e, _, p⟩ := hb.ok s hs; ⟨t, s', e, p⟩) hb.ct ?_)
       (block_nomem_tr fun i hi s => by simp only [List.mem_singleton] at hi; subst hi; rfl))
   rintro x1 y1 ⟨x, y, ⟨hx, hy, e1, e3, e4⟩, ⟨⟨hv1, hm1⟩, k1⟩, ⟨⟨hv2, hm2⟩, k2⟩⟩
   have hs1 : x1.gpr .rsp = x.gpr .rsp := k1.gpr (by decide)
@@ -170,7 +170,7 @@ section
 variable (W : KgH16Wf K) (T : KgH16T K)
 include W T
 
-theorem frag0_tr (v : Sample4Impl) {p : Prog isa} (hpb : v.callee.batchP16 = some p) :
+theorem frag0_tr (v : Sample4Impl) {p : Nat → Nat → Prog isa} (hpb : v.callee.batchP16 = some p) :
     RelCT isa (R K.L (KN K 6)) (frag0 K p) fun _ _ => True := by
   have Wb := W.toKgWfB
   have k3 := W.k3
@@ -179,7 +179,7 @@ theorem frag0_tr (v : Sample4Impl) {p : Prog isa} (hpb : v.callee.batchP16 = som
   have hsm := W.sm0
   simp only [Bool.and_eq_true] at hsm
   have c4 := hsm.1
-  have hB := v.batchP16 p hpb
+  have hB := v.batchP16 p hpb (0, 2) (by decide)
   have hc0 := W.c0
   simp only [Bool.and_eq_true] at hc0
   obtain ⟨_, hr0⟩ := keepAll_spec hc0.2
@@ -403,7 +403,7 @@ theorem lastIf_tr (hK : KgRowsOk K.L) (T : KgH16T K) :
     fun _ _ _ => trivial
 
 theorem rows_tr (hK : KgRowsOk K.L) (T : KgH16T K) (v : Sample4Impl) {b : Nat → Prog isa}
-    (hb : v.callee.batchHM16 = some b) {p : Prog isa} (hpb : v.callee.batchP16 = some p) :
+    (hb : v.callee.batchHM16 = some b) {p : Nat → Nat → Prog isa} (hpb : v.callee.batchP16 = some p) :
     RelCT isa (R K.L (KN K 6)) (KeyGenH16.rows K b p v.callee.arith) (R K.L (KEnd K.L)) := by
   unfold KeyGenH16.rows
   refine RelCT.seq (relInv (I' := fun σ s => KG K σ 0 false s)
@@ -431,7 +431,8 @@ end KeyGenH
 
 open KeyGen KeyGenH in
 theorem kemKeyGenH16_ct {K : Kem16} (hK : KgRowsOk K.L) (v : Sample4Impl) (W : KgH16Wf K) (T : KgH16T K)
-    {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b) {p : Prog isa} (hpb : v.callee.batchP16 = some p) :
+    {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b) {p : Nat → Nat → Prog isa}
+    (hpb : v.callee.batchP16 = some p) :
     ConstantTime isa (keyGenK K.L).pre (keyGenK K.L).pub (kemKeyGenH16 K v.callee b p) := by
   have Wb := W.toKgWfB
   refine relStart (Q := fun _ _ => True) ?_

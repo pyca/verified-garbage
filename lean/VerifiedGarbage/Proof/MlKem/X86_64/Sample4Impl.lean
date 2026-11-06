@@ -108,24 +108,39 @@ theorem sampleHM16_ok (fast : Bool) {m : Nat} (hm : m ≤ 3) : BatchHMOk16 m (Im
   simp only [BatchHOk16.checks, Bool.and_eq_true, beq_iff_eq] at h
   exact ⟨SH.correctHM (fast := fast) hm, SH.ctHM (fast := fast) hm, h.1.1.1, h.1.1.2, Code.all_of_allInstrs h.1.2, h.2⟩
 
-/-- What key generation needs of a fragment it inlines computing two outputs
-of `PRF₂` (`Callee4.batchP16`): as `BatchHOk16`, with `samplePKW`. -/
-structure BatchPOk16 (b : Prog isa) : Prop where
-  ok : ∀ s, samplePKW.pre s → ∃ t s', Exec isa b s t s' ∧ abiPreserved s s' ∧ samplePKW.post s s'
-  ct : ConstantTime isa samplePKW.pre samplePKW.pub b
+/-- What key generation and encapsulation need of a fragment they inline
+computing `m` outputs of `PRF₂` from `PRF₂(σ, N₀)` (`Callee4.batchP16`): as
+`BatchHOk16`, with `samplePNKW N₀ m`. -/
+structure BatchPOk16 (N₀ m : Nat) (b : Prog isa) : Prop where
+  ok : ∀ s, (samplePNKW N₀ m).pre s → ∃ t s', Exec isa b s t s' ∧ abiPreserved s s' ∧ (samplePNKW N₀ m).post s s'
+  ct : ConstantTime isa (samplePNKW N₀ m).pre (samplePNKW N₀ m).pub b
   noCalls : b.noCalls = true
   ctl : ctlOk b = true
   sp : b.all (fun i => !isa.writesSp i) = true
   /-- It uses no stack. -/
   xd : b.x86_64Depth = 0
 
-theorem sampleP16_checks (fast : Bool) : BatchHOk16.checks (Impl.MlKem.X86_64.Sample4.sampleP fast) = true := by
-  cases fast <;> decide +kernel
+/-- The checks of a fragment computing outputs of `PRF₂`, and that it never
+loads MXCSR. -/
+noncomputable def BatchPOk16.checks (b : Prog isa) : Bool :=
+  BatchHOk16.checks b && b.allInstrs (fun i => !loadsMxcsr i)
 
-theorem sampleP16_ok (fast : Bool) : BatchPOk16 (Impl.MlKem.X86_64.Sample4.sampleP fast) := by
-  have h := sampleP16_checks fast
-  simp only [BatchHOk16.checks, Bool.and_eq_true, beq_iff_eq] at h
-  exact ⟨SH.correctP (fast := fast), SH.ctP (fast := fast), h.1.1.1, h.1.1.2, Code.all_of_allInstrs h.1.2, h.2⟩
+theorem samplePN16_checks (fast : Bool) {q : Nat × Nat} (hq : q ∈ Impl.MlKem.X86_64.Sample4.pnUses) :
+    BatchPOk16.checks (Impl.MlKem.X86_64.Sample4.samplePN fast q.1 q.2) = true := by
+  simp only [Impl.MlKem.X86_64.Sample4.pnUses, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl <;> cases fast <;> decide +kernel
+
+theorem pnUses_le {q : Nat × Nat} (hq : q ∈ Impl.MlKem.X86_64.Sample4.pnUses) : 0 < q.2 ∧ q.2 ≤ 3 ∧ q.1 + q.2 ≤ 256 := by
+  simp only [Impl.MlKem.X86_64.Sample4.pnUses, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl <;> decide
+
+theorem samplePN16_ok (fast : Bool) {q : Nat × Nat} (hq : q ∈ Impl.MlKem.X86_64.Sample4.pnUses) :
+    BatchPOk16 q.1 q.2 (Impl.MlKem.X86_64.Sample4.samplePN fast q.1 q.2) := by
+  have h := samplePN16_checks fast hq
+  have hl := pnUses_le hq
+  simp only [BatchPOk16.checks, BatchHOk16.checks, Bool.and_eq_true, beq_iff_eq] at h
+  exact ⟨SH.correctPN (fast := fast) hl.1 hl.2.1 hl.2.2 h.2, SH.ctPN_uses (fast := fast) hq, h.1.1.1.1, h.1.1.1.2,
+    Code.all_of_allInstrs h.1.1.2, h.1.2⟩
 
 /-- What a caller needs of an implementation's code with 16-bit
 coefficients (`Callee4.s16`): it meets `sample4KW true`, in constant time,
@@ -175,8 +190,9 @@ structure Sample4Impl where
   batchH16 : ∀ b, callee.batchH16 = some b → BatchHOk16 b
   /-- Its fragments for key generation, if any, are verified. -/
   batchHM16 : ∀ b, callee.batchHM16 = some b → ∀ m ≤ 3, BatchHMOk16 m (b m)
-  /-- Its fragment computing outputs of `PRF₂` for key generation, if any, is verified. -/
-  batchP16 : ∀ b, callee.batchP16 = some b → BatchPOk16 b
+  /-- Its fragments computing outputs of `PRF₂` for key generation and
+  encapsulation, if any, are verified, for each of their uses. -/
+  batchP16 : ∀ b, callee.batchP16 = some b → ∀ q ∈ Impl.MlKem.X86_64.Sample4.pnUses, BatchPOk16 q.1 q.2 (b q.1 q.2)
   /-- What the names of its callers' instances end with (e.g. `_avx2`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -248,7 +264,7 @@ def avx2 : Sample4Impl where
   arith := ArithOk.sse16
   batchH16 := fun _ h => Option.some.inj h ▸ sampleH16_ok false
   batchHM16 := fun _ h m hm => Option.some.inj h ▸ sampleHM16_ok false hm
-  batchP16 := fun _ h => Option.some.inj h ▸ sampleP16_ok false
+  batchP16 := fun _ h _ hq => Option.some.inj h ▸ samplePN16_ok false hq
   suffix := "_avx2"
   prfsDoc := "four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2"]
@@ -278,7 +294,7 @@ def avx512 : Sample4Impl where
   arith := ArithOk.sse16
   batchH16 := fun _ h => Option.some.inj h ▸ sampleH16_ok true
   batchHM16 := fun _ h m hm => Option.some.inj h ▸ sampleHM16_ok true hm
-  batchP16 := fun _ h => Option.some.inj h ▸ sampleP16_ok true
+  batchP16 := fun _ h _ hq => Option.some.inj h ▸ samplePN16_ok true hq
   suffix := "_avx512"
   prfsDoc := "four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2", "avx512f", "avx512vl"]

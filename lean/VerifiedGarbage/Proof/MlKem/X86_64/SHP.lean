@@ -11,18 +11,19 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 
 /-!
-# ML-KEM on x86-64: `Sample4.sampleP`, two outputs of `PRF₂` in the fourth state
+# ML-KEM on x86-64: `Sample4.samplePN`, outputs of `PRF₂` in the fourth state
 
-`sampleP` (`Impl/MlKem/X86_64/SampleH.lean`) samples three entries of the
-matrix as `sampleHM fast 0` does, while the fourth state computes
-`PRF₂(σ, 0)` and `PRF₂(σ, 1)`. Before each of the first two squeezes its
-lanes are those of the padded block of `σ ‖ N` (`pload_ok`, with
-`Prf4.P0`, the state `PrfBatch.lean`'s four-way `PRF₂` permutes), and after
-it the first 128 bytes of the permuted state are copied out (`pext_ok`).
+`samplePN fast N₀ m` (`Impl/MlKem/X86_64/SampleH.lean`) samples three
+entries of the matrix as `sampleHM fast 0` does, while the fourth state
+computes `PRF₂(σ, N₀)`, …, `PRF₂(σ, N₀ + m - 1)`, for `0 < m ≤ 3`. Before
+each of the first `m` squeezes its lanes are those of the padded block of
+`σ ‖ N` (`pload_ok`, with `Prf4.P0`, the state `PrfBatch.lean`'s four-way
+`PRF₂` permutes), and after it the first 128 bytes of the permuted state are
+copied out (`pext_ok`).
 
-The contract (`samplePKW`): `vg_mlkem_sample_ntt4`'s precondition and public
-data, and as postcondition its result and polynomials for the first three
-seeds (`Post3`) and the two outputs at `scratch + oPO`, of `σ` at
+The contract (`samplePNKW N₀ m`): `vg_mlkem_sample_ntt4`'s precondition and
+public data, and as postcondition its result and polynomials for the first
+three seeds (`Post3`) and the `m` outputs at `scratch + oPO`, of `σ` at
 `scratch + oPS`.
 -/
 
@@ -34,12 +35,12 @@ open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Spec.MlKem
 open VG.Spec.Sha3 (keccakF bytesAt)
 
-/-- The contract of `Sample4.sampleP`. -/
-def samplePKW : Contract isa where
+/-- The contract of `Sample4.samplePN fast N₀ m`. -/
+def samplePNKW (N₀ m : Nat) : Contract isa where
   pre := (sample4KW true).pre
-  post s s' := SH.Post3 true s s' ∧ ∀ N < 2,
+  post s s' := SH.Post3 true s s' ∧ ∀ N < m,
     bytesAt s'.mem (s.gpr .rdx + BitVec.ofNat 64 (Impl.MlKem.X86_64.Sample4.oPO + 128 * N)) 128 =
-      prf 2 (bytesAt s.mem (s.gpr .rdx + BitVec.ofNat 64 Impl.MlKem.X86_64.Sample4.oPS) 32) (BitVec.ofNat 8 N)
+      prf 2 (bytesAt s.mem (s.gpr .rdx + BitVec.ofNat 64 Impl.MlKem.X86_64.Sample4.oPS) 32) (BitVec.ofNat 8 (N₀ + N))
   pub := sample4K.pub
 
 namespace SH
@@ -326,21 +327,21 @@ theorem sqYg_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {Y : Spec.Sha3.Sta
 /-- `σ` at entry. -/
 abbrev sigB (σ : State) : List Byte := bytesAt σ.mem (at' σ oPS) 32
 
-/-- The fourth state after `i` of the squeezes with `PRF₂`. -/
-def Yp (σ : State) : Nat → Spec.Sha3.State
+/-- The fourth state after `i` of the squeezes with `PRF₂`, from `PRF₂(σ, N₀)`. -/
+def Yp (σ : State) (N₀ : Nat) : Nat → Spec.Sha3.State
   | 0 => A0 (B σ 3)
-  | i + 1 => keccakF (P0 (sigB σ) (BitVec.ofNat 8 i))
+  | i + 1 => keccakF (P0 (sigB σ) (BitVec.ofNat 8 (N₀ + i)))
 
 /-- Output `N` of `PRF₂`. -/
 abbrev poA (σ : State) (N : Nat) : Addr := at' σ (oPO + 128 * N)
 
-/-- After `i` of the squeezes with `PRF₂`. -/
-structure PI (w16 : Bool) (σ : State) (i : Nat) (t : State) : Prop where
-  sq : SqY w16 σ (Yp σ i) 0 i t
+/-- After `i` of the squeezes with `PRF₂`, from `PRF₂(σ, N₀)`. -/
+structure PI (w16 : Bool) (σ : State) (N₀ i : Nat) (t : State) : Prop where
+  sq : SqY w16 σ (Yp σ N₀ i) 0 i t
   hr : HR σ t.mem
   r8 : t.gpr .r8 = poA σ i
-  r9 : t.gpr .r9 = BitVec.ofNat 64 (0x1f00 + i)
-  out : ∀ N < i, bytesAt t.mem (poA σ N) 128 = prf 2 (sigB σ) (BitVec.ofNat 8 N)
+  r9 : t.gpr .r9 = BitVec.ofNat 64 (0x1f00 + N₀ + i)
+  out : ∀ N < i, bytesAt t.mem (poA σ N) 128 = prf 2 (sigB σ) (BitVec.ofNat 8 (N₀ + N))
 
 /-- `σ` in the sponge's blocks, as at entry. -/
 theorem HR.sig {σ : State} {m : Mem} (h : HR σ m) : bytesAt m (at' σ oPS) 32 = sigB σ :=
@@ -353,11 +354,12 @@ theorem hR_apart (σ : State) {d n : Nat} (h : oHS + 608 ≤ d) (h' : d + n ≤ 
     (hR σ).Disjoint ⟨at' σ d, n⟩ :=
   Offset.disjoint _ (.inl (by simp only [oHS] at h ⊢; omega_arith)) (by simp only [oHS]; omega_arith) (by omega_arith)
 
-theorem squeezeP_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {i : Nat} (hi : i < 2) {t : State} (h : PI w16 σ i t)
-    (hbp : t.gpr .rbp = at' σ (oBuf + 168 * i)) :
-    WP isa (squeezeP fast) t fun t' => PI w16 σ (i + 1) t' ∧ t'.gpr .rbp = t.gpr .rbp ∧ t'.gpr .r10 = t.gpr .r10 := by
+theorem squeezeP_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {N₀ i : Nat} (hi : i < 3) (hN : N₀ + i < 256) {t : State}
+    (h : PI w16 σ N₀ i t) (hbp : t.gpr .rbp = at' σ (oBuf + 168 * i)) :
+    WP isa (squeezeP fast) t fun t' => PI w16 σ N₀ (i + 1) t' ∧ t'.gpr .rbp = t.gpr .rbp ∧ t'.gpr .r10 = t.gpr .r10 := by
   unfold squeezeP
-  refine WP.seq (WP.mono (pload_ok hp h.sq (by omega_arith) (N := i) (by omega_arith) h.r9) fun t₁ ⟨q₁, f₁, rd₁, wr₁, g₁⟩ => ?_)
+  refine WP.seq (WP.mono (pload_ok hp h.sq (by omega_arith) (N := N₀ + i) hN (by rw [h.r9, Nat.add_assoc]))
+    fun t₁ ⟨q₁, f₁, rd₁, wr₁, g₁⟩ => ?_)
   rw [h.hr.sig] at q₁
   have hd₁ : ∀ {d n : Nat}, 800 ≤ d → d + n ≤ 8192 → (stR σ).Disjoint ⟨at' σ d, n⟩ := fun hd hn =>
     Offset.base_disjoint _ hd (by omega_arith)
@@ -372,7 +374,7 @@ theorem squeezeP_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {i : Nat} (hi 
       fun r hr => by rw [List.mem_singleton.mp hr]; exact hR_apart σ (by simp only [oPO, oHS]; omega_arith) (by simp only [oPO]; omega_arith),
     by rw [r8₃, poA, show oPO + 128 * i + 128 = oPO + 128 * (i + 1) by omega_arith],
     by rw [r9₃, r9₂, g₁ _ (by decide), h.r9, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat,
-      Nat.add_assoc], fun N hN => ?_⟩, ?_, ?_⟩
+      congrArg (BitVec.ofNat 64) (show 0x1f00 + N₀ + i + 1 = 0x1f00 + N₀ + (i + 1) by omega_arith)], fun N hN => ?_⟩, ?_, ?_⟩
   · rcases (by omega_arith : N < i ∨ N = i) with hN' | rfl
     · rw [VG.Proof.MlKem.bytesAt_frame f₃ (fun r hr => by
           rw [List.mem_singleton.mp hr]
@@ -392,10 +394,11 @@ end
 
 section
 
-/-- The two outputs of `PRF₂`. -/
-def HP (σ : State) (m : Mem) : Prop := ∀ N < 2, bytesAt m (poA σ N) 128 = prf 2 (sigB σ) (BitVec.ofNat 8 N)
+/-- The `m ≤ 3` outputs of `PRF₂`, from `PRF₂(σ, N₀)`. -/
+def HP (σ : State) (N₀ m : Nat) (M : Mem) : Prop :=
+  ∀ N < m, bytesAt M (poA σ N) 128 = prf 2 (sigB σ) (BitVec.ofNat 8 (N₀ + N))
 
-theorem HP.stab (σ : State) : Stab σ (HP σ) := fun {m m' rs} h hf hd N hN => by
+theorem HP.stab (σ : State) {N₀ m : Nat} (hm : m ≤ 3) : Stab σ (HP σ N₀ m) := fun {M M' rs} h hf hd N hN => by
   have hs : Region.Sub ⟨poA σ N, 128⟩ (hkR σ) :=
     Offset.sub (scr σ) (d := oPO + 128 * N) (n := 128) (e := oHS) (k := 1472) (by simp only [oPO, oHS]; omega_arith)
       (by simp only [oPO, oHS]; omega_arith)
@@ -404,10 +407,11 @@ theorem HP.stab (σ : State) : Stab σ (HP σ) := fun {m m' rs} h hf hd N hN => 
 
 open VG.Proof.Sha3.X86_64 (wp_mov wp_addi wp_mov32i wp_nil) in
 /-- The prologue, the round constants, the padded seeds, and `r8` and `r9`. -/
-theorem startP_ok {σ : State} (hp : PreW true σ) :
+theorem startP_ok {σ : State} (hp : PreW true σ) {N₀ : Nat} (hN : N₀ < 256) :
     WP isa (.block (pro ++ Impl.Sha3.X86_64.X4.rcTable .rbx (oRc / 32) ++ absorb4 ++
-      ([.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 oPO)), .mov32 .r9 (.imm 0x1f00)] : List Instr))) σ
-      (PI true σ 0) := by
+      ([.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 oPO)),
+        .mov32 .r9 (.imm (BitVec.ofNat 32 (0x1f00 + N₀)))] : List Instr))) σ
+      (PI true σ N₀ 0) := by
   rw [show ∀ (a b c d : List Instr), a ++ b ++ c ++ d = (a ++ b ++ c) ++ d from fun _ _ _ _ => by
     simp only [List.append_assoc], WP.block_append_iff]
   refine WP.mono (startF_ok hp) fun s₁ ⟨h₁, r₁⟩ => wp_mov fun s₂ u₂ => wp_addi fun s₃ u₃ => wp_mov32i fun s₄ u₄ =>
@@ -426,29 +430,49 @@ theorem startP_ok {σ : State} (hp : PreW true σ) :
     · rw [show c = 3 by omega_arith, L3_three]; rfl
   · rw [u₄.other _ (by decide), u₃.gpr, u₂.gpr, h₁.env.rbx, poA, at', sx_ofNat (by simp only [oPO]; omega_arith), Nat.mul_zero,
       Nat.add_zero]
-  · rw [u₄.gpr]; rfl
+  · rw [u₄.gpr, Nat.add_zero]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    omega_arith
 
-/-- The two squeezes with `PRF₂`, from the start. -/
-theorem squeezesP_ok {fast : Bool} {σ : State} (hp : PreW true σ) {s : State} (h : PI true σ 0 s) :
-    WP isa (blocks oBuf 168 2 (squeezeP fast)) s (PI true σ 2) := by
+/-- The `m` squeezes with `PRF₂`, from the start. -/
+theorem squeezesP_ok {fast : Bool} {σ : State} (hp : PreW true σ) {N₀ m : Nat} (hm : 0 < m) (hm' : m ≤ 3)
+    (hN : N₀ + m ≤ 256) {s : State} (h : PI true σ N₀ 0 s) :
+    WP isa (blocks oBuf 168 m (squeezeP fast)) s (PI true σ N₀ m) := by
   have hbx : s.gpr .rbx = scr σ := h.sq.env.rbx
-  exact blocks_ok (b := 0) (P := PI true σ) (by decide) (by decide) (by simp only [oBuf]; omega_arith) (by decide)
+  refine WP.mono (blocks_ok (start := oBuf) (step := 168) (b := 0) (n := m) (P := PI true σ N₀) hm (by omega_arith) (by simp only [oBuf]; omega_arith) (by decide)
     (fun _ _ _ h' hm hrd hwr hg => ⟨h'.sq.frame hm hrd hwr hg, by rw [hm]; exact h'.hr,
       by rw [hg _ (by decide) (by decide)]; exact h'.r8, by rw [hg _ (by decide) (by decide)]; exact h'.r9,
       by rw [hm]; exact h'.out⟩)
-    (fun i t _ hi hI hbp => squeezeP_ok (fast := fast) hp (by omega_arith) hI (by
-      rw [hbp, hbx, at', Offset.add_add, Nat.sub_zero])) h
+    (fun i t _ hi hI hbp => squeezeP_ok (fast := fast) hp (by omega_arith) (by omega_arith) hI (by
+      rw [hbp, hbx, at', Offset.add_add, Nat.sub_zero])) h) fun _ h => by rwa [Nat.zero_add] at h
 
-theorem correctP {fast : Bool} (σ : State) (hs : samplePKW.pre σ) :
-    ∃ t s', Exec isa (sampleP fast) σ t s' ∧ abiPreserved σ s' ∧ samplePKW.post σ s' := by
+/-- The squeezes after the `m` with `PRF₂`. -/
+theorem restP_ok {fast : Bool} {σ : State} (hp : PreW true σ) {N₀ m : Nat} (hm' : m ≤ 3) {s : State}
+    (h : PI true σ N₀ m s) :
+    WP isa (if m = 3 then .block [] else squeezes m (3 - m) fast) s fun s' =>
+      SqY true σ (iterF (3 - m) (Yp σ N₀ m)) 0 3 s' ∧ HP σ N₀ m s'.mem := by
+  by_cases e : m = 3
+  · subst e
+    rw [ifp rfl]
+    exact VG.Proof.Sha3.X86_64.wp_nil ⟨h.sq, h.out⟩
+  · rw [ifn e]
+    refine WP.mono (sqYs_ok (fast := fast) hp (b := m) (n := 3 - m) (by omega_arith) (by omega_arith) h.sq)
+      fun s' ⟨h', f'⟩ => ⟨by rwa [show m + (3 - m) = 3 by omega_arith] at h', HP.stab σ hm' h.out f' fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact (low_hs σ).symm⟩
+
+theorem correctPN {fast : Bool} {N₀ m : Nat} (hm : 0 < m) (hm' : m ≤ 3) (hN : N₀ + m ≤ 256)
+    (hc : (samplePN fast N₀ m).allInstrs (fun i => !loadsMxcsr i) = true) (σ : State)
+    (hs : (samplePNKW N₀ m).pre σ) :
+    ∃ t s', Exec isa (samplePN fast N₀ m) σ t s' ∧ abiPreserved σ s' ∧ (samplePNKW N₀ m).post σ s' := by
   have hp := preW_of (w16 := true) hs
-  have hlow : (lowR σ).Disjoint (hkR σ) := low_hs σ
-  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (startP_ok hp) fun s₁ h₁ =>
-    WP.seq (WP.mono (squeezesP_ok (fast := fast) hp h₁) fun s₂ h₂ =>
-      WP.seq (WP.mono (sqYs_ok (fast := fast) hp (b := 2) (n := 1) (by decide) (by decide) h₂.sq) fun s₃ ⟨h₃, f₃⟩ =>
-        run3G_ok (fast := fast) (H := HP σ) hp h₃ (HP.stab σ h₂.out f₃ fun r hr => by
-          rw [List.mem_singleton.mp hr]; exact hlow.symm) (HP.stab σ))))
-  refine ⟨t, s', he, abiPreserved_of_exec (by cases fast <;> decide +kernel) he hF.2.2, hF.1, hF.2.1⟩
+  unfold samplePN at hc ⊢
+  rw [ifn (show ¬ m = 0 by omega_arith)] at hc ⊢
+  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (startP_ok hp (N₀ := N₀) (by omega_arith)) fun s₁ h₁ =>
+    WP.seq (WP.mono (squeezesP_ok (fast := fast) hp hm hm' hN h₁) fun s₂ h₂ =>
+      WP.seq (WP.mono (restP_ok (fast := fast) hp hm' h₂) fun s₃ ⟨h₃, f₃⟩ =>
+        run3G_ok (fast := fast) (H := HP σ N₀ m) hp h₃ f₃ (HP.stab σ hm'))))
+  exact ⟨t, s', he, abiPreserved_of_exec hc he hF.2.2, hF.1, hF.2.1⟩
 
 end
 

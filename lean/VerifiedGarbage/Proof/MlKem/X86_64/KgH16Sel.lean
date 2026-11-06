@@ -46,7 +46,7 @@ elab "closedH_in " v:ident b:ident p:ident : tactic => withMainContext do
 key generation (`hR : KgRowsOk L`). -/
 tactic_template "kgh_ctl " v:ident b:ident p:ident B:ident P:ident hR:ident : tactic =>
   `(tactic| repeat' (first
-    | with_reducible exact ($B _ (by decide)).ctl | with_reducible exact ($P).ctl
+    | with_reducible exact ($B _ (by decide)).ctl | with_reducible exact ($P (_, _) (by decide)).ctl
     | with_reducible exact ($hR).ntt.ctl | with_reducible exact ($hR).row.ctl
     | (closedH_in $v $b $p; decide +kernel) | (code_whnf; closedH_in $v $b $p; decide +kernel)
     | with_reducible exact ($v).prfs_ctl _ _ _ _ | with_reducible exact ($v).arith.cbd16.ctl
@@ -56,7 +56,7 @@ tactic_template "kgh_ctl " v:ident b:ident p:ident B:ident P:ident hR:ident : ta
 /-- That key generation hashing `ek` in the rows never writes the stack pointer. -/
 tactic_template "kgh_sp " v:ident b:ident p:ident B:ident P:ident hR:ident : tactic =>
   `(tactic| repeat' (first
-    | with_reducible exact ($B _ (by decide)).sp | with_reducible exact ($P).sp
+    | with_reducible exact ($B _ (by decide)).sp | with_reducible exact ($P (_, _) (by decide)).sp
     | with_reducible exact ($hR).ntt.sp | with_reducible exact ($hR).row.sp
     | (closedH_in $v $b $p; exact Code.all_of_allInstrs (by decide +kernel))
     | (code_whnf; closedH_in $v $b $p; exact Code.all_of_allInstrs (by decide +kernel))
@@ -68,7 +68,8 @@ open KeyGenH in
 theorem keyGenHSel_verified (hR : KgRowsOk kem768w.L) (v : Sample4Impl) (WH : KgH16Wf kem768w) (T : KgH16T kem768w)
     (hK : KpkeOk kem768w.L) (W16 : KeyGen16.Kg16Wf kem768w) (W : KeyGen.KgWf kem768w.L) {k : Contract isa}
     (hk : (keyGenK kem768w.L).Implies k)
-    (hctlH : ∀ (b : Nat → Prog isa) (p : Prog isa), (∀ m ≤ 3, BatchHMOk16 m (b m)) → BatchPOk16 p →
+    (hctlH : ∀ (b : Nat → Prog isa) (p : Nat → Nat → Prog isa), (∀ m ≤ 3, BatchHMOk16 m (b m)) →
+      (∀ q ∈ Sample4.pnUses, BatchPOk16 q.1 q.2 (p q.1 q.2)) →
       ctlOk (kemKeyGenH16 kem768w v.callee b p) = true)
     (hctl16 : ∀ n c, S16Ok c → ctlOk (kemKeyGen16 kem768w v.callee (n, c)) = true)
     (hctl : ctlOk (kemKeyGen kem768w.L v.callee) = true) :
@@ -84,7 +85,8 @@ theorem keyGenHSel_verified (hR : KgRowsOk kem768w.L) (v : Sample4Impl) (WH : Kg
 /-- No instruction of `kemKeyGenHSel c` writes the stack pointer, if none of
 the functions it may run does. -/
 theorem keyGenHSel_sp (v : Sample4Impl) {q : Instr → Bool}
-    (hH : ∀ (b : Nat → Prog isa) (p : Prog isa), (∀ m ≤ 3, BatchHMOk16 m (b m)) → BatchPOk16 p →
+    (hH : ∀ (b : Nat → Prog isa) (p : Nat → Nat → Prog isa), (∀ m ≤ 3, BatchHMOk16 m (b m)) →
+      (∀ q ∈ Sample4.pnUses, BatchPOk16 q.1 q.2 (p q.1 q.2)) →
       (kemKeyGenH16 kem768w v.callee b p).all q = true)
     (h : (kemKeyGenSel kem768w v.callee).all q = true) : (kemKeyGenHSel v.callee).all q = true := by
   unfold kemKeyGenHSel
