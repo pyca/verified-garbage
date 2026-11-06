@@ -272,7 +272,7 @@ def post (τ : FT) (i : Instr) (t' : Taint.T) : Taint.T :=
     match addrOf τ.t m with
     | some (ri, o) =>
       match τ.mb.find? (fun e => e.1 == ri && e.2.1 == o) with
-      | some (_, _, pj, pk) => { t' with bases := (d, pj, pk) :: t'.bases }
+      | some e => { t' with bases := (d, e.2.2.1, e.2.2.2) :: t'.bases }
       | none => t'
     | none => t'
   | _ => t'
