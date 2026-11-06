@@ -106,9 +106,6 @@ theorem fin_twoG {α : Type} {Φ : α → State → Prop} {an : α → State}
     · rw [x5, y5]
     · rw [x6, y6]
 
-include X hH in
-include X in
-include X in
 section
 variable {cn dn : String} {cc dc : Prog isa} {f : MdFns} {j : Nat} (A : MdTabA H cn cc dn dc f j S Pre Pub)
 

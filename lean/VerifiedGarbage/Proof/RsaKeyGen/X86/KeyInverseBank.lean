@@ -12,7 +12,6 @@ public import VerifiedGarbage.Impl.Rsa.X86.Inverse
 namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
 open VG.Impl.Rsa.X86.Keys hiding slot
-open VG.Impl.RsaKeyGen.X86.Key
 
 structure InverseReady (B : Addr) (n a m : Nat) (s : State) : Prop where
   modulus : num s.mem B n aM = m

@@ -202,7 +202,6 @@ theorem cs_disj (rs : List Reg) (h : rs.all (fun r => !calleeSaved.contains r) =
   simp only [Bool.not_eq_true'] at this
   simp_all
 
-include hG in
 /-! ## MGF1 -/
 
 /-- The counter and `done` set to 0: the loop's invariant for counter 0. -/

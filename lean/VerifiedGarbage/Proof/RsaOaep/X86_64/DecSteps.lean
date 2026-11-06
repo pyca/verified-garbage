@@ -83,7 +83,6 @@ theorem DW.words (h : DW s t) : ∀ k ∈ decKs, word t.mem (fb s) (8 * k) = dec
   rw [R.fr k (decKs_lt k hk)]
   exact hW k hk
 
-omit hp in
 /-- The label, where `hashLabel` finds it. -/
 theorem DW.lab (h : DW s t) {W : Nat → BitVec 64} (hW : ArgsD s W) :
     LabAt t (fb s) (stackArg s 15) W (stackArg s 11) (stackArg s 12).toNat := by
@@ -138,7 +137,6 @@ theorem dw_dbArgs {Hm : Stream} (hD : Hm.D < 2 ^ 30) (hkD : Hm.D + 1 ≤ (s.gpr 
       ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, _, _, R1,
         fun k hk => (mW_other (by have := decKs_iff hk; omega)).trans (hW k hk), mW_args _ _ _ _ _ _⟩
 
-omit hp in
 omit hp in
 theorem dw_mgfT {Gm : Hash} (hG : HashOK Gm) (mG : MgfLink Gm hG) {f : Impl.Mgf1.X86_64.Table.Fns}
     (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd) (hgf : Table.FnsGood f.fin)

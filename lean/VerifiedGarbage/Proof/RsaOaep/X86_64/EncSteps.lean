@@ -196,7 +196,6 @@ theorem ew_seedArgs {Hm : Stream} (hD : Hm.D < 2 ^ 30) (hkD : Hm.D + 1 ≤ (s.gp
         fun k hk => (mW_other (by omega)).trans (hW k hk), mW_args _ _ _ _ _ _⟩
 
 omit hp in
-omit hp in
 theorem ew_mgfT {Gm : Hash} (hG : HashOK Gm) (mG : MgfLink Gm hG) {f : Impl.Mgf1.X86_64.Table.Fns}
     (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd) (hgf : Table.FnsGood f.fin)
     {src srcLen dst dstLen : Nat} (hf : MFit src srcLen dst dstLen) {t : State}

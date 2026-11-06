@@ -94,7 +94,6 @@ def gD (d : Nat) : Stream := ⟨0, 0, d, 0, 0, "", .block [], "", .block [], "",
 
 theorem nopin {β : Type} {Φ : β → State → Prop} : Pins Φ [] := fun _ _ _ _ _ _ h => absurd h List.not_mem_nil
 
-include hG in
 /-! ## MGF1 -/
 
 /-- Where MGF1 starts: in the frame, with its slots set. -/
