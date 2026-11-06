@@ -4,6 +4,6 @@
 
 /// The table of functions `VG_HASH_SHA512` of the interface `Hash`: `vg_sha512_init`, `vg_sha512_update`, `vg_sha512_finalize`, then the data 5, 64.
 pub static VG_HASH_SHA512: super::Hash = super::Hash {
-    fns: [crate::sha512::vg_sha512_init as *const (), crate::sha512::vg_sha512_update as *const (), crate::sha512::vg_sha512_finalize as *const ()],
+    fns: [crate::sha512::raw::vg_sha512_init as *const (), crate::sha512::raw::vg_sha512_update as *const (), crate::sha512::raw::vg_sha512_finalize as *const ()],
     data: [5, 64],
 };

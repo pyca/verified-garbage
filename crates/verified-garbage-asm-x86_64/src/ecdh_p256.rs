@@ -16,8 +16,43 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
 /// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ecdh_p256(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdh_p256(out, d, peer, scratch) }
+}
+
+/// The CPU features `vg_ecdh_p256_adx` requires (`Artifact.features`).
+pub const VG_ECDH_P256_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ECDH over P-256 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (32 bytes, most significant first) for the private key `d` at `d` (32 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
+///
+/// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `d` must be valid for reads of 32 bytes.
+/// * `peer` must be valid for reads of 65 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
+/// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
+#[inline(always)]
+pub unsafe fn vg_ecdh_p256_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdh_p256_adx(out, d, peer, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ecdh_p256`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdh_p256(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdh_p256(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnISYnRSInxSIPCAUmJGEmJaAhNiWAQTYloGE2JcCBNiXgoSYn+TInHSItBGEgPyEiJhyAEAABIi0EQSA/ISImHKAQAAEiLQQhID8hIiYcwBAAASIsBSA/ISImHOAQAAEiLRhhID8hIiYdABAAASItGEEgPyEiJh0gEAABIi0YISA/ISImHUAQAAEiLBkgPyEiJh1gEAABIi0IYSA/ISImHYAQAAEiLQhBID8hIiYdoBAAASItCCEgPyEiJh3AEAABIiwJID8hIiYd4BAAASLj//////////0iJR0BIuP////8AAAAASIlHSEi4AAAAAAAAAABIiUdQSLgBAAAA/////0iJR1hIuFElY/zCyrnzSIlHYEi4hJ4Xp6365rxIiUdoSLj//////////0iJR3BIuAAAAAD/////SIlHeEi4AAAAAAAAAABIiYegAAAASLgAAAAAAAAAAEiJh6gAAABIuAAAAAAAAAAASImHsAAAAEi4AAAAAAAAAABIiYe4AAAASLgBAAAAAAAAAEiJh8AAAABIuAAAAAAAAAAASImHyAAAAEi4AAAAAAAAAABIiYfQAAAASLgAAAAAAAAAAEiJh9gAAABIuAEAAAAAAAAASImH4AAAAEi4AAAAAP////9IiYfoAAAASLj//////////0iJh/AAAABIuP7///8AAAAASImH+AAAAEi4/P////////9IiYcAAQAASLj/////AwAAAEiJhwgBAABIuAAAAAAAAAAASImHEAEAAEi4BAAAAPz///9IiYcYAQAASLifOU59Jp7WiUiJhyABAABIuLKRjGlmEdAGSImHKAEAAEi4hIxj5QNi5rBIiYcwAQAASLic2JUNWRKQlEiJhzgBAABIuDwUqRjUMOd5SImHQAEAAEi4AbbtX/yVunVIiYdIAQAASLgQJWJ3K3P7eUiJh1ABAABIuMZVN6V2X5AYSImHWAEAAEi4ClaVzldT8t1IiYdgAQAASLhc5Bm65LhKi0iJh2gBAABIuCXzId2IhujSSImHcAEAAEi4hV2IJRj/cYVIiYd4AQAASLii7nm+lUwkg0iJh4ABAABIuKZvvUmceZlGSImHiAEAAEi4WexrKzmyRShIiYeQAQAASLggVtnzlC3hZkiJh5gBAABIuK/anAM9NUYMSImHoAEAAEi4e2HoWFIFGUNIiYeoAQAASLgAAAAAAAAAAEiJh7ABAABIuP////8AAAAASImHuAEAAEi4/f////////9IiYfAAQAASLj/////AAAAAEiJh8gBAABIuAAAAAAAAAAASImH0AEAAEi4AQAAAP////9IiYfYAQAASLhPJWP8wsq580iJh+ABAABIuISeF6et+ua8SImH6AEAAEi4//////////9IiYfwAQAASLgAAAAA/////0iJh/gBAABIuAAAAAAAAAAASImHAAIAAEi4AAAAAAAAAABIiYcIAgAASLgAAAAAAAAAAEiJhxACAABIuAAAAAAAAAAASImHGAIAAEi4AQAAAAAAAABIiYcgAgAASLgAAAAA/////0iJhygCAABIuP//////////SImHMAIAAEi4/v///wAAAABIiYc4AgAASLgAAAAAAAAAAEiJh0ACAABIuAAAAAAAAAAASImHSAIAAEi4AAAAAAAAAABIiYdQAgAASLgAAAAAAAAAAEiJh1gCAABIuP//////////SImHwAUAAEyJ9rsAAAAA"
 20:
@@ -57,30 +92,14 @@ jae 27b
 call {vg_p256_inv_mod_p}
 .base64 "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"
 .p2align 6"#,
-        vg_p256_check_point = sym super::ec_p256_compressed::vg_p256_check_point::vg_p256_check_point,
-        vg_p256_inv_mod_p = sym super::ec_p256::vg_p256_inv_mod_p::vg_p256_inv_mod_p,
+        vg_p256_check_point = sym crate::ec_p256_compressed::vg_p256_check_point::vg_p256_check_point,
+        vg_p256_inv_mod_p = sym crate::ec_p256::vg_p256_inv_mod_p::vg_p256_inv_mod_p,
     )
 }
 
-/// The CPU features `vg_ecdh_p256_adx` requires (`Artifact.features`).
-pub const VG_ECDH_P256_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ECDH over P-256 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (32 bytes, most significant first) for the private key `d` at `d` (32 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
-///
-/// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `d` must be valid for reads of 32 bytes.
-/// * `peer` must be valid for reads of 65 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
-/// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_ecdh_p256_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdh_p256_adx(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdh_p256_adx(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnISYnRSInxSIPCAUmJGEmJaAhNiWAQTYloGE2JcCBNiXgoSYn+TInHSItBGEgPyEiJhyAEAABIi0EQSA/ISImHKAQAAEiLQQhID8hIiYcwBAAASIsBSA/ISImHOAQAAEiLRhhID8hIiYdABAAASItGEEgPyEiJh0gEAABIi0YISA/ISImHUAQAAEiLBkgPyEiJh1gEAABIi0IYSA/ISImHYAQAAEiLQhBID8hIiYdoBAAASItCCEgPyEiJh3AEAABIiwJID8hIiYd4BAAASLj//////////0iJR0BIuP////8AAAAASIlHSEi4AAAAAAAAAABIiUdQSLgBAAAA/////0iJR1hIuFElY/zCyrnzSIlHYEi4hJ4Xp6365rxIiUdoSLj//////////0iJR3BIuAAAAAD/////SIlHeEi4AAAAAAAAAABIiYegAAAASLgAAAAAAAAAAEiJh6gAAABIuAAAAAAAAAAASImHsAAAAEi4AAAAAAAAAABIiYe4AAAASLgBAAAAAAAAAEiJh8AAAABIuAAAAAAAAAAASImHyAAAAEi4AAAAAAAAAABIiYfQAAAASLgAAAAAAAAAAEiJh9gAAABIuAEAAAAAAAAASImH4AAAAEi4AAAAAP////9IiYfoAAAASLj//////////0iJh/AAAABIuP7///8AAAAASImH+AAAAEi4/P////////9IiYcAAQAASLj/////AwAAAEiJhwgBAABIuAAAAAAAAAAASImHEAEAAEi4BAAAAPz///9IiYcYAQAASLifOU59Jp7WiUiJhyABAABIuLKRjGlmEdAGSImHKAEAAEi4hIxj5QNi5rBIiYcwAQAASLic2JUNWRKQlEiJhzgBAABIuDwUqRjUMOd5SImHQAEAAEi4AbbtX/yVunVIiYdIAQAASLgQJWJ3K3P7eUiJh1ABAABIuMZVN6V2X5AYSImHWAEAAEi4ClaVzldT8t1IiYdgAQAASLhc5Bm65LhKi0iJh2gBAABIuCXzId2IhujSSImHcAEAAEi4hV2IJRj/cYVIiYd4AQAASLii7nm+lUwkg0iJh4ABAABIuKZvvUmceZlGSImHiAEAAEi4WexrKzmyRShIiYeQAQAASLggVtnzlC3hZkiJh5gBAABIuK/anAM9NUYMSImHoAEAAEi4e2HoWFIFGUNIiYeoAQAASLgAAAAAAAAAAEiJh7ABAABIuP////8AAAAASImHuAEAAEi4/f////////9IiYfAAQAASLj/////AAAAAEiJh8gBAABIuAAAAAAAAAAASImH0AEAAEi4AQAAAP////9IiYfYAQAASLhPJWP8wsq580iJh+ABAABIuISeF6et+ua8SImH6AEAAEi4//////////9IiYfwAQAASLgAAAAA/////0iJh/gBAABIuAAAAAAAAAAASImHAAIAAEi4AAAAAAAAAABIiYcIAgAASLgAAAAAAAAAAEiJhxACAABIuAAAAAAAAAAASImHGAIAAEi4AQAAAAAAAABIiYcgAgAASLgAAAAA/////0iJhygCAABIuP//////////SImHMAIAAEi4/v///wAAAABIiYc4AgAASLgAAAAAAAAAAEiJh0ACAABIuAAAAAAAAAAASImHSAIAAEi4AAAAAAAAAABIiYdQAgAASLgAAAAAAAAAAEiJh1gCAABIuP//////////SImHwAUAAEyJ9rsAAAAA"
 20:
@@ -120,7 +139,8 @@ jae 27b
 call {vg_p256_inv_mod_p_adx}
 .base64 "SIuXAAIAADHtxGK79o/gAwAAxGL79pfoAwAAZkwPOPbIxGL79p/wAwAAZkwPOPbQxGL79qf4AwAAZkwPOPbYZkwPOPblSIuXCAIAADHtxOL79o/gAwAA80wPOPbIZkwPOPbRxOL79o/oAwAA80wPOPbQZkwPOPbZxOL79o/wAwAA80wPOPbYZkwPOPbhxGL79q/4AwAA80wPOPbgZkwPOPbt80wPOPbtSIuXEAIAADHtxOL79o/gAwAA80wPOPbQZkwPOPbZxOL79o/oAwAA80wPOPbYZkwPOPbhxOL79o/wAwAA80wPOPbgZkwPOPbpxGL79rf4AwAA80wPOPboZkwPOPb180wPOPb1SIuXGAIAADHtxOL79o/gAwAA80wPOPbYZkwPOPbhxOL79o/oAwAA80wPOPbgZkwPOPbpxOL79o/wAwAA80wPOPboZkwPOPbxxGL79r/4AwAA80wPOPbwZkwPOPb980wPOPb9TInCTInASMHgIEyJxUjB7SBIuQEAAAD/////xGLz9sFJAcFJEepJEctJg9AATInKTInISMHgIEyJzUjB7SBIuQEAAAD/////xGLz9slJAcJJEetJEchJg9EATInSTInQSMHgIEyJ1UjB7SBIuQEAAAD/////xGLz9tFJAcNJEehJEclJg9IATInaTInYSMHgIEyJ3UjB7SBIuQEAAAD/////xGLz9tlJAcBJEelJEcpJg9MATQHETRHNTRHWTRHfQbgAAAAASYPQAEyJ4EgrR0BMielIG09ITInySBtXUEyJ/Ugbb1hJg9gATA9D4EwPQ+lMD0PyTA9D/UyJp4AEAABMia+IBAAATIm3kAQAAEyJv5gEAABIi5eABAAAMe3EYrv2j8AAAADEYvv2l8gAAABmTA849sjEYvv2n9AAAABmTA849tDEYvv2p9gAAABmTA849thmTA849uVIi5eIBAAAMe3E4vv2j8AAAADzTA849shmTA849tHE4vv2j8gAAADzTA849tBmTA849tnE4vv2j9AAAADzTA849thmTA849uHEYvv2r9gAAADzTA849uBmTA849u3zTA849u1Ii5eQBAAAMe3E4vv2j8AAAADzTA849tBmTA849tnE4vv2j8gAAADzTA849thmTA849uHE4vv2j9AAAADzTA849uBmTA849unEYvv2t9gAAADzTA849uhmTA849vXzTA849vVIi5eYBAAAMe3E4vv2j8AAAADzTA849thmTA849uHE4vv2j8gAAADzTA849uBmTA849unE4vv2j9AAAADzTA849uhmTA849vHEYvv2v9gAAADzTA849vBmTA849v3zTA849v1MicJMicBIweAgTInFSMHtIEi5AQAAAP/////EYvP2wUkBwUkR6kkRy0mD0ABMicpMichIweAgTInNSMHtIEi5AQAAAP/////EYvP2yUkBwkkR60kRyEmD0QBMidJMidBIweAgTInVSMHtIEi5AQAAAP/////EYvP20UkBw0kR6EkRyUmD0gBMidpMidhIweAgTIndSMHtIEi5AQAAAP/////EYvP22UkBwEkR6UkRykmD0wBNAcRNEc1NEdZNEd9BuAAAAABJg9AATIngSCtHQEyJ6UgbT0hMifJIG1dQTIn9SBtvWEmD2ABMD0PgTA9D6UwPQ/JMD0P9TImnoAQAAEyJr6gEAABMibewBAAATIm/uAQAAEiLl0AEAABIK1dgSIuXSAQAAEgbV2hIi5dQBAAASBtXcEiLl1gEAABIG1d4SBnASInFSIuXQAQAAEgLl0gEAABIC5dQBAAASAuXWAQAALkAAAAASCnRSBnSSCHqSIuHwAUAAEgh0EiJh8AFAABIi5dAAgAASAuXSAIAAEgLl1ACAABIC5dYAgAAuQAAAABIKdFIGdJIi4fABQAASCHQSImHwAUAAEiLj8AFAABIi4egBAAASCHISA/ISIlGGEiLh6gEAABIIchID8hIiUYQSIuHsAQAAEghyEgPyEiJRghIi4e4BAAASCHISA/ISIkGSInISIPgAUiLH0iLbwhMi2cQTItvGEyLdyBMi38oww=="
 .p2align 6"#,
-        vg_p256_check_point_adx = sym super::ec_p256_compressed::vg_p256_check_point_adx::vg_p256_check_point_adx,
-        vg_p256_inv_mod_p_adx = sym super::ec_p256::vg_p256_inv_mod_p_adx::vg_p256_inv_mod_p_adx,
+        vg_p256_check_point_adx = sym crate::ec_p256_compressed::vg_p256_check_point_adx::vg_p256_check_point_adx,
+        vg_p256_inv_mod_p_adx = sym crate::ec_p256::vg_p256_inv_mod_p_adx::vg_p256_inv_mod_p_adx,
     )
+}
 }

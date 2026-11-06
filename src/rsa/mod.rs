@@ -321,8 +321,8 @@ impl PublicKey {
     /// The values of `n` (`VG.Spec.Rsa.publicPrecompute`), computed in
     /// `scratch` (at least `public_scratch_words(n_len)` words, left holding only
     /// values of `n`) at the key's first operation.
-    pub(crate) fn pre(&self, scratch: &mut [u64]) -> &[u64] {
-        self.pre.get(&self.n, scratch)
+    pub(crate) fn pre(&self, dit: crate::dit::Dit<'_>, scratch: &mut [u64]) -> &[u64] {
+        self.pre.get(dit, &self.n, scratch)
     }
 
     /// The length of the modulus in bytes, which is that of the key's

@@ -128,7 +128,7 @@ impl Drop for BlowfishCfb64Decryptor {
 /// The signature of `vg_blowfish_cfb64_encrypt` and
 /// `vg_blowfish_cfb64_decrypt`.
 #[cfg(target_arch = "x86_64")]
-type Cfb = unsafe extern "sysv64" fn(*const [u8; 4168], *mut [u8; 8], *mut [u8; 8], usize);
+type Cfb = unsafe fn(crate::dit::Dit<'_>, *const [u8; 4168], *mut [u8; 8], *mut [u8; 8], usize);
 
 #[cfg(any(
     target_arch = "x86",
@@ -137,18 +137,19 @@ type Cfb = unsafe extern "sysv64" fn(*const [u8; 4168], *mut [u8; 8], *mut [u8; 
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-type Cfb = unsafe extern "C" fn(*const [u8; 4168], *mut [u8; 8], *mut [u8; 8], usize);
+type Cfb = unsafe fn(crate::dit::Dit<'_>, *const [u8; 4168], *mut [u8; 8], *mut [u8; 8], usize);
 
 impl Key {
     /// Expands a key of 4..=56 bytes (32 to 448 bits). Weak keys are accepted.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !(4..=56).contains(&key.len()) {
             return Err(InvalidKeyLength);
         }
         let mut schedule = [0; 4168];
         // SAFETY: the key has a length in 4..=56; the key and the schedule
         // are separate valid objects of the lengths passed.
-        unsafe { vg_blowfish_expand_key(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_blowfish_expand_key(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self { schedule })
     }
 
@@ -159,7 +160,8 @@ impl Key {
     /// `iv` the last left; a piece whose length is not a multiple of eight
     /// bytes must end the message.
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.crypt(iv, buffer, vg_blowfish_cfb64_encrypt);
+        crate::dit::enter!(dit);
+        self.crypt(dit, iv, buffer, vg_blowfish_cfb64_encrypt);
     }
 
     /// Decrypts `buffer` in place, from the block `iv`, which it replaces
@@ -169,18 +171,19 @@ impl Key {
     /// `iv` the last left; a piece whose length is not a multiple of eight
     /// bytes must end the message.
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.crypt(iv, buffer, vg_blowfish_cfb64_decrypt);
+        crate::dit::enter!(dit);
+        self.crypt(dit, iv, buffer, vg_blowfish_cfb64_decrypt);
     }
 
-    fn crypt(&self, iv: &mut [u8; 8], buffer: &mut [u8], f: Cfb) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], buffer: &mut [u8], f: Cfb) {
         let whole = buffer.len() / 8 * 8;
         let (blocks, rest) = buffer.split_at_mut(whole);
-        self.blocks(iv, blocks, f);
+        self.blocks(dit, iv, blocks, f);
         if !rest.is_empty() {
             // `CIPH_K` of the block to continue from, as CFB encryption of a
             // zero block, XORed into the last bytes.
             let mut last = [0; 8];
-            self.blocks(iv, &mut last, vg_blowfish_cfb64_encrypt);
+            self.blocks(dit, iv, &mut last, vg_blowfish_cfb64_encrypt);
             for (b, o) in rest.iter_mut().zip(last) {
                 *b ^= o;
             }
@@ -189,13 +192,14 @@ impl Key {
     }
 
     /// `f` on whole blocks.
-    fn blocks(&self, iv: &mut [u8; 8], blocks: &mut [u8], f: Cfb) {
+    fn blocks(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], blocks: &mut [u8], f: Cfb) {
         // SAFETY: `blocks` holds `len / 8` whole blocks (its length is a
         // multiple of 8), and it, the block at `iv` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
             f(
+                dit,
                 &self.schedule,
                 iv,
                 blocks.as_mut_ptr().cast(),

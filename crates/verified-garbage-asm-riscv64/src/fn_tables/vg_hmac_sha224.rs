@@ -4,6 +4,6 @@
 
 /// The table of functions `VG_HMAC_SHA224` of the interface `Hmac`: `vg_hmac_sha224_init`, `vg_sha256_update`, `vg_hmac_sha224_finalize`, then the data 2, 28, 64.
 pub static VG_HMAC_SHA224: super::Hmac = super::Hmac {
-    fns: [crate::hmac_sha224::vg_hmac_sha224_init as *const (), crate::sha256::vg_sha256_update as *const (), crate::hmac_sha224::vg_hmac_sha224_finalize as *const ()],
+    fns: [crate::hmac_sha224::raw::vg_hmac_sha224_init as *const (), crate::sha256::raw::vg_sha256_update as *const (), crate::hmac_sha224::raw::vg_hmac_sha224_finalize as *const ()],
     data: [2, 28, 64],
 };

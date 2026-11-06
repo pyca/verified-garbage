@@ -17,8 +17,40 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p384_compress_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p384_compress_public_key(out, public, scratch) }
+}
+
+/// Validate and decompress a P-384 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 48 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 48 bytes each and returns 1. If no such finite point exists, writes 97 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
+///
+/// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 97 bytes.
+/// * `public` must be valid for reads of 49 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
+/// * None of `out`, `public` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p384_decompress_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p384_decompress_public_key(out, public, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_p384_compress_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p384_compress_public_key(out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p384_compress_public_key(out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkDIkYiXAEiXgIiWgMiceLXCQIi0MsD8iJhxAGAACLQygPyImHFAYAAItDJA/IiYcYBgAAi0MgD8iJhxwGAACLQxwPyImHIAYAAItDGA/IiYckBgAAi0MUD8iJhygGAACLQxAPyImHLAYAAItDDA/IiYcwBgAAi0MID8iJhzQGAACLQwQPyImHOAYAAIsDD8iJhzwGAACLXCQIi0MsD8iJh0AGAACLQygPyImHRAYAAItDJA/IiYdIBgAAi0MgD8iJh0wGAACLQxwPyImHUAYAAItDGA/IiYdUBgAAi0MUD8iJh1gGAACLQxAPyImHXAYAAItDDA/IiYdgBgAAi0MID8iJh2QGAACLQwQPyImHaAYAAIsDD8iJh2wGAACLXCQIi0MsD8iJh3AGAACLQygPyImHdAYAAItDJA/IiYd4BgAAi0MgD8iJh3wGAACLQxwPyImHgAYAAItDGA/IiYeEBgAAi0MUD8iJh4gGAACLQxAPyImHjAYAAItDDA/IiYeQBgAAi0MID8iJh5QGAACLQwQPyImHmAYAAIsDD8iJh5wGAAC4/////4lHQLgAAAAAiUdEuAAAAACJR0i4/////4lHTLj+////iUdQuP////+JR1S4/////4lHWLj/////iUdcuP////+JR2C4/////4lHZLj/////iUdouP////+JR2y4cynFzIlHcLhqGezsiUd0uHqnsEiJR3i4sg0aWIlHfLjfLTf0iYeAAAAAuIFNY8eJh4QAAAC4/////4mHiAAAALj/////iYeMAAAAuP////+Jh5AAAAC4/////4mHlAAAALj/////iYeYAAAAuP////+Jh5wAAAC4AAAAAImH0AAAALgAAAAAiYfUAAAAuAAAAACJh9gAAAC4AAAAAImH3AAAALgAAAAAiYfgAAAAuAAAAACJh+QAAAC4AAAAAImH6AAAALgAAAAAiYfsAAAAuAAAAACJh/AAAAC4AAAAAImH9AAAALgAAAAAiYf4AAAAuAAAAACJh/wAAAC4AQAAAImHAAEAALgAAAAAiYcEAQAAuAAAAACJhwgBAAC4AAAAAImHDAEAALgAAAAAiYcQAQAAuAAAAACJhxQBAAC4AAAAAImHGAEAALgAAAAAiYccAQAAuAAAAACJhyABAAC4AAAAAImHJAEAALgAAAAAiYcoAQAAuAAAAACJhywBAAC4AQAAAImHMAEAALj/////iYc0AQAAuP////+JhzgBAAC4AAAAAImHPAEAALgBAAAAiYdAAQAAuAAAAACJh0QBAAC4AAAAAImHSAEAALgAAAAAiYdMAQAAuAAAAACJh1ABAAC4AAAAAImHVAEAALgAAAAAiYdYAQAAuAAAAACJh1wBAAC4/P///4mHYAEAALgDAAAAiYdkAQAAuAAAAACJh2gBAAC4/P///4mHbAEAALj7////iYdwAQAAuP////+Jh3QBAAC4/////4mHeAEAALj/////iYd8AQAAuP////+Jh4ABAAC4/////4mHhAEAALj/////iYeIAQAAuP////+Jh4wBAAC4ZonD14mHkAEAALhSmTQYiYeUAQAAuMSY5G6Jh5gBAAC4iwl95YmHnAEAALiOBmBLiYegAQAAuNFh1meJh6QBAAC4p6C6vYmHqAEAALjL46WpiYesAQAAuL5hBl2Jh7ABAAC43GWBIomHtAEAALjtP+8giYe4AQAAuOIzGGeJh7wBAAC4KLXASYmHwAEAALhmddA9iYfEAQAAuDjO1qCJh8gBAAC44njjIImHzAEAALhuTRtUiYfQAQAAuPw6nIeJh9QBAAC4/w6jWYmH2AEAALiEhlRkiYfcAQAAuCveTmGJh+ABAAC4I/cvgYmH5AEAALgTFZ4piYfoAQAAuMKtOk2Jh+wBAAC4/qQDS4mH8AEAALitPQQjiYf0AQAAuKyptHuJh/gBAAC4v6i/oYmH/AEAALhQsIMuiYcAAgAAuFbnrYuJhwQCAAC42f/0aImHCAIAALgZUsPGiYcMAgAAuECoaTmJhxACAAC4JgKA3YmHFAIAALjpxRVaiYcYAgAAuMKreCuJhxwCAAC4qQm0GYmHIAIAALgkmzEtiYckAgAAuBmkGt+JhygCAAC45YE9/4mHLAIAALhHKbj8iYcwAgAAuDpIPryJhzQCAAC4xRyrSomHOAIAALgXSQ3UiYc8AgAAuJVoJiiJh0ACAAC4eluwP4mHRAIAALghvzkriYdIAgAAuAHuhAyJh0wCAAC4jdY6M4mHUAIAALiV5hMTiYdUAgAAuIVYT7eJh1gCAAC4TfLlp4mHXAIAALgg0sgLiYdgAgAAuH6ynDiJh2QCAAC4AAAAAImHaAIAALgAAAAAiYdsAgAAuAAAAACJh3ACAAC4AAAAAImHdAIAALgAAAAAiYd4AgAAuAAAAACJh3wCAAC4/f///4mHgAIAALgAAAAAiYeEAgAAuAAAAACJh4gCAAC4/////4mHjAIAALj+////iYeQAgAAuP////+Jh5QCAAC4/////4mHmAIAALj/////iYecAgAAuP////+Jh6ACAAC4/////4mHpAIAALj/////iYeoAgAAuP////+Jh6wCAAC4cSnFzImHsAIAALhqGezsiYe0AgAAuHqnsEiJh7gCAAC4sg0aWImHvAIAALjfLTf0iYfAAgAAuIFNY8eJh8QCAAC4/////4mHyAIAALj/////iYfMAgAAuP////+Jh9ACAAC4/////4mH1AIAALj/////iYfYAgAAuP////+Jh9wCAAC4AAAAAImH4AIAALgAAAAAiYfkAgAAuAAAAACJh+gCAAC4AAAAAImH7AIAALgAAAAAiYfwAgAAuAAAAACJh/QCAAC4AAAAAImH+AIAALgAAAAAiYf8AgAAuAAAAACJhwADAAC4AAAAAImHBAMAALgAAAAAiYcIAwAAuAAAAACJhwwDAAC4AQAAAImHEAMAALj/////iYcUAwAAuP////+JhxgDAAC4AAAAAImHHAMAALgBAAAAiYcgAwAAuAAAAACJhyQDAAC4AAAAAImHKAMAALgAAAAAiYcsAwAAuAAAAACJhzADAAC4AAAAAImHNAMAALgAAAAAiYc4AwAAuAAAAACJhzwDAAC4AAAAAImHQAMAALgAAAAAiYdEAwAAuAAAAACJh0gDAAC4AAAAAImHTAMAALgAAAAAiYdQAwAAuAAAAACJh1QDAAC4AAAAAImHWAMAALgAAAAAiYdcAwAAuAAAAACJh2ADAAC4AAAAAImHZAMAALgAAAAAiYdoAwAAuAAAAACJh2wDAAC4/////4mHgAgAALgBAAAAiYeQBwAAuP7///+Jh5QHAAC4AAAAAImHmAcAALgCAAAAiYecBwAAuAAAAACJh6AHAAC4/v///4mHpAcAALgAAAAAiYeoBwAAuAIAAACJh6wHAAC4AQAAAImHsAcAALgAAAAAiYe0BwAAuAAAAACJh7gHAAC4AAAAAImHvAcAALjMLUGdiYfABwAAuHGIEQiJh8QHAAC47DJMeomHyAcAALjYrSn3iYfMBwAAuC4CIBmJh9AHAAC4myDyd4mH1AcAALjiipOUiYfYBwAAuO5LN+OJh9wHAAC4lCACH4mH4AcAALj0ISu2iYfkBwAAuPm/T2CJh+gHAAC4SxEIzYmH7AcAAItcJAiDwwGLQywPyImHcAYAAItDKA/IiYd0BgAAi0MkD8iJh3gGAACLQyAPyImHfAYAAItDHA/IiYeABgAAi0MYD8iJh4QGAACLQxQPyImHiAYAAItDEA/IiYeMBgAAi0MMD8iJh5AGAACLQwgPyImHlAYAAItDBA/IiYeYBgAAiwMPyImHnAYAAIPDMItDLA/IiYcABwAAi0MoD8iJhwQHAACLQyQPyImHCAcAAItDIA/IiYcMBwAAi0McD8iJhxAHAACLQxgPyImHFAcAAItDFA/IiYcYBwAAi0MQD8iJhxwHAACLQwwPyImHIAcAAItDCA/IiYckBwAAi0MED8iJhygHAACLAw/IiYcsBwAAi1wkCA+2E4PyBIPqARnSi4eACAAAIdCJh4AIAACLl3AGAAArV0CLl3QGAAAbV0SLl3gGAAAbV0iLl3wGAAAbV0yLl4AGAAAbV1CLl4QGAAAbV1SLl4gGAAAbV1iLl4wGAAAbV1yLl5AGAAAbV2CLl5QGAAAbV2SLl5gGAAAbV2iLl5wGAAAbV2wZwInCi4eACAAAIdCJh4AIAACLlwAHAAArV0CLlwQHAAAbV0SLlwgHAAAbV0iLlwwHAAAbV0yLlxAHAAAbV1CLlxQHAAAbV1SLlxgHAAAbV1iLlxwHAAAbV1yLlyAHAAAbV2CLlyQHAAAbV2SLlygHAAAbV2iLlywHAAAbV2wZwInCi4eACAAAIdCJh4AIAAC4kAcAALlwBgAAuqAGAABQUVJX"
 call {vg_p384_mul_mod_p}
@@ -40,28 +72,15 @@ call {vg_p384_add_mod_p}
 call {vg_p384_sub_mod_p}
 .base64 "WFhYWIuX8AcAAAuX9AcAAAuX+AcAAAuX/AcAAAuXAAgAAAuXBAgAAAuXCAgAAAuXDAgAAAuXEAgAAAuXFAgAAAuXGAgAAAuXHAgAALkAAAAAKdEZ0oPy/4uHgAgAACHQiYeACAAAi4+ACAAAi4fAAQAAi5egBgAAMcIhyjHQiYdgBwAAi4fEAQAAi5ekBgAAMcIhyjHQiYdkBwAAi4fIAQAAi5eoBgAAMcIhyjHQiYdoBwAAi4fMAQAAi5esBgAAMcIhyjHQiYdsBwAAi4fQAQAAi5ewBgAAMcIhyjHQiYdwBwAAi4fUAQAAi5e0BgAAMcIhyjHQiYd0BwAAi4fYAQAAi5e4BgAAMcIhyjHQiYd4BwAAi4fcAQAAi5e8BgAAMcIhyjHQiYd8BwAAi4fgAQAAi5fABgAAMcIhyjHQiYeABwAAi4fkAQAAi5fEBgAAMcIhyjHQiYeEBwAAi4foAQAAi5fIBgAAMcIhyjHQiYeIBwAAi4fsAQAAi5fMBgAAMcIhyjHQiYeMBwAAi4fwAQAAi5fQBgAAMcIhyjHQiYdQCAAAi4f0AQAAi5fUBgAAMcIhyjHQiYdUCAAAi4f4AQAAi5fYBgAAMcIhyjHQiYdYCAAAi4f8AQAAi5fcBgAAMcIhyjHQiYdcCAAAi4cAAgAAi5fgBgAAMcIhyjHQiYdgCAAAi4cEAgAAi5fkBgAAMcIhyjHQiYdkCAAAi4cIAgAAi5foBgAAMcIhyjHQiYdoCAAAi4cMAgAAi5fsBgAAMcIhyjHQiYdsCAAAi4cQAgAAi5fwBgAAMcIhyjHQiYdwCAAAi4cUAgAAi5f0BgAAMcIhyjHQiYd0CAAAi4cYAgAAi5f4BgAAMcIhyjHQiYd4CAAAi4ccAgAAi5f8BgAAMcIhyjHQiYd8CAAAi4+ACAAAi1wkBIuHAAcAAIPgAYPIAiHIiAOLh3AGAAAhyA/IiUMti4d0BgAAIcgPyIlDKYuHeAYAACHID8iJQyWLh3wGAAAhyA/IiUMhi4eABgAAIcgPyIlDHYuHhAYAACHID8iJQxmLh4gGAAAhyA/IiUMVi4eMBgAAIcgPyIlDEYuHkAYAACHID8iJQw2Lh5QGAAAhyA/IiUMJi4eYBgAAIcgPyIlDBYuHnAYAACHID8iJQwGJyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
-        vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
-        vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
+        vg_p384_mul_mod_p = sym crate::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
+        vg_p384_add_mod_p = sym crate::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
+        vg_p384_sub_mod_p = sym crate::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
     )
 }
 
-/// Validate and decompress a P-384 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 48 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 48 bytes each and returns 1. If no such finite point exists, writes 97 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
-///
-/// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 97 bytes.
-/// * `public` must be valid for reads of 49 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
-/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
-/// * None of `out`, `public` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ec_p384_decompress_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p384_decompress_public_key(out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p384_decompress_public_key(out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkDIkYiXAEiXgIiWgMiceLXCQIi0MsD8iJhxAGAACLQygPyImHFAYAAItDJA/IiYcYBgAAi0MgD8iJhxwGAACLQxwPyImHIAYAAItDGA/IiYckBgAAi0MUD8iJhygGAACLQxAPyImHLAYAAItDDA/IiYcwBgAAi0MID8iJhzQGAACLQwQPyImHOAYAAIsDD8iJhzwGAACLXCQIi0MsD8iJh0AGAACLQygPyImHRAYAAItDJA/IiYdIBgAAi0MgD8iJh0wGAACLQxwPyImHUAYAAItDGA/IiYdUBgAAi0MUD8iJh1gGAACLQxAPyImHXAYAAItDDA/IiYdgBgAAi0MID8iJh2QGAACLQwQPyImHaAYAAIsDD8iJh2wGAACLXCQIi0MsD8iJh3AGAACLQygPyImHdAYAAItDJA/IiYd4BgAAi0MgD8iJh3wGAACLQxwPyImHgAYAAItDGA/IiYeEBgAAi0MUD8iJh4gGAACLQxAPyImHjAYAAItDDA/IiYeQBgAAi0MID8iJh5QGAACLQwQPyImHmAYAAIsDD8iJh5wGAAC4/////4lHQLgAAAAAiUdEuAAAAACJR0i4/////4lHTLj+////iUdQuP////+JR1S4/////4lHWLj/////iUdcuP////+JR2C4/////4lHZLj/////iUdouP////+JR2y4cynFzIlHcLhqGezsiUd0uHqnsEiJR3i4sg0aWIlHfLjfLTf0iYeAAAAAuIFNY8eJh4QAAAC4/////4mHiAAAALj/////iYeMAAAAuP////+Jh5AAAAC4/////4mHlAAAALj/////iYeYAAAAuP////+Jh5wAAAC4AAAAAImH0AAAALgAAAAAiYfUAAAAuAAAAACJh9gAAAC4AAAAAImH3AAAALgAAAAAiYfgAAAAuAAAAACJh+QAAAC4AAAAAImH6AAAALgAAAAAiYfsAAAAuAAAAACJh/AAAAC4AAAAAImH9AAAALgAAAAAiYf4AAAAuAAAAACJh/wAAAC4AQAAAImHAAEAALgAAAAAiYcEAQAAuAAAAACJhwgBAAC4AAAAAImHDAEAALgAAAAAiYcQAQAAuAAAAACJhxQBAAC4AAAAAImHGAEAALgAAAAAiYccAQAAuAAAAACJhyABAAC4AAAAAImHJAEAALgAAAAAiYcoAQAAuAAAAACJhywBAAC4AQAAAImHMAEAALj/////iYc0AQAAuP////+JhzgBAAC4AAAAAImHPAEAALgBAAAAiYdAAQAAuAAAAACJh0QBAAC4AAAAAImHSAEAALgAAAAAiYdMAQAAuAAAAACJh1ABAAC4AAAAAImHVAEAALgAAAAAiYdYAQAAuAAAAACJh1wBAAC4/P///4mHYAEAALgDAAAAiYdkAQAAuAAAAACJh2gBAAC4/P///4mHbAEAALj7////iYdwAQAAuP////+Jh3QBAAC4/////4mHeAEAALj/////iYd8AQAAuP////+Jh4ABAAC4/////4mHhAEAALj/////iYeIAQAAuP////+Jh4wBAAC4ZonD14mHkAEAALhSmTQYiYeUAQAAuMSY5G6Jh5gBAAC4iwl95YmHnAEAALiOBmBLiYegAQAAuNFh1meJh6QBAAC4p6C6vYmHqAEAALjL46WpiYesAQAAuL5hBl2Jh7ABAAC43GWBIomHtAEAALjtP+8giYe4AQAAuOIzGGeJh7wBAAC4KLXASYmHwAEAALhmddA9iYfEAQAAuDjO1qCJh8gBAAC44njjIImHzAEAALhuTRtUiYfQAQAAuPw6nIeJh9QBAAC4/w6jWYmH2AEAALiEhlRkiYfcAQAAuCveTmGJh+ABAAC4I/cvgYmH5AEAALgTFZ4piYfoAQAAuMKtOk2Jh+wBAAC4/qQDS4mH8AEAALitPQQjiYf0AQAAuKyptHuJh/gBAAC4v6i/oYmH/AEAALhQsIMuiYcAAgAAuFbnrYuJhwQCAAC42f/0aImHCAIAALgZUsPGiYcMAgAAuECoaTmJhxACAAC4JgKA3YmHFAIAALjpxRVaiYcYAgAAuMKreCuJhxwCAAC4qQm0GYmHIAIAALgkmzEtiYckAgAAuBmkGt+JhygCAAC45YE9/4mHLAIAALhHKbj8iYcwAgAAuDpIPryJhzQCAAC4xRyrSomHOAIAALgXSQ3UiYc8AgAAuJVoJiiJh0ACAAC4eluwP4mHRAIAALghvzkriYdIAgAAuAHuhAyJh0wCAAC4jdY6M4mHUAIAALiV5hMTiYdUAgAAuIVYT7eJh1gCAAC4TfLlp4mHXAIAALgg0sgLiYdgAgAAuH6ynDiJh2QCAAC4AAAAAImHaAIAALgAAAAAiYdsAgAAuAAAAACJh3ACAAC4AAAAAImHdAIAALgAAAAAiYd4AgAAuAAAAACJh3wCAAC4/f///4mHgAIAALgAAAAAiYeEAgAAuAAAAACJh4gCAAC4/////4mHjAIAALj+////iYeQAgAAuP////+Jh5QCAAC4/////4mHmAIAALj/////iYecAgAAuP////+Jh6ACAAC4/////4mHpAIAALj/////iYeoAgAAuP////+Jh6wCAAC4cSnFzImHsAIAALhqGezsiYe0AgAAuHqnsEiJh7gCAAC4sg0aWImHvAIAALjfLTf0iYfAAgAAuIFNY8eJh8QCAAC4/////4mHyAIAALj/////iYfMAgAAuP////+Jh9ACAAC4/////4mH1AIAALj/////iYfYAgAAuP////+Jh9wCAAC4AAAAAImH4AIAALgAAAAAiYfkAgAAuAAAAACJh+gCAAC4AAAAAImH7AIAALgAAAAAiYfwAgAAuAAAAACJh/QCAAC4AAAAAImH+AIAALgAAAAAiYf8AgAAuAAAAACJhwADAAC4AAAAAImHBAMAALgAAAAAiYcIAwAAuAAAAACJhwwDAAC4AQAAAImHEAMAALj/////iYcUAwAAuP////+JhxgDAAC4AAAAAImHHAMAALgBAAAAiYcgAwAAuAAAAACJhyQDAAC4AAAAAImHKAMAALgAAAAAiYcsAwAAuAAAAACJhzADAAC4AAAAAImHNAMAALgAAAAAiYc4AwAAuAAAAACJhzwDAAC4AAAAAImHQAMAALgAAAAAiYdEAwAAuAAAAACJh0gDAAC4AAAAAImHTAMAALgAAAAAiYdQAwAAuAAAAACJh1QDAAC4AAAAAImHWAMAALgAAAAAiYdcAwAAuAAAAACJh2ADAAC4AAAAAImHZAMAALgAAAAAiYdoAwAAuAAAAACJh2wDAAC4/////4mHgAgAALgBAAAAiYeQBwAAuP7///+Jh5QHAAC4AAAAAImHmAcAALgCAAAAiYecBwAAuAAAAACJh6AHAAC4/v///4mHpAcAALgAAAAAiYeoBwAAuAIAAACJh6wHAAC4AQAAAImHsAcAALgAAAAAiYe0BwAAuAAAAACJh7gHAAC4AAAAAImHvAcAALjMLUGdiYfABwAAuHGIEQiJh8QHAAC47DJMeomHyAcAALjYrSn3iYfMBwAAuC4CIBmJh9AHAAC4myDyd4mH1AcAALjiipOUiYfYBwAAuO5LN+OJh9wHAAC4lCACH4mH4AcAALj0ISu2iYfkBwAAuPm/T2CJh+gHAAC4SxEIzYmH7AcAAItcJAiDwwGLQywPyImHcAYAAItDKA/IiYd0BgAAi0MkD8iJh3gGAACLQyAPyImHfAYAAItDHA/IiYeABgAAi0MYD8iJh4QGAACLQxQPyImHiAYAAItDEA/IiYeMBgAAi0MMD8iJh5AGAACLQwgPyImHlAYAAItDBA/IiYeYBgAAiwMPyImHnAYAAItcJAgPthOJl0AGAACDygGD8gOD6gEZ0ouHgAgAACHQiYeACAAAi5dwBgAAK1dAi5d0BgAAG1dEi5d4BgAAG1dIi5d8BgAAG1dMi5eABgAAG1dQi5eEBgAAG1dUi5eIBgAAG1dYi5eMBgAAG1dci5eQBgAAG1dgi5eUBgAAG1dki5eYBgAAG1doi5ecBgAAG1dsGcCJwouHgAgAACHQiYeACAAAuJAHAAC5cAYAALqgBgAAUFFSVw=="
 call {vg_p384_mul_mod_p}
@@ -99,8 +118,9 @@ call {vg_p384_mul_mod_p}
 call {vg_p384_sub_mod_p}
 .base64 "WFhYWIuXYAcAAAuXZAcAAAuXaAcAAAuXbAcAAAuXcAcAAAuXdAcAAAuXeAcAAAuXfAcAAAuXgAcAAAuXhAcAAAuXiAcAAAuXjAcAALkAAAAAKdEZ0oPy/4uHgAgAACHQiYeACAAAi4cABwAAi49ABgAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHgAgAACHQiYeACAAAi4+ACAAAi1wkBLgEAAAAIciIA4uHcAYAACHID8iJQy2Lh3QGAAAhyA/IiUMpi4d4BgAAIcgPyIlDJYuHfAYAACHID8iJQyGLh4AGAAAhyA/IiUMdi4eEBgAAIcgPyIlDGYuHiAYAACHID8iJQxWLh4wGAAAhyA/IiUMRi4eQBgAAIcgPyIlDDYuHlAYAACHID8iJQwmLh5gGAAAhyA/IiUMFi4ecBgAAIcgPyIlDAYuHAAcAACHID8iJQ12LhwQHAAAhyA/IiUNZi4cIBwAAIcgPyIlDVYuHDAcAACHID8iJQ1GLhxAHAAAhyA/IiUNNi4cUBwAAIcgPyIlDSYuHGAcAACHID8iJQ0WLhxwHAAAhyA/IiUNBi4cgBwAAIcgPyIlDPYuHJAcAACHID8iJQzmLhygHAAAhyA/IiUM1i4csBwAAIcgPyIlDMYnIg+ABifqLGotyBItqDIt6CMM="
 .p2align 6"#,
-        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
-        vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
-        vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
+        vg_p384_mul_mod_p = sym crate::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
+        vg_p384_add_mod_p = sym crate::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
+        vg_p384_sub_mod_p = sym crate::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
     )
+}
 }

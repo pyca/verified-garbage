@@ -16,17 +16,11 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `seed` and `scratch` may overlap the 768 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "wf8h+KYCCHwgAIE5AAAM+AgAbPgQAIz4GADM+AAAZTgAAKQ4IACAOA=="
-bl {vg_sha512_digest}
-.base64 "IACBOQgAbOgQAIzoGACs6A=="
-bl {vg_ed25519_public_key_expanded}
-.base64 "IACBOQAADOimAwh8QAAhOCAAgE4=""#,
-        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
-        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
-    )
+#[inline(always)]
+pub unsafe fn vg_ed25519_key_pair(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ed25519_key_pair(out, expanded, seed, scratch) }
 }
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
@@ -43,8 +37,51 @@ bl {vg_ed25519_public_key_expanded}
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the 368 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ed25519_sign_expanded(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ed25519_sign_expanded(out, expanded, pk, message, len, scratch) }
+}
+
+/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 32 bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
+/// * None of `pk`, `message`, `signature` and `scratch` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ed25519_verify(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ed25519_verify(pk, message, len, signature, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ed25519_key_pair`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r#".base64 "wf8h+KYCCHwgAIE5AAAM+AgAbPgQAIz4GADM+AAAZTgAAKQ4IACAOA=="
+bl {vg_sha512_digest}
+.base64 "IACBOQgAbOgQAIzoGACs6A=="
+bl {vg_ed25519_public_key_expanded}
+.base64 "IACBOQAADOimAwh8QAAhOCAAgE4=""#,
+        vg_sha512_digest = sym crate::sha512::raw::vg_sha512_digest,
+        vg_ed25519_public_key_expanded = sym crate::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
+    )
+}
+
+/// The verified code of [`super::vg_ed25519_sign_expanded`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "wf4h+CAAITmmAgh84ACJ+ugAqfrwAMn6+ADp+gABCfsIASn7EAEJ+AAAgzoAAKQ6AADGOgAA5zoAAAg7AAApOwAABenAABn5CAAF6cgAGfkQAAXp0AAZ+RgABenYABn5AAAV6YAAGfkIABXpiAAZ+RAAFemQABn5GAAV6ZgAGfkgABXpoAAZ+SgAFemoABn5MAAV6bAAGfk4ABXpuAAZ+YAAGenC6Ah5JB8IeQAAGfmIABnpCAAZ+ZAAGekQABn5mAAZ6WQXCHmC8Ah5AEAgPcYHKXl4Swh9GAAZ+aAAGekgABn5qAAZ6SgAGfmwABnpMAAZ+bgAGek4ABn5AAB4OA=="
 bl {vg_sha512_init}
@@ -73,28 +110,18 @@ bl {vg_ed25519_scalar_reduce}
 .base64 "IAB0OEAAmThgALk4AADZOAAA+Dg="
 bl {vg_ed25519_scalar_mul_add}
 .base64 "EAEZ6OAAmeroALnq8ADZ6vgA+eoAARnrCAE566YDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPlAASE4IACATg==""#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
-        vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
+        vg_sha512_init = sym crate::sha512::raw::vg_sha512_init,
+        vg_sha512_update_scratch = sym crate::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym crate::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym crate::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_scalar_base = sym crate::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
+        vg_ed25519_scalar_mul_add = sym crate::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
     )
 }
 
-/// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 32 bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `signature` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
-/// * None of `pk`, `message`, `signature` and `scratch` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ed25519_verify`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "If8h+CAAATmmAgh8gACI+ogAqPqQAMj6mADo+qAACPuoACj7sAAI+AAAgzoAAKQ6AADFOgAA5joAAAc7AAAoOwAAeDg="
 bl {vg_sha512_init}
@@ -111,12 +138,13 @@ bl {vg_ed25519_scalar_reduce}
 .base64 "AAAAOSAAGfkoABn5MAAZ+TgAGfkAAHQ4AACXOAAAuTgAANg4"
 bl {vg_ed25519_verify_equation}
 .base64 "sAAZ6IAAmeqIALnqkADZ6pgA+eqgABnrqAA566YDCHzgACE4IACATg==""#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
-        vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
-        vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
+        vg_sha512_init = sym crate::sha512::raw::vg_sha512_init,
+        vg_sha512_update_scratch = sym crate::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym crate::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_ed25519_scalar_reduce = sym crate::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
+        vg_ed25519_verify_equation = sym crate::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
     )
+}
 }
 
 #[rustfmt::skip]

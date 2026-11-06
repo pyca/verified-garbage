@@ -15,18 +15,11 @@
 /// * `ctx` must be valid for reads and writes of 256 bytes.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 4112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk8PX//4uEJBQKAACJRCQEi4QkGAoAAIlEJAiJ4IPAEIlEJAyLRCQMiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBInyUlA="
-call {vg_sm4_expand_key}
-.base64 "WFi4AAAAAImG8AAAAImG9AAAAImG+AAAAImG/AAAALgAAAAAiUVgiUVkiUVoiUVsifCJ6oPCYInzgcPwAAAAvwEAAABXU1JQ"
-call {vg_sm4_ctr32}
-.base64 "WFhYWIudgAAAAIu1hAAAAIu9iAAAAIutjAAAAI2kJBAKAADD"
-.p2align 6"#,
-        vg_sm4_expand_key = sym super::sm4::vg_sm4_expand_key,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
-    )
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_init(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 16], ctx: *mut [u64; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_init(key, ctx) }
 }
 
 /// The CPU features `vg_sm4_gcm_stream_init_pclmul` requires (`Artifact.features`).
@@ -48,79 +41,11 @@ pub const VG_SM4_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk6PX//4uEJBwKAACJRCQEi4QkIAoAAIlEJAiLhCQkCgAAiUQkDIuEJCgKAACJRCQQieCDwBiJRCQUi0QkFImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAAC4AAAAAImFvAAAAIuFwAAAAIP4DA=="
-je 20f
-.base64 "uAAAAACJBolGBIlGCIlGDImFGAEAAIuFFAEAAIXA"
-je 22f
-.base64 "i4UYAQAAhcA="
-je 24f
-.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
-jb 26f
-jmp 27f
-26:
-.base64 "icE="
-27:
-.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
-28:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 28b
-.base64 "i4UYAQAAg/gQ"
-je 29f
-jmp 210f
-29:
-.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-210:
-jmp 25f
-24:
-25:
-.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 211f
-.base64 "i4WQAAAABfAAAACJ8oPCAIHFAAIAAFVXU1JQ"
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 212f
-211:
-212:
-.base64 "i40UAQAAhck="
-je 213f
-.base64 "i70QAQAAifKDwiA="
-215:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 215b
-jmp 214f
-213:
-214:
-jmp 23f
-22:
-23:
-.base64 "i4XAAAAAg+APiYUYAQAAi40YAQAAhck="
-je 216f
-.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
-218:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 218b
-.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 217f
-216:
-217:
-.base64 "i4W8AAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhcAAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IAgcUAAgAAVVdTUlA="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 21f
-20:
-.base64 "i70QAQAAiweLTwSLVwiJBolOBIlWCLgAAAABiUYM"
-21:
-.base64 "iwaJRjCLRgSJRjSLRgiJRjiLRgwPyIPAAQ/IiUY8uAAAAACJRhCJRhSJRhiJRhyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQYCgAAww=="
-.p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-    )
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_stream_init_pclmul(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_stream_init_pclmul(ctx, nonce, nonce_len, state) }
 }
 
 /// The CPU features `vg_sm4_gcm_stream_aad_pclmul` requires (`Artifact.features`).
@@ -140,58 +65,11 @@ pub const VG_SM4_GCM_STREAM_AAD_PCLMUL_FEATURES: verified_garbage_cpu::Features 
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk4PX//4uEJCQKAACJRCQEi4QkKAoAAIlEJAiLhCQsCgAAiUQkDIuEJDAKAACJRCQQi4QkNAoAAIlEJBSLhCQ4CgAAiUQkGIngg8AgiUQkHItEJByJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAiLRCQEiYWQAAAAi0QkFImFEAEAAItEJBiJhRQBAACLRCQMg+APiYUYAQAAi4UUAQAAhcA="
-je 20f
-.base64 "i4UYAQAAhcA="
-je 22f
-.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
-jb 24f
-jmp 25f
-24:
-.base64 "icE="
-25:
-.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
-26:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 26b
-.base64 "i4UYAQAAg/gQ"
-je 27f
-jmp 28f
-27:
-.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-28:
-jmp 23f
-22:
-23:
-.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 29f
-.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 210f
-29:
-210:
-.base64 "i40UAQAAhck="
-je 211f
-.base64 "i70QAQAAifKDwiA="
-213:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 213b
-jmp 212f
-211:
-212:
-jmp 21f
-20:
-21:
-.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkIAoAAMM="
-.p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-    )
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_stream_aad_pclmul(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_stream_aad_pclmul(ctx, state, aad_len, data, len) }
 }
 
 /// The CPU features `vg_sm4_gcm_stream_encrypt_pclmul` requires (`Artifact.features`).
@@ -213,120 +91,11 @@ pub const VG_SM4_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_encrypt_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIuFqAAAAImFEAEAAIuFrAAAAImFFAEAAIuFoAAAAIPgD4mFGAEAAIuFFAEAAIXA"
-je 20f
-.base64 "i4UYAQAAhcA="
-je 22f
-.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
-jb 24f
-jmp 25f
-24:
-.base64 "icE="
-25:
-.base64 "i70QAQAAifKDwkADlRgBAACLhRQBAAApyImFFAEAAIn4AciJhRABAAA="
-26:
-.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
-jne 26b
-jmp 23f
-22:
-23:
-.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 27f
-.base64 "i4WQAAAAifKDwjBXU1JQ"
-call {vg_sm4_ctr32}
-.base64 "WFhYWA=="
-jmp 28f
-27:
-28:
-.base64 "i4UUAQAAhcA="
-je 29f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAifKDwjBXU1JQ"
-call {vg_sm4_ctr32}
-.base64 "WFhYWIu9EAEAAInyg8JAi40UAQAA"
-211:
-.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
-jne 211b
-jmp 210f
-29:
-210:
-jmp 21f
-20:
-21:
-.base64 "i4WsAAAAhcA="
-je 212f
-.base64 "i4WgAAAAC4WkAAAA"
-je 214f
-jmp 215f
-214:
-.base64 "i4WYAAAAg+APiYUYAQAAi40YAQAAhck="
-je 216f
-.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
-218:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 218b
-.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 217f
-216:
-217:
-215:
-.base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi4WgAAAAg+APiYUYAQAAi4UUAQAAhcA="
-je 219f
-.base64 "i4UYAQAAhcA="
-je 221f
-.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
-jb 223f
-jmp 224f
-223:
-.base64 "icE="
-224:
-.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
-225:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 225b
-.base64 "i4UYAQAAg/gQ"
-je 226f
-jmp 227f
-226:
-.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-227:
-jmp 222f
-221:
-222:
-.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 228f
-.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 229f
-228:
-229:
-.base64 "i40UAQAAhck="
-je 230f
-.base64 "i70QAQAAifKDwiA="
-232:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 232b
-jmp 231f
-230:
-231:
-jmp 220f
-219:
-220:
-jmp 213f
-212:
-213:
-.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
-.p2align 6"#,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-    )
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_stream_encrypt_pclmul(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_stream_encrypt_pclmul(ctx, state, aad_len, text_len, data, len) }
 }
 
 /// The CPU features `vg_sm4_gcm_stream_decrypt_pclmul` requires (`Artifact.features`).
@@ -348,120 +117,11 @@ pub const VG_SM4_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_decrypt_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIuFrAAAAIXA"
-je 20f
-.base64 "i4WgAAAAC4WkAAAA"
-je 22f
-jmp 23f
-22:
-.base64 "i4WYAAAAg+APiYUYAQAAi40YAQAAhck="
-je 24f
-.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
-26:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 26b
-.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 25f
-24:
-25:
-23:
-.base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi4WgAAAAg+APiYUYAQAAi4UUAQAAhcA="
-je 27f
-.base64 "i4UYAQAAhcA="
-je 29f
-.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
-jb 211f
-jmp 212f
-211:
-.base64 "icE="
-212:
-.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
-213:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 213b
-.base64 "i4UYAQAAg/gQ"
-je 214f
-jmp 215f
-214:
-.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-215:
-jmp 210f
-29:
-210:
-.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 216f
-.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 217f
-216:
-217:
-.base64 "i40UAQAAhck="
-je 218f
-.base64 "i70QAQAAifKDwiA="
-220:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 220b
-jmp 219f
-218:
-219:
-jmp 28f
-27:
-28:
-jmp 21f
-20:
-21:
-.base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi4WgAAAAg+APiYUYAQAAi4UUAQAAhcA="
-je 221f
-.base64 "i4UYAQAAhcA="
-je 223f
-.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
-jb 225f
-jmp 226f
-225:
-.base64 "icE="
-226:
-.base64 "i70QAQAAifKDwkADlRgBAACLhRQBAAApyImFFAEAAIn4AciJhRABAAA="
-227:
-.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
-jne 227b
-jmp 224f
-223:
-224:
-.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 228f
-.base64 "i4WQAAAAifKDwjBXU1JQ"
-call {vg_sm4_ctr32}
-.base64 "WFhYWA=="
-jmp 229f
-228:
-229:
-.base64 "i4UUAQAAhcA="
-je 230f
-.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAifKDwjBXU1JQ"
-call {vg_sm4_ctr32}
-.base64 "WFhYWIu9EAEAAInyg8JAi40UAQAA"
-232:
-.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
-jne 232b
-jmp 231f
-230:
-231:
-jmp 222f
-221:
-222:
-.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
-.p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
-    )
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_stream_decrypt_pclmul(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_stream_decrypt_pclmul(ctx, state, aad_len, text_len, data, len) }
 }
 
 /// The CPU features `vg_sm4_gcm_stream_finish_pclmul` requires (`Artifact.features`).
@@ -482,36 +142,11 @@ pub const VG_SM4_GCM_STREAM_FINISH_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_finish_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk3PX//4uEJCgKAACJRCQEi4QkLAoAAIlEJAiLhCQwCgAAiUQkDIuEJDQKAACJRCQQi4QkOAoAAIlEJBSLhCQ8CgAAiUQkGIuEJEAKAACJRCQcieCDwCSJRCQgi0QkIImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkCItEJASJhZAAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImF1AAAAIuFoAAAAIuNmAAAAIuVoAAAAAuVpAAAAA=="
-je 20f
-jmp 21f
-20:
-.base64 "icg="
-21:
-.base64 "g+APiYUYAQAAi40YAQAAhck="
-je 22f
-.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
-24:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 24b
-.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 23f
-22:
-23:
-.base64 "i4WYAAAAi42cAAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhaAAAACLjaQAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAifJXU1JQ"
-call {vg_sm4_ctr32}
-.base64 "WFhYWItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkJAoAAMM="
-.p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
-    )
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_stream_finish_pclmul(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_stream_finish_pclmul(ctx, state, aad_len, text_len, tag) }
 }
 
 /// The CPU features `vg_sm4_gcm_stream_verify_pclmul` requires (`Artifact.features`).
@@ -532,62 +167,11 @@ pub const VG_SM4_GCM_STREAM_VERIFY_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_verify_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYXUAAAAi0QkIImFtAAAALkAAAAAi520AAAAg/sE"
-jb 20f
-.base64 "g/sR"
-jb 22f
-jmp 23f
-22:
-.base64 "uQEAAAA="
-23:
-jmp 21f
-20:
-21:
-.base64 "hck="
-je 24f
-.base64 "uAAAAACJhcQAAACJhcgAAACJhcwAAACJhdAAAACLvdQAAACJ6oHCxAAAAIuNtAAAAA=="
-26:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 26b
-.base64 "i4WgAAAAi42YAAAAi5WgAAAAC5WkAAAA"
-je 27f
-jmp 28f
-27:
-.base64 "icg="
-28:
-.base64 "g+APiYUYAQAAi40YAQAAhck="
-je 29f
-.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
-211:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 211b
-.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 210f
-29:
-210:
-.base64 "i4WYAAAAi42cAAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhaAAAACLjaQAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAifJXU1JQ"
-call {vg_sm4_ctr32}
-.base64 "WFhYWLgAAAAAiYXwAAAAiYX0AAAAiYX4AAAAiYX8AAAAie+DxwCJ6oHC8AAAAIuNtAAAAA=="
-212:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 212b
-.base64 "i4XwAAAAM4XEAAAAi430AAAAM43IAAAACciLjfgAAAAzjcwAAAAJyIuN/AAAADON0AAAAAnIg/gBuAAAAACD0AA="
-jmp 25f
-24:
-.base64 "uAAAAAA="
-25:
-.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
-.p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
-    )
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_stream_verify_pclmul(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_stream_verify_pclmul(ctx, state, aad_len, text_len, tag, tag_len) }
 }
 
 /// The CPU features `vg_sm4_gcm_seal_pclmul` requires (`Artifact.features`).
@@ -611,8 +195,699 @@ pub const VG_SM4_GCM_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = veri
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_seal_pclmul(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_seal_pclmul(ctx, nonce, nonce_len, aad, aad_len, data, len, tag) }
+}
+
+/// The CPU features `vg_sm4_gcm_open_pclmul` requires (`Artifact.features`).
+pub const VG_SM4_GCM_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+
+/// SM4-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4140 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_open_pclmul(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_open_pclmul(ctx, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// Starts an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_sm4_gcm_stream_aad`, then `vg_sm4_gcm_stream_encrypt` or `vg_sm4_gcm_stream_decrypt`, then `vg_sm4_gcm_stream_finish` or `vg_sm4_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_stream_init(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_stream_init(ctx, nonce, nonce_len, state) }
+}
+
+/// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_stream_aad(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_stream_aad(ctx, state, aad_len, data, len) }
+}
+
+/// Encrypts the next piece of the text of an incremental SM4-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamEncryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_stream_encrypt(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_stream_encrypt(ctx, state, aad_len, text_len, data, len) }
+}
+
+/// Decrypts the next piece of the text of an incremental SM4-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_sm4_gcm_stream_verify` has returned 1.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamDecryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_stream_decrypt(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_stream_decrypt(ctx, state, aad_len, text_len, data, len) }
+}
+
+/// Finishes an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_sm4_gcm_stream_verify`.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_stream_finish(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_stream_finish(ctx, state, aad_len, text_len, tag) }
+}
+
+/// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_stream_verify(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_stream_verify(ctx, state, aad_len, text_len, tag, tag_len) }
+}
+
+/// SM4-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_seal(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_seal(ctx, nonce, nonce_len, aad, aad_len, data, len, tag) }
+}
+
+/// SM4-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4140 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_sm4_gcm_open(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm4_gcm_open(ctx, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_sm4_gcm_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_seal_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk8PX//4uEJBQKAACJRCQEi4QkGAoAAIlEJAiJ4IPAEIlEJAyLRCQMiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBInyUlA="
+call {vg_sm4_expand_key}
+.base64 "WFi4AAAAAImG8AAAAImG9AAAAImG+AAAAImG/AAAALgAAAAAiUVgiUVkiUVoiUVsifCJ6oPCYInzgcPwAAAAvwEAAABXU1JQ"
+call {vg_sm4_ctr32}
+.base64 "WFhYWIudgAAAAIu1hAAAAIu9iAAAAIutjAAAAI2kJBAKAADD"
+.p2align 6"#,
+        vg_sm4_expand_key = sym crate::sm4::raw::vg_sm4_expand_key,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+    )
+}
+
+/// The verified code of [`super::vg_sm4_gcm_stream_init_pclmul`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk6PX//4uEJBwKAACJRCQEi4QkIAoAAIlEJAiLhCQkCgAAiUQkDIuEJCgKAACJRCQQieCDwBiJRCQUi0QkFImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAAC4AAAAAImFvAAAAIuFwAAAAIP4DA=="
+je 20f
+.base64 "uAAAAACJBolGBIlGCIlGDImFGAEAAIuFFAEAAIXA"
+je 22f
+.base64 "i4UYAQAAhcA="
+je 24f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 26f
+jmp 27f
+26:
+.base64 "icE="
+27:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+28:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 28b
+.base64 "i4UYAQAAg/gQ"
+je 29f
+jmp 210f
+29:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+210:
+jmp 25f
+24:
+25:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 211f
+.base64 "i4WQAAAABfAAAACJ8oPCAIHFAAIAAFVXU1JQ"
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 212f
+211:
+212:
+.base64 "i40UAQAAhck="
+je 213f
+.base64 "i70QAQAAifKDwiA="
+215:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 215b
+jmp 214f
+213:
+214:
+jmp 23f
+22:
+23:
+.base64 "i4XAAAAAg+APiYUYAQAAi40YAQAAhck="
+je 216f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+218:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 218b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 217f
+216:
+217:
+.base64 "i4W8AAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhcAAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IAgcUAAgAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 21f
+20:
+.base64 "i70QAQAAiweLTwSLVwiJBolOBIlWCLgAAAABiUYM"
+21:
+.base64 "iwaJRjCLRgSJRjSLRgiJRjiLRgwPyIPAAQ/IiUY8uAAAAACJRhCJRhSJRhiJRhyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQYCgAAww=="
+.p2align 6"#,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+    )
+}
+
+/// The verified code of [`super::vg_sm4_gcm_stream_aad_pclmul`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk4PX//4uEJCQKAACJRCQEi4QkKAoAAIlEJAiLhCQsCgAAiUQkDIuEJDAKAACJRCQQi4QkNAoAAIlEJBSLhCQ4CgAAiUQkGIngg8AgiUQkHItEJByJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAiLRCQEiYWQAAAAi0QkFImFEAEAAItEJBiJhRQBAACLRCQMg+APiYUYAQAAi4UUAQAAhcA="
+je 20f
+.base64 "i4UYAQAAhcA="
+je 22f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 24f
+jmp 25f
+24:
+.base64 "icE="
+25:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+26:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 26b
+.base64 "i4UYAQAAg/gQ"
+je 27f
+jmp 28f
+27:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+28:
+jmp 23f
+22:
+23:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 29f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 210f
+29:
+210:
+.base64 "i40UAQAAhck="
+je 211f
+.base64 "i70QAQAAifKDwiA="
+213:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 213b
+jmp 212f
+211:
+212:
+jmp 21f
+20:
+21:
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkIAoAAMM="
+.p2align 6"#,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+    )
+}
+
+/// The verified code of [`super::vg_sm4_gcm_stream_encrypt_pclmul`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_encrypt_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIuFqAAAAImFEAEAAIuFrAAAAImFFAEAAIuFoAAAAIPgD4mFGAEAAIuFFAEAAIXA"
+je 20f
+.base64 "i4UYAQAAhcA="
+je 22f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 24f
+jmp 25f
+24:
+.base64 "icE="
+25:
+.base64 "i70QAQAAifKDwkADlRgBAACLhRQBAAApyImFFAEAAIn4AciJhRABAAA="
+26:
+.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
+jne 26b
+jmp 23f
+22:
+23:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 27f
+.base64 "i4WQAAAAifKDwjBXU1JQ"
+call {vg_sm4_ctr32}
+.base64 "WFhYWA=="
+jmp 28f
+27:
+28:
+.base64 "i4UUAQAAhcA="
+je 29f
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAifKDwjBXU1JQ"
+call {vg_sm4_ctr32}
+.base64 "WFhYWIu9EAEAAInyg8JAi40UAQAA"
+211:
+.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
+jne 211b
+jmp 210f
+29:
+210:
+jmp 21f
+20:
+21:
+.base64 "i4WsAAAAhcA="
+je 212f
+.base64 "i4WgAAAAC4WkAAAA"
+je 214f
+jmp 215f
+214:
+.base64 "i4WYAAAAg+APiYUYAQAAi40YAQAAhck="
+je 216f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+218:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 218b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 217f
+216:
+217:
+215:
+.base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi4WgAAAAg+APiYUYAQAAi4UUAQAAhcA="
+je 219f
+.base64 "i4UYAQAAhcA="
+je 221f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 223f
+jmp 224f
+223:
+.base64 "icE="
+224:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+225:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 225b
+.base64 "i4UYAQAAg/gQ"
+je 226f
+jmp 227f
+226:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+227:
+jmp 222f
+221:
+222:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 228f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 229f
+228:
+229:
+.base64 "i40UAQAAhck="
+je 230f
+.base64 "i70QAQAAifKDwiA="
+232:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 232b
+jmp 231f
+230:
+231:
+jmp 220f
+219:
+220:
+jmp 213f
+212:
+213:
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
+.p2align 6"#,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+    )
+}
+
+/// The verified code of [`super::vg_sm4_gcm_stream_decrypt_pclmul`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_decrypt_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIuFrAAAAIXA"
+je 20f
+.base64 "i4WgAAAAC4WkAAAA"
+je 22f
+jmp 23f
+22:
+.base64 "i4WYAAAAg+APiYUYAQAAi40YAQAAhck="
+je 24f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+26:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 26b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 25f
+24:
+25:
+23:
+.base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi4WgAAAAg+APiYUYAQAAi4UUAQAAhcA="
+je 27f
+.base64 "i4UYAQAAhcA="
+je 29f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 211f
+jmp 212f
+211:
+.base64 "icE="
+212:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+213:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 213b
+.base64 "i4UYAQAAg/gQ"
+je 214f
+jmp 215f
+214:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+215:
+jmp 210f
+29:
+210:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 216f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 217f
+216:
+217:
+.base64 "i40UAQAAhck="
+je 218f
+.base64 "i70QAQAAifKDwiA="
+220:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 220b
+jmp 219f
+218:
+219:
+jmp 28f
+27:
+28:
+jmp 21f
+20:
+21:
+.base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi4WgAAAAg+APiYUYAQAAi4UUAQAAhcA="
+je 221f
+.base64 "i4UYAQAAhcA="
+je 223f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 225f
+jmp 226f
+225:
+.base64 "icE="
+226:
+.base64 "i70QAQAAifKDwkADlRgBAACLhRQBAAApyImFFAEAAIn4AciJhRABAAA="
+227:
+.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
+jne 227b
+jmp 224f
+223:
+224:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 228f
+.base64 "i4WQAAAAifKDwjBXU1JQ"
+call {vg_sm4_ctr32}
+.base64 "WFhYWA=="
+jmp 229f
+228:
+229:
+.base64 "i4UUAQAAhcA="
+je 230f
+.base64 "uAAAAACJRkCJRkSJRkiJRkyJ84PDQL8BAAAAi4WQAAAAifKDwjBXU1JQ"
+call {vg_sm4_ctr32}
+.base64 "WFhYWIu9EAEAAInyg8JAi40UAQAA"
+232:
+.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
+jne 232b
+jmp 231f
+230:
+231:
+jmp 222f
+221:
+222:
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
+.p2align 6"#,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+    )
+}
+
+/// The verified code of [`super::vg_sm4_gcm_stream_finish_pclmul`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_finish_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk3PX//4uEJCgKAACJRCQEi4QkLAoAAIlEJAiLhCQwCgAAiUQkDIuEJDQKAACJRCQQi4QkOAoAAIlEJBSLhCQ8CgAAiUQkGIuEJEAKAACJRCQcieCDwCSJRCQgi0QkIImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkCItEJASJhZAAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImF1AAAAIuFoAAAAIuNmAAAAIuVoAAAAAuVpAAAAA=="
+je 20f
+jmp 21f
+20:
+.base64 "icg="
+21:
+.base64 "g+APiYUYAQAAi40YAQAAhck="
+je 22f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+24:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 24b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 23f
+22:
+23:
+.base64 "i4WYAAAAi42cAAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhaAAAACLjaQAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAifJXU1JQ"
+call {vg_sm4_ctr32}
+.base64 "WFhYWItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkJAoAAMM="
+.p2align 6"#,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+    )
+}
+
+/// The verified code of [`super::vg_sm4_gcm_stream_verify_pclmul`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_verify_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYXUAAAAi0QkIImFtAAAALkAAAAAi520AAAAg/sE"
+jb 20f
+.base64 "g/sR"
+jb 22f
+jmp 23f
+22:
+.base64 "uQEAAAA="
+23:
+jmp 21f
+20:
+21:
+.base64 "hck="
+je 24f
+.base64 "uAAAAACJhcQAAACJhcgAAACJhcwAAACJhdAAAACLvdQAAACJ6oHCxAAAAIuNtAAAAA=="
+26:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 26b
+.base64 "i4WgAAAAi42YAAAAi5WgAAAAC5WkAAAA"
+je 27f
+jmp 28f
+27:
+.base64 "icg="
+28:
+.base64 "g+APiYUYAQAAi40YAQAAhck="
+je 29f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+211:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 211b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 210f
+29:
+210:
+.base64 "i4WYAAAAi42cAAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhaAAAACLjaQAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IQgcUAAgAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAACLRhCLThSLVhiLXhyJRQCJTQSJVQiJXQyJ64PDAL8BAAAAi4WQAAAAifJXU1JQ"
+call {vg_sm4_ctr32}
+.base64 "WFhYWLgAAAAAiYXwAAAAiYX0AAAAiYX4AAAAiYX8AAAAie+DxwCJ6oHC8AAAAIuNtAAAAA=="
+212:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 212b
+.base64 "i4XwAAAAM4XEAAAAi430AAAAM43IAAAACciLjfgAAAAzjcwAAAAJyIuN/AAAADON0AAAAAnIg/gBuAAAAACD0AA="
+jmp 25f
+24:
+.base64 "uAAAAAA="
+25:
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
+.p2align 6"#,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+    )
+}
+
+/// The verified code of [`super::vg_sm4_gcm_seal_pclmul`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_seal_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWJ7oPGEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAACLRCQQiYWwAAAAi0QkFImFmAAAAItEJBiJhagAAACLRCQciYWsAAAAi0QkIImF1AAAALgAAAAAiYW8AAAAi4XAAAAAg/gM"
 je 20f
@@ -839,34 +1114,14 @@ call {vg_ghash_pclmul}
 call {vg_sm4_ctr32}
 .base64 "WFhYWItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
-/// The CPU features `vg_sm4_gcm_open_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
-
-/// SM4-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
-///
-/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4140 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// The verified code of [`super::vg_sm4_gcm_open_pclmul`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_open_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_open_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYnug8YQi0QkBImFkAAAAItEJAiJhRABAACLRCQMiYUUAQAAi0QkDImFwAAAAItEJBCJhbAAAACLRCQUiYWYAAAAi0QkGImFqAAAAItEJByJhawAAACLRCQgiYXUAAAAi0QkJImFtAAAALgAAAAAiYW8AAAAuQAAAACLnbQAAACD+wQ="
 jb 20f
@@ -1124,28 +1379,14 @@ jmp 25f
 25:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+        vg_ghash_pclmul = sym crate::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
-/// Starts an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_sm4_gcm_stream_aad`, then `vg_sm4_gcm_stream_encrypt` or `vg_sm4_gcm_stream_decrypt`, then `vg_sm4_gcm_stream_finish` or `vg_sm4_gcm_stream_verify`, with the same key context.
-///
-/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sm4_gcm_stream_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk6PX//4uEJBwKAACJRCQEi4QkIAoAAIlEJAiLhCQkCgAAiUQkDIuEJCgKAACJRCQQieCDwBiJRCQUi0QkFImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAAC4AAAAAImFvAAAAIuFwAAAAIP4DA=="
 je 20f
@@ -1215,25 +1456,13 @@ jmp 21f
 21:
 .base64 "iwaJRjCLRgSJRjSLRgiJRjiLRgwPyIPAAQ/IiUY8uAAAAACJRhCJRhSJRhiJRhyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQYCgAAww=="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
-/// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
-///
-/// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sm4_gcm_stream_aad`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk4PX//4uEJCQKAACJRCQEi4QkKAoAAIlEJAiLhCQsCgAAiUQkDIuEJDAKAACJRCQQi4QkNAoAAIlEJBSLhCQ4CgAAiUQkGIngg8AgiUQkHItEJByJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAiLRCQEiYWQAAAAi0QkFImFEAEAAItEJBiJhRQBAACLRCQMg+APiYUYAQAAi4UUAQAAhcA="
 je 20f
@@ -1282,27 +1511,13 @@ jmp 21f
 21:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkIAoAAMM="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
-/// Encrypts the next piece of the text of an incremental SM4-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
-///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Sm4.Gcm.streamEncryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sm4_gcm_stream_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_encrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_encrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIuFqAAAAImFEAEAAIuFrAAAAImFFAEAAIuFoAAAAIPgD4mFGAEAAIuFFAEAAIXA"
 je 20f
@@ -1412,28 +1627,14 @@ jmp 213f
 213:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
 
-/// Decrypts the next piece of the text of an incremental SM4-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_sm4_gcm_stream_verify` has returned 1.
-///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Sm4.Gcm.streamDecryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sm4_gcm_stream_decrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_decrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_decrypt(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYWoAAAAi0QkIImFrAAAAIuFrAAAAIXA"
 je 20f
@@ -1543,27 +1744,14 @@ jmp 222f
 222:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
-/// Finishes an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_sm4_gcm_stream_verify`.
-///
-/// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sm4_gcm_stream_finish`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_finish(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_finish(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk3PX//4uEJCgKAACJRCQEi4QkLAoAAIlEJAiLhCQwCgAAiUQkDIuEJDQKAACJRCQQi4QkOAoAAIlEJBSLhCQ8CgAAiUQkGIuEJEAKAACJRCQcieCDwCSJRCQgi0QkIImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkCItEJASJhZAAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImF1AAAAIuFoAAAAIuNmAAAAIuVoAAAAAuVpAAAAA=="
 je 20f
@@ -1589,27 +1777,14 @@ call {vg_ghash}
 call {vg_sm4_ctr32}
 .base64 "WFhYWItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkJAoAAMM="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
-/// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * The contents of `state` on return are unspecified.
-/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sm4_gcm_stream_verify`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_stream_verify(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_verify(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBImFkAAAAItEJAyJhZgAAACLRCQQiYWcAAAAi0QkFImFoAAAAItEJBiJhaQAAACLRCQciYXUAAAAi0QkIImFtAAAALkAAAAAi520AAAAg/sE"
 jb 20f
@@ -1661,30 +1836,14 @@ jmp 25f
 25:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
-/// SM4-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
-///
-/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sm4_gcm_seal`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_seal(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_seal(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk2PX//4uEJCwKAACJRCQEi4QkMAoAAIlEJAiLhCQ0CgAAiUQkDIuEJDgKAACJRCQQi4QkPAoAAIlEJBSLhCRACgAAiUQkGIuEJEQKAACJRCQci4QkSAoAAIlEJCCJ4IPAKIlEJCSLRCQkiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWJ7oPGEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAACLRCQQiYWwAAAAi0QkFImFmAAAAItEJBiJhagAAACLRCQciYWsAAAAi0QkIImF1AAAALgAAAAAiYW8AAAAi4XAAAAAg/gM"
 je 20f
@@ -1911,30 +2070,14 @@ call {vg_ghash}
 call {vg_sm4_ctr32}
 .base64 "WFhYWItFAItNBItVCItdDIu91AAAAIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkKAoAAMM="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
 
-/// SM4-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
-///
-/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4140 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sm4_gcm_open`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm4_gcm_open(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_open(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk1PX//4uEJDAKAACJRCQEi4QkNAoAAIlEJAiLhCQ4CgAAiUQkDIuEJDwKAACJRCQQi4QkQAoAAIlEJBSLhCRECgAAiUQkGIuEJEgKAACJRCQci4QkTAoAAIlEJCCLhCRQCgAAiUQkJIngg8AsiUQkKItEJCiJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYnug8YQi0QkBImFkAAAAItEJAiJhRABAACLRCQMiYUUAQAAi0QkDImFwAAAAItEJBCJhbAAAACLRCQUiYWYAAAAi0QkGImFqAAAAItEJByJhawAAACLRCQgiYXUAAAAi0QkJImFtAAAALgAAAAAiYW8AAAAuQAAAACLnbQAAACD+wQ="
 jb 20f
@@ -2192,7 +2335,8 @@ jmp 25f
 25:
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkLAoAAMM="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_sm4_ctr32 = sym crate::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
+}
 }

@@ -17,8 +17,19 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
 /// * None of `out`, `d` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_brainpoolp384r1_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_brainpoolp384r1_public_key(out, d, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_brainpoolp384r1_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_brainpoolp384r1_public_key(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_brainpoolp384r1_public_key(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "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"
 20:
@@ -58,10 +69,11 @@ call {vg_brainpoolp384r1_mul_mod_p}
 call {vg_brainpoolp384r1_mul_mod_p}
 .base64 "WFhYWIuXQAYAACtXcIuXRAYAABtXdIuXSAYAABtXeIuXTAYAABtXfIuXUAYAABuXgAAAAIuXVAYAABuXhAAAAIuXWAYAABuXiAAAAIuXXAYAABuXjAAAAIuXYAYAABuXkAAAAIuXZAYAABuXlAAAAIuXaAYAABuXmAAAAIuXbAYAABuXnAAAABnAicOLl0AGAAALl0QGAAALl0gGAAALl0wGAAALl1AGAAALl1QGAAALl1gGAAALl1wGAAALl2AGAAALl2QGAAALl2gGAAALl2wGAAC5AAAAACnRGdIh2ouHgAgAACHQiYeACAAAi5dAAwAAC5dEAwAAC5dIAwAAC5dMAwAAC5dQAwAAC5dUAwAAC5dYAwAAC5dcAwAAC5dgAwAAC5dkAwAAC5doAwAAC5dsAwAAuQAAAAAp0RnSi4eACAAAIdCJh4AIAACLj4AIAACLXCQEuAQAAAAhyIgDi4fQBgAAIcgPyIlDLYuH1AYAACHID8iJQymLh9gGAAAhyA/IiUMli4fcBgAAIcgPyIlDIYuH4AYAACHID8iJQx2Lh+QGAAAhyA/IiUMZi4foBgAAIcgPyIlDFYuH7AYAACHID8iJQxGLh/AGAAAhyA/IiUMNi4f0BgAAIcgPyIlDCYuH+AYAACHID8iJQwWLh/wGAAAhyA/IiUMBi4dQCAAAIcgPyIlDXYuHVAgAACHID8iJQ1mLh1gIAAAhyA/IiUNVi4dcCAAAIcgPyIlDUYuHYAgAACHID8iJQ02Lh2QIAAAhyA/IiUNJi4doCAAAIcgPyIlDRYuHbAgAACHID8iJQ0GLh3AIAAAhyA/IiUM9i4d0CAAAIcgPyIlDOYuHeAgAACHID8iJQzWLh3wIAAAhyA/IiUMxiciD4AGJ+osai3IEi2oMi3oIww=="
 .p2align 6"#,
-        vg_brainpoolp384r1_point_double = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_double::vg_brainpoolp384r1_point_double,
-        vg_brainpoolp384r1_point_add = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_add::vg_brainpoolp384r1_point_add,
-        vg_brainpoolp384r1_mul_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p::vg_brainpoolp384r1_mul_mod_p,
+        vg_brainpoolp384r1_point_double = sym crate::ec_brainpoolp384r1::vg_brainpoolp384r1_point_double::vg_brainpoolp384r1_point_double,
+        vg_brainpoolp384r1_point_add = sym crate::ec_brainpoolp384r1::vg_brainpoolp384r1_point_add::vg_brainpoolp384r1_point_add,
+        vg_brainpoolp384r1_mul_mod_p = sym crate::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p::vg_brainpoolp384r1_mul_mod_p,
     )
+}
 }
 
 #[rustfmt::skip]

@@ -169,10 +169,11 @@ impl Drop for Squeezing {
 }
 
 /// `update`, through the implementation `backend`: absorbs `data` into
-/// `$s` (an `Absorbing`), with the function's `update` or its `_sha3`
+/// `$s` (an `Absorbing`), with the token `$dit`, with the function's `update` or its `_sha3`
 /// variant.
 macro_rules! absorb {
-    ($s:expr, $data:expr, $update:ident, $update_sha3:ident) => {{
+    ($dit:expr, $s:expr, $data:expr, $update:ident, $update_sha3:ident) => {{
+        let dit: crate::dit::Dit<'_> = $dit;
         let s: &mut Absorbing = $s;
         let data: &[u8] = $data;
         let backend = s.backend();
@@ -191,6 +192,7 @@ macro_rules! absorb {
         s.pos = unsafe {
             match backend {
                 Backend::Scalar => $update(
+                    dit,
                     &mut s.state,
                     s.pos,
                     data.as_ptr(),
@@ -199,6 +201,7 @@ macro_rules! absorb {
                 ),
                 #[cfg(target_arch = "aarch64")]
                 Backend::Sha3 => $update_sha3(
+                    dit,
                     &mut s.state,
                     s.pos,
                     data.as_ptr(),
@@ -243,11 +246,23 @@ macro_rules! sha3 {
 
             /// Absorbs `data`.
             pub fn update(&mut self, data: &[u8]) {
-                absorb!(&mut self.0, data, $update, $update_sha3);
+                self.update_with(crate::dit::public(crate::dit::Why::UnkeyedHash), data);
+            }
+
+            /// [`update`](Self::update), with the token of the operation it
+            /// is part of (see `crate::dit`).
+            pub(crate) fn update_with(&mut self, dit: crate::dit::Dit<'_>, data: &[u8]) {
+                absorb!(dit, &mut self.0, data, $update, $update_sha3);
             }
 
             /// Pads the message and returns its digest.
-            pub fn finalize(mut self) -> [u8; $output] {
+            pub fn finalize(self) -> [u8; $output] {
+                self.finalize_with(crate::dit::public(crate::dit::Why::UnkeyedHash))
+            }
+
+            /// [`finalize`](Self::finalize), with the token of the operation
+            /// it is part of (see `crate::dit`).
+            pub(crate) fn finalize_with(mut self, dit: crate::dit::Dit<'_>) -> [u8; $output] {
                 let backend = self.0.backend();
                 let mut digest = [0; $output];
                 // SAFETY: as in `update`, `self.0.pos` is the position
@@ -258,10 +273,12 @@ macro_rules! sha3 {
                 // hardware variant requires.
                 unsafe {
                     match backend {
-                        Backend::Scalar => $finalize(&mut self.0.state, self.0.pos, &mut digest),
+                        Backend::Scalar => {
+                            $finalize(dit, &mut self.0.state, self.0.pos, &mut digest)
+                        }
                         #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => {
-                            $finalize_sha3(&mut self.0.state, self.0.pos, &mut digest)
+                            $finalize_sha3(dit, &mut self.0.state, self.0.pos, &mut digest)
                         }
                     }
                 };
@@ -270,9 +287,16 @@ macro_rules! sha3 {
 
             /// The digest of `data`.
             pub fn digest(data: &[u8]) -> [u8; $output] {
+                Self::digest_with(crate::dit::public(crate::dit::Why::UnkeyedHash), data)
+            }
+
+            /// [`digest`](Self::digest), with the token of the operation it
+            /// is part of (see `crate::dit`).
+            #[allow(dead_code)]
+            pub(crate) fn digest_with(dit: crate::dit::Dit<'_>, data: &[u8]) -> [u8; $output] {
                 let mut h = Self::new();
-                h.update(data);
-                h.finalize()
+                h.update_with(dit, data);
+                h.finalize_with(dit)
             }
         }
 
@@ -317,6 +341,12 @@ macro_rules! shake {
         impl $reader {
             /// Writes the next `out.len()` bytes of output to `out`.
             pub fn squeeze(&mut self, out: &mut [u8]) {
+                self.squeeze_with(crate::dit::public(crate::dit::Why::UnkeyedHash), out);
+            }
+
+            /// [`squeeze`](Self::squeeze), with the token of the operation
+            /// it is part of (see `crate::dit`).
+            pub(crate) fn squeeze_with(&mut self, dit: crate::dit::Dit<'_>, out: &mut [u8]) {
                 let s = &mut self.0;
                 // SAFETY: `s.pos` is the position `finalize` (0) or the last
                 // `squeeze` left, at most the rate, from which `s.state`
@@ -329,11 +359,11 @@ macro_rules! shake {
                 s.pos = unsafe {
                     match s.backend {
                         Backend::Scalar => {
-                            $squeeze(&mut s.state, s.pos, out.as_mut_ptr(), out.len())
+                            $squeeze(dit, &mut s.state, s.pos, out.as_mut_ptr(), out.len())
                         }
                         #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => {
-                            $squeeze_sha3(&mut s.state, s.pos, out.as_mut_ptr(), out.len())
+                            $squeeze_sha3(dit, &mut s.state, s.pos, out.as_mut_ptr(), out.len())
                         }
                     }
                 };
@@ -357,12 +387,24 @@ macro_rules! shake {
 
             /// Absorbs `data`.
             pub fn update(&mut self, data: &[u8]) {
-                absorb!(&mut self.0, data, $update, $update_sha3);
+                self.update_with(crate::dit::public(crate::dit::Why::UnkeyedHash), data);
+            }
+
+            /// [`update`](Self::update), with the token of the operation it
+            /// is part of (see `crate::dit`).
+            pub(crate) fn update_with(&mut self, dit: crate::dit::Dit<'_>, data: &[u8]) {
+                absorb!(dit, &mut self.0, data, $update, $update_sha3);
             }
 
             /// Pads the message and returns a reader of its output, which
             /// can be squeezed in pieces.
-            pub fn finalize_xof(mut self) -> $reader {
+            pub fn finalize_xof(self) -> $reader {
+                self.finalize_xof_with(crate::dit::public(crate::dit::Why::UnkeyedHash))
+            }
+
+            /// [`finalize_xof`](Self::finalize_xof), with the token of the
+            /// operation it is part of (see `crate::dit`).
+            pub(crate) fn finalize_xof_with(mut self, dit: crate::dit::Dit<'_>) -> $reader {
                 let backend = self.0.backend();
                 let mut state = self.0.state;
                 // SAFETY: as in `update`, `self.0.pos` is the position
@@ -372,9 +414,9 @@ macro_rules! shake {
                 // requires.
                 unsafe {
                     match backend {
-                        Backend::Scalar => $finalize(&mut state, self.0.pos),
+                        Backend::Scalar => $finalize(dit, &mut state, self.0.pos),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $finalize_sha3(&mut state, self.0.pos),
+                        Backend::Sha3 => $finalize_sha3(dit, &mut state, self.0.pos),
                     }
                 };
                 // From position 0, the padded state gives the output from its
@@ -389,15 +431,29 @@ macro_rules! shake {
             /// Pads the message and fills `out` with the first `out.len()`
             /// bytes of output.
             pub fn finalize(self, out: &mut [u8]) {
-                self.finalize_xof().squeeze(out);
+                self.finalize_with(crate::dit::public(crate::dit::Why::UnkeyedHash), out);
+            }
+
+            /// [`finalize`](Self::finalize), with the token of the operation
+            /// it is part of (see `crate::dit`).
+            #[allow(dead_code)]
+            pub(crate) fn finalize_with(self, dit: crate::dit::Dit<'_>, out: &mut [u8]) {
+                self.finalize_xof_with(dit).squeeze_with(dit, out);
             }
 
             /// Fills `out` with the first `out.len()` bytes of output for
             /// `data`.
             pub fn digest(data: &[u8], out: &mut [u8]) {
+                Self::digest_with(crate::dit::public(crate::dit::Why::UnkeyedHash), data, out);
+            }
+
+            /// [`digest`](Self::digest), with the token of the operation it
+            /// is part of (see `crate::dit`).
+            #[allow(dead_code)]
+            pub(crate) fn digest_with(dit: crate::dit::Dit<'_>, data: &[u8], out: &mut [u8]) {
                 let mut h = Self::new();
-                h.update(data);
-                h.finalize(out);
+                h.update_with(dit, data);
+                h.finalize_with(dit, out);
             }
         }
     };

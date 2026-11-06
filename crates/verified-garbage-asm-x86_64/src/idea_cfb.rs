@@ -14,8 +14,37 @@
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_idea_cfb64_encrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_idea_cfb64_encrypt(schedule, iv, data, n) }
+}
+
+/// IDEA-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is IDEA (also for decryption) under the encryption subkeys at `schedule`, as `vg_idea_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Idea.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 104 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_idea_cfb64_decrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_idea_cfb64_decrypt(schedule, iv, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_idea_cfb64_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_idea_cfb64_encrypt(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_idea_cfb64_encrypt(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJEj///9JieBJg8AITYnBSYlZcEmJaXhNiaGAAAAATYmpiAAAAE2JsZAAAABNibmYAAAAZkwPbv5JidRJic1IiwdJiUEISItHCEmJQRBIi0cQSYlBGEiLRxhJiUEgSItHIEmJQShIi0coSYlBMEiLRzBJiUE4SItHOEmJQUBIi0dASYlBSEiLR0hJiUFQSItHUEmJQVhIi0dYSYlBYEiLR2BJiUFoZkwPfvhIiyhJiSlNhe0="
 je 20f
@@ -30,19 +59,9 @@ jmp 21f
     )
 }
 
-/// IDEA-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is IDEA (also for decryption) under the encryption subkeys at `schedule`, as `vg_idea_expand_key` writes them.
-///
-/// Contract: `VG.Spec.Idea.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 104 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_idea_cfb64_decrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_idea_cfb64_decrypt(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_idea_cfb64_decrypt(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJEj///9JieBJg8AITYnBSYlZcEmJaXhNiaGAAAAATYmpiAAAAE2JsZAAAABNibmYAAAAZkwPbv5JidRJic1IiwdJiUEISItHCEmJQRBIi0cQSYlBGEiLRxhJiUEgSItHIEmJQShIi0coSYlBMEiLRzBJiUE4SItHOEmJQUBIi0dASYlBSEiLR0hJiUFQSItHUEmJQVhIi0dYSYlBYEiLR2BJiUFoZkwPfvhIiyhJiSlNhe0="
 je 20f
@@ -55,4 +74,5 @@ jmp 21f
 .base64 "ZkwPfvhJiylIiShJi1lwSYtpeE2LoYAAAABNi6mIAAAATYuxkAAAAE2LuZgAAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEiNpCS4AAAAww=="
 .p2align 6"#,
     )
+}
 }

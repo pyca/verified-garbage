@@ -16,8 +16,95 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ecdsa_p256_verify(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_p256_verify(public, digest, digest_len, sig, scratch) }
+}
+
+/// The CPU features `vg_ecdsa_p256_verify_adx` requires (`Artifact.features`).
+pub const VG_ECDSA_P256_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// ECDSA signature verification over P-256 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 256 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
+///
+/// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
+///
+/// # Safety
+///
+/// * `public` must be valid for reads of 65 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `sig` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
+/// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[inline(always)]
+pub unsafe fn vg_ecdsa_p256_verify_adx(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_p256_verify_adx(public, digest, digest_len, sig, scratch) }
+}
+
+/// Deterministic ECDSA signature generation over P-256 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `d` must be valid for reads of 32 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[inline(always)]
+pub unsafe fn vg_ecdsa_p256_sign(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_p256_sign(out, d, digest, digest_len, scratch, hmac) }
+}
+
+/// The CPU features `vg_ecdsa_p256_sign_adx` requires (`Artifact.features`).
+pub const VG_ECDSA_P256_SIGN_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// Deterministic ECDSA signature generation over P-256 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `d` must be valid for reads of 32 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
+#[inline(always)]
+pub unsafe fn vg_ecdsa_p256_sign_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_p256_sign_adx(out, d, digest, digest_len, scratch, hmac) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ecdsa_p256_verify`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p256_verify(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_verify(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJKhJieFJg8EISIP6IA=="
 jb 20f
@@ -244,31 +331,15 @@ jmp 256f
 jne 242b
 .base64 "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"
 .p2align 6"#,
-        vg_p256_check_point = sym super::ec_p256_compressed::vg_p256_check_point::vg_p256_check_point,
-        vg_p256_inv_mod_n = sym super::ecdsa_p256::vg_p256_inv_mod_n::vg_p256_inv_mod_n,
-        VG_P256_GTAB = sym super::consts::VG_P256_GTAB,
+        vg_p256_check_point = sym crate::ec_p256_compressed::vg_p256_check_point::vg_p256_check_point,
+        vg_p256_inv_mod_n = sym crate::ecdsa_p256::vg_p256_inv_mod_n::vg_p256_inv_mod_n,
+        VG_P256_GTAB = sym crate::consts::VG_P256_GTAB,
     )
 }
 
-/// The CPU features `vg_ecdsa_p256_verify_adx` requires (`Artifact.features`).
-pub const VG_ECDSA_P256_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// ECDSA signature verification over P-256 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 256 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
-///
-/// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
-///
-/// # Safety
-///
-/// * `public` must be valid for reads of 65 bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `sig` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
-/// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
-/// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ecdsa_p256_verify_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p256_verify_adx(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_verify_adx(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJKhJieFJg8EISIP6IA=="
 jb 20f
@@ -495,31 +566,15 @@ jmp 256f
 jne 242b
 .base64 "SIuXQAIAADHtxGKz9pdIAgAAxGL79p9QAgAAZkwPOPbQxGL79qdYAgAAZkwPOPbYZkwPOPblSIuXSAIAADHtxOL79o9QAgAA80wPOPbYZkwPOPbhxGL79q9YAgAA80wPOPbgZkwPOPbt80wPOPbtSIuXUAIAADHtxGL79rdYAgAAZkwPOPboZkwPOPb1Me1Ii5dAAgAAxOK79sJmTQ849snzTA849shIi5dIAgAAxOL79spmTQ849tLzTA849tBmTQ849tvzTA849tlIi5dQAgAAxOL79spmTQ849uTzTA849uBmTQ849u3zTA849ulIi5dYAgAAxGL79vpmTQ849vbzTA849vBmTA849v3zTA849v1MicJMicBIweAgTInFSMHtIEi5AQAAAP/////EYvP2wUkBwUkR6kkRy0mD0ABMicpMichIweAgTInNSMHtIEi5AQAAAP/////EYvP2yUkBwkkR60kRyEmD0QBMidJMidBIweAgTInVSMHtIEi5AQAAAP/////EYvP20UkBw0kR6EkRyUmD0gBMidpMidhIweAgTIndSMHtIEi5AQAAAP/////EYvP22UkBwEkR6UkRykmD0wBNAcRNEc1NEdZNEd9BuAAAAABJg9AATIngSCtHQEyJ6UgbT0hMifJIG1dQTIn9SBtvWEmD2ABMD0PgTA9D6UwPQ/JMD0P9TImnQAIAAEyJr0gCAABMibdQAgAATIm/WAIAAEi4AwAAAAAAAABIiYeABAAASLj/////+////0iJh4gEAABIuP7/////////SImHkAQAAEi4/f///wQAAABIiYeYBAAASLho9TUzSGnRmkiJh+ADAABIuDGZ/mNEBbGJSImH6AMAAEi4t5YuZc5mAZxIiYfwAwAASLjrD+MPIIxkmEiJh/gDAABIuK7anAM9NUYMSIlHYEi4e2HoWFMFGUNIiUdoSLgAAAAAAAAAAEiJR3BIuAAAAAAAAAAASIlHeEiLlyAEAAAx7cRiu/aPgAQAAMRi+/aXiAQAAGZMDzj2yMRi+/afkAQAAGZMDzj20MRi+/anmAQAAGZMDzj22GZMDzj25UiLlygEAAAx7cTi+/aPgAQAAPNMDzj2yGZMDzj20cTi+/aPiAQAAPNMDzj20GZMDzj22cTi+/aPkAQAAPNMDzj22GZMDzj24cRi+/avmAQAAPNMDzj2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"
 .p2align 6"#,
-        vg_p256_check_point_adx = sym super::ec_p256_compressed::vg_p256_check_point_adx::vg_p256_check_point_adx,
-        vg_p256_inv_mod_n_adx = sym super::ecdsa_p256::vg_p256_inv_mod_n_adx::vg_p256_inv_mod_n_adx,
-        VG_P256_GTAB = sym super::consts::VG_P256_GTAB,
+        vg_p256_check_point_adx = sym crate::ec_p256_compressed::vg_p256_check_point_adx::vg_p256_check_point_adx,
+        vg_p256_inv_mod_n_adx = sym crate::ecdsa_p256::vg_p256_inv_mod_n_adx::vg_p256_inv_mod_n_adx,
+        VG_P256_GTAB = sym crate::consts::VG_P256_GTAB,
     )
 }
 
-/// Deterministic ECDSA signature generation over P-256 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
-///
-/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `d` must be valid for reads of 32 bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
-/// * `digest_len` must be the digest length of the hash function `hmac` names.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
-/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// The verified code of [`super::vg_ecdsa_p256_sign`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p256_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TInBTYtRIE2LWShBUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBBU0FSV1ZSUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQMcBIiYQkQAEAADHASImEJEgBAAAxwEiJhCRQAQAAMcBIiYQkWAEAADHASImEJGABAAAxwEiJhCRoAQAAMcBIiYQkcAEAADHASImEJHgBAAAxwEiJhCSAAQAASIuMJNgAAAC4IAAAAEg5wUgPQ8hIiedIgcdgAQAASCnPSIu0JMAAAABFMcA="
 20:
@@ -547,33 +602,13 @@ jmp 25f
 jne 21b
 .base64 "MclIiQwkSIlMJAhIiUwkEEiJTCQYSIlMJCBIiUwkKEiJTCQwSIlMJDhIiUwkQEiJTCRISIlMJFBIiUwkWEiJTCRgSIlMJGhIiUwkcEiJTCR4SImMJOgAAABIiYwk8AAAAEiJjCT4AAAASImMJAABAABIiYwkCAEAAEiJjCQQAQAASImMJBgBAABIiYwkIAEAAEiJjCQoAQAASImMJDABAABIiYwkOAEAAEiJjCRAAQAASImMJEgBAABIiYwkUAEAAEiJjCRYAQAASImMJGABAABIiYwkaAEAAEiJjCRwAQAASImMJHgBAABIiYwkgAEAAEiJjCSIAQAASImMJJABAABIiYwkmAEAAEiJjCSgAQAASImMJKgBAABIiYwksAEAAEiJjCS4AQAASImMJMABAABIiYwkyAEAAEiJjCTQAQAASImMJNgBAABIiYwk4AEAAEiJjCToAQAASImMJPABAABIiYwk+AEAAEiJjCQAAgAASImMJAgCAABIiYwkEAIAAEiJjCQYAgAASImMJCACAABIiYwkKAIAAEiJjCQwAgAASImMJDgCAABIiYwkQAIAAEiJjCRIAgAASImMJFACAABZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZww=="
 .p2align 6"#,
-        vg_ecdsa_p256_sign_k = sym super::ecdsa_p256::vg_ecdsa_p256_sign_k::vg_ecdsa_p256_sign_k,
+        vg_ecdsa_p256_sign_k = sym crate::ecdsa_p256::vg_ecdsa_p256_sign_k::vg_ecdsa_p256_sign_k,
     )
 }
 
-/// The CPU features `vg_ecdsa_p256_sign_adx` requires (`Artifact.features`).
-pub const VG_ECDSA_P256_SIGN_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// Deterministic ECDSA signature generation over P-256 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
-///
-/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `d` must be valid for reads of 32 bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
-/// * `digest_len` must be the digest length of the hash function `hmac` names.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
-/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_ecdsa_p256_sign_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p256_sign_adx(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sign_adx(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TInBTYtRIE2LWShBUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBBU0FSV1ZSUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQMcBIiYQkQAEAADHASImEJEgBAAAxwEiJhCRQAQAAMcBIiYQkWAEAADHASImEJGABAAAxwEiJhCRoAQAAMcBIiYQkcAEAADHASImEJHgBAAAxwEiJhCSAAQAASIuMJNgAAAC4IAAAAEg5wUgPQ8hIiedIgcdgAQAASCnPSIu0JMAAAABFMcA="
 20:
@@ -601,8 +636,9 @@ jmp 25f
 jne 21b
 .base64 "MclIiQwkSIlMJAhIiUwkEEiJTCQYSIlMJCBIiUwkKEiJTCQwSIlMJDhIiUwkQEiJTCRISIlMJFBIiUwkWEiJTCRgSIlMJGhIiUwkcEiJTCR4SImMJOgAAABIiYwk8AAAAEiJjCT4AAAASImMJAABAABIiYwkCAEAAEiJjCQQAQAASImMJBgBAABIiYwkIAEAAEiJjCQoAQAASImMJDABAABIiYwkOAEAAEiJjCRAAQAASImMJEgBAABIiYwkUAEAAEiJjCRYAQAASImMJGABAABIiYwkaAEAAEiJjCRwAQAASImMJHgBAABIiYwkgAEAAEiJjCSIAQAASImMJJABAABIiYwkmAEAAEiJjCSgAQAASImMJKgBAABIiYwksAEAAEiJjCS4AQAASImMJMABAABIiYwkyAEAAEiJjCTQAQAASImMJNgBAABIiYwk4AEAAEiJjCToAQAASImMJPABAABIiYwk+AEAAEiJjCQAAgAASImMJAgCAABIiYwkEAIAAEiJjCQYAgAASImMJCACAABIiYwkKAIAAEiJjCQwAgAASImMJDgCAABIiYwkQAIAAEiJjCRIAgAASImMJFACAABZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZww=="
 .p2align 6"#,
-        vg_ecdsa_p256_sign_k_adx = sym super::ecdsa_p256::vg_ecdsa_p256_sign_k_adx::vg_ecdsa_p256_sign_k_adx,
+        vg_ecdsa_p256_sign_k_adx = sym crate::ecdsa_p256::vg_ecdsa_p256_sign_k_adx::vg_ecdsa_p256_sign_k_adx,
     )
+}
 }
 
 #[rustfmt::skip]

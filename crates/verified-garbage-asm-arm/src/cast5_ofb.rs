@@ -15,8 +15,19 @@
 /// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
 /// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_cast5_ofb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_cast5_ofb(schedule, rounds, iv, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_cast5_ofb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_ofb(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_ofb(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #328
 add r12, sp, #0
@@ -166,6 +177,7 @@ str r2, [r12, #304]
 str r2, [r12, #308]
 add sp, sp, #328
 bx lr",
-        vg_cast5_ecb_encrypt = sym super::cast5::vg_cast5_ecb_encrypt,
+        vg_cast5_ecb_encrypt = sym crate::cast5::raw::vg_cast5_ecb_encrypt,
     )
+}
 }

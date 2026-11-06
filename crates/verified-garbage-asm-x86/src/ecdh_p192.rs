@@ -18,8 +18,19 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
 /// * None of `out`, `d`, `peer` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ecdh_p192(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 24], d: *const [u8; 24], peer: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdh_p192(out, d, peer, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ecdh_p192`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdh_p192(out: *mut [u8; 24], d: *const [u8; 24], peer: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdh_p192(out: *mut [u8; 24], d: *const [u8; 24], peer: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkEIkYiXAEiXgIiWgMiceLXCQIi0MUD8iJhygDAACLQxAPyImHLAMAAItDDA/IiYcwAwAAi0MID8iJhzQDAACLQwQPyImHOAMAAIsDD8iJhzwDAACLXCQIi0MUD8iJh0ADAACLQxAPyImHRAMAAItDDA/IiYdIAwAAi0MID8iJh0wDAACLQwQPyImHUAMAAIsDD8iJh1QDAACLXCQIi0MUD8iJh1gDAACLQxAPyImHXAMAAItDDA/IiYdgAwAAi0MID8iJh2QDAACLQwQPyImHaAMAAIsDD8iJh2wDAAC4/////4lHQLj/////iUdEuP7///+JR0i4/////4lHTLj/////iUdQuP////+JR1S4MSjStIlHWLixyWsUiUdcuDb43pmJR2C4/////4lHZLj/////iUdouP////+JR2y4AAAAAImHiAAAALgAAAAAiYeMAAAAuAAAAACJh5AAAAC4AAAAAImHlAAAALgAAAAAiYeYAAAAuAAAAACJh5wAAAC4AQAAAImHoAAAALgAAAAAiYekAAAAuAAAAACJh6gAAAC4AAAAAImHrAAAALgAAAAAiYewAAAAuAAAAACJh7QAAAC4AQAAAImHuAAAALgAAAAAiYe8AAAAuAEAAACJh8AAAAC4AAAAAImHxAAAALgAAAAAiYfIAAAAuAAAAACJh8wAAAC4/P///4mH0AAAALj/////iYfUAAAAuPv///+Jh9gAAAC4/////4mH3AAAALj/////iYfgAAAAuP////+Jh+QAAAC4ya+p9ImH6AAAALgTrI0oiYfsAAAAuKhAFkuJh/AAAAC4FmmFV4mH9AAAALiUE0IHiYf4AAAAuFDMWluJh/wAAAC4CKEvM4mHAAEAALgMs4wNiYcEAQAAuAkp0XaJhwgBAAC499NLiomHDAEAALj3GNLziYcQAQAAuPnITJWJhxQBAAC4iSJCHomHGAEAALg3oxJ7iYccAQAAuF7wZomJhyABAAC4JLUi3omHJAEAALhNqO1qiYcoAQAAuIM9KWqJhywBAAC4YVmz3omHMAEAALjMumbOiYc0AQAAuO5rOruJhzgBAAC4W+qWRomHPAEAALiigQXqiYdAAQAAuHdWviiJh0QBAAC4z9ctS4mHSAEAALhONpTriYdMAQAAuMkHIWaJh1ABAAC4AAAAAImHVAEAALgAAAAAiYdYAQAAuAAAAACJh1wBAAC4/f///4mHYAEAALj/////iYdkAQAAuP7///+Jh2gBAAC4/////4mHbAEAALj/////iYdwAQAAuP////+Jh3QBAAC4LyjStImHeAEAALixyWsUiYd8AQAAuDb43pmJh4ABAAC4/////4mHhAEAALj/////iYeIAQAAuP////+Jh4wBAAC4AAAAAImHkAEAALgAAAAAiYeUAQAAuAAAAACJh5gBAAC4AAAAAImHnAEAALgAAAAAiYegAQAAuAAAAACJh6QBAAC4AQAAAImHqAEAALgAAAAAiYesAQAAuAEAAACJh7ABAAC4AAAAAImHtAEAALgAAAAAiYe4AQAAuAAAAACJh7wBAAC4AAAAAImHwAEAALgAAAAAiYfEAQAAuAAAAACJh8gBAAC4AAAAAImHzAEAALgAAAAAiYfQAQAAuAAAAACJh9QBAAC4/////4mHYAQAAL4YAAAA"
 20:
@@ -73,10 +84,11 @@ call {vg_p192_mul_mod_p}
 call {vg_p192_mul_mod_p}
 .base64 "WFhYWIuXQAMAACtXWIuXRAMAABtXXIuXSAMAABtXYIuXTAMAABtXZIuXUAMAABtXaIuXVAMAABtXbBnAicOLl0ADAAALl0QDAAALl0gDAAALl0wDAAALl1ADAAALl1QDAAC5AAAAACnRGdIh2ouHYAQAACHQiYdgBAAAi5fAAQAAC5fEAQAAC5fIAQAAC5fMAQAAC5fQAQAAC5fUAQAAuQAAAAAp0RnSi4dgBAAAIdCJh2AEAACLj2AEAACLXCQEi4eIAwAAIcgPyIlDFIuHjAMAACHID8iJQxCLh5ADAAAhyA/IiUMMi4eUAwAAIcgPyIlDCIuHmAMAACHID8iJQwSLh5wDAAAhyA/IiQOJyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
-        vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
-        vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
-        vg_p192_point_double = sym super::ec_p192::vg_p192_point_double::vg_p192_point_double,
-        vg_p192_point_add = sym super::ec_p192::vg_p192_point_add::vg_p192_point_add,
+        vg_p192_mul_mod_p = sym crate::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
+        vg_p192_add_mod_p = sym crate::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
+        vg_p192_sub_mod_p = sym crate::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
+        vg_p192_point_double = sym crate::ec_p192::vg_p192_point_double::vg_p192_point_double,
+        vg_p192_point_add = sym crate::ec_p192::vg_p192_point_add::vg_p192_point_add,
     )
+}
 }

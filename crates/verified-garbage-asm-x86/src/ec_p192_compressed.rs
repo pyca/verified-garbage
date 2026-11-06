@@ -17,8 +17,40 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p192_compress_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 25], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p192_compress_public_key(out, public, scratch) }
+}
+
+/// Validate and decompress a P-192 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 24 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 24 bytes each and returns 1. If no such finite point exists, writes 49 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
+///
+/// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 49 bytes.
+/// * `public` must be valid for reads of 25 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
+/// * None of `out`, `public` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p192_decompress_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 49], public: *const [u8; 25], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p192_decompress_public_key(out, public, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_p192_compress_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p192_compress_public_key(out: *mut [u8; 25], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p192_compress_public_key(out: *mut [u8; 25], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkDIkYiXAEiXgIiWgMiceLXCQIi0MUD8iJhygDAACLQxAPyImHLAMAAItDDA/IiYcwAwAAi0MID8iJhzQDAACLQwQPyImHOAMAAIsDD8iJhzwDAACLXCQIi0MUD8iJh0ADAACLQxAPyImHRAMAAItDDA/IiYdIAwAAi0MID8iJh0wDAACLQwQPyImHUAMAAIsDD8iJh1QDAACLXCQIi0MUD8iJh1gDAACLQxAPyImHXAMAAItDDA/IiYdgAwAAi0MID8iJh2QDAACLQwQPyImHaAMAAIsDD8iJh2wDAAC4/////4lHQLj/////iUdEuP7///+JR0i4/////4lHTLj/////iUdQuP////+JR1S4MSjStIlHWLixyWsUiUdcuDb43pmJR2C4/////4lHZLj/////iUdouP////+JR2y4AAAAAImHiAAAALgAAAAAiYeMAAAAuAAAAACJh5AAAAC4AAAAAImHlAAAALgAAAAAiYeYAAAAuAAAAACJh5wAAAC4AQAAAImHoAAAALgAAAAAiYekAAAAuAAAAACJh6gAAAC4AAAAAImHrAAAALgAAAAAiYewAAAAuAAAAACJh7QAAAC4AQAAAImHuAAAALgAAAAAiYe8AAAAuAEAAACJh8AAAAC4AAAAAImHxAAAALgAAAAAiYfIAAAAuAAAAACJh8wAAAC4/P///4mH0AAAALj/////iYfUAAAAuPv///+Jh9gAAAC4/////4mH3AAAALj/////iYfgAAAAuP////+Jh+QAAAC4ya+p9ImH6AAAALgTrI0oiYfsAAAAuKhAFkuJh/AAAAC4FmmFV4mH9AAAALiUE0IHiYf4AAAAuFDMWluJh/wAAAC4CKEvM4mHAAEAALgMs4wNiYcEAQAAuAkp0XaJhwgBAAC499NLiomHDAEAALj3GNLziYcQAQAAuPnITJWJhxQBAAC4iSJCHomHGAEAALg3oxJ7iYccAQAAuF7wZomJhyABAAC4JLUi3omHJAEAALhNqO1qiYcoAQAAuIM9KWqJhywBAAC4YVmz3omHMAEAALjMumbOiYc0AQAAuO5rOruJhzgBAAC4W+qWRomHPAEAALiigQXqiYdAAQAAuHdWviiJh0QBAAC4z9ctS4mHSAEAALhONpTriYdMAQAAuMkHIWaJh1ABAAC4AAAAAImHVAEAALgAAAAAiYdYAQAAuAAAAACJh1wBAAC4/f///4mHYAEAALj/////iYdkAQAAuP7///+Jh2gBAAC4/////4mHbAEAALj/////iYdwAQAAuP////+Jh3QBAAC4LyjStImHeAEAALixyWsUiYd8AQAAuDb43pmJh4ABAAC4/////4mHhAEAALj/////iYeIAQAAuP////+Jh4wBAAC4AAAAAImHkAEAALgAAAAAiYeUAQAAuAAAAACJh5gBAAC4AAAAAImHnAEAALgAAAAAiYegAQAAuAAAAACJh6QBAAC4AQAAAImHqAEAALgAAAAAiYesAQAAuAEAAACJh7ABAAC4AAAAAImHtAEAALgAAAAAiYe4AQAAuAAAAACJh7wBAAC4AAAAAImHwAEAALgAAAAAiYfEAQAAuAAAAACJh8gBAAC4AAAAAImHzAEAALgAAAAAiYfQAQAAuAAAAACJh9QBAAC4/////4mHYAQAALgBAAAAiYfoAwAAuAAAAACJh+wDAAC4AgAAAImH8AMAALgAAAAAiYf0AwAAuAEAAACJh/gDAAC4AAAAAImH/AMAALiYOuOmiYcABAAAuAbk2WKJhwQEAAC44moHGYmHCAQAALiyzYFyiYcMBAAAuDGxwFeJhxAEAAC4xe7Ic4mHFAQAAItcJAiDwwGLQxQPyImHWAMAAItDEA/IiYdcAwAAi0MMD8iJh2ADAACLQwgPyImHZAMAAItDBA/IiYdoAwAAiwMPyImHbAMAAIPDGItDFA/IiYegAwAAi0MQD8iJh6QDAACLQwwPyImHqAMAAItDCA/IiYesAwAAi0MED8iJh7ADAACLAw/IiYe0AwAAi1wkCA+2E4PyBIPqARnSi4dgBAAAIdCJh2AEAACLl1gDAAArV0CLl1wDAAAbV0SLl2ADAAAbV0iLl2QDAAAbV0yLl2gDAAAbV1CLl2wDAAAbV1QZwInCi4dgBAAAIdCJh2AEAACLl6ADAAArV0CLl6QDAAAbV0SLl6gDAAAbV0iLl6wDAAAbV0yLl7ADAAAbV1CLl7QDAAAbV1QZwInCi4dgBAAAIdCJh2AEAAC46AMAALlYAwAAunADAABQUVJX"
 call {vg_p192_mul_mod_p}
@@ -40,28 +72,15 @@ call {vg_p192_add_mod_p}
 call {vg_p192_sub_mod_p}
 .base64 "WFhYWIuXGAQAAAuXHAQAAAuXIAQAAAuXJAQAAAuXKAQAAAuXLAQAALkAAAAAKdEZ0oPy/4uHYAQAACHQiYdgBAAAi49gBAAAi4cAAQAAi5dwAwAAMcIhyjHQiYfQAwAAi4cEAQAAi5d0AwAAMcIhyjHQiYfUAwAAi4cIAQAAi5d4AwAAMcIhyjHQiYfYAwAAi4cMAQAAi5d8AwAAMcIhyjHQiYfcAwAAi4cQAQAAi5eAAwAAMcIhyjHQiYfgAwAAi4cUAQAAi5eEAwAAMcIhyjHQiYfkAwAAi4cYAQAAi5eIAwAAMcIhyjHQiYdIBAAAi4ccAQAAi5eMAwAAMcIhyjHQiYdMBAAAi4cgAQAAi5eQAwAAMcIhyjHQiYdQBAAAi4ckAQAAi5eUAwAAMcIhyjHQiYdUBAAAi4coAQAAi5eYAwAAMcIhyjHQiYdYBAAAi4csAQAAi5ecAwAAMcIhyjHQiYdcBAAAi49gBAAAi1wkBIuHoAMAAIPgAYPIAiHIiAOLh1gDAAAhyA/IiUMVi4dcAwAAIcgPyIlDEYuHYAMAACHID8iJQw2Lh2QDAAAhyA/IiUMJi4doAwAAIcgPyIlDBYuHbAMAACHID8iJQwGJyIPgAYn6ixqLcgSLagyLegjD"
 .p2align 6"#,
-        vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
-        vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
-        vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
+        vg_p192_mul_mod_p = sym crate::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
+        vg_p192_add_mod_p = sym crate::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
+        vg_p192_sub_mod_p = sym crate::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
     )
 }
 
-/// Validate and decompress a P-192 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 24 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 24 bytes each and returns 1. If no such finite point exists, writes 49 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
-///
-/// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 49 bytes.
-/// * `public` must be valid for reads of 25 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
-/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
-/// * None of `out`, `public` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ec_p192_decompress_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p192_decompress_public_key(out: *mut [u8; 49], public: *const [u8; 25], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p192_decompress_public_key(out: *mut [u8; 49], public: *const [u8; 25], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkDIkYiXAEiXgIiWgMiceLXCQIi0MUD8iJhygDAACLQxAPyImHLAMAAItDDA/IiYcwAwAAi0MID8iJhzQDAACLQwQPyImHOAMAAIsDD8iJhzwDAACLXCQIi0MUD8iJh0ADAACLQxAPyImHRAMAAItDDA/IiYdIAwAAi0MID8iJh0wDAACLQwQPyImHUAMAAIsDD8iJh1QDAACLXCQIi0MUD8iJh1gDAACLQxAPyImHXAMAAItDDA/IiYdgAwAAi0MID8iJh2QDAACLQwQPyImHaAMAAIsDD8iJh2wDAAC4/////4lHQLj/////iUdEuP7///+JR0i4/////4lHTLj/////iUdQuP////+JR1S4MSjStIlHWLixyWsUiUdcuDb43pmJR2C4/////4lHZLj/////iUdouP////+JR2y4AAAAAImHiAAAALgAAAAAiYeMAAAAuAAAAACJh5AAAAC4AAAAAImHlAAAALgAAAAAiYeYAAAAuAAAAACJh5wAAAC4AQAAAImHoAAAALgAAAAAiYekAAAAuAAAAACJh6gAAAC4AAAAAImHrAAAALgAAAAAiYewAAAAuAAAAACJh7QAAAC4AQAAAImHuAAAALgAAAAAiYe8AAAAuAEAAACJh8AAAAC4AAAAAImHxAAAALgAAAAAiYfIAAAAuAAAAACJh8wAAAC4/P///4mH0AAAALj/////iYfUAAAAuPv///+Jh9gAAAC4/////4mH3AAAALj/////iYfgAAAAuP////+Jh+QAAAC4ya+p9ImH6AAAALgTrI0oiYfsAAAAuKhAFkuJh/AAAAC4FmmFV4mH9AAAALiUE0IHiYf4AAAAuFDMWluJh/wAAAC4CKEvM4mHAAEAALgMs4wNiYcEAQAAuAkp0XaJhwgBAAC499NLiomHDAEAALj3GNLziYcQAQAAuPnITJWJhxQBAAC4iSJCHomHGAEAALg3oxJ7iYccAQAAuF7wZomJhyABAAC4JLUi3omHJAEAALhNqO1qiYcoAQAAuIM9KWqJhywBAAC4YVmz3omHMAEAALjMumbOiYc0AQAAuO5rOruJhzgBAAC4W+qWRomHPAEAALiigQXqiYdAAQAAuHdWviiJh0QBAAC4z9ctS4mHSAEAALhONpTriYdMAQAAuMkHIWaJh1ABAAC4AAAAAImHVAEAALgAAAAAiYdYAQAAuAAAAACJh1wBAAC4/f///4mHYAEAALj/////iYdkAQAAuP7///+Jh2gBAAC4/////4mHbAEAALj/////iYdwAQAAuP////+Jh3QBAAC4LyjStImHeAEAALixyWsUiYd8AQAAuDb43pmJh4ABAAC4/////4mHhAEAALj/////iYeIAQAAuP////+Jh4wBAAC4AAAAAImHkAEAALgAAAAAiYeUAQAAuAAAAACJh5gBAAC4AAAAAImHnAEAALgAAAAAiYegAQAAuAAAAACJh6QBAAC4AQAAAImHqAEAALgAAAAAiYesAQAAuAEAAACJh7ABAAC4AAAAAImHtAEAALgAAAAAiYe4AQAAuAAAAACJh7wBAAC4AAAAAImHwAEAALgAAAAAiYfEAQAAuAAAAACJh8gBAAC4AAAAAImHzAEAALgAAAAAiYfQAQAAuAAAAACJh9QBAAC4/////4mHYAQAALgBAAAAiYfoAwAAuAAAAACJh+wDAAC4AgAAAImH8AMAALgAAAAAiYf0AwAAuAEAAACJh/gDAAC4AAAAAImH/AMAALiYOuOmiYcABAAAuAbk2WKJhwQEAAC44moHGYmHCAQAALiyzYFyiYcMBAAAuDGxwFeJhxAEAAC4xe7Ic4mHFAQAAItcJAiDwwGLQxQPyImHWAMAAItDEA/IiYdcAwAAi0MMD8iJh2ADAACLQwgPyImHZAMAAItDBA/IiYdoAwAAiwMPyImHbAMAAItcJAgPthOJl0ADAACDygGD8gOD6gEZ0ouHYAQAACHQiYdgBAAAi5dYAwAAK1dAi5dcAwAAG1dEi5dgAwAAG1dIi5dkAwAAG1dMi5doAwAAG1dQi5dsAwAAG1dUGcCJwouHYAQAACHQiYdgBAAAuOgDAAC5WAMAALpwAwAAUFFSVw=="
 call {vg_p192_mul_mod_p}
@@ -99,8 +118,9 @@ call {vg_p192_mul_mod_p}
 call {vg_p192_sub_mod_p}
 .base64 "WFhYWIuX0AMAAAuX1AMAAAuX2AMAAAuX3AMAAAuX4AMAAAuX5AMAALkAAAAAKdEZ0oPy/4uHYAQAACHQiYdgBAAAi4egAwAAi49AAwAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHYAQAACHQiYdgBAAAi49gBAAAi1wkBLgEAAAAIciIA4uHWAMAACHID8iJQxWLh1wDAAAhyA/IiUMRi4dgAwAAIcgPyIlDDYuHZAMAACHID8iJQwmLh2gDAAAhyA/IiUMFi4dsAwAAIcgPyIlDAYuHoAMAACHID8iJQy2Lh6QDAAAhyA/IiUMpi4eoAwAAIcgPyIlDJYuHrAMAACHID8iJQyGLh7ADAAAhyA/IiUMdi4e0AwAAIcgPyIlDGYnIg+ABifqLGotyBItqDIt6CMM="
 .p2align 6"#,
-        vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
-        vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
-        vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
+        vg_p192_mul_mod_p = sym crate::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
+        vg_p192_add_mod_p = sym crate::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
+        vg_p192_sub_mod_p = sym crate::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
     )
+}
 }

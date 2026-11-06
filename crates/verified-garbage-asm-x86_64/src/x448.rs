@@ -20,15 +20,11 @@ pub const VG_X448_EXCHANGE_ADX_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x448_exchange_adx(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "Vw=="
-call {vg_x448_adx}
-.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBD7ZCIEgJwQ+2QiFICcEPtkIiSAnBD7ZCI0gJwQ+2QiRICcEPtkIlSAnBD7ZCJkgJwQ+2QidICcEPtkIoSAnBD7ZCKUgJwQ+2QipICcEPtkIrSAnBD7ZCLEgJwQ+2Qi1ICcEPtkIuSAnBD7ZCL0gJwQ+2QjBICcEPtkIxSAnBD7ZCMkgJwQ+2QjNICcEPtkI0SAnBD7ZCNUgJwQ+2QjZICcEPtkI3SAnBSIPpAUjB6T9Ig/EBSInIww=="
-.p2align 6"#,
-        vg_x448_adx = sym super::x448::vg_x448_adx::vg_x448_adx,
-    )
+#[inline(always)]
+pub unsafe fn vg_x448_exchange_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x448_exchange_adx(out, scalar, point, scratch) }
 }
 
 /// The CPU features `vg_x448_base_adx` requires (`Artifact.features`).
@@ -47,8 +43,70 @@ pub const VG_X448_BASE_ADX_FEATURES: verified_garbage_cpu::Features = verified_g
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
+#[inline(always)]
+pub unsafe fn vg_x448_base_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x448_base_adx(out, scalar, scratch) }
+}
+
+/// Computes an X448 shared secret (RFC 7748 §6.2): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime (§5).
+///
+/// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 56 bytes.
+/// * `scalar` must be valid for reads of 56 bytes.
+/// * `point` must be valid for reads of 56 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_x448_exchange(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x448_exchange(out, scalar, point, scratch) }
+}
+
+/// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
+///
+/// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 56 bytes.
+/// * `scalar` must be valid for reads of 56 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
+/// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_x448_base(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x448_base(out, scalar, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_x448_exchange_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x448_base_adx(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_x448_exchange_adx(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "Vw=="
+call {vg_x448_adx}
+.base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBD7ZCIEgJwQ+2QiFICcEPtkIiSAnBD7ZCI0gJwQ+2QiRICcEPtkIlSAnBD7ZCJkgJwQ+2QidICcEPtkIoSAnBD7ZCKUgJwQ+2QipICcEPtkIrSAnBD7ZCLEgJwQ+2Qi1ICcEPtkIuSAnBD7ZCL0gJwQ+2QjBICcEPtkIxSAnBD7ZCMkgJwQ+2QjNICcEPtkI0SAnBD7ZCNUgJwQ+2QjZICcEPtkI3SAnBSIPpAUjB6T9Ig/EBSInIww=="
+.p2align 6"#,
+        vg_x448_adx = sym crate::x448::vg_x448_adx::vg_x448_adx,
+    )
+}
+
+/// The verified code of [`super::vg_x448_base_adx`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_x448_base_adx(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "SInRSIkZSIlpCEyJYRBMiWkYTIlxIEyJeShJif9Iic9BuAUAAABBuQAAAABBugAAAABBuwAAAABBvAAAAABBvQAAAABBvgAAAABMiUdATIlPSEyJV1BMiV9YTIlnYEyJb2hMiXdwTImHAAEAAEyJjwgBAABMiZcQAQAATImfGAEAAEyJpyABAABMia8oAQAATIm3MAEAALgAAAAAugEAAABIiZeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHwAAAAEiJh8gAAABIiYfQAAAASImH2AAAAEiJh+AAAABIiYfoAAAASImH8AAAAEiJl0ABAABIiYdIAQAASImHUAEAAEiJh1gBAABIiYdgAQAASImHaAEAAEiJh3ABAABIiUcwuwAAAAA="
 20:
@@ -70,48 +128,25 @@ jne 22b
 jne 23b
 .base64 "QbgAAAAAQbkAAAAAQboAAAAAQbsAAAAAQbwAAAAAQb0AAAAAQb4AAAAASIuXwAAAAEG/AAAAADHtxOL79o9ABQAA80wPOPbAZkwPOPbJxOL79o9IBQAA80wPOPbIZkwPOPbRxOL79o9QBQAA80wPOPbQZkwPOPbZxOL79o9YBQAA80wPOPbYZkwPOPbhxOL79o9gBQAA80wPOPbgZkwPOPbpxOL79o9oBQAA80wPOPboZkwPOPbxxOL79o9wBQAA80wPOPbwZkwPOPb580wPOPb9TImHAAYAAEiLl8gAAABBuAAAAAAx7cTi+/aPQAUAAPNMDzj2yGZMDzj20cTi+/aPSAUAAPNMDzj20GZMDzj22cTi+/aPUAUAAPNMDzj22GZMDzj24cTi+/aPWAUAAPNMDzj24GZMDzj26cTi+/aPYAUAAPNMDzj26GZMDzj28cTi+/aPaAUAAPNMDzj28GZMDzj2+cTi+/aPcAUAAPNMDzj2+GZMDzj2wfNMDzj2xUyJjwgGAABIi5fQAAAAQbkAAAAAMe3E4vv2j0AFAADzTA849tBmTA849tnE4vv2j0gFAADzTA849thmTA849uHE4vv2j1AFAADzTA849uBmTA849unE4vv2j1gFAADzTA849uhmTA849vHE4vv2j2AFAADzTA849vBmTA849vnE4vv2j2gFAADzTA849vhmTA849sHE4vv2j3AFAADzTA849sBmTA849snzTA849s1MiZcQBgAASIuX2AAAAEG6AAAAADHtxOL79o9ABQAA80wPOPbYZkwPOPbhxOL79o9IBQAA80wPOPbgZkwPOPbpxOL79o9QBQAA80wPOPboZkwPOPbxxOL79o9YBQAA80wPOPbwZkwPOPb5xOL79o9gBQAA80wPOPb4ZkwPOPbBxOL79o9oBQAA80wPOPbAZkwPOPbJxOL79o9wBQAA80wPOPbIZkwPOPbR80wPOPbVTImfGAYAAEiLl+AAAABBuwAAAAAx7cTi+/aPQAUAAPNMDzj24GZMDzj26cTi+/aPSAUAAPNMDzj26GZMDzj28cTi+/aPUAUAAPNMDzj28GZMDzj2+cTi+/aPWAUAAPNMDzj2+GZMDzj2wcTi+/aPYAUAAPNMDzj2wGZMDzj2ycTi+/aPaAUAAPNMDzj2yGZMDzj20cTi+/aPcAUAAPNMDzj20GZMDzj22fNMDzj23UyJpyAGAABIi5foAAAAQbwAAAAAMe3E4vv2j0AFAADzTA849uhmTA849vHE4vv2j0gFAADzTA849vBmTA849vnE4vv2j1AFAADzTA849vhmTA849sHE4vv2j1gFAADzTA849sBmTA849snE4vv2j2AFAADzTA849shmTA849tHE4vv2j2gFAADzTA849tBmTA849tnE4vv2j3AFAADzTA849thmTA849uHzTA849uVMia8oBgAASIuX8AAAAEG9AAAAADHtxOL79o9ABQAA80wPOPbwZkwPOPb5xOL79o9IBQAA80wPOPb4ZkwPOPbBxOL79o9QBQAA80wPOPbAZkwPOPbJxOL79o9YBQAA80wPOPbIZkwPOPbRxOL79o9gBQAA80wPOPbQZkwPOPbZxOL79o9oBQAA80wPOPbYZkwPOPbhxOL79o9wBQAA80wPOPbgZkwPOPbp80wPOPbtTIm3MAYAAEyJvzgGAABMiYdABgAATImPSAYAAEyJl1AGAABMiZ9YBgAATImnYAYAAEyJr2gGAABBvwAAAABMi4cABgAATIuPCAYAAEyLlxAGAABMi58YBgAATIunIAYAAEyLrygGAABMi7cwBgAATAOHOAYAAEwTj0AGAABME5dIBgAATBOfUAYAAEwTp1gGAABME69gBgAATBO3aAYAAEmD1wBIi4dQBgAAicJIKdBJAcNME6dYBgAATBOvYAYAAEwTt2gGAABJg9cASIuPNAYAAInKSCnRi5dsBgAASAHRTAOHVAYAAEwTj1wGAABME5dkBgAASRHLTBOnPAYAAEwTr0QGAABME7dMBgAASYPXAEyJ+EjByCBNAfhJg9EASYPSAEkRw0mD1ABJg9UASYPWAEG/AAAAAEmD1wBMifhIwcggTQH4SYPRAEmD0gBJEcNJg9QASYPVAEmD1gBMiYdABQAATImPSAUAAEyJl1AFAABMiZ9YBQAATImnYAUAAEyJr2gFAABMibdwBQAAQbgAAAAAQbkAAAAAQboAAAAAQbsAAAAAQbwAAAAAQb0AAAAAQb4AAAAASIuXQAUAAEG/AAAAADHtxOL79o+ABQAA80wPOPbAZkwPOPbJxOL79o+IBQAA80wPOPbIZkwPOPbRxOL79o+QBQAA80wPOPbQZkwPOPbZxOL79o+YBQAA80wPOPbYZkwPOPbhxOL79o+gBQAA80wPOPbgZkwPOPbpxOL79o+oBQAA80wPOPboZkwPOPbxxOL79o+wBQAA80wPOPbwZkwPOPb580wPOPb9TImHAAYAAEiLl0gFAABBuAAAAAAx7cTi+/aPgAUAAPNMDzj2yGZMDzj20cTi+/aPiAUAAPNMDzj20GZMDzj22cTi+/aPkAUAAPNMDzj22GZMDzj24cTi+/aPmAUAAPNMDzj24GZMDzj26cTi+/aPoAUAAPNMDzj26GZMDzj28cTi+/aPqAUAAPNMDzj28GZMDzj2+cTi+/aPsAUAAPNMDzj2+GZMDzj2wfNMDzj2xUyJjwgGAABIi5dQBQAAQbkAAAAAMe3E4vv2j4AFAADzTA849tBmTA849tnE4vv2j4gFAADzTA849thmTA849uHE4vv2j5AFAADzTA849uBmTA849unE4vv2j5gFAADzTA849uhmTA849vHE4vv2j6AFAADzTA849vBmTA849vnE4vv2j6gFAADzTA849vhmTA849sHE4vv2j7AFAADzTA849sBmTA849snzTA849s1MiZcQBgAASIuXWAUAAEG6AAAAADHtxOL79o+ABQAA80wPOPbYZkwPOPbhxOL79o+IBQAA80wPOPbgZkwPOPbpxOL79o+QBQAA80wPOPboZkwPOPbxxOL79o+YBQAA80wPOPbwZkwPOPb5xOL79o+gBQAA80wPOPb4ZkwPOPbBxOL79o+oBQAA80wPOPbAZkwPOPbJxOL79o+wBQAA80wPOPbIZkwPOPbR80wPOPbVTImfGAYAAEiLl2AFAABBuwAAAAAx7cTi+/aPgAUAAPNMDzj24GZMDzj26cTi+/aPiAUAAPNMDzj26GZMDzj28cTi+/aPkAUAAPNMDzj28GZMDzj2+cTi+/aPmAUAAPNMDzj2+GZMDzj2wcTi+/aPoAUAAPNMDzj2wGZMDzj2ycTi+/aPqAUAAPNMDzj2yGZMDzj20cTi+/aPsAUAAPNMDzj20GZMDzj22fNMDzj23UyJpyAGAABIi5doBQAAQbwAAAAAMe3E4vv2j4AFAADzTA849uhmTA849vHE4vv2j4gFAADzTA849vBmTA849vnE4vv2j5AFAADzTA849vhmTA849sHE4vv2j5gFAADzTA849sBmTA849snE4vv2j6AFAADzTA849shmTA849tHE4vv2j6gFAADzTA849tBmTA849tnE4vv2j7AFAADzTA849thmTA849uHzTA849uVMia8oBgAASIuXcAUAAEG9AAAAADHtxOL79o+ABQAA80wPOPbwZkwPOPb5xOL79o+IBQAA80wPOPb4ZkwPOPbBxOL79o+QBQAA80wPOPbAZkwPOPbJxOL79o+YBQAA80wPOPbIZkwPOPbRxOL79o+gBQAA80wPOPbQZkwPOPbZxOL79o+oBQAA80wPOPbYZkwPOPbhxOL79o+wBQAA80wPOPbgZkwPOPbp80wPOPbtTIm3MAYAAEyJvzgGAABMiYdABgAATImPSAYAAEyJl1AGAABMiZ9YBgAATImnYAYAAEyJr2gGAABBvwAAAABMi4cABgAATIuPCAYAAEyLlxAGAABMi58YBgAATIunIAYAAEyLrygGAABMi7cwBgAATAOHOAYAAEwTj0AGAABME5dIBgAATBOfUAYAAEwTp1gGAABME69gBgAATBO3aAYAAEmD1wBIi4dQBgAAicJIKdBJAcNME6dYBgAATBOvYAYAAEwTt2gGAABJg9cASIuPNAYAAInKSCnRi5dsBgAASAHRTAOHVAYAAEwTj1wGAABME5dkBgAASRHLTBOnPAYAAEwTr0QGAABME7dMBgAASYPXAEyJ+EjByCBNAfhJg9EASYPSAEkRw0mD1ABJg9UASYPWAEG/AAAAAEmD1wBMifhIwcggTQH4SYPRAEmD0gBJEcNJg9QASYPVAEmD1gBMiYeABQAATImPiAUAAEyJl5AFAABMiZ+YBQAATImnoAUAAEyJr6gFAABMibewBQAAQbgAAAAAQbkAAAAAQboAAAAAQbsAAAAAQbwAAAAAQb0AAAAAQb4AAAAASIuXgAUAAEG/AAAAADHtxOL79o+AAAAA80wPOPbAZkwPOPbJxOL79o+IAAAA80wPOPbIZkwPOPbRxOL79o+QAAAA80wPOPbQZkwPOPbZxOL79o+YAAAA80wPOPbYZkwPOPbhxOL79o+gAAAA80wPOPbgZkwPOPbpxOL79o+oAAAA80wPOPboZkwPOPbxxOL79o+wAAAA80wPOPbwZkwPOPb580wPOPb9TImHAAYAAEiLl4gFAABBuAAAAAAx7cTi+/aPgAAAAPNMDzj2yGZMDzj20cTi+/aPiAAAAPNMDzj20GZMDzj22cTi+/aPkAAAAPNMDzj22GZMDzj24cTi+/aPmAAAAPNMDzj24GZMDzj26cTi+/aPoAAAAPNMDzj26GZMDzj28cTi+/aPqAAAAPNMDzj28GZMDzj2+cTi+/aPsAAAAPNMDzj2+GZMDzj2wfNMDzj2xUyJjwgGAABIi5eQBQAAQbkAAAAAMe3E4vv2j4AAAADzTA849tBmTA849tnE4vv2j4gAAADzTA849thmTA849uHE4vv2j5AAAADzTA849uBmTA849unE4vv2j5gAAADzTA849uhmTA849vHE4vv2j6AAAADzTA849vBmTA849vnE4vv2j6gAAADzTA849vhmTA849sHE4vv2j7AAAADzTA849sBmTA849snzTA849s1MiZcQBgAASIuXmAUAAEG6AAAAADHtxOL79o+AAAAA80wPOPbYZkwPOPbhxOL79o+IAAAA80wPOPbgZkwPOPbpxOL79o+QAAAA80wPOPboZkwPOPbxxOL79o+YAAAA80wPOPbwZkwPOPb5xOL79o+gAAAA80wPOPb4ZkwPOPbBxOL79o+oAAAA80wPOPbAZkwPOPbJxOL79o+wAAAA80wPOPbIZkwPOPbR80wPOPbVTImfGAYAAEiLl6AFAABBuwAAAAAx7cTi+/aPgAAAAPNMDzj24GZMDzj26cTi+/aPiAAAAPNMDzj26GZMDzj28cTi+/aPkAAAAPNMDzj28GZMDzj2+cTi+/aPmAAAAPNMDzj2+GZMDzj2wcTi+/aPoAAAAPNMDzj2wGZMDzj2ycTi+/aPqAAAAPNMDzj2yGZMDzj20cTi+/aPsAAAAPNMDzj20GZMDzj22fNMDzj23UyJpyAGAABIi5eoBQAAQbwAAAAAMe3E4vv2j4AAAADzTA849uhmTA849vHE4vv2j4gAAADzTA849vBmTA849vnE4vv2j5AAAADzTA849vhmTA849sHE4vv2j5gAAADzTA849sBmTA849snE4vv2j6AAAADzTA849shmTA849tHE4vv2j6gAAADzTA849tBmTA849tnE4vv2j7AAAADzTA849thmTA849uHzTA849uVMia8oBgAASIuXsAUAAEG9AAAAADHtxOL79o+AAAAA80wPOPbwZkwPOPb5xOL79o+IAAAA80wPOPb4ZkwPOPbBxOL79o+QAAAA80wPOPbAZkwPOPbJxOL79o+YAAAA80wPOPbIZkwPOPbRxOL79o+gAAAA80wPOPbQZkwPOPbZxOL79o+oAAAA80wPOPbYZkwPOPbhxOL79o+wAAAA80wPOPbgZkwPOPbp80wPOPbtTIm3MAYAAEyJvzgGAABMiYdABgAATImPSAYAAEyJl1AGAABMiZ9YBgAATImnYAYAAEyJr2gGAABBvwAAAABMi4cABgAATIuPCAYAAEyLlxAGAABMi58YBgAATIunIAYAAEyLrygGAABMi7cwBgAATAOHOAYAAEwTj0AGAABME5dIBgAATBOfUAYAAEwTp1gGAABME69gBgAATBO3aAYAAEmD1wBIi4dQBgAAicJIKdBJAcNME6dYBgAATBOvYAYAAEwTt2gGAABJg9cASIuPNAYAAInKSCnRi5dsBgAASAHRTAOHVAYAAEwTj1wGAABME5dkBgAASRHLTBOnPAYAAEwTr0QGAABME7dMBgAASYPXAEyJ+EjByCBNAfhJg9EASYPSAEkRw0mD1ABJg9UASYPWAEG/AAAAAEmD1wBMifhIwcggTQH4SYPRAEmD0gBJEcNJg9QASYPVAEmD1gBMiYeAAAAATImPiAAAAEyJl5AAAABMiZ+YAAAATImnoAAAAEyJr6gAAABMibewAAAAQb8BAAAATIuHgAAAAEyLj4gAAABMi5eQAAAATIufmAAAAEyLp6AAAABMi6+oAAAATIu3sAAAAEyJ+EjByCBNAfhJg9EASYPSAEkRw0mD1ABJg9UASYPWAE0Z/0iLh4AAAABJMcBNIfhJMcBIi4eIAAAASTHBTSH5STHBSIuHkAAAAEkxwk0h+kkxwkiLh5gAAABJMcNNIftJMcNIi4egAAAASTHETSH8STHESIuHqAAAAEkxxU0h/UkxxUiLh7AAAABJMcZNIf5JMcZMiQZMiU4ITIlWEEyJXhhMiWYgTIluKEyJdjBIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_gf448_r64_pow223_adx = sym super::ed448::vg_gf448_r64_pow223_adx::vg_gf448_r64_pow223_adx,
+        vg_gf448_r64_pow223_adx = sym crate::ed448::vg_gf448_r64_pow223_adx::vg_gf448_r64_pow223_adx,
     )
 }
 
-/// Computes an X448 shared secret (RFC 7748 §6.2): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime (§5).
-///
-/// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 56 bytes.
-/// * `scalar` must be valid for reads of 56 bytes.
-/// * `point` must be valid for reads of 56 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
-/// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_x448_exchange`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "Vw=="
 call {vg_x448}
 .base64 "WkjHwQAAAAAPtgJICcEPtkIBSAnBD7ZCAkgJwQ+2QgNICcEPtkIESAnBD7ZCBUgJwQ+2QgZICcEPtkIHSAnBD7ZCCEgJwQ+2QglICcEPtkIKSAnBD7ZCC0gJwQ+2QgxICcEPtkINSAnBD7ZCDkgJwQ+2Qg9ICcEPtkIQSAnBD7ZCEUgJwQ+2QhJICcEPtkITSAnBD7ZCFEgJwQ+2QhVICcEPtkIWSAnBD7ZCF0gJwQ+2QhhICcEPtkIZSAnBD7ZCGkgJwQ+2QhtICcEPtkIcSAnBD7ZCHUgJwQ+2Qh5ICcEPtkIfSAnBD7ZCIEgJwQ+2QiFICcEPtkIiSAnBD7ZCI0gJwQ+2QiRICcEPtkIlSAnBD7ZCJkgJwQ+2QidICcEPtkIoSAnBD7ZCKUgJwQ+2QipICcEPtkIrSAnBD7ZCLEgJwQ+2Qi1ICcEPtkIuSAnBD7ZCL0gJwQ+2QjBICcEPtkIxSAnBD7ZCMkgJwQ+2QjNICcEPtkI0SAnBD7ZCNUgJwQ+2QjZICcEPtkI3SAnBSIPpAUjB6T9Ig/EBSInIww=="
 .p2align 6"#,
-        vg_x448 = sym super::x448::vg_x448::vg_x448,
+        vg_x448 = sym crate::x448::vg_x448::vg_x448,
     )
 }
 
-/// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
-///
-/// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 56 bytes.
-/// * `scalar` must be valid for reads of 56 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
-/// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_x448_base`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "sysv64" fn vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "SInRSIkZSIlpCEyJYRBMiWkYTIlxIEyJeShJif9Iic9BuAUAAABBuQAAAABBugAAAABBuwAAAABBvAAAAABBvQAAAABBvgAAAABMiUdATIlPSEyJV1BMiV9YTIlnYEyJb2hMiXdwTImHAAEAAEyJjwgBAABMiZcQAQAATImfGAEAAEyJpyABAABMia8oAQAATIm3MAEAALgAAAAAugEAAABIiZeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHwAAAAEiJh8gAAABIiYfQAAAASImH2AAAAEiJh+AAAABIiYfoAAAASImH8AAAAEiJl0ABAABIiYdIAQAASImHUAEAAEiJh1gBAABIiYdgAQAASImHaAEAAEiJh3ABAABIiUcwuwAAAAA="
 20:
@@ -133,8 +168,9 @@ jne 22b
 jne 23b
 .base64 "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"
 .p2align 6"#,
-        vg_gf448_r64_pow223 = sym super::ed448::vg_gf448_r64_pow223::vg_gf448_r64_pow223,
+        vg_gf448_r64_pow223 = sym crate::ed448::vg_gf448_r64_pow223::vg_gf448_r64_pow223,
     )
+}
 }
 
 #[rustfmt::skip]

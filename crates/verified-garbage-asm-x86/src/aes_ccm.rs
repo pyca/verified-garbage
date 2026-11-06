@@ -25,115 +25,12 @@ pub const VG_AES_CCM_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2664 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
-20:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 20b
-.base64 "i4W0AAAAg+gCAcABwLkOAAAAK42cAAAAAciLjaQAAACFyQ=="
-je 21f
-.base64 "g8BA"
-jmp 22f
-21:
-22:
-.base64 "i00wiU0gi000iU0ki004iU0oiEUgi4WsAAAAD8gLRTyJRSy4AAAAAIlFAIlFBIlFCIlFDIuFkAAAAIuNlAAAAInqg8IAieuDwyC+AQAAAInvgceAAQAAV1ZTUlFQ"
-call {vg_cmac_aes_update_aesni}
-.base64 "WFhYWFhYi4WgAAAAiYUQAQAAi4WkAAAAiYUUAQAAhcA="
-je 23f
-.base64 "uAAAAACJRSCJRSSJRSiJRSyLhRQBAAA9AP8AAA=="
-jb 25f
-.base64 "uf/+AACJTSAPyIlFIrgGAAAAiYUYAQAA"
-jmp 26f
-25:
-.base64 "D8jB6BCJRSC4AgAAAImFGAEAAA=="
-26:
-.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
-jb 27f
-jmp 28f
-27:
-.base64 "icE="
-28:
-.base64 "i70QAQAAieqDwiADlRgBAACLhRQBAAApyImFFAEAAIn4AciJhRABAAA="
-29:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 29b
-.base64 "i4WQAAAAi42UAAAAieqDwgCJ64PDIL4BAAAAie+Bx4ABAABXVlNSUVA="
-call {vg_cmac_aes_update_aesni}
-.base64 "WFhYWFhYi50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 210f
-.base64 "i4WQAAAAi42UAAAAieqDwgCJ/onvgceAAQAAV1ZTUlFQ"
-call {vg_cmac_aes_update_aesni}
-.base64 "WFhYWFhY"
-jmp 211f
-210:
-211:
-.base64 "i40UAQAAhck="
-je 212f
-.base64 "uAAAAACJRSCJRSSJRSiJRSyLvRABAACJ6oPCIIuNFAEAAA=="
-214:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 214b
-.base64 "i4WQAAAAi42UAAAAieqDwgCJ64PDIL4BAAAAie+Bx4ABAABXVlNSUVA="
-call {vg_cmac_aes_update_aesni}
-.base64 "WFhYWFhY"
-jmp 213f
-212:
-213:
-jmp 24f
-23:
-24:
-.base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 215f
-.base64 "i4WQAAAAi42UAAAAieqDwgCJ/onvgceAAQAAV1ZTUlFQ"
-call {vg_cmac_aes_update_aesni}
-.base64 "WFhYWFhY"
-jmp 216f
-215:
-216:
-.base64 "i40UAQAAhck="
-je 217f
-.base64 "uAAAAACJRSCJRSSJRSiJRSyLvRABAACJ6oPCIIuNFAEAAA=="
-219:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 219b
-.base64 "i4WQAAAAi42UAAAAieqDwgCJ64PDIL4BAAAAie+Bx4ABAABXVlNSUVA="
-call {vg_cmac_aes_update_aesni}
-.base64 "WFhYWFhY"
-jmp 218f
-217:
-218:
-.base64 "uAAAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAieuDwwC/AQAAAIHFgAEAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge2AAQAAi4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 220f
-.base64 "uAEAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAgcWAAQAAVVdTUlFQ"
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge2AAQAA"
-jmp 221f
-220:
-221:
-.base64 "i40UAQAAhck="
-je 222f
-.base64 "i4WsAAAAwegEg8ABi00wiU1Ai000iU1Ei004iU1ID8gLRTyJRUy4AAAAAIlFUIlFVIlFWIlFXIuFkAAAAIuNlAAAAInqg8JAieuDw1C/AQAAAIHFgAEAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge2AAQAAi70QAQAAieqDwlCLjRQBAAA="
-224:
-.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
-jne 224b
-jmp 223f
-222:
-223:
-.base64 "ie+LldQAAACLjbQAAAA="
-225:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 225b
-.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
-.p2align 6"#,
-        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ccm_seal_aesni(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ccm_seal_aesni(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }
 
 /// The CPU features `vg_aes_ccm_open_aesni` requires (`Artifact.features`).
@@ -158,8 +55,184 @@ pub const VG_AES_CCM_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2664 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ccm_open_aesni(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ccm_open_aesni(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// AES-CCM generation-encryption (NIST SP 800-38C §6.1, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, encrypts the `len` bytes of payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the encrypted MAC (`T ⊕ MSB_Tlen(S₀)`) of `tag_len` bytes, of the payload and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The ciphertext of §6.1 is the encrypted payload followed by it.
+///
+/// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
+/// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2664 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ccm_seal(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ccm_seal(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
+///
+/// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
+/// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
+/// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2664 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_ccm_open(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_ccm_open(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_ccm_seal_aesni`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
+20:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 20b
+.base64 "i4W0AAAAg+gCAcABwLkOAAAAK42cAAAAAciLjaQAAACFyQ=="
+je 21f
+.base64 "g8BA"
+jmp 22f
+21:
+22:
+.base64 "i00wiU0gi000iU0ki004iU0oiEUgi4WsAAAAD8gLRTyJRSy4AAAAAIlFAIlFBIlFCIlFDIuFkAAAAIuNlAAAAInqg8IAieuDwyC+AQAAAInvgceAAQAAV1ZTUlFQ"
+call {vg_cmac_aes_update_aesni}
+.base64 "WFhYWFhYi4WgAAAAiYUQAQAAi4WkAAAAiYUUAQAAhcA="
+je 23f
+.base64 "uAAAAACJRSCJRSSJRSiJRSyLhRQBAAA9AP8AAA=="
+jb 25f
+.base64 "uf/+AACJTSAPyIlFIrgGAAAAiYUYAQAA"
+jmp 26f
+25:
+.base64 "D8jB6BCJRSC4AgAAAImFGAEAAA=="
+26:
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 27f
+jmp 28f
+27:
+.base64 "icE="
+28:
+.base64 "i70QAQAAieqDwiADlRgBAACLhRQBAAApyImFFAEAAIn4AciJhRABAAA="
+29:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 29b
+.base64 "i4WQAAAAi42UAAAAieqDwgCJ64PDIL4BAAAAie+Bx4ABAABXVlNSUVA="
+call {vg_cmac_aes_update_aesni}
+.base64 "WFhYWFhYi50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 210f
+.base64 "i4WQAAAAi42UAAAAieqDwgCJ/onvgceAAQAAV1ZTUlFQ"
+call {vg_cmac_aes_update_aesni}
+.base64 "WFhYWFhY"
+jmp 211f
+210:
+211:
+.base64 "i40UAQAAhck="
+je 212f
+.base64 "uAAAAACJRSCJRSSJRSiJRSyLvRABAACJ6oPCIIuNFAEAAA=="
+214:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 214b
+.base64 "i4WQAAAAi42UAAAAieqDwgCJ64PDIL4BAAAAie+Bx4ABAABXVlNSUVA="
+call {vg_cmac_aes_update_aesni}
+.base64 "WFhYWFhY"
+jmp 213f
+212:
+213:
+jmp 24f
+23:
+24:
+.base64 "i4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 215f
+.base64 "i4WQAAAAi42UAAAAieqDwgCJ/onvgceAAQAAV1ZTUlFQ"
+call {vg_cmac_aes_update_aesni}
+.base64 "WFhYWFhY"
+jmp 216f
+215:
+216:
+.base64 "i40UAQAAhck="
+je 217f
+.base64 "uAAAAACJRSCJRSSJRSiJRSyLvRABAACJ6oPCIIuNFAEAAA=="
+219:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 219b
+.base64 "i4WQAAAAi42UAAAAieqDwgCJ64PDIL4BAAAAie+Bx4ABAABXVlNSUVA="
+call {vg_cmac_aes_update_aesni}
+.base64 "WFhYWFhY"
+jmp 218f
+217:
+218:
+.base64 "uAAAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAieuDwwC/AQAAAIHFgAEAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge2AAQAAi4WoAAAAiYUQAQAAi4WsAAAAiYUUAQAAi50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 220f
+.base64 "uAEAAACLTTCJTUCLTTSJTUSLTTiJTUgPyAtFPIlFTIuFkAAAAIuNlAAAAInqg8JAgcWAAQAAVVdTUlFQ"
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge2AAQAA"
+jmp 221f
+220:
+221:
+.base64 "i40UAQAAhck="
+je 222f
+.base64 "i4WsAAAAwegEg8ABi00wiU1Ai000iU1Ei004iU1ID8gLRTyJRUy4AAAAAIlFUIlFVIlFWIlFXIuFkAAAAIuNlAAAAInqg8JAieuDw1C/AQAAAIHFgAEAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge2AAQAAi70QAQAAieqDwlCLjRQBAAA="
+224:
+.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
+jne 224b
+jmp 223f
+222:
+223:
+.base64 "ie+LldQAAACLjbQAAAA="
+225:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 225b
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
+.p2align 6"#,
+        vg_cmac_aes_update_aesni = sym crate::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_ccm_open_aesni`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
 20:
@@ -277,31 +350,14 @@ jmp 228f
 228:
 .base64 "i4WwAAAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_cmac_aes_update_aesni = sym crate::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
     )
 }
 
-/// AES-CCM generation-encryption (NIST SP 800-38C §6.1, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, encrypts the `len` bytes of payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the encrypted MAC (`T ⊕ MSB_Tlen(S₀)`) of `tag_len` bytes, of the payload and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The ciphertext of §6.1 is the encrypted payload followed by it.
-///
-/// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
-/// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2664 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_ccm_seal`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
 20:
@@ -406,31 +462,14 @@ jmp 223f
 jne 225b
 .base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_cmac_aes_update = sym crate::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
-///
-/// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
-/// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
-/// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2664 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_ccm_open`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQk0PX//4uEJDQKAACJRCQEi4QkOAoAAIlEJAiLhCQ8CgAAiUQkDIuEJEAKAACJRCQQi4QkRAoAAIlEJBSLhCRICgAAiUQkGIuEJEwKAACJRCQci4QkUAoAAIlEJCCLhCRUCgAAiUQkJIuEJFgKAACJRCQoieCDwDCJRCQsi0QkLImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFkAAAAItEJAiJhZQAAACLRCQMiYWYAAAAi0QkEImFnAAAAItEJBSJhaAAAACLRCQYiYWkAAAAi0QkHImFqAAAAItEJCCJhawAAACLRCQkiYXUAAAAi0QkKImFtAAAALgAAAAAiUUwiUU0iUU4iUU8uA4AAAArhZwAAACIRTCLvZgAAACJ6oPCMYuNnAAAAA=="
 20:
@@ -548,7 +587,8 @@ jmp 228f
 228:
 .base64 "i4WwAAAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
 .p2align 6"#,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_cmac_aes_update = sym crate::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
+}
 }

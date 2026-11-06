@@ -13,13 +13,11 @@
 /// * `key` must be valid for reads of 32 bytes.
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
-    core::arch::naked_asm!(
-        r".inst 0xf9400022,0xf9400423,0xf9400824,0xf9400c25,0xf9000c02,0xf9001003,0xf9001404,0xf9001805
-.inst 0xd2800002,0xf9000002,0xf9000402,0xf9000802,0xd65f03c0
-.p2align 6",
-    )
+#[inline(always)]
+pub unsafe fn vg_poly1305_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], key: *const [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_poly1305_init(state, key) }
 }
 
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
@@ -32,8 +30,64 @@ pub unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_poly1305_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_poly1305_update(state, count, data, len) }
+}
+
+/// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
+///
+/// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_poly1305_update_neon(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_poly1305_update_neon(state, count, data, len) }
+}
+
+/// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
+///
+/// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_poly1305_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_poly1305_finalize(state, count, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_poly1305_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
+    core::arch::naked_asm!(
+        r".inst 0xf9400022,0xf9400423,0xf9400824,0xf9400c25,0xf9000c02,0xf9001003,0xf9001404,0xf9001805
+.inst 0xd2800002,0xf9000002,0xf9000402,0xf9000802,0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// The verified code of [`super::vg_poly1305_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10203ff,0x910003e4,0xd29ffff0,0xf2a1fff0,0xf2dfff90,0xf2e1fff0,0xf9400c07,0x8a1000e7
 .inst 0xd29fff90,0xf2a1fff0,0xf2dfff90,0xf2e1fff0,0xf9401008,0x8a100108,0xd342fd11,0x8b080231
@@ -98,18 +152,9 @@ b 215f
     )
 }
 
-/// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
-///
-/// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_poly1305_update_neon`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_update_neon(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_poly1305_update_neon(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10203ff,0x910003e4,0xd29ffff0,0xf2a1fff0,0xf2dfff90,0xf2e1fff0,0xf9400c07,0x8a1000e7
 .inst 0xd29fff90,0xf2a1fff0,0xf2dfff90,0xf2e1fff0,0xf9401008,0x8a100108,0xd342fd11,0x8b080231
@@ -248,19 +293,9 @@ b 218f
     )
 }
 
-/// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
-///
-/// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_poly1305_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd10203ff,0x910003e3,0x91000043,0xd28001e2,0x8a020022,0xd29ffff0,0xf2a1fff0,0xf2dfff90
 .inst 0xf2e1fff0,0xf9400c07,0x8a1000e7,0xd29fff90,0xf2a1fff0,0xf2dfff90,0xf2e1fff0,0xf9401008
@@ -284,6 +319,7 @@ b 21f
 .inst 0xf9000465,0x910203ff,0xd65f03c0
 .p2align 6",
     )
+}
 }
 
 #[rustfmt::skip]

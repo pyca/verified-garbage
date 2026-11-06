@@ -11,11 +11,11 @@
 ///
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
-    core::arch::naked_asm!(
-        r#".base64 "RWcAPQEjCGEAAAORze8APYmrCGEEAAORupgAPf7cCGEIAAORMhAAPXZUCGEMAAORIACATg==""#,
-    )
+#[inline(always)]
+pub unsafe fn vg_md5_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 80]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_md5_init(state) }
 }
 
 /// Absorbs data into an MD5 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
@@ -28,8 +28,45 @@ pub unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_md5_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 80], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_md5_update(state, count, data, len) }
+}
+
+/// Finishes an MD5 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the MD5 digest of that message to `*out`.
+///
+/// Contract: `VG.Spec.Md5.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_md5_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 80], count: u64, out: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_md5_finalize(state, count, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_md5_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
+    core::arch::naked_asm!(
+        r#".base64 "RWcAPQEjCGEAAAORze8APYmrCGEEAAORupgAPf7cCGEIAAORMhAAPXZUCGEMAAORIACATg==""#,
+    )
+}
+
+/// The verified code of [`super::vg_md5_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "cf8h+CAA4TimAgh80f8h+CAAAfhAAEf7SABn+1AAh/tYAKf7YADH+2gA5/sAAEM7AABnOwAAhTsAAKY7PwAAOThAnnwAAD0o"
 beq %cr0, 20f
@@ -124,23 +161,13 @@ b 21f
 20:
 21:
 .base64 "QABb61AAm+tYALvrYADb62gA++tIAHvrIAAB6DAAITimAwh8kAAhOCAAgE4=""#,
-        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
+        vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }
 
-/// Finishes an MD5 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the MD5 digest of that message to `*out`.
-///
-/// Contract: `VG.Spec.Md5.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_md5_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "cf8h+CAAwTimAgh80f8h+CAAAfhAAEb7SABm+1AAhvtYAKb7YADG+2gA5vsAAEM7AABmOwAAhTsAAKQ7PwAAOThAvn+AAAA5FPJ6fRAAC5kBAN47BwD+O4LR/3s="
 20:
@@ -177,8 +204,9 @@ bl {vg_md5_compress}
 .base64 "AADAO////zsAAD8o"
 beq %cr0, 20b
 .base64 "AAAagQAAHJEEABqBBAAckQgAGoEIAByRDAAagQwAHJFAAFvrUACb61gAu+tgANvraAD760gAe+sgAAHoMAAhOKYDCHyQACE4IACATg==""#,
-        vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
+        vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
+}
 }
 
 #[rustfmt::skip]

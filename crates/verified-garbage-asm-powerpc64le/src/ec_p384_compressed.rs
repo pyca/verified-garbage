@@ -15,8 +15,38 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p384_compress_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p384_compress_public_key(out, public, scratch) }
+}
+
+/// Validate and decompress a P-384 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 48 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 48 bytes each and returns 1. If no such finite point exists, writes 97 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
+///
+/// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 97 bytes.
+/// * `public` must be valid for reads of 49 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
+/// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p384_decompress_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p384_decompress_public_key(out, public, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_p384_compress_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p384_compress_public_key(out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p384_compress_public_key(out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "eCOMfAAAxfkIAOX7pgIIfBAABfh4G258eCujfCgAIDkoTAx9EAYD+SAAIDkoTAx9GAYD+RgAIDkoTAx9IAYD+RAAIDkoTAx9KAYD+QgAIDkoTAx9MAYD+QAAIDkoTAx9OAYD+SgAIDkoTAx9QAYD+SAAIDkoTAx9SAYD+RgAIDkoTAx9UAYD+RAAIDkoTAx9WAYD+QgAIDkoTAx9YAYD+QAAIDkoTAx9aAYD+SgAIDkoTAx9cAYD+SAAIDkoTAx9eAYD+RgAIDkoTAx9gAYD+RAAIDkoTAx9iAYD+QgAIDkoTAx9kAYD+QAAIDkoTAx9mAYD+f//YD3//2thQABjkQAAYD0AAGthRABjkQAAYD0AAGthSABjkf//YD3//2thTABjkf//YD3+/2thUABjkf//YD3//2thVABjkf//YD3//2thWABjkf//YD3//2thXABjkf//YD3//2thYABjkf//YD3//2thZABjkf//YD3//2thaABjkf//YD3//2thbABjkcXMYD1zKWthcABjkezsYD1qGWthdABjkbBIYD16p2theABjkRpYYD2yDWthfABjkTf0YD3fLWthgABjkWPHYD2BTWthhABjkf//YD3//2thiABjkf//YD3//2thjABjkf//YD3//2thkABjkf//YD3//2thlABjkf//YD3//2thmABjkf//YD3//2thnABjkQAAYD0AAGth0ABjkQAAYD0AAGth1ABjkQAAYD0AAGth2ABjkQAAYD0AAGth3ABjkQAAYD0AAGth4ABjkQAAYD0AAGth5ABjkQAAYD0AAGth6ABjkQAAYD0AAGth7ABjkQAAYD0AAGth8ABjkQAAYD0AAGth9ABjkQAAYD0AAGth+ABjkQAAYD0AAGth/ABjkQAAYD0BAGthAAFjkQAAYD0AAGthBAFjkQAAYD0AAGthCAFjkQAAYD0AAGthDAFjkQAAYD0AAGthEAFjkQAAYD0AAGthFAFjkQAAYD0AAGthGAFjkQAAYD0AAGthHAFjkQAAYD0AAGthIAFjkQAAYD0AAGthJAFjkQAAYD0AAGthKAFjkQAAYD0AAGthLAFjkQAAYD0BAGthMAFjkf//YD3//2thNAFjkf//YD3//2thOAFjkQAAYD0AAGthPAFjkQAAYD0BAGthQAFjkQAAYD0AAGthRAFjkQAAYD0AAGthSAFjkQAAYD0AAGthTAFjkQAAYD0AAGthUAFjkQAAYD0AAGthVAFjkQAAYD0AAGthWAFjkQAAYD0AAGthXAFjkf//YD38/2thYAFjkQAAYD0DAGthZAFjkQAAYD0AAGthaAFjkf//YD38/2thbAFjkf//YD37/2thcAFjkf//YD3//2thdAFjkf//YD3//2theAFjkf//YD3//2thfAFjkf//YD3//2thgAFjkf//YD3//2thhAFjkf//YD3//2thiAFjkf//YD3//2thjAFjkcPXYD1miWthkAFjkTQYYD1SmWthlAFjkeRuYD3EmGthmAFjkX3lYD2LCWthnAFjkWBLYD2OBmthoAFjkdZnYD3RYWthpAFjkbq9YD2noGthqAFjkaWpYD3L42thrAFjkQZdYD2+YWthsAFjkYEiYD3cZWthtAFjke8gYD3tP2thuAFjkRhnYD3iM2thvAFjkcBJYD0otWthwAFjkdA9YD1mdWthxAFjkdagYD04zmthyAFjkeMgYD3ieGthzAFjkRtUYD1uTWth0AFjkZyHYD38Omth1AFjkaNZYD3/Dmth2AFjkVRkYD2Ehmth3AFjkU5hYD0r3mth4AFjkS+BYD0j92th5AFjkZ4pYD0TFWth6AFjkTpNYD3CrWth7AFjkQNLYD3+pGth8AFjkQQjYD2tPWth9AFjkbR7YD2sqWth+AFjkb+hYD2/qGth/AFjkYMuYD1QsGthAAJjka2LYD1W52thBAJjkfRoYD3Z/2thCAJjkcPGYD0ZUmthDAJjkWk5YD1AqGthEAJjkYDdYD0mAmthFAJjkRVaYD3pxWthGAJjkXgrYD3Cq2thHAJjkbQZYD2pCWthIAJjkTEtYD0km2thJAJjkRrfYD0ZpGthKAJjkT3/YD3lgWthLAJjkbj8YD1HKWthMAJjkT68YD06SGthNAJjkatKYD3FHGthOAJjkQ3UYD0XSWthPAJjkSYoYD2VaGthQAJjkbA/YD16W2thRAJjkTkrYD0hv2thSAJjkYQMYD0B7mthTAJjkTozYD2N1mthUAJjkRMTYD2V5mthVAJjkU+3YD2FWGthWAJjkeWnYD1N8mthXAJjkcgLYD0g0mthYAJjkZw4YD1+smthZAJjkQAAYD0AAGthaAJjkQAAYD0AAGthbAJjkQAAYD0AAGthcAJjkQAAYD0AAGthdAJjkQAAYD0AAGtheAJjkQAAYD0AAGthfAJjkf//YD39/2thgAJjkQAAYD0AAGthhAJjkQAAYD0AAGthiAJjkf//YD3//2thjAJjkf//YD3+/2thkAJjkf//YD3//2thlAJjkf//YD3//2thmAJjkf//YD3//2thnAJjkf//YD3//2thoAJjkf//YD3//2thpAJjkf//YD3//2thqAJjkf//YD3//2thrAJjkcXMYD1xKWthsAJjkezsYD1qGWthtAJjkbBIYD16p2thuAJjkRpYYD2yDWthvAJjkTf0YD3fLWthwAJjkWPHYD2BTWthxAJjkf//YD3//2thyAJjkf//YD3//2thzAJjkf//YD3//2th0AJjkf//YD3//2th1AJjkf//YD3//2th2AJjkf//YD3//2th3AJjkQAAYD0AAGth4AJjkQAAYD0AAGth5AJjkQAAYD0AAGth6AJjkQAAYD0AAGth7AJjkQAAYD0AAGth8AJjkQAAYD0AAGth9AJjkQAAYD0AAGth+AJjkQAAYD0AAGth/AJjkQAAYD0AAGthAANjkQAAYD0AAGthBANjkQAAYD0AAGthCANjkQAAYD0AAGthDANjkQAAYD0BAGthEANjkf//YD3//2thFANjkf//YD3//2thGANjkQAAYD0AAGthHANjkQAAYD0BAGthIANjkQAAYD0AAGthJANjkQAAYD0AAGthKANjkQAAYD0AAGthLANjkQAAYD0AAGthMANjkQAAYD0AAGthNANjkQAAYD0AAGthOANjkQAAYD0AAGthPANjkQAAYD0AAGthQANjkQAAYD0AAGthRANjkQAAYD0AAGthSANjkQAAYD0AAGthTANjkQAAYD0AAGthUANjkQAAYD0AAGthVANjkQAAYD0AAGthWANjkQAAYD0AAGthXANjkQAAYD0AAGthYANjkQAAYD0AAGthZANjkQAAYD0AAGthaANjkQAAYD0AAGthbANjkQAAgDj//4Q4gAiD+AAAYD0BAGthkAdjkf//YD3+/2thlAdjkQAAYD0AAGthmAdjkQAAYD0CAGthnAdjkQAAYD0AAGthoAdjkf//YD3+/2thpAdjkQAAYD0AAGthqAdjkQAAYD0CAGthrAdjkQAAYD0BAGthsAdjkQAAYD0AAGthtAdjkQAAYD0AAGthuAdjkQAAYD0AAGthvAdjkUGdYD3MLWthwAdjkREIYD1xiGthxAdjkUx6YD3sMmthyAdjkSn3YD3YrWthzAdjkSAZYD0uAmth0AdjkfJ3YD2bIGth1AdjkZOUYD3iimth2AdjkTfjYD3uS2th3AdjkQIfYD2UIGth4AdjkSu2YD30IWth5AdjkU9gYD35v2th6AdjkQjNYD1LEWth7AdjkQEAzDgoACA5KEwGfXAGA/kgACA5KEwGfXgGA/kYACA5KEwGfYAGA/kQACA5KEwGfYgGA/kIACA5KEwGfZAGA/kAACA5KEwGfZgGA/kwAMY4KAAgOShMBn0ABwP5IAAgOShMBn0IBwP5GAAgOShMBn0QBwP5EAAgOShMBn0YBwP5CAAgOShMBn0gBwP5AAAgOShMBn0oBwP5AACMiAQA4Dh4OoR8//+EOOAPhHgAAKA4UCikfIAIg+g4KIR8gAiD+AAAADj//wBg//8AZAEAwDhwBuOAQAADgRQC53xQOOh8FDLnfCIA5nh0BuOARAADgRQC53xQOOh8FDLnfCIA5nh4BuOASAADgRQC53xQOOh8FDLnfCIA5nh8BuOATAADgRQC53xQOOh8FDLnfCIA5niABuOAUAADgRQC53xQOOh8FDLnfCIA5niEBuOAVAADgRQC53xQOOh8FDLnfCIA5niIBuOAWAADgRQC53xQOOh8FDLnfCIA5niMBuOAXAADgRQC53xQOOh8FDLnfCIA5niQBuOAYAADgRQC53xQOOh8FDLnfCIA5niUBuOAZAADgRQC53xQOOh8FDLnfCIA5niYBuOAaAADgRQC53xQOOh8FDLnfCIA5nicBuOAbAADgRQC53xQOOh8FDLnfCIA5nj//6Y4gAiD6DgohHyACIP4AAAAOP//AGD//wBkAQDAOAAH44BAAAOBFALnfFA46HwUMud8IgDmeAQH44BEAAOBFALnfFA46HwUMud8IgDmeAgH44BIAAOBFALnfFA46HwUMud8IgDmeAwH44BMAAOBFALnfFA46HwUMud8IgDmeBAH44BQAAOBFALnfFA46HwUMud8IgDmeBQH44BUAAOBFALnfFA46HwUMud8IgDmeBgH44BYAAOBFALnfFA46HwUMud8IgDmeBwH44BcAAOBFALnfFA46HwUMud8IgDmeCAH44BgAAOBFALnfFA46HwUMud8IgDmeCQH44BkAAOBFALnfFA46HwUMud8IgDmeCgH44BoAAOBFALnfFA46HwUMud8IgDmeCwH44BsAAOBFALnfFA46HwUMud8IgDmeP//pjiACIPoOCiEfIAIg/igBoA4cAagOJAHwDg="
 bl {vg_p384_mul_mod_p}
@@ -37,26 +67,15 @@ bl {vg_p384_add_mod_p}
 .base64 "8AeAODAHoDggCMA4"
 bl {vg_p384_sub_mod_p}
 .base64 "8Aej6PgHg+h4I6V8AAiD6HgjpXwICIPoeCOlfBAIg+h4I6V8GAiD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTiACIPoOCiEfIAIg/iACEPpwAGD6KAGo+h4IqV8OFClfHgqhHxgB4P4yAGD6KgGo+h4IqV8OFClfHgqhHxoB4P40AGD6LAGo+h4IqV8OFClfHgqhHxwB4P42AGD6LgGo+h4IqV8OFClfHgqhHx4B4P44AGD6MAGo+h4IqV8OFClfHgqhHyAB4P46AGD6MgGo+h4IqV8OFClfHgqhHyIB4P48AGD6NAGo+h4IqV8OFClfHgqhHxQCIP4+AGD6NgGo+h4IqV8OFClfHgqhHxYCIP4AAKD6OAGo+h4IqV8OFClfHgqhHxgCIP4CAKD6OgGo+h4IqV8OFClfHgqhHxoCIP4EAKD6PAGo+h4IqV8OFClfHgqhHxwCIP4GAKD6PgGo+h4IqV8OFClfHgqhHx4CIP4gAhD6QAHg+gBAKA4OCiEfAIAhDg4UIR8AACOmHAGg+g4UIR8KQDAOCg1jnx4BoPoOFCEfCEAwDgoNY58gAaD6DhQhHwZAMA4KDWOfIgGg+g4UIR8EQDAOCg1jnyQBoPoOFCEfAkAwDgoNY58mAaD6DhQhHwBAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
-        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
-        vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
-        vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
+        vg_p384_mul_mod_p = sym crate::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
+        vg_p384_add_mod_p = sym crate::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
+        vg_p384_sub_mod_p = sym crate::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
     )
 }
 
-/// Validate and decompress a P-384 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 48 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 48 bytes each and returns 1. If no such finite point exists, writes 97 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
-///
-/// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 97 bytes.
-/// * `public` must be valid for reads of 49 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
-/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
-/// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ec_p384_decompress_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p384_decompress_public_key(out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p384_decompress_public_key(out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "eCOMfAAAxfkIAOX7pgIIfBAABfh4G258eCujfCgAIDkoTAx9EAYD+SAAIDkoTAx9GAYD+RgAIDkoTAx9IAYD+RAAIDkoTAx9KAYD+QgAIDkoTAx9MAYD+QAAIDkoTAx9OAYD+SgAIDkoTAx9QAYD+SAAIDkoTAx9SAYD+RgAIDkoTAx9UAYD+RAAIDkoTAx9WAYD+QgAIDkoTAx9YAYD+QAAIDkoTAx9aAYD+SgAIDkoTAx9cAYD+SAAIDkoTAx9eAYD+RgAIDkoTAx9gAYD+RAAIDkoTAx9iAYD+QgAIDkoTAx9kAYD+QAAIDkoTAx9mAYD+f//YD3//2thQABjkQAAYD0AAGthRABjkQAAYD0AAGthSABjkf//YD3//2thTABjkf//YD3+/2thUABjkf//YD3//2thVABjkf//YD3//2thWABjkf//YD3//2thXABjkf//YD3//2thYABjkf//YD3//2thZABjkf//YD3//2thaABjkf//YD3//2thbABjkcXMYD1zKWthcABjkezsYD1qGWthdABjkbBIYD16p2theABjkRpYYD2yDWthfABjkTf0YD3fLWthgABjkWPHYD2BTWthhABjkf//YD3//2thiABjkf//YD3//2thjABjkf//YD3//2thkABjkf//YD3//2thlABjkf//YD3//2thmABjkf//YD3//2thnABjkQAAYD0AAGth0ABjkQAAYD0AAGth1ABjkQAAYD0AAGth2ABjkQAAYD0AAGth3ABjkQAAYD0AAGth4ABjkQAAYD0AAGth5ABjkQAAYD0AAGth6ABjkQAAYD0AAGth7ABjkQAAYD0AAGth8ABjkQAAYD0AAGth9ABjkQAAYD0AAGth+ABjkQAAYD0AAGth/ABjkQAAYD0BAGthAAFjkQAAYD0AAGthBAFjkQAAYD0AAGthCAFjkQAAYD0AAGthDAFjkQAAYD0AAGthEAFjkQAAYD0AAGthFAFjkQAAYD0AAGthGAFjkQAAYD0AAGthHAFjkQAAYD0AAGthIAFjkQAAYD0AAGthJAFjkQAAYD0AAGthKAFjkQAAYD0AAGthLAFjkQAAYD0BAGthMAFjkf//YD3//2thNAFjkf//YD3//2thOAFjkQAAYD0AAGthPAFjkQAAYD0BAGthQAFjkQAAYD0AAGthRAFjkQAAYD0AAGthSAFjkQAAYD0AAGthTAFjkQAAYD0AAGthUAFjkQAAYD0AAGthVAFjkQAAYD0AAGthWAFjkQAAYD0AAGthXAFjkf//YD38/2thYAFjkQAAYD0DAGthZAFjkQAAYD0AAGthaAFjkf//YD38/2thbAFjkf//YD37/2thcAFjkf//YD3//2thdAFjkf//YD3//2theAFjkf//YD3//2thfAFjkf//YD3//2thgAFjkf//YD3//2thhAFjkf//YD3//2thiAFjkf//YD3//2thjAFjkcPXYD1miWthkAFjkTQYYD1SmWthlAFjkeRuYD3EmGthmAFjkX3lYD2LCWthnAFjkWBLYD2OBmthoAFjkdZnYD3RYWthpAFjkbq9YD2noGthqAFjkaWpYD3L42thrAFjkQZdYD2+YWthsAFjkYEiYD3cZWthtAFjke8gYD3tP2thuAFjkRhnYD3iM2thvAFjkcBJYD0otWthwAFjkdA9YD1mdWthxAFjkdagYD04zmthyAFjkeMgYD3ieGthzAFjkRtUYD1uTWth0AFjkZyHYD38Omth1AFjkaNZYD3/Dmth2AFjkVRkYD2Ehmth3AFjkU5hYD0r3mth4AFjkS+BYD0j92th5AFjkZ4pYD0TFWth6AFjkTpNYD3CrWth7AFjkQNLYD3+pGth8AFjkQQjYD2tPWth9AFjkbR7YD2sqWth+AFjkb+hYD2/qGth/AFjkYMuYD1QsGthAAJjka2LYD1W52thBAJjkfRoYD3Z/2thCAJjkcPGYD0ZUmthDAJjkWk5YD1AqGthEAJjkYDdYD0mAmthFAJjkRVaYD3pxWthGAJjkXgrYD3Cq2thHAJjkbQZYD2pCWthIAJjkTEtYD0km2thJAJjkRrfYD0ZpGthKAJjkT3/YD3lgWthLAJjkbj8YD1HKWthMAJjkT68YD06SGthNAJjkatKYD3FHGthOAJjkQ3UYD0XSWthPAJjkSYoYD2VaGthQAJjkbA/YD16W2thRAJjkTkrYD0hv2thSAJjkYQMYD0B7mthTAJjkTozYD2N1mthUAJjkRMTYD2V5mthVAJjkU+3YD2FWGthWAJjkeWnYD1N8mthXAJjkcgLYD0g0mthYAJjkZw4YD1+smthZAJjkQAAYD0AAGthaAJjkQAAYD0AAGthbAJjkQAAYD0AAGthcAJjkQAAYD0AAGthdAJjkQAAYD0AAGtheAJjkQAAYD0AAGthfAJjkf//YD39/2thgAJjkQAAYD0AAGthhAJjkQAAYD0AAGthiAJjkf//YD3//2thjAJjkf//YD3+/2thkAJjkf//YD3//2thlAJjkf//YD3//2thmAJjkf//YD3//2thnAJjkf//YD3//2thoAJjkf//YD3//2thpAJjkf//YD3//2thqAJjkf//YD3//2thrAJjkcXMYD1xKWthsAJjkezsYD1qGWthtAJjkbBIYD16p2thuAJjkRpYYD2yDWthvAJjkTf0YD3fLWthwAJjkWPHYD2BTWthxAJjkf//YD3//2thyAJjkf//YD3//2thzAJjkf//YD3//2th0AJjkf//YD3//2th1AJjkf//YD3//2th2AJjkf//YD3//2th3AJjkQAAYD0AAGth4AJjkQAAYD0AAGth5AJjkQAAYD0AAGth6AJjkQAAYD0AAGth7AJjkQAAYD0AAGth8AJjkQAAYD0AAGth9AJjkQAAYD0AAGth+AJjkQAAYD0AAGth/AJjkQAAYD0AAGthAANjkQAAYD0AAGthBANjkQAAYD0AAGthCANjkQAAYD0AAGthDANjkQAAYD0BAGthEANjkf//YD3//2thFANjkf//YD3//2thGANjkQAAYD0AAGthHANjkQAAYD0BAGthIANjkQAAYD0AAGthJANjkQAAYD0AAGthKANjkQAAYD0AAGthLANjkQAAYD0AAGthMANjkQAAYD0AAGthNANjkQAAYD0AAGthOANjkQAAYD0AAGthPANjkQAAYD0AAGthQANjkQAAYD0AAGthRANjkQAAYD0AAGthSANjkQAAYD0AAGthTANjkQAAYD0AAGthUANjkQAAYD0AAGthVANjkQAAYD0AAGthWANjkQAAYD0AAGthXANjkQAAYD0AAGthYANjkQAAYD0AAGthZANjkQAAYD0AAGthaANjkQAAYD0AAGthbANjkQAAgDj//4Q4gAiD+AAAYD0BAGthkAdjkf//YD3+/2thlAdjkQAAYD0AAGthmAdjkQAAYD0CAGthnAdjkQAAYD0AAGthoAdjkf//YD3+/2thpAdjkQAAYD0AAGthqAdjkQAAYD0CAGthrAdjkQAAYD0BAGthsAdjkQAAYD0AAGthtAdjkQAAYD0AAGthuAdjkQAAYD0AAGthvAdjkUGdYD3MLWthwAdjkREIYD1xiGthxAdjkUx6YD3sMmthyAdjkSn3YD3YrWthzAdjkSAZYD0uAmth0AdjkfJ3YD2bIGth1AdjkZOUYD3iimth2AdjkTfjYD3uS2th3AdjkQIfYD2UIGth4AdjkSu2YD30IWth5AdjkU9gYD35v2th6AdjkQjNYD1LEWth7AdjkQEAzDgoACA5KEwGfXAGA/kgACA5KEwGfXgGA/kYACA5KEwGfYAGA/kQACA5KEwGfYgGA/kIACA5KEwGfZAGA/kAACA5KEwGfZgGA/kAAIyIQAaD+AEAoDh4K4R8AwCgOHgqhHz//4Q44A+EeAAAoDhQKKR8gAiD6DgohHyACIP4AAAAOP//AGD//wBkAQDAOHAG44BAAAOBFALnfFA46HwUMud8IgDmeHQG44BEAAOBFALnfFA46HwUMud8IgDmeHgG44BIAAOBFALnfFA46HwUMud8IgDmeHwG44BMAAOBFALnfFA46HwUMud8IgDmeIAG44BQAAOBFALnfFA46HwUMud8IgDmeIQG44BUAAOBFALnfFA46HwUMud8IgDmeIgG44BYAAOBFALnfFA46HwUMud8IgDmeIwG44BcAAOBFALnfFA46HwUMud8IgDmeJAG44BgAAOBFALnfFA46HwUMud8IgDmeJQG44BkAAOBFALnfFA46HwUMud8IgDmeJgG44BoAAOBFALnfFA46HwUMud8IgDmeJwG44BsAAOBFALnfFA46HwUMud8IgDmeP//pjiACIPoOCiEfIAIg/igBoA4cAagOJAHwDg="
 bl {vg_p384_mul_mod_p}
@@ -93,8 +112,9 @@ bl {vg_p384_mul_mod_p}
 .base64 "YAeAOPAHoDggCMA4"
 bl {vg_p384_sub_mod_p}
 .base64 "YAej6GgHg+h4I6V8cAeD6HgjpXx4B4PoeCOlfIAHg+h4I6V8iAeD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTiACIPoOCiEfIAIg/gAB4PoQAaj6HgipXwBAIA4OCClfAAAgDhQIEV9AQCqOAAAgDhQIKV8gAiD6DgohHyACIP4gAhD6QQAgDg4UIR8AACOmHAGg+g4UIR8KQDAOCg1jnx4BoPoOFCEfCEAwDgoNY58gAaD6DhQhHwZAMA4KDWOfIgGg+g4UIR8EQDAOCg1jnyQBoPoOFCEfAkAwDgoNY58mAaD6DhQhHwBAMA4KDWOfAAHg+g4UIR8WQDAOCg1jnwIB4PoOFCEfFEAwDgoNY58EAeD6DhQhHxJAMA4KDWOfBgHg+g4UIR8QQDAOCg1jnwgB4PoOFCEfDkAwDgoNY58KAeD6DhQhHwxAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
-        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
-        vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
-        vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
+        vg_p384_mul_mod_p = sym crate::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
+        vg_p384_add_mod_p = sym crate::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
+        vg_p384_sub_mod_p = sym crate::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
     )
+}
 }

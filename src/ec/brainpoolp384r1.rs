@@ -62,7 +62,7 @@ impl Mul {
 
 /// The public key `Q = dG` of the key `d`, in the uncompressed form of
 /// SEC 1 §2.3.3, or `None` if `d` is not in `[1, n − 1]`.
-pub(crate) fn public_key(d: &[u8; 48]) -> Option<[u8; 97]> {
+pub(crate) fn public_key(dit: crate::dit::Dit<'_>, d: &[u8; 48]) -> Option<[u8; 97]> {
     let mut out = [0; 97];
     let mut scratch = [0u64; 1024];
     let ok = match Mul::select(detected()) {
@@ -71,11 +71,15 @@ pub(crate) fn public_key(d: &[u8; 48]) -> Option<[u8; 97]> {
         // `scratch` are distinct objects from each other and `d`, so none
         // overlaps another or the call's stack frame, and, as Rust objects,
         // none wraps around the address space.
-        Mul::Baseline => unsafe { vg_ec_brainpoolp384r1_public_key(&mut out, d, &mut scratch) },
+        Mul::Baseline => unsafe {
+            vg_ec_brainpoolp384r1_public_key(dit, &mut out, d, &mut scratch)
+        },
         // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
         // (`Mul::select`).
         #[cfg(target_arch = "arm")]
-        Mul::Umaal => unsafe { vg_ec_brainpoolp384r1_public_key_umaal(&mut out, d, &mut scratch) },
+        Mul::Umaal => unsafe {
+            vg_ec_brainpoolp384r1_public_key_umaal(dit, &mut out, d, &mut scratch)
+        },
     };
     zeroize(&mut scratch);
     (ok == 1).then_some(out)

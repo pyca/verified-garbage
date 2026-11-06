@@ -16,8 +16,95 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ecdsa_p521_verify(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 133], digest: *const u8, digest_len: usize, sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_p521_verify(public, digest, digest_len, sig, scratch) }
+}
+
+/// The CPU features `vg_ecdsa_p521_verify_adx` requires (`Artifact.features`).
+pub const VG_ECDSA_P521_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// ECDSA signature verification over P-521 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 66 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 521 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 66 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
+///
+/// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
+///
+/// # Safety
+///
+/// * `public` must be valid for reads of 133 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `sig` must be valid for reads of 132 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
+/// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[inline(always)]
+pub unsafe fn vg_ecdsa_p521_verify_adx(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 133], digest: *const u8, digest_len: usize, sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_p521_verify_adx(public, digest, digest_len, sig, scratch) }
+}
+
+/// Deterministic ECDSA signature generation over P-521 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 132 bytes.
+/// * `d` must be valid for reads of 66 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[inline(always)]
+pub unsafe fn vg_ecdsa_p521_sign(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_p521_sign(out, d, digest, digest_len, scratch, hmac) }
+}
+
+/// The CPU features `vg_ecdsa_p521_sign_adx` requires (`Artifact.features`).
+pub const VG_ECDSA_P521_SIGN_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// Deterministic ECDSA signature generation over P-521 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 132 bytes.
+/// * `d` must be valid for reads of 66 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
+#[inline(always)]
+pub unsafe fn vg_ecdsa_p521_sign_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_p521_sign_adx(out, d, digest, digest_len, scratch, hmac) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ecdsa_p521_verify`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p521_verify(public: *const [u8; 133], digest: *const u8, digest_len: usize, sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_verify(public: *const [u8; 133], digest: *const u8, digest_len: usize, sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJKhJieFJg8EISIP6Qg=="
 jb 20f
@@ -391,33 +478,17 @@ call {vg_p521_mul_mod_p}
 call {vg_p521_mul_mod_p}
 .base64 "TInmSIHHMAQAAEiLL0yLRwhMi08QTItXGEyLXyBMi2coTItvMEyLdzhMi39ASIHH6AUAAEgrL0wbRwhMG08QTBtXGEwbXyBMG2coTBtvMEwbdzhMG39ASYHHAAIAAEiBx9gAAABMifhIwegJSIPwAUgpxUmD2ABJg9kASYPaAEmD2wBJg9wASYPdAEmD3gBJg98ASYHn/wEAAEiJL0yJRwhMiU8QTIlXGEyJXyBMiWcoTIlvMEyJdzhMiX9ASIHv8AoAAEiLl4ALAABIC5eICwAASAuXkAsAAEgLl5gLAABIC5egCwAASAuXqAsAAEgLl7ALAABIC5e4CwAASAuXwAsAAEiD+gFIGdJIidVIi5f4CAAASCuXiAAAAEiLlwAJAABIG5eQAAAASIuXCAkAAEgbl5gAAABIi5cQCQAASBuXoAAAAEiLlxgJAABIG5eoAAAASIuXIAkAAEgbl7AAAABIi5coCQAASBuXuAAAAEiLlzAJAABIG5fAAAAASIuXOAkAAEgbl8gAAABIGcBJicRIi5fwCgAASAuX+AoAAEgLlwALAABIC5cICwAASAuXEAsAAEgLlxgLAABIC5cgCwAASAuXKAsAAEgLlzALAABIg/oBSBnSTCHiSAnqSIuHoAwAAEgh0EiJh6AMAABIi5fABAAASAuXyAQAAEgLl9AEAABIC5fYBAAASAuX4AQAAEgLl+gEAABIC5fwBAAASAuX+AQAAEgLlwAFAAC5AAAAAEgp0UgZ0kiLh6AMAABIIdBIiYegDAAASIuHoAwAAEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KEiNZCRYww=="
 .p2align 6"#,
-        vg_p521_check_point = sym super::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
-        vg_p521_mul_mod_n = sym super::ecdsa_p521::vg_p521_mul_mod_n::vg_p521_mul_mod_n,
-        vg_p521_inv_mod_n = sym super::ecdsa_p521::vg_p521_inv_mod_n::vg_p521_inv_mod_n,
-        vg_p521_mul_mod_p = sym super::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
-        VG_P521_COMB = sym super::consts::VG_P521_COMB,
+        vg_p521_check_point = sym crate::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
+        vg_p521_mul_mod_n = sym crate::ecdsa_p521::vg_p521_mul_mod_n::vg_p521_mul_mod_n,
+        vg_p521_inv_mod_n = sym crate::ecdsa_p521::vg_p521_inv_mod_n::vg_p521_inv_mod_n,
+        vg_p521_mul_mod_p = sym crate::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
+        VG_P521_COMB = sym crate::consts::VG_P521_COMB,
     )
 }
 
-/// The CPU features `vg_ecdsa_p521_verify_adx` requires (`Artifact.features`).
-pub const VG_ECDSA_P521_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// ECDSA signature verification over P-521 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 66 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 521 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 66 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
-///
-/// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
-///
-/// # Safety
-///
-/// * `public` must be valid for reads of 133 bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `sig` must be valid for reads of 132 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
-/// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
-/// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ecdsa_p521_verify_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p521_verify_adx(public: *const [u8; 133], digest: *const u8, digest_len: usize, sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_verify_adx(public: *const [u8; 133], digest: *const u8, digest_len: usize, sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJKhJieFJg8EISIP6Qg=="
 jb 20f
@@ -759,33 +830,17 @@ call {vg_p521_mul_mod_p_adx}
 call {vg_p521_mul_mod_p_adx}
 .base64 "TInmSIHHMAQAAEiLL0yLRwhMi08QTItXGEyLXyBMi2coTItvMEyLdzhMi39ASIHH6AUAAEgrL0wbRwhMG08QTBtXGEwbXyBMG2coTBtvMEwbdzhMG39ASYHHAAIAAEiBx9gAAABMifhIwegJSIPwAUgpxUmD2ABJg9kASYPaAEmD2wBJg9wASYPdAEmD3gBJg98ASYHn/wEAAEiJL0yJRwhMiU8QTIlXGEyJXyBMiWcoTIlvMEyJdzhMiX9ASIHv8AoAAEiLl4ALAABIC5eICwAASAuXkAsAAEgLl5gLAABIC5egCwAASAuXqAsAAEgLl7ALAABIC5e4CwAASAuXwAsAAEiD+gFIGdJIidVIi5f4CAAASCuXiAAAAEiLlwAJAABIG5eQAAAASIuXCAkAAEgbl5gAAABIi5cQCQAASBuXoAAAAEiLlxgJAABIG5eoAAAASIuXIAkAAEgbl7AAAABIi5coCQAASBuXuAAAAEiLlzAJAABIG5fAAAAASIuXOAkAAEgbl8gAAABIGcBJicRIi5fwCgAASAuX+AoAAEgLlwALAABIC5cICwAASAuXEAsAAEgLlxgLAABIC5cgCwAASAuXKAsAAEgLlzALAABIg/oBSBnSTCHiSAnqSIuHoAwAAEgh0EiJh6AMAABIi5fABAAASAuXyAQAAEgLl9AEAABIC5fYBAAASAuX4AQAAEgLl+gEAABIC5fwBAAASAuX+AQAAEgLlwAFAAC5AAAAAEgp0UgZ0kiLh6AMAABIIdBIiYegDAAASIuHoAwAAEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KEiNZCRYww=="
 .p2align 6"#,
-        vg_p521_check_point_adx = sym super::ec_p521_compressed::vg_p521_check_point_adx::vg_p521_check_point_adx,
-        vg_p521_mul_mod_n = sym super::ecdsa_p521::vg_p521_mul_mod_n::vg_p521_mul_mod_n,
-        vg_p521_inv_mod_n = sym super::ecdsa_p521::vg_p521_inv_mod_n::vg_p521_inv_mod_n,
-        vg_p521_mul_mod_p_adx = sym super::ec_p521::vg_p521_mul_mod_p_adx::vg_p521_mul_mod_p_adx,
-        VG_P521_COMB = sym super::consts::VG_P521_COMB,
+        vg_p521_check_point_adx = sym crate::ec_p521_compressed::vg_p521_check_point_adx::vg_p521_check_point_adx,
+        vg_p521_mul_mod_n = sym crate::ecdsa_p521::vg_p521_mul_mod_n::vg_p521_mul_mod_n,
+        vg_p521_inv_mod_n = sym crate::ecdsa_p521::vg_p521_inv_mod_n::vg_p521_inv_mod_n,
+        vg_p521_mul_mod_p_adx = sym crate::ec_p521::vg_p521_mul_mod_p_adx::vg_p521_mul_mod_p_adx,
+        VG_P521_COMB = sym crate::consts::VG_P521_COMB,
     )
 }
 
-/// Deterministic ECDSA signature generation over P-521 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
-///
-/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 132 bytes.
-/// * `d` must be valid for reads of 66 bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
-/// * `digest_len` must be the digest length of the hash function `hmac` names.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
-/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// The verified code of [`super::vg_ecdsa_p521_sign`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p521_sign(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_sign(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TInBTYtRIE2LWShBUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBBU0FSV1ZSUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQMcBIiYQkQAEAADHASImEJEgBAAAxwEiJhCRQAQAAMcBIiYQkWAEAADHASImEJGABAAAxwEiJhCRoAQAAMcBIiYQkcAEAADHASImEJHgBAAAxwEiJhCSAAQAASIuMJNgAAAC4QgAAAEg5wUgPQ8hIiedIgceCAQAASCnPSIu0JMAAAABFMcA="
 20:
@@ -817,33 +872,13 @@ jmp 26f
 jne 22b
 .base64 "MclIiQwkSIlMJAhIiUwkEEiJTCQYSIlMJCBIiUwkKEiJTCQwSIlMJDhIiUwkQEiJTCRISIlMJFBIiUwkWEiJTCRgSIlMJGhIiUwkcEiJTCR4SImMJOgAAABIiYwk8AAAAEiJjCT4AAAASImMJAABAABIiYwkCAEAAEiJjCQQAQAASImMJBgBAABIiYwkIAEAAEiJjCQoAQAASImMJDABAABIiYwkOAEAAEiJjCRAAQAASImMJEgBAABIiYwkUAEAAEiJjCRYAQAASImMJGABAABIiYwkaAEAAEiJjCRwAQAASImMJHgBAABIiYwkgAEAAEiJjCSIAQAASImMJJABAABIiYwkmAEAAEiJjCSgAQAASImMJKgBAABIiYwksAEAAEiJjCS4AQAASImMJMABAABIiYwkyAEAAEiJjCTQAQAASImMJNgBAABIiYwk4AEAAEiJjCToAQAASImMJPABAABIiYwk+AEAAEiJjCQAAgAASImMJAgCAABIiYwkEAIAAEiJjCQYAgAASImMJCACAABIiYwkKAIAAEiJjCQwAgAASImMJDgCAABIiYwkQAIAAEiJjCRIAgAASImMJFACAABZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZww=="
 .p2align 6"#,
-        vg_ecdsa_p521_sign_k = sym super::ecdsa_p521::vg_ecdsa_p521_sign_k::vg_ecdsa_p521_sign_k,
+        vg_ecdsa_p521_sign_k = sym crate::ecdsa_p521::vg_ecdsa_p521_sign_k::vg_ecdsa_p521_sign_k,
     )
 }
 
-/// The CPU features `vg_ecdsa_p521_sign_adx` requires (`Artifact.features`).
-pub const VG_ECDSA_P521_SIGN_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// Deterministic ECDSA signature generation over P-521 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
-///
-/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 132 bytes.
-/// * `d` must be valid for reads of 66 bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
-/// * `digest_len` must be the digest length of the hash function `hmac` names.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
-/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_ecdsa_p521_sign_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_p521_sign_adx(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_sign_adx(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TInBTYtRIE2LWShBUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBBU0FSV1ZSUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQMcBIiYQkQAEAADHASImEJEgBAAAxwEiJhCRQAQAAMcBIiYQkWAEAADHASImEJGABAAAxwEiJhCRoAQAAMcBIiYQkcAEAADHASImEJHgBAAAxwEiJhCSAAQAASIuMJNgAAAC4QgAAAEg5wUgPQ8hIiedIgceCAQAASCnPSIu0JMAAAABFMcA="
 20:
@@ -875,8 +910,9 @@ jmp 26f
 jne 22b
 .base64 "MclIiQwkSIlMJAhIiUwkEEiJTCQYSIlMJCBIiUwkKEiJTCQwSIlMJDhIiUwkQEiJTCRISIlMJFBIiUwkWEiJTCRgSIlMJGhIiUwkcEiJTCR4SImMJOgAAABIiYwk8AAAAEiJjCT4AAAASImMJAABAABIiYwkCAEAAEiJjCQQAQAASImMJBgBAABIiYwkIAEAAEiJjCQoAQAASImMJDABAABIiYwkOAEAAEiJjCRAAQAASImMJEgBAABIiYwkUAEAAEiJjCRYAQAASImMJGABAABIiYwkaAEAAEiJjCRwAQAASImMJHgBAABIiYwkgAEAAEiJjCSIAQAASImMJJABAABIiYwkmAEAAEiJjCSgAQAASImMJKgBAABIiYwksAEAAEiJjCS4AQAASImMJMABAABIiYwkyAEAAEiJjCTQAQAASImMJNgBAABIiYwk4AEAAEiJjCToAQAASImMJPABAABIiYwk+AEAAEiJjCQAAgAASImMJAgCAABIiYwkEAIAAEiJjCQYAgAASImMJCACAABIiYwkKAIAAEiJjCQwAgAASImMJDgCAABIiYwkQAIAAEiJjCRIAgAASImMJFACAABZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZww=="
 .p2align 6"#,
-        vg_ecdsa_p521_sign_k_adx = sym super::ecdsa_p521::vg_ecdsa_p521_sign_k_adx::vg_ecdsa_p521_sign_k_adx,
+        vg_ecdsa_p521_sign_k_adx = sym crate::ecdsa_p521::vg_ecdsa_p521_sign_k_adx::vg_ecdsa_p521_sign_k_adx,
     )
+}
 }
 
 #[rustfmt::skip]

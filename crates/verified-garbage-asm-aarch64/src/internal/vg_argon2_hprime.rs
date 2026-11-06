@@ -65,7 +65,7 @@ b 23f
 cbnz x8, 29b
 .inst 0xf941a713,0xf941ab14,0xf941af15,0xf941b316,0xf941b717,0xf941bf1e,0xf941bb18,0xd65f03c0
 .p2align 6",
-        vg_blake2b_init = sym crate::blake2b::vg_blake2b_init,
+        vg_blake2b_init = sym crate::blake2b::raw::vg_blake2b_init,
         vg_blake2b_update_scratch = sym crate::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym crate::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
     )

@@ -27,11 +27,12 @@ pub struct Sm4Ecb {
 impl Sm4Ecb {
     /// Expands a 16-byte key for use in either direction.
     pub fn new(key: &[u8; 16]) -> Self {
+        crate::dit::enter!(dit);
         let mut schedule = [0; 128];
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_sm4_expand_key(key, &mut schedule);
+            vg_sm4_expand_key(dit, key, &mut schedule);
         }
         Self { schedule }
     }
@@ -39,16 +40,23 @@ impl Sm4Ecb {
     /// Encrypts complete 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, true)
+        crate::dit::enter!(dit);
+        self.crypt(dit, buffer, true)
     }
 
     /// Decrypts complete 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, false)
+        crate::dit::enter!(dit);
+        self.crypt(dit, buffer, false)
     }
 
-    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), IncompleteBlock> {
+    fn crypt(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        buffer: &mut [u8],
+        encrypt: bool,
+    ) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
@@ -62,6 +70,7 @@ impl Sm4Ecb {
         // overlap the callee's stack.
         unsafe {
             f(
+                dit,
                 &self.schedule,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,
@@ -90,10 +99,11 @@ mod tests {
     #[test]
     fn unaligned_schedule() {
         let ctx = Sm4Ecb::new(&[0x5a; 16]);
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let input: [u8; 64] = core::array::from_fn(|i| (i * 13) as u8);
         for encrypt in [true, false] {
             let mut expected = input;
-            ctx.crypt(&mut expected, encrypt).unwrap();
+            ctx.crypt(dit, &mut expected, encrypt).unwrap();
             for offset in 0..8 {
                 let mut storage = Aligned([0; 136]);
                 storage.0[offset..offset + 128].copy_from_slice(&ctx.schedule);
@@ -103,9 +113,9 @@ mod tests {
                 unsafe {
                     let schedule = storage.0.as_ptr().add(offset).cast();
                     if encrypt {
-                        vg_sm4_ecb_encrypt(schedule, output.as_mut_ptr().cast(), 4);
+                        vg_sm4_ecb_encrypt(dit, schedule, output.as_mut_ptr().cast(), 4);
                     } else {
-                        vg_sm4_ecb_decrypt(schedule, output.as_mut_ptr().cast(), 4);
+                        vg_sm4_ecb_decrypt(dit, schedule, output.as_mut_ptr().cast(), 4);
                     }
                 }
                 assert_eq!(output, expected);

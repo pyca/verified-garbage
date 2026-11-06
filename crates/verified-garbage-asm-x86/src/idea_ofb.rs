@@ -16,8 +16,19 @@
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 208 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_idea_ofb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_idea_ofb(schedule, iv, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_idea_ofb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_idea_ofb(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_idea_ofb(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "jaQkMP///4uEJNQAAACJRCQEi4Qk2AAAAIlEJAiLhCTcAAAAiUQkDIuEJOAAAACJRCQQieCDwBiJRCQUi0QkFImYjAAAAImwkAAAAIm4lAAAAImomAAAAInHi3QkCIsGiYekAAAAi0YEiYeoAAAAif6LVCQEiwKJBotCBIlGBItCCIlGCItCDIlGDItCEIlGEItCFIlGFItCGIlGGItCHIlGHItCIIlGIItCJIlGJItCKIlGKItCLIlGLItCMIlGMItCNIlGNItCOIlGOItCPIlGPItCQIlGQItCRIlGRItCSIlGSItCTIlGTItCUIlGUItCVIlGVItCWIlGWItCXIlGXItCYIlGYItCZIlGZItEJAyJh5wAAACLRCQQiYegAAAAhcA="
 je 20f
@@ -30,4 +41,5 @@ jmp 21f
 .base64 "i3QkCIuHpAAAAIkGi4eoAAAAiUYEi5+MAAAAi7eQAAAAi6+YAAAAi7+UAAAAuQAAAACJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAjaQk0AAAAMM="
 .p2align 6"#,
     )
+}
 }

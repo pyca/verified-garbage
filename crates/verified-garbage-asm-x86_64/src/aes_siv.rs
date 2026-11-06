@@ -18,20 +18,11 @@ pub const VG_AES_SIV_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "TInnTIn2TIniSIHC8AAAAEyJ6UiBwQABAAA="
-call {vg_cmac_aes_subkeys_aesni}
-.base64 "SInfSAHvSInuTIniSIHCEAEAAEyJ6UiBwQABAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
-.p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni::vg_cmac_aes_subkeys_aesni,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_siv_init_aesni(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_init_aesni(key, key_len, ctx) }
 }
 
 /// The AES-SIV key setup (RFC 5297 §2.6): writes the key context of the `key_len`-byte key `K = K1 ‖ K2` at `key` (the halves of `key_len / 2` bytes) to `*ctx`: the key schedule of `K1` for `Nr = key_len / 8 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, its CMAC subkeys (NIST SP 800-38B §6.1) in bytes 240–271, and the key schedule of `K2` in the `16 * (Nr + 1)` bytes from byte 272. The other bytes are unspecified. The other `vg_aes_siv_*` functions read it, with `Nr` as their `rounds`.
@@ -45,20 +36,11 @@ call {vg_aes_expand_key_scratch_aesni}
 /// * `key_len` must be 32, 48 or 64.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
-call {vg_aes_expand_key_scratch}
-.base64 "TInnTIn2TIniSIHC8AAAAEyJ6UiBwQABAAA="
-call {vg_cmac_aes_subkeys}
-.base64 "SInfSAHvSInuTIniSIHCEAEAAEyJ6UiBwQABAAA="
-call {vg_aes_expand_key_scratch}
-.base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
-.p2align 6"#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_siv_init(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_init(key, key_len, ctx) }
 }
 
 /// The CPU features `vg_aes_siv_init_vaes` requires (`Artifact.features`).
@@ -76,20 +58,11 @@ pub const VG_AES_SIV_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "TInnTIn2TIniSIHC8AAAAEyJ6UiBwQABAAA="
-call {vg_cmac_aes_subkeys_vaes}
-.base64 "SInfSAHvSInuTIniSIHCEAEAAEyJ6UiBwQABAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
-.p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_cmac_aes_subkeys_vaes = sym super::cmac_aes::vg_cmac_aes_subkeys_vaes::vg_cmac_aes_subkeys_vaes,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_siv_init_vaes(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_init_vaes(key, key_len, ctx) }
 }
 
 /// The CPU features `vg_aes_siv_encrypt_aesni` requires (`Artifact.features`).
@@ -109,99 +82,12 @@ pub const VG_AES_SIV_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `data` and `siv` must not overlap each other, `ctx`, `ads`, the slices `ads` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_encrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
-call {vg_cmac_aes_finalize_aesni}
-.base64 "SYtHeEiFwA=="
-je 20f
-22:
-.base64 "SYtHcEyLKEyLcAi4AAAAAEmJh4AAAABJiYeIAAAAuQAAAABNhfY="
-je 23f
-.base64 "TInxSIPpAUiJyEiD4A9IKcE="
-jmp 24f
-23:
-24:
-.base64 "SYnIScHoBEmJj5AAAABIid9Iie5MifpIgcKAAAAATInpTYn5SYHBAAEAAA=="
-call {vg_cmac_aes_update_aesni}
-.base64 "SYuHkAAAAEyJ6UgBwU2J8EkpwEiJ30iJ7kyJ+kiBwoAAAABNiflJgcEAAQAA"
-call {vg_cmac_aes_finalize_aesni}
-.base64 "SYmf4AAAAEyJ40iLA0gPyEiLUwhID8pIicFIwek/QbgAAAAASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hID8pIiQNIiVMISYsEJEkzh4AAAABJiQQkSYtEJAhJM4eIAAAASYlEJAhJi5/gAAAASYtHcEiDwBBJiUdwSYtHeEiD6AFJiUd4"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TYuv0AAAAE2Lt9gAAABJg/4Q"
-jb 25f
-.base64 "SYP+EQ=="
-jb 27f
-.base64 "TInxSIPpAUjB6QRIg+kBSInISAHASAHASAHASAHA"
-jmp 28f
-27:
-.base64 "uAAAAAA="
-28:
-.base64 "SYmHkAAAAEkBxUyJ8UgpwUyJ+kiDwiBJicNBugAAAABIhck="
-je 29f
-211:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 211b
-jmp 210f
-29:
-210:
-.base64 "TSndTInxTCnZTAH5SItBEEkzBCRIiUEQSItBGEkzRCQISIlBGLgAAAAASYkHSYlHCE2Lh5AAAABJwegESInfSInuTIn6SIPCAEyJ6U2J+UmBwQABAAA="
-call {vg_cmac_aes_update_aesni}
-.base64 "QbgAAAAASYP+EQ=="
-jb 212f
-.base64 "QbgBAAAA"
-jmp 213f
-212:
-213:
-.base64 "SInfSInuTIn6SIPCAEyJ+UiDwSBNiflJgcEAAQAATYmHmAAAAA=="
-call {vg_cmac_aes_update_aesni}
-.base64 "SYuHmAAAAEgBwEgBwEgBwEgBwE2J8E0rh5AAAABJKcBMiflIg8EgSAHBSInfSInuTIn6SIPCAE2J+UmBwQABAAA="
-call {vg_cmac_aes_finalize_aesni}
-jmp 26f
-25:
-.base64 "uAAAAABJiUcgSYlHKEyJ+kiDwiBMifFBugAAAABIhck="
-je 214f
-216:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 216b
-jmp 215f
-214:
-215:
-.base64 "uIAAAABDiEQ3IEmLBCRJiYeQAAAASYtEJAhJiYeYAAAASYmf4AAAAEyJ+0iLg5AAAABID8hIi5OYAAAASA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSImDkAAAAEiJk5gAAABJi5/gAAAASYtHIEkzh5AAAABJiUcgSYtHKEkzh5gAAABJiUcouAAAAABJiQdJiUcISInfSInuTIn6SIPCAEyJ+UiDwSBBuBAAAABNiflJgcEAAQAA"
-call {vg_cmac_aes_finalize_aesni}
-26:
-.base64 "SYsHSYlHQEmLRwhIun////9/////SCHQSYlHSEmLR0BJiUdgSYtHSEmJR2hMifFIwekESIHh////f0mJyEiJ30iBxxABAABIie5MifpIg8JgTInpTYn5SYHBAAEAAA=="
-call {vg_aes_ctr32_aesni}
-.base64 "TInxSMHpBEiB4f///39Ji0dISA/ISYtXQEgPykgByEiD0gBID8hID8pJiVdASYlHSEgByUgByUgByUgByUkBzUkpzg=="
-je 217f
-219:
-.base64 "uAAAAABJiUdQSYlHWEmLR0BJiUdgSYtHSEmJR2hIid9IgccQAQAASInuTIn6SIPCYEyJ+UiDwVBBuAEAAABNiflJgcEAAQAA"
-call {vg_aes_ctr32_aesni}
-.base64 "uRAAAABJOc4="
-jb 220f
-jmp 221f
-220:
-.base64 "TInx"
-221:
-.base64 "QboAAAAA"
-222:
-.base64 "Qw+2RBUAQw+2VBdQSDHQQ4hEFQBJg8IBSTnK"
-jne 222b
-.base64 "SYtHSEgPyEmLV0BID8pIg8ABSIPSAEgPyEgPykmJV0BJiUdISYPFEEkpzg=="
-jne 219b
-jmp 218f
-217:
-218:
-.base64 "TYuv0AAAAE2Lt9gAAABJi5+gAAAASYuvqAAAAE2Lp7AAAABNi6+4AAAATYu3wAAAAE2Lv8gAAABIi0QkCEyLVCQQTYsaTIkYTYtaCEyJWAhIjaQkKAoAAMM="
-.p2align 6"#,
-        vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
-        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_siv_encrypt_aesni(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_encrypt_aesni(ctx, rounds, ads, ads_count, data, len, siv) }
 }
 
 /// The CPU features `vg_aes_siv_decrypt_aesni` requires (`Artifact.features`).
@@ -221,115 +107,12 @@ pub const VG_AES_SIV_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists, `siv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
-call {vg_cmac_aes_finalize_aesni}
-.base64 "SYtHeEiFwA=="
-je 20f
-22:
-.base64 "SYtHcEyLKEyLcAi4AAAAAEmJh4AAAABJiYeIAAAAuQAAAABNhfY="
-je 23f
-.base64 "TInxSIPpAUiJyEiD4A9IKcE="
-jmp 24f
-23:
-24:
-.base64 "SYnIScHoBEmJj5AAAABIid9Iie5MifpIgcKAAAAATInpTYn5SYHBAAEAAA=="
-call {vg_cmac_aes_update_aesni}
-.base64 "SYuHkAAAAEyJ6UgBwU2J8EkpwEiJ30iJ7kyJ+kiBwoAAAABNiflJgcEAAQAA"
-call {vg_cmac_aes_finalize_aesni}
-.base64 "SYmf4AAAAEyJ40iLA0gPyEiLUwhID8pIicFIwek/QbgAAAAASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hID8pIiQNIiVMISYsEJEkzh4AAAABJiQQkSYtEJAhJM4eIAAAASYlEJAhJi5/gAAAASYtHcEiDwBBJiUdwSYtHeEiD6AFJiUd4"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TYuv0AAAAE2Lt9gAAABIi0QkCEiLCEmJD0iLSAhJiU8ISYsHSYlHQEmLRwhIun////9/////SCHQSYlHSEmLR0BJiUdgSYtHSEmJR2hMifFIwekESIHh////f0mJyEiJ30iBxxABAABIie5MifpIg8JgTInpTYn5SYHBAAEAAA=="
-call {vg_aes_ctr32_aesni}
-.base64 "TInxSMHpBEiB4f///39Ji0dISA/ISYtXQEgPykgByEiD0gBID8hID8pJiVdASYlHSEgByUgByUgByUgByUkBzUkpzg=="
-je 25f
-27:
-.base64 "uAAAAABJiUdQSYlHWEmLR0BJiUdgSYtHSEmJR2hIid9IgccQAQAASInuTIn6SIPCYEyJ+UiDwVBBuAEAAABNiflJgcEAAQAA"
-call {vg_aes_ctr32_aesni}
-.base64 "uRAAAABJOc4="
-jb 28f
-jmp 29f
-28:
-.base64 "TInx"
-29:
-.base64 "QboAAAAA"
-210:
-.base64 "Qw+2RBUAQw+2VBdQSDHQQ4hEFQBJg8IBSTnK"
-jne 210b
-.base64 "SYtHSEgPyEmLV0BID8pIg8ABSIPSAEgPyEgPykmJV0BJiUdISYPFEEkpzg=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "TYuv0AAAAE2Lt9gAAABJg/4Q"
-jb 211f
-.base64 "SYP+EQ=="
-jb 213f
-.base64 "TInxSIPpAUjB6QRIg+kBSInISAHASAHASAHASAHA"
-jmp 214f
-213:
-.base64 "uAAAAAA="
-214:
-.base64 "SYmHkAAAAEkBxUyJ8UgpwUyJ+kiDwiBJicNBugAAAABIhck="
-je 215f
-217:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 217b
-jmp 216f
-215:
-216:
-.base64 "TSndTInxTCnZTAH5SItBEEkzBCRIiUEQSItBGEkzRCQISIlBGLgAAAAASYlHcEmJR3hNi4eQAAAAScHoBEiJ30iJ7kyJ+kiDwnBMielNiflJgcEAAQAA"
-call {vg_cmac_aes_update_aesni}
-.base64 "QbgAAAAASYP+EQ=="
-jb 218f
-.base64 "QbgBAAAA"
-jmp 219f
-218:
-219:
-.base64 "SInfSInuTIn6SIPCcEyJ+UiDwSBNiflJgcEAAQAATYmHmAAAAA=="
-call {vg_cmac_aes_update_aesni}
-.base64 "SYuHmAAAAEgBwEgBwEgBwEgBwE2J8E0rh5AAAABJKcBMiflIg8EgSAHBSInfSInuTIn6SIPCcE2J+UmBwQABAAA="
-call {vg_cmac_aes_finalize_aesni}
-jmp 212f
-211:
-.base64 "uAAAAABJiUcgSYlHKEyJ+kiDwiBMifFBugAAAABIhck="
-je 220f
-222:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 222b
-jmp 221f
-220:
-221:
-.base64 "uIAAAABDiEQ3IEmLBCRJiYeQAAAASYtEJAhJiYeYAAAASYmf4AAAAEyJ+0iLg5AAAABID8hIi5OYAAAASA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSImDkAAAAEiJk5gAAABJi5/gAAAASYtHIEkzh5AAAABJiUcgSYtHKEkzh5gAAABJiUcouAAAAABJiUdwSYlHeEiJ30iJ7kyJ+kiDwnBMiflIg8EgQbgQAAAATYn5SYHBAAEAAA=="
-call {vg_cmac_aes_finalize_aesni}
-212:
-.base64 "SYsHSTNHcEmLVwhJM1d4SAnQSInCSIPqAUiJwUiD8f9IIdFIichIweg/QbsAAAAASSnDSYmHkAAAAEG6AAAAAEyJ8UjB6QNIhck="
-je 223f
-225:
-.base64 "S4tEFQBMIdhLiUQVAEmDwghIg+kB"
-jne 225b
-jmp 224f
-223:
-224:
-.base64 "TTny"
-je 226f
-228:
-.base64 "Qw+2RBUATCHYQ4hEFQBJg8IBTTny"
-jne 228b
-jmp 227f
-226:
-227:
-.base64 "SYuHkAAAAEmLn6AAAABJi6+oAAAATYunsAAAAE2Lr7gAAABNi7fAAAAATYu/yAAAAEiNpCQoCgAAww=="
-.p2align 6"#,
-        vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
-        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_siv_decrypt_aesni(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_decrypt_aesni(ctx, rounds, ads, ads_count, data, len, siv) }
 }
 
 /// The CPU features `vg_aes_siv_encrypt_aesni_cbc` requires (`Artifact.features`).
@@ -349,99 +132,12 @@ pub const VG_AES_SIV_ENCRYPT_AESNI_CBC_FEATURES: verified_garbage_cpu::Features 
 /// * `data` and `siv` must not overlap each other, `ctx`, `ads`, the slices `ads` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_encrypt_aesni_cbc(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
-call {vg_cmac_aes_finalize_aesni}
-.base64 "SYtHeEiFwA=="
-je 20f
-22:
-.base64 "SYtHcEyLKEyLcAi4AAAAAEmJh4AAAABJiYeIAAAAuQAAAABNhfY="
-je 23f
-.base64 "TInxSIPpAUiJyEiD4A9IKcE="
-jmp 24f
-23:
-24:
-.base64 "SYnIScHoBEmJj5AAAABIid9Iie5MifpIgcKAAAAATInpTYn5SYHBAAEAAA=="
-call {vg_cmac_aes_update_aesni_cbc}
-.base64 "SYuHkAAAAEyJ6UgBwU2J8EkpwEiJ30iJ7kyJ+kiBwoAAAABNiflJgcEAAQAA"
-call {vg_cmac_aes_finalize_aesni}
-.base64 "SYmf4AAAAEyJ40iLA0gPyEiLUwhID8pIicFIwek/QbgAAAAASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hID8pIiQNIiVMISYsEJEkzh4AAAABJiQQkSYtEJAhJM4eIAAAASYlEJAhJi5/gAAAASYtHcEiDwBBJiUdwSYtHeEiD6AFJiUd4"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TYuv0AAAAE2Lt9gAAABJg/4Q"
-jb 25f
-.base64 "SYP+EQ=="
-jb 27f
-.base64 "TInxSIPpAUjB6QRIg+kBSInISAHASAHASAHASAHA"
-jmp 28f
-27:
-.base64 "uAAAAAA="
-28:
-.base64 "SYmHkAAAAEkBxUyJ8UgpwUyJ+kiDwiBJicNBugAAAABIhck="
-je 29f
-211:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 211b
-jmp 210f
-29:
-210:
-.base64 "TSndTInxTCnZTAH5SItBEEkzBCRIiUEQSItBGEkzRCQISIlBGLgAAAAASYkHSYlHCE2Lh5AAAABJwegESInfSInuTIn6SIPCAEyJ6U2J+UmBwQABAAA="
-call {vg_cmac_aes_update_aesni_cbc}
-.base64 "QbgAAAAASYP+EQ=="
-jb 212f
-.base64 "QbgBAAAA"
-jmp 213f
-212:
-213:
-.base64 "SInfSInuTIn6SIPCAEyJ+UiDwSBNiflJgcEAAQAATYmHmAAAAA=="
-call {vg_cmac_aes_update_aesni_cbc}
-.base64 "SYuHmAAAAEgBwEgBwEgBwEgBwE2J8E0rh5AAAABJKcBMiflIg8EgSAHBSInfSInuTIn6SIPCAE2J+UmBwQABAAA="
-call {vg_cmac_aes_finalize_aesni}
-jmp 26f
-25:
-.base64 "uAAAAABJiUcgSYlHKEyJ+kiDwiBMifFBugAAAABIhck="
-je 214f
-216:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 216b
-jmp 215f
-214:
-215:
-.base64 "uIAAAABDiEQ3IEmLBCRJiYeQAAAASYtEJAhJiYeYAAAASYmf4AAAAEyJ+0iLg5AAAABID8hIi5OYAAAASA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSImDkAAAAEiJk5gAAABJi5/gAAAASYtHIEkzh5AAAABJiUcgSYtHKEkzh5gAAABJiUcouAAAAABJiQdJiUcISInfSInuTIn6SIPCAEyJ+UiDwSBBuBAAAABNiflJgcEAAQAA"
-call {vg_cmac_aes_finalize_aesni}
-26:
-.base64 "SYsHSYlHQEmLRwhIun////9/////SCHQSYlHSEmLR0BJiUdgSYtHSEmJR2hMifFIwekESIHh////f0mJyEiJ30iBxxABAABIie5MifpIg8JgTInpTYn5SYHBAAEAAA=="
-call {vg_aes_ctr32_aesni}
-.base64 "TInxSMHpBEiB4f///39Ji0dISA/ISYtXQEgPykgByEiD0gBID8hID8pJiVdASYlHSEgByUgByUgByUgByUkBzUkpzg=="
-je 217f
-219:
-.base64 "uAAAAABJiUdQSYlHWEmLR0BJiUdgSYtHSEmJR2hIid9IgccQAQAASInuTIn6SIPCYEyJ+UiDwVBBuAEAAABNiflJgcEAAQAA"
-call {vg_aes_ctr32_aesni}
-.base64 "uRAAAABJOc4="
-jb 220f
-jmp 221f
-220:
-.base64 "TInx"
-221:
-.base64 "QboAAAAA"
-222:
-.base64 "Qw+2RBUAQw+2VBdQSDHQQ4hEFQBJg8IBSTnK"
-jne 222b
-.base64 "SYtHSEgPyEmLV0BID8pIg8ABSIPSAEgPyEgPykmJV0BJiUdISYPFEEkpzg=="
-jne 219b
-jmp 218f
-217:
-218:
-.base64 "TYuv0AAAAE2Lt9gAAABJi5+gAAAASYuvqAAAAE2Lp7AAAABNi6+4AAAATYu3wAAAAE2Lv8gAAABIi0QkCEyLVCQQTYsaTIkYTYtaCEyJWAhIjaQkKAoAAMM="
-.p2align 6"#,
-        vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
-        vg_cmac_aes_update_aesni_cbc = sym super::cmac_aes::vg_cmac_aes_update_aesni_cbc::vg_cmac_aes_update_aesni_cbc,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_siv_encrypt_aesni_cbc(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_encrypt_aesni_cbc(ctx, rounds, ads, ads_count, data, len, siv) }
 }
 
 /// The CPU features `vg_aes_siv_decrypt_aesni_cbc` requires (`Artifact.features`).
@@ -461,115 +157,12 @@ pub const VG_AES_SIV_DECRYPT_AESNI_CBC_FEATURES: verified_garbage_cpu::Features 
 /// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists, `siv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_decrypt_aesni_cbc(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
-call {vg_cmac_aes_finalize_aesni}
-.base64 "SYtHeEiFwA=="
-je 20f
-22:
-.base64 "SYtHcEyLKEyLcAi4AAAAAEmJh4AAAABJiYeIAAAAuQAAAABNhfY="
-je 23f
-.base64 "TInxSIPpAUiJyEiD4A9IKcE="
-jmp 24f
-23:
-24:
-.base64 "SYnIScHoBEmJj5AAAABIid9Iie5MifpIgcKAAAAATInpTYn5SYHBAAEAAA=="
-call {vg_cmac_aes_update_aesni_cbc}
-.base64 "SYuHkAAAAEyJ6UgBwU2J8EkpwEiJ30iJ7kyJ+kiBwoAAAABNiflJgcEAAQAA"
-call {vg_cmac_aes_finalize_aesni}
-.base64 "SYmf4AAAAEyJ40iLA0gPyEiLUwhID8pIicFIwek/QbgAAAAASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hID8pIiQNIiVMISYsEJEkzh4AAAABJiQQkSYtEJAhJM4eIAAAASYlEJAhJi5/gAAAASYtHcEiDwBBJiUdwSYtHeEiD6AFJiUd4"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TYuv0AAAAE2Lt9gAAABIi0QkCEiLCEmJD0iLSAhJiU8ISYsHSYlHQEmLRwhIun////9/////SCHQSYlHSEmLR0BJiUdgSYtHSEmJR2hMifFIwekESIHh////f0mJyEiJ30iBxxABAABIie5MifpIg8JgTInpTYn5SYHBAAEAAA=="
-call {vg_aes_ctr32_aesni}
-.base64 "TInxSMHpBEiB4f///39Ji0dISA/ISYtXQEgPykgByEiD0gBID8hID8pJiVdASYlHSEgByUgByUgByUgByUkBzUkpzg=="
-je 25f
-27:
-.base64 "uAAAAABJiUdQSYlHWEmLR0BJiUdgSYtHSEmJR2hIid9IgccQAQAASInuTIn6SIPCYEyJ+UiDwVBBuAEAAABNiflJgcEAAQAA"
-call {vg_aes_ctr32_aesni}
-.base64 "uRAAAABJOc4="
-jb 28f
-jmp 29f
-28:
-.base64 "TInx"
-29:
-.base64 "QboAAAAA"
-210:
-.base64 "Qw+2RBUAQw+2VBdQSDHQQ4hEFQBJg8IBSTnK"
-jne 210b
-.base64 "SYtHSEgPyEmLV0BID8pIg8ABSIPSAEgPyEgPykmJV0BJiUdISYPFEEkpzg=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "TYuv0AAAAE2Lt9gAAABJg/4Q"
-jb 211f
-.base64 "SYP+EQ=="
-jb 213f
-.base64 "TInxSIPpAUjB6QRIg+kBSInISAHASAHASAHASAHA"
-jmp 214f
-213:
-.base64 "uAAAAAA="
-214:
-.base64 "SYmHkAAAAEkBxUyJ8UgpwUyJ+kiDwiBJicNBugAAAABIhck="
-je 215f
-217:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 217b
-jmp 216f
-215:
-216:
-.base64 "TSndTInxTCnZTAH5SItBEEkzBCRIiUEQSItBGEkzRCQISIlBGLgAAAAASYlHcEmJR3hNi4eQAAAAScHoBEiJ30iJ7kyJ+kiDwnBMielNiflJgcEAAQAA"
-call {vg_cmac_aes_update_aesni_cbc}
-.base64 "QbgAAAAASYP+EQ=="
-jb 218f
-.base64 "QbgBAAAA"
-jmp 219f
-218:
-219:
-.base64 "SInfSInuTIn6SIPCcEyJ+UiDwSBNiflJgcEAAQAATYmHmAAAAA=="
-call {vg_cmac_aes_update_aesni_cbc}
-.base64 "SYuHmAAAAEgBwEgBwEgBwEgBwE2J8E0rh5AAAABJKcBMiflIg8EgSAHBSInfSInuTIn6SIPCcE2J+UmBwQABAAA="
-call {vg_cmac_aes_finalize_aesni}
-jmp 212f
-211:
-.base64 "uAAAAABJiUcgSYlHKEyJ+kiDwiBMifFBugAAAABIhck="
-je 220f
-222:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 222b
-jmp 221f
-220:
-221:
-.base64 "uIAAAABDiEQ3IEmLBCRJiYeQAAAASYtEJAhJiYeYAAAASYmf4AAAAEyJ+0iLg5AAAABID8hIi5OYAAAASA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSImDkAAAAEiJk5gAAABJi5/gAAAASYtHIEkzh5AAAABJiUcgSYtHKEkzh5gAAABJiUcouAAAAABJiUdwSYlHeEiJ30iJ7kyJ+kiDwnBMiflIg8EgQbgQAAAATYn5SYHBAAEAAA=="
-call {vg_cmac_aes_finalize_aesni}
-212:
-.base64 "SYsHSTNHcEmLVwhJM1d4SAnQSInCSIPqAUiJwUiD8f9IIdFIichIweg/QbsAAAAASSnDSYmHkAAAAEG6AAAAAEyJ8UjB6QNIhck="
-je 223f
-225:
-.base64 "S4tEFQBMIdhLiUQVAEmDwghIg+kB"
-jne 225b
-jmp 224f
-223:
-224:
-.base64 "TTny"
-je 226f
-228:
-.base64 "Qw+2RBUATCHYQ4hEFQBJg8IBTTny"
-jne 228b
-jmp 227f
-226:
-227:
-.base64 "SYuHkAAAAEmLn6AAAABJi6+oAAAATYunsAAAAE2Lr7gAAABNi7fAAAAATYu/yAAAAEiNpCQoCgAAww=="
-.p2align 6"#,
-        vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
-        vg_cmac_aes_update_aesni_cbc = sym super::cmac_aes::vg_cmac_aes_update_aesni_cbc::vg_cmac_aes_update_aesni_cbc,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_siv_decrypt_aesni_cbc(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_decrypt_aesni_cbc(ctx, rounds, ads, ads_count, data, len, siv) }
 }
 
 /// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data.
@@ -585,99 +178,12 @@ jmp 227f
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `siv` must not overlap each other, `ctx`, `ads`, the slices `ads` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
-call {vg_cmac_aes_finalize}
-.base64 "SYtHeEiFwA=="
-je 20f
-22:
-.base64 "SYtHcEyLKEyLcAi4AAAAAEmJh4AAAABJiYeIAAAAuQAAAABNhfY="
-je 23f
-.base64 "TInxSIPpAUiJyEiD4A9IKcE="
-jmp 24f
-23:
-24:
-.base64 "SYnIScHoBEmJj5AAAABIid9Iie5MifpIgcKAAAAATInpTYn5SYHBAAEAAA=="
-call {vg_cmac_aes_update}
-.base64 "SYuHkAAAAEyJ6UgBwU2J8EkpwEiJ30iJ7kyJ+kiBwoAAAABNiflJgcEAAQAA"
-call {vg_cmac_aes_finalize}
-.base64 "SYmf4AAAAEyJ40iLA0gPyEiLUwhID8pIicFIwek/QbgAAAAASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hID8pIiQNIiVMISYsEJEkzh4AAAABJiQQkSYtEJAhJM4eIAAAASYlEJAhJi5/gAAAASYtHcEiDwBBJiUdwSYtHeEiD6AFJiUd4"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TYuv0AAAAE2Lt9gAAABJg/4Q"
-jb 25f
-.base64 "SYP+EQ=="
-jb 27f
-.base64 "TInxSIPpAUjB6QRIg+kBSInISAHASAHASAHASAHA"
-jmp 28f
-27:
-.base64 "uAAAAAA="
-28:
-.base64 "SYmHkAAAAEkBxUyJ8UgpwUyJ+kiDwiBJicNBugAAAABIhck="
-je 29f
-211:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 211b
-jmp 210f
-29:
-210:
-.base64 "TSndTInxTCnZTAH5SItBEEkzBCRIiUEQSItBGEkzRCQISIlBGLgAAAAASYkHSYlHCE2Lh5AAAABJwegESInfSInuTIn6SIPCAEyJ6U2J+UmBwQABAAA="
-call {vg_cmac_aes_update}
-.base64 "QbgAAAAASYP+EQ=="
-jb 212f
-.base64 "QbgBAAAA"
-jmp 213f
-212:
-213:
-.base64 "SInfSInuTIn6SIPCAEyJ+UiDwSBNiflJgcEAAQAATYmHmAAAAA=="
-call {vg_cmac_aes_update}
-.base64 "SYuHmAAAAEgBwEgBwEgBwEgBwE2J8E0rh5AAAABJKcBMiflIg8EgSAHBSInfSInuTIn6SIPCAE2J+UmBwQABAAA="
-call {vg_cmac_aes_finalize}
-jmp 26f
-25:
-.base64 "uAAAAABJiUcgSYlHKEyJ+kiDwiBMifFBugAAAABIhck="
-je 214f
-216:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 216b
-jmp 215f
-214:
-215:
-.base64 "uIAAAABDiEQ3IEmLBCRJiYeQAAAASYtEJAhJiYeYAAAASYmf4AAAAEyJ+0iLg5AAAABID8hIi5OYAAAASA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSImDkAAAAEiJk5gAAABJi5/gAAAASYtHIEkzh5AAAABJiUcgSYtHKEkzh5gAAABJiUcouAAAAABJiQdJiUcISInfSInuTIn6SIPCAEyJ+UiDwSBBuBAAAABNiflJgcEAAQAA"
-call {vg_cmac_aes_finalize}
-26:
-.base64 "SYsHSYlHQEmLRwhIun////9/////SCHQSYlHSEmLR0BJiUdgSYtHSEmJR2hMifFIwekESIHh////f0mJyEiJ30iBxxABAABIie5MifpIg8JgTInpTYn5SYHBAAEAAA=="
-call {vg_aes_ctr32}
-.base64 "TInxSMHpBEiB4f///39Ji0dISA/ISYtXQEgPykgByEiD0gBID8hID8pJiVdASYlHSEgByUgByUgByUgByUkBzUkpzg=="
-je 217f
-219:
-.base64 "uAAAAABJiUdQSYlHWEmLR0BJiUdgSYtHSEmJR2hIid9IgccQAQAASInuTIn6SIPCYEyJ+UiDwVBBuAEAAABNiflJgcEAAQAA"
-call {vg_aes_ctr32}
-.base64 "uRAAAABJOc4="
-jb 220f
-jmp 221f
-220:
-.base64 "TInx"
-221:
-.base64 "QboAAAAA"
-222:
-.base64 "Qw+2RBUAQw+2VBdQSDHQQ4hEFQBJg8IBSTnK"
-jne 222b
-.base64 "SYtHSEgPyEmLV0BID8pIg8ABSIPSAEgPyEgPykmJV0BJiUdISYPFEEkpzg=="
-jne 219b
-jmp 218f
-217:
-218:
-.base64 "TYuv0AAAAE2Lt9gAAABJi5+gAAAASYuvqAAAAE2Lp7AAAABNi6+4AAAATYu3wAAAAE2Lv8gAAABIi0QkCEyLVCQQTYsaTIkYTYtaCEyJWAhIjaQkKAoAAMM="
-.p2align 6"#,
-        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_siv_encrypt(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_encrypt(ctx, rounds, ads, ads_count, data, len, siv) }
 }
 
 /// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
@@ -693,115 +199,12 @@ jmp 218f
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists, `siv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
-call {vg_cmac_aes_finalize}
-.base64 "SYtHeEiFwA=="
-je 20f
-22:
-.base64 "SYtHcEyLKEyLcAi4AAAAAEmJh4AAAABJiYeIAAAAuQAAAABNhfY="
-je 23f
-.base64 "TInxSIPpAUiJyEiD4A9IKcE="
-jmp 24f
-23:
-24:
-.base64 "SYnIScHoBEmJj5AAAABIid9Iie5MifpIgcKAAAAATInpTYn5SYHBAAEAAA=="
-call {vg_cmac_aes_update}
-.base64 "SYuHkAAAAEyJ6UgBwU2J8EkpwEiJ30iJ7kyJ+kiBwoAAAABNiflJgcEAAQAA"
-call {vg_cmac_aes_finalize}
-.base64 "SYmf4AAAAEyJ40iLA0gPyEiLUwhID8pIicFIwek/QbgAAAAASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hID8pIiQNIiVMISYsEJEkzh4AAAABJiQQkSYtEJAhJM4eIAAAASYlEJAhJi5/gAAAASYtHcEiDwBBJiUdwSYtHeEiD6AFJiUd4"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TYuv0AAAAE2Lt9gAAABIi0QkCEiLCEmJD0iLSAhJiU8ISYsHSYlHQEmLRwhIun////9/////SCHQSYlHSEmLR0BJiUdgSYtHSEmJR2hMifFIwekESIHh////f0mJyEiJ30iBxxABAABIie5MifpIg8JgTInpTYn5SYHBAAEAAA=="
-call {vg_aes_ctr32}
-.base64 "TInxSMHpBEiB4f///39Ji0dISA/ISYtXQEgPykgByEiD0gBID8hID8pJiVdASYlHSEgByUgByUgByUgByUkBzUkpzg=="
-je 25f
-27:
-.base64 "uAAAAABJiUdQSYlHWEmLR0BJiUdgSYtHSEmJR2hIid9IgccQAQAASInuTIn6SIPCYEyJ+UiDwVBBuAEAAABNiflJgcEAAQAA"
-call {vg_aes_ctr32}
-.base64 "uRAAAABJOc4="
-jb 28f
-jmp 29f
-28:
-.base64 "TInx"
-29:
-.base64 "QboAAAAA"
-210:
-.base64 "Qw+2RBUAQw+2VBdQSDHQQ4hEFQBJg8IBSTnK"
-jne 210b
-.base64 "SYtHSEgPyEmLV0BID8pIg8ABSIPSAEgPyEgPykmJV0BJiUdISYPFEEkpzg=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "TYuv0AAAAE2Lt9gAAABJg/4Q"
-jb 211f
-.base64 "SYP+EQ=="
-jb 213f
-.base64 "TInxSIPpAUjB6QRIg+kBSInISAHASAHASAHASAHA"
-jmp 214f
-213:
-.base64 "uAAAAAA="
-214:
-.base64 "SYmHkAAAAEkBxUyJ8UgpwUyJ+kiDwiBJicNBugAAAABIhck="
-je 215f
-217:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 217b
-jmp 216f
-215:
-216:
-.base64 "TSndTInxTCnZTAH5SItBEEkzBCRIiUEQSItBGEkzRCQISIlBGLgAAAAASYlHcEmJR3hNi4eQAAAAScHoBEiJ30iJ7kyJ+kiDwnBMielNiflJgcEAAQAA"
-call {vg_cmac_aes_update}
-.base64 "QbgAAAAASYP+EQ=="
-jb 218f
-.base64 "QbgBAAAA"
-jmp 219f
-218:
-219:
-.base64 "SInfSInuTIn6SIPCcEyJ+UiDwSBNiflJgcEAAQAATYmHmAAAAA=="
-call {vg_cmac_aes_update}
-.base64 "SYuHmAAAAEgBwEgBwEgBwEgBwE2J8E0rh5AAAABJKcBMiflIg8EgSAHBSInfSInuTIn6SIPCcE2J+UmBwQABAAA="
-call {vg_cmac_aes_finalize}
-jmp 212f
-211:
-.base64 "uAAAAABJiUcgSYlHKEyJ+kiDwiBMifFBugAAAABIhck="
-je 220f
-222:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 222b
-jmp 221f
-220:
-221:
-.base64 "uIAAAABDiEQ3IEmLBCRJiYeQAAAASYtEJAhJiYeYAAAASYmf4AAAAEyJ+0iLg5AAAABID8hIi5OYAAAASA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSImDkAAAAEiJk5gAAABJi5/gAAAASYtHIEkzh5AAAABJiUcgSYtHKEkzh5gAAABJiUcouAAAAABJiUdwSYlHeEiJ30iJ7kyJ+kiDwnBMiflIg8EgQbgQAAAATYn5SYHBAAEAAA=="
-call {vg_cmac_aes_finalize}
-212:
-.base64 "SYsHSTNHcEmLVwhJM1d4SAnQSInCSIPqAUiJwUiD8f9IIdFIichIweg/QbsAAAAASSnDSYmHkAAAAEG6AAAAAEyJ8UjB6QNIhck="
-je 223f
-225:
-.base64 "S4tEFQBMIdhLiUQVAEmDwghIg+kB"
-jne 225b
-jmp 224f
-223:
-224:
-.base64 "TTny"
-je 226f
-228:
-.base64 "Qw+2RBUATCHYQ4hEFQBJg8IBTTny"
-jne 228b
-jmp 227f
-226:
-227:
-.base64 "SYuHkAAAAEmLn6AAAABJi6+oAAAATYunsAAAAE2Lr7gAAABNi7fAAAAATYu/yAAAAEiNpCQoCgAAww=="
-.p2align 6"#,
-        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_siv_decrypt(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_decrypt(ctx, rounds, ads, ads_count, data, len, siv) }
 }
 
 /// The CPU features `vg_aes_siv_encrypt_vaes` requires (`Artifact.features`).
@@ -821,8 +224,720 @@ pub const VG_AES_SIV_ENCRYPT_VAES_FEATURES: verified_garbage_cpu::Features = ver
 /// * `data` and `siv` must not overlap each other, `ctx`, `ads`, the slices `ads` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_siv_encrypt_vaes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_encrypt_vaes(ctx, rounds, ads, ads_count, data, len, siv) }
+}
+
+/// The CPU features `vg_aes_siv_decrypt_vaes` requires (`Artifact.features`).
+pub const VG_AES_SIV_DECRYPT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
+
+/// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
+///
+/// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 512 bytes.
+/// * `ads` must be valid for reads of `2 * size_of::<usize>() * ads_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `siv` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists, `siv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_siv_decrypt_vaes(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_decrypt_vaes(ctx, rounds, ads, ads_count, data, len, siv) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_siv_init_aesni`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_encrypt_vaes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "TInnTIn2TIniSIHC8AAAAEyJ6UiBwQABAAA="
+call {vg_cmac_aes_subkeys_aesni}
+.base64 "SInfSAHvSInuTIniSIHCEAEAAEyJ6UiBwQABAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
+.p2align 6"#,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_cmac_aes_subkeys_aesni = sym crate::cmac_aes::vg_cmac_aes_subkeys_aesni::vg_cmac_aes_subkeys_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_siv_init`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
+call {vg_aes_expand_key_scratch}
+.base64 "TInnTIn2TIniSIHC8AAAAEyJ6UiBwQABAAA="
+call {vg_cmac_aes_subkeys}
+.base64 "SInfSAHvSInuTIniSIHCEAEAAEyJ6UiBwQABAAA="
+call {vg_aes_expand_key_scratch}
+.base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
+.p2align 6"#,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_cmac_aes_subkeys = sym crate::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
+    )
+}
+
+/// The verified code of [`super::vg_aes_siv_init_vaes`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPj1//9IieFIg8EISImZoAAAAEiJqagAAABMiaGwAAAATImpuAAAAEyJscAAAABIiftIifVI0e1JidRJic1JifZJwe4DSYPGBkiJ7kiBwQABAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "TInnTIn2TIniSIHC8AAAAEyJ6UiBwQABAAA="
+call {vg_cmac_aes_subkeys_vaes}
+.base64 "SInfSAHvSInuTIniSIHCEAEAAEyJ6UiBwQABAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAMM="
+.p2align 6"#,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_cmac_aes_subkeys_vaes = sym crate::cmac_aes::vg_cmac_aes_subkeys_vaes::vg_cmac_aes_subkeys_vaes,
+    )
+}
+
+/// The verified code of [`super::vg_aes_siv_encrypt_aesni`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_encrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
+call {vg_cmac_aes_finalize_aesni}
+.base64 "SYtHeEiFwA=="
+je 20f
+22:
+.base64 "SYtHcEyLKEyLcAi4AAAAAEmJh4AAAABJiYeIAAAAuQAAAABNhfY="
+je 23f
+.base64 "TInxSIPpAUiJyEiD4A9IKcE="
+jmp 24f
+23:
+24:
+.base64 "SYnIScHoBEmJj5AAAABIid9Iie5MifpIgcKAAAAATInpTYn5SYHBAAEAAA=="
+call {vg_cmac_aes_update_aesni}
+.base64 "SYuHkAAAAEyJ6UgBwU2J8EkpwEiJ30iJ7kyJ+kiBwoAAAABNiflJgcEAAQAA"
+call {vg_cmac_aes_finalize_aesni}
+.base64 "SYmf4AAAAEyJ40iLA0gPyEiLUwhID8pIicFIwek/QbgAAAAASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hID8pIiQNIiVMISYsEJEkzh4AAAABJiQQkSYtEJAhJM4eIAAAASYlEJAhJi5/gAAAASYtHcEiDwBBJiUdwSYtHeEiD6AFJiUd4"
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "TYuv0AAAAE2Lt9gAAABJg/4Q"
+jb 25f
+.base64 "SYP+EQ=="
+jb 27f
+.base64 "TInxSIPpAUjB6QRIg+kBSInISAHASAHASAHASAHA"
+jmp 28f
+27:
+.base64 "uAAAAAA="
+28:
+.base64 "SYmHkAAAAEkBxUyJ8UgpwUyJ+kiDwiBJicNBugAAAABIhck="
+je 29f
+211:
+.base64 "Qw+2RBUAQogEEkmDwgFJOco="
+jne 211b
+jmp 210f
+29:
+210:
+.base64 "TSndTInxTCnZTAH5SItBEEkzBCRIiUEQSItBGEkzRCQISIlBGLgAAAAASYkHSYlHCE2Lh5AAAABJwegESInfSInuTIn6SIPCAEyJ6U2J+UmBwQABAAA="
+call {vg_cmac_aes_update_aesni}
+.base64 "QbgAAAAASYP+EQ=="
+jb 212f
+.base64 "QbgBAAAA"
+jmp 213f
+212:
+213:
+.base64 "SInfSInuTIn6SIPCAEyJ+UiDwSBNiflJgcEAAQAATYmHmAAAAA=="
+call {vg_cmac_aes_update_aesni}
+.base64 "SYuHmAAAAEgBwEgBwEgBwEgBwE2J8E0rh5AAAABJKcBMiflIg8EgSAHBSInfSInuTIn6SIPCAE2J+UmBwQABAAA="
+call {vg_cmac_aes_finalize_aesni}
+jmp 26f
+25:
+.base64 "uAAAAABJiUcgSYlHKEyJ+kiDwiBMifFBugAAAABIhck="
+je 214f
+216:
+.base64 "Qw+2RBUAQogEEkmDwgFJOco="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "uIAAAABDiEQ3IEmLBCRJiYeQAAAASYtEJAhJiYeYAAAASYmf4AAAAEyJ+0iLg5AAAABID8hIi5OYAAAASA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSImDkAAAAEiJk5gAAABJi5/gAAAASYtHIEkzh5AAAABJiUcgSYtHKEkzh5gAAABJiUcouAAAAABJiQdJiUcISInfSInuTIn6SIPCAEyJ+UiDwSBBuBAAAABNiflJgcEAAQAA"
+call {vg_cmac_aes_finalize_aesni}
+26:
+.base64 "SYsHSYlHQEmLRwhIun////9/////SCHQSYlHSEmLR0BJiUdgSYtHSEmJR2hMifFIwekESIHh////f0mJyEiJ30iBxxABAABIie5MifpIg8JgTInpTYn5SYHBAAEAAA=="
+call {vg_aes_ctr32_aesni}
+.base64 "TInxSMHpBEiB4f///39Ji0dISA/ISYtXQEgPykgByEiD0gBID8hID8pJiVdASYlHSEgByUgByUgByUgByUkBzUkpzg=="
+je 217f
+219:
+.base64 "uAAAAABJiUdQSYlHWEmLR0BJiUdgSYtHSEmJR2hIid9IgccQAQAASInuTIn6SIPCYEyJ+UiDwVBBuAEAAABNiflJgcEAAQAA"
+call {vg_aes_ctr32_aesni}
+.base64 "uRAAAABJOc4="
+jb 220f
+jmp 221f
+220:
+.base64 "TInx"
+221:
+.base64 "QboAAAAA"
+222:
+.base64 "Qw+2RBUAQw+2VBdQSDHQQ4hEFQBJg8IBSTnK"
+jne 222b
+.base64 "SYtHSEgPyEmLV0BID8pIg8ABSIPSAEgPyEgPykmJV0BJiUdISYPFEEkpzg=="
+jne 219b
+jmp 218f
+217:
+218:
+.base64 "TYuv0AAAAE2Lt9gAAABJi5+gAAAASYuvqAAAAE2Lp7AAAABNi6+4AAAATYu3wAAAAE2Lv8gAAABIi0QkCEyLVCQQTYsaTIkYTYtaCEyJWAhIjaQkKAoAAMM="
+.p2align 6"#,
+        vg_cmac_aes_finalize_aesni = sym crate::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
+        vg_cmac_aes_update_aesni = sym crate::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_siv_decrypt_aesni`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
+call {vg_cmac_aes_finalize_aesni}
+.base64 "SYtHeEiFwA=="
+je 20f
+22:
+.base64 "SYtHcEyLKEyLcAi4AAAAAEmJh4AAAABJiYeIAAAAuQAAAABNhfY="
+je 23f
+.base64 "TInxSIPpAUiJyEiD4A9IKcE="
+jmp 24f
+23:
+24:
+.base64 "SYnIScHoBEmJj5AAAABIid9Iie5MifpIgcKAAAAATInpTYn5SYHBAAEAAA=="
+call {vg_cmac_aes_update_aesni}
+.base64 "SYuHkAAAAEyJ6UgBwU2J8EkpwEiJ30iJ7kyJ+kiBwoAAAABNiflJgcEAAQAA"
+call {vg_cmac_aes_finalize_aesni}
+.base64 "SYmf4AAAAEyJ40iLA0gPyEiLUwhID8pIicFIwek/QbgAAAAASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hID8pIiQNIiVMISYsEJEkzh4AAAABJiQQkSYtEJAhJM4eIAAAASYlEJAhJi5/gAAAASYtHcEiDwBBJiUdwSYtHeEiD6AFJiUd4"
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "TYuv0AAAAE2Lt9gAAABIi0QkCEiLCEmJD0iLSAhJiU8ISYsHSYlHQEmLRwhIun////9/////SCHQSYlHSEmLR0BJiUdgSYtHSEmJR2hMifFIwekESIHh////f0mJyEiJ30iBxxABAABIie5MifpIg8JgTInpTYn5SYHBAAEAAA=="
+call {vg_aes_ctr32_aesni}
+.base64 "TInxSMHpBEiB4f///39Ji0dISA/ISYtXQEgPykgByEiD0gBID8hID8pJiVdASYlHSEgByUgByUgByUgByUkBzUkpzg=="
+je 25f
+27:
+.base64 "uAAAAABJiUdQSYlHWEmLR0BJiUdgSYtHSEmJR2hIid9IgccQAQAASInuTIn6SIPCYEyJ+UiDwVBBuAEAAABNiflJgcEAAQAA"
+call {vg_aes_ctr32_aesni}
+.base64 "uRAAAABJOc4="
+jb 28f
+jmp 29f
+28:
+.base64 "TInx"
+29:
+.base64 "QboAAAAA"
+210:
+.base64 "Qw+2RBUAQw+2VBdQSDHQQ4hEFQBJg8IBSTnK"
+jne 210b
+.base64 "SYtHSEgPyEmLV0BID8pIg8ABSIPSAEgPyEgPykmJV0BJiUdISYPFEEkpzg=="
+jne 27b
+jmp 26f
+25:
+26:
+.base64 "TYuv0AAAAE2Lt9gAAABJg/4Q"
+jb 211f
+.base64 "SYP+EQ=="
+jb 213f
+.base64 "TInxSIPpAUjB6QRIg+kBSInISAHASAHASAHASAHA"
+jmp 214f
+213:
+.base64 "uAAAAAA="
+214:
+.base64 "SYmHkAAAAEkBxUyJ8UgpwUyJ+kiDwiBJicNBugAAAABIhck="
+je 215f
+217:
+.base64 "Qw+2RBUAQogEEkmDwgFJOco="
+jne 217b
+jmp 216f
+215:
+216:
+.base64 "TSndTInxTCnZTAH5SItBEEkzBCRIiUEQSItBGEkzRCQISIlBGLgAAAAASYlHcEmJR3hNi4eQAAAAScHoBEiJ30iJ7kyJ+kiDwnBMielNiflJgcEAAQAA"
+call {vg_cmac_aes_update_aesni}
+.base64 "QbgAAAAASYP+EQ=="
+jb 218f
+.base64 "QbgBAAAA"
+jmp 219f
+218:
+219:
+.base64 "SInfSInuTIn6SIPCcEyJ+UiDwSBNiflJgcEAAQAATYmHmAAAAA=="
+call {vg_cmac_aes_update_aesni}
+.base64 "SYuHmAAAAEgBwEgBwEgBwEgBwE2J8E0rh5AAAABJKcBMiflIg8EgSAHBSInfSInuTIn6SIPCcE2J+UmBwQABAAA="
+call {vg_cmac_aes_finalize_aesni}
+jmp 212f
+211:
+.base64 "uAAAAABJiUcgSYlHKEyJ+kiDwiBMifFBugAAAABIhck="
+je 220f
+222:
+.base64 "Qw+2RBUAQogEEkmDwgFJOco="
+jne 222b
+jmp 221f
+220:
+221:
+.base64 "uIAAAABDiEQ3IEmLBCRJiYeQAAAASYtEJAhJiYeYAAAASYmf4AAAAEyJ+0iLg5AAAABID8hIi5OYAAAASA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSImDkAAAAEiJk5gAAABJi5/gAAAASYtHIEkzh5AAAABJiUcgSYtHKEkzh5gAAABJiUcouAAAAABJiUdwSYlHeEiJ30iJ7kyJ+kiDwnBMiflIg8EgQbgQAAAATYn5SYHBAAEAAA=="
+call {vg_cmac_aes_finalize_aesni}
+212:
+.base64 "SYsHSTNHcEmLVwhJM1d4SAnQSInCSIPqAUiJwUiD8f9IIdFIichIweg/QbsAAAAASSnDSYmHkAAAAEG6AAAAAEyJ8UjB6QNIhck="
+je 223f
+225:
+.base64 "S4tEFQBMIdhLiUQVAEmDwghIg+kB"
+jne 225b
+jmp 224f
+223:
+224:
+.base64 "TTny"
+je 226f
+228:
+.base64 "Qw+2RBUATCHYQ4hEFQBJg8IBTTny"
+jne 228b
+jmp 227f
+226:
+227:
+.base64 "SYuHkAAAAEmLn6AAAABJi6+oAAAATYunsAAAAE2Lr7gAAABNi7fAAAAATYu/yAAAAEiNpCQoCgAAww=="
+.p2align 6"#,
+        vg_cmac_aes_finalize_aesni = sym crate::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
+        vg_cmac_aes_update_aesni = sym crate::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_siv_encrypt_aesni_cbc`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_encrypt_aesni_cbc(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
+call {vg_cmac_aes_finalize_aesni}
+.base64 "SYtHeEiFwA=="
+je 20f
+22:
+.base64 "SYtHcEyLKEyLcAi4AAAAAEmJh4AAAABJiYeIAAAAuQAAAABNhfY="
+je 23f
+.base64 "TInxSIPpAUiJyEiD4A9IKcE="
+jmp 24f
+23:
+24:
+.base64 "SYnIScHoBEmJj5AAAABIid9Iie5MifpIgcKAAAAATInpTYn5SYHBAAEAAA=="
+call {vg_cmac_aes_update_aesni_cbc}
+.base64 "SYuHkAAAAEyJ6UgBwU2J8EkpwEiJ30iJ7kyJ+kiBwoAAAABNiflJgcEAAQAA"
+call {vg_cmac_aes_finalize_aesni}
+.base64 "SYmf4AAAAEyJ40iLA0gPyEiLUwhID8pIicFIwek/QbgAAAAASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hID8pIiQNIiVMISYsEJEkzh4AAAABJiQQkSYtEJAhJM4eIAAAASYlEJAhJi5/gAAAASYtHcEiDwBBJiUdwSYtHeEiD6AFJiUd4"
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "TYuv0AAAAE2Lt9gAAABJg/4Q"
+jb 25f
+.base64 "SYP+EQ=="
+jb 27f
+.base64 "TInxSIPpAUjB6QRIg+kBSInISAHASAHASAHASAHA"
+jmp 28f
+27:
+.base64 "uAAAAAA="
+28:
+.base64 "SYmHkAAAAEkBxUyJ8UgpwUyJ+kiDwiBJicNBugAAAABIhck="
+je 29f
+211:
+.base64 "Qw+2RBUAQogEEkmDwgFJOco="
+jne 211b
+jmp 210f
+29:
+210:
+.base64 "TSndTInxTCnZTAH5SItBEEkzBCRIiUEQSItBGEkzRCQISIlBGLgAAAAASYkHSYlHCE2Lh5AAAABJwegESInfSInuTIn6SIPCAEyJ6U2J+UmBwQABAAA="
+call {vg_cmac_aes_update_aesni_cbc}
+.base64 "QbgAAAAASYP+EQ=="
+jb 212f
+.base64 "QbgBAAAA"
+jmp 213f
+212:
+213:
+.base64 "SInfSInuTIn6SIPCAEyJ+UiDwSBNiflJgcEAAQAATYmHmAAAAA=="
+call {vg_cmac_aes_update_aesni_cbc}
+.base64 "SYuHmAAAAEgBwEgBwEgBwEgBwE2J8E0rh5AAAABJKcBMiflIg8EgSAHBSInfSInuTIn6SIPCAE2J+UmBwQABAAA="
+call {vg_cmac_aes_finalize_aesni}
+jmp 26f
+25:
+.base64 "uAAAAABJiUcgSYlHKEyJ+kiDwiBMifFBugAAAABIhck="
+je 214f
+216:
+.base64 "Qw+2RBUAQogEEkmDwgFJOco="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "uIAAAABDiEQ3IEmLBCRJiYeQAAAASYtEJAhJiYeYAAAASYmf4AAAAEyJ+0iLg5AAAABID8hIi5OYAAAASA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSImDkAAAAEiJk5gAAABJi5/gAAAASYtHIEkzh5AAAABJiUcgSYtHKEkzh5gAAABJiUcouAAAAABJiQdJiUcISInfSInuTIn6SIPCAEyJ+UiDwSBBuBAAAABNiflJgcEAAQAA"
+call {vg_cmac_aes_finalize_aesni}
+26:
+.base64 "SYsHSYlHQEmLRwhIun////9/////SCHQSYlHSEmLR0BJiUdgSYtHSEmJR2hMifFIwekESIHh////f0mJyEiJ30iBxxABAABIie5MifpIg8JgTInpTYn5SYHBAAEAAA=="
+call {vg_aes_ctr32_aesni}
+.base64 "TInxSMHpBEiB4f///39Ji0dISA/ISYtXQEgPykgByEiD0gBID8hID8pJiVdASYlHSEgByUgByUgByUgByUkBzUkpzg=="
+je 217f
+219:
+.base64 "uAAAAABJiUdQSYlHWEmLR0BJiUdgSYtHSEmJR2hIid9IgccQAQAASInuTIn6SIPCYEyJ+UiDwVBBuAEAAABNiflJgcEAAQAA"
+call {vg_aes_ctr32_aesni}
+.base64 "uRAAAABJOc4="
+jb 220f
+jmp 221f
+220:
+.base64 "TInx"
+221:
+.base64 "QboAAAAA"
+222:
+.base64 "Qw+2RBUAQw+2VBdQSDHQQ4hEFQBJg8IBSTnK"
+jne 222b
+.base64 "SYtHSEgPyEmLV0BID8pIg8ABSIPSAEgPyEgPykmJV0BJiUdISYPFEEkpzg=="
+jne 219b
+jmp 218f
+217:
+218:
+.base64 "TYuv0AAAAE2Lt9gAAABJi5+gAAAASYuvqAAAAE2Lp7AAAABNi6+4AAAATYu3wAAAAE2Lv8gAAABIi0QkCEyLVCQQTYsaTIkYTYtaCEyJWAhIjaQkKAoAAMM="
+.p2align 6"#,
+        vg_cmac_aes_finalize_aesni = sym crate::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
+        vg_cmac_aes_update_aesni_cbc = sym crate::cmac_aes::vg_cmac_aes_update_aesni_cbc::vg_cmac_aes_update_aesni_cbc,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_siv_decrypt_aesni_cbc`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_decrypt_aesni_cbc(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
+call {vg_cmac_aes_finalize_aesni}
+.base64 "SYtHeEiFwA=="
+je 20f
+22:
+.base64 "SYtHcEyLKEyLcAi4AAAAAEmJh4AAAABJiYeIAAAAuQAAAABNhfY="
+je 23f
+.base64 "TInxSIPpAUiJyEiD4A9IKcE="
+jmp 24f
+23:
+24:
+.base64 "SYnIScHoBEmJj5AAAABIid9Iie5MifpIgcKAAAAATInpTYn5SYHBAAEAAA=="
+call {vg_cmac_aes_update_aesni_cbc}
+.base64 "SYuHkAAAAEyJ6UgBwU2J8EkpwEiJ30iJ7kyJ+kiBwoAAAABNiflJgcEAAQAA"
+call {vg_cmac_aes_finalize_aesni}
+.base64 "SYmf4AAAAEyJ40iLA0gPyEiLUwhID8pIicFIwek/QbgAAAAASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hID8pIiQNIiVMISYsEJEkzh4AAAABJiQQkSYtEJAhJM4eIAAAASYlEJAhJi5/gAAAASYtHcEiDwBBJiUdwSYtHeEiD6AFJiUd4"
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "TYuv0AAAAE2Lt9gAAABIi0QkCEiLCEmJD0iLSAhJiU8ISYsHSYlHQEmLRwhIun////9/////SCHQSYlHSEmLR0BJiUdgSYtHSEmJR2hMifFIwekESIHh////f0mJyEiJ30iBxxABAABIie5MifpIg8JgTInpTYn5SYHBAAEAAA=="
+call {vg_aes_ctr32_aesni}
+.base64 "TInxSMHpBEiB4f///39Ji0dISA/ISYtXQEgPykgByEiD0gBID8hID8pJiVdASYlHSEgByUgByUgByUgByUkBzUkpzg=="
+je 25f
+27:
+.base64 "uAAAAABJiUdQSYlHWEmLR0BJiUdgSYtHSEmJR2hIid9IgccQAQAASInuTIn6SIPCYEyJ+UiDwVBBuAEAAABNiflJgcEAAQAA"
+call {vg_aes_ctr32_aesni}
+.base64 "uRAAAABJOc4="
+jb 28f
+jmp 29f
+28:
+.base64 "TInx"
+29:
+.base64 "QboAAAAA"
+210:
+.base64 "Qw+2RBUAQw+2VBdQSDHQQ4hEFQBJg8IBSTnK"
+jne 210b
+.base64 "SYtHSEgPyEmLV0BID8pIg8ABSIPSAEgPyEgPykmJV0BJiUdISYPFEEkpzg=="
+jne 27b
+jmp 26f
+25:
+26:
+.base64 "TYuv0AAAAE2Lt9gAAABJg/4Q"
+jb 211f
+.base64 "SYP+EQ=="
+jb 213f
+.base64 "TInxSIPpAUjB6QRIg+kBSInISAHASAHASAHASAHA"
+jmp 214f
+213:
+.base64 "uAAAAAA="
+214:
+.base64 "SYmHkAAAAEkBxUyJ8UgpwUyJ+kiDwiBJicNBugAAAABIhck="
+je 215f
+217:
+.base64 "Qw+2RBUAQogEEkmDwgFJOco="
+jne 217b
+jmp 216f
+215:
+216:
+.base64 "TSndTInxTCnZTAH5SItBEEkzBCRIiUEQSItBGEkzRCQISIlBGLgAAAAASYlHcEmJR3hNi4eQAAAAScHoBEiJ30iJ7kyJ+kiDwnBMielNiflJgcEAAQAA"
+call {vg_cmac_aes_update_aesni_cbc}
+.base64 "QbgAAAAASYP+EQ=="
+jb 218f
+.base64 "QbgBAAAA"
+jmp 219f
+218:
+219:
+.base64 "SInfSInuTIn6SIPCcEyJ+UiDwSBNiflJgcEAAQAATYmHmAAAAA=="
+call {vg_cmac_aes_update_aesni_cbc}
+.base64 "SYuHmAAAAEgBwEgBwEgBwEgBwE2J8E0rh5AAAABJKcBMiflIg8EgSAHBSInfSInuTIn6SIPCcE2J+UmBwQABAAA="
+call {vg_cmac_aes_finalize_aesni}
+jmp 212f
+211:
+.base64 "uAAAAABJiUcgSYlHKEyJ+kiDwiBMifFBugAAAABIhck="
+je 220f
+222:
+.base64 "Qw+2RBUAQogEEkmDwgFJOco="
+jne 222b
+jmp 221f
+220:
+221:
+.base64 "uIAAAABDiEQ3IEmLBCRJiYeQAAAASYtEJAhJiYeYAAAASYmf4AAAAEyJ+0iLg5AAAABID8hIi5OYAAAASA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSImDkAAAAEiJk5gAAABJi5/gAAAASYtHIEkzh5AAAABJiUcgSYtHKEkzh5gAAABJiUcouAAAAABJiUdwSYlHeEiJ30iJ7kyJ+kiDwnBMiflIg8EgQbgQAAAATYn5SYHBAAEAAA=="
+call {vg_cmac_aes_finalize_aesni}
+212:
+.base64 "SYsHSTNHcEmLVwhJM1d4SAnQSInCSIPqAUiJwUiD8f9IIdFIichIweg/QbsAAAAASSnDSYmHkAAAAEG6AAAAAEyJ8UjB6QNIhck="
+je 223f
+225:
+.base64 "S4tEFQBMIdhLiUQVAEmDwghIg+kB"
+jne 225b
+jmp 224f
+223:
+224:
+.base64 "TTny"
+je 226f
+228:
+.base64 "Qw+2RBUATCHYQ4hEFQBJg8IBTTny"
+jne 228b
+jmp 227f
+226:
+227:
+.base64 "SYuHkAAAAEmLn6AAAABJi6+oAAAATYunsAAAAE2Lr7gAAABNi7fAAAAATYu/yAAAAEiNpCQoCgAAww=="
+.p2align 6"#,
+        vg_cmac_aes_finalize_aesni = sym crate::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
+        vg_cmac_aes_update_aesni_cbc = sym crate::cmac_aes::vg_cmac_aes_update_aesni_cbc::vg_cmac_aes_update_aesni_cbc,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_siv_encrypt`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
+call {vg_cmac_aes_finalize}
+.base64 "SYtHeEiFwA=="
+je 20f
+22:
+.base64 "SYtHcEyLKEyLcAi4AAAAAEmJh4AAAABJiYeIAAAAuQAAAABNhfY="
+je 23f
+.base64 "TInxSIPpAUiJyEiD4A9IKcE="
+jmp 24f
+23:
+24:
+.base64 "SYnIScHoBEmJj5AAAABIid9Iie5MifpIgcKAAAAATInpTYn5SYHBAAEAAA=="
+call {vg_cmac_aes_update}
+.base64 "SYuHkAAAAEyJ6UgBwU2J8EkpwEiJ30iJ7kyJ+kiBwoAAAABNiflJgcEAAQAA"
+call {vg_cmac_aes_finalize}
+.base64 "SYmf4AAAAEyJ40iLA0gPyEiLUwhID8pIicFIwek/QbgAAAAASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hID8pIiQNIiVMISYsEJEkzh4AAAABJiQQkSYtEJAhJM4eIAAAASYlEJAhJi5/gAAAASYtHcEiDwBBJiUdwSYtHeEiD6AFJiUd4"
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "TYuv0AAAAE2Lt9gAAABJg/4Q"
+jb 25f
+.base64 "SYP+EQ=="
+jb 27f
+.base64 "TInxSIPpAUjB6QRIg+kBSInISAHASAHASAHASAHA"
+jmp 28f
+27:
+.base64 "uAAAAAA="
+28:
+.base64 "SYmHkAAAAEkBxUyJ8UgpwUyJ+kiDwiBJicNBugAAAABIhck="
+je 29f
+211:
+.base64 "Qw+2RBUAQogEEkmDwgFJOco="
+jne 211b
+jmp 210f
+29:
+210:
+.base64 "TSndTInxTCnZTAH5SItBEEkzBCRIiUEQSItBGEkzRCQISIlBGLgAAAAASYkHSYlHCE2Lh5AAAABJwegESInfSInuTIn6SIPCAEyJ6U2J+UmBwQABAAA="
+call {vg_cmac_aes_update}
+.base64 "QbgAAAAASYP+EQ=="
+jb 212f
+.base64 "QbgBAAAA"
+jmp 213f
+212:
+213:
+.base64 "SInfSInuTIn6SIPCAEyJ+UiDwSBNiflJgcEAAQAATYmHmAAAAA=="
+call {vg_cmac_aes_update}
+.base64 "SYuHmAAAAEgBwEgBwEgBwEgBwE2J8E0rh5AAAABJKcBMiflIg8EgSAHBSInfSInuTIn6SIPCAE2J+UmBwQABAAA="
+call {vg_cmac_aes_finalize}
+jmp 26f
+25:
+.base64 "uAAAAABJiUcgSYlHKEyJ+kiDwiBMifFBugAAAABIhck="
+je 214f
+216:
+.base64 "Qw+2RBUAQogEEkmDwgFJOco="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "uIAAAABDiEQ3IEmLBCRJiYeQAAAASYtEJAhJiYeYAAAASYmf4AAAAEyJ+0iLg5AAAABID8hIi5OYAAAASA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSImDkAAAAEiJk5gAAABJi5/gAAAASYtHIEkzh5AAAABJiUcgSYtHKEkzh5gAAABJiUcouAAAAABJiQdJiUcISInfSInuTIn6SIPCAEyJ+UiDwSBBuBAAAABNiflJgcEAAQAA"
+call {vg_cmac_aes_finalize}
+26:
+.base64 "SYsHSYlHQEmLRwhIun////9/////SCHQSYlHSEmLR0BJiUdgSYtHSEmJR2hMifFIwekESIHh////f0mJyEiJ30iBxxABAABIie5MifpIg8JgTInpTYn5SYHBAAEAAA=="
+call {vg_aes_ctr32}
+.base64 "TInxSMHpBEiB4f///39Ji0dISA/ISYtXQEgPykgByEiD0gBID8hID8pJiVdASYlHSEgByUgByUgByUgByUkBzUkpzg=="
+je 217f
+219:
+.base64 "uAAAAABJiUdQSYlHWEmLR0BJiUdgSYtHSEmJR2hIid9IgccQAQAASInuTIn6SIPCYEyJ+UiDwVBBuAEAAABNiflJgcEAAQAA"
+call {vg_aes_ctr32}
+.base64 "uRAAAABJOc4="
+jb 220f
+jmp 221f
+220:
+.base64 "TInx"
+221:
+.base64 "QboAAAAA"
+222:
+.base64 "Qw+2RBUAQw+2VBdQSDHQQ4hEFQBJg8IBSTnK"
+jne 222b
+.base64 "SYtHSEgPyEmLV0BID8pIg8ABSIPSAEgPyEgPykmJV0BJiUdISYPFEEkpzg=="
+jne 219b
+jmp 218f
+217:
+218:
+.base64 "TYuv0AAAAE2Lt9gAAABJi5+gAAAASYuvqAAAAE2Lp7AAAABNi6+4AAAATYu3wAAAAE2Lv8gAAABIi0QkCEyLVCQQTYsaTIkYTYtaCEyJWAhIjaQkKAoAAMM="
+.p2align 6"#,
+        vg_cmac_aes_finalize = sym crate::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_update = sym crate::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// The verified code of [`super::vg_aes_siv_decrypt`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
+call {vg_cmac_aes_finalize}
+.base64 "SYtHeEiFwA=="
+je 20f
+22:
+.base64 "SYtHcEyLKEyLcAi4AAAAAEmJh4AAAABJiYeIAAAAuQAAAABNhfY="
+je 23f
+.base64 "TInxSIPpAUiJyEiD4A9IKcE="
+jmp 24f
+23:
+24:
+.base64 "SYnIScHoBEmJj5AAAABIid9Iie5MifpIgcKAAAAATInpTYn5SYHBAAEAAA=="
+call {vg_cmac_aes_update}
+.base64 "SYuHkAAAAEyJ6UgBwU2J8EkpwEiJ30iJ7kyJ+kiBwoAAAABNiflJgcEAAQAA"
+call {vg_cmac_aes_finalize}
+.base64 "SYmf4AAAAEyJ40iLA0gPyEiLUwhID8pIicFIwek/QbgAAAAASSnISYHghwAAAEiJ0UjB6T9IAcBICchIAdJMMcJID8hID8pIiQNIiVMISYsEJEkzh4AAAABJiQQkSYtEJAhJM4eIAAAASYlEJAhJi5/gAAAASYtHcEiDwBBJiUdwSYtHeEiD6AFJiUd4"
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "TYuv0AAAAE2Lt9gAAABIi0QkCEiLCEmJD0iLSAhJiU8ISYsHSYlHQEmLRwhIun////9/////SCHQSYlHSEmLR0BJiUdgSYtHSEmJR2hMifFIwekESIHh////f0mJyEiJ30iBxxABAABIie5MifpIg8JgTInpTYn5SYHBAAEAAA=="
+call {vg_aes_ctr32}
+.base64 "TInxSMHpBEiB4f///39Ji0dISA/ISYtXQEgPykgByEiD0gBID8hID8pJiVdASYlHSEgByUgByUgByUgByUkBzUkpzg=="
+je 25f
+27:
+.base64 "uAAAAABJiUdQSYlHWEmLR0BJiUdgSYtHSEmJR2hIid9IgccQAQAASInuTIn6SIPCYEyJ+UiDwVBBuAEAAABNiflJgcEAAQAA"
+call {vg_aes_ctr32}
+.base64 "uRAAAABJOc4="
+jb 28f
+jmp 29f
+28:
+.base64 "TInx"
+29:
+.base64 "QboAAAAA"
+210:
+.base64 "Qw+2RBUAQw+2VBdQSDHQQ4hEFQBJg8IBSTnK"
+jne 210b
+.base64 "SYtHSEgPyEmLV0BID8pIg8ABSIPSAEgPyEgPykmJV0BJiUdISYPFEEkpzg=="
+jne 27b
+jmp 26f
+25:
+26:
+.base64 "TYuv0AAAAE2Lt9gAAABJg/4Q"
+jb 211f
+.base64 "SYP+EQ=="
+jb 213f
+.base64 "TInxSIPpAUjB6QRIg+kBSInISAHASAHASAHASAHA"
+jmp 214f
+213:
+.base64 "uAAAAAA="
+214:
+.base64 "SYmHkAAAAEkBxUyJ8UgpwUyJ+kiDwiBJicNBugAAAABIhck="
+je 215f
+217:
+.base64 "Qw+2RBUAQogEEkmDwgFJOco="
+jne 217b
+jmp 216f
+215:
+216:
+.base64 "TSndTInxTCnZTAH5SItBEEkzBCRIiUEQSItBGEkzRCQISIlBGLgAAAAASYlHcEmJR3hNi4eQAAAAScHoBEiJ30iJ7kyJ+kiDwnBMielNiflJgcEAAQAA"
+call {vg_cmac_aes_update}
+.base64 "QbgAAAAASYP+EQ=="
+jb 218f
+.base64 "QbgBAAAA"
+jmp 219f
+218:
+219:
+.base64 "SInfSInuTIn6SIPCcEyJ+UiDwSBNiflJgcEAAQAATYmHmAAAAA=="
+call {vg_cmac_aes_update}
+.base64 "SYuHmAAAAEgBwEgBwEgBwEgBwE2J8E0rh5AAAABJKcBMiflIg8EgSAHBSInfSInuTIn6SIPCcE2J+UmBwQABAAA="
+call {vg_cmac_aes_finalize}
+jmp 212f
+211:
+.base64 "uAAAAABJiUcgSYlHKEyJ+kiDwiBMifFBugAAAABIhck="
+je 220f
+222:
+.base64 "Qw+2RBUAQogEEkmDwgFJOco="
+jne 222b
+jmp 221f
+220:
+221:
+.base64 "uIAAAABDiEQ3IEmLBCRJiYeQAAAASYtEJAhJiYeYAAAASYmf4AAAAEyJ+0iLg5AAAABID8hIi5OYAAAASA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSImDkAAAAEiJk5gAAABJi5/gAAAASYtHIEkzh5AAAABJiUcgSYtHKEkzh5gAAABJiUcouAAAAABJiUdwSYlHeEiJ30iJ7kyJ+kiDwnBMiflIg8EgQbgQAAAATYn5SYHBAAEAAA=="
+call {vg_cmac_aes_finalize}
+212:
+.base64 "SYsHSTNHcEmLVwhJM1d4SAnQSInCSIPqAUiJwUiD8f9IIdFIichIweg/QbsAAAAASSnDSYmHkAAAAEG6AAAAAEyJ8UjB6QNIhck="
+je 223f
+225:
+.base64 "S4tEFQBMIdhLiUQVAEmDwghIg+kB"
+jne 225b
+jmp 224f
+223:
+224:
+.base64 "TTny"
+je 226f
+228:
+.base64 "Qw+2RBUATCHYQ4hEFQBJg8IBTTny"
+jne 228b
+jmp 227f
+226:
+227:
+.base64 "SYuHkAAAAEmLn6AAAABJi6+oAAAATYunsAAAAE2Lr7gAAABNi7fAAAAATYu/yAAAAEiNpCQoCgAAww=="
+.p2align 6"#,
+        vg_cmac_aes_finalize = sym crate::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_update = sym crate::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// The verified code of [`super::vg_aes_siv_encrypt_vaes`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_encrypt_vaes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
 call {vg_cmac_aes_finalize_vaes}
@@ -910,31 +1025,15 @@ jmp 218f
 218:
 .base64 "TYuv0AAAAE2Lt9gAAABJi5+gAAAASYuvqAAAAE2Lp7AAAABNi6+4AAAATYu3wAAAAE2Lv8gAAABIi0QkCEyLVCQQTYsaTIkYTYtaCEyJWAhIjaQkKAoAAMM="
 .p2align 6"#,
-        vg_cmac_aes_finalize_vaes = sym super::cmac_aes::vg_cmac_aes_finalize_vaes::vg_cmac_aes_finalize_vaes,
-        vg_cmac_aes_update_vaes = sym super::cmac_aes::vg_cmac_aes_update_vaes::vg_cmac_aes_update_vaes,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_cmac_aes_finalize_vaes = sym crate::cmac_aes::vg_cmac_aes_finalize_vaes::vg_cmac_aes_finalize_vaes,
+        vg_cmac_aes_update_vaes = sym crate::cmac_aes::vg_cmac_aes_update_vaes::vg_cmac_aes_update_vaes,
+        vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
 }
 
-/// The CPU features `vg_aes_siv_decrypt_vaes` requires (`Artifact.features`).
-pub const VG_AES_SIV_DECRYPT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
-
-/// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
-///
-/// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 512 bytes.
-/// * `ads` must be valid for reads of `2 * size_of::<usize>() * ads_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `siv` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists, `siv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
+/// The verified code of [`super::vg_aes_siv_decrypt_vaes`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_siv_decrypt_vaes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_decrypt_vaes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZigAAAASImoqAAAAEyJoLAAAABMiai4AAAATImwwAAAAEyJuMgAAABIiftIifVJicdJicRJgcQACgAATYnFTYnOTYmv0AAAAE2Jt9gAAABJiVdwSYlPeEyJ4kyJ+bgAAAAASIlBEEiJQRhIiQJIiUIISYnJSYHBAAEAAEiDwRBBuBAAAAA="
 call {vg_cmac_aes_finalize_vaes}
@@ -1038,8 +1137,9 @@ jmp 227f
 227:
 .base64 "SYuHkAAAAEmLn6AAAABJi6+oAAAATYunsAAAAE2Lr7gAAABNi7fAAAAATYu/yAAAAEiNpCQoCgAAww=="
 .p2align 6"#,
-        vg_cmac_aes_finalize_vaes = sym super::cmac_aes::vg_cmac_aes_finalize_vaes::vg_cmac_aes_finalize_vaes,
-        vg_cmac_aes_update_vaes = sym super::cmac_aes::vg_cmac_aes_update_vaes::vg_cmac_aes_update_vaes,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_cmac_aes_finalize_vaes = sym crate::cmac_aes::vg_cmac_aes_finalize_vaes::vg_cmac_aes_finalize_vaes,
+        vg_cmac_aes_update_vaes = sym crate::cmac_aes::vg_cmac_aes_update_vaes::vg_cmac_aes_update_vaes,
+        vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
+}
 }

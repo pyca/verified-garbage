@@ -119,13 +119,15 @@ impl PublicKey {
         plaintext: &[u8],
         random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Vec<u8>, Error> {
+        // The plaintext and the padding string are secret.
+        crate::dit::enter!(dit);
         let k = self.modulus_len();
         if plaintext.len() + 11 > k {
             return Err(Error::MessageTooLong);
         }
         let mut out = vec![0u8; k];
         let mut scratch = vec![0u64; public_scratch_words(k)];
-        let pre = self.pre(&mut scratch);
+        let pre = self.pre(dit, &mut scratch);
         let backend = Backend::select(detected());
         let mut status = 0;
         // The padding string needs at least as many random bytes as it has;
@@ -150,6 +152,7 @@ impl PublicKey {
                     // `Backend::select` chose.
                     unsafe {
                         $function(
+                            dit,
                             out.as_mut_ptr(),
                             k,
                             &mut counts,
@@ -215,7 +218,8 @@ impl PublicKey {
 
 /// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
 #[cfg(target_arch = "x86_64")]
-type DecryptFn = unsafe extern "sysv64" fn(
+type DecryptFn = unsafe fn(
+    crate::dit::Dit<'_>,
     *mut u8,
     usize,
     *mut [u64; 1],
@@ -248,7 +252,8 @@ type DecryptFn = unsafe extern "sysv64" fn(
     target_arch = "powerpc64",
     target_arch = "riscv64"
 ))]
-type DecryptFn = unsafe extern "C" fn(
+type DecryptFn = unsafe fn(
+    crate::dit::Dit<'_>,
     *mut u8,
     usize,
     *mut [u64; 1],
@@ -327,6 +332,7 @@ impl PrivateKey {
     ///
     /// RSAES-PKCS1-v1_5 is deprecated (see the [module](self) documentation).
     pub fn decrypt_pkcs1v15(&self, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
+        crate::dit::enter!(dit);
         let k = self.modulus_len();
         if ciphertext.len() != k {
             return Err(Error::InvalidLength);
@@ -353,6 +359,7 @@ impl PrivateKey {
         // of `f`.
         let r = unsafe {
             f(
+                dit,
                 out.as_mut_ptr(),
                 k,
                 &mut len,

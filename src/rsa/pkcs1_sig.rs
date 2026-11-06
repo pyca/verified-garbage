@@ -127,6 +127,7 @@ impl PrivateKey {
     /// RSASSA-PKCS1-V1_5-SIGN (RFC 8017 §8.2.1) of the hash value `digest` of
     /// the hash function `hash`: the signature, as long as the modulus.
     pub fn sign_pkcs1v15(&self, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Error> {
+        crate::dit::enter!(dit);
         if digest.len() != hash.digest_len() {
             return Err(Error::InvalidDigestLength);
         }
@@ -161,6 +162,7 @@ impl PrivateKey {
         // features of the function `select` chose.
         let r = unsafe {
             f(
+                dit,
                 out.as_mut_ptr(),
                 k,
                 self.n.as_ptr(),
@@ -211,9 +213,10 @@ impl PublicKey {
         digest: &[u8],
         hash: Hash,
     ) -> Result<(), InvalidSignature> {
+        let dit = crate::dit::public(crate::dit::Why::Verify);
         let k = self.n.len();
         let mut scratch = self.verify_scratch.take(public_scratch_words(k), false);
-        let pre = self.pre(&mut scratch);
+        let pre = self.pre(dit, &mut scratch);
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_pkcs1_verify_precomputed,
             #[cfg(target_arch = "x86_64")]
@@ -240,6 +243,7 @@ impl PublicKey {
         // words. The CPU supports the selected function's features.
         let r = unsafe {
             f(
+                dit,
                 self.n.as_ptr(),
                 k,
                 self.e.as_ptr(),
@@ -275,10 +279,11 @@ impl PublicKey {
         signature: &[u8],
         hash: Hash,
     ) -> Result<Vec<u8>, InvalidSignature> {
+        crate::dit::enter!(dit);
         let k = self.n.len();
         let mut out = vec![0; hash.digest_len()];
         let mut scratch = vec![0u64; public_scratch_words(k)];
-        let pre = self.pre(&mut scratch);
+        let pre = self.pre(dit, &mut scratch);
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_pkcs1_recover_precomputed,
             // `select` chose it because the CPU has the features it needs.
@@ -307,6 +312,7 @@ impl PublicKey {
         // and the CPU supports the selected function's features.
         let r = unsafe {
             f(
+                dit,
                 out.as_mut_ptr(),
                 out.len(),
                 self.n.as_ptr(),

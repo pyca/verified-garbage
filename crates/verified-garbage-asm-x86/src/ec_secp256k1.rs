@@ -17,8 +17,19 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
 /// * None of `out`, `d` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_secp256k1_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_secp256k1_public_key(out, d, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_secp256k1_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_secp256k1_public_key(out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_secp256k1_public_key(out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "i0QkDIkYiXAEiXgIiWgMiceLXCQIi0McD8iJhyAEAACLQxgPyImHJAQAAItDFA/IiYcoBAAAi0MQD8iJhywEAACLQwwPyImHMAQAAItDCA/IiYc0BAAAi0MED8iJhzgEAACLAw/IiYc8BAAAi1wkCItDHA/IiYdABAAAi0MYD8iJh0QEAACLQxQPyImHSAQAAItDEA/IiYdMBAAAi0MMD8iJh1AEAACLQwgPyImHVAQAAItDBA/IiYdYBAAAiwMPyImHXAQAAItcJAiLQxwPyImHYAQAAItDGA/IiYdkBAAAi0MUD8iJh2gEAACLQxAPyImHbAQAAItDDA/IiYdwBAAAi0MID8iJh3QEAACLQwQPyImHeAQAAIsDD8iJh3wEAAC4L/z//4lHQLj+////iUdEuP////+JR0i4/////4lHTLj/////iUdQuP////+JR1S4/////4lHWLj/////iUdcuEFBNtCJR2C4jF7Sv4lHZLg7oEiviUdouObcrrqJR2y4/v///4lHcLj/////iUd0uP////+JR3i4/////4lHfLgAAAAAiYegAAAAuAAAAACJh6QAAAC4AAAAAImHqAAAALgAAAAAiYesAAAAuAAAAACJh7AAAAC4AAAAAImHtAAAALgAAAAAiYe4AAAAuAAAAACJh7wAAAC4AQAAAImHwAAAALgAAAAAiYfEAAAAuAAAAACJh8gAAAC4AAAAAImHzAAAALgAAAAAiYfQAAAAuAAAAACJh9QAAAC4AAAAAImH2AAAALgAAAAAiYfcAAAAuNEDAACJh+AAAAC4AQAAAImH5AAAALgAAAAAiYfoAAAAuAAAAACJh+wAAAC4AAAAAImH8AAAALgAAAAAiYf0AAAAuAAAAACJh/gAAAC4AAAAAImH/AAAALgAAAAAiYcAAQAAuAAAAACJhwQBAAC4AAAAAImHCAEAALgAAAAAiYcMAQAAuAAAAACJhxABAAC4AAAAAImHFAEAALgAAAAAiYcYAQAAuAAAAACJhxwBAAC4JVAAAImHIAEAALgVAAAAiYckAQAAuAAAAACJhygBAAC4AAAAAImHLAEAALgAAAAAiYcwAQAAuAAAAACJhzQBAAC4AAAAAImHOAEAALgAAAAAiYc8AQAAuJcgfkiJh0ABAAC4Wi4214mHRAEAALjbZrwpiYdIAQAAuFMpHiOJh0wBAAC4nBL9M4mHUAEAALjASJ+XiYdUAQAAuEifCOmJh1gBAAC4Q+aBmYmHXAEAALjiq9vTiYdgAQAAuNKmXrGJh2QBAAC4TcYdH4mHaAEAALhdXfyNiYdsAQAAuDbBGayJh3ABAAC4mrW2cImHdAEAALjWgqXUiYd4AQAAuB+FP8+Jh3wBAAC4QNHXZ4mHgAEAALgU8myJiYeEAQAAuHj4fA6Jh4gBAAC4wpYUdImHjAEAALjGB81biYeQAQAAuOT1l+aJh5QBAAC4xZvGgYmHmAEAALjVHGediYecAQAAuL++yS+Jh6ABAAC4c6EtQImHpAEAALjEX7dQiYeoAQAAuBkjUUWJh6wBAAC4AQAAAImHsAEAALgAAAAAiYe0AQAAuAAAAACJh7gBAAC4AAAAAImHvAEAALgt/P//iYfAAQAAuP7///+Jh8QBAAC4/////4mHyAEAALj/////iYfMAQAAuP////+Jh9ABAAC4/////4mH1AEAALj/////iYfYAQAAuP////+Jh9wBAAC4P0E20ImH4AEAALiMXtK/iYfkAQAAuDugSK+Jh+gBAAC45tyuuomH7AEAALj+////iYfwAQAAuP////+Jh/QBAAC4/////4mH+AEAALj/////iYf8AQAAuAAAAACJhwACAAC4AAAAAImHBAIAALgAAAAAiYcIAgAAuAAAAACJhwwCAAC4AAAAAImHEAIAALgAAAAAiYcUAgAAuAAAAACJhxgCAAC4AAAAAImHHAIAALjRAwAAiYcgAgAAuAEAAACJhyQCAAC4AAAAAImHKAIAALgAAAAAiYcsAgAAuAAAAACJhzACAAC4AAAAAImHNAIAALgAAAAAiYc4AgAAuAAAAACJhzwCAAC4AAAAAImHQAIAALgAAAAAiYdEAgAAuAAAAACJh0gCAAC4AAAAAImHTAIAALgAAAAAiYdQAgAAuAAAAACJh1QCAAC4AAAAAImHWAIAALgAAAAAiYdcAgAAuP////+Jh8AFAAC+IAAAAA=="
 20:
@@ -60,10 +71,11 @@ call {vg_secp256k1_mul_mod_p}
 call {vg_secp256k1_mul_mod_p}
 .base64 "WFhYWIuXQAQAACtXYIuXRAQAABtXZIuXSAQAABtXaIuXTAQAABtXbIuXUAQAABtXcIuXVAQAABtXdIuXWAQAABtXeIuXXAQAABtXfBnAicOLl0AEAAALl0QEAAALl0gEAAALl0wEAAALl1AEAAALl1QEAAALl1gEAAALl1wEAAC5AAAAACnRGdIh2ouHwAUAACHQiYfABQAAi5dAAgAAC5dEAgAAC5dIAgAAC5dMAgAAC5dQAgAAC5dUAgAAC5dYAgAAC5dcAgAAuQAAAAAp0RnSi4fABQAAIdCJh8AFAACLj8AFAACLXCQEuAQAAAAhyIgDi4egBAAAIcgPyIlDHYuHpAQAACHID8iJQxmLh6gEAAAhyA/IiUMVi4esBAAAIcgPyIlDEYuHsAQAACHID8iJQw2Lh7QEAAAhyA/IiUMJi4e4BAAAIcgPyIlDBYuHvAQAACHID8iJQwGLh6AFAAAhyA/IiUM9i4ekBQAAIcgPyIlDOYuHqAUAACHID8iJQzWLh6wFAAAhyA/IiUMxi4ewBQAAIcgPyIlDLYuHtAUAACHID8iJQymLh7gFAAAhyA/IiUMli4e8BQAAIcgPyIlDIYnIg+ABifqLGotyBItqDIt6CMM="
 .p2align 6"#,
-        vg_secp256k1_point_a0_double = sym super::ec_secp256k1::vg_secp256k1_point_a0_double::vg_secp256k1_point_a0_double,
-        vg_secp256k1_point_a0_add_affine = sym super::ec_secp256k1::vg_secp256k1_point_a0_add_affine::vg_secp256k1_point_a0_add_affine,
-        vg_secp256k1_mul_mod_p = sym super::ec_secp256k1::vg_secp256k1_mul_mod_p::vg_secp256k1_mul_mod_p,
+        vg_secp256k1_point_a0_double = sym crate::ec_secp256k1::vg_secp256k1_point_a0_double::vg_secp256k1_point_a0_double,
+        vg_secp256k1_point_a0_add_affine = sym crate::ec_secp256k1::vg_secp256k1_point_a0_add_affine::vg_secp256k1_point_a0_add_affine,
+        vg_secp256k1_mul_mod_p = sym crate::ec_secp256k1::vg_secp256k1_mul_mod_p::vg_secp256k1_mul_mod_p,
     )
+}
 }
 
 #[rustfmt::skip]

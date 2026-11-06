@@ -16,24 +16,11 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
-    core::arch::naked_asm!(
-        r".inst 0xf81f0ffe,0x910003e9,0xf9000520
-bl {vg_x25519}
-.inst 0x910003e9,0xf9400529,0xd280000a,0x3940012b,0xaa0b014a,0x3940052b,0xaa0b014a,0x3940092b
-.inst 0xaa0b014a,0x39400d2b,0xaa0b014a,0x3940112b,0xaa0b014a,0x3940152b,0xaa0b014a,0x3940192b
-.inst 0xaa0b014a,0x39401d2b,0xaa0b014a,0x3940212b,0xaa0b014a,0x3940252b,0xaa0b014a,0x3940292b
-.inst 0xaa0b014a,0x39402d2b,0xaa0b014a,0x3940312b,0xaa0b014a,0x3940352b,0xaa0b014a,0x3940392b
-.inst 0xaa0b014a,0x39403d2b,0xaa0b014a,0x3940412b,0xaa0b014a,0x3940452b,0xaa0b014a,0x3940492b
-.inst 0xaa0b014a,0x39404d2b,0xaa0b014a,0x3940512b,0xaa0b014a,0x3940552b,0xaa0b014a,0x3940592b
-.inst 0xaa0b014a,0x39405d2b,0xaa0b014a,0x3940612b,0xaa0b014a,0x3940652b,0xaa0b014a,0x3940692b
-.inst 0xaa0b014a,0x39406d2b,0xaa0b014a,0x3940712b,0xaa0b014a,0x3940752b,0xaa0b014a,0x3940792b
-.inst 0xaa0b014a,0x39407d2b,0xaa0b014a,0xd100054a,0xd37ffd40,0xd280002b,0xca0b0000,0xf84107fe
-.inst 0xd65f03c0
-.p2align 6",
-        vg_x25519 = sym super::x25519::vg_x25519::vg_x25519,
-    )
+#[inline(always)]
+pub unsafe fn vg_x25519_exchange(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x25519_exchange(out, scalar, point, scratch) }
 }
 
 /// The bytes of `scratch` that `vg_x25519_base` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
@@ -53,8 +40,40 @@ pub const VG_X25519_BASE_SCRATCH_WRITTEN: usize = 1024;
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_x25519_base(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x25519_base(out, scalar, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_x25519_exchange`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0x910003e9,0xf9000520
+bl {vg_x25519}
+.inst 0x910003e9,0xf9400529,0xd280000a,0x3940012b,0xaa0b014a,0x3940052b,0xaa0b014a,0x3940092b
+.inst 0xaa0b014a,0x39400d2b,0xaa0b014a,0x3940112b,0xaa0b014a,0x3940152b,0xaa0b014a,0x3940192b
+.inst 0xaa0b014a,0x39401d2b,0xaa0b014a,0x3940212b,0xaa0b014a,0x3940252b,0xaa0b014a,0x3940292b
+.inst 0xaa0b014a,0x39402d2b,0xaa0b014a,0x3940312b,0xaa0b014a,0x3940352b,0xaa0b014a,0x3940392b
+.inst 0xaa0b014a,0x39403d2b,0xaa0b014a,0x3940412b,0xaa0b014a,0x3940452b,0xaa0b014a,0x3940492b
+.inst 0xaa0b014a,0x39404d2b,0xaa0b014a,0x3940512b,0xaa0b014a,0x3940552b,0xaa0b014a,0x3940592b
+.inst 0xaa0b014a,0x39405d2b,0xaa0b014a,0x3940612b,0xaa0b014a,0x3940652b,0xaa0b014a,0x3940692b
+.inst 0xaa0b014a,0x39406d2b,0xaa0b014a,0x3940712b,0xaa0b014a,0x3940752b,0xaa0b014a,0x3940792b
+.inst 0xaa0b014a,0x39407d2b,0xaa0b014a,0xd100054a,0xd37ffd40,0xd280002b,0xca0b0000,0xf84107fe
+.inst 0xd65f03c0
+.p2align 6",
+        vg_x25519 = sym crate::x25519::vg_x25519::vg_x25519,
+    )
+}
+
+/// The verified code of [`super::vg_x25519_base`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r".inst 0xf9000053,0xf9000454,0xf9000855,0xf9000c56,0xf9001057,0xf9001458,0xf9001840,0x91000040
 .inst 0x52800013,0x5280002b
@@ -439,8 +458,9 @@ cbnz x20, 22b
 .inst 0xf9401800,0xf9400053,0xf9400454,0xf9400855,0xf9400c56,0xf9401057,0xf9401458,0xf9000004
 .inst 0xf9000405,0xf9000806,0xf9000c07,0xd65f03c0
 .p2align 6",
-        VG_ED25519_COMB = sym super::consts::VG_ED25519_COMB,
+        VG_ED25519_COMB = sym crate::consts::VG_ED25519_COMB,
     )
+}
 }
 
 #[rustfmt::skip]

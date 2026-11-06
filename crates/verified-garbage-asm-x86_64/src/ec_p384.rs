@@ -15,8 +15,42 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
 /// * None of `out`, `d` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p384_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p384_public_key(out, d, scratch) }
+}
+
+/// The CPU features `vg_ec_p384_public_key_adx` requires (`Artifact.features`).
+pub const VG_EC_P384_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// P-384 public-key derivation (FIPS 186-5 §A.2, SP 800-56A §5.6.1.2): writes the public key `Q = dG` of the private key `d` at `d` (48 bytes, most significant first) to `*out`, in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 48 bytes each, most significant first), and returns 1; or, if `d` is not in `[1, n-1]`, writes zeros and returns 0.
+///
+/// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 97 bytes.
+/// * `d` must be valid for reads of 48 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
+/// * None of `out`, `d` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
+#[inline(always)]
+pub unsafe fn vg_ec_p384_public_key_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p384_public_key_adx(out, d, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_p384_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ec_p384_public_key(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ec_p384_public_key(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnQSInxSInySYkYSYloCE2JYBBNiWgYTYlwIE2JeChJif5MicdIi0EoSA/ISImHEAYAAEiLQSBID8hIiYcYBgAASItBGEgPyEiJhyAGAABIi0EQSA/ISImHKAYAAEiLQQhID8hIiYcwBgAASIsBSA/ISImHOAYAAEiLRihID8hIiYdABgAASItGIEgPyEiJh0gGAABIi0YYSA/ISImHUAYAAEiLRhBID8hIiYdYBgAASItGCEgPyEiJh2AGAABIiwZID8hIiYdoBgAASItCKEgPyEiJh3AGAABIi0IgSA/ISImHeAYAAEiLQhhID8hIiYeABgAASItCEEgPyEiJh4gGAABIi0IISA/ISImHkAYAAEiLAkgPyEiJh5gGAABIuP////8AAAAASIlHQEi4AAAAAP////9IiUdISLj+/////////0iJR1BIuP//////////SIlHWEi4//////////9IiUdgSLj//////////0iJR2hIuHMpxcxqGezsSIlHcEi4eqewSLINGlhIiUd4SLjfLTf0gU1jx0iJh4AAAABIuP//////////SImHiAAAAEi4//////////9IiYeQAAAASLj//////////0iJh5gAAABIuAAAAAAAAAAASImH0AAAAEi4AAAAAAAAAABIiYfYAAAASLgAAAAAAAAAAEiJh+AAAABIuAAAAAAAAAAASImH6AAAAEi4AAAAAAAAAABIiYfwAAAASLgAAAAAAAAAAEiJh/gAAABIuAEAAAAAAAAASImHAAEAAEi4AAAAAAAAAABIiYcIAQAASLgAAAAAAAAAAEiJhxABAABIuAAAAAAAAAAASImHGAEAAEi4AAAAAAAAAABIiYcgAQAASLgAAAAAAAAAAEiJhygBAABIuAEAAAD/////SImHMAEAAEi4/////wAAAABIiYc4AQAASLgBAAAAAAAAAEiJh0ABAABIuAAAAAAAAAAASImHSAEAAEi4AAAAAAAAAABIiYdQAQAASLgAAAAAAAAAAEiJh1gBAABIuPz///8DAAAASImHYAEAAEi4AAAAAPz///9IiYdoAQAASLj7/////////0iJh3ABAABIuP//////////SImHeAEAAEi4//////////9IiYeAAQAASLj//////////0iJh4gBAABIuGaJw9dSmTQYSImHkAEAAEi4xJjkbosJfeVIiYeYAQAASLiOBmBL0WHWZ0iJh6ABAABIuKegur3L46WpSImHqAEAAEi4vmEGXdxlgSJIiYewAQAASLjtP+8g4jMYZ0iJh7gBAABIuCi1wElmddA9SImHwAEAAEi4OM7WoOJ44yBIiYfIAQAASLhuTRtU/Dqch0iJh9ABAABIuP8Oo1mEhlRkSImH2AEAAEi4K95OYSP3L4FIiYfgAQAASLgTFZ4pwq06TUiJh+gBAABIuP6kA0utPQQjSImH8AEAAEi4rKm0e7+ov6FIiYf4AQAASLhQsIMuVueti0iJhwACAABIuNn/9GgZUsPGSImHCAIAAEi4QKhpOSYCgN1IiYcQAgAASLjpxRVawqt4K0iJhxgCAABIuKkJtBkkmzEtSImHIAIAAEi4GaQa3+WBPf9IiYcoAgAASLhHKbj8Okg+vEiJhzACAABIuMUcq0oXSQ3USImHOAIAAEi4lWgmKHpbsD9IiYdAAgAASLghvzkrAe6EDEiJh0gCAABIuI3WOjOV5hMTSImHUAIAAEi4hVhPt03y5adIiYdYAgAASLgg0sgLfrKcOEiJh2ACAABIuAAAAAAAAAAASImHaAIAAEi4AAAAAAAAAABIiYdwAgAASLgAAAAAAAAAAEiJh3gCAABIuP3///8AAAAASImHgAIAAEi4AAAAAP////9IiYeIAgAASLj+/////////0iJh5ACAABIuP//////////SImHmAIAAEi4//////////9IiYegAgAASLj//////////0iJh6gCAABIuHEpxcxqGezsSImHsAIAAEi4eqewSLINGlhIiYe4AgAASLjfLTf0gU1jx0iJh8ACAABIuP//////////SImHyAIAAEi4//////////9IiYfQAgAASLj//////////0iJh9gCAABIuAAAAAAAAAAASImH4AIAAEi4AAAAAAAAAABIiYfoAgAASLgAAAAAAAAAAEiJh/ACAABIuAAAAAAAAAAASImH+AIAAEi4AAAAAAAAAABIiYcAAwAASLgAAAAAAAAAAEiJhwgDAABIuAEAAAD/////SImHEAMAAEi4/////wAAAABIiYcYAwAASLgBAAAAAAAAAEiJhyADAABIuAAAAAAAAAAASImHKAMAAEi4AAAAAAAAAABIiYcwAwAASLgAAAAAAAAAAEiJhzgDAABIuAAAAAAAAAAASImHQAMAAEi4AAAAAAAAAABIiYdIAwAASLgAAAAAAAAAAEiJh1ADAABIuAAAAAAAAAAASImHWAMAAEi4AAAAAAAAAABIiYdgAwAASLgAAAAAAAAAAEiJh2gDAABIuP//////////SImHgAgAAEyJ9rsAAAAA"
 20:
@@ -38,30 +72,15 @@ call {vg_p384_mul_mod_p}
 call {vg_p384_mul_mod_p}
 .base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAAuAQAAABIIciIBkiLh9AGAABIIchID8hIiUYpSIuH2AYAAEghyEgPyEiJRiFIi4fgBgAASCHISA/ISIlGGUiLh+gGAABIIchID8hIiUYRSIuH8AYAAEghyEgPyEiJRglIi4f4BgAASCHISA/ISIlGAUiLh1AIAABIIchID8hIiUZZSIuHWAgAAEghyEgPyEiJRlFIi4dgCAAASCHISA/ISIlGSUiLh2gIAABIIchID8hIiUZBSIuHcAgAAEghyEgPyEiJRjlIi4d4CAAASCHISA/ISIlGMUiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_p384_mul_base = sym super::ec_p384::vg_p384_mul_base::vg_p384_mul_base,
-        vg_p384_inv_mod_p = sym super::ec_p384::vg_p384_inv_mod_p::vg_p384_inv_mod_p,
-        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
+        vg_p384_mul_base = sym crate::ec_p384::vg_p384_mul_base::vg_p384_mul_base,
+        vg_p384_inv_mod_p = sym crate::ec_p384::vg_p384_inv_mod_p::vg_p384_inv_mod_p,
+        vg_p384_mul_mod_p = sym crate::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
     )
 }
 
-/// The CPU features `vg_ec_p384_public_key_adx` requires (`Artifact.features`).
-pub const VG_EC_P384_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// P-384 public-key derivation (FIPS 186-5 §A.2, SP 800-56A §5.6.1.2): writes the public key `Q = dG` of the private key `d` at `d` (48 bytes, most significant first) to `*out`, in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 48 bytes each, most significant first), and returns 1; or, if `d` is not in `[1, n-1]`, writes zeros and returns 0.
-///
-/// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 97 bytes.
-/// * `d` must be valid for reads of 48 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
-/// * None of `out`, `d` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_ec_p384_public_key_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ec_p384_public_key_adx(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ec_p384_public_key_adx(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnQSInxSInySYkYSYloCE2JYBBNiWgYTYlwIE2JeChJif5MicdIi0EoSA/ISImHEAYAAEiLQSBID8hIiYcYBgAASItBGEgPyEiJhyAGAABIi0EQSA/ISImHKAYAAEiLQQhID8hIiYcwBgAASIsBSA/ISImHOAYAAEiLRihID8hIiYdABgAASItGIEgPyEiJh0gGAABIi0YYSA/ISImHUAYAAEiLRhBID8hIiYdYBgAASItGCEgPyEiJh2AGAABIiwZID8hIiYdoBgAASItCKEgPyEiJh3AGAABIi0IgSA/ISImHeAYAAEiLQhhID8hIiYeABgAASItCEEgPyEiJh4gGAABIi0IISA/ISImHkAYAAEiLAkgPyEiJh5gGAABIuP////8AAAAASIlHQEi4AAAAAP////9IiUdISLj+/////////0iJR1BIuP//////////SIlHWEi4//////////9IiUdgSLj//////////0iJR2hIuHMpxcxqGezsSIlHcEi4eqewSLINGlhIiUd4SLjfLTf0gU1jx0iJh4AAAABIuP//////////SImHiAAAAEi4//////////9IiYeQAAAASLj//////////0iJh5gAAABIuAAAAAAAAAAASImH0AAAAEi4AAAAAAAAAABIiYfYAAAASLgAAAAAAAAAAEiJh+AAAABIuAAAAAAAAAAASImH6AAAAEi4AAAAAAAAAABIiYfwAAAASLgAAAAAAAAAAEiJh/gAAABIuAEAAAAAAAAASImHAAEAAEi4AAAAAAAAAABIiYcIAQAASLgAAAAAAAAAAEiJhxABAABIuAAAAAAAAAAASImHGAEAAEi4AAAAAAAAAABIiYcgAQAASLgAAAAAAAAAAEiJhygBAABIuAEAAAD/////SImHMAEAAEi4/////wAAAABIiYc4AQAASLgBAAAAAAAAAEiJh0ABAABIuAAAAAAAAAAASImHSAEAAEi4AAAAAAAAAABIiYdQAQAASLgAAAAAAAAAAEiJh1gBAABIuPz///8DAAAASImHYAEAAEi4AAAAAPz///9IiYdoAQAASLj7/////////0iJh3ABAABIuP//////////SImHeAEAAEi4//////////9IiYeAAQAASLj//////////0iJh4gBAABIuGaJw9dSmTQYSImHkAEAAEi4xJjkbosJfeVIiYeYAQAASLiOBmBL0WHWZ0iJh6ABAABIuKegur3L46WpSImHqAEAAEi4vmEGXdxlgSJIiYewAQAASLjtP+8g4jMYZ0iJh7gBAABIuCi1wElmddA9SImHwAEAAEi4OM7WoOJ44yBIiYfIAQAASLhuTRtU/Dqch0iJh9ABAABIuP8Oo1mEhlRkSImH2AEAAEi4K95OYSP3L4FIiYfgAQAASLgTFZ4pwq06TUiJh+gBAABIuP6kA0utPQQjSImH8AEAAEi4rKm0e7+ov6FIiYf4AQAASLhQsIMuVueti0iJhwACAABIuNn/9GgZUsPGSImHCAIAAEi4QKhpOSYCgN1IiYcQAgAASLjpxRVawqt4K0iJhxgCAABIuKkJtBkkmzEtSImHIAIAAEi4GaQa3+WBPf9IiYcoAgAASLhHKbj8Okg+vEiJhzACAABIuMUcq0oXSQ3USImHOAIAAEi4lWgmKHpbsD9IiYdAAgAASLghvzkrAe6EDEiJh0gCAABIuI3WOjOV5hMTSImHUAIAAEi4hVhPt03y5adIiYdYAgAASLgg0sgLfrKcOEiJh2ACAABIuAAAAAAAAAAASImHaAIAAEi4AAAAAAAAAABIiYdwAgAASLgAAAAAAAAAAEiJh3gCAABIuP3///8AAAAASImHgAIAAEi4AAAAAP////9IiYeIAgAASLj+/////////0iJh5ACAABIuP//////////SImHmAIAAEi4//////////9IiYegAgAASLj//////////0iJh6gCAABIuHEpxcxqGezsSImHsAIAAEi4eqewSLINGlhIiYe4AgAASLjfLTf0gU1jx0iJh8ACAABIuP//////////SImHyAIAAEi4//////////9IiYfQAgAASLj//////////0iJh9gCAABIuAAAAAAAAAAASImH4AIAAEi4AAAAAAAAAABIiYfoAgAASLgAAAAAAAAAAEiJh/ACAABIuAAAAAAAAAAASImH+AIAAEi4AAAAAAAAAABIiYcAAwAASLgAAAAAAAAAAEiJhwgDAABIuAEAAAD/////SImHEAMAAEi4/////wAAAABIiYcYAwAASLgBAAAAAAAAAEiJhyADAABIuAAAAAAAAAAASImHKAMAAEi4AAAAAAAAAABIiYcwAwAASLgAAAAAAAAAAEiJhzgDAABIuAAAAAAAAAAASImHQAMAAEi4AAAAAAAAAABIiYdIAwAASLgAAAAAAAAAAEiJh1ADAABIuAAAAAAAAAAASImHWAMAAEi4AAAAAAAAAABIiYdgAwAASLgAAAAAAAAAAEiJh2gDAABIuP//////////SImHgAgAAEyJ9rsAAAAA"
 20:
@@ -83,10 +102,11 @@ call {vg_p384_mul_mod_p_adx}
 call {vg_p384_mul_mod_p_adx}
 .base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAAuAQAAABIIciIBkiLh9AGAABIIchID8hIiUYpSIuH2AYAAEghyEgPyEiJRiFIi4fgBgAASCHISA/ISIlGGUiLh+gGAABIIchID8hIiUYRSIuH8AYAAEghyEgPyEiJRglIi4f4BgAASCHISA/ISIlGAUiLh1AIAABIIchID8hIiUZZSIuHWAgAAEghyEgPyEiJRlFIi4dgCAAASCHISA/ISIlGSUiLh2gIAABIIchID8hIiUZBSIuHcAgAAEghyEgPyEiJRjlIi4d4CAAASCHISA/ISIlGMUiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_p384_mul_base_adx = sym super::ec_p384::vg_p384_mul_base_adx::vg_p384_mul_base_adx,
-        vg_p384_inv_mod_p_adx = sym super::ec_p384::vg_p384_inv_mod_p_adx::vg_p384_inv_mod_p_adx,
-        vg_p384_mul_mod_p_adx = sym super::ec_p384::vg_p384_mul_mod_p_adx::vg_p384_mul_mod_p_adx,
+        vg_p384_mul_base_adx = sym crate::ec_p384::vg_p384_mul_base_adx::vg_p384_mul_base_adx,
+        vg_p384_inv_mod_p_adx = sym crate::ec_p384::vg_p384_inv_mod_p_adx::vg_p384_inv_mod_p_adx,
+        vg_p384_mul_mod_p_adx = sym crate::ec_p384::vg_p384_mul_mod_p_adx::vg_p384_mul_mod_p_adx,
     )
+}
 }
 
 #[rustfmt::skip]

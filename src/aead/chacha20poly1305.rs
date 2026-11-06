@@ -148,6 +148,7 @@ impl ChaCha20Poly1305 {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<[u8; 16], Error> {
+        crate::dit::enter!(dit);
         // Check the length before encrypting anything.
         check_len(data.len())?;
         let seal = match self.backend {
@@ -180,6 +181,7 @@ impl ChaCha20Poly1305 {
         // implementation selected (see `features` in the tests).
         unsafe {
             seal(
+                dit,
                 &self.key,
                 nonce,
                 aad.as_ptr(),
@@ -207,6 +209,7 @@ impl ChaCha20Poly1305 {
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Result<[u8; 16], Error> {
+        crate::dit::enter!(dit);
         if plaintext.len() > Self::MAX_PIECES {
             return Err(Error::TooManyPieces);
         }
@@ -251,6 +254,7 @@ impl ChaCha20Poly1305 {
         // the stack the function uses.
         unsafe {
             seal(
+                dit,
                 &self.key,
                 nonce,
                 aad.as_ptr(),
@@ -275,6 +279,7 @@ impl ChaCha20Poly1305 {
         data: &mut [u8],
         tag: &[u8; 16],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         check_len(data.len())?;
         let open = match self.backend {
             Backend::Scalar => vg_chacha20_poly1305_open,
@@ -299,6 +304,7 @@ impl ChaCha20Poly1305 {
         // `tag`.
         let ok = unsafe {
             open(
+                dit,
                 &self.key,
                 nonce,
                 aad.as_ptr(),

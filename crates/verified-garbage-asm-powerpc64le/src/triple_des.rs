@@ -14,8 +14,53 @@
 /// * `key_len` must be 16 or 24.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_triple_des_expand_key(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_triple_des_expand_key(key, key_len, schedule) }
+}
+
+/// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 1056 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_triple_des_ecb_encrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_triple_des_ecb_encrypt(schedule, data, n) }
+}
+
+/// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 1056 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_triple_des_ecb_decrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_triple_des_ecb_decrypt(schedule, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_triple_des_expand_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
+pub(crate) unsafe extern "C" fn vg_triple_des_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
     core::arch::naked_asm!(
         r#".base64 "AAAAOShEA30AACA5AQBgOcLJCnk4WEp9ArhKeXhSKX3Ciwp5OFhKfQKwSnl4Uil9wk0KeThYSn0CqEp5eFIpfcIPCnk4WEp9AqBKeXhSKX3gyQp5OFhKfQKYSnl4Uil94IsKeThYSn0CkEp5eFIpfeBNCnk4WEp9AohKeXhSKX3gDwp5OFhKfQKASnl4Uil9gtEKeThYSn0CeEp5eFIpfYKTCnk4WEp9AnBKeXhSKX2CVQp5OFhKfQJoSnl4Uil9ghcKeThYSn0CYEp5eFIpfaDRCnk4WEp9AlhKeXhSKX2gkwp5OFhKfQJQSnl4Uil9oFUKeThYSn0CSEp5eFIpfaAXCnk4WEp9AkBKeXhSKX1C2Qp5OFhKfQI4Snl4Uil9QpsKeThYSn0CMEp5eFIpfUJdCnk4WEp9AihKeXhSKX1CHwp5OFhKfQIgSnl4Uil9YNkKeThYSn0CGEp5eFIpfWCbCnk4WEp9AhBKeXhSKX1gXQp5OFhKfQIISnl4Uil9YB8KeThYSn0CAEp5eFIpfQLhCnk4WEp9APhKeXhSKX0Cowp5OFhKfQDwSnl4Uil9AmUKeThYSn0A6Ep5eFIpfQInCnk4WEp9AOBKeXhSKX1C+Ap5OFhKfQDYSnl4Uil9QroKeThYSn0A0Ep5eFIpfUJ8Cnk4WEp9AMhKeXhSKX1CPgp5OFhKfQDASnl4Uil9YPgKeThYSn0AuEp5eFIpfWC6Cnk4WEp9ALBKeXhSKX1gfAp5OFhKfQCoSnl4Uil9YD4KeThYSn0AoEp5eFIpfYLwCnk4WEp9AJhKeXhSKX2Csgp5OFhKfQCQSnl4Uil9gnQKeThYSn0AiEp5eFIpfYI2Cnk4WEp9AIBKeXhSKX2g8Ap5OFhKfQB4Snl4Uil9oLIKeThYSn0AcEp5eFIpfaB0Cnk4WEp9AGhKeXhSKX2gNgp5OFhKfQBgSnl4Uil9wugKeThYSn0AWEp5eFIpfcKqCnk4WEp9AFBKeXhSKX3CbAp5OFhKfQBISnl4Uil9wi4KeThYSn0AQEp5eFIpfeDoCnk4WEp9ADhKeXhSKX3gqgp5OFhKfQAwSnl4Uil94GwKeThYSn0AKEp5eFIpfeAuCnk4WEp9ACBKeXhSKX0g4Qp5OFhKfQAYSnl4Uil9IKMKeThYSn0AEEp5eFIpfSBlCnk4WEp9AAhKeXhSKX0gJwp5OFhKfXhSKX0CJyB5eEsnfcYm53gg4ed4AACAOQAAxTg="
 20:
@@ -96,18 +141,9 @@ b 215f
     )
 }
 
-/// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 384 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 1056 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_triple_des_ecb_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "4fsh+CAAwTimAgh8AAIG+AgC5vt4K798eDPFfAAAPyg="
 beq %cr0, 20f
@@ -119,22 +155,13 @@ b 21f
 20:
 21:
 .base64 "AAIF6KYDCHwIAuXrIACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+SAEITggAIBO""#,
-        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+        vg_triple_des_encrypt_block = sym crate::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
 
-/// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 384 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 1056 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_triple_des_ecb_decrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "4fsh+CAAwTimAgh8AAIG+AgC5vt4K798eDPFfAAAPyg="
 beq %cr0, 20f
@@ -146,8 +173,9 @@ b 21f
 20:
 21:
 .base64 "AAIF6KYDCHwIAuXrIACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmIAmz5kAJs+ZgCbPmgAmz5qAJs+bACbPm4Amz5wAJs+cgCbPnQAmz52AJs+eACbPnoAmz58AJs+fgCbPkAA2z5CANs+RADbPkYA2z5IANs+SgDbPkwA2z5OANs+UADbPlIA2z5UANs+VgDbPlgA2z5aANs+XADbPl4A2z5gANs+YgDbPmQA2z5mANs+aADbPmoA2z5sANs+bgDbPnAA2z5yANs+dADbPnYA2z54ANs+egDbPnwA2z5+ANs+SAEITggAIBO""#,
-        vg_triple_des_decrypt_block = sym super::triple_des::vg_triple_des_decrypt_block::vg_triple_des_decrypt_block,
+        vg_triple_des_decrypt_block = sym crate::triple_des::vg_triple_des_decrypt_block::vg_triple_des_decrypt_block,
     )
+}
 }
 
 #[rustfmt::skip]

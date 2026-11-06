@@ -93,6 +93,7 @@ impl Key {
     /// error without changing anything if the buffer's length is not a
     /// multiple of 8.
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
@@ -103,6 +104,7 @@ impl Key {
         // the signature, none of them on the callee's stack.
         unsafe {
             vg_cast5_cbc_encrypt_chained(
+                dit,
                 self.key.schedule(),
                 self.key.rounds(),
                 iv,
@@ -119,12 +121,14 @@ impl Key {
     /// error without changing anything if the buffer's length is not a
     /// multiple of 8.
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
         // SAFETY: as in `encrypt`.
         unsafe {
             vg_cast5_cbc_decrypt_chained(
+                dit,
                 self.key.schedule(),
                 self.key.rounds(),
                 iv,

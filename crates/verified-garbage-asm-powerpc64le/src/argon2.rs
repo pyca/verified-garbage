@@ -24,8 +24,20 @@
 /// * `memory` and `scratch` are working space: their initial contents are arbitrary and their contents on return are unspecified.
 /// * `memory`, `scratch` and `out` must not overlap each other, `password`, `salt`, `secret`, `associated_data` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the 384 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_argon2(_dit: verified_garbage_cpu::Dit<'_>, kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_argon2(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_argon2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "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"
 bl {vg_blake2b_init}
@@ -156,12 +168,13 @@ bne %cr0, 228b
 .base64 "2AF+6AAEgDjwAb7o+AHe6AAA/zg="
 bl {vg_argon2_hprime}
 .base64 "aAAe6KYDCHxwAJ7reAC+64gA/uuAAN7rUAEhOCAAgE4=""#,
-        vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
-        vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
-        vg_blake2b_finalize_scratch = sym super::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
-        vg_argon2_hprime = sym super::argon2::vg_argon2_hprime::vg_argon2_hprime,
-        vg_argon2_compress = sym super::argon2::vg_argon2_compress::vg_argon2_compress,
+        vg_blake2b_init = sym crate::blake2b::raw::vg_blake2b_init,
+        vg_blake2b_update_scratch = sym crate::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
+        vg_blake2b_finalize_scratch = sym crate::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
+        vg_argon2_hprime = sym crate::argon2::vg_argon2_hprime::vg_argon2_hprime,
+        vg_argon2_compress = sym crate::argon2::vg_argon2_compress::vg_argon2_compress,
     )
+}
 }
 
 #[rustfmt::skip]

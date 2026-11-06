@@ -171,6 +171,7 @@ impl AesCfb8Decryptor {
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -186,7 +187,7 @@ impl Key {
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature, and
         // `select` chose `expand` for the CPU's features.
-        unsafe { expand(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { expand(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -198,6 +199,7 @@ impl Key {
     /// replaces with the one to continue from: its last `16 - n` bytes
     /// followed by the last `n` (up to 16) ciphertext bytes.
     fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let f = instance!(
             self.backend,
             vg_aes_cfb8_encrypt,
@@ -205,13 +207,14 @@ impl Key {
             vg_aes_cfb8_encrypt_vaes,
             vg_aes_cfb8_encrypt_aes
         );
-        self.crypt(iv, buffer, f);
+        self.crypt(dit, iv, buffer, f);
     }
 
     /// Decrypts `buffer` in place, from the input block `iv`, which it
     /// replaces with the one to continue from: its last `16 - n` bytes
     /// followed by the last `n` (up to 16) ciphertext bytes.
     fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let f = instance!(
             self.backend,
             vg_aes_cfb8_decrypt,
@@ -219,10 +222,10 @@ impl Key {
             vg_aes_cfb8_decrypt_vaes,
             vg_aes_cfb8_decrypt_aes
         );
-        self.crypt(iv, buffer, f);
+        self.crypt(dit, iv, buffer, f);
     }
 
-    fn crypt(&self, iv: &mut [u8; 16], buffer: &mut [u8], f: Cfb8) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 16], buffer: &mut [u8], f: Cfb8) {
         let mut scratch = [0; 272];
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; `buffer`, the block at `iv`, the schedule and the
@@ -230,6 +233,7 @@ impl Key {
         // signature. `select` chose `f` for the CPU's features.
         unsafe {
             f(
+                dit,
                 &self.schedule,
                 self.rounds,
                 iv,
@@ -246,7 +250,8 @@ impl Key {
 
 /// The signature of `vg_aes_cfb8_encrypt` and `vg_aes_cfb8_decrypt`.
 #[cfg(target_arch = "x86_64")]
-type Cfb8 = unsafe extern "sysv64" fn(
+type Cfb8 = unsafe fn(
+    crate::dit::Dit<'_>,
     *const [u8; 240],
     usize,
     *mut [u8; 16],
@@ -262,8 +267,15 @@ type Cfb8 = unsafe extern "sysv64" fn(
     target_arch = "powerpc64",
     target_arch = "riscv64"
 ))]
-type Cfb8 =
-    unsafe extern "C" fn(*const [u8; 240], usize, *mut [u8; 16], *mut u8, usize, *mut [u64; 272]);
+type Cfb8 = unsafe fn(
+    crate::dit::Dit<'_>,
+    *const [u8; 240],
+    usize,
+    *mut [u8; 16],
+    *mut u8,
+    usize,
+    *mut [u64; 272],
+);
 
 impl Drop for Key {
     fn drop(&mut self) {

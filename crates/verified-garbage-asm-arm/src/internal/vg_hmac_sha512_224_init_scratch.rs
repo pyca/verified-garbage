@@ -197,7 +197,7 @@ ldr r10, [r11, #296]
 ldr lr, [r11, #300]
 ldr r11, [r11, #304]
 bx lr",
-        vg_sha512_224_init = sym crate::sha512::vg_sha512_224_init,
+        vg_sha512_224_init = sym crate::sha512::raw::vg_sha512_224_init,
         vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }

@@ -24,9 +24,41 @@ machine code that runs is exactly the code that was verified (plus the
 final `ret` from the printer). The functions of each target are a crate
 of their own, `verified-garbage-asm-<target>` (`crateDir`, under `crates/`;
 its `Cargo.toml` is written by hand), one file `<module>.rs` per `module`,
-in its `src/` (`codeDir`), compiled only under the target's `cfg` (`targetRoot`), whose
-items are therefore `pub`. The library depends on the crate of the target
+in its `src/` (`codeDir`), compiled only under the target's `cfg` (`targetRoot`).
+The library depends on the crate of the target
 it is built for and names it `crate::arch` (`Cargo.toml`, `src/lib.rs`).
+
+The naked functions are in a module `raw` of their module, `pub(crate)`:
+only the crate's generated code names them (the `sym` operands of their
+callers, and `fn_tables`, which need their addresses). What the crate
+exports is, for each artifact, a function of the same name that takes a
+token, `verified_garbage_cpu::Dit`, before the naked function's parameters,
+and only calls the naked function with those parameters (`wrapper`):
+
+```rust
+/// <the artifact's documentation, as the naked function had it>
+#[inline(always)]
+pub unsafe fn <name>(_dit: verified_garbage_cpu::Dit<'_>, <params>) -> <ret> {
+    unsafe { raw::<name>(<the params' names>) }
+}
+
+pub(crate) mod raw {
+    #[unsafe(naked)]
+    pub(crate) unsafe extern "<abi>" fn <name><sig> { … }
+}
+```
+
+The token proves nothing to the model and changes no code that runs: the
+wrapper is inlined into its caller, which then calls the naked function as
+it would have, with the same arguments in the same registers. It is for the
+Rust that calls the verified code. The leakage model assumes that the
+data-independent-time instructions take time independent of their data,
+which Arm guarantees only while PSTATE.DIT is on (`TCB/AArch64/Isa.lean`),
+and a `Dit` can only be made by the code that turns it on
+(`src/dit.rs`), or by an `unsafe` assertion that the call needs no such
+guarantee (all of its inputs are public): so the compiler checks that every
+path into the verified code, by name or through a function pointer, starts
+where data independent timing was seen to.
 
 The functions are in crates of their own, rather than modules of the
 library, for the time it takes to compile them: rustc puts naked functions
@@ -776,9 +808,46 @@ def asmOf (T : EmitTarget) (body : List Line) (moduleOf : String → String) (ro
 
 /-- The text of `a`'s function after its name, given `a`'s printed code
 `lines`: its signature and its body, the `naked_asm!` of its code
-(`function`, `asmOf`). -/
+(`function`, `asmOf`), whose `sym` operands name their functions and tables
+from the crate's root (`moduleOf` gives the module, `raw` included). -/
 def codeOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : String :=
-  s!"{a.sig.rust} " ++ "{\n" ++ asmOf a.target (bodyOf a lines) moduleOf "super" ++ "}\n"
+  s!"{a.sig.rust} " ++ "{\n" ++ asmOf a.target (bodyOf a lines) moduleOf "crate" ++ "}\n"
+
+/-- The token every public function takes first (`wrapper`): proof that the
+caller has seen to data independent timing on its thread. -/
+def ditParam : String := "_dit: verified_garbage_cpu::Dit<'_>"
+
+/-- The signature of `a`'s public function (`wrapper`): the token
+(`ditParam`), then the parameters and result of its naked function. -/
+def wrapperSig (sig : Sig) : String :=
+  "(" ++ ", ".intercalate (ditParam :: sig.params.map fun p => p.2.rust p.1) ++ ")" ++
+    match sig.ret with
+    | none => ""
+    | some ty => s!" -> {ty.rust}"
+
+/-- The names of the Rust parameters of the parameter `name` (`Param.rust`):
+a slice's pointer and length, a list of slices' pointer and count, else
+`name`. -/
+def argNames (name : String) : Param → List String
+  | .slice _ _ len => [name, len]
+  | .slices _ count => [name, count]
+  | _ => [name]
+
+/-- `a`'s public function: under its name, the token (`ditParam`) and then
+the naked function's parameters, passed on unchanged to the naked function
+`raw::<name>`, whose result it returns. It does nothing else, and is inlined
+into its caller (`#[inline(always)]`), so the code that runs is the naked
+function's. -/
+def wrapper (a : Artifact) : String :=
+  let args := a.sig.params.flatMap fun p => argNames p.1 p.2
+  -- Clippy's `too_many_arguments`, which does not apply to the naked
+  -- function (an `extern` one), allowed for the token and its parameters.
+  (if args.length + 1 > 7 then "#[allow(clippy::too_many_arguments)]\n" else "") ++
+  "#[inline(always)]\n" ++
+  s!"pub unsafe fn {a.name}{wrapperSig a.sig} " ++ "{\n" ++
+  "    // SAFETY: the caller's obligations, which are this function's: it only calls the naked\n" ++
+  "    // function with the same arguments.\n" ++
+  s!"    unsafe \{ raw::{a.name}({", ".intercalate args}) }\n" ++ "}\n"
 
 /-- Clippy's `missing_safety_doc`, which asks every `pub unsafe fn` for a
 `# Safety` section, allowed for a function whose documentation `doc` has
@@ -787,21 +856,18 @@ not: its contract asks nothing of the caller); nothing for any other. -/
 def safetyAllow (doc : String) : String :=
   if (doc.splitOn "# Safety\n").length > 1 then "" else "#[allow(clippy::missing_safety_doc)]\n"
 
-/-- One artifact as a Rust naked function; `moduleOf` gives the module of
-each function it calls. The printer's `funcAlign` comes after the return
-(`Printer.function`) and any directives that follow it, and only the
-target's closing `funcOptions` after that, which close what its opening
-ones, the first lines, opened. -/
+/-- One artifact as Rust: its public function (`function.exported`), and then
+its naked function (`function.naked`), as its module's `raw` module holds
+it; `moduleOf` gives the module of each function it calls. The printer's
+`funcAlign` comes after the return (`Printer.function`) and any directives
+that follow it, and only the target's closing `funcOptions` after that,
+which close what its opening ones, the first lines, opened. -/
 def function (a : Artifact) (moduleOf : String → String) : String :=
-  functionOf a (a.target.printer.function a.code) moduleOf
+  exported a ++ "\n" ++ naked a (codeOf a (a.target.printer.function a.code) moduleOf)
 where
-  /-- `function a`, given `a`'s printed code `lines`
-  (`a.target.printer.function a.code`). -/
-  functionOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : String :=
-  withCode a (codeOf a lines moduleOf)
-  /-- `function a`, given the text of its function after its name, `code`
-  (`codeOf`). -/
-  withCode (a : Artifact) (code : String) : String :=
+  /-- `a`'s constants, documentation and public function (`wrapper`), at the
+  top of its module. -/
+  exported (a : Artifact) : String :=
   let gate := gateOf a
   let doc := fullDoc a
   featuresConst a.name gate a.features ++
@@ -809,8 +875,16 @@ where
   docComment "" doc ++
   gate ++
   safetyAllow doc ++
+  wrapper a
+  /-- `a`'s naked function, in its module's `raw` module, given the text of
+  its function after its name, `code` (`codeOf`): `pub(crate)`, so that only
+  its public function and the generated code of the crate (the `sym`
+  operands of its callers, `fn_tables`) name it. -/
+  naked (a : Artifact) (code : String) : String :=
+  s!"/// The verified code of [`super::{a.name}`], which calls it.\n" ++
+  gateOf a ++
   "#[unsafe(naked)]\n" ++
-  s!"pub unsafe extern \"{a.target.rustAbi}\" fn {a.name}" ++ code
+  s!"pub(crate) unsafe extern \"{a.target.rustAbi}\" fn {a.name}" ++ code
 
 /-- What makes two functions of a module the same function: their `cfg`
 attribute, calling convention, signature and body (`gateOf`, `codeOf`),
@@ -836,6 +910,13 @@ def alias (a : Artifact) (canon : String) : String :=
   gate ++
   "#[allow(unused_imports)]\n" ++
   s!"pub use self::{canon} as {a.name};\n"
+where
+  /-- The same, in the module's `raw` module: its naked function, as `a`'s
+  name. -/
+  naked (a : Artifact) (canon : String) : String :=
+  gateOf a ++
+  "#[allow(unused_imports)]\n" ++
+  s!"pub(crate) use self::{canon} as {a.name};\n"
 
 /-- The tables of constants of `a`: those its contract gives it
 (`Artifact.consts`) and those its instructions carry (`Printer.codeTables`,
@@ -943,12 +1024,18 @@ def moduleItems (moduleOf : Artifact → String → String) (ps : List Prepared)
         | none => some p.art.name) |>.getD ""
   items.map fun (p, code, h, key) => (p, code, canon h key)
 
-/-- The text of the functions of a module (`moduleItems`): each as `function`
-writes it, if it is emitted as itself, else the `alias` of the function it
-is emitted as. -/
+/-- The text of the functions of a module (`moduleItems`): each one's public
+part, as `function.exported` writes it if it is emitted as itself, else the
+`alias` of the function it is emitted as; then the module `raw`, which holds
+their naked functions (`function.naked`, `alias.naked`). -/
 def moduleText (items : List (Prepared × String × String)) : String :=
+  String.join (items.map fun (p, _, c) =>
+    "\n" ++ if c == p.art.name then function.exported p.art else alias p.art c) ++
+  "\n/// The naked functions of this module's verified code, which only its public functions \
+    and the crate's generated code name.\npub(crate) mod raw {\n" ++
   String.join (items.map fun (p, code, c) =>
-    "\n" ++ if c == p.art.name then function.withCode p.art code else alias p.art c)
+    "\n" ++ if c == p.art.name then function.naked p.art code else alias.naked p.art c) ++
+  "}\n"
 
 /-- The assembly file of the functions of a module (`moduleItems`), which the
 crate does not compile: each function emitted as itself as its name, then
@@ -1686,7 +1773,7 @@ def files (as : List Artifact) : Except String (List (String × String)) := do
   forMPar as checkWritten
   return render ps hs fun t n =>
     match as.find? fun b => b.target.name == t && b.name == n with
-    | some b => b.module
+    | some b => b.module ++ "::raw"
     | none => ((internal? hs t n).map internalModule).getD ""
 
 end VG.Rust

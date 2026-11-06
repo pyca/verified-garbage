@@ -135,6 +135,7 @@ mod tests {
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn selftest_add_x86_64() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let cases = [
             (0, 0),
             (1, 2),
@@ -145,7 +146,7 @@ mod tests {
         ];
         for (a, b) in cases {
             // SAFETY: the contract has no preconditions.
-            let r = unsafe { crate::arch::selftest::vg_selftest_add(a, b) };
+            let r = unsafe { crate::arch::selftest::vg_selftest_add(dit, a, b) };
             assert_eq!(r, a.wrapping_add(b));
         }
     }

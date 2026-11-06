@@ -14,12 +14,11 @@ pub const VG_DIT_ENTER_FEATURES: verified_garbage_cpu::Features = verified_garba
 ///
 ///
 /// * The CPU must support the `dit` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_dit_enter() -> u32 {
-    core::arch::naked_asm!(
-        r".inst 0xd53b42a0,0xd358fc00,0xd503415f,0xd65f03c0
-.p2align 6",
-    )
+#[inline(always)]
+pub unsafe fn vg_dit_enter(_dit: verified_garbage_cpu::Dit<'_>) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dit_enter() }
 }
 
 /// The CPU features `vg_dit_clear` requires (`Artifact.features`).
@@ -33,10 +32,31 @@ pub const VG_DIT_CLEAR_FEATURES: verified_garbage_cpu::Features = verified_garba
 ///
 ///
 /// * The CPU must support the `dit` target feature.
+#[inline(always)]
+pub unsafe fn vg_dit_clear(_dit: verified_garbage_cpu::Dit<'_>) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_dit_clear() }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_dit_enter`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dit_clear() {
+pub(crate) unsafe extern "C" fn vg_dit_enter() -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd53b42a0,0xd358fc00,0xd503415f,0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// The verified code of [`super::vg_dit_clear`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_dit_clear() {
     core::arch::naked_asm!(
         r".inst 0xd503405f,0xd65f03c0
 .p2align 6",
     )
+}
 }

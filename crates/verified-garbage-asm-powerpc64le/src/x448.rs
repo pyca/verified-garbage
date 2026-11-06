@@ -16,14 +16,11 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4AACBOSgAbPg="
-bl {vg_x448}
-.base64 "AACBOSgAjOkAAGA5AABMiXhTa30BAEyJeFNrfQIATIl4U2t9AwBMiXhTa30EAEyJeFNrfQUATIl4U2t9BgBMiXhTa30HAEyJeFNrfQgATIl4U2t9CQBMiXhTa30KAEyJeFNrfQsATIl4U2t9DABMiXhTa30NAEyJeFNrfQ4ATIl4U2t9DwBMiXhTa30QAEyJeFNrfREATIl4U2t9EgBMiXhTa30TAEyJeFNrfRQATIl4U2t9FQBMiXhTa30WAEyJeFNrfRcATIl4U2t9GABMiXhTa30ZAEyJeFNrfRoATIl4U2t9GwBMiXhTa30cAEyJeFNrfR0ATIl4U2t9HgBMiXhTa30fAEyJeFNrfSAATIl4U2t9IQBMiXhTa30iAEyJeFNrfSMATIl4U2t9JABMiXhTa30lAEyJeFNrfSYATIl4U2t9JwBMiXhTa30oAEyJeFNrfSkATIl4U2t9KgBMiXhTa30rAEyJeFNrfSwATIl4U2t9LQBMiXhTa30uAEyJeFNrfS8ATIl4U2t9MABMiXhTa30xAEyJeFNrfTIATIl4U2t9MwBMiXhTa300AEyJeFNrfTUATIl4U2t9NgBMiXhTa303AEyJeFNrff//azngD2N5AQBAOXhSY3wgAAHoMAAhOKYDCHwgAIBO""#,
-        vg_x448 = sym super::x448::vg_x448::vg_x448,
-    )
+#[inline(always)]
+pub unsafe fn vg_x448_exchange(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x448_exchange(out, scalar, point, scratch) }
 }
 
 /// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
@@ -38,8 +35,30 @@ bl {vg_x448}
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_x448_base(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x448_base(out, scalar, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_x448_exchange`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "pgIIfNH/IfggAAH4AACBOSgAbPg="
+bl {vg_x448}
+.base64 "AACBOSgAjOkAAGA5AABMiXhTa30BAEyJeFNrfQIATIl4U2t9AwBMiXhTa30EAEyJeFNrfQUATIl4U2t9BgBMiXhTa30HAEyJeFNrfQgATIl4U2t9CQBMiXhTa30KAEyJeFNrfQsATIl4U2t9DABMiXhTa30NAEyJeFNrfQ4ATIl4U2t9DwBMiXhTa30QAEyJeFNrfREATIl4U2t9EgBMiXhTa30TAEyJeFNrfRQATIl4U2t9FQBMiXhTa30WAEyJeFNrfRcATIl4U2t9GABMiXhTa30ZAEyJeFNrfRoATIl4U2t9GwBMiXhTa30cAEyJeFNrfR0ATIl4U2t9HgBMiXhTa30fAEyJeFNrfSAATIl4U2t9IQBMiXhTa30iAEyJeFNrfSMATIl4U2t9JABMiXhTa30lAEyJeFNrfSYATIl4U2t9JwBMiXhTa30oAEyJeFNrfSkATIl4U2t9KgBMiXhTa30rAEyJeFNrfSwATIl4U2t9LQBMiXhTa30uAEyJeFNrfS8ATIl4U2t9MABMiXhTa30xAEyJeFNrfTIATIl4U2t9MwBMiXhTa300AEyJeFNrfTUATIl4U2t9NgBMiXhTa303AEyJeFNrff//azngD2N5AQBAOXhSY3wgAAHoMAAhOKYDCHwgAIBO""#,
+        vg_x448 = sym crate::x448::vg_x448::vg_x448,
+    )
+}
+
+/// The verified code of [`super::vg_x448_base`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "AADFOAUA4DgAAAA5AADmkKgA5pAEAAaRCAAGkQwABpEQAAaRFAAGkRgABpEcAAaRIAAGkSQABpEoAAaRLAAGkTAABpE0AAaRrAAGkbAABpG0AAaRuAAGkbwABpHAAAaRxAAGkcgABpHMAAaR0AAGkdQABpHYAAaR3AAGkQEA4DgAAAA5AACgOKmYpWA4AOaQcAAGkeAA5pAQA6aQPAAGkUAABpFEAAaRSAAGkUwABpFQAAaRVAAGkVgABpFcAAaRYAAGkWQABpFoAAaRbAAGkXQABpF4AAaRfAAGkYAABpGEAAaRiAAGkYwABpGQAAaRlAAGkZgABpGcAAaRoAAGkaQABpHkAAaR6AAGkewABpHwAAaR9AAGkfgABpH8AAaRAAEGkQQBBpEIAQaRDAEGkRABBpEUAQaRFAMGkRgDBpEcAwaRIAMGkSQDBpEoAwaRLAMGkTADBpE0AwaROAMGkTwDBpFAAwaRRAMGkQAAJjk4AGA5"
 20:
@@ -118,6 +137,7 @@ bne %cr0, 212b
 bne %cr0, 219b
 .base64 "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""#,
     )
+}
 }
 
 #[rustfmt::skip]

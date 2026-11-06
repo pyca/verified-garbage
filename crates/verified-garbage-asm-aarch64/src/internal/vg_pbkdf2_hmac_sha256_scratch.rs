@@ -76,7 +76,7 @@ b 25f
 25:
 .inst 0xf941a2f3,0xf941a6f4,0xf941aaf5,0xf941aef6,0xf941b2f8,0xf941b6fe,0xf941baf7,0xd65f03c0
 .p2align 6",
-        vg_sha256_init = sym crate::sha256::vg_sha256_init,
+        vg_sha256_init = sym crate::sha256::raw::vg_sha256_init,
         vg_sha256_update_scratch = sym crate::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym crate::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha256_init_scratch = sym crate::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,

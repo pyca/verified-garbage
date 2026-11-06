@@ -41,8 +41,51 @@ use crate::cpu::detected;
 use crate::entropy::{self, Step, Stop};
 use verified_garbage_cpu::Features;
 
+/// An implementation and its name, which the tests compare: the address of
+/// a generated function is not unique, as its public function is inlined
+/// into each caller (`core::ptr::fn_addr_eq`).
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    )
+))]
+pub(super) type Named = (Search, &'static str);
+
+/// The implementation `$f`, with its name (`Named`).
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )
+    )
+))]
+macro_rules! named {
+    ($f:ident) => {
+        ($f as Search, stringify!($f))
+    };
+}
+
 #[cfg(target_arch = "x86_64")]
-pub(super) type Search = unsafe extern "sysv64" fn(
+pub(super) type Search = unsafe fn(
+    crate::dit::Dit<'_>,
     *mut u8,
     usize,
     *mut [u64; 1],
@@ -61,6 +104,7 @@ pub(super) fn select(features: Features) -> Search {
         Sha256Backend::select(features),
         features.contains(VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES),
     )
+    .0
 }
 
 #[cfg(target_arch = "x86_64")]
@@ -68,28 +112,33 @@ pub(super) fn select_backends(
     sha1: crate::hashes::sha1::Sha1Backend,
     sha256: crate::hashes::sha256::Sha256Backend,
     adx: bool,
-) -> Search {
+) -> Named {
     use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
     // Match the hashes' enums exhaustively so a new hash backend reaches
     // parameter generation.
     match (sha1, sha256, adx) {
-        (H1::Scalar, H256::Scalar, false) => vg_dsa_parameter_search,
-        (H1::Scalar, H256::Scalar, true) => vg_dsa_parameter_search_mr_adx,
-        (H1::Scalar, H256::Avx2, false) => vg_dsa_parameter_search_sha256_avx2,
-        (H1::Scalar, H256::Avx2, true) => vg_dsa_parameter_search_sha256_avx2_mr_adx,
-        (H1::Scalar, H256::ShaNi, false) => vg_dsa_parameter_search_sha256_shani,
-        (H1::Scalar, H256::ShaNi, true) => vg_dsa_parameter_search_sha256_shani_mr_adx,
-        (H1::ShaNi, H256::Scalar, false) => vg_dsa_parameter_search_sha1_shani,
-        (H1::ShaNi, H256::Scalar, true) => vg_dsa_parameter_search_sha1_shani_mr_adx,
-        (H1::ShaNi, H256::Avx2, false) => vg_dsa_parameter_search_sha1_shani_sha256_avx2,
-        (H1::ShaNi, H256::Avx2, true) => vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx,
-        (H1::ShaNi, H256::ShaNi, false) => vg_dsa_parameter_search_sha1_shani_sha256_shani,
-        (H1::ShaNi, H256::ShaNi, true) => vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx,
+        (H1::Scalar, H256::Scalar, false) => named!(vg_dsa_parameter_search),
+        (H1::Scalar, H256::Scalar, true) => named!(vg_dsa_parameter_search_mr_adx),
+        (H1::Scalar, H256::Avx2, false) => named!(vg_dsa_parameter_search_sha256_avx2),
+        (H1::Scalar, H256::Avx2, true) => named!(vg_dsa_parameter_search_sha256_avx2_mr_adx),
+        (H1::Scalar, H256::ShaNi, false) => named!(vg_dsa_parameter_search_sha256_shani),
+        (H1::Scalar, H256::ShaNi, true) => named!(vg_dsa_parameter_search_sha256_shani_mr_adx),
+        (H1::ShaNi, H256::Scalar, false) => named!(vg_dsa_parameter_search_sha1_shani),
+        (H1::ShaNi, H256::Scalar, true) => named!(vg_dsa_parameter_search_sha1_shani_mr_adx),
+        (H1::ShaNi, H256::Avx2, false) => named!(vg_dsa_parameter_search_sha1_shani_sha256_avx2),
+        (H1::ShaNi, H256::Avx2, true) => {
+            named!(vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx)
+        }
+        (H1::ShaNi, H256::ShaNi, false) => named!(vg_dsa_parameter_search_sha1_shani_sha256_shani),
+        (H1::ShaNi, H256::ShaNi, true) => {
+            named!(vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx)
+        }
     }
 }
 
 #[cfg(target_arch = "powerpc64")]
-pub(super) type Search = unsafe extern "C" fn(
+pub(super) type Search = unsafe fn(
+    crate::dit::Dit<'_>,
     *mut u8,
     usize,
     *mut [u64; 1],
@@ -112,7 +161,8 @@ pub(super) fn select(features: Features) -> Search {
 }
 
 #[cfg(target_arch = "x86")]
-pub(super) type Search = unsafe extern "C" fn(
+pub(super) type Search = unsafe fn(
+    crate::dit::Dit<'_>,
     *mut u8,
     usize,
     *mut [u64; 1],
@@ -130,26 +180,28 @@ pub(super) fn select(features: Features) -> Search {
         Sha1Backend::select(features),
         Sha256Backend::select(features),
     )
+    .0
 }
 
 #[cfg(target_arch = "x86")]
 pub(super) fn select_backends(
     sha1: crate::hashes::sha1::Sha1Backend,
     sha256: crate::hashes::sha256::Sha256Backend,
-) -> Search {
+) -> Named {
     use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
     // Match the hashes' enums exhaustively so a new hash backend reaches
     // parameter generation.
     match (sha1, sha256) {
-        (H1::Scalar, H256::Scalar) => vg_dsa_parameter_search,
-        (H1::Scalar, H256::ShaNi) => vg_dsa_parameter_search_sha256_shani,
-        (H1::ShaNi, H256::Scalar) => vg_dsa_parameter_search_sha1_shani,
-        (H1::ShaNi, H256::ShaNi) => vg_dsa_parameter_search_sha1_shani_sha256_shani,
+        (H1::Scalar, H256::Scalar) => named!(vg_dsa_parameter_search),
+        (H1::Scalar, H256::ShaNi) => named!(vg_dsa_parameter_search_sha256_shani),
+        (H1::ShaNi, H256::Scalar) => named!(vg_dsa_parameter_search_sha1_shani),
+        (H1::ShaNi, H256::ShaNi) => named!(vg_dsa_parameter_search_sha1_shani_sha256_shani),
     }
 }
 
 #[cfg(target_arch = "aarch64")]
-pub(super) type Search = unsafe extern "C" fn(
+pub(super) type Search = unsafe fn(
+    crate::dit::Dit<'_>,
     *mut u8,
     usize,
     *mut [u64; 1],
@@ -167,26 +219,28 @@ pub(super) fn select(features: Features) -> Search {
         Sha1Backend::select(features),
         Sha256Backend::select(features),
     )
+    .0
 }
 
 #[cfg(target_arch = "aarch64")]
 pub(super) fn select_backends(
     sha1: crate::hashes::sha1::Sha1Backend,
     sha256: crate::hashes::sha256::Sha256Backend,
-) -> Search {
+) -> Named {
     use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
     // Match the hashes' enums exhaustively so a new hash backend reaches
     // parameter generation.
     match (sha1, sha256) {
-        (H1::Scalar, H256::Scalar) => vg_dsa_parameter_search,
-        (H1::Scalar, H256::Sha2) => vg_dsa_parameter_search_sha256_sha2,
-        (H1::Sha2, H256::Scalar) => vg_dsa_parameter_search_sha1_sha2,
-        (H1::Sha2, H256::Sha2) => vg_dsa_parameter_search_sha1_sha2_sha256_sha2,
+        (H1::Scalar, H256::Scalar) => named!(vg_dsa_parameter_search),
+        (H1::Scalar, H256::Sha2) => named!(vg_dsa_parameter_search_sha256_sha2),
+        (H1::Sha2, H256::Scalar) => named!(vg_dsa_parameter_search_sha1_sha2),
+        (H1::Sha2, H256::Sha2) => named!(vg_dsa_parameter_search_sha1_sha2_sha256_sha2),
     }
 }
 
 #[cfg(target_arch = "arm")]
-pub(super) type Search = unsafe extern "C" fn(
+pub(super) type Search = unsafe fn(
+    crate::dit::Dit<'_>,
     *mut u8,
     usize,
     *mut [u64; 1],
@@ -211,6 +265,21 @@ pub(super) type Search = unsafe extern "C" fn(
     )
 ))]
 pub(super) fn select(features: Features) -> Search {
+    select_named(features).0
+}
+
+/// [`select`], with the implementation's name (`Named`).
+#[cfg(all(
+    target_arch = "arm",
+    any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )
+))]
+pub(super) fn select_named(features: Features) -> Named {
     use crate::arch::dsa::VG_DSA_PARAMETER_SEARCH_UMAAL_FEATURES;
     select_backends(features.contains(VG_DSA_PARAMETER_SEARCH_UMAAL_FEATURES))
 }
@@ -225,11 +294,11 @@ pub(super) fn select(features: Features) -> Search {
         target_os = "openbsd"
     )
 ))]
-pub(super) fn select_backends(umaal: bool) -> Search {
+pub(super) fn select_backends(umaal: bool) -> Named {
     use crate::arch::dsa::vg_dsa_parameter_search_umaal;
     match umaal {
-        false => vg_dsa_parameter_search,
-        true => vg_dsa_parameter_search_umaal,
+        false => named!(vg_dsa_parameter_search),
+        true => named!(vg_dsa_parameter_search_umaal),
     }
 }
 
@@ -256,10 +325,10 @@ struct Searcher {
 }
 
 impl Searcher {
-    fn new(p_len: usize, q_len: usize) -> Self {
+    fn new(dit: crate::dit::Dit<'_>, p_len: usize, q_len: usize) -> Self {
         let mut state = [0u64; 4];
         // SAFETY: `state` is four writable words of its own.
-        let ok = unsafe { vg_dsa_parameter_search_init(&mut state, p_len) };
+        let ok = unsafe { vg_dsa_parameter_search_init(dit, &mut state, p_len) };
         // The caller chose one of the three supported widths.
         assert_eq!(ok, 1);
         Self {
@@ -271,7 +340,7 @@ impl Searcher {
     }
 
     /// One call on `tape`: the status and the octets consumed.
-    fn run(&mut self, tape: &[u8]) -> (u32, usize) {
+    fn run(&mut self, dit: crate::dit::Dit<'_>, tape: &[u8]) -> (u32, usize) {
         assert!(tape.len() <= self.state[2] as usize);
         let mut used = [0u64; 1];
         // SAFETY: `state` came from `vg_dsa_parameter_search_init` or the
@@ -281,6 +350,7 @@ impl Searcher {
         // checked the CPU features.
         let status = unsafe {
             (self.search)(
+                dit,
                 self.packed.as_mut_ptr(),
                 self.packed.len(),
                 &mut used,
@@ -298,13 +368,14 @@ impl Searcher {
 /// `p || q || g` for the widths `p_len` and `q_len`, from the random octets
 /// `random` supplies, refilled as the search asks.
 pub(super) fn generate(
+    dit: crate::dit::Dit<'_>,
     p_len: usize,
     q_len: usize,
     random: impl FnMut(&mut [u8]) -> Result<(), Error>,
 ) -> Result<Vec<u8>, Error> {
-    let mut searcher = Searcher::new(p_len, q_len);
+    let mut searcher = Searcher::new(dit, p_len, q_len);
     entropy::serve(searcher.state[3] as usize, random, |tape| {
-        match searcher.run(tape) {
+        match searcher.run(dit, tape) {
             (1, _) => Step::Done,
             (0, used) => Step::More {
                 used,

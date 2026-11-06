@@ -162,6 +162,7 @@ fn check(nonce: &[u8]) -> Result<(), Error> {
 impl AesOcb {
     /// Prepares `key`, which must be 16, 24 or 32 bytes long.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -183,7 +184,7 @@ impl AesOcb {
         // the return address on the stack or the stack below it, and neither
         // wraps around the end of the address space. The CPU has the features
         // of the implementation selected.
-        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
+        unsafe { init(dit, key.as_ptr(), key.len(), &mut k.ctx) };
         Ok(k)
     }
 
@@ -201,6 +202,7 @@ impl AesOcb {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<[u8; T], Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(T);
         check(nonce)?;
         let seal = instance!(
@@ -223,6 +225,7 @@ impl AesOcb {
         // space. The CPU has the features of the implementation selected.
         unsafe {
             seal(
+                dit,
                 &self.ctx,
                 self.rounds,
                 nonce.as_ptr(),
@@ -251,6 +254,7 @@ impl AesOcb {
         data: &mut [u8],
         tag: &[u8; T],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(T);
         check(nonce)?;
         let open = instance!(
@@ -265,6 +269,7 @@ impl AesOcb {
         // `data`, a unique one, does not overlap.
         let ok = unsafe {
             open(
+                dit,
                 &self.ctx,
                 self.rounds,
                 nonce.as_ptr(),

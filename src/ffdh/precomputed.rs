@@ -13,11 +13,17 @@ use alloc::sync::Arc;
 pub(super) struct Precomputed(Arc<[u64]>);
 
 impl Precomputed {
-    pub(super) fn new(domain: &[u8], p_len: usize, scratch: &mut [u64]) -> Self {
-        Self::new_with_backend(domain, p_len, scratch, Backend::ffdh(detected()))
+    pub(super) fn new(
+        dit: crate::dit::Dit<'_>,
+        domain: &[u8],
+        p_len: usize,
+        scratch: &mut [u64],
+    ) -> Self {
+        Self::new_with_backend(dit, domain, p_len, scratch, Backend::ffdh(detected()))
     }
 
     pub(super) fn new_with_backend(
+        dit: crate::dit::Dit<'_>,
         domain: &[u8],
         p_len: usize,
         scratch: &mut [u64],
@@ -38,6 +44,7 @@ impl Precomputed {
         // selection ensures the CPU has the generated function's features.
         let ok = unsafe {
             f(
+                dit,
                 words.as_mut_ptr(),
                 words.len(),
                 domain.as_ptr(),

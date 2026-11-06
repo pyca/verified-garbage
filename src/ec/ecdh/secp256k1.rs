@@ -19,7 +19,7 @@ use crate::ec::secp256k1::Mul;
 use crate::zeroize::zeroize;
 
 impl Exchange for Secp256k1 {
-    fn exchange(d: &[u8; 32], peer: &[u8; 65]) -> Option<[u8; 32]> {
+    fn exchange(dit: crate::dit::Dit<'_>, d: &[u8; 32], peer: &[u8; 65]) -> Option<[u8; 32]> {
         let mut out = [0; 32];
         let mut scratch = [0u64; 1024];
         let ok = match Mul::select(detected()) {
@@ -29,11 +29,11 @@ impl Exchange for Secp256k1 {
             // are distinct objects from each other and the others, so none
             // overlaps another or the call's stack frame, and, as Rust
             // objects, none wraps around the address space.
-            Mul::Baseline => unsafe { vg_ecdh_secp256k1(&mut out, d, peer, &mut scratch) },
+            Mul::Baseline => unsafe { vg_ecdh_secp256k1(dit, &mut out, d, peer, &mut scratch) },
             // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
             // (`Mul::select`).
             #[cfg(target_arch = "arm")]
-            Mul::Umaal => unsafe { vg_ecdh_secp256k1_umaal(&mut out, d, peer, &mut scratch) },
+            Mul::Umaal => unsafe { vg_ecdh_secp256k1_umaal(dit, &mut out, d, peer, &mut scratch) },
         };
         zeroize(&mut scratch);
         (ok == 1).then_some(out)

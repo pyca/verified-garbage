@@ -105,8 +105,16 @@ pub const VG_TEST_WRITTEN_BUF_WRITTEN: usize = 8;
 /// * None.
 /// * `buf` and `other` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `buf`, `other` and `key` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_test_written(_dit: verified_garbage_cpu::Dit<'_>, buf: *mut [u64; 4], other: *mut [u8; 16], key: *const [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_test_written(buf, other, key) }
+}
+
+/// The verified code of [`super::vg_test_written`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern \"C\" fn vg_test_written(buf: *mut [u64; 4], other: *mut [u8; 16], key: *const [u8; 32]) {
+pub(crate) unsafe extern \"C\" fn vg_test_written(buf: *mut [u64; 4], other: *mut [u8; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
         r\".inst 0xd65f03c0
 .p2align 6\",

@@ -14,8 +14,53 @@
 /// * `key_len` must be in 4..=56.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_blowfish_expand_key(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blowfish_expand_key(key, key_len, schedule) }
+}
+
+/// Blowfish ECB encryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_blowfish_ecb_encrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blowfish_ecb_encrypt(schedule, data, n) }
+}
+
+/// Blowfish ECB decryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_blowfish_ecb_decrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blowfish_ecb_decrypt(schedule, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_blowfish_expand_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blowfish_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
+pub(crate) unsafe extern "C" fn vg_blowfish_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
     core::arch::naked_asm!(
         r".inst 0xd2800806,0x4e010cc2,0xd2801006,0x4e010cc3",
         concat!("adrp x9, ", vg_sym_page!("{VG_BLOWFISH_INIT}")),
@@ -179,22 +224,13 @@ cbnz x15, 210b
 .inst 0x4e080c08,0x4e080c29,0x4e080c6a,0x4e080c8b,0x4e080d6c,0x4e080e0d,0x4e080e2e,0x4ebb1f6f
 .inst 0xd65f03c0
 .p2align 6",
-        VG_BLOWFISH_INIT = sym super::consts::VG_BLOWFISH_INIT,
+        VG_BLOWFISH_INIT = sym crate::consts::VG_BLOWFISH_INIT,
     )
 }
 
-/// Blowfish ECB encryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 4168 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_blowfish_ecb_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blowfish_ecb_encrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_blowfish_ecb_encrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10403ff,0x910003e3,0x3d802068,0x3d802469,0x3d80286a,0x3d802c6b,0x3d80306c,0x3d80346d
 .inst 0x3d80386e,0x3d803c6f,0xd2800806,0x4e010cc2,0xd2801006,0x4e010cc3,0xd344fc48
@@ -445,18 +481,9 @@ b 25f
     )
 }
 
-/// Blowfish ECB decryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 4168 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_blowfish_ecb_decrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_blowfish_ecb_decrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_blowfish_ecb_decrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r".inst 0xd10403ff,0x910003e3,0x3d802068,0x3d802469,0x3d80286a,0x3d802c6b,0x3d80306c,0x3d80346d
 .inst 0x3d80386e,0x3d803c6f,0xd2800806,0x4e010cc2,0xd2801006,0x4e010cc3,0xd344fc48
@@ -705,4 +732,5 @@ b 25f
 .inst 0xa90e4611,0xa90f4611,0x910403ff,0xd65f03c0
 .p2align 6",
     )
+}
 }

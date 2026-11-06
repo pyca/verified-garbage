@@ -35,54 +35,54 @@ impl Backend {
 }
 
 macro_rules! check {
-    ($base:ident, $out:ident, $public:ident, $ws:ident) => {
-        $base(&mut $out, $public, &mut $ws)
+    ($dit:ident, $base:ident, $out:ident, $public:ident, $ws:ident) => {
+        $base($dit, &mut $out, $public, &mut $ws)
     };
-    ($base:ident, $out:ident, $public:ident, $ws:ident, $adx:ident, $features:ident) => {{
+    ($dit:ident, $base:ident, $out:ident, $public:ident, $ws:ident, $adx:ident, $features:ident) => {{
         #[cfg(target_arch = "x86_64")]
         {
             match Backend::select(detected(), $features) {
-                Backend::Baseline => $base(&mut $out, $public, &mut $ws),
-                Backend::Fast => $adx(&mut $out, $public, &mut $ws),
+                Backend::Baseline => $base($dit, &mut $out, $public, &mut $ws),
+                Backend::Fast => $adx($dit, &mut $out, $public, &mut $ws),
             }
         }
         #[cfg(not(target_arch = "x86_64"))]
         {
-            $base(&mut $out, $public, &mut $ws)
+            $base($dit, &mut $out, $public, &mut $ws)
         }
     }};
-    ($base:ident, $out:ident, $public:ident, $ws:ident, umaal: $umaal:ident, $ufeatures:ident) => {{
+    ($dit:ident, $base:ident, $out:ident, $public:ident, $ws:ident, umaal: $umaal:ident, $ufeatures:ident) => {{
         #[cfg(target_arch = "arm")]
         {
             match Backend::select(detected(), $ufeatures) {
-                Backend::Baseline => $base(&mut $out, $public, &mut $ws),
-                Backend::Fast => $umaal(&mut $out, $public, &mut $ws),
+                Backend::Baseline => $base($dit, &mut $out, $public, &mut $ws),
+                Backend::Fast => $umaal($dit, &mut $out, $public, &mut $ws),
             }
         }
         #[cfg(not(target_arch = "arm"))]
         {
-            $base(&mut $out, $public, &mut $ws)
+            $base($dit, &mut $out, $public, &mut $ws)
         }
     }};
-    ($base:ident, $out:ident, $public:ident, $ws:ident, $adx:ident, $features:ident,
+    ($dit:ident, $base:ident, $out:ident, $public:ident, $ws:ident, $adx:ident, $features:ident,
         umaal: $umaal:ident, $ufeatures:ident) => {{
         #[cfg(target_arch = "x86_64")]
         {
             match Backend::select(detected(), $features) {
-                Backend::Baseline => $base(&mut $out, $public, &mut $ws),
-                Backend::Fast => $adx(&mut $out, $public, &mut $ws),
+                Backend::Baseline => $base($dit, &mut $out, $public, &mut $ws),
+                Backend::Fast => $adx($dit, &mut $out, $public, &mut $ws),
             }
         }
         #[cfg(target_arch = "arm")]
         {
             match Backend::select(detected(), $ufeatures) {
-                Backend::Baseline => $base(&mut $out, $public, &mut $ws),
-                Backend::Fast => $umaal(&mut $out, $public, &mut $ws),
+                Backend::Baseline => $base($dit, &mut $out, $public, &mut $ws),
+                Backend::Fast => $umaal($dit, &mut $out, $public, &mut $ws),
             }
         }
         #[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
         {
-            $base(&mut $out, $public, &mut $ws)
+            $base($dit, &mut $out, $public, &mut $ws)
         }
     }};
 }
@@ -102,13 +102,14 @@ macro_rules! codec {
                 use crate::arch::$module::{$compress_adx, $features};)?
                 $(#[cfg(target_arch = "arm")]
                 use crate::arch::$module::{$compress_umaal, $cfeatures};)?
+                let dit = crate::dit::public(crate::dit::Why::PublicKey);
                 let mut out = [0; $len + 1];
                 let mut ws = [0u64; 1024];
                 // SAFETY: all three arrays have the contract's lengths and
                 // occupy separate Rust objects. Their ranges cannot wrap or
                 // overlap the return address. Dispatch checks CPU requirements.
                 let ok = unsafe {
-                    check!($compress, out, public, ws $(, $compress_adx, $features)?
+                    check!(dit, $compress, out, public, ws $(, $compress_adx, $features)?
                         $(, umaal: $compress_umaal, $cfeatures)?)
                 };
                 (ok == 1).then_some(out)
@@ -125,13 +126,14 @@ macro_rules! codec {
                 use crate::arch::$module::{$decompress_adx, $features};)?
                 $(#[cfg(target_arch = "arm")]
                 use crate::arch::$module::{$decompress_umaal, $dfeatures};)?
+                let dit = crate::dit::public(crate::dit::Why::PublicKey);
                 let mut out = [0; 2 * $len + 1];
                 let mut ws = [0u64; 1024];
                 // SAFETY: all three arrays have the contract's lengths and
                 // occupy separate Rust objects. Their ranges cannot wrap or
                 // overlap the return address. Dispatch checks CPU requirements.
                 let ok = unsafe {
-                    check!($decompress, out, public, ws $(, $decompress_adx, $features)?
+                    check!(dit, $decompress, out, public, ws $(, $decompress_adx, $features)?
                         $(, umaal: $decompress_umaal, $dfeatures)?)
                 };
                 (ok == 1).then_some(out)

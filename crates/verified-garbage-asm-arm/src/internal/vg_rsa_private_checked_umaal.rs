@@ -155,7 +155,7 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_rsa_private_crt_umaal = sym crate::rsa::vg_rsa_private_crt_umaal::vg_rsa_private_crt_umaal,
-        vg_rsa_public_precompute_umaal = sym crate::rsa::vg_rsa_public_precompute_umaal,
+        vg_rsa_public_precompute_umaal = sym crate::rsa::raw::vg_rsa_public_precompute_umaal,
         vg_rsa_public_precomputed_checked_umaal = sym crate::rsa::vg_rsa_public_precomputed_checked_umaal::vg_rsa_public_precomputed_checked_umaal,
     )
 }

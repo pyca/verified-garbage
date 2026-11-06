@@ -4,6 +4,6 @@
 
 /// The table of functions `VG_HASH_SHA224` of the interface `Hash`: `vg_sha224_init`, `vg_sha256_update_scratch`, `vg_sha256_finalize_scratch`, then the data 2, 28.
 pub static VG_HASH_SHA224: super::Hash = super::Hash {
-    fns: [crate::sha256::vg_sha224_init as *const (), crate::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch as *const (), crate::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch as *const ()],
+    fns: [crate::sha256::raw::vg_sha224_init as *const (), crate::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch as *const (), crate::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch as *const ()],
     data: [2, 28],
 };

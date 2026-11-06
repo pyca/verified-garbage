@@ -215,6 +215,7 @@ fn check(nonce: &[u8], len: usize) -> Result<(), Error> {
 impl AesCcm {
     /// Prepares `key`, which must be 16, 24 or 32 bytes long.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -239,7 +240,7 @@ impl AesCcm {
         // the return address on the stack or the stack below it, and neither
         // wraps around the end of the address space. The CPU has the
         // features of the implementation selected.
-        unsafe { expand(key.as_ptr(), key.len(), &mut k.schedule) };
+        unsafe { expand(dit, key.as_ptr(), key.len(), &mut k.schedule) };
         Ok(k)
     }
 
@@ -257,6 +258,7 @@ impl AesCcm {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<[u8; T], Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(T);
         check(nonce, data.len())?;
         let seal = instance!(
@@ -281,6 +283,7 @@ impl AesCcm {
         // implementation selected.
         unsafe {
             seal(
+                dit,
                 &self.schedule,
                 self.rounds,
                 nonce.as_ptr(),
@@ -310,6 +313,7 @@ impl AesCcm {
         data: &mut [u8],
         tag: &[u8; T],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         assert_tag_length!(T);
         check(nonce, data.len())?;
         let open = instance!(
@@ -324,6 +328,7 @@ impl AesCcm {
         // `data`, a unique one, does not overlap.
         let ok = unsafe {
             open(
+                dit,
                 &self.schedule,
                 self.rounds,
                 nonce.as_ptr(),

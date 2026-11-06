@@ -205,6 +205,7 @@ impl AesCbcDecryptor {
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -221,7 +222,7 @@ impl Key {
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature, and
         // `select` chose `expand` for the CPU's features.
-        unsafe { expand(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { expand(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -235,6 +236,7 @@ impl Key {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
     fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         let f = instance!(
             self.backend,
             vg_aes_cbc_encrypt,
@@ -256,7 +258,7 @@ impl Key {
         };
         #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
         let scratch_written = 2176;
-        self.crypt(iv, buffer, f, scratch_written)
+        self.crypt(dit, iv, buffer, f, scratch_written)
     }
 
     /// Decrypts whole 16-byte blocks in place, chained from `iv`, and
@@ -265,10 +267,12 @@ impl Key {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
     fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         #[cfg(target_arch = "aarch64")]
         if self.backend == Backend::Aes && detected().contains(VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES)
         {
             return self.crypt(
+                dit,
                 iv,
                 buffer,
                 vg_aes_cbc_decrypt_aes_sha3,
@@ -292,11 +296,12 @@ impl Key {
         };
         #[cfg(not(target_arch = "x86_64"))]
         let scratch_written = 2176;
-        self.crypt(iv, buffer, f, scratch_written)
+        self.crypt(dit, iv, buffer, f, scratch_written)
     }
 
     fn crypt(
         &self,
+        dit: crate::dit::Dit<'_>,
         iv: &mut [u8; 16],
         buffer: &mut [u8],
         f: Cbc,
@@ -313,6 +318,7 @@ impl Key {
         // the CPU's features.
         unsafe {
             f(
+                dit,
                 &self.schedule,
                 self.rounds,
                 iv,
@@ -333,7 +339,8 @@ impl Key {
 
 /// The signature of `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt`.
 #[cfg(target_arch = "x86_64")]
-type Cbc = unsafe extern "sysv64" fn(
+type Cbc = unsafe fn(
+    crate::dit::Dit<'_>,
     *const [u8; 240],
     usize,
     *mut [u8; 16],
@@ -349,7 +356,8 @@ type Cbc = unsafe extern "sysv64" fn(
     target_arch = "powerpc64",
     target_arch = "riscv64"
 ))]
-type Cbc = unsafe extern "C" fn(
+type Cbc = unsafe fn(
+    crate::dit::Dit<'_>,
     *const [u8; 240],
     usize,
     *mut [u8; 16],

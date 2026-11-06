@@ -139,7 +139,7 @@ bnez a6, 29b
 .insn 4, 0x368a3a03
 .insn 2, 0x8082
 .option pop",
-        vg_blake2b_init = sym crate::blake2b::vg_blake2b_init,
+        vg_blake2b_init = sym crate::blake2b::raw::vg_blake2b_init,
         vg_blake2b_update_scratch = sym crate::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym crate::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
     )

@@ -77,13 +77,14 @@ impl Drop for TripleDesOfb {
 impl Key {
     /// Expands a 16- or 24-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24) {
             return Err(InvalidKeyLength);
         }
         let mut schedule = [0; 384];
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
-        unsafe { vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_triple_des_expand_key(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self { schedule })
     }
 
@@ -93,28 +94,30 @@ impl Key {
     /// whole blocks, each continuing from the `iv` the last left; a piece
     /// whose length is not a multiple of eight bytes must end the message.
     fn apply_keystream(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let whole = buffer.len() / 8 * 8;
         let (blocks, rest) = buffer.split_at_mut(whole);
-        self.crypt(iv, blocks);
+        self.crypt(dit, iv, blocks);
         if !rest.is_empty() {
             // The next output block, as OFB of a zero block, XORed into the
             // last bytes.
             let mut last = [0; 8];
             last[..rest.len()].copy_from_slice(rest);
-            self.crypt(iv, &mut last);
+            self.crypt(dit, iv, &mut last);
             rest.copy_from_slice(&last[..rest.len()]);
             zeroize(&mut last);
         }
     }
 
     /// OFB of whole blocks.
-    fn crypt(&self, iv: &mut [u8; 8], blocks: &mut [u8]) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], blocks: &mut [u8]) {
         // SAFETY: `blocks` holds `len / 8` whole blocks (its length is a
         // multiple of 8), and it, the block at `iv` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
             vg_triple_des_ofb(
+                dit,
                 &self.schedule,
                 iv,
                 blocks.as_mut_ptr().cast(),

@@ -142,6 +142,7 @@ impl AesCtr {
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -157,7 +158,7 @@ impl Key {
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature, and
         // `select` chose `expand` for the CPU's features.
-        unsafe { expand(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { expand(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -173,22 +174,23 @@ impl Key {
     /// the last left; a piece whose length is not a multiple of 16 bytes
     /// must end the message.
     fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let whole = buffer.len() / 16 * 16;
         let (blocks, rest) = buffer.split_at_mut(whole);
-        self.crypt(ctr, blocks);
+        self.crypt(dit, ctr, blocks);
         if !rest.is_empty() {
             // The last bytes, padded to a block: CTR XORs them with the first
             // bytes of the next output block.
             let mut last = [0; 16];
             last[..rest.len()].copy_from_slice(rest);
-            self.crypt(ctr, &mut last);
+            self.crypt(dit, ctr, &mut last);
             rest.copy_from_slice(&last[..rest.len()]);
             zeroize(&mut last);
         }
     }
 
     /// CTR of whole blocks.
-    fn crypt(&self, ctr: &mut [u8; 16], blocks: &mut [u8]) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, ctr: &mut [u8; 16], blocks: &mut [u8]) {
         let f = instance!(
             self.backend,
             vg_aes_ctr,
@@ -204,6 +206,7 @@ impl Key {
         // signature. `select` chose `f` for the CPU's features.
         unsafe {
             f(
+                dit,
                 &self.schedule,
                 self.rounds,
                 ctr,

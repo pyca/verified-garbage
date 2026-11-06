@@ -205,6 +205,7 @@ impl AesSiv {
     /// Prepares `key`, which must be 32, 48 or 64 bytes long: `K1`, for
     /// S2V, then `K2`, for CTR, each 16, 24 or 32 bytes.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 32 | 48 | 64) {
             return Err(InvalidKeyLength);
         }
@@ -226,7 +227,7 @@ impl AesSiv {
         // addresses on the stack (on x86 and x86-64) or the stack below them that
         // the function uses, and neither wraps around the end of the address
         // space. The CPU has the features of the implementation selected.
-        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
+        unsafe { init(dit, key.as_ptr(), key.len(), &mut k.ctx) };
         Ok(k)
     }
 
@@ -256,6 +257,7 @@ impl AesSiv {
     /// protocol that must hide repeated messages passes a nonce as the last
     /// component.
     pub fn encrypt_in_place(&self, ads: &[&[u8]], data: &mut [u8]) -> Result<Block, Error> {
+        crate::dit::enter!(dit);
         let mut storage = [const { MaybeUninit::uninit() }; Self::MAX_COMPONENTS];
         let descs = Self::descriptors(ads, &mut storage)?;
         let mut siv = [0u8; 16];
@@ -282,6 +284,7 @@ impl AesSiv {
         // selected.
         unsafe {
             encrypt(
+                dit,
                 &self.ctx,
                 self.rounds,
                 descs,
@@ -304,6 +307,7 @@ impl AesSiv {
         data: &mut [u8],
         tag: &[u8; 16],
     ) -> Result<(), Error> {
+        crate::dit::enter!(dit);
         let mut storage = [const { MaybeUninit::uninit() }; Self::MAX_COMPONENTS];
         let descs = Self::descriptors(ads, &mut storage)?;
         let decrypt = instance!(
@@ -319,6 +323,7 @@ impl AesSiv {
         // only read-only buffers may overlap it.
         let ok = unsafe {
             decrypt(
+                dit,
                 &self.ctx,
                 self.rounds,
                 descs,

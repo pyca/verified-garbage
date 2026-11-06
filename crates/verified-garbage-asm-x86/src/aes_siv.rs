@@ -20,20 +20,11 @@ pub const VG_AES_SIV_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_siv_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk7PX//4uEJBgKAACJRCQEi4QkHAoAAIlEJAiLhCQgCgAAiUQkDIngg8AUiUQkEItEJBCJmIAIAACJsIQIAACJuIgIAACJqIwIAACLRCQEi0wkCNHpi1QkDItcJBBTUlFQ"
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "WFhYWItEJAyLTCQIwekDg8EGicKBwvAAAACLXCQQU1JRUA=="
-call {vg_cmac_aes_subkeys_aesni}
-.base64 "WFhYWItMJAjR6YtEJAQByItUJAyBwhABAACLXCQQU1JRUA=="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "WFhYWItEJBCLmIAIAACLsIQIAACLuIgIAACLqIwIAACNpCQUCgAAww=="
-.p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni::vg_cmac_aes_subkeys_aesni,
-    )
+#[inline(always)]
+pub unsafe fn vg_aes_siv_init_aesni(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_init_aesni(key, key_len, ctx) }
 }
 
 /// The CPU features `vg_aes_siv_encrypt_aesni` requires (`Artifact.features`).
@@ -55,93 +46,12 @@ pub const VG_AES_SIV_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `data` and `siv` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_siv_encrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkzPX//4uEJDgKAACJRCQEi4QkPAoAAIlEJAiLhCRACgAAiUQkDIuEJEQKAACJRCQQi4QkSAoAAIlEJBSLhCRMCgAAiUQkGIuEJFAKAACJRCQcieCDwCSJRCQgi0QkIImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFsAAAAItEJAiJhbQAAACLRCQMiYW4AAAAi0QkEImFvAAAAItEJBSJhcAAAACLRCQYiYXEAAAAuAAAAACJRRCJRRSJRRiJRRy4AAAAAImFAAoAAImFBAoAAImFCAoAAImFDAoAAIuFsAAAAIuNtAAAAInqgcIACgAAie+BxwABAACJ64PDEL4QAAAAV1ZTUlFQ"
-call {vg_cmac_aes_finalize_aesni}
-.base64 "WFhYWFhYi4W8AAAAhcA="
-je 20f
-22:
-.base64 "i4W4AAAAiwiJjcgAAACLSASJjcwAAAC4AAAAAImFkAAAAImFlAAAAImFmAAAAImFnAAAALkAAAAAi4XMAAAAhcA="
-je 23f
-.base64 "icGD6QGD4fA="
-jmp 24f
-23:
-24:
-.base64 "iY3QAAAAic7B7gSLncgAAACLhbAAAACLjbQAAACJ6oHCkAAAAInvgccAAQAAV1ZTUlFQ"
-call {vg_cmac_aes_update_aesni}
-.base64 "WFhYWFhYi53IAAAAA53QAAAAi7XMAAAAK7XQAAAAi4WwAAAAi420AAAAieqBwpAAAACJ74HHAAEAAFdWU1JRUA=="
-call {vg_cmac_aes_finalize_aesni}
-.base64 "WFhYWFhYieuBwwAKAACLA4tLBItTCItzDA/ID8kPyg/OicfB7x+9AAAAACn9geWHAAAAAcCJz8HvHwn4AcmJ18HvHwn5AdKJ98HvHwn6AfYx7g/ID8kPyg/OiQOJSwSJUwiJcwyJ3YHtAAoAAInqgcIACgAAi4WQAAAAMwKJAouFlAAAADNCBIlCBIuFmAAAADNCCIlCCIuFnAAAADNCDIlCDIuFuAAAAIPACImFuAAAAIuFvAAAAIPoAYmFvAAAAA=="
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "i4XAAAAAiYXIAAAAi4XEAAAAiYXMAAAAi43MAAAAg/kQ"
-jb 25f
-.base64 "uAAAAACLjcwAAACD+RE="
-jb 27f
-.base64 "iciD6AGD4PCD6BA="
-jmp 28f
-27:
-28:
-.base64 "iYXQAAAAi73IAAAAAccpwYnqg8Ig"
-29:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 29b
-.base64 "ieoDlcwAAAArldAAAACLhQAKAAAzQhCJQhCLhQQKAAAzQhSJQhSLhQgKAAAzQhiJQhiLhQwKAAAzQhyJQhy4AAAAAIlFAIlFBIlFCIlFDIu10AAAAMHuBIudyAAAAIuFsAAAAIuNtAAAAInqg8IAie+BxwABAABXVlNSUVA="
-call {vg_cmac_aes_update_aesni}
-.base64 "WFhYWFhYvgAAAACLjcwAAACD+RE="
-jb 210f
-.base64 "vgEAAAA="
-jmp 211f
-210:
-211:
-.base64 "ibXUAAAAieuDwyCLhbAAAACLjbQAAACJ6oPCAInvgccAAQAAV1ZTUlFQ"
-call {vg_cmac_aes_update_aesni}
-.base64 "WFhYWFhYi4XUAAAAAcABwAHAAcCLtcwAAAArtdAAAAApxonrg8MgAcOLhbAAAACLjbQAAACJ6oPCAInvgccAAQAAV1ZTUlFQ"
-call {vg_cmac_aes_finalize_aesni}
-.base64 "WFhYWFhY"
-jmp 26f
-25:
-.base64 "uAAAAACJRSCJRSSJRSiJRSy4AAAAAIlFMIlFNIlFOIlFPIu9yAAAAInqg8Igi43MAAAAhck="
-je 212f
-214:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 214b
-jmp 213f
-212:
-213:
-.base64 "ieoDlcwAAAC4gAAAAIhCIIuFAAoAAImFoAAAAIuFBAoAAImFpAAAAIuFCAoAAImFqAAAAIuFDAoAAImFrAAAAInrgcOgAAAAiwOLSwSLUwiLcwwPyA/JD8oPzonHwe8fvQAAAAAp/YHlhwAAAAHAic/B7x8J+AHJidfB7x8J+QHSiffB7x8J+gH2Me4PyA/JD8oPzokDiUsEiVMIiXMMid2B7aAAAACJ6ouFoAAAADNCIIlCIIuFpAAAADNCJIlCJIuFqAAAADNCKIlCKIuFrAAAADNCLIlCLLgAAAAAiUUAiUUEiUUIiUUMi4WwAAAAi420AAAAieqDwgCJ74HHAAEAAInrg8MgvhAAAABXVlNSUVA="
-call {vg_cmac_aes_finalize_aesni}
-.base64 "WFhYWFhY"
-26:
-.base64 "i0UAiUVgi0UEiUVki0UIJX////+JRWiLRQwlf////4lFbIu9xAAAAMHvBIX/"
-je 215f
-.base64 "i4WwAAAABRABAACLjbQAAACJ6oPCYIudwAAAAIHFAAEAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAQAA"
-jmp 216f
-215:
-216:
-.base64 "i43EAAAAg+EP"
-je 217f
-.base64 "uAAAAACJRVCJRVSJRViJRVyLhbAAAAAFEAEAAIuNtAAAAInqg8JgieuDw1C/AQAAAIHFAAEAAFVXU1JRUA=="
-call {vg_aes_ctr32_aesni}
-.base64 "WFhYWFhYge0AAQAAi43EAAAAg+EPieqDwlCLvcAAAAADvcQAAAApzw=="
-219:
-.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
-jne 219b
-jmp 218f
-217:
-218:
-.base64 "i0UAi00Ei1UIi10Mi3wkHIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkNAoAAMM="
-.p2align 6"#,
-        vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
-        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_siv_encrypt_aesni(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_encrypt_aesni(ctx, rounds, ads, ads_count, data, len, siv) }
 }
 
 /// The CPU features `vg_aes_siv_decrypt_aesni` requires (`Artifact.features`).
@@ -163,8 +73,193 @@ pub const VG_AES_SIV_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = ve
 /// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists or `siv` (distinct Rust objects never do).
 /// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_siv_decrypt_aesni(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_decrypt_aesni(ctx, rounds, ads, ads_count, data, len, siv) }
+}
+
+/// The AES-SIV key setup (RFC 5297 §2.6): writes the key context of the `key_len`-byte key `K = K1 ‖ K2` at `key` (the halves of `key_len / 2` bytes) to `*ctx`: the key schedule of `K1` for `Nr = key_len / 8 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, its CMAC subkeys (NIST SP 800-38B §6.1) in bytes 240–271, and the key schedule of `K2` in the `16 * (Nr + 1)` bytes from byte 272. The other bytes are unspecified. The other `vg_aes_siv_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 512 bytes.
+/// * `key_len` must be 32, 48 or 64.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_aes_siv_init(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_init(key, key_len, ctx) }
+}
+
+/// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data.
+///
+/// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 512 bytes.
+/// * `ads` must be valid for reads of `2 * size_of::<usize>() * ads_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `siv` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` and `siv` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_siv_encrypt(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_encrypt(ctx, rounds, ads, ads_count, data, len, siv) }
+}
+
+/// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
+///
+/// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 512 bytes.
+/// * `ads` must be valid for reads of `2 * size_of::<usize>() * ads_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `siv` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists or `siv` (distinct Rust objects never do).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_aes_siv_decrypt(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_aes_siv_decrypt(ctx, rounds, ads, ads_count, data, len, siv) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_aes_siv_init_aesni`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_siv_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk7PX//4uEJBgKAACJRCQEi4QkHAoAAIlEJAiLhCQgCgAAiUQkDIngg8AUiUQkEItEJBCJmIAIAACJsIQIAACJuIgIAACJqIwIAACLRCQEi0wkCNHpi1QkDItcJBBTUlFQ"
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "WFhYWItEJAyLTCQIwekDg8EGicKBwvAAAACLXCQQU1JRUA=="
+call {vg_cmac_aes_subkeys_aesni}
+.base64 "WFhYWItMJAjR6YtEJAQByItUJAyBwhABAACLXCQQU1JRUA=="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "WFhYWItEJBCLmIAIAACLsIQIAACLuIgIAACLqIwIAACNpCQUCgAAww=="
+.p2align 6"#,
+        vg_aes_expand_key_scratch_aesni = sym crate::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_cmac_aes_subkeys_aesni = sym crate::cmac_aes::vg_cmac_aes_subkeys_aesni::vg_cmac_aes_subkeys_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_siv_encrypt_aesni`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkzPX//4uEJDgKAACJRCQEi4QkPAoAAIlEJAiLhCRACgAAiUQkDIuEJEQKAACJRCQQi4QkSAoAAIlEJBSLhCRMCgAAiUQkGIuEJFAKAACJRCQcieCDwCSJRCQgi0QkIImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFsAAAAItEJAiJhbQAAACLRCQMiYW4AAAAi0QkEImFvAAAAItEJBSJhcAAAACLRCQYiYXEAAAAuAAAAACJRRCJRRSJRRiJRRy4AAAAAImFAAoAAImFBAoAAImFCAoAAImFDAoAAIuFsAAAAIuNtAAAAInqgcIACgAAie+BxwABAACJ64PDEL4QAAAAV1ZTUlFQ"
+call {vg_cmac_aes_finalize_aesni}
+.base64 "WFhYWFhYi4W8AAAAhcA="
+je 20f
+22:
+.base64 "i4W4AAAAiwiJjcgAAACLSASJjcwAAAC4AAAAAImFkAAAAImFlAAAAImFmAAAAImFnAAAALkAAAAAi4XMAAAAhcA="
+je 23f
+.base64 "icGD6QGD4fA="
+jmp 24f
+23:
+24:
+.base64 "iY3QAAAAic7B7gSLncgAAACLhbAAAACLjbQAAACJ6oHCkAAAAInvgccAAQAAV1ZTUlFQ"
+call {vg_cmac_aes_update_aesni}
+.base64 "WFhYWFhYi53IAAAAA53QAAAAi7XMAAAAK7XQAAAAi4WwAAAAi420AAAAieqBwpAAAACJ74HHAAEAAFdWU1JRUA=="
+call {vg_cmac_aes_finalize_aesni}
+.base64 "WFhYWFhYieuBwwAKAACLA4tLBItTCItzDA/ID8kPyg/OicfB7x+9AAAAACn9geWHAAAAAcCJz8HvHwn4AcmJ18HvHwn5AdKJ98HvHwn6AfYx7g/ID8kPyg/OiQOJSwSJUwiJcwyJ3YHtAAoAAInqgcIACgAAi4WQAAAAMwKJAouFlAAAADNCBIlCBIuFmAAAADNCCIlCCIuFnAAAADNCDIlCDIuFuAAAAIPACImFuAAAAIuFvAAAAIPoAYmFvAAAAA=="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i4XAAAAAiYXIAAAAi4XEAAAAiYXMAAAAi43MAAAAg/kQ"
+jb 25f
+.base64 "uAAAAACLjcwAAACD+RE="
+jb 27f
+.base64 "iciD6AGD4PCD6BA="
+jmp 28f
+27:
+28:
+.base64 "iYXQAAAAi73IAAAAAccpwYnqg8Ig"
+29:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 29b
+.base64 "ieoDlcwAAAArldAAAACLhQAKAAAzQhCJQhCLhQQKAAAzQhSJQhSLhQgKAAAzQhiJQhiLhQwKAAAzQhyJQhy4AAAAAIlFAIlFBIlFCIlFDIu10AAAAMHuBIudyAAAAIuFsAAAAIuNtAAAAInqg8IAie+BxwABAABXVlNSUVA="
+call {vg_cmac_aes_update_aesni}
+.base64 "WFhYWFhYvgAAAACLjcwAAACD+RE="
+jb 210f
+.base64 "vgEAAAA="
+jmp 211f
+210:
+211:
+.base64 "ibXUAAAAieuDwyCLhbAAAACLjbQAAACJ6oPCAInvgccAAQAAV1ZTUlFQ"
+call {vg_cmac_aes_update_aesni}
+.base64 "WFhYWFhYi4XUAAAAAcABwAHAAcCLtcwAAAArtdAAAAApxonrg8MgAcOLhbAAAACLjbQAAACJ6oPCAInvgccAAQAAV1ZTUlFQ"
+call {vg_cmac_aes_finalize_aesni}
+.base64 "WFhYWFhY"
+jmp 26f
+25:
+.base64 "uAAAAACJRSCJRSSJRSiJRSy4AAAAAIlFMIlFNIlFOIlFPIu9yAAAAInqg8Igi43MAAAAhck="
+je 212f
+214:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 214b
+jmp 213f
+212:
+213:
+.base64 "ieoDlcwAAAC4gAAAAIhCIIuFAAoAAImFoAAAAIuFBAoAAImFpAAAAIuFCAoAAImFqAAAAIuFDAoAAImFrAAAAInrgcOgAAAAiwOLSwSLUwiLcwwPyA/JD8oPzonHwe8fvQAAAAAp/YHlhwAAAAHAic/B7x8J+AHJidfB7x8J+QHSiffB7x8J+gH2Me4PyA/JD8oPzokDiUsEiVMIiXMMid2B7aAAAACJ6ouFoAAAADNCIIlCIIuFpAAAADNCJIlCJIuFqAAAADNCKIlCKIuFrAAAADNCLIlCLLgAAAAAiUUAiUUEiUUIiUUMi4WwAAAAi420AAAAieqDwgCJ74HHAAEAAInrg8MgvhAAAABXVlNSUVA="
+call {vg_cmac_aes_finalize_aesni}
+.base64 "WFhYWFhY"
+26:
+.base64 "i0UAiUVgi0UEiUVki0UIJX////+JRWiLRQwlf////4lFbIu9xAAAAMHvBIX/"
+je 215f
+.base64 "i4WwAAAABRABAACLjbQAAACJ6oPCYIudwAAAAIHFAAEAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAQAA"
+jmp 216f
+215:
+216:
+.base64 "i43EAAAAg+EP"
+je 217f
+.base64 "uAAAAACJRVCJRVSJRViJRVyLhbAAAAAFEAEAAIuNtAAAAInqg8JgieuDw1C/AQAAAIHFAAEAAFVXU1JRUA=="
+call {vg_aes_ctr32_aesni}
+.base64 "WFhYWFhYge0AAQAAi43EAAAAg+EPieqDwlCLvcAAAAADvcQAAAApzw=="
+219:
+.base64 "D7YCD7YfMdiIB4PHAYPCAYPpAQ=="
+jne 219b
+jmp 218f
+217:
+218:
+.base64 "i0UAi00Ei1UIi10Mi3wkHIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkNAoAAMM="
+.p2align 6"#,
+        vg_cmac_aes_finalize_aesni = sym crate::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
+        vg_cmac_aes_update_aesni = sym crate::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The verified code of [`super::vg_aes_siv_decrypt_aesni`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQkzPX//4uEJDgKAACJRCQEi4QkPAoAAIlEJAiLhCRACgAAiUQkDIuEJEQKAACJRCQQi4QkSAoAAIlEJBSLhCRMCgAAiUQkGIuEJFAKAACJRCQcieCDwCSJRCQgi0QkIImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFsAAAAItEJAiJhbQAAACLRCQMiYW4AAAAi0QkEImFvAAAAItEJBSJhcAAAACLRCQYiYXEAAAAuAAAAACJRRCJRRSJRRiJRRy4AAAAAImFAAoAAImFBAoAAImFCAoAAImFDAoAAIuFsAAAAIuNtAAAAInqgcIACgAAie+BxwABAACJ64PDEL4QAAAAV1ZTUlFQ"
 call {vg_cmac_aes_finalize_aesni}
@@ -255,27 +350,15 @@ jmp 221f
 221:
 .base64 "i4XYAAAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkNAoAAMM="
 .p2align 6"#,
-        vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
-        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_cmac_aes_finalize_aesni = sym crate::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
+        vg_cmac_aes_update_aesni = sym crate::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
+        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
-/// The AES-SIV key setup (RFC 5297 §2.6): writes the key context of the `key_len`-byte key `K = K1 ‖ K2` at `key` (the halves of `key_len / 2` bytes) to `*ctx`: the key schedule of `K1` for `Nr = key_len / 8 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, its CMAC subkeys (NIST SP 800-38B §6.1) in bytes 240–271, and the key schedule of `K2` in the `16 * (Nr + 1)` bytes from byte 272. The other bytes are unspecified. The other `vg_aes_siv_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 512 bytes.
-/// * `key_len` must be 32, 48 or 64.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_siv_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
+pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk7PX//4uEJBgKAACJRCQEi4QkHAoAAIlEJAiLhCQgCgAAiUQkDIngg8AUiUQkEItEJBCJmIAIAACJsIQIAACJuIgIAACJqIwIAACLRCQEi0wkCNHpi1QkDItcJBBTUlFQ"
 call {vg_aes_expand_key_scratch}
@@ -285,28 +368,14 @@ call {vg_cmac_aes_subkeys}
 call {vg_aes_expand_key_scratch}
 .base64 "WFhYWItEJBCLmIAIAACLsIQIAACLuIgIAACLqIwIAACNpCQUCgAAww=="
 .p2align 6"#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
+        vg_aes_expand_key_scratch = sym crate::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_cmac_aes_subkeys = sym crate::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
 
-/// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data.
-///
-/// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 512 bytes.
-/// * `ads` must be valid for reads of `2 * size_of::<usize>() * ads_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `siv` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `data` and `siv` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_siv_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkzPX//4uEJDgKAACJRCQEi4QkPAoAAIlEJAiLhCRACgAAiUQkDIuEJEQKAACJRCQQi4QkSAoAAIlEJBSLhCRMCgAAiUQkGIuEJFAKAACJRCQcieCDwCSJRCQgi0QkIImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFsAAAAItEJAiJhbQAAACLRCQMiYW4AAAAi0QkEImFvAAAAItEJBSJhcAAAACLRCQYiYXEAAAAuAAAAACJRRCJRRSJRRiJRRy4AAAAAImFAAoAAImFBAoAAImFCAoAAImFDAoAAIuFsAAAAIuNtAAAAInqgcIACgAAie+BxwABAACJ64PDEL4QAAAAV1ZTUlFQ"
 call {vg_cmac_aes_finalize}
@@ -388,29 +457,15 @@ jmp 218f
 218:
 .base64 "i0UAi00Ei1UIi10Mi3wkHIkHiU8EiVcIiV8Mi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkNAoAAMM="
 .p2align 6"#,
-        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_cmac_aes_finalize = sym crate::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_update = sym crate::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
-/// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
-///
-/// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 512 bytes.
-/// * `ads` must be valid for reads of `2 * size_of::<usize>() * ads_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `siv` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists or `siv` (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_aes_siv_decrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jaQkzPX//4uEJDgKAACJRCQEi4QkPAoAAIlEJAiLhCRACgAAiUQkDIuEJEQKAACJRCQQi4QkSAoAAIlEJBSLhCRMCgAAiUQkGIuEJFAKAACJRCQcieCDwCSJRCQgi0QkIImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi0QkBImFsAAAAItEJAiJhbQAAACLRCQMiYW4AAAAi0QkEImFvAAAAItEJBSJhcAAAACLRCQYiYXEAAAAuAAAAACJRRCJRRSJRRiJRRy4AAAAAImFAAoAAImFBAoAAImFCAoAAImFDAoAAIuFsAAAAIuNtAAAAInqgcIACgAAie+BxwABAACJ64PDEL4QAAAAV1ZTUlFQ"
 call {vg_cmac_aes_finalize}
@@ -501,8 +556,9 @@ jmp 221f
 221:
 .base64 "i4XYAAAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkNAoAAMM="
 .p2align 6"#,
-        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_cmac_aes_finalize = sym crate::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_update = sym crate::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
+}
 }
