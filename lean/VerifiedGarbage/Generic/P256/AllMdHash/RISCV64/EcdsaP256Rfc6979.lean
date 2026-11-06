@@ -22,7 +22,6 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve)
     Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact RISCV64.target {
       tables := [("hmac", tables vs)]
       code := signCodeT (curveT h.law) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs
-      consts := Impl.Ecdsa.RISCV64.Comb.p256CombConsts
       stack := stackT
       verified := verifiedT h.law vs hv }]
   else []

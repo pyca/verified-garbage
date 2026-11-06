@@ -27,7 +27,6 @@ def artifacts (v : Proof.Bignum.Arm.MontBackend) : List Artifact :=
     suffix := v.suffix
     features := v.features
     stack := 176
-    consts := Impl.Ffdh.Arm.VettedGroups.tableConsts
     code := Proof.Ffdh.Arm.combPrecomputeCalledCode v
     verified := Proof.Ffdh.Arm.combPrecomputeCalled_verified v },
   Spec.Ffdh.cachedGenerateKeyApi.artifact VG.Arm.target {

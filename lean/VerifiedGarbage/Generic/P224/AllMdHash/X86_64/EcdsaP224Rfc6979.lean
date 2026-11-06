@@ -24,7 +24,6 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve)
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (p224 h.law (Proof.P224.combOk7 h.law) h.inv) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs
-      consts := Impl.Ecdsa.X86_64.p224.combConsts
       stack := stackT
       verified := p224T_verified h.law (Proof.P224.combOk7 h.law) h.inv vs hv
       spSafe := signCode_sp _ _ _

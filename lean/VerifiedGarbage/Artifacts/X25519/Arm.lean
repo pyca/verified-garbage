@@ -24,7 +24,6 @@ def artifacts : List Artifact := [
     verified := Proof.X25519.Arm.Exchange.exchange_umaal
     features := ["umaal"] },
   Spec.X25519.x25519BaseApi.artifact Arm.target {
-    consts := Impl.Ed25519.Arm.combConsts
     code := Impl.X25519.Arm.Base.x25519Base
     stack := 0
     verified := Proof.X25519.Arm.Base.x25519Base_verified }]

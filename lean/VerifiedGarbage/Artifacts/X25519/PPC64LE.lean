@@ -18,7 +18,6 @@ def artifacts : List Artifact := [
     stack := 48
     verified := Proof.X25519.PPC64LE.Exchange.exchange_verified },
   Spec.X25519.x25519BaseApi.artifact PPC64LE.target {
-    consts := Impl.Ed25519.PPC64LE.combConsts
     code := Impl.X25519.PPC64LE.Base.x25519Base
     verified := Proof.X25519.PPC64LE.Base.x25519Base_verified }]
 

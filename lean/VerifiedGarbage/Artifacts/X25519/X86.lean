@@ -27,7 +27,6 @@ def artifacts : List Artifact := [
     stack := 28
     verified := Proof.X25519.X86.Exchange.exchange_verified },
   Spec.X25519.x25519BaseApi.artifact X86.target {
-    consts := Impl.Ed25519.X86.combConsts
     code := Impl.X25519.X86.Base.x25519Base
     stack := 8
     verified := Proof.X25519.X86.Base.x25519Base_verified }]

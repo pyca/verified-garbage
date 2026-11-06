@@ -26,7 +26,6 @@ def artifacts : List Artifact := [
     stack := 16
     verified := Proof.X25519.AArch64.Exchange.exchange_verified },
   Spec.X25519.x25519BaseApi.artifact AArch64.target {
-    consts := Impl.Ed25519.AArch64.combConsts
     written := [("scratch", 1024)]
     code := Impl.X25519.AArch64.Base.x25519Base
     verified := Proof.X25519.AArch64.Base.x25519Base_verified

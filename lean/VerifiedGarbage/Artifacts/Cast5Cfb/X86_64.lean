@@ -13,12 +13,10 @@ namespace VG.Artifacts.Cast5Cfb.X86_64
 
 def artifacts : List Artifact := [
   Spec.Cast5.cfbEncryptApi.artifact X86_64.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 Impl.Cast5.X86_64.cfbEncrypt
     stack := 240
     verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.X86_64.cfbEncrypt_framed },
   Spec.Cast5.cfbDecryptApi.artifact X86_64.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 Impl.Cast5.X86_64.cfbDecrypt
     stack := 240
     verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.X86_64.cfbDecrypt_framed }]

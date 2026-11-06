@@ -46,20 +46,17 @@ def artifacts : List Artifact := [
     verified := Proof.X25519.X86_64.Exchange.exchange_ifma
     features := ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"] },
   Spec.X25519.x25519BaseApi.artifact X86_64.target {
-    consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519Base Impl.X25519.X86_64.baseline
     stack := 8
     verified := Proof.X25519.X86_64.Base.x25519Base_verified },
   Spec.X25519.x25519BaseApi.artifact X86_64.target {
     suffix := "_adx"
-    consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519BaseAdx
     stack := 8
     verified := Proof.X25519.X86_64.Base.x25519BaseAdx_verified
     features := ["avx", "avx2", "bmi2", "adx"] },
   Spec.X25519.x25519BaseApi.artifact X86_64.target {
     suffix := "_ifma"
-    consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519BaseIfma
     stack := 8
     verified := Proof.X25519.X86_64.Base.x25519BaseIfma_verified

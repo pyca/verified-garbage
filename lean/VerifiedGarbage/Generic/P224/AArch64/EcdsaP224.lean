@@ -71,7 +71,6 @@ namespace VG.Generic.P224.AArch64.EcdsaP224
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P224.curve) : List Artifact := [
   Spec.Ecdsa.P224.verifyHashApi.artifact AArch64.target {
-    consts := Impl.Ecdsa.AArch64.p224.combConsts
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.verifyP224
     stack := 80

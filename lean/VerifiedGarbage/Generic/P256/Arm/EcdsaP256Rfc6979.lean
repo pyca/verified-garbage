@@ -17,14 +17,12 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
   Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact Arm.target {
     tables := [("hmac", tables vars)]
     code := signCodeT (p256CombCurve h.law) Spec.Ecdsa.Rfc6979.Curves.p256.tries vars
-    consts := Impl.Weierstrass.Arm.p256CombConsts
     stack := stackT
     verified := p256T_verified h.law },
   Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact Arm.target {
     suffix := "_umaal"
     tables := [("hmac", tables vars)]
     code := signCodeT (p256CombCurveU h.law) Spec.Ecdsa.Rfc6979.Curves.p256.tries vars
-    consts := Impl.Weierstrass.Arm.p256CombConsts
     stack := stackT
     verified := p256UT_verified h.law
     features := ["umaal"] }]

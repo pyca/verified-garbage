@@ -61,7 +61,6 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.Ed448.verifyApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    consts := Impl.Ed448.AArch64.Sparse.baseConsts
     code := Impl.Ed448.AArch64.Verify.verifyWith v.callee
     stack := 352
     verified := Proof.Ed448.AArch64.Verify.verify_verified v

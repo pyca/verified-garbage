@@ -25,7 +25,6 @@ def artifacts : List Artifact := [
     stack := 16
     verified := Proof.X448.AArch64.Exchange.exchange_verified },
   Spec.X448.x448BaseApi.artifact AArch64.target {
-    consts := Impl.X448.AArch64.Base.combConsts
     code := Impl.X448.AArch64.Base.x448Base
     verified := Proof.X448.AArch64.Base.x448Base_verified }]
 
