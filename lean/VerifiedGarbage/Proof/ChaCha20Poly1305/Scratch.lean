@@ -54,6 +54,15 @@ def openScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Con
       openPost A.ptrBits key nonce aad aadLen data len tag)
     (writeArgs := true) (stack := stack)
 
+/-- `openZeroContract`, whatever `work` is. -/
+def openZeroScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
+  (openScratchSig n).contract A
+    (post := fun key nonce aad aadLen data len tag _work =>
+      openZeroPost A.ptrBits key nonce aad aadLen data len tag)
+    (writeArgs := true) (stack := stack)
+    (leak := some fun key nonce aad aadLen data len tag _work =>
+      openLeak A.ptrBits key nonce aad aadLen data len tag)
+
 /-! ## Locality -/
 
 theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
@@ -216,5 +225,77 @@ theorem openPost_out : ∀ vs m m₁ m₂ r, vs.length = (openSig.words pb).leng
   refine Eq.mpr (openPost_curry pb _ _ _ _ data _ _ m m₂ r) ?_
   rw [bytesAt_congr_len (p := data) (agree_of hb.2.2.2.1)]
   exact h
+
+/-- `openZeroPost`, as a function of the bytes it reads. -/
+def openZeroPostB (k n a c t out : List Byte) (l : Nat) (r : BitVec 32) : Prop :=
+  match decrypt k n a c t with
+  | some pt => r = 1 ∧ out = pt
+  | none => r = 0 ∧ out = List.replicate l 0
+
+theorem openZeroPost_curry (key nonce aad al data len tag : BitVec 64) (m m' : Mem) (r : BitVec 32) :
+    Curry.apply (openSig.words pb) (openZeroPost pb) [key, nonce, aad, al, data, len, tag] m m' r =
+      openZeroPostB (Spec.Poly1305.bytesAt m key 32) (Spec.Poly1305.bytesAt m nonce 12)
+        (Spec.Poly1305.bytesAt m aad (al.setWidth pb).toNat)
+        (Spec.Poly1305.bytesAt m data (len.setWidth pb).toNat) (Spec.Poly1305.bytesAt m tag 16)
+        (Spec.Poly1305.bytesAt m' data (len.setWidth pb).toNat) (len.setWidth pb).toNat r := rfl
+
+theorem openZeroPost_out : ∀ vs m m₁ m₂ r, vs.length = (openSig.words pb).length →
+    (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openSig.words pb) (openZeroPost pb) vs m m₁ r →
+      Curry.apply (openSig.words pb) (openZeroPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 3
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 2
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  replace h := Eq.mp (openZeroPost_curry pb _ _ _ _ data _ _ m m₁ r) h
+  refine Eq.mpr (openZeroPost_curry pb _ _ _ _ data _ _ m m₂ r) ?_
+  rw [bytesAt_congr_len (p := data) (agree_of hb.2.2.2.1)]
+  exact h
+
+/-- `openLeak`, as a function of the bytes it reads. -/
+theorem openLeak_curry (key nonce aad al data len tag : BitVec 64) (m : Mem) :
+    Curry.apply (openSig.words pb) (openLeak pb) [key, nonce, aad, al, data, len, tag] m =
+      [if (decrypt (Spec.Poly1305.bytesAt m key 32) (Spec.Poly1305.bytesAt m nonce 12)
+        (Spec.Poly1305.bytesAt m aad (al.setWidth pb).toNat)
+        (Spec.Poly1305.bytesAt m data (len.setWidth pb).toNat)
+        (Spec.Poly1305.bytesAt m tag 16)).isSome then 1 else 0] := rfl
+
+theorem openLeak_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length →
+    (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openSig.words pb) (openLeak pb) vs m₁ =
+      Curry.apply (openSig.words pb) (openLeak pb) vs m₂ := by
+  intro vs m₁ m₂ hlen hb
+  obtain ⟨key, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  rw [openLeak_curry, openLeak_curry, bytesAt_congr (fun i hi => (agree_of hb.1 i hi).symm),
+    bytesAt_congr (fun i hi => (agree_of hb.2.1 i hi).symm),
+    bytesAt_congr_len (fun i hi => (agree_of hb.2.2.1 i hi).symm),
+    bytesAt_congr_len (p := data) (fun i hi => (agree_of hb.2.2.2.1 i hi).symm),
+    bytesAt_congr (p := tag) (fun i hi => (agree_of hb.2.2.2.2 i hi).symm)]
 
 end VG.Proof.ChaCha20Poly1305

@@ -14,9 +14,10 @@ meta import VerifiedGarbage.Proof.Poly1305.RISCV64.Lit
 /-!
 # ChaCha20-Poly1305 on RISC-V: constant time
 
-The taint analysis of the whole of each function, through its callees: the
-values it keeps in `s7`–`s11`, which no callee writes, and the context in
-`a0`, which no callee writes either, stay public across the calls.
+The taint analysis of the whole of `seal`, and of `open` but for its branch
+on the result, through their callees: the values they keep in `s7`–`s11`,
+which no callee writes, and the context in `a0`, which no callee writes
+either, stay public across the calls.
 -/
 
 @[expose] public section
@@ -37,9 +38,18 @@ theorem seal_ct :
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7])
     (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
 
-theorem open_ct :
-    ConstantTime isa openRISCV64.pre openRISCV64.pub Impl.ChaCha20Poly1305.RISCV64.«open» :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7])
-    (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
+/-! `open` branches on whether the tag is right, which its contract lets it
+leak: the taint analysis checks the parts around the branch, which
+`open_ct` (`Verified.lean`) composes. -/
+
+theorem openBody_taint : ∃ h, (VG.Taint.check taint (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7])
+    Impl.ChaCha20Poly1305.RISCV64.openBody h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem zeroData_taint : ∃ h, (VG.Taint.check taint (Taint.ofRegs [.s9, .s10])
+    Impl.ChaCha20Poly1305.RISCV64.zeroData h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem tail_taint : ∃ h, (VG.Taint.check taint (Taint.ofRegs [.t0])
+    (.block (Impl.ChaCha20Poly1305.RISCV64.restore ++ [Impl.ChaCha20.RISCV64.Xor.mov .a0 .t1])) h).isSome =
+      true := ⟨_, by taint_decide⟩
 
 end VG.Proof.ChaCha20Poly1305.RISCV64

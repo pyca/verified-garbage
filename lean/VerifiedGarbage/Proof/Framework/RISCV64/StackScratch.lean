@@ -535,9 +535,11 @@ scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
 for the function without it, which allocates the buffer in a frame of
 `bytes` more bytes of stack and zeroes its first `words` doublewords after
 the code (`withStackScratchWiped`), if its postcondition reads the memory on
-return only within the function's buffers (`hpostOut`). -/
+return only within the function's buffers (`hpostOut`), with any leak, as
+`stackScratchL`. -/
 theorem Verified.stackScratchWiped {c : Prog isa}
-    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack))
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hk : (sig.words abi.ptrBits).length < 8)
     (hb : 0 < bytes ∧ bytes ≤ 4064 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes)
     (hw : 8 * words ≤ n * e.size)
@@ -545,10 +547,10 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
         Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
-    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
+    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s)
     (hl : Sig.noLists sig.params = true := by decide) :
     Verified target (withStackScratchWiped bytes (scratchReg sig) words c)
-      (sig.contract abi pre post wa (stack + bytes)) := by
+      (sig.contract abi pre post wa (stack + bytes) leak) := by
   obtain ⟨hcor, hct, -⟩ := h
   have hlen := regArgs_length sig
   -- The buffer, below the stack the contract without it reserves, so apart
@@ -599,6 +601,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, s₄, -, hq, hfr, -, hex, ha, hm, hr0⟩ := hrun s hs
     refine ⟨_, _, hex, ha, ?_⟩
+    show (sig.contract abi pre post wa (stack + bytes)).post s _
     rw [post_regs (by omega_using [hk])]
     have hq' := (post_regs (sig := sig.withScratch nm e n)
       (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
@@ -616,9 +619,9 @@ theorem Verified.stackScratchWiped {c : Prog isa}
   · obtain ⟨u₁, _, _, f₁, _, _, p₁, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂]
-    have hsp₁₂ : s₁.sp = s₂.sp := ((pub_regs (by omega_using [hk]) hl).mp hp).1
-    rw [hct _ _ _ _ _ _ (narrow_pre hk hb h₁ hl) (narrow_pre hk hb h₂ hl) (narrow_pub hk hp hl) f₁ f₂,
-      hsp₁₂]
+    have hsp₁₂ : s₁.sp = s₂.sp := ((pub_regsL (by omega_using [hk]) hl).mp hp).1.1
+    rw [hct _ _ _ _ _ _ (narrow_pre (post := post) hk hb h₁ hl) (narrow_pre (post := post) hk hb h₂ hl)
+      (narrow_pubL hk hp hl) f₁ f₂, hsp₁₂]
 
 /-- Code verified for a function whose last argument, in a register, is a
 scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
