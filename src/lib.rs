@@ -106,7 +106,7 @@ mod align;
 pub mod cipher;
 pub mod cmac;
 mod ct;
-mod dit;
+pub mod dit;
 pub mod dsa;
 pub mod ec;
 pub mod ed25519;
