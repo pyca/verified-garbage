@@ -15,8 +15,7 @@ of the library's hash functions (`Mgf1.hashes`) may be either.
 As in BoringSSL (`RSA_sign_pss_mgf1`, `RSA_verify_pss_mgf1`), the message is
 given as its digest `mHash = Hash(M)` (§9.1.1 step 2, §9.1.2 step 2), which
 must be `hLen` octets, and the salt is an input to the encoding: the caller
-generates it (§9.1.1 step 4), with the salt length a convention chooses
-(`SaltLength`).
+generates it (§9.1.1 step 4), with a salt length of its choosing.
 
 Verification (`verifyEncoding`) recovers the salt as BoringSSL's
 `RSA_verify_PKCS1_PSS_mgf1` (`crypto/fipsmodule/rsa/padding.cc.inc`) does.
@@ -65,32 +64,6 @@ step 11, §9.1.2 step 9, with `z = 8 emLen - emBits`). -/
 def clearTop (z : Nat) : List Byte → List Byte
   | [] => []
   | b :: bs => (b &&& ((0xFF : Byte) >>> z)) :: bs
-
-/-! ## Salt lengths -/
-
-/-- A salt length convention, as BoringSSL's `salt_len`: a length, the
-digest length (`RSA_PSS_SALTLEN_DIGEST`), or, as BoringSSL's
-`RSA_PSS_SALTLEN_AUTO`, the longest salt when signing and any salt when
-verifying. -/
-inductive SaltLength
-  | fixed (sLen : Nat)
-  | digest
-  | auto
-
-/-- The salt length to sign with, for the hash function `H` and an encoding
-of `emLen` octets: BoringSSL's `RSA_padding_add_PKCS1_PSS_mgf1`, whose `auto`
-is `emLen - hLen - 2`, the longest that fits. -/
-def SaltLength.sign (H : Hash) (emLen : Nat) : SaltLength → Nat
-  | .fixed sLen => sLen
-  | .digest => H.len
-  | .auto => emLen - H.len - 2
-
-/-- The salt length verification expects, for the hash function `H`, or
-`none` for any (`auto`): BoringSSL's `RSA_verify_PKCS1_PSS_mgf1`. -/
-def SaltLength.verify (H : Hash) : SaltLength → Option Nat
-  | .fixed sLen => some sLen
-  | .digest => some H.len
-  | .auto => none
 
 /-! ## EMSA-PSS (§9.1) -/
 

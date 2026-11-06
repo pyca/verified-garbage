@@ -62,15 +62,6 @@ def storePowersParam : String × Param := ("pw", .array true .u64 16)
 /-- The powers' buffer read by the `*_with_powers` functions. -/
 def withPowersParam : String × Param := ("pw", .array false .u64 16)
 
-/-- Documentation shared by the `*_store_powers` functions. -/
-def storePowersSummary (name contract : String) : String :=
-  "`" ++ name ++ "`, which also writes to `*pw` the 8 prepared powers of its hash subkey `H`: " ++
-  "at byte `32*k`, for `k` from 0 to 3, `preparedPower(H^(2*k+2))` then " ++
-  "`preparedPower(H^(2*k+1))`, as two little-endian 128-bit words " ++
-  "(`VG.Spec.Gcm.Powers8Repr`, `VG.Spec.Gcm.preparedPower`). Its other results are those of `" ++
-  name ++ "`. The powers are secret, as the hash subkey is: they may not affect timing. " ++
-  "Contract: `VG.Spec.Gcm." ++ contract ++ "`."
-
 /-- Documentation shared by the `*_with_powers` functions. -/
 def withPowersSummary (name contract : String) : String :=
   "`" ++ name ++ "` with the 8 prepared powers of the hash subkey of the key context at `*pw` " ++
@@ -92,10 +83,6 @@ additional data. -/
 def storePowersOk {pb : Nat} (nonceLen aadLen : BitVec pb) : Prop :=
   nonceLen.toNat = 12 ∧ aadLen.toNat ≤ 16
 
-/-- `storePowersOk` in the safety documentation. -/
-def storePowersSafety : String :=
-  "`nonce_len` must be 12 and `aad_len` at most 16 (`VG.Spec.Gcm.storePowersOk`)."
-
 /-- `vg_aes_gcm_seal_store_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *mut [u64; 16])`:
 `sealSig` and the powers' buffer. -/
 def sealStorePowersSig : Sig where
@@ -114,16 +101,6 @@ def sealStorePowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract 
       sealPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag m ∧
         storePowersOk nonceLen aadLen)
     (post := sealStorePowersPost A.ptrBits) (writeArgs := true) (stack := stack)
-
-/-- `vg_aes_gcm_seal_store_powers` on every target. -/
-def sealStorePowersApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_seal_store_powers"
-  sig := sealStorePowersSig
-  writeArgs := true
-  contracts := some fun A stack => sealStorePowersContract A stack
-  summary := storePowersSummary "vg_aes_gcm_seal" "sealStorePowersContract"
-  safety := sealApi.safety ++ [storePowersSafety]
 
 /-- `vg_aes_gcm_open_store_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *mut [u64; 16]) -> u32`:
 `openSig` and the powers' buffer. -/
@@ -148,18 +125,6 @@ def openStorePowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract 
     (post := openStorePowersPost A.ptrBits) (writeArgs := true) (stack := stack)
     (leak := some fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _pw =>
       openLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
-
-/-- `vg_aes_gcm_open_store_powers` on every target. -/
-def openStorePowersApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_open_store_powers"
-  sig := openStorePowersSig
-  writeArgs := true
-  contracts := some fun A stack => openStorePowersContract A stack
-  summary := storePowersSummary "vg_aes_gcm_open" "openStorePowersContract" ++
-    " It writes the powers whether or not the tag matches: they depend only on the key."
-  safety := openApi.safety ++ [storePowersSafety,
-    "`tag_len` must be between 4 and 16 (`VG.Spec.Gcm.tagLenOk`)."]
 
 /-- `vg_aes_gcm_seal_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16])`:
 `sealSig` and the powers' buffer. -/

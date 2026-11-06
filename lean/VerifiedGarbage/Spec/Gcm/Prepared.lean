@@ -124,15 +124,6 @@ def sealGatherPreparedPre (pb : Nat) : Curry (sealGatherPreparedSig.words pb) (M
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       gatheredLen pb m src srcCount.toNat = len.toNat ∧ PreparedPowersRepr m ctx
 
-/-- The existing signature with a prepared 1024-byte context. -/
-abbrev openToPreparedSig := openToPrecomputedSig
-
-/-- The existing round-count and length requirements, plus the prepared powers. -/
-def openToPreparedPre (pb : Nat) : Curry (openToPreparedSig.words pb) (Mem → Prop) :=
-  fun ctx rounds _nonce _nonceLen _aad _aadLen _src len _dst dstLen _tag _tagLen m =>
-    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
-      dstLen.toNat = len.toNat ∧ PreparedPowersRepr m ctx
-
 /-- The unchanged `sealContract` postcondition with prepared powers. -/
 def sealPreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealPreparedSig.contract A (pre := sealPreparedPre A.ptrBits)
@@ -212,22 +203,5 @@ def sealGatherPreparedApi : Api where
   contracts := some fun A stack => sealGatherPreparedContract A stack
   summary := preparedSummary "vg_aes_gcm_seal_gather" "sealGatherPreparedContract"
   safety := sealGatherApi.safety ++ [preparedSafety]
-
-
-/-- The unchanged `openToContract` postcondition with prepared powers. -/
-def openToPreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openToPreparedSig.contract A (pre := openToPreparedPre A.ptrBits)
-    (post := openToPost A.ptrBits)
-    (writeArgs := true) (stack := stack) (leak := some (openToLeak A.ptrBits))
-
-/-- `vg_aes_gcm_open_to_prepared` on every target. -/
-def openToPreparedApi : Api where
-  module := "gcm"
-  name := "vg_aes_gcm_open_to_prepared"
-  sig := openToPreparedSig
-  writeArgs := true
-  contracts := some fun A stack => openToPreparedContract A stack
-  summary := preparedSummary "vg_aes_gcm_open_to" "openToPreparedContract"
-  safety := openToApi.safety ++ [preparedSafety]
 
 end VG.Spec.Gcm
