@@ -934,14 +934,11 @@ end VG.Proof.Gcm.AArch64.Pmull
 /-!
 # GHASH with PMULL and the powers in their own buffer
 
-`ghashW_correct`, `ghashW_ct` and `ghashS_verified` prove
-`Impl.Gcm.AArch64.Pmull.ghashW` (`vg_ghash_with_powers_aes`) and
-`Impl.Gcm.AArch64.Pmull.ghashS` (`vg_ghash_store_powers_aes`) against their
-AArch64 contracts, `Proof.Gcm.ghashWithAArch64` and
-`Proof.Gcm.ghashStoreAArch64`. Both set up all eight powers before the loops
-(`Inv s₀ 8 0`, `loopsPart_ok`): `ghashW` loads them from `pw`, where
-`x · H'ᵏ = Hᵏ` (`read_pwOff`), and `ghashS` computes them as `ghash` does,
-then stores them after its epilogue, where `H'ᵏ = pp H k` (`tReg_pp`).
+`ghashW_correct` and `ghashW_ct` prove `Impl.Gcm.AArch64.Pmull.ghashW`
+(`vg_ghash_with_powers_aes`) against its AArch64 contract,
+`Proof.Gcm.ghashWithAArch64`. It sets up all eight powers before the loops
+(`Inv s₀ 8 0`, `loopsPart_ok`), loading them from `pw`, where
+`x · H'ᵏ = Hᵏ` (`read_pwOff`).
 -/
 
 namespace VG.Proof.Gcm.AArch64.Pmull
@@ -1156,69 +1153,7 @@ theorem ghashW_ct : ConstantTime isa Proof.Gcm.ghashWithAArch64.pre Proof.Gcm.gh
   · exact h5
   · exact h6
 
-
-/-! ## Storing the powers -/
-
-theorem pm_of_store {s₀ : State} (h : Proof.Gcm.ghashStoreAArch64.pre s₀) : Pm s₀ := by
-  obtain ⟨hrd, hwr, -, -, -, hyd, -⟩ := h
-  exact ⟨⟨hR s₀, by simp [hrd], contains_offset (by decide) (by decide)⟩, by simp [hrd],
-    by simp [hwr], hyd⟩
-
-/-- `Pm` reads only `x0` to `x3` and the regions of its state. -/
-theorem Pm.congr {s₀ s₁ : State} (h0 : s₁.gpr .x0 = s₀.gpr .x0) (h1 : s₁.gpr .x1 = s₀.gpr .x1)
-    (h2 : s₁.gpr .x2 = s₀.gpr .x2) (h3 : s₁.gpr .x3 = s₀.gpr .x3) (hrd : s₁.rd = s₀.rd)
-    (hwr : s₁.wr = s₀.wr) (hp : Pm s₀) : Pm s₁ := by
-  obtain ⟨hh, hd, hy, hyd⟩ := hp
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · simp only [hA, hrd, hwr, h0]; exact hh
-  · simp only [dR, dp, nb, hrd, h2, h3]; exact hd
-  · simp only [yR, yp, hwr, h1]; exact hy
-  · simp only [yR, yp, dR, dp, nb, h1, h2, h3]; exact hyd
-
-/-- `Inv` reads only `x0` to `x3`, the memory and the regions of its initial state. -/
-theorem Inv.congr {s₀ s₁ : State} (h0 : s₁.gpr .x0 = s₀.gpr .x0) (h1 : s₁.gpr .x1 = s₀.gpr .x1)
-    (h2 : s₁.gpr .x2 = s₀.gpr .x2) (h3 : s₁.gpr .x3 = s₀.gpr .x3) (hm : s₁.mem = s₀.mem)
-    (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr) {K i : Nat} {s : State} (hI : Inv s₁ K i s) :
-    Inv s₀ K i s := by
-  have eH : H₀ s₁ = H₀ s₀ := by simp only [H₀, hA, h0, hm]
-  have eY : ∀ j, Ys s₁ j = Ys s₀ j := fun j => by
-    simp only [Ys, H₀, Y₀, hA, yp, dp, h0, h1, h2, hm]
-  refine ⟨?_, hI.c, fun k hk hkK => ?_, hI.sw, ?_, ?_, ?_, ?_, ?_, hI.x5, ?_, ?_, ?_⟩
-  · have := hI.le; simp only [nb, h3] at this ⊢; exact this
-  · rw [← eH]; exact hI.t k hk hkK
-  · rw [← eY]; exact hI.y
-  · rw [hI.x0]; simp only [hA, h0]
-  · rw [hI.x1]; simp only [yp, h1]
-  · rw [hI.x2]; simp only [blkAddr, dp, h2]
-  · rw [hI.x3]; simp only [nb, h3]
-  · rw [hI.mem, hm]
-  · rw [hI.rd, hrd]
-  · rw [hI.wr, hwr]
-
-theorem prologueS_ok {s₀ : State} (h : Proof.Gcm.ghashStoreAArch64.pre s₀) :
-    WP isa (.block Impl.Gcm.AArch64.Pmull.prologueS) s₀ fun s =>
-      Inv s₀ 8 0 s ∧ s.gpr .x8 = s₀.gpr .x5 := by
-  have hp := pm_of_store h
-  simp only [Impl.Gcm.AArch64.Pmull.prologueS, List.singleton_append]
-  refine WP.block_cons_iff.mpr ⟨_, exec_addImm (show 0 < 4096 by decide) s₀, ?_⟩
-  have g : ∀ r, r ≠ .x8 → (s₀.write .x .x8 (s₀.gpr .x5 + BitVec.ofNat 64 0)).gpr r = s₀.gpr r :=
-    fun r hr => by simp only [gpr_write_x, hr, ite_false]
-  have hp₁ := Pm.congr (s₁ := s₀.write .x .x8 (s₀.gpr .x5 + BitVec.ofNat 64 0))
-    (g .x0 (by decide)) (g .x1 (by decide)) (g .x2 (by decide)) (g .x3 (by decide)) rfl rfl hp
-  have hw : WP isa (.block (Impl.Gcm.AArch64.Pmull.prologueT ++ Impl.Gcm.AArch64.Pmull.powersS))
-      (s₀.write .x .x8 (s₀.gpr .x5 + BitVec.ofNat 64 0)) (Inv (s₀.write .x .x8 (s₀.gpr .x5 + BitVec.ofNat 64 0)) 8 0) := by
-    rw [WP.block_append_iff]
-    exact WP.mono (prologueT_ok hp₁) fun _ hI => powersS_ok hI
-  refine WP.mono (WP.gprs (rs := [.x8]) hw (by decide +kernel) (by decide +kernel))
-    fun s ⟨hI, g8⟩ => ⟨Inv.congr (g .x0 (by decide)) (g .x1 (by decide)) (g .x2 (by decide))
-      (g .x3 (by decide)) rfl rfl rfl hI, ?_⟩
-  rw [g8 .x8 (by simp)]
-  simp only [gpr_write_x, ite_true, add_ofNat_zero]
-
-/-- With the eight powers computed, `H'ᵏ` is the prepared power of `Hᵏ`. -/
-theorem tReg_pp {s₀ s : State} {i : Nat} (hI : Inv s₀ 8 i s) {k : Nat} (hk1 : 1 ≤ k) (hk8 : k ≤ 8) :
-    s.v (tReg k) = pp (H₀ s₀) k :=
-  φ_inj (x_cancel (by rw [hI.t k hk1 hk8, x_φ_pp]))
+/-! ## The offsets of the powers in their own buffer -/
 
 /-- The offsets of distinct powers are 16 bytes apart at least. -/
 theorem pwOff_sep : ∀ k < 9, ∀ j < 9, 1 ≤ k → 1 ≤ j → k ≠ j →
@@ -1232,201 +1167,6 @@ theorem pwOff_le : ∀ k < 9, pwOff k + 16 ≤ 128 := by
   unfold Impl.Gcm.AArch64.Pmull.pwOff
   split <;> omega
 
-/-- A byte outside a write is kept. -/
-theorem write_byte_sep {m : Mem} {x b : Addr} {k : Nat} {v : BitVec (8 * k)} (h : Mem.Sep x 1 b k) :
-    m.write b k v x = m x :=
-  Mem.write_apply (h x (by simp))
-
-/-- The bytes of `scratch` (`x4`) as they were in `s₀`. -/
-def ScratchKept (s₀ s : State) : Prop :=
-  ∀ x, Region.Contains ⟨s₀.gpr .x4, 256⟩ x 1 → s.mem x = s₀.mem x
-
-/-- The powers below `K` stored at `pw`, the block at `y` kept, `scratch` untouched. -/
-structure SW (s₀ : State) (yv : BitVec 128) (K : Nat) (s : State) : Prop where
-  x8 : s.gpr .x8 = s₀.gpr .x5
-  wr : s.wr = s₀.wr
-  t : ∀ k, 1 ≤ k → k ≤ 8 → s.v (tReg k) = pp (H₀ s₀) k
-  pw : ∀ k, 1 ≤ k → k ≤ K → s.mem.read (s₀.gpr .x5 + BitVec.ofNat 64 (pwOff k)) 16 = pp (H₀ s₀) k
-  y : s.mem.read (yp s₀) 16 = yv
-  sc : ScratchKept s₀ s
-
-/-- `H'ᴷ⁺¹` stored. -/
-theorem storeI_ok {s₀ : State} (h : Proof.Gcm.ghashStoreAArch64.pre s₀) {yv : BitVec 128} {K : Nat}
-    (hK : K + 1 ≤ 8) {s : State} (hS : SW s₀ yv K s) :
-    WP isa (.block (Impl.Gcm.AArch64.Pmull.storePw (K + 1))) s (SW s₀ yv (K + 1)) := by
-  obtain ⟨-, hwr, -, -, -, -, -, hyp, -, -, hsp⟩ := h
-  have hc : ∀ k, k ≤ 8 → Region.Contains ⟨s₀.gpr .x5, 128⟩ (s₀.gpr .x5 + BitVec.ofNat 64 (pwOff k)) 16 :=
-    fun k hk => contains_offset (by have := pwOff_le k (by omega); omega)
-      (by have := pwOff_le k (by omega); omega)
-  have hout : InRegions s.wr (s.gpr .x8 + BitVec.ofNat 64 (pwOff (K + 1))) 16 := by
-    rw [hS.wr, hwr, hS.x8]; exact ⟨⟨s₀.gpr .x5, 128⟩, by simp, hc (K + 1) hK⟩
-  have ho' : pwOff (K + 1) < 4096 * 16 := by have := pwOff_le (K + 1) (by omega); omega
-  refine WP.block_cons_iff.mpr ⟨_, exec_strq (pwOff_mod (K + 1)) ho' hout, WP.block_nil ?_⟩
-  refine ⟨hS.x8, hS.wr, hS.t, fun k hk hkK => ?_, ?_, fun x hx => ?_⟩
-  · show (s.mem.write (s.gpr .x8 + BitVec.ofNat 64 (pwOff (K + 1))) 16 (s.v (tReg (K + 1)))).read _ 16 = _
-    rw [hS.x8]
-    rcases (by omega : k = K + 1 ∨ k ≤ K) with rfl | hkK'
-    · rw [read_write16, hS.t _ hk hK]
-    · rw [Mem.read_write_sep (Offset.sep _ (pwOff_sep k (by omega) (K + 1) (by omega) hk (by omega)
-          (by omega)) (by have := pwOff_le k (by omega); omega)
-          (by have := pwOff_le (K + 1) (by omega); omega)) (by decide),
-        hS.pw k hk hkK']
-  · show (s.mem.write (s.gpr .x8 + BitVec.ofNat 64 (pwOff (K + 1))) 16 (s.v (tReg (K + 1)))).read _ 16 = _
-    have hcy : Region.Contains ⟨s₀.gpr .x1, 16⟩ (s₀.gpr .x1) 16 := by
-      have := contains_offset (base := s₀.gpr .x1) (len := 16) (off := 0) (n := 16) (by decide) (by decide)
-      rwa [add_ofNat_zero] at this
-    rw [hS.x8, Mem.read_write_sep (Region.Disjoint.sep hyp hcy (hc (K + 1) hK)) (by decide), hS.y]
-  · show (s.mem.write (s.gpr .x8 + BitVec.ofNat 64 (pwOff (K + 1))) 16 (s.v (tReg (K + 1)))) x = _
-    rw [hS.x8, write_byte_sep (Region.Disjoint.sep hsp hx (hc (K + 1) hK)), hS.sc x hx]
-
-/-- The epilogue, then the eight powers stored. -/
-theorem epiS_ok {s₀ : State} (h : Proof.Gcm.ghashStoreAArch64.pre s₀) {s : State}
-    (hI : Inv s₀ 8 (nb s₀) s) (h8 : s.gpr .x8 = s₀.gpr .x5) :
-    WP isa (.block (Impl.Gcm.AArch64.Pmull.epilogue ++ Impl.Gcm.AArch64.Pmull.storesS)) s fun s' =>
-      Proof.Gcm.ghashAArch64.post s₀ s' ∧ Spec.Gcm.Powers8Repr s'.mem (s₀.gpr .x5) (H₀ s₀) ∧
-        ScratchKept s₀ s' := by
-  have hp := pm_of_store h
-  have hys := h.2.2.2.2.2.2.1
-  have hout : InRegions s.wr (s.gpr .x1 + BitVec.ofNat 64 0) 16 := by
-    rw [hI.wr, hI.x1]
-    exact ⟨yR s₀, hp.y_in, contains_offset (by decide) (by decide)⟩
-  refine WP.block_cons_iff.mpr ⟨_, exec_rev64b Y Y s, ?_⟩
-  refine WP.block_cons_iff.mpr ⟨_, exec_strq (s := s.setV Y _) (by decide) (by decide) hout, ?_⟩
-  -- After the epilogue: `Y` at `y`.
-  let se : State := { s.setV Y (VRevOp.eval .rev64b (s.v Y)) with
-    mem := (s.setV Y (VRevOp.eval .rev64b (s.v Y))).mem.write
-      ((s.setV Y (VRevOp.eval .rev64b (s.v Y))).gpr .x1 + BitVec.ofNat 64 0) 16
-      ((s.setV Y (VRevOp.eval .rev64b (s.v Y))).v Y) }
-  have hye : blockAt se.mem (yp s₀) = Ys s₀ (nb s₀) := by
-    apply φ_inj
-    simp only [se, mem_setV, gpr_setV, v_setV, ↓reduceIte, hI.x1, add_ofNat_zero, φ_store, hI.y]
-  have hsc0 : ScratchKept s₀ se := fun x hx => by
-    have hcy : Region.Contains ⟨s₀.gpr .x1, 16⟩ (s₀.gpr .x1) 16 := by
-      have := contains_offset (base := s₀.gpr .x1) (len := 16) (off := 0) (n := 16) (by decide) (by decide)
-      rwa [add_ofNat_zero] at this
-    simp only [se, mem_setV, gpr_setV, hI.x1, add_ofNat_zero]
-    rw [write_byte_sep (Region.Disjoint.sep hys.symm hx hcy), hI.mem]
-  have hS0 : SW s₀ (se.mem.read (yp s₀) 16) 0 se :=
-    ⟨by simp only [se, gpr_setV, h8], by simp only [se, wr_setV, hI.wr],
-      fun k hk1 hk8 => by
-        simp only [se, v_setV, (ne_tReg (r := Y) k).symm, ite_false]; exact tReg_pp hI hk1 hk8,
-      fun _ _ h => absurd h (by omega), rfl, hsc0⟩
-  show WP isa (.block Impl.Gcm.AArch64.Pmull.storesS) se _
-  simp only [Impl.Gcm.AArch64.Pmull.storesS, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (storeI_ok h (K := 0) (by decide) hS0) fun s₁ h₁ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (storeI_ok h (K := 1) (by decide) h₁) fun s₂ h₂ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (storeI_ok h (K := 2) (by decide) h₂) fun s₃ h₃ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (storeI_ok h (K := 3) (by decide) h₃) fun s₄ h₄ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (storeI_ok h (K := 4) (by decide) h₄) fun s₅ h₅ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (storeI_ok h (K := 5) (by decide) h₅) fun s₆ h₆ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (storeI_ok h (K := 6) (by decide) h₆) fun s₇ h₇ => ?_
-  refine WP.mono (storeI_ok h (K := 7) (by decide) h₇) fun s' h' => ⟨?_, ?_, h'.sc⟩
-  · show blockAt s'.mem (yp s₀) = Ys s₀ (nb s₀)
-    rw [← hye]
-    apply φ_inj
-    rw [← ρ_load, ← ρ_load, h'.y]
-  · intro j hj
-    have e : ∀ k, 1 ≤ k → k ≤ 8 → s'.mem.readW (s₀.gpr .x5 + BitVec.ofNat 64 (pwOff k)) 128 =
-        pp (H₀ s₀) k := fun k hk1 hk8 => by rw [Mem.readW, ← h'.pw k hk1 hk8]; rfl
-    refine ⟨?_, ?_⟩
-    · have := e (2 * j + 2) (by omega) (by omega)
-      rw [show pwOff (2 * j + 2) = 32 * j by
-        simp only [pwOff, show (2 * j + 2) % 2 = 0 by omega, ↓reduceIte]; omega] at this
-      exact this
-    · have := e (2 * j + 1) (by omega) (by omega)
-      rw [show pwOff (2 * j + 1) = 16 + 32 * j by
-        simp only [pwOff, show (2 * j + 1) % 2 = 1 by omega, Nat.one_ne_zero, ↓reduceIte]; omega] at this
-      exact this
-
-theorem correctS {s₀ : State} (hs : Proof.Gcm.ghashStoreAArch64.pre s₀) :
-    WP isa Impl.Gcm.AArch64.Pmull.ghashS s₀ fun s' =>
-      (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Gcm.ghashStoreAArch64.post s₀ s' ∧
-        ScratchKept s₀ s' := by
-  have hp := pm_of_store hs
-  have hw : WP isa Impl.Gcm.AArch64.Pmull.ghashS s₀ fun s' =>
-      Proof.Gcm.ghashStoreAArch64.post s₀ s' ∧ ScratchKept s₀ s' := by
-    refine WP.seq (WP.mono (prologueS_ok hs) fun s₁ ⟨hI₁, h8₁⟩ => ?_)
-    refine WP.seq (WP.mono (WP.gprs (rs := [.x8]) (loopsPart_ok hp hI₁) (by decide +kernel)
-      (by decide +kernel)) fun s₂ ⟨hI₂, g₂⟩ => ?_)
-    exact WP.mono (epiS_ok hs hI₂ (by rw [g₂ .x8 (by simp), h8₁])) fun _ ⟨a, b, c⟩ => ⟨⟨a, b⟩, c⟩
-  exact WP.mono (WP.gprs (rs := preserved) hw (keeps_pres (by decide +kernel)) (by decide +kernel))
-    fun _ ⟨⟨h₁, h₃⟩, h₂⟩ => ⟨h₂, h₁, h₃⟩
-
-theorem ghashS_correct (s : State) (hs : Proof.Gcm.ghashStoreAArch64.pre s) :
-    ∃ t s', Exec isa Impl.Gcm.AArch64.Pmull.ghashS s t s' ∧ abiPreserved s s' ∧
-      Proof.Gcm.ghashStoreAArch64.post s s' := by
-  obtain ⟨t, s', he, h₁, h₂, -⟩ := correctS hs
-  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
-
-theorem ghashS_ct : ConstantTime isa Proof.Gcm.ghashStoreAArch64.pre Proof.Gcm.ghashStoreAArch64.pub
-    Impl.Gcm.AArch64.Pmull.ghashS := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5]) ?_
-    (by taint_decide)
-  intro s₁ s₂ _ _ ⟨⟨h1, h2, h3, h4, h5, hsp⟩, h6⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h1
-  · exact h2
-  · exact h3
-  · exact h4
-  · exact h5
-  · exact h6
-
-/-- A state satisfying `vg_ghash_store_powers`'s precondition, with zero memory. -/
-def satStateS : State :=
-  { Proof.Gcm.AArch64.satState with
-    gpr := fun r => if r = .x5 then 0x6000 else Proof.Gcm.AArch64.satState.gpr r
-    wr := [⟨0x2000, 16⟩, ⟨0x4000, 256⟩, ⟨0x6000, 128⟩] }
-
-private theorem ghashS_implies :
-    Proof.Gcm.ghashStoreAArch64.Implies (Spec.Gcm.ghashStorePowersContract AArch64.abi) :=
-    { pre := by
-        sig_implies_pre [Spec.Gcm.ghashStorePowersContract, Spec.Gcm.ghashStorePowersSig,
-          Proof.Gcm.ghashSig, Spec.Gcm.storePowersParam, Proof.Gcm.ghashStoreAArch64,
-          Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
-      post := by
-        sig_implies_post [Spec.Gcm.ghashStorePowersContract, Spec.Gcm.ghashStorePowersSig,
-          Proof.Gcm.ghashSig, Spec.Gcm.storePowersParam, Proof.Gcm.ghashStoreAArch64,
-          Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
-      pub := by
-        sig_implies_pub [Spec.Gcm.ghashStorePowersContract, Spec.Gcm.ghashStorePowersSig,
-          Proof.Gcm.ghashSig, Spec.Gcm.storePowersParam, Proof.Gcm.ghashStoreAArch64,
-          Proof.Gcm.ghashAArch64, AArch64.abi, AArch64.argRegs]
-      sat := ⟨satStateS, by
-        sig_pre [Spec.Gcm.ghashStorePowersContract, Spec.Gcm.ghashStorePowersSig, Proof.Gcm.ghashSig,
-          Spec.Gcm.storePowersParam, AArch64.abi, AArch64.argRegs, satStateS,
-          Proof.Gcm.AArch64.satState]
-        sig_and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact Region.disjoint_of_sep (by decide)⟩ }
-
-theorem ghashS_verified :
-    Verified AArch64.target Impl.Gcm.AArch64.Pmull.ghashS (Spec.Gcm.ghashStorePowersContract AArch64.abi) :=
-  Verified.of_correct ghashS_correct ghashS_ct ghashS_implies
-
-/-- `vg_ghash_store_powers` never writes `scratch`: its caller need not wipe it. -/
-theorem ghashS_written (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.Gcm.ghashStorePowersContract AArch64.abi).pre s)
-    (he : Exec isa Impl.Gcm.AArch64.Pmull.ghashS s t s') :
-    Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Gcm.ghashStorePowersSig [("scratch", 0)] s s' := by
-  obtain ⟨t', s'', he', -, -, hsc⟩ := correctS (ghashS_implies.pre s hs)
-  obtain ⟨-, rfl⟩ := Exec.det he he'
-  simp [Sig.writtenWithin, AArch64.abi, AArch64.argRegs, Abi.withConsts, Spec.Gcm.ghashStorePowersSig,
-    Spec.Gcm.storePowersParam, Sig.words, Sig.arrays, Param.words, ArgWord.bits]
-  intro i hi
-  have hi' : i < 256 := by simpa [Elem.size] using hi
-  exact hsc _ (Offset.contains_base _ (by omega) (by omega))
-
 end VG.Proof.Gcm.AArch64.Pmull
 
 /-!
@@ -1434,9 +1174,8 @@ end VG.Proof.Gcm.AArch64.Pmull
 
 `keyPowers_verified` proves `Impl.Gcm.AArch64.Pmull.keyPowers`
 (`vg_aes_gcm_store_powers_aes`) against `Spec.Gcm.storePowersContract`: it
-loads `H` from byte 240 of the key context, and computes and stores its
-powers as `vg_ghash_store_powers_aes` does (`Pmull/Ghash.lean`), keeping
-them, as `Inv` does, in `tReg k` with `x · Tₖ = Hᵏ` and in `sReg k` with
+loads `H` from byte 240 of the key context, and computes its powers as
+`vg_ghash_aes` does and stores them at `pwOff`, keeping them, as `Inv` does, in `tReg k` with `x · Tₖ = Hᵏ` and in `sReg k` with
 their halves swapped (`KP`).
 -/
 
