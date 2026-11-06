@@ -70,10 +70,12 @@ abbrev dnRegion (c : Core) (B : BitVec 32) : Region := ⟨slotA B c.dSlot, 4 * (
 abbrev dataRegion (D : BitVec 32) (st n : Nat) : Region := ⟨D.setWidth 64, st * n⟩
 
 /-- What a run keeps fixed: the scratch buffer at `B`, the data at `D` of `n`
-steps of `st` bytes, the stack the core uses below `esp`, and the layout. -/
+steps of `st` bytes (within a writable region, at `e` bytes from its base),
+the stack the core uses below `esp`, and the layout. -/
 structure Fixed (c : Core) (s₀ : State) (B D : BitVec 32) (n st : Nat) : Prop where
   scr : ScrIn s₀ B c.total
-  dataW : dataRegion D st n ∈ s₀.wr
+  dataW : ∃ (R : Addr) (e ℓ : Nat), (⟨R, ℓ⟩ : Region) ∈ s₀.wr ∧ D.setWidth 64 = R + BitVec.ofNat 64 e ∧
+    e + st * n ≤ ℓ ∧ ℓ < 2 ^ 64
   dataFit : D.toNat + st * n ≤ 2 ^ 32
   dataScr : Region.Disjoint (dataRegion D st n) ⟨B.setWidth 64, 4 * c.total⟩
   stkData : Region.Disjoint (stkRegion (s₀.gpr .esp) c.stack) (dataRegion D st n)
@@ -144,8 +146,10 @@ theorem areasOk {s₀ s : State} {B D : BitVec 32} {n st j : Nat} (hF : Fixed c 
     rw [hwr]
     cases l
     · simp only [lens, areas] at ho ⊢
-      refine ⟨_, hF.dataW, ?_⟩
-      rw [VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega_using [hjn, ho]) (by omega_using [hD, hjn, ho])
+      obtain ⟨R, e, ℓ, hR, hDR, heℓ, hℓ⟩ := hF.dataW
+      refine ⟨_, hR, ?_⟩
+      rw [VG.Offset.add_add, hDR, VG.Offset.add_add]
+      exact VG.Offset.contains_base _ (by omega_using [hjn, ho, heℓ]) (by omega_using [hjn, ho, heℓ, hℓ])
     · simp only [lens, areas] at ho ⊢
       refine ⟨_, hF.scr.wr, ?_⟩
       rw [VG.Offset.add_add]; exact slot_contains hfit (by simp only [Core.chnSlot]; omega_using [hroom, hbw, ho])
@@ -408,7 +412,11 @@ theorem toWr {s₀ t : State} {B D : BitVec 32} {n st : Nat} (hF : Fixed c s₀ 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
   rw [hw]
   rcases hr' with rfl | rfl
-  · exact ⟨_, hF.dataW, hs⟩
+  · obtain ⟨R, e, ℓ, hR, hDR, heℓ, -⟩ := hF.dataW
+    refine ⟨_, hR, fun a ha => ?_⟩
+    have := VG.Offset.sub_base R (n := st * n) heℓ
+    rw [← hDR] at this
+    exact this a (hs a ha)
   · exact ⟨_, hF.scr.wr, hs⟩
 
 theorem pre_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : BitVec 32} {n st : Nat}
