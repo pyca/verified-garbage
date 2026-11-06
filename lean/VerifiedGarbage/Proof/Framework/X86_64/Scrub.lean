@@ -444,6 +444,8 @@ structure ScrubAbi (A : Abi isa) : Prop where
   ret : ∀ s, A.ret s = s.gpr .rax
   rdSub : ∀ s r, r ∈ A.rd s → r ∈ s.rd
   argsLen : ∀ ws f, A.args ws = some f → ∀ s, (f s).length = ws.length
+  args : ∀ ws, A.args ws = abi.args ws
+  argRo : ∀ ws s, ∀ p ∈ A.argArea ws s, p.2 = false
 
 theorem abi_args_len (ws : List Nat) (f : State → List (BitVec 64)) (h : abi.args ws = some f) (s : State) :
     (f s).length = ws.length := by
@@ -464,16 +466,23 @@ theorem abi_wf_stack {ws : List Nat} {n : Nat} {s : State} (h : abi.wf ws n s) :
     | zero => exact .inl rfl
     | succ n => exact .inr h.1
 
+theorem abi_argRo (ws : List Nat) (s : State) : ∀ p ∈ abi.argArea ws s, p.2 = false := by
+  intro p hp
+  simp only [abi] at hp
+  split at hp
+  · cases hp
+  · simp only [List.mem_singleton] at hp; subst hp; rfl
+
 theorem ScrubAbi.plain : ScrubAbi abi :=
   ⟨rfl, rfl, fun _ => rfl, fun _ _ _ h => ⟨abi_wf_stack h, fun _ hr hn => absurd hr hn⟩,
-    fun _ _ h => h, fun _ => rfl, fun _ => rfl, fun _ _ h => h, abi_args_len⟩
+    fun _ _ h => h, fun _ => rfl, fun _ => rfl, fun _ _ h => h, abi_args_len, fun _ => rfl, abi_argRo⟩
 
 theorem ScrubAbi.consts (cs : List (String × List (BitVec 64))) : ScrubAbi (abi.withConsts cs) := by
   cases cs with
   | nil => exact ScrubAbi.plain
   | cons c cs =>
     refine ⟨rfl, rfl, fun _ => rfl, fun ws n s h => ?_, fun _ _ h => h.1, fun _ => rfl, fun _ => rfl,
-      fun _ _ h => List.mem_of_mem_take h, abi_args_len⟩
+      fun _ _ h => List.mem_of_mem_take h, abi_args_len, fun _ => rfl, abi_argRo⟩
     obtain ⟨hw, hdrop, -, hdis, -⟩ := h
     refine ⟨abi_wf_stack hw, fun r hr hn q hq => ?_⟩
     have hr' : r ∈ (abi.rd s).drop ((abi.rd s).length - (c :: cs).length) := by
@@ -491,7 +500,7 @@ theorem ScrubAbi.tables {A : Abi isa} (hA : ScrubAbi A) (sig : Sig) (ts : List (
   | nil => exact hA
   | cons t ts =>
     exact ⟨hA.ptrBits, hA.reserved, hA.wr, fun ws n s h => hA.wf ws n s h.1,
-      fun s₁ s₂ h => hA.pub s₁ s₂ h.1, hA.mem, hA.ret, hA.rdSub, hA.argsLen⟩
+      fun s₁ s₂ h => hA.pub s₁ s₂ h.1, hA.mem, hA.ret, hA.rdSub, hA.argsLen, hA.args, hA.argRo⟩
 
 /-- The calling convention of every x86-64 artifact (`Api.artifact`). -/
 theorem ScrubAbi.of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable)) :
