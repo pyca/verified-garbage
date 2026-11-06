@@ -9,7 +9,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use alloc::{vec, vec::Vec};
@@ -98,7 +99,7 @@ pub(super) fn select_backends(
     }
 }
 
-#[cfg(target_arch = "powerpc64")]
+#[cfg(any(target_arch = "powerpc64", target_arch = "riscv64"))]
 pub(super) type Search = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -110,10 +111,10 @@ pub(super) type Search = unsafe extern "C" fn(
     *mut [u64; 4],
 ) -> u32;
 
-/// The PPC64LE implementation: neither hash has a variant there, so the
+/// The PPC64LE and RISC-V implementation: neither hash has a variant there, so the
 /// match names only their baselines, and a new hash backend does not compile
 /// until the search handles it.
-#[cfg(target_arch = "powerpc64")]
+#[cfg(any(target_arch = "powerpc64", target_arch = "riscv64"))]
 pub(super) fn select(features: Features) -> Search {
     use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
     match (H1::select(features), H256::select(features)) {
