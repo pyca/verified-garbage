@@ -329,7 +329,8 @@ resolved source references and implicit core imports.
 
 ## Restoring the CI build cache
 
-After CI passes on `main`, it publishes the Linux x86-64 project build and
+Once CI has checked the Lean build of a push to `main` (without waiting for
+its Rust jobs), it publishes the Linux x86-64 project build and
 Mathlib dependencies to `ghcr.io/pyca/vg-lean-cache:latest`, an OCI artifact
 whose one layer is `lean-cache.tar.zst`: `.lake/build` and `.lake/packages`
 relative to `lean/`, with each module's outputs in one `.ltar` archive, the

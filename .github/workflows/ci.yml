@@ -301,6 +301,38 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+  # On a push to main, starts the Lean cache's publisher (lean-cache.yml) as
+  # soon as the build is checked and saved, without waiting for the Rust
+  # jobs. The build is checked and saved by `lean`, or by the shard that
+  # assembled it; if none did, `all-green` assembles it after the Rust jobs,
+  # and this commit's cache is not published: the next push's is.
+  lean-cache:
+    name: "Lean: publish the cache"
+    if: >-
+      ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      && github.repository == 'pyca/verified-garbage'
+      && needs.lean.result == 'success'
+      && (needs.lean-shard.result == 'success' || needs.lean-shard.result == 'skipped') }}
+    needs: [lean, lean-shard]
+    runs-on: ubuntu-26.04
+    # To list the run's artifacts, and start the publisher.
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Start the publisher
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHARDS: ${{ needs.lean-shard.result }}
+        run: |
+          if [ "$SHARDS" = success ] && ! gh api --paginate "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
+              --jq '.artifacts[].name' | grep -q '^lean-assembled-'; then
+            echo "No shard assembled the build: the next push to main publishes the cache."
+            exit 0
+          fi
+          gh workflow run lean-cache.yml --ref main -f sha="$GITHUB_SHA"
+
   lean-imports:
     name: Static checks
     runs-on: ubuntu-26.04
