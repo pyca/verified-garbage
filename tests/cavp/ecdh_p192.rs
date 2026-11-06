@@ -12,8 +12,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{P192, PublicKey};
-use verified_garbage::ecdh::{Error, PrivateKey};
+use verified_garbage::ec::{Error, P192, PrivateKey, PublicKey};
 
 /// Each vector: `QCAVS` (uncompressed), `dIUT`, `QIUT` (uncompressed) and
 /// `ZIUT`.
@@ -91,5 +90,5 @@ fn ecdh_p192_invalid() {
         );
     }
     assert_eq!(format!("{key:?}"), "PrivateKey { .. }");
-    assert_eq!(Error::InvalidKey.to_string(), "invalid ECDH key");
+    assert_eq!(Error::InvalidKey.to_string(), "invalid elliptic-curve key");
 }

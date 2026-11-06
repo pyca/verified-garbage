@@ -12,8 +12,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{P256, PublicKey};
-use verified_garbage::ecdh::{Error, PrivateKey};
+use verified_garbage::ec::{Error, P256, PrivateKey, PublicKey};
 
 use verified_garbage_test_vectors::unhex;
 
@@ -89,5 +88,5 @@ fn ecdh_p256_invalid() {
         );
     }
     assert_eq!(format!("{key:?}"), "PrivateKey { .. }");
-    assert_eq!(Error::InvalidKey.to_string(), "invalid ECDH key");
+    assert_eq!(Error::InvalidKey.to_string(), "invalid elliptic-curve key");
 }

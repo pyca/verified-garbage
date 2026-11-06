@@ -25,8 +25,8 @@ use verified_garbage_test_vectors::unhex;
 
 #[test]
 fn errors() {
-    use verified_garbage::ecdsa::Error;
-    assert_eq!(Error::InvalidKey.to_string(), "invalid ECDSA private key");
+    use verified_garbage::ec::Error;
+    assert_eq!(Error::InvalidKey.to_string(), "invalid elliptic-curve key");
     assert_eq!(
         Error::InvalidSignature.to_string(),
         "invalid ECDSA signature"
@@ -114,12 +114,11 @@ fn section<const Q: usize, const U: usize, const S: usize>(
 fn sign_with<C, H, const Q: usize, const U: usize, const S: usize>(title: &str, hash: &'static str)
 where
     C: verified_garbage::ec::Curve<PrivateKey = [u8; Q], PublicKey = [u8; U], Signature = [u8; S]>,
-    H: verified_garbage::ecdsa::SignatureHash<C>,
+    H: verified_garbage::ec::SignatureHash<C>,
 {
-    use verified_garbage::ec::PublicKey;
-    use verified_garbage::ecdsa::{Error, SigningKey};
+    use verified_garbage::ec::{Error, PrivateKey, PublicKey};
     let (_, x, u, signatures) = section::<Q, U, S>(title, &[hash]);
-    let key = SigningKey::<C>::from_bytes(&x);
+    let key = PrivateKey::<C>::from_bytes(&x);
     let public = PublicKey::<C>::from_bytes(&u);
     for (_, message, rs) in &signatures {
         let m = message.as_bytes();
@@ -150,12 +149,11 @@ where
 fn round_trip<C, H, const Q: usize, const U: usize, const S: usize>(title: &str)
 where
     C: verified_garbage::ec::Curve<PrivateKey = [u8; Q], PublicKey = [u8; U], Signature = [u8; S]>,
-    H: verified_garbage::ecdsa::SignatureHash<C>,
+    H: verified_garbage::ec::SignatureHash<C>,
 {
-    use verified_garbage::ec::PublicKey;
-    use verified_garbage::ecdsa::{Error, SigningKey};
+    use verified_garbage::ec::{Error, PrivateKey, PublicKey};
     let (_, x, u, _) = section::<Q, U, S>(title, &[]);
-    let key = SigningKey::<C>::from_bytes(&x);
+    let key = PrivateKey::<C>::from_bytes(&x);
     let public = PublicKey::<C>::from_bytes(&u);
     for m in [&b"sample"[..], b"test"] {
         let rs = key.sign::<H>(m).unwrap();

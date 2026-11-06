@@ -33,8 +33,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
     use openssl::hash::MessageDigest;
     use openssl::nid::Nid;
-    use verified_garbage::ec::P224;
-    use verified_garbage::ecdsa::SigningKey;
+    use verified_garbage::ec::{P224, PrivateKey};
     use verified_garbage::hashes::sha224::Sha224;
 
     use crate::{BenchDyn, OPENSSL, VG};
@@ -49,7 +48,7 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("ec_p224_public_key");
     g.bench(BenchmarkId::new(VG, 57), |b| {
         b.iter(|| {
-            SigningKey::<P224>::from_bytes(black_box(&d))
+            PrivateKey::<P224>::from_bytes(black_box(&d))
                 .public_key()
                 .unwrap()
         })
@@ -76,7 +75,7 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::P224>>(
+fn hash<H: verified_garbage::ec::SignatureHash<verified_garbage::ec::P224>>(
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
@@ -91,12 +90,11 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::P224>>(
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use openssl::sign::{Signer, Verifier};
-    use verified_garbage::ec::P224;
-    use verified_garbage::ecdsa::SigningKey;
+    use verified_garbage::ec::{P224, PrivateKey};
 
     use crate::{BenchDyn, OPENSSL, SIZES, VG};
 
-    let key = SigningKey::<P224>::from_bytes(d);
+    let key = PrivateKey::<P224>::from_bytes(d);
     let group = EcGroup::from_curve_name(Nid::SECP224R1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let d_bn = BigNum::from_slice(d).unwrap();

@@ -1,7 +1,8 @@
-//! Elliptic curves for [`ecdsa`](crate::ecdsa) and [`ecdh`](crate::ecdh):
-//! [`P192`], [`P224`], [`P256`], [`P384`], [`P521`], [`Secp256k1`],
-//! [`BrainpoolP256r1`], [`BrainpoolP384r1`] and [`BrainpoolP512r1`] (each a
-//! [`Curve`]), and their public keys ([`PublicKey<C>`]).
+//! Elliptic-curve cryptography: ECDSA (FIPS 186-5 §6.4) with deterministic
+//! signatures (RFC 6979 §3.2) and ECDH (the ECC CDH primitive of SP 800-56A
+//! Rev. 3 §5.7.1.2), with a [`PrivateKey<C>`] and a [`PublicKey<C>`] on each
+//! [`Curve`]: [`P192`], [`P224`], [`P256`], [`P384`], [`P521`], [`Secp256k1`],
+//! [`BrainpoolP256r1`], [`BrainpoolP384r1`] and [`BrainpoolP512r1`].
 //!
 //! Each curve converts a SEC 1 public key between its compressed and
 //! uncompressed forms, validating it (`compress_public_key`,
@@ -21,6 +22,8 @@ pub(crate) mod brainpoolp256r1;
 pub(crate) mod brainpoolp384r1;
 pub(crate) mod brainpoolp512r1;
 mod compressed;
+mod ecdh;
+mod ecdsa;
 mod p192;
 pub(crate) mod p224;
 pub(crate) mod p256;
@@ -28,6 +31,10 @@ pub(crate) mod p384;
 pub(crate) mod p521;
 pub(crate) mod secp256k1;
 mod validate;
+
+pub use ecdsa::SignatureHash;
+
+use crate::zeroize::zeroize;
 
 pub(crate) mod sealed {
     use super::Curve;
@@ -43,7 +50,7 @@ pub(crate) mod sealed {
     }
 
     /// ECDH on a curve (`vg_ecdh_<curve>`), implemented in its file in
-    /// [`ecdh`](crate::ecdh).
+    /// `src/ec/ecdh/`.
     pub trait Exchange {
         /// The x-coordinate of `dQ`, or `None` if `d` is not in `[1, n − 1]`
         /// or `q` is not a valid public key.
@@ -104,6 +111,73 @@ impl<C: Curve> PublicKey<C> {
     /// not in `[1, n − 1]`.
     pub(crate) fn derive(d: &C::PrivateKey) -> Option<Self> {
         C::public_key(d).map(|q| Self { q })
+    }
+}
+
+/// A private key on the curve `C`, which signs with ECDSA
+/// ([`sign`](Self::sign)) and exchanges keys with ECDH
+/// ([`exchange`](Self::exchange)).
+///
+/// The key is cleared when it is dropped. Debug output omits it.
+pub struct PrivateKey<C: Curve> {
+    d: C::PrivateKey,
+}
+
+impl<C: Curve> PrivateKey<C> {
+    /// Imports a private key `d`, most significant byte first. Each
+    /// operation checks that it is in `[1, n − 1]`.
+    pub fn from_bytes(d: &C::PrivateKey) -> Self {
+        Self { d: d.clone() }
+    }
+
+    /// The public key `Q = dG`.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
+    pub fn public_key(&self) -> Result<PublicKey<C>, Error> {
+        PublicKey::derive(&self.d).ok_or(Error::InvalidKey)
+    }
+}
+
+impl<C: Curve> Clone for PrivateKey<C> {
+    fn clone(&self) -> Self {
+        Self { d: self.d.clone() }
+    }
+}
+
+impl<C: Curve> core::fmt::Debug for PrivateKey<C> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("PrivateKey").finish_non_exhaustive()
+    }
+}
+
+impl<C: Curve> Drop for PrivateKey<C> {
+    fn drop(&mut self) {
+        zeroize(self.d.as_mut());
+    }
+}
+
+/// Why an operation with a key failed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// The private key is not in `[1, n − 1]`, or, for an exchange, the
+    /// peer's public key is not a valid uncompressed public key on the curve
+    /// (the verified code does not say which). For a valid key, signing
+    /// fails only if none of the candidates for `k` it tries is suitable:
+    /// for P-224, with probability under 2⁻⁸⁸⁸, for P-256 under 2⁻²⁴⁸, for
+    /// P-384 under 2⁻¹⁵⁴⁴, and for P-521 under 2⁻²⁰⁸⁸; deriving the public
+    /// key never fails.
+    InvalidKey,
+    /// The signature is not valid for the public key, or the public key is
+    /// not valid.
+    InvalidSignature,
+}
+
+crate::error::impl_error! {
+    Error {
+        InvalidKey => "invalid elliptic-curve key",
+        InvalidSignature => "invalid ECDSA signature",
     }
 }
 

@@ -221,6 +221,8 @@ mod tests {
             crate::chacha20poly1305::Error::InvalidTextLength,
             crate::chacha20poly1305::Error::TagMismatch,
             crate::chacha20poly1305::Error::TooManyPieces,
+            crate::ec::Error::InvalidKey,
+            crate::ec::Error::InvalidSignature,
             crate::ed25519::Error::InvalidSignature,
             crate::ed448::Error::ContextTooLong,
             crate::ed448::Error::InvalidSignature,

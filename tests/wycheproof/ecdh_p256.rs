@@ -15,8 +15,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{P256, PublicKey};
-use verified_garbage::ecdh::{Error, PrivateKey};
+use verified_garbage::ec::{Error, P256, PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Expectation};
 use super::schema::{CurveGroup, EcdhCase};

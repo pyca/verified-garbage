@@ -68,7 +68,7 @@ pub fn bench(c: &mut Criterion) {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::P256>>(
+fn hash<H: verified_garbage::ec::SignatureHash<verified_garbage::ec::P256>>(
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
@@ -87,12 +87,11 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ec::P256>>(
     use openssl::nid::Nid;
     use openssl::pkey::PKey;
     use openssl::sign::{Signer, Verifier};
-    use verified_garbage::ec::P256;
-    use verified_garbage::ecdsa::SigningKey;
+    use verified_garbage::ec::{P256, PrivateKey};
 
     use crate::{AWS_LC, BenchDyn, OPENSSL, SIZES, VG};
 
-    let key = SigningKey::<P256>::from_bytes(d);
+    let key = PrivateKey::<P256>::from_bytes(d);
     let group = EcGroup::from_curve_name(Nid::X9_62_PRIME256V1).unwrap();
     let mut ctx = BigNumContext::new().unwrap();
     let d_bn = BigNum::from_slice(d).unwrap();

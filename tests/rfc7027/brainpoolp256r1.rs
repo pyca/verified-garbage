@@ -9,8 +9,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{BrainpoolP256r1, PublicKey};
-use verified_garbage::ecdh::{Error, PrivateKey};
+use verified_garbage::ec::{BrainpoolP256r1, Error, PrivateKey, PublicKey};
 
 use super::value;
 
