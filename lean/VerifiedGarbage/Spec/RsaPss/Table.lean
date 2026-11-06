@@ -235,4 +235,59 @@ def verifyPrecomputedTableApi : Api where
     "For the result to be signature verification's, `pre` must hold what \
       `vg_rsa_public_precompute` wrote for `n` (returning 1).", hashSafety, mgf1Safety]
 
+/-- `verifyPrecomputedTableContract` with `pre` checked against `n`: if
+`pre` holds the values of some modulus (what `vg_rsa_public_precompute`
+writes), returns `verify H G`'s result when they are `n`'s, and 0 when they
+are another modulus'. Constant time but for the public key and `pre`. -/
+def verifyPrecomputedTableMatchedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  verifyPrecomputedTableSig.contract A
+    (pre := fun _n nLen _e eLen _digest digestLen _sig sigLen _saltLen _anySaltLen _scratch
+        scratchLen _pre preLen hash _mgf1 m =>
+      lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
+        sigLen.toNat = nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        preLen.toNat = Rsa.precomputedWords nLen.toNat ∧ digestLenOk A.ptrBits m hash digestLen)
+    (post := fun n nLen e eLen digest _digestLen sig _sigLen saltLen anySaltLen _scratch
+        _scratchLen pre preLen hash mgf1 m _m' r =>
+      ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
+        HashTable.hashAt A.ptrBits m mgf1 = some G →
+        Rsa.isPrecomputed (Rsa.wordsAt m pre preLen.toNat) →
+          r = if Rsa.precomputedFor (bytesAt m n nLen.toNat) (Rsa.wordsAt m pre preLen.toNat) &&
+              verify H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
+                (bytesAt m digest H.len) (bytesAt m sig nLen.toNat)
+                (expectedSaltLen saltLen anySaltLen) then 1 else 0)
+    (writeArgs := true) (stack := stack)
+    (leak := some fun n nLen e eLen _digest _digestLen _sig _sigLen _saltLen _anySaltLen
+        _scratch _scratchLen pre preLen _hash _mgf1 m =>
+      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
+        (Rsa.wordsAt m pre preLen.toNat).map (·.toNat))
+
+/-- `vg_rsa_pss_verify_precomputed` with `pre` checked against `n`, on every
+target. -/
+def verifyPrecomputedTableMatchedApi : Api where
+  module := "rsa_pss"
+  name := "vg_rsa_pss_verify_precomputed"
+  sig := verifyPrecomputedTableSig
+  writeArgs := true
+  contracts := some fun A stack => verifyPrecomputedTableMatchedContract A stack
+  summary := "RSASSA-PSS signature verification (RFC 8017 §8.1.2) with the hash function \
+    of the table `hash` and MGF1 with that of the table `mgf1`, of a signature of a digest \
+    of the former. With the modulus `n` (`n_len` bytes, most significant first, odd, from \
+    512 to 8192 bits, its first byte not zero), " ++ exponentDoc ++ " and `pre`, the \
+    `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), returns 1 \
+    if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the \
+    `digest_len`-byte digest `digest` with a salt of `salt_len` bytes, or of any length if \
+    `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or \
+    if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`. If \
+    `pre` holds the values `vg_rsa_public_precompute` wrote for another modulus, it returns \
+    0; if it does not hold any modulus' values, the result is unspecified; memory safety and \
+    the timing guarantee still apply.\n\n\
+    Contract: `VG.Spec.RsaPss.verifyPrecomputedTableMatchedContract`. Constant time but for \
+    the public key: timing may depend on the pointers, the lengths, `salt_len`, \
+    `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` \
+    are, not on the digest, the signature or anything computed from them but the result."
+  safety := verifySafety ++ [digestLenSafety,
+    "`pre_len` must be `2 * ⌈n_len / 8⌉`.",
+    "For the result to be specified, `pre` must hold what \
+      `vg_rsa_public_precompute` wrote (returning 1) for some modulus.", hashSafety, mgf1Safety]
+
 end VG.Spec.RsaPss

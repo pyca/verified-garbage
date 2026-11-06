@@ -90,6 +90,16 @@ def wordsAt (m : Mem) (p : Addr) (n : Nat) : List (BitVec 64) :=
 (`publicPrecompute`). -/
 def precomputedWords (nLen : Nat) : Nat := 2 * modulusWords nLen
 
+/-- Whether `ws` are the precomputed values of some modulus: what
+`vg_rsa_public_precompute` writes when it returns 1. -/
+def isPrecomputed (ws : List (BitVec 64)) : Prop :=
+  ∃ nB, publicPrecompute nB = some ws
+
+/-- Whether `ws` are the precomputed values of the modulus `nB`
+(`publicPrecompute`); false if `nB` is not a valid modulus. -/
+def precomputedFor (nB : List Byte) (ws : List (BitVec 64)) : Bool :=
+  decide (publicPrecompute nB = some ws)
+
 /-- The `# Safety` items on the working space. -/
 def scratchSafety : List String :=
   ["`scratch_len` must be at least `16 * n_len + 32`.",

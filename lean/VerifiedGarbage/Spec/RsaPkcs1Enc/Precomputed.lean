@@ -71,4 +71,53 @@ def encryptPrecomputedApi : Api where
       "For the result to be encryption's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1)."]
 
+/-! ## Precomputed values checked against `n` -/
+
+/-- `encryptPrecomputedContract` with `pre` checked against `n`: if `pre`
+holds the values of some modulus (what `vg_rsa_public_precompute` writes),
+the ciphertext and result are `encryptContract`'s when they are `n`'s, and
+zeros and 0 when they are another modulus'. Constant time but for the public
+key and its precomputed values. -/
+def encryptPrecomputedMatchedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  encryptPrecomputedSig.contract A
+    (pre := fun _out outLen _n nLen _e eLen _msg msgLen _ps psLen _scratch scratchLen _pre preLen _ =>
+      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ 1 ≤ eLen.toNat ∧
+        eLen.toNat ≤ nLen.toNat ∧ msgLen.toNat + 11 ≤ nLen.toNat ∧
+        psLen.toNat = nLen.toNat - msgLen.toNat - 3 ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        preLen.toNat = Rsa.precomputedWords nLen.toNat)
+    (post := fun out _outLen n nLen e eLen msg msgLen ps psLen _scratch _scratchLen pre preLen m m' r =>
+      Rsa.isPrecomputed (Rsa.wordsAt m pre preLen.toNat) →
+        written m' out nLen.toNat r
+          (if Rsa.precomputedFor (bytesAt m n nLen.toNat) (Rsa.wordsAt m pre preLen.toNat) then
+            encrypt (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m msg msgLen.toNat)
+              (bytesAt m ps psLen.toNat)
+          else none))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun _out _outLen n nLen e eLen _msg _msgLen _ps _psLen _scratch _scratchLen pre preLen
+        m =>
+      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
+        (Rsa.wordsAt m pre preLen.toNat).map (·.toNat))
+
+/-- Precomputed encryption with `pre` checked against `n`, on every target,
+with the original timing policy. -/
+def encryptPrecomputedMatchedApi : Api where
+  module := "rsa_pkcs1_enc"
+  name := "vg_rsa_pkcs1_encrypt_precomputed"
+  sig := encryptPrecomputedSig
+  writeArgs := true
+  contracts := some fun A stack => encryptPrecomputedMatchedContract A stack
+  summary := encryptSummary ++ "\n\n\
+    This entry point also takes `pre`, the `pre_len` words written by \
+    `vg_rsa_public_precompute` (returning 1) for a modulus. If they are the \
+    values for `n`, it writes and returns exactly what is specified above; if \
+    they are another modulus' values, it writes zeros and returns 0. If `pre` \
+    does not hold any modulus' values, what it writes and returns is \
+    unspecified; memory safety and the timing guarantee still apply. Timing \
+    may additionally depend on the contents of `pre`.\n\n\
+    Contract: `VG.Spec.RsaPkcs1Enc.encryptPrecomputedMatchedContract`."
+  safety := encryptSafety ++
+    ["`pre_len` must be `2 * ⌈n_len / 8⌉`.",
+      "For the result to be specified, `pre` must hold what \
+        `vg_rsa_public_precompute` wrote (returning 1) for some modulus."]
+
 end VG.Spec.RsaPkcs1Enc

@@ -149,6 +149,63 @@ def encryptTablesApi : Api where
       "For the result to be encryption's, `pre` must hold what \
         `vg_rsa_public_precompute` wrote for `n` (returning 1).", hashSafety, mgf1Safety]
 
+/-- `encryptTablesContract` with `pre` checked against `n`: if `pre` holds
+the values of some modulus (what `vg_rsa_public_precompute` writes), the
+ciphertext and result are RSAES-OAEP-ENCRYPT's when they are `n`'s, and
+zeros and 0 when they are another modulus'. -/
+def encryptTablesMatchedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  encryptTablesSig.contract A
+    (pre := fun _out outLen _n nLen _e eLen _label _labelLen _msg _msgLen _seed seedLen _scratch
+        scratchLen _pre preLen hash _mgf1 m =>
+      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ 1 ≤ eLen.toNat ∧
+        eLen.toNat ≤ nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        preLen.toNat = Rsa.precomputedWords nLen.toNat ∧ seedLenOk A.ptrBits m hash seedLen)
+    (post := fun out _outLen n nLen e eLen label labelLen msg msgLen seed _seedLen _scratch
+        _scratchLen pre preLen hash mgf1 m m' r =>
+      ∀ H G, HashTable.hashAt A.ptrBits m hash = some H →
+        HashTable.hashAt A.ptrBits m mgf1 = some G →
+        Rsa.isPrecomputed (Rsa.wordsAt m pre preLen.toNat) →
+          written m' out nLen.toNat r
+            (if Rsa.precomputedFor (bytesAt m n nLen.toNat) (Rsa.wordsAt m pre preLen.toNat) then
+              encrypt H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
+                (bytesAt m label labelLen.toNat) (bytesAt m msg msgLen.toNat)
+                (bytesAt m seed H.len)
+            else none))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun _out _outLen n nLen e eLen _label _labelLen _msg _msgLen _seed _seedLen
+        _scratch _scratchLen pre preLen _hash _mgf1 m =>
+      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
+        (Rsa.wordsAt m pre preLen.toNat).map (·.toNat))
+
+/-- `vg_rsa_oaep_encrypt_precomputed` with `pre` checked against `n`, on
+every target. -/
+def encryptTablesMatchedApi : Api where
+  module := "rsa_oaep"
+  name := "vg_rsa_oaep_encrypt_precomputed"
+  sig := encryptTablesSig
+  writeArgs := true
+  contracts := some fun A stack => encryptTablesMatchedContract A stack
+  summary := "RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table \
+    `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most \
+    significant first, odd, from 512 to 8192 bits, its first byte not zero), the public \
+    exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words \
+    written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the \
+    message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, \
+    most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is \
+    not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed \
+    must be fresh random bytes for each encryption. If `pre` holds the values \
+    `vg_rsa_public_precompute` wrote for another modulus, it writes zeros and returns 0; if it \
+    does not hold any modulus' values, what it writes and returns is unspecified; memory \
+    safety and the timing guarantee still apply.\n\n\
+    Contract: `VG.Spec.RsaOaep.encryptTablesMatchedContract`. Constant time but for the public \
+    key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, \
+    and which tables `hash` and `mgf1` are, not on the message, the label or the seed."
+  safety := encryptSafety ++
+    ["`seed_len` must be the digest length of the hash function `hash` names.",
+      "`pre_len` must be `2 * ⌈n_len / 8⌉`.",
+      "For the result to be specified, `pre` must hold what \
+        `vg_rsa_public_precompute` wrote (returning 1) for some modulus.", hashSafety, mgf1Safety]
+
 /-! ## `vg_rsa_oaep_decrypt` -/
 
 /-- The parameters of decryption (`decryptSig`), then `hash` and `mgf1`,
