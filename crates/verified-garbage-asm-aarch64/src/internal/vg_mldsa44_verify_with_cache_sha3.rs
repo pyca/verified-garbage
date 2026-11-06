@@ -246,7 +246,7 @@ cbnz x2, 221b
         vg_mldsa_sub = sym crate::mldsa44::vg_mldsa_sub::vg_mldsa_sub,
         vg_mldsa_montgomery_inv_ntt = sym crate::mldsa44::vg_mldsa_montgomery_inv_ntt::vg_mldsa_montgomery_inv_ntt,
         vg_mldsa_usehint_pack6 = sym crate::mldsa44::vg_mldsa_usehint_pack6::vg_mldsa_usehint_pack6,
-        vg_keccak_absorb_scratch_sha3 = sym crate::sha3::vg_keccak_absorb_scratch_sha3,
+        vg_keccak_absorb_scratch_sha3 = sym crate::ed448::vg_keccak_absorb_scratch_sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym crate::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym crate::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
     )

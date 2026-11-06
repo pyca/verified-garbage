@@ -164,3 +164,10 @@ theorem PPostB.mono {s s' : State} {ws ws' : List (Ptr × Nat)} (h : PPostB S s 
 end
 
 end VG.Proof.MlDsa.AArch64
+
+namespace VG.AArch64
+
+theorem State.callEntry_withRegions (s : State) (rd wr : List Region) :
+    (s.withRegions rd wr).callEntry = s.callEntry.withRegions rd wr := rfl
+
+end VG.AArch64

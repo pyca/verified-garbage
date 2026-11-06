@@ -351,7 +351,7 @@ bl {vg_mldsa_hint_bit_pack}
         vg_mldsa_rej_ntt_poly4_sha3 = sym crate::mldsa44::vg_mldsa_rej_ntt_poly4_sha3::vg_mldsa_rej_ntt_poly4_sha3,
         vg_mldsa_bit_unpack = sym crate::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
         vg_mldsa_ntt_positive = sym crate::mldsa44::vg_mldsa_ntt_positive::vg_mldsa_ntt_positive,
-        vg_keccak_absorb_scratch_sha3 = sym crate::sha3::vg_keccak_absorb_scratch_sha3,
+        vg_keccak_absorb_scratch_sha3 = sym crate::ed448::vg_keccak_absorb_scratch_sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym crate::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym crate::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
         vg_mldsa_expand_mask_pair_sha3 = sym crate::mldsa44::vg_mldsa_expand_mask_pair_sha3::vg_mldsa_expand_mask_pair_sha3,

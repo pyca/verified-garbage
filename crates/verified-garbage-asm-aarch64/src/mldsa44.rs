@@ -3,6 +3,125 @@
 //! `assembly/mldsa44.s`.
 #![allow(dead_code)]
 
+/// ML-DSA-44 public-key preparation: with the public key `*pk`, writes to `*prepared` the key, followed by the `k` polynomials `NTT(t₁ · 2^d)` that verification (FIPS 204 Algorithm 8, line 9) computes from it, for `vg_mldsa44_verify_message_prepared`.
+///
+/// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1312 bytes.
+/// * `prepared` must be valid for reads and writes of 5408 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `prepared` and `scratch` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_prepare_verifying_key(pk: *const [u8; 1312], prepared: *mut [u8; 5408], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ff9,0xf81f0ffa,0xf81f0ffc,0xf81f0ffe,0x91000019,0x9100003a,0x9100005c,0x91000340
+.inst 0x91000321,0xd2800a42
+20:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 20b
+.inst 0x91008320,0x91148341
+bl {vg_mldsa_unpack_t1}
+.inst 0x91148340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91058320,0x91248341
+bl {vg_mldsa_unpack_t1}
+.inst 0x91248340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910a8320,0x91348341
+bl {vg_mldsa_unpack_t1}
+.inst 0x91348340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910f8320,0xd2822401,0x8b010341
+bl {vg_mldsa_unpack_t1}
+.inst 0xd2822400,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0xf84107fe,0xf84107fc,0xf84107fa,0xf84107f9,0xd65f03c0
+.p2align 6",
+        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
+        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
+    )
+}
+
+/// ML-DSA-44 private-key preparation: with the private key `*sk`, writes to `*prepared` the key, followed by the `ℓ + 2k` polynomials `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` that signing (FIPS 204 Algorithm 7, lines 2–4) computes from it, for `vg_mldsa44_sign_message_prepared`.
+///
+/// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 2560 bytes.
+/// * `prepared` must be valid for reads and writes of 14848 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * `*prepared` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
+/// * None of `sk`, `prepared` and `scratch` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_prepare_signing_key(sk: *const [u8; 2560], prepared: *mut [u8; 14848], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ff9,0xf81f0ffa,0xf81f0ffc,0xf81f0ffe,0x91000019,0x9100003a,0x9100005c,0x91000340
+.inst 0x91000321,0xd2801402
+20:
+.inst 0x3dc00020,0x3d800000,0x91004000,0x91004021,0xd1000442
+cbnz x2, 20b
+.inst 0x91020320,0xd2800c01,0xd2800042,0xd2800043,0x91280344
+bl {vg_mldsa_bit_unpack}
+.inst 0x91280340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91038320,0xd2800c01,0xd2800042,0xd2800043,0x91380344
+bl {vg_mldsa_bit_unpack}
+.inst 0x91380340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91050320,0xd2800c01,0xd2800042,0xd2800043,0xd2824004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2824000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91068320,0xd2800c01,0xd2800042,0xd2800043,0xd282c004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd282c000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91080320,0xd2800c01,0xd2800042,0xd2800043,0xd2834004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2834000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91098320,0xd2800c01,0xd2800042,0xd2800043,0xd283c004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd283c000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910b0320,0xd2800c01,0xd2800042,0xd2800043,0xd2844004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2844000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910c8320,0xd2800c01,0xd2800042,0xd2800043,0xd284c004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd284c000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x910e0320,0xd2803401,0xd281ffe2,0xd2820003,0xd2854004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2854000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91148320,0xd2803401,0xd281ffe2,0xd2820003,0xd285c004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd285c000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x911b0320,0xd2803401,0xd281ffe2,0xd2820003,0xd2864004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd2864000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0x91218320,0xd2803401,0xd281ffe2,0xd2820003,0xd286c004,0x8b040344
+bl {vg_mldsa_bit_unpack}
+.inst 0xd286c000,0x8b000340,0x91000381
+bl {vg_mldsa_ntt}
+.inst 0xf84107fe,0xf84107fc,0xf84107fa,0xf84107f9,0xd65f03c0
+.p2align 6",
+        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
+        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
+    )
+}
+
 /// ML-DSA-44 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
@@ -290,399 +409,15 @@ bl {vg_keccak_squeeze_scratch}
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_sign(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xf901a497,0xf901a898,0xf901ac99,0xf901b09a,0xf901b49b,0xf901b89e,0xf901bc9c,0x9100009c
-.inst 0x91000019,0x9100003a,0x9100005b,0x91000077,0xd2800038,0xf9400329,0xf901cf89,0xf9400729
-.inst 0xf901d389,0xf9400b29,0xf901d789,0xf9400f29,0xf901db89,0x9116038a,0xf941cf89,0xf9000149
-.inst 0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800009,0x39168389
-.inst 0xd2800009,0x39168789,0x91168b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789
-.inst 0xf9000949,0xf941db89,0xf9000d49,0xd2800029,0x39170b89,0xd2800009,0x39170f89,0x9117138a
-.inst 0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49
-.inst 0xd2800049,0x39179389,0xd2800009,0x39179789,0x91179b8a,0xf941cf89,0xf9000149,0xf941d389
-.inst 0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800069,0x39181b89,0xd2800009
-.inst 0x39181f89,0x91160380,0xd2930001,0x8b010381,0xd29b0002,0x8b020382
-bl {vg_mldsa_rej_ntt_poly4}
-.inst 0x0a000318,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
-.inst 0xf941db89,0xf9000d49,0xd2800009,0x39168389,0xd2800029,0x39168789,0x91168b8a,0xf941cf89
-.inst 0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800029
-.inst 0x39170b89,0xd2800029,0x39170f89,0x9117138a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549
-.inst 0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800049,0x39179389,0xd2800029,0x39179789
-.inst 0x91179b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89
-.inst 0xf9000d49,0xd2800069,0x39181b89,0xd2800029,0x39181f89,0x91160380,0xd2950001,0x8b010381
-.inst 0xd29b0002,0x8b020382
-bl {vg_mldsa_rej_ntt_poly4}
-.inst 0x0a000318,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
-.inst 0xf941db89,0xf9000d49,0xd2800009,0x39168389,0xd2800049,0x39168789,0x91168b8a,0xf941cf89
-.inst 0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800029
-.inst 0x39170b89,0xd2800049,0x39170f89,0x9117138a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549
-.inst 0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800049,0x39179389,0xd2800049,0x39179789
-.inst 0x91179b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89
-.inst 0xf9000d49,0xd2800069,0x39181b89,0xd2800049,0x39181f89,0x91160380,0xd2970001,0x8b010381
-.inst 0xd29b0002,0x8b020382
-bl {vg_mldsa_rej_ntt_poly4}
-.inst 0x0a000318,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
-.inst 0xf941db89,0xf9000d49,0xd2800009,0x39168389,0xd2800069,0x39168789,0x91168b8a,0xf941cf89
-.inst 0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800029
-.inst 0x39170b89,0xd2800069,0x39170f89,0x9117138a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549
-.inst 0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800049,0x39179389,0xd2800069,0x39179789
-.inst 0x91179b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89
-.inst 0xf9000d49,0xd2800069,0x39181b89,0xd2800069,0x39181f89,0x91160380,0xd2990001,0x8b010381
-.inst 0xd29b0002,0x8b020382
-bl {vg_mldsa_rej_ntt_poly4}
-.inst 0x0a000318
-cbnz w24, 20f
-b 21f
-20:
-.inst 0x91020320,0xd2800c01,0xd2800042,0xd2800043,0xd28d0004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28d0000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91038320,0xd2800c01,0xd2800042,0xd2800043,0xd28d8004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28d8000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91050320,0xd2800c01,0xd2800042,0xd2800043,0xd28e0004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28e0000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91068320,0xd2800c01,0xd2800042,0xd2800043,0xd28e8004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28e8000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91080320,0xd2800c01,0xd2800042,0xd2800043,0xd28f0004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28f0000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91098320,0xd2800c01,0xd2800042,0xd2800043,0xd28f8004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28f8000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x910b0320,0xd2800c01,0xd2800042,0xd2800043,0xd2900004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd2900000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x910c8320,0xd2800c01,0xd2800042,0xd2800043,0xd2908004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd2908000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x910e0320,0xd2803401,0xd281ffe2,0xd2820003,0xd2910004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd2910000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91148320,0xd2803401,0xd281ffe2,0xd2820003,0xd2918004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd2918000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x911b0320,0xd2803401,0xd281ffe2,0xd2820003,0xd2920004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd2920000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91218320,0xd2803401,0xd281ffe2,0xd2820003,0xd2928004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd2928000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409
-.inst 0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409
-.inst 0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809,0xf9004c09,0xf9005009,0xf9005409
-.inst 0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380,0xd2801101,0x91032385,0x91008323
-.inst 0xd2800404
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91000363,0xd2800404
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91000343,0xd2800804
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032384,0xd28003e3
-bl {vg_keccak_pad_scratch}
-.inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x910f0383,0xd2800804
-bl {vg_keccak_squeeze_scratch}
-.inst 0xd2800009,0xf901c789,0xd28065c9,0xf901c389
-22:
-.inst 0xf941c789,0x91000129,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00041
-.inst 0xf2c00001,0xf2e00001,0xd2870002,0x8b020382,0x91300383,0xf903f079,0xf903f47a,0xf903f87b
-.inst 0xf903fc7e,0x91000079,0x9100005a,0x1100003b,0x91000003,0xd2800844,0xd2800009,0xf9000329
-.inst 0xf9000729,0xf9000b29,0xf9000f29,0xf9001329,0xf9001729,0xf9001b29,0xf9001f29,0xf9002329
-.inst 0xf9002729,0xf9002b29,0xf9002f29,0xf9003329,0xf9003729,0xf9003b29,0xf9003f29,0xf9004329
-.inst 0xf9004729,0xf9004b29,0xf9004f29,0xf9005329,0xf9005729,0xf9005b29,0xf9005f29,0xf9006329
-.inst 0x91000320,0xd2801101,0xd2800002,0x91032325
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0x91000320,0xd2801101,0xd28003e3,0x91032324
-bl {vg_keccak_pad_scratch}
-.inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
-bl {vg_keccak_squeeze_scratch}
-.inst 0xd352ff69
-cbz x9, 23f
-.inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-25:
-.inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
-.inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
-.inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
-.inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 25b
-b 24f
-23:
-.inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-26:
-.inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
-.inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
-.inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
-.inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 26b
-24:
-.inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd2890000,0x8b000380,0xd2870001,0x8b010381
-bl {vg_mldsa_ntt_positive_from}
-.inst 0xf941c789,0x91000529,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00041
-.inst 0xf2c00001,0xf2e00001,0xd2878002,0x8b020382,0x91300383,0xf903f079,0xf903f47a,0xf903f87b
-.inst 0xf903fc7e,0x91000079,0x9100005a,0x1100003b,0x91000003,0xd2800844,0xd2800009,0xf9000329
-.inst 0xf9000729,0xf9000b29,0xf9000f29,0xf9001329,0xf9001729,0xf9001b29,0xf9001f29,0xf9002329
-.inst 0xf9002729,0xf9002b29,0xf9002f29,0xf9003329,0xf9003729,0xf9003b29,0xf9003f29,0xf9004329
-.inst 0xf9004729,0xf9004b29,0xf9004f29,0xf9005329,0xf9005729,0xf9005b29,0xf9005f29,0xf9006329
-.inst 0x91000320,0xd2801101,0xd2800002,0x91032325
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0x91000320,0xd2801101,0xd28003e3,0x91032324
-bl {vg_keccak_pad_scratch}
-.inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
-bl {vg_keccak_squeeze_scratch}
-.inst 0xd352ff69
-cbz x9, 27f
-.inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-29:
-.inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
-.inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
-.inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
-.inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 29b
-b 28f
-27:
-.inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-210:
-.inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
-.inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
-.inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
-.inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 210b
-28:
-.inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd2898000,0x8b000380,0xd2878001,0x8b010381
-bl {vg_mldsa_ntt_positive_from}
-.inst 0xf941c789,0x91000929,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00041
-.inst 0xf2c00001,0xf2e00001,0xd2880002,0x8b020382,0x91300383,0xf903f079,0xf903f47a,0xf903f87b
-.inst 0xf903fc7e,0x91000079,0x9100005a,0x1100003b,0x91000003,0xd2800844,0xd2800009,0xf9000329
-.inst 0xf9000729,0xf9000b29,0xf9000f29,0xf9001329,0xf9001729,0xf9001b29,0xf9001f29,0xf9002329
-.inst 0xf9002729,0xf9002b29,0xf9002f29,0xf9003329,0xf9003729,0xf9003b29,0xf9003f29,0xf9004329
-.inst 0xf9004729,0xf9004b29,0xf9004f29,0xf9005329,0xf9005729,0xf9005b29,0xf9005f29,0xf9006329
-.inst 0x91000320,0xd2801101,0xd2800002,0x91032325
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0x91000320,0xd2801101,0xd28003e3,0x91032324
-bl {vg_keccak_pad_scratch}
-.inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
-bl {vg_keccak_squeeze_scratch}
-.inst 0xd352ff69
-cbz x9, 211f
-.inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-213:
-.inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
-.inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
-.inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
-.inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 213b
-b 212f
-211:
-.inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-214:
-.inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
-.inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
-.inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
-.inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 214b
-212:
-.inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd28a0000,0x8b000380,0xd2880001,0x8b010381
-bl {vg_mldsa_ntt_positive_from}
-.inst 0xf941c789,0x91000d29,0x39100389,0xd348fd29,0x39100789,0x910f0380,0xd2800001,0xf2a00041
-.inst 0xf2c00001,0xf2e00001,0xd2888002,0x8b020382,0x91300383,0xf903f079,0xf903f47a,0xf903f87b
-.inst 0xf903fc7e,0x91000079,0x9100005a,0x1100003b,0x91000003,0xd2800844,0xd2800009,0xf9000329
-.inst 0xf9000729,0xf9000b29,0xf9000f29,0xf9001329,0xf9001729,0xf9001b29,0xf9001f29,0xf9002329
-.inst 0xf9002729,0xf9002b29,0xf9002f29,0xf9003329,0xf9003729,0xf9003b29,0xf9003f29,0xf9004329
-.inst 0xf9004729,0xf9004b29,0xf9004f29,0xf9005329,0xf9005729,0xf9005b29,0xf9005f29,0xf9006329
-.inst 0x91000320,0xd2801101,0xd2800002,0x91032325
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0x91000320,0xd2801101,0xd28003e3,0x91032324
-bl {vg_keccak_pad_scratch}
-.inst 0x91000320,0xd2801101,0xd2800002,0x910d2323,0xd2805004,0x91032325
-bl {vg_keccak_squeeze_scratch}
-.inst 0xd352ff69
-cbz x9, 215f
-.inst 0x910d2322,0x91000343,0xd2800805,0xd2a001e8,0xf29fffe8,0xd29c0029,0xf2a00fe9
-217:
-.inst 0xf9400046,0x39402047,0x3940244b,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d
-.inst 0xd354fccc,0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd368fccc,0x8a08018c
-.inst 0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900086d,0xd37cfccc,0xd37ceced,0x8b0d018c,0xd374cd6d
-.inst 0x8b0d018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb9000c6d,0x91002842,0x91004063,0xd10004a5
-cbnz x5, 217b
-b 216f
-215:
-.inst 0x910d2322,0x91000343,0xd2800805,0xd2a00068,0xf29fffe8,0xd29c0029,0xf2a00fe9
-218:
-.inst 0xf9400046,0x39402047,0x8a0800cc,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900006d,0xd352fccc
-.inst 0x8a08018c,0xcb0c036d,0xd37ffdae,0x9b0935cd,0xb900046d,0xd364fccc,0x8a08018c,0xcb0c036d
-.inst 0xd37ffdae,0x9b0935cd,0xb900086d,0xd376fccc,0xd376d4ed,0x8b0d018c,0xcb0c036d,0xd37ffdae
-.inst 0x9b0935cd,0xb9000c6d,0x91002442,0x91004063,0xd10004a5
-cbnz x5, 218b
-216:
-.inst 0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd28a8000,0x8b000380,0xd2888001,0x8b010381
-bl {vg_mldsa_ntt_positive_from}
-.inst 0xd28b0000,0x8b000380,0xd2930001,0x8b010381,0xd2890002,0x8b020382,0x91300383
-bl {vg_mldsa_dot_inverse4}
-.inst 0xd28b8000,0x8b000380,0xd2950001,0x8b010381,0xd2890002,0x8b020382,0x91300383
-bl {vg_mldsa_dot_inverse4}
-.inst 0xd28c0000,0x8b000380,0xd2970001,0x8b010381,0xd2890002,0x8b020382,0x91300383
-bl {vg_mldsa_dot_inverse4}
-.inst 0xd28c8000,0x8b000380,0xd2990001,0x8b010381,0xd2890002,0x8b020382,0x91300383
-bl {vg_mldsa_dot_inverse4}
-.inst 0xd28b0000,0x8b000380,0x91200381
-bl {vg_mldsa_high_pack6}
-.inst 0xd28b8000,0x8b000380,0x91230381
-bl {vg_mldsa_high_pack6}
-.inst 0xd28c0000,0x8b000380,0x91260381
-bl {vg_mldsa_high_pack6}
-.inst 0xd28c8000,0x8b000380,0x91290381
-bl {vg_mldsa_high_pack6}
-.inst 0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409
-.inst 0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409
-.inst 0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809,0xf9004c09,0xf9005009,0xf9005409
-.inst 0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380,0xd2801101,0x91032385,0x91000343
-.inst 0xd2800804
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91200383,0xd2806004
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032384,0xd28003e3
-bl {vg_keccak_pad_scratch}
-.inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x91104383,0xd2800404
-bl {vg_keccak_squeeze_scratch}
-.inst 0x91104380,0xd2800401,0xd28004e2,0xd2828003,0x8b030383,0x91300384
-bl {vg_mldsa_sample_in_ball}
-cbnz w0, 219f
-.inst 0xd2800018,0xd2800029,0xf901c389
-b 220f
-219:
-.inst 0xd2828000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0xd2800038,0xd2800009,0xf901cb89,0xd2828000,0x8b000380,0xd28d0001,0x8b010381,0xd2870002
-.inst 0x8b020382,0xd2830003,0x8b030383,0xd2830004,0x8b040384,0xd2800005,0xf2a00045,0xf2c00005
-.inst 0xf2e00005,0xd29ff646,0xf2a00026,0xf2c00006,0xf2e00006
-bl {vg_mldsa_fused_pair_z}
-.inst 0x0a000318
-cbnz w24, 221f
-b 222f
-221:
-.inst 0xd2828000,0x8b000380,0xd28e0001,0x8b010381,0xd2880002,0x8b020382,0xd2830003,0x8b030383
-.inst 0xd2830004,0x8b040384,0xd2800005,0xf2a00045,0xf2c00005,0xf2e00005,0xd29ff646,0xf2a00026
-.inst 0xf2c00006,0xf2e00006
-bl {vg_mldsa_fused_pair_z}
-.inst 0x0a000318
-cbnz w24, 223f
-b 224f
-223:
-224:
-222:
-cbnz w24, 225f
-.inst 0xf941c789,0x91001129,0xf901c789
-b 226f
-225:
-.inst 0xd2828000,0x8b000380,0xd28f0001,0x8b010381,0xd28b0002,0x8b020382,0xd2850003,0x8b030383
-.inst 0xd2830004,0x8b040384,0xd28e8005,0xf2a00025,0xf2c00005,0xf2e00005,0xd28e7646,0xf2a00026
-.inst 0xf2c00006,0xf2e00006
-bl {vg_mldsa_fused_pair_r0}
-.inst 0x0a000318
-cbnz w24, 227f
-b 228f
-227:
-.inst 0xd2828000,0x8b000380,0xd2900001,0x8b010381,0xd28c0002,0x8b020382,0xd2860003,0x8b030383
-.inst 0xd2830004,0x8b040384,0xd28e8005,0xf2a00025,0xf2c00005,0xf2e00005,0xd28e7646,0xf2a00026
-.inst 0xf2c00006,0xf2e00006
-bl {vg_mldsa_fused_pair_r0}
-.inst 0x0a000318
-cbnz w24, 229f
-b 230f
-229:
-230:
-228:
-cbnz w24, 231f
-.inst 0xf941c789,0x91001129,0xf901c789
-b 232f
-231:
-.inst 0xd2828000,0x8b000380,0xd2910001,0x8b010381,0xd2850002,0x8b020382,0xd28b0003,0x8b030383
-.inst 0xd2830004,0x8b040384,0xd28e8005,0xf2a00025,0xf2c00005,0xf2e00005,0xd28e8006,0xf2a00026
-.inst 0xf2c00006,0xf2e00006
-bl {vg_mldsa_fused_pair_h}
-.inst 0xf941cb89,0x0b000129,0xf901cb89,0xd360fc00,0x0a000318,0xd2828000,0x8b000380,0xd2920001
-.inst 0x8b010381,0xd2860002,0x8b020382,0xd28c0003,0x8b030383,0xd2830004,0x8b040384,0xd28e8005
-.inst 0xf2a00025,0xf2c00005,0xf2e00005,0xd28e8006,0xf2a00026,0xf2c00006,0xf2e00006
-bl {vg_mldsa_fused_pair_h}
-.inst 0xf941cb89,0x0b000129,0xf901cb89,0xd360fc00,0x0a000318,0xf941cb89,0xd1014529,0xd37ffd29
-.inst 0x0a090318
-cbnz w24, 233f
-.inst 0xf941c789,0x91001129,0xf901c789
-b 234f
-233:
-.inst 0xd2800029,0xf901c389
-234:
-232:
-226:
-220:
-.inst 0xf941c389,0xd1000529,0xf901c389
-cbnz x9, 22b
-cbnz w24, 235f
-b 236f
-235:
-.inst 0xd2870000,0x8b000380
-bl {vg_mldsa_canonicalize_signed}
-.inst 0xd2878000,0x8b000380
-bl {vg_mldsa_canonicalize_signed}
-.inst 0xd2880000,0x8b000380
-bl {vg_mldsa_canonicalize_signed}
-.inst 0xd2888000,0x8b000380
-bl {vg_mldsa_canonicalize_signed}
-.inst 0x910002e0,0x91104381,0xd2800402
-237:
-.inst 0x39400029,0x39000009,0x91000400,0x91000421,0xd1000442
-cbnz x2, 237b
-.inst 0xd2870000,0x8b000380,0xd29fffe1,0xf2a00021,0xf2c00001,0xf2e00001,0xd2800002,0xf2a00042
-.inst 0xf2c00002,0xf2e00002,0x910082e3,0xd2804804
-bl {vg_mldsa_bit_pack}
-.inst 0xd2878000,0x8b000380,0xd29fffe1,0xf2a00021,0xf2c00001,0xf2e00001,0xd2800002,0xf2a00042
-.inst 0xf2c00002,0xf2e00002,0x910982e3,0xd2804804
-bl {vg_mldsa_bit_pack}
-.inst 0xd2880000,0x8b000380,0xd29fffe1,0xf2a00021,0xf2c00001,0xf2e00001,0xd2800002,0xf2a00042
-.inst 0xf2c00002,0xf2e00002,0x911282e3,0xd2804804
-bl {vg_mldsa_bit_pack}
-.inst 0xd2888000,0x8b000380,0xd29fffe1,0xf2a00021,0xf2c00001,0xf2e00001,0xd2800002,0xf2a00042
-.inst 0xf2c00002,0xf2e00002,0x911b82e3,0xd2804804
-bl {vg_mldsa_bit_pack}
-.inst 0xd2850000,0x8b000380,0xd2808001,0xd2800a02,0x912482e3,0xd2800a84
-bl {vg_mldsa_hint_bit_pack}
-236:
-21:
-.inst 0x91000300,0xf941a797,0xf941ab98,0xf941af99,0xf941b39a,0xf941b79b,0xf941bb9e,0xf941bf9c
-.inst 0xd65f03c0
+        r".inst 0xf81f0ffe,0x91000005,0xd2800006
+bl {vg_mldsa44_sign_with_cache}
+.inst 0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_mldsa_rej_ntt_poly4 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4::vg_mldsa_rej_ntt_poly4,
-        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
-        vg_mldsa_ntt_positive = sym super::mldsa44::vg_mldsa_ntt_positive::vg_mldsa_ntt_positive,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa_ntt_positive_from = sym super::mldsa44::vg_mldsa_ntt_positive_from::vg_mldsa_ntt_positive_from,
-        vg_mldsa_dot_inverse4 = sym super::mldsa44::vg_mldsa_dot_inverse4::vg_mldsa_dot_inverse4,
-        vg_mldsa_high_pack6 = sym super::mldsa44::vg_mldsa_high_pack6::vg_mldsa_high_pack6,
-        vg_mldsa_sample_in_ball = sym super::mldsa44::vg_mldsa_sample_in_ball::vg_mldsa_sample_in_ball,
-        vg_mldsa_fused_pair_z = sym super::mldsa44::vg_mldsa_fused_pair_z::vg_mldsa_fused_pair_z,
-        vg_mldsa_fused_pair_r0 = sym super::mldsa44::vg_mldsa_fused_pair_r0::vg_mldsa_fused_pair_r0,
-        vg_mldsa_fused_pair_h = sym super::mldsa44::vg_mldsa_fused_pair_h::vg_mldsa_fused_pair_h,
-        vg_mldsa_canonicalize_signed = sym super::mldsa44::vg_mldsa_canonicalize_signed::vg_mldsa_canonicalize_signed,
-        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
-        vg_mldsa_hint_bit_pack = sym super::mldsa44::vg_mldsa_hint_bit_pack::vg_mldsa_hint_bit_pack,
+        vg_mldsa44_sign_with_cache = sym super::mldsa44::vg_mldsa44_sign_with_cache::vg_mldsa44_sign_with_cache,
     )
 }
 
@@ -702,7 +437,7 @@ bl {vg_mldsa_hint_bit_pack}
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_sign_message(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
     core::arch::naked_asm!(
@@ -742,6 +477,63 @@ b 21f
     )
 }
 
+/// ML-DSA-44 signing with a prepared private key: `vg_mldsa44_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 14848 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `sk` must have been written by `vg_mldsa44_prepare_signing_key` from a private key written by `vg_mldsa44_keygen`, and not changed since.
+/// * `*sk` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_sign_message_prepared(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd348fc89
+cbnz x9, 20f
+.inst 0xd2860009,0xf2a00029,0xf2c00009,0xf2e00009,0x8b0900e9,0xf901c53c,0xf901c93e,0x9100013c
+.inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e385,0xf901e786,0xf901eb87
+.inst 0xd2800009,0x390f6389,0x390f6784,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
+.inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
+.inst 0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809
+.inst 0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380
+.inst 0xd2801101,0xf941cf83,0x91010063,0xd2800804,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0xd2800802,0x91000380,0xd2801101,0x910f6383,0xd2800044,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0xd2800842,0x91000380,0xd2801101,0xf941db83,0xf941df84,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0xf941d383,0xf941d784,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0xd28003e3,0x91032384
+bl {vg_keccak_pad_scratch}
+.inst 0x91000380,0xd2801101,0xd2800002,0x910d2383,0xd2800804,0x91032385
+bl {vg_keccak_squeeze_scratch}
+.inst 0xf941cf80,0x910d2381,0xf941e382,0xf941e783,0xf941eb84
+bl {vg_mldsa44_sign_prepared}
+.inst 0xf941cb9e,0xf941c79c
+b 21f
+20:
+.inst 0xd2800040
+21:
+.inst 0xd65f03c0
+.p2align 6",
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa44_sign_prepared = sym super::mldsa44::vg_mldsa44_sign_prepared::vg_mldsa44_sign_prepared,
+    )
+}
+
 /// ML-DSA-44 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
@@ -754,240 +546,15 @@ b 21f
 /// * `scratch` must be valid for reads and writes of 77824 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_verify(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b,0xf901b47c,0xf901b87e,0x91000019,0x9100003a
-.inst 0x9100005b,0x9100007c,0xd2800038,0x91248360,0xd2800a81,0xd2800a02,0xd28a8003,0x8b030383
-.inst 0xd2808004
-bl {vg_mldsa_hint_bit_unpack}
-.inst 0x0a000318
-cbnz x24, 20f
-b 21f
-20:
-.inst 0x91008360,0xd2804801,0xd29fffe2,0xf2a00022,0xf2c00002,0xf2e00002,0xd2800003,0xf2a00043
-.inst 0xf2c00003,0xf2e00003,0xd28c8004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28c8000,0x8b000380,0xd29ff641,0xf2a00021,0xf2c00001,0xf2e00001
-bl {vg_mldsa_norm_lt}
-.inst 0x0a000318,0x91098360,0xd2804801,0xd29fffe2,0xf2a00022,0xf2c00002,0xf2e00002,0xd2800003
-.inst 0xf2a00043,0xf2c00003,0xf2e00003,0xd28d0004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28d0000,0x8b000380,0xd29ff641,0xf2a00021,0xf2c00001,0xf2e00001
-bl {vg_mldsa_norm_lt}
-.inst 0x0a000318,0x91128360,0xd2804801,0xd29fffe2,0xf2a00022,0xf2c00002,0xf2e00002,0xd2800003
-.inst 0xf2a00043,0xf2c00003,0xf2e00003,0xd28d8004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28d8000,0x8b000380,0xd29ff641,0xf2a00021,0xf2c00001,0xf2e00001
-bl {vg_mldsa_norm_lt}
-.inst 0x0a000318,0x911b8360,0xd2804801,0xd29fffe2,0xf2a00022,0xf2c00002,0xf2e00002,0xd2800003
-.inst 0xf2a00043,0xf2c00003,0xf2e00003,0xd28e0004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28e0000,0x8b000380,0xd29ff641,0xf2a00021,0xf2c00001,0xf2e00001
-bl {vg_mldsa_norm_lt}
-.inst 0x0a000318
-cbnz x24, 22f
-b 23f
-22:
-.inst 0xf9400329,0xf9024389,0xf9400729,0xf9024789,0xf9400b29,0xf9024b89,0xf9400f29,0xf9024f89
-.inst 0x9116038a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89
-.inst 0xf9000d49,0xd2800009,0x39168389,0xd2800009,0x39168789,0x91168b8a,0xf9424389,0xf9000149
-.inst 0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49,0xd2800029,0x39170b89
-.inst 0xd2800009,0x39170f89,0x9117138a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89
-.inst 0xf9000949,0xf9424f89,0xf9000d49,0xd2800049,0x39179389,0xd2800009,0x39179789,0x91179b8a
-.inst 0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49
-.inst 0xd2800069,0x39181b89,0xd2800009,0x39181f89,0x91160380,0xd2820001,0x8b010381,0xd28f8002
-.inst 0x8b020382
-bl {vg_mldsa_rej_ntt_poly4}
-.inst 0x0a000318,0xd2800008,0x4b000108,0xd2820001,0x8b010381,0xd2808002
-24:
-.inst 0xb9400029,0x0a080129,0xb9000029,0x91001021,0xd1000442
-cbnz x2, 24b
-.inst 0x9116038a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89
-.inst 0xf9000d49,0xd2800009,0x39168389,0xd2800029,0x39168789,0x91168b8a,0xf9424389,0xf9000149
-.inst 0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49,0xd2800029,0x39170b89
-.inst 0xd2800029,0x39170f89,0x9117138a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89
-.inst 0xf9000949,0xf9424f89,0xf9000d49,0xd2800049,0x39179389,0xd2800029,0x39179789,0x91179b8a
-.inst 0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49
-.inst 0xd2800069,0x39181b89,0xd2800029,0x39181f89,0x91160380,0xd2840001,0x8b010381,0xd28f8002
-.inst 0x8b020382
-bl {vg_mldsa_rej_ntt_poly4}
-.inst 0x0a000318,0xd2800008,0x4b000108,0xd2840001,0x8b010381,0xd2808002
-25:
-.inst 0xb9400029,0x0a080129,0xb9000029,0x91001021,0xd1000442
-cbnz x2, 25b
-.inst 0x9116038a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89
-.inst 0xf9000d49,0xd2800009,0x39168389,0xd2800049,0x39168789,0x91168b8a,0xf9424389,0xf9000149
-.inst 0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49,0xd2800029,0x39170b89
-.inst 0xd2800049,0x39170f89,0x9117138a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89
-.inst 0xf9000949,0xf9424f89,0xf9000d49,0xd2800049,0x39179389,0xd2800049,0x39179789,0x91179b8a
-.inst 0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49
-.inst 0xd2800069,0x39181b89,0xd2800049,0x39181f89,0x91160380,0xd2860001,0x8b010381,0xd28f8002
-.inst 0x8b020382
-bl {vg_mldsa_rej_ntt_poly4}
-.inst 0x0a000318,0xd2800008,0x4b000108,0xd2860001,0x8b010381,0xd2808002
-26:
-.inst 0xb9400029,0x0a080129,0xb9000029,0x91001021,0xd1000442
-cbnz x2, 26b
-.inst 0x9116038a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89
-.inst 0xf9000d49,0xd2800009,0x39168389,0xd2800069,0x39168789,0x91168b8a,0xf9424389,0xf9000149
-.inst 0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49,0xd2800029,0x39170b89
-.inst 0xd2800069,0x39170f89,0x9117138a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89
-.inst 0xf9000949,0xf9424f89,0xf9000d49,0xd2800049,0x39179389,0xd2800069,0x39179789,0x91179b8a
-.inst 0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49
-.inst 0xd2800069,0x39181b89,0xd2800069,0x39181f89,0x91160380,0xd2880001,0x8b010381,0xd28f8002
-.inst 0x8b020382
-bl {vg_mldsa_rej_ntt_poly4}
-.inst 0x0a000318,0xd2800008,0x4b000108,0xd2880001,0x8b010381,0xd2808002
-27:
-.inst 0xb9400029,0x0a080129,0xb9000029,0x91001021,0xd1000442
-cbnz x2, 27b
-.inst 0x91000360,0xd2800401,0xd28004e2,0xd28e8003,0x8b030383,0x91200384
-bl {vg_mldsa_sample_in_ball}
-.inst 0x0a000318,0xd2800008,0x4b000108,0xd28e8001,0x8b010381,0xd2802002
-28:
-.inst 0xb9400029,0x0a080129,0xb9000029,0x91001021,0xd1000442
-cbnz x2, 28b
-.inst 0xd28c8000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd28d0000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd28d8000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd28e0000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd28e8000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd2900000,0x8b000380,0xd2820001,0x8b010381,0xd28c8002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2900000,0x8b000380,0xd2828001,0x8b010381,0xd28d0002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2900000,0x8b000380,0xd2830001,0x8b010381,0xd28d8002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2900000,0x8b000380,0xd2838001,0x8b010381,0xd28e0002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0x91008320,0xd28f0001,0x8b010381
-bl {vg_mldsa_unpack_t1}
-.inst 0xd28f0000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
-bl {vg_mldsa_sub}
-.inst 0xd2900000,0x8b000380,0x91200381
-bl {vg_mldsa_inv_ntt}
-.inst 0xd28a8000,0x8b000380,0xd2900001,0x8b010381,0xd28e8002,0xf2a00022,0xf2c00002,0xf2e00002
-.inst 0xd2908003,0x8b030383
-bl {vg_mldsa_use_hint}
-.inst 0xd2908000,0x8b000380,0xd2800561,0xd28a0002,0x8b020382,0xd2801803
-bl {vg_mldsa_simple_bit_pack}
-.inst 0xd2900000,0x8b000380,0xd2840001,0x8b010381,0xd28c8002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2900000,0x8b000380,0xd2848001,0x8b010381,0xd28d0002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2900000,0x8b000380,0xd2850001,0x8b010381,0xd28d8002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2900000,0x8b000380,0xd2858001,0x8b010381,0xd28e0002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0x91058320,0xd28f0001,0x8b010381
-bl {vg_mldsa_unpack_t1}
-.inst 0xd28f0000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
-bl {vg_mldsa_sub}
-.inst 0xd2900000,0x8b000380,0x91200381
-bl {vg_mldsa_inv_ntt}
-.inst 0xd28b0000,0x8b000380,0xd2900001,0x8b010381,0xd28e8002,0xf2a00022,0xf2c00002,0xf2e00002
-.inst 0xd2908003,0x8b030383
-bl {vg_mldsa_use_hint}
-.inst 0xd2908000,0x8b000380,0xd2800561,0xd28a1802,0x8b020382,0xd2801803
-bl {vg_mldsa_simple_bit_pack}
-.inst 0xd2900000,0x8b000380,0xd2860001,0x8b010381,0xd28c8002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2900000,0x8b000380,0xd2868001,0x8b010381,0xd28d0002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2900000,0x8b000380,0xd2870001,0x8b010381,0xd28d8002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2900000,0x8b000380,0xd2878001,0x8b010381,0xd28e0002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0x910a8320,0xd28f0001,0x8b010381
-bl {vg_mldsa_unpack_t1}
-.inst 0xd28f0000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
-bl {vg_mldsa_sub}
-.inst 0xd2900000,0x8b000380,0x91200381
-bl {vg_mldsa_inv_ntt}
-.inst 0xd28b8000,0x8b000380,0xd2900001,0x8b010381,0xd28e8002,0xf2a00022,0xf2c00002,0xf2e00002
-.inst 0xd2908003,0x8b030383
-bl {vg_mldsa_use_hint}
-.inst 0xd2908000,0x8b000380,0xd2800561,0xd28a3002,0x8b020382,0xd2801803
-bl {vg_mldsa_simple_bit_pack}
-.inst 0xd2900000,0x8b000380,0xd2880001,0x8b010381,0xd28c8002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2900000,0x8b000380,0xd2888001,0x8b010381,0xd28d0002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2900000,0x8b000380,0xd2890001,0x8b010381,0xd28d8002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0xd2900000,0x8b000380,0xd2898001,0x8b010381,0xd28e0002,0x8b020382
-bl {vg_mldsa_multiply_add_ntt}
-.inst 0x910f8320,0xd28f0001,0x8b010381
-bl {vg_mldsa_unpack_t1}
-.inst 0xd28f0000,0x8b000380,0x91200381
-bl {vg_mldsa_ntt}
-.inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
-bl {vg_mldsa_multiply_ntt}
-.inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
-bl {vg_mldsa_sub}
-.inst 0xd2900000,0x8b000380,0x91200381
-bl {vg_mldsa_inv_ntt}
-.inst 0xd28c0000,0x8b000380,0xd2900001,0x8b010381,0xd28e8002,0xf2a00022,0xf2c00002,0xf2e00002
-.inst 0xd2908003,0x8b030383
-bl {vg_mldsa_use_hint}
-.inst 0xd2908000,0x8b000380,0xd2800561,0xd28a4802,0x8b020382,0xd2801803
-bl {vg_mldsa_simple_bit_pack}
-.inst 0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409
-.inst 0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409
-.inst 0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809,0xf9004c09,0xf9005009,0xf9005409
-.inst 0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380,0xd2801101,0x91032385,0x91000343
-.inst 0xd2800804
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0xd28a0003,0x8b030383,0xd2806004
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032384,0xd28003e3
-bl {vg_keccak_pad_scratch}
-.inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x91100383,0xd2800404
-bl {vg_keccak_squeeze_scratch}
-.inst 0x91100380,0x91000361,0xd2800402,0xd280000a
-29:
-.inst 0x39400009,0x3940002b,0xca0b0129,0xaa09014a,0x91000400,0x91000421,0xd1000442
-cbnz x2, 29b
-.inst 0xd100054a,0xd37ffd4a,0x0a0a0318
-23:
-21:
-.inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xd65f03c0
+        r".inst 0xf81f0ffe,0x91000004,0xd2800005
+bl {vg_mldsa44_verify_with_cache}
+.inst 0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_mldsa_hint_bit_unpack = sym super::mldsa44::vg_mldsa_hint_bit_unpack::vg_mldsa_hint_bit_unpack,
-        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
-        vg_mldsa_norm_lt = sym super::mldsa44::vg_mldsa_norm_lt::vg_mldsa_norm_lt,
-        vg_mldsa_rej_ntt_poly4 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4::vg_mldsa_rej_ntt_poly4,
-        vg_mldsa_sample_in_ball = sym super::mldsa44::vg_mldsa_sample_in_ball::vg_mldsa_sample_in_ball,
-        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
-        vg_mldsa_multiply_ntt = sym super::mldsa44::vg_mldsa_multiply_ntt::vg_mldsa_multiply_ntt,
-        vg_mldsa_multiply_add_ntt = sym super::mldsa44::vg_mldsa_multiply_add_ntt::vg_mldsa_multiply_add_ntt,
-        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
-        vg_mldsa_sub = sym super::mldsa44::vg_mldsa_sub::vg_mldsa_sub,
-        vg_mldsa_inv_ntt = sym super::mldsa44::vg_mldsa_inv_ntt::vg_mldsa_inv_ntt,
-        vg_mldsa_use_hint = sym super::mldsa44::vg_mldsa_use_hint::vg_mldsa_use_hint,
-        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa44_verify_with_cache = sym super::mldsa44::vg_mldsa44_verify_with_cache::vg_mldsa44_verify_with_cache,
     )
 }
 
@@ -1006,7 +573,7 @@ cbnz x2, 29b
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_verify_message_cached(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
@@ -1043,6 +610,62 @@ b 21f
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mldsa44_verify = sym super::mldsa44::vg_mldsa44_verify,
+    )
+}
+
+/// ML-DSA-44 verification with a prepared public key: `vg_mldsa44_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 5408 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `pk` must have been written by `vg_mldsa44_prepare_verifying_key`, and not changed since.
+/// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_verify_message_prepared(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd348fc89
+cbnz x9, 20f
+.inst 0xd2860009,0xf2a00029,0xf2c00009,0xf2e00009,0x8b0900c9,0xf901c53c,0xf901c93e,0x9100013c
+.inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e387,0xf901e785,0xf901eb86
+.inst 0xd2800009,0x390f6389,0x390f6784,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
+.inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
+.inst 0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809
+.inst 0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380
+.inst 0xd2801101,0xf941e383,0xd2800804,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0xd2800802,0x91000380,0xd2801101,0x910f6383,0xd2800044,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0xd2800842,0x91000380,0xd2801101,0xf941db83,0xf941df84,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0xf941d383,0xf941d784,0x91032385
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0x91000380,0xd2801101,0xd28003e3,0x91032384
+bl {vg_keccak_pad_scratch}
+.inst 0x91000380,0xd2801101,0xd2800002,0x910d2383,0xd2800804,0x91032385
+bl {vg_keccak_squeeze_scratch}
+.inst 0xf941cf80,0x910d2381,0xf941e782,0xf941eb83
+bl {vg_mldsa44_verify_prepared}
+.inst 0xf941cb9e,0xf941c79c
+b 21f
+20:
+.inst 0xd2800040
+21:
+.inst 0xd65f03c0
+.p2align 6",
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa44_verify_prepared = sym super::mldsa44::vg_mldsa44_verify_prepared::vg_mldsa44_verify_prepared,
     )
 }
 
@@ -1299,295 +922,16 @@ pub const VG_MLDSA44_SIGN_SHA3_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_sign_sha3(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xf901a497,0xf901a898,0xf901ac99,0xf901b09a,0xf901b49b,0xf901b89e,0xf901bc9c,0x9100009c
-.inst 0x91000019,0x9100003a,0x9100005b,0x91000077,0xd2800038,0xf9400329,0xf901cf89,0xf9400729
-.inst 0xf901d389,0xf9400b29,0xf901d789,0xf9400f29,0xf901db89,0x9116038a,0xf941cf89,0xf9000149
-.inst 0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800009,0x39168389
-.inst 0xd2800009,0x39168789,0x91168b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789
-.inst 0xf9000949,0xf941db89,0xf9000d49,0xd2800029,0x39170b89,0xd2800009,0x39170f89,0x9117138a
-.inst 0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49
-.inst 0xd2800049,0x39179389,0xd2800009,0x39179789,0x91179b8a,0xf941cf89,0xf9000149,0xf941d389
-.inst 0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800069,0x39181b89,0xd2800009
-.inst 0x39181f89,0x91160380,0xd2930001,0x8b010381,0xd29b0002,0x8b020382
-bl {vg_mldsa_rej_ntt_poly4_sha3}
-.inst 0x0a000318,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
-.inst 0xf941db89,0xf9000d49,0xd2800009,0x39168389,0xd2800029,0x39168789,0x91168b8a,0xf941cf89
-.inst 0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800029
-.inst 0x39170b89,0xd2800029,0x39170f89,0x9117138a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549
-.inst 0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800049,0x39179389,0xd2800029,0x39179789
-.inst 0x91179b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89
-.inst 0xf9000d49,0xd2800069,0x39181b89,0xd2800029,0x39181f89,0x91160380,0xd2950001,0x8b010381
-.inst 0xd29b0002,0x8b020382
-bl {vg_mldsa_rej_ntt_poly4_sha3}
-.inst 0x0a000318,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
-.inst 0xf941db89,0xf9000d49,0xd2800009,0x39168389,0xd2800049,0x39168789,0x91168b8a,0xf941cf89
-.inst 0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800029
-.inst 0x39170b89,0xd2800049,0x39170f89,0x9117138a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549
-.inst 0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800049,0x39179389,0xd2800049,0x39179789
-.inst 0x91179b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89
-.inst 0xf9000d49,0xd2800069,0x39181b89,0xd2800049,0x39181f89,0x91160380,0xd2970001,0x8b010381
-.inst 0xd29b0002,0x8b020382
-bl {vg_mldsa_rej_ntt_poly4_sha3}
-.inst 0x0a000318,0x9116038a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949
-.inst 0xf941db89,0xf9000d49,0xd2800009,0x39168389,0xd2800069,0x39168789,0x91168b8a,0xf941cf89
-.inst 0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800029
-.inst 0x39170b89,0xd2800069,0x39170f89,0x9117138a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549
-.inst 0xf941d789,0xf9000949,0xf941db89,0xf9000d49,0xd2800049,0x39179389,0xd2800069,0x39179789
-.inst 0x91179b8a,0xf941cf89,0xf9000149,0xf941d389,0xf9000549,0xf941d789,0xf9000949,0xf941db89
-.inst 0xf9000d49,0xd2800069,0x39181b89,0xd2800069,0x39181f89,0x91160380,0xd2990001,0x8b010381
-.inst 0xd29b0002,0x8b020382
-bl {vg_mldsa_rej_ntt_poly4_sha3}
-.inst 0x0a000318
-cbnz w24, 20f
-b 21f
-20:
-.inst 0x91020320,0xd2800c01,0xd2800042,0xd2800043,0xd28d0004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28d0000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91038320,0xd2800c01,0xd2800042,0xd2800043,0xd28d8004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28d8000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91050320,0xd2800c01,0xd2800042,0xd2800043,0xd28e0004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28e0000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91068320,0xd2800c01,0xd2800042,0xd2800043,0xd28e8004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28e8000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91080320,0xd2800c01,0xd2800042,0xd2800043,0xd28f0004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28f0000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91098320,0xd2800c01,0xd2800042,0xd2800043,0xd28f8004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28f8000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x910b0320,0xd2800c01,0xd2800042,0xd2800043,0xd2900004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd2900000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x910c8320,0xd2800c01,0xd2800042,0xd2800043,0xd2908004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd2908000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x910e0320,0xd2803401,0xd281ffe2,0xd2820003,0xd2910004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd2910000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91148320,0xd2803401,0xd281ffe2,0xd2820003,0xd2918004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd2918000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x911b0320,0xd2803401,0xd281ffe2,0xd2820003,0xd2920004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd2920000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91218320,0xd2803401,0xd281ffe2,0xd2820003,0xd2928004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd2928000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409
-.inst 0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409
-.inst 0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809,0xf9004c09,0xf9005009,0xf9005409
-.inst 0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380,0xd2801101,0x91032385,0x91008323
-.inst 0xd2800404
-bl {vg_keccak_absorb_scratch_sha3}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91000363,0xd2800404
-bl {vg_keccak_absorb_scratch_sha3}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91000343,0xd2800804
-bl {vg_keccak_absorb_scratch_sha3}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032384,0xd28003e3
-bl {vg_keccak_pad_scratch_sha3}
-.inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x910f0383,0xd2800804
-bl {vg_keccak_squeeze_scratch_sha3}
-.inst 0xd2800009,0xf901c789,0xd28065c9,0xf901c389
-22:
-.inst 0x9119838a,0xf941e389,0xf9000149,0xf941e789,0xf9000549,0xf941eb89,0xf9000949,0xf941ef89
-.inst 0xf9000d49,0x911a038a,0xf941f389,0xf9000149,0xf941f789,0xf9000549,0xf941fb89,0xf9000949
-.inst 0xf941ff89,0xf9000d49,0xf941c789,0x91000129,0x391a8389,0xd348fd29,0x391a8789,0x911a8b8a
-.inst 0xf941e389,0xf9000149,0xf941e789,0xf9000549,0xf941eb89,0xf9000949,0xf941ef89,0xf9000d49
-.inst 0x911b0b8a,0xf941f389,0xf9000149,0xf941f789,0xf9000549,0xf941fb89,0xf9000949,0xf941ff89
-.inst 0xf9000d49,0xf941c789,0x91000529,0x391b8b89,0xd348fd29,0x391b8f89,0x91198380,0xd2800001
-.inst 0xf2a00041,0xf2c00001,0xf2e00001,0xd2870002,0x8b020382,0xd2878003,0x8b030383,0xd29b0004
-.inst 0x8b040384
-bl {vg_mldsa_expand_mask_pair_sha3}
-.inst 0xd2890000,0x8b000380,0xd2870001,0x8b010381
-bl {vg_mldsa_ntt_positive_from}
-.inst 0xd2898000,0x8b000380,0xd2878001,0x8b010381
-bl {vg_mldsa_ntt_positive_from}
-.inst 0x9119838a,0xf941e389,0xf9000149,0xf941e789,0xf9000549,0xf941eb89,0xf9000949,0xf941ef89
-.inst 0xf9000d49,0x911a038a,0xf941f389,0xf9000149,0xf941f789,0xf9000549,0xf941fb89,0xf9000949
-.inst 0xf941ff89,0xf9000d49,0xf941c789,0x91000929,0x391a8389,0xd348fd29,0x391a8789,0x911a8b8a
-.inst 0xf941e389,0xf9000149,0xf941e789,0xf9000549,0xf941eb89,0xf9000949,0xf941ef89,0xf9000d49
-.inst 0x911b0b8a,0xf941f389,0xf9000149,0xf941f789,0xf9000549,0xf941fb89,0xf9000949,0xf941ff89
-.inst 0xf9000d49,0xf941c789,0x91000d29,0x391b8b89,0xd348fd29,0x391b8f89,0x91198380,0xd2800001
-.inst 0xf2a00041,0xf2c00001,0xf2e00001,0xd2880002,0x8b020382,0xd2888003,0x8b030383,0xd29b0004
-.inst 0x8b040384
-bl {vg_mldsa_expand_mask_pair_sha3}
-.inst 0xd28a0000,0x8b000380,0xd2880001,0x8b010381
-bl {vg_mldsa_ntt_positive_from}
-.inst 0xd28a8000,0x8b000380,0xd2888001,0x8b010381
-bl {vg_mldsa_ntt_positive_from}
-.inst 0xd28b0000,0x8b000380,0xd2930001,0x8b010381,0xd2890002,0x8b020382,0x91300383
-bl {vg_mldsa_dot_inverse4}
-.inst 0xd28b8000,0x8b000380,0xd2950001,0x8b010381,0xd2890002,0x8b020382,0x91300383
-bl {vg_mldsa_dot_inverse4}
-.inst 0xd28c0000,0x8b000380,0xd2970001,0x8b010381,0xd2890002,0x8b020382,0x91300383
-bl {vg_mldsa_dot_inverse4}
-.inst 0xd28c8000,0x8b000380,0xd2990001,0x8b010381,0xd2890002,0x8b020382,0x91300383
-bl {vg_mldsa_dot_inverse4}
-.inst 0xd28b0000,0x8b000380,0x91200381
-bl {vg_mldsa_high_pack6}
-.inst 0xd28b8000,0x8b000380,0x91230381
-bl {vg_mldsa_high_pack6}
-.inst 0xd28c0000,0x8b000380,0x91260381
-bl {vg_mldsa_high_pack6}
-.inst 0xd28c8000,0x8b000380,0x91290381
-bl {vg_mldsa_high_pack6}
-.inst 0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409
-.inst 0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409
-.inst 0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809,0xf9004c09,0xf9005009,0xf9005409
-.inst 0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380,0xd2801101,0x91032385,0x91000343
-.inst 0xd2800804
-bl {vg_keccak_absorb_scratch_sha3}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0x91200383,0xd2806004
-bl {vg_keccak_absorb_scratch_sha3}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032384,0xd28003e3
-bl {vg_keccak_pad_scratch_sha3}
-.inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x91104383,0xd2800404
-bl {vg_keccak_squeeze_scratch_sha3}
-.inst 0x91104380,0xd2800401,0xd28004e2,0xd2828003,0x8b030383,0x91300384
-bl {vg_mldsa_sample_in_ball_sha3}
-cbnz w0, 23f
-.inst 0xd2800018,0xd2800029,0xf901c389
-b 24f
-23:
-.inst 0xd2828000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0xd2800038,0xd2800009,0xf901cb89,0xd2828000,0x8b000380,0xd28d0001,0x8b010381,0xd2870002
-.inst 0x8b020382,0xd2830003,0x8b030383,0xd2830004,0x8b040384,0xd2800005,0xf2a00045,0xf2c00005
-.inst 0xf2e00005,0xd29ff646,0xf2a00026,0xf2c00006,0xf2e00006
-bl {vg_mldsa_fused_pair_z}
-.inst 0x0a000318
-cbnz w24, 25f
-b 26f
-25:
-.inst 0xd2828000,0x8b000380,0xd28e0001,0x8b010381,0xd2880002,0x8b020382,0xd2830003,0x8b030383
-.inst 0xd2830004,0x8b040384,0xd2800005,0xf2a00045,0xf2c00005,0xf2e00005,0xd29ff646,0xf2a00026
-.inst 0xf2c00006,0xf2e00006
-bl {vg_mldsa_fused_pair_z}
-.inst 0x0a000318
-cbnz w24, 27f
-b 28f
-27:
-28:
-26:
-cbnz w24, 29f
-.inst 0xf941c789,0x91001129,0xf901c789
-b 210f
-29:
-.inst 0xd2828000,0x8b000380,0xd28f0001,0x8b010381,0xd28b0002,0x8b020382,0xd2850003,0x8b030383
-.inst 0xd2830004,0x8b040384,0xd28e8005,0xf2a00025,0xf2c00005,0xf2e00005,0xd28e7646,0xf2a00026
-.inst 0xf2c00006,0xf2e00006
-bl {vg_mldsa_fused_pair_r0}
-.inst 0x0a000318
-cbnz w24, 211f
-b 212f
-211:
-.inst 0xd2828000,0x8b000380,0xd2900001,0x8b010381,0xd28c0002,0x8b020382,0xd2860003,0x8b030383
-.inst 0xd2830004,0x8b040384,0xd28e8005,0xf2a00025,0xf2c00005,0xf2e00005,0xd28e7646,0xf2a00026
-.inst 0xf2c00006,0xf2e00006
-bl {vg_mldsa_fused_pair_r0}
-.inst 0x0a000318
-cbnz w24, 213f
-b 214f
-213:
-214:
-212:
-cbnz w24, 215f
-.inst 0xf941c789,0x91001129,0xf901c789
-b 216f
-215:
-.inst 0xd2828000,0x8b000380,0xd2910001,0x8b010381,0xd2850002,0x8b020382,0xd28b0003,0x8b030383
-.inst 0xd2830004,0x8b040384,0xd28e8005,0xf2a00025,0xf2c00005,0xf2e00005,0xd28e8006,0xf2a00026
-.inst 0xf2c00006,0xf2e00006
-bl {vg_mldsa_fused_pair_h}
-.inst 0xf941cb89,0x0b000129,0xf901cb89,0xd360fc00,0x0a000318,0xd2828000,0x8b000380,0xd2920001
-.inst 0x8b010381,0xd2860002,0x8b020382,0xd28c0003,0x8b030383,0xd2830004,0x8b040384,0xd28e8005
-.inst 0xf2a00025,0xf2c00005,0xf2e00005,0xd28e8006,0xf2a00026,0xf2c00006,0xf2e00006
-bl {vg_mldsa_fused_pair_h}
-.inst 0xf941cb89,0x0b000129,0xf901cb89,0xd360fc00,0x0a000318,0xf941cb89,0xd1014529,0xd37ffd29
-.inst 0x0a090318
-cbnz w24, 217f
-.inst 0xf941c789,0x91001129,0xf901c789
-b 218f
-217:
-.inst 0xd2800029,0xf901c389
-218:
-216:
-210:
-24:
-.inst 0xf941c389,0xd1000529,0xf901c389
-cbnz x9, 22b
-cbnz w24, 219f
-b 220f
-219:
-.inst 0xd2870000,0x8b000380
-bl {vg_mldsa_canonicalize_signed}
-.inst 0xd2878000,0x8b000380
-bl {vg_mldsa_canonicalize_signed}
-.inst 0xd2880000,0x8b000380
-bl {vg_mldsa_canonicalize_signed}
-.inst 0xd2888000,0x8b000380
-bl {vg_mldsa_canonicalize_signed}
-.inst 0x910002e0,0x91104381,0xd2800402
-221:
-.inst 0x39400029,0x39000009,0x91000400,0x91000421,0xd1000442
-cbnz x2, 221b
-.inst 0xd2870000,0x8b000380,0xd29fffe1,0xf2a00021,0xf2c00001,0xf2e00001,0xd2800002,0xf2a00042
-.inst 0xf2c00002,0xf2e00002,0x910082e3,0xd2804804
-bl {vg_mldsa_bit_pack}
-.inst 0xd2878000,0x8b000380,0xd29fffe1,0xf2a00021,0xf2c00001,0xf2e00001,0xd2800002,0xf2a00042
-.inst 0xf2c00002,0xf2e00002,0x910982e3,0xd2804804
-bl {vg_mldsa_bit_pack}
-.inst 0xd2880000,0x8b000380,0xd29fffe1,0xf2a00021,0xf2c00001,0xf2e00001,0xd2800002,0xf2a00042
-.inst 0xf2c00002,0xf2e00002,0x911282e3,0xd2804804
-bl {vg_mldsa_bit_pack}
-.inst 0xd2888000,0x8b000380,0xd29fffe1,0xf2a00021,0xf2c00001,0xf2e00001,0xd2800002,0xf2a00042
-.inst 0xf2c00002,0xf2e00002,0x911b82e3,0xd2804804
-bl {vg_mldsa_bit_pack}
-.inst 0xd2850000,0x8b000380,0xd2808001,0xd2800a02,0x912482e3,0xd2800a84
-bl {vg_mldsa_hint_bit_pack}
-220:
-21:
-.inst 0x91000300,0xf941a797,0xf941ab98,0xf941af99,0xf941b39a,0xf941b79b,0xf941bb9e,0xf941bf9c
-.inst 0xd65f03c0
+        r".inst 0xf81f0ffe,0x91000005,0xd2800006
+bl {vg_mldsa44_sign_with_cache_sha3}
+.inst 0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4_sha3::vg_mldsa_rej_ntt_poly4_sha3,
-        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
-        vg_mldsa_ntt_positive = sym super::mldsa44::vg_mldsa_ntt_positive::vg_mldsa_ntt_positive,
-        vg_keccak_absorb_scratch_sha3 = sym super::ed448::vg_keccak_absorb_scratch_sha3::vg_keccak_absorb_scratch_sha3,
-        vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
-        vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
-        vg_mldsa_expand_mask_pair_sha3 = sym super::mldsa44::vg_mldsa_expand_mask_pair_sha3::vg_mldsa_expand_mask_pair_sha3,
-        vg_mldsa_ntt_positive_from = sym super::mldsa44::vg_mldsa_ntt_positive_from::vg_mldsa_ntt_positive_from,
-        vg_mldsa_dot_inverse4 = sym super::mldsa44::vg_mldsa_dot_inverse4::vg_mldsa_dot_inverse4,
-        vg_mldsa_high_pack6 = sym super::mldsa44::vg_mldsa_high_pack6::vg_mldsa_high_pack6,
-        vg_mldsa_sample_in_ball_sha3 = sym super::mldsa44::vg_mldsa_sample_in_ball_sha3::vg_mldsa_sample_in_ball_sha3,
-        vg_mldsa_fused_pair_z = sym super::mldsa44::vg_mldsa_fused_pair_z::vg_mldsa_fused_pair_z,
-        vg_mldsa_fused_pair_r0 = sym super::mldsa44::vg_mldsa_fused_pair_r0::vg_mldsa_fused_pair_r0,
-        vg_mldsa_fused_pair_h = sym super::mldsa44::vg_mldsa_fused_pair_h::vg_mldsa_fused_pair_h,
-        vg_mldsa_canonicalize_signed = sym super::mldsa44::vg_mldsa_canonicalize_signed::vg_mldsa_canonicalize_signed,
-        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
-        vg_mldsa_hint_bit_pack = sym super::mldsa44::vg_mldsa_hint_bit_pack::vg_mldsa_hint_bit_pack,
+        vg_mldsa44_sign_with_cache_sha3 = sym super::mldsa44::vg_mldsa44_sign_with_cache_sha3::vg_mldsa44_sign_with_cache_sha3,
     )
 }
 
@@ -1610,7 +954,7 @@ pub const VG_MLDSA44_SIGN_MESSAGE_SHA3_FEATURES: verified_garbage_cpu::Features 
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_sign_message_sha3(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
@@ -1651,6 +995,67 @@ b 21f
     )
 }
 
+/// The CPU features `vg_mldsa44_sign_message_prepared_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA44_SIGN_MESSAGE_PREPARED_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// ML-DSA-44 signing with a prepared private key: `vg_mldsa44_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 14848 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `sk` must have been written by `vg_mldsa44_prepare_signing_key` from a private key written by `vg_mldsa44_keygen`, and not changed since.
+/// * `*sk` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_sign_message_prepared_sha3(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd348fc89
+cbnz x9, 20f
+.inst 0xd2860009,0xf2a00029,0xf2c00009,0xf2e00009,0x8b0900e9,0xf901c53c,0xf901c93e,0x9100013c
+.inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e385,0xf901e786,0xf901eb87
+.inst 0xd2800009,0x390f6389,0x390f6784,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
+.inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
+.inst 0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809
+.inst 0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380
+.inst 0xd2801101,0xf941cf83,0x91010063,0xd2800804,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xd2800802,0x91000380,0xd2801101,0x910f6383,0xd2800044,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xd2800842,0x91000380,0xd2801101,0xf941db83,0xf941df84,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0xf941d383,0xf941d784,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0xd28003e3,0x91032384
+bl {vg_keccak_pad_scratch_sha3}
+.inst 0x91000380,0xd2801101,0xd2800002,0x910d2383,0xd2800804,0x91032385
+bl {vg_keccak_squeeze_scratch_sha3}
+.inst 0xf941cf80,0x910d2381,0xf941e382,0xf941e783,0xf941eb84
+bl {vg_mldsa44_sign_prepared_sha3}
+.inst 0xf941cb9e,0xf941c79c
+b 21f
+20:
+.inst 0xd2800040
+21:
+.inst 0xd65f03c0
+.p2align 6",
+        vg_keccak_absorb_scratch_sha3 = sym super::ed448::vg_keccak_absorb_scratch_sha3::vg_keccak_absorb_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_mldsa44_sign_prepared_sha3 = sym super::mldsa44::vg_mldsa44_sign_prepared_sha3::vg_mldsa44_sign_prepared_sha3,
+    )
+}
+
 /// The CPU features `vg_mldsa44_verify_sha3` requires (`Artifact.features`).
 pub const VG_MLDSA44_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
@@ -1666,213 +1071,16 @@ pub const VG_MLDSA44_VERIFY_SHA3_FEATURES: verified_garbage_cpu::Features = veri
 /// * `scratch` must be valid for reads and writes of 77824 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_verify_sha3(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xf901a478,0xf901a879,0xf901ac7a,0xf901b07b,0xf901b47c,0xf901b87e,0x91000019,0x9100003a
-.inst 0x9100005b,0x9100007c,0xd2800038,0x91248360,0xd2800a81,0xd2800a02,0xd28a8003,0x8b030383
-.inst 0xd2808004
-bl {vg_mldsa_hint_bit_unpack}
-.inst 0x0a000318
-cbnz x24, 20f
-b 21f
-20:
-.inst 0x91008360,0xd2804801,0xd29fffe2,0xf2a00022,0xf2c00002,0xf2e00002,0xd2800003,0xf2a00043
-.inst 0xf2c00003,0xf2e00003,0xd28c8004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28c8000,0x8b000380,0xd29ff641,0xf2a00021,0xf2c00001,0xf2e00001
-bl {vg_mldsa_norm_lt}
-.inst 0x0a000318,0x91098360,0xd2804801,0xd29fffe2,0xf2a00022,0xf2c00002,0xf2e00002,0xd2800003
-.inst 0xf2a00043,0xf2c00003,0xf2e00003,0xd28d0004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28d0000,0x8b000380,0xd29ff641,0xf2a00021,0xf2c00001,0xf2e00001
-bl {vg_mldsa_norm_lt}
-.inst 0x0a000318,0x91128360,0xd2804801,0xd29fffe2,0xf2a00022,0xf2c00002,0xf2e00002,0xd2800003
-.inst 0xf2a00043,0xf2c00003,0xf2e00003,0xd28d8004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28d8000,0x8b000380,0xd29ff641,0xf2a00021,0xf2c00001,0xf2e00001
-bl {vg_mldsa_norm_lt}
-.inst 0x0a000318,0x911b8360,0xd2804801,0xd29fffe2,0xf2a00022,0xf2c00002,0xf2e00002,0xd2800003
-.inst 0xf2a00043,0xf2c00003,0xf2e00003,0xd28e0004,0x8b040384
-bl {vg_mldsa_bit_unpack}
-.inst 0xd28e0000,0x8b000380,0xd29ff641,0xf2a00021,0xf2c00001,0xf2e00001
-bl {vg_mldsa_norm_lt}
-.inst 0x0a000318
-cbnz x24, 22f
-b 23f
-22:
-.inst 0xf9400329,0xf9024389,0xf9400729,0xf9024789,0xf9400b29,0xf9024b89,0xf9400f29,0xf9024f89
-.inst 0x9116038a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89
-.inst 0xf9000d49,0xd2800009,0x39168389,0xd2800009,0x39168789,0x91168b8a,0xf9424389,0xf9000149
-.inst 0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49,0xd2800029,0x39170b89
-.inst 0xd2800009,0x39170f89,0x9117138a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89
-.inst 0xf9000949,0xf9424f89,0xf9000d49,0xd2800049,0x39179389,0xd2800009,0x39179789,0x91179b8a
-.inst 0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49
-.inst 0xd2800069,0x39181b89,0xd2800009,0x39181f89,0x91160380,0xd2820001,0x8b010381,0xd28f8002
-.inst 0x8b020382
-bl {vg_mldsa_rej_ntt_poly4_sha3}
-.inst 0x0a000318,0xd2800008,0x4b000108,0x4e040d00,0xd2820001,0x8b010381,0xd2800802
-24:
-.inst 0x3dc00021,0x4e201c21,0x3d800021,0x3dc00421,0x4e201c21,0x3d800421,0x3dc00821,0x4e201c21
-.inst 0x3d800821,0x3dc00c21,0x4e201c21,0x3d800c21,0x91010021,0xd1000442
-cbnz x2, 24b
-.inst 0x9116038a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89
-.inst 0xf9000d49,0xd2800009,0x39168389,0xd2800029,0x39168789,0x91168b8a,0xf9424389,0xf9000149
-.inst 0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49,0xd2800029,0x39170b89
-.inst 0xd2800029,0x39170f89,0x9117138a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89
-.inst 0xf9000949,0xf9424f89,0xf9000d49,0xd2800049,0x39179389,0xd2800029,0x39179789,0x91179b8a
-.inst 0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49
-.inst 0xd2800069,0x39181b89,0xd2800029,0x39181f89,0x91160380,0xd2840001,0x8b010381,0xd28f8002
-.inst 0x8b020382
-bl {vg_mldsa_rej_ntt_poly4_sha3}
-.inst 0x0a000318,0xd2800008,0x4b000108,0x4e040d00,0xd2840001,0x8b010381,0xd2800802
-25:
-.inst 0x3dc00021,0x4e201c21,0x3d800021,0x3dc00421,0x4e201c21,0x3d800421,0x3dc00821,0x4e201c21
-.inst 0x3d800821,0x3dc00c21,0x4e201c21,0x3d800c21,0x91010021,0xd1000442
-cbnz x2, 25b
-.inst 0x9116038a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89
-.inst 0xf9000d49,0xd2800009,0x39168389,0xd2800049,0x39168789,0x91168b8a,0xf9424389,0xf9000149
-.inst 0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49,0xd2800029,0x39170b89
-.inst 0xd2800049,0x39170f89,0x9117138a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89
-.inst 0xf9000949,0xf9424f89,0xf9000d49,0xd2800049,0x39179389,0xd2800049,0x39179789,0x91179b8a
-.inst 0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49
-.inst 0xd2800069,0x39181b89,0xd2800049,0x39181f89,0x91160380,0xd2860001,0x8b010381,0xd28f8002
-.inst 0x8b020382
-bl {vg_mldsa_rej_ntt_poly4_sha3}
-.inst 0x0a000318,0xd2800008,0x4b000108,0x4e040d00,0xd2860001,0x8b010381,0xd2800802
-26:
-.inst 0x3dc00021,0x4e201c21,0x3d800021,0x3dc00421,0x4e201c21,0x3d800421,0x3dc00821,0x4e201c21
-.inst 0x3d800821,0x3dc00c21,0x4e201c21,0x3d800c21,0x91010021,0xd1000442
-cbnz x2, 26b
-.inst 0x9116038a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89
-.inst 0xf9000d49,0xd2800009,0x39168389,0xd2800069,0x39168789,0x91168b8a,0xf9424389,0xf9000149
-.inst 0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49,0xd2800029,0x39170b89
-.inst 0xd2800069,0x39170f89,0x9117138a,0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89
-.inst 0xf9000949,0xf9424f89,0xf9000d49,0xd2800049,0x39179389,0xd2800069,0x39179789,0x91179b8a
-.inst 0xf9424389,0xf9000149,0xf9424789,0xf9000549,0xf9424b89,0xf9000949,0xf9424f89,0xf9000d49
-.inst 0xd2800069,0x39181b89,0xd2800069,0x39181f89,0x91160380,0xd2880001,0x8b010381,0xd28f8002
-.inst 0x8b020382
-bl {vg_mldsa_rej_ntt_poly4_sha3}
-.inst 0x0a000318,0xd2800008,0x4b000108,0x4e040d00,0xd2880001,0x8b010381,0xd2800802
-27:
-.inst 0x3dc00021,0x4e201c21,0x3d800021,0x3dc00421,0x4e201c21,0x3d800421,0x3dc00821,0x4e201c21
-.inst 0x3d800821,0x3dc00c21,0x4e201c21,0x3d800c21,0x91010021,0xd1000442
-cbnz x2, 27b
-.inst 0x91000360,0xd2800401,0xd28004e2,0xd28e8003,0x8b030383,0x91200384
-bl {vg_mldsa_sample_in_ball_sha3}
-.inst 0x0a000318,0xd2800008,0x4b000108,0x4e040d00,0xd28e8001,0x8b010381,0xd2800202
-28:
-.inst 0x3dc00021,0x4e201c21,0x3d800021,0x3dc00421,0x4e201c21,0x3d800421,0x3dc00821,0x4e201c21
-.inst 0x3d800821,0x3dc00c21,0x4e201c21,0x3d800c21,0x91010021,0xd1000442
-cbnz x2, 28b
-.inst 0xd28c8000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0xd28d0000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0xd28d8000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0xd28e0000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0xd28e8000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0xd2900000,0x8b000380,0xd2820001,0x8b010381,0xd28c8002,0x8b020382
-bl {vg_mldsa_montgomery_dot4}
-.inst 0x91008320,0xd28f0001,0x8b010381
-bl {vg_mldsa_unpack_t1}
-.inst 0xd28f0000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
-bl {vg_mldsa_montgomery_product}
-.inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
-bl {vg_mldsa_sub}
-.inst 0xd2900000,0x8b000380
-bl {vg_mldsa_montgomery_inv_ntt}
-.inst 0xd28a0000,0x8b000380,0xd28a8001,0x8b010381,0xd2900002,0x8b020382,0xd28e8003,0xf2a00023
-.inst 0xf2c00003,0xf2e00003
-bl {vg_mldsa_usehint_pack6}
-.inst 0xd2900000,0x8b000380,0xd2840001,0x8b010381,0xd28c8002,0x8b020382
-bl {vg_mldsa_montgomery_dot4}
-.inst 0x91058320,0xd28f0001,0x8b010381
-bl {vg_mldsa_unpack_t1}
-.inst 0xd28f0000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
-bl {vg_mldsa_montgomery_product}
-.inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
-bl {vg_mldsa_sub}
-.inst 0xd2900000,0x8b000380
-bl {vg_mldsa_montgomery_inv_ntt}
-.inst 0xd28a1800,0x8b000380,0xd28b0001,0x8b010381,0xd2900002,0x8b020382,0xd28e8003,0xf2a00023
-.inst 0xf2c00003,0xf2e00003
-bl {vg_mldsa_usehint_pack6}
-.inst 0xd2900000,0x8b000380,0xd2860001,0x8b010381,0xd28c8002,0x8b020382
-bl {vg_mldsa_montgomery_dot4}
-.inst 0x910a8320,0xd28f0001,0x8b010381
-bl {vg_mldsa_unpack_t1}
-.inst 0xd28f0000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
-bl {vg_mldsa_montgomery_product}
-.inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
-bl {vg_mldsa_sub}
-.inst 0xd2900000,0x8b000380
-bl {vg_mldsa_montgomery_inv_ntt}
-.inst 0xd28a3000,0x8b000380,0xd28b8001,0x8b010381,0xd2900002,0x8b020382,0xd28e8003,0xf2a00023
-.inst 0xf2c00003,0xf2e00003
-bl {vg_mldsa_usehint_pack6}
-.inst 0xd2900000,0x8b000380,0xd2880001,0x8b010381,0xd28c8002,0x8b020382
-bl {vg_mldsa_montgomery_dot4}
-.inst 0x910f8320,0xd28f0001,0x8b010381
-bl {vg_mldsa_unpack_t1}
-.inst 0xd28f0000,0x8b000380
-bl {vg_mldsa_ntt_positive}
-.inst 0xd28f8000,0x8b000380,0xd28e8001,0x8b010381,0xd28f0002,0x8b020382
-bl {vg_mldsa_montgomery_product}
-.inst 0xd2900000,0x8b000380,0xd28f8001,0x8b010381
-bl {vg_mldsa_sub}
-.inst 0xd2900000,0x8b000380
-bl {vg_mldsa_montgomery_inv_ntt}
-.inst 0xd28a4800,0x8b000380,0xd28c0001,0x8b010381,0xd2900002,0x8b020382,0xd28e8003,0xf2a00023
-.inst 0xf2c00003,0xf2e00003
-bl {vg_mldsa_usehint_pack6}
-.inst 0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809,0xf9000c09,0xf9001009,0xf9001409
-.inst 0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809,0xf9002c09,0xf9003009,0xf9003409
-.inst 0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809,0xf9004c09,0xf9005009,0xf9005409
-.inst 0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380,0xd2801101,0x91032385,0x91000343
-.inst 0xd2800804
-bl {vg_keccak_absorb_scratch_sha3}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032385,0xd28a0003,0x8b030383,0xd2806004
-bl {vg_keccak_absorb_scratch_sha3}
-.inst 0x91000002,0x91000380,0xd2801101,0x91032384,0xd28003e3
-bl {vg_keccak_pad_scratch_sha3}
-.inst 0xd2800002,0x91000380,0xd2801101,0x91032385,0x91100383,0xd2800404
-bl {vg_keccak_squeeze_scratch_sha3}
-.inst 0x91100380,0x91000361,0xd2800402,0xd280000a
-29:
-.inst 0x39400009,0x3940002b,0xca0b0129,0xaa09014a,0x91000400,0x91000421,0xd1000442
-cbnz x2, 29b
-.inst 0xd100054a,0xd37ffd4a,0x0a0a0318
-23:
-21:
-.inst 0x91000300,0xf941bb9e,0xf941a798,0xf941ab99,0xf941af9a,0xf941b39b,0xf941b79c,0xd65f03c0
+        r".inst 0xf81f0ffe,0x91000004,0xd2800005
+bl {vg_mldsa44_verify_with_cache_sha3}
+.inst 0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_mldsa_hint_bit_unpack = sym super::mldsa44::vg_mldsa_hint_bit_unpack::vg_mldsa_hint_bit_unpack,
-        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
-        vg_mldsa_norm_lt = sym super::mldsa44::vg_mldsa_norm_lt::vg_mldsa_norm_lt,
-        vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4_sha3::vg_mldsa_rej_ntt_poly4_sha3,
-        vg_mldsa_sample_in_ball_sha3 = sym super::mldsa44::vg_mldsa_sample_in_ball_sha3::vg_mldsa_sample_in_ball_sha3,
-        vg_mldsa_ntt_positive = sym super::mldsa44::vg_mldsa_ntt_positive::vg_mldsa_ntt_positive,
-        vg_mldsa_montgomery_dot4 = sym super::mldsa44::vg_mldsa_montgomery_dot4::vg_mldsa_montgomery_dot4,
-        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
-        vg_mldsa_montgomery_product = sym super::mldsa44::vg_mldsa_montgomery_product::vg_mldsa_montgomery_product,
-        vg_mldsa_sub = sym super::mldsa44::vg_mldsa_sub::vg_mldsa_sub,
-        vg_mldsa_montgomery_inv_ntt = sym super::mldsa44::vg_mldsa_montgomery_inv_ntt::vg_mldsa_montgomery_inv_ntt,
-        vg_mldsa_usehint_pack6 = sym super::mldsa44::vg_mldsa_usehint_pack6::vg_mldsa_usehint_pack6,
-        vg_keccak_absorb_scratch_sha3 = sym super::ed448::vg_keccak_absorb_scratch_sha3::vg_keccak_absorb_scratch_sha3,
-        vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
-        vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_mldsa44_verify_with_cache_sha3 = sym super::mldsa44::vg_mldsa44_verify_with_cache_sha3::vg_mldsa44_verify_with_cache_sha3,
     )
 }
 
@@ -1894,7 +1102,7 @@ pub const VG_MLDSA44_VERIFY_MESSAGE_CACHED_SHA3_FEATURES: verified_garbage_cpu::
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa44_verify_message_cached_sha3(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
@@ -1935,6 +1143,66 @@ b 21f
     )
 }
 
+/// The CPU features `vg_mldsa44_verify_message_prepared_sha3` requires (`Artifact.features`).
+pub const VG_MLDSA44_VERIFY_MESSAGE_PREPARED_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// ML-DSA-44 verification with a prepared public key: `vg_mldsa44_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 5408 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `pk` must have been written by `vg_mldsa44_prepare_verifying_key`, and not changed since.
+/// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or `tr` (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa44_verify_message_prepared_sha3(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd348fc89
+cbnz x9, 20f
+.inst 0xd2860009,0xf2a00029,0xf2c00009,0xf2e00009,0x8b0900c9,0xf901c53c,0xf901c93e,0x9100013c
+.inst 0xf901cf80,0xf901d381,0xf901d782,0xf901db83,0xf901df84,0xf901e387,0xf901e785,0xf901eb86
+.inst 0xd2800009,0x390f6389,0x390f6784,0x91000380,0xd2800009,0xf9000009,0xf9000409,0xf9000809
+.inst 0xf9000c09,0xf9001009,0xf9001409,0xf9001809,0xf9001c09,0xf9002009,0xf9002409,0xf9002809
+.inst 0xf9002c09,0xf9003009,0xf9003409,0xf9003809,0xf9003c09,0xf9004009,0xf9004409,0xf9004809
+.inst 0xf9004c09,0xf9005009,0xf9005409,0xf9005809,0xf9005c09,0xf9006009,0xd2800002,0x91000380
+.inst 0xd2801101,0xf941e383,0xd2800804,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xd2800802,0x91000380,0xd2801101,0x910f6383,0xd2800044,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xd2800842,0x91000380,0xd2801101,0xf941db83,0xf941df84,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0xf941d383,0xf941d784,0x91032385
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0x91000002,0x91000380,0xd2801101,0xd28003e3,0x91032384
+bl {vg_keccak_pad_scratch_sha3}
+.inst 0x91000380,0xd2801101,0xd2800002,0x910d2383,0xd2800804,0x91032385
+bl {vg_keccak_squeeze_scratch_sha3}
+.inst 0xf941cf80,0x910d2381,0xf941e782,0xf941eb83
+bl {vg_mldsa44_verify_prepared_sha3}
+.inst 0xf941cb9e,0xf941c79c
+b 21f
+20:
+.inst 0xd2800040
+21:
+.inst 0xd65f03c0
+.p2align 6",
+        vg_keccak_absorb_scratch_sha3 = sym super::ed448::vg_keccak_absorb_scratch_sha3::vg_keccak_absorb_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_mldsa44_verify_prepared_sha3 = sym super::mldsa44::vg_mldsa44_verify_prepared_sha3::vg_mldsa44_verify_prepared_sha3,
+    )
+}
+
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_f1600_x2.rs"]
 pub(crate) mod vg_keccak_f1600_x2;
@@ -1942,6 +1210,38 @@ pub(crate) mod vg_keccak_f1600_x2;
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_f1600_x2_sha3.rs"]
 pub(crate) mod vg_keccak_f1600_x2_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa44_sign_prepared.rs"]
+pub(crate) mod vg_mldsa44_sign_prepared;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa44_sign_prepared_sha3.rs"]
+pub(crate) mod vg_mldsa44_sign_prepared_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa44_sign_with_cache.rs"]
+pub(crate) mod vg_mldsa44_sign_with_cache;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa44_sign_with_cache_sha3.rs"]
+pub(crate) mod vg_mldsa44_sign_with_cache_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa44_verify_prepared.rs"]
+pub(crate) mod vg_mldsa44_verify_prepared;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa44_verify_prepared_sha3.rs"]
+pub(crate) mod vg_mldsa44_verify_prepared_sha3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa44_verify_with_cache.rs"]
+pub(crate) mod vg_mldsa44_verify_with_cache;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa44_verify_with_cache_sha3.rs"]
+pub(crate) mod vg_mldsa44_verify_with_cache_sha3;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa_add.rs"]
