@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 public import VerifiedGarbage.Proof.Xdh.X86
 public import VerifiedGarbage.Proof.X448.X86.Base
 public import VerifiedGarbage.Spec.X448.Contract
@@ -15,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.X448.X86.CT
+meta import VerifiedGarbage.Proof.X448.Contract
 
 
 /-!
@@ -57,7 +59,7 @@ theorem exchange_verified :
       have a3 : arg Proof.X448.X86.satState 3 = 0x4000 := by decide
       have e : argAddr Proof.X448.X86.satState 0 = 0x8004 := by decide
       have esp : Proof.X448.X86.satState.gpr .esp = 0x8000 := rfl
-      contract_implies [Spec.X448.exchangeContract, Spec.X448.exchangeSig, Spec.X448.x448Sig, Proof.Xdh.X86.exContract,
+      contract_implies [Spec.X448.exchangeContract, Spec.X448.exchangeSig, Proof.X448.x448Sig, Proof.Xdh.X86.exContract,
         Proof.Xdh.X86.Pre, Proof.Xdh.X86.ExPost, Proof.Xdh.X86.Pub, Proof.Xdh.X86.outR, Proof.Xdh.X86.scR, Proof.Xdh.X86.ptR, Proof.Xdh.X86.wsR,
         Proof.Xdh.X86.argR, Proof.Xdh.X86.retR, Proof.Xdh.X86.stkR, X86.abi, X86.argSlots, X86.argVal,
         X86.argBytes, stackBelow, Proof.Xdh.x448_bytesAt] [a0, a1, a2, a3, e, esp] using Proof.X448.X86.satState)

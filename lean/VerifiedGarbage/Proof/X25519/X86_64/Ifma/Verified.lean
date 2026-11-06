@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Contract
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Ladder
 public import VerifiedGarbage.Proof.X25519.X86_64.Main
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
@@ -24,6 +25,7 @@ meta import VerifiedGarbage.Impl.X25519.X86_64.Ifma
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+meta import VerifiedGarbage.Proof.X25519.Contract
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: `Verified`
@@ -64,7 +66,7 @@ theorem x25519Ifma_ct : ConstantTime isa Proof.X25519.x25519X86_64.pre
     (fun s₁ s₂ _ _ hp => x25519_agree s₁ s₂ hp) (by taint_decide)
 
 theorem x25519Ifma_verified [DivstepInv] :
-    Verified X86_64.target Impl.X25519.X86_64.x25519Ifma (Spec.X25519.x25519Contract X86_64.abi 8) :=
+    Verified X86_64.target Impl.X25519.X86_64.x25519Ifma (Proof.X25519.x25519Contract X86_64.abi 8) :=
   Verified.of_inline_ct x25519Ifma_inlineOk x25519Ifma_ok x25519Ifma_ct x25519_implies8
     (fun _ h => Sig.clear_of_pre h) x25519_patch
 

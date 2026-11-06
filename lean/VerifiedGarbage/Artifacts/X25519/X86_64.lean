@@ -29,22 +29,6 @@ import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
 namespace VG.Artifacts.X25519.X86_64
 
 def artifacts : List Artifact := [
-  Spec.X25519.x25519Api.artifact X86_64.target {
-    code := Impl.X25519.X86_64.x25519
-    stack := 8
-    verified := Proof.X25519.X86_64.x25519_verified },
-  Spec.X25519.x25519Api.artifact X86_64.target {
-    suffix := "_adx"
-    code := Impl.X25519.X86_64.x25519Adx
-    stack := 8
-    verified := Proof.X25519.X86_64.x25519Adx_verified
-    features := ["bmi2", "adx"] },
-  Spec.X25519.x25519Api.artifact X86_64.target {
-    suffix := "_ifma"
-    code := Impl.X25519.X86_64.x25519Ifma
-    stack := 8
-    verified := Proof.X25519.X86_64.x25519Ifma_verified
-    features := ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"] },
   Spec.X25519.exchangeApi.artifact X86_64.target {
     code := Impl.Xdh.X86_64.exchange "vg_x25519" Impl.X25519.X86_64.x25519 32
     stack := 24

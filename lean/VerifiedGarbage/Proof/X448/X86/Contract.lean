@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 import VerifiedGarbage.Proof.X25519.X86.Basic
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.X86.Target
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # X448 on x86 (32-bit): the contract the proof is written against
 
-The facts of the shared contract (`Spec.X448.x448Contract`) the proof uses,
+The facts of the shared contract (`Proof.X448.x448Contract`) the proof uses,
 stated for x86; the shared contract implies it (`sig_implies`, in
 `Main.lean`).
 -/

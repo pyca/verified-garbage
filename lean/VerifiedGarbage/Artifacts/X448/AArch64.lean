@@ -20,9 +20,6 @@ public import VerifiedGarbage.TCB.AArch64.Print
 namespace VG.Artifacts.X448.AArch64
 
 def artifacts : List Artifact := [
-  Spec.X448.x448Api.artifact AArch64.target {
-    code := Impl.X448.AArch64.Fast.x448
-    verified := Proof.X448.AArch64.Fast.x448_verified },
   Spec.X448.exchangeApi.artifact AArch64.target {
     code := Impl.Xdh.AArch64.exchange "vg_x448" Impl.X448.AArch64.Fast.x448 56
     stack := 16

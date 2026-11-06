@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 public import VerifiedGarbage.Proof.Xdh.X86_64
 public import VerifiedGarbage.Proof.X448.X86_64.Instances
 public import VerifiedGarbage.Spec.X448.Contract
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.X448.X86_64.Lit
 meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 meta import VerifiedGarbage.Proof.X448.X86_64.Verified
+meta import VerifiedGarbage.Proof.X448.Contract
 
 /-!
 # X448 exchange, with RFC 7748's check, on x86-64
@@ -36,14 +38,14 @@ namespace VG.Proof.X448.X86_64.Exchange
 
 open VG VG.X86_64 VG.Proof.Xdh.X86_64
 
-theorem callee {c : Prog isa} (hv : Verified X86_64.target c (Spec.X448.x448Contract X86_64.abi 8))
-    (hn : NoSp c) (hd : c.depth ≤ 1) : Callee 56 8192 Spec.X448.x448 c (Spec.X448.x448Contract X86_64.abi 8) where
+theorem callee {c : Prog isa} (hv : Verified X86_64.target c (Proof.X448.x448Contract X86_64.abi 8))
+    (hn : NoSp c) (hd : c.depth ≤ 1) : Callee 56 8192 Spec.X448.x448 c (Proof.X448.x448Contract X86_64.abi 8) where
   hv := hv.1
   hct := hv.2.1
   pre s h := by
     obtain ⟨rd, wr, d1, d2, d3, d4, d5, r1, r2, r3, r4, k1, k2, k3, k4, b0, b1, b2, b3, stk⟩ := h
-    sig_pre [Spec.X448.x448Contract, Spec.X448.x448Sig, X86_64.abi, X86_64.argRegs]
-    sig_reduce [Spec.X448.x448Contract, Spec.X448.x448Sig, X86_64.abi, X86_64.argRegs, stackBelow, List.getD]
+    sig_pre [Proof.X448.x448Contract, Proof.X448.x448Sig, X86_64.abi, X86_64.argRegs]
+    sig_reduce [Proof.X448.x448Contract, Proof.X448.x448Sig, X86_64.abi, X86_64.argRegs, stackBelow, List.getD]
     sig_and_intros
     all_goals first
       | with_reducible assumption
@@ -51,12 +53,12 @@ theorem callee {c : Prog isa} (hv : Verified X86_64.target c (Spec.X448.x448Cont
       | omega
       | exact Region.Disjoint.symm ‹_›
   post s s' h := by
-    sig_post [Spec.X448.x448Contract, Spec.X448.x448Sig, X86_64.abi, X86_64.argRegs] at h
+    sig_post [Proof.X448.x448Contract, Proof.X448.x448Sig, X86_64.abi, X86_64.argRegs] at h
     exact h
   pub s₁ s₂ h := by
     obtain ⟨qsp, q0, q1, q2, q3⟩ := h
-    sig_pub [Spec.X448.x448Contract, Spec.X448.x448Sig, X86_64.abi, X86_64.argRegs]
-    sig_reduce [Spec.X448.x448Contract, Spec.X448.x448Sig, X86_64.abi, X86_64.argRegs]
+    sig_pub [Proof.X448.x448Contract, Proof.X448.x448Sig, X86_64.abi, X86_64.argRegs]
+    sig_reduce [Proof.X448.x448Contract, Proof.X448.x448Sig, X86_64.abi, X86_64.argRegs]
     sig_and_intros
     all_goals first | with_reducible assumption | trivial
   noSp := hn
@@ -64,11 +66,11 @@ theorem callee {c : Prog isa} (hv : Verified X86_64.target c (Spec.X448.x448Cont
 
 /-- `vg_x448_exchange` calling `c`, an implementation of `vg_x448`, as `name`. -/
 theorem exchange_verified {c : Prog isa} (name : String)
-    (hv : Verified X86_64.target c (Spec.X448.x448Contract X86_64.abi 8)) (hn : NoSp c) (hd : c.depth ≤ 1) :
+    (hv : Verified X86_64.target c (Proof.X448.x448Contract X86_64.abi 8)) (hn : NoSp c) (hd : c.depth ≤ 1) :
     Verified X86_64.target (Impl.Xdh.X86_64.exchange name c 56) (Spec.X448.exchangeContract X86_64.abi 24) :=
   Verified.of_correct (k := exContract 56 8192 Spec.X448.x448) (exchange_correct (callee hv hn hd) (by decide))
     (exchange_ct (callee hv hn hd) ⟨_, by taint_decide⟩) (by
-      contract_implies [Spec.X448.exchangeContract, Spec.X448.exchangeSig, Spec.X448.x448Sig,
+      contract_implies [Spec.X448.exchangeContract, Spec.X448.exchangeSig, Proof.X448.x448Sig,
         Proof.Xdh.X86_64.exContract, Proof.Xdh.X86_64.Pre, Proof.Xdh.X86_64.ExPost, Proof.Xdh.X86_64.Pub,
         Proof.Xdh.X86_64.outR, Proof.Xdh.X86_64.scR, Proof.Xdh.X86_64.ptR, Proof.Xdh.X86_64.wsR,
         Proof.Xdh.X86_64.retR, Proof.Xdh.X86_64.stkR, X86_64.abi, X86_64.argRegs, stackBelow]

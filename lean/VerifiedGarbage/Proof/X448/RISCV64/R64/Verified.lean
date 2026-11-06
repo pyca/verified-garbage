@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 import VerifiedGarbage.Proof.X448.RISCV64.R64.Invert
 import VerifiedGarbage.Proof.X448.RISCV64.Invert
 import VerifiedGarbage.Proof.Framework.Offset
@@ -175,9 +176,9 @@ def x448Sat : State where
   wr := [⟨0x1000, 56⟩, ⟨0x4000, 8192⟩]
 
 theorem x448_verified :
-    Verified RISCV64.target Impl.X448.RISCV64.R64.x448 (Spec.X448.x448Contract RISCV64.abi) :=
+    Verified RISCV64.target Impl.X448.RISCV64.R64.x448 (Proof.X448.x448Contract RISCV64.abi) :=
   Verified.of_correct x448_ok x448_ct' (by
-    contract_implies [Spec.X448.x448Contract, Spec.X448.x448Sig, Proof.X448.RISCV64.x448RISCV64,
+    contract_implies [Proof.X448.x448Contract, Proof.X448.x448Sig, Proof.X448.RISCV64.x448RISCV64,
       RISCV64.abi, RISCV64.argRegs] [Proof.X448.RISCV64.R64.x448Sat] using Proof.X448.RISCV64.R64.x448Sat)
 
 theorem BPre.of {s : State} (h : x448BaseRISCV64.pre s) : BPre s := by

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 public import VerifiedGarbage.Proof.X448.PPC64LE.Main
 public import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.Proof.X448.PPC64LE.CT
@@ -52,9 +53,9 @@ def x448Sat : State where
   wr := [⟨0x1000, 56⟩, ⟨0x4000, 8192⟩]
 
 theorem x448_verified :
-    Verified PPC64LE.target Impl.X448.PPC64LE.x448 (Spec.X448.x448Contract PPC64LE.abi) :=
+    Verified PPC64LE.target Impl.X448.PPC64LE.x448 (Proof.X448.x448Contract PPC64LE.abi) :=
   Verified.of_correct x448_ok x448_ct' (by
-    contract_implies [Spec.X448.x448Contract, Spec.X448.x448Sig, Proof.X448.PPC64LE.x448PPC64LE,
+    contract_implies [Proof.X448.x448Contract, Proof.X448.x448Sig, Proof.X448.PPC64LE.x448PPC64LE,
       PPC64LE.abi, PPC64LE.argRegs] [Proof.X448.PPC64LE.x448Sat] using Proof.X448.PPC64LE.x448Sat)
 
 theorem x448Base_ok (s : State) (hs : x448BasePPC64LE.pre s) :
