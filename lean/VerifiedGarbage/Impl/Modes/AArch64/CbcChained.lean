@@ -47,7 +47,7 @@ def lastAddr (r : CtrRegs) : List Instr :=
 def cbcLastToIv (r : CtrRegs) : Prog isa :=
   .ite (.zero .x r.n) (.block []) (.block (c.lastAddr r ++ (List.range c.bw).flatMap (copyW .x6 r.ctr .x7 0 0)))
 
-/-- `cbcDecrypt`, with the last block of the data to the IV once the IV is
+/-- CBC decryption, with the last block of the data to the IV once the IV is
 in the chaining value's slots. -/
 def cbcDecryptChained (r : CtrRegs) : Prog isa :=
   .seq (.block (c.ctrEntry r ++ c.cbcSetup r))
@@ -57,7 +57,7 @@ def cbcDecryptChained (r : CtrRegs) : Prog isa :=
           (.seq (.ite (.zero .x c.leftReg) (.block []) (.loop c.cbcDecGroup (.nonzero .x c.leftReg)))
             (.block c.restoreRegs)))))
 
-/-- `cbcEncrypt`, with the IV's address in `iv` and the buffer, the last
+/-- CBC encryption, with the IV's address in `iv` and the buffer, the last
 ciphertext block, back to the IV after the blocks. -/
 def cbcEncryptChained (r : CtrRegs) (iv : Reg) : Prog isa :=
   .seq (.block (c.ctrEntry r ++ ([movR iv r.ctr] : List Instr))) (.seq (c.cbcWhiten r) (.seq (.block (c.ctrArgs r))

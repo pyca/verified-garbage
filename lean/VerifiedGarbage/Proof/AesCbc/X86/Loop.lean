@@ -58,10 +58,6 @@ abbrev argsR : Region := ⟨argAddr s₀ 0, 24⟩
 abbrev retR : Region := ⟨(E s₀).setWidth 64, 4⟩
 abbrev stkR : Region := ⟨(E s₀).setWidth 64 - BitVec.ofNat 64 24, 24⟩
 
-/-- The cipher of the direction. -/
-abbrev ciph (enc : Bool) : Spec.Cbc.Cipher :=
-  ciphOf enc (R s₀) (bytesAt s₀.mem ((W s₀).setWidth 64) (16 * (R s₀ + 1)))
-
 /-- The blocks on entry. -/
 abbrev blks : List (List Byte) := Spec.Cbc.blocksAt s₀.mem ((Dp s₀).setWidth 64) (N s₀)
 
@@ -180,14 +176,6 @@ theorem UPre.dataN {k : Nat} (hk : k < N s₀) :
   have := hp.data_fit
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * k) (by omega),
     Nat.mod_eq_of_lt (by omega)]
-
-theorem UPre.scrN {d : Nat} (hd : d < 2176) : (S s₀ + BitVec.ofNat 32 d).toNat = (S s₀).toNat + d := by
-  have := hp.scr_fit
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
-
-theorem UPre.scrA {d : Nat} (hd : d < 2176) :
-    (S s₀ + BitVec.ofNat 32 d).setWidth 64 = (S s₀).setWidth 64 + BitVec.ofNat 64 d :=
-  addr_eq (by have := hp.scr_fit; omega)
 
 theorem UPre.blk_disjoint {j k : Nat} (hj : j < N s₀) (hk : k < N s₀) (hjk : j ≠ k) :
     (⟨blk s₀ j, 16⟩ : Region).Disjoint ⟨blk s₀ k, 16⟩ := by
@@ -391,11 +379,6 @@ theorem ends_mid_wp {M : Mode} {mid : Prog isa} {s₀ : State} {s₁ : State}
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
     exact hm (by omega)
-
-theorem mid_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (hp : UPre s₀) {s₁ : State}
-    (h : LInv M s₀ 0 s₁) (hz : s₁.zf = some (decide (N s₀ = 0))) :
-    WP isa (.ite .e (.block []) (.loop body .ne)) s₁ (LInv M s₀ (N s₀)) :=
-  ends_mid_wp (fun hn => loop_ok hb hp hn h) h hz
 
 /-! ## The epilogue -/
 

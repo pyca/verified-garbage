@@ -36,13 +36,6 @@ theorem covers_of_mem {r : Region} {ts : List Region} (h : r ∈ ts) : Covers [r
   intro a n ⟨x, hx, hc⟩
   simp only [List.mem_singleton] at hx; subst hx; exact ⟨x, h, hc⟩
 
-theorem covers_append {xs ys ts : List Region} (h₁ : Covers xs ts) (h₂ : Covers ys ts) :
-    Covers (xs ++ ys) ts := by
-  intro a n ⟨x, hx, hc⟩
-  rcases List.mem_append.mp hx with hx | hx
-  · exact h₁ a n ⟨x, hx, hc⟩
-  · exact h₂ a n ⟨x, hx, hc⟩
-
 /-! ## The regions -/
 
 /-- The key schedule, `W` and the stack below `SP` used by the calls. -/
@@ -110,17 +103,11 @@ namespace Perm
 variable {K W : BitVec 32} {s : State} (P : Perm K W s)
 include P
 
-theorem kR {d n : Nat} (h : d + n ≤ 240) : InRegions (s.rd ++ s.wr) (w64 K + BitVec.ofNat 64 d) n :=
-  in_off P.k h (by decide)
-
 theorem wW {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (w64 W + BitVec.ofNat 64 d) n :=
   in_off P.w h (by decide)
 
 theorem wR {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
-
-theorem kC {d n : Nat} (h : d + n ≤ 240) : Covers [⟨w64 K + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
-  covers_off P.k h (by decide)
 
 theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨w64 W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)
@@ -200,13 +187,6 @@ abbrev wC (W : BitVec 32) : Region := ⟨w64 W + BitVec.ofNat 64 240, 2320⟩
 and the data. -/
 abbrev mutR (W SP D : BitVec 32) (n : Nat) : List Region :=
   [wA W, wO W, wT W, wC W, below SP 56, ⟨w64 D, n⟩]
-
-/-- The parts of `W` the pieces write. -/
-abbrev wR (W SP : BitVec 32) : List Region := [wA W, wO W, wT W, wC W, below SP 56]
-
-theorem wR_mut (W SP D : BitVec 32) (n : Nat) : ∀ r ∈ wR W SP, ∃ r' ∈ mutR W SP D n, Region.Sub r r' :=
-  fun r hr => ⟨r, by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h <;>
-    simp [h], fun _ h => h⟩
 
 /-- The part of `W` at `[d, d + k)`, when it misses the parts the pieces write. -/
 theorem kept_mut {K W SP D : BitVec 32} {n : Nat} (L : Lay K W SP)

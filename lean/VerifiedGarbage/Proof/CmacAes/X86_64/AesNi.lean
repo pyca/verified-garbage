@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
 import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 public import VerifiedGarbage.Spec.Cmac.Contract
-public import VerifiedGarbage.Proof.Cmac.Contract
 public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -17,7 +16,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 meta import VerifiedGarbage.Spec.Cmac.Contract
-meta import VerifiedGarbage.Proof.Cmac.Contract
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 meta import VerifiedGarbage.Proof.Cmac.Spec
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -558,23 +556,6 @@ theorem ct : ConstantTime isa cbcX86_64.pre cbcX86_64.pub update := by
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-/-- A state satisfying the precondition (with no blocks). -/
-def cbcSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x2000 | .rcx => 0x3000 | .r9 => 0x4000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 240⟩, ⟨0x3000, 0⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x4000, 2176⟩]
-
-theorem verified : Verified X86_64.target update (Proof.Cmac.aesUpdateContract X86_64.abi) :=
-  Verified.of_correct correct ct (by
-    sig_implies [Proof.Cmac.aesUpdateContract, Proof.Cmac.aesUpdateSig, cbcX86_64, X86_64.abi,
-      X86_64.argRegs] [cbcSat] using cbcSat)
 
 /-! ## As an implementation of `vg_cmac_aes_update` for its callers -/
 

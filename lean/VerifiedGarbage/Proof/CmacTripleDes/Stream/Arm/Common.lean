@@ -69,12 +69,6 @@ theorem held_lo {lo hi : BitVec 32} {x : Nat} (h : (hi ++ lo : BitVec 64) = BitV
 
 /-! ## Conditions -/
 
-theorem ne_iff (s : State) {k : Nat} (h : s.z = (BitVec.ofNat 32 k - 0 == 0)) (hk : k < 2 ^ 32) :
-    isa.eval .ne s = some (decide (k ≠ 0)) := by
-  show VG.Arm.eval .ne s = _
-  rw [eval_ne, h, cmp0 hk]
-  simp
-
 theorem eq_iff (s : State) {k : Nat} (h : s.z = (BitVec.ofNat 32 k - 0 == 0)) (hk : k < 2 ^ 32) :
     isa.eval .eq s = some (decide (k = 0)) := by
   show VG.Arm.eval .eq s = _

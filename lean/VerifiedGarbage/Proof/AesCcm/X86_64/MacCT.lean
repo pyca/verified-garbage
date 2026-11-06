@@ -129,16 +129,6 @@ theorem b0Pre_check {y : Nat} (hy : y = 0 ∨ y = 96) :
         .alu .or .rsi (.reg .rdx), .store (at_ .r15 (bO + 8)) .rsi] : List Instr) ++ zero16 y)))) hc).isSome = true := by
   rcases hy with rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
-/-- Both runs, after a frame within what the pieces write. -/
-theorem Both.frame {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} (L : Lay K W SP)
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) {s₁ s₂ s₁' s₂' : State}
-    (h : Both K W SP R N A D nl al n tl [] s₁ s₂) (E₁ : Env K W SP s₁') (E₂ : Env K W SP s₂')
-    (hrd₁ : s₁'.wr = s₁.wr) (hrd₂ : s₂'.wr = s₂.wr)
-    (f₁ : Frame (mutR W SP D n) s₁.mem s₁'.mem) (f₂ : Frame (mutR W SP D n) s₂.mem s₂'.mem) :
-    Both K W SP R N A D nl al n tl [] s₁' s₂' :=
-  ⟨E₁, E₂, slots_mut L hDW f₁ h.sl₁, slots_mut L hDW f₂ h.sl₂, hrd₁.trans h.wr₁, hrd₂.trans h.wr₂,
-    fun _ h => nomatch h⟩
-
 /-- `b0 y` in two runs. -/
 theorem b0_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)

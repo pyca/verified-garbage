@@ -156,9 +156,6 @@ include hp
 
 theorem UPre.m_pos : 1 ≤ M s := by have := hp.len_lo; simp only [M]; omega
 
-theorem UPre.m_lt : M s < 2 ^ 28 := by
-  have := hp.len_hi; simp only [M, Spec.Xts.maxBlocks] at *; omega
-
 omit hp in
 theorem len_eq (s : State) : Len s = 16 * M s + B s := by simp only [M, B]; omega
 
@@ -195,12 +192,6 @@ theorem UPre.t_z : (tR s).Disjoint (zR s) :=
   Offset.disjoint _ (by simp only [Impl.AesXts.X86Unit.tO, Impl.AesXts.X86Unit.zO]; omega)
     (by have := hp.scr_wrap; simp only [Impl.AesXts.X86Unit.tO]; omega)
     (by have := hp.scr_wrap; simp only [Impl.AesXts.X86Unit.zO]; omega)
-
-omit hp in
-/-- The slots of the saved registers. -/
-theorem slot_sub (d : Nat) (h₁ : 2208 ≤ d) (h₂ : d + 4 ≤ 2224) :
-    Region.Sub ⟨Sa s + BitVec.ofNat 64 d, 4⟩ ⟨Sa s + BitVec.ofNat 64 2208, 16⟩ :=
-  Offset.sub _ h₁ (by omega)
 
 /-- Everything the code writes but the slots lies within the data, the
 first 2208 bytes of the scratch buffer or the stack below `esp`. -/

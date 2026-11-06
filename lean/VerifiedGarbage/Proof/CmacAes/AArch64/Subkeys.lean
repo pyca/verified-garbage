@@ -281,11 +281,6 @@ theorem restore3_ok (s : State) {B : Addr} (hb : s.gpr .x20 = B)
   refine ⟨by simp [gpr_write, Mem.readW], by simp [gpr_write, Mem.readW], by simp [gpr_write, Mem.readW],
     fun r h₁ h₂ h₃ => by simp [gpr_write, h₁, h₂, h₃], rfl, rfl⟩
 
-theorem readW_writeW_other' (m : Mem) (b : Addr) {d e : Nat} (v : BitVec 64) (h : d + 8 ≤ e ∨ e + 8 ≤ d)
-    (hd : d + 8 ≤ 2 ^ 64) (he : e + 8 ≤ 2 ^ 64) :
-    (m.writeW (b + BitVec.ofNat 64 e) v).readW (b + BitVec.ofNat 64 d) 64 = m.readW (b + BitVec.ofNat 64 d) 64 :=
-  readW_writeW_other m b v h hd he
-
 theorem preMem_slot (s : State) {d : Nat} (hd : d = 2064 ∨ d = 2072 ∨ d = 2080)
     (hks : (⟨s.gpr .x2, 32⟩ : Region).Disjoint ⟨s.gpr .x3, 2176⟩) :
     (preMem s).readW (s.gpr .x3 + BitVec.ofNat 64 d) 64 =

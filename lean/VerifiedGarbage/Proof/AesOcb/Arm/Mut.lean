@@ -99,10 +99,6 @@ theorem lstar_mut {m m' : Mem} (h : Frame (mutR p) m m') :
   unfold Spec.Ocb.ctxLstar
   exact Proof.Ocb.blockAtMem_frame h fun r hr => (k_mut L r hr).sub_left (Offset.sub_base _ (by decide))
 
-theorem nonce_mut {m m' : Mem} (h : Frame (mutR p) m m') :
-    bytesAt m' (State.addr p.N) p.nl = bytesAt m (State.addr p.N) p.nl :=
-  Proof.Cmac.bytesAt_frame h (disj_mut L L.n_w L.bn L.n_d) (by have := L.nl15; omega)
-
 theorem aad_mut {m m' : Mem} (h : Frame (mutR p) m m') :
     bytesAt m' (State.addr p.A) p.al = bytesAt m (State.addr p.A) p.al :=
   Proof.Cmac.bytesAt_frame h (disj_mut L L.a_w L.ba L.a_d) (by have := L.al_lt; omega)

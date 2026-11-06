@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.AesCbc.Mem
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 public import VerifiedGarbage.Spec.Cmac.Contract
-public import VerifiedGarbage.Proof.Cmac.Contract
 public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -24,7 +23,6 @@ meta import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
 meta import VerifiedGarbage.Impl.AesCbc.X86_64.Encrypt
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 meta import VerifiedGarbage.Spec.Cmac.Contract
-meta import VerifiedGarbage.Proof.Cmac.Contract
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 meta import VerifiedGarbage.Proof.Cmac.Spec
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

@@ -75,19 +75,6 @@ theorem srcW {C W SP : BitVec 32} {s : State} (L : Lay C W SP) (P : Perm C W s) 
 theorem srcBuf {W SP : BitVec 32} {s : State} {Q : BitVec 32} {k : Nat} (h : Buf W SP s Q k) : Src W SP s Q k :=
   ⟨h.rd, h.wrap, h.w.sub_right (Lay.wSub (by decide)), h.stk⟩
 
-theorem Src.of_eq {W SP : BitVec 32} {s s' : State} {Q : BitVec 32} {k : Nat} (h : Src W SP s Q k)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Src W SP s' Q k :=
-  { h with rd := by rw [hrd, hwr]; exact h.rd }
-
-theorem Src.take {W SP : BitVec 32} {s : State} {Q : BitVec 32} {k j : Nat} (h : Src W SP s Q k) (hj : j ≤ k) :
-    Src W SP s Q j where
-  rd := fun a m ⟨r, hr, hc⟩ => by
-    simp only [List.mem_singleton] at hr; subst hr
-    exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
-  wrap := by have := h.wrap; omega
-  qs := h.qs.sub_left (Region.sub_prefix hj)
-  stk := h.stk.sub_right (Region.sub_prefix hj)
-
 /-! ## `vg_cmac_aes_update` -/
 
 /-- The arguments of `vg_cmac_aes_update`: `K1`'s schedule, the state at

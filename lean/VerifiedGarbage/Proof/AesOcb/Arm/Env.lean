@@ -196,10 +196,6 @@ theorem wN {d : Nat} (hd : d < 2560) : (p.W + BitVec.ofNat 32 d).toNat = p.W.toN
   have := L.ww
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
 
-/-- An offset into the key context, as a 64-bit address. -/
-theorem kA {d : Nat} (hd : d < 256) : State.addr (p.K + BitVec.ofNat 32 d) = State.addr p.K + BitVec.ofNat 64 d :=
-  addr_add (by have := L.kw; omega)
-
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
     (⟨State.addr p.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨State.addr p.W + BitVec.ofNat 64 d, k⟩ :=
@@ -237,11 +233,6 @@ theorem args_below : (argR p.SP).Disjoint (below p.SP) :=
 
 theorem rounds_le : 16 * (p.R + 1) ≤ 240 := by rcases L.rounds with h | h | h <;> rw [h] <;> decide
 
-theorem toNat_R : (BitVec.ofNat 32 p.R).toNat = p.R := by
-  rcases L.rounds with h | h | h <;> rw [h] <;> rfl
-
-theorem ofNat_R_lt : p.R < 2 ^ 32 := by rcases L.rounds with h | h | h <;> rw [h] <;> decide
-
 end Lay
 
 namespace Perm
@@ -260,9 +251,6 @@ theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨State.addr p.W + BitVec
 
 theorem wCR {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨State.addr p.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   covers_left (P.wC h)
-
-theorem kR {d k : Nat} (h : d + k ≤ 256) : InRegions (s.rd ++ s.wr) (State.addr p.K + BitVec.ofNat 64 d) k :=
-  in_off P.k h (by decide)
 
 theorem kC {d k : Nat} (h : d + k ≤ 256) :
     Covers [⟨State.addr p.K + BitVec.ofNat 64 d, k⟩] (s.rd ++ s.wr) :=
@@ -311,9 +299,5 @@ theorem ofNat_lsr32 {a : Nat} (ha : a < 2 ^ 32) (k : Nat) : BitVec.ofNat 32 a >>
 
 theorem toNat_ofNat32 {a : Nat} (ha : a < 2 ^ 32) : (BitVec.ofNat 32 a).toNat = a := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha]
-
-/-- The `n` bytes at `p + d` within the `k` bytes at `p`. -/
-theorem contains_at (p : Addr) {d n k : Nat} (h : d + n ≤ k) (hk : k < 2 ^ 64) :
-    (⟨p, k⟩ : Region).Contains (p + BitVec.ofNat 64 d) n := Offset.contains_base p h (by omega)
 
 end VG.Proof.AesOcb.Arm

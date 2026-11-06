@@ -52,10 +52,6 @@ abbrev dataR : Region := ⟨Dp s₀, 16 * N s₀⟩
 abbrev scrR : Region := ⟨S s₀, 2176⟩
 abbrev stkR : Region := below (s₀.gpr .rsp) 8
 
-/-- The cipher of the direction. -/
-abbrev ciph (enc : Bool) : Spec.Cbc.Cipher :=
-  ciphOf enc (R s₀) (bytesAt s₀.mem (W s₀) (16 * (R s₀ + 1)))
-
 /-- The blocks on entry. -/
 abbrev blks : List (List Byte) := Spec.Cbc.blocksAt s₀.mem (Dp s₀) (N s₀)
 
@@ -356,11 +352,6 @@ theorem ends_mid_wp {M : Mode} {mid : Prog isa} {s₀ : State} {s₁ : State}
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
     exact hm (by omega)
-
-theorem mid_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (hp : UPre s₀) {s₁ : State}
-    (h : LInv M s₀ 0 s₁) (hz : s₁.zf = some (decide (N s₀ = 0))) :
-    WP isa (.ite .e (.block []) (.loop body .ne)) s₁ (LInv M s₀ (N s₀)) :=
-  ends_mid_wp (fun hn => loop_ok hb hp hn h) h hz
 
 theorem slots_disj {s₀ : State} (hp : UPre s₀) :
     ∀ r ∈ [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, stkR s₀], (⟨S s₀ + BitVec.ofNat 64 2064, 48⟩ : Region).Disjoint r := by

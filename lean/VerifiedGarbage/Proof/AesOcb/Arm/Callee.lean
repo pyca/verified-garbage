@@ -84,8 +84,6 @@ def decF : BlkFn where
 def blkFrame (F : BlkFn) : Prog isa := .frame (.push [.r12, .lr]) (.call F.name F.code) (.pop .r12 8)
 
 theorem encFrame_eq : Impl.AesOcb.Arm.encFrame = blkFrame encF := rfl
-theorem decFrame_eq : Impl.AesOcb.Arm.decFrame = blkFrame decF := rfl
-
 /-- What a call of a `BlkFn` needs: the key schedule at `K` for `R` rounds,
 `n` blocks at `D` and working space at `S`, in `r12` to push. -/
 structure BlkCall (s : State) (K D S : BitVec 32) (R n : Nat) : Prop where

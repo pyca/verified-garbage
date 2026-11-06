@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Call
 public import VerifiedGarbage.Proof.AesXts.Spec
 public import VerifiedGarbage.Spec.Xts.Contract
-public import VerifiedGarbage.Proof.Xts.Contract
 
 import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
 import VerifiedGarbage.Proof.AesXts.X86_64.CT
@@ -53,47 +52,5 @@ theorem decrypt_correct (v : BlocksImpl) (s : State) (hs : (modeX86_64 (AesXts.x
   obtain ⟨t, s', he, hg, hp⟩ := crypt_wp false v.decOk v.decNosp v.decDepth
     (fun R w m p => (aesInvWith_state R w m p).symm) hs
   exact ⟨t, s', he, abiPreserved_of_exec (decrypt_mx v) he hg, hp⟩
-
-theorem encrypt_verified (v : BlocksImpl) :
-    Verified X86_64.target (encrypt v.enc) (Proof.Xts.aesEncryptContract X86_64.abi 8) :=
-  Verified.of_correct (encrypt_correct v)
-    (crypt_ct true v.encOk v.encCt v.encNosp v.encDepth fun R w m p => (aesWith_state R w m p).symm)
-    { pre := by sig_implies_pre [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, modeX86_64, X86_64.abi,
-        X86_64.argRegs]
-      -- `xtsMode.chain` counts the blocks, which are `n`.
-      post := by
-        intro s s' _ h
-        sig_post [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, modeX86_64, AesXts.xtsMode, ciphOf, X86_64.abi,
-          X86_64.argRegs]
-        sig_reduce [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, modeX86_64, AesXts.xtsMode, ciphOf,
-          X86_64.abi, X86_64.argRegs] at h
-        sig_simp [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, modeX86_64, AesXts.xtsMode, ciphOf, X86_64.abi,
-          X86_64.argRegs] [] at h
-        rwa [VG.Proof.AesCbc.length_blocksAt] at h
-      pub := by sig_implies_pub [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, modeX86_64, X86_64.abi,
-        X86_64.argRegs]
-      sat := by sig_implies_sat [Proof.Xts.aesEncryptContract, Proof.Xts.aesSig, modeX86_64, X86_64.abi,
-        X86_64.argRegs] [sat] using sat }
-
-theorem decrypt_verified (v : BlocksImpl) :
-    Verified X86_64.target (decrypt v.dec) (Proof.Xts.aesDecryptContract X86_64.abi 8) :=
-  Verified.of_correct (decrypt_correct v)
-    (crypt_ct false v.decOk v.decCt v.decNosp v.decDepth fun R w m p => (aesInvWith_state R w m p).symm)
-    { pre := by sig_implies_pre [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, modeX86_64, X86_64.abi,
-        X86_64.argRegs]
-      -- `xtsMode.chain` counts the blocks, which are `n`.
-      post := by
-        intro s s' _ h
-        sig_post [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, modeX86_64, AesXts.xtsMode, ciphOf, X86_64.abi,
-          X86_64.argRegs]
-        sig_reduce [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, modeX86_64, AesXts.xtsMode, ciphOf,
-          X86_64.abi, X86_64.argRegs] at h
-        sig_simp [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, modeX86_64, AesXts.xtsMode, ciphOf, X86_64.abi,
-          X86_64.argRegs] [] at h
-        rwa [VG.Proof.AesCbc.length_blocksAt] at h
-      pub := by sig_implies_pub [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, modeX86_64, X86_64.abi,
-        X86_64.argRegs]
-      sat := by sig_implies_sat [Proof.Xts.aesDecryptContract, Proof.Xts.aesSig, modeX86_64, X86_64.abi,
-        X86_64.argRegs] [sat] using sat }
 
 end VG.Proof.AesXts.X86_64

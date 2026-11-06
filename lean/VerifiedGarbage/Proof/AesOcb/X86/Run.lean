@@ -81,16 +81,6 @@ theorem seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP is
     WP isa (.seq a (.seq b c)) s Q :=
   WP.seq (WP.mono (WP.seq_iff.mp (WP.seq_iff.mp h)) fun _ h => WP.seq h)
 
-/-- A block, then code: the block constant time by the taint analysis from
-the registers `rs`, which `I` pins, and the code from what the block leaves
-(`F`, from the state it started in). -/
-theorem CT.block_seq {I : State → Prop} {is : List Instr} {c : Prog isa} {F : State → State → Prop}
-    (rs : List Reg) (hr : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) {hc : Taint.Hint VG.X86.taint.T}
-    (h : (VG.X86.taint.check (τr rs) (.block is) hc).isSome = true)
-    (blk : ∀ s, I s → ∃ s', runBlock isa is s = some s' ∧ F s s') (h₂ : CT (fun s' => ∃ s, I s ∧ F s s') c) :
-    CT I (.seq (.block is) c) :=
-  CT.seq (CT.taint rs hr h) (fun s hs => let ⟨s', r, f⟩ := blk s hs; WP.of_runBlock ⟨s', r, s, hs, f⟩) h₂
-
 /-- `ebp` pinned. -/
 theorem pin_ebp {I : State → Prop} {W : BitVec 32} (h : ∀ s, I s → s.gpr .ebp = W) :
     ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [Reg.ebp], s₁.gpr r = s₂.gpr r := fun s₁ s₂ h₁ h₂ r hr => by

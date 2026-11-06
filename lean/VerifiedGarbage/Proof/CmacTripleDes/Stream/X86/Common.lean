@@ -102,12 +102,6 @@ theorem wp_orz {d r : Reg}
     WP isa (.block (.alu .or d (.reg r) :: is)) s Q :=
   WP.cons rfl (k _ (MdStream.X86.Upd.flags _ _ _ _ _ _) rfl)
 
-/-- `shr d, n`, as a division by `2 ^ n`. -/
-theorem wp_shr' {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 31)
-    (k : ∀ s', Upd s s' d (s.gpr d >>> n) → WP isa (.block is) s' Q) :
-    WP isa (.block (.shift .shr d n :: is)) s Q :=
-  MdStream.X86.wp_shr hn k
-
 end
 
 /-! ## The bytes held back -/

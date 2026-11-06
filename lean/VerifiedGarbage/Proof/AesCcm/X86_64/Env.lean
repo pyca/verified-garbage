@@ -54,13 +54,6 @@ theorem shr4 (n : Nat) (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 4 = BitVec.ofNa
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (by omega), Nat.shiftRight_eq_div_pow]
 
-theorem and15 (x : BitVec 64) : x &&& (BitVec.ofNat 32 15).signExtend 64 = BitVec.ofNat 64 (x.toNat % 16) := by
-  rw [show (BitVec.ofNat 32 15).signExtend 64 = 15#64 by decide]
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
-  rw [show (15 : Nat) % 2 ^ 64 = 2 ^ 4 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod]
-  omega
-
 theorem and15' (x : BitVec 64) : x &&& 15#64 = BitVec.ofNat 64 (x.toNat % 16) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
@@ -183,17 +176,11 @@ namespace Perm
 variable {K W : Addr} {s : State} (P : Perm K W s)
 include P
 
-theorem kR {d n : Nat} (h : d + n ≤ 240) : InRegions (s.rd ++ s.wr) (K + BitVec.ofNat 64 d) n :=
-  in_off P.k h (by decide)
-
 theorem wW {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 64 d) n :=
   in_off P.w h (by decide)
 
 theorem wR {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
-
-theorem kC {d n : Nat} (h : d + n ≤ 240) : Covers [⟨K + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
-  covers_off P.k h (by decide)
 
 theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)

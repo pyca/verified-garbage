@@ -89,8 +89,6 @@ theorem ofNat_sub {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
 number left, and the data and its length. -/
 def Hold (s s' : State) : Prop := ∀ r ∈ [Reg.x24, .x25, .x26, .x27], s'.gpr r = s.gpr r
 
-theorem Hold.refl (s : State) : Hold s s := fun _ _ => rfl
-
 theorem Hold.trans {a b c : State} (h₁ : Hold a b) (h₂ : Hold b c) : Hold a c :=
   fun r hr => by rw [h₂ r hr, h₁ r hr]
 
