@@ -384,10 +384,10 @@ class Selection(unittest.TestCase):
         self.assertEqual(planner.logical('src/cipher/rc4.rs'), 'src/rc4.rs')
         self.assertEqual(planner.logical('src/cipher/mod.rs'), 'src/cipher/mod.rs')
         self.assertEqual(planner.physical('src/aes/mod.rs'), 'src/cipher/aes/mod.rs')
-        self.assertEqual(planner.physical('src/aes_gcm.rs'), 'src/aes_gcm.rs')
+        self.assertEqual(planner.physical('src/aes_gcm.rs'), 'src/aead/aes_gcm.rs')
         self.assertEqual(planner.crate_path('aes'), 'cipher::aes')
         self.assertEqual(planner.crate_path('rc4'), 'cipher::rc4')
-        self.assertEqual(planner.crate_path('aes_gcm'), 'aes_gcm')
+        self.assertEqual(planner.crate_path('aes_gcm'), 'aead::aes_gcm')
         self.catalog.update({'aes_cbc': {'aes_cbc', 'aes'}, 'aes_xts': {'aes_xts', 'aes'},
                              'aes_gcm': {'aes_gcm', 'aes'}})
         self.files.update({
@@ -540,17 +540,20 @@ class Selection(unittest.TestCase):
         self.assertEqual(planner.physical('src/aes_gcm_siv.rs'), 'src/aead/aes_gcm_siv.rs')
         self.assertEqual(planner.physical('src/aes_cbc.rs'), 'src/aes_cbc.rs')
         self.assertEqual(planner.crate_path('aes_gcm'), 'aead::aes_gcm')
-        self.assertEqual(planner.crate_path('aes'), 'aes')
+        self.assertEqual(planner.crate_path('aes'), 'cipher::aes')
         self.catalog.update({'aes_gcm': {'aes_gcm'}, 'aes_gcm_siv': {'aes_gcm_siv', 'aes_gcm'}})
         self.files.update({
-            'src/lib.rs': 'mod aes;\npub mod aead;\n',
-            'src/aes.rs': 'pub(crate) enum Backend {}\n',
-            'src/aes_gcm.rs': 'use crate::aes::Backend;\n',
+            'src/lib.rs': 'pub mod aead;\npub mod cipher;\n',
+            'src/aes/mod.rs': 'pub(crate) enum Backend {}\n',
+            'src/aes_gcm.rs': 'use crate::cipher::aes::Backend;\n',
             'src/aes_gcm_siv.rs': 'use crate::aead::aes_gcm::Backend;\n',
         })
         self.assertEqual({r['modules'] for r in self.rows(['src/aead/aes_gcm_siv.rs'])}, {'aes_gcm_siv'})
-        # A private helper's users, at their paths in the crate.
-        self.assertEqual({r['modules'] for r in self.rows(['src/aes.rs'])}, {'aes_gcm'})
+        # A private helper's users, at their paths in the crate: AES's
+        # shared code, `cipher::aes`, is a family's, so its `aes_*` modules
+        # are among them.
+        self.assertEqual({r['modules'] for r in self.rows(['src/cipher/aes/mod.rs'])},
+                         {'aes_gcm aes_gcm_siv'})
         self.assertEqual({r['modules'] for r in self.rows(['src/aead/mod.rs'])}, {'triple_des_ecb'})
 
     def test_private_helpers_select_the_modules_using_them(self):
