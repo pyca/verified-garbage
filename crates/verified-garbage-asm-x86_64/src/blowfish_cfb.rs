@@ -96,3 +96,115 @@ jmp 21f
 .p2align 6"#,
     )
 }
+
+/// Blowfish-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; Schneier, FSE 1994) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Blowfish encryption under the schedule written by `vg_blowfish_expand_key`.
+///
+/// Contract: `VG.Spec.Blowfish.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_blowfish_cfb64_encrypt_final(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI1kJKBJieBJg8AITYnBSYlZGEmJaSBNiWEoTYlpME2JcThNiXlAZkwPbv5JidRJic1mTA9++EiLKEmJKU2F7Q=="
+je 20f
+22:
+.base64 "Zk0Pfv5MicpMic5MiclIg8EISbsBAAEAAQABAGZND27rSbsBAAEAAQABAGZND27jZkUPbOxJuxAAEAAQABAAZk0PbvNJuxAAEAAQABAAZk0PbuNmRQ9s9Em7/wD/AP8A/wBmTQ9u+0m7/wD/AP8A/wBmTQ9u42ZFD2z8RIseQQ/LZkkPbsNEi14EQQ/LZkkPbsu4AAAAAEG6EAAAAA=="
+23:
+.base64 "RIucBwAQAABmTQ9u42ZBD+/EZg9v2GYPcvMAZg9y0xhmD2HbZg9w2wBJuwAAAgAEAAYAZkkPbuNJuwgACgAMAA4AZk0PbuNmQQ9s5GZFD+/AZkUP78lmRQ/v0mZFD+/bQbgAAAAAQbkQAAAA"
+24:
+.base64 "Zg9v9GYP7/NmQQ/59WYPceYPZg9v/GZBD/39Zg/v+2ZBD/n9Zg9x5w9mQQ/b92YPcfcIZg/r9/NGD28kB2ZED9vmZkUP68TzRg9vpAcAAQAAZkQP2+ZmRQ/rzPNGD2+kBwACAABmRA/b5mZFD+vU80YPb6QHAAMAAGZED9vmZkUP69xmQQ/95kmDwBBJg+kB"
+jne 24b
+.base64 "ZkUPcOBOZkUP68RmRQ9w4LFmRQ/rxGZFD2/gZkEPctQQZkUP68RmRQ9v4GZBD3LUCGZFD+vEZkEPcvAYZkEPctAYZkUPcOFOZkUP68xmRQ9w4bFmRQ/rzGZFD2/hZkEPctQQZkUP68xmRQ9v4WZBD3LUCGZFD+vMZkEPcvEYZkEPctEYZkUPcOJOZkUP69RmRQ9w4rFmRQ/r1GZFD2/iZkEPctQQZkUP69RmRQ9v4mZBD3LUCGZFD+vUZkEPcvIYZkEPctIYZkUPcONOZkUP69xmRQ9w47FmRQ/r3GZFD2/jZkEPctQQZkUP69xmRQ9v42ZBD3LUCGZFD+vcZkEPcvMYZkEPctMYZkEPcvEIZkEPcvIQZkEPcvMYZkUP68FmRQ/rwmZFD+vDZkEPb9BmD2/YZg9y8whmD3LTGGYPYdtmD3DbAEm7AAACAAQABgBmSQ9u40m7CAAKAAwADgBmTQ9u42ZBD2zkZkUP78BmRQ/vyWZFD+/SZkUP79tBuAAAAABBuRAAAAA="
+25:
+.base64 "Zg9v9GYP7/NmQQ/59WYPceYPZg9v/GZBD/39Zg/v+2ZBD/n9Zg9x5w9mQQ/b92YPcfcIZg/r9/NGD2+kBwAEAABmRA/b5mZFD+vE80YPb6QHAAUAAGZED9vmZkUP68zzRg9vpAcABgAAZkQP2+ZmRQ/r1PNGD2+kBwAHAABmRA/b5mZFD+vcZkEP/eZJg8AQSYPpAQ=="
+jne 25b
+.base64 "ZkUPcOBOZkUP68RmRQ9w4LFmRQ/rxGZFD2/gZkEPctQQZkUP68RmRQ9v4GZBD3LUCGZFD+vEZkEPcvAYZkEPctAYZkUPcOFOZkUP68xmRQ9w4bFmRQ/rzGZFD2/hZkEPctQQZkUP68xmRQ9v4WZBD3LUCGZFD+vMZkEPcvEYZkEPctEYZkUPcOJOZkUP69RmRQ9w4rFmRQ/r1GZFD2/iZkEPctQQZkUP69RmRQ9v4mZBD3LUCGZFD+vUZkEPcvIYZkEPctIYZkUPcONOZkUP69xmRQ9w47FmRQ/r3GZFD2/jZkEPctQQZkUP69xmRQ9v42ZBD3LUCGZFD+vcZkEPcvMYZkEPctMYZkEPcvEIZkEPcvIQZkEPcvMYZkUP68FmRQ/rwmZFD+vDZkEP/tBmD2/YZg9y8xBmD3LTGGYPYdtmD3DbAEm7AAACAAQABgBmSQ9u40m7CAAKAAwADgBmTQ9u42ZBD2zkZkUP78BmRQ/vyWZFD+/SZkUP79tBuAAAAABBuRAAAAA="
+26:
+.base64 "Zg9v9GYP7/NmQQ/59WYPceYPZg9v/GZBD/39Zg/v+2ZBD/n9Zg9x5w9mQQ/b92YPcfcIZg/r9/NGD2+kBwAIAABmRA/b5mZFD+vE80YPb6QHAAkAAGZED9vmZkUP68zzRg9vpAcACgAAZkQP2+ZmRQ/r1PNGD2+kBwALAABmRA/b5mZFD+vcZkEP/eZJg8AQSYPpAQ=="
+jne 26b
+.base64 "ZkUPcOBOZkUP68RmRQ9w4LFmRQ/rxGZFD2/gZkEPctQQZkUP68RmRQ9v4GZBD3LUCGZFD+vEZkEPcvAYZkEPctAYZkUPcOFOZkUP68xmRQ9w4bFmRQ/rzGZFD2/hZkEPctQQZkUP68xmRQ9v4WZBD3LUCGZFD+vMZkEPcvEYZkEPctEYZkUPcOJOZkUP69RmRQ9w4rFmRQ/r1GZFD2/iZkEPctQQZkUP69RmRQ9v4mZBD3LUCGZFD+vUZkEPcvIYZkEPctIYZkUPcONOZkUP69xmRQ9w47FmRQ/r3GZFD2/jZkEPctQQZkUP69xmRQ9v42ZBD3LUCGZFD+vcZkEPcvMYZkEPctMYZkEPcvEIZkEPcvIQZkEPcvMYZkUP68FmRQ/rwmZFD+vDZkEP79BmD2/YZg9y8xhmD3LTGGYPYdtmD3DbAEm7AAACAAQABgBmSQ9u40m7CAAKAAwADgBmTQ9u42ZBD2zkZkUP78BmRQ/vyWZFD+/SZkUP79tBuAAAAABBuRAAAAA="
+27:
+.base64 "Zg9v9GYP7/NmQQ/59WYPceYPZg9v/GZBD/39Zg/v+2ZBD/n9Zg9x5w9mQQ/b92YPcfcIZg/r9/NGD2+kBwAMAABmRA/b5mZFD+vE80YPb6QHAA0AAGZED9vmZkUP68zzRg9vpAcADgAAZkQP2+ZmRQ/r1PNGD2+kBwAPAABmRA/b5mZFD+vcZkEP/eZJg8AQSYPpAQ=="
+jne 27b
+.base64 "ZkUPcOBOZkUP68RmRQ9w4LFmRQ/rxGZFD2/gZkEPctQQZkUP68RmRQ9v4GZBD3LUCGZFD+vEZkEPcvAYZkEPctAYZkUPcOFOZkUP68xmRQ9w4bFmRQ/rzGZFD2/hZkEPctQQZkUP68xmRQ9v4WZBD3LUCGZFD+vMZkEPcvEYZkEPctEYZkUPcOJOZkUP69RmRQ9w4rFmRQ/r1GZFD2/iZkEPctQQZkUP69RmRQ9v4mZBD3LUCGZFD+vUZkEPcvIYZkEPctIYZkUPcONOZkUP69xmRQ9w47FmRQ/r3GZFD2/jZkEPctQQZkUP69xmRQ9v42ZBD3LUCGZFD+vcZkEPcvMYZkEPctMYZkEPcvEIZkEPcvIQZkEPcvMYZkUP68FmRQ/rwmZFD+vDZkEP/tBmD+/KZkQPb+BmD2/BZkEPb8xIg8AESYPqAQ=="
+jne 23b
+.base64 "RIufQBAAAGZND27jZkEP78REi59EEAAAZk0PbuNmQQ/vzPMPfwlEixlBD8tEiR7zD38BRIsZQQ/LRIleBEmJ0WZND27+SYP9CA=="
+jb 28f
+.base64 "SYsEJEkzAUmJBCRJiwQkSYkBSYPECEmD7Qg="
+jmp 29f
+28:
+.base64 "TInISIPAAA=="
+210:
+.base64 "RA+2EEEPtgwkTDHRQYgMJEiDwAFJg8QBSYPtAQ=="
+jne 210b
+29:
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "ZkwPfvhJiylIiShJi1kYSYtpIE2LYShNi2kwTYtxOE2LeUBBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYSI1kJGDD"
+.p2align 6"#,
+    )
+}
+
+/// Blowfish-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; Schneier, FSE 1994) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Blowfish encryption under the schedule written by `vg_blowfish_expand_key`.
+///
+/// Contract: `VG.Spec.Blowfish.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_blowfish_cfb64_decrypt_final(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI1kJKBJieBJg8AITYnBSYlZGEmJaSBNiWEoTYlpME2JcThNiXlAZkwPbv5JidRJic1mTA9++EiLKEmJKU2F7Q=="
+je 20f
+22:
+.base64 "Zk0Pfv5MicpMic5MiclIg8EISbsBAAEAAQABAGZND27rSbsBAAEAAQABAGZND27jZkUPbOxJuxAAEAAQABAAZk0PbvNJuxAAEAAQABAAZk0PbuNmRQ9s9Em7/wD/AP8A/wBmTQ9u+0m7/wD/AP8A/wBmTQ9u42ZFD2z8RIseQQ/LZkkPbsNEi14EQQ/LZkkPbsu4AAAAAEG6EAAAAA=="
+23:
+.base64 "RIucBwAQAABmTQ9u42ZBD+/EZg9v2GYPcvMAZg9y0xhmD2HbZg9w2wBJuwAAAgAEAAYAZkkPbuNJuwgACgAMAA4AZk0PbuNmQQ9s5GZFD+/AZkUP78lmRQ/v0mZFD+/bQbgAAAAAQbkQAAAA"
+24:
+.base64 "Zg9v9GYP7/NmQQ/59WYPceYPZg9v/GZBD/39Zg/v+2ZBD/n9Zg9x5w9mQQ/b92YPcfcIZg/r9/NGD28kB2ZED9vmZkUP68TzRg9vpAcAAQAAZkQP2+ZmRQ/rzPNGD2+kBwACAABmRA/b5mZFD+vU80YPb6QHAAMAAGZED9vmZkUP69xmQQ/95kmDwBBJg+kB"
+jne 24b
+.base64 "ZkUPcOBOZkUP68RmRQ9w4LFmRQ/rxGZFD2/gZkEPctQQZkUP68RmRQ9v4GZBD3LUCGZFD+vEZkEPcvAYZkEPctAYZkUPcOFOZkUP68xmRQ9w4bFmRQ/rzGZFD2/hZkEPctQQZkUP68xmRQ9v4WZBD3LUCGZFD+vMZkEPcvEYZkEPctEYZkUPcOJOZkUP69RmRQ9w4rFmRQ/r1GZFD2/iZkEPctQQZkUP69RmRQ9v4mZBD3LUCGZFD+vUZkEPcvIYZkEPctIYZkUPcONOZkUP69xmRQ9w47FmRQ/r3GZFD2/jZkEPctQQZkUP69xmRQ9v42ZBD3LUCGZFD+vcZkEPcvMYZkEPctMYZkEPcvEIZkEPcvIQZkEPcvMYZkUP68FmRQ/rwmZFD+vDZkEPb9BmD2/YZg9y8whmD3LTGGYPYdtmD3DbAEm7AAACAAQABgBmSQ9u40m7CAAKAAwADgBmTQ9u42ZBD2zkZkUP78BmRQ/vyWZFD+/SZkUP79tBuAAAAABBuRAAAAA="
+25:
+.base64 "Zg9v9GYP7/NmQQ/59WYPceYPZg9v/GZBD/39Zg/v+2ZBD/n9Zg9x5w9mQQ/b92YPcfcIZg/r9/NGD2+kBwAEAABmRA/b5mZFD+vE80YPb6QHAAUAAGZED9vmZkUP68zzRg9vpAcABgAAZkQP2+ZmRQ/r1PNGD2+kBwAHAABmRA/b5mZFD+vcZkEP/eZJg8AQSYPpAQ=="
+jne 25b
+.base64 "ZkUPcOBOZkUP68RmRQ9w4LFmRQ/rxGZFD2/gZkEPctQQZkUP68RmRQ9v4GZBD3LUCGZFD+vEZkEPcvAYZkEPctAYZkUPcOFOZkUP68xmRQ9w4bFmRQ/rzGZFD2/hZkEPctQQZkUP68xmRQ9v4WZBD3LUCGZFD+vMZkEPcvEYZkEPctEYZkUPcOJOZkUP69RmRQ9w4rFmRQ/r1GZFD2/iZkEPctQQZkUP69RmRQ9v4mZBD3LUCGZFD+vUZkEPcvIYZkEPctIYZkUPcONOZkUP69xmRQ9w47FmRQ/r3GZFD2/jZkEPctQQZkUP69xmRQ9v42ZBD3LUCGZFD+vcZkEPcvMYZkEPctMYZkEPcvEIZkEPcvIQZkEPcvMYZkUP68FmRQ/rwmZFD+vDZkEP/tBmD2/YZg9y8xBmD3LTGGYPYdtmD3DbAEm7AAACAAQABgBmSQ9u40m7CAAKAAwADgBmTQ9u42ZBD2zkZkUP78BmRQ/vyWZFD+/SZkUP79tBuAAAAABBuRAAAAA="
+26:
+.base64 "Zg9v9GYP7/NmQQ/59WYPceYPZg9v/GZBD/39Zg/v+2ZBD/n9Zg9x5w9mQQ/b92YPcfcIZg/r9/NGD2+kBwAIAABmRA/b5mZFD+vE80YPb6QHAAkAAGZED9vmZkUP68zzRg9vpAcACgAAZkQP2+ZmRQ/r1PNGD2+kBwALAABmRA/b5mZFD+vcZkEP/eZJg8AQSYPpAQ=="
+jne 26b
+.base64 "ZkUPcOBOZkUP68RmRQ9w4LFmRQ/rxGZFD2/gZkEPctQQZkUP68RmRQ9v4GZBD3LUCGZFD+vEZkEPcvAYZkEPctAYZkUPcOFOZkUP68xmRQ9w4bFmRQ/rzGZFD2/hZkEPctQQZkUP68xmRQ9v4WZBD3LUCGZFD+vMZkEPcvEYZkEPctEYZkUPcOJOZkUP69RmRQ9w4rFmRQ/r1GZFD2/iZkEPctQQZkUP69RmRQ9v4mZBD3LUCGZFD+vUZkEPcvIYZkEPctIYZkUPcONOZkUP69xmRQ9w47FmRQ/r3GZFD2/jZkEPctQQZkUP69xmRQ9v42ZBD3LUCGZFD+vcZkEPcvMYZkEPctMYZkEPcvEIZkEPcvIQZkEPcvMYZkUP68FmRQ/rwmZFD+vDZkEP79BmD2/YZg9y8xhmD3LTGGYPYdtmD3DbAEm7AAACAAQABgBmSQ9u40m7CAAKAAwADgBmTQ9u42ZBD2zkZkUP78BmRQ/vyWZFD+/SZkUP79tBuAAAAABBuRAAAAA="
+27:
+.base64 "Zg9v9GYP7/NmQQ/59WYPceYPZg9v/GZBD/39Zg/v+2ZBD/n9Zg9x5w9mQQ/b92YPcfcIZg/r9/NGD2+kBwAMAABmRA/b5mZFD+vE80YPb6QHAA0AAGZED9vmZkUP68zzRg9vpAcADgAAZkQP2+ZmRQ/r1PNGD2+kBwAPAABmRA/b5mZFD+vcZkEP/eZJg8AQSYPpAQ=="
+jne 27b
+.base64 "ZkUPcOBOZkUP68RmRQ9w4LFmRQ/rxGZFD2/gZkEPctQQZkUP68RmRQ9v4GZBD3LUCGZFD+vEZkEPcvAYZkEPctAYZkUPcOFOZkUP68xmRQ9w4bFmRQ/rzGZFD2/hZkEPctQQZkUP68xmRQ9v4WZBD3LUCGZFD+vMZkEPcvEYZkEPctEYZkUPcOJOZkUP69RmRQ9w4rFmRQ/r1GZFD2/iZkEPctQQZkUP69RmRQ9v4mZBD3LUCGZFD+vUZkEPcvIYZkEPctIYZkUPcONOZkUP69xmRQ9w47FmRQ/r3GZFD2/jZkEPctQQZkUP69xmRQ9v42ZBD3LUCGZFD+vcZkEPcvMYZkEPctMYZkEPcvEIZkEPcvIQZkEPcvMYZkUP68FmRQ/rwmZFD+vDZkEP/tBmD+/KZkQPb+BmD2/BZkEPb8xIg8AESYPqAQ=="
+jne 23b
+.base64 "RIufQBAAAGZND27jZkEP78REi59EEAAAZk0PbuNmQQ/vzPMPfwlEixlBD8tEiR7zD38BRIsZQQ/LRIleBEmJ0WZND27+SYP9CA=="
+jb 28f
+.base64 "SYsEJEkzAUmJBCRJiwFJMwQkSYkBSYPECEmD7Qg="
+jmp 29f
+28:
+.base64 "TInISIPAAA=="
+210:
+.base64 "RA+2EEEPtgwkTDHRQYgMJEiDwAFJg8QBSYPtAQ=="
+jne 210b
+29:
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "ZkwPfvhJiylIiShJi1kYSYtpIE2LYShNi2kwTYtxOE2LeUBBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYSI1kJGDD"
+.p2align 6"#,
+    )
+}
