@@ -476,9 +476,9 @@ class Selection(unittest.TestCase):
             'src/cipher/mod.rs': '//! Ciphers.\n\npub mod aes;\n',
             'src/cipher/aes/mod.rs': 'mod cbc;\n\npub use cbc::AesCbc;\n\npub(crate) enum Backend {}\n',
             'src/cipher/aes/cbc.rs': 'use super::Backend;\n',
-            'src/kdf/mod.rs': 'pub mod pbkdf2;\n',
-            'src/kdf/pbkdf2/mod.rs': 'pub mod sha256;\nfn pbkdf2() {}\n',
-            'src/kdf/pbkdf2/sha256.rs': '',
+            'src/kdf/mod.rs': 'pub mod pbkdf2_hmac;\n',
+            'src/kdf/pbkdf2_hmac/mod.rs': 'pub mod sha256;\nfn pbkdf2() {}\n',
+            'src/kdf/pbkdf2_hmac/sha256.rs': 'use crate::arch::pbkdf2_sha256;\n',
         })
         self.base_files['src/aead/mod.rs'] = self.files['src/aead/mod.rs'].replace('pub mod aes_gcm;\n', '')
         with mock.patch.object(planner, 'read', self.read):
@@ -494,8 +494,8 @@ class Selection(unittest.TestCase):
         self.assertEqual({r['modules'] for r in self.rows(['src/aead/mod.rs'], registered=None)}, {'aes_gcm'})
         self.assertEqual({r['modules'] for r in self.rows(['src/cipher/aes/cbc.rs'])}, {'aes_cbc'})
         self.assertEqual({r['modules'] for r in self.rows(['src/cipher/aes/mod.rs'])}, {'aes_cbc aes_gcm'})
-        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/sha256.rs'])}, {'pbkdf2_sha256'})
-        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/mod.rs'])}, {'pbkdf2_sha256'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2_hmac/sha256.rs'])}, {'pbkdf2_sha256'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2_hmac/mod.rs'])}, {'pbkdf2_sha256'})
 
     def test_external_test_file_uses_its_parent_gate_and_path(self):
         # #1417: the file's name differs from its module, and its test gate
@@ -665,21 +665,34 @@ class Selection(unittest.TestCase):
                 del self.files[includer]
 
     def test_kdf_files_are_named_by_their_real_paths(self):
-        # `kdf::pbkdf2::sha256` is `pbkdf2_sha256`, the code PBKDF2's
-        # hashes share is theirs, and `src/kdf/mod.rs` is a list of modules.
+        # `kdf::pbkdf2_hmac::sha256` is `pbkdf2_sha256`, the generated module
+        # it imports (its directory is not named as the modules are), the
+        # code PBKDF2's hashes share is theirs, and `src/kdf/mod.rs` is a
+        # list of modules.
         self.catalog.update({'pbkdf2_sha256': {'pbkdf2_sha256', 'sha256'},
                              'scrypt': {'scrypt', 'pbkdf2_sha256'}})
         self.files.update({
             'src/lib.rs': 'pub mod kdf;\n',
-            'src/kdf/mod.rs': 'pub mod pbkdf2;\npub mod scrypt;\n',
-            'src/kdf/pbkdf2/mod.rs': 'mod sha256;\npub(crate) fn pbkdf2() {}\n',
-            'src/kdf/pbkdf2/sha256.rs': 'super::pbkdf2();\n',
-            'src/kdf/scrypt.rs': 'crate::kdf::pbkdf2::pbkdf2();\n',
+            'src/kdf/mod.rs': 'pub mod pbkdf2_hmac;\npub mod scrypt;\n',
+            'src/kdf/pbkdf2_hmac/mod.rs': '// mod sha1;\nmod sha256;\npub(crate) fn pbkdf2() {}\n',
+            'src/kdf/pbkdf2_hmac/sha256.rs': 'use crate::arch::pbkdf2_sha256::vg_pbkdf2_hmac_sha256;\n'
+                                             'use crate::arch::sha256;\nsuper::pbkdf2();\n',
+            'src/kdf/scrypt.rs': 'crate::kdf::pbkdf2_hmac::pbkdf2();\n',
         })
-        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/sha256.rs'])}, {'pbkdf2_sha256'})
-        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2/mod.rs'])},
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2_hmac/sha256.rs'])}, {'pbkdf2_sha256'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/kdf/pbkdf2_hmac/mod.rs'])},
                          {'pbkdf2_sha256 scrypt'})
         self.assertEqual({r['modules'] for r in self.rows(['src/kdf/mod.rs'])}, {'triple_des_ecb'})
+        with mock.patch.object(planner, 'read', self.read), mock.patch.object(
+                planner, 'rust_files', lambda root='.': sorted(p for p in self.files if p.startswith('src/'))):
+            self.assertEqual(planner.family_prefix('src/kdf/pbkdf2_hmac'), 'pbkdf2')
+            self.assertEqual(planner.sources('pbkdf2_sha256'),
+                             ['src/hashes/mod.rs', 'src/kdf/pbkdf2_hmac/mod.rs', 'src/kdf/pbkdf2_hmac/sha256.rs'])
+            # Files that agree on no name, or import none: the directory's.
+            self.files['src/kdf/pbkdf2_hmac/sha1.rs'] = 'use crate::arch::hmac_sha1;\n'
+            self.files['src/kdf/pbkdf2_hmac/mod.rs'] = 'mod sha1;\nmod sha256;\n'
+            self.assertEqual(planner.family_prefix('src/kdf/pbkdf2_hmac'), 'pbkdf2_hmac')
+            self.assertEqual(planner.family_prefix('src/kdf'), 'kdf')
 
     def test_manifest_target_tables_select_their_architectures(self):
         manifest = '[package]\nname = "b"\n\n[dependencies]\nx = "1"\n'
