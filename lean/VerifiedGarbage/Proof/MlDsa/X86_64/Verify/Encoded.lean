@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 
+-- separate module: the encoded-key entry's contract depends only on the verification kernel, not on
+-- the message functions, so a change to either rebuilds less.
+
 /-!
 # ML-DSA verification on x86-64: the entry of an encoded key
 
