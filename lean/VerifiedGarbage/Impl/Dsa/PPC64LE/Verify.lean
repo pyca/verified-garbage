@@ -137,8 +137,4 @@ def compare : Prog isa :=
 def body : Prog isa :=
   .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products (.seq combine compare))))))
 
-/-- `vg_dsa_verify`. -/
-def verify : Prog isa :=
-  .seq (.block entry) (.seq (checkKey body (.block [.li .r3 0])) (.block restore))
-
 end VG.Impl.Dsa.PPC64LE.Verify

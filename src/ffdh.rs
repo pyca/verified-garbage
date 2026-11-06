@@ -31,6 +31,7 @@ mod precomputed;
 #[cfg(test)]
 mod vetted_tests;
 
+use crate::error::InvalidKey;
 use crate::zeroize::zeroize;
 use alloc::vec::Vec;
 use arithmetic::{canonical, scalar};
@@ -47,8 +48,6 @@ pub const MAX_BITS: usize = 8192;
 pub enum Error {
     /// Invalid modulus, generator, subgroup order or algebraic domain relation.
     InvalidParameters,
-    /// Invalid public/private scalar, subgroup membership or key consistency.
-    InvalidKey,
     /// The peer belongs to a different domain.
     ParametersMismatch,
     /// A shared value of zero, one or p-1 was computed.
@@ -62,7 +61,6 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Self::InvalidParameters => "invalid FFDH parameters",
-            Self::InvalidKey => "invalid FFDH key",
             Self::ParametersMismatch => "FFDH peer parameters differ",
             Self::InvalidSharedSecret => "invalid FFDH shared secret",
             Self::Randomness => "FFDH random number generator failed",
@@ -193,10 +191,15 @@ pub struct PublicKey {
 }
 impl PublicKey {
     /// Import an unsigned big-endian y, accepting leading zeros.
-    pub fn from_components(params: &Parameters, y: &[u8]) -> Result<Self, Error> {
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidKey`] if `y` is not in `[2, p − 2]`, or, with `q`, not in
+    /// its subgroup.
+    pub fn from_components(params: &Parameters, y: &[u8]) -> Result<Self, InvalidKey> {
         let y = canonical(y);
         if !params.domain.check_public(y) {
-            return Err(Error::InvalidKey);
+            return Err(InvalidKey);
         }
         Ok(Self {
             params: params.clone(),
@@ -238,16 +241,21 @@ impl PrivateKey {
     /// This accepts private components from PKCS#8, which omits `y`.
     /// Checks the scalar range and the derived public value. Parsing and
     /// the exponentiation schedule follow [`Self::from_components`].
-    pub fn from_private_components(params: &Parameters, x: &[u8]) -> Result<Self, Error> {
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidKey`] if `x` is out of range or the public value it derives
+    /// is not valid (as [`PublicKey::from_components`] checks it).
+    pub fn from_private_components(params: &Parameters, x: &[u8]) -> Result<Self, InvalidKey> {
         let exponent_len = x.len().min(params.p.len());
         let (zeros, scalar) = x.split_at(x.len() - exponent_len);
         if scalar.is_empty() || zeros.iter().any(|&b| b != 0) {
-            return Err(Error::InvalidKey);
+            return Err(InvalidKey);
         }
         let mut y = alloc::vec![0; params.p.len()];
         // One exponentiation checks the scalar range and derives a valid y.
         if params.domain.derive_public(scalar, &mut y) != 1 {
-            return Err(Error::InvalidKey);
+            return Err(InvalidKey);
         }
         Ok(Self::assemble(params, canonical(&y), scalar, exponent_len))
     }
@@ -256,17 +264,22 @@ impl PrivateKey {
     /// The encoding length of x is public and determines the fixed
     /// exponentiation schedule, capped at the modulus width. Leading zeros
     /// are retained in that schedule; the scalar value does not set its length.
-    pub fn from_components(params: &Parameters, y: &[u8], x: &[u8]) -> Result<Self, Error> {
+    ///
+    /// # Errors
+    ///
+    /// [`InvalidKey`] if `x` is out of range, `y` is not valid (as
+    /// [`PublicKey::from_components`] checks it) or `y ≠ g^x mod p`.
+    pub fn from_components(params: &Parameters, y: &[u8], x: &[u8]) -> Result<Self, InvalidKey> {
         // Only zeros may precede the modulus' width. Retain the public
         // encoding length, capped at that width, for secret exponentiation.
         let exponent_len = x.len().min(params.p.len());
         let (zeros, x) = x.split_at(x.len() - exponent_len);
         let y = canonical(y);
         if zeros.iter().any(|&b| b != 0) {
-            return Err(Error::InvalidKey);
+            return Err(InvalidKey);
         }
         if !params.domain.check_private(y, x) {
-            return Err(Error::InvalidKey);
+            return Err(InvalidKey);
         }
         Ok(Self::assemble(params, y, x, exponent_len))
     }

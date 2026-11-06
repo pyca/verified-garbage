@@ -20,7 +20,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{Error, P256, PublicKey, SignatureHash};
+use verified_garbage::ec::{P256, PublicKey, SignatureHash};
+use verified_garbage::error::InvalidSignature;
 use verified_garbage::hashes::sha1::Sha1;
 use verified_garbage::hashes::sha224::Sha224;
 use verified_garbage::hashes::sha256::Sha256;
@@ -123,7 +124,7 @@ fn ecdsa_p256_sigver() {
             assert_eq!(result, Ok(()));
             valid += 1;
         } else {
-            assert_eq!(result, Err(Error::InvalidSignature));
+            assert_eq!(result, Err(InvalidSignature));
             invalid += 1;
         }
     }
@@ -177,7 +178,7 @@ fn ecdsa_p256_sigver_invalid() {
         bad.push((neg, d, rs));
         for (k, d, rs) in bad {
             let result = PublicKey::<P256>::from_bytes(&k).verify_prehashed::<Sha256>(&d, &rs);
-            assert_eq!(result, Err(Error::InvalidSignature));
+            assert_eq!(result, Err(InvalidSignature));
         }
     }
 }
@@ -187,7 +188,7 @@ fn verify_with<H: SignatureHash<P256>>(
     q: &[u8; 65],
     msg: &[u8],
     rs: &[u8; 64],
-) -> Result<(), Error> {
+) -> Result<(), InvalidSignature> {
     PublicKey::<P256>::from_bytes(q).verify::<H>(msg, rs)
 }
 
@@ -202,14 +203,7 @@ fn ecdsa_p256_sigver_messages() {
             "SHA-384" => verify_with::<Sha384>(&q, &msg, &rs),
             _ => continue,
         };
-        assert_eq!(
-            result,
-            if ok {
-                Ok(())
-            } else {
-                Err(Error::InvalidSignature)
-            }
-        );
+        assert_eq!(result, if ok { Ok(()) } else { Err(InvalidSignature) });
         checked += 1;
     }
     assert_eq!(checked, 30);

@@ -9,8 +9,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-! # One seed of the refillable-tape parameter search, as native code runs it
 
 `Spec.Dsa.seedCandidate` draws the generator's `h` candidates from the tape
-after the seed's witnesses. Native code runs the generator search of
-`generateParametersBytes` over a window of the tape: its first
+after the seed's witnesses. Native code runs the list generator search
+`Spec.Dsa.generator` over a window of the tape: its first
 `generatorAttempts` candidates' octets, or fewer if the tape is shorter
 (`generatorSearch_window`). `refillAttempt` is the seed's result in those
 terms: the witness tape's rest after `p`'s tests, the generator over the

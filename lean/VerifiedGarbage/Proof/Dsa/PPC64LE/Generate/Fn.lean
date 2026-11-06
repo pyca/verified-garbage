@@ -210,8 +210,6 @@ theorem derive_wp {s₀ t : State} (h : gkContract.pre s₀) (hq : 1 < qOf s₀)
 
 theorem ctx_draw : ∀ r ∈ ctxRegs, r ∉ drawRegs := by decide
 
-theorem ctx_prep : ∀ r ∈ ctxRegs, r ∉ (([.r6, .r12] : List Reg) ++ prepRegs) := by decide
-
 /-- After the steps for a valid domain. -/
 structure VOut (s₀ : State) (t : State) : Prop where
   ctx : Ctx (glOf s₀) s₀ t

@@ -31,17 +31,6 @@ abbrev shapeFinish : List Instr :=
     .subs .x .x4 .x2 .x3, .csel .x .x3 .x3 .x2,
     .str .x .x3 .x0 Field.digestPrefixLen.offset, Core.field .x3 .mask]
 
-theorem prefix_select {n q : Nat} (hn : n < 2 ^ 64) (hq : q < 2 ^ 64) :
-    (if decide ((BitVec.ofNat 64 q).toNat < (BitVec.ofNat 64 n).toNat) then
-      BitVec.ofNat 64 q else BitVec.ofNat 64 n) = BitVec.ofNat 64 (min n q) := by
-  simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt hq]
-  split <;> rename_i h
-  · rw [Nat.min_eq_right (Nat.le_of_lt (of_decide_eq_true h))]
-  · rw [Nat.min_eq_left (Nat.le_of_not_gt (by simpa only [decide_eq_true_eq] using h))]
-
-theorem mask_test (valid : Bool) : (mask valid &&& mask valid == 0#64) = !valid := by
-  cases valid <;> decide
-
 theorem shapeFinish_ok {s : State} {B : Addr} {Z n q : Nat} {valid : Bool}
     (hs : Scr s B Z) (hdi : s.gpr .x0 = B) (hZ : pWorkspace ≤ Z)
     (hn : n < 2 ^ 64) (hq : q < 2 ^ 64)

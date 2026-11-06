@@ -234,30 +234,4 @@ def generator (p q : Nat) (hs : List Nat) : Option Nat :=
   ((hs.filter fun h => 1 < h && h < p - 1).map fun h => powMod h ((p - 1) / q) p).find?
     fun g => 1 < g
 
-/-- Parameter generation from finite randomness tapes. Seeds must have at
-least N bits (A.1.1.2 step 3). An exhausted tape, exhausted search or unsupported
-size fails. The independent witness tape is threaded through q and every p
-candidate, including across rejected seeds; witnesses are never restarted.
-The output passes `parametersValid` and probable-prime tests for p and q,
-not an exact primality predicate. -/
-def generateParameters (bits : Nat) (seeds : List (List Byte)) (hs : List Nat)
-    (rand : RsaKeyGen.Rand) : Option Params := do
-  let n ← subgroupBits bits
-  let rec attempt : List (List Byte) → RsaKeyGen.Rand → Option Params
-    | [], _ => none
-    | seed :: rest, rand => do
-      if 8 * seed.length < n then attempt rest rand else do
-        let q := qCandidate n seed
-        let (accepted, rand) ← probablePrime q rand
-        if !accepted then attempt rest rand else do
-          let (p, rand) ← primeFromSeed bits n q seed rand
-          match p with
-          | some p => match generator p q hs with
-            | some g =>
-              let a : Params := ⟨p, q, g⟩
-              if parametersValid a then some a else attempt rest rand
-            | none => attempt rest rand
-          | none => attempt rest rand
-  attempt seeds rand
-
 end VG.Spec.Dsa

@@ -10,7 +10,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{Error, P256, PrivateKey, PublicKey};
+use verified_garbage::ec::{P256, PrivateKey, PublicKey};
+use verified_garbage::error::{InvalidKey, InvalidSignature};
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha384::Sha384;
 
@@ -29,7 +30,7 @@ fn p256() -> ([u8; 32], [u8; 32], [u8; 65], Signatures<64>) {
 }
 
 /// The signature of `message` with `hash`, of the message and of its hash.
-fn sign(key: &PrivateKey<P256>, hash: &str, message: &[u8]) -> [Result<[u8; 64], Error>; 2] {
+fn sign(key: &PrivateKey<P256>, hash: &str, message: &[u8]) -> [Result<[u8; 64], InvalidKey>; 2] {
     if hash == "SHA-256" {
         [
             key.sign::<Sha256>(message),
@@ -50,7 +51,7 @@ fn verify(
     hash: &str,
     message: &[u8],
     rs: &[u8; 64],
-) -> [Result<(), Error>; 2] {
+) -> [Result<(), InvalidSignature>; 2] {
     if hash == "SHA-256" {
         [
             key.verify::<Sha256>(message, rs),
@@ -102,7 +103,7 @@ fn p256_verify() {
     for (hash, message, rs) in &signatures {
         let verified = verify(&key.clone(), hash, message.as_bytes(), rs);
         assert_eq!(verified, [Ok(()); 2], "{hash} {message}");
-        let bad = Err(Error::InvalidSignature);
+        let bad = Err(InvalidSignature);
         assert_eq!(verify(&key, hash, b"other", rs), [bad; 2]);
         assert_eq!(verify(&other, hash, message.as_bytes(), rs), [bad; 2]);
         let other_hash = if *hash == "SHA-256" {
@@ -133,9 +134,9 @@ fn p256_keys() {
     for bad in [[0; 32], q, add(&q, 1), [0xff; 32]] {
         let key = PrivateKey::<P256>::from_bytes(&bad);
         for hash in ["SHA-256", "SHA-384"] {
-            assert_eq!(sign(&key, hash, b"sample"), [Err(Error::InvalidKey); 2]);
+            assert_eq!(sign(&key, hash, b"sample"), [Err(InvalidKey); 2]);
         }
-        assert_eq!(key.public_key(), Err(Error::InvalidKey));
+        assert_eq!(key.public_key(), Err(InvalidKey));
     }
     for good in [add(&[0; 32], 1), add(&q, -1)] {
         let key = PrivateKey::<P256>::from_bytes(&good);

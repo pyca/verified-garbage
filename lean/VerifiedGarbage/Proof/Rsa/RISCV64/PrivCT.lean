@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPubCall
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_checked` on RISC-V: constant time
@@ -59,11 +61,11 @@ def dataOf (s : State) : List (BitVec 64) × List (BitVec 64) × List Nat × Add
     (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat ++
       Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat).map (·.toNat), s.sp)
 
-theorem pub_data {s₁ s₂ : State} (h : (Spec.Rsa.privateCheckedContract RISCV64.abi frameBytes).pub s₁ s₂) :
+theorem pub_data {s₁ s₂ : State} (h : (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pub s₁ s₂) :
     dataOf s₁ = dataOf s₂ := by
   have e : frameBytes = 3247 + 1 := rfl
   rw [e] at h
-  sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, RISCV64.abi, RISCV64.argRegs,
+  sig_pub [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_twelve, List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h
@@ -95,7 +97,7 @@ theorem same_of {s₁ s₂ : State} (h : dataOf s₁ = dataOf s₂) : Same s₁ 
 
 /-- On entry, with the public data `d`. -/
 def Φ0 (d : List (BitVec 64) × List (BitVec 64) × List Nat × Addr) (s : State) : Prop :=
-  (Spec.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre s ∧ dataOf s = d
+  (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre s ∧ dataOf s = d
 
 /-- Two states for the same public data. -/
 theorem same {d} {s₁ s₂ : State} (h₁ : Φ0 d s₁) (h₂ : Φ0 d s₂) : Same s₁ s₂ :=
@@ -260,8 +262,8 @@ theorem code_rel : RelCT isa (Two Φ0) code fun _ _ => True :=
   relCT_alloc (body_rel.mono (fun a b ⟨s, t, ⟨d, φs, φt, hsp⟩, ea, eb⟩ =>
     ⟨d, ⟨s, φs, ea⟩, ⟨t, φt, eb⟩, by rw [ea, eb]; simp only [allocd, hsp]⟩) fun _ _ h => h)
 
-theorem code_ct : ConstantTime isa (Spec.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre
-    (Spec.Rsa.privateCheckedContract RISCV64.abi frameBytes).pub code :=
+theorem code_ct : ConstantTime isa (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre
+    (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pub code :=
   RelCT.constantTime (code_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>
     ⟨dataOf s, ⟨hs, rfl⟩, ⟨ht, (pub_data hp).symm⟩, (same_of (pub_data hp)).sp⟩) fun _ _ h => h)
 

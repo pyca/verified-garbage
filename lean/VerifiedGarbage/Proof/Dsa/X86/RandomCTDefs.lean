@@ -43,7 +43,6 @@ theorem pub_rLow : rLow s₁ = rLow s₂ := by rw [rLow, rLow, pub_esp h]
 theorem pub_rBase : rBase s₁ = rBase s₂ := by rw [rBase, rBase, pub_rLow h]
 theorem pub_rQ : rQ s₁ = rQ s₂ := by rw [rQ, rQ, pub_arg h 3 (by decide), pub_arg h 5 (by decide)]
 theorem pub_rWidth : rWidth s₁ = rWidth s₂ := by rw [rWidth, rWidth, pub_qBytes h]
-theorem pub_rLead : rLead s₁ = rLead s₂ := by rw [rLead, rLead, pub_qBytes h]
 theorem pub_rq : rq s₁ = rq s₂ := by rw [rq, rq, pub_qBytes h]
 theorem pub_randLen : (rInput s₁).rand.length = (rInput s₂).rand.length := by
   simp only [rInput, rBytes_length, pub_arg h 10 (by decide)]

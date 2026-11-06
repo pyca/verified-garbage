@@ -75,15 +75,6 @@ theorem RF.of_keeps {rs : List Reg} {s s' : State} {B : Addr} (h : RF s B) (hk :
     (hsp : .esp ∉ rs := by decide) : RF s' B :=
   ⟨by rw [hk.1 _ hsp]; exact h.esp, hk.2.2 ▸ h.wr, hk.2.2 ▸ h.args, h.nowrap⟩
 
-/-- A store to a slot leaves the arguments, which lie above the frame. -/
-theorem RF.arg_store {s : State} {B : Addr} (h : RF s B) {d j : Nat} (hd : d + 4 ≤ frameBytes)
-    (v : BitVec 32) (hj : j < 13) :
-    (s.mem.writeW (off B d) v).readW (off B (argOff j)) 32 = s.mem.readW (off B (argOff j)) 32 := by
-  apply BitVec.eq_of_toNat_eq
-  have := (writeW32_outside s.mem B (d := d) v (by have := h.nowrap; unfold argOff at this; omega)).w32
-    (d := argOff j) (.inr (by unfold argOff; omega)) (by have := h.nowrap; unfold argOff at this ⊢; omega)
-  simpa only [w32] using this
-
 theorem RF.of_mupd {s t : State} {B : Addr} {m : Mem} (h : RF s B) (hu : Mupd s t m) : RF t B :=
   h.of_keeps (hu.keeps []) (by decide)
 

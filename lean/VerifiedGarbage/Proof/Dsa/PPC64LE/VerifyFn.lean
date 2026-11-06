@@ -28,15 +28,6 @@ namespace VG.Proof.Dsa.PPC64LE
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.MillerRabin.PPC64LE
 open VG.Impl.Bignum VG.Impl.Dsa.PPC64LE
 
-/-- The bytes of a buffer apart from `scratch`, kept by a change in its first `n` bytes. -/
-theorem Src.bytesOut {s : State} {L : Lay} {D : Addr} {k : Nat} (h : Src s L D k) {m m' : Mem} {n : Nat}
-    (ho : Outside L.S 0 n m m') (hn : n ≤ L.Z) : Spec.Rsa.bytesAt m' D k = Spec.Rsa.bytesAt m D k := by
-  simp only [Spec.Rsa.bytesAt]
-  refine List.map_congr_left fun i hi => ho _ (Or.inr ?_)
-  have hi := List.mem_range.mp hi
-  by_contra hc
-  exact h.sep i hi (D + BitVec.ofNat 64 i) (by omega) rfl
-
 theorem ret_ofNat (c : Prop) [Decidable c] :
     ((BitVec.ofNat 64 (if c then 1 else 0)).setWidth 32).toNat = if c then 1 else 0 := by
   split <;> rfl
@@ -168,12 +159,5 @@ theorem verifyLike_ok {X : Prog isa → Prog isa → Prog isa} {V : Prop}
     show ((w.gpr .r3).setWidth 32).toNat = _
     rw [w3, u3, hspec, decide_eq_false (fun hx => hn (hKs.mpr hx.1))]
     rfl
-
-theorem verify_correct (s : State) (h : vContract.pre s) :
-    ∃ tr t, Exec isa Verify.verify s tr t ∧ abiPreserved s t ∧ vContract.post s t := by
-  show WP isa Verify.verify s fun t => abiPreserved s t ∧ vContract.post s t
-  unfold Verify.verify
-  exact verifyLike_ok (X := checkKey) (V := False)
-    (fun hL hs hr h2 hd hk _ hrest hfail => checkKey_ok hL hs hr h2 hd hk hrest hfail) h False.elim
 
 end VG.Proof.Dsa.PPC64LE

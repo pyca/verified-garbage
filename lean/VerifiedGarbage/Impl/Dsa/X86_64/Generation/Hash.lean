@@ -17,12 +17,6 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 open VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp)
 
-def hashTest : List Instr := [.mov .rax (.mem (sp sLabLen)), .alu .cmp .rax (.imm 20)]
-
-def seedHash (sha1 sha256 : Stream) : Prog isa :=
-  .seq (.block hashTest)
-    (.ite .e (hashLabel sha1 oDig) (hashLabel sha256 oDig))
-
 /-- The generator's reviewed width determines its hash before emission. -/
 def seedHashAt (sha1 sha256 : Stream) (len : Nat) : Prog isa :=
   hashLabel (if len = 20 then sha1 else sha256) oDig

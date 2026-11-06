@@ -79,7 +79,7 @@ pub fn groups<T: crate::json::FromJson>(name: &str, json: &str) -> Vec<Group<T>>
 macro_rules! mldsa_tests {
     ($name:literal, $module:ident, $SigningKey:ident, $VerifyingKey:ident) => {
         use super::mldsa::{KeyGen, SigVer, groups};
-        use verified_garbage::error::MlDsaError;
+        use verified_garbage::error::{InvalidSignature, MlDsaError};
         use verified_garbage::hashes::sha3::Shake256;
         use verified_garbage::$module::{$SigningKey, $VerifyingKey};
 
@@ -136,7 +136,7 @@ macro_rules! mldsa_tests {
                     let expected = if t.passed {
                         Ok(())
                     } else {
-                        Err(MlDsaError::InvalidSignature)
+                        Err(InvalidSignature)
                     };
                     assert_eq!(r, expected);
                     count += 1;
@@ -153,10 +153,7 @@ macro_rules! mldsa_tests {
             let pk = key.verifying_key();
             let sig = key.sign(b"message", b"context").unwrap();
             assert_eq!(pk.verify(b"message", b"context", &sig), Ok(()));
-            assert_eq!(
-                pk.verify(b"message", b"other", &sig),
-                Err(MlDsaError::InvalidSignature)
-            );
+            assert_eq!(pk.verify(b"message", b"other", &sig), Err(InvalidSignature));
             let sig2 = key.sign_deterministic(b"message", b"").unwrap();
             assert_eq!(sig2, key.sign_deterministic(b"message", b"").unwrap());
             assert_eq!(pk.verify(b"message", b"", &sig2), Ok(()));
@@ -179,20 +176,14 @@ macro_rules! mldsa_tests {
             assert_eq!(pk.verify_mu(&mu, &sig), Ok(()));
             assert_eq!(pk.verify_mu(&mu, &mu_sig), Ok(()));
             mu[0] ^= 1;
-            assert_eq!(
-                pk.verify_mu(&mu, &mu_sig),
-                Err(MlDsaError::InvalidSignature)
-            );
+            assert_eq!(pk.verify_mu(&mu, &mu_sig), Err(InvalidSignature));
             let long = [0u8; 256];
             assert_eq!(key.sign(b"message", &long), Err(MlDsaError::ContextTooLong));
             assert_eq!(
                 key.sign_deterministic(b"message", &long),
                 Err(MlDsaError::ContextTooLong)
             );
-            assert_eq!(
-                pk.verify(b"message", &long, &sig),
-                Err(MlDsaError::ContextTooLong)
-            );
+            assert_eq!(pk.verify(b"message", &long, &sig), Err(InvalidSignature));
             // A public key is its bytes.
             assert_eq!($VerifyingKey::from_bytes(pk.as_bytes()), pk.clone());
             assert!(format!("{key:?}").starts_with(stringify!($SigningKey)));

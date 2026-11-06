@@ -93,9 +93,6 @@ def hCnt : Nat := 5
 
 /-! ## Entry and exit -/
 
-/-- `mr d, n` (`or d, n, n`). -/
-def mov (d n : Reg) : Instr := .logic .or d n n
-
 /-- The return address (in `r0`), our caller's registers, `used` and `r2`,
 and their offsets in `ws`. -/
 def savedSlots : List (Reg × Nat) :=

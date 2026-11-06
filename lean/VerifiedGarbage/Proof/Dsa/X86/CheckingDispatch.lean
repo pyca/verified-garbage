@@ -39,14 +39,4 @@ theorem generationDispatch_ok (sized : Nat → Nat → Prog isa) (widths : List 
       · intro u Ku Ou
         exact body u (K.trans Ku) (Ou.trans O)
 
-theorem checkDispatch_ok (widths : List (Nat × Nat))
-    {s : State} {base : Addr} {size pLen qLen : Nat} {Q : State → Prop}
-    (hs : Scr s base size) (hz : Layout.saved ≤ size) (member : (pLen, qLen) ∈ widths)
-    (bound : ∀ w ∈ widths, w.1 < 2 ^ 32 ∧ w.2 < 2 ^ 32)
-    (hp : (pointerValue base s (.input .pLen)).toNat = pLen)
-    (hq : (pointerValue base s (.input .qLen)).toNat = qLen)
-    (body : ∀ t, Keeps [.eax] s t → t.mem = s.mem → WP isa (Generate.checkSized pLen qLen) t Q) :
-    WP isa (Generate.checkDispatch widths) s Q :=
-  generationDispatch_ok Generate.checkSized widths hs hz member bound hp hq body
-
 end VG.Proof.Dsa.X86

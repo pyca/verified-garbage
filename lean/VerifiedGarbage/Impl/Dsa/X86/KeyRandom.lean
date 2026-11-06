@@ -27,7 +27,6 @@ def oSaveEsi : Nat := 48
 def oSaveEdi : Nat := 52
 def oSaveEbp : Nat := 56
 def oUsed : Nat := 60
-def oAttempts : Nat := 64
 def oDraws : Nat := 68
 def oQ : Nat := 72
 def oWidth : Nat := 76

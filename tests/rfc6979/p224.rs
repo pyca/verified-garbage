@@ -10,7 +10,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::ec::{Error, P224, PrivateKey, PublicKey};
+use verified_garbage::ec::{P224, PrivateKey, PublicKey};
+use verified_garbage::error::{InvalidKey, InvalidSignature};
 use verified_garbage::hashes::sha224::Sha224;
 
 use verified_garbage::hashes::sha1::Sha1;
@@ -26,7 +27,7 @@ fn p224() -> ([u8; 28], [u8; 28], [u8; 57], Signatures<56>) {
 }
 
 /// The signature of `message`, of the message and of its hash.
-fn sign(key: &PrivateKey<P224>, message: &[u8]) -> [Result<[u8; 56], Error>; 2] {
+fn sign(key: &PrivateKey<P224>, message: &[u8]) -> [Result<[u8; 56], InvalidKey>; 2] {
     [
         key.sign::<Sha224>(message),
         key.sign_prehashed::<Sha224>(&Sha224::digest(message)),
@@ -34,7 +35,11 @@ fn sign(key: &PrivateKey<P224>, message: &[u8]) -> [Result<[u8; 56], Error>; 2] 
 }
 
 /// Whether `rs` verifies for `message`, of the message and of its hash.
-fn verify(key: &PublicKey<P224>, message: &[u8], rs: &[u8; 56]) -> [Result<(), Error>; 2] {
+fn verify(
+    key: &PublicKey<P224>,
+    message: &[u8],
+    rs: &[u8; 56],
+) -> [Result<(), InvalidSignature>; 2] {
     [
         key.verify::<Sha224>(message, rs),
         key.verify_prehashed::<Sha224>(&Sha224::digest(message), rs),
@@ -93,7 +98,7 @@ fn p224_verify() {
     let other = PrivateKey::<P224>::from_bytes(&add(&x, 1))
         .public_key()
         .unwrap();
-    let bad = Err(Error::InvalidSignature);
+    let bad = Err(InvalidSignature);
     for (hash, message, rs) in &signatures {
         let verified = verify(&key.clone(), message.as_bytes(), rs);
         assert_eq!(verified, [Ok(()); 2], "{hash} {message}");
@@ -122,8 +127,8 @@ fn p224_keys() {
     let (q, _, _, _) = p224();
     for bad in [[0; 28], q, add(&q, 1), [0xff; 28]] {
         let key = PrivateKey::<P224>::from_bytes(&bad);
-        assert_eq!(sign(&key, b"sample"), [Err(Error::InvalidKey); 2]);
-        assert_eq!(key.public_key(), Err(Error::InvalidKey));
+        assert_eq!(sign(&key, b"sample"), [Err(InvalidKey); 2]);
+        assert_eq!(key.public_key(), Err(InvalidKey));
     }
     for good in [add(&[0; 28], 1), add(&q, -1)] {
         let key = PrivateKey::<P224>::from_bytes(&good);

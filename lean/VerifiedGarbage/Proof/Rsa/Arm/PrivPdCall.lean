@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.PrivPcCall
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
 import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # Call verified public re-exponentiation while retaining the private intermediate -/
 
@@ -55,7 +56,7 @@ theorem pd_call (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {s :
     (pdCovers h).1 (pdCovers h).2 pdWrites_sub (pdWrites_slots h.valid)) ?_
   rintro t ⟨ht, slotsT, frame, rest, post⟩
   refine ⟨ht, slotsT, frame, rest, ?_⟩
-  sig_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at post
+  sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at post
   have sa := fun {j} (hj : j < 6) => pdArgs_stack h args hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
   have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega

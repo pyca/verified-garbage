@@ -139,15 +139,4 @@ theorem bodyWith_ct {I : State → Mem → Prop} (C : CheckInvoke I) (D : Derive
   have efi := (finish_ct _ _ _ _ _ _ ⟨(pubOf s₁, (rResult s₁).status),
     ⟨s₁, A₁, rfl, F₁, rfl⟩, s₂, A₂, e.symm, F₂, hr.symm⟩ fi₁ fi₂).1
   simp only [een, ecl, ecm, ebr, efi]
-theorem body_ct (C : CheckCall.CheckFn) (D : DeriveFn) {s₁ s₂ : State}
-    (A₁ : KeyABI s₁) (A₂ : KeyABI s₂) (e : pubOf s₁ = pubOf s₂)
-    (hk : keyLeak s₁ = keyLeak s₂) (hr : (rResult s₁).status = (rResult s₂).status)
-    (ht : (rResult s₁).trace = (rResult s₂).trace)
-    {tr₁ tr₂ : List Leak} {u₁ u₂ : State}
-    (x₁ : Exec isa (body C.name D.name C.code D.code) (allocated KeyRandom.frameBytes s₁) tr₁ u₁)
-    (x₂ : Exec isa (body C.name D.name C.code D.code) (allocated KeyRandom.frameBytes s₂) tr₂ u₂) :
-    tr₁ = tr₂ :=
-  bodyWith_ct C.invoke D.invoke (fun _ _ _ => trivial) C.invoke_ct D.invoke_ct
-    A₁ A₂ e hk hr ht x₁ x₂
-
 end VG.Proof.Dsa.X86.KeyRandom

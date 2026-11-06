@@ -119,17 +119,4 @@ theorem sampledWith_ct {I : State → Mem → Prop} (F : DeriveInvoke I) (stable
         two_taint [.esp] (pins_at id fun _ _ _ h => h) (by taint_decide)
       have ew := (cw _ _ _ _ _ _ ⟨pubOf s₁, ⟨s₁, A₁, rfl, rw₁⟩, s₂, A₂, e.symm, rw₂⟩ w₁ w₂).1
       simp only [ec, ea, ed, ew]
-theorem sampled_ct (F : DeriveFn) {s₁ s₂ t₁ t₂ : State}
-    (A₁ : KeyABI s₁) (A₂ : KeyABI s₂) (e : pubOf s₁ = pubOf s₂)
-    (hk : keyLeak s₁ = keyLeak s₂) (hc₁ : checked s₁ = true) (hc₂ : checked s₂ = true)
-    (hr : (rResult s₁).status = (rResult s₂).status)
-    (hs : VG.Proof.Dsa.Random.sampleStatus (draw s₁) = VG.Proof.Dsa.Random.sampleStatus (draw s₂))
-    (O₁ : SampleOut s₁ 0 (draw s₁) t₁) (O₂ : SampleOut s₂ 0 (draw s₂) t₂)
-    (ax₁ : t₁.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (draw s₁)))
-    (ax₂ : t₂.gpr .eax = BitVec.ofNat 32 (VG.Proof.Dsa.Random.sampleStatus (draw s₂)))
-    {tr₁ tr₂ : List Leak} {u₁ u₂ : State}
-    (x₁ : Exec isa (sampled F.name F.code) t₁ tr₁ u₁)
-    (x₂ : Exec isa (sampled F.name F.code) t₂ tr₂ u₂) : tr₁ = tr₂ :=
-  sampledWith_ct F.invoke (fun _ _ _ => trivial) F.invoke_ct A₁ A₂ e hk hc₁ hc₂ hr hs O₁ O₂ ax₁ ax₂ trivial trivial x₁ x₂
-
 end VG.Proof.Dsa.X86.KeyRandom

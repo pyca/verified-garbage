@@ -48,9 +48,6 @@ variable {G : GP} {σ s : State} {V : Nat → BitVec 32} {LS : List Nat}
 theorem GI.seedsFit (h : GI G σ V LS s) : G.seeds.toNat + G.seedsLen ≤ 2 ^ 32 := by
   have := h.pre.nW; rw [← h.hG]; exact this
 
-theorem GI.seedsB_length (h : GI G σ V LS s) : G.seedsB.length = G.seedsLen := by
-  rw [← h.hG]; exact bytesAt_length' _ _ _
-
 /-- The seed at `k`, in memory. -/
 theorem GI.seedBytes (h : GI G σ V LS s) {k : Nat} (hk : k + G.qLen ≤ G.seedsLen) :
     Spec.Rsa.bytesAt s.mem (State.addr (G.seeds + BitVec.ofNat 32 k)) G.qLen = seedAt G k := by

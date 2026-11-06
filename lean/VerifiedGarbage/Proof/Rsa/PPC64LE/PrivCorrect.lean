@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivCmp
 import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivResult
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
+public import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_checked` on PPC64LE: correctness
@@ -39,7 +40,7 @@ theorem freed_lr (b : Nat) (s : State) : (freed b s).lr = s.lr := rfl
 theorem freed_gpr (b : Nat) (s : State) : (freed b s).gpr = s.gpr := rfl
 theorem freed_mem (b : Nat) (s : State) : (freed b s).mem = s.mem := rfl
 
-theorem code_correct (s : State) (hpre : (Spec.Rsa.privateCheckedContract abi frameBytes).pre s) :
+theorem code_correct (s : State) (hpre : (Proof.Rsa.privateCheckedContract abi frameBytes).pre s) :
     ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ fnPost s t := by
   show WP isa code s fun t => abiPreserved s t ∧ fnPost s t
   have h := preP_of hpre

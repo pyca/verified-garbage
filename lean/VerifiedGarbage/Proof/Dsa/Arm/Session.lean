@@ -43,8 +43,6 @@ structure Run (base : Addr) (s t : State) : Prop where
   rest : Rest coreClob s t
   mem : Outs base runRanges s.mem t.mem
 
-theorem Run.refl (base : Addr) (s : State) : Run base s s := ⟨Rest.refl _ _, Outs.refl _ _ _⟩
-
 theorem Run.trans {base : Addr} {s t u : State} (h₁ : Run base s t) (h₂ : Run base t u) : Run base s u :=
   ⟨h₁.rest.trans h₂.rest, h₁.mem.trans h₂.mem⟩
 
@@ -152,8 +150,6 @@ theorem localVal_of_bytes {base : Addr} {s : State} {o len v : Nat}
 /-- The computed values in `[lo, hi)` are kept. -/
 def KeepsLocals (base : Addr) (s t : State) (lo hi : Nat) : Prop :=
   ∀ o len, lo ≤ o → o + len ≤ hi → localVal base t o len = localVal base s o len
-
-theorem KeepsLocals.refl (base : Addr) (s : State) (lo hi : Nat) : KeepsLocals base s s lo hi := fun _ _ _ _ => rfl
 
 theorem KeepsLocals.trans {base : Addr} {s t u : State} {lo hi : Nat} (h₁ : KeepsLocals base s t lo hi)
     (h₂ : KeepsLocals base t u lo hi) : KeepsLocals base s u lo hi :=

@@ -419,6 +419,13 @@ def tagOut : List Instr :=
 def keys : Prog isa :=
   .seq (derive e) (.seq (expand c) (.block hkey))
 
+/-- The keys but the expansion of the encryption key: `seal` expands it after
+POLYVAL, which does not need it, so that the CPU runs the two chains of
+dependent instructions, the expansion and POLYVAL's multiplications, at
+once rather than one after the other. -/
+def keysS : Prog isa :=
+  .seq (derive e) (.block hkey)
+
 /-- POLYVAL of the additional data, the data and the lengths, and the tag
 input, absorbing up to 64 blocks per call of `vg_ghash`. -/
 def polyvalLong (wide : Bool) : Prog isa :=
@@ -477,8 +484,8 @@ def polyval (wide : Bool) : Prog isa :=
 
 /-- `vg_aes_gcm_siv_seal`. -/
 def «seal» (wide : Bool) : Prog isa :=
-  .seq (.block entry) (.seq (keys c e) (.seq (polyval c wide) (.seq (tag c tagO) (.seq (crypt c e wide)
-    (.block (tagOut ++ restore))))))
+  .seq (.block entry) (.seq (keysS e) (.seq (polyval c wide) (.seq (expand c) (.seq (tag c tagO)
+    (.seq (crypt c e wide) (.block (tagOut ++ restore)))))))
 
 /-- `vg_aes_gcm_siv_open`. -/
 def «open» (wide : Bool) : Prog isa :=

@@ -11,7 +11,7 @@ implementations can reuse key setup and call
 `vg_rsa_public_precomputed_checked` and its variants. The accepted
 signatures are exactly those of `verifyContract`, and the recovered values
 those of `recoverContract`, when `pre` holds the values for `n`. An inconsistent `pre` leaves the result
-unspecified, as in `Rsa.publicPrecomputedCheckedContract`; memory safety
+unspecified, as in `Proof.Rsa.publicPrecomputedCheckedContract`; memory safety
 and the timing guarantee still apply. Existing contracts are unchanged.
 -/
 

@@ -11,15 +11,6 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 @[expose] public section
 namespace VG.Proof.Dsa.Generation
 
-/-- Add a fixed contribution independently of the accumulator. -/
-theorem contribution_fold (f : Nat → Nat) (xs : List Nat) (acc : Nat) :
-    xs.foldl (fun a j => a + f j) acc = acc + xs.foldl (fun a j => a + f j) 0 := by
-  induction xs generalizing acc with
-  | nil => simp
-  | cons x xs ih =>
-    simp only [List.foldl_cons, Nat.zero_add]
-    rw [ih (acc + f x), ih (f x), Nat.add_assoc]
-
 def contributions (n : Nat) (v : Nat → Nat) (k : Nat) : Nat :=
   (List.range k).foldl (fun a j => a + v j * 2 ^ (j * n)) 0
 

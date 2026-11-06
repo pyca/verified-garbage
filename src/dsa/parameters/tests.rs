@@ -82,7 +82,7 @@ fn cavp_generated_parameters() {
         let key = PrivateKey::generate(parameters.p(), parameters.q(), parameters.g()).unwrap();
         let digest = [0x53; 32];
         let signature = key.sign(&digest).unwrap();
-        assert!(key.public_key().verify(&digest, &signature));
+        assert!(key.public_key().verify(&digest, &signature).is_ok());
     }
 }
 
@@ -130,5 +130,6 @@ fn generated_parameters_with_os_randomness() {
     assert!(
         key.public_key()
             .verify(&digest, &key.sign(&digest).unwrap())
+            .is_ok()
     );
 }

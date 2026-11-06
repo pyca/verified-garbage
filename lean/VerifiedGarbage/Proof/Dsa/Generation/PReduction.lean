@@ -38,11 +38,6 @@ theorem pReduction_generatorExponent (x : Nat) {q : Nat} (hq : 0 < q) :
   rw [pReduction_quotient, Nat.add_sub_cancel]
   rw [Nat.mul_comm 2 q, Nat.mul_assoc, Nat.mul_div_right _ hq]
 
-/-- The structural divisibility check holds for every reduced candidate. -/
-theorem pReduction_divides (x q : Nat) : (x + 1 - x % (2 * q) - 1) % q = 0 := by
-  rw [pReduction_quotient, Nat.add_sub_cancel]
-  simp [Nat.mul_mod]
-
 /-- Shaping may set the low bit before division: an even divisor makes
 that bit irrelevant to the quotient and therefore to the p candidate. -/
 theorem pReduction_orOne (x q : Nat) :

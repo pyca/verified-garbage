@@ -43,10 +43,6 @@ theorem seedAdd_depth (n : Nat) : generationDepth (seedAdd n) := by
   · unfold seedAddTail
     split <;> exact Nat.zero_le _
 
-theorem seedHash_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256) :
-    generationDepth (seedHash H1 H256) :=
-  (generationDepth.block _).seq ((hashLabel_depth h1 _).ite (hashLabel_depth h256 _) _)
-
 theorem seedHashAt_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256) (len : Nat) :
     generationDepth (seedHashAt H1 H256 len) := by
   unfold seedHashAt

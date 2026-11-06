@@ -134,7 +134,7 @@ bnez t5, 25b
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
 
@@ -479,7 +479,7 @@ bnez t2, 27b
 .insn 2, 0x6129
 .insn 2, 0x8082
 .option pop",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
+        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update = sym super::sha256::vg_sha256_update,
         vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,

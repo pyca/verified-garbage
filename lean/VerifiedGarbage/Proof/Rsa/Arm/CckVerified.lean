@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-! # `vg_rsa_check_crt_key` on ARMv7 is verified against the shared RSA contract -/
 
@@ -36,12 +38,12 @@ theorem cck_body_ct : RelCT isa
     (fun a σ => FnBase 12 10 insC a σ)).mono (fun _ _ h => h)
     fun _ _ h => LiftB.mono (fun _ _ _ _ ⟨x, _, _, _, _, _, _, _, ht⟩ => ⟨x, _, _, _, ht⟩) h
 
-theorem cck_contract_ct : ConstantTime isa (Spec.Rsa.checkCrtKeyContract abi 0).pre
-    (Spec.Rsa.checkCrtKeyContract abi 0).pub VG.Impl.Rsa.Arm.CheckCrtKey.code := by
+theorem cck_contract_ct : ConstantTime isa (Proof.Rsa.checkCrtKeyContract abi 0).pre
+    (Proof.Rsa.checkCrtKeyContract abi 0).pub VG.Impl.Rsa.Arm.CheckCrtKey.code := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := cck_pre s hs
   have it := cck_pre t ht
-  sig_pub [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, reduceClassify, Loc.val,
+  sig_pub [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argRegs, reduceClassify, Loc.val,
     State.addr] at hp
   obtain ⟨sp, bytes, p0, p1, p2, p3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := hp
   have args : ∀ i < 12, stackArg s i = stackArg t i := fun i hi =>
@@ -72,15 +74,15 @@ def cckSatState : State where
     ⟨0x8000, 48⟩]
   wr := [⟨0x4000, 8448⟩]
 
-theorem cck_contract_sat : ∃ s, (Spec.Rsa.checkCrtKeyContract abi 0).pre s := by
-  sig_implies_sat [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, reduceClassify, Loc.val,
+theorem cck_contract_sat : ∃ s, (Proof.Rsa.checkCrtKeyContract abi 0).pre s := by
+  sig_implies_sat [Proof.Rsa.checkCrtKeyContract, Proof.Rsa.checkCrtKeySig, abi, argRegs, reduceClassify, Loc.val,
     State.addr]
     [cckSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid, Spec.Rsa.scratchWords]
     using cckSatState
 
 /-- `vg_rsa_check_crt_key`. -/
 theorem check_crt_key_verified :
-    Verified target VG.Impl.Rsa.Arm.CheckCrtKey.code (Spec.Rsa.checkCrtKeyContract abi 0) :=
+    Verified target VG.Impl.Rsa.Arm.CheckCrtKey.code (Proof.Rsa.checkCrtKeyContract abi 0) :=
   ⟨cck_contract_correct, cck_contract_ct, cck_contract_sat⟩
 
 end VG.Proof.Rsa.Arm.CheckCrtKey

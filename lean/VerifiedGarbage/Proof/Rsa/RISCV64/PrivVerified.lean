@@ -7,6 +7,8 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCorrect
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCT
+public import VerifiedGarbage.Proof.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.Contract
 
 /-!
 # `vg_rsa_private_checked` on RISC-V: verified against the shared contract
@@ -25,9 +27,9 @@ open VG VG.RISCV64 VG.Impl.Rsa.RISCV64.Priv
 
 /-- The shared contract, its postcondition on the registers and the stack. -/
 def fnContract : Contract isa where
-  pre := (Spec.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre
+  pre := (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre
   post := fnPost
-  pub := (Spec.Rsa.privateCheckedContract RISCV64.abi frameBytes).pub
+  pub := (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pub
 
 /-- A state meeting the precondition: a 64-byte modulus, input and `out`, a
 one-byte exponent, primes, exponents and `qInv`, and the stack arguments at
@@ -49,20 +51,20 @@ def satState : State where
     ⟨0x4500, 1⟩, ⟨0x10000, 96⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 8448⟩]
 
-theorem priv_implies : fnContract.Implies (Spec.Rsa.privateCheckedContract RISCV64.abi frameBytes) where
+theorem priv_implies : fnContract.Implies (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes) where
   pre := fun _ h => h
   post := by
-    sig_implies_post [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, RISCV64.abi,
+    sig_implies_post [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, RISCV64.abi,
       RISCV64.argRegs, fnContract, fnPost, stackArgs_twelve, List.append_eq]
   pub := fun _ _ _ _ h => h
   sat := by
-    sig_implies_sat [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, RISCV64.abi,
+    sig_implies_sat [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, RISCV64.abi,
       RISCV64.argRegs, fnContract, stackArgs_twelve, List.append_eq] [satState, stackArg, stackArgAddr,
       Mem.readW, Mem.read] using satState
 
 /-- `vg_rsa_private_checked`. -/
 theorem priv_verified :
-    Verified RISCV64.target code (Spec.Rsa.privateCheckedContract RISCV64.abi frameBytes) :=
+    Verified RISCV64.target code (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes) :=
   Verified.of_correct code_correct code_ct priv_implies
 
 end VG.Proof.Rsa.RISCV64.Priv

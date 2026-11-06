@@ -27,9 +27,4 @@ theorem derivingEntry_precise {s : State} (A : DerivingABI s) :
     simp only [Generate.deriveArguments, List.mem_cons, List.not_mem_nil, or_false] at ha
     rcases ha with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
-theorem derivingEntry_ok {s : State} (A : DerivingABI s) :
-    WP isa (.block Generate.deriveEntry) s fun t =>
-      Installed (argumentPointer s 7) ((arg s 8).toNat * 8) Generate.deriveArguments 2 4 6 s t :=
-  WP.mono (derivingEntry_precise A) fun _ H => H.1
-
 end VG.Proof.Dsa.X86

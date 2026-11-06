@@ -74,10 +74,6 @@ theorem DeriveAgrees.qb {reference c : DeriveCall} (h : DeriveAgrees reference c
     c.input.qb = reference.input.qb := by
   rw [ParametersInput.qb, ParametersInput.qb, h.params, h.pLen, h.qLen]
 
-theorem DeriveAgrees.gb {reference c : DeriveCall} (h : DeriveAgrees reference c) :
-    c.input.gb = reference.input.gb := by
-  rw [ParametersInput.gb, ParametersInput.gb, h.params, h.pLen, h.qLen]
-
 theorem DeriveAgrees.accepted {reference c : DeriveCall} (h : DeriveAgrees reference c) :
     c.input.accepted = reference.input.accepted := by
   unfold ParametersInput.accepted

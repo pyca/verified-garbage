@@ -126,7 +126,7 @@ def checkInit : Except String Unit := do
     unless parameterInit pLen == none do throw "an unsupported width was accepted"
   unless generationQLen 128 == 20 && generationQLen 256 == 32 && generationQLen 384 == 32 &&
       [128, 256, 384].all fun p => generationLengthsValid p (generationQLen p) do
-    throw "the subgroup widths differ from generateParametersBytes'"
+    throw "the subgroup widths are not the generated (L, N) pairs"
 
 #assert_standard_axioms Spec.Dsa.parameterInitContract
 #assert_standard_axioms Spec.Dsa.parameterSearchContract

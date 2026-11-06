@@ -7,9 +7,9 @@ public import VerifiedGarbage.Spec.Dsa.Generate
 # DSA parameter generation over refillable random tapes
 
 **Trusted.** FIPS 186-4 A.1.1.2 and A.2.1 parameter generation over the
-protocol of `Spec/Entropy.lean`, in place of `generateParametersBytes`'s three
-fixed tapes: verified code counts the seeds it tries and chooses how much
-entropy to ask for, and its host only refills one tape.
+protocol of `Spec/Entropy.lean`, over one refillable tape: verified code
+counts the seeds it tries and chooses how much entropy to ask for, and its
+host only refills the tape.
 
 Each seed is one candidate (`seedCandidate`), reading, in order: the seed
 (`qLen` octets), the witnesses of `q`'s test, the witnesses of the tests of
@@ -24,10 +24,9 @@ a seed asks for more, so the seed is run again from its own octets, whole;
 over a stream cut into refilled tapes the search finds what it finds over the
 stream in one tape.
 
-Where `generateParametersBytes` reads its seeds, `h` candidates and
-witnesses from separate tapes, and starts every generator search at the
-front of its `h` tape, this search reads all three from one tape, in the
-order a seed uses them. Its limits replace those of the fixed tapes: at most
+The search reads its seeds, `h` candidates and witnesses from one tape, in
+the order a seed uses them, so each seed's generator search reads the `h`
+candidates that follow its witnesses. Its limits: at most
 `parameterSeeds` seeds are rejected, and one seed may read at most
 `parameterEntropy` octets (a seed and 32768 draws of `p`'s width) before the
 search is exhausted. The parameters are public: the tape may affect the
@@ -48,12 +47,10 @@ def generationQLen (pLen : Nat) : Nat := if pLen = 128 then 20 else 32
 /-- The modulus widths parameter generation supports. -/
 def generationPLenValid (pLen : Nat) : Bool := pLen == 128 || pLen == 256 || pLen == 384
 
-/-- The seeds the search may reject: as many as `generateParametersBytes`'s
-seed tape held. -/
+/-- The seeds the search may reject. -/
 def parameterSeeds : Nat := 4096
 
-/-- The `h` candidates one seed may draw for its generator (A.2.1): as many
-as `generateParametersBytes`'s `h` tape held. -/
+/-- The `h` candidates one seed may draw for its generator (A.2.1). -/
 def generatorAttempts : Nat := 128
 
 /-- An unfinished seed's budget of entropy: the seed and 32768 draws of the

@@ -48,7 +48,7 @@ fn signatures() {
             .unwrap()
             .1;
         let signature = [hex(&v["R"], q.len()), hex(&v["S"], q.len())].concat();
-        let actual = key.verify(digest, &signature);
+        let actual = key.verify(digest, &signature).is_ok();
         let expected = v["Result"].starts_with('P');
         assert_eq!(actual, expected, "vector {i}");
     }

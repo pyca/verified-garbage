@@ -59,8 +59,7 @@ def candidates (pLen : Nat) (hs : List Byte) : List Nat :=
 
 /-- The stage: the generator search over `hs`, then the domain check of
 what it finds; `none` sends parameter generation on to its next seed. This
-is the step of `Spec.Dsa.generateParameters`'s `attempt` that follows
-`primeFromSeed`. -/
+is the step of a seed's candidate that follows `primeFromSeed`. -/
 def stage (p q : Nat) (hs : List Nat) : Option Params := do
   let g ← generator p q hs
   if parametersValid ⟨p, q, g⟩ then some ⟨p, q, g⟩ else none

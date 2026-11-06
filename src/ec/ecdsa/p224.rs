@@ -10,7 +10,7 @@
 ))]
 
 use super::table::{HmacHash, SignFn, sign_with};
-use super::{Error, SignatureHash, sealed};
+use super::{SignatureHash, sealed};
 use crate::arch::ecdsa_p224::vg_ecdsa_p224_sign;
 use crate::arch::ecdsa_p224::vg_ecdsa_p224_verify;
 #[cfg(target_arch = "arm")]
@@ -18,9 +18,10 @@ use crate::arch::ecdsa_p224::{vg_ecdsa_p224_sign_umaal, vg_ecdsa_p224_verify_uma
 use crate::cpu::detected;
 use crate::ec::P224;
 use crate::ec::p224::Mul;
+use crate::error::{InvalidKey, InvalidSignature};
 
 /// Whether `signature` verifies with `q` for the hash `digest`.
-fn verify_with(q: &[u8; 57], digest: &[u8], signature: &[u8; 56]) -> Result<(), Error> {
+fn verify_with(q: &[u8; 57], digest: &[u8], signature: &[u8; 56]) -> Result<(), InvalidSignature> {
     let mut scratch = [0u64; 1024];
     let ok = match Mul::select(detected()) {
         // SAFETY: `q` is valid for reads of 57 bytes, `digest` of `digest.len()`,
@@ -41,12 +42,12 @@ fn verify_with(q: &[u8; 57], digest: &[u8], signature: &[u8; 56]) -> Result<(), 
     if ok == 1 {
         Ok(())
     } else {
-        Err(Error::InvalidSignature)
+        Err(InvalidSignature)
     }
 }
 
 impl<H: HmacHash> sealed::Functions<P224> for H {
-    fn sign(d: &[u8; 28], digest: &H::Output) -> Result<[u8; 56], Error> {
+    fn sign(d: &[u8; 28], digest: &H::Output) -> Result<[u8; 56], InvalidKey> {
         let f = detected();
         let sign: SignFn<28, 56> = match Mul::select(f) {
             Mul::Baseline => vg_ecdsa_p224_sign,
@@ -60,7 +61,11 @@ impl<H: HmacHash> sealed::Functions<P224> for H {
 
     /// The verified function takes the hash itself, of any length, and
     /// uses as many of its leftmost bits as the order has (FIPS 186-5 §6.4.2).
-    fn verify(q: &[u8; 57], digest: &H::Output, signature: &[u8; 56]) -> Result<(), Error> {
+    fn verify(
+        q: &[u8; 57],
+        digest: &H::Output,
+        signature: &[u8; 56],
+    ) -> Result<(), InvalidSignature> {
         verify_with(q, digest.as_ref(), signature)
     }
 }

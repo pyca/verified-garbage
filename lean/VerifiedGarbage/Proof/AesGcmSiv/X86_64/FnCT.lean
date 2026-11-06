@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
 import VerifiedGarbage.Proof.Framework.X86_64.Narrow
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
 meta import VerifiedGarbage.Proof.Framework.X86_64.Narrow
@@ -96,6 +97,34 @@ theorem keys_st (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) {K W SP : Addr}
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact (L.stk_w' (by decide)).symm) ((Ky.frame.sub (keyR_mutW W SP)).sub (mutW_mut W SP D n)) Ky.rd Ky.wr,
       Ky.hkey, Ky.acc⟩
+
+theorem keysS_st (eb : Proof.Aes.X86_64.BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
+    {N A D T : Addr} {al n : Nat} {t : State} (h : St K W SP R N A D al n T t) :
+    WP isa (keysS ⟨eb.enc.name, eb.enc.code⟩) t (StK K W SP R N A D al n T) :=
+  WP.mono (keysS_ok eb L hR h.bufs.one.env h.bufs.one.sl h.nonce h.bufs.data.w) fun _ Ky =>
+    ⟨h.frame Ky.env Ky.frame (fun q hq => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl
+      · exact L.w_w (.inr (by decide)) (by decide) (by decide)
+      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+      · exact (L.stk_w' (by decide)).symm) ((Ky.frame.sub (keyR_mutW W SP)).sub (mutW_mut W SP D n)) Ky.rd Ky.wr,
+      Ky.hkey, Ky.acc⟩
+
+theorem expand_st (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
+    {N A D T : Addr} {al n : Nat} {t : State} (h : St K W SP R N A D al n T t) :
+    WP isa (expand v.callees) t (St K W SP R N A D al n T) :=
+  WP.mono (expand_ok v L hR h.bufs.one.env h.bufs.one.sl) fun _ X =>
+    h.frame X.env X.frame (fun q hq => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl
+      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+      · exact (L.stk_w' (by decide)).symm) ((X.frame.sub fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact sub_wC (by decide) (by decide)
+        · exact sub_wC (by decide) (by decide)
+        · exact sub_stk).sub (mutW_mut W SP D n)) X.rd X.wr
 
 theorem polyval_st (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr} {al n : Nat} {t : State}
     (h : StK K W SP R N A D al n T t) : WP isa (polyval v.callees wide) t (St K W SP R N A D al n T) :=
@@ -336,12 +365,14 @@ theorem entry_seal_pub {s₀ s₀' : State} (hp' : sealPre s₀') (hq : onePub s
 
 /-- `seal` after its entry, up to the copy of the tag. -/
 abbrev sealFront (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) : Prog isa :=
-  .seq (.seq (.seq (keys v.callees ⟨eb.enc.name, eb.enc.code⟩) (polyval v.callees wide)) (tag v.callees tagO)) (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)
+  .seq (.seq (.seq (.seq (keysS ⟨eb.enc.name, eb.enc.code⟩) (polyval v.callees wide)) (expand v.callees))
+    (tag v.callees tagO)) (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)
 
 theorem sealFront_st (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D T : Addr} {al n : Nat} {t : State} (h : St K W SP R N A D al n T t) :
     WP isa (sealFront v eb wide) t (St K W SP R N A D al n T) :=
-  WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (keys_st v eb L hR h) fun _ h => polyval_st v wide L h))
+  WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (keysS_st eb L hR h)
+    fun _ h => polyval_st v wide L h)) fun _ h => expand_st v L hR h))
     fun _ h => tag_st v L hR (by decide) h)) fun _ h => crypt_st0 v eb wide L hR h)
 
 /-- `sealFront`, in two runs. -/
@@ -350,14 +381,18 @@ theorem sealFront_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : B
     (hn' : n < 2 ^ 64) {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂) :
     RelCT isa P (sealFront v eb wide) fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂ := by
-  have r₁ := (keys_rel v eb L hR hDW hn fun t₁ t₂ h => ⟨⟨(hP _ _ h).1.bufs.one, (hP _ _ h).1.nonce⟩,
+  have r₁ := (keysS_rel eb L hR hDW hn fun t₁ t₂ h => ⟨⟨(hP _ _ h).1.bufs.one, (hP _ _ h).1.nonce⟩,
       ⟨(hP _ _ h).2.bufs.one, (hP _ _ h).2.nonce⟩⟩).wp
     (F₁ := StK K W SP R N A D al n T) (F₂ := StK K W SP R N A D al n T)
-    fun t₁ t₂ h => ⟨keys_st v eb L hR (hP _ _ h).1, keys_st v eb L hR (hP _ _ h).2⟩
+    fun t₁ t₂ h => ⟨keysS_st eb L hR (hP _ _ h).1, keysS_st eb L hR (hP _ _ h).2⟩
   have r₂ := (polyval_rel v wide L hDW hn hal hn' (P := fun t₁ t₂ => True ∧ StK K W SP R N A D al n T t₁ ∧
       StK K W SP R N A D al n T t₂) fun t₁ t₂ h => ⟨h.2.1.1.bufs, h.2.2.1.bufs⟩).wp
     (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨polyval_st v wide L h.2.1, polyval_st v wide L h.2.2⟩
+  have r₂' := (expand_rel v L hR hDW hn (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧
+      St K W SP R N A D al n T t₂) fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one⟩).wp
+    (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
+    fun t₁ t₂ h => ⟨expand_st v L hR h.2.1, expand_st v L hR h.2.2⟩
   have r₃ := (tag_rel v L hR hDW hn (o := tagO) (by decide) (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧
       St K W SP R N A D al n T t₂) fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩).wp
     (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
@@ -366,7 +401,7 @@ theorem sealFront_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : B
       St K W SP R N A D al n T t₂) fun t₁ t₂ h => ⟨⟨h.2.1.bufs.one, h.2.1.bufs.data⟩, ⟨h.2.2.bufs.one, h.2.2.bufs.data⟩⟩).wp
     (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨crypt_st0 v eb wide L hR h.2.1, crypt_st0 v eb wide L hR h.2.2⟩
-  exact (RelCT.seq (RelCT.seq (RelCT.seq r₁ r₂) r₃) r₄).mono (fun _ _ h => h) fun _ _ h => ⟨trivial, h.2⟩
+  exact (RelCT.seq (RelCT.seq (RelCT.seq (RelCT.seq r₁ r₂) r₂') r₃) r₄).mono (fun _ _ h => h) fun _ _ h => ⟨trivial, h.2⟩
 
 theorem tagOut_check : ∃ hc, (taint.check (Taint.ofRegs [.rcx, .r15]) (.block (tagOut.tail ++ restore)) hc).isSome =
     true := ⟨_, by taint_decide⟩
@@ -378,7 +413,7 @@ theorem seal_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) 
   have L := Ar.lay
   refine RelCT.seq (entry_rel (pub_regs hq) (hq.2.2.2.2.2.2.2 2 (by decide)) (argW_in Ar rfl)
     (argW_in (args_of_seal hp').1.1 rfl) (entry_seal hp) (entry_seal_pub hp' hq)) ?_
-  refine RelCT.assoc (RelCT.assoc (RelCT.assoc ?_))
+  refine RelCT.assoc (RelCT.assoc (RelCT.assoc (RelCT.assoc ?_)))
   have hn := Nat.le_of_lt Ar.data.lt
   have front := rel_narrow (c := sealFront v eb wide)
     (P := fun s₁ s₂ => True ∧
