@@ -25,29 +25,7 @@ bl {vg_sha512_digest}
 bl {vg_ed25519_public_key_expanded}
 .base64 "IACBOQAADOimAwh8QAAhOCAAgE4=""#,
         vg_sha512_digest = sym super::sha512::vg_sha512_digest,
-        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded,
-    )
-}
-
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `expanded` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed.
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
-/// * None of `out`, `expanded` and `scratch` may overlap the 224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed25519_public_key_expanded(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "Uf8h+CAAwTimAgh8YACG+mgApvpwAMb6eADm+oAABvgAAIM6AACkOgAAxToAAOY6AAAV6QAAF/kIABXpCAAX+RAAFekQABf5GAAV6RgAF/kgABXpIAAX+SgAFekoABf5MAAV6TAAF/k4ABXpOAAX+QAAF+nC6Ah5JB8IeUAAF/kIABfpSAAX+RAAF+lQABf5GAAX6WQXCHmC8Ah5AEAgPcYHKXl4Swh9WAAX+QAAdDhAAJc4AAC2OA=="
-bl {vg_ed25519_scalar_base}
-.base64 "gAAX6GAAl+poALfqcADX6ngA9+qmAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+bAAITggAIBO""#,
-        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
+        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
 
@@ -140,6 +118,10 @@ bl {vg_ed25519_verify_equation}
         vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed25519_public_key_expanded.rs"]
+pub(crate) mod vg_ed25519_public_key_expanded;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ed25519_r32_point_add.rs"]

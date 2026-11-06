@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CopyDigest
-public import VerifiedGarbage.Spec.Ed25519.ExpandedKey
+public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Verified
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CopyDigest
-meta import VerifiedGarbage.Spec.Ed25519.ExpandedKey
+meta import VerifiedGarbage.Proof.Ed25519.Contract
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 meta import VerifiedGarbage.Proof.Ed25519.Expanded
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -149,42 +149,14 @@ theorem pkE_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
     exact ⟨(bodyFrom_ct (copy_ct hL rfl hpa' hqa) hL hpa' hqa _ _ _ _ _ _
       ⟨⟨entry_ctx hs hpa, entry_syms hpa, trivial⟩, ⟨hq, hqs, trivial⟩⟩ ea eb).1, trivial⟩
 
-/-! ## A witness, and the shared contract -/
+/-! ## The comb's tables in memory, for the witnesses of callers -/
 
 open VG.Impl.Ed25519.AArch64 (combSym combWords combConsts)
 
-/-- A seed of zeros, and its digest at `0x2000`. -/
-def satSeedE : List Byte := List.replicate 32 0
-def satDigestE : List Byte := Spec.Sha512.sha512 satSeedE
-
-def satMemE (a : Addr) : Byte :=
-  if a.toNat < 0x2000 then 0 else satDigestE[a.toNat - 0x2000]?.getD 0
-
-theorem sat_digestE : Spec.Ed25519.bytesAt satMemE 0x2000 64 = satDigestE := by
-  apply List.ext_getElem
-  · simp only [Spec.Ed25519.bytesAt, List.length_map, List.length_range, satDigestE, sha512_length]
-  · intro i hi hj
-    have hi' : i < 64 := by simpa only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] using hi
-    have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
-      change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-      omega
-    simp only [Spec.Ed25519.bytesAt, List.getElem_map, List.getElem_range, satMemE, ha,
-      show ¬ 0x2000 + i < 0x2000 from by omega, ite_false,
-      Nat.add_sub_cancel_left, List.getElem?_eq_getElem hj, Option.getD_some]
-
-/-- `satMemE`, and the comb's tables at `0x100000` (irreducible: unfolding it in a definitional
+/-- The comb's tables at `0x100000`, zeros below (irreducible: unfolding it in a definitional
 check would evaluate the tables). -/
 @[irreducible] def satMemTE : Mem := fun a =>
-  if 0x100000 ≤ a.toNat then constMem 0x100000 combWords a else satMemE a
-
-theorem satMemTE_bytes {p : Addr} {n : Nat} (hp : p.toNat + n ≤ 0x100000) :
-    Spec.Ed25519.bytesAt satMemTE p n = Spec.Ed25519.bytesAt satMemE p n := by
-  unfold Spec.Ed25519.bytesAt
-  refine List.map_congr_left fun i hi => ?_
-  have hi' := List.mem_range.mp hi
-  unfold satMemTE
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega)]
-  simp only [show ¬ 0x100000 ≤ (p.toNat + i) % 2 ^ 64 by omega, ite_false]
+  if 0x100000 ≤ a.toNat then constMem 0x100000 combWords a else 0
 
 theorem satMemTE_held : ∀ i < combWords.length,
     satMemTE.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
@@ -199,86 +171,5 @@ theorem satMemTE_held : ∀ i < combWords.length,
     omega
   unfold satMemTE
   simp only [e, show 0x100000 ≤ 0x100000 + 8 * i + b by omega, ↓reduceIte]
-
-def satStateE : State where
-  gpr r := match r with | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x4000 | _ => 0
-  sp := 0x9000
-  mem := satMemTE
-  rd := [⟨0x2000, 64⟩, ⟨0x100000, 49152⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩]
-  syms _ := 0x100000
-
-/-- The shared contract's precondition, from its facts. -/
-theorem spec_preE {s : State} (hsp : 352 ≤ s.sp.toNat)
-    (hrd : s.rd = [⟨s.gpr .x1, 64⟩, ⟨s.syms combSym, 8 * combWords.length⟩])
-    (hw : s.wr = [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩])
-    (hheld : ∀ i < combWords.length,
-      s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0)
-    (hfit : (s.syms combSym).toNat + 8 * combWords.length ≤ 2 ^ 64)
-    (hdw : ∀ r ∈ s.wr, Region.Disjoint ⟨s.syms combSym, 8 * combWords.length⟩ r)
-    (hds : Region.Disjoint ⟨s.syms combSym, 8 * combWords.length⟩ ⟨s.sp - 352#64, 352⟩)
-    (hal : (s.syms combSym).toNat % 64 = 0)
-    (hrest : (⟨s.gpr .x0, 32⟩ : Region).Disjoint ⟨s.gpr .x1, 64⟩ ∧
-      (⟨s.gpr .x0, 32⟩ : Region).Disjoint ⟨s.gpr .x2, 8192⟩ ∧
-      (⟨s.gpr .x1, 64⟩ : Region).Disjoint ⟨s.gpr .x2, 8192⟩ ∧
-      (⟨s.sp - 352#64, 352⟩ : Region).Disjoint ⟨s.gpr .x0, 32⟩ ∧
-      (⟨s.sp - 352#64, 352⟩ : Region).Disjoint ⟨s.gpr .x1, 64⟩ ∧
-      (⟨s.sp - 352#64, 352⟩ : Region).Disjoint ⟨s.gpr .x2, 8192⟩ ∧
-      (s.gpr .x0).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 64 ≤ 2 ^ 64 ∧
-      (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64)
-    (hk : ∃ seed : List Byte, seed.length = 32 ∧
-      Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 64 = Spec.Sha512.sha512 seed) :
-    (Spec.Ed25519.publicKeyExpandedContract (AArch64.abi.withConsts combConsts) 352).pre s := by
-  sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
-    Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs,
-    combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
-  obtain ⟨r1, r2, r3, r4, r5, r6, r7, r8, r9⟩ := hrest
-  exact ⟨hsp, by rw [hrd]; rfl, hheld, hfit, hdw, hds, hal, by rw [hrd]; rfl, hw, r1, r2, r3, r4, r5, r6, r7,
-    r8, r9, hk⟩
-
-theorem satE : ∃ s, (Spec.Ed25519.publicKeyExpandedContract (AArch64.abi.withConsts combConsts) 352).pre s := by
-  have hl := combWords_length
-  refine ⟨satStateE, spec_preE (by decide) (by rw [hl]; rfl) rfl satMemTE_held (by rw [hl]; decide) ?_
-    (by rw [hl]; exact Region.disjoint_of_sep (by decide)) (by decide) ?_ ⟨satSeedE, by simp [satSeedE], ?_⟩⟩
-  · rw [hl]
-    simp only [satStateE, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
-  · refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    all_goals first | exact Region.disjoint_of_sep (by decide) | decide
-  · change Spec.Ed25519.bytesAt satMemTE 0x2000 64 = _
-    rw [satMemTE_bytes (by decide), sat_digestE]
-    rfl
-
-theorem pkE_implies : pkLocalE.Implies
-    (Spec.Ed25519.publicKeyExpandedContract (AArch64.abi.withConsts combConsts) 352) where
-  pre s h := by
-    sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
-      Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs,
-      combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-    obtain ⟨hsp, hd, held, fit, hdw, hds, -, ht, hw, os, oc, sc, ko, ks, kc, no, ns, nc, -⟩ := h
-    refine ⟨?_, hw, os, oc, sc, ko, ks, kc, no, ns, nc, hsp, held, fit, ?_⟩
-    · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact hdw _ (by rw [hw]; simp)
-      · exact hdw _ (by rw [hw]; simp)
-      · exact hds
-  post := by
-    sig_implies_post [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
-      Spec.Ed25519.scratchWords, pkLocalE, pkLocalWith, below, AArch64.abi, AArch64.argRegs,
-      combConsts_eq, Abi.withConsts]
-  pub := by
-    sig_implies_pub [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
-      Spec.Ed25519.scratchWords, pkLocalE, pkLocalWith, below, AArch64.abi, AArch64.argRegs,
-      combConsts_eq, Abi.withConsts]
-  sat := satE
-
-theorem publicKeyExpanded_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
-    Verified AArch64.target codeExpanded
-      (Spec.Ed25519.publicKeyExpandedContract (AArch64.abi.withConsts combConsts) 352) :=
-  Verified.of_implies
-    (Verified.of_correct (fun _ h => pkE_ok h) pkE_ct (.refl pkE_implies.sat_left))
-    pkE_implies
 
 end VG.Proof.Ed25519.AArch64.PublicKey

@@ -27,9 +27,9 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Ed25519.ExpandedKey
+public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.Expanded
-meta import VerifiedGarbage.Spec.Ed25519.ExpandedKey
+meta import VerifiedGarbage.Proof.Ed25519.Contract
 meta import VerifiedGarbage.Proof.Ed25519.Expanded
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
@@ -332,7 +332,7 @@ theorem satE_digest : Spec.Ed25519.bytesAt (satMemWith pkSatMemE) 0x2000 64 = sa
       List.getElem?_eq_getElem hj, Option.getD_some]
 
 theorem pkE_sat :
-    (Spec.Ed25519.publicKeyExpandedContract (X86.abi.withConsts combConsts) 280).pre pkSatStateE := by
+    (Proof.Ed25519.publicKeyExpandedContract (X86.abi.withConsts combConsts) 280).pre pkSatStateE := by
   have hl := combWords_length
   have a0 : arg pkSatStateE 0 = 0x1000 := (pkSatE_arg 0 (by decide)).trans (by decide)
   have a1 : arg pkSatStateE 1 = 0x2000 := (pkSatE_arg 1 (by decide)).trans (by decide)
@@ -342,7 +342,7 @@ theorem pkE_sat :
   have key : Spec.Ed25519.bytesAt pkSatStateE.mem ((0x2000 : BitVec 32).setWidth 64) 64 =
       Spec.Sha512.sha512 satSeedE := satE_digest
   generalize e : pkSatStateE = s
-  sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+  sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
     Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s
@@ -361,9 +361,9 @@ theorem pkE_sat :
       decide
 
 theorem pkWideE_implies :
-    pkWideE.Implies (Spec.Ed25519.publicKeyExpandedContract (X86.abi.withConsts combConsts) 280) where
+    pkWideE.Implies (Proof.Ed25519.publicKeyExpandedContract (X86.abi.withConsts combConsts) 280) where
   pre s h := by
-    sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨h280, hsp, hd, held, hfit, hdw, -, hstk, -, ht, hw, os, oc, oa, sc, -, ca, ro, -, rc, -,
@@ -379,12 +379,12 @@ theorem pkWideE_implies :
       · exact hstk
   post := by
     intro s t _ h
-    sig_post [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_post [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts]
     exact h
   pub s t _ _ h := by
-    sig_pub [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_pub [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
@@ -393,7 +393,7 @@ theorem pkWideE_implies :
 
 theorem publicKeyExpanded_verified :
     Verified X86.target publicKeyExpanded
-      (Spec.Ed25519.publicKeyExpandedContract (X86.abi.withConsts combConsts) 280) := by
+      (Proof.Ed25519.publicKeyExpandedContract (X86.abi.withConsts combConsts) 280) := by
   have hsat := pkWideE_implies.sat_left
   have satLocal : ∃ s, pkLocalE.pre s := hsat.elim fun s h => ⟨_, pkWide_pre s h⟩
   have verifiedLocal : Verified X86.target publicKeyExpanded pkLocalE :=
