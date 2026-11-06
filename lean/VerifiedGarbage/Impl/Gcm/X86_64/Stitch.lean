@@ -34,7 +34,7 @@ round key, `r11` to `scratch`.
 namespace VG.Impl.Gcm.X86_64.Stitch
 
 open VG.X86_64
-open VG.Impl.Aes.X86_64.Vaes (keyOpK roundK aesK ctrsK xorDataK)
+open VG.Impl.Aes.X86_64.Vaes (keyOpK roundK aesK ctrsK)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ revMask poly hInv mul)
 open VG.Impl.Gcm.X86_64.Vpclmul (preg16 powersY powers16 zero ld reduce combine)
 
@@ -75,11 +75,26 @@ def setupC : List Instr :=
 /-- The powers, stored to `scratch`, and the registers for the loop. -/
 def setup : List Instr := setupG ++ storesK .r11 pregs 0 ++ setupC
 
-/-- Eight blocks encrypted into the data blocks `2j`… at `rdx + 32 j`, the
-GHASH loads `g i` after round `i`. -/
-def batch (j : Nat) (g : Nat → List Instr) : Prog isa :=
+/-- Where a pair of blocks read at `rdx + d` is written: back there, or, out
+of place (`ix`), at `rdx + r8 + d`, `r8` holding the distance from the data
+read to the output. -/
+def dstK (ix : Bool) (d : Nat) : MemOp :=
+  if ix then { base := .rdx, index := some .r8, disp := d } else at_ .rdx d
+
+/-- XOR block register `i` into the two blocks at `rdx + 32 (j + i)`, through
+`t`, and store the result to `dstK ix (32 (j + i))` (in place,
+`Vaes.xorDataK t .rdx`). -/
+def xorDataKM (ix : Bool) (t : XReg) : List XReg → Nat → List Instr
+  | [], _ => []
+  | b :: bs, j => ([.vmovdquLoad .l256 t (at_ .rdx (32 * j)), .vop (.vbin .vpxor .l256 b b t),
+      .vmovdquStore .l256 (dstK ix (32 * j)) b] : List Instr) ++ xorDataKM ix t bs (j + 1)
+
+/-- Eight blocks encrypted into the data blocks `2j`… at `rdx + 32 j`, or,
+out of place (`ix`), from there to `rdx + r8 + 32 j`, the GHASH loads `g i`
+after round `i`. -/
+def batch (j : Nat) (g : Nat → List Instr) (ix : Bool := false) : Prog isa :=
   .seq (.block (ctrsK .xmm14 .xmm0 .xmm15 aregs))
-    (.seq (aesK .xmm13 aregs g) (.block (xorDataK .xmm13 .rdx aregs j)))
+    (.seq (aesK .xmm13 aregs g) (.block (xorDataKM ix .xmm13 aregs j)))
 
 /-- The order of the GHASH loads of an encryption body: the product with `Y`
 last. -/
@@ -145,11 +160,12 @@ def dA : Nat → List Instr := gq ordD 0 false
 /-- The GHASH loads of the second batch: blocks 8–15, then the reduction. -/
 def dB : Nat → List Instr := gq ordD 4 true
 
-/-- A group hashed and decrypted, at `rdx`. -/
-def dbody : Prog isa :=
+/-- A group hashed and decrypted, at `rdx`, or, out of place (`ix`), from
+there to `rdx + r8`. -/
+def dbody (ix : Bool := false) : Prog isa :=
   .seq (.block zero)
-    (.seq (batch 0 dA)
-      (.seq (batch 4 dB)
+    (.seq (batch 0 dA ix)
+      (.seq (batch 4 dB ix)
         (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 16)])))
 
 /-- `n` (a multiple of 16, at least 16) blocks. -/

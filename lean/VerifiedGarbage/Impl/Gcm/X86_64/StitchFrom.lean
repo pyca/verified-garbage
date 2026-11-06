@@ -16,9 +16,9 @@ The setup ends with `setupCFrom` in place of `Stitch.setupC`: it points
 `r8 ← dst - src` before `r10` becomes the last round key's address. `r8`
 then stays constant: the ciphertext blocks are loaded from `[rdx + 32 j]`,
 by the GHASH loads too, as in place, and each pair of plaintext blocks is
-stored to `[rdx + r8 + 32 j]` (`xorDataKFrom`), so that the GHASH loads read
-the ciphertext, which nothing writes. Everything else is the code of
-`StitchR.decR`'s loop.
+stored to `[rdx + r8 + 32 j]`, so that the GHASH loads read the ciphertext,
+which nothing writes: the loop is `StitchR.decR`'s, `Stitch.dbody`, out of
+place.
 -/
 
 @[expose] public section
@@ -27,18 +27,7 @@ namespace VG.Impl.Gcm.X86_64.StitchFrom
 
 open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
-open VG.Impl.Aes.X86_64.Vaes (ctrsK aesK)
-open VG.Impl.Gcm.X86_64.Stitch (aregs storesK pregs dA dB storeCtr storeY)
-open VG.Impl.Gcm.X86_64.StitchZTo (atIx)
-open VG.Impl.Gcm.X86_64.Vpclmul (zero)
-
-/-- XOR block register `i` into the two ciphertext blocks at
-`base + 32 (j + i)`, through `t`, and store the result to
-`base + idx + 32 (j + i)` (`Vaes.xorDataK` out of place). -/
-def xorDataKFrom (t : XReg) (base idx : Reg) : List XReg → Nat → List Instr
-  | [], _ => []
-  | b :: bs, j => ([.vmovdquLoad .l256 t (at_ base (32 * j)), .vop (.vbin .vpxor .l256 b b t),
-      .vmovdquStore .l256 (atIx base idx (32 * j)) b] : List Instr) ++ xorDataKFrom t base idx bs (j + 1)
+open VG.Impl.Gcm.X86_64.Stitch (storesK pregs dbody storeCtr storeY)
 
 /-- `Y`, the counter pair, the increment, `src` in `rdx`, `dst - src` in
 `r8` and the last round key's address in `r10`. -/
@@ -55,22 +44,9 @@ def setupCFrom : List Instr :=
 /-- `StitchR.setup`, out of place. -/
 def setup : List Instr := StitchZR.setupGP ++ storesK .r11 pregs 0 ++ setupCFrom
 
-/-- Eight ciphertext blocks at `rdx + 32 j` decrypted to `rdx + r8 + 32 j`,
-the GHASH loads `g i` after round `i`. -/
-def batchFrom (j : Nat) (g : Nat → List Instr) : Prog isa :=
-  .seq (.block (ctrsK .xmm14 .xmm0 .xmm15 aregs))
-    (.seq (aesK .xmm13 aregs g) (.block (xorDataKFrom .xmm13 .rdx .r8 aregs j)))
-
-/-- A group hashed and decrypted, from `rdx` to `rdx + r8`. -/
-def dbodyFrom : Prog isa :=
-  .seq (.block zero)
-    (.seq (batchFrom 0 dA)
-      (.seq (batchFrom 4 dB)
-        (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 16)])))
-
 /-- `StitchR.decR`, out of place: `n` (a multiple of 16, at least 16)
 blocks. -/
 def decR : Prog isa :=
-  .seq (.block setup) (.seq (.loop dbodyFrom .ae) (.block (storeCtr ++ storeY)))
+  .seq (.block setup) (.seq (.loop (dbody true) .ae) (.block (storeCtr ++ storeY)))
 
 end VG.Impl.Gcm.X86_64.StitchFrom
