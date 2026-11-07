@@ -31,6 +31,26 @@ arrays and slots, everything else as it was. Each operation is a piece
 
 @[expose] public section
 
+namespace VG.Proof.Rsa.RISCV64.Keys
+open VG VG.RISCV64 VG.Proof.Mont
+
+/-- Outside the arrays and header slots a step writes, memory is unchanged.
+(As `Proof/Rsa/RISCV64/KeyLayout.lean` had it before #4344.) -/
+theorem Frame.outside {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
+    (h : Frame B w js ds m m') {Z : Nat} (hj : ∀ j ∈ js, arr w j + S w ≤ Z) (hd : ∀ d ∈ ds, d + 8 ≤ Z) :
+    Outside B 0 Z m m' :=
+  fun x hx => h.out hj hd (by omega_arith)
+
+/-- The frame of a step, the arrays below `N` and the slots in the header.
+(As `Proof/Rsa/RISCV64/KeyLayout.lean` had it before #4344, which removed it
+when nothing on `main` used it.) -/
+theorem Ws.frame_out {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) {js ds : List Nat}
+    {m m' : Mem} (f : Frame B w js ds m m') (hj : ∀ j ∈ js, j < N) (hd : ∀ d ∈ ds, d + 8 ≤ hdr) :
+    Outside B 0 Z m m' :=
+  f.outside (fun j hj' => h.arr_fit (hj j hj')) fun d hd' => by have := hd d hd'; have := h.hdr_le; omega_arith
+
+end VG.Proof.Rsa.RISCV64.Keys
+
 namespace VG.Proof.Dsa.RISCV64.PSearch
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Proof.Mont
 open VG.Proof.Rsa.RISCV64.Keys (Ws arr num slot S opRegs)
