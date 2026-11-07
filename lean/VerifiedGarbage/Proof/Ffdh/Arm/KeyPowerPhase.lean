@@ -4,6 +4,22 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpStep
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Impl.Bignum.Arm.TwoExp
+import VerifiedGarbage.Proof.Bignum.Arm.TwoExpState
+import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
+import VerifiedGarbage.Proof.Bignum.Arm.ExpByteLoad
+import VerifiedGarbage.Impl.Bignum.Arm.Exp
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.FoldedPublic
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Public generator dispatch with a full-width secret exponent
 

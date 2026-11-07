@@ -7,6 +7,9 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.X86.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # A concrete witness for the comb signing contract -/
 

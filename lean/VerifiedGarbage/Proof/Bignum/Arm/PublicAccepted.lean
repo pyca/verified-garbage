@@ -2,6 +2,10 @@ module
 
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicData
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicStack
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 
 /-! # Preserve the secret acceptance bit across workspace-only arithmetic -/
 

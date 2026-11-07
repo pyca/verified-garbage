@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # Workspace and stack invariants shared by repeated modular doublings -/
 

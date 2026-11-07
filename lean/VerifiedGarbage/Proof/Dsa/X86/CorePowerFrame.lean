@@ -10,6 +10,15 @@ public import VerifiedGarbage.Spec.Weierstrass
 
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextMul
+import VerifiedGarbage.Proof.Mont.X86.ContextMath
+import VerifiedGarbage.Proof.Mont.X86.ExponentMask
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+public import VerifiedGarbage.Proof.Mont.X86.ShiftDown
 
 /-! # Short scalar exponents in a full-width arithmetic context -/
 

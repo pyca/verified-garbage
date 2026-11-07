@@ -7,6 +7,9 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Spec.RsaKeyGen
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 
 /-! # Scan the public exponent supplied through the cdecl argument slots -/
 

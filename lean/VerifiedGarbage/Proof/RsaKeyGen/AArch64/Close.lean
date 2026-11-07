@@ -101,6 +101,23 @@ def closeRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w aX, 8 * (w + 2)), (slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)),
     (8 * kT0, 8)]
 
+/-- `closeRanges`'s ranges, in the header and in the arrays. -/
+theorem closeRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(208, 8)]
+    [(1, 1), (2, 1), (3, 1), (6, 1)] (closeRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    closeRanges, Public.sCnt, Public.aX, Public.aAcc, Public.aTmp, Public.aY, aX, aAcc, aTmp, aY, kT0, sFn] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact .inr ⟨(1, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+
 theorem closeRanges_mut (w : Nat) : ∀ r ∈ closeRanges w, KMut r := by
   simp only [closeRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl | rfl)
@@ -325,5 +342,6 @@ theorem closeCheck_ok {s : State} {B : Addr} {Z w : Nat} {pP : Addr} {pB : List 
   rw [hY, hA, otherPrime_ne (by omega_using [hlen8]), tooClose_some]
   congr 1
   rw [← decide_not]; exact decide_eq_decide.mpr Nat.not_lt
+
 
 end VG.Proof.RsaKeyGen.AArch64
