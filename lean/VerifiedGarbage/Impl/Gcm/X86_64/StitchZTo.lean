@@ -56,29 +56,24 @@ the GHASH work `g i` after round `i`. -/
 abbrev batchTo (j : Nat) (g : Nat → List Instr) : Prog isa := StitchZ.batch j g false true
 
 /-- The first group, encrypted only. -/
-def firstTo : Prog isa := batchTo 0 fun _ => []
+abbrev firstTo : Prog isa := StitchZ.first true
 
 /-- A group encrypted (to `rdx + 256`) and the previous one hashed (at `rdx`). -/
-def bodyTo : Prog isa :=
-  .seq (batchTo 4 gq) (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 32)])
+abbrev bodyTo : Prog isa := StitchZ.body true
 
 /-- Three groups encrypted (to `rdx + 768`) and the three before hashed (at
 `rdx`). -/
-def body48To : Prog isa :=
-  .seq (batchTo 12 (gq48 0)) (.seq (batchTo 16 (gq48 1)) (.seq (batchTo 20 (gq48 2))
-    (.block [.alu .add .rdx (.imm 768), .alu .sub .r9 (.imm 48), .alu .cmp .r9 (.imm 96)])))
+abbrev body48To : Prog isa := StitchZ.body48 true
 
 /-- After the tables of 48 blocks: the next two groups, the loop, and two of
 the three groups left to hash. -/
-def bigRestTo : Prog isa :=
-  .seq (batchTo 4 fun _ => []) (.seq (batchTo 8 fun _ => [])
-    (.seq (.loop body48To .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv)))))
+abbrev bigRestTo : Prog isa := StitchZ.bigRest true
 
 /-- `StitchZ.big`, out of place. -/
-def bigTo : Prog isa := .seq (.block pow48) bigRestTo
+abbrev bigTo : Prog isa := StitchZ.big true
 
 /-- `StitchZP.bigP`, out of place. -/
-def bigPTo : Prog isa := .seq (.block powP48) bigRestTo
+abbrev bigPTo : Prog isa := StitchZP.bigP true
 
 /-- `n` (a multiple of 16, at least 16) blocks, after the setup `su`, with
 `bigC` from `big` blocks on. -/

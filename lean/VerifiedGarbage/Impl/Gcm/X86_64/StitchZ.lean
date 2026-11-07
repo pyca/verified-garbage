@@ -129,12 +129,13 @@ def setupZ : List Instr :=
 
 def setup : List Instr := Stitch.setup ++ setupZ
 
-/-- The first group, encrypted only. -/
-def first : Prog isa := batch 0 fun _ => []
+/-- The first group, encrypted only, in place or, from `rdx + r8`, out of
+place (`ld`). -/
+def first (ld : Bool := false) : Prog isa := batch 0 (fun _ => []) false ld
 
 /-- A group encrypted (at `rdx + 256`) and the previous one hashed (at `rdx`). -/
-def body : Prog isa :=
-  .seq (batch 4 gq) (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 32)])
+def body (ld : Bool := false) : Prog isa :=
+  .seq (batch 4 gq false ld) (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 32)])
 
 /-- The last group hashed, at `rdx`. -/
 def lastG : List Instr := (List.range 4).flatMap (fun i => ghLoad (ord i)) ++ fin
@@ -209,8 +210,8 @@ def pow48 : List Instr :=
 
 /-- Three groups encrypted (at `rdx + 768`) and the three before hashed (at
 `rdx`). -/
-def body48 : Prog isa :=
-  .seq (batch 12 (gq48 0)) (.seq (batch 16 (gq48 1)) (.seq (batch 20 (gq48 2))
+def body48 (ld : Bool := false) : Prog isa :=
+  .seq (batch 12 (gq48 0) false ld) (.seq (batch 16 (gq48 1) false ld) (.seq (batch 20 (gq48 2) false ld)
     (.block [.alu .add .rdx (.imm 768), .alu .sub .r9 (.imm 48), .alu .cmp .r9 (.imm 96)])))
 
 /-- The next group. -/
@@ -226,11 +227,15 @@ a time: measured on Emerald Rapids, they are slower with them below 144
 blocks. -/
 def bigMinPE : BitVec 32 := 144
 
-/-- At least 256 blocks, the first group encrypted: the powers, the next two
-groups, the loop, and two of the three groups left to hash. -/
-def big : Prog isa :=
-  .seq (.block pow48) (.seq (batch 4 fun _ => []) (.seq (batch 8 fun _ => [])
-    (.seq (.loop body48 .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv))))))
+/-- After the tables of 48 blocks: the next two groups, the loop, and two of
+the three groups left to hash. -/
+def bigRest (ld : Bool := false) : Prog isa :=
+  .seq (batch 4 (fun _ => []) false ld) (.seq (batch 8 (fun _ => []) false ld)
+    (.seq (.loop (body48 ld) .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv)))))
+
+/-- At least 256 blocks, the first group encrypted: the powers, then
+`bigRest`. -/
+def big (ld : Bool := false) : Prog isa := .seq (.block pow48) (bigRest ld)
 
 /-- `n` (a multiple of 16, at least 16) blocks. -/
 def enc : Prog isa :=
