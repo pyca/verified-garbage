@@ -20,8 +20,8 @@ public meta import VerifiedGarbage.Proof.Framework.AddrArith
 /-!
 # Experiment: ChaCha20's `apply` without secret residue (x86-64)
 
-`vg_chacha20_apply_avx512`, scrubbed (`X86_64.Scrub.scrubReg`), named with
-`_scrub`, for measuring. The residue analysis starts with the 8 bytes of
+`vg_chacha20_apply`, `vg_chacha20_apply_avx2` and `vg_chacha20_apply_avx512`,
+scrubbed (`X86_64.Scrub.scrubReg`), named with `_scrub`, for measuring. The residue analysis starts with the 8 bytes of
 the state that hold the number of bytes of keystream left (`leftAt`) public:
 the contract declares that number as leaked, so two runs that agree on what
 is public agree on those bytes (`pubOk`).
@@ -97,23 +97,42 @@ theorem pubOk (stack : Nat) : PubOk (applyContract X86_64.abi stack) pubs := by
       show (p + 128 : Addr) = p + BitVec.ofNat 64 128 from rfl, Offset.add_add, Nat.add_sub_cancel' hj₁]
   rw [e s₁.mem, e s₂.mem, hw]
 
-def applyR : Registration Spec.ChaCha20.applyApi X86_64.target where
-  suffix := "_avx512_scrub"
-  code := Impl.ChaCha20.X86_64.Stream.apply XorImpl.avx512.callee
+/-- `apply` over the implementation `v` of `vg_chacha20_xor`, with suffix `sfx`. -/
+def applyR (v : XorImpl) (sfx : String) : Registration Spec.ChaCha20.applyApi X86_64.target where
+  suffix := sfx
+  code := Impl.ChaCha20.X86_64.Stream.apply v.callee
   stack := 24
-  verified := Proof.ChaCha20.X86_64.Stream.apply_verified .avx512
-  spSafe := Proof.ChaCha20.X86_64.Stream.apply_spSafe .avx512
-  features := XorImpl.avx512.features
+  verified := Proof.ChaCha20.X86_64.Stream.apply_verified v
+  spSafe := Proof.ChaCha20.X86_64.Stream.apply_spSafe v
+  features := v.features
 
-def applyKs : List Nat := keep_for% Spec.ChaCha20.applyApi.sig applyR.stack applyR.code pubs
+def scalarR := applyR .scalar "_scrub"
+def avx2R := applyR .avx2 "_avx2_scrub"
+def avx512R := applyR .avx512 "_avx512_scrub"
 
-theorem applyRes : ResOk applyR.code applyR.contract applyR.stack applyKs (chunks applyR.stack) :=
-  resOk_reg applyR applyKs (pubs := pubs) (by decide) (pubOk _) (by taint_decide)
+def scalarKs : List Nat := keep_for% Spec.ChaCha20.applyApi.sig scalarR.stack scalarR.code pubs
+def avx2Ks : List Nat := keep_for% Spec.ChaCha20.applyApi.sig avx2R.stack avx2R.code pubs
+def avx512Ks : List Nat := keep_for% Spec.ChaCha20.applyApi.sig avx512R.stack avx512R.code pubs
 
-def apply := scrubReg applyR .avx applyKs (by lit_decide) (by decide) (by decide) (by lit_decide) (by decide)
-  (applyOut _) applyRes rfl
+theorem scalarRes : ResOk scalarR.code scalarR.contract scalarR.stack scalarKs (chunks scalarR.stack) :=
+  resOk_reg scalarR scalarKs (pubs := pubs) (by decide) (pubOk _) (by taint_decide)
+theorem avx2Res : ResOk avx2R.code avx2R.contract avx2R.stack avx2Ks (chunks avx2R.stack) :=
+  resOk_reg avx2R avx2Ks (pubs := pubs) (by decide) (pubOk _) (by taint_decide)
+theorem avx512Res : ResOk avx512R.code avx512R.contract avx512R.stack avx512Ks (chunks avx512R.stack) :=
+  resOk_reg avx512R avx512Ks (pubs := pubs) (by decide) (pubOk _) (by taint_decide)
 
-theorem apply_noResidue : NoResidue apply.code applyR.contract (applySig.retBits 64) :=
-  scrubReg_noResidue applyR .avx applyKs _ _ _ _ _ _ applyRes rfl
+def applyScalar := scrubReg scalarR .sse scalarKs (by lit_decide) (by decide) (by decide) (by lit_decide)
+  (by decide) (applyOut _) scalarRes rfl
+def applyAvx2 := scrubReg avx2R .avx avx2Ks (by lit_decide) (by decide) (by decide) (by lit_decide)
+  (by decide) (applyOut _) avx2Res rfl
+def applyAvx512 := scrubReg avx512R .avx avx512Ks (by lit_decide) (by decide) (by decide) (by lit_decide)
+  (by decide) (applyOut _) avx512Res rfl
+
+theorem applyScalar_noResidue : NoResidue applyScalar.code scalarR.contract (applySig.retBits 64) :=
+  scrubReg_noResidue scalarR .sse scalarKs _ _ _ _ _ _ scalarRes rfl
+theorem applyAvx2_noResidue : NoResidue applyAvx2.code avx2R.contract (applySig.retBits 64) :=
+  scrubReg_noResidue avx2R .avx avx2Ks _ _ _ _ _ _ avx2Res rfl
+theorem applyAvx512_noResidue : NoResidue applyAvx512.code avx512R.contract (applySig.retBits 64) :=
+  scrubReg_noResidue avx512R .avx avx512Ks _ _ _ _ _ _ avx512Res rfl
 
 end VG.Proof.ChaCha20.X86_64.ScrubExp

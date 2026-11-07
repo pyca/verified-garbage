@@ -82,8 +82,8 @@ structure Args (s₀ s : State) : Prop where
 
 theorem args_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) :
     WP isa (.block blocksArgs) s (Args s₀) :=
-  WP.mono (args_exec h.rbx (h.w hp) (by rw [h.rd, hp.rd])) fun _ ⟨_, rdi₁, rsi₁, rcx₁, rdx₁, _, _, k₁, rd₁, wr₁⟩ =>
-    ⟨rdi₁, by rw [rsi₁, h.rbp], by rw [rdx₁, h.rdx], rcx₁, by rw [k₁ .rsp (by simp), h.keep .rsp (by simp)],
+  WP.mono (args_exec h.r13 (h.w hp) (by rw [h.rd, hp.rd])) fun _ ⟨_, rdi₁, rsi₁, rcx₁, rdx₁, _, _, k₁, rd₁, wr₁⟩ =>
+    ⟨rdi₁, by rw [rsi₁, h.r14], by rw [rdx₁, h.rdx], rcx₁, by rw [k₁ .rsp (by simp), h.keep .rsp (by simp)],
       by rw [rd₁, h.rd, hp.rd], by rw [wr₁, h.wr, hp.wr]⟩
 
 theorem Args.covers {s₀ s : State} (h : Args s₀ s) :
@@ -118,13 +118,13 @@ theorem Args.pre (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s : State} (hp : APre
 
 set_option simprocs false in
 theorem test_ok {s₀ : State} {s : State} (h : Q2 s₀ s) :
-    WP isa (.block [.alu .test .r12 (.reg .r12)]) s fun s₁ => Q2 s₀ s₁ ∧ s₁.zf = some (decide (T s₀ = 0)) := by
+    WP isa (.block [.alu .test .r15 (.reg .r15)]) s fun s₁ => Q2 s₀ s₁ ∧ s₁.zf = some (decide (T s₀ = 0)) := by
   have hT64 : T s₀ < 64 := Nat.mod_lt _ (by decide)
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
-  refine ⟨⟨h.rbx, h.rbp, h.r12, h.keep, h.rd, h.wr, h.state, h.buf, h.saved, h.done, h.frame⟩, ?_⟩
-  rw [BitVec.and_self, h.r12, ← Offset.ofNat_sub_ofNat_beq (x := T s₀) (y := 0) (by omega) (by omega)]
+  refine ⟨⟨h.r13, h.r14, h.r15, h.keep, h.rd, h.wr, h.state, h.buf, h.saved, h.done, h.frame⟩, ?_⟩
+  rw [BitVec.and_self, h.r15, ← Offset.ofNat_sub_ofNat_beq (x := T s₀) (y := 0) (by omega) (by omega)]
   simp
 
 /-- The arguments of the call of the block function, and the registers the
@@ -132,9 +132,9 @@ rest uses. -/
 structure TArgs (s₀ s : State) : Prop where
   rdi : s.gpr .rdi = st s₀
   rsi : s.gpr .rsi = st s₀ + BitVec.ofNat 64 64
-  rbx : s.gpr .rbx = st s₀
-  rbp : s.gpr .rbp = dp s₀ + BitVec.ofNat 64 (H s₀ + 64 * NB s₀)
-  r12 : s.gpr .r12 = BitVec.ofNat 64 (T s₀)
+  r13 : s.gpr .r13 = st s₀
+  r14 : s.gpr .r14 = dp s₀ + BitVec.ofNat 64 (H s₀ + 64 * NB s₀)
+  r15 : s.gpr .r15 = BitVec.ofNat 64 (T s₀)
   rsp : s.gpr .rsp = s₀.gpr .rsp
   rd : s.rd = []
   wr : s.wr = [stR s₀, dR s₀]
@@ -145,16 +145,16 @@ theorem tailArgs_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q2 s₀ s) 
   apply WP.of_runBlock
   simp (config := {decide := true}) only [tailArgs, runBlock_cons, runStep_some, runBlock_nil, exec,
     readSrc, execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
-    Option.some.injEq, exists_eq_left', ite_true, ite_false, h.rbx]
-  exact ⟨rfl, rfl, by simp (config := {decide := true}) [h.rbx], by simp (config := {decide := true}) [h.rbp],
-    by simp (config := {decide := true}) [h.r12], by simp (config := {decide := true}) [h.keep .rsp (by simp)],
+    Option.some.injEq, exists_eq_left', ite_true, ite_false, h.r13]
+  exact ⟨rfl, rfl, by simp (config := {decide := true}) [h.r13], by simp (config := {decide := true}) [h.r14],
+    by simp (config := {decide := true}) [h.r15], by simp (config := {decide := true}) [h.keep .rsp (by simp)],
     by simp [h.rd, hp.rd], by simp [h.wr, hp.wr]⟩
 
 /-- After the block function: the registers the rest uses. -/
 structure TAfter (s₀ s : State) : Prop where
-  rbx : s.gpr .rbx = st s₀
-  rbp : s.gpr .rbp = dp s₀ + BitVec.ofNat 64 (H s₀ + 64 * NB s₀)
-  r12 : s.gpr .r12 = BitVec.ofNat 64 (T s₀)
+  r13 : s.gpr .r13 = st s₀
+  r14 : s.gpr .r14 = dp s₀ + BitVec.ofNat 64 (H s₀ + 64 * NB s₀)
+  r15 : s.gpr .r15 = BitVec.ofNat 64 (T s₀)
   rsp : s.gpr .rsp = s₀.gpr .rsp
 
 theorem TArgs.pre {s₀ s : State} (hp : APre s₀) (h : TArgs s₀ s) :
@@ -187,8 +187,8 @@ theorem TArgs.call {s₀ s : State} (hp : APre s₀) (h : TArgs s₀ s) :
   refine block_call h.rdi h.rsi (Offset.disjoint_base _ (by omega) (by omega))
     (by rw [hb8]; exact (hp.stk_st.sub_left (below8_stk s₀)).sub_right (bufR_sub s₀))
     (by rw [hb8]; exact (hp.stk_st.sub_left (below8_stk s₀)).sub_right stS) h.covers.1 h.covers.2
-    fun s' _ _ cs _ _ _ => ⟨by rw [cs .rbx (by simp [calleeSaved]), h.rbx],
-      by rw [cs .rbp (by simp [calleeSaved]), h.rbp], by rw [cs .r12 (by simp [calleeSaved]), h.r12],
+    fun s' _ _ cs _ _ _ => ⟨by rw [cs .r13 (by simp [calleeSaved]), h.r13],
+      by rw [cs .r14 (by simp [calleeSaved]), h.r14], by rw [cs .r15 (by simp [calleeSaved]), h.r15],
       by rw [cs .rsp (by simp [calleeSaved]), h.rsp]⟩
 
 section
@@ -237,12 +237,12 @@ theorem part2_rel (v : Proof.ChaCha20.X86_64.XorImpl) :
   refine RelCT.ite (fun x y ⟨hx, hy⟩ => by simp only [eval, hx.zf, hy.zf, h.eqNB])
     (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)) ?_
   refine RelCT.seq (R := fun x y => Args a x ∧ Args b y) ?_ (xor_rel h v)
-  refine RelCT.post (taintRegs [.rbx, .rbp, .r12, .rdx, .rsp] (fun x y ⟨⟨hx, hy⟩, _⟩ r hr => by
+  refine RelCT.post (taintRegs [.r13, .r14, .r15, .rdx, .rsp] (fun x y ⟨⟨hx, hy⟩, _⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
-      · rw [hx.rbx, hy.rbx, h.hst]
-      · rw [hx.rbp, hy.rbp, h.hdp, h.eqH]
-      · rw [hx.r12, hy.r12, h.eqL, h.eqH]
+      · rw [hx.r13, hy.r13, h.hst]
+      · rw [hx.r14, hy.r14, h.hdp, h.eqH]
+      · rw [hx.r15, hy.r15, h.eqL, h.eqH]
       · rw [hx.rdx, hy.rdx, h.eqNB]
       · rw [hx.keep .rsp (by simp), hy.keep .rsp (by simp), h.hrsp]) (by taint_decide))
     fun x y ⟨⟨hx, hy⟩, _⟩ => ⟨args_ok h.pa hx, args_ok h.pb hy⟩
@@ -257,16 +257,16 @@ theorem part3_rel : RelCT isa (fun x y => Q2 a x ∧ Q2 b y) part3 fun x y => Q3
   refine RelCT.ite (fun x y ⟨hx, hy⟩ => by simp only [eval, hx.2, hy.2, h.eqT])
     (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)) ?_
   refine RelCT.seq (R := fun x y => TArgs a x ∧ TArgs b y)
-    (RelCT.post (taintRegs [.rbx] (fun x y ⟨⟨hx, hy⟩, _⟩ r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; rw [hx.1.rbx, hy.1.rbx, h.hst]) (by taint_decide))
+    (RelCT.post (taintRegs [.r13] (fun x y ⟨⟨hx, hy⟩, _⟩ r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [hx.1.r13, hy.1.r13, h.hst]) (by taint_decide))
       fun x y ⟨⟨hx, hy⟩, _⟩ => ⟨tailArgs_ok h.pa hx.1, tailArgs_ok h.pb hy.1⟩) ?_
   refine RelCT.seq (R := fun x y => TAfter a x ∧ TAfter b y) ?_
-    (taintRegs [.rbx, .rbp, .r12, .rsp] (fun x y ⟨hx, hy⟩ r hr => by
+    (taintRegs [.r13, .r14, .r15, .rsp] (fun x y ⟨hx, hy⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · rw [hx.rbx, hy.rbx, h.hst]
-      · rw [hx.rbp, hy.rbp, h.hdp, h.eqH, h.eqNB]
-      · rw [hx.r12, hy.r12, h.eqT]
+      · rw [hx.r13, hy.r13, h.hst]
+      · rw [hx.r14, hy.r14, h.hdp, h.eqH, h.eqNB]
+      · rw [hx.r15, hy.r15, h.eqT]
       · rw [hx.rsp, hy.rsp, h.hrsp]) (by taint_decide))
   have hP : ∀ x y : State, TArgs a x ∧ TArgs b y → ∃ rd₁ wr₁ rd₂ wr₂ : List Region,
       Proof.ChaCha20.blockX86_64.pre (x.callEntry.withRegions rd₁ wr₁) ∧
@@ -294,10 +294,10 @@ theorem apply_rel (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hle : L a ≤ N a := by omega
   refine RelCT.seq (RelCT.mono (part1_rel h hle) (fun _ _ hp => hp.1) fun _ _ hq => hq)
     (RelCT.seq (part2_rel h v) (RelCT.seq (part3_rel h) ?_))
-  exact taintRegs [.rbx, .rsp] (fun x y ⟨hx, hy⟩ r hr => by
+  exact taintRegs [.r13, .rsp] (fun x y ⟨hx, hy⟩ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · rw [hx.rbx, hy.rbx, h.hst]
+    · rw [hx.r13, hy.r13, h.hst]
     · rw [hx.keep .rsp (by simp), hy.keep .rsp (by simp), h.hrsp]) (by taint_decide)
 
 end
