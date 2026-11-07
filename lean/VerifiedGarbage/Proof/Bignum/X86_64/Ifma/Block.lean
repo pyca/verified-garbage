@@ -26,18 +26,18 @@ open VG.Proof.Bignum.X86_64.AmmSym (ops Ctx Keeps ofNat_add64)
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
 theorem AmmOk.bounds (hl : AmmOk l) : 2 ≤ l.R ∧ l.R ≤ 20 := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The vector registers: the lanes' roles, each lane's `b` and `u`, the zero
 register and the temporary, of the 32. -/
 theorem AmmOk.regs (hl : AmmOk l) : 1 ≤ l.nl ∧ l.nl * l.R + 2 * l.nl + 1 < 32 := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The steps: `S / R` blocks, then `S % R` more, at most `4 R`. -/
 theorem AmmOk.steps (hl : AmmOk l) :
     1 ≤ l.S / l.R ∧ l.S / l.R ≤ 4 ∧ 2 ≤ l.S ∧ l.S ≤ l.L ∧ l.R * (l.S / l.R) + l.S % l.R = l.S ∧
       l.S % l.R < l.R := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem LayOk.bounds (hl : LayOk l) : 2 ≤ l.R ∧ l.R ≤ 10 := by
   rcases hl with rfl | rfl | rfl <;> decide

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+public import VerifiedGarbage.Proof.Gcm.AArch64.KeyPowers
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -11,6 +12,9 @@ public import VerifiedGarbage.TCB.AArch64.Print
 namespace VG.Artifacts.Gcm.AArch64
 
 def artifacts : List Artifact := [
+  Spec.Gcm.storePowersApi.artifact AArch64.target {
+    code := Impl.Gcm.AArch64.keyPowers
+    verified := Proof.Gcm.AArch64.KeyPowers.keyPowers_verified },
   Spec.Gcm.storePowersApi.artifact AArch64.target {
     suffix := "_aes"
     code := Impl.Gcm.AArch64.Pmull.keyPowers

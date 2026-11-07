@@ -36,7 +36,7 @@ carry word `s1`, in that order: the sum is below `2¹²⁸`, its low word stored
 and its high word the next carry. The operand's word `yⱼ` is in `a7`, loaded
 a step ahead, so that a step's multiplications need not wait for its load:
 the step loads `yⱼ₊₁` (a row reads one word past its operand, within the
-operand's array of `w + 2` words). The rows are unrolled by eight, the rest of
+operand's array of `w + 2` words). The rows are unrolled by eight as four pipelined pairs, the rest of
 a row one word at a time (`macRun`). `a7`, `m`'s base, is recomputed from
 `a5` before `finish`: `m` is the layout's array 0, `T` its array 2.
 
@@ -50,7 +50,7 @@ Registers: `t3` a row's pointer (into `a` in `cross`, into `T` in `diag` and
 the carry out of word `i + w` (`reduce`); in a row, `t4` and `a0` the
 pointers into `T` and the operand, `t5` and `t6` the groups of eight and the
 single words left, `s0` the multiplier, `s1` the carry, `s2`–`s4`
-temporaries, `a7` the operand's next word. The code writes `a0`, `a1`,
+temporaries, `a4` the next product's low word, `a7` the operand's next word. The code writes `a0`, `a1`, `a4`,
 `t2`–`t6` and `s0`–`s4`, and `a5` and `a7`, which it restores, and the
 memory of `T`, the temporary and `[o]`.
 -/
@@ -81,9 +81,27 @@ def sqrMac (k : Nat) : List Instr :=
     .add .s3 .s3 .s4, .sltu .s4 .s3 .s4, .add .s2 .s2 .s4,
     .add .s3 .s3 .s1, .sltu .s4 .s3 .s1, .add .s1 .s2 .s4, .store .d .s3 .t4 k]
 
+/-- Two row steps, overlapping the second low multiplication with the first
+carry chain. Only `a4` is added to the scalar step's temporaries. -/
+def sqrMacPair (k : Nat) : List Instr :=
+  [.load .d .s4 .t4 k, .mul .s3 .s0 .a7, .mulhu .s2 .s0 .a7,
+    .load .d .a7 .a0 (k + 8), .mul .a4 .s0 .a7,
+    .add .s3 .s3 .s4, .sltu .s4 .s3 .s4, .add .s2 .s2 .s4,
+    .add .s3 .s3 .s1, .sltu .s4 .s3 .s1, .add .s1 .s2 .s4,
+    .mulhu .s2 .s0 .a7, .load .d .a7 .a0 (k + 16), .load .d .s4 .t4 (k + 8),
+    .store .d .s3 .t4 k,
+    .add .a4 .a4 .s4, .sltu .s4 .a4 .s4, .add .s2 .s2 .s4,
+    .add .a4 .a4 .s1, .sltu .s4 .a4 .s1, .add .s1 .s2 .s4,
+    .store .d .a4 .t4 (k + 8)]
+
+/-- Four pipelined pairs in an eight-word group; scalar steps otherwise. -/
+def macGroupSteps (U : Nat) : List Instr :=
+  if U = 8 then (List.range 4).flatMap (fun k => sqrMacPair (16 * k))
+  else (List.range U).flatMap (fun k => sqrMac (8 * k))
+
 /-- `U` steps of a row, and the pointers advanced past them. -/
 def macGroup (U : Nat) : List Instr :=
-  (List.range U).flatMap (fun k => sqrMac (8 * k)) ++
+  macGroupSteps U ++
     [.addi .t4 .t4 ((8 * U : Nat) : Int), .addi .a0 .a0 ((8 * U : Nat) : Int)]
 
 /-- A row of `t5` steps: the operand's first word into `a7`, groups of

@@ -380,6 +380,12 @@ def Instr.encode : Instr → Option (List Nat)
   -- "MSR (immediate)": `1101010100 0 00 op1 0100 CRm op2 11111`, with the
   -- PSTATE field DIT, `op1 = 0b011`, `op2 = 0b010`, and `CRm` the immediate.
   | .msrDitImm on => some [0xD500401F ||| 3 <<< 16 ||| on.toNat <<< 8 ||| 2 <<< 5]
+  -- The barriers, `11010101000000110011 CRm 1 opc 11111` (DDI 0602 2026-03):
+  -- "DSB" with `CRm = '1111'` (SY) and `opc = '00'`, "ISB" with `CRm =
+  -- '1111'` (SY) and `opc = '10'`, "SB" with `CRm = '0000'` and `opc = '11'`.
+  | .barrier .dsbSy => some [0xD5033F9F]
+  | .barrier .isb => some [0xD5033FDF]
+  | .barrier .sb => some [0xD50330FF]
   | .adrSym .. | .align _ => none
 where
   /-- The fields `o0 op1 CRn CRm op2` (19–5) of the system register DIT. -/

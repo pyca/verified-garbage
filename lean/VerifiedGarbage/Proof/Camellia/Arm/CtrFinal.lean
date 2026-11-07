@@ -905,7 +905,6 @@ theorem tail_xor_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : TCall s₀ 
   have sp₄ : s₄.sp = s₀.sp := by rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp, h.sp]
   have blkT : (cBlk s₀).Disjoint (fTail s₀) := ((hp.data_sv.sub_left (tail_sub s₀)).sub_right (blk_sv_sub s₀)).symm
   have xp : XPre s₄ (cBk32 s₀) (fT s₀) (fU s₀) := {
-    pos := by omega
     fK := by rw [hbk]; omega
     fR := by rw [hT]; omega
     disj := by rw [aT, bkA]; exact blkT.sub_left (Region.sub_prefix (by omega))

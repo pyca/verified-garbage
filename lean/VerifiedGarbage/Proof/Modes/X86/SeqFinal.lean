@@ -48,7 +48,6 @@ the byte at the same offset of `R`, and changes memory only there.
 
 /-- What the loop works on. -/
 structure XPre (s₀ : State) (K R : BitVec 32) (r : Nat) : Prop where
-  pos : 0 < r
   fitK : K.toNat + r ≤ 2 ^ 32
   fitR : R.toNat + r ≤ 2 ^ 32
   disj : Region.Disjoint ⟨K.setWidth 64, r⟩ ⟨R.setWidth 64, r⟩
@@ -78,7 +77,6 @@ structure XDone (s₀ : State) (K R : BitVec 32) (r : Nat) (s : State) : Prop wh
   frame : Frame [⟨R.setWidth 64, r⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  syms : s.syms = s₀.syms
   gpr : ∀ x, x ≠ .eax → x ≠ .ecx → x ≠ .ebx → x ≠ .esi → x ≠ .ebp → s.gpr x = s₀.gpr x
 
 /-- `[K + j]`, as the code addresses it. -/
@@ -172,7 +170,7 @@ theorem tailByte_wp {s₀ : State} {K R : BitVec 32} {r : Nat} (hp : XPre s₀ K
     rw [z₇, ebp₆, Wp.ofNat_pred (by omega_using [hj]), Wp.ofNat_beq_zero (by omega_using [hR])]
     exact congrArg some (decide_eq_decide.mpr (by omega_using [hj]))
   by_cases hdone : j + 1 = r
-  · refine .inl ⟨by rw [hz, decide_eq_true hdone], fun q hq => ?_, fr₇, rd₇, wr₇, sy₇, gpr₇⟩
+  · refine .inl ⟨by rw [hz, decide_eq_true hdone], fun q hq => ?_, fr₇, rd₇, wr₇, gpr₇⟩
     rw [data₇ q hq, ite_eq_left (by omega_using [hq, hdone])]
   · exact .inr ⟨by rw [hz, decide_eq_false hdone], ebx₇, esi₇, ebp₇, by omega_using [hj, hdone], data₇, fr₇, rd₇,
       wr₇, sy₇, gpr₇⟩
@@ -733,8 +731,7 @@ theorem part_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
   have wr₆ : s₆.wr = s₀.wr := by rw [u₆.wr, u₅.wr, wr₄, hm.wr]
   have sT : Region.Sub ⟨tailA c D len, rr⟩ ⟨D.setWidth 64, len⟩ := VG.Offset.sub_base _ (by omega_using [hdm, hrr])
   have hxp : XPre s₆ (B + BitVec.ofNat 32 (4 * c.buf)) Dt rr :=
-    { pos := hr
-      fitK := by rw [tK]; omega_arith
+    { fitK := by rw [tK]; omega_arith
       fitR := by rw [tDt]; omega_using [hD, hdm, hrr]
       disj := by
         rw [hK, eDt]

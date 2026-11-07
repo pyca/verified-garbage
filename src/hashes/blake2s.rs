@@ -10,12 +10,9 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
-use crate::arch::blake2s::{
-    VG_BLAKE2S_FINALIZE_AVX_FEATURES, VG_BLAKE2S_UPDATE_AVX_FEATURES, vg_blake2s_finalize_avx,
-    vg_blake2s_update_avx,
+use crate::arch::dispatch::blake2s::{
+    vg_blake2s_finalize_auto, vg_blake2s_init_auto, vg_blake2s_update_auto,
 };
-use crate::arch::blake2s::{vg_blake2s_finalize, vg_blake2s_init, vg_blake2s_update};
 
 super::blake2::blake2!(
     /// An incremental BLAKE2s computation of an `N`-byte digest.
@@ -23,13 +20,9 @@ super::blake2::blake2!(
         state: 96,
         block: 64,
         max: 32,
-        init: vg_blake2s_init,
-        backends: Blake2sBackend {
-            Scalar => (vg_blake2s_update, vg_blake2s_finalize),
-            #[cfg(target_arch = "x86_64")]
-            Avx if [VG_BLAKE2S_UPDATE_AVX_FEATURES, VG_BLAKE2S_FINALIZE_AVX_FEATURES] =>
-                (vg_blake2s_update_avx, vg_blake2s_finalize_avx),
-        },
+        init: vg_blake2s_init_auto,
+        update: vg_blake2s_update_auto,
+        finalize: vg_blake2s_finalize_auto,
     }
 );
 

@@ -2235,22 +2235,22 @@ vg_mldsa44_keygen_avx512:
 	add rdi, 20480
 	mov rsi, rbx
 	add rsi, 2048
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 21504
 	mov rsi, rbx
 	add rsi, 2048
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 22528
 	mov rsi, rbx
 	add rsi, 2048
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 23552
 	mov rsi, rbx
 	add rsi, 2048
-	call {vg_mldsa_ntt_avx512}
+	call {vg_mldsa_ntt_avx2}
 	mov rdi, rbx
 	add rdi, 28672
 	mov rsi, rbx
@@ -2259,12 +2259,12 @@ vg_mldsa44_keygen_avx512:
 	add rdx, 20480
 	mov rcx, rbx
 	add rcx, 2048
-	call {vg_mldsa_dot_inverse4_avx512}
+	call {vg_mldsa_dot_inverse4_avx2}
 	mov rdi, rbx
 	add rdi, 28672
 	mov rsi, rbx
 	add rsi, 24576
-	call {vg_mldsa_add_avx512}
+	call {vg_mldsa_add_avx2}
 	mov rdi, rbx
 	add rdi, 28672
 	mov rsi, rbx
@@ -2295,12 +2295,12 @@ vg_mldsa44_keygen_avx512:
 	add rdx, 20480
 	mov rcx, rbx
 	add rcx, 2048
-	call {vg_mldsa_dot_inverse4_avx512}
+	call {vg_mldsa_dot_inverse4_avx2}
 	mov rdi, rbx
 	add rdi, 28672
 	mov rsi, rbx
 	add rsi, 25600
-	call {vg_mldsa_add_avx512}
+	call {vg_mldsa_add_avx2}
 	mov rdi, rbx
 	add rdi, 28672
 	mov rsi, rbx
@@ -2331,12 +2331,12 @@ vg_mldsa44_keygen_avx512:
 	add rdx, 20480
 	mov rcx, rbx
 	add rcx, 2048
-	call {vg_mldsa_dot_inverse4_avx512}
+	call {vg_mldsa_dot_inverse4_avx2}
 	mov rdi, rbx
 	add rdi, 28672
 	mov rsi, rbx
 	add rsi, 26624
-	call {vg_mldsa_add_avx512}
+	call {vg_mldsa_add_avx2}
 	mov rdi, rbx
 	add rdi, 28672
 	mov rsi, rbx
@@ -2367,12 +2367,12 @@ vg_mldsa44_keygen_avx512:
 	add rdx, 20480
 	mov rcx, rbx
 	add rcx, 2048
-	call {vg_mldsa_dot_inverse4_avx512}
+	call {vg_mldsa_dot_inverse4_avx2}
 	mov rdi, rbx
 	add rdi, 28672
 	mov rsi, rbx
 	add rsi, 27648
-	call {vg_mldsa_add_avx512}
+	call {vg_mldsa_add_avx2}
 	mov rdi, rbx
 	add rdi, 28672
 	mov rsi, rbx
@@ -2456,266 +2456,6 @@ vg_mldsa44_keygen_avx512:
 	mov r12, QWORD PTR [rbx+856]
 	mov rbp, QWORD PTR [rbx+848]
 	mov rbx, QWORD PTR [rbx+840]
-	ret
-	.p2align 6
-
-vg_mldsa44_prepare_verifying_key_avx512:
-	mov QWORD PTR [rdx+840], rbx
-	mov QWORD PTR [rdx+848], rbp
-	mov QWORD PTR [rdx+856], r12
-	mov QWORD PTR [rdx+864], r13
-	mov QWORD PTR [rdx+872], r14
-	mov QWORD PTR [rdx+880], r15
-	mov rbx, rsi
-	mov rbp, rdi
-	mov r12, rdx
-	mov r13, rdx
-	mov rdi, rbp
-	add rdi, 32
-	mov rsi, rbx
-	add rsi, 1312
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 1312
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 352
-	mov rsi, rbx
-	add rsi, 2336
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 2336
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 672
-	mov rsi, rbx
-	add rsi, 3360
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 3360
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 992
-	mov rsi, rbx
-	add rsi, 4384
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 4384
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 0
-	mov rsi, rbp
-	add rsi, 0
-	mov ecx, 164
-20:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 20b
-	mov rbx, QWORD PTR [r12+840]
-	mov rbp, QWORD PTR [r12+848]
-	mov r13, QWORD PTR [r12+864]
-	mov r14, QWORD PTR [r12+872]
-	mov r15, QWORD PTR [r12+880]
-	mov r12, QWORD PTR [r12+856]
-	ret
-	.p2align 6
-
-vg_mldsa44_prepare_signing_key_avx512:
-	mov QWORD PTR [rdx+840], rbx
-	mov QWORD PTR [rdx+848], rbp
-	mov QWORD PTR [rdx+856], r12
-	mov QWORD PTR [rdx+864], r13
-	mov QWORD PTR [rdx+872], r14
-	mov QWORD PTR [rdx+880], r15
-	mov rbx, rsi
-	mov rbp, rdi
-	mov r12, rdx
-	mov r13, rdx
-	mov rdi, rbp
-	add rdi, 128
-	mov esi, 96
-	mov edx, 2
-	mov ecx, 2
-	mov r8, rbx
-	add r8, 2560
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 2560
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 224
-	mov esi, 96
-	mov edx, 2
-	mov ecx, 2
-	mov r8, rbx
-	add r8, 3584
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 3584
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 320
-	mov esi, 96
-	mov edx, 2
-	mov ecx, 2
-	mov r8, rbx
-	add r8, 4608
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 4608
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 416
-	mov esi, 96
-	mov edx, 2
-	mov ecx, 2
-	mov r8, rbx
-	add r8, 5632
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 5632
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 512
-	mov esi, 96
-	mov edx, 2
-	mov ecx, 2
-	mov r8, rbx
-	add r8, 6656
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 6656
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 608
-	mov esi, 96
-	mov edx, 2
-	mov ecx, 2
-	mov r8, rbx
-	add r8, 7680
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 7680
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 704
-	mov esi, 96
-	mov edx, 2
-	mov ecx, 2
-	mov r8, rbx
-	add r8, 8704
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 8704
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 800
-	mov esi, 96
-	mov edx, 2
-	mov ecx, 2
-	mov r8, rbx
-	add r8, 9728
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 9728
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 896
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 10752
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 10752
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 1312
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 11776
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 11776
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 1728
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 12800
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 12800
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbp
-	add rdi, 2144
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 13824
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 13824
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx512}
-	mov rdi, rbx
-	add rdi, 0
-	mov rsi, rbp
-	add rsi, 0
-	mov ecx, 320
-20:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 20b
-	mov rbx, QWORD PTR [r12+840]
-	mov rbp, QWORD PTR [r12+848]
-	mov r13, QWORD PTR [r12+864]
-	mov r14, QWORD PTR [r12+872]
-	mov r15, QWORD PTR [r12+880]
-	mov r12, QWORD PTR [r12+856]
 	ret
 	.p2align 6
 

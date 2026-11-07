@@ -27,7 +27,7 @@ open VG.Spec.MlDsa
 
 /-- The primitives, each empty. -/
 def P0 : Prims := ⟨.block [], .block [], .block [], .block [], .block [], .block [], .block [], .block [], .block [],
-  .block [], .block [], .block [], .block [], .block [], "", false⟩
+  .block [], .block [], .block [], .block [], .block [], "", "", false⟩
 
 /-- `q` holds of every instruction of the primitives `P`. -/
 structure PrimsQ (q : Instr → Bool) (P : Prims) : Prop where

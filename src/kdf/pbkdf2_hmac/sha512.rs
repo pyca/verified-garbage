@@ -9,25 +9,7 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::pbkdf2_sha512::vg_pbkdf2_hmac_sha512;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::pbkdf2_sha512::{
-    VG_PBKDF2_HMAC_SHA512_AVX2_FEATURES, VG_PBKDF2_HMAC_SHA512_SHANI_FEATURES,
-    vg_pbkdf2_hmac_sha512_avx2, vg_pbkdf2_hmac_sha512_shani,
-};
-#[cfg(target_arch = "aarch64")]
-use crate::arch::pbkdf2_sha512::{VG_PBKDF2_HMAC_SHA512_SHA3_FEATURES, vg_pbkdf2_hmac_sha512_sha3};
-use crate::hashes::sha512::{Sha512, Sha512Backend};
+use crate::arch::dispatch::pbkdf2_sha512::vg_pbkdf2_hmac_sha512_auto;
+use crate::hashes::sha512::Sha512;
 
-super::whole_pbkdf2!(
-    Sha512 (Sha512Backend) {
-        Scalar => vg_pbkdf2_hmac_sha512,
-        #[cfg(target_arch = "aarch64")]
-        Sha3 if [VG_PBKDF2_HMAC_SHA512_SHA3_FEATURES] => vg_pbkdf2_hmac_sha512_sha3,
-        #[cfg(target_arch = "x86_64")]
-        ShaNi if [VG_PBKDF2_HMAC_SHA512_SHANI_FEATURES] => vg_pbkdf2_hmac_sha512_shani,
-        #[cfg(target_arch = "x86_64")]
-        Avx2 if [VG_PBKDF2_HMAC_SHA512_AVX2_FEATURES] => vg_pbkdf2_hmac_sha512_avx2,
-    },
-    output: 64,
-);
+super::whole_pbkdf2!(Sha512, pbkdf2: vg_pbkdf2_hmac_sha512_auto, output: 64);
