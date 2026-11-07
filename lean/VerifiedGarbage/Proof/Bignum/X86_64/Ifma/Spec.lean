@@ -58,7 +58,7 @@ theorem LayOk.D_ge (hl : LayOk l) : l.NB + 32 ≤ l.D := by
   rcases hl with rfl | rfl | rfl <;> decide
 
 theorem AmmOk.D_ge (hl : AmmOk l) : l.NB + 32 ≤ l.D := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The CRT's layouts have the two primes' lanes. -/
 theorem LayOk.nl (hl : LayOk l) : l.nl = 2 := by

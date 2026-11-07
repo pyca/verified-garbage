@@ -182,19 +182,52 @@ theorem lowCheck_ok {s : State} {b : Bool} (k : Nat) (hk : 2 ≤ k) (hk' : k < 3
     xrun [State.ea, at0, hrd, hax, sx_ofNat (show 3 < 2 ^ 31 by decide), hlow, h, execCmov, eval,
       BitVec.add_zero, show BitVec.ofInt 64 0 = 0#64 from rfl, Bool.not_true, Bool.not_false]
 
+/-- One `foldStep k`: RSI := RSI mod 2^k + RSI / 2^k. -/
+theorem foldStep_ok (k : Nat) (hk : k = 8 ∨ k = 16 ∨ k = 32) (s : State) :
+    WP isa (.block (foldStep k)) s fun t =>
+      (t.gpr .rsi).toNat = (s.gpr .rsi).toNat % 2 ^ k + (s.gpr .rsi).toNat / 2 ^ k ∧ t.mem = s.mem ∧
+        Keep [.rdx, .rsi] s t := by
+  refine WP.mono (WP.keep [.rdx, .rsi] (Q := fun t =>
+    (t.gpr .rsi).toNat = (s.gpr .rsi).toNat % 2 ^ k + (s.gpr .rsi).toNat / 2 ^ k ∧ t.mem = s.mem) ?_ rfl)
+    fun t ⟨⟨h, hm⟩, kk⟩ => ⟨h, hm, kk⟩
+  have hx := (s.gpr .rsi).isLt
+  unfold foldStep
+  rcases hk with rfl | rfl | rfl <;> xrun <;>
+    simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftLeft_eq,
+      Nat.shiftRight_eq_div_pow] <;> omega
+
 /-- `reduce255`: RSI := RSI mod 255. -/
 theorem reduce255_ok (s : State) :
-    WP isa reduce255 s fun t => (t.gpr .rsi).toNat = (s.gpr .rsi).toNat % 255 ∧ t.mem = s.mem ∧
-      Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r13] s t := by
+    WP isa (.block reduce255) s fun t => (t.gpr .rsi).toNat = (s.gpr .rsi).toNat % 255 ∧ t.mem = s.mem ∧
+      Keep [.rdx, .rsi] s t := by
+  have hx := (s.gpr .rsi).isLt
   unfold reduce255
-  refine WP.seq (WP.mono (WP.keep [.rdx, .rsi, .rbx, .r13] (Q := fun u =>
-    u.gpr .rdx = s.gpr .rsi ∧ u.gpr .rsi = 0 ∧ u.gpr .rbx = BitVec.ofNat 64 255 ∧
-      u.gpr .r13 = BitVec.ofNat 64 64 ∧ u.mem = s.mem) (by xrun) rfl)
-    fun u ⟨⟨hdx, hsi, hbx, h13, hm⟩, k⟩ => ?_)
-  refine WP.mono (modBits_ok h13 (by rw [hsi, hbx]; decide))
-    fun t ⟨hv, hm', k'⟩ => ⟨?_, hm'.trans hm, (k.trans k').mono (by decide)⟩
-  rw [hv, hsi, hdx, hbx]
-  simp
+  refine WP.block_append (WP.block_append (WP.block_append (WP.block_append
+    (WP.mono (foldStep_ok 32 (by decide) s) fun u₁ ⟨h₁, m₁, k₁⟩ => ?_) ) ) )
+  refine WP.mono (foldStep_ok 16 (by decide) u₁) fun u₂ ⟨h₂, m₂, k₂⟩ => ?_
+  refine WP.mono (foldStep_ok 8 (by decide) u₂) fun u₃ ⟨h₃, m₃, k₃⟩ => ?_
+  refine WP.mono (foldStep_ok 8 (by decide) u₃) fun u₄ ⟨h₄, m₄, k₄⟩ => ?_
+  have hv : (u₄.gpr .rsi).toNat % 255 = (s.gpr .rsi).toNat % 255 ∧ (u₄.gpr .rsi).toNat < 264 := by
+    rw [h₄, h₃, h₂, h₁]
+    generalize (s.gpr .rsi).toNat = x at hx ⊢
+    omega
+  refine WP.mono (WP.keep [.rdx, .rsi] (Q := fun t =>
+    (t.gpr .rsi).toNat = (s.gpr .rsi).toNat % 255 ∧ t.mem = u₄.mem) ?_ rfl)
+    fun t ⟨⟨h, hm⟩, kk⟩ => ⟨h, hm.trans (m₄.trans (m₃.trans (m₂.trans m₁))),
+      ((((k₁.trans k₂).trans k₃).trans k₄).trans kk).mono (by decide)⟩
+  obtain ⟨hmod, hlt⟩ := hv
+  have h255 : BitVec.signExtend 64 (255 : BitVec 32) = BitVec.ofNat 64 255 := by decide
+  have hy := (u₄.gpr .rsi).isLt
+  have hc : (BitVec.ofNat 64 255).toNat = 255 := rfl
+  generalize hu : u₄.gpr .rsi = y at hmod hlt hy
+  by_cases h : y.toNat < 255
+  · have hd : decide (y.toNat < (BitVec.ofNat 64 255).toNat) = true := by rw [hc]; exact decide_eq_true h
+    xrun [hu, h255, execCmov, eval, hd]
+    omega
+  · have hd : decide (y.toNat < (BitVec.ofNat 64 255).toNat) = false := by rw [hc]; exact decide_eq_false h
+    xrun [hu, h255, execCmov, eval, hd]
+    rw [BitVec.toNat_sub, hc]
+    omega
 
 /-- The candidate in aN, its words folded modulo 2^64 − 1, in RSI; R8 is
 aN's base. -/
@@ -239,12 +272,12 @@ private theorem low_mod {m : Mem} {p : Addr} {d n k : Nat} (hn : 1 ≤ n) (hk : 
 theorem generatorCode_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {vals : List Nat} {k : Nat}
     (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z) (hw : 1 ≤ w) (hw' : w < 2 ^ 31)
     (hvals : ∀ v ∈ vals, v < 2 ^ 31) (hk : 2 ≤ k) (hk' : k < 31) :
-    WP isa (.seq fold (.seq reduce255 (.block (memberFlag vals ++ lowCheck (2 ^ k - 1))))) s fun t =>
+    WP isa (.seq fold (.block (reduce255 ++ memberFlag vals ++ lowCheck (2 ^ k - 1)))) s fun t =>
       t.zf = some (decide (wv s.mem B (slot w aN) w % 255 ∈ vals) &&
         decide (wv s.mem B (slot w aN) w % 2 ^ k = 3)) ∧
       t.mem = s.mem ∧ Keep [.rbx, .r12, .r8, .rsi, .r14, .rax, .rcx, .rdx, .rbp, .r13] s t := by
   refine WP.seq (WP.mono (fold_ok hg hZ hw hw') fun u₀ ⟨hv₀, h8₀, hm₀, k₀⟩ => ?_)
-  refine WP.seq (WP.mono (reduce255_ok u₀) fun u ⟨hv', hm', k'⟩ => ?_)
+  refine WP.block_append (WP.block_append (WP.mono (reduce255_ok u₀) fun u ⟨hv', hm', k'⟩ => ?_))
   have hv : (u.gpr .rsi).toNat = wv s.mem B (slot w aN) w % 255 := by
     rw [hv', ← Nat.mod_mod_of_dvd _ (show 255 ∣ 2 ^ 64 - 1 by decide), hv₀,
       Nat.mod_mod_of_dvd _ (show 255 ∣ 2 ^ 64 - 1 by decide)]
@@ -254,7 +287,7 @@ theorem generatorCode_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {
     (k₀.trans k').mono (by decide)
   have hsi : u.gpr .rsi = BitVec.ofNat 64 (wv s.mem B (slot w aN) w % 255) := by
     rw [← hv, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  refine WP.block_append (WP.mono (memberFlag_ok (by omega_arith) hvals hsi) fun v ⟨hva, hvm, kv⟩ => ?_)
+  refine WP.mono (memberFlag_ok (by omega_arith) hvals hsi) fun v ⟨hva, hvm, kv⟩ => ?_
   have hrd : InRegions (v.rd ++ v.wr) (v.gpr .r8) 8 := by
     rw [kv.gpr (by decide), h8, kv.2.1, kv.2.2, k₁.2.1, k₁.2.2]
     exact hg.scr.ld (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)

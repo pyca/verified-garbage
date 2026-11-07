@@ -31,7 +31,7 @@ open VG VG.X86_64 VG.Proof.Bignum.Amm52
 open VG.Proof.Bignum (off word ofs Outside mask Frm wv)
 open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Proof.Bignum.X86_64.Ifma (limb val52)
-open VG.Proof.Bignum.X86_64.Ifma.Pub (PubOk Mod)
+open VG.Proof.Bignum.X86_64.Ifma.Pub (Mod)
 open VG.Impl.Rsa.X86_64.CrtIfma (mask52)
 open VG.Impl.Rsa.X86_64.PubIfma (arr)
 open VG.Impl.MillerRabin.X86_64.Ifma
@@ -71,10 +71,10 @@ theorem arr_tab : arr l (aT0 + 16) = arr l aT0 + 16 * (8 * (l.W + 2)) := by
 
 /-- The area lies in the table arrays: from array `aT0`'s offset at most 63
 bytes on, `size l` bytes before array `aT0 + 16`'s. -/
-theorem areaBase_ofs (hl : PubOk l) {H : Addr} (hn : H.toNat + arr l (aT0 + 16) ≤ 2 ^ 64) :
+theorem areaBase_ofs (hl : MrOk l) {H : Addr} (hn : H.toNat + arr l (aT0 + 16) ≤ 2 ^ 64) :
     arr l aT0 ≤ ofs H (areaBase l H) ∧ ofs H (areaBase l H) + size l ≤ arr l (aT0 + 16) ∧
       areaBase l H = off H (ofs H (areaBase l H)) := by
-  have ho := (PubOk.offs hl).1
+  have ho := (MrOk.offs hl).1
   have ha := arr_tab (l := l)
   have hx : (H + BitVec.ofNat 64 (arr l aT0) + 63#64).toNat = H.toNat + arr l aT0 + 63 := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
@@ -125,7 +125,7 @@ theorem wv_tab {H : Addr} {m m' : Mem} (h : Frm H [(arr l aT0, 16 * (8 * (l.W + 
     rw [List.mem_singleton.mp hr]; have := arr_tab (l := l); simp only; omega_arith) he'
 
 /-- The limbs at `a` through a change elsewhere. -/
-theorem limb_frm (hl : PubOk l) {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m') {a : Nat}
+theorem limb_frm (hl : MrOk l) {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m') {a : Nat}
     (hs : ∀ r ∈ rs, a + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ a) (ha : a + l.NB < 2 ^ 31) :
     ∀ j < l.L, limb l m' B a j = limb l m B a j := fun j hj => by
   have := VG.Proof.Bignum.X86_64.Ifma.off_ltN hl.amm hj
@@ -133,7 +133,7 @@ theorem limb_frm (hl : PubOk l) {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem}
   rw [h.word_eq (fun r hr => by have := hs r hr; omega_arith) (by omega_arith)]
 
 /-- A number at `a` through a change elsewhere. -/
-theorem num_frm (hl : PubOk l) {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m') {a v : Nat}
+theorem num_frm (hl : MrOk l) {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m') {a v : Nat}
     (hc : Canon l m B a ∧ val52 l m B a = v)
     (hs : ∀ r ∈ rs, a + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ a) (ha : a + l.NB < 2 ^ 31) :
     Canon l m' B a ∧ val52 l m' B a = v :=
@@ -141,10 +141,10 @@ theorem num_frm (hl : PubOk l) {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} 
   ⟨fun j hj => (e j hj) ▸ hc.1 j hj, (lval_congr e).trans hc.2⟩
 
 /-- `Mod` through a change from `NB + 32` on. -/
-theorem mod_frm (hl : PubOk l) {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} {c k : Nat} (hm : Mod l m B c k)
+theorem mod_frm (hl : MrOk l) {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} {c k : Nat} (hm : Mod l m B c k)
     (h : Frm B rs m m') (hs : ∀ r ∈ rs, l.NB + 32 ≤ r.1) (hN : l.NB + 32 < 2 ^ 31) : Mod l m' B c k := by
   have e := limb_frm hl h (a := 0) (fun r hr => .inl (by have := hs r hr; omega_arith)) (by omega_arith)
-  have hL := (VG.Proof.Bignum.X86_64.Ifma.Pub.PubOk.amm hl).bounds.1
+  have hL := (hl.amm).bounds.1
   refine ⟨fun j hj => (e j hj) ▸ hm.lt j hj, (lval_congr e).trans hm.val, fun t ht => ?_, hm.klt,
     by rw [e 0 (by simp only [VG.Impl.Rsa.X86_64.CrtIfma.Lay.L]; omega_arith)]; exact hm.inv, hm.big⟩
   rw [h.word_eq (fun r hr => by have := hs r hr; simp only [VG.Impl.Rsa.X86_64.CrtIfma.Lay.oK0]; omega_arith)
@@ -152,7 +152,7 @@ theorem mod_frm (hl : PubOk l) {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} 
   exact hm.k0 t ht
 
 /-- A number from limbs `limbN v`. -/
-theorem num_of (hl : PubOk l) {m : Mem} {B : Addr} {o v : Nat}
+theorem num_of (hl : MrOk l) {m : Mem} {B : Addr} {o v : Nat}
     (h : ∀ q < l.L, word m B (o + l.off q) = BitVec.ofNat 64 (limbN v q)) (hv : v < 2 ^ (64 * l.W)) :
     Canon l m B o ∧ val52 l m B o = v :=
   ⟨fun q hq => by
@@ -181,7 +181,7 @@ theorem pow_mod_shift {a b e c : Nat} (h : a + b = e) : 2 ^ a * (2 ^ b % c) % c 
 /-! ## The first block -/
 
 /-- An array of the workspace (`aN`, `aXm` or `aR1`) into the limbs at `o`. -/
-theorem ldA_ok (hl : PubOk l) {s : State} {H B : Addr} {d n j o : Nat} (hB : s.gpr .rbx = B)
+theorem ldA_ok (hl : MrOk l) {s : State} {H B : Addr} {d n j o : Nat} (hB : s.gpr .rbx = B)
     (hdi : s.gpr .rdi = H) (h12 : s.gpr .r12 = mask52) (hBd : B = off H d) (hd : arr l aT0 ≤ d)
     (hd' : d + size l ≤ arr l (aT0 + 16)) (hs : Scr s H (8 * n)) (hsz : arr l 27 ≤ 8 * n)
     (hj : j = aN ∨ j = aXm ∨ j = aR1) (ho : o + l.NB ≤ size l) :
@@ -190,7 +190,7 @@ theorem ldA_ok (hl : PubOk l) {s : State} {H B : Addr} {d n j o : Nat} (hB : s.g
       Outside B o l.NB s.mem t.mem ∧ Frm H [(arr l aT0, 16 * (8 * (l.W + 2)))] s.mem t.mem ∧
       Keep [.rsi, .r11, .rax, .rcx, .rbp] s t ∧ t.mxcsr = s.mxcsr := by
   have ha := arr_tab (l := l)
-  have hsize := (PubOk.offs hl).2.1
+  have hsize := (MrOk.offs hl).2.1
   have hW := VG.Proof.Bignum.X86_64.Ifma.conv_boundsN hl.amm
   have hn : H.toNat + 8 * n ≤ 2 ^ 64 := hs.nowrap
   have hF : ∀ q < l.L, l.off q + 8 ≤ l.NB := fun q hq => VG.Proof.Bignum.X86_64.Ifma.off_ltN hl.amm hq
@@ -203,7 +203,7 @@ theorem ldA_ok (hl : PubOk l) {s : State} {H B : Addr} {d n j o : Nat} (hB : s.g
   have fa : ∀ m m' : Mem, Outside B o l.NB m m' → Frm H [(arr l aT0, 16 * (8 * (l.W + 2)))] m m' :=
     fun m m' f => frm_area (Frm.of_outside f (List.mem_singleton_self _)) hBd hd hd' (by omega_arith)
       (one_r (p := fun r => r.1 + r.2 ≤ size l) ho)
-  refine WP.mono (VG.Proof.Bignum.X86_64.Ifma.Pub.ld52_ok hl hB hdi h12 hJ.2.2
+  refine WP.mono (VG.Proof.Bignum.X86_64.Ifma.Pub.ld52_ok hl.amm hB hdi h12 hJ.2.2
     (fun i hi => by rw [VG.Proof.Bignum.X86_64.AmmSym.off_add]; exact hs.ld (by omega_arith))
     (fun q hq => hsB.st (by have := hF q hq; omega_arith)) (by omega_arith)
     (fun m m' f i hi => by
@@ -213,7 +213,7 @@ theorem ldA_ok (hl : PubOk l) {s : State} {H B : Addr} {d n j o : Nat} (hB : s.g
 
 /-- `setup`'s first block: the area's base, the modulus and `k₀`, `b R mod c`
 at `T_1`, and `R mod c` at `S` and `T_0`. -/
-theorem block_ok (hl : PubOk l) {s : State} {H B : Addr} {d n c : Nat}
+theorem block_ok (hl : MrOk l) {s : State} {H B : Addr} {d n c : Nat}
     (hdi : s.gpr .rdi = H) (hs : Scr s H (8 * n)) (hsz : arr l 27 ≤ 8 * n)
     (hB : areaBase l H = B) (hBd : B = off H d) (hd : arr l aT0 ≤ d) (hd' : d + size l ≤ arr l (aT0 + 16))
     (hc : wv s.mem H (arr l aN) l.W = c)
@@ -229,8 +229,8 @@ theorem block_ok (hl : PubOk l) {s : State} {H B : Addr} {d n c : Nat}
       (Canon l t.mem B (oT l 0) ∧ val52 l t.mem B (oT l 0) = wv s.mem H (arr l aR1) l.W) ∧
       Frm H [(arr l aT0, 16 * (8 * (l.W + 2)))] s.mem t.mem ∧
       Keep [.rbx, .r12, .rsi, .r11, .rax, .rcx, .rbp] s t ∧ t.mxcsr = s.mxcsr := by
-  obtain ⟨o1, o2, o3, o4, o5, o6, -, -, -, -, -, -, -, -, -, -, -, -⟩ := PubOk.offs hl
-  obtain ⟨e1, e2, -⟩ := PubOk.ends hl
+  obtain ⟨o1, o2, o3, o4, o5, o6, -, -, -, -, -, -, -, -, -, -, -, -⟩ := MrOk.offs hl
+  obtain ⟨e1, e2, -⟩ := MrOk.ends hl
   have o6₁ := o6 1
   have e1₀ := e1 0 (by decide)
   have e1₁ := e1 1 (by decide)
@@ -317,7 +317,8 @@ theorem block_ok (hl : PubOk l) {s : State} {H B : Addr} {d n c : Nat}
     · obtain ⟨i', hi', rfl⟩ := List.mem_map.mp hd; rw [List.mem_range] at hi'; omega_arith
   have hcW : c < 2 ^ (64 * l.W) := hc ▸ VG.Proof.Bignum.wv_lt _ _ _ _
   have hmod₄ : Mod l M₄ B c ((word s.mem H (8 * sMinv)).toNat % 2 ^ 52) :=
-    VG.Proof.Bignum.X86_64.Ifma.Pub.mod_of hl hN₄ hcW hk₄ (by
+    VG.Proof.Bignum.X86_64.Ifma.Pub.mod_ofN hl.amm (by rcases hl with rfl | rfl | rfl | rfl | rfl <;> rfl)
+      (by rcases hl with rfl | rfl | rfl | rfl | rfl <;> decide) (by rcases hl with rfl | rfl | rfl | rfl | rfl <;> rfl) hN₄ hcW hk₄ (by
       have := hinv
       rw [← VG.Proof.Bignum.wv_mod64 s.mem H (arr l aN) (n := l.W) (by omega_arith), hc] at this
       exact this)
@@ -376,7 +377,7 @@ theorem block_ok (hl : PubOk l) {s : State} {H B : Addr} {d n c : Nat}
 /-! ## The last block -/
 
 /-- `c − T_0`, `T_0 + c` and `c − T_0 + c` from `T_0 < c`. -/
-theorem tail_ok (hl : PubOk l) {s : State} {B : Addr} {c k t0 : Nat} (hB : s.gpr .rbx = B)
+theorem tail_ok (hl : MrOk l) {s : State} {B : Addr} {c k t0 : Nat} (hB : s.gpr .rbx = B)
     (h12 : s.gpr .r12 = mask52) (hs : Scr s B (size l)) (hm : Mod l s.mem B c k)
     (ht : Canon l s.mem B (oT l 0) ∧ val52 l s.mem B (oT l 0) = t0) (hlt : t0 < c) :
     WP isa (.block (subN l (oM1 l) 0 (oT l 0) ++ addN l (oP1c l) (oT l 0) 0 ++ addN l (oM1c l) (oM1 l) 0)) s
@@ -386,8 +387,8 @@ theorem tail_ok (hl : PubOk l) {s : State} {B : Addr} {c k t0 : Nat} (hB : s.gpr
       (Canon l t.mem B (oM1c l) ∧ val52 l t.mem B (oM1c l) = c - t0 + c) ∧
       Frm B [(oM1 l, l.NB), (oP1c l, l.NB), (oM1c l, l.NB)] s.mem t.mem ∧
       Keep [.rax, .rdx] s t ∧ t.mxcsr = s.mxcsr := by
-  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, -, -, -, o14, -, -, -, -⟩ := PubOk.offs hl
-  obtain ⟨-, -, e3⟩ := PubOk.ends hl
+  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, -, -, -, o14, -, -, -, -⟩ := MrOk.offs hl
+  obtain ⟨-, -, e3⟩ := MrOk.ends hl
   have o6₄ := o6 4
   have hW := VG.Proof.Bignum.X86_64.Ifma.conv_boundsN hl.amm
   have hP : 2 ^ (52 * l.S) ≤ 2 ^ (52 * l.L) :=
@@ -431,7 +432,7 @@ theorem tail_ok (hl : PubOk l) {s : State} {B : Addr} {c k t0 : Nat} (hB : s.gpr
   exact ((F₁.mono (by simp)).trans (F₂.mono (by simp))).trans (F₃.mono (by simp))
 
 /-- `setup`: the area's numbers, from the prepared workspace. -/
-theorem setup_ok (hl : PubOk l) {s : State} {H : Addr} {n c bR : Nat}
+theorem setup_ok (hl : MrOk l) {s : State} {H : Addr} {n c bR : Nat}
     (hdi : s.gpr .rdi = H) (hwr : (⟨H, 8 * n⟩ : Region) ∈ s.wr) (hn : H.toNat + 8 * n ≤ 2 ^ 64)
     (hsz : arr l 27 ≤ 8 * n)
     (hc : wv s.mem H (arr l aN) l.W = c) (h3 : 3 ≤ c)
@@ -445,8 +446,8 @@ theorem setup_ok (hl : PubOk l) {s : State} {H : Addr} {n c bR : Nat}
       (∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r11 → r ≠ .r12 → r ≠ .r13 →
         r ≠ .rbp → t.gpr r = s.gpr r) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
-  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, -, -, o13, o14, o15, o16, o17, o18⟩ := PubOk.offs hl
-  obtain ⟨e1, e2, e3⟩ := PubOk.ends hl
+  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, -, -, o13, o14, o15, o16, o17, o18⟩ := MrOk.offs hl
+  obtain ⟨e1, e2, e3⟩ := MrOk.ends hl
   have o6₁ := o6 1
   have o6₄ := o6 4
   have e1₀ := e1 0 (by decide)

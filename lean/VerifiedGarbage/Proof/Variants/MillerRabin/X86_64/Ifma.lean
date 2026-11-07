@@ -29,6 +29,7 @@ def variant : RoundImpl :=
     ct := Proof.MillerRabin.X86_64.Ifma.code_ct Adx.arith
     suffix := "_ifma"
     features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
-    arithFeatures := ["bmi2", "adx"] }
+    arithFeatures := ["bmi2", "adx"]
+    roundOnly := true }
 
 end VG.Proof.Variants.MillerRabin.X86_64.Ifma

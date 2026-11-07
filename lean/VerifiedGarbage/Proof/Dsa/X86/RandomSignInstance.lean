@@ -48,7 +48,7 @@ def randomSignSatState : State where
   rd := [⟨0x2000, 424⟩, ⟨0x5000, 0⟩, ⟨0x6000, 0⟩]
   wr := [⟨0x1000, 40⟩, ⟨0x7000, 8⟩, ⟨0x8000, 16896⟩, ⟨0x20004, 52⟩]
 
-theorem randomSign_satisfiable : ∃ s, (Spec.Dsa.randomSignContract abi 232).pre s := by
+theorem randomSign_satisfiable : ∃ s, (randomSignCheckedContract abi 232).pre s := by
   have a0 : arg randomSignSatState 0 = 0x1000 := by decide
   have a1 : arg randomSignSatState 1 = 40 := by decide
   have a2 : arg randomSignSatState 2 = 0x7000 := by decide
@@ -64,31 +64,31 @@ theorem randomSign_satisfiable : ∃ s, (Spec.Dsa.randomSignContract abi 232).pr
   have a12 : arg randomSignSatState 12 = 2112 := by decide
   have e : argAddr randomSignSatState 0 = 0x20004 := by decide
   have esp : randomSignSatState.gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes,
+  sig_implies_sat [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes,
     stackBelow] [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, e, esp, randomSignSatState]
     using randomSignSatState
 
 /-- A signer that accepts every key, in the randomized wrapper. -/
 theorem randomSign_verified (F : SignFn) (hall : ∀ s, KeyValid F.valid s) :
-    Verified target (code F.name F.code) (Spec.Dsa.randomSignContract abi 232) :=
+    Verified target (code F.name F.code) (randomSignCheckedContract abi 232) :=
   ⟨fun s h => randomSign_correct F s h (hall s),
     fun s t tr ur sf tf hs ht => randomSign_constantTime F s t tr ur sf tf ⟨hs, hall s⟩ ⟨ht, hall t⟩,
     randomSign_satisfiable⟩
 
 theorem randomPrevalidated_pre {s : State} (h : (Spec.Dsa.randomSignPrevalidatedContract abi 232).pre s) :
-    (Spec.Dsa.randomSignContract abi 232).pre s ∧ KeyValid Spec.Dsa.validatePrivateKeyBytes s := by
+    (randomSignCheckedContract abi 232).pre s ∧ KeyValid Spec.Dsa.validatePrivateKeyBytes s := by
   sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes,
     stackBelow] at h
   sig_split h
   refine ⟨?_, by unfold KeyValid rInput; assumption⟩
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes, stackBelow]
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes, stackBelow]
   sig_and_intros <;> with_reducible assumption
 
-theorem randomPrevalidated_of_pre {s : State} (h : (Spec.Dsa.randomSignContract abi 232).pre s)
+theorem randomPrevalidated_of_pre {s : State} (h : (randomSignCheckedContract abi 232).pre s)
     (hv : KeyValid Spec.Dsa.validatePrivateKeyBytes s) :
     (Spec.Dsa.randomSignPrevalidatedContract abi 232).pre s := by
   unfold KeyValid rInput at hv
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes,
     stackBelow]
   sig_split h
@@ -123,8 +123,8 @@ theorem randomPrevalidated_satisfiable :
   have a12 : arg randomPrevalidatedSatState 12 = 2112 := by decide
   have e : argAddr randomPrevalidatedSatState 0 = 0x20004 := by decide
   have esp : randomPrevalidatedSatState.gpr .esp = 0x20000 := rfl
-  have ho : ∃ s, (Spec.Dsa.randomSignContract abi 232).pre s ∧ s = randomPrevalidatedSatState := by
-    sig_implies_sat [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes,
+  have ho : ∃ s, (randomSignCheckedContract abi 232).pre s ∧ s = randomPrevalidatedSatState := by
+    sig_implies_sat [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argSlots, argVal, argBytes,
       stackBelow] [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, e, esp, randomPrevalidatedSatState,
       randomSignSatState] using randomPrevalidatedSatState
   obtain ⟨s, h, rfl⟩ := ho
@@ -256,7 +256,7 @@ def signFn : SignFn where
   depth := by decide +kernel
 
 theorem randomSigning_verified :
-    Verified target (RandomSign.code signFn.name signFn.code) (Spec.Dsa.randomSignContract abi 232) :=
+    Verified target (RandomSign.code signFn.name signFn.code) (randomSignCheckedContract abi 232) :=
   randomSign_verified signFn fun _ => rfl
 
 /-- The supplied-nonce signer for a validated private key, as registered. -/

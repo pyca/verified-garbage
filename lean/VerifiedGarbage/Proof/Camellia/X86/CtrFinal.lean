@@ -1090,7 +1090,6 @@ theorem xor_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : XArgs s₀ s) (h
   have eU : fU s₀ = fL s₀ % 16 := rfl
   have hc := h.call
   have xp : Modes.X86.XPre s (cBk s₀) (fT s₀) (fU s₀) := {
-    pos := by omega
     fitK := by omega
     fitR := by rw [hT]; omega
     disj := by
@@ -1242,9 +1241,6 @@ theorem Pt.agree {s₀ s₀' : State} (hq : ctrFinalX86.pub s₀ s₀') (hp : CP
 
 theorem whole_pt {s₀ s : State} (hp : CPre s₀) (h : Whole s₀ s) : Pt s₀ s :=
   ⟨h.esp, h.wr, fun _ hi => hp.arg_keep (big_of (whole_cW h)) hi⟩
-
-theorem TArgs.pt {s₀ s : State} (hp : CPre s₀) (h : TArgs s₀ s) : Pt s₀ s :=
-  ⟨h.esp, h.wr, fun _ hi => hp.arg_keep (big_of (cW1_cW h.frame)) hi⟩
 
 theorem TCall.pt {s₀ s : State} (hp : CPre s₀) (h : TCall s₀ s) : Pt s₀ s :=
   ⟨h.esp, h.wr, fun _ hi => hp.arg_keep (big_of (cW1_cW h.frame)) hi⟩

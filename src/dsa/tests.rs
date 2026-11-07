@@ -267,38 +267,8 @@ fn malformed_keys_nonces_and_bounded_retries() {
         );
         assert_eq!(draws, 128);
     }
-    // A zero private scalar fails each of the bounded signing attempts, or,
-    // on x86-64, x86, AArch64, Arm, PPC64LE and RISC-V 64, the key's validation, before
-    // any draw.
+    // A zero private scalar fails the key's validation, before any draw.
     let zero_x = PrivateKey::from_components(&p, &q, &g, &y, &vec![0; q.len()]).unwrap();
-    #[cfg(not(any(
-        target_arch = "x86_64",
-        target_arch = "x86",
-        target_arch = "aarch64",
-        target_arch = "arm",
-        all(target_arch = "powerpc64", target_endian = "little"),
-        target_arch = "riscv64"
-    )))]
-    {
-        let mut draws = 0;
-        assert_eq!(
-            zero_x.sign_from(&digest, |b| {
-                b.copy_from_slice(&nonce);
-                draws += 1;
-                Ok(())
-            }),
-            Err(Error::InvalidKeyOrNonce)
-        );
-        assert_eq!(draws, 8);
-    }
-    #[cfg(any(
-        target_arch = "x86_64",
-        target_arch = "x86",
-        target_arch = "aarch64",
-        target_arch = "arm",
-        all(target_arch = "powerpc64", target_endian = "little"),
-        target_arch = "riscv64"
-    ))]
     assert_eq!(
         zero_x.sign_from(&digest, |_| panic!("an invalid key needs no RNG")),
         Err(Error::InvalidKeyOrNonce)
@@ -453,17 +423,8 @@ fn immutable_public_validation_cache() {
     assert_eq!(shared.validated.load(Ordering::Relaxed), 1);
 }
 
-/// On x86-64, x86, AArch64, Arm, PPC64LE and RISC-V 64 a private key is validated on its
-/// first signature, and the result is reused, as a public key's is for
-/// verification.
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little"),
-    target_arch = "riscv64"
-))]
+/// A private key is validated on its first signature, and the result is
+/// reused, as a public key's is for verification.
 #[test]
 fn immutable_private_validation_cache() {
     let (key, digest, nonce) = sample();

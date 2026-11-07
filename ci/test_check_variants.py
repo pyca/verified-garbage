@@ -463,5 +463,32 @@ class TestCode(unittest.TestCase):
         self.assertEqual(used(rust), {"vg_a"})
 
 
+class Avoided(unittest.TestCase):
+    # `g` calls `f`, which has `f_vaes`; `g_aesni` needs only `aes` and
+    # calls none of `f`'s implementations.
+    CALLS = {"vg_f": [], "vg_f_vaes": [], "vg_k": [], "vg_g": ["vg_f"], "vg_g_aesni": ["vg_k"]}
+    FEATS = {"x": {"vg_f_vaes": frozenset({"aes", "vaes"}), "vg_g_aesni": frozenset({"aes"})}}
+    RUST = "vg_g vg_g_aesni vg_f_vaes"
+
+    def check(self, calls, feats=None):
+        return check_variants.check(fns(calls), self.RUST, feats or self.FEATS)
+
+    def test_no_variant_needed(self):
+        self.assertEqual(self.check(self.CALLS), [])
+
+    def test_needs_more_features(self):
+        feats = {"x": dict(self.FEATS["x"], vg_g_aesni=frozenset({"aes", "avx512f"}))}
+        errors = self.check(self.CALLS, feats)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("there is no vg_g_vaes", errors[0])
+
+    def test_another_implementation_calls_the_baseline(self):
+        calls = dict(self.CALLS, vg_g_avx=["vg_f"])
+        feats = {"x": dict(self.FEATS["x"], vg_g_avx=frozenset({"aes"}))}
+        errors = check_variants.check(fns(calls), self.RUST + " vg_g_avx", feats)
+        self.assertTrue(any("vg_g calls vg_f, which has the variant vg_f_vaes, but there is "
+                            "no vg_g_vaes" in e for e in errors), errors)
+
+
 if __name__ == "__main__":
     unittest.main()

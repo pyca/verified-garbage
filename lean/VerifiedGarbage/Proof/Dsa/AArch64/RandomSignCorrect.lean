@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.RandomSignResult
 import VerifiedGarbage.Proof.Framework.Sig
@@ -14,9 +15,9 @@ open VG.Impl.Dsa.AArch64
 
 theorem random_sign_shared_post {extra : Nat} {s t : State} (h : RandomSignABI extra s)
     (hp : RandomSignCodePost s (randomSignRemaining (randomInput s) 0 8) t) :
-    (Spec.Dsa.randomSignContract abi (extra + 256)).post s t := by
-  sig_post [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, randomSignStackArgs]
-  sig_post [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, randomSignStackArgs]
+    (randomSignCheckedContract abi (extra + 256)).post s t := by
+  sig_post [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argRegs, randomSignStackArgs]
+  sig_post [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argRegs, randomSignStackArgs]
   have he := random_remaining_bytes h
   have hb : (randomSignRemaining (randomInput s) 0 8).status < 2 ^ 32 := by
     have := randomSignLoop_status_le (randomInput s).pLen (randomInput s).qLen 8
@@ -36,9 +37,9 @@ theorem random_sign_shared_post {extra : Nat} {s t : State} (h : RandomSignABI e
     exact congrArg (fun r : Spec.Dsa.RandomSignResult => [BitVec.ofNat 64 r.used]) he
 
 theorem random_sign_correct (S : Signer) (s : State)
-    (hpre : (Spec.Dsa.randomSignContract abi (S.stack + 256)).pre s) (hval : RandomValid S s) :
+    (hpre : (randomSignCheckedContract abi (S.stack + 256)).pre s) (hval : RandomValid S s) :
     ∃ trace t, Exec isa (RandomSign.code S.name S.code) s trace t ∧
-      abiPreserved s t ∧ (Spec.Dsa.randomSignContract abi (S.stack + 256)).post s t := by
+      abiPreserved s t ∧ (randomSignCheckedContract abi (S.stack + 256)).post s t := by
   have h := randomSignABI_of hpre
   obtain ⟨trace, t, he, hp⟩ := random_sign_code S h hval
   exact ⟨trace, t, he, ⟨hp.callee, hp.sp, hp.vectors⟩, random_sign_shared_post h hp⟩

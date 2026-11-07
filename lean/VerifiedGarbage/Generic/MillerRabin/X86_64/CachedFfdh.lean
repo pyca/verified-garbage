@@ -12,7 +12,8 @@ public import VerifiedGarbage.TCB.X86_64.Print
 
 namespace VG.Generic.MillerRabin.X86_64.CachedFfdh
 
-def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
+def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact :=
+  if v.roundOnly then [] else [
   Spec.Ffdh.generationPrecomputeApi.artifact X86_64.target {
     suffix := v.suffix
     stack := 8

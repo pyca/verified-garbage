@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PolicyResult
-public 
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestQ
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeOriginal
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Consume
@@ -9,6 +8,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Screen
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.Group.Nat.Defs
 
@@ -41,8 +41,26 @@ theorem testCandidate_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   unfold testCandidate
   simp only [seqs]
   refine WP.seq (WP.mono (shapeOriginal_ok h hdi havail) fun s₁ ⟨h₁, hd₁, hv₁, hs₁, hf₁, k₁, _⟩ => ?_)
-  refine WP.seq (WP.mono (consumeCandidate_ok h₁ hd₁ havail) fun s₂ ⟨h₂, hs₂, hf₂, k₂, ho₂⟩ => ?_)
-  have hd₂ : s₂.gpr .rdi = p.B := (k₂.gpr (by decide)).trans hd₁
+  refine WP.seq (WP.mono (consumeCandidate_ok h₁ hd₁ havail) fun s₂₀ ⟨h₂₀, hs₂₀, hf₂₀, k₂₀, ho₂₀⟩ => ?_)
+  have hd₂₀ : s₂₀.gpr .rdi = p.B := (k₂₀.gpr (by decide)).trans hd₁
+  -- The screen on p's octets, before any workspace.
+  refine WP.seq (WP.mono (outerScreen_ok h₂₀ hd₂₀) fun s₂ ⟨hzs, hms, ks⟩ => ?_)
+  obtain ⟨h₂, hs₂', hf₂'⟩ := h₂₀.same_mem hms ks (by decide)
+  have hs₂ := hs₂₀.trans hs₂'
+  have hf₂ := hf₂₀.trans hf₂'
+  have k₂ : Keep mmRegs s₁ s₂ := (k₂₀.trans ks).mono (by decide)
+  have ho₂ : Spec.Rsa.bytesAt s₂.mem p.op p.k = Spec.Rsa.bytesAt s₁.mem p.op p.k := by rw [hms]; exact ho₂₀
+  have hd₂ : s₂.gpr .rdi = p.B := (ks.gpr (by decide)).trans hd₂₀
+  have hscr : outP p s₂₀.mem = p.P := by unfold outP; rw [ho₂₀]; exact hv₁
+  refine WP.ite (screen p.gen p.P) (by simp [eval, hzs, hscr]) (fun hscreen => ?_) (fun hscreen => ?_)
+  rotate_left
+  · have hsc : screen p.gen p.P = false := by simpa using hscreen
+    refine WP.mono (status_ok h₂ hd₂ (n := 2) (by decide))
+      fun t ⟨ht, hdt, hstatus, hst, hft, kt⟩ => ?_
+    refine ⟨0, Nat.zero_le _, by simpa only [Nat.add_zero] using ht, hdt, ?_,
+      fun he => by rw [hstatus] at he; contradiction, (hs₁.trans hs₂).trans hst, (hf₁.trans hf₂).trans hft,
+      ((k₁.trans k₂).trans kt).mono (by decide)⟩
+    simp [candidateTail, CandidateP.congruent, hsc, TapeOutcome, hstatus]
   unfold candidateFilter
   simp only [seqs]
   refine WP.seq (WP.mono (phaseSetup_state_ok h₂ hd₂ false .all)

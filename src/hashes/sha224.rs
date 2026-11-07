@@ -59,31 +59,6 @@ super::streaming_hash!(
             #[cfg(target_arch = "x86_64")]
             Avx2 => vg_sha224_digest_avx2,
         },
-        tables: {
-            Scalar => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA224 [],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA224 [],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA224 [],
-            },
-            #[cfg(target_arch = "aarch64")]
-            Sha2 => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA224_SHA2 [crate::arch::fn_tables::VG_HASH_SHA224_SHA2_FEATURES],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA224_SHA2 [crate::arch::fn_tables::VG_MD_HASH_SHA224_SHA2_FEATURES],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA224_SHA2 [crate::arch::fn_tables::VG_HMAC_SHA224_SHA2_FEATURES],
-            },
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            ShaNi => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA224_SHANI [crate::arch::fn_tables::VG_HASH_SHA224_SHANI_FEATURES],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA224_SHANI [crate::arch::fn_tables::VG_MD_HASH_SHA224_SHANI_FEATURES],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA224_SHANI [crate::arch::fn_tables::VG_HMAC_SHA224_SHANI_FEATURES],
-            },
-            #[cfg(target_arch = "x86_64")]
-            Avx2 => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA224_AVX2 [crate::arch::fn_tables::VG_HASH_SHA224_AVX2_FEATURES],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA224_AVX2 [crate::arch::fn_tables::VG_MD_HASH_SHA224_AVX2_FEATURES],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA224_AVX2 [crate::arch::fn_tables::VG_HMAC_SHA224_AVX2_FEATURES],
-            },
-        },
     }
 );
 

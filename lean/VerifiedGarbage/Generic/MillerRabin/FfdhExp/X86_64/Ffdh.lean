@@ -16,7 +16,8 @@ public import VerifiedGarbage.TCB.X86_64.Print
 
 namespace VG.Generic.MillerRabin.FfdhExp.X86_64.Ffdh
 
-def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) (e : Proof.Ffdh.X86_64.ExpImpl) : List Artifact := [
+def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) (e : Proof.Ffdh.X86_64.ExpImpl) : List Artifact :=
+  if v.roundOnly then [] else [
   Spec.Ffdh.checkPublicApi.artifact X86_64.target {
     suffix := Emit.qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     stack := 8

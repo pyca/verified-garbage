@@ -49,10 +49,7 @@ open VG.WriteBytes (writeW8_apply)
 /-- What the loop works on: the block at `K`, the `r` bytes at `R`, the
 registers `Rd` and `Rl`. -/
 structure XPre (s₀ : State) (K R : Addr) (r : Nat) (Rd Rl : Reg) : Prop where
-  pos : 0 < r
   small : r < 2 ^ 64
-  fitK : K.toNat + r ≤ 2 ^ 64
-  fitR : R.toNat + r ≤ 2 ^ 64
   disj : Region.Disjoint ⟨K, r⟩ ⟨R, r⟩
   rdK : ∀ q < r, InRegions (s₀.rd ++ s₀.wr) (K + BitVec.ofNat 64 q) 1
   wrR : ∀ q < r, InRegions s₀.wr (R + BitVec.ofNat 64 q) 1
@@ -268,16 +265,6 @@ structure FDoneF (cs : BlockSpec c) (mo : FbMode) (s₀ : State) (m₀ : Mem) (B
   wr : s.wr = s₀.wr
   xmm : s.xmm Core.ivX = s₀.xmm Core.ivX
 
-/-- A region at an offset of `p` that does not wrap around. -/
-theorem fit_off (p : Addr) {d n : Nat} (h : p.toNat + d + n ≤ 2 ^ 64) (hn : 0 < n) :
-    (p + BitVec.ofNat 64 d).toNat + n ≤ 2 ^ 64 := by
-  have hp := p.isLt
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show d < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
-
-theorem xorByte_scal (Rd Rl : Reg) : (xorByte Rd Rl).all scalarI = true := rfl
-
 /-- The partial segment's code is scalar. -/
 theorem fbTail_scal (c : Core) :
     scalCode (.seq (.block c.fbTailStart) (.loop (.block (xorByte c.dataReg c.leftReg)) .ne)) = true := rfl
@@ -393,10 +380,7 @@ theorem fbSeg_wp (cs : BlockSpec c) (mo : FbMode) {s₀ : State} {m₀ : Mem} {B
     have subTr : Region.Sub ⟨T, r⟩ ⟨T, 8 * c.bw⟩ := Region.sub_prefix (by omega_arith)
     have subAr : Region.Sub ⟨A, r⟩ ⟨D, len⟩ := VG.Offset.sub_base D (by omega_arith)
     have hxp : XPre s₄ T A r c.dataReg c.leftReg :=
-      { pos := hr0
-        small := by omega_arith
-        fitK := fit_off B (by simp only [Core.ctrSlots] at hfit; omega_arith) hr0
-        fitR := fit_off D (by omega_arith) hr0
+      { small := by omega_arith
         disj := ((dDS subT).sub_left subAr).sub_right subTr |>.symm
         rdK := fun q hq => by
           rw [rd₄', wr₄']

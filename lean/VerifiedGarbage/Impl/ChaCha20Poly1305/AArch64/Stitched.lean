@@ -27,7 +27,10 @@ computes the keystream, and only the rest with those calls:
   and stored, `x21` (the context) recomputed from `x0`, `x27` and `x28`
   restored, and `x22`, `x23` set to the data not yet absorbed: everything
   after the chunks when decrypting, and also the last chunk when encrypting
-  (`polyOut`); the chunks use SVE2 as the stream does (`XorCallee.sve`);
+  (`polyOut`); the chunks use SVE2 as the stream does (`XorCallee.sve`), and
+  write to the destination, which, when decrypting, is `x28` after the data
+  (`bulkDst`), and `x28` is then set again from the chunks' pointers
+  (`polyEnd`);
 * when encrypting, if data follows the chunks, the last chunk is
   absorbed while the keystream of the next four blocks is computed, and up to
   256 bytes of the rest encrypted with it (`Tail.rest`, below);
@@ -160,12 +163,20 @@ def rest (sve : Bool) : Prog isa :=
 
 end Tail
 
-/-- After the chunks: the accumulator stored (`polyOut`); when encrypting,
+/-- After the chunks, the accumulator stored (`polyOut`). When decrypting,
+`x28`, which `polyOut` restores from memory, is set again to the
+destination's distance from the data, from the bulk's pointers (`x4 - x1`,
+kept in `x15`, which `polyOut` does not write), so that the analysis, which
+knows nothing of memory, knows it public. -/
+def polyEnd (enc : Bool) : List Instr :=
+  if enc then polyOut true else [.sub .x .x15 .x4 .x1] ++ polyOut false ++ [mov .x28 .x15]
+
+/-- After the chunks: the accumulator stored (`polyEnd`); when encrypting,
 if a rest remains, its first four blocks' keystream computed while the last
 chunk is absorbed, and up to 256 bytes of it encrypted (`Tail.rest`). -/
 def afterBulk (sve enc : Bool) : Prog isa :=
-  if enc then .seq (.block (polyOut true)) (.ite (.zero .x .x2) (.block []) (Tail.rest sve))
-  else .block (polyOut enc)
+  if enc then .seq (.block (polyEnd true)) (.ite (.zero .x .x2) (.block []) (Tail.rest sve))
+  else .block (polyEnd false)
 
 /-- The bulk's destination (`x4`) set from its source (`x1`): to `x1 + x28` if
 `to` (`open`), else to `x1` (in place). -/
@@ -210,14 +221,14 @@ def openRest (c : XorCallee) : Prog isa :=
   .seq (.block [.addImm .x .x9 .x23 (511 - Pad.threshold c.sve), .lsr .x .x9 .x9 9])
     (.ite (.zero .x .x9)
       (.seq (.block [.lsl .x .x9 .x23 58])
-        (.ite (.zero .x .x9) (cryptRest c false)
+        (.ite (.zero .x .x9) (cryptRest c true)
           (.seq (.block (atMost 6))
-            (.ite (.zero .x .x9) (cryptRest c false)
+            (.ite (.zero .x .x9) (cryptRest c true)
               (.seq (.block (atMost 8))
-                (.ite (.zero .x .x9) (padRest c false 256)
+                (.ite (.zero .x .x9) (padRest c true 256)
                   (.seq (.block above320)
-                    (.ite (.zero .x .x9) (padRest c false 512) (cryptRest c false)))))))))
-      (padRest c false 512))
+                    (.ite (.zero .x .x9) (padRest c true 512) (cryptRest c true)))))))))
+      (padRest c true 512))
 
 /-! ## The rest after the chunks when decrypting
 
@@ -281,15 +292,23 @@ def out : List Instr :=
   polyOut false ++ [mov .x22 .x20, .add .x .x23 .x7 .x2, .sub .x .x23 .x23 .x20, mov .x20 .x8,
     mov .x24 .x7, mov .x25 .x2]
 
+/-- `load`, with `x28` (the destination's distance from the data, which the
+kernel writes) kept in `x15`, which neither the kernel nor `polyOut` write. -/
+def loadTo : List Instr := load ++ [mov .x15 .x28]
+
+/-- `out`, with `x28` set again from `x15` (rather than from memory, so that
+the analysis knows it public). -/
+def outTo : List Instr := out ++ [mov .x28 .x15]
+
 /-- The rest decrypted, its whole blocks absorbed with its keystream's
 rounds, and its last partial block before it is XORed. -/
 def rest (sve : Bool) : Prog isa :=
-  .seq (.block load)
+  .seq (.block loadTo)
   (.seq (kernel sve 2)
-  (.seq (.block out)
+  (.seq (.block outTo)
   (.seq (macPad .x22 .x23)
   (.seq (.block [mov .x22 .x24, mov .x23 .x25])
-    (Short.xorKs false)))))
+    (Short.xorKs true)))))
 
 end TailO
 
@@ -360,14 +379,14 @@ def openMain (c : XorCallee) : Prog isa :=
   (.seq (.call "vg_poly1305_init" Impl.Poly1305.AArch64.init)
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
-  (.seq (.block (pre ++ TailO.load))
+  (.seq (.block (pre ++ TailO.loadTo))
   (.seq (TailO.kernel c.sve 5)
-  (.seq (.block TailO.out)
+  (.seq (.block TailO.outTo)
   (.seq (macPad .x22 .x23)
   (.seq (.block [mov .x22 .x24, mov .x23 .x25])
-  (.seq (xorFirst false)
+  (.seq (xorFirst true)
   (.seq (.block skip)
-  (.seq (Short.xorKs false)
+  (.seq (Short.xorKs true)
   (.seq absorbLengths
   (.seq (.block Pad.zero)
     (finalizeTo 48)))))))))))))))))
@@ -436,7 +455,7 @@ def openStitchedMain (c : XorCallee) : Prog isa :=
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
   (.seq (.block counterOne)
-  (.seq (cryptStitched c.sve false false)
+  (.seq (cryptStitched c.sve false true)
   (.seq (.block TailO.test)
   (.seq (Code.iteCold (.zero .x .x9) (TailO.rest c.sve) (.seq (macPad .x22 .x23) (openRest c)))
   (.seq absorbLengths
@@ -481,10 +500,10 @@ def openWideMain (c : XorCallee) : Prog isa :=
   (.seq (.block ShortRest.stash)
   (.seq (macPad .x24 .x25)
   (.seq absorbFirst
-  (.seq (ShortRest.first false)
+  (.seq (ShortRest.first true)
   (.seq (.block lengths)
   (.seq (.block skipFirst)
-  (.seq (cryptStitched c.sve false false)
+  (.seq (cryptStitched c.sve false true)
   (.seq (macPad .x22 .x23)
   (.seq (openRest c)
   (.seq absorbLengths
@@ -499,13 +518,15 @@ context, but in one chunk with Poly1305 absorbing the data's first 448 bytes
 
 * after the lengths, `ctx[704, 1280)` is zeroed, and the stream's arguments
   set: the counter to 1, the keystream's buffer of 512 bytes at
-  `ctx + 256 + len` (`ctx[705, 1279)`), and the data's address in `x2`,
-  which the chunk keeps in `x19`; then, as before the chunks, the clamped
-  key is stored and the accumulator loaded (`polyIn`), and the data's
-  address put in `x27` too, where the chunk's phases read it;
-* the chunk (`Stitch.bulkPad`), and the accumulator stored (`polyOut`); the
-  analysis knows registers only, so the length is recovered from the
-  buffer's address (`recover`), and the data's from `x2`;
+  `ctx + 256 + len` (`ctx[705, 1279)`), and the data's address in `x2`;
+  then, as before the chunks, the clamped key is stored and the accumulator
+  loaded (`polyIn`), the data's address put in `x27`, where the chunk's
+  phases read it, and the destination's in `x2`, which the chunk keeps in
+  `x19`;
+* the chunk (`Stitch.bulkPad`), and the accumulator stored (`out`, which
+  also sets `x28` again from the two addresses); the analysis knows
+  registers only, so the length is recovered from the buffer's address
+  (`recover`), and the data's from `x27`;
 * the rest of the data (1 to 63 bytes after the first 448) absorbed with its
   padding, then the lengths; the data XORed with the keystream (`xorKs`)
   and `ctx[704, 1280)` zeroed again.
@@ -526,6 +547,14 @@ def args : List Instr :=
   [.movz .w .x9 1 0, .str .w .x9 .x21 112, .addImm .x .x0 .x21 64, .add .x .x1 .x21 .x23,
    .addImm .x .x1 .x1 256, mov .x2 .x22, .addImm .x .x3 .x21 128]
 
+/-- After the chunk: the destination's distance from the data into `x15`,
+from the destination's address, which the chunk keeps in `x2`, and the data's,
+to which it sets `x27` back; the data's address in `x2`; the accumulator
+stored (`polyOut`), and `x28` set from `x15` (rather than from memory, so that
+the analysis knows it public). -/
+def out : List Instr :=
+  [.sub .x .x15 .x2 .x27, mov .x2 .x27] ++ polyOut false ++ [mov .x28 .x15]
+
 /-- From `polyOut false`'s `x22` (the buffer) and `x23` (the data): the data in
 `x22`, its length in `x23`, and the rest after 448 bytes in `x24`, `x25`. -/
 def recover : List Instr :=
@@ -543,12 +572,12 @@ def openMain (sve : Bool) : Prog isa :=
   .seq prologue
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
-  (.seq (.block (zero ++ args ++ polyIn ++ [mov .x27 .x2]))
+  (.seq (.block (zero ++ args ++ polyIn ++ [mov .x27 .x2, .add .x .x2 .x2 .x28]))
   (.seq (Stitch.bulkPad sve)
-  (.seq (.block (polyOut false ++ recover))
+  (.seq (.block (out ++ recover))
   (.seq (macPad .x24 .x25)
   (.seq absorbLengths
-  (.seq (xorKs false)
+  (.seq (xorKs true)
   (.seq (.block zero)
     (finalizeTo 48))))))))))
 
@@ -631,8 +660,20 @@ def openMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
 /-- The code for a stream backend. -/
 def sealCode (c : XorCallee) (stitched : Bool) : Prog isa := .seq (sealMainCode c stitched) sealTail
 
-/-- `data` and `len` saved after the context first, for `openTail`. -/
+/-- `open`'s body, from the source (`x4`) to the destination (`x8`): the
+destination, `len` and `x28` saved after the context first, for `openTail`. -/
 def openCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   .seq (.block saveData) (.seq (openMainCode c stitched) openTail)
+
+/-- `vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag, work)`:
+the body, in place (the destination the data). -/
+def openInPlace (c : XorCallee) (stitched : Bool) : Prog isa :=
+  .seq (.block [mov .x8 .x4]) (openCode c stitched)
+
+/-- `vg_chacha20_poly1305_open_to(key, nonce, aad, aad_len, src, len, dst, dst_len, tag, work)`,
+`tag` and `work` on the stack: the body, with the destination moved to `x8`,
+and `tag` and `work` loaded into `x6` and `x7`. -/
+def openTo (c : XorCallee) (stitched : Bool) : Prog isa :=
+  .seq (.block [mov .x8 .x6, .ldrSp .x6 0, .ldrSp .x7 8]) (openCode c stitched)
 
 end VG.Impl.ChaCha20Poly1305.AArch64

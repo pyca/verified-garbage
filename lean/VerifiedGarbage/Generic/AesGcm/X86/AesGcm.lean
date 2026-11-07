@@ -53,27 +53,6 @@ open VG.Proof.AesGcm.X86
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  Spec.Gcm.initApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesGcm.X86.init v.callees)
-    stack := 2608
-    verified := init_framed v
-    spSafe := withStackScratch_spSafe (init_spSafe v)
-    features := (v.ctr.features) },
-  Spec.Gcm.streamAadApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch 2592 6 (Impl.AesGcm.X86.streamAad v.callees)
-    stack := 2616
-    verified := streamAad_framed v
-    spSafe := withStackScratch_spSafe (streamAad_spSafe v)
-    features := v.gh.features },
-  Spec.Gcm.streamInitApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch 2584 4 (Impl.AesGcm.X86.streamInit v.callees)
-    stack := 2608
-    verified := streamInit_framed v
-    spSafe := withStackScratch_spSafe (streamInit_spSafe v)
-    features := v.gh.features },
   Spec.Gcm.streamEncryptApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamEncrypt v.callees)

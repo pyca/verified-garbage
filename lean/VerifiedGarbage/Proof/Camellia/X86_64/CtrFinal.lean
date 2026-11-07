@@ -286,7 +286,6 @@ structure KPre (s₀ : State) : Prop where
   iv_data : (kIv s₀).Disjoint (fData s₀)
   iv_sv : (kIv s₀).Disjoint (kSv s₀)
   data_sv : (fData s₀).Disjoint (kSv s₀)
-  ret_sch : (⟨fSp s₀, 8⟩ : Region).Disjoint (kSch s₀)
   ret_iv : (⟨fSp s₀, 8⟩ : Region).Disjoint (kIv s₀)
   ret_data : (⟨fSp s₀, 8⟩ : Region).Disjoint (fData s₀)
   ret_sv : (⟨fSp s₀, 8⟩ : Region).Disjoint (kSv s₀)
@@ -301,8 +300,8 @@ structure KPre (s₀ : State) : Prop where
   rounds : fR s₀ = 18 ∨ fR s₀ = 24
 
 theorem KPre.of {s₀ : State} (h : ctrFinalX86_64.pre s₀) : KPre s₀ :=
-  let ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22⟩ := h
-  ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22⟩
+  let ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, _, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22⟩ := h
+  ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22⟩
 
 /-! ## Regions and frames -/
 
@@ -751,10 +750,7 @@ theorem tail_xor_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KTCall s₀
       Nat.mod_eq_of_lt (by omega)]
   have hB := hp.bk_toNat
   have xp : Modes.X86_64.XPre s₁ (kBk s₀) (fT s₀) (fU s₀) .r13 .r14 := {
-    pos := by omega
     small := by omega
-    fitK := by omega
-    fitR := by rw [hT]; omega
     disj := (((hp.data_sv.sub_left (tail_sub s₀)).sub_right (blk_sv_sub s₀)).sub_right
       (Region.sub_prefix (by omega))).symm
     rdK := fun q hq => by

@@ -22,10 +22,17 @@ def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
   Spec.ChaCha20Poly1305.openZeroApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1296 .x7 96
-      (Impl.ChaCha20Poly1305.AArch64.openCode v.callee v.stitched)
-    stack := 1296
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1312 .x7 96
+      (Impl.ChaCha20Poly1305.AArch64.openInPlace v.callee v.stitched)
+    stack := 1312
     verified := Proof.ChaCha20Poly1305.AArch64.open_framed v },
+  Spec.ChaCha20Poly1305.openToApi.artifact AArch64.target {
+    suffix := v.callee.suffix
+    features := v.features
+    code := Impl.StackScratch.AArch64.withStackArgScratchWiped 1328 1 96
+      (Impl.ChaCha20Poly1305.AArch64.openTo v.callee v.stitched)
+    stack := 1328
+    verified := Proof.ChaCha20Poly1305.AArch64.openTo_framed v },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features

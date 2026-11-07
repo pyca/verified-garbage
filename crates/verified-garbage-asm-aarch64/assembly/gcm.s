@@ -6595,109 +6595,16 @@ vg_aes_gcm_open_with_powers_aes:
 	ret
 	.p2align 6
 
-// vg_aes_gcm_init_aes_sha3: the function `vg_aes_gcm_init_aes`
-
-// vg_aes_gcm_seal_aes_sha3: the function `vg_aes_gcm_seal_aes`
-
-// vg_aes_gcm_open_aes_sha3: the function `vg_aes_gcm_open_aes`
-
-// vg_aes_gcm_stream_init_aes_sha3: the function `vg_aes_gcm_stream_init_aes`
-
-// vg_aes_gcm_stream_aad_aes_sha3: the function `vg_aes_gcm_stream_aad_aes`
-
-// vg_aes_gcm_stream_encrypt_aes_sha3: the function `vg_aes_gcm_stream_encrypt_aes`
-
-// vg_aes_gcm_stream_decrypt_aes_sha3: the function `vg_aes_gcm_stream_decrypt_aes`
-
-// vg_aes_gcm_stream_finish_aes_sha3: the function `vg_aes_gcm_stream_finish_aes`
-
-// vg_aes_gcm_stream_verify_aes_sha3: the function `vg_aes_gcm_stream_verify_aes`
-
-vg_aes_gcm_seal_gather_aes_sha3:
-	sub sp, sp, #16
-	add x16, sp, #0
-	str x30, [x16, #8]
-	ldr x17, [sp, #32]
-	str x17, [x16, #0]
-	ldr x11, [sp, #16]
-	cbz x7, 20f
-22:
-	ldr x12, [x6, #0]
-	ldr x13, [x6, #8]
-	add x6, x6, #16
-	lsr x14, x13, #4
-	cbz x14, 23f
-25:
-	ldr q0, [x12, #0]
-	str q0, [x11, #0]
-	add x12, x12, #16
-	add x11, x11, #16
-	sub x14, x14, #1
-	cbnz x14, 25b
-	b 24f
-23:
-24:
-	movz x15, #15, lsl #0
-	and x13, x13, x15
-	cbz x13, 26f
-	lsr x14, x13, #3
-	cbz x14, 28f
-210:
-	ldr x14, [x12, #0]
-	str x14, [x11, #0]
-	add x12, x12, #8
-	add x11, x11, #8
-	sub x13, x13, #8
-	lsr x14, x13, #3
-	cbnz x14, 210b
-	b 29f
-28:
-29:
-	lsr x14, x13, #2
-	cbz x14, 211f
-	ldr w14, [x12, #0]
-	str w14, [x11, #0]
-	add x12, x12, #4
-	add x11, x11, #4
-	sub x13, x13, #4
-	b 212f
-211:
-212:
-	cbz x13, 213f
-215:
-	ldrb w14, [x12, #0]
-	strb w14, [x11, #0]
-	add x12, x12, #1
-	add x11, x11, #1
-	sub x13, x13, #1
-	cbnz x13, 215b
-	b 214f
-213:
-214:
-	b 27f
-26:
-27:
-	sub x7, x7, #1
-	cbnz x7, 22b
-	b 21f
-20:
-21:
-	ldr x6, [sp, #16]
-	ldr x7, [sp, #24]
-	bl {vg_aes_gcm_seal_aes_sha3}
-	ldr x30, [sp, #8]
-	add sp, sp, #16
-	ret
-	.p2align 6
-
-vg_aes_gcm_open_to_aes_sha3:
+vg_aes_gcm_open_to_with_powers_aes:
 	sub sp, sp, #32
 	add x16, sp, #0
-	str x30, [x16, #16]
+	str x30, [x16, #24]
 	ldr x17, [sp, #48]
 	str x17, [x16, #0]
 	ldr x17, [sp, #56]
 	str x17, [x16, #8]
+	ldr x17, [sp, #64]
+	str x17, [x16, #16]
 	ldr x11, [sp, #32]
 	add x12, x6, #0
 	add x13, x7, #0
@@ -6754,7 +6661,7 @@ vg_aes_gcm_open_to_aes_sha3:
 23:
 24:
 	ldr x6, [sp, #32]
-	bl {vg_aes_gcm_open_aes_sha3}
+	bl {vg_aes_gcm_open_with_powers_aes}
 	cbz w0, 213f
 	b 214f
 213:
@@ -6771,7 +6678,7 @@ vg_aes_gcm_open_to_aes_sha3:
 215:
 216:
 214:
-	ldr x30, [sp, #16]
+	ldr x30, [sp, #24]
 	add sp, sp, #32
 	ret
 	.p2align 6
@@ -17133,6 +17040,94 @@ vg_aes_gcm_open_with_powers_aes_sha3:
 2131:
 27:
 	add sp, sp, #2592
+	ret
+	.p2align 6
+
+vg_aes_gcm_open_to_with_powers_aes_sha3:
+	sub sp, sp, #32
+	add x16, sp, #0
+	str x30, [x16, #24]
+	ldr x17, [sp, #48]
+	str x17, [x16, #0]
+	ldr x17, [sp, #56]
+	str x17, [x16, #8]
+	ldr x17, [sp, #64]
+	str x17, [x16, #16]
+	ldr x11, [sp, #32]
+	add x12, x6, #0
+	add x13, x7, #0
+	lsr x14, x13, #4
+	cbz x14, 20f
+22:
+	ldr q0, [x12, #0]
+	str q0, [x11, #0]
+	add x12, x12, #16
+	add x11, x11, #16
+	sub x14, x14, #1
+	cbnz x14, 22b
+	b 21f
+20:
+21:
+	movz x15, #15, lsl #0
+	and x13, x13, x15
+	cbz x13, 23f
+	lsr x14, x13, #3
+	cbz x14, 25f
+27:
+	ldr x14, [x12, #0]
+	str x14, [x11, #0]
+	add x12, x12, #8
+	add x11, x11, #8
+	sub x13, x13, #8
+	lsr x14, x13, #3
+	cbnz x14, 27b
+	b 26f
+25:
+26:
+	lsr x14, x13, #2
+	cbz x14, 28f
+	ldr w14, [x12, #0]
+	str w14, [x11, #0]
+	add x12, x12, #4
+	add x11, x11, #4
+	sub x13, x13, #4
+	b 29f
+28:
+29:
+	cbz x13, 210f
+212:
+	ldrb w14, [x12, #0]
+	strb w14, [x11, #0]
+	add x12, x12, #1
+	add x11, x11, #1
+	sub x13, x13, #1
+	cbnz x13, 212b
+	b 211f
+210:
+211:
+	b 24f
+23:
+24:
+	ldr x6, [sp, #32]
+	bl {vg_aes_gcm_open_with_powers_aes_sha3}
+	cbz w0, 213f
+	b 214f
+213:
+	ldr x9, [sp, #32]
+	ldr x10, [sp, #40]
+	movz x11, #0, lsl #0
+	cbz x10, 215f
+217:
+	strb w11, [x9, #0]
+	add x9, x9, #1
+	sub x10, x10, #1
+	cbnz x10, 217b
+	b 216f
+215:
+216:
+214:
+	ldr x30, [sp, #24]
+	add sp, sp, #32
 	ret
 	.p2align 6
 

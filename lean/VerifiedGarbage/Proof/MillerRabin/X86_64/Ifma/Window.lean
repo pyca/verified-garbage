@@ -26,7 +26,7 @@ open VG VG.X86_64 VG.Proof.Bignum.Amm52
 open VG.Proof.Bignum (off word ofs Outside mask Frm wv)
 open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Proof.Bignum.X86_64.Ifma (limb val52)
-open VG.Proof.Bignum.X86_64.Ifma.Pub (PubOk Mod)
+open VG.Proof.Bignum.X86_64.Ifma.Pub (Mod)
 open VG.Impl.Rsa.X86_64.CrtIfma (mask52 ammMul at_)
 open VG.Impl.Rsa.X86_64.PubIfma (setOps arr)
 open VG.Impl.MillerRabin.X86_64.Ifma
@@ -58,11 +58,11 @@ structure WEnv (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (B H : Addr) (c k b : Nat) (
 
 /-! ## The layout -/
 
-theorem PubOk.lay (hl : PubOk l) : size l < 2 ^ 31 ∧ oY l = l.NB + 32 ∧ oS l = oY l + l.NB ∧
+theorem MrOk.lay (hl : MrOk l) : size l < 2 ^ 31 ∧ oY l = l.NB + 32 ∧ oS l = oY l + l.NB ∧
     oT l 0 = oS l + l.NB ∧ oP1c l = oT l 0 + 4 * l.NB ∧ oM1 l = oP1c l + l.NB ∧ oM1c l = oM1 l + l.NB ∧
     oV l = oM1c l + l.NB ∧ oF l = oV l + 16 ∧ size l = oF l + 8 ∧ 32 ≤ l.NB ∧ l.NB % 32 = 0 ∧ l.W < 2 ^ 31 ∧
     l.NB + 32 ≤ size l := by
-  rcases hl with rfl | rfl | rfl <;> decide
+  rcases hl with rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-! ## Masks -/
 
@@ -170,14 +170,14 @@ theorem yeq_iff {m : Mem} {B : Addr} {c k b y : Nat} (h : Tab l m B c k b) (hodd
 /-! ## `y ≡ −1` and `y ≡ ±1` -/
 
 /-- `eqN k` and `op rdx, rcx` (`mov` or `or`). -/
-theorem eqOp_ok (hl : PubOk l) {s : State} {B : Addr} {k : Nat} (hB : s.gpr .rbx = B) (hs : Scr s B (size l))
+theorem eqOp_ok (hl : MrOk l) {s : State} {B : Addr} {k : Nat} (hB : s.gpr .rbx = B) (hs : Scr s B (size l))
     (hk : k + l.NB ≤ size l) (op : List Instr) {f : BitVec 64 → BitVec 64 → BitVec 64}
     (hop : ∀ u : State, WP isa (.block op) u fun t => t.gpr .rdx = f (u.gpr .rdx) (u.gpr .rcx) ∧
       t.mem = u.mem ∧ VG.Proof.MlKem.X86_64.Keep [.rdx] u t ∧ t.mxcsr = u.mxcsr) :
     WP isa (.block (eqN l k ++ op)) s fun t =>
       t.gpr .rdx = f (s.gpr .rdx) (mask (decide (∀ j < l.L, limb l s.mem B (oY l) j = limb l s.mem B k j))) ∧
       t.mem = s.mem ∧ VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rdx] s t ∧ t.mxcsr = s.mxcsr := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   rw [WP.block_append_iff]
   refine WP.mono (eqN_ok hl hB hs (by omega_arith) hk z0) fun t ⟨hc, hm, kt, hx⟩ => ?_
   refine WP.mono (hop t) fun u ⟨hd, hmu, ku, hxu⟩ => ⟨?_, hmu.trans hm, (kt.trans ku).mono (by decide),
@@ -198,12 +198,12 @@ theorem orDC_ok (u : State) : WP isa (.block [.alu .or .rdx (.reg .rcx)]) u fun 
     fun t ⟨⟨a, b, c⟩, k⟩ => ⟨a, b, k, c⟩
 
 /-- The two equalities of `isM1`, as masks. -/
-theorem isM1_mask (hl : PubOk l) {s : State} {B : Addr} (hB : s.gpr .rbx = B) (hs : Scr s B (size l)) :
+theorem isM1_mask (hl : MrOk l) {s : State} {B : Addr} (hB : s.gpr .rbx = B) (hs : Scr s B (size l)) :
     WP isa (.block (isM1 l)) s fun t =>
       t.gpr .rdx = mask (decide (∀ j < l.L, limb l s.mem B (oY l) j = limb l s.mem B (oM1 l) j) ||
         decide (∀ j < l.L, limb l s.mem B (oY l) j = limb l s.mem B (oM1c l) j)) ∧ t.mem = s.mem ∧
       VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rdx] s t ∧ t.mxcsr = s.mxcsr := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   unfold isM1
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (eqOp_ok hl hB hs (by omega_arith) _ (f := fun _ c => c) movDC_ok) fun t ⟨hd, hm, kt, hx⟩ => ?_
@@ -232,39 +232,39 @@ theorem mem_wrs1 : (oY l, 2 * l.NB) ∈ wrs l := List.mem_cons_self ..
 theorem mem_wrs2 : (oV l, 8) ∈ wrs l := List.mem_cons_of_mem _ (List.mem_cons_self ..)
 theorem mem_wrs3 : (oF l, 8) ∈ wrs l := List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
 
-theorem word_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {d : Nat}
+theorem word_frm (hl : MrOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {d : Nat}
     (hd : d + 8 ≤ oY l ∨ (oY l + 2 * l.NB ≤ d ∧ d + 8 ≤ oV l)) : word m' B d = word m B d := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   refine f.word_eq (fun r hr => ?_) (by omega_arith)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
 
-theorem wlimb_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o : Nat} (ho : Away l o) :
+theorem wlimb_frm (hl : MrOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o : Nat} (ho : Away l o) :
     ∀ j < l.L, limb l m' B o j = limb l m B o j := fun j hj => by
   have := VG.Proof.Bignum.X86_64.Ifma.off_ltN hl.amm hj
   simp only [limb]
   unfold Away at ho
   rw [word_frm hl f (by omega_arith)]
 
-theorem canon_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o : Nat} (ho : Away l o)
+theorem canon_frm (hl : MrOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o : Nat} (ho : Away l o)
     (h : Canon l m B o) : Canon l m' B o := fun j hj => by rw [wlimb_frm hl f ho j hj]; exact h j hj
 
-theorem val_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o : Nat} (ho : Away l o) :
+theorem val_frm (hl : MrOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o : Nat} (ho : Away l o) :
     val52 l m' B o = val52 l m B o := lval_congr (wlimb_frm hl f ho)
 
-theorem rep_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o c x : Nat} (ho : Away l o)
+theorem rep_frm (hl : MrOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o c x : Nat} (ho : Away l o)
     (h : Rep l m B c o x) : Rep l m' B c o x :=
   ⟨canon_frm hl f ho h.1, by rw [val_frm hl f ho]; exact h.2.1, by rw [val_frm hl f ho]; exact h.2.2⟩
 
-theorem away (hl : PubOk l) : Away l 0 ∧ (∀ j < 4, Away l (oT l j)) ∧ Away l (oP1c l) ∧ Away l (oM1 l) ∧
+theorem away (hl : MrOk l) : Away l 0 ∧ (∀ j < 4, Away l (oT l j)) ∧ Away l (oP1c l) ∧ Away l (oM1 l) ∧
     Away l (oM1c l) := by
   unfold Away
-  rcases hl with rfl | rfl | rfl <;> decide
+  rcases hl with rfl | rfl | rfl | rfl | rfl <;> decide
 
-theorem tab_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {c k b : Nat}
+theorem tab_frm (hl : MrOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {c k b : Nat}
     (h : Tab l m B c k b) : Tab l m' B c k b := by
   obtain ⟨a0, aT, aP, aM, aMc⟩ := away hl
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   have hm := h.mod
   refine ⟨⟨fun j hj => by rw [wlimb_frm hl f a0 j hj]; exact hm.lt j hj, by rw [val_frm hl f a0]; exact hm.val,
     fun t ht => by rw [word_frm hl f (by simp only [VG.Impl.Rsa.X86_64.CrtIfma.Lay.oK0]; omega_arith)]; exact hm.k0 t ht, hm.klt,
@@ -274,16 +274,16 @@ theorem tab_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') 
     ⟨canon_frm hl f aP h.p1c.1, by rw [val_frm hl f aP]; exact h.p1c.2⟩,
     ⟨canon_frm hl f aMc h.m1c.1, by rw [val_frm hl f aMc]; exact h.m1c.2⟩⟩
 
-theorem hword_frm (hl : PubOk l) {B H : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {d : Nat}
+theorem hword_frm (hl : MrOk l) {B H : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {d : Nat}
     (hd : ∀ x < 8, size l ≤ ofs B (off H d + BitVec.ofNat 64 x)) : word m' H d = word m H d := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   refine Mem.readW_congr fun i hi => f _ fun r hr => ?_
   have := hd i (by omega_arith)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
 
 /-- `WEnv` through a change of `Y`, `S`, the word at `oV` and the flag. -/
-theorem WEnv.frame (hl : PubOk l) {s t : State} {B H : Addr} {c k b : Nat} (h : WEnv l B H c k b s)
+theorem WEnv.frame (hl : MrOk l) {s t : State} {B H : Addr} {c k b : Nat} (h : WEnv l B H c k b s)
     (hbx : t.gpr .rbx = B) (hdi : t.gpr .rdi = H) (h12 : t.gpr .r12 = mask52) (hrd : t.rd = s.rd)
     (hwr : t.wr = s.wr) (f : Frm B (wrs l) s.mem t.mem) : WEnv l B H c k b t := by
   refine ⟨hbx, hdi, h12, h.scr.congr hwr, tab_frm hl f h.tab, h.odd, h.three, h.lt,
@@ -293,7 +293,7 @@ theorem WEnv.frame (hl : PubOk l) {s t : State} {B H : Addr} {c k b : Nat} (h : 
   · rw [hword_frm hl f (h.esep l.W (by omega_arith))]; exact h.el
 
 /-- `WEnv` through a change of registers outside it. -/
-theorem WEnv.keep (hl : PubOk l) {s t : State} {B H : Addr} {c k b : Nat} {rs : List Reg} (h : WEnv l B H c k b s)
+theorem WEnv.keep (hl : MrOk l) {s t : State} {B H : Addr} {c k b : Nat} {rs : List Reg} (h : WEnv l B H c k b s)
     (hk : Keep rs s t) (hb : .rbx ∉ rs) (hd : .rdi ∉ rs) (h12 : .r12 ∉ rs) (hm : t.mem = s.mem) :
     WEnv l B H c k b t :=
   h.frame hl ((hk.gpr hb).trans h.rbx) ((hk.gpr hd).trans h.rdi) ((hk.gpr h12).trans h.r12) hk.2.1 hk.2.2
@@ -301,14 +301,14 @@ theorem WEnv.keep (hl : PubOk l) {s t : State} {B H : Addr} {c k b : Nat} {rs : 
 
 /-! ## Numbers through stores elsewhere -/
 
-theorem wlimb_out (hl : PubOk l) {B : Addr} {m m' : Mem} {o' n o : Nat} (f : Outside B o' n m m')
+theorem wlimb_out (hl : MrOk l) {B : Addr} {m m' : Mem} {o' n o : Nat} (f : Outside B o' n m m')
     (ho : o + l.NB ≤ o' ∨ o' + n ≤ o) (hb : o + l.NB ≤ 2 ^ 63) :
     ∀ j < l.L, limb l m' B o j = limb l m B o j := fun j hj => by
   have := VG.Proof.Bignum.X86_64.Ifma.off_ltN hl.amm hj
   simp only [limb]
   rw [f.word (by omega_arith) (by omega_arith)]
 
-theorem wrep_out (hl : PubOk l) {B : Addr} {m m' : Mem} {o' n o c x : Nat} (f : Outside B o' n m m')
+theorem wrep_out (hl : MrOk l) {B : Addr} {m m' : Mem} {o' n o c x : Nat} (f : Outside B o' n m m')
     (ho : o + l.NB ≤ o' ∨ o' + n ≤ o) (hb : o + l.NB ≤ 2 ^ 63) (h : Rep l m B c o x) : Rep l m' B c o x := by
   have e : val52 l m' B o = val52 l m B o := lval_congr (wlimb_out hl f ho hb)
   exact ⟨fun j hj => by rw [wlimb_out hl f ho hb j hj]; exact h.1 j hj, by rw [e]; exact h.2.1, by rw [e]; exact h.2.2⟩
@@ -323,7 +323,7 @@ theorem rep_limbs {m m' : Mem} {B : Addr} {c o a x : Nat} (e : ∀ j < l.L, limb
   exact ⟨fun j hj => by rw [e j hj]; exact h.1 j hj, by rw [ev]; exact h.2.1, by rw [ev]; exact h.2.2⟩
 
 /-- `rdx := mask (y = c − 1)` for `Y` standing for `y < c`. -/
-theorem isM1_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b y : Nat} (h : WEnv l B H c k b s)
+theorem isM1_ok (hl : MrOk l) {s : State} {B H : Addr} {c k b y : Nat} (h : WEnv l B H c k b s)
     (hy : Rep l s.mem B c (oY l) y) (hyc : y < c) :
     WP isa (.block (isM1 l)) s fun t =>
       t.gpr .rdx = mask (decide (y = c - 1)) ∧ t.mem = s.mem ∧
@@ -332,12 +332,12 @@ theorem isM1_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b y : Nat} (h : WEn
   rw [hd, decide_or_iff (yeq_iff h.tab h.odd h.three hy hyc).1]
 
 /-- `rdx := mask (y = 1 ∨ y = c − 1)`. -/
-theorem isPM1_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b y : Nat} (h : WEnv l B H c k b s)
+theorem isPM1_ok (hl : MrOk l) {s : State} {B H : Addr} {c k b y : Nat} (h : WEnv l B H c k b s)
     (hy : Rep l s.mem B c (oY l) y) (hyc : y < c) :
     WP isa (.block (isPM1 l)) s fun t =>
       t.gpr .rdx = mask (decide (y = 1) || decide (y = c - 1)) ∧ t.mem = s.mem ∧
       VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rdx] s t ∧ t.mxcsr = s.mxcsr := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   have e := yeq_iff h.tab h.odd h.three hy hyc
   unfold isPM1
   rw [List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
@@ -595,7 +595,7 @@ theorem mov14_ok (u : State) : WP isa (.block [.mov32 .r14 (.imm 1)]) u fun t =>
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r14] (Q := fun t => t.gpr .r14 = BitVec.ofNat 64 1 ∧
     t.mem = u.mem ∧ t.mxcsr = u.mxcsr) (by xrun [RegUpd.mxcsr_setReg]) rfl) fun t ⟨⟨a, b, d⟩, k⟩ => ⟨a, b, k, d⟩
 
-theorem WEnv.same (hl : PubOk l) {u v : State} {B H : Addr} {c k b : Nat} (h : WEnv l B H c k b u)
+theorem WEnv.same (hl : MrOk l) {u v : State} {B H : Addr} {c k b : Nat} (h : WEnv l B H c k b u)
     (e : Same u v) : WEnv l B H c k b v := h.keep hl e.1 (by decide) (by decide) (by decide) e.2.1
 
 theorem Rep.same {u v : State} {B : Addr} {c o x : Nat} (h : Rep l u.mem B c o x) (e : Same u v) :
@@ -628,13 +628,13 @@ structure MOut (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (B H : Addr) (c k b : Nat) (
   v : word u.mem B (oV l) = word t.mem B (oV l)
 
 /-- The end of a multiplication: the flag stored, `r13` counted down. -/
-theorem fin_ok (hl : PubOk l) {t u w : State} {B H : Addr} {c k b z : Nat} {F : Bool}
+theorem fin_ok (hl : MrOk l) {t u w : State} {B H : Addr} {c k b z : Nat} {F : Bool}
     (hE : WEnv l B H c k b u) (hz : Rep l u.mem B c (oY l) z) (hzc : z < c)
     (hK : Keep MR t u) (h13 : u.gpr .r13 = t.gpr .r13) (hx : u.mxcsr = t.mxcsr) (hf : Frm B (wrs l) t.mem u.mem)
     (hv : word u.mem B (oV l) = word t.mem B (oV l))
     (hw : w.mem = u.mem.writeW (off B (oF l)) (mask F)) (kw : Keep [.rax, .rcx, .rdx] u w) (xw : w.mxcsr = u.mxcsr) :
     WP isa (.block [.alu .sub .r13 (.imm 1)]) w fun v => MOut l B H c k b t v (z, F) := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   refine WP.mono (wsub13_ok w) fun v ⟨r13, zf, m, kv, xv⟩ => ?_
   have ow : Outside B (oF l) 8 u.mem v.mem := by
     rw [m, hw]; exact VG.Proof.Bignum.writeW_outside _ B _ (by omega_arith)
@@ -653,13 +653,13 @@ theorem wp_assoc {c₁ c₂ c₃ : Prog isa} {u : State} {Q : State → Prop}
   WP.mono (WP.seq_iff.mp h) fun _ h' => WP.seq h'
 
 /-- The squaring of `Y` from a state with `rbx = B`: `Y := Y Y`. -/
-theorem sqY_ok (hl : PubOk l) {t u : State} {B H : Addr} {c k b y : Nat} {Q : State → Prop}
+theorem sqY_ok (hl : MrOk l) {t u : State} {B H : Addr} {c k b y : Nat} {Q : State → Prop}
     (hE : WEnv l B H c k b t) (hy : Rep l t.mem B c (oY l) y) (e : Same t u)
     (hQ : ∀ w, WEnv l B H c k b w → Rep l w.mem B c (oY l) (y * y % c) → Keep MR t w →
       w.gpr .r13 = t.gpr .r13 → w.gpr .r15 = t.gpr .r15 → w.mxcsr = t.mxcsr → Frm B (wrs l) t.mem w.mem →
       word w.mem B (oV l) = word t.mem B (oV l) → word w.mem B (oF l) = word t.mem B (oF l) → Q w) :
     WP isa (.seq (.block (setOps (oY l) (oY l) (oY l))) (ammMul l)) u Q := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   have hB₂ : u.gpr .rbx = B := (e.gpr _).trans hE.rbx
   refine WP.seq (WP.mono (VG.Proof.Bignum.X86_64.Ifma.Pub.setOps_ok (o := oY l) (a := oY l) (b := oY l) hB₂
     (by omega_arith) (by omega_arith) (by omega_arith)) fun u₃ ⟨r8, r9, r11, k₃, m₃, x₃⟩ => ?_)
@@ -678,11 +678,11 @@ theorem sqY_ok (hl : PubOk l) {t u : State} {B H : Addr} {c k b y : Nat} {Q : St
     (o.word (.inr (by omega_arith)) (by omega_arith))
 
 /-- A squaring of a window (`r15 ≠ 0`, `r13 ≠ 1`). -/
-theorem multSq_ok (hl : PubOk l) {t : State} {B H : Addr} {c k b y : Nat} {P : Bool}
+theorem multSq_ok (hl : MrOk l) {t : State} {B H : Addr} {c k b y : Nat} {P : Bool}
     (hE : WEnv l B H c k b t) (hy : Rep l t.mem B c (oY l) y) (hF : word t.mem B (oF l) = mask P)
     (h15 : t.gpr .r15 ≠ 0) (hne : (t.gpr .r13 - BitVec.signExtend 64 (1 : BitVec 32) == 0) = false) :
     WP isa (mult l) t fun u => MOut l B H c k b t u (wSq c true (y, P)) := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   have hc0 : 0 < c := by have := hE.three; omega_arith
   unfold mult
   refine WP.seq (isLast_ite (fun h => absurd h h15) fun _ u₁ e₁ => ?_)
@@ -708,12 +708,12 @@ def mStep (c b d : Nat) (st : Nat × Bool) : Nat × Bool :=
     decide (st.1 * VG.Spec.Rsa.powMod b d c % c = 1) || decide (st.1 * VG.Spec.Rsa.powMod b d c % c = c - 1))
 
 /-- The multiplication of a window (`r15 ≠ 0`, `r13 = 1`). -/
-theorem multMul_ok (hl : PubOk l) {t : State} {B H : Addr} {c k b y d : Nat} {P : Bool}
+theorem multMul_ok (hl : MrOk l) {t : State} {B H : Addr} {c k b y d : Nat} {P : Bool}
     (hE : WEnv l B H c k b t) (hy : Rep l t.mem B c (oY l) y) (hF : word t.mem B (oF l) = mask P)
     (h15 : t.gpr .r15 ≠ 0) (heq : (t.gpr .r13 - BitVec.signExtend 64 (1 : BitVec 32) == 0) = true)
     (hd : (word t.mem B (oV l)).toNat / 2 ^ 62 = d) :
     WP isa (mult l) t fun u => MOut l B H c k b t u (mStep c b d (y, P)) := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   have hc0 : 0 < c := by have := hE.three; omega_arith
   unfold mult
   refine WP.seq (isLast_ite (fun h => absurd h h15) fun _ u₁ e₁ => ?_)
@@ -766,13 +766,13 @@ theorem multMul_ok (hl : PubOk l) {t : State} {B H : Addr} {c k b y d : Nat} {P 
     (by rw [m₉, m₈, s₇.2.1]) ((s₇.1.trans k₈).trans k₉ |>.mono (by decide)) (by rw [x₉, x₈, s₇.2.2])
 
 /-- After squaring `j` of the last three: `F |= y ≡ −1` under `σ > j`. -/
-theorem afterLast_ok (hl : PubOk l) {u : State} {B H : Addr} {c k b y j : Nat} {P : Bool}
+theorem afterLast_ok (hl : MrOk l) {u : State} {B H : Addr} {c k b y j : Nat} {P : Bool}
     (hj : j = 1 ∨ j = 2 ∨ j = 3) (hE : WEnv l B H c k b u) (hy : Rep l u.mem B c (oY l) y) (hyc : y < c)
     (hF : word u.mem B (oF l) = mask P) :
     WP isa (.block (afterLast l j)) u fun w =>
       w.mem = u.mem.writeW (off B (oF l)) (mask (P || (decide (j < mrSig c) && decide (y = c - 1)))) ∧
       Keep [.rax, .rcx, .rdx] u w ∧ w.mxcsr = u.mxcsr := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   unfold afterLast
   rw [WP.block_append_iff]
   refine WP.mono (isM1_ok hl hE hy hyc) fun w ⟨hd, m, kw, x⟩ => ?_
@@ -784,7 +784,7 @@ theorem afterLast_ok (hl : PubOk l) {u : State} {B H : Addr} {c k b y j : Nat} {
     (by rw [m]; exact hF) hd) fun v ⟨mv, kv, xv⟩ => ⟨by rw [mv, m], (kw.trans kv).mono (by decide), xv.trans x⟩
 
 /-- A squaring of the last pass (`r15 = 0`, `r13 = v`): squaring `j = 4 − v`. -/
-theorem multLast_ok (hl : PubOk l) {t : State} {B H : Addr} {c k b y v j : Nat} {P : Bool}
+theorem multLast_ok (hl : MrOk l) {t : State} {B H : Addr} {c k b y v j : Nat} {P : Bool}
     (hE : WEnv l B H c k b t) (hy : Rep l t.mem B c (oY l) y) (hF : word t.mem B (oF l) = mask P)
     (h15 : t.gpr .r15 = 0) (h13 : t.gpr .r13 = BitVec.ofNat 64 v) (hv : v + j = 4) (hj : 1 ≤ j) (hj3 : j ≤ 3) :
     WP isa (mult l) t fun u => MOut l B H c k b t u (wSq c (decide (j < mrSig c)) (y, P)) := by
@@ -836,7 +836,7 @@ theorem WI.step {B H : Addr} {c k b : Nat} {s u v : State} {st st' : Nat × Bool
 abbrev MRW : List Reg := [.rax, .rcx, .rdx, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14]
 
 /-- A window, its multiplications' steps `sts`. -/
-theorem window_gen (hl : PubOk l) {s : State} {B H : Addr} {c k b n : Nat} (sts : Nat → Nat × Bool)
+theorem window_gen (hl : MrOk l) {s : State} {B H : Addr} {c k b n : Nat} (sts : Nat → Nat × Bool)
     (hE : WEnv l B H c k b s) (hy : Rep l s.mem B c (oY l) (sts 0).1) (hlt : (sts 0).1 < c)
     (hF : word s.mem B (oF l) = mask (sts 0).2) (h14 : s.gpr .r14 = BitVec.ofNat 64 n) (hn : 1 ≤ n) (hn' : n ≤ 32)
     (hstep : ∀ i < 3, ∀ u, WI l B H c k b s (sts i) u → u.gpr .r13 = BitVec.ofNat 64 (3 - i) →
@@ -846,7 +846,7 @@ theorem window_gen (hl : PubOk l) {s : State} {B H : Addr} {c k b n : Nat} (sts 
       word t.mem B (oF l) = mask (sts 3).2 ∧ word t.mem B (oV l) = word s.mem B (oV l) <<< 2 ∧
       t.gpr .r14 = BitVec.ofNat 64 (n - 1) ∧ t.zf = some (decide (n - 1 = 0)) ∧ Keep MRW s t ∧
       t.mxcsr = s.mxcsr ∧ Frm B (wrs l) s.mem t.mem := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   unfold window
   refine WP.seq (WP.mono (mov13_ok s) fun u₀ ⟨r13₀, m₀, k₀, x₀⟩ => ?_)
   have I₀ : WI l B H c k b s (sts 0) u₀ :=
@@ -884,7 +884,7 @@ theorem wst_three (c b d : Nat) (st : Nat × Bool) : wst c b d st 3 = mStep c b 
   unfold wst; rw [ifn (by decide), ifp (by decide)]; rfl
 
 /-- A window, with the registers it changes. -/
-theorem windowW_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b y n : Nat} {P : Bool}
+theorem windowW_ok (hl : MrOk l) {s : State} {B H : Addr} {c k b y n : Nat} {P : Bool}
     (h : WEnv l B H c k b s) (hy : Rep l s.mem B c (oY l) y) (hyc : y < c)
     (hP : word s.mem B (oF l) = mask P) (h15 : s.gpr .r15 ≠ 0) (h14 : s.gpr .r14 = BitVec.ofNat 64 n)
     (hn : 1 ≤ n) (hn' : n ≤ 32) :
@@ -918,7 +918,7 @@ def lst (c : Nat) (st : Nat × Bool) : Nat → Nat × Bool
   | i + 1 => wSq c (decide (i + 1 < mrSig c)) (lst c st i)
 
 /-- The last pass, with the registers it changes. -/
-theorem lastW_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b y : Nat} {P : Bool}
+theorem lastW_ok (hl : MrOk l) {s : State} {B H : Addr} {c k b y : Nat} {P : Bool}
     (h : WEnv l B H c k b s) (hy : Rep l s.mem B c (oY l) y) (hyc : y < c)
     (hP : word s.mem B (oF l) = mask P) (h15 : s.gpr .r15 = 0) (h14 : s.gpr .r14 = 1) :
     WP isa (window l) s fun t =>
@@ -934,7 +934,7 @@ theorem lastW_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b y : Nat} {P : Bo
 the word at `oV`, from `y < c` in `Y` and the flag `P` at `oF`: `kWin`'s
 result, the word shifted by two bits, and `r14` decremented (ZF if it
 reaches 0). -/
-theorem window_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b y n : Nat} {P : Bool}
+theorem window_ok (hl : MrOk l) {s : State} {B H : Addr} {c k b y n : Nat} {P : Bool}
     (h : WEnv l B H c k b s) (hy : Rep l s.mem B c (oY l) y) (hyc : y < c)
     (hP : word s.mem B (oF l) = mask P) (h15 : s.gpr .r15 ≠ 0) (h14 : s.gpr .r14 = BitVec.ofNat 64 n)
     (hn : 1 ≤ n) (hn' : n ≤ 32) :
@@ -951,7 +951,7 @@ theorem window_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b y n : Nat} {P :
     ⟨e, r, lt, f, v, r14, z, k.gpr (by decide), k.gpr (by decide), k.gpr (by decide), x, fr⟩
 
 /-- The last pass (`r15 = 0`): one window of three squarings, `wEnd`. -/
-theorem last_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b y : Nat} {P : Bool}
+theorem last_ok (hl : MrOk l) {s : State} {B H : Addr} {c k b y : Nat} {P : Bool}
     (h : WEnv l B H c k b s) (hy : Rep l s.mem B c (oY l) y) (hyc : y < c)
     (hP : word s.mem B (oF l) = mask P) (h15 : s.gpr .r15 = 0) (h14 : s.gpr .r14 = 1) :
     WP isa (window l) s fun t =>
@@ -995,12 +995,12 @@ structure WN (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (B H : Addr) (c k b : Nat) (s 
   mx : u.mxcsr = s.mxcsr
 
 /-- A window of the pass over word `n − 1` of `E`. -/
-theorem pstep_ok (hl : PubOk l) {s v : State} {B H : Addr} {c k b n t : Nat} {V : BitVec 64}
+theorem pstep_ok (hl : MrOk l) {s v : State} {B H : Addr} {c k b n t : Nat} {V : BitVec 64}
     (hV : V.toNat = mrE c / 2 ^ (64 * (n - 1)) % 2 ^ 64) (hn : 1 ≤ n) (hW : n ≤ l.W) (ht : t < 32)
     (hJ : WN l B H c k b s n V t v) (h14 : v.gpr .r14 = BitVec.ofNat 64 (32 - t)) :
     WP isa (window l) v fun w => WN l B H c k b s n V (t + 1) w ∧ w.gpr .r14 = v.gpr .r14 - 1 ∧
       w.zf = some (v.gpr .r14 - 1 == 0) := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   have hd := digit (W := l.W) (t := t) hV hn hW ht
   have h15 : v.gpr .r15 ≠ 0 := by
     rw [hJ.r15]; intro h'
@@ -1020,11 +1020,11 @@ theorem pstep_ok (hl : PubOk l) {s v : State} {B H : Addr} {c k b n t : Nat} {V 
       VG.Proof.MlKem.X86_64.ofNat64_beq_zero (by omega_arith)]⟩
 
 /-- The pass over word `n − 1` of `E`, `n ≥ 1`. -/
-theorem pass_ok (hl : PubOk l) {s u : State} {B H : Addr} {c k b n : Nat} (hI : OI l B H c k b s n u)
+theorem pass_ok (hl : MrOk l) {s u : State} {B H : Addr} {c k b n : Nat} (hI : OI l B H c k b s n u)
     (hn : 1 ≤ n) :
     WP isa (VG.Impl.MillerRabin.X86_64.Ifma.word l) u fun t =>
       WN l B H c k b s n (word u.mem H (arr l aE + 8 * (n - 1))) 32 t := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   have hW := hI.le
   unfold VG.Impl.MillerRabin.X86_64.Ifma.word
   refine WP.seq (isLast_ite (fun h => absurd h ?_) fun _ u₁ e₁ => ?_)
@@ -1057,14 +1057,14 @@ theorem pass_ok (hl : PubOk l) {s u : State} {B H : Addr} {c k b n : Nat} (hI : 
 
 /-- The windows of `E`, from `y := T_0` and a clear flag, and the last pass:
 the flag at `oF` is the mask of `mrIteration`'s result by windows of 2 bits. -/
-theorem windows_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b : Nat} (h : WEnv l B H c k b s) :
+theorem windows_ok (hl : MrOk l) {s : State} {B H : Addr} {c k b : Nat} (h : WEnv l B H c k b s) :
     WP isa (VG.Impl.Bignum.X86_64.seqs (windows l)) s fun t =>
       word t.mem B (oF l) = mask (wEnd c (kRun 2 c b (mrE c) (32 * l.W) (32 * l.W))).2 ∧
       t.gpr .rbp = s.gpr .rbp ∧
       t.gpr .rbx = B ∧ t.gpr .rdi = H ∧ t.gpr .rsp = s.gpr .rsp ∧ t.gpr .r12 = mask52 ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr ∧
       Frm B [(oY l, 2 * l.NB), (oV l, 8), (oF l, 8)] s.mem t.mem := by
-  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
+  obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := MrOk.lay hl
   unfold windows
   simp only [VG.Impl.Bignum.X86_64.seqs]
   refine WP.seq ?_

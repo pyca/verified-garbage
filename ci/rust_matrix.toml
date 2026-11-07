@@ -234,11 +234,11 @@ pclmulqdq,ssse3 | aes_gcm aes_gcm_siv sm4_gcm cpu
 # private-key operation selects its table's entries with AVX2, and
 # P-256's, P-384's, P-521's and Ed25519's `_adx` functions, whose
 # combs select their entries with AVX2, P-384's and P-521's with
-# SHA-512's baseline code); AVX-512F without AVX2, for Argon2 with G's
-# AVX-512 code and BLAKE2b's baseline code; and AVX-512F without
-# AVX512VL, for Argon2 with G's AVX-512 code and BLAKE2b's AVX2
-# code, and for ChaCha20's and ChaCha20-Poly1305's `_avx512`
-# instances, which the CPU's AVX512VL replaces with `_avx512vl`.
+# SHA-512's baseline code); and AVX-512F without AVX512VL, for
+# Argon2's AVX2 code (BLAKE2b's and G's), which its AVX-512 code
+# replaces only with AVX512VL, and for ChaCha20's and
+# ChaCha20-Poly1305's `_avx512` instances, which the CPU's AVX512VL
+# replaces with `_avx512vl`.
 # The unrestricted line runs RSA's ADX arithmetic in full; the line
 # without BMI1 (whose SHA-256 is then the baseline's) runs only the small
 # RSA groups that reach each hash's implementation.
@@ -248,7 +248,6 @@ arch = "x86_64"
 runs = """
 - | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb triple_des_cbc triple_des_cfb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,bmi2,adx | ffdh dsa ed448 rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs p256 p384 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-avx,avx512f | argon2 rfc9106 cpu
 avx,avx2,avx512f | argon2 rfc9106 mlkem chacha20 cpu
 avx,avx2,avx512f,avx512vl | mldsa cpu
 """
