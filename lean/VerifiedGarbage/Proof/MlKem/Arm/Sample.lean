@@ -455,11 +455,6 @@ theorem squeeze_phase {s₀ s : State} (hp : Pre s₀) (h : SEnv s₀ s)
 256 coefficients. -/
 def accD (a : List Zq) (d : Nat) : List Zq := if d < q ∧ a.length < 256 then a ++ [ofNat d] else a
 
-theorem accD_length_le {a : List Zq} (h : a.length ≤ 256) (d : Nat) : (accD a d).length ≤ 256 := by
-  unfold accD; split
-  · rename_i h'; simp only [List.length_append, List.length_singleton]; omega_arith
-  · exact h
-
 theorem stepCap_eq {a : List Zq} (ha : a.length ≤ 256) (c₀ c₁ c₂ : Byte) :
     sampleStepCap a c₀ c₁ c₂ =
       accD (accD a (c₀.toNat + 256 * (c₁.toNat % 16))) (c₁.toNat / 16 + 16 * c₂.toNat) := by

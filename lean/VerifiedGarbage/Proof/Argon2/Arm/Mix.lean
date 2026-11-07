@@ -86,9 +86,6 @@ theorem mul_split (X Y : Nat) :
   subst hX hY
   grind
 
-theorem mul16_lt {a b : Nat} (ha : a < 2 ^ 16) (hb : b < 2 ^ 16) : a * b < 2 ^ 32 :=
-  Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le ha (Nat.le_of_lt hb) (by omega_arith)) (by decide)
-
 theorem mul16_le {a b : Nat} (ha : a < 2 ^ 16) (hb : b < 2 ^ 16) : a * b ≤ (2 ^ 16 - 1) * (2 ^ 16 - 1) :=
   Nat.mul_le_mul (by omega_arith) (by omega_arith)
 

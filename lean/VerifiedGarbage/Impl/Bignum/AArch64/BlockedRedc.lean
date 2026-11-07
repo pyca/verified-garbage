@@ -41,10 +41,6 @@ def highChain : List Instr :=
     [(if j = 0 then Instr.adds else Instr.adcs) .x aa[j]!
       (if j < 7 then aa[j+1]! else .x1) tt[j%4]!] ++
     (if j < 4 then product true (j+4) tt[j%4]! else []))
-def cancelBasic (i : Nat) : List Instr :=
-  [.mul .x .x27 .x19 .x15, st .x27 .x8 (8*i), movi .x1 0] ++
-  lowChain ++ [.adc .x .x1 .x1 .x7] ++ highChain
-
 def cancelLowChain : List Instr :=
  [movi .x13 1, .subs .x .x13 .x19 .x13] ++
  (List.range 4).flatMap (fun j => BlockedRedc.product false (j+1) BlockedRedc.tt[(j+1)%4]!) ++

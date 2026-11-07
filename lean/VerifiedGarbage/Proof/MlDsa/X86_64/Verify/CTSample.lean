@@ -117,7 +117,7 @@ theorem ballStage_tr {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params
   · have L := RV.lrel hp hT h
     obtain ⟨σ₁, σ₂, _, _, pub, ⟨_, _, hx⟩, ⟨_, _, hy⟩⟩ := h
     exact ⟨L.1, L.2.1, L.2.2, by rw [hx.t.sigSlice (by omega : 0 + p.ctildeLen ≤ p.sigLen),
-      hy.t.sigSlice (by omega : 0 + p.ctildeLen ≤ p.sigLen), pub.2.2.2.2.2.2.2]⟩
+      hy.t.sigSlice (by omega : 0 + p.ctildeLen ≤ p.sigLen), pub.2.2.2.2.2.2.2.1]⟩
   · have L := RV.lrel hp hT h
     exact ⟨WP.mono (ballAt_ok C.ball L.1 c6 c5) fun _ h' => ⟨_, h'.1⟩,
       WP.mono (ballAt_ok C.ball L.2.1 c6 c5) fun _ h' => ⟨_, h'.1⟩⟩

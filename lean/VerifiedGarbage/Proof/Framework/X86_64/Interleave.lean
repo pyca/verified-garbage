@@ -291,9 +291,6 @@ theorem bAddr_of_gpr {s s' : State} (h : s'.gpr = s.gpr) : bAddr b ix sc s' = bA
 
 /-! ## Frames of the instructions' effects -/
 
-theorem Frame.refl (F : Fp) (s : State) : Frame b ix sc F s s :=
-  ⟨fun _ _ => rfl, fun _ _ => ⟨rfl, rfl, rfl⟩, fun _ => rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
-
 theorem Frame.trans {F : Fp} {s s₁ s₂ : State} (h₁ : Frame b ix sc F s s₁) (h₂ : Frame b ix sc F s₁ s₂)
     (hb : bAddr b ix sc s₁ = bAddr b ix sc s) : Frame b ix sc F s s₂ where
   gpr r hr := (h₂.gpr r hr).trans (h₁.gpr r hr)
@@ -509,10 +506,6 @@ theorem ea_congr {s t : State} {m : MemOp} (h : ∀ r : Reg, (memIx m).testBit r
     have hi := h i (by simp [memIx, e, Nat.testBit_or])
     simp only [State.ea, e, hb, hi]
 
-theorem base_reads {F : Fp} {s t : State} (h : Reads b ix sc F s t) (hb : ∀ i, (baseMask b ix).testBit i → F.gr.testBit i) :
-    ∀ r : Reg, (baseMask b ix).testBit r.ctorIdx → s.gpr r = t.gpr r :=
-  fun r hr => h.gpr r (hb _ hr)
-
 theorem readSrc_det {F : Fp} {s t : State} (h : Reads b ix sc F s t) {src : Src} {g mr : Nat}
     (hs : srcFp b ix sc src = some (g, mr)) (hg : ∀ i, g.testBit i → F.gr.testBit i)
     (hm : ∀ i, mr.testBit i → F.mr.testBit i) : readSrc s src = readSrc t src := by
@@ -532,9 +525,6 @@ theorem readSrc_det {F : Fp} {s t : State} (h : Reads b ix sc F s t) {src : Src}
     · have e := readW_eq (w := 64) h fun k hk => hm _ (testBit_range_add (by omega))
       rw [e, h.base]
     · rfl
-
-theorem arith_flags {s t : State} {w : Nat} (r : BitVec w) (c o : Bool) :
-    (arithFlags s r c o).flags = (arithFlags t r c o).flags := rfl
 
 theorem execAluW_det {F : Fp} {op : AluOp} {d : Reg} {v : BitVec 64} {s t s' : State}
     (hgw : ∀ r : Reg, F.gw.testBit r.ctorIdx → r = d) (hx : F.xw = 0) (hm : F.mw = 0)

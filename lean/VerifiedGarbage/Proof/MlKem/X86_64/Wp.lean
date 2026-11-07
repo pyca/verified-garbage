@@ -153,12 +153,6 @@ theorem Keep.mono {rs rs' : List Reg} {s s' : State} (h : Keep rs s s') (hs : �
 
 theorem Keep.refl (rs : List Reg) (s : State) : Keep rs s s := ⟨fun _ _ => rfl, rfl, rfl⟩
 
-/-- Every register. -/
-def allRegs : List Reg :=
-  [.rax, .rcx, .rdx, .rbx, .rsp, .rbp, .rsi, .rdi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15]
-
-theorem mem_allRegs (r : Reg) : r ∈ allRegs := by cases r <;> decide
-
 /-- Whether the registers `i` writes (`Taint.clobbers`) are all in `rs`. -/
 def writesIn (rs : List Reg) (i : Instr) : Bool :=
   match i with

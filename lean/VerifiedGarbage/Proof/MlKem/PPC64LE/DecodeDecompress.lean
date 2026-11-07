@@ -549,48 +549,4 @@ theorem zext_rel : RelCT isa LoAgree (.block [.rotr .w .r5 .r5 0])
   · rw [k1, k2, Z, Z, hlo]
   · rw [g1 _ (by decide), g2 _ (by decide), hr _ (by decide)]
 
-theorem pre_of {s : State} (h : (Proof.MlKem.decodeDecompressContract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, PPC64LE.abi, PPC64LE.argRegs] at h
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 32 | .r5 => 1 | .r6 => 0x2000 | _ => 0
-  lr := 0
-  sp := 0x4000
-  mem _ := 0
-  rd := [⟨0x1000, 32⟩]
-  wr := [⟨0x2000, 1024⟩]
-
-theorem verified : Verified PPC64LE.target Impl.MlKem.PPC64LE.decodeDecompress
-    (Proof.MlKem.decodeDecompressContract PPC64LE.abi) := by
-  refine ⟨fun s hs => ?_, RelCT.constantTime (Q := fun _ _ => True) ?_, ?_⟩
-  · obtain ⟨t, s', he, hpres, hsp, hlr, h⟩ := correct (pre_of hs)
-    refine ⟨t, s', he, ⟨hpres, hsp, hlr⟩, ?_⟩
-    sig_post [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, PPC64LE.abi, PPC64LE.argRegs]
-    exact polyIs_of_coeffAt (p := F s) fun j hj => by rw [h j (by rw [n_eq] at hj; exact hj)]; rfl
-  · refine RelCT.seq (zext_rel.mono (fun s₁ s₂ ⟨_, _, hp⟩ => ?_) fun _ _ h => h)
-      (RelCT.taint (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
-        (fun _ _ ⟨hsp, hr⟩ => ⟨hsp, fun r h => hr r (Taint.mem_ofRegs.mp h)⟩) (by taint_decide))
-    sig_pub [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, PPC64LE.abi,
-      PPC64LE.argRegs] at hp
-    obtain ⟨hsp, h3, h4, h5, h6⟩ := hp
-    refine ⟨hsp, fun r hr => ?_, h5⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact h3
-    · exact h4
-    · exact h6
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig, PPC64LE.abi,
-        PPC64LE.argRegs]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | decide +kernel
-
 end VG.Proof.MlKem.PPC64LE.DecodeDecompress

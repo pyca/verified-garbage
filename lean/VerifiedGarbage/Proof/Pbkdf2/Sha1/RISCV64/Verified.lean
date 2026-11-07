@@ -18,9 +18,8 @@ Untrusted: everything here is checked by Lean. Constant time (`ct`), as for
 every Merkle–Damgård hash function's iteration
 (`Proof/Pbkdf2/RISCV64/Correct.lean`): the taint analysis of `main` after the
 entry block, which zero-extends `n`, the one input public only in its low
-32 bits (`RelCT.wpDep`). `iterate_verified`: `correct` and `ct` meet the
-iteration's contract with `Wi` bytes of scratch space (`iterK`), and the
-shared contract of `Spec.Hmac.sha1I` (`iterate`), with no stack.
+32 bits (`RelCT.wpDep`). `verifiedW`: `correct` meets the iteration's
+contract with `Wi` bytes of scratch space (`iterK`).
 -/
 
 @[expose] public section
@@ -76,16 +75,5 @@ theorem verifiedW (Wi : Nat) (h₁ : 227 ≤ Wi) (h₂ : Wi ≤ 8192) :
   have ho := hashOkW Wi h₁ h₂
   obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of (P := it) rfl rfl hs) ho.sizes ho.link
   exact ⟨t, s', he, h₁, h₂⟩
-
-/-- `iterate` against the shared contract of `Spec.Hmac.sha1I`. -/
-theorem iterate_verified : Verified RISCV64.target iterate (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha1I RISCV64.abi 0) := by
-  have hs : ∃ s, (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha1I RISCV64.abi 0).pre s := by
-    inst_sat [Proof.Pbkdf2.Instance.iterateContract, Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig,
-      Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, RISCV64.abi, RISCV64.argRegs]
-      using iterSat 84 20 448
-  have imp := iterImp hs
-  have v : Verified RISCV64.target iterate (iterK Spec.Hmac.sha1S (8 * Spec.Hmac.sha1I.scratch)) :=
-    ⟨verifiedW _ (by decide) (by decide), ct (fun _ _ h => h), imp.sat_left⟩
-  exact v.of_implies imp
 
 end VG.Proof.Pbkdf2.Sha1.RISCV64

@@ -152,12 +152,6 @@ theorem CK.ldP {p : ChecksPub} {s : State} (h : CK p s) {i : Nat} (hi : i < 32) 
   have h8 := hdr_lt_slot p.wp 8 hi
   exact (h.1.sub (o := p.op) (n := slot p.wp 8) (by omega_arith) (by omega_arith)).ld (by omega_arith)
 
-theorem CK.ldQ {p : ChecksPub} {s : State} (h : CK p s) {i : Nat} (hi : i < 32) :
-    InRegions (s.rd ++ s.wr) (off (off p.B p.oq) (8 * i)) 8 := by
-  obtain ⟨hn, -, -, hlo, hop, hoq, -⟩ := h.bounds
-  have h8 := hdr_lt_slot p.wq 8 hi
-  exact (h.1.sub (o := p.oq) (n := slot p.wq 8) (by omega_arith) (by omega_arith)).ld (by omega_arith)
-
 theorem CK.ldP' {p : ChecksPub} {s : State} (h : CK p s) {i : Nat} (hi : i < 32) :
     InRegions (s.rd ++ s.wr) (off p.B (p.op + 8 * i)) 8 := by
   obtain ⟨hn, -, -, hlo, hop, hoq, -⟩ := h.bounds
@@ -177,9 +171,6 @@ theorem enterQ_ck {p : ChecksPub} {s : State} (h : CKr (·.B) p s) : WP isa (.bl
 
 theorem leaveP_ck {p : ChecksPub} {s : State} (h : CKr ckP p s) : WP isa (.block [leave]) s (CKr (·.B) p) :=
   h.1.move (X := ckP p) (i := sLink) h.2 (by decide) (h.1.ldP (by decide)) h.1.2.2.2.2.1.1
-
-theorem leaveQ_ck {p : ChecksPub} {s : State} (h : CKr ckQ p s) : WP isa (.block [leave]) s (CKr (·.B) p) :=
-  h.1.move (X := ckQ p) (i := sLink) h.2 (by decide) (h.1.ldQ (by decide)) h.1.2.2.2.2.2.1.1
 
 /-! ## `p q` -/
 

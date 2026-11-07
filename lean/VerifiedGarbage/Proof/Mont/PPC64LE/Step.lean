@@ -35,12 +35,6 @@ theorem wp_step {i : Instr} {is : List Instr} {s s' : State} {Q : State → Prop
     (k : WP isa (.block is) s' Q) : WP isa (.block (i :: is)) s Q :=
   WP.block_cons_iff.mpr ⟨s', h, k⟩
 
-/-- A step's sum is below `2¹²⁸`. -/
-theorem mac_lt {x y t c : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) (ht : t < 2 ^ 64) (hc : c < 2 ^ 64) :
-    x * y + t + c < 2 ^ 128 := by
-  have : x * y ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
-  omega
-
 /-- The arithmetic of a step: the carrying adds keep the whole sum. -/
 theorem mac_arith {P t c : Nat} (hP : P ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1)) (ht : t < 2 ^ 64) (hc : c < 2 ^ 64) :
     ((P % 2 ^ 64 + t) % 2 ^ 64 + c) % 2 ^ 64 + 2 ^ 64 * (((P / 2 ^ 64 % 2 ^ 64 +

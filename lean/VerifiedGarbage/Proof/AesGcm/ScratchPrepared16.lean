@@ -70,6 +70,15 @@ theorem preparedPowers16Repr_congr {m₁ m₂ : Mem} {p : Addr}
   rw [keep _ (by omega), keep _ (by omega), ctxH_congr fun i hi => h i (by omega)]
   exact hr k hk
 
+/-- Zero memory has the prepared powers of the zero subkey. -/
+theorem preparedPowers16Repr_zeroMem (p : Addr) : PreparedPowers16Repr (fun _ => 0) p :=
+  fun k hk => preparedPowersRepr_zeroMem p k (by omega)
+
+/-- A context of zeros has the prepared powers. -/
+theorem preparedPowers16Repr_of_zeroMem {m : Mem} {p : Addr} (h : ∀ i < 128 * 8, m (p + BitVec.ofNat 64 i) = 0) :
+    PreparedPowers16Repr m p :=
+  preparedPowers16Repr_congr (m₁ := fun _ => 0) h (preparedPowers16Repr_zeroMem p)
+
 variable (pb : Nat)
 
 theorem sealPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (sealPreparedSig.words pb).length →

@@ -207,24 +207,4 @@ theorem lastCode_relCT {w16 : Bool} {s u : State} {p seed out table : Addr} {sb 
   intro t v tr ur t' v' h et ev
   exact grouped t v tr ur t' v' h (last_exec et) (last_exec ev)
 
-theorem lastSample_relCT {w16 : Bool} {s u : State} {L : Impl.MlKem.AArch64.KemLay} {kg : Bool}
-    {p seed out table : Addr}
-    (hss : (if kg then Impl.MlKem.AArch64.KG.SS else Impl.MlKem.AArch64.KEM.SS)<4096)
-    (hsb : (if kg then Impl.MlKem.AArch64.KG.SB else Impl.MlKem.AArch64.KEM.SB)+32≤32768)
-    (h8 : (if kg then Impl.MlKem.AArch64.KG.SB else Impl.MlKem.AArch64.KEM.SB)%8=0)
-    (hoff : (if kg then Impl.MlKem.AArch64.KG.AH else Impl.MlKem.AArch64.KEM.AH)+1024*(L.k*L.k-1)<65536)
-    (hk : 0<L.k) (hk256 : L.k≤256)
-    (ps : LastInput (if kg then Impl.MlKem.AArch64.KG.SB else Impl.MlKem.AArch64.KEM.SB)
-      (if kg then Impl.MlKem.AArch64.KG.SS else Impl.MlKem.AArch64.KEM.SS)
-      ((if kg then Impl.MlKem.AArch64.KG.AH else Impl.MlKem.AArch64.KEM.AH)+1024*(L.k*L.k-1)) p seed out table s)
-    (pu : LastInput (if kg then Impl.MlKem.AArch64.KG.SB else Impl.MlKem.AArch64.KEM.SB)
-      (if kg then Impl.MlKem.AArch64.KG.SS else Impl.MlKem.AArch64.KEM.SS)
-      ((if kg then Impl.MlKem.AArch64.KG.AH else Impl.MlKem.AArch64.KEM.AH)+1024*(L.k*L.k-1)) p seed out table u)
-    (ho : (Region.mk seed 32).Disjoint (polyRegion out))
-    (sp : s.sp=u.sp) (base : s.gpr .x28=u.gpr .x28)
-    (seedEq : seedBytes s.mem seed (L.k*L.k-1) L.k=seedBytes u.mem seed (L.k*L.k-1) L.k) :
-    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.lastSample L kg w16) (fun _ _=>True) := by
-  rw [lastSample_eq]
-  exact lastCode_relCT hss hsb h8 hoff hk hk256 ps pu ho sp base seedEq
-
 end VG.Proof.MlKem.AArch64.Paired

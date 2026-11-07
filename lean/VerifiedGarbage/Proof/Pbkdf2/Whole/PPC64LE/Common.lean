@@ -87,8 +87,6 @@ abbrev stk : Region := below s₀.sp (X + 144)
 /-- An address in `scratch`, and a part of it. -/
 abbrev sA (o : Nat) : Addr := scr s₀ + BitVec.ofNat 64 o
 abbrev sR (o n : Nat) : Region := ⟨sA s₀ o, n⟩
-/-- The save area. -/
-abbrev svR : Region := sR s₀ 0 48
 /-- Everything the code writes. -/
 abbrev wrs : List Region := [outR s₀, scR F s₀, stk X s₀]
 
@@ -186,13 +184,6 @@ theorem in_sc' (hr : F.bytes ≤ 4096) {s : State} (hwr : s.wr = s₀.wr) {o n :
     InRegions (s.rd ++ s.wr) (sA s₀ o) n :=
   ⟨_, List.mem_append_right _ (sc_wr hp hwr), part_contains (s₀ := s₀) hr h⟩
 
-/-- A part of `scratch` is covered by its regions. -/
-theorem cov_part {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ F.bytes) :
-    Covers [sR s₀ o n] s.wr :=
-  Covers.of_sub fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, sc_wr hp hwr, o, rfl, h⟩
-
 /-- The stack below the stack pointer of the frame. -/
 theorem below_stk {n : Nat} (hn : n + 48 ≤ X + 144) : Region.Sub (below (s₀.sp - 48) n) (stk X s₀) :=
   fun x hx => below_sub hn (by have := hp.sp; have := s₀.sp.isLt; omega) x (below_body s₀.sp n x hx)
@@ -231,15 +222,6 @@ theorem KR.keep {s s' : State} (h : KR F X s₀ s) (hrd : s'.rd = s.rd) (hwr : s
     (hg _ (by simp)).trans h.r22, (hg _ (by simp)).trans h.r25,
     fun r hr => (hg r (by revert r; decide)).trans (h.un r hr), saved_keep h.saved hf hs,
     h.frame.trans (hf.sub hsub)⟩
-
-theorem KR.same {s s' : State} (h : KR F X s₀ s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp)
-    (hg : ∀ r ∈ kregs, s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) : KR F X s₀ s' :=
-  h.keep hrd hwr hsp hg (rs := []) (by rw [hm]; exact Frame.refl _ _) (by simp) (by simp)
-
-open VG.Proof.MdStream.PPC64LE (Upd Mupd) in
-theorem KR.upd {s s' : State} (h : KR F X s₀ s) {d : Reg} (hd : d ∉ kregs) {v : BitVec 64}
-    (u : Upd s s' d v) : KR F X s₀ s' :=
-  h.same u.rd u.wr u.sp (fun r hr => u.other r fun e => hd (e ▸ hr)) u.mem
 
 /-- A part of `scratch` after the save area, or the stack below the frame. -/
 def Wk (F : Fns) (X : Nat) (s₀ : State) (r : Region) : Prop :=

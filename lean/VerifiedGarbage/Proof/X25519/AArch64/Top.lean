@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.X25519.AArch64.Lit
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -21,7 +22,7 @@ import Mathlib.Logic.Function.Basic
 # X25519 on AArch64: the whole function
 
 The contract the proof is written against (the facts of
-`Spec.X25519.x25519Contract` it uses, stated for AArch64), and the correctness
+`Proof.X25519.x25519Contract` it uses, stated for AArch64), and the correctness
 of `vg_x25519` against it: every write is in the working space but the
 result's, so the arguments are read unchanged, and the callee-saved registers
 it uses are restored from the working space.

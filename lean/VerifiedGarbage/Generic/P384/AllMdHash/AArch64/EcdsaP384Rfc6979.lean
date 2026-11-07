@@ -25,7 +25,6 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve)
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (p384 h.law h.inv (Proof.P384.combOk7 h.law)) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs
-      consts := Impl.Ecdsa.AArch64.p384.combConsts
       stack := stackT
       verified := p384T_verified h.law h.inv (Proof.P384.combOk7 h.law) vs hv
       features := [] }]

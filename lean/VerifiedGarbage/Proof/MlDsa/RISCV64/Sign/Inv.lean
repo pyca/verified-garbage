@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Sign.Lay
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Piece
 public import VerifiedGarbage.Proof.MlKem.RISCV64.TopSave
+import VerifiedGarbage.Proof.MlDsa.RISCV64.CacheCopy
 import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
 import VerifiedGarbage.Proof.MlKem.RISCV64.Sample
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -61,7 +62,13 @@ end
 def sPub (p : Params) (σ₁ σ₂ : State) : Prop :=
   σ₁.sp = σ₂.sp ∧ sSk σ₁ = sSk σ₂ ∧ sMu σ₁ = sMu σ₂ ∧ sRnd σ₁ = sRnd σ₂ ∧ sSig σ₁ = sSig σ₂ ∧
     sScr σ₁ = sScr σ₂ ∧ Spec.MlDsa.signLeak p (skOf p σ₁) (muOf σ₁) (rndOf σ₁) =
-      Spec.MlDsa.signLeak p (skOf p σ₂) (muOf σ₂) (rndOf σ₂)
+      Spec.MlDsa.signLeak p (skOf p σ₂) (muOf σ₂) (rndOf σ₂) ∧ sCache σ₁ = sCache σ₂ ∧
+    σ₁.gpr .a6 = σ₂.gpr .a6
+
+theorem cSel_pub {p : Params} {σ₁ σ₂ : State} (h : sPub p σ₁ σ₂) : cSel σ₁ = cSel σ₂ := by
+  obtain ⟨-, -, -, -, -, -, -, e5, e6⟩ := h
+  simp only [cSel, sCache] at *
+  rw [e5, e6]
 
 /-- The pieces of signing. -/
 abbrev SPiece (p : Params) (STK : Nat) := Piece (SPre p STK) (sPub p)
@@ -93,6 +100,9 @@ structure SC1 (p : Params) (STK : Nat) (σ s : State) : Prop where
   sk : bytesAt s.mem ((slay1 p STK σ).A 2 0) p.skLen = skOf p σ
   mu : bytesAt s.mem ((slay1 p STK σ).A 3 0) 64 = muOf σ
   rnd : bytesAt s.mem ((slay1 p STK σ).A 4 0) 32 = rndOf σ
+  pre : SPre p STK σ
+  s3 : s.gpr .s3 = cSel σ
+  cache : bytesAt s.mem (sCache σ) (sCLen σ) = bytesAt σ.mem (sCache σ) (sCLen σ)
 
 /-- What holds from the hash of `ρ″` on, from the entry state `σ`. -/
 structure SC2 (p : Params) (STK : Nat) (σ s : State) : Prop where
@@ -104,6 +114,9 @@ structure SC2 (p : Params) (STK : Nat) (σ s : State) : Prop where
   sav : TopSaved s.mem (sScr σ) σ
   sk : bytesAt s.mem ((slay2 p STK σ).A 2 0) p.skLen = skOf p σ
   mu : bytesAt s.mem ((slay2 p STK σ).A 3 0) 64 = muOf σ
+  pre : SPre p STK σ
+  s3 : s.gpr .s3 = cSel σ
+  cache : bytesAt s.mem (sCache σ) (sCLen σ) = bytesAt σ.mem (sCache σ) (sCLen σ)
 
 /-- A part that writes the regions `W` before the hash of `ρ″` keeps `SC1`. -/
 def sc1Chk (p : Params) (STK : Nat) (W : List (Nat × Nat × Nat)) : Bool :=
@@ -127,6 +140,22 @@ theorem bytes_keepR {L : Lay} {Wb : List Nat} (hL : OkW L Wb) {W : List (Nat × 
   Proof.MlKem.bytesAt_frame hf (fun r hr => by
     obtain ⟨w, hw', rfl⟩ := List.mem_map.mp hr
     exact disjW hL (List.all_eq_true.mp h w hw') (.inr (hw w hw'))) hl
+
+/-- The cache, apart from the buffers that a part writes, is kept by it. -/
+theorem cache_keep {L : Lay} {W : List (Nat × Nat × Nat)} {m m' : Mem} (hf : Frame (L.RL W) m m') {X : Region}
+    (hl : X.len ≤ 2 ^ 64)
+    (h : ∀ w ∈ W, w.2.1 + w.2.2 ≤ L.size w.1 ∧ (⟨L.ptr w.1, L.size w.1⟩ : Region).Disjoint X) :
+    bytesAt m' X.base X.len = bytesAt m X.base X.len :=
+  Proof.MlKem.bytesAt_frame hf (fun r hr => by
+    obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hr
+    exact ((h w hw).2.sub_left (Lay.R_sub (h w hw).1)).symm) hl
+
+/-- The bounds of a region apart from another. -/
+theorem sepAll_bound {sz : List Nat} {a : Nat × Nat × Nat} {W : List (Nat × Nat × Nat)} (h : sepAll sz a W = true)
+    {w : Nat × Nat × Nat} (hw : w ∈ W) : w.2.1 + w.2.2 ≤ sz.getD w.1 0 := by
+  have := List.all_eq_true.mp h w hw
+  simp only [sepB, Bool.and_eq_true, decide_eq_true_eq] at this
+  exact this.1.2
 
 theorem sfit1 {p : Params} {STK : Nat} {σ : State} (hL : OkW (slay1 p STK σ) sWb1) (i : Nat) (hi : i < 5) :
     (slay1 p STK σ).size i ≤ 2 ^ 64 := by
@@ -157,12 +186,21 @@ theorem SC1.keep {p : Params} {STK : Nat} {σ s s' : State} (h : SC1 p STK σ s)
       exact disjW hL (List.all_eq_true.mp h1 w hw'') (.inl (by decide))
   refine ⟨h.site.kept hk, hk.rd.trans h.rd, hk.wr.trans h.wr, hk.sp.trans h.sp,
     fun r hr hs => (hk.cs r hr).trans (h.pres r hr hs), h.sav.keep hk.frame (by rw [saveR_slay1 p STK σ]; exact hd),
-    ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hk.frame.readW (r := (slay1 p STK σ).R 0 912 8) (Region.contains_self _ _) hd8 (by decide)]
     exact h.sig
   · rw [bytes_keepR hL hk.frame h2 hw' (sfit1 hL 2 (by decide))]; exact h.sk
   · rw [bytes_keepR hL hk.frame h3 hw' (by decide)]; exact h.mu
   · rw [bytes_keepR hL hk.frame h4 hw' (by decide)]; exact h.rnd
+  · exact h.pre
+  · rw [hk.cs .s3 (by decide)]; exact h.s3
+  · refine (cache_keep (X := reg (sCache σ) (sCLen σ)) hk.frame (by have := h.pre.f_x; show sCLen σ ≤ 2 ^ 64; omega_arith)
+      fun w hw => ⟨sepAll_bound h0 hw, ?_⟩).trans h.cache
+    have e := hw' w hw
+    simp only [sWb1, List.mem_cons, List.not_mem_nil, or_false] at e
+    rcases e with e | e <;> rw [e]
+    · exact h.pre.d_cx
+    · exact h.pre.b_x
 
 theorem SC2.keep {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ s) {W : List (Nat × Nat × Nat)}
     (hk : Kept ((slay2 p STK σ).RL W) s s') (hc : sc2Chk p STK W = true) : SC2 p STK σ s' := by
@@ -179,9 +217,19 @@ theorem SC2.keep {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ s)
       exact disjW hL (List.all_eq_true.mp h0 w hw'') (.inl (by decide))
   refine ⟨h.site.kept hk, hk.rd.trans h.rd, hk.wr.trans h.wr, hk.sp.trans h.sp,
     fun r hr hs => (hk.cs r hr).trans (h.pres r hr hs), h.sav.keep hk.frame (by rw [saveR_slay2 p STK σ]; exact hd),
-    ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_⟩
   · rw [bytes_keepR hL hk.frame h2 hw' (sfit2 hL 2 (by decide))]; exact h.sk
   · rw [bytes_keepR hL hk.frame h3 hw' (by decide)]; exact h.mu
+  · exact h.pre
+  · rw [hk.cs .s3 (by decide)]; exact h.s3
+  · refine (cache_keep (X := reg (sCache σ) (sCLen σ)) hk.frame (by have := h.pre.f_x; show sCLen σ ≤ 2 ^ 64; omega_arith)
+      fun w hw => ⟨sepAll_bound h0 hw, ?_⟩).trans h.cache
+    have e := hw' w hw
+    simp only [sWb2, List.mem_cons, List.not_mem_nil, or_false] at e
+    rcases e with e | e | e <;> rw [e]
+    · exact h.pre.d_cx
+    · exact h.pre.b_x
+    · exact h.pre.d_gx
 
 theorem inputs_eq (p : Params) (STK : Nat) (σ : State) :
     bytesAt σ.mem ((slay1 p STK σ).A 2 0) p.skLen = skOf p σ ∧ bytesAt σ.mem ((slay1 p STK σ).A 3 0) 64 = muOf σ ∧
@@ -209,24 +257,30 @@ theorem spro_ok {p : Params} (hF : SFacts p) {STK : Nat} (hSTK : 1168 ≤ STK) {
   have g5 : s₁.gpr .a2 = sRnd σ := by rw [g₁]
   have g6 : s₁.gpr .a3 = sSig σ := by rw [g₁]
   have g7 : s₁.gpr .a4 = sScr σ := by rw [g₁]
+  have g8 : s₁.gpr .a5 = sCache σ := by rw [g₁]
+  have g9 : s₁.gpr .a6 = σ.gpr .a6 := by rw [g₁]
   have a912 : (sScr σ + BitVec.ofNat 64 oSIG).toNat % 8 = 0 := by
     have := hp.al_c
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]; simp only [oSIG]; omega
   have i912 : InRegions s₁.wr (sScr σ + BitVec.ofNat 64 oSIG) 8 := by rw [wr₁]; exact wS (by decide)
   have o912 : oSIG % 8 = 0 ∧ oSIG < 32768 := by decide
   have hmv : WP isa (.block [mov .s10 .a0, mov .s9 .a1, mov .s8 .a2, mov .s11 .a4, .store .d .a3 .s11 oSIG,
-      .li .s4 1]) s₁ fun s =>
+      .li .s4 1, .li .t2 0, .sltu .t0 .t2 .a6, .sub .t0 .t2 .t0, .logic .and .s3 .a5 .t0]) s₁ fun s =>
       s.gpr .s10 = sSk σ ∧ s.gpr .s9 = sMu σ ∧ s.gpr .s8 = sRnd σ ∧ s.gpr .s11 = sScr σ ∧
-      s.gpr .s4 = 1 ∧ (∀ r ∈ preserved, r ∉ savedTop → s.gpr r = s₁.gpr r) ∧
+      s.gpr .s4 = 1 ∧ s.gpr .s3 = cSel σ ∧ (∀ r ∈ preserved, r ∉ savedTop → s.gpr r = s₁.gpr r) ∧
       s.mem = s₁.mem.writeW (sScr σ + BitVec.ofNat 64 oSIG) (sSig σ) ∧ s.rd = s₁.rd ∧ s.wr = s₁.wr ∧
       s.sp = s₁.sp := by
     have hlt : oSIG < 2048 := by decide
-    mrun [mov, g3, g4, g5, g6, g7, i912, a912, hlt]
-    refine ⟨rfl, fun r _ hs => ?_⟩
+    mrun [mov, g3, g4, g5, g6, g7, g8, g9, i912, a912, hlt]
+    refine ⟨?_, ?_, fun r hr hs => ?_⟩
+    all_goals try exact rfl
+    all_goals try exact CacheCopy.sel_eq _ _
     simp only [savedTop, List.mem_cons, List.not_mem_nil, or_false, not_or] at hs
-    obtain ⟨-, a4, -, -, -, a8, a9, a10, a11⟩ := hs
-    simp only [a4, a8, a9, a10, a11, ite_false]
-  refine WP.mono hmv fun s ⟨g30, g29, g28, g31, g24, cs, m, rd, wr, sp⟩ => ?_
+    obtain ⟨a3, a4, -, -, -, a8, a9, a10, a11⟩ := hs
+    have t0 : r ≠ .t0 := fun e => by subst e; revert hr; decide
+    have t2 : r ≠ .t2 := fun e => by subst e; revert hr; decide
+    simp only [a3, a4, a8, a9, a10, a11, t0, t2, ite_false]
+  refine WP.mono hmv fun s ⟨g30, g29, g28, g31, g24, g19, cs, m, rd, wr, sp⟩ => ?_
   have fr8 : Frame [(slay1 p STK σ).R 0 912 8] s₁.mem s.mem := by
     rw [m]
     exact (show Frame [(slay1 p STK σ).R 0 912 8] s₁.mem s₁.mem from fun _ _ => rfl).writeW
@@ -253,7 +307,7 @@ theorem spro_ok {p : Params} (hF : SFacts p) {STK : Nat} (hSTK : 1168 ≤ STK) {
     sav.keep fr8 (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
       exact disjW' (i := 0) (o := 1288) (l := 80) (j := 0) (o' := 912) (l' := 8) hL (by ssep hF [slay1, Lay.size])
-        (.inl (by decide))), ?_, ?_, ?_, ?_⟩, g24⟩
+        (.inl (by decide))), ?_, ?_, ?_, ?_, hp, g19, ?_⟩, g24⟩
   · show _ ∈ s.wr
     rw [wr, wr₁, hp.wr]
     simp only [sWb1, List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -267,6 +321,13 @@ theorem spro_ok {p : Params} (hF : SFacts p) {STK : Nat} (hSTK : 1168 ≤ STK) {
   · rw [hin (i := 2) (l := p.skLen) (.inl rfl) rfl]; exact ek
   · rw [hin (i := 3) (l := 64) (.inr (.inl rfl)) rfl]; exact em
   · rw [hin (i := 4) (l := 32) (.inr (.inr rfl)) rfl]; exact er
+  · have hx : (sCLen σ) ≤ 2 ^ 64 := by have := hp.f_x; omega_arith
+    have hsub : ∀ {o l : Nat}, o + l ≤ scrLen p →
+        (Region.Disjoint (reg (sCache σ) (sCLen σ)) ((slay1 p STK σ).R 0 o l)) := fun h =>
+      (hp.d_cx.sub_left (Lay.R_sub (L := slay1 p STK σ) (i := 0) h)).symm
+    rw [Proof.MlKem.bytesAt_frame fr8 (fun r hr => ?_) hx, Proof.MlKem.bytesAt_frame fr (fun r hr => ?_) hx]
+    · rw [List.mem_singleton] at hr; subst hr; rw [saveR_slay1 p STK σ]; exact hsub (by omega_arith)
+    · rw [List.mem_singleton] at hr; subst hr; exact hsub (by omega_arith)
 
 theorem spro_piece {p : Params} (hF : SFacts p) {STK : Nat} (hSTK : 1168 ≤ STK) :
     SPiece p STK (fun σ s => s = σ) (fun σ s => SC1 p STK σ s ∧ s.gpr .s4 = 1) (.block pro) :=

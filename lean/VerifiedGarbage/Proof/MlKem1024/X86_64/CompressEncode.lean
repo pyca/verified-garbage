@@ -176,24 +176,6 @@ theorem compressEncode1024_ct :
       fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact hp.2.2.2.2)
     (by taint_decide)
 
-/-- A state satisfying the precondition. -/
-def compressEncode1024Sat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 5 | .rdx => 0x2000 | .rcx => 160 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 1024⟩]
-  wr := [⟨0x2000, 160⟩]
-
-theorem compressEncode1024_verified :
-    Verified X86_64.target compressEncode1024 (Proof.MlKem1024.compressEncodeContract X86_64.abi) :=
-  Verified.of_correct compressEncode1024_correct compressEncode1024_ct (by
-    mlkem_implies [Proof.MlKem1024.compressEncodeContract, Proof.MlKem1024.compressEncodeSig, compressEncode1024K,
-      X86_64.abi, X86_64.argRegs] [compressEncode1024Sat] using compressEncode1024Sat)
-
 theorem ce4_nosp : NoSp compressEncode1024 := nosp_of (by decide +kernel)
 theorem ce4_depth : compressEncode1024.depth = 0 := by decide +kernel
 

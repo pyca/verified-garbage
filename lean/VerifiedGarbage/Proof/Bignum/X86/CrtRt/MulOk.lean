@@ -2,9 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 
-public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Mul
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Mont.X86.MulRt
 
 /-! # The Montgomery product of two slots of a context, by a call -/
 

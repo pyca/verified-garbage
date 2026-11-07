@@ -392,7 +392,7 @@ theorem pkArgs_ok {s t : State} (hc : Ctx s t) :
 
 abbrev pkCode : Prog isa := Impl.Ed25519.PPC64LE.Whole.publicKeyExpandedCode
 
-abbrev pkK : Contract isa := Spec.Ed25519.publicKeyExpandedContract (PPC64LE.abi.withConsts combConsts) 224
+abbrev pkK : Contract isa := Proof.Ed25519.publicKeyExpandedContract (PPC64LE.abi.withConsts combConsts) 224
 
 theorem pk_verified : Verified PPC64LE.target pkCode pkK := Proof.Ed25519.PPC64LE.Whole.publicKeyExpanded_framed
 
@@ -406,7 +406,7 @@ theorem pk_pre {s t : State} (h : Pre s) (hc : Ctx s t) (hx3 : t.gpr .r3 = s.gpr
     (hE : Spec.Ed25519.bytesAt t.mem (s.gpr .r4) 64 =
       Spec.Sha512.sha512 (Spec.Ed25519.bytesAt s.mem (s.gpr .r5) 32)) :
     pkK.pre (t.callEntry.withRegions (pkRd s) (pkWr s)) := by
-  sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+  sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
     Spec.Ed25519.scratchWords, PPC64LE.abi, PPC64LE.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions,
     Abi.constsHeld, stackBelow]
   have hb := hc.belowEq (n := 224) (by decide)
@@ -458,7 +458,7 @@ theorem pk_ok {s t : State} (h : Pre s) (hc : Ctx s t) {pn : String} (hx3 : t.gp
     · exact h.oe.symm
     · exact h.ec
     · exact (h.kE (by decide)).symm
-  · sig_post [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+  · sig_post [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, PPC64LE.abi, PPC64LE.argRegs, combConsts_eq, Abi.withConsts] at hpost
     rw [hx3, hx4] at hpost
     exact hpost _ (by simp [Spec.Ed25519.bytesAt]) hE
@@ -593,7 +593,7 @@ theorem body_ct {dn pn : String} :
     obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨e₁, d₁, i₁, x₁⟩, ⟨e₂, d₂, i₂, x₂⟩⟩ := hr
     refine ⟨_, _, _, _, pk_pre h₁ c₁ d₁ i₁ x₁ e₁, pk_pre h₂ c₂ d₂ i₂ x₂ e₂, ?_, (pk_cov h₁ c₁).1,
       (pk_cov h₁ c₁).2, (pk_cov h₂ c₂).1, (pk_cov h₂ c₂).2⟩
-    sig_pub [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_pub [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, PPC64LE.abi, PPC64LE.argRegs, combConsts_eq, Abi.withConsts]
     rw [c₁.sp, c₂.sp, d₁, d₂, i₁, i₂, x₁, x₂, c₁.sym, c₂.sym, K, K, hp.sp, hp.r3, hp.r4, hp.r6, hp.sy]
     exact ⟨rfl, rfl, rfl, rfl, rfl⟩

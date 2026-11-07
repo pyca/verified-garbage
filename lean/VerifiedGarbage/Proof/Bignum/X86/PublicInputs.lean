@@ -48,13 +48,4 @@ theorem PublicInputs.keep {base : Addr} {bytes len : Nat} {args : Nat → BitVec
   · rw [K.2.1, K.2.2]; exact h.eRead
   · rw [K.2.1, K.2.2]; exact h.inRead
 
-theorem PublicInputs.dimensions {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {s : State}
-    (h : PublicInputs base bytes len args s) :
-    0 < Spec.Rsa.modulusWords len ∧ 128 * Spec.Rsa.modulusWords len < 2 ^ 32 ∧
-      len ≤ 8 * Spec.Rsa.modulusWords len := by
-  have := h.lower
-  have := h.upper
-  unfold Spec.Rsa.modulusWords
-  omega
-
 end VG.Proof.Bignum.X86

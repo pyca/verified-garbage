@@ -718,12 +718,6 @@ theorem correctD (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog is
     · rw [hC.r0, hC.r6]
       exact hp.st_out.sub_left (Region.sub_prefix (by omega_arith))
 
-theorem correct (hd : Dims P) (hs : Shape H) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    {s₀ : State} (hp : Pre P s₀) :
-    WP isa (finalize P name code) s₀ fun s' => abiPreserved s₀ s' ∧ (finK H).post s₀ s' :=
-  (correctD hd hs.toD hf hp).mono fun _ ⟨ha, h⟩ => ⟨ha, fun iv m hr hl hc =>
-    (h iv m hr hl hc).trans (List.take_of_length_le (by rw [Md.hash, H.digest_length]))⟩
-
 end
 
 /-! ## Constant time -/
@@ -782,7 +776,6 @@ theorem agree₀D {s₁ s₂ : State} (h₁ : (finKD H D).pre s₁) (h₂ : (fin
     rcases this with h | h <;> rw [h]
     · exact congrArg _ a0
     · exact congrArg _ a1
-
 
 theorem agree₀ {s₁ s₂ : State} (h₁ : (finK H).pre s₁) (h₂ : (finK H).pre s₂)
     (hpub : (finK H).pub s₁ s₂) : VG.Arm.Taint.Agree (τ₀ P) s₁ s₂ := by

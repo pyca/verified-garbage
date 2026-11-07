@@ -99,14 +99,6 @@ theorem Agree.writeCarry {τ : T} {s₁ s₂ : State} (h : Agree τ s₁ s₂) (
     Agree (set τ d p) (s₁.writeCarry d v₁) (s₂.writeCarry d v₂) :=
   h.write d fun hp => by rw [hv hp]
 
-/-- The result of an instruction that writes `d` from the state, if it does
-not fault. -/
-theorem step_write {τ : T} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂) {d : Reg} {p : Bool}
-    {f : State → BitVec 64} (hf : p = true → f s₁ = f s₂)
-    (e₁ : s₁' = s₁.write d (f s₁)) (e₂ : s₂' = s₂.write d (f s₂)) :
-    Agree (set τ d p) s₁' s₂' := by
-  subst e₁ e₂; exact ha.write d hf
-
 theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by

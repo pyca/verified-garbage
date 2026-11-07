@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.Xdh.RISCV64
 public import VerifiedGarbage.Proof.X25519.RISCV64.R64.Verified
 public import VerifiedGarbage.Spec.X25519.Contract
@@ -12,6 +13,7 @@ meta import VerifiedGarbage.Spec.X25519.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.X25519.Contract
 
 /-!
 # X25519 exchange, with RFC 7748's check, on RISC-V
@@ -30,13 +32,13 @@ namespace VG.Proof.X25519.RISCV64.Exchange
 open VG VG.RISCV64 VG.Proof.Xdh.RISCV64
 
 theorem callee : Callee 32 4096 Spec.X25519.x25519 Impl.X25519.RISCV64.R64.x25519
-    (Spec.X25519.x25519Contract RISCV64.abi) where
+    (Proof.X25519.x25519Contract RISCV64.abi) where
   hv := Proof.X25519.RISCV64.R64.x25519_verified.1
   hct := Proof.X25519.RISCV64.R64.x25519_verified.2.1
   pre s h := by
     obtain ⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3, al3, al⟩ := h
-    sig_pre [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, RISCV64.abi, RISCV64.argRegs]
-    sig_reduce [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, RISCV64.abi, RISCV64.argRegs, List.getD]
+    sig_pre [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, RISCV64.abi, RISCV64.argRegs]
+    sig_reduce [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, RISCV64.abi, RISCV64.argRegs, List.getD]
     sig_and_intros
     all_goals first
       | with_reducible assumption
@@ -44,12 +46,12 @@ theorem callee : Callee 32 4096 Spec.X25519.x25519 Impl.X25519.RISCV64.R64.x2551
       | omega
       | exact Region.Disjoint.symm ‹_›
   post s s' h := by
-    sig_post [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, RISCV64.abi, RISCV64.argRegs] at h
+    sig_post [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, RISCV64.abi, RISCV64.argRegs] at h
     exact h
   pub s₁ s₂ h := by
     obtain ⟨q0, q1, q2, q3, qsp⟩ := h
-    sig_pub [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, RISCV64.abi, RISCV64.argRegs]
-    sig_reduce [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, RISCV64.abi, RISCV64.argRegs]
+    sig_pub [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, RISCV64.abi, RISCV64.argRegs]
+    sig_reduce [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, RISCV64.abi, RISCV64.argRegs]
     sig_and_intros
     all_goals first | with_reducible assumption | trivial
   nf := by lit_decide
@@ -59,7 +61,7 @@ theorem exchange_verified :
       (Spec.X25519.exchangeContract RISCV64.abi 16) :=
   Verified.of_correct (k := exContract 32 4096 Spec.X25519.x25519) (exchange_correct callee (by decide))
     (exchange_ct callee ⟨_, by taint_decide⟩) (by
-      contract_implies [Spec.X25519.exchangeContract, Spec.X25519.exchangeSig, Spec.X25519.x25519Sig,
+      contract_implies [Spec.X25519.exchangeContract, Spec.X25519.exchangeSig, Proof.X25519.x25519Sig,
         exContract, ExPre, CallPre, ExPost, Pub, RISCV64.abi, RISCV64.argRegs]
         [Proof.X25519.RISCV64.R64.x25519Sat] using Proof.X25519.RISCV64.R64.x25519Sat)
 

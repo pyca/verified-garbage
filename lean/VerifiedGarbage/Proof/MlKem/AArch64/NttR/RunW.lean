@@ -37,8 +37,6 @@ materialize_value fInW
 def outW (σ : St) : Bool :=
   (List.range 32).all fun j => (List.range 8).all fun e => Nat.beq ((σ.chunk 0 j).get e) (outT (8 * j + e))
 
-theorem fInW_get : ∀ j < 32, ∀ e < 8, Y.get (slot yw fInW j) e = lvT 0 (8 * j + e) := by decide +kernel
-
 /-- Lane `e` of chunk `j` of the table. -/
 theorem tabT_get {j e : Nat} (hj : j < 32) (he : e < 8) :
     Y.get (slot yw tabT j) e = cT (Impl.MlKem.AArch64.Ntt16.tableHalves.getD (8 * j + e) 0) := by

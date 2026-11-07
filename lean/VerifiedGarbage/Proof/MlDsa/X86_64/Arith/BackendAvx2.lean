@@ -76,5 +76,6 @@ def ArithImpl.avx512 : ArithImpl where
     expandMask4 := ⟨Mask4.expandMask4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by lit_decide),
       by lit_decide, by lit_decide, Code.all_of_allInstrs (by lit_decide)⟩ }
   features := ["avx", "avx2", "avx512f", "avx512vl"]
+  prepareFeatures := ["avx", "avx2"]
 
 end VG.Proof.MlDsa.X86_64

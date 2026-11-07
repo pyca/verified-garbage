@@ -77,7 +77,24 @@ def sealX86 : Contract X86.isa where
   pub := pubX86
 
 open VG.X86 in
-/-- `vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag, work) -> u32`. -/
+/-- Whether the message is authenticated, in `open`'s state on entry. -/
+def okX86 (s : X86.State) : Bool :=
+  (decrypt (bytesAt s.mem ((arg s 0).setWidth 64) 32) (bytesAt s.mem ((arg s 1).setWidth 64) 12)
+    (bytesAt s.mem ((arg s 2).setWidth 64) (arg s 3).toNat)
+    (bytesAt s.mem ((arg s 4).setWidth 64) (arg s 5).toNat) (bytesAt s.mem ((arg s 6).setWidth 64) 16)).isSome
+
+open VG.X86 in
+/-- What `open` may leak (`Spec.ChaCha20Poly1305.openLeak`): whether the
+message is authenticated. -/
+def openLeakX86 (s : X86.State) : List Nat :=
+  [if (decrypt (bytesAt s.mem ((arg s 0).setWidth 64) 32) (bytesAt s.mem ((arg s 1).setWidth 64) 12)
+    (bytesAt s.mem ((arg s 2).setWidth 64) (arg s 3).toNat)
+    (bytesAt s.mem ((arg s 4).setWidth 64) (arg s 5).toNat)
+    (bytesAt s.mem ((arg s 6).setWidth 64) 16)).isSome then 1 else 0]
+
+open VG.X86 in
+/-- `vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag, work) -> u32`:
+zeros at `data` if the tag is wrong; it may leak whether it is (`openLeakX86`). -/
 def openX86 : Contract X86.isa where
   pre := preX86 false
   post s s' :=
@@ -85,8 +102,9 @@ def openX86 : Contract X86.isa where
         (bytesAt s.mem ((arg s 2).setWidth 64) (arg s 3).toNat)
         (bytesAt s.mem ((arg s 4).setWidth 64) (arg s 5).toNat) (bytesAt s.mem ((arg s 6).setWidth 64) 16) with
     | some pt => s'.gpr .eax = 1 ∧ bytesAt s'.mem ((arg s 4).setWidth 64) (arg s 5).toNat = pt
-    | none => s'.gpr .eax = 0
-  pub := pubX86
+    | none => s'.gpr .eax = 0 ∧
+        bytesAt s'.mem ((arg s 4).setWidth 64) (arg s 5).toNat = List.replicate (arg s 5).toNat 0
+  pub s₁ s₂ := pubX86 s₁ s₂ ∧ openLeakX86 s₁ = openLeakX86 s₂
 
 end VG.Proof.ChaCha20Poly1305
 

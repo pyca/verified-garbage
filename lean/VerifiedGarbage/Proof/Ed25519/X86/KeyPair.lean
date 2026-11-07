@@ -440,7 +440,7 @@ theorem pkArgs_ok {s t : State} (h : Pre s) (hc : Ctx s t) :
   · rw [u₃.gpr]
     exact c₂.argRead h (j := 3) (by decide) rfl
 
-abbrev pkK : Contract isa := Spec.Ed25519.publicKeyExpandedContract (X86.abi.withConsts combConsts) 280
+abbrev pkK : Contract isa := Proof.Ed25519.publicKeyExpandedContract (X86.abi.withConsts combConsts) 280
 
 theorem pk_nosp : NoSp PublicKey.publicKeyExpanded := by
   intro i hi
@@ -513,7 +513,7 @@ theorem pk_pre {s t : State} (h : Pre s) (hc : Ctx s t) (ha : t.gpr .eax = arg s
     rw [xm]; exact hheld
   have xk : Spec.Ed25519.bytesAt X.mem ((arg s 1).setWidth 64) 64 =
       Spec.Sha512.sha512 (Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 32) := by rw [xm]; exact hk'
-  sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+  sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
     Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   simp only [x0, x1, x2, xb, xsy, xrd, xwr, xsp, sub_eq h (show 16 ≤ 628 by decide), Nat.reduceSub]
@@ -605,7 +605,7 @@ theorem pk_ok {s t : State} (h : Pre s) (hc : Ctx s t) {pn : String} (ha : t.gpr
     have xm : X.mem = (pushed argRegs t).callEntry.mem := by rw [← hX]; rfl
     have x0 : arg X 0 = arg s 0 := by rw [← hX, arg_withRegions]; exact a0
     have x1 : arg X 1 = arg s 1 := by rw [← hX, arg_withRegions]; exact a1
-    sig_post [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_post [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts] at hpost
     simp only [x0, x1, xm, hm₂] at hpost
@@ -781,7 +781,7 @@ theorem body_ct (S : State) {dn pn : String} :
     have f₂ : 4 * argRegs.length + 4 ≤ (b.gpr .esp).toNat := by
       rw [show b.gpr .esp = s₂.gpr .esp from c₂.esp]; have := h₂.sp; simp only [esp] at this
       show 16 ≤ _; omega
-    sig_pub [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_pub [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts]
     simp only [arg_withRegions, ea, eb,

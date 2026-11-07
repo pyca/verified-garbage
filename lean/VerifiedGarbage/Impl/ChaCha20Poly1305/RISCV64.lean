@@ -34,7 +34,9 @@ with the message's length so far as `count`.
 
 Constant time: only the pointers and the lengths can affect timing (the
 branches are on the lengths, in the callees, and every address is a pointer
-plus a constant or a count). `open` compares the tags without a branch.
+plus a constant or a count). `open` compares the tags without a branch,
+then, if they differ, zeroes the data (`zeroData`): that branch is on
+whether it returns 1, which its contract lets it leak.
 -/
 
 @[expose] public section
@@ -116,11 +118,12 @@ def macData (out : Instr) : Prog isa :=
   (.seq (.block (round16 .a1 .s8 ++ round16 .t0 .s10 ++ [.add .a1 .a1 .t0, .addi .a1 .a1 16, out]))
     (.call "vg_poly1305_finalize" Impl.Poly1305.RISCV64.finalize)))))))
 
-/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted, from
-`a0` at the Poly1305 state; `a0` back to it. -/
+/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted in
+place (`vg_chacha20_xor` with `dst = src`), from `a0` at the Poly1305 state;
+`a0` back to it. -/
 def crypt : Prog isa :=
   .seq (.block [.addi .a0 .a0 (-(polyOff : Int)), .li .t0 1, .store .b .t0 .a0 48, mov .a1 .s9,
-    mov .a2 .s10, .addi .a3 .a0 bufOff])
+    mov .a2 .s10, .addi .a3 .a0 bufOff, mov .a4 .s9])
   (.seq (.call "vg_chacha20_xor" Impl.ChaCha20.RISCV64.Xor.xor)
     (.block [.addi .a0 .a0 polyOff]))
 
@@ -146,13 +149,28 @@ def compare : List Instr :=
       .logic .xor .t2 .t2 .t3, .logic .or .t1 .t1 .t2]) ++
     [.li .t2 1, .sltu .t1 .t1 .t2]
 
-def «open» : Prog isa :=
+/-- The `s10` bytes at `s9` zeroed, a byte at a time, with `t1` zero:
+through `t2` (the address) and `t3` (the count). -/
+def zeroData : Prog isa :=
+  .seq (.block [mov .t2 .s9, mov .t3 .s10])
+    (.ite (.zero .t3) (.block [])
+      (.loop (.block [.store .b .t1 .t2 0, .addi .t2 .t2 1, .addi .t3 .t3 (-1)]) (.nonzero .t3)))
+
+/-- Everything but the epilogue: `t1` is 1 if the tag is right, else 0. -/
+def openBody : Prog isa :=
   .seq (.block (save ++ moves ++ setup))
   (.seq keyGen
   (.seq polyInit
   (.seq macAad
   (.seq (macData (.addi .a2 .a0 (tagOff - polyOff)))
   (.seq crypt
-    (.block (compare ++ restore ++ [mov .a0 .t1])))))))
+    (.block compare))))))
+
+/-- `open` zeroes the data if the tag is wrong, branching on the result of
+the comparison, which its contract lets it leak. -/
+def «open» : Prog isa :=
+  .seq openBody
+  (.seq (.ite (.zero .t1) zeroData (.block []))
+    (.block (restore ++ [mov .a0 .t1])))
 
 end VG.Impl.ChaCha20Poly1305.RISCV64

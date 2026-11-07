@@ -26,7 +26,6 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Scrypt.Contract
 
 /-!
 # scryptBlockMix on PPC64LE: correctness of the loop
@@ -762,16 +761,6 @@ theorem agree₀ {s₁ s₂ : State} (hpub : Proof.Scrypt.blockMixPPC64LE.pub s�
   simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-/-- A state satisfying the precondition (with no data). -/
-def bmSat : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 1 | .r5 => 0x2000 | .r6 => 1 | .r7 => 0x3000 | _ => 0
-  lr := 0
-  sp := 0x5000
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x3000, 128⟩]
-
 theorem blockMix_correct (s : State) (hs : Proof.Scrypt.blockMixPPC64LE.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.PPC64LE.blockMix s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.blockMixPPC64LE.post s s' :=
@@ -781,24 +770,5 @@ theorem blockMix_ct : ConstantTime isa Proof.Scrypt.blockMixPPC64LE.pre
     Proof.Scrypt.blockMixPPC64LE.pub Impl.Scrypt.PPC64LE.blockMix := by
   exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
-
-theorem blockMix_verified :
-    Verified PPC64LE.target Impl.Scrypt.PPC64LE.blockMix (Proof.Scrypt.blockMixContract PPC64LE.abi
-      48) :=
-  Verified.of_correct blockMix_correct blockMix_ct
-    { pre := by
-        sig_implies_pre [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixPPC64LE, PPC64LE.abi, PPC64LE.argRegs, below]
-      post := by
-        sig_implies_post [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
-      pub := by
-        sig_implies_pub [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
-      sat := by
-        sig_implies_sat [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixPPC64LE, PPC64LE.abi, PPC64LE.argRegs, below,
-          Proof.Scrypt.PPC64LE.BlockMix.bmSat]
-          [Proof.Scrypt.PPC64LE.BlockMix.bmSat] using Proof.Scrypt.PPC64LE.BlockMix.bmSat }
 
 end VG.Proof.Scrypt.PPC64LE.BlockMix

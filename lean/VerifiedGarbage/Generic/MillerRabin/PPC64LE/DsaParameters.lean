@@ -16,7 +16,6 @@ def artifacts (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.Dsa.PPC64LE.Generation.code (gen1 v) (gen2 v) (gen3 v)
     stack := 176
-    consts := Impl.RsaKeyGen.TrialTable32.consts
     verified := search_params v
     features := v.features }]
 

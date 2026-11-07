@@ -117,8 +117,4 @@ theorem permute_verified :
     sig_implies [Proof.Sha3.permuteContract,Proof.Sha3.permuteSig,VG.Proof.Sha3.permuteAArch64,
       AArch64.abi,AArch64.argRegs] [VG.Proof.Sha3.AArch64.satState] using VG.Proof.Sha3.AArch64.satState)
 
-/-- Core and boundary instructions, excluding the emitted return. -/
-theorem permute_instruction_count : (instrs permute).length = 1723 := by lit_decide
-
-
 end VG.Proof.Sha3.AArch64.Sha3.Vector

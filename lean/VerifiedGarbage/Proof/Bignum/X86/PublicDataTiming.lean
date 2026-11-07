@@ -19,32 +19,11 @@ def loadTaint : VG.X86.Taint.T :=
 def storeTaint : VG.X86.Taint.T :=
   { regs := .ofList [.edi, .esp, .ebx, .ecx], flags := false }
 
-theorem loadBE_relCT (n out : Nat) :
-    RelCT isa (VG.X86.Taint.Agree loadTaint) (loadBE n out)
-      (VG.X86.Taint.Agree (workspaceTaint false)) := by
-  apply erased_relCT (loadBE n out) (loadBE 1 0)
-    (VG.Taint.hintOf taint loadTaint (loadBE 1 0)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
-  kernel_rfl
-
 theorem storeBE_relCT (src : Nat) :
     RelCT isa (VG.X86.Taint.Agree storeTaint) (storeBE src)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
   apply erased_relCT (storeBE src) (storeBE 0)
     (VG.Taint.hintOf taint storeTaint (storeBE 0)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
-  kernel_rfl
-
-theorem inputCompare_relCT (n : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (PublicContext.inputCompare n)
-      (VG.X86.Taint.Agree (workspaceTaint false)) := by
-  apply erased_relCT (PublicContext.inputCompare n) (PublicContext.inputCompare 1)
-    (VG.Taint.hintOf taint (workspaceTaint false) (PublicContext.inputCompare 1)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
-  kernel_rfl
-
-theorem maskResult_relCT (n : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (PublicFn.maskResult n)
-      (VG.X86.Taint.Agree (workspaceTaint false)) := by
-  apply erased_relCT (PublicFn.maskResult n) (PublicFn.maskResult 1)
-    (VG.Taint.hintOf taint (workspaceTaint false) (PublicFn.maskResult 1)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
   kernel_rfl
 
 end VG.Proof.Bignum.X86

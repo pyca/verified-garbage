@@ -278,16 +278,6 @@ theorem RowOk.sub {size : Nat} {x : Reg} {ts ts' : List Reg} {ws : List RWord} (
   x2 := h.x2
   x3 := h.x3
 
-theorem regsVal_zero_of {s : State} {rs : List Reg} (h : regsVal s rs = 0) : ∀ r ∈ rs, s.gpr r = 0 := by
-  induction rs with
-  | nil => intro r hr; exact absurd hr List.not_mem_nil
-  | cons q rs ih =>
-    intro r hr
-    simp only [regsVal] at h
-    rcases List.mem_cons.mp hr with rfl | hr
-    · exact BitVec.eq_of_toNat_eq (show _ = 0 by omega_using [h])
-    · exact ih (by omega_using [h]) r hr
-
 /-- The window as its low `n + 1` words and the rest. -/
 theorem regsVal_wins_split (s : State) (n i : Nat) :
     regsVal s (wins n i) = regsVal s ((wins n i).take (n + 1)) +

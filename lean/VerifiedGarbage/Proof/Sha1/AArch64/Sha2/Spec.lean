@@ -31,9 +31,6 @@ theorem step_eq (g : Sha1Op) (v : HashValue) (k w : Word) :
 def hw4 (g : Sha1Op) (v : HashValue) (k w0 w1 w2 w3 : Word) : HashValue :=
   hw g (hw g (hw g (hw g v k w0) k w1) k w2) k w3
 
-theorem hw4_e (g : Sha1Op) (v : HashValue) (k w0 w1 w2 w3 : Word) :
-    (hw4 g v k w0 w1 w2 w3)[4] = v[0].rotateLeft 30 := rfl
-
 theorem hash_eq (g : Sha1Op) (v : HashValue) (k w0 w1 w2 w3 : Word) :
     sha1Hash g.f (abcd v) v[4] (ofVWords (k + w0) (k + w1) (k + w2) (k + w3)) =
       abcd (hw4 g v k w0 w1 w2 w3) := by
@@ -65,7 +62,6 @@ theorem add_abcd (v H : HashValue) :
     VArr.s4.map2 (fun _ x y => x + y) (abcd v) (abcd H) = abcd (Vector.zipWith (· + ·) v H) := by
   simp only [VArr.map2, abcd, vword_ofVWords_0, vword_ofVWords_1, vword_ofVWords_2,
     vword_ofVWords_3, Vector.getElem_zipWith]
-
 
 /-- Word views distribute over vector XOR. -/
 theorem vword_xor (x y : BitVec 128) (e : Nat) :

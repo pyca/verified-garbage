@@ -34,13 +34,13 @@ use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt;
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_sha2;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_shani;
-use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_precomputed;
+use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_encrypt_random;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_enc::{
     vg_rsa_pkcs1_decrypt_crt_adx, vg_rsa_pkcs1_decrypt_crt_ifma, vg_rsa_pkcs1_decrypt_sha256_avx2,
     vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx, vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
     vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx, vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma,
-    vg_rsa_pkcs1_encrypt_precomputed_adx, vg_rsa_pkcs1_encrypt_precomputed_ifma,
+    vg_rsa_pkcs1_encrypt_random_adx, vg_rsa_pkcs1_encrypt_random_ifma,
 };
 #[cfg(all(
     target_arch = "arm",
@@ -52,10 +52,9 @@ use crate::arch::rsa_pkcs1_enc::{
         target_os = "openbsd"
     )
 ))]
-use crate::arch::rsa_pkcs1_enc::{
-    vg_rsa_pkcs1_decrypt_umaal, vg_rsa_pkcs1_encrypt_precomputed_umaal,
-};
+use crate::arch::rsa_pkcs1_enc::{vg_rsa_pkcs1_decrypt_umaal, vg_rsa_pkcs1_encrypt_random_umaal};
 use crate::cpu::detected;
+use crate::entropy::{self, Step, Stop};
 use crate::hashes::sha256::Sha256Backend;
 use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words};
 use crate::zeroize::zeroize;
@@ -94,21 +93,6 @@ impl fmt::Display for Error {
 
 impl core::error::Error for Error {}
 
-/// Fills `ps` with nonzero bytes from `draw`, which fills a buffer with
-/// random bytes: all at once, then each zero byte again until it is not.
-fn fill_nonzero(
-    ps: &mut [u8],
-    mut draw: impl FnMut(&mut [u8]) -> Result<(), Error>,
-) -> Result<(), Error> {
-    draw(ps)?;
-    for b in ps.iter_mut() {
-        while *b == 0 {
-            draw(core::slice::from_mut(b))?;
-        }
-    }
-    Ok(())
-}
-
 /// The operating system's random bytes.
 fn os_random(buf: &mut [u8]) -> Result<(), Error> {
     getrandom::fill(buf).map_err(|_| Error::Randomness)
@@ -119,16 +103,17 @@ impl PublicKey {
     /// most [`modulus_len`](PublicKey::modulus_len)` - 11` bytes, with `key`,
     /// with a padding string of random nonzero bytes, and returns the
     /// ciphertext ([`modulus_len`](PublicKey::modulus_len) bytes, big-endian).
-    /// The timing may depend on the public key and the plaintext's length, not
-    /// on its contents.
+    /// The timing may depend on the public key, the plaintext's length and
+    /// which of the random bytes drawn were zero, not on the plaintext's
+    /// contents or the padding string.
     ///
     /// RSAES-PKCS1-v1_5 is deprecated (see the [module](self) documentation).
     pub fn encrypt_pkcs1v15(&self, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
         self.encrypt_pkcs1v15_from(plaintext, os_random)
     }
 
-    /// [`encrypt_pkcs1v15`](Self::encrypt_pkcs1v15), with its padding string
-    /// drawn from `random`.
+    /// [`encrypt_pkcs1v15`](Self::encrypt_pkcs1v15), with the random bytes
+    /// its padding string is drawn from given by `random`.
     fn encrypt_pkcs1v15_from(
         &self,
         plaintext: &[u8],
@@ -138,71 +123,94 @@ impl PublicKey {
         if plaintext.len() + 11 > k {
             return Err(Error::MessageTooLong);
         }
-        let mut ps = vec![0u8; k - plaintext.len() - 3];
-        fill_nonzero(&mut ps, random)?;
-        let c = encrypt_with(self, plaintext, &ps);
-        zeroize(&mut ps);
-        Ok(c)
+        let mut out = vec![0u8; k];
+        let mut scratch = vec![0u64; public_scratch_words(k)];
+        let pre = self.pre(&mut scratch);
+        let backend = Backend::select(detected());
+        let mut status = 0;
+        // The padding string needs at least as many random bytes as it has;
+        // 32 more make a tape too short for it (more than 32 of at most 1045
+        // uniform bytes zero) all but impossible, sparing a second step.
+        let drawn = entropy::serve(k - plaintext.len() - 3 + 32, random, |tape| {
+            let mut counts = [0u64; 2];
+            macro_rules! encrypt {
+                ($function:path) => {
+                    // SAFETY: each pointer is valid for its length (`out`,
+                    // `counts` and `scratch` for writes), and none overlaps
+                    // another or wraps around, as they are distinct Rust
+                    // allocations; `PublicKey::new` and the check above give
+                    // `64 ≤ n_len ≤ 1024`, `out_len = n_len`,
+                    // `1 ≤ e_len ≤ 5 ≤ n_len`, `msg_len + 11 ≤ n_len` and
+                    // `scratch_len = 8 ⌈n_len / 8⌉ + 48`; `entropy::serve`
+                    // gives a tape of fresh random bytes, extended only as
+                    // the function asks, so of at most its budget,
+                    // `n_len - msg_len + 125` bytes; `pre` holds the verified
+                    // precomputation for `self.n`, with `2 ⌈n_len / 8⌉`
+                    // words; and the CPU has the features of the function
+                    // `Backend::select` chose.
+                    unsafe {
+                        $function(
+                            out.as_mut_ptr(),
+                            k,
+                            &mut counts,
+                            self.n.as_ptr(),
+                            k,
+                            self.e.as_ptr(),
+                            self.e.len(),
+                            plaintext.as_ptr(),
+                            plaintext.len(),
+                            tape.as_ptr(),
+                            tape.len(),
+                            scratch.as_mut_ptr(),
+                            scratch.len(),
+                            pre.as_ptr(),
+                            pre.len(),
+                        )
+                    }
+                };
+            }
+            status = match backend {
+                Backend::Baseline => encrypt!(vg_rsa_pkcs1_encrypt_random),
+                #[cfg(target_arch = "x86_64")]
+                Backend::Adx => encrypt!(vg_rsa_pkcs1_encrypt_random_adx),
+                #[cfg(target_arch = "x86_64")]
+                Backend::Ifma => encrypt!(vg_rsa_pkcs1_encrypt_random_ifma),
+                #[cfg(all(
+                    target_arch = "arm",
+                    any(
+                        target_os = "linux",
+                        target_os = "android",
+                        target_os = "freebsd",
+                        target_os = "netbsd",
+                        target_os = "openbsd"
+                    )
+                ))]
+                Backend::Umaal => encrypt!(vg_rsa_pkcs1_encrypt_random_umaal),
+            };
+            match status {
+                // The tape has too few nonzero bytes: it consumed none of
+                // them and asks for a longer tape.
+                0 => Step::More {
+                    used: counts[0] as usize,
+                    requested: counts[1] as usize,
+                },
+                1 => Step::Done,
+                _ => Step::Failed,
+            }
+        });
+        // The working space holds powers of the encoded message.
+        zeroize(&mut scratch);
+        match drawn {
+            Ok(()) => Ok(out),
+            Err(Stop::Fill(e)) => Err(e),
+            Err(Stop::Failed) => {
+                // `PublicKey::new` checked `n` and `e`, so the tape's whole
+                // budget had too few nonzero bytes.
+                assert_eq!(status, 3, "encryption refused a valid key");
+                Err(Error::Randomness)
+            }
+        }
     }
-}
-
-/// `vg_rsa_pkcs1_encrypt_precomputed` of `plaintext` with the padding string `ps`, of
-/// `k - plaintext.len() - 3` nonzero bytes.
-fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
-    let k = key.modulus_len();
-    let mut out = vec![0u8; k];
-    let mut scratch = vec![0u64; public_scratch_words(k)];
-    let pre = key.pre(&mut scratch);
-    let f = match Backend::select(detected()) {
-        Backend::Baseline => vg_rsa_pkcs1_encrypt_precomputed,
-        // `select` chose it because the CPU has the features it needs.
-        #[cfg(target_arch = "x86_64")]
-        Backend::Adx => vg_rsa_pkcs1_encrypt_precomputed_adx,
-        #[cfg(target_arch = "x86_64")]
-        Backend::Ifma => vg_rsa_pkcs1_encrypt_precomputed_ifma,
-        #[cfg(all(
-            target_arch = "arm",
-            any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd"
-            )
-        ))]
-        Backend::Umaal => vg_rsa_pkcs1_encrypt_precomputed_umaal,
-    };
-    // SAFETY: each pointer is valid for its length (`out` and `scratch` for
-    // writes), and none overlaps another or wraps around, as they are
-    // distinct Rust allocations; `PublicKey::new` and `encrypt` give
-    // `64 ≤ n_len ≤ 1024`, `out_len = n_len`, `1 ≤ e_len ≤ 5 ≤ n_len`,
-    // `msg_len + 11 ≤ n_len`, `ps_len = n_len - msg_len - 3` and
-    // `scratch_len = 8 ⌈n_len / 8⌉ + 48`; `pre` holds the verified
-    // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; and the
-    // CPU supports the selected function's features.
-    let r = unsafe {
-        f(
-            out.as_mut_ptr(),
-            k,
-            key.n.as_ptr(),
-            k,
-            key.e.as_ptr(),
-            key.e.len(),
-            plaintext.as_ptr(),
-            plaintext.len(),
-            ps.as_ptr(),
-            ps.len(),
-            scratch.as_mut_ptr(),
-            scratch.len(),
-            pre.as_ptr(),
-            pre.len(),
-        )
-    };
-    // The working space holds powers of the encoded message.
-    zeroize(&mut scratch);
-    // `PublicKey::new` checked `n` and `e`, and `PS` has no zero byte.
-    assert_eq!(r, 1, "precomputed encryption refused a valid key");
-    out
 }
 
 /// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
@@ -387,7 +395,7 @@ impl PrivateKey {
 
 #[cfg(test)]
 mod tests {
-    use super::{Backend, Error, Sha256Backend, Vec, decrypt_fn, fill_nonzero, os_random, vec};
+    use super::{Backend, Error, Sha256Backend, Vec, decrypt_fn, os_random, vec};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 
@@ -418,39 +426,53 @@ mod tests {
         assert_ne!(encrypt(1), encrypt(2));
     }
 
+    /// A tape with too few nonzero bytes is extended, keeping its
+    /// unconsumed bytes, until the padding string is drawn; a tape of the
+    /// whole budget with too few gives up; and a failing random number
+    /// generator fails the encryption.
     #[test]
-    fn nonzero_padding() {
-        // Zeros come back from the first draw at the first, second and last
-        // bytes, and again from the second draw of the first byte.
-        let mut draws = 0;
-        let mut ps = [0u8; 5];
-        fill_nonzero(&mut ps, |buf| {
-            draws += 1;
-            match draws {
-                1 => buf.copy_from_slice(&[0, 0, 7, 9, 0]),
-                2 => buf[0] = 0,
-                _ => buf[0] = draws,
-            }
-            Ok(())
-        })
-        .unwrap();
-        assert_eq!(ps, [3, 4, 7, 9, 5]);
-        assert_eq!(
-            fill_nonzero(&mut ps, |_| Err(Error::Randomness)),
-            Err(Error::Randomness)
-        );
-        let mut ps = [0u8; 2];
-        let mut first = true;
-        let r = fill_nonzero(&mut ps, |buf| {
-            if first {
-                first = false;
-                buf.fill(0);
+    fn padding_from_tape() {
+        let (_, public) = composite_key();
+        // The padding string has 8 bytes. The first tape, of 40, is all
+        // zeros, and so are the first 4 bytes of the next, of 48: the tape is
+        // extended by 8, then by the 4 it still lacks, and the padding string
+        // is the ones that follow, as from a tape of ones.
+        let mut fills = Vec::new();
+        let mut zeros = 44;
+        let extended = public
+            .encrypt_pkcs1v15_from(&[7; 53], |buf| {
+                fills.push(buf.len());
+                for b in buf {
+                    *b = if zeros > 0 { 0 } else { 1 };
+                    zeros -= usize::from(zeros > 0);
+                }
                 Ok(())
-            } else {
-                Err(Error::Randomness)
-            }
+            })
+            .unwrap();
+        assert_eq!(fills, [40, 8, 4]);
+        let ones = public
+            .encrypt_pkcs1v15_from(&[7; 53], |buf| {
+                buf.fill(1);
+                Ok(())
+            })
+            .unwrap();
+        assert_eq!(extended, ones);
+        let mut drawn = 0;
+        let r = public.encrypt_pkcs1v15_from(&[7; 53], |buf| {
+            drawn += buf.len();
+            buf.fill(0);
+            Ok(())
         });
         assert_eq!(r, Err(Error::Randomness));
+        assert_eq!(drawn, 8 + 128);
+        assert_eq!(
+            public.encrypt_pkcs1v15_from(&[7; 53], |_| Err(Error::Randomness)),
+            Err(Error::Randomness)
+        );
+        assert_eq!(
+            public.encrypt_pkcs1v15_from(&[7; 54], |_| Ok(())),
+            Err(Error::MessageTooLong)
+        );
         let mut ps = [0u8; 64];
         os_random(&mut ps).unwrap();
     }

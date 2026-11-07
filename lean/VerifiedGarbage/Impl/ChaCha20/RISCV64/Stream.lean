@@ -114,11 +114,11 @@ def part1 : Prog isa :=
     (.block [.shift .srl .d .a2 .s7 6, .shift .sll .d .a2 .a2 6]))))
 
 /-- The whole blocks: the state copied and the counter advanced (word 12),
-then `vg_chacha20_xor` on the copy. -/
+then `vg_chacha20_xor` on the copy, in place (`dst = src`). -/
 def blocksArgs : List Instr :=
   copyBytes .t1 .s5 .s5 0 192 64 ++ [.shift .srl .d .t4 .a2 6] ++ loadLE32 .t1 .t3 .s5 48 ++
   [.add .t1 .t1 .t4] ++ storeLE32 .t1 .t3 .s5 48 ++
-  [.addi .a0 .s5 192, mov .a1 .s6, .addi .a3 .s5 256, .add .s6 .s6 .a2, .sub .s7 .s7 .a2]
+  [.addi .a0 .s5 192, mov .a1 .s6, .addi .a3 .s5 256, .add .s6 .s6 .a2, .sub .s7 .s7 .a2, mov .a4 .a1]
 
 def part2 : Prog isa :=
   .ite (.zero .a2) (.block []) (.seq (.block blocksArgs) (.call "vg_chacha20_xor" xor))

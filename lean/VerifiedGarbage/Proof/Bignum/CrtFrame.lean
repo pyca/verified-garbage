@@ -52,13 +52,6 @@ theorem Frm.rebase {B : Addr} {o : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h
   · simp only at hx'; omega
   · omega
 
-theorem Frm.of_arrays_off {B : Addr} {o w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays (off B o) w js m m')
-    (ho : o < 2 ^ 64) (hw : ∀ j ∈ js, o + slot w j + 8 * (w + 2) ≤ 2 ^ 64) :
-    Frm B (shiftRanges o (js.map fun j => (slot w j, 8 * (w + 2)))) m m' :=
-  Frm.rebase (Frm.of_arrays h fun j hj => List.mem_map.mpr ⟨j, hj, rfl⟩) ho fun r hr => by
-    obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hr
-    exact hw j hj
-
 theorem Frm.of_outside_off {B : Addr} {o d n : Nat} {m m' : Mem} (h : Outside (off B o) d n m m')
     (ho : o < 2 ^ 64) (hd : o + d + n ≤ 2 ^ 64) : Frm B [(o + d, n)] m m' :=
   Frm.rebase (rs := [(d, n)]) (Frm.of_outside h (List.mem_singleton.mpr rfl)) ho fun r hr => by

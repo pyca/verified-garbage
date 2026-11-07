@@ -144,14 +144,8 @@ def squeezeMainWith (c : Callee) : Prog isa :=
 
 def squeezeWith (c : Callee) : Prog isa := .frame (.push .x30) (squeezeMainWith c) (.pop .x30)
 
-def permuteAt : Prog isa := permuteAtWith .scalar
-def absorbBody : Prog isa := absorbBodyWith .scalar
-def absorbMain : Prog isa := absorbMainWith .scalar
 def absorb : Prog isa := absorbWith .scalar
-def padMain : Prog isa := padMainWith .scalar
 def pad : Prog isa := padWith .scalar
-def squeezeBody : Prog isa := squeezeBodyWith .scalar
-def squeezeMain : Prog isa := squeezeMainWith .scalar
 def squeeze : Prog isa := squeezeWith .scalar
 
 end VG.Impl.Sha3.AArch64.Stream

@@ -66,40 +66,15 @@ def openSig : Sig where
     ("tag", .array false .u8 16)]
   ret := some .u32
 
-/-- With the key at `key`, the nonce at `nonce` and the received tag at
-`tag`: if the message (the `len` bytes of ciphertext at `data`, with the
-`aad_len` bytes of additional data at `aad`) is authenticated, the result is
-1 and the plaintext is at `data`; otherwise the result is 0, and the bytes at
-`data` are unspecified. -/
-def openPost (pb : Nat) : openSig.Post pb :=
-  fun key nonce aad aadLen data len tag m m' r =>
-    match decrypt (bytesAt m key 32) (bytesAt m nonce 12) (bytesAt m aad aadLen.toNat)
-        (bytesAt m data len.toNat) (bytesAt m tag 16) with
-    | some pt => r = 1 ∧ bytesAt m' data len.toNat = pt
-    | none => r = 0
-
-/-- With the key at `key`, the nonce at `nonce` and the received tag at
-`tag`: if the message (the `len` bytes of ciphertext at `data`, with the
-`aad_len` bytes of additional data at `aad`) is authenticated, returns 1 and
-leaves the plaintext at `data`; otherwise returns 0, and the bytes at `data`
-are unspecified (the caller must not use them). -/
-def openContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openSig.contract A (post := openPost A.ptrBits)
-    (writeArgs := true)
-    (stack := stack)
-
 /-! ## `open`, zeroing the data on a wrong tag
 
-`openZeroContract` strengthens `openContract`: on a wrong tag the bytes at
-`data` are zeros, not unspecified, as in every other AEAD's `open` here
-(`vg_aes_ccm_open`, `vg_aes_gcm_siv_open`, `vg_aes_ocb_open`), so that the
-decryption of a forged ciphertext is never released, whatever the caller
-does. In exchange, the function may leak whether it returns 1 (as those
-functions do): it may branch on the result of the comparison of the tags to
-zero the data only when they differ. The result is returned to the caller,
-which branches on it anyway. `openZeroApi` is `vg_chacha20_poly1305_open`
-with this contract; it replaces `openApi` once every implementation is
-proven to meet it. -/
+On a wrong tag the bytes at `data` are zeros, as in every other AEAD's
+`open` here (`vg_aes_ccm_open`, `vg_aes_gcm_siv_open`, `vg_aes_ocb_open`),
+so that the decryption of a forged ciphertext is never released, whatever
+the caller does. In exchange, the function may leak whether it returns 1 (as
+those functions do): it may branch on the result of the comparison of the
+tags to zero the data only when they differ. The result is returned to the
+caller, which branches on it anyway. -/
 
 /-- With the key at `key`, the nonce at `nonce` and the received tag at
 `tag`: if the message (the `len` bytes of ciphertext at `data`, with the
@@ -147,25 +122,8 @@ def sealApi : Api where
     construction to be secure."
   safety := []
 
-/-- `vg_chacha20_poly1305_open` on every target. -/
-def openApi : Api where
-  module := "chacha20poly1305"
-  name := "vg_chacha20_poly1305_open"
-  sig := openSig
-  writeArgs := true
-  contracts := some fun A stack => openContract A stack
-  summary := "ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce \
-    `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of \
-    ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted \
-    the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they \
-    must not be used). The tags are compared without a branch.\n\n\
-    Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the \
-    lengths may affect timing, not the key, the nonce, the tag or the data."
-  safety := []
-
 /-- `vg_chacha20_poly1305_open` on every target, zeroing the data on a wrong
-tag (`openZeroContract`): replaces `openApi` once every implementation is
-proven to meet it. -/
+tag (`openZeroContract`). -/
 def openZeroApi : Api where
   module := "chacha20poly1305"
   name := "vg_chacha20_poly1305_open"

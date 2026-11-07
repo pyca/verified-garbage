@@ -84,8 +84,6 @@ end
 theorem round_eq (B : Block) (v : HashValue) (j : Nat) :
     round B v j = roundW v j (W B j) (W B (j + 4)) := rfl
 
-theorem rounds_zero (V : HashValue) (B : Block) : rounds V B 0 = V := rfl
-
 theorem rounds_succ (V : HashValue) (B : Block) (j : Nat) :
     rounds V B (j + 1) = round B (rounds V B j) j := by
   simp [rounds, List.range_succ, List.foldl_append]
@@ -117,12 +115,6 @@ theorem rotateLeft_eq (x : Word) {n : Nat} (h₀ : 0 < n) (h : n < 32) :
   · rw [dite_eq_right_of_eq_false (eq_false h'), dite_eq_right_of_eq_false (eq_false (by omega))]
     congr 1; omega
 
-theorem ff_lo {j : Nat} (h : j < 16) (x y z : Word) : ff j x y z = x ^^^ y ^^^ z := by
-  simp [ff, h]
-
-theorem gg_lo {j : Nat} (h : j < 16) (x y z : Word) : gg j x y z = x ^^^ y ^^^ z := by
-  simp [gg, h]
-
 /-- `FF_j` for `16 ≤ j`, as the implementations compute it. -/
 theorem maj_eq (x y z : Word) : x &&& y ||| x &&& z ||| y &&& z = (x ||| y) &&& z ||| x &&& y := by
   ext i; simp only [BitVec.getElem_and, BitVec.getElem_or]
@@ -132,12 +124,6 @@ theorem maj_eq (x y z : Word) : x &&& y ||| x &&& z ||| y &&& z = (x ||| y) &&& 
 theorem ch_eq (x y z : Word) : x &&& y ||| ~~~x &&& z = (y ^^^ z) &&& x ^^^ z := by
   ext i; simp only [BitVec.getElem_xor, BitVec.getElem_and, BitVec.getElem_or, BitVec.getElem_not]
   cases x[i] <;> cases y[i] <;> cases z[i] <;> rfl
-
-theorem ff_hi {j : Nat} (h : ¬ j < 16) (x y z : Word) : ff j x y z = (x ||| y) &&& z ||| x &&& y := by
-  simp only [ff, h, ↓reduceIte, maj_eq]
-
-theorem gg_hi {j : Nat} (h : ¬ j < 16) (x y z : Word) : gg j x y z = (y ^^^ z) &&& x ^^^ z := by
-  simp only [gg, h, ↓reduceIte, ch_eq]
 
 /-- The rotations of the specification, as the implementations compute them: rotations
 right by the complement. -/

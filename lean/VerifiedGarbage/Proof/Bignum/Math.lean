@@ -17,7 +17,7 @@ naturals:
   still below `2m` if `B < m` (`round_lt`), and congruent to
   `(T + a_i B) 2⁻⁶⁴` modulo `m` (`round_mul`).
 * The conditional subtraction that ends it: below `2m`, subtracting `m`
-  when it does not borrow is reduction modulo `m` (`csub_eq`).
+  when it does not borrow is reduction modulo `m`.
 -/
 
 @[expose] public section
@@ -99,12 +99,6 @@ theorem round_step {P T T' a b u m A : Nat} (h : 2 ^ 64 * T' = T + a * b + u * m
   rw [e, Nat.add_mul_mod_self_right, Nat.add_mod, hI, ← Nat.add_mod, Nat.add_mul]
 
 /-! ## The conditional subtraction -/
-
-/-- Below `2m`, subtracting `m` when it does not borrow is reduction modulo `m`. -/
-theorem csub_eq {T m : Nat} (h : T < 2 * m) : (if T < m then T else T - m) = T % m := by
-  split
-  · rw [Nat.mod_eq_of_lt (by assumption)]
-  · rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
 
 /-- What `subMod` and `selectAcc` leave: for `T = T_l + R (T_w + 2⁶⁴ T_{w+1}) < 2m`
 (`T_l < R` its low words, `m < R`) and `D + m = T_l + R c` (`D < R`, `c` the

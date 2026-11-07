@@ -49,7 +49,6 @@ theorem arg32_eq {i : Nat} (hi : i < 18) : arg32 s₀₁ i = arg32 s₀₂ i := 
 theorem memP_eq : memP s₀₁ = memP s₀₂ := h.arg_eq (i := 13) (by decide)
 theorem scrP_eq : scrP s₀₁ = scrP s₀₂ := h.arg_eq (i := 15) (by decide)
 theorem outP_eq : outP s₀₁ = outP s₀₂ := h.arg_eq (i := 16) (by decide)
-theorem outL_eq : outL s₀₁ = outL s₀₂ := by simp only [outL, h.arg_eq (i := 17) (by decide)]
 theorem blocksN_eq : blocksN s₀₁ = blocksN s₀₂ := by simp only [blocksN, h.arg_eq (i := 14) (by decide)]
 theorem lanesN_eq : lanesN s₀₁ = lanesN s₀₂ := by simp only [lanesN, h.arg32_eq (i := 7) (by decide)]
 theorem itersN_eq : itersN s₀₁ = itersN s₀₂ := by simp only [itersN, h.arg32_eq (i := 5) (by decide)]

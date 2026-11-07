@@ -111,10 +111,6 @@ structure OpPre (M : Mod) (base : Addr) (size O A B m : Nat) (s : State) : Prop 
   mo : val32 s.mem base M.mo (2 * M.n) = m
   m0 : 0 < m
 
-theorem outs_of {base : Addr} {M : Mod} {acc O : Nat} {rs : List (Nat × Nat)} {m m' : Mem}
-    (h : Outs base rs m m') (hs : ∀ r ∈ rs, r ∈ opOuts M acc O := by decide) : Outs base (opOuts M acc O) m m' :=
-  h.mono hs
-
 theorem outs_tail {base : Addr} {M : Mod} {acc O : Nat} {m m' : Mem}
     (h : Outs base [(M.tmp, 8 * M.n), (O, 8 * M.n)] m m') : Outs base (opOuts M acc O) m m' :=
   h.mono fun r hr => by

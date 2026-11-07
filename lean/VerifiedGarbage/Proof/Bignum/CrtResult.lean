@@ -17,9 +17,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 
 The result for a valid key (`crtResult`, `decryptCrt_eq`) and what is
 written (`crtWritten_of`); what a valid modulus and the key's lengths give
-(`crt_bounds_of`) and what the mask of the checks gives (`mask_facts`); and
-that `p`'s phase keeps the header's arguments (`keepsHdr_pRanges`,
-`keepsHdr_x`).
+(`crt_bounds_of`) and what the mask of the checks gives (`mask_facts`).
 -/
 
 @[expose] public section
@@ -46,15 +44,6 @@ theorem decryptCrt_eq {N P Q dp dq QI C : Nat} :
     Spec.Rsa.decryptCrt N P Q dp dq QI C =
       if C < N ∧ P * Q = N ∧ QI < P then some (crtResult P Q dp dq QI C) else none := by
   simp only [Spec.Rsa.decryptCrt, crtResult, VG.Proof.Bignum.powMod_eq]
-
-theorem keepsHdr_x {o wx : Nat} (ho : 8 * 32 ≤ o) : KeepsHdr (xRange o wx) := keepsHdr_ge (by simp only [xRange]; omega)
-
-theorem keepsHdr_pRanges (w : Nat) : ∀ r ∈ pRanges w, KeepsHdr r := by
-  intro r hr
-  rcases List.mem_append.mp hr with hr | hr
-  · exact keepsHdr_gRanges w r hr
-  · rw [List.mem_singleton.mp hr]
-    exact keepsHdr_ge (by have := hdr_lt_slot w Public.aX (show 31 < 32 by decide); simp only; omega)
 
 /-- What a valid modulus and the key's lengths give. -/
 theorem crt_bounds_of {k pl ql : Nat} {nb pb qb : List Byte}

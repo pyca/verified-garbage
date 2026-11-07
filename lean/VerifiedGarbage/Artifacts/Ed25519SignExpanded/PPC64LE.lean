@@ -12,7 +12,6 @@ namespace VG.Artifacts.Ed25519SignExpanded.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Ed25519.signExpandedApi.artifact PPC64LE.target {
-    consts := Impl.Ed25519.PPC64LE.combConsts
     code := Impl.Ed25519.PPC64LE.Whole.signExpandedCode
     stack := 368
     verified := Proof.Ed25519.PPC64LE.Whole.signExpanded_framed }]

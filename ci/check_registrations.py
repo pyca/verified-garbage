@@ -16,7 +16,11 @@ chooses and bind proofs made under `Proof/`:
     the instance as a theorem;
   * a module docstring of one line, its title (`/-! # SHA-256 on x86-64 -/`),
     if any: prose on the implementation restates what the code states, and
-    goes stale.
+    goes stale;
+  * no `consts :=`: the tables of constants the code reads are an
+    implementation detail its proof's contract names, which `Registration`'s
+    default (`consts_of`) finds there, so that adding or changing a table
+    touches no file reviewed by hand.
 """
 
 import pathlib
@@ -33,6 +37,7 @@ DEFAULTS = {"sp_safe", "of_sig"}
 
 THEOREM = re.compile(r"(?<![\w.'])(theorem|lemma)\s")
 BY = re.compile(r"(?<![\w.'])by(?![\w'])\s*([\w.']*)")
+CONSTS = re.compile(r"(?<![\w.'])consts\s*:=")
 MODULE_DOC = re.compile(r"/-!.*?-/", re.S)
 TITLE = re.compile(r"/-! # [^\n]+ -/")
 OPEN, CLOSE = "([{⟨", ")]}⟩"
@@ -124,6 +129,11 @@ def problems(lean: pathlib.Path) -> list[str]:
             for m in THEOREM.finditer(code):
                 out.append(f"lean/{rel}:{line(m.start())}: a {m.group(1)} in a file reviewed by hand; "
                            "prove it under `Proof/` (.agents/skills/adding-a-primitive/SKILL.md)")
+            for m in CONSTS.finditer(code):
+                out.append(f"lean/{rel}:{line(m.start())}: `consts` in a file reviewed by hand; "
+                           "the default (`consts_of`) finds the tables in the contract `verified` "
+                           "proves: state them there, in `Abi.withConsts` "
+                           "(.agents/skills/adding-a-primitive/SKILL.md)")
             for m in BY.finditer(code):
                 if m.group(1) in DEFAULTS and not rest_of_block(code, m.start(), m.end()):
                     continue

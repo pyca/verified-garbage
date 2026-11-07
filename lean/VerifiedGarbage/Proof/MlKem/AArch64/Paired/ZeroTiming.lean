@@ -21,8 +21,6 @@ structure ZeroReadyW (w16 : Bool) (L : List Zq) (slot : Nat) (aP : Addr) (s : St
   read1 : InRegions (s.rd++s.wr) (s.gpr .x19+BitVec.ofNat 64 (slot+8)) 8
   writable : ∀i<256,InRegions s.wr (cAddr w16 aP i) 4
 
-abbrev ZeroReady := ZeroReadyW false
-
 theorem zeroExtra_relCT {w16 : Bool} {s u : State} {slot : Nat} (ho : slot+8<32768) (ha : slot%8=0)
     {L : List Zq} {aP : Addr} (ps : ZeroReadyW w16 L slot aP s) (pu : ZeroReadyW w16 L slot aP u)
     (hsp : s.sp=u.sp) (h19 : s.gpr .x19=u.gpr .x19) :

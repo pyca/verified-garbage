@@ -54,12 +54,6 @@ theorem wp_xori {d : Reg} {v : BitVec 32} (k : ∀ s', Upd s s' d (s.gpr d ^^^ v
     WP isa (.block (.alu .xor d (.imm v) :: is)) s Q :=
   Wp.cons rfl (k _ (Upd.flags _ _ _ _ _ _))
 
-/-- `and d, v`, and ZF. -/
-theorem wp_andiz {d : Reg} {v : BitVec 32}
-    (k : ∀ s', Upd s s' d (s.gpr d &&& v) → s'.zf = some ((s.gpr d &&& v) == 0) → WP isa (.block is) s' Q) :
-    WP isa (.block (.alu .and d (.imm v) :: is)) s Q :=
-  Wp.cons rfl (k _ (Upd.flags _ _ _ _ _ _) rfl)
-
 end
 
 /-- `add eax, eax`, `n` times. -/
@@ -145,7 +139,6 @@ theorem blockAddr_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {lane col : 
       (Divide.Keep.of_upd u₅ (by simp))
 
 end
-
 
 /-- The loop position in the locals. -/
 structure Pos (s₀ s : State) (pass slice lane index : Nat) : Prop where

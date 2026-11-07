@@ -21,8 +21,6 @@ structure EnvW (w16 : Bool) (N : Nat) (B : Nat → Byte) (bP aP : Addr) (s : Sta
   tableData : ∀mask<256,s.mem.read (s.gpr .x16+BitVec.ofNat 64 (16*mask)) 16=tableVec mask
   tableDisj : ∀mask<256,(⟨s.gpr .x16+BitVec.ofNat 64 (16*mask),16⟩ : Region).Disjoint (polyRegion aP)
 
-abbrev Env := EnvW false
-
 theorem vector_ok {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
     {s₀ s : State} (hp : EnvW w16 N B bP aP s₀) (h : Scalar.InvW w16 initial N B bP aP s₀ t s)
     (hc : Constants s) (ht : t+4≤N) (hroom : 8≤(s.gpr .x4).toNat) :

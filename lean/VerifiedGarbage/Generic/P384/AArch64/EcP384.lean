@@ -52,7 +52,6 @@ namespace VG.Generic.P384.AArch64.EcP384
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : List Artifact := [
   Spec.EcKey.P384.publicKeyApi.artifact AArch64.target {
-    consts := Impl.Ecdsa.AArch64.p384.combConsts
     code := Impl.EcKey.AArch64.publicKeyP384
     verified := Proof.EcKey.AArch64.P384.pk_verified h.law h.inv (Proof.P384.combOk7 h.law) }]
 

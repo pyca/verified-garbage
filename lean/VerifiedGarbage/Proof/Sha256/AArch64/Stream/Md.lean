@@ -32,7 +32,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 (`Impl/MdStream/AArch64.lean`), so they are verified by the generic proofs
 (`Proof/MdStream/AArch64/`) for SHA-256's instance (`Proof/Sha256/Md.lean`),
 given what SHA-256's own pieces do: its length field and digest (`shape`), that
-its compression function is verified (`callee`), and that the taint analysis
+its compression function is verified, and that the taint analysis
 accepts its code.
 -/
 
@@ -55,17 +55,7 @@ theorem shape : Shape (P := params) md where
       ⟨g, rd, wr, sp, ?_⟩
     rw [m, digest_eq]
 
-theorem callee : CalleeOk (P := params) md Impl.Sha256.AArch64.compress :=
-  ⟨compress_verified.1, by lit_decide, by lit_decide⟩
-
 namespace Update
-
-theorem update_verified : Verified AArch64.target Impl.Sha256.AArch64.Stream.update Proof.Sha256.updateAArch64 :=
-  have h := MdStream.AArch64.Update.verified (name := "vg_sha256_compress") dims callee
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-      (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))
-    (instrs_keeps (by lit_decide)) (by lit_decide)
-  Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h iv m hr hc => h iv m hr hc, fun _ _ _ _ h => h, h.2.2⟩
 
 /-- A state satisfying `update`'s precondition. -/
 abbrev sat : State := MdStream.AArch64.Update.sat params
@@ -74,29 +64,8 @@ end Update
 
 namespace Finalize
 
-theorem finalize_verified : Verified AArch64.target Impl.Sha256.AArch64.Stream.finalize Proof.Sha256.finalizeAArch64 :=
-  have h := MdStream.AArch64.Finalize.verified (name := "vg_sha256_compress") dims shape callee
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-      (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀ hp) (by taint_decide))
-    (instrs_keeps (by lit_decide)) (by lit_decide)
-  Verified.of_implies h
-    ⟨fun _ h => h, fun _ _ _ h iv m hr hc => h iv m hr trivial hc, fun _ _ _ _ h => h, h.2.2⟩
-
 /-- A state satisfying `finalize`'s precondition. -/
 abbrev sat : State := MdStream.AArch64.Finalize.sat params
-
-theorem writeW_rev32 (m : Mem) (a : Addr) (w : BitVec 32) :
-    m.writeW a (rev32 w) = Proof.Sha256.Stream.writeBytes m a (Spec.Sha256.wordBytes w) :=
-  writeW32 m a true w
-
-theorem sw32 (v : BitVec 32) : (v.setWidth 64).setWidth 32 = v := setWidth32 v
-
-theorem flat_length (H : Spec.Sha256.HashValue) (k : Nat) (hk : k ≤ 8) :
-    ((H.toList.take k).flatMap Spec.Sha256.wordBytes).length = 4 * k := by
-  rw [List.length_flatMap]
-  have : ∀ w ∈ H.toList.take k, (Spec.Sha256.wordBytes w).length = 4 := fun w _ => rfl
-  rw [List.map_congr_left this, List.map_const', List.sum_replicate_nat, List.length_take]
-  simp; omega
 
 end Finalize
 

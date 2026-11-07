@@ -47,8 +47,8 @@ def absorbArgs (sc : Reg) (first : Bool) (p : Piece) : List Instr :=
   [.addi .a3 p.base p.off, if first then .li .a2 0 else mov .a2 .a0, mov .a0 sc, .li .a1 136, p.len.set]
 
 def callAbsorb : Prog isa := .call "vg_keccak_absorb" Impl.Sha3.RISCV64.Stream.absorb
-def callPad : Prog isa := .call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad
-def callSqueeze : Prog isa := .call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze
+def callPad : Prog isa := .call "vg_keccak_pad" Impl.Sha3.RISCV64.Stream.pad
+def callSqueeze : Prog isa := .call "vg_keccak_squeeze" Impl.Sha3.RISCV64.Stream.squeeze
 
 /-- Absorbing the pieces `ps`. -/
 def absorbs (sc : Reg) : Bool → List Piece → Prog isa

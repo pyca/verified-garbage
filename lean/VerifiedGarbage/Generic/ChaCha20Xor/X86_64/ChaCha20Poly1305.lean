@@ -36,7 +36,7 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
     verified := Stitch.sealFor_framed v
     spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.sealFor_spSafe v)
     features := features v },
-  Spec.ChaCha20Poly1305.openApi.artifact X86_64.target {
+  Spec.ChaCha20Poly1305.openZeroApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1728 1 42
       (Impl.ChaCha20Poly1305.X86_64.Stitch.openFor v.callee v.poly)

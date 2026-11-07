@@ -107,7 +107,7 @@ theorem XS.io (hf : fChk p = true) {σ x₀ x : State} (h : XS p D σ x₀) (h15
 
 theorem rest_tr {P : Prims} (hP : PrimsOk P D) (h3 : Ok3 p) :
     RelCT isa (RS p D (LeakEq p 0) (IM p D)) (rest P p) (RS p D (LeakEq p 0) (FS p D)) := by
-  refine liftR (fun σ s _ h => rest_ok hP h3 h) ?_
+  refine liftR (fun σ s hpre h => rest_ok hP h3 hpre h) ?_
   have hc := allChk_ok h3
   simp only [allChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨-, hd⟩, hc1⟩, hb⟩, hks⟩, hl⟩, ho⟩, hf⟩ := hc
@@ -116,7 +116,7 @@ theorem rest_tr {P : Prims} (hP : PrimsOk P D) (h3 : Ok3 p) :
   obtain ⟨⟨⟨⟨⟨⟨⟨-, -⟩, -⟩, -⟩, f5⟩, -⟩, -⟩, -⟩ := hf'
   have hp := paramsOk h3
   unfold rest
-  refine RelCT.seq (decode_tr hP hd) (RelCT.seq (signLoop_tr hP hp hc1 hb hks (ksChk2_ok h3) hl) ?_)
+  refine RelCT.seq (decodeOrCopy_tr hP hd (pkChk_ok h3)) (RelCT.seq (signLoop_tr hP hp hc1 hb hks (ksChk2_ok h3) hl) ?_)
   unfold ifOk
   refine ifOkElse_tr (D := D) (fun x y h => by rw [h.2.1]) (RelCT.mono (output_tr hP ho (E := fun _ _ => True))
     (fun x y ⟨x₀, y₀, ⟨⟨σ₁, σ₂, p₁, p₂, hpub, _, s₁, s₂⟩, h15, hj⟩, ⟨hPx, hcx, _⟩, ⟨hPy, hcy, _⟩, hne⟩ => ?_)

@@ -47,8 +47,4 @@ theorem mergeAcceptance_ok (s : State) (fit : s.sp.toNat + 52 ≤ 2 ^ 32)
   rw [mem]
   exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
 
-theorem validation_bits_and (P Q : Prop) [Decidable P] [Decidable Q] :
-    ((if P then 1 else 0) : BitVec 32) &&& (if Q then 1 else 0) = if P ∧ Q then 1 else 0 := by
-  by_cases hp : P <;> by_cases hq : Q <;> simp only [hp, hq, ↓reduceIte] <;> decide
-
 end VG.Proof.Bignum.Arm

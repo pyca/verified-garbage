@@ -404,6 +404,92 @@ jmp 25f
     )
 }
 
+/// The CPU features `vg_aes_gcm_open_to_aesni` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` and `ssse3` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+SA="
+jb 20f
+.base64 "8w9vBvMPfwdBugAAAABJKfpJg+IPSYnISYPoIE050A=="
+jb 22f
+24:
+.base64 "80IPbwQW80IPb0wWEPNCD38EF/NCD39MFxBJg8IgTTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "8w9vRA7g8w9vTA7w8w9/RA/g8w9/TA/w"
+jmp 21f
+20:
+.base64 "SIP5EA=="
+jb 25f
+.base64 "8w9vBvMPb0wO8PMPfwfzD39MD/A="
+jmp 26f
+25:
+.base64 "SIP5CA=="
+jb 27f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 28f
+27:
+.base64 "SIP5BA=="
+jb 29f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 210f
+29:
+.base64 "QboAAAAASTnK"
+je 211f
+213:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 213b
+jmp 212f
+211:
+212:
+210:
+28:
+26:
+21:
+.base64 "SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_aesni}
+.base64 "hcA="
+je 214f
+jmp 215f
+214:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 216f
+218:
+.base64 "QogEF0mDwgFJOco="
+jne 218b
+jmp 217f
+216:
+217:
+215:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open_aesni = sym super::gcm::vg_aes_gcm_open_aesni,
+    )
+}
+
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
 /// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
@@ -1490,6 +1576,92 @@ jmp 25f
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_decrypt_blocks_aesni_pclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni_pclmul::vg_aes_gcm_decrypt_blocks_aesni_pclmul,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_to_aesni_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+SA="
+jb 20f
+.base64 "8w9vBvMPfwdBugAAAABJKfpJg+IPSYnISYPoIE050A=="
+jb 22f
+24:
+.base64 "80IPbwQW80IPb0wWEPNCD38EF/NCD39MFxBJg8IgTTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "8w9vRA7g8w9vTA7w8w9/RA/g8w9/TA/w"
+jmp 21f
+20:
+.base64 "SIP5EA=="
+jb 25f
+.base64 "8w9vBvMPb0wO8PMPfwfzD39MD/A="
+jmp 26f
+25:
+.base64 "SIP5CA=="
+jb 27f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 28f
+27:
+.base64 "SIP5BA=="
+jb 29f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 210f
+29:
+.base64 "QboAAAAASTnK"
+je 211f
+213:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 213b
+jmp 212f
+211:
+212:
+210:
+28:
+26:
+21:
+.base64 "SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_aesni_pclmul}
+.base64 "hcA="
+je 214f
+jmp 215f
+214:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 216f
+218:
+.base64 "QogEF0mDwgFJOco="
+jne 218b
+jmp 217f
+216:
+217:
+215:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open_aesni_pclmul = sym super::gcm::vg_aes_gcm_open_aesni_pclmul,
     )
 }
 
@@ -2611,6 +2783,98 @@ jmp 25f
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_to_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 20f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 22f
+24:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 21f
+20:
+.base64 "SIP5IA=="
+jb 25f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 26f
+25:
+.base64 "SIP5EA=="
+jb 27f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 28f
+27:
+.base64 "SIP5CA=="
+jb 29f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 210f
+29:
+.base64 "SIP5BA=="
+jb 211f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 212f
+211:
+.base64 "QboAAAAASTnK"
+je 213f
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+jmp 214f
+213:
+214:
+212:
+210:
+28:
+26:
+21:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_aesni_pclmul_avx}
+.base64 "hcA="
+je 216f
+jmp 217f
+216:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 218f
+220:
+.base64 "QogEF0mDwgFJOco="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_open_aesni_pclmul_avx,
     )
 }
 
@@ -3870,6 +4134,95 @@ jmp 25f
     )
 }
 
+/// The CPU features `vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+
+/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPrepared16Contract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 20f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 22f
+24:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 21f
+20:
+.base64 "SIP5IA=="
+jb 25f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 26f
+25:
+.base64 "SIP5EA=="
+jb 27f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 28f
+27:
+.base64 "SIP5CA=="
+jb 29f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 210f
+29:
+.base64 "SIP5BA=="
+jb 211f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 212f
+211:
+.base64 "QboAAAAASTnK"
+je 213f
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+jmp 214f
+213:
+214:
+212:
+210:
+28:
+26:
+21:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_prepared16_aesni_pclmul_avx}
+.base64 "hcA="
+je 216f
+jmp 217f
+216:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 218f
+220:
+.base64 "QogEF0mDwgFJOco="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open_prepared16_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_open_prepared16_aesni_pclmul_avx,
+    )
+}
+
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
@@ -4934,6 +5287,98 @@ jmp 25f
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_aesni_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni_vpclmul::vg_aes_gcm_decrypt_blocks_aesni_vpclmul,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_to_aesni_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 20f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 22f
+24:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 21f
+20:
+.base64 "SIP5IA=="
+jb 25f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 26f
+25:
+.base64 "SIP5EA=="
+jb 27f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 28f
+27:
+.base64 "SIP5CA=="
+jb 29f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 210f
+29:
+.base64 "SIP5BA=="
+jb 211f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 212f
+211:
+.base64 "QboAAAAASTnK"
+je 213f
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+jmp 214f
+213:
+214:
+212:
+210:
+28:
+26:
+21:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_aesni_vpclmul}
+.base64 "hcA="
+je 216f
+jmp 217f
+216:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 218f
+220:
+.base64 "QogEF0mDwgFJOco="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open_aesni_vpclmul = sym super::gcm::vg_aes_gcm_open_aesni_vpclmul,
     )
 }
 
@@ -6027,6 +6472,92 @@ jmp 25f
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_decrypt_blocks_pclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_pclmul::vg_aes_gcm_decrypt_blocks_pclmul,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_to_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+SA="
+jb 20f
+.base64 "8w9vBvMPfwdBugAAAABJKfpJg+IPSYnISYPoIE050A=="
+jb 22f
+24:
+.base64 "80IPbwQW80IPb0wWEPNCD38EF/NCD39MFxBJg8IgTTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "8w9vRA7g8w9vTA7w8w9/RA/g8w9/TA/w"
+jmp 21f
+20:
+.base64 "SIP5EA=="
+jb 25f
+.base64 "8w9vBvMPb0wO8PMPfwfzD39MD/A="
+jmp 26f
+25:
+.base64 "SIP5CA=="
+jb 27f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 28f
+27:
+.base64 "SIP5BA=="
+jb 29f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 210f
+29:
+.base64 "QboAAAAASTnK"
+je 211f
+213:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 213b
+jmp 212f
+211:
+212:
+210:
+28:
+26:
+21:
+.base64 "SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_pclmul}
+.base64 "hcA="
+je 214f
+jmp 215f
+214:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 216f
+218:
+.base64 "QogEF0mDwgFJOco="
+jne 218b
+jmp 217f
+216:
+217:
+215:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open_pclmul = sym super::gcm::vg_aes_gcm_open_pclmul,
     )
 }
 
@@ -7201,6 +7732,88 @@ jmp 25f
     )
 }
 
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+SA="
+jb 20f
+.base64 "8w9vBvMPfwdBugAAAABJKfpJg+IPSYnISYPoIE050A=="
+jb 22f
+24:
+.base64 "80IPbwQW80IPb0wWEPNCD38EF/NCD39MFxBJg8IgTTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "8w9vRA7g8w9vTA7w8w9/RA/g8w9/TA/w"
+jmp 21f
+20:
+.base64 "SIP5EA=="
+jb 25f
+.base64 "8w9vBvMPb0wO8PMPfwfzD39MD/A="
+jmp 26f
+25:
+.base64 "SIP5CA=="
+jb 27f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 28f
+27:
+.base64 "SIP5BA=="
+jb 29f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 210f
+29:
+.base64 "QboAAAAASTnK"
+je 211f
+213:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 213b
+jmp 212f
+211:
+212:
+210:
+28:
+26:
+21:
+.base64 "SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open}
+.base64 "hcA="
+je 214f
+jmp 215f
+214:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 216f
+218:
+.base64 "QogEF0mDwgFJOco="
+jne 218b
+jmp 217f
+216:
+217:
+215:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open = sym super::gcm::vg_aes_gcm_open,
+    )
+}
+
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
 /// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
@@ -8356,6 +8969,98 @@ jmp 25f
     )
 }
 
+/// The CPU features `vg_aes_gcm_open_to_vaes` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 20f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 22f
+24:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 21f
+20:
+.base64 "SIP5IA=="
+jb 25f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 26f
+25:
+.base64 "SIP5EA=="
+jb 27f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 28f
+27:
+.base64 "SIP5CA=="
+jb 29f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 210f
+29:
+.base64 "SIP5BA=="
+jb 211f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 212f
+211:
+.base64 "QboAAAAASTnK"
+je 213f
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+jmp 214f
+213:
+214:
+212:
+210:
+28:
+26:
+21:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_vaes}
+.base64 "hcA="
+je 216f
+jmp 217f
+216:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 218f
+220:
+.base64 "QogEF0mDwgFJOco="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open_vaes = sym super::gcm::vg_aes_gcm_open_vaes,
+    )
+}
+
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
 /// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
@@ -9442,6 +10147,98 @@ jmp 25f
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_decrypt_blocks_vaes_pclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_pclmul::vg_aes_gcm_decrypt_blocks_vaes_pclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_to_vaes_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 20f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 22f
+24:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 21f
+20:
+.base64 "SIP5IA=="
+jb 25f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 26f
+25:
+.base64 "SIP5EA=="
+jb 27f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 28f
+27:
+.base64 "SIP5CA=="
+jb 29f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 210f
+29:
+.base64 "SIP5BA=="
+jb 211f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 212f
+211:
+.base64 "QboAAAAASTnK"
+je 213f
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+jmp 214f
+213:
+214:
+212:
+210:
+28:
+26:
+21:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_vaes_pclmul}
+.base64 "hcA="
+je 216f
+jmp 217f
+216:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 218f
+220:
+.base64 "QogEF0mDwgFJOco="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open_vaes_pclmul = sym super::gcm::vg_aes_gcm_open_vaes_pclmul,
     )
 }
 
@@ -10539,6 +11336,98 @@ jmp 25f
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_to_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 20f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 22f
+24:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 21f
+20:
+.base64 "SIP5IA=="
+jb 25f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 26f
+25:
+.base64 "SIP5EA=="
+jb 27f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 28f
+27:
+.base64 "SIP5CA=="
+jb 29f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 210f
+29:
+.base64 "SIP5BA=="
+jb 211f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 212f
+211:
+.base64 "QboAAAAASTnK"
+je 213f
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+jmp 214f
+213:
+214:
+212:
+210:
+28:
+26:
+21:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_vaes_vpclmul}
+.base64 "hcA="
+je 216f
+jmp 217f
+216:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 218f
+220:
+.base64 "QogEF0mDwgFJOco="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open_vaes_vpclmul = sym super::gcm::vg_aes_gcm_open_vaes_vpclmul,
     )
 }
 
@@ -11742,6 +12631,118 @@ jmp 25f
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_to_prepared16_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+
+/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPrepared16Contract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SItEJBBIPQAEAAA="
+jae 20f
+.base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 22f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 24f
+26:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 26b
+jmp 25f
+24:
+25:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 23f
+22:
+.base64 "SIP5IA=="
+jb 27f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 28f
+27:
+.base64 "SIP5EA=="
+jb 29f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 210f
+29:
+.base64 "SIP5CA=="
+jb 211f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 212f
+211:
+.base64 "SIP5BA=="
+jb 213f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 214f
+213:
+.base64 "QboAAAAASTnK"
+je 215f
+217:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 217b
+jmp 216f
+215:
+216:
+214:
+212:
+210:
+28:
+23:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_prepared16_vaes_vpclmul}
+.base64 "hcA="
+je 218f
+jmp 219f
+218:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 220f
+222:
+.base64 "QogEF0mDwgFJOco="
+jne 222b
+jmp 221f
+220:
+221:
+219:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBWw=="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJMD1//9Ii4QkSAoAAEiJRCQISIuEJFAKAABIiUQkEEiLhCRYCgAASIlEJBhIi4QkYAoAAEiJRCQgSIuEJGgKAABIiUQkKEiLhCRwCgAASIlEJDBIieBIg8BASIlEJDhXVlJRQVBBUVBQUFBQSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQYSItEJGBIiUQkIEiLRCRoSIlEJChIi4QkkAAAAEiJRCQw"
+call {vg_aes_gcm_open_split_prepared16_vaes_vpclmul}
+.base64 "hcA="
+je 223f
+jmp 224f
+223:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 225f
+227:
+.base64 "QogEF0mDwgFJOco="
+jne 227b
+jmp 226f
+225:
+226:
+224:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
+jmp 21b
+.p2align 6"#,
+        vg_aes_gcm_open_prepared16_vaes_vpclmul = sym super::gcm::vg_aes_gcm_open_prepared16_vaes_vpclmul,
+        vg_aes_gcm_open_split_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_open_split_prepared16_vaes_vpclmul::vg_aes_gcm_open_split_prepared16_vaes_vpclmul,
     )
 }
 
@@ -13130,6 +14131,98 @@ jmp 235b
         vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_to_vaes_vpclmul_avx512` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 20f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 22f
+24:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 21f
+20:
+.base64 "SIP5IA=="
+jb 25f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 26f
+25:
+.base64 "SIP5EA=="
+jb 27f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 28f
+27:
+.base64 "SIP5CA=="
+jb 29f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 210f
+29:
+.base64 "SIP5BA=="
+jb 211f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 212f
+211:
+.base64 "QboAAAAASTnK"
+je 213f
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+jmp 214f
+213:
+214:
+212:
+210:
+28:
+26:
+21:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_vaes_vpclmul_avx512}
+.base64 "hcA="
+je 216f
+jmp 217f
+216:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 218f
+220:
+.base64 "QogEF0mDwgFJOco="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_open_vaes_vpclmul_avx512,
     )
 }
 
@@ -14659,6 +15752,95 @@ jmp 229b
     )
 }
 
+/// The CPU features `vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
+
+/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 20f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 22f
+24:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 21f
+20:
+.base64 "SIP5IA=="
+jb 25f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 26f
+25:
+.base64 "SIP5EA=="
+jb 27f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 28f
+27:
+.base64 "SIP5CA=="
+jb 29f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 210f
+29:
+.base64 "SIP5BA=="
+jb 211f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 212f
+211:
+.base64 "QboAAAAASTnK"
+je 213f
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+jmp 214f
+213:
+214:
+212:
+210:
+28:
+26:
+21:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_prepared_vaes_vpclmul_avx512}
+.base64 "hcA="
+je 216f
+jmp 217f
+216:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 218f
+220:
+.base64 "QogEF0mDwgFJOco="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
+    )
+}
+
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
@@ -15597,6 +16779,98 @@ jmp 25f
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_decrypt_blocks_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_vpclmul::vg_aes_gcm_decrypt_blocks_vpclmul,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_to_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 20f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 22f
+24:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 24b
+jmp 23f
+22:
+23:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 21f
+20:
+.base64 "SIP5IA=="
+jb 25f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 26f
+25:
+.base64 "SIP5EA=="
+jb 27f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 28f
+27:
+.base64 "SIP5CA=="
+jb 29f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 210f
+29:
+.base64 "SIP5BA=="
+jb 211f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 212f
+211:
+.base64 "QboAAAAASTnK"
+je 213f
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+jmp 214f
+213:
+214:
+212:
+210:
+28:
+26:
+21:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_vpclmul}
+.base64 "hcA="
+je 216f
+jmp 217f
+216:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 218f
+220:
+.base64 "QogEF0mDwgFJOco="
+jne 220b
+jmp 219f
+218:
+219:
+217:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.p2align 6"#,
+        vg_aes_gcm_open_vpclmul = sym super::gcm::vg_aes_gcm_open_vpclmul,
     )
 }
 

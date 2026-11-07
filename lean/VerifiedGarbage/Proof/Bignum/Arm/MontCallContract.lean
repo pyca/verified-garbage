@@ -84,8 +84,4 @@ theorem montCall_contract_sat : ∃ s, (Proof.Rsa.Mont.mulContract abi 40).pre s
 theorem montCall_verified : Verified target MontCall.code (Proof.Rsa.Mont.mulContract abi 40) :=
   ⟨montCall_contract_correct, montCall_contract_ct, montCall_contract_sat⟩
 
-theorem montCallUmaal_verified :
-    Verified target (umaalArithmetic MontCall.code) (Proof.Rsa.Mont.mulContract abi 40) :=
-  umaalArithmetic_verified montCall_verified
-
 end VG.Proof.Bignum.Arm

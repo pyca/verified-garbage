@@ -52,7 +52,6 @@ namespace VG.Generic.P521.AArch64.EcP521
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
   Spec.EcKey.P521.publicKeyApi.artifact AArch64.target {
-    consts := Impl.Ecdsa.AArch64.p521.combConsts
     code := Impl.EcKey.AArch64.publicKeyP521
     verified := Proof.EcKey.AArch64.P521.pk_verified h.law h.inv (Proof.P521.combOk7 h.law) }]
 

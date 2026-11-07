@@ -3,83 +3,6 @@
 //! `assembly/ed25519.s`.
 #![allow(dead_code)]
 
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `expanded` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed.
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
-/// * None of `out`, `expanded` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_public_key_expanded(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUFBQUEiLRCQoSItMJCBIixBIiZEgBgAASItQCEiJkSgGAABIi1AQSImRMAYAAEiLUBhIiZE4BgAASItQIEiJkUAGAABIi1AoSImRSAYAAEiLUDBIiZFQBgAASItQOEiJkVgGAABIi3wkMEiJ5kiLVCQgTIuCIAYAAEyLiigGAABMi5IwBgAATIuaOAYAAEmD4PhIuf////////8/SSHLSLkAAAAAAAAAQEkJy0yJBCRMiUwkCEyJVCQQTIlcJBg="
-call {vg_ed25519_scalar_base}
-.base64 "RTHARTHJRTHSRTHbTIkEJEyJTCQITIlUJBBMiVwkGFhYWFhYWFjD"
-.p2align 6"#,
-        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
-    )
-}
-
-/// The CPU features `vg_ed25519_public_key_expanded_adx` requires (`Artifact.features`).
-pub const VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `expanded` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed.
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
-/// * None of `out`, `expanded` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_public_key_expanded_adx(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUFBQUEiLRCQoSItMJCBIixBIiZEgBgAASItQCEiJkSgGAABIi1AQSImRMAYAAEiLUBhIiZE4BgAASItQIEiJkUAGAABIi1AoSImRSAYAAEiLUDBIiZFQBgAASItQOEiJkVgGAABIi3wkMEiJ5kiLVCQgTIuCIAYAAEyLiigGAABMi5IwBgAATIuaOAYAAEmD4PhIuf////////8/SSHLSLkAAAAAAAAAQEkJy0yJBCRMiUwkCEyJVCQQTIlcJBg="
-call {vg_ed25519_scalar_base_adx}
-.base64 "RTHARTHJRTHSRTHbTIkEJEyJTCQITIlUJBBMiVwkGFhYWFhYWFjD"
-.p2align 6"#,
-        vg_ed25519_scalar_base_adx = sym super::ed25519::vg_ed25519_scalar_base_adx::vg_ed25519_scalar_base_adx,
-    )
-}
-
-/// The CPU features `vg_ed25519_public_key_expanded_ifma` requires (`Artifact.features`).
-pub const VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
-
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `expanded` must be valid for reads of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed.
-/// * The seed must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
-/// * None of `out`, `expanded` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ed25519_public_key_expanded_ifma(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r#".base64 "V1ZSUFBQUEiLRCQoSItMJCBIixBIiZEgBgAASItQCEiJkSgGAABIi1AQSImRMAYAAEiLUBhIiZE4BgAASItQIEiJkUAGAABIi1AoSImRSAYAAEiLUDBIiZFQBgAASItQOEiJkVgGAABIi3wkMEiJ5kiLVCQgTIuCIAYAAEyLiigGAABMi5IwBgAATIuaOAYAAEmD4PhIuf////////8/SSHLSLkAAAAAAAAAQEkJy0yJBCRMiUwkCEyJVCQQTIlcJBg="
-call {vg_ed25519_scalar_base_ifma}
-.base64 "RTHARTHJRTHSRTHbTIkEJEyJTCQITIlUJBBMiVwkGFhYWFhYWFjD"
-.p2align 6"#,
-        vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma::vg_ed25519_scalar_base_ifma,
-    )
-}
-
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
 /// # Safety
@@ -195,7 +118,7 @@ call {vg_ed25519_public_key_expanded}
 .base64 "WFhYww=="
 .p2align 6"#,
         vg_sha512_digest = sym super::sha512::vg_sha512_digest,
-        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded,
+        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
 
@@ -326,7 +249,7 @@ call {vg_ed25519_public_key_expanded_adx}
 .base64 "WFhYww=="
 .p2align 6"#,
         vg_sha512_digest = sym super::sha512::vg_sha512_digest,
-        vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx,
+        vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
     )
 }
 
@@ -457,7 +380,7 @@ call {vg_ed25519_public_key_expanded_ifma}
 .base64 "WFhYww=="
 .p2align 6"#,
         vg_sha512_digest = sym super::sha512::vg_sha512_digest,
-        vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma,
+        vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
     )
 }
 
@@ -588,7 +511,7 @@ call {vg_ed25519_public_key_expanded}
 .base64 "WFhYww=="
 .p2align 6"#,
         vg_sha512_digest_avx2 = sym super::sha512::vg_sha512_digest_avx2,
-        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded,
+        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
 
@@ -719,7 +642,7 @@ call {vg_ed25519_public_key_expanded_adx}
 .base64 "WFhYww=="
 .p2align 6"#,
         vg_sha512_digest_avx2 = sym super::sha512::vg_sha512_digest_avx2,
-        vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx,
+        vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
     )
 }
 
@@ -850,7 +773,7 @@ call {vg_ed25519_public_key_expanded_ifma}
 .base64 "WFhYww=="
 .p2align 6"#,
         vg_sha512_digest_avx2 = sym super::sha512::vg_sha512_digest_avx2,
-        vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma,
+        vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
     )
 }
 
@@ -981,7 +904,7 @@ call {vg_ed25519_public_key_expanded}
 .base64 "WFhYww=="
 .p2align 6"#,
         vg_sha512_digest_shani = sym super::sha512::vg_sha512_digest_shani,
-        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded,
+        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
 
@@ -1112,7 +1035,7 @@ call {vg_ed25519_public_key_expanded_adx}
 .base64 "WFhYww=="
 .p2align 6"#,
         vg_sha512_digest_shani = sym super::sha512::vg_sha512_digest_shani,
-        vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx,
+        vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
     )
 }
 
@@ -1243,9 +1166,21 @@ call {vg_ed25519_public_key_expanded_ifma}
 .base64 "WFhYww=="
 .p2align 6"#,
         vg_sha512_digest_shani = sym super::sha512::vg_sha512_digest_shani,
-        vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma,
+        vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed25519_public_key_expanded.rs"]
+pub(crate) mod vg_ed25519_public_key_expanded;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed25519_public_key_expanded_adx.rs"]
+pub(crate) mod vg_ed25519_public_key_expanded_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed25519_public_key_expanded_ifma.rs"]
+pub(crate) mod vg_ed25519_public_key_expanded_ifma;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ed25519_r64_add_affine_ext.rs"]

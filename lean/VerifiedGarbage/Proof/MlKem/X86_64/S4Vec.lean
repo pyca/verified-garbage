@@ -363,13 +363,6 @@ theorem wp_vst256 {m : MemOp} {r : XReg} {a : Addr} (ha : s.ea m = a) (hout : In
   refine WP.cons (s' := { s with mem := s.mem.writeW a (s.ymm r) }) ?_ (k _ rfl (fun _ _ => rfl) rfl rfl rfl)
   simp [exec, State.store256, ha, hout]
 
-theorem wp_vst128 {m : MemOp} {r : XReg} {a : Addr} (ha : s.ea m = a) (hout : InRegions s.wr a 16)
-    (k : ∀ s', s'.gpr = s.gpr → (∀ x l, s'.lane x l = s.lane x l) → s'.mem = s.mem.writeW a (s.xmm r) →
-      s'.rd = s.rd → s'.wr = s.wr → WP isa (.block is) s' Q) :
-    WP isa (.block (.vmovdquStore .l128 m r :: is)) s Q := by
-  refine WP.cons (s' := { s with mem := s.mem.writeW a (s.xmm r) }) ?_ (k _ rfl (fun _ _ => rfl) rfl rfl rfl)
-  simp [exec, State.store128, ha, hout]
-
 /-- `wp_vst128`, keeping the statics' addresses. -/
 theorem wp_vst128s {m : MemOp} {r : XReg} {a : Addr} (ha : s.ea m = a) (hout : InRegions s.wr a 16)
     (k : ∀ s', s'.gpr = s.gpr → (∀ x l, s'.lane x l = s.lane x l) → s'.mem = s.mem.writeW a (s.xmm r) →
@@ -377,13 +370,6 @@ theorem wp_vst128s {m : MemOp} {r : XReg} {a : Addr} (ha : s.ea m = a) (hout : I
     WP isa (.block (.vmovdquStore .l128 m r :: is)) s Q := by
   refine WP.cons (s' := { s with mem := s.mem.writeW a (s.xmm r) }) ?_ (k _ rfl (fun _ _ => rfl) rfl rfl rfl rfl)
   simp [exec, State.store128, ha, hout]
-
-theorem wp_vbin128 {op : VBinOp} {d a b : XReg}
-    (k : ∀ s', LUpd s s' d (fun l => if l = 0 then op.sse.eval (s.lane a 0) (s.lane b 0) else 0) →
-      WP isa (.block is) s' Q) :
-    WP isa (.block (.vop (.vbin op .l128 d a b) :: is)) s Q :=
-  WP.cons (s' := s.setV .l128 d (op.sse.eval (s.lane a 0) (s.lane b 0)) (op.sse.eval (s.lane a 1) (s.lane b 1)))
-    rfl (k _ (LUpd.setV128 s d _ _))
 
 theorem wp_vext128 {d r : XReg}
     (k : ∀ s', LUpd s s' d (fun l => if l = 0 then s.lane r 1 else 0) → WP isa (.block is) s' Q) :
@@ -443,9 +429,6 @@ end
 
 theorem candN_lt (b : Nat → Nat) (hb : ∀ i, b i < 256) (k : Nat) : candN b k < 4096 := by
   unfold candN; have := hb (cb k); have := hb (cb k + 1); split <;> omega
-
-/-- The mask of the candidates less than `q`. -/
-abbrev maskN (b : Nat → Nat) : Nat := bsum (fun k => decide (candN b k < 3329)) 8
 
 /-! ## The compaction -/
 

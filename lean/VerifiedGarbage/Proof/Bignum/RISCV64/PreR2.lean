@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # The precomputed values of an RSA modulus on RISC-V: `R² mod n`
 
-`r2_ok`: `Precompute.r2` leaves `x = 2^(128 w) mod n` in array 1. `r2Top_ok`
+`Precompute.r2` leaves `x = 2^(128 w) mod n` in array 1. `r2Top_ok`
 writes `2^(64 (w - 1))`, below a valid `n`; `r2HiDbl_ok` doubles it `64 + w`
 times, to `2^w R mod n`; `minv_ok` computes `-n⁻¹ mod 2⁶⁴` by Newton's
 iteration (3, 6, 12, 24, 48 and 96 bits), and `r2Squares_ok` squares `x` six
@@ -378,45 +378,6 @@ theorem r2Squares_ok {s : State} {B : Addr} {Z w N : Nat} (hs : Scr s B Z) (hw2 
 
 /-- The registers `r2` may write. -/
 def r2Regs : List Reg := [.a0, .a1, .a3, .a4, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4]
-
-/-- `r2`: `x := R² mod n = 2^(128 w) mod n` in array 1, for an odd `n` of `w`
-words, at least `2^(64 (w - 1))`, in array 0, changing only arrays 1–3. -/
-theorem r2_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
-    (h2 : s.gpr .a2 = off B (slot w 1)) (h5 : s.gpr .a5 = off B (slot w 2)) (h6 : s.gpr .a6 = off B (slot w 3))
-    (h7 : s.gpr .a7 = off B (slot w 0)) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
-    (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z)
-    (hN : 2 ^ (64 * (w - 1)) ≤ wordsVal s.mem B (slot w 0) w) (hodd : wordsVal s.mem B (slot w 0) w % 2 = 1) :
-    WP isa Impl.Bignum.RISCV64.Precompute.r2 s fun t =>
-      wordsVal t.mem B (slot w 1) w = 2 ^ (128 * w) % wordsVal s.mem B (slot w 0) w ∧
-      Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep r2Regs s t := by
-  have hnw := hs.nowrap
-  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
-  have e0 := e 0; have e1 := e 1; have e4 := e 4; have e8 := e 8
-  have hh : hdrBytes = 256 := rfl
-  have hlow : (Mont.word s.mem B (slot w 0)).toNat % 2 = 1 := by
-    rw [fios_wordsVal_pred _ _ _ (show 1 ≤ w by omega)] at hodd
-    omega
-  generalize hNd : wordsVal s.mem B (slot w 0) w = N at hN hodd ⊢
-  replace hN : 2 ^ (64 * (w - 1)) < N := Nat.lt_of_le_of_ne hN fun h => by
-    rw [← h, show 64 * (w - 1) = (64 * (w - 1) - 1) + 1 by omega, Nat.pow_succ, Nat.mul_mod_left] at hodd
-    exact absurd hodd (by decide)
-  have hN0 : 0 < N := by omega
-  unfold Impl.Bignum.RISCV64.Precompute.r2
-  -- The doublings.
-  refine WP.seq (WP.mono (r2HiDbl_ok hs h5 h6 h7 h2 ht0 hw hw' (by omega) hNd hN) fun s₃ ⟨x3, o3, k3⟩ => ?_)
-  have n3 : wordsVal s₃.mem B (slot w 0) w = N := by rw [Outside.wordsVal o3 (by omega) (by omega), hNd]
-  have w3 : Mont.word s₃.mem B (slot w 0) = Mont.word s.mem B (slot w 0) := Outside.word o3 (by omega) (by omega)
-  -- `-n⁻¹ mod 2⁶⁴`.
-  refine WP.seq (WP.mono (minv_ok (hs.congr k3.2.2) ((k3.gpr (by decide)).trans h7) (slot_al8 w 0) (by omega)
-    (by rw [w3]; exact hlow)) fun s₄ ⟨⟨i4, m4⟩, k4⟩ => ?_)
-  have k34 := k3.trans k4
-  -- The squares.
-  rw [← m4] at x3 n3 w3
-  refine WP.mono (r2Squares_ok (N := N) (hs.congr k34.2.2) hw hw' hZ ((k34.gpr (by decide)).trans h2)
-    ((k34.gpr (by decide)).trans h5) ((k34.gpr (by decide)).trans h6) ((k34.gpr (by decide)).trans h7)
-    ((k34.gpr (by decide)).trans ht0) (by rw [m4]; exact i4) n3 hodd
-    (by rw [x3]; exact Nat.mod_lt _ hN0) (by rw [x3, Nat.mod_mod, Nat.pow_add]))
-    fun t ⟨tx, to, tk⟩ => ⟨tx, Outside.trans (by rw [m4]; exact o3) to, (k34.trans tk).mono (by decide)⟩
 
 /-! ## Montgomery squares by `sqrTail` -/
 

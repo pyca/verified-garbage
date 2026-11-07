@@ -585,13 +585,4 @@ theorem Ok.of_region {c : Cfg} {s : State} {r : Region} (hr : r ∈ s.wr)
     (he : c.exts = 0) : Ok c s :=
   Ok.of_off (off := 0) hr (by rw [← hb]; simp) (by omega) hn he
 
-/-- `Ok` for external words at offset `off` of a readable region, and no slots. -/
-theorem Ok.of_ext {c : Cfg} {s : State} {r : Region} {off : Nat} (hr : r ∈ s.rd ++ s.wr)
-    (hb : s.gpr c.ext = r.base + BitVec.ofNat 64 off) (hlen : off + 8 * c.exts ≤ r.len)
-    (hn : r.len < 2 ^ 64) (hs : c.slots = 0) : Ok c s where
-  slotIn k hk := by omega
-  extIn k hk := ⟨r, hr, contains_word hb (by omega) (Nat.le_refl _) hn⟩
-  slots := by omega
-  sep k hk := by omega
-
 end VG.PPC64LE.StraightK

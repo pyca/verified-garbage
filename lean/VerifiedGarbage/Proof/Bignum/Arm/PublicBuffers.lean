@@ -88,17 +88,4 @@ theorem PublicBuffers.after_workspace {base dst np ep xp : BitVec 32} {len k eLe
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.exponentSeparate)
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.inputSeparate)
 
-theorem PublicBuffers.after_acceptance {base dst np ep xp : BitVec 32} {len k eLen : Nat}
-    {nb eb xb : List Byte} {s t : State} {rs : List Reg}
-    (h : PublicBuffers base dst np ep xp len k eLen nb eb xb s)
-    (frame : Frame [⟨off (State.addr s.sp) 48, 4⟩] s.mem t.mem) (rest : Rest rs s t) :
-    PublicBuffers base dst np ep xp len k eLen nb eb xb t :=
-  h.after_frame frame rest
-    (by intro r hr; simp only [List.mem_singleton] at hr; subst r
-        exact h.stackModulus.sub_right (Offset.sub_base _ (by decide)))
-    (by intro r hr; simp only [List.mem_singleton] at hr; subst r
-        exact h.stackExponent.sub_right (Offset.sub_base _ (by decide)))
-    (by intro r hr; simp only [List.mem_singleton] at hr; subst r
-        exact h.stackInput.sub_right (Offset.sub_base _ (by decide)))
-
 end VG.Proof.Bignum.Arm

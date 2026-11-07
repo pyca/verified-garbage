@@ -121,8 +121,6 @@ abbrev gE (P : KemLay) (s₀ : State) : List Byte × List Byte := G (mE s₀ ++ 
 /-- `ρ`. -/
 abbrev rhoE (P : KemLay) (s₀ : State) : List Byte := ekRho P.params (ekE P s₀)
 
-theorem sha3Suffix_eq : Spec.Sha3.sha3Suffix = BitVec.ofNat 8 6 := rfl
-
 /-- After the first phase. -/
 structure AfterA (P : KemLay) (s₀ s : State) : Prop where
   kb : KB P (enL P) s₀ s
@@ -455,9 +453,5 @@ theorem encaps_verifiedWith :
   Verified.of_correct (encaps_correctWith (keccak := keccak)) (ct KeyGen.wf768 taints768) (by
     mlkem_implies [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, encapsAArch64, lay768, KemLay.params,
       Spec.MlKem.mlKem768, KemLay.ekLen, KemLay.ctLen, AArch64.abi, AArch64.argRegs] [sat] using sat)
-
-theorem encaps_verified :
-    Verified AArch64.target encaps (Spec.MlKem.encapsContract AArch64.abi 16) :=
-  encaps_verifiedWith (keccak := .scalar)
 
 end VG.Proof.MlKem.AArch64.Encaps

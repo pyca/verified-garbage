@@ -48,14 +48,6 @@ structure Sound (c : Prog isa) (k : Contract isa) : Prop where
 theorem Sound.of_verified {c : Prog isa} {k : Contract isa} (h : Verified Arm.target c k) : Sound c k :=
   ⟨h.1, h.2.1⟩
 
-/-- `Sound` for a contract that asks no more and gives no less. -/
-theorem Sound.weaken {c : Prog isa} {k k' : Contract isa} (h : Sound c k) (hpre : ∀ s, k'.pre s → k.pre s)
-    (hpost : ∀ s s', k'.pre s → k.post s s' → k'.post s s')
-    (hpub : ∀ s₁ s₂, k'.pre s₁ → k'.pre s₂ → k'.pub s₁ s₂ → k.pub s₁ s₂) : Sound c k' :=
-  ⟨fun s hs => (h.ok s (hpre s hs)).elim fun t ⟨s', he, ha, hp⟩ => ⟨t, s', he, ha, hpost s s' hs hp⟩,
-    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ =>
-      h.ct s₁ s₂ t₁ t₂ s₁' s₂' (hpre _ h₁) (hpre _ h₂) (hpub _ _ h₁ h₂ hp) e₁ e₂⟩
-
 /-! ## The stack below the stack pointer -/
 
 /-- The 24 bytes below the stack pointer, where our frames and calls go. -/

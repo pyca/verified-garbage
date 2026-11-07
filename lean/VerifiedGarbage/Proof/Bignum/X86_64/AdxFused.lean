@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Bignum.Math
 `zeroWin` clears the `2 w + 2` words from the first window (`zeroWin_ok`);
 the rows (`rows_ok`) keep the window `T < 2m` and
 `2^(64 i) T ≡ (a mod 2^(64 i)) b (mod m)`, as the baseline's rounds do, the
-window moving up a word a row; `montMulAdx_ok` is `montMul_ok` for it.
+window moving up a word a row.
 -/
 
 @[expose] public section
@@ -344,40 +344,5 @@ theorem sizeTest_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : 
   unfold sizeTest
   xrun [State.ea, hdr, hdi, hdrOff, hs.ld (show 8 * sW + 8 ≤ Z by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega_using [hZ, this]),
     hH.hw, sizeTest_beq w (by unfold slot hdrBytes at hZ; omega_using [hZ, hn])]
-
-/-- `montMulAdx o a b`: what `montMul_ok` says of `montMul aN aAcc aTmp o a b`, if
-neither `a` nor `b` is `aTmp` either. -/
-theorem montMulAdx_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
-    (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
-    {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
-    (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp)
-    (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
-    (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w aN) w) :
-    WP isa (montMulAdx o a b) s fun t =>
-      wv t.mem B (slot w o) w < wv s.mem B (slot w aN) w ∧
-      wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w aN) w =
-        wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w aN) w ∧
-      Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
-  have hn := hs.nowrap
-  unfold montMulAdx
-  refine WP.seq (WP.mono (sizeTest_ok hs hdi hH hZ) fun s₁ ⟨hz, hm₁, k₁⟩ => ?_)
-  have hs₁ := hs.congr k₁.2.2
-  have hdi₁ : s₁.gpr .rdi = B := (k₁.gpr (by decide)).trans hdi
-  rw [← hm₁] at hinv hB hH ⊢
-  have post : ∀ t, (wv t.mem B (slot w o) w < wv s₁.mem B (slot w aN) w ∧
-      wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s₁.mem B (slot w aN) w =
-        wv s₁.mem B (slot w a) w * wv s₁.mem B (slot w b) w % wv s₁.mem B (slot w aN) w ∧
-      Arrays B w [aAcc, aTmp, o] s₁.mem t.mem ∧ Keep mmRegs s₁ t) →
-      (wv t.mem B (slot w o) w < wv s₁.mem B (slot w aN) w ∧
-      wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s₁.mem B (slot w aN) w =
-        wv s₁.mem B (slot w a) w * wv s₁.mem B (slot w b) w % wv s₁.mem B (slot w aN) w ∧
-      Arrays B w [aAcc, aTmp, o] s₁.mem t.mem ∧ Keep mmRegs s t) :=
-    fun t ⟨h1, h2, h3, k⟩ => ⟨h1, h2, h3, (k₁.trans k).mono (by decide)⟩
-  by_cases h4 : SizeOk w
-  · refine WP.ite true (by simp [eval, hz, h4]) (fun _ => WP.mono (fused_ok hs₁ hdi₁ hH hZ h4.1 h4.2.1 hw' ho ha hb
-      ho1 ho2 ha1 ha2 hb1 hb2 hinv hB) post) (by simp)
-  · refine WP.ite false (by simp [eval, hz, h4]) (by simp) (fun _ => WP.mono (montMul_ok hs₁ hdi₁ hH hZ hw hw'
-      (by decide) (by decide) (by decide) ho ha hb (by decide) (by decide) (Ne.symm ho1) (Ne.symm ha1) (Ne.symm hb1)
-      (by decide) (Ne.symm ho2) hinv hB) post)
 
 end VG.Proof.Bignum.X86_64

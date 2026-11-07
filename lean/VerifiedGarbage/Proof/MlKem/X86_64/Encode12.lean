@@ -158,22 +158,4 @@ theorem encode12_ct : ConstantTime isa encode12K.pre encode12K.pub Impl.MlKem.X8
       exacts [hp.1, hp.2.1, hp.2.2])
     (by taint_decide)
 
-/-- A state satisfying the precondition. -/
-def encode12Sat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 1024⟩]
-  wr := [⟨0x2000, 384⟩]
-
-theorem encode12_verified :
-    Verified X86_64.target Impl.MlKem.X86_64.encode12 (Proof.MlKem.encode12Contract X86_64.abi) :=
-  Verified.of_correct encode12_correct encode12_ct (by
-    mlkem_implies [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, encode12K, X86_64.abi,
-      X86_64.argRegs] [encode12Sat] using encode12Sat)
-
 end VG.Proof.MlKem.X86_64

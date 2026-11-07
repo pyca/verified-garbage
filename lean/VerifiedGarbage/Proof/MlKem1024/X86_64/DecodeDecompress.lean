@@ -157,24 +157,6 @@ theorem decodeDecompress1024_ct :
       fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; exact hp.2.2.2.2)
     (by taint_decide)
 
-/-- A state satisfying the precondition. -/
-def decodeDecompress1024Sat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 160 | .rdx => 5 | .rcx => 0x2000 | .rsp => 0x4000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 160⟩]
-  wr := [⟨0x2000, 1024⟩]
-
-theorem decodeDecompress1024_verified :
-    Verified X86_64.target decodeDecompress1024 (Proof.MlKem1024.decodeDecompressContract X86_64.abi) :=
-  Verified.of_correct decodeDecompress1024_correct decodeDecompress1024_ct (by
-    mlkem_implies [Proof.MlKem1024.decodeDecompressContract, Proof.MlKem1024.decodeDecompressSig,
-      decodeDecompress1024K, X86_64.abi, X86_64.argRegs] [decodeDecompress1024Sat] using decodeDecompress1024Sat)
-
 theorem dd4_nosp : NoSp decodeDecompress1024 := nosp_of (by decide +kernel)
 theorem dd4_depth : decodeDecompress1024.depth = 0 := by decide +kernel
 

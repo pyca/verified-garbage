@@ -147,7 +147,7 @@ theorem cmpAnd_tr {a b : Ptr} {n : Nat}
 theorem and15_tr {P : State → State → Prop} : RelCT isa P (.block and15) fun _ _ => True :=
   block_nomem_tr fun i hi s => by simp only [and15, List.mem_singleton] at hi; subst hi; rfl
 
-theorem pro_tr {p : Params} : RelCT isa (RV p fun σ s => s = σ) (.block pro) fun _ _ => True :=
+theorem pro_tr {p : Params} : RelCT isa (RV p fun σ s => s = σ) (.block proF) fun _ _ => True :=
   taintRel [.rcx, .rdi, .rsi, .rdx] (fun x y ⟨σ₁, σ₂, _, _, pub, h₁, h₂⟩ r hr => by
     subst h₁ h₂
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

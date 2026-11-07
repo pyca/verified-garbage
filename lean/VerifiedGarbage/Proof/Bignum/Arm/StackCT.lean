@@ -36,10 +36,6 @@ theorem stackLoads_ct (slots : List (Reg × Nat)) :
   | nil => exact RelCT.block_nil (fun _ _ h => h)
   | cons p rest ih => exact RelCT.block_append ((loadStack_ct p.1 p.2).seq ih)
 
-theorem montRestore_ct : RelCT isa (fun s t => s.sp = t.sp) (.block MontFn.restore)
-    (fun s t => s.sp = t.sp) :=
-  stackLoads_ct [(.r5, 4), (.r6, 8), (.r7, 12), (.r8, 16), (.r9, 20), (.r10, 24), (.r11, 28), (.lr, 32)]
-
 theorem relCT_keep_sp {P : State → State → Prop} {code : Prog isa}
     (ct : RelCT isa P code (fun _ _ => True)) (sp : ∀ s t, P s t → s.sp = t.sp) :
     RelCT isa P code (fun s t => s.sp = t.sp) := by

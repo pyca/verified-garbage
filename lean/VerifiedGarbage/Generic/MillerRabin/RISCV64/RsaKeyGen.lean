@@ -18,7 +18,6 @@ def artifacts (v : Proof.MillerRabin.RISCV64.RoundImpl) : List Artifact := [
   Spec.RsaKeyGen.keySearchApi.artifact RISCV64.target {
     suffix := v.suffix
     stack := 656
-    consts := Impl.RsaKeyGen.TrialTable32.consts
     code := Proof.RsaKeyGen.RISCV64.Generate.genCode v
     verified := Proof.RsaKeyGen.RISCV64.Generate.gen_verified v
     features := v.features }]

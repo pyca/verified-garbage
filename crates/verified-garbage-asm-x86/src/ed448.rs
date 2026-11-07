@@ -29,7 +29,7 @@ call {vg_keccak_squeeze_scratch}
 call {vg_ed448_scalar_base}
 .base64 "uAAAAACJRCQYuAAAAACJRCQcuAAAAACJRCQguAAAAACJRCQkuAAAAACJRCQouAAAAACJRCQsuAAAAACJRCQwuAAAAACJRCQ0uAAAAACJRCQ4uAAAAACJRCQ8uAAAAACJRCRAuAAAAACJRCREuAAAAACJRCRIuAAAAACJRCRMuAAAAACJRCRQuAAAAACJRCRUuAAAAACJRCRYuAAAAACJRCRcuAAAAACJRCRguAAAAACJRCRkuAAAAACJRCRouAAAAACJRCRsuAAAAACJRCRwuAAAAACJRCR0uAAAAACJRCR4uAAAAACJRCR8uAAAAACJhCSAAAAAuAAAAACJhCSEAAAAuAAAAACJhCSIAAAAuAAAAACJhCSMAAAAuAAAAACJhCSQAAAAuAAAAACJhCSUAAAAuAAAAACJhCSYAAAAuAAAAACJhCScAAAAuAAAAACJhCSgAAAAuAAAAACJhCSkAAAAuAAAAACJhCSoAAAAuAAAAACJhCSsAAAAuAAAAACJhCSwAAAAuAAAAACJhCS0AAAAuAAAAACJhCS4AAAAuAAAAACJhCS8AAAAuAAAAACJhCTAAAAAuAAAAACJhCTEAAAAuAAAAACJhCTIAAAAuAAAAACJhCTMAAAAuAAAAACJhCTQAAAAuAAAAACJhCTUAAAAuAAAAACJhCTYAAAAuAAAAACJhCTcAAAAuAAAAACJhCTgAAAAuAAAAACJhCTkAAAAuAAAAACJhCToAAAAuAAAAACJhCTsAAAAuAAAAACJhCTwAAAAuAAAAACJhCT0AAAAuAAAAACJhCT4AAAAuAAAAACJhCT8AAAAWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWMM="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
@@ -99,7 +99,7 @@ call {vg_ed448_scalar_reduce}
 call {vg_ed448_scalar_mul_add}
 .base64 "uAAAAACJRCQYuAAAAACJRCQcuAAAAACJRCQguAAAAACJRCQkuAAAAACJRCQouAAAAACJRCQsuAAAAACJRCQwuAAAAACJRCQ0uAAAAACJRCQ4uAAAAACJRCQ8uAAAAACJRCRAuAAAAACJRCREuAAAAACJRCRIuAAAAACJRCRMuAAAAACJRCRQuAAAAACJRCRUuAAAAACJRCRYuAAAAACJRCRcuAAAAACJRCRguAAAAACJRCRkuAAAAACJRCRouAAAAACJRCRsuAAAAACJRCRwuAAAAACJRCR0uAAAAACJRCR4uAAAAACJRCR8uAAAAACJhCSAAAAAuAAAAACJhCSEAAAAuAAAAACJhCSIAAAAuAAAAACJhCSMAAAAuAAAAACJhCSQAAAAuAAAAACJhCSUAAAAuAAAAACJhCSYAAAAuAAAAACJhCScAAAAuAAAAACJhCSgAAAAuAAAAACJhCSkAAAAuAAAAACJhCSoAAAAuAAAAACJhCSsAAAAuAAAAACJhCSwAAAAuAAAAACJhCS0AAAAuAAAAACJhCS4AAAAuAAAAACJhCS8AAAAuAAAAACJhCTAAAAAuAAAAACJhCTEAAAAuAAAAACJhCTIAAAAuAAAAACJhCTMAAAAuAAAAACJhCTQAAAAuAAAAACJhCTUAAAAuAAAAACJhCTYAAAAuAAAAACJhCTcAAAAuAAAAACJhCTgAAAAuAAAAACJhCTkAAAAuAAAAACJhCToAAAAuAAAAACJhCTsAAAAuAAAAACJhCTwAAAAuAAAAACJhCT0AAAAuAAAAACJhCT4AAAAuAAAAACJhCT8AAAAWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWMM="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
@@ -152,7 +152,7 @@ call {vg_ed448_verify_equation}
 21:
 .base64 "ww=="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
@@ -187,6 +187,10 @@ pub(crate) mod vg_gf448_r16_mul;
 #[rustfmt::skip]
 #[path = "internal/vg_gf448_r16_sub.rs"]
 pub(crate) mod vg_gf448_r16_sub;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_absorb_scratch.rs"]
+pub(crate) mod vg_keccak_absorb_scratch;
 
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_f1600.rs"]

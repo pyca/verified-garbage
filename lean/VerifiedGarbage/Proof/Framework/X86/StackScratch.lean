@@ -26,7 +26,8 @@ which the frame lies outside of. So must the leak the contract may declare
 (`Sig.contract`'s `leak`, which the code's contract takes too): `hleak`
 (`Sig.LeakLocalL`, which holds of no leak and is then proved by default). The
 lists are the same in the frame's memory, whose descriptors are as on entry
-(`Sig.lists_eq_of_agree`). `pubL_stack` is `pub_stack` with a leak;
+(`Sig.lists_eq_of_agree`). `pubL_stack` is the public data of a contract
+that may leak, every argument on the stack;
 `pre_stackL` and `pubL_stackL` are `pre_stack` and `pubL_stack` for a
 signature that may have lists of slices. `Verified.stackScratchL` is the
 frame's theorem; `Verified.stackScratch` is it for a contract that reads only
@@ -774,21 +775,6 @@ theorem post_stack {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Pro
         ((s'.gpr .edx ++ s'.gpr .eax).setWidth _) := by
   simp only [Sig.contract]
   rw [args_stack]
-  exact Iff.rfl
-
-/-- The public data of a contract that leaks nothing, with every argument on
-the stack. -/
-theorem pub_stack {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
-    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat} {s₁ s₂ : State}
-    (hl : Sig.noLists sig.params = true) :
-    (sig.contract abi pre post wa stack none).pub s₁ s₂ ↔
-      s₁.gpr .esp = s₂.gpr .esp ∧
-      ∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
-        ((stackArgs sig s₁).getD i 0).setWidth ((widths sig).getD i 64) =
-          ((stackArgs sig s₂).getD i 0).setWidth ((widths sig).getD i 64) := by
-  simp only [Sig.contract]
-  rw [args_stack]
-  simp only [Sig.descs_of_noLists _ _ _ hl, List.not_mem_nil, false_implies, implies_true, and_true]
   exact Iff.rfl
 
 /-- The public data of a contract, and what it may leak, every argument on

@@ -85,9 +85,6 @@ structure After (s : State) (ws : List Region) (s' : State) : Prop where
 theorem After.esp {s s' : State} {ws : List Region} (h : After s ws s') : s'.gpr .esp = s.gpr .esp :=
   h.cs .esp (by simp [calleeSaved])
 
-theorem frame_app {ws ws' : List Region} {m m' : Mem} (h : Frame ws m m') : Frame (ws ++ ws') m m' :=
-  h.sub fun r hr => ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
-
 /-! ## The stack below `esp` -/
 
 section Stack
@@ -112,9 +109,6 @@ end Stack
 
 @[simp] theorem count_withRegions (s : State) (rd wr : List Region) :
     count (s.withRegions rd wr) = count s := rfl
-
-theorem toNat_sub_ofNat {E : BitVec 32} {k : Nat} (h : k ≤ E.toNat) :
-    (E - BitVec.ofNat 32 k).toNat = E.toNat - k := sub_toNat h
 
 theorem zero_append_ofNat {n : Nat} (h : n < 2 ^ 32) :
     (0 : BitVec 32) ++ BitVec.ofNat 32 n = BitVec.ofNat 64 n := by
@@ -526,15 +520,12 @@ theorem fin_rel {P : State → State → Prop} {sp : BitVec 32} {r : Reg} {st o 
 The taint analysis checks the code between the calls from the registers
 that hold our variables, and the words of the stack arguments (`argTaint`),
 which the pieces read again: they are public, and the same in both runs as
-long as nothing has written them (`ArgsKept`). -/
+long as nothing has written them. -/
 
 /-- The taint in which `esp`, the registers `rs` and the `n - 4` bytes of
 stack arguments are public. -/
 def argTaint (rs : List Reg) (n : Nat) : VG.X86.Taint.T :=
   { regs := .ofList (.esp :: rs), flags := false, argLen := n }
-
-/-- The `k` words of arguments of `s` are those of `s₀`. -/
-def ArgsKept (s₀ : State) (k : Nat) (s : State) : Prop := ∀ i < k, arg s i = arg s₀ i
 
 /-- The arguments lie outside the writable regions, and do not wrap around. -/
 def ArgsOut (k : Nat) (s : State) : Prop :=

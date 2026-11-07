@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecHash
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Pbkdf2.Hmac
 import VerifiedGarbage.Proof.Sha256.Md
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecTaint

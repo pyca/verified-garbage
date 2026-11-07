@@ -131,9 +131,6 @@ theorem KB.hash {s₀ s s' : State} (hp : Pre P s₀) (h : KB P s₀ s) {outs : 
   exact ⟨hp.args.rdisj (by decide) h4 hp.sv f (by omega),
     hp.args.rdisj (by decide) h4 (by kl) f (by omega)⟩
 
-theorem sha3Suffix_eq : Spec.Sha3.sha3Suffix = BitVec.ofNat 8 6 := rfl
-theorem shakeSuffix_eq : Spec.Sha3.shakeSuffix = BitVec.ofNat 8 0x1f := rfl
-
 /-- After `G(d ‖ k)`. -/
 structure AfterA (P : KemLay) (s₀ s : State) : Prop where
   kb : KB P s₀ s

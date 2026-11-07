@@ -19,9 +19,8 @@ namespace VG.Artifacts.Ed25519KeyPair.X86
 
 def artifacts : List Artifact := [
   Spec.Ed25519.keyPairApi.artifact X86.target {
-    consts := Impl.Ed25519.X86.combConsts
     code := Impl.Ed25519.X86.KeyPair.keyPair Spec.Sha512.digest512Api.name
-      Proof.Ed25519.X86.KeyPair.dgCode Spec.Ed25519.publicKeyExpandedApi.name
+      Proof.Ed25519.X86.KeyPair.dgCode "vg_ed25519_public_key_expanded"
       Impl.Ed25519.X86.PublicKey.publicKeyExpanded
     stack := 628
     verified := Proof.Ed25519.X86.KeyPair.verified }]

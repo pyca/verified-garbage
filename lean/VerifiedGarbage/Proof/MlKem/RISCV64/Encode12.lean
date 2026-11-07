@@ -172,46 +172,4 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa encode12 s₀ (Inv s₀ 
   refine WP.seq (WP.mono (init_ok (s₀ := s₀)) fun s h => ?_)
   exact wp_loop_nz (Inv s₀) (N := 128) (by decide) (fun i hi s h => step hp hi h) (fun _ h => h) h
 
-/-! ## Verified -/
-
-theorem pre_of {s : State} (h : (Proof.MlKem.encode12Contract RISCV64.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs] at h
-  obtain ⟨-, h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x2000 | _ => 0
-  sp := 0x4000
-  mem _ := 0
-  rd := [⟨0x1000, 1024⟩]
-  wr := [⟨0x2000, 384⟩]
-
-theorem verified :
-    Verified RISCV64.target Impl.MlKem.RISCV64.encode12 (Proof.MlKem.encode12Contract RISCV64.abi) := by
-  refine ⟨fun s hs => ?_, Add.ctRegs [.a0, .a1] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · obtain ⟨t, s', he, h⟩ := loop_ok (pre_of hs)
-    refine ⟨t, s', he, ⟨h.pres, h.sp, h.ra⟩, ?_⟩
-    sig_post [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs]
-    exact bytesAt_eq! (p := O s) (encode12_length _) fun k hk => by
-      rw [h.bytes k hk, ite_eq_left (by omega_arith)]
-  · sig_pub [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs] at h
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact h.2.1
-    · exact h.2.2
-  · sig_pub [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs] at h
-    exact h.1
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.encode12Contract, Proof.MlKem.encode12Sig, RISCV64.abi, RISCV64.argRegs]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | exact Add.reduced_zero _
-        | decide +kernel
-
 end VG.Proof.MlKem.RISCV64.Encode12

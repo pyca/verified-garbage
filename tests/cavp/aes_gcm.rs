@@ -43,9 +43,33 @@ fn decrypt(key: &AesGcm, iv: &[u8], aad: &[u8], data: &mut [u8], tag: &[u8]) -> 
     }
 }
 
+/// Decrypts `ct` with `tag` out of place, into a new buffer filled with
+/// `0x55`: the result, and the output.
+fn decrypt_to(
+    key: &AesGcm,
+    iv: &[u8],
+    aad: &[u8],
+    ct: &[u8],
+    tag: &[u8],
+) -> (Result<(), Error>, Vec<u8>) {
+    let mut out = vec![0x55; ct.len()];
+    let r = match tag.len() {
+        4 => key.decrypt_truncated::<4>(iv, aad, ct, tag.try_into().unwrap(), &mut out),
+        8 => key.decrypt_truncated::<8>(iv, aad, ct, tag.try_into().unwrap(), &mut out),
+        12 => key.decrypt_truncated::<12>(iv, aad, ct, tag.try_into().unwrap(), &mut out),
+        13 => key.decrypt_truncated::<13>(iv, aad, ct, tag.try_into().unwrap(), &mut out),
+        14 => key.decrypt_truncated::<14>(iv, aad, ct, tag.try_into().unwrap(), &mut out),
+        15 => key.decrypt_truncated::<15>(iv, aad, ct, tag.try_into().unwrap(), &mut out),
+        // Panics on any other length.
+        _ => key.decrypt(iv, aad, ct, tag.try_into().unwrap(), &mut out),
+    };
+    (r, out)
+}
+
 /// Encryption with an external IV must give the ciphertext and the tag
-/// (truncated to its length), and decryption must return the plaintext or,
-/// for a `FAIL` vector, reject the tag.
+/// (truncated to its length), and decryption, in place and out of place,
+/// must return the plaintext or, for a `FAIL` vector, reject the tag (and
+/// zero the output out of place).
 #[test]
 fn aes_gcm() {
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("vectors/nist-cavp/gcm");
@@ -70,12 +94,22 @@ fn aes_gcm() {
             let mut buf = unhex(r["CT"]);
             let tag = unhex(r["Tag"]);
             let result = decrypt(&key, &unhex(r["IV"]), &unhex(r["AAD"]), &mut buf, &tag);
+            let (to, out) = decrypt_to(
+                &key,
+                &unhex(r["IV"]),
+                &unhex(r["AAD"]),
+                &unhex(r["CT"]),
+                &tag,
+            );
             if fail {
                 assert!(result.is_err());
+                assert_eq!(to, Err(Error::TagMismatch));
+                assert!(out.iter().all(|&b| b == 0));
                 failed += 1;
             } else {
                 result.unwrap();
                 assert_eq!(buf, unhex(r["PT"]));
+                assert_eq!((to, out), (Ok(()), buf));
             }
             decrypted += 1;
         }

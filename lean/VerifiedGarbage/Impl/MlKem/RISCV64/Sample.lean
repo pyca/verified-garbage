@@ -104,8 +104,8 @@ def loopInit (N : Nat) : List Instr := [.addi .a0 .s9 840, mov .a1 .s8, .li .a2 
 def sampleTry (N : Nat) : Prog isa :=
   .seq (.block (zeroState .s9))
   (.seq (.seq (.block absorbSeedArgs) (.call "vg_keccak_absorb" Impl.Sha3.RISCV64.Stream.absorb))
-  (.seq (.seq (.block padArgs) (.call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad))
-  (.seq (.seq (.block (squeezeArgs (3 * N))) (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze))
+  (.seq (.seq (.block padArgs) (.call "vg_keccak_pad" Impl.Sha3.RISCV64.Stream.pad))
+  (.seq (.seq (.block (squeezeArgs (3 * N))) (.call "vg_keccak_squeeze" Impl.Sha3.RISCV64.Stream.squeeze))
   (.seq (.block (loopInit N)) (.loop rejBody (.nonzero .a3))))))
 
 def sampleNTT : Prog isa :=

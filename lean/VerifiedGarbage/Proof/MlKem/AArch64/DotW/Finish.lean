@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 # ML-KEM's fused dot product of polynomials stored with 16 bits, on AArch64: the terms and the finish
 
 All the terms (`termsW_ok`), and the reduction of each group of sums
-(`finishR_ok`: `finish` of `dot` with any registers).
+(`finishR_ok`).
 -/
 
 @[expose] public section

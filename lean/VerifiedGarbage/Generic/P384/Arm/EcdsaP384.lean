@@ -15,14 +15,12 @@ namespace VG.Generic.P384.Arm.EcdsaP384
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := [
   Spec.Ecdsa.P384.verifyHashApi.artifact Arm.target {
-    consts := Impl.Weierstrass.Arm.p384CombConsts
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
       Impl.Ecdsa.Arm.verifyP384Comb
     stack := 96
     verified := Proof.Ecdsa.Verify.Arm.P384.verifyHash_verified h.law },
   Spec.Ecdsa.P384.verifyHashApi.artifact Arm.target {
     suffix := "_umaal"
-    consts := Impl.Weierstrass.Arm.p384CombConsts
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
       Impl.Ecdsa.Arm.verifyP384CombU
     stack := 96

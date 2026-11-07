@@ -117,22 +117,49 @@ theorem prims_ok : SPrimsOk prims 1168 where
       · rw [sampleInBall_mono (show 272 ≤ maxBounds.ball by decide) (sampleInBall_some _ (by decide) hf)]; rfl
       · rw [ifn hf] at h1; exact absurd h1 zero_ne_one32⟩
 
-theorem sign44_sat : (signContract mlDsa44 RISCV64.abi 1168).pre (signSat mlDsa44) := by
-  sig_sat_check [signContract, signSig, RISCV64.abi, RISCV64.argRegs, signSat]
+theorem withCache44_sat : (Proof.MlDsa.signWithCacheContract mlDsa44 RISCV64.abi 1168).pre (signSat mlDsa44) := by
+  sig_pre [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, signSig, RISCV64.abi,
+    RISCV64.argRegs, signSat]
+  sig_and_intros
+  all_goals first
+    | exact .inl rfl
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
 
-theorem sign44_verified : Verified RISCV64.target sign44 (signContract mlDsa44 RISCV64.abi 1168) :=
-  sign_verified prims_ok (by decide) _ (.inl rfl) sign44_sat
+theorem withCache44_verified :
+    Verified RISCV64.target Impl.MlDsa.RISCV64.Sign.withCache44
+      (Proof.MlDsa.signWithCacheContract mlDsa44 RISCV64.abi 1168) :=
+  sign_verified prims_ok (by decide) _ (.inl rfl) withCache44_sat
 
-theorem sign65_sat : (signContract mlDsa65 RISCV64.abi 1168).pre (signSat mlDsa65) := by
-  sig_sat_check [signContract, signSig, RISCV64.abi, RISCV64.argRegs, signSat]
+theorem withCache65_sat : (Proof.MlDsa.signWithCacheContract mlDsa65 RISCV64.abi 1168).pre (signSat mlDsa65) := by
+  sig_pre [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, signSig, RISCV64.abi,
+    RISCV64.argRegs, signSat]
+  sig_and_intros
+  all_goals first
+    | exact .inl rfl
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
 
-theorem sign65_verified : Verified RISCV64.target sign65 (signContract mlDsa65 RISCV64.abi 1168) :=
-  sign_verified prims_ok (by decide) _ (.inr (.inl rfl)) sign65_sat
+theorem withCache65_verified :
+    Verified RISCV64.target Impl.MlDsa.RISCV64.Sign.withCache65
+      (Proof.MlDsa.signWithCacheContract mlDsa65 RISCV64.abi 1168) :=
+  sign_verified prims_ok (by decide) _ (.inr (.inl rfl)) withCache65_sat
 
-theorem sign87_sat : (signContract mlDsa87 RISCV64.abi 1168).pre (signSat mlDsa87) := by
-  sig_sat_check [signContract, signSig, RISCV64.abi, RISCV64.argRegs, signSat]
+theorem withCache87_sat : (Proof.MlDsa.signWithCacheContract mlDsa87 RISCV64.abi 1168).pre (signSat mlDsa87) := by
+  sig_pre [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, signSig, RISCV64.abi,
+    RISCV64.argRegs, signSat]
+  sig_and_intros
+  all_goals first
+    | exact .inl rfl
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
 
-theorem sign87_verified : Verified RISCV64.target sign87 (signContract mlDsa87 RISCV64.abi 1168) :=
-  sign_verified prims_ok (by decide) _ (.inr (.inr rfl)) sign87_sat
+theorem withCache87_verified :
+    Verified RISCV64.target Impl.MlDsa.RISCV64.Sign.withCache87
+      (Proof.MlDsa.signWithCacheContract mlDsa87 RISCV64.abi 1168) :=
+  sign_verified prims_ok (by decide) _ (.inr (.inr rfl)) withCache87_sat
 
 end VG.Proof.MlDsa.RISCV64.Sign

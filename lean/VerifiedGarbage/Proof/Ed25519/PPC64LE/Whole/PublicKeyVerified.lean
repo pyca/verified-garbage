@@ -29,7 +29,7 @@ public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Whole
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Spec.Ed25519.ExpandedKey
+public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.Expanded
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
@@ -133,37 +133,37 @@ theorem pkE_ct : ConstantTime isa pkCE.pre pkCE.pub publicKeyExpanded :=
         simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
 /-- `publicKeyExpandedContract`'s precondition and postcondition. -/
-def pkEPre (pb : Nat) : Curry (Spec.Ed25519.publicKeyExpandedSig.words pb) (Mem → Prop) :=
+def pkEPre (pb : Nat) : Curry (Proof.Ed25519.publicKeyExpandedSig.words pb) (Mem → Prop) :=
   fun _out expanded _scratch m =>
     ∃ seed : List Byte, seed.length = 32 ∧ bytesAt m expanded 64 = Spec.Sha512.sha512 seed
 
-def pkEPost (pb : Nat) : Spec.Ed25519.publicKeyExpandedSig.Post pb :=
+def pkEPost (pb : Nat) : Proof.Ed25519.publicKeyExpandedSig.Post pb :=
   fun out expanded _scratch m m' _ =>
     ∀ seed : List Byte, seed.length = 32 → bytesAt m expanded 64 = Spec.Sha512.sha512 seed →
       bytesAt m' out 32 = Spec.Ed25519.publicKey seed
 
-theorem pkEPre_local (pb : Nat) : ∀ vs m₁ m₂, vs.length = (Spec.Ed25519.publicKeyExpandedSig.words pb).length →
-    (∀ b ∈ Sig.bufs Spec.Ed25519.publicKeyExpandedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Ed25519.publicKeyExpandedSig.words pb) (pkEPre pb) vs m₁ →
-    Curry.apply (Spec.Ed25519.publicKeyExpandedSig.words pb) (pkEPre pb) vs m₂ := by
+theorem pkEPre_local (pb : Nat) : ∀ vs m₁ m₂, vs.length = (Proof.Ed25519.publicKeyExpandedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Ed25519.publicKeyExpandedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Ed25519.publicKeyExpandedSig.words pb) (pkEPre pb) vs m₁ →
+    Curry.apply (Proof.Ed25519.publicKeyExpandedSig.words pb) (pkEPre pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb h
   match vs, hlen with
   | [o, dg, sc], _ =>
-    simp only [Spec.Ed25519.publicKeyExpandedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    simp only [Proof.Ed25519.publicKeyExpandedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
     change ∃ seed : List Byte, seed.length = 32 ∧ bytesAt m₁ dg 64 = Spec.Sha512.sha512 seed at h
     change ∃ seed : List Byte, seed.length = 32 ∧ bytesAt m₂ dg 64 = Spec.Sha512.sha512 seed
     rw [Proof.Ed25519.WholeLocal.bytesAt_congr hb.2.1]
     exact h
 
-theorem pkEPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (Spec.Ed25519.publicKeyExpandedSig.words pb).length →
-    (∀ b ∈ Sig.bufs Spec.Ed25519.publicKeyExpandedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Ed25519.publicKeyExpandedSig.words pb) (pkEPost pb) vs m₁ m' r →
-    Curry.apply (Spec.Ed25519.publicKeyExpandedSig.words pb) (pkEPost pb) vs m₂ m' r := by
+theorem pkEPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Ed25519.publicKeyExpandedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Ed25519.publicKeyExpandedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Ed25519.publicKeyExpandedSig.words pb) (pkEPost pb) vs m₁ m' r →
+    Curry.apply (Proof.Ed25519.publicKeyExpandedSig.words pb) (pkEPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   match vs, hlen with
   | [o, dg, sc], _ =>
-    simp only [Spec.Ed25519.publicKeyExpandedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    simp only [Proof.Ed25519.publicKeyExpandedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
     change ∀ seed : List Byte, seed.length = 32 → bytesAt m₁ dg 64 = Spec.Sha512.sha512 seed →
       bytesAt m' o 32 = Spec.Ed25519.publicKey seed at h
@@ -173,14 +173,14 @@ theorem pkEPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (Spec.Ed25
     exact h
 
 theorem pkEPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r,
-    vs.length = (Spec.Ed25519.publicKeyExpandedSig.words pb).length →
-    (∀ b ∈ Sig.bufs Spec.Ed25519.publicKeyExpandedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Ed25519.publicKeyExpandedSig.words pb) (pkEPost pb) vs m m₁ r →
-    Curry.apply (Spec.Ed25519.publicKeyExpandedSig.words pb) (pkEPost pb) vs m m₂ r := by
+    vs.length = (Proof.Ed25519.publicKeyExpandedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Ed25519.publicKeyExpandedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Ed25519.publicKeyExpandedSig.words pb) (pkEPost pb) vs m m₁ r →
+    Curry.apply (Proof.Ed25519.publicKeyExpandedSig.words pb) (pkEPost pb) vs m m₂ r := by
   intro vs m m₁ m₂ r hlen hb h
   match vs, hlen with
   | [o, dg, sc], _ =>
-    simp only [Spec.Ed25519.publicKeyExpandedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    simp only [Proof.Ed25519.publicKeyExpandedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
     change ∀ seed : List Byte, seed.length = 32 → bytesAt m dg 64 = Spec.Sha512.sha512 seed →
       bytesAt m₁ o 32 = Spec.Ed25519.publicKey seed at h
@@ -267,25 +267,25 @@ def pkSatE : State where
   rd := [⟨0x2000, 64⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩, ⟨0x8000, 144⟩]
 
-theorem pkRE_implies : pkRE.Implies (Sig.scratchContract PPC64LE.abi Spec.Ed25519.publicKeyExpandedSig "frame"
+theorem pkRE_implies : pkRE.Implies (Sig.scratchContract PPC64LE.abi Proof.Ed25519.publicKeyExpandedSig "frame"
     .u8 144 (pkEPre PPC64LE.abi.ptrBits) (pkEPost PPC64LE.abi.ptrBits) true 48) :=
     { pre := by
         sig_implies_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
-          Spec.Ed25519.publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, pkEPost, pkRE, PPC64LE.abi,
+          Proof.Ed25519.publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, pkEPost, pkRE, PPC64LE.abi,
           PPC64LE.argRegs]
       post := by
         sig_implies_post [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
-          Spec.Ed25519.publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, pkEPost, pkRE, PPC64LE.abi,
+          Proof.Ed25519.publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, pkEPost, pkRE, PPC64LE.abi,
           PPC64LE.argRegs]
       pub := by
         sig_implies_pub [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
-          Spec.Ed25519.publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, pkEPost, pkRE, PPC64LE.abi,
+          Proof.Ed25519.publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, pkEPost, pkRE, PPC64LE.abi,
           PPC64LE.argRegs]
       sat := by
         have hd : bytesAt satMemE 0x2000 64 = Spec.Sha512.sha512 Proof.Ed25519.WholeLocal.satSeed := sat_digestE
         refine ⟨pkSatE, ?_⟩
         sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
-          Spec.Ed25519.publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, PPC64LE.abi, PPC64LE.argRegs,
+          Proof.Ed25519.publicKeyExpandedSig, Spec.Ed25519.scratchWords, pkEPre, PPC64LE.abi, PPC64LE.argRegs,
           pkSatE]
         sig_and_intros
         all_goals first
@@ -298,7 +298,7 @@ theorem pkRE_implies : pkRE.Implies (Sig.scratchContract PPC64LE.abi Spec.Ed2551
 def pkSatCE : State :=
   { pkSatE with mem := satMemTE, rd := pkSatE.rd ++ [⟨0x100000, 49152⟩], syms := fun _ => 0x100000 }
 
-theorem pkCE_sat : (Sig.scratchContract (PPC64LE.abi.withConsts combConsts) Spec.Ed25519.publicKeyExpandedSig
+theorem pkCE_sat : (Sig.scratchContract (PPC64LE.abi.withConsts combConsts) Proof.Ed25519.publicKeyExpandedSig
     "frame" .u8 144 (pkEPre PPC64LE.abi.ptrBits) (pkEPost PPC64LE.abi.ptrBits) true 48).pre pkSatCE := by
   have hl := combWords_length
   have held := satMemTE_held
@@ -306,7 +306,7 @@ theorem pkCE_sat : (Sig.scratchContract (PPC64LE.abi.withConsts combConsts) Spec
   rw [show combConsts = [(combSym, combWords)] from rfl]
   generalize combWords = W' at hl held ⊢
   generalize e : pkSatCE = s
-  sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Spec.Ed25519.publicKeyExpandedSig,
+  sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Ed25519.publicKeyExpandedSig,
     Spec.Ed25519.scratchWords, pkEPre, PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions,
     Abi.constsHeld, stackBelow]
   subst e
@@ -324,20 +324,20 @@ theorem pkCE_sat : (Sig.scratchContract (PPC64LE.abi.withConsts combConsts) Spec
        rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
 theorem pkCE_implies : pkCE.Implies (Sig.scratchContract (PPC64LE.abi.withConsts combConsts)
-    Spec.Ed25519.publicKeyExpandedSig "frame" .u8 144 (pkEPre PPC64LE.abi.ptrBits) (pkEPost PPC64LE.abi.ptrBits)
+    Proof.Ed25519.publicKeyExpandedSig "frame" .u8 144 (pkEPre PPC64LE.abi.ptrBits) (pkEPost PPC64LE.abi.ptrBits)
     true 48) :=
   consts_implies (kR := pkRE) pkRE_implies (fun _ _ h => h) (fun _ _ h => h) ⟨pkSatCE, pkCE_sat⟩
 
 theorem publicKeyExpanded_verified :
     Verified PPC64LE.target publicKeyExpanded (Sig.scratchContract (PPC64LE.abi.withConsts combConsts)
-      Spec.Ed25519.publicKeyExpandedSig "frame" .u8 144 (pkEPre PPC64LE.abi.ptrBits) (pkEPost PPC64LE.abi.ptrBits)
+      Proof.Ed25519.publicKeyExpandedSig "frame" .u8 144 (pkEPre PPC64LE.abi.ptrBits) (pkEPost PPC64LE.abi.ptrBits)
       true 48) :=
   Verified.of_correct (pkE_ok base_ok) pkE_ct pkCE_implies
 
 /-- A state satisfying `vg_ed25519_public_key_expanded`'s precondition, without the frame. -/
 def pkFrameSatE : State := { pkSatCE with wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩] }
 
-theorem pkFrameSatE_pre : ∃ s, (Spec.Ed25519.publicKeyExpandedContract (PPC64LE.abi.withConsts combConsts)
+theorem pkFrameSatE_pre : ∃ s, (Proof.Ed25519.publicKeyExpandedContract (PPC64LE.abi.withConsts combConsts)
     (48 + 176)).pre s := by
   refine ⟨pkFrameSatE, ?_⟩
   have hl := combWords_length
@@ -346,7 +346,7 @@ theorem pkFrameSatE_pre : ∃ s, (Spec.Ed25519.publicKeyExpandedContract (PPC64L
   rw [show combConsts = [(combSym, combWords)] from rfl]
   generalize combWords = W' at hl held ⊢
   generalize e : pkFrameSatE = s
-  sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig, Spec.Ed25519.scratchWords,
+  sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig, Spec.Ed25519.scratchWords,
     PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst e
   rw [hl]
@@ -365,8 +365,8 @@ theorem pkFrameSatE_pre : ∃ s, (Spec.Ed25519.publicKeyExpandedContract (PPC64L
 /-- In its frame of 176 bytes, whose first 136 it zeroes before returning. -/
 theorem publicKeyExpanded_framed :
     Verified PPC64LE.target publicKeyExpandedCode
-      (Spec.Ed25519.publicKeyExpandedContract (PPC64LE.abi.withConsts combConsts) (48 + 176)) :=
-  Verified.stackScratchWipedC (c₀ := (combSym, combWords)) (cs := []) (sig := Spec.Ed25519.publicKeyExpandedSig)
+      (Proof.Ed25519.publicKeyExpandedContract (PPC64LE.abi.withConsts combConsts) (48 + 176)) :=
+  Verified.stackScratchWipedC (c₀ := (combSym, combWords)) (cs := []) (sig := Proof.Ed25519.publicKeyExpandedSig)
     (nm := "frame") (e := .u8) (n := 144) (pre := pkEPre PPC64LE.abi.ptrBits)
     (post := pkEPost PPC64LE.abi.ptrBits) (wa := true) (stack := 48) (bytes := 176)
     (words := 17) publicKeyExpanded_verified (by decide) (by decide) (by decide)

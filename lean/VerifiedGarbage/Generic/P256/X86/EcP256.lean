@@ -141,7 +141,6 @@ namespace VG.Generic.P256.X86.EcP256
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : List Artifact := [
   Spec.EcKey.P256.publicKeyApi.artifact X86.target {
-    consts := Impl.Ecdsa.X86.p256Comb.combConsts
     code := Proof.EcKey.X86.pkCombCode
     stack := 20
     verified := Proof.EcKey.X86.pkComb_verified h.law h.inv }]

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 public import VerifiedGarbage.Proof.X448.X86_64.Finish
 public import VerifiedGarbage.Proof.X448.X86_64.InvCall
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -15,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # X448 on x86-64: the whole function
 
 The contract the proof is written against (the facts of
-`Spec.X448.x448Contract` it uses, stated for x86-64), and the correctness of
+`Proof.X448.x448Contract` it uses, stated for x86-64), and the correctness of
 `vg_x448` against it: every write is in the working space but the result's, so
 the arguments are read unchanged, the callee-saved registers restored from the
 working space, and the return address kept.

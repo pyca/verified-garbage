@@ -54,10 +54,6 @@ theorem TableHolds.of_keeps {m m' : Mem} {base : BitVec 32} {len w M x k o : Nat
   rw [keeps_table_num keep fits ho (by omega)]
   exact h j hj
 
-theorem TableHolds.of_mem {m m' : Mem} {base : BitVec 32} {w M x k : Nat}
-    (h : TableHolds m base w M x k) (mem : m' = m) : TableHolds m' base w M x k := by
-  rw [mem]; exact h
-
 /-- A Montgomery product of `x^E R` and `x^d R` is `x^(E + d) R`. -/
 theorem mont_mulpow {Y Y' X x E d R m : Nat} (hR : Nat.Coprime R m) (hY : Y % m = x ^ E * R % m)
     (hX : X % m = x ^ d * R % m) (h : Y' * R % m = Y * X % m) : Y' % m = x ^ (E + d) * R % m := by

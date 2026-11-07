@@ -2591,8 +2591,8 @@ pub(crate) mod vg_rsa_mul_6_6_5;
 pub(crate) mod vg_rsa_mul_6_6_7;
 
 #[rustfmt::skip]
-#[path = "internal/vg_rsa_prime_search.rs"]
-pub(crate) mod vg_rsa_prime_search;
+#[path = "internal/vg_rsa_pkcs1_encrypt_precomputed.rs"]
+pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed;
 
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_private_checked.rs"]

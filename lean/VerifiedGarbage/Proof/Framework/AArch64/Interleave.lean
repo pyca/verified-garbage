@@ -281,12 +281,6 @@ theorem Frame.store {F : Fp} {s s' : State} {off n : Nat} {v : BitVec (8 * n)}
   · cases h
 
 
-theorem testBit_union_left {a b i : Nat} (h : a.testBit i = true) : (a ||| b).testBit i = true := by
-  simp [Nat.testBit_or, h]
-
-theorem testBit_union_right {a b i : Nat} (h : b.testBit i = true) : (a ||| b).testBit i = true := by
-  simp [Nat.testBit_or, h]
-
 theorem VOp.frame {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s s' : State}
     (he : (op.eval s).map (fun (p : VReg × BitVec 128) => s.setV p.1 p.2) = some s') : Frame xb F s s' := by
   cases op <;> cases hf

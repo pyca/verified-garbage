@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.X86_64.Main
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
@@ -14,6 +15,7 @@ meta import VerifiedGarbage.Proof.X25519.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.X25519.Contract
 
 /-!
 # X25519 on x86-64: `Verified`
@@ -43,19 +45,19 @@ def satState : State where
   rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 4096⟩]
 
-theorem x25519_implies : Proof.X25519.x25519X86_64.Implies (Spec.X25519.x25519Contract X86_64.abi) := by
-  sig_implies [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, X86_64.abi, X86_64.argRegs,
+theorem x25519_implies : Proof.X25519.x25519X86_64.Implies (Proof.X25519.x25519Contract X86_64.abi) := by
+  sig_implies [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, X86_64.abi, X86_64.argRegs,
     Proof.X25519.x25519X86_64] [satState] using satState
 
 /-- The contract with 8 bytes of stack, for the call's return address. -/
-theorem x25519_implies8 : Proof.X25519.x25519X86_64.Implies (Spec.X25519.x25519Contract X86_64.abi 8) :=
+theorem x25519_implies8 : Proof.X25519.x25519X86_64.Implies (Proof.X25519.x25519Contract X86_64.abi 8) :=
   x25519_implies.stack8_abi (by
-    sig_implies_sat [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, X86_64.abi, X86_64.argRegs,
+    sig_implies_sat [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, X86_64.abi, X86_64.argRegs,
       satState] [satState] using satState)
 
 /-- The output is apart from the call's return address. -/
 theorem x25519_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
-    (hs : (Spec.X25519.x25519Contract X86_64.abi 8).pre s) (hp : Proof.X25519.x25519X86_64.post s b) :
+    (hs : (Proof.X25519.x25519Contract X86_64.abi 8).pre s) (hp : Proof.X25519.x25519X86_64.post s b) :
     Proof.X25519.x25519X86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   obtain ⟨-, hwr, -⟩ := x25519_implies8.pre s hs
   have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdi) (n := 32)
@@ -87,7 +89,7 @@ theorem x25519_ct : ConstantTime isa Proof.X25519.x25519X86_64.pre Proof.X25519.
     (fun s₁ s₂ _ _ hp => x25519_agree s₁ s₂ hp) (by taint_decide)
 
 theorem x25519_verified [DivstepInv] :
-    Verified X86_64.target Impl.X25519.X86_64.x25519 (Spec.X25519.x25519Contract X86_64.abi 8) :=
+    Verified X86_64.target Impl.X25519.X86_64.x25519 (Proof.X25519.x25519Contract X86_64.abi 8) :=
   Verified.of_inline_ct x25519_inlineOk x25519_ok x25519_ct x25519_implies8
     (fun _ h => Sig.clear_of_pre h) x25519_patch
 

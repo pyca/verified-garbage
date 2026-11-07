@@ -34,7 +34,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
@@ -57,7 +56,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Math
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Word
 public import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
@@ -95,7 +93,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
@@ -118,7 +115,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Word
 import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
-import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
@@ -148,6 +144,10 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
 
 /-!
 # BMI2/ADX Montgomery arithmetic for DSA: the variant's code and proofs

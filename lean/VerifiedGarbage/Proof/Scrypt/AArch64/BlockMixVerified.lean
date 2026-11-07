@@ -23,14 +23,9 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Scrypt.Contract
 
 /-!
-# scryptBlockMix on AArch64: correctness of the loop
-
-As on x86-64 (`Proof/Scrypt/X86_64/BlockMixCT.lean`), the calls of
-`vg_salsa20_8` are used through `SalsaSpec`, what its proof says about a call;
-the proof of this file holds for any code meeting it.
+# scryptBlockMix on AArch64: the loop's layout and invariants
 
 The function's body runs inside a frame saving `x30`; the state `s₀` here is
 the one the body starts in, and the frame is handled in
@@ -49,19 +44,6 @@ open VG.Proof.Sha256.Stream (writeBytes writeBytes_frame)
 open VG.Proof.MdStream.AArch64 (Upd wp_mov wp_addImm wp_subImm sub_ofNat)
 open VG.Proof.Scrypt.Memory (toNat_ofNat_lt add_ofNat toNat_add_ofNat contains_off sub_off disj_off
   InRegions.of_mem frame_bytesAt bytesAt_writeBytes_self xorBytes_length bytesAt_length blk_bytesAt)
-
-/-! ## What a call of `vg_salsa20_8` does -/
-
-/-- A call of `c` replaces the 64 bytes at `x0` by their Salsa20/8 Core,
-with the 64 bytes at `x1` as working space. -/
-def SalsaSpec (c : Prog isa) : Prop :=
-  ∀ (s : State) (d sc : Addr), s.gpr .x0 = d → s.gpr .x1 = sc →
-    Region.Disjoint ⟨d, 64⟩ ⟨sc, 64⟩ → InRegions s.wr d 64 → InRegions s.wr sc 64 →
-    ∀ Q : State → Prop, (∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
-        (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r) →
-        Frame [⟨d, 64⟩, ⟨sc, 64⟩] s.mem s'.mem →
-        bytesAt s'.mem d 64 = salsa (bytesAt s.mem d 64) → Q s') →
-    WP isa (.call "vg_salsa20_8" c) s Q
 
 /-! ## The precondition -/
 
@@ -142,11 +124,6 @@ theorem y_sub {o n : Nat} (h : o + n ≤ 128 * rr s₀) : Region.Sub ⟨yP s₀ 
 theorem b_sub {o n : Nat} (h : o + n ≤ 128 * rr s₀) : Region.Sub ⟨bP s₀ + BitVec.ofNat 64 o, n⟩ (bR s₀) :=
   sub_off (by omega_arith) (by have := r_lt hp; omega_arith)
 
-/-- A part of `y` and a part of `b`. -/
-theorem yb_disj {o₁ n₁ o₂ n₂ : Nat} (h₁ : o₁ + n₁ ≤ 128 * rr s₀) (h₂ : o₂ + n₂ ≤ 128 * rr s₀) :
-    Region.Disjoint ⟨yP s₀ + BitVec.ofNat 64 o₁, n₁⟩ ⟨bP s₀ + BitVec.ofNat 64 o₂, n₂⟩ :=
-  (hp.b_y.symm.sub_left (y_sub hp h₁)).sub_right (b_sub hp h₂)
-
 end
 
 theorem in_s (s₀ : State) {o n : Nat} (h : o + n ≤ 128) :
@@ -196,64 +173,14 @@ theorem blk_B (s₀ : State) {i : Nat} (hi : i < 2 * rr s₀) :
 
 /-! ## A call of `vg_salsa20_8` on a block of `y` -/
 
-theorem pres_ne : ∀ r ∈ preserved, r ≠ .x0 ∧ r ≠ .x1 ∧ r ≠ .x9 ∧ r ≠ .x10 := by decide
-
 /-- A 64-byte slot of `y` at offset `o`. -/
 abbrev slot (s₀ : State) (o : Nat) : Region := ⟨yP s₀ + BitVec.ofNat 64 o, 64⟩
-
-theorem salsaAt_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) {dR : Reg}
-    {s : State} {o : Nat} (ho : o + 64 ≤ 128 * rr s₀) (hd : s.gpr dR = yP s₀ + BitVec.ofNat 64 o)
-    (h22 : s.gpr .x22 = sc s₀) (hwr : s.wr = s₀.wr) {Q : State → Prop}
-    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
-      (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r) →
-      Frame [slot s₀ o, ⟨sc s₀, 64⟩] s.mem s'.mem →
-      bytesAt s'.mem (yP s₀ + BitVec.ofNat 64 o) 64 =
-        salsa (bytesAt s.mem (yP s₀ + BitVec.ofNat 64 o) 64) → Q s') :
-    WP isa (salsaAt c dR) s Q := by
-  unfold salsaAt
-  refine WP.seq (wp_mov fun s₁ u₁ => wp_mov fun s₂ u₂ => WP.block_nil ?_)
-  have e₁ : s₂.gpr .x0 = yP s₀ + BitVec.ofNat 64 o := by rw [u₂.other _ (by decide), u₁.gpr, hd]
-  have e₂ : s₂.gpr .x1 = sc s₀ := by rw [u₂.gpr, u₁.other _ (by decide), h22]
-  have e₃ : ∀ r ∈ preserved, s₂.gpr r = s.gpr r := fun r hr => by
-    rw [u₂.other _ (pres_ne r hr).2.1, u₁.other _ (pres_ne r hr).1]
-  have hsub : Region.Sub (slot s₀ o) (yR s₀) := y_sub hp ho
-  have hsub' : Region.Sub ⟨sc s₀, 64⟩ (scR s₀) := Region.sub_prefix (by omega_arith)
-  have hsc : (scR s₀).Contains (sc s₀) 64 := by
-    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
-  refine hS s₂ _ _ e₁ e₂ (hp.y_s.sub_left hsub |>.sub_right hsub')
-    (by rw [u₂.wr, u₁.wr, hwr, hp.wr]; exact InRegions.of_mem (by simp) (in_y hp ho))
-    (by rw [u₂.wr, u₁.wr, hwr, hp.wr]; exact InRegions.of_mem (R := scR s₀) (by simp) hsc)
-    _ fun s' hrd hwr' hsp hcs hf hb => hQ s' (by rw [hrd, u₂.rd, u₁.rd]) (by rw [hwr', u₂.wr, u₁.wr])
-      (by rw [hsp, u₂.sp, u₁.sp]) (fun r hr h30 => by rw [hcs r hr h30, e₃ r hr])
-      (by rw [u₂.mem, u₁.mem] at hf; exact hf) (by rw [hb, u₂.mem, u₁.mem])
 
 /-! ## One pair -/
 
 theorem slot_s {s₀ : State} (hp : Pre s₀) {o : Nat} (ho : o + 64 ≤ 128 * rr s₀) :
     (slot s₀ o).Disjoint ⟨sc s₀, 64⟩ :=
   (hp.y_s.sub_left (y_sub hp ho)).sub_right (Region.sub_prefix (by omega_arith))
-
-/-- Where `X` is. -/
-theorem xP_in {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s : State}
-    (hrd : s.rd = [bR s₀]) (hwr : s.wr = [yR s₀, scR s₀]) :
-    ∀ i < 8, InRegions (s.rd ++ s.wr) (xP s₀ k + BitVec.ofNat 64 (8 * i)) 8 := by
-  intro i hi
-  rw [hrd, hwr]
-  cases k with
-  | zero =>
-    simp only [xP]
-    rw [add_ofNat]
-    exact InRegions.of_mem (by simp) (in_b hp (by have := hp.pos; omega_arith))
-  | succ j =>
-    simp only [xP]
-    rw [add_ofNat]
-    exact InRegions.of_mem (by simp) (in_y hp (by omega_arith))
-
-theorem xP_disj {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) :
-    Region.Disjoint (slot s₀ (64 * k)) ⟨xP s₀ k, 64⟩ := by
-  cases k with
-  | zero => exact yb_disj hp (by omega_arith) (by have := hp.pos; omega_arith)
-  | succ j => exact y_disj hp (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
 
 /-- What a call's frame keeps: our caller's saved registers. -/
 theorem saved_keep {s₀ : State} (hp : Pre s₀) {o : Nat} (ho : o + 64 ≤ 128 * rr s₀) {m m' : Mem}
@@ -286,46 +213,6 @@ theorem frame_big {s₀ : State} (hp : Pre s₀) {o : Nat} (ho : o + 64 ≤ 128 
     rcases hr with rfl | rfl
     · exact ⟨yR s₀, List.mem_cons_self, y_sub hp ho⟩
     · exact ⟨scR s₀, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega_arith)⟩
-
-/-- Half a pair: `T = X xor B[i]` into block `o` of `y`, then Salsa20/8 of it. -/
-theorem half_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) {dR xR sR : Reg}
-    (hd : dR ≠ .x9 ∧ dR ≠ .x10) (hx : xR ≠ .x9 ∧ xR ≠ .x10) (hs : sR ≠ .x9 ∧ sR ≠ .x10)
-    {o : Nat} (ho : o + 64 ≤ 128 * rr s₀)
-    {x : Addr} {ob : Nat} (hob : ob + 64 ≤ 128 * rr s₀) {s : State}
-    (hrd : s.rd = [bR s₀]) (hwr : s.wr = [yR s₀, scR s₀])
-    (gd : s.gpr dR = yP s₀ + BitVec.ofNat 64 o) (gx : s.gpr xR = x)
-    (gs : s.gpr sR = bP s₀ + BitVec.ofNat 64 ob) (h22 : s.gpr .x22 = sc s₀)
-    (hdx : Region.Disjoint (slot s₀ o) ⟨x, 64⟩)
-    (hinx : ∀ i < 8, InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 (8 * i)) 8)
-    {P : Prog isa} {Q : State → Prop}
-    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
-      (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r) →
-      Frame [slot s₀ o, ⟨sc s₀, 64⟩] s.mem s'.mem →
-      bytesAt s'.mem (yP s₀ + BitVec.ofNat 64 o) 64 =
-        salsa (xorBytes (bytesAt s.mem x 64) (bytesAt s.mem (bP s₀ + BitVec.ofNat 64 ob) 64)) →
-      WP isa P s' Q) :
-    WP isa (.block (xor64 dR xR sR)) s fun s' => WP isa (.seq (salsaAt c dR) P) s' Q := by
-  have lt := r_lt hp
-  rw [← List.append_nil (xor64 dR xR sR)]
-  refine xor64_ok hd hx hs hdx (yb_disj hp ho hob) 8 (Nat.le_refl _) [] s _ gd gx gs hinx
-    (fun i hi => by
-      rw [hrd, hwr, add_ofNat]; exact InRegions.of_mem (by simp) (in_b hp (by omega_arith)))
-    (fun i hi => by
-      rw [hwr, add_ofNat]; exact InRegions.of_mem (by simp) (in_y hp (by omega_arith)))
-    fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => WP.block_nil ?_
-  have l1 : (xorBytes (bytesAt s.mem x 64) (bytesAt s.mem (bP s₀ + BitVec.ofNat 64 ob) 64)).length
-      = 64 := by
-    rw [xorBytes_length _ _ (by simp [bytesAt_length]), bytesAt_length]
-  have f₁ : Frame [slot s₀ o] s.mem s₁.mem := by
-    rw [m₁]; exact writeBytes_frame _ _ _ (by rw [l1]; exact Region.contains_self _ _)
-  have hw := bytesAt_writeBytes_self s.mem (yP s₀ + BitVec.ofNat 64 o) _ (by rw [l1]; omega_arith)
-  rw [l1] at hw
-  refine WP.seq (salsaAt_ok hS hp ho (by rw [g₁ _ hd.1 hd.2, gd]) (by rw [g₁ _ (by decide) (by decide), h22])
-    (by rw [wr₁, hwr, hp.wr]) fun s₂ rd₂ wr₂ sp₂ cs₂ f₂ b₂ => ?_)
-  refine hQ s₂ (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) (by rw [sp₂, sp₁])
-    (fun r hr h30 => by rw [cs₂ r hr h30, g₁ r (pres_ne r hr).2.2.1 (pres_ne r hr).2.2.2])
-    ((f₁.mono (by simp)).trans f₂) ?_
-  rw [b₂, m₁, hw]
 
 /-- The state after both halves of pair `k`. -/
 structure Mid (s₀ : State) (k : Nat) (s : State) : Prop where
@@ -379,52 +266,6 @@ theorem mem_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s s�
     · rw [slot_keep hp oO (by omega_arith) (by omega_arith) f₅, slot_keep hp oE (by omega_arith) (by omega_arith) f₂, d₁]
     · rw [slot_keep hp oO (by omega_arith) (by omega_arith) f₅, slot_keep hp oE (by omega_arith) (by omega_arith) f₂, d₂]
 
-theorem others_pres : ∀ r ∈ others, r ∈ preserved ∧ r ≠ .x30 ∧ r ≠ .x19 := by decide
-
-/-- Both halves of pair `k`. -/
-theorem halves_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) {k : Nat}
-    (hk : k < rr s₀) {s : State} (h : Inv s₀ k s) {P : Prog isa} {Q : State → Prop}
-    (hQ : ∀ s', Mid s₀ k s' → WP isa P s' Q) :
-    WP isa (.seq (.block (xor64 .x20 .x24 .x19)) <| .seq (salsaAt c .x20) <|
-      .seq (.block (.addImm .x .x19 .x19 64 :: xor64 .x21 .x20 .x19)) <| .seq (salsaAt c .x21) P)
-      s Q := by
-  have lt := r_lt hp
-  have hrd : s.rd = [bR s₀] := by rw [h.rd, hp.rd]
-  have hwr : s.wr = [yR s₀, scR s₀] := by rw [h.wr, hp.wr]
-  have oE : 64 * k + 64 ≤ 128 * rr s₀ := by omega_arith
-  have oO : 64 * (rr s₀ + k) + 64 ≤ 128 * rr s₀ := by omega_arith
-  refine WP.seq (half_ok hS hp (by decide) (by decide) (by decide) oE (ob := 128 * k) (by omega_arith)
-    hrd hwr h.x20 h.x24 h.x19 h.x22 (xP_disj hp hk) (xP_in hp hk hrd hwr)
-    fun s₂ rd₂ wr₂ sp₂ cs₂ f₂ b₂ => ?_)
-  refine WP.seq (wp_addImm (by decide) fun s₃ u₃ => ?_)
-  have k3 : ∀ r, r ≠ .x19 → r ∈ preserved → r ≠ .x30 → s₃.gpr r = s.gpr r := fun r h1 h2 h3 => by
-    rw [u₃.other _ h1, cs₂ r h2 h3]
-  have e3 : s₃.gpr .x19 = bP s₀ + BitVec.ofNat 64 (64 * (2 * k + 1)) := by
-    rw [u₃.gpr, cs₂ _ (by decide) (by decide), h.x19, add_ofNat]; congr 2; omega_arith
-  have hrd₃ : s₃.rd = [bR s₀] := by rw [u₃.rd, rd₂, hrd]
-  have hwr₃ : s₃.wr = [yR s₀, scR s₀] := by rw [u₃.wr, wr₂, hwr]
-  have e20 : s₃.gpr .x20 = yE s₀ k := by rw [k3 _ (by decide) (by decide) (by decide), h.x20]
-  refine half_ok hS hp (by decide) (by decide) (by decide) oO (ob := 64 * (2 * k + 1)) (by omega_arith)
-    hrd₃ hwr₃ (by rw [k3 _ (by decide) (by decide) (by decide), h.x21]) e20 e3
-    (by rw [k3 _ (by decide) (by decide) (by decide), h.x22])
-    (y_disj hp (by omega_arith) oO oE (by omega_arith) (by omega_arith))
-    (fun i hi => by rw [hrd₃, hwr₃, add_ofNat]; exact InRegions.of_mem (by simp) (in_y hp (by omega_arith)))
-    fun s₅ rd₅ wr₅ sp₅ cs₅ f₅ b₅ => ?_
-  rw [u₃.mem] at f₅ b₅
-  obtain ⟨F, S, D⟩ := mem_ok hp hk h f₂ b₂ f₅ b₅
-  have k5 : ∀ r, r ≠ .x19 → r ∈ preserved → r ≠ .x30 → s₅.gpr r = s.gpr r := fun r h1 h2 h3 => by
-    rw [cs₅ r h2 h3, k3 r h1 h2 h3]
-  exact hQ s₅ ⟨by rw [rd₅, hrd₃, hp.rd], by rw [wr₅, hwr₃, hp.wr],
-    by rw [sp₅, u₃.sp, sp₂, h.sp],
-    by rw [cs₅ _ (by decide) (by decide), e3],
-    by rw [k5 _ (by decide) (by decide) (by decide), h.x20],
-    by rw [k5 _ (by decide) (by decide) (by decide), h.x21],
-    by rw [k5 _ (by decide) (by decide) (by decide), h.x22],
-    by rw [k5 _ (by decide) (by decide) (by decide), h.x23],
-    fun r hr => by
-      rw [k5 r (others_pres r hr).2.2 (others_pres r hr).1 (others_pres r hr).2.1, h.keep r hr],
-    F, S, D⟩
-
 /-- The pointers move on. -/
 theorem regs_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s : State}
     (h : Mid s₀ k s) :
@@ -469,10 +310,6 @@ theorem regs_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s :
     show bytesAt s.mem (yO s₀ k) 64 = _
     rw [(h.done k (by omega_arith)).2]
     rfl
-
-theorem body_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) {k : Nat}
-    (hk : k < rr s₀) {s : State} (h : Inv s₀ k s) : WP isa (bmBody c) s (Inv s₀ (k + 1)) :=
-  halves_ok hS hp hk h fun _ hm => regs_ok hp hk hm
 
 end VG.Proof.Scrypt.AArch64.BlockMix
 
@@ -595,24 +432,6 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (g : s₁.gpr = s
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.b_s.sub_left (b_sub hp (by omega_arith))
 
-/-! ## The loop -/
-
-theorem loop_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) {s : State}
-    (h : Inv s₀ 0 s) : WP isa (.loop (bmBody c) (.nonzero .x .x23)) s (Inv s₀ (rr s₀)) := by
-  have lt := r_lt hp
-  refine WP.loop (M := isa) (fun n s => ∃ k, n = rr s₀ - k ∧ k < rr s₀ ∧ Inv s₀ k s) ?_ (rr s₀) s
-    ⟨0, rfl, hp.pos, h⟩
-  rintro n s ⟨k, rfl, hk, hi⟩
-  refine WP.mono (body_ok hS hp hk hi) fun s' hi' => ?_
-  have hz : isa.eval (.nonzero .x .x23) s' = some (decide (rr s₀ - (k + 1) ≠ 0)) := by
-    show VG.AArch64.eval (.nonzero .x .x23) s' = _
-    rw [eval_nonzero, hi'.x23, bne, ofNat_beq_zero (by omega_arith)]
-    simp
-  by_cases hl : rr s₀ - (k + 1) = 0
-  · refine .inl ⟨by rw [hz]; simp [hl], ?_⟩
-    rwa [show k + 1 = rr s₀ by omega_arith] at hi'
-  · exact .inr ⟨by rw [hz]; simp [hl], rr s₀ - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, hi'⟩
-
 /-! ## The epilogue -/
 
 theorem preserved_cases : ∀ r ∈ preserved, r ≠ .x30 → r ∈ bmSaved.map Prod.fst ∨ r ∈ others := by
@@ -644,19 +463,6 @@ theorem post_of {s₀ : State} {m : Mem}
     rw [add_ofNat, ← Nat.mul_add]
     exact (h i hi).2
 
-theorem correctMain {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) :
-    WP isa (blockMixMain c) s₀ fun s' => (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₀.gpr r) ∧
-      s'.sp = s₀.sp ∧ bytesAt s'.mem (yP s₀) (128 * rr s₀) = blockMix (rr s₀) (B s₀) := by
-  unfold blockMixMain
-  refine WP.seq ?_
-  rw [prologue_eq]
-  refine save_ok hp fun s₁ g hrd hwr hsp hm => ?_
-  refine WP.mono (setup_ok hp g hrd hwr hsp hm) fun s₂ h₂ => ?_
-  refine WP.seq (WP.mono (loop_ok hS hp h₂) fun s₃ h₃ => ?_)
-  refine WP.mono (restore_ok hp h₃) fun s' ⟨hm', hsp', hg'⟩ => ⟨hg', hsp'.trans h₃.sp, ?_⟩
-  rw [hm']
-  exact post_of fun i hi => h₃.done i hi
-
 /-! ## The whole function -/
 
 /-- The frame's 16 bytes are free. -/
@@ -675,69 +481,18 @@ theorem pre_of {s₀ : State} (h : Proof.Scrypt.blockMixAArch64.pre s₀) : Pre 
 abbrev inner (s₀ : State) : State :=
   { s₀ with sp := s₀.sp - 16, mem := s₀.mem.write (s₀.sp - 16) 8 (s₀.gpr .x30) }
 
-theorem correct {c : Prog isa} (hS : SalsaSpec c)
-    (hd : 16 * (blockMixMain c).aarch64Depth + 16 < 2 ^ 64) {s₀ : State} (hp : Pre s₀) (hs : Stack s₀) :
-    WP isa (blockMixWith c) s₀ fun s' =>
-      GprAbi s₀ s' ∧ Proof.Scrypt.blockMixAArch64.post s₀ s' := by
-  have hpi : Pre (inner s₀) := ⟨hp.rd, hp.wr, hp.y_s, hp.b_y, hp.b_s, hp.b_nw, hp.y_nw, hp.s_nw,
-    hp.x3, hp.pos⟩
-  refine WP.frameReg hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hS hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_) hd
-  · rw [hp.wr] at hR
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
-    rcases hR with rfl | rfl
-    · exact hs.y
-    · exact hs.s
-  · refine ⟨⟨fun r hr => ?_, rfl⟩, ?_⟩
-    · by_cases h30 : r = .x30
-      · subst h30; simp [State.write]
-      · simp only [State.write, h30, ite_false]
-        exact hk r hr h30
-    · have e : B (inner s₀) = bytesAt s₀.mem (bP s₀) (128 * rr s₀) :=
-        bytesAt_congr fun i hi => by
-          have hi' : i < 128 * rr s₀ := hi
-          exact write_frame_bytes (R := bR s₀) hs.b (by have := r_lt hp; simp only; omega_arith)
-            (by simp only; omega_arith)
-      show bytesAt s'.mem (yP s₀) (128 * rr s₀) = blockMix (rr s₀) (bytesAt s₀.mem (bP s₀) (128 * rr s₀))
-      rw [← e]
-      exact hpost
-
 end VG.Proof.Scrypt.AArch64.BlockMix
 
 /-!
-# scryptBlockMix on AArch64: verified
+# scryptBlockMix on AArch64: the public arguments
 
-`SalsaSpec` of the verified Salsa20/8 Core, from its `Verified` proof by
-`WP.call`; then the `Verified` proof of `vg_scrypt_blockmix`. Only the
-pointers and `r` are public, and the taint analysis checks that nothing else
-reaches an address or a branch.
+Only the pointers and `r` are public: the registers that hold them agree
+in two runs with the same public data (`agree₀`).
 -/
 
 namespace VG.Proof.Scrypt.AArch64.BlockMix
 
 open VG VG.AArch64
-
-theorem salsa_noFrames : Impl.Scrypt.AArch64.salsa.noFrames = true := by decide +kernel
-
-theorem salsaSpec : SalsaSpec Impl.Scrypt.AArch64.salsa := by
-  intro s d sc hd hsc hds hind hins Q hQ
-  have c0 : s.callEntry.gpr .x0 = d := (State.callEntry_gpr _ (by decide)).trans hd
-  have c1 : s.callEntry.gpr .x1 = sc := (State.callEntry_gpr _ (by decide)).trans hsc
-  have hw : Covers [⟨d, 64⟩, ⟨sc, 64⟩] s.wr := Covers.pair (Covers.one hind) (Covers.one hins)
-  refine WP.call (k := Proof.Scrypt.salsaAArch64) Proof.Scrypt.AArch64.salsa_correct
-    (rd := []) (wr := [⟨d, 64⟩, ⟨sc, 64⟩]) ?_ ?_ hw ?_ salsa_noFrames
-  · simp only [Proof.Scrypt.salsaAArch64, State.withRegions_gpr, State.withRegions_rd,
-      State.withRegions_wr, c0, c1]
-    exact ⟨trivial, trivial, hds⟩
-  · intro a n h
-    obtain ⟨R, hR, hc⟩ := hw a n (by simpa using h)
-    exact ⟨R, List.mem_append_right _ hR, hc⟩
-  · intro s' hrd hwr hsp hf hcs _ hpost
-    simp only [Proof.Scrypt.salsaAArch64, State.withRegions_gpr, State.withRegions_mem,
-      State.callEntry_mem, c0] at hpost
-    exact hQ s' hrd hwr hsp hcs hf hpost
-
-theorem main_fdepth : 16 * (Impl.Scrypt.AArch64.blockMixMain Impl.Scrypt.AArch64.salsa).aarch64Depth + 16 < 2 ^ 64 := by
-  decide +kernel
 
 theorem agree₀ {s₁ s₂ : State} (hpub : Proof.Scrypt.blockMixAArch64.pub s₁ s₂) :
     VG.AArch64.Taint.Agree (VG.AArch64.Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) s₁ s₂ := by
@@ -745,45 +500,5 @@ theorem agree₀ {s₁ s₂ : State} (hpub : Proof.Scrypt.blockMixAArch64.pub s�
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-/-- A state satisfying the precondition (with no data). -/
-def bmSat : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 1 | .x2 => 0x2000 | .x3 => 1 | .x4 => 0x3000 | _ => 0
-  sp := 0x5000
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x3000, 128⟩]
-
-theorem blockMix_correct (s : State) (hs : Proof.Scrypt.blockMixAArch64.pre s) :
-    ∃ t s', Exec isa Impl.Scrypt.AArch64.referenceBlockMix s t s' ∧ abiPreserved s s' ∧
-      Proof.Scrypt.blockMixAArch64.post s s' := by
-  obtain ⟨t, s', he, h⟩ :=
-    BlockMix.correct salsaSpec main_fdepth (pre_of hs).1 (pre_of hs).2
-  exact ⟨t, s', he, ⟨h.1.1, h.1.2, Exec.preservedV he (by lit_decide)⟩, h.2⟩
-
-theorem blockMix_ct : ConstantTime isa Proof.Scrypt.blockMixAArch64.pre
-    Proof.Scrypt.blockMixAArch64.pub Impl.Scrypt.AArch64.referenceBlockMix := by
-  exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
-
-theorem blockMix_verified :
-    Verified AArch64.target Impl.Scrypt.AArch64.referenceBlockMix (Proof.Scrypt.blockMixContract AArch64.abi
-      16) :=
-  Verified.of_correct blockMix_correct blockMix_ct
-    { pre := by
-        sig_implies_pre [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixAArch64, AArch64.abi, AArch64.argRegs]
-      post := by
-        sig_implies_post [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixAArch64, AArch64.abi, AArch64.argRegs]
-      pub := by
-        sig_implies_pub [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixAArch64, AArch64.abi, AArch64.argRegs]
-      sat := by
-        sig_implies_sat [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixAArch64, AArch64.abi, AArch64.argRegs,
-          Proof.Scrypt.AArch64.BlockMix.bmSat]
-          [Proof.Scrypt.AArch64.BlockMix.bmSat] using Proof.Scrypt.AArch64.BlockMix.bmSat }
 
 end VG.Proof.Scrypt.AArch64.BlockMix

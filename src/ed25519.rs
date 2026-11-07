@@ -111,14 +111,13 @@ macro_rules! assert_pair {
     };
 }
 
-// Key derivation, signing and verification (with the key derivation of the
-// field's implementation, which does not hash) for each pair.
+// Key derivation, signing and verification for each pair.
 #[cfg(target_arch = "x86_64")]
 assert_pair!(
     Scalar,
     Adx,
     [
-        VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES,
+        VG_ED25519_KEY_PAIR_ADX_FEATURES,
         VG_ED25519_SIGN_EXPANDED_ADX_FEATURES,
         VG_ED25519_VERIFY_ADX_FEATURES
     ]
@@ -128,7 +127,7 @@ assert_pair!(
     Scalar,
     Ifma,
     [
-        VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
+        VG_ED25519_KEY_PAIR_IFMA_FEATURES,
         VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES,
         VG_ED25519_VERIFY_IFMA_FEATURES
     ]
@@ -138,6 +137,7 @@ assert_pair!(
     ShaNi,
     Baseline,
     [
+        VG_ED25519_KEY_PAIR_SHANI_FEATURES,
         VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES,
         VG_ED25519_VERIFY_SHANI_FEATURES
     ]
@@ -147,7 +147,7 @@ assert_pair!(
     ShaNi,
     Adx,
     [
-        VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES,
+        VG_ED25519_KEY_PAIR_SHANI_ADX_FEATURES,
         VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES,
         VG_ED25519_VERIFY_SHANI_ADX_FEATURES
     ]
@@ -157,7 +157,7 @@ assert_pair!(
     ShaNi,
     Ifma,
     [
-        VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
+        VG_ED25519_KEY_PAIR_SHANI_IFMA_FEATURES,
         VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES,
         VG_ED25519_VERIFY_SHANI_IFMA_FEATURES
     ]
@@ -167,6 +167,7 @@ assert_pair!(
     Avx2,
     Baseline,
     [
+        VG_ED25519_KEY_PAIR_AVX2_FEATURES,
         VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES,
         VG_ED25519_VERIFY_AVX2_FEATURES
     ]
@@ -176,7 +177,7 @@ assert_pair!(
     Avx2,
     Adx,
     [
-        VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES,
+        VG_ED25519_KEY_PAIR_AVX2_ADX_FEATURES,
         VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES,
         VG_ED25519_VERIFY_AVX2_ADX_FEATURES
     ]
@@ -186,17 +187,18 @@ assert_pair!(
     Avx2,
     Ifma,
     [
-        VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES,
+        VG_ED25519_KEY_PAIR_AVX2_IFMA_FEATURES,
         VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES,
         VG_ED25519_VERIFY_AVX2_IFMA_FEATURES
     ]
 );
 
-// Signing and verification with SHA-512's `_sha3` need no CPU feature that
-// its `select` does not require to choose it.
+// Key derivation, signing and verification with SHA-512's `_sha3` need no
+// CPU feature that its `select` does not require to choose it.
 #[cfg(target_arch = "aarch64")]
 const _: () = assert!(
     Sha512Backend::REQUIRES[Sha512Backend::Sha3 as usize].contains(Features::all(&[
+        crate::arch::ed25519::VG_ED25519_KEY_PAIR_SHA3_FEATURES,
         crate::arch::ed25519::VG_ED25519_SIGN_EXPANDED_SHA3_FEATURES,
         crate::arch::ed25519::VG_ED25519_VERIFY_SHA3_FEATURES,
     ])),

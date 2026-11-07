@@ -127,6 +127,19 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_decrypt, vg_aes_gcm_stream_encrypt, vg_aes_gcm_stream_finish,
     vg_aes_gcm_stream_init, vg_aes_gcm_stream_verify,
 };
+#[cfg(target_arch = "x86_64")]
+use crate::arch::gcm::{
+    vg_aes_gcm_open_to, vg_aes_gcm_open_to_aesni, vg_aes_gcm_open_to_aesni_pclmul,
+    vg_aes_gcm_open_to_aesni_pclmul_avx, vg_aes_gcm_open_to_aesni_vpclmul,
+    vg_aes_gcm_open_to_pclmul, vg_aes_gcm_open_to_vaes, vg_aes_gcm_open_to_vaes_pclmul,
+    vg_aes_gcm_open_to_vaes_vpclmul, vg_aes_gcm_open_to_vaes_vpclmul_avx512,
+    vg_aes_gcm_open_to_vpclmul,
+};
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+use crate::arch::gcm::{
+    vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx, vg_aes_gcm_open_to_prepared16_vaes_vpclmul,
+};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
     vg_aes_gcm_open_with_powers_aes, vg_aes_gcm_seal_with_powers_aes, vg_aes_gcm_store_powers_aes,
@@ -352,6 +365,10 @@ type SealFn = asm_fn!(
 /// `vg_aes_gcm_open`, on the key's context.
 type OpenFn = asm_fn!(*const KeyCtx, usize, *const u8, usize, *const u8, usize, *mut u8, usize, *const u8,
     usize => u32);
+/// On x86-64, `vg_aes_gcm_open_to`, on the key's context.
+#[cfg(target_arch = "x86_64")]
+type OpenToFn = asm_fn!(*const KeyCtx, usize, *const u8, usize, *const u8, usize, *const u8, usize, *mut u8,
+    usize, *const u8, usize => u32);
 /// `vg_aes_gcm_seal_gather`, on the key's context.
 type SealGatherFn = asm_fn!(
     *const KeyCtx,
@@ -428,6 +445,10 @@ struct Fns {
     init: InitFn,
     seal: SealFn,
     open: OpenFn,
+    /// On x86-64, `vg_aes_gcm_open_to`; elsewhere `AesGcm::decrypt` copies
+    /// the ciphertext and calls `open`.
+    #[cfg(target_arch = "x86_64")]
+    open_to: OpenToFn,
     seal_gather: SealGatherFn,
     stream_init: StreamInitFn,
     stream_aad: StreamAadFn,
@@ -498,6 +519,16 @@ impl Backend {
                 aarch64: [vg_aes_gcm_open_aes, vg_aes_gcm_open_aes_sha3]),
                 usize, *const u8, usize, *const u8, usize, *mut u8, usize, *const u8, usize => u32;
                 OpenFn),
+            #[cfg(target_arch = "x86_64")]
+            open_to: on_key_ctx!(instance!(self, vg_aes_gcm_open_to,
+                x86_64: [vg_aes_gcm_open_to_aesni, vg_aes_gcm_open_to_pclmul, vg_aes_gcm_open_to_aesni_pclmul],
+                vaes: [vg_aes_gcm_open_to_vaes, vg_aes_gcm_open_to_vpclmul, vg_aes_gcm_open_to_vaes_pclmul,
+                    vg_aes_gcm_open_to_aesni_vpclmul, vg_aes_gcm_open_to_vaes_vpclmul,
+                    vg_aes_gcm_open_to_vaes_vpclmul_avx512],
+                avx: [vg_aes_gcm_open_to_aesni_pclmul_avx],
+                aarch64: [vg_aes_gcm_open_to_aes, vg_aes_gcm_open_to_aes_sha3]),
+                usize, *const u8, usize, *const u8, usize, *const u8, usize, *mut u8, usize, *const u8,
+                usize => u32; OpenToFn),
             seal_gather: on_key_ctx!(instance!(self, vg_aes_gcm_seal_gather,
                 x86_64: [vg_aes_gcm_seal_gather_aesni, vg_aes_gcm_seal_gather_pclmul,
                     vg_aes_gcm_seal_gather_aesni_pclmul],
@@ -561,6 +592,7 @@ impl Fns {
         Fns {
             seal: p.seal,
             open: p.open,
+            open_to: p.open_to,
             seal_gather: p.seal_gather,
             stream_encrypt: p.stream_encrypt,
             stream_decrypt: p.stream_decrypt,
@@ -687,6 +719,8 @@ struct Prepared {
     features: Features,
     seal: SealPrepared,
     open: OpenPrepared,
+    #[cfg(target_arch = "x86_64")]
+    open_to: OpenToPrepared,
     /// None on AArch64, where `encrypt` copies its pieces and calls `seal`.
     #[cfg(target_arch = "x86_64")]
     seal_gather: SealGatherPrepared,
@@ -735,6 +769,20 @@ mod prepared_types {
         *const u8,
         usize,
     ) -> u32;
+    pub(super) type OpenToPrepared = unsafe extern "sysv64" fn(
+        *const Ctx,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *mut u8,
+        usize,
+        *const u8,
+        usize,
+    ) -> u32;
     pub(super) type SealGatherPrepared = unsafe extern "sysv64" fn(
         *const Ctx,
         usize,
@@ -750,7 +798,7 @@ mod prepared_types {
     );
 }
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-use prepared_types::{OpenPrepared, SealGatherPrepared, SealPrepared};
+use prepared_types::{OpenPrepared, OpenToPrepared, SealGatherPrepared, SealPrepared};
 /// The powers of the hash subkey: on x86-64, in a key context of 1024 bytes
 /// (`VG.Spec.Gcm.PreparedPowersRepr`), which the `_prepared` instances read
 /// alone, and which begins with the key context of `vg_aes_gcm_init`; on
@@ -800,6 +848,7 @@ static PREPARED_VAES_VPCLMUL_AVX512: Prepared = Prepared {
     features: VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES,
     seal: vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
     open: vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
+    open_to: vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512,
     seal_gather: vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
@@ -812,6 +861,7 @@ static PREPARED_VAES_VPCLMUL: Prepared = Prepared {
     features: VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES,
     seal: vg_aes_gcm_seal_prepared16_vaes_vpclmul,
     open: vg_aes_gcm_open_prepared16_vaes_vpclmul,
+    open_to: vg_aes_gcm_open_to_prepared16_vaes_vpclmul,
     seal_gather: vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul,
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul,
@@ -824,6 +874,7 @@ static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
     features: VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES,
     seal: vg_aes_gcm_seal_prepared16_aesni_pclmul_avx,
     open: vg_aes_gcm_open_prepared16_aesni_pclmul_avx,
+    open_to: vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx,
     seal_gather: vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx,
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx,
@@ -1238,6 +1289,104 @@ impl AesGcm {
         } else {
             Err(Error::TagMismatch)
         }
+    }
+
+    /// GCM-AD (§7.2), out of place: if the 16-byte `tag` authenticates
+    /// `ciphertext` and `aad` under `nonce`, writes the plaintext to `out`,
+    /// which must be exactly as long as `ciphertext`. Otherwise returns an
+    /// error, having written zeros to `out` if the tag was wrong (and left it
+    /// as it was if a length was).
+    ///
+    /// A protocol that truncates the tag uses
+    /// [`decrypt_truncated`](Self::decrypt_truncated).
+    pub fn decrypt(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        ciphertext: &[u8],
+        tag: &[u8; 16],
+        out: &mut [u8],
+    ) -> Result<(), Error> {
+        self.decrypt_truncated(nonce, aad, ciphertext, tag, out)
+    }
+
+    /// [`decrypt`](Self::decrypt) with a tag truncated to `N` bytes, as
+    /// [`decrypt_in_place_truncated`](Self::decrypt_in_place_truncated)
+    /// takes it.
+    pub fn decrypt_truncated<const N: usize>(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        ciphertext: &[u8],
+        tag: &[u8; N],
+        out: &mut [u8],
+    ) -> Result<(), Error> {
+        assert_tag_length!(N);
+        if out.len() != ciphertext.len() {
+            return Err(Error::InvalidOutputLength);
+        }
+        check_nonce(nonce)?;
+        add_len(0, out.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        self.open_to(nonce, aad, ciphertext, out, tag)
+    }
+
+    /// On x86-64, `vg_aes_gcm_open_to`, which writes zeros to `out` if the
+    /// tag is wrong.
+    #[cfg(target_arch = "x86_64")]
+    fn open_to(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        src: &[u8],
+        out: &mut [u8],
+        tag: &[u8],
+    ) -> Result<(), Error> {
+        let open_to = self.fns.open_to;
+        // SAFETY: as in `encrypt_in_place`, with `src` and the received tag
+        // `tag` valid for reads, and `out` for reads and writes, of their
+        // lengths, `out` as long as `src`. `out` is a unique borrow, so it
+        // overlaps neither `src` nor any other argument.
+        let ok = unsafe {
+            open_to(
+                self.ctx.as_ptr(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src.as_ptr(),
+                src.len(),
+                out.as_mut_ptr(),
+                out.len(),
+                tag.as_ptr(),
+                tag.len(),
+            )
+        };
+        if ok == 1 {
+            Ok(())
+        } else {
+            Err(Error::TagMismatch)
+        }
+    }
+
+    /// Elsewhere, the ciphertext copied to `out` and decrypted there, and
+    /// `out` zeroed if the tag is wrong, as `vg_aes_gcm_open_to` does.
+    #[cfg(not(target_arch = "x86_64"))]
+    fn open_to(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        src: &[u8],
+        out: &mut [u8],
+        tag: &[u8],
+    ) -> Result<(), Error> {
+        out.copy_from_slice(src);
+        let r = self.open(nonce, aad, out, tag);
+        if r.is_err() {
+            out.fill(0);
+        }
+        r
     }
 
     /// The most pieces [`encrypt`](Self::encrypt) takes a plaintext in.
@@ -2371,6 +2520,16 @@ mod tests {
                     k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &tag)
                         .unwrap();
                     assert_eq!(&ct[..len], &msg[..len], "{b:?}");
+                    // Out of place, and a wrong tag zeroes the output.
+                    let mut out = [0x55u8; 3100];
+                    k.decrypt(&nonce, &aad, &want[..len], &tag, &mut out[..len])
+                        .unwrap();
+                    assert_eq!(&out[..len], &msg[..len], "{b:?}");
+                    let mut bad = tag;
+                    bad[0] ^= 1;
+                    let r = k.decrypt(&nonce, &aad, &want[..len], &bad, &mut out[..len]);
+                    assert_eq!(r, Err(Error::TagMismatch), "{b:?}");
+                    assert!(out[..len].iter().all(|&x| x == 0), "{b:?}");
                     let (a, c) = msg[..len].split_at(len / 3);
                     let (p, t) = msg[..len].split_at(len - 1);
                     // Slices after one ending inside a block: shorter than
@@ -2512,6 +2671,7 @@ mod tests {
         let with = b.plain_fns().with(p);
         assert!(fn_addr_eq(with.seal, p.seal));
         assert!(fn_addr_eq(with.open, p.open));
+        assert!(fn_addr_eq(with.open_to, p.open_to));
         assert!(fn_addr_eq(with.seal_gather, p.seal_gather));
         assert!(fn_addr_eq(with.stream_encrypt, p.stream_encrypt));
         assert!(fn_addr_eq(with.stream_decrypt, p.stream_decrypt));
@@ -2566,6 +2726,12 @@ mod tests {
                                     .is_err()
                             );
                             assert_eq!(actual, want);
+                            // Out of place, and a wrong tag zeroes the output.
+                            let mut out = alloc::vec![0x55; len];
+                            warm.decrypt(nonce, aad, &want, &tag, &mut out).unwrap();
+                            assert_eq!(out, plain);
+                            assert!(warm.decrypt(nonce, aad, &want, &bad_tag, &mut out).is_err());
+                            assert!(out.iter().all(|&b| b == 0));
                             // The pieces below split off up to 17 bytes.
                             if len < 17 {
                                 continue;
@@ -2991,6 +3157,16 @@ mod tests {
         let mut out = [0u8; 4];
         let tag = k.encrypt(&nonce, &[], &[&msg[..1], &msg[1..3]], &mut out);
         assert_eq!(tag, Err(Error::InvalidOutputLength));
+        let t = [0u8; 16];
+        assert_eq!(
+            k.decrypt(&nonce, &[], &msg[..3], &t, &mut out),
+            Err(Error::InvalidOutputLength)
+        );
+        assert_eq!(
+            k.decrypt(&[], &[], &msg[..4], &t, &mut out),
+            Err(Error::InvalidNonceLength)
+        );
+        assert_eq!(out, [0; 4]);
         assert_eq!(
             k.encrypt(&[], &[], &[&msg[..4]], &mut out),
             Err(Error::InvalidNonceLength)

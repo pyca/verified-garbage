@@ -35,9 +35,6 @@ theorem Near.succ {x t k : Nat} (h : Near x t (k + 1)) : Near (x + 8) (t + 8) k 
 theorem Near.rest {x t k : Nat} (h : Near x t (k + 1)) : x + 8 + 8 * k ≤ t ∨ t + 8 ≤ x + 8 := by
   unfold Near at h; omega_arith
 
-theorem Near.head {x t k : Nat} (h : Near x t (k + 1)) (hx : x ≠ t) : x + 8 ≤ t ∨ t + 8 ≤ x := by
-  unfold Near at h; omega_arith
-
 theorem fresh_r8 : Fresh [.r8] := ⟨by decide, by decide⟩
 
 /-! ## Chains in memory -/

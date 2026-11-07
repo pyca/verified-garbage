@@ -34,9 +34,6 @@ structure Keeps (B E : BitVec 32) (s t : State) : Prop where
   wr : t.wr = s.wr
   frame : Frame [⟨B.setWidth 64, 832⟩, below E 60] s.mem t.mem
 
-theorem Keeps.refl {B E : BitVec 32} (s : State) : Keeps B E s s :=
-  ⟨rfl, rfl, rfl, rfl, rfl, Frame.refl _ _⟩
-
 theorem Keeps.trans {B E : BitVec 32} {s t u : State} (h : Keeps B E s t) (h' : Keeps B E t u) :
     Keeps B E s u :=
   ⟨h'.ebx.trans h.ebx, h'.ebp.trans h.ebp, h'.esp.trans h.esp, h'.rd.trans h.rd, h'.wr.trans h.wr,

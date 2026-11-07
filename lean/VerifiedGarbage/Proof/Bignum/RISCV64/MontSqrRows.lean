@@ -580,9 +580,6 @@ theorem shr63_le (x : BitVec 64) : (x >>> 63).toNat ≤ 1 := by
   have := x.isLt
   omega_arith
 
-theorem carry_le (x y : BitVec 64) : (if x + y < y then (1 : BitVec 64) else 0).toNat ≤ 1 := by
-  split <;> decide
-
 /-- A step of `diag`: the pair `x₀ + 2⁶⁴ x₁` doubled, the bit `sh` shifted in
 and the carry `c` and `a²` added, as two words, the bit shifted out and the
 carry out. -/

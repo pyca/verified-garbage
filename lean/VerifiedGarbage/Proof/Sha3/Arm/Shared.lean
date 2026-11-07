@@ -31,17 +31,10 @@ theorem setWidth_append32 (a b : BitVec 32) : (a ++ b).setWidth 32 = b := by
     ← Nat.two_pow_add_eq_or_of_lt b.isLt]
   omega
 
-theorem permute :
-    Verified Arm.target Impl.Sha3.Arm.permute (Proof.Sha3.permuteContract Arm.abi) :=
-  Proof.Sha3.Arm.permute_verified.of_implies (by
-    contract_implies [Proof.Sha3.permuteContract, Proof.Sha3.permuteSig, Proof.Sha3.permuteArm,
-      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-      [Proof.Sha3.Arm.satState] using Proof.Sha3.Arm.satState)
-
 theorem absorb :
-    Verified Arm.target Impl.Sha3.Arm.Stream.absorb (Spec.Sha3.absorbScratchContract Arm.abi) :=
+    Verified Arm.target Impl.Sha3.Arm.Stream.absorb (Proof.Sha3.absorbScratchContract Arm.abi) :=
   Proof.Sha3.Arm.Stream.Absorb.absorb_verified.of_implies (by
-    contract_implies [Spec.Sha3.absorbScratchContract, Spec.Sha3.absorbScratchSig, Spec.Sha3.absorbPre, Spec.Sha3.absorbPost, Proof.Sha3.absorbArm,
+    contract_implies [Proof.Sha3.absorbScratchContract, Proof.Sha3.absorbScratchSig, Proof.Sha3.absorbPre, Proof.Sha3.absorbPost, Proof.Sha3.absorbArm,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, setWidth_append32]
       [Proof.Sha3.Arm.Stream.Absorb.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
       using Proof.Sha3.Arm.Stream.Absorb.sat)
@@ -49,7 +42,7 @@ theorem absorb :
 theorem pad :
     Verified Arm.target Impl.Sha3.Arm.Stream.pad (Proof.Sha3.padScratchContract Arm.abi) :=
   Proof.Sha3.Arm.Stream.Pad.pad_verified.of_implies (by
-    contract_implies [Proof.Sha3.padScratchContract, Proof.Sha3.padScratchSig, Spec.Sha3.padPre, Spec.Sha3.padPost, Proof.Sha3.padArm,
+    contract_implies [Proof.Sha3.padScratchContract, Proof.Sha3.padScratchSig, Proof.Sha3.padPre, Proof.Sha3.padPost, Proof.Sha3.padArm,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Sha3.Arm.Stream.Pad.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
       using Proof.Sha3.Arm.Stream.Pad.sat)
@@ -57,7 +50,7 @@ theorem pad :
 theorem squeeze :
     Verified Arm.target Impl.Sha3.Arm.Stream.squeeze (Proof.Sha3.squeezeScratchContract Arm.abi) :=
   Proof.Sha3.Arm.Stream.Squeeze.squeeze_verified.of_implies (by
-    contract_implies [Proof.Sha3.squeezeScratchContract, Proof.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre, Spec.Sha3.squeezePost, Proof.Sha3.squeezeArm,
+    contract_implies [Proof.Sha3.squeezeScratchContract, Proof.Sha3.squeezeScratchSig, Proof.Sha3.squeezePre, Proof.Sha3.squeezePost, Proof.Sha3.squeezeArm,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, setWidth_append32]
       [Proof.Sha3.Arm.Stream.Squeeze.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
       using Proof.Sha3.Arm.Stream.Squeeze.sat)

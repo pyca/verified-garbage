@@ -71,8 +71,6 @@ theorem var_ne_T0 (t k : Nat) : var t k ≠ T0 := (work_ne' _ (var_mem t k)).1
 
 theorem var_ne_T1 (t k : Nat) : var t k ≠ T1 := (work_ne' _ (var_mem t k)).2.1
 
-theorem var_ne_x1 (t k : Nat) : var t k ≠ .x1 := (work_ne' _ (var_mem t k)).2.2.1
-
 theorem var_ne_pub (t k : Nat) {p : Reg} (hp : p ∈ pubRegs) : var t k ≠ p :=
   (work_ne' _ (var_mem t k)).2.2.2 p hp
 
@@ -356,7 +354,6 @@ def finalizeAArch64 : Contract AArch64.isa where
 
 end VG.Proof.Md5
 
-
 namespace VG.Proof.Md5.AArch64
 
 open VG VG.AArch64 VG.Impl.Md5.AArch64
@@ -445,8 +442,6 @@ structure Common (s₀ : State) (i : Nat) (s : State) : Prop where
 structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends Common s₀ i s where
   x1 : s.gpr .x1 = blkAddr s₀ i
   x2 : s.gpr .x2 = BitVec.ofNat 64 (nb s₀ - i)
-
-theorem preserved_sub : ∀ r ∈ preserved, r ∈ pubRegs := by decide
 
 /-- The registers `load` does not write. -/
 def loadKept : List Reg := [.x0, .x1, .x2, .x3] ++ preserved

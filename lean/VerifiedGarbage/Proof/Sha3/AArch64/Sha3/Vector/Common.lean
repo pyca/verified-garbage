@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 
-
 @[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Sha3.Vector
@@ -37,28 +36,6 @@ theorem low_ext8 (a : BitVec 128) :
 
 theorem exec_vop (s : VG.AArch64.State) (op : VOp) :
     exec (.vop op) s = (VOp.eval s op).map (fun p => s.setV p.1 p.2) := rfl
-
-theorem chi_low (a b c : BitVec 128) :
-    vdword (a ^^^ (c &&& ~~~b)) 0 =
-      (vdword b 0 ^^^ 0xffffffffffffffff) &&& vdword c 0 ^^^ vdword a 0 := by
-  rw [low_xor, low_and, low_not]
-  change _ = (vdword b 0 ^^^ BitVec.allOnes 64) &&& vdword c 0 ^^^ vdword a 0
-  rw [BitVec.xor_allOnes, BitVec.and_comm, BitVec.xor_comm]
-
-theorem chi_xor_low (a b c r : BitVec 128) :
-    vdword ((a ^^^ (c &&& ~~~b)) ^^^ r) 0 =
-      ((vdword b 0 ^^^ 0xffffffffffffffff) &&& vdword c 0 ^^^ vdword a 0) ^^^ vdword r 0 := by
-  rw [low_xor, chi_low]
-
-theorem rotl_mod (a : BitVec 64) (k : Nat) (hk : k < 64) :
-    a.rotateRight ((64 - k) % 64) = Proof.Sha3.rotl a k := by
-  by_cases h : k = 0
-  · subst h
-    simp only [Proof.Sha3.rotl, Nat.sub_zero, Nat.mod_self, ite_true]
-    apply BitVec.eq_of_getLsbD_eq
-    intro i hi
-    simp [hi]
-  · simp only [Proof.Sha3.rotl, h, ite_false, Nat.mod_eq_of_lt (by omega : 64 - k < 64)]
 
 theorem exec_umov_low (s : VG.AArch64.State) (d : Reg) (n : VReg) :
     exec (.umov .x d n 0) s = some (s.write .x d (vdword (s.v n) 0)) := rfl

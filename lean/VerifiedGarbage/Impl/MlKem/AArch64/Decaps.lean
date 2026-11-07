@@ -91,6 +91,4 @@ end KemLay
 abbrev deAWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay768.deAWith c
 abbrev deCWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay768.deCWith c
 abbrev decapsWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay768.decapsWith c
-abbrev decaps : Prog isa := decapsWith .scalar
-
 end VG.Impl.MlKem.AArch64

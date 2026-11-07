@@ -140,7 +140,6 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    consts := Impl.Ecdsa.X86_64.p521.combConsts
     code
     stack := 96
     verified := hv

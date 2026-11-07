@@ -69,23 +69,6 @@ theorem call_kept {n : String} {c : Prog isa} {k : Contract isa}
     WP isa (.call n c) s Q :=
   WP.call hv hpre hc hw (fun s' hrd hwr hsp hf hcs _ hp => hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ hp) hn
 
-/-- Two runs that call a primitive with the same arguments `x`, from the same
-stack pointer. -/
-theorem call_ct {α : Type} {n : String} {c : Prog isa} {k : Contract isa}
-    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
-    (hct : ConstantTime isa k.pre k.pub c) (A : α → State → Prop) (rd wr : α → List Region)
-    (hpre : ∀ x s, A x s → k.pre (view s (rd x) (wr x)))
-    (hcov : ∀ x s, A x s → Covers (rd x ++ wr x) (s.rd ++ s.wr) ∧ Covers (wr x) s.wr)
-    (hpub : ∀ x a b, A x a → A x b → a.sp = b.sp → k.pub (view a (rd x) (wr x)) (view b (rd x) (wr x)))
-    {P : State → State → Prop} (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∃ x, A x a ∧ A x b) :
-    RelCT isa P (.call n c) fun _ _ => True := by
-  refine RelCT.mono (P := fun (a b : State) => ∃ y : α × Addr, (A y.1 a ∧ a.sp = y.2) ∧ (A y.1 b ∧ b.sp = y.2))
-    (RelCT.exists_ fun y => ?_) (fun (a b : State) h => let ⟨e, x, ha, hb⟩ := hP a b h; ⟨(x, a.sp), ⟨ha, rfl⟩, hb, e.symm⟩)
-    (fun _ _ h => h)
-  exact RelCT.call hv hct (rd y.1) (wr y.1) fun a b ⟨⟨ha, ea⟩, hb, eb⟩ =>
-    ⟨hpre _ a ha, hpre _ b hb, hpub _ a b ha hb (ea.trans eb.symm), (hcov _ a ha).1, (hcov _ a ha).2,
-      (hcov _ b hb).1, (hcov _ b hb).2⟩
-
 theorem covers_append {rs ts ws : List Region} (h₁ : Covers rs ws) (h₂ : Covers ts ws) : Covers (rs ++ ts) ws :=
   fun x n ⟨q, hq, hc⟩ => (List.mem_append.mp hq).elim (fun h => h₁ x n ⟨q, h, hc⟩) (fun h => h₂ x n ⟨q, h, hc⟩)
 
@@ -94,16 +77,8 @@ theorem covers_cons' {r : Region} {rs ws : List Region} (h₁ : Covers [r] ws) (
 
 theorem covers_nil' {ws : List Region} : Covers [] ws := fun _ _ ⟨_, h, _⟩ => absurd h List.not_mem_nil
 
-theorem covers_rd {rs rd wr : List Region} (h : Covers rs rd) : Covers rs (rd ++ wr) := fun x n hi =>
-  let ⟨r, hr, hc⟩ := h x n hi; ⟨r, List.mem_append_left _ hr, hc⟩
-
 theorem covers_wr {rs rd wr : List Region} (h : Covers rs wr) : Covers rs (rd ++ wr) := fun x n hi =>
   let ⟨r, hr, hc⟩ := h x n hi; ⟨r, List.mem_append_right _ hr, hc⟩
-
-theorem regsEq_view {rs : List Reg} (hl : ∀ r ∈ rs, r ∉ linkRegs) {a b : State} (hsp : a.sp = b.sp)
-    (hab : ∀ r ∈ rs, a.gpr r = b.gpr r) (rd wr : List Region) : regsEq rs (view a rd wr) (view b rd wr) :=
-  ⟨by simp only [State.withRegions_sp, State.callEntry_sp, hsp], fun r hr => by
-    rw [view_gpr' _ _ _ (hl r hr), view_gpr' _ _ _ (hl r hr), hab r hr]⟩
 
 /-! ## `vg_mlkem_add` and `vg_mlkem_sub` -/
 
@@ -124,12 +99,6 @@ theorem kSub_ok : ∀ s, kSub.pre s → ∃ t s', Exec isa Impl.MlKem.RISCV64.su
     kSub.post s s' :=
   mkK_ok fun _ hp => WP.mono (Add.loop_ok hp (Add.sub_hb hp)) fun _ h =>
     ⟨h.pres, h.sp, h.ra, Add.polyIs_of_inv h fun _ _ => rfl⟩
-
-theorem kAdd_ct : ConstantTime isa kAdd.pre kAdd.pub Impl.MlKem.RISCV64.add :=
-  Add.ctRegs (k := kAdd) [.a0, .a1] (fun _ _ h => h.2) (fun _ _ h => h.1) (by taint_decide)
-
-theorem kSub_ct : ConstantTime isa kSub.pre kSub.pub Impl.MlKem.RISCV64.sub :=
-  Add.ctRegs (k := kSub) [.a0, .a1] (fun _ _ h => h.2) (fun _ _ h => h.1) (by taint_decide)
 
 /-- The arguments of `vg_mlkem_add` or `vg_mlkem_sub`: `f` and `g`. -/
 structure AccArgs (s : State) (f g : Addr) : Prop where
@@ -176,32 +145,6 @@ theorem sub_call {s : State} {f g : Addr} (h : AccArgs s f g) {Q : State → Pro
       rw [h.a0] at e3; rw [h.a1] at e4
       simpa only [kSub, mkK, Add.F, Add.G, e3, e4, State.withRegions_mem, State.callEntry_mem] using hp)
 
-theorem acc_pub {f g : Addr} {a b : State} (ha : AccArgs a f g) (hb : AccArgs b f g) (hsp : a.sp = b.sp) :
-    regsEq [.a0, .a1] (view a [polyRegion g] [polyRegion f]) (view b [polyRegion g] [polyRegion f]) :=
-  regsEq_view (by decide) hsp (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · rw [ha.a0, hb.a0]
-    · rw [ha.a1, hb.a1]) _ _
-
-theorem add_ct {P : State → State → Prop}
-    (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∃ f g, AccArgs a f g ∧ AccArgs b f g) :
-    RelCT isa P (.call "vg_mlkem_add" Impl.MlKem.RISCV64.add) fun _ _ => True :=
-  call_ct (k := kAdd) kAdd_ok kAdd_ct (fun (x : Addr × Addr) s => AccArgs s x.1 x.2)
-    (fun x => [polyRegion x.2]) (fun x => [polyRegion x.1])
-    (fun _ _ h => acc_pre h) (fun _ _ h => ⟨covers_append h.cr (covers_wr h.cw), h.cw⟩)
-    (fun _ _ _ ha hb e => acc_pub ha hb e)
-    fun a b hab => let ⟨e, f, g, h₁, h₂⟩ := hP a b hab; ⟨e, (f, g), h₁, h₂⟩
-
-theorem sub_ct {P : State → State → Prop}
-    (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∃ f g, AccArgs a f g ∧ AccArgs b f g) :
-    RelCT isa P (.call "vg_mlkem_sub" Impl.MlKem.RISCV64.sub) fun _ _ => True :=
-  call_ct (k := kSub) kSub_ok kSub_ct (fun (x : Addr × Addr) s => AccArgs s x.1 x.2)
-    (fun x => [polyRegion x.2]) (fun x => [polyRegion x.1])
-    (fun _ _ h => acc_pre h) (fun _ _ h => ⟨covers_append h.cr (covers_wr h.cw), h.cw⟩)
-    (fun _ _ _ ha hb e => acc_pub ha hb e)
-    fun a b hab => let ⟨e, f, g, h₁, h₂⟩ := hP a b hab; ⟨e, (f, g), h₁, h₂⟩
-
 /-! ## `vg_mlkem_multiply_ntts` -/
 
 def kMul : Contract isa := mkK Mul.Pre
@@ -210,9 +153,6 @@ def kMul : Contract isa := mkK Mul.Pre
 theorem kMul_ok : ∀ s, kMul.pre s → ∃ t s', Exec isa Impl.MlKem.RISCV64.multiplyNTTs s t s' ∧
     abiPreserved s s' ∧ kMul.post s s' :=
   mkK_ok fun _ hp => Mul.correct hp
-
-theorem kMul_ct : ConstantTime isa kMul.pre kMul.pub Impl.MlKem.RISCV64.multiplyNTTs :=
-  Add.ctRegs (k := kMul) [.a0, .a1, .a2, .a3] (fun _ _ h => h.2) (fun _ _ h => h.1) (by taint_decide)
 
 /-- The arguments of `vg_mlkem_multiply_ntts`. -/
 structure MulArgs (s : State) (h f g scr : Addr) : Prop where
@@ -272,21 +212,5 @@ theorem mul_call {s : State} {h f g scr : Addr} (a : MulArgs s h f g scr) {Q : S
       rw [a.a0] at e3; rw [a.a1] at e4; rw [a.a2] at e5
       simpa only [kMul, mkK, Mul.H, Mul.fp, Mul.gp, Mul.F, Mul.G, e3, e4, e5,
         State.withRegions_mem, State.callEntry_mem] using hp)
-
-theorem mul_ct {P : State → State → Prop}
-    (hP : ∀ a b, P a b → a.sp = b.sp ∧ ∃ h f g scr, MulArgs a h f g scr ∧ MulArgs b h f g scr) :
-    RelCT isa P (.call "vg_mlkem_multiply_ntts" Impl.MlKem.RISCV64.multiplyNTTs) fun _ _ => True :=
-  call_ct (k := kMul) kMul_ok kMul_ct (fun (x : Addr × Addr × Addr × Addr) s =>
-      MulArgs s x.1 x.2.1 x.2.2.1 x.2.2.2)
-    (fun x => mulRd x.2.1 x.2.2.1) (fun x => mulWr x.1 x.2.2.2)
-    (fun _ _ h => mul_pre h) (fun _ _ h => ⟨covers_append h.cr (covers_wr h.cw), h.cw⟩)
-    (fun _ _ _ ha hb e => regsEq_view (by decide) e (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · rw [ha.a0, hb.a0]
-      · rw [ha.a1, hb.a1]
-      · rw [ha.a2, hb.a2]
-      · rw [ha.a3, hb.a3]) _ _)
-    fun a b hab => let ⟨e, h, f, g, scr, h₁, h₂⟩ := hP a b hab; ⟨e, (h, f, g, scr), h₁, h₂⟩
 
 end VG.Proof.MlKem.RISCV64

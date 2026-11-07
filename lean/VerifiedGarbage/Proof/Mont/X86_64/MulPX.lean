@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 first row puts `a_0 [b]` in the nine registers of the accumulator, whatever
 they held, by one carry chain (`mulAccs_ok`, `accRow_ok`), and stores its low
 word (`xRow0_ok`); each later row adds `a_i [b]` to them and stores its low
-word (`xRow_ok`, `xRow_inv`), and the nine rows (`xRows_ok`) leave
+word (`xRow_inv`), and the nine rows (`xRows_ok`) leave
 `a b` in the temporary area (its low words) and the registers (its high
 ones). The reduction (`xRed_ok`) then leaves `W` with
 `2⁵⁷⁶ W = a b + U p` in the registers, as `mulP`'s columns do (`mulP_arith`),
@@ -72,16 +72,6 @@ theorem xWin_sub (k : Nat) : ∀ r ∈ xWin k, r ∈ xRegs := by
   simp only [xWin, List.mem_map, List.mem_range] at hr
   obtain ⟨j, -, rfl⟩ := hr
   exact (xAcc_ne _).2.2.2.2
-
-/-- `xWin k` is `xAcc k` followed by `xWin (k + 1)` but its last. -/
-theorem xWin_cons (k : Nat) : xWin k = xAcc k :: (xWin (k + 1)).take 8 := by
-  simp only [xWin, List.range_succ_eq_map, List.map_cons, List.map_map, Nat.add_zero]
-  congr 1
-
-/-- `xWin (k + 1)` is `xWin k` but its first, then `xAcc (k + 9)`. -/
-theorem xWin_succ (k : Nat) : xWin (k + 1) = (xWin (k + 1)).take 8 ++ [xAcc (k + 9)] := by
-  simp only [xWin, List.range_succ, List.map_append, List.map_cons, List.map_nil]
-  rw [List.take_left' (by simp)]
 
 /-! ## Steps -/
 
@@ -608,32 +598,6 @@ theorem xRowR_ok {s : State} {base bB : Addr} {size zB c₀ : Nat} (hs : ScrC s 
     · rw [k₇.2.2.1, k₆.2.2.1, k₅.2.2.1, rd₄, k₃.2.2.1, k₂.2.2.1, k₁.2.2.1]
     · rw [k₇.2.2.2, k₆.2.2.2, k₅.2.2.2, wr₄, k₃.2.2.2, k₂.2.2.2, k₁.2.2.2]
   · rw [hm₇]; exact O₄
-
-/-- Row `i`: `t += a_i [b]`, word `i` stored at `[tmp + 8 i]`: the words
-`i … i + 8` before, and the stored word and the words `i + 1 … i + 9` after,
-if the sum fits in ten words. -/
-theorem xRow_ok {s : State} {base bA bB : Addr} {size zA zB c₀ : Nat} (hs : ScrC s base size c₀)
-    {ra rb : Reg} (hpa : PtrC s ra bA zA c₀) (hpb : PtrC s rb bB zB c₀) {M : Mod} {a b : Nat}
-    (i : Nat) (ha : a + 8 * i + 8 ≤ zA) (hb : b + 72 ≤ zB) (ht : M.tmp + 8 * i + 8 ≤ size)
-    (hbt : Apart bB b 72 base (M.tmp + 8 * i) 8)
-    (hB : hval (xg s) i 9 + (word s.mem bA (a + 8 * i)).toNat * wordsVal s.mem bB b 9 <
-      (2 ^ 64) ^ 10) :
-    WP isa (.block (xRow M ra rb c₀ a b i)) s fun s' =>
-      (word s'.mem base (M.tmp + 8 * i)).toNat + 2 ^ 64 * hval (xg s') (i + 1) 9 =
-        hval (xg s) i 9 + (word s.mem bA (a + 8 * i)).toNat * wordsVal s.mem bB b 9 ∧
-      KeepRegs (.rax :: .rcx :: .rdx :: xRegs) s s' ∧ Outside base (M.tmp + 8 * i) 8 s.mem s'.mem := by
-  have hnw := hs.nowrap
-  rw [xRow_eq, ← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (movRdx_ok s (readSrc_rcR hpa ha)) fun s₁ ⟨d₁, _, _, k₁⟩ => ?_
-  have hx : ∀ c, xg s₁ c = xg s c := fun c => by
-    simp only [xg]; rw [k₁.1 _ (by simpa using (xAcc_ne c).2.2.1)]
-  have hm : s₁.mem = s.mem := k₁.2.1
-  refine WP.mono (xRowR_ok (hs.of_keeps k₁ (by decide)) (hpb.of_keeps k₁ (by rows_sub)) i d₁ hb ht hbt
-    (by rw [hval_congr (g := xg s) (fun c _ _ => hx c), hm]; exact hB)) fun s' ⟨e, k, O⟩ => ?_
-  rw [hval_congr (g := xg s) (fun c _ _ => hx c), hm] at e
-  rw [hm] at O
-  refine ⟨e, ⟨fun r hr => ?_, k.rd.trans (k₁.2.2.1), k.wr.trans (k₁.2.2.2)⟩, O⟩
-  rw [k.gpr r hr, k₁.1 r (by simp only [List.mem_singleton]; intro h; exact hr (h ▸ by simp))]
 
 theorem wordsVal_succ_last (m : Mem) (base : Addr) (d n : Nat) :
     wordsVal m base d (n + 1) = wordsVal m base d n + (2 ^ 64) ^ n * (word m base (d + 8 * n)).toNat := by

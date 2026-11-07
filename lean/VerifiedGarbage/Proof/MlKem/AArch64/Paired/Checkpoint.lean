@@ -19,8 +19,6 @@ def checkpointW (w16 : Bool) (p aP : Addr) (L : List Zq) (m : Mem) : Prop :=
   m.readW p 64=cAddr w16 aP L.length ∧
     (m.readW (p+8) 64).toNat=256-L.length
 
-abbrev checkpoint := checkpointW false
-
 theorem load_checkpoint (s : State) {r : Reg} {slot : Nat} (ho : slot+8<32768) (ha : slot%8=0)
     (h0 : InRegions (s.rd++s.wr) (s.gpr r+BitVec.ofNat 64 slot) 8)
     (h1 : InRegions (s.rd++s.wr) (s.gpr r+BitVec.ofNat 64 (slot+8)) 8)

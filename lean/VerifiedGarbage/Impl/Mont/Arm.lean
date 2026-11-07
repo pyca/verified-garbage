@@ -20,8 +20,8 @@ is the high half. A number's digit `2k` is the low half of its word `k`, and
 digit `2k + 1` the high half. `r6` holds `0xffff`. With `R = 2^(16 D) =
 2^(64 n)` and `m' = -m⁻¹ mod 2¹⁶` (the low half of `M.minv`):
 
-* `mul acc o a b`: `[o] = [a] [b] R⁻¹ mod m`, by coarsely integrated operand
-  scanning (CIOS) on digits, with the accumulator in memory: `2D + 2`
+* `mulR acc o a b ra rb ro`: `[o] = [a] [b] R⁻¹ mod m` (each number at an
+  offset from a register), by coarsely integrated operand scanning (CIOS) on digits, with the accumulator in memory: `2D + 2`
   digits at `[acc]`, cleared, and a window of them at `[r0 + acc]`, `r0`
   starting at `r12`. Each of the `D / 2` iterations of the loop (counted
   down in `r9`; `r1` points to word `i` of `[a]`) does two rows, for the
@@ -30,8 +30,8 @@ digit `2k + 1` the high half. `r6` holds `0xffff`. With `R = 2^(16 D) =
   digit, and the window moves up a digit (`r0 += 4`) instead of shifting the
   accumulator. Its last `D + 1` digits are then below `2m` and reduced by
   `csub`.
-* `add acc o a b`: the digits of `[a] + [b]` at `[acc]`, then `csub`;
-  `sub acc o a b`: the digits of `[a] + m - [b]` (each digit
+* `addR`: the digits of `[a] + [b]` at `[acc]`, then `csub`;
+  `subR`: the digits of `[a] + m - [b]` (each digit
   `a_j + m_j + (2¹⁶ - 1 - b_j)` plus the carry, from a carry of 1, which
   adds `2^(16 D)`, taken off the top digit), then `csub`.
 * `csub src o`: the number below `2m` at `[src]` (`D` digits and a top digit,
@@ -99,7 +99,7 @@ def digitRow (M : Mod) (acc : Nat) (rb : Reg) (b h : Nat) : List Instr :=
     mulRow acc wb M.mo D ++
   ([.dp .add .r0 .r0 (.imm 4)] : List Instr)
 
-/-- An iteration of `mul`: the rows of both digits of word `r1` of `[a]`,
+/-- An iteration of `mulR`'s loop: the rows of both digits of word `r1` of `[a]`,
 then the next word, and the count. -/
 def row (M : Mod) (acc a : Nat) (rb : Reg) (b : Nat) : List Instr :=
   ([.ldr .r8 .r1 a] : List Instr) ++ digitRow M acc rb b 0 ++ digitRow M acc rb b 1 ++
@@ -146,9 +146,6 @@ def mulR (M : Mod) (acc o a b : Nat) (ra rb ro : Reg) : Prog isa :=
   .seq (.loop (.block (row M acc a rb b)) .ne) <|
     .block (csub M (acc + 4 * digits M) ro o)
 
-/-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`). -/
-def mul (M : Mod) (acc o a b : Nat) : Prog isa := mulR M acc o a b wb wb wb
-
 /-- Digit `j` of `[a] + [b]` (`r7`, `r8` hold their words `j / 2`), from the
 carry `r3`, to `[acc]`, its carry to `r3`. -/
 def addDigit (acc j : Nat) : List Instr :=
@@ -161,9 +158,6 @@ def addR (M : Mod) (acc o a b : Nat) (ra rb ro : Reg) : List Instr :=
   (List.range (words M)).flatMap (fun k =>
     ([.ldr .r7 ra (a + 4 * k), .ldr .r8 rb (b + 4 * k)] : List Instr) ++ addDigit acc (2 * k) ++ addDigit acc (2 * k + 1)) ++
   ([.str .r3 wb (acc + 4 * digits M)] : List Instr) ++ csub M acc ro o
-
-/-- `[o] = [a] + [b] mod m`. -/
-def add (M : Mod) (acc o a b : Nat) : List Instr := addR M acc o a b wb wb wb
 
 /-- Digit `j` of `[a] + m - [b]` (`r7`, `r8`, `r9` hold the words `j / 2` of
 `[a]`, `[b]` and `m`), from the carry `r3`, to `[acc]`, its carry to `r3`. -/
@@ -179,9 +173,6 @@ def subR (M : Mod) (acc o a b : Nat) (ra rb ro : Reg) : List Instr :=
     ([.ldr .r7 ra (a + 4 * k), .ldr .r8 rb (b + 4 * k), .ldr .r9 wb (M.mo + 4 * k)] : List Instr) ++
       subDigit acc (2 * k) ++ subDigit acc (2 * k + 1)) ++
   ([.dp .sub .r3 .r3 (.imm 1), .str .r3 wb (acc + 4 * digits M)] : List Instr) ++ csub M acc ro o
-
-/-- `[o] = [a] - [b] mod m`, as `[a] + m - [b]` reduced. -/
-def sub (M : Mod) (acc o a b : Nat) : List Instr := subR M acc o a b wb wb wb
 
 /-- `r4 = x mod 2³²`. -/
 def movImm (x : Nat) : List Instr :=

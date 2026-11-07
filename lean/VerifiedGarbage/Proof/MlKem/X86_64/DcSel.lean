@@ -77,15 +77,6 @@ theorem mid_ok (s : State) :
 
 /-! ## The loops -/
 
-theorem bytesAt_succ (m : Mem) (p : Addr) (k : Nat) :
-    bytesAt m p (k + 1) = bytesAt m p k ++ [m (p + BitVec.ofNat 64 k)] := by
-  rw [bytesAt_add, bytesAt_one]
-
-theorem zx_or_xor (a x y : Byte) :
-    BitVec.setWidth 64 a ||| (BitVec.setWidth 64 x ^^^ BitVec.setWidth 64 y) = BitVec.setWidth 64 (a ||| (x ^^^ y)) := by
-  ext i hi
-  simp
-
 theorem sel_byte (x y : Byte) (e : Bool) :
     BitVec.setWidth 8 (((BitVec.setWidth 64 x ^^^ BitVec.setWidth 64 y) &&& (if e then BitVec.allOnes 64 else 0)) ^^^
       BitVec.setWidth 64 y) = if e then x else y := by

@@ -523,6 +523,7 @@ beqz a2, 27f
 .insn 4, 0x100a8693
 .insn 2, 0x9b32
 .insn 4, 0x40cb8bb3
+.insn 2, 0x872e
 call {vg_chacha20_xor}
 j 28f
 27:

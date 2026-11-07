@@ -12,7 +12,6 @@ namespace VG.Artifacts.Blowfish.AArch64
 
 def artifacts : List Artifact := [
   Spec.Blowfish.expandKeyApi.artifact AArch64.target {
-    consts := Impl.Blowfish.AArch64.initConsts
     code := Impl.Blowfish.AArch64.expandKey
     verified := Proof.Blowfish.AArch64.expandKey_verified },
   Spec.Blowfish.ecbEncryptApi.artifact AArch64.target {

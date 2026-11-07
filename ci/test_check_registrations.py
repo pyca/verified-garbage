@@ -68,6 +68,19 @@ class Registrations(unittest.TestCase):
             self.assertIn("Artifacts/A/X86_64.lean:4: a tactic proof", ps[0])
             self.assertIn("Generic/A/X86_64/B.lean:3: a tactic proof", ps[1])
 
+    def test_consts(self):
+        # The default finds the tables in the contract; a field of the
+        # proofs' own structures may still be named `consts`.
+        with tree({"VerifiedGarbage/Artifacts/A/X86_64.lean":
+                    "module\ndef artifacts := [\n  api.artifact t {\n"
+                    "    consts := Impl.A.tables\n"
+                    "    verified := v }]\n",
+                    "VerifiedGarbage/Generic/A/X86_64/B.lean":
+                    "module\n-- consts := none\ndef artifacts := [\n  api.artifact t {\n"
+                    "    code := c.consts\n    Impl.myconsts := v }]\n"}) as d:
+            [p] = check_registrations.problems(pathlib.Path(d))
+            self.assertTrue(p.startswith("lean/VerifiedGarbage/Artifacts/A/X86_64.lean:4: `consts`"))
+
     def test_a_theorem(self):
         with tree({"VerifiedGarbage/Variants/A/X86_64/B.lean":
                     "module\ntheorem ok : 1 = 1 := rfl\ndef variant := v\n"}) as d:

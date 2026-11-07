@@ -17,14 +17,12 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List A
   Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact Arm.target {
     tables := [("hmac", tables vars)]
     code := signCodeT (brainpoolp256r1CombCurve h.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vars
-    consts := Impl.Weierstrass.Arm.brainpoolp256r1CombConsts
     stack := stackT
     verified := brainpoolp256r1T_verified h.law },
   Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact Arm.target {
     suffix := "_umaal"
     tables := [("hmac", tables vars)]
     code := signCodeT (brainpoolp256r1CombCurveU h.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vars
-    consts := Impl.Weierstrass.Arm.brainpoolp256r1CombConsts
     stack := stackT
     verified := brainpoolp256r1UT_verified h.law
     features := ["umaal"] }]

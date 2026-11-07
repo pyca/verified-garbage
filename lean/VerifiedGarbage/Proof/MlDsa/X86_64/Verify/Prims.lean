@@ -112,10 +112,4 @@ theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
   normLt := calleeOf v.ok.normLt
   rej4 := ⟨v.ok.rej4.ver.1, v.ok.rej4.ver.2.1, v.ok.rej4.nosp, v.ok.rej4.depth, v.ok.rej4.ctl, v.ok.rej4.sp⟩
 
-/-- `vg_mldsa*_verify` for the parameter set `p`, calling the x86-64
-primitives, with the polynomial arithmetic of `v`. -/
-theorem verify_prims (v : ArithImpl) {p : Spec.MlDsa.Params} (hp : p ∈ params) :
-    Verified X86_64.target (verify (primsWith v.code) p) (Spec.MlDsa.verifyContract p X86_64.abi 32) :=
-  verify_verified (prims_okWith v) hp
-
 end VG.Proof.MlDsa.X86_64.Verify

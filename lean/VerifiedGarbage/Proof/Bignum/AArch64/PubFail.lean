@@ -29,9 +29,6 @@ open VG.Proof.Bignum
 open VG.Proof.MlKem.AArch64 (Keep)
 open VG.WriteBytes (writeW8_apply)
 
-theorem readW_zero {m : Mem} {a : Addr} (h : ∀ i < 8, m (a + BitVec.ofNat 64 i) = 0) : m.readW a 64 = 0 :=
-  (Mem.readW_congr (m' := fun _ => 0) fun i hi => h i (by omega)).trans (by simp [Mem.readW, Mem.read])
-
 theorem two_w (k : Nat) (hk : k < 2 ^ 32) :
     (BitVec.ofNat 64 k + BitVec.ofNat 64 7) >>> 3 <<< 1 = BitVec.ofNat 64 (2 * ((k + 7) / 8)) := by
   rw [shr3_w k hk]

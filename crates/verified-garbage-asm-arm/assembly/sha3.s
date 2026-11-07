@@ -4,118 +4,241 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_keccak_absorb_scratch:
-	ldr r12, [sp, #4]
-	str r4, [r12, #512]
-	str r5, [r12, #516]
-	str r6, [r12, #520]
-	str r7, [r12, #524]
-	str lr, [r12, #528]
-	mov r4, r1
-	mov r1, r12
-	mov r5, r2
-	mov r6, r3
-	ldr r7, [sp, #0]
-	cmp r7, #0
-	beq 20f
-22:
-	ldrb r2, [r6, #0]
-	add r3, r0, r5
-	ldrb r12, [r3, #0]
-	eor r2, r2, r12
-	strb r2, [r3, #0]
-	add r6, r6, #1
-	add r5, r5, #1
-	sub r7, r7, #1
-	cmp r5, r4
-	beq 23f
-	b 24f
-23:
-	mov r5, #0
-	bl {vg_keccak_f1600}
-24:
-	cmp r7, #0
-	bne 22b
-	b 21f
-20:
-21:
-	mov r0, r5
-	ldr r4, [r1, #512]
-	ldr r5, [r1, #516]
-	ldr r6, [r1, #520]
-	ldr r7, [r1, #524]
-	ldr lr, [r1, #528]
+vg_sha3_224_update:
+	sub sp, sp, #16
+	add r12, sp, #0
+	str lr, [r12, #8]
+	str r3, [r12, #0]
+	ldr lr, [sp, #16]
+	str lr, [r12, #4]
+	mov r3, r2
+	mov r2, r1
+	mov r1, #144
+	bl {vg_keccak_absorb_scratch}
+	ldr lr, [sp, #8]
+	add sp, sp, #16
 	bx lr
 
-vg_keccak_pad:
-	sub sp, sp, #656
+vg_sha3_224_finalize:
+	sub sp, sp, #664
+	add r12, sp, #0
+	str lr, [r12, #8]
+	str r0, [r12, #12]
+	str r2, [r12, #16]
+	add lr, sp, #24
+	str lr, [r12, #0]
+	mov r2, r1
+	mov r1, #144
+	mov r3, #6
+	bl {vg_keccak_pad_scratch}
+	add r12, sp, #0
+	ldr r0, [sp, #12]
+	ldr r3, [sp, #16]
+	mov r1, #144
+	mov r2, #0
+	mov lr, #28
+	str lr, [r12, #0]
+	add lr, sp, #24
+	str lr, [r12, #4]
+	bl {vg_keccak_squeeze_scratch}
+	ldr lr, [sp, #8]
+	add sp, sp, #664
+	bx lr
+
+vg_sha3_256_update:
+	sub sp, sp, #16
+	add r12, sp, #0
+	str lr, [r12, #8]
+	str r3, [r12, #0]
+	ldr lr, [sp, #16]
+	str lr, [r12, #4]
+	mov r3, r2
+	mov r2, r1
+	mov r1, #136
+	bl {vg_keccak_absorb_scratch}
+	ldr lr, [sp, #8]
+	add sp, sp, #16
+	bx lr
+
+vg_sha3_256_finalize:
+	sub sp, sp, #664
+	add r12, sp, #0
+	str lr, [r12, #8]
+	str r0, [r12, #12]
+	str r2, [r12, #16]
+	add lr, sp, #24
+	str lr, [r12, #0]
+	mov r2, r1
+	mov r1, #136
+	mov r3, #6
+	bl {vg_keccak_pad_scratch}
+	add r12, sp, #0
+	ldr r0, [sp, #12]
+	ldr r3, [sp, #16]
+	mov r1, #136
+	mov r2, #0
+	mov lr, #32
+	str lr, [r12, #0]
+	add lr, sp, #24
+	str lr, [r12, #4]
+	bl {vg_keccak_squeeze_scratch}
+	ldr lr, [sp, #8]
+	add sp, sp, #664
+	bx lr
+
+vg_sha3_384_update:
+	sub sp, sp, #16
+	add r12, sp, #0
+	str lr, [r12, #8]
+	str r3, [r12, #0]
+	ldr lr, [sp, #16]
+	str lr, [r12, #4]
+	mov r3, r2
+	mov r2, r1
+	mov r1, #104
+	bl {vg_keccak_absorb_scratch}
+	ldr lr, [sp, #8]
+	add sp, sp, #16
+	bx lr
+
+vg_sha3_384_finalize:
+	sub sp, sp, #664
+	add r12, sp, #0
+	str lr, [r12, #8]
+	str r0, [r12, #12]
+	str r2, [r12, #16]
+	add lr, sp, #24
+	str lr, [r12, #0]
+	mov r2, r1
+	mov r1, #104
+	mov r3, #6
+	bl {vg_keccak_pad_scratch}
+	add r12, sp, #0
+	ldr r0, [sp, #12]
+	ldr r3, [sp, #16]
+	mov r1, #104
+	mov r2, #0
+	mov lr, #48
+	str lr, [r12, #0]
+	add lr, sp, #24
+	str lr, [r12, #4]
+	bl {vg_keccak_squeeze_scratch}
+	ldr lr, [sp, #8]
+	add sp, sp, #664
+	bx lr
+
+vg_sha3_512_update:
+	sub sp, sp, #16
+	add r12, sp, #0
+	str lr, [r12, #8]
+	str r3, [r12, #0]
+	ldr lr, [sp, #16]
+	str lr, [r12, #4]
+	mov r3, r2
+	mov r2, r1
+	mov r1, #72
+	bl {vg_keccak_absorb_scratch}
+	ldr lr, [sp, #8]
+	add sp, sp, #16
+	bx lr
+
+vg_sha3_512_finalize:
+	sub sp, sp, #664
+	add r12, sp, #0
+	str lr, [r12, #8]
+	str r0, [r12, #12]
+	str r2, [r12, #16]
+	add lr, sp, #24
+	str lr, [r12, #0]
+	mov r2, r1
+	mov r1, #72
+	mov r3, #6
+	bl {vg_keccak_pad_scratch}
+	add r12, sp, #0
+	ldr r0, [sp, #12]
+	ldr r3, [sp, #16]
+	mov r1, #72
+	mov r2, #0
+	mov lr, #64
+	str lr, [r12, #0]
+	add lr, sp, #24
+	str lr, [r12, #4]
+	bl {vg_keccak_squeeze_scratch}
+	ldr lr, [sp, #8]
+	add sp, sp, #664
+	bx lr
+
+vg_shake128_update:
+	sub sp, sp, #16
+	add r12, sp, #0
+	str lr, [r12, #8]
+	str r3, [r12, #0]
+	ldr lr, [sp, #16]
+	str lr, [r12, #4]
+	mov r3, r2
+	mov r2, r1
+	mov r1, #168
+	bl {vg_keccak_absorb_scratch}
+	ldr lr, [sp, #8]
+	add sp, sp, #16
+	bx lr
+
+vg_shake128_finalize:
+	sub sp, sp, #648
 	add r12, sp, #0
 	str lr, [r12, #4]
 	add lr, sp, #8
 	str lr, [r12, #0]
+	mov r2, r1
+	mov r1, #168
+	mov r3, #31
+	bl {vg_keccak_pad_scratch}
 	ldr lr, [sp, #4]
-	ldr r12, [sp, #0]
-	str lr, [r12, #512]
-	add r2, r0, r2
-	ldrb lr, [r2, #0]
-	eor lr, lr, r3
-	strb lr, [r2, #0]
-	add r2, r0, r1
-	sub r2, r2, #1
-	ldrb lr, [r2, #0]
-	eor lr, lr, #128
-	strb lr, [r2, #0]
-	mov r1, r12
-	bl {vg_keccak_f1600}
-	ldr lr, [r1, #512]
-	add sp, sp, #656
+	add sp, sp, #648
 	bx lr
 
-vg_keccak_squeeze:
+vg_shake128_squeeze:
 	sub sp, sp, #656
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #656]
-	str lr, [r12, #0]
-	add lr, sp, #12
+	str r3, [r12, #0]
+	add lr, sp, #16
 	str lr, [r12, #4]
+	mov r3, r2
+	mov r2, r1
+	mov r1, #168
+	bl {vg_keccak_squeeze_scratch}
 	ldr lr, [sp, #8]
-	ldr r12, [sp, #4]
-	str r4, [r12, #512]
-	str r5, [r12, #516]
-	str r6, [r12, #520]
-	str r7, [r12, #524]
-	str lr, [r12, #528]
-	mov r4, r1
-	mov r1, r12
-	mov r5, r2
-	mov r6, r3
-	ldr r7, [sp, #0]
-	cmp r7, #0
-	beq 20f
-22:
-	cmp r5, r4
-	beq 23f
-	b 24f
-23:
-	mov r5, #0
-	bl {vg_keccak_f1600}
-24:
-	add r3, r0, r5
-	ldrb r2, [r3, #0]
-	strb r2, [r6, #0]
-	add r6, r6, #1
-	add r5, r5, #1
-	subs r7, r7, #1
-	bne 22b
-	b 21f
-20:
-21:
-	mov r0, r5
-	ldr r4, [r1, #512]
-	ldr r5, [r1, #516]
-	ldr r6, [r1, #520]
-	ldr r7, [r1, #524]
-	ldr lr, [r1, #528]
+	add sp, sp, #656
+	bx lr
+
+// vg_shake256_update: the function `vg_sha3_256_update`
+
+vg_shake256_finalize:
+	sub sp, sp, #648
+	add r12, sp, #0
+	str lr, [r12, #4]
+	add lr, sp, #8
+	str lr, [r12, #0]
+	mov r2, r1
+	mov r1, #136
+	mov r3, #31
+	bl {vg_keccak_pad_scratch}
+	ldr lr, [sp, #4]
+	add sp, sp, #648
+	bx lr
+
+vg_shake256_squeeze:
+	sub sp, sp, #656
+	add r12, sp, #0
+	str lr, [r12, #8]
+	str r3, [r12, #0]
+	add lr, sp, #16
+	str lr, [r12, #4]
+	mov r3, r2
+	mov r2, r1
+	mov r1, #136
+	bl {vg_keccak_squeeze_scratch}
+	ldr lr, [sp, #8]
 	add sp, sp, #656
 	bx lr

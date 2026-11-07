@@ -11230,8 +11230,8 @@ bnez t3, 298b
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_rsa_prime_search.rs"]
-pub(crate) mod vg_rsa_prime_search;
+#[path = "internal/vg_rsa_pkcs1_encrypt_precomputed.rs"]
+pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed;
 
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_private_checked.rs"]

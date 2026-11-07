@@ -66,25 +66,4 @@ theorem loadArguments_relCT (i j : Nat) (p c : BitVec 32) :
   · exact Ps.trans Pt.symm
   · exact Cs.trans Ct.symm
 
-theorem storeArguments_relCT (i j : Nat) (p c : BitVec 32) :
-    RelCT isa (fun s t => VG.X86.Taint.Agree argumentTaint s t ∧
-      readSrc s (.mem (PublicFn.argument i)) = some p ∧
-      readSrc t (.mem (PublicFn.argument i)) = some p ∧
-      readSrc s (.mem (PublicFn.argument j)) = some c ∧
-      readSrc t (.mem (PublicFn.argument j)) = some c)
-      (.block [.mov .ebx (.mem (PublicFn.argument i)), .mov .ecx (.mem (PublicFn.argument j))])
-      (VG.X86.Taint.Agree storeTaint) := by
-  intro s t tr ur sf tf ⟨A, P, Q, C, D⟩ E F
-  have T := (argumentPair_trace .ebx i j (by decide) _ _ _ _ _ _ A E F).1
-  obtain ⟨Ps, Cs, _, Ks⟩ := wp_result (argumentPair_ok (by decide) (by decide) P C) E
-  obtain ⟨Pt, Ct, _, Kt⟩ := wp_result (argumentPair_ok (by decide) (by decide) Q D) F
-  refine ⟨T, agree_regs (rs := [.edi, .esp, .ebx, .ecx]) ?_⟩
-  intro reg hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · rw [Ks.1 _ (by decide), Kt.1 _ (by decide)]; exact A.rf.1 _ (by decide)
-  · rw [Ks.1 _ (by decide), Kt.1 _ (by decide)]; exact A.rf.1 _ (by decide)
-  · exact Ps.trans Pt.symm
-  · exact Cs.trans Ct.symm
-
 end VG.Proof.Bignum.X86

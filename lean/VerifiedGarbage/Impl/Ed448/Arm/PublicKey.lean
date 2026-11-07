@@ -67,7 +67,7 @@ def squeezeArgs : List Instr :=
 /-- `SHAKE256(seed, 114)` into the frame at `HASH`. -/
 def hash : Prog isa :=
   .seq zeroState <|
-  .seq (callWith absorbArgs Spec.Sha3.absorbScratchApi.name Impl.Sha3.Arm.Stream.absorb) <|
+  .seq (callWith absorbArgs "vg_keccak_absorb_scratch" Impl.Sha3.Arm.Stream.absorb) <|
   .seq (callWith padArgs "vg_keccak_pad_scratch" Impl.Sha3.Arm.Stream.pad)
     (callWith squeezeArgs "vg_keccak_squeeze_scratch" Impl.Sha3.Arm.Stream.squeeze)
 

@@ -180,13 +180,6 @@ theorem selEndN_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n 
   omega
 
 
-theorem selEnd_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
-    (hc : CExpCtx t P wx minv X Xc) {j : Nat} (hj : j < 16) (hJ : word t.mem P (8 * Crt.sJ) = BitVec.ofNat 64 j) :
-    WP isa (.block [ldh .x3 Crt.sJ, .addImm .x .x3 .x3 1, sth .x3 Crt.sJ, .subImm .x .x4 .x3 16]) t fun t' =>
-      (t'.mem = t.mem.writeW (off P (8 * Crt.sJ)) (BitVec.ofNat 64 (j + 1)) ∧
-      ((t'.gpr .x4).toNat ≠ 0 ↔ j + 1 ≠ 16)) ∧ Keep [.x3, .x4] t t' :=
-  selEndN_ok hc (by decide) hj hJ
-
 /-- After `j` entries of the selection of entry `v` from `t₀`. -/
 structure TabSelInvN (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc v : Nat) (n : Nat) (j : Nat) (t : State) :
     Prop where

@@ -36,7 +36,7 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (PdChecked PdOk pdCallCT ArgsEq)
 /-- The shared contract, with `post` and `encK`'s public data with `pre`
 and its words. -/
 def contract (P : Nat) : Contract isa where
-  pre := (Spec.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (P + 1088)).pre
+  pre := (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (P + 1088)).pre
   post := post P
   pub a s := (encK P).pub a s ∧ stackArg a 4 = stackArg s 4 ∧ stackArg a 5 = stackArg s 5 ∧
     Spec.Rsa.wordsAt a.mem (stackArg a 4) (stackArg a 5).toNat =

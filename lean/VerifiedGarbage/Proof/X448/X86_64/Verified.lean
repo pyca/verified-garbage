@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 public import VerifiedGarbage.Proof.X448.X86_64.Main
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
@@ -20,6 +21,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.X448.Contract
 
 /-!
 # X448 on x86-64: `Verified`, of `vg_x448` and `vg_x448_base`
@@ -76,19 +78,19 @@ theorem x448_ct : ConstantTime isa Proof.X448.x448X86_64.pre Proof.X448.x448X86_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem x448_implies : Proof.X448.x448X86_64.Implies (Spec.X448.x448Contract X86_64.abi) := by
-  sig_implies [Spec.X448.x448Contract, Spec.X448.x448Sig, X86_64.abi, X86_64.argRegs,
+theorem x448_implies : Proof.X448.x448X86_64.Implies (Proof.X448.x448Contract X86_64.abi) := by
+  sig_implies [Proof.X448.x448Contract, Proof.X448.x448Sig, X86_64.abi, X86_64.argRegs,
     Proof.X448.x448X86_64] [satState] using satState
 
 /-- The contract with 8 bytes of stack, for the call's return address. -/
-theorem x448_implies8 : Proof.X448.x448X86_64.Implies (Spec.X448.x448Contract X86_64.abi 8) :=
+theorem x448_implies8 : Proof.X448.x448X86_64.Implies (Proof.X448.x448Contract X86_64.abi 8) :=
   x448_implies.stack8_abi (by
-    sig_implies_sat [Spec.X448.x448Contract, Spec.X448.x448Sig, X86_64.abi, X86_64.argRegs, satState]
+    sig_implies_sat [Proof.X448.x448Contract, Proof.X448.x448Sig, X86_64.abi, X86_64.argRegs, satState]
       [satState] using satState)
 
 /-- The output is apart from the call's return address. -/
 theorem x448_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
-    (hs : (Spec.X448.x448Contract X86_64.abi 8).pre s) (hp : Proof.X448.x448X86_64.post s b) :
+    (hs : (Proof.X448.x448Contract X86_64.abi 8).pre s) (hp : Proof.X448.x448X86_64.post s b) :
     Proof.X448.x448X86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   obtain ⟨-, hwr, -⟩ := x448_implies8.pre s hs
   have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdi) (n := 56)
@@ -99,7 +101,7 @@ theorem x448_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
   exact hp
 
 theorem x448_verified :
-    Verified X86_64.target Impl.X448.X86_64.x448 (Spec.X448.x448Contract X86_64.abi 8) :=
+    Verified X86_64.target Impl.X448.X86_64.x448 (Proof.X448.x448Contract X86_64.abi 8) :=
   Verified.of_inline_ct x448_inlineOk x448_ok x448_ct x448_implies8 (fun _ h => Sig.clear_of_pre h)
     x448_patch
 

@@ -14,7 +14,7 @@ SHA-1 a variant of the interface `MdHash` on x86-64
 (`Variants/MdHash/X86_64/Sha1*.lean`, `Proof/Pbkdf2/Md/X86_64/Hashes/Sha1.lean`),
 and each function built on it (in `Generic/MdHash/X86_64/`) is emitted once
 for each of them (see `TCB/Emit.lean`). The streaming functions made with any of them are
-verified (`Compress.update_verified`, `Compress.finalize_verified`), and have
+verified, and have
 what callers of those need (their call depth, that they keep `rsp` and never
 load MXCSR), so that a caller of them is proven once for every
 implementation.
@@ -61,55 +61,8 @@ open VG.Impl.Sha1.X86_64.Stream (update finalize)
 
 variable (v : Compress)
 
-theorem update_mxcsr : (update v.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [update, Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody,
-    Impl.MdStream.X86_64.updateTail, Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressWith,
-    Code.allInstrs, v.mxcsr,
-    Bool.true_and]
-  decide +kernel
-
-theorem finalize_mxcsr : (finalize v.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [finalize, Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
-    Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith, Code.allInstrs, v.mxcsr, Bool.true_and]
-  decide +kernel
-
-theorem update_verified : Verified X86_64.target (update v.callee) Proof.Sha1.updateX86_64 :=
-  Stream.Update.verified_of v.ok v.update_mxcsr
-
-theorem finalize_verified : Verified X86_64.target (finalize v.callee) Proof.Sha1.finalizeX86_64 :=
-  Stream.Finalize.verified_of v.ok v.finalize_mxcsr
-
-theorem update_depth : (update v.callee).depth = 1 := by
-  simp only [update, Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody,
-    Impl.MdStream.X86_64.updateTail, Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressWith,
-    Code.depth, v.ok.depth]
-  decide +kernel
-
-theorem finalize_depth : (finalize v.callee).depth = 1 := by
-  simp only [finalize, Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
-    Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith, Code.depth, v.ok.depth]
-  decide +kernel
-
 theorem callee_nosp : (v.callee.code.allInstrs fun i => !Taint.clobbers i .rsp) = true := by
   rw [Code.allInstrs_eq]; exact List.all_eq_true.mpr fun i hi => by simp [v.ok.nosp i hi]
-
-theorem update_nosp : NoSp (update v.callee) := by
-  have : ((instrs (update v.callee)).all fun i => !Taint.clobbers i .rsp) = true := by
-    rw [← Code.allInstrs_eq]
-    simp only [update, Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody,
-      Impl.MdStream.X86_64.updateTail, Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressWith,
-      Code.allInstrs,
-      v.callee_nosp, Bool.true_and]
-    decide +kernel
-  exact fun i hi => by simpa using List.all_eq_true.mp this i hi
-
-theorem finalize_nosp : NoSp (finalize v.callee) := by
-  have : ((instrs (finalize v.callee)).all fun i => !Taint.clobbers i .rsp) = true := by
-    rw [← Code.allInstrs_eq]
-    simp only [finalize, Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
-      Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith, Code.allInstrs, v.callee_nosp, Bool.true_and]
-    decide +kernel
-  exact fun i hi => by simpa using List.all_eq_true.mp this i hi
 
 end Compress
 

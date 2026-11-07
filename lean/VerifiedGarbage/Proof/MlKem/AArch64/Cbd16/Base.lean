@@ -59,13 +59,4 @@ theorem Pre.byte_eq {s₀ : State} (hp : Pre s₀) {m : Mem} (hf : Frame [polyRe
   show _ = ((bytesAt s₀.mem (bP s₀) 128).getD j 0).toNat
   rw [bytesAt_getD _ _ hj]
 
-/-- A state satisfying the precondition. -/
-def sat : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | _ => 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 1024⟩]
-
 end VG.Proof.MlKem.AArch64.Cbd2

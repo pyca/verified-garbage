@@ -57,8 +57,4 @@ theorem keyGen_verifiedWith :
       KemLay.params, Spec.MlKem.mlKem1024, KemLay.ekLen, KemLay.dkLen, AArch64.abi, AArch64.argRegs] [sat]
       using sat)
 
-theorem keyGen_verified :
-    Verified AArch64.target keyGen (Spec.MlKem1024.keyGenContract AArch64.abi 16) :=
-  keyGen_verifiedWith (keccak := .scalar)
-
 end VG.Proof.MlKem1024.AArch64.KeyGen

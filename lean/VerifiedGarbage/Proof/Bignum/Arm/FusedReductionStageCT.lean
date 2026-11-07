@@ -45,9 +45,4 @@ theorem fusedReductionStage_relCT {base : BitVec 32} {size tmp a b mod acc n i :
     ⟨h.1.1.trans h.2.1.symm, h.1.2.1.trans h.2.2.1.symm, h.1.2.2.trans h.2.2.2.symm⟩ e1 e2
 
 
-theorem fusedReductionStage_ct {base : BitVec 32} {size tmp a b mod acc n i : Nat} :
-    RelCT isa (fun s t => StageReady base size tmp a b mod acc n i (acc + 4 * n) s ∧
-      StageReady base size tmp a b mod acc n i (acc + 4 * n) t) fusedReductionStage (fun _ _ => True) :=
-  fusedReductionStage_relCT.mono (fun _ _ h => h) (fun _ _ _ => trivial)
-
 end VG.Proof.Bignum.Arm

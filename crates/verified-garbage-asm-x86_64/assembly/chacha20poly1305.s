@@ -40568,6 +40568,23 @@ vg_chacha20_poly1305_open_avx2:
 	cmp rax, 1
 	mov eax, 0
 	adc eax, 0
+	cmp eax, 0
+	je 2105f
+	jmp 2106f
+2105:
+	mov rdx, r14
+	mov rcx, r13
+	cmp rcx, 0
+	je 2107f
+2109:
+	mov BYTE PTR [rdx], al
+	add rdx, 1
+	sub rcx, 1
+	jne 2109b
+	jmp 2108f
+2107:
+2108:
+2106:
 	mov r15, rdi
 	sub r15, 448
 	mov rbx, QWORD PTR [r15]
@@ -72296,6 +72313,23 @@ vg_chacha20_poly1305_open_avx512:
 	cmp rax, 1
 	mov eax, 0
 	adc eax, 0
+	cmp eax, 0
+	je 266f
+	jmp 267f
+266:
+	mov rdx, r14
+	mov rcx, r13
+	cmp rcx, 0
+	je 268f
+270:
+	mov BYTE PTR [rdx], al
+	add rdx, 1
+	sub rcx, 1
+	jne 270b
+	jmp 269f
+268:
+269:
+267:
 	mov r15, rdi
 	sub r15, 448
 	mov rbx, QWORD PTR [r15]
@@ -72356,19 +72390,19 @@ vg_chacha20_poly1305_open_avx512:
 	mov QWORD PTR [r15+664], rax
 	mov edx, 0
 	cmp r13, 449
-	jb 266f
-	jmp 267f
-266:
+	jb 271f
+	jmp 272f
+271:
 	mov rdx, r13
-267:
+272:
 	add rdx, 64
 	vpxor ymm0, ymm0, ymm0
 	mov ecx, 0
-268:
+273:
 	vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 	add rcx, 32
 	cmp rcx, rdx
-	jb 268b
+	jb 273b
 	vzeroupper
 	mov rdi, r15
 	add rdi, 608
@@ -72380,10 +72414,10 @@ vg_chacha20_poly1305_open_avx512:
 	sub rax, 1
 	and rax, 511
 	cmp r13, 449
-	jb 269f
+	jb 274f
 	sub rax, 64
 	cmp rax, 128
-	jb 271f
+	jb 276f
 	mov rcx, r15
 	add rcx, 672
 	movabs rax, 0
@@ -72836,8 +72870,8 @@ vg_chacha20_poly1305_open_avx512:
 	mov eax, 0
 	mov eax, eax
 	mov eax, eax
-	jmp 272f
-271:
+	jmp 277f
+276:
 	mov rcx, r15
 	add rcx, 672
 	movabs rax, 0
@@ -73698,11 +73732,11 @@ vg_chacha20_poly1305_open_avx512:
 	vzeroupper
 	mov rsi, r15
 	add rsi, 128
-272:
-	jmp 270f
-269:
+277:
+	jmp 275f
+274:
 	call {vg_chacha20_xor_avx2}
-270:
+275:
 	mov r15, rsi
 	sub r15, 128
 	mov rdi, r15
@@ -73717,17 +73751,17 @@ vg_chacha20_poly1305_open_avx512:
 	mov rsi, rbx
 	mov rdx, rbp
 	shr rdx, 4
-	je 273f
+	je 278f
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 274f
-273:
-274:
+	jmp 279f
+278:
+279:
 	mov rdx, rbp
 	and rdx, 15
-	jne 275f
-	je 277f
+	jne 280f
+	je 282f
 	movabs rax, 0
 	movabs rax, 0
 	movabs rax, 0
@@ -73738,14 +73772,14 @@ vg_chacha20_poly1305_open_avx512:
 	movabs rax, 0
 	add rax, 1
 	add rax, 1
-	jmp 278f
-277:
-278:
-276:
+	jmp 283f
+282:
+283:
+281:
 	mov QWORD PTR [r15+592], rbp
 	mov QWORD PTR [r15+600], r13
 	cmp r13, 449
-	jb 287f
+	jb 292f
 	mov eax, 1
 	mov DWORD PTR [r15+112], eax
 	mov rdi, r15
@@ -73755,7 +73789,7 @@ vg_chacha20_poly1305_open_avx512:
 	mov rcx, r15
 	add rcx, 128
 	cmp rdx, 512
-	jb 289f
+	jb 294f
 	mov QWORD PTR [rcx+392], r12
 	mov QWORD PTR [rcx+400], r13
 	mov QWORD PTR [rcx+408], r14
@@ -73800,7 +73834,7 @@ vg_chacha20_poly1305_open_avx512:
 	mov rbp, QWORD PTR [rdi+16]
 	mov rdi, rcx
 	sub rdi, 64
-291:
+296:
 	vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 	vpshufd ymm0, ymm12, 0
 	vpshufd ymm1, ymm12, 85
@@ -76630,12 +76664,12 @@ vg_chacha20_poly1305_open_avx512:
 	sub rdx, 512
 	mov QWORD PTR [rcx+416], rdx
 	cmp rdx, 512
-	jae 291b
+	jae 296b
 	mov edx, 0
 	mov rdx, QWORD PTR [rcx+416]
 	sub rdx, 193
 	cmp rdx, 319
-	jb 292f
+	jb 297f
 	mov rax, r11
 	add rax, 5
 	mov rdx, rbx
@@ -76667,12 +76701,12 @@ vg_chacha20_poly1305_open_avx512:
 	mov r14, QWORD PTR [rcx+408]
 	mov r15, rcx
 	sub r15, 128
-	jmp 293f
-292:
+	jmp 298f
+297:
 	cmp rdx, 64
-	jb 294f
+	jb 299f
 	cmp rdx, 192
-	jb 296f
+	jb 2101f
 	vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 	vpshufd ymm0, ymm12, 0
 	vpshufd ymm1, ymm12, 85
@@ -76699,7 +76733,7 @@ vg_chacha20_poly1305_open_avx512:
 	vmovdqu YMMWORD PTR [rcx+96], ymm15
 	vmovdqu ymm15, YMMWORD PTR [rcx+128]
 	mov edi, 6
-298:
+2103:
 	vpaddd ymm0, ymm0, ymm4
 	vpxor ymm8, ymm8, ymm0
 	vpshufb ymm8, ymm8, ymm15
@@ -76998,10 +77032,10 @@ vg_chacha20_poly1305_open_avx512:
 	adc rbp, 0
 	add rsi, 64
 	sub rdi, 1
-	jne 298b
+	jne 2103b
 	sub rsi, 384
 	mov edi, 4
-299:
+2104:
 	vpaddd ymm0, ymm0, ymm4
 	vpxor ymm8, ymm8, ymm0
 	vpshufb ymm8, ymm8, ymm15
@@ -77147,7 +77181,7 @@ vg_chacha20_poly1305_open_avx512:
 	vpsrld ymm4, ymm4, 25
 	vpor ymm4, ymm4, ymm14
 	sub rdi, 1
-	jne 299b
+	jne 2104b
 	mov rdi, rcx
 	sub rdi, 64
 	vmovdqu YMMWORD PTR [rcx], ymm12
@@ -77296,8 +77330,8 @@ vg_chacha20_poly1305_open_avx512:
 	mov eax, 0
 	mov eax, eax
 	mov eax, eax
-	jmp 297f
-296:
+	jmp 2102f
+2101:
 	movabs rax, 0
 	mov QWORD PTR [rcx+224], rax
 	movabs rax, 0
@@ -77361,7 +77395,7 @@ vg_chacha20_poly1305_open_avx512:
 	vpaddd ymm3, ymm3, ymm12
 	mov r9, r12
 	mov edi, 4
-2100:
+2105:
 	vpaddd ymm0, ymm0, ymm1
 	vpaddd ymm4, ymm4, ymm5
 	vpaddd ymm8, ymm8, ymm9
@@ -77630,10 +77664,10 @@ vg_chacha20_poly1305_open_avx512:
 	vpshufd ymm11, ymm11, 57
 	add rsi, 64
 	sub rdi, 1
-	jne 2100b
+	jne 2105b
 	sub rsi, 256
 	mov edi, 6
-2101:
+2106:
 	vpaddd ymm0, ymm0, ymm1
 	vpaddd ymm4, ymm4, ymm5
 	vpaddd ymm8, ymm8, ymm9
@@ -77749,7 +77783,7 @@ vg_chacha20_poly1305_open_avx512:
 	vpshufd ymm10, ymm10, 78
 	vpshufd ymm11, ymm11, 57
 	sub rdi, 1
-	jne 2101b
+	jne 2106b
 	mov rdi, rcx
 	sub rdi, 64
 	mov rax, r11
@@ -77835,9 +77869,9 @@ vg_chacha20_poly1305_open_avx512:
 	vperm2i128 ymm12, ymm10, ymm11, 49
 	vmovdqu YMMWORD PTR [rsi+352], ymm12
 	vzeroupper
-297:
-	jmp 295f
-294:
+2102:
+	jmp 2100f
+299:
 	movabs rax, 0
 	mov QWORD PTR [rcx+224], rax
 	movabs rax, 0
@@ -79176,10 +79210,10 @@ vg_chacha20_poly1305_open_avx512:
 	vperm2i128 ymm10, ymm6, ymm7, 49
 	vmovdqu YMMWORD PTR [r9+224], ymm10
 	vzeroupper
-295:
-293:
-	jmp 290f
-289:
+2100:
+298:
+	jmp 295f
+294:
 	mov QWORD PTR [rcx+392], r12
 	mov QWORD PTR [rcx+400], r13
 	mov QWORD PTR [rcx+408], r14
@@ -81894,7 +81928,7 @@ vg_chacha20_poly1305_open_avx512:
 	mov r15, rcx
 	sub r15, 128
 	vzeroupper
-290:
+295:
 	mov eax, 0
 	mov eax, 0
 	mov eax, 0
@@ -81904,16 +81938,16 @@ vg_chacha20_poly1305_open_avx512:
 	mov rsi, rbx
 	mov rdx, rbp
 	shr rdx, 4
-	je 2102f
+	je 2107f
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 2103f
-2102:
-2103:
+	jmp 2108f
+2107:
+2108:
 	mov rdx, rbp
 	and rdx, 15
-	jne 2104f
+	jne 2109f
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -81922,19 +81956,19 @@ vg_chacha20_poly1305_open_avx512:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-2105:
+2110:
 	cmp r13, 512
-	jb 2112f
+	jb 2117f
 	mov rax, r13
 	and rax, 511
 	sub rax, 193
 	cmp rax, 64
-	jb 2114f
+	jb 2119f
 	mov rax, r13
 	and rax, 511
 	sub rax, 1
 	cmp rax, 511
-	jb 2116f
+	jb 2121f
 	mov rdi, r15
 	add rdi, 64
 	mov rsi, rbx
@@ -81942,8 +81976,8 @@ vg_chacha20_poly1305_open_avx512:
 	mov rcx, r15
 	add rcx, 128
 	call {vg_chacha20_xor_avx2}
-	jmp 2117f
-2116:
+	jmp 2122f
+2121:
 	mov rdx, r13
 	and rdx, 511
 	mov r10, r14
@@ -81954,18 +81988,18 @@ vg_chacha20_poly1305_open_avx512:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
-	je 2118f
-2120:
+	je 2123f
+2125:
 	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 	add rcx, 32
 	sub rax, 1
-	jne 2120b
-	jmp 2119f
-2118:
-2119:
+	jne 2125b
+	jmp 2124f
+2123:
+2124:
 	mov rdi, r10
 	add rdi, rcx
 	add rsi, rcx
@@ -81973,53 +82007,53 @@ vg_chacha20_poly1305_open_avx512:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 2121f
-2123:
+	je 2126f
+2128:
 	mov r8, QWORD PTR [rdi+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 2123b
-	jmp 2122f
-2121:
-2122:
-	cmp rcx, rdx
-	je 2124f
+	jne 2128b
+	jmp 2127f
 2126:
+2127:
+	cmp rcx, rdx
+	je 2129f
+2131:
 	movzx eax, BYTE PTR [rdi+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 2126b
-	jmp 2125f
-2124:
-2125:
+	jne 2131b
+	jmp 2130f
+2129:
+2130:
 	mov rsi, r15
 	add rsi, 128
 	mov rax, r13
 	and rax, 511
 	sub rax, 257
 	cmp rax, 255
-	jb 2127f
-	jmp 2128f
-2127:
+	jb 2132f
+	jmp 2133f
+2132:
 	mov edx, 576
 	vpxor ymm0, ymm0, ymm0
 	mov ecx, 0
-2129:
+2134:
 	vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 	add rcx, 32
 	cmp rcx, rdx
-	jb 2129b
+	jb 2134b
 	vzeroupper
 	mov rax, rax
-2128:
-2117:
-	jmp 2115f
-2114:
+2133:
+2122:
+	jmp 2120f
+2119:
 	mov rdx, r13
 	and rdx, 511
 	mov r10, r14
@@ -82030,18 +82064,18 @@ vg_chacha20_poly1305_open_avx512:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
-	je 2130f
-2132:
+	je 2135f
+2137:
 	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 	add rcx, 32
 	sub rax, 1
-	jne 2132b
-	jmp 2131f
-2130:
-2131:
+	jne 2137b
+	jmp 2136f
+2135:
+2136:
 	mov rdi, r10
 	add rdi, rcx
 	add rsi, rcx
@@ -82049,39 +82083,39 @@ vg_chacha20_poly1305_open_avx512:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 2133f
-2135:
+	je 2138f
+2140:
 	mov r8, QWORD PTR [rdi+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 2135b
-	jmp 2134f
-2133:
-2134:
-	cmp rcx, rdx
-	je 2136f
+	jne 2140b
+	jmp 2139f
 2138:
+2139:
+	cmp rcx, rdx
+	je 2141f
+2143:
 	movzx eax, BYTE PTR [rdi+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 2138b
-	jmp 2137f
-2136:
-2137:
+	jne 2143b
+	jmp 2142f
+2141:
+2142:
 	mov rsi, r15
 	add rsi, 128
-2115:
+2120:
 	mov eax, 0
 	mov eax, 0
 	mov eax, 0
 	mov eax, 0
-	jmp 2113f
-2112:
+	jmp 2118f
+2117:
 	mov rdx, r13
 	and rdx, 511
 	mov r10, r14
@@ -82092,18 +82126,18 @@ vg_chacha20_poly1305_open_avx512:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
-	je 2139f
-2141:
+	je 2144f
+2146:
 	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 	add rcx, 32
 	sub rax, 1
-	jne 2141b
-	jmp 2140f
-2139:
-2140:
+	jne 2146b
+	jmp 2145f
+2144:
+2145:
 	mov rdi, r10
 	add rdi, rcx
 	add rsi, rcx
@@ -82111,59 +82145,59 @@ vg_chacha20_poly1305_open_avx512:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 2142f
-2144:
+	je 2147f
+2149:
 	mov r8, QWORD PTR [rdi+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 2144b
-	jmp 2143f
-2142:
-2143:
-	cmp rcx, rdx
-	je 2145f
+	jne 2149b
+	jmp 2148f
 2147:
+2148:
+	cmp rcx, rdx
+	je 2150f
+2152:
 	movzx eax, BYTE PTR [rdi+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 2147b
-	jmp 2146f
-2145:
-2146:
+	jne 2152b
+	jmp 2151f
+2150:
+2151:
 	mov rsi, r15
 	add rsi, 128
 	mov edx, 576
 	vpxor ymm0, ymm0, ymm0
 	mov ecx, 0
-2148:
+2153:
 	vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 	add rcx, 32
 	cmp rcx, rdx
-	jb 2148b
+	jb 2153b
 	vzeroupper
-2113:
-	jmp 288f
-287:
+2118:
+	jmp 293f
+292:
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r14
 	mov rdx, r13
 	shr rdx, 4
-	je 2149f
+	je 2154f
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 2150f
-2149:
-2150:
+	jmp 2155f
+2154:
+2155:
 	mov rdx, r13
 	and rdx, 15
-	jne 2151f
+	jne 2156f
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -82172,25 +82206,25 @@ vg_chacha20_poly1305_open_avx512:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-2152:
+2157:
 	mov rsi, r15
 	add rsi, 736
 	mov rdx, r13
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
-	je 2159f
-2161:
+	je 2164f
+2166:
 	vmovdqu ymm0, YMMWORD PTR [r14+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r14+rcx*1], ymm0
 	add rcx, 32
 	sub rax, 1
-	jne 2161b
-	jmp 2160f
-2159:
-2160:
+	jne 2166b
+	jmp 2165f
+2164:
+2165:
 	mov rdi, r14
 	add rdi, rcx
 	add rsi, rcx
@@ -82198,50 +82232,50 @@ vg_chacha20_poly1305_open_avx512:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 2162f
-2164:
+	je 2167f
+2169:
 	mov r8, QWORD PTR [rdi+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 2164b
-	jmp 2163f
-2162:
-2163:
-	cmp rcx, rdx
-	je 2165f
+	jne 2169b
+	jmp 2168f
 2167:
+2168:
+	cmp rcx, rdx
+	je 2170f
+2172:
 	movzx eax, BYTE PTR [rdi+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 2167b
-	jmp 2166f
-2165:
-2166:
+	jne 2172b
+	jmp 2171f
+2170:
+2171:
 	mov rsi, r15
 	add rsi, 128
-288:
+293:
 	mov r15, rsi
 	sub r15, 128
 	cmp r13, 449
-	jb 2168f
+	jb 2173f
 	mov edx, 192
-	jmp 2169f
-2168:
+	jmp 2174f
+2173:
 	mov rdx, r13
-2169:
+2174:
 	add rdx, 64
 	vpxor ymm0, ymm0, ymm0
 	mov ecx, 0
-2170:
+2175:
 	vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 	add rcx, 32
 	cmp rcx, rdx
-	jb 2170b
+	jb 2175b
 	vzeroupper
 	mov rdi, r15
 	add rdi, 448
@@ -82257,6 +82291,23 @@ vg_chacha20_poly1305_open_avx512:
 	cmp rax, 1
 	mov eax, 0
 	adc eax, 0
+	cmp eax, 0
+	je 2176f
+	jmp 2177f
+2176:
+	mov rdx, r14
+	mov rcx, r13
+	cmp rcx, 0
+	je 2178f
+2180:
+	mov BYTE PTR [rdx], al
+	add rdx, 1
+	sub rcx, 1
+	jne 2180b
+	jmp 2179f
+2178:
+2179:
+2177:
 	mov r15, rdi
 	sub r15, 448
 	mov rbx, QWORD PTR [r15]
@@ -82406,8 +82457,8 @@ vg_chacha20_poly1305_open_avx512:
 	mov r15, rdi
 	sub r15, 448
 	jmp 224b
-275:
-	jne 279f
+280:
+	jne 284f
 	movabs rax, 0
 	movabs rax, 0
 	movabs rax, 0
@@ -82415,39 +82466,39 @@ vg_chacha20_poly1305_open_avx512:
 	movabs rax, 0
 	mov eax, 0
 	add rax, 1
-	jmp 280f
-279:
-280:
+	jmp 285f
+284:
+285:
 	mov rsi, rbp
 	sub rsi, rdx
 	add rsi, rbx
 	xor r9d, r9d
 	cmp rdx, 8
-	jb 281f
+	jb 286f
 	mov rax, QWORD PTR [rsi]
 	add rsi, 8
 	sub rdx, 8
-	je 283f
-285:
+	je 288f
+290:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 285b
-	jmp 284f
-283:
-284:
-	jmp 282f
-281:
+	jne 290b
+	jmp 289f
+288:
+289:
+	jmp 287f
 286:
+291:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 286b
+	jne 291b
 	mov rax, r9
 	xor r9d, r9d
-282:
+287:
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -82458,38 +82509,38 @@ vg_chacha20_poly1305_open_avx512:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 276b
-2104:
+	jmp 281b
+2109:
 	mov rsi, rbp
 	sub rsi, rdx
 	add rsi, rbx
 	xor r9d, r9d
 	cmp rdx, 8
-	jb 2106f
+	jb 2111f
 	mov rax, QWORD PTR [rsi]
 	add rsi, 8
 	sub rdx, 8
-	je 2108f
-2110:
+	je 2113f
+2115:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 2110b
-	jmp 2109f
-2108:
-2109:
-	jmp 2107f
-2106:
+	jne 2115b
+	jmp 2114f
+2113:
+2114:
+	jmp 2112f
 2111:
+2116:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 2111b
+	jne 2116b
 	mov rax, r9
 	xor r9d, r9d
-2107:
+2112:
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -82500,38 +82551,38 @@ vg_chacha20_poly1305_open_avx512:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 2105b
-2151:
+	jmp 2110b
+2156:
 	mov rsi, r13
 	sub rsi, rdx
 	add rsi, r14
 	xor r9d, r9d
 	cmp rdx, 8
-	jb 2153f
+	jb 2158f
 	mov rax, QWORD PTR [rsi]
 	add rsi, 8
 	sub rdx, 8
-	je 2155f
-2157:
+	je 2160f
+2162:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 2157b
-	jmp 2156f
-2155:
-2156:
-	jmp 2154f
-2153:
+	jne 2162b
+	jmp 2161f
+2160:
+2161:
+	jmp 2159f
 2158:
+2163:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 2158b
+	jne 2163b
 	mov rax, r9
 	xor r9d, r9d
-2154:
+2159:
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -82542,7 +82593,7 @@ vg_chacha20_poly1305_open_avx512:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 2152b
+	jmp 2157b
 	.p2align 6
 
 vg_chacha20_poly1305_seal_gather_avx512:
@@ -110899,6 +110950,23 @@ vg_chacha20_poly1305_open_avx512vl:
 	cmp rax, 1
 	mov eax, 0
 	adc eax, 0
+	cmp eax, 0
+	je 266f
+	jmp 267f
+266:
+	mov rdx, r14
+	mov rcx, r13
+	cmp rcx, 0
+	je 268f
+270:
+	mov BYTE PTR [rdx], al
+	add rdx, 1
+	sub rcx, 1
+	jne 270b
+	jmp 269f
+268:
+269:
+267:
 	mov r15, rdi
 	sub r15, 448
 	mov rbx, QWORD PTR [r15]
@@ -110959,19 +111027,19 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov QWORD PTR [r15+664], rax
 	mov edx, 0
 	cmp r13, 449
-	jb 266f
-	jmp 267f
-266:
+	jb 271f
+	jmp 272f
+271:
 	mov rdx, r13
-267:
+272:
 	add rdx, 64
 	vpxor ymm0, ymm0, ymm0
 	mov ecx, 0
-268:
+273:
 	vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 	add rcx, 32
 	cmp rcx, rdx
-	jb 268b
+	jb 273b
 	vzeroupper
 	mov rdi, r15
 	add rdi, 608
@@ -110986,12 +111054,12 @@ vg_chacha20_poly1305_open_avx512vl:
 	cmp r13, 513
 	cmovb rax, r10
 	cmp rax, 192
-	jb 269f
+	jb 274f
 	call {vg_chacha20_xor_avx512vl}
-	jmp 270f
-269:
+	jmp 275f
+274:
 	cmp rax, 64
-	jb 271f
+	jb 276f
 	mov rcx, r15
 	add rcx, 672
 	movabs rax, 0
@@ -111692,8 +111760,8 @@ vg_chacha20_poly1305_open_avx512vl:
 	vzeroupper
 	mov rsi, r15
 	add rsi, 128
-	jmp 272f
-271:
+	jmp 277f
+276:
 	mov rcx, r15
 	add rcx, 672
 	movabs rax, 0
@@ -112063,8 +112131,8 @@ vg_chacha20_poly1305_open_avx512vl:
 	vzeroupper
 	mov rsi, r15
 	add rsi, 128
-272:
-270:
+277:
+275:
 	mov r15, rsi
 	sub r15, 128
 	mov rdi, r15
@@ -112079,17 +112147,17 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov rsi, rbx
 	mov rdx, rbp
 	shr rdx, 4
-	je 273f
+	je 278f
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 274f
-273:
-274:
+	jmp 279f
+278:
+279:
 	mov rdx, rbp
 	and rdx, 15
-	jne 275f
-	je 277f
+	jne 280f
+	je 282f
 	movabs rax, 0
 	movabs rax, 0
 	movabs rax, 0
@@ -112100,14 +112168,14 @@ vg_chacha20_poly1305_open_avx512vl:
 	movabs rax, 0
 	add rax, 1
 	add rax, 1
-	jmp 278f
-277:
-278:
-276:
+	jmp 283f
+282:
+283:
+281:
 	mov QWORD PTR [r15+592], rbp
 	mov QWORD PTR [r15+600], r13
 	cmp r13, 449
-	jb 287f
+	jb 292f
 	mov eax, 1
 	mov DWORD PTR [r15+112], eax
 	mov rdi, r15
@@ -112117,7 +112185,7 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov rcx, r15
 	add rcx, 128
 	cmp rdx, 512
-	jb 289f
+	jb 294f
 	mov QWORD PTR [rcx+392], r12
 	mov QWORD PTR [rcx+400], r13
 	mov QWORD PTR [rcx+408], r14
@@ -112162,7 +112230,7 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov rbp, QWORD PTR [rdi+16]
 	mov rdi, rcx
 	sub rdi, 64
-291:
+296:
 	vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 	vpshufd ymm0, ymm12, 0
 	vpshufd ymm1, ymm12, 85
@@ -114517,12 +114585,12 @@ vg_chacha20_poly1305_open_avx512vl:
 	sub rdx, 512
 	mov QWORD PTR [rcx+416], rdx
 	cmp rdx, 512
-	jae 291b
+	jae 296b
 	mov edx, 0
 	mov rdx, QWORD PTR [rcx+416]
 	sub rdx, 193
 	cmp rdx, 319
-	jb 292f
+	jb 297f
 	mov rax, r11
 	add rax, 5
 	mov rdx, rbx
@@ -114554,12 +114622,12 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov r14, QWORD PTR [rcx+408]
 	mov r15, rcx
 	sub r15, 128
-	jmp 293f
-292:
+	jmp 298f
+297:
 	cmp rdx, 64
-	jb 294f
+	jb 299f
 	cmp rdx, 192
-	jb 296f
+	jb 2101f
 	vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 	vpshufd ymm0, ymm12, 0
 	vpshufd ymm1, ymm12, 85
@@ -114588,7 +114656,7 @@ vg_chacha20_poly1305_open_avx512vl:
 	vmovdqu ymm14, YMMWORD PTR [rcx+64]
 	vmovdqu ymm15, YMMWORD PTR [rcx+96]
 	mov edi, 6
-298:
+2103:
 	vpaddd ymm0, ymm0, ymm4
 	vpxor ymm8, ymm8, ymm0
 	vprold ymm8, ymm8, 16
@@ -114839,10 +114907,10 @@ vg_chacha20_poly1305_open_avx512vl:
 	adc rbp, 0
 	add rsi, 64
 	sub rdi, 1
-	jne 298b
+	jne 2103b
 	sub rsi, 384
 	mov edi, 4
-299:
+2104:
 	vpaddd ymm0, ymm0, ymm4
 	vpxor ymm8, ymm8, ymm0
 	vprold ymm8, ymm8, 16
@@ -114940,7 +115008,7 @@ vg_chacha20_poly1305_open_avx512vl:
 	vpxor ymm4, ymm4, ymm13
 	vprold ymm4, ymm4, 7
 	sub rdi, 1
-	jne 299b
+	jne 2104b
 	mov rdi, rcx
 	sub rdi, 64
 	vmovdqu YMMWORD PTR [rcx+64], ymm14
@@ -115094,8 +115162,8 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov eax, 0
 	mov eax, 0
 	mov eax, 0
-	jmp 297f
-296:
+	jmp 2102f
+2101:
 	movabs rax, 0
 	mov QWORD PTR [rcx+224], rax
 	movabs rax, 0
@@ -115159,7 +115227,7 @@ vg_chacha20_poly1305_open_avx512vl:
 	vpaddd ymm3, ymm3, ymm12
 	mov r9, r12
 	mov edi, 4
-2100:
+2105:
 	vpaddd ymm0, ymm0, ymm1
 	vpaddd ymm4, ymm4, ymm5
 	vpaddd ymm8, ymm8, ymm9
@@ -115428,10 +115496,10 @@ vg_chacha20_poly1305_open_avx512vl:
 	vpshufd ymm11, ymm11, 57
 	add rsi, 64
 	sub rdi, 1
-	jne 2100b
+	jne 2105b
 	sub rsi, 256
 	mov edi, 6
-2101:
+2106:
 	vpaddd ymm0, ymm0, ymm1
 	vpaddd ymm4, ymm4, ymm5
 	vpaddd ymm8, ymm8, ymm9
@@ -115547,7 +115615,7 @@ vg_chacha20_poly1305_open_avx512vl:
 	vpshufd ymm10, ymm10, 78
 	vpshufd ymm11, ymm11, 57
 	sub rdi, 1
-	jne 2101b
+	jne 2106b
 	mov rdi, rcx
 	sub rdi, 64
 	mov rax, r11
@@ -115633,9 +115701,9 @@ vg_chacha20_poly1305_open_avx512vl:
 	vperm2i128 ymm12, ymm10, ymm11, 49
 	vmovdqu YMMWORD PTR [rsi+352], ymm12
 	vzeroupper
-297:
-	jmp 295f
-294:
+2102:
+	jmp 2100f
+299:
 	movabs rax, 0
 	mov QWORD PTR [rcx+224], rax
 	movabs rax, 0
@@ -116974,10 +117042,10 @@ vg_chacha20_poly1305_open_avx512vl:
 	vperm2i128 ymm10, ymm6, ymm7, 49
 	vmovdqu YMMWORD PTR [r9+224], ymm10
 	vzeroupper
-295:
-293:
-	jmp 290f
-289:
+2100:
+298:
+	jmp 295f
+294:
 	mov QWORD PTR [rcx+392], r12
 	mov QWORD PTR [rcx+400], r13
 	mov QWORD PTR [rcx+408], r14
@@ -119217,7 +119285,7 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov r15, rcx
 	sub r15, 128
 	vzeroupper
-290:
+295:
 	mov eax, 0
 	mov eax, 0
 	mov eax, 0
@@ -119227,16 +119295,16 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov rsi, rbx
 	mov rdx, rbp
 	shr rdx, 4
-	je 2102f
+	je 2107f
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 2103f
-2102:
-2103:
+	jmp 2108f
+2107:
+2108:
 	mov rdx, rbp
 	and rdx, 15
-	jne 2104f
+	jne 2109f
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -119245,19 +119313,19 @@ vg_chacha20_poly1305_open_avx512vl:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-2105:
+2110:
 	cmp r13, 512
-	jb 2112f
+	jb 2117f
 	mov rax, r13
 	and rax, 511
 	sub rax, 193
 	cmp rax, 64
-	jb 2114f
+	jb 2119f
 	mov rax, r13
 	and rax, 511
 	sub rax, 1
 	cmp rax, 511
-	jb 2116f
+	jb 2121f
 	mov rdi, r15
 	add rdi, 64
 	mov rsi, rbx
@@ -119265,8 +119333,8 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov rcx, r15
 	add rcx, 128
 	call {vg_chacha20_xor_avx512vl}
-	jmp 2117f
-2116:
+	jmp 2122f
+2121:
 	mov rdx, r13
 	and rdx, 511
 	mov r10, r14
@@ -119277,18 +119345,18 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
-	je 2118f
-2120:
+	je 2123f
+2125:
 	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 	add rcx, 32
 	sub rax, 1
-	jne 2120b
-	jmp 2119f
-2118:
-2119:
+	jne 2125b
+	jmp 2124f
+2123:
+2124:
 	mov rdi, r10
 	add rdi, rcx
 	add rsi, rcx
@@ -119296,53 +119364,53 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 2121f
-2123:
+	je 2126f
+2128:
 	mov r8, QWORD PTR [rdi+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 2123b
-	jmp 2122f
-2121:
-2122:
-	cmp rcx, rdx
-	je 2124f
+	jne 2128b
+	jmp 2127f
 2126:
+2127:
+	cmp rcx, rdx
+	je 2129f
+2131:
 	movzx eax, BYTE PTR [rdi+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 2126b
-	jmp 2125f
-2124:
-2125:
+	jne 2131b
+	jmp 2130f
+2129:
+2130:
 	mov rsi, r15
 	add rsi, 128
 	mov rax, r13
 	and rax, 511
 	sub rax, 257
 	cmp rax, 255
-	jb 2127f
-	jmp 2128f
-2127:
+	jb 2132f
+	jmp 2133f
+2132:
 	mov edx, 576
 	vpxor ymm0, ymm0, ymm0
 	mov ecx, 0
-2129:
+2134:
 	vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 	add rcx, 32
 	cmp rcx, rdx
-	jb 2129b
+	jb 2134b
 	vzeroupper
 	mov rax, rax
-2128:
-2117:
-	jmp 2115f
-2114:
+2133:
+2122:
+	jmp 2120f
+2119:
 	mov rdx, r13
 	and rdx, 511
 	mov r10, r14
@@ -119353,18 +119421,18 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
-	je 2130f
-2132:
+	je 2135f
+2137:
 	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 	add rcx, 32
 	sub rax, 1
-	jne 2132b
-	jmp 2131f
-2130:
-2131:
+	jne 2137b
+	jmp 2136f
+2135:
+2136:
 	mov rdi, r10
 	add rdi, rcx
 	add rsi, rcx
@@ -119372,39 +119440,39 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 2133f
-2135:
+	je 2138f
+2140:
 	mov r8, QWORD PTR [rdi+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 2135b
-	jmp 2134f
-2133:
-2134:
-	cmp rcx, rdx
-	je 2136f
+	jne 2140b
+	jmp 2139f
 2138:
+2139:
+	cmp rcx, rdx
+	je 2141f
+2143:
 	movzx eax, BYTE PTR [rdi+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 2138b
-	jmp 2137f
-2136:
-2137:
+	jne 2143b
+	jmp 2142f
+2141:
+2142:
 	mov rsi, r15
 	add rsi, 128
-2115:
+2120:
 	mov eax, 0
 	mov eax, 0
 	mov eax, 0
 	mov eax, 0
-	jmp 2113f
-2112:
+	jmp 2118f
+2117:
 	mov rdx, r13
 	and rdx, 511
 	mov r10, r14
@@ -119415,18 +119483,18 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
-	je 2139f
-2141:
+	je 2144f
+2146:
 	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 	add rcx, 32
 	sub rax, 1
-	jne 2141b
-	jmp 2140f
-2139:
-2140:
+	jne 2146b
+	jmp 2145f
+2144:
+2145:
 	mov rdi, r10
 	add rdi, rcx
 	add rsi, rcx
@@ -119434,59 +119502,59 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 2142f
-2144:
+	je 2147f
+2149:
 	mov r8, QWORD PTR [rdi+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 2144b
-	jmp 2143f
-2142:
-2143:
-	cmp rcx, rdx
-	je 2145f
+	jne 2149b
+	jmp 2148f
 2147:
+2148:
+	cmp rcx, rdx
+	je 2150f
+2152:
 	movzx eax, BYTE PTR [rdi+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 2147b
-	jmp 2146f
-2145:
-2146:
+	jne 2152b
+	jmp 2151f
+2150:
+2151:
 	mov rsi, r15
 	add rsi, 128
 	mov edx, 576
 	vpxor ymm0, ymm0, ymm0
 	mov ecx, 0
-2148:
+2153:
 	vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 	add rcx, 32
 	cmp rcx, rdx
-	jb 2148b
+	jb 2153b
 	vzeroupper
-2113:
-	jmp 288f
-287:
+2118:
+	jmp 293f
+292:
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r14
 	mov rdx, r13
 	shr rdx, 4
-	je 2149f
+	je 2154f
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 2150f
-2149:
-2150:
+	jmp 2155f
+2154:
+2155:
 	mov rdx, r13
 	and rdx, 15
-	jne 2151f
+	jne 2156f
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -119495,25 +119563,25 @@ vg_chacha20_poly1305_open_avx512vl:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-2152:
+2157:
 	mov rsi, r15
 	add rsi, 736
 	mov rdx, r13
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
-	je 2159f
-2161:
+	je 2164f
+2166:
 	vmovdqu ymm0, YMMWORD PTR [r14+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r14+rcx*1], ymm0
 	add rcx, 32
 	sub rax, 1
-	jne 2161b
-	jmp 2160f
-2159:
-2160:
+	jne 2166b
+	jmp 2165f
+2164:
+2165:
 	mov rdi, r14
 	add rdi, rcx
 	add rsi, rcx
@@ -119521,50 +119589,50 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 2162f
-2164:
+	je 2167f
+2169:
 	mov r8, QWORD PTR [rdi+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 2164b
-	jmp 2163f
-2162:
-2163:
-	cmp rcx, rdx
-	je 2165f
+	jne 2169b
+	jmp 2168f
 2167:
+2168:
+	cmp rcx, rdx
+	je 2170f
+2172:
 	movzx eax, BYTE PTR [rdi+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 2167b
-	jmp 2166f
-2165:
-2166:
+	jne 2172b
+	jmp 2171f
+2170:
+2171:
 	mov rsi, r15
 	add rsi, 128
-288:
+293:
 	mov r15, rsi
 	sub r15, 128
 	cmp r13, 449
-	jb 2168f
+	jb 2173f
 	mov edx, 192
-	jmp 2169f
-2168:
+	jmp 2174f
+2173:
 	mov rdx, r13
-2169:
+2174:
 	add rdx, 64
 	vpxor ymm0, ymm0, ymm0
 	mov ecx, 0
-2170:
+2175:
 	vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 	add rcx, 32
 	cmp rcx, rdx
-	jb 2170b
+	jb 2175b
 	vzeroupper
 	mov rdi, r15
 	add rdi, 448
@@ -119580,6 +119648,23 @@ vg_chacha20_poly1305_open_avx512vl:
 	cmp rax, 1
 	mov eax, 0
 	adc eax, 0
+	cmp eax, 0
+	je 2176f
+	jmp 2177f
+2176:
+	mov rdx, r14
+	mov rcx, r13
+	cmp rcx, 0
+	je 2178f
+2180:
+	mov BYTE PTR [rdx], al
+	add rdx, 1
+	sub rcx, 1
+	jne 2180b
+	jmp 2179f
+2178:
+2179:
+2177:
 	mov r15, rdi
 	sub r15, 448
 	mov rbx, QWORD PTR [r15]
@@ -119729,8 +119814,8 @@ vg_chacha20_poly1305_open_avx512vl:
 	mov r15, rdi
 	sub r15, 448
 	jmp 224b
-275:
-	jne 279f
+280:
+	jne 284f
 	movabs rax, 0
 	movabs rax, 0
 	movabs rax, 0
@@ -119738,39 +119823,39 @@ vg_chacha20_poly1305_open_avx512vl:
 	movabs rax, 0
 	mov eax, 0
 	add rax, 1
-	jmp 280f
-279:
-280:
+	jmp 285f
+284:
+285:
 	mov rsi, rbp
 	sub rsi, rdx
 	add rsi, rbx
 	xor r9d, r9d
 	cmp rdx, 8
-	jb 281f
+	jb 286f
 	mov rax, QWORD PTR [rsi]
 	add rsi, 8
 	sub rdx, 8
-	je 283f
-285:
+	je 288f
+290:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 285b
-	jmp 284f
-283:
-284:
-	jmp 282f
-281:
+	jne 290b
+	jmp 289f
+288:
+289:
+	jmp 287f
 286:
+291:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 286b
+	jne 291b
 	mov rax, r9
 	xor r9d, r9d
-282:
+287:
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -119781,38 +119866,38 @@ vg_chacha20_poly1305_open_avx512vl:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 276b
-2104:
+	jmp 281b
+2109:
 	mov rsi, rbp
 	sub rsi, rdx
 	add rsi, rbx
 	xor r9d, r9d
 	cmp rdx, 8
-	jb 2106f
+	jb 2111f
 	mov rax, QWORD PTR [rsi]
 	add rsi, 8
 	sub rdx, 8
-	je 2108f
-2110:
+	je 2113f
+2115:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 2110b
-	jmp 2109f
-2108:
-2109:
-	jmp 2107f
-2106:
+	jne 2115b
+	jmp 2114f
+2113:
+2114:
+	jmp 2112f
 2111:
+2116:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 2111b
+	jne 2116b
 	mov rax, r9
 	xor r9d, r9d
-2107:
+2112:
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -119823,38 +119908,38 @@ vg_chacha20_poly1305_open_avx512vl:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 2105b
-2151:
+	jmp 2110b
+2156:
 	mov rsi, r13
 	sub rsi, rdx
 	add rsi, r14
 	xor r9d, r9d
 	cmp rdx, 8
-	jb 2153f
+	jb 2158f
 	mov rax, QWORD PTR [rsi]
 	add rsi, 8
 	sub rdx, 8
-	je 2155f
-2157:
+	je 2160f
+2162:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 2157b
-	jmp 2156f
-2155:
-2156:
-	jmp 2154f
-2153:
+	jne 2162b
+	jmp 2161f
+2160:
+2161:
+	jmp 2159f
 2158:
+2163:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 2158b
+	jne 2163b
 	mov rax, r9
 	xor r9d, r9d
-2154:
+2159:
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -119865,7 +119950,7 @@ vg_chacha20_poly1305_open_avx512vl:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 2152b
+	jmp 2157b
 	.p2align 6
 
 vg_chacha20_poly1305_seal_gather_avx512vl:
@@ -120978,6 +121063,23 @@ vg_chacha20_poly1305_open_ifma:
 	cmp rax, 1
 	mov eax, 0
 	adc eax, 0
+	cmp eax, 0
+	je 266f
+	jmp 267f
+266:
+	mov rdx, r14
+	mov rcx, r13
+	cmp rcx, 0
+	je 268f
+270:
+	mov BYTE PTR [rdx], al
+	add rdx, 1
+	sub rcx, 1
+	jne 270b
+	jmp 269f
+268:
+269:
+267:
 	mov r15, rdi
 	sub r15, 448
 	mov rbx, QWORD PTR [r15]
@@ -121038,19 +121140,19 @@ vg_chacha20_poly1305_open_ifma:
 	mov QWORD PTR [r15+664], rax
 	mov edx, 0
 	cmp r13, 449
-	jb 266f
-	jmp 267f
-266:
+	jb 271f
+	jmp 272f
+271:
 	mov rdx, r13
-267:
+272:
 	add rdx, 64
 	vpxor ymm0, ymm0, ymm0
 	mov ecx, 0
-268:
+273:
 	vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 	add rcx, 32
 	cmp rcx, rdx
-	jb 268b
+	jb 273b
 	vzeroupper
 	mov rdi, r15
 	add rdi, 608
@@ -121065,12 +121167,12 @@ vg_chacha20_poly1305_open_ifma:
 	cmp r13, 513
 	cmovb rax, r10
 	cmp rax, 192
-	jb 269f
+	jb 274f
 	call {vg_chacha20_xor_avx512vl}
-	jmp 270f
-269:
+	jmp 275f
+274:
 	cmp rax, 64
-	jb 271f
+	jb 276f
 	mov rcx, r15
 	add rcx, 672
 	movabs rax, 0
@@ -121771,8 +121873,8 @@ vg_chacha20_poly1305_open_ifma:
 	vzeroupper
 	mov rsi, r15
 	add rsi, 128
-	jmp 272f
-271:
+	jmp 277f
+276:
 	mov rcx, r15
 	add rcx, 672
 	movabs rax, 0
@@ -122142,8 +122244,8 @@ vg_chacha20_poly1305_open_ifma:
 	vzeroupper
 	mov rsi, r15
 	add rsi, 128
-272:
-270:
+277:
+275:
 	mov r15, rsi
 	sub r15, 128
 	mov rdi, r15
@@ -122158,17 +122260,17 @@ vg_chacha20_poly1305_open_ifma:
 	mov rsi, rbx
 	mov rdx, rbp
 	shr rdx, 4
-	je 273f
+	je 278f
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 274f
-273:
-274:
+	jmp 279f
+278:
+279:
 	mov rdx, rbp
 	and rdx, 15
-	jne 275f
-	je 277f
+	jne 280f
+	je 282f
 	movabs rax, 0
 	movabs rax, 0
 	movabs rax, 0
@@ -122179,14 +122281,14 @@ vg_chacha20_poly1305_open_ifma:
 	movabs rax, 0
 	add rax, 1
 	add rax, 1
-	jmp 278f
-277:
-278:
-276:
+	jmp 283f
+282:
+283:
+281:
 	mov QWORD PTR [r15+592], rbp
 	mov QWORD PTR [r15+600], r13
 	cmp r13, 449
-	jb 287f
+	jb 292f
 	mov eax, 1
 	mov DWORD PTR [r15+112], eax
 	mov rdi, r15
@@ -122196,7 +122298,7 @@ vg_chacha20_poly1305_open_ifma:
 	mov rcx, r15
 	add rcx, 128
 	cmp rdx, 512
-	jb 289f
+	jb 294f
 	mov QWORD PTR [rcx+392], r12
 	mov QWORD PTR [rcx+400], r13
 	mov QWORD PTR [rcx+408], r14
@@ -122241,7 +122343,7 @@ vg_chacha20_poly1305_open_ifma:
 	mov rbp, QWORD PTR [rdi+16]
 	mov rdi, rcx
 	sub rdi, 64
-291:
+296:
 	vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 	vpshufd ymm0, ymm12, 0
 	vpshufd ymm1, ymm12, 85
@@ -124596,12 +124698,12 @@ vg_chacha20_poly1305_open_ifma:
 	sub rdx, 512
 	mov QWORD PTR [rcx+416], rdx
 	cmp rdx, 512
-	jae 291b
+	jae 296b
 	mov edx, 0
 	mov rdx, QWORD PTR [rcx+416]
 	sub rdx, 193
 	cmp rdx, 319
-	jb 292f
+	jb 297f
 	mov rax, r11
 	add rax, 5
 	mov rdx, rbx
@@ -124633,12 +124735,12 @@ vg_chacha20_poly1305_open_ifma:
 	mov r14, QWORD PTR [rcx+408]
 	mov r15, rcx
 	sub r15, 128
-	jmp 293f
-292:
+	jmp 298f
+297:
 	cmp rdx, 64
-	jb 294f
+	jb 299f
 	cmp rdx, 192
-	jb 296f
+	jb 2101f
 	vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 	vpshufd ymm0, ymm12, 0
 	vpshufd ymm1, ymm12, 85
@@ -124667,7 +124769,7 @@ vg_chacha20_poly1305_open_ifma:
 	vmovdqu ymm14, YMMWORD PTR [rcx+64]
 	vmovdqu ymm15, YMMWORD PTR [rcx+96]
 	mov edi, 6
-298:
+2103:
 	vpaddd ymm0, ymm0, ymm4
 	vpxor ymm8, ymm8, ymm0
 	vprold ymm8, ymm8, 16
@@ -124918,10 +125020,10 @@ vg_chacha20_poly1305_open_ifma:
 	adc rbp, 0
 	add rsi, 64
 	sub rdi, 1
-	jne 298b
+	jne 2103b
 	sub rsi, 384
 	mov edi, 4
-299:
+2104:
 	vpaddd ymm0, ymm0, ymm4
 	vpxor ymm8, ymm8, ymm0
 	vprold ymm8, ymm8, 16
@@ -125019,7 +125121,7 @@ vg_chacha20_poly1305_open_ifma:
 	vpxor ymm4, ymm4, ymm13
 	vprold ymm4, ymm4, 7
 	sub rdi, 1
-	jne 299b
+	jne 2104b
 	mov rdi, rcx
 	sub rdi, 64
 	vmovdqu YMMWORD PTR [rcx+64], ymm14
@@ -125173,8 +125275,8 @@ vg_chacha20_poly1305_open_ifma:
 	mov eax, 0
 	mov eax, 0
 	mov eax, 0
-	jmp 297f
-296:
+	jmp 2102f
+2101:
 	movabs rax, 0
 	mov QWORD PTR [rcx+224], rax
 	movabs rax, 0
@@ -125238,7 +125340,7 @@ vg_chacha20_poly1305_open_ifma:
 	vpaddd ymm3, ymm3, ymm12
 	mov r9, r12
 	mov edi, 4
-2100:
+2105:
 	vpaddd ymm0, ymm0, ymm1
 	vpaddd ymm4, ymm4, ymm5
 	vpaddd ymm8, ymm8, ymm9
@@ -125507,10 +125609,10 @@ vg_chacha20_poly1305_open_ifma:
 	vpshufd ymm11, ymm11, 57
 	add rsi, 64
 	sub rdi, 1
-	jne 2100b
+	jne 2105b
 	sub rsi, 256
 	mov edi, 6
-2101:
+2106:
 	vpaddd ymm0, ymm0, ymm1
 	vpaddd ymm4, ymm4, ymm5
 	vpaddd ymm8, ymm8, ymm9
@@ -125626,7 +125728,7 @@ vg_chacha20_poly1305_open_ifma:
 	vpshufd ymm10, ymm10, 78
 	vpshufd ymm11, ymm11, 57
 	sub rdi, 1
-	jne 2101b
+	jne 2106b
 	mov rdi, rcx
 	sub rdi, 64
 	mov rax, r11
@@ -125712,9 +125814,9 @@ vg_chacha20_poly1305_open_ifma:
 	vperm2i128 ymm12, ymm10, ymm11, 49
 	vmovdqu YMMWORD PTR [rsi+352], ymm12
 	vzeroupper
-297:
-	jmp 295f
-294:
+2102:
+	jmp 2100f
+299:
 	movabs rax, 0
 	mov QWORD PTR [rcx+224], rax
 	movabs rax, 0
@@ -127053,10 +127155,10 @@ vg_chacha20_poly1305_open_ifma:
 	vperm2i128 ymm10, ymm6, ymm7, 49
 	vmovdqu YMMWORD PTR [r9+224], ymm10
 	vzeroupper
-295:
-293:
-	jmp 290f
-289:
+2100:
+298:
+	jmp 295f
+294:
 	mov QWORD PTR [rcx+392], r12
 	mov QWORD PTR [rcx+400], r13
 	mov QWORD PTR [rcx+408], r14
@@ -129296,7 +129398,7 @@ vg_chacha20_poly1305_open_ifma:
 	mov r15, rcx
 	sub r15, 128
 	vzeroupper
-290:
+295:
 	mov eax, 0
 	mov eax, 0
 	mov eax, 0
@@ -129306,16 +129408,16 @@ vg_chacha20_poly1305_open_ifma:
 	mov rsi, rbx
 	mov rdx, rbp
 	shr rdx, 4
-	je 2102f
+	je 2107f
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 2103f
-2102:
-2103:
+	jmp 2108f
+2107:
+2108:
 	mov rdx, rbp
 	and rdx, 15
-	jne 2104f
+	jne 2109f
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -129324,19 +129426,19 @@ vg_chacha20_poly1305_open_ifma:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-2105:
+2110:
 	cmp r13, 512
-	jb 2112f
+	jb 2117f
 	mov rax, r13
 	and rax, 511
 	sub rax, 193
 	cmp rax, 64
-	jb 2114f
+	jb 2119f
 	mov rax, r13
 	and rax, 511
 	sub rax, 1
 	cmp rax, 511
-	jb 2116f
+	jb 2121f
 	mov rdi, r15
 	add rdi, 64
 	mov rsi, rbx
@@ -129344,8 +129446,8 @@ vg_chacha20_poly1305_open_ifma:
 	mov rcx, r15
 	add rcx, 128
 	call {vg_chacha20_xor_avx512vl}
-	jmp 2117f
-2116:
+	jmp 2122f
+2121:
 	mov rdx, r13
 	and rdx, 511
 	mov r10, r14
@@ -129356,18 +129458,18 @@ vg_chacha20_poly1305_open_ifma:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
-	je 2118f
-2120:
+	je 2123f
+2125:
 	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 	add rcx, 32
 	sub rax, 1
-	jne 2120b
-	jmp 2119f
-2118:
-2119:
+	jne 2125b
+	jmp 2124f
+2123:
+2124:
 	mov rdi, r10
 	add rdi, rcx
 	add rsi, rcx
@@ -129375,53 +129477,53 @@ vg_chacha20_poly1305_open_ifma:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 2121f
-2123:
+	je 2126f
+2128:
 	mov r8, QWORD PTR [rdi+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 2123b
-	jmp 2122f
-2121:
-2122:
-	cmp rcx, rdx
-	je 2124f
+	jne 2128b
+	jmp 2127f
 2126:
+2127:
+	cmp rcx, rdx
+	je 2129f
+2131:
 	movzx eax, BYTE PTR [rdi+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 2126b
-	jmp 2125f
-2124:
-2125:
+	jne 2131b
+	jmp 2130f
+2129:
+2130:
 	mov rsi, r15
 	add rsi, 128
 	mov rax, r13
 	and rax, 511
 	sub rax, 257
 	cmp rax, 255
-	jb 2127f
-	jmp 2128f
-2127:
+	jb 2132f
+	jmp 2133f
+2132:
 	mov edx, 576
 	vpxor ymm0, ymm0, ymm0
 	mov ecx, 0
-2129:
+2134:
 	vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 	add rcx, 32
 	cmp rcx, rdx
-	jb 2129b
+	jb 2134b
 	vzeroupper
 	mov rax, rax
-2128:
-2117:
-	jmp 2115f
-2114:
+2133:
+2122:
+	jmp 2120f
+2119:
 	mov rdx, r13
 	and rdx, 511
 	mov r10, r14
@@ -129432,18 +129534,18 @@ vg_chacha20_poly1305_open_ifma:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
-	je 2130f
-2132:
+	je 2135f
+2137:
 	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 	add rcx, 32
 	sub rax, 1
-	jne 2132b
-	jmp 2131f
-2130:
-2131:
+	jne 2137b
+	jmp 2136f
+2135:
+2136:
 	mov rdi, r10
 	add rdi, rcx
 	add rsi, rcx
@@ -129451,39 +129553,39 @@ vg_chacha20_poly1305_open_ifma:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 2133f
-2135:
+	je 2138f
+2140:
 	mov r8, QWORD PTR [rdi+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 2135b
-	jmp 2134f
-2133:
-2134:
-	cmp rcx, rdx
-	je 2136f
+	jne 2140b
+	jmp 2139f
 2138:
+2139:
+	cmp rcx, rdx
+	je 2141f
+2143:
 	movzx eax, BYTE PTR [rdi+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 2138b
-	jmp 2137f
-2136:
-2137:
+	jne 2143b
+	jmp 2142f
+2141:
+2142:
 	mov rsi, r15
 	add rsi, 128
-2115:
+2120:
 	mov eax, 0
 	mov eax, 0
 	mov eax, 0
 	mov eax, 0
-	jmp 2113f
-2112:
+	jmp 2118f
+2117:
 	mov rdx, r13
 	and rdx, 511
 	mov r10, r14
@@ -129494,18 +129596,18 @@ vg_chacha20_poly1305_open_ifma:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
-	je 2139f
-2141:
+	je 2144f
+2146:
 	vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 	add rcx, 32
 	sub rax, 1
-	jne 2141b
-	jmp 2140f
-2139:
-2140:
+	jne 2146b
+	jmp 2145f
+2144:
+2145:
 	mov rdi, r10
 	add rdi, rcx
 	add rsi, rcx
@@ -129513,59 +129615,59 @@ vg_chacha20_poly1305_open_ifma:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 2142f
-2144:
+	je 2147f
+2149:
 	mov r8, QWORD PTR [rdi+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 2144b
-	jmp 2143f
-2142:
-2143:
-	cmp rcx, rdx
-	je 2145f
+	jne 2149b
+	jmp 2148f
 2147:
+2148:
+	cmp rcx, rdx
+	je 2150f
+2152:
 	movzx eax, BYTE PTR [rdi+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 2147b
-	jmp 2146f
-2145:
-2146:
+	jne 2152b
+	jmp 2151f
+2150:
+2151:
 	mov rsi, r15
 	add rsi, 128
 	mov edx, 576
 	vpxor ymm0, ymm0, ymm0
 	mov ecx, 0
-2148:
+2153:
 	vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 	add rcx, 32
 	cmp rcx, rdx
-	jb 2148b
+	jb 2153b
 	vzeroupper
-2113:
-	jmp 288f
-287:
+2118:
+	jmp 293f
+292:
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r14
 	mov rdx, r13
 	shr rdx, 4
-	je 2149f
+	je 2154f
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 2150f
-2149:
-2150:
+	jmp 2155f
+2154:
+2155:
 	mov rdx, r13
 	and rdx, 15
-	jne 2151f
+	jne 2156f
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -129574,25 +129676,25 @@ vg_chacha20_poly1305_open_ifma:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-2152:
+2157:
 	mov rsi, r15
 	add rsi, 736
 	mov rdx, r13
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 5
-	je 2159f
-2161:
+	je 2164f
+2166:
 	vmovdqu ymm0, YMMWORD PTR [r14+rcx*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [r14+rcx*1], ymm0
 	add rcx, 32
 	sub rax, 1
-	jne 2161b
-	jmp 2160f
-2159:
-2160:
+	jne 2166b
+	jmp 2165f
+2164:
+2165:
 	mov rdi, r14
 	add rdi, rcx
 	add rsi, rcx
@@ -129600,50 +129702,50 @@ vg_chacha20_poly1305_open_ifma:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 2162f
-2164:
+	je 2167f
+2169:
 	mov r8, QWORD PTR [rdi+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
 	mov QWORD PTR [rdi+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 2164b
-	jmp 2163f
-2162:
-2163:
-	cmp rcx, rdx
-	je 2165f
+	jne 2169b
+	jmp 2168f
 2167:
+2168:
+	cmp rcx, rdx
+	je 2170f
+2172:
 	movzx eax, BYTE PTR [rdi+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [rdi+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 2167b
-	jmp 2166f
-2165:
-2166:
+	jne 2172b
+	jmp 2171f
+2170:
+2171:
 	mov rsi, r15
 	add rsi, 128
-288:
+293:
 	mov r15, rsi
 	sub r15, 128
 	cmp r13, 449
-	jb 2168f
+	jb 2173f
 	mov edx, 192
-	jmp 2169f
-2168:
+	jmp 2174f
+2173:
 	mov rdx, r13
-2169:
+2174:
 	add rdx, 64
 	vpxor ymm0, ymm0, ymm0
 	mov ecx, 0
-2170:
+2175:
 	vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 	add rcx, 32
 	cmp rcx, rdx
-	jb 2170b
+	jb 2175b
 	vzeroupper
 	mov rdi, r15
 	add rdi, 448
@@ -129659,6 +129761,23 @@ vg_chacha20_poly1305_open_ifma:
 	cmp rax, 1
 	mov eax, 0
 	adc eax, 0
+	cmp eax, 0
+	je 2176f
+	jmp 2177f
+2176:
+	mov rdx, r14
+	mov rcx, r13
+	cmp rcx, 0
+	je 2178f
+2180:
+	mov BYTE PTR [rdx], al
+	add rdx, 1
+	sub rcx, 1
+	jne 2180b
+	jmp 2179f
+2178:
+2179:
+2177:
 	mov r15, rdi
 	sub r15, 448
 	mov rbx, QWORD PTR [r15]
@@ -129808,8 +129927,8 @@ vg_chacha20_poly1305_open_ifma:
 	mov r15, rdi
 	sub r15, 448
 	jmp 224b
-275:
-	jne 279f
+280:
+	jne 284f
 	movabs rax, 0
 	movabs rax, 0
 	movabs rax, 0
@@ -129817,39 +129936,39 @@ vg_chacha20_poly1305_open_ifma:
 	movabs rax, 0
 	mov eax, 0
 	add rax, 1
-	jmp 280f
-279:
-280:
+	jmp 285f
+284:
+285:
 	mov rsi, rbp
 	sub rsi, rdx
 	add rsi, rbx
 	xor r9d, r9d
 	cmp rdx, 8
-	jb 281f
+	jb 286f
 	mov rax, QWORD PTR [rsi]
 	add rsi, 8
 	sub rdx, 8
-	je 283f
-285:
+	je 288f
+290:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 285b
-	jmp 284f
-283:
-284:
-	jmp 282f
-281:
+	jne 290b
+	jmp 289f
+288:
+289:
+	jmp 287f
 286:
+291:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 286b
+	jne 291b
 	mov rax, r9
 	xor r9d, r9d
-282:
+287:
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -129860,38 +129979,38 @@ vg_chacha20_poly1305_open_ifma:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 276b
-2104:
+	jmp 281b
+2109:
 	mov rsi, rbp
 	sub rsi, rdx
 	add rsi, rbx
 	xor r9d, r9d
 	cmp rdx, 8
-	jb 2106f
+	jb 2111f
 	mov rax, QWORD PTR [rsi]
 	add rsi, 8
 	sub rdx, 8
-	je 2108f
-2110:
+	je 2113f
+2115:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 2110b
-	jmp 2109f
-2108:
-2109:
-	jmp 2107f
-2106:
+	jne 2115b
+	jmp 2114f
+2113:
+2114:
+	jmp 2112f
 2111:
+2116:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 2111b
+	jne 2116b
 	mov rax, r9
 	xor r9d, r9d
-2107:
+2112:
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -129902,38 +130021,38 @@ vg_chacha20_poly1305_open_ifma:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 2105b
-2151:
+	jmp 2110b
+2156:
 	mov rsi, r13
 	sub rsi, rdx
 	add rsi, r14
 	xor r9d, r9d
 	cmp rdx, 8
-	jb 2153f
+	jb 2158f
 	mov rax, QWORD PTR [rsi]
 	add rsi, 8
 	sub rdx, 8
-	je 2155f
-2157:
+	je 2160f
+2162:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 2157b
-	jmp 2156f
-2155:
-2156:
-	jmp 2154f
-2153:
+	jne 2162b
+	jmp 2161f
+2160:
+2161:
+	jmp 2159f
 2158:
+2163:
 	shl r9, 8
 	movzx ecx, BYTE PTR [rsi+rdx*1-1]
 	or r9, rcx
 	sub rdx, 1
-	jne 2158b
+	jne 2163b
 	mov rax, r9
 	xor r9d, r9d
-2154:
+2159:
 	mov rdi, r15
 	add rdi, 448
 	mov rsi, r15
@@ -129944,7 +130063,7 @@ vg_chacha20_poly1305_open_ifma:
 	call {vg_poly1305_blocks_avx2}
 	mov r15, rdi
 	sub r15, 448
-	jmp 2152b
+	jmp 2157b
 	.p2align 6
 
 vg_chacha20_poly1305_seal_gather_ifma:
@@ -130933,6 +131052,23 @@ vg_chacha20_poly1305_open:
 	cmp rax, 1
 	mov eax, 0
 	adc eax, 0
+	cmp eax, 0
+	je 242f
+	jmp 243f
+242:
+	mov rdx, r14
+	mov rcx, r13
+	cmp rcx, 0
+	je 244f
+246:
+	mov BYTE PTR [rdx], al
+	add rdx, 1
+	sub rcx, 1
+	jne 246b
+	jmp 245f
+244:
+245:
+243:
 	mov r15, rdi
 	sub r15, 448
 	mov rbx, QWORD PTR [r15]

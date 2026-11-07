@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CopyDigest
-public import VerifiedGarbage.Spec.Ed25519.ExpandedKey
+public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Verified
 meta import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CopyDigest
-meta import VerifiedGarbage.Spec.Ed25519.ExpandedKey
+meta import VerifiedGarbage.Proof.Ed25519.Contract
 meta import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 meta import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
@@ -161,14 +161,14 @@ theorem pkE_ct : ConstantTime isa pkLocalE.pre pkLocalE.pub codeExpanded := by
 /-! ## A witness, and the shared contract -/
 
 abbrev pkSpecE : Contract isa :=
-  Spec.Ed25519.publicKeyExpandedContract (Arm.abi.withConsts VG.Impl.Ed25519.Arm.combConsts) 280
+  Proof.Ed25519.publicKeyExpandedContract (Arm.abi.withConsts VG.Impl.Ed25519.Arm.combConsts) 280
 
 theorem pkE_pre {s : State} (h : pkSpecE.pre s) : pkLocalE.pre s := by
-  have hp : (Spec.Ed25519.publicKeyExpandedContract Arm.abi 280).pre
+  have hp : (Proof.Ed25519.publicKeyExpandedContract Arm.abi 280).pre
       (stripConsts VG.Impl.Ed25519.Arm.combConsts s) ∧
       ConstsOk VG.Impl.Ed25519.Arm.combConsts 280 s := pre_consts.mp h
   have h1 := hp.1
-  sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+  sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
     Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr,
     stackBelow] at h1
   obtain ⟨hb, _, rd, wr, os, oc, sc, ko, ks, kc, no, ns, nc, -⟩ := h1
@@ -265,7 +265,7 @@ def satStateE : State where
 theorem pkE_sat : pkSpecE.pre satStateE := by
   have held := satMemTE_held
   generalize eqs : satStateE = s
-  sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+  sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
     Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr,
     combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s
@@ -284,12 +284,12 @@ theorem pkE_implies : pkLocalE.Implies pkSpecE where
   pre _ h := pkE_pre h
   post := by
     intro s s' _ h
-    sig_post [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_post [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr,
       combConsts_eq, Abi.withConsts]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
+    sig_pub [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr,
       combConsts_eq, Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2⟩ := h

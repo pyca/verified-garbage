@@ -22,7 +22,6 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve)
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact RISCV64.target {
       tables := [("hmac", tables vs)]
       code := signCodeT (curveT h.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vs
-      consts := Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1CombConsts
       stack := stackT
       verified := verifiedT h.law vs hv }]
   else []

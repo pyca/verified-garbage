@@ -6,12 +6,14 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 
 /// One-shot AES-GCM encryption (in place, and out of place from one piece
 /// and from two: a TLS 1.3 record's payload and its content type byte) and
-/// decryption (setup included), and streaming encryption, with a 16-byte
+/// decryption (in place and out of place; setup included), and streaming
+/// encryption, with a 16-byte
 /// key, a 12-byte nonce and 16 bytes of additional data. aws-lc-rs, which
 /// has no streaming AES-GCM, is measured one-shot only, with a separate tag
 /// as this library's is. The one-shot functions are also measured at `RECORD_SIZES`, the short
 /// messages of protocols such as TLS and QUIC, where the fixed costs of a
-/// call (the key's setup, the tag) weigh the most. Encryption with a key
+/// call (the key's setup, the tag) weigh the most, and at `LARGE_SIZES`,
+/// whose input and output do not fit in the caches. Encryption with a key
 /// used for many messages, as a TLS or QUIC connection's is, is also
 /// measured at `REUSED_SIZES`, which are not multiples of 16 blocks (also
 /// out of place from two halves, whose second holds whole blocks).
@@ -37,6 +39,8 @@ pub fn bench(c: &mut Criterion) {
 
     /// The sizes measured one-shot only, besides `SIZES`.
     const RECORD_SIZES: [usize; 3] = [128, 192, 384];
+    /// The sizes measured one-shot only whose buffers outgrow the caches.
+    const LARGE_SIZES: [usize; 1] = [1 << 20];
     /// The sizes measured with a key reused across messages.
     const REUSED_SIZES: [usize; 3] = [600, 1350, 4000];
 
@@ -45,7 +49,12 @@ pub fn bench(c: &mut Criterion) {
     let aad = [0x5a; 16];
     let cipher = Cipher::aes_128_gcm();
     let aws_lc_key = |key: &[u8]| LessSafeKey::new(UnboundKey::new(&AES_128_GCM, key).unwrap());
-    let mut sizes = [SIZES.as_slice(), RECORD_SIZES.as_slice()].concat();
+    let mut sizes = [
+        SIZES.as_slice(),
+        RECORD_SIZES.as_slice(),
+        LARGE_SIZES.as_slice(),
+    ]
+    .concat();
     sizes.sort_unstable();
     for size in sizes {
         let data = vec![0u8; size];
@@ -263,6 +272,54 @@ pub fn bench(c: &mut Criterion) {
                         black_box(&mut buf),
                     )
                     .unwrap();
+            })
+        });
+        g.finish();
+
+        // Out of place: from `ct` into a separate buffer.
+        let mut out = vec![0u8; size];
+        let mut ossl_out = vec![0u8; size + cipher.block_size()];
+        let mut g = c.benchmark_group("aes-128-gcm-decrypt-out-of-place");
+        g.throughput(Throughput::Bytes(size as u64));
+        g.bench(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                let k = AesGcm::new(black_box(&key)).unwrap();
+                k.decrypt(
+                    black_box(&nonce),
+                    black_box(&aad),
+                    black_box(&ct),
+                    &tag,
+                    black_box(&mut out),
+                )
+                .unwrap()
+            })
+        });
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                let mut s = Crypter::new(
+                    cipher,
+                    Mode::Decrypt,
+                    black_box(&key),
+                    Some(black_box(&nonce)),
+                )
+                .unwrap();
+                s.aad_update(black_box(&aad)).unwrap();
+                s.set_tag(&tag).unwrap();
+                let n = s.update(black_box(&ct), &mut ossl_out).unwrap();
+                s.finalize(&mut ossl_out[n..]).unwrap();
+            })
+        });
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                aws_lc_key(black_box(&key))
+                    .open_separate_gather(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(&ct),
+                        &tag,
+                        black_box(&mut out),
+                    )
+                    .unwrap()
             })
         });
         g.finish();

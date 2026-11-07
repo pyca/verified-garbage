@@ -259,4 +259,13 @@ def epi : List Instr :=
     ((List.range 5).map fun k => .mov (savedRegs.getD (5 - k) .rbx) (.mem (at_ .rbx (oSV + 8 * (5 - k))))) ++
     ([.mov .rbx (.mem (at_ .rbx oSV))] : List Instr)
 
+/-- Where the prologue keeps `r8`, which says whether `pk` is a prepared key. -/
+def oFL : Nat := 888
+
+/-- The flag at `FL` (the entry's `r8`). -/
+def testFlag : List Instr := [.mov .rax (.mem (at_ .rbx oFL)), .alu .test .rax (.reg .rax)]
+
+/-- The prologue, which also keeps the flag `r8` at `FL`. -/
+def proF : List Instr := pro ++ [.store (at_ .rcx oFL) .r8]
+
 end VG.Impl.MlDsa.X86_64.Verify

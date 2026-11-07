@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 import VerifiedGarbage.Proof.X448.Arm.Bits
 import VerifiedGarbage.Proof.X448.Arm.Finish
 import VerifiedGarbage.Proof.X448.Arm.Ladder
@@ -16,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # X448 on ARMv7: the whole function
 
 The contract the proof is written against (the facts of
-`Spec.X448.x448Contract` it uses, stated for ARMv7), and the correctness of
+`Proof.X448.x448Contract` it uses, stated for ARMv7), and the correctness of
 `vg_x448` against it: every write is in the working space but the result's, so
 the arguments are read unchanged, the callee-saved registers restored from the
 working space, and the return address kept.

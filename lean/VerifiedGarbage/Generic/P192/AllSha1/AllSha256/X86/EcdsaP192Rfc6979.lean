@@ -19,7 +19,6 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P192.curve) (vs1 : List Proof.S
     Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact X86.target {
       tables := [("hmac", tables (vars vs1 vs256))]
       code := signCodeT (p192 h.law) Spec.Ecdsa.Rfc6979.Curves.p192.tries (vars vs1 vs256)
-      consts := Impl.Ecdsa.X86.p192.combConsts
       stack := stackT
       verified := p192T_verified h.law (vars vs1 vs256) hv
       spSafe := signCode_sp _ _ _ }]

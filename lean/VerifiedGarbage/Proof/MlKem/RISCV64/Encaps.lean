@@ -64,9 +64,6 @@ theorem lay_sizes (K : KemLay) (s₀ : State) : (lay s₀ K).sizes = eSz K := rf
 
 theorem layM_sizes (K : KemLay) (s₀ : State) : (layM s₀ K).sizes = [K.scratch, 1168, 32] := rfl
 
-theorem lay_ptr0 (K : KemLay) (s₀ : State) : (lay s₀ K).ptr 0 = pScr s₀ := rfl
-theorem layM_ptr0 (K : KemLay) (s₀ : State) : (layM s₀ K).ptr 0 = pScr s₀ := rfl
-
 /-- The precondition of the contract. -/
 structure Pre (K : KemLay) (s : State) : Prop where
   wf : K.WF
@@ -517,7 +514,6 @@ theorem correct {K : KemLay} {s₀ : State} (hp : Pre K s₀) : WP isa K.encaps 
   refine WP.seq (WP.mono (copyM_ok hp h₂ g29 m₂) fun s₃ ⟨h₃, m₃, _⟩ => ?_)
   refine WP.seq (WP.mono (s4_ok hp h₃ m₃) fun s₄ h₄ => ?_)
   exact WP.seq (WP.mono (s5_ok hp h₄) fun s₅ h₅ => tail_ok hp h₅)
-
 
 /-! ## `encapsH`: `H(ek)` given at `h`
 

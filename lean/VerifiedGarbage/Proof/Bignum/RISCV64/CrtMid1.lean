@@ -144,20 +144,6 @@ theorem sepBX {S : Addr} {n b k : Nat} (h : n ≤ b) (hb : b + k ≤ 2 ^ 64) (hk
   change n ≤ (x - S).toNat
   rcases ofs_reb S x (b := b) (by omega) with ⟨_, _⟩ | ⟨_, h2⟩ <;> omega
 
-theorem sepBB {S : Addr} {a n b k : Nat} (h : a + n ≤ b) (hb : b + k ≤ 2 ^ 64) (hk : 0 < k) :
-    ∀ x, ofs (Mont.off S a) x < n → k ≤ ofs (Mont.off S b) x := fun x hx => by
-  change (x - Mont.off S a).toNat < n at hx
-  change k ≤ (x - Mont.off S b).toNat
-  rcases ofs_reb S x (b := a) (by omega) with ⟨_, h1⟩ | ⟨_, h1⟩ <;>
-    rcases ofs_reb S x (b := b) (by omega) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega
-
-theorem sepBB' {S : Addr} {a n b k : Nat} (h : a + n ≤ b) (hb : b + k ≤ 2 ^ 64) (hk : 0 < k) :
-    ∀ x, ofs (Mont.off S b) x < k → n ≤ ofs (Mont.off S a) x := fun x hx => by
-  change (x - Mont.off S b).toNat < k at hx
-  change n ≤ (x - Mont.off S a).toNat
-  rcases ofs_reb S x (b := a) (by omega) with ⟨_, h1⟩ | ⟨_, h1⟩ <;>
-    rcases ofs_reb S x (b := b) (by omega) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega
-
 /-- A byte within `k` of `b` is within the scratch's `Z`. -/
 theorem sepIn {S : Addr} {b k Z : Nat} (h : b + k ≤ Z) (hZ : Z ≤ 2 ^ 64) (hk : 0 < k) :
     ∀ x, ofs (Mont.off S b) x < k → ofs S x < Z := fun x hx => by

@@ -10,7 +10,6 @@ namespace VG.Artifacts.Blowfish.Arm
 
 def artifacts : List Artifact := [
   Spec.Blowfish.expandKeyApi.artifact Arm.target {
-    consts := Impl.Blowfish.Arm.initConsts
     code := Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 12 Impl.Blowfish.Arm.expandKey
     stack := 64
     verified := Proof.Blowfish.Arm.expandKey_framed },

@@ -152,12 +152,12 @@ theorem code_ok {s : State} (hp : PreE s) : WP isa code s (Post s) := by
 
 /-- The correctness of `vg_rsa_pkcs1_encrypt_precomputed`, against its
 shared contract. -/
-theorem code_correct (s : State) (h : (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre s) :
+theorem code_correct (s : State) (h : (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).pre s) :
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧
-      (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).post s s' := by
+      (Proof.RsaPkcs1Enc.encryptPrecomputedContract abi frameBytes).post s s' := by
   obtain ⟨t, s', he, habi, hr⟩ := code_ok (preE_of h)
   refine ⟨t, s', he, habi, ?_⟩
-  sig_post [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
+  sig_post [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
     stackArgs_six, List.append_eq]
   exact hr
 

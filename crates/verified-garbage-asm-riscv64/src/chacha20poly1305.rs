@@ -191,6 +191,7 @@ call {vg_poly1305_update}
 .insn 2, 0x85e6
 .insn 2, 0x866a
 .insn 4, 0x04050693
+.insn 2, 0x8766
 call {vg_chacha20_xor}
 .insn 4, 0x18050513
 .insn 4, 0x00fc0593
@@ -319,9 +320,9 @@ call {vg_poly1305_finalize}
     )
 }
 
-/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
-/// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
+/// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
 ///
 /// # Safety
 ///
@@ -536,6 +537,7 @@ call {vg_poly1305_finalize}
 .insn 2, 0x85e6
 .insn 2, 0x866a
 .insn 4, 0x04050693
+.insn 2, 0x8766
 call {vg_chacha20_xor}
 .insn 4, 0x18050513
 .insn 4, 0xe8050293
@@ -606,6 +608,21 @@ call {vg_chacha20_xor}
 .insn 4, 0x00736333
 .insn 2, 0x4385
 .insn 4, 0x00733333
+beqz t1, 20f
+j 21f
+20:
+.insn 2, 0x83e6
+.insn 2, 0x8e6a
+beqz t3, 22f
+24:
+.insn 4, 0x00638023
+.insn 2, 0x0385
+.insn 2, 0x1e7d
+bnez t3, 24b
+j 23f
+22:
+23:
+21:
 .insn 4, 0x2302bb83
 .insn 4, 0x2382bc03
 .insn 4, 0x2402bc83

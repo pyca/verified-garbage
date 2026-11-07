@@ -46,12 +46,6 @@ theorem RoundCtx.rowB {s t : State} {base : BitVec 32} {size tmp a b mod acc n :
   ⟨ctx.workspace.nowrap, by have := ctx.accFits; omega, ctx.bFits,
     by have := ctx.accB; omega, by rw [hw]; exact ctx.workspace.writable⟩
 
-theorem RoundCtx.rowM {s t : State} {base : BitVec 32} {size tmp a b mod acc n : Nat}
-    (ctx : RoundCtx s base size tmp a b mod acc n) (hw : t.wr = s.wr) :
-    RowCtx t base size acc mod n :=
-  ⟨ctx.workspace.nowrap, by have := ctx.accFits; omega, ctx.mFits,
-    by have := ctx.accM; omega, by rw [hw]; exact ctx.workspace.writable⟩
-
 abbrev roundClobbers : List Reg :=
   [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]
 

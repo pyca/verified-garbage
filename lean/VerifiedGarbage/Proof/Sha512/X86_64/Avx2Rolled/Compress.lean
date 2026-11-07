@@ -59,14 +59,6 @@ theorem avx2 : Avx2.Pre s₀ := ⟨h.rd, h.wr, h.st_scr, h.blk_st, h.blk_scr, h.
 
 theorem nb_lt : 128 * nb s₀ < 2 ^ 64 := h.base.nb_lt
 
-theorem in_state {k : Nat} (hk : k < 8) :
-    InRegions (s₀.rd ++ s₀.wr) (st s₀ + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 8 :=
-  ⟨stR s₀, by simp [h.wr], contains_offset' (by omega_arith) (by omega_arith)⟩
-
-theorem out_state {k : Nat} (hk : k < 8) :
-    InRegions s₀.wr (st s₀ + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 8 :=
-  ⟨stR s₀, by simp [h.wr], contains_offset' (by omega_arith) (by omega_arith)⟩
-
 theorem in_blk16 {i n : Nat} (hi : i < nb s₀) (hn : n < 8) :
     InRegions (s₀.rd ++ s₀.wr) (blkAddr s₀ i + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 16 := by
   obtain ⟨r, hr, hc⟩ := h.base.in_blk16 hi hn

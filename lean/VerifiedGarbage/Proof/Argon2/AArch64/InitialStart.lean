@@ -154,13 +154,6 @@ theorem headerWords_ok (s : State) (n : Nat) (hn : n ≤ 6) (h : Space s) :
     rw [ht, ku.x24, headerValue_keeps h ku, hu]
     rfl
 
-theorem header_ok (s : State) (h : Space s) :
-    WP isa (.block header) s fun t =>
-      bytesAt t.mem (s.gpr .x24 + 768) 24 =
-        (List.range 6).flatMap (fun j => Spec.Blake2.wordBytes (headerValue s j)) ∧ Keeps s t :=
-  (headerWords_ok s 6 (by decide) h).mono fun t ⟨hm, hk⟩ =>
-    ⟨by rw [hm]; exact headerMem_bytes s, hk⟩
-
 end VG.Proof.Argon2.AArch64.Initial
 
 end

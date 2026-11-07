@@ -480,21 +480,18 @@ def optimizedArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.keyGen44Api.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    consts := Proof.MlDsa.AArch64.Sign.signRootConsts
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa44
     stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inl rfl) },
   Spec.MlDsa.keyGen65Api.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    consts := Proof.MlDsa.AArch64.Sign.signRootConsts
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa65
     stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inl rfl)) },
   Spec.MlDsa.keyGen87Api.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    consts := Proof.MlDsa.AArch64.Sign.signRootConsts
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa87
     stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inr rfl)) }]

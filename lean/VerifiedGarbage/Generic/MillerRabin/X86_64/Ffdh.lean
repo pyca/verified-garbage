@@ -46,7 +46,6 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     spSafe := Proof.Ffdh.X86_64.DerivePublic.deriveCode_sp v
     features := v.features },
   Spec.Ffdh.checkDomainApi.artifact X86_64.target {
-    consts := Impl.Ffdh.X86_64.VettedValidation.tableConsts
     suffix := v.suffix
     stack := 8
     code := Proof.Ffdh.X86_64.VettedValidation.emittedCode v

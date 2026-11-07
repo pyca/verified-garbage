@@ -74,11 +74,6 @@ theorem Ws.of_fupd {s s' : State} {base : Addr} {size : Nat} (hs : Ws s base siz
     (h : Fupd s s') : Ws s' base size :=
   ⟨by rw [h.gpr]; exact hs.wb, h.wr ▸ hs.wr, hs.nowrap⟩
 
-theorem Ws.mono {s : State} {base : Addr} {size size' : Nat} (hs : Ws s base size) (h : size' ≤ size) :
-    Ws s base size' :=
-  have ⟨len, hl, hl', hR⟩ := hs.wr
-  ⟨hs.wb, ⟨len, by omega, hl', hR⟩, by have := hs.nowrap; omega⟩
-
 /-- A register after an update, for `simp` with literal registers. -/
 theorem _root_.VG.Proof.X25519.Arm.Upd.get {s s' : State} {d : Reg} {v : BitVec 32} (h : Upd s s' d v) (r : Reg) :
     s'.gpr r = if r = d then v else s.gpr r := by

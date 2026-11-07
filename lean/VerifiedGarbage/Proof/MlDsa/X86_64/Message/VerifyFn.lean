@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignFn
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCall
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Encoded
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
@@ -69,10 +70,11 @@ theorem verify_same : Same m (Impl.MlDsa.X86_64.Verify.verify P p) (Impl.MlDsa.X
   have dot : ∀ r, Same m (dot P p r) (dot P0 p r) := fun r =>
     Same.seq hm (Same.callAt hm hP.mul _ _ _) (Same.seqRV hm (fun _ => Same.callAt hm hP.mulAdd _ _ _) _ _)
   have row : ∀ r, Same m (row P p r) (row P0 p r) := fun r =>
-    Same.seq hm (dot r) (Same.seq hm (Same.callAt hm hP.unpackT1 _ _ _) (Same.seq hm (Same.callAt hm hP.ntt _ _ _)
+    Same.seq hm (dot r) (Same.seq hm (Same.seq hm rfl (Same.ite hm rfl
+      (Same.seq hm (Same.callAt hm hP.unpackT1 _ _ _) (Same.callAt hm hP.ntt _ _ _))))
       (Same.seq hm (Same.callAt hm hP.mul _ _ _) (Same.seq hm (Same.callAt hm hP.sub _ _ _)
         (Same.seq hm (Same.callAt hm hP.invNtt _ _ _) (Same.seq hm (Same.callAt hm hP.useHint _ _ _)
-          (Same.callAt hm hP.simpleBitPack _ _ _)))))))
+          (Same.callAt hm hP.simpleBitPack _ _ _))))))
   have aQuad : ∀ e, Same m (aQuad P p e) (aQuad P0 p e) := fun _ =>
     Same.seq hm rfl (Same.seq hm rfl (Same.seq hm rfl (Same.seq hm rfl
       (Same.seq hm (Same.callAt hm hP.rej4 _ _ _) rfl))))
@@ -116,8 +118,8 @@ theorem verifyFn (v : ArithImpl) {p : Params} (hp : p ∈ params) :
     of_decide_eq_true (Same.ok (verify_same (depthCompN 3) (primsM_of C fun _ h => decide_eq_true h) p)
       (verify0_depth h3))⟩
 
-theorem verifyMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true) :
-    (Impl.MlDsa.X86_64.Message.verifyMessageCached n c p).all (fun i => !isa.writesSp i) = true := by
+theorem verifyMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true)
+    (flag : Nat) : (Impl.MlDsa.X86_64.Message.verifyMessageCached n c p flag).all (fun i => !isa.writesSp i) = true := by
   generalize hq : (fun i => !isa.writesSp i) = q at hc ⊢
   have ha : Impl.Sha3.X86_64.Stream.absorb.all q = true := hq ▸ kabs_spSafe
   have hp' : Impl.Sha3.X86_64.Stream.pad.all q = true := hq ▸ kpad_spSafe
@@ -130,5 +132,21 @@ theorem verifyMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.al
     Impl.MlDsa.X86_64.Message.callA, Code.all, hc, ha, hp', hs, hsa, hmv, Bool.and_true, Bool.true_and]
   subst hq
   decide
+
+/-! ## `vg_mldsa*_verify`: the entry of an encoded key -/
+
+theorem verifyEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n : String) :
+    Verified X86_64.target
+      (Impl.MlDsa.X86_64.Verify.entry n (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) p) 0)
+      (verifyContract p X86_64.abi 40) :=
+  have hV := verifyFn v hp
+  have hK : Verify.KernelFn p (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) p) :=
+    ⟨hV.ok, hV.ct, hV.nosp, hV.depth⟩
+  Verified.of_correct (Verify.entry0_correct hK) (Verify.entry0_ct hK) (Verify.verify_implies0 hp)
+
+theorem verifyEntry_spSafe {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true)
+    (flag : Nat) : (Impl.MlDsa.X86_64.Verify.entry n c flag).all (fun i => !isa.writesSp i) = true := by
+  simp only [Impl.MlDsa.X86_64.Verify.entry, Code.all, hc, Bool.and_true]
+  rfl
 
 end VG.Proof.MlDsa.X86_64.Message
