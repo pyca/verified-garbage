@@ -1,0 +1,14 @@
+[
+  {
+    "url": "https://raw.githubusercontent.com/C2SP/wycheproof/main/testvectors_v1/rsa_oaep_2048_sha256_mgf1sha256_test.json",
+    "sha256": "83dce701e3d8640ac56e6d7bf37a5a8f9bd6a336e1e932a1e9bfe4ba9c5ea3a9"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/C2SP/wycheproof/main/testvectors_v1/rsa_oaep_3072_sha256_mgf1sha256_test.json",
+    "sha256": "c8122302f522bfd539650c71c4aa966bd1f89acb50c6f4c190030fdb9b2684a4"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/C2SP/wycheproof/main/testvectors_v1/rsa_oaep_4096_sha256_mgf1sha256_test.json",
+    "sha256": "e0eb85bcd6d66a85941ee3d98e44f7d1ffb0cf870ba6550e1ed3bec4174c60a9"
+  }
+]
