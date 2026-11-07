@@ -113,7 +113,7 @@ def blocksArgs : List Instr :=
    .alu .add .rbp (.reg .rdx), .alu .sub .r12 (.reg .rdx)]
 
 def part2 (x : Callee) : Prog isa :=
-  .ite .e (.block []) (.seq (.block blocksArgs) (.call x.name x.code))
+  .ite .e (.block []) (.seq (.block blocksArgs) x.inPlace)
 
 /-- The arguments of the block function: the state and the buffer. -/
 def tailArgs : List Instr := [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbx), .alu .add .rsi (.imm 64)]

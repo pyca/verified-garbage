@@ -73,7 +73,7 @@ theorem seal_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
   generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ⊢
   rcases v.fold_poly with ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo | hpo⟩ <;>
     (rw [hpo] at hb ⊢
-     simp only [dataCopy, «seal», prologue, crypt, cryptBig, Code.all, hc, hb, hf, hpass, hw,
+     simp only [Impl.ChaCha20.X86_64.Callee.inPlace, dataCopy, «seal», prologue, crypt, cryptBig, xorKs, callX, Code.all, hc, hb, hf, hpass, hw,
        macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
      subst hP; lit_decide)
 
@@ -84,7 +84,7 @@ theorem open_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
   generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ⊢
   rcases v.fold_poly with ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo | hpo⟩ <;>
     (rw [hpo] at hb ⊢
-     simp only [dataCopy, «open», openBody, openTail, zeroData, prologue, crypt, cryptBig, Code.all, hc, hb, hf, hpass, hw,
+     simp only [Impl.ChaCha20.X86_64.Callee.inPlace, dataCopy, «open», openShared, openBody, openTail, zeroData, prologue, crypt, cryptBig, xorKs, callX, Code.all, hc, hb, hf, hpass, hw,
        macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
      subst hP; lit_decide)
 
@@ -164,6 +164,9 @@ theorem open_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
 theorem xorBuf_xdepth (w : Nat) : (xorBufX w .r14).x86_64Depth = 0 := by
   have : (Impl.ChaCha20.X86_64.XorBuf.xorBuf .rdi .rsi).x86_64Depth = 0 := by decide
   simp only [xorBufX, Code.x86_64Depth, this, Nat.max_self]
+theorem xorBufTo_xdepth (w : Nat) : (Impl.ChaCha20.X86_64.XorBuf.xorBufXTo w .r14 .r10).x86_64Depth = 0 := by
+  have : (Impl.ChaCha20.X86_64.XorBuf.xorBufTo .rdi .r10 .rsi).x86_64Depth = 0 := by decide
+  simp only [Impl.ChaCha20.X86_64.XorBuf.xorBufXTo, Code.x86_64Depth, this, Nat.max_self]
 theorem splitM_xdepth (fold pass : Nat) : (splitM fold pass).x86_64Depth = 0 := by
   unfold splitM; split
   · rfl
@@ -194,7 +197,7 @@ theorem seal_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («seal» v.callee v.p
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
   have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
-  simp only [«seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
+  simp only [Impl.ChaCha20.X86_64.Callee.inPlace, «seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, crypt, cryptBig, cryptPre, xorKs, callX, Bool.cond_false, absorbLengths, finalizeTag, finalizeWith,
     Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ha ⊢
   omega
 
@@ -203,8 +206,8 @@ theorem open_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («open» v.callee v.p
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
   have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
-  simp only [«open», openBody, openTail, zeroData, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
-    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ha ⊢
+  simp only [Impl.ChaCha20.X86_64.Callee.inPlace, «open», openShared, openBody, openTail, zeroData, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, crypt, cryptBig, cryptPre, xorKs, callX, Bool.cond_true, Impl.ChaCha20.X86_64.Xor.callTo, absorbLengths, finalizeTo, finalizeWith,
+    Code.x86_64Depth, xorBufTo_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ha ⊢
   omega
 
 /-- A state satisfying `seal`'s precondition, without the working space. -/
