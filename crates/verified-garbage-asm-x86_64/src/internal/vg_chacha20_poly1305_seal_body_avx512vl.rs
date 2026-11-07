@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_chacha20_poly1305_seal_body_avx512vl.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_chacha20_poly1305_seal_body_avx512vl` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_BODY_AVX512VL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety
