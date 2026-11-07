@@ -1,4 +1,16 @@
 module
+
+import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
+meta import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
+
+import VerifiedGarbage.Impl.MlKem.X86.Basic
+meta import VerifiedGarbage.Impl.MlKem.X86.Basic
+
+import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.Framework.Semantics
+
+import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inst
 public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Inst
 public import VerifiedGarbage.Impl.MlDsa.X86.Sign.Entry
