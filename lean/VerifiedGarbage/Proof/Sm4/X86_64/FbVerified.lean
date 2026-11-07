@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
 import VerifiedGarbage.Proof.Modes.X86_64.Fb
+import VerifiedGarbage.Proof.Modes.X86_64.CfbDec
 public import VerifiedGarbage.Proof.Sm4.FbScratch
 public import VerifiedGarbage.Impl.Sm4.X86_64.Fb
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
@@ -12,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+meta import VerifiedGarbage.Proof.Modes.X86_64.CfbDec
 meta import VerifiedGarbage.Proof.Sm4.FbScratch
 meta import VerifiedGarbage.Impl.Sm4.X86_64.Fb
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
@@ -146,11 +148,43 @@ theorem cfbEncrypt_wp {s₀ : State} (hp : cfbEncX86_64.pre s₀) :
     obtain ⟨h1, h2⟩ := Modes.cfbEnc_of 16 (ciphOf s₀) s₀.mem (s₀.gpr .rdx) (ivOf s₀) (s₀.gpr .rcx).toNat
     exact ⟨hg, hd.trans h1, hv.trans h2⟩
 
+/-- CFB decryption: the modes' CFB decryption a group at a time
+(`Proof.Modes.X86_64.CfbDec.batched_wp`), which, unlike `fb_wp'`, needs
+no register for the IV's address. -/
 theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecX86_64.pre s₀) :
-    WP isa cfbDecrypt s₀ fun s' => gprPreserved s₀ s' ∧ cfbDecX86_64.post s₀ s' :=
-  WP.mono (fb_wp' .cfbDec hp) fun s' ⟨hg, hd, hv⟩ => by
-    obtain ⟨h1, h2⟩ := Modes.cfbDec_of 16 (ciphOf s₀) s₀.mem (s₀.gpr .rdx) (ivOf s₀) (s₀.gpr .rcx).toNat
-    exact ⟨hg, hd.trans h1, hv.trans h2⟩
+    WP isa cfbDecrypt s₀ fun s' => gprPreserved s₀ s' ∧ cfbDecX86_64.post s₀ s' := by
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, dTV, dTD, dTS, hst, fitK, fitV, fitD, fitB⟩ := hp
+  have hwS : (⟨s₀.gpr .r8, 8 * 400⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  refine WP.mono (Proof.Modes.X86_64.CfbDec.batched_wp ((dirCoreSpec .encrypt).toBlock rfl) rfl
+    (r := ⟨.rsi, .rdx, .rcx, .r8⟩) ⟨by decide, by decide, by decide⟩ (by decide)
+    (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
+    (k := Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .rdi)) rfl rfl rfl rfl ⟨hwS, fitB⟩
+    (by rw [hwr]; simp) (by rw [hwr]; simp) dVS dDS dVD fitD
+    ⟨s₀.gpr .rdi, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dKS
+      · exact dKV, hst, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dTS
+      · exact dTV⟩
+    (hstk := .inr ⟨hst, fun w hw => by
+      rw [hwr] at hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact dTV
+      · exact dTD
+      · exact dTS⟩)) fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_⟩
+  rw [stkList_dirCore] at hf
+  · refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact dRS
+    · exact dRD
+    · exact dRV
+    · exact VG.Offset.base_disjoint_below _ (by decide)
+  · rw [encCipher_eq] at hdata; exact ⟨hdata, hiv⟩
 
 /-! ## Constant time -/
 
