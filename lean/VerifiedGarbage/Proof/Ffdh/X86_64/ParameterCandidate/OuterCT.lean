@@ -62,4 +62,21 @@ theorem consumeCandidate_ct : RelCT isa (Two OuterHeader) (.block consumeCandida
   kt_ct OuterPublic.B OuterPublic.wr outerS outerSlots [] (by decide)
     (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
 
+theorem byteScreen2_ct : RelCT isa (Two OuterHeader) (byteScreen allowed2 3) fun _ _ => True :=
+  kt_ct OuterPublic.B OuterPublic.wr outerS outerSlots [] (by decide)
+    (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
+
+theorem byteScreen5_ct : RelCT isa (Two OuterHeader) (byteScreen allowed5 2) fun _ _ => True :=
+  kt_ct OuterPublic.B OuterPublic.wr outerS outerSlots [] (by decide)
+    (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
+
+theorem screenHead_ct : RelCT isa (Two OuterHeader)
+    (.block [.mov .rdx (.mem (VG.Impl.Bignum.X86_64.hdr oGen)), .alu .cmp .rdx (.imm 2)]) fun _ _ => True :=
+  kt_ct OuterPublic.B OuterPublic.wr outerS outerSlots [] (by decide)
+    (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
+
+theorem screenReject_ct : RelCT isa (Two OuterHeader) (status 2) fun _ _ => True :=
+  kt_ct OuterPublic.B OuterPublic.wr outerS outerSlots [] (by decide)
+    (fun _ => rfl) (fun _ _ h => h) (pins_nil _) (by taint_decide)
+
 end VG.Proof.Ffdh.X86_64.ParameterCandidate
