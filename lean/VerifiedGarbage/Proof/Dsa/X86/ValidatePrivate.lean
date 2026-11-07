@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 import VerifiedGarbage.Proof.Dsa.X86.InstallArguments
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
@@ -162,21 +163,6 @@ theorem privateValidatingEntry_ok {s : State} (A : PrivateValidatingABI s) :
         rcases ha with rfl | rfl | rfl | rfl <;> decide
       exact (field_keep O2 hn).trans (Args a ha)
     · exact N.trans (field_keep O2 (by decide)).symm
-
-theorem validatePrivateKeyBytes_eq {pLen qLen p q g y x : Nat} {key : List Byte}
-    (widths : Spec.Dsa.lengthsValid pLen qLen) (keyLen : key.length = 3 * pLen + 2 * qLen)
-    (keyValue : Spec.Dsa.privateKeyBytes pLen qLen key = ⟨⟨p, q, g⟩, y, some x⟩) :
-    Spec.Dsa.validatePrivateKeyBytes pLen qLen key =
-      decide (shapeValid p q ∧ publicChecks p q g y ∧ (0 < x ∧ x < q) ∧ g ^ x % p = y) := by
-  unfold Spec.Dsa.validatePrivateKeyBytes
-  simp only [widths, decide_true, Bool.not_true, keyLen, bne_self_eq_false, Bool.or_false,
-    Bool.false_eq_true, ↓reduceIte, keyValue]
-  by_cases hs : shapeValid p q
-  · have e := privateChecks_spec (g := g) (y := y) (x := x) hs
-    apply Bool.eq_iff_iff.mpr
-    simp only [Bool.and_eq_true, decide_eq_true_eq, hs, true_and, ← e, and_assoc]
-  · have hp : ¬ Spec.Dsa.parametersValid ⟨p, q, g⟩ := fun P => hs (parametersValid_shape P)
-    simp only [hp, hs, decide_false, Bool.false_and, false_and]
 
 theorem privateValidatingSized_spec {base : Addr} {size pLen qLen p q g y x : Nat}
     {s : State} {key : List Byte}

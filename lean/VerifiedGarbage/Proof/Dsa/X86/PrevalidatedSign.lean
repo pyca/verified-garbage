@@ -30,6 +30,7 @@ import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
 import VerifiedGarbage.Proof.Dsa.X86.PackedKeyBuffers
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
 import VerifiedGarbage.Proof.Dsa.X86.ValidatePrivate
+import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Dsa.OutputBytes
 import VerifiedGarbage.Proof.Framework.Offset
