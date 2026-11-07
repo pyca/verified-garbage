@@ -8,7 +8,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
-/-! # Seed-CFB128's final functions' AArch64 code as literals, for kernel-evaluated checks -/
+/-! # Seed-CFB128's and SEED-OFB's final functions' AArch64 code as literals, for kernel-evaluated checks -/
 
 @[expose] public section
 
@@ -16,5 +16,6 @@ namespace VG
 
 materialize_code Impl.Seed.AArch64.cfbEncryptFinal
 materialize_code Impl.Seed.AArch64.cfbDecryptFinal
+materialize_code Impl.Seed.AArch64.ofbFinal
 
 end VG
