@@ -351,8 +351,8 @@ GROUPS = {
         "tests": ["wycheproof::rsa_pss::rsa_pss_every_hash"],
     },
     "scrypt": {
-        "lib": ["kdf::scrypt"],
-        "tests": [],
+        "lib": [],
+        "tests": ["rfc7914::key_lengths", "rfc7914::verify_keys"],
     },
     "secp256k1": {
         "lib": ["ec::secp256k1", "ec::validate::tests::secp256k1", "ec::compressed::tests::secp256k1"],
