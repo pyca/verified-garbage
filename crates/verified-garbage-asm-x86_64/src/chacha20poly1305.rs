@@ -5397,11 +5397,12 @@ call {vg_chacha20_poly1305_seal}
     )
 }
 
+/// The CPU features `vg_chacha20_poly1305_seal_ssse3` requires (`Artifact.features`).
+pub const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
+
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
-///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_seal_ifma` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES`); `vg_chacha20_poly1305_seal_avx512vl` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES`); `vg_chacha20_poly1305_seal_avx512` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES`); `vg_chacha20_poly1305_seal_avx2` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES`); or else `vg_chacha20_poly1305_seal`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -5412,39 +5413,165 @@ call {vg_chacha20_poly1305_seal}
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `key`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_chacha20_poly1305_seal_ifma(key, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_avx512vl`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_chacha20_poly1305_seal_avx512vl(key, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_chacha20_poly1305_seal_avx512(key, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_chacha20_poly1305_seal_avx2(key, nonce, aad, aad_len, data, len, tag) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { vg_chacha20_poly1305_seal(key, nonce, aad, aad_len, data, len, tag) }
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQSItEJBBMi1wkCEiJGEiJaAhMiWgQTIlwGEyJeCBMiWAoSYnHTYncSInTSInNTYnGTYnNSLhleHBhbmQgM0mJR0BIuDItYnl0ZSBrSYlHSEiLB0mJR1BIi0cISYlHWEiLRxBJiUdgSItHGEmJR2iLBkjB4CBJiUdwSItGBEmJR3hIuGV4cGFuZCAzSYmHYAIAAEi4Mi1ieXRlIGtJiYdoAgAASIsHSYmHcAIAAEiLRwhJiYd4AgAASItHEEmJh4ACAABIi0cYSYmHiAIAAIsGSMHgIEmJh5ACAABIi0YESYmHmAIAALoAAAAASYP9AQ=="
+jb 20f
+jmp 21f
+20:
+.base64 "TInq"
+21:
+.base64 "SIPCQGYP78C5AAAAAA=="
+22:
+.base64 "80EPf4QPoAIAAEiDwRBIOdE="
+jb 22b
+.base64 "TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAA"
+call {vg_chacha20_xor_ssse3}
+.base64 "SYn3SYHvgAAAAEyJ/0iBx8ABAABMif5IgcagAgAA"
+call {vg_poly1305_init}
+.base64 "SYn/SYHvwAEAAEyJ/0iBx8ABAABIid5IiepIweoE"
+je 23f
+call {vg_poly1305_blocks}
+.base64 "SYn/SYHvwAEAAA=="
+jmp 24f
+23:
+24:
+.base64 "SInqSIPiDw=="
+je 25f
+.base64 "SInuSCnWSAHeuAAAAABJiYdAAgAASYmHSAIAALkAAAAA"
+27:
+.base64 "D7YEDkGIhA9AAgAASIPBAUg50Q=="
+jne 27b
+.base64 "TIn/SIHHwAEAAEyJ/kiBxkACAAC6AQAAAA=="
+call {vg_poly1305_blocks}
+.base64 "SYn/SYHvwAEAAA=="
+jmp 26f
+25:
+26:
+.base64 "SYmvUAIAAE2Jr1gCAABJg/0B"
+jb 28f
+.base64 "ugAAAABJg/0B"
+jb 210f
+jmp 211f
+210:
+.base64 "TInq"
+211:
+.base64 "SIXS"
+je 212f
+.base64 "TIn+SIHG4AIAALkAAAAASInQSMHoBA=="
+je 214f
+216:
+.base64 "80EPbwQO8w9vDA5mD+/B80EPfwQOSIPBEEiD6AE="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "TIn3SAHPSAHOSCnKuQAAAABIidBIwegD"
+je 217f
+219:
+.base64 "TIsED0wzBA5MiQQPSIPBCEiD6AE="
+jne 219b
+jmp 218f
+217:
+218:
+.base64 "SDnR"
+je 220f
+222:
+.base64 "D7YED0QPtgQOTDHAiAQPSIPBAUg50Q=="
+jne 222b
+jmp 221f
+220:
+221:
+jmp 213f
+212:
+213:
+.base64 "ugAAAABJg/0B"
+jb 223f
+jmp 224f
+223:
+.base64 "TInq"
+224:
+.base64 "SInQSMHoBkiDwAFBiUdwTIn2SAHWTInoSCnQSInCTIn/SIPHQEyJ+UiBwYAAAAA="
+call {vg_chacha20_xor_ssse3}
+jmp 29f
+28:
+.base64 "TIn+SIHG4AIAAEyJ6rkAAAAASInQSMHoBA=="
+je 225f
+227:
+.base64 "80EPbwQO8w9vDA5mD+/B80EPfwQOSIPBEEiD6AE="
+jne 227b
+jmp 226f
+225:
+226:
+.base64 "TIn3SAHPSAHOSCnKuQAAAABIidBIwegD"
+je 228f
+230:
+.base64 "TIsED0wzBA5MiQQPSIPBCEiD6AE="
+jne 230b
+jmp 229f
+228:
+229:
+.base64 "SDnR"
+je 231f
+233:
+.base64 "D7YED0QPtgQOTDHAiAQPSIPBAUg50Q=="
+jne 233b
+jmp 232f
+231:
+232:
+.base64 "TIn+SIHGgAAAAA=="
+29:
+.base64 "SYn3SYHvgAAAALoAAAAASYP9AQ=="
+jb 234f
+jmp 235f
+234:
+.base64 "TInq"
+235:
+.base64 "SIPCQGYP78C5AAAAAA=="
+236:
+.base64 "80EPf4QPoAIAAEiDwRBIOdE="
+jb 236b
+.base64 "TIn/SIHHwAEAAEyJ9kyJ6kjB6gQ="
+je 237f
+call {vg_poly1305_blocks}
+.base64 "SYn/SYHvwAEAAA=="
+jmp 238f
+237:
+238:
+.base64 "TInqSIPiDw=="
+jne 239f
+.base64 "TIn/SIHHwAEAAEyJ/kiBxlACAAC6AQAAAA=="
+call {vg_poly1305_blocks}
+.base64 "SYn/SYHvwAEAAA=="
+240:
+.base64 "TIn/SIHHwAEAAL4AAAAATIni"
+call {vg_poly1305_finalize_scratch}
+.base64 "SYn/SYHvwAEAAEmLH0mLbwhNi28QTYt3GE2LZyhNi38gZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAww=="
+239:
+.base64 "TInuSCnWTAH2uAAAAABJiYdAAgAASYmHSAIAALkAAAAA"
+241:
+.base64 "D7YEDkGIhA9AAgAASIPBAUg50Q=="
+jne 241b
+.base64 "TIn/SIHHwAEAAEyJ/kiBxkACAAC6AgAAAA=="
+call {vg_poly1305_blocks}
+.base64 "SYn/SYHvwAEAAA=="
+jmp 240b
+.p2align 6"#,
+        vg_chacha20_xor_ssse3 = sym super::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,
+        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+    )
 }
+
+/// The CPU features `vg_chacha20_poly1305_open_ssse3` requires (`Artifact.features`).
+pub const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
-///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_open_ifma` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES`); `vg_chacha20_poly1305_open_avx512vl` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES`); `vg_chacha20_poly1305_open_avx512` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES`); `vg_chacha20_poly1305_open_avx2` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES`); or else `vg_chacha20_poly1305_open`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -5455,39 +5582,178 @@ pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 1752 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_chacha20_poly1305_open_ifma(key, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_avx512vl`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_chacha20_poly1305_open_avx512vl(key, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_chacha20_poly1305_open_avx512(key, nonce, aad, aad_len, data, len, tag) };
-    }
-    if cpu.contains(VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_chacha20_poly1305_open_avx2(key, nonce, aad, aad_len, data, len, tag) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { vg_chacha20_poly1305_open(key, nonce, aad, aad_len, data, len, tag) }
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQSItEJBBMi1wkCEiJGEiJaAhMiWgQTIlwGEyJeCBMiWAoSYnHTYncSInTSInNTYnGTYnNSLhleHBhbmQgM0mJR0BIuDItYnl0ZSBrSYlHSEiLB0mJR1BIi0cISYlHWEiLRxBJiUdgSItHGEmJR2iLBkjB4CBJiUdwSItGBEmJR3hIuGV4cGFuZCAzSYmHYAIAAEi4Mi1ieXRlIGtJiYdoAgAASIsHSYmHcAIAAEiLRwhJiYd4AgAASItHEEmJh4ACAABIi0cYSYmHiAIAAIsGSMHgIEmJh5ACAABIi0YESYmHmAIAALoAAAAASYP9AQ=="
+jb 20f
+jmp 21f
+20:
+.base64 "TInq"
+21:
+.base64 "SIPCQGYP78C5AAAAAA=="
+22:
+.base64 "80EPf4QPoAIAAEiDwRBIOdE="
+jb 22b
+.base64 "TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAA"
+call {vg_chacha20_xor_ssse3}
+.base64 "SYn3SYHvgAAAAEyJ/0iBx8ABAABMif5IgcagAgAA"
+call {vg_poly1305_init}
+.base64 "SYn/SYHvwAEAAEyJ/0iBx8ABAABIid5IiepIweoE"
+je 23f
+call {vg_poly1305_blocks}
+.base64 "SYn/SYHvwAEAAA=="
+jmp 24f
+23:
+24:
+.base64 "SInqSIPiDw=="
+je 25f
+.base64 "SInuSCnWSAHeuAAAAABJiYdAAgAASYmHSAIAALkAAAAA"
+27:
+.base64 "D7YEDkGIhA9AAgAASIPBAUg50Q=="
+jne 27b
+.base64 "TIn/SIHHwAEAAEyJ/kiBxkACAAC6AQAAAA=="
+call {vg_poly1305_blocks}
+.base64 "SYn/SYHvwAEAAA=="
+jmp 26f
+25:
+26:
+.base64 "SYmvUAIAAE2Jr1gCAABMif9IgcfAAQAATIn2TInqSMHqBA=="
+je 28f
+call {vg_poly1305_blocks}
+.base64 "SYn/SYHvwAEAAA=="
+jmp 29f
+28:
+29:
+.base64 "TInqSIPiDw=="
+jne 210f
+.base64 "TIn/SIHHwAEAAEyJ/kiBxlACAAC6AQAAAA=="
+call {vg_poly1305_blocks}
+.base64 "SYn/SYHvwAEAAA=="
+211:
+.base64 "SYP9AQ=="
+jb 213f
+.base64 "ugAAAABJg/0B"
+jb 215f
+jmp 216f
+215:
+.base64 "TInq"
+216:
+.base64 "SIXS"
+je 217f
+.base64 "TIn+SIHG4AIAALkAAAAASInQSMHoBA=="
+je 219f
+221:
+.base64 "80EPbwQO8w9vDA5mD+/B80EPfwQOSIPBEEiD6AE="
+jne 221b
+jmp 220f
+219:
+220:
+.base64 "TIn3SAHPSAHOSCnKuQAAAABIidBIwegD"
+je 222f
+224:
+.base64 "TIsED0wzBA5MiQQPSIPBCEiD6AE="
+jne 224b
+jmp 223f
+222:
+223:
+.base64 "SDnR"
+je 225f
+227:
+.base64 "D7YED0QPtgQOTDHAiAQPSIPBAUg50Q=="
+jne 227b
+jmp 226f
+225:
+226:
+jmp 218f
+217:
+218:
+.base64 "ugAAAABJg/0B"
+jb 228f
+jmp 229f
+228:
+.base64 "TInq"
+229:
+.base64 "SInQSMHoBkiDwAFBiUdwTIn2SAHWTInoSCnQSInCTIn/SIPHQEyJ+UiBwYAAAAA="
+call {vg_chacha20_xor_ssse3}
+jmp 214f
+213:
+.base64 "TIn+SIHG4AIAAEyJ6rkAAAAASInQSMHoBA=="
+je 230f
+232:
+.base64 "80EPbwQO8w9vDA5mD+/B80EPfwQOSIPBEEiD6AE="
+jne 232b
+jmp 231f
+230:
+231:
+.base64 "TIn3SAHPSAHOSCnKuQAAAABIidBIwegD"
+je 233f
+235:
+.base64 "TIsED0wzBA5MiQQPSIPBCEiD6AE="
+jne 235b
+jmp 234f
+233:
+234:
+.base64 "SDnR"
+je 236f
+238:
+.base64 "D7YED0QPtgQOTDHAiAQPSIPBAUg50Q=="
+jne 238b
+jmp 237f
+236:
+237:
+.base64 "TIn+SIHGgAAAAA=="
+214:
+.base64 "SYn3SYHvgAAAALoAAAAASYP9AQ=="
+jb 239f
+jmp 240f
+239:
+.base64 "TInq"
+240:
+.base64 "SIPCQGYP78C5AAAAAA=="
+241:
+.base64 "80EPf4QPoAIAAEiDwRBIOdE="
+jb 241b
+.base64 "TIn/SIHHwAEAAL4AAAAATIn6SIPCMA=="
+call {vg_poly1305_finalize_scratch}
+.base64 "SIsBSTMEJEiLUQhJM1QkCEgJ0EiD+AG4AAAAAIPQAIP4AA=="
+je 242f
+jmp 243f
+242:
+.base64 "TInyTInpSIP5AA=="
+je 244f
+246:
+.base64 "iAJIg8IBSIPpAQ=="
+jne 246b
+jmp 245f
+244:
+245:
+243:
+.base64 "SYn/SYHvwAEAAEmLH0mLbwhNi28QTYt3GE2LZyhNi38gZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAww=="
+210:
+.base64 "TInuSCnWTAH2uAAAAABJiYdAAgAASYmHSAIAALkAAAAA"
+212:
+.base64 "D7YEDkGIhA9AAgAASIPBAUg50Q=="
+jne 212b
+.base64 "TIn/SIHHwAEAAEyJ/kiBxkACAAC6AgAAAA=="
+call {vg_poly1305_blocks}
+.base64 "SYn/SYHvwAEAAA=="
+jmp 211b
+.p2align 6"#,
+        vg_chacha20_xor_ssse3 = sym super::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,
+        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+    )
 }
+
+/// The CPU features `vg_chacha20_poly1305_seal_gather_ssse3` requires (`Artifact.features`).
+pub const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
-///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_seal_gather_ifma` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES`); `vg_chacha20_poly1305_seal_gather_avx512vl` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES`); `vg_chacha20_poly1305_seal_gather_avx512` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES`); `vg_chacha20_poly1305_seal_gather_avx2` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES`); or else `vg_chacha20_poly1305_seal_gather`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -5501,30 +5767,62 @@ pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const
 /// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
 /// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 1880 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_gather_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_chacha20_poly1305_seal_gather_ifma(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
-    }
-    if cpu.contains(VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_gather_avx512vl`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_chacha20_poly1305_seal_gather_avx512vl(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
-    }
-    if cpu.contains(VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_gather_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_chacha20_poly1305_seal_gather_avx512(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
-    }
-    if cpu.contains(VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_gather_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_chacha20_poly1305_seal_gather_avx2(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { vg_chacha20_poly1305_seal_gather(key, nonce, aad, aad_len, src, src_count, dst, len, tag) }
+/// * The CPU must support the `ssse3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
+je 20f
+22:
+.base64 "SYszSYtLCEmDwxBIg/kg"
+jb 23f
+.base64 "8w9vBvMPfwdBugAAAABJKfpJg+IPSYnISYPoIE050A=="
+jb 25f
+27:
+.base64 "80IPbwQW80IPb0wWEPNCD38EF/NCD39MFxBJg8IgTTnQ"
+jae 27b
+jmp 26f
+25:
+26:
+.base64 "8w9vRA7g8w9vTA7w8w9/RA/g8w9/TA/w"
+jmp 24f
+23:
+.base64 "SIP5EA=="
+jb 28f
+.base64 "8w9vBvMPb0wO8PMPfwfzD39MD/A="
+jmp 29f
+28:
+.base64 "SIP5CA=="
+jb 210f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 211f
+210:
+.base64 "SIP5BA=="
+jb 212f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 213f
+212:
+.base64 "QboAAAAASTnK"
+je 214f
+216:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 216b
+jmp 215f
+214:
+215:
+213:
+211:
+29:
+24:
+.base64 "SAHPSYPpAQ=="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
+call {vg_chacha20_poly1305_seal_ssse3}
+.base64 "WFhYWFhYWMM="
+.p2align 6"#,
+        vg_chacha20_poly1305_seal_ssse3 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_ssse3,
+    )
 }

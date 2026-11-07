@@ -162,7 +162,9 @@ arch = "x86_64"
 # AES-CCM's and AES-SIV's AES-NI functions, those chaining CMAC's
 # blocks in registers among them, and the AES-NI instances of
 # AES-OCB and of the modes over whole blocks, ECB to XTS), which a
-# runner with VAES and VPCLMULQDQ never chooses; and VAES's and
+# runner with VAES and VPCLMULQDQ never chooses; ChaCha20's and
+# ChaCha20-Poly1305's SSSE3 instances, which a runner with AVX2 never
+# chooses; and VAES's and
 # VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
 # never chooses; and XTS's VAES instances calling the block
 # functions, which a runner with VPCLMULQDQ never chooses, and its
@@ -187,7 +189,7 @@ runs = """
 none | sm4_gcm
 aes,ssse3 | aes_gcm cmac aes_ccm aes_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts zeroize cpu
 pclmulqdq,ssse3 | aes_gcm sm4_gcm cpu
-aes,pclmulqdq,ssse3 | aes_gcm aes_xts cpu
+aes,pclmulqdq,ssse3 | aes_gcm aes_xts chacha20 cpu
 aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
 aes,avx,avx2,pclmulqdq,ssse3 | aes_gcm cpu
 avx,avx2 | aes_gcm_siv cpu
