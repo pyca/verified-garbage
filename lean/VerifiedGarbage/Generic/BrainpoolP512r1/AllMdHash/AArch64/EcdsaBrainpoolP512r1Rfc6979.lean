@@ -19,7 +19,7 @@ open VG.Proof.HmacTable.AArch64 (tables names)
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP512r1.curve)
     (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
-  if hv : OK vs then [
+  if hv : OK vs ∧ "VG_BRAINPOOLP512R1_COMB7" ∉ names vs then [
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi.artifact AArch64.target {
       suffix := ""
       tables := [("hmac", tables vs)]
