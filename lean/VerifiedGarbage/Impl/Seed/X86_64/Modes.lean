@@ -1,20 +1,22 @@
 module
 
 public import VerifiedGarbage.Impl.Seed.X86_64.Ecb
-public import VerifiedGarbage.Impl.Modes.X86_64.CbcChained
+public import VerifiedGarbage.Impl.Modes.X86_64.CfbDec
 
 /-!
 # SEED-CBC, -OFB and -CFB128 on x86-64
 
 `cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and
 `cfbDecrypt` (schedule = rdi, iv = rsi, data = rdx, n = rcx, scratch = r8):
-the modes' generic CBC that updates the chaining value, OFB and CFB
-(`Impl/Modes/X86_64/CbcChained.lean`, `Fb.lean`) over calls of
+the modes' generic CBC that updates the chaining value, OFB, CFB
+encryption and CFB decryption a group at a time
+(`Impl/Modes/X86_64/CbcChained.lean`, `Fb.lean`, `CfbDec.lean`) over calls of
 `vg_seed_encrypt_blocks` or `vg_seed_decrypt_blocks` (the ECB code with the
 working space as an argument) on sixteen blocks, with the working space in
 the scratch buffer, which the artifact allocates on the stack. CBC
-decryption deciphers sixteen blocks at a time; the other modes encipher one
-block per call, of which the other fifteen lanes are unused.
+decryption deciphers, and CFB decryption enciphers, sixteen blocks at a
+time; the other modes encipher one block per call, of which the other
+fifteen lanes are unused.
 
 The core's slots: the blocks function's 136 (its working space, at `sb` =
 `r9`), the buffer's sixteen blocks, and a copy of the 128-byte schedule,
@@ -96,6 +98,6 @@ def ofb : Prog isa := (dirCore .encrypt).fb .ofb modeRegs
 def cfbEncrypt : Prog isa := (dirCore .encrypt).fb .cfbEnc modeRegs
 
 /-- `vg_seed_cfb128_decrypt`. -/
-def cfbDecrypt : Prog isa := (dirCore .encrypt).fb .cfbDec modeRegs
+def cfbDecrypt : Prog isa := (dirCore .encrypt).cfbDecryptBatched modeRegs
 
 end VG.Impl.Seed.X86_64
