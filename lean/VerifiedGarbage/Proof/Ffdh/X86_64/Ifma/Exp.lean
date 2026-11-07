@@ -496,4 +496,124 @@ theorem expW_ok (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitV
   · rw [k₆.gpr (by decide), d₅, sub₄.rdi, hc.rdi]
   · exact ((((k₁.trans k₂).trans k₃).trans hk₄).trans k₅).trans k₆ |>.mono (by decide)
 
+/-- `fits`: ZF, whether the workspace has `l.W` words and the exponent at
+most `8 l.W` bytes. -/
+theorem fits_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} (hc : SubCtx s B Z o w wx minv)
+    {sl L : Nat} (hsl : sl < 32) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 L) (hL : L < 2 ^ 31)
+    (hwx : wx < 2 ^ 31) (hW : l.W < 2 ^ 24) :
+    WP isa (.block (fits l sl)) s fun t =>
+      t.mem = s.mem ∧ t.zf = some (decide (wx = l.W ∧ L ≤ 8 * l.W)) ∧ Keep [.rax, .rcx, .rdx] s t := by
+  have hs := hc.scr
+  have hn := hs.nowrap
+  have hlo := hc.lo
+  have hT := hc.hi
+  have h8 := hdr_lt_slot wx 8 (show 31 < 32 by decide)
+  have hw8 := hdr_lt_slot w 8 hsl
+  have hld : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off B o) (8 * i)) 8 := fun i hi => by
+    rw [off_off]; exact hs.ld (by have := hdr_lt_slot wx 8 hi; unfold tabBytes at hT; omega_using [this, hT])
+  have hldL : InRegions (s.rd ++ s.wr) (off B (8 * sl)) 8 := hs.ld (by omega_using [hw8, hlo, hT])
+  refine WP.mono (WP.keep [.rax, .rcx, .rdx] (Q := fun t => t.mem = s.mem ∧
+    t.zf = some (decide (wx = l.W ∧ L ≤ 8 * l.W))) ?_ rfl) fun t ⟨⟨m, z⟩, k⟩ => ⟨m, z, k⟩
+  unfold fits
+  xrun [State.ea, hdr, ws, hc.rdi, hdrOff, hld sW (by decide), hld sLink (by decide), hc.hdr.hw, hc.link, hldL, hel]
+  rw [AmmSym.se_ofNat (show l.W < 2 ^ 31 by omega_using [hW]),
+    AmmSym.se_ofNat (show 8 * l.W + 1 < 2 ^ 31 by omega_using [hW]), BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (show L < 2 ^ 64 by omega_using [hL]),
+    Nat.mod_eq_of_lt (show 8 * l.W + 1 < 2 ^ 64 by omega_using [hW])]
+  have inj : ∀ {a b : Nat}, a < 2 ^ 64 → b < 2 ^ 64 → BitVec.ofNat 64 a = BitVec.ofNat 64 b → a = b :=
+    fun ha hb h => by
+      have := congrArg BitVec.toNat h
+      rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] at this
+  by_cases h : L ≤ 8 * l.W
+  · rw [decide_eq_true (show L < 8 * l.W + 1 by omega_using [h]),
+      show (0#64 - BitVec.setWidth 64 (BitVec.ofBool true) + 1) = 0 by decide,
+      show ∀ x : BitVec 64, (x ||| 0) = x from fun x => by simp]
+    by_cases hw : wx = l.W
+    · subst hw; simp [h]
+    · simp only [hw, false_and, decide_false, beq_eq_false_iff_ne, ne_eq]
+      intro h0
+      refine hw (inj (by omega_using [hwx]) (by omega_using [hW]) ?_)
+      have := congrArg (· ^^^ BitVec.ofNat 64 l.W) h0
+      simp only [BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero] at this
+      exact this.trans (BitVec.zero_xor (x := BitVec.ofNat 64 l.W))
+  · rw [decide_eq_false (show ¬ L < 8 * l.W + 1 by omega_using [h]),
+      show (0#64 - BitVec.setWidth 64 (BitVec.ofBool false) + 1) = 1 by decide]
+    simp [h]
+
+/-- What `CrtExpL.ok` claims after an exponentiation from `s` to `t`. -/
+def EPost (s : State) (B : Addr) (Z o w wx : Nat) (minv : BitVec 64) (X x : Nat) (Q : Prop) (eb : List Byte)
+    (t : State) : Prop :=
+  SubCtx t B Z o w wx minv ∧ wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
+    (Q → wv t.mem (off B o) (slot wx Public.aY) wx % X = x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
+    Frm (off B o) (crtExpRanges5 wx) s.mem t.mem ∧ Keep mmRegs s t
+
+/-- `CrtExpL.ok`'s hypotheses. -/
+structure EPre (s : State) (B : Addr) (Z o w wx : Nat) (minv : BitVec 64) (X x : Nat) (Q : Prop)
+    (sp sl : Nat) (ep : Addr) (eb : List Byte) : Prop where
+  hc : SubCtx s B Z o w wx minv
+  hT : o + slot wx 8 + wsTab wx ≤ Z
+  hw2 : 2 ≤ wx
+  hwx : wx ≤ w
+  hw30 : w < 2 ^ 30
+  hn : wv s.mem (off B o) (slot wx Public.aN) wx = X
+  hinv : ((word s.mem (off B o) (slot wx Public.aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0
+  hodd : X % 2 = 1
+  hxl : wv s.mem (off B o) (slot wx Crt.aXc) wx < X
+  hxc : Q → wv s.mem (off B o) (slot wx Crt.aXc) wx % X = x * 2 ^ (64 * wx) % X
+  hyl : wv s.mem (off B o) (slot wx Public.aY) wx < X
+  hyc : Q → wv s.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X
+  hsp : sp < 32
+  hsl : sl < 32
+  hep : word s.mem B (8 * sp) = ep
+  hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length
+  hL1 : 1 ≤ eb.length
+  hL2 : eb.length ≤ 1024
+  he : Src s B Z ep eb
+
+/-- The hypotheses after code that writes only `rax`, `rcx` and `rdx`. -/
+theorem EPre.keep {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {X x : Nat} {Q : Prop}
+    {sp sl : Nat} {ep : Addr} {eb : List Byte} (h : EPre s B Z o w wx minv X x Q sp sl ep eb)
+    (hm : t.mem = s.mem) (hk : Keep [.rax, .rcx, .rdx] s t) : EPre t B Z o w wx minv X x Q sp sl ep eb := by
+  obtain ⟨hc, hT, hw2, hwx, hw30, hn, hinv, hodd, hxl, hxc, hyl, hyc, hsp, hsl, hep, hel, hL1, hL2, he⟩ := h
+  rw [← hm] at hn hinv hxl hxc hyl hyc hep hel
+  exact ⟨SubCtx.of_frmW hc hT (rs := []) (fun x _ => by rw [hm]) (by simp) hk.2.2 (hk.gpr (by decide)), hT, hw2,
+    hwx, hw30, hn, hinv, hodd, hxl, hxc, hyl, hyc, hsp, hsl, hep, hel, hL1, hL2,
+    he.congr (fun x _ => by rw [hm]) hk.2.1 hk.2.2⟩
+
+/-- `EPost` from a state that code writing only `rax`, `rcx` and `rdx` left. -/
+theorem EPost.keep {s t u : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {X x : Nat} {Q : Prop}
+    {eb : List Byte} (h : EPost t B Z o w wx minv X x Q eb u) (hm : t.mem = s.mem)
+    (hk : Keep [.rax, .rcx, .rdx] s t) : EPost s B Z o w wx minv X x Q eb u :=
+  ⟨h.1, h.2.1, h.2.2.1, by rw [← hm]; exact h.2.2.2.1, (hk.trans h.2.2.2.2).mono (by decide)⟩
+
+/-- A layout's vector code if it fits, else `rest`. -/
+theorem disp_ok (hl : PubOk l) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {X x : Nat} {Q : Prop}
+    {sp sl : Nat} {ep : Addr} {eb : List Byte} (h : EPre s B Z o w wx minv X x Q sp sl ep eb) {rest : Prog isa}
+    (hr : ∀ t, EPre t B Z o w wx minv X x Q sp sl ep eb → WP isa rest t (EPost t B Z o w wx minv X x Q eb)) :
+    WP isa (.seq (.block (fits l sl)) (.ite .e (seqs (exp l sp sl)) rest)) s (EPost s B Z o w wx minv X x Q eb) := by
+  have hW := (PubOk.sizes hl).2.2.2.2.2.2.2.2.2.2.1
+  refine WP.seq (WP.mono (fits_ok h.hc h.hsl h.hel (by have := h.hL2; omega_using [this])
+    (by have a := h.hwx; have b := h.hw30; omega_using [a, b]) (by omega_using [hW])) fun t ⟨m₁, z₁, k₁⟩ => ?_)
+  have h₁ := h.keep m₁ k₁
+  by_cases hf : wx = l.W ∧ eb.length ≤ 8 * l.W
+  · refine WP.ite true (by simp [eval, z₁, hf]) (fun _ => ?_) (by intro h; cases h)
+    obtain ⟨rfl, hLW⟩ := hf
+    refine WP.mono (expW_ok hl h₁.hc h₁.hT h₁.hn h₁.hinv h₁.hodd h₁.hxl h₁.hxc h₁.hyl h₁.hyc h₁.hsp h₁.hsl h₁.hep
+      h₁.hel h₁.hL1 hLW h₁.he) fun u ⟨a, b, f, wd, wr, di, k⟩ => ?_
+    have f' : Frm (off B o) (crtExpRanges5 l.W) t.mem u.mem := Frm.drop_word f wd
+    exact EPost.keep ⟨SubCtx.of_frmW h₁.hc h₁.hT f' (crtExpRanges5_ok l.W) wr di, a, b, f', k⟩ m₁ k₁
+  · exact WP.ite false (by simp [eval, z₁, hf]) (by intro h; cases h)
+      (fun _ => WP.mono (hr t h₁) fun u hu => hu.keep m₁ k₁)
+
+/-- FFDH's exponentiation with AVX512_IFMA: `Ifma.code`, for the three
+layouts that fit, else `CrtExpL.w4`. -/
+def expL (M : Mont) : CrtExpL M where
+  code := code M.mm
+  ne _ _ := by simp [Impl.Ffdh.X86_64.Ifma.code]
+  ok hc hT hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc _ _ hsp hsl _ _ hep hel hL1 hL2 he := by
+    have h := EPre.mk hc hT hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc hsp hsl hep hel hL1 hL2 he
+    exact disp_ok (.inl rfl) h fun _ h₁ => disp_ok (.inr (.inl rfl)) h₁ fun _ h₂ => disp_ok (.inr (.inr rfl)) h₂
+      fun _ h₃ => (CrtExpL.w4 M).ok h₃.hc h₃.hT h₃.hw2 h₃.hwx h₃.hw30 h₃.hn h₃.hinv h₃.hodd h₃.hxl h₃.hxc h₃.hyl
+        h₃.hyc h₃.hsp h₃.hsl h₃.hep h₃.hel h₃.hL1 h₃.hL2 h₃.he
+
 end VG.Proof.Ffdh.X86_64.Ifma

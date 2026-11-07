@@ -72,6 +72,15 @@ theorem epi_ok {s : State} {B : Addr} {d Z : Nat} {v : BitVec 32} (hB : s.gpr .r
   xrun [eaG', hB, hst, hld, h14, Mem.readW_writeW_self32, VG.Proof.Bignum.X86_64.AmmSym.and_ffff_hi]
   and_intros <;> rfl
 
+/-- `withMx`'s shape, from the prologue's and the epilogue's blocks whole. -/
+theorem WP.mx_shape {S P L R V : List Instr} {c : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa (.block (S ++ P)) s fun s₁ => WP isa c s₁ fun s₂ => WP isa (.block (L ++ R ++ V)) s₂ Q) :
+    WP isa (.seq (.seq (.block S) (.seq (.seq (.block P) (.seq c (.block L))) (.block R))) (.block V)) s Q := by
+  refine WP.seq (WP.seq (WP.mono (WP.block_append_iff.mp h) fun s₁ h₁ => WP.seq (WP.seq (WP.mono h₁
+    fun s₂ h₂ => WP.seq (WP.mono h₂ fun s₃ h₃ => ?_)))))
+  rw [List.append_assoc] at h₃
+  exact WP.mono (WP.block_append_iff.mp h₃) fun s₄ h₄ => WP.block_append_iff.mp h₄
+
 /-- The first digit, from `oSt`. -/
 theorem start_ok {t : State} {F : Addr} {Z i₀ : Nat} (hB : t.gpr .rbx = F) (hs : Scr t F Z) (hd : oSt l + 8 ≤ Z)
     (hv : word t.mem F (oSt l) = BitVec.ofNat 64 i₀) :
@@ -145,7 +154,7 @@ theorem vec_ok (hl : AmmOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat �
   have e2 : 2 ^ (104 * l.S - 64 * l.W) = 2 ^ l.dbls * 2 ^ (64 * l.W) := by
     rw [← Nat.pow_add]; congr 1; simp only [Lay.dbls]; omega_arith
   unfold Impl.Ffdh.X86_64.Ifma.vec withMx
-  refine WP.seq (WP.mono (pro_ok (d := l.oMx) hB hs (by omega_using [hMx, hSt])) fun s₁ ⟨m₁, r14₁, k₁, x₁⟩ => ?_)
+  refine WP.mx_shape (WP.mono (pro_ok (d := l.oMx) hB hs (by omega_using [hMx, hSt])) fun s₁ ⟨m₁, r14₁, k₁, x₁⟩ => ?_)
   have hB₁ : s₁.gpr .rbx = F := by rw [k₁.gpr (by decide)]; exact hB
   have hs₁ : Scr s₁ F (oSt l + 8) := hs.congr k₁.2.2
   have O : Outside F (l.nl * l.D) 8 s.mem s₁.mem := by
@@ -161,7 +170,7 @@ theorem vec_ok (hl : AmmOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat �
   have gf := fun p hp => (good_of hl (hF p hp) (hFlt p hp) (hMlt p hp)).of_hi hl O hp (by omega_using [o9, o10])
   have hst₁ : word s₁.mem F (oSt l) = BitVec.ofNat 64 i₀ := by
     rw [O.word (.inr (by omega_using [hSt])) (by omega_using [hn, hSt])]; exact hst
-  refine WP.seq (WP.mono (expLoopFrom_ok hl (st := [.mov .r13 (.mem (at_ .rbx (oSt l)))]) (x := x) (e := e) (Q := Q)
+  refine WP.mono (expLoopFrom_ok hl (st := [.mov .r13 (.mem (at_ .rbx (oSt l)))]) (x := x) (e := e) (Q := Q)
     ⟨hB₁, VG.Proof.Bignum.X86_64.AmmSym.Scr.mono hs₁ (by omega_using [hSt]), Ar.of_hi hl O ar, fun p hp => cop2 (hModd p hp) _, gx, gy, gk,
       fun q p hp => by
         rw [hi_val hl O hp (by omega_using [o3, o10]), hv hX p hp (by have := hXlt p hp; omega_arith)]; exact vx q p hp,
@@ -175,7 +184,7 @@ theorem vec_ok (hl : AmmOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat �
     fun t hBt _ hwt ht => start_ok hBt (hs₁.congr hwt) (Nat.le_refl _)
       (by rw [Out2.word_hi hl ht (by omega_using [o2, o5, o10]) (by omega_using [hSt]) (by omega_using [hn, hSt])]
           exact hst₁))
-    fun s₂ ⟨v₂, O₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
+    fun s₂ ⟨v₂, O₂, g₂, rd₂, wr₂, x₂⟩ => ?_
   have hB₂ : s₂.gpr .rbx = F := by
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)]; exact hB₁

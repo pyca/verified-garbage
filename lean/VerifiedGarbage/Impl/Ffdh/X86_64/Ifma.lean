@@ -42,11 +42,14 @@ def oSt : Nat := l.oMx + 8
 def oSv : Nat := l.oMx + 16
 
 /-- Intel's MXCSR prologue and epilogue around `c`, the caller's MXCSR
-(bits 15:0) kept in `r14`. -/
+(bits 15:0) kept in `r14`, which `c` never writes: the shape of a save and
+restore that the proofs check (`ctlOk`). -/
 def withMx (c : Prog isa) : Prog isa :=
-  .seq (.block [.stmxcsr (at_ .rbx l.oMx), .mov32 .r14 (.mem (at_ .rbx l.oMx)), .alu32 .and .r14 (.imm 0xFFFF),
-      .mov32 .rax (.imm 0x1FBF), .store32 (at_ .rbx (l.oMx + 4)) .rax, .ldmxcsr (at_ .rbx (l.oMx + 4)), .lfence])
-    (.seq c (.block [.lfence, .store32 (at_ .rbx l.oMx) .r14, .ldmxcsr (at_ .rbx l.oMx), .vop .vzeroupper]))
+  .seq (.seq (.block [.stmxcsr (at_ .rbx l.oMx), .mov32 .r14 (.mem (at_ .rbx l.oMx)), .alu32 .and .r14 (.imm 0xFFFF)])
+      (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rbx (l.oMx + 4)) .rax,
+          .ldmxcsr (at_ .rbx (l.oMx + 4)), .lfence]) (.seq c (.block [.lfence])))
+        (.block [.store32 (at_ .rbx l.oMx) .r14, .ldmxcsr (at_ .rbx l.oMx)])))
+    (.block [.vop .vzeroupper])
 
 /-- The vector code: `CrtIfma.expLoop` for one lane, from the digit at `oSt`. -/
 def vec : Prog isa := withMx l (seqs (expLoop l [.mov .r13 (.mem (at_ .rbx (oSt l)))]))
