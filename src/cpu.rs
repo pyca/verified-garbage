@@ -9,6 +9,11 @@ pub(crate) use verified_garbage_cpu::detected;
 #[cfg(test)]
 mod tests {
     use super::detected;
+    #[cfg(all(
+        feature = "cpu-features-env",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ))]
+    use verified_garbage_cpu::detect::REPORTED_WITH;
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     use verified_garbage_cpu::detect::decode;
     use verified_garbage_cpu::detect::{NAMES, allowed, runtime};
@@ -116,6 +121,37 @@ mod tests {
         }
     }
 
+    /// AES-NI is reported only with SSSE3, VAES only with AES-NI, and
+    /// AVX-512F only with AVX2 (`REPORTED_WITH`).
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn decode_aes_vaes_avx512f_need_their_others() {
+        let mut leaves = [[0; 4]; 8];
+        leaves[0][0] = 7;
+        // OSXSAVE and AVX; SSSE3 and AES-NI, or AES-NI alone.
+        for (ecx, ebx, want) in [
+            // VAES and AVX-512F, with AES-NI, SSSE3 and AVX2.
+            (
+                1 << 9 | 1 << 25,
+                1 << 5 | 1 << 16,
+                feature::SSSE3
+                    | feature::AES
+                    | feature::AVX
+                    | feature::AVX2
+                    | feature::VAES
+                    | feature::AVX512F,
+            ),
+            // Without SSSE3, no AES-NI, so no VAES; without AVX2, no AVX-512F.
+            (1 << 25, 1 << 16, feature::AVX),
+        ] {
+            leaves[1][2] = ecx | 1 << 27 | 1 << 28;
+            leaves[7][1] = ebx;
+            leaves[7][2] = 1 << 9;
+            let f = decode(|leaf, _| leaves[leaf as usize], || 0b1110_0111);
+            assert_eq!(Features(f), Features(want));
+        }
+    }
+
     /// Detection returns the CPU's features, restricted as
     /// `VG_CPU_FEATURES` says.
     #[test]
@@ -165,12 +201,41 @@ mod tests {
         allowed_by("aes,sha,avx", 0b101);
     }
 
-    /// BMI2 or ADX without AVX2 is a configuration no CPU has.
-    #[cfg(feature = "cpu-features-env")]
+    /// BMI2 without AVX2 is a configuration no CPU has.
+    #[cfg(all(
+        feature = "cpu-features-env",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ))]
     #[test]
-    #[should_panic(expected = "VG_CPU_FEATURES names bmi2 or adx without avx2, which no CPU has")]
-    fn allowed_by_bmi2_adx_without_avx2() {
+    #[should_panic(expected = "VG_CPU_FEATURES names bmi2 without avx2, which no CPU has")]
+    fn allowed_by_bmi2_without_avx2() {
         allowed_by("bmi2,adx", u32::MAX);
+    }
+
+    /// Naming a feature that is reported only with another
+    /// (`REPORTED_WITH`) fails without that one, whatever else it names, and
+    /// not with it.
+    #[cfg(all(
+        feature = "cpu-features-env",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ))]
+    #[test]
+    fn allowed_by_reported_with() {
+        // `VG_CPU_FEATURES` naming the features `bits`.
+        let names = |bits: u32| {
+            let named: std::vec::Vec<&str> = (NAMES.iter())
+                .filter(|(_, b)| bits & b != 0)
+                .map(|(n, _)| *n)
+                .collect();
+            named.join(",")
+        };
+        // Every feature another is reported only with.
+        let others = feature::SSSE3 | feature::AES | feature::AVX | feature::AVX2;
+        for (f, with) in REPORTED_WITH {
+            let without = names(f | (others & !with));
+            assert!(std::panic::catch_unwind(|| allowed_by(&without, u32::MAX)).is_err());
+            assert_eq!(allowed_by(&names(f | others), u32::MAX), f | others);
+        }
     }
 
     /// With AVX2, BMI2 and ADX are allowed.

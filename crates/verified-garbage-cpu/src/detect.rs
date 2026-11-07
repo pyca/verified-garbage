@@ -18,8 +18,8 @@
 // benchmarks run every implementation on one machine. It can only remove
 // features, and panics on a name this library does not know or the CPU does
 // not have, rather than quietly test another configuration. On x86 and x86-64,
-// BMI2 and ADX are detected only with AVX2, which every CPU that has them has,
-// so naming either without `avx2` panics too. On AArch64 targets
+// some features are detected only with others that every CPU with them has
+// (`REPORTED_WITH`), so naming one without them panics too. On AArch64 targets
 // other than Apple's, the SHA-3 functions run FEAT_SHA3's Keccak only when it
 // names `sha3` (`hashes::sha3::Backend::detected`).
 
@@ -54,6 +54,23 @@ pub const NAMES: [(&str, u32); 21] = [
     ("vpclmulqdq", feature::VPCLMULQDQ),
     ("avx512bw", feature::AVX512BW),
     ("umaal", feature::UMAAL),
+];
+
+/// Each feature that `decode` reports only with others, and those others:
+/// every CPU with it has them (BMI2 and ADX came with AVX2, in Intel's
+/// Haswell and Broadwell and AMD's Zen; AES-NI with SSSE3, in Intel's Westmere
+/// and Silvermont and AMD's Bulldozer and Jaguar; VAES with AES-NI and
+/// AVX-512F with AVX2, in every CPU with them, Intel's Knights Landing
+/// among them), so only a virtual machine or an operating system hiding
+/// the others has it without them, and it gets the code that needs neither
+/// rather than configurations of its own, which no CPU runs, to test.
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+pub const REPORTED_WITH: [(u32, u32); 5] = [
+    (feature::BMI2, feature::AVX2),
+    (feature::ADX, feature::AVX2),
+    (feature::AES, feature::SSSE3),
+    (feature::VAES, feature::AES),
+    (feature::AVX512F, feature::AVX2),
 ];
 
 /// The detected features, with [`DETECTED_INIT`] set once they are known,
@@ -167,15 +184,27 @@ pub fn allowed_by(names: &str, runtime: u32) -> u32 {
             lacking.join(",")
         );
     }
-    // `decode` reports BMI2 and ADX only with AVX2, so naming either without
-    // `avx2` asks for a configuration no CPU can have.
-    if !names.is_empty()
-        && allowed & (feature::BMI2 | feature::ADX) != 0
-        && allowed & feature::AVX2 == 0
-    {
-        panic!("VG_CPU_FEATURES names bmi2 or adx without avx2, which no CPU has");
+    // `decode` reports some features only with others (`REPORTED_WITH`), so
+    // naming one without them asks for a configuration no CPU can have.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    if !names.is_empty() {
+        for (f, with) in REPORTED_WITH {
+            if allowed & f != 0 && allowed & with != with {
+                panic!(
+                    "VG_CPU_FEATURES names {} without {}, which no CPU has",
+                    name_of(f),
+                    name_of(with)
+                );
+            }
+        }
     }
     allowed
+}
+
+/// The name of the feature `bit` in [`NAMES`].
+#[cfg(all(feature = "env", any(target_arch = "x86", target_arch = "x86_64")))]
+fn name_of(bit: u32) -> &'static str {
+    NAMES.iter().find(|(_, b)| *b == bit).map_or("", |(n, _)| n)
 }
 
 /// Every feature: without the `cpu-features-env` Cargo feature, nothing
@@ -244,7 +273,9 @@ pub fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) ->
     let max = cpuid(0, 0)[0];
     let ecx = cpuid(1, 0)[2];
     let ssse3 = (ecx >> 9) & 1;
-    let aes = (ecx >> 25) & 1;
+    // These and the others below that need another feature are reported
+    // only with it (`REPORTED_WITH`).
+    let aes = (ecx >> 25) & ssse3;
     let pclmulqdq = (ecx >> 1) & 1;
     let osxsave = (ecx >> 27) & 1 == 1;
     let xcr0 = if osxsave { xgetbv() } else { 0 };
@@ -260,17 +291,13 @@ pub fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) ->
     let sha = (ebx >> 29) & 1;
     let avx2 = (ebx >> 5) & avx;
     let bmi1 = (ebx >> 3) & 1;
-    // BMI2 and ADX only with AVX2: no CPU has them without it (Intel's
-    // came with Haswell's AVX2 and Broadwell, AMD's with Zen), so only a
-    // virtual machine or an operating system hiding AVX2 does, and it gets
-    // the baseline code rather than configurations of its own to test.
     let bmi2 = (ebx >> 8) & avx2;
-    let avx512f = (ebx >> 16) & avx & zmm;
+    let avx512f = (ebx >> 16) & avx2 & zmm;
     let sha512 = eax1 & avx;
     let adx = (ebx >> 19) & avx2;
     let avx512ifma = (ebx >> 21) & avx & zmm;
     let avx512vl = (ebx >> 31) & avx & zmm;
-    let vaes = (ecx7 >> 9) & avx;
+    let vaes = (ecx7 >> 9) & avx & aes;
     let vpclmulqdq = (ecx7 >> 10) & avx;
     let avx512bw = (ebx >> 30) & avx & zmm;
     (ssse3 * feature::SSSE3)
