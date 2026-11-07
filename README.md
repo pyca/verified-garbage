@@ -583,7 +583,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX-512F, AVX2</td>
 
 <td>✅</td>
 
@@ -603,7 +603,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX-512F, AVX2</td>
 
 <td>✅</td>
 
