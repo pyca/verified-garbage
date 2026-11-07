@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
 import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
@@ -22,7 +23,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 namespace VG.Proof.Gcm.X86_64.StitchZH
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (SPrePrepared kp pp hk nr sch nb)
-open VG.Proof.Gcm.X86_64.StitchZ (Ready EInv DInv FinOk FinOk48 AInv.pow)
+open VG.Proof.Gcm.X86_64.StitchZ (Ready EInv DInv DInvM DInv.toM FinOk FinOk48 AInv.pow AInvM.pow)
 open VG.Proof.Gcm.X86_64.StitchZR (ctx_keep powP48_ok setupP_ok)
 open VG.Proof.Gcm.X86_64.StitchZP (hInvF)
 open VG.Impl.Gcm.X86_64.StitchZ (tab)
@@ -83,37 +84,48 @@ theorem bigP_ok {s₀ : State} (hp : SPrePrepared s₀) {P : Nat → Nat → Blo
     (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
     (hCache.keep hh₁ (hA₁.keys hp.base))
 
+theorem bigDPM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀)
+    (hQ : SPrePrepared (if ix then StitchZTo.dst s₀ else s₀)) {P : Nat → Nat → Block}
+    (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
+    (hFin : ∀ T : Nat → Nat → Nat → Block,
+      (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
+        FinOk48 (hk s₀) T) (h96 : 96 ≤ nb s₀) {s : State}
+    (hI : DInvM ix s₀ P 0 s)
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) : WP isa (bigDP ix) s fun s' => ∃ e, DInvM ix s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
+  cases ix <;>
+  · have hdi : s.gpr .rdi = kp s₀ := hI.gpr .rdi (by decide) (by decide) (fun _ => by decide) (by decide) (by decide)
+    have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (fun _ => by decide) (by decide) (by decide)
+    obtain ⟨hpw, hH⟩ := ctx_keep hQ hI.a.frame
+    refine WP.seq (WP.mono (WP.hkeep (by decide +kernel) (powP48_ok hQ hdi hr11 hI.a.rd hI.a.wr hpw
+      (fun l hl => by rw [← State.zlane_lt2 _ _ hl]; exact hI.a.msk l (by omega)) hI.m1))
+      fun s₁ ⟨⟨t, pm, keep, fr, g₁, rd₁, wr₁, z₁⟩, hh₁⟩ => ?_)
+    rw [hH] at t
+    let T : Nat → Nat → Nat → Block := fun g k l =>
+      if g = 2 then P k l else s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128
+    have hv : ∀ g < 3, ∀ k < 4, ∀ l < 4,
+        s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l := fun g hg k hk l hl => by
+      by_cases h2 : g = 2
+      · subst h2
+        simp only [T, ↓reduceIte, show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega]
+        exact (keep (64 * k + 16 * l) (by omega)).trans (hI.pw k hk l hl)
+      · simp only [T, h2, ↓reduceIte]
+    have hT : FinOk48 (hk s₀) T := hFin T fun g hg k hk l hl => by
+      by_cases h2 : g = 2
+      · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
+      · simp only [T, h2, ↓reduceIte]; exact t g (by omega) k hk l hl
+    have hA₁ := (hI.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
+    exact bigDRestM_ok hp hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
+      hA₁ hv pm g₁
+      (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
+      (hCache.keep hh₁ (hA₁.keys hp))
+
 theorem bigDP_ok {s₀ : State} (hp : SPrePrepared s₀) {P : Nat → Nat → Block}
     (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
     (hFin : ∀ T : Nat → Nat → Nat → Block,
       (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
         FinOk48 (hk s₀) T) (h96 : 96 ≤ nb s₀) {s : State}
     (hI : DInv s₀ P 0 s)
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) : WP isa bigDP s fun s' => ∃ e, DInv s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
-  have hdi : s.gpr .rdi = kp s₀ := hI.gpr .rdi (by decide) (by decide) (by decide) (by decide)
-  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
-  obtain ⟨hpw, hH⟩ := ctx_keep hp hI.a.frame
-  refine WP.seq (WP.mono (WP.hkeep (by decide +kernel) (powP48_ok hp hdi hr11 hI.a.rd hI.a.wr hpw
-    (fun l hl => by rw [← State.zlane_lt2 _ _ hl]; exact hI.a.msk l (by omega)) hI.m1))
-    fun s₁ ⟨⟨t, pm, keep, fr, g₁, rd₁, wr₁, z₁⟩, hh₁⟩ => ?_)
-  rw [hH] at t
-  let T : Nat → Nat → Nat → Block := fun g k l =>
-    if g = 2 then P k l else s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128
-  have hv : ∀ g < 3, ∀ k < 4, ∀ l < 4,
-      s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l := fun g hg k hk l hl => by
-    by_cases h2 : g = 2
-    · subst h2
-      simp only [T, ↓reduceIte, show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega]
-      rw [keep _ (by omega)]; exact hI.pw k hk l hl
-    · simp only [T, h2, ↓reduceIte]
-  have hT : FinOk48 (hk s₀) T := hFin T fun g hg k hk l hl => by
-    by_cases h2 : g = 2
-    · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
-    · simp only [T, h2, ↓reduceIte]; exact t g (by omega) k hk l hl
-  have hA₁ := (hI.a.pow hp.base fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
-  exact bigDRest_ok hp.base hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
-    hA₁ hv pm g₁
-    (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
-    (hCache.keep hh₁ (hA₁.keys hp.base))
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) : WP isa bigDP s fun s' => ∃ e, DInv s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' :=
+  WP.mono (bigDPM_ok (ix := false) hp.base.toM hp hP hFin h96 hI.toM hCache) fun _ ⟨e, h, hk⟩ => ⟨e, h.toDInv, hk⟩
 
 end VG.Proof.Gcm.X86_64.StitchZH
