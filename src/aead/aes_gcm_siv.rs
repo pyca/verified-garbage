@@ -43,7 +43,12 @@ crate::error::impl_error! {
 }
 
 /// An AES-GCM-SIV key: the AES key schedule of the key-generating key.
+// Aligned to 32 bytes: `new` copies the key out of the frame it expands the
+// schedule in, just after the schedule's 16-byte stores, and that copy of
+// the unaligned 248-byte struct made `new` about 6 ns slower (a store-to-load
+// forwarding stall on its last, overlapping loads).
 #[derive(Clone)]
+#[repr(align(32))]
 pub struct AesGcmSiv {
     /// The key schedule `vg_aes_expand_key` writes.
     schedule: [u8; 240],
