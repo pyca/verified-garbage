@@ -13,17 +13,9 @@
 
 use core::mem::MaybeUninit;
 
-#[cfg(any(
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86",
-    target_arch = "riscv64",
-    all(target_arch = "powerpc64", target_endian = "little")
-))]
-use crate::arch::dispatch::chacha20poly1305::vg_chacha20_poly1305_open_to_auto;
 use crate::arch::dispatch::chacha20poly1305::{
-    vg_chacha20_poly1305_open_auto, vg_chacha20_poly1305_seal_auto,
-    vg_chacha20_poly1305_seal_gather_auto,
+    vg_chacha20_poly1305_open_auto, vg_chacha20_poly1305_open_to_auto,
+    vg_chacha20_poly1305_seal_auto, vg_chacha20_poly1305_seal_gather_auto,
 };
 use crate::zeroize::zeroize;
 
@@ -226,13 +218,6 @@ impl ChaCha20Poly1305 {
     /// authenticates it; otherwise returns [`Error::TagMismatch`] and zeroes
     /// `out`. `ciphertext` is read where it is, not copied to `out` first. A
     /// length error leaves `out` as it was.
-    #[cfg(any(
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "x86",
-        target_arch = "riscv64",
-        all(target_arch = "powerpc64", target_endian = "little")
-    ))]
     pub fn decrypt(
         &self,
         nonce: &[u8; 12],
@@ -422,13 +407,6 @@ mod tests {
     /// to 300 bytes, from and to buffers at several alignments, leaving the
     /// ciphertext as it was; zeroes the output on a wrong tag; and leaves it
     /// as it was on a length error.
-    #[cfg(any(
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "x86",
-        target_arch = "riscv64",
-        all(target_arch = "powerpc64", target_endian = "little")
-    ))]
     #[test]
     fn decrypt_out_of_place() {
         let aead = ChaCha20Poly1305::new(&core::array::from_fn(|i| (i * 9) as u8));
@@ -461,8 +439,12 @@ mod tests {
         // Lengths the long paths take (whole chunks of 512 bytes, the rests
         // after them, and the paths through the keystream of eight blocks).
         let msg: [u8; 4097] = core::array::from_fn(|i| (i * 13) as u8);
+        // On x86-64, also the AVX-512 instances' choices of the AVX2 code by
+        // the length (below 640 or 768 bytes, from 961 to 1024, and IFMA's
+        // from 449 to 639) and the bytes after a pass of 1024.
         for len in [
-            449, 511, 512, 513, 576, 577, 704, 705, 768, 769, 896, 1024, 1350, 2049, 4097,
+            449, 511, 512, 513, 576, 577, 639, 640, 641, 704, 705, 767, 768, 769, 896, 960, 961,
+            1023, 1024, 1025, 1350, 1408, 1409, 1536, 2049, 2560, 3073, 4097,
         ] {
             let mut ct = [0u8; 4097 + 7];
             let ct = &mut ct[7..7 + len];
