@@ -9,8 +9,10 @@ vg_chacha20_xor:
 	std %r23, 264(%r6)
 	mflr %r0
 	std %r0, 272(%r6)
+	std %r30, 280(%r6)
 	addi %r22, %r4, 0
 	addi %r23, %r5, 0
+	addi %r30, %r7, 0
 	addi %r4, %r6, 0
 	cmpldi %cr0, %r23, 0
 	beq %cr0, 20f
@@ -33,8 +35,9 @@ vg_chacha20_xor:
 	ld %r6, 0(%r22)
 	ld %r8, 0(%r7)
 	xor %r6, %r6, %r8
-	std %r6, 0(%r22)
+	std %r6, 0(%r30)
 	addi %r22, %r22, 8
+	addi %r30, %r30, 8
 	addi %r7, %r7, 8
 	addi %r5, %r5, -8
 	cmpldi %cr0, %r5, 0
@@ -45,8 +48,9 @@ vg_chacha20_xor:
 	lbz %r6, 0(%r22)
 	lbz %r8, 0(%r7)
 	xor %r6, %r6, %r8
-	stb %r6, 0(%r22)
+	stb %r6, 0(%r30)
 	addi %r22, %r22, 1
+	addi %r30, %r30, 1
 	addi %r7, %r7, 1
 	addi %r5, %r5, -1
 	cmpldi %cr0, %r5, 0
@@ -64,4 +68,5 @@ vg_chacha20_xor:
 	mtlr %r0
 	ld %r22, 256(%r4)
 	ld %r23, 264(%r4)
+	ld %r30, 280(%r4)
 	blr

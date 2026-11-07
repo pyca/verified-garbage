@@ -74,6 +74,7 @@ vg_chacha20_poly1305_seal:
 	addi %r4, %r27, 0
 	addi %r5, %r28, 0
 	addi %r6, %r24, 0
+	addi %r7, %r27, 0
 	bl {vg_chacha20_xor}
 	addi %r3, %r24, 0
 	addi %r4, %r24, 384
@@ -412,6 +413,7 @@ vg_chacha20_poly1305_open:
 	addi %r4, %r27, 0
 	addi %r5, %r28, 0
 	addi %r6, %r24, 0
+	addi %r7, %r27, 0
 	bl {vg_chacha20_xor}
 	ld %r3, 448(%r24)
 	ld %r4, 0(%r29)

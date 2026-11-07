@@ -30,7 +30,7 @@ The working space (648 bytes, called the context below):
 `r24` holds the context, `r25` the additional data, `r26` its length, `r27`
 the data, `r28` its length and `r29` the tag throughout: they are
 nonvolatile, and no callee writes them (the callees save and restore
-`r14`–`r23` only), so the constant-time analysis sees them public after every
+`r14`–`r23` and `r30` only), so the constant-time analysis sees them public after every
 call, which it would not for a register a callee reloads from memory. `r0`,
 `r3`–`r6` and `r11`–`r12` are temporaries. The return address is saved in the context, as
 `vg_chacha20_xor` does, so the only stack the functions use is
@@ -159,10 +159,11 @@ def macPad (p n : Reg) : Prog isa :=
     (.ite (.zero .d .r12) (.block [])
       (.seq (.block [.sub .r4 n .r12, .add .r4 p .r4]) padTail))))
 
-/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted. -/
+/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted in
+place (`vg_chacha20_xor` with `dst = src`). -/
 def crypt : Prog isa :=
   .seq (.block [.li .r12 1, .store .w .r12 .r24 (stOff + 48), .addi .r3 .r24 stOff,
-    mov .r4 .r27, mov .r5 .r28, mov .r6 .r24])
+    mov .r4 .r27, mov .r5 .r28, mov .r6 .r24, mov .r7 .r27])
     (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Xor.xor)
 
 /-- The lengths block, absorbed. -/
