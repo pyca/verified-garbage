@@ -3439,6 +3439,7 @@ vg_chacha20_poly1305_seal_neon:
 	b 210f
 29:
 210:
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x0, x21, #448
 	add x1, x22, #0
@@ -9340,6 +9341,7 @@ vg_chacha20_poly1305_seal_neon:
 	b 267f
 266:
 267:
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x0, x21, #448
 	add x1, x22, #0
@@ -9500,6 +9502,7 @@ vg_chacha20_poly1305_seal_neon:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -12111,6 +12114,7 @@ vg_chacha20_poly1305_seal_neon:
 	add x1, x22, #256
 	sub x2, x23, #256
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x0, x21, #448
 	add x1, x24, #0
@@ -12672,6 +12676,7 @@ vg_chacha20_poly1305_seal_neon:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x0, x21, #448
 	add x1, x21, #768
@@ -15088,6 +15093,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -15170,6 +15176,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	b 234f
 233:
@@ -15210,6 +15217,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -15315,6 +15323,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x21, #768
 	movz x2, #256, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -15387,6 +15396,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 230:
 	b 228f
@@ -15395,6 +15405,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 228:
 220:
@@ -19565,6 +19576,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -19647,6 +19659,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	b 2122f
 2121:
@@ -19687,6 +19700,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -19792,6 +19806,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x21, #768
 	movz x2, #256, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -19864,6 +19879,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 2118:
 	b 2116f
@@ -19872,6 +19888,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 2116:
 2108:
@@ -24227,6 +24244,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x22, #256
 	sub x2, x23, #256
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x0, x21, #448
 	movz x1, #0, lsl #0
@@ -25286,6 +25304,7 @@ vg_chacha20_poly1305_open_neon:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	add x0, x21, #448
 	add x1, x21, #768
@@ -26234,6 +26253,7 @@ vg_chacha20_poly1305_seal:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor}
 	add x0, x21, #448
 	add x1, x22, #0
@@ -26393,6 +26413,7 @@ vg_chacha20_poly1305_seal:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -29004,6 +29025,7 @@ vg_chacha20_poly1305_seal:
 	add x1, x22, #256
 	sub x2, x23, #256
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor}
 	add x0, x21, #448
 	add x1, x24, #0
@@ -29578,6 +29600,7 @@ vg_chacha20_poly1305_open:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor}
 	add x0, x21, #448
 	movz x1, #0, lsl #0
@@ -33926,6 +33949,7 @@ vg_chacha20_poly1305_open:
 	add x1, x22, #256
 	sub x2, x23, #256
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor}
 	add x0, x21, #448
 	movz x1, #0, lsl #0
@@ -37524,6 +37548,7 @@ vg_chacha20_poly1305_seal_sve2:
 	b 210f
 29:
 210:
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x0, x21, #448
 	add x1, x22, #0
@@ -42609,6 +42634,7 @@ vg_chacha20_poly1305_seal_sve2:
 	b 267f
 266:
 267:
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x0, x21, #448
 	add x1, x22, #0
@@ -42769,6 +42795,7 @@ vg_chacha20_poly1305_seal_sve2:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -44900,6 +44927,7 @@ vg_chacha20_poly1305_seal_sve2:
 	add x1, x22, #256
 	sub x2, x23, #256
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x0, x21, #448
 	add x1, x24, #0
@@ -45461,6 +45489,7 @@ vg_chacha20_poly1305_seal_sve2:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x0, x21, #448
 	add x1, x21, #768
@@ -47685,6 +47714,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -47767,6 +47797,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	b 234f
 233:
@@ -47807,6 +47838,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -47912,6 +47944,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x21, #768
 	movz x2, #256, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -47984,6 +48017,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 230:
 	b 228f
@@ -47992,6 +48026,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 228:
 220:
@@ -51538,6 +51573,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -51620,6 +51656,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	b 2122f
 2121:
@@ -51660,6 +51697,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -51765,6 +51803,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x21, #768
 	movz x2, #256, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -51837,6 +51876,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 2118:
 	b 2116f
@@ -51845,6 +51885,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x22, #0
 	add x2, x23, #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 2116:
 2108:
@@ -53639,6 +53680,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x9, x22, #0
 	add x10, x21, #768
@@ -55805,6 +55847,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x22, #256
 	sub x2, x23, #256
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x0, x21, #448
 	movz x1, #0, lsl #0
@@ -56816,6 +56859,7 @@ vg_chacha20_poly1305_open_sve2:
 	add x1, x21, #768
 	movz x2, #512, lsl #0
 	add x3, x21, #128
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	add x0, x21, #448
 	add x1, x21, #768
