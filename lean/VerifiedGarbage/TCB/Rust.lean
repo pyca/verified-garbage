@@ -1620,7 +1620,9 @@ therefore its own, but for what depends on the implementation: the stack
 its calls and frames use (it documents the largest, `Sig.layoutDoc`, whose
 requirements then hold for each) and how much of its arrays it writes (the
 largest bound of each array that every implementation bounds,
-`Artifact.written`). It needs no CPU feature: it calls an implementation
+`Artifact.written`; for an array that only some bound, a function next to
+it, `writtenOfChoice`, gives the bound of the one it runs on this CPU). It
+needs no CPU feature: it calls an implementation
 that needs features only if the CPU has them, as the generated condition
 checks with `verified_garbage_cpu::detected()`, which detects the features
 the CPU and operating system support (`crates/verified-garbage-cpu/`), of
@@ -1913,6 +1915,45 @@ def dispatchNote (base : String) (arms : List Arm) : String :=
     s!"; or else `{base}`, which needs no CPU feature. Each has this documentation but for its \
     stack (whose requirements here are the largest) and what it writes."
 
+/-- For each writable array parameter `p` of the function `g` that some of
+its implementations bound what they write of (`Artifact.written`) but not
+every one does, so that its dispatcher states no bound (see above): a
+function `<dispatcher>_<p>_written`, which returns how many bytes from the
+start of `p` the implementation the dispatcher runs on this CPU may write,
+its bound or, for one without, the whole array. It tests the dispatcher's
+conditions in the dispatcher's order (the same `arms`, `condOf`), and
+`verified_garbage_cpu::detected()` and `requested()` give the same answer at
+every call, so it describes the implementation every call of the dispatcher
+runs, and a caller that wipes what that writes need not wipe more. -/
+def writtenOfChoice (g : Group) (arms : List Arm) : String :=
+  let b := g.base
+  let auto := autoName b.name
+  let all := b :: g.members.map (·.1)
+  String.join (b.sig.params.filterMap fun (p, ty) => match ty with
+    | .array true e k =>
+      let bounds := all.map fun a => a.written.lookup p
+      if bounds.any (·.isSome) && !bounds.all (·.isSome) then
+        let full := k * e.size
+        let boundOf (name : String) : Nat :=
+          ((all.find? (·.name == name)).bind (·.written.lookup p)).getD full
+        some (
+          s!"/// How many bytes from the start of `{p}` `{auto}` may write on this CPU: the bound\n" ++
+          s!"/// of the implementation it runs (`Artifact.written`), or all {full} for one\n" ++
+          s!"/// without. It tests the dispatcher's conditions in its order, and the CPU's\n" ++
+          s!"/// features are detected once, so it describes every call of `{auto}`.\n" ++
+          "#[inline]\n" ++
+          s!"pub fn {auto}_{p}_written() -> usize " ++ "{\n" ++
+          (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
+          String.join (arms.map fun a =>
+            String.join (a.impl.gate.map fun c => s!"    #[cfg({c})]\n") ++
+            s!"    if {condOf a} " ++ "{\n" ++
+            s!"        return {boundOf a.impl.name};\n" ++
+            "    }\n") ++
+          s!"    {boundOf b.name}\n" ++
+          "}\n")
+      else none
+    | _ => none)
+
 /-- The dispatcher of the function `g` of the module `m` (see above), given
 its implementations' `arms`. -/
 def dispatcher (g : Group) (arms : List Arm) : String :=
@@ -1942,7 +1983,8 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
     "    }\n") ++
   "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
   "    unsafe { " ++ s!"crate::{b.module}::{b.name}({args})" ++ " }\n" ++
-  "}\n"
+  "}\n" ++
+  writtenOfChoice g arms
 
 /-- The dispatcher of the function `g` whose base is its only implementation:
 another name of it. -/
