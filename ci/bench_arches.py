@@ -156,9 +156,12 @@ import asm_layout
 # natively, in the images ci/runner.Dockerfile builds, as ci.yml's `rust` job
 # tests them (so that its build of the dependencies is the cache bench.yml
 # restores): x86 in a 32-bit userspace on the x86-64 host, PPC64LE on a
-# ppc64le host, RISC-V on its riscv64 host, with the toolchain the runner's
-# image installs (`rust = "host"`, as ci/rust_matrix.toml's entry), and ARMv7 cross-compiled on the ARM64 host, in armv7-cross,
-# whose binaries run natively. bench_compare.py runs them itself, not through
+# ppc64le host, and ARMv7 cross-compiled on the ARM64 host, in armv7-cross,
+# whose binaries run natively. RISC-V runs natively on its riscv64 host
+# (RISE's), with the toolchain the runner's image installs (`rust = "host"`),
+# though ci.yml tests it under QEMU on x86-64, so no push to main caches its
+# dependencies (`benches_on` in ci/rust_arches.py): timing QEMU would mean
+# nothing. bench_compare.py runs them itself, not through
 # ci/arm32-run, so on a host without AArch32 they fail rather than time QEMU.
 PLATFORMS = {
     "x86_64": {"os": "ubuntu-26.04"},

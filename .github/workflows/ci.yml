@@ -418,9 +418,8 @@ jobs:
       options: ${{ matrix.container.options || '' }}
     env:
       # Selects the toolchain without `rustup default`, which refuses 32-bit
-      # toolchains on a 64-bit kernel; `host` (empty here) is the runner's
-      # default.
-      RUSTUP_TOOLCHAIN: ${{ matrix.rust != 'host' && matrix.rust || '' }}
+      # toolchains on a 64-bit kernel.
+      RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
       RUSTFLAGS: -D warnings -Cinstrument-coverage
       # Both relative to the crate root, where the test binaries run.
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
@@ -444,47 +443,36 @@ jobs:
             /crates/verified-garbage-asm-${{ matrix.asm || matrix.arch }}/
       - uses: ./.github/actions/runner-info
 
-      - name: Install Rust
-        if: ${{ matrix.rust != 'host' }}
-        run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component llvm-tools
-      # `host`: the toolchain the runner's image installs (RISE's riscv64
-      # runners', on which pulling a container image took longer than any
-      # other step but the tests), whatever its version, and what else the
-      # job runs, which the image may stop having. Its llvm-tools, which the
-      # image lacks, are a 90 MB download, of which the job needs only
-      # llvm-cov and llvm-profdata: those come from the cache, keyed by the
-      # compiler they belong to.
-      - id: host-rust
-        name: Check the runner's toolchain
-        if: ${{ matrix.rust == 'host' }}
+      # A cross-compiled target (RISC-V's): its linker, C library and QEMU
+      # from the runner's packages, and Cargo's build target, linker and
+      # runner, which runs each test binary under QEMU's user-mode emulation.
+      # Before the cache, whose key covers the CARGO_* environment.
+      - name: Install the cross toolchain and QEMU
+        if: ${{ matrix.target }}
+        env:
+          TARGET: ${{ matrix.target }}
+          APT: ${{ matrix.apt }}
+          LINKER: ${{ matrix.linker }}
+          QEMU: ${{ matrix.qemu }}
         run: |
-          for tool in python3 git zstd gcc rustc cargo; do
-            if ! command -v "$tool" > /dev/null; then
-              echo "::error::the runner has no $tool"
-              exit 1
-            fi
-          done
-          rustc -vV
-          echo "bin=$(dirname "$(rustc --print target-libdir)")/bin" >> "$GITHUB_OUTPUT"
-          echo "key=llvm-tools-$(rustc -vV | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
-      - id: llvm-tools
-        if: ${{ matrix.rust == 'host' }}
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ${{ steps.host-rust.outputs.bin }}/llvm-cov
-            ${{ steps.host-rust.outputs.bin }}/llvm-profdata
-          key: ${{ steps.host-rust.outputs.key }}
-      - if: ${{ matrix.rust == 'host' && steps.llvm-tools.outputs.cache-hit != 'true' }}
-        run: rustup component add llvm-tools
+          sudo apt-get -qq update
+          sudo apt-get -qq install -y --no-install-recommends $APT
+          var=CARGO_TARGET_$(echo "$TARGET" | tr a-z- A-Z_)
+          {
+            echo "CARGO_BUILD_TARGET=$TARGET"
+            echo "${var}_LINKER=$LINKER"
+            echo "${var}_RUNNER=$QEMU"
+          } >> "$GITHUB_ENV"
+          $QEMU --version | head -n 1
+      - name: Install Rust
+        run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component llvm-tools ${{ matrix.target && format('--target {0}', matrix.target) || '' }}
       # A push to main builds only to save main's cache, whose key covers
       # the toolchain, the CARGO_*/RUST_* environment and Cargo.toml and
       # Cargo.lock, not the crate's sources. An entry is never overwritten,
       # so when one with this key exists (most pushes change no dependency)
       # the build would save nothing: look the key up first, without
       # downloading or saving (the step below saves), and build only on a
-      # miss, so that the job takes its runner (RISC-V's, few and slow) for
-      # no longer than the lookup.
+      # miss, so that the job takes its runner for no longer than the lookup.
       - id: cached
         if: ${{ github.event_name == 'push' }}
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
@@ -515,10 +503,11 @@ jobs:
       # changes the key (ci/bench_cache_key.sh), so every push to main looks
       # it up, without downloading, and builds only on a miss. ARMv7's too,
       # cross-compiled in the armv7-cross image, as that workflow builds it;
-      # not those of the architectures it does not measure (`bench`, see
+      # not those of the architectures it does not measure, or measures on
+      # another runner than this job's (RISC-V's, natively) (`bench`, see
       # ci/rust_arches.py).
       - id: bench-cache-key
-        if: ${{ matrix.bench && (matrix.rust == 'stable' || matrix.rust == 'host') && runner.os == 'Linux' && github.event_name == 'push' }}
+        if: ${{ matrix.bench && matrix.rust == 'stable' && runner.os == 'Linux' && github.event_name == 'push' }}
         run: sh ci/bench_cache_key.sh bench >> "$GITHUB_OUTPUT"
       - id: bench-cache
         if: ${{ steps.bench-cache-key.outputs.key }}
@@ -682,8 +671,8 @@ jobs:
   # (ci/rust_matrix.toml's `lint`, those of the architectures `rust-arches`
   # selected, or all of them when the benchmarks changed), on one x86-64
   # runner (ci/rust_lint.py): Clippy only checks, which needs the target's
-  # standard library and no linker or runner, so the slow platforms (RISC-V's
-  # and PPC64LE's runners, x86 and ARMv7 in their containers) only build and
+  # standard library and no linker or runner, so the slow platforms (RISC-V
+  # under QEMU, PPC64LE's runners, x86 and ARMv7 in their containers) only build and
   # test. The library with each of its sets of features, and the benchmark
   # crate, outside its workspace, for the Linux targets. In the lint image
   # (ci/runner.Dockerfile), which has every target's standard library, and
