@@ -118,8 +118,8 @@ own changes are rebuilt either way, on top of the restored build.
   too, and their callers, without anyone listing it. The Rust code that
   chooses among implementations matches exhaustively on the primitive's
   backend enum (`streaming_hash!`'s, which `streaming_hmac!` and `whole_pbkdf2!`
-  follow; `cipher::chacha20::Backend`, which ChaCha20-Poly1305 follows; a caller of
-  several, like Argon2, matches on each of their enums together): a new
+  follow; a caller of several, like Argon2, matches on each of their enums
+  together): a new
   backend does not compile until everything built on it handles it.
   `ci/check_variants.py` checks the generated code for this (the
   `adding-a-primitive` skill says what it checks). There are no

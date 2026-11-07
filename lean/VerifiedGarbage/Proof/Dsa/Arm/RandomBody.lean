@@ -173,8 +173,8 @@ theorem Done.mem {s₀ t u : State} (A : RandomABI s₀) (D : Done s₀ t) (hr :
   let ⟨d, S⟩ := D.smp
   ⟨⟨d, S.mem A hr hm⟩, by rw [hm]; exact D.status, by rw [hm]; exact D.out, by rw [hm]; exact D.saved⟩
 
-theorem body_ok (name : String) {s₀ : State} (A : RandomABI s₀) :
-    WP isa (body name (Entry.operation true)) (allocated frameBytes s₀) fun u => Finished s₀ u := by
+theorem body_ok (S : Signer) (name : String) {s₀ : State} (A : RandomABI s₀) (V : RValid S s₀) :
+    WP isa (body name S.code) (allocated frameBytes s₀) fun u => Finished s₀ u := by
   have hql := rQBytes_le A
   have hfit := rWidth_le s₀
   have hR := rResult_status_le A
@@ -191,7 +191,7 @@ theorem body_ok (name : String) {s₀ : State} (A : RandomABI s₀) :
   have at₃ : slot t₃.mem (rBase s₀) oAttempts = 8 := by rw [m₃, lo₂ _ (by decide)]; exact at₁
   rw [ax₂] at z₃
   suffices H : WP isa (.ite .eq (.block [st .r0 oStatus])
-      (.loop (.seq (attempt name (Entry.operation true)) (.block [ld .r0 oStatus, .cmp .r0 (.imm 4)])) .eq))
+      (.loop (.seq (attempt name S.code) (.block [ld .r0 oStatus, .cmp .r0 (.imm 4)])) .eq))
       t₃ (RFin s₀) from WP.seq (WP.mono H fun u hu => rfinish_ok A hu hR (rResult_signature A))
   by_cases hq : 1 < rq s₀
   · simp only [hq, ↓reduceIte] at z₃
@@ -208,7 +208,7 @@ theorem body_ok (name : String) {s₀ : State} (A : RandomABI s₀) :
       (fun n u hu => ?_) 8 t₃ ⟨0, by decide, by decide, T₀⟩
     obtain ⟨used, hn1, hn8, T⟩ := hu
     obtain ⟨f, rfl⟩ : ∃ f, n = f + 1 := ⟨n - 1, by omega_arith⟩
-    refine WP.seq (WP.mono (attempt_ok name A T hn8 hq) fun v hv => ?_)
+    refine WP.seq (WP.mono (attempt_ok S name A T hn8 hq V) fun v hv => ?_)
     have hrv : RReady s₀ v := by
       rcases hv with ⟨_, _, T', _⟩ | ⟨_, D, _⟩
       · obtain ⟨_, S⟩ := T'.smp; exact S.ready

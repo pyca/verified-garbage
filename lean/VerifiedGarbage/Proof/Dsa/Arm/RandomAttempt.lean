@@ -204,17 +204,6 @@ theorem frameOuts_bytes {s₀ : State} {m m' : Mem} {rs : List (Nat × Nat)}
     exact Offset.contains_base _ (by omega) (by omega)
   · right; omega
 
-/-- The key's bytes, while the frame is allocated. -/
-theorem callKey {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) :
-    Spec.Rsa.bytesAt t.mem (State.addr (s₀.gpr .r3)) (stackArg s₀ 0).toNat = (rInput s₀).key := by
-  refine rBytes_frame h.frame (fun r hr => ?_) (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
-  simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact A.stackKey.symm
-  · exact A.outKey.symm
-  · exact A.keyScratch
-  · exact A.usedKey.symm
-
 /-- The signer's input is the specification's, with the sampled nonce. -/
 theorem callResult_eq {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {k : Nat}
     (hn : Spec.Rsa.bytesAt t.mem (off (rBase s₀) oNonce) (rQBytes s₀).length =
@@ -262,9 +251,9 @@ def AttemptOut (s₀ : State) (used f : Nat) (u : State) : Prop :=
       ¬ ((VG.Proof.Dsa.randomSigningTrace
         (VG.Proof.Dsa.randomSignRemaining (rInput s₀) used (f + 1)).trace).head? = some 6 ∧ 1 ≤ f))
 
-theorem attempt_ok (name : String) {s₀ t : State} (A : RandomABI s₀) {used f : Nat}
-    (T : Att s₀ used (f + 1) t) (hf : f + 1 ≤ 8) (hq : 1 < rq s₀) :
-    WP isa (attempt name (Entry.operation true)) t fun u => AttemptOut s₀ used f u := by
+theorem attempt_ok (S : Signer) (name : String) {s₀ t : State} (A : RandomABI s₀) {used f : Nat}
+    (T : Att s₀ used (f + 1) t) (hf : f + 1 ≤ 8) (hq : 1 < rq s₀) (V : RValid S s₀) :
+    WP isa (attempt name S.code) t fun u => AttemptOut s₀ used f u := by
   have hql := rQBytes_le A
   obtain ⟨d₀, Sm⟩ := T.smp
   unfold attempt
@@ -306,7 +295,7 @@ theorem attempt_ok (name : String) {s₀ t : State} (A : RandomABI s₀) {used f
         Spec.Dsa.encodeBE (rQBytes s₀).length k := by
       rw [m₃, m₂]; exact O.nonce k hsc
     have hres := callResult_eq A h₃ hk
-    refine WP.seq (WP.mono (callSigner_ok A h₃ C₃ name) fun u₄ ⟨h₄, f₄, _, r0₄, out₄⟩ => ?_)
+    refine WP.seq (WP.mono (callSigner_ok S A h₃ C₃ V name) fun u₄ ⟨h₄, f₄, _, r0₄, out₄⟩ => ?_)
     have at₄ : slot u₄.mem (rBase s₀) oAttempts = BitVec.ofNat 32 (f + 1) := by
       rw [call_frame_slot A f₄ (by decide), m₃, m₂]; exact at₁
     have S₄ := (S₂.mem A h₃ m₃).after_call A h₄ f₄
