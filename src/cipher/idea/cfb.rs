@@ -65,8 +65,12 @@ impl IdeaCfb64Encryptor {
     /// whole segments; this is the rule of its §6.4 and §6.5 for a partial
     /// last block, as other implementations extend CFB).
     pub fn encrypt_final(mut self, buffer: &mut [u8]) {
-        self.key
-            .final_(&mut self.iv, buffer, vg_idea_cfb64_encrypt_final);
+        self.key.last(
+            &mut self.iv,
+            buffer,
+            vg_idea_cfb64_encrypt,
+            vg_idea_cfb64_encrypt_final,
+        );
     }
 }
 
@@ -119,13 +123,12 @@ impl IdeaCfb64Decryptor {
     /// whole segments; this is the rule of its §6.4 and §6.5 for a partial
     /// last block, as other implementations extend CFB).
     pub fn decrypt_final(mut self, buffer: &mut [u8]) {
-        // The whole blocks, which decryption need not chain (the whole-block
-        // function may decrypt several at once), then the rest, fewer than
-        // 8 bytes, from the IV they leave.
-        let (blocks, rest) = buffer.split_at_mut(buffer.len() / 8 * 8);
-        self.key.decrypt(&mut self.iv, blocks);
-        self.key
-            .final_(&mut self.iv, rest, vg_idea_cfb64_decrypt_final);
+        self.key.last(
+            &mut self.iv,
+            buffer,
+            vg_idea_cfb64_decrypt,
+            vg_idea_cfb64_decrypt_final,
+        );
     }
 }
 
@@ -192,6 +195,18 @@ impl Key {
                 blocks.len() / 8,
             )
         };
+    }
+
+    /// The rest of a message, of any length: its whole blocks with `whole`,
+    /// the whole-block function (which, decrypting, may decrypt several at
+    /// once), then the bytes after them, fewer than 8, with `f`, the final
+    /// function of the same direction, from the IV the whole blocks leave.
+    fn last(&self, iv: &mut [u8; 8], buffer: &mut [u8], whole: Cfb, f: CfbFinal) {
+        let (blocks, rest) = buffer.split_at_mut(buffer.len() / 8 * 8);
+        self.blocks(iv, blocks, whole);
+        if !rest.is_empty() {
+            self.final_(iv, rest, f);
+        }
     }
 
     /// `f`, a final function, on the rest of a message, of any length: it
