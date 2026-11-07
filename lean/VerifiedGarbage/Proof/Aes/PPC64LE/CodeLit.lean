@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 @[expose] public section
 namespace VG.Impl.Aes.PPC64LE
 materialize_code ctr32
+materialize_code ctr32To
 materialize_code encryptBlocks
 materialize_code decryptBlocks
 materialize_code expandKey

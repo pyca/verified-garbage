@@ -60,9 +60,8 @@ structure CtrSetup (s t : State) : Prop where
   offset : t.gpr .r11 = 12
 
 theorem ctr_setup_ok (s : State) (hr : (⟨s.gpr .r5, 16⟩ : Region) ∈ s.rd ++ s.wr) :
-    WP isa (.block (Impl.Aes.PPC64LE.Crypto.setup ++
-      Impl.Aes.PPC64LE.Crypto.setMask counterMask counterControl ++
-      ([.li .r11 12, .loadRev .w .r8 .r5 .r11] : List Instr) ++ Impl.Aes.PPC64LE.Crypto.load counterBase .r5)) s (CtrSetup s) := by
+    WP isa (.block Impl.Aes.PPC64LE.Crypto.ctrSetup) s (CtrSetup s) := by
+  rw [Impl.Aes.PPC64LE.Crypto.ctrSetup]
   repeat rw [WP.block_append_iff]
   refine WP.mono (setup_ok s) fun u ⟨hz, hm, hv0, he⟩ => ?_
   refine WP.mono (setMask_ok counterMask counterControl u (by decide) (by decide) hv0) fun v ⟨hctrl, hf⟩ => ?_
