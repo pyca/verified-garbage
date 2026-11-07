@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesCtr.AArch64.Verified
+public import VerifiedGarbage.Proof.AesCtr.AArch64.Final
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -17,6 +18,12 @@ def artifacts (v : Proof.Aes.AArch64.Ctr32Impl) : List Artifact := [
     suffix := v.suffix
     code := Impl.AesCtr.AArch64.crypt v.callee
     verified := Proof.AesCtr.keyed (crypt_verified v)
+    features := v.features },
+  Spec.Ctr.aesFinalApi.artifact AArch64.target {
+    suffix := v.suffix
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (Impl.AesCtr.AArch64.cryptFinal v.callee v.suffix)
+    stack := 80
+    verified := Proof.AesCtr.final_keyed (Final.cryptFinal_framed v)
     features := v.features }]
 
 end VG.Generic.AesCtr32.AArch64.AesCtr
