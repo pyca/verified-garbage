@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.Spec.Gcm.Prepared
 
 /-!
@@ -14,12 +15,13 @@ of its own. It is a storage convention, not a change to GCM's field
 arithmetic (NIST SP 800-38D §6.3).
 
 `vg_aes_gcm_store_powers` computes the buffer from a key context alone, when
-the key is set up. The `*_with_powers` functions, `vg_aes_gcm_seal` and
-`vg_aes_gcm_open` that also read the buffer, take the key context and the
-powers through two pointers, so that nothing copies the key context.
+the key is set up. The `*_with_powers` functions, `vg_aes_gcm_seal`,
+`vg_aes_gcm_open` and `vg_aes_gcm_open_to` that also read the buffer, take
+the key context and the powers through two pointers, so that nothing copies
+the key context.
 
 They keep the existing GCM postconditions, memory bounds, disjointness,
-leakage (`openLeak`) and secrecy guarantees. The powers are secret, as the
+leakage (`openLeak`, `openToLeak`) and secrecy guarantees. The powers are secret, as the
 key context is. The `*_with_powers` functions require the
 powers of the hash subkey of the key context passed with them
 (`Powers8Repr m pw (ctxH m ctx)`), so they have names of their own.
@@ -159,5 +161,46 @@ def openWithPowersApi : Api where
   contracts := some fun A stack => openWithPowersContract A stack
   summary := withPowersSummary "vg_aes_gcm_open" "openWithPowersContract"
   safety := openApi.safety ++ [withPowersSafety]
+
+/-! ## Decryption out of place -/
+
+/-- `vg_aes_gcm_open_to_with_powers(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32`:
+`openToSig` and the powers' buffer. -/
+def openToWithPowersSig : Sig where
+  params := openToSig.params ++ [withPowersParam]
+  ret := some .u32
+
+/-- `openToPre`, and the powers of the key context's hash subkey at `pw`. -/
+def openToWithPowersPre (pb : Nat) : Curry (openToWithPowersSig.words pb) (Mem → Prop) :=
+  fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen pw m =>
+    openToPre pb ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen m ∧
+      Powers8Repr m pw (ctxH m ctx)
+
+/-- `openToPost`, which does not depend on `pw`. -/
+def openToWithPowersPost (pb : Nat) : openToWithPowersSig.Post pb :=
+  fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _pw m m' r =>
+    openToPost pb ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen m m' r
+
+/-- `openToLeak`, which does not depend on `pw`. -/
+def openToWithPowersLeak (pb : Nat) : Curry (openToWithPowersSig.words pb) (Mem → List Nat) :=
+  fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _pw =>
+    openToLeak pb ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen
+
+/-- `openToWithPowersPre`, `openToWithPowersPost`, and what `openToContract`
+may leak (`openToWithPowersLeak`). -/
+def openToWithPowersContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  openToWithPowersSig.contract A (pre := openToWithPowersPre A.ptrBits)
+    (post := openToWithPowersPost A.ptrBits) (writeArgs := true) (stack := stack)
+    (leak := some (openToWithPowersLeak A.ptrBits))
+
+/-- `vg_aes_gcm_open_to_with_powers` on every target. -/
+def openToWithPowersApi : Api where
+  module := "gcm"
+  name := "vg_aes_gcm_open_to_with_powers"
+  sig := openToWithPowersSig
+  writeArgs := true
+  contracts := some fun A stack => openToWithPowersContract A stack
+  summary := withPowersSummary "vg_aes_gcm_open_to" "openToWithPowersContract"
+  safety := openToApi.safety ++ [withPowersSafety]
 
 end VG.Spec.Gcm
