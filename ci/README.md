@@ -22,7 +22,6 @@ CI runs each of these, and fails if it does:
 | `check_mcdt.py` | Intel's MCDT instructions run only inside the MXCSR prologue and epilogue |
 | `check_registrations.py` | Registration and variant files only bind |
 | `check_skills.py` | The skills' frontmatter and links, and CLAUDE.md's list of them |
-| `check_variants.py` | Every variant reaches every function built on it |
 | `check_vectors.py` | `vectors/sources/` describes the files under `vectors/` |
 | `cpu_tests.py lint` | `rust_matrix.toml`'s CPU-feature lines |
 | `merge_rust_coverage.py` | 100% line coverage, per architecture and merged (from `export_rust_coverage.py`'s files) |
