@@ -1946,6 +1946,10 @@ pub(crate) mod vg_rsa_prime_search;
 pub(crate) mod vg_rsa_prime_search_adx;
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_prime_search_ifma.rs"]
+pub(crate) mod vg_rsa_prime_search_ifma;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_private_checked.rs"]
 pub(crate) mod vg_rsa_private_checked;
 
