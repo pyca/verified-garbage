@@ -143,6 +143,22 @@ def verifyWithCacheContract (p : Params) {M : ISA} (A : Abi M)
     (leak := some fun pk mu sig _scratch _cache _cacheLen m =>
       leakBytes (bytesAt m pk p.pkLen ++ bytesAt m mu 64 ++ bytesAt m sig p.sigLen))
 
+/-! ## Keys, encoded or prepared -/
+
+/-- The length of a private key: encoded, or prepared (`prepared`). -/
+def secretKeyLen (p : Params) (prepared : Bool) : Nat := if prepared then preparedSecretKeyBytes p else p.skLen
+
+/-- The length of a public key: encoded, or prepared (`prepared`). -/
+def publicKeyLen (p : Params) (prepared : Bool) : Nat := if prepared then preparedPublicKeyBytes p else p.pkLen
+
+/-- The private key at `a` is a prepared one, if `prepared`. -/
+def SecretKeyOk (p : Params) (prepared : Bool) (m : Mem) (a : Addr) : Prop :=
+  prepared = true → PreparedSecretKey p m a
+
+/-- The public key at `a` is a prepared one, if `prepared`. -/
+def PublicKeyOk (p : Params) (prepared : Bool) (m : Mem) (a : Addr) : Prop :=
+  prepared = true → PreparedPublicKey p m a
+
 /-! ## The names of the internal functions -/
 
 def signWithCacheName (module : String) : String := s!"vg_{module}_sign_with_cache"

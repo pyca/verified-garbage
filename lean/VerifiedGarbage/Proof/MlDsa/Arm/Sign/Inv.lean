@@ -42,6 +42,15 @@ def Ok3 (p : Params) : Prop := p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87
 
 /-! ## Every state -/
 
+/-- If the kernel was given prepared polynomials (`cache ≠ 0`): they lie apart
+from `sig`, `scratch` and the stack, and are where they were. -/
+def CK (p : Params) (D : Nat) (σ s : State) : Prop :=
+  stackArg σ 1 ≠ 0 →
+    (cacheR p σ).Disjoint ⟨State.addr (σ.gpr .r3), p.sigLen⟩ ∧
+    (cacheR p σ).Disjoint ⟨State.addr (stackArg σ 0), scrLen p⟩ ∧ (belowA σ.sp D).Disjoint (cacheR p σ) ∧
+    cacheLen p ≤ 2 ^ 64 ∧
+    bytesAt s.mem (State.addr (stackArg σ 1)) (cacheLen p) = bytesAt σ.mem (State.addr (stackArg σ 1)) (cacheLen p)
+
 /-- What holds of every state of the function entered in `σ`. -/
 structure St (p : Params) (D : Nat) (σ s : State) : Prop where
   top : Top σ s
@@ -49,18 +58,41 @@ structure St (p : Params) (D : Nat) (σ s : State) : Prop where
   sk : bytesAt s.mem (pa s (.r4, 0)) p.skLen = skOf p σ
   mu : bytesAt s.mem (pa s (.r5, 0)) 64 = muOf σ
   rnd : bytesAt s.mem (pa s (.r6, 0)) 32 = rndOf σ
+  ck : CK p D σ s
 
 /-- A piece that writes `ws` keeps `St`. -/
 def stChk (p : Params) (ws : List (Ptr × Nat)) : Bool :=
   topChk (sgB p) ws && keepB (sgB p) ws (.r4, 0) p.skLen && keepB (sgB p) ws (.r5, 0) 64 &&
-    keepB (sgB p) ws (.r6, 0) 32
+    keepB (sgB p) ws (.r6, 0) 32 && ws.all fun w => inB (sgW p) w.1 w.2
+
+/-- The prepared polynomials lie apart from what the function writes. -/
+theorem cacheR_disj {p : Params} {σ s : State} (d1 : (cacheR p σ).Disjoint ⟨State.addr (σ.gpr .r3), p.sigLen⟩)
+    (d2 : (cacheR p σ).Disjoint ⟨State.addr (stackArg σ 0), scrLen p⟩) (ht : Top σ s) {q : Ptr} {l : Nat}
+    (hw : inB (sgW p) q l = true) : (cacheR p σ).Disjoint ⟨pa s q, l⟩ := by
+  obtain ⟨n, hn, hs⟩ := sub_of_inB (s := s) (rbs := []) (wbs := sgW p) (p := q) (l := l) (by simpa using hw)
+  simp only [sgW, List.nil_append, List.mem_cons, List.not_mem_nil, or_false, Prod.ext_iff] at hn
+  rcases hn with ⟨e1, rfl⟩ | ⟨e1, rfl⟩
+  · rw [e1, ht.regs .r7 (by decide)] at hs; exact d2.sub_right hs
+  · rw [e1, ht.regs .r8 (by decide)] at hs; exact d1.sub_right hs
+
+theorem CK.step {p : Params} {D : Nat} {σ s s' : State} (h : CK p D σ s) (ht : Top σ s) {ws : List (Ptr × Nat)}
+    (hP : PPostB D s s' ws) (hw : ∀ w ∈ ws, inB (sgW p) w.1 w.2 = true) : CK p D σ s' := by
+  intro hne
+  obtain ⟨d1, d2, d3, hl, hb⟩ := h hne
+  refine ⟨d1, d2, d3, hl, ?_⟩
+  rw [← hb]
+  refine VG.Proof.MlKem.bytesAt_frame hP.frame (fun R hR => ?_) hl
+  rcases List.mem_append.mp hR with hR | hR
+  · obtain ⟨w, hw', rfl⟩ := List.mem_map.mp hR
+    exact cacheR_disj d1 d2 ht (hw w hw')
+  · rw [List.mem_singleton] at hR; subst hR; rw [ht.sp]; exact d3.symm
 
 theorem St.step {p : Params} {D : Nat} {σ s s' : State} (h : St p D σ s) {ws : List (Ptr × Nat)}
     (hP : PPostB D s s' ws) (hc : stChk p ws = true) : St p D σ s' := by
-  simp only [stChk, Bool.and_eq_true] at hc
-  obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := hc
+  simp only [stChk, Bool.and_eq_true, List.all_eq_true] at hc
+  obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := hc
   exact ⟨h.top.step h.lay hP h1, h.lay.post hP (sgB_bases p), (h.lay.keepBytes hP h2).trans h.sk,
-    (h.lay.keepBytes hP h3).trans h.mu, (h.lay.keepBytes hP h4).trans h.rnd⟩
+    (h.lay.keepBytes hP h3).trans h.mu, (h.lay.keepBytes hP h4).trans h.rnd, h.ck.step h.top hP h5⟩
 
 /-! ## Polynomials in slots -/
 

@@ -30,37 +30,37 @@ variable {D : Nat} {rbs wbs : List (Reg × Nat)}
 
 /-! ## `NTT` and `NTT⁻¹` in place -/
 
-/-- What a call of an in-place transformation of `f` needs of the layout. -/
-def ipChk (bs wbs : List (Reg × Nat)) (f : Ptr) : Bool :=
-  inB wbs f 1024 && inB wbs (sc oPS) 1024 && inB bs f 1024 && inB bs (sc oPS) 1024 &&
-    sepB bs f 1024 (sc oPS) 1024 && decide (f.1 ∈ bases)
+/-- What a call of an in-place transformation of `f`, with the working space `w`, needs of the layout. -/
+def ipChkW (bs wbs : List (Reg × Nat)) (f w : Ptr) : Bool :=
+  inB wbs f 1024 && inB wbs w 1024 && inB bs f 1024 && inB bs w 1024 &&
+    sepB bs f 1024 w 1024 && decide (f.1 ∈ bases) && decide (w.1 ∈ bases)
 
-theorem ipChk_spec {bs wbs : List (Reg × Nat)} {f : Ptr} (h : ipChk bs wbs f = true) :
-    inB wbs f 1024 = true ∧ inB wbs (sc oPS) 1024 = true ∧ inB bs f 1024 = true ∧ inB bs (sc oPS) 1024 = true ∧
-      sepB bs f 1024 (sc oPS) 1024 = true ∧ ([Arg.ptr f, .ptr (sc oPS)].all Arg.ok) = true := by
-  simp only [ipChk, Bool.and_eq_true, decide_eq_true_eq] at h
-  exact ⟨h.1.1.1.1.1, h.1.1.1.1.2, h.1.1.1.2, h.1.1.2, h.1.2, by simp [Arg.ok, h.2]⟩
+theorem ipChkW_spec {bs wbs : List (Reg × Nat)} {f w : Ptr} (h : ipChkW bs wbs f w = true) :
+    inB wbs f 1024 = true ∧ inB wbs w 1024 = true ∧ inB bs f 1024 = true ∧ inB bs w 1024 = true ∧
+      sepB bs f 1024 w 1024 = true ∧ ([Arg.ptr f, .ptr w].all Arg.ok) = true := by
+  simp only [ipChkW, Bool.and_eq_true, decide_eq_true_eq] at h
+  exact ⟨h.1.1.1.1.1.1, h.1.1.1.1.1.2, h.1.1.1.1.2, h.1.1.1.2, h.1.1.2, by simp [Arg.ok, h.1.2, h.2]⟩
 
-theorem ipPre {t : Poly → Poly} {S : Nat} {s E : State} (En : Ent D rbs wbs s S E) {f : Ptr}
-    (hc : ipChk (rbs ++ wbs) wbs f = true) (g0 : E.gpr .r0 = s.gpr f.1 + BitVec.ofNat 32 f.2)
-    (g1 : E.gpr .r1 = s.gpr .r7 + BitVec.ofNat 32 oPS) (hrd : E.rd = [])
-    (hwr : E.wr = [pR (pa s f), pR (pa s (sc oPS))]) (hr : Reduced s.mem (pa s f)) :
+theorem ipPreW {t : Poly → Poly} {S : Nat} {s E : State} (En : Ent D rbs wbs s S E) {f w : Ptr}
+    (hc : ipChkW (rbs ++ wbs) wbs f w = true) (g0 : E.gpr .r0 = s.gpr f.1 + BitVec.ofNat 32 f.2)
+    (g1 : E.gpr .r1 = s.gpr w.1 + BitVec.ofNat 32 w.2) (hrd : E.rd = [])
+    (hwr : E.wr = [pR (pa s f), pR (pa s w)]) (hr : Reduced s.mem (pa s f)) :
     (inPlaceContract Arm.abi t S).pre E := by
-  obtain ⟨_, _, i1, i2, d12, _⟩ := ipChk_spec hc
+  obtain ⟨_, _, i1, i2, d12, _⟩ := ipChkW_spec hc
   sig_pre [inPlaceContract, inPlaceSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  simp only [g0, g1, En.L.w i1 (by decide), En.L.w (p := sc oPS) i2 (by decide)]
-  exact ⟨wf0 En.wf, hrd, hwr, En.L.disj d12, En.conj (bs := [(f, 1024), (sc oPS, 1024)]) (by simp [i1, i2]),
-    En.L.fit i1 (by decide), En.L.fit (p := sc oPS) i2 (by decide), En.red i1 hr⟩
+  simp only [g0, g1, En.L.w i1 (by decide), En.L.w (p := w) i2 (by decide)]
+  exact ⟨wf0 En.wf, hrd, hwr, En.L.disj d12, En.conj (bs := [(f, 1024), (w, 1024)]) (by simp [i1, i2]),
+    En.L.fit i1 (by decide), En.L.fit (p := w) i2 (by decide), En.red i1 hr⟩
 
-theorem ipAt_ok {t : Poly → Poly} {n : String} {c : Prog isa}
-    (C : Callee (fun S => inPlaceContract Arm.abi t S) 0 D c) {s : State} (L : Lay D rbs wbs s) {f : Ptr}
-    (hc : ipChk (rbs ++ wbs) wbs f = true) (hr : Reduced s.mem (pa s f)) :
-    WP isa (callR n c [.ptr f, .ptr (sc oPS)]) s fun s' => PPostB D s s' [(f, 1024), (sc oPS, 1024)] ∧
+theorem ipAtW_ok {t : Poly → Poly} {n : String} {c : Prog isa}
+    (C : Callee (fun S => inPlaceContract Arm.abi t S) 0 D c) {s : State} (L : Lay D rbs wbs s) {f w : Ptr}
+    (hc : ipChkW (rbs ++ wbs) wbs f w = true) (hr : Reduced s.mem (pa s f)) :
+    WP isa (callR n c [.ptr f, .ptr w]) s fun s' => PPostB D s s' [(f, 1024), (w, 1024)] ∧
       CS s s' ∧ PolyIs s'.mem (pa s f) (t (polyAt s.mem (pa s f))) := by
-  obtain ⟨w1, w2, i1, _, _, ok⟩ := ipChk_spec hc
+  obtain ⟨w1, w2, i1, _, _, ok⟩ := ipChkW_spec hc
   refine WP.mono (callR_ok C.ver.1 (by have := C.su; have := C.hS; omega) ok L.sp
-    (rd := []) (wr := [pR (pa s f), pR (pa s (sc oPS))])
-    (fun s1 hA k => ipPre (ent_R L k (by have := C.hS; omega) _ _) hc
+    (rd := []) (wr := [pR (pa s f), pR (pa s w)])
+    (fun s1 hA k => ipPreW (ent_R L k (by have := C.hS; omega) _ _) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn2 hA).1) (by rw [vR _ _ _ nl1]; exact (argsIn2 hA).2) rfl rfl hr)
     (Covers.append_left Covers.nil (Covers.right (Covers.cons (L.cW w1) (L.cW w2)))) (Covers.cons (L.cW w1) (L.cW w2)))
     fun s' ⟨hpost, hcs, s1, hA, k, hq⟩ => ⟨hpost, hcs, ?_⟩
@@ -69,16 +69,16 @@ theorem ipAt_ok {t : Poly → Poly} {n : String} {c : Prog isa}
   simp only [e1, Arg.val, k.mem, L.w i1 (by decide)] at hq
   exact hq
 
-theorem ipAt_tr {t : Poly → Poly} {n : String} {c : Prog isa}
-    (C : Callee (fun S => inPlaceContract Arm.abi t S) 0 D c) {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true) :
+theorem ipAtW_tr {t : Poly → Poly} {n : String} {c : Prog isa}
+    (C : Callee (fun S => inPlaceContract Arm.abi t S) 0 D c) {f w : Ptr} (hc : ipChkW (rbs ++ wbs) wbs f w = true) :
     RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
-      (callR n c [.ptr f, .ptr (sc oPS)]) fun _ _ => True := by
-  obtain ⟨w1, w2, i1, i2, _, ok⟩ := ipChk_spec hc
+      (callR n c [.ptr f, .ptr w]) fun _ _ => True := by
+  obtain ⟨w1, w2, i1, i2, _, ok⟩ := ipChkW_spec hc
   have hS : C.S ≤ D := by have := C.hS; omega
   refine callR_tr C.ver.1 C.ver.2.1 ok fun x y x1 y1 ⟨R, rx, ry⟩ ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
-    ⟨_, _, _, _, ipPre (ent_R R.lx kx hS [] [pR (pa x f), pR (pa x (sc oPS))]) hc
+    ⟨_, _, _, _, ipPreW (ent_R R.lx kx hS [] [pR (pa x f), pR (pa x w)]) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn2 hAx).1) (by rw [vR _ _ _ nl1]; exact (argsIn2 hAx).2) rfl rfl rx,
-      ipPre (ent_R R.ly ky hS [] [pR (pa y f), pR (pa y (sc oPS))]) hc
+      ipPreW (ent_R R.ly ky hS [] [pR (pa y f), pR (pa y w)]) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn2 hAy).1) (by rw [vR _ _ _ nl1]; exact (argsIn2 hAy).2) rfl rfl ry, ?_,
       by rw [kx.rd, kx.wr]; exact Covers.append_left Covers.nil (Covers.right (Covers.cons (R.lx.cW w1) (R.lx.cW w2))),
       by rw [kx.wr]; exact Covers.cons (R.lx.cW w1) (R.lx.cW w2),
@@ -88,6 +88,22 @@ theorem ipAt_tr {t : Poly → Poly} {n : String} {c : Prog isa}
   obtain ⟨hy1, hy2⟩ := argsIn2 hAy
   sig_pub [inPlaceContract, inPlaceSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   simp only [kx.sp, ky.sp, hx1, hx2, hy1, hy2, Arg.val, R.eq i1, R.eq i2, R.sp, and_self]
+
+/-- What a call of an in-place transformation of `f` needs of the layout. -/
+def ipChk (bs wbs : List (Reg × Nat)) (f : Ptr) : Bool := ipChkW bs wbs f (sc oPS)
+
+theorem ipAt_ok {t : Poly → Poly} {n : String} {c : Prog isa}
+    (C : Callee (fun S => inPlaceContract Arm.abi t S) 0 D c) {s : State} (L : Lay D rbs wbs s) {f : Ptr}
+    (hc : ipChk (rbs ++ wbs) wbs f = true) (hr : Reduced s.mem (pa s f)) :
+    WP isa (callR n c [.ptr f, .ptr (sc oPS)]) s fun s' => PPostB D s s' [(f, 1024), (sc oPS, 1024)] ∧
+      CS s s' ∧ PolyIs s'.mem (pa s f) (t (polyAt s.mem (pa s f))) :=
+  ipAtW_ok C L hc hr
+
+theorem ipAt_tr {t : Poly → Poly} {n : String} {c : Prog isa}
+    (C : Callee (fun S => inPlaceContract Arm.abi t S) 0 D c) {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true) :
+    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
+      (callR n c [.ptr f, .ptr (sc oPS)]) fun _ _ => True :=
+  ipAtW_tr C hc
 
 /-! ## Products -/
 

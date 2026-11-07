@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCall
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Entry
+import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.Hash
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Framework.Sig
@@ -13,10 +15,11 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 # ML-DSA on ARMv7, `verify_message_cached`: the call of the verification function on `μ`
 
 Untrusted: everything here is checked by Lean. Any code verified against
-`verifyContract p Arm.abi 36` whose frames use at most 36 bytes of stack
-(`VerifyFn`): its call on the key, `μ` at `X + 840`, `sig` and the first
-`scratchWords p` words of `scratch` (`verifyCall_ok`), after which the saves
-are intact (`Fin`), for any layout with the facts `VFacts` (those of
+`Verify.verifyE p prepared 52` (`vg_mldsa*_verify` with an encoded key, or
+`vg_mldsa*_verify_prepared` with a prepared one) whose frames use at most 52
+bytes of stack (`VerifyFn`): its call on the key, `μ` at `X + 840`, `sig` and
+the first `scratchWords p` words of `scratch` (`verifyCall_ok`), after which
+the saves are intact (`Fin`), for any layout with the facts `VFacts` (those of
 `verify_message_cached`'s, `CPre.vfacts`).
 -/
 
@@ -30,38 +33,40 @@ open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
 /-- A verification function on `μ` that `verify_message_cached` can call. -/
-structure VerifyFn (p : Params) (c : Prog isa) : Prop where
-  ver : Verified Arm.target c (verifyContract p Arm.abi 36)
-  su : stackUse c ≤ 36
+structure VerifyFn (p : Params) (prepared : Bool) (c : Prog isa) : Prop where
+  ok : ∀ s, (Verify.verifyE p prepared 52).pre s → ∃ t s', Exec isa c s t s' ∧ Arm.target.abiPreserved s s' ∧
+    (Verify.verifyE p prepared 52).post s s'
+  ct : ConstantTime isa (Verify.verifyE p prepared 52).pre (Verify.verifyE p prepared 52).pub c
+  su : stackUse c ≤ 52
 
-/-- The precondition of `verifyContract p Arm.abi 36`, from its facts. -/
-theorem verifyC_pre {p : Params} {E : State} (sp : 36 ≤ E.sp.toNat)
-    (rd : E.rd = [⟨State.addr (E.gpr .r0), p.pkLen⟩, ⟨State.addr (E.gpr .r1), 64⟩,
+/-- The precondition of `Verify.verifyE p prepared 52`, from its facts. -/
+theorem verifyC_pre {p : Params} {prepared : Bool} {E : State} (sp : 52 ≤ E.sp.toNat)
+    (rd : E.rd = [⟨State.addr (E.gpr .r0), publicKeyLen p prepared⟩, ⟨State.addr (E.gpr .r1), 64⟩,
       ⟨State.addr (E.gpr .r2), p.sigLen⟩])
     (wr : E.wr = [⟨State.addr (E.gpr .r3), sScr p⟩])
-    (d03 : Region.Disjoint ⟨State.addr (E.gpr .r0), p.pkLen⟩ ⟨State.addr (E.gpr .r3), sScr p⟩)
+    (d03 : Region.Disjoint ⟨State.addr (E.gpr .r0), publicKeyLen p prepared⟩ ⟨State.addr (E.gpr .r3), sScr p⟩)
     (d13 : Region.Disjoint ⟨State.addr (E.gpr .r1), 64⟩ ⟨State.addr (E.gpr .r3), sScr p⟩)
     (d23 : Region.Disjoint ⟨State.addr (E.gpr .r2), p.sigLen⟩ ⟨State.addr (E.gpr .r3), sScr p⟩)
-    (k0 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 36, 36⟩ ⟨State.addr (E.gpr .r0), p.pkLen⟩)
-    (k1 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 36, 36⟩ ⟨State.addr (E.gpr .r1), 64⟩)
-    (k2 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 36, 36⟩ ⟨State.addr (E.gpr .r2), p.sigLen⟩)
-    (k3 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 36, 36⟩ ⟨State.addr (E.gpr .r3), sScr p⟩)
-    (n0 : (E.gpr .r0).toNat + p.pkLen ≤ 2 ^ 32) (n1 : (E.gpr .r1).toNat + 64 ≤ 2 ^ 32)
-    (n2 : (E.gpr .r2).toNat + p.sigLen ≤ 2 ^ 32) (n3 : (E.gpr .r3).toNat + sScr p ≤ 2 ^ 32) :
-    (verifyContract p Arm.abi 36).pre E := by
-  sig_pre [verifyContract, verifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  exact ⟨sp, by have := E.sp.isLt; omega, rd, wr, d03, d13, d23, k0, k1, k2, k3, n0, n1, n2, n3⟩
+    (k0 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 52, 52⟩ ⟨State.addr (E.gpr .r0), publicKeyLen p prepared⟩)
+    (k1 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 52, 52⟩ ⟨State.addr (E.gpr .r1), 64⟩)
+    (k2 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 52, 52⟩ ⟨State.addr (E.gpr .r2), p.sigLen⟩)
+    (k3 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 52, 52⟩ ⟨State.addr (E.gpr .r3), sScr p⟩)
+    (n0 : (E.gpr .r0).toNat + publicKeyLen p prepared ≤ 2 ^ 32) (n1 : (E.gpr .r1).toNat + 64 ≤ 2 ^ 32)
+    (n2 : (E.gpr .r2).toNat + p.sigLen ≤ 2 ^ 32) (n3 : (E.gpr .r3).toNat + sScr p ≤ 2 ^ 32)
+    (hk : PublicKeyOk p prepared E.mem (State.addr (E.gpr .r0))) :
+    (Verify.verifyE p prepared 52).pre E :=
+  ⟨sp, rd, wr, d03, d13, d23, k0, k1, k2, k3, n0, n1, n2, n3, hk⟩
 
 /-- The arguments of the call of the verification function on `μ`. -/
 abbrev verifyArgs : List (Reg × Arg) := [(.r0, .slot fKey), (.r1, .off oMU), (.r2, .slot fSig), (.r3, .slot fScr)]
 
 section
-variable {p : Params} {L : Lay}
+variable {p : Params} {prepared : Bool} {L : Lay}
 
 /-- What a layout of `verify_message_cached` says of
 the key, `sig` and `scratch`, beyond `Lay.Ok`. -/
-structure VFacts (p : Params) (L : Lay) : Prop where
-  key : L.keyLen = p.pkLen
+structure VFacts (p : Params) (prepared : Bool) (L : Lay) : Prop where
+  key : L.keyLen = publicKeyLen p prepared
   scrLen : L.scrLen = mScrLen p
   hE : L.E = oE p
   xSig : L.SC.Disjoint ⟨State.addr L.sig, p.sigLen⟩
@@ -69,23 +74,24 @@ structure VFacts (p : Params) (L : Lay) : Prop where
   nSig : L.sig.toNat + p.sigLen ≤ 2 ^ 32
   inSig : (⟨State.addr L.sig, p.sigLen⟩ : Region) ∈ L.rd
 
-theorem CPre.vfacts {s : State} (h : CPre p s) : VFacts p (clay p s) :=
+theorem CPre.vfacts {s : State} (h : CPre p prepared s) : VFacts p prepared (clay p prepared s) :=
   ⟨rfl, rfl, rfl, h.sigScr.symm, h.stkSig, h.nSig, by simp [clay, h.rd]⟩
 
 /-- The regions the verification function on `μ` reads and writes. -/
-abbrev verifyRd (p : Params) (L : Lay) : List Region :=
-  [⟨State.addr L.key, p.pkLen⟩, ⟨L.MU, 64⟩, ⟨State.addr L.sig, p.sigLen⟩]
+abbrev verifyRd (p : Params) (prepared : Bool) (L : Lay) : List Region :=
+  [⟨State.addr L.key, publicKeyLen p prepared⟩, ⟨L.MU, 64⟩, ⟨State.addr L.sig, p.sigLen⟩]
 abbrev verifyWr (p : Params) (L : Lay) : List Region := [⟨State.addr L.scr, sScr p⟩]
 
-theorem VFacts.sub (F : VFacts p L) : Region.Sub ⟨State.addr L.scr, sScr p⟩ L.SC := by
+theorem VFacts.sub (F : VFacts p prepared L) : Region.Sub ⟨State.addr L.scr, sScr p⟩ L.SC := by
   show Region.Sub _ ⟨_, L.scrLen⟩
   rw [F.scrLen]; exact sScr_sub p _
 
-theorem VFacts.inKey (F : VFacts p L) (hL : L.Ok) : (⟨State.addr L.key, p.pkLen⟩ : Region) ∈ L.rd := by
+theorem VFacts.inKey (F : VFacts p prepared L) (hL : L.Ok) :
+    (⟨State.addr L.key, publicKeyLen p prepared⟩ : Region) ∈ L.rd := by
   have := hL.inKey; simp only [Lay.KEY, F.key] at this; exact this
 
 /-- The working space of the function on `μ` is writable. -/
-theorem VFacts.wScr (F : VFacts p L) (hL : L.Ok) : ∃ R ∈ L.wr, Within ⟨State.addr L.scr, sScr p⟩ R :=
+theorem VFacts.wScr (F : VFacts p prepared L) (hL : L.Ok) : ∃ R ∈ L.wr, Within ⟨State.addr L.scr, sScr p⟩ R :=
   ⟨_, hL.inSC, within_base _ (by show sScr p ≤ L.scrLen; rw [F.scrLen, mScr_eq]; simp only [sScr, oE]; omega)⟩
 
 /-- The registers after the moves of the arguments. -/
@@ -105,13 +111,14 @@ theorem verifyRegs_of (hL : L.Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t t1 : S
   exact ⟨e0, e1, e2, e3⟩
 
 /-- The precondition of the verification function on `μ`, on entry to it. -/
-theorem verifyK_pre (hL : L.Ok) (F : VFacts p L) {g : Reg → BitVec 32}
+theorem verifyK_pre (hL : L.Ok) (F : VFacts p prepared L) {g : Reg → BitVec 32}
     {m₀ : Mem} {t t1 : State} (hc : Ctx L g m₀ t)
-    (hA : ∀ da ∈ verifyArgs, t1.gpr da.1 = da.2.val t) (hsp1 : t1.sp = L.SP) :
-    (verifyContract p Arm.abi 36).pre (t1.callEntry.withRegions (verifyRd p L) (verifyWr p L)) := by
+    (hA : ∀ da ∈ verifyArgs, t1.gpr da.1 = da.2.val t) (hsp1 : t1.sp = L.SP)
+    (hk : PublicKeyOk p prepared t1.mem (State.addr L.key)) :
+    (Verify.verifyE p prepared 52).pre (t1.callEntry.withRegions (verifyRd p prepared L) (verifyWr p L)) := by
   obtain ⟨e0, e1, e2, e3⟩ := verifyRegs_of hL hc hA
   have hsub := F.sub
-  generalize hE : t1.callEntry.withRegions (verifyRd p L) (verifyWr p L) = E
+  generalize hE : t1.callEntry.withRegions (verifyRd p prepared L) (verifyWr p L) = E
   have gr : ∀ {r : Reg}, r ∉ linkRegs → E.gpr r = t1.gpr r := fun hr => by
     rw [← hE, State.withRegions_gpr, State.callEntry_gpr _ hr]
   have g0 : E.gpr .r0 = L.key := by rw [gr (by decide), e0]
@@ -119,11 +126,12 @@ theorem verifyK_pre (hL : L.Ok) (F : VFacts p L) {g : Reg → BitVec 32}
   have g2 : E.gpr .r2 = L.sig := by rw [gr (by decide), e2]
   have g3 : E.gpr .r3 = L.scr := by rw [gr (by decide), e3]
   have gsp : E.sp = L.SP := by rw [← hE, State.withRegions_sp, State.callEntry_sp, hsp1]
-  have grd : E.rd = verifyRd p L := by rw [← hE]; rfl
+  have grd : E.rd = verifyRd p prepared L := by rw [← hE]; rfl
+  have gm : E.mem = t1.mem := by rw [← hE, State.withRegions_mem, State.callEntry_mem]
   have gwr : E.wr = verifyWr p L := by rw [← hE]; rfl
   have xKey := hL.xKey; have kKey := hL.kKey; have nKey := hL.nKey
   simp only [Lay.KEY, F.key] at xKey kKey nKey
-  refine verifyC_pre ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;> try simp only [g0, g1, g2, g3, gsp, grd, gwr]
+  refine verifyC_pre ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;> try simp only [g0, g1, g2, g3, gsp, grd, gwr, gm]
   · exact hL.nSP
   · exact xKey.symm.sub_right hsub
   · exact x_sScr hL F.hE (by omega)
@@ -138,10 +146,12 @@ theorem verifyK_pre (hL : L.Ok) (F : VFacts p L) {g : Reg → BitVec 32}
     rw [x32_toNat hL (by omega)]; omega
   · exact F.nSig
   · have := hL.nScr; rw [F.scrLen] at this; simp only [mScrLen, sScr, messageScratchWords] at this ⊢; omega
+  · exact hk
 
 /-- The call of the verification function on `μ`. -/
-theorem verifyCall_ok {n : String} {c : Prog isa} (hV : VerifyFn p c) (hL : L.Ok) (F : VFacts p L)
-    {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m₀ t) :
+theorem verifyCall_ok {n : String} {c : Prog isa} (hV : VerifyFn p prepared c) (hL : L.Ok) (F : VFacts p prepared L)
+    {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m₀ t)
+    (hk : PublicKeyOk p prepared t.mem (State.addr L.key)) :
     WP isa (.seq (.block (setArgs verifyArgs)) (.call n c)) t fun s' => Fin L g s' ∧
       (let w := fun b => verifyMu p b (bytesAt t.mem (State.addr L.key) p.pkLen)
           (bytesAt t.mem L.MU 64) (bytesAt t.mem (State.addr L.sig) p.sigLen);
@@ -151,9 +161,9 @@ theorem verifyCall_ok {n : String} {c : Prog isa} (hV : VerifyFn p c) (hL : L.Ok
     o.gpr r (by simp only [List.map_cons, List.map_nil]; exact not_pres hr hl _)
   obtain ⟨e0, e1, e2, _⟩ := verifyRegs_of hL hc hA
   have hsp1 : t1.sp = L.SP := hc1.sp
-  have hpre := verifyK_pre hL F hc hA hsp1
+  have hpre := verifyK_pre hL F hc hA hsp1 (by rw [o.mem]; exact hk)
   obtain ⟨RS, hRS, wS⟩ := F.wScr hL
-  refine WP.callF hV.ver.1 hpre ?_ ?_ (by rw [hsp1]; have := hV.su; have := hL.nSP; omega)
+  refine WP.callF hV.ok hpre ?_ ?_ (by rw [hsp1]; have := hV.su; have := hL.nSP; omega)
     fun s' hrd hwr hsp hf hcs hpost => ?_
   · rw [hc1.rd, hc1.wr]
     refine covers_of_within fun r hr => ?_
@@ -180,10 +190,15 @@ theorem verifyCall_ok {n : String} {c : Prog isa} (hV : VerifyFn p c) (hL : L.Ok
   refine ⟨⟨hrd.trans hc1.rd, hwr.trans hc1.wr, hsp.trans hc1.sp, (hcs .r7 (by decide) (by decide)).trans hc1.r7,
     fun r hr h7 hl => (hcs r hr hl).trans (hc1.cs r hr h7 hl),
     (hsv 0 (by omega)).trans hc1.s7, (hsv 4 (by omega)).trans hc1.sLR⟩, ?_⟩
-  sig_reduce [verifyContract, verifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hpost
-  rw [e0, e1, e2, Proof.MlKem.Arm.setWidth_append32, o.mem] at hpost
-  rw [show BitVec.setWidth 64 (L.X32 + 840#32) = L.MU from mu_eq hL] at hpost
-  exact hpost
+  have hpost' : Verify.VOut p (t1.callEntry.withRegions (verifyRd p prepared L) (verifyWr p L))
+      ((s'.withRegions (verifyRd p prepared L) (verifyWr p L)).gpr .r0) := hpost
+  unfold Verify.VOut Verify.vv at hpost'
+  simp only [Verify.pkOf, Verify.muOf, Verify.sgOf, Verify.vPk, Verify.vMu, Verify.vSg, State.withRegions_gpr,
+    State.withRegions_mem, State.callEntry_mem, State.callEntry_gpr _ (show Reg.r0 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.r1 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r2 ∉ linkRegs by decide),
+    e0, e1, e2, o.mem] at hpost'
+  rw [show State.addr (L.X32 + 840#32) = L.MU from mu_eq hL] at hpost'
+  exact hpost'
 
 end
 

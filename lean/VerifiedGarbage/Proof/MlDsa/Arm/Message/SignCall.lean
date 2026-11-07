@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MlKem.Arm.CallF
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Args
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Entry
 public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Top
+import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.Hash
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Framework.Offset
@@ -20,7 +22,7 @@ Untrusted: everything here is checked by Lean. A call of verified code with
 frames of its own, in a frame that pushes its fifth argument (`r12`) and
 `lr` (`frameCall_ok`, as `callS_ok` of the signing function on `μ`, after
 the moves of the arguments). Any code verified against `signContract p
-Arm.abi 28` whose frames use at most 28 bytes of stack (`SignFn`): its call
+Arm.abi 44` whose frames use at most 44 bytes of stack (`SignFn`): its call
 on the key, `μ` at `X + 840`, `rnd`, `sig` and the first `scratchWords p`
 words of `scratch` (`signCall_ok`), after which the saves are intact
 (`Fin`).
@@ -37,9 +39,11 @@ open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
 /-- A signing function on `μ` that `sign_message` can call. -/
-structure SignFn (p : Params) (c : Prog isa) : Prop where
-  ver : Verified Arm.target c (signContract p Arm.abi 28)
-  su : stackUse c ≤ 28
+structure SignFn (p : Params) (prepared : Bool) (c : Prog isa) : Prop where
+  ok : ∀ s, (Sign.signE p prepared 44).pre s → ∃ t s', Exec isa c s t s' ∧ Arm.target.abiPreserved s s' ∧
+    (Sign.signE p prepared 44).post s s'
+  ct : ConstantTime isa (Sign.signE p prepared 44).pre (Sign.signE p prepared 44).pub c
+  su : stackUse c ≤ 44
 
 /-- The size of the working space of the functions on `μ`. -/
 abbrev sScr (p : Params) : Nat := scratchWords p * 8
@@ -146,13 +150,13 @@ theorem storeWords_bytes {t : State} (h8 : 8 ≤ t.sp.toNat) {a : Addr} {n : Nat
   Proof.MlKem.bytesAt_frame (push2_frame h8) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hd) hn
 
-/-- The precondition of `signContract p Arm.abi 28`, from its facts. -/
-theorem signC_pre {p : Params} {E : State} (sp : 28 ≤ E.sp.toNat) (sp4 : E.sp.toNat + 4 ≤ 2 ^ 32)
-    (rd : E.rd = [⟨State.addr (E.gpr .r0), p.skLen⟩, ⟨State.addr (E.gpr .r1), 64⟩, ⟨State.addr (E.gpr .r2), 32⟩,
+/-- The precondition of `Sign.signE p prepared 44`, from its facts. -/
+theorem signC_pre {p : Params} {prepared : Bool} {E : State} (sp : 44 ≤ E.sp.toNat) (sp4 : E.sp.toNat + 4 ≤ 2 ^ 32)
+    (rd : E.rd = [⟨State.addr (E.gpr .r0), secretKeyLen p prepared⟩, ⟨State.addr (E.gpr .r1), 64⟩, ⟨State.addr (E.gpr .r2), 32⟩,
       ⟨stackArgAddr E 0, 4⟩])
     (wr : E.wr = [⟨State.addr (E.gpr .r3), p.sigLen⟩, ⟨State.addr (stackArg E 0), sScr p⟩])
-    (d03 : Region.Disjoint ⟨State.addr (E.gpr .r0), p.skLen⟩ ⟨State.addr (E.gpr .r3), p.sigLen⟩)
-    (d0s : Region.Disjoint ⟨State.addr (E.gpr .r0), p.skLen⟩ ⟨State.addr (stackArg E 0), sScr p⟩)
+    (d03 : Region.Disjoint ⟨State.addr (E.gpr .r0), secretKeyLen p prepared⟩ ⟨State.addr (E.gpr .r3), p.sigLen⟩)
+    (d0s : Region.Disjoint ⟨State.addr (E.gpr .r0), secretKeyLen p prepared⟩ ⟨State.addr (stackArg E 0), sScr p⟩)
     (d13 : Region.Disjoint ⟨State.addr (E.gpr .r1), 64⟩ ⟨State.addr (E.gpr .r3), p.sigLen⟩)
     (d1s : Region.Disjoint ⟨State.addr (E.gpr .r1), 64⟩ ⟨State.addr (stackArg E 0), sScr p⟩)
     (d23 : Region.Disjoint ⟨State.addr (E.gpr .r2), 32⟩ ⟨State.addr (E.gpr .r3), p.sigLen⟩)
@@ -160,25 +164,27 @@ theorem signC_pre {p : Params} {E : State} (sp : 28 ≤ E.sp.toNat) (sp4 : E.sp.
     (d3s : Region.Disjoint ⟨State.addr (E.gpr .r3), p.sigLen⟩ ⟨State.addr (stackArg E 0), sScr p⟩)
     (d3a : Region.Disjoint ⟨State.addr (E.gpr .r3), p.sigLen⟩ ⟨stackArgAddr E 0, 4⟩)
     (dsa : Region.Disjoint ⟨State.addr (stackArg E 0), sScr p⟩ ⟨stackArgAddr E 0, 4⟩)
-    (k0 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 28, 28⟩ ⟨State.addr (E.gpr .r0), p.skLen⟩)
-    (k1 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 28, 28⟩ ⟨State.addr (E.gpr .r1), 64⟩)
-    (k2 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 28, 28⟩ ⟨State.addr (E.gpr .r2), 32⟩)
-    (k3 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 28, 28⟩ ⟨State.addr (E.gpr .r3), p.sigLen⟩)
-    (ks : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 28, 28⟩ ⟨State.addr (stackArg E 0), sScr p⟩)
-    (ka : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 28, 28⟩ ⟨stackArgAddr E 0, 4⟩)
-    (n0 : (E.gpr .r0).toNat + p.skLen ≤ 2 ^ 32) (n1 : (E.gpr .r1).toNat + 64 ≤ 2 ^ 32)
+    (k0 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 44, 44⟩ ⟨State.addr (E.gpr .r0), secretKeyLen p prepared⟩)
+    (k1 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 44, 44⟩ ⟨State.addr (E.gpr .r1), 64⟩)
+    (k2 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 44, 44⟩ ⟨State.addr (E.gpr .r2), 32⟩)
+    (k3 : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 44, 44⟩ ⟨State.addr (E.gpr .r3), p.sigLen⟩)
+    (ks : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 44, 44⟩ ⟨State.addr (stackArg E 0), sScr p⟩)
+    (_ka : Region.Disjoint ⟨State.addr E.sp - BitVec.ofNat 64 44, 44⟩ ⟨stackArgAddr E 0, 4⟩)
+    (n0 : (E.gpr .r0).toNat + secretKeyLen p prepared ≤ 2 ^ 32) (n1 : (E.gpr .r1).toNat + 64 ≤ 2 ^ 32)
     (n2 : (E.gpr .r2).toNat + 32 ≤ 2 ^ 32) (n3 : (E.gpr .r3).toNat + p.sigLen ≤ 2 ^ 32)
-    (ns : (stackArg E 0).toNat + sScr p ≤ 2 ^ 32) :
-    (signContract p Arm.abi 28).pre E := by
-  sig_pre [signContract, signSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  exact ⟨sp, sp4, rd, wr, d03, d0s, d13, d1s, d23, d2s, d3s, d3a, dsa, k0, k1, k2, k3, ks, ka, n0, n1, n2, n3, ns⟩
+    (ns : (stackArg E 0).toNat + sScr p ≤ 2 ^ 32)
+    (hk : SecretKeyOk p prepared E.mem (State.addr (E.gpr .r0))) :
+    (Sign.signE p prepared 44).pre E := by
+  have e : sScr p = Sign.scrLen p := Nat.mul_comm _ _
+  rw [e] at wr d0s d1s d2s d3s dsa ks ns
+  exact ⟨rd, wr, d03, d0s, d13, d1s, d23, d2s, d3s, d3a, dsa, k0, k1, k2, k3, ks, n0, n1, n2, n3, ns, sp, sp4, hk⟩
 
 /-- The arguments of the call of the signing function on `μ`. -/
 abbrev signArgs : List (Reg × Arg) := [(.r0, .slot fKey), (.r1, .off oMU), (.r2, .slot fRnd), (.r3, .slot fSig),
   (.r12, .slot fScr)]
 
 section
-variable {p : Params} {s : State}
+variable {p : Params} {prepared : Bool} {s : State}
 
 /-- The working space of the functions on `μ`: the start of `scratch`. -/
 theorem sScr_sub (p : Params) (b : Addr) : Region.Sub ⟨b, sScr p⟩ ⟨b, mScrLen p⟩ :=
@@ -196,7 +202,7 @@ theorem mu_within {L : Lay} (hL : L.Ok) : Within ⟨L.MU, 64⟩ L.SC :=
 
 /-- The stack below the callee's stack pointer, in `STK`. -/
 theorem stkE_sub {L : Lay} (hL : L.Ok) :
-    Region.Sub ⟨State.addr (L.SP - BitVec.ofNat 32 8) - BitVec.ofNat 64 28, 28⟩ L.STK := by
+    Region.Sub ⟨State.addr (L.SP - BitVec.ofNat 32 8) - BitVec.ofNat 64 44, 44⟩ L.STK := by
   rw [addr_sub (by have := hL.nSP; omega_arith), BitVec.sub_sub, BitVec.ofNat_add_ofNat]
   exact Offset.sub_below _ (by omega_arith) (by omega_arith)
 
@@ -204,15 +210,15 @@ theorem argR_sub {L : Lay} {t : State} (ht : t.sp = L.SP) : Region.Sub (argR t) 
   simp only [argR, ht]; exact Offset.sub_below _ (by omega_arith) (by omega_arith)
 
 /-- The regions the signing function on `μ` reads and writes. -/
-abbrev signRd (p : Params) (s : State) : List Region :=
-  [⟨State.addr (s.gpr .r0), p.skLen⟩, ⟨(slay p s).MU, 64⟩, ⟨State.addr (stackArg s 1), 32⟩]
+abbrev signRd (p : Params) (prepared : Bool) (s : State) : List Region :=
+  [⟨State.addr (s.gpr .r0), secretKeyLen p prepared⟩, ⟨(slay p prepared s).MU, 64⟩, ⟨State.addr (stackArg s 1), 32⟩]
 abbrev signWr (p : Params) (s : State) : List Region :=
   [⟨State.addr (stackArg s 2), p.sigLen⟩, ⟨State.addr (stackArg s 3), sScr p⟩]
 
 /-- The registers after the moves of the arguments. -/
-theorem signRegs_of (hL : (slay p s).Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t t1 : State}
-    (hc : Ctx (slay p s) g m₀ t) (hm : (∀ da ∈ signArgs, t1.gpr da.1 = da.2.val t)) :
-    t1.gpr .r0 = s.gpr .r0 ∧ t1.gpr .r1 = (slay p s).X32 + BitVec.ofNat 32 840 ∧ t1.gpr .r2 = stackArg s 1 ∧
+theorem signRegs_of (hL : (slay p prepared s).Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t t1 : State}
+    (hc : Ctx (slay p prepared s) g m₀ t) (hm : (∀ da ∈ signArgs, t1.gpr da.1 = da.2.val t)) :
+    t1.gpr .r0 = s.gpr .r0 ∧ t1.gpr .r1 = (slay p prepared s).X32 + BitVec.ofNat 32 840 ∧ t1.gpr .r2 = stackArg s 1 ∧
       t1.gpr .r3 = stackArg s 2 ∧ t1.gpr .r12 = stackArg s 3 := by
   have e0 := hm (.r0, .slot fKey) (by simp)
   have e1 := hm (.r1, .off oMU) (by simp)
@@ -228,28 +234,29 @@ theorem signRegs_of (hL : (slay p s).Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t
   exact ⟨e0, e1, e2, e3, e4⟩
 
 /-- The precondition of the signing function on `μ`, on entry to it. -/
-theorem signK_pre (hp : p ∈ params) (h : SPre p s) (h8 : (stackArg s 0).toNat < 256) {g : Reg → BitVec 32}
-    {m₀ : Mem} {t t1 : State} (hc : Ctx (slay p s) g m₀ t)
-    (hA : ∀ da ∈ signArgs, t1.gpr da.1 = da.2.val t) (hsp1 : t1.sp = s.sp) :
-    (signContract p Arm.abi 28).pre
-      ((pushed [.r12, .lr] t1).callEntry.withRegions (signRd p s ++ [argR t1]) (signWr p s)) := by
+theorem signK_pre (hp : p ∈ params) (h : SPre p prepared s) (h8 : (stackArg s 0).toNat < 256) {g : Reg → BitVec 32}
+    {m₀ : Mem} {t t1 : State} (hc : Ctx (slay p prepared s) g m₀ t)
+    (hA : ∀ da ∈ signArgs, t1.gpr da.1 = da.2.val t) (hsp1 : t1.sp = s.sp) (hm1 : t1.mem = t.mem)
+    (hk : SecretKeyOk p prepared t.mem (State.addr (s.gpr .r0))) :
+    (Sign.signE p prepared 44).pre
+      ((pushed [.r12, .lr] t1).callEntry.withRegions (signRd p prepared s ++ [argR t1]) (signWr p s)) := by
   have hL := slay_ok hp h h8
   obtain ⟨e0, e1, e2, e3, e4⟩ := signRegs_of hL hc hA
   have h8' : 8 ≤ t1.sp.toNat := by rw [hsp1]; have := h.sp; omega_arith
-  obtain ⟨a0, a1, -⟩ := push2_arg (t := (pushed [.r12, .lr] t1).callEntry.withRegions (signRd p s ++ [argR t1])
+  obtain ⟨a0, a1, -⟩ := push2_arg (t := (pushed [.r12, .lr] t1).callEntry.withRegions (signRd p prepared s ++ [argR t1])
     (signWr p s)) h8' rfl rfl
   have hmu := mu_eq hL
   have hsub := sScr_sub p (State.addr (stackArg s 3))
-  have hmuS : Region.Sub ⟨(slay p s).MU, 64⟩ ⟨State.addr (stackArg s 3), mScrLen p⟩ := (mu_within hL).sub
-  have eSP : ((pushed [.r12, .lr] t1).callEntry.withRegions (signRd p s ++ [argR t1]) (signWr p s)).sp =
+  have hmuS : Region.Sub ⟨(slay p prepared s).MU, 64⟩ ⟨State.addr (stackArg s 3), mScrLen p⟩ := (mu_within hL).sub
+  have eSP : ((pushed [.r12, .lr] t1).callEntry.withRegions (signRd p prepared s ++ [argR t1]) (signWr p s)).sp =
       s.sp - BitVec.ofNat 32 8 := by
     simp only [State.withRegions_sp, State.callEntry_sp, VG.Arm.pushed_sp, hsp1]; rfl
-  have kE := stkE_sub (L := slay p s) hL
-  have kA := argR_sub (L := slay p s) (t := t1) hsp1
+  have kE := stkE_sub (L := slay p prepared s) hL
+  have kA := argR_sub (L := slay p prepared s) (t := t1) hsp1
   simp only [slay] at kE kA
   have hstk : ∀ {r : Region}, (rStk s).Disjoint r → Region.Disjoint ⟨State.addr (s.sp - BitVec.ofNat 32 8) -
-      BitVec.ofNat 64 28, 28⟩ r := fun hr => hr.sub_left kE
-  refine signC_pre ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
+      BitVec.ofNat 64 44, 44⟩ r := fun hr => hr.sub_left kE
+  refine signC_pre ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
     simp only [view_gpr _ _ _ _ (by decide : Reg.r0 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r1 ∉ linkRegs),
       view_gpr _ _ _ _ (by decide : Reg.r2 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r3 ∉ linkRegs),
       e0, e1, e2, e3, a0, a1, e4, eSP, hmu, State.withRegions_rd, State.withRegions_wr]
@@ -259,7 +266,7 @@ theorem signK_pre (hp : p ∈ params) (h : SPre p s) (h8 : (stackArg s 0).toNat 
   · exact h.skSig
   · exact h.skScr.sub_right hsub
   · exact h.sigScr.symm.sub_left hmuS
-  · exact (x_sScr hL rfl (by omega_arith) : Region.Disjoint ⟨(slay p s).X + BitVec.ofNat 64 840, 64⟩ _)
+  · exact (x_sScr hL rfl (by omega_arith) : Region.Disjoint ⟨(slay p prepared s).X + BitVec.ofNat 64 840, 64⟩ _)
   · exact h.rndSig
   · exact h.rndScr.sub_right hsub
   · exact h.sigScr.sub_right hsub
@@ -278,26 +285,36 @@ theorem signK_pre (hp : p ∈ params) (h : SPre p s) (h8 : (stackArg s 0).toNat 
   · exact h.nRnd
   · exact h.nSig
   · have := h.nScr; simp only [mScrLen, sScr, messageScratchWords] at this ⊢; omega_arith
+  · intro hp'
+    subst hp'
+    have bk : Region.Sub (below t1 8) (slay p true s).STK := below_stk hsp1
+    have e : secretKeyLen p true = preparedSecretKeyBytes p := rfl
+    have dk := h.stkSk.symm.sub_right bk
+    have nk := h.nSk
+    rw [e] at dk nk
+    refine VG.Proof.MlDsa.PreparedKey.preparedSecretKey_of_bytes ?_ (hk rfl)
+    show bytesAt (storeWords t1.mem (t1.sp - 8#32) [t1.gpr .r12, t1.gpr .lr]) _ _ = _
+    rw [storeWords_bytes h8' dk (by omega), hm1]
 
 /-- The call of the signing function on `μ`. -/
-theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ params) (h : SPre p s)
+theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p prepared c) (hp : p ∈ params) (h : SPre p prepared s)
     (h8 : (stackArg s 0).toNat < 256) {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
-    (hc : Ctx (slay p s) g m₀ t) :
+    (hc : Ctx (slay p prepared s) g m₀ t) (hk : SecretKeyOk p prepared t.mem (State.addr (s.gpr .r0))) :
     WP isa (.seq (.block (setArgs signArgs)) (.frame (.push [.r12, .lr]) (.call n c) (.pop .r12 8))) t fun s' =>
-      Fin (slay p s) g s' ∧
-      Outcome (fun b => signMu p b (bytesAt t.mem (State.addr (s.gpr .r0)) p.skLen) (bytesAt t.mem (slay p s).MU 64)
+      Fin (slay p prepared s) g s' ∧
+      Outcome (fun b => signMu p b (bytesAt t.mem (State.addr (s.gpr .r0)) p.skLen) (bytesAt t.mem (slay p prepared s).MU 64)
           (bytesAt t.mem (State.addr (stackArg s 1)) 32)) (s'.gpr .r0)
         (bytesAt s'.mem (State.addr (stackArg s 2)) p.sigLen) := by
   have hL := slay_ok hp h h8
   refine WP.seq (WP.mono (setArgs_ok signArgs (by decide) t (hc.xOk hL)) fun t1 ⟨hA, o⟩ => ?_)
-  have hc1 : Ctx (slay p s) g m₀ t1 := hc.regs o.rd o.wr o.sp o.mem fun r hr hl =>
+  have hc1 : Ctx (slay p prepared s) g m₀ t1 := hc.regs o.rd o.wr o.sp o.mem fun r hr hl =>
     o.gpr r (by simp only [List.map_cons, List.map_nil]; exact not_pres hr hl _)
   obtain ⟨e0, e1, e2, e3, _⟩ := signRegs_of hL hc hA
   have hsp1 : t1.sp = s.sp := hc1.sp
-  have hpre := signK_pre hp h h8 hc hA hsp1
+  have hpre := signK_pre hp h h8 hc hA hsp1 o.mem hk
   have hsub := sScr_sub p (State.addr (stackArg s 3))
-  have hmuS : Region.Sub ⟨(slay p s).MU, 64⟩ ⟨State.addr (stackArg s 3), mScrLen p⟩ := (mu_within hL).sub
-  refine WP.mono (frameCall_ok (D := 36) hS.ver.1 (by have := hS.su; omega_arith) (by rw [hsp1]; exact h.sp) hpre ?_ ?_)
+  have hmuS : Region.Sub ⟨(slay p prepared s).MU, 64⟩ ⟨State.addr (stackArg s 3), mScrLen p⟩ := (mu_within hL).sub
+  refine WP.mono (frameCall_ok (D := 52) hS.ok (by have := hS.su; omega_arith) (by rw [hsp1]; exact h.sp) hpre ?_ ?_)
     fun s' ⟨hrd, hwr, hsp, hcs, hf, s₂, hm₂, hg₂, hpost⟩ => ?_
   · rw [hc1.rd, hc1.wr]
     refine covers_of_within fun r hr => ?_
@@ -314,29 +331,33 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
     · exact ⟨⟨State.addr (stackArg s 3), mScrLen p⟩, by simp [slay, h.wr],
         within_base _ (by rw [mScr_eq]; simp only [sScr, oE]; omega_arith)⟩
   -- After the call.
-  have hsv : ∀ d, d + 4 ≤ 120 → s'.mem.readW ((slay p s).X + BitVec.ofNat 64 (904 + d)) 32 =
-      t1.mem.readW ((slay p s).X + BitVec.ofNat 64 (904 + d)) 32 := fun d hd' =>
+  have hsv : ∀ d, d + 4 ≤ 120 → s'.mem.readW ((slay p prepared s).X + BitVec.ofNat 64 (904 + d)) 32 =
+      t1.mem.readW ((slay p prepared s).X + BitVec.ofNat 64 (904 + d)) 32 := fun d hd' =>
     hf.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact h.sigScr.symm.sub_left ((within_off (slay p s).X (d := 904 + d) (n := 4) (k := 1024)
+      · exact h.sigScr.symm.sub_left ((within_off (slay p prepared s).X (d := 904 + d) (n := 4) (k := 1024)
           (by omega_arith)).trans hL.xs_sc).sub
       · exact x_sScr hL rfl (by omega_arith)
       · rw [hsp1]
-        exact hL.sv_disj (r := belowA s.sp 36) (.inr fun _ h => h) hd') (by decide)
+        exact hL.sv_disj (r := belowA s.sp 52) (.inr fun _ h => h) hd') (by decide)
   refine ⟨⟨hrd.trans hc1.rd, hwr.trans hc1.wr, hsp.trans hc1.sp, (hcs .r7 (by decide) (by decide)).trans hc1.r7,
     fun r hr h7 hl => (hcs r hr hl).trans (hc1.cs r hr h7 hl),
     (hsv 0 (by omega_arith)).trans hc1.s7, (hsv 4 (by omega_arith)).trans hc1.sLR⟩, ?_⟩
   have h8' : 8 ≤ t1.sp.toNat := by rw [hsp1]; have := h.sp; omega_arith
-  have kA := argR_sub (L := slay p s) (t := t1) hsp1
-  have bk : Region.Sub (below t1 8) (slay p s).STK := below_stk hsp1
-  sig_reduce [signContract, signSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hpost
+  have kA := argR_sub (L := slay p prepared s) (t := t1) hsp1
+  have bk : Region.Sub (below t1 8) (slay p prepared s).STK := below_stk hsp1
+  have hpm : (pushed [.r12, .lr] t1).mem = storeWords t1.mem (t1.sp - 8#32) [t1.gpr .r12, t1.gpr .lr] := rfl
+  simp only [Sign.signE, Sign.signK, State.withRegions_mem, State.callEntry_mem, State.withRegions_gpr, hpm,
+    view_gpr _ _ _ _ (by decide : Reg.r0 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r1 ∉ linkRegs),
+    view_gpr _ _ _ _ (by decide : Reg.r2 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r3 ∉ linkRegs)] at hpost
   have pm : ∀ (x : BitVec 32) (n : Nat), Region.Disjoint ⟨State.addr x, n⟩ (below t1 8) → n ≤ 2 ^ 64 →
-      bytesAt (storeWords t1.mem (t1.sp - 8#32) [t1.gpr .r12, t1.gpr .lr]) (BitVec.setWidth 64 x) n =
+      bytesAt (storeWords t1.mem (t1.sp - 8#32) [t1.gpr .r12, t1.gpr .lr]) (State.addr x) n =
         bytesAt t1.mem (State.addr x) n := fun x n hd hn => storeWords_bytes h8' hd hn
-  rw [e0, e1, e2, e3, pm _ _ (h.stkSk.symm.sub_right bk) (by have := h.nSk; omega_arith),
+  rw [e0, e1, e2, e3, pm _ _ ((h.stkSk.sub_right (Region.sub_prefix (skLen_le prepared))).symm.sub_right bk)
+      (by have := h.nSk; have := skLen_le (p := p) prepared; omega_arith),
     pm _ _ (by rw [mu_eq hL]; exact (k_mu hL).symm.sub_right bk) (by decide),
-    pm _ _ (h.stkRnd.symm.sub_right bk) (by decide), mu_eq hL, hm₂, Proof.MlKem.Arm.setWidth_append32,
+    pm _ _ (h.stkRnd.symm.sub_right bk) (by decide), mu_eq hL, hm₂,
     hg₂ .r0 (by decide), o.mem] at hpost
   exact hpost
 

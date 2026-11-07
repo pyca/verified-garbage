@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.SeedsCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.SeedsCT
 import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
@@ -79,10 +80,19 @@ abbrev vScr : BitVec 32 := σ.gpr .r3
 
 end
 
-/-- The precondition of `verifyContract` with `STK` bytes of stack. -/
+/-- The prepared polynomials `cache` points to, if it is not 0. -/
+abbrev cacheRV (p : Params) (σ : State) : Region := ⟨State.addr (stackArg σ 0), 1024 * p.k⟩
+
+/-- The regions of the prepared polynomials: none if `cache` is 0. -/
+def cacheRdV (p : Params) (σ : State) : List Region := if stackArg σ 0 = 0 then [] else [cacheRV p σ]
+
+/-- The precondition of `vg_mldsa*_verify_with_cache(pk = r0, mu = r1, sig = r2,
+scratch = r3, cache = [sp])` with `STK` bytes of stack: `verifyContract`'s, and
+`cache` 0 or the `t̂₁` of `pk`, apart from `scratch` and the stack. -/
 structure VPre (p : Params) (STK : Nat) (σ : State) : Prop where
   stk : STK ≤ σ.sp.toNat
-  rd : σ.rd = [regA (vPk σ) p.pkLen, regA (vMu σ) 64, regA (vSg σ) p.sigLen]
+  rd : σ.rd = [regA (vPk σ) p.pkLen, regA (vMu σ) 64, regA (vSg σ) p.sigLen, ⟨stackArgAddr σ 0, 4⟩] ++
+    cacheRdV p σ
   wr : σ.wr = [regA (vScr σ) (scrLen p)]
   d_pc : (regA (vPk σ) p.pkLen).Disjoint (regA (vScr σ) (scrLen p))
   d_mc : (regA (vMu σ) 64).Disjoint (regA (vScr σ) (scrLen p))
@@ -95,13 +105,11 @@ structure VPre (p : Params) (STK : Nat) (σ : State) : Prop where
   f_m : (vMu σ).toNat + 64 ≤ 2 ^ 32
   f_s : (vSg σ).toNat + p.sigLen ≤ 2 ^ 32
   f_c : (vScr σ).toNat + scrLen p ≤ 2 ^ 32
-
-theorem vpre_of {p : Params} {n : Nat} {σ : State} (h : (Spec.MlDsa.verifyContract p Arm.abi (n + 1)).pre σ) :
-    VPre p (n + 1) σ := by
-  sig_pre [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
-    Arm.Loc.val] at h
-  obtain ⟨h0, -, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
-  exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
+  spA : σ.sp.toNat + 4 ≤ 2 ^ 32
+  d_ac : (⟨stackArgAddr σ 0, 4⟩ : Region).Disjoint (regA (vScr σ) (scrLen p))
+  cache : stackArg σ 0 ≠ 0 → (cacheRV p σ).Disjoint (regA (vScr σ) (scrLen p)) ∧
+    (below σ STK).Disjoint (cacheRV p σ) ∧ (stackArg σ 0).toNat + 1024 * p.k ≤ 2 ^ 32 ∧
+    Proof.MlDsa.CachedPublicPolys p σ.mem (State.addr (stackArg σ 0)) (bytesAt σ.mem (State.addr (vPk σ)) p.pkLen)
 
 /-! ## The buffers -/
 
