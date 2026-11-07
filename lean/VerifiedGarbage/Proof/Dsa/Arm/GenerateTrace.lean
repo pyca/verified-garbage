@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
 As the key checks' (`KeyTrace.lean`): the dispatch compares the public
 widths (`genDispatch_trace`), and each operation reads its operands through
 pointers that are the same in both runs (`parameters_trace`,
-`deriveCompute_trace`).
+`keyCompute_trace`, `deriveCompute_trace`).
 -/
 
 @[expose] public section
@@ -146,29 +146,24 @@ theorem parameters_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {
     (domain_gen_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
     fun _ _ ⟨_, Rn₁⟩ ⟨_, Rn₂⟩ => subgroup_gen_trace (X.run Rn₁ Rn₂) mp mq mg D₁ D₂
 
-theorem deriveCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {ins : List (Pointer × Nat)}
+theorem keyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {ins : List (Pointer × Nat)}
     {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
     (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
     (mx : (.input .nonce, qLen) ∈ ins)
     (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
-    SameTrace isa (Generate.deriveCompute pLen qLen) s₁ s₂ := by
+    SameTrace isa (Generate.keyCompute pLen qLen) s₁ s₂ := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
   have L2 : Impl.Dsa.Layout.t2 = 15328 := rfl
   have ho : 4960 ≤ Impl.Dsa.Layout.t2 ∧ Impl.Dsa.Layout.t2 + pLen ≤ 15712 := by omega_arith
-  simp only [Generate.deriveCompute, Core.sequence, List.foldr]
-  refine SameTrace.seq (parameters_trace X mp mq mg D₁ D₂)
-    (parameters_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
-    (parameters_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
-    fun v₁ v₂ ⟨_, Rn₁⟩ ⟨_, Rn₂⟩ => ?_
-  have X₁ := X.run Rn₁ Rn₂
-  refine SameTrace.seq (range_trace X₁.C₁.S.ws X₁.C₂.S.ws (by omega_arith) (by omega_arith) X.C₁.S.wq
-      (X₁.C₁.inp mq).toReady (X₁.C₂.inp mq).toReady (X₁.C₁.inp mx).toReady (X₁.E _ mq) (X₁.E _ mx) false)
-    (range_ok X₁.C₁.S.ws (by omega_arith) X.C₁.S.wq (X₁.C₁.inp mq).toReady (X₁.C₁.inp mx).toReady false)
-    (range_ok X₁.C₂.S.ws (by omega_arith) X.C₁.S.wq (X₁.C₂.inp mq).toReady (X₁.C₂.inp mx).toReady false)
+  simp only [Generate.keyCompute, Core.sequence, List.foldr]
+  refine SameTrace.seq (range_trace X.C₁.S.ws X.C₂.S.ws (by omega_arith) (by omega_arith) X.C₁.S.wq
+      (X.C₁.inp mq).toReady (X.C₂.inp mq).toReady (X.C₁.inp mx).toReady (X.E _ mq) (X.E _ mx) false)
+    (range_ok X.C₁.S.ws (by omega_arith) X.C₁.S.wq (X.C₁.inp mq).toReady (X.C₁.inp mx).toReady false)
+    (range_ok X.C₂.S.ws (by omega_arith) X.C₁.S.wq (X.C₂.inp mq).toReady (X.C₂.inp mx).toReady false)
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_
-  have X₂ := X₁.run (St₁.run (.inl ⟨rfl, rfl⟩)) (St₂.run (.inl ⟨rfl, rfl⟩))
+  have X₂ := X.run (St₁.run (.inl ⟨rfl, rfl⟩)) (St₂.run (.inl ⟨rfl, rfl⟩))
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t2) (X₂.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
       (X₂.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X₂.C₁.inp mg).toReady (X₂.C₂.inp mg).toReady (X₂.C₁.inp mx).toReady
       (X₂.E _ mp) (X₂.E _ mg) (X₂.E _ mx)
@@ -187,5 +182,28 @@ theorem deriveCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat
     (range_ok X₃.C₂.S.ws (by omega_arith) X.C₁.S.wp (X₃.C₂.inp mp).toReady
       (localReady X₃.C₂.S.ws ho.1 (by omega_arith) (by decide)) true)
     fun _ _ _ _ => SameTrace.block_nil
+
+theorem deriveCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {ins : List (Pointer × Nat)}
+    {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State} (X : Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂)
+    (mp : (.input .p, pLen) ∈ ins) (mq : (.input .q, qLen) ∈ ins) (mg : (.input .g, pLen) ∈ ins)
+    (mx : (.input .nonce, qLen) ∈ ins)
+    (D₁ : DomainOk (val₁ (.input .p)) (val₁ (.input .q))) (D₂ : DomainOk (val₂ (.input .p)) (val₂ (.input .q))) :
+    SameTrace isa (Generate.deriveCompute pLen qLen) s₁ s₂ :=
+  SameTrace.seq (parameters_trace X mp mq mg D₁ D₂)
+    (parameters_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
+    (parameters_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
+    fun _ _ ⟨_, Rn₁⟩ ⟨_, Rn₂⟩ => keyCompute_trace (X.run Rn₁ Rn₂) mp mq mg mx D₁ D₂
+
+/-- A derivation's computation reads its operands through the same pointers in
+two runs. -/
+def ComputeTrace (compute : Nat → Nat → Prog isa) : Prop :=
+  ∀ {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {ins : List (Pointer × Nat)}
+    {val₁ val₂ : Pointer → Nat} {s₁ s₂ : State}, Pair base size₁ size₂ pLen qLen nP nQ ins val₁ val₂ s₁ s₂ →
+    (.input .p, pLen) ∈ ins → (.input .q, qLen) ∈ ins → (.input .g, pLen) ∈ ins → (.input .nonce, qLen) ∈ ins →
+    DomainOk (val₁ (.input .p)) (val₁ (.input .q)) → DomainOk (val₂ (.input .p)) (val₂ (.input .q)) →
+    SameTrace isa (compute pLen qLen) s₁ s₂
+
+theorem keyCompute_computeTrace : ComputeTrace Generate.keyCompute := keyCompute_trace
+theorem deriveCompute_computeTrace : ComputeTrace Generate.deriveCompute := deriveCompute_trace
 
 end VG.Proof.Dsa.Arm
