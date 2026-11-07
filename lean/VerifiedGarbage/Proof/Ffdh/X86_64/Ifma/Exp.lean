@@ -346,8 +346,9 @@ def C1 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (sp sl : Nat) (p : BPub) (g : Gh) (t
 def C0 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (sp sl : Nat) (p : BPub) (g : Gh) (t : State) : Prop :=
   HPre l p t ∧ WP isa (.block (head l sl)) t (C1 l sp sl p g)
 
-theorem exp_eq (sp sl : Nat) : exp l sp sl = [.block (head l sl)] ++ (region l 0 sp sl ++
-    ([.block (Impl.Ffdh.X86_64.Ifma.bases l), Impl.Ffdh.X86_64.Ifma.vec l] ++ (result l 0 ++ [.block (tail l)]))) := by
+theorem exp_eq (sp sl : Nat) : exp l sp sl = ([.block (head l sl)] : List (Prog isa)) ++ (region l 0 sp sl ++
+    (([.block (Impl.Ffdh.X86_64.Ifma.bases l), Impl.Ffdh.X86_64.Ifma.vec l] : List (Prog isa)) ++
+      (result l 0 ++ ([.block (tail l)] : List (Prog isa))))) := by
   simp only [exp, List.append_assoc]
 
 /-- The chain runs the exponentiation. -/

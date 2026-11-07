@@ -59,7 +59,7 @@ theorem lok2048E : LOk PubIfma.pay2048 sEp sEl := by unfold LOk; decide +kernel
 theorem lok3072E : LOk PubIfma.pay3072 sEp sEl := by unfold LOk; decide +kernel
 theorem lok4096E : LOk PubIfma.pay4096 sEp sEl := by unfold LOk; decide +kernel
 
-theorem lok {sp sl : Nat} (hs : Slots sp sl) :
+theorem lok {sp sl : Nat} (hs : ExpSlots sp sl) :
     LOk PubIfma.pay2048 sp sl ∧ LOk PubIfma.pay3072 sp sl ∧ LOk PubIfma.pay4096 sp sl := by
   rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   · exact ⟨lok2048X, lok3072X, lok4096X⟩
@@ -75,7 +75,7 @@ theorem code_eq (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) :
                 (.ite .e (seqs (VG.Impl.Ffdh.X86_64.Ifma.exp PubIfma.pay4096 sp sl))
                   (seqs (Crt.expLoop mul Crt.tabSelect sp sl)))))))] := rfl
 
-theorem ifma_inline (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) (hs : Slots sp sl) :
+theorem ifma_inline (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) (hs : ExpSlots sp sl) :
     @List.map (Code Instr Cond) (Prog isa) (@Code.inline Instr Cond) (VG.Impl.Ffdh.X86_64.Ifma.code mul sp sl) =
       VG.Impl.Ffdh.X86_64.Ifma.code (fun o a b => (mul o a b).inline) sp sl := by
   have hb := ExpImpl.base.inline mul sp sl hs
@@ -86,7 +86,7 @@ theorem ifma_inline (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) (hs :
     map_inline_of_noCalls b.1, map_inline_of_noCalls c.1]
 
 theorem ifma_inlineOk (mul : Nat → Nat → Nat → Prog isa) (hm : ∀ o a b, (mul o a b).InlineOk = true)
-    (sp sl : Nat) (hs : Slots sp sl) : (VG.Impl.Ffdh.X86_64.Ifma.code mul sp sl).all Code.InlineOk = true := by
+    (sp sl : Nat) (hs : ExpSlots sp sl) : (VG.Impl.Ffdh.X86_64.Ifma.code mul sp sl).all Code.InlineOk = true := by
   have hb := ExpImpl.base.inlineOk mul hm sp sl hs
   simp only [ExpImpl.base] at hb
   obtain ⟨a, b, c⟩ := lok hs
@@ -95,7 +95,7 @@ theorem ifma_inlineOk (mul : Nat → Nat → Nat → Prog isa) (hm : ∀ o a b, 
     (ok_ite c.2.2.1 ((inlineOk_seqs _).trans hb))))))
 
 theorem ifma_spSafe (mul : Nat → Nat → Nat → Prog isa)
-    (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !isa.writesSp i) = true) (sp sl : Nat) (hs : Slots sp sl) :
+    (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !isa.writesSp i) = true) (sp sl : Nat) (hs : ExpSlots sp sl) :
     (VG.Impl.Ffdh.X86_64.Ifma.code mul sp sl).all (fun c => c.allInstrs (fun i => !isa.writesSp i)) = true := by
   have hb := ExpImpl.base.spSafe mul hm sp sl hs
   simp only [ExpImpl.base] at hb
@@ -105,7 +105,7 @@ theorem ifma_spSafe (mul : Nat → Nat → Nat → Prog isa)
     (in_ite c.2.2.2.2.1 ((all_seqs _ _).trans hb))))))
 
 theorem ifma_ctl (mul : Nat → Nat → Nat → Prog isa)
-    (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !loadsMxcsr i) = true) (sp sl : Nat) (hs : Slots sp sl) :
+    (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !loadsMxcsr i) = true) (sp sl : Nat) (hs : ExpSlots sp sl) :
     (VG.Impl.Ffdh.X86_64.Ifma.code mul sp sl).all ctlOk = true := by
   have hb := ExpImpl.base.ctl mul hm sp sl hs
   simp only [ExpImpl.base] at hb

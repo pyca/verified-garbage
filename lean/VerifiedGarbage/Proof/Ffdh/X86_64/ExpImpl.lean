@@ -20,7 +20,7 @@ An `ExpImpl` is an exponentiation of FFDH's domain operations: its code for
 a multiplication `mul` (`Domain.pow`'s `ex`), the `CrtExpL` its proofs take,
 and what their templates need of its code: that it inlines with `mul`, never
 writes `rsp`, loads MXCSR only to restore it (`ctlOk`), and is constant
-time, for the exponents' slots of the domain operations (`Slots`).
+time, for the exponents' slots of the domain operations (`ExpSlots`).
 -/
 
 @[expose] public section
@@ -31,21 +31,21 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Ffdh.X86_64.D
 open VG.Proof.Bignum.X86_64
 
 /-- The exponents' slots of the domain operations. -/
-def Slots (sp sl : Nat) : Prop := (sp = sX ∧ sl = sXl) ∨ (sp = sEp ∧ sl = sEl)
+def ExpSlots (sp sl : Nat) : Prop := (sp = sX ∧ sl = sXl) ∨ (sp = sEp ∧ sl = sEl)
 
 /-- An exponentiation of the domain operations. -/
 structure ExpImpl where
   code : (Nat → Nat → Nat → Prog isa) → Nat → Nat → List (Prog isa)
   E : (M : Mont) → CrtExpL M
   code_eq : ∀ M, (E M).code = code M.mm
-  inline : ∀ mul sp sl, Slots sp sl →
+  inline : ∀ mul sp sl, ExpSlots sp sl →
     @List.map (Code Instr Cond) (Prog isa) (@Code.inline Instr Cond) (code mul sp sl) =
       code (fun o a b => (mul o a b).inline) sp sl
-  inlineOk : ∀ mul, (∀ o a b, (mul o a b).InlineOk = true) → ∀ sp sl, Slots sp sl →
+  inlineOk : ∀ mul, (∀ o a b, (mul o a b).InlineOk = true) → ∀ sp sl, ExpSlots sp sl →
     (code mul sp sl).all Code.InlineOk = true
-  spSafe : ∀ mul, (∀ o a b, (mul o a b).allInstrs (fun i => !isa.writesSp i) = true) → ∀ sp sl, Slots sp sl →
+  spSafe : ∀ mul, (∀ o a b, (mul o a b).allInstrs (fun i => !isa.writesSp i) = true) → ∀ sp sl, ExpSlots sp sl →
     (code mul sp sl).all (fun c => c.allInstrs (fun i => !isa.writesSp i)) = true
-  ctl : ∀ mul, (∀ o a b, (mul o a b).allInstrs (fun i => !loadsMxcsr i) = true) → ∀ sp sl, Slots sp sl →
+  ctl : ∀ mul, (∀ o a b, (mul o a b).allInstrs (fun i => !loadsMxcsr i) = true) → ∀ sp sl, ExpSlots sp sl →
     (code mul sp sl).all ctlOk = true
   ctX : ∀ M, ExpCTL (E M) sX sXl
   ctE : ∀ M, ExpCTL (E M) sEp sEl
@@ -177,22 +177,37 @@ theorem base_ctX (M : Mont) : ExpCTL (CrtExpL.w4 M) sX sXl :=
 theorem base_ctE (M : Mont) : ExpCTL (CrtExpL.w4 M) sEp sEl :=
   two_map id (fun _ _ h => h.1) (crtExpLoop_ct M CrtSel.sse CrtSel.sse_ct (by taint_decide))
 
+theorem base_inline (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) (hs : ExpSlots sp sl) :
+    @List.map (Code Instr Cond) (Prog isa) (@Code.inline Instr Cond) (Crt.expLoop mul Crt.tabSelect sp sl) =
+      Crt.expLoop (fun o a b => (mul o a b).inline) Crt.tabSelect sp sl := by
+  rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+  · simp only [Crt.expLoop, Crt.expLoopS, Crt.expWin, Crt.tabBuild, Crt.tabBuildN, List.map_append,
+      List.map_cons, List.map_nil, Code.inline, inline_seqs]
+    simp (disch := decide) only [inline_of_noCalls, map_inline_of_noCalls]
+
+theorem base_inlineOk' (mul : Nat → Nat → Nat → Prog isa) (hm : ∀ o a b, (mul o a b).InlineOk = true)
+    (sp sl : Nat) (hs : ExpSlots sp sl) : (Crt.expLoop mul Crt.tabSelect sp sl).all Code.InlineOk = true := by
+  rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact base_inlineOk mul (by decide +kernel) hm
+
+theorem base_spSafe (mul : Nat → Nat → Nat → Prog isa)
+    (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !isa.writesSp i) = true) (sp sl : Nat) (hs : ExpSlots sp sl) :
+    (Crt.expLoop mul Crt.tabSelect sp sl).all (fun c => c.allInstrs (fun i => !isa.writesSp i)) = true := by
+  rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact base_instrs _ mul (by decide +kernel) hm
+
+theorem base_ctl (mul : Nat → Nat → Nat → Prog isa)
+    (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !loadsMxcsr i) = true) (sp sl : Nat) (hs : ExpSlots sp sl) :
+    (Crt.expLoop mul Crt.tabSelect sp sl).all ctlOk = true := by
+  rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact all_ctl_of (base_instrs _ mul (by decide +kernel) hm)
+
 /-- `Crt.expLoop`, by windows of 4 bits. -/
 def ExpImpl.base : ExpImpl where
   code mul := Crt.expLoop mul Crt.tabSelect
   E := CrtExpL.w4
   code_eq _ := rfl
-  inline mul sp sl hs := by
-    rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
-    · simp only [Crt.expLoop, Crt.expLoopS, Crt.expWin, Crt.tabBuild, Crt.tabBuildN, List.map_append,
-        List.map_cons, List.map_nil, Code.inline, inline_seqs]
-      simp (disch := decide) only [inline_of_noCalls, map_inline_of_noCalls]
-  inlineOk mul hm sp sl hs := by
-    rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact base_inlineOk mul (by decide +kernel) hm
-  spSafe mul hm sp sl hs := by
-    rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact base_instrs _ mul (by decide +kernel) hm
-  ctl mul hm sp sl hs := by
-    rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact all_ctl_of (base_instrs _ mul (by decide +kernel) hm)
+  inline := base_inline
+  inlineOk := base_inlineOk'
+  spSafe := base_spSafe
+  ctl := base_ctl
   ctX := base_ctX
   ctE := base_ctE
   suffix := ""

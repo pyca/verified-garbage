@@ -8,13 +8,13 @@ use crate::arch::ffdh::{
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::{
-    vg_ffdh_check_domain_exp_ifma, vg_ffdh_check_domain_mr_adx, vg_ffdh_check_domain_mr_adx_exp_ifma,
-    vg_ffdh_check_private_exp_ifma, vg_ffdh_check_private_mr_adx,
-    vg_ffdh_check_private_mr_adx_exp_ifma, vg_ffdh_check_public_exp_ifma,
-    vg_ffdh_check_public_mr_adx, vg_ffdh_check_public_mr_adx_exp_ifma,
-    vg_ffdh_derive_public_exp_ifma, vg_ffdh_derive_public_mr_adx,
-    vg_ffdh_derive_public_mr_adx_exp_ifma, vg_ffdh_exchange_exp_ifma, vg_ffdh_exchange_mr_adx,
-    vg_ffdh_exchange_mr_adx_exp_ifma,
+    vg_ffdh_check_domain_exp_ifma, vg_ffdh_check_domain_mr_adx,
+    vg_ffdh_check_domain_mr_adx_exp_ifma, vg_ffdh_check_private_exp_ifma,
+    vg_ffdh_check_private_mr_adx, vg_ffdh_check_private_mr_adx_exp_ifma,
+    vg_ffdh_check_public_exp_ifma, vg_ffdh_check_public_mr_adx,
+    vg_ffdh_check_public_mr_adx_exp_ifma, vg_ffdh_derive_public_exp_ifma,
+    vg_ffdh_derive_public_mr_adx, vg_ffdh_derive_public_mr_adx_exp_ifma, vg_ffdh_exchange_exp_ifma,
+    vg_ffdh_exchange_mr_adx, vg_ffdh_exchange_mr_adx_exp_ifma,
 };
 use crate::cpu::detected;
 use crate::rsa::Scratch;

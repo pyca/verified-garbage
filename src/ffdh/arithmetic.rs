@@ -193,7 +193,10 @@ mod tests {
             (ifma & !feature::AVX512IFMA, Exp::Baseline),
             (ifma & !feature::AVX512VL, Exp::Baseline),
             (ifma, Exp::Ifma),
-            (ifma | feature::AVX2 | feature::BMI2 | feature::ADX, Exp::Ifma),
+            (
+                ifma | feature::AVX2 | feature::BMI2 | feature::ADX,
+                Exp::Ifma,
+            ),
         ];
         for &(features, expected) in cases {
             assert_eq!(Exp::ffdh(Features(features)), expected, "{features:?}");
