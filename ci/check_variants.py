@@ -228,7 +228,15 @@ NEVER_WITH = {
     # The dispatchers of ChaCha20 and ChaCha20-Poly1305 rank `_avx2` (and
     # better) above `_ssse3` (`VG.Dispatch.ranking`), so choose it whenever
     # AVX2 is present (`VerifiedGarbageTest/Dispatch.lean` checks it).
-    "x86_64": {"vg_chacha20_xor_ssse3": [{"avx", "avx2"}]},
+    "x86_64": {
+        "vg_chacha20_xor_ssse3": [{"avx", "avx2"}],
+        # AES-CMAC's, AES-SIV's and AES-CCM's dispatchers choose their
+        # `_aesni` implementations (the chaining in AES-NI registers, which is
+        # faster than by calls of any `vg_aes_ctr32` at every length) on every
+        # CPU with AES-NI and SSSE3, so never the bitsliced chaining by calls
+        # of `vg_aes_ctr32` (`VerifiedGarbageTest/Dispatch.lean` checks it).
+        "vg_cmac_aes_update": [{"aes", "ssse3"}],
+    },
 }
 
 

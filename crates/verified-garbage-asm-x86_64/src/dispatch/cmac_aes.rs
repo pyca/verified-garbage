@@ -69,7 +69,7 @@ pub unsafe fn vg_cmac_aes_finish_auto(state: *mut [u64; 38], rounds: usize, coun
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_cmac_aes_absorb_vaes` if the CPU supports its features (`VG_CMAC_AES_ABSORB_VAES_FEATURES`); `vg_cmac_aes_absorb_aesni` if the CPU supports its features (`VG_CMAC_AES_ABSORB_AESNI_FEATURES`); or else `vg_cmac_aes_absorb`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_cmac_aes_absorb_aesni` if the CPU supports its features (`VG_CMAC_AES_ABSORB_AESNI_FEATURES`); or else `vg_cmac_aes_absorb`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -82,11 +82,6 @@ pub unsafe fn vg_cmac_aes_finish_auto(state: *mut [u64; 38], rounds: usize, coun
 #[inline]
 pub unsafe fn vg_cmac_aes_absorb_auto(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::cmac_aes::VG_CMAC_AES_ABSORB_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_cmac_aes_absorb_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::cmac_aes::vg_cmac_aes_absorb_vaes(state, rounds, count, data, len) };
-    }
     if cpu.contains(crate::cmac_aes::VG_CMAC_AES_ABSORB_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_cmac_aes_absorb_aesni`'s, and the CPU
         // has the features it needs.
