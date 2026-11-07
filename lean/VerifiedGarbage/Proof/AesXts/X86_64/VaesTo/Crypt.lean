@@ -254,40 +254,43 @@ theorem preListTo_ok (regs ts : List XReg) (j : Nat) (s : State) (hnd : regs.Nod
       rw [hx r hr.2 l hl, o₁ r hr.1 l hl]
 
 
-theorem tPre1To_ok (b : XReg) (d : Nat) (s : State)
+theorem tPre1To_ok (b : XReg) (d : Nat) (s : State) (h9 : b ≠ .xmm9)
     (hd : InRegions (s.rd ++ s.wr) (s.gpr .r11 + s.gpr .rcx + BitVec.ofInt 64 (d : Int)) 16)
     (he : InRegions (s.rd ++ s.wr) (s.gpr .rax + BitVec.ofInt 64 (d : Int)) 16) :
-    WP isa (.block [.movdquLoad b (ix d), .vbinLoad .vpxor .l128 b b (at_ .rax d)]) s fun s' =>
+    WP isa (.block [.movdquLoad b (ix d), .movdquLoad .xmm9 (at_ .rax d), .xop (.bin .pxor b .xmm9)]) s
+      fun s' =>
       s'.xmm b = s.mem.readW (s.gpr .r11 + s.gpr .rcx + BitVec.ofInt 64 (d : Int)) 128 ^^^
         s.mem.readW (s.gpr .rax + BitVec.ofInt 64 (d : Int)) 128 ∧
-      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ≠ b → s'.xmm r = s.xmm r) := by
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r, r ∉ [.xmm9, b] → s'.xmm r = s.xmm r) := by
   apply WP.of_runBlock
-  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.setXmm,
-    State.load128, ea_ix, ea_at, hd, he, Option.map_some, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, by simp [State.setV], by simp [State.setV], by simp [State.setV], by simp [State.setV],
-    fun r h => by simp [State.setV, h]⟩
-  simp [State.setV, State.lane, reduceVBinOpSse, XBinOp.eval]
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa, State.setXmm,
+    State.load128, ea_ix, ea_at, hd, he, Option.map_some, Option.some.injEq, exists_eq_left', h9]
+  refine ⟨by simp [XBinOp.eval], trivial, trivial, trivial, trivial, fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp [hr.1, hr.2]
 
 
-theorem tPreListTo_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
+theorem tPreListTo_ok (regs : List XReg) (j : Nat) (s : State) (hnd : (.xmm9 :: regs).Nodup)
     (hd : ∀ k < regs.length, InRegions (s.rd ++ s.wr) (s.gpr .r11 + s.gpr .rcx + BitVec.ofInt 64 ((16 * (j + k) : Nat) : Int)) 16)
     (he : ∀ k < regs.length, InRegions (s.rd ++ s.wr) (s.gpr .rax + BitVec.ofInt 64 ((16 * (j + k) : Nat) : Int)) 16) :
     WP isa (.block (tPre regs j)) s fun s' =>
       (∀ k (h : k < regs.length), s'.xmm regs[k] =
         s.mem.readW (s.gpr .r11 + s.gpr .rcx + BitVec.ofNat 64 (16 * (j + k))) 128 ^^^
           s.mem.readW (s.gpr .rax + BitVec.ofNat 64 (16 * (j + k))) 128) ∧
-      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ regs → s'.xmm r = s.xmm r) := by
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r, r ∉ .xmm9 :: regs → s'.xmm r = s.xmm r) := by
   induction regs generalizing j s with
   | nil => exact WP.block_nil ⟨fun _ h => absurd h (by simp), rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
   | cons b bs ih =>
-    have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
+    obtain ⟨h9, hbs, hnd'⟩ := Vaes.nodup9 hnd
     simp only [List.length_cons] at hd he
     rw [tPre, WP.block_append_iff]
     have hd0 := hd 0 (by omega_arith)
     have he0 := he 0 (by omega_arith)
     rw [Nat.add_zero] at hd0 he0
-    refine WP.mono (tPre1To_ok b (16 * j) s hd0 he0) fun s₁ ⟨v₁, g₁, m₁, rd₁, wr₁, o₁⟩ => ?_
-    refine WP.mono (ih (j + 1) s₁ (List.nodup_cons.mp hnd).2
+    refine WP.mono (tPre1To_ok b (16 * j) s h9 hd0 he0) fun s₁ ⟨v₁, g₁, m₁, rd₁, wr₁, o₁⟩ => ?_
+    refine WP.mono (ih (j + 1) s₁ hnd'
         (fun k hk => by rw [rd₁, wr₁, g₁, show j + 1 + k = j + (k + 1) by omega_arith]; exact hd (k + 1) (by omega_arith))
         (fun k hk => by rw [rd₁, wr₁, g₁, show j + 1 + k = j + (k + 1) by omega_arith]; exact he (k + 1) (by omega_arith)))
       fun s' ⟨hb, g, m, rd, wr, hx⟩ => ?_
@@ -296,12 +299,12 @@ theorem tPreListTo_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup
     · cases k with
       | zero =>
         simp only [List.getElem_cons_zero, Nat.add_zero]
-        rw [hx b hbs, v₁, ofInt_natCast]
+        rw [hx b (by simp [h9, hbs]), v₁, ofInt_natCast]
       | succ k =>
         simp only [List.getElem_cons_succ]
         rw [hb k (by simpa using hk), show j + 1 + k = j + (k + 1) by omega_arith]
     · simp only [List.mem_cons, not_or] at hr
-      rw [hx r hr.2, o₁ r hr.1]
+      rw [hx r (by simp [hr.1, hr.2.2]), o₁ r (by simp [hr.1, hr.2.1])]
 
 
 end VG.Proof.AesXts.X86_64.VaesTo
@@ -794,7 +797,7 @@ theorem tbody_ok {enc : Bool} {KP : State → Prop} {f : List XReg → Prog isa}
       TInv enc KP s₀ b (c + n) s' ∧ s'.zf = some (decide (N s₀ - (c + n) = 0)) := by
   obtain ⟨hrs1, hn1⟩ := hrs
   have hlen : rs.length = n := by rw [hrs1, hn1]; rfl
-  have hnd : rs.Nodup := by rw [hrs1]; decide
+  have hnd : (XReg.xmm9 :: rs).Nodup := by rw [hrs1]; decide
   have hg := h.g
   have hw := hp.data_wrap
   have hsw := hp.scr_wrap
@@ -1455,12 +1458,11 @@ theorem loop8Ni_ok {enc : Bool} {KP : State → Prop} {f : List XReg → Prog is
         (NInv enc KP s₀ 0) := by
       apply WP.of_runBlock
       simp only [constK, List.cons_append, List.nil_append, ↓reduceIte, runBlock_cons, runStep_some,
-        runBlock_nil, exec, readSrc, execAlu, VOp.exec, arithFlags, State.setFlags, State.setReg, e256,
-        Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
-      refine ⟨h.congr hst (fun r h1 => by simp [h1]) (by simp [State.setV]) (by simp [State.setV])
-        (by simp [State.setV]), ?_, ?_⟩
-      · simp [State.setV, hr8, slot, bufOff]
-      · simp [State.setV, qword]
+        runBlock_nil, exec, readSrc, execAlu, XOp.exec, arithFlags, State.setFlags, State.setReg, State.setXmm,
+        e256, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
+      refine ⟨h.congr hst (fun r h1 => by simp [h1]) (by simp) (by simp) (by simp), ?_, ?_⟩
+      · simp [hr8, slot, bufOff]
+      · simp [qword]
     refine WP.seq (WP.mono st₁ fun s₁ h₁ => ?_)
     let I : Nat → State → Prop := fun m t => ∃ c, m = N s₀ - c ∧ c + 8 ≤ N s₀ ∧ NInv enc KP s₀ c t
     have hstep : ∀ m t, I m t → WP isa (groupNi f) t (fun t' =>

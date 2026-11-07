@@ -540,17 +540,17 @@ mod tests {
             // AVX-512F without AVX512BW.
             let no_bw = Features(one_pass.0 | feature::AVX512F);
             assert_eq!(select(no_bw), Impl::VaesVpclmul);
-            let aesni_pclmul =
-                Features(feature::AES | feature::AVX | feature::PCLMULQDQ | feature::SSSE3);
+            // PCLMULQDQ, with or without AVX.
+            let aesni_pclmul = Features(feature::AES | feature::PCLMULQDQ | feature::SSSE3);
             assert_eq!(select(aesni_pclmul), Impl::AesNiPclmul);
             assert_eq!(Impl::AesNiPclmul.aes(), Backend::AesNi);
-            // VPCLMULQDQ without VAES, and PCLMULQDQ without AVX.
+            let avx = Features(aesni_pclmul.0 | feature::AVX);
+            assert_eq!(select(avx), Impl::AesNiPclmul);
+            // VPCLMULQDQ without VAES or PCLMULQDQ.
             let no_vaes = Features(
                 feature::AES | feature::AVX | feature::AVX2 | feature::SSSE3 | feature::VPCLMULQDQ,
             );
             assert_eq!(select(no_vaes), Impl::Blocks(Backend::AesNi));
-            let no_avx = Features(feature::AES | feature::PCLMULQDQ | feature::SSSE3);
-            assert_eq!(select(no_avx), Impl::Blocks(Backend::AesNi));
         }
         #[cfg(target_arch = "x86")]
         assert_eq!(select(Features(feature::AES)), Impl::Blocks(Backend::AesNi));
