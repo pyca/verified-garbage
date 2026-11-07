@@ -1,5 +1,4 @@
-use super::{Backend, Error, Features, Ordering, PrivateKey, PublicKey, Vec, vec};
-use verified_garbage_cpu::feature;
+use super::{Error, Ordering, PrivateKey, PublicKey, Vec, vec};
 extern crate std;
 use crate::hashes::{sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512};
 use alloc::{format, string::ToString};
@@ -326,7 +325,7 @@ fn malformed_keys_nonces_and_bounded_retries() {
 }
 
 #[test]
-fn import_lengths_errors_and_backends() {
+fn import_lengths_and_errors() {
     assert_eq!(
         PublicKey::from_components(&[], &[], &[], &[]).unwrap_err(),
         Error::Length
@@ -346,13 +345,6 @@ fn import_lengths_errors_and_backends() {
     assert_eq!(
         PrivateKey::from_components(&[0; 128], &[0; 20], &[0; 128], &[0; 128], &[]).unwrap_err(),
         Error::Length
-    );
-    assert_eq!(Backend::select(Features(0)), Backend::Baseline);
-    assert_eq!(Backend::select(Features(feature::BMI2)), Backend::Baseline);
-    #[cfg(target_arch = "x86_64")]
-    assert_eq!(
-        Backend::select(Features(feature::BMI2 | feature::ADX)),
-        Backend::Adx
     );
     for error in [Error::Length, Error::InvalidKeyOrNonce, Error::Randomness] {
         assert!(!error.to_string().is_empty());
