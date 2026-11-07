@@ -41,7 +41,7 @@ def dstOf : Instr → Option Reg
   | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. | .mrsDit d => some d
   | .cselc _ d .. | .csneg _ d .. => some d
   | .str .. | .strb .. | .strSp .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .ldrqTbl .. | .strq .. | .tst .. | .ccmp ..
-  | .ldp .. | .stp .. | .align _ | .blr _ | .msrDitImm _ => none
+  | .ldp .. | .stp .. | .align _ | .blr _ | .msrDitImm _ | .barrier _ => none
 
 /-- The general-purpose registers instruction `i` writes. -/
 def dsts (i : Instr) : List Reg :=
@@ -347,6 +347,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : clobbers i r = false) (h : exec i s
     exact hw _ _ _ _ fun e => hi (by simp [dstOf, e])
   | align _ => obtain rfl := Option.some.inj h; rfl
   | msrDitImm _ => obtain rfl := Option.some.inj h; rfl
+  | barrier _ => obtain rfl := Option.some.inj h; rfl
   | _ => obtain rfl := Option.some.inj h; exact hw _ _ _ _ fun e => hi (by simp [dstOf, e])
 
 theorem eval_withRegions (c : Cond) (s : State) (rd wr : List Region) :

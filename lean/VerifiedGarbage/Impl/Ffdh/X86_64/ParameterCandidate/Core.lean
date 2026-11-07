@@ -55,6 +55,10 @@ def sieveBits : List Instr := [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws
 /-- Oddness, then the sieve: ZF means acceptance. -/
 def primeCheck : Prog isa := .seq (.block oddTest) (.ite .e (.seq (.block sieveBits) sieve) (.block []))
 
+/-- Oddness, then the table's first words (`sieveFirst`): ZF means neither
+rejects the candidate. -/
+def earlyCheck : Prog isa := .seq (.block oddTest) (.ite .e sieveFirst (.block []))
+
 /-- Save the ABI arguments and callee-saved registers in the outer header. -/
 def entry : List Instr :=
   [.mov .rax (.mem (stk 2)), .mov .r10 (.mem (stk 1))] ++ Domain.save .rax ++
@@ -211,19 +215,48 @@ def testQ : Prog isa := phaseTest mul r2 round (.seq shapeOriginal halveOutput) 
 /-- p's first witness, before q's. -/
 def testFirst : Prog isa := phaseTest mul r2 round shapeOriginal false .first (testQ mul r2 round)
 
-/-- q's trial division, at its own width, then the witnesses. -/
-def sieveQ : Prog isa := seqs [halveOutput, phaseSetup true .all, loadOutput, primeCheck,
+/-- p's whole trial division, once q has passed its own, then the witnesses. -/
+def sieveP : Prog isa := seqs [shapeOriginal, phaseSetup false .all, loadOutput, primeCheck,
   .ite .e (.seq (.block [leave]) (testFirst mul r2 round)) (innerStatus 2)]
+
+/-- q's trial division, at its own width, then p's (`sieveP`). -/
+def sieveQ : Prog isa := seqs [halveOutput, phaseSetup true .all, loadOutput, primeCheck,
+  .ite .e (.seq (.block [leave]) (sieveP mul r2 round)) (innerStatus 2)]
 
 /-- Apply the requested generator's candidate congruence policy. -/
 def generatorPolicy : Prog isa := .seq
   (.block [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax oGen))]) generatorCheck
 
-/-- Trial checks of p and q before any witness. -/
+/-- Trial checks of p and q before any witness: p's first words, q's whole
+sieve, then p's (`sieveQ`), so that a q with a small factor is rejected
+before p's whole sieve. -/
 def candidateFilter : Prog isa := seqs [phaseSetup false .all, loadOutput, generatorPolicy,
-  .ite .e (.seq primeCheck (.ite .e (.seq (.block [leave]) (sieveQ mul r2 round)) (innerStatus 2))) (innerStatus 2)]
+  .ite .e (.seq earlyCheck (.ite .e (.seq (.block [leave]) (sieveQ mul r2 round)) (innerStatus 2))) (innerStatus 2)]
 
-def testCandidate : Prog isa := seqs [shapeOriginal, .block consumeCandidate, candidateFilter mul r2 round]
+/-- One byte of p's octets (at R10) added into RSI. -/
+def sumByte : List Instr :=
+  [.movzx8 .rax (at0 .r10), .alu .add .rsi (.reg .rax), .alu .add .r10 (.imm 1), .alu .sub .rcx (.imm 1)]
+
+/-- ZF iff RAX is 1 and the last octet before R10, masked by `mask`, is 3. -/
+def lowByte (mask : Nat) : List Instr :=
+  [.movzx8 .rdx { base := .r10, disp := -1 }, .alu .and .rdx (.imm (BitVec.ofNat 32 mask)),
+    .mov32 .rcx (.imm 0), .alu .cmp .rdx (.imm 3), .cmov .ne .rax (.reg .rcx), .alu .cmp .rax (.imm 1)]
+
+/-- The generator's screen on p's octets in the output buffer, before any
+workspace is set up: their sum is p modulo 255 (256 ≡ 1), and the last
+octet gives p modulo 8. ZF means acceptance; it is `generatorCheck`'s. -/
+def byteScreen (vals : List Nat) (k : Nat) : Prog isa := .seq
+  (.block [.mov .r10 (.mem (hdr oOut)), .mov .rcx (.mem (hdr oLen)), .mov32 .rsi (.imm 0)])
+  (.seq (.loop (.block sumByte) .ne) (.block (reduce255 ++ memberFlag vals ++ lowByte (2 ^ k - 1))))
+
+/-- The requested generator's screen (`byteScreen`). -/
+def outerScreen : Prog isa := .seq (.block [.mov .rdx (.mem (hdr oGen)), .alu .cmp .rdx (.imm 2)])
+  (.ite .e (byteScreen allowed2 3) (byteScreen allowed5 2))
+
+/-- Shape p, consume it, and screen it before setting up its workspace: most
+candidates are rejected here (status 2). -/
+def testCandidate : Prog isa := seqs [shapeOriginal, .block consumeCandidate, outerScreen,
+  .ite .e (candidateFilter mul r2 round) (status 2)]
 
 /-- Clear rejected outputs, write the consumed count (zero on exhaustion),
 and restore the ABI's callee-saved registers. -/

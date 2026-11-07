@@ -29,6 +29,8 @@
     target_arch = "riscv64"
 ))]
 
+#[cfg(target_arch = "aarch64")]
+use crate::arch::gcm::VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES;
 use crate::arch::gcm::vg_aes_gcm_open_to;
 use crate::arch::gcm::vg_aes_gcm_seal_gather;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -59,41 +61,33 @@ use crate::arch::gcm::{
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::gcm::{
     VG_AES_GCM_SEAL_AESNI_FEATURES, VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES,
-    VG_AES_GCM_SEAL_PCLMUL_FEATURES, vg_aes_gcm_init_aesni, vg_aes_gcm_init_aesni_pclmul,
-    vg_aes_gcm_init_pclmul, vg_aes_gcm_open_aesni, vg_aes_gcm_open_aesni_pclmul,
-    vg_aes_gcm_open_pclmul, vg_aes_gcm_open_to_aesni, vg_aes_gcm_open_to_aesni_pclmul,
-    vg_aes_gcm_open_to_pclmul, vg_aes_gcm_seal_aesni, vg_aes_gcm_seal_aesni_pclmul,
-    vg_aes_gcm_seal_gather_aesni, vg_aes_gcm_seal_gather_aesni_pclmul,
-    vg_aes_gcm_seal_gather_pclmul, vg_aes_gcm_seal_pclmul, vg_aes_gcm_stream_aad_aesni,
-    vg_aes_gcm_stream_aad_aesni_pclmul, vg_aes_gcm_stream_aad_pclmul,
-    vg_aes_gcm_stream_decrypt_aesni, vg_aes_gcm_stream_decrypt_aesni_pclmul,
-    vg_aes_gcm_stream_decrypt_pclmul, vg_aes_gcm_stream_encrypt_aesni,
-    vg_aes_gcm_stream_encrypt_aesni_pclmul, vg_aes_gcm_stream_encrypt_pclmul,
-    vg_aes_gcm_stream_finish_aesni, vg_aes_gcm_stream_finish_aesni_pclmul,
-    vg_aes_gcm_stream_finish_pclmul, vg_aes_gcm_stream_init_aesni,
-    vg_aes_gcm_stream_init_aesni_pclmul, vg_aes_gcm_stream_init_pclmul,
-    vg_aes_gcm_stream_verify_aesni, vg_aes_gcm_stream_verify_aesni_pclmul,
-    vg_aes_gcm_stream_verify_pclmul,
+    VG_AES_GCM_SEAL_PCLMUL_FEATURES, vg_aes_gcm_init_aesni, vg_aes_gcm_open_aesni,
+    vg_aes_gcm_open_aesni_pclmul, vg_aes_gcm_open_pclmul, vg_aes_gcm_open_to_aesni,
+    vg_aes_gcm_open_to_aesni_pclmul, vg_aes_gcm_open_to_pclmul, vg_aes_gcm_seal_aesni,
+    vg_aes_gcm_seal_aesni_pclmul, vg_aes_gcm_seal_gather_aesni,
+    vg_aes_gcm_seal_gather_aesni_pclmul, vg_aes_gcm_seal_gather_pclmul, vg_aes_gcm_seal_pclmul,
+    vg_aes_gcm_stream_aad_pclmul, vg_aes_gcm_stream_decrypt_aesni,
+    vg_aes_gcm_stream_decrypt_aesni_pclmul, vg_aes_gcm_stream_decrypt_pclmul,
+    vg_aes_gcm_stream_encrypt_aesni, vg_aes_gcm_stream_encrypt_aesni_pclmul,
+    vg_aes_gcm_stream_encrypt_pclmul, vg_aes_gcm_stream_finish_aesni,
+    vg_aes_gcm_stream_finish_aesni_pclmul, vg_aes_gcm_stream_finish_pclmul,
+    vg_aes_gcm_stream_init_pclmul, vg_aes_gcm_stream_verify_aesni,
+    vg_aes_gcm_stream_verify_aesni_pclmul, vg_aes_gcm_stream_verify_pclmul,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
-    VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES, vg_aes_gcm_init_aesni_pclmul_avx,
-    vg_aes_gcm_open_aesni_pclmul_avx, vg_aes_gcm_seal_aesni_pclmul_avx,
-    vg_aes_gcm_stream_aad_aesni_pclmul_avx, vg_aes_gcm_stream_decrypt_aesni_pclmul_avx,
-    vg_aes_gcm_stream_encrypt_aesni_pclmul_avx, vg_aes_gcm_stream_finish_aesni_pclmul_avx,
-    vg_aes_gcm_stream_init_aesni_pclmul_avx, vg_aes_gcm_stream_verify_aesni_pclmul_avx,
+    VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES, vg_aes_gcm_open_aesni_pclmul_avx,
+    vg_aes_gcm_seal_aesni_pclmul_avx, vg_aes_gcm_stream_decrypt_aesni_pclmul_avx,
+    vg_aes_gcm_stream_encrypt_aesni_pclmul_avx,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
     VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_FEATURES,
     VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES,
-    VG_AES_GCM_SEAL_VPCLMUL_FEATURES, vg_aes_gcm_init_aesni_vpclmul, vg_aes_gcm_init_vaes,
-    vg_aes_gcm_init_vaes_pclmul, vg_aes_gcm_init_vaes_vpclmul, vg_aes_gcm_init_vpclmul,
-    vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes, vg_aes_gcm_open_vaes_pclmul,
-    vg_aes_gcm_open_vaes_vpclmul, vg_aes_gcm_open_vpclmul, vg_aes_gcm_seal_aesni_vpclmul,
-    vg_aes_gcm_seal_vaes, vg_aes_gcm_seal_vaes_pclmul, vg_aes_gcm_seal_vaes_vpclmul,
-    vg_aes_gcm_seal_vpclmul, vg_aes_gcm_stream_aad_aesni_vpclmul, vg_aes_gcm_stream_aad_vaes,
-    vg_aes_gcm_stream_aad_vaes_pclmul, vg_aes_gcm_stream_aad_vaes_vpclmul,
+    VG_AES_GCM_SEAL_VPCLMUL_FEATURES, vg_aes_gcm_init_vaes, vg_aes_gcm_open_aesni_vpclmul,
+    vg_aes_gcm_open_vaes, vg_aes_gcm_open_vaes_pclmul, vg_aes_gcm_open_vaes_vpclmul,
+    vg_aes_gcm_open_vpclmul, vg_aes_gcm_seal_aesni_vpclmul, vg_aes_gcm_seal_vaes,
+    vg_aes_gcm_seal_vaes_pclmul, vg_aes_gcm_seal_vaes_vpclmul, vg_aes_gcm_seal_vpclmul,
     vg_aes_gcm_stream_aad_vpclmul, vg_aes_gcm_stream_decrypt_aesni_vpclmul,
     vg_aes_gcm_stream_decrypt_vaes, vg_aes_gcm_stream_decrypt_vaes_pclmul,
     vg_aes_gcm_stream_decrypt_vaes_vpclmul, vg_aes_gcm_stream_decrypt_vpclmul,
@@ -102,28 +96,15 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_encrypt_vpclmul, vg_aes_gcm_stream_finish_aesni_vpclmul,
     vg_aes_gcm_stream_finish_vaes, vg_aes_gcm_stream_finish_vaes_pclmul,
     vg_aes_gcm_stream_finish_vaes_vpclmul, vg_aes_gcm_stream_finish_vpclmul,
-    vg_aes_gcm_stream_init_aesni_vpclmul, vg_aes_gcm_stream_init_vaes,
-    vg_aes_gcm_stream_init_vaes_pclmul, vg_aes_gcm_stream_init_vaes_vpclmul,
     vg_aes_gcm_stream_init_vpclmul, vg_aes_gcm_stream_verify_aesni_vpclmul,
     vg_aes_gcm_stream_verify_vaes, vg_aes_gcm_stream_verify_vaes_pclmul,
     vg_aes_gcm_stream_verify_vaes_vpclmul, vg_aes_gcm_stream_verify_vpclmul,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
-    VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES, vg_aes_gcm_init_vaes_vpclmul_avx512,
-    vg_aes_gcm_open_vaes_vpclmul_avx512, vg_aes_gcm_seal_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_aad_vaes_vpclmul_avx512, vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512, vg_aes_gcm_stream_finish_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_init_vaes_vpclmul_avx512, vg_aes_gcm_stream_verify_vaes_vpclmul_avx512,
-};
-#[cfg(target_arch = "aarch64")]
-use crate::arch::gcm::{
-    VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES, vg_aes_gcm_init_aes_sha3,
-    vg_aes_gcm_open_aes_sha3, vg_aes_gcm_open_to_aes_sha3, vg_aes_gcm_seal_aes_sha3,
-    vg_aes_gcm_seal_gather_aes_sha3, vg_aes_gcm_stream_aad_aes_sha3,
-    vg_aes_gcm_stream_decrypt_aes_sha3, vg_aes_gcm_stream_encrypt_aes_sha3,
-    vg_aes_gcm_stream_finish_aes_sha3, vg_aes_gcm_stream_init_aes_sha3,
-    vg_aes_gcm_stream_verify_aes_sha3,
+    VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES, vg_aes_gcm_open_vaes_vpclmul_avx512,
+    vg_aes_gcm_seal_vaes_vpclmul_avx512, vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512,
 };
 use crate::arch::gcm::{
     vg_aes_gcm_init, vg_aes_gcm_open, vg_aes_gcm_seal, vg_aes_gcm_stream_aad,
@@ -143,11 +124,13 @@ use crate::arch::gcm::{
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
-    vg_aes_gcm_open_with_powers_aes, vg_aes_gcm_seal_with_powers_aes, vg_aes_gcm_store_powers_aes,
+    vg_aes_gcm_open_to_with_powers_aes, vg_aes_gcm_open_with_powers_aes,
+    vg_aes_gcm_seal_with_powers_aes, vg_aes_gcm_store_powers_aes,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
-    vg_aes_gcm_open_with_powers_aes_sha3, vg_aes_gcm_seal_with_powers_aes_sha3,
+    vg_aes_gcm_open_to_with_powers_aes_sha3, vg_aes_gcm_open_with_powers_aes_sha3,
+    vg_aes_gcm_seal_with_powers_aes_sha3,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
@@ -453,8 +436,9 @@ struct Fns {
     /// `_CTX_WRITTEN`, or all of them).
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     written: usize,
-    /// On AArch64, the `_with_powers` instances of `seal` and `open`, which
-    /// read the powers `AesGcm::new` stores (`AesGcm::powers`).
+    /// On AArch64, the `_with_powers` instances of `seal`, `open` and
+    /// `open_to`, which read the powers `AesGcm::new` stores
+    /// (`AesGcm::powers`).
     #[cfg(target_arch = "aarch64")]
     powers: Option<Prepared>,
 }
@@ -469,7 +453,7 @@ impl Backend {
                 vg_aes_gcm_stream_encrypt_vaes_pclmul, vg_aes_gcm_stream_encrypt_aesni_vpclmul,
                 vg_aes_gcm_stream_encrypt_vaes_vpclmul, vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_stream_encrypt_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_stream_encrypt_aes, vg_aes_gcm_stream_encrypt_aes_sha3]),
+            aarch64: [vg_aes_gcm_stream_encrypt_aes, vg_aes_gcm_stream_encrypt_aes]),
             usize, *mut [u64; 10], u64, u64, *mut u8, usize; StreamCryptFn);
         let stream_decrypt = on_key_ctx!(instance!(self, vg_aes_gcm_stream_decrypt,
             x86_64: [vg_aes_gcm_stream_decrypt_aesni, vg_aes_gcm_stream_decrypt_pclmul,
@@ -478,25 +462,25 @@ impl Backend {
                 vg_aes_gcm_stream_decrypt_vaes_pclmul, vg_aes_gcm_stream_decrypt_aesni_vpclmul,
                 vg_aes_gcm_stream_decrypt_vaes_vpclmul, vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_stream_decrypt_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_stream_decrypt_aes, vg_aes_gcm_stream_decrypt_aes_sha3]),
+            aarch64: [vg_aes_gcm_stream_decrypt_aes, vg_aes_gcm_stream_decrypt_aes]),
             usize, *mut [u64; 10], u64, u64, *mut u8, usize; StreamCryptFn);
         Fns {
             #[cfg(test)]
             backend: self,
             init: instance!(self, vg_aes_gcm_init,
-                x86_64: [vg_aes_gcm_init_aesni, vg_aes_gcm_init_pclmul, vg_aes_gcm_init_aesni_pclmul],
-                vaes: [vg_aes_gcm_init_vaes, vg_aes_gcm_init_vpclmul, vg_aes_gcm_init_vaes_pclmul,
-                    vg_aes_gcm_init_aesni_vpclmul, vg_aes_gcm_init_vaes_vpclmul,
-                    vg_aes_gcm_init_vaes_vpclmul_avx512],
-                avx: [vg_aes_gcm_init_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_init_aes, vg_aes_gcm_init_aes_sha3]),
+                x86_64: [vg_aes_gcm_init_aesni, vg_aes_gcm_init, vg_aes_gcm_init_aesni],
+                vaes: [vg_aes_gcm_init_vaes, vg_aes_gcm_init, vg_aes_gcm_init_vaes,
+                    vg_aes_gcm_init_aesni, vg_aes_gcm_init_vaes,
+                    vg_aes_gcm_init_vaes],
+                avx: [vg_aes_gcm_init_aesni],
+                aarch64: [vg_aes_gcm_init_aes, vg_aes_gcm_init_aes]),
             seal: on_key_ctx!(instance!(self, vg_aes_gcm_seal,
                 x86_64: [vg_aes_gcm_seal_aesni, vg_aes_gcm_seal_pclmul, vg_aes_gcm_seal_aesni_pclmul],
                 vaes: [vg_aes_gcm_seal_vaes, vg_aes_gcm_seal_vpclmul, vg_aes_gcm_seal_vaes_pclmul,
                     vg_aes_gcm_seal_aesni_vpclmul, vg_aes_gcm_seal_vaes_vpclmul,
                     vg_aes_gcm_seal_vaes_vpclmul_avx512],
                 avx: [vg_aes_gcm_seal_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_seal_aes, vg_aes_gcm_seal_aes_sha3]),
+                aarch64: [vg_aes_gcm_seal_aes, vg_aes_gcm_seal_aes]),
                 usize, *const u8, usize, *const u8, usize, *mut u8, usize, *mut [u8; 16]; SealFn),
             open: on_key_ctx!(instance!(self, vg_aes_gcm_open,
                 x86_64: [vg_aes_gcm_open_aesni, vg_aes_gcm_open_pclmul, vg_aes_gcm_open_aesni_pclmul],
@@ -504,7 +488,7 @@ impl Backend {
                     vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes_vpclmul,
                     vg_aes_gcm_open_vaes_vpclmul_avx512],
                 avx: [vg_aes_gcm_open_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_open_aes, vg_aes_gcm_open_aes_sha3]),
+                aarch64: [vg_aes_gcm_open_aes, vg_aes_gcm_open_aes]),
                 usize, *const u8, usize, *const u8, usize, *mut u8, usize, *const u8, usize => u32;
                 OpenFn),
             open_to: on_key_ctx!(instance!(self, vg_aes_gcm_open_to,
@@ -513,7 +497,7 @@ impl Backend {
                     vg_aes_gcm_open_to_aesni_vpclmul, vg_aes_gcm_open_to_vaes_vpclmul,
                     vg_aes_gcm_open_to_vaes_vpclmul_avx512],
                 avx: [vg_aes_gcm_open_to_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_open_to_aes, vg_aes_gcm_open_to_aes_sha3]),
+                aarch64: [vg_aes_gcm_open_to_aes, vg_aes_gcm_open_to_aes]),
                 usize, *const u8, usize, *const u8, usize, *const u8, usize, *mut u8, usize, *const u8,
                 usize => u32; OpenToFn),
             seal_gather: on_key_ctx!(instance!(self, vg_aes_gcm_seal_gather,
@@ -523,25 +507,25 @@ impl Backend {
                     vg_aes_gcm_seal_gather_vaes_pclmul, vg_aes_gcm_seal_gather_aesni_vpclmul,
                     vg_aes_gcm_seal_gather_vaes_vpclmul, vg_aes_gcm_seal_gather_vaes_vpclmul_avx512],
                 avx: [vg_aes_gcm_seal_gather_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_seal_gather_aes, vg_aes_gcm_seal_gather_aes_sha3]),
+                aarch64: [vg_aes_gcm_seal_gather_aes, vg_aes_gcm_seal_gather_aes]),
                 usize, *const u8, usize, *const u8, usize, *const [usize; 2], usize, *mut u8, usize,
                 *mut [u8; 16]; SealGatherFn),
             stream_init: instance!(self, vg_aes_gcm_stream_init,
-                x86_64: [vg_aes_gcm_stream_init_aesni, vg_aes_gcm_stream_init_pclmul,
-                    vg_aes_gcm_stream_init_aesni_pclmul],
-                vaes: [vg_aes_gcm_stream_init_vaes, vg_aes_gcm_stream_init_vpclmul,
-                    vg_aes_gcm_stream_init_vaes_pclmul, vg_aes_gcm_stream_init_aesni_vpclmul,
-                    vg_aes_gcm_stream_init_vaes_vpclmul, vg_aes_gcm_stream_init_vaes_vpclmul_avx512],
-                avx: [vg_aes_gcm_stream_init_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_stream_init_aes, vg_aes_gcm_stream_init_aes_sha3]),
+                x86_64: [vg_aes_gcm_stream_init, vg_aes_gcm_stream_init_pclmul,
+                    vg_aes_gcm_stream_init_pclmul],
+                vaes: [vg_aes_gcm_stream_init, vg_aes_gcm_stream_init_vpclmul,
+                    vg_aes_gcm_stream_init_pclmul, vg_aes_gcm_stream_init_vpclmul,
+                    vg_aes_gcm_stream_init_vpclmul, vg_aes_gcm_stream_init_vpclmul],
+                avx: [vg_aes_gcm_stream_init_pclmul],
+                aarch64: [vg_aes_gcm_stream_init_aes, vg_aes_gcm_stream_init_aes]),
             stream_aad: instance!(self, vg_aes_gcm_stream_aad,
-                x86_64: [vg_aes_gcm_stream_aad_aesni, vg_aes_gcm_stream_aad_pclmul,
-                    vg_aes_gcm_stream_aad_aesni_pclmul],
-                vaes: [vg_aes_gcm_stream_aad_vaes, vg_aes_gcm_stream_aad_vpclmul,
-                    vg_aes_gcm_stream_aad_vaes_pclmul, vg_aes_gcm_stream_aad_aesni_vpclmul,
-                    vg_aes_gcm_stream_aad_vaes_vpclmul, vg_aes_gcm_stream_aad_vaes_vpclmul_avx512],
-                avx: [vg_aes_gcm_stream_aad_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_stream_aad_aes, vg_aes_gcm_stream_aad_aes_sha3]),
+                x86_64: [vg_aes_gcm_stream_aad, vg_aes_gcm_stream_aad_pclmul,
+                    vg_aes_gcm_stream_aad_pclmul],
+                vaes: [vg_aes_gcm_stream_aad, vg_aes_gcm_stream_aad_vpclmul,
+                    vg_aes_gcm_stream_aad_pclmul, vg_aes_gcm_stream_aad_vpclmul,
+                    vg_aes_gcm_stream_aad_vpclmul, vg_aes_gcm_stream_aad_vpclmul],
+                avx: [vg_aes_gcm_stream_aad_pclmul],
+                aarch64: [vg_aes_gcm_stream_aad_aes, vg_aes_gcm_stream_aad_aes]),
             stream_encrypt,
             stream_decrypt,
             stream_finish: instance!(self, vg_aes_gcm_stream_finish,
@@ -549,17 +533,17 @@ impl Backend {
                     vg_aes_gcm_stream_finish_aesni_pclmul],
                 vaes: [vg_aes_gcm_stream_finish_vaes, vg_aes_gcm_stream_finish_vpclmul,
                     vg_aes_gcm_stream_finish_vaes_pclmul, vg_aes_gcm_stream_finish_aesni_vpclmul,
-                    vg_aes_gcm_stream_finish_vaes_vpclmul, vg_aes_gcm_stream_finish_vaes_vpclmul_avx512],
-                avx: [vg_aes_gcm_stream_finish_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_stream_finish_aes, vg_aes_gcm_stream_finish_aes_sha3]),
+                    vg_aes_gcm_stream_finish_vaes_vpclmul, vg_aes_gcm_stream_finish_vaes_vpclmul],
+                avx: [vg_aes_gcm_stream_finish_aesni_pclmul],
+                aarch64: [vg_aes_gcm_stream_finish_aes, vg_aes_gcm_stream_finish_aes]),
             stream_verify: instance!(self, vg_aes_gcm_stream_verify,
                 x86_64: [vg_aes_gcm_stream_verify_aesni, vg_aes_gcm_stream_verify_pclmul,
                     vg_aes_gcm_stream_verify_aesni_pclmul],
                 vaes: [vg_aes_gcm_stream_verify_vaes, vg_aes_gcm_stream_verify_vpclmul,
                     vg_aes_gcm_stream_verify_vaes_pclmul, vg_aes_gcm_stream_verify_aesni_vpclmul,
-                    vg_aes_gcm_stream_verify_vaes_vpclmul, vg_aes_gcm_stream_verify_vaes_vpclmul_avx512],
-                avx: [vg_aes_gcm_stream_verify_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_stream_verify_aes, vg_aes_gcm_stream_verify_aes_sha3]),
+                    vg_aes_gcm_stream_verify_vaes_vpclmul, vg_aes_gcm_stream_verify_vaes_vpclmul],
+                avx: [vg_aes_gcm_stream_verify_aesni_pclmul],
+                aarch64: [vg_aes_gcm_stream_verify_aes, vg_aes_gcm_stream_verify_aes]),
             #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
             prepare: None,
             #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -706,7 +690,6 @@ struct Prepared {
     features: Features,
     seal: SealPrepared,
     open: OpenPrepared,
-    #[cfg(target_arch = "x86_64")]
     open_to: OpenToPrepared,
     /// None on AArch64, where `encrypt` copies its pieces and calls `seal`.
     #[cfg(target_arch = "x86_64")]
@@ -796,8 +779,9 @@ use prepared_types::{OpenPrepared, OpenToPrepared, SealGatherPrepared, SealPrepa
 type Ctx = [u64; 128];
 #[cfg(target_arch = "aarch64")]
 type Ctx = [u64; 16];
-/// The `_with_powers` instances of `seal` and `open`: `vg_aes_gcm_seal`'s
-/// and `vg_aes_gcm_open`'s arguments, then the powers.
+/// The `_with_powers` instances of `seal`, `open` and `open_to`:
+/// `vg_aes_gcm_seal`'s, `vg_aes_gcm_open`'s and `vg_aes_gcm_open_to`'s
+/// arguments, then the powers.
 #[cfg(target_arch = "aarch64")]
 type SealPrepared = unsafe extern "C" fn(
     *const [u64; 32],
@@ -814,6 +798,22 @@ type SealPrepared = unsafe extern "C" fn(
 #[cfg(target_arch = "aarch64")]
 type OpenPrepared = unsafe extern "C" fn(
     *const [u64; 32],
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *mut u8,
+    usize,
+    *const u8,
+    usize,
+    *const Ctx,
+) -> u32;
+#[cfg(target_arch = "aarch64")]
+type OpenToPrepared = unsafe extern "C" fn(
+    *const [u64; 32],
+    usize,
+    *const u8,
     usize,
     *const u8,
     usize,
@@ -873,12 +873,14 @@ static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
 const PREPARED_AES: Prepared = Prepared {
     seal: vg_aes_gcm_seal_with_powers_aes,
     open: vg_aes_gcm_open_with_powers_aes,
+    open_to: vg_aes_gcm_open_to_with_powers_aes,
 };
 
 #[cfg(target_arch = "aarch64")]
 const PREPARED_AES_SHA3: Prepared = Prepared {
     seal: vg_aes_gcm_seal_with_powers_aes_sha3,
     open: vg_aes_gcm_open_with_powers_aes_sha3,
+    open_to: vg_aes_gcm_open_to_with_powers_aes_sha3,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -1319,10 +1321,9 @@ impl AesGcm {
     }
 
     /// `vg_aes_gcm_open_to`, which writes zeros to `out` if the tag is wrong,
-    /// on every architecture. On AArch64, a key with `_with_powers` instances
-    /// copies the ciphertext and calls them instead (`open_to_copy`), as
-    /// `encrypt` does there (`seal_pieces_prepared`): there is no
-    /// `_with_powers` instance of `vg_aes_gcm_open_to`.
+    /// on every architecture; on AArch64, for a key with `_with_powers`
+    /// instances, that of `vg_aes_gcm_open_to_with_powers`
+    /// (`open_to_prepared`).
     fn open_to(
         &self,
         nonce: &[u8],
@@ -1332,8 +1333,8 @@ impl AesGcm {
         tag: &[u8],
     ) -> Result<(), Error> {
         #[cfg(target_arch = "aarch64")]
-        if self.fns.powers.is_some() {
-            return self.open_to_copy(nonce, aad, src, out, tag);
+        if let Some(p) = &self.fns.powers {
+            return self.open_to_prepared(p, nonce, aad, src, out, tag);
         }
         let open_to = self.fns.open_to;
         // SAFETY: as in `encrypt_in_place`, with `src` and the received tag
@@ -1361,26 +1362,6 @@ impl AesGcm {
         } else {
             Err(Error::TagMismatch)
         }
-    }
-
-    /// On AArch64, for a key with `_with_powers` instances: the ciphertext
-    /// copied to `out` and decrypted there, and `out` zeroed if the tag is
-    /// wrong, as `vg_aes_gcm_open_to` does.
-    #[cfg(target_arch = "aarch64")]
-    fn open_to_copy(
-        &self,
-        nonce: &[u8],
-        aad: &[u8],
-        src: &[u8],
-        out: &mut [u8],
-        tag: &[u8],
-    ) -> Result<(), Error> {
-        out.copy_from_slice(src);
-        let r = self.open(nonce, aad, out, tag);
-        if r.is_err() {
-            out.fill(0);
-        }
-        r
     }
 
     /// The most pieces [`encrypt`](Self::encrypt) takes a plaintext in.
@@ -1540,6 +1521,44 @@ impl AesGcm {
             )
         };
         // As in `open`.
+        if ok == 1 {
+            Ok(())
+        } else {
+            Err(Error::TagMismatch)
+        }
+    }
+
+    /// `open_to` with the `_with_powers` instances `p` and the powers.
+    #[inline]
+    fn open_to_prepared(
+        &self,
+        p: &Prepared,
+        nonce: &[u8],
+        aad: &[u8],
+        src: &[u8],
+        out: &mut [u8],
+        tag: &[u8],
+    ) -> Result<(), Error> {
+        let open_to = p.open_to;
+        // SAFETY: as in `open_to`, with the powers as in `seal_prepared`.
+        let ok = unsafe {
+            open_to(
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src.as_ptr(),
+                src.len(),
+                out.as_mut_ptr(),
+                out.len(),
+                tag.as_ptr(),
+                tag.len(),
+                &self.powers,
+            )
+        };
+        // As in `open_to`.
         if ok == 1 {
             Ok(())
         } else {
@@ -1950,23 +1969,21 @@ mod tests {
         #[cfg(target_arch = "x86")]
         {
             use crate::arch::gcm::{
-                VG_AES_GCM_INIT_AESNI_FEATURES, VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES,
-                VG_AES_GCM_OPEN_AESNI_FEATURES, VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES,
-                VG_AES_GCM_OPEN_PCLMUL_FEATURES, VG_AES_GCM_SEAL_AESNI_FEATURES,
-                VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES, VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES,
+                VG_AES_GCM_INIT_AESNI_FEATURES, VG_AES_GCM_OPEN_AESNI_FEATURES,
+                VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES, VG_AES_GCM_OPEN_PCLMUL_FEATURES,
+                VG_AES_GCM_SEAL_AESNI_FEATURES, VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES,
+                VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES, VG_AES_GCM_SEAL_PCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES, VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES,
+                VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES, VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES,
                 VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES,
                 VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES, VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES,
                 VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES, VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES,
+                VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES, VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES,
+                VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES,
                 VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES,
             };
@@ -1999,9 +2016,9 @@ mod tests {
                 (
                     VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES,
+                        VG_AES_GCM_INIT_AESNI_FEATURES,
+                        VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES,
@@ -2020,13 +2037,10 @@ mod tests {
         #[cfg(target_arch = "x86_64")]
         {
             use crate::arch::gcm::{
-                VG_AES_GCM_INIT_AESNI_FEATURES, VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES,
-                VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES, VG_AES_GCM_INIT_AESNI_VPCLMUL_FEATURES,
-                VG_AES_GCM_INIT_VAES_FEATURES, VG_AES_GCM_INIT_VAES_PCLMUL_FEATURES,
-                VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES,
-                VG_AES_GCM_INIT_VAES_VPCLMUL_FEATURES, VG_AES_GCM_OPEN_AESNI_FEATURES,
-                VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES, VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES,
-                VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES, VG_AES_GCM_OPEN_PCLMUL_FEATURES,
+                VG_AES_GCM_INIT_AESNI_FEATURES, VG_AES_GCM_INIT_VAES_FEATURES,
+                VG_AES_GCM_OPEN_AESNI_FEATURES, VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES,
+                VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES, VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES,
+                VG_AES_GCM_OPEN_PCLMUL_FEATURES,
                 VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
                 VG_AES_GCM_OPEN_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
                 VG_AES_GCM_OPEN_PREPARED16_VAES_VPCLMUL_FEATURES, VG_AES_GCM_OPEN_VAES_FEATURES,
@@ -2053,13 +2067,8 @@ mod tests {
                 VG_AES_GCM_SEAL_PREPARED16_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_FEATURES,
                 VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES,
                 VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VPCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES,
-                VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES, VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES,
-                VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES, VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES,
+                VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES, VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES,
+                VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES,
                 VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_AVX_FEATURES,
                 VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_DECRYPT_AESNI_VPCLMUL_FEATURES,
@@ -2086,28 +2095,17 @@ mod tests {
                 VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_ENCRYPT_VPCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES,
-                VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES,
                 VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES, VG_AES_GCM_STREAM_FINISH_VAES_FEATURES,
                 VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES,
                 VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES,
-                VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES,
-                VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES,
+                VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES, VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES, VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES,
-                VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES,
                 VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES, VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES,
                 VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES,
-                VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES,
                 VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES,
                 VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES,
             };
@@ -2140,10 +2138,10 @@ mod tests {
                 (
                     VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES,
+                        VG_AES_GCM_INIT_AESNI_FEATURES,
                         VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES,
@@ -2161,15 +2159,15 @@ mod tests {
                 (
                     VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_INIT_AESNI_FEATURES,
                         VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_SEAL_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_OPEN_PREPARED16_AESNI_PCLMUL_AVX_FEATURES,
@@ -2206,10 +2204,10 @@ mod tests {
                 (
                     VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_VAES_PCLMUL_FEATURES,
+                        VG_AES_GCM_INIT_VAES_FEATURES,
                         VG_AES_GCM_OPEN_VAES_PCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_VAES_PCLMUL_FEATURES,
                         VG_AES_GCM_SEAL_GATHER_VAES_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_VAES_PCLMUL_FEATURES,
@@ -2220,10 +2218,10 @@ mod tests {
                 (
                     VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_AESNI_VPCLMUL_FEATURES,
+                        VG_AES_GCM_INIT_AESNI_FEATURES,
                         VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_AESNI_VPCLMUL_FEATURES,
                         VG_AES_GCM_SEAL_GATHER_AESNI_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_AESNI_VPCLMUL_FEATURES,
@@ -2234,10 +2232,10 @@ mod tests {
                 (
                     VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_INIT_VAES_FEATURES,
                         VG_AES_GCM_OPEN_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES,
@@ -2254,15 +2252,15 @@ mod tests {
                 (
                     VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_INIT_VAES_FEATURES,
                         VG_AES_GCM_OPEN_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
@@ -2281,21 +2279,17 @@ mod tests {
         #[cfg(target_arch = "aarch64")]
         {
             use crate::arch::gcm::{
-                VG_AES_GCM_INIT_AES_FEATURES, VG_AES_GCM_INIT_AES_SHA3_FEATURES,
-                VG_AES_GCM_OPEN_AES_FEATURES, VG_AES_GCM_OPEN_AES_SHA3_FEATURES,
+                VG_AES_GCM_INIT_AES_FEATURES, VG_AES_GCM_OPEN_AES_FEATURES,
+                VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES,
+                VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES,
                 VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES,
                 VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES, VG_AES_GCM_SEAL_AES_FEATURES,
-                VG_AES_GCM_SEAL_AES_SHA3_FEATURES, VG_AES_GCM_SEAL_GATHER_AES_FEATURES,
-                VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES, VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES,
+                VG_AES_GCM_SEAL_GATHER_AES_FEATURES, VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES,
                 VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES,
                 VG_AES_GCM_STORE_POWERS_AES_FEATURES, VG_AES_GCM_STREAM_AAD_AES_FEATURES,
-                VG_AES_GCM_STREAM_AAD_AES_SHA3_FEATURES, VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES,
-                VG_AES_GCM_STREAM_DECRYPT_AES_SHA3_FEATURES,
-                VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES,
-                VG_AES_GCM_STREAM_ENCRYPT_AES_SHA3_FEATURES, VG_AES_GCM_STREAM_FINISH_AES_FEATURES,
-                VG_AES_GCM_STREAM_FINISH_AES_SHA3_FEATURES, VG_AES_GCM_STREAM_INIT_AES_FEATURES,
-                VG_AES_GCM_STREAM_INIT_AES_SHA3_FEATURES, VG_AES_GCM_STREAM_VERIFY_AES_FEATURES,
-                VG_AES_GCM_STREAM_VERIFY_AES_SHA3_FEATURES,
+                VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES, VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES,
+                VG_AES_GCM_STREAM_FINISH_AES_FEATURES, VG_AES_GCM_STREAM_INIT_AES_FEATURES,
+                VG_AES_GCM_STREAM_VERIFY_AES_FEATURES,
             };
             for other in [
                 VG_AES_GCM_INIT_AES_FEATURES,
@@ -2309,22 +2303,24 @@ mod tests {
                 VG_AES_GCM_SEAL_GATHER_AES_FEATURES,
                 VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES,
                 VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES,
+                VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES,
                 VG_AES_GCM_STORE_POWERS_AES_FEATURES,
             ] {
                 assert!(VG_AES_GCM_SEAL_AES_FEATURES.contains(other));
             }
             for other in [
-                VG_AES_GCM_INIT_AES_SHA3_FEATURES,
-                VG_AES_GCM_OPEN_AES_SHA3_FEATURES,
-                VG_AES_GCM_STREAM_INIT_AES_SHA3_FEATURES,
-                VG_AES_GCM_STREAM_AAD_AES_SHA3_FEATURES,
-                VG_AES_GCM_STREAM_ENCRYPT_AES_SHA3_FEATURES,
-                VG_AES_GCM_STREAM_DECRYPT_AES_SHA3_FEATURES,
-                VG_AES_GCM_STREAM_FINISH_AES_SHA3_FEATURES,
-                VG_AES_GCM_STREAM_VERIFY_AES_SHA3_FEATURES,
-                VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES,
-                VG_AES_GCM_SEAL_AES_SHA3_FEATURES,
+                VG_AES_GCM_INIT_AES_FEATURES,
+                VG_AES_GCM_OPEN_AES_FEATURES,
+                VG_AES_GCM_STREAM_INIT_AES_FEATURES,
+                VG_AES_GCM_STREAM_AAD_AES_FEATURES,
+                VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES,
+                VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES,
+                VG_AES_GCM_STREAM_FINISH_AES_FEATURES,
+                VG_AES_GCM_STREAM_VERIFY_AES_FEATURES,
+                VG_AES_GCM_SEAL_GATHER_AES_FEATURES,
+                VG_AES_GCM_SEAL_AES_FEATURES,
                 VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES,
+                VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES,
                 VG_AES_GCM_STORE_POWERS_AES_FEATURES,
             ] {
                 assert!(VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES.contains(other));

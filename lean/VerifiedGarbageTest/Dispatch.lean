@@ -94,9 +94,9 @@ def x86Rank (module suffix : String) : Option Nat :=
   | some i, some j => i < j
   | _, _ => false
 
--- ChaCha20's `_ifma` needs AVX512_IFMA too, which its own features do not
--- name: it is chosen where ChaCha20-Poly1305's `_ifma` is.
-#guard ((Rust.rankOf ((Dispatch.ranking.lookup "x86_64").getD []) "chacha20" "_ifma").map
+-- ChaCha20's `_avx512` needs AVX512_IFMA too, which its own features do not
+-- name: it is chosen where ChaCha20-Poly1305's `_ifma`, built on it, is.
+#guard ((Rust.rankOf ((Dispatch.ranking.lookup "x86_64").getD []) "chacha20" "_avx512").map
   (·.2.extra)) == some ["avx512ifma"]
 
 -- An unranked suffix fails the emitter.

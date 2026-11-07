@@ -823,7 +823,6 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
   have wr₃ : s₃.wr = s₀.wr := by rw [u₃.wr, u₂.wr, u₁.wr, h.wr]
   have sp₃ : s₃.sp = s₀.sp := by rw [u₃.sp, u₂.sp, u₁.sp, h.sp]
   have xp : XPre s₃ (fIv s₀) (fT s₀) (fU s₀) := {
-    pos := by omega
     fK := by have := hp.iv_fit; omega
     fR := by rw [hT]; omega
     disj := by rw [aT]; exact (hp.iv_data.sub_left (Region.sub_prefix (by omega))).sub_right (tail_sub s₀)

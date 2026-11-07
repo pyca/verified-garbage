@@ -675,7 +675,6 @@ theorem tail_xor_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KCall s₀ 
   have eN := fN_eq s₀
   have eU := fU_eq s₀
   have xp : XPre s₁ (kBk s₀) (fT s₀) (fU s₀) := {
-    pos := by omega
     fK := by omega
     fR := by omega
     disj := (((hp.data_sv.sub_left (tail_sub s₀)).sub_right (blk_sv_sub s₀)).sub_right

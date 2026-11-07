@@ -27,13 +27,13 @@ open VG.Proof.Bignum.X86_64.AmmSym (wrList writeW256_outside word_wrList_unique 
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
 theorem AmmOk.D_bounds (hl : AmmOk l) : l.NB ≤ l.D ∧ l.D + l.NB ≤ 2 ^ 20 := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem LayOk.D_bounds (hl : LayOk l) : l.NB ≤ l.D ∧ l.D + l.NB ≤ 2 ^ 20 := hl.amm.D_bounds
 
 /-- At most two lanes, whose carries are `rdx` and `rsi`. -/
 theorem AmmOk.nl_le (hl : AmmOk l) : 1 ≤ l.nl ∧ l.nl ≤ 2 := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem off_ltN (hl : AmmOk l) {j : Nat} (hj : j < l.L) : l.off j + 8 ≤ l.NB := by
   obtain ⟨hR, _⟩ := hl.bounds
@@ -488,7 +488,7 @@ theorem ammCore_ok (hl : AmmOk l) {s : State} {B : Addr} {a m : Nat → Nat → 
      k₁.mem, k₁.rd, k₁.wr⟩
   have hst := hl.steps
   refine WP.seq (WP.mono (loop_ok hl e (l.S / l.R) s₁ hst.1 (Nat.le_refl _) (by rw [Nat.sub_self]; exact i₁)
-      (by rw [k₁.gpr _ (by decide)]; rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> rfl))
+      (by rw [k₁.gpr _ (by decide)]; rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> rfl))
     fun s₂ₐ ⟨i₂ₐ, g₂ₐ, x₂ₐ⟩ => ?_)
   rw [accStores_code, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (steps_chain hl e (l.S % l.R) (by omega_arith) (by omega_arith) s₂ₐ i₂ₐ) fun s₂ ⟨i₂, g₂', x₂'⟩ => ?_

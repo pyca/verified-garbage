@@ -20,7 +20,11 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   nothing would call needs none: one the Rust code does not use, all of
   whose callers have variants for `f_<s>` that do not call it, or need
   none themselves (`vg_mlkem_sample_ntt`, which `vg_mlkem768_keygen`, …
-  call, but not their `_x2_sha3` variants). Variants compose: a variant
+  call, but not their `_x2_sha3` variants). Nor does a function with
+  implementations, but its baseline, that a CPU with `f_<s>`'s features
+  runs, if there are some and none calls any of `f`'s implementations
+  (AES-CBC's sequential encryption: its AES-NI code calls no
+  `vg_aes_encrypt_blocks`, and serves CPUs with VAES too). Variants compose: a variant
   of a variant, `g_<t>_<s>`, has both suffixes, in either order, so when
   `g_<t>` calls `f`, its variant for `f_<s>` may be `g_<t>_<s>` or
   `g_<s>_<t>` (e.g. Ed25519's operations over each SHA-512 backend and each
@@ -603,6 +607,22 @@ def check(targets, rust, feats=None, names=None, never_with=None, disp=None):
             for c in callees:
                 callers.setdefault(c, set()).add(name)
 
+        def avoided(name, callee, variant):
+            """Whether a CPU with `variant`'s features runs `name` without
+            `callee`: some implementation of `name` but its baseline needs no
+            more features, and each that needs no more calls none of
+            `callee`'s implementations (CBC encryption, whose AES-NI code
+            calls no `vg_aes_encrypt_blocks` and needs no VAES)."""
+            root = chain(var, name)[0]
+            impls = {callee} | {f"{callee}_{s}" for s in by_base.get(callee, [])}
+            limit = tfeats.get(variant, frozenset())
+            runs = [
+                n for n in fns
+                if n != root and chain(var, n)[0] == root
+                and tfeats.get(n, frozenset()) <= limit
+            ]
+            return bool(runs) and all(not impls & fns[n][1] for n in runs)
+
         def variants_for(name, suffix):
             """`name`'s variants for an implementation with `suffix`: the one
             adding `_<suffix>`, or those adding it qualified by a tag."""
@@ -643,7 +663,11 @@ def check(targets, rust, feats=None, names=None, never_with=None, disp=None):
                     variant = f"{callee}_{suffix}"
                     found = variants_for(caller, suffix)
                     if not found:
-                        if unneeded(caller, suffix) or unchosen(caller, variant):
+                        if (
+                            unneeded(caller, suffix)
+                            or unchosen(caller, variant)
+                            or avoided(caller, callee, variant)
+                        ):
                             continue
                         errors.append(
                             f"{target}: {caller} calls {callee}, which has the variant "

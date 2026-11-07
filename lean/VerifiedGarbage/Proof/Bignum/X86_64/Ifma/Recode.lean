@@ -58,7 +58,7 @@ theorem bv_congr {m m' : Mem} {F : Addr} {o : Nat} :
 
 /-- The layouts' groups: `P = w G`, `ND = 8 G`. -/
 theorem lay_groups (hl : AmmOk l) : l.P = l.w * (l.P / l.w) ∧ l.ND = 8 * (l.P / l.w) := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- Digit `8 g + t` of the padded exponent is digit `t` of group `g`'s value. -/
 theorem digit_group (hl : AmmOk l) {m : Mem} {F : Addr} {o g t : Nat} (hg : g < l.P / l.w) (ht : t < 8) :
@@ -303,7 +303,7 @@ theorem recIter_ok (hl : AmmOk l) {s₀ t : State} {F : Addr} {e d g : Nat} (hg 
   have h9₂ : u₂.gpr .r9 = off F (d + 8 * g) := by rw [k₂.gpr (by decide)]; exact h9
   have hc₂ : u₂.gpr .rcx = BitVec.ofNat 64 (l.P / l.w - g) := by
     rw [k₂.gpr (by decide), k₁.gpr (by decide), k.gpr (by decide)]; exact h.rcx
-  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rcx, .r8, .r9] (Q := fun u' =>
     u'.gpr .r8 = off F (e + l.w * (g + 1)) ∧ u'.gpr .r9 = off F (d + 8 * (g + 1)) ∧
       u'.gpr .rcx = BitVec.ofNat 64 (l.P / l.w - (g + 1)) ∧ u'.zf = some (decide (g + 1 = l.P / l.w)) ∧
@@ -347,7 +347,7 @@ theorem recLoop_ok (hl : AmmOk l) {s₀ : State} {F : Addr} {e d : Nat}
     (hrd : ∀ i < l.P, InRegions (s₀.rd ++ s₀.wr) (off F (e + i)) 1)
     (hwr : ∀ i < l.ND, InRegions s₀.wr (off F (d + i)) 1) (h : RecInv l s₀ F e d 0 s₀) :
     WP isa (.loop (.block (recodeBody l)) .ne) s₀ (RecInv l s₀ F e d (l.P / l.w)) :=
-  wp_upto (a := 0) (N := l.P / l.w) (by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide) (fun g t => RecInv l s₀ F e d g t)
+  wp_upto (a := 0) (N := l.P / l.w) (by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide) (fun g t => RecInv l s₀ F e d g t)
     (fun _ _ hg t hI => recIter_ok hl hg hed hd hrd hwr hI) (fun _ hI => hI) h
 
 /-! ## A region's digits -/
@@ -366,7 +366,7 @@ theorem recode_ok (hl : AmmOk l) (hw : l.w ≠ 4) {s : State} {W F : Addr} {p : 
   obtain ⟨hP, hN⟩ := lay_groups hl
   obtain ⟨d1, d2⟩ := lay_oD l hw
   have hD := hl.D_bounds
-  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   have he : l.D * p + l.oE < 2 ^ 31 := by
     obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
     rcases D_mulN hl hp with h | h <;> omega_using [h, hD, o6, o10]

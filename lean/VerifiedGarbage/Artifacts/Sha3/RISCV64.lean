@@ -56,10 +56,6 @@ def artifacts : List Artifact := [
     code := Impl.Sha3.RISCV64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate
     stack := 1168
     verified := Proof.Sha3.RISCV64.Instances.squeeze_shake128 },
-  Spec.Sha3.updateShake256Api.artifact RISCV64.target {
-    code := Impl.Sha3.RISCV64.Instances.update Spec.Sha3.xofShake256.rate
-    stack := 608
-    verified := Proof.Sha3.RISCV64.Instances.update_shake256 },
   Spec.Sha3.finalizeShake256Api.artifact RISCV64.target {
     code := Impl.Sha3.RISCV64.Instances.xofFinalize Spec.Sha3.xofShake256.rate
     stack := 1136

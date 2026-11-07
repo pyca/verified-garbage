@@ -76,7 +76,22 @@ Modelling choices:
   data-independent-time instructions). So the leakage model's assumption that
   the other instructions' timing depends on nothing but what they leak is what
   Arm specifies for code run with PSTATE.DIT 1, and the model does not check
-  that it is. `Target.abiPreserved` says nothing about it.
+  that it is. `Target.abiPreserved` says nothing about it. The calling
+  convention gives it as the mode (`Abi.mode`, `TCB/AArch64/Target.lean`),
+  which a contract may make public.
+* Barriers, `barrier` (DSB SY, ISB and SB): the model has no memory ordering,
+  pipeline or speculation, which is all they act on, so each leaves the state
+  as it is and leaks nothing (DDI 0602 2026-03: "DSB", whose operation for
+  `CRm = '1111'` is `DataSynchronizationBarrier(scope, types, nXS)`; "ISB",
+  `InstructionSynchronizationBarrier()`; "SB", `SpeculationBarrier()`). They
+  have no operands: their time depends only on the instructions before them,
+  whose leakage the model already accounts for. Code uses
+  them after setting PSTATE.DIT, as Apple's documentation asks ("To ensure
+  that subsequent instruction timing reflects the updated DIT processor
+  state, add a speculation barrier after turning on DIT", Writing ARM64 code
+  for Apple platforms, "Enable DIT for constant-time cryptographic
+  operations"), with DSB SY and ISB in place of SB where FEAT_SB is missing,
+  as Apple's corecrypto does (`cc/src/cc_timing_safe.c`).
 * Calls are `bl`, or indirect through a register, `blr` (`icall`, the
   instruction of an indirect call, `Code.icall`), and returns `ret` (DDI
   0487, C6.2 "BL", "BLR", "RET"). The return addresses are the next of the
@@ -442,6 +457,16 @@ def CondCode.holds (s : State) : CondCode → Bool
   | .gt => s.nf == s.vf && !s.zf
   | .le => !(s.nf == s.vf && !s.zf)
 
+/-- The barriers (DDI 0602, "DSB", "ISB", "SB"). -/
+inductive Barrier
+  /-- `dsb sy`: DSB with `CRm = '1111'`, the full system, all accesses. -/
+  | dsbSy
+  /-- `isb` (ISB SY, `CRm = '1111'`). -/
+  | isb
+  /-- `sb`, FEAT_SB. -/
+  | sb
+  deriving DecidableEq, Repr
+
 inductive Instr
   /-- `add d, n, m` (ADD (shifted register), no shift) -/
   | add (sz : Size) (d n m : Reg)
@@ -585,6 +610,9 @@ inductive Instr
   /-- `msr DIT, #imm` (MSR (immediate), the PSTATE field DIT, with `imm` 0 or
   1): PSTATE.DIT becomes `on` (see `exec`). -/
   | msrDitImm (on : Bool)
+  /-- A barrier (DSB SY, ISB or SB): no effect on the model's state (see
+  `exec`). -/
+  | barrier (b : Barrier)
   /-- Padding to the next multiple of `2 ^ k` bytes with NOPs (NOP, `HINT
   #0`), printed as `.p2align k` for `k` 4, 5 or 6 only: it has no effect,
   accesses no memory and requires no feature (DDI 0487 C6.2, "NOP"; see
@@ -1303,6 +1331,12 @@ def exec : Instr → State → Option State
   -- and for `op1::op2 = '011 010'`, `field = PSTATEField_DIT`, whose
   -- execution is `PSTATE.DIT = operand[0]`. `imm` (`CRm`) is 0 or 1 here.
   | .msrDitImm on, s => some { s with dit := on }
+  -- DDI 0602 2026-03, "DSB" (`DataSynchronizationBarrier`), "ISB"
+  -- (`InstructionSynchronizationBarrier`), "SB" (`SpeculationBarrier`): they
+  -- order and complete memory accesses, synchronize context and limit
+  -- speculation, none of which the model has, and write no register,
+  -- memory or PSTATE field.
+  | .barrier _, s => some s
   -- Frame delimiters execute only through `push` and `pop`, and the
   -- instruction of an indirect call only through `icall`.
   | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ | .blr _, _ => none
@@ -1439,7 +1473,10 @@ DIT are UNDEFINED", and its accessor begins `if
 !(IsFeatureImplemented(FEAT_DIT) && IsFeatureImplemented(FEAT_AA64)) then
 Undefined();`) and for MSR (immediate) of PSTATE.DIT (DDI 0602 2026-03,
 "MSR (immediate)": `when '011 010' => if !IsFeatureImplemented(FEAT_DIT) then
-EndOfDecode(Decode_UNDEF);`), Rust's `dit`. -/
+EndOfDecode(Decode_UNDEF);`), Rust's `dit`; FEAT_SB for SB (DDI 0602
+2026-03, "SB": `if !IsFeatureImplemented(FEAT_SB) then
+EndOfDecode(Decode_UNDEF); end;`), Rust's `sb`. DSB and ISB are in the
+baseline. -/
 def Instr.requires : Instr → List String
   | .vop (.aese ..) | .vop (.aesd ..) | .vop (.aesmc ..) | .vop (.aesimc ..)
   | .vop (.pmull ..) => ["aes"]
@@ -1450,6 +1487,7 @@ def Instr.requires : Instr → List String
   | .vop (.eor3 ..) | .vop (.bcax ..) | .vop (.rax1 ..) | .vop (.xar ..) => ["sha3"]
   | .vop (.xarS ..) => ["sve2"]
   | .mrsDit _ | .msrDitImm _ => ["dit"]
+  | .barrier .sb => ["sb"]
   | _ => []
 
 /-- The address an indirect call instruction calls: DDI 0487, C6.2 "BLR":

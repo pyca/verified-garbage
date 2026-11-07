@@ -57,13 +57,30 @@ theorem inner_loadWitness_ct : RelCT isa (Two InnerNumber) (loadNumber aXm) fun 
   inner_ct InnerPublic.B InnerPublic.wr gS (fun p => gvs (off p.B 256) p.w) [.rsi, .rcx] (by decide)
     (fun p => gvs_fst _ _) (fun _ _ h => h.1) pins_innerNumber (by taint_decide)
 
-/-- The sieve, its count chosen by the requested width in RDX. -/
-theorem inner_sieve_ct : RelCT isa (Two fun (a : InnerPublic × BitVec 64) s => InnerHeader a.1 s ∧ s.gpr .rdx = a.2)
-    sieve fun _ _ => True :=
+/-- The sieve's table and count, before its loop. -/
+theorem inner_sievePrefix_ct : RelCT isa (Two fun (a : InnerPublic × BitVec 64) s => InnerHeader a.1 s ∧ s.gpr .rdx = a.2)
+    sievePrefix fun _ _ => True :=
   inner_ct (fun a => a.1.B) (fun a => a.1.wr) gS (fun a => gvs (off a.1.B 256) a.1.w) [.rdx] (by decide)
     (fun a => gvs_fst _ _) (fun _ _ h => h.1)
     (fun _ _ _ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h₁.2.trans h₂.2.symm)
     (by taint_decide)
+
+/-- The table, and a count of `firstWords` of its words. -/
+theorem inner_sievePrefixN_ct : RelCT isa (Two InnerHeader) (sievePrefixN firstWords) fun _ _ => True :=
+  inner_ct InnerPublic.B InnerPublic.wr gS (fun p => gvs (off p.B 256) p.w) [] (by decide)
+    (fun p => gvs_fst _ _) (fun _ _ h => h) (pins_nil _) (by taint_decide)
+
+/-- One word of the sieve's table, its index in R13. -/
+theorem inner_sieveWord_ct : RelCT isa (Two fun (a : InnerPublic × Nat) s => InnerHeader a.1 s ∧
+    s.gpr .r13 = BitVec.ofNat 64 a.2) (VG.Impl.Bignum.X86_64.seqs sieveWord) fun _ _ => True :=
+  inner_ct (fun a => a.1.B) (fun a => a.1.wr) gS (fun a => gvs (off a.1.B 256) a.1.w) [.r13] (by decide)
+    (fun a => gvs_fst _ _) (fun _ _ h => h.1)
+    (fun _ _ _ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h₁.2.trans h₂.2.symm)
+    (by taint_decide)
+
+theorem inner_sieveTail_ct : RelCT isa (Two InnerHeader) (.block sieveTail) fun _ _ => True :=
+  inner_ct InnerPublic.B InnerPublic.wr gS (fun p => gvs (off p.B 256) p.w) [] (by decide)
+    (fun p => gvs_fst _ _) (fun _ _ h => h) (pins_nil _) (by taint_decide)
 
 theorem inner_generator_ct : RelCT isa (Two fun p s => InnerHeader p s ∧ s.gpr .rdx = p.gen)
     generatorCheck fun _ _ => True :=

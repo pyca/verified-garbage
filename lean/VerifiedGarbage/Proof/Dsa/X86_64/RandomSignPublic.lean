@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInputs
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCode
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicSlices
@@ -41,12 +42,12 @@ theorem RandomSignPublicAgree.keyLeak {s t : State} (h : RandomSignPublicAgree s
 
 theorem random_sign_public_related {extra : Nat} {s t : State}
     (hs : RandomSignABI extra s) (ht : RandomSignABI extra t)
-    (h : (Spec.Dsa.randomSignContract abi (extra + 256)).pub s t) :
+    (h : (randomSignCheckedContract abi (extra + 256)).pub s t) :
     RandomSignPublicAgree s t ∧
       (randomSignRemaining (randomInput s) 0 8).status = (randomSignRemaining (randomInput t) 0 8).status ∧
       (randomSignRemaining (randomInput s) 0 8).used = (randomSignRemaining (randomInput t) 0 8).used ∧
       (randomSignRemaining (randomInput s) 0 8).trace = (randomSignRemaining (randomInput t) 0 8).trace := by
-  sig_pub [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven] at h
+  sig_pub [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hleak, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6⟩ := h
   have hregs : ∀ r ∈ argRegs, s.gpr r = t.gpr r := by

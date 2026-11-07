@@ -200,7 +200,6 @@ structure FPre (s₀ : State) : Prop where
   data_scr : (fData s₀).Disjoint (fScr s₀)
   data_sv : (fData s₀).Disjoint (fSv s₀)
   scr_sv : (fScr s₀).Disjoint (fSv s₀)
-  sch_wrap : (fW s₀).toNat + 240 ≤ 2 ^ 64
   iv_wrap : (fIv s₀).toNat + 16 ≤ 2 ^ 64
   data_wrap : (fD s₀).toNat + fL s₀ ≤ 2 ^ 64
   scr_wrap : (fS s₀).toNat + 2176 ≤ 2 ^ 64
@@ -208,8 +207,8 @@ structure FPre (s₀ : State) : Prop where
   rounds : fR s₀ = 10 ∨ fR s₀ = 12 ∨ fR s₀ = 14
 
 theorem FPre.of {enc : Bool} {s₀ : State} (h : (finalPPC64LE enc).pre s₀) : FPre s₀ :=
-  let ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18⟩ := h
-  ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18⟩
+  let ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, _, a14, a15, a16, a17, a18⟩ := h
+  ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a14, a15, a16, a17, a18⟩
 
 /-! ## Regions -/
 
@@ -678,8 +677,6 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
   have eN := fN_eq s₀
   have eU := fU_eq s₀
   have xp : Proof.Modes.PPC64LE.XPre s₁ (fIv s₀) (fT s₀) (fU s₀) := {
-    pos := by omega
-    fitK := by omega
     fitR := by omega
     disj := (hp.iv_data.sub_left (Region.sub_prefix (by omega))).sub_right (tail_sub s₀)
     rdK := fun q hq => by

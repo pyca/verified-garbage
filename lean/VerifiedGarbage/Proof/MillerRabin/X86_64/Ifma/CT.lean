@@ -29,21 +29,20 @@ namespace VG.Proof.MillerRabin.X86_64.Ifma
 
 open VG VG.X86_64
 open VG.Proof.Bignum.X86_64 (Two Pins two_taint two_piece two_map two_ite)
-open VG.Proof.Bignum.X86_64.Ifma.Pub (PubOk)
 open VG.Proof.Bignum.X86_64.Ifma (TOk)
 open VG.Proof.MlKem.X86_64 (Keep)
-open VG.Impl.Rsa.X86_64.PubIfma (pay2048 pay3072 pay4096)
+open VG.Impl.Rsa.X86_64.PubIfma (pay1024 pay1536 pay2048 pay3072 pay4096)
 open VG.Impl.MillerRabin.X86_64.Ifma
 
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
 /-- The frame's body passes the taint analysis from `rdi` and `rsp`. -/
-theorem body_t (hl : PubOk l) :
+theorem body_t (hl : MrOk l) :
     TOk [.rdi, .rsp] (VG.Impl.Bignum.X86_64.seqs (setup l ++ [vec l, .block (finish l)])) := by
-  rcases hl with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  rcases hl with rfl | rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- A layout's round leaks the same in runs with the same `rsp` and `rdi`. -/
-theorem ifma_ct (hl : PubOk l) :
+theorem ifma_ct (hl : MrOk l) :
     RelCT isa (fun s₁ s₂ => s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi) (ifma l)
       fun _ _ => True := by
   obtain ⟨_, hT⟩ := body_t hl
@@ -89,7 +88,7 @@ theorem step_ct (n : Nat) (hn : n < 2 ^ 31) (hT : TOk [.rdi] (.block (isW n))) {
       show _root_.VG.X86_64.State.zf _ = _root_.VG.X86_64.State.zf _; rw [h₁.2, h₂.2])
     (two_map id (fun _ _ h => h.1.1) ht) (two_map id (fun _ _ h => h.1.1) he))
 
-theorem ifma_ct' (hl : PubOk l) : RelCT isa (Two CP) (ifma l) fun _ _ => True :=
+theorem ifma_ct' (hl : MrOk l) : RelCT isa (Two CP) (ifma l) fun _ _ => True :=
   (ifma_ct hl).mono (fun _ _ ⟨_, h₁, h₂⟩ => ⟨h₁.2.1.trans h₂.2.1.symm, h₁.2.2.1.trans h₂.2.2.1.symm⟩)
     fun _ _ h => h
 
@@ -101,9 +100,11 @@ theorem round_ct' (v : RoundArith) :
 
 /-- The round with the IFMA layouts, `round mul` otherwise, is constant time. -/
 theorem code_ct (v : RoundArith) : ConstantTime isa roundPre roundPub (code v.mm) := by
-  refine RelCT.constantTime (Q := fun _ _ => True) ((step_ct 32 (by decide) ⟨_, by taint_decide⟩ (ifma_ct' (.inl rfl))
-    (step_ct 48 (by decide) ⟨_, by taint_decide⟩ (ifma_ct' (.inr (.inl rfl)))
-      (step_ct 64 (by decide) ⟨_, by taint_decide⟩ (ifma_ct' (.inr (.inr rfl))) (round_ct' v)))).mono ?_
+  refine RelCT.constantTime (Q := fun _ _ => True) ((step_ct 16 (by decide) ⟨_, by taint_decide⟩ (ifma_ct' (.inl rfl))
+    (step_ct 24 (by decide) ⟨_, by taint_decide⟩ (ifma_ct' (.inr (.inl rfl)))
+      (step_ct 32 (by decide) ⟨_, by taint_decide⟩ (ifma_ct' (.inr (.inr (.inl rfl))))
+        (step_ct 48 (by decide) ⟨_, by taint_decide⟩ (ifma_ct' (.inr (.inr (.inr (.inl rfl)))))
+          (step_ct 64 (by decide) ⟨_, by taint_decide⟩ (ifma_ct' (.inr (.inr (.inr (.inr rfl))))) (round_ct' v)))))).mono ?_
     fun _ _ h => h)
   rintro s₁ s₂ ⟨h₁, h₂, hsp, hdi, hsi, hw⟩
   exact ⟨(s₁.gpr .rsp, s₁.gpr .rdi, s₁.gpr .rsi, Proof.Rsa.Mont.wOf s₁.mem (s₁.gpr .rdi)),

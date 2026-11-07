@@ -367,7 +367,6 @@ end
 /-- What the byte loop works on: the `r` bytes at `R` (in `r6`, their count
 in `r7`) and those at `K` (in `r0`), apart, readable and writable. -/
 structure XPre (s₀ : State) (K R : BitVec 32) (r : Nat) : Prop where
-  pos : 0 < r
   fK : K.toNat + r ≤ 2 ^ 32
   fR : R.toNat + r ≤ 2 ^ 32
   disj : Region.Disjoint ⟨State.addr K, r⟩ ⟨State.addr R, r⟩
@@ -632,7 +631,7 @@ theorem tail_seg {k : Nat} (hk : c.bs * k < N c s₀) (ht : N c s₀ - c.bs * k 
   refine WP.seq (wp_add (op2_imm (by show encodable (BitVec.ofNat 32 40) = true; decide)) fun s₆ u₆ =>
     WP.block_nil ?_)
   have xp : XPre s₆ (Sc c s₀ + BitVec.ofNat 32 oOff) (Dp c s₀ + BitVec.ofNat 32 (c.bs * k)) (rF c s₀) := by
-    refine ⟨hr0, ?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_⟩
     · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := oOff) (by omega_arith),
         Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
     · rw [hp.dkF_toNat hk]; omega_arith

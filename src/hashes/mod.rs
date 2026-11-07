@@ -71,16 +71,6 @@ pub trait HashFunction: Clone {
 /// `digest` calls: the match is exhaustive, so an implementation without one
 /// does not compile. Without it, `digest` uses the streaming functions.
 ///
-/// `tables`, if given, is every implementation's tables of functions
-/// (`crate::arch::fn_tables`), each with the generated constants of the CPU
-/// features it needs (none for the baseline ISA's: it fails to compile if
-/// they are not all among those `select` requires to choose that
-/// implementation), which `tables` returns for the verified functions that take a hash function as a table
-/// (`tables::TableHash`): its table of `Hash`, its table of `MdHash` and,
-/// on the architectures with tables of `Hmac` (`tables::Tables`), its table
-/// of `Hmac`. The match is exhaustive, so an implementation without its
-/// tables does not compile.
-///
 /// Every region is a distinct Rust object, so none overlaps another or the
 /// return address, and none wraps around the end of the address space; the
 /// length is kept exactly (`update` panics rather than let it reach 2⁶⁴
@@ -127,13 +117,7 @@ macro_rules! streaming_hash {
             $(, digests: {
                 $($(#[$dattr:meta])* $dvariant:ident => $digest:path),* $(,)?
             })?
-            $(, tables: {
-                $($(#[$tattr:meta])* $tvariant:ident => {
-                    hash: $thash:path [$($threq:path),*],
-                    md_hash: $tmd:path [$($tmreq:path),*]
-                    $(, hmac: $thmac:path [$($thmreq:path),*])? $(,)?
-                }),* $(,)?
-            })? $(,)?
+            $(,)?
         }
     ) => {
         /// The implementations of the streaming primitives.
@@ -154,8 +138,7 @@ macro_rules! streaming_hash {
             /// every CPU it is chosen for has them, so a function chosen
             /// with it may need no other, which its caller checks when it
             /// compiles (`assert!` in a `const`). (A hash function with no
-            /// implementation but the baseline, and no tables, does not use
-            /// it.)
+            /// implementation but the baseline does not use it.)
             #[allow(dead_code)]
             pub(crate) const REQUIRES: &[verified_garbage_cpu::Features] = &[
                 verified_garbage_cpu::Features(0),
@@ -239,37 +222,6 @@ macro_rules! streaming_hash {
             }
             )?
         }
-
-        $(
-        // Each implementation's tables need no CPU feature that `select`
-        // does not require to choose it.
-        $(
-            $(#[$tattr])*
-            const _: () = assert!(
-                $backend::REQUIRES[$backend::$tvariant as usize].contains(
-                    verified_garbage_cpu::Features::all(&[$($threq,)* $($tmreq,)* $($($thmreq),*)?])
-                ),
-                "a table needs a CPU feature its implementation is not chosen for"
-            );
-        )*
-
-        impl $backend {
-            /// The tables of functions of this implementation.
-            pub(crate) fn tables(self) -> $crate::hashes::tables::Tables {
-                match self {
-                    $($(#[$tattr])* Self::$tvariant => $crate::hashes::tables::Tables {
-                        #[cfg(feature = "alloc")]
-                        hash: &$thash,
-                        #[cfg(feature = "alloc")]
-                        md_hash: &$tmd,
-                        $(
-                        hmac: &$thmac,
-                        )?
-                    },)*
-                }
-            }
-        }
-        )?
 
         $(#[$doc])*
         ///
@@ -366,18 +318,11 @@ macro_rules! streaming_hash {
 
             /// A computation whose streaming state is `state`, which must
             /// represent a message of `length` bytes (for HMAC, whose
-            /// `init` makes such states), and which runs the implementation
-            /// `backend` (which must have been selected for this CPU).
+            /// `init` makes such states).
             #[allow(dead_code)]
-            pub(crate) fn from_state(state: [u8; $state], length: u64, backend: $backend) -> Self {
+            pub(crate) fn from_state(state: [u8; $state], length: u64) -> Self {
+                let backend = $backend::select($crate::cpu::detected());
                 $name { state, length, backend }
-            }
-
-            /// The implementation this computation runs, selected for this
-            /// CPU, which functions built on it (e.g. HMAC's) follow.
-            #[allow(dead_code)]
-            pub(crate) fn backend(&self) -> $backend {
-                self.backend
             }
 
             /// The streaming state, in place, and the length of the message

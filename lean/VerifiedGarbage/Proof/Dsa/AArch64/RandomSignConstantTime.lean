@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInvalidCT
 import VerifiedGarbage.Proof.Framework.Omega
@@ -32,8 +33,8 @@ theorem random_sign_alloc {extra : Nat} {s : State} (h : RandomSignABI extra s) 
   exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega⟩
 
 theorem random_sign_constantTime (S : Signer) :
-    ConstantTime isa (fun s => (Spec.Dsa.randomSignContract abi (S.stack + 256)).pre s ∧ RandomValid S s)
-      (Spec.Dsa.randomSignContract abi (S.stack + 256)).pub
+    ConstantTime isa (fun s => (randomSignCheckedContract abi (S.stack + 256)).pre s ∧ RandomValid S s)
+      (randomSignCheckedContract abi (S.stack + 256)).pub
       (RandomSign.code S.name S.code) := by
   intro s t tsa tsb u w ⟨hs, hvs⟩ ⟨ht, hvt⟩ hpub ea eb
   have hsa := randomSignABI_of hs

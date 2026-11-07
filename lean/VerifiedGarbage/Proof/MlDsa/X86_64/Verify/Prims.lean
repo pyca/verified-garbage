@@ -63,6 +63,7 @@ def primsWith (B : Arith.Backend) : Prims :=
     useHint := B.useHint
     rej4 := B.rej4
     sfx := B.sfx
+    asfx := B.asfx
     montgomery := B.montgomery }
 
 /-- A function of the polynomial arithmetic satisfies what the proofs of verification need of it. -/
