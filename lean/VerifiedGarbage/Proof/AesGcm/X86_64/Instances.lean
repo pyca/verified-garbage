@@ -44,6 +44,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToS.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Fn
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksFrom.Fn
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchFrom.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.DecFrom
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.PreparedContract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
@@ -617,15 +618,25 @@ theorem powFinD : Proof.Gcm.X86_64.StitchFrom.PowFinD :=
 `vg_aes_gcm_prepare`. -/
 def GcmVariant.stitchFromR (v : GcmVariant) :
     Option (StitchFromCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
-  (v.stitch.bind (·.toPart)).bind fun p => p.pieceFromR.map fun q =>
-    ⟨Impl.Gcm.X86_64.StitchFrom.decR, Proof.Gcm.X86_64.StitchFrom.decR_okN powFinD 24, q.dec⟩
+  (v.stitch.bind (·.toPart)).bind fun p => p.pieceFromR.bind (code p.name)
+where
+  /-- The loop named `n` and its proof. -/
+  code : (n : StitchToName) → PieceFromR n → Option (StitchFromCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true)
+    | .vaes, q => some ⟨_, Proof.Gcm.X86_64.StitchFrom.decR_okN powFinD 24, q.dec⟩
+    | .vaesAvx512, q => some ⟨_, Proof.Gcm.X86_64.StitchZH.decFromR_ok, q.dec⟩
+    | .aesniAvx, _ => none
 
 /-- The out-of-place decryption loop of a variant, for a key context of
-`vg_aes_gcm_prepare16`. -/
+`vg_aes_gcm_prepare16`: the 256-bit loop's only (the 512-bit loop reads
+more powers than that context holds). -/
 def GcmVariant.stitchFromR16 (v : GcmVariant) :
     Option (StitchFromCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 true) :=
-  (v.stitch.bind (·.toPart)).bind fun p => p.pieceFromR.map fun q =>
-    ⟨Impl.Gcm.X86_64.StitchFrom.decR, Proof.Gcm.X86_64.StitchFrom.decR_okN powFinD 8, q.dec⟩
+  (v.stitch.bind (·.toPart)).bind fun p => p.pieceFromR.bind (code p.name)
+where
+  /-- The loop named `n` and its proof. -/
+  code : (n : StitchToName) → PieceFromR n → Option (StitchFromCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 true)
+    | .vaes, q => some ⟨_, Proof.Gcm.X86_64.StitchFrom.decR_okN powFinD 8, q.dec⟩
+    | _, _ => none
 
 /-- The instance of `vg_aes_gcm_decrypt_blocks_to_prepared` of a variant. -/
 def blkFromR (v : GcmVariant) : BlkFromFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
