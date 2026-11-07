@@ -74,7 +74,7 @@ theorem Env.self {V : Reg → BitVec 64} {sp : Addr} {s s' : State} (he : Env V 
     exact he.stk⟩
 
 /-- `W` and the stack below `sp`. -/
-abbrev wF (W sp : Addr) : List Region := [⟨W, 2560⟩, below sp 3232]
+abbrev wF (W sp : Addr) : List Region := [⟨W, 2560⟩, below sp 3248]
 
 section
 variable {W sp : Addr}
@@ -112,7 +112,7 @@ theorem inW_one : ∀ r ∈ [oneR W], ∃ r' ∈ wF W sp, Region.Sub r r' := by
 
 /-- The first counter block is apart from what `oneTag 112`, `recv` and `cmp 112` write. -/
 theorem cb_ot {c : Addr} (L : Lay c (W + BitVec.ofNat 64 16) W)
-    (hbs : (below sp 3232).Disjoint ⟨W + BitVec.ofNat 64 16, 80⟩) :
+    (hbs : (below sp 3248).Disjoint ⟨W + BitVec.ofNat 64 16, 80⟩) :
     ∀ r ∈ otFrame (W + BitVec.ofNat 64 16) W 112 sp ++
       [⟨W + BitVec.ofNat 64 256, 16⟩, ⟨W + BitVec.ofNat 64 272, 16⟩],
       (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint r := by
@@ -129,7 +129,7 @@ theorem cb_ot {c : Addr} (L : Lay c (W + BitVec.ofNat 64 16) W)
   · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
 
 /-- The slot of the data's address is apart from what `oneTag 112`, `recv` and `cmp 112` write. -/
-theorem slot_ot {c : Addr} (L : Lay c (W + BitVec.ofNat 64 16) W) (hbw : (below sp 3232).Disjoint ⟨W, 2560⟩) :
+theorem slot_ot {c : Addr} (L : Lay c (W + BitVec.ofNat 64 16) W) (hbw : (below sp 3248).Disjoint ⟨W, 2560⟩) :
     ∀ r ∈ otFrame (W + BitVec.ofNat 64 16) W 112 sp ++
       [⟨W + BitVec.ofNat 64 256, 16⟩, ⟨W + BitVec.ofNat 64 272, 16⟩],
       (⟨W + BitVec.ofNat 64 dataO, 8⟩ : Region).Disjoint r := by
@@ -149,7 +149,7 @@ end
 
 /-- A buffer apart from `W` and the stack below `sp` is as it was. -/
 theorem bytes_W {m m' : Mem} {W sp p : Addr} {n : Nat} (hf : Frame (wF W sp) m m')
-    (hd : (⟨p, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hs : (⟨p, n⟩ : Region).Disjoint (below sp 3232)) (hn : n ≤ 2 ^ 64) :
+    (hd : (⟨p, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hs : (⟨p, n⟩ : Region).Disjoint (below sp 3248)) (hn : n ≤ 2 ^ 64) :
     bytesAt m' p n = bytesAt m p n :=
   bytesAt_frame hf (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -190,7 +190,7 @@ theorem openStk : StkOk (s₀.gpr .a0) (stackArg s₀ 1 + BitVec.ofNat 64 16) (s
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hstk, -⟩ := h
   exact one_stk3 hstk (by simp) (by simp)
 
-theorem openGe : 3232 ≤ s₀.sp.toNat := by
+theorem openGe : 3248 ≤ s₀.sp.toNat := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hstk, -⟩ := h
   exact hstk.2.1
 
@@ -206,11 +206,11 @@ theorem openBuf {r : Region} (hr : r ∈ [(⟨s₀.gpr .a0, 256⟩ : Region), �
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hstk, -⟩ := h
   exact hstk.buf hr
 
-/-- A buffer of the precondition is apart from the 3232 bytes below `sp`. -/
+/-- A buffer of the precondition is apart from the 3248 bytes below `sp`. -/
 theorem openBuf3 {r : Region} (hr : r ∈ [(⟨s₀.gpr .a0, 256⟩ : Region), ⟨s₀.gpr .a1, (s₀.gpr .a2).toNat⟩,
     ⟨s₀.gpr .a3, (s₀.gpr .a4).toNat⟩, ⟨s₀.gpr .a5, (s₀.gpr .a6).toNat⟩,
     ⟨s₀.gpr .a7, (stackArg s₀ 0).toNat⟩, ⟨stackArg s₀ 1, 2560⟩, args s₀ 2]) :
-    r.Disjoint (below s₀.sp 3232) := by
+    r.Disjoint (below s₀.sp 3248) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hstk, -⟩ := h
   exact (hstk.buf3 hr).symm
 
@@ -417,7 +417,7 @@ theorem open_tail {s₀ s₄ s₉ : State} (h : openPre s₀) (h4 : SO1 (stackAr
         have hb := openBig h h4
         exact ⟨hb.ge, by rw [e _ (by decide) (by decide)]; exact hb.c, by rw [e _ (by decide) (by decide)]; exact hb.st,
           by rw [e _ (by decide) (by decide)]; exact hb.w⟩
-      have hbd₉ : (below s₀.sp 3232).Disjoint ⟨s₀.gpr .a5, (s₉.gpr .s11).toNat⟩ := by
+      have hbd₉ : (below s₀.sp 3248).Disjoint ⟨s₀.gpr .a5, (s₉.gpr .s11).toNat⟩ := by
         rw [e _ (by decide) (by decide), h4.s11]; exact (openBuf3 h (by simp)).symm
       have cb₉ : blockAt s₉.mem (s₉.gpr .s1 + BitVec.ofNat 64 48) = inc32 (j0 H iv) := by
         rw [e _ (by decide) (by decide), h4.s1]; exact om.cb

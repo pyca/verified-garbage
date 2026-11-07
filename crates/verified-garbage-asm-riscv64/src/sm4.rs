@@ -16592,3 +16592,15 @@ j 25f
 #[rustfmt::skip]
 #[path = "internal/vg_sm4_ctr32.rs"]
 pub(crate) mod vg_sm4_ctr32;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_modes_crypt.rs"]
+pub(crate) mod vg_sm4_modes_crypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_modes_prepare_decrypt.rs"]
+pub(crate) mod vg_sm4_modes_prepare_decrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_modes_prepare_encrypt.rs"]
+pub(crate) mod vg_sm4_modes_prepare_encrypt;
