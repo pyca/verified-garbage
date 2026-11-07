@@ -69,3 +69,71 @@ pub unsafe fn vg_aes_cfb128_decrypt_auto(schedule: *const [u8; 240], rounds: usi
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::aes_cfb::vg_aes_cfb128_decrypt(schedule, rounds, iv, data, n, scratch) }
 }
+
+/// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cfb128_encrypt_final_vaes` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_FINAL_VAES_FEATURES`); `vg_aes_cfb128_encrypt_final_aesni` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_FINAL_AESNI_FEATURES`); or else `vg_aes_cfb128_encrypt_final`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 80 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_cfb128_encrypt_final_auto(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::aes_cfb::VG_AES_CFB128_ENCRYPT_FINAL_VAES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_cfb128_encrypt_final_vaes`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::aes_cfb::vg_aes_cfb128_encrypt_final_vaes(schedule, rounds, iv, data, len, scratch) };
+    }
+    if cpu.contains(crate::aes_cfb::VG_AES_CFB128_ENCRYPT_FINAL_AESNI_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_cfb128_encrypt_final_aesni`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::aes_cfb::vg_aes_cfb128_encrypt_final_aesni(schedule, rounds, iv, data, len, scratch) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_cfb::vg_aes_cfb128_encrypt_final(schedule, rounds, iv, data, len, scratch) }
+}
+
+/// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cfb128_decrypt_final_vaes` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_FINAL_VAES_FEATURES`); `vg_aes_cfb128_decrypt_final_aesni` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_FINAL_AESNI_FEATURES`); or else `vg_aes_cfb128_decrypt_final`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 80 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_cfb128_decrypt_final_auto(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_FINAL_VAES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_cfb128_decrypt_final_vaes`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::aes_cfb::vg_aes_cfb128_decrypt_final_vaes(schedule, rounds, iv, data, len, scratch) };
+    }
+    if cpu.contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_FINAL_AESNI_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_cfb128_decrypt_final_aesni`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::aes_cfb::vg_aes_cfb128_decrypt_final_aesni(schedule, rounds, iv, data, len, scratch) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::aes_cfb::vg_aes_cfb128_decrypt_final(schedule, rounds, iv, data, len, scratch) }
+}

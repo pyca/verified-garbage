@@ -13,3 +13,15 @@ pub use crate::aes_cfb::vg_aes_cfb128_encrypt as vg_aes_cfb128_encrypt_auto;
 /// target.
 #[allow(unused_imports)]
 pub use crate::aes_cfb::vg_aes_cfb128_decrypt as vg_aes_cfb128_decrypt_auto;
+
+/// `vg_aes_cfb128_encrypt_final`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use crate::aes_cfb::vg_aes_cfb128_encrypt_final as vg_aes_cfb128_encrypt_final_auto;
+
+/// `vg_aes_cfb128_decrypt_final`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use crate::aes_cfb::vg_aes_cfb128_decrypt_final as vg_aes_cfb128_decrypt_final_auto;
