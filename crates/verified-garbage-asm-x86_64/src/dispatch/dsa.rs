@@ -64,7 +64,7 @@ pub unsafe fn vg_dsa_generate_key_auto(out: *mut u8, out_len: usize, used: *mut 
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_FEATURES`); `vg_dsa_parameter_search_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES`); or else `vg_dsa_parameter_search`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES`); `vg_dsa_parameter_search_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES`); or else `vg_dsa_parameter_search`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -113,21 +113,6 @@ pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *
         // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
-    }
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi_mr_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_mr_ifma(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
-    }
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi_mr_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_mr_adx(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
-    }
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
     }
     if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_mr_ifma`'s, and the CPU
