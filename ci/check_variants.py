@@ -227,7 +227,17 @@ INTERNAL = ("", "")
 NEVER_WITH = {
     # `cipher::chacha20::Backend::select_for` chooses `_avx2` (or better)
     # over `_ssse3` whenever AVX2 is present.
-    "x86_64": {"vg_chacha20_xor_ssse3": [{"avx", "avx2"}]},
+    "x86_64": {
+        "vg_chacha20_xor_ssse3": [{"avx", "avx2"}],
+        # Argon2's dispatcher (`vg_argon2_auto`) chooses BLAKE2b's and G's
+        # `_avx2` (or better) over their baseline whenever AVX and AVX2 are
+        # present, which is all either needs, and G's `_avx512` over its
+        # `_avx2` whenever AVX and AVX-512F are (`VG.Dispatch.ranking` ranks
+        # `_avx512` first: `VerifiedGarbageTest/Dispatch.lean` checks it).
+        "vg_argon2_hprime": [{"avx", "avx2"}],
+        "vg_argon2_compress": [{"avx", "avx2"}],
+        "vg_argon2_compress_avx2": [{"avx", "avx512f"}],
+    },
 }
 
 
