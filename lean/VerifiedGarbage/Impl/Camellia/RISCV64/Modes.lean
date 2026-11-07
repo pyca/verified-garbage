@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Modes.RISCV64.Seq
+public import VerifiedGarbage.Impl.Modes.RISCV64.Shared
 public import VerifiedGarbage.Impl.Modes.RISCV64.Wide
 public import VerifiedGarbage.Impl.Modes.CbcChained
 public import VerifiedGarbage.Impl.Modes.Ctr
@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Camellia.RISCV64.Ecb
 /-!
 # Camellia's modes on RISC-V
 
-`dirCore d R`: ECB's key setup and batch (`Ecb.lean`), inlined, as a core
+`inlineCore d R`: ECB's key setup and batch (`Ecb.lean`), inlined, as a core
 for the modes (`Impl/Modes/RISCV64/Seq.lean`), with `R` rounds and the
 subkeys in the order of the direction `d`: encryption's for CBC
 encryption, OFB, CFB and CTR, decryption's for CBC decryption, as on
@@ -42,6 +42,13 @@ with that many, as CAST5's do (`Impl/Cast5/RISCV64/Modes.lean`).
 
 `cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt`,
 `cfbDecrypt` and `ctr` are the modes over it.
+
+`dirCore` wraps this body with named internal calls (`Core.shared`), so the
+key preparation and batch code are emitted once across modes, alignment
+branches, and wide and tail paths. Two additional slots preserve the
+caller's return address and keep the frame aligned; the mode wipes them
+with the original frame. The callee computes its own pointers after the
+call, which may clobber all temporary registers.
 -/
 
 @[expose] public section
@@ -85,7 +92,7 @@ def cryptBlocks (R : Nat) : Prog isa :=
     (.seq crypt8 (.block (restoreRegs ++ unpark)))
 
 /-- Camellia's core for the modes, with `R` rounds in the direction `d`. -/
-def dirCore (d : Dir) (R : Nat) : Modes.RISCV64.Core where
+def inlineCore (d : Dir) (R : Nat) : Modes.RISCV64.Core where
   prepare := prepareKeys d R
   crypt := cryptBlocks R
   total := coreSlot + slots
@@ -99,6 +106,11 @@ registers. -/
 def modeFn (m : Nat → Prog isa) : Prog isa :=
   .seq (.block [mov .t0 .a1, mov .a1 .a2, mov .a2 .a3, mov .a3 .a4, .addi .t0 .t0 (-18)])
     (.ite (.zero .t0) (m 18) (m 24))
+
+/-- Shared key preparation and batch encryption, with a saved return address. -/
+def dirCore (d : Dir) (R : Nat) : Modes.RISCV64.Core :=
+  (inlineCore d R).shared ("vg_camellia_modes_prepare_" ++ (if d = .encrypt then "encrypt" else "decrypt") ++ "_" ++ (if R = 18 then "18" else "24"))
+    ("vg_camellia_modes_crypt_" ++ (if R = 18 then "18" else "24"))
 
 /-- `vg_camellia_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := modeFn fun R => (dirCore .encrypt R).seq (Modes.Mode.cbcEncChained 4)

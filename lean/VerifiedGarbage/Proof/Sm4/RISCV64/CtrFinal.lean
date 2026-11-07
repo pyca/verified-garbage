@@ -74,7 +74,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 The code is proven against `ctrFinalRISCV64`, with the arguments
 `(schedule = a0, ctr = a1, data = a2, len = a3, save = a4)`, a fifth argument
 `save` (`a4`) of 80 bytes for its return address and its caller's registers
-and a block of its own, and 3232 bytes of stack for its calls
+and a block of its own, and 3248 bytes of stack for its calls
 (`ctrFinal_implies`: the shared contract with it), as a caller of
 `vg_sm4_ctr`, which keeps its own working space in a frame on the
 stack, through the register-form contract its proofs give it
@@ -114,11 +114,11 @@ open VG.Impl.AesCtr.RISCV64 (zeroSlots tailKey)
 /-! ## The callee -/
 
 /-- `vg_sm4_ctr`'s contract, as its proofs state it: the arguments
-`(schedule = a0, ctr = a1, data = a2, n = a3)` and a frame of 3232 bytes
+`(schedule = a0, ctr = a1, data = a2, n = a3)` and a frame of 3248 bytes
 below the stack pointer. -/
 abbrev ctrK : Contract isa := Modes.modeContract Modes.ctrPost
 
-theorem ctr_depth : sdepth ctr ≤ 3232 := by lit_decide
+theorem ctr_depth : sdepth ctr ≤ 3248 := by lit_decide
 
 theorem ctr_ok : ∀ s, ctrK.pre s → ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ ctrK.post s s' :=
   Modes.ctr_correct
@@ -128,7 +128,7 @@ theorem ctr_ct : ConstantTime isa ctrK.pre ctrK.pub ctr := ctr_constantTime _
 /-! ## The contract -/
 
 /-- The code's contract, with the arguments `(schedule = a0, ctr = a1,
-data = a2, len = a3, save = a4)`, `save` of 80 bytes, and 3232 bytes of stack
+data = a2, len = a3, save = a4)`, `save` of 80 bytes, and 3248 bytes of stack
 for the calls: the data and the counter block as `Spec.Ctr.CryptFinal` says,
 by SM4 with the schedule at `schedule`. -/
 def ctrFinalRISCV64 : Contract isa where
@@ -137,8 +137,8 @@ def ctrFinalRISCV64 : Contract isa where
     let ctr : Region := ⟨s.gpr .a1, 16⟩
     let data : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
     let sv : Region := ⟨s.gpr .a4, 80⟩
-    let stack := below s.sp 3232
-    s.sp.toNat % 16 = 0 ∧ 3232 ≤ s.sp.toNat ∧ s.rd = [sched] ∧ s.wr = [ctr, data, sv] ∧
+    let stack := below s.sp 3248
+    s.sp.toNat % 16 = 0 ∧ 3248 ≤ s.sp.toNat ∧ s.rd = [sched] ∧ s.wr = [ctr, data, sv] ∧
       sched.Disjoint ctr ∧ sched.Disjoint data ∧ sched.Disjoint sv ∧ ctr.Disjoint data ∧ ctr.Disjoint sv ∧
       data.Disjoint sv ∧
       stack.Disjoint sched ∧ stack.Disjoint ctr ∧ stack.Disjoint data ∧ stack.Disjoint sv ∧
@@ -153,10 +153,10 @@ def ctrFinalRISCV64 : Contract isa where
       s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.sp = s₂.sp
 
 /-- The contract the frame needs: the shared one, with `save`, 80 bytes, as a
-fifth argument, and 3232 bytes of stack (`vg_sm4_ctr`'s frame). -/
+fifth argument, and 3248 bytes of stack (`vg_sm4_ctr`'s frame). -/
 abbrev ctrFinalScratchContract : Contract isa :=
   Sig.scratchContract RISCV64.abi Spec.Sm4.ctrFinalSig "save" .u64 10 (Curry.const (fun _ => True) _)
-    (Proof.Sm4.ctrFinalPost RISCV64.abi.ptrBits) true 3232
+    (Proof.Sm4.ctrFinalPost RISCV64.abi.ptrBits) true 3248
 
 /-- A state satisfying the precondition (no data). -/
 def ctrFinalSat : State where
@@ -208,7 +208,7 @@ abbrev kSv64 : Region := ⟨kV s₀, 64⟩
 abbrev kBk : Addr := kV s₀ + BitVec.ofNat 64 64
 abbrev kBlk : Region := ⟨kBk s₀, 16⟩
 /-- The stack the calls use. -/
-abbrev kStk : Region := below s₀.sp 3232
+abbrev kStk : Region := below s₀.sp 3248
 /-- The memory once the registers are saved. -/
 abbrev kSvMem : Mem := Spill.saveMem s₀.mem (kV s₀) s₀.gpr finalSaved
 /-- The cipher on entry. -/
@@ -226,7 +226,7 @@ end
 /-- The precondition, by name. -/
 structure KPre (s₀ : State) : Prop where
   al : s₀.sp.toNat % 16 = 0
-  sp : 3232 ≤ s₀.sp.toNat
+  sp : 3248 ≤ s₀.sp.toNat
   rd : s₀.rd = [kSch s₀]
   wr : s₀.wr = [kIv s₀, fData s₀, kSv s₀]
   sch_iv : (kSch s₀).Disjoint (kIv s₀)
@@ -930,22 +930,22 @@ theorem ctrFinal_verified : Verified RISCV64.target ctrFinal ctrFinalScratchCont
 The final function has four argument words, so `save` is its fifth, in `a4`:
 it runs its code in a frame of 80 bytes on the stack (`withStackScratchWiped`),
 `save`'s 80 bytes (the registers, then the block that held the last output
-block), which it zeroes before returning. Its calls use 3232 bytes below it,
-so 3312 in all. -/
+block), which it zeroes before returning. Its calls use 3248 bytes below it,
+so 3328 in all. -/
 
 /-- A state satisfying the shared contract's precondition. -/
 def ctrFinalFrameSat : State := { ctrFinalSat with wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩] }
 
-theorem ctrFinalFrameSat_pre : ∃ s, (Spec.Sm4.ctrFinalContract RISCV64.abi 3312).pre s := by
+theorem ctrFinalFrameSat_pre : ∃ s, (Spec.Sm4.ctrFinalContract RISCV64.abi 3328).pre s := by
   implies_sat [Spec.Sm4.ctrFinalContract, Spec.Sm4.ctrFinalSig, RISCV64.abi, RISCV64.argRegs]
     [ctrFinalFrameSat, ctrFinalSat] using ctrFinalFrameSat
 
 theorem ctrFinal_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a4 10 ctrFinal)
-      (Spec.Sm4.ctrFinalContract RISCV64.abi 3312) := by
+      (Spec.Sm4.ctrFinalContract RISCV64.abi 3328) := by
   rw [Proof.Sm4.ctrFinalContract_eq]
   exact RISCV64.Verified.stackScratchWiped (sig := Spec.Sm4.ctrFinalSig) (nm := "save") (e := .u64) (n := 10)
-    (post := Proof.Sm4.ctrFinalPost RISCV64.abi.ptrBits) (wa := true) (stack := 3232) (bytes := 80) (words := 10)
+    (post := Proof.Sm4.ctrFinalPost RISCV64.abi.ptrBits) (wa := true) (stack := 3248) (bytes := 80) (words := 10)
     ctrFinal_verified (by decide) (by decide) (by decide) (Proof.Sm4.ctrFinalPostOut_local _) ctrFinalFrameSat_pre
 
 end VG.Proof.Sm4.RISCV64.CtrFinal

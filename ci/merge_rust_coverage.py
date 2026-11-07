@@ -15,9 +15,10 @@
 # to htmlcov/ if it is under 100%). Lines between `// NO-COVERAGE-START` and
 # `// NO-COVERAGE-END` are excluded, and so is a generated dispatcher
 # (`crates/verified-garbage-asm-<target>/src/dispatch/<module>.rs`,
-# `Rust.dispatcher` in lean/VerifiedGarbage/TCB/Rust.lean) that no test
-# reached at all: the emitter writes one for every function, and the library
-# calls only some of them. One that the library calls is reached by the tests
+# `Rust.dispatcher` in lean/VerifiedGarbage/TCB/Rust.lean, or a table's,
+# `Rust.tableDispatcher`, in `dispatch/fn_tables.rs`) that no test reached
+# at all: the emitter writes one for every function and table, and the
+# library calls only some of them. One that the library calls is reached by the tests
 # of the API calling it, and then each of its lines must be covered, as every
 # other line: each implementation it may choose is run on some CPU.
 
@@ -75,7 +76,8 @@ def dispatcher_spans(file_name: str, text: str | None = None) -> list[tuple[int,
     """The first and last lines of each dispatcher of `file_name` (its text
     `text`, if given), if it is a generated file of dispatchers
     (`crates/verified-garbage-asm-<target>/src/dispatch/<module>.rs`): from its
-    `pub unsafe fn` line to the `}` closing it, alone in column 0."""
+    `pub unsafe fn` line (a table's: `pub fn`) to the `}` closing it, alone
+    in column 0."""
     parts = pathlib.PurePosixPath(file_name).parts
     if not (len(parts) >= 4 and parts[-4].startswith("verified-garbage-asm-")
             and parts[-3:-1] == ("src", "dispatch")):
@@ -84,7 +86,7 @@ def dispatcher_spans(file_name: str, text: str | None = None) -> list[tuple[int,
         text = pathlib.Path(file_name).read_text()
     spans, start = [], None
     for i, line in enumerate(text.splitlines(), 1):
-        if line.startswith("pub unsafe fn "):
+        if line.startswith(("pub unsafe fn ", "pub fn ")):
             start = i
         elif line == "}" and start is not None:
             spans.append((start, i))

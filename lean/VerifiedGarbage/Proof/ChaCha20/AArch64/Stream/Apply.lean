@@ -605,7 +605,7 @@ theorem blR_sub (s₀ : State) : Region.Sub (blR s₀) (dR s₀) := Offset.sub_b
 theorem kept_preserved : ∀ r ∈ kept, r ∈ preserved ∧ r ≠ .x30 := by decide
 
 theorem blocks_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s)
-    (hnb : 0 < NB s₀) : WP isa (.seq (.block blocksArgs) (.call v.callee.name v.callee.code)) s (fun u => Q2 s₀ u ∧
+    (hnb : 0 < NB s₀) : WP isa (.seq (.block blocksArgs) v.callee.inPlace) s (fun u => Q2 s₀ u ∧
       ∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) := by
   have hL := L_lt s₀
   have hH := H_le s₀
@@ -635,7 +635,6 @@ theorem blocks_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre
     omega_arith
   refine xor_call v (S := st s₀ + BitVec.ofNat 64 192) (D := dp s₀ + BitVec.ofNat 64 (H s₀))
     (B := st s₀ + BitVec.ofNat 64 256) (n := 64 * NB s₀) x0₁ x1₁ x2₁ x3₁ (by omega_arith) dSD dSB dDB hwrap
-    (by rw [hrd₁, hwr₁, List.nil_append, List.nil_append]; exact Covers.of_sub hcov)
     (by rw [hwr₁]; exact Covers.of_sub hcov) ?_
   intro s₂ k₂ x₂
   refine ⟨?_,fun r hr => (k₂.vec r hr).trans (v₁ r hr)⟩

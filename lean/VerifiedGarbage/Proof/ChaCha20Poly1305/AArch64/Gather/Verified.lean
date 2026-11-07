@@ -130,19 +130,23 @@ theorem sealCode_noFrames (v : Proof.ChaCha20.AArch64.XorImpl) : (sealCode v.cal
   have hxks : Short.xorKs.noFrames = true := by decide +kernel
   have hrest : (ShortRest.sealMain c).noFrames = true := by
     simp only [ShortRest.sealMain, ShortRest.sealAfter, ShortRest.first, ShortRest.rest, macPad, absorbLengths,
+      Impl.ChaCha20.AArch64.XorCallee.inPlace,
       padTail, Code.noFrames, hv, hpro, hshort, hxks, Bool.and_true, Bool.true_and]
     decide +kernel
   have hpad : (Pad.sealRoute c).noFrames = true := by
     simp only [Pad.sealRoute, Pad.sealMain, Pad.cryptPad, sealMainWith, prologue, macPad, absorbLengths,
+      Impl.ChaCha20.AArch64.XorCallee.inPlace,
       padTail, Code.noFrames, hv, hrest, Bool.and_true, Bool.true_and]
     decide +kernel
   have hkern : (TailO.kernel c.sve 3).noFrames = true := by cases c.sve <;> decide +kernel
   have hsk : (SealKey.sealMain c).noFrames = true := by
     simp only [SealKey.sealMain, OpenKey.xorFirst, macPad, absorbLengths, padTail, Code.noFrames, hv, hkern,
+      Impl.ChaCha20.AArch64.XorCallee.inPlace,
       hxks, Bool.and_true, Bool.true_and]
     decide +kernel
   cases st <;>
   simp only [sealCode, sealMainCode, Code.iteCold, hsk, sealStitched, sealWith, sealMain, sealMainWith, sealStitchedMain, sealWideMain,
+    Impl.ChaCha20.AArch64.XorCallee.inPlace,
     sealTail,
     prologue, macPad,
     cryptWith, absorbLengths, finalizeTag, padTail, Code.noFrames, hv, hs, hshort, hrest, Bool.and_true, Bool.true_and,

@@ -118,8 +118,8 @@ own changes are rebuilt either way, on top of the restored build.
   too, and their callers, without anyone listing it. The Rust code that
   chooses among implementations matches exhaustively on the primitive's
   backend enum (`streaming_hash!`'s, which `streaming_hmac!` and `whole_pbkdf2!`
-  follow; `cipher::chacha20::Backend`, which ChaCha20-Poly1305 follows; a caller of
-  several, like Argon2, matches on each of their enums together): a new
+  follow; a caller of several, like Argon2, matches on each of their enums
+  together): a new
   backend does not compile until everything built on it handles it.
   `ci/check_variants.py` checks the generated code for this (the
   `adding-a-primitive` skill says what it checks). There are no
@@ -135,6 +135,9 @@ own changes are rebuilt either way, on top of the restored build.
   `lean/VerifiedGarbage/TCB/Rust.lean`), which runs
   the best of its implementations the CPU supports and needs no CPU
   feature: Rust code that calls it names no variant and chooses nothing.
+  So does each table of functions' (`<table>_auto()`, in
+  `crate::arch::dispatch::fn_tables`, `Rust.tableDispatcher`), which
+  returns the best of the tables of its interface and data.
   Which is best is not trusted: `lean/VerifiedGarbage/Dispatch.lean` ranks
   the suffixes of each target (with a variant's `extra` features, and its
   `vendor` for a choice by compilation target), and the emitter fails on

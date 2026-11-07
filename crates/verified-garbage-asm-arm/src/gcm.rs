@@ -2701,3 +2701,107 @@ bx lr",
         vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
     )
 }
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2648 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #48
+add r12, sp, #0
+str lr, [r12, #24]
+str r0, [r12, #28]
+str r1, [r12, #32]
+str r2, [r12, #36]
+str r3, [r12, #40]
+ldr lr, [r12, #48]
+str lr, [r12, #0]
+ldr lr, [r12, #52]
+str lr, [r12, #4]
+ldr lr, [r12, #64]
+str lr, [r12, #8]
+ldr lr, [r12, #60]
+str lr, [r12, #12]
+ldr lr, [r12, #72]
+str lr, [r12, #16]
+ldr lr, [r12, #76]
+str lr, [r12, #20]
+add r0, r12, #56
+ldr r2, [r12, #64]
+ldr r1, [r0, #0]
+ldr r3, [r0, #4]
+lsr r3, r3, #2
+cmp r3, #0
+beq 20f
+22:
+ldr r12, [r1, #0]
+str r12, [r2, #0]
+add r1, r1, #4
+add r2, r2, #4
+subs r3, r3, #1
+bne 22b
+b 21f
+20:
+21:
+ldr r3, [r0, #4]
+and r3, r3, #3
+cmp r3, #0
+beq 23f
+25:
+ldrb r12, [r1, #0]
+strb r12, [r2, #0]
+add r1, r1, #1
+add r2, r2, #1
+subs r3, r3, #1
+bne 25b
+b 24f
+23:
+24:
+add r12, sp, #0
+ldr r0, [r12, #28]
+ldr r1, [r12, #32]
+ldr r2, [r12, #36]
+ldr r3, [r12, #40]
+bl {vg_aes_gcm_open}
+cmp r0, #0
+beq 26f
+b 27f
+26:
+add r12, sp, #0
+ldr r1, [r12, #64]
+ldr r2, [r12, #60]
+mov r3, #0
+cmp r2, #0
+beq 28f
+210:
+strb r3, [r1, #0]
+add r1, r1, #1
+subs r2, r2, #1
+bne 210b
+b 29f
+28:
+29:
+27:
+add r12, sp, #0
+ldr lr, [r12, #24]
+add sp, sp, #48
+bx lr",
+        vg_aes_gcm_open = sym super::gcm::vg_aes_gcm_open,
+    )
+}

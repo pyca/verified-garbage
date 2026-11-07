@@ -63,7 +63,7 @@ def args : List Instr :=
 with it. -/
 def cryptPad (c : XorCallee) : Prog isa :=
   .seq (.block (zero ++ args))
-    (.seq (.call c.name c.code)
+    (.seq c.inPlace
       (.seq (Short.xorKsFrom 768) (.block zero)))
 
 def sealMain (c : XorCallee) : Prog isa := sealMainWith (cryptPad c)

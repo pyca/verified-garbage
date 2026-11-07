@@ -44,7 +44,7 @@ open VG.Proof.Seed.RISCV64.Mode (dirCoreSpec KeyArgs layout total_eq)
 open VG.Proof.Seed.RISCV64 (modePub)
 
 /-- The frame's bytes, of the core on `g` blocks. -/
-abbrev frameBytes (g : Nat) : Nat := 1088 + 16 * g
+abbrev frameBytes (g : Nat) : Nat := 1104 + 16 * g
 
 /-- SEED under the schedule at `a0`, and its inverse. -/
 abbrev ciph (s : State) : Spec.Cbc.Cipher := Spec.Seed.cipher (Spec.Seed.scheduleAt s.mem (s.gpr .a0))
@@ -120,11 +120,9 @@ theorem keyArgs_of {post : State → State → Prop} {M : Mode} (d : Spec.Seed.D
 /-! ## Correctness -/
 
 theorem cipher_enc {g : Nat} {h1 : 1 ≤ g} {h2 : g ≤ 16} (k : Spec.Seed.Schedule) :
-    (dirCoreSpec .encrypt g h1 h2).cipher k = Spec.Seed.cipher k := by
-  simp only [dirCoreSpec, Proof.Seed.dirCipher]
+    (dirCoreSpec .encrypt g h1 h2).cipher k = Spec.Seed.cipher k := rfl
 theorem cipher_dec {g : Nat} {h1 : 1 ≤ g} {h2 : g ≤ 16} (k : Spec.Seed.Schedule) :
-    (dirCoreSpec .decrypt g h1 h2).cipher k = Spec.Seed.invCipher k := by
-  simp only [dirCoreSpec, Proof.Seed.dirCipher]
+    (dirCoreSpec .decrypt g h1 h2).cipher k = Spec.Seed.invCipher k := rfl
 
 theorem cbcEncryptChained_correct (s : State) (hs : (modeContract 1 cbcEncPost).pre s) :
     ∃ t s', Exec isa cbcEncryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract 1 cbcEncPost).post s s' :=

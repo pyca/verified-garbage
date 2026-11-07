@@ -35,6 +35,9 @@ on:
       groups:
         description: Space-separated regular expressions over benchmark group names, each matching a whole name, e.g. `aes-(128|256)-gcm-tls-seal`; only the groups they match run (needs `modules`; empty for every group of the modules)
         required: false
+      test_filter:
+        description: Exact integration test to compare instead of primitive benchmarks (requires base_commit and arches=riscv64)
+        required: false
       rounds:
         description: Interleaved comparison rounds (empty for the platform default)
         required: false
@@ -204,14 +207,52 @@ jobs:
       # back to main's latest entry for the same compiler, and Cargo rebuilds
       # only what changed.
       - id: cache-key
+        if: ${{ !inputs.test_filter }}
         run: sh head/ci/bench_cache_key.sh head/bench >> "$GITHUB_OUTPUT"
       - name: Restore the dependencies' build
+        if: ${{ !inputs.test_filter }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: bench-target
           key: ${{ steps.cache-key.outputs.key }}
           restore-keys: ${{ steps.cache-key.outputs.prefix }}
+      - name: Check test comparison scope
+        if: ${{ inputs.test_filter }}
+        env:
+          BASE: ${{ needs.arches.outputs.base }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          test -n "$BASE"
+          test "$RUNNER_OS" = Linux
+          test "$ARCH" = riscv64
+      - name: Check out Wycheproof for test comparison
+        if: ${{ inputs.test_filter }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: C2SP/wycheproof
+          ref: 3fa63dd0344abb611f1fb1d77e119938603ea230
+          path: wycheproof
+          persist-credentials: false
+      - name: Benchmark the complete integration test
+        if: ${{ inputs.test_filter }}
+        id: test-benchmark
+        env:
+          TEST_FILTER: ${{ inputs.test_filter }}
+          ROUNDS: ${{ inputs.rounds || 6 }}
+        run: |
+          python3 head/ci/bench_test_compare.py base head --test "$TEST_FILTER" --vectors wycheproof --rounds "$ROUNDS" --summary "$GITHUB_STEP_SUMMARY"
+      - name: Save raw test benchmark samples
+        if: ${{ always() && !cancelled() && (steps.test-benchmark.outcome == 'success' || steps.test-benchmark.outcome == 'failure') }}
+        uses: ./head/.github/actions/upload-artifact
+        with:
+          name: test-benchmark-samples-${{ matrix.arch }}-${{ strategy.job-index }}
+          path: |
+            test-compare/results.json
+            test-compare/*.log
+          retention-days: 14
+          if-no-files-found: ignore
       - name: Benchmark base and head
+        if: ${{ !inputs.test_filter }}
         id: benchmark
         env:
           MODULES: ${{ matrix.modules }}
@@ -232,6 +273,16 @@ jobs:
           # The `openssl` crate needs Homebrew's OpenSSL on macOS.
           if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
           python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --groups "$BENCH_GROUPS" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL $OPENSSL_WITH_FEATURES
+      - name: Record per-run benchmark estimates
+        if: ${{ always() && !cancelled() && !inputs.test_filter && (steps.benchmark.outcome == 'success' || steps.benchmark.outcome == 'failure') }}
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for path in sorted(Path("bench-compare").rglob("new/estimates.json")):
+              estimates = json.loads(path.read_text())
+              print(json.dumps({"path": str(path), **{key: estimates[key] for key in ("mean", "median", "std_dev")}}))
+          PY
       - name: Save raw benchmark samples
         if: ${{ always() && !cancelled() && (steps.benchmark.outcome == 'success' || steps.benchmark.outcome == 'failure') }}
         uses: ./head/.github/actions/upload-artifact

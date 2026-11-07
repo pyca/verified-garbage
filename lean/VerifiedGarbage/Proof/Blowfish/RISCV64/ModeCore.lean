@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.RISCV64.Core
+public import VerifiedGarbage.Proof.Modes.RISCV64.Shared
 public import VerifiedGarbage.Impl.Blowfish.RISCV64.Modes
 public import VerifiedGarbage.Proof.Blowfish.ModeBytes
 import VerifiedGarbage.Proof.Blowfish.RISCV64.Ecb
@@ -18,7 +18,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 /-!
 # Blowfish's core for the modes on RISC-V
 
-`dirCoreSpec up`: Blowfish's core (`Impl.Blowfish.RISCV64.dirCore up`) meets
+`inlineCoreSpec up`: Blowfish's core (`Impl.Blowfish.RISCV64.inlineCore up`) meets
 what the modes need of a core (`Proof.Modes.RISCV64.CoreSpec`), with the key
 a schedule, its cipher `Proof.Blowfish.dirCipher up`. The schedule at `a0`
 is readable and apart from the regions the mode writes (`KeyArgs`);
@@ -64,17 +64,17 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Schedule} (h : KeyA
 
 /-- The copy is in the core's slots, apart from its buffer. -/
 theorem copy_sub (up : Bool) (B : Addr) :
-    Region.Sub ⟨B + BitVec.ofNat 64 schOff, 4168⟩ (coreRegion (dirCore up) B) :=
+    Region.Sub ⟨B + BitVec.ofNat 64 schOff, 4168⟩ (coreRegion (inlineCore up) B) :=
   Offset.sub _ (by cases up <;> decide) (by cases up <;> decide)
 
 theorem copy_blk (up : Bool) (B : Addr) :
-    Region.Disjoint ⟨B + BitVec.ofNat 64 schOff, 4168⟩ (blkRegion (dirCore up) B) :=
+    Region.Disjoint ⟨B + BitVec.ofNat 64 schOff, 4168⟩ (blkRegion (inlineCore up) B) :=
   Offset.disjoint _ (.inr (by cases up <;> decide)) (by simp only [schOff, bufOff, bufSlot]; omega)
-    (by cases up <;> simp only [dirCore, bufSlot] <;> omega)
+    (by cases up <;> simp only [inlineCore, bufSlot] <;> omega)
 
 theorem ready_frame (up : Bool) {s s' : State} {B : Addr} {ws : List Region} {k : Schedule}
     {rs : List Region} (h : Ready s B ws k) (hf : Frame rs s.mem s'.mem)
-    (hc : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore up) B) r ∨ Region.Sub r (blkRegion (dirCore up) B)) :
+    (hc : ∀ r ∈ rs, Region.Disjoint (coreRegion (inlineCore up) B) r ∨ Region.Sub r (blkRegion (inlineCore up) B)) :
     Ready s' B ws k := by
   obtain ⟨hk, hfit⟩ := h
   refine ⟨?_, hfit⟩
@@ -83,15 +83,15 @@ theorem ready_frame (up : Bool) {s s' : State} {B : Addr} {ws : List Region} {k 
   · exact h.sub_left (copy_sub up B)
   · exact (copy_blk up B).sub_right h
 
-theorem layout (up : Bool) : Layout (dirCore up) :=
+theorem inlineLayout (up : Bool) : Layout (inlineCore up) :=
   ⟨by cases up <;> decide, .inl rfl, by cases up <;> decide, by cases up <;> decide, by cases up <;> decide,
     by cases up <;> decide, by cases up <;> decide⟩
 
 theorem prepare_wp (up : Bool) {s : State} {B : Addr} {rs : List Region} {k : Schedule}
-    (hB : s.gpr sb = B) (hS : ScrIn s B (dirCore up).total) (hm : (⟨B, 8 * (dirCore up).total⟩ : Region) ∈ rs)
+    (hB : s.gpr sb = B) (hS : ScrIn s B (inlineCore up).total) (hm : (⟨B, 8 * (inlineCore up).total⟩ : Region) ∈ rs)
     (hk : KeyArgs s rs k) :
-    WP isa (dirCore up).prepare s fun s' => Ready s' B rs k ∧ s'.gpr sb = B ∧
-      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (dirCore up) B] s.mem s'.mem ∧
+    WP isa (inlineCore up).prepare s fun s' => Ready s' B rs k ∧ s'.gpr sb = B ∧
+      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (inlineCore up) B] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hfit : B.toNat + 8 * 528 ≤ 2 ^ 64 := hS.fit
   have hB' : s.gpr .s4 = B := hB
@@ -112,7 +112,7 @@ theorem prepare_wp (up : Bool) {s : State} {B : Addr} {rs : List Region} {k : Sc
       exact ⟨_, hin, Offset.contains_base _ (by omega) (by omega)⟩)
     (fun i hi => by
       rw [a0, ak.2.2, Offset.add_add]
-      exact hS.wr _ _ (by decide) (by cases up <;> simp only [dirCore, schOff, bufOff, bufSlot] <;> omega)
+      exact hS.wr _ _ (by decide) (by cases up <;> simp only [inlineCore, schOff, bufOff, bufSlot] <;> omega)
         (by simp only [schOff, bufOff, bufSlot]; omega)) (by
       rw [a0, a2]
       have hs : Region.Sub ⟨B + BitVec.ofNat 64 schOff, 4168⟩ ⟨B, 8 * 528⟩ :=
@@ -133,15 +133,15 @@ theorem prepare_wp (up : Bool) {s : State} {B : Addr} {rs : List Region} {k : Sc
 /-- The registers the core writes. -/
 def cryptRegs : List Reg := [.a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6]
 
-theorem blkAddr_eq (up : Bool) (B : Addr) : blkAddr (dirCore up) B 0 = B + BitVec.ofNat 64 48 := by
-  simp only [blkAddr, slotA, dirCore, bufSlot, Nat.mul_zero, BitVec.add_zero]
+theorem blkAddr_eq (up : Bool) (B : Addr) : blkAddr (inlineCore up) B 0 = B + BitVec.ofNat 64 48 := by
+  simp only [blkAddr, slotA, inlineCore, bufSlot, Nat.mul_zero, BitVec.add_zero]
 
 theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Schedule}
-    (hB : s.gpr sb = B) (hS : ScrIn s B (dirCore up).total) (hR : Ready s B ws k) :
-    WP isa (dirCore up).crypt s fun s' => s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
-      Ready s' B ws k ∧ Frame [coreRegion (dirCore up) B] s.mem s'.mem ∧
-      (∀ j < (dirCore up).G, Spec.Aes.bytesAt s'.mem (blkAddr (dirCore up) B j) (4 * (dirCore up).bw) =
-        dirCipher up k (Spec.Aes.bytesAt s.mem (blkAddr (dirCore up) B j) (4 * (dirCore up).bw))) ∧
+    (hB : s.gpr sb = B) (hS : ScrIn s B (inlineCore up).total) (hR : Ready s B ws k) :
+    WP isa (inlineCore up).crypt s fun s' => s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      Ready s' B ws k ∧ Frame [coreRegion (inlineCore up) B] s.mem s'.mem ∧
+      (∀ j < (inlineCore up).G, Spec.Aes.bytesAt s'.mem (blkAddr (inlineCore up) B j) (4 * (inlineCore up).bw) =
+        dirCipher up k (Spec.Aes.bytesAt s.mem (blkAddr (inlineCore up) B j) (4 * (inlineCore up).bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hfit : B.toNat + 8 * 528 ≤ 2 ^ 64 := hS.fit
   have hal : B.toNat % 16 = 0 := hS.al
@@ -164,11 +164,11 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
   have E : LookEnv u₁ := by
     refine ⟨fun o ho ho' => ?_, fun o ho ho' => ?_, ?_, ?_⟩
     · rw [k₁.gpr (by decide), a7, K₁.2.1, K₁.2.2, Offset.add_add]
-      obtain ⟨r, hr, hc⟩ := hS.wr (schOff + o) 4 (by decide) (by cases up <;> simp only [dirCore, schOff, bufOff, bufSlot] <;> omega)
+      obtain ⟨r, hr, hc⟩ := hS.wr (schOff + o) 4 (by decide) (by cases up <;> simp only [inlineCore, schOff, bufOff, bufSlot] <;> omega)
         (by simp only [schOff, bufOff, bufSlot]; omega)
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     · rw [k₁.gpr (by decide), a7, K₁.2.1, K₁.2.2, Offset.add_add]
-      obtain ⟨r, hr, hc⟩ := hS.wr (schOff + o) 8 (by decide) (by cases up <;> simp only [dirCore, schOff, bufOff, bufSlot] <;> omega)
+      obtain ⟨r, hr, hc⟩ := hS.wr (schOff + o) 8 (by decide) (by cases up <;> simp only [inlineCore, schOff, bufOff, bufSlot] <;> omega)
         (by simp only [schOff, bufOff, bufSlot]; omega)
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     · rw [k₁.gpr (by decide), a7, BitVec.toNat_add, BitVec.toNat_ofNat]
@@ -188,29 +188,29 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
     rw [m₃, m₂, m₁, am]; exact stored_frame _ _ _ _
   have dB : Region.Disjoint ⟨B + BitVec.ofNat 64 schOff, 4168⟩ ⟨B + BitVec.ofNat 64 48, 8⟩ := by
     have := copy_blk up B
-    simpa [blkRegion, slotA, dirCore, bufSlot] using this
+    simpa [blkRegion, slotA, inlineCore, bufSlot] using this
   have hK : scheduleAt u₃.mem (B + BitVec.ofNat 64 schOff) = k := by
     rw [scheduleAt_eq_of_frame _ F₃ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dB, hk]
   refine ⟨by rw [show sb = .s4 from rfl, K₃.gpr (by decide)]; exact hB', fun r hr => K₃.gpr (nk r hr),
     ⟨hK, hfit⟩, F₃.sub fun r hr => ?_, fun j hj => ?_, K₃.2.1, K₃.2.2⟩
   · simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by cases up <;> decide)⟩
-  · obtain rfl : j = 0 := by simpa [dirCore] using hj
+  · obtain rfl : j = 0 := by simpa [inlineCore] using hj
     have e1 := congrArg Prod.fst c₂
     have e2 := congrArg Prod.snd c₂
     simp only at e1 e2
-    rw [blkAddr_eq, show 4 * (dirCore up).bw = 8 from rfl, bytesAt_eq, m₃, stored_block, e1, e2, l₁, h₁, m₁, am,
+    rw [blkAddr_eq, show 4 * (inlineCore up).bw = 8 from rfl, bytesAt_eq, m₃, stored_block, e1, e2, l₁, h₁, m₁, am,
       k₁.gpr (show Reg.a7 ∉ [Reg.a3, .a4, .t4] by decide), a7, hk, ← blockOut_eq, dirCipher_bytes]
     cases up <;> rfl
 
 /-- Blowfish's core in the direction `up` meets what the modes need. -/
-def dirCoreSpec (up : Bool) : CoreSpec (dirCore up) where
+def inlineCoreSpec (up : Bool) : CoreSpec (inlineCore up) where
   Key := Schedule
   cipher := dirCipher up
   KeyArgs := KeyArgs
   Ready := Ready
   cipher_len k b := dirCipher_len up k b
-  layout := layout up
+  layout := inlineLayout up
   keyArgs_congr h e r w _ f := keyArgs_congr h e.a0 r w f
   ready_frame h _ _ _ _ f _ hc := ready_frame up h f hc
   prepare_wp := prepare_wp up
@@ -223,17 +223,17 @@ def Ready2 (s : State) (B : Addr) (_ws : List Region) (k : Schedule) : Prop :=
   scheduleAt s.mem (B + BitVec.ofNat 64 schOff2) = k ∧ B.toNat + 8 * 540 ≤ 2 ^ 64
 
 theorem copy2_sub (up : Bool) (B : Addr) :
-    Region.Sub ⟨B + BitVec.ofNat 64 schOff2, 4168⟩ (coreRegion (dirCore2 up) B) :=
+    Region.Sub ⟨B + BitVec.ofNat 64 schOff2, 4168⟩ (coreRegion (inlineCore2 up) B) :=
   Offset.sub _ (by cases up <;> decide) (by cases up <;> decide)
 
 theorem copy2_blk (up : Bool) (B : Addr) :
-    Region.Disjoint ⟨B + BitVec.ofNat 64 schOff2, 4168⟩ (blkRegion (dirCore2 up) B) :=
+    Region.Disjoint ⟨B + BitVec.ofNat 64 schOff2, 4168⟩ (blkRegion (inlineCore2 up) B) :=
   Offset.disjoint _ (.inr (by cases up <;> decide)) (by simp only [schOff2, bufOff, bufSlot]; omega)
-    (by cases up <;> simp only [dirCore2, bufSlot] <;> omega)
+    (by cases up <;> simp only [inlineCore2, bufSlot] <;> omega)
 
 theorem ready2_frame (up : Bool) {s s' : State} {B : Addr} {ws : List Region} {k : Schedule}
     {rs : List Region} (h : Ready2 s B ws k) (hf : Frame rs s.mem s'.mem)
-    (hc : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore2 up) B) r ∨ Region.Sub r (blkRegion (dirCore2 up) B)) :
+    (hc : ∀ r ∈ rs, Region.Disjoint (coreRegion (inlineCore2 up) B) r ∨ Region.Sub r (blkRegion (inlineCore2 up) B)) :
     Ready2 s' B ws k := by
   obtain ⟨hk, hfit⟩ := h
   refine ⟨?_, hfit⟩
@@ -242,15 +242,15 @@ theorem ready2_frame (up : Bool) {s s' : State} {B : Addr} {ws : List Region} {k
   · exact h.sub_left (copy2_sub up B)
   · exact (copy2_blk up B).sub_right h
 
-theorem layout2 (up : Bool) : Layout (dirCore2 up) :=
+theorem inlineLayout2 (up : Bool) : Layout (inlineCore2 up) :=
   ⟨by cases up <;> decide, .inl rfl, by cases up <;> decide, by cases up <;> decide, by cases up <;> decide,
     by cases up <;> decide, by cases up <;> decide⟩
 
 theorem prepare2_wp (up : Bool) {s : State} {B : Addr} {rs : List Region} {k : Schedule}
-    (hB : s.gpr sb = B) (hS : ScrIn s B (dirCore2 up).total) (hm : (⟨B, 8 * (dirCore2 up).total⟩ : Region) ∈ rs)
+    (hB : s.gpr sb = B) (hS : ScrIn s B (inlineCore2 up).total) (hm : (⟨B, 8 * (inlineCore2 up).total⟩ : Region) ∈ rs)
     (hk : KeyArgs s rs k) :
-    WP isa (dirCore2 up).prepare s fun s' => Ready2 s' B rs k ∧ s'.gpr sb = B ∧
-      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (dirCore2 up) B] s.mem s'.mem ∧
+    WP isa (inlineCore2 up).prepare s fun s' => Ready2 s' B rs k ∧ s'.gpr sb = B ∧
+      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (inlineCore2 up) B] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hfit : B.toNat + 8 * 540 ≤ 2 ^ 64 := hS.fit
   have hB' : s.gpr .s4 = B := hB
@@ -271,7 +271,7 @@ theorem prepare2_wp (up : Bool) {s : State} {B : Addr} {rs : List Region} {k : S
       exact ⟨_, hin, Offset.contains_base _ (by omega) (by omega)⟩)
     (fun i hi => by
       rw [a0, ak.2.2, Offset.add_add]
-      exact hS.wr _ _ (by decide) (by cases up <;> simp only [dirCore2, schOff2, bufOff, bufSlot] <;> omega)
+      exact hS.wr _ _ (by decide) (by cases up <;> simp only [inlineCore2, schOff2, bufOff, bufSlot] <;> omega)
         (by simp only [schOff2, bufOff, bufSlot]; omega)) (by
       rw [a0, a2]
       have hs : Region.Sub ⟨B + BitVec.ofNat 64 schOff2, 4168⟩ ⟨B, 8 * 540⟩ :=
@@ -313,16 +313,16 @@ theorem kept_out : ∀ r ∈ kept, r ∉ saved2.map Prod.fst → r ∉ [Reg.s1, 
 
 theorem saved_out : ∀ p ∈ saved2, p.1 ∉ [Reg.a7, .a1, .t0] := by decide
 theorem blkAddr2_eq (up : Bool) (B : Addr) (j : Nat) :
-    blkAddr (dirCore2 up) B j = B + BitVec.ofNat 64 (48 + 8 * j) := by
-  simp only [blkAddr, slotA, dirCore2, bufSlot]
+    blkAddr (inlineCore2 up) B j = B + BitVec.ofNat 64 (48 + 8 * j) := by
+  simp only [blkAddr, slotA, inlineCore2, bufSlot]
   rw [Offset.add_add]
 
 theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Schedule}
-    (hB : s.gpr sb = B) (hS : ScrIn s B (dirCore2 up).total) (hR : Ready2 s B ws k) :
-    WP isa (dirCore2 up).crypt s fun s' => s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
-      Ready2 s' B ws k ∧ Frame [coreRegion (dirCore2 up) B] s.mem s'.mem ∧
-      (∀ j < (dirCore2 up).G, Spec.Aes.bytesAt s'.mem (blkAddr (dirCore2 up) B j) (4 * (dirCore2 up).bw) =
-        dirCipher up k (Spec.Aes.bytesAt s.mem (blkAddr (dirCore2 up) B j) (4 * (dirCore2 up).bw))) ∧
+    (hB : s.gpr sb = B) (hS : ScrIn s B (inlineCore2 up).total) (hR : Ready2 s B ws k) :
+    WP isa (inlineCore2 up).crypt s fun s' => s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      Ready2 s' B ws k ∧ Frame [coreRegion (inlineCore2 up) B] s.mem s'.mem ∧
+      (∀ j < (inlineCore2 up).G, Spec.Aes.bytesAt s'.mem (blkAddr (inlineCore2 up) B j) (4 * (inlineCore2 up).bw) =
+        dirCipher up k (Spec.Aes.bytesAt s.mem (blkAddr (inlineCore2 up) B j) (4 * (inlineCore2 up).bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hfit : B.toNat + 8 * 540 ≤ 2 ^ 64 := hS.fit
   have hal : B.toNat % 16 = 0 := hS.al
@@ -367,7 +367,7 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   · have := saved_in' p hp
     have h8 := (saved_ok' p hp).1
     rw [ak.2.2, a0, Offset.add_add]
-    exact hS.wr _ _ (by decide) (by cases up <;> simp only [dirCore2] <;> omega) (by omega)
+    exact hS.wr _ _ (by decide) (by cases up <;> simp only [inlineCore2] <;> omega) (by omega)
   rw [a0]
   let Ms := Spill.saveMem a.mem SA a.gpr saved2
   have fs : Frame [⟨SA, 80⟩] s.mem Ms := by
@@ -404,11 +404,11 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   have E : LookEnv u₁ := by
     refine ⟨fun o ho ho' => ?_, fun o ho ho' => ?_, ?_, ?_⟩
     · rw [u7, K₁.2.1, K₁.2.2, Offset.add_add]
-      obtain ⟨r, hr, hc⟩ := hS.wr (schOff2 + o) 4 (by decide) (by cases up <;> simp only [dirCore2, schOff2, bufOff, bufSlot] <;> omega)
+      obtain ⟨r, hr, hc⟩ := hS.wr (schOff2 + o) 4 (by decide) (by cases up <;> simp only [inlineCore2, schOff2, bufOff, bufSlot] <;> omega)
         (by simp only [schOff2, bufOff, bufSlot]; omega)
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     · rw [u7, K₁.2.1, K₁.2.2, Offset.add_add]
-      obtain ⟨r, hr, hc⟩ := hS.wr (schOff2 + o) 8 (by decide) (by cases up <;> simp only [dirCore2, schOff2, bufOff, bufSlot] <;> omega)
+      obtain ⟨r, hr, hc⟩ := hS.wr (schOff2 + o) 8 (by decide) (by cases up <;> simp only [inlineCore2, schOff2, bufOff, bufSlot] <;> omega)
         (by simp only [schOff2, bufOff, bufSlot]; omega)
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     · rw [u7, BitVec.toNat_add, BitVec.toNat_ofNat]
@@ -462,7 +462,7 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   · have := saved_in' p hp
     have h8 := (saved_ok' p hp).1
     rw [k₄.2.1, k₄.2.2, kv.2.1, kv.2.2, k₃.2.1, k₃.2.2, K₂.2.1, K₂.2.2, Offset.add_add]
-    obtain ⟨r, hr, hc⟩ := hS.wr (4232 + p.2) 8 (by decide) (by cases up <;> simp only [dirCore2] <;> omega) (by omega)
+    obtain ⟨r, hr, hc⟩ := hS.wr (4232 + p.2) 8 (by decide) (by cases up <;> simp only [inlineCore2] <;> omega) (by omega)
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   have Kt : Keep crypt2Regs s u₄ := (((K₂.trans k₃).trans kv).trans k₄).mono (by decide)
   have tg : ∀ r ∈ kept, t.gpr r = s.gpr r := fun r hr => by
@@ -488,7 +488,7 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   refine ⟨by rw [show sb = .s4 from rfl]; exact (tg .s4 (by decide)).trans hB', tg, ⟨by rw [R.mem]; exact hK4, hfit⟩,
     ?_, fun j hj => ?_, by rw [R.rd]; exact Kt.2.1, by rw [R.wr]; exact Kt.2.2⟩
   · rw [R.mem, mem₄]
-    have eC : coreRegion (dirCore2 up) B = ⟨B + BitVec.ofNat 64 48, 4272⟩ := by cases up <;> rfl
+    have eC : coreRegion (inlineCore2 up) B = ⟨B + BitVec.ofNat 64 48, 4272⟩ := by cases up <;> rfl
     rw [eC]
     refine ((fs.sub fun r hr => ?_).trans (f₁.sub fun r hr => ?_)).trans (f₂.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
@@ -498,13 +498,13 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, by rw [e8]; exact Offset.sub _ (by decide) (by decide)⟩
   · have hj' : j < 2 := hj
-    rw [R.mem, show 4 * (dirCore2 up).bw = 8 from rfl]
+    rw [R.mem, show 4 * (inlineCore2 up).bw = 8 from rfl]
     have u17 : u₁.gpr .a7 = B + BitVec.ofNat 64 schOff2 := u7
     rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl
     · have e1 := congrArg Prod.fst c₂
       have e2 := congrArg Prod.snd c₂
       simp only at e1 e2
-      have ea : blkAddr (dirCore2 up) B 0 = q := by rw [blkAddr2_eq]
+      have ea : blkAddr (inlineCore2 up) B 0 = q := by rw [blkAddr2_eq]
       have h0 := hbq 0 (by decide); rw [BitVec.add_zero] at h0
       rw [ea, bytesAt_eq, mem₄, blockAt_frame f₂ fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
@@ -514,7 +514,7 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
     · have e1 := congrArg Prod.fst c₂'
       have e2 := congrArg Prod.snd c₂'
       simp only at e1 e2
-      have ea : blkAddr (dirCore2 up) B 1 = q + 8#64 := by rw [blkAddr2_eq, e8]
+      have ea : blkAddr (inlineCore2 up) B 1 = q + 8#64 := by rw [blkAddr2_eq, e8]
       have h8 := hbq 8 (by decide)
       rw [show q + BitVec.ofNat 64 8 = q + 8#64 from rfl] at h8
       rw [ea, bytesAt_eq, mem₄, stored_block, e1, e2, l₁', h₁', m₁, pm, u17, hbk, ← blockOut_eq, h8,
@@ -522,16 +522,52 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
       cases up <;> rfl
 
 /-- Blowfish's two-block core in the direction `up` meets what the modes need. -/
-def dirCoreSpec2 (up : Bool) : CoreSpec (dirCore2 up) where
+def inlineCoreSpec2 (up : Bool) : CoreSpec (inlineCore2 up) where
   Key := Schedule
   cipher := dirCipher up
   KeyArgs := KeyArgs
   Ready := Ready2
   cipher_len k b := dirCipher_len up k b
-  layout := layout2 up
+  layout := inlineLayout2 up
   keyArgs_congr h e r w _ f := keyArgs_congr h e.a0 r w f
   ready_frame h _ _ _ _ f _ hc := ready2_frame up h f hc
   prepare_wp := prepare2_wp up
   crypt_wp := crypt2_wp up
+
+open VG.Proof.Modes.RISCV64 (KeyMove ReadyMove)
+
+theorem shared_key (up : Bool) : KeyMove (inlineCoreSpec up) := by
+  intro s t rs ts k hk ha rd wr hf hs
+  obtain ⟨hk, hin, hd⟩ := keyArgs_congr hk ha rd wr hf
+  exact ⟨hk, hin, fun r hr => by
+    obtain ⟨r', hr', sub⟩ := hs r hr
+    exact (hd r' hr').sub_right sub⟩
+
+theorem shared_ready (up : Bool) : ReadyMove (inlineCoreSpec up) := by
+  intro s t B ws k rs hr ha rd wr hf hs hd
+  exact ready_frame (ws := ws) up hr hf hd
+
+def dirCoreSpec (up : Bool) : CoreSpec (dirCore up) :=
+  (inlineCoreSpec up).shared (by dsimp only [inlineCore, inlineCore2]; decide) (by dsimp only [inlineCore, inlineCore2]; decide) (shared_key up) (shared_ready up) (by cases up <;> rfl) (by cases up <;> rfl) _ _
+
+theorem shared_key2 (up : Bool) : KeyMove (inlineCoreSpec2 up) := by
+  intro s t rs ts k hk ha rd wr hf hs
+  obtain ⟨hk, hin, hd⟩ := keyArgs_congr hk ha rd wr hf
+  exact ⟨hk, hin, fun r hr => by
+    obtain ⟨r', hr', sub⟩ := hs r hr
+    exact (hd r' hr').sub_right sub⟩
+
+theorem shared_ready2 (up : Bool) : ReadyMove (inlineCoreSpec2 up) := by
+  intro s t B ws k rs hr ha rd wr hf hs hd
+  exact ready2_frame (ws := ws) up hr hf hd
+
+def dirCoreSpec2 (up : Bool) : CoreSpec (dirCore2 up) :=
+  (inlineCoreSpec2 up).shared (by dsimp only [inlineCore, inlineCore2]; decide) (by dsimp only [inlineCore, inlineCore2]; decide) (shared_key2 up) (shared_ready2 up) (by cases up <;> rfl) (by cases up <;> rfl) _ _
+
+theorem layout (up : Bool) : Layout (dirCore up) :=
+  VG.Proof.Modes.RISCV64.shared_layout (inlineLayout up) (by dsimp only [inlineCore, inlineCore2]; decide) _ _
+
+theorem layout2 (up : Bool) : Layout (dirCore2 up) :=
+  VG.Proof.Modes.RISCV64.shared_layout (inlineLayout2 up) (by dsimp only [inlineCore, inlineCore2]; decide) _ _
 
 end VG.Proof.Blowfish.RISCV64.Mode

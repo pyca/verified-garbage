@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.RISCV64.Core
+public import VerifiedGarbage.Proof.Modes.RISCV64.Shared
 public import VerifiedGarbage.Impl.Camellia.RISCV64.Modes
 public import VerifiedGarbage.Spec.Camellia.Cbc
 public import VerifiedGarbage.Proof.Camellia.RISCV64.Ecb
@@ -22,8 +22,8 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 /-!
 # Camellia's core for the modes on RISC-V
 
-`dirCoreSpec d R`: Camellia's core for the direction `d` and `R` rounds
-(`Impl.Camellia.RISCV64.dirCore d R`) meets what the modes need of a core
+`inlineCoreSpec d R`: Camellia's core for the direction `d` and `R` rounds
+(`Impl.Camellia.RISCV64.inlineCore d R`) meets what the modes need of a core
 (`Proof.Modes.RISCV64.CoreSpec`), with the key the schedule's words, its
 cipher `Spec.Camellia.cipher` under the subkeys of `R` rounds of them for
 encryption and `Spec.Camellia.invCipher` for decryption, as on PPC64LE
@@ -181,7 +181,7 @@ theorem readyAt_congr {d : Dir} {R : Nat} {m m' : Mem} {b : Addr} {w : List (Bit
 core's slots or within its buffer. -/
 theorem word_disjoint {d : Dir} {R : Nat} {B : Addr} {k : Nat} (hk : (48 ≤ k ∧ k < 59) ∨ (keySlot ≤ k ∧ k < slots))
     {r : Region}
-    (hr : Region.Disjoint (coreRegion (dirCore d R) B) r ∨ Region.Sub r (blkRegion (dirCore d R) B)) :
+    (hr : Region.Disjoint (coreRegion (inlineCore d R) B) r ∨ Region.Sub r (blkRegion (inlineCore d R) B)) :
     Region.Disjoint ⟨wordAddr (ecbA B) k, 8⟩ r := by
   have hk' : k < 400 := by rw [keySlot_eq, slots_eq] at hk; omega
   rcases hr with h | h
@@ -196,7 +196,7 @@ theorem word_disjoint {d : Dir} {R : Nat} {B : Addr} {k : Nat} (hk : (48 ≤ k �
 
 theorem ready_frame {d : Dir} {R : Nat} (hR : R = 18 ∨ R = 24) {s s' : State} {B : Addr} {ws : List Region}
     {w : List (BitVec 64)} {rs : List Region} (h : Ready d R s B ws w) (hf : Frame rs s.mem s'.mem)
-    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore d R) B) r ∨ Region.Sub r (blkRegion (dirCore d R) B)) :
+    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (inlineCore d R) B) r ∨ Region.Sub r (blkRegion (inlineCore d R) B)) :
     Ready d R s' B ws w :=
   readyAt_congr hR h fun k hk =>
     hf.readW (Region.contains_self _ _) (fun r hr => word_disjoint hk (hd r hr)) (by decide)
@@ -599,44 +599,44 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
 
 /-! ## The core -/
 
-theorem total_eq (d : Dir) (R : Nat) : (dirCore d R).total = 406 := rfl
+theorem inline_total_eq (d : Dir) (R : Nat) : (inlineCore d R).total = 406 := rfl
 
-theorem layout (d : Dir) (R : Nat) : Layout (dirCore d R) :=
-  ⟨by dsimp only [dirCore]; decide, .inr rfl, by dsimp only [dirCore]; decide, by dsimp only [dirCore]; decide,
-    by dsimp only [dirCore]; decide, by dsimp only [dirCore]; decide, by dsimp only [dirCore]; decide⟩
+theorem inlineLayout (d : Dir) (R : Nat) : Layout (inlineCore d R) :=
+  ⟨by dsimp only [inlineCore]; decide, .inr rfl, by dsimp only [inlineCore]; decide, by dsimp only [inlineCore]; decide,
+    by dsimp only [inlineCore]; decide, by dsimp only [inlineCore]; decide, by dsimp only [inlineCore]; decide⟩
 
 /-- ECB's scratch buffer within the frame. -/
-theorem ecb_in {s : State} {B : Addr} {d : Dir} {R : Nat} (hS : ScrIn s B (dirCore d R).total) :
+theorem ecb_in {s : State} {B : Addr} {d : Dir} {R : Nat} (hS : ScrIn s B (inlineCore d R).total) :
     InRegions s.wr (ecbA B) (8 * slots) :=
-  ⟨_, hS.whole (by rw [total_eq]; decide), VG.Offset.contains_base B (by rw [total_eq]; decide) (by decide)⟩
+  ⟨_, hS.whole (by rw [inline_total_eq]; decide), VG.Offset.contains_base B (by rw [inline_total_eq]; decide) (by decide)⟩
 
 theorem ecb_sub (d : Dir) (R : Nat) (B : Addr) :
-    Region.Sub ⟨ecbA B, 8 * slots⟩ ⟨B, 8 * (dirCore d R).total⟩ :=
-  VG.Offset.sub_base B (by rw [total_eq]; decide)
+    Region.Sub ⟨ecbA B, 8 * slots⟩ ⟨B, 8 * (inlineCore d R).total⟩ :=
+  VG.Offset.sub_base B (by rw [inline_total_eq]; decide)
 
-theorem ecb_al {s : State} {B : Addr} {d : Dir} {R : Nat} (hS : ScrIn s B (dirCore d R).total) :
+theorem ecb_al {s : State} {B : Addr} {d : Dir} {R : Nat} (hS : ScrIn s B (inlineCore d R).total) :
     (ecbA B).toNat % 8 = 0 :=
   Spill.al8 (by have := hS.al; omega) (by decide)
 
-theorem ecb_fit {s : State} {B : Addr} {d : Dir} {R : Nat} (hS : ScrIn s B (dirCore d R).total) :
+theorem ecb_fit {s : State} {B : Addr} {d : Dir} {R : Nat} (hS : ScrIn s B (inlineCore d R).total) :
     (ecbA B).toNat + 8 * slots ≤ 2 ^ 64 := by
   have h := hS.fit
-  have e : (dirCore d R).total = 406 := rfl
+  have e : (inlineCore d R).total = 406 := rfl
   rw [e] at h
   rw [slots_eq, ecbA, ecbOff_eq, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by decide : 48 < 2 ^ 64),
     Nat.mod_eq_of_lt (by omega)]
   omega
 
-theorem prepare_noFrames (d : Dir) (R : Nat) : (dirCore d R).prepare.noFrames = true := by
+theorem prepare_noFrames (d : Dir) (R : Nat) : (inlineCore d R).prepare.noFrames = true := by
   cases d <;> rfl
 
-theorem crypt_noFrames (d : Dir) (R : Nat) : (dirCore d R).crypt.noFrames = true := rfl
+theorem crypt_noFrames (d : Dir) (R : Nat) : (inlineCore d R).crypt.noFrames = true := rfl
 
 theorem prepare_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B : Addr} {rs : List Region}
-    {w : List (BitVec 64)} (hB : s.gpr Impl.Modes.RISCV64.sb = B) (hS : ScrIn s B (dirCore d R).total)
-    (hm : (⟨B, 8 * (dirCore d R).total⟩ : Region) ∈ rs) (hk : KeyArgs R s rs w) :
-    WP isa (dirCore d R).prepare s fun s' => Ready d R s' B rs w ∧ s'.gpr Impl.Modes.RISCV64.sb = B ∧
-      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (dirCore d R) B] s.mem s'.mem ∧
+    {w : List (BitVec 64)} (hB : s.gpr Impl.Modes.RISCV64.sb = B) (hS : ScrIn s B (inlineCore d R).total)
+    (hm : (⟨B, 8 * (inlineCore d R).total⟩ : Region) ∈ rs) (hk : KeyArgs R s rs w) :
+    WP isa (inlineCore d R).prepare s fun s' => Ready d R s' B rs w ∧ s'.gpr Impl.Modes.RISCV64.sb = B ∧
+      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (inlineCore d R) B] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨p, hp, hws, hin, hfit, hdis⟩ := hk
   have dSS : Region.Disjoint ⟨p, 272⟩ ⟨ecbA B, 8 * slots⟩ := (hdis _ hm).sub_right (ecb_sub d R B)
@@ -650,13 +650,13 @@ theorem prepare_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B :
 
 /-- Block `j` of blocks transformed by ECB. -/
 theorem crypt_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B : Addr} {ws : List Region}
-    {w : List (BitVec 64)} (hB : s.gpr Impl.Modes.RISCV64.sb = B) (hS : ScrIn s B (dirCore d R).total)
+    {w : List (BitVec 64)} (hB : s.gpr Impl.Modes.RISCV64.sb = B) (hS : ScrIn s B (inlineCore d R).total)
     (hr : Ready d R s B ws w) :
-    WP isa (dirCore d R).crypt s fun s' => s'.gpr Impl.Modes.RISCV64.sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
-      Ready d R s' B ws w ∧ Frame [coreRegion (dirCore d R) B] s.mem s'.mem ∧
-      (∀ j < (dirCore d R).G, Spec.Aes.bytesAt s'.mem (blkAddr (dirCore d R) B j) (4 * (dirCore d R).bw) =
+    WP isa (inlineCore d R).crypt s fun s' => s'.gpr Impl.Modes.RISCV64.sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      Ready d R s' B ws w ∧ Frame [coreRegion (inlineCore d R) B] s.mem s'.mem ∧
+      (∀ j < (inlineCore d R).G, Spec.Aes.bytesAt s'.mem (blkAddr (inlineCore d R) B j) (4 * (inlineCore d R).bw) =
         dirCipher d (Spec.Camellia.subkeysOfWords R w)
-          (Spec.Aes.bytesAt s.mem (blkAddr (dirCore d R) B j) (4 * (dirCore d R).bw))) ∧
+          (Spec.Aes.bytesAt s.mem (blkAddr (inlineCore d R) B j) (4 * (inlineCore d R).bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have w₀ := cryptBody_wp d hR (s := s.withRegions [] [⟨ecbA B, 8 * slots⟩]) hB (ecb_al hS)
     (List.mem_singleton_self _) (ecb_fit hS) hr
@@ -664,27 +664,49 @@ theorem crypt_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B : A
     (fun s' rd' wr' _ f' ⟨b', k', r', _, blk', _, _⟩ => ⟨b', fun r hr => k' r hr, r', f', fun j hj => ?_, rd', wr'⟩)
     (crypt_noFrames d R)
   have hj8 : j < 8 := hj
-  have ha : blkAddr (dirCore d R) B j = ecbA B + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := by
+  have ha : blkAddr (inlineCore d R) B j = ecbA B + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := by
     show B + BitVec.ofNat 64 (8 * 102) + BitVec.ofNat 64 (16 * j) =
       B + BitVec.ofNat 64 48 + BitVec.ofNat 64 (8 * 96 + 16 * j)
     rw [VG.Offset.add_add, VG.Offset.add_add]
     congr 2; omega
-  show Spec.Aes.bytesAt s'.mem (blkAddr (dirCore d R) B j) 16 =
-    dirCipher d _ (Spec.Aes.bytesAt s.mem (blkAddr (dirCore d R) B j) 16)
+  show Spec.Aes.bytesAt s'.mem (blkAddr (inlineCore d R) B j) 16 =
+    dirCipher d _ (Spec.Aes.bytesAt s.mem (blkAddr (inlineCore d R) B j) 16)
   rw [dirCipher_bytes, bytesAt_eq_blockAt, ha]
   exact congrArg Vector.toList (blk' j hj8)
 
 /-- Camellia's core meets what the modes need. -/
-def dirCoreSpec (d : Dir) (R : Nat) (hR : R = 18 ∨ R = 24) : CoreSpec (dirCore d R) where
+def inlineCoreSpec (d : Dir) (R : Nat) (hR : R = 18 ∨ R = 24) : CoreSpec (inlineCore d R) where
   Key := List (BitVec 64)
   cipher k := dirCipher d (Spec.Camellia.subkeysOfWords R k)
   KeyArgs := KeyArgs R
   Ready := Ready d R
-  cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.Camellia.cipher, Spec.Camellia.invCipher, dirCore]
-  layout := layout d R
+  cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.Camellia.cipher, Spec.Camellia.invCipher, inlineCore]
+  layout := inlineLayout d R
   keyArgs_congr h e r _ _ f := keyArgs_congr h e.a0 r f hR
   ready_frame h _ _ _ _ f _ hd := ready_frame hR h f hd
   prepare_wp := prepare_wp d hR
   crypt_wp := crypt_wp d hR
+
+open VG.Proof.Modes.RISCV64 (KeyMove ReadyMove)
+
+theorem shared_key (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) : KeyMove (inlineCoreSpec d R hR) := by
+  intro s t rs ts k hk ha rd wr hf hs
+  obtain ⟨p, hp, hw, hin, fit, hd⟩ := keyArgs_congr hk ha rd hf hR
+  exact ⟨p, hp, hw, hin, fit, fun r hr => by
+    obtain ⟨r', hr', sub⟩ := hs r hr
+    exact (hd r' hr').sub_right sub⟩
+
+theorem shared_ready (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) : ReadyMove (inlineCoreSpec d R hR) := by
+  intro s t B ws k rs hr ha rd wr hf hs hd
+  exact ready_frame (ws := ws) hR hr hf hd
+
+def dirCoreSpec (d : Dir) (R : Nat) (hR : R = 18 ∨ R = 24) : CoreSpec (dirCore d R) :=
+  (inlineCoreSpec d R hR).shared (by dsimp only [inlineCore]; decide) (by dsimp only [inlineCore]; decide) (shared_key d hR) (shared_ready d hR)
+    (prepare_noFrames d R) (crypt_noFrames d R) _ _
+
+theorem layout (d : Dir) (R : Nat) : Layout (dirCore d R) :=
+  VG.Proof.Modes.RISCV64.shared_layout (inlineLayout d R) (by dsimp only [inlineCore]; decide) _ _
+
+theorem total_eq (d : Dir) (R : Nat) : (dirCore d R).total = 408 := rfl
 
 end VG.Proof.Camellia.RISCV64.Mode
