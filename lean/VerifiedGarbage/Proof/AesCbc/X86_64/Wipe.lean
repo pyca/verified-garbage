@@ -283,7 +283,7 @@ theorem decrypt_depth (v : BlocksImpl) : (Caller.decrypt v).x86_64Depth ≤ 8 :=
   · split
     · decide
     · simp only [Impl.AesCbc.X86_64.decrypt, Impl.AesCbc.X86_64.batched, Impl.AesCbc.X86_64.groups,
-        Impl.AesCbc.X86_64.decGroup, Impl.AesCbc.X86_64.decBody, Code.x86_64Depth, v.decNoStack]
+        Impl.AesCbc.X86_64.decGroup, Impl.AesCbc.X86_64.decBody, Code.x86_64Depth, v.decNoStack, Nat.max_le]
       omega
 
 theorem encrypt_depth (v : BlocksImpl) : (Caller.encrypt v).x86_64Depth ≤ 8 := by
@@ -291,7 +291,7 @@ theorem encrypt_depth (v : BlocksImpl) : (Caller.encrypt v).x86_64Depth ≤ 8 :=
   split
   · decide
   · simp only [Impl.AesCbc.X86_64.encrypt, Impl.AesCbc.X86_64.whole, Impl.AesCbc.X86_64.encBody,
-      Code.x86_64Depth, v.encNoStack]
+      Code.x86_64Depth, v.encNoStack, Nat.max_le]
     omega
 
 /-- The bytes of `scratch` that `Caller.decrypt v` may write: 224 for the
