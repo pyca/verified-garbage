@@ -123,8 +123,13 @@ impl TripleDesCfb64Decryptor {
     /// whole segments; this is the rule of its §6.4 and §6.5 for a partial
     /// last block, as other implementations extend CFB).
     pub fn decrypt_final(mut self, buffer: &mut [u8]) {
+        // The whole blocks, which decryption need not chain (the whole-block
+        // function may decrypt several at once), then the rest, fewer than
+        // 8 bytes, from the IV they leave.
+        let (blocks, rest) = buffer.split_at_mut(buffer.len() / 8 * 8);
+        self.key.decrypt(&mut self.iv, blocks);
         self.key
-            .final_(&mut self.iv, buffer, vg_triple_des_cfb64_decrypt_final);
+            .final_(&mut self.iv, rest, vg_triple_des_cfb64_decrypt_final);
     }
 }
 
