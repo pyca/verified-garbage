@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveVerified
 public import VerifiedGarbage.Proof.Dsa.RISCV64.RSVerified
+public import VerifiedGarbage.Proof.Dsa.RISCV64.ValidatePrivateVerified
 public import VerifiedGarbage.Proof.Dsa.RISCV64.GKVerified
 public import VerifiedGarbage.Proof.Dsa.RISCV64.ValidateVerified
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedVerified
@@ -18,10 +19,13 @@ def artifacts : List Artifact := [
   Spec.Dsa.deriveKeyApi.artifact RISCV64.target {
     code := Impl.Dsa.RISCV64.Derive.derive
     verified := Proof.Dsa.RISCV64.deriveKey_verified },
-  Spec.Dsa.randomSignApi.artifact RISCV64.target {
+  Spec.Dsa.validatePrivateKeyApi.artifact RISCV64.target {
+    code := Impl.Dsa.RISCV64.PrevalidatedSign.validate
+    verified := Proof.Dsa.RISCV64.validatePrivate_verified },
+  Spec.Dsa.randomSignPrevalidatedApi.artifact RISCV64.target {
     stack := 192
-    code := Impl.Dsa.RISCV64.RandomSign.code
-    verified := Proof.Dsa.RISCV64.randomSign_verified },
+    code := Impl.Dsa.RISCV64.PrevalidatedSign.randomSign
+    verified := Proof.Dsa.RISCV64.randomSignPre_verified },
   Spec.Dsa.generateKeyApi.artifact RISCV64.target {
     stack := 192
     code := Impl.Dsa.RISCV64.Generate.code
