@@ -16,7 +16,7 @@ exponentiation for the 2048-, 3072- and 4096-bit groups, else `Crt.expLoop`.
 
 @[expose] public section
 
-namespace VG.Proof.Variants.Ffdh.X86_64.Ifma
+namespace VG.Proof.Variants.FfdhExp.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Ffdh.X86_64.Domain
 open VG.Proof.Bignum.X86_64 VG.Proof.Ffdh.X86_64
@@ -127,4 +127,4 @@ def variant : ExpImpl where
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl"]
 
-end VG.Proof.Variants.Ffdh.X86_64.Ifma
+end VG.Proof.Variants.FfdhExp.X86_64.Ifma

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
 
@@ -169,8 +170,7 @@ theorem body_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M) {s : State} (hpre : kp
     exact mainStatus_eq hb' hm hp
 
 theorem kp_correct (M : Mont) (E : CrtExpL M) (R : R2Impl M)
-    (hmx : (VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.code M.mm E.code (.seq (.block r2Head) R.code)).allInstrs
-      (fun i => !loadsMxcsr i) = true) (s : State) (h : kpContract.pre s) :
+    (hmx : ctlOk (VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.code M.mm E.code (.seq (.block r2Head) R.code)) = true) (s : State) (h : kpContract.pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.code M.mm E.code (.seq (.block r2Head) R.code)) s tr t ∧
       abiPreserved s t ∧ kpContract.post s t := by
   have hpre := h
@@ -179,7 +179,7 @@ theorem kp_correct (M : Mont) (E : CrtExpL M) (R : R2Impl M)
   suffices hw : WP isa (VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.code M.mm E.code (.seq (.block r2Head) R.code)) s
       fun t => gprPreserved s t ∧ kpContract.post s t by
     obtain ⟨tr, t, he, hg, hp⟩ := hw
-    exact ⟨tr, t, he, abiPreserved_of_exec hmx he hg, hp⟩
+    exact ⟨tr, t, he, abiPreserved_of_ctl hmx he hg, hp⟩
   unfold VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.code
   refine WP.seq (WP.mono (body_ok M E R hpre) fun u ⟨hp, hd, hf, hs, k⟩ => ?_)
   have hZ := c.hZ

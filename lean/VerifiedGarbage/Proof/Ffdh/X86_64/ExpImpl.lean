@@ -120,6 +120,23 @@ theorem ctlOk_seqs_of {l : List (Prog isa)} (h : l.all ctlOk = true) : ctlOk (se
     | nil => exact h.1
     | cons b l => exact ctlOk_seq_of h.1 (ih h.2)
 
+/-- `ctlOk` of a template whose instructions never load MXCSR, but in the
+multiplication `hm` (whose instructions never do) and the exponentiation
+`he` (whose code satisfies `ctlOk`): by its structure, down to them and to
+the blocks, which it decides. -/
+syntax "ctl_tac " term:max term:max : tactic
+macro_rules
+  | `(tactic| ctl_tac $hm $he) => `(tactic| repeat' first
+    | with_reducible exact $he
+    | exact ctlOk_of_allInstrs ($hm _ _ _)
+    | decide +kernel
+    | (apply ctlOk_seqs_of
+       simp only [List.all_append, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+       try and_intros)
+    | apply ctlOk_seq_of
+    | apply ctlOk_ite_of
+    | apply ctlOk_loop_of)
+
 /-! ## The baseline: `Crt.expLoop` -/
 
 private theorem base_instrs (p : Instr → Bool) (mul : Nat → Nat → Nat → Prog isa) {sp sl : Nat}

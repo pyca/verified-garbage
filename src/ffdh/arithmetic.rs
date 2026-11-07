@@ -1,10 +1,13 @@
 //! FFDH's public arithmetic, and the choice of its implementation.
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::{
-    VG_FFDH_CHECK_DOMAIN_ADX_FEATURES, VG_FFDH_CHECK_PRIVATE_ADX_FEATURES,
-    VG_FFDH_CHECK_PUBLIC_ADX_FEATURES, VG_FFDH_EXCHANGE_ADX_FEATURES,
-    VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES, VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES,
-    VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES, VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES,
+    VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES, VG_FFDH_CHECK_DOMAIN_MR_ADX_FEATURES,
+    VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES, VG_FFDH_CHECK_PRIVATE_MR_ADX_FEATURES,
+    VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES, VG_FFDH_CHECK_PUBLIC_MR_ADX_FEATURES,
+    VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES, VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES,
+    VG_FFDH_EXCHANGE_MR_ADX_FEATURES, VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES,
+    VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES, VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES,
+    VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES,
 };
 #[cfg(target_arch = "arm")]
 use crate::arch::ffdh::{
@@ -56,10 +59,10 @@ impl Backend {
         if _f.contains(
             const {
                 Features::all(&[
-                    VG_FFDH_CHECK_DOMAIN_ADX_FEATURES,
-                    VG_FFDH_CHECK_PUBLIC_ADX_FEATURES,
-                    VG_FFDH_CHECK_PRIVATE_ADX_FEATURES,
-                    VG_FFDH_EXCHANGE_ADX_FEATURES,
+                    VG_FFDH_CHECK_DOMAIN_MR_ADX_FEATURES,
+                    VG_FFDH_CHECK_PUBLIC_MR_ADX_FEATURES,
+                    VG_FFDH_CHECK_PRIVATE_MR_ADX_FEATURES,
+                    VG_FFDH_EXCHANGE_MR_ADX_FEATURES,
                     VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES,
                     VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES,
                     VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES,
@@ -91,9 +94,41 @@ impl Backend {
     }
 }
 
+/// The exponentiation of the domain operations (`vg_ffdh_check_domain`,
+/// `_check_public`, `_check_private`, `_derive_public` and `_exchange`),
+/// whichever arithmetic `Backend` they multiply with: the baseline ISA's, or
+/// x86-64's with AVX512_IFMA, which their `_exp_ifma` instances use.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum Exp {
+    Baseline,
+    #[cfg(target_arch = "x86_64")]
+    Ifma,
+}
+impl Exp {
+    /// The exponentiation of the domain operations a CPU with the
+    /// features `_f` can run.
+    pub(super) fn ffdh(_f: Features) -> Self {
+        #[cfg(target_arch = "x86_64")]
+        if _f.contains(
+            const {
+                Features::all(&[
+                    VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES,
+                    VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES,
+                    VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES,
+                    VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES,
+                    VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES,
+                ])
+            },
+        ) {
+            return Self::Ifma;
+        }
+        Self::Baseline
+    }
+}
+
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
-    use super::{Backend, Features};
+    use super::{Backend, Exp, Features};
     use verified_garbage_cpu::feature;
 
     #[test]
@@ -144,11 +179,31 @@ mod tests {
             assert_eq!(selected, expected, "{features:?}");
         }
     }
+
+    #[test]
+    fn exp_feature_requirements() {
+        // The exponentiation needs AVX, AVX512F, AVX512_IFMA and AVX512VL,
+        // whatever the arithmetic's BMI2 and ADX.
+        let ifma = feature::AVX | feature::AVX512F | feature::AVX512IFMA | feature::AVX512VL;
+        let cases: &[(u32, Exp)] = &[
+            (0, Exp::Baseline),
+            (feature::BMI2 | feature::ADX, Exp::Baseline),
+            (ifma & !feature::AVX, Exp::Baseline),
+            (ifma & !feature::AVX512F, Exp::Baseline),
+            (ifma & !feature::AVX512IFMA, Exp::Baseline),
+            (ifma & !feature::AVX512VL, Exp::Baseline),
+            (ifma, Exp::Ifma),
+            (ifma | feature::AVX2 | feature::BMI2 | feature::ADX, Exp::Ifma),
+        ];
+        for &(features, expected) in cases {
+            assert_eq!(Exp::ffdh(Features(features)), expected, "{features:?}");
+        }
+    }
 }
 
 #[cfg(all(test, target_arch = "arm"))]
 mod arm_tests {
-    use super::{Backend, Features};
+    use super::{Backend, Exp, Features};
     use verified_garbage_cpu::feature;
     #[test]
     fn backend_feature_requirements() {
@@ -159,6 +214,7 @@ mod arm_tests {
             (feature::NEON | feature::UMAAL, Backend::Umaal),
         ] {
             assert_eq!(Backend::ffdh(Features(names)), expected);
+            assert_eq!(Exp::ffdh(Features(names)), Exp::Baseline);
         }
     }
 }

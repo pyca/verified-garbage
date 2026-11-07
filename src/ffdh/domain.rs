@@ -1,18 +1,30 @@
 //! The FFDH operations: the domain, public-key and key-pair checks, key
 //! generation and the exchange.
 
-use super::arithmetic::{Backend, scalar};
+use super::arithmetic::{Backend, Exp, scalar};
 use crate::arch::ffdh::{
     vg_ffdh_check_domain, vg_ffdh_check_private, vg_ffdh_check_public, vg_ffdh_exchange,
     vg_ffdh_key_generation_init,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::{
-    vg_ffdh_check_domain_adx, vg_ffdh_check_private_adx, vg_ffdh_check_public_adx,
-    vg_ffdh_derive_public_adx, vg_ffdh_exchange_adx,
+    vg_ffdh_check_domain_exp_ifma, vg_ffdh_check_domain_mr_adx, vg_ffdh_check_domain_mr_adx_exp_ifma,
+    vg_ffdh_check_private_exp_ifma, vg_ffdh_check_private_mr_adx,
+    vg_ffdh_check_private_mr_adx_exp_ifma, vg_ffdh_check_public_exp_ifma,
+    vg_ffdh_check_public_mr_adx, vg_ffdh_check_public_mr_adx_exp_ifma,
+    vg_ffdh_derive_public_exp_ifma, vg_ffdh_derive_public_mr_adx,
+    vg_ffdh_derive_public_mr_adx_exp_ifma, vg_ffdh_exchange_exp_ifma, vg_ffdh_exchange_mr_adx,
+    vg_ffdh_exchange_mr_adx_exp_ifma,
 };
 use crate::cpu::detected;
 use crate::rsa::Scratch;
+
+/// The arithmetic and the exponentiation of the domain operations for the
+/// CPU's features.
+fn domain_variant() -> (Backend, Exp) {
+    let f = detected();
+    (Backend::ffdh(f), Exp::ffdh(f))
+}
 
 /// The working space every function needs, `16 p_len + 32` words.
 fn scratch(p_len: usize) -> Scratch {
@@ -43,12 +55,16 @@ impl Domain {
             bytes[3 * p_len - q.len()..].copy_from_slice(q);
         }
         let mut ws = scratch(p_len);
-        let f = match Backend::ffdh(detected()) {
-            Backend::Baseline => vg_ffdh_check_domain,
+        let f = match domain_variant() {
+            (Backend::Baseline, Exp::Baseline) => vg_ffdh_check_domain,
             #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_ffdh_check_domain_adx,
+            (Backend::Adx, Exp::Baseline) => vg_ffdh_check_domain_mr_adx,
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Baseline, Exp::Ifma) => vg_ffdh_check_domain_exp_ifma,
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Adx, Exp::Ifma) => vg_ffdh_check_domain_mr_adx_exp_ifma,
             #[cfg(target_arch = "arm")]
-            Backend::Umaal => crate::arch::ffdh::vg_ffdh_check_domain_umaal,
+            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_check_domain_umaal,
         };
         // SAFETY: `bytes` is `2 p_len` or `3 p_len` bytes for a `p_len` in
         // 64..=1024, and `ws` is `16 p_len + 32` words; they are distinct
@@ -86,12 +102,16 @@ impl Domain {
         }
         let y = scalar(y, self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match Backend::ffdh(detected()) {
-            Backend::Baseline => vg_ffdh_check_public,
+        let f = match domain_variant() {
+            (Backend::Baseline, Exp::Baseline) => vg_ffdh_check_public,
             #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_ffdh_check_public_adx,
+            (Backend::Adx, Exp::Baseline) => vg_ffdh_check_public_mr_adx,
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Baseline, Exp::Ifma) => vg_ffdh_check_public_exp_ifma,
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Adx, Exp::Ifma) => vg_ffdh_check_public_mr_adx_exp_ifma,
             #[cfg(target_arch = "arm")]
-            Backend::Umaal => crate::arch::ffdh::vg_ffdh_check_public_umaal,
+            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_check_public_umaal,
         };
         // SAFETY: `self.bytes` is a domain laid out by `new`, `y` is `p_len`
         // bytes and `ws` `16 p_len + 32` words; all are distinct objects.
@@ -118,12 +138,16 @@ impl Domain {
         }
         let y = scalar(y, self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match Backend::ffdh(detected()) {
-            Backend::Baseline => vg_ffdh_check_private,
+        let f = match domain_variant() {
+            (Backend::Baseline, Exp::Baseline) => vg_ffdh_check_private,
             #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_ffdh_check_private_adx,
+            (Backend::Adx, Exp::Baseline) => vg_ffdh_check_private_mr_adx,
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Baseline, Exp::Ifma) => vg_ffdh_check_private_exp_ifma,
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Adx, Exp::Ifma) => vg_ffdh_check_private_mr_adx_exp_ifma,
             #[cfg(target_arch = "arm")]
-            Backend::Umaal => crate::arch::ffdh::vg_ffdh_check_private_umaal,
+            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_check_private_umaal,
         };
         // SAFETY: as in `check_public`, and `x` is 1 to `p_len` bytes.
         unsafe {
@@ -147,12 +171,16 @@ impl Domain {
     pub(super) fn derive_public(&self, x: &[u8], y: &mut [u8]) -> u32 {
         assert!(!x.is_empty() && x.len() <= self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match Backend::ffdh(detected()) {
-            Backend::Baseline => crate::arch::ffdh::vg_ffdh_derive_public,
-            #[cfg(target_arch = "arm")]
-            Backend::Umaal => crate::arch::ffdh::vg_ffdh_derive_public_umaal,
+        let f = match domain_variant() {
+            (Backend::Baseline, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_derive_public,
             #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_ffdh_derive_public_adx,
+            (Backend::Adx, Exp::Baseline) => vg_ffdh_derive_public_mr_adx,
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Baseline, Exp::Ifma) => vg_ffdh_derive_public_exp_ifma,
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Adx, Exp::Ifma) => vg_ffdh_derive_public_mr_adx_exp_ifma,
+            #[cfg(target_arch = "arm")]
+            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_derive_public_umaal,
         };
         // SAFETY: `y` is `p_len` bytes, `x` 1 to `p_len`, the domain, `ws`
         // and the variant as in `check_public`; all are distinct objects.
@@ -285,12 +313,16 @@ impl Domain {
         );
         let y = scalar(y, self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match Backend::ffdh(detected()) {
-            Backend::Baseline => vg_ffdh_exchange,
+        let f = match domain_variant() {
+            (Backend::Baseline, Exp::Baseline) => vg_ffdh_exchange,
             #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_ffdh_exchange_adx,
+            (Backend::Adx, Exp::Baseline) => vg_ffdh_exchange_mr_adx,
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Baseline, Exp::Ifma) => vg_ffdh_exchange_exp_ifma,
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Adx, Exp::Ifma) => vg_ffdh_exchange_mr_adx_exp_ifma,
             #[cfg(target_arch = "arm")]
-            Backend::Umaal => crate::arch::ffdh::vg_ffdh_exchange_umaal,
+            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_exchange_umaal,
         };
         // SAFETY: `out` and `y` are `p_len` bytes, `x` 1 to `p_len`, the
         // domain, `ws` and the variant as in `check_public`; all are
