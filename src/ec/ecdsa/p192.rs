@@ -36,7 +36,7 @@ fn verify_with(q: &[u8; 49], digest: &[u8], signature: &[u8; 48]) -> Result<(), 
 impl<H: HmacHash> sealed::Functions<P192> for H {
     fn sign(d: &[u8; 24], digest: &H::Output) -> Result<[u8; 48], InvalidKey> {
         // SAFETY: `vg_ecdsa_p192_sign` needs no CPU feature.
-        unsafe { sign_with::<H, 24, 48>(vg_ecdsa_p192_sign, crate::cpu::detected(), d, digest) }
+        unsafe { sign_with::<H, 24, 48>(vg_ecdsa_p192_sign, d, digest) }
     }
 
     /// The verified function takes the hash itself, of any length, and

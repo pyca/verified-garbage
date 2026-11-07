@@ -186,8 +186,8 @@ fn with_tables(hash: Hash, mgf1_hash: Hash) -> Option<(EncryptFn, DecryptFn, Tab
     Some((
         encrypt,
         decrypt,
-        table::table(hash, f)?,
-        table::table(mgf1_hash, f)?,
+        table::table(hash)?,
+        table::table(mgf1_hash)?,
     ))
 }
 
@@ -259,10 +259,10 @@ fn encrypt_with(
     // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; `hash`
     // and `mgf1` are the words of tables of the crate's of `Hash`, and
     // `seed_len` is the digest length of `hash`'s, its word 4
-    // (`hashes::tables::tests::table_words` checks it); and the CPU has the features of `f` and
-    // of the tables' functions, which `functions` and `table::table` chose
-    // for the features detected (which fails to compile if they
-    // need others).
+    // (`hashes::tables::tests::table_words` checks it); and the CPU has the
+    // features of `f`, which `functions` chose for the features detected
+    // (which fails to compile if it needs others), and of the tables'
+    // functions, which their dispatchers chose (`table::table`).
     let r = unsafe {
         f(
             out.as_mut_ptr(),
@@ -339,10 +339,10 @@ fn decrypt_with(
     // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
     // `dp_len = qinv_len = p_len`, `dq_len = q_len` and
     // `scratch_len = 16 n_len + 1056`; `hash` and `mgf1` are the words of
-    // tables of the crate's of `Hash`; and the CPU has the features of `f`
-    // and of the tables' functions, which `functions` and `table::table`
-    // chose for the features detected (which fails to compile if they
-    // need others).
+    // tables of the crate's of `Hash`; and the CPU has the features of `f`,
+    // which `functions` chose for the features detected (which fails to
+    // compile if it needs others), and of the tables' functions, which
+    // their dispatchers chose (`table::table`).
     let r = unsafe {
         f(
             out.as_mut_ptr(),
