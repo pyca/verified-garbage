@@ -168,6 +168,10 @@ GROUPS = {
         "lib": ["cpu"],
         "tests": [],
     },
+    "dit": {
+        "lib": ["dit"],
+        "tests": [],
+    },
     "dsa_parameters": {
         "lib": ["dsa::parameters"],
         "tests": [],
