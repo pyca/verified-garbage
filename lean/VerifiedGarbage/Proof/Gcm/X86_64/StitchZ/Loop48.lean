@@ -803,6 +803,15 @@ theorem DInv.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : 
     fun k hk l hl' => by rw [hm]; exact h.pw k hk l hl', fun l hl' => by rw [hl]; exact h.m1 l hl',
     by rw [hl]; exact h.y, fun l h1 h4 => by rw [hl]; exact h.y1 l h1 h4⟩
 
+/-- `DInv.of_eq`, in place or out of place. -/
+theorem DInvM.of_eq {ix : Bool} {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : State} (h : DInvM ix s₀ P e s)
+    (hg : s'.gpr = s.gpr) (hl : ∀ r l, s'.zlane r l = s.zlane r l) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) : DInvM ix s₀ P e s' :=
+  ⟨h.a.gpr2 (fun r _ _ => by rw [hg]) hl hm hrd hwr, by rw [hg]; exact h.rdx, by rw [hg]; exact h.r9,
+    by rw [hg]; exact h.rax, fun r h1 h2 h3 h4 h5 => by rw [hg]; exact h.gpr r h1 h2 h3 h4 h5,
+    fun k hk l hl' => by rw [hm]; exact h.pw k hk l hl', fun l hl' => by rw [hl]; exact h.m1 l hl',
+    by rw [hl]; exact h.y, fun l h1 h4 => by rw [hl]; exact h.y1 l h1 h4⟩
+
 /-- The loop of one group, from any number of groups decrypted. -/
 theorem loopD_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat} {s : State}
     (hI : DInv s₀ P e s) (hcf : s.cf = some (decide (nb s₀ - 16 * e < 16))) :

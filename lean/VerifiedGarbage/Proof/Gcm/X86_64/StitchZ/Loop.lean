@@ -299,59 +299,69 @@ structure Ready (s₀ : State) (P : Nat → Nat → Block) (s : State) : Prop wh
 
 /-- The four lanes, from the two of `Stitch.setup`: the powers of the `k`-th
 load are the `2k`-th and `2k + 1`-th of `Stitch`'s. -/
+theorem setupZ_run {s : State} {cb : Block}
+    (hc : ∀ l < 2, s.lane .xmm14 l = Nat.repeat inc32 (0 + l) cb) (hm : ∀ l < 2, s.lane .xmm0 l = revMask)
+    (hi : ∀ l < 2, s.lane .xmm15 l = VG.Proof.Aes.X86_64.Vaes.two) (h1 : ∀ l < 2, s.lane .xmm1 l = poly) :
+    WP isa (.block setupZ) s fun s' => ((∀ l < 4, s'.zlane .xmm14 l = Nat.repeat inc32 l cb) ∧ (∀ l < 4, s'.zlane .xmm0 l = revMask) ∧
+      (∀ l < 4, s'.zlane .xmm15 l = four) ∧ (∀ l < 4, s'.zlane .xmm1 l = poly) ∧ s'.zlane .xmm2 0 = s.lane .xmm2 0 ∧
+      (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0)) ∧
+      ZFrame [.xmm13, .xmm14, .xmm15, .xmm15, .xmm0, .xmm1, .xmm2] s s' :=
+  WP.zframe (is := setupZ) (rs := [.xmm13, .xmm14, .xmm15, .xmm15, .xmm0, .xmm1, .xmm2]) (by decide)
+    (Q := fun s' => (∀ l < 4, s'.zlane .xmm14 l = Nat.repeat inc32 l cb) ∧ (∀ l < 4, s'.zlane .xmm0 l = revMask) ∧
+      (∀ l < 4, s'.zlane .xmm15 l = four) ∧ (∀ l < 4, s'.zlane .xmm1 l = poly) ∧ s'.zlane .xmm2 0 = s.lane .xmm2 0 ∧
+      (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0)) (by
+  have c0 : s.xmm .xmm14 = Nat.repeat inc32 0 cb := by
+    have h := hc 0 (by decide); simp only [State.lane, ite_true] at h; exact h
+  have c1 : s.ymmHi .xmm14 = Nat.repeat inc32 1 cb := by
+    have h := hc 1 (by decide); simp only [State.lane, Nat.one_ne_zero, ite_false] at h; exact h
+  have i0 : s.xmm .xmm15 = VG.Proof.Aes.X86_64.Vaes.two := by
+    have h := hi 0 (by decide); simp only [State.lane, ite_true] at h; exact h
+  have i1 : s.ymmHi .xmm15 = VG.Proof.Aes.X86_64.Vaes.two := by
+    have h := hi 1 (by decide); simp only [State.lane, Nat.one_ne_zero, ite_false] at h; exact h
+  have m0 : s.xmm .xmm0 = revMask := by
+    have h := hm 0 (by decide); simp only [State.lane, ite_true] at h; exact h
+  have m1 : s.ymmHi .xmm0 = revMask := by
+    have h := hm 1 (by decide); simp only [State.lane, Nat.one_ne_zero, ite_false] at h; exact h
+  have p0 : s.xmm .xmm1 = poly := by
+    have h := h1 0 (by decide); simp only [State.lane, ite_true] at h; exact h
+  have p1 : s.ymmHi .xmm1 = poly := by
+    have h := h1 1 (by decide); simp only [State.lane, Nat.one_ne_zero, ite_false] at h; exact h
+  rw [setupZ]
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_,
+    fun l hl => ?_, ?_, fun l hl1 hl4 => ?_⟩⟩
+  all_goals simp only [VOp.exec]
+  all_goals try rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
+  all_goals try omega_arith
+  all_goals simp (disch := decide) only [lane0_zlane, lane1_zlane, State.zlane_setV_ne, zlane_vshufi32x4, State.zlane_setV256,
+    State.zlane_setV128, shuf44_0, shuf44_1, shuf44_2, shuf44_3, reduceCtorEq,
+    ↓reduceIte, VBinOp.sse, Nat.one_ne_zero]
+  all_goals simp only [State.zlane, State.lane, ite_true, ite_false, Nat.one_ne_zero,
+    show (0 : Nat) < 2 by decide, show (1 : Nat) < 2 by decide]
+  all_goals first
+    | exact c0 | exact c1 | exact m0 | exact m1 | exact p0 | exact p1
+    | (rw [c0, i0, VG.Proof.Aes.X86_64.Vaes.paddd_two]; rfl)
+    | (rw [c1, i1, VG.Proof.Aes.X86_64.Vaes.paddd_two]; rfl)
+    | (rw [i0]; exact paddd_two_two) | (rw [i1]; exact paddd_two_two))
+
+/-- The state the loops start from, from `Stitch.Ready`. -/
 theorem setupZ_ok {s₀ : State} {P : Nat → Nat → Block} {s : State} (hR : Stitch.Ready s₀ P s) :
     WP isa (.block setupZ) s (Ready s₀ fun k l => P (2 * k + l / 2) (l % 2)) := by
-  refine WP.mono (WP.zframe (is := setupZ) (rs := [.xmm13, .xmm14, .xmm15, .xmm15, .xmm0, .xmm1, .xmm2]) (by decide)
-    (Q := fun s' => (∀ l < 4, s'.zlane .xmm14 l = Nat.repeat inc32 l (cb s₀)) ∧ (∀ l < 4, s'.zlane .xmm0 l = revMask) ∧
-      (∀ l < 4, s'.zlane .xmm15 l = four) ∧ (∀ l < 4, s'.zlane .xmm1 l = poly) ∧ s'.zlane .xmm2 0 = s.lane .xmm2 0 ∧
-      (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0)) ?_) fun s' ⟨⟨c14, m0, i15, p1, y0, y1⟩, f⟩ => ?_
-  · have c0 : s.xmm .xmm14 = Nat.repeat inc32 0 (cb s₀) := by
-      have h := hR.a.ctr 0 (by decide); simp only [State.lane, ite_true] at h; exact h
-    have c1 : s.ymmHi .xmm14 = Nat.repeat inc32 1 (cb s₀) := by
-      have h := hR.a.ctr 1 (by decide); simp only [State.lane, Nat.one_ne_zero, ite_false] at h; exact h
-    have i0 : s.xmm .xmm15 = VG.Proof.Aes.X86_64.Vaes.two := by
-      have h := hR.a.inc 0 (by decide); simp only [State.lane, ite_true] at h; exact h
-    have i1 : s.ymmHi .xmm15 = VG.Proof.Aes.X86_64.Vaes.two := by
-      have h := hR.a.inc 1 (by decide); simp only [State.lane, Nat.one_ne_zero, ite_false] at h; exact h
-    have m0 : s.xmm .xmm0 = revMask := by
-      have h := hR.a.msk 0 (by decide); simp only [State.lane, ite_true] at h; exact h
-    have m1 : s.ymmHi .xmm0 = revMask := by
-      have h := hR.a.msk 1 (by decide); simp only [State.lane, Nat.one_ne_zero, ite_false] at h; exact h
-    have p0 : s.xmm .xmm1 = poly := by
-      have h := hR.m1 0 (by decide); simp only [State.lane, ite_true] at h; exact h
-    have p1 : s.ymmHi .xmm1 = poly := by
-      have h := hR.m1 1 (by decide); simp only [State.lane, Nat.one_ne_zero, ite_false] at h; exact h
-    rw [setupZ]
-    rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
-    rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
-    rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
-    rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
-    rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
-    rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
-    rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_,
-      fun l hl => ?_, ?_, fun l hl1 hl4 => ?_⟩⟩
-    all_goals simp only [VOp.exec]
-    all_goals try rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
-    all_goals try omega_arith
-    all_goals simp (disch := decide) only [lane0_zlane, lane1_zlane, State.zlane_setV_ne, zlane_vshufi32x4, State.zlane_setV256,
-      State.zlane_setV128, shuf44_0, shuf44_1, shuf44_2, shuf44_3, reduceCtorEq,
-      ↓reduceIte, VBinOp.sse, Nat.one_ne_zero]
-    all_goals simp only [State.zlane, State.lane, ite_true, ite_false, Nat.one_ne_zero,
-      show (0 : Nat) < 2 by decide, show (1 : Nat) < 2 by decide]
-    all_goals first
-      | exact c0 | exact c1 | exact m0 | exact m1 | exact p0 | exact p1
-      | (rw [c0, i0, VG.Proof.Aes.X86_64.Vaes.paddd_two]; rfl)
-      | (rw [c1, i1, VG.Proof.Aes.X86_64.Vaes.paddd_two]; rfl)
-      | (rw [i0]; exact paddd_two_two) | (rw [i1]; exact paddd_two_two)
-  · have hA := hR.a
-    refine ⟨⟨Nat.zero_le _, fun l hl => by rw [c14 l hl, Nat.zero_add], m0, i15, by rw [f.gpr]; exact hA.rdi,
-      by rw [f.gpr]; exact hA.rsi, by rw [f.gpr]; exact hA.r10, by rw [f.mem]; exact hA.frame,
-      fun k hk => by rw [f.mem]; exact hA.blocks k hk, by rw [f.rd]; exact hA.rd, by rw [f.wr]; exact hA.wr⟩,
-      by rw [f.gpr]; exact hR.rdx, by rw [f.gpr]; exact hR.rax, fun r h1 h2 h3 => by rw [f.gpr]; exact hR.gpr r h1 h2 h3,
-      fun k hk l hl => ?_, fun l hl => ?_, by rw [y0]; exact hR.y, y1⟩
-    · rw [f.mem, show 64 * k + 16 * l = 32 * (2 * k + l / 2) + 16 * (l % 2) by omega_arith]
-      exact hR.pw _ (by omega_arith) _ (by omega_arith)
-    · exact p1 l hl
+  refine WP.mono (setupZ_run hR.a.ctr hR.a.msk hR.a.inc hR.m1) fun s' ⟨⟨c14, m0, i15, p1, y0, y1⟩, f⟩ => ?_
+  have hA := hR.a
+  refine ⟨⟨Nat.zero_le _, fun l hl => by rw [c14 l hl, Nat.zero_add], m0, i15, by rw [f.gpr]; exact hA.rdi,
+    by rw [f.gpr]; exact hA.rsi, by rw [f.gpr]; exact hA.r10, by rw [f.mem]; exact hA.frame,
+    fun k hk => by rw [f.mem]; exact hA.blocks k hk, by rw [f.rd]; exact hA.rd, by rw [f.wr]; exact hA.wr⟩,
+    by rw [f.gpr]; exact hR.rdx, by rw [f.gpr]; exact hR.rax, fun r h1 h2 h3 => by rw [f.gpr]; exact hR.gpr r h1 h2 h3,
+    fun k hk l hl => ?_, fun l hl => ?_, by rw [y0]; exact hR.y, y1⟩
+  · rw [f.mem, show 64 * k + 16 * l = 32 * (2 * k + l / 2) + 16 * (l % 2) by omega_arith]
+    exact hR.pw _ (by omega_arith) _ (by omega_arith)
+  · exact p1 l hl
 
 /-- The first group, with nothing between its rounds. -/
 theorem first_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {s : State} (hR : Ready s₀ P s) :
