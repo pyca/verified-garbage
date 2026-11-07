@@ -10,7 +10,8 @@ public import VerifiedGarbage.TCB.X86_64.Print
 
 namespace VG.Generic.ChaCha20Xor.X86_64.ChaCha20
 
-def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
+def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact :=
+  if v.polyOnly then [] else [
   Spec.ChaCha20.applyApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.ChaCha20.X86_64.Stream.apply v.callee

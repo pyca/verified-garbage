@@ -65,6 +65,10 @@ structure XorImpl where
   which also call `vg_poly1305_blocks` (ChaCha20-Poly1305) call: the one
   for the same CPUs. -/
   poly : Impl.Poly1305.X86_64.Blocks
+  /-- Whether it differs from another only in `poly`: the callers that do not
+  call `vg_poly1305_blocks` (`vg_chacha20_apply`) are not instantiated for it,
+  as they would be that other's. -/
+  polyOnly : Bool := false
   /-- Its `fold`, `pass` and `wide` with the implementation of
   `vg_poly1305_blocks` it comes with: one of the combinations whose
   ChaCha20-Poly1305 the constant-time analysis checks (it runs on code with
@@ -211,6 +215,7 @@ def ifma : XorImpl where
   suffix := "_ifma"
   features := ["avx", "avx512f"]
   poly := .ifma
+  polyOnly := true
   fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inr rfl⟩)
 
 theorem avx512vl_nosp : NoSp Impl.ChaCha20.X86_64.Callee.avx512vl.code := by
