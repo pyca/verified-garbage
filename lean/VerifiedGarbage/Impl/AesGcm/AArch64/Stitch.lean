@@ -325,7 +325,8 @@ def openWithPw (gh : Fn) : Prog isa := openWithS c 24 (pwTbl 16) (pwSel c 16 gh)
 
 `vg_aes_gcm_open_split_with_powers` `(ctx = x0, rounds = x1, nonce = x2,
 nonce_len = x3, aad = x4, aad_len = x5, dst = x6, len = x7, tag = [sp],
-tag_len = [sp + 8], pw = [sp + 16], src = [sp + 24], work = [sp + 32])`:
+tag_len = [sp + 8], pw = [sp + 16], src = [sp + 24], src_len = [sp + 32],
+work = [sp + 40])`:
 `vg_aes_gcm_open_with_powers` of the `len` bytes of ciphertext at `src`, the
 plaintext written to `dst`, for a TLS record of at least `minLen` bytes (a
 12-byte nonce, at most 16 bytes of additional data), which its only caller,
@@ -337,7 +338,7 @@ and `x0` is 0 (its caller then zeroes `dst`). -/
 
 /-- `vg_aes_gcm_open_split_with_powers`, hashing the rest by `gh`. -/
 def openSplitWithPw (gh : Fn) : Prog isa :=
-  .seq (.block (oneEntry 32 ++ stashArg 8 ++ ([.ldrSp .x12 0, .ldrSp .x6 24] : List Instr)))
+  .seq (.block (oneEntry 40 ++ stashArg 8 ++ ([.ldrSp .x12 0, .ldrSp .x6 24] : List Instr)))
     (openFastS c (pwTbl 16) (pwSel c 16 gh) true)
 
 end VG.Impl.AesGcm.AArch64.Stitch

@@ -662,8 +662,9 @@ theorem openLay {w : Nat} {extra extraW : List Region} {s : State} (hs : openPre
   obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, dtw, -⟩ := hs'
   exact ⟨oneLay (openCore hs), covers_mem (by rw [hrd, hwr]; simp), dtw⟩
 
-/-- `open`'s first block: the entry, the tag length and the tag. -/
-theorem openEntry_ok {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region} {s : State}
+/-- `open`'s first block: the entry, the tag length and the tag, with `work`
+the stack argument `w`. -/
+theorem openEntryW_ok {w : Nat} (hw : 2 ≤ w ∧ w ≤ 5) {extra extraW : List Region} {s : State}
     (hs : openPreXW w extra s extraW) :
     WP isa (.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) s fun s' =>
       OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
@@ -732,6 +733,16 @@ theorem openEntry_ok {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Regio
     by rw [m₃]; exact f₂.sub fun r hr => ⟨r, by simp only [List.mem_singleton] at hr; subst hr; simp, fun _ h => h⟩,
     by rw [m₃]; exact sv₂, rfl, rd₄, wr₄⟩
 
+/-- `openEntryW_ok` for `vg_aes_gcm_open` (`w = 2`) and its instance with the
+powers (`w = 3`). -/
+theorem openEntry_ok {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region} {s : State}
+    (hs : openPreXW w extra s extraW) :
+    WP isa (.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) s fun s' =>
+      OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
+        (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s' ∧
+      s'.gpr .x12 = stackArg s 0 :=
+  openEntryW_ok (by omega) hs
+
 /-- What `openMain` reads, in a state after `tagIn`, as it was on entry. -/
 theorem OpenIn.vals {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ t : State}
     (o : OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ t) :
@@ -751,6 +762,18 @@ theorem OpenIn.vals {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ t : S
 theorem OpenIn.tag {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ s : State}
     (o : OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ s) : bytesAt s.mem Tg tl = bytesAt s₀.mem Tg tl :=
   bytesAt_frame o.fr (keep_of_sub (entry16_work W) o.dtW) (by have := o.tlt; omega_arith)
+
+/-- What `open` leaves after its branch on the tag length, from the state
+`s₀` it was called in, for the ciphertext `C`: the plaintext at the text if
+the tag is right, and `F` of the memory if not. `OpenPost` is the case of the
+text decrypted in place. -/
+abbrev OpenPostG (Ctx W SP Np A D Tg : Addr) (R nl al n tl : Nat) (C : List Byte) (F : Mem → Prop)
+    (s₀ s₄ : State) : Prop :=
+  Env Ctx (W + BitVec.ofNat 64 16) W SP s₄ ∧ SavedAt s₄.mem W s₀ ∧
+    match Spec.Gcm.openResult (ctxCiph s₀.mem Ctx R) (ctxH s₀.mem Ctx) tl (bytesAt s₀.mem Np nl)
+        C (bytesAt s₀.mem A al) (bytesAt s₀.mem Tg tl) with
+    | some pt => (s₄.gpr .x0).setWidth 32 = 1 ∧ bytesAt s₄.mem D n = pt
+    | none => (s₄.gpr .x0).setWidth 32 = 0 ∧ F s₄.mem
 
 /-- What `open` leaves after its branch on the tag length, from the state
 `s₀` it was called in. -/
@@ -789,16 +812,18 @@ theorem openMain_post (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {R nl al n tl : 
       simp only [hc, decide_false, Bool.false_eq_true, ite_false] at x0₄ d₄
       exact ⟨by rw [x0₄]; rfl, d₄⟩
 
-/-- `open`'s branch on the tag length, with `m` once the received tag is at `W`. -/
-theorem oiteWith_ok {m : Prog isa} {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ s₃ : State}
+/-- `open`'s branch on the tag length, with `m` once the received tag is at
+`W`, for `OpenPostG`. -/
+theorem oiteWithG_ok {m : Prog isa} {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {C : List Byte}
+    {F : Mem → Prop} {s₀ s₃ : State}
     (o : OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ s₃) (x12₃ : s₃.gpr .x12 = Tg)
-    (x9₃ : s₃.gpr .x9 = BitVec.ofNat 64 (if Spec.Gcm.tagLenOk tl then 1 else 0))
+    (x9₃ : s₃.gpr .x9 = BitVec.ofNat 64 (if Spec.Gcm.tagLenOk tl then 1 else 0)) (hF : F s₃.mem)
     (hm : ∀ {t : State}, OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ t →
       bytesAt t.mem W tl = bytesAt s₀.mem Tg tl → Spec.Gcm.tagLenOk tl = true →
       Others loopRegs s₃ t →
-      WP isa m t (OpenPost Ctx W SP Np A D Tg R nl al n tl s₀)) :
+      WP isa m t (OpenPostG Ctx W SP Np A D Tg R nl al n tl C F s₀)) :
     WP isa (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) s₃
-      (OpenPost Ctx W SP Np A D Tg R nl al n tl s₀) := by
+      (OpenPostG Ctx W SP Np A D Tg R nl al n tl C F s₀) := by
   have ev : isa.eval (.zero .x .x9) s₃ = some (decide ((if Spec.Gcm.tagLenOk tl then 1 else 0) = 0)) :=
     eval_zero x9₃ (by split <;> decide)
   refine WP.ite _ ev (fun ht => ?_) (fun hf => ?_)
@@ -810,13 +835,58 @@ theorem oiteWith_ok {m : Prog isa} {Ctx W SP Np A D Tg : Addr} {R nl al n tl : N
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl <;> simp [gpr_write]) rfl rfl rfl, o.sv, ?_⟩
     rw [Spec.Gcm.openResult, ite_eq_right (by simp [hok])]
-    exact ⟨by simp [gpr_write], o.vals.2.2.2.2⟩
+    exact ⟨by simp [gpr_write], hF⟩
   · have hok : Spec.Gcm.tagLenOk tl = true := by
       revert hf; cases Spec.Gcm.tagLenOk tl <;> simp
     have hle := tagLenOk_le hok
     refine WP.seq (WP.mono (tagIn_ok o.env.x19 x12₃ o.x28 hle o.tagR o.env.perm.w
       (o.dtW.sub_right (Region.sub_prefix (by decide)))) fun s₃' ⟨rt, f, og, sp, rd, wr⟩ => ?_)
     exact hm (o.tagIn f og sp rd wr) (by rw [rt, o.tag]) hok og
+
+/-- `open`'s branch on the tag length, with `m` once the received tag is at `W`. -/
+theorem oiteWith_ok {m : Prog isa} {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ s₃ : State}
+    (o : OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ s₃) (x12₃ : s₃.gpr .x12 = Tg)
+    (x9₃ : s₃.gpr .x9 = BitVec.ofNat 64 (if Spec.Gcm.tagLenOk tl then 1 else 0))
+    (hm : ∀ {t : State}, OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ t →
+      bytesAt t.mem W tl = bytesAt s₀.mem Tg tl → Spec.Gcm.tagLenOk tl = true →
+      Others loopRegs s₃ t →
+      WP isa m t (OpenPost Ctx W SP Np A D Tg R nl al n tl s₀)) :
+    WP isa (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) s₃
+      (OpenPost Ctx W SP Np A D Tg R nl al n tl s₀) :=
+  oiteWithG_ok (C := bytesAt s₀.mem D n) (F := fun m => bytesAt m D n = bytesAt s₀.mem D n) o x12₃ x9₃
+    o.vals.2.2.2.2 hm
+
+/-- `openRestWith_wp`, for `OpenPostG`: the ciphertext `C`, and `F` of the
+memory if the tag is wrong (which the branch on the tag length keeps). -/
+theorem openRestWithG_wp {m : Prog isa} {w : Nat} {s s₂ : State} {C : List Byte} {F : Mem → Prop}
+    (o₂ : OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
+      (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s₂)
+    (x12₂ : s₂.gpr .x12 = stackArg s 0) (hF : ∀ {t : State}, Others [.x9, .x10] s₂ t → t.mem = s₂.mem → F t.mem)
+    (hm : ∀ {t : State}, OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
+        (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s t →
+      bytesAt t.mem (stackArg s w) (stackArg s 1).toNat = bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat →
+      Spec.Gcm.tagLenOk (stackArg s 1).toNat = true →
+      (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₂.gpr r) →
+      WP isa m t (OpenPostG (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
+        (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat C F s)) :
+    WP isa (.seq tagLenOk (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) (.block restore))) s₂
+      fun s' => GprAbi s s' ∧
+        match Spec.Gcm.openResult (ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat) (ctxH s.mem (s.gpr .x0))
+            (stackArg s 1).toNat (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) C
+            (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat) (bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) with
+        | some pt => (s'.gpr .x0).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat = pt
+        | none => (s'.gpr .x0).setWidth 32 = 0 ∧ F s'.mem := by
+  refine WP.seq (WP.mono (tagLenOk_ok s₂ o₂.x28 o₂.tlt) fun s₃ ⟨x9₃, r₃⟩ => ?_)
+  refine WP.seq (WP.mono (oiteWithG_ok (C := C) (F := F) (o₂.of_regs r₃) (by rw [r₃.others _ (by decide), x12₂])
+    x9₃ (hF r₃.others r₃.mem)
+    fun o' hT hok og => hm o' hT hok fun r hr => by
+      rw [og r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide),
+        r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide)])
+    fun s₄ ⟨he₄, sv₄, post₄⟩ => ?_)
+  refine WP.mono (exit_ok he₄.x19 (he₄.sp.trans o₂.sp₀.symm) (covers_left he₄.perm.w) sv₄)
+    fun s' ⟨ga, hm, hx0, _⟩ => ⟨ga, ?_⟩
+  rw [hm, hx0]
+  exact post₄
 
 /-- `open` after its entry, with `m` once the received tag is at `W`, from
 the registers `x4` to `x7` of the entry. -/
