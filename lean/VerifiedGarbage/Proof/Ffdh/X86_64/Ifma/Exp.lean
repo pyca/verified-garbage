@@ -189,4 +189,119 @@ theorem headOut_of (hl : PubOk l) {s t : State} {B : Addr} {Z o w L : Nat} {minv
     exact hv3.symm
   · exact ((Frm.of_outside O1 (by simp)).trans (Frm.of_outside O2 (by simp))).trans (Frm.of_outside O3 (by simp))
 
+/-- The ranges of the prime's workspace that the exponentiation writes:
+`crtExpRanges5`'s, and `sCtr`, which it puts back. -/
+def expRanges (wx : Nat) : List (Nat × Nat) := (8 * sCtr, 8) :: crtExpRanges5 wx
+
+theorem expRanges_ok (wx : Nat) : ∀ r ∈ expRanges wx, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 + wsTab wx := by
+  intro r hr
+  simp only [expRanges, List.mem_cons] at hr
+  rcases hr with rfl | hr
+  · have := hdr_lt_slot wx 8 (show sCtr < 32 by decide); unfold sCtr sFn at *; simp only; omega_using [this]
+  · exact crtExpRanges5_ok wx r hr
+
+/-- After `head`, from `s`. -/
+structure Mid (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s t : State) (B : Addr) (Z o w : Nat) (minv : BitVec 64)
+    (sp sl : Nat) (ep : Addr) (eb : List Byte) : Prop where
+  sub : SubCtx t B Z o w l.W minv
+  ho : HeadOut l s t B o eb.length
+  arr : ∀ j < 8, wv t.mem (off B o) (slot l.W j) l.W = wv s.mem (off B o) (slot l.W j) l.W
+  nw : word t.mem (off B o) (slot l.W Public.aN) = word s.mem (off B o) (slot l.W Public.aN)
+  pv : word t.mem B (8 * sp) = word s.mem B (8 * sp)
+  lv : word t.mem B (8 * sl) = word s.mem B (8 * sl)
+  src : Src t B Z ep eb
+
+theorem head_mid (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitVec 64}
+    (hc : SubCtx s B Z o w l.W minv) (hT : o + slot l.W 8 + wsTab l.W ≤ Z)
+    {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
+    (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length) (hLW : eb.length ≤ 8 * l.W) (he : Src s B Z ep eb) :
+    WP isa (.block (head l sl)) s fun t => Mid l s t B Z o w minv sp sl ep eb ∧ Keep [.rax, .rcx, .rdx, .r8] s t := by
+  obtain ⟨hA, -, -, hE, hP, -, hv, hSt, hSv, -, -, -, -⟩ := PubOk.sizes hl
+  have hnw := hc.scr.nowrap
+  have hS8 : slot l.W 8 = 256 + 64 * (l.W + 2) := by unfold slot hdrBytes; omega_using []
+  have hT' : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
+  have hlo := hc.lo
+  have hw8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
+  have hoZ : o < 2 ^ 64 := by omega_using [hnw, hT, hS8]
+  refine WP.mono (head_ok hl hc hT hsl hel (by omega_using [hLW, hE, hP])) fun t ⟨m, k⟩ => ?_
+  have ho := headOut_of hl hc hT m
+  have hr : ∀ r ∈ [(8 * sIfma, 8), (oArea l + oSt l, 8), (oArea l + oSv l, 8)],
+      (r.1 + r.2 ≤ slot l.W 0) ∨ (slot l.W 8 ≤ r.1 ∧ r.1 + r.2 ≤ slot l.W 8 + wsTab l.W) := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact .inl (by unfold sIfma sFn slot hdrBytes; omega_using [])
+    · exact .inr ⟨by omega_using [hA], by omega_using [hA, hv, hSt, hSv]⟩
+    · exact .inr ⟨by omega_using [hA], by omega_using [hA, hv]⟩
+  have hL : ∀ r ∈ [(8 * sIfma, 8), (oArea l + oSt l, 8), (oArea l + oSv l, 8)],
+      r.1 + r.2 ≤ slot l.W 8 + wsTab l.W := fun r h => by
+    rcases hr r h with h | h
+    · have := slot_le (w := l.W) (show 0 < 8 by decide); omega_using [h, this]
+    · exact h.2
+  have arr : ∀ j < 8, wv t.mem (off B o) (slot l.W j) l.W = wv s.mem (off B o) (slot l.W j) l.W := fun j hj => by
+    have := slot_le (w := l.W) hj
+    have h0 : slot l.W 0 ≤ slot l.W j := by unfold slot; omega_using []
+    refine ho.f.wv_eq (fun r h => ?_) (by omega_using [this, hnw, hT, hoZ])
+    rcases hr r h with h | ⟨h, -⟩
+    · exact .inr (by omega_using [h, h0])
+    · exact .inl (by omega_using [h, this])
+  have below : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi =>
+    ho.f.word_below hL (by omega_using [hnw, hT]) hoZ (by have := hdr_lt_slot w 8 hi; omega_using [this, hlo])
+  have fW : Frm (off B o) (expRanges l.W) s.mem t.mem := ho.f.widen fun r h => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl | rfl
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Nat.le_refl _, Nat.le_refl _⟩
+    · exact ⟨(slot l.W 8, tabBytes l.W 32), by simp [expRanges, crtExpRanges5, crtExpRanges],
+        by simp only; omega_using [hA], by simp only; unfold wsTab at hv; omega_using [hA, hv, hSt, hSv]⟩
+    · exact ⟨(slot l.W 8, tabBytes l.W 32), by simp [expRanges, crtExpRanges5, crtExpRanges],
+        by simp only; omega_using [hA], by simp only; unfold wsTab at hv; omega_using [hA, hv]⟩
+  have nw : word t.mem (off B o) (slot l.W Public.aN) = word s.mem (off B o) (slot l.W Public.aN) := by
+    have := slot_le (w := l.W) (show Public.aN < 8 by decide)
+    refine ho.f.word_eq (fun r h => ?_) (by omega_using [this, hnw, hT, hoZ])
+    rcases hr r h with h | ⟨h, -⟩
+    · exact .inr (by unfold Public.aN at *; omega_using [h])
+    · exact .inl (by omega_using [h, this])
+  have fB := ho.f.rebase hoZ fun r h => by have := hL r h; omega_using [this, hnw, hT]
+  have iS : InScr B Z s.mem t.mem := InScr.of_frm fB fun r h => by
+    simp only [shiftRanges, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl | rfl <;> simp only <;> unfold sIfma sFn at * <;> omega_using [hT, hA, hv, hSt, hSv, hS8, hT']
+  exact ⟨⟨SubCtx.of_frmW hc hT fW (expRanges_ok l.W) k.2.2 (k.gpr (by decide)), ho, arr, nw, below sp hsp,
+    below sl hsl, he.congr iS k.2.1 k.2.2⟩, k⟩
+
+/-- `Ifma.exp` of a one-lane layout, for the prime's `W` words and an
+exponent of at most `8 W` bytes: `CrtExpL.ok`'s claims, but its frame also
+covers `sCtr` (which it restores: `exp_ok`). -/
+theorem expW_ok (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitVec 64} {X x : Nat} {Q : Prop}
+    (hc : SubCtx s B Z o w l.W minv) (hT : o + slot l.W 8 + wsTab l.W ≤ Z)
+    (hn : wv s.mem (off B o) (slot l.W Public.aN) l.W = X)
+    (hinv : ((word s.mem (off B o) (slot l.W Public.aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
+    (hodd : X % 2 = 1)
+    (hxl : wv s.mem (off B o) (slot l.W Crt.aXc) l.W < X)
+    (hxc : Q → wv s.mem (off B o) (slot l.W Crt.aXc) l.W % X = x * 2 ^ (64 * l.W) % X)
+    (hyl : wv s.mem (off B o) (slot l.W Public.aY) l.W < X)
+    (hyc : Q → wv s.mem (off B o) (slot l.W Public.aY) l.W % X = 2 ^ (64 * l.W) % X)
+    {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
+    (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
+    (hL1 : 1 ≤ eb.length) (hLW : eb.length ≤ 8 * l.W) (he : Src s B Z ep eb) :
+    WP isa (seqs (exp l sp sl)) s fun t =>
+      wv t.mem (off B o) (slot l.W Public.aY) l.W < X ∧
+      (Q → wv t.mem (off B o) (slot l.W Public.aY) l.W % X = x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * l.W) % X) ∧
+      Frm (off B o) (expRanges l.W) s.mem t.mem ∧
+      word t.mem (off B o) (8 * sCtr) = word s.mem (off B o) (8 * sCtr) ∧
+      t.wr = s.wr ∧ t.gpr .rdi = s.gpr .rdi ∧ Keep mmRegs s t := by
+  obtain ⟨hA, hn1, hw4, hE, hP, hND, hv, hSt, hSv, hW1, hW2, hP31, hD31⟩ := PubOk.sizes hl
+  have hla := hl.amm
+  have hs := hc.scr
+  have hnw := hs.nowrap
+  have hS8 : slot l.W 8 = 256 + 64 * (l.W + 2) := by unfold slot hdrBytes; omega_using []
+  have hT' : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
+  have h8 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
+  have hlo := hc.lo
+  have hw8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
+  obtain ⟨hDb1, hDb2⟩ := hla.D_bounds
+  have hnD : l.nl * l.D = l.D := by rw [hn1, Nat.one_mul]
+  have haZ : o + oArea l + l.nl * l.D + 8 ≤ Z := by omega_using [hnD, hA, hT, hv, hSv]
+  have hoZ : o < 2 ^ 64 := by omega_using [hnw, hT, hS8]
+  have hER := expRanges_ok l.W
+  sorry
+
 end VG.Proof.Ffdh.X86_64.Ifma
