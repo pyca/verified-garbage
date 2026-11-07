@@ -287,7 +287,7 @@ call {vg_sha1_compress_shani}
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha1_init_shani` if the CPU supports its features (`VG_HMAC_SHA1_INIT_SHANI_FEATURES`); or else `vg_hmac_sha1_init`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha1_init_shani` if the CPU supports its features (`VG_HMAC_SHA1_INIT_SHANI_FEATURES`); `vg_hmac_sha1_init_avx_bmi` if the CPU supports its features (`VG_HMAC_SHA1_INIT_AVX_BMI_FEATURES`); or else `vg_hmac_sha1_init`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -305,6 +305,11 @@ pub unsafe fn vg_hmac_sha1_init_auto(inner: *mut [u8; 84], outer: *mut [u8; 84],
         // has the features it needs.
         return unsafe { vg_hmac_sha1_init_shani(inner, outer, key, key_len) };
     }
+    if cpu.contains(VG_HMAC_SHA1_INIT_AVX_BMI_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_hmac_sha1_init_avx_bmi`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_hmac_sha1_init_avx_bmi(inner, outer, key, key_len) };
+    }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { vg_hmac_sha1_init(inner, outer, key, key_len) }
 }
@@ -313,7 +318,7 @@ pub unsafe fn vg_hmac_sha1_init_auto(inner: *mut [u8; 84], outer: *mut [u8; 84],
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha1_finalize_shani` if the CPU supports its features (`VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES`); or else `vg_hmac_sha1_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_hmac_sha1_finalize_shani` if the CPU supports its features (`VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES`); `vg_hmac_sha1_finalize_avx_bmi` if the CPU supports its features (`VG_HMAC_SHA1_FINALIZE_AVX_BMI_FEATURES`); or else `vg_hmac_sha1_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -331,6 +336,11 @@ pub unsafe fn vg_hmac_sha1_finalize_auto(inner: *mut [u8; 84], outer: *const [u8
         // SAFETY: the caller's obligations, which are `vg_hmac_sha1_finalize_shani`'s, and the CPU
         // has the features it needs.
         return unsafe { vg_hmac_sha1_finalize_shani(inner, outer, count, out) };
+    }
+    if cpu.contains(VG_HMAC_SHA1_FINALIZE_AVX_BMI_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_hmac_sha1_finalize_avx_bmi`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_hmac_sha1_finalize_avx_bmi(inner, outer, count, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { vg_hmac_sha1_finalize(inner, outer, count, out) }

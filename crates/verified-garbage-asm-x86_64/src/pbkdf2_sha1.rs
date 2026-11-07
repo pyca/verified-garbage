@@ -252,7 +252,7 @@ jmp 24f
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_pbkdf2_hmac_sha1_shani` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES`); or else `vg_pbkdf2_hmac_sha1`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_pbkdf2_hmac_sha1_shani` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES`); `vg_pbkdf2_hmac_sha1_avx_bmi` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA1_AVX_BMI_FEATURES`); or else `vg_pbkdf2_hmac_sha1`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -270,6 +270,11 @@ pub unsafe fn vg_pbkdf2_hmac_sha1_auto(password: *const u8, password_len: usize,
         // SAFETY: the caller's obligations, which are `vg_pbkdf2_hmac_sha1_shani`'s, and the CPU
         // has the features it needs.
         return unsafe { vg_pbkdf2_hmac_sha1_shani(password, password_len, salt, salt_len, c, out, out_len) };
+    }
+    if cpu.contains(VG_PBKDF2_HMAC_SHA1_AVX_BMI_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_pbkdf2_hmac_sha1_avx_bmi`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_pbkdf2_hmac_sha1_avx_bmi(password, password_len, salt, salt_len, c, out, out_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { vg_pbkdf2_hmac_sha1(password, password_len, salt, salt_len, c, out, out_len) }

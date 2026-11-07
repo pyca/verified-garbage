@@ -228,8 +228,33 @@ jmp 23f
 #[allow(unused_imports)]
 pub use self::vg_triple_des_cbc_encrypt_chained as vg_triple_des_cbc_encrypt_chained_auto;
 
-/// `vg_triple_des_cbc_decrypt_chained`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_triple_des_cbc_decrypt_chained as vg_triple_des_cbc_decrypt_chained_auto;
+/// Triple DES-CBC decryption (NIST SP 800-38A §6.2, FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Triple DES decryption under the schedule written by `vg_triple_des_expand_key`. No padding is removed.
+///
+/// Contract: `VG.Spec.TripleDes.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_cbc_decrypt_chained_avx512` if the CPU supports its features (`VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES`); `vg_triple_des_cbc_decrypt_chained_avx2` if the CPU supports its features (`VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX2_FEATURES`); or else `vg_triple_des_cbc_decrypt_chained`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_triple_des_cbc_decrypt_chained_auto(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX512_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_triple_des_cbc_decrypt_chained_avx512`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_triple_des_cbc_decrypt_chained_avx512(schedule, iv, data, n) };
+    }
+    if cpu.contains(VG_TRIPLE_DES_CBC_DECRYPT_CHAINED_AVX2_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_triple_des_cbc_decrypt_chained_avx2`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_triple_des_cbc_decrypt_chained_avx2(schedule, iv, data, n) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_triple_des_cbc_decrypt_chained(schedule, iv, data, n) }
+}

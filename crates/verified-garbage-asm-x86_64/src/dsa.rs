@@ -8552,37 +8552,6 @@ pub unsafe fn vg_dsa_derive_key_auto(out: *mut u8, out_len: usize, params: *cons
     unsafe { vg_dsa_derive_key(out, out_len, params, params_len, p_len, x, q_len, scratch, scratch_len) }
 }
 
-/// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
-///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_sign_random_adx` if the CPU supports its features (`VG_DSA_SIGN_RANDOM_ADX_FEATURES`); or else `vg_dsa_sign_random`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
-/// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
-/// * Caller must assure domain validity and provide fresh independent random octets; never reuse a completed signing tape for another signature.
-/// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_dsa_sign_random_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(VG_DSA_SIGN_RANDOM_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_sign_random_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_dsa_sign_random_adx(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { vg_dsa_sign_random(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) }
-}
-
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_generate_key_adx` if the CPU supports its features (`VG_DSA_GENERATE_KEY_ADX_FEATURES`); or else `vg_dsa_generate_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
@@ -8617,7 +8586,7 @@ pub unsafe fn vg_dsa_generate_key_auto(out: *mut u8, out_len: usize, used: *mut 
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES`); `vg_dsa_parameter_search_sha256_avx2_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA256_AVX2_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha256_avx2` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA256_AVX2_FEATURES`); `vg_dsa_parameter_search_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES`); or else `vg_dsa_parameter_search`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_FEATURES`); `vg_dsa_parameter_search_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES`); or else `vg_dsa_parameter_search`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -8647,15 +8616,25 @@ pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *
         // has the features it needs.
         return unsafe { vg_dsa_parameter_search_sha1_shani_sha256_shani(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
     }
-    if cpu.contains(VG_DSA_PARAMETER_SEARCH_SHA256_AVX2_MR_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha256_avx2_mr_adx`'s, and the CPU
+    if cpu.contains(VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx`'s, and the CPU
         // has the features it needs.
-        return unsafe { vg_dsa_parameter_search_sha256_avx2_mr_adx(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
+        return unsafe { vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
     }
-    if cpu.contains(VG_DSA_PARAMETER_SEARCH_SHA256_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha256_avx2`'s, and the CPU
+    if cpu.contains(VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { vg_dsa_parameter_search_sha256_avx2(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
+        return unsafe { vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
+    }
+    if cpu.contains(VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi_mr_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_dsa_parameter_search_sha1_avx_bmi_mr_adx(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
+    }
+    if cpu.contains(VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_dsa_parameter_search_sha1_avx_bmi(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
     }
     if cpu.contains(VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_mr_adx`'s, and the CPU
@@ -8720,11 +8699,68 @@ pub unsafe fn vg_dsa_verify_prevalidated_auto(key: *const u8, key_len: usize, p_
     unsafe { vg_dsa_verify_prevalidated(key, key_len, p_len, q_len, signature, signature_len, digest, digest_len, scratch, scratch_len) }
 }
 
+/// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_validate_private_key_adx` if the CPU supports its features (`VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES`); or else `vg_dsa_validate_private_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; scratch_len must be at least 16*p_len words; destroy scratch after use.
+/// * `scratch` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_dsa_validate_private_key_auto(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_dsa_validate_private_key_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_dsa_validate_private_key_adx(key, key_len, p_len, q_len, scratch, scratch_len) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_dsa_validate_private_key(key, key_len, p_len, q_len, scratch, scratch_len) }
+}
+
 /// `vg_dsa_parameter_search_init`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
 /// target.
 #[allow(unused_imports)]
 pub use self::vg_dsa_parameter_search_init as vg_dsa_parameter_search_init_auto;
+
+/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Returns exactly what vg_dsa_sign_random returns (`VG.Spec.Dsa.randomSignContract`): 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_sign_random_prevalidated_adx` if the CPU supports its features (`VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES`); or else `vg_dsa_sign_random_prevalidated`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
+/// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
+/// * The exact key bytes must satisfy validatePrivateKeyBytes p_len q_len key = true. A successful vg_dsa_validate_private_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
+/// * Provide fresh independent random octets; never reuse a completed signing tape for another signature.
+/// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_dsa_sign_random_prevalidated_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_dsa_sign_random_prevalidated_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_dsa_sign_random_prevalidated_adx(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_dsa_sign_random_prevalidated(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) }
+}
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_check_parameters.rs"]

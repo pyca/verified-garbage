@@ -298,3 +298,52 @@ jmp 23f
         vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
     )
 }
+
+/// `vg_triple_des_cfb64_encrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_triple_des_cfb64_encrypt as vg_triple_des_cfb64_encrypt_auto;
+
+/// Triple DES-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption (also for decryption) under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_cfb64_decrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_CFB64_DECRYPT_AVX512_FEATURES`); `vg_triple_des_cfb64_decrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_CFB64_DECRYPT_AVX2_FEATURES`); or else `vg_triple_des_cfb64_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_triple_des_cfb64_decrypt_auto(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(VG_TRIPLE_DES_CFB64_DECRYPT_AVX512_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_triple_des_cfb64_decrypt_avx512`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_triple_des_cfb64_decrypt_avx512(schedule, iv, data, n) };
+    }
+    if cpu.contains(VG_TRIPLE_DES_CFB64_DECRYPT_AVX2_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_triple_des_cfb64_decrypt_avx2`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_triple_des_cfb64_decrypt_avx2(schedule, iv, data, n) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_triple_des_cfb64_decrypt(schedule, iv, data, n) }
+}
+
+/// `vg_triple_des_cfb64_encrypt_final`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_triple_des_cfb64_encrypt_final as vg_triple_des_cfb64_encrypt_final_auto;
+
+/// `vg_triple_des_cfb64_decrypt_final`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_triple_des_cfb64_decrypt_final as vg_triple_des_cfb64_decrypt_final_auto;

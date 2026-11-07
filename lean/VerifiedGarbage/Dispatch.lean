@@ -42,6 +42,7 @@ def ranking : Rust.Ranking := [
     { suffix := "_avx512vl" },
     { suffix := "_avx512" },
     { suffix := "_shani" },
+    { suffix := "_avx_bmi" },
     { suffix := "_avx2" },
     { suffix := "_adx" },
     { suffix := "_avx" }]),

@@ -800,7 +800,7 @@ pub use self::vg_sha1_init as vg_sha1_init_auto;
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_update_shani` if the CPU supports its features (`VG_SHA1_UPDATE_SHANI_FEATURES`); or else `vg_sha1_update`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_update_shani` if the CPU supports its features (`VG_SHA1_UPDATE_SHANI_FEATURES`); `vg_sha1_update_avx_bmi` if the CPU supports its features (`VG_SHA1_UPDATE_AVX_BMI_FEATURES`); or else `vg_sha1_update`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -817,6 +817,11 @@ pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const
         // has the features it needs.
         return unsafe { vg_sha1_update_shani(state, count, data, len) };
     }
+    if cpu.contains(VG_SHA1_UPDATE_AVX_BMI_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_sha1_update_avx_bmi`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_sha1_update_avx_bmi(state, count, data, len) };
+    }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { vg_sha1_update(state, count, data, len) }
 }
@@ -825,7 +830,7 @@ pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const
 ///
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_digest_shani` if the CPU supports its features (`VG_SHA1_DIGEST_SHANI_FEATURES`); or else `vg_sha1_digest`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_digest_shani` if the CPU supports its features (`VG_SHA1_DIGEST_SHANI_FEATURES`); `vg_sha1_digest_avx_bmi` if the CPU supports its features (`VG_SHA1_DIGEST_AVX_BMI_FEATURES`); or else `vg_sha1_digest`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -842,6 +847,11 @@ pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20
         // has the features it needs.
         return unsafe { vg_sha1_digest_shani(data, len, out) };
     }
+    if cpu.contains(VG_SHA1_DIGEST_AVX_BMI_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_sha1_digest_avx_bmi`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_sha1_digest_avx_bmi(data, len, out) };
+    }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { vg_sha1_digest(data, len, out) }
 }
@@ -850,7 +860,7 @@ pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20
 ///
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_finalize_shani` if the CPU supports its features (`VG_SHA1_FINALIZE_SHANI_FEATURES`); or else `vg_sha1_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha1_finalize_shani` if the CPU supports its features (`VG_SHA1_FINALIZE_SHANI_FEATURES`); `vg_sha1_finalize_avx_bmi` if the CPU supports its features (`VG_SHA1_FINALIZE_AVX_BMI_FEATURES`); or else `vg_sha1_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -867,6 +877,11 @@ pub unsafe fn vg_sha1_finalize_auto(state: *mut [u8; 84], count: u64, out: *mut 
         // SAFETY: the caller's obligations, which are `vg_sha1_finalize_shani`'s, and the CPU
         // has the features it needs.
         return unsafe { vg_sha1_finalize_shani(state, count, out) };
+    }
+    if cpu.contains(VG_SHA1_FINALIZE_AVX_BMI_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_sha1_finalize_avx_bmi`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_sha1_finalize_avx_bmi(state, count, out) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { vg_sha1_finalize(state, count, out) }
