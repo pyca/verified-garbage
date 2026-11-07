@@ -271,19 +271,24 @@ fn malformed_keys_nonces_and_bounded_retries() {
     // A zero private scalar fails each of the bounded signing attempts, or,
     // on x86-64, the key's validation, before any draw.
     let zero_x = PrivateKey::from_components(&p, &q, &g, &y, &vec![0; q.len()]).unwrap();
-    let mut draws = 0;
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        let mut draws = 0;
+        assert_eq!(
+            zero_x.sign_from(&digest, |b| {
+                b.copy_from_slice(&nonce);
+                draws += 1;
+                Ok(())
+            }),
+            Err(Error::InvalidKeyOrNonce)
+        );
+        assert_eq!(draws, 8);
+    }
+    #[cfg(target_arch = "x86_64")]
     assert_eq!(
-        zero_x.sign_from(&digest, |b| {
-            b.copy_from_slice(&nonce);
-            draws += 1;
-            Ok(())
-        }),
+        zero_x.sign_from(&digest, |_| panic!("an invalid key needs no RNG")),
         Err(Error::InvalidKeyOrNonce)
     );
-    #[cfg(not(target_arch = "x86_64"))]
-    assert_eq!(draws, 8);
-    #[cfg(target_arch = "x86_64")]
-    assert_eq!(draws, 0);
     let zero_q = PrivateKey::from_components(&p, &vec![0; q.len()], &g, &y, &x).unwrap();
     assert_eq!(
         zero_q.sign_from(&digest, |_| panic!("zero q needs no RNG")),
