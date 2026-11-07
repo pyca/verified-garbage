@@ -19,88 +19,8 @@ use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
 use core::mem::MaybeUninit;
 
-// The `_aes_cbc` (AArch64) or `_aesni_cbc` (x86-64) implementations, which
-// the dispatchers never choose: `encrypt` and `decrypt` run them on long
-// inputs (`chains_long`), where they are faster.
-#[cfg(target_arch = "aarch64")]
-use crate::arch::aes_siv::{
-    VG_AES_SIV_DECRYPT_AES_CBC_FEATURES as DECRYPT_CBC_FEATURES,
-    VG_AES_SIV_ENCRYPT_AES_CBC_FEATURES as ENCRYPT_CBC_FEATURES,
-    vg_aes_siv_decrypt_aes_cbc as decrypt_cbc, vg_aes_siv_encrypt_aes_cbc as encrypt_cbc,
-};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::aes_siv::{
-    VG_AES_SIV_DECRYPT_AESNI_CBC_FEATURES as DECRYPT_CBC_FEATURES,
-    VG_AES_SIV_ENCRYPT_AESNI_CBC_FEATURES as ENCRYPT_CBC_FEATURES,
-    vg_aes_siv_decrypt_aesni_cbc as decrypt_cbc, vg_aes_siv_encrypt_aesni_cbc as encrypt_cbc,
-};
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-use crate::cpu::detected;
-
 /// A 16-byte block.
 type Block = [u8; 16];
-
-/// Whether `encrypt` and `decrypt` should run the `_aes_cbc` instances (on
-/// AArch64 with the AES extension) or the `_aesni_cbc` ones (on x86-64 with
-/// AES-NI) rather than the others: when the associated-data components
-/// `ads` and the `len` bytes of data total more than 32 bytes, as AES-CMAC's
-/// updates (`crate::cmac::aes`).
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-fn chains_long(ads: &[&[u8]], len: usize) -> bool {
-    ads.iter()
-        .fold(len, |total, ad| total.saturating_add(ad.len()))
-        > 32
-}
-
-/// `vg_aes_siv_encrypt` of the components `ads`, described by `descs`: its
-/// `_aes_cbc` or `_aesni_cbc` implementation on long inputs (`chains_long`)
-/// if the CPU has its features, else its dispatcher's choice.
-///
-/// # Safety
-///
-/// `vg_aes_siv_encrypt`'s, for the descriptors `descs` of `ads`.
-unsafe fn encrypt(
-    ctx: &[u64; 64],
-    rounds: usize,
-    ads: &[&[u8]],
-    descs: *const [usize; 2],
-    data: &mut [u8],
-    siv: &mut Block,
-) {
-    let (d, len) = (data.as_mut_ptr(), data.len());
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    if chains_long(ads, len) && detected().contains(ENCRYPT_CBC_FEATURES) {
-        // SAFETY: the caller's, and the CPU has the features it needs.
-        return unsafe { encrypt_cbc(ctx, rounds, descs, ads.len(), d, len, siv) };
-    }
-    // SAFETY: the caller's. The dispatcher calls only an implementation the
-    // CPU has the features of.
-    unsafe { vg_aes_siv_encrypt_auto(ctx, rounds, descs, ads.len(), d, len, siv) }
-}
-
-/// `vg_aes_siv_decrypt`, chosen as `encrypt` chooses `vg_aes_siv_encrypt`.
-///
-/// # Safety
-///
-/// `vg_aes_siv_decrypt`'s, for the descriptors `descs` of `ads`.
-unsafe fn decrypt(
-    ctx: &[u64; 64],
-    rounds: usize,
-    ads: &[&[u8]],
-    descs: *const [usize; 2],
-    data: &mut [u8],
-    tag: &Block,
-) -> u32 {
-    let (d, len) = (data.as_mut_ptr(), data.len());
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    if chains_long(ads, len) && detected().contains(DECRYPT_CBC_FEATURES) {
-        // SAFETY: the caller's, and the CPU has the features it needs.
-        return unsafe { decrypt_cbc(ctx, rounds, descs, ads.len(), d, len, tag) };
-    }
-    // SAFETY: the caller's. The dispatcher calls only an implementation the
-    // CPU has the features of.
-    unsafe { vg_aes_siv_decrypt_auto(ctx, rounds, descs, ads.len(), d, len, tag) }
-}
 
 /// Why an AES-SIV operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -208,8 +128,19 @@ impl AesSiv {
         // `storage` or a component; no buffer overlaps the arguments on the
         // stack or the return address (on x86 and x86-64) or the stack below
         // them that the function uses, and none wraps around the end of the
-        // address space.
-        unsafe { encrypt(&self.ctx, self.rounds, ads, descs, data, &mut siv) };
+        // address space. The dispatcher calls only an implementation the
+        // CPU has the features of.
+        unsafe {
+            vg_aes_siv_encrypt_auto(
+                &self.ctx,
+                self.rounds,
+                descs,
+                ads.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                &mut siv,
+            )
+        };
         Ok(siv)
     }
 
@@ -229,7 +160,17 @@ impl AesSiv {
         // `tag`, valid for reads of 16 bytes, in place of `siv`: it is a
         // shared borrow, so it does not overlap `data`, a unique one, and
         // only read-only buffers may overlap it.
-        let ok = unsafe { decrypt(&self.ctx, self.rounds, ads, descs, data, tag) };
+        let ok = unsafe {
+            vg_aes_siv_decrypt_auto(
+                &self.ctx,
+                self.rounds,
+                descs,
+                ads.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                tag,
+            )
+        };
         // `decrypt`'s contract leaves the plaintext in `data` if it returns
         // 1, and zeros otherwise.
         if ok == 1 {
@@ -243,20 +184,6 @@ impl AesSiv {
 #[cfg(test)]
 mod tests {
     use super::{AesSiv, Error, InvalidKeyLength};
-
-    /// The `_aes_cbc` (or `_aesni_cbc`) instances run when the components
-    /// and the data total more than 32 bytes, and the others otherwise.
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    #[test]
-    fn chains_long() {
-        use super::chains_long;
-        assert!(!chains_long(&[], 0));
-        assert!(!chains_long(&[], 32));
-        assert!(chains_long(&[], 33));
-        assert!(!chains_long(&[&[0; 16], &[0; 8]], 8));
-        assert!(chains_long(&[&[0; 16], &[0; 8]], 9));
-        assert!(chains_long(&[&[0; 33]], 0));
-    }
 
     #[test]
     fn key_lengths() {

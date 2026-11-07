@@ -28,7 +28,7 @@ meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# AES-CMAC's chaining with AES-NI on x86-64: `vg_cmac_aes_update_aesni_cbc`
+# AES-CMAC's chaining in AES-NI registers on x86-64
 
 The code reads everything it needs before it writes the state, once, at the
 end, so the proof is about registers: after the setup, the round keys are in
@@ -56,7 +56,7 @@ open VG.Spec.Aes (roundKey cipher)
 
 /-! ## The contract -/
 
-/-- `vg_cmac_aes_update_aesni_cbc(schedule = rdi, rounds = rsi, state = rdx, data = rcx, n = r8,
+/-- `vg_cmac_aes_update(schedule = rdi, rounds = rsi, state = rdx, data = rcx, n = r8,
 scratch = r9)`: `updateX86_64` without the stack and the disjointness of the
 buffers, which the code does not need. -/
 def cbcX86_64 : Contract isa where

@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_cmac_aes_update_vaes` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_CMAC_AES_UPDATE_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
+pub(crate) const VG_CMAC_AES_UPDATE_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
 
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
@@ -14,17 +14,51 @@ pub(crate) const VG_CMAC_AES_UPDATE_VAES_FEATURES: verified_garbage_cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_update_vaes() {
     core::arch::naked_asm!(
-        r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
-je 20f
-22:
+        r#".base64 "SYP4Ag=="
+jae 20f
+.base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
+je 22f
+24:
 .base64 "SYsEJEkzRQBJiYcACAAASYtEJAhJM0UISYmHCAgAALgAAAAASYkEJEmJRCQISInfSInuTYn5TIn6SIHCAAgAAEyJ4UG4AQAAAA=="
 call {vg_aes_ctr32_vaes}
 .base64 "SYPFEEmD7gE="
-jne 22b
-jmp 21f
-20:
+jne 24b
+jmp 23f
+22:
+23:
+.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAA"
 21:
-.base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
+.base64 "ww=="
+20:
+.base64 "TYXA"
+je 25f
+.base64 "8w9vD/MPbwJmD+/B8w9vVxDzD29fIPMPb2cw8w9vb0DzD293UPMPb39g80QPb0dw80QPb4+AAAAA80QPb5eQAAAA80QPb5+gAAAA80QPb6ewAAAA80QPb6/AAAAA80QPb7fQAAAASIP+Cg=="
+je 27f
+.base64 "SIP+DA=="
+je 29f
+.base64 "80QPb7/gAAAAZkQP7/k="
+211:
+.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843MNmQQ843MRmQQ843MVmQQ843MZmQQ843cdIg8EQSYPoAQ=="
+jne 211b
+jmp 210f
+29:
+.base64 "80QPb7/AAAAAZkQP7/k="
+212:
+.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843MNmQQ843MRmQQ843cdIg8EQSYPoAQ=="
+jne 212b
+210:
+jmp 28f
+27:
+.base64 "80QPb7+gAAAAZkQP7/k="
+213:
+.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843cdIg8EQSYPoAQ=="
+jne 213b
+28:
+.base64 "8w9vD2YP78HzD38C"
+jmp 26f
+25:
+26:
+jmp 21b
 .p2align 6"#,
         vg_aes_ctr32_vaes = sym crate::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )

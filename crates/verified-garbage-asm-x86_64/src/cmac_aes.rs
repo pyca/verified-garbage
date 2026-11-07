@@ -247,75 +247,6 @@ jmp 212f
     )
 }
 
-/// The CPU features `vg_cmac_aes_absorb_aesni_cbc` requires (`Artifact.features`).
-pub const VG_CMAC_AES_ABSORB_AESNI_CBC_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
-///
-/// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 304 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_cmac_aes_absorb_aesni_cbc(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPj2//9JieFJg8EISYmZgAgAAEmJqYgIAABNiaGQCAAATYmpmAgAAE2JsaAIAABNibmoCAAASIn7SIn1SYnNTYnGTYnPSIXS"
-je 20f
-.base64 "SInQSIPoAUiD4A9Ig8AB"
-jmp 21f
-20:
-.base64 "uAAAAAA="
-21:
-.base64 "uRAAAABIKcFJOc4="
-jb 22f
-jmp 23f
-22:
-.base64 "TInx"
-23:
-.base64 "SInaSIHCIAEAAEgBwkG6AAAAAEiFyQ=="
-je 24f
-26:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "SQHNQbgAAAAASSnO"
-je 27f
-.base64 "QbgBAAAA"
-jmp 28f
-27:
-28:
-.base64 "SInfSInuSInaSIHCEAEAAEiJ2UiBwSABAABNifk="
-call {vg_cmac_aes_update_aesni_cbc}
-.base64 "QbwAAAAATYX2"
-je 29f
-.base64 "TYn0SYPsAUyJ4EiD4A9JKcQ="
-jmp 210f
-29:
-210:
-.base64 "TYngScHoBEiJ30iJ7kiJ2kiBwhABAABMielNifk="
-call {vg_cmac_aes_update_aesni_cbc}
-.base64 "TQHlTSnmSInaSIHCIAEAAEyJ8UG6AAAAAEiFyQ=="
-je 211f
-213:
-.base64 "Qw+2RBUAQogEEkmDwgFJOco="
-jne 213b
-jmp 212f
-211:
-212:
-.base64 "SYufgAgAAEmLr4gIAABNi6eQCAAATYuvmAgAAE2Lt6AIAABNi7+oCAAASI2kJAgJAADD"
-.p2align 6"#,
-        vg_cmac_aes_update_aesni_cbc = sym super::cmac_aes::vg_cmac_aes_update_aesni_cbc::vg_cmac_aes_update_aesni_cbc,
-    )
-}
-
 /// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
@@ -481,10 +412,6 @@ pub(crate) mod vg_cmac_aes_update;
 #[rustfmt::skip]
 #[path = "internal/vg_cmac_aes_update_aesni.rs"]
 pub(crate) mod vg_cmac_aes_update_aesni;
-
-#[rustfmt::skip]
-#[path = "internal/vg_cmac_aes_update_aesni_cbc.rs"]
-pub(crate) mod vg_cmac_aes_update_aesni_cbc;
 
 #[rustfmt::skip]
 #[path = "internal/vg_cmac_aes_update_vaes.rs"]

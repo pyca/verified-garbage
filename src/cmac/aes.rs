@@ -16,50 +16,8 @@ use crate::arch::dispatch::cmac_aes::{
 use crate::error::{InvalidKeyLength, InvalidMac};
 use crate::zeroize::zeroize;
 
-// The `_aes_cbc` (AArch64) or `_aesni_cbc` (x86-64) absorb, which the
-// dispatcher never chooses: `update` runs it on long updates (`chains_long`),
-// where it is faster.
-#[cfg(target_arch = "aarch64")]
-use crate::arch::cmac_aes::{
-    VG_CMAC_AES_ABSORB_AES_CBC_FEATURES as ABSORB_CBC_FEATURES,
-    vg_cmac_aes_absorb_aes_cbc as absorb_cbc,
-};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::cmac_aes::{
-    VG_CMAC_AES_ABSORB_AESNI_CBC_FEATURES as ABSORB_CBC_FEATURES,
-    vg_cmac_aes_absorb_aesni_cbc as absorb_cbc,
-};
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-use crate::cpu::detected;
-
 /// The streaming state, in 64-bit words.
 const STATE: usize = 38;
-
-/// Whether an update of `len` bytes calls the `_aes_cbc` absorb (on
-/// AArch64) or the `_aesni_cbc` one (on x86-64) rather than the dispatcher:
-/// when it is longer than 32 bytes, where the `_cbc` one is faster.
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-fn chains_long(len: usize) -> bool {
-    len > 32
-}
-
-/// `vg_cmac_aes_absorb` of `data`: its `_aes_cbc` or `_aesni_cbc`
-/// implementation on long updates (`chains_long`) if the CPU has its
-/// features, else its dispatcher's choice.
-///
-/// # Safety
-///
-/// `vg_cmac_aes_absorb`'s.
-unsafe fn absorb(state: &mut [u64; STATE], rounds: usize, count: u64, data: &[u8]) {
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    if chains_long(data.len()) && detected().contains(ABSORB_CBC_FEATURES) {
-        // SAFETY: the caller's, and the CPU has the features it needs.
-        return unsafe { absorb_cbc(state, rounds, count, data.as_ptr(), data.len()) };
-    }
-    // SAFETY: the caller's. The dispatcher calls only an implementation the
-    // CPU has the features of.
-    unsafe { vg_cmac_aes_absorb_auto(state, rounds, count, data.as_ptr(), data.len()) }
-}
 
 /// An incremental AES-CMAC computation.
 ///
@@ -130,8 +88,18 @@ impl AesCmac {
         // uses, and neither wraps around the end of the address space. `self.rounds` is 10, 12 or
         // 14, that of the key `new` was given. The state represents a
         // message of `self.count` bytes, which with `data` is shorter than
-        // 2⁶⁴ bytes, as the contract's postcondition requires.
-        unsafe { absorb(&mut self.state, self.rounds, self.count, data) };
+        // 2⁶⁴ bytes, as the contract's postcondition requires. The
+        // dispatcher calls only an implementation the CPU has the features
+        // of.
+        unsafe {
+            vg_cmac_aes_absorb_auto(
+                &mut self.state,
+                self.rounds,
+                self.count,
+                data.as_ptr(),
+                data.len(),
+            )
+        };
         self.count = count;
     }
 
@@ -217,17 +185,6 @@ mod tests {
             c.update(&[b]);
         }
         assert_eq!(c.finalize(), AesCmac::mac(&key, &msg).unwrap());
-    }
-
-    /// Updates longer than 32 bytes run the `_cbc` absorb.
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    #[test]
-    fn chains_long() {
-        use super::chains_long;
-        assert!(!chains_long(0));
-        assert!(!chains_long(32));
-        assert!(chains_long(33));
-        assert!(chains_long(usize::MAX));
     }
 
     /// A message of 2⁶⁴ bytes or more is refused.
