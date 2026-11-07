@@ -434,7 +434,9 @@ jobs:
           persist-credentials: false
           # Not the proofs, nor other architectures' verified functions, which
           # this target never compiles (but their crates' manifests, which
-          # Cargo reads for every path dependency, built or not).
+          # Cargo reads for every path dependency, built or not), nor the text
+          # of its own (`assembly/`), which only the checks of the emitter's
+          # output and ci/check_mcdt.py read.
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
@@ -443,6 +445,7 @@ jobs:
             !/crates/verified-garbage-asm-*/
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-${{ matrix.asm || matrix.arch }}/
+            !/crates/verified-garbage-asm-*/assembly/
       - uses: ./.github/actions/runner-info
 
       - name: Install Rust
@@ -635,7 +638,8 @@ jobs:
           # Not the proofs, nor other architectures' verified functions, which
           # this target never compiles (or formats: rustfmt skips a missing
           # module file that a `cfg` leaves out), but their crates'
-          # manifests, which Cargo reads for every path dependency, built or not.
+          # manifests, which Cargo reads for every path dependency, built or
+          # not; nor the text of its own (`assembly/`, as `rust`'s).
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
@@ -645,6 +649,7 @@ jobs:
             !/crates/verified-garbage-asm-*/
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-${{ matrix.arch }}/
+            !/crates/verified-garbage-asm-*/assembly/
       - uses: ./.github/actions/runner-info
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -722,12 +727,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # Every architecture's verified functions, but not the proofs.
+          # Every architecture's verified functions, but not the proofs, nor
+          # their text (`assembly/`, as `rust`'s).
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
             !/lean/
             !/docs/
+            !/crates/verified-garbage-asm-*/assembly/
       - name: Install Rust
         run: rustup toolchain install stable --profile minimal --component clippy,rustfmt --target "$(python3 ci/rust_lint.py targets "$CRATE")"
       # As `rust`'s: a push to main lints the commit the merge queue linted,
@@ -825,7 +832,8 @@ jobs:
           # Not the proofs, nor other architectures' verified functions, which
           # this target never compiles (or formats: rustfmt skips a missing
           # module file that a `cfg` leaves out), but their crates'
-          # manifests, which Cargo reads for every path dependency, built or not.
+          # manifests, which Cargo reads for every path dependency, built or
+          # not; nor the text of its own (`assembly/`, as `rust`'s).
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
@@ -835,6 +843,7 @@ jobs:
             !/crates/verified-garbage-asm-*/
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-${{ matrix.arch || 'x86_64' }}/
+            !/crates/verified-garbage-asm-*/assembly/
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
@@ -1092,6 +1101,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # The Rust sources the coverage maps, but not the proofs, nor the
+          # verified functions' text (`assembly/`, as `rust`'s).
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/crates/verified-garbage-asm-*/assembly/
       - run: |
           python3 -m venv .venv
           .venv/bin/pip install -r ci/requirements-coverage.txt
