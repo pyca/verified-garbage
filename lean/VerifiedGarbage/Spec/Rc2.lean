@@ -55,10 +55,6 @@ def pi (b : Byte) : Byte := piTable.getD b.toNat 0
 def validKey (keyLen effectiveBits : Nat) : Prop :=
   1 ≤ keyLen ∧ keyLen ≤ 128 ∧ 1 ≤ effectiveBits ∧ effectiveBits ≤ 1024
 
-instance (keyLen effectiveBits : Nat) : Decidable (validKey keyLen effectiveBits) :=
-  inferInstanceAs (Decidable (1 ≤ keyLen ∧ keyLen ≤ 128 ∧
-    1 ≤ effectiveBits ∧ effectiveBits ≤ 1024))
-
 /-- §2: fill L to 128 bytes, reduce to T1 effective bits, then run the
 descending XOR/PITABLE loop. Defined for all inputs, used only with valid
 key parameters. For T1 = 1024 the descending loop is empty. -/

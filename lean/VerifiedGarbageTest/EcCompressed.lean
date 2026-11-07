@@ -36,6 +36,10 @@ namespace VG.Test.EcCompressed
 
 open Spec.Weierstrass Spec.EcKey
 
+instance (C : Curve) (bs : List Byte) (Q : Point C) :
+    Decidable (matchesCompressedPublicKey C bs Q) := by
+  cases Q <;> unfold matchesCompressedPublicKey <;> infer_instance
+
 def curves : List Curve :=
   [Spec.P192.curve, Spec.P224.curve, Spec.P256.curve, Spec.P384.curve,
     Spec.P521.curve, Spec.Secp256k1.curve, Spec.BrainpoolP256r1.curve,

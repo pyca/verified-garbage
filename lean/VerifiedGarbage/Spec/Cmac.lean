@@ -136,11 +136,6 @@ theorem macFull_eq (ciph : Cipher) (b : Nat) (m : List Byte) :
 def mac (ciph : Cipher) (b t : Nat) (m : List Byte) : List Byte :=
   (macFull ciph b m).take t
 
-/-- §6.3, MAC verification: whether `T'` is `MSB_Tlen(Cₙ)` for the message
-`M'`, with `Tlen` the length of `T'` (at most `b` bytes). -/
-def verify (ciph : Cipher) (b : Nat) (m t : List Byte) : Bool :=
-  t.length ≤ b && mac ciph b t.length m == t
-
 /-! ## AES-CMAC -/
 
 /-- `CIPH_K` for AES with `nr` rounds and the key schedule `w` (as bytes),

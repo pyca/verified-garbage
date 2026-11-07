@@ -353,8 +353,6 @@ def S8 (b : Byte) : Word := s8[b.toFin]
 /-- The valid key lengths in bytes (§2.5). -/
 def validKey (n : Nat) : Prop := 5 ≤ n ∧ n ≤ 16
 
-instance (n : Nat) : Decidable (validKey n) := inferInstanceAs (Decidable (5 ≤ n ∧ n ≤ 16))
-
 /-- §2.5 (1) and (2): 12 rounds for keys of up to 80 bits, 16 for longer
 keys. -/
 def rounds (keyLen : Nat) : Nat := if keyLen ≤ 10 then 12 else 16

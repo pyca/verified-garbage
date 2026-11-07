@@ -26,7 +26,7 @@ contracts (`Gcm.streamInitContract`, `Gcm.streamAadContract`).
   `vg_sm4_expand_key` writes, and the hash subkey `H = CIPH_K(0¹²⁸)`. The
   others read one, and compute with the cipher and the hash subkey it holds
   (`ctxCiph`, `ctxH`): with a context `vg_sm4_gcm_init` wrote, that is
-  SM4-GCM with its key (`encryptWith_ctx`, `decryptWith_ctx`).
+  SM4-GCM with its key (`gcmCipherOfKey key` and its hash subkey).
 * `vg_sm4_gcm_seal` is GCM-AE with a 16-byte tag, and `vg_sm4_gcm_open`
   GCM-AD with a tag of any length `tagLenOk` allows; `open` decrypts only if
   the tag is right, and otherwise leaves the data as it was. Whether the tag
@@ -40,10 +40,11 @@ contracts (`Gcm.streamInitContract`, `Gcm.streamAadContract`).
   keeps the lengths of the additional data and the text so far, which are
   public, and passes them.
 
-None of the functions checks the lengths of §5.2.1.1 (`Gcm.supported`),
-which concern a whole message: the caller checks them. Only the length of a
-received tag is checked, by the function given the tag, which rejects
-lengths outside 4 through 16 bytes as it rejects a wrong tag.
+None of the functions checks the lengths of §5.2.1.1 (of the IV, the text
+and the additional data), which concern a whole message: the caller checks
+them. Only the length of a received tag is checked, by the function given
+the tag, which rejects lengths outside 4 through 16 bytes as it rejects a
+wrong tag.
 
 Everything but the pointers and the lengths is secret: keys, schedules, hash
 subkeys, IVs, additional data, texts, tags and states. Every contract takes
@@ -80,26 +81,6 @@ def ctxCiph (m : Mem) (p : Addr) : Spec.Gcm.Block → Spec.Gcm.Block := gcmCiphe
 key schedule of `key` and the hash subkey `CIPH_K(0¹²⁸)`. -/
 def KeyRepr (m : Mem) (p : Addr) (key : List Byte) : Prop :=
   scheduleAt m p = expandKey (Vector.ofFn fun i => key.getD i.val 0) ∧ ctxH m p = gcmCipherOfKey key 0
-
-/-- GCM-AE with the key context of `key` is SM4-GCM's with `key`. -/
-theorem encryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : KeyRepr m p key)
-    (t : Nat) (iv pt a : List Byte) :
-    encryptWith (ctxCiph m p) (ctxH m p) t iv pt a = gcmEncrypt key t iv pt a := by
-  unfold ctxCiph
-  rw [hk.1, hk.2]
-  rfl
-
-/-- GCM-AD with the key context of `key` is SM4-GCM's with `key`, for
-lengths that step 1 accepts. -/
-theorem decryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : KeyRepr m p key)
-    (t : Nat) (iv c a tag : List Byte)
-    (hs : Spec.Gcm.supported iv.length c.length a.length = true) (ht : tag.length = t) :
-    decryptWith (ctxCiph m p) (ctxH m p) t iv c a tag = gcmDecrypt key t iv c a tag := by
-  unfold ctxCiph
-  rw [hk.1, hk.2, gcmDecrypt, Spec.Gcm.decrypt_eq, hs, ht]
-  simp only [Bool.not_true, Bool.false_or, ne_eq, not_true_eq_false, decide_false,
-    Bool.false_eq_true, ↓reduceIte]
-  rfl
 
 /-- `vg_sm4_gcm_init(key: *const [u8; 16], ctx: *mut [u64; 32])`. -/
 def initSig : Sig where

@@ -29,13 +29,15 @@ SHA-1 for N=160 and SHA-256 for N=256. Generator construction is A.2.1's
 unverifiable generation, with a separate random h tape (not the verifiable
 generator construction). Parameter provenance certificates are not modeled.
 
-Like RSA's `checkKey`, `fromComponents` checks algebraic consistency, not
-primality. `parametersValid` checks sizes, oddness, divisibility and the
-order relation for g; it is not a proof of domain validity. `keyValid` checks
+Like RSA's `checkKey`, the checks of imported components (`parametersValid`
+and `keyValid`) are of algebraic consistency, not primality.
+`parametersValid` checks sizes, oddness, divisibility and the order
+relation for g; it is not a proof of domain validity. `keyValid` checks
 scalar ranges, the public order relation, and private/public consistency.
 The caller is responsible for the provenance of imported parameters.
-`sign` and `verify` compute the formulas below even for composite parameters;
-Fermat exponentiation is an inverse only under the usual prime-q assumption.
+`signWithNonce` and `verify` compute the formulas below even for composite
+parameters; Fermat exponentiation is an inverse only under the usual prime-q
+assumption.
 Their cryptographic interpretation requires valid DSA domain parameters.
 All digest lengths, including zero, have mathematical meaning; checking a
 caller's chosen hash length belongs to a prehash wrapper.
@@ -129,17 +131,6 @@ def keyValid (key : Key) : Bool :=
     | none => true
     | some x => 0 < x && x < a.q && powMod a.g x a.p == key.y
 
-/-- Import public (x=none) or private components, with consistency checks.
-Like RSA import, this does not test primality.
-No private key is manufactured by silently reducing x modulo q. -/
-def fromComponents (p q g y : Nat) (x : Option Nat := none) : Option Key :=
-  let key : Key := ⟨⟨p, q, g⟩, y, x⟩
-  if parametersValid key.params && keyValid key then some key else none
-
-/-- Export the exact components; public exports have no private scalar. -/
-def toComponents (key : Key) : Nat × Nat × Nat × Nat × Option Nat :=
-  (key.params.p, key.params.q, key.params.g, key.y, key.x)
-
 /-- §4.6: leftmost min(N,outlen) digest bits, not the digest modulo q.
 In particular a short digest is not left-padded by shifting its value. -/
 def digestScalar (q : Nat) (digest : List Byte) : Nat :=
@@ -168,15 +159,6 @@ def signWithNonce (key : Key) (digest : List Byte) (k : Nat) : Option Signature 
     let s := powMod k (a.q - 2) a.q * (digestScalar a.q digest + x * r) % a.q
     if r == 0 || s == 0 then none else some ⟨r, s⟩
 
-/-- Randomized signing: consume fresh independent N-bit candidates until a
-nonzero signature is obtained; exhaustion reports failure. No deterministic
-signing or nonce-reuse behavior is specified. -/
-def sign (key : Key) (digest : List Byte) : List Nat → Option Signature
-  | [] => none
-  | k :: ks => match signWithNonce key digest k with
-    | some sig => some sig
-    | none => sign key digest ks
-
 /-- §4.7: reject out-of-range r,s before inversion. A private key's public
 projection can verify too, without consulting x. The signature and digest
 need not be trusted. As with signing, the mathematical DSA interpretation
@@ -190,10 +172,6 @@ def verify (key : Key) (sig : Signature) (digest : List Byte) : Bool :=
     let u1 := digestScalar a.q digest * w % a.q
     let u2 := sig.r * w % a.q
     (powMod a.g u1 a.p * powMod key.y u2 a.p % a.p) % a.q == sig.r
-
-/-- Default subgroup size for the issue's bits-only parameter API. -/
-def subgroupBits (bits : Nat) : Option Nat :=
-  if bits == 1024 then some 160 else if bits == 2048 || bits == 3072 then some 256 else none
 
 /-- A.1.1.2 seed hash, chosen for the default subgroup size. -/
 def seedHash (n : Nat) (seed : List Byte) : List Byte :=

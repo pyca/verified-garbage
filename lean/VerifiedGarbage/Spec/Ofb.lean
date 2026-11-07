@@ -14,7 +14,8 @@ OFB enciphers the initialization vector repeatedly, `Oⱼ = CIPH_K(Oⱼ₋₁)`
 with `O₀ = IV`, and XORs the output blocks `O₁ O₂ …` with the input. It
 uses only the forward cipher, and encryption and decryption are the same
 function (`crypt`). The last block may be partial (`Pₙ*`, of `u` bytes),
-XORed with `MSB_u(Oₙ)`: `aesOfb` takes a string of any length.
+XORed with `MSB_u(Oₙ)`, so OFB takes a string of any length: `cryptFinal`
+(`Spec/Ofb/Final.lean`).
 
 A message may be processed in pieces of whole blocks: OFB of
 `P₁ … Pₙ` from `IV` is OFB of `P₁ … Pₖ` from `IV`, followed by OFB of
@@ -49,15 +50,5 @@ def crypt (ciph : Cipher) (iv : List Byte) (xs : List (List Byte)) : List (List 
 /-- The block to continue from after `n` blocks from `iv`: `Oₙ`, or `iv` if
 `n = 0` (see above). -/
 def next (ciph : Cipher) (iv : List Byte) (n : Nat) : List Byte := (outputs ciph iv n).getLastD iv
-
-/-! ## With AES -/
-
-/-- AES-OFB encryption or decryption of `x` (of any length) under the key
-`key` (16, 24 or 32 bytes) with the 16-byte `iv`: `x` XORed with the
-output blocks, the last one truncated to what is left of `x` (§6.4,
-`Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`). -/
-def aesOfb (key iv x : List Byte) : List Byte :=
-  let ciph := Cbc.aes key
-  List.zipWith (· ^^^ ·) x (outputs ciph iv ((x.length + 15) / 16)).flatten
 
 end VG.Spec.Ofb

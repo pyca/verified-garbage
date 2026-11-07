@@ -18,9 +18,9 @@ secret.
 
 The functions of AES-GCM do all of GCM-AE and GCM-AD (§7) but check no
 lengths (which are public): the caller checks the key length and the number of
-rounds (the preconditions), and the lengths of §5.2.1.1 (`supported`), which
-GCM needs to be secure but which concern a whole message, which a streaming
-caller gives in pieces. Only the length of a received tag is checked by the
+rounds (the preconditions), and the lengths of §5.2.1.1 (of the IV, the
+plaintext and the additional data), which GCM needs to be secure but which
+concern a whole message, which a streaming caller gives in pieces. Only the length of a received tag is checked by the
 function given the tag, which rejects lengths outside 4 through 16 bytes
 (`tagLenOk`) as it rejects a wrong tag: a tag of 0 bytes would accept any
 message.

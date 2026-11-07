@@ -35,8 +35,8 @@ rounds it is given (`ctxCiph`, `keyLen`).
   it (it is the result), and nothing else secret.
 
 The functions check no length (which are public): the caller checks the
-lengths of §6 (`supported`: at most 2³⁶ bytes of plaintext and of
-additional data). The nonce is 12 bytes (§6), the tag 16: `seal` writes the
+lengths of §6 (at most 2³⁶ bytes of plaintext and of additional
+data). The nonce is 12 bytes (§6), the tag 16: `seal` writes the
 tag to the 16 bytes at `tag`, and `open` reads the received tag from the 16
 bytes at `tag`. The functions keep their working space on the stack. The
 leak of `open` is stated for `rounds` of 10 or 14, which the preconditions

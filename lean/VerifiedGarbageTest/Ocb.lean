@@ -10,8 +10,10 @@ meta import VerifiedGarbage.Spec.Ocb
 
 Read from RFC 7253, vendored unmodified under `vectors/rfc7253/` (see
 `vectors/sources/`), when this file is built and checked against
-`VG.Spec.Ocb`, so that a transcription error in the spec fails the build.
-From Appendix A:
+`VG.Spec.Ocb`, so that a transcription error in the spec fails the build
+(the RFC's OCB-ENCRYPT and OCB-DECRYPT with AES are `encrypt` and
+`decrypt` here: its length checks around `VG.Spec.Ocb.encryptWith` and
+`decryptWith`). From Appendix A:
 
 * the 16 `(N, A, P, C)` tuples with AES-128 and 128-bit tags (empty and
   nonempty associated data and plaintexts of 0 to 40 bytes), and the tuple
@@ -67,6 +69,26 @@ def unhex (where_ v : String) : CommandElabM (List Byte) := match Test.Sha256.un
   | some bs => pure bs
   | none => throwError "RFC 7253 Appendix A, {where_}: `{v}` is not hex"
 
+/-- §4.2, AES-OCB encryption under the key `key` (16, 24 or 32 bytes) with
+a tag of `t` bytes, of the plaintext `p` with the associated data `a` under
+the nonce `nonce`: the RFC's ciphertext `C`, or `none` if the tag or nonce
+length is not one OCB is defined for. -/
+def encrypt (key : List Byte) (t : Nat) (nonce a p : List Byte) : Option (List Byte) :=
+  if Spec.Ocb.lengthsOk t nonce.length then
+    let (c, tag) := Spec.Ocb.encryptWith (Spec.Ocb.aes key) (Spec.Ocb.aes key 0) t nonce a p
+    some (c ++ tag)
+  else none
+
+/-- §4.3, AES-OCB decryption under the key `key` (16, 24 or 32 bytes) with
+a tag of `t` bytes, of the RFC's ciphertext `c` with the associated data
+`a` under the nonce `nonce`: the plaintext, or `none` (INVALID) if the tag
+or nonce length is not one OCB is defined for, if `c` is shorter than the
+tag, or if the tag is wrong. -/
+def decrypt (key : List Byte) (t : Nat) (nonce a c : List Byte) : Option (List Byte) :=
+  if !Spec.Ocb.lengthsOk t nonce.length || c.length < t then none
+  else Spec.Ocb.decryptWith (Spec.Ocb.aes key) (Spec.Ocb.aesInv key) (Spec.Ocb.aes key 0) t nonce a
+    (c.take (c.length - t)) (c.drop (c.length - t))
+
 -- The tuples, and the internal values.
 run_cmd do
   let fs := fields (← readFile ("rfc7253" / "rfc7253.txt"))
@@ -83,12 +105,12 @@ run_cmd do
         | none => throwError "RFC 7253 Appendix A, tuple {n}: no `{l}`"
       let (nonce, a, p, c) := (← get "N", ← get "A", ← get "P", ← unhex s!"tuple {n}" v)
       let t := c.length - p.length
-      unless Spec.Ocb.encrypt tupleKey t nonce a p == some c do
+      unless encrypt tupleKey t nonce a p == some c do
         throwError "RFC 7253 Appendix A, tuple {n}: encryption is wrong"
-      unless Spec.Ocb.decrypt tupleKey t nonce a c == some p do
+      unless decrypt tupleKey t nonce a c == some p do
         throwError "RFC 7253 Appendix A, tuple {n}: decryption is wrong"
       let forged := c.set (c.length - 1) (c.getLast! ^^^ 1)
-      unless Spec.Ocb.decrypt tupleKey t nonce a forged == none do
+      unless decrypt tupleKey t nonce a forged == none do
         throwError "RFC 7253 Appendix A, tuple {n}: decryption accepts a wrong tag"
       n := n + 1
       tagLens := tagLens ++ [t]
@@ -121,7 +143,7 @@ def encryptCached (ciph : Spec.Ocb.Cipher) (lstar : Spec.Ocb.Block) (t : Nat)
 theorem encryptCached_eq (key : List Byte) (t : Nat) (nonce a p : List Byte) :
     encryptCached (Spec.Ocb.aesWith (Spec.Aes.rounds (key.length / 4))
       (Spec.Aes.expandKey key)) (Spec.Ocb.aes key 0) t nonce a p =
-      Spec.Ocb.encrypt key t nonce a p := rfl
+      encrypt key t nonce a p := rfl
 
 private def aesWithCached (nr : Nat) (w : List Byte) :
     {c : Spec.Ocb.Cipher // c = Spec.Ocb.aesWith nr w} :=
