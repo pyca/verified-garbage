@@ -513,7 +513,11 @@ jobs:
       # restore: pull requests can read only caches saved on their own branch
       # or on main, and that workflow does not run on main. A new stable Rust
       # changes the key (ci/bench_cache_key.sh), so every push to main looks
-      # it up, without downloading, and builds only on a miss. ARMv7's too,
+      # it up, without downloading, and builds only on a miss. A miss first
+      # restores main's latest entry for the same compiler (the key's
+      # prefix), so that a change to the benchmark crate's manifest or lock
+      # file, even to a comment, rebuilds only what it changed, not every
+      # dependency (RISC-V's runners took six minutes). ARMv7's too,
       # cross-compiled in the armv7-cross image, as that workflow builds it;
       # not those of the architectures it does not measure (`bench`, see
       # ci/rust_arches.py).
@@ -527,6 +531,12 @@ jobs:
           path: bench-target
           key: ${{ steps.bench-cache-key.outputs.key }}
           lookup-only: true
+      - if: ${{ steps.bench-cache-key.outputs.key && steps.bench-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: bench-target
+          key: ${{ steps.bench-cache-key.outputs.key }}
+          restore-keys: ${{ steps.bench-cache-key.outputs.prefix }}
       - name: Build the benchmarks' dependencies
         if: ${{ steps.bench-cache-key.outputs.key && steps.bench-cache.outputs.cache-hit != 'true' }}
         working-directory: bench
