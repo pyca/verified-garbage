@@ -4,7 +4,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowGeneral
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinQuad
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.Proof.Weierstrass.JacDblA
+public import VerifiedGarbage.Proof.Weierstrass.JacDblAF
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Window
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinEntry
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
@@ -19,8 +19,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 `WinCfg.windowA` (`Impl/Weierstrass/X86_64/WindowGeneral.lean`) is
 `WinCfg.window` with the complete addition for any `a` (`rcb`) in place of
-`rcb3`, and the Jacobian doubling for any `a` (`dblJGen`, the operations of
-`dblJa`: `dblJGen_eq`) in place of `dblJX`/`dblJMul`. Its proof is
+`rcb3`, and the Jacobian doubling for any `a` (`dblJGen`, whose operations
+compute `dblAF`: `dblJGenN_run`) in place of `dblJX`/`dblJMul`. Its proof is
 `window_ok`'s (`WinLoop.lean`), with the lemmas it rests on that see the
 formulas copied here:
 
@@ -51,8 +51,21 @@ local macro "rcb_sub" : tactic => `(tactic| plain_simp_names (
                      List.not_mem_nil, or_false] at hx ⊢
                    rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
 
-/-- `dblJGen` is `dblJa`'s operations on numbered slots. -/
-theorem dblJGen_eq (S : RcbSlots) (p o : Pt) : WinCfg.dblJGen S p o = ofN dblJaN S p p o := rfl
+/-- `dblJGen` on numbered slots: `a` at 9, `p` at 11–13, `o` at 6–8. -/
+def dblJGenN : List FOp := WinCfg.dblJGen ⟨9, 10, 0, 1, 2, 3, 4, 5⟩ ⟨11, 12, 13⟩ ⟨6, 7, 8⟩
+
+theorem dblJGenN_ok : NumOk dblJGenN := ⟨by decide, by decide, by decide⟩
+
+theorem dblJGen_eq (S : RcbSlots) (p o : Pt) : WinCfg.dblJGen S p o = ofN dblJGenN S p p o := rfl
+
+/-- `dblJGen`'s operations compute `dblAF` of the slot `9`'s `a`. -/
+theorem dblJGenN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
+    (runOps dblJGenN e 6, runOps dblJGenN e 7, runOps dblJGenN e 8) = dblAF (e 9) (e 11) (e 12) (e 13) := by
+  dsimp only [dblJGenN, WinCfg.dblJGen, runOps, List.foldl, FOp.run, Function.update]
+  simp only [dblAF, Prod.mk.injEq]
+  constructor
+  · grind
+  constructor <;> grind
 
 /-- `WinFixed`, but with `3 b R mod p` in `S.b3`, as the complete addition for
 any `a` reads it. -/
@@ -575,17 +588,17 @@ theorem jacA_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     simp only [WinCfg.jacPairA, dblJGen_eq]
     have hA : E K.S.a = Fin.ofNat C.p C.a :=
       (I.val K.S.a (by simp [V])).symm.trans (S.ro_tmvA hL hF).1
-    refine WP.seq (WP.mono (winN_ok hL hp dblJaN_ok a2 w2.1 w2.2 I (by
+    refine WP.seq (WP.mono (winN_ok hL hp dblJGenN_ok a2 w2.1 w2.2 I (by
       dsimp [V]; rcb_sub)) fun st₁ ⟨k₁', U₁', E₁', I₁', _, v₁'⟩ => ?_)
     have S₁' := S.next hL I₁'.scr (k₁'.mono clob_powClob) U₁'
     have hA₁ : E₁' K.S.a = Fin.ofNat C.p C.a :=
       (I₁'.val K.S.a (by simp [V])).symm.trans (S₁'.ro_tmvA hL hF).1
-    have J₁' := InvJ.dblA' hC (hQ _) J hA (v₁'.trans (dblJaN_run _))
+    have J₁' := InvJ.dblA' hC (hQ _) J hA (v₁'.trans (dblJGenN_run _))
     rw [hC.double hP] at J₁'
-    refine WP.seq (WP.mono (winN_ok hL hp dblJaN_ok a3 w3.1 w3.2 I₁' (by
+    refine WP.seq (WP.mono (winN_ok hL hp dblJGenN_ok a3 w3.1 w3.2 I₁' (by
       dsimp [V]; rcb_sub)) fun st₂ ⟨k₂', U₂', E₂', I₂', _, v₂'⟩ => ?_)
     have S₂' := S₁'.next hL I₂'.scr (k₂'.mono clob_powClob) U₂'
-    have J₂' := InvJ.dblA' hC (hQ _) J₁' hA₁ (v₂'.trans (dblJaN_run _))
+    have J₂' := InvJ.dblA' hC (hQ _) J₁' hA₁ (v₂'.trans (dblJGenN_run _))
     rw [hC.double hP] at J₂'
     have ar : 2 * (2 * (4 ^ (2 - j) * e)) = 4 ^ (2 - (j - 1)) * e := by
       have hj12 : j = 1 ∨ j = 2 := by omega_arith
