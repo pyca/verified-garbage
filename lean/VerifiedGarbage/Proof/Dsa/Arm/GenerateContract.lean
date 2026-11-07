@@ -8,8 +8,8 @@ public import VerifiedGarbage.Proof.Dsa.Contract
 # DSA domain checks and key derivation on 32-bit ARM: the contracts
 
 Untrusted: everything here is checked by Lean. The facts of
-`Proof.Dsa.checkParametersContract` and `Spec.Dsa.deriveKeyContract` for
-32-bit ARM, by name. `vg_dsa_check_parameters(params, params_len, p_len,
+`Proof.Dsa.checkParametersContract`, `Spec.Dsa.deriveKeyContract` and
+`Spec.Dsa.deriveKeyDomainCheckedContract` for 32-bit ARM, by name. `vg_dsa_check_parameters(params, params_len, p_len,
 q_len, scratch, scratch_len)` has its first four arguments in `r0`–`r3`
 and the others on the stack; `vg_dsa_derive_key(out, out_len, params,
 params_len, p_len, x, q_len, scratch, scratch_len)` likewise.
@@ -90,5 +90,12 @@ def deriveArm : Contract isa where
       (deriveRes s).getD (List.replicate (s.gpr .r1).toNat 0)
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ deriveLeak s₁ = deriveLeak s₂ ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧
     s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ ∀ i < 5, arg s₁ i = arg s₂ i
+
+/-- `deriveArm` for a domain whose exact bytes pass the domain check, as
+`Spec.Dsa.deriveKeyDomainCheckedContract` restates `deriveKeyContract`. -/
+def deriveCheckedArm : Contract isa :=
+  { deriveArm with
+    pre := fun s => derivePre s ∧
+      Spec.Dsa.checkParametersBytes (arg s 0).toNat (arg s 2).toNat (deriveParams s) = true }
 
 end VG.Proof.Dsa.Arm
