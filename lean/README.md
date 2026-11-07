@@ -30,7 +30,9 @@ VerifiedGarbage/
                     artifact, or an internal function the emitter writes from that
                     code), and that each artifact declares the CPU features its
                     code needs; and each function's dispatcher (`<name>_auto`),
-                    which calls the best of its implementations the CPU supports
+                    which calls the best of its implementations the CPU supports,
+                    and each table of functions' (`<table>_auto()`), which
+                    returns the best of its tables
     Axioms.lean     `#assert_standard_axioms`
     Audit.lean      `#assert_no_compiler_overrides` (the compiled code the emitter
                     runs is what the kernel checked) and `#assert_spec_origin`

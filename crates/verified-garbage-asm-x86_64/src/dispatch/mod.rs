@@ -246,6 +246,9 @@ pub mod ed448;
 pub mod ffdh;
 
 #[rustfmt::skip]
+pub mod fn_tables;
+
+#[rustfmt::skip]
 pub mod gcm;
 
 #[rustfmt::skip]

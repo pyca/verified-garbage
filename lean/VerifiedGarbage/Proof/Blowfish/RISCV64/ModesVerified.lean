@@ -26,10 +26,10 @@ meta import VerifiedGarbage.TCB.RISCV64.Target
 
 `cbcEncryptChained_verified`, `ofb_verified`, … : the modes of
 `Proof/Modes/RISCV64/` over Blowfish's core (`Mode.dirCoreSpec`) meet the
-shared contracts, with `stack := 4224`: the mode's frame of 528 slots below
+shared contracts, with `stack := 4240`: the mode's frame of 530 slots below
 the stack pointer, which it zeroes before returning (`seq_changes_wp`); CBC
 and CFB decryption, two blocks a step over `Mode.dirCoreSpec2`, with
-`stack := 4320` (540 slots).
+`stack := 4336` (542 slots).
 The proofs are written against `modeContract`, which states the frame.
 -/
 
@@ -42,10 +42,10 @@ open VG.Proof.Modes.RISCV64 (SeqPre ivR scrRegion Fb)
 open VG.Proof.Blowfish.RISCV64.Mode (dirCoreSpec dirCoreSpec2 KeyArgs layout layout2)
 open VG.Proof.Blowfish.RISCV64 (modePub)
 
-/-- The frame's bytes: 528 slots, and 540 for the modes over the two-block
+/-- The frame's bytes: 530 slots, and 542 for the modes over the two-block
 core (`dirCore2`). -/
-abbrev frameBytes : Nat := 4224
-abbrev frameBytes2 : Nat := 4320
+abbrev frameBytes : Nat := 4240
+abbrev frameBytes2 : Nat := 4336
 
 /-- Blowfish under the schedule at `a0`, and its inverse. -/
 abbrev ciph (s : State) : Spec.Cbc.Cipher := Spec.Blowfish.cipher (Spec.Blowfish.scheduleAt s.mem (s.gpr .a0))

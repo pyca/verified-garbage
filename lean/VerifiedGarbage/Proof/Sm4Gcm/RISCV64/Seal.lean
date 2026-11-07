@@ -56,7 +56,7 @@ section
 variable {c st w : Addr} (L : Lay c st w)
 include L
 
-theorem saved_otFrame {sp : Addr} (hbw : (below sp 3232).Disjoint ⟨w, 2560⟩) {o : Nat} (ho : o = 0 ∨ o = 112) :
+theorem saved_otFrame {sp : Addr} (hbw : (below sp 3248).Disjoint ⟨w, 2560⟩) {o : Nat} (ho : o = 0 ∨ o = 112) :
     ∀ r ∈ otFrame st w o sp, (savedR w).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -77,10 +77,10 @@ theorem seal_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : sealRISCV64.
   have L₀ := oneLay fc fW dcW ca wa
   have hk₀ : StkOk (s₀.gpr .a0) (stackArg s₀ 0 + BitVec.ofNat 64 16) (stackArg s₀ 0) s₀.sp :=
     one_stk3 hstk (by simp) (by simp)
-  have bc₀ : (below s₀.sp 3232).Disjoint ⟨s₀.gpr .a0, 256⟩ := hstk.buf3 (by simp)
-  have bw₀ : (below s₀.sp 3232).Disjoint ⟨stackArg s₀ 0, 2560⟩ := hstk.buf3 (by simp)
-  have bd₀ : (below s₀.sp 3232).Disjoint ⟨s₀.gpr .a5, (s₀.gpr .a6).toNat⟩ := hstk.buf3 (by simp)
-  have bs₀ : (below s₀.sp 3232).Disjoint ⟨stackArg s₀ 0 + BitVec.ofNat 64 16, 80⟩ :=
+  have bc₀ : (below s₀.sp 3248).Disjoint ⟨s₀.gpr .a0, 256⟩ := hstk.buf3 (by simp)
+  have bw₀ : (below s₀.sp 3248).Disjoint ⟨stackArg s₀ 0, 2560⟩ := hstk.buf3 (by simp)
+  have bd₀ : (below s₀.sp 3248).Disjoint ⟨s₀.gpr .a5, (s₀.gpr .a6).toNat⟩ := hstk.buf3 (by simp)
+  have bs₀ : (below s₀.sp 3248).Disjoint ⟨stackArg s₀ 0 + BitVec.ofNat 64 16, 80⟩ :=
     bw₀.sub_right (Lay.wSub (by decide))
   have hC : Covers [⟨s₀.gpr .a0, 256⟩] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
   have hW : Covers [⟨stackArg s₀ 0, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)

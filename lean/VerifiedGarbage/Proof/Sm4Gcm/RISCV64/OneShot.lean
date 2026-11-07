@@ -70,7 +70,7 @@ include L
 `W + dataO`) from the counter block `icb`. -/
 theorem oneCrypt_ok (hb : Big V sp) {D : Addr} {s : State} (he : Env V sp s)
     (hd : DataW (V .s2) (V .s1) (V .s0) s D (V .s11).toNat)
-    (hbd : (below sp 3232).Disjoint ⟨D, (V .s11).toNat⟩)
+    (hbd : (below sp 3248).Disjoint ⟨D, (V .s11).toNat⟩)
     (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = D)
     {icb : Block} (hcb : blockAt s.mem (V .s1 + BitVec.ofNat 64 48) = icb) :
     WP isa oneCrypt s (OC V sp icb D s.mem) := by
@@ -89,7 +89,7 @@ end
 /-- The regions `oneTag o` writes. -/
 abbrev otFrame (st w : Addr) (o : Nat) (sp : Addr) : List Region :=
   [⟨st, 48⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 o, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩,
-    below sp 3232]
+    below sp 3248]
 
 theorem abs_otSub {st w sp : Addr} {o : Nat} :
     ∀ r ∈ absFrame st w 16 sp, ∃ r' ∈ otFrame st w o sp, Region.Sub r r' :=

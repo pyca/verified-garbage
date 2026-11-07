@@ -75,7 +75,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 The code is proven against `ctrFinalRISCV64`, with the arguments
 `(schedule = a0, rounds = a1, ctr = a2, data = a3, len = a4, save = a5)`, a
 sixth argument `save` (`a5`) of 80 bytes for its return address and its
-caller's registers and a block of its own, and 3248 bytes of stack for its
+caller's registers and a block of its own, and 3264 bytes of stack for its
 calls (`ctrFinal_implies`: the shared contract with it), as a caller of
 `vg_camellia_ctr`, which keeps its own working space in a frame on the
 stack, through the register-form contract its proofs give it
@@ -116,10 +116,10 @@ open VG.Impl.AesCtr.RISCV64 (zeroSlots tailKey)
 
 /-- `vg_camellia_ctr`'s contract, as its proofs state it: the arguments
 `(schedule = a0, rounds = a1, ctr = a2, data = a3, n = a4)` and a frame of
-3248 bytes below the stack pointer. -/
+3264 bytes below the stack pointer. -/
 abbrev ctrK : Contract isa := Modes.modeContract Modes.ctrPost
 
-theorem ctr_depth : sdepth ctr ≤ 3248 := by lit_decide
+theorem ctr_depth : sdepth ctr ≤ 3264 := by lit_decide
 
 theorem ctr_ok : ∀ s, ctrK.pre s → ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ ctrK.post s s' :=
   Modes.ctr_correct
@@ -129,7 +129,7 @@ theorem ctr_ct : ConstantTime isa ctrK.pre ctrK.pub ctr := ctr_constantTime _
 /-! ## The contract -/
 
 /-- The code's contract, with the arguments `(schedule = a0, rounds = a1,
-ctr = a2, data = a3, len = a4, save = a5)`, `save` of 80 bytes, and 3248
+ctr = a2, data = a3, len = a4, save = a5)`, `save` of 80 bytes, and 3264
 bytes of stack for the calls: the data and the counter block as
 `Spec.Ctr.CryptFinal` says, by Camellia with the subkeys at `schedule`. -/
 def ctrFinalRISCV64 : Contract isa where
@@ -138,8 +138,8 @@ def ctrFinalRISCV64 : Contract isa where
     let ctr : Region := ⟨s.gpr .a2, 16⟩
     let data : Region := ⟨s.gpr .a3, (s.gpr .a4).toNat⟩
     let sv : Region := ⟨s.gpr .a5, 80⟩
-    let stack := below s.sp 3248
-    s.sp.toNat % 16 = 0 ∧ 3248 ≤ s.sp.toNat ∧ s.rd = [sched] ∧ s.wr = [ctr, data, sv] ∧
+    let stack := below s.sp 3264
+    s.sp.toNat % 16 = 0 ∧ 3264 ≤ s.sp.toNat ∧ s.rd = [sched] ∧ s.wr = [ctr, data, sv] ∧
       sched.Disjoint ctr ∧ sched.Disjoint data ∧ sched.Disjoint sv ∧ ctr.Disjoint data ∧ ctr.Disjoint sv ∧
       data.Disjoint sv ∧
       stack.Disjoint sched ∧ stack.Disjoint ctr ∧ stack.Disjoint data ∧ stack.Disjoint sv ∧
@@ -155,11 +155,11 @@ def ctrFinalRISCV64 : Contract isa where
       s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧ s₁.sp = s₂.sp
 
 /-- The contract the frame needs: the shared one on the subkeys, with `save`,
-80 bytes, as a sixth argument, and 3248 bytes of stack (`vg_camellia_ctr`'s
+80 bytes, as a sixth argument, and 3264 bytes of stack (`vg_camellia_ctr`'s
 frame). -/
 abbrev ctrFinalScratchContract : Contract isa :=
   Sig.scratchContract RISCV64.abi Spec.Camellia.ctrFinalSig "save" .u64 10
-    (Spec.Camellia.ctrFinalPre RISCV64.abi.ptrBits) (Proof.Camellia.ctrFinalPostSk RISCV64.abi.ptrBits) true 3248
+    (Spec.Camellia.ctrFinalPre RISCV64.abi.ptrBits) (Proof.Camellia.ctrFinalPostSk RISCV64.abi.ptrBits) true 3264
 
 /-- A state satisfying the precondition (no data, 18 rounds). -/
 def ctrFinalSat : State where
@@ -196,7 +196,7 @@ abbrev kSv64 : Region := ⟨kV s₀, 64⟩
 abbrev kBk : Addr := kV s₀ + BitVec.ofNat 64 64
 abbrev kBlk : Region := ⟨kBk s₀, 16⟩
 /-- The stack the calls use. -/
-abbrev kStk : Region := below s₀.sp 3248
+abbrev kStk : Region := below s₀.sp 3264
 /-- The memory once the registers are saved. -/
 abbrev kSvMem : Mem := Spill.saveMem s₀.mem (kV s₀) s₀.gpr finalSaved
 /-- The cipher on entry. -/
@@ -214,7 +214,7 @@ end
 /-- The precondition, by name. -/
 structure KPre (s₀ : State) : Prop where
   al : s₀.sp.toNat % 16 = 0
-  sp : 3248 ≤ s₀.sp.toNat
+  sp : 3264 ≤ s₀.sp.toNat
   rd : s₀.rd = [kSch s₀]
   wr : s₀.wr = [kIv s₀, fData s₀, kSv s₀]
   sch_iv : (kSch s₀).Disjoint (kIv s₀)
@@ -929,24 +929,24 @@ theorem ctrFinal_verified : Verified RISCV64.target ctrFinal ctrFinalScratchCont
 The final function has five argument words, so `save` is its sixth, in `a5`:
 it runs its code in a frame of 80 bytes on the stack (`withStackScratchWiped`),
 `save`'s 80 bytes (the registers, then the block that held the last output
-block), which it zeroes before returning. Its calls use 3248 bytes below it,
-so 3328 in all. -/
+block), which it zeroes before returning. Its calls use 3264 bytes below it,
+so 3344 in all. -/
 
 /-- A state satisfying the shared contract's precondition. -/
 def ctrFinalFrameSat : State := { ctrFinalSat with wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩] }
 
-theorem ctrFinalFrameSat_pre : ∃ s, (Proof.Camellia.ctrFinalContractSk RISCV64.abi 3328).pre s := by
+theorem ctrFinalFrameSat_pre : ∃ s, (Proof.Camellia.ctrFinalContractSk RISCV64.abi 3344).pre s := by
   implies_sat [Proof.Camellia.ctrFinalContractSk, Spec.Camellia.ctrFinalSig, Spec.Camellia.ctrFinalPre,
     Proof.Camellia.ctrFinalPostSk, RISCV64.abi, RISCV64.argRegs] [ctrFinalFrameSat, ctrFinalSat]
     using ctrFinalFrameSat
 
 theorem ctrFinal_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a5 10 ctrFinal)
-      (Spec.Camellia.ctrFinalContract RISCV64.abi 3328) :=
+      (Spec.Camellia.ctrFinalContract RISCV64.abi 3344) :=
   Proof.Camellia.ctrFinal_of_sk <|
   RISCV64.Verified.stackScratchWiped (sig := Spec.Camellia.ctrFinalSig) (nm := "save") (e := .u64) (n := 10)
     (pre := Spec.Camellia.ctrFinalPre RISCV64.abi.ptrBits) (post := Proof.Camellia.ctrFinalPostSk RISCV64.abi.ptrBits)
-    (wa := true) (stack := 3248) (bytes := 80) (words := 10) ctrFinal_verified (by decide) (by decide)
+    (wa := true) (stack := 3264) (bytes := 80) (words := 10) ctrFinal_verified (by decide) (by decide)
     (by decide) (Proof.Camellia.ctrFinalPostOut_local _) ctrFinalFrameSat_pre
 
 end VG.Proof.Camellia.RISCV64.CtrFinal

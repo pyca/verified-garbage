@@ -16,19 +16,19 @@ namespace VG.Artifacts.SeedCfb.RISCV64
 def artifacts : List Artifact := [
   Spec.Seed.cfbEncryptApi.artifact RISCV64.target {
     code := Impl.Seed.RISCV64.cfbEncrypt
-    stack := 1104
+    stack := 1120
     verified := Proof.Seed.RISCV64.Modes.cfbEncrypt_verified },
   Spec.Seed.cfbDecryptApi.artifact RISCV64.target {
     code := Impl.Seed.RISCV64.cfbDecrypt
-    stack := 1344
+    stack := 1360
     verified := Proof.Seed.RISCV64.Modes.cfbDecrypt_verified },
   Spec.Seed.cfbEncryptFinalApi.artifact RISCV64.target {
     code := Impl.Seed.RISCV64.cfbEncryptFinal
-    stack := 1104
+    stack := 1120
     verified := Proof.Seed.RISCV64.Modes.cfbEncryptFinal_verified },
   Spec.Seed.cfbDecryptFinalApi.artifact RISCV64.target {
     code := Impl.Seed.RISCV64.cfbDecryptFinal
-    stack := 1104
+    stack := 1120
     verified := Proof.Seed.RISCV64.Modes.cfbDecryptFinal_verified }]
 
 end VG.Artifacts.SeedCfb.RISCV64

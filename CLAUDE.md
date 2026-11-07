@@ -135,6 +135,9 @@ own changes are rebuilt either way, on top of the restored build.
   `lean/VerifiedGarbage/TCB/Rust.lean`), which runs
   the best of its implementations the CPU supports and needs no CPU
   feature: Rust code that calls it names no variant and chooses nothing.
+  So does each table of functions' (`<table>_auto()`, in
+  `crate::arch::dispatch::fn_tables`, `Rust.tableDispatcher`), which
+  returns the best of the tables of its interface and data.
   Which is best is not trusted: `lean/VerifiedGarbage/Dispatch.lean` ranks
   the suffixes of each target (with a variant's `extra` features, and its
   `vendor` for a choice by compilation target), and the emitter fails on

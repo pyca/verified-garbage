@@ -1718,7 +1718,35 @@ pub use crate::<module>::<base> as <base>_auto;
 ```
 
 A function whose base needs CPU features gets none (there is nothing to fall
-back on), and neither does an implementation that is not a base. -/
+back on), and neither does an implementation that is not a base.
+
+A table of functions (`FnTable`) is chosen the same way, by
+`dispatch/fn_tables.rs` (`tableDispatcher`). Its implementations are the
+tables of the same interface and the same words of data whose names are its
+own followed by `_<SUFFIX>` (`tableGroupsOf`), ranked as the suffix in
+lowercase in the module of its first function. A function taking tables
+is proven for every table of their interface, and what it computes depends
+on which only through the table's data (`Abi.withTables`; for instance the
+index of the hash function, `Spec/HashTable.lean`), so these tables give the
+same results, and the dispatcher, which needs no CPU feature and is safe to
+call, returns the best one the CPU supports:
+
+```rust
+/// <which table it returns>
+#[inline]
+pub fn <table, in lowercase>_auto() -> &'static crate::fn_tables::<Iface> {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::fn_tables::<NAME>_FEATURES) {
+        return &crate::fn_tables::<NAME>;
+    }
+    …
+    &crate::fn_tables::<TABLE>
+}
+```
+
+A table that needs CPU features gets none (there is nothing to fall back
+on), and neither does an implementation that is not a base; a table with no
+other implementation gets one, returning it. -/
 
 /-- How a dispatcher (see above) ranks an implementation of a function: one
 whose name is that of its base followed by `suffix`, in a module of
@@ -1803,33 +1831,48 @@ def lexLe : List Nat → List Nat → Bool
   | _ :: _, [] => false
   | x :: xs, y :: ys => x < y || (x == y && lexLe xs ys)
 
-/-- An implementation a dispatcher may call, with its ranking's `extra`
-features and `vendor`s (those of each of its suffix's parts), and the `cfg`
-predicates it is compiled under (`gateOf`). -/
+/-- An implementation a dispatcher may choose: a function (`Impl.ofArtifact`)
+or a table of functions (`tableDispatcher`), by its name; the module, from
+the crate's root, of its item and of the constant of its CPU features
+(`featuresConst`, `<NAME>_FEATURES` with its name in uppercase); the
+features it needs; and the `cfg` predicates it is compiled under
+(`Printer.featureCfg` of them). -/
+structure Impl where
+  name : String
+  module : String
+  features : List String
+  gate : List String
+
+/-- The function `a`, as an implementation a dispatcher may call. -/
+def Impl.ofArtifact (a : Artifact) : Impl :=
+  ⟨a.name, a.module, a.features, a.features.filterMap a.target.printer.featureCfg⟩
+
+/-- An implementation a dispatcher may choose, with its ranking's `extra`
+features and `vendor`s (those of each of its suffix's parts). -/
 structure Arm where
-  art : Artifact
+  impl : Impl
   extra : List String
   vendors : List String
-  gate : List String
   /-- Whether the ranking leaves it out (`Rank.skip`). -/
   skip : Bool
 
-/-- The implementations of `g` (but its base) that its dispatcher tries, in
-the module `m`, in order (see above), or why `rs` does not rank them. -/
-def armsOf (rs : List Rank) (m : String) (g : Group) : Except String (List Arm) := do
-  let gate (a : Artifact) := a.features.filterMap a.target.printer.featureCfg
-  let arm (a : Artifact) (ranks : List Rank) : Arm :=
-    ⟨a, dedup (ranks.flatMap (·.extra)), dedup (ranks.filterMap (·.vendor)), gate a,
+/-- The implementations `members` (each with its suffix) of a function or
+table of the module `m` of the target `t`, but its base, that its dispatcher
+tries, in order (see above), or why `rs` does not rank them. -/
+def armsOf (rs : List Rank) (m t : String) (members : List (Impl × String)) :
+    Except String (List Arm) := do
+  let arm (a : Impl) (ranks : List Rank) : Arm :=
+    ⟨a, dedup (ranks.flatMap (·.extra)), dedup (ranks.filterMap (·.vendor)),
       ranks.any (·.skip)⟩
-  let keyed ← if g.members.all fun (_, s) => (rankOf rs m s).isSome then
-      pure (g.members.map fun (a, s) => match rankOf rs m s with
+  let keyed ← if members.all fun (_, s) => (rankOf rs m s).isSome then
+      pure (members.map fun (a, s) => match rankOf rs m s with
         | some (i, r) => ([i], arm a [r])
         | none => ([], arm a []))
     else do
-      let parsed ← g.members.mapM fun (a, s) =>
+      let parsed ← members.mapM fun (a, s) =>
         match (rankOf rs m s).map (fun (i, r) => [("", i, r)]) <|> partsOf rs m s.length s with
         | some ps => pure (a, ps)
-        | none => throw s!"{a.target.name}: {a.name}: its suffix `{s}` is not ranked \
+        | none => throw s!"{t}: {a.name}: its suffix `{s}` is not ranked \
             (`VG.Dispatch.ranking`), nor made of parts `_<tag><suffix>` whose suffixes are"
       -- Each tag once, in the order of the parts of every suffix that has it.
       let tags := parsed.foldl (init := ([] : List String)) fun tags (_, ps) =>
@@ -1844,8 +1887,8 @@ def armsOf (rs : List Rank) (m : String) (g : Group) : Except String (List Arm) 
   let sorted := keyed.mergeSort fun a b => lexLe a.1 b.1
   -- Leave out each implementation that can be chosen only where one before it can.
   let weaker (e l : Arm) : Bool :=
-    (e.art.features ++ e.extra).all (l.art.features ++ l.extra).contains &&
-      e.vendors.all l.vendors.contains && e.gate.all l.gate.contains
+    (e.impl.features ++ e.extra).all (l.impl.features ++ l.extra).contains &&
+      e.vendors.all l.vendors.contains && e.impl.gate.all l.impl.gate.contains
   return sorted.foldl (init := []) fun acc (_, l) =>
     if acc.any (weaker · l) then acc else acc ++ [l]
 
@@ -1866,9 +1909,9 @@ def argsOf (sig : Sig) : String :=
 its ranking's `extra` ones; for one that needs none, that detection reports
 some feature. -/
 def condOf (a : Arm) : String :=
-  let name := s!"crate::{a.art.module}::{a.art.name.toUpper}"
+  let name := s!"crate::{a.impl.module}::{a.impl.name.toUpper}"
   let bits := a.extra.map fun f => s!"verified_garbage_cpu::feature::{featureConst f}"
-  let need : Option String := match a.art.features.isEmpty, bits with
+  let need : Option String := match a.impl.features.isEmpty, bits with
     | true, [] => none
     | false, [] => some s!"{name}_FEATURES"
     | true, bs => some s!"verified_garbage_cpu::Features({" | ".intercalate bs})"
@@ -1885,17 +1928,18 @@ def condOf (a : Arm) : String :=
 /-- The paragraph of a dispatcher's documentation saying what it runs. -/
 def dispatchNote (base : String) (arms : List Arm) : String :=
   let item (a : Arm) : String :=
-    let needs := if a.art.features.isEmpty then
+    let needs := if a.impl.features.isEmpty then
       (if a.extra.isEmpty then ["detection reports some CPU feature"] else [])
-      else [s!"the CPU supports its features (`{a.art.name.toUpper}_FEATURES`)"]
+      else [s!"the CPU supports its features (`{a.impl.name.toUpper}_FEATURES`)"]
     let extra := if a.extra.isEmpty then [] else
       [s!"it also supports {codeList a.extra}"]
     let vendor := a.vendors.map fun v =>
       s!"the target's vendor is `{v}` (or `VG_CPU_FEATURES` names every feature it needs)"
-    let gate := if a.gate.isEmpty then [] else [s!"it is compiled (`{", ".intercalate a.gate}`)"]
+    let gate := if a.impl.gate.isEmpty then [] else
+      [s!"it is compiled (`{", ".intercalate a.impl.gate}`)"]
     match gate ++ vendor ++ needs ++ extra with
-    | [] => s!"`{a.art.name}`"
-    | cs => s!"`{a.art.name}` if " ++ englishList "and" cs
+    | [] => s!"`{a.impl.name}`"
+    | cs => s!"`{a.impl.name}` if " ++ englishList "and" cs
   s!"It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders \
     (`VG.Rust.Rank`): " ++ "; ".intercalate (arms.map item) ++
     s!"; or else `{base}`, which needs no CPU feature. Each has this documentation but for its \
@@ -1922,11 +1966,11 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   s!"pub unsafe fn {auto}{b.sig.rust} " ++ "{\n" ++
   (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
   String.join (arms.map fun a =>
-    String.join (a.gate.map fun p => s!"    #[cfg({p})]\n") ++
+    String.join (a.impl.gate.map fun p => s!"    #[cfg({p})]\n") ++
     s!"    if {condOf a} " ++ "{\n" ++
-    s!"        // SAFETY: the caller's obligations, which are `{a.art.name}`'s, and the CPU\n" ++
+    s!"        // SAFETY: the caller's obligations, which are `{a.impl.name}`'s, and the CPU\n" ++
     "        // has the features it needs.\n" ++
-    s!"        return unsafe " ++ "{ " ++ s!"crate::{a.art.module}::{a.art.name}({args})" ++ " };\n" ++
+    s!"        return unsafe " ++ "{ " ++ s!"crate::{a.impl.module}::{a.impl.name}({args})" ++ " };\n" ++
     "    }\n") ++
   "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
   "    unsafe { " ++ s!"crate::{b.module}::{b.name}({args})" ++ " }\n" ++
@@ -1970,9 +2014,85 @@ def dispatchers (rs : List Rank) (names : List String) (m : String) (as : List A
     if names.contains auto then
       throw s!"{g.base.target.name}: {auto} is both an artifact and the dispatcher of {g.base.name}"
     if g.members.isEmpty then return soleDispatcher g
-    match armsOf rs m g with
+    match armsOf rs m g.base.target.name (g.members.map fun (a, s) => (Impl.ofArtifact a, s)) with
     | .ok arms => return dispatcher g arms
     | .error e => throw e
+  return String.join (texts.map ("\n" ++ ·))
+
+/-- The tables of functions `ts` of a target, with their implementations: in
+order of their names' lengths, a table is an implementation of the first
+found whose base has its interface and data and whose base's name, followed
+by `_`, starts its own, and is otherwise the base of a group of its own. -/
+def tableGroupsOf (ts : List FnTable) : List (FnTable × List (FnTable × String)) := Id.run do
+  let sorted := ts.mergeSort fun a b => a.name.length ≤ b.name.length
+  let mut gs : Array (FnTable × List (FnTable × String)) := #[]
+  for T in sorted do
+    match gs.findIdx? fun (b, _) =>
+        T.name.startsWith (b.name ++ "_") && T.iface == b.iface && T.data == b.data with
+    | some i =>
+      gs := gs.modify i fun (b, ms) => (b, ms ++ [(T, (T.name.drop b.name.length).toString)])
+    | none => gs := gs.push (T, [])
+  return gs.toList
+
+/-- The name of the dispatcher of the table of functions `name`: its name in
+lowercase, followed by `_auto`. -/
+def tableAutoName (name : String) : String := name.toLower ++ "_auto"
+
+/-- The dispatcher of the table of functions `b` of the target `t` (see
+above), whose implementations are `members` (each with its suffix), given
+the CPU features each table needs (`features`), its `cfg` predicates
+(`gate`) and the module `rankModule` of a table's first function, in which
+`rs` ranks its suffix; or why `rs` does not rank them. -/
+def tableDispatcher (rs : List Rank) (t : String) (features : FnTable → List String)
+    (gate : List String → List String) (rankModule : FnTable → String) (b : FnTable)
+    (members : List (FnTable × String)) : Except String String := do
+  let impl (T : FnTable) : Impl := ⟨T.name, "fn_tables", features T, gate (features T)⟩
+  let arms ← armsOf rs (rankModule b) t (members.map fun (T, s) => (impl T, s.toLower))
+  let item (a : Arm) : String :=
+    let needs := if a.impl.features.isEmpty then
+      (if a.extra.isEmpty then ["detection reports some CPU feature"] else [])
+      else [s!"the CPU supports its features (`{a.impl.name}_FEATURES`)"]
+    let extra := if a.extra.isEmpty then [] else [s!"it also supports {codeList a.extra}"]
+    let vendor := a.vendors.map fun v =>
+      s!"the target's vendor is `{v}` (or `VG_CPU_FEATURES` names every feature it needs)"
+    let gated := if a.impl.gate.isEmpty then [] else
+      [s!"it is compiled (`{", ".intercalate a.impl.gate}`)"]
+    match gated ++ vendor ++ needs ++ extra with
+    | [] => s!"`{a.impl.name}`"
+    | cs => s!"`{a.impl.name}` if " ++ englishList "and" cs
+  let doc := if arms.isEmpty then
+      s!"The table of functions `{b.name}` of the interface `{b.iface}`, the only one with its \
+        data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`)."
+    else
+      s!"A table of functions of the interface `{b.iface}` with the data of `{b.name}`, which \
+        every function taking one computes the same with (`VG.Rust.tableDispatcher`): the \
+        first of these that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): " ++
+        "; ".intercalate (arms.map item) ++ s!"; or else `{b.name}`, which needs no CPU feature. \
+        Its CPU features, if any, are those of the table returned, which the CPU has."
+  return docComment "" doc ++
+    "#[inline]\n" ++
+    s!"pub fn {tableAutoName b.name}() -> &'static crate::fn_tables::{b.iface} " ++ "{\n" ++
+    (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
+    String.join (arms.map fun a =>
+      String.join (a.impl.gate.map fun p => s!"    #[cfg({p})]\n") ++
+      s!"    if {condOf a} " ++ "{\n" ++
+      s!"        return &crate::fn_tables::{a.impl.name};\n" ++
+      "    }\n") ++
+    s!"    &crate::fn_tables::{b.name}\n" ++
+    "}\n"
+
+/-- The dispatchers of the tables of functions `ts` of the target `t` (see
+above), as the text of `dispatch/fn_tables.rs` after its header; `names` are
+the names of every artifact of the target, none of which may be a
+dispatcher's. -/
+def tableDispatchers (rs : List Rank) (t : String) (names : List String) (ts : List FnTable)
+    (features : FnTable → List String) (gate : List String → List String)
+    (rankModule : FnTable → String) : Except String String := do
+  let gs := (tableGroupsOf ts).filter fun (b, _) => (features b).isEmpty
+  let texts ← gs.mapM fun (b, ms) => do
+    if names.contains (tableAutoName b.name) then
+      throw s!"{t}: {tableAutoName b.name} is both an artifact and the dispatcher of {b.name}"
+    tableDispatcher rs t features gate rankModule b ms
   return String.join (texts.map ("\n" ++ ·))
 
 /-- The module of the dispatchers of the target `t` (`dispatch/mod.rs` of its
@@ -1986,8 +2106,12 @@ def dispatchMod (t : String) (ms : List String) : String :=
 the target `t` (`dispatch/<m>.rs`), which name the functions they call by
 their paths from the crate's root. -/
 def dispatchFile (t m text : String) : String :=
-  header ++ s!"//! The dispatchers of the verified `{m}` functions for `{t}`\n" ++
-  s!"//! (`crate::{m}`, `VG.Rust.dispatcher`).\n" ++ text
+  header ++ (if m == "fn_tables" then
+    s!"//! The dispatchers of the tables of functions for `{t}`\n" ++
+    "//! (`crate::fn_tables`, `VG.Rust.tableDispatcher`).\n"
+  else
+    s!"//! The dispatchers of the verified `{m}` functions for `{t}`\n" ++
+    s!"//! (`crate::{m}`, `VG.Rust.dispatcher`).\n") ++ text
 
 /-- The generated files of the artifacts of `ps`, given the module of each
 function each artifact calls; each artifact's code as `ps` printed it
@@ -2004,7 +2128,8 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
     let modules := (distinct (arts.map (·.art)) (·.module)).mergeSort (· ≤ ·)
     let ts := tables (arts.map (·.art)) hs
     let fts := fnTables (arts.map (·.art))
-    let dmods := modules.filter fun m => !(disp t m).isEmpty
+    let dmods := ((modules ++ (if fts.isEmpty then [] else ["fn_tables"])).filter fun m =>
+      !(disp t m).isEmpty).mergeSort (· ≤ ·)
     let mods := (modules ++ (if ts.isEmpty then [] else ["consts"]) ++
       (if fts.isEmpty then [] else ["fn_tables"]) ++
       (if dmods.isEmpty then [] else ["dispatch"])).mergeSort (· ≤ ·)
@@ -2095,8 +2220,20 @@ def files (as : List Artifact) (ranking : Ranking := []) :
     checkRanks t rs
     let arts := as.filter (·.target.name == t)
     let names := arts.map (·.name)
-    (distinct arts (·.module)).mapM fun m => do
+    let fns ← (distinct arts (·.module)).mapM fun m => do
       return ((t, m), ← dispatchers rs names m (arts.filter (·.module == m)))
+    let tps := ps.filter (·.art.target.name == t)
+    let rankModule (T : FnTable) : String := match T.fns.head? with
+      | none => ""
+      | some f => match arts.find? (·.name == f) with
+        | some a => a.module
+        | none => ((internal? hs t f).map (·.owner)).getD ""
+    let gate (fs : List String) : List String := match arts.head? with
+      | some a => fs.filterMap a.target.printer.featureCfg
+      | none => []
+    let tabs ← tableDispatchers rs t names (fnTables arts) (fnTableFeatures tps hs t) gate
+      rankModule
+    return fns ++ (if tabs.isEmpty then [] else [((t, "fn_tables"), tabs)])
   return render ps hs (fun t n =>
     match as.find? fun b => b.target.name == t && b.name == n with
     | some b => b.module
