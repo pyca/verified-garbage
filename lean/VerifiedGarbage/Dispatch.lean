@@ -23,15 +23,23 @@ open VG.Rust (Rank)
 def gcmX86_64 : List String := ["_vaes_vpclmul_avx512", "_vaes_vpclmul", "_vaes_pclmul",
   "_aesni_vpclmul", "_aesni_pclmul_avx", "_aesni_pclmul", "_vaes", "_aesni", "_vpclmul", "_pclmul"]
 
+/-- Whether the implementation of AES-GCM of the suffix `g` needs AVX2: those
+of VAES or VPCLMULQDQ, which every CPU with them has. -/
+def needsAvx2 (g : String) : Bool :=
+  (g.splitOn "vaes").length > 1 || (g.splitOn "vpclmul").length > 1
+
 def ranking : Rust.Ranking := [
   ("x86_64",
     -- AES-SIV's CMAC by AES-NI's CBC code, which it runs on long inputs.
     { suffix := "_aesni_cbc", skip := true } ::
     -- AES-GCM-SIV: each of AES-GCM's implementations with its AVX2 copies
-    -- (`_avx2`), then without.
+    -- (`_avx2`), then without. Those of VAES or VPCLMULQDQ need what their
+    -- `_avx2` copies need, so no dispatcher would choose them: the Rust code
+    -- calls them itself, on short messages (`skip`).
     ((gcmX86_64 ++ [""]).flatMap fun g =>
       [{ suffix := g ++ "_avx2", modules := ["aes_gcm_siv"] }] ++
-        if g.isEmpty then [] else [{ suffix := g, modules := ["aes_gcm_siv"] }]) ++
+        if g.isEmpty then [] else
+          [{ suffix := g, modules := ["aes_gcm_siv"], skip := needsAvx2 g }]) ++
     { suffix := "_vaes_avx512" } ::
     gcmX86_64.map (fun g => { suffix := g }) ++ [
     -- ChaCha20's `_ifma` needs no AVX512_IFMA itself: it is chosen where
