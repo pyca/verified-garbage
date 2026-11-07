@@ -71,6 +71,8 @@ def wideArtifactsOf (v : GcmImpl) : List Artifact := [
 
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifacts (v : GcmVariant) : List Artifact :=
-  artifactsOf v.impl ++ if hasWide v.impl then wideArtifactsOf v.impl else []
+  if sivSame v.impl then [] else
+    (if hasNarrow v.impl then artifactsOf v.impl else []) ++
+      if hasWide v.impl then wideArtifactsOf v.impl else []
 
 end VG.Generic.AesGcm.X86_64.AesGcmSiv
