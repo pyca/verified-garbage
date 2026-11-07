@@ -54,7 +54,7 @@ theorem sealSplitBody_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1
   have hc := padRest_xdepth (dataCopy b) b 2
   have ha := padSite_xdepth (dataCopy b) b .rbx .rbp
   simp only [sealSplitBody, bigCallee, Impl.ChaCha20.X86_64.Callee.inPlace, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
-    padRest, padCopy, padTail, cryptSplit, cryptBigSplit, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth,
+    padRest, padCopy, padTail, cryptSplit, cryptBigSplit, cryptPre, xorKs, Bool.cond_false, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth,
     xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hx hc ha ⊢
   omega
 

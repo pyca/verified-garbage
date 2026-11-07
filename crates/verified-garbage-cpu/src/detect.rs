@@ -61,18 +61,16 @@ pub const NAMES: [(&str, u32); 21] = [
 /// Haswell and Broadwell and AMD's Zen; AES-NI with SSSE3, in Intel's Westmere
 /// and Silvermont and AMD's Bulldozer and Jaguar; VAES with AES-NI and
 /// AVX-512F with AVX2, in every CPU with them, Intel's Knights Landing
-/// among them; AVX512_IFMA with AVX512VL, in Intel's Cannon Lake, Ice Lake
-/// and later and AMD's Zen 4), so only a virtual machine or an operating system hiding
+/// among them), so only a virtual machine or an operating system hiding
 /// the others has it without them, and it gets the code that needs neither
 /// rather than configurations of its own, which no CPU runs, to test.
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-pub const REPORTED_WITH: [(u32, u32); 6] = [
+pub const REPORTED_WITH: [(u32, u32); 5] = [
     (feature::BMI2, feature::AVX2),
     (feature::ADX, feature::AVX2),
     (feature::AES, feature::SSSE3),
     (feature::VAES, feature::AES),
     (feature::AVX512F, feature::AVX2),
-    (feature::AVX512IFMA, feature::AVX512VL),
 ];
 
 /// The detected features, with [`DETECTED_INIT`] set once they are known,
@@ -297,8 +295,8 @@ pub fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) ->
     let avx512f = (ebx >> 16) & avx2 & zmm;
     let sha512 = eax1 & avx;
     let adx = (ebx >> 19) & avx2;
+    let avx512ifma = (ebx >> 21) & avx & zmm;
     let avx512vl = (ebx >> 31) & avx & zmm;
-    let avx512ifma = (ebx >> 21) & avx512vl;
     let vaes = (ecx7 >> 9) & avx & aes;
     let vpclmulqdq = (ecx7 >> 10) & avx;
     let avx512bw = (ebx >> 30) & avx & zmm;

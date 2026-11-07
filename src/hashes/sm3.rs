@@ -9,7 +9,7 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::sm3::{vg_sm3_finalize, vg_sm3_init, vg_sm3_update};
+use crate::arch::dispatch::sm3::{vg_sm3_finalize_auto, vg_sm3_init_auto, vg_sm3_update_auto};
 
 super::streaming_hash!(
     /// An incremental SM3 computation.
@@ -17,10 +17,9 @@ super::streaming_hash!(
         state: 96,
         block: 64,
         output: 32,
-        init: vg_sm3_init,
-        backends: Sm3Backend {
-            Scalar => (vg_sm3_update, vg_sm3_finalize),
-        },
+        init: vg_sm3_init_auto,
+        update: vg_sm3_update_auto,
+        finalize: vg_sm3_finalize_auto,
     }
 );
 

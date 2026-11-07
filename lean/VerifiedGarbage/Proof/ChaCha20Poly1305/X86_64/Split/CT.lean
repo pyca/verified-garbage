@@ -108,7 +108,7 @@ structure BigPre (s₀ s : State) : Prop where
   s3 : s.mem.readW (stackArgAddr s₀ 3) 64 = stackArg s₀ 3
 
 theorem cryptPre_big {s₀ : State} (hT : SPre s₀) {s : State} (h : AtIteS s₀ s) :
-    WP isa (cryptPre 960 1024 6) s (BigPre s₀) := by
+    WP isa (cryptPre 960 1024 6 false) s (BigPre s₀) := by
   have hp := hT.hp
   have hML := mOf_le_len 960 1024 (L s₀)
   refine WP.mono (cryptPre_ok Proof.ChaCha20.X86_64.XorImpl.avx512 (pass_of _) hp h.at_.inv)
@@ -214,12 +214,12 @@ theorem big_rel :
   have hqi := hq
   obtain ⟨⟨-, -, -, -, -, -, p7, -, p9⟩, -, -⟩ := hq
   have hfp : FoldPoly 960 1024 6 .avx512 := .inr (.inr ⟨rfl, rfl, rfl, .inl rfl⟩)
-  obtain ⟨_, hX⟩ := cryptPre_taint true hfp
+  obtain ⟨_, hX⟩ := cryptPre_taint true false hfp
   obtain ⟨_, hA⟩ := splitArgs_taint
   obtain ⟨_, hP⟩ := ptr_taint
   have pre := (RelCT.taint (A := taintS)
     (P := fun s₁ s₂ => (AtIteS s₀ s₁ ∧ AtIteS s₀' s₂) ∧ isa.eval .b s₁ = some false)
-    (τS true) (fun _ _ h => agreeS hp hp' hq₀ h.1.1.at_ h.1.2.at_) hX).wp
+    (τS true) (fun _ _ h => agreeS hp hp' hq₀ (tp_pub hq₀) h.1.1.at_ h.1.2.at_) hX).wp
     (F₁ := BigPre s₀) (F₂ := BigPre s₀') fun _ _ h => ⟨cryptPre_big hT h.1.1, cryptPre_big hT' h.1.2⟩
   have args := (RelCT.taint (A := taintS) (P := fun s₁ s₂ => True ∧ BigPre s₀ s₁ ∧ BigPre s₀' s₂)
     (τR [.rsp]) (fun _ _ h => agreeR (by
@@ -243,7 +243,7 @@ theorem sealSplitBody_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.
     {s s' : State} {t : List Leak} (h : Exec isa (sealSplitBody x b) s t s') :
     Exec isa (.seq (.block entry) (.seq (prologueA 960 1024 6)
       (.seq x.inPlace
-      (.seq (sealMid 960 b) (.seq (.ite .b (cryptSmall 6) cryptBigSplit) (sealPost 960 1024 6 b)))))) s t s' := by
+      (.seq (sealMid 960 b) (.seq (.ite .b (cryptSmall 6 false) cryptBigSplit) (sealPost 960 1024 6 b)))))) s t s' := by
   cases h with | seq e₀ h => cases h with | seq hP h => cases hP with | seq ePA hP => cases hP with
   | seq eC ePB => cases h with | seq eMA h => cases h with | seq eLEN h => cases h with | seq hC h =>
   cases hC with | seq eCMP hC => cases hC with | seq eITE hC => cases hC with | seq eANC hC =>
@@ -259,7 +259,7 @@ theorem sealSplitBody_rel {s₀ s₀' : State} (hT : SPre s₀) (hT' : SPre s₀
     (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.Blocks) (hvb : v.poly = b)
     (hb : b = .avx512 ∨ b = .ifma) :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (sealSplitBody v.callee b) fun _ _ => True := by
-  have c1 := call1_rel hT.hp hT'.hp hq.1 v (pass := 1024)
+  have c1 := call1_rel hT.hp hT'.hp hq.1 v (pass := 1024) (t₁₂ := tp s₀) (t₁₂' := tp s₀')
   rw [big_fold (hvb ▸ hb)] at c1
   have hp := hT.hp
   have hp' := hT'.hp
@@ -268,7 +268,7 @@ theorem sealSplitBody_rel {s₀ s₀' : State} (hT : SPre s₀) (hT' : SPre s₀
   have hfp : FoldPoly 960 1024 6 b := .inr (.inr ⟨rfl, rfl, rfl, hb⟩)
   obtain ⟨_, hA⟩ := prologueA_taint true hfp
   have pA := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => s₁ = entryS s₀ ∧ s₂ = entryS s₀') (τ₀ true)
-    (fun _ _ h => by rw [h.1, h.2]; exact agree₀ hp hp' hq₀) hA).wp
+    (fun _ _ h => by rw [h.1, h.2]; exact agree₀ hp hp' hq₀ (tp_pub hq₀)) hA).wp
     (F₁ := FArgs 960 1024 s₀) (F₂ := FArgs 960 1024 s₀') fun _ _ h =>
     ⟨by rw [h.1]; exact prologueA_ok (by lit_omega) (.inr (.inl rfl)) (.inr (.inr rfl)) hp,
       by rw [h.2]; exact prologueA_ok (by lit_omega) (.inr (.inl rfl)) (.inr (.inr rfl)) hp'⟩).mono
@@ -276,24 +276,24 @@ theorem sealSplitBody_rel {s₀ s₀' : State} (hT : SPre s₀) (hT' : SPre s₀
   obtain ⟨_, hmid⟩ := sealMid_taint hfp
   have mid := ((RelCT.taint (A := taintS)
     (P := fun s₁ s₂ => AfterF 960 1024 s₀ s₁ ∧ AfterF 960 1024 s₀' s₂) (τA true)
-    (fun _ _ h => agreeA hp hp' hq₀ h.1 h.2) hmid).wp (F₁ := AtIteS s₀) (F₂ := AtIteS s₀') fun _ _ h =>
+    (fun _ _ h => agreeA hp hp' hq₀ (tp_pub hq₀) h.1 h.2) hmid).wp (F₁ := AtIteS s₀) (F₂ := AtIteS s₀') fun _ _ h =>
       ⟨sealMidS_ok b hT h.1, sealMidS_ok b hT' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
   have hc : ∀ s₁ s₂, (AtIteS s₀ s₁ ∧ AtIteS s₀' s₂) → isa.eval .b s₁ = isa.eval .b s₂ := fun s₁ s₂ h => by
     simp [eval, h.1.at_.cf, h.2.at_.cf, eL]
-  obtain ⟨_, hS⟩ := cryptSmall_taint true hfp
+  obtain ⟨_, hS⟩ := cryptSmall_taint true false hfp
   have small := (RelCT.taint (A := taintS)
     (P := fun s₁ s₂ => (AtIteS s₀ s₁ ∧ AtIteS s₀' s₂) ∧ isa.eval .b s₁ = some true)
-    (τS true) (fun _ _ h => agreeS hp hp' hq₀ h.1.1.at_ h.1.2.at_) hS).wp (F₁ := After s₀) (F₂ := After s₀')
+    (τS true) (fun _ _ h => agreeS hp hp' hq₀ (tp_pub hq₀) h.1.1.at_ h.1.2.at_) hS).wp (F₁ := After s₀) (F₂ := After s₀')
     fun s₁ s₂ h => by
       have e₁ := h.2
       have e₂ := (hc _ _ h.1).symm.trans h.2
       simp only [eval, h.1.1.at_.cf, h.1.2.at_.cf, Option.some.injEq, decide_eq_true_eq] at e₁ e₂
-      exact ⟨small_ok hp (by lit_omega) (.inr (.inr rfl)) h.1.1.at_ (by omega_using [e₁]),
-        small_ok hp' (by lit_omega) (.inr (.inr rfl)) h.1.2.at_ (by omega_using [e₂])⟩
+      exact ⟨small_ok hp (by lit_omega) (.inr (.inr rfl)) h.1.1.at_ (fun h => nomatch h) (by omega_using [e₁]),
+        small_ok hp' (by lit_omega) (.inr (.inr rfl)) h.1.2.at_ (fun h => nomatch h) (by omega_using [e₂])⟩
   have ite := RelCT.ite hc (small.mono (fun _ _ h => h) fun _ _ h => h.2) (big_rel hT hT' hq)
   obtain ⟨_, hpost⟩ := sealPost_taint hfp
   have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) (τ₁ true)
-    (fun _ _ h => agree₁ hp hp' hq₀ h.1 h.2) hpost
+    (fun _ _ h => agree₁ hp hp' hq₀ (tp_pub hq₀) h.1 h.2) hpost
   have all := (entry_rel hp hp' hq₀).seq (pA.seq (c1.seq (mid.seq (ite.seq post))))
   exact RelCT.of_exec sealSplitBody_exec all
 

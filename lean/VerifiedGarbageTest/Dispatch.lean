@@ -85,6 +85,11 @@ def x86Rank (module suffix : String) : Option Nat :=
   | some a, some s => a < s
   | _, _ => false
 
+-- AES-CMAC's, AES-SIV's and AES-CCM's dispatchers rank `_aesni`, which needs
+-- only AES-NI and SSSE3, so they never choose the baseline with those
+-- (`NEVER_WITH` in `ci/check_variants.py`).
+#guard ["cmac_aes", "aes_siv", "aes_ccm"].all fun m => (x86Rank m "_aesni").isSome
+
 -- AES-GCM-SIV's dispatchers try `_aesni_pclmul_avx_avx2` before `_aesni_avx2`
 -- and `_pclmul_avx2`, and `_vaes_vpclmul_avx512` before `_vaes_avx2` and
 -- `_vpclmul_avx2` (`NEVER_WITH` in `ci/check_variants.py`).

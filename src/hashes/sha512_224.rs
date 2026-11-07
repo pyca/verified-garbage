@@ -9,27 +9,10 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::sha512::vg_sha512_224_digest;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha512::vg_sha512_224_digest_sha3;
-use crate::arch::sha512::vg_sha512_224_init;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha512::{
-    VG_SHA512_224_FINALIZE_AVX2_FEATURES, VG_SHA512_224_FINALIZE_SHANI_FEATURES,
-    VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_UPDATE_SHANI_FEATURES,
+use crate::arch::dispatch::sha512::{
+    vg_sha512_224_digest_auto, vg_sha512_224_finalize_auto, vg_sha512_224_init_auto,
+    vg_sha512_update_auto,
 };
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha512::{VG_SHA512_224_FINALIZE_SHA3_FEATURES, VG_SHA512_UPDATE_SHA3_FEATURES};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha512::{vg_sha512_224_digest_avx2, vg_sha512_224_digest_shani};
-use crate::arch::sha512::{vg_sha512_224_finalize, vg_sha512_update};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha512::{
-    vg_sha512_224_finalize_avx2, vg_sha512_224_finalize_shani, vg_sha512_update_avx2,
-    vg_sha512_update_shani,
-};
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha512::{vg_sha512_224_finalize_sha3, vg_sha512_update_sha3};
 
 super::streaming_hash!(
     /// An incremental SHA-512/224 computation (FIPS 180-4 §6.6).
@@ -37,28 +20,10 @@ super::streaming_hash!(
         state: 192,
         block: 128,
         output: 28,
-        init: vg_sha512_224_init,
-        backends: Sha512_224Backend {
-            Scalar => (vg_sha512_update, vg_sha512_224_finalize),
-            #[cfg(target_arch = "aarch64")]
-            Sha3 if [VG_SHA512_UPDATE_SHA3_FEATURES, VG_SHA512_224_FINALIZE_SHA3_FEATURES] =>
-                (vg_sha512_update_sha3, vg_sha512_224_finalize_sha3),
-            #[cfg(target_arch = "x86_64")]
-            ShaNi if [VG_SHA512_UPDATE_SHANI_FEATURES, VG_SHA512_224_FINALIZE_SHANI_FEATURES] =>
-                (vg_sha512_update_shani, vg_sha512_224_finalize_shani),
-            #[cfg(target_arch = "x86_64")]
-            Avx2 if [VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_224_FINALIZE_AVX2_FEATURES] =>
-                (vg_sha512_update_avx2, vg_sha512_224_finalize_avx2),
-        },
-        digests: {
-            Scalar => vg_sha512_224_digest,
-            #[cfg(target_arch = "aarch64")]
-            Sha3 => vg_sha512_224_digest_sha3,
-            #[cfg(target_arch = "x86_64")]
-            ShaNi => vg_sha512_224_digest_shani,
-            #[cfg(target_arch = "x86_64")]
-            Avx2 => vg_sha512_224_digest_avx2,
-        },
+        init: vg_sha512_224_init_auto,
+        update: vg_sha512_update_auto,
+        finalize: vg_sha512_224_finalize_auto,
+        digest: vg_sha512_224_digest_auto,
     }
 );
 

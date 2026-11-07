@@ -403,7 +403,7 @@ Poly1305 state kept. -/
 theorem cryptPreR_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hf448 : v.callee.fold = 448) {s₀ : State}
     (hp : APre e s₀) {s : State} (h : Inv s₀ s) (hpre : PreLen 448 (L s₀)) (hbig : 448 < L s₀)
     {key msg : List Byte} (hrep : Repr s.mem (off (cx s₀) 448) key msg) :
-    WP isa (cryptPre v.callee.fold 512 v.callee.wide) s fun s' =>
+    WP isa (cryptPre v.callee.fold 512 v.callee.wide false) s fun s' =>
       XArgsM s₀ 448 s' ∧ Repr s'.mem (off (cx s₀) 448) key msg := by
   have hm : mOf v.callee.fold 512 (L s₀) = 448 := by
     rw [mOf_big (by omega_arith), hf448]
