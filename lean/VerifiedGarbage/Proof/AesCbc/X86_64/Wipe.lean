@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesCbc.X86_64.Caller
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Vaes512Decrypt
 public import VerifiedGarbage.Proof.Framework.X86_64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.X86_64
+public import VerifiedGarbage.Proof.Zeroize.X86_64Avx
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
@@ -13,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 
 Each implementation of `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` that
 writes its `scratch` buffer is called by `callWipe`, which then zeroes the
-bytes it may write (`encWrites`, `decWrites`) with `vg_zeroize`, so that no
+bytes it may write (`encWrites`, `decWrites`) with `vg_zeroize` (`vg_zeroize_avx` in code that needs AVX already), so that no
 implementation leaves the key schedule or the data there for its caller to
 wipe. The ones that write none (`vg_aes_cbc_encrypt_aesni`) are not wrapped.
 
@@ -241,36 +242,57 @@ theorem encPost_out : ∀ vs m m₁ m₂ x, vs.length = (aesSig.words 64).length
 
 /-! ## Wrapping an implementation -/
 
-/-- A call of `name`, whose code is `body`, then of `vg_zeroize` on the first
-`n` bytes of `scratch` (the sixth argument, in `r9`). -/
-def wiped (n : Nat) (name : String) (body : Prog isa) : Prog isa :=
-  Impl.CallWipe.X86_64.callWipe .r9 n name body "vg_zeroize" Impl.Zeroize.X86_64.zeroize
+/-- The zeroize function a wrapper calls: `vg_zeroize_avx` for code that
+needs AVX already, `vg_zeroize` for the rest. -/
+def zname (avx : Bool) : String := if avx then "vg_zeroize_avx" else "vg_zeroize"
 
-theorem wiped_spSafe {n : Nat} {name : String} {body : Prog isa}
-    (h : body.all (fun i => !isa.writesSp i) = true) : (wiped n name body).all (fun i => !isa.writesSp i) = true :=
-  callWipe_spSafe h (by decide)
+def zcode (avx : Bool) : Prog isa :=
+  if avx then Impl.Zeroize.X86_64.zeroizeAvx else Impl.Zeroize.X86_64.zeroize
+
+theorem zcode_verified (avx : Bool) :
+    Verified X86_64.target (zcode avx) (Spec.Zeroize.zeroizeContract X86_64.abi) := by
+  cases avx
+  · exact Proof.Zeroize.X86_64.verified
+  · exact Proof.Zeroize.X86_64.verifiedAvx
+
+theorem zcode_spSafe (avx : Bool) : (zcode avx).all (fun i => !isa.writesSp i) = true := by
+  cases avx <;> decide
+
+theorem zcode_depth (avx : Bool) : (zcode avx).x86_64Depth ≤ 0 := by
+  cases avx <;> decide
+
+/-- A call of `name`, whose code is `body`, then of the zeroize function
+(`zname avx`) on the first `n` bytes of `scratch` (the sixth argument, in
+`r9`). -/
+def wiped (avx : Bool) (n : Nat) (name : String) (body : Prog isa) : Prog isa :=
+  Impl.CallWipe.X86_64.callWipe .r9 n name body (zname avx) (zcode avx)
+
+theorem wiped_spSafe {avx : Bool} {n : Nat} {name : String} {body : Prog isa}
+    (h : body.all (fun i => !isa.writesSp i) = true) :
+    (wiped avx n name body).all (fun i => !isa.writesSp i) = true :=
+  callWipe_spSafe h (zcode_spSafe avx)
 
 /-- An implementation of `vg_aes_cbc_decrypt` with 8 bytes of stack, wrapped. -/
-theorem wiped_decrypt {n : Nat} {name : String} {body : Prog isa}
+theorem wiped_decrypt {avx : Bool} {n : Nat} {name : String} {body : Prog isa}
     (h : Verified X86_64.target body (Spec.Cbc.aesDecryptContract X86_64.abi 8))
     (hsp : body.all (fun i => !isa.writesSp i) = true) (hd : body.x86_64Depth ≤ 8) (hn : n ≤ 2176) :
-    Verified X86_64.target (wiped n name body) (Spec.Cbc.aesDecryptContract X86_64.abi 32) :=
+    Verified X86_64.target (wiped avx n name body) (Spec.Cbc.aesDecryptContract X86_64.abi 32) :=
   Verified.callWipe (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 5)
-    h Proof.Zeroize.X86_64.verified (by decide) rfl rfl rfl (by simp only [Elem.size]; omega) (by omega)
-    (by decide) hsp hd (by decide) (by decide) (by omega) pre_local decPost_local decPost_out
+    h (zcode_verified avx) (by decide) rfl rfl rfl (by simp only [Elem.size]; omega) (by omega)
+    (by decide) hsp hd (zcode_spSafe avx) (zcode_depth avx) (by omega) pre_local decPost_local decPost_out
     (by implies_sat [Spec.Cbc.aesSig, X86_64.abi, X86_64.argRegs] [Proof.AesCbc.X86_64.sat]
       using Proof.AesCbc.X86_64.sat)
 
 /-- An implementation of `vg_aes_cbc_encrypt` with 8 bytes of stack, wrapped. -/
-theorem wiped_encrypt {n : Nat} {name : String} {body : Prog isa}
+theorem wiped_encrypt {avx : Bool} {n : Nat} {name : String} {body : Prog isa}
     (h : Verified X86_64.target body (Spec.Cbc.aesEncryptContract X86_64.abi 8))
     (hsp : body.all (fun i => !isa.writesSp i) = true) (hd : body.x86_64Depth ≤ 8) (hn : n ≤ 2176) :
-    Verified X86_64.target (wiped n name body) (Spec.Cbc.aesEncryptContract X86_64.abi 32) :=
+    Verified X86_64.target (wiped avx n name body) (Spec.Cbc.aesEncryptContract X86_64.abi 32) :=
   Verified.callWipe (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 5)
-    h Proof.Zeroize.X86_64.verified (by decide) rfl rfl rfl (by simp only [Elem.size]; omega) (by omega)
-    (by decide) hsp hd (by decide) (by decide) (by omega) pre_local encPost_local encPost_out
+    h (zcode_verified avx) (by decide) rfl rfl rfl (by simp only [Elem.size]; omega) (by omega)
+    (by decide) hsp hd (zcode_spSafe avx) (zcode_depth avx) (by omega) pre_local encPost_local encPost_out
     (by implies_sat [Spec.Cbc.aesSig, X86_64.abi, X86_64.argRegs] [Proof.AesCbc.X86_64.sat]
       using Proof.AesCbc.X86_64.sat)
 
@@ -306,7 +328,7 @@ theorem decWrites_le (v : BlocksImpl) : decWrites v ≤ 2176 := by
 
 /-- `vg_aes_cbc_decrypt` for `v`, wrapped. -/
 def decrypt (v : BlocksImpl) : Prog isa :=
-  wiped (decWrites v) ("vg_aes_cbc_decrypt_unwiped" ++ v.suffix) (Caller.decrypt v)
+  wiped (Caller.vaes v) (decWrites v) ("vg_aes_cbc_decrypt_unwiped" ++ v.suffix) (Caller.decrypt v)
 
 theorem decrypt_verified (v : BlocksImpl) :
     Verified X86_64.target (decrypt v) (Spec.Cbc.aesDecryptContract X86_64.abi 32) :=
@@ -320,7 +342,7 @@ theorem decrypt_spSafe (v : BlocksImpl) : (decrypt v).all (fun i => !isa.writesS
 write all of `scratch` (the loop in AES-NI registers writes none of it, and
 is not wrapped). -/
 def encrypt (v : BlocksImpl) : Prog isa :=
-  wiped 2176 ("vg_aes_cbc_encrypt_unwiped" ++ v.suffix) (Caller.encrypt v)
+  wiped false 2176 ("vg_aes_cbc_encrypt_unwiped" ++ v.suffix) (Caller.encrypt v)
 
 theorem encrypt_verified (v : BlocksImpl) :
     Verified X86_64.target (encrypt v) (Spec.Cbc.aesEncryptContract X86_64.abi 32) :=
@@ -332,7 +354,7 @@ theorem encrypt_spSafe (v : BlocksImpl) : (encrypt v).all (fun i => !isa.writesS
 
 /-- `vg_aes_cbc_decrypt_vaes_avx512`, wrapped. -/
 def decryptVaes512 : Prog isa :=
-  wiped 224 "vg_aes_cbc_decrypt_unwiped_vaes_avx512" Impl.AesCbc.X86_64.Vaes512Decrypt.decrypt
+  wiped true 224 "vg_aes_cbc_decrypt_unwiped_vaes_avx512" Impl.AesCbc.X86_64.Vaes512Decrypt.decrypt
 
 theorem decryptVaes512_verified :
     Verified X86_64.target decryptVaes512 (Spec.Cbc.aesDecryptContract X86_64.abi 32) :=

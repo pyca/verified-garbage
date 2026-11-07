@@ -27,11 +27,11 @@ pub unsafe extern "sysv64" fn vg_aes_cbc_decrypt_vaes_avx512(schedule: *const [u
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_aes_cbc_decrypt_unwiped_vaes_avx512}
 .base64 "SIkEJEiLfCQIvuAAAAA="
-call {vg_zeroize}
+call {vg_zeroize_avx}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_aes_cbc_decrypt_unwiped_vaes_avx512 = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped_vaes_avx512::vg_aes_cbc_decrypt_unwiped_vaes_avx512,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
     )
 }
 
@@ -206,11 +206,11 @@ pub unsafe extern "sysv64" fn vg_aes_cbc_decrypt_vaes(schedule: *const [u8; 240]
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_aes_cbc_decrypt_unwiped_vaes}
 .base64 "SIkEJEiLfCQIvuAAAAA="
-call {vg_zeroize}
+call {vg_zeroize_avx}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
         vg_aes_cbc_decrypt_unwiped_vaes = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped_vaes::vg_aes_cbc_decrypt_unwiped_vaes,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
     )
 }
 
