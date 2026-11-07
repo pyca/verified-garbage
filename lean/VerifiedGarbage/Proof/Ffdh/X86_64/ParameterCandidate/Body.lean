@@ -50,7 +50,16 @@ theorem CandidateBase.candidate_result {p : CandidateP} {s : State} (h : Candida
     cases Spec.Ffdh.generationShape p.bits p.gen p.P <;> cases Spec.Ffdh.primeShape p.P <;>
       cases Spec.Ffdh.primeShape p.Q <;> cases Spec.RsaKeyGen.obviouslyComposite p.bits p.P <;>
       cases Spec.RsaKeyGen.obviouslyComposite p.bits p.Q <;> rfl
-  rw [hcond]
+  -- `earlyOk` rejects only what the whole sieve of p rejects.
+  have hearly : p.sieved p.P = true → earlyOk p.P = true :=
+    earlyOk_of_sieved (by simpa [CandidateP.phaseValue] using h.phase_large false)
+  have htail : candidateTail p (p.rand.drop p.k) =
+      if (p.congruent && p.sieved p.P) && p.sieved p.Q then policyFirst p (p.rand.drop p.k)
+      else some (false, p.rand.drop p.k) := by
+    unfold candidateTail sievedPolicy sievedP
+    cases hc : p.congruent <;> cases hs : p.sieved p.P <;> cases hq : p.sieved p.Q <;>
+      cases ho : earlyOk p.P <;> simp_all
+  rw [hcond, htail]
   by_cases hgp : (p.congruent && p.sieved p.P) = true
   · by_cases hq : p.sieved p.Q = true
     · have hqodd : p.Q % 2 = 1 := odd_of_sieved hq
@@ -68,15 +77,15 @@ theorem CandidateBase.candidate_result {p : CandidateP} {s : State} (h : Candida
         rw [← hqbits, ← hpbits]
         rfl
       simp only [hgp, hq, Bool.and_self, Bool.not_true, Bool.false_eq_true, ite_false,
-        candidateTail, ite_true, sievedPolicy, hpol]
+        ite_true, hpol]
       cases Spec.Ffdh.screenedParameterWitnesses p.P p.Q (p.rand.drop p.k) with
       | none => rfl
       | some ar => obtain ⟨pass, rest⟩ := ar; cases pass <;> rfl
     · have hqf : p.sieved p.Q = false := Bool.eq_false_iff.mpr hq
-      simp [candidateTail, sievedPolicy, hgp, hqf]
+      simp [hgp, hqf]
   · have hgpf : (p.congruent && p.sieved p.P) = false :=
       Bool.eq_false_iff.mpr hgp
-    simp [candidateTail, hgpf]
+    simp [hgpf]
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate
 end

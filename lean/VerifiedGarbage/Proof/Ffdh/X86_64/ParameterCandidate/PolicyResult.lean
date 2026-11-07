@@ -42,9 +42,13 @@ def policyQ (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
 def policyFirst (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
   thenPolicy (checkWitnesses p.P (p.phaseChecks false .first) r) (policyQ p)
 
-/-- q's trial division, then the witnesses. -/
+/-- p's whole trial division, then the witnesses. -/
+def sievedP (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
+  if p.sieved p.P then policyFirst p r else some (false, r)
+
+/-- q's trial division, then p's, then the witnesses. -/
 def sievedPolicy (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
-  if p.sieved p.Q then policyFirst p r else some (false, r)
+  if p.sieved p.Q then sievedP p r else some (false, r)
 
 theorem tape_reject {p : CandidateP} {used : Nat} {m : Mem} (hstatus : word m p.B (8 * oStatus) = 2) :
     TapeOutcome p used 0 (some (false, p.rand.drop used)) m := by

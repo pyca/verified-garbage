@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Consume
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseSetup
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Screen
 import VerifiedGarbage.Proof.Framework.Omega
@@ -25,7 +25,7 @@ open VG.Impl.Ffdh.X86_64.ParameterCandidate VG.Impl.Bignum.X86_64.Public
 open VG.Proof.MlKem.X86_64 VG.Proof.MillerRabin.X86_64
 
 def candidateTail (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
-  if p.congruent && p.sieved p.P then sievedPolicy p r
+  if p.congruent && earlyOk p.P then sievedPolicy p r
   else some (false, r)
 
 def CandidateTestPost (p : CandidateP) (s t : State) : Prop :=
@@ -79,12 +79,12 @@ theorem testCandidate_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   have kk' : Keep (.rdi :: mmRegs) s s₅ := (kk.trans k₅).mono (by decide)
   refine WP.ite p.congruent (by simp [eval, hz₅]) ?_ ?_
   · intro hgen
-    refine WP.seq (WP.mono (primeCheck_state_ok h₅ hg₅ hp₅ hn₅)
+    refine WP.seq (WP.mono (earlyCheck_state_ok h₅ hg₅ hp₅ hn₅)
       fun s₆ ⟨h₆, hg₆, hp₆, _, hz₆, hs₆, hf₆, k₆, ho₆⟩ => ?_)
     have hs'' := hs'.trans hs₆
     have hf'' := hf'.trans hf₆
     have kk'' : Keep (.rdi :: mmRegs) s s₆ := (kk'.trans k₆).mono (by decide)
-    refine WP.ite (p.sieved p.P) (by simpa [eval, CandidateP.phaseValue, CandidateP.sieved] using hz₆) ?_ ?_
+    refine WP.ite (earlyOk p.P) (by simpa [eval, CandidateP.phaseValue] using hz₆) ?_ ?_
     · intro hprime
       refine WP.seq (WP.mono (leavePhase_ok h₆ hg₆.rdi hp₆.link)
         fun s₇ ⟨h₇, hd₇, hm₇, hs₇, hf₇, k₇⟩ => ?_)
