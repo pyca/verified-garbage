@@ -30,15 +30,17 @@ def loadData : List XReg → Nat → List Instr
   | [], _ => []
   | b::bs, j => .vmovdqu32Load b (at_ .rdx (64*j)) :: loadData bs (j+1)
 
-/-- Form [previous ciphertext, C₀, C₁, C₂] and XOR all four lanes.
-The legacy movdqa replaces only the low 128 bits, retaining the three upper
-lanes built by the shuffle. Save C₃ before the in-place 64-byte store. -/
+/-- Form [previous ciphertext, C₀, C₁, C₂] and XOR all four lanes, with
+EVEX and VEX instructions only (a legacy-SSE write of an `xmm` register after
+the `zmm` writes would pay an SSE/AVX transition on each one): the previous
+ciphertext, lane 0 of `zmm15`, joins the lanes of the loaded `zmm14` by two
+shuffles. Load C₃ before the in-place 64-byte store. -/
 def finish4 (b : XReg) (j : Nat) : List Instr :=
   [.vmovdqu32Load .xmm14 (at_ .rdx (64*j)),
-   .zop (.vshufi32x4 .xmm14 .xmm14 .xmm14 144),
-   .xop (.bin .movdqa .xmm14 .xmm15),
-   .movdquLoad .xmm15 (at_ .rdx (64*j+48)),
-   .zop (.zbin .vpxord b b .xmm14),
+   .zop (.vshufi32x4 .xmm15 .xmm15 .xmm14 0),
+   .zop (.vshufi32x4 .xmm15 .xmm15 .xmm14 152),
+   .zop (.zbin .vpxord b b .xmm15),
+   .vmovdquLoad .l128 .xmm15 (at_ .rdx (64*j+48)),
    .vmovdqu32Store (at_ .rdx (64*j)) b]
 
 def finishData : List XReg → Nat → List Instr
