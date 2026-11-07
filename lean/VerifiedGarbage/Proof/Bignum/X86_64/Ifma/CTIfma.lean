@@ -221,8 +221,8 @@ structure ResPub where
 /-- `resBlock_ok`'s hypotheses. -/
 def ResPre (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) (q : ResPub) (s : State) : Prop :=
   ∃ mx : BitVec 64, Scr s q.B q.Z ∧ s.gpr .rdi = off q.B q.o ∧ Hdr s.mem (off q.B q.o) l.W mx ∧
-    word s.mem (off q.B q.o) (8 * sIfma) = off q.B q.a ∧ q.o + slot l.W 8 + wsTab l.W ≤ q.a ∧
-    q.a + 2 * l.D + 8 ≤ q.Z ∧ p < 2 ∧ (∀ j < l.L, limb l s.mem (off q.B q.a) (l.D * p + l.oY) j < 2 ^ 52) ∧
+    word s.mem (off q.B q.o) (8 * sIfma) = off q.B q.a ∧ q.o + slot l.W 8 ≤ q.a ∧
+    q.a + l.nl * l.D + 8 ≤ q.Z ∧ p < l.nl ∧ (∀ j < l.L, limb l s.mem (off q.B q.a) (l.D * p + l.oY) j < 2 ^ 52) ∧
     val52 l s.mem (off q.B q.a) (l.D * p + l.oY) < 2 * wv s.mem (off q.B q.o) (slot l.W Public.aN) l.W
 
 /-- The bases of the subtraction. -/
@@ -235,7 +235,7 @@ theorem result_eq (p : Nat) : result l p = [.block (resLd l p ++ resMid l), subM
   simp only [result, resLd, resMid, List.cons_append, List.nil_append]
 
 /-- `result p` is constant time, given the taint checks of its code that depends on the layout. -/
-theorem result_ct (hl : LayOk l) (p : Nat) (hT : TOk [.rdi] (.block (resLd l p)))
+theorem result_ct (hl : AmmOk l) (p : Nat) (hT : TOk [.rdi] (.block (resLd l p)))
     (hM : TOk [.rdi, .r11, .r8] (.block (resMid l))) :
     RelCT isa (Two (ResPre l p)) (seqs (result l p)) fun _ _ => True := by
   rw [result_eq]
@@ -268,7 +268,8 @@ theorem result_ct (hl : LayOk l) (p : Nat) (hT : TOk [.rdi] (.block (resLd l p))
     have hn := hs.nowrap
     obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
     obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
-    have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_arith
+    have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D :=
+      ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
     have h8 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
     have hH' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off q.B q.o) (8 * i)) 8 := fun i hi => by
       rw [off_off]; exact hs.ld (by have := hdr_lt_slot l.W 8 hi; omega_arith)
@@ -280,7 +281,7 @@ theorem result_ct (hl : LayOk l) (p : Nat) (hT : TOk [.rdi] (.block (resLd l p))
       · rw [show s.mem.readW (off (off q.B q.o) (8 * sIfma)) 64 = off q.B q.a from hia]
       · exact hH.harr _ (by decide)) rfl) fun t ⟨⟨h11, h8'⟩, k⟩ => ⟨(k.gpr (by decide)).trans hdi, h11, h8'⟩
   · rintro q s ⟨mx, hs, hdi, hH, hia, hoa, haZ, hp, hL, hV⟩
-    have := resBlock_ok hl hs hdi hH hia hoa (by rw [hl.nlD]; exact haZ) (by rw [hl.nl]; exact hp) hL hV
+    have := resBlock_ok hl hs hdi hH hia hoa haZ hp hL hV
     simp only [resLd, resMid, List.append_assoc] at this ⊢
     exact WP.mono this fun t ⟨_, _, r8, bx, r10, r12, si, _⟩ => ⟨r8, bx, r10, r12, si⟩
 
@@ -349,7 +350,7 @@ def F0 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : IfPub) (t : State) : Prop :=
       .store (ws .rdx sIfma) .rax, enterP] : List Instr))) t (F1 l p)
 
 theorem regPre_of {p sp sl : Nat} {B : Addr} {Z o a w : Nat} {ep : Addr} {s : State} {mx : BitVec 64} {X : Nat}
-    {eb : List Byte} (hoa : o + slot l.W 8 + wsTab l.W ≤ a) (haZ : a + 2 * l.D + 8 ≤ Z) (hp : p < 2)
+    {eb : List Byte} (hoa : o + slot l.W 8 ≤ a) (haZ : a + l.nl * l.D + 8 ≤ Z) (hp : p < l.nl)
     (hsp : sp < 32) (hsl : sl < 32) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ l.E) (hc : SubCtx s B Z o w l.W mx)
     (hia : word s.mem (off B o) (8 * sIfma) = off B a) (hN : wv s.mem (off B o) (slot l.W Public.aN) l.W = X)
     (hY : wv s.mem (off B o) (slot l.W Public.aY) l.W < X) (hpv : word s.mem B (8 * sp) = ep)
@@ -359,7 +360,7 @@ theorem regPre_of {p sp sl : Nat} {B : Addr} {Z o a w : Nat} {ep : Addr} {s : St
 
 theorem resPre_of {p : Nat} {B : Addr} {Z o a : Nat} {s : State} {mx : BitVec 64} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = off B o) (hH : Hdr s.mem (off B o) l.W mx) (hia : word s.mem (off B o) (8 * sIfma) = off B a)
-    (hoa : o + slot l.W 8 + wsTab l.W ≤ a) (haZ : a + 2 * l.D + 8 ≤ Z) (hp : p < 2)
+    (hoa : o + slot l.W 8 ≤ a) (haZ : a + l.nl * l.D + 8 ≤ Z) (hp : p < l.nl)
     (hL : ∀ j < l.L, limb l s.mem (off B a) (l.D * p + l.oY) j < 2 ^ 52)
     (hV : val52 l s.mem (off B a) (l.D * p + l.oY) < 2 * wv s.mem (off B o) (slot l.W Public.aN) l.W) :
     ResPre l p ⟨B, Z, o, a⟩ s :=

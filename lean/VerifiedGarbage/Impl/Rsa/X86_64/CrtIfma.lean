@@ -342,8 +342,8 @@ def to64 : List Instr :=
 /-! ## Before the vector code, in a prime's workspace (`rdi`) -/
 
 /-- `aT := 2^dbls [aY] mod X` (`[aY] = R_X mod X`, so `aT = 2^(104 S - 64 W) mod X`). -/
-def k1 (ctr : Nat := sCtr) : List (Prog isa) :=
-  copyArr aT aY ++ [.block [.mov32 .rcx (.imm (BitVec.ofNat 32 l.dbls))], doubles aN aAcc aTmp aT ctr]
+def k1 : List (Prog isa) :=
+  copyArr aT aY ++ [.block [.mov32 .rcx (.imm (BitVec.ofNat 32 l.dbls))], doubles aN aAcc aTmp aT sCtr]
 
 /-- `to52`'s arguments for array `j` and the limbs at offset `o` of region
 `p`: the array, the limbs, and `2⁵² - 1`. -/
@@ -418,8 +418,8 @@ def recode (p : Nat) : List (Prog isa) :=
 /-- A prime's region (`p` 0 or 1): the modulus, `2^(104 S - 64 W) mod X`,
 `x R_X` as `X`, `R_X` as `Y`, the last multiplier, `k₀`, the padded
 exponent and, with windows of more than 4 bits, its digits. -/
-def region (p slotPtr slotLen : Nat) (ctr : Nat := sCtr) : List (Prog isa) :=
-  k1 l ctr ++ [arrLoop l p] ++
+def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
+  k1 l ++ [arrLoop l p] ++
     [.block (k0St l p), .block (eZero l)] ++
     (if p = 0 then [] else [.block (finOne l)]) ++ eCopy l slotPtr slotLen ++ (if l.w = 4 then [] else recode l p)
 

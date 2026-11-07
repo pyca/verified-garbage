@@ -38,6 +38,9 @@ def oArea : Nat := hdrBytes + 8 * (8 * (l.W + 2))
 /-- The first digit of the exponent's windows, after the MXCSR slots. -/
 def oSt : Nat := l.oMx + 8
 
+/-- The workspace's `sCtr` while `k1` counts in it. -/
+def oSv : Nat := l.oMx + 16
+
 /-- Intel's MXCSR prologue and epilogue around `c`, the caller's MXCSR
 (bits 15:0) kept in `r14`. -/
 def withMx (c : Prog isa) : Prog isa :=
@@ -48,16 +51,22 @@ def withMx (c : Prog isa) : Prog isa :=
 /-- The vector code: `CrtIfma.expLoop` for one lane, from the digit at `oSt`. -/
 def vec : Prog isa := withMx l (seqs (expLoop l [.mov .r13 (.mem (at_ .rbx (oSt l)))]))
 
-/-- The area's base into `sIfma`, and the first digit with a bit of the
-exponent, `2 (P - len)`, at `oSt`. -/
+/-- The area's base into `sIfma`, the first digit with a bit of the
+exponent, `2 (P - len)`, at `oSt`, and `sCtr` at `oSv`. -/
 def head (sl : Nat) : List Instr :=
   [.mov .rax (.reg .rdi), .alu .add .rax (.imm (BitVec.ofNat 32 (oArea l))), .store (hdr sIfma) .rax,
     .mov .rdx (.mem (hdr sLink)), .mov .rcx (.mem (ws .rdx sl)), .alu .add .rcx (.reg .rcx),
-    .mov32 .rdx (.imm (BitVec.ofNat 32 (2 * l.P))), .alu .sub .rdx (.reg .rcx), .store (at_ .rax (oSt l)) .rdx]
+    .mov32 .rdx (.imm (BitVec.ofNat 32 (2 * l.P))), .alu .sub .rdx (.reg .rcx), .store (at_ .rax (oSt l)) .rdx,
+    .mov .rcx (.mem (hdr sCtr)), .store (at_ .rax (oSv l)) .rcx]
+
+/-- `sCtr` back from `oSv`. -/
+def tail : List Instr :=
+  [.mov .rax (.mem (hdr sIfma)), .mov .rcx (.mem (at_ .rax (oSv l))), .store (hdr sCtr) .rcx]
 
 /-- The exponentiation of a layout: the region, the vector code, the result. -/
 def exp (sp sl : Nat) : List (Prog isa) :=
-  [.block (head l sl)] ++ region l 0 sp sl sJ ++ [.block [.mov .rbx (.mem (hdr sIfma))], vec l] ++ result l 0
+  [.block (head l sl)] ++ region l 0 sp sl ++ [.block [.mov .rbx (.mem (hdr sIfma))], vec l] ++ result l 0 ++
+    [.block (tail l)]
 
 /-- ZF: whether the workspace has `W` words and the exponent at most `8 W` bytes. -/
 def fits (sl : Nat) : List Instr :=
