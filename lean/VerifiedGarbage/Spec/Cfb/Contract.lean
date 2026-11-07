@@ -20,8 +20,8 @@ Each reads the AES key schedule that `vg_aes_expand_key`
 start of a 240-byte buffer, and transforms `n` whole blocks in place, from
 the block in `iv`, which it replaces with the one to continue from, the
 last ciphertext block (`Cbc.next`): so a caller may encrypt or decrypt a
-message in pieces of whole blocks, keeping `iv` between calls. A partial
-last segment is the caller's.
+message in pieces of whole blocks, keeping `iv` between calls. A partial last
+segment is left to the AES final functions (`Spec/Cfb/Final.lean`).
 
 Each takes CBC's `scratch` buffer: room for the working space of
 `vg_aes_encrypt_blocks` (`[u64; 256]`) and 128 bytes more. `stack` is the

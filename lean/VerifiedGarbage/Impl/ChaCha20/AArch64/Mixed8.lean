@@ -60,25 +60,17 @@ def xorScalarRowFrom (r : Reg) (k : Fin 8) : List Instr :=
   [.ldrq .v30 .x3 (16 * k.val),.ldrq .v31 r (384 + 16 * k.val),
    .vop (.logic .eor .v31 .v31 .v30),.strq .v31 .x1 (384 + 16 * k.val)]
 
-def xorScalarRow (k : Fin 8) : List Instr := xorScalarRowFrom .x1 k
-
 def vectorFinishFrom (r : Reg) : Prog isa := .seq (.block Mixed5.restoreArgs)
   (.seq (.block (Mixed5.counter 7 true))
     (.block (Rows6.finishFrom r)))
-
-def vectorFinish : Prog isa := vectorFinishFrom .x1
 
 /-- The keystream XORed with the source (at `r`: `x1` itself, in place, or
 `x27`) into the destination (at `x1`). -/
 def finishFrom (r : Reg) : Prog isa :=
   .seq (vectorFinishFrom r) (.block ((List.finRange 8).flatMap (xorScalarRowFrom r)))
 
-def finish : Prog isa := finishFrom .x1
-
 def chunkFrom (sve : Bool) (r : Reg) : Prog isa := .seq prepare (.seq (phase sve .x26)
   (.seq second (.seq (phase sve .x20) (.seq (spill 64) (finishFrom r)))))
-
-def chunk (sve : Bool) : Prog isa := chunkFrom sve .x1
 
 def check : List Instr :=
   [.lsr .x .x5 .x2 6,.subImm .x .x5 .x5 8,.lsr .x .x5 .x5 63]
@@ -105,8 +97,6 @@ def leaveFrom : List Instr :=
 
 def next : List Instr := Mixed5.counter 8 ++
   ([.addImm .x .x1 .x1 512,.subImm .x .x2 .x2 512] : List Instr) ++ check
-
-def body (sve : Bool) : Prog isa := .seq (chunk sve) (.block next)
 
 /-- A chunk from the source at `x27` to the destination at `x1`, both advanced. -/
 def bodyFrom (sve : Bool) : Prog isa :=

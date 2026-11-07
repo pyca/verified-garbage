@@ -83,7 +83,7 @@ theorem ks_prefix (S : VG.Spec.ChaCha20.State) {n i : Nat} (hi : i < n) (hn : n 
 
 /-- `Pad.cryptPad` encrypts up to 512 bytes of data from counter 1. -/
 theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀)
-    (h512 : L s₀ ≤ 512) : CryptOk s₀ (cryptPad v.callee) := by
+    (h512 : L s₀ ≤ 512) : CryptOk s₀ (cryptPad v.callee false) := by
   intro s h hst
   have hL' := Nat.le_of_lt (s₀.gpr .x5).isLt
   have wc := hp.wrap_c

@@ -17,10 +17,15 @@ structure XorCallee where
   does ChaCha20-Poly1305's own copy of it (`Stitch.bulk`). -/
   sve : Bool := false
 
+/-- A call of the stream, its destination (`x4`) set first: to its source
+(`x1`) plus `x28` if `to` (ChaCha20-Poly1305's `open`, which keeps there the
+distance from its source to its destination), else to its source (in place). -/
+def XorCallee.callWith (c : XorCallee) (to : Bool) : Prog isa :=
+  .seq (.block [if to then .add .x .x4 .x1 .x28 else Xor.mov .x4 .x1]) (.call c.name c.code)
+
 /-- A call of the stream in place: its destination (`x4`) set to its source
 (`x1`) first. -/
-def XorCallee.inPlace (c : XorCallee) : Prog isa :=
-  .seq (.block [Xor.mov .x4 .x1]) (.call c.name c.code)
+def XorCallee.inPlace (c : XorCallee) : Prog isa := c.callWith false
 
 def XorCallee.scalar : XorCallee := ⟨"vg_chacha20_xor", Xor.xor, "", false⟩
 def XorCallee.neon : XorCallee := ⟨"vg_chacha20_xor_neon", Mixed8.xor false, "_neon", false⟩

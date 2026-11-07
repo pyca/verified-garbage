@@ -237,8 +237,8 @@ theorem inc_setWidth (v : BitVec 32) :
 buffer or apart (`TPre.alias`): the loop's invariant says what the
 destination holds before the bytes done (`OInv.data`, `Dst`) and that the
 source after them is intact (`OInv.src`, `Src`), which holds in both cases
-(`src_step`). `XPre` is the precondition of the in-place code that
-ChaCha20-Poly1305's stitched kernel shares, with the data at `x1` (`dp`).
+(`src_step`); ChaCha20-Poly1305's stitched kernel shares the loop's
+invariant (`Mixed8.TInv`), in place when encrypting.
 -/
 
 section
@@ -266,15 +266,6 @@ abbrev C (j : Nat) : Nat := min 64 (L s₀ - P s₀ j)
 end
 
 theorem L_lt (s₀ : State) : L s₀ < 2 ^ 64 := (s₀.gpr .x2).isLt
-
-/-- The in-place code's precondition: the data at `x1`. -/
-structure XPre (s₀ : State) : Prop where
-  rd : s₀.rd = []
-  wr : s₀.wr = [stR s₀, dR s₀, bR s₀]
-  st_d : (stR s₀).Disjoint (dR s₀)
-  st_b : (stR s₀).Disjoint (bR s₀)
-  d_b : (dR s₀).Disjoint (bR s₀)
-  nowrap : (dp s₀).toNat + L s₀ ≤ 2 ^ 64
 
 /-- `vg_chacha20_xor`'s precondition (`xorAArch64.pre`): the source at `x1`,
 the destination at `x4`. -/

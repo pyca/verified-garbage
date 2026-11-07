@@ -26,6 +26,7 @@ use core::sync::atomic::{AtomicU8, Ordering};
 
 #[cfg(not(any(
     target_arch = "x86_64",
+    target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
     all(target_arch = "powerpc64", target_endian = "little"),
@@ -42,6 +43,7 @@ use crate::arch::dsa::{
 };
 #[cfg(any(
     target_arch = "x86_64",
+    target_arch = "x86",
     target_arch = "aarch64",
     target_arch = "arm",
     all(target_arch = "powerpc64", target_endian = "little"),
@@ -243,11 +245,12 @@ impl PublicKey {
 pub struct PrivateKey {
     public: PublicKey,
     packed: Secret<u8>,
-    // On x86-64, AArch64, Arm, PPC64LE and RISC-V 64, whether
+    // On x86-64, x86, AArch64, Arm, PPC64LE and RISC-V 64, whether
     // `vg_dsa_validate_private_key` accepts the owned, immutable `packed`:
     // 0 = unchecked, 1 = valid, 2 = invalid.
     #[cfg(any(
         target_arch = "x86_64",
+        target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "arm",
         all(target_arch = "powerpc64", target_endian = "little"),
@@ -292,6 +295,7 @@ impl PrivateKey {
             packed,
             #[cfg(any(
                 target_arch = "x86_64",
+                target_arch = "x86",
                 target_arch = "aarch64",
                 target_arch = "arm",
                 all(target_arch = "powerpc64", target_endian = "little"),
@@ -311,7 +315,7 @@ impl PrivateKey {
     ///
     /// At most eight signing attempts are made, each with at most 128 nonce
     /// draws. Invalid keys therefore return an error instead of retrying
-    /// indefinitely. Each retry draws a fresh nonce. On x86-64, AArch64,
+    /// indefinitely. Each retry draws a fresh nonce. On x86-64, x86, AArch64,
     /// Arm, PPC64LE and RISC-V 64 the first signature validates the immutable key,
     /// and later ones reuse that result, as [`PublicKey::verify`] does.
     pub fn sign(&self, digest: &[u8]) -> Result<Vec<u8>, Error> {
@@ -330,6 +334,7 @@ impl PrivateKey {
         let mut scratch = Secret(vec![0u64; 16 * self.public.p_len + 64]);
         #[cfg(any(
             target_arch = "x86_64",
+            target_arch = "x86",
             target_arch = "aarch64",
             target_arch = "arm",
             all(target_arch = "powerpc64", target_endian = "little"),
@@ -367,12 +372,13 @@ impl PrivateKey {
                     }
                 };
             }
-            // On x86-64, AArch64, Arm, PPC64LE and RISC-V 64, the validation
+            // On x86-64, x86, AArch64, Arm, PPC64LE and RISC-V 64, the validation
             // above, or a cached result for the exact same immutable owned
             // bytes, establishes the prevalidated signer's precondition.
             let status = match self.public.backend {
                 #[cfg(not(any(
                     target_arch = "x86_64",
+                    target_arch = "x86",
                     target_arch = "aarch64",
                     target_arch = "arm",
                     all(target_arch = "powerpc64", target_endian = "little"),
@@ -381,6 +387,7 @@ impl PrivateKey {
                 Backend::Baseline => sign!(vg_dsa_sign_random),
                 #[cfg(any(
                     target_arch = "x86_64",
+                    target_arch = "x86",
                     target_arch = "aarch64",
                     target_arch = "arm",
                     all(target_arch = "powerpc64", target_endian = "little"),
@@ -413,6 +420,7 @@ impl PrivateKey {
     /// on the first call. `scratch` holds at least 16*p_len words.
     #[cfg(any(
         target_arch = "x86_64",
+        target_arch = "x86",
         target_arch = "aarch64",
         target_arch = "arm",
         all(target_arch = "powerpc64", target_endian = "little"),

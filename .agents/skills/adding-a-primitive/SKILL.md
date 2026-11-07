@@ -136,7 +136,10 @@ instructions in an ISA model) go in their own PR before either.
    `Generic/<Curve>/<Target>/<Alg>.lean` (`Generic/<Iface>/<Curve>/<Target>/`
    when it is generic over an implementation too). The law has no suffix.
 5. Regenerate the generated crates, build the public Rust API on top of the primitive
-   (calling each function's dispatcher, `<name>_auto`, where it has variants),
+   (calling each function's dispatcher, `<name>_auto`, where it has variants;
+   the Rust only checks arguments, lays out buffers and calls: see "The
+   cryptography is in the verified code, never in Rust" in `AGENTS.md`, and
+   if the API needs a step no verified function does, go back to step 1),
    and test it against the Wycheproof vectors in `tests/wycheproof/` (set
    `WYCHEPROOF_ROOT` to a checkout of C2SP/wycheproof). Benchmark the new
    API in `bench/benches/primitives/<alg>.rs`, next to the same operation in

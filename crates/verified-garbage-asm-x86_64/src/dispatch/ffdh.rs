@@ -225,7 +225,7 @@ pub use crate::ffdh::vg_ffdh_key_generation_init as vg_ffdh_key_generation_init_
 
 /// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_generate_key_cached_ifma` if the CPU supports its features (`VG_FFDH_GENERATE_KEY_CACHED_IFMA_FEATURES`); or else `vg_ffdh_generate_key_cached`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_generate_key_cached_ifma` if the CPU supports its features (`VG_FFDH_GENERATE_KEY_CACHED_IFMA_FEATURES`) and it also supports `avx`, `avx512f`, `avx512ifma` and `avx512vl`; `vg_ffdh_generate_key_cached_adx` if the CPU supports its features (`VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES`); or else `vg_ffdh_generate_key_cached`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -248,10 +248,15 @@ pub use crate::ffdh::vg_ffdh_key_generation_init as vg_ffdh_key_generation_init_
 #[inline]
 pub unsafe fn vg_ffdh_generate_key_cached_auto(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_CACHED_IFMA_FEATURES) {
+    if cpu.contains(verified_garbage_cpu::Features(crate::ffdh::VG_FFDH_GENERATE_KEY_CACHED_IFMA_FEATURES.0 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL)) {
         // SAFETY: the caller's obligations, which are `vg_ffdh_generate_key_cached_ifma`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::ffdh::vg_ffdh_generate_key_cached_ifma(x, x_len, y, y_len, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, ctx, ctx_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_generate_key_cached_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_generate_key_cached_adx(x, x_len, y, y_len, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, ctx, ctx_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ffdh::vg_ffdh_generate_key_cached(x, x_len, y, y_len, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, ctx, ctx_len) }
@@ -259,7 +264,7 @@ pub unsafe fn vg_ffdh_generate_key_cached_auto(x: *mut u8, x_len: usize, y: *mut
 
 /// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_generate_parameters_ifma` if the CPU supports its features (`VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES`); `vg_ffdh_generate_parameters_adx` if the CPU supports its features (`VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES`); or else `vg_ffdh_generate_parameters`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_generate_parameters_ifma` if the CPU supports its features (`VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES`) and it also supports `avx`, `avx512f`, `avx512ifma` and `avx512vl`; `vg_ffdh_generate_parameters_adx` if the CPU supports its features (`VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES`); or else `vg_ffdh_generate_parameters`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -278,7 +283,7 @@ pub unsafe fn vg_ffdh_generate_key_cached_auto(x: *mut u8, x_len: usize, y: *mut
 #[inline]
 pub unsafe fn vg_ffdh_generate_parameters_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES) {
+    if cpu.contains(verified_garbage_cpu::Features(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES.0 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL)) {
         // SAFETY: the caller's obligations, which are `vg_ffdh_generate_parameters_ifma`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::ffdh::vg_ffdh_generate_parameters_ifma(out, out_len, used, bits, generator, rand, rand_len, scratch, scratch_len, state) };
@@ -294,7 +299,7 @@ pub unsafe fn vg_ffdh_generate_parameters_auto(out: *mut u8, out_len: usize, use
 
 /// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_generate_key_precompute_ifma` if the CPU supports its features (`VG_FFDH_GENERATE_KEY_PRECOMPUTE_IFMA_FEATURES`); or else `vg_ffdh_generate_key_precompute`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_generate_key_precompute_ifma` if the CPU supports its features (`VG_FFDH_GENERATE_KEY_PRECOMPUTE_IFMA_FEATURES`) and it also supports `avx`, `avx512f`, `avx512ifma` and `avx512vl`; `vg_ffdh_generate_key_precompute_adx` if the CPU supports its features (`VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES`); or else `vg_ffdh_generate_key_precompute`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -313,10 +318,15 @@ pub unsafe fn vg_ffdh_generate_parameters_auto(out: *mut u8, out_len: usize, use
 #[inline]
 pub unsafe fn vg_ffdh_generate_key_precompute_auto(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_PRECOMPUTE_IFMA_FEATURES) {
+    if cpu.contains(verified_garbage_cpu::Features(crate::ffdh::VG_FFDH_GENERATE_KEY_PRECOMPUTE_IFMA_FEATURES.0 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL)) {
         // SAFETY: the caller's obligations, which are `vg_ffdh_generate_key_precompute_ifma`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::ffdh::vg_ffdh_generate_key_precompute_ifma(ctx, ctx_len, domain, domain_len, p_len, scratch, scratch_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_generate_key_precompute_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_generate_key_precompute_adx(ctx, ctx_len, domain, domain_len, p_len, scratch, scratch_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ffdh::vg_ffdh_generate_key_precompute(ctx, ctx_len, domain, domain_len, p_len, scratch, scratch_len) }
@@ -330,7 +340,7 @@ pub use crate::ffdh::vg_ffdh_parameter_generation_init as vg_ffdh_parameter_gene
 
 /// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_generate_key_search_cached_ifma` if the CPU supports its features (`VG_FFDH_GENERATE_KEY_SEARCH_CACHED_IFMA_FEATURES`); or else `vg_ffdh_generate_key_search_cached`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_generate_key_search_cached_ifma` if the CPU supports its features (`VG_FFDH_GENERATE_KEY_SEARCH_CACHED_IFMA_FEATURES`) and it also supports `avx`, `avx512f`, `avx512ifma` and `avx512vl`; `vg_ffdh_generate_key_search_cached_adx` if the CPU supports its features (`VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES`); or else `vg_ffdh_generate_key_search_cached`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -356,10 +366,15 @@ pub use crate::ffdh::vg_ffdh_parameter_generation_init as vg_ffdh_parameter_gene
 #[inline]
 pub unsafe fn vg_ffdh_generate_key_search_cached_auto(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_SEARCH_CACHED_IFMA_FEATURES) {
+    if cpu.contains(verified_garbage_cpu::Features(crate::ffdh::VG_FFDH_GENERATE_KEY_SEARCH_CACHED_IFMA_FEATURES.0 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL)) {
         // SAFETY: the caller's obligations, which are `vg_ffdh_generate_key_search_cached_ifma`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::ffdh::vg_ffdh_generate_key_search_cached_ifma(x, x_len, y, y_len, used, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, state, ctx, ctx_len) };
+    }
+    if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_generate_key_search_cached_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_generate_key_search_cached_adx(x, x_len, y, y_len, used, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, state, ctx, ctx_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::ffdh::vg_ffdh_generate_key_search_cached(x, x_len, y, y_len, used, domain, domain_len, p_len, rand, rand_len, scratch, scratch_len, state, ctx, ctx_len) }

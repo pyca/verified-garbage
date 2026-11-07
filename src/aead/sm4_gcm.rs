@@ -28,34 +28,12 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sm4_gcm::{
-    VG_SM4_GCM_SEAL_AES_FEATURES, vg_sm4_gcm_open_aes, vg_sm4_gcm_seal_aes,
-    vg_sm4_gcm_stream_aad_aes, vg_sm4_gcm_stream_decrypt_aes, vg_sm4_gcm_stream_encrypt_aes,
-    vg_sm4_gcm_stream_finish_aes, vg_sm4_gcm_stream_init_aes, vg_sm4_gcm_stream_verify_aes,
+use crate::arch::dispatch::sm4_gcm::{
+    vg_sm4_gcm_init_auto, vg_sm4_gcm_open_auto, vg_sm4_gcm_seal_auto, vg_sm4_gcm_stream_aad_auto,
+    vg_sm4_gcm_stream_decrypt_auto, vg_sm4_gcm_stream_encrypt_auto, vg_sm4_gcm_stream_finish_auto,
+    vg_sm4_gcm_stream_init_auto, vg_sm4_gcm_stream_verify_auto,
 };
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::sm4_gcm::{
-    VG_SM4_GCM_SEAL_PCLMUL_FEATURES, vg_sm4_gcm_open_pclmul, vg_sm4_gcm_seal_pclmul,
-    vg_sm4_gcm_stream_aad_pclmul, vg_sm4_gcm_stream_decrypt_pclmul,
-    vg_sm4_gcm_stream_encrypt_pclmul, vg_sm4_gcm_stream_finish_pclmul,
-    vg_sm4_gcm_stream_init_pclmul, vg_sm4_gcm_stream_verify_pclmul,
-};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sm4_gcm::{
-    VG_SM4_GCM_SEAL_VPCLMUL_FEATURES, vg_sm4_gcm_open_vpclmul, vg_sm4_gcm_seal_vpclmul,
-    vg_sm4_gcm_stream_aad_vpclmul, vg_sm4_gcm_stream_decrypt_vpclmul,
-    vg_sm4_gcm_stream_encrypt_vpclmul, vg_sm4_gcm_stream_finish_vpclmul,
-    vg_sm4_gcm_stream_init_vpclmul, vg_sm4_gcm_stream_verify_vpclmul,
-};
-use crate::arch::sm4_gcm::{
-    vg_sm4_gcm_init, vg_sm4_gcm_open, vg_sm4_gcm_seal, vg_sm4_gcm_stream_aad,
-    vg_sm4_gcm_stream_decrypt, vg_sm4_gcm_stream_encrypt, vg_sm4_gcm_stream_finish,
-    vg_sm4_gcm_stream_init, vg_sm4_gcm_stream_verify,
-};
-use crate::cpu::detected;
 use crate::zeroize::zeroize;
-use verified_garbage_cpu::Features;
 
 /// A 16-byte block: a tag.
 pub type Block = [u8; 16];
@@ -65,81 +43,6 @@ const MAX_TEXT: u64 = (1 << 36) - 32;
 /// The longest additional data, in bytes: `2^64 − 1` bits, rounded down
 /// to whole bytes (§5.2.1.1).
 const MAX_AAD: u64 = (1 << 61) - 1;
-
-/// The implementations of SM4-GCM: each is the variant with its suffix of
-/// every `vg_sm4_gcm_*` function but `init`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Ghash {
-    /// The baseline implementation.
-    Scalar,
-    /// `_pclmul` (x86 and x86-64).
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    Pclmul,
-    /// `_vpclmul` (x86-64 only).
-    #[cfg(target_arch = "x86_64")]
-    Vpclmul,
-    /// `_aes` (AArch64 only).
-    #[cfg(target_arch = "aarch64")]
-    Aes,
-}
-
-/// The instance of a function for `ghash`: the baseline one, then the
-/// `_pclmul` one (x86 and x86-64), the `_vpclmul` one (x86-64) and the
-/// `_aes` one (AArch64).
-macro_rules! instance {
-    ($ghash:expr, $scalar:ident,
-     x86: [$pclmul:ident],
-     x86_64: [$vpclmul:ident],
-     aarch64: [$aes:ident]) => {
-        match $ghash {
-            Ghash::Scalar => $scalar,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            Ghash::Pclmul => $pclmul,
-            #[cfg(target_arch = "x86_64")]
-            Ghash::Vpclmul => $vpclmul,
-            #[cfg(target_arch = "aarch64")]
-            Ghash::Aes => $aes,
-        }
-    };
-}
-
-impl Ghash {
-    /// The best implementation a CPU with the features `f` can run: the
-    /// features of its instances are `seal`'s, which are every other
-    /// function's.
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    fn select(f: Features) -> Ghash {
-        #[cfg(target_arch = "x86_64")]
-        if f.contains(VG_SM4_GCM_SEAL_VPCLMUL_FEATURES) {
-            return Ghash::Vpclmul;
-        }
-        if f.contains(VG_SM4_GCM_SEAL_PCLMUL_FEATURES) {
-            Ghash::Pclmul
-        } else {
-            Ghash::Scalar
-        }
-    }
-
-    /// The best implementation an AArch64 CPU with the features `f` can run.
-    #[cfg(target_arch = "aarch64")]
-    fn select(f: Features) -> Ghash {
-        if f.contains(VG_SM4_GCM_SEAL_AES_FEATURES) {
-            Ghash::Aes
-        } else {
-            Ghash::Scalar
-        }
-    }
-
-    /// The only implementation on ARMv7, PPC64LE and RISC-V, whatever the CPU.
-    #[cfg(any(
-        target_arch = "arm",
-        all(target_arch = "powerpc64", target_endian = "little"),
-        target_arch = "riscv64"
-    ))]
-    fn select(_: Features) -> Ghash {
-        Ghash::Scalar
-    }
-}
 
 /// Why an SM4-GCM operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -208,8 +111,6 @@ macro_rules! assert_tag_length {
 pub struct Sm4Gcm {
     /// The key context `vg_sm4_gcm_init` writes (`VG.Spec.Sm4.Gcm.KeyRepr`).
     ctx: [u64; 32],
-    /// The implementation of the functions called.
-    ghash: Ghash,
 }
 
 impl Drop for Sm4Gcm {
@@ -225,15 +126,13 @@ impl Sm4Gcm {
 
     /// Prepares a 16-byte SM4 key.
     pub fn new(key: &[u8; 16]) -> Self {
-        let mut k = Sm4Gcm {
-            ctx: [0; 32],
-            ghash: Ghash::select(detected()),
-        };
+        let mut k = Sm4Gcm { ctx: [0; 32] };
         // SAFETY: `key` is valid for reads of 16 bytes and `k.ctx` for reads
         // and writes of 256. They are distinct objects, so they do not
         // overlap each other or anything on the stack, or wrap around the end
-        // of the address space. The function needs no CPU feature.
-        unsafe { vg_sm4_gcm_init(key, &mut k.ctx) };
+        // of the address space. The dispatcher calls only an implementation
+        // the CPU has the features of.
+        unsafe { vg_sm4_gcm_init_auto(key, &mut k.ctx) };
         k
     }
 
@@ -254,10 +153,6 @@ impl Sm4Gcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let seal = instance!(self.ghash, vg_sm4_gcm_seal,
-            x86: [vg_sm4_gcm_seal_pclmul],
-            x86_64: [vg_sm4_gcm_seal_vpclmul],
-            aarch64: [vg_sm4_gcm_seal_aes]);
         let mut tag: Block = [0; 16];
         // SAFETY: `self.ctx` is the key context `vg_sm4_gcm_init` wrote,
         // valid for reads of 256 bytes; `nonce` and `aad` are valid for reads
@@ -265,10 +160,10 @@ impl Sm4Gcm {
         // local) for reads and writes of 16 bytes. They are distinct objects
         // (`data` a unique borrow), so the writable ones overlap nothing
         // else, nor anything on the stack, and none wraps around the end of
-        // the address space. The CPU has the features of the implementation
-        // selected.
+        // the address space. The dispatcher calls only an implementation the
+        // CPU has the features of.
         unsafe {
-            seal(
+            vg_sm4_gcm_seal_auto(
                 &self.ctx,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -317,15 +212,11 @@ impl Sm4Gcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let open = instance!(self.ghash, vg_sm4_gcm_open,
-            x86: [vg_sm4_gcm_open_pclmul],
-            x86_64: [vg_sm4_gcm_open_vpclmul],
-            aarch64: [vg_sm4_gcm_open_aes]);
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag` valid
         // for reads of its `N` bytes, between 4 and 16 (`vg_sm4_gcm_open`
         // rejects any other length).
         let ok = unsafe {
-            open(
+            vg_sm4_gcm_open_auto(
                 &self.ctx,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -392,17 +283,14 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             text_len: 0,
             in_text: false,
         };
-        let init = instance!(key.ghash, vg_sm4_gcm_stream_init,
-            x86: [vg_sm4_gcm_stream_init_pclmul],
-            x86_64: [vg_sm4_gcm_stream_init_vpclmul],
-            aarch64: [vg_sm4_gcm_stream_init_aes]);
         // SAFETY: `key.ctx` is a key context (as in
         // `Sm4Gcm::encrypt_in_place`), valid for reads of 256 bytes, `nonce`
         // for reads of `nonce.len()`, and `s.state` for reads and writes of
         // 80. They are distinct objects, so the writable one overlaps nothing
-        // else, nor anything on the stack, and none wraps around. The CPU has
-        // the features of the implementation selected.
-        unsafe { init(&key.ctx, nonce.as_ptr(), nonce.len(), &mut s.state) };
+        // else, nor anything on the stack, and none wraps around. The
+        // dispatcher calls only an implementation the CPU has the features
+        // of.
+        unsafe { vg_sm4_gcm_stream_init_auto(&key.ctx, nonce.as_ptr(), nonce.len(), &mut s.state) };
         Ok(s)
     }
 
@@ -413,14 +301,10 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         }
         let aad_len =
             add_len(self.aad_len, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let f = instance!(self.key.ghash, vg_sm4_gcm_stream_aad,
-            x86: [vg_sm4_gcm_stream_aad_pclmul],
-            x86_64: [vg_sm4_gcm_stream_aad_vpclmul],
-            aarch64: [vg_sm4_gcm_stream_aad_aes]);
         // SAFETY: as in `new`; `self.state` represents a message with
         // `self.aad_len` bytes of additional data and no text yet.
         unsafe {
-            f(
+            vg_sm4_gcm_stream_aad_auto(
                 &self.key.ctx,
                 &mut self.state,
                 self.aad_len,
@@ -439,15 +323,9 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             add_len(self.text_len, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         self.in_text = true;
         let f = if DECRYPT {
-            instance!(self.key.ghash, vg_sm4_gcm_stream_decrypt,
-                x86: [vg_sm4_gcm_stream_decrypt_pclmul],
-                x86_64: [vg_sm4_gcm_stream_decrypt_vpclmul],
-                aarch64: [vg_sm4_gcm_stream_decrypt_aes])
+            vg_sm4_gcm_stream_decrypt_auto
         } else {
-            instance!(self.key.ghash, vg_sm4_gcm_stream_encrypt,
-                x86: [vg_sm4_gcm_stream_encrypt_pclmul],
-                x86_64: [vg_sm4_gcm_stream_encrypt_vpclmul],
-                aarch64: [vg_sm4_gcm_stream_encrypt_aes])
+            vg_sm4_gcm_stream_encrypt_auto
         };
         // SAFETY: as in `new`, with `data` valid for reads and writes of
         // `data.len()` bytes (a unique borrow, so it overlaps nothing else);
@@ -471,16 +349,12 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
 impl Stream<'_, false> {
     /// Finishes the message and returns its 16-byte tag.
     fn finish(mut self) -> Block {
-        let f = instance!(self.key.ghash, vg_sm4_gcm_stream_finish,
-            x86: [vg_sm4_gcm_stream_finish_pclmul],
-            x86_64: [vg_sm4_gcm_stream_finish_vpclmul],
-            aarch64: [vg_sm4_gcm_stream_finish_aes]);
         let mut tag: Block = [0; 16];
         // SAFETY: as in `update`, with `tag` (a local) valid for reads and
         // writes of 16 bytes. `update_aad` and `update` checked the lengths
         // (§5.2.1.1).
         unsafe {
-            f(
+            vg_sm4_gcm_stream_finish_auto(
                 &self.key.ctx,
                 &mut self.state,
                 self.aad_len,
@@ -496,14 +370,10 @@ impl Stream<'_, true> {
     /// Finishes the message and checks the received prefix in constant time.
     /// Callers check at compile time that its length is between 4 and 16.
     fn verify(mut self, tag: &[u8]) -> Result<(), Error> {
-        let f = instance!(self.key.ghash, vg_sm4_gcm_stream_verify,
-            x86: [vg_sm4_gcm_stream_verify_pclmul],
-            x86_64: [vg_sm4_gcm_stream_verify_vpclmul],
-            aarch64: [vg_sm4_gcm_stream_verify_aes]);
         // SAFETY: as in `finish`, with the received tag `tag` valid for
         // reads of its length.
         let ok = unsafe {
-            f(
+            vg_sm4_gcm_stream_verify_auto(
                 &self.key.ctx,
                 &mut self.state,
                 self.aad_len,
@@ -604,50 +474,7 @@ impl Sm4GcmDecryptor<'_> {
 mod tests {
     extern crate std;
 
-    use super::{Error, Ghash, MAX_AAD, MAX_TEXT, Sm4Gcm, Stream, add_len};
-    use crate::cpu::detected;
-    use verified_garbage_cpu::Features;
-
-    /// The implementation chosen for each set of features.
-    #[test]
-    fn ghash_backend() {
-        let f = |bits: u32| Ghash::select(Features(bits));
-        assert_eq!(f(0), Ghash::Scalar);
-        assert_eq!(Sm4Gcm::new(&[0; 16]).ghash, Ghash::select(detected()));
-    }
-
-    /// The variants x86's and x86-64's CPUs choose among.
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    #[test]
-    fn ghash_backend_x86() {
-        let f = |bits: u32| Ghash::select(Features(bits));
-        assert_eq!(f(verified_garbage_cpu::feature::PCLMULQDQ), Ghash::Scalar);
-        assert_eq!(
-            f(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3),
-            Ghash::Pclmul
-        );
-        let all = verified_garbage_cpu::feature::AVX
-            | verified_garbage_cpu::feature::AVX2
-            | verified_garbage_cpu::feature::PCLMULQDQ
-            | verified_garbage_cpu::feature::SSSE3
-            | verified_garbage_cpu::feature::VPCLMULQDQ;
-        #[cfg(target_arch = "x86_64")]
-        assert_eq!(f(all), Ghash::Vpclmul);
-        // 32-bit x86 has no `_vpclmul` instances.
-        #[cfg(target_arch = "x86")]
-        assert_eq!(f(all), Ghash::Pclmul);
-        assert_eq!(f(all & !verified_garbage_cpu::feature::AVX), Ghash::Pclmul);
-    }
-
-    /// The variant AArch64's CPUs with `VG_SM4_GCM_SEAL_AES_FEATURES` choose.
-    #[cfg(target_arch = "aarch64")]
-    #[test]
-    fn ghash_backend_aarch64() {
-        assert_eq!(
-            Ghash::select(Features(verified_garbage_cpu::feature::AES)),
-            Ghash::Aes
-        );
-    }
+    use super::{Error, MAX_AAD, MAX_TEXT, Sm4Gcm, Stream, add_len};
 
     /// The text of a message is checked against its limits before
     /// anything is encrypted, and so is its additional data.

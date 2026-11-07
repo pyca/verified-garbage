@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
