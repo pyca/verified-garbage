@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.Arm.RandomSign
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomCall
 public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 
 import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
 import VerifiedGarbage.Proof.Framework.Omega
@@ -28,10 +29,10 @@ theorem drop_take_prefix {α : Type} (xs : List α) {p q n : Nat} (h : p + q ≤
 
 /-- Two entries with the same public data: the same arguments, q, public
 key bytes, status and trace. -/
-theorem random_public {s t : State} (H : (Spec.Dsa.randomSignContract Arm.abi 144).pub s t) :
+theorem random_public {s t : State} (H : (randomSignCheckedContract Arm.abi 144).pub s t) :
     pubOf s = pubOf t ∧ keyLeak s = keyLeak t ∧ (rResult s).status = (rResult t).status ∧
       (rResult s).trace = (rResult t).trace := by
-  sig_pub [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_pub [randomSignCheckedContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.stackArgAddr, BitVec.add_zero] at H
   obtain ⟨hsp, hleak, r0, r1, r2, r3, a0, a1, a2, a3, a4, a5, a6, a7, a8⟩ := H
   change keyLeak s ++ [(rResult s).status, (rResult s).used] ++ (rResult s).trace =
@@ -70,8 +71,8 @@ theorem alloc_push {s₀ : State} (A : RandomABI s₀) :
 
 /-- `vg_dsa_sign_random` leaks only what its contract makes public. -/
 theorem randomSign_constantTime (S : Signer) (name : String) :
-    ConstantTime isa (fun s => (Spec.Dsa.randomSignContract Arm.abi 144).pre s ∧ RValid S s)
-      (Spec.Dsa.randomSignContract Arm.abi 144).pub (code name S.code) := by
+    ConstantTime isa (fun s => (randomSignCheckedContract Arm.abi 144).pre s ∧ RValid S s)
+      (randomSignCheckedContract Arm.abi 144).pub (code name S.code) := by
   intro s t tsa tsb u w ⟨hs, Vs⟩ ⟨ht, Vt⟩ hpub ea eb
   have As := randomABI_of hs
   have At' := randomABI_of ht

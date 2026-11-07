@@ -46,7 +46,7 @@ theorem pref_step {e i : Nat} (hi : i < l.ND) :
 theorem pref_k0 (hl : AmmOk l) {e : Nat} (he : e < 2 ^ (8 * l.E)) : e / l.T ^ (l.ND - l.k0) = 0 := by
   refine Nat.div_eq_of_lt (Nat.lt_of_lt_of_le he ?_)
   rw [Lay.T, ← Nat.pow_mul]
-  exact Nat.pow_le_pow_right (by decide) (by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide)
+  exact Nat.pow_le_pow_right (by decide) (by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide)
 
 /-- The digit bytes outside `Y`, `S` and `V`. -/
 theorem OutW.dig (hl : AmmOk l) {B : Addr} {m m' : Mem} (h : OutW l B m m') {p i : Nat} (hp : p < l.nl)
@@ -65,7 +65,7 @@ theorem r13Inc_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i ≤ l.ND) (h13 : 
     WP isa (.block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.ND + 1)))]) s fun s' =>
       s'.gpr .r13 = BitVec.ofNat 64 (i + 1) ∧ s'.zf = some (decide (i + 1 = l.ND + 1)) ∧
       VG.Proof.MlKem.X86_64.Keep [.r13] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr := by
-  have hE : l.ND + 1 < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  have hE : l.ND + 1 < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r13] (Q := fun s' =>
     s'.gpr .r13 = BitVec.ofNat 64 (i + 1) ∧ s'.zf = some (decide (i + 1 = l.ND + 1)) ∧ s'.mem = s.mem ∧
       s'.mxcsr = s.mxcsr) (by
@@ -236,7 +236,7 @@ theorem digLoop_ok (hl : AmmOk l) {t₀ : State} {B : Addr} {M k x : Nat → Nat
     refine .inr ⟨by simp, n - 1, by omega_using [hn], by omega_using [hn], by omega_using [hE],
       by rw [show l.ND + 1 - (n - 1) = l.ND + 1 - n + 1 by omega_using [hE, hn]]; exact hI'⟩
 
-theorem k0_le (hl : AmmOk l) : l.k0 ≤ l.ND := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+theorem k0_le (hl : AmmOk l) : l.k0 ≤ l.ND := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The exponentiations from digit `i₀`, which the block `st` puts in `r13`:
 `Y ≡ x^e R` for the exponents `e` whose digits before `i₀` are zero, whose
@@ -309,7 +309,7 @@ theorem expLoop_ok (hl : AmmOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         r ≠ .r13 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hk32 : l.k0 < 2 ^ 32 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  have hk32 : l.k0 < 2 ^ 32 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   refine expLoopFrom_ok hl hc gf (k0_le hl) (fun p hp => pref_k0 hl (he p hp)) hd fun t _ _ _ _ _ => ?_
   rw [WP.block_cons_iff]
   refine ⟨t.setReg32 .r13 (BitVec.ofNat 32 l.k0), rfl, WP.block_nil ⟨rfl, rfl, rfl, rfl, ?_,

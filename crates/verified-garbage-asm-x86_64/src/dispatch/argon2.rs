@@ -8,7 +8,7 @@
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_argon2_blake2b_avx512_g_avx512` if the CPU supports its features (`VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES`); `vg_argon2_blake2b_avx2_g_avx512` if the CPU supports its features (`VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES`); `vg_argon2_blake2b_avx2_g_avx2` if the CPU supports its features (`VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES`); `vg_argon2_g_avx512` if the CPU supports its features (`VG_ARGON2_G_AVX512_FEATURES`); or else `vg_argon2`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_argon2_blake2b_avx512_g_avx512` if the CPU supports its features (`VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES`); `vg_argon2_blake2b_avx2_g_avx2` if the CPU supports its features (`VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES`); or else `vg_argon2`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -34,20 +34,10 @@ pub unsafe fn vg_argon2_auto(kind: u32, password: *const u8, password_len: usize
         // has the features it needs.
         return unsafe { crate::argon2::vg_argon2_blake2b_avx512_g_avx512(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) };
     }
-    if cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_argon2_blake2b_avx2_g_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::argon2::vg_argon2_blake2b_avx2_g_avx512(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) };
-    }
     if cpu.contains(crate::argon2::VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_argon2_blake2b_avx2_g_avx2`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::argon2::vg_argon2_blake2b_avx2_g_avx2(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) };
-    }
-    if cpu.contains(crate::argon2::VG_ARGON2_G_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_argon2_g_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::argon2::vg_argon2_g_avx512(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::argon2::vg_argon2(kind, password, password_len, salt, salt_len, iterations, memory_cost, lanes, threads, secret, secret_len, associated_data, ad_len, memory, blocks, scratch, out, out_len) }

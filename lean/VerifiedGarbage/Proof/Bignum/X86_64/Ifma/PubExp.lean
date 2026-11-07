@@ -104,7 +104,7 @@ theorem setup_ok (hl : PubOk l) {a : State} {P : Addr} {Z : Nat} {minv : BitVec 
   -- The modulus' limbs.
   rw [WP.block_append_iff]
   have hdi₁ : t₁.gpr .rdi = P := (k₁.gpr (by decide)).trans hg.rdi
-  refine WP.mono (ld52_ok hl (s := t₁) (B := B) (H := P) (j := aN) (o := 0) b₁ hdi₁ r12₁ (hj aN (by decide))
+  refine WP.mono (ld52_ok hl.amm (s := t₁) (B := B) (H := P) (j := aN) (o := 0) b₁ hdi₁ r12₁ (hj aN (by decide))
     (fun i hi => by rw [k₁.2.1, k₁.2.2, AmmSym.off_add, harr]; exact hs.ld (by omega_arith))
     (fun q hq => by rw [k₁.2.2]; exact hwB _ (by have := hF q hq; omega_arith)) (by omega_arith)
     (fun m m' f i hi => by
@@ -150,7 +150,7 @@ theorem setup_ok (hl : PubOk l) {a : State} {P : Addr} {Z : Nat} {minv : BitVec 
     rw [low_word o₄ hn (by omega_arith) he, m₃, low_word o₂ hn (by omega_arith) he, m₁]
   have hdi₄ : t₃.gpr .rdi = P := (k₃.gpr (by decide)).trans hdi₂
   -- `R² mod m` into `A`.
-  refine WP.mono (ld52_ok hl (s := { t₃ with mem := M₄ }) (B := B) (H := P) (j := aR2)
+  refine WP.mono (ld52_ok hl.amm (s := { t₃ with mem := M₄ }) (B := B) (H := P) (j := aR2)
     (o := oA l) hb₃ hdi₄ (by rw [k₃.gpr (by decide), k₂.gpr (by decide)]; exact r12₁) (hj aR2 (by decide))
     (fun i hi => by
       show InRegions (t₃.rd ++ t₃.wr) _ 8
@@ -351,13 +351,14 @@ theorem fin_ok (hl : PubOk l) {s : State} {P : Addr} {Z N : Nat} (hs : Scr s P Z
 
 /-! ## The exponentiation by 65537 -/
 
-/-- The modulus' limbs and `k₀` as `setup` leaves them. -/
-theorem mod_of (hl : PubOk l) {m : Mem} {B : Addr} {N : Nat} {minv : BitVec 64}
+/-- The modulus' limbs and `k₀` as `setup` leaves them, for any layout of
+the multiplication whose radix is `2^(52 L)`, above `4 n`. -/
+theorem mod_ofN (ha : AmmOk l) (a7 : l.S = l.L) (a8 : 64 * l.W + 2 ≤ 52 * l.S) (a11 : l.L = 4 * l.R)
+    {m : Mem} {B : Addr} {N : Nat} {minv : BitVec 64}
     (hN : ∀ j < l.L, word m B (0 + l.off j) = BitVec.ofNat 64 (limbN N j)) (hNlt : N < 2 ^ (64 * l.W))
     (hk : ∀ i < 4, word m B (l.NB + 8 * i) = BitVec.ofNat 64 (minv.toNat % 2 ^ 52))
     (hinv : (N % 2 ^ 64 * minv.toNat + 1) % 2 ^ 64 = 0) : Mod l m B N (minv.toNat % 2 ^ 52) := by
-  obtain ⟨-, -, -, -, -, -, a7, a8, -, -, a11, -⟩ := hl.area
-  have hL := (conv_boundsN hl.amm).2.1
+  have hL := (conv_boundsN ha).2.1
   have hNL : N < 2 ^ (52 * l.L) := Nat.lt_of_lt_of_le hNlt (AmmSym.pow2_le hL)
   refine ⟨fun j hj => by simp only [limb]; rw [hN j hj]; exact limbN_lt64 _ _, val52_of hN hNL,
     fun t ht => hk t ht, Nat.mod_lt _ (by decide), ?_, ?_⟩
@@ -378,6 +379,14 @@ theorem mod_of (hl : PubOk l) {m : Mem} {B : Addr} {N : Nat} {minv : BitVec 64}
       rw [show 4 * 2 ^ (64 * l.W) = 2 ^ (64 * l.W + 2) by rw [Nat.pow_add]; omega_arith]
       exact AmmSym.pow2_le (by omega_arith)
     omega_arith
+
+/-- The modulus' limbs and `k₀` as `setup` leaves them. -/
+theorem mod_of (hl : PubOk l) {m : Mem} {B : Addr} {N : Nat} {minv : BitVec 64}
+    (hN : ∀ j < l.L, word m B (0 + l.off j) = BitVec.ofNat 64 (limbN N j)) (hNlt : N < 2 ^ (64 * l.W))
+    (hk : ∀ i < 4, word m B (l.NB + 8 * i) = BitVec.ofNat 64 (minv.toNat % 2 ^ 52))
+    (hinv : (N % 2 ^ 64 * minv.toNat + 1) % 2 ^ 64 = 0) : Mod l m B N (minv.toNat % 2 ^ 52) :=
+  have a := hl.area
+  mod_ofN hl.amm a.2.2.2.2.2.2.1 a.2.2.2.2.2.2.2.1 a.2.2.2.2.2.2.2.2.2.2.1 hN hNlt hk hinv
 
 /-- A change within ranges that a list of ranges covers. -/
 theorem Frm.cover {P : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Frm P rs m m')

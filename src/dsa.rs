@@ -236,9 +236,9 @@ impl PrivateKey {
     ///
     /// At most eight signing attempts are made, each with at most 128 nonce
     /// draws. Invalid keys therefore return an error instead of retrying
-    /// indefinitely. Each retry draws a fresh nonce. On x86-64, x86, AArch64,
-    /// Arm, PPC64LE and RISC-V 64 the first signature validates the immutable key,
-    /// and later ones reuse that result, as [`PublicKey::verify`] does.
+    /// indefinitely. Each retry draws a fresh nonce. The first signature
+    /// validates the immutable key, and later ones reuse that result, as
+    /// [`PublicKey::verify`] does.
     pub fn sign(&self, digest: &[u8]) -> Result<Vec<u8>, Error> {
         self.sign_from(digest, |buf| {
             getrandom::fill(buf).map_err(|_| Error::Randomness)

@@ -13,62 +13,60 @@ use crate::hashes::sha512_224::Sha512_224;
 use crate::hashes::sha512_256::Sha512_256;
 use crate::hashes::tables::TableHash;
 use crate::zeroize::zeroize;
-use verified_garbage_cpu::Features;
 
 /// A hash function that the verified signatures take HMAC over as a table:
 /// one with HMAC (`VG.Spec.HmacTable.hmacOf`).
 pub trait HmacHash: HashFunction {
-    /// Its table of `Hmac`, as the verified functions take it, for the
-    /// implementation that a CPU with the features `f` runs best
-    /// (`TableHash::hmac_table`).
-    fn hmac_table(f: Features) -> *const [usize; 6];
+    /// The best of its tables of `Hmac` that this CPU runs, as the verified
+    /// functions take it (`TableHash::hmac_table`).
+    fn hmac_table() -> *const [usize; 6];
 }
 
 impl HmacHash for Md5 {
-    fn hmac_table(f: Features) -> *const [usize; 6] {
-        TableHash::Md5.hmac_table(f)
+    fn hmac_table() -> *const [usize; 6] {
+        TableHash::Md5.hmac_table()
     }
 }
 
 impl HmacHash for Sha1 {
-    fn hmac_table(f: Features) -> *const [usize; 6] {
-        TableHash::Sha1.hmac_table(f)
+    fn hmac_table() -> *const [usize; 6] {
+        TableHash::Sha1.hmac_table()
     }
 }
 
 impl HmacHash for Sha224 {
-    fn hmac_table(f: Features) -> *const [usize; 6] {
-        TableHash::Sha224.hmac_table(f)
+    fn hmac_table() -> *const [usize; 6] {
+        TableHash::Sha224.hmac_table()
     }
 }
 
 impl HmacHash for Sha256 {
-    fn hmac_table(f: Features) -> *const [usize; 6] {
-        TableHash::Sha256.hmac_table(f)
+    fn hmac_table() -> *const [usize; 6] {
+        TableHash::Sha256.hmac_table()
     }
 }
 
 impl HmacHash for Sha384 {
-    fn hmac_table(f: Features) -> *const [usize; 6] {
-        TableHash::Sha384.hmac_table(f)
+    fn hmac_table() -> *const [usize; 6] {
+        TableHash::Sha384.hmac_table()
     }
 }
 
 impl HmacHash for Sha512 {
-    fn hmac_table(f: Features) -> *const [usize; 6] {
-        TableHash::Sha512.hmac_table(f)
+    fn hmac_table() -> *const [usize; 6] {
+        TableHash::Sha512.hmac_table()
     }
 }
 
 impl HmacHash for Sha512_224 {
-    fn hmac_table(f: Features) -> *const [usize; 6] {
-        TableHash::Sha512_224.hmac_table(f)
+    fn hmac_table() -> *const [usize; 6] {
+        TableHash::Sha512_224.hmac_table()
     }
 }
 
 impl HmacHash for Sha512_256 {
-    fn hmac_table(f: Features) -> *const [usize; 6] {
-        TableHash::Sha512_256.hmac_table(f)
+    fn hmac_table() -> *const [usize; 6] {
+        TableHash::Sha512_256.hmac_table()
     }
 }
 
@@ -97,19 +95,18 @@ pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "C" fn(
 ) -> u32;
 
 /// The signature `r ‖ s` of `digest`, the hash of a message with `H`, with
-/// the key `d`, by `sign` with `H`'s table of `Hmac` for this CPU (`f`, its
-/// features).
+/// the key `d`, by `sign` with the best of `H`'s tables of `Hmac` that this
+/// CPU runs.
 ///
 /// # Safety
 ///
 /// `sign` needs no CPU feature that this CPU lacks.
 pub(super) unsafe fn sign_with<H: HmacHash, const Q: usize, const S: usize>(
     sign: SignFn<Q, S>,
-    f: Features,
     d: &[u8; Q],
     digest: &H::Output,
 ) -> Result<[u8; S], InvalidKey> {
-    let table = H::hmac_table(f);
+    let table = H::hmac_table();
     let digest = digest.as_ref();
     let mut out = [0; S];
     let mut scratch = [0u64; 1024];
@@ -120,8 +117,9 @@ pub(super) unsafe fn sign_with<H: HmacHash, const Q: usize, const S: usize>(
     // others, so none overlaps another or the call's stack frame, and, as
     // Rust objects, none wraps around the address space. `table` is one of
     // the tables of the interface `Hmac`, for `H`, whose functions need no
-    // CPU feature that `f`, this CPU's, lacks (`TableHash::hmac_table`); the
-    // caller guarantees the features `sign` needs.
+    // CPU feature that this CPU lacks (its dispatcher chose it,
+    // `TableHash::hmac_table`); the caller guarantees the features `sign`
+    // needs.
     let ok = unsafe {
         sign(
             &mut out,
@@ -139,14 +137,13 @@ pub(super) unsafe fn sign_with<H: HmacHash, const Q: usize, const S: usize>(
 #[cfg(test)]
 mod tests {
     use super::{HmacHash, Md5, Sha1, Sha224, Sha256, Sha384, Sha512, Sha512_224, Sha512_256};
-    use verified_garbage_cpu::Features;
 
     /// `H`'s table of `Hmac` names `H`'s digest length and HMAC's block
     /// size (its words 4 and 5).
     fn check<H: HmacHash>() {
         // SAFETY: `hmac_table` points to the table's six words, of an
         // immutable `'static` `repr(C)` value of six pointer-sized words.
-        let t = unsafe { *H::hmac_table(Features(0)) };
+        let t = unsafe { *H::hmac_table() };
         assert_eq!((t[4], t[5]), (H::OUTPUT_SIZE, H::BLOCK_SIZE));
     }
 

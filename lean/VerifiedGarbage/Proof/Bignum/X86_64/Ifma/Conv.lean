@@ -31,7 +31,7 @@ theorem conv_bounds (hl : LayOk l) : 1 ≤ l.W ∧ 64 * l.W ≤ 52 * l.L ∧ l.L
 
 theorem conv_boundsN (hl : AmmOk l) : 1 ≤ l.W ∧ 64 * l.W ≤ 52 * l.L ∧ l.L ≤ 80 ∧ 64 * l.W + 2 ≤ 52 * l.S ∧
     128 * l.W ≤ 104 * l.S ∧ l.S ≤ l.L := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem and_mask' (x : BitVec 64) : x &&& mask52 = BitVec.ofNat 64 (x.toNat % 2 ^ 52) := AmmSym.and_mask' x
 

@@ -2,33 +2,8 @@
 //! take a hash function at run time (RSAES-OAEP, RSASSA-PSS, deterministic
 //! ECDSA).
 
+use crate::arch::dispatch::fn_tables as auto;
 use crate::arch::fn_tables;
-use crate::hashes::md5::Md5Backend;
-use crate::hashes::sha1::Sha1Backend;
-use crate::hashes::sha224::Sha224Backend;
-use crate::hashes::sha256::Sha256Backend;
-use crate::hashes::sha384::Sha384Backend;
-use crate::hashes::sha512::Sha512Backend;
-use crate::hashes::sha512_224::Sha512_224Backend;
-use crate::hashes::sha512_256::Sha512_256Backend;
-use verified_garbage_cpu::Features;
-
-/// The tables of functions of one implementation of a hash function, which
-/// need no CPU feature that its backend's `select` does not require to
-/// choose it (`streaming_hash!` checks it when it compiles).
-#[derive(Clone, Copy)]
-pub(crate) struct Tables {
-    /// Its table of `Hash`: `init`, `update` and `finalize`.
-    #[cfg(feature = "alloc")]
-    pub(crate) hash: &'static fn_tables::Hash,
-    /// Its table of `MdHash`: those, its compression function and its
-    /// digest of a state.
-    #[cfg(feature = "alloc")]
-    pub(crate) md_hash: &'static fn_tables::MdHash,
-    /// Its table of `Hmac`: HMAC's `init`, the streaming `update` and HMAC's
-    /// `finalize`, with its index, digest length and block size.
-    pub(crate) hmac: &'static fn_tables::Hmac,
-}
 
 /// A hash function that has tables of functions (`VG.Spec.Mgf1.hashes`'
 /// Merkle–Damgård ones).
@@ -53,54 +28,65 @@ pub(crate) enum TableHash {
 }
 
 impl TableHash {
-    /// The tables of the implementation that a CPU with the features `f`
-    /// runs best.
-    pub(crate) fn tables(self, f: Features) -> Tables {
-        match self {
-            Self::Md5 => Md5Backend::select(f).tables(),
-            Self::Sha1 => Sha1Backend::select(f).tables(),
-            Self::Sha224 => Sha224Backend::select(f).tables(),
-            Self::Sha256 => Sha256Backend::select(f).tables(),
-            Self::Sha384 => Sha384Backend::select(f).tables(),
-            Self::Sha512 => Sha512Backend::select(f).tables(),
-            Self::Sha512_224 => Sha512_224Backend::select(f).tables(),
-            Self::Sha512_256 => Sha512_256Backend::select(f).tables(),
-        }
-    }
-
     /// Its table of `Hash`, as the verified functions take it: the words of
-    /// the table of the implementation that a CPU with the features `f`
-    /// runs best.
+    /// the best table this CPU runs (its dispatcher's,
+    /// `crate::arch::dispatch::fn_tables`).
     #[cfg(feature = "alloc")]
-    pub(crate) fn hash_table(self, f: Features) -> *const [usize; 5] {
-        self.tables(f).hash.as_ptr()
+    pub(crate) fn hash_table(self) -> *const [usize; 5] {
+        let t: &'static fn_tables::Hash = match self {
+            Self::Md5 => auto::vg_hash_md5_auto(),
+            Self::Sha1 => auto::vg_hash_sha1_auto(),
+            Self::Sha224 => auto::vg_hash_sha224_auto(),
+            Self::Sha256 => auto::vg_hash_sha256_auto(),
+            Self::Sha384 => auto::vg_hash_sha384_auto(),
+            Self::Sha512 => auto::vg_hash_sha512_auto(),
+            Self::Sha512_224 => auto::vg_hash_sha512_224_auto(),
+            Self::Sha512_256 => auto::vg_hash_sha512_256_auto(),
+        };
+        t.as_ptr()
     }
 
     /// Its table of `MdHash`, as the verified functions take it.
     #[cfg(feature = "alloc")]
-    pub(crate) fn md_hash_table(self, f: Features) -> *const [usize; 11] {
-        self.tables(f).md_hash.as_ptr()
+    pub(crate) fn md_hash_table(self) -> *const [usize; 11] {
+        let t: &'static fn_tables::MdHash = match self {
+            Self::Md5 => auto::vg_md_hash_md5_auto(),
+            Self::Sha1 => auto::vg_md_hash_sha1_auto(),
+            Self::Sha224 => auto::vg_md_hash_sha224_auto(),
+            Self::Sha256 => auto::vg_md_hash_sha256_auto(),
+            Self::Sha384 => auto::vg_md_hash_sha384_auto(),
+            Self::Sha512 => auto::vg_md_hash_sha512_auto(),
+            Self::Sha512_224 => auto::vg_md_hash_sha512_224_auto(),
+            Self::Sha512_256 => auto::vg_md_hash_sha512_256_auto(),
+        };
+        t.as_ptr()
     }
 
     /// Its table of `Hmac`, as the verified functions take it.
-    pub(crate) fn hmac_table(self, f: Features) -> *const [usize; 6] {
-        self.tables(f).hmac.as_ptr()
+    pub(crate) fn hmac_table(self) -> *const [usize; 6] {
+        let t: &'static fn_tables::Hmac = match self {
+            Self::Md5 => auto::vg_hmac_md5_auto(),
+            Self::Sha1 => auto::vg_hmac_sha1_auto(),
+            Self::Sha224 => auto::vg_hmac_sha224_auto(),
+            Self::Sha256 => auto::vg_hmac_sha256_auto(),
+            Self::Sha384 => auto::vg_hmac_sha384_auto(),
+            Self::Sha512 => auto::vg_hmac_sha512_auto(),
+            Self::Sha512_224 => auto::vg_hmac_sha512_224_auto(),
+            Self::Sha512_256 => auto::vg_hmac_sha512_256_auto(),
+        };
+        t.as_ptr()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        Md5Backend, Sha1Backend, Sha224Backend, Sha256Backend, Sha384Backend, Sha512_224Backend,
-        Sha512_256Backend, Sha512Backend, TableHash,
-    };
+    use super::TableHash;
 
     /// A table of `Hash` holds the hash function's index and digest length
     /// (its words 3 and 4), as its table of `MdHash` does (words 5 and 6),
     /// and its table of `Hmac` holds them and HMAC's block size (words 3, 4
     /// and 5); and the indices are those of `VG.Spec.Mgf1.hashes`, in this
-    /// order: for the implementations a CPU with exactly the features any
-    /// implementation's `select` requires runs, so for each of them.
+    /// order: for the tables this CPU runs.
     #[test]
     fn table_words() {
         let all = [
@@ -113,33 +99,21 @@ mod tests {
             (TableHash::Sha512_224, 28, 128),
             (TableHash::Sha512_256, 32, 128),
         ];
-        let sets = [
-            Md5Backend::REQUIRES,
-            Sha1Backend::REQUIRES,
-            Sha224Backend::REQUIRES,
-            Sha256Backend::REQUIRES,
-            Sha384Backend::REQUIRES,
-            Sha512Backend::REQUIRES,
-            Sha512_224Backend::REQUIRES,
-            Sha512_256Backend::REQUIRES,
-        ];
-        for &f in sets.into_iter().flatten() {
-            for (i, (h, len, block)) in all.into_iter().enumerate() {
-                #[cfg(feature = "alloc")]
-                {
-                    // SAFETY: `as_ptr` points to the tables' words, of
-                    // immutable `'static` `repr(C)` values of 5 and 11
-                    // pointer-sized words.
-                    let (g, md) = unsafe { (*h.hash_table(f), *h.md_hash_table(f)) };
-                    assert_eq!((g[3], g[4]), (i, len), "{h:?} {f:?}");
-                    assert_eq!((md[5], md[6]), (i, len), "{h:?} {f:?}");
-                }
-                // SAFETY: `as_ptr` points to the table's words, of an
-                // immutable `'static` `repr(C)` value of 6 pointer-sized
-                // words.
-                let m = unsafe { *h.hmac_table(f) };
-                assert_eq!((m[3], m[4], m[5]), (i, len, block), "{h:?} {f:?}");
+        for (i, (h, len, block)) in all.into_iter().enumerate() {
+            #[cfg(feature = "alloc")]
+            {
+                // SAFETY: `as_ptr` points to the tables' words, of
+                // immutable `'static` `repr(C)` values of 5 and 11
+                // pointer-sized words.
+                let (g, md) = unsafe { (*h.hash_table(), *h.md_hash_table()) };
+                assert_eq!((g[3], g[4]), (i, len), "{h:?}");
+                assert_eq!((md[5], md[6]), (i, len), "{h:?}");
             }
+            // SAFETY: `as_ptr` points to the table's words, of an
+            // immutable `'static` `repr(C)` value of 6 pointer-sized
+            // words.
+            let m = unsafe { *h.hmac_table() };
+            assert_eq!((m[3], m[4], m[5]), (i, len, block), "{h:?}");
         }
     }
 }

@@ -219,8 +219,8 @@ theorem leave_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s�
   · rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr]
 
 /-- After the kernel and `leave`. -/
-structure Post2 (s₀ : State) (s : State) : Prop where
-  inv : Inv s₀ s
+structure Post2 (e : Bool) (s₀ : State) (s : State) : Prop where
+  inv : Inv e s₀ s
   fine : Frame [workR s₀] s₀.mem s.mem
   ks : ∀ k < 320, s.mem (off (cx s₀) 64 + BitVec.ofNat 64 k) = ks5 s₀ k
   x0 : s.gpr .x0 = off (cx s₀) 448
@@ -229,7 +229,7 @@ structure Post2 (s₀ : State) (s : State) : Prop where
 
 open VG.Proof.ChaCha20.AArch64.Mixed5 in
 theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post1 s₀ s) :
-    WP isa (.seq (VG.Impl.ChaCha20.AArch64.Mixed5.chunk sve) (.block leave)) s (Post2 s₀) := by
+    WP isa (.seq (VG.Impl.ChaCha20.AArch64.Mixed5.chunk sve) (.block leave)) s (Post2 e s₀) := by
   refine WP.seq ((chunk_ok s (h.cp hp)).mono fun s₂ c₂ => ?_)
   have x21₂ : s₂.gpr .x21 = cx s₀ := by rw [c₂.cs _ (by decide) (by decide) (by decide), h.x21]
   have hf₂ : Frame [sub s₀ 0 64, sub s₀ 384 64, sub s₀ 64 320] s.mem s₂.mem := by
@@ -283,8 +283,8 @@ theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post
     rw [hm, hc, h.st]
 
 /-- After the prologue. -/
-structure PostP (s₀ : State) (s : State) : Prop where
-  inv : Inv s₀ s
+structure PostP (e : Bool) (s₀ : State) (s : State) : Prop where
+  inv : Inv e s₀ s
   fine : Frame [workR s₀] s₀.mem s.mem
   poly : Repr s.mem (off (cx s₀) 448) (otk s₀) []
   ks : ∀ k < 320, s.mem (off (cx s₀) 64 + BitVec.ofNat 64 k) = ks5 s₀ k
@@ -304,7 +304,7 @@ theorem otk_eq {s₀ : State} {m : Mem} (h : ∀ k < 320, m (off (cx s₀) 64 + 
       rw [VG.Proof.ChaCha20.length_serialize]; omega), Option.getD_some]
 
 theorem prologue_ok {sve : Bool} {s₀ : State} (hp : APre e s₀) :
-    WP isa (Short.prologue sve) s₀ (PostP s₀) := by
+    WP isa (Short.prologue sve) s₀ (PostP e s₀) := by
   unfold Short.prologue
   refine WP.seq (WP.mono (block1_ok hp) fun s₁ h₁ => ?_)
   refine WP.seq ((chunkLeave_ok hp h₁).mono fun s₂ h₂ => ?_)
