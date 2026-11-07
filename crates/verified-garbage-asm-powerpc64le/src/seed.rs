@@ -70,24 +70,6 @@ bl {vg_seed_decrypt_blocks}
     )
 }
 
-/// `vg_seed_expand_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_seed_expand_key as vg_seed_expand_key_auto;
-
-/// `vg_seed_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_seed_ecb_encrypt as vg_seed_ecb_encrypt_auto;
-
-/// `vg_seed_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_seed_ecb_decrypt as vg_seed_ecb_decrypt_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_seed_decrypt_blocks.rs"]
 pub(crate) mod vg_seed_decrypt_blocks;

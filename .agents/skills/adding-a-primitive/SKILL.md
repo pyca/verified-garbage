@@ -103,7 +103,8 @@ instructions in an ISA model) go in their own PR before either.
    interface append the suffix alone. Never list the
    implementations in the caller: a new implementation is a new variant
    file, and its callers follow.
-   The emitter writes each function's dispatcher, `<name>_auto`, which
+   The emitter writes each function's dispatcher, `<name>_auto` (in
+   `crate::arch::dispatch::<module>`), which
    tries its implementations in the order `Dispatch.lean` ranks their
    suffixes on the target (a suffix of several parts by the rank of each
    part's): a variant with a suffix it does not rank yet fails the

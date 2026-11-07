@@ -276,15 +276,3 @@ call {vg_sha224_finalize}
         vg_sha256_update = sym super::sha256::vg_sha256_update,
     )
 }
-
-/// `vg_hmac_sha224_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_hmac_sha224_init as vg_hmac_sha224_init_auto;
-
-/// `vg_hmac_sha224_finalize`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_hmac_sha224_finalize as vg_hmac_sha224_finalize_auto;

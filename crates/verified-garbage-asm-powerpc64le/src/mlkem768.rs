@@ -607,33 +607,3 @@ bne %cr0, 20b
 .base64 "AADAOFAwxXzgD8Z4AQBgOFAYZnwgAIBO""#,
     )
 }
-
-/// `vg_mlkem768_keygen`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mlkem768_keygen as vg_mlkem768_keygen_auto;
-
-/// `vg_mlkem768_encaps`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mlkem768_encaps as vg_mlkem768_encaps_auto;
-
-/// `vg_mlkem768_decaps`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mlkem768_decaps as vg_mlkem768_decaps_auto;
-
-/// `vg_mlkem768_encaps_h`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mlkem768_encaps_h as vg_mlkem768_encaps_h_auto;
-
-/// `vg_mlkem768_check_ek`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mlkem768_check_ek as vg_mlkem768_check_ek_auto;

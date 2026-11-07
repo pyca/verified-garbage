@@ -124,31 +124,3 @@ call {vg_p256_inv_mod_p_adx}
         vg_p256_inv_mod_p_adx = sym super::ec_p256::vg_p256_inv_mod_p_adx::vg_p256_inv_mod_p_adx,
     )
 }
-
-/// ECDH over P-256 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (32 bytes, most significant first) for the private key `d` at `d` (32 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
-///
-/// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
-///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ecdh_p256_adx` if the CPU supports its features (`VG_ECDH_P256_ADX_FEATURES`); or else `vg_ecdh_p256`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `d` must be valid for reads of 32 bytes.
-/// * `peer` must be valid for reads of 65 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
-/// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_ecdh_p256_auto(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(VG_ECDH_P256_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ecdh_p256_adx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_ecdh_p256_adx(out, d, peer, scratch) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { vg_ecdh_p256(out, d, peer, scratch) }
-}

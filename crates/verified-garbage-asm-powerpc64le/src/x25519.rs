@@ -101,18 +101,6 @@ bl {vg_gf25519_r32_mul}
     )
 }
 
-/// `vg_x25519_base`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_x25519_base as vg_x25519_base_auto;
-
-/// `vg_x25519_exchange`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_x25519_exchange as vg_x25519_exchange_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_x25519.rs"]
 pub(crate) mod vg_x25519;

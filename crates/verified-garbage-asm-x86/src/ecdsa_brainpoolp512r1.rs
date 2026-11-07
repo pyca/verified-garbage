@@ -601,18 +601,6 @@ jne 24b
     )
 }
 
-/// `vg_ecdsa_brainpoolp512r1_sign`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_ecdsa_brainpoolp512r1_sign as vg_ecdsa_brainpoolp512r1_sign_auto;
-
-/// `vg_ecdsa_brainpoolp512r1_verify`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_ecdsa_brainpoolp512r1_verify as vg_ecdsa_brainpoolp512r1_verify_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp512r1_add_mod_n.rs"]
 pub(crate) mod vg_brainpoolp512r1_add_mod_n;

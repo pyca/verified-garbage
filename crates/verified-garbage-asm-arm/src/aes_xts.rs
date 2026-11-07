@@ -262,18 +262,6 @@ bx lr",
     )
 }
 
-/// `vg_aes_xts_encrypt_unit`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_aes_xts_encrypt_unit as vg_aes_xts_encrypt_unit_auto;
-
-/// `vg_aes_xts_decrypt_unit`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_aes_xts_decrypt_unit as vg_aes_xts_decrypt_unit_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_aes_xts_decrypt.rs"]
 pub(crate) mod vg_aes_xts_decrypt;

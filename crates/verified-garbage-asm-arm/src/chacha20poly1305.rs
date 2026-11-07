@@ -890,21 +890,3 @@ bx lr",
         vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
     )
 }
-
-/// `vg_chacha20_poly1305_seal`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_chacha20_poly1305_seal as vg_chacha20_poly1305_seal_auto;
-
-/// `vg_chacha20_poly1305_open`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_chacha20_poly1305_open as vg_chacha20_poly1305_open_auto;
-
-/// `vg_chacha20_poly1305_seal_gather`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_chacha20_poly1305_seal_gather as vg_chacha20_poly1305_seal_gather_auto;

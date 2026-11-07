@@ -1408,21 +1408,3 @@ j 225f
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
-
-/// `vg_aes_siv_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_aes_siv_init as vg_aes_siv_init_auto;
-
-/// `vg_aes_siv_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_aes_siv_encrypt as vg_aes_siv_encrypt_auto;
-
-/// `vg_aes_siv_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_aes_siv_decrypt as vg_aes_siv_decrypt_auto;

@@ -73,9 +73,3 @@ call {vg_p224_mul_mod_p}
         vg_p224_mul = sym super::ec_p224::vg_p224_mul::vg_p224_mul,
     )
 }
-
-/// `vg_ecdh_p224`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_ecdh_p224 as vg_ecdh_p224_auto;

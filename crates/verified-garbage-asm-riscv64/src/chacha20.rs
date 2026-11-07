@@ -603,24 +603,6 @@ j 21f
     )
 }
 
-/// `vg_chacha20_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_chacha20_init as vg_chacha20_init_auto;
-
-/// `vg_chacha20_apply`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_chacha20_apply as vg_chacha20_apply_auto;
-
-/// `vg_chacha20_set_nonce`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_chacha20_set_nonce as vg_chacha20_set_nonce_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_chacha20_block.rs"]
 pub(crate) mod vg_chacha20_block;

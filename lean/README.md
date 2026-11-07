@@ -153,7 +153,7 @@ emitter checks the declaration is exact, and the generated function's
 `# Safety` section makes their presence the caller's obligation. The Rust
 that calls it checks for them first, using the generated `<NAME>_FEATURES`
 constant, or calls the function's generated dispatcher, `<name>_auto`
-(`Rust.dispatcher`), which checks them itself with the features
+(`dispatch/<module>.rs` of its crate, `Rust.dispatcher`), which checks them itself with the features
 `verified_garbage_cpu::detected()` reports (`crates/verified-garbage-cpu/`),
 and needs none: it calls an implementation only on a CPU with that
 implementation's features, in the order `Dispatch.lean` ranks them, and

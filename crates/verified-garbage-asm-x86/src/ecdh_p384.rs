@@ -73,9 +73,3 @@ call {vg_p384_mul_mod_p}
         vg_p384_mul = sym super::ec_p384::vg_p384_mul::vg_p384_mul,
     )
 }
-
-/// `vg_ecdh_p384`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_ecdh_p384 as vg_ecdh_p384_auto;

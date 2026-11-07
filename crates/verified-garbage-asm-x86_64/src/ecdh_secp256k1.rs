@@ -43,9 +43,3 @@ call {vg_secp256k1_inv_mod_p}
         vg_secp256k1_inv_mod_p = sym super::ec_secp256k1::vg_secp256k1_inv_mod_p::vg_secp256k1_inv_mod_p,
     )
 }
-
-/// `vg_ecdh_secp256k1`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_ecdh_secp256k1 as vg_ecdh_secp256k1_auto;

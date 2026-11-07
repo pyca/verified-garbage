@@ -171,24 +171,6 @@ b 212f
     )
 }
 
-/// `vg_rc2_cbc_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_rc2_cbc_init as vg_rc2_cbc_init_auto;
-
-/// `vg_rc2_cbc_encrypt_update`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_rc2_cbc_encrypt_update as vg_rc2_cbc_encrypt_update_auto;
-
-/// `vg_rc2_cbc_decrypt_update`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_rc2_cbc_decrypt_update as vg_rc2_cbc_decrypt_update_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_rc2_cbc_decrypt.rs"]
 pub(crate) mod vg_rc2_cbc_decrypt;

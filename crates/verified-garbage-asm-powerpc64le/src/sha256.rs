@@ -261,48 +261,6 @@ bl {vg_sha256_finalize_scratch}
     )
 }
 
-/// `vg_sha224_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_sha224_init as vg_sha224_init_auto;
-
-/// `vg_sha256_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_sha256_init as vg_sha256_init_auto;
-
-/// `vg_sha224_digest`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_sha224_digest as vg_sha224_digest_auto;
-
-/// `vg_sha256_update`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_sha256_update as vg_sha256_update_auto;
-
-/// `vg_sha256_digest`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_sha256_digest as vg_sha256_digest_auto;
-
-/// `vg_sha224_finalize`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_sha224_finalize as vg_sha224_finalize_auto;
-
-/// `vg_sha256_finalize`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_sha256_finalize as vg_sha256_finalize_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_compress.rs"]
 pub(crate) mod vg_sha256_compress;

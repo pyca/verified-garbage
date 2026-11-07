@@ -9821,9 +9821,3 @@ bnez t2, 241b
 .option pop",
     )
 }
-
-/// `vg_camellia_ofb`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_camellia_ofb as vg_camellia_ofb_auto;

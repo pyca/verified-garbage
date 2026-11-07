@@ -119,24 +119,6 @@ bl {vg_ed25519_verify_equation}
     )
 }
 
-/// `vg_ed25519_verify`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_ed25519_verify as vg_ed25519_verify_auto;
-
-/// `vg_ed25519_key_pair`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_ed25519_key_pair as vg_ed25519_key_pair_auto;
-
-/// `vg_ed25519_sign_expanded`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_ed25519_sign_expanded as vg_ed25519_sign_expanded_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_ed25519_public_key_expanded.rs"]
 pub(crate) mod vg_ed25519_public_key_expanded;

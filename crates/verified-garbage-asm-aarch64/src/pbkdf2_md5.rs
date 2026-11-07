@@ -90,12 +90,6 @@ b 25f
     )
 }
 
-/// `vg_pbkdf2_hmac_md5`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_pbkdf2_hmac_md5 as vg_pbkdf2_hmac_md5_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_pbkdf2_hmac_md5_iterate.rs"]
 pub(crate) mod vg_pbkdf2_hmac_md5_iterate;

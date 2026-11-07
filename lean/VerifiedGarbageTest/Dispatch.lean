@@ -47,13 +47,13 @@ def out : List (String × String) :=
   | .error e => [("error", e)]
 
 def file : String :=
-  ((out.find? (·.1 == "verified-garbage-asm-aarch64/src/poly1305.rs")).map (·.2)).getD ""
+  ((out.find? (·.1 == "verified-garbage-asm-aarch64/src/dispatch/poly1305.rs")).map (·.2)).getD ""
 
 def has (text part : String) : Bool := (text.splitOn part).length > 1
 
 -- The functions with one implementation: other names of it.
-#guard has file "pub use self::vg_poly1305_init as vg_poly1305_init_auto;\n"
-#guard has file "pub use self::vg_poly1305_finalize as vg_poly1305_finalize_auto;\n"
+#guard has file "pub use crate::poly1305::vg_poly1305_init as vg_poly1305_init_auto;\n"
+#guard has file "pub use crate::poly1305::vg_poly1305_finalize as vg_poly1305_finalize_auto;\n"
 
 -- `vg_poly1305_update`: `_neon` where the ranking chooses it, else the base.
 #guard has file
@@ -63,8 +63,15 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
     if (cfg!(target_vendor = \"apple\") || verified_garbage_cpu::requested(\
     verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON))) && \
     cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {\n"
-#guard has file "        return unsafe { vg_poly1305_update_neon(state, count, data, len) };\n    }\n"
-#guard has file "    unsafe { vg_poly1305_update(state, count, data, len) }\n}\n"
+#guard has file
+  "        return unsafe { crate::poly1305::vg_poly1305_update_neon(state, count, data, len) };\n    }\n"
+#guard has file "    unsafe { crate::poly1305::vg_poly1305_update(state, count, data, len) }\n}\n"
+
+-- They are a module of their own, not in the module of the functions.
+#guard ((out.find? (·.1 == "verified-garbage-asm-aarch64/src/poly1305.rs")).map
+  fun (_, t) => !has t "_auto").getD false
+#guard has (((out.find? (·.1 == "verified-garbage-asm-aarch64/src/dispatch/mod.rs")).map (·.2)).getD "")
+  "pub mod poly1305;\n"
 
 -- An unranked suffix fails the emitter.
 #guard match Rust.files Artifacts.Poly1305.AArch64.artifacts [("aarch64", [])] with

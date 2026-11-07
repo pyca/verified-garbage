@@ -14,9 +14,3 @@ pub unsafe extern "sysv64" fn vg_selftest_add(a: u64, b: u64) -> u64 {
 .p2align 6"#,
     )
 }
-
-/// `vg_selftest_add`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_selftest_add as vg_selftest_add_auto;

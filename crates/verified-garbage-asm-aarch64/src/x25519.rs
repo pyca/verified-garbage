@@ -443,21 +443,6 @@ cbnz x20, 22b
     )
 }
 
-/// The bytes of `scratch` that `vg_x25519_base_auto` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub const VG_X25519_BASE_AUTO_SCRATCH_WRITTEN: usize = 1024;
-
-/// `vg_x25519_base`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_x25519_base as vg_x25519_base_auto;
-
-/// `vg_x25519_exchange`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_x25519_exchange as vg_x25519_exchange_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_x25519.rs"]
 pub(crate) mod vg_x25519;

@@ -84,12 +84,6 @@ jmp 24f
     )
 }
 
-/// `vg_pbkdf2_hmac_sha512_256`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_pbkdf2_hmac_sha512_256 as vg_pbkdf2_hmac_sha512_256_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_pbkdf2_hmac_sha512_256_iterate.rs"]
 pub(crate) mod vg_pbkdf2_hmac_sha512_256_iterate;

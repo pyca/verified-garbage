@@ -249,15 +249,3 @@ call {vg_sha1_finalize}
         vg_sha1_update = sym super::sha1::vg_sha1_update,
     )
 }
-
-/// `vg_hmac_sha1_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_hmac_sha1_init as vg_hmac_sha1_init_auto;
-
-/// `vg_hmac_sha1_finalize`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_hmac_sha1_finalize as vg_hmac_sha1_finalize_auto;

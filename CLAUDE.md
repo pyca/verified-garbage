@@ -129,7 +129,8 @@ own changes are rebuilt either way, on top of the restored build.
   listed with those features in `NEVER_WITH` in `ci/check_variants.py`, and
   its choice unit-tested both ways.
   The emitter also writes each function's *dispatcher*, `<function>_auto`
-  (`Rust.dispatcher` in `lean/VerifiedGarbage/TCB/Rust.lean`), which runs
+  (`crate::arch::dispatch::<module>`, `Rust.dispatcher` in
+  `lean/VerifiedGarbage/TCB/Rust.lean`), which runs
   the best of its implementations the CPU supports and needs no CPU
   feature: Rust code that calls it names no variant and chooses nothing.
   Which is best is not trusted: `lean/VerifiedGarbage/Dispatch.lean` ranks

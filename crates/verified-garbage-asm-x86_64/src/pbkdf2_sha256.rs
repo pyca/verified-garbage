@@ -248,38 +248,6 @@ jmp 24f
     )
 }
 
-/// PBKDF2-HMAC-SHA-256 (RFC 8018 §5.2, with HMAC-SHA-256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-256 and HMAC-SHA-256 functions.
-///
-/// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
-///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_pbkdf2_hmac_sha256_shani` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA256_SHANI_FEATURES`); `vg_pbkdf2_hmac_sha256_avx2` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA256_AVX2_FEATURES`); or else `vg_pbkdf2_hmac_sha256`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
-///
-/// # Safety
-///
-/// * `password` must be valid for reads of `password_len` bytes.
-/// * `salt` must be valid for reads of `salt_len` bytes.
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 32`.
-/// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_pbkdf2_hmac_sha256_auto(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(VG_PBKDF2_HMAC_SHA256_SHANI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_pbkdf2_hmac_sha256_shani`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_pbkdf2_hmac_sha256_shani(password, password_len, salt, salt_len, c, out, out_len) };
-    }
-    if cpu.contains(VG_PBKDF2_HMAC_SHA256_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_pbkdf2_hmac_sha256_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_pbkdf2_hmac_sha256_avx2(password, password_len, salt, salt_len, c, out, out_len) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { vg_pbkdf2_hmac_sha256(password, password_len, salt, salt_len, c, out, out_len) }
-}
-
 #[rustfmt::skip]
 #[path = "internal/vg_pbkdf2_hmac_sha256_iterate.rs"]
 pub(crate) mod vg_pbkdf2_hmac_sha256_iterate;

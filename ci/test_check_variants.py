@@ -62,12 +62,12 @@ class Dispatchers(unittest.TestCase):
     def test_read_from_generated_code(self):
         text = (
             "pub unsafe fn vg_f_auto(out: *mut u8) {\n"
-            "    if cpu.contains(VG_F_S_FEATURES) {\n"
-            "        return unsafe { vg_f_s(out) };\n"
+            "    if cpu.contains(crate::f::VG_F_S_FEATURES) {\n"
+            "        return unsafe { crate::f::vg_f_s(out) };\n"
             "    }\n"
-            "    unsafe { vg_f(out) }\n"
+            "    unsafe { crate::f::vg_f(out) }\n"
             "}\n"
-            "pub use self::vg_g as vg_g_auto;\n"
+            "pub use crate::g::vg_g as vg_g_auto;\n"
             "pub use self::vg_h as vg_h_s;\n"
         )
         self.assertEqual(check_variants.file_dispatchers(text),

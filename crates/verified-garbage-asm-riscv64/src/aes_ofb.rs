@@ -40,12 +40,6 @@ call {vg_aes_ofb_chain}
     )
 }
 
-/// `vg_aes_ofb`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_aes_ofb as vg_aes_ofb_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ofb_chain.rs"]
 pub(crate) mod vg_aes_ofb_chain;

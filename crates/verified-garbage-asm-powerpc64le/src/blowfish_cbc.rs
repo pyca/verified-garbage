@@ -94,15 +94,3 @@ b 21f
 .base64 "eOu/f0gABYEAAB+RTAAFgQQAH5EoAKXrMADF6zgA5etAAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5gAAhOCAAgE4=""#,
     )
 }
-
-/// `vg_blowfish_cbc_encrypt_chained`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_blowfish_cbc_encrypt_chained as vg_blowfish_cbc_encrypt_chained_auto;
-
-/// `vg_blowfish_cbc_decrypt_chained`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_blowfish_cbc_decrypt_chained as vg_blowfish_cbc_decrypt_chained_auto;

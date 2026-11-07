@@ -1299,21 +1299,3 @@ add sp, sp, #256
 bx lr",
     )
 }
-
-/// `vg_blowfish_expand_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_blowfish_expand_key as vg_blowfish_expand_key_auto;
-
-/// `vg_blowfish_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_blowfish_ecb_encrypt as vg_blowfish_ecb_encrypt_auto;
-
-/// `vg_blowfish_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_blowfish_ecb_decrypt as vg_blowfish_ecb_decrypt_auto;

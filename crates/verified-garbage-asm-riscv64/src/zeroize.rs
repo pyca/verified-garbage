@@ -61,9 +61,3 @@ j 29f
 .option pop",
     )
 }
-
-/// `vg_zeroize`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_zeroize as vg_zeroize_auto;

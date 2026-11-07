@@ -590,27 +590,3 @@ b 221f
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
 }
-
-/// `vg_cast5_cfb64_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_cast5_cfb64_encrypt as vg_cast5_cfb64_encrypt_auto;
-
-/// `vg_cast5_cfb64_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_cast5_cfb64_decrypt as vg_cast5_cfb64_decrypt_auto;
-
-/// `vg_cast5_cfb64_encrypt_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_cast5_cfb64_encrypt_final as vg_cast5_cfb64_encrypt_final_auto;
-
-/// `vg_cast5_cfb64_decrypt_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_cast5_cfb64_decrypt_final as vg_cast5_cfb64_decrypt_final_auto;

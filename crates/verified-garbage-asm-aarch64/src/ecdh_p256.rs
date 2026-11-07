@@ -1304,9 +1304,3 @@ cbnz x19, 24b
         vg_p256_check_point = sym super::ec_p256_compressed::vg_p256_check_point::vg_p256_check_point,
     )
 }
-
-/// `vg_ecdh_p256`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_ecdh_p256 as vg_ecdh_p256_auto;

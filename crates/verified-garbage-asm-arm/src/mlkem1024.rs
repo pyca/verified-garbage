@@ -2113,36 +2113,6 @@ bx lr",
     )
 }
 
-/// `vg_mlkem1024_keygen`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mlkem1024_keygen as vg_mlkem1024_keygen_auto;
-
-/// `vg_mlkem1024_encaps`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mlkem1024_encaps as vg_mlkem1024_encaps_auto;
-
-/// `vg_mlkem1024_decaps`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mlkem1024_decaps as vg_mlkem1024_decaps_auto;
-
-/// `vg_mlkem1024_check_ek`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mlkem1024_check_ek as vg_mlkem1024_check_ek_auto;
-
-/// `vg_mlkem1024_encaps_h`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mlkem1024_encaps_h as vg_mlkem1024_encaps_h_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_mlkem1024_compress_encode.rs"]
 pub(crate) mod vg_mlkem1024_compress_encode;

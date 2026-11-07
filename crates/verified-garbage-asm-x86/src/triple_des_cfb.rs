@@ -150,27 +150,3 @@ jmp 21f
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
-
-/// `vg_triple_des_cfb64_encrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_triple_des_cfb64_encrypt as vg_triple_des_cfb64_encrypt_auto;
-
-/// `vg_triple_des_cfb64_decrypt`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_triple_des_cfb64_decrypt as vg_triple_des_cfb64_decrypt_auto;
-
-/// `vg_triple_des_cfb64_encrypt_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_triple_des_cfb64_encrypt_final as vg_triple_des_cfb64_encrypt_final_auto;
-
-/// `vg_triple_des_cfb64_decrypt_final`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_triple_des_cfb64_decrypt_final as vg_triple_des_cfb64_decrypt_final_auto;

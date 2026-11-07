@@ -342,18 +342,6 @@ bl {vg_gf448_r56_mul}
     )
 }
 
-/// `vg_x448_base`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_x448_base as vg_x448_base_auto;
-
-/// `vg_x448_exchange`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_x448_exchange as vg_x448_exchange_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_x448.rs"]
 pub(crate) mod vg_x448;

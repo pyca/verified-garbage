@@ -91,9 +91,9 @@ its module (`pub use self::<f> as <name>;`, `Rust.alias` in
 `lean/VerifiedGarbage/TCB/Rust.lean`) is that function's code: it has its
 signature and callees, and a use of it is a use of that function.
 
-A *dispatcher* (`<f>_auto`, `Rust.dispatcher`: an ordinary Rust function,
-`pub unsafe fn`, or for a function with one implementation another name of
-it, `pub use self::<f> as <f>_auto;`) runs the best of `f`'s implementations
+A *dispatcher* (`<f>_auto` in `dispatch/<module>.rs`, `Rust.dispatcher`: an
+ordinary Rust function, `pub unsafe fn`, or for a function with one
+implementation another name of it, `pub use crate::<module>::<f> as <f>_auto;`) runs the best of `f`'s implementations
 the CPU supports. It is not a variant, and its calls are not those of a
 generated function: a use of it by the Rust code is a use of each
 implementation it calls, so that a variant whose dispatcher nothing uses is
@@ -118,13 +118,14 @@ FN = re.compile(
     r"^pub(?:\(crate\))? unsafe extern \"[\w-]+\" fn (vg_\w+)\((.*?)\)(?: -> ([^{]+?))? \{\n",
     re.MULTILINE | re.DOTALL,
 )
-# Another name of a function of the same module (`Rust.alias`), or the
-# dispatcher of a function with one implementation (`<f>_auto`,
-# `Rust.soleDispatcher`).
+# Another name of a function of the same module (`Rust.alias`).
 ALIAS = re.compile(r"^pub(?:\(crate\))? use self::(vg_\w+) as (vg_\w+);$", re.MULTILINE)
+# The dispatcher of a function with one implementation (`<f>_auto`,
+# `Rust.soleDispatcher`), in `dispatch/<module>.rs`.
+SOLE = re.compile(r"^pub use crate::\w+::(vg_\w+) as (vg_\w+);$", re.MULTILINE)
 # A dispatcher (`Rust.dispatcher`), to the end of its body, and each function it calls.
 DISPATCHER = re.compile(r"^pub unsafe fn (vg_\w+)\(.*?^\}\n", re.MULTILINE | re.DOTALL)
-DISPATCHED = re.compile(r"unsafe \{ (vg_\w+)\(")
+DISPATCHED = re.compile(r"unsafe \{ crate::\w+::(vg_\w+)\(")
 # `<operand> = sym <path>`, found from the literal ` = sym ` (a leading
 # `\w+` would be tried at every word character of the code: 30 times slower).
 SYM = re.compile(r" = sym (?:\w+::)*(vg_\w+)")
@@ -137,11 +138,12 @@ FEATURES = re.compile(
 
 
 def sources():
-    """Each generated file's target and text: its modules' and its internal
-    functions' (`internal/<name>.rs`)."""
+    """Each generated file's target and text: its modules', its internal
+    functions' (`internal/<name>.rs`) and its dispatchers' (`dispatch/<module>.rs`)."""
     return [(target, path.read_text())
             for target, d in asm_layout.target_dirs(ROOT).items()
-            for path in sorted(d.glob("*.rs")) + sorted(d.glob("internal/vg_*.rs"))]
+            for path in sorted(d.glob("*.rs")) + sorted(d.glob("internal/vg_*.rs"))
+            + sorted(d.glob("dispatch/*.rs"))]
 
 
 def bodies(text):
@@ -175,16 +177,14 @@ def functions(srcs):
 def aliases(text):
     """Each other name of a function of a generated file (`Rust.alias`), by
     the name it gives it: `{name: function}`; not a dispatcher's."""
-    return {m.group(2): m.group(1) for m in ALIAS.finditer(text)
-            if m.group(2) != m.group(1) + "_auto"}
+    return {m.group(2): m.group(1) for m in ALIAS.finditer(text)}
 
 
 def file_dispatchers(text):
     """Each dispatcher of a generated file (`Rust.dispatcher`), with the
     functions it calls: `{name: {function, …}}`."""
     out = {m.group(1): set(DISPATCHED.findall(m.group(0))) for m in DISPATCHER.finditer(text)}
-    out.update({m.group(2): {m.group(1)} for m in ALIAS.finditer(text)
-                if m.group(2) == m.group(1) + "_auto"})
+    out.update({m.group(2): {m.group(1)} for m in SOLE.finditer(text)})
     return out
 
 
@@ -702,9 +702,8 @@ def unread(srcs):
     for target, text in srcs:
         for what, total, read in [
             ("naked functions", text.count("#[unsafe(naked)]"), sum(1 for _ in bodies(text))),
-            ("other names", text.count(" use self::vg_"),
-             len(aliases(text)) + sum(1 for d in file_dispatchers(text) if d not in
-                                     {m.group(1) for m in DISPATCHER.finditer(text)})),
+            ("other names", text.count(" use self::vg_"), len(aliases(text))),
+            ("dispatchers' other names", text.count(" use crate::"), len(SOLE.findall(text))),
             ("dispatchers", text.count("\npub unsafe fn vg_"), len(DISPATCHER.findall(text))),
             ("_FEATURES constants", text.count("_FEATURES: "), len(FEATURES.findall(text))),
         ]:

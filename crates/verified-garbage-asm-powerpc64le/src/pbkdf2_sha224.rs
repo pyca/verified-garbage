@@ -54,12 +54,6 @@ b 21f
     )
 }
 
-/// `vg_pbkdf2_hmac_sha224`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_pbkdf2_hmac_sha224 as vg_pbkdf2_hmac_sha224_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_pbkdf2_hmac_sha224_iterate.rs"]
 pub(crate) mod vg_pbkdf2_hmac_sha224_iterate;

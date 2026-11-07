@@ -24,9 +24,3 @@ call {vg_p192_check_point}
         vg_p192_check_point = sym super::ec_p192_compressed::vg_p192_check_point::vg_p192_check_point,
     )
 }
-
-/// `vg_ec_p192_validate_public_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_ec_p192_validate_public_key as vg_ec_p192_validate_public_key_auto;

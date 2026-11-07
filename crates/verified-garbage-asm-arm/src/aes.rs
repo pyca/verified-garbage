@@ -3108,24 +3108,6 @@ bx lr",
     )
 }
 
-/// `vg_aes_expand_key`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_aes_expand_key as vg_aes_expand_key_auto;
-
-/// `vg_aes_encrypt_blocks`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_aes_encrypt_blocks as vg_aes_encrypt_blocks_auto;
-
-/// `vg_aes_decrypt_blocks`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_aes_decrypt_blocks as vg_aes_decrypt_blocks_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32.rs"]
 pub(crate) mod vg_aes_ctr32;

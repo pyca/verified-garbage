@@ -147,18 +147,6 @@ cbz x9, 22b
     )
 }
 
-/// `vg_rsa_generate`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_rsa_generate as vg_rsa_generate_auto;
-
-/// `vg_rsa_generate_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_rsa_generate_init as vg_rsa_generate_init_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_keygen_candidate.rs"]
 pub(crate) mod vg_rsa_keygen_candidate;

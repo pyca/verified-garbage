@@ -547,21 +547,3 @@ call {vg_triple_des_ecb_encrypt_serial}
         vg_triple_des_ecb_encrypt_serial = sym super::triple_des::vg_triple_des_ecb_encrypt_serial::vg_triple_des_ecb_encrypt_serial,
     )
 }
-
-/// `vg_cmac_triple_des_absorb`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_cmac_triple_des_absorb as vg_cmac_triple_des_absorb_auto;
-
-/// `vg_cmac_triple_des_finish`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_cmac_triple_des_finish as vg_cmac_triple_des_finish_auto;
-
-/// `vg_cmac_triple_des_stream_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_cmac_triple_des_stream_init as vg_cmac_triple_des_stream_init_auto;

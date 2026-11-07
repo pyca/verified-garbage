@@ -676,21 +676,3 @@ j 21f
 .option pop",
     )
 }
-
-/// `vg_poly1305_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_poly1305_init as vg_poly1305_init_auto;
-
-/// `vg_poly1305_update`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_poly1305_update as vg_poly1305_update_auto;
-
-/// `vg_poly1305_finalize`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_poly1305_finalize as vg_poly1305_finalize_auto;

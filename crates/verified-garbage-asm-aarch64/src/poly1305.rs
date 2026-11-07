@@ -286,43 +286,6 @@ b 21f
     )
 }
 
-/// `vg_poly1305_init`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_poly1305_init as vg_poly1305_init_auto;
-
-/// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
-///
-/// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_poly1305_update_neon` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and it also supports `neon`; or else `vg_poly1305_update`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_poly1305_update_auto(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON))) && cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {
-        // SAFETY: the caller's obligations, which are `vg_poly1305_update_neon`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_poly1305_update_neon(state, count, data, len) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { vg_poly1305_update(state, count, data, len) }
-}
-
-/// `vg_poly1305_finalize`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_poly1305_finalize as vg_poly1305_finalize_auto;
-
 #[rustfmt::skip]
 #[path = "internal/vg_poly1305_blocks.rs"]
 pub(crate) mod vg_poly1305_blocks;

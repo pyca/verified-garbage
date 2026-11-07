@@ -7926,41 +7926,6 @@ bx lr",
     )
 }
 
-/// `vg_x25519_base`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_x25519_base as vg_x25519_base_auto;
-
-/// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies (§5).
-///
-/// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
-///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_x25519_exchange_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_X25519_EXCHANGE_UMAAL_FEATURES`); or else `vg_x25519_exchange`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `scalar` must be valid for reads of 32 bytes.
-/// * `point` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 4096 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
-/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_x25519_exchange_auto(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-    if cpu.contains(VG_X25519_EXCHANGE_UMAAL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_x25519_exchange_umaal`'s, and the CPU
-        // has the features it needs.
-        return unsafe { vg_x25519_exchange_umaal(out, scalar, point, scratch) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { vg_x25519_exchange(out, scalar, point, scratch) }
-}
-
 #[rustfmt::skip]
 #[path = "internal/vg_x25519.rs"]
 pub(crate) mod vg_x25519;

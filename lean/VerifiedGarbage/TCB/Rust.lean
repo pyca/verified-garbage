@@ -1631,15 +1631,22 @@ which a `Features` constant names the bits (`featuresConst`):
 #[inline]
 pub unsafe fn <base>_auto(<the signature>) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(<NAME>_FEATURES) {
+    if cpu.contains(crate::<module>::<NAME>_FEATURES) {
         // SAFETY: …
-        return unsafe { <name>(<the arguments>) };
+        return unsafe { crate::<module>::<name>(<the arguments>) };
     }
     …
     // SAFETY: the caller's obligations.
-    unsafe { <base>(<the arguments>) }
+    unsafe { crate::<module>::<base>(<the arguments>) }
 }
 ```
+
+The dispatchers of a module's functions are in a file of their own,
+`dispatch/<module>.rs` of the crate's `codeDir` (`dispatchFile`), declared by
+`dispatch/mod.rs` (`dispatchMod`), so that the Rust code calls
+`crate::arch::dispatch::<module>::<base>_auto`. The module's own file is as
+it would be without them: a change to one implementation changes the
+dispatchers' file only where it changes what a dispatcher calls.
 
 Which implementation is best is a matter of speed, never of correctness or
 safety: each is proven against the contract that their common documentation
@@ -1675,7 +1682,7 @@ on every target, whatever implementations each has:
 
 ```rust
 #[allow(unused_imports)]
-pub use self::<base> as <base>_auto;
+pub use crate::<module>::<base> as <base>_auto;
 ```
 
 A function whose base needs CPU features gets none (there is nothing to fall
@@ -1827,7 +1834,7 @@ def argsOf (sig : Sig) : String :=
 its ranking's `extra` ones; for one that needs none, that detection reports
 some feature. -/
 def condOf (a : Arm) : String :=
-  let name := a.art.name.toUpper
+  let name := s!"crate::{a.art.module}::{a.art.name.toUpper}"
   let bits := a.extra.map fun f => s!"verified_garbage_cpu::feature::{featureConst f}"
   let need : Option String := match a.art.features.isEmpty, bits with
     | true, [] => none
@@ -1887,10 +1894,10 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
     s!"    if {condOf a} " ++ "{\n" ++
     s!"        // SAFETY: the caller's obligations, which are `{a.art.name}`'s, and the CPU\n" ++
     "        // has the features it needs.\n" ++
-    s!"        return unsafe " ++ "{ " ++ s!"{a.art.name}({args})" ++ " };\n" ++
+    s!"        return unsafe " ++ "{ " ++ s!"crate::{a.art.module}::{a.art.name}({args})" ++ " };\n" ++
     "    }\n") ++
   "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
-  "    unsafe { " ++ s!"{b.name}({args})" ++ " }\n" ++
+  "    unsafe { " ++ s!"crate::{b.module}::{b.name}({args})" ++ " }\n" ++
   "}\n"
 
 /-- The dispatcher of the function `g` whose base is its only implementation:
@@ -1903,7 +1910,7 @@ def soleDispatcher (g : Group) : String :=
   "/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every\n" ++
   "/// target.\n" ++
   "#[allow(unused_imports)]\n" ++
-  s!"pub use self::{b.name} as {auto};\n"
+  s!"pub use crate::{b.module}::{b.name} as {auto};\n"
 
 /-- Each `Rank` of `rs` has a suffix starting with `_` and, if it names a
 vendor, a vendor of lowercase ASCII letters, digits and underscores (the
@@ -1936,6 +1943,20 @@ def dispatchers (rs : List Rank) (names : List String) (m : String) (as : List A
     | .error e => throw e
   return String.join (texts.map ("\n" ++ ·))
 
+/-- The module of the dispatchers of the target `t` (`dispatch/mod.rs` of its
+`codeDir`), declaring the file of each module `ms` with any. -/
+def dispatchMod (t : String) (ms : List String) : String :=
+  header ++ s!"//! The dispatchers of the verified functions for `{t}` (`VG.Rust.dispatcher`):\n" ++
+  "//! for each function, `<name>_auto`, in the module of its module's name.\n" ++
+  modDecls ms (fun _ => none)
+
+/-- The file of the dispatchers `text` of the functions of the module `m` of
+the target `t` (`dispatch/<m>.rs`), which name the functions they call by
+their paths from the crate's root. -/
+def dispatchFile (t m text : String) : String :=
+  header ++ s!"//! The dispatchers of the verified `{m}` functions for `{t}`\n" ++
+  s!"//! (`crate::{m}`, `VG.Rust.dispatcher`).\n" ++ text
+
 /-- The generated files of the artifacts of `ps`, given the module of each
 function each artifact calls; each artifact's code as `ps` printed it
 (`Prepared.lines`). -/
@@ -1951,8 +1972,10 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
     let modules := (distinct (arts.map (·.art)) (·.module)).mergeSort (· ≤ ·)
     let ts := tables (arts.map (·.art)) hs
     let fts := fnTables (arts.map (·.art))
+    let dmods := modules.filter fun m => !(disp t m).isEmpty
     let mods := (modules ++ (if ts.isEmpty then [] else ["consts"]) ++
-      (if fts.isEmpty then [] else ["fn_tables"])).mergeSort (· ≤ ·)
+      (if fts.isEmpty then [] else ["fn_tables"]) ++
+      (if dmods.isEmpty then [] else ["dispatch"])).mergeSort (· ≤ ·)
     let cfg := ((targetsOf (arts.map (·.art))).map (·.2)).headD ""
     let src := codeDir t
     (s!"{src}/lib.rs", targetRoot t cfg mods) ::
@@ -1965,6 +1988,9 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
         (s!"{src}/fn_tables/mod.rs", fnTablesMod t fts (fnTableFeatures arts hs t)) ::
           fts.map fun T => (s!"{src}/fn_tables/{fnTableModule T.name}.rs",
             fnTableFile p₀.art.target T (fnTableFeatures arts hs t T) (moduleOf t))) ++
+    (if dmods.isEmpty then [] else
+      (s!"{src}/dispatch/mod.rs", dispatchMod t dmods) ::
+        dmods.map fun m => (s!"{src}/dispatch/{m}.rs", dispatchFile t m (disp t m))) ++
     (hs.map fun h => Task.spawn fun _ =>
       let m := s!"internal/{h.name}"
       [(s!"{src}/{m}.rs", internalFile h (moduleOf t)),
@@ -1978,7 +2004,7 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
         header ++ s!"//! Verified `{m}` functions for `{t}`, whose text is in\n" ++
         s!"//! `{assemblyFile m}`.\n" ++
         "#![allow(dead_code)]\n" ++
-        moduleText items ++ disp t m ++ internalDecls (hs.filter (·.owner == m))),
+        moduleText items ++ internalDecls (hs.filter (·.owner == m))),
        (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++ moduleAssembly items)]).map
       Task.get).flatten
   -- Each target's files on a task of their own.

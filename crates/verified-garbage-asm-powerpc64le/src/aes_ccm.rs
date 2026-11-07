@@ -284,15 +284,3 @@ b 231f
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }
-
-/// `vg_aes_ccm_seal`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_aes_ccm_seal as vg_aes_ccm_seal_auto;
-
-/// `vg_aes_ccm_open`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_aes_ccm_open as vg_aes_ccm_open_auto;
