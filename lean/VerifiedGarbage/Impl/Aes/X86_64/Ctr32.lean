@@ -5,7 +5,10 @@ public import VerifiedGarbage.Impl.Aes.X86_64.Linear
 /-!
 # AES counter mode (GCM's `inc₃₂`), bitsliced, on x86-64
 
-`vg_aes_ctr32(schedule = rdi, rounds = rsi, counter = rdx, data = rcx, n = r8, scratch = r9)`.
+The parts of `vg_aes_ctr32(schedule = rdi, rounds = rsi, counter = rdx,
+data = rcx, n = r8, scratch = r9)` (`Sse.lean`, which adds groups of eight
+blocks in SSE2 registers, and runs the group of four below for the last one
+to four blocks).
 
 Constant-time AES in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT
 licence): four blocks at a time, bitsliced in eight 64-bit registers
@@ -131,11 +134,5 @@ def group : Prog isa :=
   .seq (.block ctrBlocks)
     (.seq encrypt4
       (.seq (.block [.alu .cmp .r8 (.imm 4)]) (.ite .ae (.block xorFull) xorTail)))
-
-def ctr32 : Prog isa :=
-  .seq (.block (saveRegs ++ ctrSetup ++ keySetup))
-    (.seq (.loop (.block keyBody) .ae)
-      (.seq (.block (keyDone ++ ([.alu .test .r8 (.reg .r8)] : List Instr)))
-        (.seq (.ite .e (.block []) (.loop group .ne)) (.block restoreRegs))))
 
 end VG.Impl.Aes.X86_64
