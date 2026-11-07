@@ -47,6 +47,10 @@ crate::mlkem_common::ml_kem! {
         crate::arch::mlkem1024::vg_mlkem1024_encaps_h_x2_sha3_keccak_sha3,
         crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES,
     ),
+    keygen_avx: (crate::arch::mlkem1024::vg_mlkem1024_keygen_avx, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX_FEATURES),
+    encaps_h_avx: (crate::arch::mlkem1024::vg_mlkem1024_encaps_h_avx, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_H_AVX_FEATURES),
+    encaps_avx: (crate::arch::mlkem1024::vg_mlkem1024_encaps_avx, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_AVX_FEATURES),
+    decaps_avx: (crate::arch::mlkem1024::vg_mlkem1024_decaps_avx, crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_AVX_FEATURES),
     keygen_avx2: (crate::arch::mlkem1024::vg_mlkem1024_keygen_avx2, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX2_FEATURES),
     keygen_avx512: (crate::arch::mlkem1024::vg_mlkem1024_keygen_avx512, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX512_FEATURES),
     encaps_h_avx2: (crate::arch::mlkem1024::vg_mlkem1024_encaps_h_avx2, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES),
@@ -60,22 +64,4 @@ crate::mlkem_common::ml_kem! {
     dk: 3168,
     ct: 1568,
     scratch: 6144,
-    scratch_written: {
-        keygen: (
-            crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX2_SCRATCH_WRITTEN,
-            crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX512_SCRATCH_WRITTEN,
-        ),
-        encaps_h: (
-            crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_H_AVX2_SCRATCH_WRITTEN,
-            crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_H_AVX512_SCRATCH_WRITTEN,
-        ),
-        encaps: (
-            crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_AVX2_SCRATCH_WRITTEN,
-            crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_AVX512_SCRATCH_WRITTEN,
-        ),
-        decaps: (
-            crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_AVX2_SCRATCH_WRITTEN,
-            crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_AVX512_SCRATCH_WRITTEN,
-        ),
-    },
 }

@@ -22,6 +22,9 @@ pub(crate) enum Backend {
     /// The `_x2_sha3_keccak_sha3` instances.
     #[cfg(target_arch = "aarch64")]
     X2Sha3KeccakSha3,
+    /// The `_avx` instances: the baseline's, wiping `scratch` with AVX.
+    #[cfg(target_arch = "x86_64")]
+    Avx,
     /// The `_avx2` instances.
     #[cfg(target_arch = "x86_64")]
     Avx2,
@@ -32,9 +35,9 @@ pub(crate) enum Backend {
 
 impl Backend {
     /// Select the best implementation whose instances of all three KEM
-    /// operations a CPU with the features `f` can run (`avx2`, `avx512` and
-    /// `sha3`: theirs), which is one of Apple's if `apple`. On x86-64,
-    /// `_avx512`, then `_avx2`. On AArch64, with the features of both
+    /// operations a CPU with the features `f` can run (`avx`, `avx2`,
+    /// `avx512` and `sha3`: theirs), which is one of Apple's if `apple`. On
+    /// x86-64, `_avx512`, then `_avx2`, then `_avx`. On AArch64, with the features of both
     /// `_x2_sha3` and `_x2_sha3_keccak_sha3`, the faster on the CPU: no CPU
     /// feature tells which, so `_x2_sha3_keccak_sha3` on Apple's cores and
     /// `_x2_sha3` elsewhere (faster on Arm's cores, such as Neoverse N2).
@@ -42,6 +45,7 @@ impl Backend {
     #[allow(unused_variables)]
     pub(crate) fn select(
         f: verified_garbage_cpu::Features,
+        avx: verified_garbage_cpu::Features,
         avx2: verified_garbage_cpu::Features,
         avx512: verified_garbage_cpu::Features,
         sha3: verified_garbage_cpu::Features,
@@ -63,6 +67,10 @@ impl Backend {
         if f.contains(avx2) {
             return Backend::Avx2;
         }
+        #[cfg(target_arch = "x86_64")]
+        if f.contains(avx) {
+            return Backend::Avx;
+        }
         Backend::Scalar
     }
 }
@@ -77,16 +85,10 @@ impl Backend {
 /// which takes it; with one that does not (one from `from_bytes`), `encaps`
 /// (and its instances), which computes it. `from_bytes` does not compute
 /// `H(ek)` itself so that `encaps` can: on AArch64, its paired instances hash
-/// it in Keccak lanes the matrix sampling leaves idle, almost for free. On x86-64, `scratch_written` gives how many bytes of `scratch` the AVX2 and
-/// AVX-512 instances of each may write (their `_SCRATCH_WRITTEN`), if fewer
-/// than all of it; the callers wipe only those.
+/// it in Keccak lanes the matrix sampling leaves idle, almost for free. On x86-64, the
+/// verified functions wipe what they write of `scratch` themselves; elsewhere,
+/// the callers wipe all of it.
 macro_rules! ml_kem {
-    (@written) => {
-        (core::mem::size_of::<Scratch>(), core::mem::size_of::<Scratch>())
-    };
-    (@written $w:expr) => {
-        $w
-    };
     (
         name: $name:literal,
         encapsulation_key: $EncapsulationKey:ident,
@@ -106,6 +108,10 @@ macro_rules! ml_kem {
         encaps_h_x2_sha3_keccak_sha3: (
             $encaps_h_x2_sha3_keccak_sha3:path, $encaps_h_x2_sha3_keccak_sha3_features:path $(,)?
         ),
+        keygen_avx: ($keygen_avx:path, $keygen_avx_features:path),
+        encaps_h_avx: ($encaps_h_avx:path, $encaps_h_avx_features:path),
+        encaps_avx: ($encaps_avx:path, $encaps_avx_features:path),
+        decaps_avx: ($decaps_avx:path, $decaps_avx_features:path),
         keygen_avx2: ($keygen_avx2:path, $keygen_avx2_features:path),
         keygen_avx512: ($keygen_avx512:path, $keygen_avx512_features:path),
         encaps_h_avx2: ($encaps_h_avx2:path, $encaps_h_avx2_features:path),
@@ -118,13 +124,7 @@ macro_rules! ml_kem {
         ek: $ek:literal,
         dk: $dk:literal,
         ct: $ct:literal,
-        scratch: $scratch:literal
-        $(, scratch_written: {
-            keygen: $keygen_written:expr,
-            encaps_h: $encaps_h_written:expr,
-            encaps: $encaps_written:expr,
-            decaps: $decaps_written:expr $(,)?
-        })? $(,)?
+        scratch: $scratch:literal $(,)?
     ) => {
         use $crate::error::{InvalidKey, MlKemError};
         use $crate::mlkem_common::Backend;
@@ -132,6 +132,11 @@ macro_rules! ml_kem {
 
         /// The features of the instances of key generation, encapsulation and
         /// decapsulation of each implementation but the baseline's.
+        #[cfg(target_arch = "x86_64")]
+        const AVX: &[verified_garbage_cpu::Features] =
+            &[$keygen_avx_features, $encaps_h_avx_features, $encaps_avx_features, $decaps_avx_features];
+        #[cfg(not(target_arch = "x86_64"))]
+        const AVX: &[verified_garbage_cpu::Features] = &[];
         #[cfg(target_arch = "x86_64")]
         const AVX2: &[verified_garbage_cpu::Features] = &[
             $keygen_avx2_features, $encaps_h_avx2_features, $encaps_avx2_features, $decaps_avx2_features,
@@ -160,6 +165,7 @@ macro_rules! ml_kem {
         fn backend() -> Backend {
             Backend::select(
                 $crate::cpu::detected(),
+                const { verified_garbage_cpu::Features::all(AVX) },
                 const { verified_garbage_cpu::Features::all(AVX2) },
                 const { verified_garbage_cpu::Features::all(AVX512) },
                 const { verified_garbage_cpu::Features::all(SHA3) },
@@ -169,28 +175,6 @@ macro_rules! ml_kem {
 
         /// The working space of the assembly functions.
         type Scratch = [u64; $scratch];
-
-        /// How many bytes of `scratch` the AVX2 and AVX-512 instances of
-        /// each operation may write (`Artifact.written`).
-        #[cfg(target_arch = "x86_64")]
-        const KEYGEN_WRITTEN: (usize, usize) = $crate::mlkem_common::ml_kem!(@written $($keygen_written)?);
-        #[cfg(target_arch = "x86_64")]
-        const ENCAPS_H_WRITTEN: (usize, usize) = $crate::mlkem_common::ml_kem!(@written $($encaps_h_written)?);
-        #[cfg(target_arch = "x86_64")]
-        const ENCAPS_WRITTEN: (usize, usize) = $crate::mlkem_common::ml_kem!(@written $($encaps_written)?);
-        #[cfg(target_arch = "x86_64")]
-        const DECAPS_WRITTEN: (usize, usize) = $crate::mlkem_common::ml_kem!(@written $($decaps_written)?);
-
-        /// The bytes of `scratch` that `backend`'s instance of an operation,
-        /// whose AVX2 and AVX-512 instances write `written`, may write.
-        #[cfg(target_arch = "x86_64")]
-        fn scratch_written(backend: Backend, written: (usize, usize)) -> usize {
-            match backend {
-                Backend::Scalar => core::mem::size_of::<Scratch>(),
-                Backend::Avx2 => written.0,
-                Backend::Avx512 => written.1,
-            }
-        }
 
         #[doc = concat!("An ", $name, " encapsulation key, which passed the check of FIPS 203 §7.2.")]
         #[derive(Clone)]
@@ -236,7 +220,7 @@ macro_rules! ml_kem {
                 #[cfg(target_arch = "x86_64")]
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $check_ek(bytes),
+                        Backend::Scalar | Backend::Avx => $check_ek(bytes),
                         Backend::Avx2 | Backend::Avx512 => $check_ek_avx2(bytes),
                     }
                 };
@@ -315,6 +299,10 @@ macro_rules! ml_kem {
                         #[cfg(target_arch = "aarch64")]
                         (Backend::X2Sha3KeccakSha3, None) => $encaps_x2_sha3_keccak_sha3(ek, m, &mut key, &mut ct, s),
                         #[cfg(target_arch = "x86_64")]
+                        (Backend::Avx, Some(h)) => $encaps_h_avx(ek, h, m, &mut key, &mut ct, s),
+                        #[cfg(target_arch = "x86_64")]
+                        (Backend::Avx, None) => $encaps_avx(ek, m, &mut key, &mut ct, s),
+                        #[cfg(target_arch = "x86_64")]
                         (Backend::Avx2, Some(h)) => $encaps_h_avx2(ek, h, m, &mut key, &mut ct, s),
                         #[cfg(target_arch = "x86_64")]
                         (Backend::Avx2, None) => $encaps_avx2(ek, m, &mut key, &mut ct, s),
@@ -324,19 +312,14 @@ macro_rules! ml_kem {
                         (Backend::Avx512, None) => $encaps_avx512(ek, m, &mut key, &mut ct, s),
                     }
                 };
-                // The bytes of `scratch` the operation may have written: on
-                // x86-64 those its instance's `_SCRATCH_WRITTEN` gives
-                // (`Artifact.written`), elsewhere all of it.
-                #[cfg(target_arch = "x86_64")]
-                let written = scratch_written(backend, if self.h.is_some() { ENCAPS_H_WRITTEN } else { ENCAPS_WRITTEN });
-                #[cfg(not(target_arch = "x86_64"))]
-                let written = core::mem::size_of::<Scratch>();
+                // On x86-64 the verified function wiped what it wrote of
+                // `scratch`; elsewhere, wipe all of it, on both success and
+                // failure, before inspecting the return status.
                 // SAFETY: the entire scratch allocation is writable, including
-                // bytes the operation may not have initialized, and `written`
-                // does not exceed it. Wipe on both success and failure before
-                // inspecting the return status.
+                // bytes the operation may not have initialized.
+                #[cfg(not(target_arch = "x86_64"))]
                 unsafe {
-                    $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), written);
+                    $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>());
                 }
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability
@@ -419,24 +402,21 @@ macro_rules! ml_kem {
                             $keygen_x2_sha3_keccak_sha3(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "x86_64")]
+                        Backend::Avx => $keygen_avx(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $keygen_avx2(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx512 => $keygen_avx512(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                     }
                 };
-                // The bytes of `scratch` the operation may have written: on
-                // x86-64 those its instance's `_SCRATCH_WRITTEN` gives
-                // (`Artifact.written`), elsewhere all of it.
-                #[cfg(target_arch = "x86_64")]
-                let written = scratch_written(backend, KEYGEN_WRITTEN);
-                #[cfg(not(target_arch = "x86_64"))]
-                let written = core::mem::size_of::<Scratch>();
+                // On x86-64 the verified function wiped what it wrote of
+                // `scratch`; elsewhere, wipe all of it, on both success and
+                // failure, before inspecting the return status.
                 // SAFETY: the entire scratch allocation is writable, including
-                // bytes the operation may not have initialized, and `written`
-                // does not exceed it. Wipe on both success and failure before
-                // inspecting the return status.
+                // bytes the operation may not have initialized.
+                #[cfg(not(target_arch = "x86_64"))]
                 unsafe {
-                    $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), written);
+                    $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>());
                 }
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability
@@ -499,24 +479,21 @@ macro_rules! ml_kem {
                             $decaps_x2_sha3_keccak_sha3(&self.dk, ct, &mut key, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "x86_64")]
+                        Backend::Avx => $decaps_avx(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $decaps_avx2(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx512 => $decaps_avx512(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
                     }
                 };
-                // The bytes of `scratch` the operation may have written: on
-                // x86-64 those its instance's `_SCRATCH_WRITTEN` gives
-                // (`Artifact.written`), elsewhere all of it.
-                #[cfg(target_arch = "x86_64")]
-                let written = scratch_written(backend, DECAPS_WRITTEN);
-                #[cfg(not(target_arch = "x86_64"))]
-                let written = core::mem::size_of::<Scratch>();
+                // On x86-64 the verified function wiped what it wrote of
+                // `scratch`; elsewhere, wipe all of it, on both success and
+                // failure, before inspecting the return status.
                 // SAFETY: the entire scratch allocation is writable, including
-                // bytes the operation may not have initialized, and `written`
-                // does not exceed it. Wipe on both success and failure before
-                // inspecting the return status.
+                // bytes the operation may not have initialized.
+                #[cfg(not(target_arch = "x86_64"))]
                 unsafe {
-                    $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), written);
+                    $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>());
                 }
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability
@@ -527,6 +504,58 @@ macro_rules! ml_kem {
                     // NO-COVERAGE-END
                 }
                 Ok(key)
+            }
+        }
+
+        #[cfg(all(test, target_arch = "x86_64"))]
+        mod backend_tests {
+            use super::{Backend, $DecapsulationKey, $EncapsulationKey, AVX, AVX2, AVX512};
+
+            /// Each implementation the CPU can run (the `_avx` instances,
+            /// which `backend()` never chooses with AVX2, among them) agrees
+            /// with the baseline's on keys, shared keys and ciphertexts (with
+            /// `H(ek)` given and not), and on the implicit rejection of a
+            /// modified ciphertext.
+            #[test]
+            fn instances_agree() {
+                let f = $crate::cpu::detected();
+                let backends = [
+                    (Backend::Avx, const { verified_garbage_cpu::Features::all(AVX) }),
+                    (Backend::Avx2, const { verified_garbage_cpu::Features::all(AVX2) }),
+                    (Backend::Avx512, const { verified_garbage_cpu::Features::all(AVX512) }),
+                ];
+                for i in 0..2u8 {
+                    let seed: [u8; 64] = core::array::from_fn(|j| (j as u8).wrapping_mul(29) ^ i);
+                    let m: [u8; 32] = core::array::from_fn(|j| (j as u8).wrapping_mul(13) ^ i);
+                    // SAFETY: the baseline needs no feature.
+                    let base = unsafe { $DecapsulationKey::from_seed_with(&seed, Backend::Scalar) }.unwrap();
+                    let ek = base.encapsulation_key();
+                    let copy = $EncapsulationKey::from_bytes(ek.as_bytes()).unwrap();
+                    // SAFETY: as above.
+                    let (k, ct) = unsafe { ek.encapsulate_with(&m, Backend::Scalar) }.unwrap();
+                    let mut bad = ct;
+                    bad[i as usize] ^= 1;
+                    // SAFETY: as above.
+                    let rejected = unsafe { base.decapsulate_with(&bad, Backend::Scalar) }.unwrap();
+                    assert_ne!(rejected, k);
+                    for (backend, needs) in backends {
+                        if !f.contains(needs) {
+                            continue;
+                        }
+                        // SAFETY: the CPU has the features of `backend`'s
+                        // instances (`needs`).
+                        let dk = unsafe { $DecapsulationKey::from_seed_with(&seed, backend) }.unwrap();
+                        assert!(dk.ek == base.ek && dk.dk == base.dk, "{backend:?}");
+                        // SAFETY: as above.
+                        assert_eq!(unsafe { ek.encapsulate_with(&m, backend) }.unwrap(), (k, ct));
+                        // SAFETY: as above.
+                        assert_eq!(unsafe { copy.encapsulate_with(&m, backend) }.unwrap(), (k, ct));
+                        // SAFETY: as above.
+                        assert_eq!(unsafe { dk.decapsulate_with(&ct, backend) }.unwrap(), k);
+                        // SAFETY: as above.
+                        assert_eq!(unsafe { base.decapsulate_with(&bad, backend) }.unwrap(), rejected);
+                    }
+                }
             }
         }
 
@@ -590,12 +619,13 @@ mod tests {
 
     #[test]
     fn selects_complete_feature_sets() {
+        let avx = Features(feature::AVX);
         let avx2 = Features(feature::AVX | feature::AVX2);
         let avx512 = Features(feature::AVX | feature::AVX2 | feature::AVX512F | feature::AVX512VL);
         let sha3 = Features(0);
         for apple in [false, true] {
             assert_eq!(
-                Backend::select(avx512, avx2, avx512, sha3, apple),
+                Backend::select(avx512, avx, avx2, avx512, sha3, apple),
                 Backend::Avx512
             );
         }
@@ -605,16 +635,23 @@ mod tests {
             Features(feature::AVX | feature::AVX2 | feature::AVX512VL),
         ] {
             assert_eq!(
-                Backend::select(features, avx2, avx512, sha3, false),
+                Backend::select(features, avx, avx2, avx512, sha3, false),
                 Backend::Avx2
             );
         }
+        // With AVX but not AVX2, the `_avx` instances; never with both.
         for features in [
-            Features(0),
+            avx,
             Features(feature::AVX | feature::AVX512F | feature::AVX512VL),
         ] {
             assert_eq!(
-                Backend::select(features, avx2, avx512, sha3, false),
+                Backend::select(features, avx, avx2, avx512, sha3, false),
+                Backend::Avx
+            );
+        }
+        for features in [Features(0), Features(feature::AVX2 | feature::AVX512F)] {
+            assert_eq!(
+                Backend::select(features, avx, avx2, avx512, sha3, false),
                 Backend::Scalar
             );
         }
@@ -632,17 +669,17 @@ mod aarch64_tests {
         let required = Features(feature::NEON | feature::SHA3);
         // `_x2_sha3_keccak_sha3` on Apple's cores, `_x2_sha3` elsewhere.
         assert_eq!(
-            Backend::select(required, empty, empty, required, true),
+            Backend::select(required, empty, empty, empty, required, true),
             Backend::X2Sha3KeccakSha3
         );
         assert_eq!(
-            Backend::select(required, empty, empty, required, false),
+            Backend::select(required, empty, empty, empty, required, false),
             Backend::X2Sha3
         );
         for available in [empty, Features(feature::NEON), Features(feature::SHA3)] {
             for apple in [false, true] {
                 assert_eq!(
-                    Backend::select(available, empty, empty, required, apple),
+                    Backend::select(available, empty, empty, empty, required, apple),
                     Backend::Scalar
                 );
             }
