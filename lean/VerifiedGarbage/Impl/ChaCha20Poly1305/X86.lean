@@ -26,7 +26,8 @@ The working space (704 bytes, called the context below):
 * `[576, 704)`: the working space of `vg_poly1305_finalize_scratch`.
 
 `edi` holds the context throughout: the callees are cdecl, so they preserve
-it. Every other argument is loaded from its slot on the stack when it is
+it. `vg_chacha20_xor` also takes its destination in `esi`, which is the data
+(in place). Every other argument is loaded from its slot on the stack when it is
 needed (the stack arguments are never written): `seal` passes `tag` to
 `vg_poly1305_finalize_scratch` as `out`, and `open` compares the tag computed
 with it. Each call pushes its
@@ -127,11 +128,13 @@ def lengths : List Instr :=
    .store (at_ .edi 40) .eax, .mov .eax (.imm 0), .store (at_ .edi 36) .eax,
    .store (at_ .edi 44) .eax]
 
-/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted. -/
+/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted in
+place (`vg_chacha20_xor`'s `dst`, in `esi`, is `src`). -/
 def crypt (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
   .seq (.block (([.mov .eax (.imm 1), .store (at_ .edi 112) .eax] : List Instr) ++ ptr .eax .edi 64 ++
-    ([.mov .ecx (.mem (at_ .esp 20)), .mov .edx (.mem (at_ .esp 24))] : List Instr) ++ ptr .esi .edi 128))
-    (callWith [.esi, .edx, .ecx, .eax] v.name v.code)
+    ([.mov .ecx (.mem (at_ .esp 20)), .mov .edx (.mem (at_ .esp 24))] : List Instr) ++ ptr .ebx .edi 128 ++
+    ([.mov .esi (.reg .ecx)] : List Instr)))
+    (callWith [.ebx, .edx, .ecx, .eax] v.name v.code)
 
 /-- The tag written to `out`, which `out` puts in `ecx`: the message is whole
 blocks, so its length (`count`, both of whose words are `eax`) is 0 modulo

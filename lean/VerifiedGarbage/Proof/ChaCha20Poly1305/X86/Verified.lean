@@ -607,23 +607,12 @@ theorem maB_rel {i : Nat} (hi : i + 1 < 8) (hsa : Src a (arg a i) (arg a (i + 1)
 
 theorem crB_rel (v : XorImpl) :
     RelCT isa (fun x y => CrA a x ∧ CrA b y)
-      (callWith [.esi, .edx, .ecx, .eax] v.callee.name v.callee.code) fun _ _ => True :=
-  RelCT.callWith v.ok v.ct [] (wrXor a)
-    fun x y ⟨hx, hy⟩ => by
-      have py := xor_pre hb hy.inv.at hy.eax hy.ecx hy.edx hy.esi
-      rw [show wrXor b = wrXor a by simp only [wrXor, sub, cx, CX, dR, dp, DP, L, LN, E, hq.cx, hq.dp, hq.ln,
-        hq.esp]] at py
-      have fit := hx.inv.at.fit ha (rs := [.esi, .edx, .ecx, .eax]) (by decide)
-      have p := entry_pub [] (wrXor a) (by decide) fit (hq.at_ hx.inv.at hy.inv.at) (by
-        intro r hr
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl
-        · rw [hx.esi, hy.esi, hq.c32]
-        · rw [hx.edx, hy.edx]; exact hq.ln.symm
-        · rw [hx.ecx, hy.ecx]; exact hq.dp.symm
-        · rw [hx.eax, hy.eax, hq.c32])
-      exact ⟨xor_pre ha hx.inv.at hx.eax hx.ecx hx.edx hx.esi, py, hq.at_ hx.inv.at hy.inv.at, p.1,
-        fun i hi => p.2 i hi⟩
+      (callWith [.ebx, .edx, .ecx, .eax] v.callee.name v.callee.code) fun _ _ => True :=
+  v.rel fun x y ⟨hx, hy⟩ => by
+    refine ⟨xor_args ha hx.inv.at hx.eax hx.ecx hx.edx hx.ebx hx.esi, ?_⟩
+    have py := xor_args hb hy.inv.at hy.eax hy.ecx hy.edx hy.ebx hy.esi
+    simp only [E, DP, L, LN, hq.esp, hq.dp, hq.ln, hq.c32] at py
+    exact py
 
 theorem fiB_rel {O : State → BitVec 32} (hoa : OutOk a (O a)) (hob : OutOk b (O b)) (hO : O b = O a) :
     RelCT isa (fun x y => FiA a (O a) x ∧ FiA b (O b) y)
