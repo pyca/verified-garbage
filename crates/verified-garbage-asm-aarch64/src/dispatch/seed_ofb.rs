@@ -7,3 +7,9 @@
 /// target.
 #[allow(unused_imports)]
 pub use crate::seed_ofb::vg_seed_ofb as vg_seed_ofb_auto;
+
+/// `vg_seed_ofb_final`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use crate::seed_ofb::vg_seed_ofb_final as vg_seed_ofb_final_auto;
