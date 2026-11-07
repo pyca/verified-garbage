@@ -1,0 +1,594 @@
+name: Tmpfs checkout experiment
+on:
+  push:
+    branches: [bench/tmpfs-checkout-20261107]
+permissions:
+  contents: read
+jobs:
+  compare:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-26.04, ubuntu-26.04-arm]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - name: Set up tmpfs and record runner
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/ram"
+          sudo mount -t tmpfs -o size=4G tmpfs "$GITHUB_WORKSPACE/ram"
+          sudo chown "$(id -u):$(id -g)" "$GITHUB_WORKSPACE/ram"
+          uname -a
+          lscpu
+          free -h
+          df -Th "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/ram"
+          git --version
+          echo '[]' > "$RUNNER_TEMP/results.json"
+      - name: Start disk trial 1
+        run: |
+          date +%s%N > "$RUNNER_TEMP/start"
+      - name: Checkout disk trial 1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/trace-disk-0.jsonl
+        with:
+          ref: 1e938f5abb64510b0ff65502723915391c66e649
+          path: disk-checkout
+          persist-credentials: false
+      - name: Record disk trial 1
+        env:
+          MEDIUM: disk
+          TRIAL: "1"
+          DESTINATION: disk-checkout
+          TRACE: ${{ runner.temp }}/trace-disk-0.jsonl
+        run: |
+          date +%s%N > "$RUNNER_TEMP/end"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          elapsed = (int((temp/'end').read_text())-int((temp/'start').read_text()))/1e9
+          starts = {}
+          phases = {}
+          for line in pathlib.Path(os.environ['TRACE']).read_text().splitlines():
+              e = json.loads(line)
+              if e['event'] == 'start':
+                  starts[e['sid']] = e['argv']
+              elif e['event'] == 'exit':
+                  argv = starts.get(e['sid'], [])
+                  for command in ['fetch', 'checkout']:
+                      if len(argv) > 1 and argv[1] == command:
+                          phases[command] = phases.get(command, 0) + e['t_abs']
+          dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
+          head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '1e938f5abb64510b0ff65502723915391c66e649', head
+          row = dict(medium=os.environ['MEDIUM'], trial=int(os.environ['TRIAL']), action_bracket_seconds=elapsed, git_seconds=phases, head=head)
+          rows = json.loads((temp/'results.json').read_text())
+          rows.append(row)
+          (temp/'results.json').write_text(json.dumps(rows, indent=2))
+          print(json.dumps(row))
+          PY
+          du -sh "$GITHUB_WORKSPACE/$DESTINATION"
+          rm -rf "$GITHUB_WORKSPACE/$DESTINATION"
+      - name: Start tmpfs trial 1
+        run: |
+          date +%s%N > "$RUNNER_TEMP/start"
+      - name: Checkout tmpfs trial 1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/trace-tmpfs-0.jsonl
+        with:
+          ref: 1e938f5abb64510b0ff65502723915391c66e649
+          path: ram/checkout
+          persist-credentials: false
+      - name: Record tmpfs trial 1
+        env:
+          MEDIUM: tmpfs
+          TRIAL: "1"
+          DESTINATION: ram/checkout
+          TRACE: ${{ runner.temp }}/trace-tmpfs-0.jsonl
+        run: |
+          date +%s%N > "$RUNNER_TEMP/end"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          elapsed = (int((temp/'end').read_text())-int((temp/'start').read_text()))/1e9
+          starts = {}
+          phases = {}
+          for line in pathlib.Path(os.environ['TRACE']).read_text().splitlines():
+              e = json.loads(line)
+              if e['event'] == 'start':
+                  starts[e['sid']] = e['argv']
+              elif e['event'] == 'exit':
+                  argv = starts.get(e['sid'], [])
+                  for command in ['fetch', 'checkout']:
+                      if len(argv) > 1 and argv[1] == command:
+                          phases[command] = phases.get(command, 0) + e['t_abs']
+          dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
+          head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '1e938f5abb64510b0ff65502723915391c66e649', head
+          row = dict(medium=os.environ['MEDIUM'], trial=int(os.environ['TRIAL']), action_bracket_seconds=elapsed, git_seconds=phases, head=head)
+          rows = json.loads((temp/'results.json').read_text())
+          rows.append(row)
+          (temp/'results.json').write_text(json.dumps(rows, indent=2))
+          print(json.dumps(row))
+          PY
+          du -sh "$GITHUB_WORKSPACE/$DESTINATION"
+          rm -rf "$GITHUB_WORKSPACE/$DESTINATION"
+      - name: Start tmpfs trial 2
+        run: |
+          date +%s%N > "$RUNNER_TEMP/start"
+      - name: Checkout tmpfs trial 2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/trace-tmpfs-1.jsonl
+        with:
+          ref: 1e938f5abb64510b0ff65502723915391c66e649
+          path: ram/checkout
+          persist-credentials: false
+      - name: Record tmpfs trial 2
+        env:
+          MEDIUM: tmpfs
+          TRIAL: "2"
+          DESTINATION: ram/checkout
+          TRACE: ${{ runner.temp }}/trace-tmpfs-1.jsonl
+        run: |
+          date +%s%N > "$RUNNER_TEMP/end"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          elapsed = (int((temp/'end').read_text())-int((temp/'start').read_text()))/1e9
+          starts = {}
+          phases = {}
+          for line in pathlib.Path(os.environ['TRACE']).read_text().splitlines():
+              e = json.loads(line)
+              if e['event'] == 'start':
+                  starts[e['sid']] = e['argv']
+              elif e['event'] == 'exit':
+                  argv = starts.get(e['sid'], [])
+                  for command in ['fetch', 'checkout']:
+                      if len(argv) > 1 and argv[1] == command:
+                          phases[command] = phases.get(command, 0) + e['t_abs']
+          dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
+          head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '1e938f5abb64510b0ff65502723915391c66e649', head
+          row = dict(medium=os.environ['MEDIUM'], trial=int(os.environ['TRIAL']), action_bracket_seconds=elapsed, git_seconds=phases, head=head)
+          rows = json.loads((temp/'results.json').read_text())
+          rows.append(row)
+          (temp/'results.json').write_text(json.dumps(rows, indent=2))
+          print(json.dumps(row))
+          PY
+          du -sh "$GITHUB_WORKSPACE/$DESTINATION"
+          rm -rf "$GITHUB_WORKSPACE/$DESTINATION"
+      - name: Start disk trial 2
+        run: |
+          date +%s%N > "$RUNNER_TEMP/start"
+      - name: Checkout disk trial 2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/trace-disk-1.jsonl
+        with:
+          ref: 1e938f5abb64510b0ff65502723915391c66e649
+          path: disk-checkout
+          persist-credentials: false
+      - name: Record disk trial 2
+        env:
+          MEDIUM: disk
+          TRIAL: "2"
+          DESTINATION: disk-checkout
+          TRACE: ${{ runner.temp }}/trace-disk-1.jsonl
+        run: |
+          date +%s%N > "$RUNNER_TEMP/end"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          elapsed = (int((temp/'end').read_text())-int((temp/'start').read_text()))/1e9
+          starts = {}
+          phases = {}
+          for line in pathlib.Path(os.environ['TRACE']).read_text().splitlines():
+              e = json.loads(line)
+              if e['event'] == 'start':
+                  starts[e['sid']] = e['argv']
+              elif e['event'] == 'exit':
+                  argv = starts.get(e['sid'], [])
+                  for command in ['fetch', 'checkout']:
+                      if len(argv) > 1 and argv[1] == command:
+                          phases[command] = phases.get(command, 0) + e['t_abs']
+          dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
+          head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '1e938f5abb64510b0ff65502723915391c66e649', head
+          row = dict(medium=os.environ['MEDIUM'], trial=int(os.environ['TRIAL']), action_bracket_seconds=elapsed, git_seconds=phases, head=head)
+          rows = json.loads((temp/'results.json').read_text())
+          rows.append(row)
+          (temp/'results.json').write_text(json.dumps(rows, indent=2))
+          print(json.dumps(row))
+          PY
+          du -sh "$GITHUB_WORKSPACE/$DESTINATION"
+          rm -rf "$GITHUB_WORKSPACE/$DESTINATION"
+      - name: Start disk trial 3
+        run: |
+          date +%s%N > "$RUNNER_TEMP/start"
+      - name: Checkout disk trial 3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/trace-disk-2.jsonl
+        with:
+          ref: 1e938f5abb64510b0ff65502723915391c66e649
+          path: disk-checkout
+          persist-credentials: false
+      - name: Record disk trial 3
+        env:
+          MEDIUM: disk
+          TRIAL: "3"
+          DESTINATION: disk-checkout
+          TRACE: ${{ runner.temp }}/trace-disk-2.jsonl
+        run: |
+          date +%s%N > "$RUNNER_TEMP/end"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          elapsed = (int((temp/'end').read_text())-int((temp/'start').read_text()))/1e9
+          starts = {}
+          phases = {}
+          for line in pathlib.Path(os.environ['TRACE']).read_text().splitlines():
+              e = json.loads(line)
+              if e['event'] == 'start':
+                  starts[e['sid']] = e['argv']
+              elif e['event'] == 'exit':
+                  argv = starts.get(e['sid'], [])
+                  for command in ['fetch', 'checkout']:
+                      if len(argv) > 1 and argv[1] == command:
+                          phases[command] = phases.get(command, 0) + e['t_abs']
+          dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
+          head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '1e938f5abb64510b0ff65502723915391c66e649', head
+          row = dict(medium=os.environ['MEDIUM'], trial=int(os.environ['TRIAL']), action_bracket_seconds=elapsed, git_seconds=phases, head=head)
+          rows = json.loads((temp/'results.json').read_text())
+          rows.append(row)
+          (temp/'results.json').write_text(json.dumps(rows, indent=2))
+          print(json.dumps(row))
+          PY
+          du -sh "$GITHUB_WORKSPACE/$DESTINATION"
+          rm -rf "$GITHUB_WORKSPACE/$DESTINATION"
+      - name: Start tmpfs trial 3
+        run: |
+          date +%s%N > "$RUNNER_TEMP/start"
+      - name: Checkout tmpfs trial 3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/trace-tmpfs-2.jsonl
+        with:
+          ref: 1e938f5abb64510b0ff65502723915391c66e649
+          path: ram/checkout
+          persist-credentials: false
+      - name: Record tmpfs trial 3
+        env:
+          MEDIUM: tmpfs
+          TRIAL: "3"
+          DESTINATION: ram/checkout
+          TRACE: ${{ runner.temp }}/trace-tmpfs-2.jsonl
+        run: |
+          date +%s%N > "$RUNNER_TEMP/end"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          elapsed = (int((temp/'end').read_text())-int((temp/'start').read_text()))/1e9
+          starts = {}
+          phases = {}
+          for line in pathlib.Path(os.environ['TRACE']).read_text().splitlines():
+              e = json.loads(line)
+              if e['event'] == 'start':
+                  starts[e['sid']] = e['argv']
+              elif e['event'] == 'exit':
+                  argv = starts.get(e['sid'], [])
+                  for command in ['fetch', 'checkout']:
+                      if len(argv) > 1 and argv[1] == command:
+                          phases[command] = phases.get(command, 0) + e['t_abs']
+          dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
+          head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '1e938f5abb64510b0ff65502723915391c66e649', head
+          row = dict(medium=os.environ['MEDIUM'], trial=int(os.environ['TRIAL']), action_bracket_seconds=elapsed, git_seconds=phases, head=head)
+          rows = json.loads((temp/'results.json').read_text())
+          rows.append(row)
+          (temp/'results.json').write_text(json.dumps(rows, indent=2))
+          print(json.dumps(row))
+          PY
+          du -sh "$GITHUB_WORKSPACE/$DESTINATION"
+          rm -rf "$GITHUB_WORKSPACE/$DESTINATION"
+      - name: Start tmpfs trial 4
+        run: |
+          date +%s%N > "$RUNNER_TEMP/start"
+      - name: Checkout tmpfs trial 4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/trace-tmpfs-3.jsonl
+        with:
+          ref: 1e938f5abb64510b0ff65502723915391c66e649
+          path: ram/checkout
+          persist-credentials: false
+      - name: Record tmpfs trial 4
+        env:
+          MEDIUM: tmpfs
+          TRIAL: "4"
+          DESTINATION: ram/checkout
+          TRACE: ${{ runner.temp }}/trace-tmpfs-3.jsonl
+        run: |
+          date +%s%N > "$RUNNER_TEMP/end"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          elapsed = (int((temp/'end').read_text())-int((temp/'start').read_text()))/1e9
+          starts = {}
+          phases = {}
+          for line in pathlib.Path(os.environ['TRACE']).read_text().splitlines():
+              e = json.loads(line)
+              if e['event'] == 'start':
+                  starts[e['sid']] = e['argv']
+              elif e['event'] == 'exit':
+                  argv = starts.get(e['sid'], [])
+                  for command in ['fetch', 'checkout']:
+                      if len(argv) > 1 and argv[1] == command:
+                          phases[command] = phases.get(command, 0) + e['t_abs']
+          dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
+          head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '1e938f5abb64510b0ff65502723915391c66e649', head
+          row = dict(medium=os.environ['MEDIUM'], trial=int(os.environ['TRIAL']), action_bracket_seconds=elapsed, git_seconds=phases, head=head)
+          rows = json.loads((temp/'results.json').read_text())
+          rows.append(row)
+          (temp/'results.json').write_text(json.dumps(rows, indent=2))
+          print(json.dumps(row))
+          PY
+          du -sh "$GITHUB_WORKSPACE/$DESTINATION"
+          rm -rf "$GITHUB_WORKSPACE/$DESTINATION"
+      - name: Start disk trial 4
+        run: |
+          date +%s%N > "$RUNNER_TEMP/start"
+      - name: Checkout disk trial 4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/trace-disk-3.jsonl
+        with:
+          ref: 1e938f5abb64510b0ff65502723915391c66e649
+          path: disk-checkout
+          persist-credentials: false
+      - name: Record disk trial 4
+        env:
+          MEDIUM: disk
+          TRIAL: "4"
+          DESTINATION: disk-checkout
+          TRACE: ${{ runner.temp }}/trace-disk-3.jsonl
+        run: |
+          date +%s%N > "$RUNNER_TEMP/end"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          elapsed = (int((temp/'end').read_text())-int((temp/'start').read_text()))/1e9
+          starts = {}
+          phases = {}
+          for line in pathlib.Path(os.environ['TRACE']).read_text().splitlines():
+              e = json.loads(line)
+              if e['event'] == 'start':
+                  starts[e['sid']] = e['argv']
+              elif e['event'] == 'exit':
+                  argv = starts.get(e['sid'], [])
+                  for command in ['fetch', 'checkout']:
+                      if len(argv) > 1 and argv[1] == command:
+                          phases[command] = phases.get(command, 0) + e['t_abs']
+          dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
+          head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '1e938f5abb64510b0ff65502723915391c66e649', head
+          row = dict(medium=os.environ['MEDIUM'], trial=int(os.environ['TRIAL']), action_bracket_seconds=elapsed, git_seconds=phases, head=head)
+          rows = json.loads((temp/'results.json').read_text())
+          rows.append(row)
+          (temp/'results.json').write_text(json.dumps(rows, indent=2))
+          print(json.dumps(row))
+          PY
+          du -sh "$GITHUB_WORKSPACE/$DESTINATION"
+          rm -rf "$GITHUB_WORKSPACE/$DESTINATION"
+      - name: Start disk trial 5
+        run: |
+          date +%s%N > "$RUNNER_TEMP/start"
+      - name: Checkout disk trial 5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/trace-disk-4.jsonl
+        with:
+          ref: 1e938f5abb64510b0ff65502723915391c66e649
+          path: disk-checkout
+          persist-credentials: false
+      - name: Record disk trial 5
+        env:
+          MEDIUM: disk
+          TRIAL: "5"
+          DESTINATION: disk-checkout
+          TRACE: ${{ runner.temp }}/trace-disk-4.jsonl
+        run: |
+          date +%s%N > "$RUNNER_TEMP/end"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          elapsed = (int((temp/'end').read_text())-int((temp/'start').read_text()))/1e9
+          starts = {}
+          phases = {}
+          for line in pathlib.Path(os.environ['TRACE']).read_text().splitlines():
+              e = json.loads(line)
+              if e['event'] == 'start':
+                  starts[e['sid']] = e['argv']
+              elif e['event'] == 'exit':
+                  argv = starts.get(e['sid'], [])
+                  for command in ['fetch', 'checkout']:
+                      if len(argv) > 1 and argv[1] == command:
+                          phases[command] = phases.get(command, 0) + e['t_abs']
+          dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
+          head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '1e938f5abb64510b0ff65502723915391c66e649', head
+          row = dict(medium=os.environ['MEDIUM'], trial=int(os.environ['TRIAL']), action_bracket_seconds=elapsed, git_seconds=phases, head=head)
+          rows = json.loads((temp/'results.json').read_text())
+          rows.append(row)
+          (temp/'results.json').write_text(json.dumps(rows, indent=2))
+          print(json.dumps(row))
+          PY
+          du -sh "$GITHUB_WORKSPACE/$DESTINATION"
+          rm -rf "$GITHUB_WORKSPACE/$DESTINATION"
+      - name: Start tmpfs trial 5
+        run: |
+          date +%s%N > "$RUNNER_TEMP/start"
+      - name: Checkout tmpfs trial 5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/trace-tmpfs-4.jsonl
+        with:
+          ref: 1e938f5abb64510b0ff65502723915391c66e649
+          path: ram/checkout
+          persist-credentials: false
+      - name: Record tmpfs trial 5
+        env:
+          MEDIUM: tmpfs
+          TRIAL: "5"
+          DESTINATION: ram/checkout
+          TRACE: ${{ runner.temp }}/trace-tmpfs-4.jsonl
+        run: |
+          date +%s%N > "$RUNNER_TEMP/end"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          elapsed = (int((temp/'end').read_text())-int((temp/'start').read_text()))/1e9
+          starts = {}
+          phases = {}
+          for line in pathlib.Path(os.environ['TRACE']).read_text().splitlines():
+              e = json.loads(line)
+              if e['event'] == 'start':
+                  starts[e['sid']] = e['argv']
+              elif e['event'] == 'exit':
+                  argv = starts.get(e['sid'], [])
+                  for command in ['fetch', 'checkout']:
+                      if len(argv) > 1 and argv[1] == command:
+                          phases[command] = phases.get(command, 0) + e['t_abs']
+          dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
+          head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '1e938f5abb64510b0ff65502723915391c66e649', head
+          row = dict(medium=os.environ['MEDIUM'], trial=int(os.environ['TRIAL']), action_bracket_seconds=elapsed, git_seconds=phases, head=head)
+          rows = json.loads((temp/'results.json').read_text())
+          rows.append(row)
+          (temp/'results.json').write_text(json.dumps(rows, indent=2))
+          print(json.dumps(row))
+          PY
+          du -sh "$GITHUB_WORKSPACE/$DESTINATION"
+          rm -rf "$GITHUB_WORKSPACE/$DESTINATION"
+      - name: Start tmpfs trial 6
+        run: |
+          date +%s%N > "$RUNNER_TEMP/start"
+      - name: Checkout tmpfs trial 6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/trace-tmpfs-5.jsonl
+        with:
+          ref: 1e938f5abb64510b0ff65502723915391c66e649
+          path: ram/checkout
+          persist-credentials: false
+      - name: Record tmpfs trial 6
+        env:
+          MEDIUM: tmpfs
+          TRIAL: "6"
+          DESTINATION: ram/checkout
+          TRACE: ${{ runner.temp }}/trace-tmpfs-5.jsonl
+        run: |
+          date +%s%N > "$RUNNER_TEMP/end"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          elapsed = (int((temp/'end').read_text())-int((temp/'start').read_text()))/1e9
+          starts = {}
+          phases = {}
+          for line in pathlib.Path(os.environ['TRACE']).read_text().splitlines():
+              e = json.loads(line)
+              if e['event'] == 'start':
+                  starts[e['sid']] = e['argv']
+              elif e['event'] == 'exit':
+                  argv = starts.get(e['sid'], [])
+                  for command in ['fetch', 'checkout']:
+                      if len(argv) > 1 and argv[1] == command:
+                          phases[command] = phases.get(command, 0) + e['t_abs']
+          dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
+          head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '1e938f5abb64510b0ff65502723915391c66e649', head
+          row = dict(medium=os.environ['MEDIUM'], trial=int(os.environ['TRIAL']), action_bracket_seconds=elapsed, git_seconds=phases, head=head)
+          rows = json.loads((temp/'results.json').read_text())
+          rows.append(row)
+          (temp/'results.json').write_text(json.dumps(rows, indent=2))
+          print(json.dumps(row))
+          PY
+          du -sh "$GITHUB_WORKSPACE/$DESTINATION"
+          rm -rf "$GITHUB_WORKSPACE/$DESTINATION"
+      - name: Start disk trial 6
+        run: |
+          date +%s%N > "$RUNNER_TEMP/start"
+      - name: Checkout disk trial 6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/trace-disk-5.jsonl
+        with:
+          ref: 1e938f5abb64510b0ff65502723915391c66e649
+          path: disk-checkout
+          persist-credentials: false
+      - name: Record disk trial 6
+        env:
+          MEDIUM: disk
+          TRIAL: "6"
+          DESTINATION: disk-checkout
+          TRACE: ${{ runner.temp }}/trace-disk-5.jsonl
+        run: |
+          date +%s%N > "$RUNNER_TEMP/end"
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          elapsed = (int((temp/'end').read_text())-int((temp/'start').read_text()))/1e9
+          starts = {}
+          phases = {}
+          for line in pathlib.Path(os.environ['TRACE']).read_text().splitlines():
+              e = json.loads(line)
+              if e['event'] == 'start':
+                  starts[e['sid']] = e['argv']
+              elif e['event'] == 'exit':
+                  argv = starts.get(e['sid'], [])
+                  for command in ['fetch', 'checkout']:
+                      if len(argv) > 1 and argv[1] == command:
+                          phases[command] = phases.get(command, 0) + e['t_abs']
+          dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
+          head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
+          assert head == '1e938f5abb64510b0ff65502723915391c66e649', head
+          row = dict(medium=os.environ['MEDIUM'], trial=int(os.environ['TRIAL']), action_bracket_seconds=elapsed, git_seconds=phases, head=head)
+          rows = json.loads((temp/'results.json').read_text())
+          rows.append(row)
+          (temp/'results.json').write_text(json.dumps(rows, indent=2))
+          print(json.dumps(row))
+          PY
+          du -sh "$GITHUB_WORKSPACE/$DESTINATION"
+          rm -rf "$GITHUB_WORKSPACE/$DESTINATION"
+      - name: Summarize
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, statistics
+          rows = json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'results.json').read_text())
+          text = ['| Measurement | Disk median (range), seconds | Tmpfs median (range), seconds | Median reduction |', '|---|---:|---:|---:|']
+          for metric in ['action_bracket_seconds', 'fetch', 'checkout']:
+              groups = {}
+              for medium in ['disk', 'tmpfs']:
+                  xs = [(r[metric] if metric == 'action_bracket_seconds' else r['git_seconds'][metric]) for r in rows if r['medium'] == medium]
+                  groups[medium] = statistics.median(xs)
+                  text_value = f'{statistics.median(xs):.3f} ({min(xs):.3f}–{max(xs):.3f})'
+                  groups[medium+'_text'] = text_value
+              delta = (groups['disk']-groups['tmpfs'])/groups['disk']*100
+              text.append(f"| {metric} | {groups['disk_text']} | {groups['tmpfs_text']} | {delta:.1f}% |")
+          report = '\n'.join(text)
+          print(report)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
+              f.write('Six alternating paired trials; pinned checkout v7, default depth 1; fresh destination each time. Action bracket includes inter-step overhead. Git trace times exclude that overhead.\n\n'+report+'\n')
+          PY
+      - name: Preserve raw timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tmpfs-checkout-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/results.json
+            ${{ runner.temp }}/trace-*.jsonl
