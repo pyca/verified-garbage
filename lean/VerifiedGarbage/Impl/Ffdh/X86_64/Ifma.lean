@@ -54,10 +54,10 @@ def vec : Prog isa := withMx l (seqs (expLoop l [.mov .r13 (.mem (at_ .rbx (oSt 
 /-- The area's base into `sIfma`, the first digit with a bit of the
 exponent, `2 (P - len)`, at `oSt`, and `sCtr` at `oSv`. -/
 def head (sl : Nat) : List Instr :=
-  [.mov .rax (.reg .rdi), .alu .add .rax (.imm (BitVec.ofNat 32 (oArea l))), .store (hdr sIfma) .rax,
-    .mov .rdx (.mem (hdr sLink)), .mov .rcx (.mem (ws .rdx sl)), .alu .add .rcx (.reg .rcx),
-    .mov32 .rdx (.imm (BitVec.ofNat 32 (2 * l.P))), .alu .sub .rdx (.reg .rcx), .store (at_ .rax (oSt l)) .rdx,
-    .mov .rcx (.mem (hdr sCtr)), .store (at_ .rax (oSv l)) .rcx]
+  [.mov .r8 (.mem (hdr sCtr)), .mov .rdx (.mem (hdr sLink)), .mov .rcx (.mem (ws .rdx sl)),
+    .alu .add .rcx (.reg .rcx), .mov32 .rdx (.imm (BitVec.ofNat 32 (2 * l.P))), .alu .sub .rdx (.reg .rcx),
+    .mov .rax (.reg .rdi), .alu .add .rax (.imm (BitVec.ofNat 32 (oArea l))), .store (hdr sIfma) .rax,
+    .store (at_ .rax (oSt l)) .rdx, .store (at_ .rax (oSv l)) .r8]
 
 /-- `sCtr` back from `oSv`. -/
 def tail : List Instr :=
