@@ -257,7 +257,7 @@ pub use self::vg_chacha20_init as vg_chacha20_init_auto;
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_apply_sve2` if the CPU supports its features (`VG_CHACHA20_APPLY_SVE2_FEATURES`); `vg_chacha20_apply_neon` if it also supports `neon`; or else `vg_chacha20_apply`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_apply_sve2` if the CPU supports its features (`VG_CHACHA20_APPLY_SVE2_FEATURES`); `vg_chacha20_apply_neon` if detection reports some CPU feature; or else `vg_chacha20_apply`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -274,7 +274,7 @@ pub unsafe fn vg_chacha20_apply_auto(state: *mut [u64; 96], data: *mut u8, len: 
         // has the features it needs.
         return unsafe { vg_chacha20_apply_sve2(state, data, len) };
     }
-    if cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {
+    if cpu.0 != 0 {
         // SAFETY: the caller's obligations, which are `vg_chacha20_apply_neon`'s, and the CPU
         // has the features it needs.
         return unsafe { vg_chacha20_apply_neon(state, data, len) };

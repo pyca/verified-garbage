@@ -64,12 +64,12 @@ def ranking : Rust.Ranking := [
     { suffix := "_sha3" },
     { suffix := "_sha2" },
     { suffix := "_sve2" },
-    -- AdvSIMD is part of the AArch64 baseline, so the `_neon` code needs no
-    -- feature, but detection reports it (`neon`), so that `VG_CPU_FEATURES=none`
-    -- runs the scalar code. Poly1305's is faster on Apple's cores (about twice
-    -- as fast), and slower on Neoverse N2.
+    -- Poly1305's NEON code is faster on Apple's cores (about twice as fast),
+    -- and slower on Neoverse N2. It needs no feature (AdvSIMD is part of the
+    -- AArch64 baseline): `neon`, which detection reports, lets
+    -- `VG_CPU_FEATURES=neon` choose it elsewhere for the tests.
     { suffix := "_neon", modules := ["poly1305"], extra := ["neon"], vendor := some "apple" },
-    { suffix := "_neon", extra := ["neon"] }]),
+    { suffix := "_neon" }]),
   ("arm", [
     { suffix := "_umaal" }])]
 

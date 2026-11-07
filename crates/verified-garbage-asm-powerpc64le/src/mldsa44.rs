@@ -699,6 +699,66 @@ bl {vg_mldsa44_verify_prepared}
     )
 }
 
+/// `vg_mldsa44_sign`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa44_sign as vg_mldsa44_sign_auto;
+
+/// `vg_mldsa44_pk_tr`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa44_pk_tr as vg_mldsa44_pk_tr_auto;
+
+/// `vg_mldsa44_keygen`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa44_keygen as vg_mldsa44_keygen_auto;
+
+/// `vg_mldsa44_verify`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa44_verify as vg_mldsa44_verify_auto;
+
+/// `vg_mldsa44_sign_message`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa44_sign_message as vg_mldsa44_sign_message_auto;
+
+/// `vg_mldsa44_prepare_signing_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa44_prepare_signing_key as vg_mldsa44_prepare_signing_key_auto;
+
+/// `vg_mldsa44_prepare_verifying_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa44_prepare_verifying_key as vg_mldsa44_prepare_verifying_key_auto;
+
+/// `vg_mldsa44_sign_message_prepared`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa44_sign_message_prepared as vg_mldsa44_sign_message_prepared_auto;
+
+/// `vg_mldsa44_verify_message_cached`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa44_verify_message_cached as vg_mldsa44_verify_message_cached_auto;
+
+/// `vg_mldsa44_verify_message_prepared`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa44_verify_message_prepared as vg_mldsa44_verify_message_prepared_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa44_sign_prepared.rs"]
 pub(crate) mod vg_mldsa44_sign_prepared;

@@ -1652,7 +1652,11 @@ compilation target's `target_vendor` is that, or where `VG_CPU_FEATURES`
 names every feature the implementation needs
 (`verified_garbage_cpu::requested`, for testing it elsewhere); an
 implementation whose `cfg` (`Printer.featureCfg`) the build lacks is not
-compiled, and its test is not either. It falls back on the base, which needs
+compiled, and its test is not either. An implementation that needs no
+feature is chosen only where detection reports some feature (as it does on
+every CPU but where `VG_CPU_FEATURES` is `none`), so that the tests run the
+base everywhere with `VG_CPU_FEATURES=none` (AArch64's `_neon` code needs
+none: AdvSIMD is part of its baseline). It falls back on the base, which needs
 no feature. An implementation of a function generic over several interfaces
 has a suffix of several parts (`Emit.qualifiedName`, `_<tag><suffix>` for
 each interface whose variant is not the baseline): unless its whole suffix
@@ -1819,10 +1823,10 @@ def argsOf (sig : Sig) : String :=
     | _ => [n])
 
 /-- The condition under which a dispatcher calls `a`, given the variable
-`cpu` it holds `verified_garbage_cpu::detected()` in; `none` if there is
-none. The features it checks are `a`'s (its constant, `featuresConst`) and
-its ranking's `extra` ones. -/
-def condOf (a : Arm) : Option String :=
+`cpu` it holds `verified_garbage_cpu::detected()` in. The features it checks are `a`'s (its constant, `featuresConst`) and
+its ranking's `extra` ones; for one that needs none, that detection reports
+some feature. -/
+def condOf (a : Arm) : String :=
   let name := a.art.name.toUpper
   let bits := a.extra.map fun f => s!"verified_garbage_cpu::feature::{featureConst f}"
   let need : Option String := match a.art.features.isEmpty, bits with
@@ -1833,15 +1837,18 @@ def condOf (a : Arm) : Option String :=
   let vs := a.vendors.map fun v => match need with
     | none => s!"cfg!(target_vendor = \"{v}\")"
     | some n => s!"(cfg!(target_vendor = \"{v}\") || verified_garbage_cpu::requested({n}))"
-  match vs ++ (need.map fun n => s!"cpu.contains({n})").toList with
-  | [] => none
-  | cs => some (" && ".intercalate cs)
+  -- One that needs no feature, only where detection reports some (see above).
+  let has := match need with
+    | none => "cpu.0 != 0"
+    | some n => s!"cpu.contains({n})"
+  " && ".intercalate (vs ++ [has])
 
 /-- The paragraph of a dispatcher's documentation saying what it runs. -/
 def dispatchNote (base : String) (arms : List Arm) : String :=
   let item (a : Arm) : String :=
-    let needs := if a.art.features.isEmpty then [] else
-      [s!"the CPU supports its features (`{a.art.name.toUpper}_FEATURES`)"]
+    let needs := if a.art.features.isEmpty then
+      (if a.extra.isEmpty then ["detection reports some CPU feature"] else [])
+      else [s!"the CPU supports its features (`{a.art.name.toUpper}_FEATURES`)"]
     let extra := if a.extra.isEmpty then [] else
       [s!"it also supports {codeList a.extra}"]
     let vendor := a.vendors.map fun v =>
@@ -1866,15 +1873,6 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
     let ns := (g.members.map (·.1)).map fun a => a.written.lookup p
     if ns.all (·.isSome) then some (p, ns.foldl (fun m o => max m (o.getD 0)) n) else none
   let args := argsOf b.sig
-  -- The implementations it tries, up to the first it calls on every CPU.
-  let (tried, last) := arms.foldl (init := (([] : List (Arm × String)), (none : Option Arm)))
-    fun (acc, last) a => match last with
-      | some _ => (acc, last)
-      | none => match condOf a, a.gate with
-        | none, [] => (acc, some a)
-        | c, _ => (acc ++ [(a, c.getD "true")], none)
-  let lastName := (last.map (·.art.name)).getD b.name
-  let usesCpu := tried.any fun (a, _) => !(a.art.features.isEmpty && a.extra.isEmpty)
   let doc := fullDoc.fullDocWith b auto stack written [] [dispatchNote b.name arms]
   writtenConsts auto "" written ++
   docComment "" doc ++
@@ -1883,18 +1881,16 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   "#[allow(clippy::too_many_arguments)]\n" ++
   "#[inline]\n" ++
   s!"pub unsafe fn {auto}{b.sig.rust} " ++ "{\n" ++
-  (if usesCpu then "    let cpu = verified_garbage_cpu::detected();\n" else "") ++
-  String.join (tried.map fun (a, c) =>
+  (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
+  String.join (arms.map fun a =>
     String.join (a.gate.map fun p => s!"    #[cfg({p})]\n") ++
-    s!"    if {c} " ++ "{\n" ++
+    s!"    if {condOf a} " ++ "{\n" ++
     s!"        // SAFETY: the caller's obligations, which are `{a.art.name}`'s, and the CPU\n" ++
     "        // has the features it needs.\n" ++
     s!"        return unsafe " ++ "{ " ++ s!"{a.art.name}({args})" ++ " };\n" ++
     "    }\n") ++
-  (if last.isSome then
-    s!"    // SAFETY: the caller's obligations, which are `{lastName}`'s; it needs no CPU feature.\n"
-  else "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n") ++
-  "    unsafe { " ++ s!"{lastName}({args})" ++ " }\n" ++
+  "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
+  "    unsafe { " ++ s!"{b.name}({args})" ++ " }\n" ++
   "}\n"
 
 /-- The dispatcher of the function `g` whose base is its only implementation:

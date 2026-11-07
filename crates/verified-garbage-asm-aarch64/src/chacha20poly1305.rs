@@ -9548,7 +9548,7 @@ bl {vg_chacha20_poly1305_seal_sve2}
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_seal_sve2` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES`); `vg_chacha20_poly1305_seal_neon` if it also supports `neon`; or else `vg_chacha20_poly1305_seal`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_seal_sve2` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES`); `vg_chacha20_poly1305_seal_neon` if detection reports some CPU feature; or else `vg_chacha20_poly1305_seal`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -9568,7 +9568,7 @@ pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const
         // has the features it needs.
         return unsafe { vg_chacha20_poly1305_seal_sve2(key, nonce, aad, aad_len, data, len, tag) };
     }
-    if cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {
+    if cpu.0 != 0 {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_neon`'s, and the CPU
         // has the features it needs.
         return unsafe { vg_chacha20_poly1305_seal_neon(key, nonce, aad, aad_len, data, len, tag) };
@@ -9581,7 +9581,7 @@ pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_open_sve2` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES`); `vg_chacha20_poly1305_open_neon` if it also supports `neon`; or else `vg_chacha20_poly1305_open`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_open_sve2` if the CPU supports its features (`VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES`); `vg_chacha20_poly1305_open_neon` if detection reports some CPU feature; or else `vg_chacha20_poly1305_open`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -9601,7 +9601,7 @@ pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const
         // has the features it needs.
         return unsafe { vg_chacha20_poly1305_open_sve2(key, nonce, aad, aad_len, data, len, tag) };
     }
-    if cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {
+    if cpu.0 != 0 {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_open_neon`'s, and the CPU
         // has the features it needs.
         return unsafe { vg_chacha20_poly1305_open_neon(key, nonce, aad, aad_len, data, len, tag) };
@@ -9614,7 +9614,7 @@ pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_seal_gather_sve2` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES`); `vg_chacha20_poly1305_seal_gather_neon` if it also supports `neon`; or else `vg_chacha20_poly1305_seal_gather`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_poly1305_seal_gather_sve2` if the CPU supports its features (`VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES`); `vg_chacha20_poly1305_seal_gather_neon` if detection reports some CPU feature; or else `vg_chacha20_poly1305_seal_gather`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -9637,7 +9637,7 @@ pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(key: *const [u8; 32], nonce:
         // has the features it needs.
         return unsafe { vg_chacha20_poly1305_seal_gather_sve2(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
     }
-    if cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {
+    if cpu.0 != 0 {
         // SAFETY: the caller's obligations, which are `vg_chacha20_poly1305_seal_gather_neon`'s, and the CPU
         // has the features it needs.
         return unsafe { vg_chacha20_poly1305_seal_gather_neon(key, nonce, aad, aad_len, src, src_count, dst, len, tag) };
