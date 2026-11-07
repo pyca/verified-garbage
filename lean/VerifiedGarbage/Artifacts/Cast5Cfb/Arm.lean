@@ -22,12 +22,10 @@ def artifacts : List Artifact := [
     stack := 336
     verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.Arm.cfbDecrypt_framed },
   Spec.Cast5.cfbEncryptFinalApi.artifact Arm.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cfbEncryptFinal
     stack := 336
     verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.Arm.cfbEncryptFinal_framed },
   Spec.Cast5.cfbDecryptFinalApi.artifact Arm.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cfbDecryptFinal
     stack := 336
     verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.Arm.cfbDecryptFinal_framed }]

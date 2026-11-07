@@ -23,12 +23,10 @@ def artifacts : List Artifact := [
     stack := 128
     verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.RISCV64.Modes.cfbDecrypt_verified },
   Spec.Cast5.cfbEncryptFinalApi.artifact RISCV64.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.RISCV64.cfbEncryptFinal
     stack := 128
     verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.RISCV64.Modes.cfbEncryptFinal_verified },
   Spec.Cast5.cfbDecryptFinalApi.artifact RISCV64.target {
-    consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.RISCV64.cfbDecryptFinal
     stack := 128
     verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.RISCV64.Modes.cfbDecryptFinal_verified }]
