@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_aes_ctr32_vaes.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_aes_ctr32_vaes` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_AES_CTR32_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety

@@ -21,13 +21,14 @@ and encrypts the plaintext with AES in counter mode from the tag (§4,
 Everything but the key-generating key's cipher is computed per message, so
 the functions take that cipher, `CIPH_K`, as a function on 16-byte blocks
 (`Cipher`), with the key's length (`encryptWith`, `decryptWith`);
-`encrypt` and `decrypt` are AES-GCM-SIV with a key, as the RFC defines
-them (`encrypt_eq`, `decrypt_eq`). The contracts of the functions
-implemented in assembly are in `Spec/GcmSiv/Contract.lean`.
+AES-GCM-SIV with a key is these with the key's cipher (`aes key`). The
+contracts of the functions implemented in assembly are in
+`Spec/GcmSiv/Contract.lean`.
 
 The RFC's limits on the lengths (§4, §5, §6: at most 2³⁶ bytes of
-plaintext and of additional data) are `supported`; the RFC's `encrypt` and
-`decrypt` fail beyond them, which `encrypt` and `decrypt` here do.
+plaintext and of additional data) are the caller's to check: the RFC's
+`encrypt` and `decrypt` fail beyond them, and `encryptWith` and
+`decryptWith` are those once the lengths are accepted.
 -/
 
 @[expose] public section
@@ -188,30 +189,6 @@ def decryptWith (ciph : Cipher) (keyLen : Nat) (nonce ct aad tag : List Byte) :
   let (authKey, encKey) := deriveKeys ciph keyLen nonce
   let pt := ctr (aes encKey) (initialCounter tag) ct
   if aes encKey (tagInput authKey nonce pt aad) = tag then some pt else none
-
-/-- §4 and §5: the lengths (in bytes) of plaintext (at most 2³⁶) and
-additional data (at most 2³⁶) for which encryption and decryption are
-defined. -/
-def supported (ptLen aadLen : Nat) : Bool := ptLen ≤ 2 ^ 36 && aadLen ≤ 2 ^ 36
-
-/-- §4, AES-GCM-SIV encryption under the key-generating key `key` (16 or
-32 bytes) of the plaintext `pt` with the additional data `aad` under the
-12-byte `nonce`: the RFC's result, the encrypted plaintext followed by the
-tag, or `none` (fail) if a length is too long. -/
-def encrypt (key nonce pt aad : List Byte) : Option (List Byte) :=
-  if supported pt.length aad.length then
-    let (ct, tag) := encryptWith (aes key) key.length nonce pt aad
-    some (ct ++ tag)
-  else none
-
-/-- §5, AES-GCM-SIV decryption under the key-generating key `key` (16 or
-32 bytes) of the ciphertext `c` (the encrypted plaintext followed by the
-16-byte tag) with the additional data `aad` under the 12-byte `nonce`:
-`none` (fail) if `c` is shorter than 16 bytes or a length is too long, and
-otherwise `decryptWith`'s result. -/
-def decrypt (key nonce c aad : List Byte) : Option (List Byte) :=
-  if c.length < 16 || !supported (c.length - 16) aad.length then none
-  else decryptWith (aes key) key.length nonce (c.take (c.length - 16)) aad (c.drop (c.length - 16))
 
 /-! ## On memory -/
 

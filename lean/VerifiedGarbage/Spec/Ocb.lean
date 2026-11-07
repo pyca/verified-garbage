@@ -19,9 +19,10 @@ significant byte.
 OCB is defined here for any blockcipher on 128-bit blocks, given as its
 functions `ENCIPHER(K, ·)` and `DECIPHER(K, ·)` (`Cipher`), with
 `L_* = ENCIPHER(K, zeros(128))` given too, which an implementation computes
-once per key (`encryptWith`, `decryptWith`); `encrypt` and `decrypt` are OCB
-with AES (§3.1's parameter sets), as the RFC defines them. The contracts of
-the functions implemented in assembly are in `Spec/Ocb/Contract.lean`.
+once per key (`encryptWith`, `decryptWith`); OCB with AES (§3.1's
+parameter sets) is these with `aes key`, `aesInv key` and `aes key 0`. The
+contracts of the functions implemented in assembly are in
+`Spec/Ocb/Contract.lean`.
 -/
 
 @[expose] public section
@@ -223,26 +224,6 @@ def aes (key : List Byte) : Cipher := aesWith (Aes.rounds (key.length / 4)) (Aes
 /-- `DECIPHER(K, ·)` for AES with the key `key` (16, 24 or 32 bytes). -/
 def aesInv (key : List Byte) : Cipher :=
   aesInvWith (Aes.rounds (key.length / 4)) (Aes.expandKey key)
-
-/-- §4.2, AES-OCB encryption under the key `key` (16, 24 or 32 bytes) with
-a tag of `t` bytes, of the plaintext `p` with the associated data `a` under
-the nonce `nonce`: the RFC's ciphertext `C`, or `none` if the tag or nonce
-length is not one OCB is defined for. -/
-def encrypt (key : List Byte) (t : Nat) (nonce a p : List Byte) : Option (List Byte) :=
-  if lengthsOk t nonce.length then
-    let (c, tag) := encryptWith (aes key) (aes key 0) t nonce a p
-    some (c ++ tag)
-  else none
-
-/-- §4.3, AES-OCB decryption under the key `key` (16, 24 or 32 bytes) with
-a tag of `t` bytes, of the RFC's ciphertext `c` with the associated data
-`a` under the nonce `nonce`: the plaintext, or `none` (INVALID) if the tag
-or nonce length is not one OCB is defined for, if `c` is shorter than the
-tag, or if the tag is wrong. -/
-def decrypt (key : List Byte) (t : Nat) (nonce a c : List Byte) : Option (List Byte) :=
-  if !lengthsOk t nonce.length || c.length < t then none
-  else decryptWith (aes key) (aesInv key) (aes key 0) t nonce a (c.take (c.length - t))
-    (c.drop (c.length - t))
 
 /-! ## The key context
 
