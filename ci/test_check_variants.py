@@ -148,6 +148,14 @@ class Flow(unittest.TestCase):
         self.assertEqual(check_variants.check(fns(calls), "vg_g vg_g_s", names=names), [])
         self.assertEqual(len(check_variants.check(fns(calls), "vg_g vg_g_s")), 1)
 
+    def test_variant_whose_code_is_used(self):
+        # `g_s` is the code of `g_t`, which the Rust code uses by the name
+        # `g_t` alone (a dispatcher that ranks `_t` first never calls `g_s`).
+        calls = dict(self.BASE, vg_g_s=["vg_f_s"], vg_g_t=["vg_f_s"])
+        names = {"x": {"vg_g_s": "vg_g_t"}}
+        self.assertEqual(check_variants.check(fns(calls), "vg_g vg_g_t", names=names), [])
+        self.assertEqual(len(check_variants.check(fns(calls), "vg_g vg_g_t")), 1)
+
 
 class Internal(unittest.TestCase):
     # Internal functions (`fn <name>()`, no signature): `vg_f` with the variant
