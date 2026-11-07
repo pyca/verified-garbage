@@ -213,17 +213,18 @@ theorem store_ok (b : VReg) (p : Reg) (s : State) (hp : p ≠ .r0)
   simpa only [Impl.Aes.PPC64LE.Crypto.store, h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hs
 
 
-structure Stored (b : VReg) (s t : State) (out : BitVec 128) : Prop where
-  mem : t.mem = s.mem.write (s.gpr .r6) 16 (rev128 out)
+/-- A block stored at `r6 + o`, and `r6` advanced. -/
+structure Stored (b : VReg) (o : Reg) (s t : State) (out : BitVec 128) : Prop where
+  mem : t.mem = s.mem.write (s.gpr .r6 + s.gpr o) 16 (rev128 out)
   ptr : t.gpr .r6 = s.gpr .r6 + 16
   keep : Keep [.r6] s t
   v : ∀ r, r ∉ [b, Impl.Aes.PPC64LE.Crypto.data] → t.vpr r = s.vpr r
 
-theorem storeAdvance_ok (b : VReg) (s : State) (h0 : s.gpr .r0 = 0) (hm : s.vpr mask = byteMask)
-    (hw : InRegions s.wr (s.gpr .r6) 16) :
-    WP isa (.block (Impl.Aes.PPC64LE.Crypto.storeAdvance b)) s fun t => Stored b s t (s.vpr b) := by
+theorem storeAdvance_ok (b : VReg) (o : Reg) (s : State) (hm : s.vpr mask = byteMask)
+    (hw : InRegions s.wr (s.gpr .r6 + s.gpr o) 16) :
+    WP isa (.block (Impl.Aes.PPC64LE.Crypto.storeAdvance b o)) s fun t => Stored b o s t (s.vpr b) := by
   rw [Impl.Aes.PPC64LE.Crypto.storeAdvance, WP.block_append_iff]
-  refine WP.mono (store_ok b .r6 s (by decide) h0 hm hw) fun u hu => ?_
+  refine WP.mono (storePerm_ok b b .r6 o s (by decide) hm hw) fun u hu => ?_
   subst u
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
@@ -245,18 +246,16 @@ def outputAt (ctr : Bool) (v : BitVec 128) (m : Mem) (p : Addr) : BitVec 128 :=
 def outputVector (ctr : Bool) (b : VReg) (s : State) : BitVec 128 :=
   outputAt ctr (s.vpr b) s.mem (s.gpr .r6)
 
-theorem writeBlock_ok (ctr : Bool) (b : VReg) (s : State) (hb : b ≠ mask)
+theorem writeBlock_ok (ctr : Bool) (b : VReg) (o : Reg) (s : State) (hb : b ≠ mask)
     (hd : b ≠ Impl.Aes.PPC64LE.Crypto.data) (h0 : s.gpr .r0 = 0) (hm : s.vpr mask = byteMask)
-    (hw : InRegions s.wr (s.gpr .r6) 16) :
-    WP isa (.block (Impl.Aes.PPC64LE.Crypto.writeBlock ctr b)) s fun t => Stored b s t (outputVector ctr b s) := by
+    (hr : InRegions (s.rd ++ s.wr) (s.gpr .r6) 16) (hw : InRegions s.wr (s.gpr .r6 + s.gpr o) 16) :
+    WP isa (.block (Impl.Aes.PPC64LE.Crypto.writeBlock ctr b o)) s fun t =>
+      Stored b o s t (outputVector ctr b s) := by
   cases ctr
   · simpa only [Impl.Aes.PPC64LE.Crypto.writeBlock, outputVector, outputAt, Bool.false_eq_true,
-      ite_false, List.nil_append] using storeAdvance_ok b s h0 hm hw
+      ite_false, List.nil_append] using storeAdvance_ok b o s hm hw
   · simp only [Impl.Aes.PPC64LE.Crypto.writeBlock, outputVector, outputAt, ite_true]
     rw [WP.block_append_iff, WP.block_append_iff]
-    have hr : InRegions (s.rd ++ s.wr) (s.gpr .r6) 16 := by
-      obtain ⟨r, hr, hc⟩ := hw
-      exact ⟨r, List.mem_append_right _ hr, hc⟩
     refine WP.mono (load_ok Impl.Aes.PPC64LE.Crypto.data .r6 s (by decide) (by decide) h0 hm hr)
       fun u ⟨hv, ho⟩ => ?_
     refine WP.mono (vector_step (.vop (.logic .xor b b Impl.Aes.PPC64LE.Crypto.data)) b
@@ -265,11 +264,10 @@ theorem writeBlock_ok (ctr : Bool) (b : VReg) (s : State) (hb : b ≠ mask)
     have hmem : w.mem = s.mem := ho'.mem.trans ho.mem
     have hmask : w.vpr mask = byteMask := (ho'.v mask (by simpa only [List.mem_singleton] using Ne.symm hb)).trans
       ((ho.v mask (by decide)).trans hm)
-    have hz : w.gpr .r0 = 0 := (congrFun hg .r0).trans h0
-    have hw' : InRegions w.wr (w.gpr .r6) 16 := by rw [ho'.wr, ho.wr, hg]; exact hw
+    have hw' : InRegions w.wr (w.gpr .r6 + w.gpr o) 16 := by rw [ho'.wr, ho.wr, hg]; exact hw
     have hval : w.vpr b = s.vpr b ^^^ rev128 (s.mem.read (s.gpr .r6) 16) := by
       rw [hx, ho.v b (by simpa only [List.mem_singleton] using hd), hv]
-    refine WP.mono (storeAdvance_ok b w hz hmask hw') fun t ht => ?_
+    refine WP.mono (storeAdvance_ok b o w hmask hw') fun t ht => ?_
     refine ⟨?_, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, fun r hr => ?_⟩
     · rw [ht.mem, hmem, hg, hval]
     · rw [ht.ptr, hg]

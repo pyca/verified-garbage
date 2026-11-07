@@ -1315,42 +1315,26 @@ bl {vg_aes_gcm_seal}
 /// * `rounds` must be 10, 12 or 14.
 /// * `dst_len` must equal `len`.
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2848 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "Yf8h+AAAgTlwAGz4eACM+IAArPiIAMz4pgIIfJgADPgQAQzoYAAM+BgBDOhoAAz4eEsjfXhTRH0AASzpwuiFeAAAJSg="
+        r#".base64 "YfUh+AAAgTmmAgh8mAAM+BALDOhgAAz4GAsM6GgADPigAAw4cAAM+AALDOh4AAz4"
+bl {vg_aes_gcm_open_split}
+.base64 "AAADKA=="
 beq %cr0, 20f
-22:
-.base64 "AAAD6AAACfgIAGM4CAApOf//pTgAACUo"
-bne %cr0, 22b
 b 21f
 20:
-21:
-.base64 "BwDAODgwhHwAACQo"
-beq %cr0, 23f
-25:
-.base64 "AAADiAAACZgBAGM4AQApOf//hDgAACQo"
-bne %cr0, 25b
-b 24f
-23:
+.base64 "AACBOQALLOkIC0zpAABgOQAAKig="
+beq %cr0, 22f
 24:
-.base64 "cABs6HgAjOiAAKzoiADM6AABLOk="
-bl {vg_aes_gcm_open}
-.base64 "AAADKA=="
-beq %cr0, 26f
-b 27f
-26:
-.base64 "AACBOQABLOkIAUzpAABgOQAAKig="
-beq %cr0, 28f
-210:
 .base64 "AABpmQEAKTn//0o5AAAqKA=="
-bne %cr0, 210b
-b 29f
-28:
-29:
-27:
-.base64 "AACBOZgADOimAwh8oAAhOCAAgE4=""#,
-        vg_aes_gcm_open = sym super::gcm::vg_aes_gcm_open,
+bne %cr0, 24b
+b 23f
+22:
+23:
+21:
+.base64 "AACBOZgADOimAwh8oAohOCAAgE4=""#,
+        vg_aes_gcm_open_split = sym super::aes::vg_aes_gcm_open_split::vg_aes_gcm_open_split,
     )
 }
