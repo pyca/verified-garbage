@@ -169,9 +169,10 @@ theorem frame_sMem (s : State) : Frame [FR2 s] s.mem (sMem s) := by
 
 /-! ## The entry -/
 
-theorem splitEntry_eq : splitEntry = [.addSp .x16 0, .str .x .x30 .x16 40] ++
-    ([.ldrSp .x17 64, .str .x .x17 .x16 0] ++ ([.ldrSp .x17 72, .str .x .x17 .x16 8] ++
-    ([.ldrSp .x17 80, .str .x .x17 .x16 16] ++ [.str .x .x6 .x16 24, .str .x .x7 .x16 32, .ldrSp .x6 48]))) := rfl
+theorem splitEntry_eq : splitEntry = ([.addSp .x16 0, .str .x .x30 .x16 40] : List Instr) ++
+    (([.ldrSp .x17 64, .str .x .x17 .x16 0] : List Instr) ++ (([.ldrSp .x17 72, .str .x .x17 .x16 8] : List Instr) ++
+    (([.ldrSp .x17 80, .str .x .x17 .x16 16] : List Instr) ++
+      ([.str .x .x6 .x16 24, .str .x .x7 .x16 32, .ldrSp .x6 48] : List Instr)))) := rfl
 
 /-- The end of the entry: `x6` and `x7` at `x16 + 24` and `x16 + 32`, and
 the doubleword at `sp + 48` in `x6`. -/
