@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Impl.Dsa.Arm.RandomSign
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomCall
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 
 import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
@@ -68,10 +69,10 @@ theorem alloc_push {s₀ : State} (A : RandomABI s₀) :
   rfl
 
 /-- `vg_dsa_sign_random` leaks only what its contract makes public. -/
-theorem randomSign_constantTime (name : String) :
-    ConstantTime isa (Spec.Dsa.randomSignContract Arm.abi 144).pre
-      (Spec.Dsa.randomSignContract Arm.abi 144).pub (code name (Entry.operation true)) := by
-  intro s t tsa tsb u w hs ht hpub ea eb
+theorem randomSign_constantTime (S : Signer) (name : String) :
+    ConstantTime isa (fun s => (Spec.Dsa.randomSignContract Arm.abi 144).pre s ∧ RValid S s)
+      (Spec.Dsa.randomSignContract Arm.abi 144).pub (code name S.code) := by
+  intro s t tsa tsb u w ⟨hs, Vs⟩ ⟨ht, Vt⟩ hpub ea eb
   have As := randomABI_of hs
   have At' := randomABI_of ht
   obtain ⟨e, hk, hst, htr⟩ := random_public hpub
@@ -82,8 +83,8 @@ theorem randomSign_constantTime (name : String) :
       rw [alloc_push As, Option.some.injEq] at hap
       rw [alloc_push At', Option.some.injEq] at hbp
       subst hap hbp
-      have hh := body_ct name _ _ _ _ _ _ ⟨⟨pubOf s, keyLeak s, (rResult s).status, (rResult s).trace⟩,
-        ⟨s, As, rfl, ⟨rfl, rfl, rfl⟩, rfl⟩, ⟨t, At', e.symm, ⟨hk.symm, hst.symm, htr.symm⟩, rfl⟩⟩ hab hbb |>.1
+      have hh := body_ct S name _ _ _ _ _ _ ⟨⟨pubOf s, keyLeak s, (rResult s).status, (rResult s).trace⟩,
+        ⟨s, As, rfl, ⟨rfl, rfl, rfl, Vs⟩, rfl⟩, ⟨t, At', e.symm, ⟨hk.symm, hst.symm, htr.symm, Vt⟩, rfl⟩⟩ hab hbb |>.1
       simpa only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] using hh
 
 end VG.Proof.Dsa.Arm
