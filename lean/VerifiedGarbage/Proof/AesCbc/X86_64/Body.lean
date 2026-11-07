@@ -147,7 +147,7 @@ omit hp in
 /-- The frame of a step, in the regions the invariant allows. -/
 theorem stepFrame {k : Nat} (hk : k < N s₀) {m m' : Mem}
     (hf : Frame [⟨blk s₀ k, 16⟩, ivR s₀, ⟨S s₀, 2064⟩, stkR s₀] m m') :
-    Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, stkR s₀] m m' :=
+    Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀, stkR s₀] m m' :=
   hf.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -237,10 +237,11 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk (cbcMode true) (encBody v.enc) := b
     (UPre.big_of h.frame).trans ((stepFrame hk (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)).sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl
       · exact ⟨ivR s₀, by simp, fun _ h => h⟩
       · exact ⟨dataR s₀, by simp, fun _ h => h⟩
       · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩
+      · exact ⟨scrR s₀, by simp, UPre.scr_sub (by decide)⟩
       · exact ⟨stkR s₀, by simp, fun _ h => h⟩)
   -- The new block, and the chaining value.
   have hblk := h.block hk
@@ -368,10 +369,11 @@ theorem decBody_ok (v : BlocksImpl) : BodyOk (cbcMode false) (decBody v.dec) := 
     (UPre.big_of h.frame).trans ((stepFrame hk (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨⟨S s₀, 2064⟩, by simp, svSub⟩)).sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl
       · exact ⟨ivR s₀, by simp, fun _ h => h⟩
       · exact ⟨dataR s₀, by simp, fun _ h => h⟩
       · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩
+      · exact ⟨scrR s₀, by simp, UPre.scr_sub (by decide)⟩
       · exact ⟨stkR s₀, by simp, fun _ h => h⟩)
   have one (r : Region) (P : Addr) (hd : (⟨P, 16⟩ : Region).Disjoint r) :
       ∀ r' ∈ [r], (⟨P, 16⟩ : Region).Disjoint r' := fun r' hr' => by
