@@ -267,6 +267,16 @@ jobs:
           # The `openssl` crate needs Homebrew's OpenSSL on macOS.
           if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
           python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --groups "$BENCH_GROUPS" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL $OPENSSL_WITH_FEATURES
+      - name: Record per-run benchmark estimates
+        if: ${{ always() && !cancelled() && !inputs.test_filter && (steps.benchmark.outcome == 'success' || steps.benchmark.outcome == 'failure') }}
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for path in sorted(Path("bench-compare").rglob("new/estimates.json")):
+              estimates = json.loads(path.read_text())
+              print(json.dumps({"path": str(path), **{key: estimates[key] for key in ("mean", "median", "std_dev")}}))
+          PY
       - name: Save raw benchmark samples
         if: ${{ always() && !cancelled() && (steps.benchmark.outcome == 'success' || steps.benchmark.outcome == 'failure') }}
         uses: ./head/.github/actions/upload-artifact
