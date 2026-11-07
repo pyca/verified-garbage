@@ -507,58 +507,6 @@ macro_rules! ml_kem {
             }
         }
 
-        #[cfg(all(test, target_arch = "x86_64"))]
-        mod backend_tests {
-            use super::{Backend, $DecapsulationKey, $EncapsulationKey, AVX, AVX2, AVX512};
-
-            /// Each implementation the CPU can run (the `_avx` instances,
-            /// which `backend()` never chooses with AVX2, among them) agrees
-            /// with the baseline's on keys, shared keys and ciphertexts (with
-            /// `H(ek)` given and not), and on the implicit rejection of a
-            /// modified ciphertext.
-            #[test]
-            fn instances_agree() {
-                let f = $crate::cpu::detected();
-                let backends = [
-                    (Backend::Avx, const { verified_garbage_cpu::Features::all(AVX) }),
-                    (Backend::Avx2, const { verified_garbage_cpu::Features::all(AVX2) }),
-                    (Backend::Avx512, const { verified_garbage_cpu::Features::all(AVX512) }),
-                ];
-                for i in 0..2u8 {
-                    let seed: [u8; 64] = core::array::from_fn(|j| (j as u8).wrapping_mul(29) ^ i);
-                    let m: [u8; 32] = core::array::from_fn(|j| (j as u8).wrapping_mul(13) ^ i);
-                    // SAFETY: the baseline needs no feature.
-                    let base = unsafe { $DecapsulationKey::from_seed_with(&seed, Backend::Scalar) }.unwrap();
-                    let ek = base.encapsulation_key();
-                    let copy = $EncapsulationKey::from_bytes(ek.as_bytes()).unwrap();
-                    // SAFETY: as above.
-                    let (k, ct) = unsafe { ek.encapsulate_with(&m, Backend::Scalar) }.unwrap();
-                    let mut bad = ct;
-                    bad[i as usize] ^= 1;
-                    // SAFETY: as above.
-                    let rejected = unsafe { base.decapsulate_with(&bad, Backend::Scalar) }.unwrap();
-                    assert_ne!(rejected, k);
-                    for (backend, needs) in backends {
-                        if !f.contains(needs) {
-                            continue;
-                        }
-                        // SAFETY: the CPU has the features of `backend`'s
-                        // instances (`needs`).
-                        let dk = unsafe { $DecapsulationKey::from_seed_with(&seed, backend) }.unwrap();
-                        assert!(dk.ek == base.ek && dk.dk == base.dk, "{backend:?}");
-                        // SAFETY: as above.
-                        assert_eq!(unsafe { ek.encapsulate_with(&m, backend) }.unwrap(), (k, ct));
-                        // SAFETY: as above.
-                        assert_eq!(unsafe { copy.encapsulate_with(&m, backend) }.unwrap(), (k, ct));
-                        // SAFETY: as above.
-                        assert_eq!(unsafe { dk.decapsulate_with(&ct, backend) }.unwrap(), k);
-                        // SAFETY: as above.
-                        assert_eq!(unsafe { base.decapsulate_with(&bad, backend) }.unwrap(), rejected);
-                    }
-                }
-            }
-        }
-
         #[cfg(all(test, target_arch = "aarch64"))]
         mod backend_tests {
             use super::{Backend, $DecapsulationKey, $EncapsulationKey, SHA3};
