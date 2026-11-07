@@ -10,22 +10,23 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::ec_brainpoolp512r1::vg_ec_brainpoolp512r1_public_key;
+use crate::arch::dispatch::ec_brainpoolp512r1::vg_ec_brainpoolp512r1_public_key_auto;
 #[cfg(target_arch = "arm")]
-use crate::arch::ec_brainpoolp512r1::{
-    VG_EC_BRAINPOOLP512R1_PUBLIC_KEY_UMAAL_FEATURES, vg_ec_brainpoolp512r1_public_key_umaal,
-};
+use crate::arch::ec_brainpoolp512r1::VG_EC_BRAINPOOLP512R1_PUBLIC_KEY_UMAAL_FEATURES;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdh_brainpoolp512r1::VG_ECDH_BRAINPOOLP512R1_UMAAL_FEATURES;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_brainpoolp512r1::VG_ECDSA_BRAINPOOLP512R1_SIGN_UMAAL_FEATURES;
 #[cfg(target_arch = "arm")]
 use crate::arch::ecdsa_brainpoolp512r1::VG_ECDSA_BRAINPOOLP512R1_VERIFY_UMAAL_FEATURES;
-use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
 /// The multiplications of brainpoolp512r1's field elements.
+///
+/// Only ECDSA signing still chooses by it: it passes its function, with the
+/// HMAC table, to `ecdsa::table::sign_with`. The other operations call their
+/// generated dispatchers (`crate::arch::dispatch`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Mul {
     /// The baseline implementation.
@@ -65,18 +66,13 @@ impl Mul {
 pub(crate) fn public_key(d: &[u8; 64]) -> Option<[u8; 129]> {
     let mut out = [0; 129];
     let mut scratch = [0u64; 1024];
-    let ok = match Mul::select(detected()) {
-        // SAFETY: `out` is valid for reads and writes of 129 bytes, `d` for
-        // reads of 64 and `scratch` for reads and writes of 8192; `out` and
-        // `scratch` are distinct objects from each other and `d`, so none
-        // overlaps another or the call's stack frame, and, as Rust objects,
-        // none wraps around the address space.
-        Mul::Baseline => unsafe { vg_ec_brainpoolp512r1_public_key(&mut out, d, &mut scratch) },
-        // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
-        // (`Mul::select`).
-        #[cfg(target_arch = "arm")]
-        Mul::Umaal => unsafe { vg_ec_brainpoolp512r1_public_key_umaal(&mut out, d, &mut scratch) },
-    };
+    // SAFETY: `out` is valid for reads and writes of 129 bytes, `d` for reads
+    // of 64 and `scratch` for reads and writes of 8192; `out` and `scratch` are
+    // distinct objects from each other and `d`, so none overlaps another or the
+    // call's stack frame, and, as Rust objects, none wraps around the address
+    // space. The dispatcher calls only an implementation the CPU has the
+    // features of.
+    let ok = unsafe { vg_ec_brainpoolp512r1_public_key_auto(&mut out, d, &mut scratch) };
     zeroize(&mut scratch);
     (ok == 1).then_some(out)
 }

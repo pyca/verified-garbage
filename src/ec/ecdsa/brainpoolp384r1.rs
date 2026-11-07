@@ -11,12 +11,10 @@
 
 use super::table::{HmacHash, SignFn, sign_with};
 use super::{SignatureHash, sealed};
+use crate::arch::dispatch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify_auto;
 use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign;
-use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify;
 #[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_brainpoolp384r1::{
-    vg_ecdsa_brainpoolp384r1_sign_umaal, vg_ecdsa_brainpoolp384r1_verify_umaal,
-};
+use crate::arch::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign_umaal;
 use crate::cpu::detected;
 use crate::ec::BrainpoolP384r1;
 use crate::ec::brainpoolp384r1::Mul;
@@ -25,33 +23,20 @@ use crate::error::{InvalidKey, InvalidSignature};
 /// Whether `signature` verifies with `q` for the hash `digest`.
 fn verify_with(q: &[u8; 97], digest: &[u8], signature: &[u8; 96]) -> Result<(), InvalidSignature> {
     let mut scratch = [0u64; 1024];
-    let ok = match Mul::select(detected()) {
-        // SAFETY: `q` is valid for reads of 97 bytes, `digest` of `digest.len()`,
-        // `signature` of 96 and `scratch` for reads and writes of 8192; `scratch`
-        // is a distinct object from the others, so it overlaps neither them nor the
-        // call's stack frame, and, as Rust objects, none wraps around the address
-        // space.
-        Mul::Baseline => unsafe {
-            vg_ecdsa_brainpoolp384r1_verify(
-                q,
-                digest.as_ptr(),
-                digest.len(),
-                signature,
-                &mut scratch,
-            )
-        },
-        // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
-        // (`Mul::select`).
-        #[cfg(target_arch = "arm")]
-        Mul::Umaal => unsafe {
-            vg_ecdsa_brainpoolp384r1_verify_umaal(
-                q,
-                digest.as_ptr(),
-                digest.len(),
-                signature,
-                &mut scratch,
-            )
-        },
+    // SAFETY: `q` is valid for reads of 97 bytes, `digest` of `digest.len()`,
+    // `signature` of 96 and `scratch` for reads and writes of 8192; `scratch`
+    // is a distinct object from the others, so it overlaps neither them nor the
+    // call's stack frame, and, as Rust objects, none wraps around the address
+    // space. The dispatcher calls only an implementation the CPU has the
+    // features of.
+    let ok = unsafe {
+        vg_ecdsa_brainpoolp384r1_verify_auto(
+            q,
+            digest.as_ptr(),
+            digest.len(),
+            signature,
+            &mut scratch,
+        )
     };
     if ok == 1 {
         Ok(())
