@@ -70,66 +70,27 @@ impl HmacHash for Sha512_256 {
     }
 }
 
-/// A verified `vg_ecdsa_<curve>_sign`, for scalars of `Q` bytes and
-/// signatures of `S = 2 Q`.
-#[cfg(target_arch = "x86_64")]
-pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "sysv64" fn(
-    *mut [u8; S],
-    *const [u8; Q],
-    *const u8,
-    usize,
-    *mut [u64; 1024],
-    *const [usize; 6],
-) -> u32;
-
-/// A verified `vg_ecdsa_<curve>_sign`, for scalars of `Q` bytes and
-/// signatures of `S = 2 Q`.
-#[cfg(not(target_arch = "x86_64"))]
-pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "C" fn(
-    *mut [u8; S],
-    *const [u8; Q],
-    *const u8,
-    usize,
-    *mut [u64; 1024],
-    *const [usize; 6],
-) -> u32;
-
 /// The signature `r ‖ s` of `digest`, the hash of a message with `H`, with
-/// the key `d`, by `sign` with the best of `H`'s tables of `Hmac` that this
-/// CPU runs.
+/// the key `d`, by `sign`, a curve's `vg_ecdsa_<curve>_sign_auto`, which it
+/// calls with the signature's buffer, `d`, `digest`, 1024 words of working
+/// space and the best of `H`'s tables of `Hmac` that this CPU runs.
 ///
-/// # Safety
-///
-/// `sign` needs no CPU feature that this CPU lacks.
-pub(super) unsafe fn sign_with<H: HmacHash, const Q: usize, const S: usize>(
-    sign: SignFn<Q, S>,
+/// Each is valid for reads (and the signature and working space for writes)
+/// of its length, and they are distinct objects, so none overlaps another
+/// or the call's stack frame, and, as Rust objects, none wraps around the
+/// address space; `digest` is as long as `H`'s digest, which the table names,
+/// and the table is one of the interface `Hmac`'s, for `H`, whose functions
+/// need no CPU feature that this CPU lacks (its dispatcher chose it,
+/// `TableHash::hmac_table`).
+pub(super) fn sign_with<H: HmacHash, const Q: usize, const S: usize>(
+    sign: impl FnOnce(&mut [u8; S], &[u8; Q], &[u8], &mut [u64; 1024], *const [usize; 6]) -> u32,
     d: &[u8; Q],
     digest: &H::Output,
 ) -> Result<[u8; S], InvalidKey> {
     let table = H::hmac_table();
-    let digest = digest.as_ref();
     let mut out = [0; S];
     let mut scratch = [0u64; 1024];
-    // SAFETY: `out` is valid for reads and writes of `S` bytes, `d` for
-    // reads of `Q`, `digest` for reads of its length, `H`'s digest length,
-    // which the table `table` names, and `scratch` for reads and writes of
-    // 8192; `out` and `scratch` are distinct objects from each other and the
-    // others, so none overlaps another or the call's stack frame, and, as
-    // Rust objects, none wraps around the address space. `table` is one of
-    // the tables of the interface `Hmac`, for `H`, whose functions need no
-    // CPU feature that this CPU lacks (its dispatcher chose it,
-    // `TableHash::hmac_table`); the caller guarantees the features `sign`
-    // needs.
-    let ok = unsafe {
-        sign(
-            &mut out,
-            d,
-            digest.as_ptr(),
-            digest.len(),
-            &mut scratch,
-            table,
-        )
-    };
+    let ok = sign(&mut out, d, digest.as_ref(), &mut scratch, table);
     zeroize(&mut scratch);
     if ok == 1 { Ok(out) } else { Err(InvalidKey) }
 }

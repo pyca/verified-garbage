@@ -10159,7 +10159,7 @@ vg_dsa_generate_key:
 	add x5, sp, #200
 	ldr x6, [sp, #88]
 	ldr x7, [sp, #128]
-	bl {vg_dsa_derive_key}
+	bl {vg_dsa_derive_key_checked}
 	ldr x30, [sp, #232]
 	orr w0, w0, w0
 	add x15, sp, #192

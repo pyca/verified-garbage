@@ -34,7 +34,7 @@ theorem keygen_result_unchecked {extra : Nat} {s : State} (h : GenerateKeyABI ex
 
 theorem keygen_body (v : Backend) {s : State} (h : GenerateKeyABI v.stack s) :
     WP isa (GenerateKey.body (keygenCheckName v) (keygenDeriveName v)
-      (Generate.checkParameters v.mul) (Generate.deriveKey v.mul))
+      (Generate.checkParameters v.mul) (Generate.deriveChecked v.mul))
       (allocated Random.frameBytes s) (KeygenBodyPost s (keygenResult s)) := by
   have hb := keygen_result_bounds h
   unfold GenerateKey.body
@@ -69,7 +69,7 @@ open VG.Impl.Dsa.AArch64
 
 theorem keygen_sp (v : Backend) :
     (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.mul)
-      (Generate.deriveKey v.mul)).all (fun i => !isa.writesSp i) = true :=
+      (Generate.deriveChecked v.mul)).all (fun i => !isa.writesSp i) = true :=
   Code.all_of_forall (fun _ => rfl) _
 
 structure KeygenCodePost (s : State) (result : Spec.Dsa.GenerateKeyResult) (t : State) : Prop where
@@ -86,7 +86,7 @@ structure KeygenCodePost (s : State) (result : Spec.Dsa.GenerateKeyResult) (t : 
 
 theorem keygen_code (v : Backend) {s : State} (h : GenerateKeyABI v.stack s) :
     WP isa (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.mul)
-      (Generate.deriveKey v.mul)) s (KeygenCodePost s (keygenResult s)) := by
+      (Generate.deriveChecked v.mul)) s (KeygenCodePost s (keygenResult s)) := by
   apply keygen_frame_ok h
   refine WP.mono (keygen_body v h) fun t ht => ⟨ht.sp, ht.wr, ?_⟩
   refine ⟨ht.rd, by change t.wr.tail = _; rw [ht.wr]; rfl, ht.status, ht.output, ht.used,
@@ -116,7 +116,7 @@ theorem keygen_shared_post {extra : Nat} {s t : State} (h : GenerateKeyABI extra
 theorem keygen_correct (v : Backend) (s : State)
     (hpre : (Spec.Dsa.generateKeyContract abi (v.stack + 256)).pre s) :
     ∃ trace t, Exec isa (GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
-        (Generate.checkParameters v.mul) (Generate.deriveKey v.mul)) s trace t ∧
+        (Generate.checkParameters v.mul) (Generate.deriveChecked v.mul)) s trace t ∧
       abiPreserved s t ∧ (Spec.Dsa.generateKeyContract abi (v.stack + 256)).post s t := by
   have h := generateKeyABI_of hpre
   obtain ⟨trace, t, he, hp⟩ := keygen_code v h

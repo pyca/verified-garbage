@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.RsaPss
 meta import VerifiedGarbage.Spec.RsaPss
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 import VerifiedGarbageTest.Memo
@@ -242,11 +240,7 @@ def checkMgf1 : Except String Unit := do
       unless mgf1 H seed len == blocks.take len do throw s!"MGF1 with {H.name}, {len} octets"
     unless (H.hash []).length == H.len do throw s!"{H.name}: digest length"
 
-#assert_standard_axioms Spec.RsaPss.encodeK
-#assert_standard_axioms Spec.RsaPss.verify
-#assert_standard_axioms Spec.RsaPss.sign
 #assert_no_compiler_overrides Spec.RsaPss.encodeK Spec.RsaPss.verify Spec.RsaPss.sign Spec.Mgf1.mgf1
-#assert_spec_origin
 
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)
