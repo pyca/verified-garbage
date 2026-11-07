@@ -12,12 +12,11 @@ open VG.Impl.Gcm.X86_64.Pclmul (at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
 open VG.Impl.Aes.X86_64.VaesZ (ctrsZ)
 open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv bigMinPE)
-open VG.Impl.Gcm.X86_64.StitchZTo (xorDataZTo)
 open VG.Impl.Gcm.X86_64.StitchZR (powP48)
 open VG.Impl.Gcm.X86_64.StitchZRTo (setupP)
 
-def batchTo (j : Nat) (g : Nat → List Instr) : Prog isa :=
-  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs)) (.seq (Aes.X86_64.VaesZH.aes aregs g) (.block (xorDataZTo .xmm13 .rdx .r8 aregs j)))
+/-- `StitchZH.batch` from `rdx + r8 + 64 j` to `rdx + 64 j`. -/
+abbrev batchTo (j : Nat) (g : Nat → List Instr) : Prog isa := StitchZH.batch j g false true
 
 def firstTo : Prog isa := batchTo 0 fun _ => []
 

@@ -37,19 +37,11 @@ open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv fin bigMinP bigMinPE)
 open VG.Impl.Gcm.X86_64.StitchZR (setupP powP48)
 open VG.Impl.Gcm.X86_64.StitchZTo (atIx)
 
-/-- XOR block register `i` into the four blocks at `rdx + 64 (j + i)`,
-through `t`, and store the result to `Stitch.dstK ix (64 (j + i))` (in place,
-`VaesZ.xorDataZ t .rdx`). -/
-def xorDataZM (ix : Bool) (t : XReg) : List XReg → Nat → List Instr
-  | [], _ => []
-  | b :: bs, j => ([.vmovdqu32Load t (at_ .rdx (64 * j)), .zop (.zbin .vpxord b b t),
-      .vmovdqu32Store (Stitch.dstK ix (64 * j)) b] : List Instr) ++ xorDataZM ix t bs (j + 1)
-
-/-- Sixteen blocks at `rdx + 64 j` encrypted, in place or, out of place
-(`ix`), to `rdx + r8 + 64 j`. -/
-def batch (j : Nat) (g : Nat → List Instr) (ix : Bool := false) : Prog isa :=
+/-- Sixteen blocks at `rdx + 64 j` encrypted, in place or, out of place, to
+`rdx + r8 + 64 j` (`ix`) or from `rdx + r8 + 64 j` (`ld`). -/
+def batch (j : Nat) (g : Nat → List Instr) (ix : Bool := false) (ld : Bool := false) : Prog isa :=
   .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs))
-    (.seq (Aes.X86_64.VaesZH.aes aregs g) (.block (xorDataZM ix .xmm13 aregs j)))
+    (.seq (Aes.X86_64.VaesZH.aes aregs g) (.block (StitchZ.xorDataZM ix .xmm13 ld aregs j)))
 
 def first : Prog isa := batch 0 fun _ => []
 

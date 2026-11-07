@@ -65,11 +65,12 @@ theorem setupFrom_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
     have hA := hR.a
     refine ⟨fun k l => hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2 * (2 * k + l / 2) - l % 2)), ⟨⟨Nat.zero_le _, fun l hl => by rw [c14 l hl, Nat.mul_zero, Nat.zero_add], m0, i15,
         by rw [f.gpr]; exact hA.rdi, by rw [f.gpr]; exact hA.rsi, by rw [f.gpr]; exact hA.r10,
-        fun _ => by rw [f.gpr]; exact hR.r8, by rw [f.mem]; exact hA.frame,
+        by rw [f.mem]; exact hA.frame,
         fun k hk => absurd hk (by omega), fun k hk _ => by rw [f.mem]; exact hA.src k hk (Nat.zero_le _),
         by rw [f.rd]; exact hA.rd, by rw [f.wr]; exact hA.wr⟩,
       by rw [f.gpr, hR.rdx]; simp, by rw [f.gpr, hR.gpr _ (by decide) (by decide) (by decide) (by decide)]; simp,
-      by rw [f.gpr]; exact hR.rax, fun r h1 h2 h3 _ h5 => by rw [f.gpr]; exact hR.gpr r h1 h2 (h3 rfl) h5,
+      by rw [f.gpr]; exact hR.rax, fun _ => by rw [f.gpr]; exact hR.r8,
+      fun r h1 h2 h3 _ h5 => by rw [f.gpr]; exact hR.gpr r h1 h2 (h3 rfl) h5,
       fun k hk l hl => ?_, p1, by rw [y0, hR.y]; simp [ghashFrom], y1⟩, fun k _ l _ => ?_⟩
     · rw [f.mem, show 64 * k + 16 * l = 32 * (2 * k + l / 2) + 16 * (l % 2) by omega]
       exact hR.pw _ (by omega) _ (by omega)
@@ -82,10 +83,11 @@ theorem setupFrom_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
       fun l hl => by rw [f.zlane _ (by simp) l hl]; exact hI.a.msk l hl,
       fun l hl => by rw [f.zlane _ (by simp) l hl]; exact hI.a.inc l hl,
       by rw [f.gpr]; exact hI.a.rdi, by rw [f.gpr]; exact hI.a.rsi, by rw [f.gpr]; exact hI.a.r10,
-      fun hi => by rw [f.gpr]; exact hI.a.r8 hi, by rw [f.mem]; exact hI.a.frame,
+      by rw [f.mem]; exact hI.a.frame,
       fun k hk => by rw [f.mem]; exact hI.a.out k hk, fun k hk hc => by rw [f.mem]; exact hI.a.src k hk hc,
       by rw [f.rd]; exact hI.a.rd, by rw [f.wr]; exact hI.a.wr⟩,
     by rw [f.gpr]; exact hI.rdx, by rw [f.gpr]; exact hI.r9, by rw [f.gpr]; exact hI.rax,
+    fun hi => by rw [f.gpr]; exact hI.r8 hi,
     fun r h1 h2 h3 h4 h5 => by rw [f.gpr]; exact hI.gpr r h1 h2 h3 h4 h5,
     fun k hk l hl => by rw [f.mem]; exact hI.pw k hk l hl,
     fun l hl => by rw [f.zlane _ (by simp) l hl]; exact hI.m1 l hl,

@@ -174,13 +174,15 @@ theorem dbodyM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : Nat
       m0 := fun l hl => by rw [f₁.zlane _ (by decide) l hl]; exact hI.a.msk l hl }
   have hA₁ := hI.a.zframe f₁ (by decide) (by decide) (by decide)
   -- The group is hashed after rounds 1–4, before its blocks are decrypted, and reduced after round 5.
-  refine WP.seq (WP.mono (batchM_ok hp gq gRegs gRegs_ok (QG s₀ loD a X P yl)
+  refine WP.seq (WP.mono (batchM_ok (ld := false) hp (by cases ix <;> rfl) (fun h => absurd h (by decide)) gq gRegs
+    gRegs_ok (QG s₀ loD a X P yl)
     (gq_ok (fun j => by simp only [loD]; split <;> split <;> omega_arith) (fun j hj1 hj4 => by
       simp only [loD, show j < 5 by omega_arith, ite_true]; exact Nat.zero_le _))
     (fun j t t' h f => h.zframe f (by decide))
     (fun t t' h hg hrd hwr hl hf => QG.keepM hp (by omega_arith) (by omega_arith) ha
       (fun _ i hi _ => by have : 16 ≤ i := hi; omega_arith) h hg hrd hwr hl hf)
-    (c := 16 * e) (j := 0) (by omega_arith) hA₁ hCache gq_keeps (by rw [f₁.gpr]; show a.toNat + _ = _; omega_arith)
+    (c := 16 * e) (j := 0) (by omega_arith) hA₁ hCache gq_keeps (fun hi => by rw [f₁.gpr]; exact hI.r8 hi)
+    (by rw [f₁.gpr]; show a.toNat + _ = (dp s₀).toNat + _; omega_arith)
     ⟨hE₁, fun l hl => by
       rw [f₁.zlane _ (by decide) l hl]; exact hI.m1 l hl,
       by rw [ite_f (by decide)]
@@ -195,7 +197,7 @@ theorem dbodyM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : Nat
     exact ⟨hA₂.le, fun l hl => by rw [fl]; exact hA₂.ctr l hl, fun l hl => by rw [fl]; exact hA₂.msk l hl,
       fun l hl => by rw [fl]; exact hA₂.inc l hl,
       by rw [fg _ (by decide) (by decide)]; exact hA₂.rdi, by rw [fg _ (by decide) (by decide)]; exact hA₂.rsi,
-      by rw [fg _ (by decide) (by decide)]; exact hA₂.r10, fun hi => by rw [fg _ (by decide) (by decide)]; exact hA₂.r8 hi,
+      by rw [fg _ (by decide) (by decide)]; exact hA₂.r10,
       by rw [fm]; exact hA₂.frame, fun k hk => by rw [fm]; exact hA₂.out k hk,
       fun k hk hc => by rw [fm]; exact hA₂.src k hk hc, by rw [frd]; exact hA₂.rd, by rw [fwr]; exact hA₂.wr⟩
   have hr9 : s₂.gpr .r9 - 16 = BitVec.ofNat 64 (nb s₀ - 16 * (e + 1)) := by
@@ -203,6 +205,7 @@ theorem dbodyM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : Nat
       ofNat_sub_ofNat (by omega_arith) (by omega_arith)]
     congr 1
   refine ⟨⟨hA', ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
+    fun hi => by rw [gk _ (by decide) (by decide)]; exact hI.r8 hi,
     fun r h1 h2 h3 h4 h5 => by rw [gk r h2 h4]; exact hI.gpr r h1 h2 h3 h4 h5,
     fun k hk l hl => by rw [fm, keepPM hp (by omega_arith) hm₂ hk hl, f₁.mem]; exact hI.pw k hk l hl,
     fun l hl => by rw [fl]; exact h1' l hl, ?_,
