@@ -97,14 +97,25 @@ FEATURES = re.compile(
     re.MULTILINE,
 )
 
+# The ranking of the implementations of an internal function
+# (`Rust.internalRanking`), and each of its rows.
+RANKING = re.compile(
+    r"^pub\(crate\) const (VG_\w+)_RANKING: [^\n]*= &\[\n(.*?)^\];", re.MULTILINE | re.DOTALL)
+RANK_MODULE = re.compile(r'^    \("(\w+)", &\[\n(.*?)^    \]\),$', re.MULTILINE | re.DOTALL)
+# The module of a file of dispatchers (`Rust.dispatchFile`).
+DISPATCH_MODULE = re.compile(r"^//! The dispatchers of the verified `(\w+)` functions", re.MULTILINE)
+RANK_ROW = re.compile(
+    r'\("(vg_\w+)", (?:crate::cpu|verified_garbage_cpu)::Features\(([^)]*)\), &\[([^\]]*)\]\)')
+
 # The signature of an internal function (`fn <name>()`).
 INTERNAL = ("", "")
 
 # For each target, the features CPU detection reports each feature only with
 # (`decode` in `crates/verified-garbage-cpu/src/detect.rs`).
 _AVX = {"avx"}
-IMPLIED = {t: {"avx2": _AVX, "bmi2": {"avx", "avx2"}, "adx": {"avx", "avx2"}, "avx512f": _AVX,
-               "sha512": _AVX, "avx512ifma": _AVX, "avx512vl": _AVX, "vaes": _AVX,
+IMPLIED = {t: {"avx2": _AVX, "bmi2": {"avx", "avx2"}, "adx": {"avx", "avx2"},
+               "avx512f": {"avx", "avx2"}, "aes": {"ssse3"}, "sha512": _AVX,
+               "avx512ifma": {"avx", "avx2", "avx512f", "avx512vl"}, "avx512vl": _AVX, "vaes": {"avx", "aes", "ssse3"},
                "vpclmulqdq": _AVX, "avx512bw": _AVX}
            for t in ("x86", "x86_64")}
 
@@ -172,7 +183,26 @@ def file_arms(text):
         base = BASE_CALL.findall(body)
         out[m.group(1)] = (tried, base[-1] if base else None)
     out.update({m.group(2): ([], m.group(1)) for m in SOLE.finditer(text)})
+    for m in RANKING.finditer(text):
+        for mod, rows in RANK_MODULE.findall(m.group(2)):
+            tried = []
+            for fn, bits, vendors in RANK_ROW.findall(rows):
+                fs = {f.lower() for f in re.findall(r"feature::(\w+)", bits)}
+                tried.append((fn, set(), fs or {"*"}, bool(vendors.strip())))
+            out[f"{INTERNAL_RANK}{mod}:{m.group(1).lower()}"] = (tried, m.group(1).lower())
+    mod = DISPATCH_MODULE.search(text)
+    for name in list(out):
+        if not name.startswith(INTERNAL_RANK):
+            DISPATCHER_MODULE[name] = mod.group(1) if mod else None
     return out
+
+
+# The module of each dispatcher's file, by its name (`file_arms` fills it).
+DISPATCHER_MODULE = {}
+
+
+# The key of an internal function's ranking among the dispatchers' (`file_arms`).
+INTERNAL_RANK = "ranking:"
 
 
 def table_functions(text):
@@ -268,6 +298,14 @@ def check(targets, rust, feats=None, arms=None, tables=None):
             return detected(tfeats.get(name, frozenset()).union(
                 *(tfeats.get(c, frozenset()) for c in consts), extra))
 
+        def ranking_of(r, module):
+            """The key in `tarms` of the dispatcher of the function `r`, or of
+            its ranking as an internal function called by `module`'s."""
+            for k in (r + "_auto", f"{INTERNAL_RANK}{module}:{r}"):
+                if k in tarms:
+                    return k
+            return None
+
         def order(auto):
             """What `auto` tries, then its base, or `None` without one."""
             if auto not in tarms:
@@ -283,17 +321,6 @@ def check(targets, rust, feats=None, arms=None, tables=None):
                         "*" not in extra or fs):
                     return fn
             return base
-
-        def best(r, c, fs):
-            """`None` if `c`, an implementation of `r`, is the one to call on a
-            CPU with `fs`, else the one that is."""
-            ranked = order(r + "_auto")
-            if ranked is not None and c in ranked:
-                b = chosen(r + "_auto", fs)
-                return None if ranked.index(c) <= ranked.index(b) else b
-            runs = [d for d in family[r] if needs(d) <= fs and not by_target(d)]
-            better = [d for d in runs if needs(c) < needs(d)]
-            return min(better) if better else None
 
         def closure(name):
             """`name` and every function it calls, directly or through others."""
@@ -328,6 +355,8 @@ def check(targets, rust, feats=None, arms=None, tables=None):
 
         reported = set()
         for auto, (tried, base) in sorted(tarms.items()):
+            if auto.startswith(INTERNAL_RANK):
+                continue
             impls = [(fn, needs(fn, consts, extra - {"*"})) for fn, consts, extra, by_target in tried
                      if not by_target] + [(base, needs(base))]
             sets = set()
@@ -346,23 +375,47 @@ def check(targets, rust, feats=None, arms=None, tables=None):
                     if x in seen or x not in fns:
                         continue
                     seen.add(x)
-                    for c in sorted(fns[x][1]):
-                        if c not in fns:
+                    calls = {}
+                    for c in fns[x][1]:
+                        if c in fns:
+                            calls.setdefault(root[c], set()).add(c)
+                    for r, cs in sorted(calls.items()):
+                        if r == root[x]:
+                            # Another implementation of its own function (for a
+                            # tail): not the code a dispatcher chose.
                             continue
-                        b = best(root[c], c, fs) if len(family[root[c]]) > 1 else None
-                        if b is not None and (x, c, b) not in reported:
-                            reported.add((x, c, b))
-                            errors.append(
-                                f"{target}: on a CPU with {', '.join(sorted(fs)) or 'no feature'}, "
-                                f"{auto} runs {' -> '.join(path)}, which calls {c}, but {b} "
-                                f"runs there and is better: make {x}'s function generic over "
-                                f"the implementations of {root[c]} (see CLAUDE.md)")
-                        todo.append((c, path + (c,)))
+                        k = ranking_of(r, DISPATCHER_MODULE.get(auto))
+                        if k is None or len(family[r]) == 1:
+                            todo += [(c, path + (c,)) for c in sorted(cs)]
+                            continue
+                        ranked = order(k)
+                        b = chosen(k, fs)
+                        good = [c for c in sorted(cs)
+                                if c in ranked and ranked.index(c) <= ranked.index(b)]
+                        # Only the best is the code the CPU runs for it: one
+                        # ranked below is for some inputs (a short one, say).
+                        todo += [(c, path + (c,)) for c in good]
+                        if good or (x, r, b) in reported:
+                            continue
+                        # The dispatcher may rank lower an implementation that
+                        # calls it: then the ranking chose, and none is missing.
+                        if any(needs(y, consts, extra - {"*"}) <= fs and any(
+                                c in ranked and ranked.index(c) <= ranked.index(b)
+                                for c in closure(y) if root.get(c) == r)
+                               for y, consts, extra, _ in tried + [(base, (), set(), False)]):
+                            continue
+                        reported.add((x, r, b))
+                        errors.append(
+                            f"{target}: on a CPU with {', '.join(sorted(fs)) or 'no feature'}, "
+                            f"{auto} runs {' -> '.join(path)}, which calls {', '.join(sorted(cs))}, "
+                            f"but {b} runs there and is better: make {x}'s function generic over "
+                            f"the implementations of {r} (see CLAUDE.md)")
 
         reached = set(tables.get(target, set())) if tables else set()
         reached |= {n for n in fns if n in rust_words}
         for auto in tarms:
-            reached |= set(order(auto))
+            if not auto.startswith(INTERNAL_RANK):
+                reached |= set(order(auto))
         todo = list(reached)
         while todo:
             n = todo.pop()
