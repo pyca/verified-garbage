@@ -17,8 +17,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 The invariant after `k` blocks (`LInv`): the registers hold the arguments
 (`r13` the next block, `r14` the blocks left), only the chaining value, the
-data, the first 2064 bytes of the scratch buffer and the stack below the
-return address have changed since the registers were saved, the first `k`
+data, the scratch buffer but the saved registers (its first 2064 bytes and
+its last 64, `gR`) and the stack below the return address have changed since
+the registers were saved, the first `k`
 blocks are the mode's (`Mode.out`) of the first `k` blocks on entry and the
 rest are unchanged, and the chaining value is the mode's after them
 (`Mode.chain`). CBC is `cbcMode`; other modes' functions with the same
@@ -51,6 +52,8 @@ abbrev ivR : Region := ⟨Iv s₀, 16⟩
 abbrev dataR : Region := ⟨Dp s₀, 16 * N s₀⟩
 abbrev scrR : Region := ⟨S s₀, 2176⟩
 abbrev stkR : Region := below (s₀.gpr .rsp) 8
+/-- The four blocks a group of decryption keeps (`Impl.AesCbc.X86_64.gOff`). -/
+abbrev gR : Region := ⟨S s₀ + BitVec.ofNat 64 2112, 64⟩
 
 /-- The blocks on entry. -/
 abbrev blks : List (List Byte) := Spec.Cbc.blocksAt s₀.mem (Dp s₀) (N s₀)
@@ -114,7 +117,7 @@ structure LInv (M : Mode) (s₀ : State) (k : Nat) (s : State) : Prop where
   rsp : s.gpr .rsp = s₀.gpr .rsp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, stkR s₀] (savedMem s₀) s.mem
+  frame : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀, stkR s₀] (savedMem s₀) s.mem
   data : Spec.Cbc.blocksAt s.mem (Dp s₀) (N s₀) = outK M s₀ k ++ (blks s₀).drop k
   iv : bytesAt s.mem (Iv s₀) 16 = chainK M s₀ k
 
@@ -182,6 +185,23 @@ theorem UPre.big_of {m : Mem} (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064
     · exact ⟨ivR s₀, by simp, fun _ h => h⟩
     · exact ⟨dataR s₀, by simp, fun _ h => h⟩
     · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩
+    · exact ⟨stkR s₀, by simp, fun _ h => h⟩)
+
+omit hp in
+/-- `big_of`, with the slots of a group (`gR`) too, as the invariant's frame. -/
+theorem UPre.big_ofG {m : Mem} (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀, stkR s₀] (savedMem s₀) m) :
+    Frame (Big s₀) s₀.mem m := by
+  have f₀ : Frame (Big s₀) s₀.mem (savedMem s₀) :=
+    (savedMem_frame s₀).sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨scrR s₀, by simp, UPre.scr_sub (by decide)⟩
+  exact f₀.trans (hf.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact ⟨ivR s₀, by simp, fun _ h => h⟩
+    · exact ⟨dataR s₀, by simp, fun _ h => h⟩
+    · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩
+    · exact ⟨scrR s₀, by simp, UPre.scr_sub (by decide)⟩
     · exact ⟨stkR s₀, by simp, fun _ h => h⟩)
 
 /-- The blocks after a step that changed only block `k`, the chaining
@@ -354,17 +374,19 @@ theorem ends_mid_wp {M : Mode} {mid : Prog isa} {s₀ : State} {s₁ : State}
     exact hm (by omega)
 
 theorem slots_disj {s₀ : State} (hp : UPre s₀) :
-    ∀ r ∈ [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, stkR s₀], (⟨S s₀ + BitVec.ofNat 64 2064, 48⟩ : Region).Disjoint r := by
+    ∀ r ∈ [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀, stkR s₀],
+      (⟨S s₀ + BitVec.ofNat 64 2064, 48⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact hp.iv_scr.symm.sub_left (UPre.scr_sub (by decide))
   · exact hp.data_scr.symm.sub_left (UPre.scr_sub (by decide))
   · exact Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega)
+  · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
   · exact hp.stk_scr.symm.sub_left (UPre.scr_sub (by decide))
 
 theorem slot_read {s₀ : State} (hp : UPre s₀) {m : Mem}
-    (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, stkR s₀] (savedMem s₀) m) {d : Nat} (h₁ : 2064 ≤ d)
+    (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀, stkR s₀] (savedMem s₀) m) {d : Nat} (h₁ : 2064 ≤ d)
     (h₂ : d + 8 ≤ 2112) :
     m.readW (S s₀ + BitVec.ofNat 64 d) 64 = (savedMem s₀).readW (S s₀ + BitVec.ofNat 64 d) 64 :=
   hf.readW (r := ⟨S s₀ + BitVec.ofNat 64 2064, 48⟩) (slot_contains _ h₁ h₂) (slots_disj hp) (by decide)
@@ -384,7 +406,7 @@ theorem epilogue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {s₂ : State} (h
     rw [rdwr, hp.rd, hp.wr, h₂.r15]
     exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega) (by have := hp.scr_wrap; omega))
   · rw [mem₃]
-    refine (UPre.big_of h₂.frame).readW (r := ⟨s₀.gpr .rsp, 8⟩) (Region.contains_self _ _)
+    refine (UPre.big_ofG h₂.frame).readW (r := ⟨s₀.gpr .rsp, 8⟩) (Region.contains_self _ _)
       (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
