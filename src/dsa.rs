@@ -26,6 +26,7 @@ use core::sync::atomic::{AtomicU8, Ordering};
 
 #[cfg(not(any(
     target_arch = "x86_64",
+    target_arch = "x86",
     target_arch = "aarch64",
     all(target_arch = "powerpc64", target_endian = "little")
 )))]
@@ -40,6 +41,7 @@ use crate::arch::dsa::{
 };
 #[cfg(any(
     target_arch = "x86_64",
+    target_arch = "x86",
     target_arch = "aarch64",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
@@ -239,11 +241,12 @@ impl PublicKey {
 pub struct PrivateKey {
     public: PublicKey,
     packed: Secret<u8>,
-    // On x86-64, AArch64 and PPC64LE, whether `vg_dsa_validate_private_key`
+    // On x86-64, x86, AArch64 and PPC64LE, whether `vg_dsa_validate_private_key`
     // accepts the owned, immutable `packed`: 0 = unchecked, 1 = valid,
     // 2 = invalid.
     #[cfg(any(
         target_arch = "x86_64",
+        target_arch = "x86",
         target_arch = "aarch64",
         all(target_arch = "powerpc64", target_endian = "little")
     ))]
@@ -286,6 +289,7 @@ impl PrivateKey {
             packed,
             #[cfg(any(
                 target_arch = "x86_64",
+                target_arch = "x86",
                 target_arch = "aarch64",
                 all(target_arch = "powerpc64", target_endian = "little")
             ))]
@@ -322,6 +326,7 @@ impl PrivateKey {
         let mut scratch = Secret(vec![0u64; 16 * self.public.p_len + 64]);
         #[cfg(any(
             target_arch = "x86_64",
+            target_arch = "x86",
             target_arch = "aarch64",
             all(target_arch = "powerpc64", target_endian = "little")
         ))]
@@ -357,18 +362,20 @@ impl PrivateKey {
                     }
                 };
             }
-            // On x86-64, AArch64 and PPC64LE, the validation above, or a
+            // On x86-64, x86, AArch64 and PPC64LE, the validation above, or a
             // cached result for the exact same immutable owned bytes,
             // establishes the prevalidated signer's precondition.
             let status = match self.public.backend {
                 #[cfg(not(any(
                     target_arch = "x86_64",
+                    target_arch = "x86",
                     target_arch = "aarch64",
                     all(target_arch = "powerpc64", target_endian = "little")
                 )))]
                 Backend::Baseline => sign!(vg_dsa_sign_random),
                 #[cfg(any(
                     target_arch = "x86_64",
+                    target_arch = "x86",
                     target_arch = "aarch64",
                     all(target_arch = "powerpc64", target_endian = "little")
                 ))]
@@ -399,6 +406,7 @@ impl PrivateKey {
     /// on the first call. `scratch` holds at least 16*p_len words.
     #[cfg(any(
         target_arch = "x86_64",
+        target_arch = "x86",
         target_arch = "aarch64",
         all(target_arch = "powerpc64", target_endian = "little")
     ))]
