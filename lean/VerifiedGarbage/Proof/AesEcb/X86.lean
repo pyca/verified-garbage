@@ -69,8 +69,7 @@ theorem dec_verified (v : BlocksImpl) :
         X86.argVal, X86.argBytes, Proof.Aes.blocksX86] [a0, a1, a2, a3, a4, e, esp] using blocksSat)
 
 /-- A state satisfying the ECB contracts' precondition. -/
-theorem sat : ∃ s, (Spec.Aes.blocksSig.contract X86.abi (blocksPre 32) (ecbPost 32 fun l key =>
-    Spec.Aes.cipher (Spec.Aes.rounds l) (Spec.Aes.expandKey key)) false 32).pre s := by
+theorem sat : ∃ s, (Spec.Aes.blocksSig.contract X86.abi (pre 32) (ecbPost 32 enc) false 32).pre s := by
   have a0 : arg blocksSat 0 = 0x1000 := by decide
   have a1 : arg blocksSat 1 = 10 := by decide
   have a2 : arg blocksSat 2 = 0x3000 := by decide
@@ -78,39 +77,36 @@ theorem sat : ∃ s, (Spec.Aes.blocksSig.contract X86.abi (blocksPre 32) (ecbPos
   have a4 : arg blocksSat 4 = 0x4000 := by decide
   have e : argAddr blocksSat 0 = 0x8004 := by decide
   have esp : blocksSat.gpr .esp = 0x8000 := rfl
-  implies_sat [Spec.Aes.blocksSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, blocksPre]
+  implies_sat [Spec.Aes.blocksSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, pre]
     [a0, a1, a2, a3, a4, e, esp] using blocksSat
 
 /-- The ECB contracts' precondition does not depend on the postcondition. -/
 theorem sat' (post : Spec.Aes.blocksSig.Post 32) :
-    ∃ s, (Spec.Aes.blocksSig.contract X86.abi (blocksPre 32) post false 32).pre s := sat
+    ∃ s, (Spec.Aes.blocksSig.contract X86.abi (pre 32) post false 32).pre s := sat
 
 /-- `vg_aes_ecb_encrypt` for `v`. -/
 theorem encrypt_verified (v : BlocksImpl) :
     Verified X86.target (Impl.AesEcb.X86.wiped v.enc) (Spec.AesEcb.encryptContract X86.abi 32) :=
   Verified.callWipe' (sig := Spec.Aes.blocksSig) (stack := 0) (zst := 0)
-    (pre := blocksPre 32) (post := blocksPost 32 fun l key => Spec.Aes.cipher (Spec.Aes.rounds l) (Spec.Aes.expandKey key))
-    (post' := ecbPost 32 fun l key => Spec.Aes.cipher (Spec.Aes.rounds l) (Spec.Aes.expandKey key))
+    (pre := pre 32) (post := post 32 enc) (post' := ecbPost 32 enc)
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 4) (j := 4)
     (Proof.Aes.encryptBlocks_keyed (enc_verified v)) Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) v.encNosp (by rw [v.encStack])
     zeroize_noSp zeroize_stack (by decide)
-    (pre_local 32) (post_local 32) (post_out 32) (post_wiped 32) (sat' _)
+    (pre_local 32) (post_local 32 _) (post_out 32 _) (AesEcb.wiped 32 _) (sat' _)
 
 /-- `vg_aes_ecb_decrypt` for `v`. -/
 theorem decrypt_verified (v : BlocksImpl) :
     Verified X86.target (Impl.AesEcb.X86.wiped v.dec) (Spec.AesEcb.decryptContract X86.abi 32) :=
   Verified.callWipe' (sig := Spec.Aes.blocksSig) (stack := 0) (zst := 0)
-    (pre := blocksPre 32)
-    (post := blocksPost 32 fun l key => Spec.Aes.invCipher (Spec.Aes.rounds l) (Spec.Aes.expandKey key))
-    (post' := ecbPost 32 fun l key => Spec.Aes.invCipher (Spec.Aes.rounds l) (Spec.Aes.expandKey key))
+    (pre := pre 32) (post := post 32 dec) (post' := ecbPost 32 dec)
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 4) (j := 4)
     (Proof.Aes.decryptBlocks_keyed (dec_verified v)) Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) v.decNosp (by rw [v.decStack])
     zeroize_noSp zeroize_stack (by decide)
-    (pre_local 32) (post_local 32) (post_out 32) (post_wiped 32) (sat' _)
+    (pre_local 32) (post_local 32 _) (post_out 32 _) (AesEcb.wiped 32 _) (sat' _)
 
 theorem zeroize_spSafe : Impl.Zeroize.X86.zeroize.all (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (by lit_decide)
