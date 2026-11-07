@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+
 public import VerifiedGarbage.Proof.Divstep.SignedWords
 public import VerifiedGarbage.Proof.Divstep.Alg
 public import VerifiedGarbage.Proof.Divstep.TcS
