@@ -108,6 +108,7 @@ add r0, r7, #320
 mov r1, r10
 mov r2, r11
 mov r3, r7
+mov r5, r10
 bl {vg_chacha20_xor}
 mov r7, r1
 mov r0, r7
@@ -583,6 +584,7 @@ add r0, r7, #320
 mov r1, r10
 mov r2, r11
 mov r3, r7
+mov r5, r10
 bl {vg_chacha20_xor}
 mov r7, r1
 ldr r3, [sp, #8]

@@ -361,6 +361,15 @@ theorem WP.kept {is : List Instr} {s : State} {Q : State → Prop} (h : WP isa (
   have := List.all_eq_true.mp (List.all_eq_true.mp hc i hi) r hr
   simpa using this
 
+/-- `WP.kept` for a block that may also write the callee-saved register `d`. -/
+theorem WP.keptBut {is : List Instr} {s : State} {Q : State → Prop} (h : WP isa (.block is) s Q) {d : Reg}
+    (hc : (is.all fun i => preserved.all fun r => r == d || !clobbers i r) = true) :
+    WP isa (.block is) s fun s' => Q s' ∧ (∀ r ∈ preserved, r ≠ d → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp := by
+  obtain ⟨t, s', he, hq⟩ := h
+  refine ⟨t, s', he, hq, fun r hr hd => Exec.gpr (fun i hi => ?_) he (.inl rfl), Exec.sp he⟩
+  have := List.all_eq_true.mp (List.all_eq_true.mp hc i hi) r hr
+  simpa [hd] using this
+
 /-- Kept, from a block's facts. -/
 theorem Kept.of {rs : List Region} {s s' : State} (hg : ∀ r ∈ preserved, s'.gpr r = s.gpr r)
     (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem) :
@@ -432,6 +441,24 @@ theorem Inv.step1 {s₀ s s' : State} (h : Inv s₀ s) {k n : Nat} (hk : Kept [s
 theorem Inv.step0 {s₀ s s' : State} (h : Inv s₀ s) (hk : Kept [] s s') : Inv s₀ s' :=
   h.step hk (fun _ hr => absurd hr List.not_mem_nil) (fun _ hr => absurd hr List.not_mem_nil)
 
+/-- `Inv.step1` for a part that also writes `r5`, which the invariant does
+not keep (the argument `dst` of `vg_chacha20_xor`). -/
+theorem Inv.step1r5 {s₀ s s' : State} (h : Inv s₀ s) {k n : Nat}
+    (hg : ∀ r ∈ preserved, r ≠ .r5 → s'.gpr r = s.gpr r) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) (hf : Frame [sub s₀ k n] s.mem s'.mem)
+    (h₂ : k + n ≤ 632) (h₃ : k + n ≤ savOff ∨ savOff + 36 ≤ k) : Inv s₀ s' where
+  regs := ⟨by rw [hg _ (by decide) (by decide), h.regs.r7], by rw [hg _ (by decide) (by decide), h.regs.r8],
+    by rw [hg _ (by decide) (by decide), h.regs.r9], by rw [hg _ (by decide) (by decide), h.regs.r10],
+    by rw [hg _ (by decide) (by decide), h.regs.r11]⟩
+  sp := by rw [hsp, h.sp]
+  rd := by rw [hrd, h.rd]
+  wr := by rw [hwr, h.wr]
+  saved := h.saved.frame hf fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact sub_disj s₀ (by simp only [savOff] at h₃ ⊢; omega_using [h₃]) (by decide) h₂
+  frame := h.frame.trans (hf.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨ctxR s₀, by simp, sub_ctx s₀ h₂⟩)
+
 end VG.Proof.ChaCha20Poly1305.Arm
 
 end
@@ -501,7 +528,6 @@ theorem init_noCalls : Impl.Poly1305.Arm.init.noCalls = true := by lit_decide
 theorem blocks_noCalls : Impl.Poly1305.Arm.blocks.noCalls = true := by lit_decide
 theorem finalize_noCalls : Impl.Poly1305.Arm.finalize.noCalls = true := by lit_decide
 theorem block_noCalls : Impl.ChaCha20.Arm.block.noCalls = true := by lit_decide
-theorem xor_noFrames : Impl.ChaCha20.Arm.Xor.xor.noFrames = true := by lit_decide
 
 /-! ## `vg_chacha20_block` -/
 
@@ -528,14 +554,10 @@ theorem block_call {s : State} {S B : BitVec 32} (h0 : s.gpr .r0 = S) (h1 : s.gp
 
 /-! ## `vg_chacha20_xor` -/
 
-/-- `vg_chacha20_xor`'s contract, with what its proof shows of `r0` and `r1`
-on return. -/
-def xorK : Contract isa :=
-  { Proof.ChaCha20.xorArm with
-    post := fun s s' => Proof.ChaCha20.xorArm.post s s' ∧ s'.gpr .r0 = s.gpr .r0 ∧ s'.gpr .r1 = s.gpr .r3 }
-
+/-- A call of `vg_chacha20_xor` in place (`dst = src` in `r5`), through
+`Xor.xor_call`. -/
 theorem xor_call {s : State} {S D B : BitVec 32} {n : Nat} (h0 : s.gpr .r0 = S) (h1 : s.gpr .r1 = D)
-    (h2 : s.gpr .r2 = BitVec.ofNat 32 n) (h3 : s.gpr .r3 = B) (hn : n < 2 ^ 32)
+    (h2 : s.gpr .r2 = BitVec.ofNat 32 n) (h3 : s.gpr .r3 = B) (h5 : s.gpr .r5 = D) (hn : n < 2 ^ 32)
     (hSD : (⟨State.addr S, 64⟩ : Region).Disjoint ⟨State.addr D, n⟩)
     (hSB : (⟨State.addr S, 64⟩ : Region).Disjoint ⟨State.addr B, 320⟩)
     (hDB : (⟨State.addr D, n⟩ : Region).Disjoint ⟨State.addr B, 320⟩)
@@ -547,23 +569,9 @@ theorem xor_call {s : State} {S D B : BitVec 32} {n : Nat} (h0 : s.gpr .r0 = S) 
       Spec.ChaCha20.bytesAt s'.mem (State.addr D) n =
         List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem (State.addr D) n)
           (keystream (stateAt s.mem (State.addr S)) n) → Q s') :
-    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.Arm.Xor.xor) s Q := by
-  have hn' : (BitVec.ofNat 32 n).toNat = n := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
-  refine WP.callCalls (k := xorK) (fun s hs => Proof.ChaCha20.Arm.Xor.xor_regs s hs)
-    (rd := []) (wr := [⟨State.addr S, 64⟩, ⟨State.addr D, n⟩, ⟨State.addr B, 320⟩]) ?_ hc hw ?_
-    xor_noFrames
-  · simp only [xorK, Proof.ChaCha20.xorArm, State.withRegions_gpr, State.withRegions_rd,
-      State.withRegions_wr, State.callEntry_gpr s (by decide : Reg.r0 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.r1 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.r2 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.r3 ∉ linkRegs), h0, h1, h2, h3, hn']
-    exact ⟨trivial, trivial, hSD, hSB, hDB, hS, hD, hB⟩
-  · intro s' hrd hwr hsp hf hcs _ hpost
-    simp only [xorK, Proof.ChaCha20.xorArm, State.withRegions_gpr, State.withRegions_mem,
-      State.callEntry_mem, State.callEntry_gpr s (by decide : Reg.r0 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.r1 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.r2 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.r3 ∉ linkRegs), h0, h1, h2, h3, hn'] at hpost
-    exact hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ hpost.2.2 hpost.1
+    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.Arm.Xor.xor) s Q :=
+  Proof.ChaCha20.Arm.Xor.xor_call h0 h1 h2 h3 h5 hn hSD hSB hDB hS hD hB hc hw
+    fun s' hrd hwr hsp hf hcs r1 hpost => hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ r1 hpost
 
 /-! ## `vg_poly1305_init` -/
 
@@ -1842,54 +1850,59 @@ theorem set12_initState (key nonce : List Byte) :
 theorem cryptA_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) :
     WP isa (.block [.mov .r12 (.imm 1), .str .r12 .r7 (stOff + 48),
       .dp .add .r0 .r7 (.imm (BitVec.ofNat 32 stOff)), .mov .r1 (.reg .r10), .mov .r2 (.reg .r11),
-      .mov .r3 (.reg .r7)]) s fun s' =>
+      .mov .r3 (.reg .r7), .mov .r5 (.reg .r10)]) s fun s' =>
       s'.mem = s.mem.writeW (off (cx s₀) (stOff + 48)) (1 : BitVec 32) ∧ s'.gpr .r0 = ptr s₀ stOff ∧
-      s'.gpr .r1 = dP s₀ ∧ s'.gpr .r2 = stackArg s₀ 1 ∧ s'.gpr .r3 = cP s₀ ∧
-      Kept [sub s₀ stOff 64] s s' := by
+      s'.gpr .r1 = dP s₀ ∧ s'.gpr .r2 = stackArg s₀ 1 ∧ s'.gpr .r3 = cP s₀ ∧ s'.gpr .r5 = dP s₀ ∧
+      Inv s₀ s' ∧ Frame [sub s₀ stOff 64] s.mem s'.mem := by
   have o := hp.in_ctx (a := stOff + 48) (w := 4) (by decide)
   rw [← h.wr] at o
   have core : WP isa (.block [.mov .r12 (.imm 1), .str .r12 .r7 (stOff + 48),
       .dp .add .r0 .r7 (.imm (BitVec.ofNat 32 stOff)), .mov .r1 (.reg .r10), .mov .r2 (.reg .r11),
-      .mov .r3 (.reg .r7)]) s fun s' =>
+      .mov .r3 (.reg .r7), .mov .r5 (.reg .r10)]) s fun s' =>
       s'.mem = s.mem.writeW (off (cx s₀) (stOff + 48)) (1 : BitVec 32) ∧ s'.gpr .r0 = ptr s₀ stOff ∧
-      s'.gpr .r1 = dP s₀ ∧ s'.gpr .r2 = stackArg s₀ 1 ∧ s'.gpr .r3 = cP s₀ ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+      s'.gpr .r1 = dP s₀ ∧ s'.gpr .r2 = stackArg s₀ 1 ∧ s'.gpr .r3 = cP s₀ ∧ s'.gpr .r5 = dP s₀ ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
     refine wp_mov (op2_imm (by decide)) fun s₁ u₁ => ?_
     refine wp_str (a := off (cx s₀) (stOff + 48)) (by decide)
       (by rw [u₁.other _ (by decide), hr7 h]; exact hp.addr_cP_off (by decide)) (by rw [u₁.wr]; exact o)
       fun s₂ g₂ => ?_
     refine wp_add (op2_imm (by decide)) fun s₃ u₃ => wp_mov (op2_reg _ _) fun s₄ u₄ =>
-      wp_mov (op2_reg _ _) fun s₅ u₅ => wp_mov (op2_reg _ _) fun s₆ u₆ => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, g₂.mem, u₁.gpr, u₁.mem]
-    · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g₂.gpr,
-        u₁.other _ (by decide), hr7 h]
-    · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂.gpr,
-        u₁.other _ (by decide), h.regs.r10]
-    · rw [u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), g₂.gpr,
-        u₁.other _ (by decide), h.regs.r11]
-    · rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), g₂.gpr,
-        u₁.other _ (by decide), hr7 h]
-    · rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, g₂.rd, u₁.rd]
-    · rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, g₂.wr, u₁.wr]
-  refine WP.mono (WP.kept core rfl)
-    fun s' ⟨⟨hm, h0, h1, h2, h3, hrd, hwr⟩, hg, hsp⟩ => ⟨hm, h0, h1, h2, h3, Kept.of hg hsp hrd hwr ?_⟩
-  rw [hm]
-  exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-    (contains_sub s₀ (w := 32 / 8) (by decide) (by decide) (by decide))
+      wp_mov (op2_reg _ _) fun s₅ u₅ => wp_mov (op2_reg _ _) fun s₆ u₆ => wp_mov (op2_reg _ _) fun s₇ u₇ =>
+      WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, g₂.mem, u₁.gpr, u₁.mem]
+    · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+        u₃.gpr, g₂.gpr, u₁.other _ (by decide), hr7 h]
+    · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr,
+        u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), h.regs.r10]
+    · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide),
+        u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), h.regs.r11]
+    · rw [u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide),
+        u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), hr7 h]
+    · rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+        u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), h.regs.r10]
+    · rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, g₂.rd, u₁.rd]
+    · rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, g₂.wr, u₁.wr]
+  refine WP.mono (WP.keptBut (d := .r5) core rfl)
+    fun s' ⟨⟨hm, h0, h1, h2, h3, h5, hrd, hwr⟩, hg, hsp⟩ => ?_
+  have hf : Frame [sub s₀ stOff 64] s.mem s'.mem := by
+    rw [hm]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (contains_sub s₀ (w := 32 / 8) (by decide) (by decide) (by decide))
+  exact ⟨hm, h0, h1, h2, h3, h5, h.step1r5 hg hsp hrd hwr hf (by decide) (by decide), hf⟩
 
 theorem hL (s₀ : State) : stackArg s₀ 1 = BitVec.ofNat 32 (L s₀) := by simp [L]
 
 theorem length_encrypt (key nonce m : List Byte) : (Spec.ChaCha20.encrypt key 1 nonce m).length = m.length := by
   rw [encrypt_eq, List.length_zipWith, VG.Proof.ChaCha20.length_keystream, Nat.min_self]
 
-/-- The data encrypted (or decrypted) from block counter 1, with the ChaCha20
-state for counter 0 at `ctx + stOff`. -/
+/-- The data encrypted (or decrypted) in place from block counter 1, with the
+ChaCha20 state for counter 0 at `ctx + stOff`. -/
 theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     (hst : stateAt s.mem (off (cx s₀) stOff) = Spec.ChaCha20.initState (K s₀) 0 (N s₀)) :
-    WP isa crypt s fun s' => Inv s₀ s' ∧ Kept [sub s₀ 0 (stOff + 64), dR s₀] s s' ∧
+    WP isa crypt s fun s' => Inv s₀ s' ∧ Frame [sub s₀ 0 (stOff + 64), dR s₀] s.mem s'.mem ∧
       bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
   unfold crypt
-  refine WP.seq (WP.mono (cryptA_ok hp h) fun s₁ ⟨m₁, h0, h1, h2, h3, k₁⟩ => ?_)
-  have i₁ := h.step1 k₁ (by decide) (by decide)
+  refine WP.seq (WP.mono (cryptA_ok hp h) fun s₁ ⟨m₁, h0, h1, h2, h3, h5, i₁, f₁⟩ => ?_)
   have hw : Covers [⟨State.addr (ptr s₀ stOff), 64⟩, ⟨State.addr (dP s₀), L s₀⟩, ⟨State.addr (cP s₀), 320⟩]
       s₁.wr := by
     refine Covers.of_sub fun r hr => ?_
@@ -1898,7 +1911,7 @@ theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     · exact ⟨ctxR s₀, by rw [i₁.wr]; exact hp.ctx_wr, stOff, by rw [hp.addr_ptr (by decide)], by simp [stOff]⟩
     · exact ⟨dR s₀, by rw [i₁.wr]; exact hp.d_wr, 0, by simp, by simp⟩
     · exact ⟨ctxR s₀, by rw [i₁.wr]; exact hp.ctx_wr, 0, by simp, by simp⟩
-  refine WP.seq (xor_call h0 h1 (by rw [h2]; exact hL s₀) h3 (stackArg s₀ 1).isLt
+  refine WP.seq (xor_call h0 h1 (by rw [h2]; exact hL s₀) h3 h5 (stackArg s₀ 1).isLt
     (by rw [hp.addr_ptr (by decide)]; exact hp.c_d.sub_left (sub_ctx s₀ (by decide)))
     (by rw [hp.addr_ptr (by decide), ← sub_zero]
         exact sub_disj s₀ (a := stOff) (n := 64) (b := 0) (m := 320) (by decide) (by decide)
@@ -1917,12 +1930,12 @@ theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     · exact ⟨dR s₀, by simp, fun _ h => h⟩
     · refine ⟨sub s₀ 0 (stOff + 64), by simp, ?_⟩
       rw [← sub_zero]; exact sub_sub s₀ (Nat.le_refl _) (by decide) (by decide)
-  have k₁₂ : Kept [sub s₀ 0 (stOff + 64), dR s₀] s s₂ :=
-    (k₁.sub fun r hr => by
+  have f₁' : Frame [sub s₀ 0 (stOff + 64), dR s₀] s.mem s₁.mem :=
+    f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨sub s₀ 0 (stOff + 64), by simp, sub_sub s₀ (by lit_omega) (by decide) (by decide)⟩).trans
-    (k₂.sub hsub)
-  have i₂ := h.step k₁₂ (fun r hr => by
+      exact ⟨sub s₀ 0 (stOff + 64), by simp, sub_sub s₀ (by lit_omega) (by decide) (by decide)⟩
+  have k₂' : Kept [sub s₀ 0 (stOff + 64), dR s₀] s₁ s₂ := k₂.sub hsub
+  have i₂ := i₁.step k₂' (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact sub_inv s₀ (by decide)
@@ -1932,9 +1945,10 @@ theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
       rcases hr with rfl | rfl
       · exact sub_disj s₀ (by decide) (by decide) (by decide)
       · exact hp.c_d.sub_left (sub_ctx s₀ (by decide)))
-  refine WP.mono (anchor_ok i₂ r1₂) fun s₃ ⟨i₃, k₃⟩ => ⟨i₃, k₁₂.trans (k₃.sub fun _ hr => absurd hr List.not_mem_nil), ?_⟩
+  refine WP.mono (anchor_ok i₂ r1₂) fun s₃ ⟨i₃, k₃⟩ =>
+    ⟨i₃, f₁'.trans (k₂'.frame.trans (k₃.frame.sub fun _ hr => absurd hr List.not_mem_nil)), ?_⟩
   have d₁ : bytesAt s₁.mem (dp s₀) (L s₀) = bytesAt s.mem (dp s₀) (L s₀) :=
-    bytesAt_frame k₁.frame (fun r hr => by
+    bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hp.c_d.sub_left (sub_ctx s₀ (by decide))).symm)
       (by simp only [L]; have := (stackArg s₀ 1).isLt; omega_using [])

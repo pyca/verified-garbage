@@ -28,7 +28,8 @@ The working space (632 bytes, called the context below):
 
 `r7` holds the context, `r8` the additional data, `r9` its length, `r10`
 the data and `r11` its length throughout: they are callee-saved, so every
-callee restores them. `r0`–`r3` and `r12` are temporaries. The ChaCha20
+callee restores them. `r0`–`r3` and `r12` are temporaries, and `r5` passes
+`vg_chacha20_xor` its fifth argument, `dst` (the data, in place). The ChaCha20
 state is built from the key and the nonce at `r0` and `r1`; `tag` is loaded
 from the stack where it is needed: `seal` passes it to
 `vg_poly1305_finalize_scratch` as `out`, and `open` compares the tag computed
@@ -166,11 +167,12 @@ def macPad (p n : Reg) : Prog isa :=
     (.ite .eq (.block [])
       (.seq (.block [.dp .sub .r1 n (.reg .r3), .dp .add .r1 p (.reg .r1)]) padTail))))
 
-/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted. -/
+/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted in
+place (`vg_chacha20_xor`'s `dst`, in `r5`, is `src`). -/
 def crypt : Prog isa :=
   .seq (.block [.mov .r12 (.imm 1), .str .r12 .r7 (stOff + 48),
     .dp .add .r0 .r7 (.imm (BitVec.ofNat 32 stOff)), .mov .r1 (.reg .r10), .mov .r2 (.reg .r11),
-    .mov .r3 (.reg .r7)])
+    .mov .r3 (.reg .r7), .mov .r5 (.reg .r10)])
   (.seq (.call "vg_chacha20_xor" Impl.ChaCha20.Arm.Xor.xor)
     (.block [.mov .r7 (.reg .r1)]))
 
