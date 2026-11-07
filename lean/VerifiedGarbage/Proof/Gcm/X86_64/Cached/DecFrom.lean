@@ -65,7 +65,7 @@ theorem setupFrom_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
     have hA := hR.a
     refine ⟨fun k l => hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2 * (2 * k + l / 2) - l % 2)), ⟨⟨Nat.zero_le _, fun l hl => by rw [c14 l hl, Nat.mul_zero, Nat.zero_add], m0, i15,
         by rw [f.gpr]; exact hA.rdi, by rw [f.gpr]; exact hA.rsi, by rw [f.gpr]; exact hA.r10,
-        fun hi => by rw [f.gpr]; exact hA.r8 hi, by rw [f.mem]; exact hA.frame,
+        fun _ => by rw [f.gpr]; exact hR.r8, by rw [f.mem]; exact hA.frame,
         fun k hk => absurd hk (by omega), fun k hk _ => by rw [f.mem]; exact hA.src k hk (Nat.zero_le _),
         by rw [f.rd]; exact hA.rd, by rw [f.wr]; exact hA.wr⟩,
       by rw [f.gpr, hR.rdx]; simp, by rw [f.gpr, hR.gpr _ (by decide) (by decide) (by decide) (by decide)]; simp,

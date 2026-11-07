@@ -109,6 +109,7 @@ theorem setupCFrom_ok (s : State) (h0 : ∀ l < 2, s.lane .xmm0 l = revMask)
 structure ReadyFrom (s₀ : State) (P : Nat → Nat → Block) (s : State) : Prop where
   a : AInvM true s₀ 0 s
   rdx : s.gpr .rdx = dp s₀
+  r8 : s.gpr .r8 = op s₀ - dp s₀
   rax : s.gpr .rax = cp s₀
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r8 → r ≠ .r10 → s.gpr r = s₀.gpr r
   pw : ∀ k < 8, ∀ l < 2, s.mem.readW (pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l)) 128 = P k l
@@ -142,13 +143,12 @@ theorem setupTFrom_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {s₁ : 
     by rw [gk _ (by decide) (by decide) (by decide) (by decide), gs _ (by decide)],
     by rw [gk _ (by decide) (by decide) (by decide) (by decide), gs _ (by decide)],
     by rw [r10, gs _ (by decide), gs _ (by decide)],
-    fun _ => by rw [r8, gs _ (by decide), gs _ (by decide)],
     by rw [m₃]; exact fr.mono fun r hr => by simp at hr ⊢; exact Or.inr hr,
     fun k hk => absurd hk (Nat.not_lt_zero _), fun k hk _ => by
       have := hp.wrap_s
       rw [m₃, hp₂ (hp.s_p.sub_left (Offset.sub_base _ (by omega_arith)))],
     by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁]⟩,
-    by rw [rdx, gs _ (by decide)], by rw [rax, gs _ (by decide)],
+    by rw [rdx, gs _ (by decide)], by rw [r8, gs _ (by decide), gs _ (by decide)], by rw [rax, gs _ (by decide)],
     fun r h1 h2 h3 h4 => by rw [gk r h1 h2 h3 h4, gs r h1], fun k hk l hl => ?_,
     fun l hl => by rw [lk _ (by decide) (by decide) (by decide) (by decide) l hl, l₂]; exact l1 l hl,
     by rw [y0, gs _ (by decide), hp₂ (hp.p_y.symm)], y1⟩
@@ -168,6 +168,7 @@ theorem decTailFrom_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : n
     WP isa (.seq (.loop (dbody true) .ae) (.block (storeCtr ++ storeY))) s₁ (DPostTo s₀) :=
   WP.mono (Stitch.decTailM_ok hp.toM hp.nb16 hm hf
     ⟨hR.a, by rw [hR.rdx]; simp, by rw [hR.gpr _ (by decide) (by decide) (by decide) (by decide)]; simp, hR.rax,
+      fun _ => hR.r8,
       fun r h1 h2 h3 _ h5 => hR.gpr r h1 h2 (h3 rfl) h5, hR.pw, hR.m1, by rw [hR.y]; simp [ghashFrom], hR.y1⟩)
     fun _ h => h.toDPostTo
 

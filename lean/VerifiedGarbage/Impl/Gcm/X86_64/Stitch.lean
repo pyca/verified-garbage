@@ -81,20 +81,26 @@ read to the output. -/
 def dstK (ix : Bool) (d : Nat) : MemOp :=
   if ix then { base := .rdx, index := some .r8, disp := d } else at_ .rdx d
 
-/-- XOR block register `i` into the two blocks at `rdx + 32 (j + i)`, through
-`t`, and store the result to `dstK ix (32 (j + i))` (in place,
+/-- Where a pair of blocks written at `rdx + d` is read from: there, or, out
+of place (`ld`), at `rdx + r8 + d`, `r8` holding the distance from the
+output to the data read. -/
+def srcK (ld : Bool) (d : Nat) : MemOp :=
+  if ld then { base := .rdx, index := some .r8, disp := d } else at_ .rdx d
+
+/-- XOR block register `i` into the two blocks read at `srcK ld (32 (j + i))`,
+through `t`, and store the result to `dstK ix (32 (j + i))` (in place,
 `Vaes.xorDataK t .rdx`). -/
-def xorDataKM (ix : Bool) (t : XReg) : List XReg → Nat → List Instr
+def xorDataKM (ix : Bool) (t : XReg) (ld : Bool) : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => ([.vmovdquLoad .l256 t (at_ .rdx (32 * j)), .vop (.vbin .vpxor .l256 b b t),
-      .vmovdquStore .l256 (dstK ix (32 * j)) b] : List Instr) ++ xorDataKM ix t bs (j + 1)
+  | b :: bs, j => ([.vmovdquLoad .l256 t (srcK ld (32 * j)), .vop (.vbin .vpxor .l256 b b t),
+      .vmovdquStore .l256 (dstK ix (32 * j)) b] : List Instr) ++ xorDataKM ix t ld bs (j + 1)
 
 /-- Eight blocks encrypted into the data blocks `2j`… at `rdx + 32 j`, or,
-out of place (`ix`), from there to `rdx + r8 + 32 j`, the GHASH loads `g i`
-after round `i`. -/
-def batch (j : Nat) (g : Nat → List Instr) (ix : Bool := false) : Prog isa :=
+out of place, from there to `rdx + r8 + 32 j` (`ix`) or from `rdx + r8 + 32 j`
+to there (`ld`), the GHASH loads `g i` after round `i`. -/
+def batch (j : Nat) (g : Nat → List Instr) (ix : Bool := false) (ld : Bool := false) : Prog isa :=
   .seq (.block (ctrsK .xmm14 .xmm0 .xmm15 aregs))
-    (.seq (aesK .xmm13 aregs g) (.block (xorDataKM ix .xmm13 aregs j)))
+    (.seq (aesK .xmm13 aregs g) (.block (xorDataKM ix .xmm13 ld aregs j)))
 
 /-- The order of the GHASH loads of an encryption body: the product with `Y`
 last. -/
@@ -121,14 +127,16 @@ def gA : Nat → List Instr := gq ordE 0 false
 reduction. -/
 def gB : Nat → List Instr := gq ordE 4 true
 
-/-- The first group, encrypted only. -/
-def first : Prog isa := .seq (batch 0 fun _ => []) (batch 4 fun _ => [])
+/-- The first group, encrypted only, in place or, out of place (`ld`), from
+the data at `rdx + r8`. -/
+def first (ld : Bool := false) : Prog isa := .seq (batch 0 (fun _ => []) false ld) (batch 4 (fun _ => []) false ld)
 
-/-- A group encrypted (at `rdx + 256`) and the previous one hashed (at `rdx`). -/
-def body : Prog isa :=
+/-- A group encrypted (at `rdx + 256`, from `rdx + r8 + 256` out of place)
+and the previous one hashed (at `rdx`). -/
+def body (ld : Bool := false) : Prog isa :=
   .seq (.block zero)
-    (.seq (batch 8 gA)
-      (.seq (batch 12 gB)
+    (.seq (batch 8 gA false ld)
+      (.seq (batch 12 gB false ld)
         (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 32)])))
 
 /-- The counter stored. -/

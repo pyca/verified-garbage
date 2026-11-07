@@ -52,6 +52,8 @@ structure DInvM (ix : Bool) (s₀ : State) (P : Nat → Nat → Block) (e : Nat)
   rdx : s.gpr .rdx = dp s₀ + BitVec.ofNat 64 (256 * e)
   r9 : s.gpr .r9 = BitVec.ofNat 64 (nb s₀ - 16 * e)
   rax : s.gpr .rax = cp s₀
+  /-- Out of place, the distance from the data to the output. -/
+  r8 : ix = true → s.gpr .r8 = op s₀ - dp s₀
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → (ix = true → r ≠ .r8) → r ≠ .r9 → r ≠ .r10 → s.gpr r = s₀.gpr r
   pw : ∀ k < 8, ∀ l < 2, s.mem.readW (pp s₀ + BitVec.ofNat 64 (32 * k + 16 * l)) 128 = P k l
   m1 : ∀ l < 2, s.lane .xmm1 l = poly
@@ -60,7 +62,8 @@ structure DInvM (ix : Bool) (s₀ : State) (P : Nat → Nat → Block) (e : Nat)
 
 theorem DInv.toM {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (h : DInv s₀ P e s) :
     DInvM false s₀ P e s :=
-  ⟨h.a.toM, h.rdx, h.r9, h.rax, fun r h1 h2 _ h4 h5 => h.gpr r h1 h2 h4 h5, h.pw, h.m1, h.y, h.y1⟩
+  ⟨h.a.toM, h.rdx, h.r9, h.rax, fun h' => absurd h' (by decide), fun r h1 h2 _ h4 h5 => h.gpr r h1 h2 h4 h5, h.pw,
+    h.m1, h.y, h.y1⟩
 
 theorem DInvM.toDInv {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (h : DInvM false s₀ P e s) :
     DInv s₀ P e s :=
@@ -104,14 +107,15 @@ theorem dbodyM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → Na
         exact in_rdwr (in_sub_int hp.p_in (by omega_arith))
       m0 := fun l hl => by rw [f₁.lane _ (by decide) l hl]; exact hI.a.msk l hl }
   -- The first batch decrypts blocks 0–7 of the group, hashing them (the product with `Y` last).
-  refine WP.seq (WP.mono (batchM_ok hp dA gRegs gRegs_ok (QG s₀ loA a X P yl ordD 0 false)
+  refine WP.seq (WP.mono (batchM_ok (ld := false) hp (by cases ix <;> rfl) (fun h => absurd h (by decide)) dA gRegs gRegs_ok (QG s₀ loA a X P yl ordD 0 false)
     (gq_ok (fun j => by simp only [loA]; split <;> split <;> omega_arith) (fun j hj1 hj4 => by
       rcases (by omega_arith : j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl <;>
         exact ⟨by decide, by decide⟩) (fun h => absurd h (by decide)))
     (fun j t t' h f => h.yframe f (by decide))
     (fun t t' h hg hrd hwr hl hf => QG.keepM hp (by omega_arith) (by omega_arith) ha
       (fun _ i hi _ => by have : 8 ≤ i := hi; omega_arith) h hg hrd hwr hl hf)
-    (c := 16 * e) (j := 0) (by omega_arith) hA₁ (by rw [f₁.gpr]; show a.toNat + _ = _; omega_arith)
+    (c := 16 * e) (j := 0) (by omega_arith) hA₁ (fun hi => by rw [f₁.gpr]; exact hI.r8 hi)
+    (by rw [f₁.gpr]; show a.toNat + _ = (dp s₀).toNat + _; omega_arith)
     ⟨hE₁, fun l hl => by rw [f₁.lane _ (by decide) l hl]; exact hI.m1 l hl,
       by rw [ite_f (by decide)]
          exact ⟨fun l hl => z₁ l hl, fun l hl => by rw [f₁.lane _ (by decide) l hl]⟩⟩)
@@ -121,14 +125,15 @@ theorem dbodyM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → Na
     rw [ite_f (by decide)] at h2
     exact ⟨hE, h1, by rw [ite_f (by decide)]; exact h2⟩
   -- The second batch decrypts blocks 8–15, hashing them, then reduces.
-  refine WP.seq (WP.mono (batchM_ok hp dB gRegs gRegs_ok (QG s₀ loB a X P yl ordD 4 true)
+  refine WP.seq (WP.mono (batchM_ok (ld := false) hp (by cases ix <;> rfl) (fun h => absurd h (by decide)) dB gRegs gRegs_ok (QG s₀ loB a X P yl ordD 4 true)
     (gq_ok (fun j => by simp only [loB]; split <;> split <;> omega_arith) (fun j hj1 hj4 => by
       rcases (by omega_arith : j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl <;>
         exact ⟨by decide, by decide⟩) (fun _ => rfl))
     (fun j t t' h f => h.yframe f (by decide))
     (fun t t' h hg hrd hwr hl hf => QG.keepM hp (by omega_arith) (by omega_arith) ha
       (fun _ i hi hi' => by have : 16 ≤ i := hi; omega_arith) h hg hrd hwr hl hf)
-    (c := 16 * e + 8) (j := 4) (by omega_arith) hA₂ (by rw [hg₂, f₁.gpr]; show a.toNat + _ = _; omega_arith) hQ₂')
+    (c := 16 * e + 8) (j := 4) (by omega_arith) hA₂ (fun hi => by rw [hg₂, f₁.gpr]; exact hI.r8 hi)
+    (by rw [hg₂, f₁.gpr]; show a.toNat + _ = (dp s₀).toNat + _; omega_arith) hQ₂')
     fun s₃ ⟨hA₃, hQ₃, hg₃, hl₃, hm₃⟩ => ?_)
   refine WP.mono (nextD_ok s₃) fun s' ⟨frdx, fr9, fcf, fg, fl, fm, frd, fwr⟩ => ?_
   obtain ⟨_, _, h2⟩ := hQ₃
@@ -153,7 +158,7 @@ theorem dbodyM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → Na
     exact ⟨hA₃.le, fun l hl => by rw [fl]; exact hA₃.ctr l hl, fun l hl => by rw [fl]; exact hA₃.msk l hl,
       fun l hl => by rw [fl]; exact hA₃.inc l hl,
       by rw [fg _ (by decide) (by decide)]; exact hA₃.rdi, by rw [fg _ (by decide) (by decide)]; exact hA₃.rsi,
-      by rw [fg _ (by decide) (by decide)]; exact hA₃.r10, fun hi => by rw [fg _ (by decide) (by decide)]; exact hA₃.r8 hi,
+      by rw [fg _ (by decide) (by decide)]; exact hA₃.r10,
       by rw [fm]; exact hA₃.frame, fun k hk => by rw [fm]; exact hA₃.out k hk,
       fun k hk hc => by rw [fm]; exact hA₃.src k hk hc, by rw [frd]; exact hA₃.rd, by rw [fwr]; exact hA₃.wr⟩
   have hr9 : s₃.gpr .r9 - 16 = BitVec.ofNat 64 (nb s₀ - 16 * (e + 1)) := by
@@ -161,6 +166,7 @@ theorem dbodyM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → Na
       ofNat_sub_ofNat (by omega_arith) (by omega_arith)]
     congr 1
   refine ⟨⟨hA', ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
+    fun hi => by rw [gk _ (by decide) (by decide)]; exact hI.r8 hi,
     fun r h1 h2 h3 h4 h5 => by rw [gk r h2 h4]; exact hI.gpr r h1 h2 h3 h4 h5,
     fun k hk l hl => by rw [keepP k hk l hl]; exact hI.pw k hk l hl,
     fun l hl => by rw [lk _ (by decide) (by decide) (by decide) (by decide) l hl]; exact hI.m1 l hl, ?_,
@@ -263,6 +269,7 @@ theorem decTail_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : 
     (hR : Ready s₀ P s₁) : WP isa (.seq (.loop dbody .ae) (.block (storeCtr ++ storeY))) s₁ (DPost s₀) :=
   WP.mono (decTailM_ok hp.toM hp.nb16 hm hf
     ⟨hR.a.toM, by rw [hR.rdx]; simp, by rw [hR.gpr _ (by decide) (by decide) (by decide)]; simp, hR.rax,
+      fun h => absurd h (by decide),
       fun r h1 h2 _ _ h5 => hR.gpr r h1 h2 h5, hR.pw, hR.m1, by rw [hR.y]; simp [ghashFrom], hR.y1⟩)
     fun _ h => h.toDPost
 

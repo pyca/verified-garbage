@@ -41,7 +41,7 @@ namespace VG.Proof.Gcm.X86_64.Stitch
 
 open VG VG.X86_64
 open VG.Impl.Aes.X86_64.Vaes (ctrsK aesK)
-open VG.Impl.Gcm.X86_64.Stitch (aregs batch dstK xorDataKM)
+open VG.Impl.Gcm.X86_64.Stitch (aregs batch dstK srcK xorDataKM)
 open VG.Proof.Aes.X86_64.Vaes (ctrs_ok aesG_ok xorData_ok two YFrame.of_keys)
 open VG.Proof.Aes.X86_64.AesNi (Keys aesWith_eq blockAt_frame st)
 open VG.Spec.Gcm (Block blockAt inc32 aesWith)
@@ -178,8 +178,7 @@ theorem sch_frame {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {m : Mem} (hf : 
   sch_frameM hp.toM hf
 
 /-- `AInv`, in place or out of place: the output blocks below `c` written,
-the data blocks from `c` on as they were, and, out of place, the distance
-from the data to the output in `r8`. -/
+and the data blocks from `c` on as they were. -/
 structure AInvM (ix : Bool) (s₀ : State) (c : Nat) (s : State) : Prop where
   le : c ≤ nb s₀
   ctr : ∀ l < 2, s.lane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀)
@@ -188,7 +187,6 @@ structure AInvM (ix : Bool) (s₀ : State) (c : Nat) (s : State) : Prop where
   rdi : s.gpr .rdi = kp s₀
   rsi : s.gpr .rsi = s₀.gpr .rsi
   r10 : s.gpr .r10 = kp s₀ + BitVec.ofNat 64 (16 * nr s₀)
-  r8 : ix = true → s.gpr .r8 = op s₀ - dp s₀
   frame : Frame [wR ix s₀, pR s₀] s₀.mem s.mem
   out : ∀ k < c, blockAt s.mem (wAddr ix s₀ k) = ctb s₀ k
   src : ∀ k < nb s₀, c ≤ k → blockAt s.mem (bAddr s₀ k) = blk s₀ k
@@ -196,7 +194,7 @@ structure AInvM (ix : Bool) (s₀ : State) (c : Nat) (s : State) : Prop where
   wr : s.wr = s₀.wr
 
 theorem AInv.toM {s₀ : State} {c : Nat} {s : State} (h : AInv s₀ c s) : AInvM false s₀ c s :=
-  ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, fun h' => absurd h' (by decide), h.frame,
+  ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, h.frame,
     fun k hk => (h.blocks k (by have := h.le; omega)).trans (by simp only [hk, ite_true]),
     fun k hk hc => (h.blocks k hk).trans (by simp only [show ¬ k < c by omega, ite_false]), h.rd, h.wr⟩
 
@@ -210,7 +208,7 @@ theorem AInvM.yframe {ix : Bool} {s₀ : State} {c : Nat} {s s' : State} {rs : L
     (f : YFrame rs s s') (h14 : .xmm14 ∉ rs) (h0 : .xmm0 ∉ rs) (h15 : .xmm15 ∉ rs) : AInvM ix s₀ c s' :=
   ⟨h.le, fun l hl => by rw [f.lane _ h14 l hl]; exact h.ctr l hl, fun l hl => by rw [f.lane _ h0 l hl]; exact h.msk l hl,
     fun l hl => by rw [f.lane _ h15 l hl]; exact h.inc l hl, by rw [f.gpr]; exact h.rdi, by rw [f.gpr]; exact h.rsi,
-    by rw [f.gpr]; exact h.r10, fun hi => by rw [f.gpr]; exact h.r8 hi, by rw [f.mem]; exact h.frame,
+    by rw [f.gpr]; exact h.r10, by rw [f.mem]; exact h.frame,
     fun k hk => by rw [f.mem]; exact h.out k hk, fun k hk hc => by rw [f.mem]; exact h.src k hk hc,
     by rw [f.rd]; exact h.rd, by rw [f.wr]; exact h.wr⟩
 
@@ -236,7 +234,8 @@ theorem aregs_ok : aregs.Nodup ∧ .xmm13 ∉ aregs ∧ ∀ r ∈ aregs, r ≠ .
 
 /-! ## The XOR into the output -/
 
-/-- Where `dstK ix` stores: `rdx`, or, out of place, `rdx + r8`. -/
+/-- Where `dstK ix` stores and `srcK ix` loads: `rdx`, or, out of place,
+`rdx + r8`. -/
 def oA (s : State) (ix : Bool) : Addr := if ix then s.gpr .rdx + s.gpr .r8 else s.gpr .rdx
 
 theorem oA_congr {s s' : State} (ix : Bool) (h : s'.gpr = s.gpr) : oA s' ix = oA s ix := by
@@ -247,21 +246,27 @@ theorem ea_dstK (s : State) (ix : Bool) (d : Nat) : s.ea (dstK ix d) = oA s ix +
   · exact VG.Proof.Gcm.X86_64.Pclmul.ea_at s .rdx d
   · exact StitchZTo.ea_atIx s .rdx .r8 d
 
-/-- XOR the two lanes of `b` into the blocks at `rdx + d` and the next, and
-store them to `dstK ix d`. -/
-theorem xor1M_ok (ix : Bool) (t : XReg) (b : XReg) (d : Nat) (s : State) (hb8 : b ≠ t)
-    (hinS : InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofInt 64 (d : Int)) 32)
+/-- `srcK ld` loads from where `dstK ld` stores. -/
+theorem ea_srcK (s : State) (ld : Bool) (d : Nat) : s.ea (srcK ld d) = oA s ld + BitVec.ofInt 64 (d : Int) := by
+  cases ld
+  · exact VG.Proof.Gcm.X86_64.Pclmul.ea_at s .rdx d
+  · exact StitchZTo.ea_atIx s .rdx .r8 d
+
+/-- XOR the two lanes of `b` into the blocks read at `srcK ld d` and the next,
+and store them to `dstK ix d`. -/
+theorem xor1M_ok (ix ld : Bool) (t : XReg) (b : XReg) (d : Nat) (s : State) (hb8 : b ≠ t)
+    (hinS : InRegions (s.rd ++ s.wr) (oA s ld + BitVec.ofInt 64 (d : Int)) 32)
     (hin : InRegions s.wr (oA s ix + BitVec.ofInt 64 (d : Int)) 32) :
-    WP isa (.block [.vmovdquLoad .l256 t (VG.Impl.Gcm.X86_64.Pclmul.at_ .rdx d), .vop (.vbin .vpxor .l256 b b t),
+    WP isa (.block [.vmovdquLoad .l256 t (srcK ld d), .vop (.vbin .vpxor .l256 b b t),
         .vmovdquStore .l256 (dstK ix d) b]) s fun s' =>
       (∃ v : BitVec 256, s'.mem = s.mem.writeW (oA s ix + BitVec.ofInt 64 (d : Int)) v) ∧
       (∀ l < 2, blockAt s'.mem (oA s ix + BitVec.ofInt 64 (d : Int) + BitVec.ofNat 64 (16 * l)) =
-        blockAt s.mem (s.gpr .rdx + BitVec.ofInt 64 (d : Int) + BitVec.ofNat 64 (16 * l)) ^^^
+        blockAt s.mem (oA s ld + BitVec.ofInt 64 (d : Int) + BitVec.ofNat 64 (16 * l)) ^^^
           XBinOp.eval .pshufb (s.lane b l) revMask) ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ≠ b → r ≠ t → ∀ l < 2, s'.lane r l = s.lane r l) := by
   let a := oA s ix + BitVec.ofInt 64 (d : Int)
-  let as := s.gpr .rdx + BitVec.ofInt 64 (d : Int)
+  let as := oA s ld + BitVec.ofInt 64 (d : Int)
   let v := s.mem.readW as 256
   let s₁ := s.setV .l256 t (v.extractLsb' 0 128) (v.extractLsb' 128 128)
   let s₂ := (VOp.vbin .vpxor .l256 b b t).exec s₁
@@ -270,7 +275,7 @@ theorem xor1M_ok (ix : Bool) (t : XReg) (b : XReg) (d : Nat) (s : State) (hb8 : 
     rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [s₁, State.lane_setV256, v]
   rw [WP.block_cons_iff]
   refine ⟨s₁, by
-    simp only [isa, exec, State.load256, VG.Proof.Gcm.X86_64.Pclmul.ea_at, hinS, ite_true, Option.map_some]; rfl, ?_⟩
+    simp only [isa, exec, State.load256, ea_srcK, hinS, ite_true, Option.map_some]; rfl, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨s₂, rfl, ?_⟩
   rw [WP.block_cons_iff]
   have hg₂ : s₂.gpr = s.gpr := by simp [s₂, s₁]
@@ -290,23 +295,23 @@ theorem xor1M_ok (ix : Bool) (t : XReg) (b : XReg) (d : Nat) (s : State) (hb8 : 
       VG.Proof.Gcm.X86_64.pshufb_rev_xor, BitVec.xor_comm, ← VG.Proof.Gcm.X86_64.blockAt_eq]
   · simp [s₂, s₁, lane_vbin256, State.lane_setV256, h1, h2]
 
-/-- `xorDataKM ix t regs j`: the pairs of blocks read at `rdx + 32 (j + k)`,
+/-- `xorDataKM ix t ld regs j`: the pairs of blocks read at `oA ld + 32 (j + k)`,
 each XORed with the lanes of register `k` and written at
 `oA + 32 (j + k)`, for an output each pair of which is apart from the pairs
 read after it. -/
-theorem xorDataKM_ok (ix : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
+theorem xorDataKM_ok (ix ld : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
     (h8 : t ∉ regs)
     (hinS : ∀ k < regs.length,
-      InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofInt 64 ((32 * (j + k) : Nat) : Int)) 32)
+      InRegions (s.rd ++ s.wr) (oA s ld + BitVec.ofInt 64 ((32 * (j + k) : Nat) : Int)) 32)
     (hin : ∀ k < regs.length, InRegions s.wr (oA s ix + BitVec.ofInt 64 ((32 * (j + k) : Nat) : Int)) 32)
     (hsep : ∀ a b, a < b → b < regs.length → ∀ l < 2,
-      Region.Disjoint ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (2 * (j + b) + l)), 16⟩
+      Region.Disjoint ⟨oA s ld + BitVec.ofNat 64 (16 * (2 * (j + b) + l)), 16⟩
         ⟨oA s ix + BitVec.ofNat 64 (32 * (j + a)), 32⟩)
     (hw : 32 * (j + regs.length) ≤ 2 ^ 64) :
-    WP isa (.block (xorDataKM ix t regs j)) s fun s' =>
+    WP isa (.block (xorDataKM ix t ld regs j)) s fun s' =>
       (∀ k (h : k < regs.length), ∀ l < 2,
         blockAt s'.mem (oA s ix + BitVec.ofNat 64 (16 * (2 * (j + k) + l))) =
-          blockAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * (2 * (j + k) + l))) ^^^
+          blockAt s.mem (oA s ld + BitVec.ofNat 64 (16 * (2 * (j + k) + l))) ^^^
             XBinOp.eval .pshufb (s.lane regs[k] l) revMask) ∧
       Frame [⟨oA s ix + BitVec.ofNat 64 (32 * j), 32 * regs.length⟩] s.mem s'.mem ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
@@ -323,18 +328,19 @@ theorem xorDataKM_ok (ix : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s : St
     have hin0 := hin 0 (by omega)
     have hinS0 := hinS 0 (by omega)
     rw [Nat.add_zero] at hin0 hinS0
-    refine WP.mono (xor1M_ok ix t b (32 * j) s hb8 hinS0 hin0) fun s₁ ⟨⟨v, m₁⟩, b₁, g₁, rd₁, wr₁, x₁⟩ => ?_
+    refine WP.mono (xor1M_ok ix ld t b (32 * j) s hb8 hinS0 hin0) fun s₁ ⟨⟨v, m₁⟩, b₁, g₁, rd₁, wr₁, x₁⟩ => ?_
     have o₁ : oA s₁ ix = oA s ix := oA_congr ix g₁
+    have i₁ : oA s₁ ld = oA s ld := oA_congr ld g₁
     refine WP.mono (ih (j + 1) s₁ (List.nodup_cons.mp hnd).2 h8'
       (fun k hk => by
-        rw [rd₁, wr₁, g₁, show j + 1 + k = j + (k + 1) by omega]; exact hinS (k + 1) (by omega))
+        rw [rd₁, wr₁, i₁, show j + 1 + k = j + (k + 1) by omega]; exact hinS (k + 1) (by omega))
       (fun k hk => by
         rw [wr₁, o₁, show j + 1 + k = j + (k + 1) by omega]; exact hin (k + 1) (by omega))
       (fun a c hac hc l hl => by
-        rw [g₁, o₁, show j + 1 + a = j + (a + 1) by omega, show j + 1 + c = j + (c + 1) by omega]
+        rw [i₁, o₁, show j + 1 + a = j + (a + 1) by omega, show j + 1 + c = j + (c + 1) by omega]
         exact hsep (a + 1) (c + 1) (by omega) (by omega) l hl)
       (by omega)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
-    rw [g₁, o₁] at hb
+    rw [i₁, o₁] at hb
     rw [o₁] at hf
     rw [VG.Proof.Aes.X86_64.AesNi.ofInt_natCast] at m₁ b₁
     have adr : ∀ (p : Addr), ∀ l < 2, p + BitVec.ofNat 64 (16 * (2 * j + l)) =
@@ -371,7 +377,8 @@ theorem xorDataKM_ok (ix : Bool) (t : XReg) (regs : List XReg) (j : Nat) (s : St
 
 /-! ## A batch -/
 
-theorem batchM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) (g : Nat → List Instr) (G : List XReg)
+theorem batchM_ok {ix st ld : Bool} {s₀ : State} (hp : LPre ix s₀) (hst : st = (ix && !ld)) (hld : ld = true → ix = true)
+    (g : Nat → List Instr) (G : List XReg)
     (hG : ∀ r ∈ G, r ≠ .xmm13 ∧ r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15)
     (Q : Nat → State → Prop)
     (hg : ∀ j, 1 ≤ j → j ≤ 9 → ∀ s, Keys (nr s₀) (sch s₀) s → Q j s →
@@ -382,8 +389,9 @@ theorem batchM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) (g : Nat → Li
       (∀ r, r ≠ .xmm13 → r ∉ aregs → ∀ l < 2, s'.lane r l = s.lane r l) →
       Frame [⟨wAddr ix s₀ c, 128⟩] s.mem s'.mem → Q 10 s')
     (hc : c + 8 ≤ nb s₀) {s : State} (hI : AInvM ix s₀ c s)
-    (hrdx : (s.gpr .rdx).toNat + 32 * j = (dp s₀).toNat + 16 * c) (hQ : Q 1 s) :
-    WP isa (batch j g ix) s fun s' => AInvM ix s₀ (c + 8) s' ∧ Q 10 s' ∧ s'.gpr = s.gpr ∧
+    (hr8 : ix = true → s.gpr .r8 = if ld then dp s₀ - op s₀ else op s₀ - dp s₀)
+    (hrdx : (s.gpr .rdx).toNat + 32 * j = (if ld then op s₀ else dp s₀).toNat + 16 * c) (hQ : Q 1 s) :
+    WP isa (batch j g st ld) s fun s' => AInvM ix s₀ (c + 8) s' ∧ Q 10 s' ∧ s'.gpr = s.gpr ∧
       (∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ G → ∀ l < 2, s'.lane r l = s.lane r l) ∧
       Frame [⟨wAddr ix s₀ c, 128⟩] s.mem s'.mem := by
   obtain ⟨hnd, h13, hx⟩ := aregs_ok
@@ -405,37 +413,55 @@ theorem batchM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) (g : Nat → Li
       ciph s₀ (Nat.repeat inc32 (c + 2 * k + l) (cb s₀)) := fun k h l hl =>
     (aesWith_eq _ _ _ _ (by rw [e₂ _ (List.getElem_mem h) l hl, e₁ k h l hl])).symm
   have hg₂ : s₂.gpr = s.gpr := by rw [f₂.gpr, f₁.gpr]
-  have addr : ∀ i, s.gpr .rdx + BitVec.ofNat 64 (32 * j + 16 * i) = bAddr s₀ (c + i) := fun i =>
-    addr_eq (by omega)
+  have hwr : (if ld then op s₀ else dp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64 := by
+    cases ld
+    · exact hwd
+    · obtain rfl := hld rfl; exact hw
+  -- Where `rdx` points: at the data, or, out of place (`ld`), at the output.
+  have raddr : ∀ i, s.gpr .rdx + BitVec.ofNat 64 (32 * j + 16 * i) =
+      (if ld then op s₀ else dp s₀) + BitVec.ofNat 64 (16 * (c + i)) := fun i => addr_eq (by omega)
+  -- Where the pairs are read from.
+  have addr : ∀ i, oA s ld + BitVec.ofNat 64 (32 * j + 16 * i) = bAddr s₀ (c + i) := fun i => by
+    cases ld
+    · exact raddr i
+    · show s.gpr .rdx + s.gpr .r8 + _ = dp s₀ + _
+      rw [hr8 (hld rfl)]
+      exact StitchZTo.src_addr (raddr i)
   -- Where the output pairs go.
-  have oaddr : ∀ i, oA s ix + BitVec.ofNat 64 (32 * j + 16 * i) = wAddr ix s₀ (c + i) := fun i => by
-    cases ix
-    · exact addr i
+  have oaddr : ∀ i, oA s st + BitVec.ofNat 64 (32 * j + 16 * i) = wAddr ix s₀ (c + i) := fun i => by
+    subst hst
+    cases ix <;> cases ld
+    · exact raddr i
+    · exact absurd (hld rfl) (by decide)
     · show s.gpr .rdx + s.gpr .r8 + _ = op s₀ + _
-      rw [hI.r8 rfl]
-      exact StitchZTo.src_addr (addr i)
+      rw [hr8 rfl]
+      exact StitchZTo.src_addr (raddr i)
+    · exact raddr i
   have e32 : ∀ k, BitVec.ofInt 64 ((32 * (j + k) : Nat) : Int) = BitVec.ofNat 64 (32 * j + 16 * (2 * k)) :=
     fun k => by rw [BitVec.ofInt_natCast]; congr 1; omega
   have e16 : ∀ k l, 16 * (2 * (j + k) + l) = 32 * j + 16 * (2 * k + l) := fun k l => by omega
-  have o₂ : oA s₂ ix = oA s ix := oA_congr ix hg₂
-  refine WP.mono (xorDataKM_ok ix .xmm13 aregs j s₂ hnd h13
+  have o₂ : oA s₂ st = oA s st := oA_congr st hg₂
+  have i₂ : oA s₂ ld = oA s ld := oA_congr ld hg₂
+  refine WP.mono (xorDataKM_ok st ld .xmm13 aregs j s₂ hnd h13
       (fun k hk => by
-        rw [hg₂, f₂.rd, f₁.rd, f₂.wr, f₁.wr, hI.rd, hI.wr, e32, addr]
+        rw [i₂, f₂.rd, f₁.rd, f₂.wr, f₁.wr, hI.rd, hI.wr, e32, addr]
         exact in_sub hp.d_in (by simp [aregs] at hk; omega))
       (fun k hk => by
         rw [o₂, f₂.wr, f₁.wr, hI.wr, e32, oaddr]
         exact in_sub hp.w_in (by simp [aregs] at hk; omega))
       (fun a b hab hb l hl => by
-        rw [hg₂, o₂, e16, show 32 * (j + a) = 32 * j + 16 * (2 * a) by omega, addr, oaddr]
+        rw [i₂, o₂, e16, show 32 * (j + a) = 32 * j + 16 * (2 * a) by omega, addr, oaddr]
         simp only [aregs, List.length_cons, List.length_nil] at hb
         cases ix
-        · exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)
+        · cases ld
+          · exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)
+          · exact absurd (hld rfl) (by decide)
         · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega))).sub_right
             (Offset.sub_base _ (by omega)))
       (by simp only [aregs, List.length_cons, List.length_nil]; omega))
     fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃⟩ => ?_
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
-  rw [hm₂, hg₂, o₂] at b₃
+  rw [hm₂, i₂, o₂] at b₃
   rw [hm₂, o₂] at fr₃
   rw [show 32 * j = 32 * j + 16 * 0 by omega, oaddr, Nat.add_zero] at fr₃
   have hb3 : ∀ k (h : k < aregs.length), ∀ l < 2,
@@ -459,7 +485,7 @@ theorem batchM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) (g : Nat → Li
       exact VG.Proof.Aes.X86_64.AesNi.run_sep hwd hk hc (by omega) h₁ h₂
     · exact ((hp.d_w rfl).sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega))
   refine ⟨⟨by omega, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, by rw [gs, hI.rdi],
-    by rw [gs, hI.rsi], by rw [gs, hI.r10], fun hi => by rw [gs, hI.r8 hi], ?_, ?_, ?_,
+    by rw [gs, hI.rsi], by rw [gs, hI.r10], ?_, ?_, ?_,
     by rw [rd₃, f₂.rd, f₁.rd, hI.rd], by rw [wr₃, f₂.wr, f₁.wr, hI.wr]⟩,
     hqx s₂ s₃ hQ₂ g₃ rd₃ wr₃ (fun r h1 h2 l hl => x₃ r h1 h2 l hl) (by rw [hm₂]; exact fr'),
     gs, kx, fr'⟩
@@ -505,6 +531,7 @@ theorem batch_ok {s₀ : State} (hp : SPre s₀) (g : Nat → List Instr) (G : L
     WP isa (batch j g) s fun s' => AInv s₀ (c + 8) s' ∧ Q 10 s' ∧ s'.gpr = s.gpr ∧
       (∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ G → ∀ l < 2, s'.lane r l = s.lane r l) ∧
       Frame [⟨bAddr s₀ c, 128⟩] s.mem s'.mem :=
-  WP.mono (batchM_ok hp.toM g G hG Q hg hq hqx hc hI.toM hrdx hQ) fun _ ⟨hA, h⟩ => ⟨hA.toAInv, h⟩
+  WP.mono (batchM_ok (ld := false) hp.toM rfl (fun h => absurd h (by decide)) g G hG Q hg hq hqx hc hI.toM
+    (fun h => absurd h (by decide)) hrdx hQ) fun _ ⟨hA, h⟩ => ⟨hA.toAInv, h⟩
 
 end VG.Proof.Gcm.X86_64.Stitch
