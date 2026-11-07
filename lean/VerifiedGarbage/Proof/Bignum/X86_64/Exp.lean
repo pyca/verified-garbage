@@ -230,8 +230,6 @@ theorem setWidth_byte (b : Byte) : b.setWidth 64 = BitVec.ofNat 64 (b.toNat * 2 
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.pow_zero, Nat.mul_one,
     Nat.mod_eq_of_lt (by have := b.isLt; omega_arith)]
 
-theorem sw8 : BitVec.setWidth 64 (8 : BitVec 32) = BitVec.ofNat 64 (8 - 0) := rfl
-
 theorem byteHead_eq : byteHead = ([.mov .rax (.mem (hdr sE)), .mov .rcx (.mem (hdr sI))] : List Instr) ++
     ([.movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr sV) .rax, .mov32 .rax (.imm 8),
       .store (hdr sBit) .rax] : List Instr) := rfl

@@ -83,7 +83,7 @@ b 28f
 28:
 .inst 0xd348fd40,0xf943ff3e,0xf943f73a,0xf943fb3b,0xf943f339,0xd65f03c0
 .p2align 6",
-        vg_keccak_absorb_scratch_sha3 = sym crate::sha3::vg_keccak_absorb_scratch_sha3,
+        vg_keccak_absorb_scratch_sha3 = sym crate::ed448::vg_keccak_absorb_scratch_sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym crate::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym crate::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
     )

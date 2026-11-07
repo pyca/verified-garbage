@@ -28,8 +28,6 @@ namespace VG.Proof.Bignum.PPC64LE.Crt
 open VG VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Bignum.PPC64LE.Crt
 open VG.Proof.Bignum.PPC64LE
 
-theorem bmask_eq (b : Bool) : bmask b = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0) := rfl
-
 /-- `recombineX`, then the output, under the mask of `b` in `r26`. -/
 theorem phaseE_ok {s : State} {BX O : Addr} {Z oP oQ pL qL wX k Qv H M2 : Nat} {b : Bool}
     (hs : Scr s BX Z) (hPZ : oP + slot (wsWords pL) 24 ≤ Z) (hXP : slot wX 8 ≤ oP)

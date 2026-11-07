@@ -383,8 +383,6 @@ def finishCopy : List Instr :=
 def finishSum : List (Prog isa) :=
   Crt.zeroAccs ++ ([.block finishCopy, copyWords, .block (rowsHdr aY), Crt.mulRows] : List (Prog isa))
 
-theorem finish_eq : Crt.finish = finishSum ++ Crt.finish.drop 6 := rfl
-
 /-- `m_q + h q` (`m_q` in `q`'s `aY`, `h` in `p`'s) into the modulus'
 accumulators (`2 w + 2` words). -/
 theorem finishSum_ok {s : State} {B : Addr} {Z w op oq wp wq : Nat} {minv : BitVec 64}

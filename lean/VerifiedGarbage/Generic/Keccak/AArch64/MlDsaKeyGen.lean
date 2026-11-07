@@ -43,7 +43,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallSample
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDepth
@@ -84,7 +83,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Indexed
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
@@ -197,11 +195,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
@@ -261,7 +256,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallSample
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDepth
@@ -302,7 +296,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Indexed
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
@@ -415,11 +408,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
@@ -490,21 +480,18 @@ def optimizedArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.keyGen44Api.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    consts := Proof.MlDsa.AArch64.Sign.signRootConsts
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa44
     stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inl rfl) },
   Spec.MlDsa.keyGen65Api.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    consts := Proof.MlDsa.AArch64.Sign.signRootConsts
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa65
     stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inl rfl)) },
   Spec.MlDsa.keyGen87Api.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    consts := Proof.MlDsa.AArch64.Sign.signRootConsts
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa87
     stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inr rfl)) }]

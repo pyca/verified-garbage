@@ -93,14 +93,6 @@ theorem selHead_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : 
       Keep [.x3, .x4, .x7, .x12, .x14, .x15, .x16, .x17] t t' :=
   VG.Proof.Bignum.AArch64.selHeadN_ok hc.toC (by decide) hj hv hJ hN hE
 
-/-- The entry's index up, and `x4 := j + 1 - 32`. -/
-theorem selEnd_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
-    (hc : TableCtx t P wx minv X Xc) {j : Nat} (hj : j < 32) (hJ : word t.mem P (8 * Crt.sJ) = BitVec.ofNat 64 j) :
-    WP isa (.block [ldh .x3 Crt.sJ, .addImm .x .x3 .x3 1, sth .x3 Crt.sJ, .subImm .x .x4 .x3 32]) t fun t' =>
-      (t'.mem = t.mem.writeW (off P (8 * Crt.sJ)) (BitVec.ofNat 64 (j + 1)) ∧
-      ((t'.gpr .x4).toNat ≠ 0 ↔ j + 1 ≠ 32)) ∧ Keep [.x3, .x4] t t' :=
-  VG.Proof.Bignum.AArch64.selEndN_ok hc.toC (by decide) hj hJ
-
 /-- After `j` entries of the selection of entry `v` from `t₀`. -/
 structure TabSelInv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc v : Nat) (j : Nat) (t : State) :
     Prop where

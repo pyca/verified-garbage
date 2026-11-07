@@ -60,9 +60,6 @@ structure OkW (L : Lay) (Wb : List Nat) : Prop where
   fit : ∀ i < L.sizes.length, (L.ptr i).toNat + L.size i ≤ 2 ^ 64
   disj : ∀ i < L.sizes.length, ∀ j < L.sizes.length, i ≠ j → (i ∈ Wb ∨ j ∈ Wb) → (L.buf i).Disjoint (L.buf j)
 
-theorem OkW.ok {L : Lay} {Wb : List Nat} (h : OkW L Wb) (hall : ∀ i < L.sizes.length, i ∈ Wb) : L.Ok :=
-  ⟨h.fit, fun i hi j hj hij => h.disj i hi j hj hij (.inl (hall i hi))⟩
-
 /-- Two regions apart, one of them in a buffer of `Wb`, or both in the same. -/
 theorem disjW' {L : Lay} {Wb : List Nat} (hL : OkW L Wb) {i o l j o' l' : Nat}
     (h : sepB L.sizes (i, o, l) (j, o', l') = true) (hw : i ∈ Wb ∨ j ∈ Wb ∨ i = j) :
@@ -257,19 +254,6 @@ theorem Site.keptW {L : Lay} {Wb : List Nat} {STK : Nat} {s s' : State} (hs : Si
     obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hr
     exact ⟨w, hw, fun _ h => h⟩) hn hk
 
-/-- The registers of the layout, the stack pointer, and the pointers of both
-runs are the same. -/
-theorem Site.gpr_eq {L : Lay} {Wb : List Nat} {STK : Nat} {x y : State} (hx : Site L Wb STK x)
-    (hy : Site L Wb STK y) {as : List (Reg × Arg)} (hg : glueOk as = true) (hn : (as.map Prod.fst).Nodup)
-    {d : Reg} {a : Arg} (hm : (d, a) ∈ as) : (glueSt x as).gpr d = (glueSt y as).gpr d := by
-  rw [glueSt_arg x hg hn hm, glueSt_arg y hg hn hm]
-  cases a with
-  | imm v => rfl
-  | ptr q =>
-    have ha : argOk (.ptr q) = true := by
-      have := List.all_eq_true.mp hg _ hm; simp only [Bool.and_eq_true] at this; exact this.2
-    rw [hx.val ha, hy.val ha]
-
 theorem view_glue_sp (s : State) (as : List (Reg × Arg)) (rd wr : List Region) :
     (view (glueSt s as) rd wr).sp = s.sp := glueSt_sp s as
 
@@ -282,9 +266,6 @@ theorem view_gpr (s : State) (rd wr : List Region) {r : Reg} (hr : r ∉ linkReg
 
 theorem imm_toNat {v : Nat} (h : v < 2 ^ 64) : (BitVec.ofNat 64 v).toNat = v := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
-
-theorem imm_toNat32 {v : Nat} (h : v < 2 ^ 32) : ((BitVec.ofNat 64 v).setWidth 32).toNat = v := by
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_arith
 
 /-! ## The sponge -/
 

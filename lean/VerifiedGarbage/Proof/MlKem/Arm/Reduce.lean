@@ -59,9 +59,6 @@ theorem red_toNat {x : BitVec 32} (hx : x.toNat < 2 ^ 25) : (red C x).toNat = x.
   unfold red
   rw [fixq_subq (by rw [bar_toNat hx]; exact h1), bar_toNat hx, ← reduce32 hx, condSub_eq h1]
 
-theorem red_lt {x : BitVec 32} (hx : x.toNat < 2 ^ 25) : (red C x).toNat < q := by
-  rw [red_toNat hx]; exact Nat.mod_lt _ (by decide)
-
 /-- A product of reduced values, reduced. -/
 theorem red_mul {a b : Zq} :
     red C (BitVec.ofNat 32 a.val * BitVec.ofNat 32 b.val) = BitVec.ofNat 32 (a * b).val := by
@@ -79,10 +76,6 @@ theorem red_mul {a b : Zq} :
 theorem zetaTable_eq : zetaTable = zetas := rfl
 
 theorem gammaTable_eq : gammaTable = gammas := rfl
-
-theorem zetaTable_lt : ∀ k < 128, zetaTable.getD k 0 < q := by decide +kernel
-
-theorem gammaTable_lt : ∀ k < 128, gammaTable.getD k 0 < q := by decide +kernel
 
 /-- An entry of a table, as `movw` builds it. -/
 theorem movw_val {v : Nat} (hv : v < 65536) : (BitVec.ofNat 16 v).setWidth 32 = BitVec.ofNat 32 v := by
@@ -170,8 +163,6 @@ theorem savedRegs_nodup : ∀ i < 8, ∀ j < 8, savedRegs.getD i .r4 = savedRegs
   decide
 
 theorem savedRegs_mem : ∀ i < 8, savedRegs.getD i .r4 ∈ savedRegs := by decide
-
-theorem savedRegs_ne_lr : ∀ i < 8, savedRegs.getD i .r4 ≠ .lr := by decide
 
 /-- The registers `g` saved at `A`. -/
 def Saved (m : Mem) (A : Addr) (g : Reg → BitVec 32) : Prop :=

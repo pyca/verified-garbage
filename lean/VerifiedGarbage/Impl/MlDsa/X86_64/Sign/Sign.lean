@@ -4,15 +4,18 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
 public import VerifiedGarbage.Spec.MlDsa
 
 /-!
-# ML-DSA on x86-64: `vg_mldsa{44,65,87}_sign`
+# ML-DSA on x86-64: `vg_mldsa{44,65,87}_sign_with_cache`
 
-`sign(sk = rdi, mu = rsi, rnd = rdx, sig = rcx, scratch = r8) -> eax`:
+`sign(sk = rdi, mu = rsi, rnd = rdx, sig = rcx, scratch = r8, prepared = r9) -> eax`:
 `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with the message
 representative `μ` given (`Spec.MlDsa.signMu`), for the parameter set `p`,
 as calls of the primitives `P` and the sponge functions (`Frag.lean`). It
 keeps `scratch` in `rbx`, `sk` in `rbp`, `mu` in `r12`, `rnd` in `r13` and
 `sig` in `r14`, and saves its caller's values of them (and of `r15`) in
-`scratch`.
+`scratch`, and `prepared` at `FL`. If `prepared ≠ 0`, `sk` is a prepared key
+(`Spec.MlDsa.PreparedSecretKey`), whose polynomials step 2 copies instead of
+computing them. `vg_mldsa{44,65,87}_sign` (`entry`) calls it with
+`prepared = 0`.
 
 1. `ρ` (the first 32 bytes of `sk`) to `RS`, the seed of `RejNTTPoly`, and
    to each of the four seeds at `RS4`, and `Â[r, s] = RejNTTPoly(ρ ‖ s ‖ r)`
@@ -21,7 +24,8 @@ keeps `scratch` in `rbx`, `sk` in `rbp`, `mu` in `r12`, `rnd` in `r13` and
    then the last `kℓ mod 4` one at a time, with `r15` the AND of the
    results. If one failed (`r15 = 0`), it returns 0 at once.
 2. `ŝ₁`, `ŝ₂` and `t̂₀`: the `NTT` of the `BitUnpack` of their pieces of
-   `sk`; and `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`.
+   `sk`, or, with a prepared key, their copies from it (`decodeOrCopy`);
+   and `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`.
 3. The rejection sampling loop, at most 814 iterations (`minBounds.sign`),
    with the counter `κ` at `KAP`: the commitment (`y ← ExpandMask(ρ″, κ)`:
    four polynomials at a time (`vg_mldsa_expand_mask_poly4`, from the seeds
@@ -146,10 +150,13 @@ def decS2 (i : Nat) : Prog isa :=
 def decT0 (i : Nat) : Prog isa :=
   .seq (bitUnpackAt P (.rbp, skT0 p i) 416 4095 4096 (t0P p i)) (nttAt P (t0P p i))
 
+/-- `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`. -/
+def rpp : Prog isa := shakeAt [((.rbp, 32), 32), ((.r13, 0), 32), ((.r12, 0), 64)] (sc oMS) 64
+
 /-- `ŝ₁`, `ŝ₂`, `t̂₀`, and `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`. -/
 def decode : Prog isa :=
   .seq (seqR (decS1 P p) 0 p.ℓ) (.seq (seqR (decS2 P p) 0 p.k) (.seq (seqR (decT0 P p) 0 p.k)
-    (shakeAt [((.rbp, 32), 32), ((.r13, 0), 32), ((.r12, 0), 64)] (sc oMS) 64)))
+    rpp))
 
 /-! ### An iteration -/
 
@@ -266,16 +273,36 @@ def output : Prog isa :=
   .seq (copy (.r14, 0) (sc oCT) (cLen p)) (.seq (seqR (packZ P p) 0 p.ℓ)
     (hintBitPackAt P (hP 0) (256 * p.k) p.ω (.r14, sigH p) (p.ω + p.k)))
 
-def pro : List Instr := topPro .r8 [(.rbp, .rdi), (.r12, .rsi), (.r13, .rdx), (.r14, .rcx)]
+/-- Where the prologue keeps `r9`, which says whether `sk` is a prepared key. -/
+def oFL : Nat := 952
+
+def pro : List Instr :=
+  topPro .r8 [(.rbp, .rdi), (.r12, .rsi), (.r13, .rdx), (.r14, .rcx)] ++ [.store (at_ .r8 oFL) .r9]
+
+/-- The `ℓ + 2k` polynomials `ŝ₁`, `ŝ₂` and `t̂₀` of a prepared key, after its
+encoded key at `sk`, to their slots, which are consecutive. -/
+def copyKey : Prog isa := copy (s1P p 0) (.rbp, p.skLen) (1024 * (p.ℓ + 2 * p.k))
+
+/-- The flag at `FL` (the entry's `r9`). -/
+def testFlag : List Instr := [.mov .rax (.mem (at_ .rbx oFL)), .alu .test .rax (.reg .rax)]
+
+/-- `ŝ₁`, `ŝ₂`, `t̂₀` and `ρ″`: copied from the prepared key if the flag is set,
+and otherwise decoded from `sk`. -/
+def decodeOrCopy : Prog isa := .seq (.block testFlag) (.ite .ne (.seq (copyKey p) rpp) (decode P p))
 
 /-- Once `Â` is sampled: the private key, the loop, and the signature if the
 loop succeeded. -/
-def rest : Prog isa := .seq (decode P p) (.seq (signLoop P p) (ifOk (output P p)))
+def rest : Prog isa := .seq (decodeOrCopy P p) (.seq (signLoop P p) (ifOk (output P p)))
 
 end
 
 /-- `vg_mldsa{44,65,87}_sign` for the parameter set `p`, with the primitives `P`. -/
 def sign (P : Prims) (p : Params) : Prog isa :=
   .seq (.block pro) (.seq (expandA P p) (.seq (ifOk (rest P p)) (.block topEpi)))
+
+/-- An entry of the signing function `c` on `μ`, named `n`: `r9 ← flag`, then a
+call of `c` with the arguments as they are. -/
+def entry (n : String) (c : Prog isa) (flag : Nat) : Prog isa :=
+  .seq (.block [.mov32 .r9 (.imm (BitVec.ofNat 32 flag))]) (.call n c)
 
 end VG.Impl.MlDsa.X86_64.Sign

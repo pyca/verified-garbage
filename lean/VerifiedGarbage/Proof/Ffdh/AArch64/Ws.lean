@@ -66,21 +66,6 @@ theorem Outer.ld {t : State} {B : Addr} {Z w : Nat} (h : Outer t B Z w) {i : Nat
     InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 :=
   h.scr.ld (by have := hdr_lt_slot w 8 hi; have := h.room; omega_arith)
 
-theorem Outer.st {t : State} {B : Addr} {Z w : Nat} (h : Outer t B Z w) {i : Nat} (hi : i < 32) :
-    InRegions t.wr (off B (8 * i)) 8 :=
-  h.scr.st (by have := hdr_lt_slot w 8 hi; have := h.room; omega_arith)
-
-/-- What changes only the outer header's slots from `sFn 0` on, outside the
-inner workspace keeps `Outer`. -/
-theorem Outer.of_frm {s t : State} {B : Addr} {Z w : Nat} {rs : List (Nat × Nat)} (h : Outer s B Z w)
-    (hf : Frm B rs s.mem t.mem) (hr : ∀ r ∈ rs, 8 * 16 ≤ r.1 ∧ r.1 + r.2 ≤ Z) (hwr : t.wr = s.wr)
-    (h0 : t.gpr .x0 = s.gpr .x0) : Outer t B Z w := by
-  have hn := h.scr.nowrap
-  have hh : ∀ i < 16, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
-    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega_arith)) (by have := h.room; unfold inner slot hdrBytes at this; omega_arith)
-  exact ⟨h.scr.congr hwr, h0.trans h.x0, (hh _ (by decide)).trans h.hw,
-    fun j hj => (hh _ (by unfold sArr; omega_arith)).trans (h.harr j hj), h.room, h.w2, h.w28⟩
-
 /-- `SubCtx` after a change of `-m⁻¹` and of the inner workspace's own
 slots and arrays. -/
 theorem _root_.VG.Proof.Bignum.AArch64.SubCtx.of_minv {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {rs : List (Nat × Nat)}

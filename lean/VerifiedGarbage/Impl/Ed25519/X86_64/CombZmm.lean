@@ -5,7 +5,8 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
 /-!
 # Ed25519: base-point multiplication with a comb, in `zmm` registers
 
-`Zmm.combMultiply` is `Ifma.combMultiply`'s comb with two accumulated points,
+`Zmm.combMultiply` is `combMultiply`'s comb, in the lanes as `CombIfma.lean`'s
+blocks keep a point, with two accumulated points,
 one in each 256-bit half of `zmm0–zmm4` (half 0 in lanes 0 and 1 of each
 register, half 1 in lanes 2 and 3): from `[G]B` in both, step `j` adds the
 entry of table `j` for the odd digit `d_{2j+1}` to half 0 (`A`) and for the
@@ -13,7 +14,7 @@ even digit `d_{2j}` to half 1 (`B`), both at once. After the 26 steps, `A`
 is doubled five times (as `ymm` lanes, `vdbl5`) and `B` added:
 `[s]B = 32 A + B`, as in `combMultiply`'s order of additions.
 
-Each `zmm` block of the step is the `ymm` code of `Ifma.combMultiply` with
+Each `zmm` block of the step is the `ymm` code of `CombIfma.lean`'s blocks with
 each instruction on both halves at once (`toZ`): the same operation with
 512-bit operands, each 32-byte row at `o` of the working space window
 `[1024, 1792)` (the operands' slots and the constants) the 64-byte row at

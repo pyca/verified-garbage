@@ -36,11 +36,6 @@ open VG.Proof.Sm4 (WordRel quads ofBlock outBlock keyInit rkOf readW64_bit getLs
 
 /-! ## Bytes -/
 
-theorem bswap64_eq (x : BitVec 64) (k : Nat) :
-    (bswap64 x).getLsbD k = (x.extractLsb' 0 8 ++ x.extractLsb' 8 8 ++ x.extractLsb' 16 8 ++ x.extractLsb' 24 8 ++
-      x.extractLsb' 32 8 ++ x.extractLsb' 40 8 ++ x.extractLsb' 48 8 ++ x.extractLsb' 56 8 :
-        BitVec (8 + 8 + 8 + 8 + 8 + 8 + 8 + 8)).getLsbD k := rfl
-
 theorem bswap64_bit (x : BitVec 64) {t j : Nat} (ht : t < 8) (hj : j < 8) :
     (bswap64 x).getLsbD (8 * t + j) = x.getLsbD (8 * (7 - t) + j) :=
   (VG.byteRev64_getLsbD x (by omega_arith)).trans (congrArg x.getLsbD (by omega_arith))

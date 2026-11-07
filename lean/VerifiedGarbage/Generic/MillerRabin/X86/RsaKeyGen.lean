@@ -36,7 +36,6 @@ def artifacts (v : RoundImpl) : List Artifact := [
     suffix := v.suffix
     code := Proof.RsaKeyGen.X86.Search.searchCode v
     stack := 216
-    consts := Impl.RsaKeyGen.TrialTable32.consts
     verified := Proof.RsaKeyGen.X86.Search.search_verified v
     spSafe := Proof.RsaKeyGen.X86.Search.search_all v
     features := v.features }]

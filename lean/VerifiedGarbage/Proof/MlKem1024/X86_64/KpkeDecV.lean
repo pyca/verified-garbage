@@ -41,32 +41,4 @@ theorem kpkeDec1024Y_correct : ∀ s, (kpkeDecK kem1024).pre s →
   KpkeDec.kpkeDec_correct PrimsOk.avx2 calls1024 kdWf1024 dmOkY (by lit_decide) (by lit_decide)
     (by lit_decide) (by lit_decide) (by lit_decide)
 
-theorem kpkeDec1024_of {c : Prog isa}
-    (hc : ∀ s, (kpkeDecK kem1024).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧
-      (kpkeDecK kem1024).post s s')
-    (hct : ConstantTime isa (kpkeDecK kem1024).pre (kpkeDecK kem1024).pub c) :
-    Verified X86_64.target c (Proof.MlKem.Params.kpkeDecryptContract mlKem1024 X86_64.abi) :=
-  Verified.of_correct hc hct
-    { pre := by sig_implies_pre [Params.kpkeDecryptContract, Params.kpkeDecryptSig, kpkeDecK, X86_64.abi,
-        X86_64.argRegs, kScr, Kem.k, Kem.ctLen, kem1024, retR, Params.ctLen, mlKem1024]
-      post := by sig_implies_post [Params.kpkeDecryptContract, Params.kpkeDecryptSig, kpkeDecK, X86_64.abi,
-        X86_64.argRegs, kScr, Kem.k, Kem.ctLen, kem1024, retR, Params.ctLen, mlKem1024]
-      pub := by sig_implies_pub [Params.kpkeDecryptContract, Params.kpkeDecryptSig, kpkeDecK, X86_64.abi,
-        X86_64.argRegs, kScr, Kem.k, Kem.ctLen, kem1024, retR, Params.ctLen, mlKem1024]
-      sat := by
-        refine ⟨kpkeDecSat kem1024, ?_⟩
-        sig_pre [Params.kpkeDecryptContract, Params.kpkeDecryptSig, kpkeDecK, X86_64.abi, X86_64.argRegs]
-        and_intros
-        all_goals first
-          | rfl
-          | decide
-          | exact Region.disjoint_of_sep (by decide)
-          | (intro a h₁ h₂
-             simp only [Region.Contains] at h₁ h₂
-             bv_omega) }
-
-theorem kpkeDec1024Y_verified :
-    Verified X86_64.target (kpkeDec kem1024 .avx2 dmInnerY) (Proof.MlKem.Params.kpkeDecryptContract mlKem1024 X86_64.abi) :=
-  kpkeDec1024_of kpkeDec1024Y_correct kpkeDec1024Y_ct
-
 end VG.Proof.MlKem1024.X86_64

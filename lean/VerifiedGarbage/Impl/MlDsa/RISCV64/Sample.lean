@@ -63,12 +63,6 @@ open VG.Impl.MlKem.RISCV64 (zeroState)
 
 /-! ## The layout and the sponge -/
 
-/-- Where the XOF output starts in `scratch`. -/
-abbrev outOff : Nat := 840
-
-/-- Where our caller's registers are saved in `scratch`. -/
-abbrev saveOff : Nat := 2000
-
 /-- Save `s7`–`s11` and the return address at `scr + 2000`, and set up the
 layout: `s11` = `scr`, `s10` = `a`, `s9` = `msg`, then `len` (which sets
 `s8`) and `prm` (which sets `s7`). -/
@@ -89,8 +83,8 @@ def sqzArgs (rate outlen : Nat) : List Instr :=
   [mov .a0 .s11, .li .a1 rate, .li .a2 0, .addi .a3 .s11 840, .li .a4 outlen]
 
 def callAbsorb : Prog isa := .call "vg_keccak_absorb" Impl.Sha3.RISCV64.Stream.absorb
-def callPad : Prog isa := .call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad
-def callSqueeze : Prog isa := .call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze
+def callPad : Prog isa := .call "vg_keccak_pad" Impl.Sha3.RISCV64.Stream.pad
+def callSqueeze : Prog isa := .call "vg_keccak_squeeze" Impl.Sha3.RISCV64.Stream.squeeze
 
 /-- `outlen` bytes of SHAKE with the rate `rate` of the message at `s9`, of
 `s8` bytes, to `s11 + 840`. -/

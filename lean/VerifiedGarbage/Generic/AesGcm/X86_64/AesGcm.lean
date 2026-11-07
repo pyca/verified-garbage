@@ -44,6 +44,13 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     verified := Proof.AesGcm.open_keyed (openSel_framed v Short.shortFacts)
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkB)
     features := v.features },
+  Spec.Gcm.openToApi.artifact X86_64.target {
+    suffix := v.suffix
+    code := Impl.AesGcm.X86_64.OpenTo.openTo v.copyW (openFn v).fn
+    stack := 2728
+    verified := Proof.AesGcm.openTo_keyed (OpenTo.openTo_verified v.copyW (openFn v))
+    spSafe := OpenTo.openTo_spAll v.copyW _ (openFn v).spAll
+    features := v.features },
   Spec.Gcm.streamInitApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .r8
@@ -176,6 +183,13 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     verified := Proof.AesGcm.openPrepared_keyed (openSelPrepared_framed v.impl (blkR v) Short.shortFacts)
     spSafe := X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR v))
     features := v.impl.features },
+  Spec.Gcm.openToPreparedApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    code := openToCodeR v
+    stack := openToStackR v
+    verified := Proof.AesGcm.openToPrepared_keyed (openToCodeR_verified v)
+    spSafe := openToCodeR_spAll v
+    features := v.impl.features },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
@@ -222,6 +236,13 @@ def artifactsR16 (v : GcmVariant) (r : R16 v) : List Artifact := [
     stack := 2632
     verified := Proof.AesGcm.openPrepared16_keyed (openSelPrepared16_framed v.impl (blkR16 v) Short.shortFacts r.short)
     spSafe := X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR16 v))
+    features := v.impl.features },
+  Spec.Gcm.openToPrepared16Api.artifact X86_64.target {
+    suffix := v.impl.suffix
+    code := openToCodeR16 v r
+    stack := openToStackR16 v
+    verified := Proof.AesGcm.openToPrepared16_keyed (openToCodeR16_verified v r)
+    spSafe := openToCodeR16_spAll v r
     features := v.impl.features },
   Spec.Gcm.streamEncryptPrepared16Api.artifact X86_64.target {
     suffix := v.impl.suffix

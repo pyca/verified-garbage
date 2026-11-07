@@ -37,8 +37,6 @@ theorem win_mod (n i j : Nat) : win n i j = win n (i % (n + 2)) j := by
 theorem wins_mod (n i : Nat) : wins n i = wins n (i % (n + 2)) := by
   simp only [wins]; exact List.map_congr_left fun j _ => win_mod n i j
 
-theorem wins_length (n i : Nat) : (wins n i).length = n + 2 := by simp [wins]
-
 theorem wins_cons (n i : Nat) :
     wins n i = win n i 0 :: (List.range (n + 1)).map (fun j => win n i (j + 1)) := by
   simp only [wins, List.range_succ_eq_map, List.map_cons, List.map_map]

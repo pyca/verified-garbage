@@ -72,9 +72,6 @@ theorem lay (len B : Nat) (hB : len * B = 128) (hBp : 0 < B) (hk : B + 1 ≤ 256
 /-- The input polynomial. -/
 abbrev F (s₀ : State) : Poly := polyAt s₀.mem (fA s₀)
 
-theorem nttInvLayer_eq (f : Poly) (len : Nat) :
-    nttInvLayer f len = layerN bflyInv f len (zf zv kf len) (128 / len) := rfl
-
 theorem fold_eq (f : Poly) : nttInvLens.foldl nttInvLayer f =
     nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer f 1)
       2) 4) 8) 16) 32) 64) 128 := by

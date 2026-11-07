@@ -149,14 +149,6 @@ theorem Permutation.squeeze_depth (v : Permutation) :
     (Impl.Sha3.AArch64.Stream.squeezeWith v.callee).aarch64Depth = 1 := by
   simp only [Impl.Sha3.AArch64.Stream.squeezeWith, Code.aarch64Depth, Instr.frameUnits, v.squeezeMain_depth]
 
-theorem keeps_of_check {c : Prog isa} {rs : List Reg}
-    (h : (c.allInstrs fun i => rs.all fun r => !clobbers i r) = true) :
-    ∀ r ∈ rs, ∀ i ∈ instrs c, clobbers i r = false := by
-  rw [Code.allInstrs_eq] at h
-  intro r hr i hi
-  have h' := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
-  simpa using h'
-
 sponge_taint_summaries ScalarSums Impl.Sha3.AArch64.Callee.scalar
 
 /-- The summaries the sponge's callers' checks use (`Callers.sums`, from this backend's summaries

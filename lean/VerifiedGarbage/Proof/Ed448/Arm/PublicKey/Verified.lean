@@ -136,7 +136,7 @@ def base_ready (hL : L.Ok) (hs : Slots L baseValues [] t) :
 end
 
 theorem abs_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L absValues absStack))
-    (.call Spec.Sha3.absorbScratchApi.name Impl.Sha3.Arm.Stream.absorb) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+    (.call "vg_keccak_absorb_scratch" Impl.Sha3.Arm.Stream.absorb) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct Proof.Sha3.Arm.Stream.Absorb.absorb_verified.1
     Proof.Sha3.Arm.Stream.Absorb.absorb_verified.2.1 absorb_noFrames (fun _ he h => abs_ready hL he h)
   · intro a b ar aw br bw hsp hg ht

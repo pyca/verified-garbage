@@ -127,11 +127,4 @@ theorem mac_ok (s : State) :
   · rw [value, sum, prod, acc1, carry2]
   all_goals decide
 
-/-- The multiply-accumulate is a fixed sequence without memory accesses. -/
-theorem mac_ct : ConstantTime isa (fun _ => True) (fun _ _ => True) (.block mac) := by
-  refine ConstantTime.of_silent fun s tr t _ h => ?_
-  rw [Exec.block_iff] at h
-  cases h
-  rfl
-
 end VG.Proof.Bignum.Arm

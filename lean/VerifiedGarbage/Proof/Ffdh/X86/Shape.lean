@@ -48,10 +48,6 @@ theorem derivePublic_spSafe :
     (Impl.Ffdh.X86.DerivePublic.code).all (fun i => !isa.writesSp i) = true :=
   VG.Proof.Rsa.X86.RtShape.all_spSafe (by rsa_stack_shape [prepare_all, windowStep_all])
 
-theorem candidate_spSafe :
-    (Impl.Ffdh.X86.Candidate.code).all (fun i => !isa.writesSp i) = true :=
-  VG.Proof.Rsa.X86.RtShape.all_spSafe candidate_all
-
 theorem paramSearch_spSafe :
     (Impl.Ffdh.X86.ParamSearch.code).all (fun i => !isa.writesSp i) = true :=
   VG.Proof.Rsa.X86.RtShape.all_spSafe (by rsa_stack_shape [prepare_all, windowStep_all, candidate_all])

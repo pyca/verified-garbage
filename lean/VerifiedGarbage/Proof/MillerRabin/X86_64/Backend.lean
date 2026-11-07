@@ -72,8 +72,4 @@ theorem RoundImpl.correct (v : RoundImpl) (s : State) (h : roundPre s) :
 theorem RoundImpl.ct (v : RoundImpl) : ConstantTime isa roundPre roundPub v.code :=
   round_call_ct v.mont v.body_inlineOk v.body_inline
 
-theorem RoundImpl.verified (v : RoundImpl) : Verified target v.code
-    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.extended 120) :=
-  Verified.of_correct v.correct v.ct round_implies
-
 end VG.Proof.MillerRabin.X86_64

@@ -40,13 +40,6 @@ theorem combEntryW_sub : ∀ w ∈ combEntryW K, w ∈ combW K := by
   simp only [combW, combWs, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false]
   rcases hw with h | h | h | h | h <;> subst h <;> simp
 
-theorem combAddW_sub : ∀ w ∈ combAddW K, w ∈ combW K := by
-  intro w hw
-  simp only [combAddW, combW, List.mem_append, List.mem_map, List.mem_singleton] at hw ⊢
-  rcases hw with ⟨y, hy, rfl⟩ | h
-  · exact Or.inl ⟨y, by simp only [combWs, List.mem_append]; exact Or.inr hy, rfl⟩
-  · exact Or.inr h
-
 theorem combSelW_D_sub : ∀ w ∈ combSelW K K.D, w ∈ combW K := by
   intro w hw
   simp only [combSelW, List.mem_cons, List.not_mem_nil, or_false] at hw

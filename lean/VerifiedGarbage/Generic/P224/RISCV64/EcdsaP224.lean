@@ -20,7 +20,6 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := 
   Spec.Ecdsa.P224.verifyHashApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
       Impl.Ecdsa.RISCV64.P224.verifyP224
-    consts := Impl.Ecdsa.RISCV64.Comb.p224CombConsts
     stack := 80
     verified := Proof.Ecdsa.RISCV64.P224.verifyHash_verified h.law }]
 

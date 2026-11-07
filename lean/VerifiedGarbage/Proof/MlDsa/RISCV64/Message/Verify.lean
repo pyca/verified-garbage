@@ -73,8 +73,8 @@ theorem vl_cached (p : Params) (s : State) : VL p s signRegs (cachedV p s) := by
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, rfl⟩
 
 section
-variable {p : Params} {STK : Nat} {X : List Region} {s : State} {rs : List Reg} {V : Reg → BitVec 64}
-  (hL : VL p s rs V) (hF : MFacts p) (hp : MVPre p STK X s) (h48 : 1168 ≤ STK)
+variable {p : Params} {q : Bool} {STK : Nat} {X : List Region} {s : State} {rs : List Reg} {V : Reg → BitVec 64}
+  (hL : VL p s rs V) (hF : MFacts p) (hp : MVPre p q STK X s) (h48 : 1168 ≤ STK)
 
 include hL in
 theorem v_reg {t : State} (h : VInvG p STK s rs V t) {r : Reg} (hr : r ∈ vRegs) :
@@ -154,8 +154,8 @@ structure MV1 (p : Params) (STK : Nat) (s : State) (rs : List Reg) (V : Reg → 
   hdr : bytesAt t.mem (eAt p (s.gpr .a6) + BitVec.ofNat 64 oHdr) 2 = [0, BitVec.ofNat 8 (s.gpr .a4).toNat]
 
 /-- The setup that saves the registers `rs` and moves the arguments into them by `ms`, `E` into the last. -/
-theorem vsetup_ok {p : Params} {STK : Nat} {X : List Region} {s u : State} {rs : List Reg} {V : Reg → BitVec 64}
-    {ms : List (Reg × Reg)} (hL : VL p s rs V) (hF : MFacts p) (hp : MVPre p STK X s)
+theorem vsetup_ok {p : Params} {q : Bool} {STK : Nat} {X : List Region} {s u : State} {rs : List Reg} {V : Reg → BitVec 64}
+    {ms : List (Reg × Reg)} (hL : VL p s rs V) (hF : MFacts p) (hp : MVPre p q STK X s)
     (hfits : Spill.Fits (slots oSV rs)) (hlo : oSV + 8 * (rs.length + 1) < 2 ^ 64)
     (hsl : ∀ q ∈ slots oSV rs, q.2 + 8 ≤ 1024) (hms : ms.map Prod.fst = rs) (hsrc : ∀ q ∈ ms, q.2 ∉ rs)
     (hnd : rs.Nodup)
@@ -191,8 +191,8 @@ theorem vsetup_ok {p : Params} {STK : Nat} {X : List Region} {s u : State} {rs :
   · rw [ht, g30, g26, show s.gpr .a4 = BitVec.ofNat 64 (s.gpr .a4).toNat by simp, hdrMem_bytes]
     simp
 
-theorem cachedSetup_ok {p : Params} {STK : Nat} {X : List Region} {s u : State} (hF : MFacts p)
-    (hp : MVPre p STK X s) (hu : ∀ r, r ≠ .t1 → u.gpr r = s.gpr r) (hrd : u.rd = s.rd) (hwr : u.wr = s.wr)
+theorem cachedSetup_ok {p : Params} {q : Bool} {STK : Nat} {X : List Region} {s u : State} (hF : MFacts p)
+    (hp : MVPre p q STK X s) (hu : ∀ r, r ≠ .t1 → u.gpr r = s.gpr r) (hrd : u.rd = s.rd) (hwr : u.wr = s.wr)
     (hsp : u.sp = s.sp) (hlr : u.gpr .ra = s.gpr .ra) (hm : u.mem = s.mem) :
     WP isa (.block (enter .a6 p signRegs cachedMs)) u (MV1 p STK s signRegs (cachedV p s)) :=
   vsetup_ok (vl_cached p s) hF hp (by decide) (by decide) (by decide) rfl (by decide) (by decide) (fun q hq => by
@@ -211,8 +211,8 @@ abbrev pkB (p : Params) (s : State) : List Byte := bytesAt s.mem (s.gpr .a0) p.p
 abbrev vsigB (p : Params) (s : State) : List Byte := bytesAt s.mem (s.gpr .a5) p.sigLen
 
 /-- What a hash keeps of the invariant. -/
-theorem vinv_hash {p : Params} {STK : Nat} {X : List Region} {s t t' : State} {rs : List Reg}
-    {V : Reg → BitVec 64} (hL : VL p s rs V) (hp : MVPre p STK X s) (h48 : 1168 ≤ STK)
+theorem vinv_hash {p : Params} {q : Bool} {STK : Nat} {X : List Region} {s t t' : State} {rs : List Reg}
+    {V : Reg → BitVec 64} (hL : VL p s rs V) (hp : MVPre p q STK X s) (h48 : 1168 ≤ STK)
     (hi : VInvG p STK s rs V t)
     (k : Kept ([⟨eAt p (s.gpr .a6) + BitVec.ofNat 64 oMU, 64⟩] ++ kW 840 (eAt p (s.gpr .a6)) t.sp) t t') :
     VInvG p STK s rs V t' := by
@@ -235,8 +235,8 @@ structure MV3 (p : Params) (STK : Nat) (s : State) (rs : List Reg) (V : Reg → 
   mu : bytesAt t.mem (eAt p (s.gpr .a6) + BitVec.ofNat 64 oMU) 64 = messageRep (pkTr (pkB p s)) (fmtB s)
 
 section
-variable {p : Params} {STK : Nat} {X : List Region} {s t : State} {rs : List Reg} {V : Reg → BitVec 64}
-  (hF : MFacts p) (hp : MVPre p STK X s) (h48 : 1168 ≤ STK)
+variable {p : Params} {q : Bool} {STK : Nat} {X : List Region} {s t : State} {rs : List Reg} {V : Reg → BitVec 64}
+  (hF : MFacts p) (hp : MVPre p q STK X s) (h48 : 1168 ≤ STK)
 include hF hp h48
 
 omit hF in
@@ -257,7 +257,7 @@ theorem mu_ins (hL : VL p s rs V) (hi : VInvG p STK s rs V t) {q₀ : Piece} (h�
   have hsp : t.sp = s.sp := hi.sp
   have b48 := vbelow48 hp h48
   have eS := e_sub0 (p := p) (x := s.gpr .a6) (n := 840) (by decide)
-  have cr : ∀ R ∈ [pkR p s, msgR s, ctxR s, vsigR p s], RISCV64.Covers [R] (t.rd ++ t.wr) := fun R hR => by
+  have cr : ∀ R ∈ [pkR p s q, msgR s, ctxR s, vsigR p s], RISCV64.Covers [R] (t.rd ++ t.wr) := fun R hR => by
     rw [hi.rd, hp.rd]
     exact cov_rd fun a n ⟨r, hr, hc⟩ => ⟨r, by rw [List.mem_singleton.mp hr]; exact List.mem_append_left _ hR, hc⟩
   intro q hq
@@ -311,7 +311,7 @@ end
 /-! ## `μ` from a cached `tr` -/
 
 section
-variable {p : Params} {STK : Nat} {s t : State} (hc : MVCPre p STK s) (h48 : 1168 ≤ STK)
+variable {p : Params} {q : Bool} {STK : Nat} {s t : State} (hc : MVCPre p q STK s) (h48 : 1168 ≤ STK)
 include hc h48
 
 /-- The first piece of `μ`: `tr`, at `s6`. -/
@@ -392,15 +392,16 @@ theorem verifyArgs_ok {p : Params} {STK : Nat} {s t : State} {rs : List Reg} {V 
   · rw [a6, g29, BitVec.add_zero]
 
 /-- What the verification function on `μ` reads and writes. -/
-abbrev vRd (p : Params) (s : State) : List Region :=
-  [pkR p s, ⟨eAt p (s.gpr .a6) + BitVec.ofNat 64 oMU, 64⟩, vsigR p s]
+abbrev vRd (p : Params) (q : Bool) (s : State) : List Region :=
+  [pkR p s q, ⟨eAt p (s.gpr .a6) + BitVec.ofNat 64 oMU, 64⟩, vsigR p s]
 abbrev vWr (p : Params) (s : State) : List Region := [⟨s.gpr .a6, scratchWords p * 8⟩]
 
 /-- The call's precondition, and its regions. -/
-theorem verifyCall_pre {p : Params} {STK stk : Nat} {X : List Region} {s u : State} {rs : List Reg}
-    {V : Reg → BitVec 64} (hF : MFacts p) (hp : MVPre p STK X s) (hstk : stk ≤ STK) (h : VA p STK s rs V u) :
-    (verifyContract p RISCV64.abi stk).pre (u.callEntry.withRegions (vRd p s) (vWr p s)) ∧
-      RISCV64.Covers (vRd p s ++ vWr p s) (u.rd ++ u.wr) ∧ RISCV64.Covers (vWr p s) u.wr := by
+theorem verifyCall_pre {p : Params} {q : Bool} {STK stk : Nat} {X : List Region} {s u : State} {rs : List Reg}
+    {V : Reg → BitVec 64} (hF : MFacts p) (hp : MVPre p q STK X s)
+    (hk : q = true → PreparedPublicKey p s.mem (s.gpr .a0)) (hstk : stk ≤ STK) (h : VA p STK s rs V u) :
+    (PreparedKey.verifyEK p q stk).pre (u.callEntry.withRegions (vRd p q s) (vWr p s)) ∧
+      RISCV64.Covers (vRd p q s ++ vWr p s) (u.rd ++ u.wr) ∧ RISCV64.Covers (vWr p s) u.wr := by
   have iu := h.ms.inv
   have hstkS : STK ≤ s.sp.toNat := hp.stk
   have hE := hF.e
@@ -420,7 +421,13 @@ theorem verifyCall_pre {p : Params} {STK stk : Nat} {X : List Region} {s u : Sta
       ((ce_gpr _ _ _ (by decide)).trans h.a2) ((ce_gpr _ _ _ (by decide)).trans h.a3) rfl rfl
       (by simp only [State.withRegions_sp, State.callEntry_sp, usp]; omega_arith)
       (by simp only [State.withRegions_sp, State.callEntry_sp, usp]; exact hp.al) hp.alx
-      (hp.kc.sub_right w_sub) muW.symm (hp.gc.sub_right w_sub) ?_ ?_ ?_ ?_ hp.fk muF hp.fg (by omega_arith)
+      (hp.kc.sub_right w_sub) muW.symm (hp.gc.sub_right w_sub) ?_ ?_ ?_ ?_ hp.fk muF hp.fg (by omega_arith) ?_
+    case' refine_5 =>
+      intro hq
+      have hk' := hk hq
+      subst hq
+      have hl : preparedPublicKeyBytes p < 2 ^ 64 := by have := hF.ppk; omega_arith
+      exact PreparedKey.preparedPublic_of_bytes (v_keep iu (R := pkR p s true) hl hp.kc hp.bk) hk'
     all_goals simp only [State.withRegions_sp, State.callEntry_sp, usp]
     · exact hp.bk.sub_left bs
     · exact (hp.bx.sub_left bs).sub_right muS
@@ -430,7 +437,7 @@ theorem verifyCall_pre {p : Params} {STK stk : Nat} {X : List Region} {s u : Sta
     refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨pkR p s, by simp, 0, by simp, by simp⟩
+    · exact ⟨pkR p s q, by simp, 0, by simp, by simp⟩
     · exact ⟨vscrR p s, by simp, oE p + oMU, e_add _ _ _, e_len p (d := oMU) (n := 64) (by decide)⟩
     · exact ⟨vsigR p s, by simp, 0, by simp, by simp⟩
     · exact ⟨vscrR p s, by simp, 0, by simp, by simp only [msw]; omega_arith⟩
@@ -439,9 +446,9 @@ theorem verifyCall_pre {p : Params} {STK stk : Nat} {X : List Region} {s u : Sta
     rw [List.mem_singleton.mp hr]
     exact ⟨vscrR p s, by simp, 0, by simp, by simp only [msw]; omega_arith⟩
 
-theorem verifyCall_ok {p : Params} {STK S : Nat} {X : List Region} {s t : State} {rs : List Reg}
-    {V : Reg → BitVec 64} (hL : VL p s rs V) (hF : MFacts p) (hp : MVPre p STK X s)
-    {f : Prog isa} (hf : Callee f (fun stk => verifyContract p RISCV64.abi stk) S) (hS : S ≤ STK) {n : String}
+theorem verifyCall_ok {p : Params} {q : Bool} {STK S : Nat} {X : List Region} {s t : State} {rs : List Reg}
+    {V : Reg → BitVec 64} (hL : VL p s rs V) (hF : MFacts p) (hp : MVPre p q STK X s)
+    (hk : q = true → PreparedPublicKey p s.mem (s.gpr .a0)) {f : Prog isa} (hf : Callee f (fun stk => PreparedKey.verifyEK p q stk) S) (hS : S ≤ STK) {n : String}
     (h : MV3 p STK s rs V t) :
     WP isa (.seq (.block verifyArgs) (.call n f)) t fun t' => VInvG p STK s rs V t' ∧
       vres p s ((t'.gpr .a0).setWidth 32) := by
@@ -450,7 +457,7 @@ theorem verifyCall_ok {p : Params} {STK S : Nat} {X : List Region} {s t : State}
   refine WP.seq (WP.mono (verifyArgs_ok hL h) fun u hu => ?_)
   have iu := hu.ms.inv
   have usp : u.sp = s.sp := iu.sp
-  obtain ⟨hpre, hc, hw⟩ := verifyCall_pre hF hp (Nat.le_trans hstk hS) hu
+  obtain ⟨hpre, hc, hw⟩ := verifyCall_pre hF hp hk (Nat.le_trans hstk hS) hu
   have hd : sdepth f < 2 ^ 64 := by have := hf.stack; omega_arith
   refine WP.callAny hver.1 hpre hc hw (fun s' rd' wr' sp' fr' cs' post' => ?_) hd
   refine ⟨iu.step hL.pres rd' wr' sp' cs' fr' (fun r hr => ?_) fun r hr => ?_, ?_⟩
@@ -463,19 +470,21 @@ theorem verifyCall_ok {p : Params} {STK S : Nat} {X : List Region} {s t : State}
     · exact vslot_w hL hF
     · rw [usp]
       exact (hp.bx.symm.sub_left (vslot_sub hL)).sub_right (below_sub (by have := hf.stack; omega_arith) (by omega_arith))
-  · have q := verify_post post'
+  · have hq := verify_post post'
     simp only [State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
       State.callEntry_gpr _ (show Reg.a0 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.a1 ∉ linkRegs by decide),
-      State.callEntry_gpr _ (show Reg.a2 ∉ linkRegs by decide), hu.a0, hu.a1, hu.a2] at q
-    rw [v_keep iu (R := pkR p s) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega_arith) hp.kc hp.bk, hu.ms.mu,
-      v_keep iu (R := vsigR p s) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega_arith) hp.gc hp.bg] at q
-    exact q
+      State.callEntry_gpr _ (show Reg.a2 ∉ linkRegs by decide), hu.a0, hu.a1, hu.a2] at hq
+    have ks := pkE_sub hF q s
+    rw [v_keep iu (R := ⟨s.gpr .a0, p.pkLen⟩) (by have := hF.pk; show p.pkLen < 2 ^ 64; omega_arith)
+      (hp.kc.sub_left ks) (hp.bk.sub_right ks), hu.ms.mu,
+      v_keep iu (R := vsigR p s) (by have := hF.sgl; show p.sigLen < 2 ^ 64; omega_arith) hp.gc hp.bg] at hq
+    exact hq
 
-theorem verifyMessageCached_wp {p : Params} {STK S : Nat} (hF : MFacts p) (h48 : 1168 ≤ STK) {f : Prog isa}
-    (hf : Callee f (fun stk => verifyContract p RISCV64.abi stk) S) (hS : S ≤ STK) {n : String} {s : State}
-    (hc : MVCPre p STK s) :
+theorem verifyMessageCached_wp {p : Params} {q : Bool} {STK S : Nat} (hF : MFacts p) (h48 : 1168 ≤ STK) {f : Prog isa}
+    (hf : Callee f (fun stk => PreparedKey.verifyEK p q stk) S) (hS : S ≤ STK) {n : String} {s : State}
+    (hc : MVCPre p q STK s) :
     WP isa (verifyMessageCached n f p) s fun t =>
-      abiPreserved s t ∧ (verifyMessageCachedContract p RISCV64.abi STK).post s t := by
+      abiPreserved s t ∧ (verifyMessageEK p q STK).post s t := by
   have hp := hc.mv
   unfold verifyMessageCached top
   refine WP.seq (Steps.WP.cons (exec_shift_d (by decide)) (WP.block_nil ?_))
@@ -485,7 +494,7 @@ theorem verifyMessageCached_wp {p : Params} {STK S : Nat} (hF : MFacts p) (h48 :
   · have hcl' : (s.gpr .a4).toNat < 256 := of_decide_eq_true hcl
     refine WP.seq (WP.mono (cachedSetup_ok hF hp hu.other hu.rd hu.wr hu.sp rfl hu.mem) fun t₁ h₁ => ?_)
     refine WP.seq (WP.mono (cachedHash_ok hc h48 h₁) fun t₃ h₃ => ?_)
-    refine WP.seq (WP.mono (verifyCall_ok (vl_cached p s) hF hp hf hS h₃) fun t₄ ⟨h₄, r₄⟩ => ?_)
+    refine WP.seq (WP.mono (verifyCall_ok (vl_cached p s) hF hp hc.kp hf hS h₃) fun t₄ ⟨h₄, r₄⟩ => ?_)
     have hrl : ∀ q ∈ restoreList oSV signRegs, q.2 + 8 ≤ 1024 := by decide
     refine restore_ok h₄ (e_al hp.alx hp.fx) (v_e (vl_cached p s) h₄) (by decide) (by decide) (by decide)
       (by decide)
@@ -496,17 +505,25 @@ theorem verifyMessageCached_wp {p : Params} {STK S : Nat} (hF : MFacts p) (h48 :
         rw [h₄.rd, h₄.wr, hp.rd, hp.wr, e_add]
         exact ⟨vscrR p s, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
       fun t₅ g₅ sp₅ lr₅ m₅ o₅ => ⟨⟨g₅, sp₅, lr₅⟩, ?_⟩
-    sig_post [verifyMessageCachedContract, verifyMessageCachedSig, RISCV64.abi, RISCV64.argRegs]
-    rw [Proof.MlDsa.Message.formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact hcl'), o₅ .a0 (by decide)
-      (by decide)]
-    simp only [verifyInternal, Proof.MlKem.bytesAt_length]
-    exact r₄
+    cases q
+    all_goals simp only [verifyMessageEK, Bool.false_eq_true, ↓reduceIte]
+    all_goals first
+      | sig_post [verifyMessageCachedContract, verifyMessageCachedSig, RISCV64.abi, RISCV64.argRegs]
+      | sig_post [preparedVerifyMessageContract, preparedVerifyMessageSig, RISCV64.abi, RISCV64.argRegs]
+    all_goals rw [Proof.MlDsa.Message.formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact hcl'),
+      o₅ .a0 (by decide) (by decide)]
+    all_goals simp only [verifyInternal, Proof.MlKem.bytesAt_length]
+    all_goals exact r₄
   · have hcl' : ¬ (s.gpr .a4).toNat < 256 := of_decide_eq_false hcl
     refine Steps.WP.cons (exec_li (d := .a0) (imm := 2) (by decide)) (WP.block_nil ⟨⟨fun r hr => ?_, rfl, rfl⟩, ?_⟩)
     · rw [(Steps.Upd.write _ _ _).other _ (Proof.Sha3.RISCV64.Pieces.pres_ne hr).2.1,
         hu.other _ (by revert hr; cases r <;> decide)]
-    · sig_post [verifyMessageCachedContract, verifyMessageCachedSig, RISCV64.abi, RISCV64.argRegs]
-      rw [Proof.MlDsa.Message.formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega_arith)]
-      rfl
+    · cases q
+      all_goals simp only [verifyMessageEK, Bool.false_eq_true, ↓reduceIte]
+      all_goals first
+        | sig_post [verifyMessageCachedContract, verifyMessageCachedSig, RISCV64.abi, RISCV64.argRegs]
+        | sig_post [preparedVerifyMessageContract, preparedVerifyMessageSig, RISCV64.abi, RISCV64.argRegs]
+      all_goals rw [Proof.MlDsa.Message.formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega_arith)]
+      all_goals rfl
 
 end VG.Proof.MlDsa.RISCV64.Message

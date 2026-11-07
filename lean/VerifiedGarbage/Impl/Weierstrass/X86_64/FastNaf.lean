@@ -31,15 +31,6 @@ def choose (w : Nat) : Prog isa :=
 
 def advance (w : Nat) : List Instr := [.alu .add .rbx (.imm (BitVec.ofNat 32 w))]
 
-def step (dst w : Nat) : Prog isa :=
-  .seq (.block [.mov .rcx (.reg .r8),.alu .and .rcx (.imm 1),.alu .test .rcx (.reg .rcx)]) <|
-  .seq (.ite .e (.block (shift 1++advance 1))
-    (.seq (choose w) (.block (Naf.subtractDigit++[.store8 (tbl dst) .rcx]++shift w++advance w))))
-    (.block [.alu .cmp .rbx (.imm 257)])
-
-def prep (src dst w : Nat) : Prog isa :=
-  .seq (.block (Naf.init src++setConst 33 dst 0)) (.loop (step dst w) .b)
-
 /-- `step` for a scalar of `n` words: `64 n + 1` digits. -/
 def stepN (n dst w : Nat) : Prog isa :=
   .seq (.block [.mov .rcx (.reg .r8),.alu .and .rcx (.imm 1),.alu .test .rcx (.reg .rcx)]) <|

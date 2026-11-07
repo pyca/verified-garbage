@@ -23,7 +23,6 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List A
   Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false
       Impl.Ecdsa.RISCV64.verifyBrainpoolP256r1
-    consts := Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1CombConsts
     stack := 80
     verified := Proof.Ecdsa.RISCV64.BrainpoolP256r1.verifyHash_verified h.law }]
 

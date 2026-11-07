@@ -67,13 +67,4 @@ theorem finishInverse_ok (hc : CfgOk p256) {ip : Prog isa} {W : List (Nat × Nat
   · rw [keep (i:=RZ) (by decide) (by decide)]
     exact hw.rz_lt
 
-/-- Compatibility wrapper for the original fixed-count inversion. -/
-theorem finishPow_ok (hc : CfgOk p256) {base : Addr} {g : Reg → BitVec 64}
-    {P : Point C} {k : Nat} {s t : State} (hw : MulReady base g P k s t)
-    {rest : Prog isa} {R : State → Prop}
-    (h : ∀ u,MulPost p256 base g P k s u → WP isa rest u R) :
-    WP isa (.seq p256.pPow rest) t R :=
-  finishInverse_ok hc (fixedOk_chainWc hc) (fun _ hi hn => apart_chainWc hc hi hn)
-    (by decide) hw (pPow_ok hc hw.scr (modP_of hc.toBaseCfgOk hw.fixed.mp) hw.rz_lt) h
-
 end VG.Proof.P256.EcdhJac

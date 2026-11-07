@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Rt.Csub
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.Column
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.Rt.Step
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Sub
+public import VerifiedGarbage.Proof.Mont.X86.Csub
 
 /-! # The reduction
 

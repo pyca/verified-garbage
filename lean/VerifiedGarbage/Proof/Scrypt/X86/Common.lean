@@ -65,11 +65,6 @@ theorem addr_add {p : BitVec 32} {o : Nat} (h : p.toNat + o < 2 ^ 32) :
   have := addr_eq (x := p) (k := o) h
   exact this
 
-/-- `[(p + o) + d]`, where nothing wraps around. -/
-theorem addr_off {p : BitVec 32} {o d : Nat} (h : p.toNat + o + d < 2 ^ 32) :
-    addr (p + BitVec.ofNat 32 o) d = p.setWidth 64 + BitVec.ofNat 64 o + BitVec.ofNat 64 d := by
-  rw [Proof.Sha256.X86.Stream.addr_add_ofNat h, BitVec.add_assoc, ← BitVec.ofNat_add]
-
 theorem addr_zero (p : BitVec 32) : addr p 0 = p.setWidth 64 := by
   simp [addr]
 
@@ -103,51 +98,6 @@ theorem timesR_ok {m : BitVec 32} {s : State} {r : BitVec 32}
     (by rw [rd₃, u₂.rd, u₁.rd]) (by rw [wr₃, u₂.wr, u₁.wr])
   · rw [e₃, u₂.other _ (by decide), u₁.gpr, hr, u₂.gpr]
   · rw [o₃ q h1 h3, u₂.other q h2, u₁.other q h1]
-
-/-! ## Words of bytes -/
-
-theorem writeW_xor32 (m m' : Mem) (d a b : Addr) :
-    m.writeW d (m'.readW a 32 ^^^ m'.readW b 32) =
-      writeBytes m d (xorBytes (bytesAt m' a 4) (bytesAt m' b 4)) := by
-  simp only [Mem.writeW, Mem.readW]
-  rw [show (32 : Nat) / 8 = 4 from rfl, BitVec.setWidth_eq, BitVec.setWidth_eq, BitVec.setWidth_eq,
-    Proof.Sha256.Stream.write_eq_writeBytes]
-  congr 1
-  apply List.ext_getElem (by simp [xorBytes, bytesAt])
-  intro j h₁ h₂
-  simp only [List.length_map, List.length_range] at h₁
-  simp only [xorBytes, bytesAt, List.getElem_map, List.getElem_range, List.getElem_zipWith]
-  rw [BitVec.extractLsb'_xor, Mem.extractLsb'_read _ _ h₁,
-    Mem.extractLsb'_read _ _ h₁]
-
-/-- One more word of `[d] ← [x] xor [y]`. -/
-theorem xor_mem4 (m : Mem) {d x y : Addr} {n k : Nat} (hk : k < n) (hlt : 4 * n < 2 ^ 64)
-    (hdx : Region.Disjoint ⟨d, 4 * n⟩ ⟨x, 4 * n⟩) (hdy : Region.Disjoint ⟨d, 4 * n⟩ ⟨y, 4 * n⟩) :
-    (writeBytes m d (xorBytes (bytesAt m x (4 * k)) (bytesAt m y (4 * k)))).writeW
-      (d + BitVec.ofNat 64 (4 * k))
-      ((writeBytes m d (xorBytes (bytesAt m x (4 * k)) (bytesAt m y (4 * k)))).readW
-          (x + BitVec.ofNat 64 (4 * k)) 32 ^^^
-        (writeBytes m d (xorBytes (bytesAt m x (4 * k)) (bytesAt m y (4 * k)))).readW
-          (y + BitVec.ofNat 64 (4 * k)) 32) =
-      writeBytes m d (xorBytes (bytesAt m x (4 * (k + 1))) (bytesAt m y (4 * (k + 1)))) := by
-  have hl : (xorBytes (bytesAt m x (4 * k)) (bytesAt m y (4 * k))).length = 4 * k := by
-    rw [xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]
-  have sx : Region.Disjoint ⟨x + BitVec.ofNat 64 (4 * k), 4⟩
-      ⟨d, (xorBytes (bytesAt m x (4 * k)) (bytesAt m y (4 * k))).length⟩ := by
-    rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega_arith) (by omega_arith))).sub_right
-      (Region.sub_prefix (by omega_arith))
-  have sy : Region.Disjoint ⟨y + BitVec.ofNat 64 (4 * k), 4⟩
-      ⟨d, (xorBytes (bytesAt m x (4 * k)) (bytesAt m y (4 * k))).length⟩ := by
-    rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega_arith) (by omega_arith))).sub_right
-      (Region.sub_prefix (by omega_arith))
-  rw [writeW_xor32, bytesAt_writeBytes_sep _ _ sx (by omega_arith),
-    bytesAt_writeBytes_sep _ _ sy (by omega_arith)]
-  have e := writeBytes_append m d _ (xorBytes (bytesAt m (x + BitVec.ofNat 64 (4 * k)) 4)
-    (bytesAt m (y + BitVec.ofNat 64 (4 * k)) 4))
-    (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega_arith)
-  rw [hl] at e
-  rw [e, Nat.mul_succ, bytesAt_add, bytesAt_add, xorBytes, xorBytes, xorBytes,
-    List.zipWith_append (by simp [bytesAt])]
 
 /-! ## Blocks of bytes -/
 

@@ -39,10 +39,6 @@ theorem Room.congr {s s' : State} (h : Room s) (hb : s'.gpr sb = s.gpr sb) (hw :
     Room s' :=
   ⟨by rw [hb, hw]; exact h.mem, by rw [hb]; exact h.fit⟩
 
-/-- A scratch buffer of exactly `slots` slots. -/
-theorem Room.exact {s : State} (hr : scratchR s ∈ s.wr) (hfit : (s.gpr sb).toNat + 4 * slots ≤ 2 ^ 32) :
-    Room s := ⟨⟨slots, Nat.le_refl _, hfit, hr⟩, hfit⟩
-
 theorem toNat_addr (b : BitVec 32) : (b.setWidth 64).toNat = b.toNat := by
   rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
 
@@ -68,9 +64,6 @@ def setMem (s : State) (m : Mem) : State := { s with mem := m }
 
 theorem mem_setMem (s : State) (m : Mem) : (setMem s m).mem = m := rfl
 theorem gpr_setMem (s : State) (m : Mem) : (setMem s m).gpr = s.gpr := rfl
-theorem rd_setMem (s : State) (m : Mem) : (setMem s m).rd = s.rd := rfl
-theorem wr_setMem (s : State) (m : Mem) : (setMem s m).wr = s.wr := rfl
-
 theorem ea_slot (s : State) (k : Nat) : s.ea (slotAt sb k) = slotA s k := rfl
 
 theorem load_slot {s : State} (h : Room s) {k : Nat} (hk : k < slots) :

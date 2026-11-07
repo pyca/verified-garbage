@@ -105,38 +105,8 @@ theorem fnHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
 
 /-! ## Restoring the callee-saved registers -/
 
-theorem fnReadW_writeW128 (m : Mem) (a : Addr) (v : BitVec 128) {j : Nat} (hj : j ≤ 8) :
-    (m.writeW a v).readW (a + BitVec.ofNat 64 j) 64 = v.extractLsb' (8 * j) 64 := by
-  simp only [Mem.readW, Mem.writeW]
-  rw [BitVec.setWidth_eq]
-  have : (Mem.write m a 16 (BitVec.setWidth (8 * 16) v)).read (a + BitVec.ofNat 64 j) 8 = v.extractLsb' (8 * j) 64 := by
-    refine Mem.read_eq_of_bytes fun i hi => ?_
-    simp only [Mem.write]
-    rw [Offset.add_add, Mem.sub_ofNat_toNat a (by omega_arith)]
-    simp only [show j + i < 16 by omega_arith, ite_true]
-    ext k hk
-    simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth]
-    simp [show 8 * (j + i) + k < 128 by omega_arith, show 8 * i + k < 64 by omega_arith]
-    congr 1; omega_arith
-  exact this
-
 theorem fnExtract_lo (hi lo : BitVec 64) : (hi ++ lo).extractLsb' 0 64 = lo := by
   ext i h; simp only [BitVec.getElem_extractLsb']; rw [BitVec.getLsbD_append]; simp [h]
-
-theorem fnExtract_hi (hi lo : BitVec 64) : (hi ++ lo).extractLsb' 64 64 = hi := by
-  ext i h; simp only [BitVec.getElem_extractLsb']; rw [BitVec.getLsbD_append]; simp [h]
-
-theorem off_add_ofInt (B : Addr) (d k : Nat) : off B d + BitVec.ofInt 64 (k : Int) = off B (d + k) := by
-  rw [BitVec.ofInt_natCast]; simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
-
-theorem word_lo128 (m : Mem) (B : Addr) (d : Nat) (v : BitVec 128) :
-    (m.writeW (off B d) v).readW (off B d) 64 = v.extractLsb' 0 64 := by
-  simpa using fnReadW_writeW128 m (off B d) v (j := 0) (by decide)
-
-theorem word_hi128 (m : Mem) (B : Addr) (d : Nat) (v : BitVec 128) :
-    (m.writeW (off B d) v).readW (off B (d + 8)) 64 = v.extractLsb' 64 64 := by
-  rw [show off B (d + 8) = off B d + BitVec.ofNat 64 8 by simp only [off, BitVec.add_assoc, BitVec.ofNat_add]]
-  exact fnReadW_writeW128 m (off B d) v (j := 8) (by decide)
 
 /-- A write of `w` bits changes only those bytes. -/
 theorem writeW_outsideN (m : Mem) (base : Addr) {d w : Nat} (v : BitVec w) (h : d + w / 8 ≤ 2 ^ 64)

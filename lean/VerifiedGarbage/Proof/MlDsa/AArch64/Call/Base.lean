@@ -214,9 +214,6 @@ theorem Post.b {s s' : State} {W : List Region} (h : Post S s s' W) : PostB S s 
 theorem PostB.bs {s s' : State} {W : List Region} (h : PostB S s s' W) : ∀ r ∈ keptRegs, s'.gpr r = s.gpr r :=
   h.cs
 
-theorem PostB.refl (s : State) (W : List Region) : PostB S s s W :=
-  ⟨rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _, fun _ _ => rfl⟩
-
 theorem PostB.trans {s s₁ s₂ : State} {W₁ W₂ W : List Region} (h₁ : PostB S s s₁ W₁) (h₂ : PostB S s₁ s₂ W₂)
     (hw₁ : ∀ r ∈ W₁, r ∈ W) (hw₂ : ∀ r ∈ W₂, r ∈ W) : PostB S s s₂ W := by
   refine ⟨h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp, fun r hr => (h₂.cs r hr).trans (h₁.cs r hr), ?_,
@@ -304,11 +301,6 @@ section
 variable {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S rbs wbs s)
 include L
 
-omit L in
-theorem sub_of_inB {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) :
-    ∃ n, (p.1, n) ∈ rbs ++ wbs ∧ Region.Sub ⟨pa s p, l⟩ ⟨s.gpr p.1, n⟩ :=
-  CallLay.sub_of_inB h
-
 theorem Lay.disj {p q : Ptr} {l k : Nat} (h : sepB rbs wbs p l q k = true) :
     Region.Disjoint ⟨pa s p, l⟩ ⟨pa s q, k⟩ :=
   L.toLay.disj (sepB_eq .. ▸ h)
@@ -367,11 +359,6 @@ theorem PPostB.trans {s s₁ s₂ : State} {ws₁ ws₂ ws : List (Ptr × Nat)} 
   refine PostB.trans h₁ h₂' (fun r hr => ?_) fun r hr => ?_
   · obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hr; exact List.mem_map_of_mem (hw₁ w hw)
   · obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hr; exact List.mem_map_of_mem (hw₂ w hw)
-
-theorem PPostB.mono {s s' : State} {ws ws' : List (Ptr × Nat)} (h : PPostB S s s' ws) (hw : ∀ w ∈ ws, w ∈ ws') :
-    PPostB S s s' ws' :=
-  PostB.trans (PostB.refl s []) h (fun _ h => absurd h List.not_mem_nil) fun r hr => by
-    obtain ⟨w, hw', rfl⟩ := List.mem_map.mp hr; exact List.mem_map_of_mem (hw w hw')
 
 end
 

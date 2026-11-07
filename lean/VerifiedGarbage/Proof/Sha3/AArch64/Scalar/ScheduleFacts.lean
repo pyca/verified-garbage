@@ -8,12 +8,6 @@ namespace VG.Proof.Sha3.AArch64.Scalar
 open VG VG.AArch64
 open VG.Impl.Sha3.AArch64.Scalar
 
-theorem laneReg_injective : ∀ i < 25, ∀ j < 25,
-    laneReg i = laneReg j → i = j := by decide +kernel
-
-theorem thetaReg_injective : ∀ i < 25, ∀ j < 25,
-    thetaReg i = thetaReg j → i = j := by decide +kernel
-
 theorem scratch_not_lane : ∀ r ∈ [Reg.x26, .x27, .x28, .x30],
     ∀ i < 25, laneReg i ≠ r := by decide +kernel
 
@@ -29,8 +23,5 @@ def BaselineSafe : ScalarOp → Prop
 
 instance (op : ScalarOp) : Decidable (BaselineSafe op) := by
   cases op <;> unfold BaselineSafe <;> infer_instance
-
-theorem baseline_safe : ∀ op ∈ thetaOps ++ rhoPiOps ++ chiOps,
-    BaselineSafe op := by decide +kernel
 
 end VG.Proof.Sha3.AArch64.Scalar

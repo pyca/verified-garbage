@@ -67,46 +67,4 @@ def pcContract : Contract isa where
   post := pcPost
   pub := pcPub
 
-theorem stackArgs_three (s : State) : List.map (stackArg s) (List.range 3) =
-    [stackArg s 0, stackArg s 1, stackArg s 2] := rfl
-
-private def satState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 64 | .rdx => 0x2000 | .rcx => 512 | .r8 => 2 | .r9 => 0x3000
-    | .rsp => 0x6000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem a := if a = 0x6011 then 0x80 else if a = 0x6018 then 0x20 else if a = 0x6019 then 0x04 else 0
-  rd := [⟨0x3000, 0⟩, ⟨0x6008, 24⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x2000, 8⟩, ⟨0x8000, 1056 * 8⟩]
-
-theorem pc_implies : pcContract.Implies (sievedParameterCandidateContract abi 128) where
-  pre := by
-    intro s h
-    sig_pre [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, stackBelow,
-      pcContract, pcPre, stackArgs_three, List.append_eq] at h
-    sig_pre [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, stackBelow,
-      pcContract, pcPre, stackArgs_three, List.append_eq] at h
-    sig_split h
-    sig_reduce [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, stackBelow,
-      pcContract, pcPre, stackArgs_three, List.append_eq]
-    sig_and_intros
-    sig_close
-    all_goals first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›
-  post := by
-    sig_implies_post [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, pcContract,
-      pcPost, pcResult, pcRand, stackArgs_three, List.append_eq]
-  pub := by
-    intro s t _ _ h
-    sig_pub [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, stackArgs_three,
-      List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-    exact h
-  sat := by
-    sig_implies_sat [sievedParameterCandidateContract, parameterCandidateSig, abi, argRegs, stackBelow,
-      pcContract, pcPre, stackArgs_three, List.append_eq]
-      [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
-
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

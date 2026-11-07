@@ -39,8 +39,6 @@ theorem slot_header (n i : Nat) : 256 ≤ slot n i := by unfold slot; omega
 /-- The accumulator's four slots. -/
 theorem slot_acc (n : Nat) : slot n 6 = slot n 2 + 4 * stride n := by simp only [slot]; omega
 
-theorem contextMod_words (n : Nat) : words (contextMod n) = 2 * n := rfl
-
 /-- The context of the modulus `m`: in slot 0 of the working space, with
 `m' = -m⁻¹ mod 2¹⁶` in the header, and the working space's offsets below
 `2¹⁶`. -/

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
+public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Spec.Entropy
 
 /-!
@@ -8,9 +8,9 @@ public import VerifiedGarbage.Spec.Entropy
 
 **Trusted** (as every file in `Spec/`). `vg_rsa_pkcs1_encrypt_random`:
 RSAES-PKCS1-V1_5-ENCRYPT (`encrypt`) with the padding string `PS` drawn by
-the verified code from a tape of random octets, rather than given by the
-caller (`vg_rsa_pkcs1_encrypt_precomputed`, `Spec/RsaPkcs1Enc/Precomputed.lean`,
-whose precomputed public key it also takes). RFC 8017 §7.2.1 step 2.a asks
+the verified code from a tape of random octets, and the modulus given also
+by the values `vg_rsa_public_precompute` computed for it
+(`Rsa.publicPrecompute`). RFC 8017 §7.2.1 step 2.a asks
 for `PS` to be `k - mLen - 3` "pseudo-randomly generated nonzero octets"; here
 `PS` is the first `k - mLen - 3` nonzero octets of the tape (`nonzeroPrefix`):
 each zero octet is rejected, and the octets kept are, for a tape of
@@ -27,11 +27,11 @@ nonzero octets: more than 128 of at most 1149 uniform octets are zero, which
 has a probability below 2⁻⁴⁰⁰, so in practice only a broken random number
 generator.
 
-What is secret and what may affect timing is as in `encryptPrecomputedContract`
-(the public key, its precomputed values and the lengths are public; the
-message and `PS` are secret), and in addition which octets of the tape
+The public key, its precomputed values and the lengths are public, and may
+affect timing; the message and `PS` are secret. So is which octets of the tape
 were zero (`zeroMask`, the trace of `padSearch`), among those it consumed,
-or all of them when it asks for more or gives up. Those octets are discarded,
+or all of them when it asks for more or gives up, but it may affect timing
+too. Those octets are discarded,
 and the positions of the zero octets of a uniform tape are independent of the
 values of the others, so they reveal nothing about `PS`; `PS`'s octets and
 the message never affect timing.

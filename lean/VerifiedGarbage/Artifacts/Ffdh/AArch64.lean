@@ -23,7 +23,6 @@ open VG.AArch64
 
 def artifacts : List Artifact := [
   Spec.Ffdh.generationPrecomputeApi.artifact target {
-    consts := Impl.Ffdh.AArch64.Cached.Policy.tableConsts
     code := Impl.Ffdh.AArch64.Cached.Precompute.code Proof.Bignum.AArch64.Mont.productEight.mm
     verified := Proof.Ffdh.AArch64.Cached.precompute_verified _ },
   Spec.Ffdh.cachedGenerateKeyApi.artifact target {
@@ -38,7 +37,6 @@ def artifacts : List Artifact := [
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.CheckPublic.cp_verified _ _ _ },
   Spec.Ffdh.checkDomainApi.artifact target {
-    consts := Impl.Ffdh.AArch64.Cached.Policy.tableConsts
     code := Impl.Ffdh.AArch64.VettedValidation.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.VettedValidation.verified _ _ _ },

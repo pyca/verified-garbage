@@ -27,12 +27,6 @@ open VG.Spec.X25519 (P)
 section
 variable {e : Nat} {b : BitVec 32}
 
-/-- The address of word `k` of the element at `o`, through a pointer to it. -/
-theorem addrO (hfit : b.toNat + 4096 ≤ 2 ^ 32) {o d : Nat} (h : o + d < 4096) :
-    State.addr (b + BitVec.ofNat 32 o + BitVec.ofNat 32 d) = State.addr b + BitVec.ofNat 64 o +
-      BitVec.ofNat 64 d := by
-  rw [addB hfit h, Offset.add_add]
-
 theorem addrO' (hfit : b.toNat + 4096 ≤ 2 ^ 32) {o : Nat} (h : o < 4096) :
     State.addr (b + BitVec.ofNat 32 o) = State.addr b + BitVec.ofNat 64 o := addr_add (by omega)
 

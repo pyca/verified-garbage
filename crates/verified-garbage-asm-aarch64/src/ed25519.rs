@@ -3,43 +3,30 @@
 //! `assembly/ed25519.s`.
 #![allow(dead_code)]
 
-/// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
+/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
 ///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
-/// * `expanded` must be valid for reads of 64 bytes.
+/// * `expanded` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The 64 bytes at `expanded` must equal the SHA-512 digest (`VG.Spec.Sha512.sha512`) of a 32-byte seed.
 /// * The seed must originate from a cryptographically secure random generator.
+/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
-/// * None of `out`, `expanded` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the 944 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ed25519_public_key_expanded(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
-.inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0xf94087e1,0x91000021
-.inst 0x910303ef,0xf9400029,0xf90001e9,0xf9400429,0xf90005e9,0xf9400829,0xf90009e9,0xf9400c29
-.inst 0xf9000de9,0xf9401029,0xf90011e9,0xf9401429,0xf90015e9,0xf9401829,0xf90019e9,0xf9401c29
-.inst 0xf9001de9,0xf94063e9,0xd29fff0a,0xf2bfffea,0xf2dfffea,0xf2ffffea,0x8a0a0129,0x910083ef
-.inst 0xf90001e9,0xf94067e9,0x9100a3ef,0xf90001e9,0xf9406be9,0x9100c3ef,0xf90001e9,0xf9406fe9
-.inst 0xd29fffea,0xf2bfffea,0xf2dfffea,0xf2e7ffea,0x8a0a0129,0xd2e8000a,0xaa0a0129,0x9100e3ef
-.inst 0xf90001e9,0xf94083e0,0x91000000,0x910083e1,0xf9408be2,0x91000042
-bl {vg_ed25519_scalar_base}
-.inst 0x910003ef,0xd280000e,0xf90011ee,0x910003ef,0xd280000e,0xf90015ee,0x910003ef,0xd280000e
-.inst 0xf90019ee,0x910003ef,0xd280000e,0xf9001dee,0x910003ef,0xd280000e,0xf90021ee,0x910003ef
-.inst 0xd280000e,0xf90025ee,0x910003ef,0xd280000e,0xf90029ee,0x910003ef,0xd280000e,0xf9002dee
-.inst 0x910003ef,0xd280000e,0xf90031ee,0x910003ef,0xd280000e,0xf90035ee,0x910003ef,0xd280000e
-.inst 0xf90039ee,0x910003ef,0xd280000e,0xf9003dee,0x910003ef,0xd280000e,0xf90041ee,0x910003ef
-.inst 0xd280000e,0xf90045ee,0x910003ef,0xd280000e,0xf90049ee,0x910003ef,0xd280000e,0xf9004dee
-.inst 0x910003ef,0xd280000e,0xf90051ee,0x910003ef,0xd280000e,0xf90055ee,0x910003ef,0xd280000e
-.inst 0xf90059ee,0x910003ef,0xd280000e,0xf9005dee,0x910003ef,0xd280000e,0xf90061ee,0x910003ef
-.inst 0xd280000e,0xf90065ee,0x910003ef,0xd280000e,0xf90069ee,0x910003ef,0xd280000e,0xf9006dee
-.inst 0x910003ef,0xd280000e,0xf90071ee,0x910003ef,0xd280000e,0xf90075ee,0x910003ef,0xd280000e
-.inst 0xf90079ee,0x910003ef,0xd280000e,0xf9007dee,0x910503ff,0xf84107fe,0xd65f03c0
+        r".inst 0xf81f0ffe,0xd10083ff,0xf90003e0,0xf90007e1,0xf9000be3,0x91000040,0x91000022,0xd2800401
+bl {vg_sha512_digest}
+.inst 0xf94003e0,0xf94007e1,0xf9400be2
+bl {vg_ed25519_public_key_expanded}
+.inst 0x910083ff,0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
+        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
 
@@ -156,6 +143,37 @@ bl {vg_ed25519_verify_equation}
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
+    )
+}
+
+/// The CPU features `vg_ed25519_key_pair_sha3` requires (`Artifact.features`).
+pub const VG_ED25519_KEY_PAIR_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `expanded` must be valid for reads and writes of 64 bytes.
+/// * `seed` must be valid for reads of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The seed must originate from a cryptographically secure random generator.
+/// * The 64 bytes written to `expanded` are secret: the caller must destroy them after use.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out`, `expanded` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `expanded`, `seed` and `scratch` may overlap the 944 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_ed25519_key_pair_sha3(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0xd10083ff,0xf90003e0,0xf90007e1,0xf9000be3,0x91000040,0x91000022,0xd2800401
+bl {vg_sha512_digest_sha3}
+.inst 0xf94003e0,0xf94007e1,0xf9400be2
+bl {vg_ed25519_public_key_expanded}
+.inst 0x910083ff,0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_sha512_digest_sha3 = sym super::sha512::vg_sha512_digest_sha3,
+        vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
 
@@ -282,6 +300,10 @@ bl {vg_ed25519_verify_equation}
         vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed25519_public_key_expanded.rs"]
+pub(crate) mod vg_ed25519_public_key_expanded;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ed25519_scalar_base.rs"]

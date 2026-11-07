@@ -196,24 +196,4 @@ theorem correct (s : State) (hs : decodeDecompressAArch64.pre s) :
       rcases mem_compressWidths hd with h | h | h <;> rw [h] at hlen <;> omega
     exact width_ok (w := width10) hs e k₃ (by rw [h₃.mem, m₂]) fun _ hp => loop10_ok hp
 
-theorem ct : ConstantTime isa decodeDecompressAArch64.pre decodeDecompressAArch64.pub
-    decodeDecompress :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x3])
-    (fun _ _ _ _ ⟨h0, h1, h3, hsp⟩ => agree_of hsp (by simp [h0, h1, h3])) (by taint_decide)
-
-/-- A state satisfying the precondition. -/
-def sat : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 128 | .x2 => 4 | .x3 => 0x2000 | _ => 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 1024⟩]
-
-theorem decodeDecompress_verified :
-    Verified AArch64.target decodeDecompress (Proof.MlKem.decodeDecompressContract AArch64.abi) :=
-  Verified.of_correct correct ct (by
-    mlkem_implies [Proof.MlKem.decodeDecompressContract, Proof.MlKem.decodeDecompressSig,
-      decodeDecompressAArch64, AArch64.abi, AArch64.argRegs] [sat] using sat)
-
 end VG.Proof.MlKem.AArch64.DD

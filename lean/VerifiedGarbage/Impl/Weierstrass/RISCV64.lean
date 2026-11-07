@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 public import VerifiedGarbage.TCB.RISCV64.Isa
 
 /-!
-# Short Weierstrass curves on RISC-V: field programs, scalar multiplication, powers
+# Short Weierstrass curves on RISC-V: field programs and powers
 
 Code for curves whose field elements are numbers of 64-bit words in slots
 of the working space, in Montgomery form, and whose arithmetic modulo `p`
@@ -26,9 +26,6 @@ projective coordinates `(X : Y : Z)`. As on PPC64LE
   offsets in `a1`–`a3`; `fprog`: field
   operations on slots (`FOp`, `Impl/Weierstrass/Slots.lean`), such as the
   complete addition `rcb`, one after the other.
-* `ladder`: `[k]G` by double-and-add from the top bit: `D = R + R`,
-  `T = D + G` and `R = D` or `T` by a mask of the bit (in `a7`), so every
-  iteration does the same.
 * `pow`: `x^e` by square-and-multiply over the bits of a public exponent,
   also always multiplying and selecting by a mask.
 * `chainPow`: `x^e` for an exponent fixed when the code is generated, by its
@@ -163,22 +160,6 @@ def decCounter : Instr := .addi ctr ctr (-1)
 abbrev more : Cond := .nonzero ctr
 
 /-! ## Scalar multiplication and powers -/
-
-/-- What the ladder needs: the field's slots and points (`LadderCfg`, whose
-`bits` is the slot of the scalar here). -/
-abbrev Ladder := LadderCfg
-
-/-- One iteration of the ladder, for the bit `t = s1 - 1`: `D = R + R`,
-`T = D + G`, then `R = T` if bit `t` is set, else `D`. -/
-def ladderBody (L : LadderCfg) (F : Field) : Prog isa :=
-  .seq (.block [decCounter]) <| .seq (fprog F (rcb L.S L.R L.R L.D)) <|
-    .seq (fprog F (rcb L.S L.D L.G L.T)) <|
-    .block (bitMask L.bits ++ selPt L.M.n L.R L.D L.T)
-
-/-- The ladder over the bits `nbits - 1` down to 0 of the number at
-`L.bits`, from `R` as set up by the caller (the point at infinity). -/
-def ladder (L : LadderCfg) (F : Field) : Prog isa :=
-  .seq (.block [.li ctr L.nbits]) (.loop (ladderBody L F) more)
 
 /-- One iteration: `acc = acc²`, `tmp = base · acc`, and `acc = tmp` if the
 exponent's bit `s1 - 1` is set (the base the multiplication's first operand,

@@ -25,12 +25,6 @@ def entry : List Instr :=
 an odd modulus above 1. The first byte is returned in rax. -/
 def bound : List (Prog isa) := [.block qTest, .ite .e (seqs (scan sDom)) (seqs (scan sQ))]
 
-/-- The low bits through the first byte's highest bit, including the all-zero case. -/
-def smear : List Instr :=
-  [.mov .rdx (.reg .rax), .shift .shr .rdx 1, .alu .or .rax (.reg .rdx),
-    .mov .rdx (.reg .rax), .shift .shr .rdx 2, .alu .or .rax (.reg .rdx),
-    .mov .rdx (.reg .rax), .shift .shr .rdx 4, .alu .or .rax (.reg .rdx), .store (hdr sMsk) .rax]
-
 /-- One random byte to x: zero before the bound's first byte, masked at it,
 and retained afterwards. Both conditional moves depend only on the public index. -/
 def cutBody : List Instr :=
@@ -49,11 +43,6 @@ def cutSetup : List Instr :=
 def cutFinish : List Instr :=
   [.mov .rax (.mem (hdr sX)), .alu .add .rax (.reg .r8), .store (hdr sX) .rax,
     .mov .rax (.mem (hdr sEl)), .store (hdr sXl) .rax]
-
-/-- Cut the random bytes to the bound's bit length, then retain only its
-public number of significant bytes as the exponentiation input. -/
-def scalar : List (Prog isa) := bound ++ [
-  .block smear, .block cutSetup, .loop (.block cutBody) .ne, .block cutFinish]
 
 /-- Move the output pointer to exchange's output slot and the checked
 generator to its input slot. The inner modulus workspace stays active. -/
@@ -86,20 +75,5 @@ def status : List Instr :=
     .alu .sub .rdx (.reg .rax), .mov .rax (.reg .rdx)]
 
 variable (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) (r2 : Prog isa)
-
-/-- The valid scalar's public value, using generator subgroup closure;
-exchange's proven range check and masked store encode it or zero it. -/
-def tail : List (Prog isa) := [r2] ++ pow mul ex sG sK sX sXl ++ publicOutput ++ [maskX, .block status]
-
-/-- Check the sampled scalar, then derive its public value or clear the outputs. -/
-def core : List (Prog isa) := [.block head] ++ pSetup ++ loadArr aXm sX sXl ++
-  CheckPrivate.scalarRange ++ [.block [.alu .test .rax (.reg .rax)],
-    .ite .e (seqs [.block [leave], maskX, ret 2]) (seqs (tail mul ex r2))]
-
-def main : Prog isa := seqs ([Keys.zeroOut sY sK] ++ scalar ++ core mul ex r2)
-
-def body : Prog isa := .seq (.block (entry ++ domHead)) (.ite .ne (ret 0) (main mul ex r2))
-
-def code : Prog isa := .seq (body mul ex r2) (.block exit)
 
 end VG.Impl.Ffdh.X86_64.Domain.GenerateKey

@@ -169,8 +169,6 @@ def gprPreserved (s s' : State) : Prop :=
   (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
   s'.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
 
-theorem abiPreserved.gpr {s s' : State} (h : abiPreserved s s') : gprPreserved s s' := ⟨h.1, h.2.1⟩
-
 /-- The calling-convention obligations of code that never loads MXCSR (the
 kernel checks `hc` by evaluating the code), from the others. -/
 theorem abiPreserved_of_exec {c : Prog isa} (hc : c.allInstrs (fun i => !loadsMxcsr i) = true)

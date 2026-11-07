@@ -15,25 +15,10 @@ open VG VG.Spec.MlDsa VG.Proof.MlDsa.Arith
 def dotPoly (f g : Nat → Poly) (count : Nat) : Poly :=
   ((List.range count).map fun j => multiplyNTT (f j) (g j)).foldl add zero
 
-theorem dotPoly_zero (f g : Nat → Poly) : dotPoly f g 0=zero := rfl
-
 theorem dotPoly_succ (f g : Nat → Poly) (count : Nat) :
     dotPoly f g (count+1)=add (dotPoly f g count) (multiplyNTT (f count) (g count)) := by
   simp only [dotPoly,List.range_succ,List.map_append,List.map_cons,List.map_nil,
     List.foldl_append,List.foldl_cons,List.foldl_nil]
-
-/-- The indexed family contract is exactly the existing matrix-row sum. -/
-theorem dotPoly_lists (f g : List Poly) {count : Nat} (hf : f.length=count) (hg : g.length=count) :
-    dotPoly (fun j => f[j]!) (fun j => g[j]!) count=(List.zipWith multiplyNTT f g).foldl add zero := by
-  unfold dotPoly
-  congr 1
-  apply List.ext_getElem
-  · simp [hf,hg]
-  · intro i hi hj
-    have hif : i<f.length := by simpa [hf] using (show i<count by simpa using hi)
-    have hig : i<g.length := by omega
-    simp only [List.getElem_map,List.getElem_range,List.getElem_zipWith,
-      getElem!_pos f i hif,getElem!_pos g i hig]
 
 theorem dotNat_field (a b : Nat → BitVec 32) (f g : Nat → Poly) (count : Nat)
     {i : Nat} (hi : i<n)

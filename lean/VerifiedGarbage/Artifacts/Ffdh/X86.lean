@@ -26,7 +26,6 @@ open VG
 
 def artifacts : List Artifact := [
   Spec.Ffdh.checkDomainApi.artifact X86.target {
-    consts := Impl.Ffdh.X86.VettedValidation.tableConsts
     code := Impl.Ffdh.X86.VettedValidation.code
     verified := Proof.Ffdh.X86.VettedValidation.verified
     spSafe := Proof.Ffdh.X86.VettedValidation.spSafe
@@ -55,7 +54,6 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.KeyInit.code
     verified := Proof.Ffdh.X86.KeyInit.verified },
   Spec.Ffdh.generationPrecomputeApi.artifact X86.target {
-    consts := Impl.Ffdh.X86.VettedValidation.tableConsts
     code := Impl.Ffdh.X86.Cached.Precompute.code
     verified := Proof.Ffdh.X86.Cached.Pre.pc_verified
     spSafe := Proof.Ffdh.X86.Shape.cachedPrecompute_spSafe
@@ -77,7 +75,6 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.ParamSearch.code
     verified := Proof.Ffdh.X86.PSearch.verified
     spSafe := Proof.Ffdh.X86.Shape.paramSearch_spSafe
-    consts := VG.Impl.RsaKeyGen.TrialTable32.consts
     stack := 212 }]
 
 end VG.Artifacts.Ffdh.X86

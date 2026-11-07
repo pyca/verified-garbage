@@ -85,7 +85,6 @@ namespace VG.Generic.P256.AArch64.EcP256
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : List Artifact := [
   Spec.EcKey.P256.publicKeyApi.artifact AArch64.target {
-    consts := Impl.Ecdsa.AArch64.p256.combConsts
     code := Impl.P256.Booth.publicKey
     verified := Proof.EcKey.AArch64.booth_pk_verified h.law h.inv (Proof.P256.combOk7 h.law) }]
 

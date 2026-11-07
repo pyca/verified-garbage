@@ -30,9 +30,6 @@ open VG.X86_64 VG.Impl.Bignum.X86_64.Public
 `i` in a register. -/
 def arrAt (i : Reg) : MemOp := { base := .rdi, index := some i, scale := 8, disp := 8 * sArr 0 }
 
-/-- `[b + d]`. -/
-def at_ (b : Reg) (d : Int) : MemOp := { base := b, disp := d }
-
 /-- The indices zero-extended (only their low 32 bits are arguments). -/
 def zext : List Instr := [.mov32 .rdx (.reg .rdx), .mov32 .rcx (.reg .rcx), .mov32 .r8 (.reg .r8)]
 

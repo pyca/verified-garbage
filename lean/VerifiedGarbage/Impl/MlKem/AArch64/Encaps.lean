@@ -54,7 +54,6 @@ end KemLay
 abbrev enAWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay768.enAWith c
 abbrev enCWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay768.enCWith c
 abbrev encapsWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay768.encapsWith c
-abbrev encaps : Prog isa := encapsWith .scalar
 abbrev encapsHWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay768.encapsHWith c
 
 end VG.Impl.MlKem.AArch64

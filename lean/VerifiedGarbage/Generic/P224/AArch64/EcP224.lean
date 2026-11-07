@@ -52,7 +52,6 @@ namespace VG.Generic.P224.AArch64.EcP224
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P224.curve) : List Artifact := [
   Spec.EcKey.P224.publicKeyApi.artifact AArch64.target {
-    consts := Impl.Ecdsa.AArch64.p224.combConsts
     code := Impl.EcKey.AArch64.publicKeyP224
     verified := Proof.EcKey.AArch64.P224.pk_verified h.law h.inv (Proof.P224.combOk7 h.law) }]
 

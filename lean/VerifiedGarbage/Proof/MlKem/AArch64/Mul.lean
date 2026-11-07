@@ -448,23 +448,4 @@ theorem correct (s₀ : State) (hs : mulAArch64.pre s₀) :
   refine WP.mono (count_loop (by decide) (Inv s₀) (fun c hc s h => step hp hc h) i₀)
     fun s' h => ⟨h.sp, (show CoeffsUpTo _ _ 256 _ _ from h.out).polyIs fun _ _ => rfl⟩
 
-theorem ct : ConstantTime isa mulAArch64.pre mulAArch64.pub multiplyNTTs :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-    (fun _ _ _ _ ⟨h0, h1, h2, h3, hsp⟩ => agree_of hsp (by simp [h0, h1, h2, h3])) (by taint_decide)
-
-/-- A state satisfying the precondition. -/
-def sat : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x3 => 0x4000 | _ => 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x2000, 1024⟩, ⟨0x3000, 1024⟩]
-  wr := [⟨0x1000, 1024⟩, ⟨0x4000, 1024⟩]
-
-theorem mul_verified :
-    Verified AArch64.target multiplyNTTs (Proof.MlKem.mulContract AArch64.abi) :=
-  Verified.of_correct correct ct (by
-    mlkem_implies [Proof.MlKem.mulContract, Proof.MlKem.mulSig, mulAArch64, AArch64.abi,
-      AArch64.argRegs] [sat] using sat)
-
 end VG.Proof.MlKem.AArch64.Mul

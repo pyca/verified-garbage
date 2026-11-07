@@ -14,7 +14,6 @@ namespace VG.Generic.MillerRabin.X86_64.CachedFfdh
 
 def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
   Spec.Ffdh.generationPrecomputeApi.artifact X86_64.target {
-    consts := Impl.Ffdh.X86_64.VettedValidation.tableConsts
     suffix := v.suffix
     stack := 8
     code := Proof.Ffdh.X86_64.Cached.precomputeCode v

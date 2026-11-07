@@ -250,7 +250,6 @@ namespace VG.Generic.P256.AArch64.EcdsaP256
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : List Artifact := [
   Spec.Ecdsa.P256.verifyHashApi.artifact AArch64.target {
-    consts := Impl.Ecdsa.Verify.AArch64.P256Joint.p256v.combConsts
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.P256Allocated.verify
     stack := 80

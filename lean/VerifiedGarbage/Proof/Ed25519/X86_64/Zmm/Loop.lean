@@ -92,9 +92,6 @@ structure ZFrame (s₀ : State) (b : Addr) (s : State) : Prop where
   mem : ∀ a, ¬ ZChg (ofs b a) → s.mem a = s₀.mem a
   syms : s.syms = s₀.syms
 
-theorem ZFrame.refl (s₀ : State) (b : Addr) : ZFrame s₀ b s₀ :=
-  ⟨fun _ _ _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl, rfl⟩
-
 theorem ZFrame.scratch {s₀ s : State} {b T : Addr} {S : Nat} (hp : ZLoopPre s₀ b T S) (h : ZFrame s₀ b s)
     (hr : s.gpr .rdi = b) : Scratch s b :=
   ⟨hr, by rw [h.wr]; exact hp.scratch.wr, hp.scratch.nowrap⟩

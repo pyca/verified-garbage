@@ -123,7 +123,8 @@ theorem SC2.of_eq {p : Params} {STK : Nat} {σ s s' : State} (h : SC2 p STK σ s
     by rw [hg .s9 (by decide) (by decide) (by decide)]; exact hs.s9,
     by rw [hg .s8 (by decide) (by decide) (by decide)]; exact hs.s8,
     by rw [hwr]; exact hs.cw, by rw [hwr, hrd]; exact hs.cr⟩, hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp,
-    fun r hr hs' => ?_, by rw [hm]; exact h.sav, by rw [hm]; exact h.sk, by rw [hm]; exact h.mu⟩
+    fun r hr hs' => ?_, by rw [hm]; exact h.sav, by rw [hm]; exact h.sk, by rw [hm]; exact h.mu, h.pre,
+    by rw [hg .s3 (by decide) (by decide) (by decide)]; exact h.s3, by rw [hm]; exact h.cache⟩
   have : r ≠ .a0 ∧ r ≠ .s4 ∧ r ≠ .s6 := ⟨fun e => by subst e; simp [preserved] at hr,
     fun e => by subst e; simp [savedTop] at hs', fun e => by subst e; simp [savedTop] at hs'⟩
   rw [hg r this.1 this.2.1 this.2.2]; exact h.pres r hr hs'
@@ -760,16 +761,6 @@ theorem onesOk_piece {t : Nat} : SPiece p STK (fun σ s => IH p STK σ t p.k p.k
   refine ⟨h.b.regs2 r2, (fun _ j hj => by rw [r2.mem]; exact h.z j hj), (fun _ j hj => by rw [r2.mem]; exact h.h j hj), ?_⟩
   rw [e24, h.s6, h.s4, sign_bit (by omega) (by omega), bit_and']
   exact bit_congr passV_iff
-
-theorem zs_piece {t : Nat} :
-    SPiece p STK (fun σ s => IZ p STK σ t 0 0 s) (fun σ s => IQ p STK σ t 0 0 s) (seqR (zR P p) 0 p.ℓ) :=
-  Piece.mono (Piece.seqR (I := fun r σ s => IZ p STK σ t r r s) p.ℓ 0
-    fun r _ hr => zR_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by rw [Nat.zero_add] at h; exact h.iq
-
-theorem r0s_piece {t : Nat} :
-    SPiece p STK (fun σ s => IQ p STK σ t 0 0 s) (fun σ s => IH p STK σ t 0 0 0 s) (seqR (r0R P p) 0 p.k) :=
-  Piece.mono (Piece.seqR (I := fun i σ s => IQ p STK σ t i i s) p.k 0
-    fun i _ hi => r0R_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by rw [Nat.zero_add] at h; exact h.ih
 
 theorem hs_piece {t : Nat} :
     SPiece p STK (fun σ s => IH p STK σ t 0 0 0 s) (fun σ s => IH p STK σ t p.k p.k p.k s) (seqR (hR P p) 0 p.k) :=

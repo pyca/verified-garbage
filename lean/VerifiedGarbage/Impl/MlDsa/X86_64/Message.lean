@@ -7,7 +7,8 @@ public import VerifiedGarbage.Spec.MlDsa.Contract
 # ML-DSA on x86-64: `vg_mldsa{44,65,87}_sign_message` and `_verify_message_cached`
 
 `sign_message(sk = rdi, msg = rsi, msg_len = rdx, ctx = rcx, ctx_len = r8,
-rnd = r9, sig = [rsp + 8], scratch = [rsp + 16]) -> eax` and
+rnd = r9, sig = [rsp + 8], scratch = [rsp + 16]) -> eax` (and `sign_message_prepared`, the same
+with a prepared key) and
 `verify_message_cached(pk = rdi, msg = rsi, msg_len = rdx, ctx = rcx,
 ctx_len = r8, sig = r9, scratch = [rsp + 8], tr = [rsp + 16]) -> eax`:
 `ML-DSA.Sign` and `ML-DSA.Verify` (FIPS 204 Algorithms 2 and 3), as calls of the sponge functions and of the
@@ -23,10 +24,11 @@ result in `rax`. The 1 KiB after the working space of the function on `μ`
 functions' working space (640 bytes) and `μ` (64 bytes).
 
 * Signing computes `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)`, with `tr` the 64
-  bytes of `sk` at 64, and calls `vg_mldsa*_sign(sk, μ, rnd, sig, scratch)`.
+  bytes of `sk` at 64, and calls `vg_mldsa*_sign_with_cache(sk, μ, rnd, sig, scratch, flag)`, with `flag = 1` for a
+  prepared key.
 * Verification computes `μ` likewise from the 64 bytes `tr = H(pk, 64)` at
   `tr`, which its caller keeps, and calls
-  `vg_mldsa*_verify(pk, μ, sig, scratch)`.
+  `vg_mldsa*_verify_with_cache(pk, μ, sig, scratch, flag)`, with `flag = 1` for a prepared key.
 
 Each call's arguments are moved into their registers from the frame (a slot,
 or a slot plus an offset), as immediates, from `rsp` (the two bytes of the
@@ -151,16 +153,19 @@ def top (pre : List Instr) (rs : List Reg) (body : Prog isa) : Prog isa :=
     (.ite .b (.seq (.block pre) (.frame (.push rs) (.seq (.block setHdr) body) (.pop .r11 9)))
       (.block [.mov32 .rax (.imm 2)]))
 
-/-- `vg_mldsa*_sign_message` for the parameter set `p`, calling the signing
-function on `μ` `c`, named `n`. -/
-def signMessage (n : String) (c : Prog isa) (p : Params) : Prog isa :=
+/-- `vg_mldsa*_sign_message` (`flag = 0`) or `vg_mldsa*_sign_message_prepared`
+(`flag = 1`, with a prepared key) for the parameter set `p`, calling the signing
+function on `μ` `c`, named `n`, with the flag in `r9`. -/
+def signMessage (n : String) (c : Prog isa) (p : Params) (flag : Nat) : Prog isa :=
   top [.mov .r10 (.mem (stk 8)), .mov .r11 (.mem (stk 16)), .mov32 .rax (.imm 0)] signRegs
-    (.seq (muHash p (.slotOff fKey 64)) (callA n c [.slot fKey, aMu p, .slot fRnd, .slot fSig, .slot fScr]))
+    (.seq (muHash p (.slotOff fKey 64))
+      (callA n c [.slot fKey, aMu p, .slot fRnd, .slot fSig, .slot fScr, .imm flag]))
 
-/-- `vg_mldsa*_verify_message_cached` for the parameter set `p`, calling the
-verification function on `μ` `c`, named `n`. -/
-def verifyMessageCached (n : String) (c : Prog isa) (p : Params) : Prog isa :=
+/-- `vg_mldsa*_verify_message_cached` (`flag = 0`) or `vg_mldsa*_verify_message_prepared`
+(`flag = 1`, with a prepared key) for the parameter set `p`, calling the
+verification function on `μ` `c`, named `n`, with the flag in `r8`. -/
+def verifyMessageCached (n : String) (c : Prog isa) (p : Params) (flag : Nat) : Prog isa :=
   top [.mov .r11 (.mem (stk 8)), .mov .r10 (.mem (stk 16)), .mov32 .rax (.imm 0)] verifyRegs
-    (.seq (muHash p (.slot fRnd)) (callA n c [.slot fKey, aMu p, .slot fSig, .slot fScr]))
+    (.seq (muHash p (.slot fRnd)) (callA n c [.slot fKey, aMu p, .slot fSig, .slot fScr, .imm flag]))
 
 end VG.Impl.MlDsa.X86_64.Message

@@ -160,15 +160,6 @@ theorem dot_verified {count : Nat} (hc : count=4 ∨ count=5 ∨ count=7) :
   · intro s t _ _ h
     exact dot_pub h
 
-theorem dot4_verified : Verified target (staticCode 4)
-    (dotInverseContract 4 (abi.withConsts inverseConsts)) := dot_verified (Or.inl rfl)
-
-theorem dot5_verified : Verified target (staticCode 5)
-    (dotInverseContract 5 (abi.withConsts inverseConsts)) := dot_verified (Or.inr (Or.inl rfl))
-
-theorem dot7_verified : Verified target (staticCode 7)
-    (dotInverseContract 7 (abi.withConsts inverseConsts)) := dot_verified (Or.inr (Or.inr rfl))
-
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse
 
 end

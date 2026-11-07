@@ -9,12 +9,13 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
-# ML-DSA signing on AArch64: correctness
+# ML-DSA signing on AArch64: pieces of the correctness proof
 
-The function returns 1 with `Sign_internal`'s signature (within `maxBounds`)
-in `sig`, or 0 when `Sign_internal` returns nothing within `minBounds`
-(`sign_correct`): its `ExpandA` or its loop does not finish (`signMu_min_A`,
-`signMu_min_L`), or an iteration passes (`signMu_max`).
+When `Sign_internal` returns nothing within `minBounds`: its `ExpandA` or its
+loop does not finish (`signMu_min_A`, `signMu_min_L`); and when an iteration
+passes, the signature within `maxBounds` (`signMu_max`). With the layout
+checks of the signing functions (`fChk`, `allChk`) and their entry
+(`entry_st`, `pro_in`).
 -/
 
 @[expose] public section
@@ -115,27 +116,6 @@ theorem x24_zero {s : State} (h : s.gpr .x24 = 0 ∨ s.gpr .x24 = 1) (he : (s.gp
   · exact e
   · rw [e] at he; exact absurd he (by decide)
 
-theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) {σ s : State} (h : IM p D σ s) :
-    WP isa (restWith keccak.callee P p) s (FS p D σ) := by
-  have hc := allChk_ok h3
-  simp only [allChk, Bool.and_eq_true] at hc
-  obtain ⟨⟨⟨⟨⟨⟨⟨-, hd⟩, hc1⟩, hb⟩, hks⟩, hl⟩, ho⟩, -⟩ := hc
-  have hp := paramsOk h3
-  have hA := expandA_max h.ok
-  unfold restWith
-  refine WP.seq (WP.mono (decode_ok hP hd h) fun s1 h1 => ?_)
-  refine WP.seq (WP.mono (signLoop_ok hP hp hc1 hb hks hl h1) fun s2 h2 => ?_)
-  unfold ifOk
-  refine ifOkElse_ok (fun hne => ?_) fun he => ?_
-  · have h15 := x24_one h2.r01 hne
-    obtain ⟨t, ht, hr, hs, hpass, hct, hz, hh⟩ := h2.pass h15
-    refine WP.mono (output_ok hP ho h2.k hct hz hh hpass h15)
-      fun s4 ⟨k4, hb4, h154⟩ => ⟨k4.d.im.st, .inr h154, fun _ => by rw [hb4]; exact signMu_max hp hA ht hr hs hpass,
-        fun h0 => absurd (h0.symm.trans h154) (by decide)⟩
-  · have h15 := x24_zero h2.r01 he
-    exact WP.block_nil ⟨h2.k.d.im.st, .inl h15, fun h1 => absurd (h1.symm.trans h15) (by decide),
-      fun _ => signMu_min_L hA (h2.fail h15)⟩
-
 /-! ## The function -/
 
 theorem entry_bytes {σ s : State} {r : Reg} {len : Nat} {R : Region} (hf : Frame [R] σ.mem s.mem)
@@ -167,42 +147,5 @@ theorem pro_in {D : Nat} {p : Params} (h3 : Ok3 p) {σ : State} (hpre : (signK p
   intro k hk
   exact ⟨⟨σ.gpr .x4, scrLen p⟩, by rw [hpre.2.1]; simp,
     Offset.contains_base _ (by omega) (by simp only [oSV]; omega)⟩
-
-theorem sign_correct {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) (σ : State)
-    (hpre : (signK p D).pre σ) :
-    ∃ t s', Exec isa (Impl.MlDsa.AArch64.Sign.signWith keccak.callee P p) σ t s' ∧ abiPreserved σ s' ∧ (signK p D).post σ s' := by
-  have hc := allChk_ok h3
-  simp only [allChk, Bool.and_eq_true] at hc
-  obtain ⟨⟨⟨⟨⟨⟨⟨ha, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, hf⟩ := hc
-  have hf' := hf
-  simp only [fChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hf'
-  obtain ⟨hsv, -⟩ := hf'
-  have hin := pro_in h3 hpre
-  have main : WP isa (Impl.MlDsa.AArch64.Sign.signWith keccak.callee P p) σ fun s₅ => abiPreserved σ s₅ ∧
-      ∃ s₄, FS p D σ s₄ ∧ s₅.gpr .x0 = s₄.gpr .x24 ∧ s₅.mem = s₄.mem := by
-    unfold Impl.MlDsa.AArch64.Sign.signWith
-    refine WP.seq (WP.mono (pro_ok hin) fun s₁ ⟨h₁, h15, hf₁⟩ => ?_)
-    have S1 := entry_st h3 hpre h₁ hf₁
-    refine WP.seq (WP.mono (expandA_ok hP h3 ha S1 h15) fun s₂ h₂ => ?_)
-    refine WP.seq (WP.mono (show WP isa (ifOk (restWith keccak.callee P p)) s₂ (FS p D σ) from ?_) fun s₄ h₄ => ?_)
-    · unfold ifOk
-      refine ifOkElse_ok (fun hne => ?_) fun he => ?_
-      · have h1 := x24_one h₂.r01 hne
-        obtain ⟨ok, fam⟩ := h₂.ok h1
-        exact rest_ok hP h3 ⟨h₂.st, ok, fam⟩
-      · have h0 := x24_zero h₂.r01 he
-        exact WP.block_nil ⟨h₂.st, .inl h0, fun h1 => absurd (h1.symm.trans h0) (by decide),
-          fun _ => signMu_min_A (h₂.bad h0)⟩
-    · exact WP.mono (epi_ok h₄.st.top fun k hk => h₄.st.lay.inR (hsv k hk)) fun s₅ ⟨hg, hr, hm⟩ =>
-        ⟨hg, s₄, h₄, hr, hm⟩
-  obtain ⟨t, s', he, hF⟩ := main
-  obtain ⟨hg, s₄, h₄, hr, hm⟩ := hF
-  refine ⟨t, s', he, hg, ?_⟩
-  have e23 : pa s₄ (.x23, 0) = σ.gpr .x3 := by
-    rw [pa, h₄.st.top.regs (.x23, .x3) (by decide), show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero]
-  show Outcome _ _ _
-  rcases h₄.r01 with h0 | h1
-  · exact .inr ⟨by rw [hr, h0]; rfl, h₄.bad h0⟩
-  · exact .inl ⟨by rw [hr, h1]; rfl, maxBounds, by rw [hm, ← e23]; exact h₄.ok h1⟩
 
 end VG.Proof.MlDsa.AArch64.Sign

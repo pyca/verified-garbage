@@ -70,9 +70,6 @@ def loadRow (idx : List Instr) (a : Nat) : Prog isa :=
 /-- `eax := k`. -/
 def rowImm (k : Nat) : List Instr := [.mov .eax (.imm (BitVec.ofNat 32 k))]
 
-/-- `eax :=` the header word at `d` plus `k`. -/
-def rowWord (d k : Nat) : List Instr := [.mov .eax (.mem (sc d)), .alu .add .eax (.imm (BitVec.ofNat 32 k))]
-
 namespace Precompute
 
 /-- `(ctx, ctx_len, domain, domain_len, p_len, scratch, scratch_len)`. -/

@@ -51,8 +51,7 @@ rotations of words and the stores of words read only those.
 
 The loop is proven against `Proof.Blake2.compressPPC64LE` (`compress_correct`,
 for any `P` whose rotations fit the word), which the streaming functions use
-for their calls; `compressB_verified` and `compressS_verified` move it to the
-shared contracts of `Spec/Blake2/Contract.lean`.
+for their calls.
 -/
 
 @[expose] public section
@@ -190,7 +189,6 @@ theorem g_ok (hR : ROk P) {a b c d : Reg}
     | rfl
     | (intro r ra rb rc rd rt; simp only [ra, rb, rc, rd, rt, ite_false])
     | (simp only [lo_add, lo_xor, ext_trunc, ha, hb, hc, hd, hx, hy, mix]; done)
-
 
 end G
 
@@ -1215,55 +1213,5 @@ theorem compressB_noFrames : (Impl.Blake2.PPC64LE.compress Spec.Blake2.b).noFram
 
 theorem compressS_noFrames : (Impl.Blake2.PPC64LE.compress Spec.Blake2.s).noFrames = true := by
   lit_decide
-
-theorem agree_pub {w : Nat} (P : Params w) :
-    ∀ s₁ s₂, (compressPPC64LE P).pre s₁ → (compressPPC64LE P).pre s₂ →
-      (compressPPC64LE P).pub s₁ s₂ → taint.Agree (Taint.ofRegs [.r3, .r4, .r5, .r8]) s₁ s₂ := by
-  rintro s₁ s₂ - - ⟨h3, h4, h5, -, -, h8, hsp⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-theorem compressB_ct : ConstantTime isa (compressPPC64LE Spec.Blake2.b).pre
-    (compressPPC64LE Spec.Blake2.b).pub (Impl.Blake2.PPC64LE.compress Spec.Blake2.b) :=
-  VG.Taint.constantTime (A := taint) _ (agree_pub _) (by taint_decide)
-
-theorem compressS_ct : ConstantTime isa (compressPPC64LE Spec.Blake2.s).pre
-    (compressPPC64LE Spec.Blake2.s).pub (Impl.Blake2.PPC64LE.compress Spec.Blake2.s) :=
-  VG.Taint.constantTime (A := taint) _ (agree_pub _) (by taint_decide)
-
-/-- A state satisfying the precondition (with no blocks). -/
-def satState (n : Nat) : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | .r8 => 0x3000 | _ => 0
-  lr := 0
-  sp := 0x4000
-  mem _ := 0
-  rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, n⟩, ⟨0x3000, 512⟩]
-
-theorem compressB_verified' :
-    Verified PPC64LE.target (Impl.Blake2.PPC64LE.compress Spec.Blake2.b) (compressPPC64LE Spec.Blake2.b) :=
-  ⟨compressB_correct, compressB_ct, satState 64, rfl, rfl, Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
-
-theorem compressS_verified' :
-    Verified PPC64LE.target (Impl.Blake2.PPC64LE.compress Spec.Blake2.s) (compressPPC64LE Spec.Blake2.s) :=
-  ⟨compressS_correct, compressS_ct, satState 32, rfl, rfl, Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
-
-theorem compressB_verified :
-    Verified PPC64LE.target (Impl.Blake2.PPC64LE.compress Spec.Blake2.b)
-      (Proof.Blake2.compressBContract PPC64LE.abi) :=
-  compressB_verified'.of_implies (by
-    sig_implies [Proof.Blake2.compressBContract, Proof.Blake2.compressBSig, compressPPC64LE,
-      PPC64LE.abi, PPC64LE.argRegs, Spec.Blake2.blockBytes] [satState] using satState 64)
-
-theorem compressS_verified :
-    Verified PPC64LE.target (Impl.Blake2.PPC64LE.compress Spec.Blake2.s)
-      (Proof.Blake2.compressSContract PPC64LE.abi) :=
-  compressS_verified'.of_implies (by
-    sig_implies [Proof.Blake2.compressSContract, Proof.Blake2.compressSSig, compressPPC64LE,
-      PPC64LE.abi, PPC64LE.argRegs, Spec.Blake2.blockBytes] [satState] using satState 32)
 
 end VG.Proof.Blake2.PPC64LE

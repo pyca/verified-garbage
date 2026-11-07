@@ -228,14 +228,6 @@ theorem rcbW_mem_other {K : WinCfg} : ∀ x ∈ [K.S.t0, K.S.t1, K.S.t2, K.S.t3,
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
   rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> win_mem
 
-theorem WinLay.ab_not_rcbW {K : WinCfg} {size : Nat} (hL : WinLay K size) {o : Pt} :
-    K.S.a ∉ rcbW K.S o ∧ K.S.b3 ∉ rcbW K.S o ↔ K.S.a ∉ [o.x, o.y, o.z] ∧ K.S.b3 ∉ [o.x, o.y, o.z] := by
-  have ha := hL.ro K.S.a (by simp [winRo])
-  have hb := hL.ro K.S.b3 (by simp [winRo])
-  simp only [winOther, rcbW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-    or_false, not_or] at ha hb ⊢
-  grind
-
 /-- The additions of the loop: into `D`, from `R` and `R` or `E`. -/
 theorem WinLay.rcbApart_D {K : WinCfg} {size : Nat} (hL : WinLay K size) {q : Pt}
     (hq : q = K.R ∨ q = K.E) : RcbApart K.S K.R q K.D := by

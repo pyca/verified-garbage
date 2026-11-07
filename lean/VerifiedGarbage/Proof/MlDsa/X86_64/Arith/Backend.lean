@@ -90,6 +90,9 @@ structure ArithImpl where
   ok : BackendOk code
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- The CPU features of its NTT and unpacking functions, which require no more than
+  `features`: all that the preparation of keys calls. -/
+  prepareFeatures : List String := features
 
 /-- `FnOk` of code verified without stack, from evaluating it. -/
 theorem FnOk.of {k : Nat → Contract isa} {c : Prog isa} (h : Verified X86_64.target c (k 0))

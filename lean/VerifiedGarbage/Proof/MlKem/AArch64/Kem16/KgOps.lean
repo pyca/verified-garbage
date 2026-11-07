@@ -26,10 +26,6 @@ open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem.AArch64.DotW (half_sub)
 variable {P : KemLay}
 
-theorem binvW_zero {w16 : Bool} {s₀ s : State} (h : AfterA P s₀ s) : BInvW w16 P s₀ 0 s :=
-  ⟨h.kb, h.rho, h.sig, by rw [h.x24, ite_eq_left (show allOk P s₀ 0 from fun e he => absurd he (Nat.not_lt_zero e))],
-    fun e he => absurd he (Nat.not_lt_zero e), fun e he => absurd he (Nat.not_lt_zero e)⟩
-
 theorem fusedW_tl {s₀ s : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {n i : Nat}
     (hi : i < P.k) (h : TLW P s₀ mB v n i s) (terms : List (Nat × Nat))
     {F G : (Nat × Nat) → Poly}

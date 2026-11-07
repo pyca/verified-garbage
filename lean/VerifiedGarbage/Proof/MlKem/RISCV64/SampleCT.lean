@@ -36,30 +36,12 @@ open VG.Spec.MlKem
 open VG.Spec.Sha3 (stateAt)
 open VG.Proof.Sha3.RISCV64.Stream (absorbCall_ct padCall_ct squeezeCall_ct)
 
-theorem pre_of {s : State} (h : (Proof.MlKem.sampleNTTContract RISCV64.abi 1168).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, RISCV64.abi, RISCV64.argRegs] at h
-  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
-  exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
-
 theorem polyAt_toPoly {m : Mem} {p : Addr} {L : List Zq} (hl : L.length = n)
     (h : ∀ k < L.length, coeffAt m p k = BitVec.ofNat 32 (L.getD k 0).val) :
     PolyIs m p (VG.Proof.MlKem.toPoly L) := by
   refine polyIs_of_coeffAt fun i hi => ?_
   rw [h i (by rw [hl]; exact hi), getElem!_eq _ hi]
   simp only [VG.Proof.MlKem.toPoly, Vector.getElem_ofFn]
-
-theorem post_of {s₀ s : State} (h : Done s₀ s) : (Proof.MlKem.sampleNTTContract RISCV64.abi 1168).post s₀ s := by
-  sig_post [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, RISCV64.abi, RISCV64.argRegs]
-  rw [h.a0]
-  by_cases hl : (Ls s₀ 280).length = 256
-  · rw [ite_eq_left hl]
-    have hpi := polyAt_toPoly (by rw [n_eq]; exact hl) h.coeff
-    refine ⟨fun _ => hpi.1, VG.Proof.MlKem.outcome_of_min (.inl ⟨rfl, ?_⟩)⟩
-    rw [hpi.2]
-    exact VG.Proof.MlKem.sampleNTT_of_full (Nat.le_refl _) (by rw [n_eq]; exact hl)
-  · rw [ite_eq_right hl]
-    refine ⟨fun e => absurd e (by decide), VG.Proof.MlKem.outcome_of_min (.inr ⟨rfl, ?_⟩)⟩
-    exact VG.Proof.MlKem.sampleNTT_none (by rw [n_eq]; exact hl)
 
 /-! ## Constant time -/
 
@@ -215,7 +197,7 @@ theorem absorbPhase_ct :
 theorem padPhase_ct :
     RelCT isa (fun a b => (SEnv s₁ a ∧ Spec.Sha3.Repr a.mem (S s₁) 168 (B s₁) ∧ (a.gpr .a0).toNat = 34) ∧
       (SEnv s₂ b ∧ Spec.Sha3.Repr b.mem (S s₂) 168 (B s₂) ∧ (b.gpr .a0).toNat = 34))
-      (.seq (.block padArgs) (.call Spec.Sha3.padApi.name Impl.Sha3.RISCV64.Stream.pad)) fun _ _ => True := by
+      (.seq (.block padArgs) (.call "vg_keccak_pad" Impl.Sha3.RISCV64.Stream.pad)) fun _ _ => True := by
   have hw : ∀ s₀ s, Pre s₀ → SEnv s₀ s → (s.gpr .a0).toNat = 34 → WP isa (.block padArgs) s (FP s₀) :=
     fun s₀ s hp hs h3 => WP.mono (padArgs_ok hp hs h3) fun _ ⟨ht, _, ha, a3⟩ => ⟨ht, ha, a3⟩
   refine RelCT.seq (R := fun a b => FP s₁ a ∧ FP s₂ b) (relct_wp ?_ fun a b hab =>
@@ -236,7 +218,7 @@ theorem squeezePhase_ct {len : Nat} (hl' : len = 504 ∨ len = 840) :
     RelCT isa (fun a b =>
       (SEnv s₁ a ∧ stateAt a.mem (S s₁) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₁)) ∧
       (SEnv s₂ b ∧ stateAt b.mem (S s₂) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₂)))
-      (.seq (.block (squeezeArgs len)) (.call Spec.Sha3.squeezeApi.name Impl.Sha3.RISCV64.Stream.squeeze))
+      (.seq (.block (squeezeArgs len)) (.call "vg_keccak_squeeze" Impl.Sha3.RISCV64.Stream.squeeze))
       fun _ _ => True := by
   have hl : len ≤ 840 := by omega
   have hw : ∀ s₀ s, Pre s₀ → SEnv s₀ s → WP isa (.block (squeezeArgs len)) s (FS len s₀) := fun s₀ s hp hs =>
@@ -322,37 +304,5 @@ theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) sampleNTT fun _ _ 
     (by taint_decide)
 
 end
-
-/-! ## Verified -/
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 0x2000 | .a2 => 0x3000 | _ => 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 34⟩]
-  wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2048⟩]
-
-theorem verified :
-    Verified RISCV64.target Impl.MlKem.RISCV64.sampleNTT (Proof.MlKem.sampleNTTContract RISCV64.abi 1168) := by
-  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ?_⟩
-  · obtain ⟨t, s', he, hd⟩ := correct (pre_of hs)
-    exact ⟨t, s', he, ⟨hd.pres, hd.sp, hd.ra⟩, post_of hd⟩
-  · have hp₁ := pre_of h₁
-    have hp₂ := pre_of h₂
-    sig_pub [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, RISCV64.abi, RISCV64.argRegs] at hpub
-    obtain ⟨hsp, hb, h3, h4, h5⟩ := hpub
-    have two : Two s₁ s₂ := ⟨hp₁, hp₂, hsp, h3, h4, h5,
-      (List.map_inj_right (fun x y (e : x.toNat = y.toNat) => BitVec.eq_of_toNat_eq e)).mp hb⟩
-    exact (all_ct two s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.sampleNTTContract, Proof.MlKem.sampleNTTSig, RISCV64.abi, RISCV64.argRegs]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | decide +kernel
 
 end VG.Proof.MlKem.RISCV64.Sample

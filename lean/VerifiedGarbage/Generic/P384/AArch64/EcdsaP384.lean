@@ -99,7 +99,6 @@ namespace VG.Generic.P384.AArch64.EcdsaP384
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : List Artifact := [
   Spec.Ecdsa.P384.verifyHashApi.artifact AArch64.target {
-    consts := Impl.Ecdsa.Verify.AArch64.P384Joint.p384v.combConsts
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.verifyP384
     stack := 80

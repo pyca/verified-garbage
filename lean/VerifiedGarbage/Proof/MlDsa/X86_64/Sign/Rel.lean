@@ -167,11 +167,6 @@ theorem seqL {c₁ c₂ : Prog isa} {I J : State → Prop} {Q : State → State 
     (fun x y h => ⟨w₁ x h.1.lx h.2.1, w₁ y h.1.ly h.2.2⟩)
     fun _ _ _ _ h ⟨⟨_, hx⟩, jx⟩ ⟨⟨_, hy⟩, jy⟩ => ⟨h.1.post (sgB_bases p) hx hy, jx, jy⟩) h₂
 
-theorem trL_mono {c : Prog isa} {I I' : State → Prop}
-    (h : RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ I x ∧ I y) c fun _ _ => True) (hI : ∀ s, I' s → I s) :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ I' x ∧ I' y) c fun _ _ => True :=
-  RelCT.mono h (fun _ _ h => ⟨h.1, hI _ h.2.1, hI _ h.2.2⟩) fun _ _ h => h
-
 end
 
 /-! ## `ρ` -/
@@ -195,6 +190,6 @@ theorem leak_rho {p : Params} {sk₁ sk₂ μ₁ μ₂ r₁ r₂ : List Byte} (h
 
 theorem pub_rho {p : Params} {D : Nat} {σ₁ σ₂ : State} (h : (signK p D).pub σ₁ σ₂) :
     rhoOf p σ₁ = rhoOf p σ₂ :=
-  leak_rho (VG.Proof.MlKem.bytesAt_length _ _ _) (VG.Proof.MlKem.bytesAt_length _ _ _) h.2.2.2.2.2.2
+  leak_rho (VG.Proof.MlKem.bytesAt_length _ _ _) (VG.Proof.MlKem.bytesAt_length _ _ _) h.2.2.2.2.2.2.1
 
 end VG.Proof.MlDsa.X86_64.Sign

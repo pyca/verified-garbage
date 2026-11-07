@@ -227,7 +227,6 @@ include h
 theorem fit : 4 * cmp4.length + 4 ≤ (s.gpr .esp).toNat := by
   have h_sp48 := h.sp48; simp only [List.length_cons, List.length_nil]; omega_using [h_sp48]
 
-
 theorem a0 : arg (pushed cmp4 s).callEntry 0 = st := by
   rw [callEntry_arg h.fit cmp4_nesp (by simp)]; simpa using h.ebx
 theorem a1 : arg (pushed cmp4 s).callEntry 1 = st + BitVec.ofNat 32 N := by
@@ -471,13 +470,10 @@ theorem Sizes.ND_le : H.N + H.D ≤ H.N + H.B :=
 theorem Sizes.NDB_le : H.N + H.D + (H.B - H.D) ≤ H.N + H.B := by
   rw [Nat.add_assoc, Nat.add_sub_cancel' (Nat.le_trans (Nat.le_add_right _ _) (Nat.le_trans (Nat.le_add_right _ 4) hz.DL))]
 
-theorem Sizes.D4 : 4 * (H.D / 4) = H.D := Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hz.D.2.2)
-
 theorem Sizes.B_lt64 : H.B < 2 ^ 64 := Nat.lt_of_le_of_lt hz.B4.2.2 (by decide)
 
 theorem Sizes.buf_le64 : 8 * H.st.W + 16 ≤ 2 ^ 64 :=
   Nat.le_trans (Nat.add_le_add_right (Nat.mul_le_mul_left 8 hz.W) 16) (by decide)
-
 
 theorem Sizes.tail_length : H.tailB.length = H.B - H.D := by
   have hz_DL := hz.DL

@@ -2040,9 +2040,9 @@ b 25b
     )
 }
 
-/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
-/// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
+/// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
 ///
 /// # Safety
 ///
@@ -2052,11 +2052,12 @@ b 25b
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_poly1305_open_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd11403ff,0x910003e7,0xd10004a9,0xd10100aa,0xaa0a0129,0xaa050129,0xd349fd29
+        r".inst 0xd11443ff,0x910003e7,0xf90280e4,0xf90284e5,0xd10004a9,0xd10100aa,0xaa0a0129,0xaa050129
+.inst 0xd349fd29
 cbz x9, 20f
 .inst 0xd280000a,0xd280000a,0xd280000a,0xd280000a,0xd10b04a9,0xd37ffd29,0xd10904aa,0xd37ffd4a
 .inst 0xcb09014a,0x9100054a,0xd34920a9,0xd377fd29,0xd1040129,0xd346fd29
@@ -3818,15 +3819,27 @@ bl {vg_poly1305_finalize_scratch}
 2136:
 21:
 .inst 0xf9413aac,0xf9401aa9,0xf940018a,0xca0a0129,0xf9401eaa,0xf940058b,0xca0b014a,0xaa0a0129
-.inst 0xd280000a,0xcb09014a,0xaa0a0129,0xd37ffd29,0xd280002a,0xcb090140,0xf94126b6,0xf9412ab7
-.inst 0xf9412eb8,0xf94132b9,0xf94136be,0xf9413aa6,0xf94122b5,0xd2800011,0x910003f0,0xa9004611
-.inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
-.inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
-.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
-.inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0
-.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
-.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
-.inst 0x911403ff,0xd65f03c0
+.inst 0xd280000a,0xcb09014a,0xaa0a0129,0xd37ffd29,0xd280002a,0xcb090140
+cbz w0, 2183f
+b 2184f
+2183:
+.inst 0xf94282a9,0xf94286aa,0xd280000b
+cbz x10, 2185f
+2187:
+.inst 0x3900012b,0x91000529,0xd100054a
+cbnz x10, 2187b
+b 2186f
+2185:
+2186:
+2184:
+.inst 0xf94126b6,0xf9412ab7,0xf9412eb8,0xf94132b9,0xf94136be,0xf9413aa6,0xf94122b5,0xd2800011
+.inst 0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
+.inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611
+.inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
+.inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
+.inst 0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
+.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
+.inst 0xa90e4611,0xa90f4611,0x911443ff,0xd65f03c0
 214:
 .inst 0x91000288,0x910002d4,0x910002c7,0xd344fee6,0xf90012bb,0xf90016bc,0xd29ffff8,0xf2a1fff8
 .inst 0xf2dfff98,0xf2e1fff8,0xf940eeb9,0x8a180339,0xf90092b9,0xd29fff98,0xf2a1fff8,0xf2dfff98
@@ -4774,9 +4787,9 @@ bl {vg_poly1305_finalize_scratch}
     )
 }
 
-/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
-/// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
+/// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
 ///
 /// # Safety
 ///
@@ -4786,11 +4799,12 @@ bl {vg_poly1305_finalize_scratch}
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd11403ff,0x910003e7,0xd10004a9,0xd10100aa,0xaa0a0129,0xaa050129,0xd349fd29
+        r".inst 0xd11443ff,0x910003e7,0xf90280e4,0xf90284e5,0xd10004a9,0xd10100aa,0xaa0a0129,0xaa050129
+.inst 0xd349fd29
 cbz x9, 20f
 .inst 0xf90124f6,0xf90128f7,0xf9012cf8,0xf90130f9,0xf90134fe,0xf90138e6,0xf90120f5,0x910000f5
 .inst 0x91000058,0x91000079,0x91000096,0x910000b7,0x528f0ca9,0x72ac2e09,0xb90042a9,0x528c8dc9
@@ -5548,15 +5562,27 @@ bl {vg_poly1305_finalize_scratch}
 29:
 21:
 .inst 0xf9413aac,0xf9401aa9,0xf940018a,0xca0a0129,0xf9401eaa,0xf940058b,0xca0b014a,0xaa0a0129
-.inst 0xd280000a,0xcb09014a,0xaa0a0129,0xd37ffd29,0xd280002a,0xcb090140,0xf94126b6,0xf9412ab7
-.inst 0xf9412eb8,0xf94132b9,0xf94136be,0xf9413aa6,0xf94122b5,0xd2800011,0x910003f0,0xa9004611
-.inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
-.inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
-.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
-.inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0
-.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
-.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
-.inst 0x911403ff,0xd65f03c0
+.inst 0xd280000a,0xcb09014a,0xaa0a0129,0xd37ffd29,0xd280002a,0xcb090140
+cbz w0, 256f
+b 257f
+256:
+.inst 0xf94282a9,0xf94286aa,0xd280000b
+cbz x10, 258f
+260:
+.inst 0x3900012b,0x91000529,0xd100054a
+cbnz x10, 260b
+b 259f
+258:
+259:
+257:
+.inst 0xf94126b6,0xf9412ab7,0xf9412eb8,0xf94132b9,0xf94136be,0xf9413aa6,0xf94122b5,0xd2800011
+.inst 0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
+.inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611
+.inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
+.inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
+.inst 0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
+.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
+.inst 0xa90e4611,0xa90f4611,0x911443ff,0xd65f03c0
 .p2align 6",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -7470,9 +7496,9 @@ b 25b
 /// The CPU features `vg_chacha20_poly1305_open_sve2` requires (`Artifact.features`).
 pub const VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SVE2);
 
-/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
-/// Contract: `VG.Spec.ChaCha20Poly1305.openContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce, the tag or the data.
+/// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
 ///
 /// # Safety
 ///
@@ -7482,12 +7508,13 @@ pub const VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES: verified_garbage_cpu::Feature
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the 1296 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sve2` target feature.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_poly1305_open_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd11403ff,0x910003e7,0xd10004a9,0xd10004aa,0xaa0a0129,0xaa050129,0xd349fd29
+        r".inst 0xd11443ff,0x910003e7,0xf90280e4,0xf90284e5,0xd10004a9,0xd10004aa,0xaa0a0129,0xaa050129
+.inst 0xd349fd29
 cbz x9, 20f
 .inst 0xd280000a,0xd280000a,0xd280000a,0xd280000a,0xd10b04a9,0xd37ffd29,0xd10804aa,0xd37ffd4a
 .inst 0xcb09014a,0x9100054a,0xd34920a9,0xd377fd29,0xd1040129,0xd349fd29
@@ -9146,15 +9173,27 @@ bl {vg_poly1305_finalize_scratch}
 2136:
 21:
 .inst 0xf9413aac,0xf9401aa9,0xf940018a,0xca0a0129,0xf9401eaa,0xf940058b,0xca0b014a,0xaa0a0129
-.inst 0xd280000a,0xcb09014a,0xaa0a0129,0xd37ffd29,0xd280002a,0xcb090140,0xf94126b6,0xf9412ab7
-.inst 0xf9412eb8,0xf94132b9,0xf94136be,0xf9413aa6,0xf94122b5,0xd2800011,0x910003f0,0xa9004611
-.inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
-.inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
-.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
-.inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0
-.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
-.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
-.inst 0x911403ff,0xd65f03c0
+.inst 0xd280000a,0xcb09014a,0xaa0a0129,0xd37ffd29,0xd280002a,0xcb090140
+cbz w0, 2197f
+b 2198f
+2197:
+.inst 0xf94282a9,0xf94286aa,0xd280000b
+cbz x10, 2199f
+2201:
+.inst 0x3900012b,0x91000529,0xd100054a
+cbnz x10, 2201b
+b 2200f
+2199:
+2200:
+2198:
+.inst 0xf94126b6,0xf9412ab7,0xf9412eb8,0xf94132b9,0xf94136be,0xf9413aa6,0xf94122b5,0xd2800011
+.inst 0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
+.inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611
+.inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
+.inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
+.inst 0xa91f4611,0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
+.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
+.inst 0xa90e4611,0xa90f4611,0x911443ff,0xd65f03c0
 214:
 .inst 0x91000288,0x910002d4,0x910002c7,0xd344fee6,0xf90012bb,0xf90016bc,0xd29ffff8,0xf2a1fff8
 .inst 0xf2dfff98,0xf2e1fff8,0xf940eeb9,0x8a180339,0xf90092b9,0xd29fff98,0xf2a1fff8,0xf2dfff98

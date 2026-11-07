@@ -118,12 +118,6 @@ theorem entry_words {o : State} (A : KeySearchABI o) :
 /-- The words before the entry. -/
 abbrev f0 (o : State) : Nat → BitVec 32 := fun d => o.mem.readW (addr (arg o 12) d) 32
 
-/-- The words after the entry. -/
-abbrev entryF (o : State) : Nat → BitVec 32 :=
-  upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (f0 o) 32 (o.gpr .esi))
-    36 (arg o 0)) 40 (arg o 2)) 76 (arg o 4)) 44 (arg o 5)) 48 (arg o 6)) 16 (arg o 7))
-    52 (arg o 8)) 56 (arg o 9)) 64 (arg o 10)) 68 (arg o 11)) 60 0) 28 0
-
 theorem entry_ok {o : State} (A : KeySearchABI o) :
     WP isa (.block Impl.Ffdh.X86.Cached.Search.entry) o (Live (ofState o) o 0 (ofState o).keys (ofState o).scalars) := by
   have hA : Aligned liveDs := by decide

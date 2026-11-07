@@ -254,9 +254,6 @@ theorem ctx_of_x {C X : Addr} {n k : Nat} {m m' : Mem} (h : Outside X 0 k m m')
   · have := hsep y hy; omega
   · have := (y - C).isLt; simp only [ofs] at hy; omega))
 
-theorem outside_ctx_trans {C : Addr} {n : Nat} {m₁ m₂ m₃ : Mem} (h₁ : Outside C n (2 ^ 64) m₁ m₂)
-    (h₂ : Outside C n (2 ^ 64) m₂ m₃) : Outside C n (2 ^ 64) m₁ m₃ := h₁.trans h₂
-
 /-- The registers the body writes. -/
 def bodyRegs : List Reg :=
   scalarCRegs ++ VG.Proof.Ffdh.PPC64LE.Derive.xRangeRegs ++ goodRegs ++

@@ -366,40 +366,4 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   exact polyIs_of_coeffAt fun j hj => by
     rw [h.coeff j (by rw [n_eq] at hj; exact hj), ite_eq_left (by rw [n_eq] at hj; omega_arith)]
 
-/-! ## Verified -/
-
-theorem pre_of {s : State} (h : (Proof.MlKem.nttInvContract PPC64LE.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, PPC64LE.abi,
-    PPC64LE.argRegs] at h
-  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6⟩
-
-theorem verified : Verified PPC64LE.target Impl.MlKem.PPC64LE.nttInv (Proof.MlKem.nttInvContract PPC64LE.abi) := by
-  refine ⟨fun s hs => ?_, Add.ctRegs [.r3, .r4] (fun s₁ s₂ h => ?_) (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · obtain ⟨t, s', he, hpres, hsp, hlr, h⟩ := correct (pre_of hs)
-    refine ⟨t, s', he, ⟨hpres, hsp, hlr⟩, ?_⟩
-    sig_post [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, PPC64LE.abi,
-      PPC64LE.argRegs]
-    exact h
-  · sig_pub [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, PPC64LE.abi,
-      PPC64LE.argRegs] at h
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact h.2.1
-    · exact h.2.2
-  · sig_pub [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, PPC64LE.abi,
-      PPC64LE.argRegs] at h
-    exact h.1
-  · refine ⟨satState, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.nttInvContract, Proof.MlKem.inPlaceContract, Proof.MlKem.inPlaceSig, PPC64LE.abi,
-        PPC64LE.argRegs]
-      sig_and_intros
-      all_goals first
-        | trivial
-        | exact Add.reduced_zero _
-        | decide +kernel
-
 end VG.Proof.MlKem.PPC64LE.NttInv

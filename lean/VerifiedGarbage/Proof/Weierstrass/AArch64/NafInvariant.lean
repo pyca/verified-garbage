@@ -63,11 +63,6 @@ theorem nafLive_R (K : WinCfg) : ∀ x ∈ [K.R.x,K.R.y,K.R.z], x ∈ nafLive K 
   simp only [nafLive,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
   grind
 
-theorem nafLive_read (K : WinCfg) : ∀ x ∈ rcbR K.S K.R K.D, x ∈ nafLive K := by
-  intro x hx
-  simp only [nafLive,winRo,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
-  grind
-
 /-- Any arithmetic result with the loop frame reconstructs the invariant. -/
 theorem NafCore.next {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     {P : Point C} {β : Nat → BitVec 8} {e e' : Nat} {s t : State} (hL : JacWinLay K size) (hJ : K.J=52)

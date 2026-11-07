@@ -80,17 +80,6 @@ theorem finalize_verified : Verified Arm.target Impl.Sha256.Arm.Stream.finalize 
 /-- A state satisfying `finalize`'s precondition. -/
 abbrev sat : State := MdStream.Arm.Finalize.sat params
 
-theorem writeW_rev (m : Mem) (a : Addr) (w : BitVec 32) :
-    m.writeW a (rev w) = Proof.Sha256.Stream.writeBytes m a (Spec.Sha256.wordBytes w) :=
-  writeW_be m a w
-
-theorem flat_length (H : Spec.Sha256.HashValue) (k : Nat) (hk : k ≤ 8) :
-    ((H.toList.take k).flatMap Spec.Sha256.wordBytes).length = 4 * k := by
-  rw [List.length_flatMap]
-  have : ∀ w ∈ H.toList.take k, (Spec.Sha256.wordBytes w).length = 4 := fun w _ => rfl
-  rw [List.map_congr_left this, List.map_const', List.sum_replicate_nat, List.length_take]
-  simp; omega
-
 end Finalize
 
 end VG.Proof.Sha256.Arm.Stream

@@ -305,7 +305,7 @@ add sp, sp, #24
 ldr r12, [sp], #4
 ldr lr, [sp], #4
 bx lr",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
@@ -951,7 +951,7 @@ add sp, sp, #24
 ldr r12, [sp], #4
 ldr lr, [sp], #4
 bx lr",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
@@ -1175,7 +1175,7 @@ ldr r12, [sp], #4
 ldr lr, [sp], #4
 21:
 bx lr",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
@@ -1210,6 +1210,10 @@ pub(crate) mod vg_gf448_r16_mul;
 #[rustfmt::skip]
 #[path = "internal/vg_gf448_r16_sub.rs"]
 pub(crate) mod vg_gf448_r16_sub;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_absorb_scratch.rs"]
+pub(crate) mod vg_keccak_absorb_scratch;
 
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_f1600.rs"]

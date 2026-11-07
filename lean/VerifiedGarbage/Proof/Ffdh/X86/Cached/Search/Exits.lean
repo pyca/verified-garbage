@@ -27,10 +27,6 @@ theorem St.done {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o 
     Done (ofState o) o r s :=
   ⟨⟨h.abi, rfl⟩, h.rd, h.wr, h.esp, h.esi, h.saved, h.frame, (h.words.sub hs).congr he, hout, hsm⟩
 
-/-- The width's word: `p_len`, below `2³²`. -/
-theorem len_ofNat {o : State} : BitVec.ofNat 32 (ofState o).len = arg o 7 := by
-  simp only [ofState, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-
 theorem exhausted_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p o used keys scalars s) :
     WP isa exhausted s (Done p o ⟨.exhausted, used, []⟩) := by
   have S := h.st

@@ -75,7 +75,6 @@ abbrev VerInv (s : State) : State → Prop := Inv s (s.gpr .a5) 224 verifyRegs (
 
 theorem verifyRegs_pres : ∀ r ∈ verifyRegs, r ∈ preserved := by decide
 
-theorem verV_s7 (s : State) : verV s .s7 = s.gpr .a1 := rfl
 theorem verV_s8 (s : State) : verV s .s8 = s.gpr .a2 := rfl
 theorem verV_s9 (s : State) : verV s .s9 = s.gpr .a4 := rfl
 theorem verV_s10 (s : State) : verV s .s10 = s.gpr .a5 := rfl

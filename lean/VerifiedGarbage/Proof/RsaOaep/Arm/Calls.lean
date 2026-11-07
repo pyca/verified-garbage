@@ -118,14 +118,12 @@ import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
 import VerifiedGarbage.Proof.Bignum.Arm.PrepareZero
 import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
 import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
-import VerifiedGarbage.Proof.Bignum.Arm.QuotientStage
 import VerifiedGarbage.Proof.Bignum.Arm.R2
 import VerifiedGarbage.Proof.Bignum.Arm.R2Constants
 import VerifiedGarbage.Proof.Bignum.Arm.R2CountInit
 import VerifiedGarbage.Proof.Bignum.Arm.R2Init
 import VerifiedGarbage.Proof.Bignum.Arm.ReduceChoice
 import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ReductionStage
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
 import VerifiedGarbage.Proof.Bignum.Arm.ReverseByteStep
@@ -169,12 +167,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
 import VerifiedGarbage.Proof.Bignum.Arm.Setup
 import VerifiedGarbage.Proof.Bignum.Arm.SetupArgs
 import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
-import VerifiedGarbage.Proof.Bignum.Arm.Shift
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeft
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftStep
-import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayoutCT
@@ -389,14 +383,12 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
 meta import VerifiedGarbage.Proof.Bignum.Arm.PrepareZero
 meta import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
 meta import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
-meta import VerifiedGarbage.Proof.Bignum.Arm.QuotientStage
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2Constants
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2CountInit
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2Init
 meta import VerifiedGarbage.Proof.Bignum.Arm.ReduceChoice
 meta import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
-meta import VerifiedGarbage.Proof.Bignum.Arm.ReductionStage
 meta import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 meta import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
 meta import VerifiedGarbage.Proof.Bignum.Arm.ReverseByteStep
@@ -440,12 +432,8 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.Setup
 meta import VerifiedGarbage.Proof.Bignum.Arm.SetupArgs
 meta import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
-meta import VerifiedGarbage.Proof.Bignum.Arm.Shift
-meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
-meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeft
 meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftStep
-meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
 meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
 meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayoutCT
@@ -549,6 +537,18 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.Prims
 meta import VerifiedGarbage.Proof.RsaPss.Arm.Prims
 public import VerifiedGarbage.Proof.RsaPss.Arm.Base
 meta import VerifiedGarbage.Proof.RsaPss.Arm.Base
+import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Impl.Bignum.Arm.Round
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Impl.Bignum.Arm.Shift
+import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+meta import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+meta import VerifiedGarbage.Impl.Bignum.Arm.Round
+meta import VerifiedGarbage.Proof.Mont.Words32
+meta import VerifiedGarbage.Impl.Bignum.Arm.Shift
+meta import VerifiedGarbage.Proof.X25519.Arm.Instr
+meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 /-!
 # RSAES-OAEP on ARMv7: the calls of the streaming hash functions

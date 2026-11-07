@@ -60,14 +60,9 @@ structure Pre (w : Width) (s₀ : State) : Prop where
   disj : (polyRegion (fP s₀)).Disjoint (oR w s₀)
   red : Reduced s₀.mem (fP s₀)
 
-theorem C_lt (w : Width) (s₀ : State) (i : Nat) : C w s₀ i < 2 ^ w.d := compress_lt _ _
-
 theorem acc_succ (w : Width) (s₀ : State) (g e : Nat) :
     acc w s₀ g (e + 1) = acc w s₀ g e + 2 ^ (w.d * e) * C w s₀ (w.c * g + e) :=
   digits_range_succ _ _ _
-
-theorem acc_lt (w : Width) (s₀ : State) (g e : Nat) : acc w s₀ g e < 2 ^ (w.d * e) :=
-  digits_range_lt (fun _ => C_lt _ _ _) _
 
 /-- Byte `j` of group `g` of the output. -/
 theorem L_eq {w : Width} (hw : WOk w) (s₀ : State) {g j : Nat} (hg : g < 256 / w.c) (hj : j < w.nb) :

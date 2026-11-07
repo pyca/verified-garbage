@@ -30,14 +30,6 @@ theorem TransformTable.apart {s : State} {symbol : String} {H : List Nat} (h : T
  obtain ⟨q,hq,hh⟩ := hi
  exact h.2.2 q hq addr ha hh
 
-theorem TransformTable.ready {s : State} {symbol : String} {H : List Nat} {f w : Addr}
- (h : TransformTable s symbol H) (hc : Covers [polyRegion f,polyRegion w] s.wr) :
- Ntt16.Readonly.TableReady s symbol H f w := by
- exact ⟨h.1,h.2.1,(h.apart (fun a n hh=>hc a n (by
-   obtain ⟨r,hr,ha⟩:=hh; exact ⟨r,by simp only [List.mem_singleton] at hr; simp [hr],ha⟩))).symm,
-   (h.apart (fun a n hh=>hc a n (by
-   obtain ⟨r,hr,ha⟩:=hh; exact ⟨r,by simp only [List.mem_singleton] at hr; simp [hr],ha⟩))).symm⟩
-
 theorem TransformTable.frameFar {s t : State} {symbol : String} {H : List Nat} {rs : List Region}
  (h : TransformTable s symbol H) (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr)
  (hf : Frame rs s.mem t.mem) (hd : ∀r∈rs,(Region.mk (s.syms symbol) 512).Disjoint r) :

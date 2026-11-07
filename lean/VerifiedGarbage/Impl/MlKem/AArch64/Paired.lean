@@ -130,8 +130,4 @@ def lastSample (L : KemLay) (keygen : Bool) (w16 : Bool := false) : Prog isa :=
   reject 400 (off+1024*a) .x22 w16,
   .ite (.zero .x .x22) (fullSample L keygen (L.k*L.k-1) w16) (.block []),
   .block (saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i))]
-def matrix (L : KemLay) (kg : Bool) (w16 : Bool := false) : Prog isa :=
- seqs (((List.range (L.k*L.k/2)).map fun i => pair L kg (2*i) w16) ++
-  (if L.k*L.k%2=1 then [lastSample L kg w16] else []))
-
 end VG.Impl.MlKem.AArch64.Paired

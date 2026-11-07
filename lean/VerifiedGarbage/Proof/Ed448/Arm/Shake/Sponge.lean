@@ -232,7 +232,7 @@ theorem absorb_call (hc : Whole.Ctx E g m₀ ins outs u) {P N : BitVec 32} {pos 
     (hs : ∀ r ∈ kWr scr, Region.Disjoint ⟨State.addr P, N.toNat⟩ r) (hfit : P.toNat + N.toNat ≤ 2 ^ 32)
     (h0 : u.gpr .r0 = scr) (h1 : u.gpr .r1 = 136) (h2 : u.gpr .r2 = BitVec.ofNat 32 pos)
     (h3 : u.gpr .r3 = P) (a0 : stackArg u 0 = N) (a1 : stackArg u 1 = scr + BitVec.ofNat 32 KSCR) :
-    WP isa (.call Spec.Sha3.absorbScratchApi.name Impl.Sha3.Arm.Stream.absorb) u fun v =>
+    WP isa (.call "vg_keccak_absorb_scratch" Impl.Sha3.Arm.Stream.absorb) u fun v =>
       Whole.Ctx E g m₀ ins outs v ∧ Frame (kWr scr) u.mem v.mem ∧
       (∀ msg, Spec.Sha3.Repr u.mem (State.addr scr) 136 msg → pos = msg.length % 136 →
         Spec.Sha3.Repr v.mem (State.addr scr) 136 (msg ++ Spec.Ed448.bytesAt u.mem (State.addr P) N.toNat)) ∧

@@ -30,19 +30,6 @@ open VG.Proof.Weierstrass.RISCV64.Gen4 (Ok CtOk)
 theorem ok_p : Ok p192p4.m := ⟨by decide, by decide, by decide⟩
 theorem ok_n : Ok p192n4.m := ⟨by decide, by decide, by decide⟩
 
-theorem ct_mulP : CtOk (Impl.Weierstrass.RISCV64.Gen4.mulCore p192p4.m) :=
-  RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide)
-theorem ct_addP : CtOk (.block (Impl.Weierstrass.RISCV64.Gen4.addCore p192p4.m)) :=
-  RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide)
-theorem ct_subP : CtOk (.block (Impl.Weierstrass.RISCV64.Gen4.subCore p192p4.m)) :=
-  RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide)
-theorem ct_mulN : CtOk (Impl.Weierstrass.RISCV64.Gen4.mulCore p192n4.m) :=
-  RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide)
-theorem ct_addN : CtOk (.block (Impl.Weierstrass.RISCV64.Gen4.addCore p192n4.m)) :=
-  RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide)
-theorem ct_subN : CtOk (.block (Impl.Weierstrass.RISCV64.Gen4.subCore p192n4.m)) :=
-  RelCT.taint (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) (fun _ _ h => h) (by taint_decide)
-
 theorem mul_rv (s : State) (hs : (mulRV p192p4).pre s) :
     ∃ t s', Exec isa p192MulP s t s' ∧ abiPreserved s s' ∧ (mulRV p192p4).post s s' := Gen4.mul_rv rfl ok_p s hs
 theorem add_rv (s : State) (hs : (addRV p192p4).pre s) :
@@ -74,18 +61,5 @@ theorem addA_rv_n (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (addR
 theorem subA_rv_n (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV p192n4)).pre s) :
     ∃ t s', Exec isa Impl.Ecdsa.RISCV64.p192SubNA s t s' ∧ abiPreserved s s' ∧ (subRV p192n4).post s s' :=
   Gen4.subA_rv rfl ok_n s hs
-
-theorem mul_verified : Verified RISCV64.target p192MulP (p192p4.mulContract RISCV64.abi) :=
-  Gen4.mul_verified rfl ok_p ct_mulP
-theorem add_verified : Verified RISCV64.target p192AddP (p192p4.addContract RISCV64.abi) :=
-  Gen4.add_verified rfl ok_p ct_addP
-theorem sub_verified : Verified RISCV64.target p192SubP (p192p4.subContract RISCV64.abi) :=
-  Gen4.sub_verified rfl ok_p ct_subP
-theorem mul_verified_n : Verified RISCV64.target p192MulN (p192n4.mulContract RISCV64.abi) :=
-  Gen4.mul_verified rfl ok_n ct_mulN
-theorem add_verified_n : Verified RISCV64.target p192AddN (p192n4.addContract RISCV64.abi) :=
-  Gen4.add_verified rfl ok_n ct_addN
-theorem sub_verified_n : Verified RISCV64.target p192SubN (p192n4.subContract RISCV64.abi) :=
-  Gen4.sub_verified rfl ok_n ct_subN
 
 end VG.Proof.Weierstrass.RISCV64.P192Field

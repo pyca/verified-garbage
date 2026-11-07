@@ -211,10 +211,6 @@ theorem ModOkW.of_inl {M : Mod} {size m : Nat} {mem : Mem} {base : Addr} {b : Bo
     (h : ModOkW { M with inl := b } size m mem base) : ModOkW M size m mem base :=
   ⟨h.n0, h.mo, h.tmp, h.sep, h.val, h.inv, h.red⟩
 
-theorem ModOk.toW {M : Mod} {size m : Nat} {mem : Mem} {base : Addr}
-    (h : ModOk M size m mem base) : ModOkW M size m mem base :=
-  ⟨h.n0, h.mo, h.tmp, h.sep, h.val, h.inv, h.red⟩
-
 theorem ModOkW.toModOk {M : Mod} {size m : Nat} {mem : Mem} {base : Addr} (h : ModOkW M size m mem base)
     (hn : M.n < 7) : ModOk M size m mem base :=
   ⟨h.n0, hn, h.mo, h.tmp, h.sep, h.val, h.inv, h.red⟩
@@ -234,34 +230,6 @@ structure Lay (M : Mod) (size : Nat) (Sl : Nat → Prop) : Prop where
 theorem Lay.inl {M : Mod} {size : Nat} {Sl : Nat → Prop} (b : Bool) (h : Lay M size Sl) :
     Lay { M with inl := b } size Sl :=
   ⟨h.le, h.apart, h.mo, h.tmp⟩
-
-/-- Slots on a grid: `d + 8 n i` for `lo ≤ i < hi`, with the modulus and the
-temporary area on the grid below `lo`. -/
-theorem Lay.grid {M : Mod} {size d lo hi imo itmp : Nat} (hmo : M.mo = d + 8 * M.n * imo)
-    (htmp : M.tmp = d + 8 * M.n * itmp) (himo : imo < lo) (hitmp : itmp < lo)
-    (hsize : d + 8 * M.n * hi ≤ size) :
-    Lay M size fun x => ∃ i, lo ≤ i ∧ i < hi ∧ x = d + 8 * M.n * i := by
-  have apart : ∀ i j, i ≠ j → d + 8 * M.n * i + 8 * M.n ≤ d + 8 * M.n * j ∨
-      d + 8 * M.n * j + 8 * M.n ≤ d + 8 * M.n * i := by
-    intro i j hij
-    rcases Nat.lt_or_gt_of_ne hij with h | h
-    · have := Nat.mul_le_mul_left (8 * M.n) h
-      rw [Nat.mul_succ] at this
-      omega_arith
-    · have := Nat.mul_le_mul_left (8 * M.n) h
-      rw [Nat.mul_succ] at this
-      omega_arith
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rintro x ⟨i, -, hi', rfl⟩
-    have := Nat.mul_le_mul_left (8 * M.n) hi'
-    rw [Nat.mul_succ] at this
-    omega_arith
-  · rintro x y ⟨i, -, -, rfl⟩ ⟨j, -, -, rfl⟩ hxy
-    exact apart i j fun h => hxy (h ▸ rfl)
-  · rintro x ⟨i, hi, -, rfl⟩
-    rw [hmo]; exact apart i imo (by omega_arith)
-  · rintro x ⟨i, hi, -, rfl⟩
-    rw [htmp]; exact apart i itmp (by omega_arith)
 
 /-- `t₀ + (t₀ m' mod 2⁶⁴) m ≡ 0 (mod 2⁶⁴)` when `m m' ≡ -1`. -/
 theorem mont_low (t0 minv m : Nat) (h : (m * minv + 1) % 2 ^ 64 = 0) :

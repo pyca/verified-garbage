@@ -93,9 +93,6 @@ def sha512_256W : HVar :=
   ⟨Proof.HashTable.RISCV64.sha512_256V, Spec.Hmac.sha512_256I.initAnyKeyApi.name,
     Spec.Hmac.sha512_256I.finalizeApi.name, Sha512_256.init_ct, Sha512_256.fin_ct, rfl⟩
 
-/-- Every hash function with HMAC on RISC-V. -/
-def vars : List HVar := [md5W, sha1W, sha224W, sha256W, sha384W, sha512W, sha512_224W, sha512_256W]
-
 /-- The table of `w`'s HMAC, `VG_HMAC_<HASH>`. -/
 def tableOf (w : HVar) : FnTable where
   name := s!"VG_HMAC_{w.G.rust.toUpper}"

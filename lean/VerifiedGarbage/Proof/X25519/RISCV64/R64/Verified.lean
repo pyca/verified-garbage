@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.RISCV64.R64.Ladder
 public import VerifiedGarbage.Proof.X25519.RISCV64.Invert
 public import VerifiedGarbage.Proof.X25519.RISCV64.Main
@@ -359,9 +360,9 @@ def x25519Sat : State where
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 4096⟩]
 
 theorem x25519_verified :
-    Verified RISCV64.target Impl.X25519.RISCV64.R64.x25519 (Spec.X25519.x25519Contract RISCV64.abi) :=
+    Verified RISCV64.target Impl.X25519.RISCV64.R64.x25519 (Proof.X25519.x25519Contract RISCV64.abi) :=
   Verified.of_correct x25519_ok x25519_ct' (by
-    contract_implies [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, Proof.X25519.RISCV64.x25519RISCV64,
+    contract_implies [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, Proof.X25519.RISCV64.x25519RISCV64,
       RISCV64.abi, RISCV64.argRegs] [Proof.X25519.RISCV64.R64.x25519Sat]
       using Proof.X25519.RISCV64.R64.x25519Sat)
 

@@ -39,8 +39,6 @@ def validate : Prog isa :=
 
 def powerWith (phase : Prog isa) (slot primeSlot exponentSlot : Nat) : Prog isa :=
   .seq (selectChild slot) (.seq (narrowPowerWith phase slot primeSlot exponentSlot) selectMain)
-def power (slot primeSlot exponentSlot : Nat) : Prog isa := powerWith windowExpPhase slot primeSlot exponentSlot
-
 def qSource : List Instr := [.ldrSp .r1 8, .ldr .r1 .r1 228]
 def coefficientPhase : Prog isa := .seq (selectChild 224)
   (.seq (.block qSource) (.seq (transferArray 1 6) (.seq coefficient selectMain)))
@@ -50,16 +48,10 @@ def finish : Prog isa := .seq (.block qSource) (.seq (transferArray 1 6)
 def computeWith (phase : Prog isa) : Prog isa := .seq (powerWith phase 224 64 80)
   (.seq (powerWith phase 228 72 88) (.seq coefficientPhase finish))
 
-def compute : Prog isa := computeWith windowExpPhase
-
 def prepare : Prog isa := .seq (.block PcFn.head) (.seq setupAll
   (.seq (savedOperand 0 8 12) (.block saveMain)))
 def validWith (phase : Prog isa) : Prog isa := .seq prepare (.seq validate (computeWith phase))
-def valid : Prog isa := validWith windowExpPhase
-
 def bodyWith (phase : Prog isa) : Prog isa := .seq (.block modulusCheck) (.ite .eq (validWith phase) PublicFn.fail)
-def body : Prog isa := bodyWith windowExpPhase
-
 def codeWith (phase : Prog isa) : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
     (.seq (.block entry) (.seq (bodyWith phase) (.block PcFn.restore))) (.pop .r12 56)

@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-! # The Miller–Rabin round on ARMv7 is verified
 
 Against its own contract (`round_verified_lite`), which implies the shared
-one (`round_implies`, `round_verified`).
+one (`round_implies`).
 -/
 
 @[expose] public section
@@ -124,10 +124,5 @@ theorem round_ct' (fios : Bool := false) : ConstantTime isa roundContract.pre ro
 /-- `vg_miller_rabin_round` against the contract its callers use. -/
 theorem round_verified_lite (fios : Bool := false) : Verified Arm.target (code (fios := fios)) roundContract :=
   ⟨(round_correct (fios := fios)), (round_ct' (fios := fios)), round_implies.sat_left⟩
-
-/-- `vg_miller_rabin_round`. -/
-theorem round_verified (fios : Bool := false) : Verified Arm.target (code (fios := fios))
-    (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 56) :=
-  (round_verified_lite (fios := fios)).of_implies round_implies
 
 end VG.Proof.MillerRabin.Arm

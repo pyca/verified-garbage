@@ -139,11 +139,6 @@ theorem pubEntry_ok {s : State} {B : Addr} (hB : stackArg s 0 = B)
 
 /-! ## The whole function -/
 
-/-- `abiPreserved` from registers kept. -/
-theorem abi_of_keep {rs : List Reg} {s t : State} (k : Keep rs s t) (h : ∀ r ∈ preserved, r ∉ rs) :
-    abiPreserved s t :=
-  ⟨fun r hr => k.gpr r (h r hr), k.sp, k.vcs⟩
-
 theorem pubCode_correct (s : State) (h : pubContract.pre s) :
     ∃ t s', Exec isa Public.code s t s' ∧ abiPreserved s s' ∧ pubContract.post s s' := by
   have c := pubCtx_of h

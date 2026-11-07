@@ -64,49 +64,7 @@ theorem packed_pairs (f : Nat → BitVec 32) :
   rw [packed_words]
   simpa only [BitVec.cast_eq] using (BitVec.append_assoc (x₁ := f 0 ++ f 1) (x₂ := f 2) (x₃ := f 3))
 
-
-theorem pair_words (x : BitVec 128) (a : BitVec 32) (j : Nat) (hj : j < 2)
-    (h : vdword x j = a.setWidth 64) :
-    vword x (2*j) = 0#32 ∧ vword x (2*j+1) = a := by
-  constructor
-  · rw [vword_dword x (2*j) (by omega)]
-    simp only [show 2*j/2 = j by omega, show 2*j%2 = 0 by omega,
-      Nat.reduceSub, Nat.reduceMul, h, widen32_eq, BitVec.extractLsb'_append_eq_left]
-  · rw [vword_dword x (2*j+1) (by omega)]
-    simp only [show (2*j+1)/2 = j by omega, show (2*j+1)%2 = 1 by omega,
-      Nat.reduceSub, Nat.reduceMul, h, widen32_eq, BitVec.extractLsb'_append_eq_right]
-
-theorem high64_packed (f : Nat → BitVec 32) :
-    vdword ((List.range 4).foldl (fun x i => x ||| ((f i).setWidth 128 <<< (32*(3-i))))
-      (0 : BitVec 128)) 0 = f 0 ++ f 1 := by
-  rw [packed_pairs]
-  exact BitVec.extractLsb'_append_eq_left
-
 theorem sigma256_zero : ∀ st one, sigma256 st one 0#32 = 0#32 := by decide
-
-theorem high64_add32 (x y : BitVec 128) (a b : BitVec 32)
-    (hx : vdword x 0 = a.setWidth 64) (hy : vdword y 0 = b.setWidth 64) :
-    vdword ((List.range 4).foldl (fun z i => z |||
-      ((vword x i + vword y i).setWidth 128 <<< (32*(3-i)))) (0 : BitVec 128)) 0 =
-      (a+b).setWidth 64 := by
-  have ⟨hx0,hx1⟩ := pair_words x a 0 (by decide) hx
-  have ⟨hy0,hy1⟩ := pair_words y b 0 (by decide) hy
-  rw [high64_packed]
-  simp only [Nat.mul_zero, Nat.zero_add] at hx0 hx1 hy0 hy1
-  rw [hx0, hx1, hy0, hy1, BitVec.zero_add, ←widen32_eq]
-
-theorem high64_sigma32 (x : BitVec 128) (a : BitVec 32) (st one : Bool)
-    (hx : vdword x 0 = a.setWidth 64) :
-    vdword ((List.range 4).foldl (fun z i => z |||
-      ((sigma256 st ((if one then 5 else 0).testBit (3-i)) (vword x i)).setWidth 128 <<<
-        (32*(3-i)))) (0 : BitVec 128)) 0 = (sigma256 st one a).setWidth 64 := by
-  have ⟨hx0,hx1⟩ := pair_words x a 0 (by decide) hx
-  simp only [Nat.mul_zero, Nat.zero_add] at hx0 hx1
-  have hm0 : (if one then 5 else 0).testBit 3 = false := by cases one <;> decide
-  have hm1 : (if one then 5 else 0).testBit 2 = one := by cases one <;> decide
-  rw [high64_packed]
-  simp only [Nat.reduceSub, hm0, hm1, hx0, hx1, sigma256_zero, ←widen32_eq]
-
 
 /-- Each working word is zero-padded to a doubleword in a vector. -/
 def Vars (t : Nat) (s : State) (v : HashValue) : Prop :=
@@ -201,7 +159,6 @@ theorem exec_kld (d : VReg) (j : Nat) (s : State) (hj : j ≤ 64)
   rw [ite_eq_left ⟨by decide, hb, by rw [hin]; omega, by rw [hin, kWords_length]; omega⟩]
   rw [hin, show (8*j)/8 = j by omega, kWords_get j hj]
 
-
 theorem high64_append (a b : BitVec 64) : (a ++ b).extractLsb' 64 64 = a :=
   BitVec.extractLsb'_append_eq_left
 
@@ -270,10 +227,6 @@ theorem round_ok (t : Nat) (ht : t < 64) (s : State) (v : HashValue) (w : Word)
   · intro r hr
     obtain ⟨h0,h1,h2,h3,h4,h5,h6⟩ := hpairs r hr
     simp only [h0,h1,h2,h3,h4,h5,h6,ite_false]
-
-
-theorem slot_ok (j : Nat) : slot j < 2 ^ 15 ∧ slot j % 4 = 0 := by
-  simp only [slot]; omega
 
 abbrev slotAddr (scr : Addr) (j : Nat) : Addr := scr + BitVec.ofNat 64 (slot j)
 
@@ -369,7 +322,6 @@ theorem pair_regs_nodup (n : Nat) :
   generalize n % 8 = a at *
   revert h; revert a; decide
 
-
 theorem high64_four (a b c d : BitVec 32) :
     ((a ++ b) ++ (c ++ d)).extractLsb' 64 64 = a ++ b :=
   BitVec.extractLsb'_append_eq_left
@@ -443,7 +395,6 @@ theorem pair_compute_ok (n : Nat) (hn : 8 ≤ n) (M : Block) (s : State)
     obtain ⟨h0,h1,h2,h3⟩ := hw r hr
     simp only [h0,h1,h2,h3,ite_false]
 
-
 theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp : Addr)
     (hr4 : s.gpr .r4 = bp)
     (hin : ∀ j < 16, InRegions (s.rd ++ s.wr) (bp + BitVec.ofNat 64 (4*j)) 4)
@@ -501,23 +452,8 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp : Addr)
 
 /-! ## The 64 rounds -/
 
-theorem pubRegs_ne' : ∀ r ∈ pubRegs, r ≠ T0 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 ∧ r ≠ .r0 := by decide
-
-theorem pubRegs_ne {r : Reg} (h : r ∈ pubRegs) : r ≠ T0 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 ∧ r ≠ .r0 :=
-  pubRegs_ne' r h
-
 /-- The window `⟨scr, 64⟩`. -/
 abbrev winRegion (scr : Addr) : Region := ⟨scr, 64⟩
-
-theorem win_contains (scr : Addr) (j : Nat) : (winRegion scr).Contains (slotAddr scr j) 4 := by
-  exact Offset.contains_base scr (d := slot j) (by unfold slot; omega) (by unfold slot; omega)
-
-theorem slot_sep (scr : Addr) {i j : Nat} (h : i % 16 ≠ j % 16) :
-    Mem.Sep (slotAddr scr i) 4 (slotAddr scr j) 4 := by
-  apply Offset.sep scr (d := slot i) (e := slot j)
-  · unfold slot; omega
-  · unfold slot; omega
-  · unfold slot; omega
 
 /-- Rounds invariant, relative to the state `sB` at the start of the rounds. -/
 structure RInv (H : HashValue) (M : Block) (scr : Addr) (sB : State) (t : Nat) (s : State) : Prop where
@@ -725,7 +661,5 @@ theorem roundsLoop_ok (H : HashValue) (M : Block) (bp scr : Addr) (sB : State)
   · simp only [runBlock_cons, exec_li (show 3 < 2^15 by decide), runStep_some, runBlock_nil]
   · exact WP.loop (M := isa) Inv step 3 _
       ⟨by decide, by decide, h16.write_counter _, RegUpd.gpr_write_self _ _ _⟩
-
-
 
 end VG.Proof.Sha256.PPC64LE

@@ -20,7 +20,7 @@ proven for every input in its range:
   `x < 2³²`.
 
 Each leaves a value less than `2q` congruent to `x`, which `condSub` then
-reduces (`reduce32`, `reduce64`).
+reduces (`reduce32`).
 
 It also has the coefficients of polynomials (`getElem!_eq`, `ext_getElem!`)
 and of their sums and differences (`add_get`, `sub_get`).
@@ -42,9 +42,6 @@ theorem ofNat_of_lt {x : Nat} (h : x < q) : (ofNat x).val = x := Nat.mod_eq_of_l
 
 theorem ofNat_mod (x : Nat) : ofNat (x % q) = ofNat x := Fin.ext (Nat.mod_mod _ _)
 
-theorem ofNat_eq_iff {x y : Nat} : ofNat x = ofNat y ↔ x % q = y % q :=
-  ⟨fun h => congrArg Fin.val h, fun h => Fin.ext h⟩
-
 theorem val_add' (a b : Zq) : (a + b).val = (a.val + b.val) % q := Fin.val_add a b
 
 theorem val_sub' (a b : Zq) : (a - b).val = (a.val + (q - b.val)) % q := by
@@ -60,9 +57,6 @@ theorem val_pow (a : Zq) (k : Nat) : (a ^ k).val = a.val ^ k % q := by
 
 theorem ofNat_add (x y : Nat) : ofNat (x + y) = ofNat x + ofNat y :=
   Fin.ext (by rw [val_add', val_ofNat, val_ofNat, val_ofNat, Nat.add_mod])
-
-theorem ofNat_mul (x y : Nat) : ofNat (x * y) = ofNat x * ofNat y :=
-  Fin.ext (by rw [val_mul, val_ofNat, val_ofNat, val_ofNat, Nat.mul_mod])
 
 theorem q_eq : q = 3329 := rfl
 
@@ -113,14 +107,6 @@ def condSub (t : Nat) : Nat := if q ≤ t then t - q else t
 /-- One conditional subtraction reduces a value less than `2q`. -/
 theorem condSub_eq {t : Nat} (h : t < 2 * q) : condSub t = t % q := by
   unfold condSub; rw [q_eq] at *; split <;> omega
-
-theorem condSub_lt {t : Nat} (h : t < 2 * q) : condSub t < q := by
-  unfold condSub; rw [q_eq] at *; split <;> omega
-
-/-- `(a + b) mod q`, for reduced `a` and `b`: `a + b`, less `q` if that is
-at least `q`. -/
-theorem add_mod_q {a b : Nat} (ha : a < q) (hb : b < q) : (a + b) % q = condSub (a + b) :=
-  (condSub_eq (by omega)).symm
 
 /-- `(a - b) mod q`, for reduced `a` and `b`, as `a + q - b` reduced with one
 conditional subtraction; that is `a - b` if `b ≤ a`, and `a + q - b`
@@ -207,26 +193,10 @@ theorem barrett64_mod {x : Nat} (hx : x < 2 ^ 32) : barrett64 x % q = x % q := b
   rw [q_eq] at *
   omega
 
-/-- Reduction modulo `q` of `x < 2³²` with one 64-bit product. -/
-theorem reduce64 {x : Nat} (hx : x < 2 ^ 32) : condSub (barrett64 x) = x % q := by
-  rw [condSub_eq (barrett64_lt hx), barrett64_mod hx]
-
 /-! ## Products of reduced values -/
 
 /-- A product of reduced values is less than `q² = 11082241`. -/
 theorem mul_lt_q2 {a b : Nat} (ha : a < q) (hb : b < q) : a * b < 11082241 :=
   Nat.mul_lt_mul_of_lt_of_lt ha hb
-
-/-- A product of reduced values, reduced with `barrett32`. -/
-theorem val_mul_barrett32 (a b : Zq) : (a * b).val = condSub (barrett32 (a.val * b.val)) := by
-  rw [val_mul, reduce32 (by have := mul_lt_q2 a.isLt b.isLt; omega)]
-
-/-- `a₀b₀ + a₁b₁γ` of `BaseCaseMultiply`, with `a₁b₁` reduced first: the sum
-is less than `2q² < 2²⁵`, so `barrett32` reduces it. -/
-theorem val_mul_add_mul (a b c d : Zq) :
-    (a * b + c * d).val = condSub (barrett32 (a.val * b.val + c.val * d.val)) := by
-  have h1 := mul_lt_q2 a.isLt b.isLt
-  have h2 := mul_lt_q2 c.isLt d.isLt
-  rw [reduce32 (by omega), val_add', val_mul, val_mul, ← Nat.add_mod]
 
 end VG.Proof.MlKem

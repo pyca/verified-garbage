@@ -63,19 +63,6 @@ theorem rowAcc_eq (a v : Nat → Poly) : ∀ k, rowAcc a v k = VG.Proof.MlKem.KP
 
 /-! ## The blocks -/
 
-section
-variable {K : KemLay} (hK : K.WF)
-include hK
-
-theorem oAcc_lt : K.oAcc < 32768 := by offs
-theorem oTmp_lt : K.oTmp < 32768 := by offs
-theorem oAhat_lt : K.oAhat < 32768 := by offs
-theorem oSample_lt : K.oSample < 32768 := by offs
-theorem oNtt_lt : K.oNtt < 32768 := by offs
-theorem oPolyK_lt : oPoly K.k < 32768 := by offs
-
-end
-
 /-- Two polynomials' addresses. -/
 theorem addr2_ok {s : State} {P : BitVec 64} {d d' : Reg} {j j' : Nat} (hj : j + 2 < 2048) (hj' : j' + 2 < 2048)
     (hd : d ∉ preserved) (hd' : d' ∉ preserved) (hdd : d ≠ d') (h11 : s.gpr .s11 = P) :
@@ -301,10 +288,6 @@ variable {K : KemLay} {L : Lay} {transpose : Bool} {ρ : List Byte} {v : Nat →
 
 theorem RS.ctx (hp : RowPre K L ρ v i fl s₀) {s : State} (h : RS K L transpose ρ v i s₀ j s) : Ctx L s :=
   h.kx.ctx (by decide) hp.ctx
-
-theorem RS.s6 (hp : RowPre K L ρ v i fl s₀) {s : State} (h : RS K L transpose ρ v i s₀ j s) :
-    s.gpr .s6 = BitVec.ofNat 64 i := by
-  rw [h.kx.cs .s6 (by decide) (by decide), hp.s6]
 
 theorem RS.vec (hp : RowPre K L ρ v i fl s₀) (hj : j < K.k) {s : State} (h : RS K L transpose ρ v i s₀ j s) :
     PolyIs s.mem (L.A 0 (oPoly (K.k + j))) (v j) := by

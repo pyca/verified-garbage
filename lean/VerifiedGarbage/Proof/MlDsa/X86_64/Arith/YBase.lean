@@ -13,11 +13,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 The AVX2 code does to each 128-bit lane what the SSE2 code does to a register
 (`toY`), so the proofs of the SSE2 code hold of each lane (`ylanes`,
-ML-KEM's): `YConsts` is `VConsts` in both lanes (`yconsts_ok`); a 256-bit load
-of coefficient `j` puts coefficients `j + 4l` to `j + 4l + 3` in lane `l`
-(`dlanes_loadY`), and a 256-bit store of a register whose lanes hold `a` and `a
-(· + 4)` puts `a` at coefficients `j` to `j + 7` (`polyIs_write2Y`,
-`ylanes_ymm`).
+ML-KEM's): `YConsts` is `VConsts` in both lanes (`yconsts_ok`); lane `l` of a
+256-bit load of coefficient `j` holds coefficients `j + 4l` to `j + 4l + 3`
+(`lane_load`), and a 256-bit store at coefficient `j` writes coefficients `j`
+to `j + 7` (`coeffAt_write256`, `frame_write2Y`).
 -/
 
 @[expose] public section
@@ -64,19 +63,6 @@ theorem extract_ymm (hi lo : BitVec 128) {e : Nat} (he : e < 8) :
       ifn (show ¬32 * e + i < 128 by omega)]
     exact congrArg _ (by omega)
 
-/-- The doublewords of a 256-bit value are the coefficients `a`. -/
-def YLanes (x : BitVec 256) (a : Nat → Zq) : Prop := ∀ e < 8, (x.extractLsb' (32 * e) 32).toNat = (a e).val
-
-/-- A register whose lanes hold `a` and `a (· + 4)`. -/
-theorem ylanes_ymm {s : State} {r : XReg} {a : Nat → Zq} (h0 : DLanes (s.lane r 0) a)
-    (h1 : DLanes (s.lane r 1) (fun e => a (e + 4))) : YLanes (s.ymm r) a := fun e he => by
-  have h0' : DLanes (s.xmm r) a := h0
-  have h1' : DLanes (s.ymmHi r) (fun e => a (e + 4)) := h1
-  rw [State.ymm, extract_ymm _ _ he]
-  split
-  · exact h0' e (by omega)
-  · rw [h1' (e - 4) (by omega)]; dsimp only; rw [show e - 4 + 4 = e by omega]
-
 /-- Coefficient `i` after storing `x` at coefficient `j`. -/
 theorem coeffAt_write256 (m : Mem) (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) (x : BitVec 256) {i : Nat}
     (hi : i < 256) :
@@ -89,27 +75,6 @@ theorem coeffAt_write256 (m : Mem) (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) (x 
     rw [show 32 * (i - j) = 8 * (4 * (i - j)) by omega]
     exact readW_writeW_inside (k := 4 * (i - j)) (n := 4) _ _ _ (by omega) (by decide)
   · exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
-
-/-- Two vectors of eight coefficients stored into a polynomial. -/
-theorem polyIs_write2Y {m : Mem} {p : Addr} {P R : Poly} (hP : PolyIs m p P) {j j' : Nat}
-    (hj : j + 8 ≤ 256) (hj' : j' + 8 ≤ 256) (hsep : j + 8 ≤ j' ∨ j' + 8 ≤ j) {x y : BitVec 256}
-    {a b : Nat → Zq} (hx : YLanes x a) (hy : YLanes y b)
-    (hR : ∀ i < 256, R[i]! = if j ≤ i ∧ i < j + 8 then a (i - j)
-      else if j' ≤ i ∧ i < j' + 8 then b (i - j') else P[i]!) :
-    PolyIs ((m.writeW (coeffAddr p j) x).writeW (coeffAddr p j') y) p R := polyIs_of_toNat fun i hi => by
-  rw [n_eq] at hi
-  rw [coeffAt_write256 _ _ hj' _ hi, coeffAt_write256 _ _ hj _ hi, hR i hi]
-  by_cases h1 : j' ≤ i ∧ i < j' + 8
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
-      ite_eq_left_of_eq_true _ _ (eq_true h1)]
-    exact hy _ (by omega)
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
-    by_cases h2 : j ≤ i ∧ i < j + 8
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ite_eq_left_of_eq_true _ _ (eq_true h2)]
-      exact hx _ (by omega)
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false h2),
-        ite_eq_right_of_eq_false _ _ (eq_false h1)]
-      exact polyIs_toNat hP (by rw [n_eq]; exact hi)
 
 theorem pR_contains32 (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) : (pR p).Contains (coeffAddr p j) 32 :=
   Offset.contains_base p (by omega) (by omega)
@@ -128,12 +93,5 @@ theorem frame_write2Y {m m' : Mem} {p : Addr} (hf : Frame [pR p] m m') {j j' : N
 theorem lane_load {p : Addr} {j l : Nat} :
     coeffAddr p j + BitVec.ofNat 64 (16 * l) = coeffAddr p (j + 4 * l) := by
   rw [show 16 * l = 4 * (4 * l) by omega, coeffAddr_add]
-
-/-- The lanes of a 256-bit load of coefficient `j` of `F`. -/
-theorem dlanes_loadY {m : Mem} {p : Addr} {F : Poly} (h : PolyIs m p F) {j : Nat} (hj : j + 8 ≤ 256)
-    {l : Nat} (hl : l < 2) :
-    DLanes (m.readW (coeffAddr p j + BitVec.ofNat 64 (16 * l)) 128) (fun e => F[j + 4 * l + e]!) := by
-  rw [lane_load]
-  exact dlanes_load h (by omega)
 
 end VG.Proof.MlDsa.X86_64.Arith

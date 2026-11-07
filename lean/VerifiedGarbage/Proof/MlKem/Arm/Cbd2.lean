@@ -185,42 +185,4 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa cbd2 s₀ (Inv s₀ 128)
   rw [ite_eq_right]
   intro e; subst e; simp [preserved] at hr
 
-/-! ## Verified -/
-
-theorem pre_of {s : State} (h : (Proof.MlKem.cbd2Contract Arm.abi).pre s) : Pre s := by
-  sig_pre [Proof.MlKem.cbd2Contract, Proof.MlKem.cbd2Sig, Arm.abi, Arm.argRegs,
-    Arm.reduceClassify, Arm.Loc.val] at h
-  obtain ⟨-, h1, h2, h3, h4, h5⟩ := h
-  exact ⟨h1, h2, h3, h4, h5⟩
-
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .r0 => 0x1000 | .r1 => 0x2000 | _ => 0
-  sp := 0x4000
-  n := false
-  z := false
-  c := false
-  v := false
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 1024⟩]
-
-theorem verified :
-    Verified Arm.target Impl.MlKem.Arm.cbd2 (Proof.MlKem.cbd2Contract Arm.abi) := by
-  refine ⟨fun s hs => ?_, Add.ct (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · have hp := pre_of hs
-    obtain ⟨t, s', he, h⟩ := loop_ok hp
-    refine ⟨t, s', he, ⟨h.pres, h.sp⟩, ?_⟩
-    sig_post [Proof.MlKem.cbd2Contract, Proof.MlKem.cbd2Sig, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val]
-    exact polyIs_of_coeffAt (p := F s) fun j hj => by
-      rw [h.coeff j hj, ite_eq_left (by rw [n_eq] at hj; omega_arith)]; rfl
-  · sig_pub [Proof.MlKem.cbd2Contract, Proof.MlKem.cbd2Sig, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val] at h
-    exact ⟨h.2.1, h.2.2⟩
-  · refine ⟨satState, ?_⟩
-    sig_sat_check [Proof.MlKem.cbd2Contract, Proof.MlKem.cbd2Sig, Arm.abi, Arm.argRegs,
-      Arm.reduceClassify, Arm.Loc.val]
-
 end VG.Proof.MlKem.Arm.Cbd2

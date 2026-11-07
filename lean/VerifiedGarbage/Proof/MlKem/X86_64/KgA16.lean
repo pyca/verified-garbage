@@ -81,14 +81,6 @@ theorem MatB16.four {k oa : Nat} {ρ : List Byte} {e : Nat} {rbs wbs : List (Reg
 theorem MatB16.zero (k oa : Nat) (ρ : List Byte) {s : State} (h15 : s.gpr .r15 = 1) : MatB16 k oa ρ 0 s :=
   ⟨by rw [h15, ifp (allOk_zero _ _)], fun _ h => absurd h (Nat.not_lt_zero _)⟩
 
-/-- Every entry of `Â`, once all were sampled. -/
-theorem MatB16.all {k oa : Nat} {ρ : List Byte} {s : State} (h : MatB16 k oa ρ (k * k) s)
-    (ho : allOk k ρ (k * k)) : ∀ i < k, ∀ j < k, PolyIsW 16 s.mem (pa s (sc (oa + 512 * (k * i + j)))) (aHat ρ i j) :=
-  fun i hi j hj => by
-    have := h.mat (k * i + j) (ij_lt hi hj) (aHat ρ i j)
-    rw [(divmod_ij hj).1, (divmod_ij hj).2] at this
-    exact this (aHat_eq ho hi hj)
-
 /-- The entries `e, …, e + n - 1`, from any invariant `I e` whose steps are
 those of one entry and of four (`ents16`). -/
 theorem ents16_ok (p : String × Prog isa) (k oa : Nat) (scr : Ptr) {I : Nat → State → Prop}

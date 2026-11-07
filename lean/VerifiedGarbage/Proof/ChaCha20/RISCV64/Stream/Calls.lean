@@ -63,11 +63,10 @@ theorem block_call {s : State} {S B : Addr} (ha0 : s.gpr .a0 = S) (ha1 : s.gpr .
       State.callEntry_mem, callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs),
       callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs), ha0, ha1] using hpost
 
-theorem xor_noFrames : Impl.ChaCha20.RISCV64.Xor.xor.noFrames = true := by decide +kernel
-
+/-- `vg_chacha20_xor` in place (`Xor.xor_call`). -/
 theorem xor_call {s : State} {S D B : Addr} {n : Nat}
     (ha0 : s.gpr .a0 = S) (ha1 : s.gpr .a1 = D)
-    (ha2 : s.gpr .a2 = BitVec.ofNat 64 n) (ha3 : s.gpr .a3 = B) (hn : n < 2 ^ 64)
+    (ha2 : s.gpr .a2 = BitVec.ofNat 64 n) (ha3 : s.gpr .a3 = B) (ha4 : s.gpr .a4 = D) (hn : n < 2 ^ 64)
     (hSD : (⟨S, 64⟩ : Region).Disjoint ⟨D, n⟩) (hSB : (⟨S, 64⟩ : Region).Disjoint ⟨B, 320⟩)
     (hDB : (⟨D, n⟩ : Region).Disjoint ⟨B, 320⟩) (hwrap : D.toNat + n ≤ 2 ^ 64)
     (hSa : S.toNat % 4 = 0) (hBa : B.toNat % 4 = 0)
@@ -77,21 +76,8 @@ theorem xor_call {s : State} {S D B : Addr} {n : Nat}
     (hQ : ∀ s', Kept [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩] s s' →
       bytesAt s'.mem D n = List.zipWith (· ^^^ ·) (bytesAt s.mem D n) (keystream (stateAt s.mem S) n) →
       Q s') :
-    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.RISCV64.Xor.xor) s Q := by
-  have hn' : (BitVec.ofNat 64 n).toNat = n := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
-  refine WP.call (k := Proof.ChaCha20.xorRISCV64) Proof.ChaCha20.RISCV64.Xor.xor_correct
-    (rd := []) (wr := [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩]) ?_ hc hw ?_ xor_noFrames
-  · simp only [Proof.ChaCha20.xorRISCV64, State.withRegions_gpr, State.withRegions_rd,
-      State.withRegions_wr, callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs),
-      callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a2 ∉ linkRegs),
-      callEntry_gpr' s (by decide : Reg.a3 ∉ linkRegs), ha0, ha1, ha2, ha3, hn']
-    exact ⟨trivial, trivial, hSD, hSB, hDB, hwrap, hSa, hBa⟩
-  · intro s' hrd hwr hsp hf hcs _ hpost
-    refine hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ ?_
-    simpa only [Proof.ChaCha20.xorRISCV64, State.withRegions_gpr, State.withRegions_mem,
-      State.callEntry_mem, callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs),
-      callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a2 ∉ linkRegs),
-      ha0, ha1, ha2, hn'] using hpost
+    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.RISCV64.Xor.xor) s Q :=
+  Xor.xor_call ha0 ha1 ha2 ha3 ha4 hn hSD hSB hDB hwrap hSa hBa hc hw
+    fun s' hrd hwr hsp hf hcs _ hpost => hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ hpost
 
 end VG.Proof.ChaCha20.RISCV64.Stream

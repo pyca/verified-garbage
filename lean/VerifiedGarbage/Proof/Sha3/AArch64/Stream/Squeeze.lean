@@ -521,7 +521,7 @@ theorem squeeze_verified (v : Permutation) :
     Verified AArch64.target (Impl.Sha3.AArch64.Stream.squeezeWith v.callee) (Proof.Sha3.squeezeScratchContract AArch64.abi
       16) :=
   Verified.of_correct (squeeze_correct v) (squeeze_ct v) (by
-    sig_implies [Proof.Sha3.squeezeScratchContract, Proof.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre, Spec.Sha3.squeezePost, Proof.Sha3.squeezeAArch64,
+    sig_implies [Proof.Sha3.squeezeScratchContract, Proof.Sha3.squeezeScratchSig, Proof.Sha3.squeezePre, Proof.Sha3.squeezePost, Proof.Sha3.squeezeAArch64,
       AArch64.abi, AArch64.argRegs] [Proof.Sha3.AArch64.Stream.Squeeze.sat] using
       Proof.Sha3.AArch64.Stream.Squeeze.sat)
 

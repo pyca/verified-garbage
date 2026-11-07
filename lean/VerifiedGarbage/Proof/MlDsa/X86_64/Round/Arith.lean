@@ -75,10 +75,6 @@ def hbRawV (g : Nat) (a : BitVec 64) : BitVec 64 :=
       (BitVec.setWidth 64 (BitVec.ofNat 32 (dMul g))).toNat) +
     BitVec.signExtend 64 (BitVec.ofNat 32 (dAdd g))) >>> dShift g
 
-theorem dMul_eq (g : Nat) : dMul g = Proof.MlDsa.Round.hbMul g := rfl
-theorem dAdd_eq (g : Nat) : dAdd g = Proof.MlDsa.Round.hbAdd g := rfl
-theorem dShift_eq (g : Nat) : dShift g = Proof.MlDsa.Round.hbShift g := rfl
-
 theorem dMod_eq {g : Nat} (h : g ∈ gamma2s) : dMod g = Proof.MlDsa.Round.hbM g := by
   rcases mem_gamma2s h with rfl | rfl <;> rfl
 

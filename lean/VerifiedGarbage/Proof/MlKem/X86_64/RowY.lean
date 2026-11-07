@@ -538,26 +538,6 @@ theorem prodsRg_ok {o : Nat} (R : FRep o) {fB gB : Addr} {fs gs : List Poly} {b 
 
 namespace RowY
 
-/-- What a row needs of its arguments: `t` at `tP`, the `k` polynomials of
-`fs` from `fB` and of `gs` from `gB` (1024 bytes apart), the table of the
-`γ`s at `C + 3328`, in the memory `m₀` and the regions `RD` and `WR`. -/
-structure Ctx (k : Nat) (fB gB tP C : Addr) (fs gs : List Poly) (m₀ : Mem) (RD WR : List Region) : Prop where
-  k1 : 1 ≤ k
-  k4 : k ≤ 4
-  fl : k ≤ fs.length
-  gl : k ≤ gs.length
-  F : ∀ j < k, PolyIs m₀ (fB + BitVec.ofNat 64 (1024 * j)) fs[j]!
-  G : ∀ j < k, PolyIs m₀ (gB + BitVec.ofNat 64 (1024 * j)) gs[j]!
-  dF : ∀ j < k, (pR tP).Disjoint (pR (fB + BitVec.ofNat 64 (1024 * j)))
-  dG : ∀ j < k, (pR tP).Disjoint (pR (gB + BitVec.ofNat 64 (1024 * j)))
-  dT : (pR tP).Disjoint (tabR C)
-  inF : ∀ j < k, InRegions (RD ++ WR) (fB + BitVec.ofNat 64 (1024 * j)) 1024
-  inG : ∀ j < k, InRegions (RD ++ WR) (gB + BitVec.ofNat 64 (1024 * j)) 1024
-  inTab : InRegions (RD ++ WR) (C + BitVec.ofNat 64 3328) 256
-  inT : InRegions WR tP 1024
-  tab : TabY m₀ C
-  red : Reduced m₀ tP
-
 /-- `Ctx` of polynomials `f` stored as `R` says, `o` bytes apart. -/
 structure CtxG {o : Nat} (R : FRep o) (k : Nat) (fB gB tP C : Addr) (fs gs : List Poly) (m₀ : Mem)
     (RD WR : List Region) : Prop where
@@ -576,10 +556,6 @@ structure CtxG {o : Nat} (R : FRep o) (k : Nat) (fB gB tP C : Addr) (fs gs : Lis
   inT : InRegions WR tP 1024
   tab : TabY m₀ C
   red : Reduced m₀ tP
-
-theorem Ctx.toG {k : Nat} {fB gB tP C : Addr} {fs gs : List Poly} {m₀ : Mem} {RD WR : List Region}
-    (h : Ctx k fB gB tP C fs gs m₀ RD WR) : CtxG (FRep.u32 1024) k fB gB tP C fs gs m₀ RD WR :=
-  ⟨h.k1, h.k4, h.fl, h.gl, h.F, h.G, h.dF, h.dG, h.dT, h.inF, h.inG, h.inTab, h.inT, h.tab, h.red⟩
 
 /-- After `b` blocks of a row. -/
 structure Inv {o : Nat} (R : FRep o) (k : Nat) (fB gB tP C : Addr) (fs gs : List Poly) (m₀ : Mem) (RD WR : List Region) (b : Nat)

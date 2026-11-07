@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lay
 public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+public import VerifiedGarbage.Spec.MlDsa.PreparedKey
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Hash
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
@@ -38,26 +39,35 @@ open VG.Spec.Sha3 (bytesAt)
 /-- The size of `scratch` in bytes. -/
 abbrev scrLen (p : Params) : Nat := 8 * scratchWords p
 
-/-- `vg_mldsa*_sign(sk = rdi, mu = rsi, rnd = rdx, sig = rcx, scratch = r8) -> eax`, with `D` bytes
-of stack, and the leakage `signLeak`. -/
+/-- The length of the key at `rdi`: the encoded key, or, if the flag `r9` is
+set, a prepared key (`PreparedSecretKey`), which begins with it. -/
+abbrev skL (p : Params) (s : State) : Nat := if s.gpr .r9 = 0 then p.skLen else preparedSecretKeyBytes p
+
+theorem skLen_le_skL (p : Params) (s : State) : p.skLen ≤ skL p s := by
+  unfold skL preparedSecretKeyBytes; split <;> omega
+
+/-- `vg_mldsa*_sign_with_cache(sk = rdi, mu = rsi, rnd = rdx, sig = rcx, scratch = r8,
+prepared = r9) -> eax`, with `D` bytes of stack, and the leakage `signLeak`: signing
+with the encoded key at `sk`, which, if `prepared ≠ 0`, is a prepared key (`skL`). -/
 def signK (p : Params) (D : Nat) : Contract isa where
   pre s :=
-    s.rd = [⟨s.gpr .rdi, p.skLen⟩, ⟨s.gpr .rsi, 64⟩, ⟨s.gpr .rdx, 32⟩] ∧
+    s.rd = [⟨s.gpr .rdi, skL p s⟩, ⟨s.gpr .rsi, 64⟩, ⟨s.gpr .rdx, 32⟩] ∧
     s.wr = [⟨s.gpr .rcx, p.sigLen⟩, ⟨s.gpr .r8, scrLen p⟩] ∧
-    Region.Disjoint ⟨s.gpr .rdi, p.skLen⟩ ⟨s.gpr .rcx, p.sigLen⟩ ∧
-    Region.Disjoint ⟨s.gpr .rdi, p.skLen⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
+    Region.Disjoint ⟨s.gpr .rdi, skL p s⟩ ⟨s.gpr .rcx, p.sigLen⟩ ∧
+    Region.Disjoint ⟨s.gpr .rdi, skL p s⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
     Region.Disjoint ⟨s.gpr .rsi, 64⟩ ⟨s.gpr .rcx, p.sigLen⟩ ∧ Region.Disjoint ⟨s.gpr .rsi, 64⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
     Region.Disjoint ⟨s.gpr .rdx, 32⟩ ⟨s.gpr .rcx, p.sigLen⟩ ∧ Region.Disjoint ⟨s.gpr .rdx, 32⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
     Region.Disjoint ⟨s.gpr .rcx, p.sigLen⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
-    (retR s).Disjoint ⟨s.gpr .rdi, p.skLen⟩ ∧ (retR s).Disjoint ⟨s.gpr .rsi, 64⟩ ∧
+    (retR s).Disjoint ⟨s.gpr .rdi, skL p s⟩ ∧ (retR s).Disjoint ⟨s.gpr .rsi, 64⟩ ∧
     (retR s).Disjoint ⟨s.gpr .rdx, 32⟩ ∧ (retR s).Disjoint ⟨s.gpr .rcx, p.sigLen⟩ ∧
     (retR s).Disjoint ⟨s.gpr .r8, scrLen p⟩ ∧
-    (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rdi, p.skLen⟩ ∧ (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rsi, 64⟩ ∧
+    (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rdi, skL p s⟩ ∧ (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rsi, 64⟩ ∧
     (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rdx, 32⟩ ∧ (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rcx, p.sigLen⟩ ∧
     (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .r8, scrLen p⟩ ∧
-    (s.gpr .rdi).toNat + p.skLen ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 64 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 32 ≤ 2 ^ 64 ∧
+    (s.gpr .rdi).toNat + skL p s ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 64 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 32 ≤ 2 ^ 64 ∧
     (s.gpr .rcx).toNat + p.sigLen ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + scrLen p ≤ 2 ^ 64 ∧
-    D ≤ (s.gpr .rsp).toNat
+    D ≤ (s.gpr .rsp).toNat ∧
+    (s.gpr .r9 ≠ 0 → PreparedSecretKey p s.mem (s.gpr .rdi))
   post s s' :=
     Outcome (fun b => signMu p b (bytesAt s.mem (s.gpr .rdi) p.skLen) (bytesAt s.mem (s.gpr .rsi) 64)
       (bytesAt s.mem (s.gpr .rdx) 32)) ((s'.gpr .rax).setWidth 32) (bytesAt s'.mem (s.gpr .rcx) p.sigLen)
@@ -66,9 +76,13 @@ def signK (p : Params) (D : Nat) : Contract isa where
     signLeak p (bytesAt s₁.mem (s₁.gpr .rdi) p.skLen) (bytesAt s₁.mem (s₁.gpr .rsi) 64)
         (bytesAt s₁.mem (s₁.gpr .rdx) 32) =
       signLeak p (bytesAt s₂.mem (s₂.gpr .rdi) p.skLen) (bytesAt s₂.mem (s₂.gpr .rsi) 64)
-        (bytesAt s₂.mem (s₂.gpr .rdx) 32)
+        (bytesAt s₂.mem (s₂.gpr .rdx) 32) ∧
+    s₁.gpr .r9 = s₂.gpr .r9
 
 /-! ## The layout -/
+
+theorem contains_prefix {a : Addr} {n k : Nat} (h : n ≤ k) : (⟨a, k⟩ : Region).Contains a n := by
+  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; exact h
 
 /-- `sk`, `mu` and `rnd`. -/
 abbrev sgR (p : Params) : List (Reg × Nat) := [(.rbp, p.skLen), (.r12, 64), (.r13, 32)]
@@ -95,27 +109,24 @@ structure Top (σ s : State) : Prop where
   regs : ∀ m ∈ sgM, s.gpr m.1 = σ.gpr m.2
   saved : ∀ k < 6, s.mem.readW (pa s (sc (oSV + 8 * k))) 64 = σ.gpr (savedReg k)
   ret : s.mem.readW (σ.gpr .rsp) 64 = σ.mem.readW (σ.gpr .rsp) 64
-
-theorem pairwise_sym {α : Type} {R : α → α → Prop} (hs : ∀ a b, R a b → R b a) :
-    ∀ {l : List α}, l.Pairwise R → ∀ {a b : α}, a ∈ l → b ∈ l → a ≠ b → R a b
-  | [], _, _, _, ha, _, _ => absurd ha List.not_mem_nil
-  | x :: l, h, a, b, ha, hb, hne => by
-    rw [List.pairwise_cons] at h
-    rcases List.mem_cons.mp ha with e | ha'
-    · rcases List.mem_cons.mp hb with e' | hb'
-      · exact absurd (e.trans e'.symm) hne
-      · rw [e]; exact h.1 _ hb'
-    · rcases List.mem_cons.mp hb with e' | hb'
-      · rw [e']; exact hs _ _ (h.1 _ ha')
-      · exact pairwise_sym hs h.2 ha' hb' hne
+  /-- The flag `r9` of entry, at `FL`. -/
+  flag : s.mem.readW (pa s (sc oFL)) 64 = σ.gpr .r9
 
 section
 variable {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ)
 include hp
 
-theorem sgLay (hD : D < 2 ^ 32) (hsz : scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 ∧ p.sigLen < 2 ^ 32) {s : State}
-    (h : Top σ s) : Lay D (sgR p) (sgW p) s := by
-  obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, r1, r2, r3, r4, r5, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp⟩ := hp
+/-- The layout with the first `L` bytes of the key at `rbp`. -/
+theorem sgLayL {L : Nat} (hL : L ≤ skL p σ) (hD : D < 2 ^ 32)
+    (hsz : scrLen p < 2 ^ 32 ∧ L < 2 ^ 32 ∧ p.sigLen < 2 ^ 32) {s : State}
+    (h : Top σ s) : Lay D [(.rbp, L), (.r12, 64), (.r13, 32)] (sgW p) s := by
+  obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, r1, r2, r3, r4, r5, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp, -⟩ := hp
+  have hsub : Region.Sub ⟨σ.gpr .rdi, L⟩ ⟨σ.gpr .rdi, skL p σ⟩ := Region.sub_prefix hL
+  replace d1 := d1.sub_left hsub
+  replace d2 := d2.sub_left hsub
+  replace r1 := r1.sub_right hsub
+  replace k1 := k1.sub_right hsub
+  replace n1 : (σ.gpr .rdi).toNat + L ≤ 2 ^ 64 := by omega
   have e1 : s.gpr .rbx = σ.gpr .r8 := h.regs (.rbx, .r8) (by decide)
   have e2 : s.gpr .rbp = σ.gpr .rdi := h.regs (.rbp, .rdi) (by decide)
   have e3 : s.gpr .r12 = σ.gpr .rsi := h.regs (.r12, .rsi) (by decide)
@@ -128,47 +139,53 @@ theorem sgLay (hD : D < 2 ^ 32) (hsz : scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 �
   refine ⟨?_, fun b hb b' hb' hne hw => ?_, fun b hb => ?_, fun b hb => ?_, fun b hb => ?_, fun b hb => ?_,
     fun b hb => ?_, by rw [h.rsp]; exact hsp, hD⟩
   · intro b hb
-    simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
+    simp only [sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega_arith
-  · simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb hb'
+  · simp only [sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb hb'
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> rcases hb' with rfl | rfl | rfl | rfl | rfl <;>
       simp only [wRegs, List.mem_cons, List.not_mem_nil, or_false, reduceCtorEq, or_self, ne_eq,
         not_true_eq_false] at hne hw ⊢ <;> simp only [e1, e2, e3, e4, e5]
     all_goals first
       | exact d1 | exact d2 | exact d3 | exact d4 | exact d5 | exact d6 | exact d7
       | exact d1.symm | exact d2.symm | exact d3.symm | exact d4.symm | exact d5.symm | exact d6.symm | exact d7.symm
-  · simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
+  · simp only [sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only [e1, e2, e3, e4, e5, h.rsp]
     exacts [k1, k2, k3, k5, k4]
-  · simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
+  · simp only [sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only [e1, e2, e3, e4, e5]
     exacts [n1, n2, n3, n5, n4]
-  · simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
+  · simp only [sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only [e1, e2, e3, e4, e5]
-    exacts [mem ⟨σ.gpr .rdi, p.skLen⟩ (by rw [hrd]; simp), mem ⟨σ.gpr .rsi, 64⟩ (by rw [hrd]; simp),
+    exacts [⟨⟨σ.gpr .rdi, skL p σ⟩, by rw [h.rd, h.wr, hrd]; simp, contains_prefix hL⟩, mem ⟨σ.gpr .rsi, 64⟩ (by rw [hrd]; simp),
       mem ⟨σ.gpr .rdx, 32⟩ (by rw [hrd]; simp), mem ⟨σ.gpr .r8, scrLen p⟩ (by rw [hwr]; simp),
       mem ⟨σ.gpr .rcx, p.sigLen⟩ (by rw [hwr]; simp)]
   · simp only [sgW, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl <;> simp only [e1, e5]
     exacts [memw ⟨σ.gpr .r8, scrLen p⟩ (by rw [hwr]; simp), memw ⟨σ.gpr .rcx, p.sigLen⟩ (by rw [hwr]; simp)]
-  · simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
+  · simp only [sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only [retR, e1, e2, e3, e4, e5, h.rsp]
     exacts [r1, r2, r3, r5, r4]
+
+theorem sgLay (hD : D < 2 ^ 32) (hsz : scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 ∧ p.sigLen < 2 ^ 32) {s : State}
+    (h : Top σ s) : Lay D (sgR p) (sgW p) s :=
+  sgLayL hp (skLen_le_skL p σ) hD hsz h
 
 end
 
 /-- The saved registers and the return address are apart from the regions `ws`. -/
 def topChk (bs : List (Reg × Nat)) (ws : List (Ptr × Nat)) : Bool :=
-  (List.range 6).all (fun k => keepB bs ws (sc (oSV + 8 * k)) 8) && ws.all fun w => inB bs w.1 w.2
+  (List.range 6).all (fun k => keepB bs ws (sc (oSV + 8 * k)) 8) && ws.all (fun w => inB bs w.1 w.2) &&
+    keepB bs ws (sc oFL) 8
 
 theorem Top.step {D : Nat} {σ s s' : State} {rbs wbs : List (Reg × Nat)} (h : Top σ s)
     (L : Lay D rbs wbs s) {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws)
     (hc : topChk (rbs ++ wbs) ws = true) : Top σ s' := by
   simp only [topChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
   refine ⟨hP.rd.trans h.rd, hP.wr.trans h.wr, hP.rsp.trans h.rsp,
-    fun m hm => (hP.bs _ (sgM_bases m hm)).trans (h.regs m hm), fun k hk => ?_, ?_⟩
-  · rw [L.keepW hP (hc.1 k hk)]; exact h.saved k hk
-  · have := L.keepRet hP hc.2
+    fun m hm => (hP.bs _ (sgM_bases m hm)).trans (h.regs m hm), fun k hk => ?_, ?_,
+    by rw [L.keepW hP hc.2]; exact h.flag⟩
+  · rw [L.keepW hP (hc.1.1 k hk)]; exact h.saved k hk
+  · have := L.keepRet hP hc.1.2
     rw [h.rsp] at this
     rw [this, h.ret]
 
@@ -196,44 +213,49 @@ theorem pro_eq : pro = [.store (VG.Impl.MlKem.X86_64.at_ .r8 840) .rbx, .store (
     .store (VG.Impl.MlKem.X86_64.at_ .r8 856) .r12, .store (VG.Impl.MlKem.X86_64.at_ .r8 864) .r13,
     .store (VG.Impl.MlKem.X86_64.at_ .r8 872) .r14, .store (VG.Impl.MlKem.X86_64.at_ .r8 880) .r15, .mov .rbx (.reg .r8),
     .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx), .mov .r14 (.reg .rcx),
-    .mov32 .r15 (.imm 1)] := rfl
+    .mov32 .r15 (.imm 1), .store (VG.Impl.MlKem.X86_64.at_ .r8 952) .r9] := rfl
 
 theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) (hsz : scrLen p < 2 ^ 32) :
     WP isa (.block pro) σ fun s => Top σ s ∧ s.mem.readW (σ.gpr .rsp) 64 = σ.mem.readW (σ.gpr .rsp) 64 ∧
       Frame [⟨σ.gpr .r8, scrLen p⟩] σ.mem s.mem ∧ s.gpr .r15 = 1 := by
   have hp' := hp
-  obtain ⟨_, hwr, _, _, _, _, _, _, _, _, _, _, _, r5, _, _, _, _, _, _, _, _, _, _, _⟩ := hp'
+  obtain ⟨_, hwr, _, _, _, _, _, _, _, _, _, _, _, r5, _, _, _, _, _, _, _, _, _, _, _, _⟩ := hp'
   have hS : ⟨σ.gpr .r8, scrLen p⟩ ∈ σ.wr := by rw [hwr]; simp
-  have c : ∀ o, o + 8 ≤ 888 → (⟨σ.gpr .r8, scrLen p⟩ : Region).Contains (σ.gpr .r8 + BitVec.ofNat 64 o) 8 :=
-    fun o ho => contains_offset' (by have : 888 ≤ scrLen p := by unfold scrLen scratchWords; omega_arith
+  have c : ∀ o, o + 8 ≤ 960 → (⟨σ.gpr .r8, scrLen p⟩ : Region).Contains (σ.gpr .r8 + BitVec.ofNat 64 o) 8 :=
+    fun o ho => contains_offset' (by have : 960 ≤ scrLen p := by unfold scrLen scratchWords; omega_arith
                                      omega_arith) (by omega_arith)
-  have w : ∀ o, o + 8 ≤ 888 → InRegions σ.wr (σ.gpr .r8 + BitVec.ofNat 64 o) 8 := fun o ho => ⟨_, hS, c o ho⟩
+  have w : ∀ o, o + 8 ≤ 960 → InRegions σ.wr (σ.gpr .r8 + BitVec.ofNat 64 o) 8 := fun o ho => ⟨_, hS, c o ho⟩
   have w0 := w 840 (by omega_arith); have w1 := w 848 (by omega_arith); have w2 := w 856 (by omega_arith)
   have w3 := w 864 (by omega_arith); have w4 := w 872 (by omega_arith); have w5 := w 880 (by omega_arith)
+  have w6 := w 952 (by omega_arith)
   rw [pro_eq]
   refine WP.mono (WP.keep [.rbx, .rbp, .r12, .r13, .r14, .r15] (Q := fun s =>
-    s.mem = (((((σ.mem.writeW (σ.gpr .r8 + BitVec.ofNat 64 840) (σ.gpr .rbx)).writeW
+    s.mem = ((((((σ.mem.writeW (σ.gpr .r8 + BitVec.ofNat 64 840) (σ.gpr .rbx)).writeW
       (σ.gpr .r8 + BitVec.ofNat 64 848) (σ.gpr .rbp)).writeW (σ.gpr .r8 + BitVec.ofNat 64 856) (σ.gpr .r12)).writeW
       (σ.gpr .r8 + BitVec.ofNat 64 864) (σ.gpr .r13)).writeW (σ.gpr .r8 + BitVec.ofNat 64 872) (σ.gpr .r14)).writeW
-      (σ.gpr .r8 + BitVec.ofNat 64 880) (σ.gpr .r15) ∧
+      (σ.gpr .r8 + BitVec.ofNat 64 880) (σ.gpr .r15)).writeW (σ.gpr .r8 + BitVec.ofNat 64 952) (σ.gpr .r9) ∧
     s.gpr .rbx = σ.gpr .r8 ∧ s.gpr .rbp = σ.gpr .rdi ∧ s.gpr .r12 = σ.gpr .rsi ∧ s.gpr .r13 = σ.gpr .rdx ∧
     s.gpr .r14 = σ.gpr .rcx ∧ s.gpr .r15 = 1)
-    (by xrun [w0, w1, w2, w3, w4, w5]) (by decide)) fun s ⟨⟨hm, hbx, hbp, h12, h13, h14, h15⟩, k⟩ => ?_
+    (by xrun [w0, w1, w2, w3, w4, w5, w6]) (by decide)) fun s ⟨⟨hm, hbx, hbp, h12, h13, h14, h15⟩, k⟩ => ?_
   have hf : Frame [⟨σ.gpr .r8, scrLen p⟩] σ.mem s.mem := by
     rw [hm]
-    exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega_arith))).writeW
+    exact ((((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega_arith))).writeW
       (List.mem_singleton_self _) _ (c 848 (by omega_arith))).writeW (List.mem_singleton_self _) _ (c 856 (by omega_arith))).writeW
       (List.mem_singleton_self _) _ (c 864 (by omega_arith))).writeW (List.mem_singleton_self _) _ (c 872 (by omega_arith))).writeW
-      (List.mem_singleton_self _) _ (c 880 (by omega_arith)))
+      (List.mem_singleton_self _) _ (c 880 (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (c 952 (by omega_arith)))
   have hret : s.mem.readW (σ.gpr .rsp) 64 = σ.mem.readW (σ.gpr .rsp) 64 :=
     hf.readW (Region.contains_self _ _) (by simpa using r5) (by decide)
   have hsp : s.gpr .rsp = σ.gpr .rsp := k.gpr (by decide)
-  refine ⟨⟨k.2.1, k.2.2, hsp, fun m hm => ?_, fun j hj => ?_, hret⟩, hret, hf, h15⟩
+  refine ⟨⟨k.2.1, k.2.2, hsp, fun m hm => ?_, fun j hj => ?_, hret, ?_⟩, hret, hf, h15⟩
   · simp only [sgM, List.mem_cons, List.not_mem_nil, or_false] at hm
     rcases hm with rfl | rfl | rfl | rfl | rfl
     exacts [hbx, hbp, h12, h13, h14]
   · simp only [pa, hbx, hm]
+    rw [readW_writeW_slot _ _ _ (by unfold oSV; omega_arith) (by unfold oSV; omega_arith) (by omega_arith)]
     exact stores_read σ.mem (σ.gpr .r8) (fun j => σ.gpr (savedReg j)) j hj
+  · simp only [pa, hbx, hm, oFL]
+    exact Mem.readW_writeW_self64 _ _ _
 
 /-! ## The return -/
 

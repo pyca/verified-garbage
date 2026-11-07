@@ -62,9 +62,6 @@ theorem cov_x (hL : L.Ok) {e k : Nat} (h₂ : e + k ≤ 1024) :
     ∃ R ∈ L.rd ++ L.wr, Within ⟨L.X + BitVec.ofNat 64 e, k⟩ R := by
   obtain ⟨R, hR, hw⟩ := hL.covX h₂; exact ⟨R, List.mem_append_right _ hR, hw⟩
 
-theorem cov_x0 (hL : L.Ok) : ∃ R ∈ L.rd ++ L.wr, Within ⟨L.X, 200⟩ R := by
-  have := cov_x hL (e := 0) (k := 200) (by omega_arith); rwa [x0] at this
-
 theorem cov_xw0 (hL : L.Ok) : ∃ R ∈ L.wr, Within ⟨L.X, 200⟩ R := by
   have := hL.covX (e := 0) (k := 200) (by omega_arith); rwa [x0] at this
 

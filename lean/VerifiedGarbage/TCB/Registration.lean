@@ -9,7 +9,8 @@ public import VerifiedGarbage.TCB.Print
 **Trusted.** A registration file makes each function's `Artifact` from its
 `Api` with `Api.artifact`, stating only what the implementation chooses: the
 target, the code and its proof, the stack it uses, the constant tables it
-reads, the tables of functions it takes, the CPU features it needs, how much
+reads (which `consts_of` finds in the contract the proof is of), the tables
+of functions it takes, the CPU features it needs, how much
 of its writable arrays it writes (`written`, with its proof), and the suffix
 of its name. Everything else
 comes from the `Api` (`Spec/`): the Rust module, name, signature and
@@ -246,9 +247,12 @@ structure Artifact where
   the first `n` bytes. -/
   written : List (String × Nat) := []
   /-- Every run from a state satisfying `contract.pre` changes no byte of
-  those buffers beyond their bounds (`Sig.writtenWithin`). -/
+  those buffers beyond their bounds (`Sig.writtenWithin`), which are where
+  the target's calling convention places the arguments: `Sig.writtenWithin`
+  reads only its `args`, `ptrBits` and `mem`, which the tables of constants
+  (`Abi.withConsts`) and of functions (`Abi.withTables`) leave as they are. -/
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
-      Sig.writtenWithin (target.abi.withConsts consts) sig written s s' := by
+      Sig.writtenWithin target.abi sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
 
 /-- Proves `Registration.spSafe`, by default. `Proof/Framework/Registration.lean`
@@ -259,6 +263,19 @@ syntax (name := spSafe) "sp_safe" : tactic
 /-- Proves `Registration.ofSig`, by default. `Proof/Framework/Registration.lean`
 implements it; how it is proven is not trusted. -/
 syntax (name := ofSig) "of_sig" : tactic
+
+/-- Gives `Registration.consts`, by default: the tables of constants of the
+calling convention `Abi.withConsts` makes in the contract `verified` proves
+(`ConstsOf`). `Proof/Framework/Registration.lean` implements it; what it
+gives is not trusted, since the contract must be `api`'s for those tables
+(`Registration.ofApi`), and the emitter writes exactly those tables
+(`Artifact.consts`). -/
+syntax (name := constsOf) "consts_of" : tactic
+
+/-- The tables of constants of a function whose contract is `contract`
+(`Registration.consts`): a list of them, whose type names the contract so
+that `consts_of` can find them in it. -/
+abbrev ConstsOf {M : ISA} (_contract : Contract M) : Type := List (String × List (BitVec 64))
 
 /-- `api`'s contract under the calling convention `A`, for an implementation
 whose calls and frames use `stack` bytes of stack (`Api.contracts`), or, if
@@ -274,8 +291,6 @@ structure Registration (api : Api) (target : Target) where
   /-- What follows `api`'s name in the function's: that of the CPU features
   or other variant it is for (e.g. `_avx2`), or nothing. -/
   suffix : String := ""
-  /-- `Artifact.consts`. -/
-  consts : List (String × List (BitVec 64)) := []
   /-- `Artifact.tables`. -/
   tables : List (String × List FnTable) := []
   /-- `Artifact.stack`. -/
@@ -283,10 +298,14 @@ structure Registration (api : Api) (target : Target) where
   code : Prog target.isa
   /-- The contract `verified` proves, which is `api`'s on `target` for
   `consts`, `tables` and `stack` (`ofApi`); unification finds it in
-  `verified`'s type. -/
+  `verified`'s type. The default, for a `verified` whose type does not
+  determine it, is `api`'s for no tables of constants. -/
   contract : Contract target.isa :=
-    api.contract ((target.abi.withConsts consts).withTables api.sig tables) stack
+    api.contract (target.abi.withTables api.sig tables) stack
   verified : Verified target code contract
+  /-- `Artifact.consts`: by default, those `contract` names (`consts_of`),
+  so that a registration states them only where it does not. -/
+  consts : ConstsOf contract := by consts_of
   ofApi : contract = api.contract ((target.abi.withConsts consts).withTables api.sig tables) stack := by
     exact rfl
   /-- `Artifact.ofSig`. -/
@@ -302,7 +321,7 @@ structure Registration (api : Api) (target : Target) where
   written : List (String × Nat) := []
   /-- `Artifact.writtenOk`. -/
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
-      Sig.writtenWithin (target.abi.withConsts consts) api.sig written s s' := by
+      Sig.writtenWithin target.abi api.sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
 
 /-- The artifact of the implementation `r` of `api` on `target`: its module,

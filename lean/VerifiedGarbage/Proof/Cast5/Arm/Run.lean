@@ -177,10 +177,6 @@ tactic_template "crun" : tactic => `(tactic| crun [])
 theorem wp_ite_eq {th el : Prog isa} {s : State} {Q : State → Prop} (ht : s.z = true → WP isa th s Q)
     (he : s.z = false → WP isa el s Q) : WP isa (.ite .eq th el) s Q := WP.ite s.z rfl ht he
 
-theorem wp_ite_ne {th el : Prog isa} {s : State} {Q : State → Prop} (ht : s.z = false → WP isa th s Q)
-    (he : s.z = true → WP isa el s Q) : WP isa (.ite .ne th el) s Q :=
-  WP.ite (!s.z) rfl (fun h => ht (by simpa using h)) (fun h => he (by simpa using h))
-
 /-! ## What a block keeps -/
 
 /-- `∀ r ∉ rs, (s with registers written).gpr r = s.gpr r`. -/

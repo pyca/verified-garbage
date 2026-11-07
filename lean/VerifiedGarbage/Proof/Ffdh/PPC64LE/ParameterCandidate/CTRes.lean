@@ -90,13 +90,6 @@ theorem pins_ME : Pins ME [.r31] := by
 def SL (a : MrD) (t : State) : Prop :=
   (∃ sv toc, MSt (a.q.with sv toc) a.mb a.N a.K t) ∧ t.gpr .r3 = BitVec.ofNat 64 (statOf a.res)
 
-theorem pins_SL : Pins SL [.r3, .r31] := by
-  rintro a s₁ s₂ ⟨⟨_, _, M₁⟩, a3⟩ ⟨⟨_, _, M₂⟩, b3⟩ r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · rw [a3, b3]
-  · rw [M₁.st.r31, M₂.st.r31]; rfl
-
 theorem statLoad_ct : RelCT isa (Two ME) (.block [ldh .r3 hStat]) (Two SL) :=
   two_post (two_taint _ pins_ME (by taint_decide)) fun _ _ ⟨sv, toc, hE⟩ =>
     WP.mono (statLoad_ok hE.1) fun _ ⟨Mt, t3, _⟩ => ⟨⟨sv, toc, Mt⟩, t3.trans hE.stat⟩

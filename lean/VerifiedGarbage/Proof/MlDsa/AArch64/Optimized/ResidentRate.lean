@@ -3,14 +3,14 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Resident
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RoundLoop
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeccakMix
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
 
 /-! ## From `Resident.lean` -/
 
@@ -41,9 +41,6 @@ theorem permute_ok {s : State} {A B : Spec.Sha3.State} (h : Pairs s A B)
 
 def originalCore : Core := ⟨Impl.MlDsa.AArch64.Optimized.Resident.permute, permute_ok⟩
 
-def n2Core : Core :=
-  ⟨Impl.Sha3.AArch64.Sha3.Vector.roundsLoop Impl.MlDsa.AArch64.Optimized.KeccakMix.core .x15,
-    fun h ht => VG.Proof.Sha3.AArch64.Neon.Hw.roundsLoop_ok KeccakMix.core_ok (by decide) h ht⟩
 end VG.Proof.MlDsa.AArch64.Optimized.Resident
 
 end

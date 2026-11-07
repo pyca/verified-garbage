@@ -1,10 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Mont.X86.Square.MemStep
 public import VerifiedGarbage.Proof.Mont.ColumnSquare
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Taint
+import Init.Prelude
 
 @[expose] public section
 
@@ -51,19 +51,5 @@ theorem advance (r N k c cn residue out outn p pn q qn x y z : Nat)
        _ = r^k*(c+x+y+z)+r^N*out := by rw [carry]
        _ = (r^k*c+r^N*out)+(x+y+z)*r^k := by grind
        _ = pn+qn := by rw [old, input, quot]; grind
-
-theorem final_bound {R A M Q O c : Nat} (rpos : 0<R) (alt : A<M) (mlt : M<R) (qlt : Q<R)
-    (eq : R*(O+R*c)=A*A+Q*M) : O+R*c<2*M ∧ c<2 := by
-  have apos : 0<M := by omega
-  have a : A*A<R*M := Nat.mul_lt_mul'' (Nat.lt_trans alt mlt) alt
-  have q : Q*M<R*M := Nat.mul_lt_mul_of_pos_right qlt apos
-  have bound : R*(O+R*c)<R*(2*M) := by
-    rw [eq, show R*(2*M)=2*(R*M) by grind]
-    omega
-  have tlt := (Nat.mul_lt_mul_left rpos).mp bound
-  have c2 : c<2 := by
-    have : R*c<R*2 := by have := Nat.mul_lt_mul_of_pos_right mlt (by decide : 0<2); omega
-    exact (Nat.mul_lt_mul_left rpos).mp this
-  exact ⟨tlt,c2⟩
 
 end VG.Proof.Mont.X86.Square

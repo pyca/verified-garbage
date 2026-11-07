@@ -161,32 +161,4 @@ theorem table25_word (x : BitVec 128) {j : Nat} (hj : j < 4) :
   · simp only [h0, ite_false, show ¬b-8<8 by omega_arith, h1, decide_false, Bool.false_and]
     simp
 
-theorem vbyte_lowWord (x : BitVec 128) (i : Nat) :
-    vbyte x (4*i) = (vword x i).setWidth 8 := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro b hb
-  simp only [vbyte, vword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth,
-    hb, show b<32 by omega_arith, decide_true, Bool.true_and]
-  congr 1; omega_arith
-
-/-- Gathered byte indices agree with the four-register lane layout of loadFour_ok. -/
-theorem gathered_byte (s : State) {i : Nat} (hi : i<16) :
-    vbyte (gathered s) i =
-      (vword (s.v ([.v0,.v1,.v2,.v3] : List VReg)[i/4]!) (i%4)).setWidth 8 := by
-  rw [gathered, gatherSixteen_byte _ _ _ _ hi]
-  by_cases h4 : i<4
-  · rw [ite_eq_left h4, vbyte_lowWord, show i/4=0 by omega_arith, show i%4=i by omega_arith]
-    rfl
-  by_cases h8 : i<8
-  · rw [ite_eq_right h4, ite_eq_left h8, vbyte_lowWord,
-      show i/4=1 by omega_arith, show i%4=i-4 by omega_arith]
-    rfl
-  by_cases h12 : i<12
-  · rw [ite_eq_right h4, ite_eq_right h8, ite_eq_left h12, vbyte_lowWord,
-      show i/4=2 by omega_arith, show i%4=i-8 by omega_arith]
-    rfl
-  · rw [ite_eq_right h4, ite_eq_right h8, ite_eq_right h12, vbyte_lowWord,
-      show i/4=3 by omega_arith, show i%4=i-12 by omega_arith]
-    rfl
-
 end VG.Proof.MlDsa.AArch64.Optimized.HighPack

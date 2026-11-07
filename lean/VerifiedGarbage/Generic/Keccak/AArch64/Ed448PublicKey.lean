@@ -22,7 +22,6 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    consts := Impl.X448.AArch64.Base.combConsts
     code := Impl.Ed448.AArch64.PublicKey.publicKeyWith v.callee
     stack := 352
     verified := Proof.Ed448.AArch64.PublicKey.publicKey_verified v Proof.Ed448.AArch64.scalarBase_baseOk }]

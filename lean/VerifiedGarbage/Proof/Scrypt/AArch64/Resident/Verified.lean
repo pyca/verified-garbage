@@ -21,7 +21,6 @@ public import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Common
-public import VerifiedGarbage.Proof.Scrypt.Contract
 
 @[expose] public section
 namespace VG.Proof.Scrypt.AArch64.Resident
@@ -89,7 +88,6 @@ theorem correct
       rw [← e]
       exact hpost
 
-
 theorem blockMix_correct (s : State) (hs : Proof.Scrypt.blockMixAArch64.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.AArch64.blockMix s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.blockMixAArch64.post s s' := by
@@ -100,24 +98,5 @@ theorem blockMix_ct : ConstantTime isa Proof.Scrypt.blockMixAArch64.pre
     Proof.Scrypt.blockMixAArch64.pub Impl.Scrypt.AArch64.blockMix := by
   exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0,.x1,.x2,.x3,.x4])
     (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
-
-theorem blockMix_verified :
-    Verified AArch64.target Impl.Scrypt.AArch64.blockMix (Proof.Scrypt.blockMixContract AArch64.abi
-      16) :=
-  Verified.of_correct blockMix_correct blockMix_ct
-    { pre := by
-        sig_implies_pre [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixAArch64, AArch64.abi, AArch64.argRegs]
-      post := by
-        sig_implies_post [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixAArch64, AArch64.abi, AArch64.argRegs]
-      pub := by
-        sig_implies_pub [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixAArch64, AArch64.abi, AArch64.argRegs]
-      sat := by
-        sig_implies_sat [Proof.Scrypt.blockMixContract, Proof.Scrypt.blockMixSig,
-          Proof.Scrypt.blockMixAArch64, AArch64.abi, AArch64.argRegs,
-          Proof.Scrypt.AArch64.BlockMix.bmSat]
-          [Proof.Scrypt.AArch64.BlockMix.bmSat] using Proof.Scrypt.AArch64.BlockMix.bmSat }
 
 end VG.Proof.Scrypt.AArch64.Resident

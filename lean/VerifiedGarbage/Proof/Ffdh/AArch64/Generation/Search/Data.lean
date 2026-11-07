@@ -148,10 +148,6 @@ theorem len_eq (h : SInput p s) : p.len = (p.bits + 7) / 8 := by
 theorem len_bounds (h : SInput p s) : 64 ≤ p.len ∧ p.len ≤ 1024 := by
   have := h.bits_bounds; have := h.len_eq; omega
 
-theorem gen_eq (h : SInput p s) : p.gen = 2 ∨ p.gen = 5 := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hg, -⟩ := h.1
-  rw [← h.2]; exact hg
-
 theorem attempts_le (h : SInput p s) : p.attempts ≤ parameterAttempts p.bits := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, ha, -⟩ := h.1
   rw [← h.2]; exact ha

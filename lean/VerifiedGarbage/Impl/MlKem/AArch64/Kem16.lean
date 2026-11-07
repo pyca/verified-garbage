@@ -48,12 +48,6 @@ def vRest (prf : Nat → Nat → Prog isa) (L : KemLay) (ek : Reg) (eo : Nat) (m
     nttInvAtWithW (TP L) NS, prf (2 * L.k) (EP L), addWAt (TP L) (EP L), widenAt (TP L) (PP L),
     ddAt m mo 1 (EP L), addAt (PP L) (EP L), L.ceLAt (PP L) L.dv ct (co + 32 * L.du * L.k)])
 
-/-- The noise, `u` and `v`. -/
-def encryptRest (prf : Nat → Nat → Prog isa) (L : KemLay) (ek : Reg) (eo : Nat) (m : Reg)
-    (mo : Nat) (ct : Reg) (co : Nat) : Prog isa :=
-  .seq (noiseAllWith nttAtWithW L false) (seqs (((List.range L.k).map (uRow L ct co)) ++
-    [vRest prf L ek eo m mo ct co]))
-
 /-- Copy the `n` words at `sb + so` to `db + do`. -/
 def copyN (n : Nat) (sb : Reg) (so : Nat) (db : Reg) (dO : Nat) : List Instr :=
   (List.range n).flatMap fun k => [.ldr .x .x9 sb (so + 8 * k), .str .x .x9 db (dO + 8 * k)]

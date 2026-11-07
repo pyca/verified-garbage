@@ -724,72 +724,103 @@ vg_rsa_pkcs1_decrypt_sha256_sha2:
 	ret
 	.p2align 6
 
-vg_rsa_pkcs1_encrypt_precomputed:
+vg_rsa_pkcs1_encrypt_random:
 	str x30, [sp, #-16]!
-	sub sp, sp, #1072
-	ldr x10, [sp, #1104]
+	sub sp, sp, #1088
+	ldr x9, [sp, #1104]
 	ldr x11, [sp, #1112]
-	add x9, sp, #0
-	str x10, [x9, #0]
-	str x11, [x9, #8]
-	str x0, [x9, #16]
-	str x3, [x9, #24]
-	movz x10, #0, lsl #0
-	strb w10, [x9, #40]
-	movz x10, #2, lsl #0
-	strb w10, [x9, #41]
-	ldr x11, [sp, #1088]
-	ldr x12, [sp, #1096]
-	add x13, x9, #42
-	movz x14, #0, lsl #0
-	movz x15, #1, lsl #0
+	ldr x12, [sp, #1120]
+	sub x15, x4, x9
+	sub x15, x15, #3
+	str x15, [sp, #48]
+	add x14, sp, #64
+	orr x16, x15, x15
+	cbnz x12, 20f
+	b 21f
 20:
-	ldrb w10, [x11, #0]
-	strb w10, [x13, #0]
-	subs x16, x10, x15
-	sbc x16, x10, x10
-	orr x14, x14, x16
-	add x11, x11, #1
-	add x13, x13, #1
-	sub x12, x12, #1
-	cbnz x12, 20b
-	movz x10, #0, lsl #0
-	strb w10, [x13, #0]
-	add x13, x13, #1
-	add x9, sp, #0
-	str x14, [x9, #32]
-	cbnz x7, 21f
-	b 22f
-21:
-23:
-	ldrb w10, [x6, #0]
-	strb w10, [x13, #0]
-	add x6, x6, #1
-	add x13, x13, #1
-	sub x7, x7, #1
-	cbnz x7, 23b
 22:
-	add x6, sp, #40
-	orr x7, x3, x3
-	ldr x2, [sp, #1120]
-	ldr x3, [sp, #1128]
-	bl {vg_rsa_public_precomputed_checked}
-	ldr x14, [sp, #32]
-	bic x0, x0, x14, ror #0
-	ldr x11, [sp, #16]
-	ldr x12, [sp, #24]
-	add x13, sp, #40
-	movz x15, #0, lsl #0
-24:
-	ldrb w10, [x11, #0]
-	bic x10, x10, x14, ror #0
-	strb w10, [x11, #0]
-	strb w15, [x13, #0]
+	ldrb w17, [x11, #0]
 	add x11, x11, #1
+	sub x12, x12, #1
+	cbz x17, 23f
+	strb w17, [x14, #0]
+	add x14, x14, #1
+	sub x16, x16, #1
+	b 24f
+23:
+24:
+	mul x9, x12, x16
+	cbnz x9, 22b
+21:
+	cbz x16, 25f
+	orr x9, x0, x0
+	orr x10, x4, x4
+	movz x13, #0, lsl #0
+27:
+	strb w13, [x9, #0]
+	add x9, x9, #1
+	sub x10, x10, #1
+	cbnz x10, 27b
+	movz x10, #1024, lsl #0
+	add x9, sp, #64
+28:
+	strb w13, [x9, #0]
+	add x9, x9, #1
+	sub x10, x10, #1
+	cbnz x10, 28b
+	add x11, x15, #128
+	ldr x12, [sp, #1120]
+	sub x10, x15, x16
+	add x9, x15, x12
+	sub x9, x9, x10
+	subs x17, x11, x9
+	csel x9, x11, x9, lo
+	subs x17, x12, x11
+	movz x13, #0, lsl #0
+	csel x14, x12, x13, hs
+	csel x9, x13, x9, hs
+	movz x10, #3, lsl #0
+	csel x0, x10, x13, hs
+	str x14, [x2, #0]
+	str x9, [x2, #8]
+	b 26f
+25:
+	ldr x9, [sp, #1120]
+	sub x9, x9, x12
+	ldr x10, [sp, #1128]
+	ldr x11, [sp, #1136]
+	ldr x13, [sp, #1144]
+	ldr x14, [sp, #1152]
+	ldr x8, [sp, #1104]
+	add x16, sp, #64
+	movz x17, #0, lsl #0
+	str x9, [x2, #0]
+	str x17, [x2, #8]
+	str x16, [sp, #0]
+	str x15, [sp, #8]
+	str x10, [sp, #16]
+	str x11, [sp, #24]
+	str x13, [sp, #32]
+	str x14, [sp, #40]
+	orr x2, x3, x3
+	orr x3, x4, x4
+	orr x4, x5, x5
+	orr x5, x6, x6
+	orr x6, x7, x7
+	orr x7, x8, x8
+	bl {vg_rsa_pkcs1_encrypt_precomputed}
+	movz x9, #2, lsl #0
+	sub w0, w9, w0
+	movz x12, #1024, lsl #0
+	add x13, sp, #64
+	movz x14, #0, lsl #0
+29:
+	strb w14, [x13, #0]
 	add x13, x13, #1
 	sub x12, x12, #1
-	cbnz x12, 24b
-	add sp, sp, #1072
+	cbnz x12, 29b
+26:
+	add sp, sp, #1088
 	ldr x30, [sp], #16
 	ret
 	.p2align 6

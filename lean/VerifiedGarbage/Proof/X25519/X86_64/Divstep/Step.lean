@@ -32,7 +32,6 @@ theorem ds2 : (2 : BitVec 32).signExtend 64 = 2 := by decide
 theorem ds1 : (1 : BitVec 32).signExtend 64 = 1 := by decide
 theorem b10 : ((1 : BitVec 64) == 0) = false := by decide
 theorem b00 : ((0 : BitVec 64) == 0) = true := by decide
-theorem and0 (x : BitVec 64) : x &&& 0 = 0 := by simp
 
 /-- Runs a block by symbolic execution, reading registers through the
 writes and deciding the `cmov`s from the given facts. -/

@@ -583,9 +583,6 @@ theorem cnt_mul (wide : Bool) (r : Nat) : unitB wide * cnt wide r = 128 * r := b
 theorem cnt_pos {wide : Bool} {r : Nat} (hr : 0 < r) : 0 < cnt wide r := by
   cases wide <;> simp [cnt] <;> omega
 
-theorem cnt_lt {wide : Bool} {r : Nat} (hr : 128 * r < 2 ^ 64) : cnt wide r < 2 ^ 64 := by
-  cases wide <;> simp [cnt] <;> omega
-
 theorem unit_le {wide : Bool} {r k : Nat} (hk : k < cnt wide r) :
     unitB wide * k + unitB wide ≤ 128 * r := by
   rw [← cnt_mul wide r, ← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hk
@@ -1640,15 +1637,6 @@ theorem pubEq_of {wide : Bool} {s₁ s₂ : State} (h : (Proof.Scrypt.roMixRISCV
 theorem preserved_cases : ∀ r ∈ preserved, r ∈ rmSaved.map Prod.fst ∨ r ∈ mid := by
   decide
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .a0 => 0x1000 | .a1 => 1 | .a2 => 0x2000 | .a3 => 1 | .a4 => 0x3000 | .a5 => 0x4000 | _ => 0
-  sp := 0x8000
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 128⟩, ⟨0x2000, 128⟩, ⟨0x3000, 128⟩, ⟨0x4000, 168⟩]
-
 theorem roMix_correct {wide : Bool} (s : State) (hs : (Proof.Scrypt.roMixRISCV64 wide).pre s) :
     ∃ t s', Exec isa (Impl.Scrypt.RISCV64.roMix wide) s t s' ∧ abiPreserved s s' ∧
       (Proof.Scrypt.roMixRISCV64 wide).post s s' := by
@@ -1664,13 +1652,5 @@ theorem roMix_ct (wide : Bool) : ConstantTime isa (Proof.Scrypt.roMixRISCV64 wid
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂
   exact (roMix_rel (pre_of h₁) (pre_of h₂) (pubEq_of hpub) hpub.2.2.2.2.2.2.2
     _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
-
-theorem roMix_verified (wide : Bool) :
-    Verified RISCV64.target (Impl.Scrypt.RISCV64.roMix wide) (Proof.Scrypt.roMixRISCV64 wide) :=
-  ⟨roMix_correct, roMix_ct wide, ⟨satState, rfl, rfl, Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), by decide, by decide, by decide, by decide, by decide,
-    by decide, ⟨0, rfl⟩, by decide, fun _ => by decide⟩⟩
 
 end VG.Proof.Scrypt.RISCV64.RoMix

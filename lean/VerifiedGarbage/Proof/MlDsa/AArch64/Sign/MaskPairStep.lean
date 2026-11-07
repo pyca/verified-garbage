@@ -108,26 +108,6 @@ theorem maskPairNonce_okB {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L
   refine ⟨postB_of_keep k (by decide) hf, k.get .x24, ?_⟩
   rw [hm, e65, bytes2_write, hk, ofNat64_add, kappa_bytes hx]
 
-theorem maskPairNonce_post {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D rbs wbs s) {r j : Nat} (hj : j<2)
-    (hr : r+j < 4096) (h1 : inB (rbs ++ wbs) (sc oKAP) 8 = true) (h2 : inB wbs (sc (oMP+66*j+64)) 2 = true) :
-    WP isa (.block (maskPairNonce r j)) s fun s' => ∃ W, PostB D s s' W := by
-  have e65 : pa s (sc (oMP+66*j+65)) = pa s (sc (oMP+66*j+64)) + 1 := (pa_sc_add s (oMP+66*j+64) 1).symm
-  have w2 := L.inW h2
-  have c0 : (⟨pa s (sc (oMP+66*j+64)), 2⟩ : Region).Contains (pa s (sc (oMP+66*j+64))) 1 := by
-    have := Offset.contains_base (pa s (sc (oMP+66*j+64))) (d := 0) (n := 1) (k := 2) (by omega_arith) (by decide)
-    rwa [BitVec.add_zero] at this
-  have c1 : (⟨pa s (sc (oMP+66*j+64)), 2⟩ : Region).Contains (pa s (sc (oMP+66*j+65))) 1 := by
-    rw [e65]; exact Offset.contains_base _ (d := 1) (by omega_arith) (by decide)
-  have i0 : InRegions s.wr (pa s (sc (oMP+66*j+64))) 1 := by
-    have := inRegions_sub (off := 0) (l := 1) w2 (by omega_arith) (by decide)
-    rwa [BitVec.add_zero] at this
-  have i1 : InRegions s.wr (pa s (sc (oMP+66*j+65))) 1 := by
-    rw [e65]; exact inRegions_sub (off := 1) (l := 1) w2 (by omega_arith) (by decide)
-  refine WP.mono (maskPairNonce_run r j hr hj s (L.inR h1) i0 i1) fun s' ⟨hm, k⟩ => ⟨_, (postB_of_keep k (by decide)
-    (W := [⟨pa s (sc (oMP+66*j+64)), 2⟩]) ?_)⟩
-  rw [hm]
-  exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _ c1
-
 end VG.Proof.MlDsa.AArch64.Sign
 
 end
@@ -158,45 +138,6 @@ def pairSeedChk (p : Params) (r j : Nat) : Bool :=
   keepB (sgR p) (sgW p) [(sc (oMP+66*j+64),2)] (sc (oMP+66*j)) 64 &&
   decide (p.ℓ*813+r+j<2^16) && decide (r+j<4096) && decide (j<2)
 
-/-- Two word-oriented copies and two nonce stores prepare exactly the
-standard 66-byte seed, preserving the earlier masks and signing state. -/
-theorem maskPairSeed_ok {p : Params} {D : Nat} {σ s : State} {t r j : Nat}
-    (hc : pairSeedChk p r j=true) (h : ICm p D σ t r s) :
-    WP isa (maskPairSeed r j) s fun u => ICm p D σ t r u ∧
-      PPostB D s u (pairSeedWrites j) ∧
-      bytesAt u.mem (pa u (sc (oMP+66*j))) 66=
-        rppOf p σ++integerToBytes (p.ℓ*t+(r+j)) 2 := by
-  simp only [pairSeedChk,Bool.and_eq_true,and_assoc,decide_eq_true_eq] at hc
-  obtain ⟨cr0,cw0,cs0,ci0,cr1,cw1,cs1,ci1,ck1,ck,cwn,cin,ckn,hx,hr,hj⟩ := hc
-  unfold maskPairSeed
-  refine WP.seq (WP.mono (maskSeedHalf_ok h.l.st.lay (by decide) (by decide) cr0 cw0 cs0)
-    fun a ⟨ha,_,hb0⟩ => ?_)
-  have hA := h.step ha ci0
-  have b0 : bytesAt a.mem (pa a (sc (oMP+66*j))) 32=(rppOf p σ).take 32 := by
-    rw [ha.pa (by simp [keptRegs]),hb0,← VG.Proof.MlKem.bytesAt_take _ _ (by decide : 32≤64),h.l.k.rpp]
-  refine WP.seq (WP.mono (maskSeedHalf_ok hA.l.st.lay (by decide) (by decide) cr1 cw1 cs1)
-    fun b ⟨hb,_,hb1⟩ => ?_)
-  have hB := hA.step hb ci1
-  have b1 : bytesAt b.mem (pa b (sc (oMP+66*j+32))) 32=(rppOf p σ).drop 32 := by
-    rw [hb.pa (by simp [keptRegs]),hb1,← pa_sc_add]
-    change bytesAt a.mem (pa a (sc oMS)+BitVec.ofNat 64 32) (64-32)=_
-    rw [← VG.Proof.MlKem.bytesAt_drop _ _ (by decide : 32≤64),hA.l.k.rpp]
-  have b64 : bytesAt b.mem (pa b (sc (oMP+66*j))) 64=rppOf p σ := by
-    rw [show 64=32+32 from rfl,VG.Proof.MlKem.bytesAt_add,pa_sc_add,
-      hA.l.st.lay.keepBytes hb ck1,b0,b1,List.take_append_drop]
-  have hx' : p.ℓ*t+(r+j)<2^16 := by
-    have := Nat.mul_le_mul_left p.ℓ (show t≤813 by have := h.l.t_lt; omega_arith)
-    omega_arith
-  refine WP.mono (maskPairNonce_okB hB.l.st.lay hj hr hx' ck cwn hB.l.kap)
-    fun u ⟨hu,_,hbn⟩ => ?_
-  have hab := PPostB.trans ha hb (ws := [(sc (oMP+66*j),32),(sc (oMP+66*j+32),32)])
-    (by simp [sc,keptRegs]) (by simp) (by simp)
-  refine ⟨hB.step hu cin,?_,?_⟩
-  · exact PPostB.trans hab hu (ws := pairSeedWrites j)
-      (by simp [sc,keptRegs]) (by simp [pairSeedWrites]) (by simp [pairSeedWrites])
-  · rw [VG.Proof.MlKem.bytesAt_add _ _ 64 2,hB.l.st.lay.keepBytes hu ckn,b64,
-      pa_sc_add,hu.pa (by simp [keptRegs]),hbn]
-
 end VG.Proof.MlDsa.AArch64.Sign
 
 end
@@ -217,33 +158,6 @@ def maskFinishChk (p : Params) (n r : Nat) : Bool :=
   icmChk p [(yh,1024)] r && famChk (sgR p) (sgW p) [(yh,1024)] (yBase p) n &&
   ipChkS (sgR p) (sgW p) yh && icmChk p [(yh,1024),(sc oPS,1024)] r &&
   famChk (sgR p) (sgW p) [(yh,1024),(sc oPS,1024)] (yBase p) n
-
-/-- Copy and transform one already sampled mask, keeping both canonical
-outputs of the paired sampler available for the rejection checks. -/
-theorem maskFinish_ok {P : Prims} {D : Nat} (hP : PrimsOk P D)
-    {p : Params} {σ s : State} {t n r : Nat} (hr : r<n)
-    (hc : maskFinishChk p n r=true) (h : ICm p D σ t r s)
-    (hy : Fam s (yBase p) n (Yv p σ (p.ℓ*t))) :
-    WP isa (maskFinish P p r) s fun u => ICm p D σ t (r+1) u ∧
-      Fam u (yBase p) n (Yv p σ (p.ℓ*t)) := by
-  simp only [maskFinishChk,Bool.and_eq_true,and_assoc] at hc
-  obtain ⟨cc,c1,fy1,ci,c2,fy2⟩ := hc
-  unfold maskFinish
-  refine WP.seq (WP.mono (copy_ok h.l.st.lay cc) fun a ⟨ha,_,hb⟩ => ?_)
-  have hA := h.step ha c1
-  have hya := Fam.keep h.l.st.lay ha fy1 hy
-  have hpoly : Pl a (yhBase p+r) (Yv p σ (p.ℓ*t) r) := by
-    show PolyIs _ _ _
-    rw [ha.pa (pS_bases _)]
-    exact polyIs_of_bytes hb (hy r hr)
-  refine WP.mono (ipAt_ok (t := ntt) hP.ntt hA.l.st.lay ci hpoly.1)
-    fun u ⟨hu,_,hqu⟩ => ?_
-  have hU := hA.step hu c2
-  have hyu := Fam.keep hA.l.st.lay hu fy2 hya
-  refine ⟨⟨hU.l,fun i hi => hyu i (by omega_arith),Fam.snoc hU.yh ?_⟩,hyu⟩
-  show PolyIs _ _ _
-  rw [hu.pa (pS_bases _),hpoly.2] at *
-  exact hqu
 
 end VG.Proof.MlDsa.AArch64.Sign
 
@@ -266,45 +180,6 @@ def maskPairStepChk (p : Params) (r : Nat) : Bool :=
   icmChk p [(yP p r,1024),(yP p (r+1),1024),(sc (oR4 p),8192)] r &&
   maskFinishChk p (r+2) r && maskFinishChk p (r+2) (r+1) &&
   decide (p.γ₁=2^17 ∨ p.γ₁=2^19)
-
-/-- Paired expansion advances the same canonical and transformed mask
-invariants by two, with the original per-polynomial seeds. -/
-theorem maskPairR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D)
-    {nm : String} {cd : Prog isa} (C : CalleeOk D cd (expandMaskPairContract AArch64.abi D))
-    {p : Params} {σ s : State} {t r : Nat} (hc : maskPairStepChk p r=true)
-    (h : ICm p D σ t r s) :
-    WP isa (maskPairR P p nm cd r) s (ICm p D σ t (r+2)) := by
-  simp only [maskPairStepChk,Bool.and_eq_true,and_assoc,decide_eq_true_eq] at hc
-  obtain ⟨cs0,cs1,ck,cm,ci,cf0,cf1,hg⟩ := hc
-  unfold maskPairR
-  refine WP.seq (WP.mono (maskPairSeed_ok cs0 h) fun a ⟨hA,_,ha⟩ => ?_)
-  refine WP.seq (WP.mono (maskPairSeed_ok cs1 hA) fun b ⟨hB,hb,hseed1⟩ => ?_)
-  have hseed0 : bytesAt b.mem (pa b (sc oMP)) 66=
-      rppOf p σ++integerToBytes (p.ℓ*t+r) 2 := by
-    have hkeep := hA.l.st.lay.keepBytes hb ck
-    simp only [Nat.mul_zero,Nat.add_zero] at ha
-    rw [hkeep]
-    exact ha
-  have hseed1' : bytesAt b.mem (pa b (sc oMP)+66) 66=
-      rppOf p σ++integerToBytes (p.ℓ*t+(r+1)) 2 := by
-    change bytesAt b.mem (pa b (sc (oMP+66))) 66=_ at hseed1
-    rw [← pa_sc_add] at hseed1
-    exact hseed1
-  refine WP.seq (WP.mono (maskPairAt_ok hB.l.st.lay.s64 C hB.l.st.lay cm hg)
-    fun c ⟨hcP,_,hy0,hy1⟩ => ?_)
-  rw [hseed0] at hy0
-  rw [hseed1'] at hy1
-  have hC := hB.step hcP ci
-  have hy : Fam c (yBase p) (r+2) (Yv p σ (p.ℓ*t)) := by
-    refine Fam.snoc (Fam.snoc hC.y ?_) ?_
-    · show PolyIs _ _ _
-      rw [hcP.pa (pS_bases _)]
-      exact hy0
-    · show PolyIs _ _ _
-      rw [hcP.pa (pS_bases _)]
-      exact hy1
-  refine WP.seq (WP.mono (maskFinish_ok hP (by omega_arith) cf0 hC hy) fun d ⟨hD,hyD⟩ => ?_)
-  exact WP.mono (maskFinish_ok hP (by omega_arith) cf1 hD hyD) fun _ hu => hu.1
 
 end VG.Proof.MlDsa.AArch64.Sign
 

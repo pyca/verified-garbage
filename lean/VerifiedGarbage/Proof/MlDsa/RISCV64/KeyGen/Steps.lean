@@ -149,9 +149,6 @@ theorem reduced_keepW (hp : Proof.MlDsa.Reduced m (L.A i o)) : Proof.MlDsa.Reduc
 theorem polyAt_keepW : Proof.MlDsa.polyAt m' (L.A i o) = Proof.MlDsa.polyAt m (L.A i o) :=
   Proof.MlDsa.Verify.polyAt_frame hf (fun r hr => by have := keepD hL h hw r hr; subst hl; exact this)
 
-theorem natPolyAt_keepW : Proof.MlDsa.natPolyAt m' (L.A i o) = Proof.MlDsa.natPolyAt m (L.A i o) :=
-  Proof.MlDsa.Verify.natPolyAt_frame hf (fun r hr => by have := keepD hL h hw r hr; subst hl; exact this)
-
 end
 
 end

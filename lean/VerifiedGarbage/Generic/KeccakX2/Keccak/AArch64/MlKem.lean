@@ -79,56 +79,48 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem.keyGenApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768
     stack := 128
     verified := Proof.MlKem.AArch64.KeyGen.keyGenP768_verified v },
   Spec.MlKem.encapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768
     stack := 128
     verified := Proof.MlKem.AArch64.Kem16P.encapsP768_verified v },
   Spec.MlKem.encapsHApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768
     stack := 128
     verified := Proof.MlKem.AArch64.EncapsH.encapsHP768_verified v },
   Spec.MlKem.decapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768
     stack := 128
     verified := Proof.MlKem.AArch64.Kem16P.decapsP768_verified v },
   Spec.MlKem1024.keyGenApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024
     stack := 128
     verified := Proof.MlKem.AArch64.KeyGen.keyGenP1024_verified v },
   Spec.MlKem1024.encapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024
     stack := 128
     verified := Proof.MlKem.AArch64.Kem16P.encapsP1024_verified v },
   Spec.MlKem1024.encapsHApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024
     stack := 128
     verified := Proof.MlKem.AArch64.EncapsH.encapsHP1024_verified v },
   Spec.MlKem1024.decapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024
     stack := 128
     verified := Proof.MlKem.AArch64.Kem16P.decapsP1024_verified v }]

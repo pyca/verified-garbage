@@ -26,7 +26,6 @@ def artifacts (h : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   Spec.Ed25519.signExpandedApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.Ed25519.AArch64.SignCached.codeExpanded v.code v.suffix
-    consts := Impl.Ed25519.AArch64.combConsts
     stack := 352
     verified := Proof.Ed25519.AArch64.SignCached.signExpanded_verified v
     features := v.features }]

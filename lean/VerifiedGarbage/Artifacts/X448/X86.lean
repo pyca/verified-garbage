@@ -14,10 +14,6 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Artifacts.X448.X86
 
 def artifacts : List Artifact := [
-  Spec.X448.x448Api.artifact X86.target {
-    code := Impl.X448.X86.x448
-    stack := 20
-    verified := Proof.X448.X86.x448_verified },
   Spec.X448.exchangeApi.artifact X86.target {
     code := Impl.Xdh.X86.exchange "vg_x448" Impl.X448.X86.x448 56
     stack := 40

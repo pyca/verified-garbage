@@ -81,41 +81,65 @@ theorem mvcMem_tr {p : Params} (hp : p.pkLen ≤ 0xB000) :
     Nat.add_sub_cancel_left]
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
 
-/-- `vg_mldsa*_sign_message` of the parameter set `p`, calling the signing
-function on `μ` `f`, named `n`, meets its contract with `S` bytes of stack. -/
-theorem signMessage_verified {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {S : Nat}
-    (h48 : 1168 ≤ S) {f : Prog isa} (hf : Callee f (fun stk => signContract p RISCV64.abi stk) S) (n : String)
-    (hsat : (signMessageContract p RISCV64.abi S).pre (msSat p)) :
-    Verified RISCV64.target (signMessage n f p) (signMessageContract p RISCV64.abi S) := by
+/-- `vg_mldsa*_sign_message` (or, with a prepared key `q`,
+`vg_mldsa*_sign_message_prepared`) of the parameter set `p`, calling the
+signing function on `μ` `f`, named `n`, meets its contract with `S` bytes of
+stack. -/
+theorem signMessage_verified {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {q : Bool} {S : Nat}
+    (h48 : 1168 ≤ S) {f : Prog isa} (hf : Callee f (fun stk => PreparedKey.signEK p q stk) S) (n : String)
+    (hsat : ∃ s, (signMessageEK p q S).pre s) :
+    Verified RISCV64.target (signMessage n f p) (signMessageEK p q S) := by
   have hF := mfacts hp3
   obtain ⟨k, rfl⟩ : ∃ k, S = k + 1 := ⟨S - 1, by omega⟩
   refine ⟨fun s hs => signMessage_wp hF h48 hf (Nat.le_refl _) (mspre_of hs),
-    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ⟨msSat p, hsat⟩⟩
-  sig_pub [signMessageContract, signMessageSig, RISCV64.abi, RISCV64.argRegs] at hpub
-  obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hpub
-  refine signMessage_ct hF h48 hf (Nat.le_refl _) s₁ s₂ t₁ t₂ s₁' s₂' (mspre_of h₁) (mspre_of h₂)
-    ⟨hsp, hl, fun r hr => ?_⟩ e₁ e₂
-  simp only [mArgs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [h3, h4, h5, h6, h7, h8, h9, h10]
+    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, hsat⟩
+  have hpub' : MSPub p s₁ s₂ := by
+    cases q
+    · simp only [signMessageEK, Bool.false_eq_true, ↓reduceIte] at hpub
+      sig_pub [signMessageContract, signMessageSig, RISCV64.abi, RISCV64.argRegs] at hpub
+      obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hpub
+      refine ⟨hsp, hl, fun r hr => ?_⟩
+      simp only [mArgs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [h3, h4, h5, h6, h7, h8, h9, h10]
+    · simp only [signMessageEK, ↓reduceIte] at hpub
+      sig_pub [preparedSignMessageContract, preparedSignMessageSig, RISCV64.abi, RISCV64.argRegs] at hpub
+      obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hpub
+      refine ⟨hsp, hl, fun r hr => ?_⟩
+      simp only [mArgs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [h3, h4, h5, h6, h7, h8, h9, h10]
+  exact signMessage_ct hF h48 hf (Nat.le_refl _) s₁ s₂ t₁ t₂ s₁' s₂' (mspre_of h₁) (mspre_of h₂) hpub' e₁ e₂
 
-/-- `vg_mldsa*_verify_message_cached` of the parameter set `p`, calling the
+/-- `vg_mldsa*_verify_message_cached` (or, with a prepared key `q`,
+`vg_mldsa*_verify_message_prepared`) of the parameter set `p`, calling the
 verification function on `μ` `f`, named `n`, meets its contract with `S`
 bytes of stack. -/
-theorem verifyMessageCached_verified {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {S : Nat}
-    (h48 : 1168 ≤ S) {f : Prog isa} (hf : Callee f (fun stk => verifyContract p RISCV64.abi stk) S) (n : String)
-    (hsat : (verifyMessageCachedContract p RISCV64.abi S).pre (mvcSat p)) :
-    Verified RISCV64.target (verifyMessageCached n f p) (verifyMessageCachedContract p RISCV64.abi S) := by
+theorem verifyMessageCached_verified {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {q : Bool}
+    {S : Nat} (h48 : 1168 ≤ S) {f : Prog isa} (hf : Callee f (fun stk => PreparedKey.verifyEK p q stk) S)
+    (n : String) (hsat : ∃ s, (verifyMessageEK p q S).pre s) :
+    Verified RISCV64.target (verifyMessageCached n f p) (verifyMessageEK p q S) := by
   have hF := mfacts hp3
   obtain ⟨k, rfl⟩ : ∃ k, S = k + 1 := ⟨S - 1, by omega⟩
   refine ⟨fun s hs => verifyMessageCached_wp hF h48 hf (Nat.le_refl _) (mvcpre_of hs),
-    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ⟨mvcSat p, hsat⟩⟩
-  sig_pub [verifyMessageCachedContract, verifyMessageCachedSig, RISCV64.abi, RISCV64.argRegs] at hpub
-  obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hpub
-  refine verifyMessageCached_ct hF h48 hf (Nat.le_refl _) s₁ s₂ t₁ t₂ s₁' s₂' (mvcpre_of h₁) (mvcpre_of h₂)
-    ⟨hsp, hl, fun r hr => ?_⟩ e₁ e₂
-  simp only [vcArgs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [h3, h4, h5, h6, h7, h8, h9, h10]
+    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, hsat⟩
+  have hpub' : MVCPub p s₁ s₂ := by
+    cases q
+    · simp only [verifyMessageEK, Bool.false_eq_true, ↓reduceIte] at hpub
+      sig_pub [verifyMessageCachedContract, verifyMessageCachedSig, RISCV64.abi, RISCV64.argRegs] at hpub
+      obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hpub
+      refine ⟨hsp, hl, fun r hr => ?_⟩
+      simp only [vcArgs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [h3, h4, h5, h6, h7, h8, h9, h10]
+    · simp only [verifyMessageEK, ↓reduceIte] at hpub
+      sig_pub [preparedVerifyMessageContract, preparedVerifyMessageSig, RISCV64.abi, RISCV64.argRegs] at hpub
+      obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hpub
+      refine ⟨hsp, hl, fun r hr => ?_⟩
+      simp only [vcArgs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [h3, h4, h5, h6, h7, h8, h9, h10]
+  exact verifyMessageCached_ct hF h48 hf (Nat.le_refl _) s₁ s₂ t₁ t₂ s₁' s₂' (mvcpre_of h₁) (mvcpre_of h₂) hpub'
+    e₁ e₂
 
 end VG.Proof.MlDsa.RISCV64.Message

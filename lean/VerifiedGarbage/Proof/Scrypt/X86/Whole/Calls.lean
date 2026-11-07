@@ -233,9 +233,6 @@ namespace Lay.Ok
 variable {L : Lay} (h : L.Ok)
 include h
 
-omit h in
-theorem toNat_A : L.A.toNat = L.B.toNat := toNat_setWidth64 _
-
 /-- `[esp + d]` in the frame. -/
 theorem ea_sp {d : Nat} (hd : d + 4 ≤ 92) :
     (L.B + BitVec.ofNat 32 80 + BitVec.ofNat 32 d).setWidth 64 = L.A + BitVec.ofNat 64 (80 + d) := by
@@ -532,10 +529,6 @@ theorem Same.arithFlags {t u : State} (h : Same t u) (x : BitVec 32) (c o : Bool
 theorem eax_cs : Reg.eax ∉ calleeSaved := by decide
 theorem ecx_cs : Reg.ecx ∉ calleeSaved := by decide
 theorem edx_cs : Reg.edx ∉ calleeSaved := by decide
-
-/-- A step of a block, from a state `Same` as `t`. -/
-def Step (t : State) (P : State → Prop) (is : List Instr) (Q : State → Prop) : Prop :=
-  ∀ u, Same t u → P u → WP isa (.block is) u Q
 
 /-- A load of `[esp + a]`, a word of the frame or of our arguments. -/
 theorem ld_eq (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (a : Nat) (ha : a + 4 ≤ 36 ∨ 40 ≤ a ∧ a + 4 ≤ 92)

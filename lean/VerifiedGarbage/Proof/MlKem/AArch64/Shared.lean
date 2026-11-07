@@ -38,13 +38,6 @@ open VG VG.AArch64
 /-- Bytes `[o, o + l)` of argument `b`. -/
 abbrev R (A : Nat → Addr) (b o l : Nat) : Region := ⟨A b + BitVec.ofNat 64 o, l⟩
 
-/-- The arguments' regions `⟨A b, L b⟩` (for `b < nb`) are pairwise
-disjoint, at most 32 KiB, and apart from the 16 bytes below `sp`. -/
-structure ArgsOk (A : Nat → Addr) (L : Nat → Nat) (nb : Nat) (sp : Addr) : Prop where
-  disj : ∀ b < nb, ∀ c < nb, b ≠ c → Region.Disjoint ⟨A b, L b⟩ ⟨A c, L c⟩
-  len : ∀ b < nb, L b ≤ 32768
-  stk : ∀ b < nb, Region.Disjoint ⟨sp - 16, 16⟩ ⟨A b, L b⟩
-
 theorem R.sub {A : Nat → Addr} {b o l len : Nat} (h : o + l ≤ len) :
     Region.Sub (R A b o l) ⟨A b, len⟩ := by
   intro x hx
@@ -64,23 +57,6 @@ theorem R.sub2 {A : Nat → Addr} {b o l o' l' : Nat} (h₁ : o' ≤ o) (h₂ : 
   have e : R A b o l = ⟨A b + BitVec.ofNat 64 o' + BitVec.ofNat 64 (o - o'), l⟩ := by
     simp only [R, ptr_add, Nat.add_sub_cancel' h₁]
   rw [e]; exact sub_offset' (by omega_arith)
-
-theorem R.disj {A : Nat → Addr} {L : Nat → Nat} {nb : Nat} {sp : Addr} (h : ArgsOk A L nb sp)
-    {b₁ o₁ l₁ b₂ o₂ l₂ : Nat} (hb₁ : b₁ < nb) (hb₂ : b₂ < nb) (f₁ : o₁ + l₁ ≤ L b₁)
-    (f₂ : o₂ + l₂ ≤ L b₂) (hs : b₁ ≠ b₂ ∨ o₁ + l₁ ≤ o₂ ∨ o₂ + l₂ ≤ o₁) :
-    (R A b₁ o₁ l₁).Disjoint (R A b₂ o₂ l₂) := by
-  by_cases hb : b₁ = b₂
-  · subst hb
-    have hl := h.len b₁ hb₁
-    have hs' : o₁ + l₁ ≤ o₂ ∨ o₂ + l₂ ≤ o₁ := hs.resolve_left (fun h => h rfl)
-    intro x h₁ h₂
-    simp only [Region.Contains] at h₁ h₂
-    exact sep_off (A b₁) hs' (by omega_arith) (by omega_arith) x (Nat.lt_of_succ_le h₁) (Nat.lt_of_succ_le h₂)
-  · exact ((h.disj b₁ hb₁ b₂ hb₂ hb).sub_left (R.sub f₁)).sub_right (R.sub f₂)
-
-theorem R.stk {A : Nat → Addr} {L : Nat → Nat} {nb : Nat} {sp : Addr} (h : ArgsOk A L nb sp)
-    {b o l : Nat} (hb : b < nb) (f : o + l ≤ L b) : Region.Disjoint ⟨sp - 16, 16⟩ (R A b o l) :=
-  (h.stk b hb).sub_right (R.sub f)
 
 theorem R.cov {A : Nat → Addr} {b o l len : Nat} {X : List Region} (hm : (⟨A b, len⟩ : Region) ∈ X)
     (f : o + l ≤ len) : Covers [R A b o l] X :=

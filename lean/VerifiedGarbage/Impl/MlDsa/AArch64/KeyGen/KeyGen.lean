@@ -141,8 +141,4 @@ def restWith (P : Prims) (p : Params) : Prog isa :=
   .seq (.block copies) (.seq (seqR (packS P p) 0 (p.ℓ + p.k)) (.seq (seqR (nttS P p) 0 p.ℓ)
     (.seq (seqR (row P p) 0 p.k) ((trHashWith c) p))))
 
-def seeds := seedsWith .scalar
-def trHash := trHashWith .scalar
-def rest := restWith .scalar
-
 end VG.Impl.MlDsa.AArch64.KeyGen

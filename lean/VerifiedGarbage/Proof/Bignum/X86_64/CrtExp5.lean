@@ -794,24 +794,4 @@ theorem crtExpLoop5S_ok (M : Mont) (Sq : MontS) (S : CrtSel 32) {s : State} {B :
   exact ⟨hc.of_frm5 hT hI.frm hI.keep.2.2 (hI.keep.gpr (by decide)), hI.ylt,
     fun hq => by rw [hI.y hq, Nat.pow_zero, Nat.div_one, pre_len], hI.frm, hI.keep⟩
 
-/-- `crtExpLoop5S_ok` with the squarings by `M`: `Crt.expLoop5`. -/
-theorem crtExpLoop5_ok (M : Mont) (S : CrtSel 32) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
-    {X x : Nat} {Q : Prop} (hc : SubCtx s B Z o w wx minv) (hT : o + slot wx 8 + wsTab wx ≤ Z) (hw2 : 2 ≤ wx)
-    (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
-    (hn : wv s.mem (off B o) (slot wx aN) wx = X)
-    (hinv : ((word s.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
-    (hodd : X % 2 = 1)
-    (hxl : wv s.mem (off B o) (slot wx Crt.aXc) wx < X)
-    (hxc : Q → wv s.mem (off B o) (slot wx Crt.aXc) wx % X = x * 2 ^ (64 * wx) % X)
-    (hyl : wv s.mem (off B o) (slot wx aY) wx < X)
-    (hyc : Q → wv s.mem (off B o) (slot wx aY) wx % X = 2 ^ (64 * wx) % X)
-    {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
-    (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
-    (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
-    WP isa (seqs (Crt.expLoop5 M.mm S.code sp sl)) s fun t => SubCtx t B Z o w wx minv ∧
-      wv t.mem (off B o) (slot wx aY) wx < X ∧
-      (Q → wv t.mem (off B o) (slot wx aY) wx % X = x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
-      Frm (off B o) (crtExpRanges5 wx) s.mem t.mem ∧ Keep mmRegs s t :=
-  crtExpLoop5S_ok M M.toS S hc hT hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc hsp hsl hep hel hL1 hL2 he
-
 end VG.Proof.Bignum.X86_64

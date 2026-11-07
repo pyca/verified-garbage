@@ -130,32 +130,11 @@ def sampleNTTContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (stack := stack)
     (leak := some fun seed _a _scratch m => (bytesAt m seed 34).map (·.toNat))
 
-/-- `vg_mlkem_sample_ntt4(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32`. -/
-def sampleNTT4Sig : Sig where
-  params := [("seeds", .array false .u8 136), ("a", .array true .u32 1024),
-    ("scratch", .array true .u64 1024)]
-  ret := some .u32
-
 /-- Seed `k` of four at `seeds`: the 34 bytes from byte `34 k`. -/
 def seed4 (m : Mem) (seeds : Addr) (k : Nat) : List Byte := bytesAt m (seeds + BitVec.ofNat 64 (34 * k)) 34
 
 /-- Polynomial `k` of four at `a`: from byte `1024 k`. -/
 def poly4 (a : Addr) (k : Nat) : Addr := a + BitVec.ofNat 64 (1024 * k)
-
-/-- `SampleNTT` four times: with the four 34-byte seeds `B₀, …, B₃` at
-`seeds` (`seed4`), writes `SampleNTT(Bₖ)` (Algorithm 7) to the polynomial at
-`a + 1024 k` (`poly4`), reduced, for each `k`, and returns 1; or returns 0
-if the loop of `SampleNTT` reaches its bound (`minIterations`) for one of
-them, and `a` is unspecified. May leak the seeds. -/
-def sampleNTT4Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sampleNTT4Sig.contract A
-    (post := fun seeds a _scratch m m' r =>
-      (r = 1 → ∀ k < 4, Reduced m' (poly4 a k)) ∧
-        ((r = 1 ∧ ∀ k < 4, ∃ iters, sampleNTT iters (seed4 m seeds k) = some (polyAt m' (poly4 a k))) ∨
-          (r = 0 ∧ ∃ k < 4, sampleNTT minIterations (seed4 m seeds k) = none)))
-    (writeArgs := true)
-    (stack := stack)
-    (leak := some fun seeds _a _scratch m => (bytesAt m seeds 136).map (·.toNat))
 
 /-- `vg_mlkem_cbd2(b: *const [u8; 128], f: *mut [u32; 256])`. -/
 def cbd2Sig : Sig where

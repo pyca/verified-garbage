@@ -102,9 +102,6 @@ def condSub (t : Nat) : Nat := if q ≤ t then t - q else t
 theorem condSub_eq {t : Nat} (h : t < 2 * q) : condSub t = t % q := by
   unfold condSub; rw [q_eq] at *; split <;> omega
 
-theorem condSub_lt {t : Nat} (h : t < 2 * q) : condSub t < q := by
-  unfold condSub; rw [q_eq] at *; split <;> omega
-
 theorem val_add (a b : Zq) : (a + b).val = condSub (a.val + b.val) := by
   rw [val_add', condSub_eq (by have := a.isLt; have := b.isLt; omega)]
 
@@ -116,8 +113,6 @@ theorem val_sub (a b : Zq) : (a - b).val = condSub (a.val + q - b.val) := by
 
 /-- `⌊2⁶⁴ / q⌋`. -/
 def barrettM : Nat := 2201172575745
-
-theorem barrettM_eq : barrettM = 2 ^ 64 / q := by decide
 
 /-- The quotient estimate of `barrett`: the high half of `x · ⌊2⁶⁴ / q⌋`. -/
 def barrettQuot (x : Nat) : Nat := x * barrettM / 2 ^ 64

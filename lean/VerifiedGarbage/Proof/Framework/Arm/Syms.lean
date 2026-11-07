@@ -17,8 +17,6 @@ same addresses as before it.
 
 namespace VG.Arm
 
-theorem setReg_syms (s : State) (r : Reg) (v : BitVec 32) : (s.setReg r v).syms = s.syms := rfl
-
 theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms = s.syms := by
   cases i <;> simp only [reduceExec, State.load32, State.load8, State.store32, State.store8,
       Option.map_eq_some_iff, reduceCtorEq] at h <;> (repeat' split at h) <;>

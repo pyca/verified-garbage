@@ -100,10 +100,6 @@ end
 
 /-! ## What each hash function's own code must do -/
 
-/-- The sizes the generic proofs support: the buffer's bytes are within
-reach of a 12-bit offset. -/
-def Dims (P : Params) : Prop := P.N ≤ 64
-
 /-- The length field and the digest: `P.len` stores the length field for the
 byte count in `s4` at `s1 + N + 56`, writing only `t1` and `t3`, and `P.out`
 writes the first `D` bytes of the digest of the hash value at `s1` to `s3`,
@@ -183,9 +179,6 @@ theorem compressAt_ok {N : Nat} {H : Md 64 N 8} {name : String} {code : Prog isa
       (hsp.trans sp₃) (m₃ ▸ hf') hpost
 
 /-! ## Arithmetic -/
-
-theorem ofNat_succ (k : Nat) : BitVec.ofNat 64 (k + 1) = BitVec.ofNat 64 k + 1 := by
-  rw [BitVec.ofNat_add]; rfl
 
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
@@ -424,12 +417,7 @@ theorem keepsN_all (l : List Instr) (h : (l.all fun i => keepsN (dstOf i)) = tru
 theorem allocd_wr (n : Nat) (s : State) :
     (allocd n s).wr = ⟨s.sp - BitVec.ofNat 64 n, n⟩ :: s.wr := rfl
 
-theorem allocd_sp (n : Nat) (s : State) : (allocd n s).sp = s.sp - BitVec.ofNat 64 n := rfl
-
 theorem allocd_gpr (n : Nat) (s : State) : (allocd n s).gpr = s.gpr := rfl
-theorem allocd_mem (n : Nat) (s : State) : (allocd n s).mem = s.mem := rfl
-theorem allocd_rd (n : Nat) (s : State) : (allocd n s).rd = s.rd := rfl
-
 /-- The frame is 16-byte aligned. -/
 theorem frame_aligned {sp : Addr} (h : sp.toNat % 16 = 0) (h' : 144 ≤ sp.toNat) :
     (sp - BitVec.ofNat 64 144).toNat % 16 = 0 := by

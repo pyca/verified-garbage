@@ -52,11 +52,6 @@ theorem storeReg_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     exists_eq_left']
   exact ⟨trivial, trivial, trivial, ⟨fun _ _ => rfl, rfl, rfl⟩⟩
 
-/-- The `k` words at `d` of memory changed only at `t`, apart from them. -/
-theorem wordsVal_apart {base : Addr} {m m' : Mem} {t n d k : Nat} (h : Outside base t n m m')
-    (hd : d + 8 * k ≤ t ∨ t + n ≤ d) (hn : d + 8 * k ≤ 2 ^ 64) :
-    wordsVal m' base d k = wordsVal m base d k := h.wordsVal hd hn
-
 /-! ## Multiply-accumulate into memory -/
 
 /-- `[t] + 2⁶⁴ rbp' = [t] + rbp + rcx · [d]`, through `r8`. -/

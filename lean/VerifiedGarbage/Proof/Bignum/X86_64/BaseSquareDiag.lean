@@ -106,7 +106,7 @@ theorem core3_ok (s : State)
   simp only [show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero] at this ⊢
   exact this
 
-/-- `core`'s result, as `AdxSquare.diagonalCore`'s. -/
+/-- `core`'s result, as `CoreOk` states it. -/
 theorem core_ok (s : State) :
     WP isa (.block core) s fun t =>
       (t.gpr .r11).toNat + 2 ^ 64 * (t.gpr .r12).toNat + 2 ^ 128 * (t.gpr .rbx).toNat =

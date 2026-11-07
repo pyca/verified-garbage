@@ -24,7 +24,6 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP256r1.curv
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (brainpoolp256r1 h.law h.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vs
-      consts := Impl.Ecdsa.AArch64.BrainpoolP256r1.combCfg.combConsts
       stack := stackT
       verified := brainpoolp256r1T_verified h.law h.inv vs hv
       features := [] }]

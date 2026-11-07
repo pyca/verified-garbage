@@ -341,9 +341,6 @@ theorem contains_sub {base : Addr} {len off n : Nat} (h : off + n ≤ len) (ho :
     {a : Addr} (ha : a = base + BitVec.ofNat 64 off) : (⟨base, len⟩ : Region).Contains a n := by
   subst ha; exact contains_offset h ho
 
-theorem arg_eq (s : State) (i : Nat) : arg s i = s.mem.readW (addr (s.gpr .esp) (4 + 4 * i)) 32 :=
-  rfl
-
 namespace Pre
 variable {s₀ : State} (h : Pre s₀)
 include h

@@ -118,6 +118,12 @@ def sealGatherPrepared16Pre (pb : Nat) : Curry (sealGatherPreparedSig.words pb) 
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       gatheredLen pb m src srcCount.toNat = len.toNat ∧ PreparedPowers16Repr m ctx
 
+/-- The existing round-count and length requirements, plus 16 prepared powers. -/
+def openToPrepared16Pre (pb : Nat) : Curry (openToPreparedSig.words pb) (Mem → Prop) :=
+  fun ctx rounds _nonce _nonceLen _aad _aadLen _src len _dst dstLen _tag _tagLen m =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
+      dstLen.toNat = len.toNat ∧ PreparedPowers16Repr m ctx
+
 /-! ## Contracts and APIs -/
 
 /-- The unchanged `sealContract` postcondition with 16 prepared powers. -/
@@ -199,5 +205,22 @@ def sealGatherPrepared16Api : Api where
   contracts := some fun A stack => sealGatherPrepared16Contract A stack
   summary := prepared16Summary "vg_aes_gcm_seal_gather" "sealGatherPrepared16Contract"
   safety := sealGatherApi.safety ++ [prepared16Safety]
+
+
+/-- The unchanged `openToContract` postcondition with 16 prepared powers. -/
+def openToPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  openToPreparedSig.contract A (pre := openToPrepared16Pre A.ptrBits)
+    (post := openToPost A.ptrBits)
+    (writeArgs := true) (stack := stack) (leak := some (openToLeak A.ptrBits))
+
+/-- `vg_aes_gcm_open_to_prepared16` on every target. -/
+def openToPrepared16Api : Api where
+  module := "gcm"
+  name := "vg_aes_gcm_open_to_prepared16"
+  sig := openToPreparedSig
+  writeArgs := true
+  contracts := some fun A stack => openToPrepared16Contract A stack
+  summary := prepared16Summary "vg_aes_gcm_open_to" "openToPrepared16Contract"
+  safety := openToApi.safety ++ [prepared16Safety]
 
 end VG.Spec.Gcm

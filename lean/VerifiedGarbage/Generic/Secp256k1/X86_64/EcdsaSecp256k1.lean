@@ -129,7 +129,6 @@ namespace VG.Generic.Secp256k1.X86_64.EcdsaSecp256k1
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact X86_64.target {
-    consts := Impl.Secp256k1.X86_64.secp256k1v.combConsts
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.verifySecp256k1
     stack := 96

@@ -155,27 +155,12 @@ the arguments. -/
 def Fixed (B : Addr) (m m' : Mem) : Prop :=
   ∀ i, i < 6 ∨ (16 ≤ i ∧ i < 22) → word m' B (8 * i) = word m B (8 * i)
 
-theorem Fixed.refl (B : Addr) (m : Mem) : Fixed B m m := fun _ _ => rfl
-
 theorem Fixed.trans {B : Addr} {m₁ m₂ m₃ : Mem} (h₁ : Fixed B m₁ m₂) (h₂ : Fixed B m₂ m₃) :
     Fixed B m₁ m₃ := fun i hi => (h₂ i hi).trans (h₁ i hi)
-
-theorem Fixed.of_outside {B : Addr} {o n : Nat} {m m' : Mem} (h : Outside B o n m m')
-    (ho : 8 * 22 ≤ o ∨ (8 * 6 ≤ o ∧ o + n ≤ 8 * 16)) : Fixed B m m' :=
-  fun _ hi => h.word (by omega_using [ho, hi]) (by omega_using [hi])
 
 theorem Fixed.of_frm {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m')
     (ho : ∀ r ∈ rs, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16)) : Fixed B m m' :=
   fun _ hi => h.word_eq (fun r hr => by have := ho r hr; omega_using [hi, this]) (by omega_using [hi])
-
-theorem Fixed.of_arrays {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m') :
-    Fixed B m m' :=
-  fun i hi => h.word_eq (fun j _ => Or.inl (by have := hdr_lt_slot w j (show i < 32 by omega_using [hi]); omega_using [this]))
-    (by omega_using [hi])
-
-theorem Fixed.store (m : Mem) (B : Addr) {i : Nat} (v : BitVec 64) (hi : 6 ≤ i) (hi' : i < 32)
-    (hi'' : i < 16 ∨ 22 ≤ i) : Fixed B m (m.writeW (off B (8 * i)) v) :=
-  Fixed.of_outside (writeW_outside m B v (by omega_using [hi'])) (by omega_using [hi, hi''])
 
 /-! ## What the pieces of the public-key operations change -/
 

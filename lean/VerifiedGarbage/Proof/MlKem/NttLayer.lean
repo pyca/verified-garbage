@@ -126,8 +126,6 @@ def nttInvL (j : Nat) (f : Poly) : Poly := (nttInvLens.take j).foldl nttInvLayer
 
 theorem nttL_zero (f : Poly) : nttL 0 f = f := rfl
 
-theorem nttInvL_zero (f : Poly) : nttInvL 0 f = f := rfl
-
 theorem nttL_succ (f : Poly) {j : Nat} (hj : j < 7) :
     nttL (j + 1) f = nttLayer (nttL j f) (128 >>> j) := by
   rw [nttL, nttL, List.take_add_one, List.foldl_append]
@@ -149,17 +147,6 @@ theorem ntt_eq_nttL (f : Poly) : ntt f = nttL 7 f := by
 
 theorem nttInv_eq_nttInvL (f : Poly) : nttInv f = (nttInvL 7 f).map (· * 3303) := by
   rw [nttInv_eq_layers]; rfl
-
-/-- Each coefficient after layer `j + 1` of `NTT`, whose `len` is `128 >>> j`. -/
-theorem nttL_succ_get (f : Poly) {j : Nat} (hj : j < 7) {i : Nat} (hi : i < 256) :
-    (nttL (j + 1) f)[i]! =
-      if i % (2 * (128 >>> j)) < 128 >>> j then
-        (nttL j f)[i]! + zeta (128 / (128 >>> j) + i / (2 * (128 >>> j))) * (nttL j f)[i + (128 >>> j)]!
-      else (nttL j f)[i - (128 >>> j)]! -
-        zeta (128 / (128 >>> j) + i / (2 * (128 >>> j))) * (nttL j f)[i]! := by
-  rw [nttL_succ f hj]
-  exact nttLayer_get _ (by match j, hj with | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ => decide)
-    (by match j, hj with | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ => decide) hi
 
 /-- Each coefficient after layer `j + 1` of `NTT⁻¹`, whose `len` is `2 <<< j`. -/
 theorem nttInvL_succ_get (f : Poly) {j : Nat} (hj : j < 7) {i : Nat} (hi : i < 256) :

@@ -73,11 +73,6 @@ theorem pw_d (m : Mem) (W : Addr) (x y j d k : Nat) (hk : 4 * k = 4 * j + d) :
   simp only [pw, dprod, w32]
   rw [show x + 4 * j + d = x + 4 * k by omega_arith, show y + 4 * j + d = y + 4 * k by omega_arith]
 
-theorem pw_dd (m : Mem) (W : Addr) (x y j d e k : Nat) (hk : 4 * k = 4 * j + d + e) :
-    pw m (off W (x + 4 * j + d + e)) (off W (y + 4 * j + d + e)) = dprod m W x y k := by
-  simp only [pw, dprod, w32]
-  rw [show x + 4 * j + d + e = x + 4 * k by omega_arith, show y + 4 * j + d + e = y + 4 * k by omega_arith]
-
 /-! ## Scalar instructions, keeping `mcdt` and the XMM registers -/
 
 section
@@ -138,9 +133,6 @@ structure DotEnv (s0 : State) (L x y n H : Nat) : Prop where
 
 theorem Sums.of_eq {x0 x1 : BitVec 128} {S H S' H' : Nat} (h : Sums x0 x1 S H) (hs : S = S') (hh : H = H') :
     Sums x0 x1 S' H' := hs ▸ hh ▸ h
-
-theorem ea_of_gpr {s t : State} (h : t.gpr = s.gpr) (m : MemOp) : t.ea m = s.ea m := by
-  simp only [State.ea, h]
 
 /-- The pointers' advance and the count's, then a comparison of the count. -/
 theorem wp_advCmp {s : State} {d c : BitVec 32} {Q : State → Prop}
@@ -214,9 +206,6 @@ theorem rsum_four (f : Nat → Nat) (j : Nat) : rsum f j 4 = f j + f (j + 1) + f
   simp only [rsum, Nat.add_zero, Nat.zero_add]
 
 theorem rsum_two (f : Nat → Nat) (j : Nat) : rsum f j 2 = f j + f (j + 1) := by
-  simp only [rsum, Nat.add_zero, Nat.zero_add]
-
-theorem rsum_one (f : Nat → Nat) (j : Nat) : rsum f j 1 = f j := by
   simp only [rsum, Nat.add_zero, Nat.zero_add]
 
 /-- The addresses of a number's word `j`, `d` bytes on. -/

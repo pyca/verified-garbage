@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.X448.Contract
 import VerifiedGarbage.Proof.X448.AArch64.Finish
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -14,7 +15,7 @@ import VerifiedGarbage.Proof.X448.Invert
 # X448 on AArch64: the whole function
 
 The contract the proof is written against (the facts of
-`Spec.X448.x448Contract` it uses, stated for AArch64), and the correctness of
+`Proof.X448.x448Contract` it uses, stated for AArch64), and the correctness of
 `vg_x448` against it: every write is in the working space but the result's, so
 the arguments are read unchanged, the callee-saved registers restored from the
 working space, and the return address kept.

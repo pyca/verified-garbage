@@ -404,7 +404,6 @@ def finalizeX86_64 : Contract X86_64.isa where
 
 end VG.Proof.Sha1
 
-
 namespace VG.Proof.Sha1.X86_64
 
 open VG VG.X86_64 VG.Impl.Sha1.X86_64
@@ -421,9 +420,6 @@ theorem contains_offset {base : Addr} {len off n : Nat} (h : off + n ≤ len) (h
 theorem contains_offset' {base : Addr} {len off n : Nat} (h : off + n ≤ len) (ho : off < 2 ^ 64) :
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofInt 64 (off : Int)) n := by
   rw [ofInt_natCast]; exact contains_offset h ho
-
-theorem sub_offset {base : Addr} {off len len' : Nat} (h : off + len ≤ len') (_ho : off < 2 ^ 64) :
-    Region.Sub ⟨base + BitVec.ofNat 64 off, len⟩ ⟨base, len'⟩ := Offset.sub_base base h
 
 theorem word_sep (p : Addr) {j k : Nat} (hj : j < 5) (hk : k < 5) (h : j ≠ k) :
     Mem.Sep (p + BitVec.ofInt 64 ((4 * j : Nat) : Int)) 4 (p + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 := by

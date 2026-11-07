@@ -2,12 +2,10 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombTiming
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombTiming
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Framework.AArch64.Inline

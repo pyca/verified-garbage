@@ -113,8 +113,21 @@ theorem verifyMessage_sat {p : Params} (hp : p ∈ params) :
     | exact Region.disjoint_of_sep (by decide)
 
 theorem verifyMessage_verified {p : Params} {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p ∈ params) :
-    Verified X86_64.target (verifyMessageCached n c p) (verifyMessageCachedContract p X86_64.abi 112) :=
-  ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := verifyMessage_wp hV hp h; ⟨t, s', he, ha, hq⟩,
-    verifyMessage_ct hV hp, verifyMessage_sat hp⟩
+    Verified X86_64.target (verifyMessageCached n c p 0) (verifyMessageCachedContract p X86_64.abi 112) :=
+  ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := verifyMessage_wp (prep := false) hV hp (vPre_of h)
+      ⟨t, s', he, ha, vPost_of hq⟩,
+    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => verifyMessage_ct (prep := false) hV hp s₁ s₂ t₁ t₂ s₁' s₂'
+      (vPre_of h₁) (vPre_of h₂) (vPub_of hpub) e₁ e₂,
+    verifyMessage_sat hp⟩
+
+/-- `verify_message_prepared`, given a state satisfying its precondition (which holds a prepared key). -/
+theorem verifyMessagePrepared_verified {p : Params} {n : String} {c : Prog isa} (hV : VerifyFn p c)
+    (hp : p ∈ params) (hsat : ∃ s, (preparedVerifyMessageContract p X86_64.abi 112).pre s) :
+    Verified X86_64.target (verifyMessageCached n c p 1) (preparedVerifyMessageContract p X86_64.abi 112) :=
+  ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := verifyMessage_wp (prep := true) hV hp (vPreP_of h)
+      ⟨t, s', he, ha, vPostP_of hq⟩,
+    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => verifyMessage_ct (prep := true) hV hp s₁ s₂ t₁ t₂ s₁' s₂'
+      (vPreP_of h₁) (vPreP_of h₂) (vPubP_of hpub) e₁ e₂,
+    hsat⟩
 
 end VG.Proof.MlDsa.X86_64.Message

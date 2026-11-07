@@ -45,9 +45,6 @@ theorem State.callEntry_gpr (s : State) {r : Reg} (h : r ∉ linkRegs) : s.callE
   simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at h
   simp [State.callEntry, h.1, h.2.1, h.2.2]
 
-theorem State.callEntry_withRegions (s : State) (rd wr : List Region) :
-    (s.withRegions rd wr).callEntry = s.callEntry.withRegions rd wr := rfl
-
 /-- Calls change none of the callee-saved registers. -/
 theorem preserved_not_link : ∀ r ∈ preserved, r ∉ linkRegs := by decide
 

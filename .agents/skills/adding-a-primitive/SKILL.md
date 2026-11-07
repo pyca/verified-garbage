@@ -57,14 +57,21 @@ instructions in an ISA model) go in their own PR before either.
    module, name, signature, `writeArgs`, documentation and contract come
    from the `Api`, so never restate them. Give a variant's name its
    `suffix` (`suffix := "_avx2"`), the stack its calls and frames use in
-   `stack`, the tables of constants it reads in `consts`, and, where a caller wipes a
+   `stack`, and, where a caller wipes a
    writable array the function uses as working space, how much of it the
    function writes in `written` (`written := [("scratch", 1024)]`, proven by
    `writtenOk`), which the emitter exports as `<NAME>_<PARAM>_WRITTEN` for
    the caller to wipe only that much. Its contract is found
    from `verified`'s type, and must be the `Api`'s on the target for
-   `consts` and `stack` (`ofApi`, by `rfl`): give `contract` only when
-   `verified`'s type does not determine it. `of_sig` proves `ofSig`, and
+   its tables of constants and `stack` (`ofApi`, by `rfl`): give `contract` only when
+   `verified`'s type does not determine it. The tables of constants the
+   code reads are an implementation detail, never stated in a registration
+   (`ci/check_registrations.py` refuses `consts :=`): the default of
+   `consts`, `consts_of`, takes them from the contract `verified` proves,
+   the first `Abi.withConsts A cs` in it or in the calling convention of the
+   `Sig.contract` it unfolds to, so state the proof's contract on
+   `T.abi.withConsts cs` (`fooContract (AArch64.abi.withConsts initConsts)`),
+   and a proof that adds or changes a table changes no registration file. `of_sig` proves `ofSig`, and
    `sp_safe` proves `spSafe`: by `Code.all_of_forall` on ARMv7, AArch64 and
    PPC64LE,
    which evaluates nothing, and by `Code.all_of_allInstrs (by lit_decide)`

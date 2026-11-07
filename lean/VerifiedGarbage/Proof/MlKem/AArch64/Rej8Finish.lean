@@ -83,8 +83,6 @@ structure PostW (w16 : Bool) (initial : List Zq) (N : Nat) (B : Nat → Byte) (a
   keep : Keep (.x0::Scalar.lRegs) s₀ u
   status : (u.gpr .x0).toNat=if (Scalar.LA initial B N).length=256 then 1 else 0
 
-abbrev Post := PostW false
-
 theorem loop_ok {w16 : Bool} {initial : List Zq} {N : Nat} {B : Nat → Byte} {bP aP : Addr}
     {s₀ s : State} (hp : EnvW w16 N B bP aP s₀) (hN : 0<N) (hm : N%4=0)
     (h : Scalar.InvW w16 initial N B bP aP s₀ 0 s) (hc : Constants s) :

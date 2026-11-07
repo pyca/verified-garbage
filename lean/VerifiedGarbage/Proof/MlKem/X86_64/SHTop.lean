@@ -46,22 +46,6 @@ def sampleHKW (w16 : Bool) : Contract isa where
           (fun i => bytesAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (Impl.MlKem.X86_64.Sample4.oHB + 136 * i)) 136) 3
   pub := sample4K.pub
 
-/-- The contract of `Sample4.sampleH` with 32-bit coefficients. -/
-def sampleHK : Contract isa where
-  pre := sample4K.pre
-  post s s' :=
-    (s'.gpr .rax).setWidth 32 =
-        (if (List.range 3).all fun k => (sampleNTT minIterations (seed4 s.mem (s.gpr .rdi) k)).isSome
-          then 1 else 0) ∧
-      (∀ k < 3, ∀ f, sampleNTT minIterations (seed4 s.mem (s.gpr .rdi) k) = some f →
-        PolyIs s'.mem (poly4 (s.gpr .rsi) k) f) ∧
-      stateAt s'.mem (s.gpr .rdx + BitVec.ofNat 64 Impl.MlKem.X86_64.Sample4.oHS) =
-        SH.habs (stateAt s.mem (s.gpr .rdx + BitVec.ofNat 64 Impl.MlKem.X86_64.Sample4.oHS))
-          (fun i => bytesAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (Impl.MlKem.X86_64.Sample4.oHB + 136 * i)) 136) 3
-  pub := sample4K.pub
-
-theorem sampleHK_eq : sampleHK = sampleHKW false := rfl
-
 /-- The contract of `Sample4.sampleHM m`: as `sampleHKW`, with the sponge
 absorbing the first `m` blocks. -/
 def sampleHMKW (w16 : Bool) (m : Nat) : Contract isa where
@@ -137,7 +121,7 @@ theorem end3G_ok {H : Mem → Prop} {s : State} (h : Done3 w16 σ H s) :
 /-- The runs after the squeezes, keeping `H`. -/
 theorem run3G_ok {fast : Bool} {Y : Spec.Sha3.State} {H : Mem → Prop} {s : State} (h : SqY w16 σ Y 0 3 s)
     (hs : H s.mem) (hH : Stab σ H) :
-    WP isa (.seq (.block tabAddr) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))) s fun s' =>
+    WP isa (.seq (.block tabAddr) (.seq (run1 0 w16 fast) (.seq (run1 1 w16 fast) (.seq (run1 2 w16 fast) (tail3 fast w16))))) s fun s' =>
       Post3 w16 σ s' ∧ H s'.mem ∧ gprPreserved σ s' := by
   refine WP.seq (WP.mono (tabY_ok h hs hH) fun _ p₀ => ?_)
   refine WP.seq (WP.mono (run1Y_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (run1Y_ok hp (by decide) p₁)
@@ -151,7 +135,7 @@ theorem run3G_ok {fast : Bool} {Y : Spec.Sha3.State} {H : Mem → Prop} {s : Sta
 /-- After the squeezes, with the sponge's state stored back. -/
 theorem run3_ok {fast : Bool} {m : Nat} {Y : Spec.Sha3.State} {s : State} (h : SqY w16 σ Y 0 3 s)
     (hs : HS σ (hst σ m) s.mem) :
-    WP isa (.seq (.block tabAddr) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))) s fun s' =>
+    WP isa (.seq (.block tabAddr) (.seq (run1 0 w16 fast) (.seq (run1 1 w16 fast) (.seq (run1 2 w16 fast) (tail3 fast w16))))) s fun s' =>
       (sampleHMKW w16 m).post σ s' ∧ gprPreserved σ s' :=
   WP.mono (run3G_ok (fast := fast) hp h hs (HS.stab σ _)) fun _ ⟨⟨a, b⟩, c, d⟩ => ⟨⟨a, b, c⟩, d⟩
 
@@ -166,10 +150,6 @@ theorem correctW {fast : Bool} (σ : State) (hs : (sampleHKW w16).pre σ) :
       WP.seq (WP.mono (squeezesH_ok (fast := fast) hp h₂ r₂) fun s₃ ⟨h₃, _⟩ =>
         WP.seq (WP.mono (hsave_ok hp h₃) fun s₄ ⟨h₄, e₄⟩ => run3_ok (fast := fast) hp h₄ e₄))))
   exact ⟨t, s', he, abiPreserved_of_exec (by cases fast <;> cases w16 <;> decide +kernel) he hF.2, hF.1⟩
-
-theorem correct {fast : Bool} (σ : State) (hs : sampleHK.pre σ) :
-    ∃ t s', Exec isa (sampleH fast) σ t s' ∧ abiPreserved σ s' ∧ sampleHK.post σ s' := by
-  rw [sampleHK_eq] at hs ⊢; exact correctW (w16 := false) σ hs
 
 end SH
 

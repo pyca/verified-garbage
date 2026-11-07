@@ -15,11 +15,11 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the runs of the loop
 
 After the squeezes and the table (`P1W w16 σ 0`), the first 168 iterations on
-each seed's buffer keep its count of coefficients (`run1_ok`, `P1`). If one
+each seed's buffer keep its count of coefficients (`run1_ok`, `P1W`). If one
 of them has fewer than 256 (`check_ok`), the code squeezes two more blocks of
 each seed to its buffer, the states being kept by the runs (`more_ok`), and
-runs 112 more iterations on each, from its count (`run2_ok`, `P2`): the 280
-iterations of `SampleNTT`'s loop bounded by `minIterations` (`Done`). A seed
+runs 112 more iterations on each, from its count (`run2_ok`, `P2W`): the 280
+iterations of `SampleNTT`'s loop bounded by `minIterations` (`DoneW`). A seed
 that already has 256 keeps them (`DoneW.of_full`).
 -/
 
@@ -44,9 +44,6 @@ structure P1W (w16 : Bool) (σ : State) (K : Nat) (s : State) : Prop where
   j : ∀ k < K, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
   st : ∀ k < K, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 168)
 
-/-- `P1W` with 32-bit coefficients. -/
-abbrev P1 := P1W false
-
 /-- After the two more squeezes, before the static's address. -/
 structure Q2W (w16 : Bool) (σ : State) (s : State) : Prop where
   sq : SqTW w16 σ 3 2 s
@@ -62,17 +59,11 @@ structure P2W (w16 : Bool) (σ : State) (K : Nat) (s : State) : Prop where
     BitVec.ofNat 64 (Lt σ k (if k < K then 280 else 168)).length
   st : ∀ k < 4, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k (if k < K then 280 else 168))
 
-/-- `P2W` with 32-bit coefficients. -/
-abbrev P2 := P2W false
-
 /-- The coefficients of each seed after 280 iterations, and whether they are 256. -/
 structure DoneW (w16 : Bool) (σ s : State) : Prop where
   env : EnvW w16 σ s
   r14 : s.gpr .r14 = BitVec.ofNat 64 (okN σ 4)
   st : ∀ k < 4, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 280)
-
-/-- `DoneW` with 32-bit coefficients. -/
-abbrev Done := DoneW false
 
 /-- Whether every seed has 256 coefficients after `t` iterations. -/
 def allFull (σ : State) (t : Nat) : Bool := (List.range 4).all fun k => (Lt σ k t).length == 256
@@ -241,11 +232,17 @@ theorem run1End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P1W w16 σ K s) 
     · exact st_poly hK (by omega_arith) e h₂.lb.fr (h.st k (by omega_arith)) (hL _ _)
 
 /-- The first 168 iterations on seed `K`, and its count kept. -/
-theorem run1_ok {K : Nat} (hK : K < 4) {s : State} (h : P1W w16 σ K s) : WP isa (run1 K w16) s (P1W w16 σ (K + 1)) := by
+theorem run1_ok {K : Nat} (hK : K < 4) {z : Bool} {s : State} (h : P1W w16 σ K s) :
+    WP isa (run1 K w16 z) s (P1W w16 σ (K + 1)) := by
   unfold run1
-  exact WP.seq (WP.mono (setup_ok hp hK (lb1 hK h)) fun s₁ ⟨h₁, h10⟩ =>
-    WP.seq (WP.mono (loop_ok hp hK (N := 21) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
-      run1End_ok hp hK h h₂))
+  split
+  · rename_i hz
+    exact WP.seq (WP.mono (setupZ_ok hp hK (lb1 hK h)) fun s₁ ⟨h₁, h10⟩ =>
+      WP.seq (WP.mono (zloop_ok hp hz.2 hK (N := 10) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
+        WP.seq (WP.mono (vgrp_ok hp hK (by decide) (by decide) h₂.lv) fun _ ⟨h₃, _⟩ => run1End_ok hp hK h h₃.lat)))
+  · exact WP.seq (WP.mono (setup_ok hp hK (lb1 hK h)) fun s₁ ⟨h₁, h10⟩ =>
+      WP.seq (WP.mono (loop_ok hp hK (N := 21) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
+        run1End_ok hp hK h h₂))
 
 /-! ## The check -/
 
@@ -254,9 +251,6 @@ structure CheckedW (w16 : Bool) (σ s : State) : Prop where
   prior : ∃ s₀, P1W w16 σ 4 s₀ ∧ s.mem = s₀.mem ∧ Keep [.rax, .r14] s₀ s
   r14 : s.gpr .r14 = if allFull σ 168 then 1 else 0
   zf : s.zf = some (!allFull σ 168)
-
-/-- `CheckedW` with 32-bit coefficients. -/
-abbrev Checked := CheckedW false
 
 theorem cntFlags_ok {t : Nat} {s : State} (env : EnvW w16 σ s)
     (j : ∀ k < 4, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k t).length) :
@@ -315,9 +309,6 @@ structure M2W (w16 : Bool) (σ : State) (s : State) : Prop where
   sq : SqTW w16 σ 3 0 s
   j : ∀ k < 4, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
   st : ∀ k < 4, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 168)
-
-/-- `M2W` with 32-bit coefficients. -/
-abbrev M2 := M2W false
 
 omit hp in
 /-- `r14 ← 1`, after the check. -/
@@ -386,15 +377,21 @@ theorem run2End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P2W w16 σ K s) 
       · rw [ite_eq_right hk'] at this; rwa [ite_eq_right (by omega_arith)]
 
 /-- 112 more iterations on seed `K`, and its count kept. -/
-theorem run2_ok {K : Nat} (hK : K < 4) {s : State} (h : P2W w16 σ K s) : WP isa (run2 K w16) s (P2W w16 σ (K + 1)) := by
+theorem run2_ok {K : Nat} (hK : K < 4) {z : Bool} {s : State} (h : P2W w16 σ K s) :
+    WP isa (run2 K w16 z) s (P2W w16 σ (K + 1)) := by
   have hj : s.mem.readW (at' σ (oCnt + 8 * K)) 64 = BitVec.ofNat 64 (Lt σ K 168).length := by
     rw [h.j K hK, ite_eq_right (by omega_arith)]
   have hst : Stored w16 s.mem (poly4W w16 (aP σ) K) (Lt σ K 168) := by
     have := h.st K hK; rwa [ite_eq_right (by omega_arith)] at this
   unfold run2
-  exact WP.seq (WP.mono (contSetup_ok hp hK (lb2 hK h) hj hst) fun s₁ ⟨h₁, h10⟩ =>
-    WP.seq (WP.mono (loop_ok hp hK (N := 14) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
-      run2End_ok hp hK h h₂))
+  split
+  · rename_i hz
+    exact WP.seq (WP.mono (contSetupZ_ok hp hK (lb2 hK h) hj hst) fun s₁ ⟨h₁, h10⟩ =>
+      WP.seq (WP.mono (zloop_ok hp hz.2 hK (N := 7) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
+        run2End_ok hp hK h h₂.lv.lat))
+  · exact WP.seq (WP.mono (contSetup_ok hp hK (lb2 hK h) hj hst) fun s₁ ⟨h₁, h10⟩ =>
+      WP.seq (WP.mono (loop_ok hp hK (N := 14) (by decide) (by decide) (by decide) h₁ h10) fun _ h₂ =>
+        run2End_ok hp hK h h₂))
 
 /-- The counts' AND, after the second runs. -/
 theorem last_ok {s : State} (h : P2W w16 σ 4 s) : WP isa (.block cntFlags) s (DoneW w16 σ) := by

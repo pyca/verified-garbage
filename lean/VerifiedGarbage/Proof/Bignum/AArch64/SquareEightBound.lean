@@ -44,20 +44,4 @@ theorem cross_words_succ_lt (m : Mem) (B : Addr) (e n : Nat) :
   rw [Square.crossValue_succ]
   exact Nat.lt_of_lt_of_eq h hp
 
-/-- The highest off-diagonal term of eight limbs is at degree thirteen;
-all its accumulated carries fit the fifteenth word. -/
-theorem cross_words_lt (m : Mem) (B : Addr) (e : Nat) :
-    Square.crossValue m B e 8 < (2 ^ 64) ^ 15 := by
-  have hx := wv_lt m B e 7
-  have hd := (word m B (e + 8*7)).isLt
-  have hc := (Square.square_decomposition m B e 7).symm
-  have h := cross_succ_bound (by decide : 0 < 2 ^ 64) hx hd
-    (hc.trans (Nat.add_comm _ _))
-  rw [Square.crossValue_succ]
-  have hp (r : Nat) : r ^ 7 * r ^ 7 * r = r ^ 15 := by
-    rw [← Nat.pow_add, ← Nat.pow_succ]
-  have hp' := hp (2 ^ 64)
-  rw [← Nat.pow_mul] at hp'
-  exact Nat.lt_of_lt_of_eq h hp'
-
 end VG.Proof.Bignum.AArch64.SquareEight

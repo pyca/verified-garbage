@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 `ptCall S dbl` calls `vg_<curve>_point_double` or `vg_<curve>_point_add` on
 the working space at `r3` (`ptCall_ok`): it changes only `fnClob`, `O` and
 the point functions' own working space, and `O` then holds `rcbAdd` of what
-`a`, `3b`, `P` and `Q` (or `P`) stood for (`fn_ok`). As on 32-bit ARM
+`a`, `3b`, `P` and `Q` (or `P`) stood for (`ptVal`). As on 32-bit ARM
 (`Proof/Weierstrass/Arm/LadderPCall.lean`).
 -/
 

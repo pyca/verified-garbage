@@ -657,6 +657,23 @@ vg_chacha20_poly1305_open:
 	cmp eax, 1
 	mov eax, 0
 	adc eax, 0
+	cmp eax, 0
+	je 26f
+	jmp 27f
+26:
+	mov ecx, DWORD PTR [esp+20]
+	mov edx, DWORD PTR [esp+24]
+	cmp edx, 0
+	je 28f
+210:
+	mov BYTE PTR [ecx], al
+	add ecx, 1
+	sub edx, 1
+	jne 210b
+	jmp 29f
+28:
+29:
+27:
 	mov ebx, DWORD PTR [edi]
 	mov esi, DWORD PTR [edi+4]
 	mov ebp, DWORD PTR [edi+12]
@@ -1562,6 +1579,23 @@ vg_chacha20_poly1305_open_ssse3:
 	cmp eax, 1
 	mov eax, 0
 	adc eax, 0
+	cmp eax, 0
+	je 26f
+	jmp 27f
+26:
+	mov ecx, DWORD PTR [esp+20]
+	mov edx, DWORD PTR [esp+24]
+	cmp edx, 0
+	je 28f
+210:
+	mov BYTE PTR [ecx], al
+	add ecx, 1
+	sub edx, 1
+	jne 210b
+	jmp 29f
+28:
+29:
+27:
 	mov ebx, DWORD PTR [edi]
 	mov esi, DWORD PTR [edi+4]
 	mov ebp, DWORD PTR [edi+12]

@@ -92,12 +92,6 @@ theorem Eff.trans {s s' s'' : State} {ws : List Reg} (h : Eff s s' ws) (h' : Eff
   ⟨fun r hr => (h'.other r hr).trans (h.other r hr), h'.mem.trans h.mem, h'.rd.trans h.rd,
     h'.wr.trans h.wr, h'.sp.trans h.sp⟩
 
-theorem Eff.refl (s : State) (ws : List Reg) : Eff s s ws := ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
-
-theorem Eff.mono {s s' : State} {ws ws' : List Reg} (h : Eff s s' ws) (hw : ∀ r ∈ ws, r ∈ ws') :
-    Eff s s' ws' :=
-  ⟨fun r hr => h.other r fun h' => hr (hw r h'), h.mem, h.rd, h.wr, h.sp⟩
-
 theorem addMul_ok {a b t u : Reg} (hat : a ≠ t) (hau : a ≠ u) (hbt : b ≠ t) (hbu : b ≠ u)
     (htu : t ≠ u) (s : State) {is : List Instr} {Q : State → Prop}
     (k : ∀ s', s'.gpr a = Spec.Argon2.addMul (s.gpr a) (s.gpr b) → Eff s s' [a, t, u] →

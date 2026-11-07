@@ -376,91 +376,151 @@ vg_rsa_pkcs1_decrypt:
 	ldr r12, [sp], #56
 	bx lr
 
-vg_rsa_pkcs1_encrypt_precomputed:
+vg_rsa_pkcs1_encrypt_random:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
-	sub sp, sp, #1056
+	sub sp, sp, #1088
 	add r12, sp, #0
-	add r0, r12, #32
-	ldr r1, [sp, #1128]
-	ldr lr, [sp, #1132]
-	mov r2, #0
-	strb r2, [r0, #0]
-	mov r2, #2
-	strb r2, [r0, #1]
-	add r0, r0, #2
-	mov r3, #0
+	ldr r1, [sp, #1164]
+	ldr r8, [sp, #1168]
+	ldr r3, [sp, #1144]
+	ldr r4, [sp, #1160]
+	sub r3, r3, r4
+	sub r3, r3, #3
+	add r0, r12, #40
+	mov r4, #0
+	mov r5, #0
+	cmp r8, #0
+	bne 20f
+	b 21f
 20:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	sub r2, r2, #1
-	orr r3, r3, r2, lsr #31
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 20b
-	mov r2, #0
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r12, sp, #0
-	str r3, [r12, #24]
-	ldr r1, [sp, #1120]
-	ldr lr, [sp, #1124]
-	cmp lr, #0
-	beq 21f
-23:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 23b
-	b 22f
-21:
 22:
-	add r12, sp, #0
-	ldr r0, [sp, #1112]
-	str r0, [r12, #0]
-	ldr r0, [sp, #1116]
-	str r0, [r12, #4]
-	add r0, r12, #32
-	str r0, [r12, #8]
-	ldr r0, [sp, #1068]
-	str r0, [r12, #12]
-	ldr r0, [sp, #1136]
-	str r0, [r12, #16]
-	ldr r0, [sp, #1140]
-	str r0, [r12, #20]
-	ldr r0, [sp, #1056]
-	ldr r1, [sp, #1068]
-	ldr r2, [sp, #1144]
-	ldr r3, [sp, #1148]
-	bl {vg_rsa_public_precomputed_checked}
-	add r12, sp, #0
-	ldr r3, [sp, #24]
-	sub r2, r3, #1
-	and r3, r0, r2
-	ldr r0, [sp, #1056]
-	ldr lr, [sp, #1068]
+	ldrb r6, [r1, #0]
+	add r1, r1, #1
+	add r4, r4, #1
+	cmp r6, #0
+	bne 23f
+	b 24f
+23:
+	strb r6, [r0, #0]
+	add r0, r0, #1
+	add r5, r5, #1
 24:
-	ldrb r1, [r0, #0]
-	and r1, r1, r2
-	strb r1, [r0, #0]
-	add r0, r0, #1
-	subs lr, lr, #1
-	bne 24b
-	add r12, sp, #0
-	add r0, r12, #32
-	ldr lr, [sp, #1068]
-	mov r2, #0
+	cmp r5, r3
+	beq 25f
+	cmp r4, r8
+	b 26f
 25:
+	cmp r5, r5
+26:
+	bne 22b
+21:
+	cmp r5, r3
+	beq 27f
+	add r12, sp, #0
+	ldr r0, [sp, #1088]
+	ldr lr, [sp, #1144]
+	mov r2, #0
+29:
 	ldrb r1, [r0, #0]
 	and r1, r1, r2
 	strb r1, [r0, #0]
 	add r0, r0, #1
 	subs lr, lr, #1
-	bne 25b
-	mov r0, r3
-	add sp, sp, #1056
+	bne 29b
+	cmp r5, #0
+	beq 210f
+	add r12, sp, #0
+	add r0, r12, #40
+	mov lr, r5
+212:
+	ldrb r1, [r0, #0]
+	and r1, r1, r2
+	strb r1, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 212b
+	b 211f
+210:
+211:
+	ldr r7, [sp, #1096]
+	add r6, r3, #128
+	cmp r8, r6
+	beq 213f
+	add r9, r3, r8
+	sub r9, r9, r5
+	sub r10, r6, r9
+	lsr r10, r10, #31
+	sub r10, r10, #1
+	sub r11, r9, r6
+	and r11, r11, r10
+	add r11, r11, r6
+	mov r10, #0
+	str r10, [r7, #0]
+	str r10, [r7, #4]
+	str r11, [r7, #8]
+	str r10, [r7, #12]
+	mov r0, #0
+	b 214f
+213:
+	mov r9, #0
+	str r8, [r7, #0]
+	str r9, [r7, #4]
+	str r9, [r7, #8]
+	str r9, [r7, #12]
+	mov r0, #3
+214:
+	b 28f
+27:
+	ldr r7, [sp, #1096]
+	mov r6, #0
+	str r4, [r7, #0]
+	str r6, [r7, #4]
+	str r6, [r7, #8]
+	str r6, [r7, #12]
+	add r12, sp, #0
+	ldr r0, [sp, #1148]
+	str r0, [r12, #0]
+	ldr r0, [sp, #1152]
+	str r0, [r12, #4]
+	ldr r0, [sp, #1156]
+	str r0, [r12, #8]
+	ldr r0, [sp, #1160]
+	str r0, [r12, #12]
+	add r0, r12, #40
+	str r0, [r12, #16]
+	str r3, [r12, #20]
+	ldr r0, [sp, #1172]
+	str r0, [r12, #24]
+	ldr r0, [sp, #1176]
+	str r0, [r12, #28]
+	ldr r0, [sp, #1180]
+	str r0, [r12, #32]
+	ldr r0, [sp, #1184]
+	str r0, [r12, #36]
+	ldr r0, [sp, #1088]
+	ldr r1, [sp, #1144]
+	ldr r2, [sp, #1100]
+	ldr r3, [sp, #1144]
+	bl {vg_rsa_pkcs1_encrypt_precomputed}
+	mov r4, #2
+	sub r4, r4, r0
+	add r12, sp, #0
+	add r0, r12, #40
+	ldr r1, [sp, #1144]
+	ldr r2, [sp, #1160]
+	sub lr, r1, r2
+	sub lr, lr, #3
+	mov r2, #0
+215:
+	ldrb r1, [r0, #0]
+	and r1, r1, r2
+	strb r1, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 215b
+	mov r0, r4
+28:
+	add sp, sp, #1088
 	ldr r4, [sp, #16]
 	ldr r5, [sp, #20]
 	ldr r6, [sp, #24]
@@ -845,91 +905,151 @@ vg_rsa_pkcs1_decrypt_umaal:
 	ldr r12, [sp], #56
 	bx lr
 
-vg_rsa_pkcs1_encrypt_precomputed_umaal:
+vg_rsa_pkcs1_encrypt_random_umaal:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
-	sub sp, sp, #1056
+	sub sp, sp, #1088
 	add r12, sp, #0
-	add r0, r12, #32
-	ldr r1, [sp, #1128]
-	ldr lr, [sp, #1132]
-	mov r2, #0
-	strb r2, [r0, #0]
-	mov r2, #2
-	strb r2, [r0, #1]
-	add r0, r0, #2
-	mov r3, #0
+	ldr r1, [sp, #1164]
+	ldr r8, [sp, #1168]
+	ldr r3, [sp, #1144]
+	ldr r4, [sp, #1160]
+	sub r3, r3, r4
+	sub r3, r3, #3
+	add r0, r12, #40
+	mov r4, #0
+	mov r5, #0
+	cmp r8, #0
+	bne 20f
+	b 21f
 20:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	sub r2, r2, #1
-	orr r3, r3, r2, lsr #31
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 20b
-	mov r2, #0
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r12, sp, #0
-	str r3, [r12, #24]
-	ldr r1, [sp, #1120]
-	ldr lr, [sp, #1124]
-	cmp lr, #0
-	beq 21f
-23:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 23b
-	b 22f
-21:
 22:
-	add r12, sp, #0
-	ldr r0, [sp, #1112]
-	str r0, [r12, #0]
-	ldr r0, [sp, #1116]
-	str r0, [r12, #4]
-	add r0, r12, #32
-	str r0, [r12, #8]
-	ldr r0, [sp, #1068]
-	str r0, [r12, #12]
-	ldr r0, [sp, #1136]
-	str r0, [r12, #16]
-	ldr r0, [sp, #1140]
-	str r0, [r12, #20]
-	ldr r0, [sp, #1056]
-	ldr r1, [sp, #1068]
-	ldr r2, [sp, #1144]
-	ldr r3, [sp, #1148]
-	bl {vg_rsa_public_precomputed_checked_umaal}
-	add r12, sp, #0
-	ldr r3, [sp, #24]
-	sub r2, r3, #1
-	and r3, r0, r2
-	ldr r0, [sp, #1056]
-	ldr lr, [sp, #1068]
+	ldrb r6, [r1, #0]
+	add r1, r1, #1
+	add r4, r4, #1
+	cmp r6, #0
+	bne 23f
+	b 24f
+23:
+	strb r6, [r0, #0]
+	add r0, r0, #1
+	add r5, r5, #1
 24:
-	ldrb r1, [r0, #0]
-	and r1, r1, r2
-	strb r1, [r0, #0]
-	add r0, r0, #1
-	subs lr, lr, #1
-	bne 24b
-	add r12, sp, #0
-	add r0, r12, #32
-	ldr lr, [sp, #1068]
-	mov r2, #0
+	cmp r5, r3
+	beq 25f
+	cmp r4, r8
+	b 26f
 25:
+	cmp r5, r5
+26:
+	bne 22b
+21:
+	cmp r5, r3
+	beq 27f
+	add r12, sp, #0
+	ldr r0, [sp, #1088]
+	ldr lr, [sp, #1144]
+	mov r2, #0
+29:
 	ldrb r1, [r0, #0]
 	and r1, r1, r2
 	strb r1, [r0, #0]
 	add r0, r0, #1
 	subs lr, lr, #1
-	bne 25b
-	mov r0, r3
-	add sp, sp, #1056
+	bne 29b
+	cmp r5, #0
+	beq 210f
+	add r12, sp, #0
+	add r0, r12, #40
+	mov lr, r5
+212:
+	ldrb r1, [r0, #0]
+	and r1, r1, r2
+	strb r1, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 212b
+	b 211f
+210:
+211:
+	ldr r7, [sp, #1096]
+	add r6, r3, #128
+	cmp r8, r6
+	beq 213f
+	add r9, r3, r8
+	sub r9, r9, r5
+	sub r10, r6, r9
+	lsr r10, r10, #31
+	sub r10, r10, #1
+	sub r11, r9, r6
+	and r11, r11, r10
+	add r11, r11, r6
+	mov r10, #0
+	str r10, [r7, #0]
+	str r10, [r7, #4]
+	str r11, [r7, #8]
+	str r10, [r7, #12]
+	mov r0, #0
+	b 214f
+213:
+	mov r9, #0
+	str r8, [r7, #0]
+	str r9, [r7, #4]
+	str r9, [r7, #8]
+	str r9, [r7, #12]
+	mov r0, #3
+214:
+	b 28f
+27:
+	ldr r7, [sp, #1096]
+	mov r6, #0
+	str r4, [r7, #0]
+	str r6, [r7, #4]
+	str r6, [r7, #8]
+	str r6, [r7, #12]
+	add r12, sp, #0
+	ldr r0, [sp, #1148]
+	str r0, [r12, #0]
+	ldr r0, [sp, #1152]
+	str r0, [r12, #4]
+	ldr r0, [sp, #1156]
+	str r0, [r12, #8]
+	ldr r0, [sp, #1160]
+	str r0, [r12, #12]
+	add r0, r12, #40
+	str r0, [r12, #16]
+	str r3, [r12, #20]
+	ldr r0, [sp, #1172]
+	str r0, [r12, #24]
+	ldr r0, [sp, #1176]
+	str r0, [r12, #28]
+	ldr r0, [sp, #1180]
+	str r0, [r12, #32]
+	ldr r0, [sp, #1184]
+	str r0, [r12, #36]
+	ldr r0, [sp, #1088]
+	ldr r1, [sp, #1144]
+	ldr r2, [sp, #1100]
+	ldr r3, [sp, #1144]
+	bl {vg_rsa_pkcs1_encrypt_precomputed_umaal}
+	mov r4, #2
+	sub r4, r4, r0
+	add r12, sp, #0
+	add r0, r12, #40
+	ldr r1, [sp, #1144]
+	ldr r2, [sp, #1160]
+	sub lr, r1, r2
+	sub lr, lr, #3
+	mov r2, #0
+215:
+	ldrb r1, [r0, #0]
+	and r1, r1, r2
+	strb r1, [r0, #0]
+	add r0, r0, #1
+	subs lr, lr, #1
+	bne 215b
+	mov r0, r4
+28:
+	add sp, sp, #1088
 	ldr r4, [sp, #16]
 	ldr r5, [sp, #20]
 	ldr r6, [sp, #24]

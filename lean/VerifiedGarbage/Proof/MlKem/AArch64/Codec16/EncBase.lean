@@ -55,13 +55,4 @@ theorem Pre.coeff {s₀ : State} (hp : Pre s₀) {m : Mem} (hf : Frame [oR s₀]
   rw [coeffAt_frame hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.disj) hi,
     polyAt_val hp.red (show i < n from hi)]
 
-/-- A state satisfying the precondition. -/
-def sat : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | _ => 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x1000, 1024⟩]
-  wr := [⟨0x2000, 384⟩]
-
 end VG.Proof.MlKem.AArch64.Encode12

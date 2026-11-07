@@ -5,8 +5,8 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
 /-!
 # ML-DSA on AArch64: rounding and hints
 
-`vg_mldsa_power2round`, `vg_mldsa_high_bits`, `vg_mldsa_low_bits`,
-`vg_mldsa_norm_lt`, `vg_mldsa_make_hint` and `vg_mldsa_use_hint` each run
+`vg_mldsa_high_bits`, `vg_mldsa_low_bits`, `vg_mldsa_norm_lt`,
+`vg_mldsa_make_hint` and `vg_mldsa_use_hint` each run
 one loop over the 256 coefficients (`mapLoop`), with a counter counting
 down from 256 and the pointers of the polynomials advancing by 4 bytes
 from coefficient 0. There is no branch on data: a conditional step uses the
@@ -21,8 +21,6 @@ zero-extend it (it is a `u32`), compare it with `(q - 1)/32` and branch on
 it once, to one loop for each value, which first puts `M` and `2^(S-1)` in
 registers.
 
-* `power2Round(t = x0, t1 = x1, t0 = x2)`: `x = a + 4095`, `t1 = x >> 13`
-  and `t0 = x - (t1 << 13) - 4095`, plus `q` if negative.
 * `highBits(r = x0, gamma2 = w1, out = x2)`: `r₁`.
 * `lowBits(r = x0, gamma2 = w1, out = x2)`: `a - r₁ · 2γ₂`, plus `q` if
   negative.
@@ -94,16 +92,6 @@ def onGamma (gr t : Reg) (arm : Nat → Prog isa) : Prog isa :=
 
 /-- `γ₂` in `gr` zero-extended first, then `main`. -/
 def zext (gr : Reg) (main : Prog isa) : Prog isa := .seq (.block [.addImm .w gr gr 0]) main
-
-/-! ## `power2Round` -/
-
-def p2rBody : List Instr :=
-  [.ldr .w .x11 .x0 0, .addImm .x .x11 .x11 4095, .lsr .x .x12 .x11 13, .str .w .x12 .x1 0,
-    .lsl .x .x13 .x12 13, .sub .x .x11 .x11 .x13, .subImm .x .x11 .x11 4095, .lsr .x .x13 .x11 63,
-    .madd .x .x11 .x13 .x9 .x11, .str .w .x11 .x2 0]
-
-def power2Round : Prog isa :=
-  .seq (.block (movW .x9 (BitVec.ofNat 32 qNat))) (mapLoop [.x0, .x1, .x2] .x10 p2rBody)
 
 /-! ## `highBits` and `lowBits` -/
 

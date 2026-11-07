@@ -50,14 +50,6 @@ theorem jacTblPt_mem (K : WinCfg) {a : Nat} (ha : 1 ≤ a) (h16 : a ≤ 16) :
   · exact jacTbl_mem K ha h16 (c := 1) (by decide)
   · exact jacTbl_mem K ha h16 (c := 2) (by decide)
 
-/-- The complete 1536-byte table fits in the scratch allocation. -/
-theorem JacWinLay.table_le {K : WinCfg} {size : Nat} (hL : JacWinLay K size) :
-    K.tbl+1536 ≤ size := by
-  have h := hL.lay.le (K.tbl+32*47) (List.mem_append_right _
-    (List.mem_map.mpr ⟨47,by decide,rfl⟩))
-  rw [hL.n] at h
-  omega
-
 /-- The previous eight-entry layout is a sub-layout of this allocation. -/
 theorem JacWinLay.old_slots {K : WinCfg} {size : Nat} (hL : JacWinLay K size) :
     ∀ x ∈ winSlots K, x ∈ jacWinSlots K := by

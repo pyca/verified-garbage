@@ -260,20 +260,6 @@ theorem leakT_step {n κ : Nat}
           | none => intro hr; exact absurd (List.cons.inj hr).1.symm (signRejectTagC_ne_one _ _ _ _ _ _ _ _ _)
           | some zh' => intro hr; simp only [outTag]; exact hr
 
-/-- Two runs that agree on what an iteration leaks, and both reject it,
-agree on which check rejected it. -/
-theorem leakT_tag {n κ : Nat}
-    (h : signLeakLoopT p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ (n + 1) κ = signLeakLoopT p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ (n + 1) κ)
-    {ct₁ ct₂ : List Byte} (e₁ : signIteration p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ κ = some (ct₁, none))
-    (e₂ : signIteration p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ κ = some (ct₂, none)) :
-    signRejectTagC p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ κ = signRejectTagC p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ κ := by
-  simp only [signLeakLoopT] at h
-  have hl : (leakBytes (signCommit p Â₁ μ₁ ρ₁ κ).2.2).length = (leakBytes (signCommit p Â₂ μ₂ ρ₂ κ).2.2).length := by
-    rw [leakBytes_length, leakBytes_length, signCommit_length, signCommit_length]
-  have hr := (List.append_inj h hl).2
-  rw [e₁, e₂] at hr
-  exact (List.cons.inj hr).1
-
 /-- `leakT_step` for the contract's `signLeakLoop`: two runs that agree on
 what an iteration leaks agree on its `c̃`, on
 whether it finished, was rejected or passed, and on the hint if it passed;
@@ -323,9 +309,9 @@ theorem leakF_step {n κ : Nat}
           | none => intro hr; exact absurd (List.cons.inj hr).1.symm (signRejectTag_ne_one _ _ _ _ _ _ _ _ _)
           | some zh' => intro hr; simp only [outTag]; exact hr
 
-/-- `leakT_tag` for the contract's `signLeakLoop`: two runs that agree on
-what an iteration leaks, and both reject it,
-agree on which check rejected it, and at which polynomial. -/
+/-- For the contract's `signLeakLoop`: two runs that agree on what an
+iteration leaks, and both reject it, agree on which check rejected it, and at
+which polynomial. -/
 theorem leakF_tag {n κ : Nat}
     (h : signLeakLoop p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ (n + 1) κ = signLeakLoop p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ (n + 1) κ)
     {ct₁ ct₂ : List Byte} (e₁ : signIteration p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ κ = some (ct₁, none))
@@ -339,72 +325,5 @@ theorem leakF_tag {n κ : Nat}
   exact (List.cons.inj hr).1
 
 end
-
-theorem signLeakLoopT_succ (p : Params) (b : Bounds) (Â : List (List Poly)) (ŝ₁ ŝ₂ t₀Hat : List Poly)
-    (μ ρ'' : List Byte) (n κ : Nat) :
-    signLeakLoopT p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' (n + 1) κ =
-      leakBytes (signCommit p Â μ ρ'' κ).2.2 ++
-        match signIteration p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' κ with
-        | some (_, none) =>
-          signRejectTagC p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' κ :: signLeakLoopT p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' n (κ + p.ℓ)
-        | some (_, some (_, h)) => 1 :: h.flatMap fun hi => hi.toList.map Bool.toNat
-        | none => [] := rfl
-
-/-! ## Contracts that leak `signLeakT` -/
-
-/-- `f` with `φ` applied to its result. -/
-def Curry.post {α β : Type} (φ : α → β) : (ws : List ArgWord) → Curry ws α → Curry ws β
-  | [], f => φ f
-  | _ :: ws, f => fun a => Curry.post φ ws (f a)
-
-theorem Curry.apply_post {α β : Type} (φ : α → β) :
-    ∀ (ws : List ArgWord) (f : Curry ws α) (v : List (BitVec 64)), Curry.apply ws (Curry.post φ ws f) v = φ (Curry.apply ws f v)
-  | [], _, _ => rfl
-  | _ :: ws, _, [] => Curry.apply_post φ ws _ []
-  | _ :: ws, _, _ :: v => Curry.apply_post φ ws _ v
-
-/-- Two runs that agree on what a contract built with `Sig.contract` takes as
-public with the leakage `f` agree on it with the leakage `Curry.post φ f`. -/
-theorem contract_pub_post {M : ISA} {sig : Sig} {A : Abi M} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
-    {post : sig.Post A.ptrBits} {wa : Bool} {st : Nat} {f : Curry (sig.words A.ptrBits) (Mem → List Nat)}
-    (φ : List Nat → List Nat) {s₁ s₂ : M.State} (h : (sig.contract A pre post wa st (some f)).pub s₁ s₂) :
-    (sig.contract A pre post wa st (some (Curry.post (fun F m => φ (F m)) _ f))).pub s₁ s₂ := by
-  revert h
-  unfold Sig.contract
-  dsimp only
-  split
-  · exact id
-  · rintro ⟨⟨a, e⟩, c⟩
-    exact ⟨⟨a, by rw [Curry.apply_post, Curry.apply_post, e]⟩, c⟩
-
-/-- Two runs that agree on `signContract`'s public data agree on that of
-the same contract with `signLeakT` for `signLeak`, against which the
-implementations that run each check on all its polynomials are proven. -/
-theorem signContract_pubT {M : ISA} {A : Abi M} {stack : Nat} {p : Params} {s₁ s₂ : M.State}
-    (h : (signContract p A stack).pub s₁ s₂) :
-    ((signSig p).contract A
-      (post := fun sk mu rnd sig _scratch m m' r =>
-        Outcome (fun b => signMu p b (VG.Spec.Sha3.bytesAt m sk p.skLen) (VG.Spec.Sha3.bytesAt m mu 64)
-          (VG.Spec.Sha3.bytesAt m rnd 32)) r (VG.Spec.Sha3.bytesAt m' sig p.sigLen))
-      (writeArgs := true)
-      (stack := stack)
-      (leak := some fun sk mu rnd _sig _scratch m =>
-        signLeakT p (VG.Spec.Sha3.bytesAt m sk p.skLen) (VG.Spec.Sha3.bytesAt m mu 64)
-          (VG.Spec.Sha3.bytesAt m rnd 32))).pub s₁ s₂ := by
-  have e := contract_pub_post (coarsen p (min 32 p.skLen)) h
-  have hg : @Eq (Curry ((signSig p).words A.ptrBits) (Mem → List Nat))
-      (fun sk mu rnd _sig _scratch m =>
-        signLeakT p (VG.Spec.Sha3.bytesAt m sk p.skLen) (VG.Spec.Sha3.bytesAt m mu 64)
-          (VG.Spec.Sha3.bytesAt m rnd 32))
-      (Curry.post (fun (F : Mem → List Nat) m => coarsen p (min 32 p.skLen) (F m)) ((signSig p).words A.ptrBits)
-        (fun sk mu rnd _sig _scratch m =>
-          signLeak p (VG.Spec.Sha3.bytesAt m sk p.skLen) (VG.Spec.Sha3.bytesAt m mu 64)
-            (VG.Spec.Sha3.bytesAt m rnd 32))) := by
-    funext sk mu rnd sig scratch m
-    rw [signLeakT_eq_coarsen, List.length_take]
-    simp only [VG.Spec.Sha3.bytesAt, List.length_map, List.length_range]
-    rfl
-  rw [hg]
-  exact e
 
 end VG.Proof.MlDsa.Sign

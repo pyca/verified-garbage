@@ -23,7 +23,6 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifac
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
       Impl.Ecdsa.RISCV64.verifySecp256k1
-    consts := Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts
     stack := 80
     verified := Proof.Ecdsa.RISCV64.Secp256k1.verifyHash_verified h.law }]
 

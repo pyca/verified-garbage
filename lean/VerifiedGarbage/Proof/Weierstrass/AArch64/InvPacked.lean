@@ -207,12 +207,6 @@ theorem pset_int (w c : BitVec 64) {C : Int} (hc : c = BitVec.ofInt 64 C) :
 theorem c31 : (2 ^ 31 : BitVec 64) = BitVec.ofInt 64 (2 ^ 31) := by decide
 theorem c47 : (2 ^ 47 : BitVec 64) = BitVec.ofInt 64 (2 ^ 47) := by decide
 
-/-- The registers `pext`, `plow` and `pcomp` see as distinct, for the `g` rows. -/
-theorem gpair_ne {g g' : Reg} (hg : g = .x9 ∧ g' = .x10 ∨ g = .x10 ∧ g' = .x9) :
-    ∀ r ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x11, .x12, .x13, .x16, .x17],
-      (¬ r = g ∧ ¬ g = r) ∧ (¬ r = g' ∧ ¬ g' = r) := by
-  rcases hg with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
-
 /-- The constants of `pext`. -/
 theorem pextK_ok (s : State) :
     WP isa (.block pextK) s fun s' =>
@@ -448,10 +442,6 @@ theorem notD_ok (s : State) :
     exact congrArg (· - s.gpr .x1 - _) (by decide)
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2, ↓reduceIte]
-
-theorem msteps_d15 {T : MSt} {k : Nat} (h : |T.d| + 2 * k ≤ 2 ^ 31) :
-    |(msteps 15 T).d| + 2 * k ≤ 2 ^ 31 + 30 := by
-  have := Divstep.msteps_d T 15; push_cast at this; omega_arith
 
 /-- A batch's `59` divsteps in chunks, from `d` in `x1` and the low words of
 `f` and `g` in `x2`, `x3`: `d` and the matrix in `x1`, `x4`–`x7`. -/

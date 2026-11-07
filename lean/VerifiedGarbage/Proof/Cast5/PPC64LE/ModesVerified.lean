@@ -307,11 +307,6 @@ def modeSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 176⟩]
 
-theorem argPub_iff (s₁ s₂ : State) : argPub s₁ s₂ ↔
-    s₁.sp = s₂.sp ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
-      s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.gpr .r8 = s₂.gpr .r8 := by
-  simp [argPub]
-
 /-- A mode's scratch contract with the table, from `modeP`'s implying it
 without. -/
 theorem implies_consts {post : State → State → Prop} {sig : Sig}

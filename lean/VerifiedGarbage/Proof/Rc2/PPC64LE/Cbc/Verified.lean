@@ -139,41 +139,4 @@ theorem cbc_ok (d : Spec.Rc2.Direction) (s : State) (hs : (cbcC d).pre s) :
   obtain ⟨t, s', he, hp, hl, hq⟩ := cbc_wp d s hs
   exact ⟨t, s', he, ⟨hp, Exec.sp he, hl⟩, hq⟩
 
-theorem cbc_agree (d : Spec.Rc2.Direction) : ∀ s₁ s₂, (cbcC d).pre s₁ → (cbcC d).pre s₂ → (cbcC d).pub s₁ s₂ →
-    taint.Agree (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) s₁ s₂ := by
-  intro s₁ s₂ _ _ h
-  refine ⟨h.2.2.2.2.2, fun r hr => ?_⟩
-  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact h.1
-  · exact h.2.1
-  · exact h.2.2.1
-  · exact h.2.2.2.1
-  · exact h.2.2.2.2.1
-
-theorem encrypt_ct : ConstantTime isa (cbcC .encrypt).pre (cbcC .encrypt).pub encrypt :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) (cbc_agree .encrypt) (by taint_decide)
-
-theorem decrypt_ct : ConstantTime isa (cbcC .decrypt).pre (cbcC .decrypt).pub decrypt :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) (cbc_agree .decrypt) (by taint_decide)
-
-def cbcSat : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | .r7 => 0x4000 | _ => 0
-  lr := 0
-  sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 512⟩]
-
-theorem encrypt_verified : Verified target encrypt (Proof.Rc2.cbcEncryptContract abi) := by
-  refine Verified.of_correct (k := cbcC .encrypt) (cbc_ok .encrypt) encrypt_ct ?_
-  sig_implies [Proof.Rc2.cbcEncryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs, cbcC]
-    [cbcSat] using cbcSat
-
-theorem decrypt_verified : Verified target decrypt (Proof.Rc2.cbcDecryptContract abi) := by
-  refine Verified.of_correct (k := cbcC .decrypt) (cbc_ok .decrypt) decrypt_ct ?_
-  sig_implies [Proof.Rc2.cbcDecryptContract, Proof.Rc2.cbcContract, Proof.Rc2.cbcSig, abi, argRegs, cbcC]
-    [cbcSat] using cbcSat
-
 end VG.Proof.Rc2.PPC64LE.Cbc

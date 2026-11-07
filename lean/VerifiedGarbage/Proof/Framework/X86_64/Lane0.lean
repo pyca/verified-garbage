@@ -69,10 +69,6 @@ theorem proj_ea (s : State) (m : MemOp) : (s.proj 0).ea m = s.ea m := rfl
 theorem proj_setReg (s : State) (d : Reg) (v : BitVec 64) : (s.setReg d v).proj 0 = (s.proj 0).setReg d v := by
   cases s; rfl
 
-theorem proj_setMem (s : State) (a : Addr) (v : BitVec 128) :
-    ({ s with mem := s.mem.writeW a v } : State).proj 0 = { s.proj 0 with mem := (s.proj 0).mem.writeW a v } := by
-  cases s; rfl
-
 /-- `vop d, a, b` from `movdqa d, a` and `op d, b`, on the lower lane. -/
 theorem two_ops {s : State} {d a b : XReg} (hb : b ≠ d) (f : BitVec 128 → BitVec 128 → BitVec 128) :
     ((s.proj 0).setXmm d (s.lane a 0)).setXmm d (f (((s.proj 0).setXmm d (s.lane a 0)).xmm d)

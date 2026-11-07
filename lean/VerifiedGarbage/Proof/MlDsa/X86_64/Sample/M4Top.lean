@@ -145,9 +145,6 @@ theorem unpack4_ok {c : Nat} (hc : emOk c) {s : State} (h : UI σ c 0 s) : WP is
   WP.seq (WP.mono (unpack_ok hp hc (by decide) h) fun _ h₁ => WP.seq (WP.mono (unpack_ok hp hc (by decide) h₁)
     fun _ h₂ => WP.seq (WP.mono (unpack_ok hp hc (by decide) h₂) fun _ h₃ => unpack_ok hp hc (by decide) h₃)))
 
-omit hp in
-theorem sx17 : BitVec.signExtend 64 (0x20000 : BitVec 32) = BitVec.ofNat 64 0x20000 := by decide
-
 /-- The branch on `γ₁`, and the unpackings for it. -/
 theorem sel_ok {s : State} (h : SqInv σ 5 s) {Q : State → Prop} (kont : ∀ s', UI σ (emC (gOf σ)) 4 s' →
     WP isa (.block epi) s' Q) :

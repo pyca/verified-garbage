@@ -29,11 +29,6 @@ theorem fin64_wordsVal_write_top (m : Mem) (B : Addr) (d j : Nat) (v : BitVec 64
     wordsVal (m.writeW (off B (d + 8 * j)) v) B d (j + 1) = wordsVal m B d j + 2 ^ (64 * j) * v.toNat := by
   rw [wordsVal_succ_top, (writeW_outside m B v h).wordsVal (by omega_arith) (by omega_arith), word_writeW_self]
 
-/-- `li` of a numeral below 2048, as an `Int` literal. -/
-theorem fin64_exec_li_lit {s : State} {d : Reg} {m : Nat} (h : m < 2048) :
-    exec (.li d (OfNat.ofNat m : Int)) s = some (s.write d (BitVec.ofNat 64 m)) :=
-  exec_li_nat h
-
 /-- `li` of 0. -/
 theorem fin64_exec_li_zero {s : State} {d : Reg} : exec (.li d 0) s = some (s.write d 0) := by
   rw [exec_li (by decide)]; rfl

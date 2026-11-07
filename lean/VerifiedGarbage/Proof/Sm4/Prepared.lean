@@ -6,9 +6,10 @@ public import VerifiedGarbage.Spec.Sm4.Contract
 /-!
 # SM4 with its round keys prepared once, in a working space
 
-Not trusted: the contracts that the proofs of internal functions (`Rust.Internal`),
-which only verified code calls, are of, and that the proofs of their callers
-compose. Only the callers' contracts, in `Spec/`, are trusted.
+Not trusted: the layout and the predicates in which the proofs of internal
+functions (`Rust.Internal`), which only verified code calls, state what
+those functions do, and which the proofs of their callers compose. Only the
+callers' contracts, in `Spec/`, are trusted.
 
 Two callable pieces of SM4's modes. A bitsliced implementation
 turns the round keys into a table of its own (their bits as masks of its
@@ -26,7 +27,7 @@ direction, and what `vg_sm4_crypt_prepared` needs to find there to transform
 its blocks in that direction. It also gives the offset of the batch's
 `blocks` blocks, and the ranges each function may change. The two functions
 are only ever composed, so the encoding is the implementation's: whatever
-it is, the batch's postcondition holds only where the table encodes the
+it is, what a batch's proof shows holds only where the table encodes the
 round keys of a direction, and then says that the batch is ECB in that
 direction (`Spec/Sm4.lean`).
 
@@ -72,44 +73,5 @@ def Holds (L : Layout) (m : Mem) (ws : Addr) (k : Schedule) (d : Direction) : Pr
 def Keeps (ws : Addr) (wsLen : Nat) (rs : List (Nat × Nat)) (m m' : Mem) : Prop :=
   ∀ i < 8 * wsLen, (∀ r ∈ rs, i < r.1 ∨ r.1 + r.2 ≤ i) →
     m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
-
-/-! ## The preparation -/
-
-/-- `vg_sm4_prepare_keys(schedule, decrypt, ws, ws_len)`: the round keys, the
-direction (0 to encrypt, 1 to decrypt, public) and the working space, in
-64-bit words. -/
-def prepareSig : Sig where
-  params := [("schedule", .array false .u8 128), ("decrypt", .int .usize true), ("ws", .slice true .u64 "ws_len")]
-
-/-- For `decrypt` of 0 or 1 and a working space of at least `L.size` bytes:
-the table encodes the round keys at `schedule` in the order of the direction
-`decrypt` selects. Only the bytes of `L.prepScratch` change. -/
-def prepareContract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contract I :=
-  prepareSig.contract A
-    (pre := fun _schedule decrypt _ws wsLen _ => decrypt.toNat ≤ 1 ∧ L.size ≤ 8 * wsLen.toNat)
-    (post := fun schedule decrypt ws wsLen m m' _ =>
-      Holds L m' ws (scheduleAt m schedule) (directionOf decrypt.toNat) ∧
-        Keeps ws wsLen.toNat L.prepScratch m m')
-    (stack := stack)
-
-/-! ## A batch -/
-
-/-- `vg_sm4_crypt_prepared(ws, ws_len)`: the working space, in 64-bit words. -/
-def cryptSig : Sig where
-  params := [("ws", .slice true .u64 "ws_len")]
-
-/-- For a working space of at least `L.size` bytes whose table encodes some
-round keys in the order of some direction (as `vg_sm4_prepare_keys` leaves
-it): wherever the table encodes the round keys `k` in the order of the
-direction `d`, the `L.blocks` blocks at `L.buf` are replaced by their ECB in
-direction `d` under `k`. Only the bytes of `L.cryptScratch` change. -/
-def cryptContract {I : ISA} (L : Layout) (A : Abi I) (stack : Nat := 0) : Contract I :=
-  cryptSig.contract A
-    (pre := fun ws wsLen m => L.size ≤ 8 * wsLen.toNat ∧ ∃ k d, Holds L m ws k d)
-    (post := fun ws wsLen m m' _ =>
-      (∀ k d, Holds L m ws k d →
-        blocksAt m' (ws + BitVec.ofNat 64 L.buf) L.blocks = ecb k d (blocksAt m (ws + BitVec.ofNat 64 L.buf) L.blocks)) ∧
-      Keeps ws wsLen.toNat L.cryptScratch m m')
-    (stack := stack)
 
 end VG.Proof.Sm4.Prepared

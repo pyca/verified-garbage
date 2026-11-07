@@ -38,9 +38,6 @@ def jointGSpan (c : Joint.Cfg) : Nat := if c.gw=9 then 520 else 264
 def jointGByte (c : Joint.Cfg) (u i : Nat) : BitVec 8 :=
   if c.gw=9 then FastNaf.wbyte u i else FastNaf.byte 7 u i
 
-/-- The largest magnitude of the generator's digits. -/
-def jointGTop (c : Joint.Cfg) : Nat := if c.gw=9 then 255 else 63
-
 theorem jointGLen_le_span (c : Joint.Cfg) : jointGLen c≤jointGSpan c := by
   unfold jointGLen jointGSpan; split <;> omega
 

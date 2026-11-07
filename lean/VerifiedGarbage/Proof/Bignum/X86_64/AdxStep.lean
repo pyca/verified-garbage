@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 /-!
 # Multiword arithmetic on x86-64: the steps of the BMI2/ADX multiplication
 
-The instructions of a block of `montMulAdx` (`Impl/Bignum/X86_64/Adx.lean`),
+The instructions of a block of the ADX multiplication (`Impl/Bignum/X86_64/Adx.lean`),
 each run symbolically once, for any registers: `mulx`, `adcx` and `adox`
 (`mulx_ok`, `adcx_ok`, `adox_ok`), and the shapes made of them, a word of
 the block's first half (`wordA_ok`) and of its second (`wordB_ok`), and the

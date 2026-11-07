@@ -5,13 +5,13 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.Ifma
 public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldMemory
 
 /-!
-# Ed25519: base-point multiplication with a comb, with AVX512_IFMA
+# Ed25519: the comb's blocks in the lanes, with AVX512_IFMA
 
-`Ifma.combMultiply` is `combMultiply`'s comb (the same digits, tables and
-order of additions and doublings) with the accumulated point `(X, Y, Z, T)`
-in the four lanes of `ymm0–ymm4`, as `Ifma.windows` keeps it, and each
-addition of a table's entry done in two products of X25519's four-lane field
-arithmetic (`mul4`):
+The blocks of `combMultiply`'s comb with the accumulated point `(X, Y, Z, T)`
+in the four lanes of `ymm0–ymm4`, as `Ifma.windows` keeps it, which
+`Zmm.combMultiply` and verification's windows build on: each addition of a
+table's entry is done in two products of X25519's four-lane field
+arithmetic (`mul4`, `vadd`):
 
 1. `(Y - X, Y + X, T, Z) · (y - x, y + x, 2dt, 2) = (A, B, C, D)`;
 2. with `E = B - A`, `F = D - C`, `G = D + C` and `H = B + A`,
@@ -22,15 +22,11 @@ The entry is selected as `combSelect` does but 32 bytes at a time
 (`vselect`, into `ymm11–ymm13`, from the static `combSym`), each entry's mask
 one `vpcmpeqd` of the magnitude with the static's copy of the entry's, the identity's
 `1`s or'd in for a zero magnitude, and its words split into the limbs of the
-lanes `(y - x, y + x, 2dt, 2)` (`eload`, with the slot `K2` holding `2`);
-for a negative digit (the mask in `rcx`) the lanes `y - x` and
-`y + x` are exchanged and `2dt` becomes `2¹¹ p - 2dt` (`vneg`). The five
-doublings are `vdbl`'s, and `[G]B`'s entry is in slots 9–11, stored before the loop.
+lanes (`esplit`); for a negative digit (the mask in each quadword of `ymm15`)
+the lanes `y - x` and `y + x` are exchanged and `2dt` becomes `2¹¹ p - 2dt`
+(`vnegBody`). The five doublings are `vdbl`'s (`vdbl5`).
 
-The loop runs between Intel's MXCSR prologue and epilogue (`withMx`, which
-keeps MXCSR in `r11`; nothing in the loop writes `r11`). The digits and the
-sign are computed as `combMultiply` computes them,
-and every address is the scratch or the static plus a public offset.
+Every address is the scratch or the static plus a public offset.
 -/
 
 @[expose] public section
@@ -43,15 +39,6 @@ open VG.Impl.X25519.X86_64.Ifma (y ld st v srl sll perm blend zero lanes ord car
   KM K19 KB0 KB1 OPL OPV)
 open VG.Impl.Ed25519.X86_64 (offset combSym combEntryBytes combTblAt combMagBytes combEqMask combSelSetup combSignMask
   combIndex combChunk combSign constPointOps combG combGCached FieldOp fieldCode)
-
-/-- The slot holding `2`, the entries' `2Z`. -/
-def K2 : Nat := offset 7
-
-/-- Before the loop: `[G]B` into slots 0–3, `2` into slot 7, and `[G]B`'s entry into slots
-9–11. -/
-def combConstOps : List FieldOp :=
-  constPointOps combG ++ [.const 7 2, .const 9 combGCached.X, .const 10 combGCached.Y,
-    .const 11 combGCached.Z]
 
 /-! ## The entry, from its words -/
 
@@ -68,23 +55,13 @@ def esplit : List Instr :=
     srl 8 13 25, srl 10 15 39, v .vpand 10 14 10, sll 10 10 39, v .vpor 8 8 10,
     srl 9 14 12]
 
-/-- The entry `[y - x, y + x, 2dt]` in `ymm11–ymm13` with `rax` (`1` for the identity, else
-`0`) or'd into the first word of `y - x` and `y + x`, and `2` (slot `K2`), into the limbs of
-the lanes of `ymm5–ymm9`. -/
-def eload : List Instr :=
-  [.vop (.vmovq (y 10) .rax), v .vpor 11 11 10, v .vpor 12 12 10, ld 14 K2] ++ esplit
-
-/-- `vneg` with the mask already in each quadword of `ymm15`. -/
+/-- The entry in the lanes of `ymm5–ymm9` negated if the mask in each quadword of `ymm15` is all
+ones: lanes 0 and 1 exchanged, and lane 2 subtracted from the bias `2¹¹ p` (`kb`). -/
 def vnegBody : List Instr :=
   (List.range 5).flatMap fun j =>
     [perm 10 (5 + j) (ord 1 0 2 3), ld 11 (kb j), v .vpsubq 11 11 (5 + j),
       blend 10 10 11 (lanes false false true false), v .vpxor 10 10 (5 + j), v .vpand 10 10 15,
       v .vpxor (5 + j) (5 + j) 10]
-
-/-- The entry in the lanes of `ymm5–ymm9` negated if the mask `rcx` is all ones: lanes 0 and 1
-exchanged, and lane 2 subtracted from the bias `2¹¹ p` (`kb`), under the mask in `ymm15`. -/
-def vneg : List Instr :=
-  [.vop (.vmovq (y 15) .rcx), .vop (.vpbroadcastq .l256 (y 15) (y 15))] ++ vnegBody
 
 /-! ## An addition -/
 
@@ -111,10 +88,6 @@ def vaddB : List Instr :=
 def vadd : List Instr :=
   vaddA ++ carry id ++ vstA ++ mul4 OPL ++ vaddB ++ carry (5 + ·) ++ carry id ++ dblC ++ mul4 OPV
 
-/-- The entry in `ymm11–ymm13` (with `rax` and the mask `rcx`) added to the point in the
-lanes. -/
-def ventry : List Instr := eload ++ vneg ++ carry (5 + ·) ++ vadd
-
 /-! ## The selection -/
 
 /-- `[rax + combMagBytes + 32 (m - 1)]`: the magnitude `m` (from 1) in the static at `rax`. -/
@@ -138,15 +111,6 @@ magnitude). -/
 def vselect : List Instr :=
   combSelSetup ++ vselMag ++ [zero 11, zero 12, zero 13] ++ (List.range 16).flatMap fun m => vselEntry (m + 1)
 
-/-- `rax = 1` if the magnitude `r8` is zero (else `0`), and the sign's mask into `rcx`. -/
-def combFlags : List Instr :=
-  [.mov .rax (.reg .r8), .alu .cmp .rax (.imm 1), .alu .sbb .rax (.reg .rax), .alu .and .rax (.imm 1),
-    .mov .rcx (.mem (sc combSignMask))]
-
-/-- `[G]B`'s entry into `ymm11–ymm13`, from slots 9–11, with `rax = rcx = 0`. -/
-def gEntry : List Instr :=
-  [.mov32 .rax (.imm 0), .mov32 .rcx (.imm 0), ld 11 (offset 9), ld 12 (offset 10), ld 13 (offset 11)]
-
 /-! ## The comb -/
 
 /-- Four doublings of the lanes, counted by `rsi`. -/
@@ -155,23 +119,6 @@ def vdbl4 : Prog isa :=
 
 /-- Five doublings of the lanes: `vdbl4`'s, and one more. -/
 def vdbl5 : Prog isa := .seq vdbl4 (.block vdbl)
-
-/-- Step `rbx`: before the even digits, the five doublings and `[G]B`; then the digit's entry
-of table `r9`, negated for a negative digit, added. -/
-def combStep : Prog isa :=
-  .seq (.block [.alu .cmp .rbx (.imm 26)]) <|
-  .seq (.ite .e (.seq vdbl5 (.block (gEntry ++ ventry))) (.block [])) <|
-  .seq combIndex <|
-  .seq combChunk <|
-  .block (combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)] ++ vselect ++ combFlags ++
-    ventry ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 52)])
-
-/-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward: `[G]B` into
-the lanes (through slots 0–3), the constants (`combConstOps`, `vload`'s), and the 52 steps with
-MXCSR `0x1FBF`. -/
-def combMultiply (fld : Arith) : Prog isa :=
-  .seq (.block (fieldCode fld combConstOps ++ VG.Impl.X25519.X86_64.Ifma.consts ++ vload))
-    (withMx (.seq (.block [.mov32 .rbx (.imm 0)]) (.seq (.loop combStep .ne) (.block vstore))))
 
 end VG.Impl.Ed25519.X86_64.Ifma
 

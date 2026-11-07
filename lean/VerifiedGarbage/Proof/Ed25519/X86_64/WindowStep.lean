@@ -57,24 +57,6 @@ theorem tableStart_ok {s : State} {base : Addr} (hp : s.gpr .rdi = base) (o : Na
 
 /-! ## `[i]A` -/
 
-theorem rbxNext_ok (s : State) (n : Nat) (hn : n < 15) (hc : s.gpr .rbx = BitVec.ofNat 64 n) :
-    WP isa (.block [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 15)]) s fun t =>
-      t.gpr .rbx = BitVec.ofNat 64 (n + 1) ∧ t.zf = some (decide (n + 1 = 15)) ∧ Keeps [.rbx] s t := by
-  have ha : BitVec.ofNat 64 n + (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (n + 1) := by
-    rw [show (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add]
-  have hz : (BitVec.ofNat 64 (n + 1) - (15 : BitVec 32).signExtend 64 == 0) = decide (n + 1 = 15) := by
-    rw [show (15 : BitVec 32).signExtend 64 = BitVec.ofNat 64 15 from rfl]
-    apply Bool.eq_iff_iff.mpr
-    simp only [beq_iff_eq, decide_eq_true_eq]
-    bv_omega_using [hn]
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
-    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.zf_arithFlags,
-    hc, ha, hz, ite_true, Option.bind_some, Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, trivial, fun r hr => ?_, rfl, rfl, rfl⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
-
 theorem rbxSet_ok (s : State) (n : Nat) (hn : n < 2 ^ 31) :
     WP isa (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 n))]) s fun t =>
       t.gpr .rbx = BitVec.ofNat 64 n ∧ Keeps [.rbx] s t := by
@@ -192,7 +174,8 @@ theorem dblOps_rep (e : Env) (t : Bool) {a : EPoint dZ} (ha : RepP (point e 0 1 
   · dsimp only [point]
     rw [n3 ht, n2, toZ_neg, toZ_neg, hr.t, mul_neg]
 
-/-- The cached addition of the point operations, as `pointAddCachedWide_ok`. -/
+/-- The cached addition of the point operations: `pointAdd` of the accumulator and the
+point whose cached form is in slots 4–7. -/
 theorem addPtWide_ok {s : State} {base : Addr} (hs : Scratch s base)
     (q : Spec.Ed25519.Point) (hq : point (env s.mem base) 4 5 6 7 = cache q) :
     WP isa (pt.add true) s fun t =>
@@ -544,12 +527,6 @@ theorem WinKeep.of_keeps {base : Addr} {s t : State} {rs : List Reg} (h : Keeps 
   · exact hs h
   · exact hr h
 
-theorem WinKeep.of_double {base : Addr} {s t : State} (h : DoubleKeep base s t) : WinKeep base s t :=
-  ⟨fun r hr _ hs => h.gpr r hs hr, h.rd, h.wr, h.mem.mono (by decide) (by decide)⟩
-
-theorem WinKeep.of_rbx {base : Addr} {s t : State} (h : RbxKeep base s t) : WinKeep base s t :=
-  ⟨fun r hr hb _ => h.gpr r hr hb, h.rd, h.wr, h.mem.mono (by decide) (by decide)⟩
-
 theorem WinKeep.counter {base : Addr} {s t : State} (h : WinKeep base s t) :
     t.mem.readW (off base 56) 64 = s.mem.readW (off base 56) 64 :=
   h.mem.word (Or.inl (by decide)) (by decide)
@@ -579,54 +556,6 @@ theorem dblH_ok {s : State} {base : Addr} (hs : Scratch s base) (t : Bool) {a : 
     · rw [(dblOpsH_eval _).1]; exact hr.proj
   · subst ht
     rw [vu, (dblOpsH_eval _).1]; exact hr
-
-theorem double4_ok {s : State} {base : Addr} {a : EPoint dZ} (hs : Scratch s base)
-    (ha : Rep (point (env s.mem base) 0 1 2 3) a) :
-    WP isa (double4 fld) s fun t => Rep (point (env t.mem base) 0 1 2 3) ((16 : Nat) • a) ∧
-      (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ DoubleKeep base s t := by
-  rw [double4]
-  refine WP.seq (WP.mono (show WP isa (.block [.mov32 .rsi (.imm 3)]) s
-      (fun t => t.gpr .rsi = 3 ∧ Keeps [.rsi] s t) by
-    apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32,
-      RegUpd.gpr_setReg, ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
-    refine ⟨rfl, fun r hr => ?_, rfl, rfl, rfl⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₁ ⟨c1, k1⟩ => ?_)
-  have hs₁ : Scratch s₁ base := hs.of_keeps k1 (by decide)
-  have k1d : DoubleKeep base s s₁ := ⟨fun r hr _ => k1.1 r (by simpa using hr), k1.2.2.1, k1.2.2.2,
-    by rw [k1.2.1]; exact Outside.refl _ _ _ _⟩
-  have keepD {x y : State} (k : Keep base x y) : DoubleKeep base x y :=
-    ⟨fun r _ hc => k.gpr r hc, k.rd, k.wr, k.mem⟩
-  refine WP.seq ?_
-  apply WP.loop (fun (n : Nat) (t : State) => 0 < n ∧ n ≤ 3 ∧ Scratch t base ∧
-    t.gpr .rsi = BitVec.ofNat 64 n ∧ RepP (point (env t.mem base) 0 1 2 3) ((2 ^ (3 - n) : Nat) • a) ∧
-    (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ DoubleKeep base s t) (n := 3)
-  · intro n t ⟨hn0, hn3, ht, tc, tv, th, tk⟩
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega_arith : n ≠ 0)
-    rw [WP.block_append_iff]
-    refine WP.mono (dblH_ok ht false tv) fun u ⟨ku, uv, _, uh⟩ => ?_
-    refine WP.mono (doubleDec_ok u k (by omega_arith) ((ku.gpr _ (by decide)).trans tc))
-      fun w ⟨wc, wz, kw⟩ => ?_
-    have wrep : RepP (point (env w.mem base) 0 1 2 3) ((2 ^ (3 - k) : Nat) • a) := by
-      rw [kw.2.1, show 3 - k = (3 - (k + 1)) + 1 by omega_arith, pow_succ, mul_nsmul, two_nsmul]
-      exact uv
-    have wh : ∀ i : Slot, 16 ≤ i.val → env w.mem base i = env s.mem base i :=
-      fun i h => by rw [kw.2.1, uh i h, th i h]
-    have wk : DoubleKeep base s w := tk.trans ((keepD ku).trans
-      ⟨fun r hr _ => kw.1 r (by simpa using hr), kw.2.2.1, kw.2.2.2,
-        by rw [kw.2.1]; exact Outside.refl _ _ _ _⟩)
-    by_cases hk0 : k = 0
-    · subst hk0
-      refine Or.inl ⟨by simp only [eval, wz, decide_true, Option.map_some, Bool.not_true], ?_⟩
-      refine WP.mono (dblH_ok (wk.scratch hs) true wrep) fun v ⟨kv, _, vr, vh⟩ => ?_
-      refine ⟨?_, fun i h => (vh i h).trans (wh i h), wk.trans (keepD kv)⟩
-      rw [show (16 : Nat) = 2 ^ (3 - 0) * 2 by rfl, mul_nsmul, two_nsmul]
-      exact vr rfl
-    · exact Or.inr ⟨by simp only [eval, wz, decide_eq_false hk0, Option.map_some, Bool.not_false],
-        k, by omega_arith, by omega_arith, by omega_arith, wk.scratch hs, wc, wrep, wh, wk⟩
-  · refine ⟨by decide, by decide, hs₁, c1, ?_, fun i _ => by rw [k1.2.1], k1d⟩
-    rw [show (2 ^ (3 - 3) : Nat) = 1 from rfl, one_nsmul, k1.2.1]; exact ha.proj
 
 /-! ## Digits -/
 
@@ -876,15 +805,6 @@ theorem WinCtx.of_keep {base kp sp T : Addr} {A : EPoint dZ} {s t : State} (h : 
   · intro i hi; rw [k.rd, k.wr]; exact h.sRead i hi
   · intro i hi; rw [k.rd, k.wr]; exact h.kRead8 i hi
   · intro i hi; rw [k.rd, k.wr]; exact h.sRead8 i hi
-
-theorem WinCtx.byteK {base kp sp T : Addr} {A : EPoint dZ} {s t : State} (h : WinCtx base kp sp T A s)
-    (k : WinKeep base s t) {i : Nat} (hi : i < 64) : t.mem (off kp i) = s.mem (off kp i) :=
-  k.mem _ (by have := h.kFar i hi; omega_arith)
-
-theorem WinCtx.byteS {base kp sp T : Addr} {A : EPoint dZ} {s t : State} (h : WinCtx base kp sp T A s)
-    (k : WinKeep base s t) {i : Nat} (hi : i < 32) :
-    t.mem (off (off sp 32) i) = s.mem (off (off sp 32) i) :=
-  k.mem _ (by have := h.sFar i hi; omega_arith)
 
 theorem off_zero (p : Addr) : off p 0 = p := by
   simp only [off, BitVec.add_zero]

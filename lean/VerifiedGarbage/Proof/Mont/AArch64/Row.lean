@@ -153,12 +153,6 @@ theorem fetch_ok {s : State} {rm : Reg} {base : Addr} {size : Nat} (hs : Ptr s r
     refine WP.mono (const64c_ok s .x3 v) fun s' ⟨e, k, c⟩ => ⟨?_, k, c⟩
     simp only [Src.out, Src.val, e]
 
-theorem _root_.VG.Impl.Mont.AArch64.Src.out_ne {size : Nat} {src : Src} (h : src.Ok size) : src.out ≠ .x2 := by
-  cases src with
-  | reg r => exact h.1
-  | mem _ => simp only [Src.out]; decide
-  | imm _ => simp only [Src.out]; decide
-
 /-- The piece of the multiplier `x`, into `p.reg x`. -/
 theorem piece_ok {s : State} {rm : Reg} {base : Addr} {size : Nat} (hs : Ptr s rm base size) {x : Reg}
     (hx3 : x ≠ .x3) {p : Piece} (hp : p.Ok size) :

@@ -192,10 +192,6 @@ theorem g_cases' (x : BitVec 64) :
   · rw [decide_eq_false hc]
     exact beq_false_of_ne fun e => hc (hiff.mp e)
 
-theorem g_cases (s₀ : State) :
-    ((s₀.gpr .r4 - BitVec.ofNat 64 261888).setWidth 32 == 0) = decide ((G s₀).toNat = g32) :=
-  g_cases' _
-
 /-- The registers after `gSel rg`. -/
 def selGpr (rg : Reg) (f : Reg → BitVec 64) (r : Reg) : BitVec 64 :=
   if r = .r0 then f rg - BitVec.ofNat 64 261888 else if r = .r7 then BitVec.ofNat 64 261888 else f r

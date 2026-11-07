@@ -31,16 +31,6 @@ open VG.Spec.Sha3 (bytesAt)
 section
 variable {p : Params} {D : Nat}
 
-/-- A piece that keeps `I`, from runs in the layout that satisfy it. -/
-theorem stepSelf {c : Prog isa} {I : State → Prop}
-    (h : RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ I x ∧ I y) c fun _ _ => True)
-    (w : ∀ x, Lay D (sgR p) (sgW p) x → I x → WP isa c x fun x' => (∃ W, PostB D x x' W) ∧ I x') :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ I x ∧ I y) c
-      fun x y => LRel D (sgR p) (sgW p) x y ∧ I x ∧ I y :=
-  VG.Proof.MlKem.X86_64.RelCT.postDep h (F := fun x x' => (∃ W, PostB D x x' W) ∧ I x')
-    (fun x y h => ⟨w x h.1.lx h.2.1, w y h.1.ly h.2.2⟩)
-    fun _ _ _ _ h ⟨⟨_, hx⟩, jx⟩ ⟨⟨_, hy⟩, jy⟩ => ⟨h.1.post (sgB_bases p) hx hy, jx, jy⟩
-
 theorem lrel_rbx {x y : State} (h : LRel D (sgR p) (sgW p) x y) : ∀ r ∈ [Reg.rbx], x.gpr r = y.gpr r := by
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr

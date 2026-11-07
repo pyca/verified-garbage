@@ -62,50 +62,10 @@ theorem exec_ldrq {s : State} {t : VReg} {n : Reg} {off : Nat}
   simp only [exec, addr, show 4096 * 16 = 65536 from rfl, ho, and_self, ite_true, State.load,
     h, Option.bind_some, Option.map_some]
 
-theorem exec_strq {s : State} {t : VReg} {n : Reg} {off : Nat}
-    (ho : off % 16 = 0 ∧ off < 65536)
-    (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 16) :
-    exec (.strq t n off) s =
-      some { s with mem := s.mem.write (s.gpr n + BitVec.ofNat 64 off) 16 (s.v t) } := by
-  simp only [exec, addr, show 4096 * 16 = 65536 from rfl, ho, and_self, ite_true, State.store,
-    h, Option.bind_some]
-
-theorem setLane_three_hi (a b c d : BitVec 32) :
-    setLane (setLane (setLane (ofVWords a a a a) 32 1 b) 32 2 c) 32 3 d = ofVWords a b c d := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro j hj
-  simp only [setLane, ofVWords, BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not,
-    BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes, BitVec.getLsbD_append,
-    hj, decide_true, Bool.true_and, Nat.reduceMul]
-  by_cases h0 : j < 32
-  · simp (disch := omega_arith) [h0, decide_eq_true]
-  by_cases h1 : j < 64
-  · simp (disch := omega_arith) [h0, h1, decide_eq_true, show j - 32 < 32 by omega_arith]
-  by_cases h2 : j < 96
-  · simp (disch := omega_arith) [h0, h1, h2, decide_eq_true,
-      show ¬ j - 32 < 32 by omega_arith, show j - 32 - 32 = j - 64 by omega_arith, show j - 64 < 32 by omega_arith]
-  · simp (disch := omega_arith) [h0, h1, h2, decide_eq_true, decide_eq_false,
-      show ¬ j - 32 < 32 by omega_arith, show ¬ j - 32 - 32 < 32 by omega_arith,
-      show j - 32 - 32 - 32 = j - 96 by omega_arith]
-
 theorem kreg_inj : ∀ i < 16, ∀ j < 16, kreg i = kreg j → i = j := by decide
 
 /-- The registers that are never a constant register. -/
 theorem kreg_ne : ∀ i < 16, ∀ r ∈ [VReg.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7], kreg i ≠ r := by decide
-
-theorem writeW64 (m : Mem) (a : Addr) (v : BitVec 64) : m.writeW a v = m.write a 8 v := by
-  simp only [Mem.writeW]
-  rfl
-
-theorem lo_append (a b : BitVec 32) : (b ++ a).extractLsb' 0 32 = a := by
-  ext i hi
-  rw [BitVec.getElem_extractLsb', BitVec.getLsbD_append]
-  simp [hi, BitVec.getLsbD_eq_getElem]
-
-theorem hi_append (a b : BitVec 32) : (b ++ a).extractLsb' 32 32 = b := by
-  ext i hi
-  rw [BitVec.getElem_extractLsb', BitVec.getLsbD_append]
-  simp [hi, BitVec.getLsbD_eq_getElem]
 
 /-- Group `n`'s constants, as `ldrqTbl` reads them from the table. -/
 theorem kTable_quad : ∀ n < 16, kTable.getD (16 * n / 8 + 1) 0 ++ kTable.getD (16 * n / 8) 0 = kQuad n := by
@@ -665,7 +625,6 @@ theorem correct {s₀ : State} (hp : AArch64.Pre s₀) :
             hk', hx'⟩
       refine WP.seq (WP.block_cons_iff.mpr ⟨s₂, rfl, WP.block_nil ?_⟩)
       exact WP.loop (M := isa) Inv hstep (nb s₀ - 1) s₂ ⟨0 + 1, rfl, by omega_arith, hV, hk, hx4⟩
-
 
 theorem compress_verified :
     Verified AArch64.target Impl.Sha256.AArch64.Sha2.compress Proof.Sha256.compressAArch64 := by

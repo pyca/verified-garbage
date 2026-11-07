@@ -92,11 +92,6 @@ theorem WP.of_flat {c : Prog M} {l : List (Prog M)} {s : M.State} {Q : M.State �
   let ⟨t, s', e, hq⟩ := h
   ⟨t, s', hl ▸ exec_flat.mp e, hq⟩
 
-theorem WP.to_flat {c : Prog M} {s : M.State} {Q : M.State → Prop}
-    (h : WP M (Code.seqL c.flat) s Q) : WP M c s Q :=
-  let ⟨t, s', e, hq⟩ := h
-  ⟨t, s', exec_flat.mpr e, hq⟩
-
 theorem RelCT.of_flat {P Q : M.State → M.State → Prop} {c : Prog M}
     (h : RelCT M P (Code.seqL c.flat) Q) : RelCT M P c Q :=
   fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ _ _ _ _ hp (exec_flat.mp e₁) (exec_flat.mp e₂)

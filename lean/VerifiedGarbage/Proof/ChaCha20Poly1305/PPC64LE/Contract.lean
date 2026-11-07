@@ -68,7 +68,23 @@ def sealPPC64LE : Contract PPC64LE.isa where
   pub := pubPPC64LE
 
 open VG.PPC64LE in
-/-- `open(key, nonce, aad, aad_len, data, len, tag, work) -> u32`. -/
+/-- Whether the message is authenticated, in `open`'s state on entry. -/
+def okPPC64LE (s : PPC64LE.State) : Bool :=
+  (decrypt (bytesAt s.mem (s.gpr .r3) 32) (bytesAt s.mem (s.gpr .r4) 12)
+    (bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat)
+    (bytesAt s.mem (s.gpr .r9) 16)).isSome
+
+open VG.PPC64LE in
+/-- What `open` may leak (`Spec.ChaCha20Poly1305.openLeak`): whether the
+message is authenticated. -/
+def openLeakPPC64LE (s : PPC64LE.State) : List Nat :=
+  [if (decrypt (bytesAt s.mem (s.gpr .r3) 32) (bytesAt s.mem (s.gpr .r4) 12)
+    (bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat)
+    (bytesAt s.mem (s.gpr .r9) 16)).isSome then 1 else 0]
+
+open VG.PPC64LE in
+/-- `open(key, nonce, aad, aad_len, data, len, tag, work) -> u32`: zeros at
+`data` if the tag is wrong; it may leak whether it is (`openLeakPPC64LE`). -/
 def openPPC64LE : Contract PPC64LE.isa where
   pre := prePPC64LE false
   post s s' :=
@@ -76,7 +92,8 @@ def openPPC64LE : Contract PPC64LE.isa where
         (bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat)
         (bytesAt s.mem (s.gpr .r9) 16) with
     | some pt => s'.gpr .r3 = 1 ∧ bytesAt s'.mem (s.gpr .r7) (s.gpr .r8).toNat = pt
-    | none => s'.gpr .r3 = 0
-  pub := pubPPC64LE
+    | none => s'.gpr .r3 = 0 ∧
+        bytesAt s'.mem (s.gpr .r7) (s.gpr .r8).toNat = List.replicate (s.gpr .r8).toNat 0
+  pub s₁ s₂ := pubPPC64LE s₁ s₂ ∧ openLeakPPC64LE s₁ = openLeakPPC64LE s₂
 
 end VG.Proof.ChaCha20Poly1305

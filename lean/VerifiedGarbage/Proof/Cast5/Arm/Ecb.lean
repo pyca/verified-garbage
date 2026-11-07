@@ -53,8 +53,6 @@ theorem restore_eq : restore = savedSlots.map fun p => Instr.ldr p.1 .r12 p.2 :=
 theorem savedSlots_ok : Spill.Slots 64 100 savedSlots := by decide
 theorem savedSlots_restorable : Spill.Restorable .r12 savedSlots := by decide
 theorem savedSlots_preserved : ∀ r ∈ preserved, r ∈ savedSlots.map Prod.fst := by decide
-theorem savedSlots_ne : ∀ p ∈ savedSlots, p.1 ≠ .r12 := by decide
-
 /-! ## The loop over the blocks -/
 
 /-- The state of ECB with `j` of the `N` blocks at `d` done, from the memory
@@ -162,9 +160,6 @@ theorem advance_ok (v : State) {c : BitVec 32} (hc : v.gpr .r12 = c) (hcf : c.to
     fun hw => by obtain ⟨g, hg, hcg⟩ := hin hw; exact ⟨g, List.mem_append_right _ hg, hcg⟩
   unfold advance
   crun [dataOff, nOff, hc, aS, hin, hin', hx, hy]
-
-theorem slot_disj (C : Addr) {off : Nat} (ho : off + 4 ≤ 16) :
-    Region.Disjoint ⟨C + BitVec.ofNat 64 off, 4⟩ ((⟨C + BitVec.ofNat 64 16, 8⟩ : Region)) := Offset.disjoint _ (by omega_arith) (by omega_arith) (by decide)
 
 /-- A block and another, or the working space. -/
 theorem blk_disj_blk (D : Addr) {N i j : Nat} (hi : i < N) (hj : j < N) (hN : 8 * N ≤ 2 ^ 32) (hij : i ≠ j) :

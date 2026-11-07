@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 public import VerifiedGarbage.Impl.Sha3.AArch64.Stream
 import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 
-
 /-!
 # ML-KEM-768 on AArch64: building blocks of the top-level functions
 
@@ -69,9 +68,5 @@ def hashWith (c : Impl.Sha3.AArch64.Callee) (sc : Reg) (st wk rate sfx : Nat) (i
   .seq (absorbsWith c sc st wk rate true ins) <|
   .seq (.block (keccakArgs sc st wk rate false .x4 ++ ([.movz .x .x3 (BitVec.ofNat 16 sfx) 0] : List Instr)))
     (.seq (.call ("vg_keccak_pad_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c)) (squeezesWith c sc st wk rate true outs))
-
-def absorbs := absorbsWith .scalar
-def squeezes := squeezesWith .scalar
-def hash := hashWith .scalar
 
 end VG.Impl.MlKem.AArch64

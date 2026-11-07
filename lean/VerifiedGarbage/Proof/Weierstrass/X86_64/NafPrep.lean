@@ -154,35 +154,4 @@ theorem nafPrepInit_ok {s : State} {base : Addr} {size src bits : Nat}
     simp only [RegUpd.gpr_setReg,h12,hbx,ite_false]
     exact ka.1 r (fun h => hr ((by decide : ∀ q∈[Reg.r8,.r9,.r10,.r11],q∈nafPrepClob) r h))
 
-theorem nafPrep_ok {s : State} {base : Addr} {size src bits : Nat}
-    (hs : Scr s base size) (hsrc : src+32≤size) (hb : bits+257≤size) :
-    WP isa (Naf.prep bits src) s fun t =>
-      NafPrepState base size bits (wordsVal s.mem base src 4) 257 t ∧
-      KeepRegs nafPrepClob s t ∧ Outside base bits 257 s.mem t.mem := by
-  let k := wordsVal s.mem base src 4
-  have hk : k<2^256 := wordsVal_lt ..
-  let I (m : Nat) (t : State) := NafPrepState base size bits k (257-m) t ∧
-    KeepRegs nafPrepClob s t ∧ Outside base bits 257 s.mem t.mem
-  rw [Naf.prep]
-  refine WP.seq (WP.mono (nafPrepInit_ok (bits:=bits) hs hsrc) fun a ⟨ha,ka,ma⟩ => ?_)
-  refine WP.loop (M:=isa) (fun m t => 1≤m ∧ m≤257 ∧ I m t) (fun m t ⟨hm,hm',hi⟩ => ?_)
-    257 a ⟨by decide,by decide,ha,ka,?_⟩
-  · have hj : 257-m<257 := by omega_arith
-    have hv : Naf5.residual k (257-m)≤2^256 := by
-      have h := Naf5.residual_bound (Nat.le_of_lt hk) (j:=257-m) (by omega_arith)
-      have hp : 2^(256-(257-m))≤2^256 := Nat.pow_le_pow_right (by decide) (by omega_arith)
-      exact Nat.le_trans h hp
-    refine WP.mono (nafPrepStep_ok hi.1 hb hj hv) fun u ⟨hu,cf,ku,ou⟩ => ?_
-    have ki := hi.2.1.trans ku
-    have oi := hi.2.2.trans ou
-    by_cases hm1 : m=1
-    · subst m
-      exact Or.inl ⟨cf,hu,ki,oi⟩
-    · refine Or.inr ⟨?_,m-1,by omega_arith,by omega_arith,by omega_arith,?_,ki,oi⟩
-      · change u.cf=some true
-        rw [cf]; congr 1; exact decide_eq_true (by omega_arith)
-      · rw [show 257-(m-1)=257-m+1 from by omega_arith]
-        exact hu
-  · rw [ma]; exact Outside.refl _ _ _ _
-
 end VG.Proof.Weierstrass.X86_64

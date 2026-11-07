@@ -47,10 +47,8 @@ end
 # BLAKE2b compression function on ARMv7: the whole function
 
 The loop is proven against `Proof.Blake2.compressArm Spec.Blake2.b`
-(`compress_verified'`), which the streaming functions use for their calls;
-`compress_verified` moves it to the shared contract of
-`Spec/Blake2/Contract.lean`. Constant time is the taint analysis on the
-literal code (`LitB.lean`).
+(`compress_verified'`), which the streaming functions use for their calls.
+Constant time is the taint analysis on the literal code (`LitB.lean`).
 -/
 
 namespace VG.Proof.Blake2.ArmB
@@ -186,13 +184,6 @@ theorem scr_frame {d : Nat} (hd : 128 ≤ d) (hd' : d + 4 ≤ 512) (hc : d + 4 �
   · exact Offset.disjoint_base _ hd (by omega_arith)
   · exact Region.Disjoint.sub_left h.st_scr.symm (Offset.sub_base _ (by omega_arith))
   · exact Offset.disjoint _ hc (by omega_arith) (by simp only [ctrLo]; omega_arith)
-
-theorem scr_frame64 {d : Nat} (hd : 128 ≤ d) (hd' : d + 8 ≤ 512) (hc : d + 8 ≤ ctrLo ∨ ctrLo + 12 ≤ d)
-    {m m' : Mem}
-    (hf : Frame [workR (scp s₀)] m m' ∨ Frame [stR (stp s₀)] m m' ∨ Frame [ctrR s₀] m m') :
-    rd64 m' (scp s₀) d = rd64 m (scp s₀) d := by
-  simp only [rd64]
-  rw [h.scr_frame (by omega_arith) (by omega_arith) (by omega_arith) hf, h.scr_frame (by omega_arith) (by omega_arith) (by omega_arith) hf]
 
 /-- A state word apart from the scratch space. -/
 theorem st_frame {m m' : Mem} (hf : Frame [scrR (scp s₀)] m m') {k : Nat} (hk : k < 8) :
@@ -804,16 +795,5 @@ theorem compress_verified' :
       (by taint_decide)
   · refine ⟨sat, rfl, rfl, ?_, ?_, ?_, ?_, ?_, by decide, by decide, by decide, by decide⟩ <;>
     exact Region.disjoint_of_sep (by decide)
-
-theorem compress_implies :
-    (compressArm Spec.Blake2.b).Implies (Proof.Blake2.compressBContract Arm.abi) := by
-  sig_implies [Proof.Blake2.compressBContract, Proof.Blake2.compressBSig, compressArm, tArm, Arm.abi,
-    Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Spec.Blake2.blockBytes]
-    [sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sat
-
-/-- The proof, against the shared contract of `Spec/Blake2/Contract.lean`. -/
-theorem compress_verified :
-    Verified Arm.target Impl.Blake2.Arm.B.compress (Proof.Blake2.compressBContract Arm.abi) :=
-  compress_verified'.of_implies compress_implies
 
 end VG.Proof.Blake2.ArmB

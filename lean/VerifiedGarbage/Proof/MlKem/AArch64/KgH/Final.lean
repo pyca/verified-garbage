@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Top
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Verified

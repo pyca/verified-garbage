@@ -45,63 +45,11 @@ theorem ldMask_ok {s : State} {r : Reg} {k : Nat} {M : BitVec 64} (hk : 8 * k < 
     runBlock_nil], (RegUpd.gpr_write_self _ _ _).trans hv, fun _ h => RegUpd.gpr_write_of_ne _ _ h,
     rfl, rfl, rfl⟩
 
-/-- Loads of slots into distinct registers other than `sb`. -/
-theorem ldS_list_ok : ∀ (L : List (Reg × Nat)) (s : State), (s.gpr sb).toNat % 8 = 0 →
-    (∀ x ∈ L, x.1 ≠ sb) → (L.map (·.1)).Nodup →
-    (∀ x ∈ L, 8 * x.2 < 2048 ∧ InRegions (s.rd ++ s.wr) (s.gpr sb + BitVec.ofNat 64 (8 * x.2)) 8) →
-    ∃ s', runBlock isa (L.map fun x => ldS x.1 x.2) s = some s' ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
-      s'.wr = s.wr ∧ (∀ r, r ∉ L.map (·.1) → s'.gpr r = s.gpr r) ∧ ∀ x ∈ L, s'.gpr x.1 = slotW s x.2
-  | [], s, _, _, _, _ => ⟨s, rfl, rfl, rfl, rfl, fun _ _ => rfl, fun _ h => absurd h List.not_mem_nil⟩
-  | x :: L, s, hal, hsb, hnd, hin => by
-    have hx := hin x List.mem_cons_self
-    obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := ldMask_ok (r := x.1) (k := x.2) hx.1 hal hx.2 rfl
-    have hb₁ : s₁.gpr sb = s.gpr sb := o₁ _ (hsb x List.mem_cons_self).symm
-    rw [List.map_cons, List.nodup_cons] at hnd
-    obtain ⟨s', e', m', rd', wr', o', v'⟩ := ldS_list_ok L s₁ (by rw [hb₁]; exact hal)
-      (fun y hy => hsb y (List.mem_cons_of_mem _ hy))
-      hnd.2 (fun y hy => by rw [rd₁, wr₁, hb₁]; exact hin y (List.mem_cons_of_mem _ hy))
-    refine ⟨s', ?_, m'.trans m₁, rd'.trans rd₁, wr'.trans wr₁, fun r hr => ?_, fun y hy => ?_⟩
-    · rw [List.map_cons, ← List.singleton_append, Interleave.runBlock_append, e₁, Option.bind_some]; exact e'
-    · simp only [List.map_cons, List.mem_cons, not_or] at hr
-      rw [o' r hr.2, o₁ r hr.1]
-    · rcases List.mem_cons.mp hy with rfl | hy
-      · exact (o' _ hnd.1).trans v₁
-      · rw [v' y hy]; simp only [slotW, m₁, hb₁]
-
 /-- `sd t, 8 k(sb)`. -/
 theorem stS_ok (s : State) {k : Nat} (t : Reg) (hk : 8 * k < 2048) (hal : (s.gpr sb).toNat % 8 = 0)
     (hin : InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * k)) 8) :
     runBlock isa [stS k t] s = some { s with mem := s.mem.writeW (wordAddr (s.gpr sb) k) (s.gpr t) } := by
   simp only [stS, runBlock_cons, runStep_some, runBlock_nil, exec_store_d hk (Spill.al8 hal (by omega)) hin]
-
-/-- Stores of registers to distinct slots in the region `R`. -/
-theorem stS_list_ok (R : Region) : ∀ (L : List (Nat × Reg)) (s : State), (s.gpr sb).toNat % 8 = 0 →
-    (L.map (·.1)).Nodup →
-    (∀ x ∈ L, 8 * x.1 < 2048 ∧ InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * x.1)) 8 ∧
-      R.Contains (wordAddr (s.gpr sb) x.1) 8) →
-    ∃ s', runBlock isa (L.map fun x => stS x.1 x.2) s = some s' ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧
-      s'.wr = s.wr ∧ Frame [R] s.mem s'.mem ∧
-      (∀ k, k ∉ L.map (·.1) → k < 2 ^ 58 → slotW s' k = slotW s k) ∧ ∀ x ∈ L, slotW s' x.1 = s.gpr x.2
-  | [], s, _, _, _ => ⟨s, rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ _ _ => rfl,
-      fun _ h => absurd h List.not_mem_nil⟩
-  | x :: L, s, hal, hnd, hin => by
-    have hx := hin x List.mem_cons_self
-    let s₁ : State := { s with mem := s.mem.writeW (wordAddr (s.gpr sb) x.1) (s.gpr x.2) }
-    rw [List.map_cons, List.nodup_cons] at hnd
-    obtain ⟨s', e', g', rd', wr', f', o', v'⟩ :=
-      stS_list_ok R L s₁ hal hnd.2 fun y hy => hin y (List.mem_cons_of_mem _ hy)
-    have hsep : ∀ k, k ≠ x.1 → k < 2 ^ 58 → slotW s₁ k = slotW s k := fun k hk hk58 =>
-      Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) hk) (by decide)
-    refine ⟨s', ?_, g', rd', wr', ?_, fun k hk hk58 => ?_, fun y hy => ?_⟩
-    · rw [List.map_cons, ← List.singleton_append, Interleave.runBlock_append, stS_ok s x.2 hx.1 hal hx.2.1,
-        Option.bind_some]
-      exact e'
-    · exact ((Frame.refl _ _).writeW (List.mem_singleton_self R) _ hx.2.2).trans f'
-    · simp only [List.map_cons, List.mem_cons, not_or] at hk
-      rw [o' k hk.2 hk58]; exact hsep k hk.1 hk58
-    · rcases List.mem_cons.mp hy with rfl | hy
-      · rw [o' _ hnd.1 (by omega)]; exact Mem.readW_writeW_self64 _ _ _
-      · exact v' y hy
 
 /-! ## Saving and restoring the callee-saved registers -/
 

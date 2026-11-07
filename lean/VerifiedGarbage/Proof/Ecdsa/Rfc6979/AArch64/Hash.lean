@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Hmac.Contract
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-import VerifiedGarbage.Proof.Pbkdf2.Hmac
 
 /-!
 # Deterministic ECDSA on AArch64: the hash function

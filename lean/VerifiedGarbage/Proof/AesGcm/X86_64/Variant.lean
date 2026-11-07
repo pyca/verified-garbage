@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchFrom
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 
 /-!
@@ -216,6 +217,11 @@ structure PieceToP (n : StitchToName) : Type where
 structure PieceToR (n : StitchToName) : Type where
   enc : PieceTo n.encR true n.fullR
 
+/-- Static and constant-time facts of the prepared out-of-place decryption
+loop (`Impl.Gcm.X86_64.StitchFrom.decR`). -/
+structure PieceFromR : Type where
+  dec : PieceTo Impl.Gcm.X86_64.StitchFrom.decR true false
+
 /-- Out-of-place loops by name, with the facts `PieceTo` states of them (and
 of those for a key context of `vg_aes_gcm_init_precomputed`, if they read
 the powers of the hash subkey from it). -/
@@ -224,6 +230,11 @@ structure StitchToPart where
   piece : PieceTo name.enc false name.full
   pieceP : Option (PieceToP name) := none
   pieceR : Option (PieceToR name) := none
+  /-- The loop that decrypts out of place for
+  `vg_aes_gcm_decrypt_blocks_to` with a prepared key context
+  (`Impl.Gcm.X86_64.StitchFrom.decR`), with the same CPU features (`none`:
+  it copies the blocks to the output and decrypts them there). -/
+  pieceFromR : Option PieceFromR := none
 
 /-- A `StitchImpl` with its loops named, and so without their proof of
 `StitchOk` (`StitchName.ok`). -/

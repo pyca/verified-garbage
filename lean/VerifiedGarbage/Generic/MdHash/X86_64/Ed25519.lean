@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Expanded
+public import VerifiedGarbage.Proof.Ed25519.X86_64.KeyPair
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.EqCodes
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Nat.Totient
@@ -32,7 +33,6 @@ def verifyWith (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Ari
     Artifact :=
   Spec.Ed25519.verifyApi.artifact X86_64.target {
     suffix := c.suffix ++ fs
-    consts := Impl.Ed25519.X86_64.baseOddConsts
     code := Impl.Ed25519.X86_64.VerifyMessage.code fld win fs c.callee c.suffix
     stack := 184
     verified := Proof.Ed25519.X86_64.VerifyMessage.verified hq c
@@ -46,11 +46,25 @@ def signExpandedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     [Proof.Ed25519.X86_64.EdBase bs] (fs : String) (ff : List String) : Artifact :=
   Spec.Ed25519.signExpandedApi.artifact X86_64.target {
     suffix := c.suffix ++ fs
-    consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.SignCached.codeExpanded bs fs c.callee c.suffix
     stack := 264
     verified := Proof.Ed25519.X86_64.SignCached.verifiedE c
     spSafe := Proof.Ed25519.X86_64.SignCached.spSafeE c
+    features := c.features ++ ff.filter (!c.features.contains ·) }
+
+/-- Key-pair derivation with the SHA-512 implementation `c`'s one-shot digest, calling
+`vg_ed25519_public_key_expanded` with the suffix `fs`, whose base-point multiplication `bs`
+needs the CPU features `ff`. -/
+def keyPairWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
+    [Proof.Ed25519.X86_64.EdBase bs] (fs : String) (ff : List String) : Artifact :=
+  Spec.Ed25519.keyPairApi.artifact X86_64.target {
+    suffix := c.suffix ++ fs
+    code := Impl.Ed25519.X86_64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ c.suffix)
+      (Proof.Ed25519.X86_64.KeyPair.dgCode c) ("vg_ed25519_public_key_expanded" ++ fs)
+      (Impl.Ed25519.X86_64.publicKeyExpanded bs fs)
+    stack := 1632
+    verified := Proof.Ed25519.X86_64.KeyPair.verified c bs fs
+    spSafe := Proof.Ed25519.X86_64.KeyPair.spSafe c bs fs
     features := c.features ++ ff.filter (!c.features.contains ·) }
 
 /-- Verification and signing with the SHA-512 implementation `c` and the field
@@ -63,7 +77,7 @@ def withField (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Arit
     (hq : Proof.Ed25519.X86_64.VerifyMessage.EqCode fld (Impl.Ed25519.X86_64.windows fld)) :
     List Artifact :=
   [verifyWith c fld (Impl.Ed25519.X86_64.windows fld) fs ff hq,
-    signExpandedWith c bs fs bf]
+    signExpandedWith c bs fs bf, keyPairWith c bs fs bf]
 
 /-- Each operation with the SHA-512 implementation of `v`, if it has one, and
 each field multiplication of the Ed25519 functions: the baseline's, and
@@ -83,6 +97,8 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
         ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
         Proof.Ed25519.X86_64.VerifyCode.ifma_eq,
         signExpandedWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
+          ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"],
+        keyPairWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
           ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]]
 
 end VG.Generic.MdHash.X86_64.Ed25519

@@ -88,9 +88,6 @@ theorem LA_then' {B : List Byte} {t : Nat} (h : (LA B t).length < 256)
     (h₂ : ¬ (acc (LA B t) (d₁ B t)).length < 256) : acc (LA B t) (d₁ B t) = LA B (t + 1) := by
   rw [LA_step h, ite_eq_right h₂]
 
-theorem acc_len {L : List Zq} {v : Nat} (hv : v < q) : (acc L v).length = L.length + 1 := by
-  simp [acc, hv]
-
 /-! ## The state of the loop -/
 
 /-- After `t` iterations, with the coefficients `L` accepted. -/
