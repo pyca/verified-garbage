@@ -15,8 +15,8 @@ public import VerifiedGarbage.Spec.Camellia
 `vg_camellia_ctr` transforms `n` whole blocks in place, from the counter
 block in `ctr`, which it replaces with the one to continue from
 (`Ctr.next`): a caller may process a message in pieces of whole blocks,
-keeping `ctr` between calls. A partial last block is the caller's: CTR of a
-zero block is the next output block, whose first bytes it XORs in. The
+keeping `ctr` between calls. A partial last
+block is left to `vg_camellia_ctr_final` (`Spec/Camellia/CtrFinal.lean`). The
 counter is incremented as one 128-bit big-endian integer (SP 800-38A
 Appendix B.1).
 
