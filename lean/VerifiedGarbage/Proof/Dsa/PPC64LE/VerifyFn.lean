@@ -49,6 +49,24 @@ theorem finish_ok {s u : State} {S : Addr} {rs : List Reg} (h21 : u.gpr .r21 = S
   · obtain ⟨i, hi, rfl⟩ := saved_all r hr
     exact wrs i hi
 
+/-- `restore`, as `finish_ok`, keeping memory. -/
+theorem sfinish_ok {s u : State} {S : Addr} {rs : List Reg} (h21 : u.gpr .r21 = S)
+    (hwr : ∀ i < 19, InRegions u.wr (off (savW S) (8 * i)) 8)
+    (hsav : ∀ i < 19, word u.mem S (saveOff i) = s.gpr (saved i)) (hk : Keep rs s u) :
+    WP isa (.block restore) u fun w => abiPreserved s w ∧ w.gpr .r3 = u.gpr .r3 ∧ w.mem = u.mem := by
+  refine WP.mono (restore_ok u (v := fun i => s.gpr (saved i)) h21 hwr fun i hi => ?_)
+    fun w ⟨wrs, wot, wm, _, _, wsp, wlr⟩ => ⟨⟨fun r hr => ?_, by rw [wsp, hk.sp], by rw [wlr, hk.lr]⟩,
+      wot .r3 (by decide), wm⟩
+  · rw [← hsav i hi]
+    show u.mem.readW (S + BitVec.ofNat 64 104 + BitVec.ofNat 64 (8 * i)) 64 = u.mem.readW (S + BitVec.ofNat 64 (104 + 8 * i)) 64
+    rw [Offset.add_add]
+  · obtain ⟨i, hi, rfl⟩ := saved_all r hr
+    exact wrs i hi
+
+theorem signStatus_ite (c : Prop) [Decidable c] (v : List Byte) :
+    Spec.Dsa.signStatus (if c then some v else none) = if c then 1 else 0 := by
+  split <;> rfl
+
 /-- The specification, on the key's values, r, s and the digest. -/
 theorem verify_spec {pl ql : Nat} {key sg dg : List Byte} {p q g y : Nat}
     (widths : Spec.Dsa.lengthsValid pl ql) (hkl : key.length = 3 * pl + ql) (hsl : sg.length = 2 * ql)

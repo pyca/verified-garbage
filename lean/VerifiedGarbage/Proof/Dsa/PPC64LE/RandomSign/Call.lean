@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Sampler
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Front
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Fn
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Contract
+import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Fn
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Offset
@@ -10,13 +10,14 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
-# Randomized DSA signing on PPC64LE: the call of `vg_dsa_sign`
+# Randomized DSA signing on PPC64LE: the call of `vg_dsa_sign_prevalidated`
 
 `callArgs` passes `out`, the key, the nonce (in the frame) and the digest,
 with their lengths, and the frame holds the arguments on the stack
-(`digest_len`, `scratch`, `scratch_len`), so `vg_dsa_sign`'s contract on
-the registers (`sContract`) holds, with the regions it is given (`signRd`,
-`signWr`): `signCall_ok` runs the call by `WP.call` from `sign_correct`.
+(`digest_len`, `scratch`, `scratch_len`), so `vg_dsa_sign_prevalidated`'s
+contract on the registers (`spContract`) holds, with the regions it is given
+(`signRd`, `signWr`): the key, which the frame keeps, passes validation as
+on entry. `sign_ok` runs the call by `WP.call` from `psign_correct`.
 -/
 
 @[expose] public section
@@ -27,11 +28,11 @@ open VG VG.PPC64LE VG.Proof.Bignum.PPC64LE VG.Impl.Dsa.PPC64LE.Random VG.Impl.Ds
 open VG.Proof.Mont
 open VG.Proof.Dsa.PPC64LE.Rnd
 
-/-- The regions `vg_dsa_sign` may read. -/
+/-- The regions `vg_dsa_sign_prevalidated` may read. -/
 abbrev signRd (L : RL) : List Region :=
   [L.keyR, ⟨off L.F oNonce, L.ql⟩, L.digR, ⟨off L.F oArgs, 24⟩]
 
-/-- The regions `vg_dsa_sign` may write. -/
+/-- The regions `vg_dsa_sign_prevalidated` may write. -/
 abbrev signWr (L : RL) : List Region := [L.outR, L.scrR]
 
 /-- The registers `callArgs` writes. -/
@@ -65,20 +66,20 @@ theorem callArgs_ok {L : RL} {s₀ t : State} (hL : L.Ok) (hc : Ctx L s₀ t) :
     ← BitVec.ofNat_add]
   refine ⟨by congr 1; omega, by simp only [RL.kl]; congr 1; omega⟩
 
-/-- The arguments' values in the state `vg_dsa_sign` is entered in. -/
+/-- The arguments' values in the state `vg_dsa_sign_prevalidated` is entered in. -/
 theorem entry_gpr (t : State) (rd wr : List Region) {r : Reg} (h : r ∉ linkRegs) :
     (t.callEntry.withRegions rd wr).gpr r = t.gpr r := State.callEntry_gpr t h
 
 theorem entry_stackArg (t : State) (rd wr : List Region) (i : Nat) :
     stackArg (t.callEntry.withRegions rd wr) i = t.mem.readW (t.sp + BitVec.ofNat 64 (32 + 8 * (8 + i))) 64 := rfl
 
-/-- The signature `vg_dsa_sign` computes from the state `t` it is called in. -/
+/-- The signature `vg_dsa_sign_prevalidated` computes from the state `t` it is called in. -/
 abbrev sresOf (L : RL) (m : Mem) : Option (List Byte) :=
   Spec.Dsa.signBytes L.pl L.ql (Spec.Rsa.bytesAt m L.key L.kl) (Spec.Rsa.bytesAt m (off L.F oNonce) L.ql)
     (Spec.Rsa.bytesAt m L.dig L.dl)
 
 /-- `vg_dsa_sign`'s contract on the registers holds when it is called. -/
-theorem sign_pre {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀) s₀ t) :
+theorem sign_pre' {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀) s₀ t) :
     sContract.pre (t.callEntry.withRegions (signRd (rlOf s₀)) (signWr (rlOf s₀))) := by
   have hL := rlOf_ok h
   have hc := ha.ctx
@@ -125,6 +126,31 @@ theorem sign_pre {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s�
   · exact RL.Ok.frame_disj (d := oNonce) (n := (rlOf s₀).ql) hL.dFS (by simp only [oNonce, frameBytes]; omega)
   · exact (RL.Ok.frame_disj (d := oArgs) (n := 24) hL.dFS (by decide)).symm
 
+/-- The key passes validation, on entry. -/
+theorem rs_valid {s₀ : State} (h : rsContract.pre s₀) :
+    Spec.Dsa.validatePrivateKeyBytes (rlOf s₀).pl (rlOf s₀).ql
+      (Spec.Rsa.bytesAt s₀.mem (rlOf s₀).key (rlOf s₀).kl) = true := by
+  have hkl : (rlOf s₀).kl = (s₀.gpr .r7).toNat := by
+    have := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+    simp only [RL.kl, rlOf]; omega
+  rw [hkl]
+  exact h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+
+/-- `vg_dsa_sign_prevalidated`'s contract on the registers holds when it is called. -/
+theorem sign_pre {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀) s₀ t) :
+    spContract.pre (t.callEntry.withRegions (signRd (rlOf s₀)) (signWr (rlOf s₀))) := by
+  refine ⟨sign_pre' h ha, ?_⟩
+  have hL := rlOf_ok h
+  have hp := hL.pl
+  have hq := hL.ql
+  have g := fun (r : Reg) (hr : r ∉ linkRegs) => entry_gpr t (signRd (rlOf s₀)) (signWr (rlOf s₀)) hr
+  simp only [State.withRegions_mem, State.callEntry_mem]
+  rw [g .r5 (by decide), g .r6 (by decide), g .r7 (by decide), g .r9 (by decide), ha.r5, ha.r6, ha.r7, ha.r9]
+  simp only [BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (a := (rlOf s₀).pl) (by omega), Nat.mod_eq_of_lt (a := (rlOf s₀).ql) (by omega),
+    Nat.mod_eq_of_lt (a := (rlOf s₀).kl) (by simp only [RL.kl]; omega), ha.ctx.key]
+  exact rs_valid h
+
 /-- What the call leaves. -/
 structure Signed (L : RL) (s₀ : State) (t t' : State) : Prop where
   ctx : Ctx L s₀ t'
@@ -133,7 +159,7 @@ structure Signed (L : RL) (s₀ : State) (t t' : State) : Prop where
   r3 : ((t'.gpr .r3).setWidth 32).toNat = Spec.Dsa.signStatus (sresOf L t.mem)
   out : Spec.Rsa.bytesAt t'.mem L.out (2 * L.ql) = (sresOf L t.mem).getD (List.replicate (2 * L.ql) 0)
 
-/-- The regions given to `vg_dsa_sign` are within the caller's. -/
+/-- The regions given to `vg_dsa_sign_prevalidated` are within the caller's. -/
 theorem sign_cov {s₀ t : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s₀) s₀ t) :
     Covers (signRd (rlOf s₀) ++ signWr (rlOf s₀)) (t.rd ++ t.wr) ∧ Covers (signWr (rlOf s₀)) t.wr := by
   have hL := rlOf_ok h
@@ -166,7 +192,7 @@ theorem sign_cov {s₀ t : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s₀
     rcases hr with rfl | rfl <;> simp
   exact ⟨hcov, hcovw⟩
 
-/-- The result `vg_dsa_sign` computes, from the state the call enters. -/
+/-- The result `vg_dsa_sign_prevalidated` computes, from the state the call enters. -/
 theorem sres_eq {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀) s₀ t) :
     sRes (t.callEntry.withRegions (signRd (rlOf s₀)) (signWr (rlOf s₀))) = sresOf (rlOf s₀) t.mem := by
   have hL := rlOf_ok h
@@ -185,13 +211,13 @@ theorem sres_eq {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀
     Nat.mod_eq_of_lt (a := (rlOf s₀).kl) (by simp only [RL.kl]; omega), Nat.mod_eq_of_lt hdl]
 
 theorem sign_ok {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀) s₀ t) :
-    WP isa (.call "vg_dsa_sign" Impl.Dsa.PPC64LE.Sign.sign) t (Signed (rlOf s₀) s₀ t) := by
+    WP isa (.call "vg_dsa_sign_prevalidated" Impl.Dsa.PPC64LE.PrevalidatedSign.sign) t (Signed (rlOf s₀) s₀ t) := by
   have hL := rlOf_ok h
   have hc := ha.ctx
   have hp := hL.pl
   have hq := hL.ql
   obtain ⟨hcov, hcovw⟩ := sign_cov h hc
-  refine WP.call (k := sContract) sign_correct (sign_pre h ha) hcov hcovw
+  refine WP.call (k := spContract) psign_correct (sign_pre h ha) hcov hcovw
     fun t' hrd' hwr' hsp' hf hpres _ hpost => ?_
   have hdis : ∀ r ∈ ctxRegs, r ∈ preserved := by decide
   obtain ⟨p3, pout⟩ := hpost
