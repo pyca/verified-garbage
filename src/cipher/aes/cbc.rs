@@ -29,9 +29,7 @@ use crate::arch::aes_cbc::{
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::aes_cbc::{
-    VG_AES_CBC_DECRYPT_AESNI_SCRATCH_WRITTEN, VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES,
-    VG_AES_CBC_DECRYPT_VAES_AVX512_SCRATCH_WRITTEN, VG_AES_CBC_DECRYPT_VAES_FEATURES,
-    VG_AES_CBC_DECRYPT_VAES_SCRATCH_WRITTEN, VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN,
+    VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES, VG_AES_CBC_DECRYPT_VAES_FEATURES,
     vg_aes_cbc_decrypt_vaes, vg_aes_cbc_decrypt_vaes_avx512,
 };
 use crate::arch::aes_cbc::{vg_aes_cbc_decrypt, vg_aes_cbc_encrypt};
@@ -247,13 +245,9 @@ impl Key {
             Backend::Aes => VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN,
             Backend::Scalar => 2176,
         };
+        // On x86-64 every implementation zeroes the scratch it writes.
         #[cfg(target_arch = "x86_64")]
-        let scratch_written = match self.backend {
-            Backend::Scalar => 2176,
-            Backend::AesNi | Backend::Vaes | Backend::VaesAvx512 => {
-                VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN
-            }
-        };
+        let scratch_written = ();
         #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
         let scratch_written = 2176;
         self.crypt(iv, buffer, f, scratch_written)
@@ -283,13 +277,9 @@ impl Key {
             vg_aes_cbc_decrypt_vaes_avx512,
             vg_aes_cbc_decrypt_aes
         );
+        // On x86-64 every implementation zeroes the scratch it writes.
         #[cfg(target_arch = "x86_64")]
-        let scratch_written = match self.backend {
-            Backend::Scalar => 2176,
-            Backend::AesNi => VG_AES_CBC_DECRYPT_AESNI_SCRATCH_WRITTEN,
-            Backend::Vaes => VG_AES_CBC_DECRYPT_VAES_SCRATCH_WRITTEN,
-            Backend::VaesAvx512 => VG_AES_CBC_DECRYPT_VAES_AVX512_SCRATCH_WRITTEN,
-        };
+        let scratch_written = ();
         #[cfg(not(target_arch = "x86_64"))]
         let scratch_written = 2176;
         self.crypt(iv, buffer, f, scratch_written)
@@ -300,7 +290,7 @@ impl Key {
         iv: &mut [u8; 16],
         buffer: &mut [u8],
         f: Cbc,
-        scratch_written: usize,
+        scratch_written: ScratchWritten,
     ) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
@@ -323,13 +313,25 @@ impl Key {
         }
         // The scratch space may hold the key schedule, the data and our
         // caller's registers: wipe the bytes the function's proved write
-        // bound (`scratch_written`) allows it to write, if any.
+        // bound (`scratch_written`) allows it to write, if any. On x86-64
+        // each implementation zeroes them itself.
+        #[cfg(not(target_arch = "x86_64"))]
         if scratch_written != 0 {
             zeroize(&mut scratch[..scratch_written.div_ceil(8)]);
         }
+        #[cfg(target_arch = "x86_64")]
+        let () = scratch_written;
         Ok(())
     }
 }
+
+/// The bytes of the scratch space the function called may leave written:
+/// none on x86-64, whose implementations zero what they write.
+#[cfg(target_arch = "x86_64")]
+type ScratchWritten = ();
+/// The bytes of the scratch space the function called may write.
+#[cfg(not(target_arch = "x86_64"))]
+type ScratchWritten = usize;
 
 /// The signature of `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt`.
 #[cfg(target_arch = "x86_64")]
