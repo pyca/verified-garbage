@@ -49,7 +49,7 @@ def DI (c st w sp D : Addr) (R : Nat) (N A T : BitVec 64) (s : State) : Prop :=
 /-- Before `crypt`, with the arguments kept. -/
 def CI (c st w sp D : Addr) (R : Nat) (N A T : BitVec 64) (s : State) : Prop :=
   ∃ V icb P, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s9 = D ∧ V .s8 = N ∧ V .s10 = A ∧ V .s11 = T ∧
-    P % 16 = T.toNat % 16 ∧ CrIn V sp R icb P D N.toNat s
+    P % 16 = T.toNat % 16 ∧ CrIn false V sp R icb P D D N.toNat s
 
 theorem cryptEntry_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint
     (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7]) (.block cryptEntry) h).isSome = true :=
@@ -77,7 +77,7 @@ theorem di_ta {s : State} (h : DI c st w sp D R N A T s) : TA c st w sp D N A T 
   let ⟨V, h29, h30, h31, h20, h19, h22, h23, _, _, he, hd⟩ := h
   ⟨V, h29, h30, h31, h20, h19, h22, h23, he, hd.ok⟩
 
-theorem ci_cr {s : State} (h : CI c st w sp D R N A T s) : CrI c st w sp R D N.toNat (T.toNat % 16) s :=
+theorem ci_cr {s : State} (h : CI c st w sp D R N A T s) : CrI false c st w sp R D D N.toNat (T.toNat % 16) s :=
   let ⟨V, icb, P, h29, h30, h31, _, _, _, _, hP, ci⟩ := h
   ⟨V, icb, P, h29, h30, h31, hP, ci⟩
 
@@ -94,7 +94,8 @@ theorem di_textArgs {s : State} (h : DI c st w sp D R N A T s) :
     hk.sp hk.rd hk.wr
   exact ⟨V, 0, T.toNat, h29, h30, h31, h20, h19, h22, h23, rfl, he₂, by rw [h24, he.fr _ (by decide), h20],
     by rw [h25, he.fr _ (by decide), h19, BitVec.ofNat_toNat, BitVec.setWidth_eq],
-    by rw [h26, he.fr _ (by decide), h23], h28, hR, by rw [h29, h30, h31]; exact hd.of_eq hk.rd hk.wr hk.sp⟩
+    by rw [h26, he.fr _ (by decide), h23], h28, hR, by rw [h29, h30, h31]; exact hd.of_eq hk.rd hk.wr hk.sp,
+    by rw [h30, h31]; exact (hd.of_eq hk.rd hk.wr hk.sp).ok, rfl, Bool.noConfusion⟩
 
 variable (L : Lay c st w)
 include L

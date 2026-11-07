@@ -68,6 +68,43 @@ def ctr32RISCV64 : Contract RISCV64.isa where
     s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧
     s₁.sp = s₂.sp
 
+open VG.RISCV64 in
+/-- RISC-V contract for the internal `vg_aes_ctr32_to(schedule: *const [u8; 240],
+rounds: usize, counter: *mut [u8; 16], dst: *mut [u8; 16], n: usize, scratch:
+*mut [u64; 256], src: *const [u8; 16])`: `ctr32RISCV64` out of place, XORing
+the keystream into the `n` blocks at `src` and writing the result to the `n`
+blocks at `dst`.
+
+The code may read `schedule` (240 bytes) and `src` (`16 n` bytes), and read
+and write `counter`, `dst` and `scratch`. `src` overlaps none of the regions
+it may write, and neither `src` nor `dst` wraps around the end of the address
+space. The pointers, `rounds` and `n` are public; the key schedule, the
+counter block and the data are secret. -/
+def ctr32ToRISCV64 : Contract RISCV64.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .a0, 240⟩
+    let counter : Region := ⟨s.gpr .a2, 16⟩
+    let data : Region := ⟨s.gpr .a3, 16 * (s.gpr .a4).toNat⟩
+    let scratch : Region := ⟨s.gpr .a5, 2048⟩
+    let src : Region := ⟨s.gpr .a6, 16 * (s.gpr .a4).toNat⟩
+    s.rd = [sched, src] ∧ s.wr = [counter, data, scratch] ∧
+    sched.Disjoint counter ∧ sched.Disjoint data ∧ sched.Disjoint scratch ∧
+    counter.Disjoint data ∧ counter.Disjoint scratch ∧ data.Disjoint scratch ∧
+    src.Disjoint counter ∧ src.Disjoint data ∧ src.Disjoint scratch ∧
+    (s.gpr .a3).toNat + 16 * (s.gpr .a4).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .a6).toNat + 16 * (s.gpr .a4).toNat ≤ 2 ^ 64 ∧
+    ((s.gpr .a1).toNat = 10 ∨ (s.gpr .a1).toNat = 12 ∨ (s.gpr .a1).toNat = 14)
+  post s s' :=
+    let ciph := aesWith (s.gpr .a1).toNat
+      (Spec.Aes.bytesAt s.mem (s.gpr .a0) (16 * ((s.gpr .a1).toNat + 1)))
+    blocksAt s'.mem (s.gpr .a3) (s.gpr .a4).toNat =
+        ctr32 ciph (blockAt s.mem (s.gpr .a2)) (blocksAt s.mem (s.gpr .a6) (s.gpr .a4).toNat) ∧
+      blockAt s'.mem (s.gpr .a2) = Nat.repeat inc32 (s.gpr .a4).toNat (blockAt s.mem (s.gpr .a2))
+  pub s₁ s₂ :=
+    s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+    s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧
+    s₁.gpr .a6 = s₂.gpr .a6 ∧ s₁.sp = s₂.sp
+
 end VG.Proof.Aes
 
 namespace VG.Proof.Aes.RISCV64
@@ -200,9 +237,6 @@ theorem c_off (base : Addr) {len off n : Nat} (h : off + n ≤ len) (ho : off < 
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofNat 64 off) n :=
   Offset.contains_base base h ho
 
-theorem out_of_disj {r₁ r₂ : Region} (hd : r₁.Disjoint r₂) {x a : Addr} {n : Nat} (hx : r₁.Contains x 1)
-    (ha : r₂.Contains a n) : ¬ (x - a).toNat < n := fun h => hd x hx (ha.byte h)
-
 section Setup
 
 variable {m : Mem} {b ctr : Addr} {N : BitVec 64}
@@ -309,10 +343,10 @@ theorem ctr_after {m m' : Mem} {ctr : Addr} {n : Nat}
     simp only [hj, decide_true, Bool.true_and]
     congr 1; omega_arith
 
-theorem ctr32_of_dataInv {m₀ m : Mem} {D : Addr} {n R : Nat} {w : List Byte}
-    {icb : Spec.Gcm.Block} (h : DataInv m₀ m D n n (keyStream R w icb)) :
+theorem ctr32_of_dataInv {m₀ m : Mem} {S D : Addr} {n R : Nat} {w : List Byte}
+    {icb : Spec.Gcm.Block} (h : DataInv m₀ m S D n n (keyStream R w icb)) :
     Spec.Gcm.blocksAt m D n =
-      Spec.Gcm.ctr32 (Spec.Gcm.aesWith R w) icb (Spec.Gcm.blocksAt m₀ D n) := by
+      Spec.Gcm.ctr32 (Spec.Gcm.aesWith R w) icb (Spec.Gcm.blocksAt m₀ S n) := by
   unfold Spec.Gcm.ctr32 Spec.Gcm.keystream Spec.Gcm.blocksAt
   apply List.ext_getElem (by simp)
   intro i h1 h2
@@ -321,7 +355,8 @@ theorem ctr32_of_dataInv {m₀ m : Mem} {D : Addr} {n R : Nat} {w : List Byte}
   simp only [List.length_map, List.length_range] at h1
   refine block_ext fun k hk => ?_
   rw [toBytes_xor _ _ hk, toBytes_blockAt _ _ hk, toBytes_blockAt _ _ hk, BitVec.add_assoc,
-    ← BitVec.ofNat_add, h _ (by omega_arith), ite_eq_left (by omega_arith)]
+    ← BitVec.ofNat_add, (h (16 * i + k) (by omega_arith)).1 (by omega_arith), BitVec.add_assoc,
+    ← BitVec.ofNat_add]
   refine congrArg (_ ^^^ ·) ?_
   unfold Spec.Gcm.aesWith
   rw [toBytes_ofBytes (by simp) hk, keyStream, show (16 * i + k) / 16 = i by omega_arith,
@@ -334,15 +369,115 @@ theorem ctr32_of_dataInv {m₀ m : Mem} {D : Addr} {n R : Nat} {w : List Byte}
 
 theorem not_ctr_writes : ∀ r ∈ [Reg.ra, .a3, .a4, .a5], r ∉ keyWrites := by decide
 
-theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
-    WP isa Impl.Aes.RISCV64.ctr32 s₀ fun s' =>
+/-- What `ctr32With o` needs: `ctr32RISCV64.pre`'s, with the data read from
+`S`, which is `a6` out of place and the data in place, apart from the
+counter block and the scratch buffer, and equal to or apart from the data. -/
+structure CPre (o : Bool) (s₀ : State) (S : Addr) : Prop where
+  sch : (⟨s₀.gpr .a0, 240⟩ : Region) ∈ s₀.rd
+  wC : (⟨s₀.gpr .a2, 16⟩ : Region) ∈ s₀.wr
+  wD : (⟨s₀.gpr .a3, 16 * (s₀.gpr .a4).toNat⟩ : Region) ∈ s₀.wr
+  wS : (⟨s₀.gpr .a5, 2048⟩ : Region) ∈ s₀.wr
+  src : (⟨S, 16 * (s₀.gpr .a4).toNat⟩ : Region) ∈ s₀.rd ++ s₀.wr
+  outOf : o = true → s₀.gpr .a6 = S
+  inPlace : o = false → S = s₀.gpr .a3
+  dSC : Region.Disjoint ⟨s₀.gpr .a0, 240⟩ ⟨s₀.gpr .a2, 16⟩
+  dSS : Region.Disjoint ⟨s₀.gpr .a0, 240⟩ ⟨s₀.gpr .a5, 2048⟩
+  dCD : Region.Disjoint ⟨s₀.gpr .a2, 16⟩ ⟨s₀.gpr .a3, 16 * (s₀.gpr .a4).toNat⟩
+  dCS : Region.Disjoint ⟨s₀.gpr .a2, 16⟩ ⟨s₀.gpr .a5, 2048⟩
+  dDS : Region.Disjoint ⟨s₀.gpr .a3, 16 * (s₀.gpr .a4).toNat⟩ ⟨s₀.gpr .a5, 2048⟩
+  sC : Region.Disjoint ⟨S, 16 * (s₀.gpr .a4).toNat⟩ ⟨s₀.gpr .a2, 16⟩
+  sS : Region.Disjoint ⟨S, 16 * (s₀.gpr .a4).toNat⟩ ⟨s₀.gpr .a5, 2048⟩
+  alias : Alias S (s₀.gpr .a3) (s₀.gpr .a4).toNat
+  rounds : (s₀.gpr .a1).toNat = 10 ∨ (s₀.gpr .a1).toNat = 12 ∨ (s₀.gpr .a1).toNat = 14
+
+/-- `t0` zero iff the data's addresses are multiples of 8. -/
+theorem alignTest_wp {o : Bool} {s : State} {S D : Addr} (hd : s.gpr .a3 = D)
+    (hs : s.gpr (srcReg o) = S) (hin : o = false → S = D) {P : State → Prop}
+    (h : ∀ s' v, Upd s s' t0 v →
+      isa.eval (.zero t0) s' = some (decide (D.toNat % 8 = 0 ∧ S.toNat % 8 = 0)) → P s') :
+    WP isa (.block (alignTest o)) s P := by
+  cases o with
+  | false =>
+    simp only [alignTest, Bool.false_eq_true, ite_false]
+    refine wp_andi (imm := 7) (by decide) fun s' u => WP.block_nil (h s' _ u ?_)
+    rw [Steps.eval_zero, u.gpr, hd, and7, Steps.ofNat_beq_zero (by omega), hin rfl]
+    simp only [and_self]
+  | true =>
+    simp only [alignTest, ite_true]
+    refine wp_or fun s₁ u₁ => wp_andi (imm := 7) (by decide) fun s₂ u₂ => WP.block_nil (h s₂ _
+      ⟨u₂.gpr, fun r hr => (u₂.other r hr).trans (u₁.other r hr), u₂.mem.trans u₁.mem,
+        u₂.rd.trans u₁.rd, u₂.wr.trans u₁.wr, u₂.sp.trans u₁.sp⟩ ?_)
+    have hs' : s.gpr .a2 = S := hs
+    rw [Steps.eval_zero, u₂.gpr, u₁.gpr, and7, Steps.ofNat_beq_zero (by omega), hd, hs',
+      BitVec.toNat_or, show (8 : Nat) = 2 ^ 3 from rfl, Nat.or_mod_two_pow]
+    simp only [Nat.or_eq_zero_iff]
+
+/-- The slot of our return address out of place. -/
+abbrev raSlotAddr (b : Addr) : Addr := b + BitVec.ofNat 64 (8 * 62)
+
+/-- Out of place, our return address into its slot and the source into `ra`. -/
+theorem srcSave_wp {o : Bool} {s : State} {X b : Addr} (hs : Scr s X 2048) (hb : s.gpr sb = b)
+    {P : State → Prop}
+    (h : ∀ s', (∀ r, r ≠ .ra → s'.gpr r = s.gpr r) →
+      s'.gpr .ra = (if o then s.gpr .a6 else s.gpr .ra) → Frame [⟨raSlotAddr b, 8⟩] s.mem s'.mem →
+      (o = true → s'.mem.readW (raSlotAddr b) 64 = s.gpr .ra) →
+      s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → P s') :
+    WP isa (.block (srcSave o)) s P := by
+  cases o
+  · exact WP.block_nil (h s (fun _ _ => rfl) rfl (Frame.refl _ _) (fun h => absurd h (by decide)) rfl rfl rfl)
+  · simp only [srcSave, srcSlot, stS, movR, ite_true]
+    refine wp_sd (by decide) (by rw [hb]) (by rw [← hb]; exact wordAddr_al hs.al 62 (by decide))
+      ⟨_, hs.wr, by rw [← hb]; exact hs.contains (by decide) (by decide)⟩ fun s₁ u₁ =>
+      wp_mv fun s' u => WP.block_nil ?_
+    refine h s' (fun r hr => by rw [u.other r hr, u₁.gpr]) (by rw [u.gpr, u₁.gpr]; rfl) ?_
+      (fun _ => by rw [u.mem, u₁.mem, Mem.readW_writeW_self64]) (u.rd.trans u₁.rd)
+      (u.wr.trans u₁.wr) (u.sp.trans u₁.sp)
+    rw [u.mem, u₁.mem]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+
+/-- Out of place, the source into `a2`. -/
+theorem srcLoad_wp {o : Bool} {s : State} {P : State → Prop}
+    (h : ∀ s', (o = true → s'.gpr .a2 = s.gpr .ra) →
+      (∀ r, r ≠ .a2 → s'.gpr r = s.gpr r) → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
+      s'.sp = s.sp → P s') :
+    WP isa (.block (srcLoad o)) s P := by
+  cases o
+  · exact WP.block_nil (h s (fun h => absurd h (by decide)) (fun _ _ => rfl) rfl rfl rfl rfl)
+  · simp only [srcLoad, movR, ite_true]
+    exact wp_mv fun s' u => WP.block_nil (h s' (fun _ => u.gpr) u.other u.mem u.rd u.wr u.sp)
+
+/-- Out of place, our return address back. -/
+theorem srcRestore_wp {o : Bool} {s : State} {X b : Addr} (hs : Scr s X 2048) (hb : s.gpr sb = b)
+    {P : State → Prop}
+    (h : ∀ s', (∀ r, r ≠ .ra → s'.gpr r = s.gpr r) →
+      s'.gpr .ra = (if o then s.mem.readW (raSlotAddr b) 64 else s.gpr .ra) → s'.mem = s.mem → P s') :
+    WP isa (.block (srcRestore o)) s P := by
+  cases o
+  · exact WP.block_nil (h s (fun _ _ => rfl) rfl rfl)
+  · simp only [srcRestore, srcSlot, ldS, ite_true]
+    exact wp_ld (by decide) (by rw [hb]) (by rw [← hb]; exact wordAddr_al hs.al 62 (by decide))
+      ⟨_, List.mem_append_right _ hs.wr, by rw [← hb]; exact hs.contains (by decide) (by decide)⟩
+      fun s' u => WP.block_nil (h s' u.other u.gpr u.mem)
+
+theorem correctWith {o : Bool} {s₀ : State} {S : Addr} (hp : CPre o s₀ S) :
+    WP isa (Impl.Aes.RISCV64.ctr32With o) s₀ fun s' =>
       (∀ r ∈ RISCV64.preserved, s'.gpr r = s₀.gpr r) ∧ s'.gpr .ra = s₀.gpr .ra ∧
-        Proof.Aes.ctr32RISCV64.post s₀ s' := by
-  obtain ⟨hrd, hwr, dSC, dSD, dSS, dCD, dCS, dDS, hwrap, hR⟩ := hp
-  have hwC : (⟨s₀.gpr .a2, 16⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  have hwD : (⟨s₀.gpr .a3, 16 * (s₀.gpr .a4).toNat⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  have hwS : (⟨s₀.gpr .a5, 2048⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  have hrS : (⟨s₀.gpr .a0, 240⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
+        Spec.Gcm.blocksAt s'.mem (s₀.gpr .a3) (s₀.gpr .a4).toNat =
+          Spec.Gcm.ctr32 (Spec.Gcm.aesWith (s₀.gpr .a1).toNat
+            (Spec.Aes.bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1))))
+            (Spec.Gcm.blockAt s₀.mem (s₀.gpr .a2)) (Spec.Gcm.blocksAt s₀.mem S (s₀.gpr .a4).toNat) ∧
+        Spec.Gcm.blockAt s'.mem (s₀.gpr .a2) =
+          Nat.repeat Spec.Gcm.inc32 (s₀.gpr .a4).toNat (Spec.Gcm.blockAt s₀.mem (s₀.gpr .a2)) := by
+  have hwC := hp.wC
+  have hwD := hp.wD
+  have hwS := hp.wS
+  have hrS := hp.sch
+  have dSC := hp.dSC
+  have dSS := hp.dSS
+  have dCD := hp.dCD
+  have dCS := hp.dCS
+  have dDS := hp.dDS
+  have hR := hp.rounds
   have n16 : 16 * (s₀.gpr .a4).toNat < 2 ^ 64 := by
     refine Nat.lt_of_not_le fun hc => dCD (s₀.gpr .a2) (by simp [Region.Contains]) ?_
     simp only [Region.Contains]
@@ -357,12 +492,28 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
   let D := s₀.gpr .a3
   have dCb : Region.Disjoint ⟨ctr, 16⟩ ⟨b, 2040⟩ := dCS.sub_right (scr_base X (by omega))
   -- The prologue.
-  unfold Impl.Aes.RISCV64.ctr32
+  unfold Impl.Aes.RISCV64.ctr32With
   refine WP.seq ?_
   repeat rw [WP.block_append_iff (M := isa)]
-  refine roundSb_wp fun s₁ b₁ o₁ m₁ rd₁ wr₁ sp₁ => ?_
-  have hb₁ : s₁.gpr sb = b := b₁
+  refine roundSb_wp fun s₁z b₁z o₁z m₁z rd₁z wr₁z sp₁z => ?_
+  have hscr₁z : Scr s₁z X 2048 := ⟨by rw [wr₁z]; exact hwS, b₁z⟩
+  refine srcSave_wp hscr₁z b₁z fun s₁ ov rav fsv vsv rdv wrv spv => ?_
+  have o₁ : ∀ r, r ≠ sb → r ≠ .ra → s₁.gpr r = s₀.gpr r := fun r h h' => (ov r h').trans (o₁z r h)
+  have hb₁ : s₁.gpr sb = b := (ov sb (by decide)).trans b₁z
+  have ra₁ : s₁.gpr .ra = if o then s₀.gpr .a6 else s₀.gpr .ra := by
+    rw [rav, o₁z .a6 (by decide), o₁z .ra (by decide)]
+  have rd₁ : s₁.rd = s₀.rd := rdv.trans rd₁z
+  have wr₁ : s₁.wr = s₀.wr := wrv.trans wr₁z
+  have sp₁ : s₁.sp = s₀.sp := spv.trans sp₁z
+  have f0s : Frame [⟨b + BitVec.ofNat 64 (8 * 62), 8⟩] s₀.mem s₁.mem := fun x hx =>
+    (fsv x hx).trans (congrFun m₁z x)
   have hscr₁ : Scr s₁ X 2048 := ⟨by rw [wr₁]; exact hwS, hb₁⟩
+  have hvs : o = true → s₁.mem.readW (raSlotAddr b) 64 = s₀.gpr .ra := fun ho =>
+    (vsv ho).trans (o₁z _ (by decide))
+  -- The slot of the source is apart from the scratch buffer's other parts and the counter.
+  have dV : ∀ {x lx}, (x + lx ≤ 8 * 62 ∨ 8 * 62 + 8 ≤ x) → x + lx ≤ 2040 →
+      Region.Disjoint ⟨b + BitVec.ofNat 64 (8 * 62), 8⟩ ⟨b + BitVec.ofNat 64 x, lx⟩ :=
+    fun h1 h2 => Offset.disjoint b (by omega_arith) (by omega_arith) (by omega_arith)
   rw [saveRegs_eq]
   refine Spill.save_ok (rest := []) hscr₁.al savedOffs_ho (fun p hp => ⟨_, hscr₁.wr,
     hscr₁.contains (by have := savedOffs_range p hp; omega) (by decide)⟩) (WP.block_nil ?_)
@@ -382,14 +533,14 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
   rw [b₁'] at mk₂ fm₂
   have hb₂ : s₂.gpr sb = b := by rw [g₂ _ (by decide) (by decide)]; exact b₁'
   have hscr₂ : Scr s₂ X 2048 := ⟨by rw [wr₂]; exact hscr₁'.wr, hb₂⟩
-  have k₂ : ∀ r, r ≠ t0 → r ≠ t1 → r ≠ sb → s₂.gpr r = s₀.gpr r := fun r h0 h1 h2 => by
-    rw [g₂ r h0 h1, g₁', o₁ r h2]
-  refine ctrSetup_wp (ctr := ctr) hscr₂ hb₂ (k₂ _ (by decide) (by decide) (by decide))
+  have k₂ : ∀ r, r ≠ t0 → r ≠ t1 → r ≠ sb → r ≠ .ra → s₂.gpr r = s₀.gpr r :=
+    fun r h0 h1 h2 h3 => by rw [g₂ r h0 h1, g₁', o₁ r h2 h3]
+  refine ctrSetup_wp (ctr := ctr) hscr₂ hb₂ (k₂ _ (by decide) (by decide) (by decide) (by decide))
     (by rw [wr₂, wr₁', wr₁]; exact hwC) fun s₃ m₃ o₃ rd₃ wr₃ sp₃ => ?_
-  have k₃ : ∀ r, r ≠ t0 → r ≠ t1 → r ≠ t2 → r ≠ sb → s₃.gpr r = s₀.gpr r :=
-    fun r h0 h1 h2 h3 => by rw [o₃ r h0 h1 h2, k₂ r h0 h1 h3]
+  have k₃ : ∀ r, r ≠ t0 → r ≠ t1 → r ≠ t2 → r ≠ sb → r ≠ .ra → s₃.gpr r = s₀.gpr r :=
+    fun r h0 h1 h2 h3 h4 => by rw [o₃ r h0 h1 h2, k₂ r h0 h1 h3 h4]
   refine keySetup_wp (s := s₃) (R := R) (by
-      rw [k₃ _ (by decide) (by decide) (by decide) (by decide)]; simp [R])
+      rw [k₃ _ (by decide) (by decide) (by decide) (by decide) (by decide)]; simp [R])
     hR14 fun s₄ a0₄ a2₄ a1₄ o₄ m₄ rd₄ wr₄ sp₄ => ?_
   have hb₄ : s₄.gpr sb = b := by
     rw [o₄ sb (by decide) (by decide) (by decide) (by decide), o₃ _ (by decide) (by decide) (by decide)]
@@ -402,7 +553,8 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
     have f01 : Frame [⟨X, 2048⟩, ⟨ctr, 16⟩] s₀.mem s₁'.mem := fun x hx =>
       ((f₁.sub fun r hr => ⟨⟨X, 2048⟩, by simp, by
         simp only [List.mem_singleton] at hr; subst hr; exact scr_part X (by omega)⟩) x hx).trans
-        (congrFun m₁ x)
+        ((f0s.sub fun r hr => ⟨⟨X, 2048⟩, by simp, by
+          simp only [List.mem_singleton] at hr; subst hr; exact scr_part X (by omega)⟩) x hx)
     refine (f01.trans (fm₂.sub fun r hr => ⟨⟨X, 2048⟩, by simp, ?_⟩)).trans (fS.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -441,7 +593,7 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
   have hi₄ : KInv s₄ b (s₀.gpr .a0) R w R s₄ :=
     { hj := Nat.le_refl _
       a1 := a1₄
-      a0 := by rw [a0₄, k₃ _ (by decide) (by decide) (by decide) (by decide)]
+      a0 := by rw [a0₄, k₃ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
       a2 := by rw [a2₄, o₃ _ (by decide) (by decide) (by decide), hb₂]; simp [keyAddr, lastKey]
       rd := rfl
       wr := rfl
@@ -453,22 +605,29 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
   refine WP.seq (WP.mono (keyLoop_ok hk hi₄) fun s₅ d₅ => ?_)
   refine WP.seq ?_
   unfold keyDone
-  refine wp_addi (imm := 64) (by decide) fun s₆ u₆ => WP.block_nil ?_
+  rw [List.singleton_append]
+  have hb₅ : s₅.gpr sb = b := by rw [d₅.keep sb (by decide)]; exact hb₄
+  refine wp_addi (imm := 64) (by decide) fun s₆' u₆ =>
+    srcLoad_wp (o := o) (s := s₆') fun s₆ ld₆ ok₆ mem₆ rd₆ wr₆ sp₆ => ?_
   have g₆ : ∀ r ∈ [Reg.ra, .a3, .a4, .a5], s₆.gpr r = s₄.gpr r := fun r hr => by
-    rw [u₆.other r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide),
+    rw [ok₆ r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide),
+      u₆.other r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide),
       d₅.keep r (not_ctr_writes r hr)]
-  have k₄ : ∀ r ∈ [Reg.ra, .a3, .a4], s₄.gpr r = s₀.gpr r := fun r hr => by
+  have k₄ : ∀ r ∈ [Reg.a3, .a4], s₄.gpr r = s₀.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;>
+    rcases hr with rfl | rfl <;>
       rw [o₄ _ (by decide) (by decide) (by decide) (by decide),
-        k₃ _ (by decide) (by decide) (by decide) (by decide)]
+        k₃ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
+  have ra₄ : s₄.gpr .ra = s₁.gpr .ra := by
+    rw [o₄ _ (by decide) (by decide) (by decide) (by decide), o₃ _ (by decide) (by decide) (by decide),
+      g₂ _ (by decide) (by decide), g₁']
   have a4₆ : s₆.gpr .a4 = s₀.gpr .a4 := by rw [g₆ _ (by simp), k₄ _ (by simp)]
   have a3₆ : s₆.gpr .a3 = D := by rw [g₆ _ (by simp), k₄ _ (by simp)]
-  have ra₆ : s₆.gpr .ra = s₀.gpr .ra := by rw [g₆ _ (by simp), k₄ _ (by simp)]
+  have ra₆ : s₆.gpr .ra = s₁.gpr .ra := by rw [g₆ _ (by simp), ra₄]
   have hb₆ : s₆.gpr sb = b := by rw [show sb = .a5 from rfl, g₆ _ (by simp)]; exact hb₄
   have hK0 : s₆.gpr .a0 = b + BitVec.ofNat 64 (1920 - 64 * R) := by
-    rw [u₆.gpr, d₅.a2]; exact BitVec.sub_add_cancel _ _
-  have fK : Frame (kRegions b) s₄.mem s₆.mem := u₆.mem ▸ d₅.frame
+    rw [ok₆ _ (by decide), u₆.gpr, d₅.a2]; exact BitVec.sub_add_cancel _ _
+  have fK : Frame (kRegions b) s₄.mem s₆.mem := by rw [mem₆, u₆.mem]; exact d₅.frame
   have kd : ∀ {x lx}, 320 ≤ x → x + lx ≤ 1024 → ∀ r ∈ kRegions b,
       Region.Disjoint ⟨b + BitVec.ofNat 64 x, lx⟩ r := by
     intro x lx h1 h2 r hr
@@ -491,11 +650,17 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
     rcases hr with rfl | rfl
     · exact (dCb.sub_right (Offset.sub_base b (by omega))).sub_left (Offset.sub_base _ h)
     · exact (dCb.sub_right (Offset.sub_base b (by omega))).sub_left (Offset.sub_base _ h)
+  have dv : ∀ {x lx}, x + lx ≤ 16 → ∀ r ∈ [(⟨b + BitVec.ofNat 64 (8 * 62), 8⟩ : Region)],
+      Region.Disjoint ⟨ctr + BitVec.ofNat 64 x, lx⟩ r := by
+    intro x lx h r hr
+    simp only [List.mem_singleton] at hr; subst hr
+    exact (dCb.sub_right (Offset.sub_base b (by omega))).sub_left (Offset.sub_base _ h)
   have m02 : ∀ {x lx}, x + lx ≤ 16 → lx ≤ 8 →
       s₂.mem.readW (ctr + BitVec.ofNat 64 x) (8 * lx) = s₀.mem.readW (ctr + BitVec.ofNat 64 x) (8 * lx) := by
     intro x lx h hl
     rw [fm₂.readW (Region.contains_self _ _) (by simpa using dcm h) (by omega),
-      f₁.readW (Region.contains_self _ _) (by simpa using dc h) (by omega), m₁]
+      f₁.readW (Region.contains_self _ _) (by simpa using dc h) (by omega),
+      f0s.readW (Region.contains_self _ _) (by simpa using dv h) (by omega)]
   have clo₆ : cloW s₆.mem b = s₀.mem.readW ctr 64 := by
     have e : cloW s₆.mem b = cloW s₄.mem b :=
       fK.readW (r := ⟨b + BitVec.ofNat 64 (8 * 59), 8⟩) (Region.contains_self _ _)
@@ -514,16 +679,21 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
         (kd (by omega_arith) (by omega_arith)) (by decide)
     rw [e, m₄, sl₃, m02 (x := 12) (lx := 4) (by omega) (by omega)]
   let icb := Spec.Gcm.blockAt s₀.mem ctr
-  have hs : GSetup s₆ X b D n R w icb :=
-    { scr := ⟨by rw [u₆.wr, d₅.wr]; exact hscr₄.wr, hb₆⟩
+  have hs : GSetup s₆ X b S D n R w icb :=
+    { scr := ⟨by rw [wr₆, u₆.wr, d₅.wr]; exact hscr₄.wr, hb₆⟩
       base := hb₆
-      masks := by rw [u₆.mem]; exact masks_kept d₅.frame hk.masks
-      dat := by rw [u₆.wr, d₅.wr, wr₄, wr₃, wr₂, wr₁', wr₁]; exact hwD
+      masks := by rw [mem₆, u₆.mem]; exact masks_kept d₅.frame hk.masks
+      dat := by rw [wr₆, u₆.wr, d₅.wr, wr₄, wr₃, wr₂, wr₁', wr₁]; exact hwD
+      src := by
+        rw [rd₆, wr₆, u₆.rd, u₆.wr, d₅.rd, d₅.wr, rd₄, wr₄, rd₃, wr₃, rd₂, wr₂, rd₁', wr₁', rd₁, wr₁]
+        exact hp.src
+      alias := hp.alias
       hn := n16
       sep := dDS
+      ssep := hp.sS
       rounds := hR
       keys := fun j hj => keyRel_congr (d₅.keys j hj) fun k hk => by
-        rw [u₆.mem, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show 1920 - 64 * R + 64 * j =
+        rw [mem₆, u₆.mem, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show 1920 - 64 * R + 64 * j =
           1920 - 64 * (R - j) by omega_arith]
       lo := fun i hi j hj => by
         rw [clo₆, readW_bit _ _ hi hj, ← BitVec.add_zero ctr,
@@ -544,24 +714,60 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
     rcases hr with rfl | rfl
     · exact dDS.sub_right (scr_base X (by omega))
     · exact dDS.sub_right (scr_part X (by omega))
-  have data₆ : DataInv s₀.mem s₆.mem D n 0 (keyStream R w icb) :=
-    dataInv_frame fK dK n16 (dataInv_frame f₀₄ dd n16 fun i hi => by simp)
-  refine WP.seq (WP.mono (Q := GDone s₀.mem s₆ b D n R w icb) ?_ fun s₇ gd => ?_)
+  have dds : ∀ r ∈ [(⟨X, 2048⟩ : Region), ⟨ctr, 16⟩], Region.Disjoint ⟨S, 16 * n⟩ r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hp.sS
+    · exact hp.sC
+  have dKs : ∀ r ∈ kRegions b, Region.Disjoint ⟨S, 16 * n⟩ r := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hp.sS.sub_right (scr_base X (by omega))
+    · exact hp.sS.sub_right (scr_part X (by omega))
+  have data₆ : DataInv s₀.mem s₆.mem S D n 0 (keyStream R w icb) :=
+    dataInv_frame fK dK dKs n16 (dataInv_frame f₀₄ dd dds n16 (dataInv_zero _ _ _ _ _))
+  -- The source, in `a2` out of place.
+  -- Our return address, in its slot out of place.
+  have slot₆ : s₆.mem.readW (raSlotAddr b) 64 = s₁.mem.readW (raSlotAddr b) 64 := by
+    have dslot : ∀ {x lx}, (x + lx ≤ 8 * 62 ∨ 8 * 62 + 8 ≤ x) → x + lx ≤ 2040 →
+        ∀ r ∈ [(⟨b + BitVec.ofNat 64 x, lx⟩ : Region)],
+        Region.Disjoint ⟨raSlotAddr b, 8⟩ r := fun h1 h2 r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact dV h1 h2
+    rw [mem₆, u₆.mem, d₅.frame.readW (Region.contains_self _ _) (kd (by omega) (by omega)) (by decide),
+      fS.readW (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact dV (by omega) (by omega)
+        · exact (dCb.sub_right (Offset.sub_base b (by omega))).symm) (by decide),
+      fm₂.readW (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact dV (by omega) (by omega)
+        · exact dV (by omega) (by omega)) (by decide),
+      f₁.readW (Region.contains_self _ _) (dslot (by omega) (by omega)) (by decide)]
+  -- The source, in `a2` out of place.
+  have vS : o = true → s₆.gpr .a2 = S := fun ho => by
+    rw [ld₆ ho, u₆.other _ (by decide), d₅.keep _ (by decide), ra₄, ra₁, ite_eq_left ho]
+    exact hp.outOf ho
+  have hsr : s₆.gpr (srcReg o) = S := by
+    cases o with
+    | false => exact a3₆.trans (hp.inPlace rfl).symm
+    | true => exact vS rfl
+  refine WP.seq (WP.mono (Q := GDone s₀.mem s₆ b S D n R w icb) ?_ fun s₇ gd => ?_)
   · refine WP.ite (decide (n = 0)) (eval_zero_ofNat _ _ (by omega_arith)
       (by rw [a4₆]; simp [n])) (fun h0 => ?_) (fun h0 => ?_)
     · have hn0 : n = 0 := by simpa using h0
-      exact WP.block_nil ⟨hb₆, rfl, rfl, rfl, rfl, Frame.refl _ _, fun i hi => by omega_arith⟩
+      exact WP.block_nil ⟨hb₆, rfl, rfl, rfl, rfl, Frame.refl _ _, fun i hi => absurd hi (by omega_arith)⟩
     · have hn0 : n ≠ 0 := by simpa using h0
-      have hi₆ : GInv s₀.mem s₆ b D n R w icb 0 s₆ :=
-        ⟨by omega_arith, by rw [a3₆]; simp, by rw [a4₆]; simp [n], hb₆, hK0, rfl, rfl, rfl, rfl,
-          Frame.refl _ _, by rw [num₆, icb_lo]; simp [icb], data₆⟩
-      -- By doublewords if the data is aligned.
+      have hi₆ : GInv o s₀.mem s₆ b S D n R w icb 0 s₆ :=
+        ⟨by omega_arith, by rw [a3₆]; simp, by rw [hsr]; simp, by rw [a4₆]; simp [n], hb₆, hK0, rfl, rfl,
+          rfl, rfl, Frame.refl _ _, by rw [num₆, icb_lo]; simp [icb], data₆⟩
+      -- By doublewords if the data's addresses are aligned.
       unfold ctrGroups
-      refine WP.seq (wp_andi (imm := 7) (by decide) fun s₇ u₇ => WP.block_nil ?_)
+      refine WP.seq (alignTest_wp a3₆ hsr hp.inPlace fun s₇ v u₇ ev => ?_)
       have hi₇ := hi₆.of_t0 u₇
-      have ev : isa.eval (.zero t0) s₇ = some (decide (D.toNat % 8 = 0)) := by
-        rw [Steps.eval_zero, u₇.gpr, a3₆, and7, Steps.ofNat_beq_zero (by omega)]
-      exact WP.ite (decide (D.toNat % 8 = 0)) ev
+      exact WP.ite _ ev
         (fun h => groups_ok hs (fun _ => by simpa using h) hi₇)
         (fun _ => groups_ok hs (fun h => Bool.noConfusion h) hi₇)
   -- The epilogue.
@@ -584,27 +790,32 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
       hs.slot_disj (by omega) (by omega) (by omega)
     exact (((sv₁.frame_in savedOffs_range fm₂ dS).frame_in savedOffs_range fS dS2).frame_in
       savedOffs_range fK dK').frame_in savedOffs_range gd.frame dG
-  have hscr₇ : Scr s₇ X 2048 := ⟨by rw [gd.wr, u₆.wr, d₅.wr]; exact hscr₄.wr, by rw [gd.base]⟩
-  rw [restoreRegs_eq]
+  have hscr₇ : Scr s₇ X 2048 := ⟨by rw [gd.wr, wr₆, u₆.wr, d₅.wr]; exact hscr₄.wr, by rw [gd.base]⟩
+  rw [WP.block_append_iff (M := isa), restoreRegs_eq]
   refine WP.mono (Spill.restore_wp (B := b) (by rw [← hb₁]; exact hscr₁.al) gd.base savedOffs_ho
     savedOffs_restorable (fun p hp => ⟨_, List.mem_append_right _ hscr₇.wr, by
       rw [← gd.base]
       exact hscr₇.contains (by have := savedOffs_range p hp; omega) (by decide)⟩) sv)
     fun s₈ rs₈ => ?_
+  have hb₈ : s₈.gpr sb = b := by rw [rs₈.other sb (by decide), gd.base]
+  refine srcRestore_wp (X := X) ⟨by rw [rs₈.wr]; exact hscr₇.wr, hb₈⟩ hb₈ fun s₉ ok₉ ra₉ mem₉ => ?_
   have fsub : ∀ {x lx}, x + lx + 7 ≤ 2048 → Region.Sub ⟨b + BitVec.ofNat 64 x, lx⟩ ⟨X, 2048⟩ :=
     fun h => scr_part X h
   refine ⟨fun r hr => ?_, ?_, ?_, ?_⟩
   · have hr' : r ∈ savedOffs.map Prod.fst := by rw [savedOffs_regs]; exact hr
-    rw [rs₈.gpr_of (.inl hr')]
-    have : r ∉ [sb] := by revert hr; revert r; decide
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at this
-    rw [o₁ r this]
-  · rw [rs₈.other _ not_saved_ra, gd.ra, ra₆]
-  · show Spec.Gcm.blocksAt s₈.mem D n = _
-    rw [rs₈.mem]
+    have h1 : r ≠ sb := by revert hr; revert r; decide
+    have h2 : r ≠ .ra := by revert hr; revert r; decide
+    rw [ok₉ r h2, rs₈.gpr_of (.inl hr'), o₁ r h1 h2]
+  · rw [ra₉]
+    by_cases ho : o = true
+    · rw [ite_eq_left ho, rs₈.mem, gd.frame.readW (Region.contains_self _ _)
+        (hs.slot_disj (x := 8 * 62) (lx := 8) (by omega) (by omega) (by omega)) (by decide), slot₆, hvs ho]
+    · rw [ite_eq_right ho, rs₈.other _ not_saved_ra, gd.ra, ra₆, ra₁, ite_eq_right ho]
+  · show Spec.Gcm.blocksAt s₉.mem D n = _
+    rw [mem₉, rs₈.mem]
     exact ctr32_of_dataInv gd.data
-  · show Spec.Gcm.blockAt s₈.mem ctr = _
-    rw [rs₈.mem]
+  · show Spec.Gcm.blockAt s₉.mem ctr = _
+    rw [mem₉, rs₈.mem]
     refine ctr_after fun k hk => ?_
     have hC : ∀ {m m' : Mem} {rs : List Region}, Frame rs m m' →
         (∀ r ∈ rs, Region.Disjoint ⟨ctr, 16⟩ r) →
@@ -623,15 +834,46 @@ theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
         · exact dCb.sub_right (Offset.sub_base b (by omega))),
       m₄, m₃, setup_ctr dCb hk, m02 (x := 12) (lx := 4) (by omega) (by omega)]
     have e7 : BitVec.ofNat 64 (s₀.gpr .a4).toNat = s₂.gpr .a4 := by
-      rw [k₂ _ (by decide) (by decide) (by decide)]; simp
+      rw [k₂ _ (by decide) (by decide) (by decide) (by decide)]; simp
     split
     · have dcS : ∀ r ∈ [(⟨b + BitVec.ofNat 64 320, 96⟩ : Region)], Region.Disjoint ⟨ctr, 16⟩ r :=
         fun r hr => by simpa using dc (x := 0) (lx := 16) (by omega) r hr
       have dcM : ∀ r ∈ [(⟨b + BitVec.ofNat 64 416, 48⟩ : Region), ⟨b + BitVec.ofNat 64 512, 96⟩],
           Region.Disjoint ⟨ctr, 16⟩ r :=
         fun r hr => by simpa using dcm (x := 0) (lx := 16) (by omega) r hr
-      rw [fm₂.bytes (R := ⟨ctr, 16⟩) dcM (by simp) hk, f₁.bytes (R := ⟨ctr, 16⟩) dcS (by simp) hk, m₁]
+      have dcV : ∀ r ∈ [(⟨b + BitVec.ofNat 64 (8 * 62), 8⟩ : Region)], Region.Disjoint ⟨ctr, 16⟩ r :=
+        fun r hr => by simpa using dv (x := 0) (lx := 16) (by omega) r hr
+      rw [fm₂.bytes (R := ⟨ctr, 16⟩) dcM (by simp) hk, f₁.bytes (R := ⟨ctr, 16⟩) dcS (by simp) hk,
+        f0s.bytes (R := ⟨ctr, 16⟩) dcV (by simp) hk]
     · rw [e7]
+
+/-- In place. -/
+theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
+    WP isa Impl.Aes.RISCV64.ctr32 s₀ fun s' =>
+      (∀ r ∈ RISCV64.preserved, s'.gpr r = s₀.gpr r) ∧ s'.gpr .ra = s₀.gpr .ra ∧
+        Proof.Aes.ctr32RISCV64.post s₀ s' := by
+  obtain ⟨hrd, hwr, dSC, -, dSS, dCD, dCS, dDS, -, hR⟩ := hp
+  have hwD : (⟨s₀.gpr .a3, 16 * (s₀.gpr .a4).toNat⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  exact correctWith (o := false) (S := s₀.gpr .a3)
+    ⟨by rw [hrd]; simp, by rw [hwr]; simp, hwD, by rw [hwr]; simp, List.mem_append_right _ hwD,
+      fun h => absurd h (by decide), fun _ => rfl, dSC, dSS, dCD, dCS, dDS, dCD.symm, dDS, .inl rfl, hR⟩
+
+/-- Out of place. -/
+theorem correctTo {s₀ : State} (hp : Proof.Aes.ctr32ToRISCV64.pre s₀) :
+    WP isa Impl.Aes.RISCV64.ctr32To s₀ fun s' =>
+      (∀ r ∈ RISCV64.preserved, s'.gpr r = s₀.gpr r) ∧ s'.gpr .ra = s₀.gpr .ra ∧
+        Proof.Aes.ctr32ToRISCV64.post s₀ s' := by
+  obtain ⟨hrd, hwr, dSC, -, dSS, dCD, dCS, dDS, sC, sD, sS, -, -, hR⟩ := hp
+  exact correctWith (o := true) (S := s₀.gpr .a6)
+    ⟨by rw [hrd]; simp, by rw [hwr]; simp, by rw [hwr]; simp, by rw [hwr]; simp,
+      List.mem_append_left _ (by rw [hrd]; simp), fun _ => rfl, fun h => absurd h (by decide),
+      dSC, dSS, dCD, dCS, dDS, sC, sS, .inr sD, hR⟩
+
+theorem ctr32To_correct (s : State) (hs : Proof.Aes.ctr32ToRISCV64.pre s) :
+    ∃ t s', Exec isa Impl.Aes.RISCV64.ctr32To s t s' ∧ abiPreserved s s' ∧
+      Proof.Aes.ctr32ToRISCV64.post s s' := by
+  obtain ⟨t, s', he, h₁, hra, h₂⟩ := correctTo hs
+  exact ⟨t, s', he, ⟨h₁, Exec.sp he, hra⟩, h₂⟩
 
 theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32RISCV64.pre s) :
     ∃ t s', Exec isa Impl.Aes.RISCV64.ctr32 s t s' ∧ abiPreserved s s' ∧

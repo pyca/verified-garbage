@@ -35,6 +35,17 @@ licence): four blocks at a time, bitsliced in eight 64-bit registers
 * Only `a0`, `a1` (`kp`), `a2`, `a3` (the data), `a4` (the blocks left),
   `a5` and what is computed from them in `t0` for the branches hold public
   values; no address and no branch depends on anything else.
+
+One body serves in place and out of place (`ctr32With o`): out of place
+(`o`), `vg_aes_ctr32_to(schedule = a0, rounds = a1, counter = a2, dst = a3,
+n = a4, scratch = a5, src = a6)` reads the data from `src` and writes the
+result to `dst`. The S-box and the linear layers use `a6` as a temporary,
+and every other register is in use, but `ra`, which none of this code
+writes: our return address waits in slot `srcSlot` while `src` is kept in
+`ra` until the round keys are bitsliced, then in `a2` (which the groups do
+not use), advanced with `a3`, and `ra` is loaded back at the end. The
+doublewords are used only if both `src` and `dst` are multiples of 8. In
+place (`ctr32`), the data is read from `a3`, and none of this is emitted.
 -/
 
 @[expose] public section
@@ -126,42 +137,76 @@ def encrypt4 : Prog isa :=
   .seq (.block (toBs ++ [movR kp .a0] ++ addRoundKey))
     (.seq (.loop (.block roundBody) (.nonzero t0)) (.block (lastRound ++ fromBs)))
 
-/-- XOR the keystream block `b` into data block `b`, by doublewords if `w`
-(the data aligned), else a byte at a time. -/
-def xorBlock (w : Bool) (b : Nat) : List Instr :=
-  loadLE64W w t0 t1 t2 .a3 (16 * b) ++ [xorR t0 t0 (q b)] ++ storeLE64W w t0 t1 t2 .a3 (16 * b) ++
-  loadLE64W w t0 t1 t2 .a3 (16 * b + 8) ++ [xorR t0 t0 (q (b + 4))] ++
+/-- Where the data is read from: `a3` in place, `a2` out of place. -/
+def srcReg (o : Bool) : Reg := if o then .a2 else .a3
+
+/-- XOR the keystream block `b` into data block `b` of the source, to data
+block `b` of `a3`, by doublewords if `w` (the data aligned), else a byte at a
+time. -/
+def xorBlock (o w : Bool) (b : Nat) : List Instr :=
+  loadLE64W w t0 t1 t2 (srcReg o) (16 * b) ++ [xorR t0 t0 (q b)] ++
+  storeLE64W w t0 t1 t2 .a3 (16 * b) ++
+  loadLE64W w t0 t1 t2 (srcReg o) (16 * b + 8) ++ [xorR t0 t0 (q (b + 4))] ++
   storeLE64W w t0 t1 t2 .a3 (16 * b + 8)
 
+/-- Out of place, the source on to the next four blocks. -/
+def srcStep (o : Bool) : List Instr := if o then [.addi .a2 .a2 64] else []
+
 /-- Four blocks, and on to the next four. -/
-def xorFull (w : Bool) : List Instr :=
-  (List.range 4).flatMap (xorBlock w) ++ ([.addi .a3 .a3 64, .addi .a4 .a4 (-4)] : List Instr)
+def xorFull (o w : Bool) : List Instr :=
+  (List.range 4).flatMap (xorBlock o w) ++ ([.addi .a3 .a3 64, .addi .a4 .a4 (-4)] : List Instr) ++
+    srcStep o
 
 /-- The last one to three blocks (and none left). -/
-def xorTail (w : Bool) : Prog isa :=
-  .seq (.block (xorBlock w 0 ++ ([.addi t0 .a4 (-1)] : List Instr)))
-    (.seq (.ite (.nonzero t0) (.seq (.block (xorBlock w 1 ++ ([.addi t0 .a4 (-3)] : List Instr)))
-        (.ite (.zero t0) (.block (xorBlock w 2)) (.block [])))
+def xorTail (o w : Bool) : Prog isa :=
+  .seq (.block (xorBlock o w 0 ++ ([.addi t0 .a4 (-1)] : List Instr)))
+    (.seq (.ite (.nonzero t0) (.seq (.block (xorBlock o w 1 ++ ([.addi t0 .a4 (-3)] : List Instr)))
+        (.ite (.zero t0) (.block (xorBlock o w 2)) (.block [])))
       (.block []))
     (.block [.li .a4 0]))
 
 /-- One group of (up to) four blocks, by doublewords if `w`. -/
-def group (w : Bool) : Prog isa :=
+def group (o w : Bool) : Prog isa :=
   .seq (.block ctrBlocks)
     (.seq encrypt4
-      (.seq (.block [shrI t0 .a4 2]) (.ite (.nonzero t0) (.block (xorFull w)) (xorTail w))))
+      (.seq (.block [shrI t0 .a4 2]) (.ite (.nonzero t0) (.block (xorFull o w)) (xorTail o w))))
 
-/-- The groups: by doublewords if the data's address is a multiple of 8
-(`t0 = a3 ∧ 7`, of a public address), else a byte at a time. -/
-def ctrGroups : Prog isa :=
-  .seq (.block [.logicImm .and t0 .a3 7])
-    (.ite (.zero t0) (.loop (group true) (.nonzero .a4)) (.loop (group false) (.nonzero .a4)))
+/-- `t0 := ` the low three bits of the data's address, or out of place of
+both addresses. -/
+def alignTest (o : Bool) : List Instr :=
+  if o then [.logic .or t0 .a3 .a2, .logicImm .and t0 t0 7] else [.logicImm .and t0 .a3 7]
 
-def ctr32 : Prog isa :=
-  .seq (.block (roundSb ++ saveRegs ++ maskInit ++ ctrSetup ++ keySetup))
+/-- The groups: by doublewords if the data's addresses are multiples of 8
+(`t0 = 0`, of public addresses), else a byte at a time. -/
+def ctrGroups (o : Bool) : Prog isa :=
+  .seq (.block (alignTest o))
+    (.ite (.zero t0) (.loop (group o true) (.nonzero .a4)) (.loop (group o false) (.nonzero .a4)))
+
+/-- The slot that keeps our return address out of place. -/
+def srcSlot : Nat := 62
+
+/-- Out of place, our return address into its slot, and the source (`a6`)
+into `ra`. -/
+def srcSave (o : Bool) : List Instr := if o then [stS srcSlot .ra, movR .ra .a6] else []
+
+/-- Out of place, the source into `a2`. -/
+def srcLoad (o : Bool) : List Instr := if o then [movR .a2 .ra] else []
+
+/-- Out of place, our return address back from its slot. -/
+def srcRestore (o : Bool) : List Instr := if o then [ldS .ra srcSlot] else []
+
+/-- In place (`o` false) or out of place. -/
+def ctr32With (o : Bool) : Prog isa :=
+  .seq (.block (roundSb ++ srcSave o ++ saveRegs ++ maskInit ++ ctrSetup ++ keySetup))
     (.seq (.loop (.block keyBody) (.nonzero .a1))
-      (.seq (.block keyDone)
-        (.seq (.ite (.zero .a4) (.block []) ctrGroups)
-          (.block restoreRegs))))
+      (.seq (.block (keyDone ++ srcLoad o))
+        (.seq (.ite (.zero .a4) (.block []) (ctrGroups o))
+          (.block (restoreRegs ++ srcRestore o)))))
+
+/-- `vg_aes_ctr32`, in place. -/
+def ctr32 : Prog isa := ctr32With false
+
+/-- `vg_aes_ctr32_to`, from `src` (`a6`) to `dst` (`a3`). -/
+def ctr32To : Prog isa := ctr32With true
 
 end VG.Impl.Aes.RISCV64
