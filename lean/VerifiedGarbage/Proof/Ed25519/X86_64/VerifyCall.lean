@@ -9,10 +9,10 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-!
-# Verification calling the point functions: `Verified`
+# Verification calling the decoding and point functions: `Verified`
 
 Untrusted: everything here is checked by Lean. The registered code,
-`verifyEquation fld win'`, calls the point functions (`Point64.calls`); its
+`verifyEquation fld win'`, calls the decoding stages and point functions (`Point64.calls`); its
 calls run as their bodies would inlined (`Code.inline`), which gives
 `verifyEquationWith fld (Point64.bodies fld) win` for the windows `win` that
 `win'` inlines to (`verifyEquation_inline`), the code `VerifyVerified.lean`
@@ -65,14 +65,7 @@ omit [EdArith fld] [EdWindows win] in
 theorem verifyEquation_inline {win' : Prog isa} (h : win'.inline = win) :
     (verifyEquation fld win').inline = verifyEquationWith fld (Point64.bodies fld) win := by
   subst h
-  have hr : (rootPower2 fld).inline = rootPower2 fld := by unfold rootPower2; split <;> rfl
-  have hd : (decodePowers fld).inline = decodePowers fld := by
-    change Code.seq _ (.seq _ (.seq _ (.seq _ (.seq (rootPower2 fld).inline _)))) = _
-    rw [hr]; rfl
-  change Code.seq (.block verifySetup) (Code.seq (Code.seq (.block verifyScalar)
-    (Code.ite .b (Code.seq (decodePowers fld).inline (decodeAThen fld (Point64.calls fld) win').inline)
-      recoverInvalid.inline)) (.block _)) = _
-  rw [hd]; rfl
+  rfl
 
 /-- `verifyLocal`, with the 8 bytes below `rsp` apart from every region: room for a call's return
 address. -/
