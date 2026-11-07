@@ -202,7 +202,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
 public import VerifiedGarbage.Proof.MlDsa.DecideAt
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
@@ -415,7 +414,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak

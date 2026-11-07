@@ -157,6 +157,7 @@ vg_chacha20_apply:
 	addi %r6, %r24, 256
 	add %r25, %r25, %r5
 	subf %r26, %r5, %r26
+	addi %r7, %r4, 0
 	bl {vg_chacha20_xor}
 	b 28f
 27:

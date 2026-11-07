@@ -58,7 +58,7 @@ theorem fin_big {V : Reg → BitVec 64} (h2 : V .s2 = s₀.gpr .a0) (h1 : V .s1 
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, hk, -⟩ := h
   exact hk.big (by rw [h2]; simp) (by rw [h1]; simp) (by rw [h0]; simp)
 
-theorem fin_bw : (below s₀.sp 3232).Disjoint ⟨s₀.gpr .a5, 2560⟩ := by
+theorem fin_bw : (below s₀.sp 3248).Disjoint ⟨s₀.gpr .a5, 2560⟩ := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, hk, -⟩ := h
   exact hk.buf3 (by simp)
 
@@ -103,7 +103,7 @@ section
 variable {c st w : Addr} (L : Lay c st w)
 include L
 
-theorem saved_tagFrame {sp : Addr} (hbw : (below sp 3232).Disjoint ⟨w, 2560⟩) {o : Nat} (ho : o = 0 ∨ o = 112) :
+theorem saved_tagFrame {sp : Addr} (hbw : (below sp 3248).Disjoint ⟨w, 2560⟩) {o : Nat} (ho : o = 0 ∨ o = 112) :
     ∀ r ∈ tagFrame st w o sp, (savedR w).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

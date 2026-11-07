@@ -220,8 +220,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicAccepted
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicEntry
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicEntryReady
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicFail
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicPush
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicSaved

@@ -60,9 +60,10 @@ def nativeTCB (names : List String) : List (String × FilePath) :=
 def usage : String := "usage: lake env lean --run EmitOne.lean [--check] <Alg>.<Target> …"
 
 /-- The names of the functions a generated file defines: each line declaring
-`extern "<abi>" fn <name>(`, whatever its ABI (`"C"`, `"sysv64"`, …), and
-each other name of one of them, `pub use self::<f> as <name>;`
-(`VG.Rust.alias`). -/
+`extern "<abi>" fn <name>(`, whatever its ABI (`"C"`, `"sysv64"`, …), each
+dispatcher, `pub unsafe fn <name>(` (`VG.Rust.dispatcher`), and each other
+name of one of them, `pub use self::<f> as <name>;` (`VG.Rust.alias`), or
+`pub use crate::<module>::<f> as <name>;` (`VG.Rust.soleDispatcher`). -/
 def fnNames (text : String) : List String :=
   (text.splitOn "\n").filterMap fun line =>
     match line.splitOn "extern \"" with
@@ -71,7 +72,9 @@ def fnNames (text : String) : List String :=
       | [_, decl] => some ((decl.splitOn "(").headD "")
       | _ => none
     | _ =>
-      if line.startsWith "pub use self::vg_" then
+      if line.startsWith "pub unsafe fn vg_" then
+        some ((((line.drop "pub unsafe fn ".length).toString).splitOn "(").headD "")
+      else if line.startsWith "pub use self::vg_" || line.startsWith "pub use crate::" then
         match line.splitOn " as " with
         | [_, name] => some ((name.splitOn ";").headD "")
         | _ => none
@@ -82,7 +85,7 @@ does not read: then it cannot tell which functions other registration files
 emit into the file, and must not overwrite it. -/
 def unreadFns (text : String) : Bool :=
   (fnNames text).length != ((text.splitOn "\n").filter fun l =>
-    l.contains "fn vg_" || l.contains "use self::vg_").length
+    l.contains "fn vg_" || l.contains "use self::vg_" || l.contains "pub use crate::").length
 
 /-- Runs a process, inheriting its output; its exit code. -/
 def runProc (cmd : String) (args : Array String) : IO UInt32 := do

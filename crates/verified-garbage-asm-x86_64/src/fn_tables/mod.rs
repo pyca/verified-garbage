@@ -62,6 +62,10 @@ mod vg_hash_sha1;
 pub use vg_hash_sha1::VG_HASH_SHA1;
 
 #[rustfmt::skip]
+mod vg_hash_sha1_avx_bmi;
+pub use vg_hash_sha1_avx_bmi::{VG_HASH_SHA1_AVX_BMI, VG_HASH_SHA1_AVX_BMI_FEATURES};
+
+#[rustfmt::skip]
 mod vg_hash_sha1_shani;
 pub use vg_hash_sha1_shani::{VG_HASH_SHA1_SHANI, VG_HASH_SHA1_SHANI_FEATURES};
 
@@ -146,6 +150,10 @@ mod vg_hmac_sha1;
 pub use vg_hmac_sha1::VG_HMAC_SHA1;
 
 #[rustfmt::skip]
+mod vg_hmac_sha1_avx_bmi;
+pub use vg_hmac_sha1_avx_bmi::{VG_HMAC_SHA1_AVX_BMI, VG_HMAC_SHA1_AVX_BMI_FEATURES};
+
+#[rustfmt::skip]
 mod vg_hmac_sha1_shani;
 pub use vg_hmac_sha1_shani::{VG_HMAC_SHA1_SHANI, VG_HMAC_SHA1_SHANI_FEATURES};
 
@@ -228,6 +236,10 @@ pub use vg_md_hash_md5::VG_MD_HASH_MD5;
 #[rustfmt::skip]
 mod vg_md_hash_sha1;
 pub use vg_md_hash_sha1::VG_MD_HASH_SHA1;
+
+#[rustfmt::skip]
+mod vg_md_hash_sha1_avx_bmi;
+pub use vg_md_hash_sha1_avx_bmi::{VG_MD_HASH_SHA1_AVX_BMI, VG_MD_HASH_SHA1_AVX_BMI_FEATURES};
 
 #[rustfmt::skip]
 mod vg_md_hash_sha1_shani;

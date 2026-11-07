@@ -21,11 +21,9 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-import VerifiedGarbage.Impl.Bignum.Arm.Shift
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.X25519.Arm.Instr
 meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-meta import VerifiedGarbage.Impl.Bignum.Arm.Shift
 meta import VerifiedGarbage.Proof.Mont.Words32
 meta import VerifiedGarbage.Proof.X25519.Arm.Instr
 
@@ -70,6 +68,5 @@ theorem productStage_ct {base : BitVec 32} {size tmp a b mod acc n i : Nat} (hi 
   intro s t tr1 tr2 u v h e1 e2
   exact ⟨rowFull_ct s t tr1 tr2 u v trivial trivial
     ⟨h.1.1.trans h.2.1.symm, h.1.2.1.trans h.2.2.1.symm, h.1.2.2.trans h.2.2.2.symm⟩ e1 e2, trivial⟩
-
 
 end VG.Proof.Bignum.Arm

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTD
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Small
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
@@ -108,7 +109,7 @@ theorem KIn.st_two {I : KIn} : I.st = 2 ↔ ∃ d, Spec.Rsa.inverse I.E I.L = so
   simp only [KIn.st]
   constructor
   · intro h2
-    unfold Spec.RsaKeyGen.keyOp at h2
+    unfold Proof.RsaKeyGen.keyOp at h2
     generalize hk : Spec.RsaKeyGen.keyFromPrimes (16 * I.pl) (Spec.Rsa.os2ip I.eb) (Spec.Rsa.os2ip I.pb)
       (Spec.Rsa.os2ip I.qb) = r at h2
     unfold Spec.RsaKeyGen.keyFromPrimes at hk
@@ -116,7 +117,7 @@ theorem KIn.st_two {I : KIn} : I.st = 2 ↔ ∃ d, Spec.Rsa.inverse I.E I.L = so
     dsimp only at hk
     rw [show Nat.lcm (I.P - 1) (I.Q - 1) = I.L from rfl, ← hW] at hk
     rcases hi : Spec.Rsa.inverse I.E I.L with _ | d
-    · rw [hi] at hk; subst hk; simp [Spec.RsaKeyGen.keyStatus] at h2
+    · rw [hi] at hk; subst hk; simp [Proof.RsaKeyGen.keyStatus] at h2
     · rw [hi] at hk
       dsimp only at hk
       by_cases hd : d ≤ 2 ^ (8 * I.pl)
@@ -127,7 +128,7 @@ theorem KIn.st_two {I : KIn} : I.st = 2 ↔ ∃ d, Spec.Rsa.inverse I.E I.L = so
           split
           · exact ⟨_, rfl⟩
           · split <;> exact ⟨_, rfl⟩
-        cases x <;> simp [Spec.RsaKeyGen.keyStatus] at h2
+        cases x <;> simp [Proof.RsaKeyGen.keyStatus] at h2
   · rintro ⟨d, hd, hsm⟩
     have hr : Spec.RsaKeyGen.keyFromPrimes (16 * I.pl) (Spec.Rsa.os2ip I.eb) (Spec.Rsa.os2ip I.pb)
         (Spec.Rsa.os2ip I.qb) = .inr () := by
@@ -137,7 +138,7 @@ theorem KIn.st_two {I : KIn} : I.st = 2 ↔ ∃ d, Spec.Rsa.inverse I.E I.L = so
       rw [show Nat.lcm (I.P - 1) (I.Q - 1) = I.L from rfl, hd, ← hW]
       dsimp only
       rw [ite_eq_left hsm]
-    unfold Spec.RsaKeyGen.keyOp
+    unfold Proof.RsaKeyGen.keyOp
     rw [hr]
     rfl
 

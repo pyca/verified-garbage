@@ -72,19 +72,19 @@ theorem stateAt_init {m : Mem} {p : Addr} {key nonce : List Byte} {c : Spec.ChaC
 
 /-- A doubleword of the context after a doubleword written elsewhere in it. -/
 theorem slot_other (s₀ : State) (m : Mem) (v : BitVec 64) {a b : Nat} (h : a + 8 ≤ b ∨ b + 8 ≤ a)
-    (ha : a + 8 ≤ 608) (hb : b + 8 ≤ 608) :
+    (ha : a + 8 ≤ 616) (hb : b + 8 ≤ 616) :
     (m.writeW (off (cx s₀) b) v).readW (off (cx s₀) a) 64 = m.readW (off (cx s₀) a) 64 :=
   Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
 
 /-- A byte of the context outside a part written. -/
 theorem byte_sub (s₀ : State) {m m' : Mem} {k n i : Nat} (hf : Frame [sub s₀ k n] m m')
-    (h : i + 1 ≤ k ∨ k + n ≤ i) (hk : k + n ≤ 608) (hi : i < 608) :
+    (h : i + 1 ≤ k ∨ k + n ≤ i) (hk : k + n ≤ 616) (hi : i < 616) :
     m' (off (cx s₀) i) = m (off (cx s₀) i) :=
   hf _ fun r hr hc => by
     simp only [List.mem_singleton] at hr; subst hr
     exact Offset.disjoint (cx s₀) h (by omega) (by omega) _ (Region.contains_self _ _) hc
 
-theorem fw_sub (s₀ : State) {m m' : Mem} {k n : Nat} (hf : Frame [sub s₀ k n] m m') (h : k + n ≤ 608) :
+theorem fw_sub (s₀ : State) {m m' : Mem} {k n : Nat} (hf : Frame [sub s₀ k n] m m') (h : k + n ≤ 616) :
     Frame [wR s₀] m m' :=
   hf.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, sub_work s₀ h⟩
@@ -111,7 +111,7 @@ structure PostS (s₀ s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   saved : Saved s₀ s.mem
-  frame : Frame [sub s₀ savOff 48] s₀.mem s.mem
+  frame : Frame [sub s₀ savOff 56] s₀.mem s.mem
 
 theorem save_ok {s₀ : State} (hp : APre e s₀) {rest : List Instr} {Q : State → Prop}
     (k : ∀ s, PostS s₀ s → WP isa (.block rest) s Q) : WP isa (.block (save ++ rest)) s₀ Q := by
@@ -120,7 +120,7 @@ theorem save_ok {s₀ : State} (hp : APre e s₀) {rest : List Instr} {Q : State
   have t0 : s₂.gpr .t0 = cx s₀ := by rw [u₂.gpr, u₁.gpr]; exact align_eq _
   have g₂ : ∀ r, r ≠ .t0 → s₂.gpr r = s₀.gpr r := fun r h => by rw [u₂.other r h, u₁.other r h]
   have w₂ : s₂.wr = s₀.wr := by rw [u₂.wr, u₁.wr]
-  have hin : ∀ d, d + 8 ≤ 48 → InRegions s₂.wr (off (cx s₀) (savOff + d)) 8 := fun d hd => by
+  have hin : ∀ d, d + 8 ≤ 56 → InRegions s₂.wr (off (cx s₀) (savOff + d)) 8 := fun d hd => by
     rw [w₂]; exact hp.in_w (by simp only [savOff]; omega)
   have hal : ∀ d, d % 8 = 0 → (off (cx s₀) (savOff + d)).toNat % 8 = 0 := fun d hd =>
     cx_al s₀ (by simp only [savOff]; omega)
@@ -137,30 +137,36 @@ theorem save_ok {s₀ : State} (hp : APre e s₀) {rest : List Instr} {Q : State
   refine wp_sd (a := off (cx s₀) (savOff + 40)) (by decide)
     (by rw [g₇.gpr, g₆.gpr, g₅.gpr, g₄.gpr, g₃.gpr, t0])
     (hal 40 (by decide)) (by rw [g₇.wr, g₆.wr, g₅.wr, g₄.wr, g₃.wr]; exact hin 40 (by decide))
+    fun s₈' g₈' => ?_
+  refine wp_sd (a := off (cx s₀) (savOff + 48)) (by decide)
+    (by rw [g₈'.gpr, g₇.gpr, g₆.gpr, g₅.gpr, g₄.gpr, g₃.gpr, t0])
+    (hal 48 (by decide)) (by rw [g₈'.wr, g₇.wr, g₆.wr, g₅.wr, g₄.wr, g₃.wr]; exact hin 48 (by decide))
     fun s₈ g₈ => k s₈ ?_
-  have eg : s₈.gpr = s₂.gpr := by rw [g₈.gpr, g₇.gpr, g₆.gpr, g₅.gpr, g₄.gpr, g₃.gpr]
-  have em : s₈.mem = ((((((s₂.mem.writeW (off (cx s₀) (savOff + 0)) (s₀.gpr .s7)).writeW
+  have eg : s₈.gpr = s₂.gpr := by rw [g₈.gpr, g₈'.gpr, g₇.gpr, g₆.gpr, g₅.gpr, g₄.gpr, g₃.gpr]
+  have em : s₈.mem = (((((((s₂.mem.writeW (off (cx s₀) (savOff + 0)) (s₀.gpr .s7)).writeW
       (off (cx s₀) (savOff + 8)) (s₀.gpr .s8)).writeW (off (cx s₀) (savOff + 16)) (s₀.gpr .s9)).writeW
       (off (cx s₀) (savOff + 24)) (s₀.gpr .s10)).writeW (off (cx s₀) (savOff + 32)) (s₀.gpr .s11)).writeW
-      (off (cx s₀) (savOff + 40)) (s₀.gpr .ra)) := by
-    rw [g₈.mem, g₇.mem, g₆.mem, g₅.mem, g₄.mem, g₃.mem, g₇.gpr, g₆.gpr, g₅.gpr, g₄.gpr, g₃.gpr,
-      g₂ _ (by decide), g₂ _ (by decide), g₂ _ (by decide), g₂ _ (by decide), g₂ _ (by decide),
-      g₂ _ (by decide)]
+      (off (cx s₀) (savOff + 40)) (s₀.gpr .ra)).writeW (off (cx s₀) (savOff + 48)) (s₀.gpr .s6)) := by
+    simp only [g₈.mem, g₈'.mem, g₇.mem, g₆.mem, g₅.mem, g₄.mem, g₃.mem, g₈'.gpr, g₇.gpr, g₆.gpr, g₅.gpr,
+      g₄.gpr, g₃.gpr, g₂ _ (show Reg.s7 ≠ .t0 by decide), g₂ _ (show Reg.s8 ≠ .t0 by decide),
+      g₂ _ (show Reg.s9 ≠ .t0 by decide), g₂ _ (show Reg.s10 ≠ .t0 by decide),
+      g₂ _ (show Reg.s11 ≠ .t0 by decide), g₂ _ (show Reg.ra ≠ .t0 by decide),
+      g₂ _ (show Reg.s6 ≠ .t0 by decide)]
   have hm₂ : s₂.mem = s₀.mem := by rw [u₂.mem, u₁.mem]
-  refine ⟨by rw [eg, t0], fun r hr => by rw [eg, g₂ r hr], by rw [g₈.sp, g₇.sp, g₆.sp, g₅.sp, g₄.sp,
-    g₃.sp, u₂.sp, u₁.sp], by rw [g₈.rd, g₇.rd, g₆.rd, g₅.rd, g₄.rd, g₃.rd, u₂.rd, u₁.rd],
-    by rw [g₈.wr, g₇.wr, g₆.wr, g₅.wr, g₄.wr, g₃.wr, w₂], ?_, ?_⟩
+  refine ⟨by rw [eg, t0], fun r hr => by rw [eg, g₂ r hr], by rw [g₈.sp, g₈'.sp, g₇.sp, g₆.sp, g₅.sp,
+    g₄.sp, g₃.sp, u₂.sp, u₁.sp], by rw [g₈.rd, g₈'.rd, g₇.rd, g₆.rd, g₅.rd, g₄.rd, g₃.rd, u₂.rd, u₁.rd],
+    by rw [g₈.wr, g₈'.wr, g₇.wr, g₆.wr, g₅.wr, g₄.wr, g₃.wr, w₂], ?_, ?_⟩
   · rw [em]
-    refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp (disch := decide) only [slot_other, Mem.readW_writeW_self64, Nat.add_zero]
   · rw [em, hm₂]
-    have c : ∀ d, d + 8 ≤ 48 → (sub s₀ savOff 48).Contains (off (cx s₀) (savOff + d)) (64 / 8) :=
+    have c : ∀ d, d + 8 ≤ 56 → (sub s₀ savOff 56).Contains (off (cx s₀) (savOff + d)) (64 / 8) :=
       fun d hd => contains_sub s₀ (by omega) (by simp only [savOff]; omega) (by decide)
-    exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 0 (by decide))).writeW
+    exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 0 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 8 (by decide))).writeW (List.mem_singleton_self _) _
       (c 16 (by decide))).writeW (List.mem_singleton_self _) _ (c 24 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 32 (by decide))).writeW (List.mem_singleton_self _) _
-      (c 40 (by decide))
+      (c 40 (by decide))).writeW (List.mem_singleton_self _) _ (c 48 (by decide))
 
 
 /-! ## The prologue -/
@@ -181,29 +187,34 @@ theorem prologue_ok {s₀ : State} (hp : APre e s₀) :
   rw [List.append_assoc]
   refine save_ok hp fun sa ha => ?_
   simp only [moves, mov, List.cons_append]
-  refine wp_mv fun s₁ u₁ => wp_mv fun s₂ u₂ => wp_mv fun s₃ u₃ => wp_mv fun s₄ u₄ => wp_mv fun sb u₅ => ?_
-  have gb : ∀ r, r ≠ .s7 → r ≠ .s8 → r ≠ .s9 → r ≠ .s10 → r ≠ .s11 → sb.gpr r = sa.gpr r :=
-    fun r h7 h8 h9 h10 h11 => by rw [u₅.other r h11, u₄.other r h10, u₃.other r h9, u₂.other r h8, u₁.other r h7]
+  refine wp_mv fun s₁ u₁ => wp_mv fun s₂ u₂ => wp_mv fun s₃ u₃ => wp_mv fun s₄ u₄ => wp_mv fun s₅ u₅ =>
+    wp_mv fun sb u₆ => ?_
+  have gb : ∀ r, r ≠ .s7 → r ≠ .s8 → r ≠ .s9 → r ≠ .s10 → r ≠ .s11 → r ≠ .s6 → sb.gpr r = sa.gpr r :=
+    fun r h7 h8 h9 h10 h11 h6 => by
+      rw [u₆.other r h6, u₅.other r h11, u₄.other r h10, u₃.other r h9, u₂.other r h8, u₁.other r h7]
   have rb : Regs s₀ sb :=
-    ⟨by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
-        u₁.gpr, ha.gpr _ (by decide)],
-      by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr,
-        u₁.other _ (by decide), ha.gpr _ (by decide)],
-      by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide),
-        u₁.other _ (by decide), ha.gpr _ (by decide)],
-      by rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide),
-        u₁.other _ (by decide), ha.gpr _ (by decide)],
-      by rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
-        u₁.other _ (by decide), ha.gpr _ (by decide)]⟩
-  have mb : sb.mem = sa.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have rdb : sb.rd = s₀.rd := by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, ha.rd]
-  have wrb : sb.wr = s₀.wr := by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, ha.wr]
-  have spb : sb.sp = s₀.sp := by rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp, ha.sp]
-  have t0b : sb.gpr .t0 = cx s₀ := by rw [gb _ (by decide) (by decide) (by decide) (by decide) (by decide), ha.t0]
+    ⟨by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
+        u₂.other _ (by decide), u₁.gpr, ha.gpr _ (by decide)],
+      by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
+        u₂.gpr, u₁.other _ (by decide), ha.gpr _ (by decide)],
+      by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr,
+        u₂.other _ (by decide), u₁.other _ (by decide), ha.gpr _ (by decide)],
+      by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide),
+        u₂.other _ (by decide), u₁.other _ (by decide), ha.gpr _ (by decide)],
+      by rw [u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide),
+        u₂.other _ (by decide), u₁.other _ (by decide), ha.gpr _ (by decide)],
+      by rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
+        u₂.other _ (by decide), u₁.other _ (by decide), ha.gpr _ (by decide)]⟩
+  have mb : sb.mem = sa.mem := by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  have rdb : sb.rd = s₀.rd := by rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, ha.rd]
+  have wrb : sb.wr = s₀.wr := by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, ha.wr]
+  have spb : sb.sp = s₀.sp := by rw [u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp, ha.sp]
+  have t0b : sb.gpr .t0 = cx s₀ := by
+    rw [gb _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), ha.t0]
   have a0b : sb.gpr .a0 = kp s₀ := by
-    rw [gb _ (by decide) (by decide) (by decide) (by decide) (by decide), ha.gpr _ (by decide)]
+    rw [gb _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), ha.gpr _ (by decide)]
   have a1b : sb.gpr .a1 = np s₀ := by
-    rw [gb _ (by decide) (by decide) (by decide) (by decide) (by decide), ha.gpr _ (by decide)]
+    rw [gb _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), ha.gpr _ (by decide)]
   have fb : Frame [wR s₀] s₀.mem sb.mem := by rw [mb]; exact fw_sub s₀ ha.frame (by decide)
   -- The constants.
   rw [List.nil_append]
@@ -330,16 +341,18 @@ theorem prologue_ok {s₀ : State} (hp : APre e s₀) :
         byte_sub s₀ fe (by omega) (by decide) (by omega), kd i hi]
     · rw [early _ (by omega), byte_sub s₀ ff (by omega) (by decide) (by omega), ce i hi]
     · rw [early _ (by omega), nf i hi]
-  refine ⟨⟨⟨?_, ?_, ?_, ?_, ?_⟩, fun r hr => ?_, ?_, ?_, ?_, ?_, fwl.mono (by simp)⟩, ?_, fwl, hst, ?_, ?_⟩
+  refine ⟨⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, fun r hr => ?_, ?_, ?_, ?_, ?_, fwl.mono (by simp)⟩, ?_, fwl, hst, ?_, ?_⟩
   · rw [gl _ (by decide) (by decide), rb.s7]
   · rw [gl _ (by decide) (by decide), rb.s8]
   · rw [gl _ (by decide) (by decide), rb.s9]
   · rw [gl _ (by decide) (by decide), rb.s10]
   · rw [gl _ (by decide) (by decide), rb.s11]
-  · have h : r ≠ .t1 ∧ r ≠ .a0 ∧ r ≠ .s7 ∧ r ≠ .s8 ∧ r ≠ .s9 ∧ r ≠ .s10 ∧ r ≠ .s11 ∧ r ≠ .t0 := by
+  · rw [gl _ (by decide) (by decide), rb.s6]
+  · have h : r ≠ .t1 ∧ r ≠ .a0 ∧ r ≠ .s7 ∧ r ≠ .s8 ∧ r ≠ .s9 ∧ r ≠ .s10 ∧ r ≠ .s11 ∧ r ≠ .s6 ∧
+        r ≠ .t0 := by
       revert r; decide
-    rw [gl r h.1 h.2.1, gb r h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2.1,
-      ha.gpr r h.2.2.2.2.2.2.2]
+    rw [gl r h.1 h.2.1, gb r h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2.1 h.2.2.2.2.2.2.2.1,
+      ha.gpr r h.2.2.2.2.2.2.2.2]
   · rw [ul.sp, gk₀.sp, gj.sp, gi.sp, gh.sp, ug.sp, hf.sp, he.sp, hd.sp, hc.sp, spb]
   · rw [ul.rd, gk₀.rd, gj.rd, gi.rd, gh.rd, ug.rd, hf.rd, he.rd, hd.rd, hc.rd, rdb]
   · rw [ul.wr, gk₀.wr, gj.wr, gi.wr, gh.wr, ug.wr, wrf]

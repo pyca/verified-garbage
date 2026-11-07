@@ -5021,3 +5021,289 @@ bx lr",
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
     )
 }
+
+/// SM4-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 1560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sm4_cfb128_encrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #80
+add r12, sp, #0
+str lr, [r12, #4]
+add lr, sp, #8
+str lr, [r12, #0]
+ldr lr, [sp, #4]
+ldr r12, [sp, #0]
+str r4, [r12, #0]
+str r5, [r12, #4]
+str r6, [r12, #8]
+str r7, [r12, #12]
+str r9, [r12, #20]
+str r10, [r12, #24]
+str r11, [r12, #28]
+str lr, [r12, #32]
+str r8, [r12, #16]
+mov r4, r0
+mov r5, r1
+mov r6, r2
+mov r7, r3
+mov r8, r12
+ldr r9, [r5, #0]
+str r9, [r8, #40]
+ldr r9, [r5, #4]
+str r9, [r8, #44]
+ldr r9, [r5, #8]
+str r9, [r8, #48]
+ldr r9, [r5, #12]
+str r9, [r8, #52]
+cmp r7, #0
+beq 20f
+22:
+mov r0, r4
+add r1, r8, #40
+mov r2, #1
+bl {vg_sm4_ecb_encrypt}
+lsr r9, r7, #4
+cmp r9, #0
+beq 23f
+ldr r9, [r6, #0]
+ldr r10, [r8, #40]
+eor r9, r9, r10
+str r9, [r6, #0]
+ldr r9, [r6, #4]
+ldr r10, [r8, #44]
+eor r9, r9, r10
+str r9, [r6, #4]
+ldr r9, [r6, #8]
+ldr r10, [r8, #48]
+eor r9, r9, r10
+str r9, [r6, #8]
+ldr r9, [r6, #12]
+ldr r10, [r8, #52]
+eor r9, r9, r10
+str r9, [r6, #12]
+ldr r9, [r6, #0]
+str r9, [r8, #40]
+ldr r9, [r6, #4]
+str r9, [r8, #44]
+ldr r9, [r6, #8]
+str r9, [r8, #48]
+ldr r9, [r6, #12]
+str r9, [r8, #52]
+add r6, r6, #16
+subs r7, r7, #16
+b 24f
+23:
+add r0, r8, #40
+25:
+ldrb r9, [r6, #0]
+ldrb r10, [r0, #0]
+eor r9, r9, r10
+strb r9, [r6, #0]
+add r0, r0, #1
+add r6, r6, #1
+subs r7, r7, #1
+bne 25b
+24:
+bne 22b
+b 21f
+20:
+21:
+ldr r9, [r8, #40]
+str r9, [r5, #0]
+ldr r9, [r8, #44]
+str r9, [r5, #4]
+ldr r9, [r8, #48]
+str r9, [r5, #8]
+ldr r9, [r8, #52]
+str r9, [r5, #12]
+ldr r4, [r8, #0]
+ldr r5, [r8, #4]
+ldr r6, [r8, #8]
+ldr r7, [r8, #12]
+ldr r9, [r8, #20]
+ldr r10, [r8, #24]
+ldr r11, [r8, #28]
+ldr lr, [r8, #32]
+ldr r8, [r8, #16]
+add r12, sp, #8
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+add sp, sp, #80
+bx lr",
+        vg_sm4_ecb_encrypt = sym super::sm4::vg_sm4_ecb_encrypt,
+    )
+}
+
+/// SM4-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 1560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sm4_cfb128_decrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #80
+add r12, sp, #0
+str lr, [r12, #4]
+add lr, sp, #8
+str lr, [r12, #0]
+ldr lr, [sp, #4]
+ldr r12, [sp, #0]
+str r4, [r12, #0]
+str r5, [r12, #4]
+str r6, [r12, #8]
+str r7, [r12, #12]
+str r9, [r12, #20]
+str r10, [r12, #24]
+str r11, [r12, #28]
+str lr, [r12, #32]
+str r8, [r12, #16]
+mov r4, r0
+mov r5, r1
+mov r6, r2
+mov r7, r3
+mov r8, r12
+ldr r9, [r5, #0]
+str r9, [r8, #40]
+ldr r9, [r5, #4]
+str r9, [r8, #44]
+ldr r9, [r5, #8]
+str r9, [r8, #48]
+ldr r9, [r5, #12]
+str r9, [r8, #52]
+cmp r7, #0
+beq 20f
+22:
+mov r0, r4
+add r1, r8, #40
+mov r2, #1
+bl {vg_sm4_ecb_encrypt}
+lsr r9, r7, #4
+cmp r9, #0
+beq 23f
+ldr r9, [r6, #0]
+str r9, [r8, #56]
+ldr r9, [r6, #4]
+str r9, [r8, #60]
+ldr r9, [r6, #8]
+str r9, [r8, #64]
+ldr r9, [r6, #12]
+str r9, [r8, #68]
+ldr r9, [r6, #0]
+ldr r10, [r8, #40]
+eor r9, r9, r10
+str r9, [r6, #0]
+ldr r9, [r6, #4]
+ldr r10, [r8, #44]
+eor r9, r9, r10
+str r9, [r6, #4]
+ldr r9, [r6, #8]
+ldr r10, [r8, #48]
+eor r9, r9, r10
+str r9, [r6, #8]
+ldr r9, [r6, #12]
+ldr r10, [r8, #52]
+eor r9, r9, r10
+str r9, [r6, #12]
+ldr r9, [r8, #56]
+str r9, [r8, #40]
+ldr r9, [r8, #60]
+str r9, [r8, #44]
+ldr r9, [r8, #64]
+str r9, [r8, #48]
+ldr r9, [r8, #68]
+str r9, [r8, #52]
+add r6, r6, #16
+subs r7, r7, #16
+b 24f
+23:
+add r0, r8, #40
+25:
+ldrb r9, [r6, #0]
+ldrb r10, [r0, #0]
+eor r9, r9, r10
+strb r9, [r6, #0]
+add r0, r0, #1
+add r6, r6, #1
+subs r7, r7, #1
+bne 25b
+24:
+bne 22b
+b 21f
+20:
+21:
+ldr r9, [r8, #40]
+str r9, [r5, #0]
+ldr r9, [r8, #44]
+str r9, [r5, #4]
+ldr r9, [r8, #48]
+str r9, [r5, #8]
+ldr r9, [r8, #52]
+str r9, [r5, #12]
+ldr r4, [r8, #0]
+ldr r5, [r8, #4]
+ldr r6, [r8, #8]
+ldr r7, [r8, #12]
+ldr r9, [r8, #20]
+ldr r10, [r8, #24]
+ldr r11, [r8, #28]
+ldr lr, [r8, #32]
+ldr r8, [r8, #16]
+add r12, sp, #8
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+str r2, [r12, #56]
+str r2, [r12, #60]
+str r2, [r12, #64]
+str r2, [r12, #68]
+add sp, sp, #80
+bx lr",
+        vg_sm4_ecb_encrypt = sym super::sm4::vg_sm4_ecb_encrypt,
+    )
+}

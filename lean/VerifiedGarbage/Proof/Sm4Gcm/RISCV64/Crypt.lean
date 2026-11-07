@@ -24,7 +24,7 @@ Untrusted: everything here is checked by Lean. AES-GCM's `crypt`
 (`Proof/AesGcm/RISCV64/Crypt.lean`, `CryptOk.lean`) with `vg_sm4_ctr32`: the
 rest of the keystream block (`cryptHead`), whole blocks (`cryptWhole`), then a
 new keystream block for the last bytes (`cryptTail`). The calls' frames take
-the 3232 bytes below the stack pointer, apart from the context, the state
+the 3248 bytes below the stack pointer, apart from the context, the state
 (`Big`) and the data. As on PPC64LE (`Proof/Sm4Gcm/PPC64LE/Crypt.lean`).
 -/
 
@@ -41,13 +41,13 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt blocksAt)
 open VG.Proof.Gcm (Ctr xorKs)
 
-/-- The 3232 bytes below the stack pointer, which `vg_sm4_ctr32`'s frame
+/-- The 3248 bytes below the stack pointer, which `vg_sm4_ctr32`'s frame
 uses, are apart from the context and the state. -/
 structure Big (V : Reg → BitVec 64) (sp : Addr) : Prop where
-  ge : 3232 ≤ sp.toNat
-  c : (below sp 3232).Disjoint ⟨V .s2, 256⟩
-  st : (below sp 3232).Disjoint ⟨V .s1, 80⟩
-  w : (below sp 3232).Disjoint ⟨V .s0, 2560⟩
+  ge : 3248 ≤ sp.toNat
+  c : (below sp 3248).Disjoint ⟨V .s2, 256⟩
+  st : (below sp 3248).Disjoint ⟨V .s1, 80⟩
+  w : (below sp 3248).Disjoint ⟨V .s0, 2560⟩
 
 /-- The bytes below the stack pointer that a smaller frame uses are within a larger one's. -/
 theorem below_le {sp : Addr} {a b : Nat} (h : a ≤ b) (hb : b < 2 ^ 64) : Region.Sub (below sp a) (below sp b) := by
@@ -60,14 +60,9 @@ theorem below_le {sp : Addr} {a b : Nat} (h : a ≤ b) (hb : b < 2 ^ 64) : Regio
   show Region.Sub ⟨sp - BitVec.ofNat 64 a, a⟩ ⟨sp - BitVec.ofNat 64 b, b⟩
   rw [e]; exact Offset.sub_base _ (by omega)
 
-/-- The 2048 bytes `vg_ghash`'s frame uses are within the 3232. -/
-theorem below_sub {sp : Addr} : Region.Sub (below sp 2048) (below sp 3232) := by
-  have e : sp - BitVec.ofNat 64 2048 = sp - BitVec.ofNat 64 3232 + BitVec.ofNat 64 1184 := by
-    apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
-  show Region.Sub ⟨sp - BitVec.ofNat 64 2048, 2048⟩ ⟨sp - BitVec.ofNat 64 3232, 3232⟩
-  rw [e]; exact Offset.sub_base _ (by decide)
+/-- The 2048 bytes `vg_ghash`'s frame uses are within the 3248. -/
+theorem below_sub {sp : Addr} : Region.Sub (below sp 2048) (below sp 3248) :=
+  below_le (by decide) (by decide)
 
 /-- AES-GCM's `StkOk`, for `vg_ghash`'s 2048 bytes, from a precondition's `stkOk3`. -/
 theorem stkOk3.stk {s : State} {rs : List Region} (h : stkOk3 s rs) {c st w : Addr} (hc : ⟨c, 256⟩ ∈ rs)
@@ -85,7 +80,7 @@ theorem stkOk3.buf {s : State} {rs : List Region} (h : stkOk3 s rs) {r : Region}
     r.Disjoint (below s.sp 2048) := ((stkAll3_mem h.2.2 hr).sub_left below_sub).symm
 
 theorem stkOk3.buf3 {s : State} {rs : List Region} (h : stkOk3 s rs) {r : Region} (hr : r ∈ rs) :
-    (below s.sp 3232).Disjoint r := stkAll3_mem h.2.2 hr
+    (below s.sp 3248).Disjoint r := stkAll3_mem h.2.2 hr
 
 /-- SM4 under the key schedule in the context. -/
 abbrev ciphOf (m : Mem) (C : Addr) : Block → Block :=
@@ -93,7 +88,7 @@ abbrev ciphOf (m : Mem) (C : Addr) : Block → Block :=
 
 /-- The regions `crypt` writes. -/
 abbrev crFrame (st sp D : Addr) (n : Nat) : List Region :=
-  [⟨D, n⟩, ⟨st + BitVec.ofNat 64 48, 32⟩, below sp 3232]
+  [⟨D, n⟩, ⟨st + BitVec.ofNat 64 48, 32⟩, below sp 3248]
 
 /-- Before `crypt`: `P` bytes of text so far, `n` bytes at `D` to go. -/
 structure CrIn (V : Reg → BitVec 64) (sp : Addr) (icb : Block) (P : Nat) (D : Addr) (n : Nat)
@@ -103,7 +98,7 @@ structure CrIn (V : Reg → BitVec 64) (sp : Addr) (icb : Block) (P : Nat) (D : 
   s5 : s.gpr .s5 = BitVec.ofNat 64 n
   s6 : s.gpr .s6 = BitVec.ofNat 64 (P % 16)
   big : Big V sp
-  bd : (below sp 3232).Disjoint ⟨D, n⟩
+  bd : (below sp 3248).Disjoint ⟨D, n⟩
   data : DataW (V .s2) (V .s1) (V .s0) s D n
 
 /-- Part of the way: `j` bytes done, from `m₀`. -/
@@ -114,7 +109,7 @@ structure CrMid (V : Reg → BitVec 64) (sp : Addr) (icb : Block) (P : Nat) (D :
   s4 : s.gpr .s4 = D + BitVec.ofNat 64 j
   s5 : s.gpr .s5 = BitVec.ofNat 64 (n - j)
   big : Big V sp
-  bd : (below sp 3232).Disjoint ⟨D, n⟩
+  bd : (below sp 3248).Disjoint ⟨D, n⟩
   data : DataW (V .s2) (V .s1) (V .s0) s D n
   ctr : Ctr m₀ (V .s1 + BitVec.ofNat 64 48) (V .s1 + BitVec.ofNat 64 64) (ciphOf m₀ (V .s2)) icb P →
     Ctr s.mem (V .s1 + BitVec.ofNat 64 48) (V .s1 + BitVec.ofNat 64 64) (ciphOf m₀ (V .s2)) icb (P + j)
@@ -270,7 +265,7 @@ theorem ctrWhole_mk (hb : Big V sp) {D : Addr} {j nb : Nat} {s : State} (he : En
     (h3 : s.gpr .a0 = V .s2) (h5 : s.gpr .a1 = V .s1 + BitVec.ofNat 64 48)
     (h6 : s.gpr .a2 = D + BitVec.ofNat 64 j) (h7 : s.gpr .a3 = BitVec.ofNat 64 nb) (hnb : nb < 2 ^ 64)
     (hdj : DataW (V .s2) (V .s1) (V .s0) s (D + BitVec.ofNat 64 j) (16 * nb))
-    (hbd : (below sp 3232).Disjoint ⟨D + BitVec.ofNat 64 j, 16 * nb⟩) :
+    (hbd : (below sp 3248).Disjoint ⟨D + BitVec.ofNat 64 j, 16 * nb⟩) :
     CtrCall s (V .s2) (V .s1 + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j) nb := by
   have hsp := he.sp
   refine ⟨h3, h5, h6, h7, hnb, ?_, ?_, ?_, ?_, ?_, hdj.ok.fit, ?_, ?_, ?_, ?_, by rw [hsp]; exact hbd, ?_, ?_⟩
@@ -346,7 +341,7 @@ theorem cryptWhole_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} 
         · exact (h.bd.sub_right (Region.sub_prefix h.le)).symm) (by omega_arith)
       exact done_append (hjd.trans (h.done hc₀)) hj16
     · have hdis : ∀ r ∈ [⟨V .s1 + BitVec.ofNat 64 48, 16⟩, ⟨D + BitVec.ofNat 64 j, 16 * nb⟩,
-          below sp 3232],
+          below sp 3248],
           (⟨D + BitVec.ofNat 64 (j + 16 * nb), n - (j + 16 * nb)⟩ : Region).Disjoint r := by
         have hst := h.data.ok.st
         have hs : Region.Sub ⟨D + BitVec.ofNat 64 (j + 16 * nb), n - (j + 16 * nb)⟩ ⟨D, n⟩ :=
@@ -430,7 +425,7 @@ structure TailKs (V : Reg → BitVec 64) (sp : Addr) (icb : Block) (P : Nat) (D 
     ciphOf m₀ (V .s2) (blockAt s₀.mem (V .s1 + BitVec.ofNat 64 48))
   cb : blockAt s.mem (V .s1 + BitVec.ofNat 64 48) =
     Spec.Gcm.inc32 (blockAt s₀.mem (V .s1 + BitVec.ofNat 64 48))
-  frame : Frame [⟨V .s1 + BitVec.ofNat 64 48, 32⟩, below sp 3232] s₀.mem s.mem
+  frame : Frame [⟨V .s1 + BitVec.ofNat 64 48, 32⟩, below sp 3248] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 

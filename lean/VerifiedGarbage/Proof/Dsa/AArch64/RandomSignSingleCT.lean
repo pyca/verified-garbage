@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 
@@ -32,8 +34,9 @@ theorem random_callArgs_ct : RelCT isa (fun s t => s.sp = t.sp)
     (by intro _ _ _ _ _ _ h; cases h) (by taint_decide)).mono
     (fun s _ h => ⟨s.sp, rfl, h.symm, h⟩) (fun _ _ _ => trivial)
 
-theorem random_sign_single_agreement (v : Backend) {s t a b : State}
-    {hs : RandomSignABI v.stack s} {ht : RandomSignABI v.stack t}
+theorem random_sign_single_agreement (S : Signer) {s t a b : State}
+    {hs : RandomSignABI S.stack s} {ht : RandomSignABI S.stack t}
+    (hvs : RandomValid S s) (hvt : RandomValid S t)
     {hqs : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {hqt : 1 < Spec.Dsa.decodeBE (randomQBytes t)}
     {used fuel k l : Nat} (ha : RandomSignRunning hs hqs used fuel a) (hb : RandomSignRunning ht hqt used fuel b)
     (hpub : RandomSignPublicAgree s t) (hf : 0 < fuel) (hbound : fuel < 2 ^ 64)
@@ -42,9 +45,9 @@ theorem random_sign_single_agreement (v : Backend) {s t a b : State}
     (hsuccess : (randomSingleResult s k).isSome = (randomSingleResult t l).isSome)
     {tsa tsb : List Leak} {u w : State}
     (ea : Exec isa (.seq (.block RandomSign.callArgs)
-      (.seq (.call (randomSignerName v) (SignVerify.sign v.mul)) RandomSign.callFinish)) a tsa u)
+      (.seq (.call S.name S.code) RandomSign.callFinish)) a tsa u)
     (eb : Exec isa (.seq (.block RandomSign.callArgs)
-      (.seq (.call (randomSignerName v) (SignVerify.sign v.mul)) RandomSign.callFinish)) b tsb w) : tsa = tsb := by
+      (.seq (.call S.name S.code) RandomSign.callFinish)) b tsb w) : tsa = tsb := by
   cases ea with
   | seq eaa ear => cases ear with
     | seq eac eaf =>
@@ -55,16 +58,16 @@ theorem random_sign_single_agreement (v : Backend) {s t a b : State}
           obtain ⟨_, _, hrb⟩ := hb.ready
           have hargs := (random_callArgs_ct _ _ _ _ _ _
             (hra.sp.trans (hpub.base.trans hrb.sp.symm)) eaa eba).1
-          obtain ⟨hca, hresa, hkeya, hfua⟩ := random_post_of_exec (random_callArgs_observe v ha hna) eaa
-          obtain ⟨hcb, hresb, hkeyb, hfub⟩ := random_post_of_exec (random_callArgs_observe v hb hnb) eba
+          obtain ⟨hca, hresa, hkeya, hfua⟩ := random_post_of_exec (random_callArgs_observe S ha hna) eaa
+          obtain ⟨hcb, hresb, hkeyb, hfub⟩ := random_post_of_exec (random_callArgs_observe S hb hnb) eba
           have hstatus : Spec.Dsa.signStatus (randomSingleResult s k) = Spec.Dsa.signStatus (randomSingleResult t l) := by
             cases hsa : randomSingleResult s k <;> cases hsb : randomSingleResult t l <;>
               simp only [hsa, hsb, Option.isSome_none, Option.isSome_some] at hsuccess <;>
               first | contradiction | rfl
-          have hcall := (random_signer_ct v _ _ _ _ _ _
-            ⟨s, t, hs, ht, hca, hcb, hpub, hkeya.trans (hpub.keyLeak.trans hkeyb.symm), by rw [hresa, hresb]; exact hstatus⟩ eac ebc).1
-          have hpa := random_post_of_exec (random_signer_retry_pre v hca hfua hf hbound) eac
-          have hpb := random_post_of_exec (random_signer_retry_pre v hcb hfub hf hbound) ebc
+          have hcall := (random_signer_ct S _ _ _ _ _ _
+            ⟨s, t, hs, ht, hvs, hvt, hca, hcb, hpub, hkeya.trans (hpub.keyLeak.trans hkeyb.symm), by rw [hresa, hresb]; exact hstatus⟩ eac ebc).1
+          have hpa := random_post_of_exec (random_signer_retry_pre S hca hfua hf hbound hvs) eac
+          have hpb := random_post_of_exec (random_signer_retry_pre S hcb hfub hf hbound hvt) ebc
           rw [hresa] at hpa
           rw [hresb, ← hpub.base, ← hsuccess] at hpb
           have hfinish := (random_callFinish_ct _ _ _ _ _ _ ⟨_, hpa, hpb, hpa.2.1.trans hpb.2.1.symm⟩ eaf ebf).1

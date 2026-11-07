@@ -74,6 +74,8 @@ def stitch : Proof.AesGcm.X86_64.StitchPart := by
         pieceP := (some ⟨⟨?_, ?_, ?_, ?_, ?_,
           ⟨?_, ?_⟩⟩⟩)
         pieceR := (some ⟨⟨?_, ?_, ?_, ?_, ?_,
+          ⟨?_, ?_⟩⟩⟩)
+        pieceToDecR := (some ⟨⟨?_, ?_, ?_, ?_, ?_,
           ⟨?_, ?_⟩⟩⟩) } }
   taint_decide_all
 

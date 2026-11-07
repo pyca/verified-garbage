@@ -19,9 +19,10 @@ import VerifiedGarbage.Proof.Bignum.Octets
 /-!
 # DSA signing on PPC64LE: after the check of the key
 
-`sbody_ok`: `Sign.body` writes to `out` r's and s's `q_len` octets, most
-significant first, and leaves 1 in `r3`, exactly when `0 < x < q`,
-`0 < k < q`, `g^x mod p = y`, `r ≠ 0` and `s ≠ 0` (`SignOk`), for
+`sbody_ok`: for a key with `g^x mod p = y`, `Sign.body` writes to `out` r's
+and s's `q_len` octets, most significant first, and leaves 1 in `r3`, exactly
+when `0 < x < q`, `0 < k < q`, `g^x mod p = y`, `r ≠ 0` and `s ≠ 0`
+(`SignOk`), for
 `r = (g^k mod p) mod q` (`sigR`) and `s = k^(q − 2) (z + x r) mod q`
 (`sigS`), z the digest's first `min(digest_len, bitLength q / 8)` octets;
 else zeros and 0. Memory changes only in `scratch`, apart from the saved
@@ -96,8 +97,7 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Na
     (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) (hn : Src s L nonce L.ql)
     (hd : d < 2 ^ 16) (hdg : Src s L dig d) (hw : word s.mem L.S hOut = out)
     (hcont : ∀ t, QS t L key nonce dig → Kept L s.mem t.mem → word t.mem L.S hOut = out →
-      word t.mem L.S hMask = mask (decide (gOf s₀.mem L key ^ xOf s.mem L key % pOf s₀.mem L key =
-          yOf s₀.mem L key) &&
+      word t.mem L.S hMask = mask (
         decide ((0 < kOf s.mem L nonce ∧ kOf s.mem L nonce < qOf s₀.mem L key) ∧
           (0 < xOf s.mem L key ∧ xOf s.mem L key < qOf s₀.mem L key) ∧
           sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (kOf s.mem L nonce) ≠ 0)) →
@@ -106,7 +106,7 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Na
         (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength (qOf s₀.mem L key) / 8))))
         (sigR (pOf s₀.mem L key) (qOf s₀.mem L key) (gOf s₀.mem L key) (kOf s.mem L nonce)) →
       Keep bodyRegs s t → WP isa c t Q) :
-    WP isa (.seq keyPair (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
+    WP isa (.seq (.block markValid) (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
       (.seq sValue c))))))) s Q := by
   have hZ := hL.z256
   have hpl := hL.pl
@@ -146,10 +146,9 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Na
       by simp only [kOf]; rw [hn.kept hm.out], (key_kept hk3 hm.out).2.2.1.trans eg, hdgn.kept hm.out⟩
   generalize hX : xOf s.mem L key = X at vals hcont
   generalize kOf s.mem L nonce = K at vals hcont
-  -- The mask of `g^x mod p = y`.
-  refine WP.seq (WP.mono (keyPair_ok (p := p) hL scr regs ip hk p0 (by omega_arith) hpo p8)
-    fun s₁ ⟨⟨mx₁, ip₁, o₁, p0₁, _, sav₁, hout₁⟩, k₁⟩ => ?_)
-  rw [eg, ey, hX] at mx₁
+  -- The mask of `g^x mod p = y`, all ones.
+  refine WP.seq (WP.mono (markValid_ok hL scr regs ip)
+    fun s₁ ⟨⟨mx₁, ip₁, o₁, p0₁, sav₁, hout₁⟩, k₁⟩ => ?_)
   have K₁ : Kept L s.mem s₁.mem := ⟨o₁.mono (Nat.zero_le _) (by omega_arith), sav₁⟩
   have q0₁ : arrQ s₁.mem L 0 = q := by
     rw [arrQ, arr, Outside.val32 (keepQ_of hL fun x hx => o₁ x (Or.inr (by omega_arith))) (by decide) (by decide)]
@@ -165,14 +164,14 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Na
   have k₁₂ := k₁.trans k₂
   have q0₂ : arrQ s₂.mem L 0 = q := by
     rw [arrQ, arr, Outside.val32 Qk₂ (by decide) (by decide)]; exact q0₁
-  have mx₂ : word s₂.mem L.S hMask = mask (decide (g ^ X % p = y)) := (Body.hMask B₂).trans mx₁
+  have mx₂ : word s₂.mem L.S hMask = mask true := (Body.hMask B₂).trans mx₁
   have hout₂ : word s₂.mem L.S hOut = out := ((Body.hOut B₂).trans hout₁).trans hw
   -- r, and the masks of the ranges.
   refine WP.seq (WP.mono (rRanges_ok hL (scr.congr k₁₂.wr) ((regs.keep k₁).keep k₂) (hk.keep k₁₂.rd k₁₂.wr)
       (hn.keep k₁₂.rd k₁₂.wr) (by rw [q0₂]; omega_arith) mx₂)
     fun s₃ ⟨⟨Q₃, r9₃, m₃, mf, fa, fb⟩, k₃⟩ => ?_)
   rw [q0₂, gk₂] at r9₃
-  rw [q0₂, gk₂, (vals K₂).1, (vals K₂).2.1] at m₃
+  rw [q0₂, gk₂, (vals K₂).1, (vals K₂).2.1, Bool.true_and] at m₃
   have qa₃ : QArr L s₂.mem mf := QArr.of fa (Nat.le_refl _) (by decide)
   have K₃ := (K₂.trans (Kept.ofBody hL (qa₃.qbody.body hL))).trans (Kept.ofMask hL fb)
   have k₁₃ := k₁₂.trans k₃
@@ -221,7 +220,9 @@ theorem sprefix_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Na
     (a9₇.trans r9₆) s6₇ (keep_but21 (k₁₆.trans k₇) (by decide) (by decide))
 
 theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
-    (hL : L.Ok) (hK : KeyOk s₀.mem L key) (hc : Checked s₀ s L key nonce dig d)
+    (hL : L.Ok) (hK : KeyOk s₀.mem L key)
+    (hgx : gOf s₀.mem L key ^ xOf s.mem L key % pOf s₀.mem L key = yOf s₀.mem L key)
+    (hc : Checked s₀ s L key nonce dig d)
     (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + 2 * L.ql)) (hn : Src s L nonce L.ql)
     (hd : d < 2 ^ 16) (hdg : Src s L dig d)
     (hw : word s.mem L.S hOut = out) (ho : Scr s out (2 * L.ql)) (hos : Src s L out (2 * L.ql)) :
@@ -247,11 +248,11 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
   unfold Sign.body
   refine sprefix_ok hL hK hc hkp hk hn hd hdg hw fun s₇ Q₇ K₇ hout₇ m₇ r9₇ s6₇ k₁₇ => ?_
   unfold KeyOk at hK
-  generalize pOf s₀.mem L key = p at hK m₇ r9₇ s6₇ ⊢
+  generalize pOf s₀.mem L key = p at hK hgx m₇ r9₇ s6₇ ⊢
   generalize qOf s₀.mem L key = q at hK hqlt m₇ r9₇ s6₇ ⊢
-  generalize gOf s₀.mem L key = g at hK m₇ r9₇ s6₇ ⊢
-  generalize yOf s₀.mem L key = y at hK m₇ ⊢
-  generalize xOf s.mem L key = X at m₇ s6₇ ⊢
+  generalize gOf s₀.mem L key = g at hK hgx m₇ r9₇ s6₇ ⊢
+  generalize yOf s₀.mem L key = y at hK hgx m₇ ⊢
+  generalize xOf s.mem L key = X at hgx m₇ s6₇ ⊢
   generalize kOf s.mem L nonce = K at m₇ r9₇ s6₇ ⊢
   generalize Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d (Spec.Dsa.bitLength q / 8))) = Z at s6₇ ⊢
   have B := VG.Proof.Dsa.supported_bounds hK.1.1
@@ -263,14 +264,14 @@ theorem sbody_ok {s₀ s : State} {L : Lay} {key nonce dig out : Addr} {d : Nat}
     fun t ⟨⟨o1, o2, t3, mo, qo, oo⟩, kt⟩ => ?_
   rw [r9₇, s6₇] at o1
   rw [s6₇] at o2 t3
-  have hcb : (decide (g ^ X % p = y) && decide ((0 < K ∧ K < q) ∧ (0 < X ∧ X < q) ∧ sigR p q g K ≠ 0) &&
+  have hcb : (decide ((0 < K ∧ K < q) ∧ (0 < X ∧ X < q) ∧ sigR p q g K ≠ 0) &&
       decide (sigS q X K Z (sigR p q g K) ≠ 0)) = decide (SignOk p q g y X K Z) := by
     rw [Bool.eq_iff_iff]
     simp only [Bool.and_eq_true, decide_eq_true_eq]
     unfold SignOk sigR
     constructor
-    · rintro ⟨⟨h1, h2, h3, h4⟩, h5⟩; exact ⟨h3, h2, h1, h4, h5⟩
-    · rintro ⟨h1, h2, h3, h4, h5⟩; exact ⟨⟨h3, h2, h1, h4⟩, h5⟩
+    · rintro ⟨⟨h2, h3, h4⟩, h5⟩; exact ⟨h3, h2, hgx, h4, h5⟩
+    · rintro ⟨h1, h2, -, h4, h5⟩; exact ⟨⟨h2, h1, h4⟩, h5⟩
   rw [hcb] at o1 o2 t3
   have h256 : ∀ v, v < q → v < 256 ^ L.ql := fun v hv => by
     rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; omega_arith

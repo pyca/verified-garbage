@@ -77,24 +77,27 @@ theorem abi_of {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa c s 
     (h₃ : ∀ r ∈ [Reg.x30], s'.gpr r = s.gpr r) (hv : c.allInstrs keepsV = true) : abiPreserved s s' :=
   ⟨Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he hv⟩
 
+/-- `n` blocks. -/
+abbrev blkLen (s : State) : Nat := (s.gpr .x4).toNat * 8
+
 /-- The facts of the feedback modes' precondition on this target, with the
-working space at `x5`. -/
-structure FPre (s : State) : Prop where
+data `len` bytes long and the working space at `x5`. -/
+structure FPre (len : State → Nat) (s : State) : Prop where
   rd : s.rd = [⟨s.gpr .x0, 128⟩, ⟨s.syms s1234Sym, 4096⟩]
-  wr : s.wr = [⟨s.gpr .x2, 8⟩, ⟨s.gpr .x3, (s.gpr .x4).toNat * 8⟩, ⟨s.gpr .x5, 104⟩]
+  wr : s.wr = [⟨s.gpr .x2, 8⟩, ⟨s.gpr .x3, len s⟩, ⟨s.gpr .x5, 104⟩]
   held : ∀ i < 512, s.mem.readW (s.syms s1234Sym + BitVec.ofNat 64 (8 * i)) 64 = s1234.getD i 0
   fitT : (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 64
   dTV : Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ ⟨s.gpr .x2, 8⟩
-  dTD : Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ ⟨s.gpr .x3, (s.gpr .x4).toNat * 8⟩
+  dTD : Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ ⟨s.gpr .x3, len s⟩
   dTS : Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ ⟨s.gpr .x5, 104⟩
   dKV : Region.Disjoint ⟨s.gpr .x0, 128⟩ ⟨s.gpr .x2, 8⟩
-  dKD : Region.Disjoint ⟨s.gpr .x0, 128⟩ ⟨s.gpr .x3, (s.gpr .x4).toNat * 8⟩
+  dKD : Region.Disjoint ⟨s.gpr .x0, 128⟩ ⟨s.gpr .x3, len s⟩
   dKS : Region.Disjoint ⟨s.gpr .x0, 128⟩ ⟨s.gpr .x5, 104⟩
-  dVD : Region.Disjoint ⟨s.gpr .x2, 8⟩ ⟨s.gpr .x3, (s.gpr .x4).toNat * 8⟩
+  dVD : Region.Disjoint ⟨s.gpr .x2, 8⟩ ⟨s.gpr .x3, len s⟩
   dVS : Region.Disjoint ⟨s.gpr .x2, 8⟩ ⟨s.gpr .x5, 104⟩
-  dDS : Region.Disjoint ⟨s.gpr .x3, (s.gpr .x4).toNat * 8⟩ ⟨s.gpr .x5, 104⟩
+  dDS : Region.Disjoint ⟨s.gpr .x3, len s⟩ ⟨s.gpr .x5, 104⟩
   fK : (s.gpr .x0).toNat + 128 ≤ 2 ^ 64
-  fD : (s.gpr .x3).toNat + (s.gpr .x4).toNat * 8 ≤ 2 ^ 64
+  fD : (s.gpr .x3).toNat + len s ≤ 2 ^ 64
   fS : (s.gpr .x5).toNat + 104 ≤ 2 ^ 64
   rounds : (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 16
 
@@ -102,26 +105,26 @@ structure FPre (s : State) : Prop where
 abbrev ciphOf (s : State) : Spec.Cbc.Cipher := Spec.Cast5.cipher (keyOf s) (s.gpr .x1).toNat
 
 def ofbX : Contract isa where
-  pre := FPre
+  pre := FPre blkLen
   post s s' := dataOf s s'.mem = Spec.Ofb.crypt (ciphOf s) (ivOf s) (dataOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .x2) 8 = Spec.Ofb.next (ciphOf s) (ivOf s) (s.gpr .x4).toNat
   pub := cbcPub
 
 def cfbEncX : Contract isa where
-  pre := FPre
+  pre := FPre blkLen
   post s s' := dataOf s s'.mem = Spec.Cfb.encrypt (ciphOf s) (ivOf s) (dataOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .x2) 8 =
       Spec.Cbc.next (ivOf s) (Spec.Cfb.encrypt (ciphOf s) (ivOf s) (dataOf s s.mem))
   pub := cbcPub
 
 def cfbDecX : Contract isa where
-  pre := FPre
+  pre := FPre blkLen
   post s s' := dataOf s s'.mem = Spec.Cfb.decrypt (ciphOf s) (ivOf s) (dataOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .x2) 8 = Spec.Cbc.next (ivOf s) (dataOf s s.mem)
   pub := cbcPub
 
 /-- The table, as the core needs it. -/
-theorem FPre.tabAt {s : State} (h : FPre s) : TabAt s :=
+theorem FPre.tabAt {len : State → Nat} {s : State} (h : FPre len s) : TabAt s :=
   ⟨by rw [h.rd]; simp, h.fitT, fun i hi => h.held i (by rw [s1234_length] at hi; exact hi), fun w hw => by
     rw [h.wr] at hw
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -131,7 +134,7 @@ theorem FPre.tabAt {s : State} (h : FPre s) : TabAt s :=
     · exact h.dTS⟩
 
 /-- The subkeys, as the core needs them. -/
-theorem FPre.schedAt {s : State} (h : FPre s) : SchedAt s (s.gpr .x0) :=
+theorem FPre.schedAt {len : State → Nat} {s : State} (h : FPre len s) : SchedAt s (s.gpr .x0) :=
   ⟨by rw [h.rd]; simp, h.fK, fun w hw => by
     rw [h.wr] at hw
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -142,7 +145,7 @@ theorem FPre.schedAt {s : State} (h : FPre s) : SchedAt s (s.gpr .x0) :=
 
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the IV
 as `fbOut` and `fbIn`, keeping the callee-saved registers. -/
-theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : FPre s₀) :
+theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : FPre blkLen s₀) :
     WP isa ((dirCore true).fb mo modeRegs .x25) s₀ fun s' =>
       (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
         s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧
@@ -199,7 +202,8 @@ theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecX.pre s₀) :
 
 /-! ## Constant time -/
 
-theorem fbTaint_agree (s₁ s₂ : State) (_ : FPre s₁) (_ : FPre s₂) (hp : cbcPub s₁ s₂) :
+theorem fbTaint_agree {len : State → Nat} (s₁ s₂ : State) (_ : FPre len s₁) (_ : FPre len s₂)
+    (hp : cbcPub s₁ s₂) :
     VG.AArch64.Taint.AgreeS [s1234Sym] (Taint.ofRegs modePub) s₁ s₂ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, hsp, hsy⟩ := hp
   refine ⟨⟨hsp, fun r hr => ?_⟩, fun n hn => ?_⟩
@@ -239,7 +243,7 @@ def fbSat : State where
 
 theorem fb_implies {postX : State → State → Prop} {post : Spec.Cast5.ofbSig.Post AArch64.abi.ptrBits}
     (hpost : ∀ s s', postX s s' → (fbK post).post s s') :
-    ({ pre := FPre, post := postX, pub := cbcPub } : Contract isa).Implies (fbK post) where
+    ({ pre := FPre blkLen, post := postX, pub := cbcPub } : Contract isa).Implies (fbK post) where
   pre s h := by
     sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Spec.Cast5.ofbSig,
       Spec.Cast5.ofbPre, AArch64.abi, AArch64.argRegs, ecbConsts_eq, Abi.withConsts, Abi.constRegions,

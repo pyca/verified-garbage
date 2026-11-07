@@ -19,9 +19,8 @@ associated data, texts and tags) is secret.
   rounds. Their contracts are stated for every key whose context is in
   memory with the number of rounds they are given (`KeyRounds`), with that
   key's ciphers and `L_*` (`aes key`, `aesInv key`, `aes key 0`): AES-OCB
-  with that key (`encryptWith_ctx`, `decryptWith_ctx`). `open`'s leak is
-  stated with the ciphers of the context's schedule and its `L_*`
-  (`ctxCiph`, `ctxInv`, `ctxLstar`).
+  with that key. `open`'s leak is stated with the ciphers of the context's
+  schedule and its `L_*` (`ctxCiph`, `ctxInv`, `ctxLstar`).
 * `vg_aes_ocb_seal` is `OCB-ENCRYPT` (`encryptWith`): it encrypts the data in
   place and writes the tag of `tag_len` bytes.
 * `vg_aes_ocb_open` is `OCB-DECRYPT` (`decryptWith`): given the encrypted

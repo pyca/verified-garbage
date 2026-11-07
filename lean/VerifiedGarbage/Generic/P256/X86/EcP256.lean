@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.EcKey.X86.Finish
 import VerifiedGarbage.Proof.Ecdsa.Sign
 import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
-import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Ecdsa.X86.Middle
@@ -35,11 +34,8 @@ import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Mont.Words128
 import VerifiedGarbage.Proof.Mont.X86.Csub
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.P256Red
 import VerifiedGarbage.Proof.Mont.X86.RedRow
 import VerifiedGarbage.Proof.Mont.X86.Row
-import VerifiedGarbage.Proof.Mont.X86.SparseShift
-import VerifiedGarbage.Proof.Mont.X86.SparseStep
 import VerifiedGarbage.Proof.Mont.X86.Step
 import VerifiedGarbage.Proof.P256.Order
 import VerifiedGarbage.Proof.P256.Prime
@@ -78,7 +74,6 @@ public import VerifiedGarbage.Proof.EcKey.X86.Finish
 public import VerifiedGarbage.Proof.Ecdsa.Sign
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
 public import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 public import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 public import VerifiedGarbage.Proof.Ecdsa.X86.Middle
@@ -101,11 +96,8 @@ public import VerifiedGarbage.Proof.Framework.X86.Sse
 public import VerifiedGarbage.Proof.Mont.Words128
 public import VerifiedGarbage.Proof.Mont.X86.Csub
 public import VerifiedGarbage.Proof.Mont.X86.Instr
-public import VerifiedGarbage.Proof.Mont.X86.P256Red
 public import VerifiedGarbage.Proof.Mont.X86.RedRow
 public import VerifiedGarbage.Proof.Mont.X86.Row
-public import VerifiedGarbage.Proof.Mont.X86.SparseShift
-public import VerifiedGarbage.Proof.Mont.X86.SparseStep
 public import VerifiedGarbage.Proof.Mont.X86.Step
 public import VerifiedGarbage.Proof.P256.Order
 public import VerifiedGarbage.Proof.P256.Prime

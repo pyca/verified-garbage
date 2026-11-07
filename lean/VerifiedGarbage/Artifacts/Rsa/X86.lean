@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.BatchInstance
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTop
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Verified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.KcVerified

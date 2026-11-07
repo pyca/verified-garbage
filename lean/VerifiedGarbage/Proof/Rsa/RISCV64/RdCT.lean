@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.RISCV64.RdFront
+public import VerifiedGarbage.Proof.Rsa.RISCV64.RdLoad
+import VerifiedGarbage.Proof.Rsa.RISCV64.RdTwos
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -38,8 +40,10 @@ fixes the registers the next piece's addresses and branches read; the
 pieces by the taint analysis, what each run satisfies after each by
 correctness (`two_post`). The code is cut after each load whose value an
 address or a branch reads: the working space's address, the stack
-arguments, `n`'s first byte, and whether `n` is valid, which the one branch
-tests. Each branch is checked together with the exit (`RelCT.ite_seq`), so
+arguments, `n`'s first byte, and whether `n` is valid, which the validity branch
+tests. Within the valid branch a second cut recovers the public low byte
+of `n - 1` from scratch, which selects the normalization bound. Each modulus-validity
+branch is checked together with the exit (`RelCT.ite_seq`), so
 nothing after the branch needs its correctness.
 -/
 
@@ -189,6 +193,107 @@ theorem Same.mv {x y : State} (sm : Same x y) :
     (Spec.Rsa.modulusValid (Nv x) (kOf x) = true ↔ Spec.Rsa.modulusValid (Nv y) (kOf y) = true) := by
   simp only [Nv, sm.n, kOf, sm.regs .a5 (by decide)]
 
+/-! ## The public normalization bound
+
+The prefix establishes that the low byte used to select the normalization
+bound is a function of public `n`, even though it was stored in scratch. -/
+
+open VG.Impl.Rsa.RISCV64.RecoverDet (setup loads prod deMinus twosInit twosLow twosCount twosLoop
+  det twos gcd divA divB minus4n sqrt factors stores nArr aN aOne)
+open VG.Impl.Rsa.RISCV64.Keys (seqs)
+
+/-- The prefix ending at the read of the public normalization operand. -/
+def normPrefix : Prog isa := seqs [setup, loads, prod, deMinus, twosInit, .block twosLow]
+
+/-- The remaining arithmetic and the exit. -/
+def normSuffix : Prog isa :=
+  .seq (.seq twosCount twosLoop)
+    (.seq (seqs [gcd, divA, divB, minus4n, sqrt, factors]) (.seq stores (.block restore)))
+
+/-- Reassociate only sequences, preserving the entire leakage trace. -/
+theorem norm_split {s t : State} {tr : List Leak} (e : Exec isa (.seq valid (.block restore)) s tr t) :
+    Exec isa (.seq normPrefix normSuffix) s tr t := by
+  cases e with
+  | seq ev er =>
+    cases ev with
+    | seq es e1 =>
+      cases e1 with
+      | seq el e2 =>
+        cases e2 with
+        | seq ep e3 =>
+          cases e3 with
+          | seq ed est =>
+            cases ed with
+            | seq em e4 =>
+              cases e4 with
+              | seq et eg =>
+                cases et with
+                | seq ei e5 =>
+                  cases e5 with
+                  | seq elo ec =>
+                    simpa only [List.append_assoc, normPrefix, normSuffix, seqs] using
+                      (Exec.seq (Exec.seq es (Exec.seq el (Exec.seq ep (Exec.seq em (Exec.seq ei elo)))))
+                        (Exec.seq ec (Exec.seq eg (Exec.seq est er))))
+
+/-- Public registers and the low byte after the prefix. -/
+def S6 (d : Dt) (t : State) : Prop :=
+  ∃ s0, C0 d s0 ∧ CB s0 s0.mem t ∧
+    VG.Proof.Rsa.RISCV64.Keys.Ws t (bOf s0) (zOf s0) (wOf s0) nArr ∧
+    t.gpr .s7 = BitVec.ofNat 64 (64 * wOf s0) ∧
+    t.gpr .t4 = BitVec.ofNat 64 (VG.Proof.Rsa.RecoverDet.wsub (64 * wOf s0) (Nv s0) 1 % 256)
+
+theorem normPrefix_ok {d : Dt} {s : State} (hs : S5 d s) : WP isa normPrefix s (S6 d) := by
+  obtain ⟨s0, hc, cb, -⟩ := hs
+  have h := preC_of hc.1
+  unfold normPrefix
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (setup_ok h cb) fun t1 ⟨c1, w1, z1⟩ => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (loads_ok h c1 w1 z1) fun t2 l2 => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (prod_ok h l2) fun t3 p3 => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (deMinus_ok h p3) fun t4 d4 => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  have ⟨fit, bound⟩ := h.fits
+  have hw : 0 < wOf s0 := by simp only [wOf]; omega_arith
+  refine WP.mono (Keys.twosInit_ok d4.ws hw fit (by decide) (by decide) (by decide) (by decide)
+    (num_zero (d4.free _ (by rdx) (by rdx)))) fun t5 ⟨w5, f5, _, e5, count, k5⟩ => ?_
+  have c5 := d4.cb.step w5 f5 (by rdx) (by simp) k5
+  exact WP.mono (Keys.twosLow_ok w5 (by decide)) fun t6 ⟨⟨low, mem⟩, keep⟩ =>
+    ⟨s0, hc, c5.of_keep keep mem, w5.of_keep keep,
+      (keep.gpr (by decide)).trans count, by
+        rw [low]
+        have hu := congrArg Prod.fst e5
+        change Keys.num t5.mem (bOf s0) (wOf s0) VG.Impl.Rsa.RISCV64.RecoverDet.aU = _ at hu
+        rw [hu, d4.n]⟩
+
+abbrev normRegs : List Reg := [.t4, .s7, .s9, .s10] ++ bodyRegs
+
+theorem S6.pins : Pins S6 normRegs := by
+  rintro d s1 s2 ⟨x, hx, cx, wx, x7, x4⟩ ⟨y, hy, cy, wy, y7, y4⟩ r hr
+  have sm := hx.same hy
+  have hk : kOf x = kOf y := congrArg BitVec.toNat (sm.regs .a5 (by decide))
+  have hw : wOf x = wOf y := by simp only [wOf, hk]
+  have hn : Nv x = Nv y := by simp only [Nv, sm.n]
+  rcases List.mem_append.mp hr with hr | hr
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · rw [x4, y4, hw, hn]
+    · rw [x7, y7, hw]
+    · rw [wx.s9, wy.s9, hw]
+    · rw [wx.s10, wy.s10, hw]
+  · exact CB.pins sm cx cy r hr
+
+theorem valid_exit_rel : RelCT isa (Two S5) (.seq valid (.block restore)) fun _ _ => True := by
+  have hpref : RelCT isa (Two S5) normPrefix (Two S6) :=
+    two_post (two_taint bodyRegs (fun _ _ _ ⟨x, hx, cx, _⟩ ⟨y, hy, cy, _⟩ => CB.pins (hx.same hy) cx cy)
+      (by taint_decide)) (fun _ _ hs => normPrefix_ok hs)
+  have hsuff : RelCT isa (Two S6) normSuffix (fun _ _ => True) :=
+    two_taint normRegs S6.pins (by taint_decide)
+  intro s1 s2 tr1 tr2 t1 t2 hp e1 e2
+  exact (RelCT.seq hpref hsuff) _ _ _ _ _ _ hp (norm_split e1) (norm_split e2)
+
 theorem code_rel : RelCT isa (Two C0) code fun _ _ => True := by
   unfold code
   rw [entry_eq, save_eq]
@@ -252,10 +357,7 @@ theorem code_rel : RelCT isa (Two C0) code fun _ _ => True := by
         congr 1
         rw [Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq, x0, y0, (hx.same hy).mv]
       · -- A valid modulus.
-        refine RelCT.mono (two_taint (Φ := S5) bodyRegs ?_ (by taint_decide)) (fun _ _ h => h.1)
-          fun _ _ h => h
-        rintro a s₁ s₂ ⟨x, hx, cx, -⟩ ⟨y, hy, cy, -⟩ r hr
-        exact CB.pins (hx.same hy) cx cy r hr
+        exact RelCT.mono valid_exit_rel (fun _ _ h => h.1) (fun _ _ h => h)
       · -- An invalid modulus.
         refine RelCT.mono (two_taint (Φ := S5) bodyRegs ?_ (by taint_decide)) (fun _ _ h => h.1)
           fun _ _ h => h

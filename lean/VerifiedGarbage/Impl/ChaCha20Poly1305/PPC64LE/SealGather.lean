@@ -32,7 +32,8 @@ open VG.Impl.ChaCha20.PPC64LE.Xor (mov)
 
 /-- `vg_chacha20_poly1305_seal`, in its frame. -/
 def sealCode : Prog isa :=
-  Impl.StackScratch.PPC64LE.withStackScratchWiped 688 .r10 81 Impl.ChaCha20Poly1305.PPC64LE.«seal»
+  Impl.StackScratch.PPC64LE.withStackScratchWiped 688 .r10 82
+    (Impl.ChaCha20Poly1305.PPC64LE.inPlace Impl.ChaCha20Poly1305.PPC64LE.«seal»)
 
 /-- The arguments the gathering overwrites, and our return address, into the
 frame (`r12` its address); `tag` into `r11`. -/

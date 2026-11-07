@@ -17,14 +17,25 @@ use alloc::{vec, vec::Vec};
 use super::{Error, Secret};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
-    VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES, vg_dsa_parameter_search_mr_adx,
-    vg_dsa_parameter_search_sha1_shani, vg_dsa_parameter_search_sha1_shani_mr_adx,
+    VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES, VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES,
+    vg_dsa_parameter_search_mr_adx, vg_dsa_parameter_search_mr_ifma,
+    vg_dsa_parameter_search_sha1_avx_bmi, vg_dsa_parameter_search_sha1_avx_bmi_mr_adx,
+    vg_dsa_parameter_search_sha1_avx_bmi_mr_ifma, vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani_mr_adx,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani_mr_ifma, vg_dsa_parameter_search_sha1_shani,
+    vg_dsa_parameter_search_sha1_shani_mr_adx, vg_dsa_parameter_search_sha1_shani_mr_ifma,
     vg_dsa_parameter_search_sha1_shani_sha256_avx2,
     vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx,
+    vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_ifma,
     vg_dsa_parameter_search_sha1_shani_sha256_shani,
-    vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx, vg_dsa_parameter_search_sha256_avx2,
-    vg_dsa_parameter_search_sha256_avx2_mr_adx, vg_dsa_parameter_search_sha256_shani,
-    vg_dsa_parameter_search_sha256_shani_mr_adx,
+    vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx,
+    vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma, vg_dsa_parameter_search_sha256_avx2,
+    vg_dsa_parameter_search_sha256_avx2_mr_adx, vg_dsa_parameter_search_sha256_avx2_mr_ifma,
+    vg_dsa_parameter_search_sha256_shani, vg_dsa_parameter_search_sha256_shani_mr_adx,
+    vg_dsa_parameter_search_sha256_shani_mr_ifma,
 };
 use crate::arch::dsa::{vg_dsa_parameter_search, vg_dsa_parameter_search_init};
 #[cfg(target_arch = "aarch64")]
@@ -53,13 +64,37 @@ pub(super) type Search = unsafe extern "sysv64" fn(
     *mut [u64; 4],
 ) -> u32;
 
+/// The implementations of the Miller–Rabin round the search calls on
+/// x86-64: the baseline ISA's, `_mr_adx` and `_mr_ifma`.
+#[cfg(target_arch = "x86_64")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum Round {
+    Baseline,
+    Adx,
+    Ifma,
+}
+
+#[cfg(target_arch = "x86_64")]
+impl Round {
+    /// The best implementation a CPU with the features `f` can run.
+    pub(super) fn select(f: Features) -> Self {
+        if f.contains(VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES) {
+            Self::Ifma
+        } else if f.contains(VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES) {
+            Self::Adx
+        } else {
+            Self::Baseline
+        }
+    }
+}
+
 #[cfg(target_arch = "x86_64")]
 pub(super) fn select(features: Features) -> Search {
     use crate::hashes::{sha1::Sha1Backend, sha256::Sha256Backend};
     select_backends(
         Sha1Backend::select(features),
         Sha256Backend::select(features),
-        features.contains(VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES),
+        Round::select(features),
     )
 }
 
@@ -67,24 +102,48 @@ pub(super) fn select(features: Features) -> Search {
 pub(super) fn select_backends(
     sha1: crate::hashes::sha1::Sha1Backend,
     sha256: crate::hashes::sha256::Sha256Backend,
-    adx: bool,
+    round: Round,
 ) -> Search {
     use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
-    // Match the hashes' enums exhaustively so a new hash backend reaches
-    // parameter generation.
-    match (sha1, sha256, adx) {
-        (H1::Scalar, H256::Scalar, false) => vg_dsa_parameter_search,
-        (H1::Scalar, H256::Scalar, true) => vg_dsa_parameter_search_mr_adx,
-        (H1::Scalar, H256::Avx2, false) => vg_dsa_parameter_search_sha256_avx2,
-        (H1::Scalar, H256::Avx2, true) => vg_dsa_parameter_search_sha256_avx2_mr_adx,
-        (H1::Scalar, H256::ShaNi, false) => vg_dsa_parameter_search_sha256_shani,
-        (H1::Scalar, H256::ShaNi, true) => vg_dsa_parameter_search_sha256_shani_mr_adx,
-        (H1::ShaNi, H256::Scalar, false) => vg_dsa_parameter_search_sha1_shani,
-        (H1::ShaNi, H256::Scalar, true) => vg_dsa_parameter_search_sha1_shani_mr_adx,
-        (H1::ShaNi, H256::Avx2, false) => vg_dsa_parameter_search_sha1_shani_sha256_avx2,
-        (H1::ShaNi, H256::Avx2, true) => vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx,
-        (H1::ShaNi, H256::ShaNi, false) => vg_dsa_parameter_search_sha1_shani_sha256_shani,
-        (H1::ShaNi, H256::ShaNi, true) => vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx,
+    use Round as R;
+    // Match the hashes' and the round's enums exhaustively so a new backend
+    // reaches parameter generation.
+    match (sha1, sha256, round) {
+        (H1::Scalar, H256::Scalar, R::Baseline) => vg_dsa_parameter_search,
+        (H1::Scalar, H256::Scalar, R::Adx) => vg_dsa_parameter_search_mr_adx,
+        (H1::Scalar, H256::Scalar, R::Ifma) => vg_dsa_parameter_search_mr_ifma,
+        (H1::Scalar, H256::Avx2, R::Baseline) => vg_dsa_parameter_search_sha256_avx2,
+        (H1::Scalar, H256::Avx2, R::Adx) => vg_dsa_parameter_search_sha256_avx2_mr_adx,
+        (H1::Scalar, H256::Avx2, R::Ifma) => vg_dsa_parameter_search_sha256_avx2_mr_ifma,
+        (H1::Scalar, H256::ShaNi, R::Baseline) => vg_dsa_parameter_search_sha256_shani,
+        (H1::Scalar, H256::ShaNi, R::Adx) => vg_dsa_parameter_search_sha256_shani_mr_adx,
+        (H1::Scalar, H256::ShaNi, R::Ifma) => vg_dsa_parameter_search_sha256_shani_mr_ifma,
+        (H1::ShaNi, H256::Scalar, R::Baseline) => vg_dsa_parameter_search_sha1_shani,
+        (H1::ShaNi, H256::Scalar, R::Adx) => vg_dsa_parameter_search_sha1_shani_mr_adx,
+        (H1::ShaNi, H256::Scalar, R::Ifma) => vg_dsa_parameter_search_sha1_shani_mr_ifma,
+        (H1::ShaNi, H256::Avx2, R::Baseline) => vg_dsa_parameter_search_sha1_shani_sha256_avx2,
+        (H1::ShaNi, H256::Avx2, R::Adx) => vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx,
+        (H1::ShaNi, H256::Avx2, R::Ifma) => vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_ifma,
+        (H1::ShaNi, H256::ShaNi, R::Baseline) => vg_dsa_parameter_search_sha1_shani_sha256_shani,
+        (H1::ShaNi, H256::ShaNi, R::Adx) => vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx,
+        (H1::ShaNi, H256::ShaNi, R::Ifma) => {
+            vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma
+        }
+        (H1::AvxBmi, H256::Scalar, R::Baseline) => vg_dsa_parameter_search_sha1_avx_bmi,
+        (H1::AvxBmi, H256::Scalar, R::Adx) => vg_dsa_parameter_search_sha1_avx_bmi_mr_adx,
+        (H1::AvxBmi, H256::Scalar, R::Ifma) => vg_dsa_parameter_search_sha1_avx_bmi_mr_ifma,
+        (H1::AvxBmi, H256::Avx2, R::Baseline) => vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2,
+        (H1::AvxBmi, H256::Avx2, R::Adx) => vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx,
+        (H1::AvxBmi, H256::Avx2, R::Ifma) => {
+            vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma
+        }
+        (H1::AvxBmi, H256::ShaNi, R::Baseline) => vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani,
+        (H1::AvxBmi, H256::ShaNi, R::Adx) => {
+            vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani_mr_adx
+        }
+        (H1::AvxBmi, H256::ShaNi, R::Ifma) => {
+            vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani_mr_ifma
+        }
     }
 }
 

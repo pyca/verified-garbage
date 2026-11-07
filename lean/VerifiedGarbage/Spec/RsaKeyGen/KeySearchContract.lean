@@ -9,7 +9,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 **Trusted.** `vg_rsa_generate_init` checks the size and the exponent
 (`keySearchInit`) and writes the search's state; `vg_rsa_generate` runs
 `keySearch` on each tape. The state is seven public words: the four of the
-prime search being run (`primeSearchContract`: its rejected candidates left,
+prime search being run (`primeSearch`'s: its rejected candidates left,
 the primes' octets `pLen`, its budget of entropy and the next tape's
 length), then the phase (0 for `p`, 1 for `q`), the generations left, and
 the exponent as 8 octets, most significant first, in that word's memory.
@@ -108,8 +108,8 @@ octets it consumed at `used`, and the state for the next call, whose fourth
 word is the next tape's length: any that `Entropy.Result.Requests` allows
 (0 if there is none); the exponent is kept. Its timing may depend on the
 state's words, the result's status, consumption and octets left, and its
-trace: each prime search's (`primeSearchContract`) and each key's status
-(`keyContract`). -/
+trace: each prime search's (`primeSearch`'s) and each key's status
+(`keyResultStatus`). -/
 def keySearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   keySearchSig.contract A
     (pre := fun _key keyLen _used _rand randLen _scratch scratchLen state m =>
@@ -152,8 +152,12 @@ def keySearchApi : Api where
   summary := "Generate an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 \
     Appendix A.1.3), over the random tape `rand`, from the state `state` that \
     `vg_rsa_generate_init` started: the search for `p`, then for `q` not too close to \
-    `p`, each that of `vg_rsa_prime_search`; then the key, that of `vg_rsa_keygen_key`, \
-    drawing both primes again if `d` is too small; a generation whose prime's search is \
+    `p`, each over candidates of `p_len` octets with their top two bits and bottom bit \
+    set, rejected by trial division, a common factor of `p − 1` and `e` or Miller–Rabin, \
+    up to BoringSSL's limit of rejected candidates; then the key, \
+    `d = e⁻¹ mod lcm(p − 1, q − 1)`, `dP`, `dQ` and `qInv`, with `p` the larger prime, \
+    checked as BoringSSL's `RSA_check_key` checks it, drawing both primes again if `d` \
+    is too small; a generation whose prime's search is \
     exhausted is started again, up to four in all. Returns 1 and writes the key to `key` \
     (`key_len` is `9 p_len`, for the primes' length `p_len = state[1]`): `n` and `d` \
     (`2 p_len` octets each), then `p`, `q`, `dP`, `dQ` and `qInv` (`p_len` each), all most \
@@ -165,9 +169,9 @@ def keySearchApi : Api where
     octets up to that length. For 0, `key` holds the search's `p` once it is found, which \
     the next call reads: pass it back unchanged. `key` is otherwise zeros but for 1.\n\n\
     Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, \
-    the lengths, `state`, the status and consumption it returns, and on what \
-    `vg_rsa_prime_search`'s timing may depend on for each prime and \
-    `vg_rsa_keygen_key`'s for each key. Not on the primes or the key."
+    the lengths, `state`, the status and consumption it returns, and, for each prime's \
+    search, its rejected candidates and the octets its accepted candidate's tests read, \
+    and each key's status. Not on the primes or the key."
   safety := ["`state` must come from `vg_rsa_generate_init`, or from the last call of \
       this function, with the same `key`, that returned 0.",
     "`key_len` must be `9 * state[1]`.",

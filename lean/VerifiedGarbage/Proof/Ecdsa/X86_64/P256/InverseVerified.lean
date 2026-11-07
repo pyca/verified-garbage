@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 public import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -15,7 +14,6 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 meta import VerifiedGarbage.Proof.Framework.Pratt
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi

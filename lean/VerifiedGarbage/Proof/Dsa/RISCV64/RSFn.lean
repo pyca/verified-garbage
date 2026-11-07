@@ -18,7 +18,8 @@ import VerifiedGarbage.Proof.Bignum.Octets
 # Randomized DSA signing on RISC-V: the function
 
 As on PPC64LE (`Proof/Dsa/PPC64LE/RandomSign/Fn.lean`).
-`randomSign_correct`: `vg_dsa_sign_random` meets `rsContract`. In its
+`randomSignWith_correct`: the randomized signer over a signer `S`
+(`Signer`) meets `rsContract`, for a key `S` accepts. In its
 frame, the entry (`entry_ok`), the scan of q (`prepareQ_ok`), the attempts
 (`attempts_ok`, or none when `q ≤ 1`) and the exit (`finish_ok`) follow one
 another; the result is `randomSignBytes`'s (`rsRes_eq`).
@@ -35,12 +36,12 @@ open VG.Proof.Dsa.RISCV64.Rnd
 open VG.Proof.Dsa (RandomSignInput RandomSignResultRel randomSignDraw randomSignRemaining randomSignAttemptStatus)
 open VG.Proof.Dsa.Random (sampleStatus)
 
-theorem attempts_ok {s₀ : State} (h : rsContract.pre s₀) (hq : 1 < qOf s₀) :
-    ∀ a u t, AttInv s₀ a u t → WP isa attempts t (AttOut s₀) := by
+theorem attempts_ok (S : Signer) {s₀ : State} (h : rsContract.pre s₀) (hv : RandomValid S s₀) (hq : 1 < qOf s₀) :
+    ∀ a u t, AttInv s₀ a u t → WP isa (attempts S.name S.code) t (AttOut s₀) := by
   intro a u t hi
   unfold attempts
   refine WP.loop (M := isa) (fun n (t : State) => ∃ u, AttInv s₀ n u t) (fun n t ⟨u, hi⟩ =>
-    WP.mono (attempt_ok h hq hi) fun t' ⟨e, ho, hc⟩ => ?_) a t ⟨u, hi⟩
+    WP.mono (attempt_ok S h hv hq hi) fun t' ⟨e, ho, hc⟩ => ?_) a t ⟨u, hi⟩
   by_cases h4 : randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u n = 4
   · obtain ⟨hn, hi'⟩ := hc h4
     exact .inr ⟨by rw [e, decide_eq_true h4], n - 1, by omega, _, hi'⟩
@@ -230,9 +231,11 @@ theorem fin_post {s₀ t : State} (h : rsContract.pre s₀) (hf : Fin s₀ (rsRe
   · simp only [freed, Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
     exact congrArg (· :: []) hf.used
 
-theorem randomSign_correct (s₀ : State) (h : rsContract.pre s₀) :
-    ∃ tr t, Exec isa Impl.Dsa.RISCV64.RandomSign.code s₀ tr t ∧ abiPreserved s₀ t ∧ rsContract.post s₀ t := by
-  show WP isa Impl.Dsa.RISCV64.RandomSign.code s₀ fun t => abiPreserved s₀ t ∧ rsContract.post s₀ t
+theorem randomSignWith_correct (S : Signer) (s₀ : State) (h : rsContract.pre s₀) (hv : RandomValid S s₀) :
+    ∃ tr t, Exec isa (Impl.Dsa.RISCV64.RandomSign.codeWith S.name S.code) s₀ tr t ∧ abiPreserved s₀ t ∧
+      rsContract.post s₀ t := by
+  show WP isa (Impl.Dsa.RISCV64.RandomSign.codeWith S.name S.code) s₀ fun t =>
+    abiPreserved s₀ t ∧ rsContract.post s₀ t
   have hL := rlOf_ok h
   have hst : (resOf s₀).status ≤ 2 := Dsa.randomSignLoop_status_le _ _ _ _ _ _
   have hnone : (resOf s₀).status ≠ 1 → (resOf s₀).signature = none := fun hs => by
@@ -249,7 +252,7 @@ theorem randomSign_correct (s₀ : State) (h : rsContract.pre s₀) :
         abiPreserved s₀ (freed frameBytes t') ∧ rsContract.post s₀ (freed frameBytes t') :=
     fun t hc h5 h10 hsig => WP.mono (finish_ok h hc h5 h10 hst hsig hnone) fun t' hf =>
       fin_post h (by rw [rsRes_eq h]; exact hf)
-  unfold Impl.Dsa.RISCV64.RandomSign.code
+  unfold Impl.Dsa.RISCV64.RandomSign.codeWith
   refine WP.alloc (by decide) hL.spF ?_
   unfold Impl.Dsa.RISCV64.RandomSign.body
   refine WP.seq (WP.mono (entry_ok h) fun t₁ he => ?_)
@@ -276,7 +279,7 @@ theorem randomSign_correct (s₀ : State) (h : rsContract.pre s₀) :
     · rw [a10, rst]; rfl
   · -- q > 1: the attempts.
     simp only [decide_eq_false_iff_not, Decidable.not_not] at hq
-    refine WP.mono (attempts_ok h hq 8 0 t₂ ⟨sc, c5, by omega, (k2.1 _ (by decide)).trans he.s6, by decide,
+    refine WP.mono (attempts_ok S h hv hq 8 0 t₂ ⟨sc, c5, by omega, (k2.1 _ (by decide)).trans he.s6, by decide,
       by decide, fun j hj => ?_, RandomSignResultRel.refl _ _ _⟩) fun t₃ ao => hfin t₃ ao.sc.ctx ao.s5 ao.s10 ao.out
     rw [m2]
     have hE : (eOf s₀).Ok := seOf_ok hL s₀.mem hq

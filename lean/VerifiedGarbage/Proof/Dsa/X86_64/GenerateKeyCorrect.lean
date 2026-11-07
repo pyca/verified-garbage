@@ -14,20 +14,20 @@ open VG.Impl.Dsa.X86_64
 
 theorem keygen_sp (v : Backend) :
     (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.sq v.mul)
-      (Generate.deriveKey v.sq v.mul)).all (fun i => !isa.writesSp i) = true := by
+      (Generate.deriveChecked v.sq v.mul)).all (fun i => !isa.writesSp i) = true := by
   simp only [GenerateKey.code, GenerateKey.body, GenerateKey.generate, Code.all, Bool.and_eq_true]
   repeat' constructor
-  all_goals first | exact v.parametersSp | exact v.deriveSp | decide
+  all_goals first | exact v.parametersSp | exact v.deriveCheckedSp | decide
 
 theorem keygen_depth (v : Backend) :
     (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.sq v.mul)
-      (Generate.deriveKey v.sq v.mul)).x86_64Depth ≤ v.stack + 256 := by
+      (Generate.deriveChecked v.sq v.mul)).x86_64Depth ≤ v.stack + 256 := by
   simp only [GenerateKey.code, GenerateKey.body, GenerateKey.generate, Code.x86_64Depth,
     show Random.prepare.x86_64Depth = 0 from rfl,
     show Random.sample.x86_64Depth = 0 from rfl,
     show RandomSign.finish.x86_64Depth = 0 from rfl,
     Nat.zero_max, Nat.max_zero]
-  have hm := Nat.max_le.mpr ⟨Nat.add_le_add_right v.parametersDepth 8, Nat.add_le_add_right v.deriveDepth 8⟩
+  have hm := Nat.max_le.mpr ⟨Nat.add_le_add_right v.parametersDepth 8, Nat.add_le_add_right v.deriveCheckedDepth 8⟩
   exact Nat.add_le_add_right hm 248
 
 structure KeygenCodePost (s : State) (result : Spec.Dsa.GenerateKeyResult) (t : State) : Prop where
@@ -43,7 +43,7 @@ structure KeygenCodePost (s : State) (result : Spec.Dsa.GenerateKeyResult) (t : 
 
 theorem keygen_code (v : Backend) {s : State} (h : GenerateKeyABI v.stack s) :
     WP isa (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.sq v.mul)
-      (Generate.deriveKey v.sq v.mul)) s (KeygenCodePost s (keygenResult s)) := by
+      (Generate.deriveChecked v.sq v.mul)) s (KeygenCodePost s (keygenResult s)) := by
   apply keygen_frame_ok h
   refine WP.mono (keygen_body v h) fun t ht => ⟨ht.sp, ht.wr, ?_⟩
   refine ⟨ht.rd, by change t.wr.tail = _; rw [ht.wr]; rfl, ht.status, ht.output, ht.used, ?_, ht.mxcsr, ht.nonce⟩
@@ -78,7 +78,7 @@ theorem keygen_shared_post {extra : Nat} {s t : State} (h : GenerateKeyABI extra
 theorem keygen_correct (v : Backend) (s : State)
     (hpre : (Spec.Dsa.generateKeyContract abi (v.stack + 256)).pre s) :
     ∃ trace t, Exec isa (GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
-        (Generate.checkParameters v.sq v.mul) (Generate.deriveKey v.sq v.mul)) s trace t ∧
+        (Generate.checkParameters v.sq v.mul) (Generate.deriveChecked v.sq v.mul)) s trace t ∧
       abiPreserved s t ∧ (Spec.Dsa.generateKeyContract abi (v.stack + 256)).post s t := by
   have h := generateKeyABI_of hpre
   obtain ⟨trace, t, he, hp⟩ := keygen_code v h

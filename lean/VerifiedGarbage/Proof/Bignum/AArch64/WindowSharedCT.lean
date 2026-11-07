@@ -18,10 +18,8 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-public import VerifiedGarbage.Proof.Rsa.MontWindowContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.Proof.Rsa.MontWindowContract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.AArch64.Target
 

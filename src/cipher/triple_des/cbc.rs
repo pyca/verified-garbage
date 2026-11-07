@@ -10,10 +10,9 @@
     target_arch = "riscv64"
 ))]
 
+use crate::arch::dispatch::triple_des_cbc::vg_triple_des_cbc_decrypt_chained_auto;
 use crate::arch::triple_des::vg_triple_des_expand_key;
-use crate::arch::triple_des_cbc::{
-    vg_triple_des_cbc_decrypt_chained, vg_triple_des_cbc_encrypt_chained,
-};
+use crate::arch::triple_des_cbc::vg_triple_des_cbc_encrypt_chained;
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -135,9 +134,10 @@ impl Key {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
-        // SAFETY: as in `encrypt`.
+        // SAFETY: as in `encrypt`; the dispatcher calls only an implementation
+        // the CPU has the features of.
         unsafe {
-            vg_triple_des_cbc_decrypt_chained(
+            vg_triple_des_cbc_decrypt_chained_auto(
                 &self.schedule,
                 iv,
                 buffer.as_mut_ptr().cast(),

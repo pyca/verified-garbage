@@ -283,11 +283,6 @@ theorem exists_isSome_of_eraseT {τ : (taintS L).T} {c : Prog isa}
     ∃ h, ((taintS L).check τ c h).isSome = true := by
   simp only [check_eraseT] at e; exact e
 
-theorem exists_map_le_of_eraseT {τ m : (taintS L).T} {c : Prog isa}
-    (e : ∃ h, ((taintS L).check τ (Code.eraseT c) h).map ((taintS L).le m) = some true) :
-    ∃ h, ((taintS L).check τ c h).map ((taintS L).le m) = some true := by
-  simp only [check_eraseT] at e; exact e
-
 end
 
 end VG.AArch64

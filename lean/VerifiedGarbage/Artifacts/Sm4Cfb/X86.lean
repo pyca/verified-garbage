@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
+public import VerifiedGarbage.Proof.Sm4.X86.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Sm4.X86.FbFinalLit
 import VerifiedGarbage.Proof.Sm4.X86.FbLit
 
 /-! # SM4-CFB128 artifacts on baseline x86 (32-bit) -/
@@ -19,6 +21,14 @@ def artifacts : List Artifact := [
   Spec.Sm4.cfbDecryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbDecrypt
     stack := 1516
-    verified := Proof.Sm4.X86.Fb.cfbDecrypt_framed }]
+    verified := Proof.Sm4.X86.Fb.cfbDecrypt_framed },
+  Spec.Sm4.cfbEncryptFinalApi.artifact X86.target {
+    code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbEncryptFinal
+    stack := 1516
+    verified := Proof.Sm4.X86.FbFinal.cfbEncryptFinal_framed },
+  Spec.Sm4.cfbDecryptFinalApi.artifact X86.target {
+    code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbDecryptFinal
+    stack := 1516
+    verified := Proof.Sm4.X86.FbFinal.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.Sm4Cfb.X86

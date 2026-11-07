@@ -1,7 +1,6 @@
 module
 import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
 import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombVerified
 import Mathlib.Data.Finset.Card
@@ -9,7 +8,6 @@ import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombContract
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombContract
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Ecdh.X86.Peer
 import VerifiedGarbage.Proof.Ecdsa.Sign
@@ -23,7 +21,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafCallerCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPoints
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPrep
 import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish
@@ -49,11 +46,8 @@ import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Mont.Words128
 import VerifiedGarbage.Proof.Mont.X86.Csub
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.P256Red
 import VerifiedGarbage.Proof.Mont.X86.RedRow
 import VerifiedGarbage.Proof.Mont.X86.Row
-import VerifiedGarbage.Proof.Mont.X86.SparseShift
-import VerifiedGarbage.Proof.Mont.X86.SparseStep
 import VerifiedGarbage.Proof.Mont.X86.Step
 import VerifiedGarbage.Proof.P256.Order
 import VerifiedGarbage.Proof.P256.Prime
@@ -88,9 +82,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJEntry
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-import VerifiedGarbage.Proof.Weierstrass.X86.WinEntry
-import VerifiedGarbage.Proof.Weierstrass.X86.WinLoop
-import VerifiedGarbage.Proof.Weierstrass.X86.WinSelect
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
@@ -112,7 +103,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafCallerCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPoints
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPrep
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
 public import VerifiedGarbage.Proof.Ecdsa.X86.Finish
@@ -138,11 +128,8 @@ public import VerifiedGarbage.Proof.Framework.X86.Sse
 public import VerifiedGarbage.Proof.Mont.Words128
 public import VerifiedGarbage.Proof.Mont.X86.Csub
 public import VerifiedGarbage.Proof.Mont.X86.Instr
-public import VerifiedGarbage.Proof.Mont.X86.P256Red
 public import VerifiedGarbage.Proof.Mont.X86.RedRow
 public import VerifiedGarbage.Proof.Mont.X86.Row
-public import VerifiedGarbage.Proof.Mont.X86.SparseShift
-public import VerifiedGarbage.Proof.Mont.X86.SparseStep
 public import VerifiedGarbage.Proof.Mont.X86.Step
 public import VerifiedGarbage.Proof.P256.Order
 public import VerifiedGarbage.Proof.P256.Prime
@@ -176,9 +163,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJEntry
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinEntry
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinLoop
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinSelect
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold

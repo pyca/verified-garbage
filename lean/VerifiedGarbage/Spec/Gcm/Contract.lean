@@ -32,8 +32,7 @@ message.
   (`KeyRounds`), with that key's cipher and hash subkey (`aes key`,
   `aes key 0`): AES-GCM with that key. `open`'s leak is stated with the
   cipher and the hash subkey the context holds (`ctxCiph`, `ctxH`), which
-  for a context `vg_aes_gcm_init` wrote are its key's (`encryptWith_ctx`,
-  `decryptWith_ctx`).
+  for a context `vg_aes_gcm_init` wrote are its key's.
 * `vg_aes_gcm_seal` is GCM-AE (`encryptWith`) with a 16-byte tag, and
   `vg_aes_gcm_open` GCM-AD (`decryptWith`) with a tag of any length
   `tagLenOk` allows; `open` decrypts only if the tag is right, and otherwise

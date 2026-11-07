@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Modes.AArch64.CfbDec.Pure
+import VerifiedGarbage.Proof.Modes.CfbDec
 public import VerifiedGarbage.Impl.Modes.AArch64.CfbDec
 public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 public import VerifiedGarbage.Proof.Modes.Ctr
@@ -20,6 +20,7 @@ namespace VG.Proof.Modes.AArch64.CfbDec
 open VG VG.AArch64 VG.AArch64.Straight VG.Impl.Modes.AArch64
 open VG.Impl.Aes.AArch64 (sb)
 open VG.Spec.Aes (bytesAt)
+open VG.Proof.Modes.CfbDec (input_eq of_dinv)
 variable {c : Core}
 theorem batched_wp (cs : BlockSpec c) (hbw : c.bw = 2) {r : CtrRegs} (hr : RegsOk r) (hdn : c.dataReg ≠ r.n) {s₀ : State}
     {B P D : Addr} {n : Nat} {k : cs.Key} (hB : s₀.gpr r.scr = B) (hP : s₀.gpr r.ctr = P) (hD : s₀.gpr r.data = D)

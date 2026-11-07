@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.RISCV64.ModesVerified
+public import VerifiedGarbage.Proof.Blowfish.RISCV64.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Blowfish.RISCV64.ModesLit
+import VerifiedGarbage.Proof.Blowfish.RISCV64.FbFinalLit
 
 /-! # Blowfish-CFB64 artifacts on baseline RISC-V -/
 
@@ -14,11 +16,19 @@ namespace VG.Artifacts.BlowfishCfb.RISCV64
 def artifacts : List Artifact := [
   Spec.Blowfish.cfbEncryptApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.cfbEncrypt
-    stack := 4224
+    stack := 4240
     verified := Proof.Blowfish.RISCV64.Modes.cfbEncrypt_verified },
   Spec.Blowfish.cfbDecryptApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.cfbDecrypt
-    stack := 4320
-    verified := Proof.Blowfish.RISCV64.Modes.cfbDecrypt_verified }]
+    stack := 4336
+    verified := Proof.Blowfish.RISCV64.Modes.cfbDecrypt_verified },
+  Spec.Blowfish.cfbEncryptFinalApi.artifact RISCV64.target {
+    code := Impl.Blowfish.RISCV64.cfbEncryptFinal
+    stack := 4240
+    verified := Proof.Blowfish.RISCV64.Modes.cfbEncryptFinal_verified },
+  Spec.Blowfish.cfbDecryptFinalApi.artifact RISCV64.target {
+    code := Impl.Blowfish.RISCV64.cfbDecryptFinal
+    stack := 4240
+    verified := Proof.Blowfish.RISCV64.Modes.cfbDecryptFinal_verified }]
 
 end VG.Artifacts.BlowfishCfb.RISCV64

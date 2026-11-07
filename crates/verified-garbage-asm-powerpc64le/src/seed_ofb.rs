@@ -31,3 +31,42 @@ b 21f
         vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
 }
+
+/// SEED-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 4269 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`.
+///
+/// Contract: `VG.Spec.Seed.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 1184 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_seed_ofb_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "Yfsh+CAA4TimAgh8aAQH+FAEp/tYBMf7YATn+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgXAEBZEEAB+BdAQFkQgAH4F4BAWRDAAfgXwEBZF4M998AAA+KA=="
+beq %cr0, 20f
+22:
+.base64 "cAQFgUAEBZF0BAWBRAQFkXgEBYFIBAWRfAQFgUwEBZFABIU4eCumfAEAoDg="
+bl {vg_seed_encrypt_blocks}
+.base64 "eEMFfQAAYzgC4ch7AAAoKA=="
+beq %cr0, 23f
+.base64 "QAQFgXAEBZFEBAWBdAQFkUgEBYF4BAWRTAQFgXwEBZEAAB+BQAQlgXhKCH0AAB+RBAAfgUQEJYF4Sgh9BAAfkQgAH4FIBCWBeEoIfQgAH5EMAB+BTAQlgXhKCH0MAB+READ/O/D/3js="
+b 24f
+23:
+.base64 "QAQFgXAEBZFEBAWBdAQFkUgEBYF4BAWRTAQFgXwEBZFABAU5"
+25:
+.base64 "AAA/iQAASIl4Uil9AAA/mQEACDkBAP87///eOwAAPig="
+bne %cr0, 25b
+24:
+.base64 "AAA+KA=="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "eOu/f3AEBYEAAB+RdAQFgQQAH5F4BAWBCAAfkXwEBYEMAB+RUASl61gExetgBOXraAQF6KYDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkAAmz5CAJs+RACbPkYAmz5IAJs+SgCbPkwAmz5OAJs+UACbPlIAmz5UAJs+VgCbPlgAmz5aAJs+XACbPl4Amz5gAJs+YgCbPmQAmz5mAJs+aACbPmoAmz5sAJs+bgCbPnAAmz5yAJs+dACbPnYAmz54AJs+egCbPnwAmz5+AJs+QADbPkIA2z5EANs+RgDbPkgA2z5KANs+TADbPk4A2z5QANs+UgDbPlQA2z5WANs+WADbPloA2z5cANs+XgDbPmAA2z5iANs+ZADbPmYA2z5oANs+agDbPmwA2z5uANs+cADbPnIA2z50ANs+dgDbPngA2z56ANs+fADbPn4A2z5AARs+QgEbPkQBGz5GARs+SAEbPkoBGz5MARs+TgEbPlABGz5SARs+VAEbPlYBGz5YARs+WgEbPlwBGz5eARs+aAEITggAIBO""#,
+        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+    )
+}

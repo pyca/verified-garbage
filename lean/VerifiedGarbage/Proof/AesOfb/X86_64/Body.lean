@@ -151,7 +151,7 @@ theorem body_ok (v : BlocksImpl) : BodyOk ofbMode (body v.enc) := by
       · exact ⟨⟨S s₀, 2064⟩, by simp, Region.sub_prefix (by decide)⟩
       · exact ⟨stkR s₀, by simp, fun _ h => h⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
-  have big : Frame (Big s₀) s₀.mem s.mem := UPre.big_of h.frame
+  have big : Frame (Big s₀) s₀.mem s.mem := UPre.big_ofG h.frame
   -- The new output block, and the data block.
   have hblk := h.block hk
   have newIv : bytesAt s₄.mem (Iv s₀) 16 =
@@ -183,7 +183,7 @@ theorem body_ok (v : BlocksImpl) : BodyOk ofbMode (body v.enc) := by
   · rw [g .rsp (by simp [calleeSaved]) (by decide) (by decide), h.rsp]
   · rw [rd₄, rd₃, c.rd, a.rd, h.rd]
   · rw [wr₄, wr₃, c.wr, a.wr, h.wr]
-  · exact h.frame.trans (stepFrame hk fStep)
+  · exact h.frame.trans (stepFrameG hk fStep)
   · rw [hp.blocksAt_step hk fStep, h.data, outSucc,
       set_prefix _ _ _ hl' (by simp [Spec.Cbc.blocksAt]; exact hk)]
   · rw [newIv]

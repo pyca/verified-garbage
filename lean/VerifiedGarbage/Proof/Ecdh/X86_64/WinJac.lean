@@ -17,7 +17,7 @@ For four or six words and a curve of prime order `n` with `n mod 32 ≥ 17`
 `WinJacA.lean` and `WinJacOdd.lean` run): numbered slots, its grid of 85 (the
 table of 16 entries of five coordinates, then the selected entry) slots
 `WT … WT + 84` past the tables of bits (`jwSlots_eq`), so they are apart as
-`winJac_ok` needs (`jwLayQ`); the bound on the recoded scalar
+the window method needs (`jwLayQ`); the bound on the recoded scalar
 (`recodeJ_lt`); and what the window method and the power may write
 (`mulQJW`, `mulQJ_w`).
 -/

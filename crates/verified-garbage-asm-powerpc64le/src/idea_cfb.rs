@@ -54,3 +54,75 @@ b 21f
 .base64 "eOu/fygABYEAAB+RLAAFgQQAH5EIAKXrEADF6xgA5esgAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlgACE4IACATg==""#,
     )
 }
+
+/// IDEA-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; Lai, 1992, §3.3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is IDEA encryption under the encryption subkeys written by `vg_idea_expand_key`.
+///
+/// Contract: `VG.Spec.Idea.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 104 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_idea_cfb64_encrypt_final(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "of8h+CAA4TimAgh8IAAH+AgAp/sQAMf7GADn+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgSgABZEEAB+BLAAFkXgz33wAAD4o"
+beq %cr0, 20f
+22:
+.base64 "KAAFgQAABZEsAAWBBAAFkQAAADj//wBgAACFOAAAxIjkRcZ4AQBkiXhbxnwCAOSI5EXneAMAZIl4W+d8BAAEieRFCHkFAGSJeFsIfQYAJInkRSl5BwBkiXhbKX14M8t8AACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9BgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX0CAIOBFGLnfDgA53wEAIOBFGIIfTgACH14Qst8CACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfQoAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8DACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9EgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX0OAIOBFGLnfDgA53wQAIOBFGIIfTgACH14Qst8FACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfRYAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8GACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9HgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX0aAIOBFGLnfDgA53wcAIOBFGIIfTgACH14Qst8IACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfSIAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8JACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9KgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX0mAIOBFGLnfDgA53woAIOBFGIIfTgACH14Qst8LACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfS4Ag4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8MACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9NgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX0yAIOBFGLnfDgA53w0AIOBFGIIfTgACH14Qst8OACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfToAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8PACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9QgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX0+AIOBFGLnfDgA53xAAIOBFGIIfTgACH14Qst8RACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfUYAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8SACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9TgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX1KAIOBFGLnfDgA53xMAIOBFGIIfTgACH14Qst8UACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfVIAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8VACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9WgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX1WAIOBFGLnfDgA53xYAIOBFGIIfTgACH14Qst8XACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfV4Ag4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8YACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9ZACDgQKEjHn//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9YgCDgRRiCH04AAh9ZACDgRRi53w4AOd8AQDEmALCy3gAAGSZAwAEmQLCC3kCAGSZBQDkmALC63gEAGSZBwAkmQLCK3kGAGSZwujIewAAKCg="
+beq %cr0, 23f
+.base64 "AAAfgQAAJYF4Sgh9AAAfkQQAH4EEACWBeEoIfQQAH5EAAB+BKAAFkQQAH4EsAAWRCAD/O/j/3js="
+b 24f
+23:
+.base64 "AAAFgSgABZEEAAWBLAAFkQAABTk="
+25:
+.base64 "AAA/iQAASIl4Uil9AAA/mQEACDkBAP87///eOwAAPig="
+bne %cr0, 25b
+24:
+.base64 "AAA+KA=="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "eOu/fygABYEAAB+RLAAFgQQAH5EIAKXrEADF6xgA5esgAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlgACE4IACATg==""#,
+    )
+}
+
+/// IDEA-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; Lai, 1992, §3.3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is IDEA encryption under the encryption subkeys written by `vg_idea_expand_key`.
+///
+/// Contract: `VG.Spec.Idea.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 104 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_idea_cfb64_decrypt_final(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "of8h+CAA4TimAgh8IAAH+AgAp/sQAMf7GADn+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgSgABZEEAB+BLAAFkXgz33wAAD4o"
+beq %cr0, 20f
+22:
+.base64 "KAAFgQAABZEsAAWBBAAFkQAAADj//wBgAACFOAAAxIjkRcZ4AQBkiXhbxnwCAOSI5EXneAMAZIl4W+d8BAAEieRFCHkFAGSJeFsIfQYAJInkRSl5BwBkiXhbKX14M8t8AACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9BgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX0CAIOBFGLnfDgA53wEAIOBFGIIfTgACH14Qst8CACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfQoAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8DACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9EgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX0OAIOBFGLnfDgA53wQAIOBFGIIfTgACH14Qst8FACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfRYAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8GACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9HgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX0aAIOBFGLnfDgA53wcAIOBFGIIfTgACH14Qst8IACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfSIAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8JACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9KgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX0mAIOBFGLnfDgA53woAIOBFGIIfTgACH14Qst8LACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfS4Ag4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8MACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9NgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX0yAIOBFGLnfDgA53w0AIOBFGIIfTgACH14Qst8OACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfToAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8PACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9QgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX0+AIOBFGLnfDgA53xAAIOBFGIIfTgACH14Qst8RACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfUYAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8SACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9TgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX1KAIOBFGLnfDgA53xMAIOBFGIIfTgACH14Qst8UACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfVIAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8VACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9WgCDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjiX1WAIOBFGLnfDgA53xYAIOBFGIIfTgACH14Qst8XACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjin14Sut8FFJrfV4Ag4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH0UYkp9OABKfXhixnx4Ygh9eFLnfHhSKX14O+t8eEMHfXhbaH14M8t8YACDgf//azk4AGt9AQBrOf//jDk4AIx9AQCMOdJha304AGx9AoRreVBgi33gD4t5FFqMfeSDa3kUWox9OACMfXhjhn14Syt9ZACDgQKEjHn//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9YgCDgRRiCH04AAh9ZACDgRRi53w4AOd8AQDEmALCy3gAAGSZAwAEmQLCC3kCAGSZBQDkmALC63gEAGSZBwAkmQLCK3kGAGSZwujIewAAKCg="
+beq %cr0, 23f
+.base64 "AAAfgSgABZEEAB+BLAAFkQAAH4EAACWBeEoIfQAAH5EEAB+BBAAlgXhKCH0EAB+RCAD/O/j/3js="
+b 24f
+23:
+.base64 "AAAFgSgABZEEAAWBLAAFkQAABTk="
+25:
+.base64 "AAA/iQAASIl4Uil9AAA/mQEACDkBAP87///eOwAAPig="
+bne %cr0, 25b
+24:
+.base64 "AAA+KA=="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "eOu/fygABYEAAB+RLAAFgQQAH5EIAKXrEADF6xgA5esgAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlgACE4IACATg==""#,
+    )
+}

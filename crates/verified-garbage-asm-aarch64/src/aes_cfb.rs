@@ -175,6 +175,92 @@ b 214f
     )
 }
 
+/// The CPU features `vg_aes_cfb128_encrypt_final_aes` requires (`Artifact.features`).
+pub const VG_AES_CFB128_ENCRYPT_FINAL_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_cfb128_encrypt_final_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
+.inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
+.inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
+bl {vg_aes_cfb128_encrypt_aes}
+cbz x23, 20f
+.inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
+bl {vg_aes_encrypt_blocks_aes}
+.inst 0x910002a9
+22:
+.inst 0x39400126,0x394002c7,0xca0600e7,0x390002c7,0x91000529,0x910006d6,0xd10006f7
+cbnz x23, 22b
+b 21f
+20:
+21:
+.inst 0xf9400333,0xf9400734,0xf9400b35,0xf9400f36,0xf9401337,0xf9401738,0xf9401b3e,0xf9401f39
+.inst 0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0x910103ff,0xd65f03c0
+.p2align 6",
+        vg_aes_cfb128_encrypt_aes = sym super::aes_cfb::vg_aes_cfb128_encrypt_aes,
+        vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
+    )
+}
+
+/// The CPU features `vg_aes_cfb128_decrypt_final_aes` requires (`Artifact.features`).
+pub const VG_AES_CFB128_DECRYPT_FINAL_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_cfb128_decrypt_final_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
+.inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
+.inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
+bl {vg_aes_cfb128_decrypt_aes}
+cbz x23, 20f
+.inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
+bl {vg_aes_encrypt_blocks_aes}
+.inst 0x910002a9
+22:
+.inst 0x39400126,0x394002c7,0xca0600e7,0x390002c7,0x91000529,0x910006d6,0xd10006f7
+cbnz x23, 22b
+b 21f
+20:
+21:
+.inst 0xf9400333,0xf9400734,0xf9400b35,0xf9400f36,0xf9401337,0xf9401738,0xf9401b3e,0xf9401f39
+.inst 0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0x910103ff,0xd65f03c0
+.p2align 6",
+        vg_aes_cfb128_decrypt_aes = sym super::aes_cfb::vg_aes_cfb128_decrypt_aes,
+        vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
+    )
+}
+
 /// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Cfb.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
@@ -242,6 +328,84 @@ b 21f
 21:
 .inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
 .p2align 6",
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+    )
+}
+
+/// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_cfb128_encrypt_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
+.inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
+.inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
+bl {vg_aes_cfb128_encrypt}
+cbz x23, 20f
+.inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
+bl {vg_aes_encrypt_blocks}
+.inst 0x910002a9
+22:
+.inst 0x39400126,0x394002c7,0xca0600e7,0x390002c7,0x91000529,0x910006d6,0xd10006f7
+cbnz x23, 22b
+b 21f
+20:
+21:
+.inst 0xf9400333,0xf9400734,0xf9400b35,0xf9400f36,0xf9401337,0xf9401738,0xf9401b3e,0xf9401f39
+.inst 0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0x910103ff,0xd65f03c0
+.p2align 6",
+        vg_aes_cfb128_encrypt = sym super::aes_cfb::vg_aes_cfb128_encrypt,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+    )
+}
+
+/// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_cfb128_decrypt_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
+.inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
+.inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
+bl {vg_aes_cfb128_decrypt}
+cbz x23, 20f
+.inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
+bl {vg_aes_encrypt_blocks}
+.inst 0x910002a9
+22:
+.inst 0x39400126,0x394002c7,0xca0600e7,0x390002c7,0x91000529,0x910006d6,0xd10006f7
+cbnz x23, 22b
+b 21f
+20:
+21:
+.inst 0xf9400333,0xf9400734,0xf9400b35,0xf9400f36,0xf9401337,0xf9401738,0xf9401b3e,0xf9401f39
+.inst 0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0x910103ff,0xd65f03c0
+.p2align 6",
+        vg_aes_cfb128_decrypt = sym super::aes_cfb::vg_aes_cfb128_decrypt,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }

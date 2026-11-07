@@ -29,8 +29,8 @@ whose descriptors are as on entry (`Sig.lists_eq_of_agree`).
 The contract may declare a leak (`Sig.contract`'s `leak`), which the code's
 contract takes too (`Sig.scratchContract`); it must then read memory only
 within the function's buffers as well (`hleak`, `Sig.LeakLocal`, which holds
-of no leak and is then proved by default). `pubL_args` is `pub_args` with a
-leak.
+of no leak and is then proved by default). `pubL_args` gives the public
+data of such a contract, and what it may leak.
 -/
 
 @[expose] public section
@@ -135,22 +135,6 @@ theorem post_args {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop
     (sig.contract abi pre post wa stack leak).post s s' ↔
       Curry.apply (sig.words abi.ptrBits) post (allArgs sig s) s.mem s'.mem
         ((s'.gpr .rax).setWidth _) := by
-  simp only [Sig.contract]
-  rw [args_some sig hk]
-  exact Iff.rfl
-
-/-- The public data of a contract with at least six argument words, which
-leaks nothing. -/
-theorem pub_args {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
-    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat} {s₁ s₂ : State}
-    (hk : 6 ≤ (sig.words abi.ptrBits).length) :
-    (sig.contract abi pre post wa stack none).pub s₁ s₂ ↔
-      s₁.gpr .rsp = s₂.gpr .rsp ∧
-      (∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
-        ((allArgs sig s₁).getD i 0).setWidth (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) =
-          ((allArgs sig s₂).getD i 0).setWidth (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64)) ∧
-      ∀ r ∈ Sig.descs 64 sig.params (allArgs sig s₁), ∀ i < r.len,
-        s₁.mem (r.base + BitVec.ofNat 64 i) = s₂.mem (r.base + BitVec.ofNat 64 i) := by
   simp only [Sig.contract]
   rw [args_some sig hk]
   exact Iff.rfl

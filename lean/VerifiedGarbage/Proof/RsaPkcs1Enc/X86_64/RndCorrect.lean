@@ -182,13 +182,6 @@ theorem outside_frame (s : State) {x : Addr} (hx : ¬ (stkR s).Contains x 1) :
   simp only [off, BitVec.add_zero] at this
   exact this x hc
 
-/-- A byte of a buffer apart from the stack the function uses, past changes
-to the frame. -/
-theorem byte_outside {s : State} {m : Mem} (h : Outside (fb s) 0 frameBytes s.mem m) {p : Addr} {n : Nat}
-    (hd : (stkR s).Disjoint ⟨p, n⟩) (hn : n ≤ 2 ^ 64) {i : Nat} (hi : i < n) :
-    m (p + BitVec.ofNat 64 i) = s.mem (p + BitVec.ofNat 64 i) :=
-  h _ (.inr (outside_frame s fun hc => hd _ hc (Offset.contains_base _ (by omega) (by omega))))
-
 theorem stackArgAddr_fb (s : State) (j : Nat) : stackArgAddr s j = off (fb s) (frameBytes + 8 + 8 * j) := by
   rw [off, show frameBytes + 8 + 8 * j = frameBytes + 8 * (j + 1) by omega, BitVec.ofNat_add,
     ← BitVec.add_assoc, BitVec.sub_add_cancel]
@@ -197,14 +190,6 @@ theorem stackArgAddr_fb (s : State) (j : Nat) : stackArgAddr s j = off (fb s) (f
 theorem stackArgAddr_eq (s : State) (j : Nat) : stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
   simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega]
-
-/-- A stack argument, past stores to the frame. -/
-theorem arg_outside {s : State} (hp : RPre s) {m : Mem} (h : Outside (fb s) 0 frameBytes s.mem m) {j : Nat}
-    (hj : j < 9) : m.readW (stackArgAddr s j) 64 = stackArg s j := by
-  have := fb_toNat hp
-  show m.readW _ 64 = s.mem.readW _ 64
-  rw [stackArgAddr_fb]
-  exact h.word (.inr (by unfold frameBytes; omega)) (by unfold frameBytes at *; omega)
 
 theorem ea_sp (t : State) (d : Nat) : t.ea (sp d) = t.gpr .rsp + BitVec.ofNat 64 d := by
   simp only [State.ea, sp, BitVec.ofInt_natCast]
@@ -716,16 +701,6 @@ theorem frame_of_outside {s : State} {m : Mem} (h : Outside (fb s) 0 frameBytes 
     Frame [stkR s, tapeR s] s.mem m :=
   fun x hx => h x (.inr (outside_frame s (hx _ (List.mem_cons_self ..))))
 
-/-- A region apart from the stack and the tape keeps its bytes. -/
-theorem readW_apart {s : State} {m₀ m : Mem} (h : Frame [argR s, tapeR s] m₀ m) {a : Addr} {r : Region}
-    (ha : r.Contains a 8) (h₁ : r.Disjoint (argR s)) (h₂ : r.Disjoint (tapeR s)) :
-    m.readW a 64 = m₀.readW a 64 :=
-  h.readW ha (fun r' hr' => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-    rcases hr' with rfl | rfl
-    · exact h₁
-    · exact h₂) (by decide)
-
 theorem argR_sub (s : State) : Region.Sub (argR s) (stkR s) := by
   have := frame_sub s (d := 0) (n := 64) (by decide)
   simpa [off, argR] using this
@@ -948,11 +923,6 @@ theorem tapeMem_read0 (s : State) (m : Mem) (i : Nat) :
 theorem tapeMem_read1 (s : State) (m : Mem) (i : Nat) :
     (tapeMem s m i).readW (s.gpr .rdx + BitVec.ofNat 64 8) 64 = 0 := by
   rw [tapeMem]; exact Mem.readW_writeW_self64 _ _ _
-
-/-- A word apart from the tape and the frame, from the entry. -/
-theorem readW_apart' {s : State} {rs : List Region} {m : Mem} (hf : Frame rs s.mem m) {r : Region} {a : Addr}
-    (hc : r.Contains a 8) (hd : ∀ r' ∈ rs, r.Disjoint r') : m.readW a 64 = s.mem.readW a 64 :=
-  hf.readW hc hd (by decide)
 
 theorem prep_rest_ok {s t u₁ : State} (hp : RPre s) {i : Nat} {ps : List Byte} (h : Ready s t i ps)
     (hm₁ : u₁.mem = tapeMem s t.mem i) (k₁ : Keep [.rax, .r10] t u₁) :
@@ -1346,9 +1316,6 @@ open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Random
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.RsaPkcs1Enc.X86_64 (encStack byte byte_wb byte_wb_self)
 open VG.WriteBytes (writeW8_apply)
-
-/-- The frame's region. -/
-abbrev frR (s : State) : Region := ⟨fb s, frameBytes⟩
 
 /-- `n` bytes from `PS` zeroed: memory changed only in the frame. -/
 theorem wipe_ok {s t : State} (hp : RPre s)

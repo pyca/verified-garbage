@@ -4,6 +4,14 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Compute
 import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
 import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 import VerifiedGarbage.Proof.MlDsa.Verify.Norm
+import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
+import VerifiedGarbage.Proof.MlKem.Arm.Loops
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Compute
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+meta import VerifiedGarbage.Proof.MlKem.Arm.Loops
 
 /-!
 # ML-DSA verification on 32-bit ARM: the rows of `w′₁`
@@ -21,7 +29,7 @@ namespace VG.Proof.MlDsa.Arm.Verify
 open VG VG.Arm VG.Arm.RegUpd VG.Proof.MlKem.Arm
 open VG.Proof.MlDsa.Arm.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 rel_of relInv Callee ip_ok ip_tr
   mul_ok mul_tr mulAdd_ok mulAdd_tr sub_ok sub_tr MulOk AccOk T1Ok t1_ok t1_tr UhOk uh_ok uh_tr SbpOk sbp_ok sbp_tr
-  polyIs_keepW polyAt_keepW reduced_keepW bytes_keepW keepD)
+  polyIs_keepW polyAt_keepW reduced_keepW bytes_keepW keepD inB_bounds)
 open VG.Impl.MlDsa.Arm.Verify
 open VG.Impl.MlDsa.Arm.KeyGen (seqR)
 open VG.Spec.MlDsa (Params toRq ntt nttInv multiplyNTT sub simpleBitPack useHint ofInt simpleBitUnpack t1Max d n q)
@@ -381,10 +389,164 @@ theorem sbpW_piece :
     rw [← vlay_pub pub] at w₂'
     exact ⟨σ₁, vc_twoL pub h₁.vc h₂.vc, w1_bound hF w₁, w₂'⟩
 
+/-! ## `t̂₁[r]` from prepared polynomials -/
+
+omit hP hF hS hr in
+theorem enc1024 : ∀ r < 8, encodable (BitVec.ofNat 32 (1024 * r)) = true := by decide
+
+omit hP hF hS hr in
+/-- Two runs of a copy from `r8 + so` to `r7 + oP 16` leak the same when
+they agree on `r7` and `r8`. -/
+theorem copyR_tr {so : Nat} (hse : encodable (BitVec.ofNat 32 so) = true) {Q : State → State → Prop}
+    (hQ : ∀ x y, Q x y → x.gpr .r8 = y.gpr .r8 ∧ x.gpr .r7 = y.gpr .r7) :
+    RelCT isa Q (Impl.MlKem.Arm.copy .r8 so .r7 (oP 16) 1024) fun _ _ => True := by
+  unfold Impl.MlKem.Arm.copy
+  have hw : ∀ s : State, WP isa (.block [Impl.MlKem.Arm.ptrTo .r0 .r8 so, Impl.MlKem.Arm.ptrTo .r1 .r7 (oP 16), .mov .r2 (.imm (BitVec.ofNat 32 1024))])
+      s fun s' => s'.gpr .r0 = s.gpr .r8 + BitVec.ofNat 32 so ∧ s'.gpr .r1 = s.gpr .r7 + BitVec.ofNat 32 (oP 16) ∧
+        s'.gpr .r2 = BitVec.ofNat 32 1024 := fun s =>
+    WP.mono (copy_setup (by decide) (by decide) hse (by decide) (by decide)) fun _ h => h.2
+  refine RelCT.seq (R := fun (x y : State) => ∀ r ∈ [Reg.r0, .r1, .r2], x.gpr r = y.gpr r)
+    (RelCT.mono (RelCT.wpDep (relct_noMem rfl) fun x y _ => ⟨hw x, hw y⟩) (fun _ _ h => h) ?_)
+    (taint_prog [.r0, .r1, .r2] (fun _ _ h => h) (by native_taint_decide))
+  rintro _ _ ⟨-, x, y, hq, ⟨a0, a1, a2⟩, ⟨c0, c1, c2⟩⟩ r hr
+  obtain ⟨e8, e7⟩ := hQ x y hq
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · rw [a0, c0, e8]
+  · rw [a1, c1, e7]
+  · rw [a2, c2]
+
+omit hP hS in
+/-- The copy of row `r` of the prepared polynomials to `T`. -/
+theorem copyT_ok {σ s : State} (hp : VPre p STK σ) (hne : stackArg σ 0 ≠ 0)
+    (hI : RowI p STK r (fun σ A' _ _ => PIs p STK σ 18 (dotAcc p (sgOf p σ) A' r p.ℓ)) σ s) :
+    WP isa (Impl.MlKem.Arm.copy .r8 (1024 * r) .r7 (oP 16) 1024) s
+      (RowI p STK r (F2 p STK r fun σ => t1Hat (pkOf p σ) r) σ) := by
+  have hk := hF.k; have hl := hF.l
+  obtain ⟨A', cc, h, R, hk5, hw⟩ := hI
+  have vc := hk5.vc
+  have hs := vc.site
+  obtain ⟨-, -, cf, hpol⟩ := hp.cache hne
+  obtain ⟨c0, -, cl, cb⟩ := vc.ck hne
+  have pd : PtrIn (vlay p STK σ) pT 1024 := ⟨rfl, by vsep hF⟩
+  obtain ⟨eb, fb⟩ := hs.addr pd.2 (by decide)
+  have hrk : r < 8 := by omega
+  have e8 : s.gpr .r8 = stackArg σ 0 := vc.r8
+  have esrc : State.addr (stackArg σ 0 + BitVec.ofNat 32 (1024 * r)) =
+      State.addr (stackArg σ 0) + BitVec.ofNat 64 (1024 * r) := addr_add (by
+    have : 1024 * r + 1024 ≤ 1024 * p.k := by omega
+    omega)
+  have hsub : Region.Sub ⟨State.addr (stackArg σ 0) + BitVec.ofNat 64 (1024 * r), 1024⟩ (cacheRV p σ) :=
+    Offset.sub_base _ (by omega)
+  refine WP.seq (WP.mono (copy_setup (sb := .r8) (db := .r7) (so := 1024 * r) (dO := oP 16) (len := 1024)
+    (by decide) (by decide) (enc1024 r hrk) (by decide) (by decide)) fun s₁ ⟨o₁, g0, g1, g2⟩ => ?_)
+  rw [e8] at g0
+  rw [hs.r7] at g1
+  have hdj : Region.Disjoint ⟨State.addr (stackArg σ 0 + BitVec.ofNat 32 (1024 * r)), 1024⟩
+      ⟨State.addr ((vlay p STK σ).ptr (ix pT.1) + BitVec.ofNat 32 pT.2), 1024⟩ := by
+    rw [esrc, eb]
+    exact (c0.sub_left hsub).sub_right (Lay.R_sub (L := vlay p STK σ) (i := 0) (inB_bounds pd.2).2.2)
+  refine WP.mono (copy_loop (by
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 1024 * r) (by omega),
+        Nat.mod_eq_of_lt (by omega)]
+      omega) fb (by decide) (by decide) hdj
+    (by
+      rw [o₁.rd, o₁.wr, esrc]
+      refine Covers.one ⟨cacheRV p σ, List.mem_append_left _ ?_, ?_⟩
+      · rw [vc.rd, hp.rd]
+        exact List.mem_append_right _ (by rw [cacheRdV, ite_eq_right_of_eq_false _ _ (eq_false hne)]; exact List.mem_singleton_self _)
+      · exact Offset.contains_base _ (by omega) (by omega))
+    (by rw [eb, o₁.wr]; exact hs.cwE pd (by decide)) g0 g1 g2) fun s' ⟨cs, rd, wr, sp, fr, hb⟩ => ?_
+  rw [eb] at fr hb
+  rw [esrc, o₁.mem] at hb
+  have k' : Kept ((vlay p STK σ).RL [tri pT 1024]) s s' :=
+    (o₁.kept _).trans ⟨fun r hr _ => cs r hr, sp, rd, wr, fr⟩
+  refine ⟨A', cc, h, R, hk5.keep hF k' (by k5chks hF (Nat.le_of_lt hr)),
+    polyIs_keepW hk5.vc.site.ok k'.frame (by vsep hF) (by decide) rfl hw, ?_⟩
+  have hc : bytesAt s.mem (State.addr (stackArg σ 0) + BitVec.ofNat 64 (1024 * r)) 1024 =
+      bytesAt σ.mem (State.addr (stackArg σ 0) + BitVec.ofNat 64 (1024 * r)) 1024 := by
+    rw [← VG.Proof.MlKem.bytesAt_slice _ _ (show 1024 * r + 1024 ≤ 1024 * p.k by omega),
+      ← VG.Proof.MlKem.bytesAt_slice _ _ (show 1024 * r + 1024 ≤ 1024 * p.k by omega), cb]
+  have := hpol r hr
+  rw [show 4 * Spec.MlDsa.n * r = 1024 * r by simp only [Spec.MlDsa.n], VG.Proof.MlDsa.PreparedKey.public_poly _ _ hr]
+    at this
+  exact VG.Proof.MlDsa.PreparedKey.polyIs_of_copy (hb.trans hc) this
+
+omit hP hF hS hr in
+theorem cmp8_ok (s : State) :
+    WP isa (.block [.cmp .r8 (.imm 0)]) s (· = subFlags s (s.gpr .r8) 0) := by
+  have he : encodable 0 = true := by decide
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, Op2.eval, he, ↓reduceIte,
+    Option.map_some, Option.some.injEq, exists_eq_left']
+
+omit hP hF hS hr in
+theorem eval_cmp8 (s : State) : isa.eval .ne (subFlags s (s.gpr .r8) 0) = some (decide (s.gpr .r8 ≠ 0)) := by
+  show some (!(s.gpr .r8 - 0 == 0)) = _
+  rw [show s.gpr .r8 - 0 = s.gpr .r8 from by simp]
+  by_cases h : s.gpr .r8 = 0
+  · simp [h]
+  · rw [beq_eq_false_iff_ne.mpr h]; simp only [Bool.not_false, Option.some.injEq]; exact (decide_eq_true h).symm
+
+omit hP hF hS hr in
+/-- A branch on `r8` (`cache`), a function of the public data. -/
+theorem ifR8_piece {I J : State → State → Prop} {c e : Prog isa}
+    (hv : ∀ σ s, VPre p STK σ → I σ s → s.gpr .r8 = stackArg σ 0)
+    (hI : ∀ σ s (a b : BitVec 32), I σ s → I σ (subFlags s a b))
+    (hc : VPiece p STK (fun σ s => I σ s ∧ stackArg σ 0 ≠ 0) J c)
+    (he : VPiece p STK (fun σ s => I σ s ∧ stackArg σ 0 = 0) J e) :
+    VPiece p STK I J (.seq (.block [.cmp .r8 (.imm 0)]) (.ite .ne c e)) := by
+  refine ⟨fun σ s hp hs => WP.seq (WP.mono (cmp8_ok s) fun s₁ e₁ => ?_), ?_⟩
+  · subst e₁
+    have h8 := hv σ s hp hs
+    refine WP.ite _ (eval_cmp8 s) (fun hb => hc.ok σ _ hp ⟨hI σ s _ _ hs, ?_⟩) fun hb =>
+      he.ok σ _ hp ⟨hI σ s _ _ hs, ?_⟩
+    · rw [← h8]; exact of_decide_eq_true hb
+    · rw [← h8]; simpa using hb
+  · refine RelCT.seq (R := Rel2 (VPre p STK) (vPub p) fun σ s => ∃ s₀, I σ s₀ ∧ s = subFlags s₀ (s₀.gpr .r8) 0)
+      ?_ (RelCT.ite ?_ ?_ ?_)
+    · refine relInv (I' := fun σ s => ∃ s₀, I σ s₀ ∧ s = subFlags s₀ (s₀.gpr .r8) 0)
+        (fun σ s _ hs => WP.mono (cmp8_ok s) fun s' e => ⟨s, hs, e⟩) ?_
+      exact relct_noMem (by decide)
+    · rintro _ _ ⟨σ₁, σ₂, p₁, p₂, pub, ⟨x, hx, rfl⟩, ⟨y, hy, rfl⟩⟩
+      rw [eval_cmp8, eval_cmp8, hv _ _ p₁ hx, hv _ _ p₂ hy, pub.2.2.2.2.2.2.2.2]
+    · refine RelCT.mono hc.tr (fun _ _ ⟨⟨σ₁, σ₂, p₁, p₂, pub, ⟨x, hx, e₁⟩, ⟨y, hy, e₂⟩⟩, hb⟩ =>
+        ⟨σ₁, σ₂, p₁, p₂, pub, ⟨e₁ ▸ hI _ _ _ _ hx, ?_⟩, ⟨e₂ ▸ hI _ _ _ _ hy, ?_⟩⟩) fun _ _ h => h
+      · subst e₁; rw [eval_cmp8] at hb
+        rw [← hv _ _ p₁ hx]; simpa using hb
+      · subst e₁ e₂; rw [eval_cmp8] at hb
+        rw [← pub.2.2.2.2.2.2.2.2, ← hv _ _ p₁ hx]; simpa using hb
+    · refine RelCT.mono he.tr (fun _ _ ⟨⟨σ₁, σ₂, p₁, p₂, pub, ⟨x, hx, e₁⟩, ⟨y, hy, e₂⟩⟩, hb⟩ =>
+        ⟨σ₁, σ₂, p₁, p₂, pub, ⟨e₁ ▸ hI _ _ _ _ hx, ?_⟩, ⟨e₂ ▸ hI _ _ _ _ hy, ?_⟩⟩) fun _ _ h => h
+      · subst e₁; rw [eval_cmp8] at hb
+        rw [← hv _ _ p₁ hx]; simpa using hb
+      · subst e₁ e₂; rw [eval_cmp8] at hb
+        rw [← pub.2.2.2.2.2.2.2.2, ← hv _ _ p₁ hx]; simpa using hb
+
+omit hP hF hS hr in
+theorem rowI_flags {f : State → (Nat → Nat → Spec.MlDsa.Poly) → Spec.MlDsa.Poly → List (Vector Bool n) → State → Prop}
+    (hf : ∀ σ A' cc h s (a b : BitVec 32), f σ A' cc h s → f σ A' cc h (subFlags s a b))
+    {σ s : State} (a b : BitVec 32) (h : RowI p STK r f σ s) : RowI p STK r f σ (subFlags s a b) := by
+  obtain ⟨A', cc, hh, R, hk5, hw⟩ := h
+  exact ⟨A', cc, hh, R, ⟨hk5.vc.congr (fun _ _ => rfl) rfl rfl rfl rfl, hk5.hh, hk5.hint, hk5.a, hk5.z, hk5.c,
+    hk5.rows, hk5.r11, hk5.gd⟩, hf _ _ _ _ _ a b hw⟩
+
+theorem keyRow_piece :
+    VPiece p STK (RowI p STK r fun σ A' _ _ => PIs p STK σ 18 (dotAcc p (sgOf p σ) A' r p.ℓ))
+      (RowI p STK r (F2 p STK r fun σ => t1Hat (pkOf p σ) r)) (keyRow P r) := by
+  unfold keyRow
+  refine ifR8_piece (fun σ s _ ⟨_, _, _, _, hk5, _⟩ => hk5.vc.r8)
+    (fun σ s a b h => rowI_flags (fun _ _ _ _ _ _ _ h => h) a b h) ⟨fun σ s hp ⟨h, hne⟩ => copyT_ok hF hr hp hne h, ?_⟩
+    (Piece.mono ((t1_piece hP hF hS hr).seq (nttT_piece hP hF hS hr)) (fun _ _ _ h => h.1) fun _ _ _ h => h)
+  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨σ₁, σ₂, _, _, pub, ⟨⟨_, _, _, _, h₁, _⟩, _⟩, ⟨⟨_, _, _, _, h₂, _⟩, _⟩⟩ e₁ e₂
+  refine copyR_tr (Q := fun a b => a = s₁ ∧ b = s₂) (enc1024 r (by have := hF.k; omega)) (fun a b ⟨ea, eb⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
+  subst ea eb
+  exact ⟨by rw [h₁.vc.r8, h₂.vc.r8, pub.2.2.2.2.2.2.2.2], by rw [h₁.vc.site.r7, h₂.vc.site.r7, vlay_pub pub]⟩
+
 theorem row_piece : VPiece p STK (KX p STK p.ℓ true r) (KX p STK p.ℓ true (r + 1)) (row P p r) :=
-  (dot_piece hP hF hS hr).seq ((t1_piece hP hF hS hr).seq ((nttT_piece hP hF hS hr).seq
+  (dot_piece hP hF hS hr).seq ((keyRow_piece hP hF hS hr).seq
     ((mulT_piece hP hF hS hr).seq ((subW_piece hP hF hS hr).seq ((invW_piece hP hF hS hr).seq
-      ((uh_piece hP hF hS hr).seq (sbpW_piece hP hF hS hr)))))))
+      ((uh_piece hP hF hS hr).seq (sbpW_piece hP hF hS hr))))))
 
 end
 

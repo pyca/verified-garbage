@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
+public import VerifiedGarbage.Proof.TripleDes.X86_64.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.FbFinalLit
 
 /-! # Triple DES-CFB64 artifacts on baseline x86-64 -/
 
@@ -16,9 +18,13 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 Impl.TripleDes.X86_64.cfbEncrypt
     stack := 984
     verified := Proof.TripleDes.X86_64.cfbEncrypt_framed },
-  Spec.TripleDes.cfbDecryptApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 Impl.TripleDes.X86_64.cfbDecrypt
+  Spec.TripleDes.cfbEncryptFinalApi.artifact X86_64.target {
+    code := Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 Impl.TripleDes.X86_64.cfbEncryptFinal
     stack := 984
-    verified := Proof.TripleDes.X86_64.cfbDecrypt_framed }]
+    verified := Proof.TripleDes.X86_64.cfbEncryptFinal_framed },
+  Spec.TripleDes.cfbDecryptFinalApi.artifact X86_64.target {
+    code := Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 Impl.TripleDes.X86_64.cfbDecryptFinal
+    stack := 984
+    verified := Proof.TripleDes.X86_64.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.TripleDesCfb.X86_64

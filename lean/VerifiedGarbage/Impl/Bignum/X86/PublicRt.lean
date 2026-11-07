@@ -105,11 +105,6 @@ def select (x d : Nat) (ws : Nat := 8) : Prog isa :=
 def doubleStep (ws : Nat := 8) : Prog isa :=
   .seq double (.seq (reduce ws) (.seq (select 5 4 ws) (.block [.alu .sub .esi (.imm 1)])))
 
-/-- `R² mod M` in number 4: one, doubled `16 B` (`128 W`) times. -/
-def powerTwo : Prog isa :=
-  .seq (setOne 4) (.seq (.block (widthB 0 .esi ++ List.replicate 4 (.alu .add .esi (.reg .esi))))
-    (.loop doubleStep .ne))
-
 /-- `eax = 256 + j B`, the offset of number `j`, from `edx = B`. -/
 def offEax (j : Nat) : List Instr :=
   .mov .eax (.imm (BitVec.ofNat 32 numOff)) :: List.replicate j (.alu .add .eax (.reg .edx))
@@ -173,26 +168,5 @@ def maskOut : Prog isa :=
 def write : Prog isa :=
   .seq (.block (outputArgs ++ slotPtr .esi 2 .edx ++ [.alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)]))
     (.seq reverseBytes (.block [.mov .eax (.mem (sc acceptanceOffset)), .alu .and .eax (.imm 1)]))
-
-/-- The numbers read, the input's acceptance, `-M⁻¹ mod 2³²`, one and `R² mod M`. -/
-def prepare : Prog isa :=
-  .seq (load 0 2 3) <|
-  .seq (load 1 6 7) <|
-  .seq compare <|
-  .seq (.block ([.store (sc acceptanceOffset) .ecx] ++
-    VG.Impl.Mont.X86.Dynamic.setupInverse numOff invOff)) <|
-  .seq (setOne 3) powerTwo
-
-def sized : Prog isa := .seq prepare (.seq exponentiate (.seq maskOut write))
-
-def valid : Prog isa := .seq (.block saveExponent) sized
-
-def checkExponent : Prog isa :=
-  .seq scanExponent (.seq (.block [.alu .cmp .eax (.imm 0)]) (.ite .e failure valid))
-
-def body : Prog isa :=
-  .seq (.block modulusArgs) (.seq (.block modulusCheck) (.ite .e checkExponent failure))
-
-def code : Prog isa := .seq (.block entry) (.seq body (.block restore))
 
 end VG.Impl.Bignum.X86.PublicRt

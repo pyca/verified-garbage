@@ -4,20 +4,23 @@ public import VerifiedGarbage.Impl.MlDsa.X86.Sign.Frag
 public import VerifiedGarbage.Spec.MlDsa
 
 /-!
-# ML-DSA on x86 (32-bit): `vg_mldsa{44,65,87}_sign`
+# ML-DSA on x86 (32-bit): `vg_mldsa{44,65,87}_sign_core`
 
 `sign(sk, mu, rnd, sig, scratch) -> eax`: `ML-DSA.Sign_internal(sk, M′, rnd)`
 (FIPS 204 Algorithm 7) with the message representative `μ` given
 (`Spec.MlDsa.signMu`), for the parameter set `p`, as calls of the
-primitives `P` and the sponge functions (`Frag.lean`). It saves its
-caller's registers in a frame of 16 bytes (`leaf`), keeps `scratch` in
-`esi`, and reads the other arguments from the stack.
+primitives `P` and the sponge functions (`Frag.lean`), shared by
+`vg_mldsa*_sign` and `vg_mldsa*_sign_prepared` (`Entry.lean`), which set the
+word `KEYS` of `scratch` first. It saves its caller's registers in a frame
+of 16 bytes (`leaf`), keeps `scratch` in `esi`, and reads the other
+arguments from the stack.
 
-1. `ρ` (the first 32 bytes of `sk`) to `RS`, the seed of `RejNTTPoly`, and
+1. If `KEYS = 0`, `ŝ₁`, `ŝ₂` and `t̂₀`: the `NTT` of the `BitUnpack` of
+   their pieces of `sk`; otherwise the caller has written them.
+2. `ρ` (the first 32 bytes of `sk`) to `RS`, the seed of `RejNTTPoly`, and
    `Â[r, s] = RejNTTPoly(ρ ‖ s ‖ r)` for the `kℓ` entries, with `OK` the
    AND of the results. If one failed (`OK = 0`), it returns 0 at once.
-2. `ŝ₁`, `ŝ₂` and `t̂₀`: the `NTT` of the `BitUnpack` of their pieces of
-   `sk`; and `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`, with `K ‖ rnd` copied to
+   Otherwise `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`, with `K ‖ rnd` copied to
    `HIN` first.
 3. The rejection sampling loop, at most 814 iterations (`minBounds.sign`),
    with the counter `κ` at `KAP`: the commitment (`y ← ExpandMask(ρ″, κ)`,
@@ -31,7 +34,8 @@ caller's registers in a frame of 16 bytes (`leaf`), keeps `scratch` in
    iterations.
 4. If `OK = 1`: `c̃`, the `BitPack` of `z` and `HintBitPack(h)` to `sig`.
 
-It returns `OK`. Only the calls of `vg_mldsa_rej_ntt_poly` (whose seeds are
+It returns `OK`. Only the branch on `KEYS`, which the contract makes
+public, depends on which caller called it; only the calls of `vg_mldsa_rej_ntt_poly` (whose seeds are
 `ρ` and two indices), and the branch on their results, depend on `ρ`; only
 the calls of `vg_mldsa_sample_in_ball`, and the branch on their results, on
 `c̃`; only the branches on validity checks on which check rejected the iteration
@@ -124,11 +128,16 @@ def decS2 (i : Nat) : Prog isa :=
 def decT0 (i : Nat) : Prog isa :=
   .seq (bitUnpackAt P (bSk (skT0 p i) 416) 4095 4096 (t0P p i)) (nttAt P (t0P p i))
 
-/-- `ŝ₁`, `ŝ₂`, `t̂₀`, and `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`. -/
-def decode : Prog isa :=
-  .seq (seqR (decS1 P p) 0 p.ℓ) (.seq (seqR (decS2 P p) 0 p.k) (.seq (seqR (decT0 P p) 0 p.k)
-    (.seq (copyW SC (bSk 32 32) (sc oHIN 32) 8) (.seq (copyW SC bRnd (sc (oHIN + 32) 32) 8)
-      (shake2 (sc oHIN 64) bMu (sc oMS 64))))))
+/-- `ŝ₁`, `ŝ₂` and `t̂₀`. -/
+def keys : Prog isa := .seq (seqR (decS1 P p) 0 p.ℓ) (.seq (seqR (decS2 P p) 0 p.k) (seqR (decT0 P p) 0 p.k))
+
+/-- `ŝ₁`, `ŝ₂` and `t̂₀`, unless `KEYS` says `scratch` holds them already. -/
+def keysOpt : Prog isa := ifKeysElse (.block []) (keys P p)
+
+/-- `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`, with `K ‖ rnd` copied to `HIN` first. -/
+def rpp : Prog isa :=
+  .seq (copyW SC (bSk 32 32) (sc oHIN 32) 8) (.seq (copyW SC bRnd (sc (oHIN + 32) 32) 8)
+    (shake2 (sc oHIN 64) bMu (sc oMS 64)))
 
 /-! ### An iteration -/
 
@@ -218,15 +227,16 @@ def output : Prog isa :=
   .seq (copyW SC (sc oCT (cLen p)) (bSig 0 (cLen p)) (cLen p / 4)) (.seq (seqR (packZ P p) 0 p.ℓ)
     (hintBitPackAt P (sc (oP 5) (1024 * p.k)) p.ω (bSig (sigH p) (p.ω + p.k))))
 
-/-- Once `Â` is sampled: the private key, the loop, and the signature if the
-loop succeeded. -/
-def rest : Prog isa := .seq (decode P p) (.seq (signLoop P p) (ifOk (output P p)))
+/-- Once `Â` is sampled: `ρ″`, the loop, and the signature if the loop
+succeeded. -/
+def rest : Prog isa := .seq rpp (.seq (signLoop P p) (ifOk (output P p)))
 
-/-- The body: `esi ← scratch`, `OK ← 1`, `Â`, and the rest if every entry
-of `Â` was sampled; then `eax ← OK`. -/
+/-- The body: `esi ← scratch`, the private key's polynomials (`keysOpt`),
+`OK ← 1`, `Â`, and the rest if every entry of `Â` was sampled; then
+`eax ← OK`. -/
 def body : Prog isa :=
-  .seq (.block [.mov .esi (.mem (at_ .esp (20 + 4 * SC)))]) (.seq (.block (st32 oOK 1))
-    (.seq (expandA P p) (.seq (ifOk (rest P p)) (.block [.mov .eax (.mem (at_ .esi oOK))]))))
+  .seq (.block [.mov .esi (.mem (at_ .esp (20 + 4 * SC)))]) (.seq (keysOpt P p) (.seq (.block (st32 oOK 1))
+    (.seq (expandA P p) (.seq (ifOk (rest P p)) (.block [.mov .eax (.mem (at_ .esi oOK))])))))
 
 end
 

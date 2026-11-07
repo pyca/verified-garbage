@@ -34,3 +34,45 @@ jmp 21f
         vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
 }
+
+/// SEED-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 4269 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`.
+///
+/// Contract: `VG.Spec.Seed.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1188 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_seed_ofb_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkcPv//4uEJJQEAACJRCQEi4QkmAQAAIlEJAiLhCScBAAAiUQkDIuEJKAEAACJRCQQieCDwBiJRCQUi0QkFImYUAQAAImwVAQAAIm4WAQAAImoXAQAAInHi3QkCIsGiYdoBAAAi0YEiYdsBAAAi0YIiYdwBAAAi0YMiYd0BAAAi0QkDImHYAQAAItEJBCJh2QEAACFwA=="
+je 20f
+22:
+.base64 "i7dgBAAAi69kBAAAi4doBAAAiYdABAAAi4dsBAAAiYdEBAAAi4dwBAAAiYdIBAAAi4d0BAAAiYdMBAAAi7dgBAAAi69kBAAAi0QkBIn5gcFABAAAugEAAABXUlFQ"
+call {vg_seed_encrypt_blocks}
+.base64 "WFhYWIt8JBSJt2AEAACJr2QEAACLt2AEAACLr2QEAACD/RA="
+jb 23f
+.base64 "i4dABAAAiYdoBAAAi4dEBAAAiYdsBAAAi4dIBAAAiYdwBAAAi4dMBAAAiYd0BAAAiwYzh0AEAACJBotGBDOHRAQAAIlGBItGCDOHSAQAAIlGCItGDDOHTAQAAIlGDIPGEIPtEIm3YAQAAImvZAQAAA=="
+jmp 24f
+23:
+.base64 "i4dABAAAiYdoBAAAi4dEBAAAiYdsBAAAi4dIBAAAiYdwBAAAi4dMBAAAiYd0BAAAifuBw0AEAAA="
+25:
+.base64 "D7YDD7YOMcGIDoPDAYPGAYPtAQ=="
+jne 25b
+.base64 "ibdgBAAAia9kBAAA"
+24:
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "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"
+.p2align 6"#,
+        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+    )
+}

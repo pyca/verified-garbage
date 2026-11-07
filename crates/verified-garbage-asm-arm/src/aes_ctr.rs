@@ -125,3 +125,117 @@ bx lr",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
+
+/// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Ctr.aesFinalContract`. Constant time: only the pointers, `rounds`, `len` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `ctr`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the 88 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_ctr_final(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #72
+add r12, sp, #0
+str lr, [r12, #12]
+ldr lr, [sp, #72]
+str lr, [r12, #0]
+ldr lr, [sp, #76]
+str lr, [r12, #4]
+add lr, sp, #16
+str lr, [r12, #8]
+ldr lr, [sp, #12]
+ldr r12, [sp, #8]
+str r4, [r12, #0]
+str r5, [r12, #4]
+str r6, [r12, #8]
+str r7, [r12, #12]
+str r8, [r12, #16]
+str r9, [r12, #20]
+str r10, [r12, #24]
+str r11, [r12, #28]
+str lr, [r12, #32]
+mov r4, r0
+mov r5, r1
+mov r6, r2
+ldr r8, [sp, #0]
+ldr r10, [sp, #4]
+lsr r12, r8, #4
+and r8, r8, #15
+add r7, r3, r12, lsl #4
+mov lr, r10
+push {{r12, lr}}
+bl {vg_aes_ctr}
+ldr r12, [sp], #8
+cmp r8, #0
+beq 20f
+ldr r12, [sp, #8]
+mov r0, #0
+str r0, [r12, #40]
+str r0, [r12, #44]
+str r0, [r12, #48]
+str r0, [r12, #52]
+mov r0, r4
+mov r1, r5
+mov r2, r6
+add r3, r12, #40
+mov r12, #1
+mov lr, r10
+push {{r12, lr}}
+bl {vg_aes_ctr}
+ldr r12, [sp], #8
+ldr r12, [sp, #8]
+add r0, r12, #40
+mov r6, r7
+mov r7, r8
+22:
+ldrb r9, [r6, #0]
+ldrb r10, [r0, #0]
+eor r9, r9, r10
+strb r9, [r6, #0]
+add r0, r0, #1
+add r6, r6, #1
+subs r7, r7, #1
+bne 22b
+b 21f
+20:
+21:
+ldr r12, [sp, #8]
+ldr r4, [r12, #0]
+ldr r5, [r12, #4]
+ldr r6, [r12, #8]
+ldr r7, [r12, #12]
+ldr r8, [r12, #16]
+ldr r9, [r12, #20]
+ldr r10, [r12, #24]
+ldr r11, [r12, #28]
+ldr lr, [r12, #32]
+add r12, sp, #16
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+add sp, sp, #72
+bx lr",
+        vg_aes_ctr = sym super::aes_ctr::vg_aes_ctr,
+    )
+}

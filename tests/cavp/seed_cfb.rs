@@ -1,6 +1,8 @@
 //! SEED-CFB128: pyca/cryptography's vectors (derived from the AESVS MMT
 //! data, verified against Botan), unmodified under vectors/, truncated and
-//! split (`tests/modes.rs`).
+//! split (`tests/modes.rs`); and, since none is longer than ten blocks and
+//! decryption works on groups of up to sixteen, a message of every vector's
+//! ciphertext, decrypted whole and in pieces, then encrypted back.
 
 #![cfg(any(
     target_arch = "x86",
@@ -47,6 +49,41 @@ fn pyca_vectors() {
         );
     }
     assert_eq!(key_lens, [16; 20]);
+}
+
+/// Every vector's ciphertext, one message of 110 blocks: decrypted whole, in
+/// pieces of each number of blocks up to 33 (across the groups' boundaries),
+/// and encrypted back.
+#[test]
+fn long_message() {
+    let text = crate::vectors::text("vectors/cryptography-seed-cfb/seed-cfb.txt");
+    let get = |record: &str, label: &str| {
+        let line = record.lines().find(|l| l.starts_with(label)).unwrap();
+        unhex(line.split_once(" = ").unwrap().1.trim())
+    };
+    let records: Vec<&str> = text.split("COUNT = ").skip(1).collect();
+    let key = get(records[0], "KEY");
+    let iv: [u8; 16] = get(records[0], "IV").try_into().unwrap();
+    let message: Vec<u8> = records.iter().flat_map(|r| get(r, "CIPHERTEXT")).collect();
+    assert_eq!(message.len(), 16 * 110);
+    let mut whole = message.clone();
+    SeedCfb128Decryptor::new(&key, &iv)
+        .unwrap()
+        .decrypt(&mut whole)
+        .unwrap();
+    for blocks in 1..=33 {
+        let mut pieces = message.clone();
+        let mut d = SeedCfb128Decryptor::new(&key, &iv).unwrap();
+        for piece in pieces.chunks_mut(16 * blocks) {
+            d.decrypt(piece).unwrap();
+        }
+        assert_eq!(pieces, whole, "pieces of {blocks} blocks");
+    }
+    SeedCfb128Encryptor::new(&key, &iv)
+        .unwrap()
+        .encrypt(&mut whole)
+        .unwrap();
+    assert_eq!(whole, message);
 }
 
 #[test]

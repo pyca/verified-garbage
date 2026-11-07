@@ -32,17 +32,4 @@ structure Montgomery (base : BitVec 32) (len w : Nat) (P : State → Prop) (regi
       Keeps (State.addr base) len w o s.mem t.mem ∧ P t ∧
       Frame regions s.mem t.mem ∧ Rest roundClobbers s t
 
-def Montgomery.kernel {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
-    (A : Montgomery base len w P regions) : Kernel base len w P regions :=
-  kernelOfSquare (A.op 6 6 6) A.workspace A.stable (by
-    intro s E M h hp
-    refine WP.mono (A.op_ok s 6 6 6 h.ready hp
-      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
-      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
-      (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)
-      (by rw [h.modulus]; exact h.bound)) ?_
-    rintro t ⟨ready, modulus, bound, value, keeps, pt, frame, rest⟩
-    rw [h.modulus] at modulus bound value
-    exact ⟨ready, modulus, bound, value, keeps, pt, frame, rest⟩)
-
 end VG.Proof.Bignum.Arm.TwoExp

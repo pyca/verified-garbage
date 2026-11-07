@@ -9,5 +9,13 @@ repository.workspace = true
 publish.workspace = true
 build = false
 
+[features]
+# Links `std`, so that the CPU features are detected at run time on every
+# target: on AArch64, by asking the operating system (`src/detect.rs`).
+std = []
+# Lets `VG_CPU_FEATURES` restrict the features detected (`src/detect.rs`):
+# the library's `cpu-features-env`.
+env = ["std"]
+
 [lints]
 workspace = true

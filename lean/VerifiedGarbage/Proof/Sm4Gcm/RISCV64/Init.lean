@@ -62,7 +62,7 @@ theorem init_kc {s₀ s₁ : State} (h : initRISCV64.pre s₀) (h1 : IS1 s₀ s�
   obtain ⟨hrd, hwr, dkc, -, -, fk, fc, -, ⟨spal, spge, bK, bC, -, -⟩, -, -⟩ := h
   have hC : Covers [⟨s₀.gpr .a1, 256⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   have hsp := h1.keeps.sp
-  have hs : Region.Sub (below s₀.sp 3168) (below s₀.sp 3232) := below_le (by decide) (by decide)
+  have hs : Region.Sub (below s₀.sp 3168) (below s₀.sp 3248) := below_le (by decide) (by decide)
   refine ⟨h1.a0, h1.a1, dkc.sub_right (Region.sub_prefix (by decide)), fk, by omega, by rw [hsp]; exact spal,
     by rw [hsp]; omega, by rw [hsp]; exact bK.sub_left hs,
     by rw [hsp]; exact (bC.sub_left hs).sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩
@@ -101,8 +101,8 @@ theorem initArgs_ok {C W : Addr} {s : State} (h29 : s.gpr .s2 = C) (h31 : s.gpr 
 encrypted from the counter block `T`. -/
 theorem init_cc {C W : Addr} {s : State} (dcs : (⟨C, 256⟩ : Region).Disjoint ⟨W, 2560⟩)
     (fc : C.toNat + 256 ≤ 2 ^ 64) (fs : W.toNat + 2560 ≤ 2 ^ 64) (hW : Covers [⟨W, 2560⟩] s.wr)
-    (hC : Covers [⟨C, 256⟩] s.wr) (spal : s.sp.toNat % 16 = 0) (spge : 3232 ≤ s.sp.toNat)
-    (bC : (below s.sp 3232).Disjoint ⟨C, 256⟩) (bS : (below s.sp 3232).Disjoint ⟨W, 2560⟩)
+    (hC : Covers [⟨C, 256⟩] s.wr) (spal : s.sp.toNat % 16 = 0) (spge : 3248 ≤ s.sp.toNat)
+    (bC : (below s.sp 3248).Disjoint ⟨C, 256⟩) (bS : (below s.sp 3248).Disjoint ⟨W, 2560⟩)
     (a3 : s.gpr .a0 = C) (a5 : s.gpr .a1 = W + BitVec.ofNat 64 96) (a6 : s.gpr .a2 = C + BitVec.ofNat 64 240)
     (a7 : s.gpr .a3 = BitVec.ofNat 64 1) :
     CtrCall s C (W + BitVec.ofNat 64 96) (C + BitVec.ofNat 64 240) 1 := by
@@ -137,7 +137,7 @@ theorem init_wp {s₀ : State} (h : initRISCV64.pre s₀) :
     fun h₁ => ((dcs.sub_left (Offset.sub_base _ h₁)).sub_right (Offset.sub_base _ (by decide))).symm
   have sC0 : (savedR (s₀.gpr .a2)).Disjoint ⟨s₀.gpr .a1, 128⟩ :=
     (dcs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide)) |>.symm
-  have sB : ∀ {k : Nat}, k ≤ 3232 → (savedR (s₀.gpr .a2)).Disjoint (below s₀.sp k) := fun hk =>
+  have sB : ∀ {k : Nat}, k ≤ 3248 → (savedR (s₀.gpr .a2)).Disjoint (below s₀.sp k) := fun hk =>
     ((bS.sub_left (below_le hk (by decide))).sub_right (Offset.sub_base _ (by decide))).symm
   have kW : ∀ {d k : Nat}, d + k ≤ 2560 →
       (⟨s₀.gpr .a1, 128⟩ : Region).Disjoint ⟨s₀.gpr .a2 + BitVec.ofNat 64 d, k⟩ :=
@@ -145,7 +145,7 @@ theorem init_wp {s₀ : State} (h : initRISCV64.pre s₀) :
   have kC : (⟨s₀.gpr .a1, 128⟩ : Region).Disjoint ⟨s₀.gpr .a1 + BitVec.ofNat 64 240, 16⟩ := by
     simpa using Offset.disjoint (s₀.gpr .a1) (d := 0) (n := 128) (e := 240) (k := 16)
       (.inl (by decide)) (by decide) (by omega)
-  have kB : (⟨s₀.gpr .a1, 128⟩ : Region).Disjoint (below s₀.sp 3232) :=
+  have kB : (⟨s₀.gpr .a1, 128⟩ : Region).Disjoint (below s₀.sp 3248) :=
     (bC.sub_right (Region.sub_prefix (by decide))).symm
   refine WP.seq (WP.mono (is1_wp h) fun s₁ h1 => ?_)
   refine WP.seq (WP.mono (key_call (init_kc h h1)) fun s₂ kp => ?_)

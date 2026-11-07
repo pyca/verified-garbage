@@ -12,74 +12,11 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ed448::{
-    VG_ED448_PUBLIC_KEY_SHA3_FEATURES, VG_ED448_SIGN_CACHED_SHA3_FEATURES,
-    VG_ED448_VERIFY_SHA3_FEATURES, vg_ed448_public_key_sha3, vg_ed448_sign_cached_sha3,
-    vg_ed448_verify_sha3,
+use crate::arch::dispatch::ed448::{
+    vg_ed448_public_key_auto, vg_ed448_sign_cached_auto, vg_ed448_verify_auto,
 };
-use crate::arch::ed448::{vg_ed448_public_key, vg_ed448_sign_cached, vg_ed448_verify};
 use crate::error::InvalidSignature;
-#[cfg(not(target_arch = "x86_64"))]
-use crate::hashes::sha3::Backend;
 use crate::zeroize::zeroize;
-
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ed448::{
-    VG_ED448_PUBLIC_KEY_ADX_FEATURES, VG_ED448_SIGN_CACHED_ADX_FEATURES,
-    VG_ED448_VERIFY_ADX_FEATURES, vg_ed448_public_key_adx, vg_ed448_sign_cached_adx,
-    vg_ed448_verify_adx,
-};
-
-#[cfg(target_arch = "x86_64")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Backend {
-    Scalar,
-    Adx,
-}
-
-#[cfg(target_arch = "x86_64")]
-impl Backend {
-    fn select(features: verified_garbage_cpu::Features) -> Self {
-        if features.contains(
-            const {
-                verified_garbage_cpu::Features::all(&[
-                    VG_ED448_PUBLIC_KEY_ADX_FEATURES,
-                    VG_ED448_SIGN_CACHED_ADX_FEATURES,
-                    VG_ED448_VERIFY_ADX_FEATURES,
-                ])
-            },
-        ) {
-            Self::Adx
-        } else {
-            Self::Scalar
-        }
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-fn backend() -> Backend {
-    Backend::select(crate::cpu::detected())
-}
-
-/// The implementation to call: the Keccak implementation the SHA-3
-/// functions use, if the CPU has the features of every instance calling it.
-#[cfg(not(target_arch = "x86_64"))]
-fn backend() -> Backend {
-    #[cfg(target_arch = "aarch64")]
-    if !crate::cpu::detected().contains(
-        const {
-            verified_garbage_cpu::Features::all(&[
-                VG_ED448_PUBLIC_KEY_SHA3_FEATURES,
-                VG_ED448_SIGN_CACHED_SHA3_FEATURES,
-                VG_ED448_VERIFY_SHA3_FEATURES,
-            ])
-        },
-    ) {
-        return Backend::Scalar;
-    }
-    Backend::detected()
-}
 
 /// The longest context RFC 8032 allows.
 pub const MAX_CONTEXT_LEN: usize = 255;
@@ -148,19 +85,12 @@ impl VerifyingKey {
     ) -> Result<(), InvalidSignature> {
         let signature: &[u8; 114] = signature.try_into().map_err(|_| InvalidSignature)?;
         let mut scratch = [0u64; 1024];
-        let verify = match backend() {
-            Backend::Scalar => vg_ed448_verify,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_ed448_verify_adx,
-            #[cfg(target_arch = "aarch64")]
-            Backend::Sha3 => vg_ed448_verify_sha3,
-        };
         // SAFETY: the input references are valid for their declared lengths,
         // and scratch is a distinct writable object. No object overlaps the
-        // call's stack or wraps the address space. Backend selection checks
-        // the generated CPU feature requirements.
+        // call's stack or wraps the address space. The dispatcher calls only
+        // an implementation the CPU has the features of.
         let valid = unsafe {
-            verify(
+            vg_ed448_verify_auto(
                 &self.bytes,
                 context.as_ptr(),
                 context.len(),
@@ -209,16 +139,9 @@ impl SigningKey {
         // SAFETY: the output, seed, and scratch are distinct objects valid for
         // 57, 57, and 8192 bytes, respectively, so they overlap neither each
         // other nor the call's stack, and none wraps the address space.
-        // Backend selection checks the generated CPU feature requirements.
-        unsafe {
-            match backend() {
-                Backend::Scalar => vg_ed448_public_key(&mut public, seed, &mut scratch),
-                #[cfg(target_arch = "x86_64")]
-                Backend::Adx => vg_ed448_public_key_adx(&mut public, seed, &mut scratch),
-                #[cfg(target_arch = "aarch64")]
-                Backend::Sha3 => vg_ed448_public_key_sha3(&mut public, seed, &mut scratch),
-            }
-        };
+        // The dispatcher calls only an implementation the CPU has the
+        // features of.
+        unsafe { vg_ed448_public_key_auto(&mut public, seed, &mut scratch) };
         zeroize(&mut scratch);
         Self {
             seed: *seed,
@@ -264,21 +187,14 @@ impl SigningKey {
 fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) -> [u8; 114] {
     let mut signature = [0u8; 114];
     let mut scratch = [0u64; 1024];
-    let sign = match backend() {
-        Backend::Scalar => vg_ed448_sign_cached,
-        #[cfg(target_arch = "x86_64")]
-        Backend::Adx => vg_ed448_sign_cached_adx,
-        #[cfg(target_arch = "aarch64")]
-        Backend::Sha3 => vg_ed448_sign_cached_sha3,
-    };
     // SAFETY: the input references are valid for their declared lengths.
     // Signature and scratch are distinct writable objects, disjoint from the
     // inputs and the call's stack. None wraps the address space. pk is seed's
     // public key (`SigningKey::sign` passes the one `from_seed` derived), and
-    // the context is at most 255 bytes long (the callers check it). Backend
-    // selection checks the generated CPU feature requirements.
+    // the context is at most 255 bytes long (the callers check it). The
+    // dispatcher calls only an implementation the CPU has the features of.
     unsafe {
-        sign(
+        vg_ed448_sign_cached_auto(
             &mut signature,
             seed,
             pk,
@@ -291,36 +207,4 @@ fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) 
     };
     zeroize(&mut scratch);
     signature
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{Backend, backend};
-    #[cfg(target_arch = "x86_64")]
-    use super::{
-        VG_ED448_PUBLIC_KEY_ADX_FEATURES, VG_ED448_SIGN_CACHED_ADX_FEATURES,
-        VG_ED448_VERIFY_ADX_FEATURES,
-    };
-
-    #[test]
-    fn backends() {
-        let _ = backend();
-        #[cfg(target_arch = "x86_64")]
-        {
-            use verified_garbage_cpu::{Features, feature};
-            assert_eq!(Backend::select(Features(0)), Backend::Scalar);
-            assert_eq!(Backend::select(Features(feature::BMI2)), Backend::Scalar);
-            assert_eq!(Backend::select(Features(feature::ADX)), Backend::Scalar);
-            assert_eq!(
-                Backend::select(Features::all(&[
-                    VG_ED448_PUBLIC_KEY_ADX_FEATURES,
-                    VG_ED448_SIGN_CACHED_ADX_FEATURES,
-                    VG_ED448_VERIFY_ADX_FEATURES,
-                ])),
-                Backend::Adx
-            );
-        }
-        #[cfg(not(target_arch = "x86_64"))]
-        assert_eq!(backend(), Backend::detected());
-    }
 }

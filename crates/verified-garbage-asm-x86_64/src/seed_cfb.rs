@@ -47,12 +47,120 @@ jmp 21f
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_seed_cfb128_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
+        r#".base64 "SI2kJPj5//9JieBJg8AITYnBSYmZwAUAAEmJqcgFAABNiaHQBQAATYmp2AUAAE2JseAFAABNibnoBQAASIsGSYmB8AUAAEiLRghJiYH4BQAASIXJ"
+je 20f
+.base64 "SInISIPoAUjB4ARIAdBIixhIiR5Ii1gISIleCA=="
+jmp 21f
+20:
+21:
+.base64 "SYnUSYnNSIsHSYmBQAUAAEiLRwhJiYFIBQAASItHEEmJgVAFAABIi0cYSYmBWAUAAEiLRyBJiYFgBQAASItHKEmJgWgFAABIi0cwSYmBcAUAAEiLRzhJiYF4BQAASItHQEmJgYAFAABIi0dISYmBiAUAAEiLR1BJiYGQBQAASItHWEmJgZgFAABIi0dgSYmBoAUAAEiLR2hJiYGoBQAASItHcEmJgbAFAABIi0d4SYmBuAUAAE2F7Q=="
+je 22f
+24:
+.base64 "SLkQAAAAAAAAAEmD/RA="
+jb 25f
+jmp 26f
+25:
+.base64 "TInp"
+26:
+.base64 "SYup8AUAAEmJqUAEAABJi6n4BQAASYmpSAQAAEyJyEgFUAQAAEyJ40iD6QE="
+je 27f
+29:
+.base64 "SIsrSIkoSItrCEiJaAhIg8AQSIPDEEiD6QE="
+jne 29b
+jmp 28f
+27:
+28:
+.base64 "SIsrSYmp8AUAAEiLawhJian4BQAAZk0PbuFmTQ9u7GZND271TInPSIHHQAUAAEyJzkiBxkAEAABIuhAAAAAAAAAATInJ"
+call {vg_seed_encrypt_blocks}
+.base64 "Zk0PfuFmTQ9+7GZND371SLkQAAAAAAAAAEmD/RA="
+jb 210f
+jmp 211f
+210:
+.base64 "TInp"
+211:
+.base64 "TInISAVABAAATInjSYnK"
+212:
+.base64 "SIsoSDMrSIkrSItoCEgzawhIiWsISIPAEEiDwxBIg+kB"
+jne 212b
+.base64 "SYncTSnV"
+jne 24b
+jmp 23f
+22:
+23:
+.base64 "SYuZwAUAAEmLqcgFAABNi6HQBQAATYup2AUAAE2LseAFAABNi7noBQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEyJnCQIBAAATImcJBAEAABMiZwkGAQAAEyJnCQgBAAATImcJCgEAABMiZwkMAQAAEyJnCQ4BAAATImcJEAEAABMiZwkSAQAAEyJnCRQBAAATImcJFgEAABMiZwkYAQAAEyJnCRoBAAATImcJHAEAABMiZwkeAQAAEyJnCSABAAATImcJIgEAABMiZwkkAQAAEyJnCSYBAAATImcJKAEAABMiZwkqAQAAEyJnCSwBAAATImcJLgEAABMiZwkwAQAAEyJnCTIBAAATImcJNAEAABMiZwk2AQAAEyJnCTgBAAATImcJOgEAABMiZwk8AQAAEyJnCT4BAAATImcJAAFAABMiZwkCAUAAEyJnCQQBQAATImcJBgFAABMiZwkIAUAAEyJnCQoBQAATImcJDAFAABMiZwkOAUAAEyJnCRABQAATImcJEgFAABMiZwkUAUAAEyJnCRYBQAATImcJGAFAABMiZwkaAUAAEyJnCRwBQAATImcJHgFAABMiZwkgAUAAEyJnCSIBQAATImcJJAFAABMiZwkmAUAAEyJnCSgBQAATImcJKgFAABMiZwksAUAAEyJnCS4BQAATImcJMAFAABMiZwkyAUAAEyJnCTQBQAATImcJNgFAABMiZwk4AUAAEyJnCToBQAATImcJPAFAABMiZwk+AUAAEyJnCQABgAASI2kJAgGAADD"
+.p2align 6"#,
+        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+    )
+}
+
+/// SEED-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 4269 §2) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`.
+///
+/// Contract: `VG.Spec.Seed.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 1552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_seed_cfb128_encrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
         r#".base64 "SI2kJPj5//9JieBJg8AITYnBSYmZwAUAAEmJqcgFAABNiaHQBQAATYmp2AUAAE2JseAFAABNibnoBQAAZkwPbv5JidRJic1IiwdJiYFABQAASItHCEmJgUgFAABIi0cQSYmBUAUAAEiLRxhJiYFYBQAASItHIEmJgWAFAABIi0coSYmBaAUAAEiLRzBJiYFwBQAASItHOEmJgXgFAABIi0dASYmBgAUAAEiLR0hJiYGIBQAASItHUEmJgZAFAABIi0dYSYmBmAUAAEiLR2BJiYGgBQAASItHaEmJgagFAABIi0dwSYmBsAUAAEiLR3hJiYG4BQAAZkwPfvhIiyhJialABAAASItoCEmJqUgEAABNhe0="
 je 20f
 22:
 .base64 "Zk0PbuFmTQ9u7GZND271TInPSIHHQAUAAEyJzkiBxkAEAABIuhAAAAAAAAAATInJ"
 call {vg_seed_encrypt_blocks}
-.base64 "Zk0PfuFmTQ9+7GZND371SYsEJEkzgUAEAABJiQQkSYtEJAhJM4FIBAAASYlEJAhJi4FABAAASTMEJEmJgUAEAABJi4FIBAAASTNEJAhJiYFIBAAASYPEEEmD7QE="
+.base64 "Zk0PfuFmTQ9+7GZND371SYP9EA=="
+jb 23f
+.base64 "SYsEJEkzgUAEAABJiQQkSYtEJAhJM4FIBAAASYlEJAhJiwQkSYmBQAQAAEmLRCQISYmBSAQAAEmDxBBJg+0Q"
+jmp 24f
+23:
+.base64 "TInISAVABAAA"
+25:
+.base64 "RA+2EEEPtgwkTDHRQYgMJEiDwAFJg8QBSYPtAQ=="
+jne 25b
+24:
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "ZkwPfvhJi6lABAAASIkoSYupSAQAAEiJaAhJi5nABQAASYupyAUAAE2LodAFAABNi6nYBQAATYux4AUAAE2LuegFAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEyJnCQIAgAATImcJBACAABMiZwkGAIAAEyJnCQgAgAATImcJCgCAABMiZwkMAIAAEyJnCQ4AgAATImcJEACAABMiZwkSAIAAEyJnCRQAgAATImcJFgCAABMiZwkYAIAAEyJnCRoAgAATImcJHACAABMiZwkeAIAAEyJnCSAAgAATImcJIgCAABMiZwkkAIAAEyJnCSYAgAATImcJKACAABMiZwkqAIAAEyJnCSwAgAATImcJLgCAABMiZwkwAIAAEyJnCTIAgAATImcJNACAABMiZwk2AIAAEyJnCTgAgAATImcJOgCAABMiZwk8AIAAEyJnCT4AgAATImcJAADAABMiZwkCAMAAEyJnCQQAwAATImcJBgDAABMiZwkIAMAAEyJnCQoAwAATImcJDADAABMiZwkOAMAAEyJnCRAAwAATImcJEgDAABMiZwkUAMAAEyJnCRYAwAATImcJGADAABMiZwkaAMAAEyJnCRwAwAATImcJHgDAABMiZwkgAMAAEyJnCSIAwAATImcJJADAABMiZwkmAMAAEyJnCSgAwAATImcJKgDAABMiZwksAMAAEyJnCS4AwAATImcJMADAABMiZwkyAMAAEyJnCTQAwAATImcJNgDAABMiZwk4AMAAEyJnCToAwAATImcJPADAABMiZwk+AMAAEyJnCQABAAATImcJAgEAABMiZwkEAQAAEyJnCQYBAAATImcJCAEAABMiZwkKAQAAEyJnCQwBAAATImcJDgEAABMiZwkQAQAAEyJnCRIBAAATImcJFAEAABMiZwkWAQAAEyJnCRgBAAATImcJGgEAABMiZwkcAQAAEyJnCR4BAAATImcJIAEAABMiZwkiAQAAEyJnCSQBAAATImcJJgEAABMiZwkoAQAAEyJnCSoBAAATImcJLAEAABMiZwkuAQAAEyJnCTABAAATImcJMgEAABMiZwk0AQAAEyJnCTYBAAATImcJOAEAABMiZwk6AQAAEyJnCTwBAAATImcJPgEAABMiZwkAAUAAEyJnCQIBQAATImcJBAFAABMiZwkGAUAAEyJnCQgBQAATImcJCgFAABMiZwkMAUAAEyJnCQ4BQAATImcJEAFAABMiZwkSAUAAEyJnCRQBQAATImcJFgFAABMiZwkYAUAAEyJnCRoBQAATImcJHAFAABMiZwkeAUAAEyJnCSABQAATImcJIgFAABMiZwkkAUAAEyJnCSYBQAATImcJKAFAABMiZwkqAUAAEyJnCSwBQAATImcJLgFAABMiZwkwAUAAEyJnCTIBQAATImcJNAFAABMiZwk2AUAAEyJnCTgBQAATImcJOgFAABMiZwk8AUAAEyJnCT4BQAATImcJAAGAABIjaQkCAYAAMM="
+.p2align 6"#,
+        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+    )
+}
+
+/// SEED-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 4269 §2) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`.
+///
+/// Contract: `VG.Spec.Seed.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 1552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_seed_cfb128_decrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPj5//9JieBJg8AITYnBSYmZwAUAAEmJqcgFAABNiaHQBQAATYmp2AUAAE2JseAFAABNibnoBQAAZkwPbv5JidRJic1IiwdJiYFABQAASItHCEmJgUgFAABIi0cQSYmBUAUAAEiLRxhJiYFYBQAASItHIEmJgWAFAABIi0coSYmBaAUAAEiLRzBJiYFwBQAASItHOEmJgXgFAABIi0dASYmBgAUAAEiLR0hJiYGIBQAASItHUEmJgZAFAABIi0dYSYmBmAUAAEiLR2BJiYGgBQAASItHaEmJgagFAABIi0dwSYmBsAUAAEiLR3hJiYG4BQAAZkwPfvhIiyhJialABAAASItoCEmJqUgEAABNhe0="
+je 20f
+22:
+.base64 "Zk0PbuFmTQ9u7GZND271TInPSIHHQAUAAEyJzkiBxkAEAABIuhAAAAAAAAAATInJ"
+call {vg_seed_encrypt_blocks}
+.base64 "Zk0PfuFmTQ9+7GZND371SYP9EA=="
+jb 23f
+.base64 "SYsEJEkzgUAEAABJiQQkSYtEJAhJM4FIBAAASYlEJAhJi4FABAAASTMEJEmJgUAEAABJi4FIBAAASTNEJAhJiYFIBAAASYPEEEmD7RA="
+jmp 24f
+23:
+.base64 "TInISAVABAAA"
+25:
+.base64 "RA+2EEEPtgwkTDHRQYgMJEiDwAFJg8QBSYPtAQ=="
+jne 25b
+24:
 jne 22b
 jmp 21f
 20:

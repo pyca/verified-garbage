@@ -340,22 +340,40 @@ def chain223 (z : Nat) : Prog isa :=
   .seq (sqn T6 T6 2) <| .seq (mul T6 T6 T0) <|        -- z^(2^222 - 1)
   .seq (sqn R T6 1) (mul R R z)                       -- z^(2^223 - 1)
 
+/-- Load the saved return address before the chain overwrites product scratch.
+The chain preserves `t2`. -/
+def chain223Shared : Prog isa :=
+  .seq (.block [.load .d .t2 .a3 ACC]) (chain223 Z2)
+
+/-- Share the fixed addition chain using existing product scratch to save `ra`.
+No stack or additional scratch is needed. -/
+def chain223Call : Prog isa :=
+  .seq (.block [.store .d .ra .a3 ACC])
+    (.seq (.call "vg_x448_chain223" chain223Shared) (.block [.addi .ra .t2 0]))
+
 /-- From `chain223 Z2`: `[R] = [Z2]^(p - 2)`. -/
 def invTail : Prog isa :=
   .seq (sqn R R 225) <| .seq (sqn T6 T6 2) <| .seq (mul T6 T6 Z2) (mul R R T6)
 
 /-- `[R] = [Z2]^(p-2)`. -/
-def invert : Prog isa := .seq (chain223 Z2) invTail
+def invert : Prog isa := .seq chain223Call invTail
 
 /-- What follows the setup. -/
 def tail : Prog isa :=
   .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq invert <| .seq (mul X2 X2 R) (.block freeze)
 
-def x448 : Prog isa := .seq (.block (align ++ setup)) tail
+/-- Both entry points call the same ladder and inversion. The last doubleword
+of the aligned 2048-byte working area holds the caller's return address;
+the tail's field area and scalar bits end before it. No stack is used. -/
+def tailCall : Prog isa :=
+  .seq (.block [.store .d .ra .a3 2040])
+    (.seq (.call "vg_x448_tail" tail) (.block [.load .d .ra .a3 2040]))
+
+def x448 : Prog isa := .seq (.block (align ++ setup)) tailCall
 
 /-- `vg_x448_base(out = a0, scalar = a1, scratch = a2)`: the working space into
 `a3`, as `vg_x448` has it, and `vg_x448` with the base point's u-coordinate, 5,
 written instead of read (`setupBase`). -/
-def x448Base : Prog isa := .seq (.block ([.addi .a3 .a2 0] ++ align ++ setupBase)) tail
+def x448Base : Prog isa := .seq (.block ([.addi .a3 .a2 0] ++ align ++ setupBase)) tailCall
 
 end VG.Impl.X448.RISCV64.R64

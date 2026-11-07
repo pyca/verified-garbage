@@ -4,8 +4,7 @@
 // Verified code writes the representation and its metadata: the Rust neither
 // recognizes groups nor derives an exponent width from private bytes.
 
-use super::arithmetic::Backend;
-use crate::cpu::detected;
+use crate::arch::dispatch::ffdh::vg_ffdh_generate_key_precompute_auto;
 use alloc::sync::Arc;
 
 /// Canonical `VG.Spec.Ffdh.generationPrecompute` words shared by every clone.
@@ -14,30 +13,14 @@ pub(super) struct Precomputed(Arc<[u64]>);
 
 impl Precomputed {
     pub(super) fn new(domain: &[u8], p_len: usize, scratch: &mut [u64]) -> Self {
-        Self::new_with_backend(domain, p_len, scratch, Backend::ffdh(detected()))
-    }
-
-    pub(super) fn new_with_backend(
-        domain: &[u8],
-        p_len: usize,
-        scratch: &mut [u64],
-        backend: Backend,
-    ) -> Self {
         let mut words = alloc::vec![0; 3 + 34 * p_len.div_ceil(8)];
-        let f = match backend {
-            Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_precompute,
-            #[cfg(target_arch = "arm")]
-            Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_precompute_umaal,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_precompute_adx,
-        };
         // SAFETY: the domain was accepted by vg_ffdh_check_domain. Its
         // length is 2*p_len or 3*p_len, p_len is in 64..=1024, words has
         // exactly 3+34*ceil(p_len/8) entries and scratch has at least
-        // 16*p_len+32 words. These are disjoint Rust allocations. Backend
-        // selection ensures the CPU has the generated function's features.
+        // 16*p_len+32 words. These are disjoint Rust allocations. The
+        // dispatcher calls only an implementation the CPU has the features of.
         let ok = unsafe {
-            f(
+            vg_ffdh_generate_key_precompute_auto(
                 words.as_mut_ptr(),
                 words.len(),
                 domain.as_ptr(),

@@ -5,7 +5,11 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Impl.Dsa.X86_64.Prevalidated
+public import VerifiedGarbage.Impl.Dsa.X86_64.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.DomainChecked
 public import VerifiedGarbage.Proof.Dsa.Contract
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
@@ -42,6 +46,17 @@ structure Backend where
   deriveSp : (Generate.deriveKey sq mul).all (fun i => !isa.writesSp i) = true
   parametersDepth : (Generate.checkParameters sq mul).x86_64Depth ≤ stack
   deriveDepth : (Generate.deriveKey sq mul).x86_64Depth ≤ stack
+  prevalidatedSignVerified : Verified target (PrevalidatedSign.sign sq mul)
+    (signContractWith Spec.Dsa.validatePrivateKeyBytes abi stack)
+  prevalidatedSignSp : (PrevalidatedSign.sign sq mul).all (fun i => !isa.writesSp i) = true
+  prevalidatedSignDepth : (PrevalidatedSign.sign sq mul).x86_64Depth ≤ stack
+  validatePrivateVerified : Verified target (PrevalidatedSign.validate sq mul)
+    (Spec.Dsa.validatePrivateKeyContract abi stack)
+  validatePrivateSp : (PrevalidatedSign.validate sq mul).all (fun i => !isa.writesSp i) = true
+  deriveCheckedVerified : Verified target (Generate.deriveChecked sq mul)
+    (Spec.Dsa.deriveKeyDomainCheckedContract abi stack)
+  deriveCheckedSp : (Generate.deriveChecked sq mul).all (fun i => !isa.writesSp i) = true
+  deriveCheckedDepth : (Generate.deriveChecked sq mul).x86_64Depth ≤ stack
   stackBound : stack < 2 ^ 32
 
 end VG.Proof.Dsa.X86_64

@@ -3,16 +3,11 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.VerifyKeyRow
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.CachedVerify
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyCallPre
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedTop
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Verified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
-import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedHintPack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowEnd
@@ -56,10 +51,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRel
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRoots
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifySat
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyCorrect
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
@@ -68,7 +61,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesFourTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesTwo
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesBall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
@@ -76,6 +68,16 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedPre
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
+import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
+import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyPre
 
 section
 
@@ -204,48 +206,6 @@ structure Piece (p : Params) (S : Nat) (I J : State → State → Prop) (c : Pro
   ok : ∀ σ s, vPre p S σ → I σ s → WP isa c s (J σ)
   tr : RelCT isa (RootPair p S I) c fun _ _ => True
 
-section
-variable {p : Params} {S : Nat} {I J K : State → State → Prop}
-
-theorem Piece.seq {c₁ c₂ : Prog isa} (h₁ : Piece p S I J c₁) (h₂ : Piece p S J K c₂) :
-    Piece p S I K (.seq c₁ c₂) :=
-  ⟨fun σ s hp hs => WP.seq (WP.mono (h₁.ok σ s hp hs) fun s' h => h₂.ok σ s' hp h),
-    RelCT.seq (rootPair_progress h₁.ok h₁.tr) h₂.tr⟩
-
-theorem Piece.mono {c : Prog isa} {I' J' : State → State → Prop} (h : Piece p S I J c)
-    (hI : ∀ σ s, vPre p S σ → I' σ s → I σ s) (hJ : ∀ σ s, vPre p S σ → J σ s → J' σ s) :
-    Piece p S I' J' c :=
-  ⟨fun σ s hp hs => WP.mono (h.ok σ s hp (hI σ s hp hs)) fun s' h => hJ σ s' hp h,
-    RelCT.mono h.tr (fun _ _ ⟨⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩,et⟩ => ⟨⟨σ₁, σ₂, p₁, p₂, pub, hI _ _ p₁ i₁, hI _ _ p₂ i₂⟩,et⟩)
-      fun _ _ h => h⟩
-
-theorem Piece.seqR {f : Nat → Prog isa} {I : Nat → State → State → Prop} :
-    ∀ (n a : Nat), (∀ k, a ≤ k → k < a + n → Piece p S (I k) (I (k + 1)) (f k)) →
-      Piece p S (I a) (I (a + n)) (seqR f a n)
-  | n, a, h =>
-    ⟨fun σ s hp hs => seqR_ok (I := fun k => I k σ) n a (fun k h₁ h₂ s hs => (h k h₁ h₂).ok σ s hp hs) s hs,
-      RelCT.mono (seqR_tr (Q := fun k => RootPair p S (I k)) n a fun k h₁ h₂ => rootPair_progress (h k h₁ h₂).ok (h k h₁ h₂).tr)
-        (fun _ _ h => h) fun _ _ _ => trivial⟩
-
-theorem Piece.ifOk {c : Prog isa} {T : State → Prop} [DecidablePred T]
-    (hx : ∀ σ s, vPre p S σ → I σ s → s.gpr .x24 = if T σ then 1 else 0)
-    (hT : ∀ σ₁ σ₂, vPre p S σ₁ → vPre p S σ₂ → vPub p S σ₁ σ₂ → (T σ₁ ↔ T σ₂))
-    (ht : Piece p S (fun σ s => I σ s ∧ T σ) J c) (he : ∀ σ s, vPre p S σ → I σ s → ¬ T σ → J σ s) :
-    Piece p S I J (ifOk c) := by
-  have ev : ∀ σ s, vPre p S σ → I σ s → isa.eval (.nonzero .x .x24) s = some (decide (T σ)) := fun σ s hp hs => by
-    rw [eval24, hx σ s hp hs]; by_cases h : T σ <;> simp [h]
-  refine ⟨fun σ s hp hs => WP.ite (decide (T σ)) (ev σ s hp hs) (fun hb => ht.ok σ s hp ⟨hs, of_decide_eq_true hb⟩)
-    fun hb => WP.block_nil (he σ s hp hs (of_decide_eq_false hb)), relIte ?_ ?_ ?_⟩
-  · rintro x y ⟨⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩,et⟩
-    rw [ev σ₁ x p₁ h₁, ev σ₂ y p₂ h₂, decide_eq_decide.mpr (hT σ₁ σ₂ p₁ p₂ pub)]
-  · refine RelCT.mono ht.tr (fun x y ⟨⟨⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩,et⟩, hc⟩ => ?_) fun _ _ h => h
-    rw [ev σ₁ x p₁ h₁] at hc
-    have t₁ : T σ₁ := of_decide_eq_true (Option.some.inj hc)
-    exact ⟨⟨σ₁, σ₂, p₁, p₂, pub, ⟨h₁, t₁⟩, h₂, (hT σ₁ σ₂ p₁ p₂ pub).mp t₁⟩,et⟩
-  · exact RelCT.block_nil fun _ _ _ => trivial
-
-end
-
 theorem Piece.of_vpiece {p : Params} {S : Nat} {I J : State→State→Prop} {c : Prog isa}
     (h : VPiece p S I J c) : Piece p S I J c :=
   ⟨h.ok, h.tr.mono (fun _ _ h=>h.1) (fun _ _ h=>h)⟩
@@ -298,7 +258,6 @@ theorem vcall2_piece {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
   exact RelCT.seq (VTwo.step (fun _ _ h => h.1)
     (rej2At_tr (nm := nm) C (vOk p) hc (fun _ _ h => ⟨h.1.lx,h.1.ly,h.2,h.1.same⟩))
     (fun x y h => ⟨ok x h.1.lx,ok y h.1.ly⟩)) tail
-
 
 end VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
 end
@@ -405,36 +364,6 @@ end
 
 end
 
-section
-
-section
-
-namespace VG.Proof.MlDsa.AArch64.Verify.Optimized
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Verify
-open VG.Proof.MlDsa.AArch64.KeyGen
-
-/-- All arithmetic uses the same Montgomery factor until the inverse removes
-it; packed output is identical to the canonical verification algorithm. -/
-theorem row_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p)
-    {σ s : State} (hp : vPre p S σ) {h : List (Vector Bool n)} {A' : Nat→Nat→Poly}
-    {c0 : Poly} {q : Bool} {r : Nat} (hr : r<p.k)
-    (hs : SC p S σ h A' c0 q p.ℓ true r s) :
-    WP isa (Impl.MlDsa.AArch64.Verify.Optimized.row P p r) s (SC p S σ h A' c0 q p.ℓ true (r+1)) := by
-  unfold Impl.MlDsa.AArch64.Verify.Optimized.row
-  refine WP.seq (WP.mono (dot_ok hF hp hr hs) fun s ⟨hs,hw⟩=>?_)
-  refine WP.seq (WP.mono (unpack_ok hP hF hp hr hs hw) fun s ⟨hs,hw,ht⟩=>?_)
-  refine WP.seq (WP.mono (nttT_ok hF hp hr hs hw ht) fun s ⟨hs,hw,ht⟩=>?_)
-  refine WP.seq (WP.mono (product_ok hF hp hr hs hw ht) fun s ⟨hs,hw,ht⟩=>?_)
-  refine WP.seq (WP.mono (subtract_ok hF hp hr hs hw ht) fun s ⟨hs,hw⟩=>?_)
-  refine WP.seq (WP.mono (inverse_ok hF hp hr hs hw) fun s ⟨hs,hw⟩=>?_)
-  exact hintPack_ok hF hp hr hs hw
-
-end VG.Proof.MlDsa.AArch64.Verify.Optimized
-end
-
-end
-
 -- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedVectors.lean`, which only this module imported.
 section
 
@@ -466,14 +395,6 @@ theorem nttZ_vector_tr {p : Params} (hF : VFacts p) {S : Nat} :
       (seqR (fun i=>Impl.MlDsa.AArch64.Verify.Optimized.forward (zP p i)) 0 p.ℓ)
       (RootPair p S (SCx p S p.ℓ false 0)) := by
   simpa only [Nat.zero_add] using seqR_tr (Q:=fun i=>RootPair p S (SCx p S i false 0)) p.ℓ 0 fun i _ hi=>nttZ_tr hF (by omega)
-
-theorem rows_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p)
-    {σ s : State} (hp : vPre p S σ) (hs : SCx p S p.ℓ true 0 σ s) :
-    WP isa (seqR (Impl.MlDsa.AArch64.Verify.Optimized.row P p) 0 p.k) s
-      (SCx p S p.ℓ true p.k σ) := by
-  simpa only [Nat.zero_add] using seqR_ok (I:=fun r=>SCx p S p.ℓ true r σ) p.k 0
-    (fun r _ hr s ⟨h,A,c,q,hs⟩=>WP.mono (row_ok hP hF hp (by omega) hs)
-      fun t ht=>⟨h,A,c,q,ht⟩) s hs
 
 end VG.Proof.MlDsa.AArch64.Verify.Optimized
 end
@@ -712,47 +633,6 @@ theorem hintPack_tr {p : Params} (hF : VFacts p) {S r : Nat} (hr : r<p.k) :
     H.same.pa (show Reg.x28∈bases from by decide),H.same.pa (show Reg.x28∈bases from by decide),
     H.same.pa (show Reg.x28∈bases from by decide),H.same.2⟩
 
-theorem row_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p)
-    {r : Nat} (hr : r<p.k) :
-    RelCT isa (RootPair p S (SCx p S p.ℓ true r)) (Impl.MlDsa.AArch64.Verify.Optimized.row P p r)
-      (RootPair p S (SCx p S p.ℓ true (r+1))) := by
-  exact (dot_tr hF hr).seq ((unpack_tr hP hF hr).seq ((nttT_tr hF hr).seq
-    ((product_tr hF hr).seq ((subtract_tr hF hP.s64 hr).seq
-      ((inverse_tr hF hr).seq (hintPack_tr hF hr))))))
-end VG.Proof.MlDsa.AArch64.Verify.Optimized
-end
-
-end
-
--- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedCompute.lean`, which only this module imported.
-section
-
-section
-
-namespace VG.Proof.MlDsa.AArch64.Verify.Optimized
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Verify
-open VG.Impl.MlDsa.AArch64.Call (seqR)
-open VG.Proof.MlDsa.AArch64.KeyGen
-variable {keccak : Proof.Sha3.AArch64.Permutation}
-
-theorem compute_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p) :
-    Piece p S (fun σ s=>VB p σ s ∧ Sign.StaticRoots S s) (VFin p)
-      (Impl.MlDsa.AArch64.Verify.Optimized.computeWith keccak.callee P p) := by
-  unfold Impl.MlDsa.AArch64.Verify.Optimized.computeWith
-  refine Piece.seq (J:=SCx p S p.ℓ false 0) ?_ (Piece.seq (J:=SCx p S p.ℓ true 0) ?_
-    (Piece.seq (J:=SCx p S p.ℓ true p.k) ?_ (Piece.of_vpiece (finish_vpiece hP.s16 hP.s64 hF))))
-  · refine ⟨fun σ s hp hs=>nttZ_vector_ok hF hp (vb_sc hs.1 hs.2),?_⟩
-    exact (nttZ_vector_tr hF).mono
-      (fun _ _ ⟨⟨σ,τ,hσ,hτ,pub,ix,iy⟩,et⟩=>⟨⟨σ,τ,hσ,hτ,pub,vb_sc ix.1 ix.2,vb_sc iy.1 iy.2⟩,et⟩)
-      (fun _ _ _=>trivial)
-  · refine ⟨fun σ s hp ⟨h,A,c,q,hs⟩=>WP.mono (nttC_ok hF hp hs) fun t ht=>⟨h,A,c,q,ht⟩,?_⟩
-    exact (nttC_tr hF).mono (fun _ _ h=>h) (fun _ _ _=>trivial)
-  · refine ⟨fun σ s hp hs=>rows_ok hP hF hp hs,?_⟩
-    have ht := seqR_tr (Q:=fun r=>RootPair p S (SCx p S p.ℓ true r)) p.k 0
-      fun r _ hr=>row_tr hP hF (by omega)
-    exact ht.mono (fun _ _ h=>h) (fun _ _ _=>trivial)
-
 end VG.Proof.MlDsa.AArch64.Verify.Optimized
 end
 
@@ -784,248 +664,7 @@ theorem zOne_depth {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params) (i : Na
   have hd : DLe (S/16) (zOne P p i) := by unfold zOne;dle_tac
   have := hd.le;omega
 
-theorem body_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p) :
-    Piece p S (fun σ s=>(VC p σ s ∧ s.gpr .x24=1) ∧ Sign.StaticRoots S s) (VFin p)
-      (Impl.MlDsa.AArch64.Verify.Optimized.bodyWith keccak.callee P p) := by
-  unfold Impl.MlDsa.AArch64.Verify.Optimized.bodyWith
-  refine (Piece.of_vpiece (OptimizedSamples.rooted_piece (hint_vpiece hP hF) (hint_depth hP p) hP.s64)).seq
-    (Piece.ifOk (T:=fun σ=>(hintOf p σ).isSome=true) (fun _ _ _ h=>h.1.2.1)
-      (fun _ _ _ _ pub=>by rw [hintOf,hintOf,(vPub_eq pub).2.2.2.1]) ?_ ?_)
-  · refine Piece.seq (J:=fun σ s=>Z0 p p.ℓ σ s ∧ Sign.StaticRoots S s) ?_
-      (Piece.ifOk (T:=fun σ=>normOk p σ p.ℓ) (fun _ _ _ h=>h.1.2)
-        (fun _ _ _ _ pub=>by simp only [normOk,zOf,(vPub_eq pub).2.2.2.1]) ?_ ?_)
-    · refine Piece.mono (Piece.seqR (I:=fun j σ s=>Z0 p j σ s ∧ Sign.StaticRoots S s) p.ℓ 0
-        fun j _ hj=>Piece.of_vpiece (OptimizedSamples.rooted_piece (zOne_vpiece hP hF (by omega))
-          (zOne_depth hP p j) hP.s64)) ?_ ?_
-      · intro σ s _ ⟨⟨⟨hv,hx,hH⟩,roots⟩,ht⟩
-        refine ⟨⟨⟨hv,?_,fun _ h=>absurd h (Nat.not_lt_zero _)⟩,?_⟩,roots⟩
-        · obtain ⟨hh,e⟩:=Option.isSome_iff_exists.mp ht
-          exact ⟨hh,e,hH hh e⟩
-        · rw [hx];exact flag_congr (iff_of_true ht (normOk_zero p σ))
-      · intro _ _ _ h;simpa only [Nat.zero_add] using h
-    · refine (Piece.of_vpiece (OptimizedSamples.samples_rooted_vpiece hP hF)).seq (compute_piece hP hF) |>.mono ?_ (fun _ _ _ h=>h)
-      intro _ _ _ ⟨⟨hz,roots⟩,hn⟩
-      exact ⟨⟨hz,hn⟩,roots⟩
-    · intro σ s _ ⟨h,roots⟩ hn
-      refine ⟨h.1.vc,.inr ⟨by rw [h.2];exact ifn hn _ _,?_⟩⟩
-      obtain ⟨hh,e,_⟩:=h.1.hint
-      exact Proof.MlDsa.Verify.verifyMu_norm minBounds _ _ e
-        (by rw [Proof.MlDsa.Verify.normR_vZ_iff hF.g1.2.1 p hF.g1.1];exact hn)
-  · intro σ s _ ⟨h,roots⟩ hn
-    refine ⟨h.1,.inr ⟨by rw [h.2.1];exact ifn hn _ _,?_⟩⟩
-    show verifyMu p minBounds _ _ _ ≠ some true
-    rw [Proof.MlDsa.Verify.verifyMu_hint_none minBounds _ _ (Option.not_isSome_iff_eq_none.mp hn)]
-    nofun
-
 end VG.Proof.MlDsa.AArch64.Verify.Optimized
-end
-
-end
-
--- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedPre.lean`, which only this module imported.
-section
-
-section
-
-namespace VG.Proof.MlDsa.AArch64.Verify.Optimized
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Proof.MlDsa.AArch64.Sign (StaticRoots signRootConsts)
-open VG.Proof.MlDsa.AArch64.Optimized
-
-def rootRegions (s : State) : List Region :=
-  [⟨s.syms "VG_MLDSA_NTT_EXPANDED",3904⟩,⟨s.syms "VG_MLDSA_INV_FOLDED",3904⟩]
-
-theorem entry {p : Params} {S : Nat} {s : State} (hS : 0<S)
-    (h : (verifyContract p (abi.withConsts signRootConsts) S).pre s) :
-    vPre p S s ∧ StaticRoots S s := by
-  obtain ⟨N,rfl⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_gt hS)
-  sig_pre [verifyContract,verifySig,abi,argRegs,Abi.withConsts,Sign.signRootConsts_eq,
-    Abi.constRegions,Abi.constsHeld,TableConstants.staticNttWords_length,
-    InverseTable.expandedWords_length,stackBelow,List.range,List.range.loop] at h
-  obtain ⟨hsp,hd,hf,hi,hff,hfw,hfs,hif,hiw,his,hfa,hia,ht,hw,d1,d2,d3,
-    k1,k2,k3,k4,n1,n2,n3,n4⟩ := h
-  have hrd : s.rd=vInputs p s++rootRegions s := by
-    rw [←List.take_append_drop (s.rd.length-2) s.rd,ht,hd]
-    rfl
-  refine ⟨⟨?_,fun r hr=>by rw [hrd]; exact List.mem_append_left _ hr⟩,
-    ⟨⟨hf,hff,?_,hfw,?_,hfa⟩,⟨hi,hif,?_,hiw,?_,hia⟩⟩⟩
-  · sig_pre [verifyContract,verifySig,abi,argRegs,List.range,List.range.loop]
-    exact ⟨hsp,rfl,hw,d1,d2,d3,k1,k2,k3,k4,n1,n2,n3,n4⟩
-  · apply Covers.one
-    exact ⟨⟨s.syms "VG_MLDSA_NTT_EXPANDED",3904⟩,by rw [hrd]; simp [rootRegions],Region.contains_self _ _⟩
-  · exact hfs
-  · apply Covers.one
-    exact ⟨⟨s.syms "VG_MLDSA_INV_FOLDED",3904⟩,by rw [hrd]; simp [rootRegions],Region.contains_self _ _⟩
-  · exact his
-
-end VG.Proof.MlDsa.AArch64.Verify.Optimized
-end
-
-end
-
--- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedContract.lean`, which only this module imported.
-section
-
-section
-
-namespace VG.Proof.MlDsa.AArch64.Verify.Optimized
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Proof.MlDsa.AArch64.Sign (Ok3 StaticRoots RootSymbolsEq signRootConsts)
-
-/-- Internal proof boundary retains the original verifier semantics and adds
-only the immutable transform tables and their public addresses. -/
-def verifyK (p : Params) (S : Nat) : Contract isa where
-  pre s := vPre p S s ∧ StaticRoots S s
-  post := (verifyContract p abi S).post
-  pub s t := vPub p S s t ∧ RootSymbolsEq s t
-
-theorem shared_pub {p : Params} {S : Nat} {s t : State}
-    (h : (verifyContract p (abi.withConsts signRootConsts) S).pub s t) :
-    vPub p S s t ∧ RootSymbolsEq s t := by
-  sig_pub [verifyContract,verifySig,abi,argRegs,Abi.withConsts,Sign.signRootConsts_eq] at h
-  obtain ⟨hsp,hf,hi,hb,h0,h1,h2,h3⟩ := h
-  refine ⟨?_,hf,hi⟩
-  unfold vPub
-  sig_pub [verifyContract,verifySig,abi,argRegs]
-  exact ⟨hsp,hb,h0,h1,h2,h3⟩
-
-theorem verifyK_implies {p : Params} (hp : Ok3 p) :
-    (verifyK p 16).Implies (verifyContract p (abi.withConsts signRootConsts) 16) where
-  pre := fun _ h=>entry (by decide) h
-  post := by
-    sig_implies_post [verifyK,verifyContract,verifySig,abi,argRegs,Abi.withConsts]
-  pub := fun _ _ _ _ h=>shared_pub h
-  sat := ⟨verifySat p,verify_sat hp⟩
-
-end VG.Proof.MlDsa.AArch64.Verify.Optimized
-end
-
-end
-
--- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedVerified.lean`, which only this module imported.
-section
-
-section
-
-namespace VG.Proof.MlDsa.AArch64.Verify.Optimized
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Impl.MlDsa.AArch64.KeyGen
-open VG.Proof.MlDsa.AArch64.KeyGen
-variable {keccak : Proof.Sha3.AArch64.Permutation}
-
-theorem verify_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p) :
-    Piece p S (fun σ s=>s=σ ∧ Sign.StaticRoots S s)
-      (fun σ s=>abiPreserved σ s ∧ (verifyContract p abi S).post σ s)
-      (Impl.MlDsa.AArch64.Verify.Optimized.verifyWith keccak.callee P p) := by
-  unfold Impl.MlDsa.AArch64.Verify.Optimized.verifyWith
-  exact (Piece.of_vpiece (OptimizedSamples.rooted_piece (pro_vpiece hF)
-    (by change 0≤S;omega) hP.s64)).seq
-    ((body_piece hP hF).seq (Piece.of_vpiece (epi_vpiece hF)))
-
-/-- Exact optimized verification under the unchanged public algorithm,
-with only the two immutable artifact tables supplied by the ABI. -/
-theorem verify_verified {P : Prims} (hP : PrimsOk P 16) {p : Params}
-    (hp : p=mlDsa44∨p=mlDsa65∨p=mlDsa87) :
-    Verified target (Impl.MlDsa.AArch64.Verify.Optimized.verifyWith keccak.callee P p)
-      (verifyContract p (abi.withConsts Sign.signRootConsts) 16) := by
-  apply Verified.of_correct (k:=verifyK p 16)
-  · intro σ h
-    exact (verify_piece hP (vfacts hp)).ok σ σ h.1 ⟨rfl,h.2⟩
-  · intro s t ts tt u v hs ht pub es et
-    exact ((verify_piece hP (vfacts hp)).tr _ _ _ _ _ _
-      ⟨⟨s,t,hs.1,ht.1,pub.1,⟨rfl,hs.2⟩,⟨rfl,ht.2⟩⟩,pub.2⟩ es et).1
-  · exact verifyK_implies hp
-
-end VG.Proof.MlDsa.AArch64.Verify.Optimized
-end
-
-end
-
--- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedDepth.lean`, which only this module imported.
-section
-
-section
-
-namespace VG.Proof.MlDsa.AArch64.Verify.Optimized
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Impl.MlDsa.AArch64.KeyGen
-open VG.Proof.MlDsa.AArch64.KeyGen
-open VG.Proof.MlDsa.AArch64.Message
-
-/-- The selected arithmetic kernels have no nested stack frame; only the
-existing sponge calls need the 16-byte stack reservation. -/
-theorem verify_dle (v : Proof.Sha3.AArch64.Permutation) {P : Prims}
-    (hP : PrimsOk P 16) (p : Params) :
-    DLe 1 (Impl.MlDsa.AArch64.Verify.Optimized.verifyWith v.callee P p) := by
-  obtain ⟨ha,hpad,hs⟩ := keccak_dle v
-  have hh := DLe.of_fd hP.hintUnpack.fd
-  have hu := DLe.of_fd hP.bitUnpack.fd
-  have ht := DLe.of_fd hP.unpackT1.fd
-  have hnorm := DLe.of_fd hP.normLt.fd
-  have hsample := DLe.of_fd (OptimizedSamples.samples_depth hP p)
-  have hn := DLe.of_fd (VG.Proof.MlDsa.AArch64.Optimized.positiveNtt_callee 16).fd
-  have hi := DLe.of_fd (VG.Proof.MlDsa.AArch64.Optimized.Inverse.inverseSingle_callee 16).fd
-  have hd : DLe 1 (Impl.MlDsa.AArch64.Optimized.MontDot.dot p.ℓ) := by
-    unfold Impl.MlDsa.AArch64.Optimized.MontDot.dot
-    dle_tac
-  have hm : DLe 1 Impl.MlDsa.AArch64.Optimized.MontProduct.code := by
-    unfold Impl.MlDsa.AArch64.Optimized.MontProduct.code
-    dle_tac
-  have hsub : DLe 1 (Impl.MlDsa.AArch64.Optimized.AddSub.code true) := by
-    unfold Impl.MlDsa.AArch64.Optimized.AddSub.code
-    dle_tac
-  have hpack : DLe 1 Impl.MlDsa.AArch64.Optimized.UseHintPack.prog := by
-    unfold Impl.MlDsa.AArch64.Optimized.UseHintPack.prog
-      Impl.MlDsa.AArch64.Round.zext Impl.MlDsa.AArch64.Round.onGamma
-      Impl.MlDsa.AArch64.Optimized.UseHintPack.code
-    dle_tac
-  unfold Impl.MlDsa.AArch64.Verify.Optimized.verifyWith
-    Impl.MlDsa.AArch64.Verify.Optimized.bodyWith
-    Impl.MlDsa.AArch64.Verify.Optimized.computeWith
-  repeat' (first
-    | with_reducible assumption
-    | (apply DLe.call; with_reducible assumption)
-    | apply DLe.seq
-    | apply DLe.ite
-    | apply DLe.loop
-    | (apply DLe.seqR; intro)
-    | apply DLe.block)
-
-/-- Every standard optimized raw verifier fits the existing stack budget,
-for either verified Keccak permutation. -/
-theorem verifyWith_dle (v : Proof.Sha3.AArch64.Permutation) (p : Params) :
-    DLe 1 (Impl.MlDsa.AArch64.Verify.Optimized.verifyWith v.callee (primsWith v.callee) p) :=
-  verify_dle v (KeyGen.prims_okWith (keccak:=v)) p
-
-end VG.Proof.MlDsa.AArch64.Verify.Optimized
-end
-
-end
-
--- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Optimized/RootedCachedVerifyVerified.lean`, which only this module imported.
-section
-
-section
-
-namespace VG.Proof.MlDsa.AArch64.Optimized.RootedCachedVerify
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Proof.MlDsa.AArch64.Message
-open VG.Impl.MlDsa.AArch64.Message
-open VG.Impl.MlDsa.AArch64.Optimized
-open VG.Proof.MlDsa.AArch64.Sign (signRootConsts)
-
-/-- Cached-key message verification with both immutable transform tables,
-original public leakage, and the unchanged cached-digest semantics. -/
-theorem verifyMessage_verified (v : Proof.Sha3.AArch64.Permutation)
-    {p : Params} {n : String} {c : Prog isa}
-    (hV : Message.OptimizedVerify.VerifyFn p c) (hp : p ∈ params) :
-    Verified AArch64.target (verifyMessageCached v.callee n c p)
-      (verifyMessageCachedContract p (abi.withConsts signRootConsts) 16) := by
-  refine ⟨fun _ h=>let ⟨tr,t,he,ha,hq⟩:=verifyMessageCached_wp v hV hp h;⟨tr,t,he,ha,hq⟩,
-    verifyMessage_ct v hV hp,verifySat p,verify_sat ?_⟩
-  simpa only [Sign.Ok3,params,List.mem_cons,List.not_mem_nil,or_false] using hp
-
-end VG.Proof.MlDsa.AArch64.Optimized.RootedCachedVerify
 end
 
 end
@@ -1123,7 +762,6 @@ theorem keyRow_optimized_tr {c : Impl.Sha3.AArch64.Callee} (hpaired : c.pairedSh
         (fun _ _ _ => trivial)
       rintro x y ⟨⟨⟨⟨σ, τ, ps, pt, pub, hx, hy⟩, roots⟩, _⟩, _⟩
       exact ⟨⟨σ, τ, ps, pt, pub, hx.1, hy.1⟩, roots⟩
-
 
 theorem optimized_sc_top {p : Params} {S j r : Nat} {cn : Bool} {σ s : State}
     (h : Verify.Optimized.SCx p S j cn r σ s) : VG.Proof.MlDsa.AArch64.KeyGen.Top σ s := by
@@ -1447,7 +1085,6 @@ theorem ScalarCachePiece.seqR {p : Params} {S : Nat} {f : Nat → Prog isa}
     have tail := ScalarCachePiece.seqR n (a + 1) (fun k h1 h2 => h k (by omega) (by omega))
     rw [show a + 1 + n = a + (n + 1) by omega] at tail
     exact (h a (Nat.le_refl _) (by omega)).seq tail
-
 
 theorem compute_scalar_piece (v : Proof.Sha3.AArch64.Permutation) (hpaired : v.callee.pairedSha3 = false)
     {P : Prims} (hP : PrimsOk P 16) {p : Params} (hF : VFacts p) :
@@ -1810,38 +1447,10 @@ namespace VG.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 open VG VG.AArch64 VG.Spec.MlDsa
 open VG.Proof.MlDsa.AArch64.Verify.Optimized
 
-/-- The feature-selected raw verifier shared by all public wrappers. -/
-def selectedCode (v : Proof.Sha3.AArch64.Permutation) (p : Params) : Prog isa :=
-  if v.callee.pairedSha3 then
-    Impl.MlDsa.AArch64.Verify.Optimized.verifyWith v.callee (Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p
-  else Impl.MlDsa.AArch64.Verify.verifyWith v.callee (Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p
-
 def selectedConsts (v : Proof.Sha3.AArch64.Permutation) : List (String × List (BitVec 64)) :=
   if v.callee.pairedSha3 then Sign.signRootConsts else []
 
 def selectedAbi (v : Proof.Sha3.AArch64.Permutation) : Abi isa :=
   abi.withConsts (selectedConsts v)
-
-theorem selected_verify_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Sign.Ok3 p) :
-    Verified target (selectedCode v p) (verifyContract p (selectedAbi v) 16) := by
-  unfold selectedCode selectedAbi selectedConsts
-  split
-  · exact Optimized.verify_verified (keccak:=v) (KeyGen.prims_okWith (keccak:=v)) hp
-  · exact Verify.verify_verified (keccak:=v) (KeyGen.prims_okWith (keccak:=v)) p hp (Verify.verify_sat p hp)
-
-theorem optimizedVerifyFn (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Sign.Ok3 p) :
-    Message.OptimizedVerify.VerifyFn p
-      (Impl.MlDsa.AArch64.Verify.Optimized.verifyWith v.callee (Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p) :=
-  ⟨Optimized.verify_verified (keccak:=v) (KeyGen.prims_okWith (keccak:=v)) hp,verifyWith_dle v p⟩
-
-theorem selected_cached_message_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Sign.Ok3 p)
-    (n : String) :
-    Verified target (Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee n (selectedCode v p) p)
-      (verifyMessageCachedContract p (selectedAbi v) 16) := by
-  have hm : p∈Message.params := by simpa only [Sign.Ok3,Message.params,List.mem_cons,List.not_mem_nil,or_false] using hp
-  unfold selectedCode selectedAbi selectedConsts
-  split
-  · exact VG.Proof.MlDsa.AArch64.Optimized.RootedCachedVerify.verifyMessage_verified v (optimizedVerifyFn v hp) hm
-  · exact VG.Proof.MlDsa.AArch64.Optimized.CachedVerify.verifyMessage_verified v (Message.verifyFn v hm) hm
 
 end VG.Proof.MlDsa.AArch64.Verify.OptimizedSelected

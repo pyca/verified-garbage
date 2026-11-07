@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Entry
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SearchInit
+public import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 
 /-! # The search's results, and the whole search's correctness, stack and calling convention -/
 
@@ -219,14 +219,21 @@ private theorem controller_instrs (p : Instr → Bool) (c : Prog isa)
   simp only [VG.Impl.Bignum.X86_64.seqs, Code.allInstrs, hc, Bool.and_true] at hp ⊢
   exact hp
 
+private theorem controller_ctlC (c : Prog isa) (hp : ctlC (code (.block [])) = true) (hc : ctlC c = true) :
+    ctlC (code c) = true := by
+  unfold code iteration candidateRun at hp ⊢
+  simp only [VG.Impl.Bignum.X86_64.seqs, ctlC, hc, Bool.and_true] at hp ⊢
+  exact hp
+
 theorem candidateCall_sp (v : RoundImpl) : (candidateCall v).all (fun i => !isa.writesSp i) = true :=
   sharedCandidate_sp v
 
 theorem searchCode_sp (v : RoundImpl) : (searchCode v).all (fun i => !isa.writesSp i) = true :=
   controller_all _ _ (by decide +kernel) (candidateCall_sp v)
 
-theorem searchCode_mx (v : RoundImpl) : (searchCode v).allInstrs (fun i => !loadsMxcsr i) = true :=
-  controller_instrs _ _ (by decide +kernel) (sharedCandidate_mx v)
+/-- The search loads MXCSR only where the round restores it. -/
+theorem searchCode_ctlC (v : RoundImpl) : ctlC (searchCode v) = true :=
+  controller_ctlC _ (by decide +kernel) (sharedCandidate_ctl v)
 
 theorem searchCode_depth (v : RoundImpl) : (searchCode v).x86_64Depth ≤ stackUse := by
   have hc := sharedCandidate_depth v
@@ -253,6 +260,6 @@ theorem search_return_address (v : RoundImpl) {s t : State} {tr : List Leak}
 theorem search_correct (v : RoundImpl) (s : State) (h : searchContract.pre s) :
     ∃ tr t, Exec isa (searchCode v) s tr t ∧ abiPreserved s t ∧ searchContract.post s t := by
   obtain ⟨tr, t, he, hp, hg⟩ := search_correct_ok v h
-  exact ⟨tr, t, he, abiPreserved_of_exec (searchCode_mx v) he ⟨hg, search_return_address v h he⟩, hp⟩
+  exact ⟨tr, t, he, abiPreserved_of_ctl (ctlOk_of_ctlC (searchCode_ctlC v)) he ⟨hg, search_return_address v h he⟩, hp⟩
 
 end VG.Proof.RsaKeyGen.X86_64.Search

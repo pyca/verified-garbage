@@ -8,7 +8,8 @@ description: "Use when adding or changing an implementation chosen by CPU featur
 A primitive with implementations for different CPU features is tested (and
 benchmarked) end to end in each configuration, never through a special API:
 the `cpu-features-env` Cargo feature lets `VG_CPU_FEATURES` restrict the
-features detected (see `src/cpu.rs`). CI tests each configuration that
+features detected (see
+`crates/verified-garbage-cpu/src/detect.rs`). CI tests each configuration that
 chooses differently on a CPU that has those features: the runner's, or one
 Intel SDE presents (`rust-cpu-features` in `ci.yml`, whose CPUs are the
 `cpu` entries of `ci/rust_matrix.toml`; SDE runs the SHA

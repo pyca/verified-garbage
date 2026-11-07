@@ -486,7 +486,7 @@ def expLoop (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (sl
 
 /-! ### The exponentiation by windows of 5 bits
 
-`expLoop5`: `Y := Y³² T_v` for each 5 bits `v` of the exponent, from its
+`expLoop5S`: `Y := Y³² T_v` for each 5 bits `v` of the exponent, from its
 top, after `2 len mod 5` zero bits that make its `8 len` bits a whole
 number of windows, with the table of the 32 powers. The exponent's bits not
 yet in a window are kept at the top of `sV`, `b` of them (in `sBit`), and a
@@ -548,14 +548,10 @@ def expLoop5S (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (sel : Li
     .mov .rdx (.mem (ws .rax slotLen)), .store (hdr sExpLen) .rdx, .mov32 .rdx (.imm 0), .store (hdr sI) .rdx]] ++
   tabBuildN mul 30 ++ [.block padInit, .loop (seqs (expWin5 sq mul sel)) .ne]
 
-/-- `expLoop5S` with the squarings by `mul`. -/
-def expLoop5 (mul : Nat → Nat → Nat → Prog isa) (sel : List (Prog isa)) (slotPtr slotLen : Nat) :
-    List (Prog isa) := expLoop5S (mul aY aY aY) mul sel slotPtr slotLen
-
 /-! ## The primes -/
 
 /-- `q`: `m_q = c^dQ mod q` into `q`'s `aY`, by the exponentiation `ex`
-(`expLoop mul sel` or `expLoop5 mul sel`). -/
+(`expLoop mul sel` or `expLoop5S sq mul sel`). -/
 def qPhase (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : List (Prog isa) :=
   gPow mul sWsQ ++ [.block [enterQ]] ++ redc mul aY ++ copyArr aY aXc ++ [.block [leave], mul aY aXm aY,
     .block [enterQ]] ++ redc mul aY ++ ex sDq sQlen ++ [mul aY aY aOne, .block [leave]]
@@ -593,7 +589,7 @@ def main (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Pr
   seqs (nSetup mul ++ primesSetup ++ checks ++ qPhase mul ex ++ pPhase mul ex ++ finish)
 
 /-- `vg_rsa_private_crt`, with the multiplication `mul` and the
-exponentiation `ex` (`expLoop mul tabSelect`, or `expLoop5 mul tabSelectV`
+exponentiation `ex` (`expLoop mul tabSelect`, or `expLoop5S sq mul tabSelectV`
 with AVX2). -/
 def code (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : Prog isa :=
   .seq (.block (entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))

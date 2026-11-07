@@ -6,10 +6,16 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Rsa.X86.KeySelect
-import VerifiedGarbage.Proof.Bignum.X86.ExportTruncated
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Bignum.X86.StoreBE
+import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Bignum.X86.ExportBE
+import VerifiedGarbage.Proof.Bignum.ReadPrefix
+import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Masked native key output preserves every other array and header word -/
 

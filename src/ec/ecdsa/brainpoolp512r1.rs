@@ -11,12 +11,10 @@
 
 use super::table::{HmacHash, SignFn, sign_with};
 use super::{SignatureHash, sealed};
+use crate::arch::dispatch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_verify_auto;
 use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign;
-use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_verify;
 #[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_brainpoolp512r1::{
-    vg_ecdsa_brainpoolp512r1_sign_umaal, vg_ecdsa_brainpoolp512r1_verify_umaal,
-};
+use crate::arch::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign_umaal;
 use crate::cpu::detected;
 use crate::ec::BrainpoolP512r1;
 use crate::ec::brainpoolp512r1::Mul;
@@ -29,33 +27,20 @@ fn verify_with(
     signature: &[u8; 128],
 ) -> Result<(), InvalidSignature> {
     let mut scratch = [0u64; 1024];
-    let ok = match Mul::select(detected()) {
-        // SAFETY: `q` is valid for reads of 129 bytes, `digest` of `digest.len()`,
-        // `signature` of 128 and `scratch` for reads and writes of 8192; `scratch`
-        // is a distinct object from the others, so it overlaps neither them nor the
-        // call's stack frame, and, as Rust objects, none wraps around the address
-        // space.
-        Mul::Baseline => unsafe {
-            vg_ecdsa_brainpoolp512r1_verify(
-                q,
-                digest.as_ptr(),
-                digest.len(),
-                signature,
-                &mut scratch,
-            )
-        },
-        // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
-        // (`Mul::select`).
-        #[cfg(target_arch = "arm")]
-        Mul::Umaal => unsafe {
-            vg_ecdsa_brainpoolp512r1_verify_umaal(
-                q,
-                digest.as_ptr(),
-                digest.len(),
-                signature,
-                &mut scratch,
-            )
-        },
+    // SAFETY: `q` is valid for reads of 129 bytes, `digest` of `digest.len()`,
+    // `signature` of 128 and `scratch` for reads and writes of 8192; `scratch`
+    // is a distinct object from the others, so it overlaps neither them nor the
+    // call's stack frame, and, as Rust objects, none wraps around the address
+    // space. The dispatcher calls only an implementation the CPU has the
+    // features of.
+    let ok = unsafe {
+        vg_ecdsa_brainpoolp512r1_verify_auto(
+            q,
+            digest.as_ptr(),
+            digest.len(),
+            signature,
+            &mut scratch,
+        )
     };
     if ok == 1 {
         Ok(())

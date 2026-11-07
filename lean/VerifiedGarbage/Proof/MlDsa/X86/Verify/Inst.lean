@@ -1,6 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Verified
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Verified
+import VerifiedGarbage.Proof.MlDsa.X86.PreparedKey
 public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Inst
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
@@ -20,8 +21,9 @@ import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 The x86 primitives (`Impl.MlDsa.X86.Verify.prims`) are verified against their
 contracts, use at most 56 bytes of stack and write `esp` only by frames and
-calls (`prims_ok`), so `vg_mldsa{44,65,87}_verify` meet theirs
-(`verify44_verified`, …).
+calls (`prims_ok`), so `vg_mldsa{44,65,87}_verify_core` meet theirs
+(`verifyCore44_verified`, …), whose precondition a run of
+`vg_mldsa*_prepare_verifying_key` satisfies (`PreparedKey.verify_core_sat`).
 -/
 
 @[expose] public section
@@ -29,7 +31,7 @@ calls (`prims_ok`), so `vg_mldsa{44,65,87}_verify` meet theirs
 namespace VG.Proof.MlDsa.X86.Verify
 
 open VG VG.X86 VG.Proof.MlDsa.X86.KeyGen
-open VG.Impl.MlDsa.X86.Verify (prims verify44 verify65 verify87)
+open VG.Impl.MlDsa.X86.Verify (prims verify)
 
 theorem prims_ok : PrimsOk prims where
   ntt := ⟨⟨15, by decide, Arith.NttFwd.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
@@ -48,16 +50,16 @@ theorem prims_ok : PrimsOk prims where
     NoSp.of_all (by lit_decide)⟩
   normLt := ⟨⟨15, by decide, Round.normLt_verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
 
-theorem verify44_verified :
-    Verified X86.target verify44 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa44 X86.abi 96) :=
-  verify_verified prims_ok _ (.inl rfl)
+theorem verifyCore44_verified :
+    Verified X86.target (verify prims Spec.MlDsa.mlDsa44) (verifyCoreContract Spec.MlDsa.mlDsa44 X86.abi 96) :=
+  verify_verified prims_ok _ (.inl rfl) (PreparedKey.verify_core_sat prims_ok (.inl rfl))
 
-theorem verify65_verified :
-    Verified X86.target verify65 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa65 X86.abi 96) :=
-  verify_verified prims_ok _ (.inr (.inl rfl))
+theorem verifyCore65_verified :
+    Verified X86.target (verify prims Spec.MlDsa.mlDsa65) (verifyCoreContract Spec.MlDsa.mlDsa65 X86.abi 96) :=
+  verify_verified prims_ok _ (.inr (.inl rfl)) (PreparedKey.verify_core_sat prims_ok (.inr (.inl rfl)))
 
-theorem verify87_verified :
-    Verified X86.target verify87 (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa87 X86.abi 96) :=
-  verify_verified prims_ok _ (.inr (.inr rfl))
+theorem verifyCore87_verified :
+    Verified X86.target (verify prims Spec.MlDsa.mlDsa87) (verifyCoreContract Spec.MlDsa.mlDsa87 X86.abi 96) :=
+  verify_verified prims_ok _ (.inr (.inr rfl)) (PreparedKey.verify_core_sat prims_ok (.inr (.inr rfl)))
 
 end VG.Proof.MlDsa.X86.Verify

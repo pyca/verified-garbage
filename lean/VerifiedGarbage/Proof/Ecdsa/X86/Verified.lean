@@ -86,10 +86,6 @@ theorem p256_ok (hI : Weierstrass.X86.Inv.InvSounds) : CfgOk p256 where
   fp := ⟨rfl, rfl, Mont.p256p_ok⟩
   fn := ⟨rfl, rfl, Mont.p256n_ok⟩
 
-def signRd (s : State) : List Region :=
-  [⟨(arg s 1).setWidth 64, 32⟩, ⟨(arg s 2).setWidth 64, 32⟩, ⟨(arg s 3).setWidth 64, 32⟩, ⟨argAddr s 0, 20⟩]
-def signWr (s : State) : List Region := [⟨(arg s 0).setWidth 64, 64⟩, ⟨(arg s 4).setWidth 64, 8192⟩]
-
 /-- Memory holding the arguments `0x1000, 0x2000, 0x3000, 0x4000, 0x8000` at
 `0x20004`. -/
 def satMem : Mem := fun a =>

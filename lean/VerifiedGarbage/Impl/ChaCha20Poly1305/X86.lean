@@ -8,10 +8,21 @@ public import VerifiedGarbage.Impl.Poly1305.X86
 
 `vg_chacha20_poly1305_seal(key, nonce, aad, aad_len, data, len, tag, work)`
 and `vg_chacha20_poly1305_open` (the same arguments, returning `eax`), cdecl:
-the arguments are at `[esp + 4]`, …, `[esp + 32]`. Both are composed of calls
-of the verified ChaCha20 and Poly1305 functions, as on x86-64. `work` is the
-working space, which the artifact's frame allocates on the stack
+the arguments are at `[esp + 4]`, …, `[esp + 32]`; and
+`vg_chacha20_poly1305_open_to(key, nonce, aad, aad_len, src, len, dst,
+dst_len, tag, work)`, at `[esp + 4]`, …, `[esp + 40]`. They are composed of
+calls of the verified ChaCha20 and Poly1305 functions, as on x86-64. `work` is
+the working space, which the artifact's frame allocates on the stack
 (`withStackScratchWiped`).
+
+One body serves in place and out of place: it reads the data from `src`
+(`[esp + 20]`) and writes the result to the destination at `[esp + 32]`
+(either `src` or apart from it, `vg_chacha20_xor` from `src` to `dst`), with
+the tag at `[esp + 28]` and `work` in `eax`. Each entry moves the arguments
+there, within its own argument slots (which the frame copied, so they may be
+written): `seal` and `open` in place, the data into `work`'s slot
+(`inPlace`); `open_to` its `tag` and `dst` into the slots of `dst` and
+`dst_len` (`toEntry`), and runs `open`'s body (`openTo`).
 
 The working space (704 bytes, called the context below):
 
@@ -26,8 +37,9 @@ The working space (704 bytes, called the context below):
 * `[576, 704)`: the working space of `vg_poly1305_finalize_scratch`.
 
 `edi` holds the context throughout: the callees are cdecl, so they preserve
-it. Every other argument is loaded from its slot on the stack when it is
-needed (the stack arguments are never written): `seal` passes `tag` to
+it. `vg_chacha20_xor` also takes its destination in `esi`, which is the data
+(the destination). Every other argument is loaded from its slot on the stack
+when it is needed (the body never writes the stack arguments): `seal` passes `tag` to
 `vg_poly1305_finalize_scratch` as `out`, and `open` compares the tag computed
 with it. Each call pushes its
 arguments in a frame of its own (`callWith`), popped into `eax` when it
@@ -39,7 +51,7 @@ functions use 32 bytes of stack below their return address.
 Only the pointers and the lengths can affect timing: the branches are on the
 lengths, and the tags are compared without a branch; but `open` then branches
 on whether they are equal, which its contract lets it leak, to zero the
-data if they are not.
+destination if they are not.
 -/
 
 @[expose] public section
@@ -86,15 +98,25 @@ def initState : List Instr := (List.range 16).flatMap stW
 /-- The key and the nonce into `ecx` and `edx`. -/
 def keyNonce : List Instr := [.mov .ecx (.mem (at_ .esp 4)), .mov .edx (.mem (at_ .esp 8))]
 
-/-- Saves the registers, and computes the ChaCha20 state for counter 0, the
-one-time key and the Poly1305 state for it. -/
+/-- `seal` and `open`'s entry: `work` into `eax`, and the destination, the
+data, into `work`'s slot. -/
+def inPlace : List Instr :=
+  [.mov .eax (.mem (at_ .esp 32)), .mov .ecx (.mem (at_ .esp 20)), .store (at_ .esp 32) .ecx]
+
+/-- `open_to`'s entry: `work` into `eax`, `tag` into the slot of `dst` and
+`dst` into that of `dst_len`. -/
+def toEntry : List Instr :=
+  [.mov .ecx (.mem (at_ .esp 28)), .mov .edx (.mem (at_ .esp 36)), .mov .eax (.mem (at_ .esp 40)),
+   .store (at_ .esp 28) .edx, .store (at_ .esp 32) .ecx]
+
+/-- With `work` in `eax`: saves the registers, and computes the ChaCha20
+state for counter 0, the one-time key and the Poly1305 state for it. -/
 def prologue : Prog isa :=
-  .seq (.block [.mov .eax (.mem (at_ .esp 32))])
-  (.seq (.block (save ++ ([.mov .edi (.reg .eax)] : List Instr) ++ keyNonce))
+  .seq (.block (save ++ ([.mov .edi (.reg .eax)] : List Instr) ++ keyNonce))
   (.seq (.block (initState ++ ptr .ecx .edi 64 ++ ptr .edx .edi 128))
   (.seq (callWith [.edx, .ecx] "vg_chacha20_block" Impl.ChaCha20.X86.block)
   (.seq (.block (ptr .ecx .edi 128 ++ ptr .edx .edi 448))
-    (callWith [.ecx, .edx] "vg_poly1305_init" Impl.Poly1305.X86.init)))))
+    (callWith [.ecx, .edx] "vg_poly1305_init" Impl.Poly1305.X86.init))))
 
 /-- The 16 bytes at `edi + k` absorbed as one block. -/
 def absorbOne (k : Nat) : Prog isa :=
@@ -127,11 +149,13 @@ def lengths : List Instr :=
    .store (at_ .edi 40) .eax, .mov .eax (.imm 0), .store (at_ .edi 36) .eax,
    .store (at_ .edi 44) .eax]
 
-/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted. -/
+/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted to
+the destination (`vg_chacha20_xor`'s `dst`, in `esi`, from `[esp + 32]`). -/
 def crypt (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
   .seq (.block (([.mov .eax (.imm 1), .store (at_ .edi 112) .eax] : List Instr) ++ ptr .eax .edi 64 ++
-    ([.mov .ecx (.mem (at_ .esp 20)), .mov .edx (.mem (at_ .esp 24))] : List Instr) ++ ptr .esi .edi 128))
-    (callWith [.esi, .edx, .ecx, .eax] v.name v.code)
+    ([.mov .ecx (.mem (at_ .esp 20)), .mov .edx (.mem (at_ .esp 24))] : List Instr) ++ ptr .ebx .edi 128 ++
+    ([.mov .esi (.mem (at_ .esp 32))] : List Instr)))
+    (callWith [.ebx, .edx, .ecx, .eax] v.name v.code)
 
 /-- The tag written to `out`, which `out` puts in `ecx`: the message is whole
 blocks, so its length (`count`, both of whose words are `eax`) is 0 modulo
@@ -146,7 +170,8 @@ def finalizeTag : Prog isa := finalizeWith [.mov .ecx (.mem (at_ .esp 28))]
 /-- The tag written to `edi + out`. -/
 def finalizeTo (out : Nat) : Prog isa := finalizeWith (ptr .ecx .edi out)
 
-def «seal» (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
+/-- `seal` after its entry. -/
+def sealBody (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
   .seq prologue
   (.seq (macPad 12 16)
   (.seq (.block lengths)
@@ -155,6 +180,8 @@ def «seal» (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
   (.seq (absorbOne 32)
   (.seq finalizeTag
     (.block restore)))))))
+
+def «seal» (v : Impl.ChaCha20.X86.Callee) : Prog isa := .seq (.block inPlace) (sealBody v)
 
 /-- Word `k` of the computed tag (`edi + 16`) XORed with that of the
 received one (at `edx`), into `r`. -/
@@ -172,26 +199,26 @@ def compare : List Instr :=
   diff .ecx 3 ++ ([.alu .or .eax (.reg .ecx), .alu .cmp .eax (.imm 1), .mov .eax (.imm 0),
     .alu .adc .eax (.imm 0)] : List Instr)
 
-/-- `data` into `ecx` and `len` into `edx`, and whether `len` is zero into
-`ZF`. -/
+/-- The destination into `ecx` and `len` into `edx`, and whether `len` is
+zero into `ZF`. -/
 def zeroArgs : List Instr :=
-  [.mov .ecx (.mem (at_ .esp 20)), .mov .edx (.mem (at_ .esp 24)), .alu .cmp .edx (.imm 0)]
+  [.mov .ecx (.mem (at_ .esp 32)), .mov .edx (.mem (at_ .esp 24)), .alu .cmp .edx (.imm 0)]
 
 /-- The `edx` bytes at `ecx` zeroed, a byte at a time, from `al`, which is
 zero. -/
 def zeroLoop : Prog isa :=
   .loop (.block [.store8 { base := .ecx } .al, .alu .add .ecx (.imm 1), .alu .sub .edx (.imm 1)]) .ne
 
-/-- The `len` bytes at `data` zeroed, with `eax` zero. -/
+/-- The `len` bytes at the destination zeroed, with `eax` zero. -/
 def zeroData : Prog isa := .seq (.block zeroArgs) (.ite .e (.block []) zeroLoop)
 
-/-- If the tag is wrong (`eax` is 0, which `ZF` then says), the data
+/-- If the tag is wrong (`eax` is 0, which `ZF` then says), the destination
 zeroed; then the registers restored. -/
 def openTail : Prog isa := .seq (.ite .e zeroData (.block [])) (.block restore)
 
 /-- Up to the tags compared without a branch: `eax` is 1 if they are
 equal and 0 if not, and `ZF` says which. -/
-def openBody (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
+def openMain (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
   .seq prologue
   (.seq (macPad 12 16)
   (.seq (macPad 20 24)
@@ -202,8 +229,13 @@ def openBody (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
   (.seq (.block loadTag)
     (.block (compare ++ [.alu .cmp .eax (.imm 0)])))))))))
 
-/-- `open` zeroes the data if the tags differ, branching on the result,
-which its contract lets it leak. -/
-def «open» (v : Impl.ChaCha20.X86.Callee) : Prog isa := .seq (openBody v) openTail
+/-- `open`'s body, after its entry: the destination zeroed if the tags
+differ, branching on the result, which its contract lets it leak. -/
+def openBody (v : Impl.ChaCha20.X86.Callee) : Prog isa := .seq (openMain v) openTail
+
+def «open» (v : Impl.ChaCha20.X86.Callee) : Prog isa := .seq (.block inPlace) (openBody v)
+
+/-- `vg_chacha20_poly1305_open_to`: `open`'s body out of place. -/
+def openTo (v : Impl.ChaCha20.X86.Callee) : Prog isa := .seq (.block toEntry) (openBody v)
 
 end VG.Impl.ChaCha20Poly1305.X86

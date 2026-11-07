@@ -31,25 +31,6 @@ structure JacWinLay (K : WinCfg) (size : Nat) : Prop where
   rxy : K.R.y = K.R.x+32
   rxz : K.R.z = K.R.x+64
 
-/-- A coordinate of an entry from 1 through 16 is one of the table slots. -/
-theorem jacTbl_mem (K : WinCfg) {a c : Nat} (ha : 1 ≤ a) (h16 : a ≤ 16) (hc : c < 3) :
-    K.tbl+96*(a-1)+32*c ∈ jacTblSlots K := by
-  apply List.mem_map.mpr
-  refine ⟨3*(a-1)+c,List.mem_range.mpr (by omega),?_⟩
-  omega
-
-/-- Every coordinate of a table point belongs to the complete environment. -/
-theorem jacTblPt_mem (K : WinCfg) {a : Nat} (ha : 1 ≤ a) (h16 : a ≤ 16) :
-    ∀ x ∈ [(Jacobian.tablePt K a).x,(Jacobian.tablePt K a).y,(Jacobian.tablePt K a).z],
-      x ∈ jacWinSlots K := by
-  intro x hx
-  apply List.mem_append_right
-  simp only [Jacobian.tablePt,List.mem_cons,List.not_mem_nil,or_false] at hx
-  rcases hx with rfl | rfl | rfl
-  · exact jacTbl_mem K ha h16 (c := 0) (by decide)
-  · exact jacTbl_mem K ha h16 (c := 1) (by decide)
-  · exact jacTbl_mem K ha h16 (c := 2) (by decide)
-
 /-- The previous eight-entry layout is a sub-layout of this allocation. -/
 theorem JacWinLay.old_slots {K : WinCfg} {size : Nat} (hL : JacWinLay K size) :
     ∀ x ∈ winSlots K, x ∈ jacWinSlots K := by
@@ -94,17 +75,5 @@ theorem JacWinLay.toWinLay {K : WinCfg} {size : Nat} (hL : JacWinLay K size)
     · have := hL.bits_tmp
       dsimp only
       rw [hL.n,hJ]; omega
-
-/-- Reversing the two work points also separates all doubling operands. -/
-theorem JacWinLay.rcbApart_DR {K : WinCfg} {size : Nat} (hL : JacWinLay K size) :
-    RcbApart K.S K.D K.D K.R := by
-  have hnd := hL.nodup
-  have ha := hL.ro K.S.a (by simp [winRo])
-  have hb := hL.ro K.S.b3 (by simp [winRo])
-  simp only [winOther,rcbW,List.cons_append,List.nil_append,List.nodup_cons,
-    List.mem_cons,List.not_mem_nil,or_false,not_or] at hnd ha hb
-  refine ⟨?_,?_⟩ <;>
-    simp only [rcbW,rcbR,List.nodup_cons,List.mem_cons,List.not_mem_nil,or_false,not_or,
-      List.nodup_nil,and_true,forall_eq_or_imp,forall_eq] <;> grind
 
 end VG.Proof.Weierstrass.AArch64

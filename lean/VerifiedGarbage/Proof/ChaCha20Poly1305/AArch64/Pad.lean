@@ -83,7 +83,7 @@ theorem ks_prefix (S : VG.Spec.ChaCha20.State) {n i : Nat} (hi : i < n) (hn : n 
 
 /-- `Pad.cryptPad` encrypts up to 512 bytes of data from counter 1. -/
 theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀)
-    (h512 : L s₀ ≤ 512) : CryptOk s₀ (cryptPad v.callee) := by
+    (h512 : L s₀ ≤ 512) : CryptOk s₀ (cryptPad v.callee false) := by
   intro s h hst
   have hL' := Nat.le_of_lt (s₀.gpr .x5).isLt
   have wc := hp.wrap_c
@@ -105,7 +105,7 @@ theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
     (sub_disj s₀ (a := 64) (n := 64) (b := 768) (m := 512) (by lit_omega) (by lit_omega) (by lit_omega))
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
     (sub_disj s₀ (a := 768) (n := 512) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
-    (by rw [hp.off_toNat (by decide)]; lit_omega) (Covers.right hw) hw fun s₃ v₃ k₃ data₃ => ?_)
+    (by rw [hp.off_toNat (by decide)]; lit_omega) hw fun s₃ v₃ k₃ data₃ => ?_)
   have i₃ : Inv s₀ s₃ := i₂.step k₃ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;>

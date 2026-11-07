@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 import VerifiedGarbage.Proof.Weierstrass.Comb
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 /-! Digit selection remains unchanged while point arithmetic uses a wider frame.
 The callbacks include the final coordinate copy, so no intermediate scratch

@@ -41,7 +41,7 @@ open VG.Proof.Cast5.X86_64.Mode (dirCoreSpec TabAt dirCore_bw)
 
 /-- CBC encryption on x86-64 that updates the chaining value. -/
 def cbcEncX : Contract isa where
-  pre := FPre
+  pre := FPre blkLen
   post s s' :=
     let cs := Spec.Cbc.encrypt (Spec.Cast5.cipher (keyOf s) (s.gpr .rsi).toNat) (ivOf s) (dataOf s s.mem)
     dataOf s s'.mem = cs ∧ Spec.Aes.bytesAt s'.mem (s.gpr .rdx) 8 = Spec.Cbc.next (ivOf s) cs
@@ -49,7 +49,7 @@ def cbcEncX : Contract isa where
 
 /-- CBC decryption on x86-64 that updates the chaining value. -/
 def cbcDecX : Contract isa where
-  pre := FPre
+  pre := FPre blkLen
   post s s' :=
     dataOf s s'.mem = Spec.Cbc.decrypt (Spec.Cast5.invCipher (keyOf s) (s.gpr .rsi).toNat) (ivOf s)
         (dataOf s s.mem) ∧
@@ -58,7 +58,7 @@ def cbcDecX : Contract isa where
 
 theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecX.pre s₀) :
     WP isa cbcDecryptChained s₀ fun s' => gprPreserved s₀ s' ∧ cbcDecX.post s₀ s' := by
-  have hp' : FPre s₀ := hp
+  have hp' : FPre blkLen s₀ := hp
   have hwS : (⟨s₀.gpr .r9, 8 * 29⟩ : Region) ∈ s₀.wr := by rw [hp'.wr]; simp
   have e : 8 * (dirCore false).bw * (s₀.gpr .r8).toNat = (s₀.gpr .r8).toNat * 8 := by
     rw [dirCore_bw, Nat.mul_one, Nat.mul_comm]
@@ -92,7 +92,7 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecX.pre s₀) :
 
 theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncX.pre s₀) :
     WP isa cbcEncryptChained s₀ fun s' => gprPreserved s₀ s' ∧ cbcEncX.post s₀ s' := by
-  have hp' : FPre s₀ := hp
+  have hp' : FPre blkLen s₀ := hp
   have hwS : (⟨s₀.gpr .r9, 8 * 29⟩ : Region) ∈ s₀.wr := by rw [hp'.wr]; simp
   have e : 8 * (dirCore true).bw * (s₀.gpr .r8).toNat = (s₀.gpr .r8).toNat * 8 := by
     rw [dirCore_bw, Nat.mul_one, Nat.mul_comm]
@@ -127,10 +127,10 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncX.pre s₀) :
 /-! ## Constant time -/
 
 theorem cbcEncryptChained_ct : ConstantTime isa cbcEncX.pre cbcEncX.pub cbcEncryptChained :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) fbTaint fbTaint_agree (by taint_decide)
+  VG.Taint.constantTime (A := taintSym [s1234Sym]) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)
 
 theorem cbcDecryptChained_ct : ConstantTime isa cbcDecX.pre cbcDecX.pub cbcDecryptChained :=
-  VG.Taint.constantTime (A := taintSym [s1234Sym]) fbTaint fbTaint_agree (by taint_decide)
+  VG.Taint.constantTime (A := taintSym [s1234Sym]) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)
 
 /-! ## The contracts -/
 
@@ -156,7 +156,7 @@ def cbcSat : State where
 
 theorem cbc_implies {postX : State → State → Prop} {post : Spec.Cast5.cbcChainedSig.Post X86_64.abi.ptrBits}
     (hpost : ∀ s s', postX s s' → (cbcK post).post s s') :
-    ({ pre := FPre, post := postX, pub := cbcPub } : Contract isa).Implies (cbcK post) where
+    ({ pre := FPre blkLen, post := postX, pub := cbcPub } : Contract isa).Implies (cbcK post) where
   pre s h := by
     sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig,
       Proof.Cast5.cbcChainedPre, X86_64.abi, X86_64.argRegs, ecbConsts_eq, Abi.withConsts, Abi.constRegions,

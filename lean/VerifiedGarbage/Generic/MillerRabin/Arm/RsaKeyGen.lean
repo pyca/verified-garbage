@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Verified
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Generate.Verified
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Verified
+public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
 public import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
@@ -236,18 +239,18 @@ public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 public import VerifiedGarbage.Proof.RsaKeyGen.Primes
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # The RSA prime search on ARMv7, its candidates calling each shared Miller–Rabin implementation -/
+/-! # RSA key generation on ARMv7, its prime searches' candidates calling each shared Miller–Rabin implementation -/
 
 @[expose] public section
 
 namespace VG.Generic.MillerRabin.Arm.RsaKeyGen
 
 def artifacts (v : Proof.MillerRabin.Arm.RoundImpl) : List Artifact := [
-  Spec.RsaKeyGen.primeSearchApi.artifact Arm.target {
+  Spec.RsaKeyGen.keySearchApi.artifact Arm.target {
     suffix := v.suffix
-    stack := 184
-    code := Proof.RsaKeyGen.Arm.Search.searchCode v
-    verified := Proof.RsaKeyGen.Arm.Search.search_verified v
+    stack := 256
+    code := Proof.RsaKeyGen.Arm.Generate.genCode v
+    verified := Proof.RsaKeyGen.Arm.Generate.gen_verified v
     features := v.features }]
 
 end VG.Generic.MillerRabin.Arm.RsaKeyGen

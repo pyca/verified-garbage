@@ -288,10 +288,10 @@ theorem rest_ok (sve : Bool) {s₀ s w₀ u : State} (hp : APre true s₀) {key 
   refine WP.seq ((Short.xorKsAt_ok hp (o := (o + 512 * T)) (n := min (L s₀ - (o + 512 * T)) 256) (by omega_arith)
     (by omega_arith) x21₅ x22₅ x23₅ rd₅' wr₅').mono fun s₆ ⟨k₆, d₆, f₆, g₆⟩ => ?_)
   -- The stream's arguments.
-  have g₆' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13) :
+  have g₆' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x15) :
       s₆.gpr r = s₅.gpr r :=
-    have ⟨h9, h10, h11, h12, h13⟩ := h
-    g₆ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13⟩)
+    have ⟨h9, h10, h11, h12, h13, h15⟩ := h
+    g₆ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13, h15⟩)
   refine (args_ok (s₀ := s₀) (D := dp s₀ + BitVec.ofNat 64 ((o + 512 * T)))
     (m := min (L s₀ - (o + 512 * T)) 256) (r := L s₀ - (o + 512 * T)) (Nat.min_le_left _ _)
     (by rw [g₆' _ (by decide), x21₅])
@@ -351,10 +351,11 @@ theorem rest_ok (sve : Bool) {s₀ s w₀ u : State} (hp : APre true s₀) {key 
       s₇.gpr r = s₆.gpr r :=
     have ⟨h0, h1, h2, h3, h23⟩ := h
     g₇ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h0, h1, h2, h3, h23⟩)
-  have to₄ (r : Reg) (h : r ≠ .x0 ∧ r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 ∧ r ≠ .x23 ∧ r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13) :
+  have to₄ (r : Reg) (h : r ≠ .x0 ∧ r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 ∧ r ≠ .x23 ∧ r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧
+      r ≠ .x15) :
       s₇.gpr r = s₄.gpr r := by
-    obtain ⟨h0, h1, h2, h3, h23, h9, h10, h11, h12, h13⟩ := h
-    rw [g₇' r ⟨h0, h1, h2, h3, h23⟩, g₆' r ⟨h9, h10, h11, h12, h13⟩, g₅ r h9 h23]
+    obtain ⟨h0, h1, h2, h3, h23, h9, h10, h11, h12, h13, h15⟩ := h
+    rw [g₇' r ⟨h0, h1, h2, h3, h23⟩, g₆' r ⟨h9, h10, h11, h12, h13, h15⟩, g₅ r h9 h23]
   have r32 (d : Nat) (hd : d = 32 ∨ d = 40) :
       s₃.mem.readW (off (cx s₀) d) 64 = s₂.mem.readW (off (cx s₀) d) 64 :=
     f₃.readW (r := sub s₀ d 8) (Region.contains_self _ _) (fun r hr => by
@@ -502,7 +503,7 @@ theorem wp_seq3 {a b c x : Prog isa} {s : State} {Q' Q : State → Prop}
 /-- `cryptStitched` when encrypting, from byte `o`. -/
 theorem cryptStitchedSeal_ok (sve : Bool) {s₀ : State} (hp : APre true s₀) {o : Nat} {s w₀ : State}
     {key msg : List Byte} (E : Entry true o s₀ s key msg w₀) :
-    WP isa (cryptStitched sve true) w₀ fun u => ∃ P A, Sealed s₀ s w₀ key msg P A u := by
+    WP isa (cryptStitched sve true false) w₀ fun u => ∃ P A, Sealed s₀ s w₀ key msg P A u := by
   unfold cryptStitched afterBulk
   simp only [ite_true]
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt

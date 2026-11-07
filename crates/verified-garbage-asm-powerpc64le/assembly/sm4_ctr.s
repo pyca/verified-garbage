@@ -510,3 +510,72 @@ vg_sm4_ctr:
 	std %r11, 3256(%r12)
 	addi %r1, %r1, 3296
 	blr
+
+vg_sm4_ctr_final:
+	stdu %r1, -112(%r1)
+	addi %r7, %r1, 32
+	mflr %r0
+	std %r0, 0(%r7)
+	std %r14, 8(%r7)
+	std %r15, 16(%r7)
+	std %r16, 24(%r7)
+	std %r19, 32(%r7)
+	std %r30, 40(%r7)
+	std %r31, 48(%r7)
+	std %r20, 56(%r7)
+	or %r14, %r3, %r3
+	or %r16, %r4, %r4
+	or %r20, %r7, %r7
+	rldicl %r10, %r6, 60, 4
+	rldicr %r11, %r10, 4, 59
+	add %r31, %r5, %r11
+	subf %r30, %r11, %r6
+	or %r6, %r10, %r10
+	bl {vg_sm4_ctr}
+	cmpldi %cr0, %r30, 0
+	beq %cr0, 20f
+	li %r9, 0
+	std %r9, 64(%r20)
+	std %r9, 72(%r20)
+	or %r3, %r14, %r14
+	or %r4, %r16, %r16
+	addi %r5, %r20, 64
+	li %r6, 1
+	bl {vg_sm4_ctr}
+	addi %r8, %r20, 64
+22:
+	lbz %r9, 0(%r31)
+	lbz %r10, 0(%r8)
+	xor %r9, %r9, %r10
+	stb %r9, 0(%r31)
+	addi %r8, %r8, 1
+	addi %r31, %r31, 1
+	addi %r30, %r30, -1
+	cmpldi %cr0, %r30, 0
+	bne %cr0, 22b
+	b 21f
+20:
+21:
+	ld %r0, 0(%r20)
+	ld %r14, 8(%r20)
+	ld %r15, 16(%r20)
+	ld %r16, 24(%r20)
+	ld %r19, 32(%r20)
+	ld %r30, 40(%r20)
+	ld %r31, 48(%r20)
+	ld %r20, 56(%r20)
+	mtlr %r0
+	addi %r12, %r1, 32
+	li %r11, 0
+	std %r11, 0(%r12)
+	std %r11, 8(%r12)
+	std %r11, 16(%r12)
+	std %r11, 24(%r12)
+	std %r11, 32(%r12)
+	std %r11, 40(%r12)
+	std %r11, 48(%r12)
+	std %r11, 56(%r12)
+	std %r11, 64(%r12)
+	std %r11, 72(%r12)
+	addi %r1, %r1, 112
+	blr

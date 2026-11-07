@@ -12,27 +12,21 @@ open VG.Impl.Gcm.X86_64.Pclmul (at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
 open VG.Impl.Aes.X86_64.VaesZ (ctrsZ)
 open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv bigMinPE)
-open VG.Impl.Gcm.X86_64.StitchZTo (xorDataZTo)
 open VG.Impl.Gcm.X86_64.StitchZR (powP48)
 open VG.Impl.Gcm.X86_64.StitchZRTo (setupP)
 
-def batchTo (j : Nat) (g : Nat → List Instr) : Prog isa :=
-  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs)) (.seq (Aes.X86_64.VaesZH.aes aregs g) (.block (xorDataZTo .xmm13 .rdx .r8 aregs j)))
+/-- `StitchZH.batch` from `rdx + r8 + 64 j` to `rdx + 64 j`. -/
+abbrev batchTo (j : Nat) (g : Nat → List Instr) : Prog isa := StitchZH.batch j g false true
 
-def firstTo : Prog isa := batchTo 0 fun _ => []
+abbrev firstTo : Prog isa := StitchZH.first true
 
-def bodyTo : Prog isa :=
-  .seq (batchTo 4 gq) (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 32)])
+abbrev bodyTo : Prog isa := StitchZH.body true
 
-def body48To : Prog isa :=
-  .seq (batchTo 12 (gq48 0)) (.seq (batchTo 16 (gq48 1)) (.seq (batchTo 20 (gq48 2))
-    (.block [.alu .add .rdx (.imm 768), .alu .sub .r9 (.imm 48), .alu .cmp .r9 (.imm 96)])))
+abbrev body48To : Prog isa := StitchZH.body48 true
 
-def bigRestTo : Prog isa :=
-  .seq (batchTo 4 fun _ => []) (.seq (batchTo 8 fun _ => [])
-    (.seq (.loop body48To .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv)))))
+abbrev bigRestTo : Prog isa := StitchZH.bigRest true
 
-def bigPTo : Prog isa := .seq (.block powP48) bigRestTo
+abbrev bigPTo : Prog isa := StitchZH.bigP true
 
 /-- The blocks after the last group, as `StitchZH.rem`'s, read at
 `rdx + r8` (`r8` is `src - dst`). -/

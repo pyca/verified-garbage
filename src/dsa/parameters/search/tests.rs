@@ -1,24 +1,52 @@
+#[cfg(target_arch = "x86_64")]
+use super::Round;
 use super::{Search, Searcher};
 use crate::arch::dsa::vg_dsa_parameter_search_init;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
-    VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES, VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES, VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_ADX_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_IFMA_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_SHANI_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_SHANI_MR_ADX_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_SHANI_MR_IFMA_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_FEATURES,
     VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_MR_ADX_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_MR_IFMA_FEATURES,
     VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_AVX2_FEATURES,
     VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_AVX2_MR_ADX_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_AVX2_MR_IFMA_FEATURES,
     VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES,
     VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES,
     VG_DSA_PARAMETER_SEARCH_SHA256_AVX2_FEATURES,
     VG_DSA_PARAMETER_SEARCH_SHA256_AVX2_MR_ADX_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA256_AVX2_MR_IFMA_FEATURES,
     VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_FEATURES,
-    VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_MR_ADX_FEATURES, vg_dsa_parameter_search,
-    vg_dsa_parameter_search_mr_adx, vg_dsa_parameter_search_sha1_shani,
-    vg_dsa_parameter_search_sha1_shani_mr_adx, vg_dsa_parameter_search_sha1_shani_sha256_avx2,
+    VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_MR_ADX_FEATURES,
+    VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_MR_IFMA_FEATURES, vg_dsa_parameter_search,
+    vg_dsa_parameter_search_mr_adx, vg_dsa_parameter_search_mr_ifma,
+    vg_dsa_parameter_search_sha1_avx_bmi, vg_dsa_parameter_search_sha1_avx_bmi_mr_adx,
+    vg_dsa_parameter_search_sha1_avx_bmi_mr_ifma, vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani_mr_adx,
+    vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani_mr_ifma, vg_dsa_parameter_search_sha1_shani,
+    vg_dsa_parameter_search_sha1_shani_mr_adx, vg_dsa_parameter_search_sha1_shani_mr_ifma,
+    vg_dsa_parameter_search_sha1_shani_sha256_avx2,
     vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx,
+    vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_ifma,
     vg_dsa_parameter_search_sha1_shani_sha256_shani,
-    vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx, vg_dsa_parameter_search_sha256_avx2,
-    vg_dsa_parameter_search_sha256_avx2_mr_adx, vg_dsa_parameter_search_sha256_shani,
-    vg_dsa_parameter_search_sha256_shani_mr_adx,
+    vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx,
+    vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma, vg_dsa_parameter_search_sha256_avx2,
+    vg_dsa_parameter_search_sha256_avx2_mr_adx, vg_dsa_parameter_search_sha256_avx2_mr_ifma,
+    vg_dsa_parameter_search_sha256_shani, vg_dsa_parameter_search_sha256_shani_mr_adx,
+    vg_dsa_parameter_search_sha256_shani_mr_ifma,
 };
 use crate::cpu::detected;
 #[cfg(target_arch = "x86_64")]
@@ -77,101 +105,237 @@ fn check(search: Search) {
 #[cfg(target_arch = "x86_64")]
 fn backend_combinations() {
     use super::select_backends;
-    // Some of these pairs cannot be selected by a real CPU, since the hash
-    // instructions share feature requirements. Check the complete dispatch
-    // table against the emitted feature sets, at every width.
-    let cases: &[(H1, H256, bool, Search, Features)] = &[
+    // Some of these combinations cannot be selected by a real CPU, since the
+    // hash instructions share feature requirements. Check the complete
+    // dispatch table against the emitted feature sets, at every width.
+    let cases: &[(H1, H256, Round, Search, Features)] = &[
         (
             H1::Scalar,
             H256::Scalar,
-            false,
+            Round::Baseline,
             vg_dsa_parameter_search,
             Features(0),
         ),
         (
             H1::Scalar,
             H256::Scalar,
-            true,
+            Round::Adx,
             vg_dsa_parameter_search_mr_adx,
             VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES,
         ),
         (
             H1::Scalar,
+            H256::Scalar,
+            Round::Ifma,
+            vg_dsa_parameter_search_mr_ifma,
+            VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES,
+        ),
+        (
+            H1::Scalar,
             H256::Avx2,
-            false,
+            Round::Baseline,
             vg_dsa_parameter_search_sha256_avx2,
             VG_DSA_PARAMETER_SEARCH_SHA256_AVX2_FEATURES,
         ),
         (
             H1::Scalar,
             H256::Avx2,
-            true,
+            Round::Adx,
             vg_dsa_parameter_search_sha256_avx2_mr_adx,
             VG_DSA_PARAMETER_SEARCH_SHA256_AVX2_MR_ADX_FEATURES,
         ),
         (
             H1::Scalar,
+            H256::Avx2,
+            Round::Ifma,
+            vg_dsa_parameter_search_sha256_avx2_mr_ifma,
+            VG_DSA_PARAMETER_SEARCH_SHA256_AVX2_MR_IFMA_FEATURES,
+        ),
+        (
+            H1::Scalar,
             H256::ShaNi,
-            false,
+            Round::Baseline,
             vg_dsa_parameter_search_sha256_shani,
             VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_FEATURES,
         ),
         (
             H1::Scalar,
             H256::ShaNi,
-            true,
+            Round::Adx,
             vg_dsa_parameter_search_sha256_shani_mr_adx,
             VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_MR_ADX_FEATURES,
         ),
         (
+            H1::Scalar,
+            H256::ShaNi,
+            Round::Ifma,
+            vg_dsa_parameter_search_sha256_shani_mr_ifma,
+            VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_MR_IFMA_FEATURES,
+        ),
+        (
             H1::ShaNi,
             H256::Scalar,
-            false,
+            Round::Baseline,
             vg_dsa_parameter_search_sha1_shani,
             VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_FEATURES,
         ),
         (
             H1::ShaNi,
             H256::Scalar,
-            true,
+            Round::Adx,
             vg_dsa_parameter_search_sha1_shani_mr_adx,
             VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_MR_ADX_FEATURES,
         ),
         (
             H1::ShaNi,
+            H256::Scalar,
+            Round::Ifma,
+            vg_dsa_parameter_search_sha1_shani_mr_ifma,
+            VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_MR_IFMA_FEATURES,
+        ),
+        (
+            H1::ShaNi,
             H256::Avx2,
-            false,
+            Round::Baseline,
             vg_dsa_parameter_search_sha1_shani_sha256_avx2,
             VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_AVX2_FEATURES,
         ),
         (
             H1::ShaNi,
             H256::Avx2,
-            true,
+            Round::Adx,
             vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_adx,
             VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_AVX2_MR_ADX_FEATURES,
         ),
         (
             H1::ShaNi,
+            H256::Avx2,
+            Round::Ifma,
+            vg_dsa_parameter_search_sha1_shani_sha256_avx2_mr_ifma,
+            VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_AVX2_MR_IFMA_FEATURES,
+        ),
+        (
+            H1::ShaNi,
             H256::ShaNi,
-            false,
+            Round::Baseline,
             vg_dsa_parameter_search_sha1_shani_sha256_shani,
             VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES,
         ),
         (
             H1::ShaNi,
             H256::ShaNi,
-            true,
+            Round::Adx,
             vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx,
             VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES,
         ),
+        (
+            H1::ShaNi,
+            H256::ShaNi,
+            Round::Ifma,
+            vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma,
+            VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES,
+        ),
+        (
+            H1::AvxBmi,
+            H256::Scalar,
+            Round::Baseline,
+            vg_dsa_parameter_search_sha1_avx_bmi,
+            VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_FEATURES,
+        ),
+        (
+            H1::AvxBmi,
+            H256::Scalar,
+            Round::Adx,
+            vg_dsa_parameter_search_sha1_avx_bmi_mr_adx,
+            VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_ADX_FEATURES,
+        ),
+        (
+            H1::AvxBmi,
+            H256::Scalar,
+            Round::Ifma,
+            vg_dsa_parameter_search_sha1_avx_bmi_mr_ifma,
+            VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_IFMA_FEATURES,
+        ),
+        (
+            H1::AvxBmi,
+            H256::Avx2,
+            Round::Baseline,
+            vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2,
+            VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES,
+        ),
+        (
+            H1::AvxBmi,
+            H256::Avx2,
+            Round::Adx,
+            vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx,
+            VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES,
+        ),
+        (
+            H1::AvxBmi,
+            H256::Avx2,
+            Round::Ifma,
+            vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma,
+            VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES,
+        ),
+        (
+            H1::AvxBmi,
+            H256::ShaNi,
+            Round::Baseline,
+            vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani,
+            VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_SHANI_FEATURES,
+        ),
+        (
+            H1::AvxBmi,
+            H256::ShaNi,
+            Round::Adx,
+            vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani_mr_adx,
+            VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_SHANI_MR_ADX_FEATURES,
+        ),
+        (
+            H1::AvxBmi,
+            H256::ShaNi,
+            Round::Ifma,
+            vg_dsa_parameter_search_sha1_avx_bmi_sha256_shani_mr_ifma,
+            VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_SHANI_MR_IFMA_FEATURES,
+        ),
     ];
-    for &(h1, h256, adx, expected, required) in cases {
-        let selected = select_backends(h1, h256, adx);
+    for &(h1, h256, round, expected, required) in cases {
+        let selected = select_backends(h1, h256, round);
         assert!(core::ptr::fn_addr_eq(selected, expected));
         if detected().contains(required) {
             check(selected);
         }
+    }
+}
+
+/// The round's implementation is chosen by its generated feature sets: IFMA's
+/// needs AVX, AVX512F, AVX512_IFMA and AVX512VL with ADX's BMI2 and ADX.
+#[test]
+#[cfg(target_arch = "x86_64")]
+fn round_feature_requirements() {
+    use verified_garbage_cpu::feature;
+    let adx = feature::BMI2 | feature::ADX;
+    let ifma = adx | feature::AVX | feature::AVX512F | feature::AVX512IFMA | feature::AVX512VL;
+    let cases: &[(u32, Round)] = &[
+        (0, Round::Baseline),
+        (feature::BMI2, Round::Baseline),
+        (feature::ADX, Round::Baseline),
+        (ifma & !feature::BMI2, Round::Baseline),
+        (ifma & !feature::ADX, Round::Baseline),
+        (adx, Round::Adx),
+        (adx | feature::AVX | feature::AVX2, Round::Adx),
+        (ifma & !feature::AVX, Round::Adx),
+        (ifma & !feature::AVX512F, Round::Adx),
+        (ifma & !feature::AVX512IFMA, Round::Adx),
+        (ifma & !feature::AVX512VL, Round::Adx),
+        (ifma, Round::Ifma),
+        (
+            ifma | feature::AVX2 | feature::SHA | feature::SSSE3,
+            Round::Ifma,
+        ),
+    ];
+    for &(features, expected) in cases {
+        assert_eq!(Round::select(Features(features)), expected, "{features:?}");
     }
 }
 

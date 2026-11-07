@@ -193,33 +193,20 @@ theorem block_call {s : State} {S B : Addr} (hx0 : s.gpr .x0 = S) (hx1 : s.gpr .
 
 /-! ## `vg_chacha20_xor` -/
 
+/-- A call of the stream in place (`XorImpl.call`). -/
 theorem xor_call (v : Proof.ChaCha20.AArch64.XorImpl) {s : State} {S D B : Addr} {n : Nat} (hx0 : s.gpr .x0 = S) (hx1 : s.gpr .x1 = D)
     (hx2 : s.gpr .x2 = BitVec.ofNat 64 n) (hx3 : s.gpr .x3 = B) (hn : n < 2 ^ 64)
     (hSD : (⟨S, 64⟩ : Region).Disjoint ⟨D, n⟩) (hSB : (⟨S, 64⟩ : Region).Disjoint ⟨B, 320⟩)
     (hDB : (⟨D, n⟩ : Region).Disjoint ⟨B, 320⟩) (hwrap : D.toNat + n ≤ 2 ^ 64)
-    (hc : Covers ([] ++ [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩]) (s.rd ++ s.wr))
     (hw : Covers [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩] s.wr)
     {Q : State → Prop}
     (hQ : ∀ s', (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) →
       Kept [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩] s s' →
       Spec.ChaCha20.bytesAt s'.mem D n =
         List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem D n) (keystream (stateAt s.mem S) n) → Q s') :
-    WP isa (.call v.callee.name v.callee.code) s Q := by
-  have hn' : (BitVec.ofNat 64 n).toNat = n := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
-  refine WP.callV (k := Proof.ChaCha20.xorAArch64) v.ok
-    (rd := []) (wr := [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩]) ?_ hc hw ?_ v.noFrames
-  · simp only [Proof.ChaCha20.xorAArch64, State.withRegions_gpr, State.withRegions_rd,
-      State.withRegions_wr, callEntry_gpr' s (by decide : Reg.x0 ∉ linkRegs),
-      callEntry_gpr' s (by decide : Reg.x1 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.x2 ∉ linkRegs),
-      callEntry_gpr' s (by decide : Reg.x3 ∉ linkRegs), hx0, hx1, hx2, hx3, hn']
-    exact ⟨trivial, trivial, hSD, hSB, hDB, hwrap⟩
-  · intro s' hrd hwr hsp hf hcs _ hvec hpost
-    refine hQ s' hvec ⟨hcs, hsp, hrd, hwr, hf⟩ ?_
-    simpa only [Proof.ChaCha20.xorAArch64, State.withRegions_gpr, State.withRegions_mem,
-      State.callEntry_mem, callEntry_gpr' s (by decide : Reg.x0 ∉ linkRegs),
-      callEntry_gpr' s (by decide : Reg.x1 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.x2 ∉ linkRegs),
-      hx0, hx1, hx2, hn'] using hpost
+    WP isa v.callee.inPlace s Q :=
+  v.call (Proof.ChaCha20.AArch64.XorArgs.inPlace hx0 hx1 hx2 hx3 hn hSD hSB hDB hwrap hw)
+    fun s' hrd hwr hsp hf hcs hvec hpost => hQ s' hvec ⟨hcs, hsp, hrd, hwr, hf⟩ hpost
 
 end VG.Proof.ChaCha20Poly1305.AArch64
 
@@ -454,6 +441,36 @@ theorem APre.ctx_wr {s₀ : State} (hp : APre e s₀) : ctxR s₀ ∈ s₀.wr :=
 
 theorem APre.d_wr {s₀ : State} (hp : APre e s₀) : dR s₀ ∈ s₀.wr := by
   rw [hp.wr]; cases e <;> simp
+
+/-- The data may be read. -/
+theorem APre.d_in {s₀ : State} (hp : APre e s₀) : dR s₀ ∈ s₀.rd ++ s₀.wr :=
+  List.mem_append_right _ hp.d_wr
+
+/-- A destination for the data's output, `L s₀` bytes at `Q`: writable, apart
+from the context and the other arguments, and the data itself or apart from
+it. -/
+structure DstR (s₀ : State) (Q : Addr) : Prop where
+  wr : (⟨Q, L s₀⟩ : Region) ∈ s₀.wr
+  wrap : Q.toNat + L s₀ ≤ 2 ^ 64
+  ctx : (ctxR s₀).Disjoint ⟨Q, L s₀⟩
+  k : (kR s₀).Disjoint ⟨Q, L s₀⟩
+  n : (nR s₀).Disjoint ⟨Q, L s₀⟩
+  a : (aR s₀).Disjoint ⟨Q, L s₀⟩
+  t : (tR s₀).Disjoint ⟨Q, L s₀⟩
+  same : Q = dp s₀ ∨ (dR s₀).Disjoint ⟨Q, L s₀⟩
+
+/-- The data itself, in place. -/
+theorem APre.dstSelf {s₀ : State} (hp : APre e s₀) : DstR s₀ (dp s₀) :=
+  ⟨hp.d_wr, hp.wrap_d, hp.c_d, hp.d_k.symm, hp.d_n.symm, hp.d_a.symm, hp.d_t.symm, .inl rfl⟩
+
+/-- The bytes from `a` to `b` of the destination are apart from those from `c`
+of the data, if `b ≤ c`. -/
+theorem DstR.sep {s₀ : State} {Q : Addr} (hq : DstR s₀ Q) {a n c m : Nat} (hb : a + n ≤ c)
+    (hc : c + m ≤ L s₀) :
+    (⟨Q + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨dp s₀ + BitVec.ofNat 64 c, m⟩ := by
+  rcases hq.same with rfl | hd
+  · exact Offset.disjoint _ (.inl hb) (by have := hq.wrap; omega_arith) (by have := hq.wrap; omega_arith)
+  · exact (hd.symm.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith))
 
 theorem APre.a_rd {s₀ : State} (hp : APre e s₀) : aR s₀ ∈ s₀.rd := by
   rw [hp.rd]; cases e <;> simp
@@ -1513,7 +1530,7 @@ theorem hL (s₀ : State) : s₀.gpr .x5 = BitVec.ofNat 64 (L s₀) := by simp [
 /-- The data encrypted (or decrypted) from block counter 1. -/
 theorem crypt_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀)) :
-    WP isa (cryptWith v.callee) s fun s' =>
+    WP isa (cryptWith v.callee false) s fun s' =>
       (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) ∧ Inv s₀ s' ∧ Kept [sub s₀ 64 384, dR s₀] s s' ∧
       bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
   refine WP.seq (WP.mono (WP.preservedV (cryptA_ok hp h) (by lit_decide)) fun s₁ ⟨⟨m₁, x0₁, x1₁, x2₁, x3₁, k₁⟩, v₁⟩ => ?_)
@@ -1529,7 +1546,7 @@ theorem crypt_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre 
     (hp.c_d.sub_left (sub_ctx s₀ (k := 64) (n := 64) (by lit_omega)))
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
     (hp.c_d.symm.sub_right (sub_ctx s₀ (k := 128) (n := 320) (by lit_omega))) hp.wrap_d
-    ((Covers.right hw)) hw fun s₂ v₂ k₂ data₂ => ?_
+    hw fun s₂ v₂ k₂ data₂ => ?_
   refine ⟨fun r hr => (v₂ r hr).trans (v₁ r hr), ?_⟩
   have hsub : ∀ r ∈ [sub s₀ 64 384, dR s₀], ∃ r' ∈ [workR s₀, dR s₀], Region.Sub r r' := by
     intro r hr

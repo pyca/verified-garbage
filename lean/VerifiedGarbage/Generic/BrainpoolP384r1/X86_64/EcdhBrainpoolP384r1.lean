@@ -47,7 +47,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.EcKey.PublicKey
@@ -85,7 +84,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 
 /-! # brainpoolP384r1 on x86-64, generic over its proven group law and inversions -/
 

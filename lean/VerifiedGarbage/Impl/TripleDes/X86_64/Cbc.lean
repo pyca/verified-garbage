@@ -6,12 +6,13 @@ public import VerifiedGarbage.Impl.Modes.X86_64.CbcChained
 /-!
 # Triple DES-CBC on x86-64
 
-`cbcEncryptChained` and `cbcDecryptChained` (schedule = rdi, iv = rsi,
-data = rdx, n = rcx, scratch = r8): the modes' generic CBC that updates the
-chaining value (`Impl/Modes/X86_64/CbcChained.lean`) over calls of the scalar block function
-(`vg_triple_des_encrypt_block` or `vg_triple_des_decrypt_block`), one 8-byte
-block at a time, with the working space in the scratch buffer, which the
-artifact allocates on the stack. `dirCore` is the core with the block
+`cbcEncryptChained` (schedule = rdi, iv = rsi, data = rdx, n = rcx,
+scratch = r8): the modes' generic CBC encryption that updates the chaining
+value (`Impl/Modes/X86_64/CbcChained.lean`) over calls of the scalar block
+function (`vg_triple_des_encrypt_block`), one 8-byte block at a time, with
+the working space in the scratch buffer, which the artifact allocates on the
+stack. (CBC decryption, whose blocks are independent, deciphers many at a
+time with the ECB functions: `Batch.lean`.) `dirCore` is the core with the block
 function inlined, which the proofs verify (`cbcEncryptChainedI`, …): the emitted
 code (`callCore`) is the same with the call in its place.
 
@@ -76,11 +77,5 @@ def cbcEncryptChained : Prog isa := (callCore .encrypt).cbcEncryptChained ⟨.rs
 
 /-- `cbcEncryptChained` with the block function inlined. -/
 def cbcEncryptChainedI : Prog isa := (dirCore .encrypt).cbcEncryptChained ⟨.rsi, .rdx, .rcx, .r8⟩
-
-/-- `vg_triple_des_cbc_decrypt_chained`. -/
-def cbcDecryptChained : Prog isa := (callCore .decrypt).cbcDecryptChained ⟨.rsi, .rdx, .rcx, .r8⟩
-
-/-- `cbcDecryptChained` with the block function inlined. -/
-def cbcDecryptChainedI : Prog isa := (dirCore .decrypt).cbcDecryptChained ⟨.rsi, .rdx, .rcx, .r8⟩
 
 end VG.Impl.TripleDes.X86_64

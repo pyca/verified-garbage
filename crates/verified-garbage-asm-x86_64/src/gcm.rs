@@ -15769,75 +15769,98 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_gar
 /// * `dst_len` must equal `len`.
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
-jb 20f
-.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+        r#".base64 "SItEJBBIPQAEAAA="
+jae 20f
+.base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
 jb 22f
-24:
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 24f
+26:
 .base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
-jae 24b
+jae 26b
+jmp 25f
+24:
+25:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
 jmp 23f
 22:
-23:
-.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
-jmp 21f
-20:
 .base64 "SIP5IA=="
-jb 25f
-.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
-jmp 26f
-25:
-.base64 "SIP5EA=="
 jb 27f
-.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
 jmp 28f
 27:
-.base64 "SIP5CA=="
+.base64 "SIP5EA=="
 jb 29f
-.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
 jmp 210f
 29:
-.base64 "SIP5BA=="
+.base64 "SIP5CA=="
 jb 211f
-.base64 "iwZEi0QO/IkHRIlED/w="
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
 jmp 212f
 211:
-.base64 "QboAAAAASTnK"
-je 213f
-215:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 215b
+.base64 "SIP5BA=="
+jb 213f
+.base64 "iwZEi0QO/IkHRIlED/w="
 jmp 214f
 213:
+.base64 "QboAAAAASTnK"
+je 215f
+217:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 217b
+jmp 216f
+215:
+216:
 214:
 212:
 210:
 28:
-26:
-21:
+23:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
 call {vg_aes_gcm_open_prepared_vaes_vpclmul_avx512}
 .base64 "hcA="
-je 216f
-jmp 217f
-216:
-.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
 je 218f
-220:
-.base64 "QogEF0mDwgFJOco="
-jne 220b
 jmp 219f
 218:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 220f
+222:
+.base64 "QogEF0mDwgFJOco="
+jne 222b
+jmp 221f
+220:
+221:
 219:
-217:
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBWw=="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJMD1//9Ii4QkSAoAAEiJRCQISIuEJFAKAABIiUQkEEiLhCRYCgAASIlEJBhIi4QkYAoAAEiJRCQgSIuEJGgKAABIiUQkKEiLhCRwCgAASIlEJDBIieBIg8BASIlEJDhXVlJRQVBBUVBQUFBQSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQYSItEJGBIiUQkIEiLRCRoSIlEJChIi4QkkAAAAEiJRCQw"
+call {vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512}
+.base64 "hcA="
+je 223f
+jmp 224f
+223:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 225f
+227:
+.base64 "QogEF0mDwgFJOco="
+jne 227b
+jmp 226f
+225:
+226:
+224:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
+jmp 21b
 .p2align 6"#,
         vg_aes_gcm_open_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512::vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512,
     )
 }
 

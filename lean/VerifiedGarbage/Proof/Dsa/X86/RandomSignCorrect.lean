@@ -40,10 +40,10 @@ theorem body_noSp (F : SignFn) : NoSp (body F.name F.code) := by
           (.of_all (by decide +kernel))))) (.of_all (by decide +kernel)))))
       (.of_all (by decide +kernel)))))
 
-theorem code_ok (F : SignFn) {s₀ : State} (A : RandomSignABI s₀) :
+theorem code_ok (F : SignFn) {s₀ : State} (A : RandomSignABI s₀) (hval : KeyValid F.valid s₀) :
     WP isa (code F.name F.code) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed Random.frameBytes u :=
   WP.alloc ⟨by decide, by decide, by decide⟩ (by have := A.stackLow; unfold Random.frameBytes; omega)
-    (body_noSp F) (WP.mono (body_ok F A) fun u hu => ⟨u, hu, rfl⟩)
+    (body_noSp F) (WP.mono (body_ok F A hval) fun u hu => ⟨u, hu, rfl⟩)
 
 theorem freed_esp_eq {s₀ u : State} (A : RandomSignABI s₀) (h : Ready s₀ u) :
     (freed Random.frameBytes u).gpr .esp = s₀.gpr .esp := by
@@ -60,11 +60,12 @@ theorem freed_esp_eq {s₀ u : State} (A : RandomSignABI s₀) (h : Ready s₀ u
   rw [e, BitVec.sub_add_cancel]
 
 /-- `vg_dsa_sign_random` meets its contract. -/
-theorem randomSign_correct (F : SignFn) (s : State) (hpre : (Spec.Dsa.randomSignContract abi 232).pre s) :
+theorem randomSign_correct (F : SignFn) (s : State) (hpre : (Spec.Dsa.randomSignContract abi 232).pre s)
+    (hval : KeyValid F.valid s) :
     ∃ t s', Exec isa (code F.name F.code) s t s' ∧ abiPreserved s s' ∧
       (Spec.Dsa.randomSignContract abi 232).post s s' := by
   have A := randomSignABI_of hpre
-  obtain ⟨t, s', he, u, hF, rfl⟩ := code_ok F A
+  obtain ⟨t, s', he, u, hF, rfl⟩ := code_ok F A hval
   refine ⟨t, _, he, ⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl

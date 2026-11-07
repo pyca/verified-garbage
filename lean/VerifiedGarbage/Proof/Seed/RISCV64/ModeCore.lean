@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.RISCV64.Core
+public import VerifiedGarbage.Proof.Modes.RISCV64.Shared
 public import VerifiedGarbage.Impl.Seed.RISCV64.Modes
 public import VerifiedGarbage.Proof.Seed.ModeBytes
 public import VerifiedGarbage.Proof.Seed.RISCV64.Ecb
@@ -16,8 +16,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 /-!
 # SEED's core for the modes on RISC-V
 
-`dirCoreSpec d`: SEED's core for the direction `d`
-(`Impl.Seed.RISCV64.dirCore d`) meets what the modes need of a core
+`inlineCoreSpec d`: SEED's core for the direction `d`
+(`Impl.Seed.RISCV64.inlineCore d`) meets what the modes need of a core
 (`Proof.Modes.RISCV64.CoreSpec`), with the key a schedule, read in place
 through `a0`, its cipher `Proof.Seed.dirCipher d`, as on PPC64LE. The
 schedule is readable and apart from the regions the mode writes (`KeyArgs`),
@@ -78,23 +78,23 @@ theorem ready_frame {g : Nat} {s s' : State} {B : Addr} {ws : List Region} {k : 
   rw [e, Proof.Seed.scheduleAt_frame hf hd', hk]
 
 /-- The frame's bytes, of the core on `g` blocks. -/
-theorem total_eq (d : Direction) (g : Nat) : 8 * (dirCore d g).total = 1088 + 16 * g := by
-  simp only [dirCore, bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots]; omega
+theorem inline_total_eq (d : Direction) (g : Nat) : 8 * (inlineCore d g).total = 1088 + 16 * g := by
+  simp only [inlineCore, bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots]; omega
 
 theorem raOff_eq (g : Nat) : raOff g = 1032 + 16 * g := by simp only [raOff, scratchSlots]; omega
 
-theorem layout (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) : Layout (dirCore d g) := by
-  have e := total_eq d g
+theorem inlineLayout (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) : Layout (inlineCore d g) := by
+  have e := inline_total_eq d g
   refine ⟨hg1, .inr rfl, Nat.le_add_right _ _, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [dirCore, bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots] at e ⊢ <;> omega
+    simp only [inlineCore, bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots] at e ⊢ <;> omega
 
 theorem prepare_wp (d : Direction) (g : Nat) {s : State} {B : Addr} {rs : List Region} {k : Spec.Seed.Schedule}
-    (hB : s.gpr Impl.Modes.RISCV64.sb = B) (_hS : ScrIn s B (dirCore d g).total)
-    (hm : (⟨B, 8 * (dirCore d g).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
-    WP isa (dirCore d g).prepare s fun s' => Ready g s' B rs k ∧ s'.gpr Impl.Modes.RISCV64.sb = B ∧
-      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (dirCore d g) B] s.mem s'.mem ∧
+    (hB : s.gpr Impl.Modes.RISCV64.sb = B) (_hS : ScrIn s B (inlineCore d g).total)
+    (hm : (⟨B, 8 * (inlineCore d g).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
+    WP isa (inlineCore d g).prepare s fun s' => Ready g s' B rs k ∧ s'.gpr Impl.Modes.RISCV64.sb = B ∧
+      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (inlineCore d g) B] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr :=
-  WP.block_nil ⟨⟨hk, by rw [← total_eq d g]; exact hk.2.2 _ hm⟩, hB, fun _ _ => rfl, Frame.refl _ _, rfl, rfl⟩
+  WP.block_nil ⟨⟨hk, by rw [← inline_total_eq d g]; exact hk.2.2 _ hm⟩, hB, fun _ _ => rfl, Frame.refl _ _, rfl, rfl⟩
 
 /-! ## The block -/
 
@@ -468,25 +468,25 @@ theorem ready_core {g : Nat} {s s' : State} {B : Addr} {ws : List Region} {k : S
 
 /-- The core's `j`th block. -/
 theorem blkAddr_eq (d : Direction) (g : Nat) (B : Addr) (j : Nat) :
-    blkAddr (dirCore d g) B j = bufA B + BitVec.ofNat 64 (16 * j) := by
+    blkAddr (inlineCore d g) B j = bufA B + BitVec.ofNat 64 (16 * j) := by
   show B + BitVec.ofNat 64 (8 * 135) + BitVec.ofNat 64 (16 * j) = B + BitVec.ofNat 64 48 + BitVec.ofNat 64 1032 + _
   rw [Offset.add_add B 48 1032]
 
 /-- The core's slots. -/
 theorem core_eq (d : Direction) (g : Nat) (B : Addr) :
-    coreRegion (dirCore d g) B = ⟨ecbA B, 1040 + 16 * g⟩ := by
-  have e : 8 * ((dirCore d g).total - Impl.Modes.RISCV64.coreSlot) = 1040 + 16 * g := by
-    simp only [dirCore, bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots]; omega
+    coreRegion (inlineCore d g) B = ⟨ecbA B, 1040 + 16 * g⟩ := by
+  have e : 8 * ((inlineCore d g).total - Impl.Modes.RISCV64.coreSlot) = 1040 + 16 * g := by
+    simp only [inlineCore, bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots]; omega
   rw [coreRegion, e]; rfl
 
 /-- SEED's core on `g` blocks meets what the modes need. -/
-def dirCoreSpec (d : Direction) (g : Nat) (hg1 : 1 ≤ g) (hg : g ≤ 16) : CoreSpec (dirCore d g) where
+def inlineCoreSpec (d : Direction) (g : Nat) (hg1 : 1 ≤ g) (hg : g ≤ 16) : CoreSpec (inlineCore d g) where
   Key := Spec.Seed.Schedule
   cipher := Proof.Seed.dirCipher d
   KeyArgs := KeyArgs
   Ready := Ready g
-  cipher_len _ _ := by cases d <;> simp [Proof.Seed.dirCipher, Spec.Seed.cipher, Spec.Seed.invCipher, dirCore]
-  layout := layout d hg1 hg
+  cipher_len _ _ := by cases d <;> simp [Proof.Seed.dirCipher, Spec.Seed.cipher, Spec.Seed.invCipher, inlineCore]
+  layout := inlineLayout d hg1 hg
   keyArgs_congr h e r w _ f := keyArgs_congr h e.a0 r w f
   ready_frame h e r w _ f hs _ := ready_frame h e.a0 r w f hs
   prepare_wp := prepare_wp d g
@@ -494,6 +494,33 @@ def dirCoreSpec (d : Direction) (g : Nat) (hg1 : 1 ≤ g) (hg : g ≤ 16) : Core
     refine WP.mono (crypt_ok d hg1 hg hB hS hR.2 hR.1.2.1) fun s' ⟨h5, hk, hf, hb, hrd, hwr⟩ => ?_
     refine ⟨h5, hk, ready_core hR (hk .a0 (by decide)) hrd hwr hf, by rw [core_eq]; exact hf, fun j hj => ?_,
       hrd, hwr⟩
-    rw [show 4 * (dirCore d g).bw = 16 from rfl, blkAddr_eq, hb j hj, hR.1.1]
+    rw [show 4 * (inlineCore d g).bw = 16 from rfl, blkAddr_eq, hb j hj, hR.1.1]
+
+open VG.Proof.Modes.RISCV64 (KeyMove ReadyMove)
+
+theorem shared_key (d : Direction) (g : Nat) (hg1 : 1 ≤ g) (hg : g ≤ 16) : KeyMove (inlineCoreSpec d g hg1 hg) := by
+  intro s t rs ts k hk ha rd wr hf hs
+  obtain ⟨hk, hin, hd⟩ := keyArgs_congr hk ha rd wr hf
+  exact ⟨hk, hin, fun r hr => by
+    obtain ⟨r', hr', sub⟩ := hs r hr
+    exact (hd r' hr').sub_right sub⟩
+
+theorem shared_ready (d : Direction) (g : Nat) (hg1 : 1 ≤ g) (hg : g ≤ 16) : ReadyMove (inlineCoreSpec d g hg1 hg) := by
+  intro s t B ws k rs hr ha rd wr hf hs hd
+  exact ready_frame hr ha rd wr hf hs
+
+def dirCoreSpec (d : Direction) (g : Nat) (hg1 : 1 ≤ g) (hg : g ≤ 16) : CoreSpec (dirCore d g) :=
+  (inlineCoreSpec d g hg1 hg).shared
+    (by simp only [inlineCore, bufSlot, scratchSlots, Impl.Modes.RISCV64.coreSlot]; omega)
+    (by left; simp only [inlineCore, bufSlot, scratchSlots, Impl.Modes.RISCV64.coreSlot]; omega)
+    (shared_key d g hg1 hg) (shared_ready d g hg1 hg) rfl rfl _ _
+
+theorem layout (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) : Layout (dirCore d g) :=
+  VG.Proof.Modes.RISCV64.shared_layout (inlineLayout d hg1 hg)
+    (by simp only [inlineCore, bufSlot, scratchSlots, Impl.Modes.RISCV64.coreSlot]; omega) _ _
+
+theorem total_eq (d : Direction) (g : Nat) : 8 * (dirCore d g).total = 1104 + 16 * g := by
+  simp only [dirCore, Impl.Modes.RISCV64.Core.shared, inlineCore, bufSlot, scratchSlots,
+    Impl.Modes.RISCV64.coreSlot]; omega
 
 end VG.Proof.Seed.RISCV64.Mode

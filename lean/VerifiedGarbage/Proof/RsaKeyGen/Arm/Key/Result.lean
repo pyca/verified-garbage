@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Vals
 public import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
 
@@ -79,7 +80,7 @@ theorem res_spec [VG.Proof.Rsa.Arm.Keys.InvLaw] (pre : In P σ) : res P σ = res
     pre.k1 pre.k2 (P0_lt P σ) (Q0_lt P σ) pre.e_lt
     (by have := hx.1; rw [hx.2.2] at this; exact this) hx.2.1
   have lcmE : Nat.lcm (pv P σ - 1) (qv P σ - 1) = lv P σ := (lv_eq P σ).symm
-  unfold res Spec.RsaKeyGen.keyOp
+  unfold res Proof.RsaKeyGen.keyOp
   rw [key]
   have hp : (if P0 P σ < Q0 P σ then Q0 P σ else P0 P σ) = pv P σ := rfl
   have hq : (if P0 P σ < Q0 P σ then P0 P σ else Q0 P σ) = qv P σ := rfl

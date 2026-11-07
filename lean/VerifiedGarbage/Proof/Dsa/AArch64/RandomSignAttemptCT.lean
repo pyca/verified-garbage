@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
@@ -45,8 +47,9 @@ private theorem some_of_status {draw : Spec.Dsa.Random.Sample}
     simp only [Random.sampleStatus, hc] at h
     split at h <;> contradiction
 
-theorem random_sign_attempt_agreement (v : Backend) {s t a b : State}
-    {hs : RandomSignABI v.stack s} {ht : RandomSignABI v.stack t}
+theorem random_sign_attempt_agreement (S : Signer) {s t a b : State}
+    {hs : RandomSignABI S.stack s} {ht : RandomSignABI S.stack t}
+    (hvs : RandomValid S s) (hvt : RandomValid S t)
     {hqs : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {hqt : 1 < Spec.Dsa.decodeBE (randomQBytes t)}
     {used fuel : Nat} (ha : RandomSignRunning hs hqs used (fuel + 1) a)
     (hb : RandomSignRunning ht hqt used (fuel + 1) b)
@@ -54,8 +57,8 @@ theorem random_sign_attempt_agreement (v : Backend) {s t a b : State}
     (htrace : (randomSignRemaining (randomInput s) used (fuel + 1)).trace =
       (randomSignRemaining (randomInput t) used (fuel + 1)).trace)
     {tsa tsb : List Leak} {u w : State}
-    (ea : Exec isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul)) a tsa u)
-    (eb : Exec isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul)) b tsb w) : tsa = tsb := by
+    (ea : Exec isa (RandomSign.attempt S.name S.code) a tsa u)
+    (eb : Exec isa (RandomSign.attempt S.name S.code) b tsb w) : tsa = tsb := by
   have hdraw := congrArg randomSamplingTrace htrace
   rw [random_sign_trace_draw, random_sign_trace_draw] at hdraw
   obtain ⟨hused, _, hstatus⟩ := random_sign_draw_agree hpub hdraw
@@ -97,7 +100,7 @@ theorem random_sign_attempt_agreement (v : Backend) {s t a b : State}
               rw [← ham] at hnoncea
               rw [← hbm] at hnonceb
               rw [← hused] at hbr'
-              have hsingle := random_sign_single_agreement v har' hbr' hpub (by omega) hbound
+              have hsingle := random_sign_single_agreement S hvs hvt har' hbr' hpub (by omega) hbound
                 hnoncea hnonceb hsucc eata ebtb
               rw [hsample, hcmp, hsingle]
             | iteF hcb _ =>

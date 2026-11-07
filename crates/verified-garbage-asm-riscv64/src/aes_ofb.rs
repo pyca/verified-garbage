@@ -40,6 +40,92 @@ call {vg_aes_ofb_chain}
     )
 }
 
+/// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Ofb.aesFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes, and aligned for `u64`.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_ofb_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x7139
+.insn 2, 0x880a
+.insn 4, 0x00183023
+.insn 4, 0x00983423
+.insn 4, 0x01283823
+.insn 4, 0x01383c23
+.insn 4, 0x03483023
+.insn 4, 0x03583423
+.insn 4, 0x03683823
+.insn 4, 0x03783c23
+.insn 2, 0x84aa
+.insn 2, 0x8a2e
+.insn 2, 0x8ab2
+.insn 2, 0x8b3e
+.insn 2, 0x8bc2
+.insn 4, 0x00475293
+.insn 4, 0x00429313
+.insn 4, 0x00668933
+.insn 4, 0x406709b3
+.insn 2, 0x8716
+call {vg_aes_ofb}
+beqz s3, 20f
+.insn 2, 0x8526
+.insn 2, 0x85d2
+.insn 2, 0x8656
+.insn 2, 0x4685
+.insn 2, 0x875a
+call {vg_aes_encrypt_blocks}
+.insn 2, 0x83d6
+22:
+.insn 4, 0x00094283
+.insn 4, 0x0003c303
+.insn 4, 0x0062c2b3
+.insn 4, 0x00590023
+.insn 2, 0x0905
+.insn 2, 0x0385
+.insn 2, 0x19fd
+bnez s3, 22b
+j 21f
+20:
+21:
+.insn 4, 0x000bb083
+.insn 4, 0x008bb483
+.insn 4, 0x010bb903
+.insn 4, 0x018bb983
+.insn 4, 0x020bba03
+.insn 4, 0x028bba83
+.insn 4, 0x030bbb03
+.insn 4, 0x038bbb83
+.insn 2, 0x8f0a
+.insn 2, 0x4f81
+.insn 4, 0x01ff3023
+.insn 4, 0x01ff3423
+.insn 4, 0x01ff3823
+.insn 4, 0x01ff3c23
+.insn 4, 0x03ff3023
+.insn 4, 0x03ff3423
+.insn 4, 0x03ff3823
+.insn 4, 0x03ff3c23
+.insn 2, 0x6121
+.insn 2, 0x8082
+.option pop",
+        vg_aes_ofb = sym super::aes_ofb::vg_aes_ofb,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+    )
+}
+
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ofb_chain.rs"]
 pub(crate) mod vg_aes_ofb_chain;

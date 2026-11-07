@@ -24,7 +24,6 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
@@ -459,7 +458,7 @@ def CryptOk (s₀ : State) (crypt : Prog isa) : Prop :=
     WP isa crypt s (CryptPost s₀ s)
 
 theorem cryptWith_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀) :
-    CryptOk s₀ (cryptWith v.callee) := fun _ h hst =>
+    CryptOk s₀ (cryptWith v.callee false) := fun _ h hst =>
   (crypt_ok v hp h hst).mono fun _ ⟨v', i', k', c'⟩ => ⟨v', i', k'.sub fun r hr => ⟨r, by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl <;> simp, fun _ h => h⟩, c'⟩

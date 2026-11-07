@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ed448.RISCV64.VFinish
 import VerifiedGarbage.Proof.Ed448.VerifyEq
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Impl.Ed448.RISCV64.VerifyEquation
@@ -138,9 +139,10 @@ theorem disj_decW {d n xo yo : Nat} (h1 : 1064 ≤ d) (h2 : d + n ≤ 1696) (hxo
     (hyo : d + n ≤ yo ∨ yo + 56 ≤ d) (hx : xo + 56 ≤ 2048) (hy : yo + 56 ≤ 2048) :
     ∀ r ∈ decW b xo yo, Region.Disjoint ⟨b + BitVec.ofNat 64 d, n⟩ r := by
   obtain ⟨o1, o2, o3, o4⟩ := offs
+  have hRA : DECODE_RA = 1712 := rfl
   intro r hr
   simp only [decW, yW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
   all_goals exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
@@ -219,7 +221,8 @@ def PreOk (s u : State) : Prop :=
     (∀ r, Spec.Ed448.decodePoint ((Spec.Ed448.bytesAt s.mem (s.gpr .a1) 114).take 57) = some r →
       FS u.mem (base (s.gpr .a3)) NRX = 0 - r.X ∧ FS u.mem (base (s.gpr .a3)) NRY = r.Y ∧ r.Z = 1)
 
-theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa vPrefix s (PreOk s) := by
+theorem pre_run (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa vPrefix s fun u => PreOk s u ∧
+    Rest [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6] s u := by
   obtain ⟨o1, o2, o3, o4⟩ := offs
   have hTB : TB = 2104 := rfl
   have hKT : KT = 3976 := rfl
@@ -333,6 +336,11 @@ theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa v
   have dF := disj_FA (b := b) (d := BAD) (n := 8) (by omega) (by omega)
   have k911 : ∀ {q : Nat}, 1064 ≤ q → q + 56 ≤ 1696 → FS s11.mem b q = FS s9.mem b q := fun h1 h2 => by
     rw [fs_disj hf11 (dBT (by omega)), fs_disj hK10.2.2.1 (disj_FAK (by omega) (by omega))]
+  refine ⟨?_, (hr1.mono (by decide)).trans ((hr2.mono (by decide)).trans
+    ((hr3.mono (by decide)).trans ((hr4.mono (by decide)).trans
+    ((hr5.mono (by decide)).trans ((hr6.mono (by decide)).trans
+    ((hr7.mono (by decide)).trans ((hr8.mono (by decide)).trans
+    ((hr9.mono (by decide)).trans ((hK10.2.1.mono (by decide)).trans (hr11.mono (by decide)))))))))))⟩
   refine ⟨hc11, ?_, hfx, hd11, ?_, fun a hA => ?_, fun r hRr => ?_⟩
   · rw [hr11.sp, hK10.2.1.sp, hr9.sp, hr8.sp, hr7.sp, hr6.sp, hr5.sp, hr4.sp, hr3.sp, hr2.sp, hr1.sp]
   · rw [bad_keep hf11 (dBT (by omega)), bad_keep hK10.2.2.1 (disj_FAK (by omega) (by omega)),
@@ -355,10 +363,14 @@ theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa v
       kR3 (.inl rfl), kR3 (.inr rfl), rx, ry, rz]
     exact ⟨rfl, rfl, rfl⟩
 
+theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa vPrefix s (PreOk s) :=
+  WP.mono (pre_run hR hp) fun _ h => h.1
+
 theorem verifyEquation_correct (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) :
-    WP isa verifyEquation s fun t => (t.gpr .a0).setWidth 32 =
+    WP isa verifyEquation s fun t => ((t.gpr .a0).setWidth 32 =
       if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt s.mem (s.gpr .a0) 57)
-        (Spec.Ed448.bytesAt s.mem (s.gpr .a1) 114) (Spec.Ed448.bytesAt s.mem (s.gpr .a2) 57) then 1 else 0 := by
+        (Spec.Ed448.bytesAt s.mem (s.gpr .a1) 114) (Spec.Ed448.bytesAt s.mem (s.gpr .a2) 57) then 1 else 0) ∧
+      Rest [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6] s t := by
   obtain ⟨o1, o2, o3, o4⟩ := offs
   have hl3 : (Spec.Ed448.bytesAt s.mem (s.gpr .a0) 57).length = 57 := by simp [Spec.Ed448.bytesAt]
   have hl4 : (Spec.Ed448.bytesAt s.mem (s.gpr .a1) 114).length = 114 := by simp [Spec.Ed448.bytesAt]
@@ -366,13 +378,19 @@ theorem verifyEquation_correct (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VP
   have hSl := limit_of (bs := (Spec.Ed448.bytesAt s.mem (s.gpr .a1) 114).drop 57) (by rw [List.length_drop, hl4])
   have hKl := limit_of hl5
   unfold verifyEquation
-  refine WP.seq (WP.mono (pre_ok hR hp) fun u ⟨hcu, _, hfx, hdu, hbad, hkey, hnr⟩ => ?_)
+  refine WP.seq (WP.mono (pre_run hR hp) fun u ⟨⟨hcu, _, hfx, hdu, hbad, hkey, hnr⟩, hru⟩ => ?_)
   generalize hb : base (s.gpr .a3) = b at hcu hfx hdu hbad hkey hnr
   generalize hS : Spec.Ed448.decodeLE ((Spec.Ed448.bytesAt s.mem (s.gpr .a1) 114).drop 57) = S at *
   generalize hK : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (s.gpr .a2) 57) = K at *
   refine WP.seq (WP.mono (joint_ok hSl hKl hcu hfx hdu) fun s12 ⟨sL, hvL, fL, rL, ⟨⟨t2', C12⟩, d12, rep12⟩⟩ => ?_)
   refine WP.seq (WP.mono (addNegR_ok hvL C12 d12) fun s13 ⟨hc13, st13, sl13⟩ => ?_)
-  refine WP.mono (vFinish_ok hc13 sl13) fun t ht => ?_
+  obtain ⟨tf, t, hef, ht, hk⟩ := WP.keep
+    [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6]
+    (vFinish_ok hc13 sl13) (by decide +kernel)
+  have rf : Rest [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6] s13 t :=
+    ⟨hk.1, hk.2.1, hk.2.2, Exec.sp hef⟩
+  refine ⟨tf, t, hef, ?_, hru.trans ((rL.mono (by decide)).trans
+    ((st13.rest.mono (by decide)).trans rf))⟩
   rw [ht]
   have dF := disj_FA (b := b) (d := BAD) (n := 8) (by omega) (by omega)
   have hb13 : bad s13.mem b = bad u.mem b := by rw [bad_keep st13.frame dF, bad_keep fL dF]

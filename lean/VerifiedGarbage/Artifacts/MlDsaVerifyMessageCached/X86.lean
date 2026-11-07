@@ -47,7 +47,7 @@ import VerifiedGarbage.Proof.MlKem.X86.EncV
 import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 import VerifiedGarbage.Proof.MlKem.X86.Table
 
-/-! # ML-DSA (FIPS 204) on x86 (32-bit): verifying messages with a cached public-key digest -/
+/-! # ML-DSA (FIPS 204) on x86 (32-bit): verifying messages with a cached public-key digest, with encoded and prepared keys -/
 
 @[expose] public section
 
@@ -59,17 +59,32 @@ def artifacts : List Artifact := [
   (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86.target {
     code := Impl.MlDsa.X86.Message.verifyMessageCached Spec.MlDsa.verify44Api.name
       Impl.MlDsa.X86.Verify.verify44 Spec.MlDsa.mlDsa44
-    stack := 132
+    stack := 172
     verified := Proof.MlDsa.X86.Message.verifyMessageCached44_verified },
+  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86.target {
+    code := Impl.MlDsa.X86.Message.verifyMessageCached (Impl.MlDsa.X86.Verify.preparedName "mldsa44")
+      (Impl.MlDsa.X86.Verify.verifyPreparedOf Spec.MlDsa.mlDsa44 "mldsa44") Spec.MlDsa.mlDsa44
+    stack := 172
+    verified := Proof.MlDsa.X86.Message.verifyMessagePrepared44_verified },
   (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86.target {
     code := Impl.MlDsa.X86.Message.verifyMessageCached Spec.MlDsa.verify65Api.name
       Impl.MlDsa.X86.Verify.verify65 Spec.MlDsa.mlDsa65
-    stack := 132
+    stack := 172
     verified := Proof.MlDsa.X86.Message.verifyMessageCached65_verified },
+  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86.target {
+    code := Impl.MlDsa.X86.Message.verifyMessageCached (Impl.MlDsa.X86.Verify.preparedName "mldsa65")
+      (Impl.MlDsa.X86.Verify.verifyPreparedOf Spec.MlDsa.mlDsa65 "mldsa65") Spec.MlDsa.mlDsa65
+    stack := 172
+    verified := Proof.MlDsa.X86.Message.verifyMessagePrepared65_verified },
   (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86.target {
     code := Impl.MlDsa.X86.Message.verifyMessageCached Spec.MlDsa.verify87Api.name
       Impl.MlDsa.X86.Verify.verify87 Spec.MlDsa.mlDsa87
-    stack := 132
-    verified := Proof.MlDsa.X86.Message.verifyMessageCached87_verified }]
+    stack := 172
+    verified := Proof.MlDsa.X86.Message.verifyMessageCached87_verified },
+  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86.target {
+    code := Impl.MlDsa.X86.Message.verifyMessageCached (Impl.MlDsa.X86.Verify.preparedName "mldsa87")
+      (Impl.MlDsa.X86.Verify.verifyPreparedOf Spec.MlDsa.mlDsa87 "mldsa87") Spec.MlDsa.mlDsa87
+    stack := 172
+    verified := Proof.MlDsa.X86.Message.verifyMessagePrepared87_verified }]
 
 end VG.Artifacts.MlDsaVerifyMessageCached.X86

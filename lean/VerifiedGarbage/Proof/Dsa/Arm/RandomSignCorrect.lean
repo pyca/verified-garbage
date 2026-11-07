@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomFinish
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomCall
 
 import VerifiedGarbage.Proof.Dsa.Arm.RandomBody
 import VerifiedGarbage.Proof.Framework.Omega
@@ -19,18 +20,18 @@ namespace VG.Proof.Dsa.Arm
 open VG VG.Arm VG.Proof.Mont VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.Random VG.Impl.Dsa.Arm.RandomSign
 open VG.Proof.X25519.Arm (toNat_imm)
 
-theorem code_ok (name : String) {s₀ : State} (A : RandomABI s₀) :
-    WP isa (code name (Entry.operation true)) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed frameBytes u :=
+theorem code_ok (S : Signer) (name : String) {s₀ : State} (A : RandomABI s₀) (V : RValid S s₀) :
+    WP isa (code name S.code) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed frameBytes u :=
   WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by have := A.stackLow; unfold frameBytes; omega)
-    (WP.mono (body_ok name A) fun u hu => ⟨u, hu, rfl⟩)
+    (WP.mono (body_ok S name A V) fun u hu => ⟨u, hu, rfl⟩)
 
 /-- `vg_dsa_sign_random` meets its contract. -/
-theorem randomSign_correct (name : String) (s : State)
-    (hpre : (Spec.Dsa.randomSignContract Arm.abi 144).pre s) :
-    ∃ t s', Exec isa (code name (Entry.operation true)) s t s' ∧ abiPreserved s s' ∧
+theorem randomSign_correct (S : Signer) (name : String) (s : State)
+    (hpre : (Spec.Dsa.randomSignContract Arm.abi 144).pre s) (V : RValid S s) :
+    ∃ t s', Exec isa (code name S.code) s t s' ∧ abiPreserved s s' ∧
       (Spec.Dsa.randomSignContract Arm.abi 144).post s s' := by
   have A := randomABI_of hpre
-  obtain ⟨t, s', he, u, hF, rfl⟩ := code_ok name A
+  obtain ⟨t, s', he, u, hF, rfl⟩ := code_ok S name A V
   refine ⟨t, _, he, ⟨fun r hr => hF.regs r hr, by
     show u.sp + BitVec.ofNat 32 frameBytes = s.sp
     rw [hF.sp, BitVec.sub_add_cancel]⟩, ?_⟩

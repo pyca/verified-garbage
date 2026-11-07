@@ -259,7 +259,7 @@ that read a key context compute with the ciphers of the key schedule in it,
 for the number of rounds `Nr` they take as an argument, and the `L_*` in it
 (`ctxCiph`, `ctxInv`, `ctxLstar`), whatever the context holds: for a
 context that `vg_aes_ocb_init` wrote for `key` (`KeyRepr`), that is AES-OCB
-with `key` (`encryptWith_ctx`, `decryptWith_ctx`). -/
+with `key`. -/
 
 /-- The 16 bytes at `p` as a block. -/
 def blockAtMem (m : Mem) (p : Addr) : Block := ofBytes (Aes.bytesAt m p 16)
@@ -280,33 +280,5 @@ schedule of `key` and `L_* = ENCIPHER(K, zeros(128))`. -/
 def KeyRepr (m : Mem) (p : Addr) (key : List Byte) : Prop :=
   Aes.bytesAt m p (16 * (Aes.rounds (key.length / 4) + 1)) = Aes.expandKey key ∧
     ctxLstar m p = aes key 0
-
-/-- Encryption with the key context of `key`, for its number of rounds, is
-AES-OCB's with `key`. -/
-theorem encryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : KeyRepr m p key)
-    (t : Nat) (nonce a pt : List Byte) (hl : lengthsOk t nonce.length = true) :
-    encrypt key t nonce a pt =
-      some ((encryptWith (ctxCiph m p (Aes.rounds (key.length / 4))) (ctxLstar m p) t nonce a
-          pt).1 ++
-        (encryptWith (ctxCiph m p (Aes.rounds (key.length / 4))) (ctxLstar m p) t nonce a
-          pt).2) := by
-  rw [ctxCiph, hk.1, hk.2, encrypt]
-  simp only [hl, ↓reduceIte]
-  rfl
-
-/-- Decryption with the key context of `key`, for its number of rounds, is
-AES-OCB's with `key`, for lengths that are accepted. -/
-theorem decryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : KeyRepr m p key)
-    (t : Nat) (nonce a c tag : List Byte) (hl : lengthsOk t nonce.length = true)
-    (ht : tag.length = t) :
-    decrypt key t nonce a (c ++ tag) =
-      decryptWith (ctxCiph m p (Aes.rounds (key.length / 4)))
-        (ctxInv m p (Aes.rounds (key.length / 4))) (ctxLstar m p) t nonce a c tag := by
-  have hc : (c ++ tag).length - t = c.length := by simp [ht]
-  have hlt : decide ((c ++ tag).length < t) = false := by simp [ht]
-  rw [ctxCiph, ctxInv, hk.1, hk.2, decrypt, hc, hl, hlt]
-  simp only [Bool.not_true, Bool.false_or, Bool.false_eq_true, ↓reduceIte, List.take_left,
-    List.drop_left]
-  rfl
 
 end VG.Spec.Ocb

@@ -100,6 +100,12 @@ def OutK (p : Params) (n1 n2 n0 : Nat) (c : Buf) : Prop :=
   Out p (oP (aBase p)) (oP (nS p)) c ∧ Out p (oP (s1B p)) (oP (s1B p + n1)) c ∧
     Out p (oP (s2B p)) (oP (s2B p + n2)) c ∧ Out p (oP (t0B p)) (oP (t0B p + n0)) c
 
+/-- A write apart from the first `n1`, `n2` and `n0` polynomials of `ŝ₁`,
+`ŝ₂` and `t̂₀`. -/
+def OutS (p : Params) (n1 n2 n0 : Nat) (c : Buf) : Prop :=
+  Out p (oP (s1B p)) (oP (s1B p + n1)) c ∧ Out p (oP (s2B p)) (oP (s2B p + n2)) c ∧
+    Out p (oP (t0B p)) (oP (t0B p + n0)) c
+
 /-- A write that an iteration of the loop may do: apart from `Â`, `ŝ₁`,
 `ŝ₂`, `t̂₀`, `CNT`, `KAP` and `ρ″`. -/
 def OutI (p : Params) (c : Buf) : Prop :=
@@ -125,7 +131,7 @@ tactic_template "ofs" : tactic => `(tactic| (
     Bool.and_eq_true, List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true,
     true_and, ne_eq, not_true_eq_false, false_and, or_false, true_or, or_true, Out, In,
     Y_n, Y_alen0, Y_alen1, Y_alen2, Y_alen3, Y_alen4, Y_awr0, Y_awr1, Y_awr2, Y_awr3, Y_awr4,
-    oP, SC, oPS, oRS, oHIN, oMS, oCT, oW1, oST, oWK, oOK, oCNT, oKAP, oONES, skS1, skS2, skT0, sigZ, sigH, aBase, s1B, s2B, t0B, OutK, OutI, OutC, yB, yhB, wB, bMu, bRnd, bSk, bSig]
+    oP, SC, oPS, oRS, oHIN, oMS, oCT, oW1, oST, oWK, oOK, oCNT, oKAP, oONES, skS1, skS2, skT0, sigZ, sigH, aBase, s1B, s2B, t0B, OutK, OutS, OutI, OutC, oKEYS, yB, yhB, wB, bMu, bRnd, bSk, bSig]
   omega_arith))
 
 /-- A check of offsets that mentions no variable but the parameter set and
@@ -133,7 +139,7 @@ bounded indices, decided for each parameter set (`decide_at`): cheaper than
 `ofs`, which unfolds it into arithmetic on the parameters for `omega`, unless
 there are many indices to try. Each conjunct is decided on its own. -/
 tactic_template "ofsd" : tactic => `(tactic| (
-  try dsimp only [VG.Proof.MlDsa.X86.Sign.Out, VG.Proof.MlDsa.X86.Sign.In, VG.Proof.MlDsa.X86.Sign.OutK,
+  try dsimp only [VG.Proof.MlDsa.X86.Sign.Out, VG.Proof.MlDsa.X86.Sign.In, VG.Proof.MlDsa.X86.Sign.OutK, VG.Proof.MlDsa.X86.Sign.OutS,
     VG.Proof.MlDsa.X86.Sign.OutI, VG.Proof.MlDsa.X86.Sign.OutC]
   try simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true, true_implies]
   have hmem := (‹VG.Proof.MlDsa.X86.Sign.PS _›).mem

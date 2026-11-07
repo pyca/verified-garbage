@@ -147,26 +147,34 @@ vg_aes_xts_decrypt_to_aesni_pclmul:
 	cmp r9, 8
 	jb 26f
 	movabs rax, 135
-	vmovq xmm11, rax
+	movq xmm11, rax
 	mov rax, r8
 	add rax, 256
 28:
 	movdqu xmm0, XMMWORD PTR [r11+rcx*1]
-	vpxor xmm0, xmm0, XMMWORD PTR [rax]
+	movdqu xmm9, XMMWORD PTR [rax]
+	pxor xmm0, xmm9
 	movdqu xmm1, XMMWORD PTR [r11+rcx*1+16]
-	vpxor xmm1, xmm1, XMMWORD PTR [rax+16]
+	movdqu xmm9, XMMWORD PTR [rax+16]
+	pxor xmm1, xmm9
 	movdqu xmm2, XMMWORD PTR [r11+rcx*1+32]
-	vpxor xmm2, xmm2, XMMWORD PTR [rax+32]
+	movdqu xmm9, XMMWORD PTR [rax+32]
+	pxor xmm2, xmm9
 	movdqu xmm3, XMMWORD PTR [r11+rcx*1+48]
-	vpxor xmm3, xmm3, XMMWORD PTR [rax+48]
+	movdqu xmm9, XMMWORD PTR [rax+48]
+	pxor xmm3, xmm9
 	movdqu xmm4, XMMWORD PTR [r11+rcx*1+64]
-	vpxor xmm4, xmm4, XMMWORD PTR [rax+64]
+	movdqu xmm9, XMMWORD PTR [rax+64]
+	pxor xmm4, xmm9
 	movdqu xmm5, XMMWORD PTR [r11+rcx*1+80]
-	vpxor xmm5, xmm5, XMMWORD PTR [rax+80]
+	movdqu xmm9, XMMWORD PTR [rax+80]
+	pxor xmm5, xmm9
 	movdqu xmm6, XMMWORD PTR [r11+rcx*1+96]
-	vpxor xmm6, xmm6, XMMWORD PTR [rax+96]
+	movdqu xmm9, XMMWORD PTR [rax+96]
+	pxor xmm6, xmm9
 	movdqu xmm7, XMMWORD PTR [r11+rcx*1+112]
-	vpxor xmm7, xmm7, XMMWORD PTR [rax+112]
+	movdqu xmm9, XMMWORD PTR [rax+112]
+	pxor xmm7, xmm9
 	movdqu xmm8, XMMWORD PTR [r10]
 	pxor xmm0, xmm8
 	pxor xmm1, xmm8
@@ -312,70 +320,86 @@ vg_aes_xts_decrypt_to_aesni_pclmul:
 	aesdeclast xmm5, xmm8
 	aesdeclast xmm6, xmm8
 	aesdeclast xmm7, xmm8
-	vpxor xmm0, xmm0, XMMWORD PTR [rax]
+	movdqu xmm9, XMMWORD PTR [rax]
+	pxor xmm0, xmm9
 	movdqu XMMWORD PTR [r11], xmm0
-	vpxor xmm1, xmm1, XMMWORD PTR [rax+16]
+	movdqu xmm9, XMMWORD PTR [rax+16]
+	pxor xmm1, xmm9
 	movdqu XMMWORD PTR [r11+16], xmm1
-	vpxor xmm2, xmm2, XMMWORD PTR [rax+32]
+	movdqu xmm9, XMMWORD PTR [rax+32]
+	pxor xmm2, xmm9
 	movdqu XMMWORD PTR [r11+32], xmm2
-	vpxor xmm3, xmm3, XMMWORD PTR [rax+48]
+	movdqu xmm9, XMMWORD PTR [rax+48]
+	pxor xmm3, xmm9
 	movdqu XMMWORD PTR [r11+48], xmm3
-	vpxor xmm4, xmm4, XMMWORD PTR [rax+64]
+	movdqu xmm9, XMMWORD PTR [rax+64]
+	pxor xmm4, xmm9
 	movdqu XMMWORD PTR [r11+64], xmm4
-	vpxor xmm5, xmm5, XMMWORD PTR [rax+80]
+	movdqu xmm9, XMMWORD PTR [rax+80]
+	pxor xmm5, xmm9
 	movdqu XMMWORD PTR [r11+80], xmm5
-	vpxor xmm6, xmm6, XMMWORD PTR [rax+96]
+	movdqu xmm9, XMMWORD PTR [rax+96]
+	pxor xmm6, xmm9
 	movdqu XMMWORD PTR [r11+96], xmm6
-	vpxor xmm7, xmm7, XMMWORD PTR [rax+112]
+	movdqu xmm9, XMMWORD PTR [rax+112]
+	pxor xmm7, xmm9
 	movdqu XMMWORD PTR [r11+112], xmm7
-	vmovdqu xmm9, XMMWORD PTR [rax]
-	vpsrldq xmm10, xmm9, 15
-	vpclmulqdq xmm10, xmm10, xmm11, 0
-	vpslldq xmm9, xmm9, 1
-	vpxor xmm9, xmm9, xmm10
-	vmovdqu XMMWORD PTR [rax], xmm9
-	vmovdqu xmm9, XMMWORD PTR [rax+16]
-	vpsrldq xmm10, xmm9, 15
-	vpclmulqdq xmm10, xmm10, xmm11, 0
-	vpslldq xmm9, xmm9, 1
-	vpxor xmm9, xmm9, xmm10
-	vmovdqu XMMWORD PTR [rax+16], xmm9
-	vmovdqu xmm9, XMMWORD PTR [rax+32]
-	vpsrldq xmm10, xmm9, 15
-	vpclmulqdq xmm10, xmm10, xmm11, 0
-	vpslldq xmm9, xmm9, 1
-	vpxor xmm9, xmm9, xmm10
-	vmovdqu XMMWORD PTR [rax+32], xmm9
-	vmovdqu xmm9, XMMWORD PTR [rax+48]
-	vpsrldq xmm10, xmm9, 15
-	vpclmulqdq xmm10, xmm10, xmm11, 0
-	vpslldq xmm9, xmm9, 1
-	vpxor xmm9, xmm9, xmm10
-	vmovdqu XMMWORD PTR [rax+48], xmm9
-	vmovdqu xmm9, XMMWORD PTR [rax+64]
-	vpsrldq xmm10, xmm9, 15
-	vpclmulqdq xmm10, xmm10, xmm11, 0
-	vpslldq xmm9, xmm9, 1
-	vpxor xmm9, xmm9, xmm10
-	vmovdqu XMMWORD PTR [rax+64], xmm9
-	vmovdqu xmm9, XMMWORD PTR [rax+80]
-	vpsrldq xmm10, xmm9, 15
-	vpclmulqdq xmm10, xmm10, xmm11, 0
-	vpslldq xmm9, xmm9, 1
-	vpxor xmm9, xmm9, xmm10
-	vmovdqu XMMWORD PTR [rax+80], xmm9
-	vmovdqu xmm9, XMMWORD PTR [rax+96]
-	vpsrldq xmm10, xmm9, 15
-	vpclmulqdq xmm10, xmm10, xmm11, 0
-	vpslldq xmm9, xmm9, 1
-	vpxor xmm9, xmm9, xmm10
-	vmovdqu XMMWORD PTR [rax+96], xmm9
-	vmovdqu xmm9, XMMWORD PTR [rax+112]
-	vpsrldq xmm10, xmm9, 15
-	vpclmulqdq xmm10, xmm10, xmm11, 0
-	vpslldq xmm9, xmm9, 1
-	vpxor xmm9, xmm9, xmm10
-	vmovdqu XMMWORD PTR [rax+112], xmm9
+	movdqu xmm9, XMMWORD PTR [rax]
+	movdqa xmm10, xmm9
+	psrldq xmm10, 15
+	pclmulqdq xmm10, xmm11, 0
+	pslldq xmm9, 1
+	pxor xmm9, xmm10
+	movdqu XMMWORD PTR [rax], xmm9
+	movdqu xmm9, XMMWORD PTR [rax+16]
+	movdqa xmm10, xmm9
+	psrldq xmm10, 15
+	pclmulqdq xmm10, xmm11, 0
+	pslldq xmm9, 1
+	pxor xmm9, xmm10
+	movdqu XMMWORD PTR [rax+16], xmm9
+	movdqu xmm9, XMMWORD PTR [rax+32]
+	movdqa xmm10, xmm9
+	psrldq xmm10, 15
+	pclmulqdq xmm10, xmm11, 0
+	pslldq xmm9, 1
+	pxor xmm9, xmm10
+	movdqu XMMWORD PTR [rax+32], xmm9
+	movdqu xmm9, XMMWORD PTR [rax+48]
+	movdqa xmm10, xmm9
+	psrldq xmm10, 15
+	pclmulqdq xmm10, xmm11, 0
+	pslldq xmm9, 1
+	pxor xmm9, xmm10
+	movdqu XMMWORD PTR [rax+48], xmm9
+	movdqu xmm9, XMMWORD PTR [rax+64]
+	movdqa xmm10, xmm9
+	psrldq xmm10, 15
+	pclmulqdq xmm10, xmm11, 0
+	pslldq xmm9, 1
+	pxor xmm9, xmm10
+	movdqu XMMWORD PTR [rax+64], xmm9
+	movdqu xmm9, XMMWORD PTR [rax+80]
+	movdqa xmm10, xmm9
+	psrldq xmm10, 15
+	pclmulqdq xmm10, xmm11, 0
+	pslldq xmm9, 1
+	pxor xmm9, xmm10
+	movdqu XMMWORD PTR [rax+80], xmm9
+	movdqu xmm9, XMMWORD PTR [rax+96]
+	movdqa xmm10, xmm9
+	psrldq xmm10, 15
+	pclmulqdq xmm10, xmm11, 0
+	pslldq xmm9, 1
+	pxor xmm9, xmm10
+	movdqu XMMWORD PTR [rax+96], xmm9
+	movdqu xmm9, XMMWORD PTR [rax+112]
+	movdqa xmm10, xmm9
+	psrldq xmm10, 15
+	pclmulqdq xmm10, xmm11, 0
+	pslldq xmm9, 1
+	pxor xmm9, xmm10
+	movdqu XMMWORD PTR [rax+112], xmm9
 	add r11, 128
 	sub r9, 8
 	cmp r9, 8
@@ -389,7 +413,8 @@ vg_aes_xts_decrypt_to_aesni_pclmul:
 	je 213f
 215:
 	movdqu xmm0, XMMWORD PTR [r11+rcx*1]
-	vpxor xmm0, xmm0, XMMWORD PTR [rax]
+	movdqu xmm9, XMMWORD PTR [rax]
+	pxor xmm0, xmm9
 	movdqu xmm8, XMMWORD PTR [r10]
 	pxor xmm0, xmm8
 	cmp rsi, 10
@@ -430,7 +455,8 @@ vg_aes_xts_decrypt_to_aesni_pclmul:
 	aesdec xmm0, xmm8
 	movdqu xmm8, XMMWORD PTR [rdi]
 	aesdeclast xmm0, xmm8
-	vpxor xmm0, xmm0, XMMWORD PTR [rax]
+	movdqu xmm9, XMMWORD PTR [rax]
+	pxor xmm0, xmm9
 	movdqu XMMWORD PTR [r11], xmm0
 	add r11, 16
 	add rax, 16
