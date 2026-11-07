@@ -1,0 +1,6 @@
+{
+  "run_url": "https://github.com/pyca/verified-garbage/actions/runs/42394606660",
+  "revision": "101ede95dd962293391c4f10bfbd974de97270e3",
+  "baseline_revision": "44db4d9cafe88709715eb344d84fd76dfe3f7341",
+  "scope_note": "Longer-batch confirmation. Single-thread improvements repeat across rounds; four-thread wall times vary substantially, motivating the focused concurrency diagnostic."
+}

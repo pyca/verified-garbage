@@ -1,0 +1,6 @@
+{
+  "run_url": "https://github.com/pyca/verified-garbage/actions/runs/42395215555",
+  "revision": "a38e754e821412bdb2340df2192ffcbead60a27e",
+  "baseline_revision": "44db4d9cafe88709715eb344d84fd76dfe3f7341",
+  "scope_note": "RSA_DIAGNOSTIC=1: RSA-4096 only, baseline/public-square/combined, 32 operations per single-thread batch and 128 per worker at four workers. Seven interleaved rounds; thread CPU time separates computation from wall-clock availability."
+}

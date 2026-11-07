@@ -47,3 +47,79 @@ multiply-pair reordering helped multiplication but hurt squaring, so the later
 candidate applies it only to multiplication. These observations reject these
 specific prototypes; they do not establish that every implementation of the
 underlying techniques would be slower.
+
+
+## Confirmed single-thread results
+
+Confirmation run [42394606660](https://github.com/pyca/verified-garbage/actions/runs/42394606660),
+revision `101ede95dd`, uses GCC 13.3.0 (`-O3 -march=rv64gc -mabi=lp64d`) on a
+native RISE RISC-V runner. Exact host/kernel/ISA details are in
+`results/confirmation/machine.txt`. The baseline is an assembly reconstruction
+of emitted code from `44db4d9`; candidate and baseline are linked into the same
+binary and measured with identical inputs in seven alternating-order rounds.
+These are wall-clock measurements, not instruction counts or simulated timings.
+
+| Operation | Bits | Baseline median | Combined median | Median paired elapsed-time reduction |
+|---|---:|---:|---:|---:|
+| Precomputed public exponentiation | 2048 | 126.05 µs | 101.92 µs | 18.81% |
+| Precomputed public exponentiation | 3072 | 271.56 µs | 214.16 µs | 21.17% |
+| Precomputed public exponentiation | 4096 | 476.48 µs | 372.57 µs | 21.92% |
+| Checked private CRT operation | 2048 | 5221.34 µs | 5029.68 µs | 3.78% |
+| Checked private CRT operation | 3072 | 15484.17 µs | 14941.09 µs | 3.37% |
+| Checked private CRT operation | 4096 | 33455.62 µs | 32725.61 µs | 2.69% |
+
+The public-squaring change alone reduces public-operation elapsed time by
+17.96%, 19.42%, and 20.30% respectively. It reuses the existing specialized square
+in the public-exponent path, taking the now-dead R-squared array as scratch.
+The combination additionally uses square-product scheduling, word-wise table
+selection and multiplication-only pair reordering. Their combined private-operation
+time reductions are 3.78%, 3.37%, and 2.69%.
+
+Confirmation passes 4,224 arithmetic checks plus 240 private and 240 public RSA
+checks against OpenSSL, including output aliasing and invalid inputs. These
+standalone checks do not establish formal correctness or a constant-time proof.
+Four-thread results in this run are noisy and include apparent regressions;
+do not infer a concurrency improvement from the single-thread table.
+
+The operations exclude Rust key construction, scratch-buffer leasing, padding,
+and Rust wrapper allocation/cleanup. Public precomputation is outside the public
+operation's timed loop. Checked private operations include CRT preparation,
+exponentiation, recombination, public precomputation and the public fault check.
+The multithreaded workload shares immutable key bytes and gives each worker its
+own scratch workspace. Allocation counts and hardware instruction counts were
+not measured. The square-scheduling candidate adds a 16-byte stack frame; the
+C controls have extra register-saving call wrappers and are not production code.
+
+No source under `src/`, `lean/`, or the generated crates is changed. No Lean
+proofs have been attempted. The normal benchmark workflow is restored in the
+final evidence commit; all experiment outputs stay under this directory.
+
+
+## Concurrency diagnostic and recommendation
+
+The focused [native diagnostic](https://github.com/pyca/verified-garbage/actions/runs/42395215555)
+uses RSA-4096, seven interleaved rounds, and 32 operations per single-thread batch
+or 128 per worker at four workers. Run it with
+`RSA_DIAGNOSTIC=1 experiments/riscv-rsa/run.sh`. Full CPU-time analysis is in
+`results/concurrency/cpu-summary.md`; raw samples retain both elapsed seconds
+and summed worker CPU seconds.
+
+The combination reduces worker CPU time by 2.91% at one worker and 3.12% at four
+workers; every four-worker round improves by 2.65–3.66%. The wall-time result at
+four workers remains noisy (-6.02% to +24.91%), so no robust aggregate-throughput
+gain is claimed. The public-square-only control has essentially unchanged
+private-operation CPU cost while its wall time swings widely, supporting the
+interpretation that those large wall-time changes are inconclusive. The exact
+cause of the runner's availability variation is not established.
+
+Prioritize proof integration of **specialized public squaring**: alone, it cuts
+public-operation elapsed time by 18–20% and reuses an existing arithmetic kernel.
+Then consider word-wise table selection (1–2% private-operation elapsed-time
+reduction) and the combined scheduling changes (roughly 3% for private RSA).
+The column-C and two-row-C prototypes are not candidates for proof work on the
+basis of these measurements. Multiplication reordering should never be applied
+to squaring indiscriminately: the screening measurements show a regression.
+
+All measured candidate code remains unproven and outside the library. Correctness
+checks, native timing, worker CPU time, and formal proofs are separate evidence;
+only the first three have been performed here.
