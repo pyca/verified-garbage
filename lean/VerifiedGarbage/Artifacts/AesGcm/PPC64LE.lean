@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Verified
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Frame
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.Verified
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OpenTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -60,6 +62,10 @@ def artifacts : List Artifact := [
   Spec.Gcm.sealGatherApi.artifact PPC64LE.target {
     code := Impl.AesGcm.PPC64LE.GatherSplit.sealGather
     stack := 2960
-    verified := Proof.AesGcm.sealGather_keyed GatherSplit.verified }]
+    verified := Proof.AesGcm.sealGather_keyed GatherSplit.verified },
+  Spec.Gcm.openToApi.artifact PPC64LE.target {
+    code := Impl.AesGcm.PPC64LE.OpenTo.openTo
+    stack := 2848
+    verified := Proof.AesGcm.openTo_keyed OpenTo.openTo_verified }]
 
 end VG.Artifacts.AesGcm.PPC64LE
