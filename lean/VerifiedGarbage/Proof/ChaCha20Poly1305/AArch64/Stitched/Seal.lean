@@ -101,9 +101,9 @@ theorem split_pad {m : Mem} {p : Addr} {a n : Nat} (ha : a % 16 = 0) (hn : a ≤
   rw [hp, ← List.append_assoc, ← VG.Proof.Poly1305.bytesAt_add, Nat.add_sub_cancel' hn]
 
 /-- The Poly1305 state after the chunks, from that before, through `rs`. -/
-theorem sealed_inv {s₀ : State} (hp : APre e s₀) {s w u : State} {key msg : List Byte} {P A : Nat}
+theorem sealed_inv {s₀ : State} (hp : APre true s₀) {s w u : State} {key msg : List Byte} {P A : Nat}
     (hc : Sealed s₀ s w key msg P A u) {s' : State} (hk : Kept [sub s₀ 64 384, dR s₀] u s') :
-    Inv0 s₀ s' :=
+    Inv0 true s₀ s' :=
   hc.inv.step hk (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -138,7 +138,7 @@ theorem sealStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
     rw [bytesAt_frame k₃'.frame (by rdisj_all) hL', D₃]
   refine WP.seq ((Tail.cryptStitchedSeal_ok v.callee.sve hp (entry_zero true i₃ st₃ R₃ m₃' k₃')).mono
     fun s₄ ⟨P, A, hc⟩ => ?_)
-  refine WP.seq (rest_call v hp hc.le hc.p64 hc.x0 hc.x1 hc.x2 hc.x3 hc.inv.wr hc.cnt hc.data
+  refine WP.seq (rest_call v hp hc.le hc.p64 hc.x0 hc.x1 hc.x2 hc.x3 hc.inv.rd hc.inv.wr (hc.inv.un .x28 (by decide)) hc.cnt hc.data
     |>.mono fun s₅ ⟨v₅, k₅, f₅, ct₅⟩ => ?_)
   rw [D₃'] at ct₅
   have i₅ := sealed_inv hp hc k₅
@@ -215,7 +215,8 @@ theorem sealWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
     simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact first_ctx hp hL256 (by lit_omega)
   have E : Entry true 256 s₀ s₄ (otk s₀) (A s₀ ++ pad16 (A s₀)) s₇ := by
-    refine ⟨i₇, by decide, hL256, x22₇, x23₇, ?_, fun k hk => ?_, ?_, fun r hr => ?_⟩
+    simp only [op_true] at x₅ f₅
+    refine Entry.ofAt i₇ (by decide) hL256 x22₇ x23₇ ?_ (fun k hk => ?_) ?_ (fun r hr => ?_)
     · rw [m₇, stateAt_frame k₆.frame (by rdisj_all), stateAt_frame k₅.frame (by rdisj_all),
         stateAt_frame k₄.frame (by rdisj_all), stateAt_frame k₃.frame (by rdisj_all), st₂,
         VG.Proof.ChaCha20Poly1305.ctr_initState,
@@ -223,13 +224,12 @@ theorem sealWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
     · rw [m₇, data_frame k₆.frame (by rdisj_all) hk]
       by_cases h : k < 256
       · rw [x₅ k h, K₄ k h, Short.ks5_eq s₀ hk, ite_eq_left h]
-      · rw [f₅ _ (ShortRest.rest_out hp (by omega) hk), ite_eq_right h]
-    · simp only [ite_true]
-      rw [m₇, bytesAt_frame k₆.frame f₆ (by omega)]
+      · rw [f₅ _ (ShortRest.rest_out hp.o (by omega) hk), ite_eq_right h]
+    · rw [m₇, bytesAt_frame k₆.frame f₆ (by omega)]
       exact r₆ _ _ (Repr.frame k₅.frame (by rdisj_all) R₄)
     · exact (v₇ r hr).trans ((v₆ r hr).trans (v₅ r hr))
   refine WP.seq ((Tail.cryptStitchedSeal_ok v.callee.sve hp E).mono fun s₈ ⟨P, A', hc⟩ => ?_)
-  refine WP.seq (rest_call v hp hc.le hc.p64 hc.x0 hc.x1 hc.x2 hc.x3 hc.inv.wr hc.cnt hc.data
+  refine WP.seq (rest_call v hp hc.le hc.p64 hc.x0 hc.x1 hc.x2 hc.x3 hc.inv.rd hc.inv.wr (hc.inv.un .x28 (by decide)) hc.cnt hc.data
     |>.mono fun s₉ ⟨v₉, k₉, f₉, ct₉⟩ => ?_)
   rw [D₄] at ct₉
   have i₉ := sealed_inv hp hc k₉

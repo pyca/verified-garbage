@@ -57,21 +57,21 @@ theorem wp_const64 {d : Reg} {c : BitVec 64}
 end
 
 /-- `Inv` without `x22`–`x25`. -/
-structure Inv0 (s₀ : State) (s : State) : Prop where
+structure Inv0 (e : Bool) (s₀ : State) (s : State) : Prop where
   x21 : s.gpr .x21 = cx s₀
   un : ∀ r ∈ untouched, s.gpr r = s₀.gpr r
   sp : s.sp = s₀.sp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   saved : Saved s₀ s.mem
-  frame : Frame [workR s₀, dR s₀] s₀.mem s.mem
+  frame : Frame [workR s₀, oR e s₀] s₀.mem s.mem
 
-theorem Inv.inv0 {s₀ s : State} (h : Inv s₀ s) : Inv0 s₀ s :=
+theorem Inv.inv0 {s₀ s : State} (h : Inv e s₀ s) : Inv0 e s₀ s :=
   ⟨h.x21, h.un, h.sp, h.rd, h.wr, h.saved, h.frame⟩
 
-theorem Inv0.step {s₀ s s' : State} {rs : List Region} (h : Inv0 s₀ s) (hk : Kept rs s s')
-    (hsub : ∀ r ∈ rs, ∃ r' ∈ [workR s₀, dR s₀], Region.Sub r r')
-    (hsv : ∀ r ∈ rs, (sub s₀ 576 56).Disjoint r) : Inv0 s₀ s' where
+theorem Inv0.step {s₀ s s' : State} {rs : List Region} (h : Inv0 e s₀ s) (hk : Kept rs s s')
+    (hsub : ∀ r ∈ rs, ∃ r' ∈ [workR s₀, oR e s₀], Region.Sub r r')
+    (hsv : ∀ r ∈ rs, (sub s₀ 576 56).Disjoint r) : Inv0 e s₀ s' where
   x21 := by rw [hk.cs _ (pres .x21) (pres30 .x21), h.x21]
   un r hr := by
     rw [hk.cs _ (untouched_preserved r hr).1 (untouched_preserved r hr).2, h.un r hr]
@@ -81,12 +81,12 @@ theorem Inv0.step {s₀ s s' : State} {rs : List Region} (h : Inv0 s₀ s) (hk :
   saved := h.saved.frame hk.frame hsv
   frame := h.frame.trans (hk.frame.sub hsub)
 
-theorem mac_inv0 {s₀ s s' : State} (h : Inv0 s₀ s) (hk : Kept (macR s₀) s s') : Inv0 s₀ s' :=
-  h.step hk (macR_work s₀) (macR_saved s₀)
+theorem mac_inv0 {s₀ s s' : State} (h : Inv0 e s₀ s) (hk : Kept (macR s₀) s s') : Inv0 e s₀ s' :=
+  h.step hk (macR_work e s₀) (macR_saved s₀)
 
 /-- The lengths block absorbed. -/
-theorem absorbLengths_ok0 {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv0 s₀ s) :
-    WP isa absorbLengths s fun s' => Inv0 s₀ s' ∧ Kept (macR s₀) s s' ∧
+theorem absorbLengths_ok0 {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv0 e s₀ s) :
+    WP isa absorbLengths s fun s' => Inv0 e s₀ s' ∧ Kept (macR s₀) s s' ∧
       ∀ key msg, Repr s.mem (off (cx s₀) 448) key msg →
         Repr s'.mem (off (cx s₀) 448) key (msg ++ bytesAt s.mem (off (cx s₀) 0) 16) := by
   unfold absorbLengths
@@ -105,7 +105,7 @@ theorem absorbLengths_ok0 {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv
   exact ⟨mac_inv0 h hk, hk, fun key msg hr => by rw [← m₁]; exact repr₂ key msg (by rw [m₁]; exact hr)⟩
 
 /-- The tag written to `ctx[out, out + 16)`. -/
-theorem finalizeTo_ok0 {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv0 s₀ s) {out : Nat}
+theorem finalizeTo_ok0 {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv0 e s₀ s) {out : Nat}
     (hout : out + 16 ≤ 448) :
     WP isa (finalizeTo out) s fun s' => Kept [sub s₀ 448 128, sub s₀ out 16] s s' ∧
       ∀ key msg, Repr s.mem (off (cx s₀) 448) key msg →
@@ -377,5 +377,52 @@ theorem polyOut_ok {s₀ : State} (hp : APre e s₀) (enc : Bool) {s : State}
       u.rd = s.rd ∧ u.wr = s.wr) ∧ u.v = s.v ∧ u.sp = s.sp ∧ u.rd = s.rd ∧ u.wr = s.wr :=
   VG.Proof.ChaCha20.AArch64.Mixed5.keeps_vectors (by cases enc <;> decide +kernel)
     (polyOut_core hp enc hx0 hrd hwr)
+
+theorem outRegs_sub : ∀ r ∈ [Reg.x4, .x5, .x6, .x9, .x10, .x11, .x12, .x13, .x14, .x21, .x22, .x23, .x27, .x28],
+    r ∈ [Reg.x4, .x5, .x6, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x21, .x22, .x23, .x27, .x28] := by decide
+
+/-- `polyEnd`: `polyOut`, and when decrypting `x28` set from the bulk's
+pointers, through `x15`. -/
+theorem polyEnd_ok {s₀ : State} (hp : APre e s₀) (enc : Bool) {s : State}
+    (hx0 : s.gpr .x0 = off (cx s₀) 64) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
+    WP isa (.block (polyEnd enc)) s fun u =>
+      (((s.gpr .x23).toNat ≤ 4 →
+        Poly1305.AArch64.Radix64.hval u = hacc s % Spec.Poly1305.P) ∧
+      u.mem = Poly1305.AArch64.storeHm s.mem (off (cx s₀) 448) (u.gpr .x4) (u.gpr .x5) (u.gpr .x6) ∧
+      u.gpr .x21 = cx s₀ ∧ u.gpr .x27 = s.mem.readW (off (cx s₀) 32) 64 ∧
+      u.gpr .x28 = cond enc (s.mem.readW (off (cx s₀) 40) 64) (s.gpr .x4 - s.gpr .x1) ∧
+      u.gpr .x22 = (restP enc (s.gpr .x1) (s.gpr .x2)).1 ∧
+      u.gpr .x23 = (restP enc (s.gpr .x1) (s.gpr .x2)).2 ∧
+      (∀ r, r ∉ [Reg.x4, .x5, .x6, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x21, .x22, .x23, .x27, .x28] →
+        u.gpr r = s.gpr r) ∧
+      u.rd = s.rd ∧ u.wr = s.wr) ∧ u.v = s.v ∧ u.sp = s.sp ∧ u.rd = s.rd ∧ u.wr = s.wr := by
+  cases enc
+  · show WP isa (.block ([.sub .x .x15 .x4 .x1] ++ (polyOut false ++ [VG.Impl.ChaCha20.AArch64.Xor.mov .x28 .x15]))) s _
+    refine WP.block_append (wp_subS fun s₁ u₁ sp₁ v₁ => WP.block_nil ?_)
+    refine WP.block_append (WP.mono (polyOut_ok hp false (by rw [u₁.other _ (by decide), hx0])
+      (by rw [u₁.rd, hrd]) (by rw [u₁.wr, hwr]))
+      fun s₂ ⟨⟨hv, m, x21, x27, _, x22, x23, g, rd, wr⟩, vv, sp, _, _⟩ => ?_)
+    refine VG.Proof.ChaCha20.AArch64.Xor.wp_movS fun s₃ u₃ sp₃ v₃ => WP.block_nil ?_
+    have g₁ : ∀ r, r ≠ .x15 → s₁.gpr r = s.gpr r := u₁.other
+    have o3 : ∀ r, r ≠ .x28 → s₃.gpr r = s₂.gpr r := u₃.other
+    have ha : hacc s₁ = hacc s := by simp only [hacc, g₁ .x21 (by decide), g₁ .x22 (by decide), g₁ .x23 (by decide)]
+    refine ⟨⟨fun h => ?_, ?_, by rw [o3 _ (by decide), x21], by rw [o3 _ (by decide), x27, u₁.mem], ?_,
+      by rw [o3 _ (by decide), x22, g₁ _ (by decide), g₁ _ (by decide)],
+      by rw [o3 _ (by decide), x23, g₁ _ (by decide), g₁ _ (by decide)], fun r hr => ?_,
+      by rw [u₃.rd, rd, u₁.rd], by rw [u₃.wr, wr, u₁.wr]⟩, by rw [v₃, vv, v₁], by rw [sp₃, sp, sp₁],
+      by rw [u₃.rd, rd, u₁.rd], by rw [u₃.wr, wr, u₁.wr]⟩
+    · rw [g₁ .x23 (by decide)] at hv
+      show (s₃.gpr .x4).toNat + 2 ^ 64 * (s₃.gpr .x5).toNat + 2 ^ 128 * (s₃.gpr .x6).toNat = _
+      rw [o3 _ (by decide), o3 _ (by decide), o3 _ (by decide), ← ha]; exact hv h
+    · rw [u₃.mem, m, u₁.mem, o3 _ (by decide), o3 _ (by decide), o3 _ (by decide)]
+    · show s₃.gpr .x28 = s.gpr .x4 - s.gpr .x1
+      rw [u₃.gpr, g .x15 (by decide), u₁.gpr]
+    · have h28 : r ≠ .x28 := fun h => hr (by subst h; simp)
+      have h15 : r ≠ .x15 := fun h => hr (by subst h; simp)
+      rw [o3 r h28, g r (fun hm => hr (outRegs_sub r hm)), g₁ r h15]
+  · show WP isa (.block (polyOut true)) s _
+    refine WP.mono (polyOut_ok hp true hx0 hrd hwr) fun u ⟨⟨hv, m, x21, x27, x28, x22, x23, g, rd, wr⟩, rest⟩ =>
+      ⟨⟨hv, m, x21, x27, by rw [x28]; rfl, x22, x23, fun r hr => g r (fun hm => hr (outRegs_sub r hm)), rd, wr⟩,
+        rest⟩
 
 end VG.Proof.ChaCha20Poly1305.AArch64
