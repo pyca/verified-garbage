@@ -128,6 +128,26 @@ theorem accStores_lt : ∀ x ∈ accStores l, x.1 + 32 ≤ l.D * (l.nl - 1) + l.
 theorem D_le (hl : AmmOk l) {p : Nat} (hp : p < l.nl) : l.D * p ≤ l.D :=
   Nat.le_trans (Nat.mul_le_mul_left _ (show p ≤ 1 by have := hl.nl_le; omega_arith)) (Nat.le_of_eq (Nat.mul_one _))
 
+/-- A lane's region starts at 0 or at `D`. -/
+theorem D_mulN (hl : AmmOk l) {p : Nat} (hp : p < l.nl) : l.D * p = 0 ∨ l.D * p = l.D := by
+  have := hl.nl_le; rcases (by omega_arith : p = 0 ∨ p = 1) with rfl | rfl <;> simp
+
+/-- A lane is 0 or 1. -/
+theorem lane01 (hl : AmmOk l) {p : Nat} (hp : p < l.nl) : p = 0 ∨ p = 1 := by
+  have := hl.nl_le; omega_arith
+
+/-- The lanes' regions, `D` bytes each. -/
+theorem nlD (hl : AmmOk l) : l.nl * l.D = l.D * (l.nl - 1) + l.D := by
+  have := hl.nl_le; rw [Nat.mul_comm, ← Nat.mul_succ]; congr 1; omega_arith
+
+/-- A lane's region ends within the lanes'. -/
+theorem lane_end (hl : AmmOk l) {p : Nat} (hp : p < l.nl) : l.D * p + l.D ≤ l.nl * l.D := by
+  rw [nlD hl]; have := D_lane (l := l) hp; omega_arith
+
+theorem nlD_le (hl : AmmOk l) : l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := by
+  have := hl.nl_le
+  exact ⟨Nat.le_mul_of_pos_left _ (by omega_arith), Nat.mul_le_mul_right _ this.2⟩
+
 /-- Two lanes' regions, `D ≥ NB` apart. -/
 theorem lane_sep (hl : AmmOk l) {p p' : Nat} (hp : p < l.nl) (hp' : p' < l.nl) (h : p ≠ p') :
     l.D * p + l.NB ≤ l.D * p' ∨ l.D * p' + l.NB ≤ l.D * p := by
@@ -169,28 +189,29 @@ theorem read_stores (hl : AmmOk l) (m : Mem) (B : Addr) (s : State) {p k t : Nat
 
 /-! ## Frames of both regions -/
 
-/-- `m'` agrees with `m` but on the bytes at offsets `[D p + o, D p + o + n)` of `B`, for `p < 2`. -/
+/-- `m'` agrees with `m` but on the bytes at offsets `[D p + o, D p + o + n)` of `B`, for each lane `p`. -/
 def Out2 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (B : Addr) (o n : Nat) (m m' : Mem) : Prop :=
-  ∀ x, (∀ p < 2, ofs B x < l.D * p + o ∨ l.D * p + o + n ≤ ofs B x) → m' x = m x
+  ∀ x, (∀ p < l.nl, ofs B x < l.D * p + o ∨ l.D * p + o + n ≤ ofs B x) → m' x = m x
 
 theorem Out2.refl (B : Addr) (o n : Nat) (m : Mem) : Out2 l B o n m m := fun _ _ => rfl
 
 theorem Out2.trans {B : Addr} {o n : Nat} {m₁ m₂ m₃ : Mem} (h₁ : Out2 l B o n m₁ m₂) (h₂ : Out2 l B o n m₂ m₃) :
     Out2 l B o n m₁ m₃ := fun x hx => (h₂ x hx).trans (h₁ x hx)
 
-theorem Out2.of_outside {B : Addr} {o n p : Nat} {m m' : Mem} (hp : p < 2)
+theorem Out2.of_outside {B : Addr} {o n p : Nat} {m m' : Mem} (hp : p < l.nl)
     (h : Outside B (l.D * p + o) n m m') : Out2 l B o n m m' := fun x hx => h x (hx p hp)
 
 /-- Writes of 32 bytes within the windows. -/
-theorem wrList_out2 (B : Addr) {o n : Nat} (hn : l.D + o + n ≤ 2 ^ 63) :
-    ∀ (xs : List (Nat × BitVec 256)) (m : Mem), (∀ x ∈ xs, ∃ p < 2, l.D * p + o ≤ x.1 ∧ x.1 + 32 ≤ l.D * p + o + n) →
+theorem wrList_out2 (hl : AmmOk l) (B : Addr) {o n : Nat} (hn : l.D + o + n ≤ 2 ^ 63) :
+    ∀ (xs : List (Nat × BitVec 256)) (m : Mem), (∀ x ∈ xs, ∃ p < l.nl, l.D * p + o ≤ x.1 ∧ x.1 + 32 ≤ l.D * p + o + n) →
       Out2 l B o n m (wrList m B xs)
   | [], m, _ => Out2.refl B o n m
   | (e, v) :: rest, m, h => by
     obtain ⟨p, hp, h1, h2⟩ := h (e, v) (List.mem_cons_self ..)
-    have hDp : l.D * p ≤ l.D := by rcases (by omega_arith : p = 0 ∨ p = 1) with rfl | rfl <;> simp
+    have hDp : l.D * p ≤ l.D := by
+      have := hl.nl_le; rcases (by omega_arith : p = 0 ∨ p = 1) with rfl | rfl <;> simp
     exact (Out2.of_outside hp ((writeW256_outside m B v (by omega_arith)).mono h1 (by omega_arith))).trans
-      (wrList_out2 B hn rest _ fun x hx => h x (List.mem_cons_of_mem _ hx))
+      (wrList_out2 hl B hn rest _ fun x hx => h x (List.mem_cons_of_mem _ hx))
 
 /-- `m'` agrees with `m` but on the bytes at offsets `[D p + o, D p + o + n)` of `B`, for each lane. -/
 def OutN (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (B : Addr) (o n : Nat) (m m' : Mem) : Prop :=
@@ -204,9 +225,8 @@ theorem OutN.trans {B : Addr} {o n : Nat} {m₁ m₂ m₃ : Mem} (h₁ : OutN l 
 theorem OutN.of_outside {B : Addr} {o n p : Nat} {m m' : Mem} (hp : p < l.nl)
     (h : Outside B (l.D * p + o) n m m') : OutN l B o n m m' := fun x hx => h x (hx p hp)
 
-/-- With two lanes, `Out2`. -/
-theorem OutN.out2 (hn : l.nl = 2) {B : Addr} {o n : Nat} {m m' : Mem} (h : OutN l B o n m m') :
-    Out2 l B o n m m' := fun x hx => h x fun p hp => hx p (by omega_arith)
+/-- `Out2`, which is the same. -/
+theorem OutN.out2 {B : Addr} {o n : Nat} {m m' : Mem} (h : OutN l B o n m m') : Out2 l B o n m m' := h
 
 /-- Writes of 32 bytes within the lanes' windows. -/
 theorem wrList_outN (B : Addr) {o n : Nat} (hn : l.D * (l.nl - 1) + o + n ≤ 2 ^ 63) :

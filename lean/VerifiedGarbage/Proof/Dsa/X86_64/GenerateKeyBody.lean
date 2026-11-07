@@ -48,7 +48,7 @@ theorem keygen_test_check {t : State} :
 
 theorem keygen_body (v : Backend) {s : State} (h : GenerateKeyABI v.stack s) :
     WP isa (GenerateKey.body (keygenCheckName v) (keygenDeriveName v)
-      (Generate.checkParameters v.sq v.mul) (Generate.deriveKey v.sq v.mul))
+      (Generate.checkParameters v.sq v.mul) (Generate.deriveChecked v.sq v.mul))
       (allocState Random.frameBytes s) (KeygenBodyPost s (keygenResult s)) := by
   have hb := keygen_result_bounds h
   unfold GenerateKey.body

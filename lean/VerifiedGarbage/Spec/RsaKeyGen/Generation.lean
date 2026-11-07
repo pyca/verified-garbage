@@ -41,7 +41,7 @@ def primeEntropy (pLen : Nat) : Nat := 32769 * pLen
 
 /-- The search's first three public words: the counted candidates left, the
 prime's width and the entropy budget (the fourth, the first tape's length, is
-the code's choice: `primeInitContract`). `vg_rsa_keygen_candidate`'s checks of
+the code's choice, within what `Entropy.RequestValid` allows). `vg_rsa_keygen_candidate`'s checks of
 the width and of the exponent's length: only full key generation requires an
 odd 32-bit exponent. An exponent of 3 (with any leading zeros) allows more
 candidates (`primeLimit`). -/

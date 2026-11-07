@@ -24,8 +24,9 @@ over the stream of octets the host hands out, the search is `generate`, but
 where a candidate does not finish within its search's budget of entropy,
 `primeEntropy`.
 
-What timing may depend on is each prime search's (`primeSearchContract`) and
-each key's status (`keyContract`), in order (`keySearch`'s trace): which
+What timing may depend on is each prime search's trace (`primeSearch`'s: its
+candidates' `candidateLeak`) and each key's status (`keyResultStatus`), in
+order (`keySearch`'s trace): which
 candidates were rejected, too close to `p` or accepted, how much the accepted
 ones read, and whether a pair of primes gave a key, was refused for its small
 `d`, or failed a check. Not on the primes or the key.

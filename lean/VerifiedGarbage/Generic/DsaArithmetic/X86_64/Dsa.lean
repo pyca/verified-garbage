@@ -16,12 +16,20 @@ namespace VG.Generic.DsaArithmetic.X86_64.Dsa
 open VG.Proof.Dsa.X86_64
 
 def artifacts (v : Backend) : List Artifact := [
-  Spec.Dsa.randomSignApi.artifact X86_64.target {
+  Spec.Dsa.randomSignPrevalidatedApi.artifact X86_64.target {
     suffix := v.suffix
-    code := Impl.Dsa.X86_64.RandomSign.code (randomSignerName v) (Impl.Dsa.X86_64.SignVerify.sign v.sq v.mul)
+    code := Impl.Dsa.X86_64.RandomSign.code (prevalidatedSignerName v)
+      (Impl.Dsa.X86_64.PrevalidatedSign.sign v.sq v.mul)
     stack := v.stack + 256
-    verified := random_sign_verified v
-    spSafe := random_sign_sp v
+    verified := random_sign_prevalidated_verified v
+    spSafe := random_sign_sp v.prevalidatedSigner
+    features := v.features },
+  Spec.Dsa.validatePrivateKeyApi.artifact X86_64.target {
+    suffix := v.suffix
+    code := Impl.Dsa.X86_64.PrevalidatedSign.validate v.sq v.mul
+    stack := v.stack
+    verified := v.validatePrivateVerified
+    spSafe := v.validatePrivateSp
     features := v.features },
   Spec.Dsa.validatePublicKeyApi.artifact X86_64.target {
     suffix := v.suffix
@@ -40,7 +48,7 @@ def artifacts (v : Backend) : List Artifact := [
   Spec.Dsa.generateKeyApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.Dsa.X86_64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
-      (Impl.Dsa.X86_64.Generate.checkParameters v.sq v.mul) (Impl.Dsa.X86_64.Generate.deriveKey v.sq v.mul)
+      (Impl.Dsa.X86_64.Generate.checkParameters v.sq v.mul) (Impl.Dsa.X86_64.Generate.deriveChecked v.sq v.mul)
     stack := v.stack + 256
     verified := keygen_verified v
     spSafe := keygen_sp v

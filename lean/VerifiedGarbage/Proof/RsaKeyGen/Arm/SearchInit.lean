@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.SearchInit
-public import VerifiedGarbage.Spec.RsaKeyGen.GenerationContract
+public import VerifiedGarbage.Proof.RsaKeyGen.SearchContract
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Slots
 public import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.CountedLoop
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Impl.RsaKeyGen.Arm.SearchInit
-meta import VerifiedGarbage.Spec.RsaKeyGen.GenerationContract
+meta import VerifiedGarbage.Proof.RsaKeyGen.SearchContract
 meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Slots
 meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.X25519.Arm.Instr
@@ -103,7 +103,6 @@ theorem checkMod_ok (s : State) :
   unfold checkMod
   ffrun []
   rw [eval_ne_sub, and7_eq, decide_not]
-
 
 theorem checkEmpty_ok (s : State) :
     WP isa (.block checkEmpty) s fun t =>
@@ -571,13 +570,5 @@ private def initSat : State where
   mem _ := 0
   rd := [⟨0x2000, 3⟩]
   wr := [⟨0x1000, 32⟩]
-
-theorem init_verified : Verified target init (Spec.RsaKeyGen.primeInitContract abi) := by
-  refine Verified.of_correct (k := initContract) init_correct ?_ ?_
-  · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp h₁ h₂
-    exact init_constantTime s₁ s₂ tr₁ tr₂ t₁ t₂ trivial trivial hp h₁ h₂
-  · sig_implies [Spec.RsaKeyGen.primeInitContract, Spec.RsaKeyGen.primeInitSig,
-      initContract, initPre, initPost, initPub, abi, argRegs, reduceClassify, Loc.val, State.addr]
-      [initSat] using initSat
 
 end VG.Proof.RsaKeyGen.Arm.SearchInit

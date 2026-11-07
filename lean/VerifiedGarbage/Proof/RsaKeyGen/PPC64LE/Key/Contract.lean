@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -9,7 +10,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # `vg_rsa_keygen_key` on PPC64LE: the contract the proofs are written against
 
-`keyP`: the shared contract (`Spec.RsaKeyGen.keyContract`) stated on the
+`keyP`: the shared contract (`Proof.RsaKeyGen.keyContract`) stated on the
 registers and the stack, as `vg_rsa_crt_values`'s `cvP`
 (`Proof/Rsa/PPC64LE/CvContract.lean`): `(n = r3, n_len = r4, d = r5,
 d_len = r6, p = r7, p_len = r8, q = r9, q_len = r10)` and `dp`, `dp_len`,
@@ -27,7 +28,7 @@ open VG VG.PPC64LE
 
 /-- The key from the primes, from the caller's memory. -/
 abbrev resOf (s : State) : Except Spec.RsaKeyGen.Failure (List (List Byte)) ⊕ Unit :=
-  Spec.RsaKeyGen.keyOp (s.gpr .r8).toNat (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 7).toNat)
+  Proof.RsaKeyGen.keyOp (s.gpr .r8).toNat (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 7).toNat)
     (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r8).toNat)
 
 /-- The seven outputs' bytes in `m`. -/
@@ -84,7 +85,7 @@ def keyP : Contract isa where
       (stackArg s 5).toNat = (s.gpr .r8).toNat ∧ 1 ≤ (stackArg s 7).toNat ∧ (stackArg s 7).toNat ≤ 8 ∧
       Spec.Rsa.scratchWords (s.gpr .r4).toNat ≤ (stackArg s 9).toNat
   post s s' :=
-    ((s'.gpr .r3).setWidth 32).toNat = Spec.RsaKeyGen.keyStatus (resOf s) ∧
+    ((s'.gpr .r3).setWidth 32).toNat = Proof.RsaKeyGen.keyStatus (resOf s) ∧
       match resOf s with
       | .inl (.ok ys) => outBytes s s'.mem = ys
       | _ => outZero s s'.mem

@@ -162,7 +162,9 @@ arch = "x86_64"
 # AES-CCM's and AES-SIV's AES-NI functions, those chaining CMAC's
 # blocks in registers among them, and the AES-NI instances of
 # AES-OCB and of the modes over whole blocks, ECB to XTS), which a
-# runner with VAES and VPCLMULQDQ never chooses; and VAES's and
+# runner with VAES and VPCLMULQDQ never chooses; ChaCha20's and
+# ChaCha20-Poly1305's SSSE3 instances, which a runner with AVX2 never
+# chooses; and VAES's and
 # VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
 # never chooses; and XTS's VAES instances calling the block
 # functions, which a runner with VPCLMULQDQ never chooses, and its
@@ -183,12 +185,12 @@ arch = "x86_64"
 chip = "native"
 arch = "x86_64"
 runs = """
-- | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize sm4_gcm cpu
+- | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb triple_des_cbc triple_des_cfb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize sm4_gcm cpu
 none | sm4_gcm
 aes,ssse3 | aes_gcm cmac aes_ccm aes_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts zeroize cpu
 pclmulqdq,ssse3 | aes_gcm sm4_gcm cpu
-aes,pclmulqdq,ssse3 | aes_gcm cpu
-aes,avx,pclmulqdq,ssse3 | aes_gcm aes_xts cpu
+aes,pclmulqdq,ssse3 | aes_gcm aes_xts chacha20 cpu
+aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
 aes,avx,avx2,pclmulqdq,ssse3 | aes_gcm cpu
 avx,avx2 | aes_gcm_siv cpu
 aes,avx,avx2,ssse3 | aes_gcm_siv cpu
@@ -244,7 +246,7 @@ pclmulqdq,ssse3 | aes_gcm aes_gcm_siv sm4_gcm cpu
 chip = "skx"
 arch = "x86_64"
 runs = """
-- | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+- | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb triple_des_cbc triple_des_cfb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,bmi2,adx | ffdh dsa ed448 rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs p256 p384 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx512f | argon2 rfc9106 cpu
 avx,avx2,avx512f | argon2 rfc9106 mlkem chacha20 cpu
@@ -261,7 +263,7 @@ avx,avx2,avx512f,avx512vl | mldsa cpu
 chip = "hsw"
 arch = "x86_64"
 runs = """
-- | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs p256 p384 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+- | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb triple_des_cbc triple_des_cfb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs p256 p384 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 """
 
 # Nothing beyond x86-64's baseline, not even CPUID leaf 7.
@@ -274,7 +276,7 @@ chip = "p4p"
 arch = "x86_64"
 runner = "ubuntu-24.04"
 runs = """
-- | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+- | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb triple_des_cbc triple_des_cfb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 """
 
 # Arrow Lake: the SHA512 extension, which no runner has (and
@@ -307,7 +309,9 @@ avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
 # RSAES-PKCS1-v1_5 decryption and RSASSA-PSS signing with
 # vg_rsa_private_checked_ifma and each hash function's
 # implementations (and RSAES-OAEP decryption with SHA-1's SHA
-# extensions and SHA-512's baseline code).
+# extensions and SHA-512's baseline code). FFDH's domain operations
+# exponentiate with AVX512_IFMA: with the ADX arithmetic on the
+# unrestricted line, and without it (`_exp_ifma`, which no chip chooses).
 # The unrestricted line runs RSA's full suite when the host has
 # AVX512_IFMA. On SDE hosts without it, ci/cpu_tests.py substitutes a
 # focused RSA group at run time. Feature lines stay identical so shards
@@ -319,7 +323,8 @@ avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
 chip = "icx"
 shards = 2
 runs = """
-- | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm aes_xts cmac chacha20 poly1305 cpu
+- | x25519 ed25519 rsa ffdh message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm aes_xts cmac chacha20 poly1305 cpu
+avx,avx512f,avx512ifma,avx512vl | ffdh cpu
 avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs cpu
 avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl,sha,ssse3 | rsa_oaep_pairs cpu

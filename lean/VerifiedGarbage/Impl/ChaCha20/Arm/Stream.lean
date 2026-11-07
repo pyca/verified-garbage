@@ -35,7 +35,8 @@ computes the next block into the buffer with `vg_chacha20_block`, advances
 the counter and XORs its first bytes. `r4` holds the state, `r5` the data
 not yet processed and `r6` its length throughout, and `r7` the length of the
 whole blocks across the call of `vg_chacha20_xor`: they are callee-saved, so
-the callees keep them. A call (`bl`) stores nothing in memory, so no stack is
+the callees keep them. `vg_chacha20_xor` XORs in place, so `r5` is both its
+`src` (`r1`) and its `dst` (which it takes in `r5`). A call (`bl`) stores nothing in memory, so no stack is
 used.
 
 The branches are on the length and the number of bytes left only, and every
@@ -110,7 +111,8 @@ def part1 : Prog isa :=
     (.block [.mov .r2 (.shifted .r6 .lsr 6), .mov .r2 (.shifted .r2 .lsl 6), .cmp .r2 (.imm 0)]))))
 
 /-- The whole blocks: the state copied and the counter advanced (by `r2 >> 6`),
-and the arguments of `vg_chacha20_xor`; their length is kept in `r7`. -/
+and the arguments of `vg_chacha20_xor` (`dst` is `r5` already); their length
+is kept in `r7`. -/
 def blocksArgs : List Instr :=
   copyWords .r0 .r4 .r4 0 192 16 ++
   ([.ldr .r0 .r4 48, .mov .r1 (.shifted .r2 .lsr 6), .dp .add .r0 .r0 (.reg .r1), .str .r0 .r4 48,

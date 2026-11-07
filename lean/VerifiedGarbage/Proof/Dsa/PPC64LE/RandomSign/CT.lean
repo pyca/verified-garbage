@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Fn
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.CT
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Fn
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.CT
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.CT
-import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Fn
+import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.CT
+import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Fn
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
 import VerifiedGarbage.Proof.Dsa.RandomSignTrace
 import VerifiedGarbage.Proof.Dsa.RandomTraceResult
@@ -29,8 +29,8 @@ followed together (`SameTrace`), as the correctness proof follows each:
 every piece the taint analysis checks from the registers both runs agree on
 (`st_taint`), and every branch it cannot is decided by public data: q, the
 sampling decisions (`sample_st`), and the success of each call of
-`vg_dsa_sign` (`random_sign_trace_call`), whose own run is constant time
-(`sign_ct`).
+`vg_dsa_sign_prevalidated` (`random_sign_trace_call`), whose own run is
+constant time (`psign_ct`).
 -/
 
 @[expose] public section
@@ -173,9 +173,9 @@ theorem prepareQ_st {s₁ s₂ t₁ t₂ : State} (h₁ : rsContract.pre s₁) (
     ⟨by rw [kv1.gpr _ (by decide), kv2.gpr _ (by decide), e12], by rw [kv1.gpr _ (by decide), kv2.gpr _ (by decide), e6],
       EqRegs.single (by rw [x16, y16])⟩ (by taint_decide)
 
-/-! ## A call of `vg_dsa_sign` -/
+/-! ## A call of `vg_dsa_sign_prevalidated` -/
 
-/-- The state `vg_dsa_sign` is entered in, after `callArgs`. -/
+/-- The state `vg_dsa_sign_prevalidated` is entered in, after `callArgs`. -/
 theorem narrow_vals {s₀ w : State} (A : Args (rlOf s₀) s₀ w) (rd wr : List Region) :
     (w.callEntry.withRegions rd wr).sp = (rlOf s₀).F ∧
       (w.callEntry.withRegions rd wr).gpr .r3 = (rlOf s₀).out ∧
@@ -220,8 +220,8 @@ theorem leak_eq {s₀ w : State} (h : rsContract.pre s₀) (A : Args (rlOf s₀)
 theorem call_st {s₁ s₂ w₁ w₂ : State} (h₁ : rsContract.pre s₁) (h₂ : rsContract.pre s₂) (eL : rlOf s₁ = rlOf s₂)
     (ek : keyLeak s₁ = keyLeak s₂) (A₁ : Args (rlOf s₁) s₁ w₁) (A₂ : Args (rlOf s₂) s₂ w₂)
     (hs : Spec.Dsa.signStatus (sresOf (rlOf s₁) w₁.mem) = Spec.Dsa.signStatus (sresOf (rlOf s₂) w₂.mem)) :
-    SameTrace isa (.call "vg_dsa_sign" Impl.Dsa.PPC64LE.Sign.sign) w₁ w₂ := by
-  refine SameTrace.of_relCT (RelCT.callEx (k := sContract) sign_correct sign_ct
+    SameTrace isa (.call "vg_dsa_sign_prevalidated" Impl.Dsa.PPC64LE.PrevalidatedSign.sign) w₁ w₂ := by
+  refine SameTrace.of_relCT (RelCT.callEx (k := spContract) psign_correct psign_ct
     (P := fun a b => a = w₁ ∧ b = w₂) fun _ _ ⟨e₁, e₂⟩ => ?_) ⟨rfl, rfl⟩
   subst e₁ e₂
   obtain ⟨c₁, cw₁⟩ := sign_cov h₁ A₁.ctx

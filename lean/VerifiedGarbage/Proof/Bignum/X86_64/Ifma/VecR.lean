@@ -30,17 +30,17 @@ theorem limb_of {m : Mem} {F : Addr} {c p v : Nat}
     {j : Nat} (hj : j < l.L) : limb l m F (l.D * p + c) j = limbN v j := by
   rw [limb, h j hj, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := limbN_lt v j; omega)]
 
-theorem val52_of (hl : LayOk l) {m : Mem} {F : Addr} {c p v : Nat}
+theorem val52_of (hl : AmmOk l) {m : Mem} {F : Addr} {c p v : Nat}
     (h : ∀ k < l.L, word m F (l.D * p + c + l.off k) = BitVec.ofNat 64 (limbN v k))
     (hv : v < 2 ^ (64 * l.W + 1)) : val52 l m F (l.D * p + c) = v := by
   rw [val52, lval_congr fun j hj => limb_of h hj, lval_limbN]
-  have h2 := pow2_le (a := 64 * l.W + 1) (b := 52 * l.L) (by have := conv_bounds hl; omega)
+  have h2 := pow2_le (a := 64 * l.W + 1) (b := 52 * l.L) (by have := conv_boundsN hl; omega)
   exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hv h2)
 
 theorem two_mul_lt {k a : Nat} (h : a < 2 ^ k) : 2 * a < 2 ^ (k + 1) + 1 := by
   rw [Nat.pow_succ]; omega
 
-theorem good_of (hl : LayOk l) {m : Mem} {F : Addr} {M : Nat → Nat} {c p v : Nat}
+theorem good_of (hl : AmmOk l) {m : Mem} {F : Addr} {M : Nat → Nat} {c p v : Nat}
     (h : ∀ k < l.L, word m F (l.D * p + c + l.off k) = BitVec.ofNat 64 (limbN v k))
     (hv : v < 2 * M p) (hM : M p < 2 ^ (64 * l.W)) : Good l m F M c p := by
   have := two_mul_lt hM
@@ -48,7 +48,7 @@ theorem good_of (hl : LayOk l) {m : Mem} {F : Addr} {M : Nat → Nat} {c p v : N
 
 /-- The limbs of `v` at offset `c` of region `p` (as `Limbs` says, for each prime). -/
 abbrev LimbsAt (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (F : Addr) (c : Nat) (v : Nat → Nat) : Prop :=
-  ∀ p < 2, ∀ k < l.L, word m F (l.D * p + c + l.off k) = BitVec.ofNat 64 (limbN (v p) k)
+  ∀ p < l.nl, ∀ k < l.L, word m F (l.D * p + c + l.off k) = BitVec.ofNat 64 (limbN (v p) k)
 
 theorem k0_of {M : Nat} {mi : BitVec 64} (h : (M % 2 ^ 64 * mi.toNat + 1) % 2 ^ 64 = 0) :
     (limbN M 0 * (mi &&& mask52).toNat + 1) % 2 ^ 52 = 0 := AmmSym.k0_of h
@@ -56,30 +56,30 @@ theorem k0_of {M : Nat} {mi : BitVec 64} (h : (M % 2 ^ 64 * mi.toNat + 1) % 2 ^ 
 /-- `vec` from the regions: for each prime `M p` (odd, `w = W` words), `k₀`
 from its inverse `mi p`, `2^dbls R mod M`, `x R`, `R` (`R = 2^(64 w)`) and
 the last multiplier `Fin p`. -/
-theorem vecR_ok (hl : LayOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat → Nat} {mi : Nat → BitVec 64}
+theorem vecR_ok (hl : AmmOk l) {s : State} {F : Addr} {M K1 Xc Y Fin x e : Nat → Nat} {mi : Nat → BitVec 64}
     {Q : Prop} {w R : Nat}
-    (hw : w = l.W) (hR : R = 2 ^ (64 * w)) (hB : s.gpr .rbx = F) (hs : Scr s F (2 * l.D + 8))
+    (hw : w = l.W) (hR : R = 2 ^ (64 * w)) (hB : s.gpr .rbx = F) (hs : Scr s F (l.nl * l.D + 8))
     (hM : LimbsAt l s.mem F oM M) (hK : LimbsAt l s.mem F l.oK1 K1) (hX : LimbsAt l s.mem F l.oX Xc)
     (hY : LimbsAt l s.mem F l.oY Y) (hF : LimbsAt l s.mem F l.oFin Fin)
-    (hk0 : ∀ p < 2, ∀ t < 4, word s.mem F (l.D * p + l.oK0 + 8 * t) = mi p &&& mask52)
-    (hinv : ∀ p < 2, (M p % 2 ^ 64 * (mi p).toNat + 1) % 2 ^ 64 = 0)
-    (hMlt : ∀ p < 2, M p < 2 ^ (64 * w)) (hModd : ∀ p < 2, M p % 2 = 1)
-    (hKlt : ∀ p < 2, K1 p < M p) (hXlt : ∀ p < 2, Xc p < M p) (hYlt : ∀ p < 2, Y p < M p)
-    (hFlt : ∀ p < 2, Fin p < 2 * M p)
-    (vx : Q → ∀ p < 2, Xc p % M p = x p * R % M p)
-    (vy : Q → ∀ p < 2, Y p % M p = R % M p)
-    (vk : Q → ∀ p < 2, K1 p % M p = 2 ^ l.dbls * R % M p)
-    (he : ∀ p < 2, e p < 2 ^ (8 * l.E)) (hd : ∀ p < 2, ∀ i < l.ND, dig l s.mem F p i = digit l (e p) i) :
+    (hk0 : ∀ p < l.nl, ∀ t < 4, word s.mem F (l.D * p + l.oK0 + 8 * t) = mi p &&& mask52)
+    (hinv : ∀ p < l.nl, (M p % 2 ^ 64 * (mi p).toNat + 1) % 2 ^ 64 = 0)
+    (hMlt : ∀ p < l.nl, M p < 2 ^ (64 * w)) (hModd : ∀ p < l.nl, M p % 2 = 1)
+    (hKlt : ∀ p < l.nl, K1 p < M p) (hXlt : ∀ p < l.nl, Xc p < M p) (hYlt : ∀ p < l.nl, Y p < M p)
+    (hFlt : ∀ p < l.nl, Fin p < 2 * M p)
+    (vx : Q → ∀ p < l.nl, Xc p % M p = x p * R % M p)
+    (vy : Q → ∀ p < l.nl, Y p % M p = R % M p)
+    (vk : Q → ∀ p < l.nl, K1 p % M p = 2 ^ l.dbls * R % M p)
+    (he : ∀ p < l.nl, e p < 2 ^ (8 * l.E)) (hd : ∀ p < l.nl, ∀ i < l.ND, dig l s.mem F p i = digit l (e p) i) :
     WP isa (vec l) s fun s' =>
-      (∀ p < 2, Good l s'.mem F M l.oY p ∧
+      (∀ p < l.nl, Good l s'.mem F M l.oY p ∧
         (Q → val52 l s'.mem F (l.D * p + l.oY) % M p = x p ^ e p * Fin p % M p)) ∧
-      Outside F 0 (2 * l.D + 8) s.mem s'.mem ∧
+      Outside F 0 (l.nl * l.D + 8) s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr &&& 0xFFFF := by
   subst hR hw
-  obtain ⟨cb1, cb2, cb3, cb4, cb5, cb6⟩ := conv_bounds hl
-  have hv : ∀ {c} {v : Nat → Nat}, LimbsAt l s.mem F c v → ∀ p < 2, v p < 2 * M p →
+  obtain ⟨cb1, cb2, cb3, cb4, cb5, cb6⟩ := conv_boundsN hl
+  have hv : ∀ {c} {v : Nat → Nat}, LimbsAt l s.mem F c v → ∀ p < l.nl, v p < 2 * M p →
       val52 l s.mem F (l.D * p + c) = v p :=
     fun h p hp hlt => val52_of hl (h p hp) (by have := two_mul_lt (hMlt p hp); omega)
   have ar : Ar l s.mem F M (fun p => (mi p &&& mask52).toNat) := by

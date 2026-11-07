@@ -122,7 +122,7 @@ theorem covers_right {rs rd wr : List Region} (h : Covers rs wr) : Covers rs (rd
   let ⟨r, hr, hc⟩ := h a n hi; ⟨r, List.mem_append_right _ hr, hc⟩
 
 theorem covers_sub {s₀ s : State} (hp : APre e s₀) (hwr : s.wr = s₀.wr) (rs : List Region)
-    (h : ∀ r ∈ rs, ∃ k, r = sub s₀ k r.len ∧ k + r.len ≤ 648) : Covers rs s.wr := by
+    (h : ∀ r ∈ rs, ∃ k, r = sub s₀ k r.len ∧ k + r.len ≤ 656) : Covers rs s.wr := by
   refine Covers.of_sub fun r hr => ?_
   obtain ⟨k, hrk, hk⟩ := h r hr
   exact ⟨ctxR s₀, by rw [hwr]; exact hp.ctx_wr, k, by rw [hrk], hk⟩
@@ -130,7 +130,7 @@ theorem covers_sub {s₀ s : State} (hp : APre e s₀) (hwr : s.wr = s₀.wr) (r
 /-- A callee's working space (at `ctx + a`, `n` bytes) and argument (at
 `ctx + b`, `m` bytes) in the context. -/
 theorem covers2 {s₀ s : State} (hp : APre e s₀) (hwr : s.wr = s₀.wr) {a n b m : Nat}
-    (ha : a + n ≤ 648) (hb : b + m ≤ 648) :
+    (ha : a + n ≤ 656) (hb : b + m ≤ 656) :
     Covers ([sub s₀ b m] ++ [sub s₀ a n]) (s.rd ++ s.wr) :=
   covers_right (covers_sub hp hwr _ fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -138,7 +138,7 @@ theorem covers2 {s₀ s : State} (hp : APre e s₀) (hwr : s.wr = s₀.wr) {a n 
     · exact ⟨b, rfl, hb⟩
     · exact ⟨a, rfl, ha⟩)
 
-theorem covers1 {s₀ s : State} (hp : APre e s₀) (hwr : s.wr = s₀.wr) {a n : Nat} (ha : a + n ≤ 648) :
+theorem covers1 {s₀ s : State} (hp : APre e s₀) (hwr : s.wr = s₀.wr) {a n : Nat} (ha : a + n ≤ 656) :
     Covers [sub s₀ a n] s.wr :=
   covers_sub hp hwr _ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨a, rfl, ha⟩
@@ -152,10 +152,10 @@ structure SI (s₀ : State) (n : Nat) (s : State) : Prop where
   lr : s.lr = s₀.lr
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [sub s₀ savOff 56] s₀.mem s.mem
+  frame : Frame [sub s₀ savOff 64] s₀.mem s.mem
   saved : ∀ i < n, s.mem.readW (off (cx s₀) (savOff + 8 * i)) 64 = s₀.gpr (saved i)
 
-theorem save_step {s₀ : State} (hp : APre e s₀) {n : Nat} (hn : n < 6) {s : State} (h : SI s₀ n s) :
+theorem save_step {s₀ : State} (hp : APre e s₀) {n : Nat} (hn : n < 7) {s : State} (h : SI s₀ n s) :
     WP isa (.block [.store .d (saved n) .r10 (savOff + 8 * n)]) s (SI s₀ (n + 1)) := by
   refine wp_std (a := off (cx s₀) (savOff + 8 * n)) (by decide) (by rw [savOff_eq]; omega)
     (by rw [h.gpr]) (by rw [h.wr]; exact hp.in_ctx (by rw [savOff_eq]; omega)) fun s' u => WP.block_nil ?_
@@ -173,14 +173,14 @@ theorem save_step {s₀ : State} (hp : APre e s₀) {n : Nat} (hn : n < 6) {s : 
 /-- Saving the registers and the return address. -/
 theorem save_ok {s₀ : State} (hp : APre e s₀) {rest : List Instr} {Q : State → Prop}
     (k : ∀ s, (∀ r, r ≠ .r0 → s.gpr r = s₀.gpr r) → s.sp = s₀.sp → s.rd = s₀.rd → s.wr = s₀.wr →
-      Saved s₀ s.mem → Frame [sub s₀ savOff 56] s₀.mem s.mem → WP isa (.block rest) s Q) :
+      Saved s₀ s.mem → Frame [sub s₀ savOff 64] s₀.mem s.mem → WP isa (.block rest) s Q) :
     WP isa (.block (save ++ rest)) s₀ Q := by
   rw [save, List.append_assoc]
   refine WP.block_append (WP.mono (wp_range_flatMap (M := isa) (SI s₀)
-    (fun k s hk h => save_step hp hk h) 6 (Nat.le_refl _) s₀
+    (fun k s hk h => save_step hp hk h) 7 (Nat.le_refl _) s₀
     ⟨rfl, rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s h => ?_)
   refine wp_mflr fun s₁ u₁ => ?_
-  refine wp_std (a := off (cx s₀) (savOff + 48)) (by decide) (by decide)
+  refine wp_std (a := off (cx s₀) (savOff + 56)) (by decide) (by decide)
     (by rw [u₁.other _ (by decide), h.gpr]) (by rw [u₁.wr, h.wr]; exact hp.in_ctx (by decide))
     fun s₂ u₂ => ?_
   refine k s₂ (fun r hr => by rw [u₂.gpr, u₁.other r hr, h.gpr]) (by rw [u₂.sp, u₁.sp, h.sp])
@@ -196,35 +196,39 @@ theorem save_ok {s₀ : State} (hp : APre e s₀) {rest : List Instr} {Q : State
 
 theorem moves_ok {s₀ s : State} (hg : ∀ r, r ≠ .r0 → s.gpr r = s₀.gpr r) :
     WP isa (.block moves) s fun s' => Regs s₀ s' ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      s'.sp = s.sp ∧ ∀ r, (∀ i < 6, r ≠ saved i) → s'.gpr r = s.gpr r := by
+      s'.sp = s.sp ∧ ∀ r, (∀ i < 7, r ≠ saved i) → s'.gpr r = s.gpr r := by
   unfold moves
   refine wp_mov fun s₁ u₁ => wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ =>
-    wp_mov fun s₅ u₅ => wp_mov fun s₆ u₆ => WP.block_nil ⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.gpr, hg _ (by decide)]
-  · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
-      u₂.gpr, u₁.other _ (by decide), hg _ (by decide)]
-  · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr,
-      u₂.other _ (by decide), u₁.other _ (by decide), hg _ (by decide)]
-  · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.other _ (by decide), hg _ (by decide)]
-  · rw [u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.other _ (by decide), hg _ (by decide)]
-  · rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.other _ (by decide), hg _ (by decide)]
-  · rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  · rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
-  · rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  · rw [u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
+    wp_mov fun s₅ u₅ => wp_mov fun s₆ u₆ => wp_mov fun s₇ u₇ =>
+    WP.block_nil ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+      u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, hg _ (by decide)]
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+      u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), hg _ (by decide)]
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+      u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), hg _ (by decide)]
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr,
+      u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hg _ (by decide)]
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide),
+      u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hg _ (by decide)]
+  · rw [u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide),
+      u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hg _ (by decide)]
+  · rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+      u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hg _ (by decide)]
+  · rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  · rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  · rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  · rw [u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
   · intro r hr
-    rw [u₆.other r (hr 5 (by decide)), u₅.other r (hr 4 (by decide)), u₄.other r (hr 3 (by decide)),
-      u₃.other r (hr 2 (by decide)), u₂.other r (hr 1 (by decide)), u₁.other r (hr 0 (by decide))]
+    rw [u₇.other r (hr 6 (by decide)), u₆.other r (hr 5 (by decide)), u₅.other r (hr 4 (by decide)),
+      u₄.other r (hr 3 (by decide)), u₃.other r (hr 2 (by decide)), u₂.other r (hr 1 (by decide)),
+      u₁.other r (hr 0 (by decide))]
 
 /-- Saving the registers and moving the arguments. -/
 theorem saveMoves_ok {s₀ : State} (hp : APre e s₀) {rest : List Instr} {Q : State → Prop}
-    (k : ∀ s, Regs s₀ s → (∀ r, (∀ i < 6, r ≠ saved i) → r ≠ .r0 → s.gpr r = s₀.gpr r) →
+    (k : ∀ s, Regs s₀ s → (∀ r, (∀ i < 7, r ≠ saved i) → r ≠ .r0 → s.gpr r = s₀.gpr r) →
       s.gpr .r3 = kp s₀ → s.gpr .r4 = np s₀ → s.sp = s₀.sp → s.rd = s₀.rd →
-      s.wr = s₀.wr → Saved s₀ s.mem → Frame [sub s₀ savOff 56] s₀.mem s.mem → WP isa (.block rest) s Q) :
+      s.wr = s₀.wr → Saved s₀ s.mem → Frame [sub s₀ savOff 64] s₀.mem s.mem → WP isa (.block rest) s Q) :
     WP isa (.block (save ++ moves ++ rest)) s₀ Q := by
   rw [List.append_assoc]
   refine save_ok hp fun s₁ g₁ sp₁ rd₁ wr₁ sv₁ f₁ => ?_
@@ -242,7 +246,7 @@ theorem copyWords_step (a b n : Nat) : copyWords a b (n + 1) =
 
 /-- `n` doublewords from `ctx + a` to `ctx + b`. -/
 theorem copyWords_ok {s₀ : State} {a b n : Nat} (hab : a + 8 * n ≤ b ∨ b + 8 * n ≤ a)
-    (ha : a + 8 * n ≤ 648) (hb : b + 8 * n ≤ 648) (ha4 : a % 4 = 0) (hb4 : b % 4 = 0) {s : State}
+    (ha : a + 8 * n ≤ 656) (hb : b + 8 * n ≤ 656) (ha4 : a % 4 = 0) (hb4 : b % 4 = 0) {s : State}
     (h14 : s.gpr .r24 = cx s₀) (hc : CtxOk s₀ s) :
     WP isa (.block (copyWords a b n)) s fun s' =>
       (∀ r, r ≠ .r12 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
@@ -333,7 +337,7 @@ theorem stW_ok {s₀ : State} (hp : APre e s₀) {k : Nat} (hk : k < 16) {s : St
       by rw [g₃.rd, u₁.rd], by rw [g₃.wr, u₁.wr], by rw [g₃.sp, u₁.sp]⟩
 
 /-- A frame of `ctx[k, k + n)` is one of the context. -/
-theorem frame_ctx {s₀ : State} {m m' : Mem} {k n : Nat} (hf : Frame [sub s₀ k n] m m') (h : k + n ≤ 648) :
+theorem frame_ctx {s₀ : State} {m m' : Mem} {k n : Nat} (hf : Frame [sub s₀ k n] m m') (h : k + n ≤ 656) :
     Frame [ctxR s₀] m m' :=
   hf.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨ctxR s₀, List.mem_singleton_self _, sub_ctx s₀ h⟩

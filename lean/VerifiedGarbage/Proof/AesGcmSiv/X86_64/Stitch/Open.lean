@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Loops
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Proof.Gcm.Stream
@@ -462,14 +462,14 @@ theorem frame_mid {rs : List Region} {W SP D : Addr} {n : Nat} {m m' : Mem} (hf 
     (hs : ∀ r ∈ rs, ∃ r' ∈ cryR W SP D n ++ polyR W SP, Region.Sub r r') :
     Frame (cryR W SP D n ++ polyR W SP) m m' := hf.sub hs
 
-theorem stitched_ok (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP)
+theorem stitched_ok {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp) (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP)
     {R : Nat} (hR : R = 10 ∨ R = 14) {t : State} (E : Env K W SP t) {N A D : Addr} {al n : Nat}
     (S : Slots W R N A D al n t.mem) (hA : Buf K W SP t A al) (hD : Buf K W SP t D n) (hN : Buf K W SP t N 12)
     (hDw : Covers [⟨D, n⟩] t.wr) (hND : (⟨N, 12⟩ : Region).Disjoint ⟨D, n⟩) (hAD : (⟨A, al⟩ : Region).Disjoint ⟨D, n⟩)
     (hG : Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 64) =
       GcmSiv.Polyval.mulXG (Spec.GcmSiv.ofBytes (bytesAt t.mem (W + BitVec.ofNat 64 16) 16)))
     (hY : Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 80) = 0) (h256 : 256 ≤ n) :
-    WP isa (Impl.AesGcmSiv.X86_64Stitch.stitched v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) t
+    WP isa (Impl.AesGcmSiv.X86_64Stitch.stitched lp v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) t
       (MidPost K W SP R N A D al n t) := by
   have hn := hD.lt
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h <;> subst h <;> decide
@@ -516,7 +516,7 @@ theorem stitched_ok (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Boo
   have hnb : Stitch.nb t₃ = 16 * (n / 256) := by
     show (t₃.gpr .r9).toNat = _; rw [r9₃, toNat_ofNat_of_lt (by omega_arith)]
   -- The loop.
-  refine WP.seq (WP.mono (Stitch.dec_ok hp₃ (by rw [hnb]; omega_arith)) fun t₄ Dp => ?_)
+  refine WP.seq (WP.mono (hlp.dec hp₃ (by rw [hnb]; omega_arith)) fun t₄ Dp => ?_)
   -- What the loop did, in the terms of `W` and the data.
   have hnr : Stitch.nr t₃ = R := by
     show (t₃.gpr .rsi).toNat = _; rw [rsi₃, toNat_ofNat_of_lt (by rcases hR with h | h <;> subst h <;> decide)]
@@ -707,7 +707,7 @@ theorem mid_mut (W SP D : Addr) (n : Nat) :
     exact ⟨r₂, h₂, fun x hx => s₂ x (s₁ x hx)⟩
 
 /-- `vg_aes_gcm_siv_open`, for its arguments. -/
-theorem openS_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W SP N A D T : Addr} {R al n : Nat}
+theorem openS_wp' {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp) (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W SP N A D T : Addr} {R al n : Nat}
     (Ar : Args s K W SP N A D R al n) (Tb : TagBuf W SP D n T) (hTr : Covers [⟨T, 16⟩] (s.rd ++ s.wr))
     (hsp : s.gpr .rsp = SP)
     (hn : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 n)
@@ -715,7 +715,7 @@ theorem openS_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool)
     (hW : s.mem.readW (SP + BitVec.ofNat 64 24) 64 = W)
     (hdi : s.gpr .rdi = K) (hsi : s.gpr .rsi = BitVec.ofNat 64 R) (hdx : s.gpr .rdx = N)
     (hcx : s.gpr .rcx = A) (hr8 : s.gpr .r8 = BitVec.ofNat 64 al) (hr9 : s.gpr .r9 = D) :
-    WP isa (Impl.AesGcmSiv.X86_64Stitch.«open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) s fun s' =>
+    WP isa (Impl.AesGcmSiv.X86_64Stitch.«open» lp v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) s fun s' =>
       gprPreserved s s' ∧ openPost (Spec.GcmSiv.decryptWith (Spec.GcmSiv.ctxCiph s.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt s.mem N 12)
         (bytesAt s.mem D n) (bytesAt s.mem A al) (bytesAt s.mem T 16)) s' D n := by
   have L := Ar.lay
@@ -781,14 +781,14 @@ theorem openS_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool)
   have nA₂ : ∀ {P : Addr} {len : Nat}, Buf K W SP s P len → bytesAt s₂.mem P len = bytesAt s.mem P len :=
     fun hP => by rw [buf_mutW (hP.of_eq rd₁ wr₁) fK, hent hP]
   have hmid : WP isa (.ite .b (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (polyval v.callees wide))
-      (Impl.AesGcmSiv.X86_64Stitch.stitched v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)) s₃
+      (Impl.AesGcmSiv.X86_64Stitch.stitched lp v.callees ⟨eb.enc.name, eb.enc.code⟩ wide)) s₃
       (MidPost K W SP R N A D al n s₃) := by
     have S₃ : Slots W R N A D al n s₃.mem := hm₃ ▸ S₂
     refine WP.ite (decide (n < 256)) (eval_b hcf₃) (fun ht => ?_) (fun hf => ?_)
     · exact classic_ok v eb wide L Ar.rounds E₃ S₃ (bA₁.of_eq (by rw [hrd₃, r₂]) (by rw [hwr₃, w₂]))
         (bD₁.of_eq (by rw [hrd₃, r₂]) (by rw [hwr₃, w₂])) (bN₁.of_eq (by rw [hrd₃, r₂]) (by rw [hwr₃, w₂]))
         (by rw [hwr₃, w₂, wr₁]; exact Ar.dw) Ar.nd Ar.ad (by rw [hm₃]; exact hG₂) (by rw [hm₃]; exact Ky.acc)
-    · exact stitched_ok v eb wide L Ar.rounds E₃ S₃ (bA₁.of_eq (by rw [hrd₃, r₂]) (by rw [hwr₃, w₂]))
+    · exact stitched_ok hlp v eb wide L Ar.rounds E₃ S₃ (bA₁.of_eq (by rw [hrd₃, r₂]) (by rw [hwr₃, w₂]))
         (bD₁.of_eq (by rw [hrd₃, r₂]) (by rw [hwr₃, w₂])) (bN₁.of_eq (by rw [hrd₃, r₂]) (by rw [hwr₃, w₂]))
         (by rw [hwr₃, w₂, wr₁]; exact Ar.dw) Ar.nd Ar.ad (by rw [hm₃]; exact hG₂) (by rw [hm₃]; exact Ky.acc)
         (by simpa using hf)
@@ -921,11 +921,11 @@ theorem openS_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool)
       · rw [hm₉, hm₈, md]; simp only [hc, ↓reduceIte]
 
 /-- `vg_aes_gcm_siv_open`. -/
-theorem openS_wp (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} (h : openPre s) :
-    WP isa (Impl.AesGcmSiv.X86_64Stitch.«open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) s fun s' =>
+theorem openS_wp {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk lp) (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} (h : openPre s) :
+    WP isa (Impl.AesGcmSiv.X86_64Stitch.«open» lp v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) s fun s' =>
       gprPreserved s s' ∧ openX86_64.post s s' := by
   obtain ⟨⟨Ar, Tb⟩, hTr⟩ := args_of_open h
-  exact openS_wp' v eb wide hpv Ar Tb hTr rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl
+  exact openS_wp' hlp v eb wide hpv Ar Tb hTr rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl
     (ofNat_toNat64 _).symm rfl
 
 end VG.Proof.AesGcmSiv.X86_64

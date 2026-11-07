@@ -29,24 +29,24 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 namespace VG.Proof.Ffdh.X86_64.CheckPrivate
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
+open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64 VG.Proof.Ffdh.X86_64
 
-theorem privateInline_verified (v : RoundImpl) : Verified target (privateInline v)
+theorem privateInline_verified (v : RoundImpl) (e : ExpImpl) : Verified target (privateInline v e)
     (Spec.Ffdh.checkPrivateContract abi) := by
-  apply kp_verified v.mont (CrtExpL.w4 v.mont) (R2Impl.words v.mont) _ (privateInline_mx v)
-  exact two_map id (fun _ _ h => h.1)
-    (crtExpLoop_ct v.mont CrtSel.sse CrtSel.sse_ct (by taint_decide))
+  have h := kp_verified v.mont (e.E v.mont) (R2Impl.words v.mont) (e.ctX v.mont)
+  rw [e.code_eq] at h
+  exact h (privateInline_ctl v e)
 
 theorem kpSatisfiable8 : ∃ s, (Spec.Ffdh.checkPrivateContract abi 8).pre s := by
   sig_implies_sat [Spec.Ffdh.checkPrivateContract, Spec.Ffdh.checkPrivateSig, abi, argRegs, stackArgs_three, List.append_eq, Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid]
     [kpSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using kpSat
 
 /-- With calls of `v.mm`, which need 8 bytes of stack for the return address. -/
-theorem privateCode_verified (v : RoundImpl) : Verified target (privateCode v)
+theorem privateCode_verified (v : RoundImpl) (e : ExpImpl) : Verified target (privateCode v e)
     (Spec.Ffdh.checkPrivateContract abi 8) := by
-  have hv := privateInline_verified v
-  rw [← privateCode_inline] at hv
-  refine Verified.of_inline_verified (privateCode_inlineOk v) hv
+  have hv := privateInline_verified v e
+  rw [← privateCode_inline v e] at hv
+  refine Verified.of_inline_verified (privateCode_inlineOk v e) hv
     ((Contract.Implies.refl hv.2.2).stack8_abi kpSatisfiable8) (fun _ h => Sig.clear_of_pre h)
     (fun s b hv u hs hp => ?_) (fun _ _ _ _ h => Sig.rsp_of_pub h)
   sig_post [Spec.Ffdh.checkPrivateContract, Spec.Ffdh.checkPrivateSig, abi, argRegs, stackArgs_three, List.append_eq] at hp ⊢

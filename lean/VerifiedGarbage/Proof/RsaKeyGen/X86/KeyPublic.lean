@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallSizes
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEncodedResult
 import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
@@ -13,7 +14,7 @@ namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86
 
 def callEBytes (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (callEnvironment s).exponentRegion.base (callEnvironment s).exponentRegion.len
-def callKeyStatus (s : State) : Nat := Spec.RsaKeyGen.keyStatus (encodedOperation (callEnvironment s) s.mem)
+def callKeyStatus (s : State) : Nat := Proof.RsaKeyGen.keyStatus (encodedOperation (callEnvironment s) s.mem)
 
 structure PublicInputs (s t : State) : Prop where
   stack : s.gpr .esp = t.gpr .esp
@@ -22,7 +23,7 @@ structure PublicInputs (s t : State) : Prop where
     (callEBytes t).map (·.toNat) ++ [callKeyStatus t]
 
 theorem public_inputs {s t : State} (H : contract.pub s t) : PublicInputs s t := by
-  sig_pub [contract, keyStack, Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig,
+  sig_pub [contract, keyStack, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig,
     abi, argSlots, argVal, argBytes] at H
   sig_split H
   refine ⟨by with_reducible assumption, ?_, ?_⟩

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Contract
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
@@ -37,26 +38,26 @@ theorem stackArgs_ten (s : State) :
     List.map (stackArg s) (List.range 10) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
       stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9] := rfl
 
-theorem key_implies : keyP.Implies (Spec.RsaKeyGen.keyContract abi) where
+theorem key_implies : keyP.Implies (Proof.RsaKeyGen.keyContract abi) where
   pre := by
     intro s h
     -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyP, stackArgs_ten,
+    sig_pre [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyP, stackArgs_ten,
       List.append_eq] at h
-    sig_pre [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyP, stackArgs_ten,
+    sig_pre [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyP, stackArgs_ten,
       List.append_eq] at h
     sig_split h
-    sig_reduce [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyP, stackArgs_ten,
+    sig_reduce [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyP, stackArgs_ten,
       List.append_eq]
     sig_and_intros
     sig_close
     all_goals first | with_reducible assumption | omega
   post := by
-    sig_implies_post [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyP, stackArgs_ten,
+    sig_implies_post [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyP, stackArgs_ten,
       List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyP, stackArgs_ten,
+    sig_pub [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyP, stackArgs_ten,
       List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, -, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9⟩ := h
@@ -64,7 +65,7 @@ theorem key_implies : keyP.Implies (Spec.RsaKeyGen.keyContract abi) where
     simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩
   sat := by
-    sig_implies_sat [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyP, stackArgs_ten,
+    sig_implies_sat [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyP, stackArgs_ten,
       List.append_eq] [keySatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.RsaKeyGen.primeLenValid,
         Spec.Rsa.scratchWords] using keySatState
 

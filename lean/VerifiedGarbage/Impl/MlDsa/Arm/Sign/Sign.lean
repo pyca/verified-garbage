@@ -205,14 +205,68 @@ def output : Prog isa :=
   .seq (copy (.r8, 0) (sc oCT) (cLen p)) (.seq (seqR (packZ P p) 0 p.ℓ)
     (hintBitPackAt P (hP 0) (256 * p.k) p.ω (.r8, sigH p) (p.ω + p.k)))
 
+/-! ### A prepared private key -/
+
+/-- The length of `ŝ₁ ‖ ŝ₂ ‖ t̂₀`, the polynomials of a prepared private key. -/
+abbrev cacheLen : Nat := 1024 * (p.ℓ + 2 * p.k)
+
+/-- `ŝ₁`, `ŝ₂` and `t̂₀` copied from the prepared private key at `r9` to their
+slots (which follow each other), and `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`. -/
+def cached : Prog isa :=
+  .seq (copy (s1P p 0) (.r9, 0) (cacheLen p)) (shakeAt [((.r4, 32), 32), ((.r6, 0), 32), ((.r5, 0), 64)] (sc oMS) 64)
+
+/-- `cached` if `r9` (the prepared polynomials) is not 0, and otherwise `decode`. -/
+def decodeC : Prog isa := .seq (.block [.cmp .r9 (.imm 0)]) (.ite .ne (cached p) (decode P p))
+
 /-- Once `Â` is sampled: the private key, the loop, and the signature if the
 loop succeeded. -/
-def rest : Prog isa := .seq (decode P p) (.seq (signLoop P p) (ifOk (output P p)))
+def rest : Prog isa := .seq (decodeC P p) (.seq (signLoop P p) (ifOk (output P p)))
 
 end
 
-/-- `vg_mldsa{44,65,87}_sign` for the parameter set `p`, with the primitives `P`. -/
-def sign (P : Prims) (p : Params) : Prog isa :=
-  .seq (.block pro) (.seq (expandA P p) (.seq (ifOk (rest P p)) (.block Impl.MlKem.Arm.topEnd)))
+/-- `vg_mldsa{44,65,87}_sign_with_cache(sk = r0, mu = r1, rnd = r2, sig = r3,
+scratch = [sp], cache = [sp, #4]) -> r0` for the parameter set `p`, with the
+primitives `P`: the signing kernel of `vg_mldsa*_sign` and of the prepared
+keys' `vg_mldsa*_sign_prepared`. `cache` is 0, or the `ŝ₁ ‖ ŝ₂ ‖ t̂₀` of a
+prepared private key, which it copies rather than decodes; it keeps it in
+`r9`. -/
+def withCache (P : Prims) (p : Params) : Prog isa :=
+  .seq (.block (pro ++ [.ldrSp .r9 4])) (.seq (expandA P p) (.seq (ifOk (rest P p)) (.block Impl.MlKem.Arm.topEnd)))
+
+/-! ## The entries -/
+
+/-- The module of the parameter set `p`. -/
+def modName (p : Params) : String :=
+  if p.k = 4 then "mldsa44" else if p.k = 6 then "mldsa65" else "mldsa87"
+
+/-- The name of the kernel. -/
+def withCacheName (p : Params) : String := s!"vg_{modName p}_sign_with_cache"
+
+/-- A call of the kernel `k`, named `name`, with `cache` moved into `lr` by
+`setCache`: in a frame saving `r4` (and `lr`, which it keeps in `r4` across
+the call), `scratch` and `cache` pushed as the kernel's arguments on the
+stack. -/
+def entry (name : String) (k : Prog isa) (setCache : List Instr) : Prog isa :=
+  .frame (.push [.r4, .lr])
+    (.seq (.block (([.ldrSp .r12 8, .mov .r4 (.reg .lr)] : List Instr) ++ setCache))
+      (.seq (.frame (.push [.r12, .lr]) (.call name k) (.pop .r12 8)) (.block [.mov .lr (.reg .r4)])))
+    (.pop .r4 8)
+
+/-- `cache` to `lr`: the polynomials after the encoded key at `sk` for a
+prepared private key, and 0 otherwise. -/
+def setCache (p : Params) (prepared : Bool) : List Instr :=
+  if prepared then lea .lr (.r0, p.skLen) else movi .lr 0
+
+/-- `vg_mldsa{44,65,87}_sign` (`prepared` false) or `vg_mldsa{44,65,87}_sign_prepared`
+(`prepared` true, with a prepared private key at `sk`), `(sk = r0, mu = r1,
+rnd = r2, sig = r3, scratch = [sp]) -> r0`: the kernel. -/
+def signEntry (P : Prims) (p : Params) (prepared : Bool) : Prog isa :=
+  entry (withCacheName p) (withCache P p) (setCache p prepared)
+
+/-- `vg_mldsa{44,65,87}_sign(sk = r0, mu = r1, rnd = r2, sig = r3, scratch = [sp]) -> r0`. -/
+def sign (P : Prims) (p : Params) : Prog isa := signEntry P p false
+
+/-- `vg_mldsa{44,65,87}_sign_prepared(sk = r0, mu = r1, rnd = r2, sig = r3, scratch = [sp]) -> r0`. -/
+def signPrepared (P : Prims) (p : Params) : Prog isa := signEntry P p true
 
 end VG.Impl.MlDsa.Arm.Sign

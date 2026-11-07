@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
@@ -10,7 +11,7 @@ public import VerifiedGarbage.TCB.Code
 # An RSA key from its primes on AArch64: the contract the proofs use
 
 Untrusted: everything here is checked by Lean. `keyA` states
-`Spec.RsaKeyGen.keyContract` on the registers and the stack:
+`Proof.RsaKeyGen.keyContract` on the registers and the stack:
 `vg_rsa_keygen_key(n = x0, n_len = x1, d = x2, d_len = x3, p = x4,
 p_len = x5, q = x6, q_len = x7, dp = [sp], dp_len = [sp + 8],
 dq = [sp + 16], dq_len = [sp + 24], qinv = [sp + 32], qinv_len = [sp + 40],
@@ -24,7 +25,8 @@ namespace VG.Proof.RsaKeyGen.AArch64.Key
 
 open VG VG.AArch64
 open VG.Spec.Rsa (bytesAt)
-open VG.Spec.RsaKeyGen (keyOp keyStatus primeLenValid)
+open VG.Spec.RsaKeyGen (primeLenValid)
+open VG.Proof.RsaKeyGen (keyOp keyStatus)
 
 /-- The `i`-th argument on the stack. -/
 abbrev arg (s : State) (i : Nat) : BitVec 64 := stackArg s i

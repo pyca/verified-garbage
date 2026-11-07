@@ -97,22 +97,23 @@ theorem block_call {s : State} {S B : Addr} (h0 : s.gpr .a0 = S) (h1 : s.gpr .a1
 
 /-! ## `vg_chacha20_xor` -/
 
-/-- `vg_chacha20_xor` in place (`Proof.ChaCha20.RISCV64.Xor.xor_call`). -/
-theorem xor_call {s : State} {S D B : Addr} {n : Nat} (h0 : s.gpr .a0 = S) (h1 : s.gpr .a1 = D)
+/-- `vg_chacha20_xor` from `X` to `D` (`Proof.ChaCha20.RISCV64.Xor.xor_call_to`). -/
+theorem xor_call_to {s : State} {S X D B : Addr} {n : Nat} (h0 : s.gpr .a0 = S) (h1 : s.gpr .a1 = X)
     (h2 : s.gpr .a2 = BitVec.ofNat 64 n) (h3 : s.gpr .a3 = B) (h4 : s.gpr .a4 = D) (hn : n < 2 ^ 64)
-    (hSD : (⟨S, 64⟩ : Region).Disjoint ⟨D, n⟩)
-    (hSB : (⟨S, 64⟩ : Region).Disjoint ⟨B, 320⟩)
-    (hDB : (⟨D, n⟩ : Region).Disjoint ⟨B, 320⟩) (hD : D.toNat + n ≤ 2 ^ 64)
+    (hSX : (⟨S, 64⟩ : Region).Disjoint ⟨X, n⟩) (hSD : (⟨S, 64⟩ : Region).Disjoint ⟨D, n⟩)
+    (hSB : (⟨S, 64⟩ : Region).Disjoint ⟨B, 320⟩) (hXB : (⟨X, n⟩ : Region).Disjoint ⟨B, 320⟩)
+    (hDB : (⟨D, n⟩ : Region).Disjoint ⟨B, 320⟩) (hXD : D = X ∨ (⟨X, n⟩ : Region).Disjoint ⟨D, n⟩)
+    (hX : X.toNat + n ≤ 2 ^ 64) (hD : D.toNat + n ≤ 2 ^ 64)
     (hSa : S.toNat % 4 = 0) (hBa : B.toNat % 4 = 0)
-    (hc : Covers ([] ++ [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩]) (s.rd ++ s.wr))
+    (hc : Covers ([⟨X, n⟩] ++ [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩]) (s.rd ++ s.wr))
     (hw : Covers [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩] s.wr)
     {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩] s s' →
       Spec.ChaCha20.bytesAt s'.mem D n =
-        List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem D n)
+        List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem X n)
           (keystream (stateAt s.mem S) n) → Q s') :
     WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.RISCV64.Xor.xor) s Q :=
-  Proof.ChaCha20.RISCV64.Xor.xor_call h0 h1 h2 h3 h4 hn hSD hSB hDB hD hSa hBa hc hw
+  Proof.ChaCha20.RISCV64.Xor.xor_call_to h0 h1 h2 h3 h4 hn hSX hSD hSB hXB hDB hXD hX hD hSa hBa hc hw
     fun s' hrd hwr hsp hf hcs hk hpost => hQ s' (kept_of xor_a0 hrd hwr hsp hf hcs hk) hpost
 
 /-! ## `vg_poly1305_init` -/

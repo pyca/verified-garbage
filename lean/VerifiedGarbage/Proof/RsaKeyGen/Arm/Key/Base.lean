@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
@@ -75,7 +76,7 @@ abbrev qB (P : KP) (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (State.ad
 
 /-- The result. -/
 abbrev res (P : KP) (σ : State) : Except Spec.RsaKeyGen.Failure (List (List Byte)) ⊕ Unit :=
-  Spec.RsaKeyGen.keyOp P.K P.eB (pB P σ) (qB P σ)
+  Proof.RsaKeyGen.keyOp P.K P.eB (pB P σ) (qB P σ)
 
 structure In (P : KP) (σ : State) : Prop where
   sp : σ.sp = P.sp
@@ -150,7 +151,7 @@ structure In (P : KP) (σ : State) : Prop where
   aEl : fw σ.mem P aoEl = BitVec.ofNat 32 P.el
   aS : fw σ.mem P aoS = P.B
   eB : Spec.Rsa.bytesAt σ.mem (State.addr P.eP) P.el = P.eB
-  st : Spec.RsaKeyGen.keyStatus (res P σ) = P.st
+  st : Proof.RsaKeyGen.keyStatus (res P σ) = P.st
 
 /-! ## Sizes -/
 

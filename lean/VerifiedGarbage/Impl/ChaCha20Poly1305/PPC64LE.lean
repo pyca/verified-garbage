@@ -14,7 +14,15 @@ ChaCha20 and Poly1305 functions, as on ARMv7 (`Impl/ChaCha20Poly1305/Arm.lean`).
 `work` is the working space, which the artifact's frame allocates on the
 stack (`withStackScratchWiped`).
 
-The working space (648 bytes, called the context below):
+One body serves in place and out of place: it reads the data at `r7`
+(`src`) and writes the result to the destination it finds in `r11` (`dst`,
+either `src` or apart from it, `vg_chacha20_xor` from `src` to `dst`).
+`seal` and `open` run it in place, with `r11 = r7` (`inPlace`);
+`vg_chacha20_poly1305_open_to(key, nonce, aad, aad_len, src, len, dst,
+dst_len, tag)` runs `open`'s with `dst` from `r9`, and `tag` and `work`
+from the stack (`toEntry`, `openTo`).
+
+The working space (656 bytes, called the context below):
 
 * `[0, 320)`: the buffer of `vg_chacha20_block` and `vg_chacha20_xor` (the
   first 32 bytes of the block with counter 0 are the one-time Poly1305 key),
@@ -24,15 +32,16 @@ The working space (648 bytes, called the context below):
 * `[416, 432)`: the padded last block of the additional data or the data;
 * `[432, 448)`: the lengths block;
 * `[448, 464)`: the tag computed by `open`;
-* `[464, 520)`: our caller's `r24`–`r29` and our return address;
-* `[520, 648)`: the working space of `vg_poly1305_finalize_scratch` (`scratch`).
+* `[464, 528)`: our caller's `r24`–`r29` and `r31`, and our return address;
+* `[528, 656)`: the working space of `vg_poly1305_finalize_scratch` (`scratch`).
 
 `r24` holds the context, `r25` the additional data, `r26` its length, `r27`
-the data, `r28` its length and `r29` the tag throughout: they are
-nonvolatile, and no callee writes them (the callees save and restore
-`r14`–`r23` only), so the constant-time analysis sees them public after every
-call, which it would not for a register a callee reloads from memory. `r0`,
-`r3`–`r6` and `r11`–`r12` are temporaries. The return address is saved in the context, as
+the source, `r28` its length, `r29` the tag and `r31` the destination
+throughout: they are nonvolatile, and no callee writes them (the callees
+save and restore `r14`–`r23` and `r30` only), so the constant-time analysis
+sees them public after every call, which it would not for a register a
+callee reloads from memory. `r0`, `r3`–`r6` and `r11`–`r12` are
+temporaries. The return address is saved in the context, as
 `vg_chacha20_xor` does, so the only stack the functions use is
 `vg_poly1305_blocks`'s frame.
 
@@ -47,7 +56,7 @@ XORs of their words.
 Constant time: only the pointers and the lengths can affect timing (the
 branches are on the lengths, and every address is a pointer plus a constant
 or a count), but for `open`'s branch on whether the tag is right, which its
-contract lets it leak, to zero the data (`zeroData`) if it is not.
+contract lets it leak, to zero the destination (`zeroData`) if it is not.
 -/
 
 @[expose] public section
@@ -72,25 +81,26 @@ def tagOff : Nat := 448
 /-- The saved registers, then the return address. -/
 def savOff : Nat := 464
 /-- The working space of `vg_poly1305_finalize_scratch`. -/
-def scrOff : Nat := 520
+def scrOff : Nat := 528
 /-! ## Saving and restoring the registers -/
 
 /-- The registers saved in the context, in order. -/
-def saved (i : Nat) : Reg := [.r24, .r25, .r26, .r27, .r28, .r29].getD i .r24
+def saved (i : Nat) : Reg := [.r24, .r25, .r26, .r27, .r28, .r29, .r31].getD i .r24
 
 /-- Save them and the return address, with the context in `r10`. -/
 def save : List Instr :=
-  (List.range 6).flatMap (fun i => [.store .d (saved i) .r10 (savOff + 8 * i)]) ++
-    ([.mflr .r0, .store .d .r0 .r10 (savOff + 48)] : List Instr)
+  (List.range 7).flatMap (fun i => [.store .d (saved i) .r10 (savOff + 8 * i)]) ++
+    ([.mflr .r0, .store .d .r0 .r10 (savOff + 56)] : List Instr)
 
 /-- Restore them and the return address, through `r12`. -/
 def restore : List Instr :=
-  ([mov .r12 .r24, .load .d .r0 .r12 (savOff + 48), .mtlr .r0] : List Instr) ++
-    (List.range 6).flatMap fun i => [.load .d (saved i) .r12 (savOff + 8 * i)]
+  ([mov .r12 .r24, .load .d .r0 .r12 (savOff + 56), .mtlr .r0] : List Instr) ++
+    (List.range 7).flatMap fun i => [.load .d (saved i) .r12 (savOff + 8 * i)]
 
-/-- The arguments moved to where they are kept. -/
+/-- The arguments moved to where they are kept, and the destination into
+`r31`. -/
 def moves : List Instr :=
-  [mov .r24 .r10, mov .r25 .r5, mov .r26 .r6, mov .r27 .r7, mov .r28 .r8, mov .r29 .r9]
+  [mov .r24 .r10, mov .r25 .r5, mov .r26 .r6, mov .r27 .r7, mov .r28 .r8, mov .r29 .r9, mov .r31 .r11]
 
 /-! ## The ChaCha20 state -/
 
@@ -159,10 +169,11 @@ def macPad (p n : Reg) : Prog isa :=
     (.ite (.zero .d .r12) (.block [])
       (.seq (.block [.sub .r4 n .r12, .add .r4 p .r4]) padTail))))
 
-/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted. -/
+/-- The ChaCha20 counter set to 1, and the source encrypted or decrypted to
+the destination (`vg_chacha20_xor` from `r27` to `r31`). -/
 def crypt : Prog isa :=
   .seq (.block [.li .r12 1, .store .w .r12 .r24 (stOff + 48), .addi .r3 .r24 stOff,
-    mov .r4 .r27, mov .r5 .r28, mov .r6 .r24])
+    mov .r4 .r27, mov .r5 .r28, mov .r6 .r24, mov .r7 .r31])
     (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Xor.xor)
 
 /-- The lengths block, absorbed. -/
@@ -226,20 +237,35 @@ def compare : List Instr :=
    .logic .or .r3 .r3 .r4, .li .r4 0, .sub .r4 .r4 .r3, .logic .or .r3 .r3 .r4,
    .lsr .d .r3 .r3 63, .li .r4 1, .sub .r3 .r4 .r3]
 
-/-- The `r28` bytes at `r27` zeroed, a byte at a time, with `r3` zero:
-through `r4` (the address) and `r5` (the count). -/
+/-- The `r28` bytes at `r31` (the destination) zeroed, a byte at a time,
+with `r3` zero: through `r4` (the address) and `r5` (the count). -/
 def zeroData : Prog isa :=
-  .seq (.block [mov .r4 .r27, mov .r5 .r28])
+  .seq (.block [mov .r4 .r31, mov .r5 .r28])
     (.ite (.zero .d .r5) (.block [])
       (.loop (.block [.stb .r3 .r4 0, .addi .r4 .r4 1, .subi .r5 .r5 1]) (.nonzero .d .r5)))
 
-/-- Everything but the epilogue: the tag computed, the data decrypted, and
-the tags compared, `r3` 1 if they are equal and 0 if not. -/
+/-- Everything but the epilogue: the tag computed, the source decrypted to
+the destination, and the tags compared, `r3` 1 if they are equal and 0 if
+not. -/
 def openBody : Prog isa := .seq openMain (.seq finalize (.seq crypt (.block compare)))
 
-/-- `open` zeroes the data if the tag is wrong, branching on the result of
+/-- `open` zeroes the destination if the tag is wrong, branching on the result of
 the comparison, which its contract lets it leak, then restores the
 registers. -/
 def «open» : Prog isa := .seq openBody (.seq (.ite (.zero .d .r3) zeroData (.block [])) (.block restore))
+
+/-! ## The entries -/
+
+/-- In place: the destination is the source (`r11 = r7`). -/
+def inPlace (c : Prog isa) : Prog isa := .seq (.block [mov .r11 .r7]) c
+
+/-- `vg_chacha20_poly1305_open_to`'s arguments where the body expects them:
+`dst` (`r9`) into `r11`, then `tag` and `work` from the frame of
+`withStackScratchArgs`, at `r1 + 96` and `r1 + 104`, into `r9` and `r10`. -/
+def toEntry : List Instr :=
+  [mov .r11 .r9, .addSp .r12 0, .load .d .r9 .r12 96, .load .d .r10 .r12 104]
+
+/-- `vg_chacha20_poly1305_open_to`: `open`'s body out of place. -/
+def openTo : Prog isa := .seq (.block toEntry) «open»
 
 end VG.Impl.ChaCha20Poly1305.PPC64LE

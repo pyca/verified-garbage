@@ -1,13 +1,23 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.KeyGen.Frag
+public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Copy
 public import VerifiedGarbage.Spec.MlDsa
 
 /-!
-# ML-DSA on PPC64LE: `vg_mldsa44_sign`, `vg_mldsa65_sign`, `vg_mldsa87_sign`
+# ML-DSA on PPC64LE: `vg_mldsa{44,65,87}_sign`, `_sign_prepared` and `_sign_with_cache`
 
 As on 32-bit ARM (`Impl/MlDsa/Arm/Sign/Sign.lean`), on the pieces of key
 generation (`KeyGen/Frag.lean`).
+
+`withCache P p (sk = r3, mu = r4, rnd = r5, sig = r6, scratch = r7,
+cache = r8, cache_len = r9) -> r3`, the internal function
+`vg_mldsa*_sign_with_cache`, keeps `cache` in `r14` and `cache_len` in `r15`,
+in the frames saving them (`Arith.saving`), and runs `sign P p`. The entries
+`vg_mldsa*_sign(sk, mu, rnd, sig, scratch)` and
+`vg_mldsa*_sign_prepared(sk, mu, rnd, sig, scratch)` (`entry`) call it with
+an empty cache, or with the `ℓ + 2k` polynomials a prepared private key
+(`Spec/MlDsa/PreparedKey.lean`) holds after its encoded key.
 
 `sign P p (sk = r3, mu = r4, rnd = r5, sig = r6, scratch = r7) -> r3`:
 `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with the message
@@ -27,7 +37,8 @@ the functions it calls preserve.
 2. `ρ″ = H(K ‖ rnd ‖ μ, 64)` to `MS`, with `rnd ‖ μ` first copied to `W1`
    (so that the sponge reads one argument besides `scratch`, as its proof
    requires of arguments that may overlap), then `sig` to `r28`; and `ŝ₁`, `ŝ₂`
-   and `t̂₀`: the `NTT` of the `BitUnpack` of their pieces of `sk`.
+   and `t̂₀`: the `NTT` of the `BitUnpack` of their pieces of `sk`, or, if
+   `r15 ≠ 0`, copies of the `ℓ + 2k` polynomials at `r14`.
 3. The rejection sampling loop, at most 814 iterations (`minBounds.sign`):
    the commitment (`y ← ExpandMask(ρ″, κ)`, `ŷ = NTT(y)`, `w = NTT⁻¹(Â ŷ)`,
    and `c̃ = H(μ ‖ w1Encode(HighBits(w)), λ/4)` at `CT`), then
@@ -265,9 +276,18 @@ def decS2 (i : Nat) : Prog isa :=
 def decT0 (i : Nat) : Prog isa :=
   .seq (bitUnpackAt P (.r30, skT0 p i) 416 4095 4096 (t0P p i)) (nttAt P (t0P p i))
 
-/-- `ρ″` and `sig`, then `ŝ₁`, `ŝ₂` and `t̂₀`. -/
-def decode : Prog isa :=
-  .seq (rhoPP) (.seq (seqR (decS1 P p) 0 p.ℓ) (.seq (seqR (decS2 P p) 0 p.k) (seqR (decT0 P p) 0 p.k)))
+/-- `ŝ₁`, `ŝ₂` and `t̂₀`, from `sk`. -/
+def keys : Prog isa := .seq (seqR (decS1 P p) 0 p.ℓ) (.seq (seqR (decS2 P p) 0 p.k) (seqR (decT0 P p) 0 p.k))
+
+/-- `ŝ₁`, `ŝ₂` and `t̂₀`, copied from the `ℓ + 2k` polynomials at `r14`. -/
+def cached : Prog isa :=
+  .seq (seqR (fun r => copyW (.r14, 1024 * r) (s1P p r) 128) 0 p.ℓ)
+    (.seq (seqR (fun i => copyW (.r14, 1024 * (p.ℓ + i)) (s2P p i) 128) 0 p.k)
+      (seqR (fun i => copyW (.r14, 1024 * (p.ℓ + p.k + i)) (t0P p i) 128) 0 p.k))
+
+/-- `ρ″` and `sig`, then `ŝ₁`, `ŝ₂` and `t̂₀`: copied if `r15 ≠ 0`, and
+decoded from `sk` otherwise. -/
+def decode : Prog isa := .seq (rhoPP) (.ite (.nonzero .d .r15) (cached p) (keys P p))
 
 /-! ### An iteration -/
 
@@ -352,8 +372,23 @@ def rest : Prog isa := .seq (decode P p) (.seq (signLoop P p) (ifOk (output P p)
 
 end
 
-/-- `vg_mldsa{44,65,87}_sign` for the parameter set `p`, with the primitives `P`. -/
+/-- Signing for the parameter set `p`, with the primitives `P`, with the
+polynomials of the key at `r14` if `r15 ≠ 0`. -/
 def sign (P : Prims) (p : Params) : Prog isa :=
   .seq (.block pro) (.seq (expandA P p) (.seq (ifOk (rest P p)) (.block topEnd)))
+
+/-- `vg_mldsa{44,65,87}_sign_with_cache`: `cache` (`r8`) to `r14` and
+`cache_len` (`r9`) to `r15`, in the frames saving them, then `sign P p`. -/
+def withCache (P : Prims) (p : Params) : Prog isa :=
+  Arith.saving (.seq (.block [mov .r14 .r8, mov .r15 .r9]) (sign P p))
+
+/-- An entry calling `code`, named `name`, the kernel `withCache`: with the
+`ℓ + 2k` polynomials after the encoded key of a prepared private key at `sk`
+(`vg_mldsa*_sign_prepared`), or with none (`vg_mldsa*_sign`). It saves the
+link register (in `r0`) in a frame. -/
+def entry (name : String) (code : Prog isa) (p : Params) (prepared : Bool) : Prog isa :=
+  .seq (.block [.mflr .r0]) (.seq (.frame (.push .r0)
+    (.seq (.block (if prepared then [.addi .r8 .r3 p.skLen, .li .r9 (1024 * (p.ℓ + 2 * p.k))]
+      else [mov .r8 .r3, .li .r9 0])) (.call name code)) (.pop .r0)) (.block [.mtlr .r0]))
 
 end VG.Impl.MlDsa.PPC64LE.Sign

@@ -22,12 +22,6 @@ open VG.X86_64
 structure Prims where
   /-- `vg_mldsa_ntt` -/
   ntt : Prog isa
-  /-- `vg_mldsa_inv_ntt` -/
-  invNtt : Prog isa
-  /-- `vg_mldsa_multiply_ntt` -/
-  mul : Prog isa
-  /-- `vg_mldsa_multiply_add_ntt` -/
-  mulAdd : Prog isa
   /-- `vg_mldsa_add` -/
   add : Prog isa
   /-- `vg_mldsa_rej_ntt_poly` -/
@@ -42,9 +36,15 @@ structure Prims where
   bitPack : Prog isa
   /-- `vg_mldsa_rej_ntt_poly4` -/
   rej4 : Prog isa
+  /-- `vg_mldsa_dot_inverse4`, `5` and `7`: `NTT⁻¹` of a row's sum of products -/
+  dotInv4 : Prog isa
+  dotInv5 : Prog isa
+  dotInv7 : Prog isa
   /-- What the names of the polynomial arithmetic's functions end with (`Arith.Backend`). -/
   sfx : String := ""
-  /-- Products retain R⁻¹ and the inverse NTT cancels it. -/
-  montgomery : Bool := false
+
+/-- `vg_mldsa_dot_inverse{c}`, for `c` of 4, 5 and 7. -/
+abbrev Prims.dotInv (P : Prims) (c : Nat) : Prog isa :=
+  if c = 4 then P.dotInv4 else if c = 5 then P.dotInv5 else P.dotInv7
 
 end VG.Impl.MlDsa.X86_64.KeyGen

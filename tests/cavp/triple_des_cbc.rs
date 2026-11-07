@@ -99,3 +99,32 @@ fn errors() {
     decryptor.decrypt(&mut buffer).unwrap();
     assert_eq!(buffer, [0x5a; 16]);
 }
+
+/// Messages of many of decryption's groups of blocks (256 on x86-64), from
+/// the last CAVP vector's plaintext repeated: decryption undoes encryption,
+/// whole and in pieces of sizes around the groups'.
+#[test]
+fn long_messages() {
+    let text = crate::vectors::text("vectors/nist-cavp-tdes-mmt/TCBCMMT3.rsp");
+    let records = cavp_records(&text);
+    let fields = records.last().unwrap();
+    let mut key = unhex(fields["KEY1"]);
+    key.extend(unhex(fields["KEY2"]));
+    key.extend(unhex(fields["KEY3"]));
+    let iv: [u8; 8] = unhex(fields["IV"]).try_into().unwrap();
+    let block = unhex(fields["PLAINTEXT"]);
+    let plaintext: Vec<u8> = block.iter().copied().cycle().take(8 * 1000).collect();
+    let mut ciphertext = plaintext.clone();
+    TripleDesCbcEncryptor::new(&key, &iv)
+        .unwrap()
+        .encrypt(&mut ciphertext)
+        .unwrap();
+    for piece in [1000, 1, 255, 256, 257, 511, 512, 513] {
+        let mut buffer = ciphertext.clone();
+        let mut decryptor = TripleDesCbcDecryptor::new(&key, &iv).unwrap();
+        for chunk in buffer.chunks_mut(8 * piece) {
+            decryptor.decrypt(chunk).unwrap();
+        }
+        assert_eq!(buffer, plaintext, "{piece}");
+    }
+}

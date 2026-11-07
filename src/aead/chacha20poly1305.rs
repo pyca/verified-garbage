@@ -14,6 +14,13 @@
 use core::mem::MaybeUninit;
 
 #[cfg(target_arch = "x86_64")]
+use crate::arch::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES;
+#[cfg(any(
+    target_arch = "riscv64",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
+use crate::arch::chacha20poly1305::vg_chacha20_poly1305_open_to;
+#[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20poly1305::{
     VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
     VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES,
@@ -34,7 +41,7 @@ use crate::arch::chacha20poly1305::{
     vg_chacha20_poly1305_seal_gather_neon, vg_chacha20_poly1305_seal_gather_sve2,
     vg_chacha20_poly1305_seal_neon, vg_chacha20_poly1305_seal_sve2,
 };
-#[cfg(target_arch = "x86")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::chacha20poly1305::{
     vg_chacha20_poly1305_open_ssse3, vg_chacha20_poly1305_seal_gather_ssse3,
     vg_chacha20_poly1305_seal_ssse3,
@@ -58,6 +65,7 @@ fn select(f: Features) -> Backend {
         VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES,
         VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
         VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
+        VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES,
     )
 }
 
@@ -93,7 +101,7 @@ pub enum Error {
     /// nonce is not what was authenticated under this key.
     TagMismatch,
     /// The output of [`ChaCha20Poly1305::encrypt`] is not as long as the
-    /// plaintext.
+    /// plaintext, or that of `ChaCha20Poly1305::decrypt` as the ciphertext.
     InvalidOutputLength,
     /// More than [`ChaCha20Poly1305::MAX_PIECES`] pieces of plaintext for
     /// [`ChaCha20Poly1305::encrypt`].
@@ -104,7 +112,7 @@ crate::error::impl_error! {
     Error {
         InvalidTextLength => "ChaCha20-Poly1305 text is too long",
         TagMismatch => "ChaCha20-Poly1305 tag does not match",
-        InvalidOutputLength => "ChaCha20-Poly1305 output is not as long as the plaintext",
+        InvalidOutputLength => "ChaCha20-Poly1305 output is not as long as its input",
         TooManyPieces => "too many pieces of ChaCha20-Poly1305 plaintext",
     }
 }
@@ -164,7 +172,7 @@ impl ChaCha20Poly1305 {
             Backend::Avx512Vl => vg_chacha20_poly1305_seal_avx512vl,
             #[cfg(target_arch = "x86_64")]
             Backend::Ifma => vg_chacha20_poly1305_seal_ifma,
-            #[cfg(target_arch = "x86")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Backend::Ssse3 => vg_chacha20_poly1305_seal_ssse3,
         };
         let mut tag = [0; 16];
@@ -238,7 +246,7 @@ impl ChaCha20Poly1305 {
             Backend::Avx512Vl => vg_chacha20_poly1305_seal_gather_avx512vl,
             #[cfg(target_arch = "x86_64")]
             Backend::Ifma => vg_chacha20_poly1305_seal_gather_ifma,
-            #[cfg(target_arch = "x86")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Backend::Ssse3 => vg_chacha20_poly1305_seal_gather_ssse3,
         };
         let mut tag = [0; 16];
@@ -290,7 +298,7 @@ impl ChaCha20Poly1305 {
             Backend::Avx512Vl => vg_chacha20_poly1305_open_avx512vl,
             #[cfg(target_arch = "x86_64")]
             Backend::Ifma => vg_chacha20_poly1305_open_ifma,
-            #[cfg(target_arch = "x86")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Backend::Ssse3 => vg_chacha20_poly1305_open_ssse3,
         };
         // SAFETY: as in `encrypt_in_place`, with `tag` valid for reads of 16
@@ -310,6 +318,58 @@ impl ChaCha20Poly1305 {
         };
         // `open`'s contract leaves the plaintext in `data` if it returns 1,
         // and zeros otherwise.
+        if ok == 1 {
+            Ok(())
+        } else {
+            Err(Error::TagMismatch)
+        }
+    }
+
+    /// Decrypts `ciphertext`, with the nonce `nonce` and the additional data
+    /// `aad`, into `out`, which must be exactly as long as it, if `tag`
+    /// authenticates it; otherwise returns [`Error::TagMismatch`] and zeroes
+    /// `out`. `ciphertext` is read where it is, not copied to `out` first. A
+    /// length error leaves `out` as it was.
+    #[cfg(any(
+        target_arch = "riscv64",
+        all(target_arch = "powerpc64", target_endian = "little")
+    ))]
+    pub fn decrypt(
+        &self,
+        nonce: &[u8; 12],
+        aad: &[u8],
+        ciphertext: &[u8],
+        tag: &[u8; 16],
+        out: &mut [u8],
+    ) -> Result<(), Error> {
+        check_len(ciphertext.len())?;
+        if out.len() != ciphertext.len() {
+            return Err(Error::InvalidOutputLength);
+        }
+        let open_to = match self.backend {
+            Backend::Scalar => vg_chacha20_poly1305_open_to,
+        };
+        // SAFETY: as in `decrypt_in_place`, with `ciphertext` valid for
+        // reads of `ciphertext.len()` bytes, at most `P_MAX` (`check_len`),
+        // and `out` for writes of `out.len()`, which is `ciphertext.len()`:
+        // `out` is the only buffer written, a unique borrow, which overlaps
+        // none of the shared borrows `self.key`, `nonce`, `aad`,
+        // `ciphertext` and `tag`.
+        let ok = unsafe {
+            open_to(
+                &self.key,
+                nonce,
+                aad.as_ptr(),
+                aad.len(),
+                ciphertext.as_ptr(),
+                ciphertext.len(),
+                out.as_mut_ptr(),
+                out.len(),
+                tag,
+            )
+        };
+        // `open_to`'s contract leaves the plaintext in `out` if it returns
+        // 1, and zeros otherwise.
         if ok == 1 {
             Ok(())
         } else {
@@ -465,6 +525,56 @@ mod tests {
         }
     }
 
+    /// Out of place: `decrypt` undoes `encrypt_in_place` at every length up
+    /// to 300 bytes, from and to buffers at several alignments, leaving the
+    /// ciphertext as it was; zeroes the output on a wrong tag; and leaves it
+    /// as it was on a length error.
+    #[cfg(any(
+        target_arch = "riscv64",
+        all(target_arch = "powerpc64", target_endian = "little")
+    ))]
+    #[test]
+    fn decrypt_out_of_place() {
+        let aead = ChaCha20Poly1305::new(&core::array::from_fn(|i| (i * 9) as u8));
+        let nonce = [5; 12];
+        let aad = [6; 7];
+        let msg: [u8; 300] = core::array::from_fn(|i| (i * 17) as u8);
+        for len in 0..=300 {
+            let mut ct = [0u8; 364];
+            let ct_off = len % 37;
+            let ct = &mut ct[ct_off..ct_off + len];
+            ct.copy_from_slice(&msg[..len]);
+            let tag = aead.encrypt_in_place(&nonce, &aad, ct).unwrap();
+            let ct = &*ct;
+            for offset in [0, 1, 8, 31, 63] {
+                let mut out = [0xAAu8; 364];
+                let dst = &mut out[offset..offset + len];
+                assert_eq!(aead.decrypt(&nonce, &aad, ct, &tag, dst), Ok(()));
+                assert_eq!(dst, &msg[..len]);
+            }
+            let mut bad = tag;
+            bad[15] ^= 0x40;
+            let mut out = [0xAAu8; 300];
+            assert_eq!(
+                aead.decrypt(&nonce, &aad, ct, &bad, &mut out[..len]),
+                Err(Error::TagMismatch)
+            );
+            assert!(out[..len].iter().all(|&b| b == 0));
+            assert!(out[len..].iter().all(|&b| b == 0xAA));
+        }
+        let ct = [1u8; 4];
+        let mut out = [0xAAu8; 5];
+        assert_eq!(
+            aead.decrypt(&nonce, &aad, &ct, &[0; 16], &mut out),
+            Err(Error::InvalidOutputLength)
+        );
+        assert_eq!(
+            aead.decrypt(&nonce, &aad, &ct, &[0; 16], &mut out[..3]),
+            Err(Error::InvalidOutputLength)
+        );
+        assert_eq!(out, [0xAA; 5]);
+    }
+
     /// Every implementation gives the same ciphertext and tag as the scalar
     /// one, and decrypts what any of them encrypted.
     #[test]
@@ -511,18 +621,19 @@ mod tests {
     fn features() {
         use crate::arch::chacha20::{
             VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES,
-            VG_CHACHA20_APPLY_AVX512VL_FEATURES,
+            VG_CHACHA20_APPLY_AVX512VL_FEATURES, VG_CHACHA20_APPLY_SSSE3_FEATURES,
         };
         use crate::arch::chacha20poly1305::{
             VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES, VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES,
             VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES, VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES,
-            VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
-            VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES,
+            VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES,
-            VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES, VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES,
         };
         use crate::arch::poly1305::{
             VG_POLY1305_UPDATE_AVX2_FEATURES, VG_POLY1305_UPDATE_AVX512_FEATURES,
@@ -558,6 +669,13 @@ mod tests {
         let ifma_open = Features::all(&[ifma, VG_CHACHA20_APPLY_AVX512VL_FEATURES]);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, ifma_open);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES, ifma);
+        // The SSSE3 variants call the baseline `vg_poly1305_blocks`.
+        let ssse3 = VG_CHACHA20_APPLY_SSSE3_FEATURES;
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES, ssse3);
+        assert_eq!(VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES, ssse3);
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES, ssse3);
+        assert_eq!(select(ssse3), Backend::Ssse3);
+        assert_eq!(select(Features(0)), Backend::Scalar);
         assert_eq!(select(avx2), Backend::Avx2);
         assert_eq!(select(avx512), Backend::Avx512);
         assert_eq!(select(avx512vl), Backend::Avx512Vl);

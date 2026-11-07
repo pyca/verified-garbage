@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Ctx
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
@@ -80,7 +81,7 @@ abbrev KQ.W (q : KQ) : Nat := 2 * q.pl / 8
 def KIn.pub (I : KIn) : KQ := ⟨I.B, I.Z, I.pl, I.pN, I.pD, I.pP, I.pQ, I.pDp, I.pDq, I.pQi, I.pE, I.el, I.eb, I.Wr⟩
 
 /-- The status of the inputs (`keyLeak`'s last entry). -/
-abbrev KIn.st (I : KIn) : Nat := Spec.RsaKeyGen.keyStatus (Spec.RsaKeyGen.keyOp I.pl I.eb I.pb I.qb)
+abbrev KIn.st (I : KIn) : Nat := Proof.RsaKeyGen.keyStatus (Proof.RsaKeyGen.keyOp I.pl I.eb I.pb I.qb)
 
 theorem KIn.pub_W {I : KIn} {q : KQ} (h : I.pub = q) : I.W = q.W := by rw [← h]; rfl
 

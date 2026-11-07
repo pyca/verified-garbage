@@ -384,7 +384,8 @@ vg_aes_xts_encrypt_to_vaes_vpclmul_avx512:
 	je 216f
 218:
 	movdqu xmm0, XMMWORD PTR [r11+rcx*1]
-	vpxor xmm0, xmm0, XMMWORD PTR [rax]
+	movdqu xmm9, XMMWORD PTR [rax]
+	pxor xmm0, xmm9
 	movdqu xmm8, XMMWORD PTR [rdi]
 	pxor xmm0, xmm8
 	movdqu xmm8, XMMWORD PTR [rdi+16]
@@ -425,7 +426,8 @@ vg_aes_xts_encrypt_to_vaes_vpclmul_avx512:
 220:
 	movdqu xmm8, XMMWORD PTR [r10]
 	aesenclast xmm0, xmm8
-	vpxor xmm0, xmm0, XMMWORD PTR [rax]
+	movdqu xmm9, XMMWORD PTR [rax]
+	pxor xmm0, xmm9
 	movdqu XMMWORD PTR [r11], xmm0
 	add r11, 16
 	add rax, 16
