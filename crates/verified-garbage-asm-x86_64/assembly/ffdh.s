@@ -8640,7 +8640,7 @@ vg_ffdh_generate_parameters_adx:
 	mov rdx, QWORD PTR [rax+80]
 	cmp rdx, 2
 	je 211f
-	mov ebx, 10
+	mov ebx, 420
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov esi, 0
@@ -8668,11 +8668,32 @@ vg_ffdh_generate_parameters_adx:
 	add r14, 1
 	cmp r14, r12
 	jne 213b
-	and rsi, 11
-	cmp rsi, 3
+	mov eax, 0
+	mov ecx, 1
+	cmp rsi, 23
+	cmove rax, rcx
+	cmp rsi, 47
+	cmove rax, rcx
+	cmp rsi, 83
+	cmove rax, rcx
+	cmp rsi, 107
+	cmove rax, rcx
+	cmp rsi, 143
+	cmove rax, rcx
+	cmp rsi, 167
+	cmove rax, rcx
+	cmp rsi, 227
+	cmove rax, rcx
+	cmp rsi, 263
+	cmove rax, rcx
+	cmp rsi, 347
+	cmove rax, rcx
+	cmp rsi, 383
+	cmove rax, rcx
+	cmp rax, 1
 	jmp 212f
 211:
-	mov ebx, 24
+	mov ebx, 840
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov esi, 0
@@ -8700,7 +8721,39 @@ vg_ffdh_generate_parameters_adx:
 	add r14, 1
 	cmp r14, r12
 	jne 215b
-	cmp rsi, 11
+	mov eax, 0
+	mov ecx, 1
+	cmp rsi, 59
+	cmove rax, rcx
+	cmp rsi, 83
+	cmove rax, rcx
+	cmp rsi, 107
+	cmove rax, rcx
+	cmp rsi, 179
+	cmove rax, rcx
+	cmp rsi, 227
+	cmove rax, rcx
+	cmp rsi, 299
+	cmove rax, rcx
+	cmp rsi, 347
+	cmove rax, rcx
+	cmp rsi, 419
+	cmove rax, rcx
+	cmp rsi, 443
+	cmove rax, rcx
+	cmp rsi, 467
+	cmove rax, rcx
+	cmp rsi, 563
+	cmove rax, rcx
+	cmp rsi, 587
+	cmove rax, rcx
+	cmp rsi, 683
+	cmove rax, rcx
+	cmp rsi, 779
+	cmove rax, rcx
+	cmp rsi, 803
+	cmove rax, rcx
+	cmp rax, 1
 212:
 	je 217f
 	mov rdi, QWORD PTR [rdi+128]
@@ -69381,7 +69434,7 @@ vg_ffdh_generate_parameters:
 	mov rdx, QWORD PTR [rax+80]
 	cmp rdx, 2
 	je 211f
-	mov ebx, 10
+	mov ebx, 420
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov esi, 0
@@ -69409,11 +69462,32 @@ vg_ffdh_generate_parameters:
 	add r14, 1
 	cmp r14, r12
 	jne 213b
-	and rsi, 11
-	cmp rsi, 3
+	mov eax, 0
+	mov ecx, 1
+	cmp rsi, 23
+	cmove rax, rcx
+	cmp rsi, 47
+	cmove rax, rcx
+	cmp rsi, 83
+	cmove rax, rcx
+	cmp rsi, 107
+	cmove rax, rcx
+	cmp rsi, 143
+	cmove rax, rcx
+	cmp rsi, 167
+	cmove rax, rcx
+	cmp rsi, 227
+	cmove rax, rcx
+	cmp rsi, 263
+	cmove rax, rcx
+	cmp rsi, 347
+	cmove rax, rcx
+	cmp rsi, 383
+	cmove rax, rcx
+	cmp rax, 1
 	jmp 212f
 211:
-	mov ebx, 24
+	mov ebx, 840
 	mov r12, QWORD PTR [rdi+48]
 	mov r8, QWORD PTR [rdi+64]
 	mov esi, 0
@@ -69441,7 +69515,39 @@ vg_ffdh_generate_parameters:
 	add r14, 1
 	cmp r14, r12
 	jne 215b
-	cmp rsi, 11
+	mov eax, 0
+	mov ecx, 1
+	cmp rsi, 59
+	cmove rax, rcx
+	cmp rsi, 83
+	cmove rax, rcx
+	cmp rsi, 107
+	cmove rax, rcx
+	cmp rsi, 179
+	cmove rax, rcx
+	cmp rsi, 227
+	cmove rax, rcx
+	cmp rsi, 299
+	cmove rax, rcx
+	cmp rsi, 347
+	cmove rax, rcx
+	cmp rsi, 419
+	cmove rax, rcx
+	cmp rsi, 443
+	cmove rax, rcx
+	cmp rsi, 467
+	cmove rax, rcx
+	cmp rsi, 563
+	cmove rax, rcx
+	cmp rsi, 587
+	cmove rax, rcx
+	cmp rsi, 683
+	cmove rax, rcx
+	cmp rsi, 779
+	cmove rax, rcx
+	cmp rsi, 803
+	cmove rax, rcx
+	cmp rax, 1
 212:
 	je 217f
 	mov rdi, QWORD PTR [rdi+128]
