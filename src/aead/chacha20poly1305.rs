@@ -14,6 +14,7 @@
 use core::mem::MaybeUninit;
 
 #[cfg(any(
+    target_arch = "arm",
     target_arch = "x86",
     target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
@@ -225,6 +226,7 @@ impl ChaCha20Poly1305 {
     /// `out`. `ciphertext` is read where it is, not copied to `out` first. A
     /// length error leaves `out` as it was.
     #[cfg(any(
+        target_arch = "arm",
         target_arch = "x86",
         target_arch = "riscv64",
         all(target_arch = "powerpc64", target_endian = "little")
@@ -419,6 +421,7 @@ mod tests {
     /// ciphertext as it was; zeroes the output on a wrong tag; and leaves it
     /// as it was on a length error.
     #[cfg(any(
+        target_arch = "arm",
         target_arch = "x86",
         target_arch = "riscv64",
         all(target_arch = "powerpc64", target_endian = "little")
