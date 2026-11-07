@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
 
-import VerifiedGarbage.Proof.Mont.X86.P256Red
 import VerifiedGarbage.Proof.Mont.X86.Row
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp

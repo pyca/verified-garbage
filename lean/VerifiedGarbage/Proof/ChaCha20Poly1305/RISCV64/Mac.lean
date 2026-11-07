@@ -41,11 +41,11 @@ theorem covers_right {rs rd wr : List Region} (h : Covers rs wr) : Covers rs (rd
 
 /-- Parts of the context are in the working space. -/
 theorem covers_ctx {s₀ s : State} (hp : APre e s₀) (hwr : s.wr = s₀.wr) (rs : List Region)
-    (h : ∀ r ∈ rs, ∃ k, r.base = off (cx s₀) k ∧ k + r.len ≤ 608) : Covers rs s.wr := by
+    (h : ∀ r ∈ rs, ∃ k, r.base = off (cx s₀) k ∧ k + r.len ≤ 616) : Covers rs s.wr := by
   refine Covers.of_sub fun r hr => ?_
   obtain ⟨k, hb, hk⟩ := h r hr
   have := pad_lt' s₀
-  exact ⟨wR s₀, by rw [hwr]; exact hp.w_wr, pad (wk s₀) + k, by rw [hb, cx_off], by show _ ≤ 616; omega⟩
+  exact ⟨wR s₀, by rw [hwr]; exact hp.w_wr, pad (wk s₀) + k, by rw [hb, cx_off], by show _ ≤ 624; omega⟩
 
 theorem cx_zero (s₀ : State) : cx s₀ = off (cx s₀) 0 := (off_zero _).symm
 
@@ -84,9 +84,9 @@ theorem keyGen_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
   · refine covers_right (covers_ctx hp (by rw [u₁.wr, h.wr]) _ fun r hr => ?_)
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    exacts [⟨0, cx_zero s₀, by show 0 + 64 ≤ 608; decide⟩, ⟨64, rfl, by show 64 + 256 ≤ 608; decide⟩]
+    exacts [⟨0, cx_zero s₀, by show 0 + 64 ≤ 616; decide⟩, ⟨64, rfl, by show 64 + 256 ≤ 616; decide⟩]
   · refine covers_ctx hp (by rw [u₁.wr, h.wr]) _ fun r hr => ?_
-    simp only [List.mem_singleton] at hr; subst hr; exact ⟨64, rfl, by show 64 + 256 ≤ 608; decide⟩
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨64, rfl, by show 64 + 256 ≤ 616; decide⟩
   refine ⟨(Step.upd _ u₁).trans k.step, by rw [k.a0, a0₁], ?_⟩
   rw [bytesAt_serialize _ _ (by decide), hb, u₁.mem, hst]
   rfl
@@ -106,9 +106,9 @@ theorem polyInit_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ 
   · refine covers_right (covers_ctx hp hw _ fun r hr => ?_)
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    exacts [⟨64, rfl, by show 64 + 32 ≤ 608; decide⟩, ⟨polyOff, rfl, by show polyOff + 128 ≤ 608; decide⟩]
+    exacts [⟨64, rfl, by show 64 + 32 ≤ 616; decide⟩, ⟨polyOff, rfl, by show polyOff + 128 ≤ 616; decide⟩]
   · refine covers_ctx hp hw _ fun r hr => ?_
-    simp only [List.mem_singleton] at hr; subst hr; exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 608; decide⟩
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 616; decide⟩
   refine ⟨((Step.upd _ u₁).trans (Step.upd _ u₂)).trans k.step,
     by rw [k.a0, u₂.gpr, u₁.other _ (by decide), ha], ?_⟩
   rw [u₂.mem, u₁.mem, hk] at hr
@@ -173,7 +173,7 @@ theorem macAad_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   have hP : (sub s₀ polyOff 128).Disjoint (aR s₀) := (APre.w_sub (s₀ := s₀) hp.a_w (k := polyOff) (n := 128) (by decide)).symm
   have cP : Covers [sub s₀ polyOff 128] s₃.wr := covers_ctx hp w₃ _ fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 608; decide⟩
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 616; decide⟩
   refine WP.seq (update_call (P := ps s₀) (hPa := cx_al s₀ (by decide)) (D := ad s₀) (c := BitVec.ofNat 64 0) (n := AL s₀)
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), ha])
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr])
@@ -195,7 +195,7 @@ theorem macAad_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     rw [k₄.cs _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide),
       h.regs.s8]
   have cP' : Covers [sub s₀ polyOff 128] s₉.wr := covers_ctx hp w₉ _ fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 608; decide⟩
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 616; decide⟩
   refine update_call (P := ps s₀) (hPa := cx_al s₀ (by decide)) (D := off (cx s₀) zeroOff) (c := s₀.gpr .a3)
     (n := (16 - AL s₀ % 16) % 16) (by rw [u₉.other _ (by decide), a0₈])
     (by rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide),
@@ -208,8 +208,8 @@ theorem macAad_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     (covers_right (covers_ctx hp w₉ _ fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨zeroOff, rfl, by show zeroOff + _ ≤ 608; simp only [zeroOff]; omega⟩
-      · exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 608; decide⟩)) cP' fun s' k' hb' => ?_
+      · exact ⟨zeroOff, rfl, by show zeroOff + _ ≤ 616; simp only [zeroOff]; omega⟩
+      · exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 616; decide⟩)) cP' fun s' k' hb' => ?_
   refine ⟨?_, by rw [k'.a0, u₉.other _ (by decide), a0₈], ?_⟩
   · refine ((((((((Step.upd _ u₁).trans (Step.upd _ u₂)).trans (Step.upd _ u₃)).trans k₄.step).trans
       (Step.upd _ u₅)).trans (Step.upd _ u₆)).trans (Step.upd _ u₇)).trans (Step.upd _ u₈)).trans
@@ -264,8 +264,8 @@ theorem fit_d' (s₀ : State) : L s₀ < 2 ^ 64 := (s₀.gpr .a5).isLt
 
 theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) (ha : s.gpr .a0 = ps s₀)
     (hst : stateAt s.mem (cx s₀) = initState (K s₀) 0 (N s₀)) :
-    WP isa crypt s fun s' => Step [sub s₀ 0 64, dR s₀, sub s₀ 64 320] s s' ∧ s'.gpr .a0 = ps s₀ ∧
-      bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
+    WP isa crypt s fun s' => Step [sub s₀ 0 64, oR s₀, sub s₀ 64 320] s s' ∧ s'.gpr .a0 = ps s₀ ∧
+      bytesAt s'.mem (op s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
   unfold crypt
   simp only [mov]
   refine WP.seq (wp_subi (imm := polyOff) (by decide) fun s₁ u₁ => wp_li (imm := 1) (by decide) fun s₂ u₂ => ?_)
@@ -281,24 +281,37 @@ theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) 
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (contains_sub s₀ (w := 8 / 8) (by decide) (by decide) (by decide))
   have a0₆ : s₆.gpr .a0 = cx s₀ := by
-    rw [u₆.other _ (by decide), u₅'.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), g₃.gpr, u₂.other _ (by decide),
-      a0₁]
+    rw [u₆.other _ (by decide), u₅'.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), g₃.gpr,
+      u₂.other _ (by decide), a0₁]
   have g₆ : ∀ r, r ≠ .a0 → r ≠ .t0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a3 → r ≠ .a4 → s₆.gpr r = s.gpr r :=
     fun r h0 ht h1 h2 h3 h4 => by
       rw [u₆.other r h4, u₅'.other r h3, u₅.other r h2, u₄.other r h1, g₃.gpr, u₂.other r ht, u₁.other r h0]
   have w₆ : s₆.wr = s₀.wr := by rw [u₆.wr, u₅'.wr, u₅.wr, u₄.wr, g₃.wr, u₂.wr, u₁.wr, h.wr]
-  have hS : (⟨cx s₀, 64⟩ : Region).Disjoint (dR s₀) := by
+  have r₆ : s₆.rd = s₀.rd := by rw [u₆.rd, u₅'.rd, u₅.rd, u₄.rd, g₃.rd, u₂.rd, u₁.rd, h.rd]
+  have hSX : (⟨cx s₀, 64⟩ : Region).Disjoint (dR s₀) := by
     rw [st_sub]; exact (APre.w_sub (s₀ := s₀) hp.d_w (k := 0) (n := 64) (by decide)).symm
-  have hcov : Covers [⟨cx s₀, 64⟩, dR s₀, sub s₀ 64 320] s₆.wr := by
+  have hSD : (⟨cx s₀, 64⟩ : Region).Disjoint (oR s₀) := by
+    rw [st_sub]; exact (APre.w_sub (s₀ := s₀) hp.o_w (k := 0) (n := 64) (by decide)).symm
+  have hcov : Covers [⟨cx s₀, 64⟩, oR s₀, sub s₀ 64 320] s₆.wr := by
     refine Covers.of_sub fun r hr => ?_
     have := pad_lt' s₀
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨wR s₀, by rw [w₆]; exact hp.w_wr, pad (wk s₀), rfl, by show pad (wk s₀) + 64 ≤ 616; omega⟩
-    · exact ⟨dR s₀, by rw [w₆]; exact hp.d_wr, 0, (BitVec.add_zero _).symm, by simp⟩
+    · exact ⟨wR s₀, by rw [w₆]; exact hp.w_wr, pad (wk s₀), rfl, by show pad (wk s₀) + 64 ≤ 624; omega⟩
+    · exact ⟨oR s₀, by rw [w₆]; exact hp.o_wr, 0, (BitVec.add_zero _).symm, by simp⟩
     · exact ⟨wR s₀, by rw [w₆]; exact hp.w_wr, pad (wk s₀) + 64, cx_off s₀ 64,
-        by show pad (wk s₀) + 64 + 320 ≤ 616; omega⟩
-  refine WP.seq (xor_call (S := cx s₀) (D := dp s₀) (n := L s₀) (B := off (cx s₀) 64)
+        by show pad (wk s₀) + 64 + 320 ≤ 624; omega⟩
+  have hc : Covers ([dR s₀] ++ [⟨cx s₀, 64⟩, oR s₀, sub s₀ 64 320]) (s₆.rd ++ s₆.wr) := by
+    intro a m ⟨r, hr, hcr⟩
+    simp only [List.cons_append, List.nil_append, List.mem_cons] at hr
+    rcases hr with rfl | hr
+    · exact ⟨dR s₀, by rw [r₆, w₆]; exact hp.d_in, hcr⟩
+    · exact covers_right hcov a m ⟨r, by simpa using hr, hcr⟩
+  have hXD : op s₀ = dp s₀ ∨ (dR s₀).Disjoint (oR s₀) := by
+    rcases hp.alias with h' | ⟨-, h'⟩
+    · exact .inl h'
+    · exact .inr h'
+  refine WP.seq (xor_call_to (S := cx s₀) (X := dp s₀) (D := op s₀) (n := L s₀) (B := off (cx s₀) 64)
     (hSa := cx_al4 s₀) (hBa := off_al4 s₀ (by decide)) a0₆
     (by rw [u₆.other _ (by decide), u₅'.other _ (by decide), u₅.other _ (by decide), u₄.gpr, g₃.gpr,
       u₂.other _ (by decide), u₁.other _ (by decide), h.regs.s9])
@@ -307,16 +320,17 @@ theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) 
     (by rw [u₆.other _ (by decide), u₅'.gpr, u₅.other _ (by decide), u₄.other _ (by decide), g₃.gpr,
       u₂.other _ (by decide), a0₁]; rfl)
     (by rw [u₆.gpr, u₅'.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), g₃.gpr,
-      u₂.other _ (by decide), u₁.other _ (by decide), h.regs.s9])
-    (fit_d' s₀) hS (Offset.base_disjoint (cx s₀) (k := 64) (e := 64) (n := 320) (by decide) (by decide))
-    (APre.w_sub (s₀ := s₀) hp.d_w (k := 64) (n := 320) (by decide)) hp.fit_d
-    (covers_right (by rw [List.nil_append]; exact hcov)) hcov fun s₇ k₇ hx => ?_)
+      u₂.other _ (by decide), u₁.other _ (by decide), h.regs.s6])
+    (fit_d' s₀) hSX hSD (Offset.base_disjoint (cx s₀) (k := 64) (e := 64) (n := 320) (by decide) (by decide))
+    (APre.w_sub (s₀ := s₀) hp.d_w (k := 64) (n := 320) (by decide))
+    (APre.w_sub (s₀ := s₀) hp.o_w (k := 64) (n := 320) (by decide)) hXD hp.fit_d hp.fit_o
+    hc hcov fun s₇ k₇ hx => ?_)
   refine wp_addi (imm := polyOff) (by decide) fun s₈ u₈ => WP.block_nil ?_
   refine ⟨?_, by rw [u₈.gpr, k₇.a0, a0₆], ?_⟩
-  · have st₆ : Step [sub s₀ 0 64, dR s₀, sub s₀ 64 320] s s₆ :=
+  · have st₆ : Step [sub s₀ 0 64, oR s₀, sub s₀ 64 320] s s₆ :=
       ⟨fun r hr => g₆ r (by revert r; decide) (by revert r; decide) (by revert r; decide)
         (by revert r; decide) (by revert r; decide) (by revert r; decide),
-        by rw [u₆.sp, u₅'.sp, u₅.sp, u₄.sp, g₃.sp, u₂.sp, u₁.sp], by rw [u₆.rd, u₅'.rd, u₅.rd, u₄.rd, g₃.rd, u₂.rd, u₁.rd],
+        by rw [u₆.sp, u₅'.sp, u₅.sp, u₄.sp, g₃.sp, u₂.sp, u₁.sp], by rw [r₆, h.rd],
         by rw [w₆, h.wr], f₆.mono (by simp)⟩
     refine (st₆.trans ?_).trans (Step.upd _ u₈)
     have := k₇.step
@@ -347,11 +361,11 @@ theorem add_mod16 (a b : BitVec 64) : (a + b).toNat % 16 = (a.toNat + b.toNat) %
 theorem length_pad16 (x : List Byte) : (x ++ pad16 x).length % 16 = 0 := by
   unfold pad16; split <;> simp <;> omega
 
-theorem covers_wr2 {r₁ r₂ : Region} {rd wr : List Region} (h₁ : r₁ ∈ wr) (h₂ : Covers [r₂] wr) :
+theorem covers_wr2 {r₁ r₂ : Region} {rd wr : List Region} (h₁ : r₁ ∈ rd ++ wr) (h₂ : Covers [r₂] wr) :
     Covers ([r₁] ++ [r₂]) (rd ++ wr) := fun a n ⟨r, hr, hc⟩ => by
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact ⟨r, List.mem_append_right _ h₁, hc⟩
+  · exact ⟨r, h₁, hc⟩
   · obtain ⟨r', hr', hc'⟩ := h₂ a n ⟨r, List.mem_singleton_self _, hc⟩
     exact ⟨r', List.mem_append_right _ hr', hc'⟩
 
@@ -383,7 +397,7 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
   simp only [mov, List.cons_append, List.nil_append]
   have cP : ∀ s' : State, s'.wr = s₀.wr → Covers [sub s₀ polyOff 128] s'.wr := fun s' hw =>
     covers_ctx hp hw _ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 608; decide⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 616; decide⟩
   have hdP : (sub s₀ polyOff 128).Disjoint (dR s₀) :=
     (APre.w_sub (s₀ := s₀) hp.d_w (k := polyOff) (n := 128) (by decide)).symm
   -- The data.
@@ -399,7 +413,7 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
     (by rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h.regs.s9])
     (by rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h.regs.s10, a5_eq])
     (fit_d' s₀) hdP
-    (covers_wr2 (by rw [i₄.wr]; exact hp.d_wr) (cP s₄ i₄.wr)) (cP s₄ i₄.wr) fun s₅ k₅ hb₅ => ?_)
+    (covers_wr2 (by rw [i₄.rd, i₄.wr]; exact hp.d_in) (cP s₄ i₄.wr)) (cP s₄ i₄.wr) fun s₅ k₅ hb₅ => ?_)
   have i₅ : Inv s₀ s₅ := i₄.step1 k₅.step (k := polyOff) (n := 128) (by decide)
   have a0₅ : s₅.gpr .a0 = ps s₀ := by rw [k₅.a0, a0₄]
   have B₅ := hb₅ (otk s₀) M (by rw [m₄]; exact hb) (c₄.trans hM.symm)
@@ -437,8 +451,8 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
     (covers_right (covers_ctx hp i₁₂.wr _ fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨zeroOff, rfl, by show zeroOff + _ ≤ 608; simp only [zeroOff]; omega⟩
-      · exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 608; decide⟩)) (cP s₁₂ i₁₂.wr) fun s₁₃ k₁₃ hb₁₃ => ?_)
+      · exact ⟨zeroOff, rfl, by show zeroOff + _ ≤ 616; simp only [zeroOff]; omega⟩
+      · exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 616; decide⟩)) (cP s₁₂ i₁₂.wr) fun s₁₃ k₁₃ hb₁₃ => ?_)
   have i₁₃ : Inv s₀ s₁₃ := i₁₂.step1 k₁₃.step (k := polyOff) (n := 128) (by decide)
   have a0₁₃ : s₁₃.gpr .a0 = ps s₀ := by rw [k₁₃.a0, a0₁₂]
   have hz₁₂ : ∀ i < 16, s₁₂.mem (off (cx s₀) zeroOff + BitVec.ofNat 64 i) = 0 := zeros_of fun i hi => by
@@ -483,8 +497,8 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
     (covers_right (covers_ctx hp i₂₀.wr _ fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨lenOff, rfl, by show lenOff + 16 ≤ 608; decide⟩
-      · exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 608; decide⟩)) (cP s₂₀ i₂₀.wr) fun s₂₁ k₂₁ hb₂₁ => ?_)
+      · exact ⟨lenOff, rfl, by show lenOff + 16 ≤ 616; decide⟩
+      · exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 616; decide⟩)) (cP s₂₀ i₂₀.wr) fun s₂₁ k₂₁ hb₂₁ => ?_)
   have i₂₁ : Inv s₀ s₂₁ := i₂₀.step1 k₂₁.step (k := polyOff) (n := 128) (by decide)
   have a0₂₁ : s₂₁.gpr .a0 = ps s₀ := by rw [k₂₁.a0, a0₂₀]
   have hl₂₀ : bytesAt s₂₀.mem (off (cx s₀) lenOff) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by

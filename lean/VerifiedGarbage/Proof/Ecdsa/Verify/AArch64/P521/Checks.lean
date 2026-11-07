@@ -94,7 +94,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
@@ -245,6 +244,5 @@ theorem window_checks : PubNaf.WindowChecks Kq where
 theorem prep_checks : PubNaf.PrepChecks Kq (p521.sl V) where
   init := by reg_ct [.x0]
   step := by reg_ct (PubNaf.prepPublic Kq.M.n)
-
 
 end VG.Proof.Ecdsa.Verify.AArch64.P521

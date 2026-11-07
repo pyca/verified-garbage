@@ -13,6 +13,8 @@
 
 use core::mem::MaybeUninit;
 
+#[cfg(target_arch = "riscv64")]
+use crate::arch::chacha20poly1305::vg_chacha20_poly1305_open_to;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20poly1305::{
     VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
@@ -93,7 +95,7 @@ pub enum Error {
     /// nonce is not what was authenticated under this key.
     TagMismatch,
     /// The output of [`ChaCha20Poly1305::encrypt`] is not as long as the
-    /// plaintext.
+    /// plaintext, or that of `ChaCha20Poly1305::decrypt` as the ciphertext.
     InvalidOutputLength,
     /// More than [`ChaCha20Poly1305::MAX_PIECES`] pieces of plaintext for
     /// [`ChaCha20Poly1305::encrypt`].
@@ -104,7 +106,7 @@ crate::error::impl_error! {
     Error {
         InvalidTextLength => "ChaCha20-Poly1305 text is too long",
         TagMismatch => "ChaCha20-Poly1305 tag does not match",
-        InvalidOutputLength => "ChaCha20-Poly1305 output is not as long as the plaintext",
+        InvalidOutputLength => "ChaCha20-Poly1305 output is not as long as its input",
         TooManyPieces => "too many pieces of ChaCha20-Poly1305 plaintext",
     }
 }
@@ -316,6 +318,55 @@ impl ChaCha20Poly1305 {
             Err(Error::TagMismatch)
         }
     }
+
+    /// Decrypts `ciphertext`, with the nonce `nonce` and the additional data
+    /// `aad`, into `out`, which must be exactly as long as it, if `tag`
+    /// authenticates it; otherwise returns [`Error::TagMismatch`] and zeroes
+    /// `out`. `ciphertext` is read where it is, not copied to `out` first. A
+    /// length error leaves `out` as it was.
+    #[cfg(target_arch = "riscv64")]
+    pub fn decrypt(
+        &self,
+        nonce: &[u8; 12],
+        aad: &[u8],
+        ciphertext: &[u8],
+        tag: &[u8; 16],
+        out: &mut [u8],
+    ) -> Result<(), Error> {
+        check_len(ciphertext.len())?;
+        if out.len() != ciphertext.len() {
+            return Err(Error::InvalidOutputLength);
+        }
+        let open_to = match self.backend {
+            Backend::Scalar => vg_chacha20_poly1305_open_to,
+        };
+        // SAFETY: as in `decrypt_in_place`, with `ciphertext` valid for
+        // reads of `ciphertext.len()` bytes, at most `P_MAX` (`check_len`),
+        // and `out` for writes of `out.len()`, which is `ciphertext.len()`:
+        // `out` is the only buffer written, a unique borrow, which overlaps
+        // none of the shared borrows `self.key`, `nonce`, `aad`,
+        // `ciphertext` and `tag`.
+        let ok = unsafe {
+            open_to(
+                &self.key,
+                nonce,
+                aad.as_ptr(),
+                aad.len(),
+                ciphertext.as_ptr(),
+                ciphertext.len(),
+                out.as_mut_ptr(),
+                out.len(),
+                tag,
+            )
+        };
+        // `open_to`'s contract leaves the plaintext in `out` if it returns
+        // 1, and zeros otherwise.
+        if ok == 1 {
+            Ok(())
+        } else {
+            Err(Error::TagMismatch)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -463,6 +514,53 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// Out of place: `decrypt` undoes `encrypt_in_place` at every length up
+    /// to 300 bytes, from and to buffers at several alignments, leaving the
+    /// ciphertext as it was; zeroes the output on a wrong tag; and leaves it
+    /// as it was on a length error.
+    #[cfg(target_arch = "riscv64")]
+    #[test]
+    fn decrypt_out_of_place() {
+        let aead = ChaCha20Poly1305::new(&core::array::from_fn(|i| (i * 9) as u8));
+        let nonce = [5; 12];
+        let aad = [6; 7];
+        let msg: [u8; 300] = core::array::from_fn(|i| (i * 17) as u8);
+        for len in 0..=300 {
+            let mut ct = [0u8; 364];
+            let ct_off = len % 37;
+            let ct = &mut ct[ct_off..ct_off + len];
+            ct.copy_from_slice(&msg[..len]);
+            let tag = aead.encrypt_in_place(&nonce, &aad, ct).unwrap();
+            let ct = &*ct;
+            for offset in [0, 1, 8, 31, 63] {
+                let mut out = [0xAAu8; 364];
+                let dst = &mut out[offset..offset + len];
+                assert_eq!(aead.decrypt(&nonce, &aad, ct, &tag, dst), Ok(()));
+                assert_eq!(dst, &msg[..len]);
+            }
+            let mut bad = tag;
+            bad[15] ^= 0x40;
+            let mut out = [0xAAu8; 300];
+            assert_eq!(
+                aead.decrypt(&nonce, &aad, ct, &bad, &mut out[..len]),
+                Err(Error::TagMismatch)
+            );
+            assert!(out[..len].iter().all(|&b| b == 0));
+            assert!(out[len..].iter().all(|&b| b == 0xAA));
+        }
+        let ct = [1u8; 4];
+        let mut out = [0xAAu8; 5];
+        assert_eq!(
+            aead.decrypt(&nonce, &aad, &ct, &[0; 16], &mut out),
+            Err(Error::InvalidOutputLength)
+        );
+        assert_eq!(
+            aead.decrypt(&nonce, &aad, &ct, &[0; 16], &mut out[..3]),
+            Err(Error::InvalidOutputLength)
+        );
+        assert_eq!(out, [0xAA; 5]);
     }
 
     /// Every implementation gives the same ciphertext and tag as the scalar

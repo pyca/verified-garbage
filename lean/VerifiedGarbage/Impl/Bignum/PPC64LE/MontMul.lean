@@ -68,13 +68,6 @@ def saved (i : Nat) : Reg :=
 
 /-! ## The arguments -/
 
-/-- The bases, `n = 2 w`, `-m⁻¹ mod 2³²` (the low half of the header's
-word) and the rounds' count, from the header. -/
-def loads : List Instr :=
-  [.load .d .r5 .r5 64, .load .d .r6 .r6 64, .load .d .r7 .r7 64,
-    .load .d .r8 .r3 (8 * sArr 2), .load .d .r9 .r3 (8 * sArr 3), .load .d .r10 .r3 (8 * sArr 0),
-    .load .d .r11 .r3 (8 * sW), .lsl .r11 .r11 1, .load .w .r12 .r3 (8 * sMinv), .addi .r4 .r11 0]
-
 /-! ## Loops -/
 
 /-- `do body; cnt -= 1 while cnt ≠ 0`, for `cnt` at least 1. -/

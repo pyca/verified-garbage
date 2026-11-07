@@ -175,13 +175,6 @@ def w1R (i : Nat) : Prog isa :=
   callAt (if p.γ₂ = 261888 then "vg_mldsa_high_pack4" else "vg_mldsa_high_pack6")
     (P.highPack p.γ₂) [(.x0,.ptr (wP p i)),(.x1,.ptr (sc (oW1+w1Len p*i)))]
 
-/-- `ct₀[i] = NTT⁻¹(ĉ t̂₀[i])` and its norm, `w[i] - cs₂[i] + ct₀[i]` (in `w[i]`),
-`-ct₀[i]` (in `T4`), and `h[i] = MakeHint(-ct₀[i], w[i] - cs₂[i] + ct₀[i])`. -/
-def hR (i : Nat) : Prog isa :=
-  .seq (mulAt P t3P cP (t0P p i)) (.seq (invNttAt P t3P) (.seq (normAt P t3P p.γ₂)
-    (.seq (copy t4P (wP p i) 1024) (.seq (addAt P (wP p i) t3P) (.seq (subAt P t4P (wP p i))
-      (makeHintAt P t4P (wP p i) p.γ₂ (hP i)))))))
-
 /-- `x24 ← x24 ∧ (ONES ≤ ω)`: `ONES - (ω + 1)` is negative exactly then. -/
 def onesOk : List Instr :=
   [.ldr .x .x9 .x28 oONES, .subImm .x .x9 .x9 (p.ω + 1), .lsr .x .x9 .x9 63, .logic .and .w .x24 .x24 .x9]

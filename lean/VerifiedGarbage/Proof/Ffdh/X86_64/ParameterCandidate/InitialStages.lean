@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Consume
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
@@ -39,7 +39,7 @@ theorem load_initial (d : CandidatePublic) (s : State) (h : PhaseSet false .all 
       ⟨⟨⟨ht, k.2.2.trans h.1.2.1, h.1.2.2⟩, mi, hgt, hpt, hnt⟩, by rw [hbytes]; exact hv⟩
 
 def InitialGenerator (d : CandidatePublic) (s : State) : Prop :=
-  InitialLoaded d s ∧ s.zf = some (Spec.Ffdh.generationShape d.p.bits d.p.gen d.p.P)
+  InitialLoaded d s ∧ s.zf = some d.p.congruent
 
 theorem generator_initial (d : CandidatePublic) (s : State) (h : InitialLoaded d s) :
     WP isa generatorPolicy s (InitialGenerator d) := by

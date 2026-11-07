@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 # 5-bit windows with an affine table on x86-64
 
 `JacWinCfg.windowA` (`Impl/Weierstrass/X86_64/WinJacA.lean`) leaves `R`
-representing `[k]P`, as `JacWinCfg.window` does (`winJac_ok`): the table by
+representing `[k]P` in projective coordinates: the table by
 `jbuild_ok`, made affine by `normA_ok` (every entry's `Z` one, `JTblOne`),
 then the first digit by `jfirst_ok` and the iterations by `jstepA_ok`, which
 selects the entry's `X` and `Y` (`jentryA_ok`) and adds it by the mixed addition (`madd_ok`, `jstepA_pt`): right

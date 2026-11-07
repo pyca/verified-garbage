@@ -13,8 +13,9 @@ import VerifiedGarbage.Proof.MlKem.Arith
 
 With the entries `A'` of `Â` and `c = c0` as the samplers left them, and `x24`
 their result `q` (`SC`): `ẑ[i] = NTT(z[i])` (`nttZ_vpiece`), `ĉ`
-(`nttC_vpiece`), and each row `r` of `w′₁`, packed to `w1Encode(w′₁)`
-(`row_vpiece`).
+(`nttC_vpiece`), and the pieces of each row `r` of `w′₁`, packed to
+`w1Encode(w′₁)` (`dot_vpiece`, `t1_vpiece`, `nttT_vpiece`, `mulT_vpiece`,
+`sub_vpiece`, `inv_vpiece`, `uh_vpiece`, `sbpR_vpiece`).
 -/
 
 @[expose] public section
@@ -513,13 +514,6 @@ theorem sbpR_vpiece : VPiece p S (RowI p r (F8 p r)) (SCx p p.ℓ true (r + 1))
     · rw [hP'.pa (show Reg.x28 ∈ keptRegs by decide), hq, hw]
   · obtain ⟨_, _, _, _, _, w⟩ := h₁; exact w1_bound hF w
   · obtain ⟨_, _, _, _, _, w⟩ := h₂; exact w1_bound hF w
-
-theorem row_vpiece : VPiece p S (SCx p p.ℓ true r) (SCx p p.ℓ true (r + 1))
-    (VG.Impl.MlDsa.AArch64.Verify.row P p r) := by
-  unfold VG.Impl.MlDsa.AArch64.Verify.row
-  exact (dot_vpiece hP hF hr).seq ((t1_vpiece hP hF hr).seq ((nttT_vpiece hP hF hr).seq
-    ((mulT_vpiece hP hF hr).seq ((sub_vpiece hP hF hr).seq ((inv_vpiece hP hF hr).seq
-      ((uh_vpiece hP hF hr).seq (sbpR_vpiece hP hF hr)))))))
 
 end
 

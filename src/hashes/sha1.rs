@@ -12,6 +12,11 @@
     target_arch = "riscv64"
 ))]
 
+#[cfg(target_arch = "x86_64")]
+use crate::arch::sha1::{
+    VG_SHA1_FINALIZE_AVX_BMI_FEATURES, VG_SHA1_UPDATE_AVX_BMI_FEATURES, vg_sha1_finalize_avx_bmi,
+    vg_sha1_update_avx_bmi,
+};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::sha1::{
     VG_SHA1_FINALIZE_SHA2_FEATURES, VG_SHA1_UPDATE_SHA2_FEATURES, vg_sha1_finalize_sha2,
@@ -25,6 +30,8 @@ use crate::arch::sha1::{
 use crate::arch::sha1::{vg_sha1_finalize, vg_sha1_init, vg_sha1_update};
 
 use crate::arch::sha1::vg_sha1_digest;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::sha1::vg_sha1_digest_avx_bmi;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::sha1::vg_sha1_digest_sha2;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -45,6 +52,9 @@ super::streaming_hash!(
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             ShaNi if [VG_SHA1_UPDATE_SHANI_FEATURES, VG_SHA1_FINALIZE_SHANI_FEATURES] =>
                 (vg_sha1_update_shani, vg_sha1_finalize_shani),
+            #[cfg(target_arch = "x86_64")]
+            AvxBmi if [VG_SHA1_UPDATE_AVX_BMI_FEATURES, VG_SHA1_FINALIZE_AVX_BMI_FEATURES] =>
+                (vg_sha1_update_avx_bmi, vg_sha1_finalize_avx_bmi),
         },
         digests: {
             Scalar => vg_sha1_digest,
@@ -52,6 +62,8 @@ super::streaming_hash!(
             Sha2 => vg_sha1_digest_sha2,
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             ShaNi => vg_sha1_digest_shani,
+            #[cfg(target_arch = "x86_64")]
+            AvxBmi => vg_sha1_digest_avx_bmi,
         },
         tables: {
             Scalar => {
@@ -70,6 +82,12 @@ super::streaming_hash!(
                 hash: crate::arch::fn_tables::VG_HASH_SHA1_SHANI [crate::arch::fn_tables::VG_HASH_SHA1_SHANI_FEATURES],
                 md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA1_SHANI [crate::arch::fn_tables::VG_MD_HASH_SHA1_SHANI_FEATURES],
                 hmac: crate::arch::fn_tables::VG_HMAC_SHA1_SHANI [crate::arch::fn_tables::VG_HMAC_SHA1_SHANI_FEATURES],
+            },
+            #[cfg(target_arch = "x86_64")]
+            AvxBmi => {
+                hash: crate::arch::fn_tables::VG_HASH_SHA1_AVX_BMI [crate::arch::fn_tables::VG_HASH_SHA1_AVX_BMI_FEATURES],
+                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA1_AVX_BMI [crate::arch::fn_tables::VG_MD_HASH_SHA1_AVX_BMI_FEATURES],
+                hmac: crate::arch::fn_tables::VG_HMAC_SHA1_AVX_BMI [crate::arch::fn_tables::VG_HMAC_SHA1_AVX_BMI_FEATURES],
             },
         },
     }

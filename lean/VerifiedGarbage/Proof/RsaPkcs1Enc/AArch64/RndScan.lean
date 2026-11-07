@@ -56,10 +56,6 @@ theorem getD_append_lt {l : List Byte} {j : Nat} (b : Byte) (h : j < l.length) :
 theorem getD_append_eq (l : List Byte) (b : Byte) : (l ++ [b]).getD l.length 0 = b := by
   simp [List.getD_eq_getElem?_getD]
 
-theorem ofNat_sub_one {n j : Nat} (hj : j < n) (hn : n < 2 ^ 64) :
-    BitVec.ofNat 64 (n - j) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - (j + 1)) :=
-  Bytes.counter_step hj hn
-
 /-- After `i` octets of the tape, from the state `t₀` after `setup`. -/
 structure At (s t₀ : State) (i : Nat) (u : State) : Prop where
   fr : InFrame s u

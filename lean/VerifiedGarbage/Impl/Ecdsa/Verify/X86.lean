@@ -185,9 +185,6 @@ def points : Prog isa :=
 /-- Shared variable-base window layout. -/
 def windowQ : WinCfg := Impl.Ecdh.X86.Cfg.windowCfg c
 
-/-- Recode verification's scalar `v`. -/
-def windowPrep : Prog isa := Impl.Ecdh.X86.Cfg.windowPrep c (c.sl V)
-
 /-- The public NAF digits fit between their residual and the field functions' workspace. -/
 def nafQ : WinCfg := { windowQ c with bits := 3580 }
 

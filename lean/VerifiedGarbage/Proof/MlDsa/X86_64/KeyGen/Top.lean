@@ -50,13 +50,9 @@ open VG.Spec.Sha3 (bytesAt)
 
 theorem row_piece {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     Piece p (KRx p (p.ℓ + p.k) p.ℓ i) (KRx p (p.ℓ + p.k) p.ℓ (i + 1)) (row P p i) := by
-  have hl := hF.l
   unfold row
-  refine (mul_piece hP hF hi).seq (Piece.seq ?_ ((inv_piece hP hF hi).seq ((addS2_piece hP hF hi).seq
-    ((p2r_piece hP hF hi).seq ((sbp_piece hP hF hi).seq (bp_piece hP hF hi))))))
-  refine Piece.mono (Piece.seqR (I := fun j => RowI p i (tIs p fun A S => encode P.montgomery (dotK p A S i j))) (p.ℓ - 1) 1
-    fun j h1 h2 => mulAdd_piece hP hF hi (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
-  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at h
+  exact (dot_piece hP hF hi).seq ((addS2_piece hP hF hi).seq
+    ((p2r_piece hP hF hi).seq ((sbp_piece hP hF hi).seq (bp_piece hP hF hi))))
 
 /-! ## The keys in memory -/
 

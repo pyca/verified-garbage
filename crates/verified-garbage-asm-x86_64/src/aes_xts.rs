@@ -276,7 +276,7 @@ call {vg_aes_xts_decrypt_to_aesni}
 }
 
 /// The CPU features `vg_aes_xts_encrypt_unit_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::PCLMULQDQ);
+pub const VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
 ///
@@ -294,7 +294,7 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::F
 /// * The contents of `scratch` on return are unspecified.
 /// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx` and `pclmulqdq` target features.
+/// * The CPU must support the `aes` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
@@ -320,7 +320,7 @@ jmp 21f
 }
 
 /// The CPU features `vg_aes_xts_decrypt_unit_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::PCLMULQDQ);
+pub const VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
 ///
@@ -338,7 +338,7 @@ pub const VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::F
 /// * The contents of `scratch` on return are unspecified.
 /// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx` and `pclmulqdq` target features.
+/// * The CPU must support the `aes` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
@@ -369,7 +369,7 @@ call {vg_aes_xts_decrypt_aesni_pclmul}
 }
 
 /// The CPU features `vg_aes_xts_encrypt_unit_to_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::PCLMULQDQ);
+pub const VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, out of place: writes to the `dst_len = len` bytes at `dst` the encryption of the `len` bytes at `src`, at least 16 and at most 2²⁰ blocks, under the key `Key1 ‖ Key2` with the tweak value `*i`, as `vg_aes_xts_encrypt_unit` would replace them with in place (see `vg_aes_xts_encrypt_unit`). `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included.
 ///
@@ -389,7 +389,7 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu
 /// * The contents of `scratch` on return are unspecified.
 /// * `dst` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i`, `src` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx` and `pclmulqdq` target features.
+/// * The CPU must support the `aes` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_to_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
@@ -456,7 +456,7 @@ jmp 215f
 }
 
 /// The CPU features `vg_aes_xts_decrypt_unit_to_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::PCLMULQDQ);
+pub const VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, out of place: writes to the `dst_len = len` bytes at `dst` the decryption of the `len` bytes at `src`, at least 16 and at most 2²⁰ blocks, under the key `Key1 ‖ Key2` with the tweak value `*i`, as `vg_aes_xts_decrypt_unit` would replace them with in place (see `vg_aes_xts_decrypt_unit`). `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included.
 ///
@@ -476,7 +476,7 @@ pub const VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu
 /// * The contents of `scratch` on return are unspecified.
 /// * `dst` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i`, `src` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx` and `pclmulqdq` target features.
+/// * The CPU must support the `aes` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_to_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], src: *const u8, len: usize, dst: *mut u8, dst_len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(

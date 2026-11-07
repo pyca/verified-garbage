@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.Math
 /-!
 # RSA with the CRT on x86-64: the exponentiation by windows of 5 bits
 
-`Crt.expLoop5` (`Impl/Rsa/X86_64/Crt.lean`): `tabBuildN` writes the table
+`Crt.expLoop5S` (`Impl/Rsa/X86_64/Crt.lean`): `tabBuildN` writes the table
 of the 32 powers, then each window takes the top 5 of the exponent's bits
 kept at the top of `sV`, after `padBits L` zero bits (`padInit_ok`), a byte
 more read below them when fewer than 5 are left (`refill_ok`).
@@ -30,7 +30,7 @@ open VG.Proof.MlKem.X86_64
 
 /-! ## What the exponentiation changes -/
 
-/-- What `expLoop5` changes: `crtExpRanges` with a table of 32 entries, and
+/-- What `expLoop5S` changes: `crtExpRanges` with a table of 32 entries, and
 `sPow`. -/
 def crtExpRanges5 (wx : Nat) : List (Nat × Nat) := (8 * Crt.sPow, 8) :: crtExpRanges wx 32
 
@@ -56,7 +56,7 @@ theorem crtExpRanges5_arr (wx : Nat) {j : Nat} (hj : j < 8) (h1 : j ≠ aAcc) (h
 /-- Two different header words are disjoint. -/
 theorem hdr_sep {k s : Nat} (h : k ≠ s) : 8 * k + 8 ≤ 8 * s ∨ 8 * s + 8 ≤ 8 * k := by omega
 
-/-- A header slot that `expLoop5`'s ranges miss. -/
+/-- A header slot that `expLoop5S`'s ranges miss. -/
 theorem crtExpRanges5_hdr (wx : Nat) {k : Nat} (hk : k < 32) (h0 : k ≠ Crt.sPow) (h1 : k ≠ Crt.sExp)
     (h2 : k ≠ Crt.sExpLen) (h3 : k ≠ Crt.sI) (h4 : k ≠ Crt.sTab) (h5 : k ≠ Crt.sV) (h6 : k ≠ Crt.sBit)
     (h7 : k ≠ Crt.sNib) (h8 : k ≠ Crt.sEnt) (h9 : k ≠ Crt.sJ) :
@@ -67,7 +67,7 @@ theorem crtExpRanges5_hdr (wx : Nat) {k : Nat} (hk : k < 32) (h0 : k ≠ Crt.sPo
     Or.inl (hdr_lt_slot wx _ hk), Or.inl (hdr_lt_slot wx _ hk), Or.inl (hdr_lt_slot wx _ hk),
     Or.inl (hdr_lt_slot wx _ hk), hdr_sep h5, hdr_sep h6, hdr_sep h7, hdr_sep h8, hdr_sep h9]
 
-/-- What changes only within `expLoop5`'s ranges keeps the context. -/
+/-- What changes only within `expLoop5S`'s ranges keeps the context. -/
 theorem CExpCtx.of_frm5 {t t' : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
     (hc : CExpCtx t P wx minv X Xc 32) (hf : Frm P (crtExpRanges5 wx) t.mem t'.mem) (hwr : t'.wr = t.wr)
     (hdi : t'.gpr .rdi = t.gpr .rdi) : CExpCtx t' P wx minv X Xc 32 := by
@@ -339,7 +339,7 @@ theorem winEnd_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n L
 
 /-! ## The window's invariant -/
 
-/-- A store to a header slot is within `expLoop5`'s ranges if the slot is. -/
+/-- A store to a header slot is within `expLoop5S`'s ranges if the slot is. -/
 theorem frm5_hdrW (m : Mem) (P : Addr) (wx : Nat) {k : Nat} (v : BitVec 64) (hk : (8 * k, 8) ∈ crtExpRanges5 wx)
     (hk' : k < 32) : Frm P (crtExpRanges5 wx) m (m.writeW (off P (8 * k)) v) :=
   Frm.of_outside (writeW_outside m P v (by omega_arith)) hk
@@ -621,7 +621,7 @@ theorem crtWin5_ok (M : Mont) (Sq : MontS) (S : CrtSel 32) {t₀ t : State} {P :
 
 /-! ## The exponentiation -/
 
-/-- What changes within `expLoop5`'s ranges keeps the prime's workspace. -/
+/-- What changes within `expLoop5S`'s ranges keeps the prime's workspace. -/
 theorem SubCtx.of_frm5 {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
     (h : SubCtx s B Z o w wx minv) (hT : o + slot wx 8 + wsTab wx ≤ Z) (hf : Frm (off B o) (crtExpRanges5 wx) s.mem t.mem)
     (hwr : t.wr = s.wr) (hdi : t.gpr .rdi = s.gpr .rdi) : SubCtx t B Z o w wx minv := by
@@ -652,7 +652,7 @@ theorem expLoop5_eq (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (se
       ([.block Crt.padInit] : List (Prog isa))) ++ ([.loop (seqs (Crt.expWin5 sq mul sel)) .ne] : List (Prog isa)) := by
   simp [Crt.expLoop5S, expInit]
 
-/-- `expLoop5`'s start, table and padding: the windows' invariant. -/
+/-- `expLoop5S`'s start, table and padding: the windows' invariant. -/
 theorem crtExpHead5_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
     {X x : Nat} {Q : Prop} (hc : SubCtx s B Z o w wx minv) (hT : o + slot wx 8 + wsTab wx ≤ Z) (hw2 : 2 ≤ wx)
     (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)

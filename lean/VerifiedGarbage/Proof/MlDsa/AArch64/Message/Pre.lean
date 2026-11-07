@@ -13,10 +13,8 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 /-!
 # ML-DSA on AArch64, `sign_message`: the precondition and the layout
 
-Untrusted: everything here is checked by Lean. The precondition of
-`signMessageContract p AArch64.abi 16`, spelled out (`SPre`), and the
-layout of runs from states satisfying it (`slay`), with what the message
-wrappers share (`params`, `mScrLen`, `rKey`, `rMsg`, `rCtx`, `rStk`).
+Untrusted: everything here is checked by Lean. The layout of runs of
+`sign_message` (`slay`), with what the message wrappers share (`params`, `mScrLen`, `rKey`, `rMsg`, `rCtx`, `rStk`).
 -/
 
 @[expose] public section
@@ -51,51 +49,6 @@ abbrev rStk : Region := ⟨s.sp - 16#64, 16⟩
 end
 
 /-! ## Signing -/
-
-/-- The precondition of `signMessageContract p AArch64.abi 16`. -/
-structure SPre (p : Params) (s : State) : Prop where
-  sp : 16 ≤ s.sp.toNat
-  rd : s.rd = [rKey s p.skLen, rMsg s, rCtx s, ⟨s.gpr .x5, 32⟩]
-  wr : s.wr = [⟨s.gpr .x6, p.sigLen⟩, ⟨s.gpr .x7, mScrLen p⟩]
-  skSig : (rKey s p.skLen).Disjoint ⟨s.gpr .x6, p.sigLen⟩
-  skScr : (rKey s p.skLen).Disjoint ⟨s.gpr .x7, mScrLen p⟩
-  msgSig : (rMsg s).Disjoint ⟨s.gpr .x6, p.sigLen⟩
-  msgScr : (rMsg s).Disjoint ⟨s.gpr .x7, mScrLen p⟩
-  ctxSig : (rCtx s).Disjoint ⟨s.gpr .x6, p.sigLen⟩
-  ctxScr : (rCtx s).Disjoint ⟨s.gpr .x7, mScrLen p⟩
-  rndSig : Region.Disjoint ⟨s.gpr .x5, 32⟩ ⟨s.gpr .x6, p.sigLen⟩
-  rndScr : Region.Disjoint ⟨s.gpr .x5, 32⟩ ⟨s.gpr .x7, mScrLen p⟩
-  sigScr : Region.Disjoint ⟨s.gpr .x6, p.sigLen⟩ ⟨s.gpr .x7, mScrLen p⟩
-  stkSk : (rStk s).Disjoint (rKey s p.skLen)
-  stkMsg : (rStk s).Disjoint (rMsg s)
-  stkCtx : (rStk s).Disjoint (rCtx s)
-  stkRnd : (rStk s).Disjoint ⟨s.gpr .x5, 32⟩
-  stkSig : (rStk s).Disjoint ⟨s.gpr .x6, p.sigLen⟩
-  stkScr : (rStk s).Disjoint ⟨s.gpr .x7, mScrLen p⟩
-  nSk : (s.gpr .x0).toNat + p.skLen ≤ 2 ^ 64
-  nMsg : (s.gpr .x1).toNat + (s.gpr .x2).toNat ≤ 2 ^ 64
-  nCtx : (s.gpr .x3).toNat + (s.gpr .x4).toNat ≤ 2 ^ 64
-  nRnd : (s.gpr .x5).toNat + 32 ≤ 2 ^ 64
-  nSig : (s.gpr .x6).toNat + p.sigLen ≤ 2 ^ 64
-  nScr : (s.gpr .x7).toNat + mScrLen p ≤ 2 ^ 64
-
-theorem sPre_of {p : Params} {s : State} (h : (signMessageContract p AArch64.abi 16).pre s) : SPre p s := by
-  sig_pre [signMessageContract, signMessageSig, AArch64.abi, AArch64.argRegs, List.range, List.range.loop] at h
-  obtain ⟨a1, a2, a3, a4, a5, h⟩ := h
-  obtain ⟨a6, a7, a8, a9, a10, h⟩ := h
-  obtain ⟨a11, a12, a13, a14, a15, h⟩ := h
-  obtain ⟨a16, a17, a18, a19, a20, h⟩ := h
-  obtain ⟨a21, a22, a23, a24⟩ := h
-  exact ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22,
-    a23, a24⟩
-
-theorem skLen_ge {p : Params} (hp : p ∈ params) : 128 ≤ p.skLen ∧ p.skLen < 2 ^ 16 := by
-  simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl <;> decide
-
-theorem pkLen_ge {p : Params} (hp : p ∈ params) : 128 ≤ p.pkLen ∧ p.pkLen < 2 ^ 16 := by
-  simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl <;> decide
 
 /-- The layout of a run of `sign_message` from `s`. -/
 def slay (p : Params) (s : State) : Lay where

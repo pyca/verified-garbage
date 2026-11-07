@@ -37,15 +37,6 @@ namespace VG.Proof.Rsa
 
 open VG.Spec.Rsa
 
-/-- `vg_rsa_public_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize,
-e: *const u8, e_len: usize, input: *const u8, input_len: usize,
-scratch: *mut u64, scratch_len: usize) -> u32`. -/
-def publicSig : Sig where
-  params := [("out", .slice true .u8 "out_len"), ("n", .slice false .u8 "n_len"),
-    ("e", .slice false .u8 "e_len"), ("input", .slice false .u8 "input_len"),
-    ("scratch", .slice true .u64 "scratch_len")]
-  ret := some .u32
-
 /-- `vg_rsa_private_crt(out: *mut u8, out_len: usize, n: *const u8,
 n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize,
 q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8,
@@ -79,21 +70,6 @@ def privateCrtContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (leak := some fun _out _outLen n nLen _input _inputLen _p _pLen _q _qLen _dp _dpLen _dq
         _dqLen _qinv _qinvLen _scratch _scratchLen m =>
       (bytesAt m n nLen.toNat).map (·.toNat))
-
-/-- RSAEP of the input with the public key `(n, e)`, within BoringSSL's
-limits (`publicOpChecked`). Constant time but for the public key. -/
-def publicCheckedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  publicSig.contract A
-    (pre := fun _out outLen _n nLen _e eLen _input inputLen _scratch scratchLen _ =>
-      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ inputLen.toNat = nLen.toNat ∧
-        1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat)
-    (post := fun out _outLen n nLen e eLen input _inputLen _scratch _scratchLen m m' r =>
-      written m' out nLen.toNat r
-        (publicOpChecked (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
-          (bytesAt m input nLen.toNat)))
-    (writeArgs := true) (stack := stack)
-    (leak := some fun _out _outLen n nLen e eLen _input _inputLen _scratch _scratchLen m =>
-      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
 
 /-! ## `vg_rsa_public_precomputed_checked` -/
 

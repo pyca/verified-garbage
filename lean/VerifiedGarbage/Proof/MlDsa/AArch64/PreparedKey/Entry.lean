@@ -45,18 +45,6 @@ theorem secret_pre {p : Params} {s : State}
   obtain ⟨hsp, hr, hw, hio, hit, hot, hsi, hso, hst, hni, hno, hnt⟩ := hpre
   exact ⟨hsp, hr, hw, hio, hit, hot, hsi, hso, hst, hni, by simpa only [Nat.add_assoc, preparedSecretKeyBytes, n] using hno, hnt⟩
 
-theorem public_sp {p : Params} {s : State}
-    (hpre : (preparePublicKeyContract p AArch64.abi 80).pre s) : 80 ≤ s.sp.toNat := by
-  sig_pre [preparePublicKeyContract, preparePublicKeySig, AArch64.abi,
-    VG.AArch64.argRegs] at hpre
-  exact KeyGen.le_of_wfP hpre.1
-
-theorem secret_sp {p : Params} {s : State}
-    (hpre : (prepareSecretKeyContract p AArch64.abi 80).pre s) : 80 ≤ s.sp.toNat := by
-  sig_pre [prepareSecretKeyContract, prepareSecretKeySig, AArch64.abi,
-    VG.AArch64.argRegs] at hpre
-  exact KeyGen.le_of_wfP hpre.1
-
 theorem entry_layout_covers {bytes count : Nat} {σ s : State} (h : EntryPre bytes count σ)
     (hb : bytes < 2 ^ 32) (ho : bytes + 1024 * count < 2 ^ 32)
     (hr : Covers (σ.rd ++ σ.wr) (s.rd ++ s.wr)) (hw : Covers σ.wr s.wr)
@@ -148,9 +136,6 @@ def pushState (r : Reg) (s : State) : State :=
 
 def innerState (s : State) : State :=
   pushState .x30 (pushState .x28 (pushState .x26 (pushState .x25 s)))
-
-theorem inner_rd (s : State) : (innerState s).rd = s.rd := rfl
-theorem inner_wr (s : State) : (innerState s).wr = s.wr := rfl
 
 theorem inner_sp (s : State) : (innerState s).sp = s.sp - 64 := by
   simp only [innerState, pushState, BitVec.sub_sub]

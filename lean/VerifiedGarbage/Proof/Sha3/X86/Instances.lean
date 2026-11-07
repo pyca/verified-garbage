@@ -257,10 +257,6 @@ theorem nosp_seq {a b : Prog isa} (ha : NoSp a) (hb : NoSp b) : NoSp (.seq a b) 
 
 theorem nosp_call {n : String} {c : Prog isa} (h : NoSp c) : NoSp (.call n c) := h
 
-/-- The blocks storing arguments write only `eax` and memory. -/
-theorem nosp_block {is : List Instr} (h : ∀ i ∈ is, Taint.clobbers i .esp = false) :
-    NoSp (.block is) := h
-
 theorem copy_nosp (B j k : Nat) : ∀ i ∈ copy B j k, Taint.clobbers i .esp = false := by
   intro i hi; simp only [copy, List.mem_cons, List.not_mem_nil, or_false] at hi
   rcases hi with rfl | rfl <;> rfl

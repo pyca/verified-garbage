@@ -540,13 +540,11 @@ meta import VerifiedGarbage.Proof.RsaPss.Arm.Base
 import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Impl.Bignum.Arm.Round
 import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Impl.Bignum.Arm.Shift
 import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 meta import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 meta import VerifiedGarbage.Impl.Bignum.Arm.Round
 meta import VerifiedGarbage.Proof.Mont.Words32
-meta import VerifiedGarbage.Impl.Bignum.Arm.Shift
 meta import VerifiedGarbage.Proof.X25519.Arm.Instr
 meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 

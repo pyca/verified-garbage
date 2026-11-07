@@ -31,8 +31,9 @@ lists of slices (`hpre`, `hpost`), which the frame lies outside of. So must
 the leak the contract may declare (`Sig.contract`'s `leak`, which the code's
 contract takes too): `hleak` (`Sig.LeakLocalL`, which holds of no leak and is
 then proved by default). The lists are the same in the frame's memory, whose
-descriptors are as on entry (`Sig.lists_eq_of_agree`). `pubL_arm` is
-`pub_arm` with a leak; `pre_armL` and `pubL_armL` are `pre_arm` and
+descriptors are as on entry (`Sig.lists_eq_of_agree`). `pubL_arm` gives
+the public data of a contract, and what it may leak, by where AAPCS passes
+each argument; `pre_armL` and `pubL_armL` are `pre_arm` and
 `pubL_arm` for a signature that may have lists of slices.
 -/
 
@@ -131,21 +132,6 @@ theorem post_arm {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)
         ((s'.gpr .r1 ++ s'.gpr .r0).setWidth _) := by
   simp only [Sig.contract]
   rw [args_arm]
-  exact Iff.rfl
-
-/-- The public data of a contract that leaks nothing, by where AAPCS passes
-the arguments. -/
-theorem pub_arm {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
-    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat} {s₁ s₂ : State}
-    (hl : Sig.noLists sig.params = true) :
-    (sig.contract abi pre post wa stack none).pub s₁ s₂ ↔
-      s₁.sp = s₂.sp ∧
-      ∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
-        ((armArgs sig s₁).getD i 0).setWidth ((widths sig).getD i 64) =
-          ((armArgs sig s₂).getD i 0).setWidth ((widths sig).getD i 64) := by
-  simp only [Sig.contract]
-  rw [args_arm]
-  simp only [Sig.descs_of_noLists _ _ _ hl, List.not_mem_nil, false_implies, implies_true, and_true]
   exact Iff.rfl
 
 /-- The public data of a contract, and what it may leak, by where AAPCS passes

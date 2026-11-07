@@ -27,11 +27,4 @@ theorem renThree_apart (outer : Bool) :
   rw [renThree_data, renThree_free]
   decide
 
-theorem table_length : staticNttWords.length = 488 := by
-  simp only [staticNttWords, List.length_map, List.length_range, expandedVals,
-    List.length_append, List.length_flatMap]
-  simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
-    List.length_cons, List.length_nil]
-  decide
-
 end VG.Proof.MlDsa.AArch64.Optimized

@@ -10,8 +10,8 @@ import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 /-!
 # ML-DSA key generation on x86-64: the rows of `t`
 
-Row `i` of `t`: the sum of the products `Â[i, j] ŝ₁[j]` in `t` (`mul_ok`,
-`mulAdd_ok`), `NTT⁻¹` of it plus `s₂[i]` (`inv_ok`, `addS2_ok`), then
+Row `i` of `t`: `NTT⁻¹` of the sum of the products `Â[i, j] ŝ₁[j]` in `t`, in
+one call (`dot_ok`), plus `s₂[i]` (`addS2_ok`), then
 `Power2Round` (`p2r_ok`) and `t₁[i]` packed to `pk` and `t₀[i]` to `sk`
 (`sbp_ok`, `bp_ok`).
 -/
@@ -47,6 +47,24 @@ theorem KR.polyS {p : Params} {σ : State} {A : Nat → Poly} {S : Nat → IPoly
     {s : State} (h : KR p σ A S R np p.ℓ nr s) {j : Nat} (hj : j < p.ℓ) :
     PolyIs s.mem (pa s (sP p j)) (ntt (toRq (S j))) := by
   have := h.s1 j hj; rwa [ifp hj] at this
+
+theorem famP_sc (b j : Nat) : famP (sc (oP b)) j = sc (oP (b + j)) := by
+  simp only [famP, sc, oP, Nat.mul_add, Nat.add_assoc]
+
+/-- Entry `j` of row `i` of `Â`, as polynomial `j` of the row. -/
+theorem KR.famA {p : Params} {σ : State} {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {np nj nr : Nat}
+    {s : State} (h : KR p σ A S R np nj nr s) {i j : Nat} (hi : i < p.k) (hj : j < p.ℓ) :
+    PolyIs s.mem (pa s (famP (aP (p.ℓ * i)) j)) (A (p.ℓ * i + j)) := by
+  rw [famP_sc]; exact h.aS _ (idx_lt hi hj)
+
+/-- `ŝ₁[j]`, as polynomial `j` of `ŝ₁`. -/
+theorem KR.famS {p : Params} {σ : State} {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {np nr : Nat}
+    {s : State} (h : KR p σ A S R np p.ℓ nr s) {j : Nat} (hj : j < p.ℓ) :
+    PolyIs s.mem (pa s (famP (sP p 0) j)) (ntt (toRq (S j))) := by
+  rw [famP_sc, Nat.add_zero]; exact h.polyS hj
+
+theorem l457 {p : Params} (hF : PFacts p) : p.ℓ = 4 ∨ p.ℓ = 5 ∨ p.ℓ = 7 := by
+  rcases hF.mem with rfl | rfl | rfl <;> decide
 
 theorem tP_ok {p : Params} (hF : PFacts p) : PtrOk (tP p) :=
   sc_ok _ (by have := hF.kl; have := hF.l; have := hF.k; simp only [oP]; omega_arith)
@@ -113,58 +131,28 @@ variable {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {σ : State} 
 include hP hF hp hi
 
 
-/-- `t = Â[i, 0] ŝ₁[0]`. -/
-theorem mul_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State} (h : KR p σ A S R (p.ℓ + p.k) p.ℓ i s) :
-    WP isa (mulAt (mont := P.montgomery) P.sfx P.mul (tP p) (aP (p.ℓ * i)) (sP p 0)) s fun s' =>
-      KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => encode P.montgomery (dotK p A S i 1)) A S s' := by
+/-- `t = NTT⁻¹(Σⱼ Â[i, j] ŝ₁[j])`. -/
+theorem dot_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State} (h : KR p σ A S R (p.ℓ + p.k) p.ℓ i s) :
+    WP isa (dotInvAt P.sfx (P.dotInv p.ℓ) p.ℓ (tP p) (aP (p.ℓ * i)) (sP p 0)) s fun s' =>
+      KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => nttInv (dotK p A S i p.ℓ)) A S s' := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   have hx0 := idx_lt (j := 0) hi (by omega_arith)
   rw [Nat.add_zero] at hx0
   have S₀ := h.kc.site hF hp
-  have hA := h.polyA hi (j := 0) (by omega_arith)
-  rw [Nat.add_zero] at hA
-  have hS := h.polyS (j := 0) (by omega_arith)
-  refine WP.mono (mulAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega_arith)) (sc_ok _ (by simp only [oP]; omega_arith))
-    (by layd) (by layd) (by layd) hP.mul S₀ hA.1 hS.1) fun s' ⟨hP', hx, hb⟩ => ?_
-  have hP'' : PPostB s s' [(tP p, 1024)] := hP'.b
-  refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_t hF hi), ?_⟩
-  rw [tIs, hP''.pa (p := tP p) rbx_bases, Proof.MlDsa.KeyGen.dotK_one, ← hA.2, ← hS.2]
-  exact hb
-
-/-- `t = t + Â[i, j] ŝ₁[j]`. -/
-theorem mulAdd_ok {j : Nat} (hj : j < p.ℓ) {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
-    (h : KR p σ A S R (p.ℓ + p.k) p.ℓ i s) (ht : tIs p (fun A S => encode P.montgomery (dotK p A S i j)) A S s) :
-    WP isa (mulAddAt (mont := P.montgomery) P.sfx P.mulAdd (tP p) (aP (p.ℓ * i + j)) (sP p j)) s fun s' =>
-      KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => encode P.montgomery (dotK p A S i (j + 1))) A S s' := by
-  have hkl := hF.kl; have hl := hF.l; have hk := hF.k
-  dsimp only [tIs] at ht
-  have hx0 := idx_lt hi hj
-  have S₀ := h.kc.site hF hp
-  have hA := h.polyA hi hj
-  have hS := h.polyS hj
-  refine WP.mono (mulAddAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega_arith)) (sc_ok _ (by simp only [oP]; omega_arith))
-    (by layd) (by layd) (by layd) hP.mulAdd S₀ ht.1 hA.1 hS.1) fun s' ⟨hP', hx, hb⟩ => ?_
-  have hP'' : PPostB s s' [(tP p, 1024)] := hP'.b
-  refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_t hF hi), ?_⟩
-  rw [tIs, hP''.pa (p := tP p) rbx_bases, Proof.MlDsa.KeyGen.dotK_succ, encode_add, ← hA.2, ← hS.2, ← ht.2]
-  exact hb
-
-/-- `t = NTT⁻¹(t)`. -/
-theorem inv_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
-    (h : KR p σ A S R (p.ℓ + p.k) p.ℓ i s) (ht : tIs p (fun A S => encode P.montgomery (dotK p A S i p.ℓ)) A S s) :
-    WP isa (invNttAt (mont := P.montgomery) P.sfx P.invNtt (tP p)) s fun s' =>
-      KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => nttInv (dotK p A S i p.ℓ)) A S s' := by
-  have hkl := hF.kl; have hl := hF.l; have hk := hF.k
-  dsimp only [tIs] at ht
-  have S₀ := h.kc.site hF hp
-  unfold invNttAt
-  refine WP.mono (ipAt_ok (t := inverse P.montgomery) (f := tP p) (tP_ok hF) (by layd) (by layd) (by layd) hP.invNtt S₀ ht.1)
-    fun s' ⟨hP', hx, hb⟩ => ?_
+  refine WP.mono (dotInvAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega_arith))
+    (sc_ok _ (by simp only [oP]; omega_arith)) (by layd) (hP.dotInv p.ℓ (l457 hF)) S₀
+    (fun j hj => (h.famA hi hj).1) (fun j hj => (h.famS hj).1)) fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [(tP p, 1024), (sc VG.Impl.MlKem.X86_64.oSS, 1024)] := hP'.b
   refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_inv hF hi), ?_⟩
   rw [tIs, hP''.pa (p := tP p) rbx_bases]
-  rw [ht.2, inverse_encode] at hb
-  exact hb
+  have he : Proof.MlDsa.dotNTT (fun j => polyAt s.mem (pa s (famP (aP (p.ℓ * i)) j)))
+      (fun j => polyAt s.mem (pa s (famP (sP p 0) j))) p.ℓ = dotK p A S i p.ℓ := by
+    unfold Proof.MlDsa.dotNTT dotK
+    refine congrArg (List.foldl Spec.MlDsa.add Spec.MlDsa.zero) (List.map_congr_left fun j hj => ?_)
+    rw [List.mem_range] at hj
+    dsimp only
+    rw [(h.famA hi hj).2, (h.famS hj).2]
+  rwa [he] at hb
 
 /-- `t = t + s₂[i]`. -/
 theorem addS2_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
@@ -267,47 +255,21 @@ section
 variable {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k)
 include hP hF hi
 
-theorem mul_piece : Piece p (KRx p (p.ℓ + p.k) p.ℓ i) (RowI p i (tIs p fun A S => encode P.montgomery (dotK p A S i 1)))
-    (mulAt (mont := P.montgomery) P.sfx P.mul (tP p) (aP (p.ℓ * i)) (sP p 0)) := by
+theorem dot_piece : Piece p (KRx p (p.ℓ + p.k) p.ℓ i) (RowI p i (tIs p fun A S => nttInv (dotK p A S i p.ℓ)))
+    (dotInvAt P.sfx (P.dotInv p.ℓ) p.ℓ (tP p) (aP (p.ℓ * i)) (sP p 0)) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   have hx0 := idx_lt (j := 0) hi (by omega_arith)
   rw [Nat.add_zero] at hx0
-  refine ⟨fun _ _ hp ⟨A, S, R, h⟩ => WP.mono (mul_ok hP hF hp hi h) fun _ h => ⟨A, S, R, h⟩, ?_⟩
-  refine rel_of (Q := fun x y => Two p x y ∧ (Reduced x.mem (pa x (aP (p.ℓ * i))) ∧ Reduced x.mem (pa x (sP p 0))) ∧
-    (Reduced y.mem (pa y (aP (p.ℓ * i))) ∧ Reduced y.mem (pa y (sP p 0)))) ?_
-    fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁⟩ ⟨_, _, _, h₂⟩ => by
-      have a₁ := h₁.polyA hi (j := 0) (by omega_arith); have a₂ := h₂.polyA hi (j := 0) (by omega_arith)
-      rw [Nat.add_zero] at a₁ a₂
-      exact ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨a₁.1, (h₁.polyS (j := 0) (by omega_arith)).1⟩,
-        ⟨a₂.1, (h₂.polyS (j := 0) (by omega_arith)).1⟩⟩
-  exact mulAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega_arith)) (sc_ok _ (by simp only [oP]; omega_arith)) (by layd) (by layd)
-    (by layd) hP.mul (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
+  refine ⟨fun _ _ hp ⟨A, S, R, h⟩ => WP.mono (dot_ok hP hF hp hi h) fun _ h => ⟨A, S, R, h⟩, ?_⟩
+  refine rel_of (Q := fun x y => Two p x y ∧
+    ((∀ j < p.ℓ, Reduced x.mem (pa x (famP (aP (p.ℓ * i)) j))) ∧ ∀ j < p.ℓ, Reduced x.mem (pa x (famP (sP p 0) j))) ∧
+    ((∀ j < p.ℓ, Reduced y.mem (pa y (famP (aP (p.ℓ * i)) j))) ∧ ∀ j < p.ℓ, Reduced y.mem (pa y (famP (sP p 0) j))))
+    ?_ fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁⟩ ⟨_, _, _, h₂⟩ =>
+      ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨fun j hj => (h₁.famA hi hj).1, fun j hj => (h₁.famS hj).1⟩,
+        ⟨fun j hj => (h₂.famA hi hj).1, fun j hj => (h₂.famS hj).1⟩⟩
+  exact dotInvAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega_arith)) (sc_ok _ (by simp only [oP]; omega_arith))
+    (by layd) (hP.dotInv p.ℓ (l457 hF)) (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
     (show Reg.rbx ∈ kgRegs by decide)
-
-theorem mulAdd_piece {j : Nat} (hj : j < p.ℓ) :
-    Piece p (RowI p i (tIs p fun A S => encode P.montgomery (dotK p A S i j))) (RowI p i (tIs p fun A S => encode P.montgomery (dotK p A S i (j + 1))))
-      (mulAddAt (mont := P.montgomery) P.sfx P.mulAdd (tP p) (aP (p.ℓ * i + j)) (sP p j)) := by
-  have hkl := hF.kl; have hl := hF.l; have hk := hF.k
-  have hx0 := idx_lt hi hj
-  refine ⟨fun _ _ hp ⟨A, S, R, h, ht⟩ => WP.mono (mulAdd_ok hP hF hp hi hj h ht) fun _ h => ⟨A, S, R, h⟩, ?_⟩
-  refine rel_of (Q := fun x y => Two p x y ∧ (Reduced x.mem (pa x (tP p)) ∧ Reduced x.mem (pa x (aP (p.ℓ * i + j))) ∧
-    Reduced x.mem (pa x (sP p j))) ∧ (Reduced y.mem (pa y (tP p)) ∧ Reduced y.mem (pa y (aP (p.ℓ * i + j))) ∧
-    Reduced y.mem (pa y (sP p j)))) ?_
-    fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩ =>
-      ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨t₁.1, (h₁.polyA hi hj).1, (h₁.polyS hj).1⟩,
-        ⟨t₂.1, (h₂.polyA hi hj).1, (h₂.polyS hj).1⟩⟩
-  exact mulAddAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega_arith)) (sc_ok _ (by simp only [oP]; omega_arith)) (by layd)
-    (by layd) (by layd) hP.mulAdd (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
-    (show Reg.rbx ∈ kgRegs by decide)
-
-theorem inv_piece : Piece p (RowI p i (tIs p fun A S => encode P.montgomery (dotK p A S i p.ℓ)))
-    (RowI p i (tIs p fun A S => nttInv (dotK p A S i p.ℓ))) (invNttAt (mont := P.montgomery) P.sfx P.invNtt (tP p)) := by
-  have hkl := hF.kl; have hl := hF.l; have hk := hF.k
-  refine ⟨fun _ _ hp ⟨A, S, R, h, ht⟩ => WP.mono (inv_ok hP hF hp hi h ht) fun _ h => ⟨A, S, R, h⟩, ?_⟩
-  refine rel_of (Q := fun x y => Two p x y ∧ Reduced x.mem (pa x (tP p)) ∧ Reduced y.mem (pa y (tP p))) ?_
-    fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩ => ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, t₁.1, t₂.1⟩
-  unfold invNttAt
-  exact ipAt_tr (tP_ok hF) (by layd) (by layd) (by layd) hP.invNtt (show Reg.rbx ∈ kgRegs by decide)
 
 theorem addS2_piece : Piece p (RowI p i (tIs p fun A S => nttInv (dotK p A S i p.ℓ)))
     (RowI p i (tIs p fun A S => Proof.MlDsa.KeyGen.tK p A S i)) (addAt P.sfx P.add (tP p) (sP p (p.ℓ + i))) := by

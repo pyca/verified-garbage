@@ -5,8 +5,8 @@ public import VerifiedGarbage.Impl.Mont.X86.Words
 
 /-! # Exponentiation by fixed 4-bit windows on 32-bit x86
 
-The parts of a windowed exponentiation, which computes what `exponentiate` does, from the exponent's
-top bits down: a table of the base's powers `0` to `15` in Montgomery form,
+The parts of a windowed exponentiation, from the exponent's top bits
+down: a table of the base's powers `0` to `15` in Montgomery form,
 then for each four bits four squares and a multiplication by the table's
 entry for them, read by a masked scan of the whole table. The exponent's
 words are shifted up by four bits per window; every count and address is

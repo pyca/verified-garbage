@@ -231,12 +231,11 @@ theorem loop8_ok {enc : Bool} {KP : State → Prop} {f : List XReg → Prog isa}
         (NInv enc KP s₀ 0) := by
       apply WP.of_runBlock
       simp only [constK, List.cons_append, List.nil_append, ↓reduceIte, runBlock_cons, runStep_some,
-        runBlock_nil, exec, readSrc, execAlu, VOp.exec, arithFlags, State.setFlags, State.setReg, e256,
+        runBlock_nil, exec, readSrc, execAlu, XOp.exec, arithFlags, State.setFlags, State.setReg, State.setXmm, e256,
         Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
-      refine ⟨h.congr hst (fun r h1 _ => by simp [h1]) (by simp [State.setV]) (by simp [State.setV])
-        (by simp [State.setV]), ?_, ?_⟩
-      · simp [State.setV, hr8, slot, bufOff]
-      · simp [State.setV, qword]
+      refine ⟨h.congr hst (fun r h1 _ => by simp [h1]) (by simp) (by simp) (by simp), ?_, ?_⟩
+      · simp [hr8, slot, bufOff]
+      · simp [qword]
     refine WP.seq (WP.mono st₁ fun s₁ h₁ => ?_)
     let I : Nat → State → Prop := fun m t => ∃ c, m = N s₀ - c ∧ c + 8 ≤ N s₀ ∧ NInv enc KP s₀ c t
     have hstep : ∀ m t, I m t → WP isa (group f) t (fun t' =>

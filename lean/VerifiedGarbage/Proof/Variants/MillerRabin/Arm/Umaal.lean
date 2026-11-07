@@ -269,7 +269,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Impl.Bignum.Arm.Round
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Impl.Bignum.Arm.Shift
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 

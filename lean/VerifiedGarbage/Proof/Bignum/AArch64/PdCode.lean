@@ -14,9 +14,8 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # `vg_rsa_public_precomputed` on AArch64: correctness
 
-The entry (`pdEntry_ok`), and the whole function without the check of `e`
-(`pdCode_correct`), against `pdContract`, which states the shared contract's
-precondition on the registers and the stack.
+The entry (`pdEntry_ok`), against `pdContract`, which states the shared
+contract's precondition on the registers and the stack.
 -/
 
 @[expose] public section
@@ -291,12 +290,5 @@ theorem pdCodeWith_correct (rest : Prog isa)
         64 * (((s.gpr .x1).toNat + 7) / 8) + 64 * (((s.gpr .x1).toNat + 7) / 8) by omega])
     refine ⟨rfl, ?_⟩
     rw [hxX]
-
-theorem pdCode_correct (M : Mont) (s : State) (h : pdContract.pre s) :
-    ∃ t s', Exec isa (Precomputed.code M.mm) s t s' ∧ abiPreserved s s' ∧ pdContract.post s s' := by
-  apply pdCodeWith_correct (Precomputed.rest M.mm) ?_ s h
-  intro a B Z k op ep ip L eb xb N R ha
-  exact WP.mono (pdRest_ok (M := M) ha) fun t ⟨x,hx,hp⟩ =>
-    ⟨x^Spec.Rsa.os2ip eb % N,fun hr => by rw [Nat.pow_mod,hx hr,← Nat.pow_mod],hp⟩
 
 end VG.Proof.Bignum.AArch64

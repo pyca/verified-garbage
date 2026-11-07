@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Verified
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.SearchInit
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.KeyInit
+public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
 public import VerifiedGarbage.TCB.Arm.Print
@@ -13,12 +13,8 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.RsaKeyGen.Arm
 
 def artifacts : List Artifact := [
-  Spec.RsaKeyGen.keyApi.artifact Arm.target {
-    code := Impl.RsaKeyGen.Arm.Key.code
-    stack := 56
-    verified := Proof.RsaKeyGen.Arm.Key.key_verified },
-  Spec.RsaKeyGen.primeInitApi.artifact Arm.target {
-    code := Impl.RsaKeyGen.Arm.SearchInit.init
-    verified := Proof.RsaKeyGen.Arm.SearchInit.init_verified }]
+  Spec.RsaKeyGen.keyInitApi.artifact Arm.target {
+    code := Impl.RsaKeyGen.Arm.KeyInit.init
+    verified := Proof.RsaKeyGen.Arm.KeyInit.init_verified }]
 
 end VG.Artifacts.RsaKeyGen.Arm
