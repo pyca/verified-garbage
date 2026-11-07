@@ -29,7 +29,7 @@ open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Impl.Aes.X86_64.AesNi (at_)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
 open VG.Impl.Gcm.X86_64.StitchAvx8 (prepOff)
-open VG.Impl.Gcm.X86_64.PrepareAvx (step plan setup)
+open VG.Impl.Gcm.X86_64.PrepareAvx (step plan plan48 setup)
 open VG.Proof.Gcm.X86_64.Pclmul (Only eq_prepared constImm_ok ldrev_ok hInvImm_ok rev_eq)
 open VG.Proof.Gcm.X86_64.Stitch (in_sub in_sub_int)
 open VG.Spec.Gcm (Block hpow)
@@ -53,15 +53,19 @@ theorem lane0_prepare16 :
     lane0Block (setup ++ plan.flatMap step) = some (setupS ++ plan.flatMap stepS) := by
   decide +kernel
 
+theorem lane0_prepare :
+    lane0Block (setup ++ plan48.flatMap step) = some (setupS ++ plan48.flatMap stepS) := by
+  decide +kernel
+
 /-- Each step's operands hold powers adding up to its own, which is one of
-the first 16, and no step writes or reads a scratch register. -/
-def valid : List (XReg × Nat) → List Step → Bool
+the first `N`, and no step writes or reads a scratch register. -/
+def valid (N : Nat) : List (XReg × Nat) → List Step → Bool
   | _, [] => true
   | env, (d, a, b, n) :: ps =>
     !scratch.contains d && !scratch.contains a && !scratch.contains b &&
     (match env.lookup a, env.lookup b with
      | some ea, some eb => ea + eb == n
-     | _, _ => false) && 1 ≤ n && n ≤ 16 && valid ((d, n) :: env) ps
+     | _, _ => false) && 1 ≤ n && n ≤ N && valid N ((d, n) :: env) ps
 
 /-- The registers' powers after the steps. -/
 def envAfter : List (XReg × Nat) → List Step → List (XReg × Nat)
@@ -73,20 +77,23 @@ def storedAfter : List Nat → List Step → List Nat
   | S, [] => S
   | S, (_, _, _, n) :: ps => storedAfter (n :: S) ps
 
-/-- What holds between steps: register `r` holds `H'ᵉ` if `env` says so, and
-the powers `S` are in their places. -/
-structure Inv (H : Block) (C : Addr) (m₀ : Mem) (env : List (XReg × Nat)) (S : List Nat) (t : State) : Prop where
+/-- What holds between steps, computing the first `N` powers (16 or 48):
+register `r` holds `H'ᵉ` if `env` says so, and the powers `S` are in their
+places. -/
+structure Inv (N : Nat) (H : Block) (C : Addr) (m₀ : Mem) (env : List (XReg × Nat)) (S : List Nat) (t : State) : Prop where
   h1 : t.xmm .xmm1 = poly
   pw : ∀ r e, env.lookup r = some e → r ∉ scratch ∧ x * φ (t.xmm r) = φ H ^ e
-  st : ∀ n ∈ S, 1 ≤ n ∧ n ≤ 16 ∧
+  st : ∀ n ∈ S, 1 ≤ n ∧ n ≤ N ∧
     t.mem.readW (C + BitVec.ofNat 64 (prepOff n)) 128 = Spec.Gcm.preparedPower (hpow H n)
-  fr : Frame [⟨C + BitVec.ofNat 64 256, 256⟩] m₀ t.mem
+  fr : Frame [⟨C + BitVec.ofNat 64 256, 16 * N⟩] m₀ t.mem
   rdi : t.gpr .rdi = C
   wr : InRegions t.wr C 1024
+  hN : N = 16 ∨ N = 48
 
 /-! ## The places of the powers -/
 
-theorem prepOff_bound {n : Nat} (h1 : 1 ≤ n) (h48 : n ≤ 16) : 256 ≤ prepOff n ∧ prepOff n + 16 ≤ 512 := by
+theorem prepOff_bound {n N : Nat} (hN : N = 16 ∨ N = 48) (h1 : 1 ≤ n) (h48 : n ≤ N) :
+    256 ≤ prepOff n ∧ prepOff n + 16 ≤ 256 + 16 * N := by
   simp only [prepOff]; split <;> omega
 
 theorem prepOff_sep {n n' : Nat} (h : n ≠ n') : prepOff n + 16 ≤ prepOff n' ∨ prepOff n' + 16 ≤ prepOff n := by
@@ -95,12 +102,12 @@ theorem prepOff_sep {n n' : Nat} (h : n ≠ n') : prepOff n + 16 ≤ prepOff n' 
 theorem prepOff_pair {k l : Nat} (hl : l < 2) : prepOff (2 * k + 2 - l) = 256 + 32 * k + 16 * l := by
   simp only [prepOff]; split <;> omega
 
-theorem readW_sep {m : Mem} {C : Addr} {n n' : Nat} {v : BitVec 128} (h1 : 1 ≤ n) (h48 : n ≤ 16)
-    (h1' : 1 ≤ n') (h48' : n' ≤ 16) (h : n ≠ n') :
+theorem readW_sep {m : Mem} {C : Addr} {n n' N : Nat} {v : BitVec 128} (hN : N = 16 ∨ N = 48)
+    (h1 : 1 ≤ n) (h48 : n ≤ N) (h1' : 1 ≤ n') (h48' : n' ≤ N) (h : n ≠ n') :
     (m.writeW (C + BitVec.ofNat 64 (prepOff n')) v).readW (C + BitVec.ofNat 64 (prepOff n)) 128 =
       m.readW (C + BitVec.ofNat 64 (prepOff n)) 128 := by
-  have b := prepOff_bound h1 h48
-  have b' := prepOff_bound h1' h48'
+  have b := prepOff_bound hN h1 h48
+  have b' := prepOff_bound hN h1' h48'
   exact Mem.readW_writeW_sep (Offset.sep C (prepOff_sep h) (by omega) (by omega)) (by decide)
 
 theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = s.gpr b + BitVec.ofInt 64 (d : Int) := rfl
@@ -115,26 +122,28 @@ theorem st_ok (r : XReg) (d : Nat) (t : State)
     by simp only [isa, exec, State.store128, ea_at, hin, ite_true], WP.block_nil ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
 /-- Storing `H'ⁿ` from `r` at its place. -/
-theorem store_ok {H : Block} {C : Addr} {m₀ : Mem} {env : List (XReg × Nat)} {S : List Nat} {r : XReg} {n : Nat}
-    (t : State) (hi : Inv H C m₀ env S t) (hr : x * φ (t.xmm r) = φ H ^ n) (h1 : 1 ≤ n) (h48 : n ≤ 16) :
+theorem store_ok {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} {env : List (XReg × Nat)} {S : List Nat}
+    {r : XReg} {n : Nat}
+    (t : State) (hi : Inv N H C m₀ env S t) (hr : x * φ (t.xmm r) = φ H ^ n) (h1 : 1 ≤ n) (h48 : n ≤ N) :
     WP isa (.block [.movdquStore (at_ .rdi (prepOff n)) r]) t fun t' =>
-      Inv H C m₀ env (n :: S) t' ∧ t'.gpr = t.gpr ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have b := prepOff_bound h1 h48
+      Inv N H C m₀ env (n :: S) t' ∧ t'.gpr = t.gpr ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
+  have b := prepOff_bound hi.hN h1 h48
+  have hN := hi.hN
   have hin : InRegions t.wr (t.gpr .rdi + BitVec.ofInt 64 ((prepOff n : Nat) : Int)) 16 := by
     rw [hi.rdi]; exact in_sub_int hi.wr (by omega)
   refine WP.mono (st_ok r _ t hin) fun t' ⟨m', g', x', rd', wr'⟩ => ?_
   rw [hi.rdi, BitVec.ofInt_natCast] at m'
   refine ⟨⟨by rw [x']; exact hi.h1, fun q e hq => by rw [x']; exact hi.pw q e hq, fun k hk => ?_, ?_,
-    by rw [g']; exact hi.rdi, by rw [wr']; exact hi.wr⟩, g', rd', wr'⟩
+    by rw [g']; exact hi.rdi, by rw [wr']; exact hi.wr, hi.hN⟩, g', rd', wr'⟩
   · rw [m']
     simp only [List.mem_cons] at hk
     by_cases hkn : k = n
     · subst hkn
       exact ⟨h1, h48, by rw [Mem.readW_writeW_self _ _ 16 _ (by decide)]; exact eq_prepared hr⟩
     · obtain ⟨k1, k48, hs⟩ := hi.st k (hk.resolve_left hkn)
-      exact ⟨k1, k48, by rw [readW_sep k1 k48 h1 h48 hkn]; exact hs⟩
+      exact ⟨k1, k48, by rw [readW_sep hi.hN k1 k48 h1 h48 hkn]; exact hs⟩
   · rw [m']
-    exact hi.fr.writeW (List.mem_singleton_self _) _ (Offset.contains C (by omega) (by omega) (by decide))
+    exact hi.fr.writeW (List.mem_singleton_self _) _ (Offset.contains C (by omega) (by omega) (by omega))
 
 theorem lookup_cons {env : List (XReg × Nat)} {d r : XReg} {n : Nat} :
     ((d, n) :: env).lookup r = if r = d then some n else env.lookup r := by
@@ -144,11 +153,11 @@ theorem lookup_cons {env : List (XReg × Nat)} {d r : XReg} {n : Nat} :
   · rw [beq_false_of_ne h]; simp [h]
 
 /-- One step: `H'ⁿ` into `d`, and stored. -/
-theorem stepS_ok {H : Block} {C : Addr} {m₀ : Mem} {env : List (XReg × Nat)} {S : List Nat}
-    {d a b : XReg} {n : Nat} {ps : List Step} (hv : valid env ((d, a, b, n) :: ps) = true)
-    (t : State) (hi : Inv H C m₀ env S t) :
+theorem stepS_ok {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} {env : List (XReg × Nat)} {S : List Nat}
+    {d a b : XReg} {n : Nat} {ps : List Step} (hv : valid N env ((d, a, b, n) :: ps) = true)
+    (t : State) (hi : Inv N H C m₀ env S t) :
     WP isa (.block (stepS (d, a, b, n))) t fun t' =>
-      Inv H C m₀ ((d, n) :: env) (n :: S) t' ∧ (∀ q, q ≠ .rax → t'.gpr q = t.gpr q) ∧
+      Inv N H C m₀ ((d, n) :: env) (n :: S) t' ∧ (∀ q, q ≠ .rax → t'.gpr q = t.gpr q) ∧
         t'.rd = t.rd ∧ t'.wr = t.wr := by
   simp only [valid, Bool.and_eq_true, Bool.not_eq_true', List.contains_eq_mem, decide_eq_false_iff_not,
     decide_eq_true_eq] at hv
@@ -179,9 +188,9 @@ theorem stepS_ok {H : Block} {C : Addr} {m₀ : Mem} {env : List (XReg × Nat)} 
         ⟨fin t' e, o⟩
   rw [stepS, WP.block_append_iff]
   refine WP.mono hm fun t₁ ⟨e₁, o₁⟩ => ?_
-  have hi₁ : Inv H C m₀ ((d, n) :: env) S t₁ := by
+  have hi₁ : Inv N H C m₀ ((d, n) :: env) S t₁ := by
     refine ⟨?_, fun r e hr => ?_, fun k hk => ?_, by rw [o₁.mem]; exact hi.fr,
-      by rw [o₁.gpr _ (by decide)]; exact hi.rdi, by rw [o₁.wr]; exact hi.wr⟩
+      by rw [o₁.gpr _ (by decide)]; exact hi.rdi, by rw [o₁.wr]; exact hi.wr, hi.hN⟩
     · rw [o₁.xmm _ (by simp [Ne.symm (not_scratch hd).1])]
       exact hi.h1
     · rw [lookup_cons] at hr
@@ -198,25 +207,25 @@ theorem stepS_ok {H : Block} {C : Addr} {m₀ : Mem} {env : List (XReg × Nat)} 
     ⟨hi', fun q hq => by rw [g', o₁.gpr q hq], by rw [rd', o₁.rd], by rw [wr', o₁.wr]⟩
 
 /-- The steps, one after the other. -/
-theorem planS_ok {H : Block} {C : Addr} {m₀ : Mem} :
-    ∀ (ps : List Step) (env : List (XReg × Nat)) (S : List Nat) (t : State), valid env ps = true →
-      Inv H C m₀ env S t →
+theorem planS_ok {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} :
+    ∀ (ps : List Step) (env : List (XReg × Nat)) (S : List Nat) (t : State), valid N env ps = true →
+      Inv N H C m₀ env S t →
       WP isa (.block (ps.flatMap stepS)) t fun t' =>
-        Inv H C m₀ (envAfter env ps) (storedAfter S ps) t' ∧ (∀ q, q ≠ .rax → t'.gpr q = t.gpr q) ∧
+        Inv N H C m₀ (envAfter env ps) (storedAfter S ps) t' ∧ (∀ q, q ≠ .rax → t'.gpr q = t.gpr q) ∧
           t'.rd = t.rd ∧ t'.wr = t.wr
   | [], _, _, _, _, hi => WP.block_nil ⟨hi, fun _ _ => rfl, rfl, rfl⟩
   | (d, a, b, n) :: ps, env, S, t, hv, hi => by
     rw [List.flatMap_cons, WP.block_append_iff]
     refine WP.mono (stepS_ok hv t hi) fun t₁ ⟨hi₁, g₁, rd₁, wr₁⟩ => ?_
-    have hv' : valid ((d, n) :: env) ps = true := by
+    have hv' : valid N ((d, n) :: env) ps = true := by
       simp only [valid, Bool.and_eq_true] at hv; exact hv.2
     refine WP.mono (planS_ok ps _ _ t₁ hv' hi₁) fun t' ⟨hi', g', rd', wr'⟩ =>
       ⟨hi', fun q hq => by rw [g' q hq, g₁ q hq], rd'.trans rd₁, wr'.trans wr₁⟩
 
 /-- The setup: `H'` in `xmm3`, and stored. -/
-theorem setupS_ok (t : State) (hw : InRegions t.wr (t.gpr .rdi) 1024) :
+theorem setupS_ok {N : Nat} (hN : N = 16 ∨ N = 48) (t : State) (hw : InRegions t.wr (t.gpr .rdi) 1024) :
     WP isa (.block setupS) t fun t' =>
-      Inv (Spec.Gcm.ctxH t.mem (t.gpr .rdi)) (t.gpr .rdi) t.mem [(.xmm3, 1)] [1] t' ∧
+      Inv N (Spec.Gcm.ctxH t.mem (t.gpr .rdi)) (t.gpr .rdi) t.mem [(.xmm3, 1)] [1] t' ∧
         (∀ q, q ≠ .rax → t'.gpr q = t.gpr q) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   have hin : InRegions (t.rd ++ t.wr) (t.gpr .rdi + BitVec.ofInt 64 ((240 : Nat) : Int)) 16 := by
     obtain ⟨r, hr, hc⟩ := in_sub_int (off := 240) (n := 16) hw (by decide)
@@ -234,9 +243,9 @@ theorem setupS_ok (t : State) (hw : InRegions t.wr (t.gpr .rdi) 1024) :
   refine WP.mono (hInvImm_ok t₃) fun t₄ ⟨h₄, o₄⟩ => ?_
   have o₁₄ := (o₁₂.trans o₃).trans o₄
   rw [o₁₂.mem, o₁₂.gpr _ (by decide)] at l₃
-  have hi₄ : Inv (Spec.Gcm.ctxH t.mem (t.gpr .rdi)) (t.gpr .rdi) t.mem [(.xmm3, 1)] [] t₄ := by
+  have hi₄ : Inv N (Spec.Gcm.ctxH t.mem (t.gpr .rdi)) (t.gpr .rdi) t.mem [(.xmm3, 1)] [] t₄ := by
     refine ⟨by rw [o₄.xmm _ (by decide), o₃.xmm _ (by decide), c₂], fun r e hr => ?_, fun k hk => absurd hk (by simp),
-      by rw [o₁₄.mem]; exact Frame.refl _ _, by rw [o₁₄.gpr _ (by decide)], by rw [o₁₄.wr]; exact hw⟩
+      by rw [o₁₄.mem]; exact Frame.refl _ _, by rw [o₁₄.gpr _ (by decide)], by rw [o₁₄.wr]; exact hw, hN⟩
     rw [lookup_cons] at hr
     split at hr
     · next h =>
@@ -246,10 +255,10 @@ theorem setupS_ok (t : State) (hw : InRegions t.wr (t.gpr .rdi) 1024) :
       rfl
     · cases hr
   have p₄ := (hi₄.pw .xmm3 1 (by simp)).2
-  refine WP.mono (store_ok t₄ hi₄ p₄ (by decide) (by decide)) fun t' ⟨hi', g', rd', wr'⟩ =>
+  refine WP.mono (store_ok t₄ hi₄ p₄ (by decide) (by omega)) fun t' ⟨hi', g', rd', wr'⟩ =>
     ⟨hi', fun q hq => by rw [g', o₁₄.gpr q hq], by rw [rd', o₁₄.rd], by rw [wr', o₁₄.wr]⟩
 
-theorem plan_valid : valid [(.xmm3, 1)] plan = true := by decide
+theorem plan_valid : valid 16 [(.xmm3, 1)] plan = true := by decide
 
 theorem plan_stored : ∀ k < 8, ∀ l < 2, 2 * k + 2 - l ∈ storedAfter [1] plan := by decide
 
@@ -260,10 +269,10 @@ theorem prepare16_ok' {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 102
     WP isa Impl.Gcm.X86_64.PrepareAvx.prepare16 s₀ fun s =>
       Prepare16.PrepOk16W s₀ s ∧ Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 256, 256⟩] s₀.mem s.mem := by
   have hS : WP isa (.block (setupS ++ plan.flatMap stepS)) (s₀.proj 0) fun t' =>
-      Inv (Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi)) (s₀.gpr .rdi) s₀.mem (envAfter [(.xmm3, 1)] plan)
+      Inv 16 (Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi)) (s₀.gpr .rdi) s₀.mem (envAfter [(.xmm3, 1)] plan)
         (storedAfter [1] plan) t' ∧ (∀ q, q ≠ .rax → t'.gpr q = s₀.gpr q) ∧ t'.rd = s₀.rd ∧ t'.wr = s₀.wr := by
     rw [WP.block_append_iff]
-    refine WP.mono (setupS_ok (s₀.proj 0) (by rw [State.proj_wr, State.proj_gpr]; exact hw))
+    refine WP.mono (setupS_ok (.inl rfl) (s₀.proj 0) (by rw [State.proj_wr, State.proj_gpr]; exact hw))
       fun t₁ ⟨hi₁, g₁, rd₁, wr₁⟩ => ?_
     rw [State.proj_mem, State.proj_gpr] at hi₁
     refine WP.mono (planS_ok plan _ _ t₁ plan_valid hi₁) fun t' ⟨hi', g', rd', wr'⟩ =>
@@ -296,5 +305,40 @@ theorem prepare16_written (s : State) (t : List Leak) (s' : State)
 theorem prepare16_verified :
     Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepare16 (Spec.Gcm.prepare16Contract X86_64.abi) :=
   Prepare16.verified_ofW _ (fun _ hw _ => prepare16_ok hw) (by decide +kernel) Prepare16.prepare16Avx_ct
+
+/-! ## `vg_aes_gcm_prepare`: the 48 powers -/
+
+theorem plan48_valid : valid 48 [(.xmm3, 1)] plan48 = true := by decide
+
+theorem plan48_stored : ∀ k < 24, ∀ l < 2, 2 * k + 2 - l ∈ storedAfter [1] plan48 := by decide
+
+/-- `prepare`: the 48 prepared powers of the hash subkey at `C + 240` into
+pairs 0–23 of the context at `C`, nothing else written. -/
+theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) :
+    WP isa Impl.Gcm.X86_64.PrepareAvx.prepare s₀ (Prepare.PrepOk s₀) := by
+  have hS : WP isa (.block (setupS ++ plan48.flatMap stepS)) (s₀.proj 0) fun t' =>
+      Inv 48 (Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi)) (s₀.gpr .rdi) s₀.mem (envAfter [(.xmm3, 1)] plan48)
+        (storedAfter [1] plan48) t' ∧ (∀ q, q ≠ .rax → t'.gpr q = s₀.gpr q) ∧ t'.rd = s₀.rd ∧
+        t'.wr = s₀.wr := by
+    rw [WP.block_append_iff]
+    refine WP.mono (setupS_ok (.inr rfl) (s₀.proj 0) (by rw [State.proj_wr, State.proj_gpr]; exact hw))
+      fun t₁ ⟨hi₁, g₁, rd₁, wr₁⟩ => ?_
+    rw [State.proj_mem, State.proj_gpr] at hi₁
+    refine WP.mono (planS_ok plan48 _ _ t₁ plan48_valid hi₁) fun t' ⟨hi', g', rd', wr'⟩ =>
+      ⟨hi', fun q hq => by rw [g' q hq, g₁ q hq, State.proj_gpr], by rw [rd', rd₁, State.proj_rd],
+        by rw [wr', wr₁, State.proj_wr]⟩
+  refine WP.mono (WP.lane0 lane0_prepare hS) fun s ⟨⟨hi, g, rd, wr⟩, _, _⟩ =>
+    ⟨fun k hk l hl => ?_, ?_, fun r hr _ => ?_, ?_, ?_⟩
+  · have := (hi.st _ (plan48_stored k hk l hl)).2.2
+    rw [prepOff_pair hl, State.proj_mem] at this
+    exact this
+  · have := hi.fr; rw [State.proj_mem] at this; exact this
+  · rw [← State.proj_gpr s 0, g r hr]
+  · rw [← State.proj_rd s 0, rd]
+  · rw [← State.proj_wr s 0, wr]
+
+theorem prepare_verified :
+    Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepare (Spec.Gcm.prepareContract X86_64.abi) :=
+  Prepare.verified_of _ (fun _ hw _ => prepare_ok hw) (by decide +kernel) Prepare16.prepareAvx_ct
 
 end VG.Proof.Gcm.X86_64.PrepareAvx
