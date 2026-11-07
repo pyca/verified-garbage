@@ -134,15 +134,8 @@ own changes are rebuilt either way, on top of the restored build.
   `adding-a-primitive` skill), so a new variant is emitted for its callers
   too, and their callers, without anyone listing it, and their dispatchers
   (below) run it: the Rust code calls only dispatchers, names no variant
-  and chooses nothing, so a new variant needs no Rust change.
-  `ci/check_variants.py` checks the generated code for this (the
-  `adding-a-primitive` skill says what it checks). There are no
-  exceptions: never add a caller that calls only the baseline
-  implementation, or a way to excuse one. Only a combination no CPU can
-  choose is not required: one with an implementation the dispatchers never
-  choose on a CPU with features the combination needs (ChaCha20's SSSE3
-  code, never chosen with AVX and AVX2, which every Poly1305 variant needs),
-  listed with those features in `NEVER_WITH` in `ci/check_variants.py`.
+  and chooses nothing, so a new variant needs no Rust change. Never add a
+  caller that calls only the baseline implementation.
   The emitter writes each function's *dispatcher*, `<function>_auto`
   (`crate::arch::dispatch::<module>`, `Rust.dispatcher` in
   `lean/VerifiedGarbage/TCB/Rust.lean`), which runs

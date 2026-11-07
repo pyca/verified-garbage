@@ -10,9 +10,8 @@ functions (`Proof/Weierstrass/PointContract.lean`) for a curve `y² = x³ + b`, 
 `a` is zero (secp256k1's), by the complete formulas of Renes, Costello and
 Batina for such curves (*Complete addition formulas for prime order elliptic
 curves*, EUROCRYPT 2016), which take fewer products than Algorithm 1. They
-are named `point_a0_…`: a name `point_double_…` or `point_add_…` would make
-them variants of those functions (`ci/check_variants.py`), which they are
-not.
+are named `point_a0_…`: a name `point_double_…` or `point_add_…` would read
+as a variant of those functions, which they are not.
 
 * `vg_<curve>_point_a0_double(ws)`: `O = P + P` by Algorithm 9 (exception-free
   doubling for `a = 0`);
