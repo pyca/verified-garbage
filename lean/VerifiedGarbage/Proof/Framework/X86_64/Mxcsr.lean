@@ -90,7 +90,7 @@ theorem ctlOk_of_ctlC {c : Prog isa} (h : ctlC c = true) : ctlOk c = true := by
     simp only [ctlOk, h.1.1, h.1.2, ihn h.2, Bool.and_self]
 
 /-- Code that never loads MXCSR satisfies `ctlOk`. -/
-theorem ctlOk_of_allInstrs {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr i) = true) : ctlOk c = true := by
+theorem ctlOk_of_noLoad {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr i) = true) : ctlOk c = true := by
   induction c with
   | block is =>
     rw [Code.allInstrs_eq] at h

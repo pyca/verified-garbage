@@ -80,7 +80,7 @@ theorem k_empty : (Code.block ([] : List Instr) : Prog isa).InlineOk = true := r
 /-- `ctlOk` of each of a list from its instructions. -/
 theorem all_ctl_of {l : List (Prog isa)} (h : l.all (fun c => c.allInstrs (fun i => !loadsMxcsr i)) = true) :
     l.all ctlOk = true :=
-  List.all_eq_true.mpr fun c hc => ctlOk_of_allInstrs (List.all_eq_true.mp h c hc)
+  List.all_eq_true.mpr fun c hc => ctlOk_of_noLoad (List.all_eq_true.mp h c hc)
 
 /-- One part of a conjunction, instruction by instruction. -/
 theorem all_and_left {l : List (Prog isa)} {p q : Instr → Bool}
@@ -128,7 +128,7 @@ syntax "ctl_tac " term:max term:max : tactic
 macro_rules
   | `(tactic| ctl_tac $hm $he) => `(tactic| repeat' first
     | with_reducible exact $he
-    | exact ctlOk_of_allInstrs ($hm _ _ _)
+    | exact ctlOk_of_noLoad ($hm _ _ _)
     | decide +kernel
     | (apply ctlOk_seqs_of
        simp only [List.all_append, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
