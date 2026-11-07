@@ -13,6 +13,8 @@
 
 use core::mem::MaybeUninit;
 
+#[cfg(target_arch = "x86_64")]
+use crate::arch::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES;
 #[cfg(target_arch = "riscv64")]
 use crate::arch::chacha20poly1305::vg_chacha20_poly1305_open_to;
 #[cfg(target_arch = "x86_64")]
@@ -36,7 +38,7 @@ use crate::arch::chacha20poly1305::{
     vg_chacha20_poly1305_seal_gather_neon, vg_chacha20_poly1305_seal_gather_sve2,
     vg_chacha20_poly1305_seal_neon, vg_chacha20_poly1305_seal_sve2,
 };
-#[cfg(target_arch = "x86")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::chacha20poly1305::{
     vg_chacha20_poly1305_open_ssse3, vg_chacha20_poly1305_seal_gather_ssse3,
     vg_chacha20_poly1305_seal_ssse3,
@@ -60,6 +62,7 @@ fn select(f: Features) -> Backend {
         VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES,
         VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
         VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
+        VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES,
     )
 }
 
@@ -166,7 +169,7 @@ impl ChaCha20Poly1305 {
             Backend::Avx512Vl => vg_chacha20_poly1305_seal_avx512vl,
             #[cfg(target_arch = "x86_64")]
             Backend::Ifma => vg_chacha20_poly1305_seal_ifma,
-            #[cfg(target_arch = "x86")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Backend::Ssse3 => vg_chacha20_poly1305_seal_ssse3,
         };
         let mut tag = [0; 16];
@@ -240,7 +243,7 @@ impl ChaCha20Poly1305 {
             Backend::Avx512Vl => vg_chacha20_poly1305_seal_gather_avx512vl,
             #[cfg(target_arch = "x86_64")]
             Backend::Ifma => vg_chacha20_poly1305_seal_gather_ifma,
-            #[cfg(target_arch = "x86")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Backend::Ssse3 => vg_chacha20_poly1305_seal_gather_ssse3,
         };
         let mut tag = [0; 16];
@@ -292,7 +295,7 @@ impl ChaCha20Poly1305 {
             Backend::Avx512Vl => vg_chacha20_poly1305_open_avx512vl,
             #[cfg(target_arch = "x86_64")]
             Backend::Ifma => vg_chacha20_poly1305_open_ifma,
-            #[cfg(target_arch = "x86")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Backend::Ssse3 => vg_chacha20_poly1305_open_ssse3,
         };
         // SAFETY: as in `encrypt_in_place`, with `tag` valid for reads of 16
@@ -609,18 +612,19 @@ mod tests {
     fn features() {
         use crate::arch::chacha20::{
             VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES,
-            VG_CHACHA20_APPLY_AVX512VL_FEATURES,
+            VG_CHACHA20_APPLY_AVX512VL_FEATURES, VG_CHACHA20_APPLY_SSSE3_FEATURES,
         };
         use crate::arch::chacha20poly1305::{
             VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES, VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES,
             VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES, VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES,
-            VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
-            VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES,
+            VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES,
-            VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES, VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES,
         };
         use crate::arch::poly1305::{
             VG_POLY1305_UPDATE_AVX2_FEATURES, VG_POLY1305_UPDATE_AVX512_FEATURES,
@@ -656,6 +660,13 @@ mod tests {
         let ifma_open = Features::all(&[ifma, VG_CHACHA20_APPLY_AVX512VL_FEATURES]);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, ifma_open);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES, ifma);
+        // The SSSE3 variants call the baseline `vg_poly1305_blocks`.
+        let ssse3 = VG_CHACHA20_APPLY_SSSE3_FEATURES;
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES, ssse3);
+        assert_eq!(VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES, ssse3);
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES, ssse3);
+        assert_eq!(select(ssse3), Backend::Ssse3);
+        assert_eq!(select(Features(0)), Backend::Scalar);
         assert_eq!(select(avx2), Backend::Avx2);
         assert_eq!(select(avx512), Backend::Avx512);
         assert_eq!(select(avx512vl), Backend::Avx512Vl);
