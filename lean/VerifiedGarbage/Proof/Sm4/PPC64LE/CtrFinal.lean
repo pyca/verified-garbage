@@ -101,7 +101,8 @@ Constant time (`final_rel`): the blocks by the taint analysis, the calls by
 the callee's constant time (`RelCT.callEx`), whose public arguments agree.
 
 The frame of the registration needs the contract's postcondition to read the
-memory on entry only within the function's buffers (`ctrFinalPost_local`).
+memory on entry only within the function's buffers
+(`Proof.Sm4.ctrFinalPost_local`).
 -/
 
 @[expose] public section
@@ -982,50 +983,6 @@ theorem final_ct : ConstantTime isa ctrFinalPPC64LE.pre ctrFinalPPC64LE.pub ctrF
 
 theorem ctrFinal_verified : Verified PPC64LE.target ctrFinal ctrFinalScratchContract :=
   Verified.of_correct final_correct final_ct ctrFinal_implies
-
-/-! ## Locality
-
-The frame needs the contract's postcondition to read the memory on entry
-only within the function's buffers. -/
-
-private theorem bytesAt_congr' {m₁ m₂ : Mem} {p : Addr} {k : Nat}
-    (h : ∀ i < k, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
-    bytesAt m₂ p k = bytesAt m₁ p k := by
-  simp only [Spec.Aes.bytesAt]
-  exact List.map_congr_left fun i hi => h i (List.mem_range.mp hi)
-
-private theorem agree_of' {m₁ m₂ : Mem} {p : Addr} {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
-    ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) := by
-  intro i hi
-  refine (h _ ?_).symm
-  by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
-  · simp only [Region.Contains]
-    have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
-
-/-- `ctrFinalPost` reads the memory on entry only within the buffers. -/
-theorem ctrFinalPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (Spec.Sm4.ctrFinalSig.words pb).length →
-    (∀ b ∈ Sig.bufs Spec.Sm4.ctrFinalSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Sm4.ctrFinalSig.words pb) (Proof.Sm4.ctrFinalPost pb) vs m₁ m' r →
-      Curry.apply (Spec.Sm4.ctrFinalSig.words pb) (Proof.Sm4.ctrFinalPost pb) vs m₂ m' r := by
-  intro vs m₁ m₂ m' r hlen hb h
-  match vs, hlen with
-  | [k, ctr, data, len], _ =>
-    simp only [Spec.Sm4.ctrFinalSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, Elem.size, Nat.mul_one] at hb
-    have hs := agree_of' hb.1
-    have hc := agree_of' hb.2.1
-    have hd := agree_of' hb.2.2
-    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-      (Proof.Sm4.ctrFinalPost pb) _ m₁ m' r at h
-    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-      (Proof.Sm4.ctrFinalPost pb) _ m₂ m' r
-    dsimp only [Curry.apply, Proof.Sm4.ctrFinalPost, ArgWord.ofRaw, Spec.Ctr.CryptFinal] at h ⊢
-    have := Nat.mod_le len.toNat (2 ^ pb)
-    rw [Proof.Sm4.scheduleAt_congr hs,
-      bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hc]
-    exact h
 
 /-! ## With `save` on the stack
 

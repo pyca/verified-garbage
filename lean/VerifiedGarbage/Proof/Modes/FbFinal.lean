@@ -259,6 +259,40 @@ theorem xor_flatten_outputs {L : Nat} {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (cip
       List.flatten_cons, ← xor_flatten_outputs hc m₀ n]
     exact List.zipWith_append (by rw [hc, bytesAt_length])
 
+/-- OFB of the `len` bytes at `D`, as a final function leaves them: its
+`n = len / L` whole blocks as `Spec.Ofb.crypt`'s from `iv`, then its last
+`len % L` bytes XORed with `CIPH_K(Oₙ)`, `Oₙ` the last whole output block
+(`Spec.Ofb.next` after `n`): `Spec.Ofb.cryptFinal`. -/
+theorem ofbFinal_out {L : Nat} (hL : 0 < L) {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = L)
+    (m₀ : Mem) (D : Addr) (iv : List Byte) (len : Nat) :
+    (Spec.Ofb.crypt ciph iv (blocksOf L m₀ D (len / L))).flatten ++
+        Spec.Cbc.xor (bytesAt m₀ (D + BitVec.ofNat 64 (L * (len / L))) (len % L))
+          (ciph (Spec.Ofb.next ciph iv (len / L))) =
+      Spec.Ofb.cryptFinal ciph L iv (bytesAt m₀ D len) := by
+  have hx := xor_flatten_outputs hc m₀ (len / L) D iv
+  have hnB : (blocksOf L m₀ D (len / L)).length = len / L := by simp [blocksOf]
+  rw [Spec.Ofb.cryptFinal, bytesAt_length, blockCount_eq hL, bytesAt_blocks_tail L m₀ D len, Spec.Ofb.crypt, hnB]
+  split
+  · rename_i h0
+    rw [h0, ← hx]
+    simp [bytesAt, Spec.Cbc.xor]
+  · rw [AesOfb.outputs_succ, List.flatten_append, List.flatten_singleton, ← hx]
+    exact (List.zipWith_append (by rw [← bytesAt_mul, bytesAt_length, length_flatten_outputs hc])).symm
+
+/-- OFB of the `len` bytes at `D` by a final function: its `n = len / L`
+whole blocks replaced by `Spec.Ofb.crypt`'s from `iv`, and its last
+`len % L` bytes XORed with `CIPH_K(Oₙ)`, `Oₙ` the last whole output block
+(`Spec.Ofb.next` after `n`): `Spec.Ofb.cryptFinal`. -/
+theorem ofbFinal_of {L : Nat} (hL : 0 < L) {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = L)
+    (m₀ m' : Mem) (D : Addr) (iv : List Byte) (len : Nat)
+    (hblocks : blocksOf L m' D (len / L) = Spec.Ofb.crypt ciph iv (blocksOf L m₀ D (len / L)))
+    (htail : bytesAt m' (D + BitVec.ofNat 64 (L * (len / L))) (len % L) =
+      Spec.Cbc.xor (bytesAt m₀ (D + BitVec.ofNat 64 (L * (len / L))) (len % L))
+        (ciph (Spec.Ofb.next ciph iv (len / L)))) :
+    bytesAt m' D len = Spec.Ofb.cryptFinal ciph L iv (bytesAt m₀ D len) := by
+  rw [bytesAt_blocks_tail L m' D len, hblocks, htail]
+  exact ofbFinal_out hL hc m₀ D iv len
+
 /-- OFB of the `len` bytes at `D`, from the bytes and the block a final
 function leaves: `Spec.Ofb.cryptFinal`, and the last output block used,
 `Spec.Ofb.next` after `⌈len / L⌉` blocks. -/
@@ -268,19 +302,9 @@ theorem ofbFinal_of_bytes {L : Nat} (hL : 0 < L) {ciph : Spec.Cbc.Cipher} (hc : 
     bytesAt m' D len = Spec.Ofb.cryptFinal ciph L iv (bytesAt m₀ D len) ∧
       fbNextF .ofb L ciph m₀ D iv len = Spec.Ofb.next ciph iv (Spec.Ofb.blockCount L len) := by
   obtain ⟨hb, hn⟩ := ofb_of L ciph m₀ D iv (len / L)
-  have hx := xor_flatten_outputs hc m₀ (len / L) D iv
   have hT := fbFinal_tail hL hc h
   rw [hn] at hT
-  have hnB : (blocksOf L m₀ D (len / L)).length = len / L := by simp [blocksOf]
-  refine ⟨?_, ?_⟩
-  · rw [bytesAt_blocks_tail L m' D len, fbFinal_blocks hc h, hb, hT, Spec.Ofb.cryptFinal, bytesAt_length,
-      blockCount_eq hL, bytesAt_blocks_tail L m₀ D len, Spec.Ofb.crypt, hnB]
-    split
-    · rename_i h0
-      rw [h0, ← hx]
-      simp [bytesAt, Spec.Cbc.xor]
-    · rw [AesOfb.outputs_succ, List.flatten_append, List.flatten_singleton, ← hx]
-      exact (List.zipWith_append (by rw [← bytesAt_mul, bytesAt_length, length_flatten_outputs hc])).symm
+  refine ⟨ofbFinal_of hL hc m₀ m' D iv len (by rw [fbFinal_blocks hc h, hb]) hT, ?_⟩
   · rw [fbNextF, hn, blockCount_eq hL]
     split
     · rfl

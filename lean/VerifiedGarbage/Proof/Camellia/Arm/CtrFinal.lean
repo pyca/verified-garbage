@@ -1167,47 +1167,6 @@ stack argument, `save`'s address, the word holding `lr`, and `save`'s 56
 bytes, the block included, which it zeroes before returning (and 4 bytes of
 padding). The code's calls use 2912 bytes below it, so 2984 in all. -/
 
-/-- `Spec.Camellia.ctrFinalPre` reads no memory. -/
-theorem ctrFinalPre_local (pb : Nat) : ∀ vs m₁ m₂, vs.length = (Spec.Camellia.ctrFinalSig.words pb).length →
-    (∀ b ∈ Sig.bufs Spec.Camellia.ctrFinalSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Camellia.ctrFinalSig.words pb) (Spec.Camellia.ctrFinalPre pb) vs m₁ →
-      Curry.apply (Spec.Camellia.ctrFinalSig.words pb) (Spec.Camellia.ctrFinalPre pb) vs m₂ := by
-  intro vs m₁ m₂ hlen _ h
-  match vs, hlen with
-  | [_, _, _, _, _], _ => exact h
-
-private theorem bytesAt_congr' {m₁ m₂ : Mem} {p : Addr} {k : Nat}
-    (h : ∀ i < k, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
-    bytesAt m₂ p k = bytesAt m₁ p k := by
-  simp only [bytesAt]
-  exact List.map_congr_left fun i hi => h i (List.mem_range.mp hi)
-
-/-- `Proof.Camellia.ctrFinalPostSk` reads the memory on entry only within
-the buffers. -/
-theorem ctrFinalPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r,
-    vs.length = (Spec.Camellia.ctrFinalSig.words pb).length →
-    (∀ b ∈ Sig.bufs Spec.Camellia.ctrFinalSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Camellia.ctrFinalSig.words pb) (Proof.Camellia.ctrFinalPostSk pb) vs m₁ m' r →
-      Curry.apply (Spec.Camellia.ctrFinalSig.words pb) (Proof.Camellia.ctrFinalPostSk pb) vs m₂ m' r := by
-  intro vs m₁ m₂ m' r hlen hb h
-  match vs, hlen with
-  | [k, rounds, ctr, data, len], _ =>
-    simp only [Spec.Camellia.ctrFinalSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, Elem.size, Nat.mul_one] at hb
-    have hk := Proof.Camellia.agree_of hb.1
-    have hc := Proof.Camellia.agree_of hb.2.1
-    have hd := Proof.Camellia.agree_of hb.2.2
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-      (Proof.Camellia.ctrFinalPostSk pb) _ m₁ m' r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-      (Proof.Camellia.ctrFinalPostSk pb) _ m₂ m' r
-    dsimp only [Curry.apply, Proof.Camellia.ctrFinalPostSk, ArgWord.ofRaw, Spec.Ctr.CryptFinal] at h ⊢
-    have := Nat.mod_le len.toNat (2 ^ pb)
-    intro hR
-    rw [Proof.Camellia.subkeysAt_congr (by rcases hR with h' | h' <;> rw [h'] <;> decide) hk,
-      bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hc]
-    exact h hR
-
 /-- A state satisfying the precondition, without `save`. -/
 def ctrFinalFrameSat : State :=
   { ctrFinalSat with rd := [⟨0x1000, 272⟩, ⟨0x8000, 4⟩], wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩] }

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Sm4.CtrFinal
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sm4.CtrCipher
 
 -- separate module: shared by the final function's proofs of every target.
 
@@ -11,9 +12,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 Not trusted, and the same on every target. `ctrFinalPost`:
 `Spec.Sm4.ctrFinalContract`'s postcondition (`ctrFinalContract_eq`), which
-reads the memory on return only within the function's buffers
-(`ctrFinalPostOut_local`), as a frame that keeps working space on the stack
-needs. What a final function leaves gives `Spec.Ctr.CryptFinal` by
+reads the memory on entry and on return only within the function's buffers
+(`ctrFinalPost_local`, `ctrFinalPostOut_local`), as a frame that keeps
+working space on the stack needs. What a final function leaves gives `Spec.Ctr.CryptFinal` by
 `Proof.Modes.CtrFinal.cryptFinal_of`, for any cipher.
 -/
 
@@ -66,6 +67,29 @@ theorem ctrFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (ct
     dsimp only [Curry.apply, ctrFinalPost, ArgWord.ofRaw, Spec.Ctr.CryptFinal] at h ⊢
     have := Nat.mod_le len.toNat (2 ^ pb)
     rw [bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hc]
+    exact h
+
+/-- `ctrFinalPost` reads the memory on entry only within the buffers. -/
+theorem ctrFinalPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (ctrFinalSig.words pb).length →
+    (∀ b ∈ Sig.bufs ctrFinalSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ctrFinalSig.words pb) (ctrFinalPost pb) vs m₁ m' r →
+      Curry.apply (ctrFinalSig.words pb) (ctrFinalPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  match vs, hlen with
+  | [k, ctr, data, len], _ =>
+    simp only [ctrFinalSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hk := agree_of' hb.1
+    have hc := agree_of' hb.2.1
+    have hd := agree_of' hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+      (ctrFinalPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+      (ctrFinalPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, ctrFinalPost, ArgWord.ofRaw, Spec.Ctr.CryptFinal] at h ⊢
+    have := Nat.mod_le len.toNat (2 ^ pb)
+    rw [scheduleAt_congr hk, bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega),
+      bytesAt_congr' hc]
     exact h
 
 end VG.Proof.Sm4

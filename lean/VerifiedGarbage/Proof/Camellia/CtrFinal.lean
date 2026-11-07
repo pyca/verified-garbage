@@ -14,9 +14,10 @@ Not trusted, and the same on every target. `ctrFinalContractSk`:
 `Spec.Camellia.ctrFinalContract` on the subkeys at `schedule`, for `rounds` of
 18 or 24, from which the shared contract follows (`ctrFinal_of_sk`), as
 `ctrContractSk` is for `vg_camellia_ctr` (`CtrScratch.lean`); its
-postcondition reads the memory on return only within the function's buffers
-(`ctrFinalPostOut_local`), as a frame that keeps working space on the stack
-needs. What a final function leaves gives `Spec.Ctr.CryptFinal` by
+precondition and postcondition read the memory on entry, and its
+postcondition the memory on return, only within the function's buffers
+(`ctrFinalPre_local`, `ctrFinalPost_local`, `ctrFinalPostOut_local`), as a
+frame that keeps working space on the stack needs. What a final function leaves gives `Spec.Ctr.CryptFinal` by
 `Proof.Modes.CtrFinal.cryptFinal_of`, for any cipher.
 -/
 
@@ -74,6 +75,39 @@ theorem ctrFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (ct
     have := Nat.mod_le len.toNat (2 ^ pb)
     intro hR
     rw [bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hc]
+    exact h hR
+
+/-- `Spec.Camellia.ctrFinalPre` reads no memory. -/
+theorem ctrFinalPre_local (pb : Nat) : ∀ vs m₁ m₂, vs.length = (ctrFinalSig.words pb).length →
+    (∀ b ∈ Sig.bufs ctrFinalSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ctrFinalSig.words pb) (ctrFinalPre pb) vs m₁ →
+      Curry.apply (ctrFinalSig.words pb) (ctrFinalPre pb) vs m₂ := by
+  intro vs m₁ m₂ hlen _ h
+  match vs, hlen with
+  | [_, _, _, _, _], _ => exact h
+
+/-- `ctrFinalPostSk` reads the memory on entry only within the buffers. -/
+theorem ctrFinalPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (ctrFinalSig.words pb).length →
+    (∀ b ∈ Sig.bufs ctrFinalSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ctrFinalSig.words pb) (ctrFinalPostSk pb) vs m₁ m' r →
+      Curry.apply (ctrFinalSig.words pb) (ctrFinalPostSk pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  match vs, hlen with
+  | [k, rounds, ctr, data, len], _ =>
+    simp only [ctrFinalSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hk := agree_of hb.1
+    have hc := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+      (ctrFinalPostSk pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+      (ctrFinalPostSk pb) _ m₂ m' r
+    dsimp only [Curry.apply, ctrFinalPostSk, ArgWord.ofRaw, Spec.Ctr.CryptFinal] at h ⊢
+    have := Nat.mod_le len.toNat (2 ^ pb)
+    intro hR
+    rw [subkeysAt_congr (by rcases hR with h' | h' <;> rw [h'] <;> decide) hk,
+      bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hc]
     exact h hR
 
 end VG.Proof.Camellia

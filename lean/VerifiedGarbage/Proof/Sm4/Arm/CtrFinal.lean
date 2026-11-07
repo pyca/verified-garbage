@@ -1038,46 +1038,6 @@ the word holding `lr`, and `save`'s 56 bytes, the block included, which it
 zeroes before returning. The code's calls use 1520 bytes below it, so 1584
 in all. -/
 
-private theorem bytesAt_congr' {m₁ m₂ : Mem} {p : Addr} {k : Nat}
-    (h : ∀ i < k, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
-    bytesAt m₂ p k = bytesAt m₁ p k := by
-  simp only [bytesAt]
-  exact List.map_congr_left fun i hi => h i (List.mem_range.mp hi)
-
-private theorem agree_of' {m₁ m₂ : Mem} {p : Addr} {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
-    ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) := by
-  intro i hi
-  refine (h _ ?_).symm
-  by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
-  · simp only [Region.Contains]
-    have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
-
-/-- `Proof.Sm4.ctrFinalPost` reads the memory on entry only within the
-buffers. -/
-theorem ctrFinalPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (Spec.Sm4.ctrFinalSig.words pb).length →
-    (∀ b ∈ Sig.bufs Spec.Sm4.ctrFinalSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Sm4.ctrFinalSig.words pb) (Proof.Sm4.ctrFinalPost pb) vs m₁ m' r →
-      Curry.apply (Spec.Sm4.ctrFinalSig.words pb) (Proof.Sm4.ctrFinalPost pb) vs m₂ m' r := by
-  intro vs m₁ m₂ m' r hlen hb h
-  match vs, hlen with
-  | [k, ctr, data, len], _ =>
-    simp only [Spec.Sm4.ctrFinalSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, Elem.size, Nat.mul_one] at hb
-    have hk := agree_of' hb.1
-    have hc := agree_of' hb.2.1
-    have hd := agree_of' hb.2.2
-    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-      (Proof.Sm4.ctrFinalPost pb) _ m₁ m' r at h
-    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
-      (Proof.Sm4.ctrFinalPost pb) _ m₂ m' r
-    dsimp only [Curry.apply, Proof.Sm4.ctrFinalPost, ArgWord.ofRaw, Spec.Ctr.CryptFinal] at h ⊢
-    have := Nat.mod_le len.toNat (2 ^ pb)
-    rw [Proof.Sm4.scheduleAt_congr hk, bytesAt_congr' fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega),
-      bytesAt_congr' hc]
-    exact h
-
 /-- A state satisfying the precondition, without `save`. -/
 def ctrFinalFrameSat : State := { ctrFinalSat with rd := [⟨0x1000, 128⟩], wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩] }
 

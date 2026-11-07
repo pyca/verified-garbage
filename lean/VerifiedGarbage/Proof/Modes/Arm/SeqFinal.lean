@@ -1069,31 +1069,6 @@ theorem cfbDecF_finalOk (c : Core) (h1 : 1 ≤ c.lg) (h31 : c.lg ≤ 31) (hl : 2
 
 /-! ## OFB -/
 
-/-- OFB of the `len` bytes at `D` by a final function: its `n = len / L`
-whole blocks replaced by `Spec.Ofb.crypt`'s from `iv`, and its last
-`len % L` bytes XORed with `CIPH_K(Oₙ)`, `Oₙ` the last whole output block
-(`Spec.Ofb.next` after `n`): `Spec.Ofb.cryptFinal`. -/
-theorem ofbFinal_of {L : Nat} (hL : 0 < L) {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = L)
-    (m₀ m' : Mem) (D : Addr) (iv : List Byte) (len : Nat)
-    (hblocks : blocksOf L m' D (len / L) = Spec.Ofb.crypt ciph iv (blocksOf L m₀ D (len / L)))
-    (htail : bytesAt m' (D + BitVec.ofNat 64 (L * (len / L))) (len % L) =
-      Spec.Cbc.xor (bytesAt m₀ (D + BitVec.ofNat 64 (L * (len / L))) (len % L))
-        (ciph (Spec.Ofb.next ciph iv (len / L)))) :
-    bytesAt m' D len = Spec.Ofb.cryptFinal ciph L iv (bytesAt m₀ D len) := by
-  have hx := VG.Proof.Modes.xor_flatten_outputs hc m₀ (len / L) D iv
-  have hnB : (blocksOf L m₀ D (len / L)).length = len / L := by simp [blocksOf]
-  rw [VG.Proof.Modes.bytesAt_blocks_tail L m' D len, hblocks, htail, Spec.Ofb.cryptFinal,
-    VG.Proof.Modes.bytesAt_length, VG.Proof.Modes.blockCount_eq hL, VG.Proof.Modes.bytesAt_blocks_tail L m₀ D len,
-    Spec.Ofb.crypt, hnB]
-  split
-  · rename_i h0
-    rw [h0, ← hx]
-    simp [bytesAt, Spec.Cbc.xor]
-  · rw [VG.Proof.AesOfb.outputs_succ, List.flatten_append, List.flatten_singleton, ← hx]
-    exact (List.zipWith_append (by
-      rw [← VG.Proof.Modes.bytesAt_mul, VG.Proof.Modes.bytesAt_length,
-        VG.Proof.Modes.length_flatten_outputs hc])).symm
-
 /-- The final function with `ofb` encrypts and decrypts as
 `Spec.Ofb.CryptFinal` says, for a cipher whose every output is a block. -/
 theorem ofbFinal_post {c : Core} {S : CoreSpec c} {s s' : State} (h : (seqFinalArm c S ofb).post s s')
