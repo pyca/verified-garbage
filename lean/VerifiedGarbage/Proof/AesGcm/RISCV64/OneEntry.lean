@@ -14,8 +14,9 @@ Untrusted: everything here is checked by Lean. `oneEntry off` loads the
 working space `W`, the stack argument at `sp + off`, saves our caller's
 registers there, keeps the arguments in callee-saved registers and the
 addresses of the additional data and the data in `W` (at `aadO` and
-`dataO`), and loads the tag's address `T`, the stack argument at `sp`, into
-`s9` (`one1_wp`), keeping `sp` in `t1`.
+`dataO`), and loads the tag's address `T`, the stack argument at `sp`
+(`sp + tagO` for `oneEntryAt off tagO`), into `s9` (`one1_wp`), keeping `sp`
+in `t1`.
 -/
 
 @[expose] public section
@@ -59,15 +60,16 @@ structure SO1 (W T : Addr) (s₀ s₁ : State) : Prop where
   s9 : s₁.gpr .s9 = T
   t1 : s₁.gpr .t1 = s₀.sp
 
-theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 8 ∨ off = 16)
+theorem one1At_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off = 8 ∨ off = 16 ∨ off = 32)
+    (htag : tagO = 0 ∨ tagO = 16)
     (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWa : W.toNat % 8 = 0) (hsa : s₀.sp.toNat % 16 = 0)
     (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
     (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W)
-    (hTi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 0) 8)
-    (hTv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 0) 64 = T)
-    (hTd : (⟨s₀.sp + BitVec.ofNat 64 0, 8⟩ : Region).Disjoint (oneR W)) :
-    WP isa (.block (oneEntry off)) s₀ (SO1 W T s₀) := by
-  simp only [oneEntry, List.cons_append, List.nil_append]
+    (hTi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 tagO) 8)
+    (hTv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 tagO) 64 = T)
+    (hTd : (⟨s₀.sp + BitVec.ofNat 64 tagO, 8⟩ : Region).Disjoint (oneR W)) :
+    WP isa (.block (oneEntryAt off tagO)) s₀ (SO1 W T s₀) := by
+  simp only [oneEntryAt, List.cons_append, List.nil_append]
   refine Steps.wp_addSp (imm := 0) (by decide) fun sA uA => ?_
   refine Steps.wp_ld (off := off) (a := s₀.sp + BitVec.ofNat 64 off) (by omega) (by rw [uA.gpr, add_ofNat_zero])
     (Spill.al8 (by omega) (by omega)) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => ?_
@@ -122,8 +124,9 @@ theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 8 ∨ off 
         (List.mem_singleton_self _) _ (Offset.contains _ (by decide) (by decide) (by decide))
   have dS : ∀ {d : Nat}, 232 ≤ d → d + 8 ≤ 248 → (savedR W).Disjoint ⟨W + BitVec.ofNat 64 d, 8⟩ :=
     fun h₁ h₂ => Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-  refine Steps.wp_ld (off := 0) (a := s₀.sp + BitVec.ofNat 64 0) (by decide) (by rw [u₁₃.gpr, u₁₂.sp, m₁₁.sp, u₁₀.sp, m₉.sp, k₈.2.2.1, add_ofNat_zero])
-    (Spill.al8 (by omega) (by decide)) (by rw [rd₁₃, wr₁₃]; exact hTi) fun s₁₄ u₁₄ => WP.block_nil ?_
+  refine Steps.wp_ld (off := tagO) (a := s₀.sp + BitVec.ofNat 64 tagO) (by omega)
+    (by rw [u₁₃.gpr, u₁₂.sp, m₁₁.sp, u₁₀.sp, m₉.sp, k₈.2.2.1, add_ofNat_zero])
+    (Spill.al8 (by omega) (by omega)) (by rw [rd₁₃, wr₁₃]; exact hTi) fun s₁₄ u₁₄ => WP.block_nil ?_
   refine ⟨⟨by rw [u₁₄.rd, rd₁₃], by rw [u₁₄.wr, wr₁₃], by rw [u₁₄.sp, sp₁₃]⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₁₄.mem, m₁₃, ← hM]
@@ -145,4 +148,15 @@ theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 8 ∨ off 
     | (rw [u₁₂.sp, m₁₁.sp, u₁₀.sp, m₉.sp, k₈.2.2.1, add_ofNat_zero])
     | (rw [m₁₃, ← hTv]; exact fM.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hTd) (by decide))
+/-- `one1At_wp` with the tag at `sp`. -/
+theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 8 ∨ off = 16)
+    (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWa : W.toNat % 8 = 0) (hsa : s₀.sp.toNat % 16 = 0)
+    (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
+    (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W)
+    (hTi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 0) 8)
+    (hTv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 0) 64 = T)
+    (hTd : (⟨s₀.sp + BitVec.ofNat 64 0, 8⟩ : Region).Disjoint (oneR W)) :
+    WP isa (.block (oneEntry off)) s₀ (SO1 W T s₀) :=
+  one1At_wp (hoff.elim .inl fun h => .inr (.inl h)) (.inl rfl) hW hWa hsa hWi hWv hTi hTv hTd
+
 end VG.Proof.AesGcm.RISCV64
