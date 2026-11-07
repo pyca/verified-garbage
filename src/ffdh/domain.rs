@@ -592,27 +592,27 @@ mod cache_tests {
         let mut shared = alloc::vec![0; len];
         assert!(chosen.exchange(&x, &y, &mut shared));
         let f = detected();
-        for &backend in Backend::ALL {
-            for &exp in Exp::ALL {
-                let ops = Ops::of(backend, exp);
-                if !(backend.runs_on(f) && exp.runs_on(f)) {
-                    continue;
-                }
-                let domain = Domain::new_with(ops, &p, &[2], None).unwrap();
-                // Not a domain: p is even.
-                let mut even = p.clone();
-                even[len - 1] ^= 1;
-                assert!(Domain::new_with(ops, &even, &[2], None).is_none());
-                assert!(domain.check_public_with(ops, &y));
-                assert!(!domain.check_public_with(ops, &[1]));
-                assert!(domain.check_private_with(ops, &y, &x));
-                assert!(!domain.check_private_with(ops, &y, &[4]));
-                let mut z = alloc::vec![0; len];
-                assert_eq!(domain.derive_public_with(ops, &x, &mut z), 1);
-                assert_eq!(z, y);
-                assert!(domain.exchange_with(ops, &x, &y, &mut z));
-                assert_eq!(z, shared);
-            }
+        let runnable = Backend::ALL.iter().flat_map(|&backend| {
+            Exp::ALL
+                .iter()
+                .filter(move |&&exp| backend.runs_on(f) && exp.runs_on(f))
+                .map(move |&exp| Ops::of(backend, exp))
+        });
+        for ops in runnable {
+            let domain = Domain::new_with(ops, &p, &[2], None).unwrap();
+            // Not a domain: p is even.
+            let mut even = p.clone();
+            even[len - 1] ^= 1;
+            assert!(Domain::new_with(ops, &even, &[2], None).is_none());
+            assert!(domain.check_public_with(ops, &y));
+            assert!(!domain.check_public_with(ops, &[1]));
+            assert!(domain.check_private_with(ops, &y, &x));
+            assert!(!domain.check_private_with(ops, &y, &[4]));
+            let mut z = alloc::vec![0; len];
+            assert_eq!(domain.derive_public_with(ops, &x, &mut z), 1);
+            assert_eq!(z, y);
+            assert!(domain.exchange_with(ops, &x, &y, &mut z));
+            assert_eq!(z, shared);
         }
     }
 }
