@@ -341,11 +341,13 @@ jobs:
         with:
           persist-credentials: false
           # A pull request's merge commit, and its first parent, the base:
-          # check_lean_single_importer.py checks the modules it adds.
+          # check_lean_single_importer.py checks the modules it adds, and
+          # check_residue_allowlist.py that it adds no function to the list.
           fetch-depth: 2
       - run: python3 ci/check_lean_imports.py
       - run: python3 ci/check_lean_modules.py
       - run: python3 ci/check_lean_single_importer.py
+      - run: python3 ci/check_residue_allowlist.py
       - run: python3 ci/check_case_collisions.py
       - run: python3 ci/check_registrations.py
       - run: python3 ci/check_lean_speed.py

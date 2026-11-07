@@ -233,4 +233,16 @@ def args (as : List String) : Option (Bool × Option String × String) :=
 #guard inTwoParts [[("x86_64", "c")], [("aarch64", "c")]] == none
 #guard inTwoParts [[("x86_64", "c")], [("aarch64", "c"), ("x86_64", "c")]] == some "x86_64"
 
+-- `ci/residue_allowlist.txt`: a target and a name per line, but blank lines
+-- and comments; anything else is refused.
+#guard match Rust.parseResidueAllowlist "# c\n\nx86_64 vg_a\n  x86_64  vg_b \n" with
+  | .ok l => l == [("x86_64", "vg_a"), ("x86_64", "vg_b")]
+  | .error _ => false
+#guard match Rust.parseResidueAllowlist "x86_64\n" with
+  | .ok _ => false
+  | .error _ => true
+#guard match Rust.parseResidueAllowlist "x86_64 vg_a extra\n" with
+  | .ok _ => false
+  | .error _ => true
+
 end VG.Test.Emit
