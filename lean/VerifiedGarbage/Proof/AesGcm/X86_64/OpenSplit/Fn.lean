@@ -3,7 +3,7 @@ module
 -- separate module: the function's static facts, which need none of the variants' instances (`Instances.lean`), so that a change to them does not rebuild it
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.CT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToS.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToSplit.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
@@ -15,7 +15,7 @@ calling any `vg_aes_gcm_encrypt_blocks` and `vg_aes_gcm_decrypt_blocks` `B`
 and `vg_aes_gcm_decrypt_blocks_to` `T` loads no `mxcsr`, writes `rsp` only
 in its frames and uses 56 bytes of stack (the call's arguments, its return
 address and its stack), so it preserves what the ABI says
-(`OpenSplitFn.of`): an internal function, which `openToS` calls.
+(`OpenSplitFn.of`): an internal function, which `openToSplit` calls.
 -/
 
 @[expose] public section
@@ -28,7 +28,7 @@ open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 
 section
-variable (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M)
+variable (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToDecFn M)
 
 theorem openSplit_mx :
     (OpenSplit.openSplit (v.withBlk B) T.fn).allInstrs (fun i => !loadsMxcsr i) = true := by
@@ -67,8 +67,8 @@ theorem openSplit_xdepth : (OpenSplit.openSplit (v.withBlk B) T.fn).x86_64Depth 
 end
 
 /-- `vg_aes_gcm_open_split`, named `n`, calling `B` and `T`. -/
-def _root_.VG.Proof.AesGcm.X86_64.OpenToS.OpenSplitFn.of (n : String) (v : GcmImpl) {M : CtxMode} (B : BlkFn M)
-    (T : BlkFromFn M) : OpenToS.OpenSplitFn M where
+def _root_.VG.Proof.AesGcm.X86_64.OpenToSplit.OpenSplitFn.of (n : String) (v : GcmImpl) {M : CtxMode} (B : BlkFn M)
+    (T : BlkToDecFn M) : OpenToSplit.OpenSplitFn M where
   fn := ⟨n, OpenSplit.openSplit (v.withBlk B) T.fn⟩
   ok s h := by
     obtain ⟨t, s', he, hg, hp⟩ := openSplitM_wp v B T h

@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSignCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPost
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
-public import VerifiedGarbage.Proof.Dsa.Validation
+public import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
@@ -35,17 +35,6 @@ namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64 VG.Proof.Rsa.X86_64
-
-/-- `validKeyWitness` with the private scalar 1: its g and y are equal. -/
-def validPrivateKeyWitness : List Byte := VG.Proof.Dsa.validKeyWitness ++ Spec.Dsa.encodeBE 20 1
-
-theorem validPrivateKeyWitness_length : validPrivateKeyWitness.length = 424 := by
-  simp only [validPrivateKeyWitness, List.length_append, VG.Proof.Dsa.validKeyWitness_length,
-    encodeBE_length]
-
-theorem validPrivateKeyWitness_valid :
-    Spec.Dsa.validatePrivateKeyBytes 128 20 validPrivateKeyWitness = true := by
-  decide +kernel
 
 theorem prevalidatedSigningCorrect (M : Mont) (Sq : MontS)
     (hmx : (PrevalidatedSign.sign Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true)

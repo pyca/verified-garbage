@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixOk
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksFrom.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksToDec.Fn
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
@@ -22,7 +22,7 @@ Untrusted: everything here is checked by Lean. `seal_split`'s `prefix`, with
 a call of `vg_aes_gcm_decrypt_blocks_to` in place of
 `vg_aes_gcm_encrypt_blocks_to` (`prefixD_ok`): as `Split.prefix_ok` proves,
 from the same state (`Split.PP`), with `Y` continued over the ciphertext at
-`src`, which the call absorbs (`preCallFrom_ok`), rather than over what it
+`src`, which the call absorbs (`preCallToDec_ok`), rather than over what it
 writes (`Mid2D`, `PPostD`).
 -/
 
@@ -71,7 +71,7 @@ include h
 
 /-- The call of `vg_aes_gcm_decrypt_blocks_to` on the `q` whole blocks at
 `S`, to `D`, with `D`, `q` and the working space pushed for it. -/
-theorem preCallFrom_ok (T : BlkFromFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
+theorem preCallToDec_ok (T : BlkToDecFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
     (hsp : st.gpr .rsp = SP) (hrd : st.rd = s.rd) (hwr : st.wr = s.wr) (hm : st.mem = s.mem)
     (h_di : st.gpr .rdi = Ctx) (h_si : st.gpr .rsi = BitVec.ofNat 64 R)
     (h_dx : st.gpr .rdx = W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48)
@@ -137,7 +137,7 @@ theorem preCallFrom_ok (T : BlkFromFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : St
   refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := Proof.AesGcm.decryptBlocksToX86_64M M)
     T.ok T.sp (by have := T.xd; omega_arith) hpre cr cw fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_)
   have r₃ := hcs _ (by decide : Reg.rsp ∈ calleeSaved)
-  simp only [Proof.AesGcm.decryptBlocksToX86_64M, Proof.AesGcm.blocksFromPost, Proof.AesGcm.arg, a0,
+  simp only [Proof.AesGcm.decryptBlocksToX86_64M, Proof.AesGcm.blocksToDecPost, Proof.AesGcm.arg, a0,
     State.withRegions_mem, gU _ (by decide : Reg.rdi ≠ .rsp), gU _ (by decide : Reg.rsi ≠ .rsp),
     gU _ (by decide : Reg.rdx ≠ .rsp), gU _ (by decide : Reg.rcx ≠ .rsp), gU _ (by decide : Reg.r8 ≠ .rsp),
     gU _ (by decide : Reg.r9 ≠ .rsp), h_di, h_si, h_dx, h_cx, h_8, h_9, h_11, hqn, hRn, hm₂, eK, eH,
@@ -290,7 +290,7 @@ theorem tailD_ok {s₂ : State} (H : Mid2D Ctx W SP D S R sl s s₂) :
 
 /-- The call of `prefix` for the `sl / 16` whole blocks at `src`, from a
 state `s₁` with their number in `rax` and `s`'s memory: what `Mid2D` says. -/
-theorem callD_ok (T : BlkFromFn M) {s₁ : State} (he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁)
+theorem callD_ok (T : BlkToDecFn M) {s₁ : State} (he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁)
     (ax₁ : s₁.gpr .rax = BitVec.ofNat 64 (sl / 16)) (m₁ : s₁.mem = s.mem) (rd₁ : s₁.rd = s.rd)
     (wr₁ : s₁.wr = s.wr) :
     WP isa (.seq (.block SealSplit.preArgs)
@@ -301,7 +301,7 @@ theorem callD_ok (T : BlkFromFn M) {s₁ : State} (he₁ : Env Ctx (W + BitVec.o
   refine WP.seq (WP.mono (pre2_ok (R := R) (D := D) (S := S) he₁ (by rw [m₁]; exact h.rounds) (by rw [m₁]; exact h.dat)
     (by rw [m₁]; exact h.src)) fun s₂ ⟨di₂, si₂, dx₂, cx₂, r8₂, r9₂, r10₂, r11₂, ax₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
   have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep g₂ rd₂ wr₂
-  exact WP.mono (preCallFrom_ok h T (q := sl / 16) (by omega_arith) he₂.rsp (rd₂.trans rd₁) (wr₂.trans wr₁)
+  exact WP.mono (preCallToDec_ok h T (q := sl / 16) (by omega_arith) he₂.rsp (rd₂.trans rd₁) (wr₂.trans wr₁)
     (m₂.trans m₁) di₂ si₂ dx₂ cx₂ r8₂ (by rw [r9₂, ax₁]) (by rw [r10₂, ax₁]) r11₂ ax₂)
     fun s₃ ⟨cs₃, rd₃, wr₃, fr₃, bl₃, ct₃, y₃⟩ => ⟨he₂.keep (fun r hr => cs₃ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -311,7 +311,7 @@ theorem callD_ok (T : BlkFromFn M) {s₁ : State} (he₁ : Env Ctx (W + BitVec.o
 /-- `prefix`: the whole blocks at `src` decrypted to `dst` and absorbed by a
 call of `vg_aes_gcm_decrypt_blocks_to` (`T`), the bytes left copied, and
 `len` and the data from them on kept. -/
-theorem prefixD_ok (T : BlkFromFn M) :
+theorem prefixD_ok (T : BlkToDecFn M) :
     WP isa (SealSplit.prefix T.fn) s (PPostD Ctx W SP D S R n sl s) := by
   have L := h.lay
   have hn := h.data.ok.lt

@@ -3,6 +3,9 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Proof.Dsa.Contract
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
+public import VerifiedGarbage.Impl.Dsa.AArch64.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
 public import Aesop.BuiltinRules
@@ -42,6 +45,13 @@ structure Backend where
   deriveDepth : 16 * (Generate.deriveKey mul).aarch64Depth ≤ stack
   signSp : (SignVerify.sign mul).all (fun i => !isa.writesSp i) = true
   signDepth : 16 * (SignVerify.sign mul).aarch64Depth ≤ stack
+  prevalidatedSignVerified : Verified target (PrevalidatedSign.sign mul)
+    (signContractWith Spec.Dsa.validatePrivateKeyBytes abi stack)
+  prevalidatedSignSp : (PrevalidatedSign.sign mul).all (fun i => !isa.writesSp i) = true
+  prevalidatedSignDepth : 16 * (PrevalidatedSign.sign mul).aarch64Depth ≤ stack
+  validatePrivateVerified : Verified target (PrevalidatedSign.validate mul)
+    (Spec.Dsa.validatePrivateKeyContract abi stack)
+  validatePrivateSp : (PrevalidatedSign.validate mul).all (fun i => !isa.writesSp i) = true
   stackBound : stack < 2 ^ 32
 
 end VG.Proof.Dsa.AArch64

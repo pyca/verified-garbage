@@ -202,6 +202,9 @@ def AmmOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop :=
 
 theorem LayOk.amm {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : LayOk l) : AmmOk l := .inl hl
 
+/-- The CRT's layouts are among those of the multiplication. -/
+instance {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} : Coe (LayOk l) (AmmOk l) := ⟨LayOk.amm⟩
+
 theorem checkStep_p2048 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay2048.R,
     checkStep VG.Impl.Rsa.X86_64.PubIfma.pay2048 i = true := by decide +kernel
 theorem checkStep_p3072 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay3072.R,

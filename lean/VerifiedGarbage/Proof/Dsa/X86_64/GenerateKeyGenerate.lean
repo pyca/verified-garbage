@@ -70,9 +70,10 @@ def KeygenGenerated {extra : Nat} {s : State} (h : GenerateKeyABI extra s) (u : 
 theorem keygen_derive_step (v : Backend) {s t : State} {h : GenerateKeyABI v.stack s} {used k : Nat}
     (ht : KeygenState h used t)
     (hnonce : Spec.Rsa.bytesAt t.mem (off (randomBase s) Random.oNonce) (stackArg s 0).toNat =
-      Spec.Dsa.encodeBE (stackArg s 0).toNat k) :
+      Spec.Dsa.encodeBE (stackArg s 0).toNat k)
+    (hc : Spec.Dsa.checkParametersBytes (keygenInput s).pLen (keygenInput s).qLen (keygenInput s).params = true) :
     WP isa (.seq (.block GenerateKey.deriveArgs)
-      (.seq (.call (keygenDeriveName v) (Generate.deriveKey v.sq v.mul)) (.block GenerateKey.keepStatus))) t fun u =>
+      (.seq (.call (keygenDeriveName v) (Generate.deriveChecked v.sq v.mul)) (.block GenerateKey.keepStatus))) t fun u =>
       let res := Spec.Dsa.deriveKeyBytes (keygenInput s).pLen (keygenInput s).qLen (keygenInput s).params
         (Spec.Dsa.encodeBE (keygenInput s).qLen k)
       KeygenState h used u ∧
@@ -89,7 +90,7 @@ theorem keygen_derive_step (v : Backend) {s t : State} {h : GenerateKeyABI v.sta
       omega
     exact (random_outside_bytes hargs (show Random.oNonce + (stackArg s 0).toNat ≤ 2 ^ 64 by
       unfold Random.oNonce; omega) (Or.inr (show 0 + 24 ≤ Random.oNonce by decide))).trans hnonce
-  refine WP.seq (WP.mono (keygen_derive_call v h ha.sp hw hdi hsi hdx hcx h8 h9 ha.rd ha.wr)
+  refine WP.seq (WP.mono (keygen_derive_call v h ha.sp hw hdi hsi hdx hcx h8 h9 ha.rd ha.wr (keygen_bytes_params ha) hc)
     fun b ⟨hbr, hbw, hbc, hf, hst, hout, hmxb⟩ => ?_)
   rw [keygen_bytes_params ha, hnA] at hst hout
   have hoF : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨randomBase s, Random.frameBytes⟩ :=

@@ -145,7 +145,7 @@ theorem sealMain_ok {s₀ : State} (hp : APre true s₀) : WP isa sealMain s₀ 
   refine WP.seq (WP.mono (crypt_ok hp h₂.inv h₂.st) fun s₃ ⟨i₃, k₃, c₃⟩ => ?_)
   rw [d₂] at c₃
   have key₃ : bytesAt s₃.mem (off (cx s₀) keyOff) 32 = otk s₀ := by
-    rw [bytesAt_frame k₃.frame (fun r hr => by
+    rw [bytesAt_frame k₃ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact sub_disj s₀ (by simp [keyOff, stOff]) (by simp [keyOff]) (by simp [stOff])
@@ -413,7 +413,7 @@ theorem endBody_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : PostFo
       · exact .inl ⟨0, stOff + 64, by simp [stOff], by omega, rfl⟩
       · exact .inr (.inl rfl)
   have t₁ : bytesAt s₁.mem (off (cx s₀) tagOff) 16 = mac (otk s₀) (macData (A s₀) (D s₀)) := by
-    rw [ctx_bytes hp k₁.frame (by simp [tagOff]) (hc (by simp [stOff, tagOff]) (by simp [tagOff])), h.tag]
+    rw [ctx_bytes hp k₁ (by simp [tagOff]) (hc (by simp [stOff, tagOff]) (by simp [tagOff])), h.tag]
   rw [h.data] at c₁
   refine WP.block_append (WP.mono (compare_ok hp i₁)
     fun s₂ ⟨r0₂, g₂, sp₂, m₂, rd₂, wr₂⟩ => ?_)

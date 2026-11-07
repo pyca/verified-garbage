@@ -115,14 +115,6 @@ def generationShape (bits generator p : Nat) : Bool :=
   if generator == 2 then p % 24 == 11 else
     generator == 5 && (p % 10 == 3 || p % 10 == 7)
 
-/-- Random candidate with independent witness tapes for p and (p-1)/2.
-The result contains no q, matching PKCS #3 parameter generation. -/
-def generateParameters (bits generator : Nat) : List (Nat × List Nat × List Nat) → Option Parameters
-  | [] => none
-  | (p, wp, wq) :: rest =>
-    if generationShape bits generator p && probablePrime p wp && probablePrime ((p - 1) / 2) wq
-    then some ⟨p, generator, none⟩ else generateParameters bits generator rest
-
 /-! ## Octet tapes
 
 The lists of integers above, drawn from random octets as the operations draw
@@ -170,8 +162,4 @@ def drawWitnesses (w : Nat) : Nat → Rand → Option (List Nat × Rand)
       return (a :: as, r)
     else return ([a], r)
 
-/-- Select a word by the low bit, used by the fixed-schedule exponentiation.
-Both candidate words and the bit are secret. -/
-def choose (a b bit : BitVec 64) : BitVec 64 :=
-  a ^^^ ((a ^^^ b) &&& (0 - (bit &&& 1)))
 end VG.Spec.Ffdh

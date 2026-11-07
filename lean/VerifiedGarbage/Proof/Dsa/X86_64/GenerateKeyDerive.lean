@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheck
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Dsa.X86_64.DeriveVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCheckedVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import VerifiedGarbage.Proof.Framework.Offset
@@ -229,14 +230,37 @@ theorem keygen_callEntry_nonce {extra : Nat} {s t : State} (h : GenerateKeyABI e
   exact random_callEntry_bytes hsp (dRM.symm.sep (Region.contains_self _ _) (Region.contains_self _ _))
     (by omega_arith)
 
+/-- The checked derivation's contract at key generation's call, once the
+domain check has passed. -/
+theorem keygen_derive_checked_pre {extra : Nat} {s t : State} (h : GenerateKeyABI extra s)
+    (hsp : t.gpr .rsp = randomBase s)
+    (hw : ∀ i < 3, word t.mem (randomBase s) (8 * i) = keygenDeriveArg s i)
+    (hdi : t.gpr .rdi = s.gpr .rdi) (hsi : t.gpr .rsi = s.gpr .rsi)
+    (hdx : t.gpr .rdx = s.gpr .rcx) (hcx : t.gpr .rcx = s.gpr .r8)
+    (h8 : t.gpr .r8 = s.gpr .r9) (h9 : t.gpr .r9 = off (randomBase s) Random.oNonce)
+    (hparams : Spec.Rsa.bytesAt t.mem (s.gpr .rcx) (s.gpr .r8).toNat = (keygenInput s).params)
+    (hc : Spec.Dsa.checkParametersBytes (keygenInput s).pLen (keygenInput s).qLen (keygenInput s).params = true) :
+    (Spec.Dsa.deriveKeyDomainCheckedContract abi extra).pre
+      (t.callEntry.withRegions (keygenDeriveRd s) (keygenDeriveWr s)) := by
+  refine deriveChecked_of_pre (keygen_derive_pre h hsp hw hdi hsi hdx hcx h8 h9) ?_
+  have hE0 : stackArg (t.callEntry.withRegions (keygenDeriveRd s) (keygenDeriveWr s)) 0 = keygenDeriveArg s 0 :=
+    (random_call_stackArg hsp _ _ (by omega_arith)).trans (hw 0 (by decide))
+  simp only [hE0, State.withRegions_gpr, State.withRegions_mem, State.callEntry_gpr _ (r := .r8) (by decide),
+    State.callEntry_gpr _ (r := .rdx) (by decide), State.callEntry_gpr _ (r := .rcx) (by decide),
+    h8, hdx, hcx, keygenDeriveArg]
+  rw [keygen_callEntry_bytes h hsp h.stackParams (s.gpr .r8).isLt, hparams]
+  exact hc
+
 theorem keygen_derive_call (v : Backend) {s t : State} (h : GenerateKeyABI v.stack s)
     (hsp : t.gpr .rsp = randomBase s)
     (hw : ∀ i < 3, word t.mem (randomBase s) (8 * i) = keygenDeriveArg s i)
     (hdi : t.gpr .rdi = s.gpr .rdi) (hsi : t.gpr .rsi = s.gpr .rsi)
     (hdx : t.gpr .rdx = s.gpr .rcx) (hcx : t.gpr .rcx = s.gpr .r8)
     (h8 : t.gpr .r8 = s.gpr .r9) (h9 : t.gpr .r9 = off (randomBase s) Random.oNonce)
-    (hrd : t.rd = s.rd) (hwr : t.wr = ⟨randomBase s, Random.frameBytes⟩ :: s.wr) :
-    WP isa (.call (keygenDeriveName v) (Generate.deriveKey v.sq v.mul)) t fun u =>
+    (hrd : t.rd = s.rd) (hwr : t.wr = ⟨randomBase s, Random.frameBytes⟩ :: s.wr)
+    (hparams : Spec.Rsa.bytesAt t.mem (s.gpr .rcx) (s.gpr .r8).toNat = (keygenInput s).params)
+    (hc : Spec.Dsa.checkParametersBytes (keygenInput s).pLen (keygenInput s).qLen (keygenInput s).params = true) :
+    WP isa (.call (keygenDeriveName v) (Generate.deriveChecked v.sq v.mul)) t fun u =>
       let res := Spec.Dsa.deriveKeyBytes (keygenInput s).pLen (keygenInput s).qLen
         (Spec.Rsa.bytesAt t.mem (s.gpr .rcx) (s.gpr .r8).toNat)
         (Spec.Rsa.bytesAt t.mem (off (randomBase s) Random.oNonce) (stackArg s 0).toNat)
@@ -246,17 +270,17 @@ theorem keygen_derive_call (v : Backend) {s t : State} (h : GenerateKeyABI v.sta
       Spec.Rsa.bytesAt u.mem (s.gpr .rdi) (s.gpr .rsi).toNat =
         res.getD (List.replicate (s.gpr .rsi).toNat 0) ∧
       u.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
-  obtain ⟨hc, hcw⟩ := keygen_derive_covers h hrd hwr
-  have hd := v.deriveDepth
+  obtain ⟨hc', hcw⟩ := keygen_derive_covers h hrd hwr
+  have hd := v.deriveCheckedDepth
   have hb := v.stackBound
   have hE (i : Nat) (hi : i < 3) :
       stackArg (t.callEntry.withRegions (keygenDeriveRd s) (keygenDeriveWr s)) i = keygenDeriveArg s i :=
     (random_call_stackArg hsp _ _ (by omega_arith)).trans (hw i hi)
-  refine WP.call_sp_mx v.deriveVerified.1 (SpSafe.of_all v.deriveSp) (by omega_arith)
-    (keygen_derive_pre h hsp hw hdi hsi hdx hcx h8 h9) hc hcw
+  refine WP.call_sp_mx v.deriveCheckedVerified.1 (SpSafe.of_all v.deriveCheckedSp) (by omega_arith)
+    (keygen_derive_checked_pre h hsp hw hdi hsi hdx hcx h8 h9 hparams hc) hc' hcw
     (fun u hur huw huc hf _ ⟨w, hwm, hwg, hp⟩ hmx => ?_)
-  sig_post [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three] at hp
-  sig_post [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three] at hp
+  sig_post [Spec.Dsa.deriveKeyDomainCheckedContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three] at hp
+  sig_post [Spec.Dsa.deriveKeyDomainCheckedContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three] at hp
   simp only [hdi, hsi, hdx, hcx, h8, h9, hE 0 (by decide), keygenDeriveArg, hwm, hwg .rax (by decide)] at hp
   rw [show t.mem.writeW (t.gpr .rsp - 8) (t.unknowns 0) = t.callEntry.mem from rfl,
     keygen_callEntry_bytes h hsp h.stackParams (s.gpr .r8).isLt, keygen_callEntry_nonce h hsp] at hp

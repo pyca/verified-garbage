@@ -15,12 +15,20 @@ namespace VG.Generic.DsaArithmetic.AArch64.Dsa
 open VG.Proof.Dsa.AArch64
 
 def artifacts (v : Backend) : List Artifact := [
-  Spec.Dsa.randomSignApi.artifact AArch64.target {
+  Spec.Dsa.randomSignPrevalidatedApi.artifact AArch64.target {
     suffix := v.suffix
-    code := Impl.Dsa.AArch64.RandomSign.code (randomSignerName v) (Impl.Dsa.AArch64.SignVerify.sign v.mul)
+    code := Impl.Dsa.AArch64.RandomSign.code (prevalidatedSignerName v)
+      (Impl.Dsa.AArch64.PrevalidatedSign.sign v.mul)
     stack := v.stack + 256
-    verified := random_sign_verified v
-    spSafe := random_sign_sp v
+    verified := random_sign_prevalidated_verified v
+    spSafe := random_sign_sp v.prevalidatedSigner
+    features := v.features },
+  Spec.Dsa.validatePrivateKeyApi.artifact AArch64.target {
+    suffix := v.suffix
+    code := Impl.Dsa.AArch64.PrevalidatedSign.validate v.mul
+    stack := v.stack
+    verified := v.validatePrivateVerified
+    spSafe := v.validatePrivateSp
     features := v.features },
   Spec.Dsa.validatePublicKeyApi.artifact AArch64.target {
     suffix := v.suffix
