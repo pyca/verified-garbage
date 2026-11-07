@@ -137,8 +137,6 @@ pub const VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN: usize = 0;
 ///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
-/// The machine code of this function is that of `vg_aes_cbc_encrypt_vaes`, which is emitted once and named both ways: the two are the same function.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -150,8 +148,41 @@ pub const VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN: usize = 0;
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
-#[allow(unused_imports)]
-pub use self::vg_aes_cbc_encrypt_vaes as vg_aes_cbc_encrypt_aesni;
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_cbc_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "TYXA"
+je 20f
+.base64 "8w9vD/MPbwJmD+/B8w9vVxDzD29fIPMPb2cw8w9vb0DzD293UPMPb39g80QPb0dw80QPb4+AAAAA80QPb5eQAAAA80QPb5+gAAAA80QPb6ewAAAA80QPb6/AAAAA80QPb7fQAAAASIP+Cg=="
+je 22f
+.base64 "SIP+DA=="
+je 24f
+.base64 "80QPb7/gAAAAZkQP7/k="
+26:
+.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843MNmQQ843MRmQQ843MVmQQ843MZmQQ843cdIg8EQSYPoAfMPbw9mD+/I8w9/SfA="
+jne 26b
+jmp 25f
+24:
+.base64 "80QPb7/AAAAAZkQP7/k="
+27:
+.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843MNmQQ843MRmQQ843cdIg8EQSYPoAfMPbw9mD+/I8w9/SfA="
+jne 27b
+25:
+jmp 23f
+22:
+.base64 "80QPb7+gAAAAZkQP7/k="
+28:
+.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843cdIg8EQSYPoAfMPbw9mD+/I8w9/SfA="
+jne 28b
+23:
+.base64 "8w9vD2YP78HzD38C"
+jmp 21f
+20:
+21:
+.base64 "ww=="
+.p2align 6"#,
+    )
+}
 
 /// The CPU features `vg_aes_cbc_decrypt_aesni` requires (`Artifact.features`).
 pub const VG_AES_CBC_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
@@ -313,65 +344,6 @@ jmp 21f
 .base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
 .p2align 6"#,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
-    )
-}
-
-/// The CPU features `vg_aes_cbc_encrypt_vaes` requires (`Artifact.features`).
-pub const VG_AES_CBC_ENCRYPT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// The bytes of `scratch` that `vg_aes_cbc_encrypt_vaes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub const VG_AES_CBC_ENCRYPT_VAES_SCRATCH_WRITTEN: usize = 0;
-
-/// AES-CBC encryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added.
-///
-/// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
-///
-/// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_ENCRYPT_VAES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `iv` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_cbc_encrypt_vaes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r#".base64 "TYXA"
-je 20f
-.base64 "8w9vD/MPbwJmD+/B8w9vVxDzD29fIPMPb2cw8w9vb0DzD293UPMPb39g80QPb0dw80QPb4+AAAAA80QPb5eQAAAA80QPb5+gAAAA80QPb6ewAAAA80QPb6/AAAAA80QPb7fQAAAASIP+Cg=="
-je 22f
-.base64 "SIP+DA=="
-je 24f
-.base64 "80QPb7/gAAAAZkQP7/k="
-26:
-.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843MNmQQ843MRmQQ843MVmQQ843MZmQQ843cdIg8EQSYPoAfMPbw9mD+/I8w9/SfA="
-jne 26b
-jmp 25f
-24:
-.base64 "80QPb7/AAAAAZkQP7/k="
-27:
-.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843MNmQQ843MRmQQ843cdIg8EQSYPoAfMPbw9mD+/I8w9/SfA="
-jne 27b
-25:
-jmp 23f
-22:
-.base64 "80QPb7+gAAAAZkQP7/k="
-28:
-.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843cdIg8EQSYPoAfMPbw9mD+/I8w9/SfA="
-jne 28b
-23:
-.base64 "8w9vD2YP78HzD38C"
-jmp 21f
-20:
-21:
-.base64 "ww=="
-.p2align 6"#,
     )
 }
 

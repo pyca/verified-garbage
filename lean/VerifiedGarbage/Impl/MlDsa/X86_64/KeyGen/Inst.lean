@@ -43,6 +43,7 @@ def primsWith (B : Arith.Backend) : Prims :=
     dotInv4 := B.dotInv4
     dotInv5 := B.dotInv5
     dotInv7 := B.dotInv7
-    sfx := B.sfx }
+    sfx := B.sfx
+    asfx := B.asfx }
 
 end VG.Impl.MlDsa.X86_64.KeyGen

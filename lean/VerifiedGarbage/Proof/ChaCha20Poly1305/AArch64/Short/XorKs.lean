@@ -498,25 +498,20 @@ theorem xorKsAllDst_ok {s₀ s : State} (hp : APre e s₀) {Q : Addr} (hq : DstR
     (by rw [hx23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hrd hwr).mono
     fun s' ⟨k, d, _, _⟩ => ⟨k, fun i hi => by simpa only [Nat.zero_add] using d i hi⟩
 
+/-- `xorKsAllDst_ok`, into the output (`xorKs (!e)`, with `x28` as on entry). -/
+theorem xorKsOut_ok {s₀ s : State} (hp : APre e s₀) (hL : L s₀ ≤ 256) (hx21 : s.gpr .x21 = cx s₀)
+    (hx22 : s.gpr .x22 = dp s₀) (h28 : s.gpr .x28 = s₀.gpr .x28) (hx23 : s.gpr .x23 = s₀.gpr .x5)
+    (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
+    WP isa (xorKs (!e)) s fun s' => Kept [oR e s₀] s s' ∧ ∀ i < L s₀,
+      s'.mem (op e s₀ + BitVec.ofNat 64 i) = s.mem (dp s₀ + BitVec.ofNat 64 i) ^^^
+        s.mem (kp' s₀ + BitVec.ofNat 64 i) :=
+  xorKsAllDst_ok hp hp.o (!e) hL hx21 hx22
+    (by simpa only [BitVec.add_zero] using cond_out s₀ h28 0) hx23 hrd hwr
+
 /-! ### In place -/
 
-/-- `xorKsWithDst_ok`, into the data itself. -/
-theorem xorKsWithAt_ok {s₀ s : State} (hp : APre e s₀) {setup : List Instr} {k o n : Nat}
-    (hkn : k + n ≤ 1280) (hon : o + n ≤ L s₀)
-    (hx23 : s.gpr .x23 = BitVec.ofNat 64 n) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
-    (hs : WP isa (.block setup) s fun s' =>
-      s'.gpr .x9 = dp s₀ + BitVec.ofNat 64 o ∧ s'.gpr .x15 = dp s₀ + BitVec.ofNat 64 o ∧
-      s'.gpr .x10 = kpAt s₀ k ∧ s'.gpr .x11 = BitVec.ofNat 64 (n / 16) ∧
-      Kept [] s s' ∧ ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → r ≠ .x15 → s'.gpr r = s.gpr r) :
-    WP isa (xorKsWith setup) s fun s' => Kept [dR s₀] s s' ∧ (∀ i < n,
-      s'.mem (dp s₀ + BitVec.ofNat 64 (o + i)) = s.mem (dp s₀ + BitVec.ofNat 64 (o + i)) ^^^
-        s.mem (kpAt s₀ k + BitVec.ofNat 64 i)) ∧
-      Frame [⟨dp s₀ + BitVec.ofNat 64 o, n⟩] s.mem s'.mem ∧
-      ∀ r, r ∉ [Reg.x9, .x10, .x11, .x12, .x13, .x15] → s'.gpr r = s.gpr r :=
-  xorKsWithDst_ok hp hp.dstSelf hkn hon hx23 hrd hwr hs
-
 /-- `xorKsFromDst_ok`, in place. -/
-theorem xorKsFromAt_ok {s₀ s : State} (hp : APre e s₀) {k o n : Nat} (hkn : k + n ≤ 1280)
+theorem xorKsFromAt_ok {s₀ s : State} (hp : APre true s₀) {k o n : Nat} (hkn : k + n ≤ 1280)
     (hon : o + n ≤ L s₀)
     (hx21 : s.gpr .x21 = cx s₀) (hx22 : s.gpr .x22 = dp s₀ + BitVec.ofNat 64 o)
     (hx23 : s.gpr .x23 = BitVec.ofNat 64 n) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
@@ -528,7 +523,7 @@ theorem xorKsFromAt_ok {s₀ s : State} (hp : APre e s₀) {k o n : Nat} (hkn : 
   xorKsFromDst_ok hp hp.dstSelf false hkn hon hx21 hx22 rfl hx23 hrd hwr
 
 /-- `xorKsDst_ok`, in place. -/
-theorem xorKsAt_ok {s₀ s : State} (hp : APre e s₀) {o n : Nat} (hn : n ≤ 256) (hon : o + n ≤ L s₀)
+theorem xorKsAt_ok {s₀ s : State} (hp : APre true s₀) {o n : Nat} (hn : n ≤ 256) (hon : o + n ≤ L s₀)
     (hx21 : s.gpr .x21 = cx s₀) (hx22 : s.gpr .x22 = dp s₀ + BitVec.ofNat 64 o)
     (hx23 : s.gpr .x23 = BitVec.ofNat 64 n) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
     WP isa (xorKs false) s fun s' => Kept [dR s₀] s s' ∧ (∀ i < n,
@@ -537,14 +532,5 @@ theorem xorKsAt_ok {s₀ s : State} (hp : APre e s₀) {o n : Nat} (hn : n ≤ 2
       Frame [⟨dp s₀ + BitVec.ofNat 64 o, n⟩] s.mem s'.mem ∧
       ∀ r, r ∉ [Reg.x9, .x10, .x11, .x12, .x13, .x15] → s'.gpr r = s.gpr r :=
   xorKsDst_ok hp hp.dstSelf false hn hon hx21 hx22 rfl hx23 hrd hwr
-
-/-- `xorKsAllDst_ok`, in place. -/
-theorem xorKs_ok {s₀ s : State} (hp : APre e s₀) (hL : L s₀ ≤ 256) (hx21 : s.gpr .x21 = cx s₀)
-    (hx22 : s.gpr .x22 = dp s₀) (hx23 : s.gpr .x23 = s₀.gpr .x5) (hrd : s.rd = s₀.rd)
-    (hwr : s.wr = s₀.wr) :
-    WP isa (xorKs false) s fun s' => Kept [dR s₀] s s' ∧ ∀ i < L s₀,
-      s'.mem (dp s₀ + BitVec.ofNat 64 i) = s.mem (dp s₀ + BitVec.ofNat 64 i) ^^^
-        s.mem (kp' s₀ + BitVec.ofNat 64 i) :=
-  xorKsAllDst_ok hp hp.dstSelf false hL hx21 hx22 rfl hx23 hrd hwr
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Short

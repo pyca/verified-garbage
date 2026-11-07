@@ -52,7 +52,7 @@ theorem dec_T (hl : AmmOk l) {i : Nat} (h : i + 1 < 16) : decide (i + 1 = l.T) =
 
 /-- Entries of the table at the same offset are the same. -/
 theorem nb_mul_inj (hl : AmmOk l) {i j : Nat} (h : l.NB * i = l.NB * j) : i = j := by
-  have : 0 < l.NB := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  have : 0 < l.NB := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   exact Nat.eq_of_mul_eq_mul_left this h
 
 theorem vy_setVy_self (s : State) (d : VReg) (v : BitVec 256) : (s.setVy d v).vy d = v := by
@@ -172,9 +172,9 @@ theorem copyN_ok (hl : AmmOk l) {s : State} {B : Addr} {o a : Nat} (hB : s.gpr .
       exact ⟨p, hp, by dsimp only; omega_using [], by dsimp only; omega_using [hNB, hk]⟩
 
 theorem NB_le (hl : AmmOk l) : l.NB ≤ 640 ∧ 160 ≤ l.NB := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
-theorem dbl_le (hl : AmmOk l) : 64 * l.W ≤ 104 * l.S := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+theorem dbl_le (hl : AmmOk l) : 64 * l.W ≤ 104 * l.S := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-! ## The pieces of `convTabBody` -/
 

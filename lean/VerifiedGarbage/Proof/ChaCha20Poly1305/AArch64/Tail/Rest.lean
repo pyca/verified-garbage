@@ -447,12 +447,12 @@ theorem rest_ok (sve : Bool) {s₀ s w₀ u : State} (hp : APre true s₀) {key 
       show ((o + 512 * T) + 256) / 64 = o / 64 + 8 * T + 4 by omega_arith]
   · -- The data.
     by_cases h₁ : k < (o + 512 * T)
-    · rw [dout k hk (.inl h₁), hc.data k hk, ite_eq_left h₁, ite_eq_left (by omega_arith)]
+    · rw [dout k hk (.inl h₁), hc.dataAt k hk, ite_eq_left h₁, ite_eq_left (by omega_arith)]
     by_cases h₂ : k < (o + 512 * T) + min (L s₀ - (o + 512 * T)) 256
     · have hi : k - (o + 512 * T) < min (L s₀ - (o + 512 * T)) 256 := by omega_arith
       have e := d₆ (k - (o + 512 * T)) hi
       rw [show (o + 512 * T) + (k - (o + 512 * T)) = k by omega_arith] at e
-      rw [m₇, e, dctx k hk, hc.data k hk, ite_eq_right h₁, ite_eq_left h₂]
+      rw [m₇, e, dctx k hk, hc.dataAt k hk, ite_eq_right h₁, ite_eq_left h₂]
       congr 1
       have k₅ : s₅.mem (Short.kp' s₀ + BitVec.ofNat 64 (k - (o + 512 * T))) =
           s₃.mem (off (cx s₀) 128 + BitVec.ofNat 64 (k - (o + 512 * T))) := by
@@ -463,7 +463,7 @@ theorem rest_ok (sve : Bool) {s₀ s w₀ u : State} (hp : APre true s₀) {key 
           (show 256 ≤ 2 ^ 64 by decide) (show k - (o + 512 * T) < 256 by omega_arith)
       rw [k₅, ks₃ _ (by omega_arith), x0₂, st₂, hc.cnt, KS1,
         ks_shift _ hk (q := o / 64 + 8 * T) (by omega_arith), show 64 * (o / 64 + 8 * T) = (o + 512 * T) by omega_arith]
-    · rw [dout k hk (.inr (by omega_arith)), hc.data k hk, ite_eq_right h₁, ite_eq_right h₂]
+    · rw [dout k hk (.inr (by omega_arith)), hc.dataAt k hk, ite_eq_right h₁, ite_eq_right h₂]
   · -- The message's length.
     show (msg ++ bytesAt s₇.mem (dp s₀) ((o + 512 * T))).length % 16 = 0
     rw [List.length_append, Poly1305.length_bytesAt]; omega_arith
