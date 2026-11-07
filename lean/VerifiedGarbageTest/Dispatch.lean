@@ -95,4 +95,61 @@ def x86Rank (module suffix : String) : Option Nat :=
   | .error e => has e "vg_poly1305_update_neon: its suffix `_neon` is not ranked"
   | .ok _ => false
 
+/-! ## Tables of functions (`Rust.tableDispatcher`) -/
+
+/-- Tables of one interface: `VG_T` and its implementations `_SHANI` and
+`_AVX2`, of the same data; `VG_T_2`, whose name extends `VG_T`'s but whose
+data is not its own, a table of its own; and `VG_U_AVX2`, which needs a CPU
+feature and has no base to fall back on. -/
+def tT : FnTable := { name := "VG_T", iface := "Fns", fns := ["vg_t"], data := [1] }
+def tShani : FnTable := { name := "VG_T_SHANI", iface := "Fns", fns := ["vg_t_shani"], data := [1] }
+def tAvx2 : FnTable := { name := "VG_T_AVX2", iface := "Fns", fns := ["vg_t_avx2"], data := [1] }
+def t2 : FnTable := { name := "VG_T_2", iface := "Fns", fns := ["vg_t"], data := [2] }
+def tU : FnTable := { name := "VG_U_AVX2", iface := "Fns", fns := ["vg_t_avx2"], data := [3] }
+
+def tableFeatures (T : FnTable) : List String :=
+  if T.name.endsWith "_SHANI" then ["sha"] else if T.name.endsWith "_AVX2" then ["avx2"] else []
+
+def tableText (rs : List Rust.Rank) (ts : List FnTable) : String :=
+  match Rust.tableDispatchers rs "x86_64" [] ts tableFeatures
+      (fun fs => fs.map fun f => s!"target_feature = \"{f}\"") (fun _ => "sha256") with
+  | .ok s => s
+  | .error e => "error: " ++ e
+
+def tables : String := tableText rs [tU, tAvx2, t2, tT, tShani]
+
+-- Implementations of `VG_T`: the tables of its interface and data named after it.
+#guard (Rust.tableGroupsOf [tU, tAvx2, t2, tT, tShani]).map (fun (b, ms) => (b.name, ms.map (·.2))) ==
+  [("VG_T", ["_AVX2", "_SHANI"]), ("VG_T_2", []), ("VG_U_AVX2", [])]
+
+-- `VG_T`'s dispatcher returns `_SHANI` where the CPU has its features, then
+-- `_AVX2`, as the ranking orders them, else `VG_T`.
+#guard has tables
+  "pub fn vg_t_auto() -> &'static crate::fn_tables::Fns {\n    \
+    let cpu = verified_garbage_cpu::detected();\n    \
+    #[cfg(target_feature = \"sha\")]\n    \
+    if cpu.contains(crate::fn_tables::VG_T_SHANI_FEATURES) {\n        \
+    return &crate::fn_tables::VG_T_SHANI;\n    }\n    \
+    #[cfg(target_feature = \"avx2\")]\n    \
+    if cpu.contains(crate::fn_tables::VG_T_AVX2_FEATURES) {\n        \
+    return &crate::fn_tables::VG_T_AVX2;\n    }\n    \
+    &crate::fn_tables::VG_T\n}\n"
+
+-- `VG_T_2`, of other data, has its own, returning it; `VG_U_AVX2`, which
+-- needs a feature, has none.
+#guard has tables "pub fn vg_t_2_auto() -> &'static crate::fn_tables::Fns {\n    \
+  &crate::fn_tables::VG_T_2\n}\n"
+#guard !has tables "vg_u_avx2_auto"
+
+-- An unranked suffix fails the emitter.
+#guard tableText [] [tT, tShani] ==
+  "error: x86_64: VG_T_SHANI: its suffix `_shani` is not ranked (`VG.Dispatch.ranking`), nor \
+    made of parts `_<tag><suffix>` whose suffixes are"
+
+-- A dispatcher's name may not be an artifact's.
+#guard match Rust.tableDispatchers rs "x86_64" ["vg_t_auto"] [tT] tableFeatures (fun _ => [])
+    (fun _ => "") with
+  | .error e => has e "vg_t_auto is both an artifact and the dispatcher of VG_T"
+  | .ok _ => false
+
 end VG.Test.Dispatch
