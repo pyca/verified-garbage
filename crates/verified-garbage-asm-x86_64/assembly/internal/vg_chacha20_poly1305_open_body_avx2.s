@@ -1406,6 +1406,7 @@ vg_chacha20_poly1305_open_body_avx2:
 26:
 	jmp 24f
 23:
+	mov r8, rsi
 	call {vg_chacha20_xor_avx2}
 24:
 	mov r15, rsi
@@ -9646,6 +9647,7 @@ vg_chacha20_poly1305_open_body_avx2:
 	mov rdx, rbp
 	mov rcx, r15
 	add rcx, 128
+	mov r8, rsi
 	call {vg_chacha20_xor_avx2}
 	jmp 251f
 250:

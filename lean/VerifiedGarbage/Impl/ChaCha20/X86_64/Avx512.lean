@@ -5,18 +5,20 @@ public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512Tail
 /-!
 # ChaCha20 keystream XOR: x86-64 implementation with AVX-512
 
-`vg_chacha20_xor_avx512(state = rdi, data = rsi, len = rdx, buf = rcx)`,
-with the contract of `vg_chacha20_xor`, for CPUs with AVX-512F.
+`vg_chacha20_xor_avx512(state = rdi, src = rsi, len = rdx, buf = rcx,
+dst = r8)`, with the contract of `vg_chacha20_xor`, for CPUs with AVX-512F.
+On entry `r11` is set to `dst - src` (`XorBuf.delta`): the destination of
+the source byte at `rsi + d` is at `rsi + r11 + d`.
 
 While at least 1024 bytes of data remain, sixteen blocks of keystream (the
 counters `c, c + 1, …, c + 15` modulo 2³², `c` being word 12 of the state)
-are computed at once and XORed into the next 1024 bytes of the data, and
-word 12 of the state is advanced by 16. If 513 to 768 bytes remain, they
+are computed at once and XORed with the next 1024 bytes of the source into
+the destination, and word 12 of the state is advanced by 16. If 513 to 768 bytes remain, they
 are XORed by one computation of twelve blocks in three sets of four lanes
 (`last12`, `Avx512Tail.part3`). If 769 to 1023 remain, they are XORed by
 one more computation of sixteen blocks (`last16`), whose first
-eight blocks are XORed into the data, the next ones as far as they fit, and
-the block the data ends in, if it ends within one, through `buf`. Fewer
+eight blocks are XORed directly, the next ones as far as they fit, and the
+block the data ends in, if it ends within one, through `buf`. Fewer
 bytes are XORed by `Avx512Tail.tail`, eight or four blocks at a time.
 
 * Word `k` of the sixteen states is kept in `zmmk`, doubleword `j` holding it
@@ -32,7 +34,8 @@ bytes are XORed by `Avx512Tail.tail`, eight or four blocks at a time.
   (`vpunpck{l,h}{dq,qdq}`), so that register `i` of row `r` holds row `r` of
   blocks `i, i + 4, i + 8, i + 12` in its four lanes. For each `i`, eight
   `vshufi32x4` gather these four registers of the four rows into the four
-  blocks, each 64 bytes XORed into the data. Two registers at a time are
+  blocks, each 64 bytes XORed with the source's into the destination's
+  (loaded before they are stored, so that it may be the source itself). Two registers at a time are
   saved to `buf` to make room: words 14 and 15 while the other rows are
   transposed, then two transposed registers of the first row while the last
   row is.
@@ -130,9 +133,10 @@ def transpose (x0 x1 x2 x3 t0 t1 : XReg) : List Instr := [
   z .vpunpcklqdq x0 t0 t1, z .vpunpckhqdq t0 t0 t1,
   z .vpunpcklqdq x2 x1 x3, z .vpunpckhqdq x3 x1 x3]
 
-/-- XOR the 64 bytes in `x` into the data at `rsi + off`, through `t`. -/
+/-- XOR the 64 bytes in `x` with the source at `rsi + off` into the
+destination's, at `rsi + r11 + off` (`XorBuf.atDst`), through `t`. -/
 def xor64 (x t : XReg) (off : Nat) : List Instr :=
-  [.vmovdqu32Load t (at_ .rsi off), z .vpxord t t x, .vmovdqu32Store (at_ .rsi off) t]
+  [.vmovdqu32Load t (at_ .rsi off), z .vpxord t t x, .vmovdqu32Store (XorBuf.atDst (some .r11) off) t]
 
 /-- Blocks `i, i + 4, i + 8, i + 12`, from rows 0–3 of them in the lanes of
 `a, b, c, d` (see `transpose`), gathered through `t0, t1` and XORed into the
@@ -250,8 +254,11 @@ def last16 : Prog isa :=
 def last12 : Prog isa :=
   .seq (.block [.mov .r9 (.reg .rcx)]) (.seq Avx512Tail.part3 (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))
 
+/-- The kernel, from the source to the destination: `r11` is set to the
+destination's distance from the source on entry (`XorBuf.delta`), and never
+written again. -/
 def xor : Prog isa :=
-  .seq (.block (Avx512Tail.consts ++ consts ++ ([.alu .cmp .rdx (.imm 1024)] : List Instr)))
+  .seq (.block (Avx512Tail.consts ++ consts ++ XorBuf.delta ++ ([.alu .cmp .rdx (.imm 1024)] : List Instr)))
   (.seq (.ite .b (.block []) (.loop body .ae))
   (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b Avx512Tail.tail
     (.seq (.block [.alu .cmp .rdx (.imm 769)]) (.ite .b last12 last16)))))

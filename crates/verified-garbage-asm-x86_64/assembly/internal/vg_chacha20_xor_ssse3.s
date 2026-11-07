@@ -13,6 +13,8 @@ vg_chacha20_xor_ssse3:
 	mov QWORD PTR [rcx+288], rax
 	movabs rax, 1012478749960636427
 	mov QWORD PTR [rcx+296], rax
+	mov r11, r8
+	sub r11, rsi
 	cmp rdx, 65
 	jb 20f
 22:
@@ -1764,7 +1766,7 @@ vg_chacha20_xor_ssse3:
 	jb 23f
 	movdqu xmm6, XMMWORD PTR [rsi]
 	pxor xmm6, xmm1
-	movdqu XMMWORD PTR [rsi], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1], xmm6
 	jmp 24f
 23:
 	cmp rdx, 1
@@ -1778,7 +1780,7 @@ vg_chacha20_xor_ssse3:
 	jb 27f
 	movdqu xmm6, XMMWORD PTR [rsi+64]
 	pxor xmm6, xmm4
-	movdqu XMMWORD PTR [rsi+64], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+64], xmm6
 	jmp 28f
 27:
 	cmp rdx, 65
@@ -1792,7 +1794,7 @@ vg_chacha20_xor_ssse3:
 	jb 211f
 	movdqu xmm6, XMMWORD PTR [rsi+128]
 	pxor xmm6, xmm3
-	movdqu XMMWORD PTR [rsi+128], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+128], xmm6
 	jmp 212f
 211:
 	cmp rdx, 129
@@ -1806,7 +1808,7 @@ vg_chacha20_xor_ssse3:
 	jb 215f
 	movdqu xmm6, XMMWORD PTR [rsi+192]
 	pxor xmm6, xmm0
-	movdqu XMMWORD PTR [rsi+192], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+192], xmm6
 	jmp 216f
 215:
 	cmp rdx, 193
@@ -1845,7 +1847,7 @@ vg_chacha20_xor_ssse3:
 	jb 219f
 	movdqu xmm6, XMMWORD PTR [rsi+16]
 	pxor xmm6, xmm1
-	movdqu XMMWORD PTR [rsi+16], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+16], xmm6
 	jmp 220f
 219:
 	cmp rdx, 17
@@ -1859,7 +1861,7 @@ vg_chacha20_xor_ssse3:
 	jb 223f
 	movdqu xmm6, XMMWORD PTR [rsi+80]
 	pxor xmm6, xmm4
-	movdqu XMMWORD PTR [rsi+80], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+80], xmm6
 	jmp 224f
 223:
 	cmp rdx, 81
@@ -1873,7 +1875,7 @@ vg_chacha20_xor_ssse3:
 	jb 227f
 	movdqu xmm6, XMMWORD PTR [rsi+144]
 	pxor xmm6, xmm3
-	movdqu XMMWORD PTR [rsi+144], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+144], xmm6
 	jmp 228f
 227:
 	cmp rdx, 145
@@ -1887,7 +1889,7 @@ vg_chacha20_xor_ssse3:
 	jb 231f
 	movdqu xmm6, XMMWORD PTR [rsi+208]
 	pxor xmm6, xmm0
-	movdqu XMMWORD PTR [rsi+208], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+208], xmm6
 	jmp 232f
 231:
 	cmp rdx, 209
@@ -1926,7 +1928,7 @@ vg_chacha20_xor_ssse3:
 	jb 235f
 	movdqu xmm6, XMMWORD PTR [rsi+32]
 	pxor xmm6, xmm1
-	movdqu XMMWORD PTR [rsi+32], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+32], xmm6
 	jmp 236f
 235:
 	cmp rdx, 33
@@ -1940,7 +1942,7 @@ vg_chacha20_xor_ssse3:
 	jb 239f
 	movdqu xmm6, XMMWORD PTR [rsi+96]
 	pxor xmm6, xmm4
-	movdqu XMMWORD PTR [rsi+96], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+96], xmm6
 	jmp 240f
 239:
 	cmp rdx, 97
@@ -1954,7 +1956,7 @@ vg_chacha20_xor_ssse3:
 	jb 243f
 	movdqu xmm6, XMMWORD PTR [rsi+160]
 	pxor xmm6, xmm3
-	movdqu XMMWORD PTR [rsi+160], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+160], xmm6
 	jmp 244f
 243:
 	cmp rdx, 161
@@ -1968,7 +1970,7 @@ vg_chacha20_xor_ssse3:
 	jb 247f
 	movdqu xmm6, XMMWORD PTR [rsi+224]
 	pxor xmm6, xmm0
-	movdqu XMMWORD PTR [rsi+224], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+224], xmm6
 	jmp 248f
 247:
 	cmp rdx, 225
@@ -2007,7 +2009,7 @@ vg_chacha20_xor_ssse3:
 	jb 251f
 	movdqu xmm6, XMMWORD PTR [rsi+48]
 	pxor xmm6, xmm1
-	movdqu XMMWORD PTR [rsi+48], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+48], xmm6
 	jmp 252f
 251:
 	cmp rdx, 49
@@ -2021,7 +2023,7 @@ vg_chacha20_xor_ssse3:
 	jb 255f
 	movdqu xmm6, XMMWORD PTR [rsi+112]
 	pxor xmm6, xmm4
-	movdqu XMMWORD PTR [rsi+112], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+112], xmm6
 	jmp 256f
 255:
 	cmp rdx, 113
@@ -2035,7 +2037,7 @@ vg_chacha20_xor_ssse3:
 	jb 259f
 	movdqu xmm6, XMMWORD PTR [rsi+176]
 	pxor xmm6, xmm3
-	movdqu XMMWORD PTR [rsi+176], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+176], xmm6
 	jmp 260f
 259:
 	cmp rdx, 177
@@ -2049,7 +2051,7 @@ vg_chacha20_xor_ssse3:
 	jb 263f
 	movdqu xmm6, XMMWORD PTR [rsi+240]
 	pxor xmm6, xmm0
-	movdqu XMMWORD PTR [rsi+240], xmm6
+	movdqu XMMWORD PTR [rsi+r11*1+240], xmm6
 	jmp 264f
 263:
 	cmp rdx, 241
@@ -2073,6 +2075,8 @@ vg_chacha20_xor_ssse3:
 	and rax, -16
 	add rsi, rax
 	and rdx, 15
+	mov r10, r11
+	add r10, rsi
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
@@ -2080,7 +2084,7 @@ vg_chacha20_xor_ssse3:
 271:
 	mov r8, QWORD PTR [rsi+rcx*1]
 	xor r8, QWORD PTR [r9+rcx*1]
-	mov QWORD PTR [rsi+rcx*1], r8
+	mov QWORD PTR [r10+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
 	jne 271b
@@ -2093,7 +2097,7 @@ vg_chacha20_xor_ssse3:
 	movzx eax, BYTE PTR [rsi+rcx*1]
 	movzx r8d, BYTE PTR [r9+rcx*1]
 	xor rax, r8
-	mov BYTE PTR [rsi+rcx*1], al
+	mov BYTE PTR [r10+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
 	jne 274b
@@ -2111,6 +2115,8 @@ vg_chacha20_xor_ssse3:
 21:
 	test rdx, rdx
 	je 275f
+	mov r8, r11
+	add r8, rsi
 	call {vg_chacha20_xor}
 	jmp 276f
 275:

@@ -149,7 +149,7 @@ theorem toNat_add_le (p : Addr) (E : Nat) (hE : E < 2 ^ 64) :
 `vg_chacha20_xor`. -/
 theorem call_mid (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     {key msg : List Byte} {E a : Nat} {s₃ : State} (hm : Mid v.callee.fold s₀ s key msg E a s₃) :
-    WP isa (.call v.callee.name v.callee.code) s₃ (CryptedS v.callee.fold s₀ s key msg) := by
+    WP isa v.callee.inPlace s₃ (CryptedS v.callee.fold s₀ s key msg) := by
   have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have hEL := hm.EL
   have dsub : Region.Sub ⟨dp s₀ + BitVec.ofNat 64 E, L s₀ - E⟩ (dR s₀) := Offset.sub_base _ (by omega_arith)
@@ -555,7 +555,7 @@ theorem beq_ofNat_zero {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n == 0) = d
 theorem callIf_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     {key msg : List Byte} {s₃ : State} (hq : (∃ E a, Mid v.callee.fold s₀ s key msg E a s₃) ∨ DoneT v.callee.fold s₀ s key msg s₃) :
     WP isa (.seq (.block [.alu .test .rdx (.reg .rdx)])
-      (.ite .e (.block [.mov .rsi (.reg .rcx)]) (.call v.callee.name v.callee.code))) s₃
+      (.ite .e (.block [.mov .rsi (.reg .rcx)]) v.callee.inPlace)) s₃
       (CryptedS v.callee.fold s₀ s key msg) := by
   have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   refine WP.seq (WP.mono (testRdx_ok s₃) fun s₄ ⟨g₄, m₄, rd₄, wr₄, z₄⟩ => ?_)
@@ -618,12 +618,12 @@ theorem cryptS_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     (cryptS { v.callee with pass := 512 }).allInstrs (fun i => !loadsMxcsr i) = true := by
   obtain ⟨hf, -, hw⟩ := avx2_of v hv
   rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;>
-    (simp only [cryptS, preS, Code.allInstrs, v.mxcsr, hf, hw, hl]; lit_decide)
+    (simp only [Impl.ChaCha20.X86_64.Callee.inPlace, cryptS, preS, Code.allInstrs, v.mxcsr, hf, hw, hl]; lit_decide)
 
 theorem prologueP_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     (prologue { v.callee with pass := 512 }).allInstrs (fun i => !loadsMxcsr i) = true := by
   obtain ⟨hf, -, hw⟩ := avx2_of v hv
-  simp only [prologue, Code.allInstrs, v.mxcsr, hf, hw]; lit_decide
+  simp only [Impl.ChaCha20.X86_64.Callee.inPlace, prologue, Code.allInstrs, v.mxcsr, hf, hw]; lit_decide
 
 /-- `cryptS`'s branch on the length. -/
 def cryptIteS (x : Impl.ChaCha20.X86_64.Callee) : Prog isa :=
@@ -634,7 +634,7 @@ def cryptIteS (x : Impl.ChaCha20.X86_64.Callee) : Prog isa :=
     (.seq (.block [.alu .test .rdx (.reg .rdx)])
       (.seq (.ite .e (bigS x.vl) (preS x))
         (.seq (.block [.alu .test .rdx (.reg .rdx)])
-          (.ite .e (.block [.mov .rsi (.reg .rcx)]) (.call x.name x.code))))))
+          (.ite .e (.block [.mov .rsi (.reg .rcx)]) x.inPlace)))))
 
 theorem cryptS_eq (x : Impl.ChaCha20.X86_64.Callee) : cryptS x =
     .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))]) (.seq (cryptIteS x)

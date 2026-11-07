@@ -5,8 +5,10 @@ public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
 /-!
 # ChaCha20 keystream XOR: x86-64 implementation with SSSE3
 
-`vg_chacha20_xor_ssse3(state = rdi, data = rsi, len = rdx, buf = rcx)`, with
-the contract of `vg_chacha20_xor`, for CPUs with SSSE3.
+`vg_chacha20_xor_ssse3(state = rdi, src = rsi, len = rdx, buf = rcx, dst = r8)`,
+with the contract of `vg_chacha20_xor`, for CPUs with SSSE3. On entry
+`r11` is set to `dst - src`, which nothing writes again: the destination of
+the source byte at `rsi + d` is at `rsi + r11 + d`.
 
 While more than 64 bytes remain, four blocks of keystream (the counters
 `c, c + 1, c + 2, c + 3` modulo 2³², `c` being word 12 of the state) are
@@ -32,19 +34,20 @@ if fewer (`body4`), as `vg_chacha20_xor` does on x86 (32-bit):
   added (their rows broadcast again from `state`, through `xmm4` and
   `xmm5`, and the counters reloaded from `buf[256, 272)`), the four
   registers are transposed (`punpck{l,h}{dq,qdq}`, through `xmm4` and
-  `xmm5`) into that row of each block, and each 16 bytes are XORed into the
-  data through `xmm6` if they all lie within the data; the 16 bytes that
-  run past its end, if any, are stored in `buf[0, 16)` (whose slot has been
-  read), and their first bytes XORed into the data afterwards (`last`,
-  by `XorBuf.xorBuf`, with `buf` in `r9`).
+  `xmm5`) into that row of each block, and each 16 bytes of the source are
+  XORed with them through `xmm6`, and stored to the destination, if they all
+  lie within the data; the 16 bytes that run past its end, if any, are
+  stored in `buf[0, 16)` (whose slot has been read), and XORed with the
+  source's last bytes afterwards (`last`, by `XorBuf.xorBufTo`, with `buf`
+  in `r9` and the destination in `r10`).
 
 If 64 bytes or fewer remain after that, but some, `vg_chacha20_xor` XORs
-them, and returns with `rsi` pointing at `buf`; otherwise `rsi` is set to
-`buf`.
+them (from `rsi` to `rsi + r11`), and returns with `rsi` pointing at `buf`;
+otherwise `rsi` is set to `buf`.
 
-No callee-saved register is written: `state`, the data not yet processed,
-the number of bytes left and `buf` stay in `rdi`, `rsi`, `rdx` and `rcx`
-(but in `last`, where `buf` is in `r9`).
+No callee-saved register is written: `state`, the source not yet
+processed, the number of bytes left and `buf` stay in `rdi`, `rsi`, `rdx`
+and `rcx` (but in `last`, where `buf` is in `r9`).
 
 The branches are on the length only, and every address is a pointer plus a
 constant or a count, so only the pointers and the length can affect timing.
@@ -218,9 +221,10 @@ def transpose : List Instr :=
 def outReg : Nat → XReg
   | 0 => .xmm1 | 1 => .xmm4 | 2 => .xmm3 | _ => .xmm0
 
-/-- The 16 bytes of `x` XORed into the data at `rsi + off`, through `xmm6`. -/
+/-- The 16 bytes of the source at `rsi + off` XORed with `x`, through
+`xmm6`, to the destination at `rsi + r11 + off`. -/
 def xor16 (x : XReg) (off : Nat) : List Instr :=
-  [.movdquLoad .xmm6 (at_ .rsi off), xb .pxor .xmm6 x, .movdquStore (at_ .rsi off) .xmm6]
+  [.movdquLoad .xmm6 (at_ .rsi off), xb .pxor .xmm6 x, .movdquStore (XorBuf.atDst (some .r11) off) .xmm6]
 
 /-- The 16 bytes of keystream in `x`, for the data at offset `off`: XORed
 into the data if it has at least `off + 16` bytes (`rdx`), stored in
@@ -246,13 +250,14 @@ def finish4 : Prog isa :=
   .seq (finishRow 0) (.seq (finishRow 1) (.seq (finishRow 2) (finishRow 3)))
 
 /-- At most 256 bytes were left (`rdx`): the first `rdx % 16` bytes of
-`buf[0, 16)` XORed into the data that follows the multiple of 16 (with
-`buf` in `r9`, as `XorBuf.xorBuf` writes `rcx`), the data's pointer at its
-end, and no bytes left. -/
+`buf[0, 16)` XORed with the source's bytes that follow the multiple of 16,
+to the destination's (with `buf` in `r9`, as `XorBuf.xorBufTo` writes
+`rcx`, and the destination in `r10`), the source's pointer at its end, and
+no bytes left. -/
 def last : Prog isa :=
   .seq (.block [.mov .r9 (.reg .rcx), .mov .rax (.reg .rdx), .alu .and .rax (.imm 0xfffffff0),
-    .alu .add .rsi (.reg .rax), .alu .and .rdx (.imm 15)])
-  (.seq (XorBuf.xorBuf .rsi .r9)
+    .alu .add .rsi (.reg .rax), .alu .and .rdx (.imm 15), .mov .r10 (.reg .r11), .alu .add .r10 (.reg .rsi)])
+  (.seq (XorBuf.xorBufTo .r10 .rsi .r9)
     (.block [.mov .rcx (.reg .r9), .alu .add .rsi (.reg .rdx), .mov32 .rdx (.imm 0)]))
 
 /-- More than 256 bytes were left: advance the counter by 4 and the data by
@@ -272,11 +277,12 @@ def body4 : Prog isa :=
 `rsi` pointing at `buf`; if there are none, `rsi` is set to `buf`. -/
 def tail : Prog isa :=
   .seq (.block [.alu .test .rdx (.reg .rdx)])
-    (.ite .e (.block [.mov .rsi (.reg .rcx)]) (.call "vg_chacha20_xor" Xor.xor))
+    (.ite .e (.block [.mov .rsi (.reg .rcx)])
+      (Xor.callTo "vg_chacha20_xor" Xor.xor))
 
 /-- `vg_chacha20_xor_ssse3`. -/
 def xor : Prog isa :=
-  .seq (.block (masks ++ ([.alu .cmp .rdx (.imm 65)] : List Instr)))
+  .seq (.block (masks ++ XorBuf.delta ++ ([.alu .cmp .rdx (.imm 65)] : List Instr)))
   (.seq (.ite .b (.block []) (.loop body4 .ae)) tail)
 
 end VG.Impl.ChaCha20.X86_64.Ssse3
