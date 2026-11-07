@@ -21,6 +21,9 @@ pub mod aes_cfb8;
 pub mod aes_ctr;
 
 #[rustfmt::skip]
+pub mod aes_ecb;
+
+#[rustfmt::skip]
 pub mod aes_gcm_siv;
 
 #[rustfmt::skip]
