@@ -680,7 +680,7 @@ theorem topW_pos {m : Mem} {B : Addr} {w : Nat} (hw : 1 ≤ w)
   · exact h
 
 /-- The registers `r2Rest` may write. -/
-def r2RestRegs : List Reg := [.a0, .a1, .a3, .a6, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4]
+def r2RestRegs : List Reg := [.a4, .a0, .a1, .a3, .a6, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4]
 
 /-- `r2Rest`, after `lz` (`a1 = zOf T`, `T` the top word): `x := R² mod n =
 2^(128 w) mod n` in array 1, for an odd `n` of `w` words, at least
