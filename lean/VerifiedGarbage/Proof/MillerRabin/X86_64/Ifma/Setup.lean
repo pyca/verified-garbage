@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Out
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubExp
 
+-- separate module: the scalar setup, built in parallel with the windows' proofs (Window.lean), which do not depend on it
+
 /-!
 # The IFMA Miller–Rabin round: the area before the vector code
 

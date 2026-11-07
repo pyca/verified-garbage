@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Win
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
+-- separate module: the scalar limb chains, which build beside the vector code's proofs and change apart from them
+
 /-!
 # The IFMA Miller–Rabin round: numbers in limbs, by scalar code
 

@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
+-- separate module: the windows, built in parallel with the setup's proofs (Setup.lean), which do not depend on them
+
 /-!
 # The IFMA Miller–Rabin round: the windows
 

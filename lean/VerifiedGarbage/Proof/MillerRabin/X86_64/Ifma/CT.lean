@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Context
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.Lit
+meta import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.Lit
 meta import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.Round
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
