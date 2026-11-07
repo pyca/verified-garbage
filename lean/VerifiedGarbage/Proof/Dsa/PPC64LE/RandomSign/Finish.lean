@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Ctx
 public import VerifiedGarbage.Spec.RsaPss
 
 /-!
-# Randomized DSA signing on PPC64LE: after a call of `vg_dsa_sign`
+# Randomized DSA signing on PPC64LE: after a call of `vg_dsa_sign_prevalidated`
 
 `callFinish_ok`: a signature leaves the status 1; a zero result spends an
 attempt, and leaves the status 4 while one is left, else 0.
