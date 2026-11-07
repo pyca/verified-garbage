@@ -263,6 +263,37 @@ pub unsafe fn vg_aes_gcm_open_to_auto(ctx: *const [u64; 32], rounds: usize, nonc
     unsafe { crate::gcm::vg_aes_gcm_open_to(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) }
 }
 
+/// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_prepare_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_prepare_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_prepare_vpclmul` if the CPU supports its features (`VG_AES_GCM_PREPARE_VPCLMUL_FEATURES`); or else `vg_aes_gcm_prepare`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 1024 bytes.
+/// * `ctx` must not overlap the return address on the stack or the 328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_prepare_auto(ctx: *mut [u64; 128]) {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::gcm::VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_prepare_vpclmul_avx512`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_prepare_vpclmul_avx512(ctx) };
+    }
+    if cpu.contains(crate::gcm::VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_prepare_pclmul_avx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_prepare_pclmul_avx(ctx) };
+    }
+    if cpu.contains(crate::gcm::VG_AES_GCM_PREPARE_VPCLMUL_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_prepare_vpclmul`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_prepare_vpclmul(ctx) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::gcm::vg_aes_gcm_prepare(ctx) }
+}
+
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
