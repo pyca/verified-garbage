@@ -203,9 +203,6 @@ def ctr32With (o : Bool) : Prog isa :=
         (.seq (.ite (.zero .a4) (.block []) (ctrGroups o))
           (.block (restoreRegs ++ srcRestore o)))))
 
-/-- `vg_aes_ctr32`, in place. -/
-def ctr32 : Prog isa := ctr32With false
-
 /-- `vg_aes_ctr32_to`, from `src` (`a6`) to `dst` (`a3`). -/
 def ctr32To : Prog isa := ctr32With true
 

@@ -74,10 +74,10 @@ theorem gh [VG.Proof.Gcm.RISCV64.GhashLaw] {I : State → Prop} {name : String}
     CT I (.call name Impl.Gcm.RISCV64.ghash) :=
   gh_rel fun _ _ hh => h _ _ hh.1 hh.2
 
-theorem ctr {I : State → Prop} {name : String}
+theorem ctr {I : State → Prop}
     (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ K C D S : Addr, ∃ R n : Nat,
       CtrCall s₁ K C D S R n ∧ CtrCall s₂ K C D S R n ∧ s₁.sp = s₂.sp) :
-    CT I (.call name Impl.Aes.RISCV64.ctr32) :=
+    CT I Impl.AesCtr.RISCV64.ctrCall :=
   ctr_rel fun _ _ hh => h _ _ hh.1 hh.2
 
 theorem key {I : State → Prop} {name : String}

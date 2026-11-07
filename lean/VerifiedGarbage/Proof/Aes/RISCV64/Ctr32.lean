@@ -35,45 +35,13 @@ namespace VG.Proof.Aes
 open Spec.Gcm
 
 open VG.RISCV64 in
-/-- RISC-V contract for `vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize,
-counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64;
-256])`: XORs the AES counter-mode keystream from the counter block at `counter`
-into the `n` blocks at `data`, and advances the counter block by `n`.
-
-The code may read `schedule` (240 bytes) and read and write `counter` (16
-bytes), `data` (`16 n` bytes) and `scratch` (2048 bytes, whose contents on
-exit are unspecified). These may not overlap each other, and `data` may not
-wrap around the end of the address space. `rounds` is 10, 12 or 14. The
-pointers, `rounds` and `n` are public; the key schedule, the counter block and
-the data are secret. -/
-def ctr32RISCV64 : Contract RISCV64.isa where
-  pre s :=
-    let sched : Region := ⟨s.gpr .a0, 240⟩
-    let counter : Region := ⟨s.gpr .a2, 16⟩
-    let data : Region := ⟨s.gpr .a3, 16 * (s.gpr .a4).toNat⟩
-    let scratch : Region := ⟨s.gpr .a5, 2048⟩
-    s.rd = [sched] ∧ s.wr = [counter, data, scratch] ∧
-    sched.Disjoint counter ∧ sched.Disjoint data ∧ sched.Disjoint scratch ∧
-    counter.Disjoint data ∧ counter.Disjoint scratch ∧ data.Disjoint scratch ∧
-    (s.gpr .a3).toNat + 16 * (s.gpr .a4).toNat ≤ 2 ^ 64 ∧
-    ((s.gpr .a1).toNat = 10 ∨ (s.gpr .a1).toNat = 12 ∨ (s.gpr .a1).toNat = 14)
-  post s s' :=
-    let ciph := aesWith (s.gpr .a1).toNat
-      (Spec.Aes.bytesAt s.mem (s.gpr .a0) (16 * ((s.gpr .a1).toNat + 1)))
-    blocksAt s'.mem (s.gpr .a3) (s.gpr .a4).toNat =
-        ctr32 ciph (blockAt s.mem (s.gpr .a2)) (blocksAt s.mem (s.gpr .a3) (s.gpr .a4).toNat) ∧
-      blockAt s'.mem (s.gpr .a2) = Nat.repeat inc32 (s.gpr .a4).toNat (blockAt s.mem (s.gpr .a2))
-  pub s₁ s₂ :=
-    s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
-    s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧
-    s₁.sp = s₂.sp
-
-open VG.RISCV64 in
 /-- RISC-V contract for the internal `vg_aes_ctr32_to(schedule: *const [u8; 240],
 rounds: usize, counter: *mut [u8; 16], dst: *mut [u8; 16], n: usize, scratch:
-*mut [u64; 256], src: *const [u8; 16])`: `ctr32RISCV64` out of place, XORing
-the keystream into the `n` blocks at `src` and writing the result to the `n`
-blocks at `dst`.
+*mut [u64; 256], src: *const [u8; 16])`: XORs the AES counter-mode keystream
+from the counter block at `counter` into the `n` blocks at `src`, writes the
+result to the `n` blocks at `dst`, and advances the counter block by `n`
+(`scratch`'s contents on exit are unspecified). Its in-place callers pass
+`src = dst`. `rounds` is 10, 12 or 14.
 
 The code may read `schedule` (240 bytes) and `src` (`16 n` bytes), and read
 and write `counter`, `dst` and `scratch`. `src` is `dst` (in place) or
@@ -847,17 +815,6 @@ theorem correctWith {o : Bool} {s₀ : State} {S : Addr} (hp : CPre o s₀ S) :
         f0s.bytes (R := ⟨ctr, 16⟩) dcV (by simp) hk]
     · rw [e7]
 
-/-- In place. -/
-theorem correct {s₀ : State} (hp : Proof.Aes.ctr32RISCV64.pre s₀) :
-    WP isa Impl.Aes.RISCV64.ctr32 s₀ fun s' =>
-      (∀ r ∈ RISCV64.preserved, s'.gpr r = s₀.gpr r) ∧ s'.gpr .ra = s₀.gpr .ra ∧
-        Proof.Aes.ctr32RISCV64.post s₀ s' := by
-  obtain ⟨hrd, hwr, dSC, -, dSS, dCD, dCS, dDS, -, hR⟩ := hp
-  have hwD : (⟨s₀.gpr .a3, 16 * (s₀.gpr .a4).toNat⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  exact correctWith (o := false) (S := s₀.gpr .a3)
-    ⟨by rw [hrd]; simp, by rw [hwr]; simp, hwD, by rw [hwr]; simp, List.mem_append_right _ hwD,
-      fun h => absurd h (by decide), fun _ => rfl, dSC, dSS, dCD, dCS, dDS, dCD.symm, dDS, .inl rfl, hR⟩
-
 /-- Out of place. -/
 theorem correctTo {s₀ : State} (hp : Proof.Aes.ctr32ToRISCV64.pre s₀) :
     WP isa Impl.Aes.RISCV64.ctr32To s₀ fun s' =>
@@ -873,12 +830,6 @@ theorem ctr32To_correct (s : State) (hs : Proof.Aes.ctr32ToRISCV64.pre s) :
     ∃ t s', Exec isa Impl.Aes.RISCV64.ctr32To s t s' ∧ abiPreserved s s' ∧
       Proof.Aes.ctr32ToRISCV64.post s s' := by
   obtain ⟨t, s', he, h₁, hra, h₂⟩ := correctTo hs
-  exact ⟨t, s', he, ⟨h₁, Exec.sp he, hra⟩, h₂⟩
-
-theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32RISCV64.pre s) :
-    ∃ t s', Exec isa Impl.Aes.RISCV64.ctr32 s t s' ∧ abiPreserved s s' ∧
-      Proof.Aes.ctr32RISCV64.post s s' := by
-  obtain ⟨t, s', he, h₁, hra, h₂⟩ := correct hs
   exact ⟨t, s', he, ⟨h₁, Exec.sp he, hra⟩, h₂⟩
 
 end VG.Proof.Aes.RISCV64
