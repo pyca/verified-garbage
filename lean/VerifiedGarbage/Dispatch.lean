@@ -25,8 +25,6 @@ def gcmX86_64 : List String := ["_vaes_vpclmul_avx512", "_vaes_vpclmul", "_vaes_
 
 def ranking : Rust.Ranking := [
   ("x86_64",
-    -- AES-SIV's CMAC by AES-NI's CBC code, which it runs on long inputs.
-    { suffix := "_aesni_cbc", skip := true } ::
     -- AES-GCM-SIV: each of AES-GCM's implementations with its AVX2 copies
     -- (`_avx2`), then without.
     ((gcmX86_64 ++ [""]).flatMap fun g =>
@@ -74,8 +72,6 @@ def ranking : Rust.Ranking := [
     { suffix := "_shani" },
     { suffix := "_ssse3" }]),
   ("aarch64", [
-    -- AES-SIV's CMAC by the AES extension's CBC code, which it runs on long inputs.
-    { suffix := "_aes_cbc", skip := true },
     { suffix := "_aes_sha3" },
     { suffix := "_aes" },
     -- FEAT_SHA3's Keccak is faster on Apple's cores, and slower on Neoverse N2:

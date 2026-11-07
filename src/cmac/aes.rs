@@ -10,92 +10,14 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "aarch64")]
-use crate::arch::cmac_aes::{
-    VG_CMAC_AES_ABSORB_AES_CBC_FEATURES, VG_CMAC_AES_ABSORB_AES_FEATURES,
-    VG_CMAC_AES_FINISH_AES_FEATURES, VG_CMAC_AES_INIT_AES_FEATURES, vg_cmac_aes_absorb_aes,
-    vg_cmac_aes_absorb_aes_cbc, vg_cmac_aes_finish_aes, vg_cmac_aes_init_aes,
+use crate::arch::dispatch::cmac_aes::{
+    vg_cmac_aes_absorb_auto, vg_cmac_aes_finish_auto, vg_cmac_aes_init_auto,
 };
-#[cfg(target_arch = "x86_64")]
-use crate::arch::cmac_aes::{
-    VG_CMAC_AES_ABSORB_AESNI_CBC_FEATURES, VG_CMAC_AES_ABSORB_VAES_FEATURES,
-    VG_CMAC_AES_FINISH_VAES_FEATURES, VG_CMAC_AES_INIT_VAES_FEATURES, vg_cmac_aes_absorb_aesni_cbc,
-    vg_cmac_aes_absorb_vaes, vg_cmac_aes_finish_vaes, vg_cmac_aes_init_vaes,
-};
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::cmac_aes::{
-    VG_CMAC_AES_ABSORB_AESNI_FEATURES, VG_CMAC_AES_FINISH_AESNI_FEATURES,
-    VG_CMAC_AES_INIT_AESNI_FEATURES, vg_cmac_aes_absorb_aesni, vg_cmac_aes_finish_aesni,
-    vg_cmac_aes_init_aesni,
-};
-use crate::arch::cmac_aes::{vg_cmac_aes_absorb, vg_cmac_aes_finish, vg_cmac_aes_init};
-use crate::cipher::aes::Backend;
-use crate::cpu::detected;
 use crate::error::{InvalidKeyLength, InvalidMac};
 use crate::zeroize::zeroize;
-use verified_garbage_cpu::Features;
 
 /// The streaming state, in 64-bit words.
 const STATE: usize = 38;
-
-/// The best implementation of AES a CPU with the features `f` can run, with
-/// the CMAC functions for it.
-#[cfg(target_arch = "x86")]
-fn select(f: Features) -> Backend {
-    const AESNI: Features = Features::all(&[
-        VG_CMAC_AES_INIT_AESNI_FEATURES,
-        VG_CMAC_AES_ABSORB_AESNI_FEATURES,
-        VG_CMAC_AES_FINISH_AESNI_FEATURES,
-    ]);
-    Backend::select_for(f, AESNI)
-}
-
-/// The best implementation of AES a CPU with the features `f` can run, with
-/// the CMAC functions for it.
-#[cfg(target_arch = "x86_64")]
-fn select(f: Features) -> Backend {
-    const VAES: Features = Features::all(&[
-        VG_CMAC_AES_INIT_VAES_FEATURES,
-        VG_CMAC_AES_ABSORB_VAES_FEATURES,
-        VG_CMAC_AES_ABSORB_AESNI_CBC_FEATURES,
-        VG_CMAC_AES_FINISH_VAES_FEATURES,
-    ]);
-    const AESNI: Features = Features::all(&[
-        VG_CMAC_AES_INIT_AESNI_FEATURES,
-        VG_CMAC_AES_ABSORB_AESNI_FEATURES,
-        VG_CMAC_AES_ABSORB_AESNI_CBC_FEATURES,
-        VG_CMAC_AES_FINISH_AESNI_FEATURES,
-    ]);
-    Backend::select_for(f, VAES, AESNI)
-}
-
-/// The best implementation of AES a CPU with the features `f` can run, with
-/// the CMAC functions for it.
-#[cfg(target_arch = "aarch64")]
-fn select(f: Features) -> Backend {
-    const AES: Features = Features::all(&[
-        VG_CMAC_AES_INIT_AES_FEATURES,
-        VG_CMAC_AES_ABSORB_AES_FEATURES,
-        VG_CMAC_AES_ABSORB_AES_CBC_FEATURES,
-        VG_CMAC_AES_FINISH_AES_FEATURES,
-    ]);
-    Backend::select_for(f, AES)
-}
-
-/// Whether an update of `len` bytes calls the `_aes_cbc` absorb (on
-/// AArch64) or the `_aesni_cbc` one (on x86-64) rather than the backend's:
-/// when it is longer than 32 bytes, where the `_cbc` one is faster.
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-fn chains_long(len: usize) -> bool {
-    len > 32
-}
-
-/// The best implementation a CPU with the features `f` can run: there is
-/// only one here.
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
-fn select(f: Features) -> Backend {
-    Backend::select(f)
-}
 
 /// An incremental AES-CMAC computation.
 ///
@@ -112,8 +34,6 @@ pub struct AesCmac {
     rounds: usize,
     /// The length of the message the state represents, in bytes.
     count: u64,
-    /// The implementation this CPU runs.
-    backend: Backend,
 }
 
 impl Drop for AesCmac {
@@ -137,16 +57,6 @@ impl AesCmac {
             state: [0; STATE],
             rounds: key.len() / 4 + 6,
             count: 0,
-            backend: select(detected()),
-        };
-        let f = match c.backend {
-            Backend::Scalar => vg_cmac_aes_init,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            Backend::AesNi => vg_cmac_aes_init_aesni,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Vaes => vg_cmac_aes_init_vaes,
-            #[cfg(target_arch = "aarch64")]
-            Backend::Aes => vg_cmac_aes_init_aes,
         };
         // SAFETY: `c.state` is valid for reads and writes of 304 bytes,
         // and `key` for reads of `key.len()` bytes, which is 16, 24 or 32.
@@ -154,8 +64,9 @@ impl AesCmac {
         // other, the return address (on x86-64 and x86), the arguments on the
         // stack (on 32-bit ARM and x86) or the stack below them that the
         // function uses, and neither wraps around the end of the address
-        // space. The CPU has the features of the implementation selected.
-        unsafe { f(&mut c.state, key.as_ptr(), key.len()) };
+        // space. The dispatcher calls only an implementation the CPU has the
+        // features of.
+        unsafe { vg_cmac_aes_init_auto(&mut c.state, key.as_ptr(), key.len()) };
         Ok(c)
     }
 
@@ -169,35 +80,6 @@ impl AesCmac {
             .count
             .checked_add(data.len() as u64)
             .expect("message too long");
-        let f = match self.backend {
-            Backend::Scalar => vg_cmac_aes_absorb,
-            #[cfg(target_arch = "x86")]
-            Backend::AesNi => vg_cmac_aes_absorb_aesni,
-            #[cfg(target_arch = "x86_64")]
-            Backend::AesNi => {
-                if chains_long(data.len()) {
-                    vg_cmac_aes_absorb_aesni_cbc
-                } else {
-                    vg_cmac_aes_absorb_aesni
-                }
-            }
-            #[cfg(target_arch = "x86_64")]
-            Backend::Vaes => {
-                if chains_long(data.len()) {
-                    vg_cmac_aes_absorb_aesni_cbc
-                } else {
-                    vg_cmac_aes_absorb_vaes
-                }
-            }
-            #[cfg(target_arch = "aarch64")]
-            Backend::Aes => {
-                if chains_long(data.len()) {
-                    vg_cmac_aes_absorb_aes_cbc
-                } else {
-                    vg_cmac_aes_absorb_aes
-                }
-            }
-        };
         // SAFETY: `self.state` is valid for reads and writes of 304 bytes
         // and `data` for reads of `data.len()` bytes. `self.state` is a
         // mutable borrow and `data` a borrow, so neither overlaps the other,
@@ -206,10 +88,11 @@ impl AesCmac {
         // uses, and neither wraps around the end of the address space. `self.rounds` is 10, 12 or
         // 14, that of the key `new` was given. The state represents a
         // message of `self.count` bytes, which with `data` is shorter than
-        // 2⁶⁴ bytes, as the contract's postcondition requires. The CPU has
-        // the features of the implementation selected.
+        // 2⁶⁴ bytes, as the contract's postcondition requires. The
+        // dispatcher calls only an implementation the CPU has the features
+        // of.
         unsafe {
-            f(
+            vg_cmac_aes_absorb_auto(
                 &mut self.state,
                 self.rounds,
                 self.count,
@@ -223,15 +106,6 @@ impl AesCmac {
     /// Returns the MAC of everything absorbed.
     pub fn finalize(mut self) -> [u8; 16] {
         let mut mac = [0; 16];
-        let f = match self.backend {
-            Backend::Scalar => vg_cmac_aes_finish,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            Backend::AesNi => vg_cmac_aes_finish_aesni,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Vaes => vg_cmac_aes_finish_vaes,
-            #[cfg(target_arch = "aarch64")]
-            Backend::Aes => vg_cmac_aes_finish_aes,
-        };
         // SAFETY: `self.state` is valid for reads and writes of 304 bytes
         // and `mac` for writes of 16. `self.state` is owned and `mac` a
         // local, so neither overlaps the other, the return address (on x86-64
@@ -240,9 +114,9 @@ impl AesCmac {
         // the end of the address space. `self.rounds`
         // is 10, 12 or 14, that of the key `new` was given, and the state
         // represents a message of `self.count` bytes, as the contract's
-        // postcondition requires. The CPU has the features of the
-        // implementation selected.
-        unsafe { f(&mut self.state, self.rounds, self.count, &mut mac) };
+        // postcondition requires. The dispatcher calls only an implementation
+        // the CPU has the features of.
+        unsafe { vg_cmac_aes_finish_auto(&mut self.state, self.rounds, self.count, &mut mac) };
         mac
     }
 
@@ -268,10 +142,8 @@ impl AesCmac {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesCmac, Backend, select};
-    use crate::cpu::detected;
+    use super::AesCmac;
     use crate::error::InvalidKeyLength;
-    use verified_garbage_cpu::Features;
 
     /// Keys of other lengths are rejected.
     #[test]
@@ -315,50 +187,6 @@ mod tests {
         assert_eq!(c.finalize(), AesCmac::mac(&key, &msg).unwrap());
     }
 
-    /// The implementation this CPU runs agrees with the baseline one for
-    /// every key width, around block boundaries, and when short updates
-    /// surround a long one.
-    #[test]
-    fn bulk() {
-        let key: [u8; 32] = core::array::from_fn(|i| (11 * i + 3) as u8);
-        let msg: [u8; 4097] = core::array::from_fn(|i| (i.wrapping_mul(7) ^ (i >> 8)) as u8);
-        for key_len in [16, 24, 32] {
-            let fresh = AesCmac::new(&key[..key_len]).unwrap();
-            let mut scalar = fresh.clone();
-            scalar.backend = Backend::Scalar;
-            for len in [
-                0, 1, 15, 16, 17, 31, 32, 33, 47, 48, 49, 255, 256, 257, 4096, 4097,
-            ] {
-                let mut reference = scalar.clone();
-                reference.update(&msg[..len]);
-                let expected = reference.finalize();
-                assert_eq!(
-                    AesCmac::mac(&key[..key_len], &msg[..len]).unwrap(),
-                    expected
-                );
-                for chunk in [1, 16, 31, 32, 33, 63, 257] {
-                    let mut c = fresh.clone();
-                    for part in msg[..len].chunks(chunk) {
-                        c.update(part);
-                        c.update(&[]);
-                    }
-                    assert_eq!(c.finalize(), expected, "{key_len}/{len}/{chunk}");
-                }
-            }
-        }
-    }
-
-    /// Updates longer than 32 bytes run the `_cbc` absorb.
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    #[test]
-    fn chains_long() {
-        use super::chains_long;
-        assert!(!chains_long(0));
-        assert!(!chains_long(32));
-        assert!(chains_long(33));
-        assert!(chains_long(usize::MAX));
-    }
-
     /// A message of 2⁶⁴ bytes or more is refused.
     #[test]
     #[should_panic(expected = "message too long")]
@@ -366,53 +194,5 @@ mod tests {
         let mut c = AesCmac::new(&[0; 16]).unwrap();
         c.count = u64::MAX;
         c.update(b"x");
-    }
-
-    /// The implementation chosen for each set of features: AES's, with the
-    /// CMAC functions for it.
-    #[test]
-    fn backend() {
-        #[cfg(target_arch = "x86_64")]
-        {
-            assert_eq!(
-                select(Features(
-                    verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3
-                )),
-                Backend::AesNi
-            );
-            assert_eq!(
-                select(Features(verified_garbage_cpu::feature::AES)),
-                Backend::Scalar
-            );
-            assert_eq!(
-                select(Features(
-                    verified_garbage_cpu::feature::AES
-                        | verified_garbage_cpu::feature::AVX
-                        | verified_garbage_cpu::feature::AVX2
-                        | verified_garbage_cpu::feature::SSSE3
-                        | verified_garbage_cpu::feature::VAES
-                )),
-                Backend::Vaes
-            );
-        }
-        #[cfg(target_arch = "x86")]
-        {
-            assert_eq!(
-                select(Features(verified_garbage_cpu::feature::AES)),
-                Backend::AesNi
-            );
-            assert_eq!(
-                select(Features(verified_garbage_cpu::feature::SSSE3)),
-                Backend::Scalar
-            );
-        }
-        #[cfg(target_arch = "aarch64")]
-        assert_eq!(
-            select(Features(verified_garbage_cpu::feature::AES)),
-            Backend::Aes
-        );
-        assert_eq!(select(Features(0)), Backend::Scalar);
-        let best = AesCmac::new(&[0; 16]).unwrap().backend;
-        assert_eq!(best, select(detected()));
     }
 }
