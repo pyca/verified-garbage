@@ -75,7 +75,8 @@ impl HmacHash for Sha512_256 {
 /// A verified `vg_ecdsa_<curve>_sign`, for scalars of `Q` bytes and
 /// signatures of `S = 2 Q`.
 #[cfg(target_arch = "x86_64")]
-pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "sysv64" fn(
+pub(super) type SignFn<const Q: usize, const S: usize> = unsafe fn(
+    crate::dit::Dit<'_>,
     *mut [u8; S],
     *const [u8; Q],
     *const u8,
@@ -87,7 +88,8 @@ pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "sysv64" 
 /// A verified `vg_ecdsa_<curve>_sign`, for scalars of `Q` bytes and
 /// signatures of `S = 2 Q`.
 #[cfg(not(target_arch = "x86_64"))]
-pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "C" fn(
+pub(super) type SignFn<const Q: usize, const S: usize> = unsafe fn(
+    crate::dit::Dit<'_>,
     *mut [u8; S],
     *const [u8; Q],
     *const u8,
@@ -104,6 +106,7 @@ pub(super) type SignFn<const Q: usize, const S: usize> = unsafe extern "C" fn(
 ///
 /// `sign` needs no CPU feature that this CPU lacks.
 pub(super) unsafe fn sign_with<H: HmacHash, const Q: usize, const S: usize>(
+    dit: crate::dit::Dit<'_>,
     sign: SignFn<Q, S>,
     f: Features,
     d: &[u8; Q],
@@ -124,6 +127,7 @@ pub(super) unsafe fn sign_with<H: HmacHash, const Q: usize, const S: usize>(
     // caller guarantees the features `sign` needs.
     let ok = unsafe {
         sign(
+            dit,
             &mut out,
             d,
             digest.as_ptr(),

@@ -71,7 +71,8 @@ pub fn derive(
     max_memory: usize,
     out: &mut [u8],
 ) -> Result<(), PasswordHashError> {
-    Memory::new(n, r, p, max_memory, out.len())?.derive(password, salt, out);
+    crate::dit::enter!(dit);
+    Memory::new(n, r, p, max_memory, out.len())?.derive(dit, password, salt, out);
     Ok(())
 }
 
@@ -108,11 +109,12 @@ pub fn verify<const N: usize>(
     max_memory: usize,
     expected: &[u8; N],
 ) -> Result<(), PasswordHashError> {
+    crate::dit::enter!(dit);
     crate::ct::assert_verify_len!(N);
     let mut memory = Memory::new(n, r, p, max_memory, N)?;
     let mut key = [0u8; N];
-    memory.derive(password, salt, &mut key);
-    let matches = crate::ct::eq(&key, expected);
+    memory.derive(dit, password, salt, &mut key);
+    let matches = crate::ct::eq(dit, &key, expected);
     crate::zeroize::zeroize(&mut key);
     if matches {
         Ok(())
@@ -178,10 +180,11 @@ impl Memory {
 
     /// Fills `out`, of the length the memory was allocated for, with the
     /// key derived from `password` and `salt`.
-    fn derive(&mut self, password: &[u8], salt: &[u8], out: &mut [u8]) {
+    fn derive(&mut self, dit: crate::dit::Dit<'_>, password: &[u8], salt: &[u8], out: &mut [u8]) {
         assert_eq!(out.len(), self.len);
         let backend = Sha256Backend::select(crate::cpu::detected());
         derive_by(
+            dit,
             backend,
             password,
             salt,
@@ -208,6 +211,7 @@ impl Drop for Memory {
 /// implementation `backend` (which must have been selected for this CPU).
 #[allow(clippy::too_many_arguments)]
 fn derive_by(
+    dit: crate::dit::Dit<'_>,
     backend: Sha256Backend,
     password: &[u8],
     salt: &[u8],
@@ -240,6 +244,7 @@ fn derive_by(
     // compiles, below).
     unsafe {
         scrypt(
+            dit,
             password.as_ptr(),
             password.len(),
             salt.as_ptr(),
@@ -286,6 +291,7 @@ mod derive_tests {
     /// baseline one (CI runs this on CPUs that select each of them).
     #[test]
     fn selected_matches_baseline() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
         let (n, r, p) = (16, 2, 2);
         let derive_with = |backend| {
             let mut b = chunks(r * p).unwrap();
@@ -293,6 +299,7 @@ mod derive_tests {
             let mut scratch = chunks(r + 2 + PBKDF2_CHUNKS).unwrap();
             let mut out = [0u8; 80];
             derive_by(
+                dit,
                 backend,
                 b"password",
                 b"salt",

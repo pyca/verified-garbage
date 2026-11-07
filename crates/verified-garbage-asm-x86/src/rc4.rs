@@ -16,8 +16,38 @@
 /// * On failure, the contents of `ctx` on return are unspecified.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 84 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_rc4_init(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rc4_init(key, key_len, ctx) }
+}
+
+/// Continues raw RC4 encryption or decryption: XORs the next `len` stream bytes into `data` in place and preserves the next stream position in `*ctx` (`VG.Spec.Rc4.contextAt`). Empty input leaves the context unchanged. There is no nonce, padding, authentication, automatic discard or final output.
+///
+/// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 258 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `ctx` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `ctx` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 84 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_rc4_apply(_dit: verified_garbage_cpu::Dit<'_>, ctx: *mut [u8; 258], data: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rc4_apply(ctx, data, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_rc4_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jWQkrItEJFiJRCQEi0QkXIlEJAiLRCRgiUQkDIngg8AUiUQkEItEJAiD6AE9AAEAAA=="
 jae 20f
@@ -39,20 +69,9 @@ jmp 21f
     )
 }
 
-/// Continues raw RC4 encryption or decryption: XORs the next `len` stream bytes into `data` in place and preserves the next stream position in `*ctx` (`VG.Spec.Rc4.contextAt`). Empty input leaves the context unchanged. There is no nonce, padding, authentication, automatic discard or final output.
-///
-/// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of 258 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `ctx` and `data` must not overlap each other (distinct Rust objects never do).
-/// * Neither `ctx` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 84 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_rc4_apply`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "jWQkrItEJFiJRCQEi0QkXIlEJAiLRCRgiUQkDIngg8AUiUQkEItUJAQPtoIAAQAAi0wkDIXJ"
 je 20f
@@ -67,4 +86,5 @@ jmp 21f
 .base64 "uQAAAACJTCQUiUwkGIlMJByJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPIlMJECJTCREiUwkSIlMJEyJTCRQjWQkVMM="
 .p2align 6"#,
     )
+}
 }

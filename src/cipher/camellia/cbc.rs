@@ -87,6 +87,7 @@ impl CamelliaCbcDecryptor {
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         let rounds = match key.len() {
             16 => 18,
             24 | 32 => 24,
@@ -96,7 +97,7 @@ impl Key {
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule);
+            vg_camellia_expand_key(dit, key.as_ptr(), key.len(), &mut schedule);
         }
         Ok(Self { schedule, rounds })
     }
@@ -107,6 +108,7 @@ impl Key {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
     fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
@@ -117,6 +119,7 @@ impl Key {
         // the signature, none of them on the callee's stack.
         unsafe {
             vg_camellia_cbc_encrypt_chained(
+                dit,
                 &self.schedule,
                 self.rounds,
                 iv,
@@ -133,12 +136,14 @@ impl Key {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 16.
     fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
         // SAFETY: as in `encrypt`.
         unsafe {
             vg_camellia_cbc_decrypt_chained(
+                dit,
                 &self.schedule,
                 self.rounds,
                 iv,

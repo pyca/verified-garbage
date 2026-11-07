@@ -247,6 +247,6 @@ call {vg_aes_encrypt_blocks}
 .insn 4, 0x0182b483
 .insn 2, 0x8082
 .option pop",
-        vg_aes_encrypt_blocks = sym crate::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
     )
 }

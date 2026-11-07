@@ -113,14 +113,22 @@ def artifact : Artifact := artifactOf "vg_test_ldrqtbl" 42
 through the register as by any `ldr q`. -/
 def expected : String := "/// Returns word 3 of its table.
 #[allow(clippy::missing_safety_doc)]
+#[inline(always)]
+pub unsafe fn vg_test_ldrqtbl(_dit: verified_garbage_cpu::Dit<'_>) -> u64 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_test_ldrqtbl() }
+}
+
+/// The verified code of [`super::vg_test_ldrqtbl`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern \"C\" fn vg_test_ldrqtbl() -> u64 {
+pub(crate) unsafe extern \"C\" fn vg_test_ldrqtbl() -> u64 {
     core::arch::naked_asm!(
         concat!(\"adrp x1, \", vg_sym_page!(\"{VG_TEST_LDRQTBL}\")),
         concat!(\"add x1, x1, \", vg_sym_pageoff!(\"{VG_TEST_LDRQTBL}\")),
         r\".inst 0x3dc00420,0x4e183c00,0xd65f03c0
 .p2align 6\",
-        VG_TEST_LDRQTBL = sym super::consts::VG_TEST_LDRQTBL,
+        VG_TEST_LDRQTBL = sym crate::consts::VG_TEST_LDRQTBL,
     )
 }
 "

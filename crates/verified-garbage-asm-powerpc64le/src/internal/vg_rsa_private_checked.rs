@@ -27,7 +27,7 @@ bne %cr0, 20b
 bne %cr0, 21b
 .base64 "AACBOeAADOimAwh8sAAM67gALOvAAEzryABs69AAjOvYAKzrAA0hOCAAgE4=""#,
         vg_rsa_private_crt = sym crate::rsa::vg_rsa_private_crt::vg_rsa_private_crt,
-        vg_rsa_public_precompute = sym crate::rsa::vg_rsa_public_precompute,
+        vg_rsa_public_precompute = sym crate::rsa::raw::vg_rsa_public_precompute,
         vg_rsa_public_precomputed_checked = sym crate::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }

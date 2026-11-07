@@ -16,14 +16,11 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4AACBOSgAbPg="
-bl {vg_x25519}
-.base64 "AACBOSgAjOkAAGA5AABMiXhTa30BAEyJeFNrfQIATIl4U2t9AwBMiXhTa30EAEyJeFNrfQUATIl4U2t9BgBMiXhTa30HAEyJeFNrfQgATIl4U2t9CQBMiXhTa30KAEyJeFNrfQsATIl4U2t9DABMiXhTa30NAEyJeFNrfQ4ATIl4U2t9DwBMiXhTa30QAEyJeFNrfREATIl4U2t9EgBMiXhTa30TAEyJeFNrfRQATIl4U2t9FQBMiXhTa30WAEyJeFNrfRcATIl4U2t9GABMiXhTa30ZAEyJeFNrfRoATIl4U2t9GwBMiXhTa30cAEyJeFNrfR0ATIl4U2t9HgBMiXhTa30fAEyJeFNrff//azngD2N5AQBAOXhSY3wgAAHoMAAhOKYDCHwgAIBO""#,
-        vg_x25519 = sym super::x25519::vg_x25519::vg_x25519,
-    )
+#[inline(always)]
+pub unsafe fn vg_x25519_exchange(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x25519_exchange(out, scalar, point, scratch) }
 }
 
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
@@ -38,8 +35,30 @@ bl {vg_x25519}
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_x25519_base(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x25519_base(out, scalar, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_x25519_exchange`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "pgIIfNH/IfggAAH4AACBOSgAbPg="
+bl {vg_x25519}
+.base64 "AACBOSgAjOkAAGA5AABMiXhTa30BAEyJeFNrfQIATIl4U2t9AwBMiXhTa30EAEyJeFNrfQUATIl4U2t9BgBMiXhTa30HAEyJeFNrfQgATIl4U2t9CQBMiXhTa30KAEyJeFNrfQsATIl4U2t9DABMiXhTa30NAEyJeFNrfQ4ATIl4U2t9DwBMiXhTa30QAEyJeFNrfREATIl4U2t9EgBMiXhTa30TAEyJeFNrfRQATIl4U2t9FQBMiXhTa30WAEyJeFNrfRcATIl4U2t9GABMiXhTa30ZAEyJeFNrfRoATIl4U2t9GwBMiXhTa30cAEyJeFNrfR0ATIl4U2t9HgBMiXhTa30fAEyJeFNrff//azngD2N5AQBAOXhSY3wgAAHoMAAhOKYDCHwgAIBO""#,
+        vg_x25519 = sym crate::x25519::vg_x25519::vg_x25519,
+    )
+}
+
+/// The verified code of [`super::vg_x25519_base`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "AATF+QgE5fkQBAX6GAQl+iAERfooBGX6MARF+zgEZftABIX7SASl+1AExftYBOX7AADFOAAAYzumAuh8YATm+AAAxDkAAOA4QADmkEQA5pBIAOaQTADmkFAA5pBUAOaQWADmkFwA5pBgAOaQZADmkGgA5pBsAOaQcADmkHQA5pB4AOaQfADmkIAA5pCEAOaQiADmkIwA5pCQAOaQlADmkJgA5pCcAOaQoADmkKQA5pCoAOaQrADmkLAA5pC0AOaQuADmkLwA5pDAAOaQxADmkMgA5pDMAOaQ0ADmkNQA5pDYAOaQ3ADmkOAA5pDkAOaQ6ADmkOwA5pDwAOaQ9ADmkPgA5pD8AOaQAAHmkAQB5pAIAeaQDAHmkBAB5pAUAeaQGAHmkBwB5pAgAeaQJAHmkCgB5pAsAeaQMAHmkDQB5pA4AeaQPAHmkEAB5pBEAeaQSAHmkEwB5pBQAeaQVAHmkFgB5pBcAeaQYAHmkGQB5pBoAeaQbAHmkHAB5pB0AeaQeAHmkHwB5pCAAeaQhAHmkIgB5pCMAeaQkAHmkJQB5pCYAeaQnAHmkKAB5pCkAeaQqAHmkKwB5pCwAeaQtAHmkLgB5pC8AeaQwAHmkMQB5pDIAeaQzAHmkNAB5pDUAeaQ2AHmkNwB5pDgAeaQ5AHmkOgB5pDsAeaQ8AHmkPQB5pD4AeaQ/AHmkAAC5pAEAuaQCALmkAwC5pAQAuaQFALmkBgC5pAcAuaQIALmkCQC5pAoAuaQLALmkDAC5pA0AuaQOALmkDwC5pBAAuaQRALmkEgC5pBMAuaQUALmkFQC5pBYAuaQXALmkGAC5pBkAuaQaALmkGwC5pBwAuaQdALmkHgC5pB8AuaQgALmkIQC5pCIAuaQjALmkJAC5pCUAuaQmALmkJwC5pCgAuaQpALmkKgC5pCsAuaQsALmkLQC5pC4AuaQvALmkMAC5pDEAuaQyALmkMwC5pDQAuaQ1ALmkNgC5pDcAuaQ4ALmkOQC5pDoAuaQ7ALmkPAC5pD0AuaQ+ALmkPwC5pAPAOA4AAAOiTg4CX2ABCaZAuEJeYEEJpkBAA6JODgJfYIEJpkC4Ql5gwQmmQIADok4OAl9hAQmmQLhCXmFBCaZAwAOiTg4CX2GBCaZAuEJeYcEJpkEAA6JODgJfYgEJpkC4Ql5iQQmmQUADok4OAl9igQmmQLhCXmLBCaZBgAOiTg4CX2MBCaZAuEJeY0EJpkHAA6JODgJfY4EJpkC4Ql5jwQmmQgADok4OAl9kAQmmQLhCXmRBCaZCQAOiTg4CX2SBCaZAuEJeZMEJpkKAA6JODgJfZQEJpkC4Ql5lQQmmQsADok4OAl9lgQmmQLhCXmXBCaZDAAOiTg4CX2YBCaZAuEJeZkEJpkNAA6JODgJfZoEJpkC4Ql5mwQmmQ4ADok4OAl9nAQmmQLhCXmdBCaZDwAOiTg4CX2eBCaZAuEJeZ8EJpkQAA6JODgJfaAEJpkC4Ql5oQQmmREADok4OAl9ogQmmQLhCXmjBCaZEgAOiTg4CX2kBCaZAuEJeaUEJpkTAA6JODgJfaYEJpkC4Ql5pwQmmRQADok4OAl9qAQmmQLhCXmpBCaZFQAOiTg4CX2qBCaZAuEJeasEJpkWAA6JODgJfawEJpkC4Ql5rQQmmRcADok4OAl9rgQmmQLhCXmvBCaZGAAOiTg4CX2wBCaZAuEJebEEJpkZAA6JODgJfbIEJpkC4Ql5swQmmRoADok4OAl9tAQmmQLhCXm1BCaZGwAOiTg4CX22BCaZAuEJebcEJpkcAA6JODgJfbgEJpkC4Ql5uQQmmR0ADok4OAl9ugQmmQLhCXm7BCaZHgAOiTg4CX28BCaZAuEJeb0EJpkfAA6JODgJfb4EJpkC4Ql5vwQmmYAE5ogIAAA5OEDnfIAE5pi/BOaIBwAAOThA53wEAOdgvwTmmAAA4DwAAOdg4ALmkAAA4DwAAOdg5ALmkAAA4DwAAOdg6ALmkAAA4DwAAOdg7ALmkAAA4DwAAOdg8ALmkAAA4DwAAOdg9ALmkAAA4DwAAOdg+ALmkAAA4DwAAOdg/ALmkHgO4DwUTedgQADmkCIl4Dx/MudgRADmkNew4DwdFedgSADmkNwM4DxK2udgTADmkBmN4Dy82+dgUADmkJ5f4DzcBOdgVADmkFo04DwUG+dgWADmkEcK4Dxm9edgXADmkPAb4Dzs9udgYADmkDil4DyntedgZADmkClb4Dw7WedgaADmkDcX4DywuOdgbADmkCmb4Dz5yedgcADmkGwx4DyXWedgdADmkIc14Dx+AudgeADmkEMJ4Dw2R+dgfADmkAAA4DwBAOdggADmkAAA4DwAAOdghADmkAAA4DwAAOdgiADmkAAA4DwAAOdgjADmkAAA4DwAAOdgkADmkAAA4DwAAOdglADmkAAA4DwAAOdgmADmkAAA4DwAAOdgnADmkCFF4DxlUudgoADmkFDN4DwKR+dgpADmkP8L4Dz3nedgqADmkMT54Dz1IedgrADmkMbi4DxJfudgsADmkDIO4DwRgedgtADmkDvS4DwgwedguADmkI044DyGledgvADmkAAA4Dk="
 bcl 20, 31, 2f
@@ -95,10 +114,11 @@ bl {vg_gf25519_r32_mul}
 .base64 "AADDOAAAZjhgAIA4YACgOCACwDg="
 bl {vg_gf25519_r32_mul}
 .base64 "AADDOEAA5oBgA+aQRADmgGQD5pBIAOaAaAPmkEwA5oBsA+aQUADmgHAD5pBUAOaAdAPmkFgA5oB4A+aQXADmgHwD5pB8A+aAwg/oeIYP53hg+Od4fAPmkBMAoDjSKQh9YAPmgBRC53xgA+aQIgDoeGQD5oAUQud8ZAPmkCIA6HhoA+aAFELnfGgD5pAiAOh4bAPmgBRC53xsA+aQIgDoeHAD5oAUQud8cAPmkCIA6Hh0A+aAFELnfHQD5pAiAOh4eAPmgBRC53x4A+aQIgDoeHwD5oAUQud8fAPmkCIA6HgTAAA5YAPmgBRC53yAA+aQIgDoeGQD5oAUQud8hAPmkCIA6HhoA+aAFELnfIgD5pAiAOh4bAPmgBRC53yMA+aQIgDoeHAD5oAUQud8kAPmkCIA6Hh0A+aAFELnfJQD5pAiAOh4eAPmgBRC53yYA+aQIgDoeHwD5oAUQud8nAPmkCIA6HicA+aAwg/reAAAgDhQIGt9hg/neGD453icA+aQYAPmgIADpoB4OqV8OFilfHgq53xgA+aQZAPmgIQDpoB4OqV8OFilfHgq53xkA+aQaAPmgIgDpoB4OqV8OFilfHgq53xoA+aQbAPmgIwDpoB4OqV8OFilfHgq53xsA+aQcAPmgJADpoB4OqV8OFilfHgq53xwA+aQdAPmgJQDpoB4OqV8OFilfHgq53x0A+aQeAPmgJgDpoB4OqV8OFilfHgq53x4A+aQfAPmgJwDpoB4OqV8OFilfHgq53x8A+aQYATm6KYD6HwAANs5YAPmgAAA7pBkA+aABADukGgD5oAIAO6QbAPmgAwA7pBwA+aAEADukHQD5oAUAO6QeAPmgBgA7pB8A+aAHADukAAExukIBObpEAQG6hgEJuogBEbqKARm6jAERus4BGbrQASG60gEputQBMbrWATm6yAAgE4=""#,
-        vg_gf25519_r32_pow250 = sym super::ed25519::vg_gf25519_r32_pow250::vg_gf25519_r32_pow250,
-        vg_gf25519_r32_mul = sym super::ed25519::vg_gf25519_r32_mul::vg_gf25519_r32_mul,
-        VG_ED25519_COMB = sym super::consts::VG_ED25519_COMB,
+        vg_gf25519_r32_pow250 = sym crate::ed25519::vg_gf25519_r32_pow250::vg_gf25519_r32_pow250,
+        vg_gf25519_r32_mul = sym crate::ed25519::vg_gf25519_r32_mul::vg_gf25519_r32_mul,
+        VG_ED25519_COMB = sym crate::consts::VG_ED25519_COMB,
     )
+}
 }
 
 #[rustfmt::skip]

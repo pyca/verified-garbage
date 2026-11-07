@@ -32,7 +32,7 @@ call {vg_sha512_compress_avx2}
 call {vg_sha512_compress_avx2}
 .base64 "SIn7SYnPSYufYAUAAEmLr2gFAABNi6dwBQAATYuveAUAAE2Lt4AFAABNi7+IBQAAww=="
 .p2align 6"#,
-        vg_sha512_init = sym crate::sha512::vg_sha512_init,
+        vg_sha512_init = sym crate::sha512::raw::vg_sha512_init,
         vg_sha512_compress_avx2 = sym crate::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
 }

@@ -217,6 +217,7 @@ impl Drop for AesCfb128Decryptor {
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -232,7 +233,7 @@ impl Key {
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature, and
         // `select` chose `expand` for the CPU's features.
-        unsafe { expand(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { expand(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -247,6 +248,7 @@ impl Key {
     /// `iv` the last left; a piece whose length is not a multiple of 16
     /// bytes must end the message.
     fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let f = instance!(
             self.backend,
             vg_aes_cfb128_encrypt,
@@ -254,7 +256,7 @@ impl Key {
             vg_aes_cfb128_encrypt_vaes,
             vg_aes_cfb128_encrypt_aes
         );
-        self.crypt(iv, buffer, f);
+        self.crypt(dit, iv, buffer, f);
     }
 
     /// Decrypts `buffer` in place, from the block `iv`, which it replaces
@@ -264,6 +266,7 @@ impl Key {
     /// `iv` the last left; a piece whose length is not a multiple of 16
     /// bytes must end the message.
     fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let f = instance!(
             self.backend,
             vg_aes_cfb128_decrypt,
@@ -271,13 +274,13 @@ impl Key {
             vg_aes_cfb128_decrypt_vaes,
             vg_aes_cfb128_decrypt_aes
         );
-        self.crypt(iv, buffer, f);
+        self.crypt(dit, iv, buffer, f);
     }
 
-    fn crypt(&self, iv: &mut [u8; 16], buffer: &mut [u8], f: Cfb) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 16], buffer: &mut [u8], f: Cfb) {
         let whole = buffer.len() / 16 * 16;
         let (blocks, rest) = buffer.split_at_mut(whole);
-        self.blocks(iv, blocks, f);
+        self.blocks(dit, iv, blocks, f);
         if !rest.is_empty() {
             // `CIPH_K` of the block to continue from, as CFB encryption of a
             // zero block, XORed into the last bytes.
@@ -289,7 +292,7 @@ impl Key {
                 vg_aes_cfb128_encrypt_aes
             );
             let mut last = [0; 16];
-            self.blocks(iv, &mut last, encrypt);
+            self.blocks(dit, iv, &mut last, encrypt);
             for (b, o) in rest.iter_mut().zip(last) {
                 *b ^= o;
             }
@@ -298,7 +301,7 @@ impl Key {
     }
 
     /// `f` on whole blocks.
-    fn blocks(&self, iv: &mut [u8; 16], blocks: &mut [u8], f: Cfb) {
+    fn blocks(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 16], blocks: &mut [u8], f: Cfb) {
         let mut scratch = [0; 272];
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; `blocks` holds `len / 16` whole blocks (its length is a
@@ -307,6 +310,7 @@ impl Key {
         // signature. `select` chose `f` for the CPU's features.
         unsafe {
             f(
+                dit,
                 &self.schedule,
                 self.rounds,
                 iv,
@@ -323,7 +327,8 @@ impl Key {
 
 /// The signature of `vg_aes_cfb128_encrypt` and `vg_aes_cfb128_decrypt`.
 #[cfg(target_arch = "x86_64")]
-type Cfb = unsafe extern "sysv64" fn(
+type Cfb = unsafe fn(
+    crate::dit::Dit<'_>,
     *const [u8; 240],
     usize,
     *mut [u8; 16],
@@ -339,7 +344,8 @@ type Cfb = unsafe extern "sysv64" fn(
     target_arch = "powerpc64",
     target_arch = "riscv64"
 ))]
-type Cfb = unsafe extern "C" fn(
+type Cfb = unsafe fn(
+    crate::dit::Dit<'_>,
     *const [u8; 240],
     usize,
     *mut [u8; 16],

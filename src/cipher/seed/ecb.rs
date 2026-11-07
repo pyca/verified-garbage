@@ -26,11 +26,12 @@ pub struct SeedEcb {
 impl SeedEcb {
     /// Expands a 16-byte key for use in either direction.
     pub fn new(key: &[u8; 16]) -> Self {
+        crate::dit::enter!(dit);
         let mut schedule = [0; 128];
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_seed_expand_key(key, &mut schedule);
+            vg_seed_expand_key(dit, key, &mut schedule);
         }
         Self { schedule }
     }
@@ -38,16 +39,23 @@ impl SeedEcb {
     /// Encrypts complete 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, true)
+        crate::dit::enter!(dit);
+        self.crypt(dit, buffer, true)
     }
 
     /// Decrypts complete 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is invalid.
     pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.crypt(buffer, false)
+        crate::dit::enter!(dit);
+        self.crypt(dit, buffer, false)
     }
 
-    fn crypt(&self, buffer: &mut [u8], encrypt: bool) -> Result<(), IncompleteBlock> {
+    fn crypt(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        buffer: &mut [u8],
+        encrypt: bool,
+    ) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
@@ -61,6 +69,7 @@ impl SeedEcb {
         // overlap the callee's stack.
         unsafe {
             f(
+                dit,
                 &self.schedule,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,

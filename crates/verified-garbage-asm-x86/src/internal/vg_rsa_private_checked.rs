@@ -28,7 +28,7 @@ jne 21b
 .base64 "idiNpCQADQAAizwki2wkCIt0JARbW1tbww=="
 .p2align 6"#,
         vg_rsa_private_crt = sym crate::rsa::vg_rsa_private_crt::vg_rsa_private_crt,
-        vg_rsa_public_precompute = sym crate::rsa::vg_rsa_public_precompute,
+        vg_rsa_public_precompute = sym crate::rsa::raw::vg_rsa_public_precompute,
         vg_rsa_public_precomputed_checked = sym crate::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }

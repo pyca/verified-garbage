@@ -15,8 +15,20 @@
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 48`.
 /// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the 1648 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_pbkdf2_hmac_sha384(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_pbkdf2_hmac_sha384(password, password_len, salt, salt_len, c, out, out_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_pbkdf2_hmac_sha384`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha384(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha384(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -589,11 +601,12 @@ j 21f
 .insn 2, 0x6159
 .insn 2, 0x8082
 .option pop",
-        vg_hmac_sha384_init = sym super::hmac_sha384::vg_hmac_sha384_init,
-        vg_sha512_update = sym super::sha512::vg_sha512_update,
-        vg_hmac_sha384_finalize = sym super::hmac_sha384::vg_hmac_sha384_finalize,
-        vg_pbkdf2_hmac_sha384_iterate = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate::vg_pbkdf2_hmac_sha384_iterate,
+        vg_hmac_sha384_init = sym crate::hmac_sha384::raw::vg_hmac_sha384_init,
+        vg_sha512_update = sym crate::sha512::raw::vg_sha512_update,
+        vg_hmac_sha384_finalize = sym crate::hmac_sha384::raw::vg_hmac_sha384_finalize,
+        vg_pbkdf2_hmac_sha384_iterate = sym crate::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate::vg_pbkdf2_hmac_sha384_iterate,
     )
+}
 }
 
 #[rustfmt::skip]

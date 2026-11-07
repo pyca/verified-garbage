@@ -15,8 +15,19 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
 /// * None of `out`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_brainpoolp384r1_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_brainpoolp384r1_public_key(out, d, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_brainpoolp384r1_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_brainpoolp384r1_public_key(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_brainpoolp384r1_public_key(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -2297,9 +2308,10 @@ call {vg_brainpoolp384r1_mul_mod_p}
 .insn 2, 0x6000
 .insn 2, 0x8082
 .option pop",
-        vg_brainpoolp384r1_mul = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul::vg_brainpoolp384r1_mul,
-        vg_brainpoolp384r1_mul_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p::vg_brainpoolp384r1_mul_mod_p,
+        vg_brainpoolp384r1_mul = sym crate::ec_brainpoolp384r1::vg_brainpoolp384r1_mul::vg_brainpoolp384r1_mul,
+        vg_brainpoolp384r1_mul_mod_p = sym crate::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p::vg_brainpoolp384r1_mul_mod_p,
     )
+}
 }
 
 #[rustfmt::skip]

@@ -7,6 +7,6 @@ pub const VG_HASH_SHA512_AVX2_FEATURES: verified_garbage_cpu::Features = verifie
 
 /// The table of functions `VG_HASH_SHA512_AVX2` of the interface `Hash`: `vg_sha512_init`, `vg_sha512_update_scratch_avx2`, `vg_sha512_finalize_scratch_avx2`, then the data 5, 64.
 pub static VG_HASH_SHA512_AVX2: super::Hash = super::Hash {
-    fns: [crate::sha512::vg_sha512_init as *const (), crate::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2 as *const (), crate::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2 as *const ()],
+    fns: [crate::sha512::raw::vg_sha512_init as *const (), crate::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2 as *const (), crate::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2 as *const ()],
     data: [5, 64],
 };

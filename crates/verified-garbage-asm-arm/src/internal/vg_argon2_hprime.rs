@@ -169,7 +169,7 @@ ldr r11, [r4, #868]
 ldr lr, [r4, #872]
 ldr r4, [r4, #840]
 bx lr",
-        vg_blake2b_init = sym crate::blake2b::vg_blake2b_init,
+        vg_blake2b_init = sym crate::blake2b::raw::vg_blake2b_init,
         vg_blake2b_update_scratch = sym crate::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym crate::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
     )

@@ -74,11 +74,12 @@ impl Sm4Ctr {
 impl Key {
     /// Expands a 16-byte key.
     fn new(key: &[u8; 16]) -> Self {
+        crate::dit::enter!(dit);
         let mut schedule = [0; 128];
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_sm4_expand_key(key, &mut schedule);
+            vg_sm4_expand_key(dit, key, &mut schedule);
         }
         Self { schedule }
     }
@@ -91,28 +92,30 @@ impl Key {
     /// the last left; a piece whose length is not a multiple of 16 bytes
     /// must end the message.
     fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let whole = buffer.len() / 16 * 16;
         let (blocks, rest) = buffer.split_at_mut(whole);
-        self.crypt(ctr, blocks);
+        self.crypt(dit, ctr, blocks);
         if !rest.is_empty() {
             // The last bytes, padded to a block: CTR XORs them with the first
             // bytes of the next output block.
             let mut last = [0; 16];
             last[..rest.len()].copy_from_slice(rest);
-            self.crypt(ctr, &mut last);
+            self.crypt(dit, ctr, &mut last);
             rest.copy_from_slice(&last[..rest.len()]);
             zeroize(&mut last);
         }
     }
 
     /// CTR of whole blocks.
-    fn crypt(&self, ctr: &mut [u8; 16], blocks: &mut [u8]) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, ctr: &mut [u8; 16], blocks: &mut [u8]) {
         // SAFETY: `blocks` holds `len / 16` whole blocks (its length is a
         // multiple of 16), and it, the block at `ctr` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
             vg_sm4_ctr(
+                dit,
                 &self.schedule,
                 ctr,
                 blocks.as_mut_ptr().cast(),

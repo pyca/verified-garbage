@@ -49,7 +49,7 @@ bl {vg_sha512_compress_sha3}
 bl {vg_sha512_compress_sha3}
 .inst 0xf9415af3,0xf9415ef4,0xf94162f5,0xf94166f6,0xf9416af8,0xf9416efe,0xf94172f7,0xd65f03c0
 .p2align 6",
-        vg_sha512_init = sym crate::sha512::vg_sha512_init,
+        vg_sha512_init = sym crate::sha512::raw::vg_sha512_init,
         vg_sha512_compress_sha3 = sym crate::sha512::vg_sha512_compress_sha3::vg_sha512_compress_sha3,
     )
 }

@@ -202,25 +202,26 @@ impl ChaCha20 {
     }
 
     /// Runs `vg_chacha20_init` on the key and nonce stored.
-    fn start(&mut self) {
+    fn start(&mut self, dit: crate::dit::Dit<'_>) {
         // SAFETY: `state` is valid for writes of 768 bytes (`init` reads none
         // of them), `key` for reads of 32 bytes and `nonce` for reads of 16
         // bytes; they are distinct fields, so they do not overlap each other
         // or the return address, and do not wrap around the end of the
         // address space.
-        unsafe { vg_chacha20_init(self.state.as_mut_ptr(), &self.key, &self.nonce) };
+        unsafe { vg_chacha20_init(dit, self.state.as_mut_ptr(), &self.key, &self.nonce) };
         self.pending = false;
     }
 
     /// Restarts the keystream, with the same key, for `nonce`.
     pub fn reset_nonce(&mut self, nonce: &[u8; 16]) {
+        crate::dit::enter!(dit);
         if self.pending {
             self.nonce = *nonce;
             return;
         }
         // SAFETY: as in `start`, for `state` and `nonce` (`set_nonce` reads
         // no byte of `state` either).
-        unsafe { vg_chacha20_set_nonce(self.state.as_mut_ptr(), nonce) };
+        unsafe { vg_chacha20_set_nonce(dit, self.state.as_mut_ptr(), nonce) };
     }
 
     /// XORs the next `data.len()` bytes of the keystream into `data`
@@ -233,8 +234,9 @@ impl ChaCha20 {
     /// have been applied since the nonce (with initial block counter `c`) was
     /// set. `data` is then left unchanged.
     pub fn apply_keystream(&mut self, data: &mut [u8]) {
+        crate::dit::enter!(dit);
         if self.pending {
-            self.start();
+            self.start(dit);
         }
         let f = match self.backend {
             Backend::Scalar => vg_chacha20_apply,
@@ -261,7 +263,7 @@ impl ChaCha20 {
         // frame of the call (the return address) or the stack below it, and
         // do not wrap around the end of the address space. The CPU has the
         // features of the implementation selected.
-        let ok = unsafe { f(self.state.as_mut_ptr(), data.as_mut_ptr(), data.len()) };
+        let ok = unsafe { f(dit, self.state.as_mut_ptr(), data.as_mut_ptr(), data.len()) };
         // `apply` checks the block counter itself, and leaves the data and the
         // state unchanged when it would overflow.
         assert!(ok == 1, "ChaCha20 block counter would overflow");

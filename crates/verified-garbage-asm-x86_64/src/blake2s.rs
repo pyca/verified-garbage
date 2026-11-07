@@ -14,21 +14,11 @@
 /// * `outlen` must be between 1 and 32, and `keylen` at most 32.
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2s_init(state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "uIWuZ7uJRwS4cvNuPIlHCLg69U+liUcMuH9SDlGJRxC4jGgFm4lHFLir2YMfiUcYuBnN4FuJRxy4Z+YIa0mJyEHByBhEMcAx8IkHSIXJ"
-je 20f
-.base64 "uAAAAABIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEG4AAAAAA=="
-22:
-.base64 "Qg+2BAJCiEQHIEmDwAFIg+kB"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "ww=="
-.p2align 6"#,
-    )
+#[inline(always)]
+pub unsafe fn vg_blake2s_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blake2s_init(state, outlen, key, keylen) }
 }
 
 /// The CPU features `vg_blake2s_update_avx` requires (`Artifact.features`).
@@ -46,68 +36,11 @@ pub const VG_BLAKE2S_UPDATE_AVX_FEATURES: verified_garbage_cpu::Features = verif
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2s_update_avx(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJLj9//9JieBJg8AISYmYAAIAAEmJqAgCAABNiaAQAgAATYmoGAIAAE2JsCACAABNibgoAgAASIn7TYnHSInVSYnMSYn2TYn1SYPtAUmD5T9Jg8UBTYX2"
-je 20f
-jmp 21f
-20:
-.base64 "Qb0AAAAA"
-21:
-.base64 "TYXk"
-je 22f
-.base64 "TYXt"
-je 24f
-.base64 "uEAAAABMKehJOcQ="
-jb 26f
-jmp 27f
-26:
-.base64 "TIng"
-27:
-.base64 "SSnESQHGSIXA"
-je 28f
-210:
-.base64 "RA+2TQBGiEwrIEiDxQFJg8UBSIPoAQ=="
-jne 210b
-jmp 29f
-28:
-29:
-.base64 "TYXk"
-je 211f
-.base64 "SInfSIneSIPGILoBAAAATInxQbgAAAAATYn5"
-call {vg_blake2s_compress_avx}
-.base64 "SIn7TYnPQb0AAAAA"
-jmp 212f
-211:
-212:
-jmp 25f
-24:
-25:
-.base64 "TYXk"
-je 213f
-.base64 "TIngSIPoAUjB6AZIhcA="
-je 215f
-.base64 "SInfSInuSInCTInxSIPBQEG4AAAAAE2J+Q=="
-call {vg_blake2s_compress_avx}
-.base64 "SIn7TYnPTIngSIPoAUiD4D9Ig8ABSSnETAHlTQHmSYnE"
-jmp 216f
-215:
-216:
-.base64 "TIngSQHGQbwAAAAA"
-217:
-.base64 "RA+2TQBGiEwrIEiDxQFJg8UBSIPoAQ=="
-jne 217b
-jmp 214f
-213:
-214:
-jmp 23f
-22:
-23:
-.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
-.p2align 6"#,
-        vg_blake2s_compress_avx = sym super::blake2s::vg_blake2s_compress_avx::vg_blake2s_compress_avx,
-    )
+#[inline(always)]
+pub unsafe fn vg_blake2s_update_avx(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blake2s_update_avx(state, count, data, len) }
 }
 
 /// The CPU features `vg_blake2s_finalize_avx` requires (`Artifact.features`).
@@ -126,8 +59,139 @@ pub const VG_BLAKE2S_FINALIZE_AVX_FEATURES: verified_garbage_cpu::Features = ver
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
+#[inline(always)]
+pub unsafe fn vg_blake2s_finalize_avx(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blake2s_finalize_avx(state, count, out) }
+}
+
+/// Absorbs data into a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
+///
+/// Contract: `VG.Spec.Blake2.updateSContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_blake2s_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blake2s_update(state, count, data, len) }
+}
+
+/// Finishes a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (32 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
+///
+/// Contract: `VG.Spec.Blake2.finalizeSContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_blake2s_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_blake2s_finalize(state, count, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_blake2s_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2s_finalize_avx(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_blake2s_init(state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "uIWuZ7uJRwS4cvNuPIlHCLg69U+liUcMuH9SDlGJRxC4jGgFm4lHFLir2YMfiUcYuBnN4FuJRxy4Z+YIa0mJyEHByBhEMcAx8IkHSIXJ"
+je 20f
+.base64 "uAAAAABIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEG4AAAAAA=="
+22:
+.base64 "Qg+2BAJCiEQHIEmDwAFIg+kB"
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "ww=="
+.p2align 6"#,
+    )
+}
+
+/// The verified code of [`super::vg_blake2s_update_avx`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_blake2s_update_avx(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJLj9//9JieBJg8AISYmYAAIAAEmJqAgCAABNiaAQAgAATYmoGAIAAE2JsCACAABNibgoAgAASIn7TYnHSInVSYnMSYn2TYn1SYPtAUmD5T9Jg8UBTYX2"
+je 20f
+jmp 21f
+20:
+.base64 "Qb0AAAAA"
+21:
+.base64 "TYXk"
+je 22f
+.base64 "TYXt"
+je 24f
+.base64 "uEAAAABMKehJOcQ="
+jb 26f
+jmp 27f
+26:
+.base64 "TIng"
+27:
+.base64 "SSnESQHGSIXA"
+je 28f
+210:
+.base64 "RA+2TQBGiEwrIEiDxQFJg8UBSIPoAQ=="
+jne 210b
+jmp 29f
+28:
+29:
+.base64 "TYXk"
+je 211f
+.base64 "SInfSIneSIPGILoBAAAATInxQbgAAAAATYn5"
+call {vg_blake2s_compress_avx}
+.base64 "SIn7TYnPQb0AAAAA"
+jmp 212f
+211:
+212:
+jmp 25f
+24:
+25:
+.base64 "TYXk"
+je 213f
+.base64 "TIngSIPoAUjB6AZIhcA="
+je 215f
+.base64 "SInfSInuSInCTInxSIPBQEG4AAAAAE2J+Q=="
+call {vg_blake2s_compress_avx}
+.base64 "SIn7TYnPTIngSIPoAUiD4D9Ig8ABSSnETAHlTQHmSYnE"
+jmp 216f
+215:
+216:
+.base64 "TIngSQHGQbwAAAAA"
+217:
+.base64 "RA+2TQBGiEwrIEiDxQFJg8UBSIPoAQ=="
+jne 217b
+jmp 214f
+213:
+214:
+jmp 23f
+22:
+23:
+.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
+.p2align 6"#,
+        vg_blake2s_compress_avx = sym crate::blake2s::vg_blake2s_compress_avx::vg_blake2s_compress_avx,
+    )
+}
+
+/// The verified code of [`super::vg_blake2s_finalize_avx`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_blake2s_finalize_avx(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLj9//9IieFIg8EISImZAAIAAEiJqQgCAABMiaEQAgAATImpGAIAAEyJsSACAABMibkoAgAASIn7SYnPSInVSYn2TYn1SYPtAUmD5T9Jg8UBTYX2"
 je 20f
@@ -147,23 +211,13 @@ jmp 23f
 call {vg_blake2s_compress_avx}
 .base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEmLnwACAABJi68IAgAATYunEAIAAE2LrxgCAABNi7cgAgAATYu/KAIAAEiNpCRIAgAAww=="
 .p2align 6"#,
-        vg_blake2s_compress_avx = sym super::blake2s::vg_blake2s_compress_avx::vg_blake2s_compress_avx,
+        vg_blake2s_compress_avx = sym crate::blake2s::vg_blake2s_compress_avx::vg_blake2s_compress_avx,
     )
 }
 
-/// Absorbs data into a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
-///
-/// Contract: `VG.Spec.Blake2.updateSContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 96 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_blake2s_update`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLj9//9JieBJg8AISYmYAAIAAEmJqAgCAABNiaAQAgAATYmoGAIAAE2JsCACAABNibgoAgAASIn7TYnHSInVSYnMSYn2TYn1SYPtAUmD5T9Jg8UBTYX2"
 je 20f
@@ -222,24 +276,13 @@ jmp 23f
 23:
 .base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
 .p2align 6"#,
-        vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress::vg_blake2s_compress,
+        vg_blake2s_compress = sym crate::blake2s::vg_blake2s_compress::vg_blake2s_compress,
     )
 }
 
-/// Finishes a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (32 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
-///
-/// Contract: `VG.Spec.Blake2.finalizeSContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 96 bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_blake2s_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "sysv64" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLj9//9IieFIg8EISImZAAIAAEiJqQgCAABMiaEQAgAATImpGAIAAEyJsSACAABMibkoAgAASIn7SYnPSInVSYn2TYn1SYPtAUmD5T9Jg8UBTYX2"
 je 20f
@@ -259,8 +302,9 @@ jmp 23f
 call {vg_blake2s_compress}
 .base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEmLnwACAABJi68IAgAATYunEAIAAE2LrxgCAABNi7cgAgAATYu/KAIAAEiNpCRIAgAAww=="
 .p2align 6"#,
-        vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress::vg_blake2s_compress,
+        vg_blake2s_compress = sym crate::blake2s::vg_blake2s_compress::vg_blake2s_compress,
     )
+}
 }
 
 #[rustfmt::skip]

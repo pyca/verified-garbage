@@ -29,6 +29,7 @@ struct Ecb<const DECRYPT: bool> {
 impl<const DECRYPT: bool> Ecb<DECRYPT> {
     /// Expands a key of 4..=56 bytes.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !(4..=56).contains(&key.len()) {
             return Err(InvalidKeyLength);
         }
@@ -40,7 +41,7 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
         // SAFETY: the key has a length in 4..=56; the key and the schedule
         // are separate valid objects of the lengths passed.
         unsafe {
-            vg_blowfish_expand_key(key.as_ptr(), key.len(), &mut ecb.schedule);
+            vg_blowfish_expand_key(dit, key.as_ptr(), key.len(), &mut ecb.schedule);
         }
         Ok(ecb)
     }
@@ -57,6 +58,7 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
     /// first bytes of `output`, keeps the rest pending, and returns how many
     /// bytes it wrote; changes nothing if `output` is too short.
     fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall> {
+        crate::dit::enter!(dit);
         // No slice is `usize::MAX` bytes long, so an overflowing length
         // (`output_len` saturates) is too long for any `output`.
         let written = self.output_len(input.len());
@@ -81,7 +83,7 @@ impl<const DECRYPT: bool> Ecb<DECRYPT> {
         // schedule, written by key expansion, and `output` are separate valid
         // objects of the lengths passed.
         unsafe {
-            crypt(&self.schedule, output.as_mut_ptr().cast(), written / 8);
+            crypt(dit, &self.schedule, output.as_mut_ptr().cast(), written / 8);
         }
         self.pending[..left.len()].copy_from_slice(left);
         self.pending_len = left.len();

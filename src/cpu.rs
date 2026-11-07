@@ -19,6 +19,11 @@
 // so naming either without `avx2` panics too. On AArch64 targets
 // other than Apple's, the SHA-3 functions run FEAT_SHA3's Keccak only when it
 // names `sha3` (`hashes::sha3::Backend::detected`).
+//
+// It never removes `dit` (FEAT_DIT), which chooses no implementation but
+// the mode every one runs in (`crate::dit`): tests and benchmarks run with
+// data independent timing whenever the CPU has it, as everything else
+// does. Naming `dit` still fails on a CPU without it.
 
 use core::sync::atomic::{AtomicU32, Ordering};
 
@@ -80,7 +85,7 @@ pub(crate) fn detected() -> Features {
 #[inline(never)]
 fn detect() -> u32 {
     let runtime = runtime();
-    let f = (runtime & allowed(runtime)) | DETECTED_INIT;
+    let f = (runtime & (allowed(runtime) | feature::DIT)) | DETECTED_INIT;
     DETECTED.store(f, Ordering::Relaxed);
     f
 }
@@ -485,10 +490,13 @@ mod tests {
     }
 
     /// Detection returns the CPU's features, restricted as
-    /// `VG_CPU_FEATURES` says.
+    /// `VG_CPU_FEATURES` says, but for FEAT_DIT, which it never removes.
     #[test]
     fn detected_is_allowed() {
-        assert_eq!(detected(), Features(runtime() & allowed(runtime())));
+        assert_eq!(
+            detected(),
+            Features(runtime() & (allowed(runtime()) | feature::DIT))
+        );
     }
 
     #[cfg(feature = "cpu-features-env")]

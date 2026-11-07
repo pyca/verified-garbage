@@ -77,6 +77,7 @@ impl CamelliaCtr {
 impl Key {
     /// Expands a 16-, 24- or 32-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         let rounds = match key.len() {
             16 => 18,
             24 | 32 => 24,
@@ -86,7 +87,7 @@ impl Key {
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule);
+            vg_camellia_expand_key(dit, key.as_ptr(), key.len(), &mut schedule);
         }
         Ok(Self { schedule, rounds })
     }
@@ -99,22 +100,23 @@ impl Key {
     /// the last left; a piece whose length is not a multiple of 16 bytes
     /// must end the message.
     fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
+        crate::dit::enter!(dit);
         let whole = buffer.len() / 16 * 16;
         let (blocks, rest) = buffer.split_at_mut(whole);
-        self.crypt(ctr, blocks);
+        self.crypt(dit, ctr, blocks);
         if !rest.is_empty() {
             // The last bytes, padded to a block: CTR XORs them with the first
             // bytes of the next output block.
             let mut last = [0; 16];
             last[..rest.len()].copy_from_slice(rest);
-            self.crypt(ctr, &mut last);
+            self.crypt(dit, ctr, &mut last);
             rest.copy_from_slice(&last[..rest.len()]);
             zeroize(&mut last);
         }
     }
 
     /// CTR of whole blocks.
-    fn crypt(&self, ctr: &mut [u8; 16], blocks: &mut [u8]) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, ctr: &mut [u8; 16], blocks: &mut [u8]) {
         // SAFETY: `rounds` is 18 for a key of 16 bytes and 24 otherwise, as
         // `new` expanded the schedule for. `blocks` holds `len / 16` whole
         // blocks (its length is a multiple of 16), and it, the block at `ctr`
@@ -122,6 +124,7 @@ impl Key {
         // signature, none of them on the callee's stack.
         unsafe {
             vg_camellia_ctr(
+                dit,
                 &self.schedule,
                 self.rounds,
                 ctr,

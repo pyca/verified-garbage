@@ -4,6 +4,6 @@
 
 /// The table of functions `VG_HASH_MD5` of the interface `Hash`: `vg_md5_init`, `vg_md5_update`, `vg_md5_finalize`, then the data 0, 16.
 pub static VG_HASH_MD5: super::Hash = super::Hash {
-    fns: [crate::md5::vg_md5_init as *const (), crate::md5::vg_md5_update as *const (), crate::md5::vg_md5_finalize as *const ()],
+    fns: [crate::md5::raw::vg_md5_init as *const (), crate::md5::raw::vg_md5_update as *const (), crate::md5::raw::vg_md5_finalize as *const ()],
     data: [0, 16],
 };

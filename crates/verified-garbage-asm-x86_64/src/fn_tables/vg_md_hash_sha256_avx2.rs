@@ -7,6 +7,6 @@ pub const VG_MD_HASH_SHA256_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 
 /// The table of functions `VG_MD_HASH_SHA256_AVX2` of the interface `MdHash`: `vg_sha256_init`, `vg_sha256_update_scratch_avx2`, `vg_sha256_finalize_scratch_avx2`, `vg_sha256_compress_avx2`, `vg_sha256_state_digest`, then the data 3, 32, 64, 8, 96, 1.
 pub static VG_MD_HASH_SHA256_AVX2: super::MdHash = super::MdHash {
-    fns: [crate::sha256::vg_sha256_init as *const (), crate::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2 as *const (), crate::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2 as *const (), crate::sha256::vg_sha256_compress_avx2::vg_sha256_compress_avx2 as *const (), crate::sha256::vg_sha256_state_digest::vg_sha256_state_digest as *const ()],
+    fns: [crate::sha256::raw::vg_sha256_init as *const (), crate::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2 as *const (), crate::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2 as *const (), crate::sha256::vg_sha256_compress_avx2::vg_sha256_compress_avx2 as *const (), crate::sha256::vg_sha256_state_digest::vg_sha256_state_digest as *const ()],
     data: [3, 32, 64, 8, 96, 1],
 };

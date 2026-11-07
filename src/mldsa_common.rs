@@ -209,6 +209,7 @@ macro_rules! ml_dsa {
             /// The public key `bytes` (every byte string of this size is
             /// one).
             pub fn from_bytes(bytes: &[u8; $pk]) -> Self {
+                let dit = $crate::dit::public($crate::dit::Why::PublicKey);
                 let mut tr = [0; 64];
                 // The verified contract accepts arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
@@ -222,13 +223,13 @@ macro_rules! ml_dsa {
                 // `verify_message_cached` requires.
                 unsafe {
                     match backend() {
-                        Backend::Scalar => $pk_tr(bytes, &mut tr, scratch.as_mut_ptr()),
+                        Backend::Scalar => $pk_tr(dit, bytes, &mut tr, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $pk_tr_sha3(bytes, &mut tr, scratch.as_mut_ptr()),
+                        Backend::Sha3 => $pk_tr_sha3(dit, bytes, &mut tr, scratch.as_mut_ptr()),
                         // x86-64 has one implementation of `pk_tr`: its
                         // sponge has no variants.
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 | Backend::Avx512 => $pk_tr(bytes, &mut tr, scratch.as_mut_ptr()),
+                        Backend::Avx2 | Backend::Avx512 => $pk_tr(dit, bytes, &mut tr, scratch.as_mut_ptr()),
                     }
                 }
                 $VerifyingKey { bytes: *bytes, tr }
@@ -247,6 +248,7 @@ macro_rules! ml_dsa {
             /// which nothing is a valid signature (Algorithm 3 returns an
             /// error).
             pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
+                let dit = $crate::dit::public($crate::dit::Why::Verify);
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
                 let (m, m_len, c, c_len) = (msg.as_ptr(), msg.len(), ctx.as_ptr(), ctx.len());
@@ -261,13 +263,13 @@ macro_rules! ml_dsa {
                         // Both constructors establish tr = H(bytes, 64) with
                         // verified code (`pk_tr`, `keygen`); the key and digest
                         // remain private and immutable.
-                        Backend::Scalar => $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        Backend::Scalar => $verify_message_cached(dit, &self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        Backend::Sha3 => $verify_message_cached_sha3(dit, &self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $verify_message_cached_avx2(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        Backend::Avx2 => $verify_message_cached_avx2(dit, &self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $verify_message_cached_avx512(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
+                        Backend::Avx512 => $verify_message_cached_avx512(dit, &self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                     }
                 };
                 // 2 is a context longer than 255 bytes.
@@ -282,6 +284,7 @@ macro_rules! ml_dsa {
             /// not hash the message or apply context formatting.
             /// Returns [`InvalidSignature`] if verification fails.
             pub fn verify_mu(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
+                let dit = $crate::dit::public($crate::dit::Why::Verify);
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
                 // SAFETY: `self.bytes`, `mu`, `sig` and `scratch` are valid
@@ -292,13 +295,13 @@ macro_rules! ml_dsa {
                 // has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $verify(&self.bytes, mu, sig, scratch.as_mut_ptr()),
+                        Backend::Scalar => $verify(dit, &self.bytes, mu, sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $verify_sha3(&self.bytes, mu, sig, scratch.as_mut_ptr()),
+                        Backend::Sha3 => $verify_sha3(dit, &self.bytes, mu, sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $verify_avx2(&self.bytes, mu, sig, scratch.as_mut_ptr()),
+                        Backend::Avx2 => $verify_avx2(dit, &self.bytes, mu, sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $verify_avx512(&self.bytes, mu, sig, scratch.as_mut_ptr()),
+                        Backend::Avx512 => $verify_avx512(dit, &self.bytes, mu, sig, scratch.as_mut_ptr()),
                     }
                 };
                 if r == 1 { Ok(()) } else { Err(InvalidSignature) }
@@ -339,6 +342,7 @@ macro_rules! ml_dsa {
             /// an approved RBG (FIPS 204 §3.6.1, Algorithm 1), or a seed so
             /// generated before.
             pub fn from_seed(seed: &[u8; 32]) -> Result<Self, MlDsaError> {
+                $crate::dit::enter!(dit);
                 let mut key = $SigningKey {
                     seed: *seed,
                     vk: $VerifyingKey {
@@ -358,13 +362,13 @@ macro_rules! ml_dsa {
                 // has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $keygen(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
+                        Backend::Scalar => $keygen(dit, seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $keygen_sha3(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
+                        Backend::Sha3 => $keygen_sha3(dit, seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $keygen_avx2(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
+                        Backend::Avx2 => $keygen_avx2(dit, seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $keygen_avx512(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
+                        Backend::Avx512 => $keygen_avx512(dit, seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
                     }
                 };
                 // SAFETY: the entire scratch allocation is writable, including
@@ -416,6 +420,7 @@ macro_rules! ml_dsa {
             }
 
             fn sign_with(&self, msg: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
+                $crate::dit::enter!(dit);
                 let mut sig = [0u8; $sig];
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
@@ -430,19 +435,19 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     match backend() {
                         Backend::Scalar => {
-                            $sign_message(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                            $sign_message(dit, &self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => {
-                            $sign_message_sha3(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                            $sign_message_sha3(dit, &self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => {
-                            $sign_message_avx2(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                            $sign_message_avx2(dit, &self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx512 => {
-                            $sign_message_avx512(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
+                            $sign_message_avx512(dit, &self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                     }
                 };
@@ -476,6 +481,7 @@ macro_rules! ml_dsa {
             /// are a concern. Returns [`MlDsaError::LoopBound`] if a loop
             /// reaches its bound.
             pub fn sign_mu(&self, mu: &[u8; 64], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
+                $crate::dit::enter!(dit);
                 let mut sig = [0u8; $sig];
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
@@ -489,13 +495,13 @@ macro_rules! ml_dsa {
                 // has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $sign(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Scalar => $sign(dit, &self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $sign_sha3(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Sha3 => $sign_sha3(dit, &self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $sign_avx2(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Avx2 => $sign_avx2(dit, &self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $sign_avx512(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Avx512 => $sign_avx512(dit, &self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
                     }
                 };
                 // SAFETY: the entire scratch allocation is writable, including
@@ -518,6 +524,8 @@ macro_rules! ml_dsa {
             /// This key, prepared for many verifications: see
             #[doc = concat!("[`", stringify!($PreparedVerifyingKey), "`].")]
             pub fn prepare(self) -> $PreparedVerifyingKey {
+                #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64"))]
+                let dit = $crate::dit::public($crate::dit::Why::PublicKey);
                 #[cfg(any(target_arch = "aarch64", target_arch = "riscv64"))]
                 {
                     let mut prepared = $crate::mldsa_common::Aligned([0u8; $prepared_pk]);
@@ -530,7 +538,7 @@ macro_rules! ml_dsa {
                     // of the address space. `prepare_verify` writes the
                     // prepared key of `self.bytes` to `prepared`
                     // (`VG.Spec.MlDsa.preparePublicKeyContract`).
-                    unsafe { $prepare_verify(&self.bytes, &mut prepared.0, work.as_mut_ptr()) };
+                    unsafe { $prepare_verify(dit, &self.bytes, &mut prepared.0, work.as_mut_ptr()) };
                     $PreparedVerifyingKey { prepared, key: self }
                 }
                 #[cfg(target_arch = "x86_64")]
@@ -550,9 +558,9 @@ macro_rules! ml_dsa {
                     // CPU has.
                     unsafe {
                         match backend() {
-                            Backend::Scalar => $prepare_verify(b, p, w),
-                            Backend::Avx2 => $prepare_verify_avx2(b, p, w),
-                            Backend::Avx512 => $prepare_verify_avx512(b, p, w),
+                            Backend::Scalar => $prepare_verify(dit, b, p, w),
+                            Backend::Avx2 => $prepare_verify_avx2(dit, b, p, w),
+                            Backend::Avx512 => $prepare_verify_avx512(dit, b, p, w),
                         }
                     };
                     $PreparedVerifyingKey { prepared, key: self }
@@ -595,6 +603,7 @@ macro_rules! ml_dsa {
             pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
                 #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64"))]
                 {
+                    let dit = $crate::dit::public($crate::dit::Why::Verify);
                     // The verified contracts accept arbitrary initial scratch bytes.
                     let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
                     let (m, m_len, c, c_len) = (msg.as_ptr(), msg.len(), ctx.as_ptr(), ctx.len());
@@ -610,13 +619,13 @@ macro_rules! ml_dsa {
                     // CPU has.
                     let r = unsafe {
                         match backend() {
-                            Backend::Scalar => $verify_message_prepared(&self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr),
+                            Backend::Scalar => $verify_message_prepared(dit, &self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr),
                             #[cfg(target_arch = "aarch64")]
-                            Backend::Sha3 => $verify_message_prepared_sha3(&self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr),
+                            Backend::Sha3 => $verify_message_prepared_sha3(dit, &self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr),
                             #[cfg(target_arch = "x86_64")]
-                            Backend::Avx2 => $verify_message_prepared_avx2(&self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr),
+                            Backend::Avx2 => $verify_message_prepared_avx2(dit, &self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr),
                             #[cfg(target_arch = "x86_64")]
-                            Backend::Avx512 => $verify_message_prepared_avx512(&self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr),
+                            Backend::Avx512 => $verify_message_prepared_avx512(dit, &self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr),
                         }
                     };
                     // 2 is a context longer than 255 bytes.
@@ -633,6 +642,8 @@ macro_rules! ml_dsa {
             /// This key, prepared for many signatures: see
             #[doc = concat!("[`", stringify!($PreparedSigningKey), "`].")]
             pub fn prepare(self) -> $PreparedSigningKey {
+                #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64"))]
+                $crate::dit::enter!(dit);
                 #[cfg(any(target_arch = "aarch64", target_arch = "riscv64"))]
                 {
                     let mut prepared = $crate::mldsa_common::Aligned([0u8; $prepared_sk]);
@@ -645,7 +656,7 @@ macro_rules! ml_dsa {
                     // address space. `prepare_sign` writes the prepared key of
                     // `self.sk` to `prepared`
                     // (`VG.Spec.MlDsa.prepareSecretKeyContract`).
-                    unsafe { $prepare_sign(&self.sk, &mut prepared.0, work.as_mut_ptr()) };
+                    unsafe { $prepare_sign(dit, &self.sk, &mut prepared.0, work.as_mut_ptr()) };
                     // SAFETY: the entire working space is writable, including
                     // bytes the preparation may not have initialized.
                     unsafe { $crate::zeroize::zeroize_raw(work.as_mut_ptr().cast(), core::mem::size_of_val(&work)) };
@@ -667,9 +678,9 @@ macro_rules! ml_dsa {
                     // chose an implementation whose features the CPU has.
                     unsafe {
                         match backend() {
-                            Backend::Scalar => $prepare_sign(k, p, w),
-                            Backend::Avx2 => $prepare_sign_avx2(k, p, w),
-                            Backend::Avx512 => $prepare_sign_avx512(k, p, w),
+                            Backend::Scalar => $prepare_sign(dit, k, p, w),
+                            Backend::Avx2 => $prepare_sign_avx2(dit, k, p, w),
+                            Backend::Avx512 => $prepare_sign_avx512(dit, k, p, w),
                         }
                     };
                     // SAFETY: the entire working space is writable, including
@@ -739,6 +750,7 @@ macro_rules! ml_dsa {
 
             #[cfg(any(target_arch = "aarch64", target_arch = "x86_64", target_arch = "riscv64"))]
             fn sign_with(&self, msg: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
+                $crate::dit::enter!(dit);
                 let mut sig = [0u8; $sig];
                 // The verified contracts accept arbitrary initial scratch bytes.
                 let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
@@ -753,13 +765,13 @@ macro_rules! ml_dsa {
                 // implementation whose features the CPU has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $sign_message_prepared(&self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Scalar => $sign_message_prepared(dit, &self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $sign_message_prepared_sha3(&self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Sha3 => $sign_message_prepared_sha3(dit, &self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $sign_message_prepared_avx2(&self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Avx2 => $sign_message_prepared_avx2(dit, &self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $sign_message_prepared_avx512(&self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
+                        Backend::Avx512 => $sign_message_prepared_avx512(dit, &self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
                     }
                 };
                 // SAFETY: the entire scratch allocation is writable, including

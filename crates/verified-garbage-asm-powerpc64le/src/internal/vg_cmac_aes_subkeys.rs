@@ -14,6 +14,6 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_subkeys() {
         r#".base64 "pgIIfCAIBvgQCMb5GAjm+Xgrrnx4M898AAAgOQAAJfkIACX5eHPFfQEAwDh4e+d9"
 bl {vg_aes_encrypt_blocks}
 .base64 "AABgOShcLn0IAGA5KFxOfeAPK3kAAIA5UGBrfYcAgDk4YGt94A9MeaQPKXl4Yyl9pA9KeXhaSn0AAGA5KF0ufQgAYDkoXU59AABgOShcLn0IAGA5KFxOfeAPK3kAAIA5UGBrfYcAgDk4YGt94A9MeaQPKXl4Yyl9pA9KeXhaSn0QAGA5KF0ufRgAYDkoXU59IAgP6BAIz+kYCO/ppgMIfCAAgE4=""#,
-        vg_aes_encrypt_blocks = sym crate::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym crate::aes::raw::vg_aes_encrypt_blocks,
     )
 }

@@ -16,8 +16,38 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_x448_exchange(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x448_exchange(out, scalar, point, scratch) }
+}
+
+/// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
+///
+/// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 56 bytes.
+/// * `scalar` must be valid for reads of 56 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
+/// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_x448_base(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_x448_base(out, scalar, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_x448_exchange`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0x910003e9,0xf9000520
 bl {vg_x448}
@@ -38,24 +68,13 @@ bl {vg_x448}
 .inst 0xaa0b014a,0x3940dd2b,0xaa0b014a,0xd100054a,0xd37ffd40,0xd280002b,0xca0b0000,0xf84107fe
 .inst 0xd65f03c0
 .p2align 6",
-        vg_x448 = sym super::x448::vg_x448::vg_x448,
+        vg_x448 = sym crate::x448::vg_x448::vg_x448,
     )
 }
 
-/// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
-///
-/// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 56 bytes.
-/// * `scalar` must be valid for reads of 56 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
-/// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_x448_base`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r".inst 0x91000043,0xd29fffec,0xf2a1ffec,0xf9000073,0xf9000474,0x91000014,0xf905a075,0xf905a476
 .inst 0xf905a877,0xf905ac78,0xf905b079,0xf905b47a,0xf905b87b,0xf905bc7c,0x3d84a068,0x3d84a469
@@ -335,11 +354,12 @@ bl {vg_gf448_r56_mul}
 .inst 0xf945b079,0xf945b47a,0xf945b87b,0xf945bc7c,0x3dc4a068,0x3dc4a469,0x3dc4a86a,0x3dc4ac6b
 .inst 0x3dc4b06c,0x3dc4b46d,0x3dc4b86e,0x3dc4bc6f,0xd65f03c0
 .p2align 6",
-        vg_ed448_r56_comb_base = sym super::ed448::vg_ed448_r56_comb_base::vg_ed448_r56_comb_base,
-        vg_ed448_r56_point_add = sym super::ed448::vg_ed448_r56_point_add::vg_ed448_r56_point_add,
-        vg_gf448_r56_pow_p34 = sym super::ed448::vg_gf448_r56_pow_p34::vg_gf448_r56_pow_p34,
-        vg_gf448_r56_mul = sym super::ed448::vg_gf448_r56_mul::vg_gf448_r56_mul,
+        vg_ed448_r56_comb_base = sym crate::ed448::vg_ed448_r56_comb_base::vg_ed448_r56_comb_base,
+        vg_ed448_r56_point_add = sym crate::ed448::vg_ed448_r56_point_add::vg_ed448_r56_point_add,
+        vg_gf448_r56_pow_p34 = sym crate::ed448::vg_gf448_r56_pow_p34::vg_gf448_r56_pow_p34,
+        vg_gf448_r56_mul = sym crate::ed448::vg_gf448_r56_mul::vg_gf448_r56_mul,
     )
+}
 }
 
 #[rustfmt::skip]

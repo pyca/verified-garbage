@@ -12,7 +12,8 @@ cpu-features-env`, after the directory):
 
 This writes `<arch>-<uuid>.lcov` in the current directory, where `<arch>`
 is the `target_arch` the tests were built for, containing only this
-repository's files, with repository-relative `/`-separated paths, so lcov
+repository's files (but the generated crates', `crates/verified-garbage-asm-*`),
+with repository-relative `/`-separated paths, so lcov
 files from different platforms can be merged by `ci/merge_rust_coverage.py`,
 which also checks each architecture's alone.
 """
@@ -61,6 +62,20 @@ def relative_records(lcov: str, root: pathlib.Path) -> str:
         except ValueError:
             continue  # the standard library or a dependency
         if rel.parts[0] == "target":
+            continue
+        # The standard library's code expanded into ours (`thread_local!`,
+        # in `src/dit.rs`'s test checks) is recorded at its remapped path,
+        # `rustc/<commit>/library/…`, which is relative, so it lands under
+        # the root, where no such file exists.
+        if not path.is_file():
+            continue
+        # The generated crates (`lean/VerifiedGarbage/TCB/Rust.lean`): their
+        # naked functions have no lines to cover, and their only other code,
+        # each public function forwarding to its naked one, is inlined into
+        # the library, where LLVM keeps the counts of some inlined copies and
+        # not others (a call of `vg_rc4_init` that ran 850 times counted 0).
+        # `ci/check_variants.py` checks that the library uses each function.
+        if rel.parts[0] == "crates" and rel.parts[1].startswith("verified-garbage-asm-"):
             continue
         out.append("\n".join([f"SF:{rel.as_posix()}", *lines[1:], "end_of_record"]))
     return "".join(line + "\n" for line in out)

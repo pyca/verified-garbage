@@ -12,8 +12,19 @@
 /// * `a` must be valid for reads of `a_len` bytes.
 /// * `b` must be valid for reads of `b_len` bytes.
 /// * Neither `a` nor `b` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ct_eq(_dit: verified_garbage_cpu::Dit<'_>, a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ct_eq(a, a_len, b, b_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ct_eq`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -44,4 +55,5 @@ j 23f
 .insn 2, 0x8082
 .option pop",
     )
+}
 }

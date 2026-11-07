@@ -15,8 +15,44 @@
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 20`.
 /// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_pbkdf2_hmac_sha1(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_pbkdf2_hmac_sha1(password, password_len, salt, salt_len, c, out, out_len) }
+}
+
+/// The CPU features `vg_pbkdf2_hmac_sha1_sha2` requires (`Artifact.features`).
+pub const VG_PBKDF2_HMAC_SHA1_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
+
+/// PBKDF2-HMAC-SHA-1 (RFC 8018 §5.2, with HMAC-SHA-1 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-1 and HMAC-SHA-1 functions.
+///
+/// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
+///
+/// # Safety
+///
+/// * `password` must be valid for reads of `password_len` bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 20`.
+/// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha2` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_pbkdf2_hmac_sha1_sha2(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_pbkdf2_hmac_sha1_sha2(password, password_len, salt, salt_len, c, out, out_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_pbkdf2_hmac_sha1`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd11183ff,0x910003e7,0x9100008a,0x910000e4,0xf900e093,0xf900e494,0xf900e895,0xf900ec96
 .inst 0xf900f098,0xf900f49e,0xf900f897,0x91000097,0xf900fee5,0x51000549,0xf90102e9,0xf90106e6
@@ -82,33 +118,18 @@ b 25f
 .inst 0xf940e2f3,0xf940e6f4,0xf940eaf5,0xf940eef6,0xf940f2f8,0xf940f6fe,0xf940faf7,0x911183ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
-        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
-        vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,
-        vg_hmac_sha1_finalize_scratch = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch::vg_hmac_sha1_finalize_scratch,
-        vg_pbkdf2_hmac_sha1_iterate = sym super::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_iterate::vg_pbkdf2_hmac_sha1_iterate,
+        vg_sha1_init = sym crate::sha1::raw::vg_sha1_init,
+        vg_sha1_update_scratch = sym crate::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym crate::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+        vg_hmac_sha1_init_scratch = sym crate::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,
+        vg_hmac_sha1_finalize_scratch = sym crate::hmac_sha1::vg_hmac_sha1_finalize_scratch::vg_hmac_sha1_finalize_scratch,
+        vg_pbkdf2_hmac_sha1_iterate = sym crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_iterate::vg_pbkdf2_hmac_sha1_iterate,
     )
 }
 
-/// The CPU features `vg_pbkdf2_hmac_sha1_sha2` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA1_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
-
-/// PBKDF2-HMAC-SHA-1 (RFC 8018 §5.2, with HMAC-SHA-1 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-1 and HMAC-SHA-1 functions.
-///
-/// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
-///
-/// # Safety
-///
-/// * `password` must be valid for reads of `password_len` bytes.
-/// * `salt` must be valid for reads of `salt_len` bytes.
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 20`.
-/// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha2` target feature.
+/// The verified code of [`super::vg_pbkdf2_hmac_sha1_sha2`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_pbkdf2_hmac_sha1_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd11183ff,0x910003e7,0x9100008a,0x910000e4,0xf900e093,0xf900e494,0xf900e895,0xf900ec96
 .inst 0xf900f098,0xf900f49e,0xf900f897,0x91000097,0xf900fee5,0x51000549,0xf90102e9,0xf90106e6
@@ -174,13 +195,14 @@ b 25f
 .inst 0xf940e2f3,0xf940e6f4,0xf940eaf5,0xf940eef6,0xf940f2f8,0xf940f6fe,0xf940faf7,0x911183ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2,
-        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
-        vg_hmac_sha1_init_scratch_sha2 = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_sha2::vg_hmac_sha1_init_scratch_sha2,
-        vg_hmac_sha1_finalize_scratch_sha2 = sym super::hmac_sha1::vg_hmac_sha1_finalize_scratch_sha2::vg_hmac_sha1_finalize_scratch_sha2,
-        vg_pbkdf2_hmac_sha1_iterate_sha2 = sym super::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_iterate_sha2::vg_pbkdf2_hmac_sha1_iterate_sha2,
+        vg_sha1_init = sym crate::sha1::raw::vg_sha1_init,
+        vg_sha1_update_scratch_sha2 = sym crate::sha1::vg_sha1_update_scratch_sha2::vg_sha1_update_scratch_sha2,
+        vg_sha1_finalize_scratch_sha2 = sym crate::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
+        vg_hmac_sha1_init_scratch_sha2 = sym crate::hmac_sha1::vg_hmac_sha1_init_scratch_sha2::vg_hmac_sha1_init_scratch_sha2,
+        vg_hmac_sha1_finalize_scratch_sha2 = sym crate::hmac_sha1::vg_hmac_sha1_finalize_scratch_sha2::vg_hmac_sha1_finalize_scratch_sha2,
+        vg_pbkdf2_hmac_sha1_iterate_sha2 = sym crate::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_iterate_sha2::vg_pbkdf2_hmac_sha1_iterate_sha2,
     )
+}
 }
 
 #[rustfmt::skip]

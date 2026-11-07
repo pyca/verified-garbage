@@ -15,8 +15,38 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p521_compress_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 67], public: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p521_compress_public_key(out, public, scratch) }
+}
+
+/// Validate and decompress a P-521 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 66 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 66 bytes each and returns 1. If no such finite point exists, writes 133 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
+///
+/// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 133 bytes.
+/// * `public` must be valid for reads of 67 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
+/// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p521_decompress_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 133], public: *const [u8; 67], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p521_decompress_public_key(out, public, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_p521_compress_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p521_compress_public_key(out: *mut [u8; 67], public: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p521_compress_public_key(out: *mut [u8; 67], public: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0x91000044,0x91000026,0x91000423,0x91000061,0x91000062,0xf9000093,0xf9000494,0xf9000895
 .inst 0xf9000c96,0xf9001097,0xf9001498,0xf9001899,0xf9001c9e,0x91000014,0x91000080,0x9100e871
@@ -140,24 +170,13 @@ bl {vg_p521_check_point}
 .inst 0xf944e401,0x8a030021,0xd348fc22,0x39000682,0x39000a81,0xf9400013,0xf9400414,0xf9400815
 .inst 0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e,0xd2800021,0x8a010060,0xd65f03c0
 .p2align 6",
-        vg_p521_check_point = sym super::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
+        vg_p521_check_point = sym crate::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
     )
 }
 
-/// Validate and decompress a P-521 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 66 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 66 bytes each and returns 1. If no such finite point exists, writes 133 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
-///
-/// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 133 bytes.
-/// * `public` must be valid for reads of 67 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
-/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
-/// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_ec_p521_decompress_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p521_decompress_public_key(out: *mut [u8; 133], public: *const [u8; 67], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p521_decompress_public_key(out: *mut [u8; 133], public: *const [u8; 67], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0x91000044,0x91000026,0x91000423,0x91000061,0x91000062,0xf9000093,0xf9000494,0xf9000895
 .inst 0xf9000c96,0xf9001097,0xf9001498,0xf9001899,0xf9001c9e,0x91000014,0x91000080,0x9100e871
@@ -372,9 +391,10 @@ bl {vg_p521_sqr_mod_p}
 .inst 0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e,0xd2800021,0x8a010060
 .inst 0xd65f03c0
 .p2align 6",
-        vg_p521_mul_mod_p = sym super::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
-        vg_p521_sqr_mod_p = sym super::ec_p521_compressed::vg_p521_sqr_mod_p::vg_p521_sqr_mod_p,
+        vg_p521_mul_mod_p = sym crate::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
+        vg_p521_sqr_mod_p = sym crate::ec_p521_compressed::vg_p521_sqr_mod_p::vg_p521_sqr_mod_p,
     )
+}
 }
 
 #[rustfmt::skip]

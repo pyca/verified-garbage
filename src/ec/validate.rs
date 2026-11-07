@@ -23,13 +23,13 @@ impl Backend {
 }
 
 macro_rules! check {
-    ($base:ident, $public:ident, $ws:ident) => {
-        $base($public, &mut $ws)
+    ($dit:ident, $base:ident, $public:ident, $ws:ident) => {
+        $base($dit, $public, &mut $ws)
     };
-    ($base:ident, $public:ident, $ws:ident, $adx:ident, $features:ident) => {
+    ($dit:ident, $base:ident, $public:ident, $ws:ident, $adx:ident, $features:ident) => {
         match Backend::select(detected(), $features) {
-            Backend::Baseline => $base($public, &mut $ws),
-            Backend::Adx => $adx($public, &mut $ws),
+            Backend::Baseline => $base($dit, $public, &mut $ws),
+            Backend::Adx => $adx($dit, $public, &mut $ws),
         }
     };
 }
@@ -46,13 +46,14 @@ macro_rules! validate {
             /// hybrid encodings are rejected. Available on x86-64.
             pub fn validate_public_key(public: &[u8; 2 * $len + 1]) -> bool {
                 use crate::arch::$module::{$base, $($adx, $features)?};
+                let dit = crate::dit::public(crate::dit::Why::PublicKey);
                 let mut ws = [0u64; 1024];
                 // SAFETY: public is readable for the complete encoding;
                 // ws is a separate, writable 8192-byte Rust object. They
                 // cannot overlap each other or the call's stack frame, or
                 // wrap around the address space. Dispatch checks the CPU
                 // features required by the selected variant.
-                let ok = unsafe { check!($base, public, ws $(, $adx, $features)?) };
+                let ok = unsafe { check!(dit, $base, public, ws $(, $adx, $features)?) };
                 // The verified contract returns exactly zero or one.
                 ok == 1
             }

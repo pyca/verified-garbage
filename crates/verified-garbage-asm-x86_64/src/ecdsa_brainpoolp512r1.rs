@@ -16,8 +16,43 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ecdsa_brainpoolp512r1_verify(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 129], digest: *const u8, digest_len: usize, sig: *const [u8; 128], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_brainpoolp512r1_verify(public, digest, digest_len, sig, scratch) }
+}
+
+/// Deterministic ECDSA signature generation over brainpoolP512r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (64 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (64 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 128 bytes.
+/// * `d` must be valid for reads of 64 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[inline(always)]
+pub unsafe fn vg_ecdsa_brainpoolp512r1_sign(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 128], d: *const [u8; 64], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_brainpoolp512r1_sign(out, d, digest, digest_len, scratch, hmac) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ecdsa_brainpoolp512r1_verify`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129], digest: *const u8, digest_len: usize, sig: *const [u8; 128], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129], digest: *const u8, digest_len: usize, sig: *const [u8; 128], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJKhJieFJg8EISIP6QA=="
 jb 20f
@@ -109,34 +144,18 @@ call {vg_brainpoolp512r1_mul_mod_p}
 call {vg_brainpoolp512r1_mul_mod_n}
 .base64 "TInmTIuHwAkAAEwrhwAKAABMiYfAAAAATIuHyAkAAEwbhwgKAABMiYfIAAAATIuH0AkAAEwbhxAKAABMiYfQAAAATIuH2AkAAEwbhxgKAABMiYfYAAAATIuH4AkAAEwbhyAKAABMiYfgAAAATIuH6AkAAEwbhygKAABMiYfoAAAATIuH8AkAAEwbhzAKAABMiYfwAAAATIuH+AkAAEwbhzgKAABMiYf4AAAASBnASIuXgAAAAEghwkiJl0AKAABIi5eIAAAASCHCSImXSAoAAEiLl5AAAABIIcJIiZdQCgAASIuXmAAAAEghwkiJl1gKAABIi5egAAAASCHCSImXYAoAAEiLl6gAAABIIcJIiZdoCgAASIuXsAAAAEghwkiJl3AKAABIi5e4AAAASCHCSImXeAoAAEyLh8AAAABMA4dACgAATImHQAoAAEyLh8gAAABME4dICgAATImHSAoAAEyLh9AAAABME4dQCgAATImHUAoAAEyLh9gAAABME4dYCgAATImHWAoAAEyLh+AAAABME4dgCgAATImHYAoAAEyLh+gAAABME4doCgAATImHaAoAAEyLh/AAAABME4dwCgAATImHcAoAAEyLh/gAAABME4d4CgAATImHeAoAAEiLl0AEAABIC5dIBAAASAuXUAQAAEgLl1gEAABIC5dgBAAASAuXaAQAAEgLl3AEAABIC5d4BAAAuQAAAABIKdFIGdJIi4dACwAASCHQSImHQAsAAEiLl0AKAABIC5dICgAASAuXUAoAAEgLl1gKAABIC5dgCgAASAuXaAoAAEgLl3AKAABIC5d4CgAASIP6AUgZ0kiLh0ALAABIIdBIiYdACwAASIuHQAsAAEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KEiNZCRYww=="
 .p2align 6"#,
-        vg_brainpoolp512r1_check_point = sym super::ec_brainpoolp512r1_compressed::vg_brainpoolp512r1_check_point::vg_brainpoolp512r1_check_point,
-        vg_brainpoolp512r1_inv_mod_n = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_inv_mod_n::vg_brainpoolp512r1_inv_mod_n,
-        vg_brainpoolp512r1_mul_mod_n = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_n::vg_brainpoolp512r1_mul_mod_n,
-        vg_brainpoolp512r1_mul = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_mul::vg_brainpoolp512r1_mul,
-        vg_brainpoolp512r1_mul_mod_p = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_p::vg_brainpoolp512r1_mul_mod_p,
-        vg_brainpoolp512r1_inv_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_inv_mod_p::vg_brainpoolp512r1_inv_mod_p,
+        vg_brainpoolp512r1_check_point = sym crate::ec_brainpoolp512r1_compressed::vg_brainpoolp512r1_check_point::vg_brainpoolp512r1_check_point,
+        vg_brainpoolp512r1_inv_mod_n = sym crate::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_inv_mod_n::vg_brainpoolp512r1_inv_mod_n,
+        vg_brainpoolp512r1_mul_mod_n = sym crate::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_n::vg_brainpoolp512r1_mul_mod_n,
+        vg_brainpoolp512r1_mul = sym crate::ec_brainpoolp512r1::vg_brainpoolp512r1_mul::vg_brainpoolp512r1_mul,
+        vg_brainpoolp512r1_mul_mod_p = sym crate::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_p::vg_brainpoolp512r1_mul_mod_p,
+        vg_brainpoolp512r1_inv_mod_p = sym crate::ec_brainpoolp512r1::vg_brainpoolp512r1_inv_mod_p::vg_brainpoolp512r1_inv_mod_p,
     )
 }
 
-/// Deterministic ECDSA signature generation over brainpoolP512r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (64 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (64 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
-///
-/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 128 bytes.
-/// * `d` must be valid for reads of 64 bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
-/// * `digest_len` must be the digest length of the hash function `hmac` names.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
-/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// The verified code of [`super::vg_ecdsa_brainpoolp512r1_sign`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_brainpoolp512r1_sign(out: *mut [u8; 128], d: *const [u8; 64], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_brainpoolp512r1_sign(out: *mut [u8; 128], d: *const [u8; 64], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TInBTYtRIE2LWShBUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBBU0FSV1ZSUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQMcBIiYQkQAEAADHASImEJEgBAAAxwEiJhCRQAQAAMcBIiYQkWAEAADHASImEJGABAAAxwEiJhCRoAQAAMcBIiYQkcAEAADHASImEJHgBAAAxwEiJhCSAAQAASIuMJNgAAAC4QAAAAEg5wUgPQ8hIiedIgceAAQAASCnPSIu0JMAAAABFMcA="
 20:
@@ -164,8 +183,9 @@ jmp 25f
 jne 21b
 .base64 "MclIiQwkSIlMJAhIiUwkEEiJTCQYSIlMJCBIiUwkKEiJTCQwSIlMJDhIiUwkQEiJTCRISIlMJFBIiUwkWEiJTCRgSIlMJGhIiUwkcEiJTCR4SImMJOgAAABIiYwk8AAAAEiJjCT4AAAASImMJAABAABIiYwkCAEAAEiJjCQQAQAASImMJBgBAABIiYwkIAEAAEiJjCQoAQAASImMJDABAABIiYwkOAEAAEiJjCRAAQAASImMJEgBAABIiYwkUAEAAEiJjCRYAQAASImMJGABAABIiYwkaAEAAEiJjCRwAQAASImMJHgBAABIiYwkgAEAAEiJjCSIAQAASImMJJABAABIiYwkmAEAAEiJjCSgAQAASImMJKgBAABIiYwksAEAAEiJjCS4AQAASImMJMABAABIiYwkyAEAAEiJjCTQAQAASImMJNgBAABIiYwk4AEAAEiJjCToAQAASImMJPABAABIiYwk+AEAAEiJjCQAAgAASImMJAgCAABIiYwkEAIAAEiJjCQYAgAASImMJCACAABIiYwkKAIAAEiJjCQwAgAASImMJDgCAABIiYwkQAIAAEiJjCRIAgAASImMJFACAABZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZww=="
 .p2align 6"#,
-        vg_ecdsa_brainpoolp512r1_sign_k = sym super::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign_k::vg_ecdsa_brainpoolp512r1_sign_k,
+        vg_ecdsa_brainpoolp512r1_sign_k = sym crate::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign_k::vg_ecdsa_brainpoolp512r1_sign_k,
     )
+}
 }
 
 #[rustfmt::skip]

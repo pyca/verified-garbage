@@ -15,8 +15,59 @@
 /// * If the function returns nonzero, the contents of `ctx` on return are unspecified.
 /// * `ctx` must not overlap `key` or `iv` (distinct Rust objects never do).
 /// * None of `key`, `iv` and `ctx` may overlap the return address on the stack or the 600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_rc2_cbc_init(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rc2_cbc_init(key, key_len, effective_bits, iv, iv_len, ctx) }
+}
+
+/// Continues RC2-CBC encryption without padding: if `*ctx` is a context with `pending_len` pending bytes (`VG.Spec.Rc2.contextAt`, written by `vg_rc2_cbc_init` and updated by this function), encrypts the complete 8-byte blocks of the pending bytes followed by the `len` bytes at `data`, `C[i] = RC2(schedule, P[i] XOR C[i-1])` from the context's chaining value, writes them to `out` (`out_len` bytes), and leaves in `*ctx` the last ciphertext block as the chaining value and the remaining `(pending_len + len) % 8` bytes as the pending input. The caller keeps the number of pending bytes; when the input ends, it is an incomplete block unless it is 0.
+///
+/// Contract: `VG.Spec.Rc2.cbcEncryptUpdateContract`. Constant time: only the pointers, `pending_len`, `len` and `out_len` may affect timing, not the context or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 144 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `pending_len` must be less than 8.
+/// * `out_len` must be `(pending_len + len) / 8 * 8`.
+/// * `ctx` and `out` must not overlap each other or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `data` and `out` may overlap the return address on the stack or the 608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_rc2_cbc_encrypt_update(_dit: verified_garbage_cpu::Dit<'_>, ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rc2_cbc_encrypt_update(ctx, pending_len, data, len, out, out_len) }
+}
+
+/// Continues RC2-CBC decryption without padding: if `*ctx` is a context with `pending_len` pending bytes (`VG.Spec.Rc2.contextAt`, written by `vg_rc2_cbc_init` and updated by this function), decrypts the complete 8-byte blocks of the pending bytes followed by the `len` bytes at `data`, `P[i] = RC2_inverse(schedule, C[i]) XOR C[i-1]` from the context's chaining value, writes them to `out` (`out_len` bytes), and leaves in `*ctx` the last input ciphertext block as the chaining value and the remaining `(pending_len + len) % 8` bytes as the pending input. The caller keeps the number of pending bytes; when the input ends, it is an incomplete block unless it is 0.
+///
+/// Contract: `VG.Spec.Rc2.cbcDecryptUpdateContract`. Constant time: only the pointers, `pending_len`, `len` and `out_len` may affect timing, not the context or the data.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 144 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `pending_len` must be less than 8.
+/// * `out_len` must be `(pending_len + len) / 8 * 8`.
+/// * `ctx` and `out` must not overlap each other or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `data` and `out` may overlap the return address on the stack or the 608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_rc2_cbc_decrypt_update(_dit: verified_garbage_cpu::Dit<'_>, ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rc2_cbc_decrypt_update(ctx, pending_len, data, len, out, out_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_rc2_cbc_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rc2_cbc_init(key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_init(key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLD9//9IieBIg8AQSIlEJAi4AQAAAEmJ8kmD6gFJgfqAAAAA"
 jae 20f
@@ -44,25 +95,13 @@ jmp 27f
 27:
 .base64 "QbsAAAAATIlcJBBMiVwkGEyJXCQgTIlcJChMiVwkMEyJXCQ4TIlcJEBMiVwkSEyJXCRQTIlcJFhMiVwkYEyJXCRoTIlcJHBMiVwkeEyJnCSAAAAATImcJIgAAABMiZwkkAAAAEyJnCSYAAAATImcJKAAAABMiZwkqAAAAEyJnCSwAAAATImcJLgAAABMiZwkwAAAAEyJnCTIAAAATImcJNAAAABMiZwk2AAAAEyJnCTgAAAATImcJOgAAABMiZwk8AAAAEyJnCT4AAAATImcJAABAABMiZwkCAEAAEyJnCQQAQAATImcJBgBAABMiZwkIAEAAEyJnCQoAQAATImcJDABAABMiZwkOAEAAEyJnCRAAQAATImcJEgBAABMiZwkUAEAAEyJnCRYAQAATImcJGABAABMiZwkaAEAAEyJnCRwAQAATImcJHgBAABMiZwkgAEAAEyJnCSIAQAATImcJJABAABMiZwkmAEAAEyJnCSgAQAATImcJKgBAABMiZwksAEAAEyJnCS4AQAATImcJMABAABMiZwkyAEAAEyJnCTQAQAATImcJNgBAABMiZwk4AEAAEyJnCToAQAATImcJPABAABMiZwk+AEAAEyJnCQAAgAATImcJAgCAABMiZwkEAIAAEyJnCQYAgAATImcJCACAABMiZwkKAIAAEyJnCQwAgAATImcJDgCAABMiZwkQAIAAEyJnCRIAgAASI2kJFACAADD"
 .p2align 6"#,
-        vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key::vg_rc2_expand_key,
+        vg_rc2_expand_key = sym crate::rc2::vg_rc2_expand_key::vg_rc2_expand_key,
     )
 }
 
-/// Continues RC2-CBC encryption without padding: if `*ctx` is a context with `pending_len` pending bytes (`VG.Spec.Rc2.contextAt`, written by `vg_rc2_cbc_init` and updated by this function), encrypts the complete 8-byte blocks of the pending bytes followed by the `len` bytes at `data`, `C[i] = RC2(schedule, P[i] XOR C[i-1])` from the context's chaining value, writes them to `out` (`out_len` bytes), and leaves in `*ctx` the last ciphertext block as the chaining value and the remaining `(pending_len + len) % 8` bytes as the pending input. The caller keeps the number of pending bytes; when the input ends, it is an incomplete block unless it is 0.
-///
-/// Contract: `VG.Spec.Rc2.cbcEncryptUpdateContract`. Constant time: only the pointers, `pending_len`, `len` and `out_len` may affect timing, not the context or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of 144 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `pending_len` must be less than 8.
-/// * `out_len` must be `(pending_len + len) / 8 * 8`.
-/// * `ctx` and `out` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `data` and `out` may overlap the return address on the stack or the 608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_rc2_cbc_encrypt_update`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rc2_cbc_encrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_encrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLD9//9IieBIg8AQSIlEJAhNhck="
 je 20f
@@ -105,25 +144,13 @@ jmp 212f
 21:
 .base64 "QbsAAAAATIlcJBBMiVwkGEyJXCQgTIlcJChMiVwkMEyJXCQ4TIlcJEBMiVwkSEyJXCRQTIlcJFhMiVwkYEyJXCRoTIlcJHBMiVwkeEyJnCSAAAAATImcJIgAAABMiZwkkAAAAEyJnCSYAAAATImcJKAAAABMiZwkqAAAAEyJnCSwAAAATImcJLgAAABMiZwkwAAAAEyJnCTIAAAATImcJNAAAABMiZwk2AAAAEyJnCTgAAAATImcJOgAAABMiZwk8AAAAEyJnCT4AAAATImcJAABAABMiZwkCAEAAEyJnCQQAQAATImcJBgBAABMiZwkIAEAAEyJnCQoAQAATImcJDABAABMiZwkOAEAAEyJnCRAAQAATImcJEgBAABMiZwkUAEAAEyJnCRYAQAATImcJGABAABMiZwkaAEAAEyJnCRwAQAATImcJHgBAABMiZwkgAEAAEyJnCSIAQAATImcJJABAABMiZwkmAEAAEyJnCSgAQAATImcJKgBAABMiZwksAEAAEyJnCS4AQAATImcJMABAABMiZwkyAEAAEyJnCTQAQAATImcJNgBAABMiZwk4AEAAEyJnCToAQAATImcJPABAABMiZwk+AEAAEyJnCQAAgAATImcJAgCAABMiZwkEAIAAEyJnCQYAgAATImcJCACAABMiZwkKAIAAEyJnCQwAgAATImcJDgCAABMiZwkQAIAAEyJnCRIAgAASI2kJFACAADD"
 .p2align 6"#,
-        vg_rc2_cbc_encrypt = sym super::rc2::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,
+        vg_rc2_cbc_encrypt = sym crate::rc2::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,
     )
 }
 
-/// Continues RC2-CBC decryption without padding: if `*ctx` is a context with `pending_len` pending bytes (`VG.Spec.Rc2.contextAt`, written by `vg_rc2_cbc_init` and updated by this function), decrypts the complete 8-byte blocks of the pending bytes followed by the `len` bytes at `data`, `P[i] = RC2_inverse(schedule, C[i]) XOR C[i-1]` from the context's chaining value, writes them to `out` (`out_len` bytes), and leaves in `*ctx` the last input ciphertext block as the chaining value and the remaining `(pending_len + len) % 8` bytes as the pending input. The caller keeps the number of pending bytes; when the input ends, it is an incomplete block unless it is 0.
-///
-/// Contract: `VG.Spec.Rc2.cbcDecryptUpdateContract`. Constant time: only the pointers, `pending_len`, `len` and `out_len` may affect timing, not the context or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of 144 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `pending_len` must be less than 8.
-/// * `out_len` must be `(pending_len + len) / 8 * 8`.
-/// * `ctx` and `out` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `data` and `out` may overlap the return address on the stack or the 608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_rc2_cbc_decrypt_update`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_rc2_cbc_decrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_decrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJLD9//9IieBIg8AQSIlEJAhNhck="
 je 20f
@@ -166,8 +193,9 @@ jmp 212f
 21:
 .base64 "QbsAAAAATIlcJBBMiVwkGEyJXCQgTIlcJChMiVwkMEyJXCQ4TIlcJEBMiVwkSEyJXCRQTIlcJFhMiVwkYEyJXCRoTIlcJHBMiVwkeEyJnCSAAAAATImcJIgAAABMiZwkkAAAAEyJnCSYAAAATImcJKAAAABMiZwkqAAAAEyJnCSwAAAATImcJLgAAABMiZwkwAAAAEyJnCTIAAAATImcJNAAAABMiZwk2AAAAEyJnCTgAAAATImcJOgAAABMiZwk8AAAAEyJnCT4AAAATImcJAABAABMiZwkCAEAAEyJnCQQAQAATImcJBgBAABMiZwkIAEAAEyJnCQoAQAATImcJDABAABMiZwkOAEAAEyJnCRAAQAATImcJEgBAABMiZwkUAEAAEyJnCRYAQAATImcJGABAABMiZwkaAEAAEyJnCRwAQAATImcJHgBAABMiZwkgAEAAEyJnCSIAQAATImcJJABAABMiZwkmAEAAEyJnCSgAQAATImcJKgBAABMiZwksAEAAEyJnCS4AQAATImcJMABAABMiZwkyAEAAEyJnCTQAQAATImcJNgBAABMiZwk4AEAAEyJnCToAQAATImcJPABAABMiZwk+AEAAEyJnCQAAgAATImcJAgCAABMiZwkEAIAAEyJnCQYAgAATImcJCACAABMiZwkKAIAAEyJnCQwAgAATImcJDgCAABMiZwkQAIAAEyJnCRIAgAASI2kJFACAADD"
 .p2align 6"#,
-        vg_rc2_cbc_decrypt = sym super::rc2::vg_rc2_cbc_decrypt::vg_rc2_cbc_decrypt,
+        vg_rc2_cbc_decrypt = sym crate::rc2::vg_rc2_cbc_decrypt::vg_rc2_cbc_decrypt,
     )
+}
 }
 
 #[rustfmt::skip]

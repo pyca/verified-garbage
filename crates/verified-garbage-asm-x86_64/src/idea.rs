@@ -13,12 +13,11 @@
 /// * `schedule` must be valid for reads and writes of 104 bytes.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
-    core::arch::naked_asm!(
-        r#".base64 "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"
-.p2align 6"#,
-    )
+#[inline(always)]
+pub unsafe fn vg_idea_expand_key(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 16], schedule: *mut [u8; 104]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_idea_expand_key(key, schedule) }
 }
 
 /// IDEA decryption key schedule (Lai, 1992, §3.3): writes to `*inverse` the 52 decryption subkeys of the 52 encryption subkeys at `schedule` (both as little-endian 16-bit words, as `vg_idea_expand_key` writes them): the multiplicative inverses modulo 2^16 + 1 (with 0 standing for 2^16), additive inverses modulo 2^16 and copies of the encryption subkeys, in reverse round order.
@@ -31,8 +30,45 @@ pub unsafe extern "sysv64" fn vg_idea_expand_key(key: *const [u8; 16], schedule:
 /// * `inverse` must be valid for reads and writes of 104 bytes.
 /// * `inverse` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `inverse` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_idea_invert_key(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_idea_invert_key(schedule, inverse) }
+}
+
+/// IDEA in ECB mode (Lai, 1992, §3.3; SP 800-38A §6.1) on `n` complete 8-byte blocks at `data`, in place, under the 52 subkeys at `schedule`: encryption under the subkeys `vg_idea_expand_key` writes, decryption under those `vg_idea_invert_key` writes. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Idea.ecbContract`. Constant time: only pointers and `n` may affect timing, not the subkeys or data, including words or subkeys that are 0.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 104 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_idea_ecb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_idea_ecb(schedule, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_idea_expand_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_idea_invert_key(schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
+pub(crate) unsafe extern "sysv64" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
+    core::arch::naked_asm!(
+        r#".base64 "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"
+.p2align 6"#,
+    )
+}
+
+/// The verified code of [`super::vg_idea_invert_key`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_idea_invert_key(schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
     core::arch::naked_asm!(
         r#".base64 "TItHYE2JwbkPAAAA"
 20:
@@ -111,18 +147,9 @@ jne 217b
     )
 }
 
-/// IDEA in ECB mode (Lai, 1992, §3.3; SP 800-38A §6.1) on `n` complete 8-byte blocks at `data`, in place, under the 52 subkeys at `schedule`: encryption under the subkeys `vg_idea_expand_key` writes, decryption under those `vg_idea_invert_key` writes. No padding is added or removed. For `n = 0`, no data is transformed.
-///
-/// Contract: `VG.Spec.Idea.ecbContract`. Constant time: only pointers and `n` may affect timing, not the subkeys or data, including words or subkeys that are 0.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 104 bytes.
-/// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_idea_ecb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_idea_ecb(schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_idea_ecb(schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI1kJOhIieFIg8EISIXS"
 je 20f
@@ -137,4 +164,5 @@ jmp 21f
 .base64 "SI1kJBjD"
 .p2align 6"#,
     )
+}
 }

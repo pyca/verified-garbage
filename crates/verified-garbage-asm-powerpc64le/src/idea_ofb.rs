@@ -14,8 +14,19 @@
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_idea_ofb(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_idea_ofb(schedule, iv, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_idea_ofb`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_idea_ofb(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_idea_ofb(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "of8h+CAA4TimAgh8IAAH+AgAp/sQAMf7GADn+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgSgABZEEAB+BLAAFkXgz33wAAD4o"
 beq %cr0, 20f
@@ -27,4 +38,5 @@ b 21f
 21:
 .base64 "eOu/fygABYEAAB+RLAAFgQQAH5EIAKXrEADF6xgA5esgAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlgACE4IACATg==""#,
     )
+}
 }

@@ -14,19 +14,11 @@
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_idea_cbc_encrypt_chained(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "of8h+CAA4TimAgh8IAAH+AgAp/sQAMf7GADn+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgSgABZEEAB+BLAAFkXgz33wAAD4o"
-beq %cr0, 20f
-22:
-.base64 "AAAfgSgAJYF4Sgh9AAAFkQQAH4EsACWBeEoIfQQABZEAAAA4//8AYAAAhTgAAMSI5EXGeAEAZIl4W8Z8AgDkiORF53gDAGSJeFvnfAQABInkRQh5BQBkiXhbCH0GACSJ5EUpeQcAZIl4Wyl9eDPLfAAAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfQYAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9AgCDgRRi53w4AOd8BACDgRRiCH04AAh9eELLfAgAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa30KAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfAwAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfRIAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9DgCDgRRi53w4AOd8EACDgRRiCH04AAh9eELLfBQAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa30WAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfBgAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfR4Ag4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9GgCDgRRi53w4AOd8HACDgRRiCH04AAh9eELLfCAAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa30iAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfCQAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfSoAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9JgCDgRRi53w4AOd8KACDgRRiCH04AAh9eELLfCwAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa30uAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfDAAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfTYAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9MgCDgRRi53w4AOd8NACDgRRiCH04AAh9eELLfDgAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa306AIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfDwAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfUIAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9PgCDgRRi53w4AOd8QACDgRRiCH04AAh9eELLfEQAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa31GAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfEgAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfU4Ag4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9SgCDgRRi53w4AOd8TACDgRRiCH04AAh9eELLfFAAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa31SAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfFQAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfVoAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9VgCDgRRi53w4AOd8WACDgRRiCH04AAh9eELLfFwAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa31eAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfGAAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfWQAg4EChIx5//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9eGOJfWIAg4EUYgh9OAAIfWQAg4EUYud8OADnfAEAxJgCwst4AABkmQMABJkCwgt5AgBkmQUA5JgCwut4BABkmQcAJJkCwit5BgBkmQAABYEoAAWRBAAFgSwABZEAAAWBAAAfkQQABYEEAB+RCAD/O///3jsAAD4o"
-bne %cr0, 22b
-b 21f
-20:
-21:
-.base64 "eOu/fygABYEAAB+RLAAFgQQAH5EIAKXrEADF6xgA5esgAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlgACE4IACATg==""#,
-    )
+#[inline(always)]
+pub unsafe fn vg_idea_cbc_encrypt_chained(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_idea_cbc_encrypt_chained(schedule, iv, data, n) }
 }
 
 /// IDEA-CBC decryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is IDEA under the decryption subkeys at `schedule`, as `vg_idea_invert_key` writes them. No padding is removed.
@@ -40,8 +32,35 @@ b 21f
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_idea_cbc_decrypt_chained(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_idea_cbc_decrypt_chained(schedule, iv, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_idea_cbc_encrypt_chained`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_idea_cbc_decrypt_chained(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_idea_cbc_encrypt_chained(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "of8h+CAA4TimAgh8IAAH+AgAp/sQAMf7GADn+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgSgABZEEAB+BLAAFkXgz33wAAD4o"
+beq %cr0, 20f
+22:
+.base64 "AAAfgSgAJYF4Sgh9AAAFkQQAH4EsACWBeEoIfQQABZEAAAA4//8AYAAAhTgAAMSI5EXGeAEAZIl4W8Z8AgDkiORF53gDAGSJeFvnfAQABInkRQh5BQBkiXhbCH0GACSJ5EUpeQcAZIl4Wyl9eDPLfAAAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfQYAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9AgCDgRRi53w4AOd8BACDgRRiCH04AAh9eELLfAgAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa30KAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfAwAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfRIAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9DgCDgRRi53w4AOd8EACDgRRiCH04AAh9eELLfBQAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa30WAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfBgAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfR4Ag4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9GgCDgRRi53w4AOd8HACDgRRiCH04AAh9eELLfCAAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa30iAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfCQAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfSoAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9JgCDgRRi53w4AOd8KACDgRRiCH04AAh9eELLfCwAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa30uAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfDAAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfTYAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9MgCDgRRi53w4AOd8NACDgRRiCH04AAh9eELLfDgAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa306AIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfDwAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfUIAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9PgCDgRRi53w4AOd8QACDgRRiCH04AAh9eELLfEQAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa31GAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfEgAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfU4Ag4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9SgCDgRRi53w4AOd8TACDgRRiCH04AAh9eELLfFAAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa31SAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfFQAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfVoAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4l9VgCDgRRi53w4AOd8WACDgRRiCH04AAh9eELLfFwAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4p9eErrfBRSa31eAIOB//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9FGJKfTgASn14YsZ8eGIIfXhS53x4Uil9eDvrfHhDB314W2h9eDPLfGAAg4H//2s5OABrfQEAazn//4w5OACMfQEAjDnSYWt9OABsfQKEa3lQYIt94A+LeRRajH3kg2t5FFqMfTgAjH14Y4Z9eEsrfWQAg4EChIx5//9rOTgAa30BAGs5//+MOTgAjH0BAIw50mFrfTgAbH0ChGt5UGCLfeAPi3kUWox95INreRRajH04AIx9eGOJfWIAg4EUYgh9OAAIfWQAg4EUYud8OADnfAEAxJgCwst4AABkmQMABJkCwgt5AgBkmQUA5JgCwut4BABkmQcAJJkCwit5BgBkmQAABYEoAAWRBAAFgSwABZEAAAWBAAAfkQQABYEEAB+RCAD/O///3jsAAD4o"
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "eOu/fygABYEAAB+RLAAFgQQAH5EIAKXrEADF6xgA5esgAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlgACE4IACATg==""#,
+    )
+}
+
+/// The verified code of [`super::vg_idea_cbc_decrypt_chained`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_idea_cbc_decrypt_chained(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "of8h+CAA4TimAgh8IAAH+AgAp/sQAMf7GADn+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgSgABZEEAB+BLAAFkXgz33wAAD4o"
 beq %cr0, 20f
@@ -53,4 +72,5 @@ b 21f
 21:
 .base64 "eOu/fygABYEAAB+RLAAFgQQAH5EIAKXrEADF6xgA5esgAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlgACE4IACATg==""#,
     )
+}
 }

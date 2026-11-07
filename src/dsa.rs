@@ -148,6 +148,7 @@ impl PublicKey {
     /// [`InvalidSignature`] if the signature is not valid, is not twice as
     /// long as `q`, or the key is not valid.
     pub fn verify(&self, digest: &[u8], signature: &[u8]) -> Result<(), InvalidSignature> {
+        let dit = crate::dit::public(crate::dit::Why::Verify);
         if signature.len() != 2 * self.q_len {
             return Err(InvalidSignature);
         }
@@ -167,6 +168,7 @@ impl PublicKey {
             // CPU features select the backend.
             let valid = unsafe {
                 validate(
+                    dit,
                     self.packed.as_ptr(),
                     self.packed.len(),
                     self.p_len,
@@ -192,6 +194,7 @@ impl PublicKey {
                 // may overlap one another. CPU features select the backend.
                 unsafe {
                     $function(
+                        dit,
                         self.packed.as_ptr(),
                         self.packed.len(),
                         self.p_len,
@@ -282,6 +285,7 @@ impl PrivateKey {
         digest: &[u8],
         random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Vec<u8>, Error> {
+        crate::dit::enter!(dit);
         let q_len = self.public.q_len;
         let mut scratch = Secret(vec![0u64; 16 * self.public.p_len + 64]);
         let mut output = vec![0u8; 2 * q_len];
@@ -296,6 +300,7 @@ impl PrivateKey {
                     // size, and backend selection establishes CPU features.
                     unsafe {
                         $function(
+                            dit,
                             output.as_mut_ptr(),
                             output.len(),
                             &mut used,

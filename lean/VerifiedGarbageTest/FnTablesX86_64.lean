@@ -228,13 +228,18 @@ def expected : String := "/// Returns the word of data of its table, which the t
 /// # Safety
 ///
 /// * `t` must be valid for reads of `2 * size_of::<usize>()` bytes.
-/// * `t` must not overlap the return address on the stack or the 8 bytes of stack below it, \
-or wrap around the end of the address space (no Rust object does).
-/// * `t` must be the `as_ptr()` of one of the `TestFns` tables of functions of this crate \
-(`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, \
-if it has one.
+/// * `t` must not overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `t` must be the `as_ptr()` of one of the `TestFns` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[inline(always)]
+pub unsafe fn vg_test_fn_tables(_dit: verified_garbage_cpu::Dit<'_>, t: *const [usize; 2]) -> u64 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_test_fn_tables(t) }
+}
+
+/// The verified code of [`super::vg_test_fn_tables`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern \"sysv64\" fn vg_test_fn_tables(t: *const [usize; 2]) -> u64 {
+pub(crate) unsafe extern \"sysv64\" fn vg_test_fn_tables(t: *const [usize; 2]) -> u64 {
     core::arch::naked_asm!(
         r#\".base64 \"TIsfQf/Tww==\"
 .p2align 6\"#,

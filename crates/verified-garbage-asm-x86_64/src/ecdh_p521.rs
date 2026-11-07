@@ -16,8 +16,43 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
 /// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ecdh_p521(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdh_p521(out, d, peer, scratch) }
+}
+
+/// The CPU features `vg_ecdh_p521_adx` requires (`Artifact.features`).
+pub const VG_ECDH_P521_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+
+/// ECDH over P-521 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 66 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (66 bytes, most significant first) for the private key `d` at `d` (66 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
+///
+/// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 66 bytes.
+/// * `d` must be valid for reads of 66 bytes.
+/// * `peer` must be valid for reads of 133 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
+/// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[inline(always)]
+pub unsafe fn vg_ecdh_p521_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdh_p521_adx(out, d, peer, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ecdh_p521`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdh_p521(out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdh_p521(out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnISYnRSInxSIPCAUmJGEmJaAhNiWAQTYloGE2JcCBNiXgoSYn+TInHSItBOkgPyEiJh/gIAABIi0EySA/ISImHAAkAAEiLQSpID8hIiYcICQAASItBIkgPyEiJhxAJAABIi0EaSA/ISImHGAkAAEiLQRJID8hIiYcgCQAASItBCkgPyEiJhygJAABIi0ECSA/ISImHMAkAAEiLAUgPyEjB6DBIiYc4CQAASItGOkgPyEiJh0AJAABIi0YySA/ISImHSAkAAEiLRipID8hIiYdQCQAASItGIkgPyEiJh1gJAABIi0YaSA/ISImHYAkAAEiLRhJID8hIiYdoCQAASItGCkgPyEiJh3AJAABIi0YCSA/ISImHeAkAAEiLBkgPyEjB6DBIiYeACQAASItCOkgPyEiJh4gJAABIi0IySA/ISImHkAkAAEiLQipID8hIiYeYCQAASItCIkgPyEiJh6AJAABIi0IaSA/ISImHqAkAAEiLQhJID8hIiYewCQAASItCCkgPyEiJh7gJAABIi0ICSA/ISImHwAkAAEiLAkgPyEjB6DBIiYfICQAASLj//////////0iJR0BIuP//////////SIlHSEi4//////////9IiUdQSLj//////////0iJR1hIuP//////////SIlHYEi4//////////9IiUdoSLj//////////0iJR3BIuP//////////SIlHeEi4/wEAAAAAAABIiYeAAAAASLgJZDiRHrdvu0iJh4gAAABIuK5HnIm4ybU7SImHkAAAAEi40KUJ90gBzH9IiYeYAAAASLhrli+/g4eGUUiJh6AAAABIuPr/////////SImHqAAAAEi4//////////9IiYewAAAASLj//////////0iJh7gAAABIuP//////////SImHwAAAAEi4/wEAAAAAAABIiYfIAAAASLgAAAAAAAAAAEiJhxgBAABIuAAAAAAAAAAASImHIAEAAEi4AAAAAAAAAABIiYcoAQAASLgAAAAAAAAAAEiJhzABAABIuAAAAAAAAAAASImHOAEAAEi4AAAAAAAAAABIiYdAAQAASLgAAAAAAAAAAEiJh0gBAABIuAAAAAAAAAAASImHUAEAAEi4AAAAAAAAAABIiYdYAQAASLgBAAAAAAAAAEiJh2ABAABIuAAAAAAAAAAASImHaAEAAEi4AAAAAAAAAABIiYdwAQAASLgAAAAAAAAAAEiJh3gBAABIuAAAAAAAAAAASImHgAEAAEi4AAAAAAAAAABIiYeIAQAASLgAAAAAAAAAAEiJh5ABAABIuAAAAAAAAAAASImHmAEAAEi4AAAAAAAAAABIiYegAQAASLgAAAAAAACAAEiJh6gBAABIuAAAAAAAAAAASImHsAEAAEi4AAAAAAAAAABIiYe4AQAASLgAAAAAAAAAAEiJh8ABAABIuAAAAAAAAAAASImHyAEAAEi4AAAAAAAAAABIiYfQAQAASLgAAAAAAAAAAEiJh9gBAABIuAAAAAAAAAAASImH4AEAAEi4AAAAAAAAAABIiYfoAQAASLj///////9//kiJh/ABAABIuP//////////SImH+AEAAEi4//////////9IiYcAAgAASLj//////////0iJhwgCAABIuP//////////SImHEAIAAEi4//////////9IiYcYAgAASLj//////////0iJhyACAABIuP//////////SImHKAIAAEi4/wEAAAAAAABIiYcwAgAASLiVKgkL7y89gEiJhzgCAABIuF74oL6v5+ZqSImHQAIAAEi4T8JbTM8t0IpIiYdIAgAASLieitkbIXyhOEiJh1ACAABIuN294vrVJQHSSImHWAIAAEi4jmlWWs4Ole1IiYdgAgAASLigjGaJq0f0ZUiJh2gCAABIuOHHEXEy51svSImHcAIAAEi45wAAAAAAAABIiYd4AgAASLgBwa2BY6Exs0iJh4ACAABIuN5y4Rg/v/xNSImHiAIAAEi4IbXC4FmkGW9IiYeQAgAASLjUf9GT4A5/lEiJh5gCAABIuKzz9zuvpVDdSImHoAIAAEi4nqY1sFcU/JBIiYeoAgAASLjan4KcQDJOIUiJh7ACAABIuNrKEbNlH8/mSImHuAIAAEi4dAAAAAAAAABIiYfAAgAASLiOJp5aSg5GKEiJh8gCAABIuLPoTztKX0QgSImH0AIAAEi4YTlRQziemrBIiYfYAgAASLiD1p+AXKhiIEiJh+ACAABIuBN6r0w590sWSImH6AIAAEi4M5+Ti97XCzRIiYfwAgAASLiizaskonrM7EiJh/gCAABIuI0+FtovRS4CSImHAAMAAEi44AEAAAAAAABIiYcIAwAASLgE3RXPTdB8E0iJhxADAABIuKN+VOXcugf3SImHGAMAAEi4/3NFeTiNpxJIiYcgAwAASLgGXvdX9R5y00iJhygDAABIuNvHSS7YI27dSImHMAMAAEi4Pm51t0LR889IiYc4AwAASLi8Z+WoYW3MW0iJh0ADAABIuEUNLUnRA44tSImHSAMAAEi4PQAAAAAAAABIiYdQAwAASLgAAAAAAACA+0iJh1gDAABIuM1jt3AkSKIoSImHYAMAAEi43DG7Ixsl4hdIiYdoAwAASLgte4Rb/xlAykiJh3ADAABIuDRoID68PNcCSImHeAMAAEi4AAAAAAAAAABIiYeAAwAASLgAAAAAAAAAAEiJh4gDAABIuAAAAAAAAAAASImHkAMAAEi4AAAAAAAAAABIiYeYAwAASLj9/////////0iJh6ADAABIuP//////////SImHqAMAAEi4//////////9IiYewAwAASLj//////////0iJh7gDAABIuP//////////SImHwAMAAEi4//////////9IiYfIAwAASLj//////////0iJh9ADAABIuP//////////SImH2AMAAEi4/wEAAAAAAABIiYfgAwAASLgHZDiRHrdvu0iJh+gDAABIuK5HnIm4ybU7SImH8AMAAEi40KUJ90gBzH9IiYf4AwAASLhrli+/g4eGUUiJhwAEAABIuPr/////////SImHCAQAAEi4//////////9IiYcQBAAASLj//////////0iJhxgEAABIuP//////////SImHIAQAAEi4/wEAAAAAAABIiYcoBAAASLgAAAAAAAAAAEiJhzAEAABIuAAAAAAAAAAASImHOAQAAEi4AAAAAAAAAABIiYdABAAASLgAAAAAAAAAAEiJh0gEAABIuAAAAAAAAAAASImHUAQAAEi4AAAAAAAAAABIiYdYBAAASLgAAAAAAAAAAEiJh2AEAABIuAAAAAAAAAAASImHaAQAAEi4AAAAAAAAAABIiYdwBAAASLgAAAAAAACAAEiJh3gEAABIuAAAAAAAAAAASImHgAQAAEi4AAAAAAAAAABIiYeIBAAASLgAAAAAAAAAAEiJh5AEAABIuAAAAAAAAAAASImHmAQAAEi4AAAAAAAAAABIiYegBAAASLgAAAAAAAAAAEiJh6gEAABIuAAAAAAAAAAASImHsAQAAEi4AAAAAAAAAABIiYe4BAAASLgAAAAAAAAAAEiJh8AEAABIuAAAAAAAAAAASImHyAQAAEi4AAAAAAAAAABIiYfQBAAASLgAAAAAAAAAAEiJh9gEAABIuAAAAAAAAAAASImH4AQAAEi4AAAAAAAAAABIiYfoBAAASLgAAAAAAAAAAEiJh/AEAABIuAAAAAAAAAAASImH+AQAAEi4AAAAAAAAAABIiYcABQAASLj//////////0iJh6AMAABMifa7AAAAAA=="
 20:
@@ -324,31 +359,15 @@ call {vg_p521_mul_mod_p}
 call {vg_p521_mul_mod_p}
 .base64 "TInmSIuXQAkAAEgrl4gAAABIi5dICQAASBuXkAAAAEiLl1AJAABIG5eYAAAASIuXWAkAAEgbl6AAAABIi5dgCQAASBuXqAAAAEiLl2gJAABIG5ewAAAASIuXcAkAAEgbl7gAAABIi5d4CQAASBuXwAAAAEiLl4AJAABIG5fIAAAASBnASInFSIuXQAkAAEgLl0gJAABIC5dQCQAASAuXWAkAAEgLl2AJAABIC5doCQAASAuXcAkAAEgLl3gJAABIC5eACQAAuQAAAABIKdFIGdJIIepIi4egDAAASCHQSImHoAwAAEiLl8AEAABIC5fIBAAASAuX0AQAAEgLl9gEAABIC5fgBAAASAuX6AQAAEgLl/AEAABIC5f4BAAASAuXAAUAALkAAAAASCnRSBnSSIuHoAwAAEgh0EiJh6AMAABIi4+gDAAASIuHGAoAAEghyEgPyEiJRjpIi4cgCgAASCHISA/ISIlGMkiLhygKAABIIchID8hIiUYqSIuHMAoAAEghyEgPyEiJRiJIi4c4CgAASCHISA/ISIlGGkiLh0AKAABIIchID8hIiUYSSIuHSAoAAEghyEgPyEiJRgpIi4dQCgAASCHISA/ISIlGAkiLh1gKAABIIchIicJIweoIiBZIicKIVgFIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_p521_check_point = sym super::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
-        vg_p521_mul_mod_p = sym super::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
-        vg_p521_inv_mod_p = sym super::ec_p521::vg_p521_inv_mod_p::vg_p521_inv_mod_p,
+        vg_p521_check_point = sym crate::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
+        vg_p521_mul_mod_p = sym crate::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
+        vg_p521_inv_mod_p = sym crate::ec_p521::vg_p521_inv_mod_p::vg_p521_inv_mod_p,
     )
 }
 
-/// The CPU features `vg_ecdh_p521_adx` requires (`Artifact.features`).
-pub const VG_ECDH_P521_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
-/// ECDH over P-521 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 66 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (66 bytes, most significant first) for the private key `d` at `d` (66 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
-///
-/// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 66 bytes.
-/// * `d` must be valid for reads of 66 bytes.
-/// * `peer` must be valid for reads of 133 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
-/// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// The verified code of [`super::vg_ecdh_p521_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdh_p521_adx(out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdh_p521_adx(out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnISYnRSInxSIPCAUmJGEmJaAhNiWAQTYloGE2JcCBNiXgoSYn+TInHSItBOkgPyEiJh/gIAABIi0EySA/ISImHAAkAAEiLQSpID8hIiYcICQAASItBIkgPyEiJhxAJAABIi0EaSA/ISImHGAkAAEiLQRJID8hIiYcgCQAASItBCkgPyEiJhygJAABIi0ECSA/ISImHMAkAAEiLAUgPyEjB6DBIiYc4CQAASItGOkgPyEiJh0AJAABIi0YySA/ISImHSAkAAEiLRipID8hIiYdQCQAASItGIkgPyEiJh1gJAABIi0YaSA/ISImHYAkAAEiLRhJID8hIiYdoCQAASItGCkgPyEiJh3AJAABIi0YCSA/ISImHeAkAAEiLBkgPyEjB6DBIiYeACQAASItCOkgPyEiJh4gJAABIi0IySA/ISImHkAkAAEiLQipID8hIiYeYCQAASItCIkgPyEiJh6AJAABIi0IaSA/ISImHqAkAAEiLQhJID8hIiYewCQAASItCCkgPyEiJh7gJAABIi0ICSA/ISImHwAkAAEiLAkgPyEjB6DBIiYfICQAASLj//////////0iJR0BIuP//////////SIlHSEi4//////////9IiUdQSLj//////////0iJR1hIuP//////////SIlHYEi4//////////9IiUdoSLj//////////0iJR3BIuP//////////SIlHeEi4/wEAAAAAAABIiYeAAAAASLgJZDiRHrdvu0iJh4gAAABIuK5HnIm4ybU7SImHkAAAAEi40KUJ90gBzH9IiYeYAAAASLhrli+/g4eGUUiJh6AAAABIuPr/////////SImHqAAAAEi4//////////9IiYewAAAASLj//////////0iJh7gAAABIuP//////////SImHwAAAAEi4/wEAAAAAAABIiYfIAAAASLgAAAAAAAAAAEiJhxgBAABIuAAAAAAAAAAASImHIAEAAEi4AAAAAAAAAABIiYcoAQAASLgAAAAAAAAAAEiJhzABAABIuAAAAAAAAAAASImHOAEAAEi4AAAAAAAAAABIiYdAAQAASLgAAAAAAAAAAEiJh0gBAABIuAAAAAAAAAAASImHUAEAAEi4AAAAAAAAAABIiYdYAQAASLgBAAAAAAAAAEiJh2ABAABIuAAAAAAAAAAASImHaAEAAEi4AAAAAAAAAABIiYdwAQAASLgAAAAAAAAAAEiJh3gBAABIuAAAAAAAAAAASImHgAEAAEi4AAAAAAAAAABIiYeIAQAASLgAAAAAAAAAAEiJh5ABAABIuAAAAAAAAAAASImHmAEAAEi4AAAAAAAAAABIiYegAQAASLgAAAAAAACAAEiJh6gBAABIuAAAAAAAAAAASImHsAEAAEi4AAAAAAAAAABIiYe4AQAASLgAAAAAAAAAAEiJh8ABAABIuAAAAAAAAAAASImHyAEAAEi4AAAAAAAAAABIiYfQAQAASLgAAAAAAAAAAEiJh9gBAABIuAAAAAAAAAAASImH4AEAAEi4AAAAAAAAAABIiYfoAQAASLj///////9//kiJh/ABAABIuP//////////SImH+AEAAEi4//////////9IiYcAAgAASLj//////////0iJhwgCAABIuP//////////SImHEAIAAEi4//////////9IiYcYAgAASLj//////////0iJhyACAABIuP//////////SImHKAIAAEi4/wEAAAAAAABIiYcwAgAASLiVKgkL7y89gEiJhzgCAABIuF74oL6v5+ZqSImHQAIAAEi4T8JbTM8t0IpIiYdIAgAASLieitkbIXyhOEiJh1ACAABIuN294vrVJQHSSImHWAIAAEi4jmlWWs4Ole1IiYdgAgAASLigjGaJq0f0ZUiJh2gCAABIuOHHEXEy51svSImHcAIAAEi45wAAAAAAAABIiYd4AgAASLgBwa2BY6Exs0iJh4ACAABIuN5y4Rg/v/xNSImHiAIAAEi4IbXC4FmkGW9IiYeQAgAASLjUf9GT4A5/lEiJh5gCAABIuKzz9zuvpVDdSImHoAIAAEi4nqY1sFcU/JBIiYeoAgAASLjan4KcQDJOIUiJh7ACAABIuNrKEbNlH8/mSImHuAIAAEi4dAAAAAAAAABIiYfAAgAASLiOJp5aSg5GKEiJh8gCAABIuLPoTztKX0QgSImH0AIAAEi4YTlRQziemrBIiYfYAgAASLiD1p+AXKhiIEiJh+ACAABIuBN6r0w590sWSImH6AIAAEi4M5+Ti97XCzRIiYfwAgAASLiizaskonrM7EiJh/gCAABIuI0+FtovRS4CSImHAAMAAEi44AEAAAAAAABIiYcIAwAASLgE3RXPTdB8E0iJhxADAABIuKN+VOXcugf3SImHGAMAAEi4/3NFeTiNpxJIiYcgAwAASLgGXvdX9R5y00iJhygDAABIuNvHSS7YI27dSImHMAMAAEi4Pm51t0LR889IiYc4AwAASLi8Z+WoYW3MW0iJh0ADAABIuEUNLUnRA44tSImHSAMAAEi4PQAAAAAAAABIiYdQAwAASLgAAAAAAACA+0iJh1gDAABIuM1jt3AkSKIoSImHYAMAAEi43DG7Ixsl4hdIiYdoAwAASLgte4Rb/xlAykiJh3ADAABIuDRoID68PNcCSImHeAMAAEi4AAAAAAAAAABIiYeAAwAASLgAAAAAAAAAAEiJh4gDAABIuAAAAAAAAAAASImHkAMAAEi4AAAAAAAAAABIiYeYAwAASLj9/////////0iJh6ADAABIuP//////////SImHqAMAAEi4//////////9IiYewAwAASLj//////////0iJh7gDAABIuP//////////SImHwAMAAEi4//////////9IiYfIAwAASLj//////////0iJh9ADAABIuP//////////SImH2AMAAEi4/wEAAAAAAABIiYfgAwAASLgHZDiRHrdvu0iJh+gDAABIuK5HnIm4ybU7SImH8AMAAEi40KUJ90gBzH9IiYf4AwAASLhrli+/g4eGUUiJhwAEAABIuPr/////////SImHCAQAAEi4//////////9IiYcQBAAASLj//////////0iJhxgEAABIuP//////////SImHIAQAAEi4/wEAAAAAAABIiYcoBAAASLgAAAAAAAAAAEiJhzAEAABIuAAAAAAAAAAASImHOAQAAEi4AAAAAAAAAABIiYdABAAASLgAAAAAAAAAAEiJh0gEAABIuAAAAAAAAAAASImHUAQAAEi4AAAAAAAAAABIiYdYBAAASLgAAAAAAAAAAEiJh2AEAABIuAAAAAAAAAAASImHaAQAAEi4AAAAAAAAAABIiYdwBAAASLgAAAAAAACAAEiJh3gEAABIuAAAAAAAAAAASImHgAQAAEi4AAAAAAAAAABIiYeIBAAASLgAAAAAAAAAAEiJh5AEAABIuAAAAAAAAAAASImHmAQAAEi4AAAAAAAAAABIiYegBAAASLgAAAAAAAAAAEiJh6gEAABIuAAAAAAAAAAASImHsAQAAEi4AAAAAAAAAABIiYe4BAAASLgAAAAAAAAAAEiJh8AEAABIuAAAAAAAAAAASImHyAQAAEi4AAAAAAAAAABIiYfQBAAASLgAAAAAAAAAAEiJh9gEAABIuAAAAAAAAAAASImH4AQAAEi4AAAAAAAAAABIiYfoBAAASLgAAAAAAAAAAEiJh/AEAABIuAAAAAAAAAAASImH+AQAAEi4AAAAAAAAAABIiYcABQAASLj//////////0iJh6AMAABMifa7AAAAAA=="
 20:
@@ -639,13 +658,14 @@ call {vg_p521_mul_mod_p_adx}
 call {vg_p521_mul_mod_p_adx}
 .base64 "TInmSIuXQAkAAEgrl4gAAABIi5dICQAASBuXkAAAAEiLl1AJAABIG5eYAAAASIuXWAkAAEgbl6AAAABIi5dgCQAASBuXqAAAAEiLl2gJAABIG5ewAAAASIuXcAkAAEgbl7gAAABIi5d4CQAASBuXwAAAAEiLl4AJAABIG5fIAAAASBnASInFSIuXQAkAAEgLl0gJAABIC5dQCQAASAuXWAkAAEgLl2AJAABIC5doCQAASAuXcAkAAEgLl3gJAABIC5eACQAAuQAAAABIKdFIGdJIIepIi4egDAAASCHQSImHoAwAAEiLl8AEAABIC5fIBAAASAuX0AQAAEgLl9gEAABIC5fgBAAASAuX6AQAAEgLl/AEAABIC5f4BAAASAuXAAUAALkAAAAASCnRSBnSSIuHoAwAAEgh0EiJh6AMAABIi4+gDAAASIuHGAoAAEghyEgPyEiJRjpIi4cgCgAASCHISA/ISIlGMkiLhygKAABIIchID8hIiUYqSIuHMAoAAEghyEgPyEiJRiJIi4c4CgAASCHISA/ISIlGGkiLh0AKAABIIchID8hIiUYSSIuHSAoAAEghyEgPyEiJRgpIi4dQCgAASCHISA/ISIlGAkiLh1gKAABIIchIicJIweoIiBZIicKIVgFIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_p521_check_point_adx = sym super::ec_p521_compressed::vg_p521_check_point_adx::vg_p521_check_point_adx,
-        vg_p521_mul_mod_p_adx = sym super::ec_p521::vg_p521_mul_mod_p_adx::vg_p521_mul_mod_p_adx,
-        vg_p521_sqr_adx = sym super::ecdh_p521::vg_p521_sqr_adx::vg_p521_sqr_adx,
-        vg_p521_mul_adx = sym super::ecdh_p521::vg_p521_mul_adx::vg_p521_mul_adx,
-        vg_p521_mulw_adx = sym super::ecdh_p521::vg_p521_mulw_adx::vg_p521_mulw_adx,
-        vg_p521_inv_mod_p_adx = sym super::ec_p521::vg_p521_inv_mod_p_adx::vg_p521_inv_mod_p_adx,
+        vg_p521_check_point_adx = sym crate::ec_p521_compressed::vg_p521_check_point_adx::vg_p521_check_point_adx,
+        vg_p521_mul_mod_p_adx = sym crate::ec_p521::vg_p521_mul_mod_p_adx::vg_p521_mul_mod_p_adx,
+        vg_p521_sqr_adx = sym crate::ecdh_p521::vg_p521_sqr_adx::vg_p521_sqr_adx,
+        vg_p521_mul_adx = sym crate::ecdh_p521::vg_p521_mul_adx::vg_p521_mul_adx,
+        vg_p521_mulw_adx = sym crate::ecdh_p521::vg_p521_mulw_adx::vg_p521_mulw_adx,
+        vg_p521_inv_mod_p_adx = sym crate::ec_p521::vg_p521_inv_mod_p_adx::vg_p521_inv_mod_p_adx,
     )
+}
 }
 
 #[rustfmt::skip]

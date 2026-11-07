@@ -16,116 +16,11 @@
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r".option push
-.option arch, +m, +c
-.insn 2, 0x87ba
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x09000593
-.insn 2, 0x82be
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 4, 0x2372b823
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
-.insn 2, 0x8bbe
-beqz s6, 20f
-22:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
-beqz t1, 23f
-.insn 4, 0x000ac303
-.insn 4, 0x014903b3
-.insn 4, 0x0003ce03
-.insn 4, 0x01c34333
-.insn 4, 0x00638023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
-j 24f
-23:
-beqz t4, 25f
-.insn 4, 0x000ac303
-.insn 4, 0x001ace03
-.insn 2, 0x0e22
-.insn 4, 0x01c36333
-.insn 4, 0x002ace03
-.insn 2, 0x0e42
-.insn 4, 0x01c36333
-.insn 4, 0x003ace03
-.insn 2, 0x0e62
-.insn 4, 0x01c36333
-.insn 4, 0x004ace83
-.insn 4, 0x005ace03
-.insn 2, 0x0e22
-.insn 4, 0x01ceeeb3
-.insn 4, 0x006ace03
-.insn 2, 0x0e42
-.insn 4, 0x01ceeeb3
-.insn 4, 0x007ace03
-.insn 2, 0x0e62
-.insn 4, 0x01ceeeb3
-.insn 2, 0x1e82
-.insn 4, 0x01d36333
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
-j 26f
-25:
-.insn 4, 0x000ab303
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
-26:
-24:
-.insn 4, 0x413a0333
-beqz t1, 27f
-j 28f
-27:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x85de
-call {vg_keccak_f1600}
-28:
-bnez s6, 22b
-j 21f
-20:
-21:
-.insn 2, 0x8552
-.insn 2, 0x82de
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x2302bb83
-.insn 2, 0x8082
-.option pop",
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_224_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_224_update(state, pos, data, len, scratch) }
 }
 
 /// Finishes a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, as `vg_sha3_224_update` leaves it), writes the SHA3-224 digest of that message (28 bytes, `VG.Spec.Sha3.sha3_224`) to `*out`.
@@ -140,40 +35,11 @@ j 21f
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 1200 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
-    core::arch::naked_asm!(
-        r".option push
-.option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x868a
-.insn 4, 0x0016b023
-.insn 4, 0x0126b423
-.insn 4, 0x0136b823
-.insn 4, 0x0146bc23
-.insn 2, 0x892a
-.insn 2, 0x89b2
-.insn 2, 0x8a36
-.insn 2, 0x862e
-.insn 4, 0x09000593
-.insn 2, 0x4699
-call {vg_keccak_pad}
-.insn 2, 0x854a
-.insn 4, 0x09000593
-.insn 2, 0x4601
-.insn 2, 0x86ce
-.insn 2, 0x4771
-call {vg_keccak_squeeze}
-.insn 4, 0x000a3083
-.insn 4, 0x008a3903
-.insn 4, 0x010a3983
-.insn 4, 0x018a3a03
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
-        vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
-        vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_224_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_224_finalize(state, pos, out) }
 }
 
 /// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
@@ -189,116 +55,11 @@ call {vg_keccak_squeeze}
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r".option push
-.option arch, +m, +c
-.insn 2, 0x87ba
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x08800593
-.insn 2, 0x82be
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 4, 0x2372b823
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
-.insn 2, 0x8bbe
-beqz s6, 20f
-22:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
-beqz t1, 23f
-.insn 4, 0x000ac303
-.insn 4, 0x014903b3
-.insn 4, 0x0003ce03
-.insn 4, 0x01c34333
-.insn 4, 0x00638023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
-j 24f
-23:
-beqz t4, 25f
-.insn 4, 0x000ac303
-.insn 4, 0x001ace03
-.insn 2, 0x0e22
-.insn 4, 0x01c36333
-.insn 4, 0x002ace03
-.insn 2, 0x0e42
-.insn 4, 0x01c36333
-.insn 4, 0x003ace03
-.insn 2, 0x0e62
-.insn 4, 0x01c36333
-.insn 4, 0x004ace83
-.insn 4, 0x005ace03
-.insn 2, 0x0e22
-.insn 4, 0x01ceeeb3
-.insn 4, 0x006ace03
-.insn 2, 0x0e42
-.insn 4, 0x01ceeeb3
-.insn 4, 0x007ace03
-.insn 2, 0x0e62
-.insn 4, 0x01ceeeb3
-.insn 2, 0x1e82
-.insn 4, 0x01d36333
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
-j 26f
-25:
-.insn 4, 0x000ab303
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
-26:
-24:
-.insn 4, 0x413a0333
-beqz t1, 27f
-j 28f
-27:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x85de
-call {vg_keccak_f1600}
-28:
-bnez s6, 22b
-j 21f
-20:
-21:
-.insn 2, 0x8552
-.insn 2, 0x82de
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x2302bb83
-.insn 2, 0x8082
-.option pop",
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_256_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_256_update(state, pos, data, len, scratch) }
 }
 
 /// Finishes a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, as `vg_sha3_256_update` leaves it), writes the SHA3-256 digest of that message (32 bytes, `VG.Spec.Sha3.sha3_256`) to `*out`.
@@ -313,40 +74,11 @@ j 21f
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 1200 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
-    core::arch::naked_asm!(
-        r".option push
-.option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x868a
-.insn 4, 0x0016b023
-.insn 4, 0x0126b423
-.insn 4, 0x0136b823
-.insn 4, 0x0146bc23
-.insn 2, 0x892a
-.insn 2, 0x89b2
-.insn 2, 0x8a36
-.insn 2, 0x862e
-.insn 4, 0x08800593
-.insn 2, 0x4699
-call {vg_keccak_pad}
-.insn 2, 0x854a
-.insn 4, 0x08800593
-.insn 2, 0x4601
-.insn 2, 0x86ce
-.insn 4, 0x02000713
-call {vg_keccak_squeeze}
-.insn 4, 0x000a3083
-.insn 4, 0x008a3903
-.insn 4, 0x010a3983
-.insn 4, 0x018a3a03
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
-        vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
-        vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_256_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_256_finalize(state, pos, out) }
 }
 
 /// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
@@ -362,116 +94,11 @@ call {vg_keccak_squeeze}
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r".option push
-.option arch, +m, +c
-.insn 2, 0x87ba
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x06800593
-.insn 2, 0x82be
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 4, 0x2372b823
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
-.insn 2, 0x8bbe
-beqz s6, 20f
-22:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
-beqz t1, 23f
-.insn 4, 0x000ac303
-.insn 4, 0x014903b3
-.insn 4, 0x0003ce03
-.insn 4, 0x01c34333
-.insn 4, 0x00638023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
-j 24f
-23:
-beqz t4, 25f
-.insn 4, 0x000ac303
-.insn 4, 0x001ace03
-.insn 2, 0x0e22
-.insn 4, 0x01c36333
-.insn 4, 0x002ace03
-.insn 2, 0x0e42
-.insn 4, 0x01c36333
-.insn 4, 0x003ace03
-.insn 2, 0x0e62
-.insn 4, 0x01c36333
-.insn 4, 0x004ace83
-.insn 4, 0x005ace03
-.insn 2, 0x0e22
-.insn 4, 0x01ceeeb3
-.insn 4, 0x006ace03
-.insn 2, 0x0e42
-.insn 4, 0x01ceeeb3
-.insn 4, 0x007ace03
-.insn 2, 0x0e62
-.insn 4, 0x01ceeeb3
-.insn 2, 0x1e82
-.insn 4, 0x01d36333
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
-j 26f
-25:
-.insn 4, 0x000ab303
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
-26:
-24:
-.insn 4, 0x413a0333
-beqz t1, 27f
-j 28f
-27:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x85de
-call {vg_keccak_f1600}
-28:
-bnez s6, 22b
-j 21f
-20:
-21:
-.insn 2, 0x8552
-.insn 2, 0x82de
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x2302bb83
-.insn 2, 0x8082
-.option pop",
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_384_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_384_update(state, pos, data, len, scratch) }
 }
 
 /// Finishes a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, as `vg_sha3_384_update` leaves it), writes the SHA3-384 digest of that message (48 bytes, `VG.Spec.Sha3.sha3_384`) to `*out`.
@@ -486,40 +113,11 @@ j 21f
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 1200 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
-    core::arch::naked_asm!(
-        r".option push
-.option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x868a
-.insn 4, 0x0016b023
-.insn 4, 0x0126b423
-.insn 4, 0x0136b823
-.insn 4, 0x0146bc23
-.insn 2, 0x892a
-.insn 2, 0x89b2
-.insn 2, 0x8a36
-.insn 2, 0x862e
-.insn 4, 0x06800593
-.insn 2, 0x4699
-call {vg_keccak_pad}
-.insn 2, 0x854a
-.insn 4, 0x06800593
-.insn 2, 0x4601
-.insn 2, 0x86ce
-.insn 4, 0x03000713
-call {vg_keccak_squeeze}
-.insn 4, 0x000a3083
-.insn 4, 0x008a3903
-.insn 4, 0x010a3983
-.insn 4, 0x018a3a03
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
-        vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
-        vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_384_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_384_finalize(state, pos, out) }
 }
 
 /// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
@@ -535,116 +133,11 @@ call {vg_keccak_squeeze}
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r".option push
-.option arch, +m, +c
-.insn 2, 0x87ba
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x04800593
-.insn 2, 0x82be
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 4, 0x2372b823
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
-.insn 2, 0x8bbe
-beqz s6, 20f
-22:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
-beqz t1, 23f
-.insn 4, 0x000ac303
-.insn 4, 0x014903b3
-.insn 4, 0x0003ce03
-.insn 4, 0x01c34333
-.insn 4, 0x00638023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
-j 24f
-23:
-beqz t4, 25f
-.insn 4, 0x000ac303
-.insn 4, 0x001ace03
-.insn 2, 0x0e22
-.insn 4, 0x01c36333
-.insn 4, 0x002ace03
-.insn 2, 0x0e42
-.insn 4, 0x01c36333
-.insn 4, 0x003ace03
-.insn 2, 0x0e62
-.insn 4, 0x01c36333
-.insn 4, 0x004ace83
-.insn 4, 0x005ace03
-.insn 2, 0x0e22
-.insn 4, 0x01ceeeb3
-.insn 4, 0x006ace03
-.insn 2, 0x0e42
-.insn 4, 0x01ceeeb3
-.insn 4, 0x007ace03
-.insn 2, 0x0e62
-.insn 4, 0x01ceeeb3
-.insn 2, 0x1e82
-.insn 4, 0x01d36333
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
-j 26f
-25:
-.insn 4, 0x000ab303
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
-26:
-24:
-.insn 4, 0x413a0333
-beqz t1, 27f
-j 28f
-27:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x85de
-call {vg_keccak_f1600}
-28:
-bnez s6, 22b
-j 21f
-20:
-21:
-.insn 2, 0x8552
-.insn 2, 0x82de
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x2302bb83
-.insn 2, 0x8082
-.option pop",
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_512_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_512_update(state, pos, data, len, scratch) }
 }
 
 /// Finishes a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, as `vg_sha3_512_update` leaves it), writes the SHA3-512 digest of that message (64 bytes, `VG.Spec.Sha3.sha3_512`) to `*out`.
@@ -659,40 +152,11 @@ j 21f
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 1200 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
-    core::arch::naked_asm!(
-        r".option push
-.option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x868a
-.insn 4, 0x0016b023
-.insn 4, 0x0126b423
-.insn 4, 0x0136b823
-.insn 4, 0x0146bc23
-.insn 2, 0x892a
-.insn 2, 0x89b2
-.insn 2, 0x8a36
-.insn 2, 0x862e
-.insn 4, 0x04800593
-.insn 2, 0x4699
-call {vg_keccak_pad}
-.insn 2, 0x854a
-.insn 4, 0x04800593
-.insn 2, 0x4601
-.insn 2, 0x86ce
-.insn 4, 0x04000713
-call {vg_keccak_squeeze}
-.insn 4, 0x000a3083
-.insn 4, 0x008a3903
-.insn 4, 0x010a3983
-.insn 4, 0x018a3a03
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
-        vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
-        vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_512_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_512_finalize(state, pos, out) }
 }
 
 /// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
@@ -708,116 +172,11 @@ call {vg_keccak_squeeze}
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r".option push
-.option arch, +m, +c
-.insn 2, 0x87ba
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x0a800593
-.insn 2, 0x82be
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 4, 0x2372b823
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
-.insn 2, 0x8bbe
-beqz s6, 20f
-22:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
-beqz t1, 23f
-.insn 4, 0x000ac303
-.insn 4, 0x014903b3
-.insn 4, 0x0003ce03
-.insn 4, 0x01c34333
-.insn 4, 0x00638023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
-j 24f
-23:
-beqz t4, 25f
-.insn 4, 0x000ac303
-.insn 4, 0x001ace03
-.insn 2, 0x0e22
-.insn 4, 0x01c36333
-.insn 4, 0x002ace03
-.insn 2, 0x0e42
-.insn 4, 0x01c36333
-.insn 4, 0x003ace03
-.insn 2, 0x0e62
-.insn 4, 0x01c36333
-.insn 4, 0x004ace83
-.insn 4, 0x005ace03
-.insn 2, 0x0e22
-.insn 4, 0x01ceeeb3
-.insn 4, 0x006ace03
-.insn 2, 0x0e42
-.insn 4, 0x01ceeeb3
-.insn 4, 0x007ace03
-.insn 2, 0x0e62
-.insn 4, 0x01ceeeb3
-.insn 2, 0x1e82
-.insn 4, 0x01d36333
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
-j 26f
-25:
-.insn 4, 0x000ab303
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
-26:
-24:
-.insn 4, 0x413a0333
-beqz t1, 27f
-j 28f
-27:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x85de
-call {vg_keccak_f1600}
-28:
-bnez s6, 22b
-j 21f
-20:
-21:
-.insn 2, 0x8552
-.insn 2, 0x82de
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x2302bb83
-.insn 2, 0x8082
-.option pop",
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
-    )
+#[inline(always)]
+pub unsafe fn vg_shake128_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake128_update(state, pos, data, len, scratch) }
 }
 
 /// Finishes absorbing a SHAKE128 message: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, as `vg_shake128_update` leaves it), it becomes a state that, squeezed by `vg_shake128_squeeze` from position 0, gives the output of SHAKE128 of that message (`VG.Spec.Sha3.shake128`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
@@ -829,35 +188,11 @@ j 21f
 /// * `state` must be valid for reads and writes of 200 bytes, and aligned for `u64`.
 /// * `pos` must be less than 168.
 /// * `state` must not overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_finalize(state: *mut [u64; 25], pos: usize) {
-    core::arch::naked_asm!(
-        r".option push
-.option arch, +m, +c
-.insn 2, 0x862e
-.insn 4, 0x0a800593
-.insn 2, 0x46fd
-.insn 4, 0xdf010113
-.insn 2, 0x828a
-.insn 4, 0x2012b023
-.insn 4, 0x00c50333
-.insn 4, 0x00034383
-.insn 4, 0x00d3c3b3
-.insn 4, 0x00730023
-.insn 4, 0x00b50333
-.insn 2, 0x137d
-.insn 4, 0x00034383
-.insn 4, 0x0803c393
-.insn 4, 0x00730023
-.insn 2, 0x858a
-call {vg_keccak_f1600}
-.insn 2, 0x828a
-.insn 4, 0x2002b083
-.insn 4, 0x21010113
-.insn 2, 0x8082
-.option pop",
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
-    )
+#[inline(always)]
+pub unsafe fn vg_shake128_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake128_finalize(state, pos) }
 }
 
 /// Squeezes SHAKE128 output: if the state `*state`, from position `pos`, continues the output of SHAKE128 of a message (`VG.Spec.Sha3.shake128`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake128_finalize` leaves and position 0.
@@ -871,101 +206,11 @@ call {vg_keccak_f1600}
 /// * `pos` must be at most 168.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
-    core::arch::naked_asm!(
-        r".option push
-.option arch, +m, +c
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x0a800593
-.insn 4, 0xdd010113
-.insn 2, 0x828a
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
-beqz s6, 20f
-22:
-.insn 4, 0x413a0333
-beqz t1, 23f
-j 24f
-23:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x858a
-call {vg_keccak_f1600}
-24:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
-beqz t1, 25f
-.insn 4, 0x014903b3
-.insn 4, 0x0003c303
-.insn 4, 0x006a8023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
-j 26f
-25:
-beqz t4, 27f
-.insn 4, 0x0003b303
-.insn 4, 0x006a8023
-.insn 4, 0x00835e13
-.insn 4, 0x01ca80a3
-.insn 4, 0x01035e13
-.insn 4, 0x01ca8123
-.insn 4, 0x01835e13
-.insn 4, 0x01ca81a3
-.insn 4, 0x02035e13
-.insn 4, 0x01ca8223
-.insn 4, 0x008e5e93
-.insn 4, 0x01da82a3
-.insn 4, 0x010e5e93
-.insn 4, 0x01da8323
-.insn 4, 0x018e5e93
-.insn 4, 0x01da83a3
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
-j 28f
-27:
-.insn 4, 0x0003b303
-.insn 4, 0x006ab023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
-28:
-26:
-bnez s6, 22b
-j 21f
-20:
-21:
-.insn 2, 0x8552
-.insn 2, 0x828a
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x23010113
-.insn 2, 0x8082
-.option pop",
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
-    )
+#[inline(always)]
+pub unsafe fn vg_shake128_squeeze(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake128_squeeze(state, pos, out, outlen) }
 }
 
 /// Absorbs data into a SHAKE256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
@@ -995,8 +240,883 @@ pub use self::vg_sha3_256_update as vg_shake256_update;
 /// * `state` must be valid for reads and writes of 200 bytes, and aligned for `u64`.
 /// * `pos` must be less than 136.
 /// * `state` must not overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_shake256_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake256_finalize(state, pos) }
+}
+
+/// Squeezes SHAKE256 output: if the state `*state`, from position `pos`, continues the output of SHAKE256 of a message (`VG.Spec.Sha3.shake256`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake256_finalize` leaves and position 0.
+///
+/// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes, and aligned for `u64`.
+/// * `out` must be valid for reads and writes of `outlen` bytes.
+/// * `pos` must be at most 136.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_shake256_squeeze(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake256_squeeze(state, pos, out, outlen) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_sha3_224_update`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake256_finalize(state: *mut [u64; 25], pos: usize) {
+pub(crate) unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x87ba
+.insn 2, 0x8736
+.insn 2, 0x86b2
+.insn 2, 0x862e
+.insn 4, 0x09000593
+.insn 2, 0x82be
+.insn 4, 0x2012b023
+.insn 4, 0x2122b423
+.insn 4, 0x2132b823
+.insn 4, 0x2142bc23
+.insn 4, 0x2352b023
+.insn 4, 0x2362b423
+.insn 4, 0x2372b823
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 2, 0x8a32
+.insn 2, 0x8ab6
+.insn 2, 0x8b3a
+.insn 2, 0x8bbe
+beqz s6, 20f
+22:
+.insn 4, 0x014903b3
+.insn 4, 0x0143e333
+.insn 4, 0x00737313
+.insn 2, 0x4ea1
+.insn 4, 0x01db3e33
+.insn 4, 0x01c36333
+.insn 4, 0x007afe93
+beqz t1, 23f
+.insn 4, 0x000ac303
+.insn 4, 0x014903b3
+.insn 4, 0x0003ce03
+.insn 4, 0x01c34333
+.insn 4, 0x00638023
+.insn 2, 0x0a85
+.insn 2, 0x0a05
+.insn 2, 0x1b7d
+j 24f
+23:
+beqz t4, 25f
+.insn 4, 0x000ac303
+.insn 4, 0x001ace03
+.insn 2, 0x0e22
+.insn 4, 0x01c36333
+.insn 4, 0x002ace03
+.insn 2, 0x0e42
+.insn 4, 0x01c36333
+.insn 4, 0x003ace03
+.insn 2, 0x0e62
+.insn 4, 0x01c36333
+.insn 4, 0x004ace83
+.insn 4, 0x005ace03
+.insn 2, 0x0e22
+.insn 4, 0x01ceeeb3
+.insn 4, 0x006ace03
+.insn 2, 0x0e42
+.insn 4, 0x01ceeeb3
+.insn 4, 0x007ace03
+.insn 2, 0x0e62
+.insn 4, 0x01ceeeb3
+.insn 2, 0x1e82
+.insn 4, 0x01d36333
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+j 26f
+25:
+.insn 4, 0x000ab303
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+26:
+24:
+.insn 4, 0x413a0333
+beqz t1, 27f
+j 28f
+27:
+.insn 2, 0x4a01
+.insn 2, 0x854a
+.insn 2, 0x85de
+call {vg_keccak_f1600}
+28:
+bnez s6, 22b
+j 21f
+20:
+21:
+.insn 2, 0x8552
+.insn 2, 0x82de
+.insn 4, 0x2002b083
+.insn 4, 0x2082b903
+.insn 4, 0x2102b983
+.insn 4, 0x2182ba03
+.insn 4, 0x2202ba83
+.insn 4, 0x2282bb03
+.insn 4, 0x2302bb83
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_224_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x1101
+.insn 2, 0x868a
+.insn 4, 0x0016b023
+.insn 4, 0x0126b423
+.insn 4, 0x0136b823
+.insn 4, 0x0146bc23
+.insn 2, 0x892a
+.insn 2, 0x89b2
+.insn 2, 0x8a36
+.insn 2, 0x862e
+.insn 4, 0x09000593
+.insn 2, 0x4699
+call {vg_keccak_pad}
+.insn 2, 0x854a
+.insn 4, 0x09000593
+.insn 2, 0x4601
+.insn 2, 0x86ce
+.insn 2, 0x4771
+call {vg_keccak_squeeze}
+.insn 4, 0x000a3083
+.insn 4, 0x008a3903
+.insn 4, 0x010a3983
+.insn 4, 0x018a3a03
+.insn 2, 0x6105
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_pad = sym crate::ed448::vg_keccak_pad::vg_keccak_pad,
+        vg_keccak_squeeze = sym crate::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_256_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x87ba
+.insn 2, 0x8736
+.insn 2, 0x86b2
+.insn 2, 0x862e
+.insn 4, 0x08800593
+.insn 2, 0x82be
+.insn 4, 0x2012b023
+.insn 4, 0x2122b423
+.insn 4, 0x2132b823
+.insn 4, 0x2142bc23
+.insn 4, 0x2352b023
+.insn 4, 0x2362b423
+.insn 4, 0x2372b823
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 2, 0x8a32
+.insn 2, 0x8ab6
+.insn 2, 0x8b3a
+.insn 2, 0x8bbe
+beqz s6, 20f
+22:
+.insn 4, 0x014903b3
+.insn 4, 0x0143e333
+.insn 4, 0x00737313
+.insn 2, 0x4ea1
+.insn 4, 0x01db3e33
+.insn 4, 0x01c36333
+.insn 4, 0x007afe93
+beqz t1, 23f
+.insn 4, 0x000ac303
+.insn 4, 0x014903b3
+.insn 4, 0x0003ce03
+.insn 4, 0x01c34333
+.insn 4, 0x00638023
+.insn 2, 0x0a85
+.insn 2, 0x0a05
+.insn 2, 0x1b7d
+j 24f
+23:
+beqz t4, 25f
+.insn 4, 0x000ac303
+.insn 4, 0x001ace03
+.insn 2, 0x0e22
+.insn 4, 0x01c36333
+.insn 4, 0x002ace03
+.insn 2, 0x0e42
+.insn 4, 0x01c36333
+.insn 4, 0x003ace03
+.insn 2, 0x0e62
+.insn 4, 0x01c36333
+.insn 4, 0x004ace83
+.insn 4, 0x005ace03
+.insn 2, 0x0e22
+.insn 4, 0x01ceeeb3
+.insn 4, 0x006ace03
+.insn 2, 0x0e42
+.insn 4, 0x01ceeeb3
+.insn 4, 0x007ace03
+.insn 2, 0x0e62
+.insn 4, 0x01ceeeb3
+.insn 2, 0x1e82
+.insn 4, 0x01d36333
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+j 26f
+25:
+.insn 4, 0x000ab303
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+26:
+24:
+.insn 4, 0x413a0333
+beqz t1, 27f
+j 28f
+27:
+.insn 2, 0x4a01
+.insn 2, 0x854a
+.insn 2, 0x85de
+call {vg_keccak_f1600}
+28:
+bnez s6, 22b
+j 21f
+20:
+21:
+.insn 2, 0x8552
+.insn 2, 0x82de
+.insn 4, 0x2002b083
+.insn 4, 0x2082b903
+.insn 4, 0x2102b983
+.insn 4, 0x2182ba03
+.insn 4, 0x2202ba83
+.insn 4, 0x2282bb03
+.insn 4, 0x2302bb83
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_256_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x1101
+.insn 2, 0x868a
+.insn 4, 0x0016b023
+.insn 4, 0x0126b423
+.insn 4, 0x0136b823
+.insn 4, 0x0146bc23
+.insn 2, 0x892a
+.insn 2, 0x89b2
+.insn 2, 0x8a36
+.insn 2, 0x862e
+.insn 4, 0x08800593
+.insn 2, 0x4699
+call {vg_keccak_pad}
+.insn 2, 0x854a
+.insn 4, 0x08800593
+.insn 2, 0x4601
+.insn 2, 0x86ce
+.insn 4, 0x02000713
+call {vg_keccak_squeeze}
+.insn 4, 0x000a3083
+.insn 4, 0x008a3903
+.insn 4, 0x010a3983
+.insn 4, 0x018a3a03
+.insn 2, 0x6105
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_pad = sym crate::ed448::vg_keccak_pad::vg_keccak_pad,
+        vg_keccak_squeeze = sym crate::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_384_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x87ba
+.insn 2, 0x8736
+.insn 2, 0x86b2
+.insn 2, 0x862e
+.insn 4, 0x06800593
+.insn 2, 0x82be
+.insn 4, 0x2012b023
+.insn 4, 0x2122b423
+.insn 4, 0x2132b823
+.insn 4, 0x2142bc23
+.insn 4, 0x2352b023
+.insn 4, 0x2362b423
+.insn 4, 0x2372b823
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 2, 0x8a32
+.insn 2, 0x8ab6
+.insn 2, 0x8b3a
+.insn 2, 0x8bbe
+beqz s6, 20f
+22:
+.insn 4, 0x014903b3
+.insn 4, 0x0143e333
+.insn 4, 0x00737313
+.insn 2, 0x4ea1
+.insn 4, 0x01db3e33
+.insn 4, 0x01c36333
+.insn 4, 0x007afe93
+beqz t1, 23f
+.insn 4, 0x000ac303
+.insn 4, 0x014903b3
+.insn 4, 0x0003ce03
+.insn 4, 0x01c34333
+.insn 4, 0x00638023
+.insn 2, 0x0a85
+.insn 2, 0x0a05
+.insn 2, 0x1b7d
+j 24f
+23:
+beqz t4, 25f
+.insn 4, 0x000ac303
+.insn 4, 0x001ace03
+.insn 2, 0x0e22
+.insn 4, 0x01c36333
+.insn 4, 0x002ace03
+.insn 2, 0x0e42
+.insn 4, 0x01c36333
+.insn 4, 0x003ace03
+.insn 2, 0x0e62
+.insn 4, 0x01c36333
+.insn 4, 0x004ace83
+.insn 4, 0x005ace03
+.insn 2, 0x0e22
+.insn 4, 0x01ceeeb3
+.insn 4, 0x006ace03
+.insn 2, 0x0e42
+.insn 4, 0x01ceeeb3
+.insn 4, 0x007ace03
+.insn 2, 0x0e62
+.insn 4, 0x01ceeeb3
+.insn 2, 0x1e82
+.insn 4, 0x01d36333
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+j 26f
+25:
+.insn 4, 0x000ab303
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+26:
+24:
+.insn 4, 0x413a0333
+beqz t1, 27f
+j 28f
+27:
+.insn 2, 0x4a01
+.insn 2, 0x854a
+.insn 2, 0x85de
+call {vg_keccak_f1600}
+28:
+bnez s6, 22b
+j 21f
+20:
+21:
+.insn 2, 0x8552
+.insn 2, 0x82de
+.insn 4, 0x2002b083
+.insn 4, 0x2082b903
+.insn 4, 0x2102b983
+.insn 4, 0x2182ba03
+.insn 4, 0x2202ba83
+.insn 4, 0x2282bb03
+.insn 4, 0x2302bb83
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_384_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x1101
+.insn 2, 0x868a
+.insn 4, 0x0016b023
+.insn 4, 0x0126b423
+.insn 4, 0x0136b823
+.insn 4, 0x0146bc23
+.insn 2, 0x892a
+.insn 2, 0x89b2
+.insn 2, 0x8a36
+.insn 2, 0x862e
+.insn 4, 0x06800593
+.insn 2, 0x4699
+call {vg_keccak_pad}
+.insn 2, 0x854a
+.insn 4, 0x06800593
+.insn 2, 0x4601
+.insn 2, 0x86ce
+.insn 4, 0x03000713
+call {vg_keccak_squeeze}
+.insn 4, 0x000a3083
+.insn 4, 0x008a3903
+.insn 4, 0x010a3983
+.insn 4, 0x018a3a03
+.insn 2, 0x6105
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_pad = sym crate::ed448::vg_keccak_pad::vg_keccak_pad,
+        vg_keccak_squeeze = sym crate::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_512_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x87ba
+.insn 2, 0x8736
+.insn 2, 0x86b2
+.insn 2, 0x862e
+.insn 4, 0x04800593
+.insn 2, 0x82be
+.insn 4, 0x2012b023
+.insn 4, 0x2122b423
+.insn 4, 0x2132b823
+.insn 4, 0x2142bc23
+.insn 4, 0x2352b023
+.insn 4, 0x2362b423
+.insn 4, 0x2372b823
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 2, 0x8a32
+.insn 2, 0x8ab6
+.insn 2, 0x8b3a
+.insn 2, 0x8bbe
+beqz s6, 20f
+22:
+.insn 4, 0x014903b3
+.insn 4, 0x0143e333
+.insn 4, 0x00737313
+.insn 2, 0x4ea1
+.insn 4, 0x01db3e33
+.insn 4, 0x01c36333
+.insn 4, 0x007afe93
+beqz t1, 23f
+.insn 4, 0x000ac303
+.insn 4, 0x014903b3
+.insn 4, 0x0003ce03
+.insn 4, 0x01c34333
+.insn 4, 0x00638023
+.insn 2, 0x0a85
+.insn 2, 0x0a05
+.insn 2, 0x1b7d
+j 24f
+23:
+beqz t4, 25f
+.insn 4, 0x000ac303
+.insn 4, 0x001ace03
+.insn 2, 0x0e22
+.insn 4, 0x01c36333
+.insn 4, 0x002ace03
+.insn 2, 0x0e42
+.insn 4, 0x01c36333
+.insn 4, 0x003ace03
+.insn 2, 0x0e62
+.insn 4, 0x01c36333
+.insn 4, 0x004ace83
+.insn 4, 0x005ace03
+.insn 2, 0x0e22
+.insn 4, 0x01ceeeb3
+.insn 4, 0x006ace03
+.insn 2, 0x0e42
+.insn 4, 0x01ceeeb3
+.insn 4, 0x007ace03
+.insn 2, 0x0e62
+.insn 4, 0x01ceeeb3
+.insn 2, 0x1e82
+.insn 4, 0x01d36333
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+j 26f
+25:
+.insn 4, 0x000ab303
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+26:
+24:
+.insn 4, 0x413a0333
+beqz t1, 27f
+j 28f
+27:
+.insn 2, 0x4a01
+.insn 2, 0x854a
+.insn 2, 0x85de
+call {vg_keccak_f1600}
+28:
+bnez s6, 22b
+j 21f
+20:
+21:
+.insn 2, 0x8552
+.insn 2, 0x82de
+.insn 4, 0x2002b083
+.insn 4, 0x2082b903
+.insn 4, 0x2102b983
+.insn 4, 0x2182ba03
+.insn 4, 0x2202ba83
+.insn 4, 0x2282bb03
+.insn 4, 0x2302bb83
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_512_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x1101
+.insn 2, 0x868a
+.insn 4, 0x0016b023
+.insn 4, 0x0126b423
+.insn 4, 0x0136b823
+.insn 4, 0x0146bc23
+.insn 2, 0x892a
+.insn 2, 0x89b2
+.insn 2, 0x8a36
+.insn 2, 0x862e
+.insn 4, 0x04800593
+.insn 2, 0x4699
+call {vg_keccak_pad}
+.insn 2, 0x854a
+.insn 4, 0x04800593
+.insn 2, 0x4601
+.insn 2, 0x86ce
+.insn 4, 0x04000713
+call {vg_keccak_squeeze}
+.insn 4, 0x000a3083
+.insn 4, 0x008a3903
+.insn 4, 0x010a3983
+.insn 4, 0x018a3a03
+.insn 2, 0x6105
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_pad = sym crate::ed448::vg_keccak_pad::vg_keccak_pad,
+        vg_keccak_squeeze = sym crate::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
+    )
+}
+
+/// The verified code of [`super::vg_shake128_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x87ba
+.insn 2, 0x8736
+.insn 2, 0x86b2
+.insn 2, 0x862e
+.insn 4, 0x0a800593
+.insn 2, 0x82be
+.insn 4, 0x2012b023
+.insn 4, 0x2122b423
+.insn 4, 0x2132b823
+.insn 4, 0x2142bc23
+.insn 4, 0x2352b023
+.insn 4, 0x2362b423
+.insn 4, 0x2372b823
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 2, 0x8a32
+.insn 2, 0x8ab6
+.insn 2, 0x8b3a
+.insn 2, 0x8bbe
+beqz s6, 20f
+22:
+.insn 4, 0x014903b3
+.insn 4, 0x0143e333
+.insn 4, 0x00737313
+.insn 2, 0x4ea1
+.insn 4, 0x01db3e33
+.insn 4, 0x01c36333
+.insn 4, 0x007afe93
+beqz t1, 23f
+.insn 4, 0x000ac303
+.insn 4, 0x014903b3
+.insn 4, 0x0003ce03
+.insn 4, 0x01c34333
+.insn 4, 0x00638023
+.insn 2, 0x0a85
+.insn 2, 0x0a05
+.insn 2, 0x1b7d
+j 24f
+23:
+beqz t4, 25f
+.insn 4, 0x000ac303
+.insn 4, 0x001ace03
+.insn 2, 0x0e22
+.insn 4, 0x01c36333
+.insn 4, 0x002ace03
+.insn 2, 0x0e42
+.insn 4, 0x01c36333
+.insn 4, 0x003ace03
+.insn 2, 0x0e62
+.insn 4, 0x01c36333
+.insn 4, 0x004ace83
+.insn 4, 0x005ace03
+.insn 2, 0x0e22
+.insn 4, 0x01ceeeb3
+.insn 4, 0x006ace03
+.insn 2, 0x0e42
+.insn 4, 0x01ceeeb3
+.insn 4, 0x007ace03
+.insn 2, 0x0e62
+.insn 4, 0x01ceeeb3
+.insn 2, 0x1e82
+.insn 4, 0x01d36333
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+j 26f
+25:
+.insn 4, 0x000ab303
+.insn 4, 0x0003be03
+.insn 4, 0x01c34333
+.insn 4, 0x0063b023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+26:
+24:
+.insn 4, 0x413a0333
+beqz t1, 27f
+j 28f
+27:
+.insn 2, 0x4a01
+.insn 2, 0x854a
+.insn 2, 0x85de
+call {vg_keccak_f1600}
+28:
+bnez s6, 22b
+j 21f
+20:
+21:
+.insn 2, 0x8552
+.insn 2, 0x82de
+.insn 4, 0x2002b083
+.insn 4, 0x2082b903
+.insn 4, 0x2102b983
+.insn 4, 0x2182ba03
+.insn 4, 0x2202ba83
+.insn 4, 0x2282bb03
+.insn 4, 0x2302bb83
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
+/// The verified code of [`super::vg_shake128_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_shake128_finalize(state: *mut [u64; 25], pos: usize) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x862e
+.insn 4, 0x0a800593
+.insn 2, 0x46fd
+.insn 4, 0xdf010113
+.insn 2, 0x828a
+.insn 4, 0x2012b023
+.insn 4, 0x00c50333
+.insn 4, 0x00034383
+.insn 4, 0x00d3c3b3
+.insn 4, 0x00730023
+.insn 4, 0x00b50333
+.insn 2, 0x137d
+.insn 4, 0x00034383
+.insn 4, 0x0803c393
+.insn 4, 0x00730023
+.insn 2, 0x858a
+call {vg_keccak_f1600}
+.insn 2, 0x828a
+.insn 4, 0x2002b083
+.insn 4, 0x21010113
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
+/// The verified code of [`super::vg_shake128_squeeze`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x8736
+.insn 2, 0x86b2
+.insn 2, 0x862e
+.insn 4, 0x0a800593
+.insn 4, 0xdd010113
+.insn 2, 0x828a
+.insn 4, 0x2012b023
+.insn 4, 0x2122b423
+.insn 4, 0x2132b823
+.insn 4, 0x2142bc23
+.insn 4, 0x2352b023
+.insn 4, 0x2362b423
+.insn 2, 0x892a
+.insn 2, 0x89ae
+.insn 2, 0x8a32
+.insn 2, 0x8ab6
+.insn 2, 0x8b3a
+beqz s6, 20f
+22:
+.insn 4, 0x413a0333
+beqz t1, 23f
+j 24f
+23:
+.insn 2, 0x4a01
+.insn 2, 0x854a
+.insn 2, 0x858a
+call {vg_keccak_f1600}
+24:
+.insn 4, 0x014903b3
+.insn 4, 0x0143e333
+.insn 4, 0x00737313
+.insn 2, 0x4ea1
+.insn 4, 0x01db3e33
+.insn 4, 0x01c36333
+.insn 4, 0x007afe93
+beqz t1, 25f
+.insn 4, 0x014903b3
+.insn 4, 0x0003c303
+.insn 4, 0x006a8023
+.insn 2, 0x0a85
+.insn 2, 0x0a05
+.insn 2, 0x1b7d
+j 26f
+25:
+beqz t4, 27f
+.insn 4, 0x0003b303
+.insn 4, 0x006a8023
+.insn 4, 0x00835e13
+.insn 4, 0x01ca80a3
+.insn 4, 0x01035e13
+.insn 4, 0x01ca8123
+.insn 4, 0x01835e13
+.insn 4, 0x01ca81a3
+.insn 4, 0x02035e13
+.insn 4, 0x01ca8223
+.insn 4, 0x008e5e93
+.insn 4, 0x01da82a3
+.insn 4, 0x010e5e93
+.insn 4, 0x01da8323
+.insn 4, 0x018e5e93
+.insn 4, 0x01da83a3
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+j 28f
+27:
+.insn 4, 0x0003b303
+.insn 4, 0x006ab023
+.insn 2, 0x0aa1
+.insn 2, 0x0a21
+.insn 2, 0x1b61
+28:
+26:
+bnez s6, 22b
+j 21f
+20:
+21:
+.insn 2, 0x8552
+.insn 2, 0x828a
+.insn 4, 0x2002b083
+.insn 4, 0x2082b903
+.insn 4, 0x2102b983
+.insn 4, 0x2182ba03
+.insn 4, 0x2202ba83
+.insn 4, 0x2282bb03
+.insn 4, 0x23010113
+.insn 2, 0x8082
+.option pop",
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
+#[allow(unused_imports)]
+pub(crate) use self::vg_sha3_256_update as vg_shake256_update;
+
+/// The verified code of [`super::vg_shake256_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_shake256_finalize(state: *mut [u64; 25], pos: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -1022,23 +1142,13 @@ call {vg_keccak_f1600}
 .insn 4, 0x21010113
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
-/// Squeezes SHAKE256 output: if the state `*state`, from position `pos`, continues the output of SHAKE256 of a message (`VG.Spec.Sha3.shake256`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake256_finalize` leaves and position 0.
-///
-/// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes, and aligned for `u64`.
-/// * `out` must be valid for reads and writes of `outlen` bytes.
-/// * `pos` must be at most 136.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_shake256_squeeze`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -1130,6 +1240,7 @@ j 21f
 .insn 4, 0x23010113
 .insn 2, 0x8082
 .option pop",
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
+}
 }

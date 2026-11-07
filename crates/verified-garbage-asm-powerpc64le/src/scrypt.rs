@@ -19,8 +19,20 @@
 /// * `b`, `v` and `scratch` are working space: their contents on return are unspecified.
 /// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the 1120 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_scrypt(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_scrypt(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_scrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "kf8h+AAAgTmmAgh8IAAM+CgAzPswAGz4OACM+EAA7PhIAAz5UAAs+VgATPkAAMw7AQDgOCQ+KXnYAF7p"
 bl {vg_pbkdf2_hmac_sha256_scratch}
@@ -33,9 +45,10 @@ bne %cr0, 20b
 .base64 "MAB+6DgAnuhIAL7oUADe6CQ+xngBAOA46AAe6fAAPunYAF7p"
 bl {vg_pbkdf2_hmac_sha256_scratch}
 .base64 "IAAe6KYDCHwoAN7rcAAhOCAAgE4=""#,
-        vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
-        vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
+        vg_pbkdf2_hmac_sha256_scratch = sym crate::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
+        vg_scrypt_romix = sym crate::scrypt::vg_scrypt_romix::vg_scrypt_romix,
     )
+}
 }
 
 #[rustfmt::skip]

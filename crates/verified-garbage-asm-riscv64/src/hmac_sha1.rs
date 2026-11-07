@@ -14,8 +14,38 @@
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_hmac_sha1_init(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_hmac_sha1_init(inner, outer, key, key_len) }
+}
+
+/// Finishes an HMAC-SHA-1 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-1 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-1 of the text under `K₀` (20 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 84 bytes.
+/// * `outer` must be valid for reads of 84 bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the 224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_hmac_sha1_finalize(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_hmac_sha1_finalize(inner, outer, count, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_hmac_sha1_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -149,26 +179,15 @@ call {vg_sha1_update}
 .insn 2, 0x610d
 .insn 2, 0x8082
 .option pop",
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update = sym super::sha1::vg_sha1_update,
-        vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
+        vg_sha1_init = sym crate::sha1::raw::vg_sha1_init,
+        vg_sha1_update = sym crate::sha1::raw::vg_sha1_update,
+        vg_sha1_finalize = sym crate::sha1::raw::vg_sha1_finalize,
     )
 }
 
-/// Finishes an HMAC-SHA-1 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-1 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-1 of the text under `K₀` (20 bytes) to `*out`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 84 bytes.
-/// * `outer` must be valid for reads of 84 bytes.
-/// * `out` must be valid for reads and writes of 20 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the 224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_hmac_sha1_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -245,7 +264,8 @@ call {vg_sha1_finalize}
 .insn 2, 0x6161
 .insn 2, 0x8082
 .option pop",
-        vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
-        vg_sha1_update = sym super::sha1::vg_sha1_update,
+        vg_sha1_finalize = sym crate::sha1::raw::vg_sha1_finalize,
+        vg_sha1_update = sym crate::sha1::raw::vg_sha1_update,
     )
+}
 }

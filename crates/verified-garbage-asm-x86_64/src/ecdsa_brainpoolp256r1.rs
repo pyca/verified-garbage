@@ -16,8 +16,43 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ecdsa_brainpoolp256r1_verify(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_brainpoolp256r1_verify(public, digest, digest_len, sig, scratch) }
+}
+
+/// Deterministic ECDSA signature generation over brainpoolP256r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `d` must be valid for reads of 32 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[inline(always)]
+pub unsafe fn vg_ecdsa_brainpoolp256r1_sign(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_brainpoolp256r1_sign(out, d, digest, digest_len, scratch, hmac) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ecdsa_brainpoolp256r1_verify`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_brainpoolp256r1_verify(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_brainpoolp256r1_verify(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJKhJieFJg8EISIP6IA=="
 jb 20f
@@ -57,32 +92,16 @@ call {vg_brainpoolp256r1_mul}
 call {vg_brainpoolp256r1_inv_mod_p}
 .base64 "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"
 .p2align 6"#,
-        vg_brainpoolp256r1_check_point = sym super::ec_brainpoolp256r1_compressed::vg_brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
-        vg_brainpoolp256r1_inv_mod_n = sym super::ecdsa_brainpoolp256r1::vg_brainpoolp256r1_inv_mod_n::vg_brainpoolp256r1_inv_mod_n,
-        vg_brainpoolp256r1_mul = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul::vg_brainpoolp256r1_mul,
-        vg_brainpoolp256r1_inv_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_inv_mod_p::vg_brainpoolp256r1_inv_mod_p,
+        vg_brainpoolp256r1_check_point = sym crate::ec_brainpoolp256r1_compressed::vg_brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
+        vg_brainpoolp256r1_inv_mod_n = sym crate::ecdsa_brainpoolp256r1::vg_brainpoolp256r1_inv_mod_n::vg_brainpoolp256r1_inv_mod_n,
+        vg_brainpoolp256r1_mul = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_mul::vg_brainpoolp256r1_mul,
+        vg_brainpoolp256r1_inv_mod_p = sym crate::ec_brainpoolp256r1::vg_brainpoolp256r1_inv_mod_p::vg_brainpoolp256r1_inv_mod_p,
     )
 }
 
-/// Deterministic ECDSA signature generation over brainpoolP256r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
-///
-/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 64 bytes.
-/// * `d` must be valid for reads of 32 bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
-/// * `digest_len` must be the digest length of the hash function `hmac` names.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
-/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// The verified code of [`super::vg_ecdsa_brainpoolp256r1_sign`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdsa_brainpoolp256r1_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdsa_brainpoolp256r1_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "TInBTYtRIE2LWShBUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBBU0FSV1ZSUVBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQMcBIiYQkQAEAADHASImEJEgBAAAxwEiJhCRQAQAAMcBIiYQkWAEAADHASImEJGABAAAxwEiJhCRoAQAAMcBIiYQkcAEAADHASImEJHgBAAAxwEiJhCSAAQAASIuMJNgAAAC4IAAAAEg5wUgPQ8hIiedIgcdgAQAASCnPSIu0JMAAAABFMcA="
 20:
@@ -110,8 +129,9 @@ jmp 25f
 jne 21b
 .base64 "MclIiQwkSIlMJAhIiUwkEEiJTCQYSIlMJCBIiUwkKEiJTCQwSIlMJDhIiUwkQEiJTCRISIlMJFBIiUwkWEiJTCRgSIlMJGhIiUwkcEiJTCR4SImMJOgAAABIiYwk8AAAAEiJjCT4AAAASImMJAABAABIiYwkCAEAAEiJjCQQAQAASImMJBgBAABIiYwkIAEAAEiJjCQoAQAASImMJDABAABIiYwkOAEAAEiJjCRAAQAASImMJEgBAABIiYwkUAEAAEiJjCRYAQAASImMJGABAABIiYwkaAEAAEiJjCRwAQAASImMJHgBAABIiYwkgAEAAEiJjCSIAQAASImMJJABAABIiYwkmAEAAEiJjCSgAQAASImMJKgBAABIiYwksAEAAEiJjCS4AQAASImMJMABAABIiYwkyAEAAEiJjCTQAQAASImMJNgBAABIiYwk4AEAAEiJjCToAQAASImMJPABAABIiYwk+AEAAEiJjCQAAgAASImMJAgCAABIiYwkEAIAAEiJjCQYAgAASImMJCACAABIiYwkKAIAAEiJjCQwAgAASImMJDgCAABIiYwkQAIAAEiJjCRIAgAASImMJFACAABZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZww=="
 .p2align 6"#,
-        vg_ecdsa_brainpoolp256r1_sign_k = sym super::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign_k::vg_ecdsa_brainpoolp256r1_sign_k,
+        vg_ecdsa_brainpoolp256r1_sign_k = sym crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign_k::vg_ecdsa_brainpoolp256r1_sign_k,
     )
+}
 }
 
 #[rustfmt::skip]

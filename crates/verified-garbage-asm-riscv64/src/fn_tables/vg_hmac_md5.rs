@@ -4,6 +4,6 @@
 
 /// The table of functions `VG_HMAC_MD5` of the interface `Hmac`: `vg_hmac_md5_init`, `vg_md5_update`, `vg_hmac_md5_finalize`, then the data 0, 16, 64.
 pub static VG_HMAC_MD5: super::Hmac = super::Hmac {
-    fns: [crate::hmac_md5::vg_hmac_md5_init as *const (), crate::md5::vg_md5_update as *const (), crate::hmac_md5::vg_hmac_md5_finalize as *const ()],
+    fns: [crate::hmac_md5::raw::vg_hmac_md5_init as *const (), crate::md5::raw::vg_md5_update as *const (), crate::hmac_md5::raw::vg_hmac_md5_finalize as *const ()],
     data: [0, 16, 64],
 };

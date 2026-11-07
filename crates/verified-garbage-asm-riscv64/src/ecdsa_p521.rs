@@ -16,8 +16,43 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ecdsa_p521_verify(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 133], digest: *const u8, digest_len: usize, sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_p521_verify(public, digest, digest_len, sig, scratch) }
+}
+
+/// Deterministic ECDSA signature generation over P-521 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 132 bytes.
+/// * `d` must be valid for reads of 66 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 1024 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[inline(always)]
+pub unsafe fn vg_ecdsa_p521_sign(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdsa_p521_sign(out, d, digest, digest_len, scratch, hmac) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ecdsa_p521_verify`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_p521_verify(public: *const [u8; 133], digest: *const u8, digest_len: usize, sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdsa_p521_verify(public: *const [u8; 133], digest: *const u8, digest_len: usize, sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -15464,35 +15499,19 @@ call {vg_p521_sub_mod_n}
 .insn 2, 0x6161
 .insn 2, 0x8082
 .option pop",
-        vg_p521_check_point = sym super::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
-        vg_p521_mul_mod_n = sym super::ecdsa_p521::vg_p521_mul_mod_n::vg_p521_mul_mod_n,
-        vg_p521_mul_mod_p = sym super::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
-        vg_p521_add_mod_p = sym super::ec_p521_compressed::vg_p521_add_mod_p::vg_p521_add_mod_p,
-        vg_p521_sub_mod_p = sym super::ec_p521_compressed::vg_p521_sub_mod_p::vg_p521_sub_mod_p,
-        vg_p521_add_mod_n = sym super::ecdsa_p521::vg_p521_add_mod_n::vg_p521_add_mod_n,
-        vg_p521_sub_mod_n = sym super::ecdsa_p521::vg_p521_sub_mod_n::vg_p521_sub_mod_n,
+        vg_p521_check_point = sym crate::ec_p521_compressed::vg_p521_check_point::vg_p521_check_point,
+        vg_p521_mul_mod_n = sym crate::ecdsa_p521::vg_p521_mul_mod_n::vg_p521_mul_mod_n,
+        vg_p521_mul_mod_p = sym crate::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
+        vg_p521_add_mod_p = sym crate::ec_p521_compressed::vg_p521_add_mod_p::vg_p521_add_mod_p,
+        vg_p521_sub_mod_p = sym crate::ec_p521_compressed::vg_p521_sub_mod_p::vg_p521_sub_mod_p,
+        vg_p521_add_mod_n = sym crate::ecdsa_p521::vg_p521_add_mod_n::vg_p521_add_mod_n,
+        vg_p521_sub_mod_n = sym crate::ecdsa_p521::vg_p521_sub_mod_n::vg_p521_sub_mod_n,
     )
 }
 
-/// Deterministic ECDSA signature generation over P-521 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
-///
-/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 132 bytes.
-/// * `d` must be valid for reads of 66 bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
-/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
-/// * `digest_len` must be the digest length of the hash function `hmac` names.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
-/// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 1024 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// The verified code of [`super::vg_ecdsa_p521_sign`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdsa_p521_sign(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdsa_p521_sign(out: *mut [u8; 132], d: *const [u8; 66], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -15838,8 +15857,9 @@ bnez t6, 21b
 .insn 4, 0x20010113
 .insn 2, 0x8082
 .option pop",
-        vg_ecdsa_p521_sign_k = sym super::ecdsa_p521::vg_ecdsa_p521_sign_k::vg_ecdsa_p521_sign_k,
+        vg_ecdsa_p521_sign_k = sym crate::ecdsa_p521::vg_ecdsa_p521_sign_k::vg_ecdsa_p521_sign_k,
     )
+}
 }
 
 #[rustfmt::skip]

@@ -161,13 +161,14 @@ pub fn derive_keyed(
     max_memory: usize,
     out: &mut [u8],
 ) -> Result<(), PasswordHashError> {
+    crate::dit::enter!(dit);
     let inputs = Inputs {
         password,
         salt,
         secret,
         associated_data,
     };
-    Derivation::new(params, inputs, max_memory, out.len())?.run(out);
+    Derivation::new(params, inputs, max_memory, out.len())?.run(dit, out);
     Ok(())
 }
 
@@ -220,6 +221,7 @@ pub fn verify_keyed<const N: usize>(
     max_memory: usize,
     expected: &[u8; N],
 ) -> Result<(), PasswordHashError> {
+    crate::dit::enter!(dit);
     crate::ct::assert_verify_len!(N);
     let inputs = Inputs {
         password,
@@ -229,8 +231,8 @@ pub fn verify_keyed<const N: usize>(
     };
     let mut derivation = Derivation::new(params, inputs, max_memory, N)?;
     let mut key = [0u8; N];
-    derivation.run(&mut key);
-    let matches = crate::ct::eq(&key, expected);
+    derivation.run(dit, &mut key);
+    let matches = crate::ct::eq(dit, &key, expected);
     crate::zeroize::zeroize(&mut key);
     if matches {
         Ok(())
@@ -320,7 +322,7 @@ impl<'a> Derivation<'a> {
     }
 
     /// Fills `out`, of the length checked, with the key.
-    fn run(&mut self, out: &mut [u8]) {
+    fn run(&mut self, dit: crate::dit::Dit<'_>, out: &mut [u8]) {
         assert_eq!(out.len(), self.len);
         let Params {
             variant,
@@ -381,6 +383,7 @@ impl<'a> Derivation<'a> {
         // need, and an instance needs exactly those of both.
         unsafe {
             derive(
+                dit,
                 variant as u32,
                 password.as_ptr(),
                 password.len(),

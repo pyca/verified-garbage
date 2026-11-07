@@ -33,6 +33,6 @@ b 21f
 21:
 .inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
 .p2align 6",
-        vg_aes_decrypt_blocks = sym crate::aes::vg_aes_decrypt_blocks,
+        vg_aes_decrypt_blocks = sym crate::aes::raw::vg_aes_decrypt_blocks,
     )
 }

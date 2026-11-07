@@ -52,7 +52,7 @@ b 210f
 .base64 "AAB2OAAAgDgUALQ4QADAOAAA9Tg="
 bl {vg_sha1_update_scratch}
 .base64 "oACV6rAA1eq4APXqwAAV68gANeuoALXqIAAB6DAAITimAwh8IACATg==""#,
-        vg_sha1_init = sym crate::sha1::vg_sha1_init,
+        vg_sha1_init = sym crate::sha1::raw::vg_sha1_init,
         vg_sha1_update_scratch = sym crate::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
     )
 }

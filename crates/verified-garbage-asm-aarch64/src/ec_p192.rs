@@ -15,8 +15,19 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
 /// * None of `out`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p192_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 49], d: *const [u8; 24], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p192_public_key(out, d, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_p192_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p192_public_key(out: *mut [u8; 49], d: *const [u8; 24], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p192_public_key(out: *mut [u8; 49], d: *const [u8; 24], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0x91000044,0x91000023,0x91000022,0xf9000093,0xf9000494,0xf9000895,0xf9000c96,0xf9001097
 .inst 0xf9001498,0xf9001899,0xf9001c9e,0x91000014,0x91000080,0xf9400865,0xdac00ca5,0xf9021005
@@ -165,9 +176,10 @@ bl {vg_p192_inv_mod_p}
 .inst 0xf9400013,0xf9400414,0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e
 .inst 0xd2800021,0x8a010060,0xd65f03c0
 .p2align 6",
-        vg_p192_mul = sym super::ec_p192::vg_p192_mul::vg_p192_mul,
-        vg_p192_inv_mod_p = sym super::ec_p192::vg_p192_inv_mod_p::vg_p192_inv_mod_p,
+        vg_p192_mul = sym crate::ec_p192::vg_p192_mul::vg_p192_mul,
+        vg_p192_inv_mod_p = sym crate::ec_p192::vg_p192_inv_mod_p::vg_p192_inv_mod_p,
     )
+}
 }
 
 #[rustfmt::skip]

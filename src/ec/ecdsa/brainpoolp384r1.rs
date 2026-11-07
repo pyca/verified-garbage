@@ -23,7 +23,12 @@ use crate::ec::brainpoolp384r1::Mul;
 use crate::error::{InvalidKey, InvalidSignature};
 
 /// Whether `signature` verifies with `q` for the hash `digest`.
-fn verify_with(q: &[u8; 97], digest: &[u8], signature: &[u8; 96]) -> Result<(), InvalidSignature> {
+fn verify_with(
+    dit: crate::dit::Dit<'_>,
+    q: &[u8; 97],
+    digest: &[u8],
+    signature: &[u8; 96],
+) -> Result<(), InvalidSignature> {
     let mut scratch = [0u64; 1024];
     let ok = match Mul::select(detected()) {
         // SAFETY: `q` is valid for reads of 97 bytes, `digest` of `digest.len()`,
@@ -33,6 +38,7 @@ fn verify_with(q: &[u8; 97], digest: &[u8], signature: &[u8; 96]) -> Result<(), 
         // space.
         Mul::Baseline => unsafe {
             vg_ecdsa_brainpoolp384r1_verify(
+                dit,
                 q,
                 digest.as_ptr(),
                 digest.len(),
@@ -45,6 +51,7 @@ fn verify_with(q: &[u8; 97], digest: &[u8], signature: &[u8; 96]) -> Result<(), 
         #[cfg(target_arch = "arm")]
         Mul::Umaal => unsafe {
             vg_ecdsa_brainpoolp384r1_verify_umaal(
+                dit,
                 q,
                 digest.as_ptr(),
                 digest.len(),
@@ -61,7 +68,11 @@ fn verify_with(q: &[u8; 97], digest: &[u8], signature: &[u8; 96]) -> Result<(), 
 }
 
 impl<H: HmacHash> sealed::Functions<BrainpoolP384r1> for H {
-    fn sign(d: &[u8; 48], digest: &H::Output) -> Result<[u8; 96], InvalidKey> {
+    fn sign(
+        dit: crate::dit::Dit<'_>,
+        d: &[u8; 48],
+        digest: &H::Output,
+    ) -> Result<[u8; 96], InvalidKey> {
         let f = detected();
         let sign: SignFn<48, 96> = match Mul::select(f) {
             Mul::Baseline => vg_ecdsa_brainpoolp384r1_sign,
@@ -70,17 +81,18 @@ impl<H: HmacHash> sealed::Functions<BrainpoolP384r1> for H {
         };
         // SAFETY: `sign` needs no CPU feature that the multiplications
         // selected for this CPU do not.
-        unsafe { sign_with::<H, 48, 96>(sign, f, d, digest) }
+        unsafe { sign_with::<H, 48, 96>(dit, sign, f, d, digest) }
     }
 
     /// The verified function takes the hash itself, of any length, and
     /// uses as many of its leftmost bits as the order has (FIPS 186-5 §6.4.2).
     fn verify(
+        dit: crate::dit::Dit<'_>,
         q: &[u8; 97],
         digest: &H::Output,
         signature: &[u8; 96],
     ) -> Result<(), InvalidSignature> {
-        verify_with(q, digest.as_ref(), signature)
+        verify_with(dit, q, digest.as_ref(), signature)
     }
 }
 

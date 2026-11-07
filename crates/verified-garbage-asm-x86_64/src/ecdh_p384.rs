@@ -16,8 +16,43 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
 /// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ecdh_p384(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 48], d: *const [u8; 48], peer: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdh_p384(out, d, peer, scratch) }
+}
+
+/// The CPU features `vg_ecdh_p384_adx` requires (`Artifact.features`).
+pub const VG_ECDH_P384_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ECDH over P-384 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (48 bytes, most significant first) for the private key `d` at `d` (48 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
+///
+/// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 48 bytes.
+/// * `d` must be valid for reads of 48 bytes.
+/// * `peer` must be valid for reads of 97 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
+/// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
+#[inline(always)]
+pub unsafe fn vg_ecdh_p384_adx(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 48], d: *const [u8; 48], peer: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdh_p384_adx(out, d, peer, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ecdh_p384`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdh_p384(out: *mut [u8; 48], d: *const [u8; 48], peer: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdh_p384(out: *mut [u8; 48], d: *const [u8; 48], peer: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnISYnRSInxSIPCAUmJGEmJaAhNiWAQTYloGE2JcCBNiXgoSYn+TInHSItBKEgPyEiJhxAGAABIi0EgSA/ISImHGAYAAEiLQRhID8hIiYcgBgAASItBEEgPyEiJhygGAABIi0EISA/ISImHMAYAAEiLAUgPyEiJhzgGAABIi0YoSA/ISImHQAYAAEiLRiBID8hIiYdIBgAASItGGEgPyEiJh1AGAABIi0YQSA/ISImHWAYAAEiLRghID8hIiYdgBgAASIsGSA/ISImHaAYAAEiLQihID8hIiYdwBgAASItCIEgPyEiJh3gGAABIi0IYSA/ISImHgAYAAEiLQhBID8hIiYeIBgAASItCCEgPyEiJh5AGAABIiwJID8hIiYeYBgAASLj/////AAAAAEiJR0BIuAAAAAD/////SIlHSEi4/v////////9IiUdQSLj//////////0iJR1hIuP//////////SIlHYEi4//////////9IiUdoSLhzKcXMahns7EiJR3BIuHqnsEiyDRpYSIlHeEi43y039IFNY8dIiYeAAAAASLj//////////0iJh4gAAABIuP//////////SImHkAAAAEi4//////////9IiYeYAAAASLgAAAAAAAAAAEiJh9AAAABIuAAAAAAAAAAASImH2AAAAEi4AAAAAAAAAABIiYfgAAAASLgAAAAAAAAAAEiJh+gAAABIuAAAAAAAAAAASImH8AAAAEi4AAAAAAAAAABIiYf4AAAASLgBAAAAAAAAAEiJhwABAABIuAAAAAAAAAAASImHCAEAAEi4AAAAAAAAAABIiYcQAQAASLgAAAAAAAAAAEiJhxgBAABIuAAAAAAAAAAASImHIAEAAEi4AAAAAAAAAABIiYcoAQAASLgBAAAA/////0iJhzABAABIuP////8AAAAASImHOAEAAEi4AQAAAAAAAABIiYdAAQAASLgAAAAAAAAAAEiJh0gBAABIuAAAAAAAAAAASImHUAEAAEi4AAAAAAAAAABIiYdYAQAASLj8////AwAAAEiJh2ABAABIuAAAAAD8////SImHaAEAAEi4+/////////9IiYdwAQAASLj//////////0iJh3gBAABIuP//////////SImHgAEAAEi4//////////9IiYeIAQAASLhmicPXUpk0GEiJh5ABAABIuMSY5G6LCX3lSImHmAEAAEi4jgZgS9Fh1mdIiYegAQAASLinoLq9y+OlqUiJh6gBAABIuL5hBl3cZYEiSImHsAEAAEi47T/vIOIzGGdIiYe4AQAASLgotcBJZnXQPUiJh8ABAABIuDjO1qDieOMgSImHyAEAAEi4bk0bVPw6nIdIiYfQAQAASLj/DqNZhIZUZEiJh9gBAABIuCveTmEj9y+BSImH4AEAAEi4ExWeKcKtOk1IiYfoAQAASLj+pANLrT0EI0iJh/ABAABIuKyptHu/qL+hSImH+AEAAEi4ULCDLlbnrYtIiYcAAgAASLjZ//RoGVLDxkiJhwgCAABIuECoaTkmAoDdSImHEAIAAEi46cUVWsKreCtIiYcYAgAASLipCbQZJJsxLUiJhyACAABIuBmkGt/lgT3/SImHKAIAAEi4Rym4/DpIPrxIiYcwAgAASLjFHKtKF0kN1EiJhzgCAABIuJVoJih6W7A/SImHQAIAAEi4Ib85KwHuhAxIiYdIAgAASLiN1jozleYTE0iJh1ACAABIuIVYT7dN8uWnSImHWAIAAEi4INLIC36ynDhIiYdgAgAASLgAAAAAAAAAAEiJh2gCAABIuAAAAAAAAAAASImHcAIAAEi4AAAAAAAAAABIiYd4AgAASLj9////AAAAAEiJh4ACAABIuAAAAAD/////SImHiAIAAEi4/v////////9IiYeQAgAASLj//////////0iJh5gCAABIuP//////////SImHoAIAAEi4//////////9IiYeoAgAASLhxKcXMahns7EiJh7ACAABIuHqnsEiyDRpYSImHuAIAAEi43y039IFNY8dIiYfAAgAASLj//////////0iJh8gCAABIuP//////////SImH0AIAAEi4//////////9IiYfYAgAASLgAAAAAAAAAAEiJh+ACAABIuAAAAAAAAAAASImH6AIAAEi4AAAAAAAAAABIiYfwAgAASLgAAAAAAAAAAEiJh/gCAABIuAAAAAAAAAAASImHAAMAAEi4AAAAAAAAAABIiYcIAwAASLgBAAAA/////0iJhxADAABIuP////8AAAAASImHGAMAAEi4AQAAAAAAAABIiYcgAwAASLgAAAAAAAAAAEiJhygDAABIuAAAAAAAAAAASImHMAMAAEi4AAAAAAAAAABIiYc4AwAASLgAAAAAAAAAAEiJh0ADAABIuAAAAAAAAAAASImHSAMAAEi4AAAAAAAAAABIiYdQAwAASLgAAAAAAAAAAEiJh1gDAABIuAAAAAAAAAAASImHYAMAAEi4AAAAAAAAAABIiYdoAwAASLj//////////0iJh4AIAABMifa7AAAAAA=="
 20:
@@ -317,31 +352,15 @@ call {vg_p384_mul_mod_p}
 call {vg_p384_mul_mod_p}
 .base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAASIuH0AYAAEghyEgPyEiJRihIi4fYBgAASCHISA/ISIlGIEiLh+AGAABIIchID8hIiUYYSIuH6AYAAEghyEgPyEiJRhBIi4fwBgAASCHISA/ISIlGCEiLh/gGAABIIchID8hIiQZIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_p384_check_point = sym super::ec_p384_compressed::vg_p384_check_point::vg_p384_check_point,
-        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
-        vg_p384_inv_mod_p = sym super::ec_p384::vg_p384_inv_mod_p::vg_p384_inv_mod_p,
+        vg_p384_check_point = sym crate::ec_p384_compressed::vg_p384_check_point::vg_p384_check_point,
+        vg_p384_mul_mod_p = sym crate::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
+        vg_p384_inv_mod_p = sym crate::ec_p384::vg_p384_inv_mod_p::vg_p384_inv_mod_p,
     )
 }
 
-/// The CPU features `vg_ecdh_p384_adx` requires (`Artifact.features`).
-pub const VG_ECDH_P384_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ECDH over P-384 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (48 bytes, most significant first) for the private key `d` at `d` (48 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
-///
-/// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 48 bytes.
-/// * `d` must be valid for reads of 48 bytes.
-/// * `peer` must be valid for reads of 97 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
-/// * None of `out`, `d`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
+/// The verified code of [`super::vg_ecdh_p384_adx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ecdh_p384_adx(out: *mut [u8; 48], d: *const [u8; 48], peer: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ecdh_p384_adx(out: *mut [u8; 48], d: *const [u8; 48], peer: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnISYnRSInxSIPCAUmJGEmJaAhNiWAQTYloGE2JcCBNiXgoSYn+TInHSItBKEgPyEiJhxAGAABIi0EgSA/ISImHGAYAAEiLQRhID8hIiYcgBgAASItBEEgPyEiJhygGAABIi0EISA/ISImHMAYAAEiLAUgPyEiJhzgGAABIi0YoSA/ISImHQAYAAEiLRiBID8hIiYdIBgAASItGGEgPyEiJh1AGAABIi0YQSA/ISImHWAYAAEiLRghID8hIiYdgBgAASIsGSA/ISImHaAYAAEiLQihID8hIiYdwBgAASItCIEgPyEiJh3gGAABIi0IYSA/ISImHgAYAAEiLQhBID8hIiYeIBgAASItCCEgPyEiJh5AGAABIiwJID8hIiYeYBgAASLj/////AAAAAEiJR0BIuAAAAAD/////SIlHSEi4/v////////9IiUdQSLj//////////0iJR1hIuP//////////SIlHYEi4//////////9IiUdoSLhzKcXMahns7EiJR3BIuHqnsEiyDRpYSIlHeEi43y039IFNY8dIiYeAAAAASLj//////////0iJh4gAAABIuP//////////SImHkAAAAEi4//////////9IiYeYAAAASLgAAAAAAAAAAEiJh9AAAABIuAAAAAAAAAAASImH2AAAAEi4AAAAAAAAAABIiYfgAAAASLgAAAAAAAAAAEiJh+gAAABIuAAAAAAAAAAASImH8AAAAEi4AAAAAAAAAABIiYf4AAAASLgBAAAAAAAAAEiJhwABAABIuAAAAAAAAAAASImHCAEAAEi4AAAAAAAAAABIiYcQAQAASLgAAAAAAAAAAEiJhxgBAABIuAAAAAAAAAAASImHIAEAAEi4AAAAAAAAAABIiYcoAQAASLgBAAAA/////0iJhzABAABIuP////8AAAAASImHOAEAAEi4AQAAAAAAAABIiYdAAQAASLgAAAAAAAAAAEiJh0gBAABIuAAAAAAAAAAASImHUAEAAEi4AAAAAAAAAABIiYdYAQAASLj8////AwAAAEiJh2ABAABIuAAAAAD8////SImHaAEAAEi4+/////////9IiYdwAQAASLj//////////0iJh3gBAABIuP//////////SImHgAEAAEi4//////////9IiYeIAQAASLhmicPXUpk0GEiJh5ABAABIuMSY5G6LCX3lSImHmAEAAEi4jgZgS9Fh1mdIiYegAQAASLinoLq9y+OlqUiJh6gBAABIuL5hBl3cZYEiSImHsAEAAEi47T/vIOIzGGdIiYe4AQAASLgotcBJZnXQPUiJh8ABAABIuDjO1qDieOMgSImHyAEAAEi4bk0bVPw6nIdIiYfQAQAASLj/DqNZhIZUZEiJh9gBAABIuCveTmEj9y+BSImH4AEAAEi4ExWeKcKtOk1IiYfoAQAASLj+pANLrT0EI0iJh/ABAABIuKyptHu/qL+hSImH+AEAAEi4ULCDLlbnrYtIiYcAAgAASLjZ//RoGVLDxkiJhwgCAABIuECoaTkmAoDdSImHEAIAAEi46cUVWsKreCtIiYcYAgAASLipCbQZJJsxLUiJhyACAABIuBmkGt/lgT3/SImHKAIAAEi4Rym4/DpIPrxIiYcwAgAASLjFHKtKF0kN1EiJhzgCAABIuJVoJih6W7A/SImHQAIAAEi4Ib85KwHuhAxIiYdIAgAASLiN1jozleYTE0iJh1ACAABIuIVYT7dN8uWnSImHWAIAAEi4INLIC36ynDhIiYdgAgAASLgAAAAAAAAAAEiJh2gCAABIuAAAAAAAAAAASImHcAIAAEi4AAAAAAAAAABIiYd4AgAASLj9////AAAAAEiJh4ACAABIuAAAAAD/////SImHiAIAAEi4/v////////9IiYeQAgAASLj//////////0iJh5gCAABIuP//////////SImHoAIAAEi4//////////9IiYeoAgAASLhxKcXMahns7EiJh7ACAABIuHqnsEiyDRpYSImHuAIAAEi43y039IFNY8dIiYfAAgAASLj//////////0iJh8gCAABIuP//////////SImH0AIAAEi4//////////9IiYfYAgAASLgAAAAAAAAAAEiJh+ACAABIuAAAAAAAAAAASImH6AIAAEi4AAAAAAAAAABIiYfwAgAASLgAAAAAAAAAAEiJh/gCAABIuAAAAAAAAAAASImHAAMAAEi4AAAAAAAAAABIiYcIAwAASLgBAAAA/////0iJhxADAABIuP////8AAAAASImHGAMAAEi4AQAAAAAAAABIiYcgAwAASLgAAAAAAAAAAEiJhygDAABIuAAAAAAAAAAASImHMAMAAEi4AAAAAAAAAABIiYc4AwAASLgAAAAAAAAAAEiJh0ADAABIuAAAAAAAAAAASImHSAMAAEi4AAAAAAAAAABIiYdQAwAASLgAAAAAAAAAAEiJh1gDAABIuAAAAAAAAAAASImHYAMAAEi4AAAAAAAAAABIiYdoAwAASLj//////////0iJh4AIAABMifa7AAAAAA=="
 20:
@@ -641,8 +660,9 @@ call {vg_p384_mul_mod_p_adx}
 call {vg_p384_mul_mod_p_adx}
 .base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAASIuH0AYAAEghyEgPyEiJRihIi4fYBgAASCHISA/ISIlGIEiLh+AGAABIIchID8hIiUYYSIuH6AYAAEghyEgPyEiJRhBIi4fwBgAASCHISA/ISIlGCEiLh/gGAABIIchID8hIiQZIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_p384_check_point_adx = sym super::ec_p384_compressed::vg_p384_check_point_adx::vg_p384_check_point_adx,
-        vg_p384_mul_mod_p_adx = sym super::ec_p384::vg_p384_mul_mod_p_adx::vg_p384_mul_mod_p_adx,
-        vg_p384_inv_mod_p_adx = sym super::ec_p384::vg_p384_inv_mod_p_adx::vg_p384_inv_mod_p_adx,
+        vg_p384_check_point_adx = sym crate::ec_p384_compressed::vg_p384_check_point_adx::vg_p384_check_point_adx,
+        vg_p384_mul_mod_p_adx = sym crate::ec_p384::vg_p384_mul_mod_p_adx::vg_p384_mul_mod_p_adx,
+        vg_p384_inv_mod_p_adx = sym crate::ec_p384::vg_p384_inv_mod_p_adx::vg_p384_inv_mod_p_adx,
     )
+}
 }

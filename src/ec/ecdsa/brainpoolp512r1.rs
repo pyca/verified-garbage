@@ -24,6 +24,7 @@ use crate::error::{InvalidKey, InvalidSignature};
 
 /// Whether `signature` verifies with `q` for the hash `digest`.
 fn verify_with(
+    dit: crate::dit::Dit<'_>,
     q: &[u8; 129],
     digest: &[u8],
     signature: &[u8; 128],
@@ -37,6 +38,7 @@ fn verify_with(
         // space.
         Mul::Baseline => unsafe {
             vg_ecdsa_brainpoolp512r1_verify(
+                dit,
                 q,
                 digest.as_ptr(),
                 digest.len(),
@@ -49,6 +51,7 @@ fn verify_with(
         #[cfg(target_arch = "arm")]
         Mul::Umaal => unsafe {
             vg_ecdsa_brainpoolp512r1_verify_umaal(
+                dit,
                 q,
                 digest.as_ptr(),
                 digest.len(),
@@ -65,7 +68,11 @@ fn verify_with(
 }
 
 impl<H: HmacHash> sealed::Functions<BrainpoolP512r1> for H {
-    fn sign(d: &[u8; 64], digest: &H::Output) -> Result<[u8; 128], InvalidKey> {
+    fn sign(
+        dit: crate::dit::Dit<'_>,
+        d: &[u8; 64],
+        digest: &H::Output,
+    ) -> Result<[u8; 128], InvalidKey> {
         let f = detected();
         let sign: SignFn<64, 128> = match Mul::select(f) {
             Mul::Baseline => vg_ecdsa_brainpoolp512r1_sign,
@@ -74,17 +81,18 @@ impl<H: HmacHash> sealed::Functions<BrainpoolP512r1> for H {
         };
         // SAFETY: `sign` needs no CPU feature that the multiplications
         // selected for this CPU do not.
-        unsafe { sign_with::<H, 64, 128>(sign, f, d, digest) }
+        unsafe { sign_with::<H, 64, 128>(dit, sign, f, d, digest) }
     }
 
     /// The verified function takes the hash itself, of any length, and
     /// uses as many of its leftmost bits as the order has (FIPS 186-5 §6.4.2).
     fn verify(
+        dit: crate::dit::Dit<'_>,
         q: &[u8; 129],
         digest: &H::Output,
         signature: &[u8; 128],
     ) -> Result<(), InvalidSignature> {
-        verify_with(q, digest.as_ref(), signature)
+        verify_with(dit, q, digest.as_ref(), signature)
     }
 }
 

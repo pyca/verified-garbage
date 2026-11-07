@@ -31,7 +31,7 @@ jne 21b
 .base64 "TInYSI2kJKgMAADD"
 .p2align 6"#,
         vg_rsa_private_crt_ifma = sym crate::rsa::vg_rsa_private_crt_ifma::vg_rsa_private_crt_ifma,
-        vg_rsa_public_precompute_adx = sym crate::rsa::vg_rsa_public_precompute_adx,
+        vg_rsa_public_precompute_adx = sym crate::rsa::raw::vg_rsa_public_precompute_adx,
         vg_rsa_public_precomputed_checked_ifma = sym crate::rsa::vg_rsa_public_precomputed_checked_ifma::vg_rsa_public_precomputed_checked_ifma,
     )
 }

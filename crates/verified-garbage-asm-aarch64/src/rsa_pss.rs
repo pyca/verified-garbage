@@ -36,8 +36,56 @@
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash` and `mgf1` may overlap the 3584 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_rsa_pss_sign(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rsa_pss_sign(out, out_len, n, n_len, e, e_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash, mgf1) }
+}
+
+/// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a signature of a digest of the former. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the `digest_len`-byte digest `digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply.
+///
+/// Contract: `VG.Spec.RsaPss.verifyPrecomputedTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
+///
+/// # Safety
+///
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `sig` must be valid for reads of `sig_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `sig_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `digest_len` must be the digest length of the hash function `hash` names.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
+/// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
+/// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
+/// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 960 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_rsa_pss_verify_precomputed(_dit: verified_garbage_cpu::Dit<'_>, n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_rsa_pss_verify_precomputed(n, n_len, e, e_len, digest, digest_len, sig, sig_len, salt_len, any_salt_len, scratch, scratch_len, pre, pre_len, hash, mgf1) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_rsa_pss_sign`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_pss_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pss_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10543ff,0xf940e3ea,0x910003f0,0xf9003213,0xf9003614,0xf9003a15,0xf9003e16,0xf9004217
 .inst 0xf9004618,0xf9004a19,0xf9004e1a,0xf900521b,0xf900561c,0xf9005a1e,0xf9006e00,0xf9005e02
@@ -117,48 +165,21 @@ cbnz x13, 219b
 .inst 0x910003f0,0xf9403213,0xf9403614,0xf9403a15,0xf9403e16,0xf9404217,0xf9404618,0xf9404a19
 .inst 0xf9404e1a,0xf940521b,0xf940561c,0xf9405a1e,0x910543ff,0xd65f03c0
 .p2align 6",
-        vg_rsa_pss_sha512_256_encode = sym super::rsa_pss::vg_rsa_pss_sha512_256_encode::vg_rsa_pss_sha512_256_encode,
-        vg_rsa_pss_sha512_224_encode = sym super::rsa_pss::vg_rsa_pss_sha512_224_encode::vg_rsa_pss_sha512_224_encode,
-        vg_rsa_pss_sha512_encode = sym super::rsa_pss::vg_rsa_pss_sha512_encode::vg_rsa_pss_sha512_encode,
-        vg_rsa_pss_sha384_encode = sym super::rsa_pss::vg_rsa_pss_sha384_encode::vg_rsa_pss_sha384_encode,
-        vg_rsa_pss_sha256_encode = sym super::rsa_pss::vg_rsa_pss_sha256_encode::vg_rsa_pss_sha256_encode,
-        vg_rsa_pss_sha224_encode = sym super::rsa_pss::vg_rsa_pss_sha224_encode::vg_rsa_pss_sha224_encode,
-        vg_rsa_pss_sha1_encode = sym super::rsa_pss::vg_rsa_pss_sha1_encode::vg_rsa_pss_sha1_encode,
-        vg_rsa_pss_md5_encode = sym super::rsa_pss::vg_rsa_pss_md5_encode::vg_rsa_pss_md5_encode,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_pss_sha512_256_encode = sym crate::rsa_pss::vg_rsa_pss_sha512_256_encode::vg_rsa_pss_sha512_256_encode,
+        vg_rsa_pss_sha512_224_encode = sym crate::rsa_pss::vg_rsa_pss_sha512_224_encode::vg_rsa_pss_sha512_224_encode,
+        vg_rsa_pss_sha512_encode = sym crate::rsa_pss::vg_rsa_pss_sha512_encode::vg_rsa_pss_sha512_encode,
+        vg_rsa_pss_sha384_encode = sym crate::rsa_pss::vg_rsa_pss_sha384_encode::vg_rsa_pss_sha384_encode,
+        vg_rsa_pss_sha256_encode = sym crate::rsa_pss::vg_rsa_pss_sha256_encode::vg_rsa_pss_sha256_encode,
+        vg_rsa_pss_sha224_encode = sym crate::rsa_pss::vg_rsa_pss_sha224_encode::vg_rsa_pss_sha224_encode,
+        vg_rsa_pss_sha1_encode = sym crate::rsa_pss::vg_rsa_pss_sha1_encode::vg_rsa_pss_sha1_encode,
+        vg_rsa_pss_md5_encode = sym crate::rsa_pss::vg_rsa_pss_md5_encode::vg_rsa_pss_md5_encode,
+        vg_rsa_private_checked = sym crate::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
     )
 }
 
-/// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a signature of a digest of the former. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the `digest_len`-byte digest `digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply.
-///
-/// Contract: `VG.Spec.RsaPss.verifyPrecomputedTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
-///
-/// # Safety
-///
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `sig` must be valid for reads of `sig_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `sig_len` must be `n_len`.
-/// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 1072`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `digest_len` must be the digest length of the hash function `hash` names.
-/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
-/// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
-/// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
-/// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
-/// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 960 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// The verified code of [`super::vg_rsa_pss_verify_precomputed`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_rsa_pss_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pss_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xd10543ff,0xf940c3ea,0x910003f0,0xf9003213,0xf9003614,0xf9003a15,0xf9003e16,0xf9004217
 .inst 0xf9004618,0xf9004a19,0xf9004e1a,0xf900521b,0xf900561c,0xf9005a1e,0xf9005e00,0xf9006202
@@ -223,16 +244,17 @@ b 21f
 .inst 0x910003f0,0xf9403213,0xf9403614,0xf9403a15,0xf9403e16,0xf9404217,0xf9404618,0xf9404a19
 .inst 0xf9404e1a,0xf940521b,0xf940561c,0xf9405a1e,0x910543ff,0xd65f03c0
 .p2align 6",
-        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
-        vg_rsa_pss_sha512_256_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_256_check_encoding::vg_rsa_pss_sha512_256_check_encoding,
-        vg_rsa_pss_sha512_224_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_224_check_encoding::vg_rsa_pss_sha512_224_check_encoding,
-        vg_rsa_pss_sha512_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha512_check_encoding::vg_rsa_pss_sha512_check_encoding,
-        vg_rsa_pss_sha384_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha384_check_encoding::vg_rsa_pss_sha384_check_encoding,
-        vg_rsa_pss_sha256_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha256_check_encoding::vg_rsa_pss_sha256_check_encoding,
-        vg_rsa_pss_sha224_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha224_check_encoding::vg_rsa_pss_sha224_check_encoding,
-        vg_rsa_pss_sha1_check_encoding = sym super::rsa_pss::vg_rsa_pss_sha1_check_encoding::vg_rsa_pss_sha1_check_encoding,
-        vg_rsa_pss_md5_check_encoding = sym super::rsa_pss::vg_rsa_pss_md5_check_encoding::vg_rsa_pss_md5_check_encoding,
+        vg_rsa_public_precomputed_checked = sym crate::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
+        vg_rsa_pss_sha512_256_check_encoding = sym crate::rsa_pss::vg_rsa_pss_sha512_256_check_encoding::vg_rsa_pss_sha512_256_check_encoding,
+        vg_rsa_pss_sha512_224_check_encoding = sym crate::rsa_pss::vg_rsa_pss_sha512_224_check_encoding::vg_rsa_pss_sha512_224_check_encoding,
+        vg_rsa_pss_sha512_check_encoding = sym crate::rsa_pss::vg_rsa_pss_sha512_check_encoding::vg_rsa_pss_sha512_check_encoding,
+        vg_rsa_pss_sha384_check_encoding = sym crate::rsa_pss::vg_rsa_pss_sha384_check_encoding::vg_rsa_pss_sha384_check_encoding,
+        vg_rsa_pss_sha256_check_encoding = sym crate::rsa_pss::vg_rsa_pss_sha256_check_encoding::vg_rsa_pss_sha256_check_encoding,
+        vg_rsa_pss_sha224_check_encoding = sym crate::rsa_pss::vg_rsa_pss_sha224_check_encoding::vg_rsa_pss_sha224_check_encoding,
+        vg_rsa_pss_sha1_check_encoding = sym crate::rsa_pss::vg_rsa_pss_sha1_check_encoding::vg_rsa_pss_sha1_check_encoding,
+        vg_rsa_pss_md5_check_encoding = sym crate::rsa_pss::vg_rsa_pss_md5_check_encoding::vg_rsa_pss_md5_check_encoding,
     )
+}
 }
 
 #[rustfmt::skip]

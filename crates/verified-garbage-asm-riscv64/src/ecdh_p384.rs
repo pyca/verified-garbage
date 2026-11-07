@@ -16,8 +16,19 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
 /// * None of `out`, `d`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ecdh_p384(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 48], d: *const [u8; 48], peer: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ecdh_p384(out, d, peer, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ecdh_p384`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ecdh_p384(out: *mut [u8; 48], d: *const [u8; 48], peer: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ecdh_p384(out: *mut [u8; 48], d: *const [u8; 48], peer: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -2496,10 +2507,11 @@ call {vg_p384_mul_mod_p}
 .insn 2, 0x6000
 .insn 2, 0x8082
 .option pop",
-        vg_p384_check_point = sym super::ec_p384_compressed::vg_p384_check_point::vg_p384_check_point,
-        vg_p384_mul = sym super::ecdh_p384::vg_p384_mul::vg_p384_mul,
-        vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
+        vg_p384_check_point = sym crate::ec_p384_compressed::vg_p384_check_point::vg_p384_check_point,
+        vg_p384_mul = sym crate::ecdh_p384::vg_p384_mul::vg_p384_mul,
+        vg_p384_mul_mod_p = sym crate::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
     )
+}
 }
 
 #[rustfmt::skip]

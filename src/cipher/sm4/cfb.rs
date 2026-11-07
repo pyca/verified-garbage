@@ -125,7 +125,7 @@ impl Drop for Sm4Cfb128Decryptor {
 
 /// The signature of `vg_sm4_cfb128_encrypt` and `vg_sm4_cfb128_decrypt`.
 #[cfg(target_arch = "x86_64")]
-type Cfb = unsafe extern "sysv64" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
+type Cfb = unsafe fn(crate::dit::Dit<'_>, *const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
 /// The signature of `vg_sm4_cfb128_encrypt` and `vg_sm4_cfb128_decrypt`.
 #[cfg(any(
     target_arch = "x86",
@@ -134,15 +134,16 @@ type Cfb = unsafe extern "sysv64" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-type Cfb = unsafe extern "C" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
+type Cfb = unsafe fn(crate::dit::Dit<'_>, *const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
 
 impl Key {
     /// Expands a 16-byte key.
     fn new(key: &[u8; 16]) -> Self {
+        crate::dit::enter!(dit);
         let mut schedule = [0; 128];
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
-        unsafe { vg_sm4_expand_key(key, &mut schedule) };
+        unsafe { vg_sm4_expand_key(dit, key, &mut schedule) };
         Self { schedule }
     }
 
@@ -153,7 +154,8 @@ impl Key {
     /// `iv` the last left; a piece whose length is not a multiple of 16
     /// bytes must end the message.
     fn encrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.crypt(iv, buffer, vg_sm4_cfb128_encrypt);
+        crate::dit::enter!(dit);
+        self.crypt(dit, iv, buffer, vg_sm4_cfb128_encrypt);
     }
 
     /// Decrypts `buffer` in place, from the block `iv`, which it replaces
@@ -163,18 +165,19 @@ impl Key {
     /// `iv` the last left; a piece whose length is not a multiple of 16
     /// bytes must end the message.
     fn decrypt(&self, iv: &mut [u8; 16], buffer: &mut [u8]) {
-        self.crypt(iv, buffer, vg_sm4_cfb128_decrypt);
+        crate::dit::enter!(dit);
+        self.crypt(dit, iv, buffer, vg_sm4_cfb128_decrypt);
     }
 
-    fn crypt(&self, iv: &mut [u8; 16], buffer: &mut [u8], f: Cfb) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 16], buffer: &mut [u8], f: Cfb) {
         let whole = buffer.len() / 16 * 16;
         let (blocks, rest) = buffer.split_at_mut(whole);
-        self.blocks(iv, blocks, f);
+        self.blocks(dit, iv, blocks, f);
         if !rest.is_empty() {
             // `CIPH_K` of the block to continue from, as CFB encryption of a
             // zero block, XORed into the last bytes.
             let mut last = [0; 16];
-            self.blocks(iv, &mut last, vg_sm4_cfb128_encrypt);
+            self.blocks(dit, iv, &mut last, vg_sm4_cfb128_encrypt);
             for (b, o) in rest.iter_mut().zip(last) {
                 *b ^= o;
             }
@@ -183,13 +186,14 @@ impl Key {
     }
 
     /// `f` on whole blocks.
-    fn blocks(&self, iv: &mut [u8; 16], blocks: &mut [u8], f: Cfb) {
+    fn blocks(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 16], blocks: &mut [u8], f: Cfb) {
         // SAFETY: `blocks` holds `len / 16` whole blocks (its length is a
         // multiple of 16), and it, the block at `iv` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
             f(
+                dit,
                 &self.schedule,
                 iv,
                 blocks.as_mut_ptr().cast(),

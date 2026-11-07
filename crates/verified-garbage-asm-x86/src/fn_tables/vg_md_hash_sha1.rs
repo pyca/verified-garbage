@@ -4,6 +4,6 @@
 
 /// The table of functions `VG_MD_HASH_SHA1` of the interface `MdHash`: `vg_sha1_init`, `vg_sha1_update_scratch`, `vg_sha1_finalize_scratch`, `vg_sha1_compress`, `vg_sha1_state_digest`, then the data 1, 20, 64, 8, 84, 1.
 pub static VG_MD_HASH_SHA1: super::MdHash = super::MdHash {
-    fns: [crate::sha1::vg_sha1_init as *const (), crate::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch as *const (), crate::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch as *const (), crate::sha1::vg_sha1_compress::vg_sha1_compress as *const (), crate::sha1::vg_sha1_state_digest::vg_sha1_state_digest as *const ()],
+    fns: [crate::sha1::raw::vg_sha1_init as *const (), crate::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch as *const (), crate::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch as *const (), crate::sha1::vg_sha1_compress::vg_sha1_compress as *const (), crate::sha1::vg_sha1_state_digest::vg_sha1_state_digest as *const ()],
     data: [1, 20, 64, 8, 84, 1],
 };

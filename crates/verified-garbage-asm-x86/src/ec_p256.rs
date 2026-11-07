@@ -17,8 +17,19 @@
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
 /// * None of `out`, `d` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 20 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p256_public_key(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p256_public_key(out, d, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_p256_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_ec_p256_public_key(out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ec_p256_public_key(out: *mut [u8; 65], d: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#"call 2f
 2:
@@ -107,11 +118,12 @@ call {vg_p256_mul_mod_p}
 call {vg_p256_mul_mod_p}
 .base64 "WFhYWIuXQAQAACtXYIuXRAQAABtXZIuXSAQAABtXaIuXTAQAABtXbIuXUAQAABtXcIuXVAQAABtXdIuXWAQAABtXeIuXXAQAABtXfBnAicOLl0AEAAALl0QEAAALl0gEAAALl0wEAAALl1AEAAALl1QEAAALl1gEAAALl1wEAAC5AAAAACnRGdIh2ouHwAUAACHQiYfABQAAi5dAAgAAC5dEAgAAC5dIAgAAC5dMAgAAC5dQAgAAC5dUAgAAC5dYAgAAC5dcAgAAuQAAAAAp0RnSi4fABQAAIdCJh8AFAACLj8AFAACLXCQEuAQAAAAhyIgDi4egBAAAIcgPyIlDHYuHpAQAACHID8iJQxmLh6gEAAAhyA/IiUMVi4esBAAAIcgPyIlDEYuHsAQAACHID8iJQw2Lh7QEAAAhyA/IiUMJi4e4BAAAIcgPyIlDBYuHvAQAACHID8iJQwGLh6AFAAAhyA/IiUM9i4ekBQAAIcgPyIlDOYuHqAUAACHID8iJQzWLh6wFAAAhyA/IiUMxi4ewBQAAIcgPyIlDLYuHtAUAACHID8iJQymLh7gFAAAhyA/IiUMli4e8BQAAIcgPyIlDIYnIg+ABifqLGotyBItqDIt6CMM="
 .p2align 6"#,
-        vg_p256_sub_mod_p = sym super::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
-        vg_p256_mul_mod_p = sym super::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
-        vg_p256_add_mod_p = sym super::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
-        VG_P256_COMB = sym super::consts::VG_P256_COMB,
+        vg_p256_sub_mod_p = sym crate::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
+        vg_p256_mul_mod_p = sym crate::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,
+        vg_p256_add_mod_p = sym crate::ec_p256::vg_p256_add_mod_p::vg_p256_add_mod_p,
+        VG_P256_COMB = sym crate::consts::VG_P256_COMB,
     )
+}
 }
 
 #[rustfmt::skip]

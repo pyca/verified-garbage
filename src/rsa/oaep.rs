@@ -120,10 +120,10 @@ macro_rules! verified_fn_types {
     )*) => {$(
         $(#[$doc])*
         #[cfg(target_arch = "x86_64")]
-        type $name = unsafe extern "sysv64" fn($($arg,)* Table, Table) -> $ret;
+        type $name = unsafe fn(crate::dit::Dit<'_>, $($arg,)* Table, Table) -> $ret;
         $(#[$doc])*
         #[cfg(not(target_arch = "x86_64"))]
-        type $name = unsafe extern "C" fn($($arg,)* Table, Table) -> $ret;
+        type $name = unsafe fn(crate::dit::Dit<'_>, $($arg,)* Table, Table) -> $ret;
     )*};
 }
 
@@ -240,6 +240,8 @@ fn encrypt_with(
     mgf1: Table,
     mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
 ) -> Result<Vec<u8>, Error> {
+    // The plaintext and the seed are secret.
+    crate::dit::enter!(dit);
     let k = key.modulus_len();
     if plaintext.len() + 2 * len + 2 > k {
         return Err(Error::MessageTooLong);
@@ -250,7 +252,7 @@ fn encrypt_with(
     random(seed)?;
     let mut out = vec![0u8; k];
     let mut scratch = key.verify_scratch.take(public_scratch_words(k), true);
-    let pre = key.pre(&mut scratch);
+    let pre = key.pre(dit, &mut scratch);
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
     // distinct Rust allocations; `PublicKey::new` gives
@@ -265,6 +267,7 @@ fn encrypt_with(
     // need others).
     let r = unsafe {
         f(
+            dit,
             out.as_mut_ptr(),
             k,
             key.n.as_ptr(),
@@ -310,14 +313,16 @@ impl PrivateKey {
         mgf1_hash: Hash,
         label: &[u8],
     ) -> Result<Vec<u8>, Error> {
+        crate::dit::enter!(dit);
         let (_, f, h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
-        decrypt_with(self, ciphertext, label, f, h, m)
+        decrypt_with(dit, self, ciphertext, label, f, h, m)
     }
 }
 
 /// `f`, a `vg_rsa_oaep_decrypt` that this CPU can run, with the label's hash
 /// function `hash` and MGF1's `mgf1`.
 fn decrypt_with(
+    dit: crate::dit::Dit<'_>,
     key: &PrivateKey,
     ciphertext: &[u8],
     label: &[u8],
@@ -345,6 +350,7 @@ fn decrypt_with(
     // need others).
     let r = unsafe {
         f(
+            dit,
             out.as_mut_ptr(),
             k,
             &mut len,

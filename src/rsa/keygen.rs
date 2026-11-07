@@ -106,14 +106,15 @@ impl<F: FnMut(&mut [u8]) -> Result<(), Error>> Random<F> {
     /// for.
     fn prime(
         &mut self,
+        dit: crate::dit::Dit<'_>,
         len: usize,
         limit: usize,
         e: &[u8],
         other: Option<&[u8]>,
     ) -> Result<Vec<u8>, Error> {
-        let mut search = Search::new(len, limit, e, other);
+        let mut search = Search::new(dit, len, limit, e, other);
         loop {
-            let (status, used) = search.run(&self.octets[self.read..]);
+            let (status, used) = search.run(dit, &self.octets[self.read..]);
             self.read += used;
             match status {
                 1 => return Ok(search.prime()),
@@ -158,11 +159,17 @@ impl<'a> Search<'a> {
     /// (`len` octets) if given, which allows `limit` rejected candidates
     /// (`VG.Spec.RsaKeyGen.primeLimit`: `8 · 8 len` for `e = 3`, `5 · 8 len`
     /// otherwise).
-    fn new(len: usize, limit: usize, e: &'a [u8], other: Option<&'a [u8]>) -> Self {
+    fn new(
+        dit: crate::dit::Dit<'_>,
+        len: usize,
+        limit: usize,
+        e: &'a [u8],
+        other: Option<&'a [u8]>,
+    ) -> Self {
         assert!(other.is_none_or(|p| p.len() == len));
         let mut state = [0u64; 4];
         // SAFETY: `state` is valid for writes and `e` for reads of its length.
-        let ok = unsafe { vg_rsa_prime_search_init(&mut state, len, e.as_ptr(), e.len()) };
+        let ok = unsafe { vg_rsa_prime_search_init(dit, &mut state, len, e.as_ptr(), e.len()) };
         // The search accepts the lengths, with the same limit.
         assert_eq!((ok, state[0]), (1, limit as u64));
         Self {
@@ -182,7 +189,7 @@ impl<'a> Search<'a> {
     /// The search over `tape` (at most `state[2]` octets): 1 if it
     /// accepted a prime, 0 if the tape ran out inside a candidate, 3 if it
     /// is exhausted; and the octets it consumed, at most `tape.len()`.
-    fn run(&mut self, tape: &[u8]) -> (u32, usize) {
+    fn run(&mut self, dit: crate::dit::Dit<'_>, tape: &[u8]) -> (u32, usize) {
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_prime_search,
             // `select` chose it because the CPU has the features it needs.
@@ -212,6 +219,7 @@ impl<'a> Search<'a> {
         // `select` chose.
         let status = unsafe {
             f(
+                dit,
                 self.out.as_mut_ptr(),
                 self.out.len(),
                 &mut used,
@@ -253,6 +261,7 @@ impl Drop for Search<'_> {
 /// BoringSSL generates both primes again. It does not check that `p` and `q`
 /// are prime.
 fn key_from_primes(
+    dit: crate::dit::Dit<'_>,
     public_exponent: &[u8],
     p: &[u8],
     q: &[u8],
@@ -274,6 +283,7 @@ fn key_from_primes(
     // and `scratch_len` is `16 n_len + 32`.
     let status = unsafe {
         vg_rsa_keygen_key(
+            dit,
             n.as_mut_ptr(),
             n.len(),
             d.as_mut_ptr(),
@@ -344,6 +354,7 @@ fn params(bits: usize, public_exponent: &[u8]) -> Result<(usize, &[u8]), Error> 
 /// deriving the key from them, drawing both primes again
 /// while `d` is too small.
 fn generate_once(
+    dit: crate::dit::Dit<'_>,
     e: &[u8],
     prime: &mut impl FnMut(Option<&[u8]>) -> Result<Vec<u8>, Error>,
 ) -> Result<PrivateKey, Error> {
@@ -351,7 +362,7 @@ fn generate_once(
         let mut p = prime(None)?;
         let q = prime(Some(&p));
         let r = q.and_then(|mut q| {
-            let key = key_from_primes(e, &p, &q);
+            let key = key_from_primes(dit, e, &p, &q);
             crate::zeroize::zeroize(&mut q);
             key
         });
@@ -394,19 +405,21 @@ fn generate_from(
     public_exponent: &[u8],
     random: impl FnMut(&mut [u8]) -> Result<(), Error>,
 ) -> Result<PrivateKey, Error> {
+    crate::dit::enter!(dit);
     let (nlen, e) = params(bits, public_exponent)?;
     let len = nlen / 16;
     let limit = if e == [3] { 8 * nlen / 2 } else { 5 * nlen / 2 };
     let mut random = Random::new(random);
-    generate_with(e, &mut |other| random.prime(len, limit, e, other))
+    generate_with(dit, e, &mut |other| random.prime(dit, len, limit, e, other))
 }
 
 fn generate_with(
+    dit: crate::dit::Dit<'_>,
     e: &[u8],
     prime: &mut impl FnMut(Option<&[u8]>) -> Result<Vec<u8>, Error>,
 ) -> Result<PrivateKey, Error> {
     for _ in 0..4 {
-        match generate_once(e, prime) {
+        match generate_once(dit, e, prime) {
             Err(Error::TooManyIterations) => {}
             r => return r,
         }
@@ -420,6 +433,11 @@ mod tests {
         BigUint, Error, PrivateKey, Random, Vec, fill_random, generate, generate_with,
         key_from_primes, vec,
     };
+
+    /// A token for the tests' direct calls of the verified functions.
+    fn t() -> crate::dit::Dit<'static> {
+        crate::dit::public(crate::dit::Why::Test)
+    }
 
     /// The source of a [`Random`] in [`stream`].
     type Fill<'a> = &'a mut dyn FnMut(&mut [u8]) -> Result<(), Error>;
@@ -465,7 +483,7 @@ mod tests {
         other: Option<&[u8]>,
         rand: &[u8],
     ) -> Result<Vec<u8>, Error> {
-        stream(rand, |random| random.prime(32, limit, e, other)).0
+        stream(rand, |random| random.prime(t(), 32, limit, e, other)).0
     }
 
     /// A key of 512 bits for `e` from `rand`, as [`stream`] reads it, and the
@@ -473,7 +491,7 @@ mod tests {
     fn generate_from(e: &[u8], rand: &[u8]) -> (Result<PrivateKey, Error>, usize) {
         let limit = if e == [3] { 8 * 256 } else { 5 * 256 };
         stream(rand, |random| {
-            generate_with(e, &mut |other| random.prime(32, limit, e, other))
+            generate_with(t(), e, &mut |other| random.prime(t(), 32, limit, e, other))
         })
     }
 
@@ -488,7 +506,7 @@ mod tests {
     /// octets.
     fn prime(bits: usize, e: &[u8], other: Option<&[u8]>) -> Vec<u8> {
         Random::new(fill_random)
-            .prime(bits / 8, 5 * bits, e, other)
+            .prime(t(), bits / 8, 5 * bits, e, other)
             .unwrap()
     }
 
@@ -558,10 +576,10 @@ mod tests {
         let mut p = [0u8; 32];
         p[0] = 0xc0;
         p[31] = 3;
-        assert!(key_from_primes(&[3], &p, &p).unwrap().is_none());
+        assert!(key_from_primes(t(), &[3], &p, &p).unwrap().is_none());
         p[31] = 1;
         assert_eq!(
-            key_from_primes(&[3], &p, &p).unwrap_err(),
+            key_from_primes(t(), &[3], &p, &p).unwrap_err(),
             Error::InvalidKey
         );
     }
@@ -572,7 +590,7 @@ mod tests {
         for bits in [256, 512, 1024] {
             let p = prime(bits, &[1, 0, 1], None);
             let q = prime(bits, &[1, 0, 1], Some(&p));
-            let key = key_from_primes(&[1, 0, 1], &p, &q).unwrap().unwrap();
+            let key = key_from_primes(t(), &[1, 0, 1], &p, &q).unwrap().unwrap();
             assert!(reloads(&key));
             assert_eq!(key.modulus_len(), bits / 4);
             let (hi, lo) = if p > q { (&p, &q) } else { (&q, &p) };
@@ -690,7 +708,7 @@ mod tests {
             Ok(())
         });
         assert_eq!(
-            random.prime(32, 5 * 256, &[1, 0, 1], None),
+            random.prime(t(), 32, 5 * 256, &[1, 0, 1], None),
             Err(Error::TooManyIterations)
         );
         let mut fills = 0;
@@ -708,8 +726,8 @@ mod tests {
             Ok(())
         });
         assert_eq!(
-            generate_with(&[1, 0, 1], &mut |other| {
-                random.prime(32, 5 * 256, &[1, 0, 1], other)
+            generate_with(t(), &[1, 0, 1], &mut |other| {
+                random.prime(t(), 32, 5 * 256, &[1, 0, 1], other)
             })
             .unwrap_err(),
             Error::Randomness
@@ -725,7 +743,7 @@ mod tests {
         });
         // Equal to the other prime: too close, never counted as rejected.
         assert_eq!(
-            random.prime(32, 5 * 256, &[1, 0, 1], Some(&[0xff; 32])),
+            random.prime(t(), 32, 5 * 256, &[1, 0, 1], Some(&[0xff; 32])),
             Err(Error::Randomness)
         );
     }
@@ -739,7 +757,7 @@ mod tests {
         rand.extend(candidate(&SMALL_D_P, &W));
         rand.extend(candidate(&SMALL_D_Q, &W));
         assert!(
-            key_from_primes(&[1, 0, 1], &SMALL_D_P, &SMALL_D_Q)
+            key_from_primes(t(), &[1, 0, 1], &SMALL_D_P, &SMALL_D_Q)
                 .unwrap()
                 .is_none()
         );

@@ -6,6 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
+import export_rust_coverage
 import merge_rust_coverage
 
 
@@ -46,6 +47,25 @@ class Arches(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("x86: 0 of 1 lines covered", out)
         self.assertIn("a.rs:1", out)
+
+
+
+class Export(unittest.TestCase):
+    def test_keeps_only_the_repositorys_files(self):
+        # Paths relative to the root (as the standard library's remapped
+        # `rustc/<commit>/…` ones are) are kept only if the file exists, and
+        # `target/` and the generated crates are left out.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d).resolve()
+            for f in ["src/a.rs", "target/b.rs", "crates/verified-garbage-asm-x/src/c.rs"]:
+                (root / f).parent.mkdir(parents=True, exist_ok=True)
+                (root / f).write_text("")
+            records = "".join(lcov(s, {1: 1}) for s in [
+                "src/a.rs", "rustc/0123/library/std/src/lib.rs", "/elsewhere/d.rs",
+                "target/b.rs", "crates/verified-garbage-asm-x/src/c.rs",
+            ])
+            self.assertEqual(export_rust_coverage.relative_records(records, root),
+                             lcov("src/a.rs", {1: 1}))
 
 
 if __name__ == "__main__":

@@ -118,6 +118,7 @@ pub struct AesEcb {
 impl AesEcb {
     /// Expands a 16-, 24- or 32-byte key for use in either direction.
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
+        crate::dit::enter!(dit);
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -133,7 +134,7 @@ impl AesEcb {
         // SAFETY: the key is 16, 24 or 32 bytes long; the key and the schedule
         // are separate valid buffers of the sizes of the signature, and
         // `select` chose `expand` for the CPU's features.
-        unsafe { expand(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { expand(dit, key.as_ptr(), key.len(), &mut schedule) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -145,6 +146,7 @@ impl AesEcb {
     /// Returns an error without changing the buffer if its length is not a
     /// multiple of 16.
     pub fn encrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         let f = instance!(
             self.backend,
             vg_aes_encrypt_blocks,
@@ -159,13 +161,14 @@ impl AesEcb {
             VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN,
             VG_AES_ENCRYPT_BLOCKS_AES_SCRATCH_WRITTEN
         );
-        self.crypt(buffer, f, written)
+        self.crypt(dit, buffer, f, written)
     }
 
     /// Decrypts whole 16-byte blocks in place. Empty input is valid.
     /// Returns an error without changing the buffer if its length is not a
     /// multiple of 16.
     pub fn decrypt(&self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        crate::dit::enter!(dit);
         let f = instance!(
             self.backend,
             vg_aes_decrypt_blocks,
@@ -180,12 +183,18 @@ impl AesEcb {
             SCRATCH,
             VG_AES_DECRYPT_BLOCKS_AES_SCRATCH_WRITTEN
         );
-        self.crypt(buffer, f, written)
+        self.crypt(dit, buffer, f, written)
     }
 
     /// Applies `f`, which writes at most the first `written` bytes of its
     /// working space, to the blocks of `buffer`.
-    fn crypt(&self, buffer: &mut [u8], f: Blocks, written: usize) -> Result<(), IncompleteBlock> {
+    fn crypt(
+        &self,
+        dit: crate::dit::Dit<'_>,
+        buffer: &mut [u8],
+        f: Blocks,
+        written: usize,
+    ) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
@@ -198,6 +207,7 @@ impl AesEcb {
         // sizes of the signature. `select` chose `f` for the CPU's features.
         unsafe {
             f(
+                dit,
                 &self.schedule,
                 self.rounds,
                 buffer.as_mut_ptr().cast(),
@@ -230,7 +240,7 @@ const ENCRYPT_AESNI_WRITTEN: usize = SCRATCH;
 /// The signature of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`.
 #[cfg(target_arch = "x86_64")]
 type Blocks =
-    unsafe extern "sysv64" fn(*const [u8; 240], usize, *mut [u8; 16], usize, *mut [u64; 256]);
+    unsafe fn(crate::dit::Dit<'_>, *const [u8; 240], usize, *mut [u8; 16], usize, *mut [u64; 256]);
 /// The signature of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`.
 #[cfg(any(
     target_arch = "x86",
@@ -239,7 +249,8 @@ type Blocks =
     target_arch = "powerpc64",
     target_arch = "riscv64"
 ))]
-type Blocks = unsafe extern "C" fn(*const [u8; 240], usize, *mut [u8; 16], usize, *mut [u64; 256]);
+type Blocks =
+    unsafe fn(crate::dit::Dit<'_>, *const [u8; 240], usize, *mut [u8; 16], usize, *mut [u64; 256]);
 
 impl Drop for AesEcb {
     fn drop(&mut self) {

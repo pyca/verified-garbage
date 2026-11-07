@@ -11,8 +11,38 @@
 ///
 /// * `p` must be valid for reads and writes of `len` bytes.
 /// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_zeroize(_dit: verified_garbage_cpu::Dit<'_>, p: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_zeroize(p, len) }
+}
+
+/// The CPU features `vg_zeroize_avx` requires (`Artifact.features`).
+pub const VG_ZEROIZE_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX);
+
+/// Wipes a buffer: sets the `len` bytes at `p` to zero, and writes no other memory. A call of it is not a dead store the compiler may remove, since the compiler cannot see its code.
+///
+/// Contract: `VG.Spec.Zeroize.zeroizeContract`. Constant time: only `p` and `len` may affect timing, not the bytes wiped.
+///
+/// # Safety
+///
+/// * `p` must be valid for reads and writes of `len` bytes.
+/// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` target feature.
+#[inline(always)]
+pub unsafe fn vg_zeroize_avx(_dit: verified_garbage_cpu::Dit<'_>, p: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_zeroize_avx(p, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_zeroize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_zeroize(p: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SMfAAAAAAEiJ8kjB6gVIg/oA"
 je 20f
@@ -43,20 +73,9 @@ jmp 27f
     )
 }
 
-/// The CPU features `vg_zeroize_avx` requires (`Artifact.features`).
-pub const VG_ZEROIZE_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX);
-
-/// Wipes a buffer: sets the `len` bytes at `p` to zero, and writes no other memory. A call of it is not a dead store the compiler may remove, since the compiler cannot see its code.
-///
-/// Contract: `VG.Spec.Zeroize.zeroizeContract`. Constant time: only `p` and `len` may affect timing, not the bytes wiped.
-///
-/// # Safety
-///
-/// * `p` must be valid for reads and writes of `len` bytes.
-/// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` target feature.
+/// The verified code of [`super::vg_zeroize_avx`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_zeroize_avx(p: *mut u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_zeroize_avx(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "xfnvwEjHwAAAAABIifJIweoGSIP6AA=="
 je 20f
@@ -85,4 +104,5 @@ jmp 27f
 .base64 "xfh3ww=="
 .p2align 6"#,
     )
+}
 }

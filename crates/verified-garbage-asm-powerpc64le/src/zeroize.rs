@@ -11,8 +11,19 @@
 ///
 /// * `p` must be valid for reads and writes of `len` bytes.
 /// * `p` must not wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_zeroize(_dit: verified_garbage_cpu::Dit<'_>, p: *mut u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_zeroize(p, len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_zeroize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_zeroize(p: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "AACgOMLohngHAOA4ODiEfAAAJig="
 beq %cr0, 20f
@@ -32,4 +43,5 @@ b 24f
 24:
 .base64 "IACATg==""#,
     )
+}
 }

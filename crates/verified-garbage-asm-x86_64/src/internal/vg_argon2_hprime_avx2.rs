@@ -67,7 +67,7 @@ jmp 23f
 jne 29b
 .base64 "SIurSAMAAEyLo1ADAABMi6tYAwAATIuzYAMAAEyLu2gDAABIi5twAwAAww=="
 .p2align 6"#,
-        vg_blake2b_init = sym crate::blake2b::vg_blake2b_init,
+        vg_blake2b_init = sym crate::blake2b::raw::vg_blake2b_init,
         vg_blake2b_update_scratch_avx2 = sym crate::blake2b::vg_blake2b_update_scratch_avx2::vg_blake2b_update_scratch_avx2,
         vg_blake2b_finalize_scratch_avx2 = sym crate::blake2b::vg_blake2b_finalize_scratch_avx2::vg_blake2b_finalize_scratch_avx2,
     )

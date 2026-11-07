@@ -11,15 +11,11 @@
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
-    core::arch::naked_asm!(
-        r".inst 0x5282cde9,0x72ae7009,0xb9000009,0x52965729,0x72a92289,0xb9000409,0x52885ae9,0x72a2e489
-.inst 0xb9000809,0x5280c009,0x72bb5149,0xb9000c09,0x52861789,0x72b52de9,0xb9001009,0x52871549
-.inst 0x72a2c629,0xb9001409,0x529dc9a9,0x72bc71a9,0xb9001809,0x5281c9c9,0x72b61f69,0xb9001c09
-.inst 0xd65f03c0
-.p2align 6",
-    )
+#[inline(always)]
+pub unsafe fn vg_sm3_init(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm3_init(state) }
 }
 
 /// Absorbs data into an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
@@ -32,8 +28,49 @@ pub unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm3_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm3_update(state, count, data, len) }
+}
+
+/// Finishes an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SM3 hash value of that message (32 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Sm3.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_sm3_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sm3_finalize(state, count, out) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_sm3_init`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm3_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
+    core::arch::naked_asm!(
+        r".inst 0x5282cde9,0x72ae7009,0xb9000009,0x52965729,0x72a92289,0xb9000409,0x52885ae9,0x72a2e489
+.inst 0xb9000809,0x5280c009,0x72bb5149,0xb9000c09,0x52861789,0x72b52de9,0xb9001009,0x52871549
+.inst 0x72a2c629,0xb9001409,0x529dc9a9,0x72bc71a9,0xb9001809,0x5281c9c9,0x72b61f69,0xb9001c09
+.inst 0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// The verified code of [`super::vg_sm3_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm3_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd101c3ff,0x910003e4,0xf81f0ffe,0xf9002093,0xf9002494,0xf9002895,0xf9002c96,0xf9003097
 .inst 0xf9003498,0x91000013,0x91000094,0x91000055,0x91000076,0xd28007e9,0x8a090037
@@ -127,23 +164,13 @@ b 21f
 .inst 0xf9402293,0xf9402a95,0xf9402e96,0xf9403297,0xf9403698,0xf9402694,0xf84107fe,0x9101c3ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
+        vg_sm3_compress = sym crate::sm3::vg_sm3_compress::vg_sm3_compress,
     )
 }
 
-/// Finishes an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SM3 hash value of that message (32 bytes) to `*out`.
-///
-/// Contract: `VG.Spec.Sm3.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 96 bytes.
-/// * `out` must be valid for reads and writes of 32 bytes.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// The verified code of [`super::vg_sm3_finalize`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_sm3_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sm3_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd101c3ff,0x910003e3,0xf81f0ffe,0xf9002073,0xf9002474,0xf9002875,0xf9002c76,0xf9003077
 .inst 0xf9003478,0x91000013,0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009
@@ -185,8 +212,9 @@ cbz x24, 20b
 .inst 0xf9402293,0xf9402a95,0xf9402e96,0xf9403297,0xf9403698,0xf9402694,0xf84107fe,0x9101c3ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
+        vg_sm3_compress = sym crate::sm3::vg_sm3_compress::vg_sm3_compress,
     )
+}
 }
 
 #[rustfmt::skip]

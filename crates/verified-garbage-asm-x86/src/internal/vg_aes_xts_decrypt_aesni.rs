@@ -31,6 +31,6 @@ jmp 21f
 21:
 .base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
 .p2align 6"#,
-        vg_aes_decrypt_blocks_aesni = sym crate::aes::vg_aes_decrypt_blocks_aesni,
+        vg_aes_decrypt_blocks_aesni = sym crate::aes::raw::vg_aes_decrypt_blocks_aesni,
     )
 }

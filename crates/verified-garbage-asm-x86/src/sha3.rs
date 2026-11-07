@@ -18,15 +18,11 @@
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "jWQk6ItEJByJBCS4kAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
-call {vg_keccak_absorb_scratch}
-.base64 "jWQkGMM="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_224_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_224_update(state, pos, data, len, scratch) }
 }
 
 /// Finishes a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, as `vg_sha3_224_update` leaves it), writes the SHA3-224 digest of that message (28 bytes, `VG.Spec.Sha3.sha3_224`) to `*out`.
@@ -43,18 +39,11 @@ call {vg_keccak_absorb_scratch}
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkaP3//4uEJJwCAACJBCS4kAAAAIlEJASLhCSgAgAAiUQkCLgGAAAAiUQkDIngg8AYiUQkEA=="
-call {vg_keccak_pad_scratch}
-.base64 "i4QknAIAAIkEJLiQAAAAiUQkBLgAAAAAiUQkCIuEJKQCAACJRCQMuBwAAACJRCQQieCDwBiJRCQU"
-call {vg_keccak_squeeze_scratch}
-.base64 "jaQkmAIAAMM="
-.p2align 6"#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_224_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_224_finalize(state, pos, out) }
 }
 
 /// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
@@ -72,15 +61,11 @@ call {vg_keccak_squeeze_scratch}
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "jWQk6ItEJByJBCS4iAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
-call {vg_keccak_absorb_scratch}
-.base64 "jWQkGMM="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_256_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_256_update(state, pos, data, len, scratch) }
 }
 
 /// Finishes a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, as `vg_sha3_256_update` leaves it), writes the SHA3-256 digest of that message (32 bytes, `VG.Spec.Sha3.sha3_256`) to `*out`.
@@ -97,18 +82,11 @@ call {vg_keccak_absorb_scratch}
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkaP3//4uEJJwCAACJBCS4iAAAAIlEJASLhCSgAgAAiUQkCLgGAAAAiUQkDIngg8AYiUQkEA=="
-call {vg_keccak_pad_scratch}
-.base64 "i4QknAIAAIkEJLiIAAAAiUQkBLgAAAAAiUQkCIuEJKQCAACJRCQMuCAAAACJRCQQieCDwBiJRCQU"
-call {vg_keccak_squeeze_scratch}
-.base64 "jaQkmAIAAMM="
-.p2align 6"#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_256_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_256_finalize(state, pos, out) }
 }
 
 /// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
@@ -126,15 +104,11 @@ call {vg_keccak_squeeze_scratch}
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "jWQk6ItEJByJBCS4aAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
-call {vg_keccak_absorb_scratch}
-.base64 "jWQkGMM="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_384_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_384_update(state, pos, data, len, scratch) }
 }
 
 /// Finishes a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, as `vg_sha3_384_update` leaves it), writes the SHA3-384 digest of that message (48 bytes, `VG.Spec.Sha3.sha3_384`) to `*out`.
@@ -151,18 +125,11 @@ call {vg_keccak_absorb_scratch}
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkaP3//4uEJJwCAACJBCS4aAAAAIlEJASLhCSgAgAAiUQkCLgGAAAAiUQkDIngg8AYiUQkEA=="
-call {vg_keccak_pad_scratch}
-.base64 "i4QknAIAAIkEJLhoAAAAiUQkBLgAAAAAiUQkCIuEJKQCAACJRCQMuDAAAACJRCQQieCDwBiJRCQU"
-call {vg_keccak_squeeze_scratch}
-.base64 "jaQkmAIAAMM="
-.p2align 6"#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_384_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_384_finalize(state, pos, out) }
 }
 
 /// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
@@ -180,15 +147,11 @@ call {vg_keccak_squeeze_scratch}
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "jWQk6ItEJByJBCS4SAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
-call {vg_keccak_absorb_scratch}
-.base64 "jWQkGMM="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_512_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_512_update(state, pos, data, len, scratch) }
 }
 
 /// Finishes a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, as `vg_sha3_512_update` leaves it), writes the SHA3-512 digest of that message (64 bytes, `VG.Spec.Sha3.sha3_512`) to `*out`.
@@ -205,18 +168,11 @@ call {vg_keccak_absorb_scratch}
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkaP3//4uEJJwCAACJBCS4SAAAAIlEJASLhCSgAgAAiUQkCLgGAAAAiUQkDIngg8AYiUQkEA=="
-call {vg_keccak_pad_scratch}
-.base64 "i4QknAIAAIkEJLhIAAAAiUQkBLgAAAAAiUQkCIuEJKQCAACJRCQMuEAAAACJRCQQieCDwBiJRCQU"
-call {vg_keccak_squeeze_scratch}
-.base64 "jaQkmAIAAMM="
-.p2align 6"#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_sha3_512_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_sha3_512_finalize(state, pos, out) }
 }
 
 /// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
@@ -234,15 +190,11 @@ call {vg_keccak_squeeze_scratch}
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "jWQk6ItEJByJBCS4qAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
-call {vg_keccak_absorb_scratch}
-.base64 "jWQkGMM="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_shake128_update(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake128_update(state, pos, data, len, scratch) }
 }
 
 /// Finishes absorbing a SHAKE128 message: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, as `vg_shake128_update` leaves it), it becomes a state that, squeezed by `vg_shake128_squeeze` from position 0, gives the output of SHAKE128 of that message (`VG.Spec.Sha3.shake128`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
@@ -256,15 +208,11 @@ call {vg_keccak_absorb_scratch}
 /// * `state` must be valid for reads and writes of 200 bytes.
 /// * `pos` must be less than 168.
 /// * `state` must not overlap the arguments on the stack, overlap the return address on the stack or the 676 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_finalize(state: *mut [u64; 25], pos: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkbP3//4uEJJgCAACJBCS4qAAAAIlEJASLhCScAgAAiUQkCLgfAAAAiUQkDIngg8AUiUQkEA=="
-call {vg_keccak_pad_scratch}
-.base64 "jaQklAIAAMM="
-.p2align 6"#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_shake128_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake128_finalize(state, pos) }
 }
 
 /// Squeezes SHAKE128 output: if the state `*state`, from position `pos`, continues the output of SHAKE128 of a message (`VG.Spec.Sha3.shake128`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake128_finalize` leaves and position 0.
@@ -280,15 +228,11 @@ call {vg_keccak_pad_scratch}
 /// * `pos` must be at most 168.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkaP3//4uEJJwCAACJBCS4qAAAAIlEJASLhCSgAgAAiUQkCIuEJKQCAACJRCQMi4QkqAIAAIlEJBCJ4IPAGIlEJBQ="
-call {vg_keccak_squeeze_scratch}
-.base64 "jaQkmAIAAMM="
-.p2align 6"#,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_shake128_squeeze(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake128_squeeze(state, pos, out, outlen) }
 }
 
 /// Absorbs data into a SHAKE256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
@@ -322,15 +266,11 @@ pub use self::vg_sha3_256_update as vg_shake256_update;
 /// * `state` must be valid for reads and writes of 200 bytes.
 /// * `pos` must be less than 136.
 /// * `state` must not overlap the arguments on the stack, overlap the return address on the stack or the 676 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake256_finalize(state: *mut [u64; 25], pos: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkbP3//4uEJJgCAACJBCS4iAAAAIlEJASLhCScAgAAiUQkCLgfAAAAiUQkDIngg8AUiUQkEA=="
-call {vg_keccak_pad_scratch}
-.base64 "jaQklAIAAMM="
-.p2align 6"#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-    )
+#[inline(always)]
+pub unsafe fn vg_shake256_finalize(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake256_finalize(state, pos) }
 }
 
 /// Squeezes SHAKE256 output: if the state `*state`, from position `pos`, continues the output of SHAKE256 of a message (`VG.Spec.Sha3.shake256`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake256_finalize` leaves and position 0.
@@ -346,13 +286,184 @@ call {vg_keccak_pad_scratch}
 /// * `pos` must be at most 136.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the arguments on the stack, overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_shake256_squeeze(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_shake256_squeeze(state, pos, out, outlen) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_sha3_224_update`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "jWQk6ItEJByJBCS4kAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
+call {vg_keccak_absorb_scratch}
+.base64 "jWQkGMM="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_224_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkaP3//4uEJJwCAACJBCS4kAAAAIlEJASLhCSgAgAAiUQkCLgGAAAAiUQkDIngg8AYiUQkEA=="
+call {vg_keccak_pad_scratch}
+.base64 "i4QknAIAAIkEJLiQAAAAiUQkBLgAAAAAiUQkCIuEJKQCAACJRCQMuBwAAACJRCQQieCDwBiJRCQU"
+call {vg_keccak_squeeze_scratch}
+.base64 "jaQkmAIAAMM="
+.p2align 6"#,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_256_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "jWQk6ItEJByJBCS4iAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
+call {vg_keccak_absorb_scratch}
+.base64 "jWQkGMM="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_256_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkaP3//4uEJJwCAACJBCS4iAAAAIlEJASLhCSgAgAAiUQkCLgGAAAAiUQkDIngg8AYiUQkEA=="
+call {vg_keccak_pad_scratch}
+.base64 "i4QknAIAAIkEJLiIAAAAiUQkBLgAAAAAiUQkCIuEJKQCAACJRCQMuCAAAACJRCQQieCDwBiJRCQU"
+call {vg_keccak_squeeze_scratch}
+.base64 "jaQkmAIAAMM="
+.p2align 6"#,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_384_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "jWQk6ItEJByJBCS4aAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
+call {vg_keccak_absorb_scratch}
+.base64 "jWQkGMM="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_384_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkaP3//4uEJJwCAACJBCS4aAAAAIlEJASLhCSgAgAAiUQkCLgGAAAAiUQkDIngg8AYiUQkEA=="
+call {vg_keccak_pad_scratch}
+.base64 "i4QknAIAAIkEJLhoAAAAiUQkBLgAAAAAiUQkCIuEJKQCAACJRCQMuDAAAACJRCQQieCDwBiJRCQU"
+call {vg_keccak_squeeze_scratch}
+.base64 "jaQkmAIAAMM="
+.p2align 6"#,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_512_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "jWQk6ItEJByJBCS4SAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
+call {vg_keccak_absorb_scratch}
+.base64 "jWQkGMM="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+    )
+}
+
+/// The verified code of [`super::vg_sha3_512_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkaP3//4uEJJwCAACJBCS4SAAAAIlEJASLhCSgAgAAiUQkCLgGAAAAiUQkDIngg8AYiUQkEA=="
+call {vg_keccak_pad_scratch}
+.base64 "i4QknAIAAIkEJLhIAAAAiUQkBLgAAAAAiUQkCIuEJKQCAACJRCQMuEAAAACJRCQQieCDwBiJRCQU"
+call {vg_keccak_squeeze_scratch}
+.base64 "jaQkmAIAAMM="
+.p2align 6"#,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+    )
+}
+
+/// The verified code of [`super::vg_shake128_update`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "jWQk6ItEJByJBCS4qAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
+call {vg_keccak_absorb_scratch}
+.base64 "jWQkGMM="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+    )
+}
+
+/// The verified code of [`super::vg_shake128_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_shake128_finalize(state: *mut [u64; 25], pos: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkbP3//4uEJJgCAACJBCS4qAAAAIlEJASLhCScAgAAiUQkCLgfAAAAiUQkDIngg8AUiUQkEA=="
+call {vg_keccak_pad_scratch}
+.base64 "jaQklAIAAMM="
+.p2align 6"#,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+    )
+}
+
+/// The verified code of [`super::vg_shake128_squeeze`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkaP3//4uEJJwCAACJBCS4qAAAAIlEJASLhCSgAgAAiUQkCIuEJKQCAACJRCQMi4QkqAIAAIlEJBCJ4IPAGIlEJBQ="
+call {vg_keccak_squeeze_scratch}
+.base64 "jaQkmAIAAMM="
+.p2align 6"#,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+    )
+}
+
+#[allow(unused_imports)]
+pub(crate) use self::vg_sha3_256_update as vg_shake256_update;
+
+/// The verified code of [`super::vg_shake256_finalize`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_shake256_finalize(state: *mut [u64; 25], pos: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkbP3//4uEJJgCAACJBCS4iAAAAIlEJASLhCScAgAAiUQkCLgfAAAAiUQkDIngg8AUiUQkEA=="
+call {vg_keccak_pad_scratch}
+.base64 "jaQklAIAAMM="
+.p2align 6"#,
+        vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+    )
+}
+
+/// The verified code of [`super::vg_shake256_squeeze`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
         r#".base64 "jaQkaP3//4uEJJwCAACJBCS4iAAAAIlEJASLhCSgAgAAiUQkCIuEJKQCAACJRCQMi4QkqAIAAIlEJBCJ4IPAGIlEJBQ="
 call {vg_keccak_squeeze_scratch}
 .base64 "jaQkmAIAAMM="
 .p2align 6"#,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
+}
 }

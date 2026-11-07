@@ -19,27 +19,12 @@
 /// * `b`, `v` and `scratch` are working space: their contents on return are unspecified.
 /// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xf81f0ffe,0xd10103ff,0x910003ef,0xf90005e0,0xf90009e1,0xf9000de4,0xf90011e5,0xf90015e6
-.inst 0xf90019e7,0xd2800024,0xd379e0c6,0xf9402fe7
-bl {vg_pbkdf2_hmac_sha256_scratch}
-.inst 0xf94013e9,0x910003ef,0xf90001e9
-20:
-.inst 0xf94003e0,0xf9400fe1,0xf9401be2,0xf9402be3,0xf9402fe4,0x91000825
-bl {vg_scrypt_romix}
-.inst 0xf94003e9,0xf9400fea,0xd379e14a,0x8b0a0129,0xf94013eb,0xf94017ec,0xd379e18c,0x8b0c016b
-.inst 0xcb09016b,0x910003ef,0xf90001e9
-cbnz x11, 20b
-.inst 0xf94007e0,0xf9400be1,0xf94013e2,0xf94017e3,0xd379e063,0xd2800024,0xf94037e5,0xf9403be6
-.inst 0xf9402fe7
-bl {vg_pbkdf2_hmac_sha256_scratch}
-.inst 0x910103ff,0xf84107fe,0xd65f03c0
-.p2align 6",
-        vg_pbkdf2_hmac_sha256_scratch = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
-        vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
-    )
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_scrypt(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_scrypt(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) }
 }
 
 /// The CPU features `vg_scrypt_sha2` requires (`Artifact.features`).
@@ -62,8 +47,44 @@ pub const VG_SCRYPT_SHA2_FEATURES: verified_garbage_cpu::Features = verified_gar
 /// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
+#[allow(clippy::too_many_arguments)]
+#[inline(always)]
+pub unsafe fn vg_scrypt_sha2(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_scrypt_sha2(password, password_len, salt, salt_len, r, b, blen, v, vlen, scratch, slen, out, out_len) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_scrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_scrypt_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0xd10103ff,0x910003ef,0xf90005e0,0xf90009e1,0xf9000de4,0xf90011e5,0xf90015e6
+.inst 0xf90019e7,0xd2800024,0xd379e0c6,0xf9402fe7
+bl {vg_pbkdf2_hmac_sha256_scratch}
+.inst 0xf94013e9,0x910003ef,0xf90001e9
+20:
+.inst 0xf94003e0,0xf9400fe1,0xf9401be2,0xf9402be3,0xf9402fe4,0x91000825
+bl {vg_scrypt_romix}
+.inst 0xf94003e9,0xf9400fea,0xd379e14a,0x8b0a0129,0xf94013eb,0xf94017ec,0xd379e18c,0x8b0c016b
+.inst 0xcb09016b,0x910003ef,0xf90001e9
+cbnz x11, 20b
+.inst 0xf94007e0,0xf9400be1,0xf94013e2,0xf94017e3,0xd379e063,0xd2800024,0xf94037e5,0xf9403be6
+.inst 0xf9402fe7
+bl {vg_pbkdf2_hmac_sha256_scratch}
+.inst 0x910103ff,0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_pbkdf2_hmac_sha256_scratch = sym crate::scrypt::vg_pbkdf2_hmac_sha256_scratch::vg_pbkdf2_hmac_sha256_scratch,
+        vg_scrypt_romix = sym crate::scrypt::vg_scrypt_romix::vg_scrypt_romix,
+    )
+}
+
+/// The verified code of [`super::vg_scrypt_sha2`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_scrypt_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10103ff,0x910003ef,0xf90005e0,0xf90009e1,0xf9000de4,0xf90011e5,0xf90015e6
 .inst 0xf90019e7,0xd2800024,0xd379e0c6,0xf9402fe7
@@ -80,9 +101,10 @@ cbnz x11, 20b
 bl {vg_pbkdf2_hmac_sha256_scratch_sha2}
 .inst 0x910103ff,0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_pbkdf2_hmac_sha256_scratch_sha2 = sym super::scrypt::vg_pbkdf2_hmac_sha256_scratch_sha2::vg_pbkdf2_hmac_sha256_scratch_sha2,
-        vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,
+        vg_pbkdf2_hmac_sha256_scratch_sha2 = sym crate::scrypt::vg_pbkdf2_hmac_sha256_scratch_sha2::vg_pbkdf2_hmac_sha256_scratch_sha2,
+        vg_scrypt_romix = sym crate::scrypt::vg_scrypt_romix::vg_scrypt_romix,
     )
+}
 }
 
 #[rustfmt::skip]

@@ -15,129 +15,11 @@
 /// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 208 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_cfb64_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "Mf8h+CAAATl4I4p8eCukfHgzxXx4O+Z8eEMHffT/SjkAACoo"
-beq %cr0, 20f
-.base64 "pgIIfJgAB/iAAKf7iADH+5AA5/t4I518eDPefHgjn3x4K6Z8eDvlfAAAH4GgAAWRBAAfgaQABZF4M998AAA+KA=="
-beq %cr0, 22f
-24:
-.base64 "oAAFgQAABZGkAAWBBAAFkXjrpn9488d/CADF+RAA5fkYAAX6IAAl+igARfowAGX6OACF+kAApfpIAMX6UADl+lgABftgACX7aABF+3AAZft4AIX7"
-bcl 20, 31, 2f
-2:
-mflr %r27
-addis %r27, %r27, ({VG_CAST5_S1234} - 2b)@ha
-addi %r27, %r27, ({VG_CAST5_S1234} - 2b)@l
-.base64 "/wBAOwAAADgQAIA4LAQFfQQABTssBDh9eBtqfHgji3wBAIA5"
-25:
-.base64 "AAAsKA=="
-beq %cr0, 26f
-.base64 "//8MOwAAOCg="
-beq %cr0, 28f
-.base64 "AACKg3hKnH8="
-b 29f
-28:
-.base64 "AACKgxRKnH8="
-29:
-b 27f
-26:
-.base64 "AACKg1DgiX8="
-27:
-.base64 "QACqgwb4vnvgD957///eOz4ImFd4wpl/OPA5f3jKHH9G8L574A/ee///3js+EJhXeMKZfzjwOX94yhx/hui+e+AP3nv//947PiCYV3jCmX848Dl/eMocf8bgvnvgD957///eOz5AmFd4wpl/OPA5f3jKHH8G2b574A/ee///3js+gJhXeMKZfzjwOX94yhx/ONCOfz7Cj1c40O99PoSQVzjQEH4+RpFXeNt3fwAAwDoAAEA6AABgOgAAgDoAAKA6"
-210:
-.base64 "AAA3g3iy2H3//xg74A8Ye1AAGH84wDl/eMtSfgQAN4N4svh9//8YO+APGHtQABh/OMA5f3jLc34IADeDeLIYfv//GDvgDxh7UAAYfzjAOX94y5R+DAA3g3iyOH7//xg74A8Ye1AAGH84wDl/eMu1fhAA9zoBANY6AP8WOwAAOCg="
-bne %cr0, 210b
-.base64 "AAAsKA=="
-beq %cr0, 211f
-.base64 "//8MOwAAOCg="
-beq %cr0, 213f
-.base64 "UKiUfxSanH94kpx/"
-b 214f
-213:
-.base64 "eKK8flDgk38Ukpx/"
-214:
-b 212f
-211:
-.base64 "FKKVf3ianH9Q4JJ/"
-212:
-.base64 "eEKcf3hLKH1444l/BABKOf7/DDsAADgo"
-beq %cr0, 215f
-.base64 "AQCMOQ=="
-b 216f
-215:
-.base64 "AACAOQ=="
-216:
-.base64 "//9rOQAAKyg="
-bne %cr0, 25b
-.base64 "LAUlfQQABTssBRh9CADF6RAA5ekYAAXqIAAl6igAReowAGXqOACF6kAApepIAMXqUADl6lgABetgACXraABF63AAZet4AIXreDPdfHg7/nwAAB+BAAAlgXhKCH0AAB+RBAAfgQQAJYF4Sgh9BAAfkQAAH4GgAAWRBAAfgaQABZEIAP87///eOwAAPig="
-bne %cr0, 24b
-b 23f
-22:
-23:
-.base64 "eOu/f6AABYEAAB+RpAAFgQQAH5GAAKXriADF65AA5euYAAXopgMIfA=="
-b 21f
-20:
-.base64 "pgIIfJgAB/iAAKf7iADH+5AA5/t4I518eDPefHgjn3x4K6Z8eDvlfAAAH4GgAAWRBAAfgaQABZF4M998AAA+KA=="
-beq %cr0, 217f
-219:
-.base64 "oAAFgQAABZGkAAWBBAAFkXjrpn9488d/CADF+RAA5fkYAAX6IAAl+igARfowAGX6OACF+kAApfpIAMX6UADl+lgABftgACX7aABF+3AAZft4AIX7"
-bcl 20, 31, 2f
-2:
-mflr %r27
-addis %r27, %r27, ({VG_CAST5_S1234} - 2b)@ha
-addi %r27, %r27, ({VG_CAST5_S1234} - 2b)@l
-.base64 "/wBAOwAAADgMAIA4LAQFfQQABTssBDh9eBtqfHgji3wBAIA5"
-220:
-.base64 "AAAsKA=="
-beq %cr0, 221f
-.base64 "//8MOwAAOCg="
-beq %cr0, 223f
-.base64 "AACKg3hKnH8="
-b 224f
-223:
-.base64 "AACKgxRKnH8="
-224:
-b 222f
-221:
-.base64 "AACKg1DgiX8="
-222:
-.base64 "QACqgwb4vnvgD957///eOz4ImFd4wpl/OPA5f3jKHH9G8L574A/ee///3js+EJhXeMKZfzjwOX94yhx/hui+e+AP3nv//947PiCYV3jCmX848Dl/eMocf8bgvnvgD957///eOz5AmFd4wpl/OPA5f3jKHH8G2b574A/ee///3js+gJhXeMKZfzjwOX94yhx/ONCOfz7Cj1c40O99PoSQVzjQEH4+RpFXeNt3fwAAwDoAAEA6AABgOgAAgDoAAKA6"
-225:
-.base64 "AAA3g3iy2H3//xg74A8Ye1AAGH84wDl/eMtSfgQAN4N4svh9//8YO+APGHtQABh/OMA5f3jLc34IADeDeLIYfv//GDvgDxh7UAAYfzjAOX94y5R+DAA3g3iyOH7//xg74A8Ye1AAGH84wDl/eMu1fhAA9zoBANY6AP8WOwAAOCg="
-bne %cr0, 225b
-.base64 "AAAsKA=="
-beq %cr0, 226f
-.base64 "//8MOwAAOCg="
-beq %cr0, 228f
-.base64 "UKiUfxSanH94kpx/"
-b 229f
-228:
-.base64 "eKK8flDgk38Ukpx/"
-229:
-b 227f
-226:
-.base64 "FKKVf3ianH9Q4JJ/"
-227:
-.base64 "eEKcf3hLKH1444l/BABKOf7/DDsAADgo"
-beq %cr0, 230f
-.base64 "AQCMOQ=="
-b 231f
-230:
-.base64 "AACAOQ=="
-231:
-.base64 "//9rOQAAKyg="
-bne %cr0, 220b
-.base64 "LAUlfQQABTssBRh9CADF6RAA5ekYAAXqIAAl6igAReowAGXqOACF6kAApepIAMXqUADl6lgABetgACXraABF63AAZet4AIXreDPdfHg7/nwAAB+BAAAlgXhKCH0AAB+RBAAfgQQAJYF4Sgh9BAAfkQAAH4GgAAWRBAAfgaQABZEIAP87///eOwAAPig="
-bne %cr0, 219b
-b 218f
-217:
-218:
-.base64 "eOu/f6AABYEAAB+RpAAFgQQAH5GAAKXriADF65AA5euYAAXopgMIfA=="
-21:
-.base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz50AAhOCAAgE4=""#,
-        VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
-    )
+#[inline(always)]
+pub unsafe fn vg_cast5_cfb64_encrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_cast5_cfb64_encrypt(schedule, rounds, iv, data, n) }
 }
 
 /// CAST5-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is CAST-128 encryption (also for decryption) with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`.
@@ -152,8 +34,145 @@ b 218f
 /// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 208 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_cast5_cfb64_decrypt(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_cast5_cfb64_decrypt(schedule, rounds, iv, data, n) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_cast5_cfb64_encrypt`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_cast5_cfb64_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cfb64_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "Mf8h+CAAATl4I4p8eCukfHgzxXx4O+Z8eEMHffT/SjkAACoo"
+beq %cr0, 20f
+.base64 "pgIIfJgAB/iAAKf7iADH+5AA5/t4I518eDPefHgjn3x4K6Z8eDvlfAAAH4GgAAWRBAAfgaQABZF4M998AAA+KA=="
+beq %cr0, 22f
+24:
+.base64 "oAAFgQAABZGkAAWBBAAFkXjrpn9488d/CADF+RAA5fkYAAX6IAAl+igARfowAGX6OACF+kAApfpIAMX6UADl+lgABftgACX7aABF+3AAZft4AIX7"
+bcl 20, 31, 2f
+2:
+mflr %r27
+addis %r27, %r27, ({VG_CAST5_S1234} - 2b)@ha
+addi %r27, %r27, ({VG_CAST5_S1234} - 2b)@l
+.base64 "/wBAOwAAADgQAIA4LAQFfQQABTssBDh9eBtqfHgji3wBAIA5"
+25:
+.base64 "AAAsKA=="
+beq %cr0, 26f
+.base64 "//8MOwAAOCg="
+beq %cr0, 28f
+.base64 "AACKg3hKnH8="
+b 29f
+28:
+.base64 "AACKgxRKnH8="
+29:
+b 27f
+26:
+.base64 "AACKg1DgiX8="
+27:
+.base64 "QACqgwb4vnvgD957///eOz4ImFd4wpl/OPA5f3jKHH9G8L574A/ee///3js+EJhXeMKZfzjwOX94yhx/hui+e+AP3nv//947PiCYV3jCmX848Dl/eMocf8bgvnvgD957///eOz5AmFd4wpl/OPA5f3jKHH8G2b574A/ee///3js+gJhXeMKZfzjwOX94yhx/ONCOfz7Cj1c40O99PoSQVzjQEH4+RpFXeNt3fwAAwDoAAEA6AABgOgAAgDoAAKA6"
+210:
+.base64 "AAA3g3iy2H3//xg74A8Ye1AAGH84wDl/eMtSfgQAN4N4svh9//8YO+APGHtQABh/OMA5f3jLc34IADeDeLIYfv//GDvgDxh7UAAYfzjAOX94y5R+DAA3g3iyOH7//xg74A8Ye1AAGH84wDl/eMu1fhAA9zoBANY6AP8WOwAAOCg="
+bne %cr0, 210b
+.base64 "AAAsKA=="
+beq %cr0, 211f
+.base64 "//8MOwAAOCg="
+beq %cr0, 213f
+.base64 "UKiUfxSanH94kpx/"
+b 214f
+213:
+.base64 "eKK8flDgk38Ukpx/"
+214:
+b 212f
+211:
+.base64 "FKKVf3ianH9Q4JJ/"
+212:
+.base64 "eEKcf3hLKH1444l/BABKOf7/DDsAADgo"
+beq %cr0, 215f
+.base64 "AQCMOQ=="
+b 216f
+215:
+.base64 "AACAOQ=="
+216:
+.base64 "//9rOQAAKyg="
+bne %cr0, 25b
+.base64 "LAUlfQQABTssBRh9CADF6RAA5ekYAAXqIAAl6igAReowAGXqOACF6kAApepIAMXqUADl6lgABetgACXraABF63AAZet4AIXreDPdfHg7/nwAAB+BAAAlgXhKCH0AAB+RBAAfgQQAJYF4Sgh9BAAfkQAAH4GgAAWRBAAfgaQABZEIAP87///eOwAAPig="
+bne %cr0, 24b
+b 23f
+22:
+23:
+.base64 "eOu/f6AABYEAAB+RpAAFgQQAH5GAAKXriADF65AA5euYAAXopgMIfA=="
+b 21f
+20:
+.base64 "pgIIfJgAB/iAAKf7iADH+5AA5/t4I518eDPefHgjn3x4K6Z8eDvlfAAAH4GgAAWRBAAfgaQABZF4M998AAA+KA=="
+beq %cr0, 217f
+219:
+.base64 "oAAFgQAABZGkAAWBBAAFkXjrpn9488d/CADF+RAA5fkYAAX6IAAl+igARfowAGX6OACF+kAApfpIAMX6UADl+lgABftgACX7aABF+3AAZft4AIX7"
+bcl 20, 31, 2f
+2:
+mflr %r27
+addis %r27, %r27, ({VG_CAST5_S1234} - 2b)@ha
+addi %r27, %r27, ({VG_CAST5_S1234} - 2b)@l
+.base64 "/wBAOwAAADgMAIA4LAQFfQQABTssBDh9eBtqfHgji3wBAIA5"
+220:
+.base64 "AAAsKA=="
+beq %cr0, 221f
+.base64 "//8MOwAAOCg="
+beq %cr0, 223f
+.base64 "AACKg3hKnH8="
+b 224f
+223:
+.base64 "AACKgxRKnH8="
+224:
+b 222f
+221:
+.base64 "AACKg1DgiX8="
+222:
+.base64 "QACqgwb4vnvgD957///eOz4ImFd4wpl/OPA5f3jKHH9G8L574A/ee///3js+EJhXeMKZfzjwOX94yhx/hui+e+AP3nv//947PiCYV3jCmX848Dl/eMocf8bgvnvgD957///eOz5AmFd4wpl/OPA5f3jKHH8G2b574A/ee///3js+gJhXeMKZfzjwOX94yhx/ONCOfz7Cj1c40O99PoSQVzjQEH4+RpFXeNt3fwAAwDoAAEA6AABgOgAAgDoAAKA6"
+225:
+.base64 "AAA3g3iy2H3//xg74A8Ye1AAGH84wDl/eMtSfgQAN4N4svh9//8YO+APGHtQABh/OMA5f3jLc34IADeDeLIYfv//GDvgDxh7UAAYfzjAOX94y5R+DAA3g3iyOH7//xg74A8Ye1AAGH84wDl/eMu1fhAA9zoBANY6AP8WOwAAOCg="
+bne %cr0, 225b
+.base64 "AAAsKA=="
+beq %cr0, 226f
+.base64 "//8MOwAAOCg="
+beq %cr0, 228f
+.base64 "UKiUfxSanH94kpx/"
+b 229f
+228:
+.base64 "eKK8flDgk38Ukpx/"
+229:
+b 227f
+226:
+.base64 "FKKVf3ianH9Q4JJ/"
+227:
+.base64 "eEKcf3hLKH1444l/BABKOf7/DDsAADgo"
+beq %cr0, 230f
+.base64 "AQCMOQ=="
+b 231f
+230:
+.base64 "AACAOQ=="
+231:
+.base64 "//9rOQAAKyg="
+bne %cr0, 220b
+.base64 "LAUlfQQABTssBRh9CADF6RAA5ekYAAXqIAAl6igAReowAGXqOACF6kAApepIAMXqUADl6lgABetgACXraABF63AAZet4AIXreDPdfHg7/nwAAB+BAAAlgXhKCH0AAB+RBAAfgQQAJYF4Sgh9BAAfkQAAH4GgAAWRBAAfgaQABZEIAP87///eOwAAPig="
+bne %cr0, 219b
+b 218f
+217:
+218:
+.base64 "eOu/f6AABYEAAB+RpAAFgQQAH5GAAKXriADF65AA5euYAAXopgMIfA=="
+21:
+.base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz50AAhOCAAgE4=""#,
+        VG_CAST5_S1234 = sym crate::consts::VG_CAST5_S1234,
+    )
+}
+
+/// The verified code of [`super::vg_cast5_cfb64_decrypt`], which calls it.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_cast5_cfb64_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r#".base64 "Mf8h+CAAATl4I4p8eCukfHgzxXx4O+Z8eEMHffT/SjkAACoo"
 beq %cr0, 20f
@@ -273,6 +292,7 @@ b 218f
 .base64 "eOu/f6AABYEAAB+RpAAFgQQAH5GAAKXriADF65AA5euYAAXopgMIfA=="
 21:
 .base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz50AAhOCAAgE4=""#,
-        VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
+        VG_CAST5_S1234 = sym crate::consts::VG_CAST5_S1234,
     )
+}
 }

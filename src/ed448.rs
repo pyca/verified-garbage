@@ -146,6 +146,7 @@ impl VerifyingKey {
         message: &[u8],
         signature: &[u8],
     ) -> Result<(), InvalidSignature> {
+        let dit = crate::dit::public(crate::dit::Why::Verify);
         let signature: &[u8; 114] = signature.try_into().map_err(|_| InvalidSignature)?;
         let mut scratch = [0u64; 1024];
         let verify = match backend() {
@@ -161,6 +162,7 @@ impl VerifyingKey {
         // the generated CPU feature requirements.
         let valid = unsafe {
             verify(
+                dit,
                 &self.bytes,
                 context.as_ptr(),
                 context.len(),
@@ -204,6 +206,7 @@ impl SigningKey {
     /// Derive a signing key and its public key (RFC 8032 §5.2.5) from a
     /// 57-byte private key.
     pub fn from_seed(seed: &[u8; 57]) -> Self {
+        crate::dit::enter!(dit);
         let mut public = [0u8; 57];
         let mut scratch = [0u64; 1024];
         // SAFETY: the output, seed, and scratch are distinct objects valid for
@@ -212,11 +215,11 @@ impl SigningKey {
         // Backend selection checks the generated CPU feature requirements.
         unsafe {
             match backend() {
-                Backend::Scalar => vg_ed448_public_key(&mut public, seed, &mut scratch),
+                Backend::Scalar => vg_ed448_public_key(dit, &mut public, seed, &mut scratch),
                 #[cfg(target_arch = "x86_64")]
-                Backend::Adx => vg_ed448_public_key_adx(&mut public, seed, &mut scratch),
+                Backend::Adx => vg_ed448_public_key_adx(dit, &mut public, seed, &mut scratch),
                 #[cfg(target_arch = "aarch64")]
-                Backend::Sha3 => vg_ed448_public_key_sha3(&mut public, seed, &mut scratch),
+                Backend::Sha3 => vg_ed448_public_key_sha3(dit, &mut public, seed, &mut scratch),
             }
         };
         zeroize(&mut scratch);
@@ -238,7 +241,8 @@ impl SigningKey {
 
     /// Sign `message` deterministically with an empty context (RFC 8032 §5.2.6).
     pub fn sign(&self, message: &[u8]) -> [u8; 114] {
-        sign_message(&self.seed, &self.public.bytes, &[], message)
+        crate::dit::enter!(dit);
+        sign_message(dit, &self.seed, &self.public.bytes, &[], message)
     }
 
     /// Sign `message` deterministically with the context `context` (RFC 8032
@@ -248,10 +252,12 @@ impl SigningKey {
     ///
     /// [`Error::ContextTooLong`] if `context` is longer than 255 bytes.
     pub fn sign_with_context(&self, context: &[u8], message: &[u8]) -> Result<[u8; 114], Error> {
+        crate::dit::enter!(dit);
         if context.len() > MAX_CONTEXT_LEN {
             return Err(Error::ContextTooLong);
         }
         Ok(sign_message(
+            dit,
             &self.seed,
             &self.public.bytes,
             context,
@@ -261,7 +267,13 @@ impl SigningKey {
 }
 
 /// `context` must be at most 255 bytes long.
-fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) -> [u8; 114] {
+fn sign_message(
+    dit: crate::dit::Dit<'_>,
+    seed: &[u8; 57],
+    pk: &[u8; 57],
+    context: &[u8],
+    message: &[u8],
+) -> [u8; 114] {
     let mut signature = [0u8; 114];
     let mut scratch = [0u64; 1024];
     let sign = match backend() {
@@ -279,6 +291,7 @@ fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) 
     // selection checks the generated CPU feature requirements.
     unsafe {
         sign(
+            dit,
             &mut signature,
             seed,
             pk,

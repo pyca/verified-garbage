@@ -124,7 +124,8 @@ impl Drop for Cast5Cfb64Decryptor {
 
 /// The signature of `vg_cast5_cfb64_encrypt` and `vg_cast5_cfb64_decrypt`.
 #[cfg(target_arch = "x86_64")]
-type Cfb = unsafe extern "sysv64" fn(*const [u8; 128], usize, *mut [u8; 8], *mut [u8; 8], usize);
+type Cfb =
+    unsafe fn(crate::dit::Dit<'_>, *const [u8; 128], usize, *mut [u8; 8], *mut [u8; 8], usize);
 /// The signature of `vg_cast5_cfb64_encrypt` and `vg_cast5_cfb64_decrypt`.
 #[cfg(any(
     target_arch = "x86",
@@ -133,7 +134,8 @@ type Cfb = unsafe extern "sysv64" fn(*const [u8; 128], usize, *mut [u8; 8], *mut
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-type Cfb = unsafe extern "C" fn(*const [u8; 128], usize, *mut [u8; 8], *mut [u8; 8], usize);
+type Cfb =
+    unsafe fn(crate::dit::Dit<'_>, *const [u8; 128], usize, *mut [u8; 8], *mut [u8; 8], usize);
 
 impl Key {
     /// Expands a key of 5 to 16 bytes.
@@ -150,7 +152,8 @@ impl Key {
     /// `iv` the last left; a piece whose length is not a multiple of 8 bytes
     /// must end the message.
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.crypt(iv, buffer, vg_cast5_cfb64_encrypt);
+        crate::dit::enter!(dit);
+        self.crypt(dit, iv, buffer, vg_cast5_cfb64_encrypt);
     }
 
     /// Decrypts `buffer` in place, from the block `iv`, which it replaces
@@ -160,18 +163,19 @@ impl Key {
     /// `iv` the last left; a piece whose length is not a multiple of 8 bytes
     /// must end the message.
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.crypt(iv, buffer, vg_cast5_cfb64_decrypt);
+        crate::dit::enter!(dit);
+        self.crypt(dit, iv, buffer, vg_cast5_cfb64_decrypt);
     }
 
-    fn crypt(&self, iv: &mut [u8; 8], buffer: &mut [u8], f: Cfb) {
+    fn crypt(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], buffer: &mut [u8], f: Cfb) {
         let whole = buffer.len() / 8 * 8;
         let (blocks, rest) = buffer.split_at_mut(whole);
-        self.blocks(iv, blocks, f);
+        self.blocks(dit, iv, blocks, f);
         if !rest.is_empty() {
             // `CIPH_K` of the block to continue from, as CFB encryption of a
             // zero block, XORed into the last bytes.
             let mut last = [0; 8];
-            self.blocks(iv, &mut last, vg_cast5_cfb64_encrypt);
+            self.blocks(dit, iv, &mut last, vg_cast5_cfb64_encrypt);
             for (b, o) in rest.iter_mut().zip(last) {
                 *b ^= o;
             }
@@ -180,7 +184,7 @@ impl Key {
     }
 
     /// `f` on whole blocks.
-    fn blocks(&self, iv: &mut [u8; 8], blocks: &mut [u8], f: Cfb) {
+    fn blocks(&self, dit: crate::dit::Dit<'_>, iv: &mut [u8; 8], blocks: &mut [u8], f: Cfb) {
         // SAFETY: `rounds` is 12 or 16, as `Cast5Ecb::new` chose for the key
         // the schedule was expanded from; `blocks` holds `len / 8` whole
         // blocks, and it, the block at `iv` and the schedule are separate valid
@@ -188,6 +192,7 @@ impl Key {
         // stack.
         unsafe {
             f(
+                dit,
                 self.key.schedule(),
                 self.key.rounds(),
                 iv,

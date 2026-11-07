@@ -14,13 +14,25 @@
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public` (distinct Rust objects never do).
 /// * Neither `public` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[inline(always)]
+pub unsafe fn vg_ec_p192_validate_public_key(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: the caller's obligations, which are this function's: it only calls the naked
+    // function with the same arguments.
+    unsafe { raw::vg_ec_p192_validate_public_key(public, scratch) }
+}
+
+/// The naked functions of this module's verified code, which only its public functions and the crate's generated code name.
+pub(crate) mod raw {
+
+/// The verified code of [`super::vg_ec_p192_validate_public_key`], which calls it.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_ec_p192_validate_public_key(public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_ec_p192_validate_public_key(public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SYnwSYn5SIn5SIPBAUiJzkiJykmJGEmJaAhNiWAQTYloGE2JcCBNiXgoSYn+TInHSItBEEgPyEiJhyAEAABIi0EISA/ISImHKAQAAEiLAUgPyEiJhzAEAABIx8AAAAAASImHOAQAAEiLRhBID8hIiYdABAAASItGCEgPyEiJh0gEAABIiwZID8hIiYdQBAAASMfAAAAAAEiJh1gEAABIi0IQSA/ISImHYAQAAEiLQghID8hIiYdoBAAASIsCSA/ISImHcAQAAEjHwAAAAABIiYd4BAAASLj//////////0iJR0BIuP7/////////SIlHSEi4//////////9IiUdQSLgAAAAAAAAAAEiJR1hIuDEo0rSxyWsUSIlHYEi4Nvjemf////9IiUdoSLj//////////0iJR3BIuAAAAAAAAAAASIlHeEi4AAAAAAAAAABIiYegAAAASLgAAAAAAAAAAEiJh6gAAABIuAAAAAAAAAAASImHsAAAAEi4AAAAAAAAAABIiYe4AAAASLgBAAAAAAAAAEiJh8AAAABIuAAAAAAAAAAASImHyAAAAEi4AAAAAAAAAABIiYfQAAAASLgAAAAAAAAAAEiJh9gAAABIuAAAAAAAAAAASImH4AAAAEi4AQAAAAAAAABIiYfoAAAASLgBAAAAAAAAAEiJh/AAAABIuAAAAAAAAAAASImH+AAAAEi4//////////9IiYcAAQAASLj7/////////0iJhwgBAABIuPz/////////SImHEAEAAEi4AAAAAAAAAABIiYcYAQAASLiUE0IHUMxaW0iJhyABAABIuF3D6/tjeOiDSImHKAEAAEi4qEAWSxZphVdIiYcwAQAASLgAAAAAAAAAAEiJhzgBAABIuPcY0vP5yEyVSImHQAEAAEi4/7kBJwZ82aJIiYdIAQAASLgJKdF299NLikiJh1ABAABIuAAAAAAAAAAASImHWAEAAEi4TajtaoM9KWpIiYdgAQAASLjWyi+JuuA75UiJh2gBAABIuF7wZokktSLeSImHcAEAAEi4AAAAAAAAAABIiYd4AQAASLgnTBODCnfRAUiJh4ABAABIuH9or8phaZzWSImHiAEAAEi4xdj1zsSSZxJIiYeQAQAASLgAAAAAAAAAAEiJh5gBAABIuAAAAAAAAAAASImHoAEAAEi4z9ctS042lOtIiYeoAQAASLjJByFmAAAAAEiJh7ABAABIuAAAAAAAAAAASImHuAEAAEi4/f////////9IiYfAAQAASLj+/////////0iJh8gBAABIuP//////////SImH0AEAAEi4AAAAAAAAAABIiYfYAQAASLgvKNK0sclrFEiJh+ABAABIuDb43pn/////SImH6AEAAEi4//////////9IiYfwAQAASLgAAAAAAAAAAEiJh/gBAABIuAAAAAAAAAAASImHAAIAAEi4AAAAAAAAAABIiYcIAgAASLgAAAAAAAAAAEiJhxACAABIuAAAAAAAAAAASImHGAIAAEi4AAAAAAAAAABIiYcgAgAASLgBAAAAAAAAAEiJhygCAABIuAEAAAAAAAAASImHMAIAAEi4AAAAAAAAAABIiYc4AgAASLgAAAAAAAAAAEiJh0ACAABIuAAAAAAAAAAASImHSAIAAEi4AAAAAAAAAABIiYdQAgAASLgAAAAAAAAAAEiJh1gCAABIuP//////////SImHwAUAAEyJ9ki4AgAAAAAAAABIiYcgBQAASLgDAAAAAAAAAEiJhygFAABIuAIAAAAAAAAASImHMAUAAEi4AAAAAAAAAABIiYc4BQAASLgxscBXxe7Ic0iJh0AFAABIuMnro/7L0qLWSImHSAUAAEi44moHGbLNgXJIiYdQBQAASLgAAAAAAAAAAEiJh1gFAABMicpIg8IZSItCEEgPyEiJh8AEAABIi0IISA/ISImHyAQAAEiLAkgPyEiJh9AEAABIx8AAAAAASImH2AQAAEEPthFIg/IESIP6AUgZ0kiLh8AFAABIIdBIiYfABQAA"
 call {vg_p192_check_point}
 .base64 "SIuPwAUAAEiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
 .p2align 6"#,
-        vg_p192_check_point = sym super::ec_p192_compressed::vg_p192_check_point::vg_p192_check_point,
+        vg_p192_check_point = sym crate::ec_p192_compressed::vg_p192_check_point::vg_p192_check_point,
     )
+}
 }
