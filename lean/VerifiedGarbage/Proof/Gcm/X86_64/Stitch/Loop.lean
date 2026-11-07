@@ -170,7 +170,7 @@ theorem bodyM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → Nat
         exact in_rdwr (in_sub_int hp.p_in (by omega_arith))
       m0 := fun l hl => by rw [f₁.lane _ (by decide) l hl]; exact hI.a.msk l hl }
   have hA₁ := hI.a.yframe f₁ (by decide) (by decide) (by decide)
-  have hrdx₁ : (s₁.gpr .rdx).toNat + 32 * 8 = (if ix then op s₀ else dp s₀).toNat + 16 * (16 * e) := by
+  have hrdx₁ : (s₁.gpr .rdx).toNat + 32 * 8 = (wp ix s₀).toNat + 16 * (16 * e) := by
     rw [f₁.gpr]; show a.toNat + _ = _; omega_arith
   have hr8₁ : ix = true → s₁.gpr .r8 = if ix then dp s₀ - op s₀ else op s₀ - dp s₀ := fun hi => by
     subst hi; rw [f₁.gpr]; exact hI.r8 rfl
@@ -193,7 +193,7 @@ theorem bodyM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → Nat
       by rw [ite_f (by decide)]
          exact ⟨fun l hl => z₁ l hl, fun l hl => by rw [f₁.lane _ (by decide) l hl]⟩⟩)
     fun s₂ ⟨hA₂, hQ₂, hg₂, hl₂, hm₂⟩ => ?_)
-  have hrdx₂ : (s₂.gpr .rdx).toNat + 32 * 12 = (if ix then op s₀ else dp s₀).toNat + 16 * (16 * e + 8) := by
+  have hrdx₂ : (s₂.gpr .rdx).toNat + 32 * 12 = (wp ix s₀).toNat + 16 * (16 * e + 8) := by
     rw [hg₂, f₁.gpr]; show a.toNat + _ = _; omega_arith
   have hQ₂' : QG s₀ (fun _ => 0) a X P yl ordE 4 true 1 s₂ := by
     obtain ⟨hE, h1, h2⟩ := hQ₂
