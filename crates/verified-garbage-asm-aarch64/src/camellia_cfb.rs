@@ -64,8 +64,8 @@ b 21f
 .inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0x913443ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_camellia_prepare_encrypt_keys = sym super::camellia::vg_camellia_prepare_encrypt_keys::vg_camellia_prepare_encrypt_keys,
-        vg_camellia_encrypt_prepared = sym super::camellia::vg_camellia_encrypt_prepared::vg_camellia_encrypt_prepared,
+        vg_camellia_prepare_encrypt_keys = sym super::camellia_cfb::vg_camellia_prepare_encrypt_keys::vg_camellia_prepare_encrypt_keys,
+        vg_camellia_encrypt_prepared = sym super::camellia_cfb::vg_camellia_encrypt_prepared::vg_camellia_encrypt_prepared,
     )
 }
 
@@ -186,9 +186,176 @@ b 216f
 .inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
 .inst 0xa9104611,0x913443ff,0xd65f03c0
 .p2align 6",
-        vg_camellia_prepare_keys = sym super::camellia::vg_camellia_prepare_keys::vg_camellia_prepare_keys,
-        vg_camellia_crypt_prepared = sym super::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
-        vg_camellia_prepare_encrypt_keys = sym super::camellia::vg_camellia_prepare_encrypt_keys::vg_camellia_prepare_encrypt_keys,
-        vg_camellia_encrypt_prepared = sym super::camellia::vg_camellia_encrypt_prepared::vg_camellia_encrypt_prepared,
+        vg_camellia_prepare_keys = sym super::camellia_cfb::vg_camellia_prepare_keys::vg_camellia_prepare_keys,
+        vg_camellia_crypt_prepared = sym super::camellia_cfb::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
+        vg_camellia_prepare_encrypt_keys = sym super::camellia_cfb::vg_camellia_prepare_encrypt_keys::vg_camellia_prepare_encrypt_keys,
+        vg_camellia_encrypt_prepared = sym super::camellia_cfb::vg_camellia_encrypt_prepared::vg_camellia_encrypt_prepared,
     )
 }
+
+/// Camellia-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 3713 §2.3) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Camellia.cfbEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_camellia_cfb128_encrypt_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd13443ff,0x910003e5,0x910000a5,0xf90628b3,0xf9062cb4,0xf90630b5,0xf90634b6,0xf90638b7
+.inst 0xf9063cb8,0xf90640b9,0xf90644ba,0xf90648bb,0xf9064cbc,0x91000053,0x91000077,0x91000098
+.inst 0x910003d4,0x910000b6,0x9100003a,0x910000a2,0xd2803443
+bl {vg_camellia_prepare_encrypt_keys}
+.inst 0x910002c5,0x9100029e,0xf9400266,0xf90180a6,0xf9400666,0xf90184a6
+cbz x24, 20f
+22:
+.inst 0x910003d4,0x91000340,0x910000a1,0xd2803442
+bl {vg_camellia_encrypt_prepared}
+.inst 0x910002c5,0x9100029e,0xd344ff08
+cbz x8, 23f
+.inst 0xf94002e6,0xf94180a7,0xca0700c6,0xf90002e6,0xf94006e6,0xf94184a7,0xca0700c6,0xf90006e6
+.inst 0xf94002e6,0xf90180a6,0xf94006e6,0xf90184a6,0x910042f7,0xd1004318
+b 24f
+23:
+.inst 0x910c00a9
+25:
+.inst 0x39400126,0x394002e7,0xca0600e7,0x390002e7,0x91000529,0x910006f7,0xd1000718
+cbnz x24, 25b
+24:
+cbnz x24, 22b
+b 21f
+20:
+21:
+.inst 0xf94180a6,0xf9000266,0xf94184a6,0xf9000666,0xf94628b3,0xf9462cb4,0xf94630b5,0xf94634b6
+.inst 0xf94638b7,0xf9463cb8,0xf94640b9,0xf94644ba,0xf94648bb,0xf9464cbc,0xd2800011,0x910003f0
+.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
+.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
+.inst 0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611
+.inst 0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611
+.inst 0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
+.inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611
+.inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
+.inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
+.inst 0xa91f4611,0x911003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
+.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
+.inst 0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611
+.inst 0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611
+.inst 0xa91e4611,0xa91f4611,0x911803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611
+.inst 0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611
+.inst 0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611
+.inst 0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611
+.inst 0xa91d4611,0xa91e4611,0xa91f4611,0x912003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
+.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
+.inst 0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611
+.inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611
+.inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x912803f0,0xa9004611,0xa9014611,0xa9024611
+.inst 0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611
+.inst 0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611
+.inst 0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611
+.inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x913003f0,0xa9004611,0xa9014611
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
+.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0x913443ff
+.inst 0xd65f03c0
+.p2align 6",
+        vg_camellia_prepare_encrypt_keys = sym super::camellia_cfb::vg_camellia_prepare_encrypt_keys::vg_camellia_prepare_encrypt_keys,
+        vg_camellia_encrypt_prepared = sym super::camellia_cfb::vg_camellia_encrypt_prepared::vg_camellia_encrypt_prepared,
+    )
+}
+
+/// Camellia-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 3713 §2.3) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Camellia.cfbDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_camellia_cfb128_decrypt_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd13443ff,0x910003e5,0x910000a5,0xf90628b3,0xf9062cb4,0xf90630b5,0xf90634b6,0xf90638b7
+.inst 0xf9063cb8,0xf90640b9,0xf90644ba,0xf90648bb,0xf9064cbc,0x91000053,0x91000077,0x91000098
+.inst 0x910003d4,0x910000b6,0x9100003a,0x910000a2,0xd2803443
+bl {vg_camellia_prepare_encrypt_keys}
+.inst 0x910002c5,0x9100029e,0xf9400266,0xf90180a6,0xf9400666,0xf90184a6
+cbz x24, 20f
+22:
+.inst 0x910003d4,0x91000340,0x910000a1,0xd2803442
+bl {vg_camellia_encrypt_prepared}
+.inst 0x910002c5,0x9100029e,0xd344ff08
+cbz x8, 23f
+.inst 0xf94002e6,0xf94180a7,0xca0700c6,0xf90002e6,0xf94006e6,0xf94184a7,0xca0700c6,0xf90006e6
+.inst 0xf94180a6,0xf94002e7,0xca0700c6,0xf90180a6,0xf94184a6,0xf94006e7,0xca0700c6,0xf90184a6
+.inst 0x910042f7,0xd1004318
+b 24f
+23:
+.inst 0x910c00a9
+25:
+.inst 0x39400126,0x394002e7,0xca0600e7,0x390002e7,0x91000529,0x910006f7,0xd1000718
+cbnz x24, 25b
+24:
+cbnz x24, 22b
+b 21f
+20:
+21:
+.inst 0xf94180a6,0xf9000266,0xf94184a6,0xf9000666,0xf94628b3,0xf9462cb4,0xf94630b5,0xf94634b6
+.inst 0xf94638b7,0xf9463cb8,0xf94640b9,0xf94644ba,0xf94648bb,0xf9464cbc,0xd2800011,0x910003f0
+.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
+.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
+.inst 0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611
+.inst 0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611
+.inst 0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
+.inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611
+.inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
+.inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
+.inst 0xa91f4611,0x911003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
+.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
+.inst 0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611
+.inst 0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611
+.inst 0xa91e4611,0xa91f4611,0x911803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611
+.inst 0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611
+.inst 0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611
+.inst 0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611
+.inst 0xa91d4611,0xa91e4611,0xa91f4611,0x912003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
+.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
+.inst 0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611
+.inst 0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611
+.inst 0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x912803f0,0xa9004611,0xa9014611,0xa9024611
+.inst 0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611
+.inst 0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611
+.inst 0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611
+.inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x913003f0,0xa9004611,0xa9014611
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
+.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0x913443ff
+.inst 0xd65f03c0
+.p2align 6",
+        vg_camellia_prepare_encrypt_keys = sym super::camellia_cfb::vg_camellia_prepare_encrypt_keys::vg_camellia_prepare_encrypt_keys,
+        vg_camellia_encrypt_prepared = sym super::camellia_cfb::vg_camellia_encrypt_prepared::vg_camellia_encrypt_prepared,
+    )
+}
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_crypt_prepared.rs"]
+pub(crate) mod vg_camellia_crypt_prepared;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_encrypt_prepared.rs"]
+pub(crate) mod vg_camellia_encrypt_prepared;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_prepare_encrypt_keys.rs"]
+pub(crate) mod vg_camellia_prepare_encrypt_keys;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_prepare_keys.rs"]
+pub(crate) mod vg_camellia_prepare_keys;

@@ -58,14 +58,14 @@ abbrev invCiphOf (s : State) : Spec.Cbc.Cipher :=
 
 /-- CBC decryption on AArch64 that updates the chaining value. -/
 def cbcDecAArch64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Cbc.decrypt (invCiphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .x2) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
   pub := fbPub
 
 /-- CBC encryption on AArch64 that updates the chaining value. -/
 def cbcEncAArch64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Cbc.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .x2) 16 =
       Spec.Cbc.next (ivOf s) (Spec.Cbc.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem))
@@ -77,7 +77,7 @@ theorem invCipher_eq (m : Mem) (p : Addr) (R : Nat) :
     ((dirCoreSpec .decrypt).toBlock rfl).cipher (R, schedWords m p R) = Spec.Camellia.invCipher (Spec.Camellia.subkeysAt m p R) :=
   rfl
 
-theorem cbcTaint_agree (s₁ s₂ : State) (_ : fbPre s₁) (_ : fbPre s₂)
+theorem cbcTaint_agree (s₁ s₂ : State) (_ : fbPre blkLen s₁) (_ : fbPre blkLen s₂)
     (hp : fbPub s₁ s₂) :
     VG.AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5]) s₁ s₂ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, hsp⟩ := hp
