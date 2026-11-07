@@ -8,7 +8,6 @@ public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
-import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedHintPack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowEnd
@@ -62,7 +61,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesFourTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesTwo
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesBall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
@@ -70,6 +68,16 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedPre
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
+import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
+import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyPre
 
 section
 

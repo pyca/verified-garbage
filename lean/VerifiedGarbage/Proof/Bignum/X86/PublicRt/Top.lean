@@ -15,6 +15,23 @@ import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Rsa.Contract
+public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
+public import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Spec.RsaKeyGen
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+import VerifiedGarbage.Impl.Bignum.X86.PublicContext
+import VerifiedGarbage.Proof.Dsa.X86.StackArgument
+import VerifiedGarbage.Proof.Dsa.X86.ABIResources
+import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+import VerifiedGarbage.Proof.Bignum.X86.PublicEntry
 
 /-! # The room for the calls of public RSA at a run-time width
 

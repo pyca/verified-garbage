@@ -1,7 +1,26 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRel
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsEntry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Pre
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section
 
