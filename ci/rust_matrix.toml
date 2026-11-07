@@ -235,8 +235,8 @@ pclmulqdq,ssse3 | aes_gcm aes_gcm_siv sm4_gcm cpu
 # P-256's, P-384's, P-521's and Ed25519's `_adx` functions, whose
 # combs select their entries with AVX2, P-384's and P-521's with
 # SHA-512's baseline code); and AVX-512F without AVX512VL, for
-# Argon2's AVX2 code (BLAKE2b's and G's), which its AVX-512 code
-# replaces only with AVX512VL, and for ChaCha20's and
+# Argon2 with BLAKE2b's AVX2 code and G's AVX-512 code, which its
+# AVX-512 BLAKE2b replaces only with AVX512VL, and for ChaCha20's and
 # ChaCha20-Poly1305's `_avx512` instances, which the CPU's AVX512VL
 # replaces with `_avx512vl`.
 # The unrestricted line runs RSA's ADX arithmetic in full; the line
