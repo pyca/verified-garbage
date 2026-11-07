@@ -110,3 +110,128 @@ b 21f
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
+
+/// Triple DES-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_triple_des_cfb64_encrypt_final(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd10fc3ff,0x910003e4,0x91000085,0xf901c4b3,0xf901c8b4,0xf901ccb5,0xf901d0b6,0xf901d4b7
+.inst 0xf901d8b8,0xf901dcb9,0xf901e0ba,0xf901e4bb,0xf901e8bc,0x91000039,0x91000057,0x91000078
+.inst 0xf9400006,0xf90104a6,0xf9400406,0xf90108a6,0xf9400806,0xf9010ca6,0xf9400c06,0xf90110a6
+.inst 0xf9401006,0xf90114a6,0xf9401406,0xf90118a6,0xf9401806,0xf9011ca6,0xf9401c06,0xf90120a6
+.inst 0xf9402006,0xf90124a6,0xf9402406,0xf90128a6,0xf9402806,0xf9012ca6,0xf9402c06,0xf90130a6
+.inst 0xf9403006,0xf90134a6,0xf9403406,0xf90138a6,0xf9403806,0xf9013ca6,0xf9403c06,0xf90140a6
+.inst 0xf9404006,0xf90144a6,0xf9404406,0xf90148a6,0xf9404806,0xf9014ca6,0xf9404c06,0xf90150a6
+.inst 0xf9405006,0xf90154a6,0xf9405406,0xf90158a6,0xf9405806,0xf9015ca6,0xf9405c06,0xf90160a6
+.inst 0xf9406006,0xf90164a6,0xf9406406,0xf90168a6,0xf9406806,0xf9016ca6,0xf9406c06,0xf90170a6
+.inst 0xf9407006,0xf90174a6,0xf9407406,0xf90178a6,0xf9407806,0xf9017ca6,0xf9407c06,0xf90180a6
+.inst 0xf9408006,0xf90184a6,0xf9408406,0xf90188a6,0xf9408806,0xf9018ca6,0xf9408c06,0xf90190a6
+.inst 0xf9409006,0xf90194a6,0xf9409406,0xf90198a6,0xf9409806,0xf9019ca6,0xf9409c06,0xf901a0a6
+.inst 0xf940a006,0xf901a4a6,0xf940a406,0xf901a8a6,0xf940a806,0xf901aca6,0xf940ac06,0xf901b0a6
+.inst 0xf940b006,0xf901b4a6,0xf940b406,0xf901b8a6,0xf940b806,0xf901bca6,0xf940bc06,0xf901c0a6
+.inst 0xf9400326,0xf90100a6
+cbz x24, 20f
+22:
+.inst 0x910820a0,0x910800a1,0x910000a2,0x910003da
+bl {vg_triple_des_encrypt_block}
+.inst 0x91000045,0x9100035e,0xd343ff08
+cbz x8, 23f
+.inst 0xf94002e6,0xf94100a7,0xca0700c6,0xf90002e6,0xf94002e6,0xf90100a6,0x910022f7,0xd1002318
+b 24f
+23:
+.inst 0x910800a9
+25:
+.inst 0x39400126,0x394002e7,0xca0600e7,0x390002e7,0x91000529,0x910006f7,0xd1000718
+cbnz x24, 25b
+24:
+cbnz x24, 22b
+b 21f
+20:
+21:
+.inst 0xf94100a6,0xf9000326,0xf941c4b3,0xf941c8b4,0xf941ccb5,0xf941d0b6,0xf941d4b7,0xf941d8b8
+.inst 0xf941dcb9,0xf941e0ba,0xf941e4bb,0xf941e8bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
+.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611
+.inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
+.inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0,0xa9004611
+.inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
+.inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
+.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
+.inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xf901f3f1,0x910fc3ff,0xd65f03c0
+.p2align 6",
+        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+    )
+}
+
+/// Triple DES-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_triple_des_cfb64_decrypt_final(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd10fc3ff,0x910003e4,0x91000085,0xf901c4b3,0xf901c8b4,0xf901ccb5,0xf901d0b6,0xf901d4b7
+.inst 0xf901d8b8,0xf901dcb9,0xf901e0ba,0xf901e4bb,0xf901e8bc,0x91000039,0x91000057,0x91000078
+.inst 0xf9400006,0xf90104a6,0xf9400406,0xf90108a6,0xf9400806,0xf9010ca6,0xf9400c06,0xf90110a6
+.inst 0xf9401006,0xf90114a6,0xf9401406,0xf90118a6,0xf9401806,0xf9011ca6,0xf9401c06,0xf90120a6
+.inst 0xf9402006,0xf90124a6,0xf9402406,0xf90128a6,0xf9402806,0xf9012ca6,0xf9402c06,0xf90130a6
+.inst 0xf9403006,0xf90134a6,0xf9403406,0xf90138a6,0xf9403806,0xf9013ca6,0xf9403c06,0xf90140a6
+.inst 0xf9404006,0xf90144a6,0xf9404406,0xf90148a6,0xf9404806,0xf9014ca6,0xf9404c06,0xf90150a6
+.inst 0xf9405006,0xf90154a6,0xf9405406,0xf90158a6,0xf9405806,0xf9015ca6,0xf9405c06,0xf90160a6
+.inst 0xf9406006,0xf90164a6,0xf9406406,0xf90168a6,0xf9406806,0xf9016ca6,0xf9406c06,0xf90170a6
+.inst 0xf9407006,0xf90174a6,0xf9407406,0xf90178a6,0xf9407806,0xf9017ca6,0xf9407c06,0xf90180a6
+.inst 0xf9408006,0xf90184a6,0xf9408406,0xf90188a6,0xf9408806,0xf9018ca6,0xf9408c06,0xf90190a6
+.inst 0xf9409006,0xf90194a6,0xf9409406,0xf90198a6,0xf9409806,0xf9019ca6,0xf9409c06,0xf901a0a6
+.inst 0xf940a006,0xf901a4a6,0xf940a406,0xf901a8a6,0xf940a806,0xf901aca6,0xf940ac06,0xf901b0a6
+.inst 0xf940b006,0xf901b4a6,0xf940b406,0xf901b8a6,0xf940b806,0xf901bca6,0xf940bc06,0xf901c0a6
+.inst 0xf9400326,0xf90100a6
+cbz x24, 20f
+22:
+.inst 0x910820a0,0x910800a1,0x910000a2,0x910003da
+bl {vg_triple_des_encrypt_block}
+.inst 0x91000045,0x9100035e,0xd343ff08
+cbz x8, 23f
+.inst 0xf94002e6,0xf94100a7,0xca0700c6,0xf90002e6,0xf94100a6,0xf94002e7,0xca0700c6,0xf90100a6
+.inst 0x910022f7,0xd1002318
+b 24f
+23:
+.inst 0x910800a9
+25:
+.inst 0x39400126,0x394002e7,0xca0600e7,0x390002e7,0x91000529,0x910006f7,0xd1000718
+cbnz x24, 25b
+24:
+cbnz x24, 22b
+b 21f
+20:
+21:
+.inst 0xf94100a6,0xf9000326,0xf941c4b3,0xf941c8b4,0xf941ccb5,0xf941d0b6,0xf941d4b7,0xf941d8b8
+.inst 0xf941dcb9,0xf941e0ba,0xf941e4bb,0xf941e8bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611
+.inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
+.inst 0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611,0xa9114611
+.inst 0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611,0xa9194611
+.inst 0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x910803f0,0xa9004611
+.inst 0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611
+.inst 0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611,0xa9104611
+.inst 0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611,0xa9184611
+.inst 0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xf901f3f1,0x910fc3ff,0xd65f03c0
+.p2align 6",
+        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+    )
+}

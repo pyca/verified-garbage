@@ -48,14 +48,14 @@ abbrev invCiphOf (s : State) : Spec.Cbc.Cipher :=
 
 /-- CBC decryption on x86-64 that updates the chaining value. -/
 def cbcDecX86_64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Cbc.decrypt (invCiphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .rdx) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
   pub := fbPub
 
 /-- CBC encryption on x86-64 that updates the chaining value. -/
 def cbcEncX86_64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Cbc.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .rdx) 16 =
       Spec.Cbc.next (ivOf s) (Spec.Cbc.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem))
@@ -148,10 +148,10 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
 /-! ## Constant time -/
 
 theorem cbcEncryptChained_ct : ConstantTime isa cbcEncX86_64.pre cbcEncX86_64.pub cbcEncryptChained :=
-  VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)
+  VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)
 
 theorem cbcDecryptChained_ct : ConstantTime isa cbcDecX86_64.pre cbcDecX86_64.pub cbcDecryptChained :=
-  VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)
+  VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)
 
 /-! ## The contracts -/
 

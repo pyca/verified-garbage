@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesFrame
+public import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
+import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalLit
 
 /-! # Camellia-CFB128 artifacts on baseline PPC64LE -/
 
@@ -21,6 +23,14 @@ def artifacts : List Artifact := [
   Spec.Camellia.cfbDecryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecrypt
     stack := 3408
-    verified := Proof.Camellia.PPC64LE.cfbDec_framed Proof.Camellia.PPC64LE.Modes.cfbDecrypt_verified }]
+    verified := Proof.Camellia.PPC64LE.cfbDec_framed Proof.Camellia.PPC64LE.Modes.cfbDecrypt_verified },
+  Spec.Camellia.cfbEncryptFinalApi.artifact PPC64LE.target {
+    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncryptFinal
+    stack := 3408
+    verified := Proof.Camellia.PPC64LE.FbFinal.cfbEncryptFinal_framed },
+  Spec.Camellia.cfbDecryptFinalApi.artifact PPC64LE.target {
+    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecryptFinal
+    stack := 3408
+    verified := Proof.Camellia.PPC64LE.FbFinal.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.CamelliaCfb.PPC64LE
