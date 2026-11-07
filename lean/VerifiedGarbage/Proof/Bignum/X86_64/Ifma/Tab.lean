@@ -40,19 +40,19 @@ theorem lay_offs (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : l.oK0 = l.NB ∧ l.oY = 
     simp only [Lay.D, Lay.oFin, Lay.oV, Lay.oK1, Lay.oE, Lay.oTab, Lay.oS, Lay.oX, Lay.oY, Lay.oK0] <;> omega_using []
 
 /-- Entry `i` of the table ends within it. -/
-theorem tab_le (hl : LayOk l) {i : Nat} (hi : i < l.T) : l.NB * i + l.NB ≤ l.T * l.NB := by
+theorem tab_le (hl : AmmOk l) {i : Nat} (hi : i < l.T) : l.NB * i + l.NB ≤ l.T * l.NB := by
   have := hl.T_bounds
   rw [Nat.mul_comm l.T, ← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
 
 /-- An entry below 16 is in the table, and not its last. -/
-theorem T_gt (hl : LayOk l) {i : Nat} (h : i < 16) : i < l.T := by have := hl.T_bounds; omega
+theorem T_gt (hl : AmmOk l) {i : Nat} (h : i < 16) : i < l.T := by have := hl.T_bounds; omega
 
-theorem dec_T (hl : LayOk l) {i : Nat} (h : i + 1 < 16) : decide (i + 1 = l.T) = false := by
+theorem dec_T (hl : AmmOk l) {i : Nat} (h : i + 1 < 16) : decide (i + 1 = l.T) = false := by
   have := hl.T_bounds; exact decide_eq_false (by omega)
 
 /-- Entries of the table at the same offset are the same. -/
-theorem nb_mul_inj (hl : LayOk l) {i j : Nat} (h : l.NB * i = l.NB * j) : i = j := by
-  have : 0 < l.NB := by rcases hl with rfl | rfl | rfl <;> decide
+theorem nb_mul_inj (hl : AmmOk l) {i j : Nat} (h : l.NB * i = l.NB * j) : i = j := by
+  have : 0 < l.NB := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
   exact Nat.eq_of_mul_eq_mul_left this h
 
 theorem vy_setVy_self (s : State) (d : VReg) (v : BitVec 256) : (s.setVy d v).vy d = v := by
@@ -64,9 +64,9 @@ theorem vy_setVy_self (s : State) (d : VReg) (v : BitVec 256) : (s.setVy d v).vy
 def copyCode (xs : List (Nat × Nat)) : List Instr :=
   xs.flatMap fun x => [.evLoad (vreg 0) (at_ .rbx x.1), .evStore (at_ .rbx x.2) (vreg 0)]
 
-theorem copies_ok (hl : LayOk l) {B : Addr} :
-    ∀ (xs : List (Nat × Nat)) (s : State), s.gpr .rbx = B → Scr s B (2 * l.D) →
-      (∀ x ∈ xs, x.1 + 32 ≤ 2 * l.D ∧ x.2 + 32 ≤ 2 * l.D) →
+theorem copies_ok (hl : AmmOk l) {B : Addr} :
+    ∀ (xs : List (Nat × Nat)) (s : State), s.gpr .rbx = B → Scr s B (l.nl * l.D) →
+      (∀ x ∈ xs, x.1 + 32 ≤ l.nl * l.D ∧ x.2 + 32 ≤ l.nl * l.D) →
       (∀ x ∈ xs, ∀ y ∈ xs, y.1 + 32 ≤ x.2 ∨ x.2 + 32 ≤ y.1) →
       WP isa (.block (copyCode xs)) s fun s' =>
         s'.mem = wrList s.mem B (xs.map fun x => (x.2, s.mem.readW (off B x.1) 256)) ∧
@@ -106,22 +106,22 @@ theorem copies_ok (hl : LayOk l) {B : Addr} :
 
 /-- The copies of `copyN o a`. -/
 def cpList (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (o a : Nat) : List (Nat × Nat) :=
-  (List.range 2).flatMap fun p => (List.range l.R).map fun k => (l.D * p + a + 32 * k, l.D * p + o + 32 * k)
+  (List.range l.nl).flatMap fun p => (List.range l.R).map fun k => (l.D * p + a + 32 * k, l.D * p + o + 32 * k)
 
 theorem copyN_eq (o a : Nat) : copyN l o a = copyCode (cpList l o a) := by
   simp only [copyN, copyCode, cpList, List.flatMap_assoc, List.flatMap_map]
 
 theorem mem_cpList {o a : Nat} {x : Nat × Nat} (h : x ∈ cpList l o a) :
-    ∃ p < 2, ∃ k < l.R, x = (l.D * p + a + 32 * k, l.D * p + o + 32 * k) := by
+    ∃ p < l.nl, ∃ k < l.R, x = (l.D * p + a + 32 * k, l.D * p + o + 32 * k) := by
   simp only [cpList, List.mem_flatMap, List.mem_map, List.mem_range] at h
   obtain ⟨p, hp, k, hk, rfl⟩ := h
   exact ⟨p, hp, k, hk, rfl⟩
 
 /-- `[o] := [a]` in both regions. -/
-theorem copyN_ok (hl : LayOk l) {s : State} {B : Addr} {o a : Nat} (hB : s.gpr .rbx = B)
-    (hs : Scr s B (2 * l.D)) (ho : o + l.NB ≤ l.D) (ha : a + l.NB ≤ l.D) (hoa : a + l.NB ≤ o ∨ o + l.NB ≤ a) :
+theorem copyN_ok (hl : AmmOk l) {s : State} {B : Addr} {o a : Nat} (hB : s.gpr .rbx = B)
+    (hs : Scr s B (l.nl * l.D)) (ho : o + l.NB ≤ l.D) (ha : a + l.NB ≤ l.D) (hoa : a + l.NB ≤ o ∨ o + l.NB ≤ a) :
     WP isa (.block (copyN l o a)) s fun s' =>
-      (∀ p < 2, ∀ q < l.L, limb l s'.mem B (l.D * p + o) q = limb l s.mem B (l.D * p + a) q) ∧
+      (∀ p < l.nl, ∀ q < l.L, limb l s'.mem B (l.D * p + o) q = limb l s.mem B (l.D * p + a) q) ∧
       Out2 l B o l.NB s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
   obtain ⟨hR, _⟩ := hl.bounds
   have hD := hl.D_bounds
@@ -130,30 +130,31 @@ theorem copyN_ok (hl : LayOk l) {s : State} {B : Addr} {o a : Nat} (hB : s.gpr .
   refine WP.mono (copies_ok hl _ s hB hs (fun x hx => ?_) (fun x hx y hy => ?_))
     fun s' ⟨hm, hg, hrd, hwr, hx⟩ => ⟨fun p hp q hq => ?_, ?_, hg, hrd, hwr, hx⟩
   · obtain ⟨p, hp, k, hk, rfl⟩ := mem_cpList hx
-    rcases D_mul (l := l) hp with h | h <;> dsimp only <;> omega_using [ho, ha, hNB, hk, h]
+    have hle := lane_end hl hp
+    rcases D_mulN hl hp with h | h <;> dsimp only <;> omega_using [ho, ha, hNB, hk, h, hle]
   · obtain ⟨p, hp, k, hk, rfl⟩ := mem_cpList hx
     obtain ⟨p', hp', k', hk', rfl⟩ := mem_cpList hy
-    rcases (by omega_using [hp] : p = 0 ∨ p = 1) with rfl | rfl <;> rcases (by omega_using [hp'] : p' = 0 ∨ p' = 1) with rfl | rfl <;>
+    rcases (lane01 hl hp) with rfl | rfl <;> rcases (lane01 hl hp') with rfl | rfl <;>
           dsimp only <;> simp only [Nat.mul_zero, Nat.mul_one] <;> omega_using [hoa, hNB, hk, hk', ho, ha]
   · have hk : q % l.R < l.R := Nat.mod_lt _ (by omega_using [hR])
     have ht : q / l.R < 4 := Nat.div_lt_of_lt_mul (by simp only [Lay.L] at hq; rw [Nat.mul_comm]; exact hq)
     have e := word_wrList_unique B (e := l.D * p + o + 32 * (q % l.R)) (t := q / l.R)
       (v := s.mem.readW (off B (l.D * p + a + 32 * (q % l.R))) 256) ht
-      (by rcases D_mul (l := l) hp with h | h <;> omega_using [ho, hD, hNB, hk, h])
+      (by have hle := lane_end hl hp; rcases D_mulN hl hp with h | h <;> omega_using [ho, hD, hNB, hk, h, hle])
       ((cpList l o a).map fun x => (x.2, s.mem.readW (off B x.1) 256)) s.mem
       (List.mem_map.2 ⟨(l.D * p + a + 32 * (q % l.R), l.D * p + o + 32 * (q % l.R)),
         by simp only [cpList, List.mem_flatMap, List.mem_map, List.mem_range]; exact ⟨p, hp, q % l.R, hk, rfl⟩, rfl⟩)
       (fun x hx => by
         obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
         obtain ⟨p', hp', k', hk', rfl⟩ := mem_cpList hy
-        rcases (by omega_using [hp] : p = 0 ∨ p = 1) with rfl | rfl <;> rcases (by omega_using [hp'] : p' = 0 ∨ p' = 1) with rfl | rfl <;>
+        rcases (lane01 hl hp) with rfl | rfl <;> rcases (lane01 hl hp') with rfl | rfl <;>
           dsimp only <;> simp only [Nat.mul_zero, Nat.mul_one] <;> omega_using [ho, hD, hNB, hk', hk])
       (fun x hx he => by
         obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
         obtain ⟨p', hp', k', hk', rfl⟩ := mem_cpList hy
         dsimp only at he ⊢
         have : p' = p ∧ k' = q % l.R := by
-          rcases (by omega_using [hp] : p = 0 ∨ p = 1) with rfl | rfl <;> rcases (by omega_using [hp'] : p' = 0 ∨ p' = 1) with rfl | rfl <;>
+          rcases (lane01 hl hp) with rfl | rfl <;> rcases (lane01 hl hp') with rfl | rfl <;>
             simp only [Nat.mul_zero, Nat.mul_one] at he <;> omega_using [he, hD, hNB, hk, hk']
         rw [this.1, this.2])
     show (word s'.mem B _).toNat = (word s.mem B _).toNat
@@ -165,15 +166,15 @@ theorem copyN_ok (hl : LayOk l) {s : State} {B : Addr} {o a : Nat} (hB : s.gpr .
     rw [off_add]
     exact congrArg (fun d => s.mem.readW (off B d) 64) (by unfold Lay.off; omega_using [])
   · rw [hm]
-    exact wrList_out2 B (by omega_using [ho, hD]) _ s.mem fun x hx => by
+    exact wrList_out2 hl B (by omega_using [ho, hD]) _ s.mem fun x hx => by
       obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
       obtain ⟨p, hp, k, hk, rfl⟩ := mem_cpList hy
       exact ⟨p, hp, by dsimp only; omega_using [], by dsimp only; omega_using [hNB, hk]⟩
 
-theorem NB_le (hl : LayOk l) : l.NB ≤ 320 ∧ 160 ≤ l.NB := by
-  rcases hl with rfl | rfl | rfl <;> decide
+theorem NB_le (hl : AmmOk l) : l.NB ≤ 640 ∧ 160 ≤ l.NB := by
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
 
-theorem dbl_le (hl : LayOk l) : 64 * l.W ≤ 104 * l.S := by rcases hl with rfl | rfl | rfl <;> decide
+theorem dbl_le (hl : AmmOk l) : 64 * l.W ≤ 104 * l.S := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
 
 /-! ## The pieces of `convTabBody` -/
 
@@ -188,7 +189,7 @@ theorem cmp13_ok (s : State) {n k : Nat} (h13 : s.gpr .r13 = BitVec.ofNat 64 n) 
     Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega)]
 
 /-- The operands of entry `i < 2`: `Y` or `X`, in place, and `K1`. -/
-theorem convSetup_ok (hl : LayOk l) {s : State} {B : Addr} {i : Nat}
+theorem convSetup_ok (hl : AmmOk l) {s : State} {B : Addr} {i : Nat}
     (hB : s.gpr .rbx = B) (h13 : s.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * i)) :
     WP isa (.block (convSetup l)) s fun s' =>
       s'.gpr .r8 = off B (l.oY + l.NB * i) ∧ s'.gpr .r9 = off B l.oK1 ∧
@@ -208,7 +209,7 @@ theorem convSetup_ok (hl : LayOk l) {s : State} {B : Addr} {i : Nat}
     fun s' ⟨⟨a, b, c, d, e⟩, k⟩ => ⟨a, b, c, k, d, e⟩
 
 /-- The operands of entry `i ≥ 1` of the table: `T_(i-1)`, `X`, `T_i`. -/
-theorem tabHead_ok (hl : LayOk l) {s : State} {B : Addr} {i : Nat} (hi : 1 ≤ i) (_hi' : i < l.T)
+theorem tabHead_ok (hl : AmmOk l) {s : State} {B : Addr} {i : Nat} (hi : 1 ≤ i) (_hi' : i < l.T)
     (hB : s.gpr .rbx = B) (h13 : s.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * i)) :
     WP isa (.block (tabSetup l)) s fun s' =>
       s'.gpr .r8 = off B (l.oTab + l.NB * (i - 1)) ∧ s'.gpr .r9 = off B l.oX ∧
@@ -228,7 +229,7 @@ theorem tabHead_ok (hl : LayOk l) {s : State} {B : Addr} {i : Nat} (hi : 1 ≤ i
     fun s' ⟨⟨a, b, c, d, e⟩, k⟩ => ⟨a, b, c, k, d, e⟩
 
 /-- The next entry, `ZF` after the last. -/
-theorem tabTail_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i < l.T)
+theorem tabTail_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i < l.T)
     (h13 : s.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * i)) :
     WP isa (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 l.NB)),
         .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + l.T * l.NB)))]) s fun s' =>
@@ -256,7 +257,7 @@ def Flags (s t : State) : Prop := t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.r
 
 /-- The head of entry `i`: the conversion's operands below 2, the table's
 from 2. -/
-theorem bodyHead_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i < l.T) {R : Prog isa} {Q : State → Prop}
+theorem bodyHead_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i < l.T) {R : Prog isa} {Q : State → Prop}
     (h13 : s.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * i))
     (hc : i < 2 → ∀ t, Flags s t → WP isa (.block (convSetup l)) t fun u => WP isa R u Q)
     (ht : 2 ≤ i → ∀ t, Flags s t → WP isa (.block (tabSetup l)) t fun u => WP isa R u Q) :
@@ -282,7 +283,7 @@ theorem bodyHead_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i < l.T) {R : Pro
   omega_using [h]
 
 /-- The end of entry `i ≠ 1`: no copies, then the next entry. -/
-theorem bodyTail_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i < l.T) (h1 : i ≠ 1)
+theorem bodyTail_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i < l.T) (h1 : i ≠ 1)
     (h13 : s.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * i)) :
     WP isa (.seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + l.NB)))])
       (.seq (.ite .e (.block (copyN l l.oTab l.oY ++ copyN l (l.oTab + l.NB) l.oX)) (.block []))
@@ -310,14 +311,14 @@ Montgomery form, and the table. -/
 structure TabInv (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) (M k x : Nat → Nat) (Q : Prop) (i : Nat) (t : State) : Prop where
   rbx : t.gpr .rbx = B
   r13 : t.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * i)
-  scr : Scr t B (2 * l.D)
+  scr : Scr t B (l.nl * l.D)
   ar : Ar l t.mem B M k
-  tab : ∀ j < i, ∀ p < 2, Good l t.mem B M (l.oTab + l.NB * j) p ∧
+  tab : ∀ j < i, ∀ p < l.nl, Good l t.mem B M (l.oTab + l.NB * j) p ∧
     (Q → val52 l t.mem B (l.D * p + (l.oTab + l.NB * j)) % M p = x p ^ j * 2 ^ (52 * l.S) % M p)
-  yg : ∀ p < 2, Good l t.mem B M l.oY p
-  yv : Q → ∀ p < 2, val52 l t.mem B (l.D * p + l.oY) % M p = x p ^ 0 * 2 ^ (52 * l.S) % M p
-  xg : ∀ p < 2, Good l t.mem B M l.oX p
-  xv : Q → ∀ p < 2, val52 l t.mem B (l.D * p + l.oX) % M p = x p ^ 1 * 2 ^ (52 * l.S) % M p
+  yg : ∀ p < l.nl, Good l t.mem B M l.oY p
+  yv : Q → ∀ p < l.nl, val52 l t.mem B (l.D * p + l.oY) % M p = x p ^ 0 * 2 ^ (52 * l.S) % M p
+  xg : ∀ p < l.nl, Good l t.mem B M l.oX p
+  xv : Q → ∀ p < l.nl, val52 l t.mem B (l.D * p + l.oX) % M p = x p ^ 1 * 2 ^ (52 * l.S) % M p
   frame : Out2 l B l.oY (l.oTab + l.T * l.NB - l.oY) s₀.mem t.mem
   gpr : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
     r ≠ .r13 → t.gpr r = s₀.gpr r
@@ -326,8 +327,8 @@ structure TabInv (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) 
   mxcsr : t.mxcsr = s₀.mxcsr
 
 /-- Entry `i ≥ 2` of the table. -/
-theorem tabIter_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {i : Nat}
-    (hi : 2 ≤ i) (hi' : i < l.T) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
+theorem tabIter_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {i : Nat}
+    (hi : 2 ≤ i) (hi' : i < l.T) (hR : ∀ p < l.nl, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (h : TabInv l s₀ B M k x Q i t) :
     WP isa (convTabBody l) t fun t' => TabInv l s₀ B M k x Q (i + 1) t' ∧ t'.zf = some (decide (i + 1 = l.T)) := by
   have hD := hl.D_bounds
@@ -342,7 +343,7 @@ theorem tabIter_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → N
   refine WP.mono (tabHead_ok hl (by omega_using [hi]) hi' hB₀ h13₀) fun t₁ ⟨h8, h9, h11, k₁, me₁, mx₁⟩ => ?_
   rw [hf.2.1] at me₁
   have rbx₁ : t₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB₀
-  have hg : ∀ p < 2, Good l t₁.mem B M (l.oTab + l.NB * (i - 1)) p := fun p hp => by
+  have hg : ∀ p < l.nl, Good l t₁.mem B M (l.oTab + l.NB * (i - 1)) p := fun p hp => by
     rw [me₁]; exact (h.tab (i - 1) (by omega_using [hi]) p hp).1
   refine WP.seq (WP.mono (ammCore2_ok hl (o := l.oTab + l.NB * i) (k := k) rbx₁ h8 h9 h11
     (h.scr.congr (by rw [k₁.2.2, hf.2.2.2.1]))
@@ -405,15 +406,15 @@ theorem tabIter_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → N
 `X ≡ x R_W`, `K1 ≡ 2^(416 R) / R_W` (`R_W = 2^(64 W)`). -/
 structure ConvPre (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) (M k x : Nat → Nat) (Q : Prop) : Prop where
   rbx : s₀.gpr .rbx = B
-  scr : Scr s₀ B (2 * l.D)
+  scr : Scr s₀ B (l.nl * l.D)
   ar : Ar l s₀.mem B M k
-  hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p)
-  gx : ∀ p < 2, Good l s₀.mem B M l.oX p
-  gy : ∀ p < 2, Good l s₀.mem B M l.oY p
-  gk : ∀ p < 2, Good l s₀.mem B M l.oK1 p
-  vx : Q → ∀ p < 2, val52 l s₀.mem B (l.D * p + l.oX) % M p = x p * 2 ^ (64 * l.W) % M p
-  vy : Q → ∀ p < 2, val52 l s₀.mem B (l.D * p + l.oY) % M p = 1 * 2 ^ (64 * l.W) % M p
-  vk : Q → ∀ p < 2, val52 l s₀.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - 64 * l.W) % M p
+  hR : ∀ p < l.nl, Nat.Coprime (2 ^ (52 * l.S)) (M p)
+  gx : ∀ p < l.nl, Good l s₀.mem B M l.oX p
+  gy : ∀ p < l.nl, Good l s₀.mem B M l.oY p
+  gk : ∀ p < l.nl, Good l s₀.mem B M l.oK1 p
+  vx : Q → ∀ p < l.nl, val52 l s₀.mem B (l.D * p + l.oX) % M p = x p * 2 ^ (64 * l.W) % M p
+  vy : Q → ∀ p < l.nl, val52 l s₀.mem B (l.D * p + l.oY) % M p = 1 * 2 ^ (64 * l.W) % M p
+  vk : Q → ∀ p < l.nl, val52 l s₀.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - 64 * l.W) % M p
 
 /-- The state before entry 0, from `s₀`. -/
 structure At0 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ t : State) : Prop where
@@ -428,8 +429,8 @@ structure At0 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ t : State) : Prop where
 structure At1 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) (M k : Nat → Nat) (t : State) : Prop where
   r13 : t.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 1)
   ar : Ar l t.mem B M k
-  yg : ∀ p < 2, Good l t.mem B M l.oY p
-  yv : ∀ p < 2, val52 l t.mem B (l.D * p + l.oY) * 2 ^ (52 * l.S) % M p =
+  yg : ∀ p < l.nl, Good l t.mem B M l.oY p
+  yv : ∀ p < l.nl, val52 l t.mem B (l.D * p + l.oY) * 2 ^ (52 * l.S) % M p =
     val52 l s₀.mem B (l.D * p + l.oY) * val52 l s₀.mem B (l.D * p + l.oK1) % M p
   f : Out2 l B l.oY l.NB s₀.mem t.mem
   gpr : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
@@ -439,7 +440,7 @@ structure At1 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) (M 
   mxcsr : t.mxcsr = s₀.mxcsr
 
 /-- Entry 0: `Y` into Montgomery form. -/
-theorem conv0_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
+theorem conv0_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
     (hc : ConvPre l s₀ B M k x Q) (h : At0 l s₀ t) :
     WP isa (convTabBody l) t fun t' => At1 l s₀ B M k t' ∧ t'.zf = some false := by
   have hD := hl.D_bounds
@@ -469,7 +470,7 @@ theorem conv0_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
   rw [k₃.gpr (by simp [r10]), g₂ r r1 r2 r3 r4 r6 r7 r9, k₁.gpr (by simp [r5, r6, r8]), hf.1, h.gpr r r10]
 
 /-- Entry 1: `X` into Montgomery form, then the table's first two entries. -/
-theorem conv1_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
+theorem conv1_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
     (hc : ConvPre l s₀ B M k x Q) (h : At1 l s₀ B M k t) :
     WP isa (convTabBody l) t fun t' => TabInv l s₀ B M k x Q 2 t' ∧ t'.zf = some false := by
   have hD := hl.D_bounds
@@ -481,9 +482,9 @@ theorem conv1_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
     rw [h.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)]; exact hc.rbx
   -- `X` and `K1` as in `s₀`
-  have gx : ∀ p < 2, Good l t.mem B M l.oX p := fun p hp =>
+  have gx : ∀ p < l.nl, Good l t.mem B M l.oX p := fun p hp =>
     (hc.gx p hp).of_out2 hl hp h.f (.inr (by omega_using [o2, o3])) (by omega_using [o3, o10]) (by omega_using [o2, o10])
-  have gk : ∀ p < 2, Good l t.mem B M l.oK1 p := fun p hp =>
+  have gk : ∀ p < l.nl, Good l t.mem B M l.oK1 p := fun p hp =>
     (hc.gk p hp).of_out2 hl hp h.f (.inr (by omega_using [o2, o7])) (by omega_using [o7, o10]) (by omega_using [o2, o10])
   unfold convTabBody
   refine bodyHead_ok hl (T_gt hl (by decide)) h.r13 (fun _ t₀ hf => ?_) fun h' => absurd h' (by decide)
@@ -504,7 +505,7 @@ theorem conv1_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
       k₁.gpr (by decide)]; exact h13₀
   have hB₂ : t₂.gpr .rbx = B := by
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact rbx₁
-  have hs₂ : Scr t₂ B (2 * l.D) := hc.scr.congr (by rw [wr₂, k₁.2.2, hf.2.2.2.1, h.wr])
+  have hs₂ : Scr t₂ B (l.nl * l.D) := hc.scr.congr (by rw [wr₂, k₁.2.2, hf.2.2.2.1, h.wr])
   -- the copies
   have hNB := NB_le hl
   refine WP.seq (WP.mono (cmp13_ok t₂ r13₂ (by omega_using [hD, o5]) (by omega_using [hD, o5]))
@@ -525,20 +526,20 @@ theorem conv1_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
   have hoD : l.oTab + l.NB ≤ l.D := by omega_using [o5, o10]
   have hoD' : l.oTab + l.NB + l.NB ≤ l.D := by omega_using [o5, o10]
   -- `Y` and `X` in Montgomery form, after the conversions
-  have vy₂ : Q → ∀ p < 2, val52 l t₂.mem B (l.D * p + l.oY) % M p = x p ^ 0 * 2 ^ (52 * l.S) % M p :=
+  have vy₂ : Q → ∀ p < l.nl, val52 l t₂.mem B (l.D * p + l.oY) % M p = x p ^ 0 * 2 ^ (52 * l.S) % M p :=
     fun hq p hp => by
       rw [f₂.val hl hp (.inl (by omega_using [o2, o3])) (by omega_using [o2, o10]) (by omega_using [o3, o10])]
       exact mont_into0 (hc.hR p hp) (hc.vy hq p hp) (hc.vk hq p hp) e2 (h.yv p hp)
-  have gy₂ : ∀ p < 2, Good l t₂.mem B M l.oY p := fun p hp =>
+  have gy₂ : ∀ p < l.nl, Good l t₂.mem B M l.oY p := fun p hp =>
     (h.yg p hp).of_out2 hl hp f₂ (.inl (by omega_using [o2, o3])) (by omega_using [o2, o10]) (by omega_using [o3, o10])
-  have vx₂ : Q → ∀ p < 2, val52 l t₂.mem B (l.D * p + l.oX) % M p = x p ^ 1 * 2 ^ (52 * l.S) % M p :=
+  have vx₂ : Q → ∀ p < l.nl, val52 l t₂.mem B (l.D * p + l.oX) % M p = x p ^ 1 * 2 ^ (52 * l.S) % M p :=
     fun hq p hp => by
       have e := (hv₂ p hp).2
       rw [h.f.val hl hp (.inr (by omega_using [o2, o3])) (by omega_using [o3, o10]) (by omega_using [o2, o10]),
         h.f.val hl hp (.inr (by omega_using [o2, o7])) (by omega_using [o7, o10]) (by omega_using [o2, o10])] at e
       exact mont_into1 (hc.hR p hp) (hc.vx hq p hp) (hc.vk hq p hp) e2 e
   -- through the copies
-  have keepY : ∀ {c : Nat}, c + l.NB ≤ l.oTab → ∀ p < 2, (Good l t₂.mem B M c p → Good l t₆.mem B M c p) ∧
+  have keepY : ∀ {c : Nat}, c + l.NB ≤ l.oTab → ∀ p < l.nl, (Good l t₂.mem B M c p → Good l t₆.mem B M c p) ∧
       val52 l t₆.mem B (l.D * p + c) = val52 l t₂.mem B (l.D * p + c) := fun {c} hcT p hp => by
     have hcD : c + l.NB ≤ l.D := by omega_using [hcT, o5, o10]
     refine ⟨fun g => ?_, ?_⟩
@@ -580,7 +581,7 @@ theorem conv1_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
   · rw [mx₆, x₅, x₄, hx₃, x₂, mx₁, hf.2.2.2.2, h.mxcsr]
 
 /-- The loop of `convTab`. -/
-theorem convTabLoop_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
+theorem convTabLoop_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
     (hc : ConvPre l s₀ B M k x Q) (h : At0 l s₀ t) :
     WP isa (.loop (convTabBody l) .ne) t (TabInv l s₀ B M k x Q l.T) := by
   have hT := hl.T_bounds
@@ -607,7 +608,7 @@ theorem convTabLoop_ok (hl : LayOk l) {s₀ t : State} {B : Addr} {M k x : Nat �
           by rw [show l.T - (n - 1) = l.T - n + 1 by omega_using [h14, hn]]; exact hI'⟩)⟩
 
 /-- `convTab`: `Y`, `X` in Montgomery form and the table `T_i ≡ x^i 2^(208 R)`. -/
-theorem convTab_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
+theorem convTab_ok (hl : AmmOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
     (hc : ConvPre l s B M k x Q) :
     WP isa (VG.Impl.Bignum.X86_64.seqs (convTab l)) s (TabInv l s B M k x Q l.T) := by
   have hD := hl.D_bounds

@@ -80,8 +80,8 @@ structure RegT (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop where
   rb1 : TOk [.rdi] (.block (recBlk l 1))
   rl : TOk [.r8, .r9, .rcx] (.loop (.block (recodeBody l)) .ne)
 
-theorem regT (hl : LayOk l) : RegT l := by
-  rcases hl with rfl | rfl | rfl <;>
+theorem regT (hl : AmmOk l) : RegT l := by
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;>
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
@@ -104,7 +104,7 @@ abbrev RegPub.pw (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (q : RegPub) : Ws := ⟨of
 
 /-- The layout of region `p`. -/
 def RegPub.Ok (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (q : RegPub) (p sp sl : Nat) : Prop :=
-  q.o + slot l.W 8 + wsTab l.W ≤ q.a ∧ q.a + 2 * l.D + 8 ≤ q.Z ∧ p < 2 ∧ sp < 32 ∧ sl < 32 ∧ 1 ≤ q.L ∧
+  q.o + slot l.W 8 ≤ q.a ∧ q.a + l.nl * l.D + 8 ≤ q.Z ∧ p < l.nl ∧ sp < 32 ∧ sl < 32 ∧ 1 ≤ q.L ∧
     q.L ≤ l.E
 
 /-- What the region's blocks read (`TCtx`). -/
@@ -139,11 +139,11 @@ theorem RT.hd {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s) :
 theorem k0St_eq (p : Nat) : k0St l p = ([.mov .r11 (.mem (hdr sIfma))] : List Instr) ++ k0Tail l p := by
   simp only [k0St, k0Tail, List.cons_append, List.nil_append]
 
-theorem k0St_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s ∧ s.gpr .r12 = mask52) :
+theorem k0St_rt (hl : AmmOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s ∧ s.gpr .r12 = mask52) :
     WP isa (.block (k0St l p)) s fun t => RT l p sp sl q t ∧ t.gpr .r11 = off (off q.B q.a) (l.D * p) := by
   have hRT := h.1
   obtain ⟨⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩, h12⟩ := h
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+  have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
   obtain ⟨o1, -⟩ := lay_offs l
   obtain ⟨hDb1, -⟩ := hl.D_bounds
   have := hl.D_ge
@@ -167,13 +167,13 @@ theorem k0St_ct (p : Nat) {sp sl : Nat} (hT : TOk [.rdi, .r11] (.block (k0Tail l
     xrun [State.ea, hdr, c.rdi, hdrOff, hH sIfma (by decide)]; exact c.ia) rfl) fun t ⟨h11, k⟩ =>
       ⟨(k.gpr (by decide)).trans c.rdi, h11⟩
 
-theorem eZero_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
+theorem eZero_rt (hl : AmmOk l) {p sp sl : Nat} {q : RegPub} {s : State}
     (h : RT l p sp sl q s ∧ s.gpr .r11 = off (off q.B q.a) (l.D * p)) :
     WP isa (.block (eZero l)) s fun t =>
       RT l p sp sl q t ∧ t.gpr .r11 = off (off q.B q.a) (l.D * p) ∧ t.gpr .rax = 0 := by
   have hRT := h.1
   obtain ⟨⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩, h11⟩ := h
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+  have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
   obtain ⟨-, -, -, -, -, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨-, -, pX, -, -, -⟩ := lay_P hl
   exact WP.mono (eZr_ok hl c.scr haZ hp h11) fun t ⟨_, f, ra, k⟩ =>
@@ -188,14 +188,15 @@ theorem eZero_ct (p : Nat) {sp sl : Nat} (hT : TOk [.r11] (.block (eZero l))) :
     fun q s (h : RT l p sp sl q s ∧ s.gpr .r11 = off (off q.B q.a) (l.D * p)) r hr => by
       rw [List.mem_singleton.mp hr]; exact h.2) hT
 
-theorem finOne_rt (hl : LayOk l) {sp sl : Nat} {q : RegPub} {s : State}
+theorem finOne_rt (hl : AmmOk l) {sp sl : Nat} {q : RegPub} {s : State}
     (h : RT l 1 sp sl q s ∧ s.gpr .r11 = off (off q.B q.a) (l.D * 1) ∧ s.gpr .rax = 0) :
     WP isa (.block (finOne l)) s fun t => RT l 1 sp sl q t ∧ t.gpr .r11 = off (off q.B q.a) (l.D * 1) := by
   have hRT := h.1
   obtain ⟨⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩, h11, ha⟩ := h
   obtain ⟨-, -, -, -, -, -, -, -, o9, o10⟩ := lay_offs l
-  exact WP.mono (finr_ok hl c.scr haZ h11 ha) fun t ⟨_, f, k⟩ =>
-    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, o9, o10]) k,
+  have h2D : 2 * l.D ≤ l.nl * l.D := Nat.mul_le_mul_right _ (by omega_arith)
+  exact WP.mono (finr_ok hl (by omega_arith) c.scr haZ h11 ha) fun t ⟨_, f, k⟩ =>
+    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, o9, o10, h2D]) k,
       (k.gpr (by decide)).trans h11⟩
 
 theorem finOne_ct {sp sl : Nat} (hT : TOk [.r11] (.block (finOne l))) :
@@ -213,7 +214,7 @@ def ECp (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) (q : RegPub) (t : State) 
   t.gpr .rsi = q.ep ∧ t.gpr .rcx = BitVec.ofNat 64 q.L ∧
     t.gpr .r11 = off (off (off q.B q.a) (l.D * p)) (l.oE + l.P - q.L)
 
-theorem eBlk_ok (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
+theorem eBlk_ok (hl : AmmOk l) {p sp sl : Nat} {q : RegPub} {s : State}
     (h : RT l p sp sl q s ∧ s.gpr .r11 = off (off q.B q.a) (l.D * p)) :
     WP isa (.block [.mov .rax (.mem (hdr sLink)), .mov .rsi (.mem (ws .rax sp)), .mov .rcx (.mem (ws .rax sl)),
       .alu .add .r11 (.imm (BitVec.ofNat 32 (l.oE + l.P))), .alu .sub .r11 (.reg .rcx)]) s (ECp l p q) := by
@@ -240,7 +241,7 @@ theorem eBlk_ok (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
 
 /-- `eCopy` is constant time, given that the taint analysis checks its loads
 from `n`'s workspace. -/
-theorem eCopy_ct (hl : LayOk l) {p sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+theorem eCopy_ct (hl : AmmOk l) {p sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rax]) (.block [.mov .rsi (.mem (ws .rax sp)),
       .mov .rcx (.mem (ws .rax sl))]) hc).isSome = true)
     (hE : TOk [.rcx, .r11] (.block [.alu .add .r11 (.imm (BitVec.ofNat 32 (l.oE + l.P))), .alu .sub .r11 (.reg .rcx)])) :
@@ -288,12 +289,12 @@ theorem eCopy_ct (hl : LayOk l) {p sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
         ⟨hcx, (k.gpr (by decide)).trans h11⟩
 
 /-- After `eCopy`, the region's reads are still `RT`. -/
-theorem eCopy_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
+theorem eCopy_rt (hl : AmmOk l) {p sp sl : Nat} {q : RegPub} {s : State}
     (h : RT l p sp sl q s ∧ s.gpr .r11 = off (off q.B q.a) (l.D * p)) :
     WP isa (seqs (eCopy l sp sl)) s (RT l p sp sl q) := by
   have hRT := h.1
   obtain ⟨⟨⟨hoa, haZ, hp, hsp, hsl, hL1, hL2⟩, mx, eb, c, hl'⟩, h11⟩ := h
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+  have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
   obtain ⟨-, -, -, -, -, o6, o7, -, -, o10⟩ := lay_offs l
   obtain ⟨pE, pP, pX, -, -, -⟩ := lay_P hl
   exact WP.mono (eCr_ok hl c.scr c.rdi c.lk hoa haZ hp hsp hsl c.pv c.lv c.src rfl (by omega_using [hl', hL1])
@@ -308,15 +309,15 @@ def RecP (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) (q : RegPub) (t : State)
   t.gpr .r8 = off (off q.B q.a) (l.D * p + l.oE) ∧ t.gpr .r9 = off (off q.B q.a) (l.D * p + l.oD) ∧
     t.gpr .rcx = BitVec.ofNat 64 (l.P / l.w)
 
-theorem recBlk_ok (hl : LayOk l) (hw : l.w ≠ 4) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s) :
+theorem recBlk_ok (hl : AmmOk l) (hw : l.w ≠ 4) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s) :
     WP isa (.block (recBlk l p)) s (RecP l p q) := by
   have hH := h.hd
   obtain ⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩ := h
   obtain ⟨-, -, -, -, -, o6, o7, -, -, o10⟩ := lay_offs l
   obtain ⟨d1, d2⟩ := lay_oD l hw
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
-  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with rfl | rfl | rfl <;> decide
+  have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
+  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
   refine WP.mono (WP.keep [.rcx, .r8, .r9] (Q := fun t =>
     t.gpr .r8 = off (off q.B q.a) (l.D * p + l.oE) ∧ t.gpr .r9 = off (off q.B q.a) (l.D * p + l.oD) ∧
       t.gpr .rcx = BitVec.ofNat 64 (l.P / l.w)) (by
@@ -332,7 +333,7 @@ theorem recBlk_ok (hl : LayOk l) (hw : l.w ≠ 4) {p sp sl : Nat} {q : RegPub} {
     all_goals rfl) rfl) fun t h => h.1
 
 /-- `recode` is constant time. -/
-theorem recode_ct (hl : LayOk l) (hw : l.w ≠ 4) {p sp sl : Nat} (hB : TOk [.rdi] (.block (recBlk l p)))
+theorem recode_ct (hl : AmmOk l) (hw : l.w ≠ 4) {p sp sl : Nat} (hB : TOk [.rdi] (.block (recBlk l p)))
     (hL : TOk [.r8, .r9, .rcx] (.loop (.block (recodeBody l)) .ne)) :
     RelCT isa (Two (RT l p sp sl)) (seqs (recode l p)) fun _ _ => True := by
   obtain ⟨_, hB⟩ := hB
@@ -370,19 +371,19 @@ def K0 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p sp sl : Nat) (q : RegPub) (s : St
   GoodW (q.pw l) s ∧ WP isa (seqs (copyArr aT Public.aY)) s (K1 l p sp sl q)
 
 /-- `region_ok`'s hypotheses give `K0`, as `k1_ok` runs `k1`. -/
-theorem k1_chain (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : RegPre l p sp sl q s) :
+theorem k1_chain (hl : AmmOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : RegPre l p sp sl q s) :
     K0 l p sp sl q s := by
   obtain ⟨ok, w, mx, X, eb, hc, hia, hN, hY, hpv, hlv, he, hl'⟩ := h
   have hok := ok
   obtain ⟨hoa, haZ, hp, hsp, hsl, hL1, hL2⟩ := ok
   have hn := hc.scr.nowrap
-  obtain ⟨hW1, hW2⟩ := W_bounds hl
+  obtain ⟨hW1, hW2⟩ := W_boundsN hl
   have h16 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
   have hg := hc.good
   have lT := slot_le (w := l.W) (show aT < 8 by decide)
   have lN := slot_le (w := l.W) (show Public.aN < 8 by decide)
   have sTN := slot_sep (w := l.W) (show aT ≠ Public.aN by decide)
-  have hdb : 1 ≤ l.dbls ∧ l.dbls < 2 ^ 31 := by rcases hl with rfl | rfl | rfl <;> decide
+  have hdb : 1 ≤ l.dbls ∧ l.dbls < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
   have hk1 : ∀ r ∈ k1Ranges l.W, r.1 + r.2 ≤ slot l.W 8 := by
     have := slot_le (w := l.W) (show Public.aAcc < 8 by decide)
     have := slot_le (w := l.W) (show Public.aTmp < 8 by decide)
@@ -426,7 +427,7 @@ theorem k1_chain (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : Re
   exact ⟨hok, mx, eb, TCtx.of_regionA hl hc hoa haZ hp hsp hsl hpv hlv he
     (fB.mono fun r hr => List.mem_append_left _ hr) kk.2.2 kk.2.1 ((kk.gpr (by decide)).trans hc.rdi) hH hia', hl'⟩
 
-theorem k1_ct (hl : LayOk l) (hR : RegT l) {p sp sl : Nat} {rest : List (Prog isa)} (hr0 : rest ≠ [])
+theorem k1_ct (hl : AmmOk l) (hR : RegT l) {p sp sl : Nat} {rest : List (Prog isa)} (hr0 : rest ≠ [])
     (hr : RelCT isa (Two (RT l p sp sl)) (seqs rest) fun _ _ => True) :
     RelCT isa (Two (RegPre l p sp sl)) (seqs (k1 l ++ rest)) fun _ _ => True := by
   refine two_map id (fun _ _ h => k1_chain hl h) ?_
@@ -465,16 +466,16 @@ def SelO (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) (a : RegPub × Nat) (s :
     s.gpr .r11 = off (off a.1.B a.1.a) (l.D * p + arrC l a.2) ∧ s.gpr .r8 = BitVec.ofNat 64 (5 - a.2)
 
 /-- What `arrLoop` does to `RT`. -/
-theorem arrLoop_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s) :
+theorem arrLoop_rt (hl : AmmOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s) :
     WP isa (arrLoop l p) s fun t => RT l p sp sl q t ∧ t.gpr .r12 = mask52 := by
   have hRT := h
   obtain ⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩ := h
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+  have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
   exact WP.mono (arrLoop_ok hl c.scr c.rdi c.hdr c.ia hoa haZ hp) fun t ⟨f, _, _, k, h12, _⟩ =>
     ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, hDp]) k, h12⟩
 
 /-- `arrLoop` is constant time. -/
-theorem arrLoop_ct (hl : LayOk l) {p sp sl : Nat} (hsel : TOk [.rdi, .r8] (arrSel l p (arrs l)))
+theorem arrLoop_ct (hl : AmmOk l) {p sp sl : Nat} (hsel : TOk [.rdi, .r8] (arrSel l p (arrs l)))
     (htail : TOk [.rsi, .r11, .r8] (.block (to52 l ++ ([.alu .sub .r8 (.imm 1)] : List Instr)))) :
     RelCT isa (Two (RT l p sp sl)) (arrLoop l p) (Two fun q s => RT l p sp sl q s ∧ s.gpr .r12 = mask52) := by
   obtain ⟨_, hsel⟩ := hsel
@@ -500,7 +501,7 @@ theorem arrLoop_ct (hl : LayOk l) {p sp sl : Nat} (hsel : TOk [.rdi, .r8] (arrSe
       · exact h.2.2
     · have hj := arrs_ok hl a.2 h.1
       have hp := h.2.1.1.2.2.1
-      have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+      have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
       refine sel a s h.1 h.2 fun s' hRT h8 => WP.mono (arrPtrs_ok hj.1 (by omega_using [hj, hD, hDp]) hRT)
         fun t ⟨hsi, h11, k⟩ => ⟨hsi, h11, ?_⟩
       rw [k.gpr (by decide), h8]; exact h.2.2
@@ -521,7 +522,7 @@ theorem arrLoop_ct (hl : LayOk l) {p sp sl : Nat} (hsel : TOk [.rdi, .r8] (arrSe
   replace hRT : RT l p sp sl q s' := hRT
   have hRT' := hRT
   obtain ⟨⟨hoa, haZ, hp, -⟩, mx, eb, c', -⟩ := hRT'
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+  have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
   have A := arr52r_ok hl c'.scr c'.rdi c'.hdr c'.ia hoa haZ hp hj.2 hj.1
   rw [arr52, WP.block_append_iff] at A
   refine WP.mono A fun u hu => ?_
@@ -542,7 +543,7 @@ theorem arrLoop_ct (hl : LayOk l) {p sp sl : Nat} (hsel : TOk [.rdi, .r8] (arrSe
 
 
 /-- `p`'s region is constant time. -/
-theorem region0_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+theorem region0_ct (hl : AmmOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rax]) (.block [.mov .rsi (.mem (ws .rax sp)),
       .mov .rcx (.mem (ws .rax sl))]) hc).isSome = true) :
     RelCT isa (Two (RegPre l 0 sp sl)) (seqs (region l 0 sp sl)) fun _ _ => True := by
@@ -573,7 +574,7 @@ theorem region0_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
       fun _ _ h => eCopy_rt hl ⟨h.1, h.2.1⟩) (recode_ct hl hw hR.rb0 hR.rl))
 
 /-- `q`'s region is constant time. -/
-theorem region1_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+theorem region1_ct (hl : AmmOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rax]) (.block [.mov .rsi (.mem (ws .rax sp)),
       .mov .rcx (.mem (ws .rax sl))]) hc).isSome = true) :
     RelCT isa (Two (RegPre l 1 sp sl)) (seqs (region l 1 sp sl)) fun _ _ => True := by

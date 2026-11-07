@@ -29,24 +29,24 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 namespace VG.Proof.Ffdh.X86_64.CheckPublic
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
+open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64 VG.Proof.Ffdh.X86_64
 
-theorem publicInline_verified (v : RoundImpl) : Verified target (publicInline v)
+theorem publicInline_verified (v : RoundImpl) (e : ExpImpl) : Verified target (publicInline v e)
     (Spec.Ffdh.checkPublicContract abi) := by
-  apply cp_verified v.mont (CrtExpL.w4 v.mont) (R2Impl.words v.mont) _ (publicInline_mx v)
-  exact two_map id (fun _ _ h => h.1)
-    (crtExpLoop_ct v.mont CrtSel.sse CrtSel.sse_ct (by taint_decide))
+  have h := cp_verified v.mont (e.E v.mont) (R2Impl.words v.mont) (e.ctE v.mont)
+  rw [e.code_eq] at h
+  exact h (publicInline_ctl v e)
 
 theorem cpSatisfiable8 : ∃ s, (Spec.Ffdh.checkPublicContract abi 8).pre s := by
   sig_implies_sat [Spec.Ffdh.checkPublicContract, Spec.Ffdh.checkPublicSig, abi, argRegs, stackArgs_one, List.append_eq, Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid]
     [cpSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using cpSat
 
 /-- With calls of `v.mm`, which need 8 bytes of stack for the return address. -/
-theorem publicCode_verified (v : RoundImpl) : Verified target (publicCode v)
+theorem publicCode_verified (v : RoundImpl) (e : ExpImpl) : Verified target (publicCode v e)
     (Spec.Ffdh.checkPublicContract abi 8) := by
-  have hv := publicInline_verified v
-  rw [← publicCode_inline] at hv
-  refine Verified.of_inline_verified (publicCode_inlineOk v) hv
+  have hv := publicInline_verified v e
+  rw [← publicCode_inline v e] at hv
+  refine Verified.of_inline_verified (publicCode_inlineOk v e) hv
     ((Contract.Implies.refl hv.2.2).stack8_abi cpSatisfiable8) (fun _ h => Sig.clear_of_pre h)
     (fun s b hv u hs hp => ?_) (fun _ _ _ _ h => Sig.rsp_of_pub h)
   sig_post [Spec.Ffdh.checkPublicContract, Spec.Ffdh.checkPublicSig, abi, argRegs, stackArgs_one, List.append_eq] at hp ⊢

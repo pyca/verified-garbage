@@ -24,8 +24,8 @@ theorem After.base {a s : State} (h : After a s) : s.gpr .r9 = a.gpr .rcx := by
   obtain ⟨u, start, result⟩ := h
   exact result.context.baseReg.trans (start.regs .rcx (by decide))
 
-theorem anchored_ct (v : RoundImpl) (a : State) :
-    RelCT isa (fun s t => Start a s ∧ Start a t) (emittedCode v) (fun _ _ => True) := by
+theorem anchored_ct (v : RoundImpl) (e : ExpImpl) (a : State) :
+    RelCT isa (fun s t => Start a s ∧ Start a t) (emittedCode v e) (fun _ _ => True) := by
   let R := fun s : State => After a s ∧ s.zf = some (recognized a == 0)
   have scanWP (s : State) (h : Start a s) : WP isa recognizeCode s (After a) :=
     WP.mono (recognize_ok (geometry h.pre)) (fun t result => ⟨s, h, result⟩)
@@ -57,12 +57,12 @@ theorem anchored_ct (v : RoundImpl) (a : State) :
   have restoreWP (s : State) (h : After a s) : WP isa (.block restore) s (Ready a) := by
     obtain ⟨u, start, result⟩ := h
     exact WP.mono (restore_ok result) (fun t restored => ⟨u, start, restored⟩)
-  have fallbackCT := (fallback_ct v).mono (P' := fun s t => Ready a s ∧ Ready a t)
+  have fallbackCT := (fallback_ct v e).mono (P' := fun s t => Ready a s ∧ Ready a t)
     (fun _ _ h => ⟨h.1.pre, h.2.pre, Ready.public h.1 h.2⟩) (fun _ _ h => h)
   have fallbackStage := ((restoreCT.wp (fun s t h => ⟨restoreWP s h.1, restoreWP t h.2⟩)).mono
     (fun _ _ h => h) (fun _ _ h => ⟨h.2.1, h.2.2⟩)).seq fallbackCT
   have choice : RelCT isa (fun s t => R s ∧ R t)
-      (.ite .ne (.block [.mov32 .rax (.imm 1)]) (.seq (.block restore) (CheckDomain.domainCode v)))
+      (.ite .ne (.block [.mov32 .rax (.imm 1)]) (.seq (.block restore) (CheckDomain.domainCode v e)))
       (fun _ _ => True) := by
     apply RelCT.ite (fun s t h => by simp only [eval, h.1.2, h.2.2])
     · apply RelCT.taint (A := taint) (Taint.ofRegs []) _ (by taint_decide)
@@ -71,9 +71,9 @@ theorem anchored_ct (v : RoundImpl) (a : State) :
     · exact fallbackStage.mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) (fun _ _ h => h)
   exact scanStage.seq (testStage.seq choice)
 
-theorem constantTime (v : RoundImpl) : ConstantTime isa contract.pre contract.pub (emittedCode v) := by
+theorem constantTime (v : RoundImpl) (e : ExpImpl) : ConstantTime isa contract.pre contract.pub (emittedCode v e) := by
   intro s t ts tt u w hs ht hp es et
   have left : Start s s := ⟨hs, fun _ _ => rfl, rfl, rfl⟩
-  exact (anchored_ct v s s t ts tt u w ⟨left, start_of_pub ht hp⟩ es et).1
+  exact (anchored_ct v e s s t ts tt u w ⟨left, start_of_pub ht hp⟩ es et).1
 
 end VG.Proof.Ffdh.X86_64.VettedValidation
