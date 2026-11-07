@@ -121,6 +121,18 @@ def argon2 : List (Rust.Impl × String) :=
    (impl "f_g_avx512" ["avx", "avx512f"], "_g_avx512")]
 #guard leftOut [{ suffix := "_avx512" }, { suffix := "_avx2" }] argon2 == ["f_g_avx2", "f_b_avx2"]
 
+-- BMI2 comes with AVX2 (`Rust.reported`): SHA-1's AVX/BMI code with
+-- SHA-256's baseline runs only where SHA-256's AVX2 code can, so it is never
+-- chosen; on AArch64, which has no such rule, it would be.
+def bmi : List (Rust.Impl × String) :=
+  [(impl "f_a_avx_bmi_b_avx2" ["avx", "avx2", "bmi1", "bmi2"], "_a_avx_bmi_b_avx2"),
+   (impl "f_a_avx_bmi" ["avx", "bmi1", "bmi2"], "_a_avx_bmi")]
+def bmiRanks : List Rust.Rank := [{ suffix := "_avx_bmi" }, { suffix := "_avx2" }]
+#guard leftOut bmiRanks bmi == ["f_a_avx_bmi"]
+#guard (match Rust.armsSplit bmiRanks "m" "aarch64" bmi with
+  | .ok (_, out) => out.map (·.impl.name)
+  | .error e => [e]) == []
+
 -- A skipped implementation is the Rust code's to call: never left out.
 #guard leftOut [{ suffix := "_avx2" }, { suffix := "_avx512", skip := true }] avx == []
 

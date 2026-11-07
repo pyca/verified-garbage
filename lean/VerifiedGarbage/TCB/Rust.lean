@@ -1824,11 +1824,22 @@ structure Arm where
   /-- Whether the ranking leaves it out (`Rank.skip`). -/
   skip : Bool
 
+/-- The CPU features `verified_garbage_cpu` reports whenever it reports
+all of `fs` on the target `t`: on x86 and x86-64 it reports BMI2 and ADX
+only with AVX2 (`decode` in `crates/verified-garbage-cpu/src/detect.rs`,
+and `VG_CPU_FEATURES` may not name them without it). It only decides which
+implementations no dispatcher chooses (`armsSplit`): a dispatcher still
+checks every feature an implementation needs before it runs it. -/
+def reported (t : String) (fs : List String) : List String :=
+  if (t == "x86" || t == "x86_64") && (fs.contains "bmi2" || fs.contains "adx") &&
+      !fs.contains "avx2" then fs ++ ["avx2"] else fs
+
 /-- The implementations `members` (each with its suffix) of a function or
 table of the module `m` of the target `t`, but its base, that its dispatcher
 tries, in order (see above), then those it leaves out because each can be
-chosen only where one before it can (never `Rank.skip`'s, which the Rust
-code calls itself); or why `rs` does not rank them. -/
+chosen only where one before it can, given what the CPU detection reports
+(`reported`; never `Rank.skip`'s, which the Rust code calls itself); or why
+`rs` does not rank them. -/
 def armsSplit (rs : List Rank) (m t : String) (members : List (Impl × String)) :
     Except String (List Arm × List Arm) := do
   let arm (a : Impl) (ranks : List Rank) : Arm :=
@@ -1857,7 +1868,7 @@ def armsSplit (rs : List Rank) (m t : String) (members : List (Impl × String)) 
   let sorted := keyed.mergeSort fun a b => lexLe a.1 b.1
   -- Leave out each implementation that can be chosen only where one before it can.
   let weaker (e l : Arm) : Bool :=
-    (e.impl.features ++ e.extra).all (l.impl.features ++ l.extra).contains &&
+    (e.impl.features ++ e.extra).all (reported t (l.impl.features ++ l.extra)).contains &&
       e.vendors.all l.vendors.contains && e.impl.gate.all l.impl.gate.contains
   return sorted.foldl (init := ([], [])) fun (acc, out) (_, l) =>
     if acc.any (weaker · l) then (acc, out ++ [l]) else (acc ++ [l], out)
