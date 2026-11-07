@@ -31,9 +31,9 @@ variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 /-- Digit `i` of `e` in base `T`, of `ND` digits, most significant first. -/
 def digit (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (e i : Nat) : Nat := e / l.T ^ (l.ND - 1 - i) % l.T
 
-theorem T_pos (hl : LayOk l) : 0 < l.T := by have := hl.T_bounds; omega
+theorem T_pos (hl : AmmOk l) : 0 < l.T := by have := hl.T_bounds; omega
 
-theorem digit_lt (hl : LayOk l) (e i : Nat) : digit l e i < l.T := Nat.mod_lt _ (T_pos hl)
+theorem digit_lt (hl : AmmOk l) (e i : Nat) : digit l e i < l.T := Nat.mod_lt _ (T_pos hl)
 
 /-- The digits up to `i`, and one more. -/
 theorem pref_step {e i : Nat} (hi : i < l.ND) :
@@ -43,29 +43,29 @@ theorem pref_step {e i : Nat} (hi : i < l.ND) :
     Nat.div_add_mod']
 
 /-- Below the first digit `k0`, the digits of an exponent below `2^(8 E)` are zero. -/
-theorem pref_k0 (hl : LayOk l) {e : Nat} (he : e < 2 ^ (8 * l.E)) : e / l.T ^ (l.ND - l.k0) = 0 := by
+theorem pref_k0 (hl : AmmOk l) {e : Nat} (he : e < 2 ^ (8 * l.E)) : e / l.T ^ (l.ND - l.k0) = 0 := by
   refine Nat.div_eq_of_lt (Nat.lt_of_lt_of_le he ?_)
   rw [Lay.T, ← Nat.pow_mul]
-  exact Nat.pow_le_pow_right (by decide) (by rcases hl with rfl | rfl | rfl <;> decide)
+  exact Nat.pow_le_pow_right (by decide) (by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide)
 
 /-- The digit bytes outside `Y`, `S` and `V`. -/
-theorem OutW.dig (hl : LayOk l) {B : Addr} {m m' : Mem} (h : OutW l B m m') {p i : Nat} (hp : p < 2)
+theorem OutW.dig (hl : AmmOk l) {B : Addr} {m m' : Mem} (h : OutW l B m m') {p i : Nat} (hp : p < l.nl)
     (hi : i < l.ND) : dig l m' B p i = dig l m B p i := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨d1, d2⟩ := lay_dAt hl hi
   have hD := hl.D_bounds
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+  have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
   refine congrArg (fun b : BitVec 8 => nibOf l i b.toNat) (h _ fun p' hp' => ?_)
   rw [ofs_off0 B (by omega_using [d2, o7, o10, hD, hDp])]
-  rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;>
+  rcases D_mulN hl hp with h1 | h1 <;> rcases D_mulN hl hp' with h2 | h2 <;>
     omega_using [o2, o4, o6, o7, o8, d1, d2, h1, h2, o10]
 
 /-- The next digit, `ZF` after the last window, `Y Fin`'s. -/
-theorem r13Inc_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i ≤ l.ND) (h13 : s.gpr .r13 = BitVec.ofNat 64 i) :
+theorem r13Inc_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i ≤ l.ND) (h13 : s.gpr .r13 = BitVec.ofNat 64 i) :
     WP isa (.block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.ND + 1)))]) s fun s' =>
       s'.gpr .r13 = BitVec.ofNat 64 (i + 1) ∧ s'.zf = some (decide (i + 1 = l.ND + 1)) ∧
       VG.Proof.MlKem.X86_64.Keep [.r13] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr := by
-  have hE : l.ND + 1 < 2 ^ 31 := by rcases hl with rfl | rfl | rfl <;> decide
+  have hE : l.ND + 1 < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r13] (Q := fun s' =>
     s'.gpr .r13 = BitVec.ofNat 64 (i + 1) ∧ s'.zf = some (decide (i + 1 = l.ND + 1)) ∧ s'.mem = s.mem ∧
       s'.mxcsr = s.mxcsr) (by
@@ -76,12 +76,12 @@ theorem r13Inc_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i ≤ l.ND) (h13 : 
     fun s' ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, k, c, d⟩
 
 theorem ExpSt.congrE {m : Mem} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E E' : Nat → Nat}
-    (h : ExpSt l m B M k x Q E) (e : ∀ p < 2, E p = E' p) : ExpSt l m B M k x Q E' :=
+    (h : ExpSt l m B M k x Q E) (e : ∀ p < l.nl, E p = E' p) : ExpSt l m B M k x Q E' :=
   ⟨h.ar, h.tab, h.y, fun hq p hp => by rw [← e p hp]; exact h.yv hq p hp⟩
 
 /-- `m'` agrees with `m` but on `Y`, `X`, `S`, `V` and the table of each region. -/
 def OutE (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (B : Addr) (m m' : Mem) : Prop :=
-  ∀ a, (∀ p < 2, (ofs B a < l.D * p + l.oY ∨ l.D * p + l.oY + 2 * l.NB ≤ ofs B a) ∧
+  ∀ a, (∀ p < l.nl, (ofs B a < l.D * p + l.oY ∨ l.D * p + l.oY + 2 * l.NB ≤ ofs B a) ∧
     (ofs B a < l.D * p + l.oS ∨ l.D * p + l.oS + l.NB ≤ ofs B a) ∧
     (ofs B a < l.D * p + l.oV ∨ l.D * p + l.oV + 8 ≤ ofs B a) ∧
     (ofs B a < l.D * p + l.oTab ∨ l.D * p + l.oTab + l.T * l.NB ≤ ofs B a)) → m' a = m a
@@ -99,27 +99,27 @@ theorem OutE.ofConv {B : Addr} {m m' : Mem} (h : Out2 l B l.oY (l.oTab + l.T * l
     obtain ⟨h1, h2, -, h4⟩ := ha p hp
     omega_using [h1, h2, h4, o2, o4, o5]
 
-theorem OutE.word_at {B : Addr} {m m' : Mem} (h : OutE l B m m') {p c : Nat} (hp : p < 2)
+theorem OutE.word_at (hl : AmmOk l) {B : Addr} {m m' : Mem} (h : OutE l B m m') {p c : Nat} (hp : p < l.nl)
     (hY : c + 8 ≤ l.oY ∨ l.oY + 2 * l.NB ≤ c) (hS : c + 8 ≤ l.oS ∨ l.oS + l.NB ≤ c) (hV : c + 8 ≤ l.oV ∨ l.oV + 8 ≤ c)
     (hT : c + 8 ≤ l.oTab ∨ l.oTab + l.T * l.NB ≤ c) (hcD : c + 8 ≤ l.D) (hD : l.D + l.NB ≤ 2 ^ 20) :
     word m' B (l.D * p + c) = word m B (l.D * p + c) := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   refine (Mem.readW_congr fun i hi => (h _ fun p' hp' => ?_).symm).symm
-  rw [ofs_off B (by rcases D_mul (l := l) hp with h | h <;> omega_using [hcD, hD, hi, h])]
+  rw [ofs_off B (by rcases D_mulN hl hp with h | h <;> omega_using [hcD, hD, hi, h])]
   have : i < 8 := hi
-  rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;> omega_using [hY, hS, hV, hT,
+  rcases D_mulN hl hp with h1 | h1 <;> rcases D_mulN hl hp' with h2 | h2 <;> omega_using [hY, hS, hV, hT,
       this, h1, h2, hcD, o2, o4, o5, o8, o10]
 
-theorem Good.of_outE (hl : LayOk l) {m m' : Mem} {B : Addr} {M : Nat → Nat} {c p : Nat} (g : Good l m B M c p)
-    (hp : p < 2) (h : OutE l B m m')
+theorem Good.of_outE (hl : AmmOk l) {m m' : Mem} {B : Addr} {M : Nat → Nat} {c p : Nat} (g : Good l m B M c p)
+    (hp : p < l.nl) (h : OutE l B m m')
     (hY : c + l.NB ≤ l.oY ∨ l.oY + 2 * l.NB ≤ c) (hS : c + l.NB ≤ l.oS ∨ l.oS + l.NB ≤ c)
     (hV : c + l.NB ≤ l.oV ∨ l.oV + 8 ≤ c) (hT : c + l.NB ≤ l.oTab ∨ l.oTab + l.T * l.NB ≤ c)
     (hcD : c + l.NB ≤ l.D) :
     Good l m' B M c p ∧ val52 l m' B (l.D * p + c) = val52 l m B (l.D * p + c) := by
   have e : ∀ j < l.L, limb l m' B (l.D * p + c) j = limb l m B (l.D * p + c) j := fun j hj => by
-    have := off_lt hl hj
+    have := off_ltN hl hj
     show (word m' B _).toNat = (word m B _).toNat
-    rw [Nat.add_assoc, h.word_at hp (by omega_using [hY, this]) (by omega_using [hS, this]) (by omega_using [hV, this])
+    rw [Nat.add_assoc, h.word_at hl hp (by omega_using [hY, this]) (by omega_using [hS, this]) (by omega_using [hV, this])
         (by omega_using [hT, this]) (by omega_using [hcD, this]) hl.D_bounds.2]
   exact ⟨g.of_limbs e, val52_of_limbs e⟩
 
@@ -141,15 +141,15 @@ def digBody (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prog isa :=
     ([.block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.ND + 1)))]] : List (Prog isa)))
 
 /-- Digit `i` of both exponents. -/
-theorem digIter_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {e : Nat → Nat} {i : Nat}
-    (hi : i < l.ND) (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * l.D))
-    (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
-    (hd : ∀ p < 2, ∀ i < l.ND, dig l t₀.mem B p i = digit l (e p) i) (h : DigInv l t₀ B M k x Q e i t) :
+theorem digIter_ok (hl : AmmOk l) {t₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {e : Nat → Nat} {i : Nat}
+    (hi : i < l.ND) (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (l.nl * l.D))
+    (hR : ∀ p < l.nl, Nat.Coprime (2 ^ (52 * l.S)) (M p))
+    (hd : ∀ p < l.nl, ∀ i < l.ND, dig l t₀.mem B p i = digit l (e p) i) (h : DigInv l t₀ B M k x Q e i t) :
     WP isa (digBody l) t fun t' => DigInv l t₀ B M k x Q e (i + 1) t' ∧ t'.zf = some false := by
   have hBt : t.gpr .rbx = B := by
     rw [h.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)]; exact hB
-  have hdt : ∀ p < 2, dig l t.mem B p i = digit l (e p) i := fun p hp => by
+  have hdt : ∀ p < l.nl, dig l t.mem B p i = digit l (e p) i := fun p hp => by
     rw [h.frame.dig hl hp hi]; exact hd p hp i hi
   refine wp_seqs_app (by simp [window]) (by simp)
     (WP.mono (window_ok hl hi h.r13 hBt (hs.congr h.wr) hR h.st fun p hp => by rw [hdt p hp]; exact digit_lt hl _ _)
@@ -169,7 +169,7 @@ theorem digIter_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → N
 /-- What the loop over the digits leaves, from `t₀`: `Y ≡ x^e Fin`. -/
 structure FinOut (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (t₀ : State) (B : Addr) (M x : Nat → Nat) (Q : Prop) (e : Nat → Nat)
     (t : State) : Prop where
-  y : ∀ p < 2, Good l t.mem B M l.oY p ∧ (Q → val52 l t.mem B (l.D * p + l.oY) % M p =
+  y : ∀ p < l.nl, Good l t.mem B M l.oY p ∧ (Q → val52 l t.mem B (l.D * p + l.oY) % M p =
     x p ^ e p * val52 l t₀.mem B (l.D * p + l.oFin) % M p)
   frame : OutW l B t₀.mem t.mem
   gpr : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
@@ -178,7 +178,7 @@ structure FinOut (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (t₀ : State) (B : Addr) 
   wr : t.wr = t₀.wr
   mxcsr : t.mxcsr = t₀.mxcsr
 
-theorem OutW.fin (hl : LayOk l) {B : Addr} {m m' : Mem} (h : OutW l B m m') {M : Nat → Nat} {p : Nat} (hp : p < 2)
+theorem OutW.fin (hl : AmmOk l) {B : Addr} {m m' : Mem} (h : OutW l B m m') {M : Nat → Nat} {p : Nat} (hp : p < l.nl)
     (g : Good l m B M l.oFin p) :
     Good l m' B M l.oFin p ∧ val52 l m' B (l.D * p + l.oFin) = val52 l m B (l.D * p + l.oFin) := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
@@ -186,15 +186,15 @@ theorem OutW.fin (hl : LayOk l) {B : Addr} {m m' : Mem} (h : OutW l B m m') {M :
     (.inr (by omega_using [o8, o9])) (.inr (by omega_using [o5, o9])) (by omega_using [o9, o10])
 
 /-- After the last digit: `Y := Y Fin / R`, `ZF`. -/
-theorem finIter_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {e : Nat → Nat}
-    (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
-    (gf : ∀ p < 2, Good l t₀.mem B M l.oFin p) (h : DigInv l t₀ B M k x Q e l.ND t) :
+theorem finIter_ok (hl : AmmOk l) {t₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {e : Nat → Nat}
+    (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (l.nl * l.D)) (hR : ∀ p < l.nl, Nat.Coprime (2 ^ (52 * l.S)) (M p))
+    (gf : ∀ p < l.nl, Good l t₀.mem B M l.oFin p) (h : DigInv l t₀ B M k x Q e l.ND t) :
     WP isa (digBody l) t fun t' => FinOut l t₀ B M x Q e t' ∧ t'.zf = some true := by
   have hBt : t.gpr .rbx = B := by
     rw [h.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)]; exact hB
-  have hst : Scr t B (2 * l.D) := hs.congr h.wr
-  have gft := fun p (hp : p < 2) => h.frame.fin hl hp (gf p hp)
+  have hst : Scr t B (l.nl * l.D) := hs.congr h.wr
+  have gft := fun p (hp : p < l.nl) => h.frame.fin hl hp (gf p hp)
   refine wp_seqs_app (by simp [window]) (by simp)
     (WP.mono (finWin_ok hl h.r13 hBt hst h.st.ar h.st.y (fun p hp => (gft p hp).1))
       fun t₁ ⟨v₁, f₁, g₁, rd₁, wr₁, x₁⟩ => ?_)
@@ -216,10 +216,10 @@ theorem finIter_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → N
   · rw [x₂, x₁, h.mxcsr]
 
 /-- The loop over the digits, from digit `ND + 1 - n` (digit `ND` the last window, `Y Fin`). -/
-theorem digLoop_ok (hl : LayOk l) {t₀ : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {e : Nat → Nat}
-    (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
-    (gf : ∀ p < 2, Good l t₀.mem B M l.oFin p)
-    (hd : ∀ p < 2, ∀ i < l.ND, dig l t₀.mem B p i = digit l (e p) i) :
+theorem digLoop_ok (hl : AmmOk l) {t₀ : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {e : Nat → Nat}
+    (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (l.nl * l.D)) (hR : ∀ p < l.nl, Nat.Coprime (2 ^ (52 * l.S)) (M p))
+    (gf : ∀ p < l.nl, Good l t₀.mem B M l.oFin p)
+    (hd : ∀ p < l.nl, ∀ i < l.ND, dig l t₀.mem B p i = digit l (e p) i) :
     ∀ n t, 1 ≤ n → n ≤ l.ND + 1 → DigInv l t₀ B M k x Q e (l.ND + 1 - n) t →
       WP isa (.loop (digBody l) .ne) t (FinOut l t₀ B M x Q e) := by
   intro n t h1 hE hI
@@ -236,15 +236,22 @@ theorem digLoop_ok (hl : LayOk l) {t₀ : State} {B : Addr} {M k x : Nat → Nat
     refine .inr ⟨by simp, n - 1, by omega_using [hn], by omega_using [hn], by omega_using [hE],
       by rw [show l.ND + 1 - (n - 1) = l.ND + 1 - n + 1 by omega_using [hE, hn]]; exact hI'⟩
 
-theorem k0_le (hl : LayOk l) : l.k0 ≤ l.ND := by rcases hl with rfl | rfl | rfl <;> decide
+theorem k0_le (hl : AmmOk l) : l.k0 ≤ l.ND := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
 
-/-- The exponentiations: `Y ≡ x^e R` for the exponents `e` below `2^(8 E)`,
-whose digits are at `oD`, from `Y ≡ R` and `X ≡ x R`. -/
-theorem expLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {e : Nat → Nat}
-    (hc : ConvPre l s B M k x Q) (gf : ∀ p < 2, Good l s.mem B M l.oFin p)
-    (he : ∀ p < 2, e p < 2 ^ (8 * l.E)) (hd : ∀ p < 2, ∀ i < l.ND, dig l s.mem B p i = digit l (e p) i) :
-    WP isa (VG.Impl.Bignum.X86_64.seqs (expLoop l)) s fun s' =>
-      (∀ p < 2, Good l s'.mem B M l.oY p ∧ (Q → val52 l s'.mem B (l.D * p + l.oY) % M p =
+/-- The exponentiations from digit `i₀`, which the block `st` puts in `r13`:
+`Y ≡ x^e R` for the exponents `e` whose digits before `i₀` are zero, whose
+digits are at `oD`, from `Y ≡ R` and `X ≡ x R`. -/
+theorem expLoopFrom_ok (hl : AmmOk l) {st : List Instr} {i₀ : Nat} {s : State} {B : Addr} {M k x : Nat → Nat}
+    {Q : Prop} {e : Nat → Nat}
+    (hc : ConvPre l s B M k x Q) (gf : ∀ p < l.nl, Good l s.mem B M l.oFin p)
+    (hi₀ : i₀ ≤ l.ND) (hz : ∀ p < l.nl, e p / l.T ^ (l.ND - i₀) = 0)
+    (hd : ∀ p < l.nl, ∀ i < l.ND, dig l s.mem B p i = digit l (e p) i)
+    (hst : ∀ t : State, t.gpr .rbx = B → t.rd = s.rd → t.wr = s.wr →
+      Out2 l B l.oY (l.oTab + l.T * l.NB - l.oY) s.mem t.mem →
+      WP isa (.block st) t fun u => u.mem = t.mem ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ u.mxcsr = t.mxcsr ∧
+        u.gpr .r13 = BitVec.ofNat 64 i₀ ∧ ∀ r, r ≠ .r13 → u.gpr r = t.gpr r) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs (expLoop l st)) s fun s' =>
+      (∀ p < l.nl, Good l s'.mem B M l.oY p ∧ (Q → val52 l s'.mem B (l.D * p + l.oY) % M p =
         x p ^ e p * val52 l s.mem B (l.D * p + l.oFin) % M p)) ∧ OutE l B s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         r ≠ .r13 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
@@ -253,46 +260,32 @@ theorem expLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {
   have hR := hc.hR
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   have hD := hl.D_bounds
-  have hk0 := k0_le hl
   refine wp_seqs_app (by simp [convTab]) (by simp)
     (WP.mono (convTab_ok hl hc) fun s₁ t₁ => ?_)
-  refine WP.seq ?_
-  rw [WP.block_cons_iff]
-  refine ⟨s₁.setReg32 .r13 (BitVec.ofNat 32 l.k0), rfl, WP.block_nil ?_⟩
-  generalize hu : s₁.setReg32 .r13 (BitVec.ofNat 32 l.k0) = u
-  have hk32 : l.k0 < 2 ^ 32 := by rcases hl with rfl | rfl | rfl <;> decide
-  have eu : u.mem = s₁.mem ∧ u.rd = s₁.rd ∧ u.wr = s₁.wr ∧ u.mxcsr = s₁.mxcsr ∧
-      u.gpr .r13 = BitVec.ofNat 64 l.k0 ∧ ∀ r, r ≠ .r13 → u.gpr r = s₁.gpr r := by
-    rw [← hu]
-    refine ⟨rfl, rfl, rfl, rfl, ?_, fun r hr => by rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ hr]⟩
-    rw [State.setReg32, RegUpd.gpr_setReg_self]
-    apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (a := l.k0) (b := 2 ^ 32) hk32,
-      Nat.mod_eq_of_lt (a := l.k0) (b := 2 ^ 64) (by omega_using [hk32])]
-  obtain ⟨mu, rdu, wru, xu, r13u, gu⟩ := eu
+  refine WP.seq (WP.mono (hst s₁ t₁.rbx t₁.rd t₁.wr t₁.frame) fun u ⟨mu, rdu, wru, xu, r13u, gu⟩ => ?_)
   have hBu : u.gpr .rbx = B := by rw [gu _ (by decide)]; exact t₁.rbx
-  have hsu : Scr u B (2 * l.D) := hs.congr (by rw [wru, t₁.wr])
-  have gfu : ∀ p < 2, Good l u.mem B M l.oFin p ∧
+  have hsu : Scr u B (l.nl * l.D) := hs.congr (by rw [wru, t₁.wr])
+  have gfu : ∀ p < l.nl, Good l u.mem B M l.oFin p ∧
       val52 l u.mem B (l.D * p + l.oFin) = val52 l s.mem B (l.D * p + l.oFin) := fun p hp =>
     (gf p hp).of_outE hl hp (by rw [mu]; exact OutE.ofConv t₁.frame) (.inr (by omega_using [o2, o9]))
       (.inr (by omega_using [o4, o9])) (.inr (by omega_using [o8, o9])) (.inr (by omega_using [o5, o9]))
       (by omega_using [o9, o10])
-  have hdu : ∀ p < 2, ∀ i < l.ND, dig l u.mem B p i = digit l (e p) i := fun p hp i hi => by
+  have hdu : ∀ p < l.nl, ∀ i < l.ND, dig l u.mem B p i = digit l (e p) i := fun p hp i hi => by
     rw [← hd p hp i hi, mu]
     obtain ⟨d1, d2⟩ := lay_dAt hl hi
     refine congrArg (fun b : BitVec 8 => nibOf l i b.toNat) (t₁.frame _ fun p' hp' => ?_)
-    have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
-    rw [ofs_off0 B (by have := hs.nowrap; omega_using [d2, o7, o10, hDp, this])]
-    rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;>
+    have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
+    have hle := lane_end hl hp
+    rw [ofs_off0 B (by have := hs.nowrap; omega_using [d2, o7, o10, hDp, this, hle])]
+    rcases D_mulN hl hp with h1 | h1 <;> rcases D_mulN hl hp' with h2 | h2 <;>
       omega_using [o2, o5, o6, o7, d1, d2, h2, o10, h1]
-  have st₀ : ExpSt l u.mem B M k x Q (fun p => e p / l.T ^ (l.ND - (l.ND + 1 - (l.ND + 1 - l.k0)))) := by
-    rw [mu, show l.ND + 1 - (l.ND + 1 - l.k0) = l.k0 by omega_using [hk0]]
+  have st₀ : ExpSt l u.mem B M k x Q (fun p => e p / l.T ^ (l.ND - (l.ND + 1 - (l.ND + 1 - i₀)))) := by
+    rw [mu, show l.ND + 1 - (l.ND + 1 - i₀) = i₀ by omega_using [hi₀]]
     refine ExpSt.congrE ⟨t₁.ar, t₁.tab, t₁.yg, t₁.yv⟩ fun p hp => ?_
-    rw [pref_k0 hl (he p hp)]
-  refine WP.mono (digLoop_ok hl hBu hsu hR (fun p hp => (gfu p hp).1) hdu (l.ND + 1 - l.k0) u (by omega_using [hk0])
+    rw [hz p hp]
+  refine WP.mono (digLoop_ok hl hBu hsu hR (fun p hp => (gfu p hp).1) hdu (l.ND + 1 - i₀) u (by omega_using [hi₀])
       (by omega_using [])
-    ⟨by rw [show l.ND + 1 - (l.ND + 1 - l.k0) = l.k0 by omega_using [hk0]]; exact r13u, st₀, OutW.refl _ _,
+    ⟨by rw [show l.ND + 1 - (l.ND + 1 - i₀) = i₀ by omega_using [hi₀]]; exact r13u, st₀, OutW.refl _ _,
       fun _ _ _ _ _ _ _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩) fun s' b' => ?_
   refine ⟨fun p hp => ⟨(b'.y p hp).1, fun hq => by rw [(b'.y p hp).2 hq, (gfu p hp).2]⟩, ?_,
     fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 => ?_, ?_, ?_, ?_⟩
@@ -302,5 +295,27 @@ theorem expLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {
   · rw [b'.rd, rdu, t₁.rd]
   · rw [b'.wr, wru, t₁.wr]
   · rw [b'.mxcsr, xu, t₁.mxcsr]
+
+/-- The exponentiations: `Y ≡ x^e R` for the exponents `e` below `2^(8 E)`,
+whose digits are at `oD`, from `Y ≡ R` and `X ≡ x R`. -/
+theorem expLoop_ok (hl : AmmOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {e : Nat → Nat}
+    (hc : ConvPre l s B M k x Q) (gf : ∀ p < l.nl, Good l s.mem B M l.oFin p)
+    (he : ∀ p < l.nl, e p < 2 ^ (8 * l.E)) (hd : ∀ p < l.nl, ∀ i < l.ND, dig l s.mem B p i = digit l (e p) i) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs (expLoop l)) s fun s' =>
+      (∀ p < l.nl, Good l s'.mem B M l.oY p ∧ (Q → val52 l s'.mem B (l.D * p + l.oY) % M p =
+        x p ^ e p * val52 l s.mem B (l.D * p + l.oFin) % M p)) ∧ OutE l B s.mem s'.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
+        r ≠ .r13 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  have hk32 : l.k0 < 2 ^ 32 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  refine expLoopFrom_ok hl hc gf (k0_le hl) (fun p hp => pref_k0 hl (he p hp)) hd fun t _ _ _ _ => ?_
+  rw [WP.block_cons_iff]
+  refine ⟨t.setReg32 .r13 (BitVec.ofNat 32 l.k0), rfl, WP.block_nil ⟨rfl, rfl, rfl, rfl, ?_,
+    fun r hr => by rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ hr]⟩⟩
+  rw [State.setReg32, RegUpd.gpr_setReg_self]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (a := l.k0) (b := 2 ^ 32) hk32,
+    Nat.mod_eq_of_lt (a := l.k0) (b := 2 ^ 64) (by omega_using [hk32])]
 
 end VG.Proof.Bignum.X86_64.Ifma

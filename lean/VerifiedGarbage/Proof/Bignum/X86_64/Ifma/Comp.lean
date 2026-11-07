@@ -156,7 +156,7 @@ theorem headI_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a : Nat} {minv
   obtain ⟨hW1, hW2⟩ := W_bounds hl
   have h16 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
   subst ha
-  refine WP.mono (ifmaHead_ok hl ⟨hs, hdi, h.nh⟩ hlo hpq (by omega_using [haZ]) h.wsP h.wsQ h.qws) fun u ⟨me, di, k⟩ => ?_
+  refine WP.mono (ifmaHead_ok hl ⟨hs, hdi, h.nh⟩ hlo hpq (by omega_using [haZ, hl.nlD]) h.wsP h.wsQ h.qws) fun u ⟨me, di, k⟩ => ?_
   have o1 := writeW_outside s.mem B (d := op + 8 * sIfma) (off (off B oq) (slot l.W 8 + wsTab l.W))
     (by unfold sIfma sFn; omega_using [hpq, hn, h16, haZ])
   have o2 := writeW_outside (s.mem.writeW (off B (op + 8 * sIfma)) (off (off B oq) (slot l.W 8 + wsTab l.W))) B
@@ -269,17 +269,17 @@ theorem ifmaA_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a : Nat} {minv
   -- `p`'s region.
   refine wp_seqs_append (by simp [region, k1, copyArr]) (by simp) (WP.mono
     (region_ok hl (p := 0) (SubCtx.mk' (hs.congr k₁.2.2) m₁.nh m₁.pws d₁ hlo (by have := tabBytes_le_wsTab l.W; omega_using [hpq, ha, haZ, this])) m₁.pia
-        (by omega_using [hpq, ha]) haZ
-      (by decide) m₁.pn (by rw [hYp₁]; exact hYp) (by decide) (by decide) m₁.dp m₁.pl
+        (by omega_using [hpq, ha]) (by rw [hl.nlD]; exact haZ)
+      (by rw [hl.nl]; decide) m₁.pn (by rw [hYp₁]; exact hYp) (by decide) (by decide) m₁.dp m₁.pl
       (hep.congr (InScr.of_frm f₁ hZ₁) k₁.2.1 k₁.2.2) hLp1 hLp2) fun u₂ ⟨rp, f₂, w₂, d₂, k₂⟩ => ?_)
   have f₂' := f₂.widen (regFr_ifmaR hl (oq := oq) (.inl rfl) (by decide))
-  have m₂ := m₁.of_frm hl f₂' hlo hpq (by omega_using [ha]) (by omega_using [haZ, hn])
+  have m₂ := m₁.of_frm hl f₂' hlo hpq (by omega_using [ha]) (by omega_using [haZ, hl.nlD, hn])
   have F₂ : Frm B ([(op + 8 * sIfma, 8), (oq + 8 * sIfma, 8)] ++ ifmaR l op oq a) s.mem u₂.mem :=
     (f₁.mono fun r hr => List.mem_append_left _ hr).trans (f₂'.mono fun r hr => List.mem_append_right _ hr)
   have hZF : ∀ r ∈ [(op + 8 * sIfma, 8), (oq + 8 * sIfma, 8)] ++ ifmaR l op oq a, r.1 + r.2 ≤ Z := fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · exact hZ₁ r hr
-    · have := ifmaR_le hpq (by omega_using [ha]) r hr; omega_using [haZ, this]
+    · have := ifmaR_le hpq (by omega_using [ha]) r hr; omega_using [haZ, hl.nlD, this]
   -- To `q`'s workspace.
   refine wp_seqs_append (by simp) (by simp [region, k1, copyArr]) (WP.mono
     (swapWs_ok (o' := oq) (hs.congr (w₂.trans k₁.2.2)) d₂ m₂.pws.link m₂.wsQ (by decide) (by omega_using [hpq, ha, haZ, lC, hC0]))
@@ -298,7 +298,7 @@ theorem ifmaA_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a : Nat} {minv
   -- `q`'s region.
   refine WP.mono (region_ok hl (p := 1) (SubCtx.mk' (hs.congr k₁₃.2.2) m₂.nh m₂.qws d₃ (by omega_using [hlo, hpq])
       (by have := tabBytes_le_wsTab l.W; omega_using [ha, haZ, this])) m₂.qia
-    (by omega_using [ha]) haZ (by decide) m₂.qn (by rw [hq₃ _ (by decide) (by decide) (by decide) (by decide)]; exact hYq)
+    (by omega_using [ha]) (by rw [hl.nlD]; exact haZ) (by rw [hl.nl]; decide) m₂.qn (by rw [hq₃ _ (by decide) (by decide) (by decide) (by decide)]; exact hYq)
     (by decide) (by decide) m₂.dq m₂.ql (heq.congr (InScr.of_frm F₂ hZF) k₁₃.2.1 k₁₃.2.2) hLq1 hLq2)
     fun t ⟨rq, f₄, w₄, d₄, k₄⟩ => ?_
   have f₄' := f₄.widen (regFr_ifmaR hl (op := op) (.inr rfl) (by decide))
@@ -306,8 +306,8 @@ theorem ifmaA_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a : Nat} {minv
   simp only [Nat.one_ne_zero, ↓reduceIte] at rq
   rw [hq₃ _ (by decide) (by decide) (by decide) (by decide),
     hq₃ _ (by decide) (by decide) (by decide) (by decide)] at rq
-  refine ⟨m₂.of_frm hl f₄' hlo hpq (by omega_using [ha]) (by omega_using [haZ, hn]),
-      rp.of_frm hl f₄ (fun r hr => ?_) (by omega_using [haZ, hn]), rq,
+  refine ⟨m₂.of_frm hl f₄' hlo hpq (by omega_using [ha]) (by omega_using [haZ, hl.nlD, hn]),
+      rp.of_frm hl f₄ (fun r hr => ?_) (by omega_using [haZ, hl.nlD, hn]), rq,
     F₂.trans (f₄'.mono fun r hr => List.mem_append_right _ hr), w₄.trans k₁₃.2.2, ?_, d₄,
     k₁₃.trans k₄ |>.mono (by decide)⟩
   · rcases List.mem_append.mp hr with hr | hr
@@ -339,12 +339,12 @@ theorem vecI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a wp : Nat} {mi
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   obtain ⟨hW1, hW2⟩ := W_bounds hl
-  have h01 : ∀ p, p < 2 → p = 0 ∨ p = 1 := fun p hp => by omega_using [hp]
+  have h01 : ∀ p, p < l.nl → p = 0 ∨ p = 1 := fun p hp => by have := hl.nl; omega_using [hp, this]
   have h16 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
   simp only [seqs]
   refine WP.seq (WP.mono (WP.keep [.rbx] (Q := fun u => u.gpr .rbx = off B a ∧ u.mem = t.mem ∧ u.mxcsr = t.mxcsr) (by
     have hl : InRegions (t.rd ++ t.wr) (off (off B oq) (8 * sIfma)) 8 := by
-      rw [off_off]; exact hs.ld (by unfold sIfma sFn; omega_using [haZ, hqa, h16])
+      rw [off_off]; exact hs.ld (by unfold sIfma sFn; omega_using [haZ, hl.nlD, hqa, h16])
     xrun [State.ea, hdr, hdi, hdrOff, hl, hm.qia]; and_intros; all_goals rfl) rfl) fun u ⟨⟨bx, me, mx⟩, k⟩ => ?_)
   have hmP := VG.Proof.Bignum.wv_lt t.mem (off B op) (slot l.W Public.aN) l.W
   have hmQ := VG.Proof.Bignum.wv_lt t.mem (off B oq) (slot l.W Public.aN) l.W
@@ -353,7 +353,7 @@ theorem vecI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a wp : Nat} {mi
   refine WP.mono (vecR_ok hl (M := two P Q) (K1 := two (2 ^ l.dbls * Yp % P) (2 ^ l.dbls * Yq % Q))
     (Xc := two Xcp Xcq) (Y := two Yp Yq) (Fin := two Yp 1) (x := fun _ => C) (mi := two mp mq) (Q := K)
     (e := two (Spec.Rsa.os2ip ebp) (Spec.Rsa.os2ip ebq))
-    (w := wp) (R := 2 ^ (64 * wp)) hwp rfl bx ((hs.congr k.2.2).sub (by omega_using [haZ]) (by omega_using []))
+    (w := wp) (R := 2 ^ (64 * wp)) hwp rfl bx ((hs.congr k.2.2).sub (by omega_using [haZ, hl.nlD]) (by omega_using []))
     (fun p hp => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.n; exact rq.n])
     (fun p hp => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.k1; exact rq.k1])
     (fun p hp => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.x; exact rq.x])
@@ -387,12 +387,12 @@ theorem vecI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a wp : Nat} {mi
       rcases h01 p hp with rfl | rfl <;> [exact lt8 hLp; exact lt8 hLq])
     (fun p hp i hi => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.d i hi; exact rq.d i hi]))
     fun t' ⟨hy, ho, hr, hrd, hwr, hmx⟩ => ?_
-  refine ⟨⟨(hy 0 (by decide)).1, fun hK => ?_⟩, ⟨(hy 1 (by decide)).1, fun hK => ?_⟩, by rw [← me]; exact ho,
+  refine ⟨⟨(hy 0 (by rw [hl.nl]; decide)).1, fun hK => ?_⟩, ⟨(hy 1 (by rw [hl.nl]; decide)).1, fun hK => ?_⟩, by rw [← me]; rw [hl.nlD] at ho; exact ho,
     by rw [hr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide), k.gpr (by decide)], by rw [hrd, k.2.1],
     by rw [hwr, k.2.2], by rw [hmx, mx], ⟨fun r hrm => ?_, by rw [hrd, k.2.1], by rw [hwr, k.2.2]⟩⟩
-  · exact (hy 0 (by decide)).2 hK
-  · exact (hy 1 (by decide)).2 hK
+  · exact (hy 0 (by rw [hl.nl]; decide)).2 hK
+  · exact (hy 1 (by rw [hl.nl]; decide)).2 hK
   · have hn : ∀ r', r' ∈ mmRegs → r ≠ r' := fun r' h' h => hrm (h ▸ h')
     rw [hr r (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide))
       (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide))
@@ -460,8 +460,8 @@ theorem resI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a : Nat} {minv 
   have hY0 := hdr_lt_slot l.W Public.aY (show 31 < 32 by decide)
   -- `q`'s result.
   refine wp_seqs_append (by simp [result]) (by simp) (WP.mono (result_ok hl (p := 1) hs hdi hm.qws.hdr hm.qia
-    (by omega_using [hqa]) haZ (by decide) hm.qn gq.lt gq.v) fun t₁ ⟨vq, f₁, d₁, k₁⟩ => ?_)
-  have m₁ := hm.of_frm hl (f₁.mono (resSh_ifmaR op oq a (.inr rfl))) hlo hpq hqa (by omega_using [haZ, hn])
+    (by omega_using [hqa]) (by rw [hl.nlD]; exact haZ) (by rw [hl.nl]; decide) hm.qn gq.lt gq.v) fun t₁ ⟨vq, f₁, d₁, k₁⟩ => ?_)
+  have m₁ := hm.of_frm hl (f₁.mono (resSh_ifmaR op oq a (.inr rfl))) hlo hpq hqa (by omega_using [haZ, hl.nlD, hn])
   have hs₁ := hs.congr k₁.2.2
   -- To `p`'s workspace.
   refine wp_seqs_append (by simp) (by simp [result]) (WP.mono (swapWs_ok (o' := op) hs₁ (d₁.trans hdi)
@@ -469,12 +469,12 @@ theorem resI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a : Nat} {minv 
   rw [← me₂] at m₁ vq
   have gp₂ := goodY_below hl gp (show Frm B _ t.mem t₂.mem by rw [me₂]; exact f₁)
       (fun r hr => by have := resSh_lt oq r hr; omega_using [hqa, this])
-    (by decide) (by omega_using [haZ, hn])
+    (by decide) (by omega_using [haZ, hl.nlD, hn])
   have hs₂ := hs₁.congr k₂.2.2
   -- `p`'s result.
   refine wp_seqs_append (by simp [result]) (by simp) (WP.mono (result_ok hl (p := 0) hs₂ d₂ m₁.pws.hdr m₁.pia
-    (by omega_using [hpq, hqa]) haZ (by decide) m₁.pn gp₂.1.lt gp₂.1.v) fun t₃ ⟨vp, f₃, d₃, k₃⟩ => ?_)
-  have m₃ := m₁.of_frm hl (f₃.mono (resSh_ifmaR op oq a (.inl rfl))) hlo hpq hqa (by omega_using [haZ, hn])
+    (by omega_using [hpq, hqa]) (by rw [hl.nlD]; exact haZ) (by rw [hl.nl]; decide) m₁.pn gp₂.1.lt gp₂.1.v) fun t₃ ⟨vp, f₃, d₃, k₃⟩ => ?_)
+  have m₃ := m₁.of_frm hl (f₃.mono (resSh_ifmaR op oq a (.inl rfl))) hlo hpq hqa (by omega_using [haZ, hl.nlD, hn])
   -- Back to `n`'s workspace.
   refine WP.mono (leaveB_ok (hs₂.congr k₃.2.2) (d₃.trans d₂) m₃.pws.link (by omega_using [hpq, hqa, haZ, lY, hY0]))
       fun t' ⟨d₄, me₄, k₄⟩ => ?_
@@ -544,11 +544,11 @@ theorem ifma_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a wp : Nat} {mi
     (by omega_using [ha]) rp rq hwp hPo hQo hYp hYq hXp hXq vxp vxq vyp vyq hLp2 hLq2)
     fun v ⟨⟨gp, vp⟩, ⟨gq, vq⟩, ov, dv, rdv, wrv, mxv, kv⟩ => ?_)
   have fv : Frm B (ifmaR l op oq a) u.mem v.mem :=
-    (Frm.of_outside_off ov (by have := hs.nowrap; omega_using [haZ, this])
-        (by have := hs.nowrap; omega_using [haZ, this])).widen fun r hr =>
+    (Frm.of_outside_off ov (by have := hs.nowrap; omega_using [haZ, hl.nlD, this])
+        (by have := hs.nowrap; omega_using [haZ, hl.nlD, this])).widen fun r hr =>
       ⟨(a, 2 * l.D + 8), List.mem_append_right _ (List.mem_singleton_self _),
         by rw [List.mem_singleton.mp hr]; simp only; omega_using []⟩
-  have mv := mu.of_frm hl fv hlo hpq (by omega_using [ha]) (by have := hs.nowrap; omega_using [haZ, this])
+  have mv := mu.of_frm hl fv hlo hpq (by omega_using [ha]) (by have := hs.nowrap; omega_using [haZ, hl.nlD, this])
   refine WP.mono_mx (resI_mx hl) (resI_ok hl ((hs.congr wu).congr wrv) (dv.trans du) mv hlo hpq (by omega_using [ha]) haZ gp gq)
     fun t ⟨mt, vqt, vpt, ft, dt, rdt, wrt, kt⟩ mxt => ?_
   have hQ0 : 0 < Q := by omega_using [hXq]

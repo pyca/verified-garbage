@@ -147,7 +147,7 @@ theorem k0St_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT 
   obtain ⟨o1, -⟩ := lay_offs l
   obtain ⟨hDb1, -⟩ := hl.D_bounds
   have := hl.D_ge
-  exact WP.mono (k0r_ok hl c.scr c.rdi c.hdr c.ia hoa haZ hp h12) fun t ⟨_, f, r11, k⟩ =>
+  exact WP.mono (k0r_ok hl c.scr c.rdi c.hdr c.ia hoa (by rw [hl.nlD]; exact haZ) (by rw [hl.nl]; exact hp) h12) fun t ⟨_, f, r11, k⟩ =>
     ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, hDp, o1, this]) k, r11⟩
 
 theorem k0St_ct (p : Nat) {sp sl : Nat} (hT : TOk [.rdi, .r11] (.block (k0Tail l p))) :
@@ -175,8 +175,8 @@ theorem eZero_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
   obtain ⟨⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩, h11⟩ := h
   have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
   obtain ⟨-, -, -, -, -, o6, o7, o8, o9, o10⟩ := lay_offs l
-  obtain ⟨-, -, pX, -, -, -⟩ := lay_P hl
-  exact WP.mono (eZr_ok hl c.scr haZ hp h11) fun t ⟨_, f, ra, k⟩ =>
+  obtain ⟨-, -, pX, -, -, -⟩ := lay_P hl.amm
+  exact WP.mono (eZr_ok hl c.scr (by rw [hl.nlD]; exact haZ) (by rw [hl.nl]; exact hp) h11) fun t ⟨_, f, ra, k⟩ =>
     ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, hDp, o6, o7, o10, pX]) k,
       (k.gpr (by decide)).trans h11, ra⟩
 
@@ -194,7 +194,7 @@ theorem finOne_rt (hl : LayOk l) {sp sl : Nat} {q : RegPub} {s : State}
   have hRT := h.1
   obtain ⟨⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩, h11, ha⟩ := h
   obtain ⟨-, -, -, -, -, -, -, -, o9, o10⟩ := lay_offs l
-  exact WP.mono (finr_ok hl c.scr haZ h11 ha) fun t ⟨_, f, k⟩ =>
+  exact WP.mono (finr_ok hl (by rw [hl.nl]) c.scr (by rw [hl.nlD]; exact haZ) h11 ha) fun t ⟨_, f, k⟩ =>
     ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, o9, o10]) k,
       (k.gpr (by decide)).trans h11⟩
 
@@ -222,7 +222,7 @@ theorem eBlk_ok (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
   have hn := c.scr.nowrap
   have h8 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
   obtain ⟨-, -, -, -, -, o6, o7, -, -, o10⟩ := lay_offs l
-  obtain ⟨pE, pP, pX, -, -, -⟩ := lay_P hl
+  obtain ⟨pE, pP, pX, -, -, -⟩ := lay_P hl.amm
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   have hlv₁ : s.mem.readW (off (off q.B q.o) (8 * sLink)) 64 = q.B := c.lk
   have hp' : InRegions (s.rd ++ s.wr) (off q.B (8 * sp)) 8 := c.scr.ld (by omega_using [hoa, haZ, hsp, h8])
@@ -295,8 +295,8 @@ theorem eCopy_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
   obtain ⟨⟨⟨hoa, haZ, hp, hsp, hsl, hL1, hL2⟩, mx, eb, c, hl'⟩, h11⟩ := h
   have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
   obtain ⟨-, -, -, -, -, o6, o7, -, -, o10⟩ := lay_offs l
-  obtain ⟨pE, pP, pX, -, -, -⟩ := lay_P hl
-  exact WP.mono (eCr_ok hl c.scr c.rdi c.lk hoa haZ hp hsp hsl c.pv c.lv c.src rfl (by omega_using [hl', hL1])
+  obtain ⟨pE, pP, pX, -, -, -⟩ := lay_P hl.amm
+  exact WP.mono (eCr_ok hl c.scr c.rdi c.lk hoa (by rw [hl.nlD]; exact haZ) (by rw [hl.nl]; exact hp) hsp hsl c.pv c.lv c.src rfl (by omega_using [hl', hL1])
       (by omega_using [hl', hL2]) h11) fun t ⟨_, f, k⟩ =>
     hRT.of_frm f (fun r hr => by
       rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, hDp, o6, o7, o10, pE, pP, pX, hl', hL2]) k
@@ -423,7 +423,7 @@ theorem k1_chain (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : Re
       rcases hr with rfl | rfl | rfl | rfl <;> simp only [sCtr, sIfma, sFn] at * <;> omega_arith)
       (by unfold sIfma sFn; omega_using [])]
     exact hia
-  exact ⟨hok, mx, eb, TCtx.of_regionA hl hc hoa haZ hp hsp hsl hpv hlv he
+  exact ⟨hok, mx, eb, TCtx.of_regionA hl hc hoa (by rw [hl.nlD]; exact haZ) (by rw [hl.nl]; exact hp) hsp hsl hpv hlv he
     (fB.mono fun r hr => List.mem_append_left _ hr) kk.2.2 kk.2.1 ((kk.gpr (by decide)).trans hc.rdi) hH hia', hl'⟩
 
 theorem k1_ct (hl : LayOk l) (hR : RegT l) {p sp sl : Nat} {rest : List (Prog isa)} (hr0 : rest ≠ [])
@@ -470,7 +470,7 @@ theorem arrLoop_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : 
   have hRT := h
   obtain ⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩ := h
   have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
-  exact WP.mono (arrLoop_ok hl c.scr c.rdi c.hdr c.ia hoa haZ hp) fun t ⟨f, _, _, k, h12, _⟩ =>
+  exact WP.mono (arrLoop_ok hl c.scr c.rdi c.hdr c.ia hoa (by rw [hl.nlD]; exact haZ) (by rw [hl.nl]; exact hp)) fun t ⟨f, _, _, k, h12, _⟩ =>
     ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, hDp]) k, h12⟩
 
 /-- `arrLoop` is constant time. -/
@@ -498,7 +498,7 @@ theorem arrLoop_ct (hl : LayOk l) {p sp sl : Nat} (hsel : TOk [.rdi, .r8] (arrSe
       rcases hr with rfl | rfl
       · exact h.2.1.rdi
       · exact h.2.2
-    · have hj := arrs_ok hl a.2 h.1
+    · have hj := arrs_ok hl.amm a.2 h.1
       have hp := h.2.1.1.2.2.1
       have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
       refine sel a s h.1 h.2 fun s' hRT h8 => WP.mono (arrPtrs_ok hj.1 (by omega_using [hj, hD, hDp]) hRT)
@@ -516,13 +516,13 @@ theorem arrLoop_ct (hl : LayOk l) {p sp sl : Nat} (hsel : TOk [.rdi, .r8] (arrSe
       fun q s h => WP.mono (WP.keep [.r8] (Q := fun t => t.gpr .r8 = BitVec.ofNat 64 5 ∧ t.mem = s.mem) (by xrun) rfl)
         fun t ⟨⟨h8, hm⟩, k⟩ => ⟨by decide, h.of_frm (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k, h8⟩)
       hloop
-  have hj := arrs_ok hl i hi
+  have hj := arrs_ok hl.amm i hi
   refine WP.seq (sel (q, i) s hi h fun s' hRT h8 => ?_)
   replace hRT : RT l p sp sl q s' := hRT
   have hRT' := hRT
   obtain ⟨⟨hoa, haZ, hp, -⟩, mx, eb, c', -⟩ := hRT'
   have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
-  have A := arr52r_ok hl c'.scr c'.rdi c'.hdr c'.ia hoa haZ hp hj.2 hj.1
+  have A := arr52r_ok hl c'.scr c'.rdi c'.hdr c'.ia hoa (by rw [hl.nlD]; exact haZ) (by rw [hl.nl]; exact hp) hj.2 hj.1
   rw [arr52, WP.block_append_iff] at A
   refine WP.mono A fun u hu => ?_
   rw [WP.block_append_iff]
@@ -549,7 +549,7 @@ theorem region0_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
   have hR := regT hl
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   have hoM : oM = 0 := rfl
-  have := NB_le hl
+  have := NB_le hl.amm
   by_cases hw : l.w = 4
   · rw [show region l 0 sp sl = k1 l ++ (arrLoop l 0 ::
       .block (k0St l 0) :: .block (eZero l) :: eCopy l sp sl) by unfold region; simp only [hw, ↓reduceIte]; rfl]
@@ -580,7 +580,7 @@ theorem region1_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
   have hR := regT hl
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   have hoM : oM = 0 := rfl
-  have := NB_le hl
+  have := NB_le hl.amm
   by_cases hw : l.w = 4
   · rw [show region l 1 sp sl = k1 l ++ (arrLoop l 1 ::
       .block (k0St l 1) :: .block (eZero l) :: .block (finOne l) :: eCopy l sp sl) by

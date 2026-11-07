@@ -280,7 +280,7 @@ theorem result_ct (hl : LayOk l) (p : Nat) (hT : TOk [.rdi] (.block (resLd l p))
       · rw [show s.mem.readW (off (off q.B q.o) (8 * sIfma)) 64 = off q.B q.a from hia]
       · exact hH.harr _ (by decide)) rfl) fun t ⟨⟨h11, h8'⟩, k⟩ => ⟨(k.gpr (by decide)).trans hdi, h11, h8'⟩
   · rintro q s ⟨mx, hs, hdi, hH, hia, hoa, haZ, hp, hL, hV⟩
-    have := resBlock_ok hl hs hdi hH hia hoa haZ hp hL hV
+    have := resBlock_ok hl hs hdi hH hia hoa (by rw [hl.nlD]; exact haZ) (by rw [hl.nl]; exact hp) hL hV
     simp only [resLd, resMid, List.append_assoc] at this ⊢
     exact WP.mono this fun t ⟨_, _, r8, bx, r10, r12, si, _⟩ => ⟨r8, bx, r10, r12, si⟩
 
@@ -402,8 +402,8 @@ theorem ifma_chain (hl : LayOk l) {p : IfPub} {s : State} (h : IfPre l p s) : F0
   have hep₁ := hep.congr (InScr.of_frm f₁ hZ₁) k₁.2.1 k₁.2.2
   -- `p`'s region.
   dsimp only [F1]
-  refine ⟨regPre_of (by omega_arith) haZ (by decide) (by decide) (by decide) hLp1 hLp2 hc₁ m₁.pia m₁.pn
-    (by rw [hYp₁]; exact hYp) m₁.dp m₁.pl hep₁, WP.mono (region_ok hl (p := 0) hc₁ m₁.pia (by omega_arith) haZ (by decide)
+  refine ⟨regPre_of (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) (by decide) (by decide) hLp1 hLp2 hc₁ m₁.pia m₁.pn
+    (by rw [hYp₁]; exact hYp) m₁.dp m₁.pl hep₁, WP.mono (region_ok hl (p := 0) hc₁ m₁.pia (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide)
       m₁.pn (by rw [hYp₁]; exact hYp) (by decide) (by decide) m₁.dp m₁.pl hep₁ hLp1 hLp2)
     fun u₂ ⟨rp, f₂, w₂, d₂, k₂⟩ => ?_⟩
   have f₂' := f₂.widen (regFr_ifmaR hl (oq := oq) (.inl rfl) (by decide))
@@ -438,8 +438,8 @@ theorem ifma_chain (hl : LayOk l) {p : IfPub} {s : State} (h : IfPre l p s) : F0
     rw [hq₃ _ (by decide) (by decide) (by decide) (by decide)]; exact hYq
   -- `q`'s region.
   dsimp only [F3]
-  refine ⟨regPre_of (by omega_arith) haZ (by decide) (by decide) (by decide) hLq1 hLq2 hc₃ m₂.qia m₂.qn hYq₃ m₂.dq m₂.ql
-    heq₃, WP.mono (region_ok hl (p := 1) hc₃ m₂.qia (by omega_arith) haZ (by decide) m₂.qn hYq₃ (by decide) (by decide) m₂.dq
+  refine ⟨regPre_of (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) (by decide) (by decide) hLq1 hLq2 hc₃ m₂.qia m₂.qn hYq₃ m₂.dq m₂.ql
+    heq₃, WP.mono (region_ok hl (p := 1) hc₃ m₂.qia (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) m₂.qn hYq₃ (by decide) (by decide) m₂.dq
       m₂.ql heq₃ hLq1 hLq2) fun t ⟨rq, f₄, w₄, d₄, k₄⟩ => ?_⟩
   have f₄' := f₄.widen (regFr_ifmaR hl (op := op) (.inr rfl) (by decide))
   rw [ite_eq_left_of_eq_true _ _ (eq_true (rfl : (0 : Nat) = 0)), hYp₁, hCp₁, ← me₃] at rp
@@ -466,8 +466,8 @@ theorem ifma_chain (hl : LayOk l) {p : IfPub} {s : State} (h : IfPre l p s) : F0
   have hdv : v.gpr .rdi = off B oq := dv.trans d₄
   -- `q`'s result.
   dsimp only [F5]
-  refine ⟨resPre_of hsv hdv mv.qws.hdr mv.qia (by omega_arith) haZ (by decide) gq.lt (by rw [mv.qn]; exact gq.v),
-    WP.mono (result_ok hl (p := 1) hsv hdv mv.qws.hdr mv.qia (by omega_arith) haZ (by decide) mv.qn gq.lt gq.v)
+  refine ⟨resPre_of hsv hdv mv.qws.hdr mv.qia (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) gq.lt (by rw [mv.qn]; exact gq.v),
+    WP.mono (result_ok hl (p := 1) hsv hdv mv.qws.hdr mv.qia (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) mv.qn gq.lt gq.v)
     fun t₁ ⟨_, f₁', d₁', k₁'⟩ => ?_⟩
   have m₁' := mv.of_frm hl (f₁'.mono (resSh_ifmaR op oq _ (.inr rfl))) hlo hpq (by omega_arith) (by omega_arith)
   have hs₁ := hsv.congr k₁'.2.2
@@ -482,9 +482,9 @@ theorem ifma_chain (hl : LayOk l) {p : IfPub} {s : State} (h : IfPre l p s) : F0
   have hs₂' := hs₁.congr k₂'.2.2
   -- `p`'s result.
   dsimp only [F7]
-  exact ⟨resPre_of hs₂' d₂' m₁'.pws.hdr m₁'.pia (by omega_arith) haZ (by decide) gp₂.1.lt
+  exact ⟨resPre_of hs₂' d₂' m₁'.pws.hdr m₁'.pia (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) gp₂.1.lt
       (by rw [m₁'.pn]; exact gp₂.1.v),
-    WP.mono (result_ok hl (p := 0) hs₂' d₂' m₁'.pws.hdr m₁'.pia (by omega_arith) haZ (by decide) m₁'.pn gp₂.1.lt gp₂.1.v)
+    WP.mono (result_ok hl (p := 0) hs₂' d₂' m₁'.pws.hdr m₁'.pia (by omega_arith) (by first | (rw [hl.nlD]; exact haZ) | exact haZ) (by first | (rw [hl.nl]; decide) | decide) m₁'.pn gp₂.1.lt gp₂.1.v)
       fun t₃ ⟨_, _, d₃', _⟩ => d₃'.trans d₂'⟩
 
 /-- `ifma` is constant time. -/

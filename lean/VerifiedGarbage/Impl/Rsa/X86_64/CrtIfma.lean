@@ -104,8 +104,8 @@ def oV : Nat := l.oK1 + l.NB
 def oFin : Nat := l.oV + 32
 /-- `q`'s region from `p`'s. -/
 def D : Nat := l.oFin + l.NB
-/-- The caller's MXCSR (its bits 15:0) and `0x1FBF`, after both regions. -/
-def oMx : Nat := 2 * l.D
+/-- The caller's MXCSR (its bits 15:0) and `0x1FBF`, after the regions. -/
+def oMx : Nat := l.nl * l.D
 /-- The doublings of `R_X mod X` that make `2^(104 S - 64 W) mod X`. -/
 def dbls : Nat := 104 * l.S - 128 * l.W
 
@@ -342,8 +342,8 @@ def to64 : List Instr :=
 /-! ## Before the vector code, in a prime's workspace (`rdi`) -/
 
 /-- `aT := 2^dbls [aY] mod X` (`[aY] = R_X mod X`, so `aT = 2^(104 S - 64 W) mod X`). -/
-def k1 : List (Prog isa) :=
-  copyArr aT aY ++ [.block [.mov32 .rcx (.imm (BitVec.ofNat 32 l.dbls))], doubles aN aAcc aTmp aT sCtr]
+def k1 (ctr : Nat := sCtr) : List (Prog isa) :=
+  copyArr aT aY ++ [.block [.mov32 .rcx (.imm (BitVec.ofNat 32 l.dbls))], doubles aN aAcc aTmp aT ctr]
 
 /-- `to52`'s arguments for array `j` and the limbs at offset `o` of region
 `p`: the array, the limbs, and `2⁵² - 1`. -/
@@ -418,8 +418,8 @@ def recode (p : Nat) : List (Prog isa) :=
 /-- A prime's region (`p` 0 or 1): the modulus, `2^(104 S - 64 W) mod X`,
 `x R_X` as `X`, `R_X` as `Y`, the last multiplier, `k₀`, the padded
 exponent and, with windows of more than 4 bits, its digits. -/
-def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
-  k1 l ++ [arrLoop l p] ++
+def region (p slotPtr slotLen : Nat) (ctr : Nat := sCtr) : List (Prog isa) :=
+  k1 l ctr ++ [arrLoop l p] ++
     [.block (k0St l p), .block (eZero l)] ++
     (if p = 0 then [] else [.block (finOne l)]) ++ eCopy l slotPtr slotLen ++ (if l.w = 4 then [] else recode l p)
 
@@ -440,9 +440,9 @@ def select (p : Nat) : List (Prog isa) :=
         .alu .cmp .rcx (.imm (BitVec.ofNat 32 l.T))] : List Instr))) .ne,
     .block ((List.range l.R).map fun k => .evStore (at_ .rbx (l.D * p + l.oS + 32 * k)) (vreg k))]
 
-/-- `[o] := [a]` (a number) in both regions. -/
+/-- `[o] := [a]` (a number) in every region. -/
 def copyN (o a : Nat) : List Instr :=
-  (List.range 2).flatMap fun p => (List.range l.R).flatMap fun k =>
+  (List.range l.nl).flatMap fun p => (List.range l.R).flatMap fun k =>
     [.evLoad (vreg 0) (at_ .rbx (l.D * p + a + 32 * k)), .evStore (at_ .rbx (l.D * p + o + 32 * k)) (vreg 0)]
 
 /-- The operands of entry `i < 2` (`r13 = oTab + NB i`) of `convTab`: `Y`
@@ -487,19 +487,21 @@ def nibSel (r : Reg) : List Instr :=
   [.mov .rcx (.reg r), .shift .shr .rcx 4, .alu .and r (.imm 15), .alu .xor .rcx (.reg r),
     .alu .and .rcx (.reg .rdx), .alu .xor r (.reg .rcx)]
 
+/-- The register of lane `p`'s digit: `rax`, then `rsi`. -/
+def dReg (p : Nat) : Reg := if p = 0 then .rax else .rsi
+
 /-- Digit `r13` of each prime into its `V`: with windows of 4 bits, a nibble
 of byte `r13 / 2` of the padded exponent (the high one for an even digit);
 otherwise the digit's byte at `oD`. -/
 def digLoad : List Instr :=
   if l.w = 4 then
     ([.mov .r8 (.reg .r13), .shift .shr .r8 1, .mov .rdx (.reg .r13), .alu .and .rdx (.imm 1),
-      .alu .sub .rdx (.imm 1),
-      .movzx8 .rax { base := .rbx, index := some .r8, disp := ((l.oE : Nat) : Int) },
-      .movzx8 .rsi { base := .rbx, index := some .r8, disp := ((l.D + l.oE : Nat) : Int) }] : List Instr) ++
-    nibSel .rax ++ ([.store (at_ .rbx l.oV) .rax] : List Instr) ++
-    nibSel .rsi ++ ([.store (at_ .rbx (l.D + l.oV)) .rsi] : List Instr)
+      .alu .sub .rdx (.imm 1)] : List Instr) ++
+    (List.range l.nl).map (fun p =>
+      .movzx8 (dReg p) { base := .rbx, index := some .r8, disp := ((l.D * p + l.oE : Nat) : Int) }) ++
+    (List.range l.nl).flatMap fun p => nibSel (dReg p) ++ [.store (at_ .rbx (l.D * p + l.oV)) (dReg p)]
   else
-    (List.range 2).flatMap fun p =>
+    (List.range l.nl).flatMap fun p =>
       [.movzx8 .rax { base := .rbx, index := some .r13, disp := ((l.D * p + l.oD : Nat) : Int) },
         .store (at_ .rbx (l.D * p + l.oV)) .rax]
 
@@ -511,7 +513,7 @@ multiplication `Y S`. -/
 def window : List (Prog isa) :=
   [.seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 l.ND))])
       (.ite .e (.block (copyN l l.oS l.oFin ++ [.mov32 .r15 (.imm 1)]))
-        (seqs ([.block (digLoad l)] ++ select l 0 ++ select l 1 ++
+        (seqs ([.block (digLoad l)] ++ (List.range l.nl).flatMap (select l) ++
           [.block [.mov32 .r15 (.imm (BitVec.ofNat 32 (l.w + 1)))]]))),
     .loop (.seq (.block [.alu .cmp .r15 (.imm 1)])
       (.seq (.ite .e (.block (winSetup l l.oS)) (.block (winSetup l l.oY)))
@@ -520,8 +522,8 @@ def window : List (Prog isa) :=
 /-- The exponentiations, a digit of each exponent (`r13`, from the first
 that holds a bit of it, `k0`) at a time, and after the last,
 `Y := Y Fin 2^(-52 S)` (`window`). -/
-def expLoop : List (Prog isa) :=
-  convTab l ++ [.block [.mov32 .r13 (.imm (BitVec.ofNat 32 l.k0))],
+def expLoop (start : List Instr := [.mov32 .r13 (.imm (BitVec.ofNat 32 l.k0))]) : List (Prog isa) :=
+  convTab l ++ [.block start,
     .loop (seqs (window l ++ [.block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.ND + 1)))]])) .ne]
 
 /-- Intel's MXCSR prologue and epilogue around `c` (see "MCDT" in
