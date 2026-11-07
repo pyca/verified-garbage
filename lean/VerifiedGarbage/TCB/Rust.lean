@@ -502,7 +502,7 @@ def featureDoc (doc : String) : List String → String
     feature{if fs.length == 1 then "" else "s"}."
 
 /-- The name of the constant of the bit of the CPU feature `f` in a
-`Features` (`src/cpu.rs`'s `feature` module): `f` in uppercase, with `_` for
+`Features` (`crates/verified-garbage-cpu/`'s `feature` module): `f` in uppercase, with `_` for
 each character that is not a letter or a digit (`sse4.1`'s is `SSE4_1`). -/
 def featureConst (f : String) : String :=
   f.toUpper.map fun c => if c.isAlphanum then c else '_'
@@ -680,11 +680,20 @@ first in it and `Sig.layoutDoc` at the end), and the CPU features it needs
 (`featureDoc`), and what the tables of functions it takes must be
 (`fnTablesDoc`). -/
 def fullDoc (a : Artifact) : String :=
+  fullDocWith a a.name a.stack a.written a.features []
+where
+  /-- `fullDoc a`, for a function named `name` whose calls and frames use
+  `stack` bytes of stack, which writes at most `written` of its arrays and
+  needs the CPU features `features`, with the paragraphs `notes` first
+  among those before its `# Safety` section: what a dispatcher of `a`'s
+  implementations documents (`dispatcher`). -/
+  fullDocWith (a : Artifact) (name : String) (stack : Nat) (written : List (String × Nat))
+      (features notes : List String) : String :=
   let A := a.target.abi
-  let items := Sig.layoutDoc a.target a.sig a.writeArgs a.stack ++ fnTablesDoc a
+  let items := Sig.layoutDoc a.target a.sig a.writeArgs stack ++ fnTablesDoc a
   featureDoc (prependSafety (insertNotes a.doc
-      (Sig.layoutNote a.target a.sig a.writeArgs ++ writtenDoc a.name a.written))
-    (Sig.validDoc A a.sig) ++ String.join (items.map ("\n* " ++ ·))) a.features
+      (notes ++ Sig.layoutNote a.target a.sig a.writeArgs ++ writtenDoc name written))
+    (Sig.validDoc A a.sig) ++ String.join (items.map ("\n* " ++ ·))) features
 
 /-- If the emitter adds anything to the documentation of `a` from its
 signature (`fullDoc`), `doc` ends with its `# Safety` section, which starts
@@ -1596,10 +1605,363 @@ def internalFile (h : Internal) (moduleOf : String → String) : String :=
   s!"pub(crate) unsafe extern \"{T.rustAbi}\" fn {h.name}() " ++ "{\n" ++
   asmOf T (bodyLines T h.lines) moduleOf "crate" ++ "}\n"
 
+/-! ## Dispatchers
+
+A function with several implementations (its baseline and its variants,
+each of which may need CPU features) gets a *dispatcher*, an ordinary Rust
+function that runs the best of them the CPU supports, so that the Rust code
+calling it never names a variant or its features. The implementations of a
+function are the artifacts of a module with the same signature and
+documentation (`Artifact.sig`, `Artifact.doc`: `Api.artifact` gives every
+artifact of an `Api` the `Api`'s) whose names are that of one of them, the
+*base*, followed by `_<suffix>` (`groupsOf`). Whichever of them it calls, the
+dispatcher keeps the promise of their common documentation, which is
+therefore its own, but for what depends on the implementation: the stack
+its calls and frames use (it documents the largest, `Sig.layoutDoc`, whose
+requirements then hold for each) and how much of its arrays it writes (the
+largest bound of each array that every implementation bounds,
+`Artifact.written`). It needs no CPU feature: it calls an implementation
+that needs features only if the CPU has them, as the generated condition
+checks with `verified_garbage_cpu::detected()`, which detects the features
+the CPU and operating system support (`crates/verified-garbage-cpu/`), of
+which a `Features` constant names the bits (`featuresConst`):
+
+```rust
+/// <the base's documentation, without its CPU features>
+#[inline]
+pub unsafe fn <base>_auto(<the signature>) {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::<module>::<NAME>_FEATURES) {
+        // SAFETY: …
+        return unsafe { crate::<module>::<name>(<the arguments>) };
+    }
+    …
+    // SAFETY: the caller's obligations.
+    unsafe { crate::<module>::<base>(<the arguments>) }
+}
+```
+
+The dispatchers of a module's functions are in a file of their own,
+`dispatch/<module>.rs` of the crate's `codeDir` (`dispatchFile`), declared by
+`dispatch/mod.rs` (`dispatchMod`), so that the Rust code calls
+`crate::arch::dispatch::<module>::<base>_auto`. The module's own file is as
+it would be without them: a change to one implementation changes the
+dispatchers' file only where it changes what a dispatcher calls.
+
+Which implementation is best is a matter of speed, never of correctness or
+safety: each is proven against the contract that their common documentation
+states, and each is called only on a CPU with its features. So the ranking
+(`Rank`) is not trusted, and comes from outside the trusted base
+(`VerifiedGarbage/Dispatch.lean`). The dispatcher tries the implementations
+in the order it gives, each where the CPU also has the ranking's `extra`
+features for it and, if the ranking names a `vendor`, only where the
+compilation target's `target_vendor` is that, or where `VG_CPU_FEATURES`
+names every feature the implementation needs
+(`verified_garbage_cpu::requested`, for testing it elsewhere); an
+implementation whose `cfg` (`Printer.featureCfg`) the build lacks is not
+compiled, and its test is not either. An implementation that needs no
+feature is chosen only where detection reports some feature (as it does on
+every CPU but where `VG_CPU_FEATURES` is `none`), so that the tests run the
+base everywhere with `VG_CPU_FEATURES=none` (AArch64's `_neon` code needs
+none: AdvSIMD is part of its baseline). It falls back on the base, which needs
+no feature. An implementation of a function generic over several interfaces
+has a suffix of several parts (`Emit.qualifiedName`, `_<tag><suffix>` for
+each interface whose variant is not the baseline): unless its whole suffix
+is ranked, each part's suffix is (a part that is all of a ranked suffix
+having the tag `""`), and the implementations are ordered by the
+rank of their part for the first tag, then for the next, and so on (a
+missing part being the baseline, ranked last), which chooses the best variant
+of each interface in turn. An implementation that can be chosen only where
+one ranked before it can is left out (it would never run), and so is one
+whose ranking says to (`Rank.skip`, for an implementation the Rust code
+chooses by something other than the CPU and calls itself).
+
+A function whose base is its only implementation gets a dispatcher too, as
+another name of it, so that the Rust code calling the dispatcher is the same
+on every target, whatever implementations each has:
+
+```rust
+#[allow(unused_imports)]
+pub use crate::<module>::<base> as <base>_auto;
+```
+
+A function whose base needs CPU features gets none (there is nothing to fall
+back on), and neither does an implementation that is not a base. -/
+
+/-- How a dispatcher (see above) ranks an implementation of a function: one
+whose name is that of its base followed by `suffix`, in a module of
+`modules` (or any if there are none), chosen only on a CPU that also has the
+features `extra` (by their Rust `target_feature` names) and, if `vendor` is
+given, only where `target_vendor` is `vendor` or `VG_CPU_FEATURES` names every
+feature it needs; or, if `skip`, never chosen by a dispatcher (as one the
+Rust code chooses by something other than the CPU, such as the length of
+its input, and calls itself). -/
+structure Rank where
+  suffix : String
+  modules : List String := []
+  extra : List String := []
+  vendor : Option String := none
+  skip : Bool := false
+
+/-- The ranking of each target, by its name (`Target.name`): its `Rank`s,
+best first. -/
+abbrev Ranking := List (String × List Rank)
+
+/-- The implementations of a function of a module: its base and each other
+(with its suffix: what follows the base's name in its own). -/
+structure Group where
+  base : Artifact
+  members : List (Artifact × String)
+
+/-- The functions of the artifacts `as` of one module and target, with their
+implementations: in order of their names' lengths, an artifact is an
+implementation of the first function found whose base has its signature and
+documentation and whose base's name, followed by `_`, starts its own, and is
+otherwise the base of a function of its own. -/
+def groupsOf (as : List Artifact) : List Group := Id.run do
+  let sorted := as.mergeSort fun a b => a.name.length ≤ b.name.length
+  let mut gs : Array Group := #[]
+  for a in sorted do
+    match gs.findIdx? fun g =>
+        a.name.startsWith (g.base.name ++ "_") && a.sig == g.base.sig && a.doc == g.base.doc with
+    | some i =>
+      gs := gs.modify i fun g =>
+        { g with members := g.members ++ [(a, (a.name.drop g.base.name.length).toString)] }
+    | none => gs := gs.push ⟨a, []⟩
+  return gs.toList
+
+/-- The first `Rank` of `rs` for an implementation with the suffix `s` in the
+module `m`, with its index in `rs`. -/
+def rankOf (rs : List Rank) (m s : String) : Option (Nat × Rank) :=
+  go rs 0
+where
+  go : List Rank → Nat → Option (Nat × Rank)
+    | [], _ => none
+    | r :: rs, i =>
+      if r.suffix == s && (r.modules.isEmpty || r.modules.contains m) then some (i, r)
+      else go rs (i + 1)
+
+/-- The suffix `s` of an implementation in the module `m`, as parts
+`_<tag><suffix>` each of whose suffixes `rs` ranks (`Emit.qualifiedName`):
+each part's tag, and the index in `rs` and `Rank` of its suffix, taking the
+longest ranked suffix after each tag that leaves a suffix of parts; `none` if
+there is no such way to read it. `fuel` bounds the number of parts. -/
+def partsOf (rs : List Rank) (m : String) : Nat → String → Option (List (String × Nat × Rank))
+  | _, "" => some []
+  | 0, _ => none
+  | fuel + 1, s =>
+    if !s.startsWith "_" then none else
+    let rest := (s.drop 1).toString
+    let tag := (rest.splitOn "_").headD ""
+    let after := (rest.drop tag.length).toString
+    let cands := (rs.filter fun r =>
+        (r.modules.isEmpty || r.modules.contains m) && !r.suffix.isEmpty &&
+          after.startsWith r.suffix).mergeSort
+      fun a b => a.suffix.length ≥ b.suffix.length
+    cands.findSome? fun r =>
+      let tail := (after.drop r.suffix.length).toString
+      if tag.isEmpty || !(tail.isEmpty || tail.startsWith "_") then none else
+      match partsOf rs m fuel tail, rankOf rs m r.suffix with
+      | some ps, some (i, r) => some ((tag, i, r) :: ps)
+      | _, _ => none
+
+/-- Whether the list of numbers `a` comes before `b`, or is `b`. -/
+def lexLe : List Nat → List Nat → Bool
+  | [], _ => true
+  | _ :: _, [] => false
+  | x :: xs, y :: ys => x < y || (x == y && lexLe xs ys)
+
+/-- An implementation a dispatcher may call, with its ranking's `extra`
+features and `vendor`s (those of each of its suffix's parts), and the `cfg`
+predicates it is compiled under (`gateOf`). -/
+structure Arm where
+  art : Artifact
+  extra : List String
+  vendors : List String
+  gate : List String
+  /-- Whether the ranking leaves it out (`Rank.skip`). -/
+  skip : Bool
+
+/-- The implementations of `g` (but its base) that its dispatcher tries, in
+the module `m`, in order (see above), or why `rs` does not rank them. -/
+def armsOf (rs : List Rank) (m : String) (g : Group) : Except String (List Arm) := do
+  let gate (a : Artifact) := a.features.filterMap a.target.printer.featureCfg
+  let arm (a : Artifact) (ranks : List Rank) : Arm :=
+    ⟨a, dedup (ranks.flatMap (·.extra)), dedup (ranks.filterMap (·.vendor)), gate a,
+      ranks.any (·.skip)⟩
+  let keyed ← if g.members.all fun (_, s) => (rankOf rs m s).isSome then
+      pure (g.members.map fun (a, s) => match rankOf rs m s with
+        | some (i, r) => ([i], arm a [r])
+        | none => ([], arm a []))
+    else do
+      let parsed ← g.members.mapM fun (a, s) =>
+        match (rankOf rs m s).map (fun (i, r) => [("", i, r)]) <|> partsOf rs m s.length s with
+        | some ps => pure (a, ps)
+        | none => throw s!"{a.target.name}: {a.name}: its suffix `{s}` is not ranked \
+            (`VG.Dispatch.ranking`), nor made of parts `_<tag><suffix>` whose suffixes are"
+      -- Each tag once, in the order of the parts of every suffix that has it.
+      let tags := parsed.foldl (init := ([] : List String)) fun tags (_, ps) =>
+        (ps.map (·.1)).foldl (init := (tags, 0)) (fun (tags, pos) t =>
+          match tags.idxOf? t with
+          | some i => (tags, i + 1)
+          | none => (tags.insertIdx pos t, pos + 1)) |>.1
+      pure (parsed.map fun (a, ps) =>
+        (tags.map fun t => ((ps.find? (·.1 == t)).map (·.2.1)).getD rs.length,
+          arm a (ps.map (·.2.2))))
+  let keyed := keyed.filter fun (_, a) => !a.skip
+  let sorted := keyed.mergeSort fun a b => lexLe a.1 b.1
+  -- Leave out each implementation that can be chosen only where one before it can.
+  let weaker (e l : Arm) : Bool :=
+    (e.art.features ++ e.extra).all (l.art.features ++ l.extra).contains &&
+      e.vendors.all l.vendors.contains && e.gate.all l.gate.contains
+  return sorted.foldl (init := []) fun acc (_, l) =>
+    if acc.any (weaker · l) then acc else acc ++ [l]
+
+/-- The name of the dispatcher of the function whose base is `base`. -/
+def autoName (base : String) : String := base ++ "_auto"
+
+/-- The Rust arguments of the signature `sig`, to pass on what the
+dispatcher was given: each parameter's name, and a slice's length or a list
+of slices' count after it (`Param.rust`). -/
+def argsOf (sig : Sig) : String :=
+  ", ".intercalate (sig.params.flatMap fun (n, p) => match p with
+    | .slice _ _ len => [n, len]
+    | .slices _ count => [n, count]
+    | _ => [n])
+
+/-- The condition under which a dispatcher calls `a`, given the variable
+`cpu` it holds `verified_garbage_cpu::detected()` in. The features it checks are `a`'s (its constant, `featuresConst`) and
+its ranking's `extra` ones; for one that needs none, that detection reports
+some feature. -/
+def condOf (a : Arm) : String :=
+  let name := s!"crate::{a.art.module}::{a.art.name.toUpper}"
+  let bits := a.extra.map fun f => s!"verified_garbage_cpu::feature::{featureConst f}"
+  let need : Option String := match a.art.features.isEmpty, bits with
+    | true, [] => none
+    | false, [] => some s!"{name}_FEATURES"
+    | true, bs => some s!"verified_garbage_cpu::Features({" | ".intercalate bs})"
+    | false, bs => some s!"verified_garbage_cpu::Features({name}_FEATURES.0 | {" | ".intercalate bs})"
+  let vs := a.vendors.map fun v => match need with
+    | none => s!"cfg!(target_vendor = \"{v}\")"
+    | some n => s!"(cfg!(target_vendor = \"{v}\") || verified_garbage_cpu::requested({n}))"
+  -- One that needs no feature, only where detection reports some (see above).
+  let has := match need with
+    | none => "cpu.0 != 0"
+    | some n => s!"cpu.contains({n})"
+  " && ".intercalate (vs ++ [has])
+
+/-- The paragraph of a dispatcher's documentation saying what it runs. -/
+def dispatchNote (base : String) (arms : List Arm) : String :=
+  let item (a : Arm) : String :=
+    let needs := if a.art.features.isEmpty then
+      (if a.extra.isEmpty then ["detection reports some CPU feature"] else [])
+      else [s!"the CPU supports its features (`{a.art.name.toUpper}_FEATURES`)"]
+    let extra := if a.extra.isEmpty then [] else
+      [s!"it also supports {codeList a.extra}"]
+    let vendor := a.vendors.map fun v =>
+      s!"the target's vendor is `{v}` (or `VG_CPU_FEATURES` names every feature it needs)"
+    let gate := if a.gate.isEmpty then [] else [s!"it is compiled (`{", ".intercalate a.gate}`)"]
+    match gate ++ vendor ++ needs ++ extra with
+    | [] => s!"`{a.art.name}`"
+    | cs => s!"`{a.art.name}` if " ++ englishList "and" cs
+  s!"It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders \
+    (`VG.Rust.Rank`): " ++ "; ".intercalate (arms.map item) ++
+    s!"; or else `{base}`, which needs no CPU feature. Each has this documentation but for its \
+    stack (whose requirements here are the largest) and what it writes."
+
+/-- The dispatcher of the function `g` of the module `m` (see above), given
+its implementations' `arms`. -/
+def dispatcher (g : Group) (arms : List Arm) : String :=
+  let b := g.base
+  let auto := autoName b.name
+  let all := b :: g.members.map (·.1)
+  let stack := all.foldl (fun n a => max n a.stack) 0
+  let written := b.written.filterMap fun (p, n) =>
+    let ns := (g.members.map (·.1)).map fun a => a.written.lookup p
+    if ns.all (·.isSome) then some (p, ns.foldl (fun m o => max m (o.getD 0)) n) else none
+  let args := argsOf b.sig
+  let doc := fullDoc.fullDocWith b auto stack written [] [dispatchNote b.name arms]
+  writtenConsts auto "" written ++
+  docComment "" doc ++
+  safetyAllow doc ++
+  -- Its signature is the implementations': Clippy allows theirs, as `extern` functions.
+  "#[allow(clippy::too_many_arguments)]\n" ++
+  "#[inline]\n" ++
+  s!"pub unsafe fn {auto}{b.sig.rust} " ++ "{\n" ++
+  (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
+  String.join (arms.map fun a =>
+    String.join (a.gate.map fun p => s!"    #[cfg({p})]\n") ++
+    s!"    if {condOf a} " ++ "{\n" ++
+    s!"        // SAFETY: the caller's obligations, which are `{a.art.name}`'s, and the CPU\n" ++
+    "        // has the features it needs.\n" ++
+    s!"        return unsafe " ++ "{ " ++ s!"crate::{a.art.module}::{a.art.name}({args})" ++ " };\n" ++
+    "    }\n") ++
+  "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
+  "    unsafe { " ++ s!"crate::{b.module}::{b.name}({args})" ++ " }\n" ++
+  "}\n"
+
+/-- The dispatcher of the function `g` whose base is its only implementation:
+another name of it. -/
+def soleDispatcher (g : Group) : String :=
+  let b := g.base
+  let auto := autoName b.name
+  writtenConsts auto "" b.written ++
+  s!"/// `{b.name}`, the only implementation of it on this target, which needs no CPU feature\n" ++
+  "/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every\n" ++
+  "/// target.\n" ++
+  "#[allow(unused_imports)]\n" ++
+  s!"pub use crate::{b.module}::{b.name} as {auto};\n"
+
+/-- Each `Rank` of `rs` has a suffix starting with `_` and, if it names a
+vendor, a vendor of lowercase ASCII letters, digits and underscores (the
+text the dispatcher puts in `cfg!(target_vendor = "…")`), and each of its
+`extra` features is a name of letters, digits, `.` and `_`. -/
+def checkRanks (t : String) (rs : List Rank) : Except String Unit :=
+  rs.forM fun r => do
+    unless r.suffix.startsWith "_" && r.suffix.length > 1 do
+      throw s!"{t}: the ranked suffix `{r.suffix}` does not start with `_`"
+    if let some v := r.vendor then
+      unless !v.isEmpty && v.all fun c => c.isLower || c.isDigit || c == '_' do
+        throw s!"{t}: the ranked suffix `{r.suffix}` names the vendor `{v}`"
+    for f in r.extra do
+      unless !f.isEmpty && f.all fun c => c.isAlphanum || c == '.' || c == '_' do
+        throw s!"{t}: the ranked suffix `{r.suffix}` needs the feature `{f}`"
+
+/-- The dispatchers of the artifacts `as` of the module `m` of a target (see
+above), as the text that follows its functions in its file; `names` are the
+names of every artifact of the target, none of which may be a dispatcher's. -/
+def dispatchers (rs : List Rank) (names : List String) (m : String) (as : List Artifact) :
+    Except String String := do
+  let gs := (groupsOf as).filter (·.base.features.isEmpty)
+  let texts ← gs.mapM fun g => do
+    let auto := autoName g.base.name
+    if names.contains auto then
+      throw s!"{g.base.target.name}: {auto} is both an artifact and the dispatcher of {g.base.name}"
+    if g.members.isEmpty then return soleDispatcher g
+    match armsOf rs m g with
+    | .ok arms => return dispatcher g arms
+    | .error e => throw e
+  return String.join (texts.map ("\n" ++ ·))
+
+/-- The module of the dispatchers of the target `t` (`dispatch/mod.rs` of its
+`codeDir`), declaring the file of each module `ms` with any. -/
+def dispatchMod (t : String) (ms : List String) : String :=
+  header ++ s!"//! The dispatchers of the verified functions for `{t}` (`VG.Rust.dispatcher`):\n" ++
+  "//! for each function, `<name>_auto`, in the module of its module's name.\n" ++
+  modDecls ms (fun _ => none)
+
+/-- The file of the dispatchers `text` of the functions of the module `m` of
+the target `t` (`dispatch/<m>.rs`), which name the functions they call by
+their paths from the crate's root. -/
+def dispatchFile (t m text : String) : String :=
+  header ++ s!"//! The dispatchers of the verified `{m}` functions for `{t}`\n" ++
+  s!"//! (`crate::{m}`, `VG.Rust.dispatcher`).\n" ++ text
+
 /-- The generated files of the artifacts of `ps`, given the module of each
 function each artifact calls; each artifact's code as `ps` printed it
 (`Prepared.lines`). -/
-def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → String → String) :
+def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → String → String)
+    (disp : String → String → String := fun _ _ => "") :
     List (String × String) :=
   let as := ps.map (·.art)
   let targets := distinct as (·.target.name)
@@ -1610,8 +1972,10 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
     let modules := (distinct (arts.map (·.art)) (·.module)).mergeSort (· ≤ ·)
     let ts := tables (arts.map (·.art)) hs
     let fts := fnTables (arts.map (·.art))
+    let dmods := modules.filter fun m => !(disp t m).isEmpty
     let mods := (modules ++ (if ts.isEmpty then [] else ["consts"]) ++
-      (if fts.isEmpty then [] else ["fn_tables"])).mergeSort (· ≤ ·)
+      (if fts.isEmpty then [] else ["fn_tables"]) ++
+      (if dmods.isEmpty then [] else ["dispatch"])).mergeSort (· ≤ ·)
     let cfg := ((targetsOf (arts.map (·.art))).map (·.2)).headD ""
     let src := codeDir t
     (s!"{src}/lib.rs", targetRoot t cfg mods) ::
@@ -1624,6 +1988,9 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
         (s!"{src}/fn_tables/mod.rs", fnTablesMod t fts (fnTableFeatures arts hs t)) ::
           fts.map fun T => (s!"{src}/fn_tables/{fnTableModule T.name}.rs",
             fnTableFile p₀.art.target T (fnTableFeatures arts hs t T) (moduleOf t))) ++
+    (if dmods.isEmpty then [] else
+      (s!"{src}/dispatch/mod.rs", dispatchMod t dmods) ::
+        dmods.map fun m => (s!"{src}/dispatch/{m}.rs", dispatchFile t m (disp t m))) ++
     (hs.map fun h => Task.spawn fun _ =>
       let m := s!"internal/{h.name}"
       [(s!"{src}/{m}.rs", internalFile h (moduleOf t)),
@@ -1655,12 +2022,16 @@ artifact's features are not those its code requires (`checkFeatures`), its
 code has an instruction its target's printer cannot encode
 (`checkEncodable`), its doc has no `# Safety` section at its end for what
 `fullDoc` adds to it (`checkLayout`) or a bound on what it writes is not of a
-writable array parameter, at most its size (`checkWritten`). Each check of
+writable array parameter, at most its size (`checkWritten`), or `ranking`
+(each target's, by its name) does not rank an implementation a dispatcher
+calls (`dispatchers`, `checkRanks`); with each module's dispatchers after its
+functions. Each check of
 every artifact runs on `tasks` tasks (`forMPar`), one check after the other,
 so the error is the
 one checking them in order would give; what they read of an artifact more
 than once is computed once, on `tasks` tasks (`Prepared`, `prepareAll`). -/
-def files (as : List Artifact) : Except String (List (String × String)) := do
+def files (as : List Artifact) (ranking : Ranking := []) :
+    Except String (List (String × String)) := do
   -- The same artifacts, with equal parts the same value in memory
   -- (`ShareCommon.shareCommon'` returns its argument): the code of every call
   -- of a function in an artifact is then the same value as its first call's,
@@ -1684,9 +2055,17 @@ def files (as : List Artifact) : Except String (List (String × String)) := do
   forMPar ps checkEncodable
   forMPar as checkLayout
   forMPar as checkWritten
-  return render ps hs fun t n =>
+  let disp ← (targetsOf as).flatMapM fun (t, _) => do
+    let rs := (ranking.lookup t).getD []
+    checkRanks t rs
+    let arts := as.filter (·.target.name == t)
+    let names := arts.map (·.name)
+    (distinct arts (·.module)).mapM fun m => do
+      return ((t, m), ← dispatchers rs names m (arts.filter (·.module == m)))
+  return render ps hs (fun t n =>
     match as.find? fun b => b.target.name == t && b.name == n with
     | some b => b.module
-    | none => ((internal? hs t n).map internalModule).getD ""
+    | none => ((internal? hs t n).map internalModule).getD "")
+    (fun t m => (disp.lookup (t, m)).getD "")
 
 end VG.Rust

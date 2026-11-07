@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.ChaCha20Poly1305
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.PowLit
 
@@ -13,7 +15,7 @@ the shared contracts with the working space as an argument
 (`Proof/ChaCha20Poly1305/Scratch.lean`), which imply these.
 
 `seal` and `open` take `(key = r3, nonce = r4, aad = r5, aad_len = r6,
-data = r7, len = r8, tag = r9, work = r10)`: `work` (648 bytes) and `data`
+data = r7, len = r8, tag = r9, work = r10)`: `work` (656 bytes) and `data`
 may be read and written, `key`, `nonce` and `aad` read, and `tag` written
 (`seal`) or read (`open`). The regions written overlap none of the others,
 nor the 160 bytes below the stack pointer (the frame of
@@ -36,7 +38,7 @@ def prePPC64LE (enc : Bool) (s : PPC64LE.State) : Prop :=
   let aad : Region := ⟨s.gpr .r5, (s.gpr .r6).toNat⟩
   let data : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
   let tag : Region := ⟨s.gpr .r9, 16⟩
-  let work : Region := ⟨s.gpr .r10, 648⟩
+  let work : Region := ⟨s.gpr .r10, 656⟩
   let below : Region := ⟨s.sp - 160, 160⟩
   160 ≤ s.sp.toNat ∧
   s.rd = (if enc then [key, nonce, aad] else [key, nonce, aad, tag]) ∧
@@ -49,7 +51,7 @@ def prePPC64LE (enc : Bool) (s : PPC64LE.State) : Prop :=
   below.Disjoint tag ∧ below.Disjoint work ∧
   (s.gpr .r3).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .r4).toNat + 12 ≤ 2 ^ 64 ∧
   (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64 ∧ (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧
-  (s.gpr .r9).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .r10).toNat + 648 ≤ 2 ^ 64
+  (s.gpr .r9).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .r10).toNat + 656 ≤ 2 ^ 64
 
 open VG.PPC64LE in
 def pubPPC64LE (s₁ s₂ : PPC64LE.State) : Prop :=
@@ -95,5 +97,68 @@ def openPPC64LE : Contract PPC64LE.isa where
     | none => s'.gpr .r3 = 0 ∧
         bytesAt s'.mem (s.gpr .r7) (s.gpr .r8).toNat = List.replicate (s.gpr .r8).toNat 0
   pub s₁ s₂ := pubPPC64LE s₁ s₂ ∧ openLeakPPC64LE s₁ = openLeakPPC64LE s₂
+
+/-! ## Out of place
+
+`open_to(key = r3, nonce = r4, aad = r5, aad_len = r6, src = r7, len = r8,
+dst = r9, dst_len = r10, tag = [sp + 96], work = [sp + 104]) -> u32`, its
+last two arguments on the stack (ELFv2 ABI §2.2.3.3, the Parameter Save
+Area), which it may only read. -/
+
+open VG.PPC64LE in
+/-- The two arguments on the stack. -/
+abbrev toArgs (s : PPC64LE.State) : Region := ⟨stackArgAddr s 0, 16⟩
+
+open VG.PPC64LE in
+/-- `open_to`'s precondition: the regions, apart but for those read, apart
+from the 160 bytes below the stack pointer, the output as long as the
+input, at most `P_MAX`. -/
+def openToPrePPC64LE (s : PPC64LE.State) : Prop :=
+  let key : Region := ⟨s.gpr .r3, 32⟩
+  let nonce : Region := ⟨s.gpr .r4, 12⟩
+  let aad : Region := ⟨s.gpr .r5, (s.gpr .r6).toNat⟩
+  let src : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
+  let dst : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
+  let tag : Region := ⟨stackArg s 0, 16⟩
+  let work : Region := ⟨stackArg s 1, 656⟩
+  let below : Region := ⟨s.sp - 160, 160⟩
+  160 ≤ s.sp.toNat ∧
+  s.rd = [key, nonce, aad, src, tag, toArgs s] ∧ s.wr = [dst, work] ∧
+  dst.Disjoint key ∧ dst.Disjoint nonce ∧ dst.Disjoint aad ∧ dst.Disjoint src ∧ dst.Disjoint tag ∧
+  dst.Disjoint work ∧ dst.Disjoint (toArgs s) ∧
+  work.Disjoint key ∧ work.Disjoint nonce ∧ work.Disjoint aad ∧ work.Disjoint src ∧ work.Disjoint tag ∧
+  work.Disjoint (toArgs s) ∧
+  below.Disjoint key ∧ below.Disjoint nonce ∧ below.Disjoint aad ∧ below.Disjoint src ∧
+  below.Disjoint dst ∧ below.Disjoint tag ∧ below.Disjoint work ∧
+  (s.gpr .r3).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .r4).toNat + 12 ≤ 2 ^ 64 ∧
+  (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64 ∧ (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧
+  (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + 16 ≤ 2 ^ 64 ∧
+  (stackArg s 1).toNat + 656 ≤ 2 ^ 64 ∧ (stackArgAddr s 0).toNat + 16 ≤ 2 ^ 64 ∧
+  (s.gpr .r10).toNat = (s.gpr .r8).toNat ∧ (s.gpr .r8).toNat ≤ pMax
+
+open VG.PPC64LE in
+/-- `open_to`'s result: `decrypt` of the source, with the tag at `[sp + 96]`. -/
+def openToRes (s : PPC64LE.State) : Option (List Byte) :=
+  decrypt (bytesAt s.mem (s.gpr .r3) 32) (bytesAt s.mem (s.gpr .r4) 12)
+    (bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) (bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat)
+    (bytesAt s.mem (stackArg s 0) 16)
+
+open VG.PPC64LE in
+/-- What `open_to` may leak (`Spec.ChaCha20Poly1305.openToLeak`): whether the
+tag is right. -/
+def openToLeakPPC64LE (s : PPC64LE.State) : List Nat :=
+  [if (openToRes s).isSome then 1 else 0]
+
+open VG.PPC64LE in
+/-- `open_to`: the plaintext or zeros at `dst`. -/
+def openToPPC64LE : Contract PPC64LE.isa where
+  pre := openToPrePPC64LE
+  post s s' :=
+    match openToRes s with
+    | some pt => s'.gpr .r3 = 1 ∧ bytesAt s'.mem (s.gpr .r9) (s.gpr .r8).toNat = pt
+    | none => s'.gpr .r3 = 0 ∧
+        bytesAt s'.mem (s.gpr .r9) (s.gpr .r8).toNat = List.replicate (s.gpr .r8).toNat 0
+  pub s₁ s₂ := pubPPC64LE s₁ s₂ ∧ (∀ i < 2, stackArg s₁ i = stackArg s₂ i) ∧
+    openToLeakPPC64LE s₁ = openToLeakPPC64LE s₂
 
 end VG.Proof.ChaCha20Poly1305

@@ -813,10 +813,10 @@ theorem decrypt_noFrames : Impl.AesCfb.PPC64LE.decrypt.noFrames = true := by
 
 /-! ## Constant time -/
 
-theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
-    (hv : ∀ s, (modePPC64LE (cfbMode enc)).pre s →
-      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modePPC64LE (cfbMode enc)).post s s')
-    (hct : ConstantTime isa (modePPC64LE (cfbMode enc)).pre (modePPC64LE (cfbMode enc)).pub whole)
+theorem final_rel {enc : Bool} {M : Mode} {name : String} {whole : Prog isa}
+    (hv : ∀ s, (modePPC64LE M).pre s →
+      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modePPC64LE M).post s s')
+    (hct : ConstantTime isa (modePPC64LE M).pre (modePPC64LE M).pub whole)
     (nf : whole.noFrames = true) {s₀ s₀' : State}
     (h0 : (finalPPC64LE enc).pre s₀) (h0' : (finalPPC64LE enc).pre s₀') (hq : (finalPPC64LE enc).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (final name whole) fun _ _ => True := by
@@ -840,7 +840,7 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
       obtain ⟨rfl, rfl⟩ := h
       exact ⟨wp_sp (final_setup_wp hp), wp_sp (final_setup_wp hp')⟩
   -- The whole blocks.
-  have r₂ := (RelCT.callEx (k := modePPC64LE (cfbMode enc)) (n := name) hv hct
+  have r₂ := (RelCT.callEx (k := modePPC64LE M) (n := name) hv hct
     (P := fun a b => (Setup s₀ a ∧ a.sp = s₀.sp) ∧ (Setup s₀' b ∧ b.sp = s₀'.sp)) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_pre (M := cfbMode enc) hp ha.1
       obtain ⟨pb, cb, wb⟩ := whole_pre (M := cfbMode enc) hp' hb.1
@@ -853,8 +853,8 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
         hb.1.r3, hb.1.r4, hb.1.r5, hb.1.r6, hb.1.r7, hb.1.r8, hb.2]
       rw [fW, fW, fIv, fIv, fD, fD, fS, fS, qW, qR, qIv, qD, qS, qSp, qN]
       exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩).wp
-    (F₁ := fun (s : State) => Whole (cfbMode enc) s₀ s ∧ s.sp = s₀.sp)
-    (F₂ := fun (s : State) => Whole (cfbMode enc) s₀' s ∧ s.sp = s₀'.sp)
+    (F₁ := fun (s : State) => Whole M s₀ s ∧ s.sp = s₀.sp)
+    (F₂ := fun (s : State) => Whole M s₀' s ∧ s.sp = s₀'.sp)
     fun a b h => ⟨WP.mono (wp_sp (whole_wp hv nf hp h.1.1)) fun _ x => ⟨x.1, x.2.trans h.1.2⟩,
       WP.mono (wp_sp (whole_wp hv nf hp' h.2.1)) fun _ x => ⟨x.1, x.2.trans h.2.2⟩⟩
   -- The partial last segment.
@@ -863,11 +863,11 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
   obtain ⟨_, t₄⟩ : ∃ h, (taint.check (Taint.ofRegs [.r16, .r30, .r31]) xorCode h).isSome = true :=
     ⟨_, by taint_decide⟩
   have tail (hu : fU s₀ ≠ 0) : RelCT isa
-      (fun a b => (Whole (cfbMode enc) s₀ a ∧ a.sp = s₀.sp) ∧ (Whole (cfbMode enc) s₀' b ∧ b.sp = s₀'.sp))
-      finalTail fun a b => (Done (cfbMode enc) s₀ a ∧ a.sp = s₀.sp) ∧ (Done (cfbMode enc) s₀' b ∧ b.sp = s₀'.sp) := by
+      (fun a b => (Whole M s₀ a ∧ a.sp = s₀.sp) ∧ (Whole M s₀' b ∧ b.sp = s₀'.sp))
+      finalTail fun a b => (Done M s₀ a ∧ a.sp = s₀.sp) ∧ (Done M s₀' b ∧ b.sp = s₀'.sp) := by
     have hu' : fU s₀' ≠ 0 := qU ▸ hu
     have a₃ := (taintRegs
-      (P := fun a b => (Whole (cfbMode enc) s₀ a ∧ a.sp = s₀.sp) ∧ (Whole (cfbMode enc) s₀' b ∧ b.sp = s₀'.sp)) _
+      (P := fun a b => (Whole M s₀ a ∧ a.sp = s₀.sp) ∧ (Whole M s₀' b ∧ b.sp = s₀'.sp)) _
       (fun a b h => ⟨by rw [h.1.2, h.2.2, qSp], fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
@@ -875,12 +875,12 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
         · rw [h.1.1.r15, h.2.1.r15, qR]
         · rw [h.1.1.r16, h.2.1.r16, fIv, fIv, qIv]
         · rw [h.1.1.r19, h.2.1.r19, fS, fS, qS]⟩) t₃).wp
-      (F₁ := fun (s : State) => IvA (cfbMode enc) s₀ s ∧ s.sp = s₀.sp) (F₂ := fun (s : State) => IvA (cfbMode enc) s₀' s ∧ s.sp = s₀'.sp)
+      (F₁ := fun (s : State) => IvA M s₀ s ∧ s.sp = s₀.sp) (F₂ := fun (s : State) => IvA M s₀' s ∧ s.sp = s₀'.sp)
       fun a b h => ⟨WP.mono (wp_sp (final_ivArgs_wp hp h.1.1)) fun _ x => ⟨x.1, x.2.trans h.1.2⟩,
         WP.mono (wp_sp (final_ivArgs_wp hp' h.2.1)) fun _ x => ⟨x.1, x.2.trans h.2.2⟩⟩
     have a₄ := (blk_rel (name := "vg_aes_encrypt_blocks") Proof.Aes.PPC64LE.encryptBlocks_correct
       Proof.Aes.PPC64LE.encryptBlocks_ct
-      (P := fun a b => (IvA (cfbMode enc) s₀ a ∧ a.sp = s₀.sp) ∧ (IvA (cfbMode enc) s₀' b ∧ b.sp = s₀'.sp))
+      (P := fun a b => (IvA M s₀ a ∧ a.sp = s₀.sp) ∧ (IvA M s₀' b ∧ b.sp = s₀'.sp))
       fun a b h => by
         have e₂ := h.2.1.pre
         have eW : fW s₀' = fW s₀ := qW.symm
@@ -889,26 +889,26 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
         have eR : fR s₀' = fR s₀ := by simp only [fR, qR]
         rw [eW, eIv, eS, eR] at e₂
         exact ⟨h.1.1.pre, e₂, by rw [h.1.2, h.2.2, qSp]⟩).wp
-      (F₁ := fun (s : State) => Ciph (cfbMode enc) s₀ s ∧ s.sp = s₀.sp) (F₂ := fun (s : State) => Ciph (cfbMode enc) s₀' s ∧ s.sp = s₀'.sp)
+      (F₁ := fun (s : State) => Ciph M s₀ s ∧ s.sp = s₀.sp) (F₂ := fun (s : State) => Ciph M s₀' s ∧ s.sp = s₀'.sp)
       fun a b h => ⟨WP.mono (wp_sp (final_ciph_wp hp h.1.1)) fun _ x => ⟨x.1, x.2.trans h.1.2⟩,
         WP.mono (wp_sp (final_ciph_wp hp' h.2.1)) fun _ x => ⟨x.1, x.2.trans h.2.2⟩⟩
     have a₅ := (taintRegs
-      (P := fun a b => (Ciph (cfbMode enc) s₀ a ∧ a.sp = s₀.sp) ∧ (Ciph (cfbMode enc) s₀' b ∧ b.sp = s₀'.sp)) _
+      (P := fun a b => (Ciph M s₀ a ∧ a.sp = s₀.sp) ∧ (Ciph M s₀' b ∧ b.sp = s₀'.sp)) _
       (fun a b h => ⟨by rw [h.1.2, h.2.2, qSp], fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · rw [h.1.1.r16, h.2.1.r16, fIv, fIv, qIv]
         · rw [h.1.1.r30, h.2.1.r30, qU]
         · rw [h.1.1.r31, h.2.1.r31, qT]⟩) t₄).wp
-      (F₁ := fun (s : State) => Done (cfbMode enc) s₀ s ∧ s.sp = s₀.sp) (F₂ := fun (s : State) => Done (cfbMode enc) s₀' s ∧ s.sp = s₀'.sp)
+      (F₁ := fun (s : State) => Done M s₀ s ∧ s.sp = s₀.sp) (F₂ := fun (s : State) => Done M s₀' s ∧ s.sp = s₀'.sp)
       fun a b h => ⟨WP.mono (wp_sp (final_xor_wp hp h.1.1 hu)) fun _ x => ⟨x.1, x.2.trans h.1.2⟩,
         WP.mono (wp_sp (final_xor_wp hp' h.2.1 hu')) fun _ x => ⟨x.1, x.2.trans h.2.2⟩⟩
     exact (a₃.mono (fun _ _ h => h) fun _ _ h => h.2).seq
       ((a₄.mono (fun _ _ h => h) fun _ _ h => h.2).seq (a₅.mono (fun _ _ h => h) fun _ _ h => h.2))
   have r₃ : RelCT isa
-      (fun a b => (Whole (cfbMode enc) s₀ a ∧ a.sp = s₀.sp) ∧ (Whole (cfbMode enc) s₀' b ∧ b.sp = s₀'.sp))
+      (fun a b => (Whole M s₀ a ∧ a.sp = s₀.sp) ∧ (Whole M s₀' b ∧ b.sp = s₀'.sp))
       (.ite (.zero .d .r30) (.block []) finalTail)
-      (fun a b => (Done (cfbMode enc) s₀ a ∧ a.sp = s₀.sp) ∧ (Done (cfbMode enc) s₀' b ∧ b.sp = s₀'.sp)) := by
+      (fun a b => (Done M s₀ a ∧ a.sp = s₀.sp) ∧ (Done M s₀' b ∧ b.sp = s₀'.sp)) := by
     refine RelCT.ite (fun a b h => by rw [eval_u h.1.1, eval_u h.2.1, qU]) ?_ ?_
     · refine RelCT.block_nil fun a b h => ?_
       have h0 : fU s₀ = 0 := by
@@ -921,16 +921,16 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
   obtain ⟨_, t₅⟩ : ∃ h, (taint.check (Taint.ofRegs [.r20]) (.block finalRestore) h).isSome = true :=
     ⟨_, by taint_decide⟩
   have r₄ := taintRegs
-    (P := fun a b => (Done (cfbMode enc) s₀ a ∧ a.sp = s₀.sp) ∧ (Done (cfbMode enc) s₀' b ∧ b.sp = s₀'.sp)) _
+    (P := fun a b => (Done M s₀ a ∧ a.sp = s₀.sp) ∧ (Done M s₀' b ∧ b.sp = s₀'.sp)) _
     (fun a b h => ⟨by rw [h.1.2, h.2.2, qSp], fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1.r20, h.2.1.r20, fV, fV, qV]⟩) t₅
   exact (r₁.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((r₂.mono (fun _ _ h => h) fun _ _ h => h.2).seq
     (r₃.seq r₄))
 
-theorem final_ct {enc : Bool} {name : String} {whole : Prog isa}
-    (hv : ∀ s, (modePPC64LE (cfbMode enc)).pre s →
-      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modePPC64LE (cfbMode enc)).post s s')
-    (hct : ConstantTime isa (modePPC64LE (cfbMode enc)).pre (modePPC64LE (cfbMode enc)).pub whole)
+theorem final_ct {enc : Bool} {M : Mode} {name : String} {whole : Prog isa}
+    (hv : ∀ s, (modePPC64LE M).pre s →
+      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modePPC64LE M).post s s')
+    (hct : ConstantTime isa (modePPC64LE M).pre (modePPC64LE M).pub whole)
     (nf : whole.noFrames = true) :
     ConstantTime isa (finalPPC64LE enc).pre (finalPPC64LE enc).pub (final name whole) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (final_rel hv hct nf h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1

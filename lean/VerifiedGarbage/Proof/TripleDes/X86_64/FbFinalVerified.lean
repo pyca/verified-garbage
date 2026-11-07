@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
 public import VerifiedGarbage.Impl.TripleDes.X86_64.FbFinal
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Spec.TripleDes.CfbFinal
+public import VerifiedGarbage.Spec.TripleDes.OfbFinal
 public import VerifiedGarbage.Proof.Modes.FbFinal
 public import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 public import VerifiedGarbage.Proof.Framework.Scratch
@@ -30,6 +31,7 @@ meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
 meta import VerifiedGarbage.Impl.TripleDes.X86_64.FbFinal
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Spec.TripleDes.CfbFinal
+meta import VerifiedGarbage.Spec.TripleDes.OfbFinal
 meta import VerifiedGarbage.Proof.Modes.FbFinal
 meta import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
@@ -46,15 +48,16 @@ meta import VerifiedGarbage.Proof.TripleDes.X86_64.BlockSum
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.ConstantTime
 
 /-!
-# Triple DES-CFB64 of a message's last piece on x86-64 meets its contracts
+# Triple DES-CFB64 and Triple DES-OFB of a message's last piece on x86-64 meet their contracts
 
-`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`: the modes' CFB over a message's
-last piece (`Proof.Modes.X86_64.fbFinal_wp`) over Triple DES's core
-(`dirCoreSpec .encrypt`), with the specification's results
-(`Proof.Modes.cfbEncFinal_of_bytes`, …). `cfbEncryptFinal_verified`, …:
-each is correct and constant time, by the taint analysis, as the
-whole-block functions are (`FbVerified.lean`); `cfbEncryptFinal_framed`, …
-run them with their working space on the stack, zeroed on return.
+`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`, `ofbFinal_wp`: the modes' CFB and
+OFB over a message's last piece (`Proof.Modes.X86_64.fbFinal_wp`) over Triple
+DES's core (`dirCoreSpec .encrypt`), with the specification's results
+(`Proof.Modes.cfbEncFinal_of_bytes`, …, `Proof.Modes.ofbFinal_of_bytes`).
+`cfbEncryptFinal_verified`, …: each is correct and constant time, by the taint
+analysis, as the whole-block functions are (`FbVerified.lean`);
+`cfbEncryptFinal_framed`, … run them with their working space on the stack,
+zeroed on return.
 -/
 
 @[expose] public section
@@ -250,6 +253,72 @@ theorem cfbDecryptFinal_framed :
     (bytes := 976) cfbDecryptFinal_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Modes.decFinalPost_local _)
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-! ## OFB of a message's last piece -/
+
+/-- The final OFB function's contract on x86-64: the data `len = rcx` bytes
+long, and the data and the IV as `Spec.Ofb.CryptFinal` says. -/
+def ofbFinalX86_64 : Contract isa where
+  pre := fbPre finalLen
+  post s s' := Spec.Ofb.CryptFinal (ciphOf s) 8 s.mem s'.mem (s.gpr .rsi) (s.gpr .rdx) (finalLen s)
+  pub := fbPub
+
+theorem ofbFinal_wp {s₀ : State} (hp : ofbFinalX86_64.pre s₀) :
+    WP isa ofbFinalI s₀ fun s' => gprPreserved s₀ s' ∧ ofbFinalX86_64.post s₀ s' :=
+  WP.mono (fbFinal_wp' .ofb hp) fun s' ⟨hg, hd, hv⟩ => by
+    obtain ⟨h1, h2⟩ := Modes.ofbFinal_of_bytes (by decide) (cipher_length _) hd
+    exact ⟨hg, h1, hv.trans h2⟩
+
+theorem ofbFinal_correct (s : State) (hs : ofbFinalX86_64.pre s) :
+    ∃ t s', Exec isa ofbFinalI s t s' ∧ abiPreserved s s' ∧ ofbFinalX86_64.post s s' := by
+  obtain ⟨t, s', he, hg, hpost⟩ := ofbFinal_wp hs
+  exact ⟨t, s', he, abiPreserved_of_exec (c := ofbFinalI) (by lit_decide) he hg, hpost⟩
+
+theorem ofbFinal_ct : ConstantTime isa ofbFinalX86_64.pre ofbFinalX86_64.pub ofbFinal := by
+  obtain ⟨_, h⟩ : ∃ h, (taintS.check fbTaint ofbFinal h).isSome = true :=
+    by taint_decide_sum [encSum]
+  exact VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree finalLen_congr) h
+
+theorem ofbFinal_implies : ofbFinalX86_64.Implies (Sig.scratchContract X86_64.abi finalSig "scratch" .u64 121
+      (Curry.const (fun _ => True) _) (Proof.Modes.ofbFinalPost ciphAt 8 X86_64.abi.ptrBits) true 0) := by
+  sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+    Proof.Modes.ofbFinalPost, ofbFinalX86_64, fbPre, fbPub, X86_64.abi, X86_64.argRegs] [finalSat] using finalSat
+
+theorem ofbFinal_implies8 : ofbFinalX86_64.Implies (Sig.scratchContract X86_64.abi finalSig "scratch" .u64 121
+      (Curry.const (fun _ => True) _) (Proof.Modes.ofbFinalPost ciphAt 8 X86_64.abi.ptrBits) true 8) :=
+  ofbFinal_implies.stack8_abi (by
+    sig_implies_sat [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+      X86_64.abi, X86_64.argRegs, finalSat] [finalSat] using finalSat)
+
+/-- The data and the IV are apart from the call's return address. -/
+theorem ofbFinal_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Sig.scratchContract X86_64.abi finalSig "scratch" .u64 121
+      (Curry.const (fun _ => True) _) (Proof.Modes.ofbFinalPost ciphAt 8 X86_64.abi.ptrBits) true 8).pre s) (hp : ofbFinalX86_64.post s b) :
+    ofbFinalX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, -, fitI, fitD, -⟩ := ofbFinal_implies8.pre s hs
+  have hbD := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdx) (n := finalLen s)
+    (by rw [hwr]; simp) (by omega)
+  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega)
+  obtain ⟨h₁, h₂⟩ := hp
+  exact ⟨by rw [aesBytesAt_congr (patch_mem hbD)]; exact h₁, by rw [aesBytesAt_congr (patch_mem hbI)]; exact h₂⟩
+
+theorem ofbFinal_inline : ofbFinal.inline = ofbFinalI := rfl
+
+theorem ofbFinal_verified : Verified X86_64.target ofbFinal (Sig.scratchContract X86_64.abi finalSig "scratch" .u64 121
+      (Curry.const (fun _ => True) _) (Proof.Modes.ofbFinalPost ciphAt 8 X86_64.abi.ptrBits) true 8) :=
+  Verified.of_inline_ct (by lit_decide) (fun s hs => by rw [ofbFinal_inline]; exact ofbFinal_correct s hs)
+    ofbFinal_ct ofbFinal_implies8 (fun _ h => Sig.clear_of_pre h) ofbFinal_patch
+
+/-- The final OFB function with its working space on the stack. -/
+theorem ofbFinal_framed :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 ofbFinal)
+      (Spec.TripleDes.ofbFinalContract X86_64.abi 984) :=
+  X86_64.Verified.stackScratchWiped (sig := Spec.TripleDes.ofbFinalSig) (nm := "scratch") (e := .u64)
+    (n := 121) (post := Proof.Modes.ofbFinalPost ciphAt 8 X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 976) ofbFinal_verified (by decide) (by decide) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Proof.Modes.ofbFinalPost_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.TripleDes.X86_64

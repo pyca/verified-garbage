@@ -32,3 +32,42 @@ jmp 21f
         vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
 }
+
+/// SEED-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 4269 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`.
+///
+/// Contract: `VG.Spec.Seed.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 1552 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_seed_ofb_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPj5//9JieBJg8AITYnBSYmZwAUAAEmJqcgFAABNiaHQBQAATYmp2AUAAE2JseAFAABNibnoBQAAZkwPbv5JidRJic1IiwdJiYFABQAASItHCEmJgUgFAABIi0cQSYmBUAUAAEiLRxhJiYFYBQAASItHIEmJgWAFAABIi0coSYmBaAUAAEiLRzBJiYFwBQAASItHOEmJgXgFAABIi0dASYmBgAUAAEiLR0hJiYGIBQAASItHUEmJgZAFAABIi0dYSYmBmAUAAEiLR2BJiYGgBQAASItHaEmJgagFAABIi0dwSYmBsAUAAEiLR3hJiYG4BQAAZkwPfvhIiyhJialABAAASItoCEmJqUgEAABNhe0="
+je 20f
+22:
+.base64 "Zk0PbuFmTQ9u7GZND271TInPSIHHQAUAAEyJzkiBxkAEAABIuhAAAAAAAAAATInJ"
+call {vg_seed_encrypt_blocks}
+.base64 "Zk0PfuFmTQ9+7GZND371SYP9EA=="
+jb 23f
+.base64 "SYsEJEkzgUAEAABJiQQkSYtEJAhJM4FIBAAASYlEJAhJg8QQSYPtEA=="
+jmp 24f
+23:
+.base64 "TInISAVABAAA"
+25:
+.base64 "RA+2EEEPtgwkTDHRQYgMJEiDwAFJg8QBSYPtAQ=="
+jne 25b
+24:
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "ZkwPfvhJi6lABAAASIkoSYupSAQAAEiJaAhJi5nABQAASYupyAUAAE2LodAFAABNi6nYBQAATYux4AUAAE2LuegFAABBuwAAAABMiVwkCEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEyJXCRATIlcJEhMiVwkUEyJXCRYTIlcJGBMiVwkaEyJXCRwTIlcJHhMiZwkgAAAAEyJnCSIAAAATImcJJAAAABMiZwkmAAAAEyJnCSgAAAATImcJKgAAABMiZwksAAAAEyJnCS4AAAATImcJMAAAABMiZwkyAAAAEyJnCTQAAAATImcJNgAAABMiZwk4AAAAEyJnCToAAAATImcJPAAAABMiZwk+AAAAEyJnCQAAQAATImcJAgBAABMiZwkEAEAAEyJnCQYAQAATImcJCABAABMiZwkKAEAAEyJnCQwAQAATImcJDgBAABMiZwkQAEAAEyJnCRIAQAATImcJFABAABMiZwkWAEAAEyJnCRgAQAATImcJGgBAABMiZwkcAEAAEyJnCR4AQAATImcJIABAABMiZwkiAEAAEyJnCSQAQAATImcJJgBAABMiZwkoAEAAEyJnCSoAQAATImcJLABAABMiZwkuAEAAEyJnCTAAQAATImcJMgBAABMiZwk0AEAAEyJnCTYAQAATImcJOABAABMiZwk6AEAAEyJnCTwAQAATImcJPgBAABMiZwkAAIAAEyJnCQIAgAATImcJBACAABMiZwkGAIAAEyJnCQgAgAATImcJCgCAABMiZwkMAIAAEyJnCQ4AgAATImcJEACAABMiZwkSAIAAEyJnCRQAgAATImcJFgCAABMiZwkYAIAAEyJnCRoAgAATImcJHACAABMiZwkeAIAAEyJnCSAAgAATImcJIgCAABMiZwkkAIAAEyJnCSYAgAATImcJKACAABMiZwkqAIAAEyJnCSwAgAATImcJLgCAABMiZwkwAIAAEyJnCTIAgAATImcJNACAABMiZwk2AIAAEyJnCTgAgAATImcJOgCAABMiZwk8AIAAEyJnCT4AgAATImcJAADAABMiZwkCAMAAEyJnCQQAwAATImcJBgDAABMiZwkIAMAAEyJnCQoAwAATImcJDADAABMiZwkOAMAAEyJnCRAAwAATImcJEgDAABMiZwkUAMAAEyJnCRYAwAATImcJGADAABMiZwkaAMAAEyJnCRwAwAATImcJHgDAABMiZwkgAMAAEyJnCSIAwAATImcJJADAABMiZwkmAMAAEyJnCSgAwAATImcJKgDAABMiZwksAMAAEyJnCS4AwAATImcJMADAABMiZwkyAMAAEyJnCTQAwAATImcJNgDAABMiZwk4AMAAEyJnCToAwAATImcJPADAABMiZwk+AMAAEyJnCQABAAATImcJAgEAABMiZwkEAQAAEyJnCQYBAAATImcJCAEAABMiZwkKAQAAEyJnCQwBAAATImcJDgEAABMiZwkQAQAAEyJnCRIBAAATImcJFAEAABMiZwkWAQAAEyJnCRgBAAATImcJGgEAABMiZwkcAQAAEyJnCR4BAAATImcJIAEAABMiZwkiAQAAEyJnCSQBAAATImcJJgEAABMiZwkoAQAAEyJnCSoBAAATImcJLAEAABMiZwkuAQAAEyJnCTABAAATImcJMgEAABMiZwk0AQAAEyJnCTYBAAATImcJOAEAABMiZwk6AQAAEyJnCTwBAAATImcJPgEAABMiZwkAAUAAEyJnCQIBQAATImcJBAFAABMiZwkGAUAAEyJnCQgBQAATImcJCgFAABMiZwkMAUAAEyJnCQ4BQAATImcJEAFAABMiZwkSAUAAEyJnCRQBQAATImcJFgFAABMiZwkYAUAAEyJnCRoBQAATImcJHAFAABMiZwkeAUAAEyJnCSABQAATImcJIgFAABMiZwkkAUAAEyJnCSYBQAATImcJKAFAABMiZwkqAUAAEyJnCSwBQAATImcJLgFAABMiZwkwAUAAEyJnCTIBQAATImcJNAFAABMiZwk2AUAAEyJnCTgBQAATImcJOgFAABMiZwk8AUAAEyJnCT4BQAATImcJAAGAABIjaQkCAYAAMM="
+.p2align 6"#,
+        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+    )
+}

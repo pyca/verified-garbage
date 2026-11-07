@@ -34,18 +34,18 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
-# CAST5-CFB64 of a message's last piece on AArch64 meets its contracts
+# CAST5-CFB64 and CAST5-OFB of a message's last piece on AArch64 meet their contracts
 
-`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`: the modes' CFB over a message's
-last piece (`Proof.Modes.AArch64.fbFinal_wp`) over CAST5's core
-(`Mode.dirCoreSpec true`), with the IV's address in `x25`, as for the
-whole-block functions (`FbVerified.lean`), and the specification's results
-(`Proof.Modes.cfbEncFinal_of_bytes`, …). `cfbEncryptFinal_verified`, …:
-each is correct and constant time, by the taint analysis, as the
-whole-block functions are, for the subkeys at `schedule`
-(`Proof.Cast5.cfbEncFinalPost`); `cfbEncryptFinal_framed`, … run them with
-their working space on the stack, zeroed on return: 112 bytes, the 13 words
-of the scratch buffer and 8 more.
+`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`, `ofbFinal_wp`: the modes' CFB and
+OFB over a message's last piece (`Proof.Modes.AArch64.fbFinal_wp`) over
+CAST5's core (`Mode.dirCoreSpec true`), with the IV's address in `x25`, as
+for the whole-block functions (`FbVerified.lean`), and the specification's
+results (`Proof.Modes.cfbEncFinal_of_bytes`, …,
+`Proof.Modes.ofbFinal_of_bytes`). `cfbEncryptFinal_verified`, …: each is
+correct and constant time, by the taint analysis, as the whole-block
+functions are, for the subkeys at `schedule` (`Proof.Cast5.cfbEncFinalPost`);
+`cfbEncryptFinal_framed`, … run them with their working space on the stack,
+zeroed on return: 112 bytes, the 13 words of the scratch buffer and 8 more.
 -/
 
 @[expose] public section
@@ -239,6 +239,46 @@ theorem cfbDecryptFinal_framed :
     (nm := "scratch") (e := .u64) (n := 13) (pre := Spec.Cast5.cfbFinalPre AArch64.abi.ptrBits)
     (post := Proof.Cast5.cfbDecFinalPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 112)
     cfbDecryptFinal_verified (by decide) (by decide) (by decide) (Proof.Cast5.cfbDecFinalPostOut_local _)
+    (finalFrame_sat _)
+
+/-! ## OFB of a message's last piece -/
+
+/-- The final OFB function's contract on AArch64: the data `len = x4` bytes
+long, and the data and the IV as `Spec.Ofb.CryptFinal` says. -/
+def ofbFinalX : Contract isa where
+  pre := FPre finalLen
+  post s s' := Spec.Ofb.CryptFinal (ciphOf s) 8 s.mem s'.mem (s.gpr .x2) (s.gpr .x3) (finalLen s)
+  pub := cbcPub
+
+theorem ofbFinal_wp {s₀ : State} (hp : ofbFinalX.pre s₀) :
+    WP isa ofbFinal s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+      s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ ofbFinalX.post s₀ s' :=
+  WP.mono (fbFinal_wp' .ofb hp) fun s' ⟨hg, hd, hv⟩ => by
+    obtain ⟨h1, h2⟩ := Modes.ofbFinal_of_bytes (by decide) (cipher_length s₀) hd
+    exact ⟨hg, h1, hv.trans h2⟩
+
+theorem ofbFinal_ct : ConstantTime isa ofbFinalX.pre ofbFinalX.pub ofbFinal :=
+  VG.Taint.constantTime (A := taintS [s1234Sym]) (Taint.ofRegs modePub) fbTaint_agree (by taint_decide)
+
+theorem ofbFinal_verified :
+    Verified AArch64.target ofbFinal (finalK (Proof.Cast5.ofbFinalPost AArch64.abi.ptrBits)) :=
+  Verified.of_correct (fun s hs => by
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (ofbFinal_wp hs) (by lit_decide)
+        (by lit_decide)
+      exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
+    ofbFinal_ct (final_implies (post := Proof.Cast5.ofbFinalPost AArch64.abi.ptrBits) fun s s' h => by
+      sig_post [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Spec.Cast5.ofbFinalSig,
+        Proof.Cast5.ofbFinalPost, AArch64.abi, AArch64.argRegs, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
+      exact h)
+
+/-- The final OFB function with its working space on the stack. -/
+theorem ofbFinal_framed :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 ofbFinal)
+      (Proof.Cast5.ofbFinalRoundsContract (AArch64.abi.withConsts ecbConsts) 112) :=
+  AArch64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbFinalSig)
+    (nm := "scratch") (e := .u64) (n := 13) (pre := Spec.Cast5.ofbFinalPre AArch64.abi.ptrBits)
+    (post := Proof.Cast5.ofbFinalPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 112)
+    ofbFinal_verified (by decide) (by decide) (by decide) (Proof.Cast5.ofbFinalPostOut_local _)
     (finalFrame_sat _)
 
 end VG.Proof.Cast5.AArch64

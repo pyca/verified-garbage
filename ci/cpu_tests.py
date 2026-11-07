@@ -197,7 +197,7 @@ GROUPS = {
         "tests": ["rfc8032::ed25519_vectors", "wycheproof::ed25519"],
     },
     "ed448": {
-        "lib": ["ed448"],
+        "lib": [],
         "tests": ["rfc8032::ed448", "wycheproof::ed448"],
     },
     "message_boundaries_and_unaligned_inputs": {

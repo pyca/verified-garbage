@@ -31,3 +31,42 @@ b 21f
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
+
+/// Triple DES-OFB encryption or decryption (NIST SP 800-38A §6.4, FIPS 46-3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_triple_des_ofb_final(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "of0h+CAA4TimAgh8IAIH+AgCp/sQAsf7GALn+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgSgCBZEEAB+BLAIFkXgz33wAAD4o"
+beq %cr0, 20f
+22:
+.base64 "KAIFgQACBZEsAgWBBAIFkQAChTg="
+bl {vg_triple_des_encrypt_block}
+.base64 "wujIewAAKCg="
+beq %cr0, 23f
+.base64 "AAIFgSgCBZEEAgWBLAIFkQAAH4EAAiWBeEoIfQAAH5EEAB+BBAIlgXhKCH0EAB+RCAD/O/j/3js="
+b 24f
+23:
+.base64 "AAIFgSgCBZEEAgWBLAIFkQACBTk="
+25:
+.base64 "AAA/iQAASIl4Uil9AAA/mQEACDkBAP87///eOwAAPig="
+bne %cr0, 25b
+24:
+.base64 "AAA+KA=="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "eOu/fygCBYEAAB+RLAIFgQQAH5EIAqXrEALF6xgC5esgAgXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5YAIhOCAAgE4=""#,
+        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+    )
+}

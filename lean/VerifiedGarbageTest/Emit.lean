@@ -55,6 +55,8 @@ open VG.Emit
   public meta import VerifiedGarbage.TCB.Axioms\n\
   public import VerifiedGarbage.TCB.Emit\n\
   public meta import VerifiedGarbage.TCB.Emit\n\
+  public import VerifiedGarbage.Dispatch\n\
+  public meta import VerifiedGarbage.Dispatch\n\
   public import VerifiedGarbage.Artifacts.Sha3.X86_64\n\
   public meta import VerifiedGarbage.Artifacts.Sha3.X86_64\n\
   \n\
@@ -67,12 +69,13 @@ open VG.Emit
     []]\n\
   \n\
   #assert_standard_axioms all\n\
-  #assert_no_compiler_overrides all run\n\
+  #assert_no_compiler_overrides all VG.Dispatch.ranking run\n\
   #assert_spec_origin\n\
   \n\
   end VG.Emit\n\
   \n\
-  def main (args : List String) : IO UInt32 := VG.Emit.run VG.Emit.all args\n\
+  def main (args : List String) : IO UInt32 :=\n  \
+    VG.Emit.run VG.Emit.all VG.Dispatch.ranking args\n\
   \n\
   end\n"
 
@@ -91,6 +94,8 @@ open VG.Emit
   public meta import VerifiedGarbage.TCB.Axioms\n\
   public import VerifiedGarbage.TCB.Emit\n\
   public meta import VerifiedGarbage.TCB.Emit\n\
+  public import VerifiedGarbage.Dispatch\n\
+  public meta import VerifiedGarbage.Dispatch\n\
   public import VerifiedGarbage.Artifacts.Sha256.X86_64\n\
   public meta import VerifiedGarbage.Artifacts.Sha256.X86_64\n\
   public import VerifiedGarbage.Generic.I.X86_64.A\n\
@@ -116,12 +121,13 @@ open VG.Emit
     []]\n\
   \n\
   #assert_standard_axioms all\n\
-  #assert_no_compiler_overrides all run\n\
+  #assert_no_compiler_overrides all VG.Dispatch.ranking run\n\
   #assert_spec_origin\n\
   \n\
   end VG.Emit\n\
   \n\
-  def main (args : List String) : IO UInt32 := VG.Emit.run VG.Emit.all args\n\
+  def main (args : List String) : IO UInt32 :=\n  \
+    VG.Emit.run VG.Emit.all VG.Dispatch.ranking args\n\
   \n\
   end\n"
 
@@ -156,6 +162,8 @@ open VG.Emit
   public meta import VerifiedGarbage.TCB.Axioms\n\
   public import VerifiedGarbage.TCB.Emit\n\
   public meta import VerifiedGarbage.TCB.Emit\n\
+  public import VerifiedGarbage.Dispatch\n\
+  public meta import VerifiedGarbage.Dispatch\n\
   public import VerifiedGarbage.Generic.I.J.X86_64.A\n\
   public meta import VerifiedGarbage.Generic.I.J.X86_64.A\n\
   public import VerifiedGarbage.Variants.I.X86_64.P\n\
@@ -179,12 +187,13 @@ open VG.Emit
     []]\n\
   \n\
   #assert_standard_axioms all\n\
-  #assert_no_compiler_overrides all run\n\
+  #assert_no_compiler_overrides all VG.Dispatch.ranking run\n\
   #assert_spec_origin\n\
   \n\
   end VG.Emit\n\
   \n\
-  def main (args : List String) : IO UInt32 := VG.Emit.run VG.Emit.all args\n\
+  def main (args : List String) : IO UInt32 :=\n  \
+    VG.Emit.run VG.Emit.all VG.Dispatch.ranking args\n\
   \n\
   end\n"
 

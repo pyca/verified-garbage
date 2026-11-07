@@ -37,7 +37,10 @@ fn chacha20_poly1305() {
         let mut data = c.ct.0.clone();
         let opened = aead.decrypt_in_place(&nonce, &c.aad.0, &mut data, &tag);
         // Out of place, into an output at an unaligned offset: the same result.
-        #[cfg(target_arch = "riscv64")]
+        #[cfg(any(
+            target_arch = "riscv64",
+            all(target_arch = "powerpc64", target_endian = "little")
+        ))]
         {
             let mut out = vec![0xAA; c.ct.0.len() + 3];
             let to = aead.decrypt(&nonce, &c.aad.0, &c.ct.0, &tag, &mut out[3..]);

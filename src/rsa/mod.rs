@@ -42,7 +42,7 @@ use core::fmt;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_keygen::VG_RSA_GENERATE_ADX_FEATURES;
+use crate::arch::rsa_keygen::{VG_RSA_GENERATE_ADX_FEATURES, VG_RSA_GENERATE_IFMA_FEATURES};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_sig::{
     VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SIGN_IFMA_FEATURES,
@@ -109,6 +109,7 @@ impl Backend {
             adx,
             VG_RSA_PKCS1_VERIFY_PRECOMPUTED_IFMA_FEATURES,
             VG_RSA_PKCS1_SIGN_IFMA_FEATURES,
+            VG_RSA_GENERATE_IFMA_FEATURES,
         ]);
         [Features(0), adx, ifma]
     };

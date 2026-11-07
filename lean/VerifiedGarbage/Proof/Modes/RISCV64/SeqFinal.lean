@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.Modes.RISCV64.Seq
 public import VerifiedGarbage.Impl.Modes.RISCV64.SeqFinal
 public import VerifiedGarbage.Spec.Cfb.Final
+public import VerifiedGarbage.Spec.Ofb.Final
 import VerifiedGarbage.Proof.Modes.FbFinal
+import VerifiedGarbage.Proof.AesOfb.Spec
 import VerifiedGarbage.Proof.Modes.RISCV64.Modes
 public import VerifiedGarbage.Proof.Modes.Words
 import VerifiedGarbage.Proof.Framework.Omega
@@ -25,7 +27,8 @@ the IV, the `r` bytes are XORed with the first bytes of `CIPH_K` of the
 chaining value `F` leaves, and the IV becomes that chaining value if
 `r = 0`, its image under the cipher otherwise (`finalOut`, `finalNext`).
 `cfbEncFinal_wp` and `cfbDecFinal_wp` state this as the specification's
-(`Spec.Cfb.encryptFinal`, `decryptFinal`) for `cfbEnc` and `cfbDec`.
+(`Spec.Cfb.encryptFinal`, `decryptFinal`) for `cfbEnc` and `cfbDec`, and
+`ofbFinal_wp` as `Spec.Ofb.CryptFinal` for `ofb` (`ofbFinal_out`).
 
 The function is `seq`'s around other loops (`seqWith_changesO_wp`), which
 start from `seq`'s invariant for no step (`Inv`, a byte at a time), which
@@ -736,5 +739,32 @@ theorem cfbDecFinal_wp (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : SeqPr
         ← (cfbDec_run _ _ _).1, ← (cfbDec_run _ _ _).2]; rfl, by
       rw [h3, ← Proof.Modes.cfbDecFinalNext_of, finalNext, ← (cfbDec_run _ _ _).2]; rfl⟩,
       h4⟩
+
+/-! ## OFB -/
+
+theorem ofb_finalOk (c : Core) : FinalOk c (Mode.ofb c.bw) :=
+  ⟨rfl, rfl, fun o ho => by
+    have b := blk_bounds (c := c) (st := (Mode.ofb c.bw).step) rfl
+    exact append_ok (copyBlk_inBounds (b _) (b _)) (xorBlk_inBounds (b _) (b _) (b _)) o ho,
+    append_ok (copyBlk_wordAl _ _ _) (xorBlk_wordAl _ _ _ _)⟩
+
+/-- OFB of a message's last piece, as the specification's. -/
+theorem ofbFinal_wp (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : SeqPre c byteMode s₀)
+    (hk : cs.KeyArgs s₀ (wrs0 c byteMode s₀) k) :
+    WP isa (c.seqFinal (Mode.ofb c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
+      Spec.Ofb.CryptFinal (cs.cipher k) (4 * c.bw) s₀.mem s'.mem (P s₀) (Dp s₀) (N s₀) ∧
+      Changes c byteMode s₀ s' :=
+  WP.mono (seqFinal_wp cs (ofb_finalOk c) (ofb_computes (cs.cipher_len k)) hp hk)
+    fun s' ⟨h1, h2, h3, h4⟩ => by
+      have hL0 : 0 < 4 * c.bw := by rcases hp.layout.bw with h | h <;> omega
+      obtain ⟨e1, e2⟩ := ofb_run (cs.cipher k) (iv0 c s₀) (xsF c s₀)
+      rw [chunksAt_length] at e2
+      refine ⟨h1, ⟨?_, ?_⟩, h4⟩
+      · rw [h2, finalOut, ← e1, ← e2]
+        exact ofbFinal_out hL0 (cs.cipher_len k) s₀.mem (Dp s₀) (iv0 c s₀) (N s₀)
+      · rw [h3, finalNext, ← e2, Proof.Modes.blockCount_eq hL0]
+        split
+        · rfl
+        · exact (Proof.AesOfb.next_succ _ _ _).symm
 
 end VG.Proof.Modes.RISCV64

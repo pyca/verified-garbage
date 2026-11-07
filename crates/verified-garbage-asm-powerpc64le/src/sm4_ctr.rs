@@ -34,3 +34,35 @@ b 21f
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
+
+/// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.ctrFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the counter block or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr` and `data` may overlap the 3408 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sm4_ctr_final(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "kf8h+CAA4TimAgh8AAAH+AgAx/kQAOf5GAAH+iAAZ/ooAMf7MADn+zgAh/p4G258eCOQfHg79HwC4cp45CZLeRRa5X9QMMt/eFNGfQ=="
+bl {vg_sm4_ctr}
+.base64 "AAA+KA=="
+beq %cr0, 20f
+.base64 "AAAgOUAANPlIADT5eHPDfXiDBH5AALQ4AQDAOA=="
+bl {vg_sm4_ctr}
+.base64 "QAAUOQ=="
+22:
+.base64 "AAA/iQAASIl4Uil9AAA/mQEACDkBAP87///eOwAAPig="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "AAAU6AgA1OkQAPTpGAAU6iAAdOooANTrMAD06zgAlOqmAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5cAAhOCAAgE4=""#,
+        vg_sm4_ctr = sym super::sm4_ctr::vg_sm4_ctr,
+    )
+}

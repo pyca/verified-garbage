@@ -39,7 +39,7 @@ call {vg_poly1305_blocks}
 jmp 21f
 20:
 21:
-.base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAiUdwifiDwECLTCQUi1QkGIn+gcaAAAAAVlJRUA=="
+.base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAiUdwifiDwECLTCQUi1QkGIn7gcOAAAAAic5TUlFQ"
 call {vg_chacha20_xor}
 .base64 "WFhYWItcJBSLbCQYiejB6ASJ+YHBwAEAAFBTUQ=="
 call {vg_poly1305_blocks}
@@ -121,7 +121,7 @@ jmp 24f
 24:
 .base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAifmDwSCJ+oHCwAEAAFBRUg=="
 call {vg_poly1305_blocks}
-.base64 "WFhYuAEAAACJR3CJ+IPAQItMJBSLVCQYif6BxoAAAABWUlFQ"
+.base64 "WFhYuAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACJzlNSUVA="
 call {vg_chacha20_xor}
 .base64 "WFhYWIn7gcNAAgAAifmDwRC4AAAAAIn+gcbAAQAAU1FQUFY="
 call {vg_poly1305_finalize_scratch}
@@ -240,7 +240,7 @@ call {vg_poly1305_blocks}
 jmp 21f
 20:
 21:
-.base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAiUdwifiDwECLTCQUi1QkGIn+gcaAAAAAVlJRUA=="
+.base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAiUdwifiDwECLTCQUi1QkGIn7gcOAAAAAic5TUlFQ"
 call {vg_chacha20_xor_ssse3}
 .base64 "WFhYWItcJBSLbCQYiejB6ASJ+YHBwAEAAFBTUQ=="
 call {vg_poly1305_blocks}
@@ -326,7 +326,7 @@ jmp 24f
 24:
 .base64 "i0QkEIlHIItEJBiJRyi4AAAAAIlHJIlHLLgBAAAAifmDwSCJ+oHCwAEAAFBRUg=="
 call {vg_poly1305_blocks}
-.base64 "WFhYuAEAAACJR3CJ+IPAQItMJBSLVCQYif6BxoAAAABWUlFQ"
+.base64 "WFhYuAEAAACJR3CJ+IPAQItMJBSLVCQYifuBw4AAAACJzlNSUVA="
 call {vg_chacha20_xor_ssse3}
 .base64 "WFhYWIn7gcNAAgAAifmDwRC4AAAAAIn+gcbAAQAAU1FQUFY="
 call {vg_poly1305_finalize_scratch}

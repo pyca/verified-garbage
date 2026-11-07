@@ -77,21 +77,22 @@ theorem block_call {s : State} {S B : Addr} (h3 : s.gpr .r3 = S) (h4 : s.gpr .r4
 
 /-! ## `vg_chacha20_xor` -/
 
-/-- `vg_chacha20_xor` in place (`Proof.ChaCha20.PPC64LE.Xor.xor_call`). -/
-theorem xor_call {s : State} {S D B : Addr} {n : Nat} (h3 : s.gpr .r3 = S) (h4 : s.gpr .r4 = D)
+/-- `vg_chacha20_xor` from `X` to `D` (`Proof.ChaCha20.PPC64LE.Xor.xor_call_to`). -/
+theorem xor_call_to {s : State} {S X D B : Addr} {n : Nat} (h3 : s.gpr .r3 = S) (h4 : s.gpr .r4 = X)
     (h5 : s.gpr .r5 = BitVec.ofNat 64 n) (h6 : s.gpr .r6 = B) (h7 : s.gpr .r7 = D) (hn : n < 2 ^ 64)
-    (hSD : (⟨S, 64⟩ : Region).Disjoint ⟨D, n⟩)
-    (hSB : (⟨S, 64⟩ : Region).Disjoint ⟨B, 320⟩)
-    (hDB : (⟨D, n⟩ : Region).Disjoint ⟨B, 320⟩) (hD : D.toNat + n ≤ 2 ^ 64)
-    (hc : Covers ([] ++ [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩]) (s.rd ++ s.wr))
+    (hSX : (⟨S, 64⟩ : Region).Disjoint ⟨X, n⟩) (hSD : (⟨S, 64⟩ : Region).Disjoint ⟨D, n⟩)
+    (hSB : (⟨S, 64⟩ : Region).Disjoint ⟨B, 320⟩) (hXB : (⟨X, n⟩ : Region).Disjoint ⟨B, 320⟩)
+    (hDB : (⟨D, n⟩ : Region).Disjoint ⟨B, 320⟩) (hXD : D = X ∨ (⟨X, n⟩ : Region).Disjoint ⟨D, n⟩)
+    (hX : X.toNat + n ≤ 2 ^ 64) (hD : D.toNat + n ≤ 2 ^ 64)
+    (hc : Covers ([⟨X, n⟩] ++ [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩]) (s.rd ++ s.wr))
     (hw : Covers [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩] s.wr)
     {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩] s s' →
       Spec.ChaCha20.bytesAt s'.mem D n =
-        List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem D n)
+        List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem X n)
           (keystream (stateAt s.mem S) n) → Q s') :
     WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Xor.xor) s Q :=
-  Proof.ChaCha20.PPC64LE.Xor.xor_call h3 h4 h5 h6 h7 hn hSD hSB hDB hD hc hw
+  Proof.ChaCha20.PPC64LE.Xor.xor_call_to h3 h4 h5 h6 h7 hn hSX hSD hSB hXB hDB hXD hX hD hc hw
     fun s' hrd hwr hsp hf hcs _ hpost => hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ hpost
 
 /-! ## `vg_poly1305_init` -/

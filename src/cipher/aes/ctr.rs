@@ -16,13 +16,21 @@ use crate::arch::aes::vg_aes_expand_key;
 use crate::arch::aes::vg_aes_expand_key_aes;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::aes::vg_aes_expand_key_aesni;
-use crate::arch::aes_ctr::vg_aes_ctr;
 #[cfg(target_arch = "aarch64")]
-use crate::arch::aes_ctr::{VG_AES_CTR_AES_FEATURES, vg_aes_ctr_aes};
+use crate::arch::aes_ctr::{
+    VG_AES_CTR_AES_FEATURES, VG_AES_CTR_FINAL_AES_FEATURES, vg_aes_ctr_aes, vg_aes_ctr_final_aes,
+};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::aes_ctr::{VG_AES_CTR_AESNI_FEATURES, vg_aes_ctr_aesni};
+use crate::arch::aes_ctr::{
+    VG_AES_CTR_AESNI_FEATURES, VG_AES_CTR_FINAL_AESNI_FEATURES, vg_aes_ctr_aesni,
+    vg_aes_ctr_final_aesni,
+};
 #[cfg(target_arch = "x86_64")]
-use crate::arch::aes_ctr::{VG_AES_CTR_VAES_FEATURES, vg_aes_ctr_vaes};
+use crate::arch::aes_ctr::{
+    VG_AES_CTR_FINAL_VAES_FEATURES, VG_AES_CTR_VAES_FEATURES, vg_aes_ctr_final_vaes,
+    vg_aes_ctr_vaes,
+};
+use crate::arch::aes_ctr::{vg_aes_ctr, vg_aes_ctr_final};
 use crate::cipher::aes::Backend;
 use crate::cpu::detected;
 use crate::error::{IncompleteBlock, InvalidKeyLength};
@@ -51,21 +59,28 @@ macro_rules! instance {
 /// its CTR function.
 #[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Backend {
-    Backend::select_for(f, VG_AES_CTR_VAES_FEATURES, VG_AES_CTR_AESNI_FEATURES)
+    const AESNI: Features =
+        Features::all(&[VG_AES_CTR_AESNI_FEATURES, VG_AES_CTR_FINAL_AESNI_FEATURES]);
+    const VAES: Features =
+        Features::all(&[VG_AES_CTR_VAES_FEATURES, VG_AES_CTR_FINAL_VAES_FEATURES]);
+    Backend::select_for(f, VAES, AESNI)
 }
 
 /// The best implementation of AES a CPU with the features `f` can run, with
 /// its CTR function.
 #[cfg(target_arch = "x86")]
 fn select(f: Features) -> Backend {
-    Backend::select_for(f, VG_AES_CTR_AESNI_FEATURES)
+    const AESNI: Features =
+        Features::all(&[VG_AES_CTR_AESNI_FEATURES, VG_AES_CTR_FINAL_AESNI_FEATURES]);
+    Backend::select_for(f, AESNI)
 }
 
 /// The best implementation of AES a CPU with the features `f` can run, with
 /// its CTR function.
 #[cfg(target_arch = "aarch64")]
 fn select(f: Features) -> Backend {
-    Backend::select_for(f, VG_AES_CTR_AES_FEATURES)
+    const AES: Features = Features::all(&[VG_AES_CTR_AES_FEATURES, VG_AES_CTR_FINAL_AES_FEATURES]);
+    Backend::select_for(f, AES)
 }
 
 /// The only implementation of AES on ARMv7, PPC64LE and RISC-V.
@@ -135,7 +150,7 @@ impl AesCtr {
     /// place, of any length: its whole blocks, then a partial last block if
     /// there is one (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`).
     pub fn apply_keystream_final(mut self, buffer: &mut [u8]) {
-        self.key.apply_keystream(&mut self.counter, buffer);
+        self.key.apply_keystream_final(&mut self.counter, buffer);
     }
 }
 
@@ -165,25 +180,49 @@ impl Key {
         })
     }
 
-    /// Encrypts or decrypts (the same operation) `buffer` in place, from the
-    /// counter block `ctr`, which it replaces with the counter block after
-    /// the last one used: `ctr` plus the number of blocks (counting a partial
-    /// last one), modulo `2¹²⁸` (unchanged for empty input). A message may
-    /// be processed in pieces of whole blocks, each continuing from the `ctr`
-    /// the last left; a piece whose length is not a multiple of 16 bytes
-    /// must end the message.
+    /// Encrypts or decrypts (the same operation) the whole blocks of
+    /// `buffer` in place, from the counter block `ctr`, which it replaces
+    /// with the counter block after the last one used: `ctr` plus the number
+    /// of blocks, modulo `2¹²⁸` (unchanged for empty input).
     fn apply_keystream(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
-        let whole = buffer.len() / 16 * 16;
-        let (blocks, rest) = buffer.split_at_mut(whole);
+        self.crypt(ctr, buffer);
+    }
+
+    /// Encrypts or decrypts (the same operation) the rest of a message, of
+    /// any length, in place: its whole blocks with `crypt`, then the bytes
+    /// after them, fewer than 16, with the final function, from the counter
+    /// block the whole blocks leave in `ctr`, which it replaces with the
+    /// next one.
+    fn apply_keystream_final(&self, ctr: &mut [u8; 16], buffer: &mut [u8]) {
+        let (blocks, rest) = buffer.split_at_mut(buffer.len() / 16 * 16);
         self.crypt(ctr, blocks);
         if !rest.is_empty() {
-            // The last bytes, padded to a block: CTR XORs them with the first
-            // bytes of the next output block.
-            let mut last = [0; 16];
-            last[..rest.len()].copy_from_slice(rest);
-            self.crypt(ctr, &mut last);
-            rest.copy_from_slice(&last[..rest.len()]);
-            zeroize(&mut last);
+            let f = instance!(
+                self.backend,
+                vg_aes_ctr_final,
+                vg_aes_ctr_final_aesni,
+                vg_aes_ctr_final_vaes,
+                vg_aes_ctr_final_aes
+            );
+            let mut scratch = [0; 272];
+            // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
+            // schedule; `rest` is valid for `len` bytes, and it, the block at
+            // `ctr`, the schedule and the scratch space are separate valid
+            // objects of the sizes of the signature. `select` chose `f` for
+            // the CPU's features.
+            unsafe {
+                f(
+                    &self.schedule,
+                    self.rounds,
+                    ctr,
+                    rest.as_mut_ptr(),
+                    rest.len(),
+                    &mut scratch,
+                );
+            }
+            // The scratch space may hold the key schedule, the data and our
+            // caller's registers.
+            zeroize(&mut scratch);
         }
     }
 

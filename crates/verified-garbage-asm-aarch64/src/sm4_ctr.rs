@@ -91,3 +91,39 @@ b 21f
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
     )
 }
+
+/// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.ctrFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the counter block or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr` and `data` may overlap the 3344 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sm4_ctr_final(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd10143ff,0x910003e4,0xf9000093,0xf9000494,0xf9000895,0xf9000c96,0xf9001097,0xf9001498
+.inst 0xf900189e,0xf9001c99,0x91000013,0x91000035,0x91000099,0xd344fc69,0xd37ced2a,0x8b0a0056
+.inst 0xcb0a0077,0x91000123
+bl {vg_sm4_ctr}
+cbz x23, 20f
+.inst 0xd2800009,0xf9002329,0xf9002729,0x91000260,0x910002a1,0x91010322,0xd2800023
+bl {vg_sm4_ctr}
+.inst 0x91010329
+22:
+.inst 0x39400126,0x394002c7,0xca0600e7,0x390002c7,0x91000529,0x910006d6,0xd10006f7
+cbnz x23, 22b
+b 21f
+20:
+21:
+.inst 0xf9400333,0xf9400734,0xf9400b35,0xf9400f36,0xf9401337,0xf9401738,0xf9401b3e,0xf9401f39
+.inst 0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0x910143ff
+.inst 0xd65f03c0
+.p2align 6",
+        vg_sm4_ctr = sym super::sm4_ctr::vg_sm4_ctr,
+    )
+}

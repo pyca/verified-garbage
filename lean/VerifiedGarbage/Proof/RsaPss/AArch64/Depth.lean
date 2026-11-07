@@ -54,7 +54,11 @@ theorem encode_depth : (encode f H g).aarch64Depth ≤ 39 := by
     Impl.RsaOaep.AArch64.Mgf1.Table.mgfXor, Impl.RsaOaep.AArch64.Mgf1.Table.round, Impl.RsaOaep.AArch64.Mgf1.seqs,
     Impl.RsaOaep.AArch64.Mgf1.Table.tcall, Impl.RsaOaep.AArch64.Mgf1.Table.xorOut, mgfFrame,
     Impl.RsaOaep.AArch64.frameBytes]
-  omega
+  -- Split the maxima before omega: one certificate for the whole tree is much larger.
+  simp (disch := decide) only [← Nat.le_sub_iff_add_le, Nat.reduceSub, Nat.reduceDiv,
+    Nat.max_le, Nat.zero_le, and_true, true_and]
+  repeat' apply And.intro
+  all_goals omega
 
 theorem chk_depth : (checkEncoding f H g).aarch64Depth ≤ 39 := by
   have hi := icalls_depth (i := .blr .x16) hd.init
@@ -70,6 +74,10 @@ theorem chk_depth : (checkEncoding f H g).aarch64Depth ≤ 39 := by
     Impl.RsaOaep.AArch64.Mgf1.Table.mgfXor, Impl.RsaOaep.AArch64.Mgf1.Table.round, Impl.RsaOaep.AArch64.Mgf1.seqs,
     Impl.RsaOaep.AArch64.Mgf1.Table.tcall, Impl.RsaOaep.AArch64.Mgf1.Table.xorOut, mgfFrame,
     Impl.RsaOaep.AArch64.frameBytes]
-  omega
+  -- Split the maxima before omega: one certificate for the whole tree is much larger.
+  simp (disch := decide) only [← Nat.le_sub_iff_add_le, Nat.reduceSub, Nat.reduceDiv,
+    Nat.max_le, Nat.zero_le, and_true, true_and]
+  repeat' apply And.intro
+  all_goals omega
 
 end VG.Proof.RsaPss.AArch64

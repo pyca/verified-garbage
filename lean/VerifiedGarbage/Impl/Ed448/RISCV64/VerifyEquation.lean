@@ -72,7 +72,7 @@ namespace VG.Impl.Ed448.RISCV64
 
 open VG.RISCV64
 open VG.Impl.X448.RISCV64 (freeze one align R X2 Z2 Y)
-open VG.Impl.X448.RISCV64.R64 (mul add sub cswap chain223 sqn T6)
+open VG.Impl.X448.RISCV64.R64 (mul add sub cswap chain223Call sqn T6)
 
 /-! ## The working space -/
 
@@ -136,7 +136,7 @@ def copy (o q : Nat) : List Instr := .li .t0 0 :: sel o q q
 /-- `[R] = [Z2]^((p-3)/4)`, by X448's addition chain as far as
 `z^(2²²³ - 1)` (in `R`, and `z^(2²²² - 1)` in `T6`), then 223 squarings and
 the product with `z^(2²²² - 1)`: `(p-3)/4 = (2²²³ - 1) 2²²³ + (2²²² - 1)`. -/
-def root : Prog isa := .seq (chain223 Z2) (.seq (sqn R R 223) (mul R R T6))
+def root : Prog isa := .seq chain223Call (.seq (sqn R R 223) (mul R R T6))
 
 /-! ## Decoding -/
 

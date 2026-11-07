@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
 import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
@@ -82,5 +83,37 @@ theorem openCode_framed (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     (leak := some (Spec.Gcm.openLeak AArch64.abi.ptrBits))
     (openCode_verified v hMK) (by decide) (by decide) (openPre_local _) (openPost_local _) openFrameSat_pre
     (hleak := openLeak_local _)
+
+open VG.Proof.AesGcm.AArch64.Gather in
+/-- `openWithE` has no frames of its own. -/
+theorem fastOpenWithE_depth0 (v : GcmImpl) {k : Nat} (hk : k = 16 ∨ k = 24) {cl : Prog isa}
+    (hcl : cl.aarch64Depth = 0) : (Impl.AesGcm.AArch64.Fast.openWithE v.callees k cl).aarch64Depth = 0 := by
+  rcases hk with rfl | rfl <;>
+  simp only [Impl.AesGcm.AArch64.Fast.openWithE, Impl.AesGcm.AArch64.Fast.openFastP,
+    Impl.AesGcm.AArch64.Fast.openRunWithP, Impl.AesGcm.AArch64.Fast.front, Impl.AesGcm.AArch64.Fast.cond,
+    Impl.AesGcm.AArch64.Fast.padMul, Impl.AesGcm.AArch64.Fast.padMulT, Impl.AesGcm.AArch64.Fast.oneCryptT, Impl.AesGcm.AArch64.Tail.cryptAlT,
+    Impl.AesGcm.AArch64.Tail.crSeg2T, Impl.AesGcm.AArch64.Tail.crTailT, openRest, openMain, oneCrypt, cryptAl, crArgs, tagLenOk,
+    tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag,
+    crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, Impl.AesGcm.AArch64.xor,
+    padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth, depth_of_noFrames v.ctr.noFrames,
+    depth_of_noFrames v.gh.noFrames, hcl] <;> decide
+
+open VG.Proof.AesGcm.AArch64.Gather in
+/-- The frames of `openCode v`, in its frame of 2592 bytes, use at most those. -/
+theorem openCode_depth (v : GcmImpl) :
+    16 * (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode v)).aarch64Depth ≤ 2592 := by
+  unfold openCode
+  split
+  · simp only [Impl.StackScratch.AArch64.withStackArgScratch, Impl.AesGcm.AArch64.Fast.«open»,
+      Impl.AesGcm.AArch64.Fast.openWith, Code.aarch64Depth, Instr.frameUnits,
+      fastOpenWithE_depth0 v (.inl rfl) (cl := .call v.callees.gh.name v.callees.gh.code)
+        (by simp only [Code.aarch64Depth, GcmImpl.callees, depth_of_noFrames v.gh.noFrames])]
+    decide
+  · simp only [Impl.StackScratch.AArch64.withStackArgScratch, «open», openRest, openMain, oneCrypt, cryptAl,
+      crArgs, tagLenOk, tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody,
+      tag, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB,
+      Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth, Instr.frameUnits,
+      depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.gh.noFrames]
+    decide
 
 end VG.Proof.AesGcm.AArch64
