@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesCfb.X86.Verified
+public import VerifiedGarbage.Proof.AesCfb.X86.Final
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 
@@ -26,6 +27,20 @@ def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
     stack := 24
     verified := Proof.AesCfb.decrypt_keyed (decrypt_verified v)
     spSafe := decrypt_spSafe v
+    features := v.features },
+  Spec.Cfb.aesEncryptFinalApi.artifact X86.target {
+    suffix := v.suffix
+    code := Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal v.enc v.suffix)
+    stack := 100
+    verified := Proof.AesCfb.encryptFinal_keyed (encryptFinal_framed v)
+    spSafe := encryptFinal_framed_spSafe v
+    features := v.features },
+  Spec.Cfb.aesDecryptFinalApi.artifact X86.target {
+    suffix := v.suffix
+    code := Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.decryptFinal v.enc v.suffix)
+    stack := 100
+    verified := Proof.AesCfb.decryptFinal_keyed (decryptFinal_framed v)
+    spSafe := decryptFinal_framed_spSafe v
     features := v.features }]
 
 end VG.Generic.AesBlocks.X86.AesCfb

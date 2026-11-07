@@ -69,9 +69,9 @@ theorem keygen_body_ct (v : Backend) {s t : State}
     (htrace : (keygenResult s).trace = (keygenResult t).trace)
     {tsa tsb : List Leak} {u w : State}
     (ea : Exec isa (GenerateKey.body (keygenCheckName v) (keygenDeriveName v)
-      (Generate.checkParameters v.sq v.mul) (Generate.deriveKey v.sq v.mul)) (allocState Random.frameBytes s) tsa u)
+      (Generate.checkParameters v.sq v.mul) (Generate.deriveChecked v.sq v.mul)) (allocState Random.frameBytes s) tsa u)
     (eb : Exec isa (GenerateKey.body (keygenCheckName v) (keygenDeriveName v)
-      (Generate.checkParameters v.sq v.mul) (Generate.deriveKey v.sq v.mul)) (allocState Random.frameBytes t) tsb w) :
+      (Generate.checkParameters v.sq v.mul) (Generate.deriveChecked v.sq v.mul)) (allocState Random.frameBytes t) tsb w) :
     tsa = tsb := by
   unfold GenerateKey.body at ea eb
   cases ea with | seq eaA eaR => cases eaR with | seq eaCall eaR2 =>
@@ -144,7 +144,7 @@ theorem keygen_constantTime (v : Backend) :
     ConstantTime isa (Spec.Dsa.generateKeyContract abi (v.stack + 256)).pre
       (Spec.Dsa.generateKeyContract abi (v.stack + 256)).pub
       (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.sq v.mul)
-        (Generate.deriveKey v.sq v.mul)) := by
+        (Generate.deriveChecked v.sq v.mul)) := by
   intro s t tsa tsb u w hs ht hpub ea eb
   have hsa := generateKeyABI_of hs
   have hta := generateKeyABI_of ht

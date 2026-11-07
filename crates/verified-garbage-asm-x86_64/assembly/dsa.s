@@ -10434,7 +10434,7 @@ vg_dsa_generate_key_adx:
 	mov QWORD PTR [rsp+8], rax
 	mov rax, QWORD PTR [rsp+136]
 	mov QWORD PTR [rsp+16], rax
-	call {vg_dsa_derive_key_adx}
+	call {vg_dsa_derive_key_checked_adx}
 	mov eax, eax
 	mov QWORD PTR [rsp+192], rax
 221:
@@ -23609,7 +23609,7 @@ vg_dsa_generate_key:
 	mov QWORD PTR [rsp+8], rax
 	mov rax, QWORD PTR [rsp+136]
 	mov QWORD PTR [rsp+16], rax
-	call {vg_dsa_derive_key}
+	call {vg_dsa_derive_key_checked}
 	mov eax, eax
 	mov QWORD PTR [rsp+192], rax
 221:
