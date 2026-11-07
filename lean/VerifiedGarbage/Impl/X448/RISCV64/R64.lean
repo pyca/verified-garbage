@@ -351,11 +351,18 @@ def invert : Prog isa := .seq (chain223 Z2) invTail
 def tail : Prog isa :=
   .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq invert <| .seq (mul X2 X2 R) (.block freeze)
 
-def x448 : Prog isa := .seq (.block (align ++ setup)) tail
+/-- Both entry points call the same ladder and inversion. The last doubleword
+of the aligned 2048-byte working area holds the caller's return address;
+the tail's field area and scalar bits end before it. No stack is used. -/
+def tailCall : Prog isa :=
+  .seq (.block [.store .d .ra .a3 2040])
+    (.seq (.call "vg_x448_tail" tail) (.block [.load .d .ra .a3 2040]))
+
+def x448 : Prog isa := .seq (.block (align ++ setup)) tailCall
 
 /-- `vg_x448_base(out = a0, scalar = a1, scratch = a2)`: the working space into
 `a3`, as `vg_x448` has it, and `vg_x448` with the base point's u-coordinate, 5,
 written instead of read (`setupBase`). -/
-def x448Base : Prog isa := .seq (.block ([.addi .a3 .a2 0] ++ align ++ setupBase)) tail
+def x448Base : Prog isa := .seq (.block ([.addi .a3 .a2 0] ++ align ++ setupBase)) tailCall
 
 end VG.Impl.X448.RISCV64.R64
