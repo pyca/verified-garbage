@@ -25,27 +25,24 @@ open VG VG.PPC64LE
 
 theorem encrypt_verified : Verified PPC64LE.target Impl.AesEcb.PPC64LE.encrypt (Spec.AesEcb.encryptContract PPC64LE.abi 48) :=
   Verified.callWipe' (sig := Spec.Aes.blocksSig) (stack := 0) (zst := 0)
-    (pre := blocksPre 64) (post := blocksPost 64 fun l key => Spec.Aes.cipher (Spec.Aes.rounds l) (Spec.Aes.expandKey key))
-    (post' := ecbPost 64 fun l key => Spec.Aes.cipher (Spec.Aes.rounds l) (Spec.Aes.expandKey key))
+    (pre := pre 64) (post := post 64 enc) (post' := ecbPost 64 enc)
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 4)
     (Proof.Aes.encryptBlocks_keyed Proof.Aes.PPC64LE.encryptBlocks_verified) Proof.Zeroize.PPC64LE.verified
     (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (pre_local 64) (post_local 64) (post_out 64) (post_wiped 64)
-    (by implies_sat [Spec.Aes.blocksSig, PPC64LE.abi, PPC64LE.argRegs, blocksPre] [Proof.Aes.PPC64LE.blocksSat]
+    (pre_local 64) (post_local 64 _) (post_out 64 _) (AesEcb.wiped 64 _)
+    (by implies_sat [Spec.Aes.blocksSig, PPC64LE.abi, PPC64LE.argRegs, pre] [Proof.Aes.PPC64LE.blocksSat]
       using Proof.Aes.PPC64LE.blocksSat)
 
 theorem decrypt_verified : Verified PPC64LE.target Impl.AesEcb.PPC64LE.decrypt (Spec.AesEcb.decryptContract PPC64LE.abi 48) :=
   Verified.callWipe' (sig := Spec.Aes.blocksSig) (stack := 0) (zst := 0)
-    (pre := blocksPre 64)
-    (post := blocksPost 64 fun l key => Spec.Aes.invCipher (Spec.Aes.rounds l) (Spec.Aes.expandKey key))
-    (post' := ecbPost 64 fun l key => Spec.Aes.invCipher (Spec.Aes.rounds l) (Spec.Aes.expandKey key))
+    (pre := pre 64) (post := post 64 dec) (post' := ecbPost 64 dec)
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 4)
     (Proof.Aes.decryptBlocks_keyed Proof.Aes.PPC64LE.decryptBlocks_verified) Proof.Zeroize.PPC64LE.verified
     (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (pre_local 64) (post_local 64) (post_out 64) (post_wiped 64)
-    (by implies_sat [Spec.Aes.blocksSig, PPC64LE.abi, PPC64LE.argRegs, blocksPre] [Proof.Aes.PPC64LE.blocksSat]
+    (pre_local 64) (post_local 64 _) (post_out 64 _) (AesEcb.wiped 64 _)
+    (by implies_sat [Spec.Aes.blocksSig, PPC64LE.abi, PPC64LE.argRegs, pre] [Proof.Aes.PPC64LE.blocksSat]
       using Proof.Aes.PPC64LE.blocksSat)
 
 end VG.Proof.AesEcb.PPC64LE
