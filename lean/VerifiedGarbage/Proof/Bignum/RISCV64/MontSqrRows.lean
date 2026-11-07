@@ -95,7 +95,7 @@ theorem macSteps_succ (K : Nat) :
   simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
 /-- The registers the steps write. -/
-def macRegs : List Reg := [.s1, .s2, .s3, .s4, .a7]
+def macRegs : List Reg := [.a4, .s1, .s2, .s3, .s4, .a7]
 
 /-- `K` steps, the pointers `t4` and `a0` at `dT` and `dY`: the `K` words
 stored at `dT` and the carry `s1` make up `T + x Y + c`, for the `K` words
@@ -144,8 +144,102 @@ theorem mac_sum_group {W T S C₀ C₁ C₂ a G T' S' P Q : Nat}
     rw [← e₂, Nat.mul_add, Nat.mul_assoc]
   grind
 
+/-- The two products in a pipelined pair have the scalar row's value. -/
+theorem sqrMacPair_ok {s : State} {B : Addr} {Z dT dY k : Nat} (hs : Scr s B Z)
+    (h4 : s.gpr .t4 = off B dT) (h0 : s.gpr .a0 = off B dY) (h7 : s.gpr .a7 = word s.mem B (dY + k))
+    (hk : k + 16 < 2048) (hk8 : k % 8 = 0) (hT8 : dT % 8 = 0) (hY8 : dY % 8 = 0)
+    (hT : dT + k + 16 ≤ Z) (hY : dY + (k + 16) + 8 ≤ Z) :
+    WP isa (.block (sqrMacPair k)) s fun t =>
+      (∃ v₀ v₁ : BitVec 64, t.mem = (s.mem.writeW (off B (dT + k)) v₀).writeW (off B (dT + k + 8)) v₁ ∧
+        v₀.toNat + 2 ^ 64 * v₁.toNat + 2 ^ 128 * (t.gpr .s1).toNat =
+          (word s.mem B (dT + k)).toNat + 2 ^ 64 * (word s.mem B (dT + k + 8)).toNat +
+          (s.gpr .s0).toNat * ((word s.mem B (dY + k)).toNat + 2 ^ 64 * (word s.mem B (dY + k + 8)).toNat) +
+          (s.gpr .s1).toNat ∧ t.gpr .a7 = word s.mem B (dY + (k + 16))) ∧ Keep macRegs s t := by
+  refine WP.keep _ ?_ (by rfl) (by rfl)
+  unfold sqrMacPair
+  brun [h4, h0, h7, hk, show k < 2048 by omega_arith, show k + 8 < 2048 by omega_arith,
+    hs.ld (show dT + k + 8 ≤ Z by omega_arith), hs.ld (show dT + (k + 8) + 8 ≤ Z by omega_arith),
+    hs.ld (show dY + (k + 8) + 8 ≤ Z by omega_arith), hs.ld hY,
+    hs.st (show dT + k + 8 ≤ Z by omega_arith), hs.st (show dT + (k + 8) + 8 ≤ Z by omega_arith),
+    hs.al8 (show dT + k + 8 ≤ Z by omega_arith) (by omega_arith), hs.al8 (show dT + (k + 8) + 8 ≤ Z by omega_arith) (by omega_arith),
+    hs.al8 (show dY + (k + 8) + 8 ≤ Z by omega_arith) (by omega_arith), hs.al8 hY (by omega_arith)]
+  refine ⟨_, _, rfl, ?_⟩
+  have e₀ := sqr_chain (word s.mem B (dT + k)) (s.gpr .s0) (word s.mem B (dY + k)) (s.gpr .s1)
+  have e₁ := sqr_chain (word s.mem B (dT + k + 8)) (s.gpr .s0) (word s.mem B (dY + k + 8))
+    (BitVec.ofNat 64 ((s.gpr .s0).toNat * (word s.mem B (dY + k)).toNat / 2 ^ 64) +
+      (if s.gpr .s0 * word s.mem B (dY + k) + word s.mem B (dT + k) < word s.mem B (dT + k) then 1 else 0) +
+      (if s.gpr .s0 * word s.mem B (dY + k) + word s.mem B (dT + k) + s.gpr .s1 < s.gpr .s1 then 1 else 0))
+  have e := mac_sum_succ (P := 2 ^ 64) e₀ e₁
+  simp only [Nat.reducePow, word, Nat.add_assoc] at e ⊢
+  exact e
+
+/-- A fixed sequence of pipelined pairs has the same row invariant as scalar steps. -/
+theorem macPairs_ok {B : Addr} {Z dT dY : Nat} (hT8 : dT % 8 = 0) (hY8 : dY % 8 = 0) :
+    ∀ (K : Nat) {s : State}, Scr s B Z →
+    s.gpr .t4 = off B dT → s.gpr .a0 = off B dY → s.gpr .a7 = word s.mem B dY → 16 * K + 16 ≤ 2048 →
+    dT + 16 * K ≤ Z → dY + 16 * K + 8 ≤ Z → (dY + 16 * K + 8 ≤ dT ∨ dT + 16 * K ≤ dY) →
+    WP isa (.block ((List.range K).flatMap fun k => sqrMacPair (16 * k))) s fun t =>
+      (Outside B dT (16 * K) s.mem t.mem ∧
+        wordsVal t.mem B dT (2 * K) + 2 ^ (64 * (2 * K)) * (t.gpr .s1).toNat =
+          wordsVal s.mem B dT (2 * K) + (s.gpr .s0).toNat * wordsVal s.mem B dY (2 * K) + (s.gpr .s1).toNat ∧
+        t.gpr .a7 = word s.mem B (dY + 16 * K)) ∧ Keep macRegs s t
+  | 0, s, _, _, _, h7, _, _, _, _ => by
+    simp only [List.range_zero, List.flatMap_nil]
+    exact WP.block_nil ⟨⟨Outside.refl _ _ _ _, by simp [wordsVal], h7⟩, Keep.refl _ _⟩
+  | K + 1, s, hs, h4, h0, h7, hK, hT, hY, sY => by
+    have hnw := hs.nowrap
+    rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
+      WP.block_append_iff]
+    refine WP.mono (macPairs_ok hT8 hY8 K hs h4 h0 h7 (by omega_arith) (by omega_arith) (by omega_arith)
+      (by omega_arith)) fun u ⟨⟨ou, eu, au⟩, ku⟩ => ?_
+    have g : ∀ r ∈ [Reg.s0, .a0, .t4], u.gpr r = s.gpr r := fun r hr => ku.gpr (by revert r hr; decide)
+    refine WP.mono (sqrMacPair_ok (dT := dT) (dY := dY) (k := 16 * K) (hs.congr ku.2.2)
+      (by rw [g .t4 (by decide), h4]) (by rw [g .a0 (by decide), h0])
+      (by rw [au, ou.word (by omega_arith) (by omega_arith)])
+      (by omega_arith) (by omega_arith) hT8 hY8 (by omega_arith) (by omega_arith))
+      fun v ⟨⟨v₀, v₁, mv, ev, av⟩, kv⟩ => ⟨⟨?_, ?_, ?_⟩, (ku.trans kv).mono (by decide)⟩
+    · rw [mv]
+      exact (ou.mono (Nat.le_refl _) (by omega_arith)).trans
+        (((writeW_outside _ B v₀ (by omega_arith)).mono (by omega_arith) (by omega_arith)).trans
+          ((writeW_outside _ B v₁ (by omega_arith)).mono (by omega_arith) (by omega_arith)))
+    · rw [ou.word (by omega_arith) (by omega_arith), ou.word (by omega_arith) (by omega_arith),
+        ou.word (by omega_arith) (by omega_arith), ou.word (by omega_arith) (by omega_arith), g .s0 (by decide)] at ev
+      have ep := mac_sum_group eu ev
+      have ix : 2 * (K + 1) = (2 * K + 1) + 1 := by omega_arith
+      have off₀ : 8 * (2 * K) = 16 * K := by omega_arith
+      have off₁ : 8 * (2 * K + 1) = 16 * K + 8 := by omega_arith
+      rw [show dT + 16 * K + 8 = dT + 8 * (2 * K + 1) by omega_arith,
+        show dT + 16 * K = dT + 8 * (2 * K) by omega_arith] at mv
+      rw [ix, mv, fios_wordsVal_write_top _ _ _ _ _ (by omega_arith),
+        fios_wordsVal_write_top _ _ _ _ _ (by omega_arith),
+        wordsVal_succ_top s.mem B dT (2 * K + 1), wordsVal_succ_top s.mem B dT (2 * K),
+        wordsVal_succ_top s.mem B dY (2 * K + 1), wordsVal_succ_top s.mem B dY (2 * K),
+        pow64_succ, pow64_succ, off₀, off₁]
+      grind
+    · rw [av, ou.word (by omega_arith) (by omega_arith)]
+      congr 2
+
+/-- Eight-word groups use four pipelined pairs; all other groups stay scalar. -/
+theorem macGroupSteps_ok {B : Addr} {Z dT dY : Nat} (hT8 : dT % 8 = 0) (hY8 : dY % 8 = 0)
+    (U : Nat) {s : State} (hs : Scr s B Z)
+    (h4 : s.gpr .t4 = off B dT) (h0 : s.gpr .a0 = off B dY) (h7 : s.gpr .a7 = word s.mem B dY)
+    (hU : 8 * U + 8 ≤ 2048) (hT : dT + 8 * U ≤ Z) (hY : dY + 8 * U + 8 ≤ Z)
+    (sY : dY + 8 * U + 8 ≤ dT ∨ dT + 8 * U ≤ dY) :
+    WP isa (.block (macGroupSteps U)) s fun t =>
+      (Outside B dT (8 * U) s.mem t.mem ∧
+        wordsVal t.mem B dT U + 2 ^ (64 * U) * (t.gpr .s1).toNat =
+          wordsVal s.mem B dT U + (s.gpr .s0).toNat * wordsVal s.mem B dY U + (s.gpr .s1).toNat ∧
+        t.gpr .a7 = word s.mem B (dY + 8 * U)) ∧ Keep macRegs s t := by
+  unfold macGroupSteps
+  split
+  next h =>
+    subst U
+    have hp := macPairs_ok hT8 hY8 4 hs h4 h0 h7 (by decide) hT hY sY
+    simpa only [Nat.reduceMul] using hp
+  next => exact macSteps_ok hT8 hY8 U hs h4 h0 h7 hU hT hY sY
+
 /-- The registers a loop of steps counted by `cr` writes. -/
-def macLoopRegs (cr : Reg) : List Reg := [.a0, .t4, cr, .s1, .s2, .s3, .s4, .a7]
+def macLoopRegs (cr : Reg) : List Reg := [.a4, .a0, .t4, cr, .s1, .s2, .s3, .s4, .a7]
 
 /-- What `N` iterations of `U` steps leave, the pointers at offsets `dT`,
 `dY` on entry: `macSteps_ok` for `U N` words, the pointers advanced past
@@ -162,7 +256,7 @@ theorem macPost_zero {cr : Reg} {B : Addr} {dT dY : Nat} {s : State} (h4 : s.gpr
   ⟨by rw [h4]; rfl, by rw [h0]; rfl, Outside.refl _ _ _ _, by simp [wordsVal], h7, Keep.refl _ _⟩
 
 /-- `N > 0` iterations of `U` steps (`countLoop cr (macGroup U)`). -/
-theorem macLoop_ok {cr : Reg} (hcr : cr ∉ [Reg.t4, .a0, .s0, .s1, .s2, .s3, .s4, .a7])
+theorem macLoop_ok {cr : Reg} (hcr : cr ∉ [Reg.a4, .t4, .a0, .s0, .s1, .s2, .s3, .s4, .a7])
     {B : Addr} {Z dT dY U N : Nat} (hU : 8 * U + 8 < 2048) {s₀ : State} (hs : Scr s₀ B Z)
     (hT8 : dT % 8 = 0) (hY8 : dY % 8 = 0)
     (h4 : s₀.gpr .t4 = off B dT) (h0 : s₀.gpr .a0 = off B dY) (h7 : s₀.gpr .a7 = word s₀.mem B dY)
@@ -181,7 +275,7 @@ theorem macLoop_ok {cr : Reg} (hcr : cr ∉ [Reg.t4, .a0, .s0, .s1, .s2, .s3, .s
   have hUi : U * i + U ≤ U * N := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
   have g : s.gpr .s0 = s₀.gpr .s0 := ik.gpr (by simp [macLoopRegs]; exact fun h => hcr (by simp [h]))
   rw [macGroup, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (macSteps_ok (show (dT + 8 * (U * i)) % 8 = 0 by omega_arith)
+  refine WP.mono (macGroupSteps_ok (show (dT + 8 * (U * i)) % 8 = 0 by omega_arith)
     (show (dY + 8 * (U * i)) % 8 = 0 by omega_arith)
     U (hs.congr ik.2.2) i4 i0 (by rw [i7, iout.word (by omega_arith) (by omega_arith)])
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
@@ -225,7 +319,7 @@ theorem macLoop_ok {cr : Reg} (hcr : cr ∉ [Reg.t4, .a0, .s0, .s1, .s2, .s3, .s
       (by simp [macLoopRegs])))
 
 /-- `N` iterations of `U` steps if `N ≠ 0` (`countLoopR? cr (macGroup U)`). -/
-theorem macLoop?_ok {cr : Reg} (hcr : cr ∉ [Reg.t4, .a0, .s0, .s1, .s2, .s3, .s4, .a7])
+theorem macLoop?_ok {cr : Reg} (hcr : cr ∉ [Reg.a4, .t4, .a0, .s0, .s1, .s2, .s3, .s4, .a7])
     {B : Addr} {Z dT dY U N : Nat} (hU : 8 * U + 8 < 2048) {s₀ : State} (hs : Scr s₀ B Z)
     (hT8 : dT % 8 = 0) (hY8 : dY % 8 = 0)
     (h4 : s₀.gpr .t4 = off B dT) (h0 : s₀.gpr .a0 = off B dY) (h7 : s₀.gpr .a7 = word s₀.mem B dY)
@@ -240,7 +334,7 @@ theorem macLoop?_ok {cr : Reg} (hcr : cr ∉ [Reg.t4, .a0, .s0, .s1, .s2, .s3, .
   · exact macLoop_ok hcr hU hs hT8 hY8 h4 h0 h7 hc (Nat.pos_of_ne_zero (of_decide_eq_false hz)) hN' hT hY sY
 
 /-- The registers a row writes. -/
-def macRunRegs : List Reg := [.a0, .t4, .t5, .t6, .s1, .s2, .s3, .s4, .a7]
+def macRunRegs : List Reg := [.a4, .a0, .t4, .t5, .t6, .s1, .s2, .s3, .s4, .a7]
 
 /-- A row of `K` steps (`macRun`, `K` in `t5`), the pointers `t4`, `a0` at
 `dT`, `dY`: the `K` words at `dT` and the carry `s1` make up `T + x Y + c`,
@@ -416,7 +510,7 @@ theorem wordsVal_seg (m : Mem) (B : Addr) (d L K R : Nat) :
     show d + 8 * (L + K) + 8 = d + 8 * (L + K + 1) by omega_arith]
 
 /-- The registers `cross` writes. -/
-def crossRegs : List Reg := [.a0, .a1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4, .a7]
+def crossRegs : List Reg := [.a4, .a0, .a1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4, .a7]
 
 /-- `cross`, `a` (`w` words) at `dA` (`a3`), `T` (`2 w + 2` words, 0) at `dT`
 (`a5`): `T` the cross products of `a`, `crossPart … (w - 1)`. The rows read
@@ -751,7 +845,7 @@ theorem sqr_mdist (w : Nat) :
   omega_arith
 
 /-- The registers `reduce` writes. -/
-def redRegs : List Reg := [.a0, .a1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4, .a7]
+def redRegs : List Reg := [.a4, .a0, .a1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4, .a7]
 
 /-- The sum of a row of the reduction. -/
 theorem red_sum {L P Q mid mid' c x x' top top' R U uM A : Nat}
