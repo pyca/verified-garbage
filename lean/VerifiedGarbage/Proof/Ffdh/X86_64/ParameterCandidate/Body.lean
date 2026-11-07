@@ -10,6 +10,7 @@ import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ScreenedStream
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
 /-! # FFDH parameter generation on x86-64: the complete callable body -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/ParameterCandidate/ResultBridge.lean`, which only this module imported.
@@ -43,13 +44,14 @@ theorem CandidateBase.candidate_result {p : CandidateP} {s : State} (h : Candida
   have hcond : (Spec.Ffdh.generationShape p.bits p.gen p.P && Spec.Ffdh.primeShape p.P &&
       Spec.Ffdh.primeShape p.Q && !Spec.RsaKeyGen.obviouslyComposite p.bits p.P &&
       !Spec.RsaKeyGen.obviouslyComposite p.bits p.Q) =
-      ((Spec.Ffdh.generationShape p.bits p.gen p.P && p.sieved p.P) && p.sieved p.Q) := by
+      ((p.congruent && p.sieved p.P) && p.sieved p.Q) := by
+    rw [congruent_sieved h.bits1 h.gen]
     unfold CandidateP.sieved
     cases Spec.Ffdh.generationShape p.bits p.gen p.P <;> cases Spec.Ffdh.primeShape p.P <;>
       cases Spec.Ffdh.primeShape p.Q <;> cases Spec.RsaKeyGen.obviouslyComposite p.bits p.P <;>
       cases Spec.RsaKeyGen.obviouslyComposite p.bits p.Q <;> rfl
   rw [hcond]
-  by_cases hgp : (Spec.Ffdh.generationShape p.bits p.gen p.P && p.sieved p.P) = true
+  by_cases hgp : (p.congruent && p.sieved p.P) = true
   · by_cases hq : p.sieved p.Q = true
     · have hqodd : p.Q % 2 = 1 := odd_of_sieved hq
       have hqbits : Spec.RsaKeyGen.bitLength p.Q = p.phaseBits true := (h.phase_bitLength true hqodd).1
@@ -72,7 +74,7 @@ theorem CandidateBase.candidate_result {p : CandidateP} {s : State} (h : Candida
       | some ar => obtain ⟨pass, rest⟩ := ar; cases pass <;> rfl
     · have hqf : p.sieved p.Q = false := Bool.eq_false_iff.mpr hq
       simp [candidateTail, sievedPolicy, hgp, hqf]
-  · have hgpf : (Spec.Ffdh.generationShape p.bits p.gen p.P && p.sieved p.P) = false :=
+  · have hgpf : (p.congruent && p.sieved p.P) = false :=
       Bool.eq_false_iff.mpr hgp
     simp [candidateTail, hgpf]
 

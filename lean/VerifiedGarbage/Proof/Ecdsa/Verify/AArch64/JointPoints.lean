@@ -23,19 +23,14 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPrep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointGenerator
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Impl.Weierstrass.AArch64.ArithmeticTable
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableState
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 /-! ## `JointPrep` -/
 

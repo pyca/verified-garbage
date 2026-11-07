@@ -13,8 +13,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacField
 
 The table's co-Z formulas, DBLU and ZADDU, as numbered programs (`dbluN`,
 `zadduN`: `dbluN_run`, `zadduN_run`) renamed to the table's slots (`tblσ`,
-`tblProg_ok`); and the loop's addition `D = R + T` with `T`'s powers
-(`cadd_ok`, from `CachedJac`'s numbering).
+`tblProg_ok`).
 -/
 
 @[expose] public section
@@ -238,54 +237,5 @@ theorem JacWinLay.addApart (hL : JacWinLay K size) : RcbApart K.S K.R K.E K.D :=
     · rw [hL.Tx]; exact hgW 0 (by decide)
     · rw [hL.Ty]; exact hgW 1 (by decide)
     · rw [hL.Tz]; exact hgW 2 (by decide)
-
-/-- `D = R + T` with `T`'s cached `Z²` and `Z³`. -/
-theorem cadd_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {base : Addr}
-    {V : List Nat} {E : Nat → Fe C} {s : State} (hI : Inv K.M base size C.p (· ∈ jwSlots K) V E s)
-    (hV : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2, K.z2 + 8 * K.M.n], x ∈ V)
-    (h2 : E K.z2 = E K.E.z * E K.E.z) (h3 : E (K.z2 + 8 * K.M.n) = E K.z2 * E K.E.z) :
-    WP isa (ForwardField.programB K.M K.addOps).inline s fun t =>
-      ProgKeep K.M base (rcbW K.S K.D) s t ∧ ∃ E' : Nat → Fe C,
-        Inv K.M base size C.p (· ∈ jwSlots K) ([K.D.x, K.D.y, K.D.z] ++ V) E' t ∧
-        (E' K.D.x, E' K.D.y, E' K.D.z) =
-          jacAddF (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y) (E K.E.z) := by
-  have hn0 := hL.n0
-  have hgW := hL.gW
-  have hA := hL.addApart
-  have h2a : K.z2 ∉ rcbW K.S K.D := by rw [hL.Tz2]; exact hgW 3 (by decide)
-  have h3a : K.z2 + 8 * K.M.n ∉ rcbW K.S K.D := by rw [hL.Tz3]; exact hgW 4 (by decide)
-  have hSl : ∀ x ∈ (rcbW K.S K.D ++ rcbR K.S K.R K.E) ++ [K.z2, K.z2 + 8 * K.M.n], x ∈ jwSlots K := by
-    intro x hx
-    simp only [rcbW, rcbR, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-      or_false] at hx
-    rw [hL.Tz3, hL.Tx, hL.Ty, hL.Tz, hL.Tz2] at hx
-    rcases hx with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;> rw [h]
-    all_goals first
-      | exact jg_mem (by decide) | jw_mem
-  have hr : readsOk K.addOps V = true := by
-    rw [JacWinCfg.addOps, CachedJac.head_eq K.M.n K.S K.R K.E K.D K.z2,
-      CachedJac.tail_eq K.M.n K.S K.R K.E K.D K.z2, ← List.map_append]
-    refine readsOk_mono (readsOk_rename (CachedJac.rename K.M.n K.S K.R K.E K.D K.z2)
-      (show readsOk (CachedJac.headN ++ jacTailN) [11, 12, 13, 14, 15, 16, 17, 18] = true by decide))
-      fun x hx => hV x ?_
-    simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
-    rcases hx with h | h | h | h | h | h | h | h <;> rw [h] <;> simp [CachedJac.rename, rcbσ, rcbW, rcbR]
-  have hs : ∀ op ∈ K.addOps, ∀ x ∈ op.out :: op.ins, x ∈ jwSlots K := by
-    rw [JacWinCfg.addOps, CachedJac.head_eq K.M.n K.S K.R K.E K.D K.z2,
-      CachedJac.tail_eq K.M.n K.S K.R K.E K.D K.z2, ← List.map_append]
-    exact fun op hop x hx => hSl x (CachedJac.slots op hop x hx)
-  refine WP.mono (ForwardField.programB_ok hL.lay hp _ hI hs hr) fun t ⟨kt, it⟩ =>
-    ⟨kt.mono ?_, _, it.sub fun x hx => ?_, CachedJac.full_run hA h2a h3a E h2 h3⟩
-  · intro x hx
-    obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hx
-    rw [JacWinCfg.addOps, CachedJac.head_eq K.M.n K.S K.R K.E K.D K.z2,
-      CachedJac.tail_eq K.M.n K.S K.R K.E K.D K.z2, ← List.map_append] at hop
-    exact CachedJac.out (show ∀ op ∈ CachedJac.headN ++ jacTailN, op.out < 9 by decide) hop
-  · rw [mem_validAfter]
-    rcases List.mem_append.mp hx with hx | hx
-    · right
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl <;> simp [JacWinCfg.addOps, jacTail, FOp.out]
-    · exact Or.inl hx
 
 end VG.Proof.Weierstrass.X86_64

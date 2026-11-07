@@ -51,7 +51,7 @@ open VG VG.AArch64 VG.Impl.Sm4.AArch64
 
 /-- CBC decryption on AArch64 that updates the chaining value. -/
 def cbcDecAArch64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem =
       Spec.Cbc.decrypt (Spec.Sm4.invCipher (Spec.Sm4.scheduleAt s.mem (s.gpr .x0))) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .x1) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
@@ -59,7 +59,7 @@ def cbcDecAArch64 : Contract isa where
 
 /-- CBC encryption on AArch64 that updates the chaining value. -/
 def cbcEncAArch64 : Contract isa where
-  pre := fbPre
+  pre := fbPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Cbc.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.Aes.bytesAt s'.mem (s.gpr .x1) 16 =
       Spec.Cbc.next (ivOf s) (Spec.Cbc.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem))

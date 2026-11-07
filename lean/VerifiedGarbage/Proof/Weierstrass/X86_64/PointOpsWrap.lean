@@ -103,59 +103,6 @@ theorem wrap_keep_ok {M : Mod} {base : Addr} {W : List Nat} {d : Prog isa} {s : 
 
 /-! ## The callee-saved registers -/
 
-theorem allInstrs_block {p : Instr → Bool} : ∀ (is : List Instr), (Code.block is : Prog isa).allInstrs p = is.all p
-  | [] => rfl
-  | i :: is => by
-    have h := allInstrs_block (p := p) is
-    simp only [Code.allInstrs] at h ⊢
-    simp only [List.all_cons, h]
-
-theorem execBlock_xmm : ∀ {is : List Instr} {s s' : State} {t : List Leak},
-    is.all (fun i => !KeepReg.writesVec i) = true → execBlock isa is s = some (s', t) → s'.xmm = s.xmm
-  | [], s, s', t, _, h => by
-    simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h
-    rw [h.1]
-  | i :: is, s, s', t, hv, h => by
-    simp only [List.all_cons, Bool.and_eq_true, Bool.not_eq_true'] at hv
-    simp only [execBlock] at h
-    split at h
-    · cases h
-    · rename_i s₁ h₁
-      obtain ⟨p, hp, e⟩ := Option.map_eq_some_iff.mp h
-      obtain ⟨rfl, -⟩ := Prod.mk.inj e
-      exact (execBlock_xmm (t := p.2) hv.2 (by rw [hp])).trans (KeepReg.exec_xmm hv.1 h₁)
-
-/-- Code that writes no vector register, and calls nothing, keeps the SSE
-registers. -/
-theorem Exec.xmm_of {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c s t s') :
-    c.allInstrs (fun i => !KeepReg.writesVec i) = true → c.noCalls = true → s'.xmm = s.xmm := by
-  induction h with
-  | icall | icallNext => intro _ hn; simp [Code.noCalls] at hn
-  | block he =>
-    intro hv _
-    rw [allInstrs_block] at hv
-    exact execBlock_xmm hv he
-  | seq _ _ ih₁ ih₂ =>
-    intro hv hn
-    simp only [Code.allInstrs, Code.noCalls, Bool.and_eq_true] at hv hn
-    exact (ih₂ hv.2 hn.2).trans (ih₁ hv.1 hn.1)
-  | iteT _ _ ih =>
-    intro hv hn
-    simp only [Code.allInstrs, Code.noCalls, Bool.and_eq_true] at hv hn
-    exact ih hv.1 hn.1
-  | iteF _ _ ih =>
-    intro hv hn
-    simp only [Code.allInstrs, Code.noCalls, Bool.and_eq_true] at hv hn
-    exact ih hv.2 hn.2
-  | loopExit _ _ ih =>
-    intro hv hn
-    exact ih hv hn
-  | loopNext _ _ _ ih₁ ih₂ =>
-    intro hv hn
-    exact (ih₂ hv hn).trans (ih₁ hv hn)
-  | call => intro _ hn; simp [Code.noCalls] at hn
-  | frame => intro _ hn; simp [Code.noCalls] at hn
-
 /-! ## Timing -/
 
 theorem saves_ct : ScratchCT (.block saves) :=

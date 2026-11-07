@@ -228,7 +228,6 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
 
 end VG.Proof.RsaPkcs1Enc.Arm.Rnd
 
-
 namespace VG.Proof.RsaPkcs1Enc.Arm.Rnd
 
 /-! ## The scan
@@ -443,12 +442,6 @@ theorem kept_succ {i : Nat} (hi : i < P.rl) :
   · rename_i h; rw [h, VG.Proof.RsaPkcs1Enc.nz_zero]
   · rename_i h; exact VG.Proof.RsaPkcs1Enc.nz_ne h _
 
-theorem cnt_le_succ {i : Nat} (hi : i < P.rl) : cnt P σ (i + 1) ≤ cnt P σ i + 1 := by
-  simp only [cnt, kept_succ (σ := σ) hi]
-  split <;> simp
-
-theorem kept_zero : kept P σ 0 = [] := rfl
-
 theorem start_wp (hs : S P σ s) : WP isa (.block start) s (G1 P σ) := by
   have hK := hs.1.k1024
   have hml := hs.1.mlK
@@ -614,8 +607,6 @@ section
 
 variable {P : EP}
 
-theorem At.sp {σ s : State} {i : Nat} (h : At P σ i s) : s.sp = P.B := h.st.2.sp
-
 theorem start_vp : VP (S P) (.block start) (G1 P) :=
   VP.stk (code := [_, _, _, _, _, _, _, _, _]) (by decide) (by decide)
     (fun _ _ _ _ h₁ h₂ => by rw [h₁.2.sp, h₂.2.sp]) fun _ _ h => start_wp h
@@ -630,7 +621,6 @@ theorem load_vp (i : Nat) : VP (A P i) (.block load) (fun σ s => Ld P σ i s) :
 end
 
 end VG.Proof.RsaPkcs1Enc.Arm.Rnd
-
 
 namespace VG.Proof.RsaPkcs1Enc.Arm.Rnd
 
@@ -779,7 +769,6 @@ theorem full_vp : VP (Done P) (.block [.cmp .r5 (.reg .r3)])
     · rw [At.r3 h₁, At.r3 h₂]) fun _ _ h => full_wp' h
 
 end VG.Proof.RsaPkcs1Enc.Arm.Rnd
-
 
 namespace VG.Proof.RsaPkcs1Enc.Arm.Rnd
 

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Search
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Correct
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.CT
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Search.Implies
-public import VerifiedGarbage.Spec.RsaKeyGen.GenerationContract
+public import VerifiedGarbage.Proof.RsaKeyGen.SearchContract
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCode
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTCode
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedCTFront
@@ -29,7 +29,7 @@ open VG.Proof.MillerRabin.AArch64 (RoundImpl)
 
 theorem search_verified_of (c : Cand) :
     Verified target (Impl.RsaKeyGen.AArch64.Search.code c.call)
-      (Spec.RsaKeyGen.primeSearchContract abi stackUse) :=
+      (Proof.RsaKeyGen.primeSearchContract abi stackUse) :=
   Verified.of_correct (search_correct c) (search_constantTime c) search_implies
 
 theorem candidate_noFrames (v : RoundImpl) : (codeWith v.mont.mm v.kernel.run).noFrames = true := by
@@ -58,7 +58,7 @@ def Cand.ofRound (v : RoundImpl) : Cand where
 abbrev searchCode (v : RoundImpl) : Prog isa := Impl.RsaKeyGen.AArch64.Search.code (Cand.ofRound v).call
 
 theorem search_verified (v : RoundImpl) :
-    Verified target (searchCode v) (Spec.RsaKeyGen.primeSearchContract abi stackUse) :=
+    Verified target (searchCode v) (Proof.RsaKeyGen.primeSearchContract abi stackUse) :=
   search_verified_of (Cand.ofRound v)
 
 end VG.Proof.RsaKeyGen.AArch64.Search

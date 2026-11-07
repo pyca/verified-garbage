@@ -33,7 +33,7 @@ open VG.Proof.Gcm.X86_64.Pclmul (Prod prod reduceB toNat_ofNat_lt)
 open VG.Impl.Gcm.X86_64.Pclmul (poly at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
 open VG.Impl.Gcm.X86_64.StitchZH (remGD dbody)
-open VG.Proof.Gcm.X86_64.StitchZ (DInv AInv FinOk Ready cmp_ok dfinal_ok)
+open VG.Proof.Gcm.X86_64.StitchZ (DInv DInvM DInv.toM AInv FinOk Ready cmp_ok dfinal_ok)
 open VG.Proof.Aes.X86_64.AesNi (blockAt_frame Keys)
 open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom inc32)
@@ -49,28 +49,35 @@ theorem test99_ok (s : State) :
   exact ⟨trivial, trivial, fun _ _ => rfl, trivial, trivial, trivial⟩
 
 /-- The decryption loop, for any number of blocks: it stops with fewer than 16 left. -/
-theorem loopDR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat}
-    {s : State} (hI : DInv s₀ P e s) (hcf : s.cf = some (decide (nb s₀ - 16 * e < 16)))
+theorem loopDRM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat}
+    {s : State} (hI : DInvM ix s₀ P e s) (hcf : s.cf = some (decide (nb s₀ - 16 * e < 16)))
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
-    WP isa (.ite .b (.block []) (.loop dbody .ae)) s fun s' => ∃ e, nb s₀ - 16 * e < 16 ∧ DInv s₀ P e s' ∧
+    WP isa (.ite .b (.block []) (.loop (dbody ix) .ae)) s fun s' => ∃ e, nb s₀ - 16 * e < 16 ∧ DInvM ix s₀ P e s' ∧
       VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
   have hle := hI.a.le
   refine WP.ite (decide (nb s₀ - 16 * e < 16)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
   · exact WP.block_nil ⟨e, by simpa using h, hI, hCache⟩
-  · let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ DInv s₀ P e s ∧
+  · let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ DInvM ix s₀ P e s ∧
       VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s
-    have hstep : ∀ m s, I m s → WP isa dbody s (fun s' =>
-        (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * e < 16 ∧ DInv s₀ P e s' ∧
+    have hstep : ∀ m s, I m s → WP isa (dbody ix) s (fun s' =>
+        (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * e < 16 ∧ DInvM ix s₀ P e s' ∧
           VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') ∨
         (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
       rintro m s ⟨e, rfl, he, hI, hCI⟩
-      refine WP.mono (dbody_ok hp hf he hI hCI) fun s' ⟨hI', hcf', hCI'⟩ => ?_
+      refine WP.mono (dbodyM_ok hp hf he hI hCI) fun s' ⟨hI', hcf', hCI'⟩ => ?_
       by_cases hlt : nb s₀ - 16 * (e + 1) < 16
       · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true],
           e + 1, hlt, hI', hCI'⟩
       · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
           nb s₀ - 16 * (e + 1), by omega, e + 1, rfl, by omega, hI', hCI'⟩
     exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e) s ⟨e, rfl, by simp at h; omega, hI, hCache⟩
+
+theorem loopDR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat}
+    {s : State} (hI : DInv s₀ P e s) (hcf : s.cf = some (decide (nb s₀ - 16 * e < 16)))
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
+    WP isa (.ite .b (.block []) (.loop dbody .ae)) s fun s' => ∃ e, nb s₀ - 16 * e < 16 ∧ DInv s₀ P e s' ∧
+      VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' :=
+  WP.mono (loopDRM_ok (Stitch.SPre.toM hp) hf hI.toM hcf hCache) fun _ ⟨e, he, h, hk⟩ => ⟨e, he, h.toDInv, hk⟩
 
 /-- `decR` after the setup, for any number of blocks from 16 on. -/
 theorem decTailRG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.AArch64
 public import VerifiedGarbage.Impl.Bignum.AArch64.R2Div
 public import VerifiedGarbage.Impl.Bignum.AArch64.WordIO
 
@@ -8,15 +7,13 @@ public import VerifiedGarbage.Impl.Bignum.AArch64.WordIO
 # The RSA public-key operations on AArch64
 
 The working space, header and arrays of `Impl/Bignum/Layout.lean`, and
-Montgomery multiplication `mul o a b` (`[o] = [a] [b] R⁻¹ mod m`), the
-baseline `Public.mm` or one for other CPU features.
+Montgomery multiplication `mul o a b` (`[o] = [a] [b] R⁻¹ mod m`), which
+the code takes as a parameter.
 
 * `vg_rsa_public_precompute` (`Precompute.code`) writes what Montgomery
   multiplication needs of a modulus, `m` and `R² mod m`, once per key.
-* `Precomputed.code` computes RSAEP from them.
-* `Public.code` runs `Precompute`'s steps and then `Precomputed`'s in one
-  working space: `m` and `R² mod m` are already in the arrays where
-  `Precomputed` loads them.
+* `Precomputed` holds the parts of RSAEP from them: the loads, and the
+  exponentiation by the exponent's bits.
 * `Checked.guarded c` runs `c` only for an exponent within BoringSSL's
   limits.
 
@@ -206,44 +203,7 @@ def finish : Prog isa :=
     (.ite (.nonzero .x .x3) (mul aY aY aOne)
       (.seq (.block [ldh .x12 sW, movi .x9 1, movi .x13 0]) (setWord aY)))
 
-/-- The computation, once `m` and `R² mod m` are in their arrays: the input
-into array `aX`, the mask of `input < m` into `sMask`, `-m⁻¹` and the number
-1, the exponentiation, and the result stored masked, with the mask's low
-bit returned. The input and the result go a word at a time when `k` is a
-multiple of eight (`loadW`, `storeW`). -/
-def rest : Prog isa := seqs [
-  .block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)],
-  loadW,
-  -- The mask of `input < m`: all ones on a borrow.
-  .block [ldh .x12 sW, ldh .x16 (sArr aX), ldh .x17 (sArr aN), movi .x7 0, mov .x14 .x12, .subs .x .x3 .x7 .x7],
-  cmpLoop,
-  -- `-m⁻¹`, and the number 1.
-  .block (([.subImm .x .x4 .x7 1, .csel .x .x15 .x7 .x4, sth .x15 sMask, ldh .x8 (sArr aN), ld .x3 .x8] : List Instr) ++ minv ++
-    [sth .x15 sMinv, ldh .x12 sW, movi .x9 1, movi .x13 0]),
-  setWord aOne,
-  -- `X = input R mod m`, the exponentiation, and the result.
-  mul aXm aX aR2, expLoop mul, finish mul,
-  .block [ldh .x8 (sArr aY), ldh .x1 sOut, ldh .x9 sK, .add .x .x1 .x1 .x9, ldh .x15 sMask],
-  storeW,
-  .block [ldh .x0 sMask, movi .x3 1, .logic .and .x .x0 .x0 .x3]]
-
-/-- `vg_rsa_public_precomputed`'s code, without the check of `e`. -/
-def code : Prog isa :=
-  .seq (.block (entry false)) (.seq (seqs load) (.ite (.zero .x .x9) fail (rest mul)))
-
 end Precomputed
-
-/-! ## The public-key operation from the modulus -/
-
-namespace Public
-
-/-- RSAEP from the modulus' bytes: `Precompute`'s steps, but for writing the
-values out, then `Precomputed`'s. -/
-def code : Prog isa :=
-  .seq (.block (Precomputed.entry true ++ invalid))
-    (.ite (.zero .x .x9) Precomputed.fail (seqs (pcLoad ++ (r2Steps Bignum.AArch64.Public.mm ++ [Precomputed.rest Bignum.AArch64.Public.mm]))))
-
-end Public
 
 /-! ## BoringSSL's limits on the public exponent
 

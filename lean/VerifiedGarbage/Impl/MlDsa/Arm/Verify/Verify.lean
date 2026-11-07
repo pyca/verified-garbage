@@ -204,11 +204,18 @@ def samples : Prog isa :=
 def dot (r : Nat) : Prog isa :=
   .seq (mulAt P pW (pA r 0) (pZ 0)) (seqR (fun s => mulAddAt P pW (pA r s) (pZ s)) 1 (p.ℓ - 1))
 
+/-- `t̂₁[r] = NTT(t₁[r] · 2ᵈ)` to `T`: copied from the prepared polynomials at
+`r8` if it is not 0, and otherwise unpacked from the public key and
+transformed. -/
+def keyRow (r : Nat) : Prog isa :=
+  .seq (.block [.cmp .r8 (.imm 0)]) (.ite .ne (copy .r8 (1024 * r) .r7 (oP 16) 1024)
+    (.seq (unpackT1At P (.r4, 32 + 320 * r) pT) (nttAt P pT)))
+
 /-- Row `r` of `w′`, `w′₁`, packed to `B`. -/
 def row (r : Nat) : Prog isa :=
-  .seq (dot P p r) (.seq (unpackT1At P (.r4, 32 + 320 * r) pT) (.seq (nttAt P pT)
+  .seq (dot P p r) (.seq (keyRow P r)
     (.seq (mulAt P pT2 pC pT) (.seq (subAt P pW pT2) (.seq (invNttAt P pW)
-      (.seq (useHintAt P (pH r) pW p.γ₂ pW1) (sbpAt P pW1 (w1Max p) (sc (oB + w1Len p * r)) (w1Len p))))))))
+      (.seq (useHintAt P (pH r) pW p.γ₂ pW1) (sbpAt P pW1 (w1Max p) (sc (oB + w1Len p * r)) (w1Len p)))))))
 
 /-- The NTTs of `z` and `c`, the rows, the hash and the comparison. -/
 def compute : Prog isa :=
@@ -219,9 +226,49 @@ def compute : Prog isa :=
 def body : Prog isa :=
   .seq (hint P p) (ifOk (.seq (seqR (zOne P p) 0 p.ℓ) (ifOk (.seq (samples P p) (compute P p)))))
 
-/-- `vg_mldsa*_verify` for the parameter set `p`, calling the primitives `P`. -/
-def verify : Prog isa := .seq (.block pro) (.seq (body P p) (.block topEnd))
+/-- `vg_mldsa{44,65,87}_verify_with_cache(pk = r0, mu = r1, sig = r2,
+scratch = r3, cache = [sp]) -> r0` for the parameter set `p`, calling the
+primitives `P`: the verification kernel of `vg_mldsa*_verify` and of the
+prepared keys' `vg_mldsa*_verify_prepared`. `cache` is 0, or the `t̂₁` of a
+prepared public key, which it copies rather than computes; it keeps it in
+`r8`. -/
+def withCache : Prog isa := .seq (.block (pro ++ [.ldrSp .r8 0])) (.seq (body P p) (.block topEnd))
 
 end
+
+/-! ## The entries -/
+
+/-- The module of the parameter set `p`. -/
+def modName (p : Params) : String :=
+  if p.k = 4 then "mldsa44" else if p.k = 6 then "mldsa65" else "mldsa87"
+
+/-- The name of the kernel. -/
+def withCacheName (p : Params) : String := s!"vg_{modName p}_verify_with_cache"
+
+/-- `cache` to `r12`: the polynomials after the encoded key at `pk` for a
+prepared public key, and 0 otherwise. -/
+def setCache (p : Params) (prepared : Bool) : List Instr :=
+  if prepared then
+    [.movw .r12 (BitVec.ofNat 16 p.pkLen), .movt .r12 (BitVec.ofNat 16 (p.pkLen / 65536)),
+      .dp .add .r12 .r0 (.reg .r12)]
+  else [.movw .r12 (BitVec.ofNat 16 0), .movt .r12 (BitVec.ofNat 16 0)]
+
+/-- `vg_mldsa{44,65,87}_verify` (`prepared` false) or `vg_mldsa{44,65,87}_verify_prepared`
+(`prepared` true, with a prepared public key at `pk`), `(pk = r0, mu = r1,
+sig = r2, scratch = r3) -> r0`: a call of the kernel, in a frame saving `r4`
+(and `lr`, which it keeps in `r4` across the call), with `cache` pushed as its
+argument on the stack. -/
+def verifyEntry (P : Prims) (p : Params) (prepared : Bool) : Prog isa :=
+  .frame (.push [.r4, .lr])
+    (.seq (.block (([.mov .r4 (.reg .lr)] : List Instr) ++ setCache p prepared))
+      (.seq (.frame (.push [.r12, .lr]) (.call (withCacheName p) (withCache P p)) (.pop .r12 8))
+        (.block [.mov .lr (.reg .r4)])))
+    (.pop .r4 8)
+
+/-- `vg_mldsa*_verify` for the parameter set `p`, calling the primitives `P`. -/
+def verify (P : Prims) (p : Params) : Prog isa := verifyEntry P p false
+
+/-- `vg_mldsa*_verify_prepared` for the parameter set `p`, calling the primitives `P`. -/
+def verifyPrepared (P : Prims) (p : Params) : Prog isa := verifyEntry P p true
 
 end VG.Impl.MlDsa.Arm.Verify

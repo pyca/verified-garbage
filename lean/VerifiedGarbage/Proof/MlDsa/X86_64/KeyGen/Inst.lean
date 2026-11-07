@@ -42,9 +42,6 @@ theorem calleeOf {k : Nat → Contract isa} {c : Prog isa} (h : FnOk k c) : Call
 
 theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
   ntt := calleeOf v.ok.ntt
-  invNtt := calleeOf v.ok.invNtt
-  mul := calleeOf v.ok.mul
-  mulAdd := calleeOf v.ok.mulAdd
   add := calleeOf v.ok.add
   rejNtt := (⟨⟨16, by decide, Sample.RejNttShort.verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
     Callee prims.rejNtt _)
@@ -57,16 +54,28 @@ theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
   bitPack := (⟨⟨0, by decide, Pack.bitPack_verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
     Callee prims.bitPack _)
   rej4 := ⟨v.ok.rej4.ver, v.ok.rej4.nosp, v.ok.rej4.depth⟩
+  dotInv := fun c hc => calleeOf (v.ok.dotInv c hc)
 
 /-! For any implementation of the polynomial arithmetic, that key
 generation never writes `rsp` is checked by evaluating it with every
 function of it empty (`keyGen_same`, as `sign_same`). -/
 
 theorem keyGen_same {m mc : Prog isa → Bool} (hm : Comp m mc) {B : Backend} (h1 : mc B.ntt = true)
-    (h2 : mc B.invNtt = true) (h3 : mc B.mul = true) (h4 : mc B.mulAdd = true) (h5 : mc B.add = true)
-    (h6 : mc B.rej4 = true) (p : Spec.MlDsa.Params) : Same m (keyGen (primsWith B) p) (keyGen (primsWith .empty) p) := by
+    (h5 : mc B.add = true) (h6 : mc B.rej4 = true) (h7 : mc B.dotInv4 = true) (h8 : mc B.dotInv5 = true)
+    (h9 : mc B.dotInv7 = true) (p : Spec.MlDsa.Params) : Same m (keyGen (primsWith B) p) (keyGen (primsWith .empty) p) := by
+  have hd : mc ((primsWith B).dotInv p.ℓ) = true := by
+    unfold Prims.dotInv; split
+    · exact h7
+    · split
+      · exact h8
+      · exact h9
+  have he : (primsWith Backend.empty).dotInv p.ℓ = .block [] := by
+    unfold Prims.dotInv; split
+    · rfl
+    · split <;> rfl
   unfold keyGen
   same_tac hm
+  all_goals rw [he]; exact Same.call hm hd _ _
 
 theorem keyGen0_sp {p : Spec.MlDsa.Params}
     (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87) :
@@ -79,9 +88,9 @@ include hp
 
 theorem keyGen_spSafe : (keyGen (primsWith v.code) p).all (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (Same.ok (keyGen_same (Comp.all _) (Code.allInstrs_of_all v.ok.ntt.sp)
-    (Code.allInstrs_of_all v.ok.invNtt.sp) (Code.allInstrs_of_all v.ok.mul.sp)
-    (Code.allInstrs_of_all v.ok.mulAdd.sp) (Code.allInstrs_of_all v.ok.add.sp)
-    (Code.allInstrs_of_all v.ok.rej4.sp) p) (keyGen0_sp hp))
+    (Code.allInstrs_of_all v.ok.add.sp) (Code.allInstrs_of_all v.ok.rej4.sp)
+    (Code.allInstrs_of_all (v.ok.dotInv 4 (.inl rfl)).sp) (Code.allInstrs_of_all (v.ok.dotInv 5 (.inr (.inl rfl))).sp)
+    (Code.allInstrs_of_all (v.ok.dotInv 7 (.inr (.inr rfl))).sp) p) (keyGen0_sp hp))
 
 theorem keyGen_verifiedWith :
     Verified X86_64.target (keyGen (primsWith v.code) p) (Spec.MlDsa.keyGenContract p X86_64.abi 32) :=

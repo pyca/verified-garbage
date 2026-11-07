@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTLcm
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 
 import VerifiedGarbage.Proof.Rsa.X86_64.InvInstance
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTTail
@@ -334,7 +335,7 @@ theorem front_zf {I : KIn} {m₀ : Mem} {t : State} (F : Front I m₀ t) :
     simp only [KIn.st]
     constructor
     · intro h2
-      unfold Spec.RsaKeyGen.keyOp at h2
+      unfold Proof.RsaKeyGen.keyOp at h2
       generalize hk : Spec.RsaKeyGen.keyFromPrimes (16 * I.pl) (Spec.Rsa.os2ip I.eb) (Spec.Rsa.os2ip I.pb)
         (Spec.Rsa.os2ip I.qb) = r at h2
       unfold Spec.RsaKeyGen.keyFromPrimes at hk
@@ -344,7 +345,7 @@ theorem front_zf {I : KIn} {m₀ : Mem} {t : State} (F : Front I m₀ t) :
       dsimp only at hk
       rw [show Nat.lcm (I.P - 1) (I.Q - 1) = I.L from rfl, ← hW] at hk
       rcases hi : Spec.Rsa.inverse I.E I.L with _ | d
-      · rw [hi] at hk; subst hk; simp [Spec.RsaKeyGen.keyStatus] at h2
+      · rw [hi] at hk; subst hk; simp [Proof.RsaKeyGen.keyStatus] at h2
       · rw [hi] at hk
         dsimp only at hk
         by_cases hd : d ≤ 2 ^ (8 * I.pl)
@@ -355,7 +356,7 @@ theorem front_zf {I : KIn} {m₀ : Mem} {t : State} (F : Front I m₀ t) :
             split
             · exact ⟨_, rfl⟩
             · split <;> exact ⟨_, rfl⟩
-          cases x <;> simp [Spec.RsaKeyGen.keyStatus] at h2
+          cases x <;> simp [Proof.RsaKeyGen.keyStatus] at h2
     · rintro ⟨d, hd, hsm⟩
       rw [keyOp_inr (by
         unfold Spec.RsaKeyGen.keyFromPrimes
@@ -480,11 +481,13 @@ theorem keyCode_correct (hmx : VG.Impl.RsaKeyGen.X86_64.Key.code.allInstrs (fun 
   obtain ⟨t, s', he, hg, hp⟩ := keyCode_wp s h
   exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
 
+instance keyProof : KeyProof := ⟨keyCode_correct, keyCode_constantTime⟩
+
 /-- `vg_rsa_keygen_key`, given that its code never loads MXCSR (which the
 registration file evaluates). -/
 theorem key_verified
     (hmx : VG.Impl.RsaKeyGen.X86_64.Key.code.allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel) :
-    Verified target VG.Impl.RsaKeyGen.X86_64.Key.code (Spec.RsaKeyGen.keyContract abi) :=
+    Verified target VG.Impl.RsaKeyGen.X86_64.Key.code (Proof.RsaKeyGen.keyContract abi) :=
   Verified.of_correct (keyCode_correct hmx) keyCode_constantTime key_implies
 
 end VG.Proof.RsaKeyGen.X86_64.Key

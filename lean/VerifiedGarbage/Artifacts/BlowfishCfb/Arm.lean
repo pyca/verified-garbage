@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.FbVerified
+public import VerifiedGarbage.Proof.Blowfish.Arm.FbFinalVerified
+public import VerifiedGarbage.Impl.Blowfish.Arm.FbFinal
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -18,6 +20,14 @@ def artifacts : List Artifact := [
   Spec.Blowfish.cfbDecryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbDecrypt
     stack := 320
-    verified := Proof.Blowfish.Arm.cfbDecrypt_framed }]
+    verified := Proof.Blowfish.Arm.cfbDecrypt_framed },
+  Spec.Blowfish.cfbEncryptFinalApi.artifact Arm.target {
+    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbEncryptFinal
+    stack := 320
+    verified := Proof.Blowfish.Arm.cfbEncryptFinal_framed },
+  Spec.Blowfish.cfbDecryptFinalApi.artifact Arm.target {
+    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbDecryptFinal
+    stack := 320
+    verified := Proof.Blowfish.Arm.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.BlowfishCfb.Arm

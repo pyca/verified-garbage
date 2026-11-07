@@ -47,6 +47,17 @@ abbrev seedE (s₀ : State) (e : Nat) : List Byte := aSeed (rhoS p s₀) (e / p.
 /-- Entry `e`, within `maxBounds`. -/
 abbrev aVal (s₀ : State) (e : Nat) : Poly := Av (skOf p s₀) (e / p.ℓ) (e % p.ℓ)
 
+/-- The values of `ŝ₁`, `ŝ₂` and `t̂₀`, from the initial state. -/
+abbrev S1 (s₀ : State) : Nat → Poly := s1F p (skOf p s₀)
+abbrev S2 (s₀ : State) : Nat → Poly := s2F p (skOf p s₀)
+abbrev T0 (s₀ : State) : Nat → Poly := t0F p (skOf p s₀)
+
+/-- The first `n1`, `n2` and `n0` polynomials of `ŝ₁`, `ŝ₂` and `t̂₀`. -/
+structure DKs (n1 n2 n0 : Nat) (s₀ : State) (m : Mem) : Prop where
+  f1 : Fam s₀ m (s1B p) n1 (S1 p s₀)
+  f2 : Fam s₀ m (s2B p) n2 (S2 p s₀)
+  f0 : Fam s₀ m (t0B p) n0 (T0 p s₀)
+
 /-- The first `e` entries were sampled. -/
 def okE (F : List Byte → Bool) (s₀ : State) (e : Nat) : Bool := (List.range e).all fun e' => F (seedE p s₀ e')
 
@@ -60,6 +71,13 @@ theorem okE_lt {F : List Byte → Bool} {s₀ : State} {e e' : Nat} (h : okE p F
     F (seedE p s₀ e') = true :=
   List.all_eq_true.mp h e' (List.mem_range.mpr he)
 
+theorem DKs.keep {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) {n1 n2 n0 : Nat} (h1 : n1 ≤ p.ℓ) (h2 : n2 ≤ p.k)
+    (h0 : n0 ≤ p.k) {bs : List Buf} {N : Nat} (hN : N ≤ 80) {m m' : Mem} (fr : Frame (FR s₀ bs N) m m')
+    (h : ∀ c ∈ bs, OutS p n1 n2 n0 c) (d : DKs p n1 n2 n0 s₀ m) : DKs p n1 n2 n0 s₀ m' :=
+  ⟨d.f1.keep hp ps hN fr (by simp only [nS, s1B]; omega_arith) fun c hc => (h c hc).1,
+    d.f2.keep hp ps hN fr (by simp only [nS, s2B]; omega_arith) fun c hc => (h c hc).2.1,
+    d.f0.keep hp ps hN fr (by simp only [nS, t0B]; omega_arith) fun c hc => (h c hc).2.2⟩
+
 /-- After entry `e`. -/
 structure IA (p : Params) (F : List Byte → Bool) (e : Nat) (s₀ s : State) : Prop where
   ctx : Ctx (Y p) s₀ s
@@ -67,6 +85,7 @@ structure IA (p : Params) (F : List Byte → Bool) (e : Nat) (s₀ s : State) : 
   ok : scw s₀ s oOK = if okE p F s₀ e then 1 else 0
   fam : okE p F s₀ e = true → Fam s₀ s.mem (aBase p) e (aVal p s₀)
   bad : okE p F s₀ e = false → ∃ e' < e, rejNTTPoly minBounds.rejNTT (seedE p s₀ e') = none
+  dk : DKs p p.ℓ p.k p.k s₀ s.mem
 
 /-- The result of `vg_mldsa_rej_ntt_poly`, if it succeeded within `maxBounds`. -/
 theorem rej_val {x : List Byte} {r : BitVec 32} {out : Poly}
@@ -137,7 +156,8 @@ theorem seedBlk_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e 
     exact ⟨sc_ok' ps (by decide) (by decide), fun _ => .inl (by simp only [oP, oRS]; omega)⟩
   have hrs : bytesAt s₂.mem (Buf.addr s₀ (sc oRS 32)) 32 = rhoS p s₀ := by rw [keepB hp (by decide) f o1 o1', h.rs]
   refine ⟨⟨c₂, hrs, by rw [scw, keepW' hp (by decide) f (sc_ok' ps (by decide) (by decide)) o0]; exact h.ok,
-    fun hk => (h.fam hk).keep hp ps (by decide) f (by simp only [nS, aBase]; omega) oF, h.bad⟩, ?_⟩
+    fun hk => (h.fam hk).keep hp ps (by decide) f (by simp only [nS, aBase]; omega) oF, h.bad,
+    h.dk.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) f (by ofsd)⟩, ?_⟩
   have b₁' : bytesAt s₂.mem (Buf.addr s₀ (sc (oRS + 32) 1)) 1 = [BitVec.ofNat 8 (e % p.ℓ)] := by
     rw [keepB hp (by decide) f₂ (sc_ok' ps (by decide) (by decide)) fun c hc => by
       rw [List.mem_singleton] at hc; subst hc; exact ⟨sc_ok' ps (by decide) (by decide), fun _ => .inr (Nat.le_refl _)⟩, b₁]
@@ -168,7 +188,8 @@ theorem rejCall_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e 
   have hj : aBase p + e < nS p := by simp only [nS, aBase]; omega
   refine ⟨⟨c', by rw [keepB hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd), h.rs],
     by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd)]; exact h.ok,
-    fun hk => (h.fam hk).keep hp ps (by decide) fr (by omega) (by ofsd), h.bad⟩, heax, fun hy => ?_, fun hn => ?_⟩
+    fun hk => (h.fam hk).keep hp ps (by decide) fr (by omega) (by ofsd), h.bad,
+    h.dk.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) fr (by ofsd)⟩, heax, fun hy => ?_, fun hn => ?_⟩
   · rw [hy] at heax; simp only [↓reduceIte] at heax
     refine ⟨hred heax, ?_⟩
     rw [rej_val hout heax (F.rejMax _ hy)]
@@ -186,7 +207,8 @@ theorem rejAnd_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e <
   have fr' := fr0 hp (N := 80) (by decide) fr
   have hfam : okE p F.rejF s₀ e = true → Fam s₀ s'.mem (aBase p) e (aVal p s₀) := fun hk =>
     (h.ia.fam hk).keep hp ps (by decide) fr' (by omega) (by ofsd)
-  refine ⟨c', by rw [keepB hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofsd), h.ia.rs], ?_, fun hk => ?_, fun hk => ?_⟩
+  refine ⟨c', by rw [keepB hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofsd), h.ia.rs], ?_, fun hk => ?_, fun hk => ?_,
+    h.ia.dk.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) fr' (by ofsd)⟩
   · rw [ok', h.ia.ok, h.eax, and01, okE_succ]
   · rw [okE_succ, Bool.and_eq_true] at hk
     exact (hfam hk.1).snoc (keepP hp ps (by decide) fr' hj (by ofsd) (h.yes hk.2))
@@ -208,17 +230,19 @@ theorem sampleE_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e 
 
 /-- `ρ` to `RS`, and `Â`. -/
 theorem expandA_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
-    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ scw s₀ s oOK = 1) (IA p F.rejF (p.k * p.ℓ)) (Impl.MlDsa.X86.Sign.expandA P p) := by
+    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ scw s₀ s oOK = 1 ∧ DKs p p.ℓ p.k p.k s₀ s.mem) (IA p F.rejF (p.k * p.ℓ))
+      (Impl.MlDsa.X86.Sign.expandA P p) := by
   unfold Impl.MlDsa.X86.Sign.expandA
   refine Piece.seq (B := IA p F.rejF 0) (copy_piece 0 0 SC oRS 8 (by decide) (by decide) (by ofsd)
     (fun _ _ _ h => h.1) fun s₀ s s' hp h c' fr hb => ?_)
     (by simpa using seqR_piece (I := IA p F.rejF) 0 (p.k * p.ℓ) fun e _ he => sampleE_piece F ps e (by omega))
   have fr' : Frame (FR s₀ [sc oRS 32] 80) s.mem s'.mem := fr.mono (by simp)
-  refine ⟨c', ?_, ?_, fun _ j hj => absurd hj (Nat.not_lt_zero _), fun hk => absurd hk (by simp [okE])⟩
+  refine ⟨c', ?_, ?_, fun _ j hj => absurd hj (Nat.not_lt_zero _), fun hk => absurd hk (by simp [okE]),
+    h.2.2.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) fr' (by ofsd)⟩
   · show bytesAt s'.mem (Buf.addr s₀ ⟨SC, oRS, 4 * 8⟩) (4 * 8) = _
     rw [hb, h.1.roBytes hp (b := ⟨0, 0, 4 * 8⟩) (by ofsd) rfl]
     exact (VG.Proof.MlKem.bytesAt_take _ _ (skLen_ge ps)).symm
   · rw [scw, keepW' hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofsd)]
-    simp [okE, h.2]
+    simp [okE, h.2.1]
 
 end VG.Proof.MlDsa.X86.Sign

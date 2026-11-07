@@ -40,19 +40,7 @@ def applyInput : Prog isa :=
 
 def prepare : Prog isa := .seq (.block PcFn.head) (.seq setup (.block PcFn.inputs))
 
-def valid : Prog isa := .seq prepare (.seq precompute applyInput)
-
 def failArgs : List Instr := [.ldrSp .r0 4, .ldrSp .lr 12, .mov .r2 (.imm 0)]
 def fail : Prog isa := .seq (.block failArgs) (.seq maskBytes (.block [.mov .r0 (.imm 0)]))
-
-def modulus : Prog isa := .seq (.block PcFn.inputs)
-  (.seq (.block modulusCheck) (.ite .eq valid fail))
-
-def body : Prog isa := .seq (.block exponentArgs) (.seq exponentCheck
-  (.seq (.block [.subs .r7 .r7 (.imm 0)]) (.ite .eq fail modulus)))
-
-def code : Prog isa :=
-  .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (.seq (.block entry) (.seq body (.block PcFn.restore))) (.pop .r12 56)
 
 end VG.Impl.Bignum.Arm.PublicFn

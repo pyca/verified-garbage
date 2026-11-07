@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Aes.X86_64.ExpandKey
 public import VerifiedGarbage.Impl.Aes.X86_64.Blocks
+public import VerifiedGarbage.Impl.Aes.X86_64.Sse
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesBlocks
 
 /-!

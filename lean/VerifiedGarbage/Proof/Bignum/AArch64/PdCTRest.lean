@@ -44,8 +44,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 `rest` (the input, the mask of `input < m`, `-m⁻¹`, the number 1, the
 exponentiation and the result) leaks the same in runs that agree on the
-pointers, the lengths, `e`, `m` and `R² mod m` (`pdRest_ct`). The public-key
-operation from the modulus ends with the same `rest`.
+pointers, the lengths, `e`, `m` and `R² mod m`.
 -/
 
 @[expose] public section
@@ -231,7 +230,6 @@ theorem setupRest_ct : RelCT isa (Two SR) (seqs setupSteps) fun _ _ => True := b
     fun t ⟨⟨h8, h7, hm⟩, k⟩ => ⟨⟨mi, hm ▸ hH, hs.congr k.wr, (k.gpr .x0 (by decide)).trans h0, hZ,
       (k.gpr .x12 (by decide)).trans h12, (k.gpr .x13 (by decide)).trans h13⟩, h8, h7⟩
 
-
 /-! ## The result -/
 
 /-- The public data of the result: the working space, the length `k` and `out`. -/
@@ -303,7 +301,7 @@ structure DPub where
   N : Nat
   R : Nat
 
-/-- `pdRest_ok`'s hypotheses. -/
+/-- What the run of `rest` starts from. -/
 def DRel (p : DPub) (s : State) : Prop :=
   ∃ xb, PdPre s p.B p.Z p.k p.op p.ep p.ip p.len p.eb xb p.N p.R
 
@@ -471,61 +469,12 @@ theorem db_pre {q : DPub × BitVec 64} {t : State} (h : DB q t) : PExpPre (DPub.
     (g.fixed sE (by decide)).trans g.1.hE, (g.fixed sElen (by decide)).trans g.1.hL, g.1.L1,
     src_esrc he g.1.el (show q.1.len < 2 ^ 31 by omega_using [hk2, hL2])⟩
 
-/-- After the exponentiation. -/
-def DC (q : DPub × BitVec 64) (t : State) : Prop :=
-  ∃ xb σ X x, DG q.1 xb σ t ∧ ExpCtx t q.1.B q.1.Z ((q.1.k + 7) / 8) q.2 q.1.N X ∧
-    YSt t.mem q.1.B ((q.1.k + 7) / 8) q.1.N x (Spec.Rsa.os2ip q.1.eb) ∧
-    wv t.mem q.1.B (slot ((q.1.k + 7) / 8) aOne) ((q.1.k + 7) / 8) = 1
-
 theorem pExpRanges_pdAll (w : Nat) : ∀ r ∈ pExpRanges w, r ∈ pdAll w :=
   fun _ hr => List.mem_append_right _ hr
-
-/-- The exponentiation leaks the same in runs that agree on `e`. -/
-theorem pdExp_ct : RelCT isa (Two DB) (Precomputed.expLoop M.mm) (Two DC) := by
-  refine two_post ((two_map DPub.E (fun _ _ h => db_pre h) pExpLoop_ct).mono (fun _ _ h => h)
-    fun _ _ _ => trivial) ?_
-  rintro q t h
-  obtain ⟨X, x, hc, hf, he, hlen, hL1, hsrc⟩ := db_pre h
-  obtain ⟨xb, σ, g, -, -, -, -, hone⟩ := h
-  have hn : q.1.B.toNat + slot ((q.1.k + 7) / 8) 8 ≤ 2 ^ 64 := by have := g.1.scr.nowrap; have := g.1.z; omega_arith
-  refine WP.mono (pExpLoop_ok hc hf.1 hf.2.1 hf.2.2.1 hf.2.2.2.1 hf.2.2.2.2.1 hf.2.2.2.2.2 he hlen hsrc.1 hL1
-    hsrc.2.1 hsrc.2.2.1 hsrc.bytes hsrc.2.2.2.2) fun t' ⟨hc', hy, f₀, k⟩ => ?_
-  have f : Frm q.1.B (pExpRanges ((q.1.k + 7) / 8)) t.mem t'.mem := f₀
-  refine ⟨xb, σ, X, x, g.step (f.mono (pExpRanges_pdAll _)) k
-      (f.word_eq (pExpRanges_hdr _ (by decide) (by decide) (by decide) (by decide) (by decide))
-        (by unfold sMask sFn; omega_using [])), hc', hy, ?_⟩
-  rw [f.wv_eq (fun r hr => by
-      have := hdr_lt_slot ((q.1.k + 7) / 8) aOne (show 31 < 32 by decide)
-      have := slot_sep (w := ((q.1.k + 7) / 8)) (show aOne ≠ aAcc by decide)
-      have := slot_sep (w := ((q.1.k + 7) / 8)) (show aOne ≠ aTmp by decide)
-      have := slot_sep (w := ((q.1.k + 7) / 8)) (show aOne ≠ aY by decide)
-      simp only [pExpRanges, pBitRanges, bitRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [sI, sV, sBit, sStarted, sFn] at * <;> omega_arith)
-      (by have := slot_le (w := ((q.1.k + 7) / 8)) (show aOne < 8 by decide); omega_using [hn, this])]
-  exact hone
 
 /-- After `finish`. -/
 def DD (q : DPub × BitVec 64) (t : State) : Prop :=
   ∃ xb σ, DG q.1 xb σ t ∧ Good t q.1.B q.1.Z ((q.1.k + 7) / 8) q.2
-
-/-- `finish` leaks the same in runs that agree on `e`. -/
-theorem pdFinish_ct : RelCT isa (Two DC) (Precomputed.finish M.mm) (Two DD) := by
-  refine two_post (two_map (fun q => (⟨DPub.L q, q.1.N, Spec.Rsa.os2ip q.1.eb⟩ : FPub))
-    (fun q _ ⟨_, _, X, x, g, hc, hy, _⟩ => ⟨X, x, hc, hy, g.1.z, show 2 ≤ (q.1.k + 7) / 8 by have := g.1.k1; omega_using [this],
-      show (q.1.k + 7) / 8 < 2 ^ 31 by have := g.1.k2; omega_using [this]⟩) finish_ct) ?_
-  rintro q t ⟨xb, σ, X, x, g, hc, hy, hone⟩
-  have hk1 := g.1.k1
-  have hk2 := g.1.k2
-  have hR := VG.Proof.Bignum.coprime_pow2 g.1.odd (64 * ((q.1.k + 7) / 8))
-  refine WP.mono (pFinish_ok hc g.1.z (by omega_using [hk1]) (by omega_using [hk2]) hR g.1.n1 hone hy)
-    fun t' ⟨hg, _, f, k⟩ => ⟨xb, σ, g.step (f.mono (by simp [finRanges, pdAll, pExpRanges, pBitRanges, bitRanges])) k
-      (f.word_eq (fun r hr => by
-        have := hdr_lt_slot ((q.1.k + 7) / 8) aAcc (show sMask < 32 by decide)
-        have := hdr_lt_slot ((q.1.k + 7) / 8) aTmp (show sMask < 32 by decide)
-        have := hdr_lt_slot ((q.1.k + 7) / 8) aY (show sMask < 32 by decide)
-        simp only [finRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> omega_arith) (by unfold sMask sFn; omega_using [])), hg⟩
 
 theorem dd_oPre {q : DPub × BitVec 64} {t : State} (h : DD q t) : OPre ⟨DPub.L q, q.1.k, q.1.op⟩ t := by
   obtain ⟨xb, σ, g, hg⟩ := h
@@ -534,13 +483,5 @@ theorem dd_oPre {q : DPub × BitVec 64} {t : State} (h : DD q t) : OPre ⟨DPub.
   exact ⟨_, hg, rfl, g.1.z, show 1 ≤ q.1.k by omega_using [hk1], show q.1.k < 2 ^ 31 by omega_using [hk2],
     by rw [g.fixed sOut (by decide)]; exact g.1.hO, by rw [g.fixed sK (by decide)]; exact g.1.hK, g.2.2.2,
     by rw [g.2.2.1.wr]; exact g.1.out, g.1.outSep⟩
-
-/-- `rest` leaks the same in runs with the same public data and `e`. -/
-theorem pdRest_ct : RelCT isa (Two DRel) (Precomputed.rest M.mm) fun _ _ => True := by
-  rw [pdRest_eq]
-  refine RelCT.seqs_append (by simp) (by simp [pdExp]) (RelCT.seq pdSetup_ct ?_)
-  refine RelCT.seqs_append (by simp [pdExp]) (by simp [outSteps]) (RelCT.seq (R := Two DD) ?_ ?_)
-  · exact RelCT.seq pdMm_ct (RelCT.seq pdExp_ct pdFinish_ct)
-  · exact two_map (fun q => (⟨DPub.L q, q.1.k, q.1.op⟩ : OPub)) (fun _ _ h => dd_oPre h) out_ct
 
 end VG.Proof.Bignum.AArch64

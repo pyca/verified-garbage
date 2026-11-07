@@ -67,7 +67,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Impl.Ecdh.Secp256k1.X86_64
@@ -119,7 +118,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 
 /-! # secp256k1 on x86-64, generic over its proven group law and inversions -/
 

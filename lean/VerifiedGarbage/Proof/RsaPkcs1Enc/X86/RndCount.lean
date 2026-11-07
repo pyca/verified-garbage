@@ -142,10 +142,4 @@ theorem zero_mask {n j : Nat} {R : List Byte} (hj : j < scanLen n R) :
   by_cases h : R[j]'(by omega) = 0 <;>
     simp [List.getD_eq_getElem?_getD, hj, List.getElem?_eq_getElem (show j < R.length by omega), h]
 
-theorem cnt_succ (M : List Nat) {j : Nat} (hj : j < M.length) :
-    cnt M (j + 1) = cnt M j + (if M.getD j 0 = 0 then 1 else 0) := by
-  rw [cnt, cnt, List.take_add_one, List.getElem?_eq_getElem hj, Option.toList_some, List.filter_append,
-    List.length_append, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj, Option.getD_some]
-  by_cases h : M[j] = 0 <;> simp [h]
-
 end VG.Proof.RsaPkcs1Enc

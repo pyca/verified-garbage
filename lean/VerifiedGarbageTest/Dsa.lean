@@ -6,6 +6,8 @@ public import VerifiedGarbage.Spec.Dsa.SignVerify
 public meta import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public meta import VerifiedGarbage.Spec.Dsa.Prevalidated
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public meta import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Spec.Sha512
 public meta import VerifiedGarbage.Spec.Sha512
 public import VerifiedGarbage.TCB.Axioms
@@ -354,6 +356,9 @@ def checkPrimality : Except String Unit := do
 #assert_standard_axioms Spec.Dsa.verify
 #assert_no_compiler_overrides Spec.Dsa.fromComponents Spec.Dsa.sign Spec.Dsa.verify
 #assert_no_compiler_overrides Spec.Dsa.validatePublicKeyApi Spec.Dsa.verifyPrevalidatedApi
+#assert_standard_axioms Spec.Dsa.validatePrivateKeyContract
+#assert_standard_axioms Spec.Dsa.randomSignPrevalidatedContract
+#assert_no_compiler_overrides Spec.Dsa.validatePrivateKeyApi Spec.Dsa.randomSignPrevalidatedApi
 #assert_spec_origin
 
 run_cmd do

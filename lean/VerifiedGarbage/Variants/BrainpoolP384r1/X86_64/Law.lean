@@ -50,7 +50,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 import VerifiedGarbage.Proof.Divstep.Incl
@@ -92,7 +91,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
 
 /-! # brainpoolP384r1's group law and inversions, on x86-64 -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.RowFull
-public import VerifiedGarbage.Impl.Bignum.Arm.Shift
 public import VerifiedGarbage.Impl.Bignum.Arm.FusedReduction
 
 /-! # A Montgomery round using the temporary array for public loop state

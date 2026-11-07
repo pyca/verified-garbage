@@ -154,6 +154,42 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
+        // Import plus the first signature exposes the cost of lazy validation.
+        let mut group = c.benchmark_group(format!("dsa_sign_cold_q{}", q_len * 8));
+        group.bench(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                let fresh = PrivateKey::from_components(
+                    black_box(&p),
+                    black_box(&q),
+                    black_box(&g),
+                    black_box(&y),
+                    black_box(&x),
+                )
+                .unwrap();
+                fresh.sign(black_box(&digest)).unwrap()
+            })
+        });
+        group.bench(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                let key = PKey::from_dsa(
+                    Dsa::from_private_components(
+                        BigNum::from_slice(black_box(&p)).unwrap(),
+                        BigNum::from_slice(black_box(&q)).unwrap(),
+                        BigNum::from_slice(black_box(&g)).unwrap(),
+                        BigNum::from_slice(black_box(&x)).unwrap(),
+                        BigNum::from_slice(black_box(&y)).unwrap(),
+                    )
+                    .unwrap(),
+                )
+                .unwrap();
+                let mut ctx = PkeyCtx::new(&key).unwrap();
+                ctx.sign_init().unwrap();
+                let mut signature = Vec::new();
+                ctx.sign_to_vec(black_box(&digest), &mut signature).unwrap();
+                black_box(signature)
+            })
+        });
+        group.finish();
         let mut group = c.benchmark_group(format!("dsa_verify_q{}", q_len * 8));
         group.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| black_box(key.public_key()).verify(black_box(&digest), black_box(&signature)))

@@ -37,7 +37,7 @@ open VG.Proof.Sha3 (Rep rep_nil byteOf iterF length_squeezeFrom squeezeFrom_getE
   squeeze_getElem)
 
 /-- The state after absorbing `m` padded with `suffix`, for the rate `rate`:
-what `vg_keccak_pad` leaves (`padContract`). -/
+what `vg_keccak_pad` leaves. -/
 abbrev padded (rate : Nat) (suffix : Byte) (m : List Byte) : State := absorb rate (pad rate suffix m)
 
 /-- The all-zero state represents the empty message. -/

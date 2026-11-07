@@ -171,8 +171,6 @@ abbrev fr (s : State) : Region := ⟨fb s + BitVec.ofNat 64 32, frameBytes - 32�
 /-- The base of the stack the function uses. -/
 abbrev kb (s : State) : Addr := s.sp - BitVec.ofNat 64 rndStack
 
-theorem frameR_eq (s : State) : frameR frameBytes s = fr s := rfl
-
 theorem fb_eq (s : State) : fb s = kb s + BitVec.ofNat 64 Impl.RsaPkcs1Sig.PPC64LE.frameBytes := by
   simp only [fb, kb, rndStack]
   rw [BitVec.ofNat_add, ← BitVec.sub_sub, BitVec.sub_add_cancel]
@@ -247,12 +245,6 @@ theorem arg_in {s : State} (hp : RPre s) (wr : List Region) {j : Nat} (hj : j < 
 def hiRegs : List Reg := [.r2, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26,
   .r27]
 
-/-- The callee-saved registers. -/
-def keptRegs : List Reg := [.r28, .r29, .r30, .r31] ++ hiRegs
-
-theorem not_kept {rs : List Reg} {r : Reg} (hrs : ∀ r ∈ rs, r ∉ keptRegs) (hr : r ∈ keptRegs) : r ∉ rs :=
-  fun h => hrs r h hr
-
 theorem freed_lr (n : Nat) (s : State) : (freed n s).lr = s.lr := rfl
 
 /-- The slots of our caller's `r28`–`r31`. -/
@@ -282,19 +274,6 @@ structure Saves (s t : State) : Prop where
   hi : ∀ r ∈ hiRegs, t.gpr r = s.gpr r
   sv : Spill.Saved (fb s) s.gpr saved t.mem
   ls : t.mem.readW (fb s + BitVec.ofNat 64 oLr) 64 = s.lr
-
-/-- The saves are kept by code writing registers other than the callee-saved
-ones and memory apart from the slots. -/
-theorem Saves.keep {s t w : State} {rs : List Reg} (h : Saves s t) (o : Keep rs t w) {R : List Region}
-    (hm : Frame R t.mem w.mem)
-    (hR : ∀ r ∈ R, (fR s).Disjoint r) (hrs : ∀ r ∈ rs, r ∉ keptRegs := by decide) : Saves s w where
-  sp := o.sp.trans h.sp
-  wr := o.wr.trans h.wr
-  hi := fun r hr => (o.gpr _ (not_kept hrs (List.mem_append_right _ hr))).trans (h.hi r hr)
-  sv := h.sv.frame hm fun p hp r hr => (hR r hr).sub_left (frame_sub0 s (by
-    have := saved_offs p hp; unfold oSave frameBytes at *; omega))
-  ls := by rw [hm.readW (Region.contains_self _ _) (fun r hr => (hR r hr).sub_left (frame_sub0 s (by decide)))
-    (by decide)]; exact h.ls
 
 /-- The saves, from the state after the frame's push (`u`): `r12` holds
 the frame's base, `r28`–`r31` and the return address are in their slots, and
@@ -469,9 +448,6 @@ theorem Fx.keep {s u v : State} (h : Fx s u) {rs : List Reg} (k : Keep rs u v)
     (g _ (by decide)).trans h.r6, (g _ (by decide)).trans h.r8, (g _ (by decide)).trans h.r9,
     (g _ (by decide)).trans h.r10, (g _ (by decide)).trans h.r28, (g _ (by decide)).trans h.r29,
     (g _ (by decide)).trans h.r30, (g _ (by decide)).trans h.r31⟩
-
-theorem Fx.saves {s u : State} (h : Fx s u) (hm : Mm s u.mem) : Saves s u :=
-  ⟨h.sp, h.wr, h.hi, hm.sv, hm.ls⟩
 
 /-! ## Values -/
 

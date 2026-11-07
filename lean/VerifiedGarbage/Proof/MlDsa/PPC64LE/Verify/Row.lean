@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Compute
 import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.CallV
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Copy
+import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # ML-DSA verification on PPC64LE: a row of `w′₁`
@@ -19,7 +23,7 @@ namespace VG.Proof.MlDsa.PPC64LE.Verify
 open VG VG.PPC64LE VG.Proof.MlKem.PPC64LE
 open VG.Proof.MlDsa.PPC64LE.KeyGen (Site OkW ix tri lpa scrLen PtrIn Piece Two Rel2 rel_of relInv Callee ip_ok ip_tr
   mul_ok mul_tr mulAdd_ok mulAdd_tr sub_ok sub_tr MulOk AddOk IpOk T1Ok t1_ok t1_tr UhOk uh_ok uh_tr SbpOk sbp_ok
-  sbp_tr polyIs_keepW polyAt_keepW reduced_keepW bytes_keepW keepD)
+  sbp_tr polyIs_keepW polyAt_keepW reduced_keepW bytes_keepW keepD reg)
 open VG.Impl.MlDsa.PPC64LE.Verify
 open VG.Impl.MlDsa.PPC64LE.KeyGen (seqR)
 open VG.Spec.MlDsa (Params toRq ntt nttInv multiplyNTT sub simpleBitPack useHint ofInt simpleBitUnpack t1Max d n q)
@@ -53,6 +57,42 @@ theorem KC5.zR {p : Params} {STK : Nat} {σ : State} {A' cc h R nc nr} {s : Stat
 theorem KC5.cR {p : Params} {STK : Nat} {σ : State} {A' cc h R nr} {s : State}
     (hk : KC5 p STK σ A' cc h R p.ℓ true nr s) : PIs p STK σ 15 (ntt cc) s := by
   have := hk.c; rwa [ifp rfl] at this
+
+/-! ## A kernel's cache -/
+
+/-- The precondition of a kernel's verification. -/
+abbrev CPre (p : Params) (STK : Nat) (σ : State) : Prop := VPre p STK σ ∧ VCache p STK σ
+
+/-- Its public data: `verifyContract`'s, and the cache's pointer and length. -/
+def cPub (p : Params) (σ₁ σ₂ : State) : Prop :=
+  vPub p σ₁ σ₂ ∧ σ₁.gpr .r14 = σ₂.gpr .r14 ∧ σ₁.gpr .r15 = σ₂.gpr .r15
+
+/-- The pieces of a kernel's verification. -/
+abbrev CPiece (p : Params) (STK : Nat) := Piece (CPre p STK) (cPub p)
+
+theorem VPiece.cache {p : Params} {STK : Nat} {I J : State → State → Prop} {c : Prog isa}
+    (h : VPiece p STK I J c) : CPiece p STK I J c :=
+  ⟨fun σ s hp hs => h.ok σ s hp.1 hs, RelCT.mono h.tr (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩ =>
+    ⟨σ₁, σ₂, p₁.1, p₂.1, pub.1, i₁, i₂⟩) fun _ _ h => h⟩
+
+/-- A branch on the cache's length, which the entry states fix. -/
+theorem Piece.ite15 {p : Params} {STK : Nat} {I J : State → State → Prop} {t e : Prog isa}
+    (h15 : ∀ σ s, CPre p STK σ → I σ s → s.gpr .r15 = σ.gpr .r15)
+    (ht : CPiece p STK (fun σ s => I σ s ∧ σ.gpr .r15 ≠ 0) J t)
+    (he : CPiece p STK (fun σ s => I σ s ∧ σ.gpr .r15 = 0) J e) :
+    CPiece p STK I J (.ite (.nonzero .d .r15) t e) := by
+  refine ⟨fun σ s hp hs => WP.ite _ (eval_nonzero s .r15) (fun hb => ht.ok σ s hp ⟨hs, ?_⟩)
+    fun hb => he.ok σ s hp ⟨hs, ?_⟩, ?_⟩
+  · rw [← h15 σ s hp hs]; simpa using hb
+  · rw [← h15 σ s hp hs]; simpa using hb
+  · refine RelCT.ite (fun x y ⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩ => by
+      rw [eval_nonzero, eval_nonzero, h15 _ _ p₁ i₁, h15 _ _ p₂ i₂, pub.2.2]) ?_ ?_
+    · exact RelCT.mono ht.tr (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩, hb⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, ⟨i₁, by
+        rw [eval_nonzero, h15 _ _ p₁ i₁] at hb; simpa using hb⟩, ⟨i₂, by
+        rw [eval_nonzero, h15 _ _ p₁ i₁] at hb; rw [← pub.2.2]; simpa using hb⟩⟩) fun _ _ h => h
+    · exact RelCT.mono he.tr (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩, hb⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, ⟨i₁, by
+        rw [eval_nonzero, h15 _ _ p₁ i₁] at hb; simpa using hb⟩, ⟨i₂, by
+        rw [eval_nonzero, h15 _ _ p₁ i₁] at hb; rw [← pub.2.2]; simpa using hb⟩⟩) fun _ _ h => h
 
 section
 variable {P : Prims} {S : Nat} (hP : VPrimsOk P S) {p : Params} (hF : VFacts p) {STK : Nat} (hS : S ≤ STK)
@@ -192,6 +232,70 @@ theorem nttT_piece :
     have t₂' : Reduced _ (lpa (vlay p STK _) pT) := t₂.1
     rw [← vlay_pub pub] at t₂'
     exact ⟨σ₁, vc_twoL pub h₁.vc h₂.vc, t₁.1, t₂'⟩
+
+omit hP hS in
+/-- `t̂₁[r]` copied from the cache. -/
+theorem cachedT_piece :
+    CPiece p STK (fun σ s => RowI p STK r (fun σ A' _ _ => PIs p STK σ 18 (dotAcc p (sgOf p σ) A' r p.ℓ)) σ s ∧
+        σ.gpr .r15 ≠ 0)
+      (RowI p STK r (F2 p STK r fun σ => t1Hat (pkOf p σ) r)) (Impl.MlDsa.PPC64LE.copyW (.r14, 1024 * r) pT 128) := by
+  have hk := hF.k; have hscr := hF.scr
+  have hoT : oP 16 + 1024 ≤ scrLen p := by simp only [oP]; omega
+  refine ⟨fun σ s hp ⟨⟨A', cc, h, R, hk5, hw⟩, hne⟩ => ?_, ?_⟩
+  · have vc := hk5.vc
+    have hs := vc.site
+    have g14 : s.gpr .r14 = σ.gpr .r14 := vc.pres .r14 (by decide) (by decide)
+    have g31 : s.gpr .r31 = vScr σ := hs.r31
+    obtain ⟨hlen, -⟩ := hp.2.polys.resolve_left hne
+    have hsub : Region.Sub ⟨σ.gpr .r14 + BitVec.ofNat 64 (1024 * r), 8 * 128⟩
+        (reg (σ.gpr .r14) (σ.gpr .r15).toNat) :=
+      Offset.sub_base _ (by rw [hlen]; show 1024 * r + 1024 ≤ 4 * 256 * p.k; omega)
+    have dsub : Region.Sub ⟨vScr σ + BitVec.ofNat 64 (oP 16), 8 * 128⟩ (reg (vScr σ) (scrLen p)) :=
+      Offset.sub_base _ hoT
+    have cr : PPC64LE.Covers [⟨s.gpr .r14 + BitVec.ofNat 64 (1024 * r), 8 * 128⟩] (s.rd ++ s.wr) := by
+      rw [g14, vc.rd]
+      exact Covers.of_sub fun x hx => by
+        rw [List.mem_singleton] at hx; subst hx
+        exact ⟨_, List.mem_append_left _ hp.2.rd, 1024 * r, rfl,
+          by rw [hlen]; show 1024 * r + 1024 ≤ 4 * 256 * p.k; omega⟩
+    have cw : PPC64LE.Covers [⟨s.gpr .r31 + BitVec.ofNat 64 (oP 16), 8 * 128⟩] s.wr := by
+      rw [g31, vc.wr, hp.1.wr]
+      exact Covers.of_sub fun x hx => by
+        rw [List.mem_singleton] at hx; subst hx
+        exact ⟨_, List.mem_singleton_self _, oP 16, rfl, hoT⟩
+    have hd : (⟨s.gpr .r14 + BitVec.ofNat 64 (1024 * r), 8 * 128⟩ : Region).Disjoint
+        ⟨s.gpr .r31 + BitVec.ofNat 64 (oP 16), 8 * 128⟩ := by
+      rw [g14, g31]; exact (hp.2.d_c.sub_left hsub).sub_right dsub
+    refine WP.mono (copyW_ok (sb := .r14) (db := .r31) (by decide) (by decide)
+      (by omega) (by simp only [oP]; omega) (by decide) (by decide) cr cw hd) fun s' ⟨k, hbt⟩ => ?_
+    rw [g31] at k hbt
+    rw [g14] at hbt
+    have k' : Kept ((vlay p STK σ).RL [tri pT 1024]) s s' :=
+      k.mono fun x hx => by
+        rw [List.mem_singleton] at hx; subst hx
+        exact List.mem_cons_self ..
+    refine ⟨A', cc, h, R, hk5.keep hF k' (by k5chks hF (Nat.le_of_lt hr)),
+      polyIs_keepW hs.ok k'.frame (by vsep hF) (by decide) rfl hw, ?_⟩
+    show PolyIs s'.mem (vScr σ + BitVec.ofNat 64 (oP 16)) (t1Hat (pkOf p σ) r)
+    rw [← Proof.MlDsa.PreparedKey.public_poly p _ hr]
+    have := vc.cache hp.2 hne r hr
+    rw [show 4 * Spec.MlDsa.n * r = 1024 * r by show 4 * 256 * r = 1024 * r; omega] at this
+    exact Proof.MlDsa.PreparedKey.polyIs_of_copy hbt this
+  · refine rel_of (copyW_tr (by decide) (by decide) (by decide) (by omega) (by simp only [oP]; omega)
+      (by decide) (P := fun x y => x.sp = y.sp ∧ x.gpr .r14 = y.gpr .r14 ∧ x.gpr .r31 = y.gpr .r31) fun _ _ h => h)
+      fun σ₁ σ₂ x y p₁ p₂ pub ⟨⟨_, _, _, _, h₁, _⟩, _⟩ ⟨⟨_, _, _, _, h₂, _⟩, _⟩ => ⟨?_, ?_, ?_⟩
+    · rw [h₁.vc.sp, h₂.vc.sp, pub.1.1]
+    · rw [h₁.vc.pres .r14 (by decide) (by decide), h₂.vc.pres .r14 (by decide) (by decide), pub.2.1]
+    · rw [h₁.vc.site.r31, h₂.vc.site.r31]; exact pub.1.2.2.2.2.1
+
+/-- `t̂₁[r]`, from the cache if `r15 ≠ 0` and from `pk` otherwise. -/
+theorem keyRow_piece :
+    CPiece p STK (RowI p STK r fun σ A' _ _ => PIs p STK σ 18 (dotAcc p (sgOf p σ) A' r p.ℓ))
+      (RowI p STK r (F2 p STK r fun σ => t1Hat (pkOf p σ) r)) (keyRow P r) := by
+  unfold keyRow
+  exact Piece.ite15 (fun σ s _ ⟨_, _, _, _, hk5, _⟩ => hk5.vc.pres .r15 (by decide) (by decide))
+    (cachedT_piece hF hr)
+    (Piece.mono (VPiece.cache ((t1_piece hP hF hS hr).seq (nttT_piece hP hF hS hr))) (fun _ _ _ h => h.1) fun _ _ _ h => h)
 
 /-! ## `W = NTT⁻¹(W - ĉ t̂₁[r])` -/
 
@@ -379,11 +483,10 @@ theorem sbpW_piece :
     rw [← vlay_pub pub] at w₂'
     exact ⟨σ₁, vc_twoL pub h₁.vc h₂.vc, w1_bound hF w₁, w₂'⟩
 
-theorem row_piece : VPiece p STK (KX p STK p.ℓ true r) (KX p STK p.ℓ true (r + 1)) (row P p r) :=
-  (dot_piece hP hF hS hr).seq ((t1_piece hP hF hS hr).seq ((nttT_piece hP hF hS hr).seq
-    ((mulT_piece hP hF hS hr).seq ((subW_piece hP hF hS hr).seq ((invW_piece hP hF hS hr).seq
+theorem row_piece : CPiece p STK (KX p STK p.ℓ true r) (KX p STK p.ℓ true (r + 1)) (row P p r) :=
+  (dot_piece hP hF hS hr).cache.seq ((keyRow_piece hP hF hS hr).seq (VPiece.cache ((mulT_piece hP hF hS hr).seq
+    ((subW_piece hP hF hS hr).seq ((invW_piece hP hF hS hr).seq
       ((uh_piece hP hF hS hr).seq (sbpW_piece hP hF hS hr)))))))
-
 end
 
 end VG.Proof.MlDsa.PPC64LE.Verify

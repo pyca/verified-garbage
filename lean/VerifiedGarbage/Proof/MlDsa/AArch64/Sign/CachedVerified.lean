@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedRestCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsForget
@@ -20,7 +19,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashSetup
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedLoopConcrete
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedCommitmentCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskPrefixTailTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
@@ -34,7 +32,6 @@ import Std.Tactic.BVDecide.Normalize.Prop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedRestCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsForget
@@ -54,7 +51,6 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashSetup
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedLoopConcrete
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedCommitmentCorrect
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignContract
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskPrefixTailTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
@@ -72,46 +68,6 @@ meta import VerifiedGarbage.TCB.Axioms
 /-! ## From `CachedRestTiming.lean` -/
 
 @[expose] public section
-
-section
-
-namespace VG.Proof.MlDsa.AArch64.Sign.Cached
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Impl.MlDsa.AArch64.Sign
-variable {keccak : VG.Proof.Sha3.AArch64.Permutation}
-
-/-- Initialization, bounded rejection, and accepted-output packing retain the
-same observable leakage as the signing contract. -/
-theorem rest_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params}
-    (hp : Ok3 p) {checks : Prog isa}
-    (hinit : 16*(positiveDecodeWith keccak.callee P p).aarch64Depth≤D)
-    (hloop : ∀σ s, PositiveIK p D σ s → PairedRoots D s →
-      WP isa (Impl.MlDsa.AArch64.Sign.Cached.signLoop P p checks) s
-        (fun u=>PositiveXS p D σ u ∧ PairedRoots D u))
-    (htloop : RelCT isa (PairedRS p D (LeakEq p 0) (PositiveIK p D))
-      (Impl.MlDsa.AArch64.Sign.Cached.signLoop P p checks) (PositiveOX p D)) :
-    RelCT isa (PairedRS p D (LeakEq p 0) fun σ s=>IM p D σ s ∧ StaticRoots D s)
-      (Impl.MlDsa.AArch64.Sign.Cached.restWith keccak.callee P p checks)
-      (RootRS p D (LeakEq p 0) (FS p D)) := by
-  refine liftPairedForgetR (fun _ _ _ h rp=>rest_ok hP hp hinit hloop h.1 h.2 rp) ?_
-  unfold Impl.MlDsa.AArch64.Sign.Cached.restWith
-  have hi := RelCT.mono (paired_trace_frame hinit hP.s64 (positiveInitialization_tr (E:=LeakEq p 0) hP hp))
-    (fun _ _ h=>h) (fun _ _ h=>PairedRS.of_root h.1 h.2.1 h.2.2.1 h.2.2.2)
-  refine RelCT.seq hi (RelCT.seq (htloop) ?_)
-  unfold ifOk
-  refine ifOkElse_tr (fun x y h=>by rw [h.2.1])
-    (RelCT.mono (optimizedOutput_tr hP hp (lo := -(q:Int)+1) (hi := (q:Int)-1) (by omega) (by omega)
-      (E := fun _ _=>True)) ?_ (fun _ _ h=>h))
-    (RelCT.mono nil_tr (fun _ _ h=>h) (fun _ _ _=>trivial))
-  rintro x y ⟨⟨⟨⟨σ,τ,ps,pt,pub,_,hx,hy⟩,_⟩,eq,hj⟩,hne⟩
-  have ex := x24_one hx.r01 hne
-  have ey : y.gpr .x24=1 := eq ▸ ex
-  obtain ⟨_,f,fx,fy⟩ := hj ex
-  exact ⟨⟨σ,τ,ps,pt,pub,trivial,hx.conversion ex,hy.conversion ey⟩,f,fx,fy⟩
-
-end VG.Proof.MlDsa.AArch64.Sign.Cached
-
-end
 
 /-! ## From `CachedLoopCache.lean` -/
 
@@ -198,56 +154,6 @@ end
 
 /-! ## From `CachedCorrect.lean` -/
 
-section
-
-namespace VG.Proof.MlDsa.AArch64.Sign.Cached
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Impl.MlDsa.AArch64.Sign
-variable {keccak : VG.Proof.Sha3.AArch64.Permutation}
-
-theorem sign_correct {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) (σ : State)
-    (hpre : (signK p D).pre σ) (hroots : StaticRoots D σ) (rp : PairedRoots D σ) {checks : Prog isa}
-    (hinit : 16*(positiveDecodeWith keccak.callee P p).aarch64Depth≤D)
-    (hloop : ∀σ s, PositiveIK p D σ s → PairedRoots D s →
-      WP isa (Impl.MlDsa.AArch64.Sign.Cached.signLoop P p checks) s
-        (fun u=>PositiveXS p D σ u ∧ PairedRoots D u)) :
-    ∃ t s', Exec isa (Impl.MlDsa.AArch64.Sign.Cached.signWith keccak.callee P p checks) σ t s' ∧ abiPreserved σ s' ∧ (signK p D).post σ s' := by
-  have hc := allChk_ok h3
-  simp only [allChk, Bool.and_eq_true] at hc
-  obtain ⟨⟨⟨⟨⟨⟨⟨ha, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, hf⟩ := hc
-  have hf' := hf
-  simp only [fChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hf'
-  obtain ⟨hsv, -⟩ := hf'
-  have main : WP isa (Impl.MlDsa.AArch64.Sign.Cached.signWith keccak.callee P p checks) σ fun s₅ => abiPreserved σ s₅ ∧
-      ∃ s₄, FS p D σ s₄ ∧ s₅.gpr .x0 = s₄.gpr .x24 ∧ s₅.mem = s₄.mem := by
-    unfold Impl.MlDsa.AArch64.Sign.Cached.signWith
-    refine WP.seq (WP.mono (paired_prologue h3 hP.s64 hpre hroots rp) fun s₁ ⟨⟨hs,h15⟩,r1⟩ => ?_)
-    refine WP.seq (WP.mono (WP.pairedRoots (CachedMatrix.rooted_expandA_ok hP h3 ha hs h15) r1 (CachedMatrix.expandA_depth hP p) hP.s64) fun s₂ ⟨⟨h₂,hr₂⟩,r2⟩ => ?_)
-    refine WP.seq (WP.mono (show WP isa (ifOk (Impl.MlDsa.AArch64.Sign.Cached.restWith keccak.callee P p checks)) s₂ (FS p D σ) from ?_) fun s₄ h₄ => ?_)
-    · unfold ifOk
-      refine ifOkElse_ok (fun hne => ?_) fun he => ?_
-      · have h1 := x24_one h₂.r01 hne
-        obtain ⟨ok, fam⟩ := h₂.ok h1
-        exact rest_ok hP h3 hinit hloop ⟨h₂.st,ok,fam⟩ hr₂ r2
-      · have h0 := x24_zero h₂.r01 he
-        exact WP.block_nil ⟨h₂.st, .inl h0, fun h1 => absurd (h1.symm.trans h0) (by decide),
-          fun _ => signMu_min_A (h₂.bad h0)⟩
-    · exact WP.mono (epi_ok h₄.st.top fun k hk => h₄.st.lay.inR (hsv k hk)) fun s₅ ⟨hg, hr, hm⟩ =>
-        ⟨hg, s₄, h₄, hr, hm⟩
-  obtain ⟨t, s', he, hF⟩ := main
-  obtain ⟨hg, s₄, h₄, hr, hm⟩ := hF
-  refine ⟨t, s', he, hg, ?_⟩
-  have e23 : pa s₄ (.x23, 0) = σ.gpr .x3 := by
-    rw [pa, h₄.st.top.regs (.x23, .x3) (by decide), show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero]
-  show Outcome _ _ _
-  rcases h₄.r01 with h0 | h1
-  · exact .inr ⟨by rw [hr, h0]; rfl, h₄.bad h0⟩
-  · exact .inl ⟨by rw [hr, h1]; rfl, maxBounds, by rw [hm, ← e23]; exact h₄.ok h1⟩
-
-end VG.Proof.MlDsa.AArch64.Sign.Cached
-
-end
-
 /-! ## From `CachedHashTiming.lean` -/
 
 section
@@ -280,7 +186,6 @@ theorem hashCall_tr {p : Params} {S : Nat} {n : String} {c : Prog isa} {k : Cont
         exact ⟨(rd, wr), p₁, p₂, pub, by rw [h1.2.rd, h1.2.wr]; exact c₁, by rw [h1.2.wr]; exact w₁,
           by rw [h2.2.rd, h2.2.wr]; exact c₂, by rw [h2.2.wr]; exact w₂⟩)
       fun _ _ h => h)
-
 
 theorem hashRegions_eq {p : Params} {x y : State} (e : SameB x y) :
     hashReads p x=hashReads p y ∧ hashWrites p x=hashWrites p y := by
@@ -331,52 +236,6 @@ end
 
 /-! ## From `CachedSignTiming.lean` -/
 
-section
-
-namespace VG.Proof.MlDsa.AArch64.Sign.Cached
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Impl.MlDsa.AArch64.Sign
-variable {keccak : Proof.Sha3.AArch64.Permutation}
-
-theorem sign_ct {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hp : Ok3 p)
-    {checks : Prog isa}
-    (hinit : 16*(positiveDecodeWith keccak.callee P p).aarch64Depth≤D)
-    (hloop : ∀σ s, PositiveIK p D σ s → PairedRoots D s →
-      WP isa (Impl.MlDsa.AArch64.Sign.Cached.signLoop P p checks) s
-        (fun u=>PositiveXS p D σ u ∧ PairedRoots D u))
-    (htloop : RelCT isa (PairedRS p D (LeakEq p 0) (PositiveIK p D))
-      (Impl.MlDsa.AArch64.Sign.Cached.signLoop P p checks) (PositiveOX p D)) :
-    ConstantTime isa (fun s=>(signK p D).pre s ∧ StaticRoots D s ∧ PairedRoots D s)
-      (fun x y=>(signK p D).pub x y ∧ RootSymbolsEq x y ∧
-        x.syms "VG_MLDSA_INV_PAIR"=y.syms "VG_MLDSA_INV_PAIR")
-      (Impl.MlDsa.AArch64.Sign.Cached.signWith keccak.callee P p checks) := by
-  have trace : RelCT isa (WithPaired D (PositiveEntry p D))
-      (Impl.MlDsa.AArch64.Sign.Cached.signWith keccak.callee P p checks) fun _ _=>True := by
-    unfold Impl.MlDsa.AArch64.Sign.Cached.signWith
-    refine RelCT.seq (withPaired_tr (Nat.zero_le _) hP.s64 (positivePro_tr hp))
-      (RelCT.seq (withPaired_tr (CachedMatrix.expandA_depth hP p) hP.s64 (CachedMatrix.positiveExpand_tr hP hp)) ?_)
-    refine RelCT.seq (R:=LRel D (sgR p) (sgW p)) ?_
-      (lrel_tr (fun _ _ h=>h) (by taint_decide))
-    unfold ifOk
-    refine ifOkElse_tr (P:=WithPaired D (PositiveRA p D)) (fun _ _ h=>by rw [h.1.1.2])
-      (RelCT.mono (rest_tr hP hp hinit hloop htloop) ?_
-        (fun _ _ h=>h.1.lrel (fun _ _ h=>h.st)))
-      (RelCT.mono nil_tr (fun _ _ h=>h) (fun _ _ h=>h.1.1.1.lrel (fun _ _ h=>h.st)))
-    rintro x y ⟨⟨⟨⟨⟨σ,τ,ps,pt,pub,hx,hy⟩,eq⟩,rx,ry,re⟩,px,py,pe⟩,hne⟩
-    have ex := x24_one hx.r01 hne
-    have ey : y.gpr .x24=1 := eq ▸ ex
-    obtain ⟨ox,fx⟩ := hx.ok ex
-    obtain ⟨oy,fy⟩ := hy.ok ey
-    exact ⟨⟨⟨σ,τ,ps,pt,pub,pub_leq pub (expandA_max ox) (expandA_max oy),
-      ⟨⟨⟨hx.st,ox,fx⟩,rx⟩,px⟩,⟨⟨⟨hy.st,oy,fy⟩,ry⟩,py⟩⟩,re⟩,pe⟩
-  intro x y tx ty x' y' hx hy pub ex ey
-  exact (trace _ _ _ _ _ _ ⟨⟨hx.1,hy.1,pub.1,hx.2.1,hy.2.1,pub.2.1⟩,
-    hx.2.2,hy.2.2,pub.2.2⟩ ex ey).1
-
-end VG.Proof.MlDsa.AArch64.Sign.Cached
-
-end
-
 /-! ## From `CachedHashSetupTiming.lean` -/
 
 section
@@ -413,33 +272,6 @@ end VG.Proof.MlDsa.AArch64.Sign.Cached
 end
 
 /-! ## From `CachedConcreteCorrect.lean` -/
-
-section
-
-namespace VG.Proof.MlDsa.AArch64.Sign.Cached
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Impl.MlDsa.AArch64.Sign
-
-theorem selectedSign_correct (v : Proof.Sha3.AArch64.Permutation)
-    {p : Params} (hp : p=mlDsa65 ∨ p=mlDsa87) (σ : State)
-    (hpre : (signK p 16).pre σ) (hr : StaticRoots 16 σ) (rp : PairedRoots 16 σ) :
-    ∃t s',Exec isa (Impl.MlDsa.AArch64.Sign.Cached.signWith v.callee (primsWith v.callee) p
-      (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks p)) σ t s' ∧
-      abiPreserved σ s' ∧ (signK p 16).post σ s' := by
-  have hp3 : Ok3 p := by rcases hp with h|h; exact Or.inr (Or.inl h); exact Or.inr (Or.inr h)
-  apply sign_correct (keccak:=v) (prims_okWith (keccak:=v)) hp3 σ hpre hr rp
-  · have hd := (Message.pairedInitialization_dle v p).le
-    change 16 * _ ≤ 16
-    omega
-  · intro σ s h r
-    apply signLoop_concrete_ok (prims_okWith (keccak:=v)) hp ?_ h r
-    have hd := (Message.cachedCommit_dle v hp).le
-    change 16 * _ ≤ 16
-    omega
-
-end VG.Proof.MlDsa.AArch64.Sign.Cached
-
-end
 
 /-! ## From `CachedCommitmentTiming.lean` -/
 
@@ -526,7 +358,6 @@ theorem iter_trace {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
     have h0 := x0_zero hb
     exact ⟨⟨⟨σ,τ,ps,pt,pub,he,⟨⟨hx.1,h0⟩,hx.2⟩,⟨⟨hy.1,eq.symm.trans h0⟩,hy.2⟩⟩,rs⟩,rp⟩
 
-
 end VG.Proof.MlDsa.AArch64.Sign.Cached
 
 end
@@ -599,53 +430,3 @@ end
 
 /-! ## From `CachedVerified.lean` -/
 
-section
-
-namespace VG.Proof.MlDsa.AArch64.Sign.Cached
-open VG VG.AArch64 VG.Spec.MlDsa
-open VG.Impl.MlDsa.AArch64.Sign
-
-/-- The cached signer uses the original public signing contract. -/
-theorem sign_verified_of_loop (v : Proof.Sha3.AArch64.Permutation)
-    {p : Params} (hp : p=mlDsa65 ∨ p=mlDsa87)
-    (htloop : RelCT isa (PairedRS p 16 (LeakEq p 0) (PositiveIK p 16))
-      (Impl.MlDsa.AArch64.Sign.Cached.signLoop (primsWith v.callee) p
-        (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks p)) (PositiveOX p 16)) :
-    Verified AArch64.target
-      (Impl.MlDsa.AArch64.Sign.Cached.signWith v.callee (primsWith v.callee) p
-        (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks p))
-      (signContract p (abi.withConsts pairedSignRootConsts) signStack) := by
-  have hp3 : Ok3 p := by rcases hp with h|h; exact Or.inr (Or.inl h); exact Or.inr (Or.inr h)
-  apply Verified.of_correct (k:=pairedSignK p signStack)
-  · intro σ h
-    exact selectedSign_correct v hp σ h.1 h.2.1 h.2.2
-  · apply sign_ct (keccak:=v) (prims_okWith (keccak:=v)) hp3
-    · have hd := (Message.pairedInitialization_dle v p).le
-      change 16 * _ ≤ 16
-      omega
-    · intro σ s h r
-      apply signLoop_concrete_ok (prims_okWith (keccak:=v)) hp ?_ h r
-      have hd := (Message.cachedCommit_dle v hp).le
-      change 16 * _ ≤ 16
-      omega
-    · exact htloop
-  · exact pairedSignK_implies_spec hp3
-
-theorem sign_verified (v : Proof.Sha3.AArch64.Permutation)
-    {p : Params} (hp : p=mlDsa65 ∨ p=mlDsa87) :
-    Verified AArch64.target
-      (Impl.MlDsa.AArch64.Sign.Cached.signWith v.callee (primsWith v.callee) p
-        (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks p))
-      (signContract p (abi.withConsts pairedSignRootConsts) signStack) := by
-  apply sign_verified_of_loop v hp
-  apply signLoop_tr (prims_okWith (keccak:=v)) hp (by decide)
-  · have hd := (Message.cachedCommit_dle v hp).le
-    change 16 * _ ≤ 16
-    omega
-  · have hd := (Message.pairedBall_dle v p).le
-    change 16 * _ ≤ 16
-    omega
-
-end VG.Proof.MlDsa.AArch64.Sign.Cached
-
-end

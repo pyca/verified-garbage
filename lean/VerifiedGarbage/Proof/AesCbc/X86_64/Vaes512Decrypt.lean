@@ -230,22 +230,29 @@ theorem loadData_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
       rw [hx r hr.2 l hl,o₁ r hr.1 l hl]
 
 
-/-- Legacy 128-bit moves retain the other three lanes. -/
-theorem zlane_setXmm (s : State) (d r : XReg) (v : BitVec 128) (l : Nat) :
-    (s.setXmm d v).zlane r l = if r=d ∧ l=0 then v else s.zlane r l := by
-  have hy : (s.setXmm d v).ymmHi = s.ymmHi := rfl
-  have hz : (s.setXmm d v).zmmHi = s.zmmHi := rfl
-  by_cases hr : r=d
-  · subst hr
-    by_cases hl : l=0
-    · subst hl; simp [State.zlane,State.lane,xmm_setXmm_self]
-    · simp [State.zlane,State.lane,hl,hy,hz]
-  · by_cases hl : l=0
-    · subst hl; simp [State.zlane,State.lane,xmm_setXmm_of_ne _ _ hr,hr]
-    · simp [State.zlane,State.lane,hl,hy,hz]
-
 def feedback (s : State) (a : Addr) (l : Nat) : BitVec 128 :=
   if l=0 then s.xmm .xmm15 else s.mem.readW (a + BitVec.ofNat 64 (16*(l-1))) 128
+
+/-- The two shuffles of `finish4`: lanes 0, 0, 0, 0 of `A` and `B`, then
+lanes 0 and 2 of that and 1 and 2 of `B`, give lane 0 of `A` and lanes 0, 1
+and 2 of `B`. -/
+theorem shuf_feedback {A B V W : Nat → BitVec 128} (hV : ∀ i < 4, V i = shuf4Lanes A B 0 i)
+    (hW : ∀ i < 4, W i = B i) {l : Nat} (hl : l < 4) :
+    shuf4Lanes V W 152 l = if l = 0 then A 0 else B (l-1) := by
+  have e : ((152 : BitVec 8).extractLsb' 0 2).toNat = 0 ∧ ((152 : BitVec 8).extractLsb' 2 2).toNat = 2 ∧
+      ((152 : BitVec 8).extractLsb' 4 2).toNat = 1 ∧ ((152 : BitVec 8).extractLsb' 6 2).toNat = 2 ∧
+      ((0 : BitVec 8).extractLsb' 0 2).toNat = 0 ∧ ((0 : BitVec 8).extractLsb' 4 2).toNat = 0 := by
+    decide
+  obtain ⟨e0,e2,e4,e6,z0,z4⟩ := e
+  rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
+  · simp only [shuf4Lanes,Nat.reduceMul,Nat.reduceLT,↓reduceIte,e0]
+    rw [hV 0 (by decide)]; simp only [shuf4Lanes,Nat.reduceMul,Nat.reduceLT,↓reduceIte,z0]
+  · simp only [shuf4Lanes,Nat.reduceMul,Nat.reduceLT,↓reduceIte,e2]
+    rw [hV 2 (by decide)]; simp only [shuf4Lanes,Nat.reduceMul,Nat.reduceLT,↓reduceIte,z4]; rfl
+  · simp only [shuf4Lanes,Nat.reduceMul,Nat.reduceLT,↓reduceIte,e4]
+    rw [hW 1 (by decide)]; rfl
+  · simp only [shuf4Lanes,Nat.reduceMul,Nat.reduceLT,↓reduceIte,e6]
+    rw [hW 2 (by decide)]; rfl
 
 /-- Four blocks share one feedback XOR and one store. -/
 theorem finish4_ok (b : XReg) (j : Nat) (s : State) (h14 : b ≠ .xmm14) (h15 : b ≠ .xmm15)
@@ -259,23 +266,19 @@ theorem finish4_ok (b : XReg) (j : Nat) (s : State) (h14 : b ≠ .xmm14) (h15 : 
       (∀ r, r ≠ b → r ≠ .xmm14 → r ≠ .xmm15 → ∀ l < 4, t.zlane r l = s.zlane r l) := by
   rw [finish4,← List.singleton_append,WP.block_append_iff]
   refine WP.mono (load1_ok .xmm14 (64*j) s (inRegions_wr hin)) fun u ⟨hu,gu,mu,ru,wu,ou⟩ => ?_
-  let v := (ZOp.vshufi32x4 .xmm14 .xmm14 .xmm14 144).exec u
-  let w := v.setXmm .xmm14 (v.xmm .xmm15)
+  let v := (ZOp.vshufi32x4 .xmm15 .xmm15 .xmm14 0).exec u
+  let w := (ZOp.vshufi32x4 .xmm15 .xmm15 .xmm14 152).exec v
+  let x := (ZOp.zbin .vpxord b b .xmm15).exec w
   let a := s.gpr .rdx + BitVec.ofInt 64 ((64*j : Nat) : Int)
-  let x := w.setXmm .xmm15 (s.mem.readW (a+48) 128)
-  let y := (ZOp.zbin .vpxord b b .xmm14).exec x
-  have vg : v.gpr = s.gpr := (ZOp.exec_gpr _ _).trans gu
-  have vm : v.mem = s.mem := (ZOp.exec_mem _ _).trans mu
-  have vr : v.rd = s.rd := (ZOp.exec_rd _ _).trans ru
-  have vw : v.wr = s.wr := (ZOp.exec_wr _ _).trans wu
-  have ea15 : w.ea (at_ .rdx (64*j+48)) = a+48 := by
-    simp only [w,ea_at,gpr_setXmm,vg,a,ofInt_natCast]
+  let y := x.setV .l128 .xmm15 (s.mem.readW (a+48) 128) 0
+  have xg : x.gpr = s.gpr := by simp only [x,w,v,ZOp.exec_gpr,gu]
+  have xm : x.mem = s.mem := by simp only [x,w,v,ZOp.exec_mem,mu]
+  have xr : x.rd = s.rd := by simp only [x,w,v,ZOp.exec_rd,ru]
+  have xw : x.wr = s.wr := by simp only [x,w,v,ZOp.exec_wr,wu]
+  have ea48 : s.gpr .rdx + BitVec.ofNat 64 (64*j+48) = a+48 := by
     change s.gpr .rdx + BitVec.ofNat 64 (64*j+48) = s.gpr .rdx + BitVec.ofNat 64 (64*j) + BitVec.ofNat 64 48
     exact (Offset.add_add_eq _ (c := 64*j+48) (by omega_arith)).symm
-  have hin15 : InRegions (w.rd ++ w.wr) (w.gpr .rdx + BitVec.ofNat 64 (64*j+48)) 16 := by
-    change InRegions (w.rd ++ w.wr) (w.ea (at_ .rdx (64*j+48))) 16
-    rw [ea15]
-    simp only [w,rd_setXmm,wr_setXmm,vr,vw]
+  have hin48 : InRegions (s.rd ++ s.wr) (a+48) 16 := by
     obtain ⟨r,hr,hc⟩ := hin
     refine ⟨r,List.mem_append_right _ hr,?_⟩
     change (a-r.base).toNat+64 ≤ r.len at hc
@@ -286,44 +289,38 @@ theorem finish4_ok (b : XReg) (j : Nat) (s : State) (h14 : b ≠ .xmm14) (h15 : 
   rw [WP.block_cons_iff]
   refine ⟨w,rfl,?_⟩
   rw [WP.block_cons_iff]
-  refine ⟨x,by
-    have he := VG.Proof.AesCbc.X86_64.Encrypt.exec_load (b := .xmm15) (r := .rdx) (d := 64*j+48) hin15
-    have ha : w.gpr .rdx + BitVec.ofNat 64 (64*j+48) = a+48 := ea15
-    simpa only [ha,w,mem_setXmm,vm,x,Impl.CmacAes.X86_64.AesNi.at_,Impl.Aes.X86_64.AesNi.at_] using he,?_⟩
+  refine ⟨x,rfl,?_⟩
   rw [WP.block_cons_iff]
-  refine ⟨y,rfl,?_⟩
+  refine ⟨y,by
+    simp only [isa,exec,State.load128,ea_at,ofInt_natCast,xg,xr,xw,xm,ea48]
+    rw [ite_eq_left hin48]
+    rfl,?_⟩
   rw [WP.block_cons_iff]
-  have yg : y.gpr = s.gpr := by simp only [y,x,w,ZOp.exec_gpr,gpr_setXmm,vg]
-  have ym : y.mem = s.mem := by simp only [y,x,w,ZOp.exec_mem,mem_setXmm,vm]
-  have yr : y.rd = s.rd := by simp only [y,x,w,ZOp.exec_rd,rd_setXmm,vr]
-  have yw : y.wr = s.wr := by simp only [y,x,w,ZOp.exec_wr,wr_setXmm,vw]
+  have yg : y.gpr = s.gpr := by simp only [y,State.setV_gpr,xg]
+  have ym : y.mem = s.mem := by simp only [y,State.setV_mem,xm]
+  have yr : y.rd = s.rd := by simp only [y,State.setV_rd,xr]
+  have yw : y.wr = s.wr := by simp only [y,State.setV_wr,xw]
   refine ⟨y.setMem (s.mem.writeW a (y.zmm b)),by
     simp only [isa,exec,State.store512_eq,ea_at,yg,yw,ym,hin,ite_true,a],WP.block_nil ?_⟩
   have keep (r : XReg) (hr14 : r ≠ .xmm14) (hr15 : r ≠ .xmm15) (l : Nat) (hl : l<4) :
-      x.zlane r l = s.zlane r l := by
-    simp only [x,w,zlane_setXmm,ite_eq_right (show ¬(r=.xmm15 ∧ l=0) by simp [hr15]),
-      ite_eq_right (show ¬(r=.xmm14 ∧ l=0) by simp [hr14])]
-    rw [zlane_vshufi32x4 _ _ _ _ _ _ hl,ite_eq_right hr14,ou r hr14 l hl]
-  have feed (l : Nat) (hl : l<4) : x.zlane .xmm14 l = feedback s a l := by
-    simp only [x,w,zlane_setXmm,show (XReg.xmm14 ≠ .xmm15) from by decide,false_and,ite_false,true_and]
-    by_cases he : l=0
-    · subst he
-      simp only [ite_true,feedback]
-      rw [← show v.zlane .xmm15 0 = v.xmm .xmm15 from rfl,
-        zlane_vshufi32x4 _ _ _ _ _ _ (by decide),ite_eq_right (by decide),ou _ (by decide) 0 (by decide)]
-      rfl
-    · rw [ite_eq_right he,zlane_vshufi32x4 _ _ _ _ _ _ hl,ite_eq_left rfl]
-      have hs : shuf4Lanes (u.zlane .xmm14) (u.zlane .xmm14) 144 l = u.zlane .xmm14 (l-1) := by
-        have hf : ∀ i : Fin 4, i.1 ≠ 0 → ((144 : BitVec 8).extractLsb' (2*i.1) 2).toNat = i.1-1 := by decide
-        simp only [shuf4Lanes,ite_self,hf ⟨l,hl⟩ he]
-      rw [hs,hu _ (by omega_arith),feedback,ite_eq_right he]
+      w.zlane r l = s.zlane r l := by
+    rw [zlane_vshufi32x4 _ _ _ _ _ _ hl,ite_eq_right hr15,zlane_vshufi32x4 _ _ _ _ _ _ hl,
+      ite_eq_right hr15,ou r hr14 l hl]
+  have feed (l : Nat) (hl : l<4) : w.zlane .xmm15 l = feedback s a l := by
+    rw [zlane_vshufi32x4 _ _ _ _ _ _ hl,ite_eq_left rfl,
+      shuf_feedback (fun i hi => by rw [zlane_vshufi32x4 _ _ _ _ _ _ hi,ite_eq_left rfl])
+        (fun i hi => by rw [zlane_vshufi32x4 _ _ _ _ _ _ hi,ite_eq_right (by decide)]) hl,feedback]
+    by_cases h0 : l=0
+    · rw [ite_eq_left h0,ite_eq_left h0,ou _ (by decide) 0 (by decide)]; rfl
+    · rw [ite_eq_right h0,ite_eq_right h0,hu _ (by omega_arith)]
   refine ⟨⟨y.zmm b,rfl,fun l hl => ?_⟩,?_,yg,yr,yw,fun r hb hr14 hr15 l hl => ?_⟩
-  · rw [VG.Proof.Aes.X86_64.VaesZ.zmm_lane _ _ hl,zlane_zbin _ _ _ _ _ _ hl,ite_eq_left rfl,keep b h14 h15 l hl,feed l hl]
+  · rw [VG.Proof.Aes.X86_64.VaesZ.zmm_lane _ _ hl,State.zlane_setV128 _ _ _ _ _ hl,ite_eq_right h15,
+      zlane_zbin _ _ _ _ _ _ hl,ite_eq_left rfl,keep b h14 h15 l hl,feed l hl]
     rfl
-  · change y.zlane .xmm15 0 = _
-    rw [zlane_zbin _ _ _ _ _ _ (by decide),ite_eq_right (Ne.symm h15)]
-    exact xmm_setXmm_self _ _ _
-  · rw [State.setMem_zlane,zlane_zbin _ _ _ _ _ _ hl,ite_eq_right hb,keep r hr14 hr15 l hl]
+  · change y.xmm .xmm15 = _
+    simp only [y,xmm_setV,ite_true,a]
+  · rw [State.setMem_zlane,State.zlane_setV128 _ _ _ _ _ hl,ite_eq_right hr15,
+      zlane_zbin _ _ _ _ _ _ hl,ite_eq_right hb,keep r hr14 hr15 l hl]
 
 
 theorem data_write4 {m₀ m : Mem} {D : Addr} {n c : Nat} {F : Nat → Spec.Aes.State} {v : BitVec 512}

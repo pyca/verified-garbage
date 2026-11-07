@@ -10,8 +10,17 @@
     target_arch = "riscv64"
 ))]
 
+use super::ecb::Backend;
 use crate::arch::triple_des::vg_triple_des_expand_key;
-use crate::arch::triple_des_cfb::{vg_triple_des_cfb64_decrypt, vg_triple_des_cfb64_encrypt};
+use crate::arch::triple_des_cfb::{
+    vg_triple_des_cfb64_decrypt, vg_triple_des_cfb64_decrypt_final, vg_triple_des_cfb64_encrypt,
+    vg_triple_des_cfb64_encrypt_final,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::triple_des_cfb::{
+    vg_triple_des_cfb64_decrypt_avx2, vg_triple_des_cfb64_decrypt_avx512,
+};
+use crate::cpu::detected;
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -59,10 +68,17 @@ impl TripleDesCfb64Encryptor {
     }
 
     /// Encrypts the rest of the message in place, of any length: its whole
-    /// blocks, then a partial last segment if there is one (§6.3,
-    /// `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`).
+    /// blocks, then a partial last segment if there is one,
+    /// `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))` (SP 800-38A defines CFB only for
+    /// whole segments; this is the rule of its §6.4 and §6.5 for a partial
+    /// last block, as other implementations extend CFB).
     pub fn encrypt_final(mut self, buffer: &mut [u8]) {
-        self.key.encrypt(&mut self.iv, buffer);
+        self.key.last(
+            &mut self.iv,
+            buffer,
+            vg_triple_des_cfb64_encrypt,
+            vg_triple_des_cfb64_encrypt_final,
+        );
     }
 }
 
@@ -86,6 +102,9 @@ pub struct TripleDesCfb64Decryptor {
     key: Key,
     /// The block to continue from: the IV, then the last ciphertext block.
     iv: [u8; 8],
+    /// The implementation of ECB encryption the CPU runs best, whose
+    /// variant of CFB64 decryption runs.
+    backend: Backend,
 }
 
 impl TripleDesCfb64Decryptor {
@@ -96,6 +115,7 @@ impl TripleDesCfb64Decryptor {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
+            backend: Backend::select(detected()),
         })
     }
 
@@ -107,15 +127,22 @@ impl TripleDesCfb64Decryptor {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
-        self.key.decrypt(&mut self.iv, buffer);
+        self.key.decrypt(self.backend, &mut self.iv, buffer);
         Ok(())
     }
 
     /// Decrypts the rest of the message in place, of any length: its whole
-    /// blocks, then a partial last segment if there is one (§6.3,
-    /// `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`).
+    /// blocks, then a partial last segment if there is one,
+    /// `Pₙ* = Cₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))` (SP 800-38A defines CFB only for
+    /// whole segments; this is the rule of its §6.4 and §6.5 for a partial
+    /// last block, as other implementations extend CFB).
     pub fn decrypt_final(mut self, buffer: &mut [u8]) {
-        self.key.decrypt(&mut self.iv, buffer);
+        self.key.last(
+            &mut self.iv,
+            buffer,
+            Key::decryptor(self.backend),
+            vg_triple_des_cfb64_decrypt_final,
+        );
     }
 }
 
@@ -140,6 +167,19 @@ type Cfb = unsafe extern "sysv64" fn(*const [u8; 384], *mut [u8; 8], *mut [u8; 8
 ))]
 type Cfb = unsafe extern "C" fn(*const [u8; 384], *mut [u8; 8], *mut [u8; 8], usize);
 
+/// The signature of `vg_triple_des_cfb64_encrypt_final` and `vg_triple_des_cfb64_decrypt_final`.
+#[cfg(target_arch = "x86_64")]
+type CfbFinal = unsafe extern "sysv64" fn(*const [u8; 384], *mut [u8; 8], *mut u8, usize);
+/// The signature of `vg_triple_des_cfb64_encrypt_final` and `vg_triple_des_cfb64_decrypt_final`.
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
+))]
+type CfbFinal = unsafe extern "C" fn(*const [u8; 384], *mut [u8; 8], *mut u8, usize);
+
 impl Key {
     /// Expands a 16- or 24-byte key.
     fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
@@ -153,39 +193,29 @@ impl Key {
         Ok(Self { schedule })
     }
 
-    /// Encrypts `buffer` in place, from the block `iv`, which it replaces
-    /// with the last ciphertext block (unchanged for empty input; after a
-    /// partial last segment, the cipher of the last whole one). A message
-    /// may be encrypted in pieces of whole blocks, each continuing from the
-    /// `iv` the last left; a piece whose length is not a multiple of eight
-    /// bytes must end the message.
+    /// Encrypts the whole blocks of `buffer` in place, from the block `iv`,
+    /// which it replaces with the last ciphertext block (unchanged for empty
+    /// input).
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.crypt(iv, buffer, vg_triple_des_cfb64_encrypt);
+        self.blocks(iv, buffer, vg_triple_des_cfb64_encrypt);
     }
 
-    /// Decrypts `buffer` in place, from the block `iv`, which it replaces
-    /// with the last ciphertext block (unchanged for empty input; after a
-    /// partial last segment, the cipher of the last whole one). A message
-    /// may be decrypted in pieces of whole blocks, each continuing from the
-    /// `iv` the last left; a piece whose length is not a multiple of eight
-    /// bytes must end the message.
-    fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.crypt(iv, buffer, vg_triple_des_cfb64_decrypt);
+    /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
+    /// which it replaces with the last ciphertext block (unchanged for empty
+    /// input), with the implementation `backend` chooses.
+    fn decrypt(&self, backend: Backend, iv: &mut [u8; 8], buffer: &mut [u8]) {
+        self.blocks(iv, buffer, Self::decryptor(backend));
     }
 
-    fn crypt(&self, iv: &mut [u8; 8], buffer: &mut [u8], f: Cfb) {
-        let whole = buffer.len() / 8 * 8;
-        let (blocks, rest) = buffer.split_at_mut(whole);
-        self.blocks(iv, blocks, f);
-        if !rest.is_empty() {
-            // `CIPH_K` of the block to continue from, as CFB encryption of a
-            // zero block, XORed into the last bytes.
-            let mut last = [0; 8];
-            self.blocks(iv, &mut last, vg_triple_des_cfb64_encrypt);
-            for (b, o) in rest.iter_mut().zip(last) {
-                *b ^= o;
-            }
-            zeroize(&mut last);
+    /// The whole-block decryption function of `backend`, the
+    /// implementation of ECB encryption it chooses.
+    fn decryptor(backend: Backend) -> Cfb {
+        match backend {
+            Backend::Scalar => vg_triple_des_cfb64_decrypt,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Avx2 => vg_triple_des_cfb64_decrypt_avx2,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Avx512 => vg_triple_des_cfb64_decrypt_avx512,
         }
     }
 
@@ -194,7 +224,8 @@ impl Key {
         // SAFETY: `blocks` holds `len / 8` whole blocks (its length is a
         // multiple of 8), and it, the block at `iv` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
-        // the callee's stack.
+        // the callee's stack; `f` is the baseline function or one that
+        // `Backend::select` chose for the CPU's features.
         unsafe {
             f(
                 &self.schedule,
@@ -203,6 +234,28 @@ impl Key {
                 blocks.len() / 8,
             )
         };
+    }
+
+    /// The rest of a message, of any length: its whole blocks with `whole`,
+    /// the whole-block function (which, decrypting, may decrypt several at
+    /// once), then the bytes after them, fewer than 8, with `f`, the final
+    /// function of the same direction, from the IV the whole blocks leave.
+    fn last(&self, iv: &mut [u8; 8], buffer: &mut [u8], whole: Cfb, f: CfbFinal) {
+        let (blocks, rest) = buffer.split_at_mut(buffer.len() / 8 * 8);
+        self.blocks(iv, blocks, whole);
+        if !rest.is_empty() {
+            self.final_(iv, rest, f);
+        }
+    }
+
+    /// `f`, a final function, on the rest of a message, of any length: it
+    /// replaces `iv` with the last ciphertext block, or, after a partial last
+    /// segment, with keystream, which the caller wipes.
+    fn final_(&self, iv: &mut [u8; 8], buffer: &mut [u8], f: CfbFinal) {
+        // SAFETY: `buffer` is valid for `len` bytes, and it, the block
+        // at `iv` and the schedule are separate valid objects of the sizes of
+        // the signature, none of them on the callee's stack.
+        unsafe { f(&self.schedule, iv, buffer.as_mut_ptr(), buffer.len()) };
     }
 }
 

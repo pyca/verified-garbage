@@ -25,7 +25,7 @@ open VG.Proof.MlKem.X86 (E0 P0)
 open VG.Spec.Sha3 (bytesAt)
 open VG.Spec.MlDsa
 
-/-- The public data of `signMessageContract p X86.abi 136`. -/
+/-- The public data of `signMessageKContract p K X86.abi 176`. -/
 structure SPub (p : Params) (s s' : State) : Prop where
   esp : s.gpr .esp = s'.gpr .esp
   leak : signMessageLeak p (bytesAt s.mem ((arg s 0).setWidth 64) p.skLen)
@@ -36,8 +36,9 @@ structure SPub (p : Params) (s s' : State) : Prop where
       (bytesAt s'.mem ((arg s' 3).setWidth 64) (arg s' 4).toNat) (bytesAt s'.mem ((arg s' 5).setWidth 64) 32)
   args : ∀ i < 8, arg s i = arg s' i
 
-theorem spub_of {p : Params} {s s' : State} (h : (signMessageContract p X86.abi 136).pub s s') : SPub p s s' := by
-  sig_pub [signMessageContract, signMessageSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
+theorem spub_of {p : Params} {K : KeyArg} {s s' : State} (h : (signMessageKContract p K X86.abi 176).pub s s') :
+    SPub p s s' := by
+  sig_pub [signMessageKContract, signMessageKSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
   obtain ⟨e₁, e₂, a0, a1, a2, a3, a4, a5, a6, a7⟩ := h
   refine ⟨e₁, e₂, fun i hi => ?_⟩
   match i, hi with
@@ -50,7 +51,7 @@ theorem spub_of {p : Params} {s s' : State} (h : (signMessageContract p X86.abi 
   | 6, _ => exact a6
   | 7, _ => exact a7
 
-/-- The public data of `verifyMessageCachedContract p X86.abi 132` (`n = 8`,
+/-- The public data of `verifyMessageKContract p kl VP X86.abi 172` (`n = 8`,
 `cpub_of`). -/
 structure VPub (p : Params) (n : Nat) (s s' : State) : Prop where
   esp : s.gpr .esp = s'.gpr .esp
@@ -62,9 +63,9 @@ structure VPub (p : Params) (n : Nat) (s s' : State) : Prop where
       bytesAt s'.mem ((arg s' 3).setWidth 64) (arg s' 4).toNat ++ bytesAt s'.mem ((arg s' 5).setWidth 64) p.sigLen)
   args : ∀ i < n, arg s i = arg s' i
 
-theorem cpub_of {p : Params} {s s' : State} (h : (verifyMessageCachedContract p X86.abi 132).pub s s') :
-    VPub p 8 s s' := by
-  sig_pub [verifyMessageCachedContract, verifyMessageCachedSig, X86.abi, X86.argSlots, X86.argVal,
+theorem cpub_of {p : Params} {kl : Nat} {VP : Mem → Addr → Addr → Prop} {s s' : State}
+    (h : (verifyMessageKContract p kl VP X86.abi 172).pub s s') : VPub p 8 s s' := by
+  sig_pub [verifyMessageKContract, verifyMessageKSig, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes] at h
   obtain ⟨e₁, e₂, a0, a1, a2, a3, a4, a5, a6, a7⟩ := h
   refine ⟨e₁, e₂, fun i hi => ?_⟩
@@ -83,7 +84,7 @@ theorem frame_eq {s : State} (h : 16 ≤ (s.gpr .esp).toNat) :
     (⟨(E0 s).setWidth 64 - 16#64, 16⟩ : Region) = below (s.gpr .esp) 16 := by
   simp only [below]; rw [Taint.sub_setWidth h]
 
-theorem sShape {p : Params} (hp : p ∈ params) : Shape (SPre p) (SPub p) (slay p) 7 p where
+theorem sShape {p : Params} {K : KeyArg} (hK : K.Ok p.skLen) : Shape (SPre p K) (SPub p) (slay p K) 7 p where
   sp _ _ := rfl
   rd _ _ := rfl
   wr _ _ := rfl
@@ -101,7 +102,7 @@ theorem sShape {p : Params} (hp : p ∈ params) : Shape (SPre p) (SPub p) (slay 
   scr _ _ := rfl
   siLt _ _ := by show 7 < 8; decide
   E _ _ := rfl
-  ok _ h₀ h8 := slay_ok hp h₀ h8
+  ok _ h₀ h8 := slay_ok hK h₀ h8
   e16 s₀ h₀ := ⟨by show 16 ≤ (s₀.gpr .esp).toNat; have := h₀.sp; omega,
     by show (s₀.gpr .esp).toNat + 4 ≤ _; have := h₀.spA; omega⟩
   fit _ h₀ := by show _ + 4 + 4 * 8 ≤ _; have := h₀.spA; omega
@@ -119,8 +120,8 @@ theorem sShape {p : Params} (hp : p ∈ params) : Shape (SPre p) (SPub p) (slay 
     hq.args 0 (by decide), hq.args 1 (by decide), hq.args 2 (by decide), hq.args 3 (by decide),
     hq.args 4 (by decide)⟩
 
-theorem vlay_argv {p : Params} {n : Nat} (hn : n = 7 ∨ n = 8) (s : State) :
-    ∀ i < n, (vlay p n s).argv.getD i 0 = arg s i := by
+theorem vlay_argv {p : Params} {K : KeyArg} {n : Nat} (hn : n = 7 ∨ n = 8) (s : State) :
+    ∀ i < n, (vlay p K n s).argv.getD i 0 = arg s i := by
   rcases hn with rfl | rfl <;> intro i hi
   · match i, hi with
     | 0, _ => rfl
@@ -140,8 +141,8 @@ theorem vlay_argv {p : Params} {n : Nat} (hn : n = 7 ∨ n = 8) (s : State) :
     | 6, _ => rfl
     | 7, _ => rfl
 
-theorem vShape {p : Params} (hp : p ∈ params) {n : Nat} {T : State → List Region} :
-    Shape (VPre p n T) (VPub p n) (vlay p n) 6 p where
+theorem vShape {p : Params} {K : KeyArg} (hK : K.Ok p.pkLen) {n : Nat} {T : State → List Region} :
+    Shape (VPre p K n T) (VPub p n) (vlay p K n) 6 p where
   sp _ _ := rfl
   rd _ _ := rfl
   wr _ _ := rfl
@@ -150,7 +151,7 @@ theorem vShape {p : Params} (hp : p ∈ params) {n : Nat} {T : State → List Re
   scr _ _ := rfl
   siLt _ h₀ := by show 6 < n; have := h₀.hn; omega
   E _ _ := rfl
-  ok _ h₀ h8 := vlay_ok hp h₀ h8
+  ok _ h₀ h8 := vlay_ok hK h₀ h8
   e16 s₀ h₀ := ⟨by show 16 ≤ (s₀.gpr .esp).toNat; have := h₀.sp; omega,
     by show (s₀.gpr .esp).toNat + 4 ≤ _; have := h₀.spA; omega⟩
   fit _ h₀ := by show _ + 4 + 4 * n ≤ _; have := h₀.spA; omega

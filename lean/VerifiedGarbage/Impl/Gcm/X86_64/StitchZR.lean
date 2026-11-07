@@ -49,9 +49,7 @@ def powP48 : List Instr :=
   ([.vmovdqu32Store (at_ .r11 832) .xmm1] : List Instr)
 
 /-- `StitchZ.big` with the tables loaded. -/
-def bigP : Prog isa :=
-  .seq (.block powP48) (.seq (batch 4 fun _ => []) (.seq (batch 8 fun _ => [])
-    (.seq (.loop body48 .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv))))))
+def bigP (ld : Bool := false) : Prog isa := .seq (.block powP48) (StitchZ.bigRest ld)
 
 /-- `StitchZ.bigD` with the tables loaded. -/
 def bigDP : Prog isa :=
@@ -69,6 +67,6 @@ open VG.Impl.Gcm.X86_64.StitchZTo (setupCTo bigRestTo encWith)
 def setupP : List Instr := StitchZR.setupGP ++ storesK .r11 pregs 0 ++ setupCTo ++ setupZ
 
 /-- The larger prepared tables followed by the existing out-of-place loop. -/
-def bigPTo : Prog isa := .seq (.block StitchZR.powP48) bigRestTo
+abbrev bigPTo : Prog isa := StitchZR.bigP true
 
 end VG.Impl.Gcm.X86_64.StitchZRTo

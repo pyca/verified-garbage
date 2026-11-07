@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Tail
 import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
@@ -21,12 +22,13 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64.Key
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64 VG.Proof.RsaKeyGen.AArch64
 open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Impl.RsaKeyGen.AArch64.Candidate (loadE kE kElen)
-open VG.Spec.RsaKeyGen (keyOp keyStatus keyFromPrimes)
+open VG.Spec.RsaKeyGen (keyFromPrimes)
+open VG.Proof.RsaKeyGen (keyOp keyStatus)
 
 /-- The status and the outputs `keyOp` gives. -/
 def OutsRes (I : KIn) (m : Mem) (x0 : BitVec 64) : Prop :=
-  (x0.setWidth 32).toNat = Spec.RsaKeyGen.keyStatus (Spec.RsaKeyGen.keyOp I.pl I.eb I.pb I.qb) ∧
-    match Spec.RsaKeyGen.keyOp I.pl I.eb I.pb I.qb with
+  (x0.setWidth 32).toNat = Proof.RsaKeyGen.keyStatus (Proof.RsaKeyGen.keyOp I.pl I.eb I.pb I.qb) ∧
+    match Proof.RsaKeyGen.keyOp I.pl I.eb I.pb I.qb with
     | .inl (.ok ys) => (outsL I).map (fun o => Spec.Rsa.bytesAt m o.1 o.2) = ys
     | _ => ∀ o ∈ outsL I, Spec.Rsa.bytesAt m o.1 o.2 = List.replicate o.2 0
 

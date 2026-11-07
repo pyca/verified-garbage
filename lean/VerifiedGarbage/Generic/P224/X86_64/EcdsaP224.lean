@@ -57,7 +57,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMulTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointTables
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPrepTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTable
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableCopy
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableFields
@@ -108,7 +107,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMulTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointTables
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPrepTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTable
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableCopy
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableFields

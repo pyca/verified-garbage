@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelVExp
 `Crt.code mul ex` takes its exponentiation in a prime's workspace, `ex sp sl`
 for the exponent's pointer and length in `n`'s slots `sp` and `sl`: `expLoop`
 by windows of 4 bits with a table of 16 entries (`CrtExpL.w4`), or
-`expLoop5` by windows of 5 bits with a table of 32 read with AVX2
+`expLoop5S` by windows of 5 bits with a table of 32 read with AVX2
 (`CrtExpL.w5S`). A `CrtExpL` is such a code with what the phases need of
 it: `Y := x^e R` in the prime's `aY`, changing only `crtExpRanges5`, within
 the room for a table of 32 entries.
@@ -45,7 +45,7 @@ structure CrtExpL (M : Mont) where
       (Q → wv t.mem (off B o) (slot wx aY) wx % X = x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
       Frm (off B o) (crtExpRanges5 wx) s.mem t.mem ∧ Keep mmRegs s t
 
-/-- `expLoop`'s ranges are within `expLoop5`'s. -/
+/-- `expLoop`'s ranges are within `expLoop5S`'s. -/
 theorem crtExpRanges_widen5 (wx : Nat) :
     ∀ r ∈ crtExpRanges wx, ∃ r' ∈ crtExpRanges5 wx, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 := by
   intro r hr

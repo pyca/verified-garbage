@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.FbVerified
+public import VerifiedGarbage.Proof.Camellia.Arm.FbFinalVerified
+public import VerifiedGarbage.Impl.Camellia.Arm.FbFinal
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -18,6 +20,14 @@ def artifacts : List Artifact := [
   Spec.Camellia.cfbDecryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecrypt
     stack := 2904
-    verified := Proof.Camellia.Arm.cfbDecrypt_framed }]
+    verified := Proof.Camellia.Arm.cfbDecrypt_framed },
+  Spec.Camellia.cfbEncryptFinalApi.artifact Arm.target {
+    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbEncryptFinal
+    stack := 2904
+    verified := Proof.Camellia.Arm.cfbEncryptFinal_framed },
+  Spec.Camellia.cfbDecryptFinalApi.artifact Arm.target {
+    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecryptFinal
+    stack := 2904
+    verified := Proof.Camellia.Arm.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.CamelliaCfb.Arm

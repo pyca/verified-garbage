@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top1
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
@@ -160,7 +161,7 @@ theorem in_k (h : CIn s) : In (mkP s) (sx s) := by
   · show fw _ _ (56 + 4 * 3) = _; rw [fwArg 3 (by decide)]; show _ = BitVec.ofNat 32 (stackArg s 1).toNat
     rw [← h.ql]; simp
   · show fw _ _ (56 + 4 * 11) = _; rw [fwArg 11 (by decide)]; show _ = BitVec.ofNat 32 (stackArg s 11).toNat; simp
-  · show Spec.RsaKeyGen.keyStatus (Spec.RsaKeyGen.keyOp (stackArg s 1).toNat (mkP s).eB
+  · show Proof.RsaKeyGen.keyStatus (Proof.RsaKeyGen.keyOp (stackArg s 1).toNat (mkP s).eB
       (Spec.Rsa.bytesAt (pcPushed s).mem (State.addr (stackArg s 0)) (stackArg s 1).toNat)
       (Spec.Rsa.bytesAt (pcPushed s).mem (State.addr (stackArg s 2)) (stackArg s 1).toNat)) = _
     rw [bP, bQ]; rfl

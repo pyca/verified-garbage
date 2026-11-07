@@ -102,12 +102,6 @@ def cfbEncX86_64 : Contract isa where
       Spec.Cbc.next (ivOf s) (Spec.Cfb.encrypt (ciphOf s) (ivOf s) (blocksOf s s.mem))
   pub := fbPub
 
-def cfbDecX86_64 : Contract isa where
-  pre := fbPre blkLen
-  post s s' := blocksOf s s'.mem = Spec.Cfb.decrypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
-    Spec.TripleDes.bytesAt s'.mem (s.gpr .rsi) 8 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
-  pub := fbPub
-
 def cfb8EncX86_64 : Contract isa where
   pre := fbPre byteLen
   post s s' := Spec.TripleDes.bytesAt s'.mem (s.gpr .rdx) (byteLen s) =
@@ -193,16 +187,6 @@ theorem cfbEncrypt_wp {s₀ : State} (hp : cfbEncX86_64.pre s₀) :
     · change Spec.TripleDes.cbcBlocksAt _ _ _ = Spec.Cfb.encrypt _ _ (Spec.TripleDes.cbcBlocksAt _ _ _)
       rw [cbcBlocksAt_eq, cbcBlocksAt_eq, hd, h1]
     · change _ = Spec.Cbc.next _ (Spec.Cfb.encrypt _ _ (Spec.TripleDes.cbcBlocksAt _ _ _))
-      rw [hv, h2, cbcBlocksAt_eq]
-
-theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecX86_64.pre s₀) :
-    WP isa cfbDecryptI s₀ fun s' => gprPreserved s₀ s' ∧ cfbDecX86_64.post s₀ s' :=
-  WP.mono (fb_wp' .cfbDec hp) fun s' ⟨hg, hd, hv⟩ => by
-    obtain ⟨h1, h2⟩ := Modes.cfbDec_of 8 (ciphOf s₀) s₀.mem (s₀.gpr .rdx) (ivOf s₀) (s₀.gpr .rcx).toNat
-    refine ⟨hg, ?_, ?_⟩
-    · change Spec.TripleDes.cbcBlocksAt _ _ _ = Spec.Cfb.decrypt _ _ (Spec.TripleDes.cbcBlocksAt _ _ _)
-      rw [cbcBlocksAt_eq, cbcBlocksAt_eq, hd, h1]
-    · change _ = Spec.Cbc.next _ (Spec.TripleDes.cbcBlocksAt _ _ _)
       rw [hv, h2, cbcBlocksAt_eq]
 
 theorem ivOf_ne (s : State) : ivOf s ≠ [] := by simp [ivOf, Spec.TripleDes.bytesAt]
@@ -376,46 +360,6 @@ theorem cfbEncrypt_verified :
   Verified.of_inline_ct (by lit_decide) (fun s hs => by rw [cfbEncrypt_inline]; exact cfbEncrypt_correct s hs) cfbEncrypt_ct
     cfbEncrypt_implies8 (fun _ h => Sig.clear_of_pre h) cfbEncrypt_patch
 
-theorem cfbDecrypt_correct (s : State) (hs : cfbDecX86_64.pre s) :
-    ∃ t s', Exec isa cfbDecryptI s t s' ∧ abiPreserved s s' ∧ cfbDecX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hpost⟩ := cfbDecrypt_wp hs
-  exact ⟨t, s', he, abiPreserved_of_exec (c := cfbDecryptI) (by lit_decide) he hg, hpost⟩
-
-theorem cfbDecrypt_ct : ConstantTime isa cfbDecX86_64.pre cfbDecX86_64.pub cfbDecrypt := by
-  obtain ⟨_, h⟩ : ∃ h, (taintS.check fbTaint cfbDecrypt h).isSome = true :=
-    by taint_decide_sum [encSum]
-  exact VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree blkLen_congr) h
-
-theorem cfbDecrypt_implies : cfbDecX86_64.Implies (Proof.TripleDes.fbScratchContract X86_64.abi 121 Proof.TripleDes.cfbDecPost) := by
-    sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
-      Proof.TripleDes.cfbDecPost, cfbDecX86_64, fbPre, fbPub, X86_64.abi, X86_64.argRegs] [fbSat] using fbSat
-
-theorem cfbDecrypt_implies8 : cfbDecX86_64.Implies (Proof.TripleDes.fbScratchContract X86_64.abi 121 Proof.TripleDes.cfbDecPost 8) :=
-  cfbDecrypt_implies.stack8_abi (by
-    sig_implies_sat [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, X86_64.abi, X86_64.argRegs, fbSat] [fbSat]
-      using fbSat)
-
-/-- The data and the IV are apart from the call's return address. -/
-theorem cfbDecrypt_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
-    (hs : (Proof.TripleDes.fbScratchContract X86_64.abi 121 Proof.TripleDes.cfbDecPost 8).pre s) (hp : cfbDecX86_64.post s b) :
-    cfbDecX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
-  obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, -, fitI, fitD, -⟩ := cfbDecrypt_implies8.pre s hs
-  have hbD := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdx) (n := 8 * (s.gpr .rcx).toNat)
-    (by rw [hwr]; simp) (by simp only [blkLen] at fitD; omega)
-  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega)
-  obtain ⟨h₁, h₂⟩ := hp
-  refine ⟨?_, ?_⟩
-  · show Spec.TripleDes.cbcBlocksAt _ _ _ = _
-    rw [cbcBlocksAt_congr (patch_mem hbD)]; exact h₁
-  · rw [bytesAt_congr (patch_mem hbI)]; exact h₂
-
-theorem cfbDecrypt_inline : cfbDecrypt.inline = cfbDecryptI := rfl
-
-theorem cfbDecrypt_verified :
-    Verified X86_64.target cfbDecrypt (Proof.TripleDes.fbScratchContract X86_64.abi 121 Proof.TripleDes.cfbDecPost 8) :=
-  Verified.of_inline_ct (by lit_decide) (fun s hs => by rw [cfbDecrypt_inline]; exact cfbDecrypt_correct s hs) cfbDecrypt_ct
-    cfbDecrypt_implies8 (fun _ h => Sig.clear_of_pre h) cfbDecrypt_patch
-
 theorem cfb8Encrypt_correct (s : State) (hs : cfb8EncX86_64.pre s) :
     ∃ t s', Exec isa cfb8EncryptI s t s' ∧ abiPreserved s s' ∧ cfb8EncX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hpost⟩ := cfb8Encrypt_wp hs
@@ -514,17 +458,6 @@ theorem cfbEncrypt_framed :
     (bytes := 976) cfbEncrypt_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.TripleDes.cfbEncPostOut_local _)
-    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-
-/-- CFB64 decryption with its working space on the stack. -/
-theorem cfbDecrypt_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 cfbDecrypt)
-      (Spec.TripleDes.cfbDecryptContract X86_64.abi 984) :=
-  X86_64.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 121) (post := Proof.TripleDes.cfbDecPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 976) cfbDecrypt_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
-    (Proof.TripleDes.cfbDecPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- CFB8 encryption with its working space on the stack. -/

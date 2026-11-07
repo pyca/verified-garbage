@@ -33,8 +33,6 @@ structure Same (rs : List Reg) (t u : State) : Prop where
   v : u.v = t.v
   keep : Keeps rs t u
 
-theorem not_mem_of {r : Reg} {rs : List Reg} (h : r ∉ rs) : ∀ x ∈ rs, r ≠ x := fun _ hx e => h (e ▸ hx)
-
 theorem zpre_ok (t : State) :
     WP isa (.block [.logic .orr .x .x9 .x0 .x0, .logic .orr .x .x10 .x4 .x4, .movz .x .x13 0 0]) t fun u =>
       Same [.x9, .x10, .x13] t u ∧ u.mem = t.mem ∧ u.gpr .x9 = t.gpr .x0 ∧ u.gpr .x10 = t.gpr .x4 ∧

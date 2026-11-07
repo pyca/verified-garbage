@@ -66,7 +66,6 @@ theorem absorb_verified' :
     exact ⟨t, s', he, h⟩
   all_goals exact Region.disjoint_of_sep (by decide)
 
-
 /-! ## `absorbWs` -/
 
 theorem absorbWs_ct : ConstantTime isa Proof.Sha3.absorbWsRISCV64.pre Proof.Sha3.absorbWsRISCV64.pub
@@ -96,14 +95,6 @@ theorem absorbWs_verified' :
     exact ⟨t, s', he, h⟩
   all_goals exact Region.disjoint_of_sep (by decide)
 
-theorem absorbWs_verified :
-    Verified RISCV64.target Impl.Sha3.RISCV64.Stream.absorbWs
-      (Proof.Sha3.absorbScratchContract RISCV64.abi 608) :=
-  absorbWs_verified'.of_implies (by
-    contract_implies [Proof.Sha3.absorbScratchContract, Proof.Sha3.absorbScratchSig, Proof.Sha3.absorbPre,
-      Proof.Sha3.absorbPost, Proof.Sha3.absorbWsRISCV64, Proof.Sha3.absorbRISCV64, RISCV64.abi,
-      RISCV64.argRegs] [absorbWsSat] using absorbWsSat)
-
 /-! ## `pad` -/
 
 theorem pad_ct : ConstantTime isa Proof.Sha3.padRISCV64.pre Proof.Sha3.padRISCV64.pub
@@ -130,12 +121,6 @@ theorem pad_verified' :
   · obtain ⟨t, s', he, h⟩ := Pad.correct (Pad.pre_of hs)
     exact ⟨t, s', he, h⟩
   · exact Region.disjoint_of_sep (by decide)
-
-theorem pad_verified :
-    Verified RISCV64.target Impl.Sha3.RISCV64.Stream.pad (Proof.Sha3.padContract RISCV64.abi 1136) :=
-  pad_verified'.of_implies (by
-    contract_implies [Proof.Sha3.padContract, Proof.Sha3.padSig, Proof.Sha3.padPre, Proof.Sha3.padPost,
-      Proof.Sha3.padRISCV64, RISCV64.abi, RISCV64.argRegs] [padSat] using padSat)
 
 /-! ## `squeeze` -/
 
@@ -164,13 +149,5 @@ theorem squeeze_verified' :
   · obtain ⟨t, s', he, h⟩ := Squeeze.correct (Squeeze.pre_of hs)
     exact ⟨t, s', he, h⟩
   all_goals exact Region.disjoint_of_sep (by decide)
-
-theorem squeeze_verified :
-    Verified RISCV64.target Impl.Sha3.RISCV64.Stream.squeeze
-      (Proof.Sha3.squeezeContract RISCV64.abi 1168) :=
-  squeeze_verified'.of_implies (by
-    contract_implies [Proof.Sha3.squeezeContract, Proof.Sha3.squeezeSig, Proof.Sha3.squeezePre,
-      Proof.Sha3.squeezePost, Proof.Sha3.squeezeRISCV64, RISCV64.abi, RISCV64.argRegs] [squeezeSat]
-      using squeezeSat)
 
 end VG.Proof.Sha3.RISCV64.Stream

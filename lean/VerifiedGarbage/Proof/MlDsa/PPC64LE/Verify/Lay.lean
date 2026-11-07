@@ -74,10 +74,11 @@ abbrev vScr : Addr := σ.gpr .r6
 
 end
 
-/-- The precondition of `verifyContract` with `STK` bytes of stack. -/
+/-- The precondition of `verifyContract` with `STK` bytes of stack; there may
+be more regions to read after the inputs (a kernel's cache). -/
 structure VPre (p : Params) (STK : Nat) (σ : State) : Prop where
   stk : STK ≤ σ.sp.toNat
-  rd : σ.rd = [reg (vPk σ) p.pkLen, reg (vMu σ) 64, reg (vSg σ) p.sigLen]
+  rd : ∃ X, σ.rd = [reg (vPk σ) p.pkLen, reg (vMu σ) 64, reg (vSg σ) p.sigLen] ++ X
   wr : σ.wr = [reg (vScr σ) (scrLen p)]
   d_pc : (reg (vPk σ) p.pkLen).Disjoint (reg (vScr σ) (scrLen p))
   d_mc : (reg (vMu σ) 64).Disjoint (reg (vScr σ) (scrLen p))
@@ -95,7 +96,7 @@ theorem vpre_of {p : Params} {n : Nat} {σ : State} (h : (Spec.MlDsa.verifyContr
     VPre p (n + 1) σ := by
   sig_pre [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, PPC64LE.abi, PPC64LE.argRegs] at h
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
-  exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
+  exact ⟨h0, ⟨[], h1.trans (List.append_nil _).symm⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
 
 /-! ## The buffers -/
 

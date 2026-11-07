@@ -14,7 +14,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # RSA with the CRT on x86-64: the exponentiation by windows of 5 bits is constant time
 
-As `crtExpLoop_ct` for `Crt.expLoop5`. Its one branch, on whether fewer
+As `crtExpLoop_ct` for `Crt.expLoop5S`. Its one branch, on whether fewer
 than 5 bits are left, is on public numbers: after `j` windows of an
 exponent of `L` bytes, `padBits L + 8 i = 5 j + b` with `b < 8` decides
 the `i` bytes read and the `b` bits left. A byte is read at its pointer
@@ -228,7 +228,7 @@ theorem crtWin5_ct (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) :
 theorem pins_ePre5 (sp sl : Nat) : Pins (EPre5 sp sl) [.rdi] :=
   fun a s₁ s₂ h₁ h₂ => pins_ePre sp sl a s₁ s₂ h₁.1 h₂.1
 
-/-- `expLoop5`'s start keeps `tabBuild_ok`'s hypotheses for 32 entries. -/
+/-- `expLoop5S`'s start keeps `tabBuild_ok`'s hypotheses for 32 entries. -/
 theorem crtExpInit_tpre5 {sp sl : Nat} {a : BPub} {s : State} (h : EPre5 sp sl a s) :
     WP isa (.block [.mov .rax (.mem (hdr Crt.sLink)), .mov .rdx (.mem (Crt.ws .rax sp)),
       .store (hdr Crt.sExp) .rdx, .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx,
@@ -258,7 +258,7 @@ theorem crtExpInit_tpre5 {sp sl : Nat} {a : BPub} {s : State} (h : EPre5 sp sl a
     (by omega_arith), o1.wv (by unfold Crt.sExp sFn at *; omega_arith) (by omega_arith)]
   exact hyl
 
-/-- `expLoop5`'s start, table and padding leak the same in runs with the
+/-- `expLoop5S`'s start, table and padding leak the same in runs with the
 same workspace, given that the taint analysis checks its start after the
 link's load. -/
 theorem crtExpHead5_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -292,7 +292,7 @@ theorem crtExpHead5_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
     exact WP.mono (tabBuild_ok M (Q := False) (x := 0) hc (by decide) (by decide) hw (by omega_arith) hR hXN
       False.elim hY False.elim) fun t' h' => h'.1.good.rdi
 
-/-- `expLoop5 M.mm S.code sp sl` is constant time, given that the taint
+/-- `expLoop5S` with the squarings `Sq` and the selection `S` is constant time, given that the taint
 analysis checks its start after the link's load. -/
 theorem crtExpLoop5S_ct (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) {sp sl : Nat}
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}

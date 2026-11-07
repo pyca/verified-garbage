@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 # ML-DSA verification on x86 (32-bit): a row of `w′₁`
 
 Row `r`, step by step, with what the temporaries hold (`RI`): `w′ = Σₛ Â[r, s]
-ẑ[s]` (`dotAcc`), `t₁[r]` unpacked and its NTT, `ĉ t̂₁[r]`, `w′ = NTT⁻¹(… - ĉ
+ẑ[s]` (`dotAcc`), `ĉ t̂₁[r]` with `t̂₁[r]` from the argument `t1` (`T1Ok`), `w′ = NTT⁻¹(… - ĉ
 t̂₁[r])` (`wRow`), its `UseHint`s with `h[r]` (`w1Row`), and their
 `SimpleBitPack` to row `r` of `w1Encode(w′₁)` (`row_piece`).
 -/
@@ -52,6 +52,17 @@ theorem natPoly_le {m : Mem} {a : Addr} {f : Vector Nat Spec.MlDsa.n} (h : NatPo
     simp only [Proof.MlDsa.natPolyAt, Vector.getElem_ofFn] at e
     rw [e]; exact hb i hi
 
+/-- `t1` holds `t̂₁` of the public key, on entry. -/
+abbrev T1Ok (p : Params) (s₀ : State) : Prop :=
+  ∀ r < p.k, PolyIs s₀.mem (Buf.addr s₀ (tB r)) (t1Hat (vPk p s₀) r)
+
+/-- A piece with a precondition `φ` on the initial state, which it keeps. -/
+theorem piece_pure {Pre : State → Prop} {Pub : State → State → Prop} {A B : State → State → Prop} {c : Prog isa}
+    (φ : State → Prop) (h : Piece Pre Pub A B c) :
+    Piece Pre Pub (fun s₀ s => A s₀ s ∧ φ s₀) (fun s₀ s => B s₀ s ∧ φ s₀) c where
+  wp s₀ s hp ha := (h.wp s₀ s hp ha.1).mono fun _ hb => ⟨hb, ha.2⟩
+  ct s₀ s₀' hp hp' hq := (h.ct s₀ s₀' hp hp' hq).mono (fun _ _ ⟨a, a'⟩ => ⟨a.1, a'.1⟩) fun _ _ h => h
+
 section
 variable {P : Prims} (hP : PrimsOk P) {p : Params} (hF : VFacts p) {r : Nat} (hr : r < p.k)
 include hP hF hr
@@ -83,37 +94,19 @@ theorem mulAddW_row {j : Nat} (hj : j < p.ℓ) :
   rw [hw.2, (h.a r hr j hj).2, (h.zh hj).2] at out
   exact out
 
-theorem t1_row : VP p (RI p r fun _ A _ s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r p.ℓ))
-    (RI p r fun _ A _ s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r p.ℓ) ∧
-      PolyIs m (Buf.addr s₀ pT) ((vT1 (vPk p s₀) r).map fun c => Spec.MlDsa.ofInt (c * 2 ^ Spec.MlDsa.d : Nat)))
-    (callP vS "vg_mldsa_unpack_t1" P.unpackT1 [.buf ⟨0, 32 + 320 * r, 320⟩, .buf pT]) :=
-  t1_piece (Y := YV p) hP.unpackT1 0 (32 + 320 * r) vS (oP 16) (by lvd) (Nat.le_of_eq (YV_stk p).symm)
-    (ht := .block []) (by kernel_rfl) (fun _ _ _ ⟨_, _, _, h, _⟩ => h.ctx)
-    fun s₀ s s' hp ⟨hh, A, C, h, hw⟩ h' fr out => ⟨hh, A, C, h.keep hp (N := 80) (by omega)
+theorem mulT_row : VP p (fun s₀ s => RI p r (fun _ A _ s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r p.ℓ)) s₀ s ∧
+      T1Ok p s₀)
+    (fun s₀ s => RI p r (fun _ A C s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r p.ℓ) ∧
+      PolyIs m (Buf.addr s₀ pT2) (Spec.MlDsa.multiplyNTT (ntt C) (t1Hat (vPk p s₀) r))) s₀ s ∧ T1Ok p s₀)
+    (callP vS "vg_mldsa_multiply_ntt" P.mul [.buf pT2, .buf pC, .buf (tB r)]) := by
+  have tp : ∀ {s₀ s : State}, TPre (YV p) s₀ → Ctx (YV p) s₀ s → T1Ok p s₀ →
+      PolyIs s.mem (Buf.addr s₀ (tB r)) (t1Hat (vPk p s₀) r) := fun hp hc ht =>
+    Proof.MlDsa.Verify.polyIs_congr (fun k hk => hc.ro hp (b := tB r) (by lvd) rfl hk) (ht r hr)
+  exact mul_piece (Y := YV p) _ _ _ _ _ _ hP.mul (by lvd) (Nat.le_of_eq (YV_stk p).symm)
+    (ht := .block []) (by kernel_rfl) (fun _ _ hp ⟨⟨_, _, _, h, _⟩, ht⟩ => ⟨h.ctx, h.ch.1, (tp hp h.ctx ht).1⟩)
+    fun s₀ s s' hp ⟨⟨hh, A, C, h, hw⟩, ht⟩ h' fr out => ⟨⟨hh, A, C, h.keep hp (N := 80) (by omega)
       (by safeCs hF (Nat.le_of_lt hr)) (fun i hi => by lvd) (by lvd) fr h',
-      keepPolyD hp (stkV (by omega)) (by lvd) fr hw, by rw [pk_slice hF hp h.ctx (by lvd)] at out; exact out⟩
-
-theorem nttT_row : VP p (RI p r fun _ A _ s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r p.ℓ) ∧
-      PolyIs m (Buf.addr s₀ pT) ((vT1 (vPk p s₀) r).map fun c => Spec.MlDsa.ofInt (c * 2 ^ Spec.MlDsa.d : Nat)))
-    (RI p r fun _ A _ s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r p.ℓ) ∧
-      PolyIs m (Buf.addr s₀ pT) (t1Hat (vPk p s₀) r))
-    (nttAt P pT) :=
-  inPlace_piece (Y := YV p) hP.ntt vS (oP 16) vS oSS (by lvd) (Nat.le_of_eq (YV_stk p).symm)
-    (ht := .block []) (by kernel_rfl) (fun _ _ _ ⟨_, _, _, h, _, ht⟩ => ⟨h.ctx, ht.1⟩)
-    fun s₀ s s' hp ⟨hh, A, C, h, hw, ht⟩ h' fr out => ⟨hh, A, C, h.keep hp (N := 80) (by omega)
-      (by safeCs hF (Nat.le_of_lt hr)) (fun i hi => by lvd) (by lvd) fr h',
-      keepPolyD hp (stkV (by omega)) (by lvd) fr hw, by rw [ht.2] at out; exact out⟩
-
-theorem mulT_row : VP p (RI p r fun _ A _ s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r p.ℓ) ∧
-      PolyIs m (Buf.addr s₀ pT) (t1Hat (vPk p s₀) r))
-    (RI p r fun _ A C s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r p.ℓ) ∧
-      PolyIs m (Buf.addr s₀ pT2) (Spec.MlDsa.multiplyNTT (ntt C) (t1Hat (vPk p s₀) r)))
-    (callP vS "vg_mldsa_multiply_ntt" P.mul [.buf pT2, .buf pC, .buf pT]) :=
-  mul_piece (Y := YV p) _ _ _ _ _ _ hP.mul (by lvd) (Nat.le_of_eq (YV_stk p).symm)
-    (ht := .block []) (by kernel_rfl) (fun _ _ _ ⟨_, _, _, h, _, ht⟩ => ⟨h.ctx, h.ch.1, ht.1⟩)
-    fun s₀ s s' hp ⟨hh, A, C, h, hw, ht⟩ h' fr out => ⟨hh, A, C, h.keep hp (N := 80) (by omega)
-      (by safeCs hF (Nat.le_of_lt hr)) (fun i hi => by lvd) (by lvd) fr h',
-      keepPolyD hp (stkV (by omega)) (by lvd) fr hw, by rw [h.ch.2, ht.2] at out; exact out⟩
+      keepPolyD hp (stkV (by omega)) (by lvd) fr hw, by rw [h.ch.2, (tp hp h.ctx ht).2] at out; exact out⟩, ht⟩
 
 theorem sub_row : VP p (RI p r fun _ A C s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r p.ℓ) ∧
       PolyIs m (Buf.addr s₀ pT2) (Spec.MlDsa.multiplyNTT (ntt C) (t1Hat (vPk p s₀) r)))
@@ -172,16 +165,19 @@ theorem pack_row : VP p (RI p r fun h A C s₀ m =>
     rw [keepBytes hp (stkV (by omega)) (by lvd) fr]; exact h.w r' hr'
   · rw [hw] at out; exact out
 
-theorem row_piece : VP p (CI p · p.ℓ true r) (CI p · p.ℓ true (r + 1)) (row P p r) := by
+theorem row_piece : VP p (fun s₀ s => CI p s₀ p.ℓ true r s ∧ T1Ok p s₀)
+    (fun s₀ s => CI p s₀ p.ℓ true (r + 1) s ∧ T1Ok p s₀) (row P p r) := by
   have hl := hF.l
   unfold row
-  refine (mulW_row hP hF hr).seq ?_
-  refine Piece.seq (B := RI p r fun _ A _ s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r p.ℓ))
-    ((seqR_piece (I := fun j => RI p r fun _ A _ s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r j))
+  refine (piece_pure (T1Ok p) (mulW_row hP hF hr)).seq ?_
+  refine Piece.seq (B := fun s₀ s => RI p r (fun _ A _ s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r p.ℓ)) s₀ s ∧
+      T1Ok p s₀)
+    (piece_pure (T1Ok p) ((seqR_piece (I := fun j => RI p r fun _ A _ s₀ m => PolyIs m (Buf.addr s₀ pW) (dotAcc p (vSig p s₀) A r j))
       (p.ℓ - 1) 1 fun j _ hj => mulAddW_row hP hF hr (by omega)).mono (fun _ _ _ h => h)
-      fun _ _ _ h => by rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at h) ?_
-  exact (t1_row hP hF hr).seq ((nttT_row hP hF hr).seq ((mulT_row hP hF hr).seq ((sub_row hP hF hr).seq
-    ((inv_rowV hP hF hr).seq ((hint_row hP hF hr).seq (pack_row hP hF hr))))))
+      fun _ _ _ h => by rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at h)) ?_
+  exact (mulT_row hP hF hr).seq ((piece_pure (T1Ok p) (sub_row hP hF hr)).seq
+    ((piece_pure (T1Ok p) (inv_rowV hP hF hr)).seq ((piece_pure (T1Ok p) (hint_row hP hF hr)).seq
+      (piece_pure (T1Ok p) (pack_row hP hF hr)))))
 
 end
 

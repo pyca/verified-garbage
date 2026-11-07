@@ -292,7 +292,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtTab
-public import VerifiedGarbage.Proof.Rsa.MontWindowContract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedGuard
