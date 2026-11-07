@@ -10,11 +10,17 @@
     target_arch = "riscv64"
 ))]
 
+use super::ecb::Backend;
 use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_cfb::{
     vg_triple_des_cfb64_decrypt, vg_triple_des_cfb64_decrypt_final, vg_triple_des_cfb64_encrypt,
     vg_triple_des_cfb64_encrypt_final,
 };
+#[cfg(target_arch = "x86_64")]
+use crate::arch::triple_des_cfb::{
+    vg_triple_des_cfb64_decrypt_avx2, vg_triple_des_cfb64_decrypt_avx512,
+};
+use crate::cpu::detected;
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -96,6 +102,9 @@ pub struct TripleDesCfb64Decryptor {
     key: Key,
     /// The block to continue from: the IV, then the last ciphertext block.
     iv: [u8; 8],
+    /// The implementation of ECB encryption the CPU runs best, whose
+    /// variant of CFB64 decryption runs.
+    backend: Backend,
 }
 
 impl TripleDesCfb64Decryptor {
@@ -106,6 +115,7 @@ impl TripleDesCfb64Decryptor {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
+            backend: Backend::select(detected()),
         })
     }
 
@@ -117,7 +127,7 @@ impl TripleDesCfb64Decryptor {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
-        self.key.decrypt(&mut self.iv, buffer);
+        self.key.decrypt(self.backend, &mut self.iv, buffer);
         Ok(())
     }
 
@@ -130,7 +140,7 @@ impl TripleDesCfb64Decryptor {
         self.key.last(
             &mut self.iv,
             buffer,
-            vg_triple_des_cfb64_decrypt,
+            Key::decryptor(self.backend),
             vg_triple_des_cfb64_decrypt_final,
         );
     }
@@ -192,9 +202,21 @@ impl Key {
 
     /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
     /// which it replaces with the last ciphertext block (unchanged for empty
-    /// input).
-    fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_triple_des_cfb64_decrypt);
+    /// input), with the implementation `backend` chooses.
+    fn decrypt(&self, backend: Backend, iv: &mut [u8; 8], buffer: &mut [u8]) {
+        self.blocks(iv, buffer, Self::decryptor(backend));
+    }
+
+    /// The whole-block decryption function of `backend`, the
+    /// implementation of ECB encryption it chooses.
+    fn decryptor(backend: Backend) -> Cfb {
+        match backend {
+            Backend::Scalar => vg_triple_des_cfb64_decrypt,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Avx2 => vg_triple_des_cfb64_decrypt_avx2,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Avx512 => vg_triple_des_cfb64_decrypt_avx512,
+        }
     }
 
     /// `f` on whole blocks.
@@ -202,7 +224,8 @@ impl Key {
         // SAFETY: `blocks` holds `len / 8` whole blocks (its length is a
         // multiple of 8), and it, the block at `iv` and the schedule are
         // separate valid objects of the sizes of the signature, none of them on
-        // the callee's stack.
+        // the callee's stack; `f` is the baseline function or one that
+        // `Backend::select` chose for the CPU's features.
         unsafe {
             f(
                 &self.schedule,

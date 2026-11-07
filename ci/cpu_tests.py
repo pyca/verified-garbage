@@ -471,6 +471,14 @@ GROUPS = {
         "lib": ["aead::sm4_gcm"],
         "tests": ["rfc8998::sm4_gcm", "wycheproof::sm4_gcm"],
     },
+    "triple_des_cbc": {
+        "lib": [],
+        "tests": ["cavp::triple_des_cbc"],
+    },
+    "triple_des_cfb": {
+        "lib": [],
+        "tests": ["cavp::triple_des_cfb"],
+    },
     "triple_des_ecb": {
         "lib": ["cipher::triple_des::ecb"],
         "tests": ["cavp::triple_des_ecb"],
