@@ -610,4 +610,190 @@ theorem whole_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D :
       (by rw [u₇.rd, u₆.rd, rd₅]) (by rw [u₇.wr, u₆.wr, wr₅]) sy₇ (by rw [m₇]; exact f₅) (hF.toWs hR)
       hR.areasCore
 
+/-! ## The partial segment -/
+
+/-- The areas after the partial segment's `pre` (`copyBlk .buf .chn`),
+`crypt` and the copy of the buffer to the chaining value. -/
+theorem part_vals (bw : Nat) (ciph : Spec.Cbc.Cipher) (a : Areas) (i : Nat) :
+    applyOps (copyBlk bw .chn .buf) (cryptBuf (4 * bw) ciph (applyOps (copyBlk bw .buf .chn) a)) .dat i =
+        a .dat i ∧
+      applyOps (copyBlk bw .chn .buf) (cryptBuf (4 * bw) ciph (applyOps (copyBlk bw .buf .chn) a)) .buf i =
+        (ciph (rd a .chn (4 * bw))).getD i 0 ∧
+      (i < 4 * bw → applyOps (copyBlk bw .chn .buf) (cryptBuf (4 * bw) ciph (applyOps (copyBlk bw .buf .chn) a))
+        .chn i = (ciph (rd a .chn (4 * bw))).getD i 0) := by
+  have hb : rd (applyOps (copyBlk bw .buf .chn) a) .buf (4 * bw) = rd a .chn (4 * bw) :=
+    List.map_congr_left fun i hi => by rw [copyBlk_apply (by decide), ite_eq_left ⟨rfl, List.mem_range.mp hi⟩]
+  refine ⟨?_, ?_, fun hi => ?_⟩
+  · rw [copyBlk_apply (by decide), ite_eq_right (fun h => nomatch h.1)]
+    simp only [cryptBuf, ite_eq_right (show Loc.dat ≠ Loc.buf by decide)]
+    rw [copyBlk_apply (by decide), ite_eq_right (fun h => nomatch h.1)]
+  · rw [copyBlk_apply (by decide), ite_eq_right (fun h => nomatch h.1)]
+    simp only [cryptBuf, ite_true, hb]
+  · rw [copyBlk_apply (by decide), ite_eq_left ⟨rfl, hi⟩]
+    simp only [cryptBuf, ite_true, hb]
+
+theorem cont_dat0 (c : Core) (B Dt : Addr) (rr : Nat) (m : Mem) (q : Nat) :
+    cont (areas c B Dt rr 0) m .dat q = m (Dt + BitVec.ofNat 64 q) := by
+  simp only [cont, areas, Nat.mul_zero, BitVec.add_zero]
+
+theorem toNat_add_ofNat64 {B : Addr} {d : Nat} (h : B.toNat + d < 2 ^ 64) :
+    (B + BitVec.ofNat 64 d).toNat = B.toNat + d := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [h]), Nat.mod_eq_of_lt h]
+
+/-- The partial segment's step region, at its address. -/
+theorem datRegion_zero (D : Addr) (r : Nat) : datRegion D r 0 = ⟨D, r⟩ := by
+  simp only [datRegion, Nat.mul_zero]
+  exact congrArg (Region.mk · r) (BitVec.add_zero _)
+
+/-- The whole blocks are apart from what the partial segment changes. -/
+theorem whole_out {s₀ : State} {B D : Addr} {len : Nat} (hp : FPre c s₀ B D len) :
+    ∀ r ∈ fine c B (tailA c D len) (len % (4 * c.bw)) 0,
+      Region.Disjoint (dataRegion D (4 * c.bw) (len / (4 * c.bw))) r := by
+  have hL := hp.layout
+  have hfit := hp.scr.fit
+  have hroom := hL.room
+  have hbw := bw_le hL
+  have hdm := Nat.div_add_mod len (4 * c.bw)
+  have hD := hp.dataFit
+  have sW : Region.Sub (dataRegion D (4 * c.bw) (len / (4 * c.bw))) (dataRegion D 1 len) :=
+    Region.sub_prefix (by omega_using [hdm])
+  have dS : ∀ {r : Region}, Region.Sub r (scrRegion c B) →
+      Region.Disjoint (dataRegion D (4 * c.bw) (len / (4 * c.bw))) r := fun h => (hp.dataScr.sub_left sW).sub_right h
+  intro r hr'
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
+  rcases hr' with rfl | rfl | rfl
+  · rw [datRegion_zero]
+    exact VG.Offset.base_disjoint _ (Nat.le_refl _) (by omega_using [hD, hdm])
+  · exact dS (Region.sub_prefix (by omega_arith))
+  · exact dS (VG.Offset.sub_base _ (by slot_omega))
+
+theorem r10_notKept : ∀ r ∈ kept, r ≠ .r10 := by decide
+
+/-- The partial segment, after `crypt` and `segTest`: the buffer to the
+chaining value, and its first bytes XORed into the data. -/
+theorem part_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : Addr} {len : Nat}
+    {k : cs.Key} {c0 tl : List Byte} {xs : List (List Byte)} (hp : FPre c s₀ B D len)
+    (hpre : M.pre = copyBlk c.bw .buf .chn) (hxs : xs.length = len / (4 * c.bw)) (htl : tl.length = len % (4 * c.bw))
+    (hr : 0 < len % (4 * c.bw)) {s s₃ : State} (hI : FInv cs s₀ B D len k F c0 xs tl (len / (4 * c.bw)) s)
+    (hm : MidF cs s₀ B D len (tailA c D len) (len % (4 * c.bw)) 0 k s
+      (cryptBuf (4 * c.bw) (cs.cipher k) (applyOps M.pre (cont (areas c B (tailA c D len) (len % (4 * c.bw)) 0)
+        s.mem))) s₃)
+    (hdp : s₃.gpr .r31 = tailA c D len) (hnp : s₃.gpr .r30 = BitVec.ofNat 64 (len % (4 * c.bw))) :
+    WP isa c.tailCode s₃ fun s' => s'.gpr .r30 = 0 ∧ FDone cs s₀ B D len k F c0 xs tl s' := by
+  have hT := hp.fixedT hr
+  have hL := hp.layout
+  have hfit := hp.scr.fit
+  have hroom := hL.room
+  have hbuf := hL.buf_le
+  have hdisp := hL.disp
+  have hbw := bw_le hL
+  have hbw0 := hL.bw_pos
+  have hG := hL.G_pos
+  have hbG : c.bw ≤ c.bw * c.G := Nat.le_mul_of_pos_right _ hG
+  have hdm := Nat.div_add_mod len (4 * c.bw)
+  have hD := hp.dataFit
+  have hmlt : len % (4 * c.bw) < 4 * c.bw := Nat.mod_lt _ (by omega_using [hbw0])
+  have hWO := whole_out hp
+  have hFB := fine_big hT (j := 0) (by decide)
+  have tDt : (tailA c D len).toNat = D.toNat + 4 * c.bw * (len / (4 * c.bw)) :=
+    toNat_add_ofNat64 (by omega_using [hD, hdm, hr])
+  rw [hpre] at hm
+  generalize hDt : tailA c D len = Dt at hm hdp hT hWO hFB tDt
+  generalize hrr : len % (4 * c.bw) = rr at hm hnp hT hr hmlt htl hWO hFB
+  have hR := hT.regs (j := 0) (by decide)
+  let A := areas c B Dt rr 0
+  have hA : AreasOk c s₃ (lens c rr) A allLocs :=
+    hT.areasOk (by decide) hm.b (by rw [hdp, Nat.mul_zero]; exact (BitVec.add_zero _).symm) hm.wr
+  have hcIB : ∀ o ∈ copyBlk c.bw .chn .buf, o.InBounds (lens c rr) :=
+    copyBlk_inBounds (by simp [lens]) (by simp [lens])
+  unfold Core.tailCode
+  refine WP.seq (opsCode_wp c (fun o ho => ⟨hcIB o ho, mem_allLocs _⟩) hA fun s₄ a₄ f₄ g₄ rd₄ wr₄ => ?_)
+  refine wp_addi (by decide) (by omega_using [hdisp, hroom, hbuf]) fun s₅ u₅ => wp_nil ?_
+  -- The areas after the copy.
+  have hY : Agree (lens c rr) (cont A s₄.mem) (applyOps (copyBlk c.bw .chn .buf) (cryptBuf (4 * c.bw) (cs.cipher k)
+      (applyOps (copyBlk c.bw .buf .chn) (cont A s.mem)))) :=
+    Agree.trans a₄ (applyOps_agree hcIB hm.agree)
+  have cj : rd (cont A s.mem) .chn (4 * c.bw) = (run F c0 xs).2 := by
+    have e := hI.chn
+    rw [List.take_of_length_le (Nat.le_of_eq hxs)] at e
+    exact e
+  have tK : (slotA B c.buf).toNat = B.toNat + 8 * c.buf := toNat_add_ofNat64 (by omega_arith)
+  have m₅ : s₅.mem = s₄.mem := u₅.mem
+  have g₅ : ∀ x, x ≠ .r8 → x ≠ .r9 → s₅.gpr x = s₃.gpr x := fun x h1 h2 => by
+    rw [u₅.other x h1, g₄ x h1 h2]
+  have b₅ : s₅.gpr sb = B := by rw [g₅ _ (by decide) (by decide)]; exact hm.b
+  have rd₅ : s₅.rd = s₀.rd := by rw [u₅.rd, rd₄, hm.rd]
+  have wr₅ : s₅.wr = s₀.wr := by rw [u₅.wr, wr₄, hm.wr]
+  have eDt : Dt = D + BitVec.ofNat 64 (4 * c.bw * (len / (4 * c.bw))) := hDt.symm
+  have sT : Region.Sub ⟨Dt, rr⟩ (dataRegion D 1 len) := by
+    rw [eDt]; exact VG.Offset.sub_base _ (by omega_using [hdm, hrr])
+  have hxp : XPre s₅ (slotA B c.buf) Dt rr :=
+    { pos := hr
+      fitK := by rw [tK]; omega_arith
+      fitR := by rw [tDt]; omega_using [hD, hdm, hrr]
+      disj := ((hp.dataScr.sub_left sT).sub_right (VG.Offset.sub_base _ (by omega_arith))).symm
+      rdK := fun q hq => by
+        rw [rd₅, wr₅]
+        exact ⟨_, List.mem_append_right _ hp.scr.wr, by
+          rw [VG.Offset.add_add]; exact slot_contains hdisp (by omega_arith)⟩
+      wrR := fun q hq => by
+        rw [eDt, wr₅]
+        refine ⟨_, hp.dataW, ?_⟩
+        rw [VG.Offset.add_add]
+        exact VG.Offset.contains_base _ (by omega_using [hdm, hrr, hq]) (by omega_using [hD, hdm, hrr, hq]) }
+  have hx0 : XInv s₅ (slotA B c.buf) Dt rr 0 s₅ :=
+    { r8 := by rw [u₅.gpr, g₄ _ (by decide) (by decide), hm.b]; exact (BitVec.add_zero _).symm
+      r31 := by rw [g₅ _ (by decide) (by decide), hdp]; exact (BitVec.add_zero _).symm
+      r30 := by rw [g₅ _ (by decide) (by decide), hnp, Nat.sub_zero]
+      lt := hr
+      data := fun q _ => by rw [ite_eq_right (Nat.not_lt_zero _)]
+      frame := Frame.refl _ _
+      rd := rfl
+      wr := rfl
+      gpr := fun _ _ _ _ _ _ => rfl }
+  refine WP.mono (tailLoop_wp hxp hx0) fun s₇ d₇ => ?_
+  -- What the segment changed.
+  have f₇ : Frame [⟨Dt, rr⟩] s₄.mem s₇.mem := by rw [← m₅]; exact d₇.frame
+  have allP : Frame (fine c B Dt rr 0) s.mem s₇.mem :=
+    (hm.frame.trans (f₄.sub hR.areasFine)).trans (f₇.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_cons_self, by rw [datRegion_zero]; exact fun _ h => h⟩)
+  -- The buffer and the chaining value.
+  have chnDat : Region.Disjoint (chnRegion c B) (datRegion Dt rr 0) := hA.apart .chn .dat (by decide)
+  rw [datRegion_zero] at chnDat
+  -- The bytes after the copy.
+  have hdat : ∀ q < rr, s₄.mem (Dt + BitVec.ofNat 64 q) = tl.getD q 0 := fun q hq => by
+    rw [← cont_dat0 c B Dt rr s₄.mem q, hY .dat q hq, (part_vals c.bw (cs.cipher k) (cont A s.mem) q).1,
+      cont_dat0, ← hDt, ← bytesAt_getD s.mem _ (show q < len % (4 * c.bw) by rw [hrr]; exact hq), hI.tail]
+  have hbuf' : ∀ q < 4 * c.bw, s₄.mem (slotA B c.buf + BitVec.ofNat 64 q) = (cs.cipher k (run F c0 xs).2).getD q 0 :=
+    fun q hq => by
+      show cont A s₄.mem .buf q = _
+      rw [hY .buf q hq, (part_vals c.bw (cs.cipher k) (cont A s.mem) q).2.1, cj]
+  have hchn : ∀ q < 4 * c.bw, s₄.mem (slotA B c.chnSlot + BitVec.ofNat 64 q) =
+      (cs.cipher k (run F c0 xs).2).getD q 0 := fun q hq => by
+    show cont A s₄.mem .chn q = _
+    rw [hY .chn q hq, (part_vals c.bw (cs.cipher k) (cont A s.mem) q).2.2 hq, cj]
+  have hcl := cs.cipher_len k (run F c0 xs).2
+  refine ⟨d₇.r30, ⟨?_, fun r hr h30 h31 => ?_, by rw [d₇.rd, rd₅], by rw [d₇.wr, wr₅], ?_, ?_, ?_,
+    hI.frame.trans (allP.sub hFB)⟩⟩
+  · rw [d₇.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide)]; exact b₅
+  · rw [d₇.gpr r (kept_ne r hr).1 (kept_ne r hr).2 (r10_notKept r hr) h30 h31, g₅ r (kept_ne r hr).1 (kept_ne r hr).2,
+      hm.kept r hr, hI.keep r hr h30 h31]
+  · rw [chunksAt_frame allP hWO (by omega_using [hD, hdm]), hI.data, List.take_of_length_le (Nat.le_of_eq hxs),
+      List.drop_of_length_le (Nat.le_of_eq hxs), List.append_nil]
+  · rw [hDt, hrr]
+    apply List.ext_getElem (by simp only [bytesAt_length, Spec.Cbc.xor, List.length_zipWith, hcl, htl]; omega_arith)
+    intro q h1 _
+    have hq : q < rr := by rw [bytesAt_length] at h1; exact h1
+    rw [List.getElem_eq_getD 0, List.getElem_eq_getD 0, getD_xor (by omega_using [htl, hrr, hq])
+      (by rw [hcl]; omega_using [hq, hmlt]), bytesAt_getD _ _ hq, d₇.data q hq, m₅,
+      hdat q hq, hbuf' q (by omega_using [hq, hmlt])]
+  · rw [ite_eq_right (by rw [hrr]; omega_using [hr])]
+    apply List.ext_getElem (by rw [bytesAt_length, hcl])
+    intro q h1 _
+    have hq : q < 4 * c.bw := by rw [bytesAt_length] at h1; exact h1
+    rw [List.getElem_eq_getD 0, List.getElem_eq_getD 0, bytesAt_getD _ _ hq]
+    refine (f₇.bytes (R := chnRegion c B) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact chnDat)
+      (by show 4 * c.bw ≤ 2 ^ 64; omega_using [hbw]) hq).trans (hchn q hq)
+
 end VG.Proof.Modes.PPC64LE
