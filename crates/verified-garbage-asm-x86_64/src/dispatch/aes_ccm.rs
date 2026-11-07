@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ccm_seal_vaes` if the CPU supports its features (`VG_AES_CCM_SEAL_VAES_FEATURES`); `vg_aes_ccm_seal_aesni` if the CPU supports its features (`VG_AES_CCM_SEAL_AESNI_FEATURES`); or else `vg_aes_ccm_seal`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ccm_seal_aesni` if the CPU supports its features (`VG_AES_CCM_SEAL_AESNI_FEATURES`); or else `vg_aes_ccm_seal`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -24,11 +24,6 @@
 #[inline]
 pub unsafe fn vg_aes_ccm_seal_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_ccm::VG_AES_CCM_SEAL_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ccm_seal_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ccm::vg_aes_ccm_seal_vaes(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
-    }
     if cpu.contains(crate::aes_ccm::VG_AES_CCM_SEAL_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ccm_seal_aesni`'s, and the CPU
         // has the features it needs.
@@ -42,7 +37,7 @@ pub unsafe fn vg_aes_ccm_seal_auto(schedule: *const [u8; 240], rounds: usize, no
 ///
 /// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ccm_open_vaes` if the CPU supports its features (`VG_AES_CCM_OPEN_VAES_FEATURES`); `vg_aes_ccm_open_aesni` if the CPU supports its features (`VG_AES_CCM_OPEN_AESNI_FEATURES`); or else `vg_aes_ccm_open`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ccm_open_aesni` if the CPU supports its features (`VG_AES_CCM_OPEN_AESNI_FEATURES`); or else `vg_aes_ccm_open`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -60,11 +55,6 @@ pub unsafe fn vg_aes_ccm_seal_auto(schedule: *const [u8; 240], rounds: usize, no
 #[inline]
 pub unsafe fn vg_aes_ccm_open_auto(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_ccm::VG_AES_CCM_OPEN_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ccm_open_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ccm::vg_aes_ccm_open_vaes(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
-    }
     if cpu.contains(crate::aes_ccm::VG_AES_CCM_OPEN_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_ccm_open_aesni`'s, and the CPU
         // has the features it needs.

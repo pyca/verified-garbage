@@ -236,6 +236,12 @@ NEVER_WITH = {
     # AVX2 is present (`VerifiedGarbageTest/Dispatch.lean` checks it).
     "x86_64": {
         "vg_chacha20_xor_ssse3": [{"avx", "avx2"}],
+        # AES-CMAC's, AES-SIV's and AES-CCM's dispatchers choose their
+        # `_aesni` implementations (the chaining in AES-NI registers, which is
+        # faster than by calls of any `vg_aes_ctr32` at every length) on every
+        # CPU with AES-NI and SSSE3, so never the bitsliced chaining by calls
+        # of `vg_aes_ctr32` (`VerifiedGarbageTest/Dispatch.lean` checks it).
+        "vg_cmac_aes_update": [{"aes", "ssse3"}],
         # AES-GCM-SIV's dispatchers rank `_aesni_pclmul_avx_avx2` above
         # `_aesni_avx2` and `_pclmul_avx2`, and `_vaes_vpclmul_avx512` above
         # `_vaes_avx2` and `_vpclmul_avx2`, each needing only the features of
