@@ -28,7 +28,8 @@ public import VerifiedGarbage.Spec.Dsa.Derive
 `generate_correct`: `vg_dsa_generate_key` meets `gkContract`. In its frame,
 the entry (`entry_ok`), the check of the domain (`checked_ok`), then for a
 valid domain the scan of q (`prepareQ_ok`), the sampling (`sample_ok`) and
-the derivation (`derive_ok`), and the exit (`finish_ok`) follow one
+the derivation (`derive_ok`, by `vg_dsa_derive_key_checked`, for the
+checked domain), and the exit (`finish_ok`) follow one
 another; the result is `generateKeyBytes`'s (`gkRes_eq`).
 -/
 
@@ -168,7 +169,7 @@ theorem derive_wp {s₀ t : State} (h : gkContract.pre s₀) (hq : 1 < qOf s₀)
       rw [m2]
       exact RS.nonce_eq (W := (eOf s₀).W) hE.Wq hz (hk x hx)
     refine WP.seq (WP.mono (deriveArgs_ok hL c₂) fun t₃ ⟨da, m3, k3⟩ => ?_)
-    refine WP.seq (WP.mono (derive_ok h da) fun t₄ dv => ?_)
+    refine WP.seq (WP.mono (derive_ok h da hchk) fun t₄ dv => ?_)
     have es : dresOf (glOf s₀) t₃.mem = dkOf s₀ x := by
       simp only [dresOf, dkOf, parOf]; rw [m3, c₂.par, hnonce]
     have hr3 := dv.r3

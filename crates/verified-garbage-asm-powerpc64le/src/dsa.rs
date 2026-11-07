@@ -828,7 +828,7 @@ beq %cr0, 214f
 b 215f
 214:
 .base64 "AAByOBSilHwUooR8FKqEfBSqhHwAALM4FKLUfBSqxnwAAPQ4eAABOQAANTkAAFY5"
-bl {vg_dsa_derive_key}
+bl {vg_dsa_derive_key_checked}
 .base64 "AAADKA=="
 beq %cr0, 216f
 .base64 "AQDgOw=="
@@ -856,7 +856,7 @@ b 219f
 219:
 .base64 "AACBOQAAADh4AAz4gAAM+IgADPiQAAz4AAA++wAAfzgAAIE5KAEM6KYDCHyYAMzpoADs6agADOqwACzquABM6sAAbOrIAIzq0ACs6tgAzOrgAOzq6AAM6/AALOv4AEzrAAFs6wgBjOsQAazrGAHM6yAB7OswASE4IACATg==""#,
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
-        vg_dsa_derive_key = sym super::dsa::vg_dsa_derive_key,
+        vg_dsa_derive_key_checked = sym super::dsa::vg_dsa_derive_key_checked::vg_dsa_derive_key_checked,
     )
 }
 
@@ -5654,6 +5654,10 @@ bne %cr0, 2642b
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_check_parameters.rs"]
 pub(crate) mod vg_dsa_check_parameters;
+
+#[rustfmt::skip]
+#[path = "internal/vg_dsa_derive_key_checked.rs"]
+pub(crate) mod vg_dsa_derive_key_checked;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_probable_prime_1024.rs"]
