@@ -48,7 +48,7 @@ def artifacts (v : Backend) : List Artifact := [
   Spec.Dsa.generateKeyApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.Dsa.X86_64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
-      (Impl.Dsa.X86_64.Generate.checkParameters v.sq v.mul) (Impl.Dsa.X86_64.Generate.deriveKey v.sq v.mul)
+      (Impl.Dsa.X86_64.Generate.checkParameters v.sq v.mul) (Impl.Dsa.X86_64.Generate.deriveChecked v.sq v.mul)
     stack := v.stack + 256
     verified := keygen_verified v
     spSafe := keygen_sp v

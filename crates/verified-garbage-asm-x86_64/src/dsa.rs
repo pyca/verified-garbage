@@ -3029,7 +3029,7 @@ je 220f
 jmp 221f
 220:
 .base64 "SIt8JChIi3QkMEiLVCRASItMJEhMi0QkUEmJ4UmBwcgAAABIi0QkWEiJBCRIi4QkgAAAAEiJRCQISIuEJIgAAABIiUQkEA=="
-call {vg_dsa_derive_key_adx}
+call {vg_dsa_derive_key_checked_adx}
 .base64 "icBIiYQkwAAAAA=="
 221:
 jmp 28f
@@ -3051,7 +3051,7 @@ jne 224b
 .base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAADD"
 .p2align 6"#,
         vg_dsa_check_parameters_adx = sym super::dsa::vg_dsa_check_parameters_adx::vg_dsa_check_parameters_adx,
-        vg_dsa_derive_key_adx = sym super::dsa::vg_dsa_derive_key_adx,
+        vg_dsa_derive_key_checked_adx = sym super::dsa::vg_dsa_derive_key_checked_adx::vg_dsa_derive_key_checked_adx,
     )
 }
 
@@ -6798,7 +6798,7 @@ je 220f
 jmp 221f
 220:
 .base64 "SIt8JChIi3QkMEiLVCRASItMJEhMi0QkUEmJ4UmBwcgAAABIi0QkWEiJBCRIi4QkgAAAAEiJRCQISIuEJIgAAABIiUQkEA=="
-call {vg_dsa_derive_key}
+call {vg_dsa_derive_key_checked}
 .base64 "icBIiYQkwAAAAA=="
 221:
 jmp 28f
@@ -6820,7 +6820,7 @@ jne 224b
 .base64 "SMfAAAAAAEiJhCTIAAAASImEJNAAAABIiYQk2AAAAEiJhCTgAAAASItUJDhIi4QkkAAAAEiJAkiLhCTAAAAASI2kJPgAAADD"
 .p2align 6"#,
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
-        vg_dsa_derive_key = sym super::dsa::vg_dsa_derive_key,
+        vg_dsa_derive_key_checked = sym super::dsa::vg_dsa_derive_key_checked::vg_dsa_derive_key_checked,
     )
 }
 
@@ -8531,6 +8531,14 @@ pub(crate) mod vg_dsa_check_parameters;
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_check_parameters_adx.rs"]
 pub(crate) mod vg_dsa_check_parameters_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_dsa_derive_key_checked.rs"]
+pub(crate) mod vg_dsa_derive_key_checked;
+
+#[rustfmt::skip]
+#[path = "internal/vg_dsa_derive_key_checked_adx.rs"]
+pub(crate) mod vg_dsa_derive_key_checked_adx;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_generation_check_parameters.rs"]
