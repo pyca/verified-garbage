@@ -14,7 +14,7 @@ The setup computes `r8 ← src - dst` before `r10` becomes the last round
 key's address, and points `rdx` at `dst` (`setupCTo`, in place of
 `Stitch.setupC`'s `mov rdx, r8`). `r8` then stays constant: each group of
 plaintext is loaded from `[rdx + r8 + 64 j]` (the plaintext at the offset of
-the output block the group is written to, `xorDataZTo`), and the ciphertext
+the output block the group is written to, `StitchZ.batch`'s load mode), and the ciphertext
 stored to `[rdx + 64 j]`, where the GHASH loads read it back, as in place.
 Everything else is the code of `StitchZ` and `StitchZP`.
 -/
@@ -32,14 +32,6 @@ open VG.Impl.Gcm.X86_64.StitchZP (setupGP powP48)
 
 /-- `[base + idx + d]`. -/
 def atIx (base idx : Reg) (d : Nat) : MemOp := { base, index := some idx, disp := d }
-
-/-- XOR block register `i` into the four plaintext blocks at
-`base + idx + 64 (j + i)`, through `t`, and store the result to
-`base + 64 (j + i)` (`VaesZ.xorDataZ` out of place). -/
-def xorDataZTo (t : XReg) (base idx : Reg) : List XReg → Nat → List Instr
-  | [], _ => []
-  | b :: bs, j => ([.vmovdqu32Load t (atIx base idx (64 * j)), .zop (.zbin .vpxord b b t),
-      .vmovdqu32Store (at_ base (64 * j)) b] : List Instr) ++ xorDataZTo t base idx bs (j + 1)
 
 /-- `Y`, the four counters, the increment, `src - dst` in `r8`, `dst` in
 `rdx` and the last round key's address in `r10`. -/
@@ -61,8 +53,7 @@ def setupP : List Instr := setupGP ++ storesK .r11 pregs 0 ++ setupCTo ++ setupZ
 
 /-- Sixteen plaintext blocks at `rdx + r8 + 64 j` encrypted to `rdx + 64 j`,
 the GHASH work `g i` after round `i`. -/
-def batchTo (j : Nat) (g : Nat → List Instr) : Prog isa :=
-  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs)) (.seq (aesZ .xmm13 aregs g) (.block (xorDataZTo .xmm13 .rdx .r8 aregs j)))
+abbrev batchTo (j : Nat) (g : Nat → List Instr) : Prog isa := StitchZ.batch j g false true
 
 /-- The first group, encrypted only. -/
 def firstTo : Prog isa := batchTo 0 fun _ => []

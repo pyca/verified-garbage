@@ -532,6 +532,8 @@ structure DInvM (ix : Bool) (s₀ : State) (P : Nat → Nat → Block) (e : Nat)
   rdx : s.gpr .rdx = dp s₀ + BitVec.ofNat 64 (256 * e)
   r9 : s.gpr .r9 = BitVec.ofNat 64 (nb s₀ - 16 * e)
   rax : s.gpr .rax = cp s₀
+  /-- Out of place, the distance from the data to the output. -/
+  r8 : ix = true → s.gpr .r8 = Stitch.op s₀ - dp s₀
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → (ix = true → r ≠ .r8) → r ≠ .r9 → r ≠ .r10 → s.gpr r = s₀.gpr r
   pw : ∀ k < 4, ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (64 * k + 16 * l)) 128 = P k l
   m1 : ∀ l < 4, s.zlane .xmm1 l = poly
@@ -540,7 +542,8 @@ structure DInvM (ix : Bool) (s₀ : State) (P : Nat → Nat → Block) (e : Nat)
 
 theorem DInv.toM {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (h : DInv s₀ P e s) :
     DInvM false s₀ P e s :=
-  ⟨h.a.toM, h.rdx, h.r9, h.rax, fun r h1 h2 _ h4 h5 => h.gpr r h1 h2 h4 h5, h.pw, h.m1, h.y, h.y1⟩
+  ⟨h.a.toM, h.rdx, h.r9, h.rax, fun h' => absurd h' (by decide), fun r h1 h2 _ h4 h5 => h.gpr r h1 h2 h4 h5, h.pw,
+    h.m1, h.y, h.y1⟩
 
 theorem DInvM.toDInv {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (h : DInvM false s₀ P e s) :
     DInv s₀ P e s :=
