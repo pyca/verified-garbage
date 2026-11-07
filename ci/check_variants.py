@@ -1,109 +1,57 @@
 #!/usr/bin/env python3
-"""Checks that every implementation of a verified function reaches every
-function built on it, from the generated code, each target's
+"""Checks that the code a CPU runs calls the best implementation of each
+function it calls, from the generated code, each target's
 `crates/verified-garbage-asm-<target>/src/`.
 
 A primitive can have several implementations with the same contract, e.g.
 `vg_sha256_compress` and `vg_sha256_compress_shani`: a *variant* of a
 function `f` on a target is a function of that target named `f_<suffix>`
-with the same Rust signature (`_shani`, `_avx2`, …).
+with the same Rust signature (`_shani`, `_avx2`, …). Each function has a
+generated *dispatcher*, `f_auto` (`Rust.dispatcher` in
+`lean/VerifiedGarbage/TCB/Rust.lean`), which tries its implementations in
+the order `VG.Dispatch.ranking` gives them and runs the first the CPU has
+the features of: the choice is made there, not in Rust.
 
-* **Variants flow to callers.** If a function `g` calls `f`, and `f` has a
-  variant `f_<s>`, then `g` must have the variant `g_<s>`, and `g_<s>` must
-  not call the baseline `f`: it calls `f_<s>`, or none of `f`'s
-  implementations, when it does the work itself (e.g. ML-KEM's AArch64
-  `vg_mlkem768_keygen_x2_sha3`, which runs two Keccak permutations at once
-  with `vg_keccak_f1600_x2_sha3` rather than calling the sponge functions
-  `vg_keccak_absorb_scratch_sha3`, … that `vg_mlkem768_keygen` calls the
-  baseline of). (A variant may call the function it is a variant of, e.g.
-  for a tail it leaves to the baseline code.) A function whose variant
-  nothing would call needs none: one the Rust code does not use, all of
-  whose callers have variants for `f_<s>` that do not call it, or need
-  none themselves (`vg_mlkem_sample_ntt`, which `vg_mlkem768_keygen`, …
-  call, but not their `_x2_sha3` variants). Nor does a function with
-  implementations, but its baseline, that a CPU with `f_<s>`'s features
-  runs, if there are some and none calls any of `f`'s implementations
-  (AES-CBC's sequential encryption: its AES-NI code calls no
-  `vg_aes_encrypt_blocks`, and serves CPUs with VAES too). Variants compose: a variant
-  of a variant, `g_<t>_<s>`, has both suffixes, in either order, so when
-  `g_<t>` calls `f`, its variant for `f_<s>` may be `g_<t>_<s>` or
-  `g_<s>_<t>` (e.g. Ed25519's operations over each SHA-512 backend and each
-  field multiplication: `vg_ed25519_verify_avx2_adx` is the variant both of
-  `vg_ed25519_verify_avx2` for `vg_ed25519_verify_equation_adx` and of
-  `vg_ed25519_verify_adx` for `vg_sha512_update_avx2`).
-  A caller generic over several interfaces qualifies each suffix with a tag
-  for its interface (`Emit.qualifiedName` in `lean/VerifiedGarbage/TCB/Emit.lean`),
-  since two interfaces may have variants with the same suffix: its variant
-  for `f_<s>` may add `<tag>_<s>` instead (`vg_argon2_g_avx512`, the
-  variant of `vg_argon2` for `vg_argon2_compress_avx512`), and one of its
-  variants adding a part ending in `_<s>` must not call `f`.
-* **Every variant is used.** Each variant is called by another generated
-  function or used by the Rust code of the library (`src/`), not counting
-  its tests: the generated modules allow dead
-  code, so a variant the Rust dispatch forgot would otherwise go unnoticed,
-  and a variant only a test calls is one nothing else runs. Test code is
-  every item gated by a `cfg` that requires `test` (`#[cfg(test)]`,
-  `#[cfg(all(test, …))]`, an inner `#![cfg(test)]`) or marked `#[test]`,
-  and every file such a `mod` declaration names, with the files it
-  declares in turn. (Code a macro expands only in its tests, from an
-  argument passed outside them, is not found: name such functions only in
-  the test.)
-* **Callers reach the best callee.** If a function `g` needs the CPU
-  features `F` (its `VG_<G>_FEATURES`, none for a baseline) and calls `f`,
-  and `f` has an implementation `f_<s>` whose features are more than those
-  of the one `g` calls but all in `F`, then some implementation of `g`
-  calls `f_<s>` (or one with still more features): otherwise no CPU ever
-  runs `f_<s>` under `g`, however many features it has. A choice made by
-  hand rather than by the generic registrations is what this catches
-  (`vg_rsa_private_checked_ifma` calling `vg_rsa_public_precomputed_checked_adx`,
-  its variant's `pubOp`, when `vg_rsa_public_precomputed_checked_ifma`
-  needs only its features). The implementation `g` calls need not be the
-  best itself: a caller generic over several interfaces has a variant for
-  each combination (`…_sha224_shani` calls SHA-1's baseline,
-  `…_sha224_shani_mgf1_shani` its `_shani`), and the Rust code chooses
-  among them. A variant calling the function it is a variant of is exempt,
-  as above.
+* **Callers run the best callee.** For each dispatcher, on a CPU with the
+  features of each implementation it can choose (and with those and the
+  features of each variant of a function that implementation calls,
+  directly or through others), the implementation the dispatcher runs, and
+  each function it calls in turn, calls the implementation of each of its
+  callees that the callee's dispatcher would choose on that CPU, or one that
+  dispatcher tries before it. A callee with no dispatcher (an internal
+  function, `Rust.Internal`) has no ranking: there the implementation
+  called must need no fewer features than any other the CPU can run. This
+  is what makes every function that calls a function with variants generic
+  over them (CLAUDE.md, "An optimized implementation reaches everything
+  built on it"): without its variant, a caller would run the baseline
+  callee on a CPU that has a better one. A CPU has what CPU detection
+  reports with the features it has (`IMPLIED`: on x86, AVX with AVX2,
+  AVX-512, SHA512, VAES or VPCLMULQDQ, and AVX2 with BMI2 or ADX); a
+  dispatcher's arm whose condition depends on the compilation target
+  (`cfg!`) is not taken.
+* **Every variant is reached.** Each variant is tried by a dispatcher,
+  named in a table of functions (`Artifact.tables`), called by another
+  generated function, or named by the Rust code in `src/`: one that none of
+  these reaches is code no CPU runs (a combination of variants that each CPU
+  able to run it runs another one ranked before, which its dispatcher
+  leaves out), so stop emitting it.
 
-A combination no CPU can choose is not required. When the Rust code never
-chooses an implementation `c` on a CPU with all of the features of a set
-`X` (it chooses another implementation of the same function there:
-ChaCha20's 4-way SSSE3 code is not chosen with AVX and AVX2, which its
-`_avx2` code needs), `NEVER_WITH` lists `X` for `c`. A variant of a
-function `g` that runs `c` (`g` is `c` or calls it) for a callee's variant
-`f_<s>` would run only on CPUs with both `g`'s features and `f_<s>`'s; if
-those include one of `c`'s sets, the Rust code never chooses `c` there, so
-no CPU chooses that combination, and `g_<s>` is not required. The Rust
-code's choice is unit-tested both ways (CLAUDE.md), and each entry must
-name a function of its target whose own features include none of its sets
-(otherwise the Rust code could never choose it at all).
-
-An *internal function* (`Rust.Internal` in `lean/VerifiedGarbage/TCB/Rust.lean`),
-which the emitter writes to `src/internal/<name>.rs` of its crate, is code
-that verified functions call but that has no contract: it has no Rust
-signature (`fn <name>()`), so its variants are not found by their
-signature. A variant of an internal function `f` is the internal function
-`f_<suffix>` whose suffix is the suffix of a variant of a function with a
-signature on the target (`_shani`, `_avx2`, `_blake2b_avx2`, …), or a
-qualified part `_<tag>_<suffix>` of one whose `<suffix>` is one
-(`_sha1_avx_bmi` of `_sha1_avx_bmi_sha256_avx2`), each
-variant of a variant adding one: `vg_p384_mul_mod_n` is not a variant of
-`vg_p384_mul`, as no function of a signature has a variant `_mod_n`, nor
-`vg_keccak_f1600_x2` of `vg_keccak_f1600`, as none has a variant `_x2`
-(though ML-KEM's have `_x2_sha3`). Its CPU features are in a `_FEATURES`
-constant of its file, as an artifact's.
+An *internal function*, which the emitter writes to `src/internal/<name>.rs`
+of its crate, is code that verified functions call but that has no
+contract: it has no Rust signature (`fn <name>()`). A variant of an
+internal function `f` is the internal function `f_<suffix>` whose suffix is
+the suffix of a variant of a function with a signature on the target, or a
+qualified part `_<tag>_<suffix>` of one whose `<suffix>` is one (`_shani`,
+`_avx2`, `_sha1_avx_bmi` of `_sha1_avx_bmi_sha256_avx2`), each variant of a
+variant adding one: `vg_p384_mul_mod_n` is not a variant of `vg_p384_mul`,
+as no function of a signature has a variant `_mod_n`, nor
+`vg_keccak_f1600_x2` of `vg_keccak_f1600` (though ML-KEM's have `_x2_sha3`).
+Its CPU features are in a `_FEATURES` constant of its file, as an
+artifact's.
 
 A function the emitter renders as another name of an identical function of
-its module (`pub use self::<f> as <name>;`, `Rust.alias` in
-`lean/VerifiedGarbage/TCB/Rust.lean`) is that function's code: it has its
-signature and callees, and a use of it is a use of that function.
-
-A *dispatcher* (`<f>_auto` in `dispatch/<module>.rs`, `Rust.dispatcher`: an
-ordinary Rust function, `pub unsafe fn`, or for a function with one
-implementation another name of it, `pub use crate::<module>::<f> as <f>_auto;`) runs the best of `f`'s implementations
-the CPU supports. It is not a variant, and its calls are not those of a
-generated function: a use of it by the Rust code is a use of each
-implementation it calls, so that a variant whose dispatcher nothing uses is
-not used either.
+its module (`pub use self::<f> as <name>;`, `Rust.alias`) is that
+function's code.
 
 See "An optimized implementation reaches everything built on it" in
 CLAUDE.md.
@@ -129,9 +77,16 @@ ALIAS = re.compile(r"^pub(?:\(crate\))? use self::(vg_\w+) as (vg_\w+);$", re.MU
 # The dispatcher of a function with one implementation (`<f>_auto`,
 # `Rust.soleDispatcher`), in `dispatch/<module>.rs`.
 SOLE = re.compile(r"^pub use crate::\w+::(vg_\w+) as (vg_\w+);$", re.MULTILINE)
-# A dispatcher (`Rust.dispatcher`), to the end of its body, and each function it calls.
+# A dispatcher (`Rust.dispatcher`), to the end of its body.
 DISPATCHER = re.compile(r"^pub unsafe fn (vg_\w+)\(.*?^\}\n", re.MULTILINE | re.DOTALL)
-DISPATCHED = re.compile(r"unsafe \{ crate::\w+::(vg_\w+)\(")
+# An arm of a dispatcher: its condition and the function it returns.
+ARM = re.compile(
+    r"if (?P<cond>[^\n]*\bcpu\b[^\n]*) \{\n(?:\s*//[^\n]*\n)*"
+    r"\s*return unsafe \{ crate::\w+::(?P<fn>vg_\w+)\(")
+# A dispatcher's last call, of its base.
+BASE_CALL = re.compile(r"\n    unsafe \{ crate::\w+::(vg_\w+)\(")
+# A function a table of functions names (`Artifact.tables`).
+TABLE_FN = re.compile(r"crate::(?:\w+::)+(vg_\w+) as \*const \(\)")
 # `<operand> = sym <path>`, found from the literal ` = sym ` (a leading
 # `\w+` would be tried at every word character of the code: 30 times slower).
 SYM = re.compile(r" = sym (?:\w+::)*(vg_\w+)")
@@ -142,14 +97,26 @@ FEATURES = re.compile(
     re.MULTILINE,
 )
 
+# The signature of an internal function (`fn <name>()`).
+INTERNAL = ("", "")
+
+# For each target, the features CPU detection reports each feature only with
+# (`decode` in `crates/verified-garbage-cpu/src/detect.rs`).
+_AVX = {"avx"}
+IMPLIED = {t: {"avx2": _AVX, "bmi2": {"avx", "avx2"}, "adx": {"avx", "avx2"}, "avx512f": _AVX,
+               "sha512": _AVX, "avx512ifma": _AVX, "avx512vl": _AVX, "vaes": _AVX,
+               "vpclmulqdq": _AVX, "avx512bw": _AVX}
+           for t in ("x86", "x86_64")}
+
 
 def sources():
     """Each generated file's target and text: its modules', its internal
-    functions' (`internal/<name>.rs`) and its dispatchers' (`dispatch/<module>.rs`)."""
+    functions' (`internal/<name>.rs`), its dispatchers' (`dispatch/<module>.rs`)
+    and its tables' of functions (`fn_tables/<name>.rs`)."""
     return [(target, path.read_text())
             for target, d in asm_layout.target_dirs(ROOT).items()
             for path in sorted(d.glob("*.rs")) + sorted(d.glob("internal/vg_*.rs"))
-            + sorted(d.glob("dispatch/*.rs"))]
+            + sorted(d.glob("dispatch/*.rs")) + sorted(d.glob("fn_tables/*.rs"))]
 
 
 def bodies(text):
@@ -168,6 +135,12 @@ def callees(body):
     return {m.group(1) for m in SYM.finditer(body) if m.start() and WORD.match(body, m.start() - 1)}
 
 
+def aliases(text):
+    """Each other name of a function of a generated file (`Rust.alias`), by
+    the name it gives it: `{name: function}`; not a dispatcher's."""
+    return {m.group(2): m.group(1) for m in ALIAS.finditer(text)}
+
+
 def functions(srcs):
     """For each target, each generated function's signature and callees."""
     targets = {}
@@ -180,39 +153,36 @@ def functions(srcs):
     return targets
 
 
-def aliases(text):
-    """Each other name of a function of a generated file (`Rust.alias`), by
-    the name it gives it: `{name: function}`; not a dispatcher's."""
-    return {m.group(2): m.group(1) for m in ALIAS.finditer(text)}
-
-
-def file_dispatchers(text):
-    """Each dispatcher of a generated file (`Rust.dispatcher`), with the
-    functions it calls: `{name: {function, …}}`."""
-    out = {m.group(1): set(DISPATCHED.findall(m.group(0))) for m in DISPATCHER.finditer(text)}
-    out.update({m.group(2): {m.group(1)} for m in SOLE.finditer(text)})
+def file_arms(text):
+    """Each dispatcher of a generated file as the implementations it tries,
+    in order, each with the `_FEATURES` constants and the other features
+    its condition names (`*` for any, `cpu.0 != 0`) and whether it depends
+    on the compilation target (`cfg!`), then its base: `{name: ([(function, {constant, …}, {feature,
+    …}, by_target), …], base)}`; a dispatcher of one implementation
+    (`Rust.soleDispatcher`) tries none."""
+    out = {}
+    for m in DISPATCHER.finditer(text):
+        body = m.group(0)
+        tried = [(a.group("fn"),
+                  {c.lower() for c in re.findall(r"(VG_\w+)_FEATURES", a.group("cond"))},
+                  {f.lower() for f in re.findall(r"feature::(\w+)", a.group("cond"))}
+                  | ({"*"} if "cpu.0 != 0" in a.group("cond") else set()),
+                  "cfg!(" in a.group("cond"))
+                 for a in ARM.finditer(body)]
+        base = BASE_CALL.findall(body)
+        out[m.group(1)] = (tried, base[-1] if base else None)
+    out.update({m.group(2): ([], m.group(1)) for m in SOLE.finditer(text)})
     return out
 
 
-def dispatchers(srcs):
-    """For each target, `file_dispatchers` of its files together."""
-    targets = {}
-    for target, text in srcs:
-        targets.setdefault(target, {}).update(file_dispatchers(text))
-    return targets
-
-
-def all_aliases(srcs):
-    """For each target, `aliases` of its files together."""
-    targets = {}
-    for target, text in srcs:
-        targets.setdefault(target, {}).update(aliases(text))
-    return targets
+def table_functions(text):
+    """The functions a generated file's tables of functions name."""
+    return set(TABLE_FN.findall(text))
 
 
 def features(srcs):
-    """For each target, the CPU features each generated function needs, by
-    its name (functions that need none are left out)."""
+    """For each target, the CPU features each generated function (and
+    table) needs, by its name (those that need none are left out)."""
     targets = {}
     for target, text in srcs:
         feats = targets.setdefault(target, {})
@@ -222,27 +192,23 @@ def features(srcs):
     return targets
 
 
-# The signature of an internal function (`fn <name>()`).
-INTERNAL = ("", "")
-
-# For each target, the implementations the Rust code never chooses on a CPU
-# with all of the features of one of the sets listed (in lower case, as
-# `features` reads them), because it chooses another implementation of the
-# same function there: a combination with one of them that needs all of a
-# set is one no CPU chooses (see the module's docstring).
-NEVER_WITH = {
-    # The dispatchers of ChaCha20 and ChaCha20-Poly1305 rank `_avx2` (and
-    # better) above `_ssse3` (`VG.Dispatch.ranking`), so choose it whenever
-    # AVX2 is present (`VerifiedGarbageTest/Dispatch.lean` checks it).
-    "x86_64": {"vg_chacha20_xor_ssse3": [{"avx", "avx2"}]},
-}
+def per_target(srcs, read):
+    """For each target, what `read` gives of each of its files, together."""
+    targets = {}
+    for target, text in srcs:
+        got = read(text)
+        if isinstance(got, set):
+            targets.setdefault(target, set()).update(got)
+        else:
+            targets.setdefault(target, {}).update(got)
+    return targets
 
 
 def variants(fns):
     """`(base, suffix)` of each function that is a variant of another: the
     longest `base` it extends with `_<suffix>`, with the same signature; of
     an internal function (which has none), the longest whose suffix is the
-    suffix of a variant of a function with one."""
+    suffix of a variant of a function with one, or a qualified part of one."""
     def find(names, ok):
         out = {}
         for name in names:
@@ -258,9 +224,6 @@ def variants(fns):
     suffixes = {suffix for _, suffix in out.values()}
 
     def internal_suffix(ws):
-        """A suffix of a variant of a function with a signature, or one of
-        its qualified parts `<tag>_<suffix>` (`Emit.qualifiedName`), whose
-        `<suffix>` is one."""
         s = "_".join(ws)
         if s in suffixes:
             return True
@@ -271,473 +234,155 @@ def variants(fns):
     return out
 
 
-def chain(var, name):
-    """The function `name` is a variant of, through every variant it is of,
-    and the suffixes it adds to it, in order."""
-    if name not in var:
-        return name, []
-    base, suffix = var[name]
-    root, suffixes = chain(var, base)
-    return root, suffixes + [suffix]
+def root_of(var, name):
+    """The function `name` is a variant of, through every variant it is of."""
+    while name in var:
+        name = var[name][0]
+    return name
 
 
-def qualified_extension(sufs, suffixes, suffix):
-    """Whether the suffixes `sufs` are `suffixes` and one more, made of
-    qualified parts `<tag>_<suffix>` (`Emit.qualifiedName`), one of which
-    ends with `_<suffix>`, in any position (`sha1_avx_bmi_sha256_avx2` for
-    `avx_bmi` or `avx2`)."""
-    rest = list(sufs)
-    for s in suffixes:
-        if s not in rest:
-            return False
-        rest.remove(s)
-    return len(rest) == 1 and f"_{suffix}_" in f"_{rest[0]}_" and rest[0] != suffix
-
-
-
-# The Rust code outside its tests.
-
-TOKEN = re.compile(
-    r"""(?P<space>\s+)
-      | (?P<comment>//[^\n]*)
-      | (?P<raw>(?:br|cr|r)(?P<hashes>\#*)")
-      | (?P<string>(?:b|c)?")
-      | (?P<char>b?'(?:\\(?:x[0-9A-Fa-f]{2}|u\{[0-9A-Fa-f_]*\}|.)|[^\\'\n])')
-      | (?P<lifetime>'(?:r\#)?[A-Za-z_]\w*)
-      | (?P<ident>(?:r\#)?[A-Za-z_]\w*)
-      | (?P<number>[0-9]\w*)
-      | (?P<punct>.)""",
-    re.VERBOSE | re.DOTALL,
-)
-
-STRING_BODY = re.compile(r'(?:[^"\\]|\\.)*"', re.DOTALL)
-
-
-def tokens(text):
-    """The tokens of Rust source `text`, as strings, without its comments.
-    String and character literals are one token each, so the braces in them
-    are not mistaken for the code's."""
-    out = []
-    i = 0
-    while i < len(text):
-        if text.startswith("/*", i):
-            # Block comments nest.
-            depth, i = 1, i + 2
-            while depth and i < len(text):
-                if text.startswith("/*", i):
-                    depth, i = depth + 1, i + 2
-                elif text.startswith("*/", i):
-                    depth, i = depth - 1, i + 2
-                else:
-                    i += 1
-            continue
-        m = TOKEN.match(text, i)
-        kind = m.lastgroup if m.lastgroup != "hashes" else "raw"
-        if kind == "raw":
-            close = '"' + m.group("hashes")
-            end = text.find(close, m.end())
-            end = len(text) if end < 0 else end + len(close)
-            out.append(text[i:end])
-            i = end
-        elif kind == "string":
-            body = STRING_BODY.match(text, m.end())
-            end = body.end() if body else len(text)
-            out.append(text[i:end])
-            i = end
-        else:
-            if kind not in ("space", "comment"):
-                out.append(m.group())
-            i = m.end()
-    return out
-
-
-OPEN = {"(": ")", "[": "]", "{": "}"}
-CLOSE = set(OPEN.values())
-
-
-def group_end(toks, i):
-    """The index just past the group opened by `toks[i]`."""
-    depth = 0
-    for j in range(i, len(toks)):
-        if toks[j] in OPEN:
-            depth += 1
-        elif toks[j] in CLOSE:
-            depth -= 1
-            if depth == 0:
-                return j + 1
-    return len(toks)
-
-
-def requires_test(toks):
-    """Whether the `cfg` predicate `toks` holds only when compiling tests."""
-    if toks == ["test"]:
-        return True
-    if len(toks) > 2 and toks[0] in ("all", "any") and toks[1] == "(":
-        args, depth, cur = [], 0, []
-        for t in toks[2:group_end(toks, 1) - 1]:
-            if t == "," and depth == 0:
-                args.append(cur)
-                cur = []
-                continue
-            depth += t in OPEN
-            depth -= t in CLOSE
-            cur.append(t)
-        args = [a for a in args + [cur] if a]
-        if toks[0] == "all":
-            return any(requires_test(a) for a in args)
-        return bool(args) and all(requires_test(a) for a in args)
-    return False
-
-
-def attribute(toks, i):
-    """`(end, inner, body)` of the attribute at `toks[i]`, if one starts there:
-    the index past it, whether it is an inner attribute (`#![…]`), and the
-    tokens between its brackets."""
-    if toks[i] != "#":
-        return None
-    j = i + 1
-    inner = j < len(toks) and toks[j] == "!"
-    j += inner
-    if j >= len(toks) or toks[j] != "[":
-        return None
-    end = group_end(toks, j)
-    return end, inner, toks[j + 1:end - 1]
-
-
-def is_test_attribute(body):
-    return body == ["test"] or (
-        len(body) > 3 and body[0] == "cfg" and body[1] == "(" and requires_test(body[2:-1])
-    )
-
-
-# The keywords starting an item that ends with `;` or a block.
-ITEM = {"fn", "mod", "impl", "struct", "enum", "union", "trait", "unsafe", "extern",
-        "async", "macro_rules", "default", "auto"}
-# The keywords starting an item that ends with `;`, after any blocks in it.
-STATEMENT = {"use", "let", "static", "type"}
-
-
-def item_end(toks, i):
-    """The index past the item (or statement, field, expression) at `toks[i]`."""
-    j = i
-    if toks[j] == "pub":
-        j += 1
-        if j < len(toks) and toks[j] == "(":
-            j = group_end(toks, j)
-    first = toks[j] if j < len(toks) else ""
-    if first == "const" and j + 1 < len(toks) and toks[j + 1] in ITEM:
-        first = "fn"
-    statement = first in STATEMENT or first == "const"
-    block = first in ITEM or first == "{" or (j + 1 < len(toks) and toks[j + 1] == "!")
-    while j < len(toks):
-        t = toks[j]
-        if t in CLOSE:
-            return j  # the end of the enclosing group
-        if t == ";" or (t == "," and not (statement or block)):
-            return j + 1
-        if t in OPEN:
-            j = group_end(toks, j)
-            if t == "{" and block:
-                return j
-            continue
-        j += 1
-    return j
-
-
-def mod_files(toks, path, test, nesting=()):
-    """The files the `mod` declarations in `toks` of the file `path` name, with
-    whether each is test-only: everything under `test`, or under an item
-    gated on `test`. Inline modules nest as `nesting`."""
-    base = path.parent if path.name in ("lib.rs", "main.rs", "mod.rs") else path.with_suffix("")
-    out = []
-    i, attr_path, gated = 0, None, False
-    while i < len(toks):
-        a = attribute(toks, i)
-        if a:
-            end, _, body = a
-            if body[:2] == ["path", "="] and len(body) == 3:
-                attr_path = body[2].strip('"')
-            gated |= is_test_attribute(body)
-            i = end
-            continue
-        if toks[i] == "pub" and i + 1 < len(toks) and toks[i + 1] == "(":
-            i = group_end(toks, i + 1)
-            continue
-        if toks[i] in ("pub", "unsafe") and i + 1 < len(toks) and toks[i + 1] in ("mod", "pub"):
-            i += 1
-            continue
-        if toks[i] == "mod" and i + 2 < len(toks):
-            name, after = toks[i + 1], toks[i + 2]
-            if after == ";":
-                if attr_path is not None:
-                    parent = base.joinpath(*nesting) if nesting else path.parent
-                    files = [parent / attr_path]
-                else:
-                    d = base.joinpath(*nesting)
-                    files = [d / f"{name}.rs", d / name / "mod.rs"]
-                out += [(f, test or gated) for f in files]
-            elif after == "{":
-                end = group_end(toks, i + 2)
-                out += mod_files(toks[i + 3:end - 1], path, test or gated, nesting + (name,))
-                i = end
-                attr_path, gated = None, False
-                continue
-        if toks[i] == "{":
-            end = group_end(toks, i)
-            out += mod_files(toks[i + 1:end - 1], path, test or gated, nesting)
-            i = end
-        else:
-            i += 1
-        attr_path, gated = None, False
-    return out
-
-
-def strip_tests(toks):
-    """`toks` without its test code: the items (and statements, fields, …) an
-    attribute gates on `test`, or the whole file if an inner attribute does.
-    Returns `None` for a file that is all test code."""
-    out = []
-    i = 0
-    while i < len(toks):
-        a = attribute(toks, i)
-        if not a:
-            out.append(toks[i])
-            i += 1
-            continue
-        end, inner, body = a
-        if is_test_attribute(body):
-            if inner:
-                return None
-            # Skip the item's other attributes, then the item.
-            while end < len(toks) and attribute(toks, end):
-                end = attribute(toks, end)[0]
-            i = item_end(toks, end) if end < len(toks) else end
-        else:
-            out += toks[i:end]
-            i = end
-    return out
-
-
-def production_rust(src):
-    """The Rust code of the library's files under `src`, without its tests:
-    the items gated on `test`, and the files only test code declares."""
-    paths = sorted(src.rglob("*.rs"))
-    toks = {p: tokens(p.read_text()) for p in paths}
-    test_only = {p for p in paths if strip_tests(toks[p]) is None}
-    # Files declared by test code, and those they declare in turn.
-    while True:
-        new = set()
-        for p in paths:
-            for f, test in mod_files(toks[p], p, p in test_only):
-                f = pathlib.Path(f).resolve()
-                if test and f in toks and f not in test_only:
-                    new.add(f)
-        if not new:
-            break
-        test_only |= new
-    return "\n".join(
-        " ".join(strip_tests(toks[p])) for p in paths if p not in test_only
-    )
-
-def never_with_errors(targets, feats, never_with):
-    """The errors of `never_with` (`NEVER_WITH`): entries naming no function
-    of their target, or one whose own features include a set it lists."""
-    errors = []
-    for target, entries in sorted(never_with.items()):
-        fns = targets.get(target, {})
-        for name, sets in sorted(entries.items()):
-            if name not in fns:
-                errors.append(f"{target}: NEVER_WITH names {name}, which is not a generated function")
-                continue
-            own = feats.get(target, {}).get(name, frozenset())
-            for excluded in sets:
-                if frozenset(excluded) <= own:
-                    errors.append(
-                        f"{target}: NEVER_WITH says {name} is never chosen with "
-                        f"{', '.join(sorted(excluded))}, which it needs itself: it could never be chosen"
-                    )
-    return errors
-
-
-def check(targets, rust, feats=None, names=None, never_with=None, disp=None):
-    """The errors of the generated functions `targets`, given the production
-    Rust code `rust`, the features of each function `feats` (`features`),
-    the other names of functions `names` (`all_aliases`), the
-    implementations never chosen with some features (`never_with`, for the
-    generated code `NEVER_WITH`) and the dispatchers `disp` (`dispatchers`)."""
+def check(targets, rust, feats=None, arms=None, tables=None):
+    """The errors of the generated functions `targets`, given the Rust code
+    `rust`, the features of each function `feats` (`features`), the
+    dispatchers' `arms` (`file_arms`) and the functions tables name
+    (`table_functions`)."""
     feats = feats or {}
-    never_with = never_with or {}
-    errors = never_with_errors(targets, feats, never_with)
-    # The identifiers of the Rust code: `name` is one exactly when
-    # `\bname\b` matches it, and a set answers without scanning the code.
     rust_words = set(re.findall(r"\w+", rust))
+    errors = []
     for target, fns in sorted(targets.items()):
-        al = (names or {}).get(target, {})
-        # A use of a dispatcher is a use of each function it calls, and a use
-        # of another name of a function a use of it.
-        words = set(rust_words)
-        for d, called_by in (disp or {}).get(target, {}).items():
-            if d in words:
-                words |= called_by
-        words |= {canon for name, canon in al.items() if name in words}
-        var = variants(fns)
         tfeats = feats.get(target, {})
-        never = never_with.get(target, {})
-        errors += best_callees(target, fns, var, tfeats)
+        tarms = (arms or {}).get(target, {})
+        implied = IMPLIED.get(target, {})
+        var = variants(fns)
+        root = {n: root_of(var, n) for n in fns}
+        family = {}
+        for n, r in root.items():
+            family.setdefault(r, set()).add(n)
 
-        def unchosen(name, variant):
-            """Whether no CPU chooses `name`'s variant for the callee's
-            `variant`: one would need `name`'s features and `variant`'s, which
-            include all of a set the Rust code never chooses `name`, or an
-            implementation it calls, with."""
-            needs = tfeats.get(name, frozenset()) | tfeats.get(variant, frozenset())
-            return any(frozenset(x) <= needs for c in {name} | fns[name][1] for x in never.get(c, ()))
-        by_base = {}
-        for v, (base, suffix) in var.items():
-            by_base.setdefault(base, []).append(suffix)
-        # Each function by its root and the set of suffixes it composes.
-        composed = {}
-        for name in fns:
-            root, suffixes = chain(var, name)
-            composed.setdefault((root, tuple(sorted(suffixes))), name)
-        callers = {}
-        for name, (_, callees) in fns.items():
-            for c in callees:
-                callers.setdefault(c, set()).add(name)
+        def detected(fs):
+            """The features a CPU reported to have `fs` has."""
+            return frozenset(fs).union(*(implied.get(f, ()) for f in fs))
 
-        def avoided(name, callee, variant):
-            """Whether a CPU with `variant`'s features runs `name` without
-            `callee`: some implementation of `name` but its baseline needs no
-            more features, and each that needs no more calls none of
-            `callee`'s implementations (CBC encryption, whose AES-NI code
-            calls no `vg_aes_encrypt_blocks` and needs no VAES)."""
-            root = chain(var, name)[0]
-            impls = {callee} | {f"{callee}_{s}" for s in by_base.get(callee, [])}
-            limit = tfeats.get(variant, frozenset())
-            runs = [
-                n for n in fns
-                if n != root and chain(var, n)[0] == root
-                and tfeats.get(n, frozenset()) <= limit
-            ]
-            return bool(runs) and all(not impls & fns[n][1] for n in runs)
+        def needs(name, consts=(), extra=()):
+            """The features `name` needs, or an arm of its with `consts`'s and `extra`."""
+            return detected(tfeats.get(name, frozenset()).union(
+                *(tfeats.get(c, frozenset()) for c in consts), extra))
 
-        def variants_for(name, suffix):
-            """`name`'s variants for an implementation with `suffix`: the one
-            adding `_<suffix>`, or those adding it qualified by a tag."""
-            root, suffixes = chain(var, name)
-            want = composed.get((root, tuple(sorted(suffixes + [suffix]))))
-            if want is not None:
-                return [want]
-            return [
-                n
-                for (r, sufs), n in sorted(composed.items())
-                if r == root and qualified_extension(sufs, suffixes, suffix)
-            ]
+        def order(auto):
+            """What `auto` tries, then its base, or `None` without one."""
+            if auto not in tarms:
+                return None
+            tried, base = tarms[auto]
+            return [fn for fn, *_ in tried] + [base]
 
-        def unneeded(name, suffix, seen=frozenset()):
-            """Whether nothing would call a variant of `name` for `suffix`: the
-            Rust code does not use `name`, and every function calling it has a
-            variant for `suffix` that does not (or, without one, is itself a
-            function whose variant nothing would call)."""
-            if name in seen or not callers.get(name) or name in words:
-                return False
-            for h in callers[name]:
-                found = variants_for(h, suffix)
-                if found:
-                    if all(name in fns[v][1] for v in found):
-                        return False
-                elif not unneeded(h, suffix, seen | {name}):
-                    return False
-            return True
+        def chosen(auto, fs):
+            """What the dispatcher `auto` runs on a CPU with the features `fs`."""
+            tried, base = tarms[auto]
+            for fn, consts, extra, by_target in tried:
+                if not by_target and needs(fn, consts, extra - {"*"}) <= fs and (
+                        "*" not in extra or fs):
+                    return fn
+            return base
 
-        for caller, (_, callees) in sorted(fns.items()):
-            root, suffixes = chain(var, caller)
-            for callee in sorted(callees):
-                for suffix in sorted(by_base.get(callee, [])):
-                    if var.get(caller, (None,))[0] == callee:
-                        continue  # a variant calling its baseline
-                    if suffix in suffixes:
-                        continue  # already the variant
-                    variant = f"{callee}_{suffix}"
-                    found = variants_for(caller, suffix)
-                    if not found:
-                        if (
-                            unneeded(caller, suffix)
-                            or unchosen(caller, variant)
-                            or avoided(caller, callee, variant)
-                        ):
+        def best(r, c, fs):
+            """`None` if `c`, an implementation of `r`, is the one to call on a
+            CPU with `fs`, else the one that is."""
+            ranked = order(r + "_auto")
+            if ranked is not None and c in ranked:
+                b = chosen(r + "_auto", fs)
+                return None if ranked.index(c) <= ranked.index(b) else b
+            runs = [d for d in family[r] if needs(d) <= fs and not by_target(d)]
+            better = [d for d in runs if needs(c) < needs(d)]
+            return min(better) if better else None
+
+        def closure(name):
+            """`name` and every function it calls, directly or through others."""
+            seen, todo = set(), [name]
+            while todo:
+                n = todo.pop()
+                if n in seen or n not in fns:
+                    continue
+                seen.add(n)
+                todo += fns[n][1]
+            return seen
+
+        # The suffixes the ranking chooses by the compilation target, whose
+        # implementations are not better elsewhere.
+        by_target_suffixes = set()
+        for tried, _ in tarms.values():
+            for fn, _, _, by_target in tried:
+                if by_target and fn in var:
+                    n = fn
+                    while n in var:
+                        by_target_suffixes |= set(var[n][1].split("_"))
+                        n = var[n][0]
+
+        def by_target(name):
+            """Whether a suffix `name` adds is one the ranking chooses by target."""
+            n = name
+            while n in var:
+                if set(var[n][1].split("_")) & by_target_suffixes:
+                    return True
+                n = var[n][0]
+            return False
+
+        reported = set()
+        for auto, (tried, base) in sorted(tarms.items()):
+            impls = [(fn, needs(fn, consts, extra - {"*"})) for fn, consts, extra, by_target in tried
+                     if not by_target] + [(base, needs(base))]
+            sets = set()
+            for g, fg in impls:
+                if g not in fns:
+                    continue
+                sets.add(fg)
+                for n in closure(g):
+                    for v in family[root[n]]:
+                        sets.add(detected(fg | needs(v)))
+            for fs in sorted(sets, key=sorted):
+                start = chosen(auto, fs)
+                seen, todo = set(), [(start, (start,))]
+                while todo:
+                    x, path = todo.pop()
+                    if x in seen or x not in fns:
+                        continue
+                    seen.add(x)
+                    for c in sorted(fns[x][1]):
+                        if c not in fns:
                             continue
-                        errors.append(
-                            f"{target}: {caller} calls {callee}, which has the variant "
-                            f"{variant}, but there is no {caller}_{suffix} (with the same "
-                            f"signature), calling {variant} or none of {callee}'s "
-                            f"implementations: make {caller} generic over the "
-                            f"implementations of {callee} (see CLAUDE.md)"
-                        )
-                    elif len(found) == 1 and callee in fns[found[0]][1]:
-                        errors.append(
-                            f"{target}: {found[0]}, the variant of {caller} for {variant}, "
-                            f"calls the baseline {callee}: it must call {variant} (or none of "
-                            f"{callee}'s implementations) instead"
-                        )
-                    elif all(callee in fns[name][1] for name in found):
-                        errors.append(
-                            f"{target}: {', '.join(found)} all call the baseline {callee}: "
-                            f"the variant of {caller} for {variant} must call {variant} "
-                            f"(or none of {callee}'s implementations) instead"
-                        )
-        called = set().union(*(c for _, c in fns.values())) if fns else set()
-        called |= {canon for name, canon in al.items() if name in called}
+                        b = best(root[c], c, fs) if len(family[root[c]]) > 1 else None
+                        if b is not None and (x, c, b) not in reported:
+                            reported.add((x, c, b))
+                            errors.append(
+                                f"{target}: on a CPU with {', '.join(sorted(fs)) or 'no feature'}, "
+                                f"{auto} runs {' -> '.join(path)}, which calls {c}, but {b} "
+                                f"runs there and is better: make {x}'s function generic over "
+                                f"the implementations of {root[c]} (see CLAUDE.md)")
+                        todo.append((c, path + (c,)))
+
+        reached = set(tables.get(target, set())) if tables else set()
+        reached |= {n for n in fns if n in rust_words}
+        for auto in tarms:
+            reached |= set(order(auto))
+        todo = list(reached)
+        while todo:
+            n = todo.pop()
+            for c in fns.get(n, ((), ()))[1]:
+                if c not in reached:
+                    reached.add(c)
+                    todo.append(c)
         for name in sorted(var):
-            if name not in called and name not in words:
+            if name not in reached:
                 errors.append(
-                    f"{target}: the variant {name} is neither called by another generated "
-                    f"function nor used by the Rust code in src/ (outside tests): "
-                    f"dispatch to it where {var[name][0]} is used, or stop emitting it"
-                )
-    return errors
-
-
-def best_callees(target, fns, var, feats):
-    """The errors of "Callers reach the best callee", for one target."""
-    def need(name):
-        return feats.get(name, frozenset())
-
-    family = {}
-    for name in fns:
-        family.setdefault(chain(var, name)[0], []).append(name)
-    errors, seen = [], set()
-    for caller, (_, callees) in sorted(fns.items()):
-        root = chain(var, caller)[0]
-        for callee in sorted(callees):
-            if callee not in fns:
-                continue
-            croot = chain(var, callee)[0]
-            if croot == root:
-                continue  # a variant calling its baseline
-            for better in sorted(family[croot]):
-                if not need(callee) < need(better) <= need(caller) or (root, better) in seen:
-                    continue
-                if any(
-                    any(f in fns[h][1] and need(f) >= need(better) for f in family[croot])
-                    for h in family[root]
-                ):
-                    continue
-                seen.add((root, better))
-                errors.append(
-                    f"{target}: {caller} (features {', '.join(sorted(need(caller))) or 'none'}) "
-                    f"calls {callee}, but no implementation of {root} calls {better}, which "
-                    f"needs only features {caller} has ({', '.join(sorted(need(better)))}): "
-                    f"call it from the implementation for those features"
-                )
+                    f"{target}: no dispatcher, table, generated function or Rust code reaches "
+                    f"the variant {name}: no CPU runs it, so stop emitting it")
     return errors
 
 
 def unread(srcs):
-    """Each generated file's naked functions, other names and `_FEATURES`
-    constants that `bodies`, `aliases` and `features` do not read: a change
-    to how the emitter writes them must not leave them unchecked, and the
-    check passing."""
+    """Each generated file's naked functions, other names, dispatchers and
+    `_FEATURES` constants that `bodies`, `aliases`, `file_arms` and
+    `features` do not read: a change to how the emitter writes them must not
+    leave them unchecked, and the check passing."""
     errors = []
     for target, text in srcs:
         for what, total, read in [
@@ -745,6 +390,8 @@ def unread(srcs):
             ("other names", text.count(" use self::vg_"), len(aliases(text))),
             ("dispatchers' other names", text.count(" use crate::"), len(SOLE.findall(text))),
             ("dispatchers", text.count("\npub unsafe fn vg_"), len(DISPATCHER.findall(text))),
+            ("dispatchers' arms", text.count("return unsafe { crate::"),
+             sum(len(t) for t, _ in file_arms(text).values())),
             ("_FEATURES constants", text.count("_FEATURES: "), len(FEATURES.findall(text))),
         ]:
             if read < total:
@@ -754,15 +401,15 @@ def unread(srcs):
 
 def main():
     srcs = sources()
+    rust = "\n".join(p.read_text() for p in sorted((ROOT / "src").rglob("*.rs")))
     errors = unread(srcs) + check(
-        functions(srcs), production_rust(ROOT / "src"), features(srcs), all_aliases(srcs), NEVER_WITH,
-        disp=dispatchers(srcs)
-    )
+        functions(srcs), rust, features(srcs), per_target(srcs, file_arms),
+        per_target(srcs, table_functions))
     for e in errors:
         print(e, file=sys.stderr)
     if errors:
         return 1
-    print("variants reach every caller, and every variant is used")
+    print("every caller runs the best callee, and every variant is reached")
     return 0
 
 
