@@ -65,7 +65,7 @@ def artifacts : List Artifact := [
     verified := Proof.AesGcm.sealGather_keyed GatherSplit.verified },
   Spec.Gcm.openToApi.artifact PPC64LE.target {
     code := Impl.AesGcm.PPC64LE.OpenTo.openTo
-    stack := 2848
+    stack := 2720
     verified := Proof.AesGcm.openTo_keyed OpenTo.openTo_verified }]
 
 end VG.Artifacts.AesGcm.PPC64LE
