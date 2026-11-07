@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToS.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToSplit.Fn
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenTo.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToS.Fn
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToSplit.Fn
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OpenTo.CT
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Impl.AesGcm.X86_64.OpenTo
-meta import VerifiedGarbage.Impl.AesGcm.X86_64.OpenToS
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.OpenToSplit
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Range
@@ -39,11 +39,11 @@ both runs take the same branches after it (`after_rel`).
 
 set_option linter.unusedSimpArgs false
 
-namespace VG.Proof.AesGcm.X86_64.OpenToS
+namespace VG.Proof.AesGcm.X86_64.OpenToSplit
 
 open VG VG.X86_64 VG.X86_64.RegUpd
 open VG.Impl.AesGcm.X86_64.OpenTo (frameRegs wipeArgs wipeBody wipe after)
-open VG.Impl.AesGcm.X86_64.OpenToS (callArgs openToS)
+open VG.Impl.AesGcm.X86_64.OpenToSplit (callArgs openToSplit)
 open VG.Proof.AesGcm.X86_64.OpenTo (K Nn Ad Src L Dst Tg res kR nR aR sR dR tR toLeak rel_frame test_taint
   wipeArgs_taint zeroLoop_taint)
 open VG.Proof.ChaCha20Poly1305.X86_64.Gather (Eq2 TT rel_seq rel_regs rel_skip rel_ite ct_of)
@@ -175,21 +175,21 @@ theorem after_rel {z₁ z₂ : State} (hz₁ : Called σ₁ z₁) (hz₂ : Calle
 
 end
 
-theorem openToS_rel {M : CtxMode} (F : OpenSplitFn M) {σ₁ σ₂ : State} (p₁ : ToPreS M σ₁)
-    (p₂ : ToPreS M σ₂) (hq : toPubS σ₁ σ₂) : RelCT isa (Eq2 σ₁ σ₂) (openToS F.fn) TT := by
+theorem openToSplit_rel {M : CtxMode} (F : OpenSplitFn M) {σ₁ σ₂ : State} (p₁ : ToPreS M σ₁)
+    (p₂ : ToPreS M σ₂) (hq : toPubS σ₁ σ₂) : RelCT isa (Eq2 σ₁ σ₂) (openToSplit F.fn) TT := by
   have h₁ := lay p₁
   have h₂ := lay p₂
   have hP := hPe hq
   refine rel_frame hq.1.2.2.2.2.2.2.1 ?_
   -- The call's arguments.
-  refine rel_seq (rel_regs [.rsp] (by simp only [List.mem_singleton, forall_eq, OpenToS.hP, hP]) callArgs_taint)
+  refine rel_seq (rel_regs [.rsp] (by simp only [List.mem_singleton, forall_eq, OpenToSplit.hP, hP]) callArgs_taint)
     (ready_wp h₁ (pushed_inFrame h₁)) (ready_wp h₂ (pushed_inFrame h₂)) fun r₁ r₂ hr₁ hr₂ => ?_
   -- The call, by its callee's contract, then what follows it.
   exact rel_seq (call_rel h₁ h₂ hq F hr₁ hr₂) (called_wp F h₁ hr₁) (called_wp F h₂ hr₂)
     fun z₁ z₂ hz₁ hz₂ => after_rel h₁ h₂ hq hz₁ hz₂
 
-theorem openToS_ct {M : CtxMode} (F : OpenSplitFn M) :
-    ConstantTime isa (toSK M).pre (toSK M).pub (openToS F.fn) :=
-  ct_of fun _ _ p₁ p₂ hq => openToS_rel F p₁ p₂ hq
+theorem openToSplit_ct {M : CtxMode} (F : OpenSplitFn M) :
+    ConstantTime isa (toSK M).pre (toSK M).pub (openToSplit F.fn) :=
+  ct_of fun _ _ p₁ p₂ hq => openToSplit_rel F p₁ p₂ hq
 
-end VG.Proof.AesGcm.X86_64.OpenToS
+end VG.Proof.AesGcm.X86_64.OpenToSplit

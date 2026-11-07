@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Lit
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Lit
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchFrom.Lit
-meta import VerifiedGarbage.Proof.Gcm.X86_64.StitchFrom.Lit
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchToDec.Lit
+meta import VerifiedGarbage.Proof.Gcm.X86_64.StitchToDec.Lit
 import VerifiedGarbage.Impl.Gcm.X86_64
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
@@ -72,7 +72,7 @@ def stitch : Proof.AesGcm.X86_64.StitchPart := by
           ⟨?_, ?_⟩⟩)
         pieceR := (some ⟨⟨?_, ?_, ?_, ?_, ?_,
           ⟨?_, ?_⟩⟩⟩)
-        pieceFromR := (some ⟨⟨?_, ?_, ?_, ?_, ?_,
+        pieceToDecR := (some ⟨⟨?_, ?_, ?_, ?_, ?_,
           ⟨?_, ?_⟩⟩⟩) } }
   taint_decide_all
 

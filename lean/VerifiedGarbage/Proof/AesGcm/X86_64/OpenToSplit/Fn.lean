@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.AesGcm.X86_64.OpenToS
+public import VerifiedGarbage.Impl.AesGcm.X86_64.OpenToSplit
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenTo.Fn
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Contract
 import VerifiedGarbage.Proof.Framework.Sig
@@ -22,9 +22,9 @@ import VerifiedGarbage.Proof.Aes.X86_64.Lit
 # AES-GCM decryption out of place, in one pass, x86-64: the function
 
 Untrusted: everything here is checked by Lean. The contract the proof of
-`openToS` is written against, for a key context of kind `M` (`toSK M`):
+`openToSplit` is written against, for a key context of kind `M` (`toSK M`):
 `open_to`'s (`OpenTo.toK`), with a working space of 2560 bytes as a seventh
-stack argument, and its proof (`openToS_wp`). It calls an instance of
+stack argument, and its proof (`openToSplit_wp`). It calls an instance of
 `vg_aes_gcm_open_split` for its key context (`OpenSplitFn`), an internal
 function whose contract is `Proof.AesGcm.openSplitX86_64M`. With `B` the
 base of the 152 bytes of stack below the stack pointer (`rsp = B + 152`),
@@ -41,12 +41,12 @@ arguments, the other buffers and the return address stay as they were.
 
 set_option linter.unusedSimpArgs false
 
-namespace VG.Proof.AesGcm.X86_64.OpenToS
+namespace VG.Proof.AesGcm.X86_64.OpenToSplit
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.WriteBytes
 open VG.Impl.AesGcm.X86_64 (at_ imm dstB Fn)
 open VG.Impl.AesGcm.X86_64.OpenTo (frameRegs stArg wipeArgs wipeBody wipe after)
-open VG.Impl.AesGcm.X86_64.OpenToS (callArgs openToS)
+open VG.Impl.AesGcm.X86_64.OpenToSplit (callArgs openToSplit)
 open VG.Proof.AesGcm.X86_64.OpenTo (K R Nn NL Ad AL Src L Dst Tg TL nR aR sR dR tR res kR toPost toLeak
   apart_of_disjoint stArg_ok covers_of_mem add_ofNat_sub_ofNat zeros bytesAt_zeros zeroLoop_ok)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
@@ -77,7 +77,7 @@ abbrev stkR : Region := below (s.gpr .rsp) 152
 
 end
 
-/-- What `openToS` needs, for a key context of kind `M`: `open_to`'s
+/-- What `openToSplit` needs, for a key context of kind `M`: `open_to`'s
 (`OpenTo.ToPre`), with `work`, 2560 bytes apart from the rest. -/
 structure ToPreS (M : CtxMode) (s : State) : Prop where
   rd : s.rd = [kR M s, nR s, aR s, sR s, tR s, argR s]
@@ -126,7 +126,7 @@ structure ToPreS (M : CtxMode) (s : State) : Prop where
 /-- What two runs agree on: the arguments, and whether the tag is right. -/
 def toPubS (s₁ s₂ : State) : Prop := onePub 7 s₁ s₂ ∧ toLeak s₁ = toLeak s₂
 
-/-- `openToS`, for a key context of kind `M`. -/
+/-- `openToSplit`, for a key context of kind `M`. -/
 def toSK (M : CtxMode) : Contract isa where
   pre := ToPreS M
   post := toPost
@@ -739,8 +739,8 @@ theorem body_wp {M : CtxMode} (F : OpenSplitFn M) {s : State} (h : Lay M s) :
   refine WP.seq (WP.mono (ready_wp h (pushed_inFrame h)) fun r hr => ?_)
   exact WP.seq (WP.mono (called_wp F h hr) fun z hz => after_wp h hz)
 
-theorem openToS_wp {M : CtxMode} (F : OpenSplitFn M) {s : State} (hs : ToPreS M s) :
-    WP isa (openToS F.fn) s fun z => abiPreserved s z ∧ toPost s z := by
+theorem openToSplit_wp {M : CtxMode} (F : OpenSplitFn M) {s : State} (hs : ToPreS M s) :
+    WP isa (openToSplit F.fn) s fun z => abiPreserved s z ∧ toPost s z := by
   have h := lay hs
   have hn : 8 * frameRegs.length ≤ (s.gpr .rsp).toNat := by
     have := hs.w₁; simp only [List.length_cons, List.length_nil]; omega
@@ -758,4 +758,4 @@ theorem openToS_wp {M : CtxMode} (F : OpenSplitFn M) {s : State} (hs : ToPreS M 
       at this ⊢
     exact this
 
-end VG.Proof.AesGcm.X86_64.OpenToS
+end VG.Proof.AesGcm.X86_64.OpenToSplit

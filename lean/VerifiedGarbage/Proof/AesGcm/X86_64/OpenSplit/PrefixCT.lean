@@ -70,11 +70,11 @@ theorem mid2D_zero {s : State} (g : G₁ Ctx W SP sl σ s) (h0 : sl / 16 = 0) : 
   · rw [h0, m]; rfl
   · rw [h0, m]; rfl
 
-theorem mid2D_call_wp (T : BlkFromFn M) {s : State} (g : G₂ Ctx W SP D S R sl σ s) :
+theorem mid2D_call_wp (T : BlkToDecFn M) {s : State} (g : G₂ Ctx W SP D S R sl σ s) :
     WP isa (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)) s
       (Mid2D Ctx W SP D S R sl σ) := by
   obtain ⟨he, di, si, dx, cx, r8, r9, r10, r11, ax, m, rd, wr⟩ := g
-  refine WP.mono (preCallFrom_ok h T (q := sl / 16) (by omega_arith) he.rsp rd wr m di si dx cx r8 r9 r10 r11 ax)
+  refine WP.mono (preCallToDec_ok h T (q := sl / 16) (by omega_arith) he.rsp rd wr m di si dx cx r8 r9 r10 r11 ax)
     fun s₃ ⟨cs₃, rd₃, wr₃, fr₃, bl₃, ct₃, y₃⟩ => ⟨he.keep (fun r hr => cs₃ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])) rd₃ wr₃,
@@ -121,7 +121,7 @@ include h h'
 
 /-- The call of `vg_aes_gcm_decrypt_blocks_to`, in two runs: the same public
 arguments. -/
-theorem callD_rel (T : BlkFromFn M) :
+theorem callD_rel (T : BlkToDecFn M) :
     RelCT isa (fun s₁ s₂ => G₂ Ctx W SP D S R sl σ s₁ ∧ G₂ Ctx W SP D S R sl σ' s₂)
       (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)) fun _ _ => True := by
   have hq : 16 * (sl / 16) ≤ sl := Nat.mul_div_le _ _
@@ -144,7 +144,7 @@ theorem callD_rel (T : BlkFromFn M) :
     a0₁, a0₂, a1₁, a1₂, a2₁, a2₂, and_self]
 
 /-- `prefix`'s call, from states with the number of whole blocks in `rax`. -/
-theorem callPartD_rel (T : BlkFromFn M) :
+theorem callPartD_rel (T : BlkToDecFn M) :
     RelCT isa (fun a b => G₀ Ctx W SP sl σ a ∧ G₀ Ctx W SP sl σ' b)
       (.seq (.block SealSplit.preArgs) (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)))
       fun a b => Mid2D Ctx W SP D S R sl σ a ∧ Mid2D Ctx W SP D S R sl σ' b := by
@@ -187,7 +187,7 @@ theorem tailD_rel :
     (fun _ _ g => g) (fun _ g => rest_runs g.1) (fun _ g => rest_runs g.1)).mono (fun _ _ g => g) fun _ _ _ => trivial
 
 /-- `prefix`, in two runs. -/
-theorem prefixD_ct (T : BlkFromFn M) :
+theorem prefixD_ct (T : BlkToDecFn M) :
     RelCT isa (fun a b => a = σ ∧ b = σ') (SealSplit.prefix T.fn) fun _ _ => True := by
   have r15 : ∀ {s₁ s₂ : State}, Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ → Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ →
       ∀ r ∈ [Reg.r15], s₁.gpr r = s₂.gpr r := fun e₁ e₂ r hr => by

@@ -3,7 +3,7 @@ module
 -- separate module: the loop's proof, which needs none of the variants' instances (`Instances.lean`), so that a change to them does not rebuild it
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchFrom
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchToDec
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Base
@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 import VerifiedGarbage.Proof.Framework.Taint
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecFrom
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecToDec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
@@ -40,21 +40,21 @@ Untrusted: everything here is checked by Lean. The loop is the in-place one,
 `rdx` points at the ciphertext, which both the GHASH loads and the XOR read
 and nothing writes, and `r8` holds `dst - src`.
 
-`setupCFrom_ok`: the end of the setup loads `Y` and makes the counter pair
+`setupCToDec_ok`: the end of the setup loads `Y` and makes the counter pair
 and the increment as `Stitch.setupC`, and leaves `src` in `rdx` and
 `dst - src` in `r8`; with the powers stored before it, the state the loop
-starts from (`setupTFrom_ok`, `ReadyFrom`), from which
-`Stitch.decTailM_ok` decrypts (`decTailFrom_ok`), its result the contract
+starts from (`setupTToDec_ok`, `ReadyToDec`), from which
+`Stitch.decTailM_ok` decrypts (`decTailToDec_ok`), its result the contract
 (`DPostM.toDPostTo`).
 
-`decR_okN`: the whole loop, for a prepared key context, given that the
+`decToR_okN`: the whole loop, for a prepared key context, given that the
 powers it loads give the products of a decryption body (`PowFinD`), which
 `Stitch.finD` proves where the field is imported (`AesGcm/X86_64/Instances.lean`).
 -/
 
 @[expose] public section
 
-namespace VG.Proof.Gcm.X86_64.StitchFrom
+namespace VG.Proof.Gcm.X86_64.StitchToDec
 
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch (SPreTo DPostTo CtxMode AInvM DInvM DPostM LPre sp op nb pp cp yp hk y₀ dp pR
@@ -63,15 +63,15 @@ open VG.Proof.Gcm.X86_64.StitchZTo (blocks_ctr32To)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
 open VG.Impl.Gcm.X86_64.Stitch (dbody ordD storeCtr storeY storesK pregs)
 open VG.Impl.Gcm.X86_64.Vpclmul (preg16)
-open VG.Impl.Gcm.X86_64.StitchFrom (setupCFrom)
+open VG.Impl.Gcm.X86_64.StitchToDec (setupCToDec)
 open VG.Proof.Gcm.X86_64.Vpclmul (getLsbD_one8)
 open VG.Spec.Gcm (Block blockAt ghashFrom inc32)
 
 /-! ## The setup -/
 
-theorem setupCFrom_ok (s : State) (h0 : ∀ l < 2, s.lane .xmm0 l = revMask)
+theorem setupCToDec_ok (s : State) (h0 : ∀ l < 2, s.lane .xmm0 l = revMask)
     (hy : InRegions s.wr (s.gpr .rcx) 16) (hc : InRegions s.wr (s.gpr .rdx) 16) :
-    WP isa (.block setupCFrom) s fun s' =>
+    WP isa (.block setupCToDec) s fun s' =>
       s'.lane .xmm2 0 = blockAt s.mem (s.gpr .rcx) ∧ s'.lane .xmm2 1 = 0 ∧
       (∀ l < 2, s'.lane .xmm14 l = Nat.repeat inc32 l (blockAt s.mem (s.gpr .rdx))) ∧
       (∀ l < 2, s'.lane .xmm15 l = VG.Proof.Aes.X86_64.Vaes.two) ∧
@@ -87,7 +87,7 @@ theorem setupCFrom_ok (s : State) (h0 : ∀ l < 2, s.lane .xmm0 l = revMask)
   have m0 := h0 0 (by decide)
   simp only [State.lane, ite_true] at m0
   apply WP.of_runBlock
-  simp only [setupCFrom, reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec,
+  simp only [setupCToDec, reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec,
     execAlu, readSrc, arithFlags, State.setFlags, isa, State.setV, State.setReg, State.load128, State.lane,
     VG.Proof.Gcm.X86_64.Pclmul.ea_at, hy', hc', VBinOp.sse, getLsbD_one8, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left', m0]
@@ -106,7 +106,7 @@ theorem setupCFrom_ok (s : State) (h0 : ∀ l < 2, s.lane .xmm0 l = revMask)
   · rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> simp [h2, h13, h14, h15]
 
 /-- The state the loop starts from. -/
-structure ReadyFrom (s₀ : State) (P : Nat → Nat → Block) (s : State) : Prop where
+structure ReadyToDec (s₀ : State) (P : Nat → Nat → Block) (s : State) : Prop where
   a : AInvM true s₀ 0 s
   rdx : s.gpr .rdx = dp s₀
   r8 : s.gpr .r8 = op s₀ - dp s₀
@@ -119,10 +119,10 @@ structure ReadyFrom (s₀ : State) (P : Nat → Nat → Block) (s : State) : Pro
 
 /-- The setup after the powers: they are stored in the working space, then
 `Y`, the counter, the increment and the pointers. -/
-theorem setupTFrom_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {s₁ : State}
+theorem setupTToDec_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {s₁ : State}
     (l0 : ∀ l < 2, s₁.lane .xmm0 l = revMask) (l1 : ∀ l < 2, s₁.lane .xmm1 l = poly)
     (g₁ : ∀ r, r ≠ .rax → s₁.gpr r = s₀.gpr r) (m₁ : s₁.mem = s₀.mem) (rd₁ : s₁.rd = s₀.rd) (wr₁ : s₁.wr = s₀.wr) :
-    WP isa (.block (storesK .r11 pregs 0 ++ setupCFrom)) s₁ (ReadyFrom s₀ fun k l => s₁.lane (preg16 k) l) := by
+    WP isa (.block (storesK .r11 pregs 0 ++ setupCToDec)) s₁ (ReadyToDec s₀ fun k l => s₁.lane (preg16 k) l) := by
   have hwp := hp.wrap_p
   have hr11 : s₁.gpr .r11 = pp s₀ := g₁ _ (by decide)
   rw [WP.block_append_iff]
@@ -134,7 +134,7 @@ theorem setupTFrom_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {s₁ : 
     simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩
   have hp₂ : ∀ {p : Addr}, Region.Disjoint ⟨p, 16⟩ (pR s₀) → blockAt s₂.mem p = blockAt s₀.mem p :=
     fun hd => by rw [blockAt_outP fr hd]
-  refine WP.mono (setupCFrom_ok s₂ (fun l hl => by rw [l₂]; exact l0 l hl)
+  refine WP.mono (setupCToDec_ok s₂ (fun l hl => by rw [l₂]; exact l0 l hl)
     (by rw [wr₂, wr₁, g₂, g₁ _ (by decide)]; exact hp.y_in)
     (by rw [wr₂, wr₁, g₂, g₁ _ (by decide)]; exact hp.c_in))
     fun s₃ ⟨y0, y1, c14, c15, r10, rax, rdx, r8, gk, lk, m₃, rd₃, wr₃⟩ => ?_
@@ -163,8 +163,8 @@ theorem _root_.VG.Proof.Gcm.X86_64.Stitch.DPostM.toDPostTo {s₀ s : State} (h :
   ⟨blocks_ctr32To h.data, h.ctr, h.y, h.frame, fun r h1 h2 h3 h4 h5 => h.gpr r h1 h2 (fun _ => h3) h4 h5, h.rd, h.wr⟩
 
 /-- The decryption after the setup. -/
-theorem decTailFrom_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block}
-    (hf : FinOk ordD (hk s₀) P) {s₁ : State} (hR : ReadyFrom s₀ P s₁) :
+theorem decTailToDec_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block}
+    (hf : FinOk ordD (hk s₀) P) {s₁ : State} (hR : ReadyToDec s₀ P s₁) :
     WP isa (.seq (.loop (dbody true) .ae) (.block (storeCtr ++ storeY))) s₁ (DPostTo s₀) :=
   WP.mono (Stitch.decTailM_ok hp.toM hp.nb16 hm hf
     ⟨hR.a, by rw [hR.rdx]; simp, by rw [hR.gpr _ (by decide) (by decide) (by decide) (by decide)]; simp, hR.rax,
@@ -180,19 +180,19 @@ def PowFinD : Prop :=
   ∀ H : Block, FinOk ordD H fun k l => StitchZP.hInvF (Spec.Gcm.hpow H (16 - 2 * k - l))
 
 /-- The setup: the state the loop starts from, with the prepared powers. -/
-theorem setupFrom_ok {s₀ : State} {np : Nat} {hn : 8 ≤ np ∧ np ≤ 24} (hp : SPreTo (CtxMode.preparedN np hn) s₀)
+theorem setupToDec_ok {s₀ : State} {np : Nat} {hn : 8 ≤ np ∧ np ≤ 24} (hp : SPreTo (CtxMode.preparedN np hn) s₀)
     (h8 : 8 ≤ np) :
-    WP isa (.block Impl.Gcm.X86_64.StitchFrom.setup) s₀
-      (ReadyFrom s₀ fun k l => StitchZP.hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2 * k - l))) := by
-  rw [Impl.Gcm.X86_64.StitchFrom.setup, List.append_assoc, WP.block_append_iff]
+    WP isa (.block Impl.Gcm.X86_64.StitchToDec.setup) s₀
+      (ReadyToDec s₀ fun k l => StitchZP.hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2 * k - l))) := by
+  rw [Impl.Gcm.X86_64.StitchToDec.setup, List.append_assoc, WP.block_append_iff]
   refine WP.mono (StitchZRTo.setupGPTo_ok hp h8) fun s₁ ⟨l0, l1, pw, g₁, m₁, rd₁, wr₁⟩ => ?_
-  refine WP.mono (setupTFrom_ok hp l0 l1 g₁ m₁ rd₁ wr₁) fun s hR => ?_
+  refine WP.mono (setupTToDec_ok hp l0 l1 g₁ m₁ rd₁ wr₁) fun s hR => ?_
   exact { hR with pw := fun k hk l hl => by rw [hR.pw k hk l hl, pw k hk l hl] }
 
 /-- The out-of-place decryption loop, for a prepared key context, for any
 number of blocks from 16 on that is a multiple of 16. -/
-theorem decR_okN (hf : PowFinD) (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) (h8 : 8 ≤ np := by decide) :
-    Stitch.StitchFromOkM (CtxMode.preparedN np hn) Impl.Gcm.X86_64.StitchFrom.decR := fun _ hp hm =>
-  WP.seq (WP.mono (setupFrom_ok hp h8) fun _ hR => decTailFrom_ok hp hm (hf _) hR)
+theorem decToR_okN (hf : PowFinD) (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) (h8 : 8 ≤ np := by decide) :
+    Stitch.StitchToDecOkM (CtxMode.preparedN np hn) Impl.Gcm.X86_64.StitchToDec.decToR := fun _ hp hm =>
+  WP.seq (WP.mono (setupToDec_ok hp h8) fun _ hR => decTailToDec_ok hp hm (hf _) hR)
 
-end VG.Proof.Gcm.X86_64.StitchFrom
+end VG.Proof.Gcm.X86_64.StitchToDec

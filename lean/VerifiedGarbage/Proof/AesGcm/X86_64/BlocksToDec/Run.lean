@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksFrom.Contract
-public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksFrom
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksToDec.Contract
+public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksToDec
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Tail
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Stitch
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Copy
@@ -34,7 +34,7 @@ Untrusted: everything here is checked by Lean. As `BlocksTo` proves of
 `vg_aes_gcm_encrypt_blocks_to`, whose code this is, with `Y` continued over
 the ciphertext, read from `src` (`pt`), which nothing writes: `MidD s q k`
 is `BlocksTo.Mid` with that `Y`, which holds after the entry, after the
-out-of-place decryption loop (`mid_of_postFrom`, from `DPostTo`) and after
+out-of-place decryption loop (`mid_of_postToDec`, from `DPostTo`) and after
 `rest`; the blocks left are copied to the output, decrypted there by a call
 of `vg_aes_gcm_decrypt_blocks`, which hashes them as it reads them
 (`blkD_call`), and their GHASH continues that of the first
@@ -45,12 +45,12 @@ of `vg_aes_gcm_decrypt_blocks`, which hashes them as it reads them
 
 set_option linter.unusedSimpArgs false
 
-namespace VG.Proof.AesGcm.X86_64.BlocksFrom
+namespace VG.Proof.AesGcm.X86_64.BlocksToDec
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.BlocksTo VG.WriteBytes
 open VG.Proof.AesGcm.X86_64.BlocksTo
 open VG.Impl.AesGcm.X86_64.Blocks (argCtx argRounds argCtr argY argN)
-open VG.Proof.Gcm.X86_64.Stitch (CtxMode SPreTo DPostTo StitchFromOkM)
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode SPreTo DPostTo StitchToDecOkM)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32 aesWith)
 
 /-- The ciphertext of the first `q` blocks, at `src`. -/
@@ -71,7 +71,7 @@ structure MidD (s : State) (q k : Nat) (st : State) : Prop where
   y : blockAt st.mem (Y s) = ghashFrom (hk s) (y₀ s) (pt s q)
 
 /-- What the function returns with. -/
-def DoneD (s s' : State) : Prop := gprPreserved s s' ∧ Proof.AesGcm.blocksFromPost s s'
+def DoneD (s s' : State) : Prop := gprPreserved s s' ∧ Proof.AesGcm.blocksToDecPost s s'
 
 section
 variable {aligned : Bool} {M : CtxMode} {s : State} (hp : BT M s)
@@ -162,7 +162,7 @@ theorem rest_ok {q : Nat} (hq : q = n s - n s % 16) {st : State} (h : MidD s q 0
       (List.mem_singleton_self _) _ (c 48 (by decide))).writeW (List.mem_singleton_self _) _ (c 40 (by decide))
 
 /-- `MidD` after the out-of-place loops, from what they leave. -/
-theorem mid_of_postFrom {q k : Nat} {s₃ s₄ : State} (hqn : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
+theorem mid_of_postToDec {q k : Nat} {s₃ s₄ : State} (hqn : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
     (hg : ∀ r ∈ BlocksTo.argRegs, s₃.gpr r = s.gpr r) (hcs : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r)
     (h10 : s₃.gpr .r10 = Dst s) (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)))
     (hrd : s₃.rd = s.rd) (hwr : s₃.wr = s.wr) (hkp : Kept s k s₃.mem) (hf₃ : Frame [kR' s] s.mem s₃.mem)
@@ -232,7 +232,7 @@ theorem mid_of_postFrom {q k : Nat} {s₃ s₄ : State} (hqn : q ≤ n s) (h9 : 
     rw [P.gpr r hr'.1 hr'.2.1 hr'.2.2.1 hr'.2.2.2.1 hr'.2.2.2.2]; exact hcs r hr
 
 /-- The interleaved part, from the state after the entry. -/
-theorem stitch_ok {piece : Prog isa} (hpiece : StitchFromOkM M piece)
+theorem stitch_ok {piece : Prog isa} (hpiece : StitchToDecOkM M piece)
     {s₁ : State} (h11 : s₁.gpr .r11 = S s) (h10 : s₁.gpr .r10 = Dst s)
     (hg : ∀ r, r ≠ .r11 → r ≠ .r10 → s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
@@ -265,7 +265,7 @@ theorem stitch_ok {piece : Prog isa} (hpiece : StitchFromOkM M piece)
       have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
       simp only [Gcm.X86_64.Stitch.nb, h9, toNat_ofNat_of_lt (show n s - n s % 16 < 2 ^ 64 by omega)]; omega
     exact WP.mono (hpiece s₃ (BlocksTo.spreTo_of hp (by omega) (by omega) h9 ga h10₃ h11₃ rd₃' wr₃' hf₃) hm) fun s₄ hP =>
-      mid_of_postFrom hp (by omega) h9 ga gc h10₃ h11₃ rd₃' wr₃' hk₃ hf₃ hP
+      mid_of_postToDec hp (by omega) h9 ga gc h10₃ h11₃ rd₃' wr₃' hk₃ hf₃ hP
 
 /-- With nothing left, `MidD` is the end. -/
 theorem done_of {q : Nat} {st : State} (h : MidD s q q st) (h0 : n s - q = 0) : DoneD s st := by
@@ -559,9 +559,9 @@ theorem tail_ok (B : BlkFn M) {q : Nat} {st : State} (h : MidD s q q st) : WP is
 end
 
 theorem decrypt_wp {M : CtxMode} (B : BlkFn M) (aligned : Bool) (st : Option (Prog isa))
-    (hst : ∀ p, st = some p → StitchFromOkM M p) {s : State}
+    (hst : ∀ p, st = some p → StitchToDecOkM M p) {s : State}
     (hpre : Proof.AesGcm.blocksToPreM M s) :
-    WP isa (BlocksFrom.decrypt B.dec st aligned) s (DoneD s) := by
+    WP isa (BlocksToDec.decrypt B.dec st aligned) s (DoneD s) := by
   have hp := BT.ofM hpre
   refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, h10, hg, hk, hf, hrd, hwr⟩ => ?_)
   cases st with
@@ -573,4 +573,4 @@ theorem decrypt_wp {M : CtxMode} (B : BlkFn M) (aligned : Bool) (st : Option (Pr
     exact WP.seq (WP.seq (WP.mono (stitch_ok hp (hst p rfl) h11 h10 hg hk hf hrd hwr) fun st M =>
       WP.mono (rest_ok hp rfl M) fun st' M' => tail_ok hp B M'))
 
-end VG.Proof.AesGcm.X86_64.BlocksFrom
+end VG.Proof.AesGcm.X86_64.BlocksToDec

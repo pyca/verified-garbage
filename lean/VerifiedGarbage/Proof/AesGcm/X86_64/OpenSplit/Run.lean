@@ -265,9 +265,9 @@ abbrev OSPost (s : State) (Ctx W SP Np A D S T : Addr) (nl al n t : Nat) (s' : S
       (bytesAt s.mem A al) (bytesAt s.mem T t) D n s'
 
 /-- The code of `open_split` after the tag length is checked. -/
-abbrev midS (c : Callees) (fFrom : Fn) : Prog isa :=
+abbrev midS (c : Callees) (fToDec : Fn) : Prog isa :=
   .seq (oneAad c)
-  (.seq (SealSplit.prefix fFrom)
+  (.seq (SealSplit.prefix fToDec)
   (.seq (.block OpenSplit.tagLen)
   (.seq (oneTag c uO)
   (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
@@ -308,9 +308,9 @@ structure FrontS (M : CtxMode) (s₀ : State) (Ctx W SP Np A D S Tp : Addr) (nl 
   ret : s.mem.readW SP 64 = s₀.mem.readW SP 64
 
 /-- The code of `open_split` from the additional data to the comparison. -/
-abbrev frontS (c : Callees) (fFrom : Fn) : Prog isa :=
+abbrev frontS (c : Callees) (fToDec : Fn) : Prog isa :=
   .seq (oneAad c)
-  (.seq (SealSplit.prefix fFrom)
+  (.seq (SealSplit.prefix fToDec)
   (.seq (.block OpenSplit.tagLen)
   (.seq (oneTag c uO)
   (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
@@ -322,7 +322,7 @@ abbrev frontS (c : Callees) (fFrom : Fn) : Prog isa :=
 comparison: `J₀` and the additional data, the whole blocks decrypted from
 `src` to `dst` and the bytes left copied, and the tag of the ciphertext
 compared with the received one. -/
-theorem frontS_ok (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M) {s₀ s₁ : State}
+theorem frontS_ok (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToDecFn M) {s₀ s₁ : State}
     {Ctx W SP Np A D S Tp : Addr} {nl al n t R : Nat}
     (C : OSCtx s₀ M.len Ctx W SP Np A D S Tp nl al n t) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
     (E : OneEntry s₀ Ctx W SP A D n s₁) (hS₁ : s₁.mem.readW (W + BitVec.ofNat 64 224) 64 = S)
@@ -642,7 +642,7 @@ theorem saved_crFrame {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {s : State} {D 
 
 /-- `open_split` after the entry, for a tag length it allows: `frontS`, then
 the bytes left decrypted if the tags match. -/
-theorem midS_ok (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M) {s₀ s₁ : State}
+theorem midS_ok (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToDecFn M) {s₀ s₁ : State}
     {Ctx W SP Np A D S Tp : Addr} {nl al n t : Nat}
     (C : OSCtx s₀ M.len Ctx W SP Np A D S Tp nl al n t) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
     (E : OneEntry s₀ Ctx W SP A D n s₁) (hS₁ : s₁.mem.readW (W + BitVec.ofNat 64 224) 64 = S)
@@ -700,7 +700,7 @@ theorem midS_ok (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M) {s�
       exact ax₇
 
 /-- `vg_aes_gcm_open_split`, for a key context of kind `M`. -/
-theorem openSplitM_wp (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M) {s : State}
+theorem openSplitM_wp (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToDecFn M) {s : State}
     (hp : (Proof.AesGcm.openSplitX86_64M M).pre s) :
     WP isa (OpenSplit.openSplit (v.withBlk B) T.fn) s
       fun s' => gprPreserved s s' ∧ (Proof.AesGcm.openSplitX86_64M M).post s s' := by

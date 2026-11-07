@@ -3,7 +3,7 @@ module
 -- separate module: the proof, which needs none of the variants' instances (`Instances.lean`), so that a change to them does not rebuild it
 
 public import VerifiedGarbage.Proof.AesGcm.ScratchOpenTo
-public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToS.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToSplit.CT
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16
@@ -22,25 +22,25 @@ import VerifiedGarbage.Proof.Aes.X86_64.Lit
 /-!
 # AES-GCM decryption out of place, in one pass, x86-64: `Verified`
 
-Untrusted: everything here is checked by Lean. `openToS` meets the contracts
+Untrusted: everything here is checked by Lean. `openToSplit` meets the contracts
 of `Proof/AesGcm/RoundsTo.lean` for prepared key contexts with a working
 space appended (`Proof/AesGcm/ScratchOpenTo.lean`) and 152 bytes of stack
 (its frame of 88, the call's return address and the 56 bytes of
 `vg_aes_gcm_open_split`), and so, in a frame of 2624 bytes holding its
 working space (`Verified.stackArgScratch`), those contracts with 2776 bytes
-of stack (`openToSPrepared_framed`). `openToL` chooses on entry between
+of stack (`openToSplitPrepared_framed`). `openToSel` chooses on entry between
 `open_to` by a copy (`OpenTo.openToPrepared_verified`, 2728 bytes) and that
 frame (`Verified.entryBranch`): the comparison of `len` with the threshold
 writes only `rax` and the flags, which no contract reads (`Same`), and leaks
 only the address of `len`; the branch depends only on `len`, which is public
-(`openToLPrepared_verified`, `openToLPrepared16_verified`).
+(`openToSelPrepared_verified`, `openToSelPrepared16_verified`).
 -/
 
 @[expose] public section
 
 set_option linter.unusedSimpArgs false
 
-namespace VG.Proof.AesGcm.X86_64.OpenToS
+namespace VG.Proof.AesGcm.X86_64.OpenToSplit
 
 open VG VG.X86_64 VG.X86_64.RegUpd
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
@@ -77,12 +77,12 @@ theorem sx_ofNat {n : Nat} (h : n < 2 ^ 31) : (BitVec.ofNat 32 n).signExtend 64 
 /-- The comparison of `len` with `thr`. -/
 theorem entry_run {thr : Nat} (hT : thr < 2 ^ 31) (s : State)
     (hin : InRegions (s.rd ++ s.wr) (stackArgAddr s 1) 8) :
-    ∃ u, execBlock isa (Impl.AesGcm.X86_64.OpenToS.cmpLen thr) s = some (u, [.addr (stackArgAddr s 1)]) ∧
+    ∃ u, execBlock isa (Impl.AesGcm.X86_64.OpenToSplit.cmpLen thr) s = some (u, [.addr (stackArgAddr s 1)]) ∧
       (∀ r, r ≠ .rax → u.gpr r = s.gpr r) ∧ u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.mxcsr = s.mxcsr ∧
       eval .ae u = some (decide (thr ≤ (stackArg s 1).toNat)) := by
   have ea : s.ea (Impl.AesGcm.X86_64.at_ .rsp 16) = stackArgAddr s 1 := rfl
   refine ⟨?u, ?h1, ?h2, ?h3, ?h4, ?h5, ?h6, ?h7⟩
-  case h1 => simp [execBlock, Impl.AesGcm.X86_64.OpenToS.cmpLen, exec, readSrc, ea, hin, addrs, srcAddrs,
+  case h1 => simp [execBlock, Impl.AesGcm.X86_64.OpenToSplit.cmpLen, exec, readSrc, ea, hin, addrs, srcAddrs,
     State.load64, execAlu]; rfl
   case h3 => rfl
   case h4 => rfl
@@ -96,32 +96,32 @@ theorem entry_run {thr : Nat} (hT : thr < 2 ^ 31) (s : State)
 
 /-! ## The code -/
 
-theorem openToS_mx (f : Impl.AesGcm.X86_64.Fn) (h : f.code.allInstrs (fun i => !loadsMxcsr i) = true) :
-    (Impl.AesGcm.X86_64.OpenToS.openToS f).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [Impl.AesGcm.X86_64.OpenToS.openToS, Impl.AesGcm.X86_64.OpenToS.callArgs,
+theorem openToSplit_mx (f : Impl.AesGcm.X86_64.Fn) (h : f.code.allInstrs (fun i => !loadsMxcsr i) = true) :
+    (Impl.AesGcm.X86_64.OpenToSplit.openToSplit f).allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [Impl.AesGcm.X86_64.OpenToSplit.openToSplit, Impl.AesGcm.X86_64.OpenToSplit.callArgs,
     Impl.AesGcm.X86_64.OpenTo.after, Impl.AesGcm.X86_64.OpenTo.wipe, Code.allInstrs, h, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
-theorem openToS_spAll (f : Impl.AesGcm.X86_64.Fn) (h : f.code.all (fun i => !X86_64.isa.writesSp i) = true) :
-    (Impl.AesGcm.X86_64.OpenToS.openToS f).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [Impl.AesGcm.X86_64.OpenToS.openToS, Impl.AesGcm.X86_64.OpenToS.callArgs,
+theorem openToSplit_spAll (f : Impl.AesGcm.X86_64.Fn) (h : f.code.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (Impl.AesGcm.X86_64.OpenToSplit.openToSplit f).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [Impl.AesGcm.X86_64.OpenToSplit.openToSplit, Impl.AesGcm.X86_64.OpenToSplit.callArgs,
     Impl.AesGcm.X86_64.OpenTo.after, Impl.AesGcm.X86_64.OpenTo.wipe, Code.all, h, Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem openToS_xdepth (f : Impl.AesGcm.X86_64.Fn) (h : f.code.x86_64Depth ≤ 56) :
-    (Impl.AesGcm.X86_64.OpenToS.openToS f).x86_64Depth ≤ 152 := by
-  simp only [Impl.AesGcm.X86_64.OpenToS.openToS, Impl.AesGcm.X86_64.OpenToS.callArgs,
+theorem openToSplit_xdepth (f : Impl.AesGcm.X86_64.Fn) (h : f.code.x86_64Depth ≤ 56) :
+    (Impl.AesGcm.X86_64.OpenToSplit.openToSplit f).x86_64Depth ≤ 152 := by
+  simp only [Impl.AesGcm.X86_64.OpenToSplit.openToSplit, Impl.AesGcm.X86_64.OpenToSplit.callArgs,
     Impl.AesGcm.X86_64.OpenTo.after, Impl.AesGcm.X86_64.OpenTo.wipe, Code.x86_64Depth, X86_64.Instr.frameBytes,
     List.length_cons, List.length_nil, Nat.max_le]
   omega
 
-theorem openToL_spAll (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width) (f fS : Impl.AesGcm.X86_64.Fn)
+theorem openToSel_spAll (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width) (f fS : Impl.AesGcm.X86_64.Fn)
     (h : f.code.all (fun i => !X86_64.isa.writesSp i) = true)
     (hS : fS.code.all (fun i => !X86_64.isa.writesSp i) = true) :
-    (Impl.AesGcm.X86_64.OpenToS.openToL thr w f fS).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [Impl.AesGcm.X86_64.OpenToS.openToL, Code.iteCold, Code.all,
-    X86_64.withStackArgScratch_spSafe (openToS_spAll fS hS), OpenTo.openTo_spAll w f h, Bool.and_true]
+    (Impl.AesGcm.X86_64.OpenToSplit.openToSel thr w f fS).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [Impl.AesGcm.X86_64.OpenToSplit.openToSel, Code.iteCold, Code.all,
+    X86_64.withStackArgScratch_spSafe (openToSplit_spAll fS hS), OpenTo.openTo_spAll w f h, Bool.and_true]
   rfl
 
 /-! ## The contracts with the working space -/
@@ -149,7 +149,7 @@ theorem toPub_prepared {s₁ s₂ : State} (hp : (Proof.AesGcm.openToPreparedScr
   | 6, _ => exact a₆
   | n + 7, h => exact absurd h (by omega)
 
-/-- A state satisfying the precondition of `openToS`: `OpenTo.toSatP`, with
+/-- A state satisfying the precondition of `openToSplit`: `OpenTo.toSatP`, with
 `work` at `0x7000`. -/
 def toSatS : State where
   gpr r := match r with
@@ -179,13 +179,13 @@ theorem prepared_implies :
     (toSK CtxMode.prepared).Implies (Proof.AesGcm.openToPreparedScratchContract X86_64.abi 152) :=
   ⟨fun _ h => toPre_prepared h, fun _ _ _ h => toPost_prepared h, fun _ _ _ _ h => toPub_prepared h, toSatS_pre⟩
 
-/-- `openToS`, calling an instance of `vg_aes_gcm_open_split` for a prepared
+/-- `openToSplit`, calling an instance of `vg_aes_gcm_open_split` for a prepared
 key context, with its working space as an argument. -/
-theorem openToSPrepared_core (F : OpenSplitFn CtxMode.prepared) :
-    Verified X86_64.target (Impl.AesGcm.X86_64.OpenToS.openToS F.fn)
+theorem openToSplitPrepared_core (F : OpenSplitFn CtxMode.prepared) :
+    Verified X86_64.target (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn)
       (Proof.AesGcm.openToPreparedScratchContract X86_64.abi 152) :=
   Verified.of_correct (k := toSK CtxMode.prepared)
-    (fun _ hs => by obtain ⟨t, s', he, ha, hp⟩ := openToS_wp F hs; exact ⟨t, s', he, ha, hp⟩) (openToS_ct F)
+    (fun _ hs => by obtain ⟨t, s', he, ha, hp⟩ := openToSplit_wp F hs; exact ⟨t, s', he, ha, hp⟩) (openToSplit_ct F)
     prepared_implies
 
 /-! ## In its frame -/
@@ -202,16 +202,16 @@ theorem toSatP2776_pre : ∃ s, (Proof.AesGcm.openToPreparedRoundsContract X86_6
     | exact Region.disjoint_of_sep (by decide)
     | exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false]
 
-/-- `openToS` in its frame of 2624 bytes, holding its working space. -/
-theorem openToSPrepared_framed (F : OpenSplitFn CtxMode.prepared) :
+/-- `openToSplit` in its frame of 2624 bytes, holding its working space. -/
+theorem openToSplitPrepared_framed (F : OpenSplitFn CtxMode.prepared) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToS.openToS F.fn))
+      (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn))
       (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openToPreparedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openToPreparedPre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openToRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 152)
-    (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSPrepared_core F)
-    (by decide) (by decide) (by decide) (openToS_spAll F.fn F.spAll) (openToS_xdepth F.fn F.xd)
+    (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSplitPrepared_core F)
+    (by decide) (by decide) (by decide) (openToSplit_spAll F.fn F.spAll) (openToSplit_xdepth F.fn F.xd)
     (Proof.AesGcm.openToPreparedPre_local _) (Proof.AesGcm.openToRoundsPost_local _) toSatP2776_pre
     (hleak := Proof.AesGcm.openToLeak_local _)
 
@@ -336,12 +336,12 @@ theorem pub_narrow {s u s' u' : State} (h : Same s u) (h' : Same s' u')
 
 /-- `vg_aes_gcm_open_to_prepared`: by a copy below `thr` bytes, and in one
 pass from `thr` on. -/
-theorem openToLPrepared_verified (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width)
+theorem openToSelPrepared_verified (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width)
     (F : OpenTo.OpenFn CtxMode.prepared) (FS : OpenSplitFn CtxMode.prepared) (hT : thr < 2 ^ 31 := by decide) :
-    Verified X86_64.target (Impl.AesGcm.X86_64.OpenToS.openToL thr w F.fn FS.fn)
+    Verified X86_64.target (Impl.AesGcm.X86_64.OpenToSplit.openToSel thr w F.fn FS.fn)
       (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776) := by
   have run (s : State) (hs : (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).pre s) :
-      ∃ u, execBlock isa (Impl.AesGcm.X86_64.OpenToS.cmpLen thr) s = some (u, [.addr (stackArgAddr s 1)]) ∧
+      ∃ u, execBlock isa (Impl.AesGcm.X86_64.OpenToSplit.cmpLen thr) s = some (u, [.addr (stackArgAddr s 1)]) ∧
         (∀ r, r ≠ .rax → u.gpr r = s.gpr r) ∧ u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.mxcsr = s.mxcsr ∧
         eval .ae u = some (decide (thr ≤ (stackArg s 1).toNat)) := by
     have hp := toPre2776_prepared hs
@@ -351,7 +351,7 @@ theorem openToLPrepared_verified (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.S
     simp only [stackArgAddr, Nat.reduceMul, Nat.reduceAdd]
     exact Offset.contains _ (by omega) (by omega) (by omega)
   refine Verified.entryBranch (p := fun s => decide (thr ≤ (stackArg s 1).toNat))
-    (fun s => [.addr (stackArgAddr s 1)]) (openToSPrepared_framed FS) (OpenTo.openToPrepared_verified w F)
+    (fun s => [.addr (stackArgAddr s 1)]) (openToSplitPrepared_framed FS) (OpenTo.openToPrepared_verified w F)
     (fun s hs => ?_) ?_ toSatP2776_pre
   · obtain ⟨u, e, g, hm, hrd, hwr, hmx, ev⟩ := run s hs
     have hS : Same s u := ⟨g, hm, hrd, hwr, hmx⟩
@@ -427,13 +427,13 @@ theorem prepared16_implies :
     (toSK CtxMode.prepared16).Implies (Proof.AesGcm.openToPrepared16ScratchContract X86_64.abi 152) :=
   ⟨fun _ h => toPre_prepared16 h, fun _ _ _ h => toPost_prepared16 h, fun _ _ _ _ h => toPub_prepared16 h, toSatS16_pre⟩
 
-/-- `openToS`, calling an instance of `vg_aes_gcm_open_split` for a prepared
+/-- `openToSplit`, calling an instance of `vg_aes_gcm_open_split` for a prepared
 key context, with its working space as an argument. -/
-theorem openToSPrepared16_core (F : OpenSplitFn CtxMode.prepared16) :
-    Verified X86_64.target (Impl.AesGcm.X86_64.OpenToS.openToS F.fn)
+theorem openToSplitPrepared16_core (F : OpenSplitFn CtxMode.prepared16) :
+    Verified X86_64.target (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn)
       (Proof.AesGcm.openToPrepared16ScratchContract X86_64.abi 152) :=
   Verified.of_correct (k := toSK CtxMode.prepared16)
-    (fun _ hs => by obtain ⟨t, s', he, ha, hp⟩ := openToS_wp F hs; exact ⟨t, s', he, ha, hp⟩) (openToS_ct F)
+    (fun _ hs => by obtain ⟨t, s', he, ha, hp⟩ := openToSplit_wp F hs; exact ⟨t, s', he, ha, hp⟩) (openToSplit_ct F)
     prepared16_implies
 
 theorem toSatP16_2776_pre : ∃ s, (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pre s := by
@@ -448,16 +448,16 @@ theorem toSatP16_2776_pre : ∃ s, (Proof.AesGcm.openToPrepared16RoundsContract 
     | exact Region.disjoint_of_sep (by decide)
     | exact Proof.AesGcm.preparedPowers16Repr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false]
 
-/-- `openToS` in its frame of 2624 bytes, holding its working space. -/
-theorem openToSPrepared16_framed (F : OpenSplitFn CtxMode.prepared16) :
+/-- `openToSplit` in its frame of 2624 bytes, holding its working space. -/
+theorem openToSplitPrepared16_framed (F : OpenSplitFn CtxMode.prepared16) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToS.openToS F.fn))
+      (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn))
       (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openToPreparedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openToPrepared16Pre X86_64.abi.ptrBits)
     (post := Proof.AesGcm.openToRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 152)
-    (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSPrepared16_core F)
-    (by decide) (by decide) (by decide) (openToS_spAll F.fn F.spAll) (openToS_xdepth F.fn F.xd)
+    (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSplitPrepared16_core F)
+    (by decide) (by decide) (by decide) (openToSplit_spAll F.fn F.spAll) (openToSplit_xdepth F.fn F.xd)
     (Proof.AesGcm.openToPrepared16Pre_local _) (Proof.AesGcm.openToRoundsPost_local _) toSatP16_2776_pre
     (hleak := Proof.AesGcm.openToLeak_local _)
 
@@ -562,12 +562,12 @@ theorem pub_narrow16 {s u s' u' : State} (h : Same s u) (h' : Same s' u')
 
 /-- `vg_aes_gcm_open_to_prepared16`: by a copy below `thr` bytes, and in one
 pass from `thr` on. -/
-theorem openToLPrepared16_verified (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width)
+theorem openToSelPrepared16_verified (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width)
     (F : OpenTo.OpenFn CtxMode.prepared16) (FS : OpenSplitFn CtxMode.prepared16) (hT : thr < 2 ^ 31 := by decide) :
-    Verified X86_64.target (Impl.AesGcm.X86_64.OpenToS.openToL thr w F.fn FS.fn)
+    Verified X86_64.target (Impl.AesGcm.X86_64.OpenToSplit.openToSel thr w F.fn FS.fn)
       (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776) := by
   have run (s : State) (hs : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pre s) :
-      ∃ u, execBlock isa (Impl.AesGcm.X86_64.OpenToS.cmpLen thr) s = some (u, [.addr (stackArgAddr s 1)]) ∧
+      ∃ u, execBlock isa (Impl.AesGcm.X86_64.OpenToSplit.cmpLen thr) s = some (u, [.addr (stackArgAddr s 1)]) ∧
         (∀ r, r ≠ .rax → u.gpr r = s.gpr r) ∧ u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.mxcsr = s.mxcsr ∧
         eval .ae u = some (decide (thr ≤ (stackArg s 1).toNat)) := by
     have hp := toPre2776_prepared16 hs
@@ -577,7 +577,7 @@ theorem openToLPrepared16_verified (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64
     simp only [stackArgAddr, Nat.reduceMul, Nat.reduceAdd]
     exact Offset.contains _ (by omega) (by omega) (by omega)
   refine Verified.entryBranch (p := fun s => decide (thr ≤ (stackArg s 1).toNat))
-    (fun s => [.addr (stackArgAddr s 1)]) (openToSPrepared16_framed FS) (OpenTo.openToPrepared16_verified w F)
+    (fun s => [.addr (stackArgAddr s 1)]) (openToSplitPrepared16_framed FS) (OpenTo.openToPrepared16_verified w F)
     (fun s hs => ?_) ?_ toSatP16_2776_pre
   · obtain ⟨u, e, g, hm, hrd, hwr, hmx, ev⟩ := run s hs
     have hS : Same s u := ⟨g, hm, hrd, hwr, hmx⟩
@@ -595,4 +595,4 @@ theorem openToLPrepared16_verified (thr : Nat) (w : Impl.ChaCha20Poly1305.X86_64
     refine ⟨by simp only [stackArgAddr, qsp], by simp only [Proof.AesGcm.arg] at qa; rw [qa 1 (by decide)],
       fun _ => pub2776_congr16 hS hS' hq, fun _ => pub_narrow16 hS hS' hq⟩
 
-end VG.Proof.AesGcm.X86_64.OpenToS
+end VG.Proof.AesGcm.X86_64.OpenToSplit

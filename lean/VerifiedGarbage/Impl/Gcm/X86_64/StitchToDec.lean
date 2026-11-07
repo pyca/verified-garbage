@@ -11,7 +11,7 @@ context (`StitchR`): `(ctx = rdi, rounds = rsi, counter = rdx, y = rcx,
 src = r8, n = r9, dst = r10, scratch = r11)`, for a number of blocks that is
 a multiple of 16, at least 16.
 
-The setup ends with `setupCFrom` in place of `Stitch.setupC`: it points
+The setup ends with `setupCToDec` in place of `Stitch.setupC`: it points
 `rdx` at `src`, as `Stitch.setupC` does at the data, and computes
 `r8 ← dst - src` before `r10` becomes the last round key's address. `r8`
 then stays constant: the ciphertext blocks are loaded from `[rdx + 32 j]`,
@@ -23,7 +23,7 @@ place.
 
 @[expose] public section
 
-namespace VG.Impl.Gcm.X86_64.StitchFrom
+namespace VG.Impl.Gcm.X86_64.StitchToDec
 
 open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
@@ -31,7 +31,7 @@ open VG.Impl.Gcm.X86_64.Stitch (storesK pregs dbody storeCtr storeY)
 
 /-- `Y`, the counter pair, the increment, `src` in `rdx`, `dst - src` in
 `r8` and the last round key's address in `r10`. -/
-def setupCFrom : List Instr :=
+def setupCToDec : List Instr :=
   [.vmovdquLoad .l128 .xmm2 (at_ .rcx 0), .vop (.vbin .vpshufb .l128 .xmm2 .xmm2 .xmm0),
    .movImm64 .rax 1, .vop (.vmovq .xmm15 .rax),
    .vmovdquLoad .l128 .xmm14 (at_ .rdx 0), .vop (.vbin .vpshufb .l128 .xmm14 .xmm14 .xmm0),
@@ -42,11 +42,11 @@ def setupCFrom : List Instr :=
    .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .rdi)]
 
 /-- `StitchR.setup`, out of place. -/
-def setup : List Instr := StitchZR.setupGP ++ storesK .r11 pregs 0 ++ setupCFrom
+def setup : List Instr := StitchZR.setupGP ++ storesK .r11 pregs 0 ++ setupCToDec
 
 /-- `StitchR.decR`, out of place: `n` (a multiple of 16, at least 16)
 blocks. -/
-def decR : Prog isa :=
+def decToR : Prog isa :=
   .seq (.block setup) (.seq (.loop (dbody true) .ae) (.block (storeCtr ++ storeY)))
 
-end VG.Impl.Gcm.X86_64.StitchFrom
+end VG.Impl.Gcm.X86_64.StitchToDec
