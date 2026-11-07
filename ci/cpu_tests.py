@@ -427,6 +427,9 @@ GROUPS = {
     },
     "sha512": {
         "lib": [
+            # Every hash's tables of functions: their dispatchers' choices
+            # of the SHA-512 family's tables, which only these lines make.
+            "hashes::tables",
             "hashes::sha512",
             "hashes::sha512_224",
             "hashes::sha512_256",
