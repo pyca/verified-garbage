@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import Init.Prelude
 public import VerifiedGarbage.TCB.X86.Target
 
@@ -16,6 +17,6 @@ namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86
 
 def keyStack : Nat := 68
-def contract : Contract isa := Spec.RsaKeyGen.keyContract abi keyStack
+def contract : Contract isa := Proof.RsaKeyGen.keyContract abi keyStack
 
 end VG.Proof.RsaKeyGen.X86.Key

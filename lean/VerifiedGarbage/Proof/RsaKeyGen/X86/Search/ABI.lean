@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaKeyGen.GenerationContract
+public import VerifiedGarbage.Proof.RsaKeyGen.SearchContract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
-meta import VerifiedGarbage.Spec.RsaKeyGen.GenerationContract
+meta import VerifiedGarbage.Proof.RsaKeyGen.SearchContract
 
 /-! # The RSA prime search on i686: what its cdecl contract supplies
 
@@ -28,7 +28,7 @@ abbrev stack : Nat := 216
 
 /-- The contract, with RSA's table of primes as the constants. -/
 abbrev contract : Contract isa :=
-  Spec.RsaKeyGen.primeSearchContract (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) stack
+  Proof.RsaKeyGen.primeSearchContract (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) stack
 
 /-- The arguments' regions: `out`, `used`, `e`, `p`, `rand`, `scratch` and `state`. -/
 abbrev oR (s : State) : Region := ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
@@ -130,7 +130,7 @@ structure SearchABI (s : State) : Prop where
   randLen : (arg s 8).toNat ≤ Spec.RsaKeyGen.primeEntropy (arg s 1).toNat
 
 theorem searchABI_of {s : State} (h : contract.pre s) : SearchABI s := by
-  sig_pre [contract, Spec.RsaKeyGen.primeSearchContract, Spec.RsaKeyGen.primeSearchSig, abi, argSlots, argVal,
+  sig_pre [contract, Proof.RsaKeyGen.primeSearchContract, Proof.RsaKeyGen.primeSearchSig, abi, argSlots, argVal,
     argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, VG.Proof.RsaKeyGen.X86.Candidate.packed_length,
     stackBelow] at h
   sig_split h

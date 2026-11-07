@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallSizes
 
 import Mathlib.Tactic.IntervalCases
@@ -30,7 +31,7 @@ structure CallLayout (s : State) : Prop where
   rd : s.rd = [callExponent s]
 
 theorem call_layout {s : State} (h : contract.pre s) : CallLayout s := by
-  sig_pre [contract, keyStack, Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig,
+  sig_pre [contract, keyStack, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig,
     abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor
@@ -84,7 +85,7 @@ structure CallSeparation (s : State) : Prop where
   returnWorkspace : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (callWorkspace s)
 
 theorem call_separation {s : State} (h : contract.pre s) : CallSeparation s := by
-  sig_pre [contract, keyStack, Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig,
+  sig_pre [contract, keyStack, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig,
     abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor

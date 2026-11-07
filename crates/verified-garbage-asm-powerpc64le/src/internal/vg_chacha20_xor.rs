@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_xor() {
     core::arch::naked_asm!(
-        r#".base64 "AAHG+ggB5vqmAgh8EAEG+AAAxDoAAOU6AACGOAAANyg="
+        r#".base64 "AAHG+ggB5vqmAgh8EAEG+BgBxvsAAMQ6AADlOgAAxzsAAIY4AAA3KA=="
 beq %cr0, 20f
 22:
 bl {vg_chacha20_block}
@@ -24,12 +24,12 @@ b 24f
 .base64 "ULjlfgAA5DiC0al4AAApKA=="
 beq %cr0, 25f
 27:
-.base64 "AADW6AAAB+l4QsZ8AADW+AgA1joIAOc4+P+lOAAAJSg="
+.base64 "AADW6AAAB+l4QsZ8AADe+AgA1joIAN47CADnOPj/pTgAACUo"
 bne %cr0, 27b
 b 26f
 25:
 28:
-.base64 "AADWiAAAB4l4QsZ8AADWmAEA1joBAOc4//+lOAAAJSg="
+.base64 "AADWiAAAB4l4QsZ8AADemAEA1joBAN47AQDnOP//pTgAACUo"
 bne %cr0, 28b
 26:
 .base64 "MAADgQEACDkwAAORAAA3KA=="
@@ -37,7 +37,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "EAEE6KYDCHwAAcTqCAHk6iAAgE4=""#,
+.base64 "EAEE6KYDCHwAAcTqCAHk6hgBxOsgAIBO""#,
         vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
     )
 }

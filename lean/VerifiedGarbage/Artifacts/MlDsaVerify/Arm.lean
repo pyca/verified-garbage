@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -13,15 +13,15 @@ namespace VG.Artifacts.MlDsaVerify.Arm
 def artifacts : List Artifact := [
   Spec.MlDsa.verify44Api.artifact Arm.target {
     code := Impl.MlDsa.Arm.Verify.verify44
-    stack := 36
+    stack := 52
     verified := Proof.MlDsa.Arm.Verify.verify44_verified },
   Spec.MlDsa.verify65Api.artifact Arm.target {
     code := Impl.MlDsa.Arm.Verify.verify65
-    stack := 36
+    stack := 52
     verified := Proof.MlDsa.Arm.Verify.verify65_verified },
   Spec.MlDsa.verify87Api.artifact Arm.target {
     code := Impl.MlDsa.Arm.Verify.verify87
-    stack := 36
+    stack := 52
     verified := Proof.MlDsa.Arm.Verify.verify87_verified }]
 
 end VG.Artifacts.MlDsaVerify.Arm

@@ -150,7 +150,16 @@ variants all do its work themselves), some implementation of each caller
 calls every implementation of its callee whose features the caller has
 but the one it calls lacks (a variant chosen by hand, such as a field
 naming the callee, still follows the features), and each variant is used by the
-Rust code outside its tests (never emit one only a test calls). An internal
+Rust code outside its tests (never emit one only a test calls). A
+combination no CPU can choose is not required: if the Rust code never
+chooses an implementation `c` on a CPU with all of a set of features (it
+chooses another implementation of the same function there), list the set
+for `c` in `NEVER_WITH`, and a variant of a function that is or calls `c`
+for a callee's variant whose features, with the caller's own, include the
+set is not required. The entry must name a generated function whose own
+features do not include the set, and the Rust choice must be unit-tested so
+that it never chooses `c` with the set. Never list one to excuse a
+combination some CPU would choose. An internal
 function has no signature: its variants are the internal functions of its
 name and a suffix that is the whole suffix of a variant of a function with
 a signature on the target (`_shani`, `_avx2`, `_blake2b_avx2`, …), each

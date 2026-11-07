@@ -114,7 +114,7 @@ theorem sat_table : Abi.constsHeld satState.mem (fun name => (satState.syms name
 
 theorem satisfiable : ∃ s, contract.pre s := by
   refine ⟨satState, ?_⟩
-  sig_pre [contract, Spec.RsaKeyGen.primeSearchContract, Spec.RsaKeyGen.primeSearchSig, abi,
+  sig_pre [contract, Proof.RsaKeyGen.primeSearchContract, Proof.RsaKeyGen.primeSearchSig, abi,
     argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, stackBelow]
   simp only [sat_arguments 0 (by decide), sat_arguments 1 (by decide), sat_arguments 2 (by decide),
     sat_arguments 3 (by decide), sat_arguments 4 (by decide), sat_arguments 5 (by decide),

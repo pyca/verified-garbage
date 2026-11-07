@@ -63,11 +63,26 @@ pub unsafe extern "sysv64" fn vg_aes_cfb128_decrypt_aesni(schedule: *const [u8; 
     core::arch::naked_asm!(
         r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
 je 20f
+.base64 "SYP+BA=="
+jb 22f
+24:
+.base64 "SYsEJEmJh0AIAABJi0QkCEmJh0gIAABJi0UASYmHUAgAAEmLRQhJiYdYCAAASYtFEEmJh2AIAABJi0UYSYmHaAgAAEmLRSBJiYdwCAAASYtFKEmJh3gIAABIid9Iie5MifpIgcJACAAAuQQAAABNifg="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "SYtFMEmJBCRJi0U4SYlEJAhJi0UASTOHQAgAAEmJRQBJi0UISTOHSAgAAEmJRQhJi0UQSTOHUAgAAEmJRRBJi0UYSTOHWAgAAEmJRRhJi0UgSTOHYAgAAEmJRSBJi0UoSTOHaAgAAEmJRShJi0UwSTOHcAgAAEmJRTBJi0U4STOHeAgAAEmJRThJg8VASYPuBEmD/gQ="
+jae 24b
+jmp 23f
 22:
+23:
+.base64 "TYX2"
+je 25f
+27:
 .base64 "SInfSInuTIniuQEAAABNifg="
 call {vg_aes_encrypt_blocks_aesni}
 .base64 "SYtFAEkzBCRJiUUASYtFCEkzRCQISYlFCEmLBCRJM0UASYkEJEmLRCQISTNFCEmJRCQISYPFEEmD7gE="
-jne 22b
+jne 27b
+jmp 26f
+25:
+26:
 jmp 21f
 20:
 21:
@@ -129,11 +144,26 @@ pub unsafe extern "sysv64" fn vg_aes_cfb128_decrypt(schedule: *const [u8; 240], 
     core::arch::naked_asm!(
         r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
 je 20f
+.base64 "SYP+BA=="
+jb 22f
+24:
+.base64 "SYsEJEmJh0AIAABJi0QkCEmJh0gIAABJi0UASYmHUAgAAEmLRQhJiYdYCAAASYtFEEmJh2AIAABJi0UYSYmHaAgAAEmLRSBJiYdwCAAASYtFKEmJh3gIAABIid9Iie5MifpIgcJACAAAuQQAAABNifg="
+call {vg_aes_encrypt_blocks}
+.base64 "SYtFMEmJBCRJi0U4SYlEJAhJi0UASTOHQAgAAEmJRQBJi0UISTOHSAgAAEmJRQhJi0UQSTOHUAgAAEmJRRBJi0UYSTOHWAgAAEmJRRhJi0UgSTOHYAgAAEmJRSBJi0UoSTOHaAgAAEmJRShJi0UwSTOHcAgAAEmJRTBJi0U4STOHeAgAAEmJRThJg8VASYPuBEmD/gQ="
+jae 24b
+jmp 23f
 22:
+23:
+.base64 "TYX2"
+je 25f
+27:
 .base64 "SInfSInuTIniuQEAAABNifg="
 call {vg_aes_encrypt_blocks}
 .base64 "SYtFAEkzBCRJiUUASYtFCEkzRCQISYlFCEmLBCRJM0UASYkEJEmLRCQISTNFCEmJRCQISYPFEEmD7gE="
-jne 22b
+jne 27b
+jmp 26f
+25:
+26:
 jmp 21f
 20:
 21:
@@ -203,11 +233,26 @@ pub unsafe extern "sysv64" fn vg_aes_cfb128_decrypt_vaes(schedule: *const [u8; 2
     core::arch::naked_asm!(
         r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
 je 20f
+.base64 "SYP+BA=="
+jb 22f
+24:
+.base64 "SYsEJEmJh0AIAABJi0QkCEmJh0gIAABJi0UASYmHUAgAAEmLRQhJiYdYCAAASYtFEEmJh2AIAABJi0UYSYmHaAgAAEmLRSBJiYdwCAAASYtFKEmJh3gIAABIid9Iie5MifpIgcJACAAAuQQAAABNifg="
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "SYtFMEmJBCRJi0U4SYlEJAhJi0UASTOHQAgAAEmJRQBJi0UISTOHSAgAAEmJRQhJi0UQSTOHUAgAAEmJRRBJi0UYSTOHWAgAAEmJRRhJi0UgSTOHYAgAAEmJRSBJi0UoSTOHaAgAAEmJRShJi0UwSTOHcAgAAEmJRTBJi0U4STOHeAgAAEmJRThJg8VASYPuBEmD/gQ="
+jae 24b
+jmp 23f
 22:
+23:
+.base64 "TYX2"
+je 25f
+27:
 .base64 "SInfSInuTIniuQEAAABNifg="
 call {vg_aes_encrypt_blocks_vaes}
 .base64 "SYtFAEkzBCRJiUUASYtFCEkzRCQISYlFCEmLBCRJM0UASYkEJEmLRCQISTNFCEmJRCQISYPFEEmD7gE="
-jne 22b
+jne 27b
+jmp 26f
+25:
+26:
 jmp 21f
 20:
 21:

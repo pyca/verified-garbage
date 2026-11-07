@@ -2352,6 +2352,553 @@ bx lr",
     )
 }
 
+/// ML-DSA-65 public-key preparation: with the public key `*pk`, writes to `*prepared` the key, followed by the `k` polynomials `NTT(t₁ · 2^d)` that verification (FIPS 204 Algorithm 8, line 9) computes from it, for `vg_mldsa65_verify_message_prepared`.
+///
+/// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `prepared` must be valid for reads and writes of 8096 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `prepared` and `scratch` may overlap the 44 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa65_prepare_verifying_key(pk: *const [u8; 1952], prepared: *mut [u8; 8096], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r"push {{r4, r7, r8, lr}}
+mov r4, r0
+mov r8, r1
+mov r7, r2
+movw r0, #0
+movt r0, #0
+add r0, r4, r0
+movw r1, #0
+movt r1, #0
+add r1, r8, r1
+movw r2, #1952
+movt r2, #0
+20:
+ldrb r3, [r0, #0]
+strb r3, [r1, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs r2, r2, #1
+bne 20b
+movw r0, #32
+movt r0, #0
+add r0, r4, r0
+movw r1, #1952
+movt r1, #0
+add r1, r8, r1
+bl {vg_mldsa_unpack_t1}
+movw r0, #1952
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #352
+movt r0, #0
+add r0, r4, r0
+movw r1, #2976
+movt r1, #0
+add r1, r8, r1
+bl {vg_mldsa_unpack_t1}
+movw r0, #2976
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #672
+movt r0, #0
+add r0, r4, r0
+movw r1, #4000
+movt r1, #0
+add r1, r8, r1
+bl {vg_mldsa_unpack_t1}
+movw r0, #4000
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #992
+movt r0, #0
+add r0, r4, r0
+movw r1, #5024
+movt r1, #0
+add r1, r8, r1
+bl {vg_mldsa_unpack_t1}
+movw r0, #5024
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #1312
+movt r0, #0
+add r0, r4, r0
+movw r1, #6048
+movt r1, #0
+add r1, r8, r1
+bl {vg_mldsa_unpack_t1}
+movw r0, #6048
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #1632
+movt r0, #0
+add r0, r4, r0
+movw r1, #7072
+movt r1, #0
+add r1, r8, r1
+bl {vg_mldsa_unpack_t1}
+movw r0, #7072
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+ldr r7, [sp, #4]
+ldr r8, [sp, #8]
+ldr lr, [sp, #12]
+ldr r4, [sp], #16
+bx lr",
+        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
+        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
+    )
+}
+
+/// ML-DSA-65 private-key preparation: with the private key `*sk`, writes to `*prepared` the key, followed by the `ℓ + 2k` polynomials `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` that signing (FIPS 204 Algorithm 7, lines 2–4) computes from it, for `vg_mldsa65_sign_message_prepared`.
+///
+/// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 4032 bytes.
+/// * `prepared` must be valid for reads and writes of 21440 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * `*prepared` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
+/// * None of `sk`, `prepared` and `scratch` may overlap the 44 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa65_prepare_signing_key(sk: *const [u8; 4032], prepared: *mut [u8; 21440], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r"push {{r4, r7, r8, lr}}
+mov r4, r0
+mov r8, r1
+mov r7, r2
+movw r0, #0
+movt r0, #0
+add r0, r4, r0
+movw r1, #0
+movt r1, #0
+add r1, r8, r1
+movw r2, #4032
+movt r2, #0
+20:
+ldrb r3, [r0, #0]
+strb r3, [r1, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs r2, r2, #1
+bne 20b
+movw r0, #128
+movt r0, #0
+add r0, r4, r0
+movw r1, #128
+movt r1, #0
+movw r2, #4
+movt r2, #0
+movw r3, #4
+movt r3, #0
+movw r12, #4032
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #4032
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #256
+movt r0, #0
+add r0, r4, r0
+movw r1, #128
+movt r1, #0
+movw r2, #4
+movt r2, #0
+movw r3, #4
+movt r3, #0
+movw r12, #5056
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #5056
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #384
+movt r0, #0
+add r0, r4, r0
+movw r1, #128
+movt r1, #0
+movw r2, #4
+movt r2, #0
+movw r3, #4
+movt r3, #0
+movw r12, #6080
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #6080
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #512
+movt r0, #0
+add r0, r4, r0
+movw r1, #128
+movt r1, #0
+movw r2, #4
+movt r2, #0
+movw r3, #4
+movt r3, #0
+movw r12, #7104
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #7104
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #640
+movt r0, #0
+add r0, r4, r0
+movw r1, #128
+movt r1, #0
+movw r2, #4
+movt r2, #0
+movw r3, #4
+movt r3, #0
+movw r12, #8128
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #8128
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #768
+movt r0, #0
+add r0, r4, r0
+movw r1, #128
+movt r1, #0
+movw r2, #4
+movt r2, #0
+movw r3, #4
+movt r3, #0
+movw r12, #9152
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #9152
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #896
+movt r0, #0
+add r0, r4, r0
+movw r1, #128
+movt r1, #0
+movw r2, #4
+movt r2, #0
+movw r3, #4
+movt r3, #0
+movw r12, #10176
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #10176
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #1024
+movt r0, #0
+add r0, r4, r0
+movw r1, #128
+movt r1, #0
+movw r2, #4
+movt r2, #0
+movw r3, #4
+movt r3, #0
+movw r12, #11200
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #11200
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #1152
+movt r0, #0
+add r0, r4, r0
+movw r1, #128
+movt r1, #0
+movw r2, #4
+movt r2, #0
+movw r3, #4
+movt r3, #0
+movw r12, #12224
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #12224
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #1280
+movt r0, #0
+add r0, r4, r0
+movw r1, #128
+movt r1, #0
+movw r2, #4
+movt r2, #0
+movw r3, #4
+movt r3, #0
+movw r12, #13248
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #13248
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #1408
+movt r0, #0
+add r0, r4, r0
+movw r1, #128
+movt r1, #0
+movw r2, #4
+movt r2, #0
+movw r3, #4
+movt r3, #0
+movw r12, #14272
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #14272
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #1536
+movt r0, #0
+add r0, r4, r0
+movw r1, #416
+movt r1, #0
+movw r2, #4095
+movt r2, #0
+movw r3, #4096
+movt r3, #0
+movw r12, #15296
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #15296
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #1952
+movt r0, #0
+add r0, r4, r0
+movw r1, #416
+movt r1, #0
+movw r2, #4095
+movt r2, #0
+movw r3, #4096
+movt r3, #0
+movw r12, #16320
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #16320
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #2368
+movt r0, #0
+add r0, r4, r0
+movw r1, #416
+movt r1, #0
+movw r2, #4095
+movt r2, #0
+movw r3, #4096
+movt r3, #0
+movw r12, #17344
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #17344
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #2784
+movt r0, #0
+add r0, r4, r0
+movw r1, #416
+movt r1, #0
+movw r2, #4095
+movt r2, #0
+movw r3, #4096
+movt r3, #0
+movw r12, #18368
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #18368
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #3200
+movt r0, #0
+add r0, r4, r0
+movw r1, #416
+movt r1, #0
+movw r2, #4095
+movt r2, #0
+movw r3, #4096
+movt r3, #0
+movw r12, #19392
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #19392
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+movw r0, #3616
+movt r0, #0
+add r0, r4, r0
+movw r1, #416
+movt r1, #0
+movw r2, #4095
+movt r2, #0
+movw r3, #4096
+movt r3, #0
+movw r12, #20416
+movt r12, #0
+add r12, r8, r12
+push {{r12, lr}}
+bl {vg_mldsa_bit_unpack}
+ldr r12, [sp], #8
+movw r0, #20416
+movt r0, #0
+add r0, r8, r0
+movw r1, #0
+movt r1, #0
+add r1, r7, r1
+bl {vg_mldsa_ntt}
+ldr r7, [sp, #4]
+ldr r8, [sp, #8]
+ldr lr, [sp, #12]
+ldr r4, [sp], #16
+bx lr",
+        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
+        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
+    )
+}
+
 /// ML-DSA-65 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
@@ -2367,2857 +2914,22 @@ bx lr",
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 28 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 44 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa65_sign(sk: *const [u8; 4032], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
     core::arch::naked_asm!(
-        r"ldr r12, [sp, #0]
-str r4, [r12, #840]
-str r5, [r12, #844]
-str r6, [r12, #848]
-str r7, [r12, #852]
-str r8, [r12, #856]
-str r9, [r12, #860]
-str r10, [r12, #864]
-str r11, [r12, #868]
-str lr, [r12, #872]
-mov r7, r12
-mov r4, r0
-mov r5, r1
-mov r6, r2
-mov r8, r3
-mov r11, #1
-movw r0, #0
-movt r0, #0
-add r0, r4, r0
-movw r1, #912
-movt r1, #0
-add r1, r7, r1
-movw r2, #32
-movt r2, #0
-20:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 20b
-mov r0, #0
-strb r0, [r7, #944]
-mov r0, #0
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #50176
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #1
-strb r0, [r7, #944]
-mov r0, #0
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #51200
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #2
-strb r0, [r7, #944]
-mov r0, #0
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #52224
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #3
-strb r0, [r7, #944]
-mov r0, #0
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #53248
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #4
-strb r0, [r7, #944]
-mov r0, #0
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #54272
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #0
-strb r0, [r7, #944]
-mov r0, #1
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #55296
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #1
-strb r0, [r7, #944]
-mov r0, #1
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #56320
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #2
-strb r0, [r7, #944]
-mov r0, #1
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #57344
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #3
-strb r0, [r7, #944]
-mov r0, #1
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #58368
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #4
-strb r0, [r7, #944]
-mov r0, #1
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #59392
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #0
-strb r0, [r7, #944]
-mov r0, #2
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #60416
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #1
-strb r0, [r7, #944]
-mov r0, #2
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #61440
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #2
-strb r0, [r7, #944]
-mov r0, #2
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #62464
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #3
-strb r0, [r7, #944]
-mov r0, #2
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #63488
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #4
-strb r0, [r7, #944]
-mov r0, #2
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #64512
-movt r1, #0
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #0
-strb r0, [r7, #944]
-mov r0, #3
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #0
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #1
-strb r0, [r7, #944]
-mov r0, #3
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #1024
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #2
-strb r0, [r7, #944]
-mov r0, #3
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #2048
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #3
-strb r0, [r7, #944]
-mov r0, #3
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #4
-strb r0, [r7, #944]
-mov r0, #3
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #0
-strb r0, [r7, #944]
-mov r0, #4
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #1
-strb r0, [r7, #944]
-mov r0, #4
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #2
-strb r0, [r7, #944]
-mov r0, #4
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #7168
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #3
-strb r0, [r7, #944]
-mov r0, #4
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #8192
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #4
-strb r0, [r7, #944]
-mov r0, #4
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #9216
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #0
-strb r0, [r7, #944]
-mov r0, #5
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #10240
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #1
-strb r0, [r7, #944]
-mov r0, #5
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #11264
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #2
-strb r0, [r7, #944]
-mov r0, #5
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #12288
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #3
-strb r0, [r7, #944]
-mov r0, #5
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #13312
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r0, #4
-strb r0, [r7, #944]
-mov r0, #5
-strb r0, [r7, #945]
-movw r0, #912
-movt r0, #0
-add r0, r7, r0
-movw r1, #14336
-movt r1, #1
-add r1, r7, r1
-movw r2, #3072
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-cmp r11, #0
-bne 21f
-b 22f
-21:
-movw r0, #128
-movt r0, #0
-add r0, r4, r0
-movw r1, #128
-movt r1, #0
-movw r2, #4
-movt r2, #0
-movw r3, #4
-movt r3, #0
-movw r12, #32768
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #32768
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #256
-movt r0, #0
-add r0, r4, r0
-movw r1, #128
-movt r1, #0
-movw r2, #4
-movt r2, #0
-movw r3, #4
-movt r3, #0
-movw r12, #33792
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #33792
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #384
-movt r0, #0
-add r0, r4, r0
-movw r1, #128
-movt r1, #0
-movw r2, #4
-movt r2, #0
-movw r3, #4
-movt r3, #0
-movw r12, #34816
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #34816
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #512
-movt r0, #0
-add r0, r4, r0
-movw r1, #128
-movt r1, #0
-movw r2, #4
-movt r2, #0
-movw r3, #4
-movt r3, #0
-movw r12, #35840
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #35840
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #640
-movt r0, #0
-add r0, r4, r0
-movw r1, #128
-movt r1, #0
-movw r2, #4
-movt r2, #0
-movw r3, #4
-movt r3, #0
-movw r12, #36864
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #36864
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #768
-movt r0, #0
-add r0, r4, r0
-movw r1, #128
-movt r1, #0
-movw r2, #4
-movt r2, #0
-movw r3, #4
-movt r3, #0
-movw r12, #37888
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #37888
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #896
-movt r0, #0
-add r0, r4, r0
-movw r1, #128
-movt r1, #0
-movw r2, #4
-movt r2, #0
-movw r3, #4
-movt r3, #0
-movw r12, #38912
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #38912
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #1024
-movt r0, #0
-add r0, r4, r0
-movw r1, #128
-movt r1, #0
-movw r2, #4
-movt r2, #0
-movw r3, #4
-movt r3, #0
-movw r12, #39936
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #39936
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #1152
-movt r0, #0
-add r0, r4, r0
-movw r1, #128
-movt r1, #0
-movw r2, #4
-movt r2, #0
-movw r3, #4
-movt r3, #0
-movw r12, #40960
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #40960
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #1280
-movt r0, #0
-add r0, r4, r0
-movw r1, #128
-movt r1, #0
-movw r2, #4
-movt r2, #0
-movw r3, #4
-movt r3, #0
-movw r12, #41984
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #41984
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #1408
-movt r0, #0
-add r0, r4, r0
-movw r1, #128
-movt r1, #0
-movw r2, #4
-movt r2, #0
-movw r3, #4
-movt r3, #0
-movw r12, #43008
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #43008
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #1536
-movt r0, #0
-add r0, r4, r0
-movw r1, #416
-movt r1, #0
-movw r2, #4095
-movt r2, #0
-movw r3, #4096
-movt r3, #0
-movw r12, #44032
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #44032
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #1952
-movt r0, #0
-add r0, r4, r0
-movw r1, #416
-movt r1, #0
-movw r2, #4095
-movt r2, #0
-movw r3, #4096
-movt r3, #0
-movw r12, #45056
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #45056
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #2368
-movt r0, #0
-add r0, r4, r0
-movw r1, #416
-movt r1, #0
-movw r2, #4095
-movt r2, #0
-movw r3, #4096
-movt r3, #0
-movw r12, #46080
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #46080
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #2784
-movt r0, #0
-add r0, r4, r0
-movw r1, #416
-movt r1, #0
-movw r2, #4095
-movt r2, #0
-movw r3, #4096
-movt r3, #0
-movw r12, #47104
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #47104
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #3200
-movt r0, #0
-add r0, r4, r0
-movw r1, #416
-movt r1, #0
-movw r2, #4095
-movt r2, #0
-movw r3, #4096
-movt r3, #0
-movw r12, #48128
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #48128
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #3616
-movt r0, #0
-add r0, r4, r0
-movw r1, #416
-movt r1, #0
-movw r2, #4095
-movt r2, #0
-movw r3, #4096
-movt r3, #0
-movw r12, #49152
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #8
-movw r0, #49152
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-mov r12, #0
-str r12, [r7, #0]
-str r12, [r7, #4]
-str r12, [r7, #8]
-str r12, [r7, #12]
-str r12, [r7, #16]
-str r12, [r7, #20]
-str r12, [r7, #24]
-str r12, [r7, #28]
-str r12, [r7, #32]
-str r12, [r7, #36]
-str r12, [r7, #40]
-str r12, [r7, #44]
-str r12, [r7, #48]
-str r12, [r7, #52]
-str r12, [r7, #56]
-str r12, [r7, #60]
-str r12, [r7, #64]
-str r12, [r7, #68]
-str r12, [r7, #72]
-str r12, [r7, #76]
-str r12, [r7, #80]
-str r12, [r7, #84]
-str r12, [r7, #88]
-str r12, [r7, #92]
-str r12, [r7, #96]
-str r12, [r7, #100]
-str r12, [r7, #104]
-str r12, [r7, #108]
-str r12, [r7, #112]
-str r12, [r7, #116]
-str r12, [r7, #120]
-str r12, [r7, #124]
-str r12, [r7, #128]
-str r12, [r7, #132]
-str r12, [r7, #136]
-str r12, [r7, #140]
-str r12, [r7, #144]
-str r12, [r7, #148]
-str r12, [r7, #152]
-str r12, [r7, #156]
-str r12, [r7, #160]
-str r12, [r7, #164]
-str r12, [r7, #168]
-str r12, [r7, #172]
-str r12, [r7, #176]
-str r12, [r7, #180]
-str r12, [r7, #184]
-str r12, [r7, #188]
-str r12, [r7, #192]
-str r12, [r7, #196]
-movw r0, #0
-movt r0, #0
-add r0, r7, r0
-movw r1, #136
-movt r1, #0
-movw r2, #0
-movt r2, #0
-movw r3, #32
-movt r3, #0
-add r3, r4, r3
-movw r12, #32
-movt r12, #0
-movw lr, #200
+        r"push {{r4, lr}}
+ldr r12, [sp, #8]
+mov r4, lr
+movw lr, #0
 movt lr, #0
-add lr, r7, lr
 push {{r12, lr}}
-bl {vg_keccak_absorb_scratch}
+bl {vg_mldsa65_sign_with_cache}
 ldr r12, [sp], #8
-movw r0, #0
-movt r0, #0
-add r0, r7, r0
-movw r1, #136
-movt r1, #0
-movw r2, #32
-movt r2, #0
-movw r3, #0
-movt r3, #0
-add r3, r6, r3
-movw r12, #32
-movt r12, #0
-movw lr, #200
-movt lr, #0
-add lr, r7, lr
-push {{r12, lr}}
-bl {vg_keccak_absorb_scratch}
-ldr r12, [sp], #8
-movw r0, #0
-movt r0, #0
-add r0, r7, r0
-movw r1, #136
-movt r1, #0
-movw r2, #64
-movt r2, #0
-movw r3, #0
-movt r3, #0
-add r3, r5, r3
-movw r12, #64
-movt r12, #0
-movw lr, #200
-movt lr, #0
-add lr, r7, lr
-push {{r12, lr}}
-bl {vg_keccak_absorb_scratch}
-ldr r12, [sp], #8
-movw r0, #0
-movt r0, #0
-add r0, r7, r0
-movw r1, #136
-movt r1, #0
-movw r2, #128
-movt r2, #0
-movw r3, #31
-movt r3, #0
-movw lr, #200
-movt lr, #0
-add lr, r7, lr
-push {{lr}}
-bl {vg_keccak_pad_scratch}
-ldr r12, [sp], #4
-movw r0, #0
-movt r0, #0
-add r0, r7, r0
-movw r1, #136
-movt r1, #0
-movw r2, #0
-movt r2, #0
-movw r3, #960
-movt r3, #0
-add r3, r7, r3
-movw r12, #64
-movt r12, #0
-movw lr, #200
-movt lr, #0
-add lr, r7, lr
-push {{r12, lr}}
-bl {vg_keccak_squeeze_scratch}
-ldr r12, [sp], #8
-movw r0, #0
-movt r0, #0
-str r0, [r7, #896]
-movw r0, #814
-movt r0, #0
-str r0, [r7, #888]
-23:
-ldr r0, [r7, #896]
-add r0, r0, #0
-strb r0, [r7, #1024]
-lsr r0, r0, #8
-strb r0, [r7, #1025]
-movw r0, #960
-movt r0, #0
-add r0, r7, r0
-movw r1, #0
-movt r1, #8
-movw r2, #16384
-movt r2, #0
-add r2, r7, r2
-movw r3, #3072
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_expand_mask_poly}
-movw r0, #16384
-movt r0, #0
-add r0, r7, r0
-movw r1, #21504
-movt r1, #0
-add r1, r7, r1
-movw r2, #1024
-movt r2, #0
-24:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 24b
-movw r0, #21504
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-ldr r0, [r7, #896]
-add r0, r0, #1
-strb r0, [r7, #1024]
-lsr r0, r0, #8
-strb r0, [r7, #1025]
-movw r0, #960
-movt r0, #0
-add r0, r7, r0
-movw r1, #0
-movt r1, #8
-movw r2, #17408
-movt r2, #0
-add r2, r7, r2
-movw r3, #3072
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_expand_mask_poly}
-movw r0, #17408
-movt r0, #0
-add r0, r7, r0
-movw r1, #22528
-movt r1, #0
-add r1, r7, r1
-movw r2, #1024
-movt r2, #0
-25:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 25b
-movw r0, #22528
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-ldr r0, [r7, #896]
-add r0, r0, #2
-strb r0, [r7, #1024]
-lsr r0, r0, #8
-strb r0, [r7, #1025]
-movw r0, #960
-movt r0, #0
-add r0, r7, r0
-movw r1, #0
-movt r1, #8
-movw r2, #18432
-movt r2, #0
-add r2, r7, r2
-movw r3, #3072
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_expand_mask_poly}
-movw r0, #18432
-movt r0, #0
-add r0, r7, r0
-movw r1, #23552
-movt r1, #0
-add r1, r7, r1
-movw r2, #1024
-movt r2, #0
-26:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 26b
-movw r0, #23552
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-ldr r0, [r7, #896]
-add r0, r0, #3
-strb r0, [r7, #1024]
-lsr r0, r0, #8
-strb r0, [r7, #1025]
-movw r0, #960
-movt r0, #0
-add r0, r7, r0
-movw r1, #0
-movt r1, #8
-movw r2, #19456
-movt r2, #0
-add r2, r7, r2
-movw r3, #3072
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_expand_mask_poly}
-movw r0, #19456
-movt r0, #0
-add r0, r7, r0
-movw r1, #24576
-movt r1, #0
-add r1, r7, r1
-movw r2, #1024
-movt r2, #0
-27:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 27b
-movw r0, #24576
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-ldr r0, [r7, #896]
-add r0, r0, #4
-strb r0, [r7, #1024]
-lsr r0, r0, #8
-strb r0, [r7, #1025]
-movw r0, #960
-movt r0, #0
-add r0, r7, r0
-movw r1, #0
-movt r1, #8
-movw r2, #20480
-movt r2, #0
-add r2, r7, r2
-movw r3, #3072
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_expand_mask_poly}
-movw r0, #20480
-movt r0, #0
-add r0, r7, r0
-movw r1, #25600
-movt r1, #0
-add r1, r7, r1
-movw r2, #1024
-movt r2, #0
-28:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 28b
-movw r0, #25600
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #50176
-movt r1, #0
-add r1, r7, r1
-movw r2, #21504
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #51200
-movt r1, #0
-add r1, r7, r1
-movw r2, #22528
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #52224
-movt r1, #0
-add r1, r7, r1
-movw r2, #23552
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #53248
-movt r1, #0
-add r1, r7, r1
-movw r2, #24576
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #54272
-movt r1, #0
-add r1, r7, r1
-movw r2, #25600
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #55296
-movt r1, #0
-add r1, r7, r1
-movw r2, #21504
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #56320
-movt r1, #0
-add r1, r7, r1
-movw r2, #22528
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #57344
-movt r1, #0
-add r1, r7, r1
-movw r2, #23552
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #58368
-movt r1, #0
-add r1, r7, r1
-movw r2, #24576
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #59392
-movt r1, #0
-add r1, r7, r1
-movw r2, #25600
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #28672
-movt r0, #0
-add r0, r7, r0
-movw r1, #60416
-movt r1, #0
-add r1, r7, r1
-movw r2, #21504
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #28672
-movt r0, #0
-add r0, r7, r0
-movw r1, #61440
-movt r1, #0
-add r1, r7, r1
-movw r2, #22528
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #28672
-movt r0, #0
-add r0, r7, r0
-movw r1, #62464
-movt r1, #0
-add r1, r7, r1
-movw r2, #23552
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #28672
-movt r0, #0
-add r0, r7, r0
-movw r1, #63488
-movt r1, #0
-add r1, r7, r1
-movw r2, #24576
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #28672
-movt r0, #0
-add r0, r7, r0
-movw r1, #64512
-movt r1, #0
-add r1, r7, r1
-movw r2, #25600
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #28672
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #29696
-movt r0, #0
-add r0, r7, r0
-movw r1, #0
-movt r1, #1
-add r1, r7, r1
-movw r2, #21504
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #29696
-movt r0, #0
-add r0, r7, r0
-movw r1, #1024
-movt r1, #1
-add r1, r7, r1
-movw r2, #22528
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #29696
-movt r0, #0
-add r0, r7, r0
-movw r1, #2048
-movt r1, #1
-add r1, r7, r1
-movw r2, #23552
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #29696
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #1
-add r1, r7, r1
-movw r2, #24576
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #29696
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #1
-add r1, r7, r1
-movw r2, #25600
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #29696
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #30720
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #1
-add r1, r7, r1
-movw r2, #21504
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #30720
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #1
-add r1, r7, r1
-movw r2, #22528
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #30720
-movt r0, #0
-add r0, r7, r0
-movw r1, #7168
-movt r1, #1
-add r1, r7, r1
-movw r2, #23552
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #30720
-movt r0, #0
-add r0, r7, r0
-movw r1, #8192
-movt r1, #1
-add r1, r7, r1
-movw r2, #24576
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #30720
-movt r0, #0
-add r0, r7, r0
-movw r1, #9216
-movt r1, #1
-add r1, r7, r1
-movw r2, #25600
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #30720
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #31744
-movt r0, #0
-add r0, r7, r0
-movw r1, #10240
-movt r1, #1
-add r1, r7, r1
-movw r2, #21504
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #31744
-movt r0, #0
-add r0, r7, r0
-movw r1, #11264
-movt r1, #1
-add r1, r7, r1
-movw r2, #22528
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #31744
-movt r0, #0
-add r0, r7, r0
-movw r1, #12288
-movt r1, #1
-add r1, r7, r1
-movw r2, #23552
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #31744
-movt r0, #0
-add r0, r7, r0
-movw r1, #13312
-movt r1, #1
-add r1, r7, r1
-movw r2, #24576
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #31744
-movt r0, #0
-add r0, r7, r0
-movw r1, #14336
-movt r1, #1
-add r1, r7, r1
-movw r2, #25600
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #31744
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-movw r2, #6144
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_high_bits}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #15
-movt r1, #0
-movw r2, #2048
-movt r2, #0
-add r2, r7, r2
-movw r3, #128
-movt r3, #0
-bl {vg_mldsa_simple_bit_pack}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-movw r2, #6144
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_high_bits}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #15
-movt r1, #0
-movw r2, #2176
-movt r2, #0
-add r2, r7, r2
-movw r3, #128
-movt r3, #0
-bl {vg_mldsa_simple_bit_pack}
-movw r0, #28672
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-movw r2, #6144
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_high_bits}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #15
-movt r1, #0
-movw r2, #2304
-movt r2, #0
-add r2, r7, r2
-movw r3, #128
-movt r3, #0
-bl {vg_mldsa_simple_bit_pack}
-movw r0, #29696
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-movw r2, #6144
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_high_bits}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #15
-movt r1, #0
-movw r2, #2432
-movt r2, #0
-add r2, r7, r2
-movw r3, #128
-movt r3, #0
-bl {vg_mldsa_simple_bit_pack}
-movw r0, #30720
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-movw r2, #6144
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_high_bits}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #15
-movt r1, #0
-movw r2, #2560
-movt r2, #0
-add r2, r7, r2
-movw r3, #128
-movt r3, #0
-bl {vg_mldsa_simple_bit_pack}
-movw r0, #31744
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-movw r2, #6144
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_high_bits}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #15
-movt r1, #0
-movw r2, #2688
-movt r2, #0
-add r2, r7, r2
-movw r3, #128
-movt r3, #0
-bl {vg_mldsa_simple_bit_pack}
-mov r12, #0
-str r12, [r7, #0]
-str r12, [r7, #4]
-str r12, [r7, #8]
-str r12, [r7, #12]
-str r12, [r7, #16]
-str r12, [r7, #20]
-str r12, [r7, #24]
-str r12, [r7, #28]
-str r12, [r7, #32]
-str r12, [r7, #36]
-str r12, [r7, #40]
-str r12, [r7, #44]
-str r12, [r7, #48]
-str r12, [r7, #52]
-str r12, [r7, #56]
-str r12, [r7, #60]
-str r12, [r7, #64]
-str r12, [r7, #68]
-str r12, [r7, #72]
-str r12, [r7, #76]
-str r12, [r7, #80]
-str r12, [r7, #84]
-str r12, [r7, #88]
-str r12, [r7, #92]
-str r12, [r7, #96]
-str r12, [r7, #100]
-str r12, [r7, #104]
-str r12, [r7, #108]
-str r12, [r7, #112]
-str r12, [r7, #116]
-str r12, [r7, #120]
-str r12, [r7, #124]
-str r12, [r7, #128]
-str r12, [r7, #132]
-str r12, [r7, #136]
-str r12, [r7, #140]
-str r12, [r7, #144]
-str r12, [r7, #148]
-str r12, [r7, #152]
-str r12, [r7, #156]
-str r12, [r7, #160]
-str r12, [r7, #164]
-str r12, [r7, #168]
-str r12, [r7, #172]
-str r12, [r7, #176]
-str r12, [r7, #180]
-str r12, [r7, #184]
-str r12, [r7, #188]
-str r12, [r7, #192]
-str r12, [r7, #196]
-movw r0, #0
-movt r0, #0
-add r0, r7, r0
-movw r1, #136
-movt r1, #0
-movw r2, #0
-movt r2, #0
-movw r3, #0
-movt r3, #0
-add r3, r5, r3
-movw r12, #64
-movt r12, #0
-movw lr, #200
-movt lr, #0
-add lr, r7, lr
-push {{r12, lr}}
-bl {vg_keccak_absorb_scratch}
-ldr r12, [sp], #8
-movw r0, #0
-movt r0, #0
-add r0, r7, r0
-movw r1, #136
-movt r1, #0
-movw r2, #64
-movt r2, #0
-movw r3, #2048
-movt r3, #0
-add r3, r7, r3
-movw r12, #768
-movt r12, #0
-movw lr, #200
-movt lr, #0
-add lr, r7, lr
-push {{r12, lr}}
-bl {vg_keccak_absorb_scratch}
-ldr r12, [sp], #8
-movw r0, #0
-movt r0, #0
-add r0, r7, r0
-movw r1, #136
-movt r1, #0
-movw r2, #16
-movt r2, #0
-movw r3, #31
-movt r3, #0
-movw lr, #200
-movt lr, #0
-add lr, r7, lr
-push {{lr}}
-bl {vg_keccak_pad_scratch}
-ldr r12, [sp], #4
-movw r0, #0
-movt r0, #0
-add r0, r7, r0
-movw r1, #136
-movt r1, #0
-movw r2, #0
-movt r2, #0
-movw r3, #1040
-movt r3, #0
-add r3, r7, r3
-movw r12, #48
-movt r12, #0
-movw lr, #200
-movt lr, #0
-add lr, r7, lr
-push {{r12, lr}}
-bl {vg_keccak_squeeze_scratch}
-ldr r12, [sp], #8
-movw r0, #1040
-movt r0, #0
-add r0, r7, r0
-movw r1, #48
-movt r1, #0
-movw r2, #49
-movt r2, #0
-movw r3, #5120
-movt r3, #0
-add r3, r7, r3
-movw r12, #3072
-movt r12, #0
-add r12, r7, r12
-push {{r12, lr}}
-bl {vg_mldsa_sample_in_ball}
-ldr r12, [sp], #8
-cmp r0, #0
-bne 29f
-mov r11, #0
-movw r0, #1
-movt r0, #0
-str r0, [r7, #888]
-b 210f
-29:
-movw r0, #5120
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-mov r11, #1
-movw r0, #0
-movt r0, #0
-str r0, [r7, #904]
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #32768
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #16384
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_add}
-movw r0, #16384
-movt r0, #0
-add r0, r7, r0
-movw r1, #65340
-movt r1, #7
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-cmp r11, #0
-bne 211f
-b 212f
-211:
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #33792
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #17408
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_add}
-movw r0, #17408
-movt r0, #0
-add r0, r7, r0
-movw r1, #65340
-movt r1, #7
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-cmp r11, #0
-bne 213f
-b 214f
-213:
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #34816
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #18432
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_add}
-movw r0, #18432
-movt r0, #0
-add r0, r7, r0
-movw r1, #65340
-movt r1, #7
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-cmp r11, #0
-bne 215f
-b 216f
-215:
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #35840
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #19456
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_add}
-movw r0, #19456
-movt r0, #0
-add r0, r7, r0
-movw r1, #65340
-movt r1, #7
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-cmp r11, #0
-bne 217f
-b 218f
-217:
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #36864
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #20480
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_add}
-movw r0, #20480
-movt r0, #0
-add r0, r7, r0
-movw r1, #65340
-movt r1, #7
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-cmp r11, #0
-bne 219f
-b 220f
-219:
-220:
-218:
-216:
-214:
-212:
-cmp r11, #0
-bne 221f
-b 222f
-221:
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #37888
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-movw r2, #7168
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_low_bits}
-movw r0, #7168
-movt r0, #0
-add r0, r7, r0
-movw r1, #65084
-movt r1, #3
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-cmp r11, #0
-bne 223f
-b 224f
-223:
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #38912
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-movw r2, #7168
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_low_bits}
-movw r0, #7168
-movt r0, #0
-add r0, r7, r0
-movw r1, #65084
-movt r1, #3
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-cmp r11, #0
-bne 225f
-b 226f
-225:
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #39936
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #28672
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #28672
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-movw r2, #7168
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_low_bits}
-movw r0, #7168
-movt r0, #0
-add r0, r7, r0
-movw r1, #65084
-movt r1, #3
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-cmp r11, #0
-bne 227f
-b 228f
-227:
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #40960
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #29696
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #29696
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-movw r2, #7168
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_low_bits}
-movw r0, #7168
-movt r0, #0
-add r0, r7, r0
-movw r1, #65084
-movt r1, #3
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-cmp r11, #0
-bne 229f
-b 230f
-229:
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #41984
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #30720
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #30720
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-movw r2, #7168
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_low_bits}
-movw r0, #7168
-movt r0, #0
-add r0, r7, r0
-movw r1, #65084
-movt r1, #3
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-cmp r11, #0
-bne 231f
-b 232f
-231:
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #43008
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #6144
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #31744
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #31744
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-movw r2, #7168
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_low_bits}
-movw r0, #7168
-movt r0, #0
-add r0, r7, r0
-movw r1, #65084
-movt r1, #3
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-cmp r11, #0
-bne 233f
-b 234f
-233:
-234:
-232:
-230:
-228:
-226:
-224:
-cmp r11, #0
-bne 235f
-b 236f
-235:
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #44032
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #9216
-movt r1, #0
-add r1, r7, r1
-movw r2, #1024
-movt r2, #0
-237:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 237b
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #8192
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_add}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #26624
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #26624
-movt r1, #0
-add r1, r7, r1
-movw r2, #65280
-movt r2, #3
-movw r3, #10240
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_make_hint}
-ldr r1, [r7, #904]
-add r1, r1, r0
-str r1, [r7, #904]
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #45056
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #9216
-movt r1, #0
-add r1, r7, r1
-movw r2, #1024
-movt r2, #0
-238:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 238b
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #8192
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_add}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #27648
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #27648
-movt r1, #0
-add r1, r7, r1
-movw r2, #65280
-movt r2, #3
-movw r3, #11264
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_make_hint}
-ldr r1, [r7, #904]
-add r1, r1, r0
-str r1, [r7, #904]
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #46080
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-movw r0, #28672
-movt r0, #0
-add r0, r7, r0
-movw r1, #9216
-movt r1, #0
-add r1, r7, r1
-movw r2, #1024
-movt r2, #0
-239:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 239b
-movw r0, #28672
-movt r0, #0
-add r0, r7, r0
-movw r1, #8192
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_add}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #28672
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #28672
-movt r1, #0
-add r1, r7, r1
-movw r2, #65280
-movt r2, #3
-movw r3, #12288
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_make_hint}
-ldr r1, [r7, #904]
-add r1, r1, r0
-str r1, [r7, #904]
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #47104
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-movw r0, #29696
-movt r0, #0
-add r0, r7, r0
-movw r1, #9216
-movt r1, #0
-add r1, r7, r1
-movw r2, #1024
-movt r2, #0
-240:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 240b
-movw r0, #29696
-movt r0, #0
-add r0, r7, r0
-movw r1, #8192
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_add}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #29696
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #29696
-movt r1, #0
-add r1, r7, r1
-movw r2, #65280
-movt r2, #3
-movw r3, #13312
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_make_hint}
-ldr r1, [r7, #904]
-add r1, r1, r0
-str r1, [r7, #904]
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #48128
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-movw r0, #30720
-movt r0, #0
-add r0, r7, r0
-movw r1, #9216
-movt r1, #0
-add r1, r7, r1
-movw r2, #1024
-movt r2, #0
-241:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 241b
-movw r0, #30720
-movt r0, #0
-add r0, r7, r0
-movw r1, #8192
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_add}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #30720
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #30720
-movt r1, #0
-add r1, r7, r1
-movw r2, #65280
-movt r2, #3
-movw r3, #14336
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_make_hint}
-ldr r1, [r7, #904]
-add r1, r1, r0
-str r1, [r7, #904]
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #0
-add r1, r7, r1
-movw r2, #49152
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #3072
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #65280
-movt r1, #3
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-movw r0, #31744
-movt r0, #0
-add r0, r7, r0
-movw r1, #9216
-movt r1, #0
-add r1, r7, r1
-movw r2, #1024
-movt r2, #0
-242:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 242b
-movw r0, #31744
-movt r0, #0
-add r0, r7, r0
-movw r1, #8192
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_add}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #31744
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #31744
-movt r1, #0
-add r1, r7, r1
-movw r2, #65280
-movt r2, #3
-movw r3, #15360
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_make_hint}
-ldr r1, [r7, #904]
-add r1, r1, r0
-str r1, [r7, #904]
-ldr r0, [r7, #904]
-sub r0, r0, #56
-lsr r0, r0, #31
-and r11, r11, r0
-236:
-222:
-cmp r11, #0
-bne 243f
-ldr r0, [r7, #896]
-add r0, r0, #5
-str r0, [r7, #896]
-b 244f
-243:
-movw r0, #1
-movt r0, #0
-str r0, [r7, #888]
-244:
-210:
-ldr r0, [r7, #888]
-subs r0, r0, #1
-str r0, [r7, #888]
-bne 23b
-cmp r11, #0
-bne 245f
-b 246f
-245:
-movw r0, #1040
-movt r0, #0
-add r0, r7, r0
-movw r1, #0
-movt r1, #0
-add r1, r8, r1
-movw r2, #48
-movt r2, #0
-247:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 247b
-movw r0, #16384
-movt r0, #0
-add r0, r7, r0
-movw r1, #65535
-movt r1, #7
-movw r2, #0
-movt r2, #8
-movw r3, #48
-movt r3, #0
-add r3, r8, r3
-movw r12, #640
-movt r12, #0
-push {{r12, lr}}
-bl {vg_mldsa_bit_pack}
-ldr r12, [sp], #8
-movw r0, #17408
-movt r0, #0
-add r0, r7, r0
-movw r1, #65535
-movt r1, #7
-movw r2, #0
-movt r2, #8
-movw r3, #688
-movt r3, #0
-add r3, r8, r3
-movw r12, #640
-movt r12, #0
-push {{r12, lr}}
-bl {vg_mldsa_bit_pack}
-ldr r12, [sp], #8
-movw r0, #18432
-movt r0, #0
-add r0, r7, r0
-movw r1, #65535
-movt r1, #7
-movw r2, #0
-movt r2, #8
-movw r3, #1328
-movt r3, #0
-add r3, r8, r3
-movw r12, #640
-movt r12, #0
-push {{r12, lr}}
-bl {vg_mldsa_bit_pack}
-ldr r12, [sp], #8
-movw r0, #19456
-movt r0, #0
-add r0, r7, r0
-movw r1, #65535
-movt r1, #7
-movw r2, #0
-movt r2, #8
-movw r3, #1968
-movt r3, #0
-add r3, r8, r3
-movw r12, #640
-movt r12, #0
-push {{r12, lr}}
-bl {vg_mldsa_bit_pack}
-ldr r12, [sp], #8
-movw r0, #20480
-movt r0, #0
-add r0, r7, r0
-movw r1, #65535
-movt r1, #7
-movw r2, #0
-movt r2, #8
-movw r3, #2608
-movt r3, #0
-add r3, r8, r3
-movw r12, #640
-movt r12, #0
-push {{r12, lr}}
-bl {vg_mldsa_bit_pack}
-ldr r12, [sp], #8
-movw r0, #10240
-movt r0, #0
-add r0, r7, r0
-movw r1, #1536
-movt r1, #0
-movw r2, #55
-movt r2, #0
-movw r3, #3248
-movt r3, #0
-add r3, r8, r3
-movw r12, #61
-movt r12, #0
-push {{r12, lr}}
-bl {vg_mldsa_hint_bit_pack}
-ldr r12, [sp], #8
-246:
-22:
-mov r0, r11
-mov r3, r7
-ldr r4, [r3, #840]
-ldr r5, [r3, #844]
-ldr r6, [r3, #848]
-ldr r7, [r3, #852]
-ldr r8, [r3, #856]
-ldr r9, [r3, #860]
-ldr r10, [r3, #864]
-ldr r11, [r3, #868]
-ldr lr, [r3, #872]
+mov lr, r4
+ldr r4, [sp], #8
 bx lr",
-        vg_mldsa_rej_ntt_poly = sym super::mldsa44::vg_mldsa_rej_ntt_poly::vg_mldsa_rej_ntt_poly,
-        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
-        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa_expand_mask_poly = sym super::mldsa44::vg_mldsa_expand_mask_poly::vg_mldsa_expand_mask_poly,
-        vg_mldsa_multiply_ntt = sym super::mldsa44::vg_mldsa_multiply_ntt::vg_mldsa_multiply_ntt,
-        vg_mldsa_multiply_add_ntt = sym super::mldsa44::vg_mldsa_multiply_add_ntt::vg_mldsa_multiply_add_ntt,
-        vg_mldsa_inv_ntt = sym super::mldsa44::vg_mldsa_inv_ntt::vg_mldsa_inv_ntt,
-        vg_mldsa_high_bits = sym super::mldsa44::vg_mldsa_high_bits::vg_mldsa_high_bits,
-        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
-        vg_mldsa_sample_in_ball = sym super::mldsa44::vg_mldsa_sample_in_ball::vg_mldsa_sample_in_ball,
-        vg_mldsa_add = sym super::mldsa44::vg_mldsa_add::vg_mldsa_add,
-        vg_mldsa_norm_lt = sym super::mldsa44::vg_mldsa_norm_lt::vg_mldsa_norm_lt,
-        vg_mldsa_sub = sym super::mldsa44::vg_mldsa_sub::vg_mldsa_sub,
-        vg_mldsa_low_bits = sym super::mldsa44::vg_mldsa_low_bits::vg_mldsa_low_bits,
-        vg_mldsa_make_hint = sym super::mldsa44::vg_mldsa_make_hint::vg_mldsa_make_hint,
-        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
-        vg_mldsa_hint_bit_pack = sym super::mldsa44::vg_mldsa_hint_bit_pack::vg_mldsa_hint_bit_pack,
+        vg_mldsa65_sign_with_cache = sym super::mldsa65::vg_mldsa65_sign_with_cache::vg_mldsa65_sign_with_cache,
     )
 }
 
@@ -5237,7 +2949,7 @@ bx lr",
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 36 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 52 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa65_sign_message(sk: *const [u8; 4032], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
     core::arch::naked_asm!(
@@ -5410,1758 +3122,54 @@ bx lr",
     )
 }
 
-/// ML-DSA-65 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+/// ML-DSA-65 signing with a prepared private key: `vg_mldsa65_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
-/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+/// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
 ///
 /// # Safety
 ///
-/// * `pk` must be valid for reads of 1952 bytes.
-/// * `mu` must be valid for reads of 64 bytes.
-/// * `sig` must be valid for reads of 3309 bytes.
-/// * `scratch` must be valid for reads and writes of 103424 bytes.
+/// * `sk` must be valid for reads of 21440 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 3309 bytes.
+/// * `scratch` must be valid for reads and writes of 104448 bytes.
+/// * `sk` must have been written by `vg_mldsa65_prepare_signing_key` from a private key written by `vg_mldsa65_keygen`, and not changed since.
+/// * `*sk` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 36 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the 52 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_mldsa65_verify(pk: *const [u8; 1952], mu: *const [u8; 64], sig: *const [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa65_sign_message_prepared(sk: *const [u8; 21440], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
     core::arch::naked_asm!(
-        r"str r4, [r3, #840]
-str r5, [r3, #844]
-str r6, [r3, #848]
-str r7, [r3, #852]
-str r8, [r3, #856]
-str r9, [r3, #860]
-str r10, [r3, #864]
-str r11, [r3, #868]
-str lr, [r3, #872]
-mov r4, r0
-mov r5, r1
-mov r6, r2
-mov r7, r3
-mov r11, #1
-movw r0, #3248
-movt r0, #0
-add r0, r6, r0
-movw r1, #61
-movt r1, #0
-movw r2, #55
-movt r2, #0
-movw r3, #8192
-movt r3, #0
-add r3, r7, r3
-movw r12, #1536
-movt r12, #0
-push {{r12}}
-bl {vg_mldsa_hint_bit_unpack}
-ldr r12, [sp], #4
-mov r11, r0
-cmp r11, #0
+        r"ldr r12, [sp, #0]
+lsr r12, r12, #8
+cmp r12, #0
 bne 20f
-b 21f
-20:
-movw r0, #48
-movt r0, #0
-add r0, r6, r0
-movw r1, #640
-movt r1, #0
-movw r2, #65535
-movt r2, #7
-movw r3, #0
-movt r3, #8
-movw r12, #16384
-movt r12, #0
-add r12, r7, r12
-push {{r12}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #4
-movw r0, #16384
-movt r0, #0
-add r0, r7, r0
-movw r1, #65340
-movt r1, #7
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-movw r0, #688
-movt r0, #0
-add r0, r6, r0
-movw r1, #640
-movt r1, #0
-movw r2, #65535
-movt r2, #7
-movw r3, #0
-movt r3, #8
-movw r12, #17408
-movt r12, #0
-add r12, r7, r12
-push {{r12}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #4
-movw r0, #17408
-movt r0, #0
-add r0, r7, r0
-movw r1, #65340
-movt r1, #7
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-movw r0, #1328
-movt r0, #0
-add r0, r6, r0
-movw r1, #640
-movt r1, #0
-movw r2, #65535
-movt r2, #7
-movw r3, #0
-movt r3, #8
-movw r12, #18432
-movt r12, #0
-add r12, r7, r12
-push {{r12}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #4
-movw r0, #18432
-movt r0, #0
-add r0, r7, r0
-movw r1, #65340
-movt r1, #7
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-movw r0, #1968
-movt r0, #0
-add r0, r6, r0
-movw r1, #640
-movt r1, #0
-movw r2, #65535
-movt r2, #7
-movw r3, #0
-movt r3, #8
-movw r12, #19456
-movt r12, #0
-add r12, r7, r12
-push {{r12}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #4
-movw r0, #19456
-movt r0, #0
-add r0, r7, r0
-movw r1, #65340
-movt r1, #7
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-movw r0, #2608
-movt r0, #0
-add r0, r6, r0
-movw r1, #640
-movt r1, #0
-movw r2, #65535
-movt r2, #7
-movw r3, #0
-movt r3, #8
-movw r12, #20480
-movt r12, #0
-add r12, r7, r12
-push {{r12}}
-bl {vg_mldsa_bit_unpack}
-ldr r12, [sp], #4
-movw r0, #20480
-movt r0, #0
-add r0, r7, r0
-movw r1, #65340
-movt r1, #7
-bl {vg_mldsa_norm_lt}
-and r11, r11, r0
-cmp r11, #0
-bne 22f
-b 23f
-22:
-add r0, r4, #0
-add r1, r7, #896
-mov r2, #32
-24:
-ldrb r3, [r0, #0]
-strb r3, [r1, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs r2, r2, #1
-bne 24b
-movw r12, #0
-strb r12, [r7, #928]
-movw r12, #0
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #28672
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
+ldr r12, [sp, #12]
+str r7, [r12, #0]
+movw r7, #37888
+movt r7, #1
+add r7, r12, r7
+ldr r12, [r12, #0]
+str r12, [r7, #904]
+str lr, [r7, #908]
+str r0, [r7, #912]
+str r1, [r7, #916]
+str r2, [r7, #920]
+str r3, [r7, #924]
+ldr r0, [sp, #0]
+ldr r1, [sp, #4]
+ldr r2, [sp, #8]
+ldr r3, [sp, #12]
+str r0, [r7, #928]
+str r1, [r7, #932]
+str r2, [r7, #936]
+str r3, [r7, #940]
 mov r12, #0
-sub r12, r12, r0
-movw r1, #28672
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-25:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 25b
-movw r12, #1
-strb r12, [r7, #928]
-movw r12, #0
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #29696
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #29696
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-26:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 26b
-movw r12, #2
-strb r12, [r7, #928]
-movw r12, #0
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #30720
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #30720
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-27:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 27b
-movw r12, #3
-strb r12, [r7, #928]
-movw r12, #0
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #31744
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #31744
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-28:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 28b
-movw r12, #4
-strb r12, [r7, #928]
-movw r12, #0
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #32768
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #32768
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-29:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 29b
-movw r12, #0
-strb r12, [r7, #928]
-movw r12, #1
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #36864
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #36864
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-210:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 210b
-movw r12, #1
-strb r12, [r7, #928]
-movw r12, #1
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #37888
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #37888
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-211:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 211b
-movw r12, #2
-strb r12, [r7, #928]
-movw r12, #1
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #38912
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #38912
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-212:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 212b
-movw r12, #3
-strb r12, [r7, #928]
-movw r12, #1
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #39936
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #39936
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-213:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 213b
-movw r12, #4
-strb r12, [r7, #928]
-movw r12, #1
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #40960
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #40960
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-214:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 214b
-movw r12, #0
-strb r12, [r7, #928]
-movw r12, #2
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #45056
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #45056
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-215:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 215b
-movw r12, #1
-strb r12, [r7, #928]
-movw r12, #2
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #46080
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #46080
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-216:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 216b
-movw r12, #2
-strb r12, [r7, #928]
-movw r12, #2
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #47104
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #47104
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-217:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 217b
-movw r12, #3
-strb r12, [r7, #928]
-movw r12, #2
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #48128
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #48128
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-218:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 218b
-movw r12, #4
-strb r12, [r7, #928]
-movw r12, #2
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #49152
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #49152
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-219:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 219b
-movw r12, #0
-strb r12, [r7, #928]
-movw r12, #3
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #53248
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #53248
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-220:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 220b
-movw r12, #1
-strb r12, [r7, #928]
-movw r12, #3
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #54272
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #54272
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-221:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 221b
-movw r12, #2
-strb r12, [r7, #928]
-movw r12, #3
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #55296
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #55296
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-222:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 222b
-movw r12, #3
-strb r12, [r7, #928]
-movw r12, #3
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #56320
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #56320
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-223:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 223b
-movw r12, #4
-strb r12, [r7, #928]
-movw r12, #3
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #57344
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #57344
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-224:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 224b
-movw r12, #0
-strb r12, [r7, #928]
-movw r12, #4
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #61440
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #61440
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-225:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 225b
-movw r12, #1
-strb r12, [r7, #928]
-movw r12, #4
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #62464
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #62464
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-226:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 226b
-movw r12, #2
-strb r12, [r7, #928]
-movw r12, #4
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #63488
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #63488
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-227:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 227b
-movw r12, #3
-strb r12, [r7, #928]
-movw r12, #4
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #64512
-movt r1, #0
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #64512
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-228:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 228b
-movw r12, #4
-strb r12, [r7, #928]
-movw r12, #4
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #0
-movt r1, #1
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #0
-movt r1, #1
-add r1, r7, r1
-mov r2, #256
-229:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 229b
-movw r12, #0
-strb r12, [r7, #928]
-movw r12, #5
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #1
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #4096
-movt r1, #1
-add r1, r7, r1
-mov r2, #256
-230:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 230b
-movw r12, #1
-strb r12, [r7, #928]
-movw r12, #5
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #1
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #5120
-movt r1, #1
-add r1, r7, r1
-mov r2, #256
-231:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 231b
-movw r12, #2
-strb r12, [r7, #928]
-movw r12, #5
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #1
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #6144
-movt r1, #1
-add r1, r7, r1
-mov r2, #256
-232:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 232b
-movw r12, #3
-strb r12, [r7, #928]
-movw r12, #5
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #7168
-movt r1, #1
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #7168
-movt r1, #1
-add r1, r7, r1
-mov r2, #256
-233:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 233b
-movw r12, #4
-strb r12, [r7, #928]
-movw r12, #5
-strb r12, [r7, #929]
-movw r0, #896
-movt r0, #0
-add r0, r7, r0
-movw r1, #8192
-movt r1, #1
-add r1, r7, r1
-movw r2, #4096
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_rej_ntt_poly}
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #8192
-movt r1, #1
-add r1, r7, r1
-mov r2, #256
-234:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 234b
-movw r0, #0
-movt r0, #0
-add r0, r6, r0
-movw r1, #48
-movt r1, #0
-movw r2, #49
-movt r2, #0
-movw r3, #23552
-movt r3, #0
-add r3, r7, r3
-movw r12, #4096
-movt r12, #0
-add r12, r7, r12
-push {{r12}}
-bl {vg_mldsa_sample_in_ball}
-ldr r12, [sp], #4
-and r11, r11, r0
-mov r12, #0
-sub r12, r12, r0
-movw r1, #23552
-movt r1, #0
-add r1, r7, r1
-mov r2, #256
-235:
-ldr r3, [r1, #0]
-and r3, r3, r12
-str r3, [r1, #0]
-add r1, r1, #4
-subs r2, r2, #1
-bne 235b
-movw r0, #16384
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #17408
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #18432
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #19456
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #20480
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #23552
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #28672
-movt r1, #0
-add r1, r7, r1
-movw r2, #16384
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #29696
-movt r1, #0
-add r1, r7, r1
-movw r2, #17408
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #30720
-movt r1, #0
-add r1, r7, r1
-movw r2, #18432
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #31744
-movt r1, #0
-add r1, r7, r1
-movw r2, #19456
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #32768
-movt r1, #0
-add r1, r7, r1
-movw r2, #20480
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #32
-movt r0, #0
-add r0, r4, r0
-movw r1, #24576
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_unpack_t1}
-movw r0, #24576
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #25600
-movt r0, #0
-add r0, r7, r0
-movw r1, #23552
-movt r1, #0
-add r1, r7, r1
-movw r2, #24576
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #25600
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #8192
-movt r0, #0
-add r0, r7, r0
-movw r1, #26624
-movt r1, #0
-add r1, r7, r1
-movw r2, #65280
-movt r2, #3
-movw r3, #27648
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_use_hint}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #15
-movt r1, #0
-movw r2, #1024
-movt r2, #0
-add r2, r7, r2
-movw r3, #128
-movt r3, #0
-bl {vg_mldsa_simple_bit_pack}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #36864
-movt r1, #0
-add r1, r7, r1
-movw r2, #16384
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #37888
-movt r1, #0
-add r1, r7, r1
-movw r2, #17408
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #38912
-movt r1, #0
-add r1, r7, r1
-movw r2, #18432
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #39936
-movt r1, #0
-add r1, r7, r1
-movw r2, #19456
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #40960
-movt r1, #0
-add r1, r7, r1
-movw r2, #20480
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #352
-movt r0, #0
-add r0, r4, r0
-movw r1, #24576
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_unpack_t1}
-movw r0, #24576
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #25600
-movt r0, #0
-add r0, r7, r0
-movw r1, #23552
-movt r1, #0
-add r1, r7, r1
-movw r2, #24576
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #25600
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #9216
-movt r0, #0
-add r0, r7, r0
-movw r1, #26624
-movt r1, #0
-add r1, r7, r1
-movw r2, #65280
-movt r2, #3
-movw r3, #27648
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_use_hint}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #15
-movt r1, #0
-movw r2, #1152
-movt r2, #0
-add r2, r7, r2
-movw r3, #128
-movt r3, #0
-bl {vg_mldsa_simple_bit_pack}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #45056
-movt r1, #0
-add r1, r7, r1
-movw r2, #16384
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #46080
-movt r1, #0
-add r1, r7, r1
-movw r2, #17408
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #47104
-movt r1, #0
-add r1, r7, r1
-movw r2, #18432
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #48128
-movt r1, #0
-add r1, r7, r1
-movw r2, #19456
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #49152
-movt r1, #0
-add r1, r7, r1
-movw r2, #20480
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #672
-movt r0, #0
-add r0, r4, r0
-movw r1, #24576
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_unpack_t1}
-movw r0, #24576
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #25600
-movt r0, #0
-add r0, r7, r0
-movw r1, #23552
-movt r1, #0
-add r1, r7, r1
-movw r2, #24576
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #25600
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #10240
-movt r0, #0
-add r0, r7, r0
-movw r1, #26624
-movt r1, #0
-add r1, r7, r1
-movw r2, #65280
-movt r2, #3
-movw r3, #27648
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_use_hint}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #15
-movt r1, #0
-movw r2, #1280
-movt r2, #0
-add r2, r7, r2
-movw r3, #128
-movt r3, #0
-bl {vg_mldsa_simple_bit_pack}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #53248
-movt r1, #0
-add r1, r7, r1
-movw r2, #16384
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #54272
-movt r1, #0
-add r1, r7, r1
-movw r2, #17408
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #55296
-movt r1, #0
-add r1, r7, r1
-movw r2, #18432
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #56320
-movt r1, #0
-add r1, r7, r1
-movw r2, #19456
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #57344
-movt r1, #0
-add r1, r7, r1
-movw r2, #20480
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #992
-movt r0, #0
-add r0, r4, r0
-movw r1, #24576
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_unpack_t1}
-movw r0, #24576
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #25600
-movt r0, #0
-add r0, r7, r0
-movw r1, #23552
-movt r1, #0
-add r1, r7, r1
-movw r2, #24576
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #25600
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #11264
-movt r0, #0
-add r0, r7, r0
-movw r1, #26624
-movt r1, #0
-add r1, r7, r1
-movw r2, #65280
-movt r2, #3
-movw r3, #27648
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_use_hint}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #15
-movt r1, #0
-movw r2, #1408
-movt r2, #0
-add r2, r7, r2
-movw r3, #128
-movt r3, #0
-bl {vg_mldsa_simple_bit_pack}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #61440
-movt r1, #0
-add r1, r7, r1
-movw r2, #16384
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #62464
-movt r1, #0
-add r1, r7, r1
-movw r2, #17408
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #63488
-movt r1, #0
-add r1, r7, r1
-movw r2, #18432
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #64512
-movt r1, #0
-add r1, r7, r1
-movw r2, #19456
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #0
-movt r1, #1
-add r1, r7, r1
-movw r2, #20480
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #1312
-movt r0, #0
-add r0, r4, r0
-movw r1, #24576
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_unpack_t1}
-movw r0, #24576
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #25600
-movt r0, #0
-add r0, r7, r0
-movw r1, #23552
-movt r1, #0
-add r1, r7, r1
-movw r2, #24576
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #25600
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #12288
-movt r0, #0
-add r0, r7, r0
-movw r1, #26624
-movt r1, #0
-add r1, r7, r1
-movw r2, #65280
-movt r2, #3
-movw r3, #27648
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_use_hint}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #15
-movt r1, #0
-movw r2, #1536
-movt r2, #0
-add r2, r7, r2
-movw r3, #128
-movt r3, #0
-bl {vg_mldsa_simple_bit_pack}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #1
-add r1, r7, r1
-movw r2, #16384
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #5120
-movt r1, #1
-add r1, r7, r1
-movw r2, #17408
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #6144
-movt r1, #1
-add r1, r7, r1
-movw r2, #18432
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #7168
-movt r1, #1
-add r1, r7, r1
-movw r2, #19456
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #8192
-movt r1, #1
-add r1, r7, r1
-movw r2, #20480
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_add_ntt}
-movw r0, #1632
-movt r0, #0
-add r0, r4, r0
-movw r1, #24576
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_unpack_t1}
-movw r0, #24576
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_ntt}
-movw r0, #25600
-movt r0, #0
-add r0, r7, r0
-movw r1, #23552
-movt r1, #0
-add r1, r7, r1
-movw r2, #24576
-movt r2, #0
-add r2, r7, r2
-bl {vg_mldsa_multiply_ntt}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #25600
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_sub}
-movw r0, #26624
-movt r0, #0
-add r0, r7, r0
-movw r1, #4096
-movt r1, #0
-add r1, r7, r1
-bl {vg_mldsa_inv_ntt}
-movw r0, #13312
-movt r0, #0
-add r0, r7, r0
-movw r1, #26624
-movt r1, #0
-add r1, r7, r1
-movw r2, #65280
-movt r2, #3
-movw r3, #27648
-movt r3, #0
-add r3, r7, r3
-bl {vg_mldsa_use_hint}
-movw r0, #27648
-movt r0, #0
-add r0, r7, r0
-movw r1, #15
-movt r1, #0
-movw r2, #1664
-movt r2, #0
-add r2, r7, r2
-movw r3, #128
-movt r3, #0
-bl {vg_mldsa_simple_bit_pack}
+strb r12, [r7, #944]
+strb r0, [r7, #945]
 mov r12, #0
 str r12, [r7, #0]
 str r12, [r7, #4]
@@ -7213,92 +3221,124 @@ str r12, [r7, #184]
 str r12, [r7, #188]
 str r12, [r7, #192]
 str r12, [r7, #196]
-mov r2, #0
-mov r0, r7
-mov r1, #136
-add lr, r7, #200
-add r3, r5, #0
-mov r12, #64
+movw r2, #0
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+ldr r3, [r7, #912]
+add r3, r3, #64
+movw r12, #64
+movw lr, #200
+add lr, r7, lr
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+movw r2, #64
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+movw r3, #944
+add r3, r7, r3
+movw r12, #2
+movw lr, #200
+add lr, r7, lr
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+movw r2, #66
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+ldr r3, [r7, #924]
+ldr r12, [r7, #928]
+movw lr, #200
+add lr, r7, lr
 push {{r12, lr}}
 bl {vg_keccak_absorb_scratch}
 ldr r12, [sp], #8
 mov r2, r0
-mov r0, r7
-mov r1, #136
-add lr, r7, #200
-add r3, r7, #1024
-mov r12, #768
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+ldr r3, [r7, #916]
+ldr r12, [r7, #920]
+movw lr, #200
+add lr, r7, lr
 push {{r12, lr}}
 bl {vg_keccak_absorb_scratch}
 ldr r12, [sp], #8
 mov r2, r0
-mov r0, r7
-mov r1, #136
-add lr, r7, #200
-mov r3, #31
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+movw r3, #31
+movw lr, #200
+add lr, r7, lr
 push {{lr}}
 bl {vg_keccak_pad_scratch}
 ldr r12, [sp], #4
-mov r2, #0
-mov r0, r7
-mov r1, #136
-add lr, r7, #200
-add r3, r7, #2048
-mov r12, #48
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+movw r2, #0
+movw r3, #840
+add r3, r7, r3
+movw r12, #64
+movw lr, #200
+add lr, r7, lr
 push {{r12, lr}}
 bl {vg_keccak_squeeze_scratch}
 ldr r12, [sp], #8
-movw r0, #2048
-movt r0, #0
-add r0, r7, r0
-movw r1, #0
-movt r1, #0
-add r1, r6, r1
-movw r9, #48
-movt r9, #0
-mov r12, #0
-236:
-ldrb r2, [r0, #0]
-ldrb r3, [r1, #0]
-eor r2, r2, r3
-orr r12, r12, r2
-add r0, r0, #1
-add r1, r1, #1
-subs r9, r9, #1
-bne 236b
-sub r12, r12, #1
-lsr r12, r12, #31
-and r11, r11, r12
-23:
+ldr r0, [r7, #912]
+movw r1, #840
+add r1, r7, r1
+ldr r2, [r7, #932]
+ldr r3, [r7, #936]
+ldr r12, [r7, #940]
+push {{r12, lr}}
+bl {vg_mldsa65_sign_prepared}
+ldr r12, [sp], #8
+ldr lr, [r7, #908]
+ldr r7, [r7, #904]
+b 21f
+20:
+mov r0, #2
 21:
-mov r0, r11
-mov r3, r7
-ldr r4, [r3, #840]
-ldr r5, [r3, #844]
-ldr r6, [r3, #848]
-ldr r7, [r3, #852]
-ldr r8, [r3, #856]
-ldr r9, [r3, #860]
-ldr r10, [r3, #864]
-ldr r11, [r3, #868]
-ldr lr, [r3, #872]
 bx lr",
-        vg_mldsa_hint_bit_unpack = sym super::mldsa44::vg_mldsa_hint_bit_unpack::vg_mldsa_hint_bit_unpack,
-        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
-        vg_mldsa_norm_lt = sym super::mldsa44::vg_mldsa_norm_lt::vg_mldsa_norm_lt,
-        vg_mldsa_rej_ntt_poly = sym super::mldsa44::vg_mldsa_rej_ntt_poly::vg_mldsa_rej_ntt_poly,
-        vg_mldsa_sample_in_ball = sym super::mldsa44::vg_mldsa_sample_in_ball::vg_mldsa_sample_in_ball,
-        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
-        vg_mldsa_multiply_ntt = sym super::mldsa44::vg_mldsa_multiply_ntt::vg_mldsa_multiply_ntt,
-        vg_mldsa_multiply_add_ntt = sym super::mldsa44::vg_mldsa_multiply_add_ntt::vg_mldsa_multiply_add_ntt,
-        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
-        vg_mldsa_sub = sym super::mldsa44::vg_mldsa_sub::vg_mldsa_sub,
-        vg_mldsa_inv_ntt = sym super::mldsa44::vg_mldsa_inv_ntt::vg_mldsa_inv_ntt,
-        vg_mldsa_use_hint = sym super::mldsa44::vg_mldsa_use_hint::vg_mldsa_use_hint,
-        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa65_sign_prepared = sym super::mldsa65::vg_mldsa65_sign_prepared::vg_mldsa65_sign_prepared,
+    )
+}
+
+/// ML-DSA-65 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+///
+/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1952 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 3309 bytes.
+/// * `scratch` must be valid for reads and writes of 103424 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 52 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa65_verify(pk: *const [u8; 1952], mu: *const [u8; 64], sig: *const [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r4, lr}}
+mov r4, lr
+movw r12, #0
+movt r12, #0
+push {{r12, lr}}
+bl {vg_mldsa65_verify_with_cache}
+ldr r12, [sp], #8
+mov lr, r4
+ldr r4, [sp], #8
+bx lr",
+        vg_mldsa65_verify_with_cache = sym super::mldsa65::vg_mldsa65_verify_with_cache::vg_mldsa65_verify_with_cache,
     )
 }
 
@@ -7317,7 +3357,7 @@ bx lr",
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 36 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 52 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mldsa65_verify_message_cached(pk: *const [u8; 1952], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
@@ -7486,38 +3526,203 @@ bx lr",
     )
 }
 
-/// `vg_mldsa65_sign`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mldsa65_sign as vg_mldsa65_sign_auto;
+/// ML-DSA-65 verification with a prepared public key: `vg_mldsa65_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 8096 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 3309 bytes.
+/// * `scratch` must be valid for reads and writes of 104448 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `pk` must have been written by `vg_mldsa65_prepare_verifying_key`, and not changed since.
+/// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the 52 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_mldsa65_verify_message_prepared(pk: *const [u8; 8096], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r"ldr r12, [sp, #0]
+lsr r12, r12, #8
+cmp r12, #0
+bne 20f
+ldr r12, [sp, #8]
+str r7, [r12, #0]
+movw r7, #37888
+movt r7, #1
+add r7, r12, r7
+ldr r12, [r12, #0]
+str r12, [r7, #904]
+str lr, [r7, #908]
+str r0, [r7, #912]
+str r1, [r7, #916]
+str r2, [r7, #920]
+str r3, [r7, #924]
+ldr r0, [sp, #0]
+ldr r1, [sp, #12]
+ldr r2, [sp, #4]
+ldr r3, [sp, #8]
+str r0, [r7, #928]
+str r1, [r7, #932]
+str r2, [r7, #936]
+str r3, [r7, #940]
+mov r12, #0
+strb r12, [r7, #944]
+strb r0, [r7, #945]
+mov r12, #0
+str r12, [r7, #0]
+str r12, [r7, #4]
+str r12, [r7, #8]
+str r12, [r7, #12]
+str r12, [r7, #16]
+str r12, [r7, #20]
+str r12, [r7, #24]
+str r12, [r7, #28]
+str r12, [r7, #32]
+str r12, [r7, #36]
+str r12, [r7, #40]
+str r12, [r7, #44]
+str r12, [r7, #48]
+str r12, [r7, #52]
+str r12, [r7, #56]
+str r12, [r7, #60]
+str r12, [r7, #64]
+str r12, [r7, #68]
+str r12, [r7, #72]
+str r12, [r7, #76]
+str r12, [r7, #80]
+str r12, [r7, #84]
+str r12, [r7, #88]
+str r12, [r7, #92]
+str r12, [r7, #96]
+str r12, [r7, #100]
+str r12, [r7, #104]
+str r12, [r7, #108]
+str r12, [r7, #112]
+str r12, [r7, #116]
+str r12, [r7, #120]
+str r12, [r7, #124]
+str r12, [r7, #128]
+str r12, [r7, #132]
+str r12, [r7, #136]
+str r12, [r7, #140]
+str r12, [r7, #144]
+str r12, [r7, #148]
+str r12, [r7, #152]
+str r12, [r7, #156]
+str r12, [r7, #160]
+str r12, [r7, #164]
+str r12, [r7, #168]
+str r12, [r7, #172]
+str r12, [r7, #176]
+str r12, [r7, #180]
+str r12, [r7, #184]
+str r12, [r7, #188]
+str r12, [r7, #192]
+str r12, [r7, #196]
+movw r2, #0
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+ldr r3, [r7, #932]
+movw r12, #64
+movw lr, #200
+add lr, r7, lr
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+movw r2, #64
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+movw r3, #944
+add r3, r7, r3
+movw r12, #2
+movw lr, #200
+add lr, r7, lr
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+movw r2, #66
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+ldr r3, [r7, #924]
+ldr r12, [r7, #928]
+movw lr, #200
+add lr, r7, lr
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+mov r2, r0
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+ldr r3, [r7, #916]
+ldr r12, [r7, #920]
+movw lr, #200
+add lr, r7, lr
+push {{r12, lr}}
+bl {vg_keccak_absorb_scratch}
+ldr r12, [sp], #8
+mov r2, r0
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+movw r3, #31
+movw lr, #200
+add lr, r7, lr
+push {{lr}}
+bl {vg_keccak_pad_scratch}
+ldr r12, [sp], #4
+movw r0, #0
+add r0, r7, r0
+movw r1, #136
+movw r2, #0
+movw r3, #840
+add r3, r7, r3
+movw r12, #64
+movw lr, #200
+add lr, r7, lr
+push {{r12, lr}}
+bl {vg_keccak_squeeze_scratch}
+ldr r12, [sp], #8
+ldr r0, [r7, #912]
+movw r1, #840
+add r1, r7, r1
+ldr r2, [r7, #936]
+ldr r3, [r7, #940]
+bl {vg_mldsa65_verify_prepared}
+ldr lr, [r7, #908]
+ldr r7, [r7, #904]
+b 21f
+20:
+mov r0, #2
+21:
+bx lr",
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa65_verify_prepared = sym super::mldsa65::vg_mldsa65_verify_prepared::vg_mldsa65_verify_prepared,
+    )
+}
 
-/// `vg_mldsa65_pk_tr`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mldsa65_pk_tr as vg_mldsa65_pk_tr_auto;
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa65_sign_prepared.rs"]
+pub(crate) mod vg_mldsa65_sign_prepared;
 
-/// `vg_mldsa65_keygen`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mldsa65_keygen as vg_mldsa65_keygen_auto;
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa65_sign_with_cache.rs"]
+pub(crate) mod vg_mldsa65_sign_with_cache;
 
-/// `vg_mldsa65_verify`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mldsa65_verify as vg_mldsa65_verify_auto;
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa65_verify_prepared.rs"]
+pub(crate) mod vg_mldsa65_verify_prepared;
 
-/// `vg_mldsa65_sign_message`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mldsa65_sign_message as vg_mldsa65_sign_message_auto;
-
-/// `vg_mldsa65_verify_message_cached`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use self::vg_mldsa65_verify_message_cached as vg_mldsa65_verify_message_cached_auto;
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa65_verify_with_cache.rs"]
+pub(crate) mod vg_mldsa65_verify_with_cache;

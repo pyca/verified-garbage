@@ -60,6 +60,19 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   among them. A variant calling the function it is a variant of is exempt,
   as above.
 
+A combination no CPU can choose is not required. When the Rust code never
+chooses an implementation `c` on a CPU with all of the features of a set
+`X` (it chooses another implementation of the same function there:
+ChaCha20's 4-way SSSE3 code is not chosen with AVX and AVX2, which its
+`_avx2` code needs), `NEVER_WITH` lists `X` for `c`. A variant of a
+function `g` that runs `c` (`g` is `c` or calls it) for a callee's variant
+`f_<s>` would run only on CPUs with both `g`'s features and `f_<s>`'s; if
+those include one of `c`'s sets, the Rust code never chooses `c` there, so
+no CPU chooses that combination, and `g_<s>` is not required. The Rust
+code's choice is unit-tested both ways (CLAUDE.md), and each entry must
+name a function of its target whose own features include none of its sets
+(otherwise the Rust code could never choose it at all).
+
 An *internal function* (`Rust.Internal` in `lean/VerifiedGarbage/TCB/Rust.lean`),
 which the emitter writes to `src/internal/<name>.rs` of its crate, is code
 that verified functions call but that has no contract: it has no Rust
@@ -205,6 +218,13 @@ def features(srcs):
 
 # The signature of an internal function (`fn <name>()`).
 INTERNAL = ("", "")
+
+# For each target, the implementations the Rust code never chooses on a CPU
+# with all of the features of one of the sets listed (in lower case, as
+# `features` reads them), because it chooses another implementation of the
+# same function there: a combination with one of them that needs all of a
+# set is one no CPU chooses (see the module's docstring).
+NEVER_WITH = {}
 
 
 def variants(fns):
@@ -495,12 +515,35 @@ def production_rust(src):
         " ".join(strip_tests(toks[p])) for p in paths if p not in test_only
     )
 
-def check(targets, rust, feats=None, names=None, disp=None):
+def never_with_errors(targets, feats, never_with):
+    """The errors of `never_with` (`NEVER_WITH`): entries naming no function
+    of their target, or one whose own features include a set it lists."""
+    errors = []
+    for target, entries in sorted(never_with.items()):
+        fns = targets.get(target, {})
+        for name, sets in sorted(entries.items()):
+            if name not in fns:
+                errors.append(f"{target}: NEVER_WITH names {name}, which is not a generated function")
+                continue
+            own = feats.get(target, {}).get(name, frozenset())
+            for excluded in sets:
+                if frozenset(excluded) <= own:
+                    errors.append(
+                        f"{target}: NEVER_WITH says {name} is never chosen with "
+                        f"{', '.join(sorted(excluded))}, which it needs itself: it could never be chosen"
+                    )
+    return errors
+
+
+def check(targets, rust, feats=None, names=None, never_with=None, disp=None):
     """The errors of the generated functions `targets`, given the production
     Rust code `rust`, the features of each function `feats` (`features`),
-    the other names of functions `names` (`all_aliases`) and the
+    the other names of functions `names` (`all_aliases`), the
+    implementations never chosen with some features (`NEVER_WITH`) and the
     dispatchers `disp` (`dispatchers`)."""
-    errors = []
+    feats = feats or {}
+    never_with = NEVER_WITH if never_with is None else never_with
+    errors = never_with_errors(targets, feats, never_with)
     # The identifiers of the Rust code: `name` is one exactly when
     # `\bname\b` matches it, and a set answers without scanning the code.
     rust_words = set(re.findall(r"\w+", rust))
@@ -514,7 +557,17 @@ def check(targets, rust, feats=None, names=None, disp=None):
                 words |= called_by
         words |= {canon for name, canon in al.items() if name in words}
         var = variants(fns)
-        errors += best_callees(target, fns, var, (feats or {}).get(target, {}))
+        tfeats = feats.get(target, {})
+        never = never_with.get(target, {})
+        errors += best_callees(target, fns, var, tfeats)
+
+        def unchosen(name, variant):
+            """Whether no CPU chooses `name`'s variant for the callee's
+            `variant`: one would need `name`'s features and `variant`'s, which
+            include all of a set the Rust code never chooses `name`, or an
+            implementation it calls, with."""
+            needs = tfeats.get(name, frozenset()) | tfeats.get(variant, frozenset())
+            return any(frozenset(x) <= needs for c in {name} | fns[name][1] for x in never.get(c, ()))
         by_base = {}
         for v, (base, suffix) in var.items():
             by_base.setdefault(base, []).append(suffix)
@@ -568,7 +621,7 @@ def check(targets, rust, feats=None, names=None, disp=None):
                     variant = f"{callee}_{suffix}"
                     found = variants_for(caller, suffix)
                     if not found:
-                        if unneeded(caller, suffix):
+                        if unneeded(caller, suffix) or unchosen(caller, variant):
                             continue
                         errors.append(
                             f"{target}: {caller} calls {callee}, which has the variant "
@@ -660,7 +713,7 @@ def main():
     srcs = sources()
     errors = unread(srcs) + check(
         functions(srcs), production_rust(ROOT / "src"), features(srcs), all_aliases(srcs),
-        dispatchers(srcs)
+        disp=dispatchers(srcs)
     )
     for e in errors:
         print(e, file=sys.stderr)

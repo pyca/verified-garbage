@@ -584,10 +584,6 @@ pub unsafe fn vg_triple_des_ecb_decrypt_auto(schedule: *const [u8; 384], data: *
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_triple_des_decrypt_block.rs"]
-pub(crate) mod vg_triple_des_decrypt_block;
-
-#[rustfmt::skip]
 #[path = "internal/vg_triple_des_ecb_decrypt_core.rs"]
 pub(crate) mod vg_triple_des_ecb_decrypt_core;
 

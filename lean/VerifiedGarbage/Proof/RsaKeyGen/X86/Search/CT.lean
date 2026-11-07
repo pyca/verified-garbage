@@ -214,7 +214,7 @@ theorem wordsAt4 (m : Mem) (p : Addr) : Spec.Rsa.wordsAt m p 4 =
 /-- Two entry states whose public data agree have the same public data and trace. -/
 theorem pub_same {s t : State} (H : contract.pub s t) :
     searchOfState s = searchOfState t ∧ (searchResult s).trace = (searchResult t).trace := by
-  sig_pub [contract, Spec.RsaKeyGen.primeSearchContract, Spec.RsaKeyGen.primeSearchSig, abi, argSlots, argVal,
+  sig_pub [contract, Proof.RsaKeyGen.primeSearchContract, Proof.RsaKeyGen.primeSearchSig, abi, argSlots, argVal,
     argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts] at H
   obtain ⟨SP, sy, L, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := H
   have inj : ∀ {l l' : List Byte}, l.map (fun x => x.toNat) = l'.map (fun x => x.toNat) → l = l' :=

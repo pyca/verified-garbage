@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
@@ -10,7 +11,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 # An RSA key from its primes on x86-64: the contract the proofs use
 
 Untrusted: everything here is checked by Lean. `keyCtr` states
-`Spec.RsaKeyGen.keyContract` on the registers and the stack:
+`Proof.RsaKeyGen.keyContract` on the registers and the stack:
 `vg_rsa_keygen_key(n = rdi, n_len = rsi, d = rdx, d_len = rcx, p = r8,
 p_len = r9, q = [rsp + 8], q_len = [rsp + 16], dp = [rsp + 24],
 dp_len = [rsp + 32], dq = [rsp + 40], dq_len = [rsp + 48],
@@ -25,7 +26,8 @@ namespace VG.Proof.RsaKeyGen.X86_64.Key
 
 open VG VG.X86_64
 open VG.Spec.Rsa (bytesAt)
-open VG.Spec.RsaKeyGen (keyOp keyStatus primeLenValid)
+open VG.Spec.RsaKeyGen (primeLenValid)
+open VG.Proof.RsaKeyGen (keyOp keyStatus)
 
 /-- The `i`-th argument on the stack. -/
 abbrev arg (s : State) (i : Nat) : BitVec 64 := stackArg s i

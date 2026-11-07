@@ -1,6 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignVerified
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ValidatePrivateVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.ValidatePrivateVerified
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareCT
@@ -53,3 +55,8 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
 
 #assert_standard_axioms VG.Proof.Dsa.X86_64.random_sign_verified
 #assert_standard_axioms VG.Proof.Dsa.X86_64.random_sign_constantTime
+
+-- Signing for a private key validated once.
+#assert_standard_axioms VG.Proof.Dsa.X86_64.random_sign_prevalidated_verified
+#assert_standard_axioms VG.Proof.Dsa.X86_64.prevalidated_sign_verified
+#assert_standard_axioms VG.Proof.Dsa.X86_64.validating_private_verified

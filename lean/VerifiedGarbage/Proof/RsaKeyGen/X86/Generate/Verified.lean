@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Verified
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Safety
@@ -337,7 +338,7 @@ theorem search_pub {q : GenPoint} {t₁ t₂ : State} (h₁ : CallS q t₁) (h�
     rw [← w₂]; exact word_keep m₂ fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
       exact (i₂.abi.lowS.sub_left (low_sub (by decide))).symm.sub_left (by rw [i₂.sR_eq]; exact Offset.sub_base _ (by decide))
-  sig_pub [VG.Proof.RsaKeyGen.X86.Search.contract, Spec.RsaKeyGen.primeSearchContract, Spec.RsaKeyGen.primeSearchSig,
+  sig_pub [VG.Proof.RsaKeyGen.X86.Search.contract, Proof.RsaKeyGen.primeSearchContract, Proof.RsaKeyGen.primeSearchSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
   simp only [ce_arg F₁ g₁ rd wr (show 0 < 12 by decide), ce_arg F₁ g₁ rd wr (show 1 < 12 by decide), ce_arg F₁ g₁ rd wr (show 2 < 12 by decide), ce_arg F₁ g₁ rd wr (show 3 < 12 by decide), ce_arg F₁ g₁ rd wr (show 4 < 12 by decide), ce_arg F₁ g₁ rd wr (show 5 < 12 by decide), ce_arg F₁ g₁ rd wr (show 6 < 12 by decide), ce_arg F₁ g₁ rd wr (show 7 < 12 by decide), ce_arg F₁ g₁ rd wr (show 8 < 12 by decide), ce_arg F₁ g₁ rd wr (show 9 < 12 by decide), ce_arg F₁ g₁ rd wr (show 10 < 12 by decide), ce_arg F₁ g₁ rd wr (show 11 < 12 by decide), ce_arg F₂ g₂ rd wr (show 0 < 12 by decide), ce_arg F₂ g₂ rd wr (show 1 < 12 by decide), ce_arg F₂ g₂ rd wr (show 2 < 12 by decide), ce_arg F₂ g₂ rd wr (show 3 < 12 by decide), ce_arg F₂ g₂ rd wr (show 4 < 12 by decide), ce_arg F₂ g₂ rd wr (show 5 < 12 by decide), ce_arg F₂ g₂ rd wr (show 6 < 12 by decide), ce_arg F₂ g₂ rd wr (show 7 < 12 by decide), ce_arg F₂ g₂ rd wr (show 8 < 12 by decide), ce_arg F₂ g₂ rd wr (show 9 < 12 by decide), ce_arg F₂ g₂ rd wr (show 10 < 12 by decide), ce_arg F₂ g₂ rd wr (show 11 < 12 by decide), ret_eq F₁, ret_eq F₂]
   rw [entry_result F₁ L₁.used_le S₁ K₁, entry_result F₂ L₂.used_le S₂ K₂]
@@ -675,7 +676,7 @@ theorem key_pub {q : GenPoint} {t₁ t₂ : State} (h₁ : CallK q t₁) (h₂ :
       (t₂.callEntry.withRegions rd wr) := by
   obtain ⟨o₁, u₁, st₁, s₁, g₁, k₁, F₁, a₁, m₁⟩ := h₁
   obtain ⟨o₂, u₂, st₂, s₂, g₂, k₂, F₂, a₂, m₂⟩ := h₂
-  sig_pub [VG.Proof.RsaKeyGen.X86.Key.contract, Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argSlots,
+  sig_pub [VG.Proof.RsaKeyGen.X86.Key.contract, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argSlots,
     argVal, argBytes]
   simp only [ce_key F₁ a₁ rd wr (show 0 < 18 by decide), ce_key F₁ a₁ rd wr (show 1 < 18 by decide), ce_key F₁ a₁ rd wr (show 2 < 18 by decide), ce_key F₁ a₁ rd wr (show 3 < 18 by decide), ce_key F₁ a₁ rd wr (show 4 < 18 by decide), ce_key F₁ a₁ rd wr (show 5 < 18 by decide), ce_key F₁ a₁ rd wr (show 6 < 18 by decide), ce_key F₁ a₁ rd wr (show 7 < 18 by decide), ce_key F₁ a₁ rd wr (show 8 < 18 by decide), ce_key F₁ a₁ rd wr (show 9 < 18 by decide), ce_key F₁ a₁ rd wr (show 10 < 18 by decide), ce_key F₁ a₁ rd wr (show 11 < 18 by decide), ce_key F₁ a₁ rd wr (show 12 < 18 by decide), ce_key F₁ a₁ rd wr (show 13 < 18 by decide), ce_key F₁ a₁ rd wr (show 14 < 18 by decide), ce_key F₁ a₁ rd wr (show 15 < 18 by decide), ce_key F₁ a₁ rd wr (show 16 < 18 by decide), ce_key F₁ a₁ rd wr (show 17 < 18 by decide),
     ce_key F₂ a₂ rd wr (show 0 < 18 by decide), ce_key F₂ a₂ rd wr (show 1 < 18 by decide), ce_key F₂ a₂ rd wr (show 2 < 18 by decide), ce_key F₂ a₂ rd wr (show 3 < 18 by decide), ce_key F₂ a₂ rd wr (show 4 < 18 by decide), ce_key F₂ a₂ rd wr (show 5 < 18 by decide), ce_key F₂ a₂ rd wr (show 6 < 18 by decide), ce_key F₂ a₂ rd wr (show 7 < 18 by decide), ce_key F₂ a₂ rd wr (show 8 < 18 by decide), ce_key F₂ a₂ rd wr (show 9 < 18 by decide), ce_key F₂ a₂ rd wr (show 10 < 18 by decide), ce_key F₂ a₂ rd wr (show 11 < 18 by decide), ce_key F₂ a₂ rd wr (show 12 < 18 by decide), ce_key F₂ a₂ rd wr (show 13 < 18 by decide), ce_key F₂ a₂ rd wr (show 14 < 18 by decide), ce_key F₂ a₂ rd wr (show 15 < 18 by decide), ce_key F₂ a₂ rd wr (show 16 < 18 by decide), ce_key F₂ a₂ rd wr (show 17 < 18 by decide),
