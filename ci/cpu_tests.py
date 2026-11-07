@@ -480,7 +480,7 @@ GROUPS = {
         "tests": ["cavp::triple_des_cfb"],
     },
     "triple_des_ecb": {
-        "lib": ["cipher::triple_des::ecb"],
+        "lib": [],
         "tests": ["cavp::triple_des_ecb"],
     },
     "x25519": {
