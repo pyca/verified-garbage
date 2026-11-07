@@ -55,7 +55,11 @@ reaches the callers of one variant, without anyone listing it.
 The artifacts emitted include each generic function applied to each variant
 of its interface and target (each combination of a variant of each of its
 interfaces, and the list of every variant of each `All` interface), in order
-of their module names. What a variant is (its type)
+of their module names. A generic function names each instance by the variants it uses
+(a function that uses one part of a variant, as AES-GCM's GHASH-only
+functions use only its GHASH, takes that part's suffix): the instance it
+makes from variants that differ elsewhere is the same artifact, emitted once
+(`Rust.sameInstance`). What a variant is (its type)
 is up to the interface, as long as every variant and every generic function
 of it agree, which elaboration checks. Nothing here needs trusting beyond
 the files found: every artifact carries its own proof, and

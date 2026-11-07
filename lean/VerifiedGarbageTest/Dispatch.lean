@@ -90,6 +90,23 @@ def x86Rank (module suffix : String) : Option Nat :=
 #guard ((Rust.rankOf ((Dispatch.ranking.lookup "x86_64").getD []) "chacha20" "_ifma").map
   (·.2.extra)) == some ["avx512ifma"]
 
+/-! ## The same instance from several variants (`Rust.checkSame`) -/
+
+def poly := Artifacts.Poly1305.AArch64.artifacts
+
+-- Each artifact twice, as a generic function's instance for two variants that
+-- differ in a part it does not use: the files are those of each once.
+#guard match Rust.files (poly ++ poly) Dispatch.ranking, Rust.files poly Dispatch.ranking with
+  | .ok a, .ok b => a == b
+  | _, _ => false
+
+-- Of the same name but not the same function: an error.
+#guard match poly.head? with
+  | some a => match Rust.files (poly ++ [{ a with doc := a.doc ++ " " }]) Dispatch.ranking with
+    | .error e => has e s!"{a.name} is defined more than once, as different functions"
+    | .ok _ => false
+  | none => false
+
 -- An unranked suffix fails the emitter.
 #guard match Rust.files Artifacts.Poly1305.AArch64.artifacts [("aarch64", [])] with
   | .error e => has e "vg_poly1305_update_neon: its suffix `_neon` is not ranked"

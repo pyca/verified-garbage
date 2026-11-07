@@ -1019,6 +1019,38 @@ def checkWritten (a : Artifact) : Except String Unit := do
     | none => throw s!"{a.target.name}: {a.name} bounds what it writes of `{p}`, which is not \
         one of its parameters"
 
+/-- Whether the artifacts `a` and `b`, of the same name and target, are the
+same function: the same module, signature, documentation, tables, stack,
+features, bounds on what they write and printed code (its calls and tables
+included, `codeOf`), so that emitting one of them emits the other. A generic
+function names each instance by the variants of its interfaces that the
+instance uses (`Emit.instances`): from variants that differ only in a part it
+does not use, it makes the same instance, the same artifact more than once,
+each with its own proof of the contract its documentation states. -/
+def sameInstance (a b : Artifact) : Bool :=
+  let code (a : Artifact) := codeOf a (Prepared.of (Shared.of a)).lines fun _ => ""
+  a.module == b.module && a.sig == b.sig && a.doc == b.doc && a.consts == b.consts &&
+    a.tables == b.tables && a.writeArgs == b.writeArgs && a.stack == b.stack &&
+    a.features == b.features && a.written == b.written && code a == code b
+
+/-- Each artifact of `as` that comes before every other of its target and name. -/
+def firstOfEach (as : List Artifact) : List Artifact := Id.run do
+  let mut out : Array Artifact := #[]
+  for a in as do
+    unless out.any fun b => b.target.name == a.target.name && b.name == a.name do
+      out := out.push a
+  return out.toList
+
+/-- Each artifact of `as` is the same function (`sameInstance`) as the first
+of its target and name, which `firstOfEach` keeps: it is emitted once. -/
+def checkSame (as : List Artifact) : Except String Unit :=
+  let firsts := firstOfEach as
+  as.forM fun a =>
+    match firsts.find? fun b => b.target.name == a.target.name && b.name == a.name with
+    | some b => unless sameInstance a b do
+        throw s!"{a.target.name}: {a.name} is defined more than once, as different functions"
+    | none => pure ()
+
 /-- No two artifacts of a target have the same name. -/
 def checkUnique (as : List Artifact) : Except String Unit :=
   as.forM fun a =>
@@ -2014,8 +2046,9 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
 for each target, its crate's `lib.rs`, one `<module>.rs` per module and one
 `internal/<name>.rs` per internal function (`internalsOf`), in its `codeDir`;
 an error if an artifact is not made from an `Api` with a
-contract (`checkApi`), two artifacts of a target have the same name
-(`checkUnique`), a call is not of the code it runs (`checkCalls`), its
+contract (`checkApi`), two artifacts of a target have the same name but are
+not the same function (`checkSame`; those that are, `sameInstance`, are
+emitted once, `firstOfEach`), a call is not of the code it runs (`checkCalls`), its
 tables of constants, or an internal function's name or tables, are not as
 `checkConsts`, `checkInternal` and `checkInternalTables` require, an
 artifact's features are not those its code requires (`checkFeatures`), its
@@ -2040,6 +2073,8 @@ def files (as : List Artifact) (ranking : Ranking := []) :
   -- and that of each first call of a function (`Shared`), with the same target
   -- and code, which `checkCalls` compares by `printsAs`. First, as sharing
   -- values that tasks have read takes several times longer.
+  checkSame as
+  let as := firstOfEach as
   let ss := ShareCommon.shareCommon' (as.map Shared.of)
   let as := ss.map (·.art)
   forMPar as checkApi
