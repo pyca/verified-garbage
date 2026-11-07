@@ -76,9 +76,9 @@ the keystream into the `n` blocks at `src` and writing the result to the `n`
 blocks at `dst`.
 
 The code may read `schedule` (240 bytes) and `src` (`16 n` bytes), and read
-and write `counter`, `dst` and `scratch`. `src` overlaps none of the regions
-it may write, and neither `src` nor `dst` wraps around the end of the address
-space. The pointers, `rounds` and `n` are public; the key schedule, the
+and write `counter`, `dst` and `scratch`. `src` is `dst` (in place) or
+overlaps none of the regions it may write, and neither `src` nor `dst` wraps
+around the end of the address space. The pointers, `rounds` and `n` are public; the key schedule, the
 counter block and the data are secret. -/
 def ctr32ToRISCV64 : Contract RISCV64.isa where
   pre s :=
@@ -90,7 +90,7 @@ def ctr32ToRISCV64 : Contract RISCV64.isa where
     s.rd = [sched, src] ∧ s.wr = [counter, data, scratch] ∧
     sched.Disjoint counter ∧ sched.Disjoint data ∧ sched.Disjoint scratch ∧
     counter.Disjoint data ∧ counter.Disjoint scratch ∧ data.Disjoint scratch ∧
-    src.Disjoint counter ∧ src.Disjoint data ∧ src.Disjoint scratch ∧
+    src.Disjoint counter ∧ (s.gpr .a6 = s.gpr .a3 ∨ src.Disjoint data) ∧ src.Disjoint scratch ∧
     (s.gpr .a3).toNat + 16 * (s.gpr .a4).toNat ≤ 2 ^ 64 ∧
     (s.gpr .a6).toNat + 16 * (s.gpr .a4).toNat ≤ 2 ^ 64 ∧
     ((s.gpr .a1).toNat = 10 ∨ (s.gpr .a1).toNat = 12 ∨ (s.gpr .a1).toNat = 14)
@@ -867,7 +867,7 @@ theorem correctTo {s₀ : State} (hp : Proof.Aes.ctr32ToRISCV64.pre s₀) :
   exact correctWith (o := true) (S := s₀.gpr .a6)
     ⟨by rw [hrd]; simp, by rw [hwr]; simp, by rw [hwr]; simp, by rw [hwr]; simp,
       List.mem_append_left _ (by rw [hrd]; simp), fun _ => rfl, fun h => absurd h (by decide),
-      dSC, dSS, dCD, dCS, dDS, sC, sS, .inr sD, hR⟩
+      dSC, dSS, dCD, dCS, dDS, sC, sS, sD, hR⟩
 
 theorem ctr32To_correct (s : State) (hs : Proof.Aes.ctr32ToRISCV64.pre s) :
     ∃ t s', Exec isa Impl.Aes.RISCV64.ctr32To s t s' ∧ abiPreserved s s' ∧

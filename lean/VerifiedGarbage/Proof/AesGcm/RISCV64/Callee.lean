@@ -8,7 +8,8 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
-import VerifiedGarbage.Proof.AesCtr.RISCV64.Call
+public import VerifiedGarbage.Proof.AesCtr.RISCV64.Call
+public import VerifiedGarbage.Impl.AesCtr.RISCV64
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Aes.RISCV64.Ctr32Verified
 import VerifiedGarbage.Proof.Aes.RISCV64.ExpandKeyVerified
@@ -161,52 +162,29 @@ structure CtrPost (s : State) (K C D S : Addr) (R n : Nat) (s' : State) : Prop w
     ctr32 (aesWith R (bytesAt s.mem K (16 * (R + 1)))) (blockAt s.mem C) (blocksAt s.mem D n)
   ctr : blockAt s'.mem C = Nat.repeat inc32 n (blockAt s.mem C)
 
-theorem CtrCall.pre {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
-    Proof.Aes.ctr32RISCV64.pre
-      (s.callEntry.withRegions [⟨K, 240⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) := by
-  simp only [Proof.Aes.ctr32RISCV64, State.withRegions_gpr, State.withRegions_rd,
-    State.withRegions_wr, callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs),
-    callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a2 ∉ linkRegs),
-    callEntry_gpr' s (by decide : Reg.a3 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a4 ∉ linkRegs),
-    callEntry_gpr' s (by decide : Reg.a5 ∉ linkRegs),
-    h.a0, h.a1, h.a2, h.a3, h.a4, h.a5, toNat64 h.n_lt, toNat_rounds h.rounds]
-  exact ⟨by trivial, by trivial, h.kc, h.kd, h.ks, h.cd, h.cs, h.ds, h.fit, h.rounds⟩
+/-- The same, as `Proof/AesCtr/RISCV64/Call.lean` states it. -/
+theorem CtrCall.ctr {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
+    Proof.AesCtr.RISCV64.CtrCall s K C D S R n :=
+  ⟨h.a0, h.a1, h.a2, h.a3, h.a4, h.a5, h.rounds, h.fit, h.kc, h.kd, h.ks, h.cd, h.cs, h.ds, h.reads, h.writes⟩
 
-theorem ctr_call {name : String} {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
-    WP isa (.call name Impl.Aes.RISCV64.ctr32) s (CtrPost s K C D S R n) := by
-  refine WP.call (k := Proof.Aes.ctr32RISCV64) Proof.Aes.RISCV64.ctr32_correct
-    (rd := [⟨K, 240⟩]) (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) h.pre h.reads h.writes ?_
-    Proof.AesCtr.RISCV64.ctr32_noFrames
-  intro s' hrd hwr hsp hf hcs _ hpost
-  refine ⟨hrd, hwr, hsp, hcs, hf, ?_, ?_⟩ <;>
-  simp only [Proof.Aes.ctr32RISCV64, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
-    callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs),
-    callEntry_gpr' s (by decide : Reg.a2 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a3 ∉ linkRegs),
-    callEntry_gpr' s (by decide : Reg.a4 ∉ linkRegs),
-    h.a0, h.a1, h.a2, h.a3, h.a4, toNat64 h.n_lt, toNat_rounds h.rounds] at hpost
-  exacts [hpost.1, hpost.2]
+/-- Counter mode in place (`ctrCall`: `vg_aes_ctr32_to` with its source the
+destination). -/
+theorem ctr_call {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
+    WP isa Impl.AesCtr.RISCV64.ctrCall s (CtrPost s K C D S R n) :=
+  WP.mono (Proof.AesCtr.RISCV64.ctr_call h.ctr) fun _ g => ⟨g.rd, g.wr, g.sp, g.saved, g.frame, g.out, g.ctr⟩
 
-/-- Calls of `vg_aes_ctr32` with the same arguments in both runs are constant time. -/
-theorem ctr_rel {name : String} {P : State → State → Prop}
+/-- Such calls with the same arguments in both runs are constant time. -/
+theorem ctr_rel {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D S R n, CtrCall s₁ K C D S R n ∧ CtrCall s₂ K C D S R n ∧
       s₁.sp = s₂.sp) :
-    RelCT isa P (.call name Impl.Aes.RISCV64.ctr32) fun _ _ => True := by
+    RelCT isa P Impl.AesCtr.RISCV64.ctrCall fun _ _ => True := by
   refine RelCT.exists_ (P := fun (x : Addr × Addr × Addr × Addr × Nat × Nat) (s₁ s₂ : State) =>
       CtrCall s₁ x.1 x.2.1 x.2.2.1 x.2.2.2.1 x.2.2.2.2.1 x.2.2.2.2.2 ∧
         CtrCall s₂ x.1 x.2.1 x.2.2.1 x.2.2.2.1 x.2.2.2.2.1 x.2.2.2.2.2 ∧ s₁.sp = s₂.sp)
       (fun x => ?_) |>.mono (fun s₁ s₂ hp => by
       obtain ⟨K, C, D, S, R, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
       exact ⟨(K, C, D, S, R, n), h₁, h₂, hsp⟩) fun _ _ h => h
-  obtain ⟨K, C, D, S, R, n⟩ := x
-  refine RelCT.call Proof.Aes.RISCV64.ctr32_correct Proof.Aes.RISCV64.ctr32_ct [⟨K, 240⟩]
-    [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩] fun s₁ s₂ ⟨h₁, h₂, hsp⟩ => ?_
-  refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
-  simp only [Proof.Aes.ctr32RISCV64, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
-    callEntry_gpr' _ (by decide : Reg.a0 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a1 ∉ linkRegs),
-    callEntry_gpr' _ (by decide : Reg.a2 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a3 ∉ linkRegs),
-    callEntry_gpr' _ (by decide : Reg.a4 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a5 ∉ linkRegs),
-    h₁.a0, h₁.a1, h₁.a2, h₁.a3, h₁.a4, h₁.a5, h₂.a0, h₂.a1, h₂.a2, h₂.a3, h₂.a4, h₂.a5, hsp]
-  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+  exact Proof.AesCtr.RISCV64.ctr_rel fun s₁ s₂ ⟨h₁, h₂, hsp⟩ => ⟨h₁.ctr, h₂.ctr, hsp⟩
 
 /-! ## `vg_aes_ctr32_to` -/
 
@@ -255,7 +233,7 @@ theorem CtrToCall.pre {s : State} {K C D S Src : Addr} {R n : Nat} (h : CtrToCal
     callEntry_gpr' s (by decide : Reg.a3 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a4 ∉ linkRegs),
     callEntry_gpr' s (by decide : Reg.a5 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a6 ∉ linkRegs),
     h.a0, h.a1, h.a2, h.a3, h.a4, h.a5, h.a6, toNat64 h.n_lt, toNat_rounds h.rounds]
-  exact ⟨by trivial, by trivial, h.kc, h.kd, h.ks, h.cd, h.cs, h.ds, h.xc, h.xd, h.xs, h.fit, h.xfit,
+  exact ⟨by trivial, by trivial, h.kc, h.kd, h.ks, h.cd, h.cs, h.ds, h.xc, .inr h.xd, h.xs, h.fit, h.xfit,
     h.rounds⟩
 
 theorem ctrTo_call {name : String} {s : State} {K C D S Src : Addr} {R n : Nat}

@@ -72,8 +72,10 @@ def carry : List Instr :=
   [.add .t1 .t1 .t3] ++
   storeBE 8 .t1 .t2 .s3 0
 
-/-- A call of `vg_aes_ctr32`. -/
-def ctrCall : Prog isa := .call "vg_aes_ctr32" Impl.Aes.RISCV64.ctr32
+/-- `vg_aes_ctr32`'s work in place: a call of `vg_aes_ctr32_to` with the
+source the destination (`a6 := a3`), so that one instance of the code serves
+every caller, in place or not. -/
+def ctrCall : Prog isa := .seq (.block [.addi .a6 .a3 0]) (.call "vg_aes_ctr32_to" Impl.Aes.RISCV64.ctr32To)
 
 /-- One call: the blocks it takes, the call, on past them, and the carry if
 the counter wrapped around. -/

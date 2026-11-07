@@ -29,6 +29,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.RISCV64.Ctr32Verified
 meta import VerifiedGarbage.Impl.AesCtr.RISCV64.Final
 meta import VerifiedGarbage.Proof.AesCtr.Final
 meta import VerifiedGarbage.Proof.AesCtr.RISCV64.Verified
@@ -267,7 +268,7 @@ theorem final_setup_wp {s₀ : State} (hp : CPre s₀) : WP isa (.block finalSet
 theorem crypt_noFrames : crypt.noFrames = true := by
   simp only [crypt, Impl.AesCbc.RISCV64.whole, Impl.AesCtr.RISCV64.body, Impl.AesCtr.RISCV64.ctrCall,
     Code.noFrames, Bool.and_self, Bool.and_true, Bool.true_and]
-  exact ctr32_noFrames
+  exact Proof.Aes.RISCV64.ctr32To_noFrames
 
 /-- The whole-block function's contract: `modeRISCV64 ctrMode`, with the
 last 32 bits of the counter block public. -/
