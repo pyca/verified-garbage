@@ -89,8 +89,7 @@ constant of its file, as an artifact's.
 A function the emitter renders as another name of an identical function of
 its module (`pub use self::<f> as <name>;`, `Rust.alias` in
 `lean/VerifiedGarbage/TCB/Rust.lean`) is that function's code: it has its
-signature and callees, a use of it is a use of that function, and a use of
-that function is a use of it.
+signature and callees, and a use of it is a use of that function.
 
 A *dispatcher* (`<f>_auto` in `dispatch/<module>.rs`, `Rust.dispatcher`: an
 ordinary Rust function, `pub unsafe fn`, or for a function with one
@@ -649,10 +648,6 @@ def check(targets, rust, feats=None, names=None, never_with=None, disp=None):
                         )
         called = set().union(*(c for _, c in fns.values())) if fns else set()
         called |= {canon for name, canon in al.items() if name in called}
-        # Another name of a function that is called or used is that code,
-        # reached (a variant whose code is another variant's, which a
-        # dispatcher ranks first).
-        called |= {name for name, canon in al.items() if canon in called or canon in words}
         for name in sorted(var):
             if name not in called and name not in words:
                 errors.append(

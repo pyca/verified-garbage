@@ -60,7 +60,7 @@ def runs_in(runner, test):
 
 GROUPS = {
     "aes_cbc": {
-        "lib": [],
+        "lib": ["cipher::aes::cbc"],
         "tests": ["cavp::aes_cbc", "wycheproof::aes_cbc"],
     },
     "aes_ccm": {
@@ -68,7 +68,7 @@ GROUPS = {
         "tests": ["cavp::aes_ccm", "wycheproof::aes_ccm"],
     },
     "aes_ecb": {
-        "lib": [],
+        "lib": ["cipher::aes::ecb"],
         "tests": ["cavp::aes_ecb"],
     },
     "aes_gcm": {
