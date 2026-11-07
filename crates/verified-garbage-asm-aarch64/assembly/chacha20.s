@@ -127,6 +127,7 @@ vg_chacha20_apply_neon:
 	add x3, x21, #256
 	add x22, x22, x2
 	sub x23, x23, x2
+	add x4, x1, #0
 	bl {vg_chacha20_xor_neon}
 	b 28f
 27:
@@ -239,6 +240,7 @@ vg_chacha20_apply:
 	add x3, x21, #256
 	add x22, x22, x2
 	sub x23, x23, x2
+	add x4, x1, #0
 	bl {vg_chacha20_xor}
 	b 28f
 27:
@@ -351,6 +353,7 @@ vg_chacha20_apply_sve2:
 	add x3, x21, #256
 	add x22, x22, x2
 	sub x23, x23, x2
+	add x4, x1, #0
 	bl {vg_chacha20_xor_sve2}
 	b 28f
 27:

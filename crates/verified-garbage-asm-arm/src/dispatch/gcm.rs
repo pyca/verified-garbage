@@ -20,6 +20,12 @@ pub use crate::gcm::vg_aes_gcm_seal as vg_aes_gcm_seal_auto;
 #[allow(unused_imports)]
 pub use crate::gcm::vg_aes_gcm_open as vg_aes_gcm_open_auto;
 
+/// `vg_aes_gcm_open_to`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use crate::gcm::vg_aes_gcm_open_to as vg_aes_gcm_open_to_auto;
+
 /// `vg_aes_gcm_stream_aad`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
 /// target.

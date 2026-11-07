@@ -2639,3 +2639,55 @@ vg_aes_gcm_seal_gather:
 	addi sp, sp, 16
 	ret
 	.option pop
+
+vg_aes_gcm_open_to:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -32
+	addi t0, sp, 0
+	sd ra, 16(t0)
+	ld t1, 48(t0)
+	sd t1, 0(t0)
+	ld t1, 56(t0)
+	sd t1, 8(t0)
+	ld t1, 32(t0)
+	addi t0, a6, 0
+	addi a6, t1, 0
+	addi t1, a7, 0
+	beqz t1, 20f
+22:
+	lbu t2, 0(t0)
+	sb t2, 0(a6)
+	addi t0, t0, 1
+	addi a6, a6, 1
+	addi t1, t1, -1
+	bnez t1, 22b
+	j 21f
+20:
+21:
+	addi t0, sp, 0
+	ld a6, 32(t0)
+	call {vg_aes_gcm_open}
+	addiw t0, a0, 0
+	beqz t0, 23f
+	j 24f
+23:
+	addi t0, sp, 0
+	ld t2, 32(t0)
+	ld t3, 40(t0)
+	addi t1, zero, 0
+	beqz t3, 25f
+27:
+	sb t1, 0(t2)
+	addi t2, t2, 1
+	addi t3, t3, -1
+	bnez t3, 27b
+	j 26f
+25:
+26:
+24:
+	addi t0, sp, 0
+	ld ra, 16(t0)
+	addi sp, sp, 32
+	ret
+	.option pop
