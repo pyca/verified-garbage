@@ -52,9 +52,6 @@ theorem C2.args (h : C2 P σ s) : ∀ i < 10, stackArg s i = (outv P).getD i 0 :
   simp only [stackArg, stackArgAddr, h.1.1.2.sp]
   rw [h.1.1.2.ok.addrB (by show 4 * i < frameBytes + 56 + 44; simp only [frameBytes]; omega)]
 
-theorem C2.fits (h : C2 P σ s) {R : Region} (hR : R ∈ P.lay.ro ++ P.lay.rw) : R.base.toNat + R.len ≤ 2 ^ 32 :=
-  h.1.1.1.ok.fits R hR
-
 theorem call_pre (h : C2 P σ s) : Pc.spec.pre (s.callEntry.withRegions (cRd P) (cWr P)) := by
   have a := h.args
   obtain ⟨⟨hs, -, -, -⟩, -, r0, r1, r2, r3⟩ := h

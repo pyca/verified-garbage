@@ -43,28 +43,6 @@ def MuOk (L : Lay) (m : Mem) (t : State) : Prop :=
   bytesAt t.mem L.MU 64 = H (bytesAt m (L.key + BitVec.ofNat 64 64) 64 ++ hdrBytes L ++
     bytesAt m L.ctx L.ctxLen.toNat ++ bytesAt m L.msg L.len.toNat) 64
 
-/-- What `sign_message` leaks is what the signing function on `μ` leaks, for
-the `μ` it computes. -/
-theorem leak_eq {L : Lay} (hL : L.Ok) (hk : L.keyLen = p.skLen) (m : Mem) :
-    signMessageLeak p (bytesAt m L.key p.skLen) (bytesAt m L.msg L.len.toNat) (bytesAt m L.ctx L.ctxLen.toNat)
-        (bytesAt m L.rnd 32) =
-      signLeak p (bytesAt m L.key p.skLen) (H (bytesAt m (L.key + BitVec.ofNat 64 64) 64 ++ hdrBytes L ++
-        bytesAt m L.ctx L.ctxLen.toNat ++ bytesAt m L.msg L.len.toNat) 64) (bytesAt m L.rnd 32) := by
-  have := hL.hKey
-  rw [signMessageLeak, formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact hL.ctxLt)]
-  simp only [messageRep, skTr, hdrBytes, Proof.MlKem.bytesAt_length, List.append_assoc]
-  rw [Proof.MlKem.bytesAt_slice _ _ (by omega)]
-
-/-- What a layout of `sign_message` says of `rnd`, `sig` and `scratch`. -/
-structure SFacts (p : Params) (L : Lay) : Prop where
-  key : L.keyLen = p.skLen
-  xRnd : L.XS.Disjoint ⟨L.rnd, 32⟩
-  kRnd : L.STK.Disjoint ⟨L.rnd, 32⟩
-  inRnd : (⟨L.rnd, 32⟩ : Region) ∈ L.rd
-  inSig : (⟨L.sig, p.sigLen⟩ : Region) ∈ L.wr
-  inScr : ∃ R ∈ L.wr, Within ⟨L.scr, sScr p⟩ R
-  inMu : ∃ R ∈ L.wr, Within ⟨L.MU, 64⟩ R
-
 /-- The public data of the contract, spelled out. -/
 structure SPub (p : Params) (s₁ s₂ : State) : Prop where
   sp : s₁.sp = s₂.sp

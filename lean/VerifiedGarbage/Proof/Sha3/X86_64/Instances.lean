@@ -679,11 +679,6 @@ theorem finRestore_ok {sc : Addr} {s : State} (hbx : s.gpr .r12 = sc)
   refine ⟨trivial, trivial, trivial, trivial, trivial, trivial, fun r h1 h2 => ?_⟩
   simp only [h1, h2, ite_false]
 
-theorem bytesAt_frame {rs : List Region} {m m' : Mem} {p : Addr} {n : Nat} (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) : bytesAt m' p n = bytesAt m p n := by
-  simp only [Spec.Sha3.bytesAt]
-  exact List.map_congr_left fun i hi => hf.bytes (R := ⟨p, n⟩) hd hn (List.mem_range.mp hi)
-
 theorem readW_frame {rs : List Region} {m m' : Mem} {a : Addr} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨a, 8⟩ r) : m'.readW a 64 = m.readW a 64 :=
   hf.readW (r := ⟨a, 8⟩) (Region.contains_self _ _) hd (by decide)

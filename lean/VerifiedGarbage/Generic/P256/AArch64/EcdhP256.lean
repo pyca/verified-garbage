@@ -86,7 +86,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedLoad
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyFinish
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvRed
@@ -137,7 +136,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedLoad
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvRed

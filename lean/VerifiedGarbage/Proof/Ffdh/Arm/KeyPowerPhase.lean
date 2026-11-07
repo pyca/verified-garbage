@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpPhase
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst

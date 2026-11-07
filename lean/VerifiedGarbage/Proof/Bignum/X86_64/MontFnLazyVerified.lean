@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
 
-/-! # `vg_rsa_lazy_mont_mul` and `vg_rsa_lazy_mont_mul_adx` meet `mulLazyContract` -/
+/-! # The baseline Montgomery multiplication of `vg_rsa_lazy_mont_mul`, without `[b] < m` -/
 
 @[expose] public section
 

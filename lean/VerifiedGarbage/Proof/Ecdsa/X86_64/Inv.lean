@@ -371,8 +371,7 @@ theorem invKeptX_clob : ∀ r ∈ Cfg.invKeptX.map Prod.fst, r ∈ invClob 4 := 
 
 /-- `vg_<curve>_inv_mod_p` or `_n` for fewer than six words (four): its body
 from a state of the same memory and registers, the callee-saved registers
-copied to `xmm` registers and back, which `invClob` allows. That they come
-back unchanged is a fact of runs (`invFnX_gpr`). -/
+copied to `xmm` registers and back, which `invClob` allows. -/
 theorem invFnX_ok (hc : BaseCfgOk c) (h6 : c.n < 6) {body : Prog isa} {base : Addr} {s : State}
     (hs : Scr s base size) {Q : Mem → Prop}
     (hb : ∀ s₁ : State, Scr s₁ base size → s₁.mem = s.mem → (∀ r, s₁.gpr r = s.gpr r) →
@@ -438,7 +437,7 @@ theorem invNFn_ok (hc : BaseCfgOk c) (h6 : 6 ≤ c.n) (h9 : c.n ≤ 9) (hf : c.f
     fun s' ⟨K, U, lt, v⟩ => ⟨K, U, lt, by rw [v, hkm]⟩
 
 /-- `vg_<curve>_inv_mod_p`'s body run as a function, for fewer than six words:
-`[ACC] = [RZ]^(p-2)`; the callee-saved registers come back by `invFnX_gpr`. -/
+`[ACC] = [RZ]^(p-2)`. -/
 theorem invPFnX_ok (hc : BaseCfgOk c) (h6 : c.n < 6) (h9 : c.n ≤ 9) {base : Addr} {s : State}
     (hs : Scr s base size)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p) :

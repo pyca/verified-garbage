@@ -9,13 +9,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpStep
 import VerifiedGarbage.Impl.Bignum.Arm.TwoExp
-import VerifiedGarbage.Proof.Bignum.Arm.TwoExpCT
-import VerifiedGarbage.Proof.Bignum.Arm.TwoExpByteState
-import VerifiedGarbage.Proof.Bignum.Arm.TwoExpByteHead
 import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.TwoExpPhase
-import VerifiedGarbage.Proof.Bignum.Arm.TwoExpBytes
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady

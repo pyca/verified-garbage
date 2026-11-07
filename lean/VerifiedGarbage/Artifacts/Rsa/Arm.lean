@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PcVerified
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtUmaal
 public import VerifiedGarbage.Proof.Bignum.Arm.PdVerified

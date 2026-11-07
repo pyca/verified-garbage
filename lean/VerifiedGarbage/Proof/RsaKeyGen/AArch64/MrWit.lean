@@ -447,18 +447,6 @@ theorem wv_force {m m' : Mem} {p : Addr} {d w : Nat} (hw : 2 ≤ w)
 /-- What `mrWitness` changes. -/
 def witRanges (w : Nat) : List (Nat × Nat) := [(slot w aX, 8 * (w + 2)), (8 * kUsed, 8), (8 * kU, 8)]
 
-/-- `witRanges`'s ranges, in the header and in the arrays. -/
-theorem witRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(216, 8), (0, 8)]
-    [(1, 1)] (witRanges w) := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false,
-    witRanges, Public.aX, aX, sFn, kU, kUsed] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact .inr ⟨(1, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
-      by simp only [slot, hdrBytes]; omega_using []⟩
-  · exact .inl (by decide)
-  · exact .inl (by decide)
-
 theorem witRanges_mut (w : Nat) : ∀ r ∈ witRanges w, KMut r := by
   simp only [witRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)

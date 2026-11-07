@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCached
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMixed
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
@@ -33,7 +32,6 @@ theorem jointExternal_frame {C : Curve} {base T : Addr} {G : Point C} :
     CachedField.ExternalFrame base (JointGenerator cfg C base 8192 G T) := by
   intro s t hk hsym hs
   exact hs.keep hk hsym (by decide +kernel) (by decide)
-
 
 theorem jointInitCounter_ok (s : State) :
     WP isa (.block [.movz .x .x19 256 0]) s fun t =>

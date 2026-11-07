@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Rsa.X86.KeySelect
-import VerifiedGarbage.Proof.Bignum.X86.ExportTruncated
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset

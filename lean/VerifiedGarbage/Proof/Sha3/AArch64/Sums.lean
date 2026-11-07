@@ -176,20 +176,6 @@ meta def spongeSumSavingCmds (ns c : String) (permUsing : List String := []) : L
       s!"taint_summary {ns}.squeeze{n} : VectorTaint.taint {ofRegs (args ++ ", " ++ rs)} " ++
         s!"{fn "squeeze" "squeeze"} using {usingS}")
 
-/-- `sponge_taint_summaries ns callee` defines, in the namespace `ns`, the
-summaries of the permutation `callee` and of the sponge's functions over it
-(the absorb, pad and squeeze calls of `Impl.Sha3.AArch64.Stream`), for
-`sponge_taint_decide ns`; `sponge_taint_summaries ns callee from base` only
-that of absorb, and takes the others from `base` (for a callee that differs
-from `base`'s only in its absorb); `sponge_taint_summaries ns callee saving`
-those of a permutation that writes (and restores) the callee-saved
-registers (`spongeSumSavingCmds`), and `… saving using l₁ …` proves those
-of the permutation with the summaries `lᵢ` (e.g. of its rounds, so that the
-summaries of the permutation for each set of callee-saved registers do not
-each analyse them again). -/
-syntax "sponge_taint_summaries " ident ident (" from " ident)? (&" saving")?
-  (" using " ident+)? : command
-
 elab_rules : command
   | `(sponge_taint_summaries $ns $callee $[from $base]? $[saving%$sv]? $[using $ls*]?) => do
     let permUsing := (ls.getD #[]).toList.map (·.getId.toString)

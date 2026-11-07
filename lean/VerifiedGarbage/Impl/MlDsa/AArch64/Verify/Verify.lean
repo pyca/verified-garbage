@@ -5,7 +5,8 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
 /-!
 # ML-DSA on AArch64: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
 
-`verifyWith c P p (pk = x0, mu = x1, sig = x2, scratch = x3) -> w0`:
+The layout and the pieces of `vg_mldsa*_verify(pk = x0, mu = x1, sig = x2, scratch = x3) -> w0`
+(the function is `Optimized.lean`'s):
 `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with the message
 representative `μ` given (`verifyMu`), for the parameter set `p`, as calls of
 the primitives `P` and of the SHA-3 sponge functions (`KeyGen/Frag.lean`).
@@ -128,26 +129,6 @@ def samples : Prog isa :=
 def dot (r : Nat) : Prog isa :=
   .seq (mulAt P (wP p) (aP (p.ℓ * r)) (zP p 0))
     (seqR (fun s => mulAddAt P (wP p) (aP (p.ℓ * r + s)) (zP p s)) 1 (p.ℓ - 1))
-
-/-- Row `r` of `w′`, `w′₁`, packed to `w1Encode(w′₁)`. -/
-def row (r : Nat) : Prog isa :=
-  .seq (dot P p r) (.seq (unpackT1At P (.x25, 32 + 320 * r) (tmP p)) (.seq (nttAt P (sc oSS) (tmP p))
-    (.seq (mulAt P (tm2P p) (cP p) (tmP p)) (.seq (subAt P (wP p) (tm2P p)) (.seq (invNttAt P (sc oSS) (wP p))
-      (.seq (useHintAt P (hP p r) (wP p) p.γ₂ (w1P p))
-        (simpleBitPackAt P (w1P p) (w1Max p) ((bP p).1, (bP p).2 + w1Len p * r) (w1Len p))))))))
-
-/-- The NTTs of `z` and `c`, the rows, the hash and the comparison. -/
-def computeWith : Prog isa :=
-  .seq (seqR (fun i => nttAt P (sc oSS) (zP p i)) 0 p.ℓ) (.seq (nttAt P (sc oSS) (cP p))
-    (.seq (seqR (row P p) 0 p.k)
-    (.seq ((shake256With c) [⟨.x26, 0, 64⟩, ⟨.x28, (bP p).2, p.k * w1Len p⟩] [⟨.x28, oCT, p.ctildeLen⟩])
-      (cmpAnd (sc oCT) (.x27, 0) p.ctildeLen))))
-
-def bodyWith : Prog isa :=
-  .seq (hint P p) (ifOk (.seq (seqR (zOne P p) 0 p.ℓ) (ifOk (.seq (samples P p) ((computeWith c) P p)))))
-
-/-- `vg_mldsa*_verify` for the parameter set `p`, calling the primitives `P`. -/
-def verifyWith : Prog isa := .seq (.block pro) (.seq ((bodyWith c) P p) (.block epi))
 
 end
 

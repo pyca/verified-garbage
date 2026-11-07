@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.PreparedKey.Copy
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedTop
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
 
 /-! # Shared verification body for ordinary and prepared ML-DSA keys -/

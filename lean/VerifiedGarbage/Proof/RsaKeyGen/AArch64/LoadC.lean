@@ -154,21 +154,6 @@ theorem candBits_ok {s : State} {B : Addr} {Z w k : Nat} (h : Ws s B Z w)
 def loadCRanges (w : Nat) : List (Nat × Nat) :=
   [(8 * sW, 8), (8 * sArr 0, 64), (8 * sStride, 8), (8 * Public.sMask, 8), (slot w aN, 8 * (w + 2)), (8 * kUsed, 8)]
 
-/-- `loadCRanges`'s ranges, in the header and in the arrays. -/
-theorem loadCRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(48, 8), (64, 64), (224, 8), (176, 8), (216, 8)]
-    [(0, 1)] (loadCRanges w) := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false,
-    loadCRanges, Public.aN, aN, sFn, sW, sArr, sStride, Public.sMask, kUsed] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact .inl (by decide)
-  · exact .inl (by decide)
-  · exact .inl (by decide)
-  · exact .inl (by decide)
-  · exact .inr ⟨(0, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
-      by simp only [slot, hdrBytes]; omega_using []⟩
-  · exact .inl (by decide)
-
 /-- `loadC`: the working space for `w` words, the candidate from the first
 `8 w` octets of `rand`, and `used := 8 w`. -/
 theorem loadC_ok {s : State} {B : Addr} {Z w : Nat} {rp : Addr} {bs : List Byte} (hs : Scr s B Z)

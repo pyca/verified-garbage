@@ -58,30 +58,4 @@ theorem Power.after_y {s t : State} {base : BitVec 32} {len w M E F : Nat}
       (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)]
     exact h.r2
 
-theorem Power.of_mem {s t : State} {base : BitVec 32} {len w M E : Nat} {rs : List Reg}
-    (h : Power base len w M E s) (mem : t.mem = s.mem)
-    (rest : Rest rs s t) (ptr : t.gpr .r0 = base) : Power base len w M E t := by
-  refine ⟨h.ready.of_mem mem rest ptr, ?_, h.coprime, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [mem]; exact h.modulus
-  · rw [mem]; exact h.bound
-  · rw [mem]; exact h.value
-  · rw [mem]; exact h.two
-  · rw [mem]; exact h.one
-  · rw [mem]; exact h.r2
-
-theorem Power.after_header {s t : State} {base : BitVec 32} {len w M E d : Nat}
-    {value : BitVec 32} {rs : List Reg}
-    (h : Power base len w M E s) (hd : 128 ≤ d) (hd' : d + 4 ≤ 256)
-    (mem : t.mem = s.mem.writeW (off (State.addr base) d) value)
-    (rest : Rest rs s t) (ptr : t.gpr .r0 = base) :
-    Power base len w M E t ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by
-  obtain ⟨ready, frame, arrays⟩ := h.ready.after_header hd hd' mem rest ptr
-  refine ⟨⟨ready, ?_, h.coprime, ?_, ?_, ?_, ?_, ?_⟩, frame⟩
-  · rw [arrays 0 (by decide)]; exact h.modulus
-  · rw [arrays 6 (by decide)]; exact h.bound
-  · rw [arrays 6 (by decide)]; exact h.value
-  · rw [arrays 5 (by decide)]; exact h.two
-  · rw [arrays 7 (by decide)]; exact h.one
-  · rw [arrays 4 (by decide)]; exact h.r2
-
 end VG.Proof.Bignum.Arm.TwoExp

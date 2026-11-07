@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 /-!
 # RSA with the CRT: the exponent's bits for windows of 5 bits
 
-`expLoop5` (`Impl/Rsa/X86_64/Crt.lean`) reads an exponent of `L` bytes
+`expLoop5S` (`Impl/Rsa/X86_64/Crt.lean`) reads an exponent of `L` bytes
 after `padBits L = 2 L mod 5` zero bits, which make its bits a whole number
 of windows (`win5_dvd`). The bits read but not yet in a window are kept at
 the top of a word: `b` of them, the low `b` bits of the value `P` of the

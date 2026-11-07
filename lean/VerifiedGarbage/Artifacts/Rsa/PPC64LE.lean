@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreVerified
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvVerified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Instances
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcVerified

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacComb
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy

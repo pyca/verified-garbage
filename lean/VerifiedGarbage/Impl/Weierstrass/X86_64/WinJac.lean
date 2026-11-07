@@ -27,7 +27,7 @@ address computed from the public counter `rbx` (`entryAddr`).
 
 The top digit's entry, selected as below, is `R` (`first`: zeros, i.e. `O`,
 for the digit zero); then, for `j = J - 2` down to `0`, `R = 32 R + [d_j]P`
-(`step`): five doublings in place (`dbl`, a loop whose
+(each iteration): five doublings in place (`dbl`, a loop whose
 count is in the bits of `rbx` above the window index); the entry of `|d_j|`
 selected in constant time into `T` (all five coordinates: every entry is
 loaded, 16 bytes at a time, or 32 with AVX2, and kept under the mask of its
@@ -190,31 +190,11 @@ def dblStep (dbl : Pt → Prog isa) : Prog isa :=
 def dbls (dbl : Pt → Prog isa) : Prog isa :=
   .seq (.block [.alu .add .rbx (.imm (BitVec.ofNat 32 (5 * 4096)))]) (.loop (K.dblStep dbl) .ae)
 
-/-- `D = R + T`, with `T`'s cached powers. -/
-def addOps : List FOp := CachedJac.head K.M.n K.S K.R K.E K.z2 ++ jacTail K.S K.R K.E K.D
-
-/-- Iteration `j = rbx - 1` (with `rbx` counting down from `J - 1`):
-`R = 32 R + [d_j]P`. -/
-def step (dbl : Pt → Prog isa) : Prog isa :=
-  .seq (.block [.alu .sub .rbx (.imm 1)]) <|
-  .seq (K.dbls dbl) <|
-  .seq (.block (K.tc.digit ++ K.select)) <|
-  .seq (.block K.tc.negY) <|
-  .seq (ForwardField.programB K.M K.addOps) <|
-  .block (nzMask K.M.n K.R.z ++ selPt K.M.n K.D K.E K.D ++
-    K.tc.digit ++ eqMask 0 ++ selPt K.M.n K.R K.D K.R ++ [.alu .test .rbx (.reg .rbx)])
-
 /-- `rbx = J - 1` and the top digit's entry into `R` (zeros, `O`, for the
 digit zero). -/
 def first : List Instr :=
   [.mov32 .rbx (.imm (BitVec.ofNat 32 (K.J - 1)))] ++ K.tc.digit ++ K.select ++ K.tc.negY ++
     copyPt K.M.n K.R K.E
-
-/-- `[k]P` into `R`, in projective coordinates, for the table of the bits of
-`k + offset J` at `K.bits`. -/
-def window (dbl : Pt → Prog isa) : Prog isa :=
-  .seq K.build <| .seq (.block K.first) <| .seq (.loop (K.step dbl) .ne) <|
-  .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)
 
 end JacWinCfg
 

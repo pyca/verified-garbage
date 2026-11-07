@@ -63,37 +63,4 @@ theorem cachedPre_of {p : Params} {s : State}
     refine ⟨⟨s.syms "VG_MLDSA_INV_FOLDED",3904⟩,?_,Region.contains_self _ _⟩
     rw [hrd]; simp [rootRegions]
 
-/-- The cached verifier layout: the cached digest pointer occupies the otherwise unused randomness slot. -/
-def cachedLay (p : Params) (s : State) : VG.Proof.MlDsa.AArch64.Message.Lay where
-  SP := s.sp
-  key := s.gpr .x0
-  keyLen := p.pkLen
-  msg := s.gpr .x1
-  len := s.gpr .x2
-  ctx := s.gpr .x3
-  ctxLen := s.gpr .x4
-  rnd := s.gpr .x7
-  sig := s.gpr .x5
-  scr := s.gpr .x6
-  E := oE p
-  rd := s.rd
-  wr := s.wr
-
-theorem cachedLay_X (p : Params) (s : State) : Within (cachedLay p s).XS ⟨s.gpr .x6, mScrLen p⟩ :=
-  ⟨oE p, rfl, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq]⟩
-
-theorem cachedLay_ok {p : Params} (hp : p ∈ params) {s : State} (h : CachedPre p s) (h8 : (s.gpr .x4).toNat < 256) :
-    (cachedLay p s).Ok := by
-  have hX := cachedLay_X p s
-  have hXs := hX.sub
-  have hE := oE_lt hp
-  refine ⟨h8, hE, pkLen_ge hp, h.sp, toNat_X (e := oE p) h.nScr (by rw [mScr_eq]),
-    ⟨_, by simp [cachedLay, h.wr], hX⟩, by simp [cachedLay, h.rd], by simp [cachedLay, h.rd], by simp [cachedLay, h.rd],
-    h.pkScr.symm.sub_left hXs, h.msgScr.symm.sub_left hXs, h.ctxScr.symm.sub_left hXs, h.stkScr.sub_right hXs,
-    h.stkPk, h.stkMsg, h.stkCtx, h.nPk, h.nMsg, h.nCtx, ?_⟩
-  intro R hR
-  simp only [cachedLay, h.wr, List.mem_cons, List.not_mem_nil, or_false] at hR
-  have := h.nScr
-  subst hR; simp only; omega
-
 end VG.Proof.MlDsa.AArch64.Optimized.RootedCachedVerify

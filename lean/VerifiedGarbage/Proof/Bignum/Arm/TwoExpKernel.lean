@@ -26,16 +26,6 @@ open VG.Proof.X25519.Arm (Rest)
 
 def twice : Prog isa := VG.Impl.Bignum.Arm.TwoExp.candidate
 
-theorem twiceArgs_ready (s : State) {base : BitVec 32} {len w M E : Nat}
-    (h : Power base len w M E s) :
-    WP isa (.block (montOpArgs 1 5 6)) s (DoubleFnReady base len w 1 5 6) := by
-  refine WP.mono (montOpArgs_ok s (o := 1) (a := 5) (b := 6) (by decide) (by decide) (by decide)) ?_
-  rintro u ⟨po, pa, pb, mem, rest⟩
-  have ready := h.ready.of_mem mem rest ((rest.gpr .r0 (by decide)).trans h.ready.ptr)
-  refine ⟨⟨ready.workspace, ready.layout, ready.width, ready.ptr, po, pa, pb, ready.inverse, ?_⟩, ?_⟩
-  · rw [mem, h.modulus]; exact h.bound
-  · rw [mem]; exact h.two_low
-
 theorem header_of_keeps {base : BitVec 32} {len w o : Nat} {s t : State}
     (ready : ArithmeticReady base len w s) (keeps : Keeps (State.addr base) len w o s.mem t.mem) :
     HeaderKept base s t := by

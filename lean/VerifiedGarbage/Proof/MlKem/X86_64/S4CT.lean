@@ -515,24 +515,6 @@ theorem cmpZ_ok {σ s₀ : State} {K b t : Nat} {c : BitVec 64} {s : State} (h :
       fun h' => (h.1.zc h').same fun r _ i _ => hz r i⟩, by rw [hg]; exact h.2⟩,
     by rw [hcf, h.1.lv.lat.rdi, ofNat64_toNat (by bdd_omega)]⟩
 
-/-- The registers `zput` reads, after `zcand`, are the same in both runs. -/
-theorem zcf_regs {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂) {s₀₁ s₀₂ : State} {K b t : Nat} (hK : K < 4)
-    (ht : t + 16 ≤ 168) (hbt : b + t + 16 ≤ 280) {x y : State} (h₁ : ZIW w16 σ₁ s₀₁ K b t x)
-    (h₂ : ZIW w16 σ₂ s₀₂ K b t y) : ∀ r ∈ [Reg.rax, .rbp, .rdi, .rsi], x.gpr r = y.gpr r := by
-  obtain ⟨u₁, l₁, -, a₁, -, -, -, -, -, -, g₁⟩ := h₁
-  obtain ⟨u₂, l₂, -, a₂, -, -, -, -, -, -, g₂⟩ := h₂
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · apply BitVec.eq_of_toNat_eq
-    rw [a₁, a₂, zmaskL_eq ht hbt l₁ (l := 0) (by decide), zmaskL_eq ht hbt l₁ (l := 1) (by decide),
-      zmaskL_eq ht hbt l₁ (l := 2) (by decide), zmaskL_eq ht hbt l₁ (l := 3) (by decide),
-      zmaskL_eq ht hbt l₂ (l := 0) (by decide), zmaskL_eq ht hbt l₂ (l := 1) (by decide),
-      zmaskL_eq ht hbt l₂ (l := 2) (by decide), zmaskL_eq ht hbt l₂ (l := 3) (by decide), pub_B hq hK]
-  · rw [g₁ _ (by decide), g₂ _ (by decide), l₁.rbp, l₂.rbp, pub_aP hq]
-  · rw [g₁ _ (by decide), g₂ _ (by decide), l₁.rdi, l₂.rdi, pub_Lt hq hK]
-  · rw [g₁ _ (by decide), g₂ _ (by decide), l₁.rsi, l₂.rsi, at', at', pub_scr hq]
-
 theorem pub_Lz {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂) {K : Nat} (hK : K < 4) (b t : Nat) :
     ∀ l, Lz σ₁ K b t l = Lz σ₂ K b t l
   | 0 => pub_Lt hq hK _

@@ -36,7 +36,7 @@ theorem relCT_of_ct {P Q : State → State → Prop} {c : Prog isa} {G : List Re
   obtain ⟨_, rfl⟩ := Exec.det et xt
   exact ⟨hct _ _ _ _ _ _ trivial trivial (hpub s t hp) es et, hq _ _ fs ft⟩
 
-/-- `ofN_relCT`, for products that may be calls. -/
+/-- The timing of a numbered field program renamed to the formulas' slots (`ofN`), for products that may be calls. -/
 theorem ofNB_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
     (hm : UnitMod m (2^(64*M.n))) {N : List FOp} (hN : NumOk N)

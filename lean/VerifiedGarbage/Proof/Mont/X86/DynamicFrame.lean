@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
-
 /-! # Memory frames for composing runtime-modulus operations -/
 
 @[expose] public section
@@ -27,21 +26,6 @@ theorem OpKeep.val {M : Mod} {base : Addr} {acc o d n : Nat} {s t : State}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> omega
   · omega
-
-theorem OpKeep.read32 {M : Mod} {base : Addr} {acc o d : Nat} {s t : State}
-    (h : VG.Proof.Mont.X86.OpKeep M base acc o s t)
-    (ho : d + 4 ≤ o ∨ o + 8 * M.n ≤ d)
-    (ht : d + 4 ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ d)
-    (ha : d + 4 ≤ acc ∨ acc + accLen M ≤ d)
-    (hd : d + 4 ≤ 2 ^ 64) : t.mem.readW (off base d) 32 = s.mem.readW (off base d) 32 := by
-  apply BitVec.eq_of_toNat_eq
-  have hv : val32 t.mem base d 1 = val32 s.mem base d 1 := by
-    apply h.mem.val32
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> omega
-    · exact hd
-  simpa only [val32, Nat.mul_zero, Nat.add_zero] using hv
 
 /-- The modulus remains available for the next arithmetic operation. -/
 theorem Modulus.keep {M : Mod} {base : Addr} {size m acc o a b : Nat} {s t : State}

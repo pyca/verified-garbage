@@ -139,15 +139,11 @@ public import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 public import VerifiedGarbage.Proof.Mont.X86.ContextMath
 public import VerifiedGarbage.Proof.Mont.X86.ContextMul
-public import VerifiedGarbage.Proof.Mont.X86.DynamicSelect
 public import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
-public import VerifiedGarbage.Proof.Mont.X86.ExponentLoop
 public import VerifiedGarbage.Proof.Mont.X86.ExponentMask
 public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
-public import VerifiedGarbage.Proof.Mont.X86.ExponentStep
 public import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks
 public import VerifiedGarbage.Proof.Mont.X86.ExponentWord
-public import VerifiedGarbage.Proof.Mont.X86.Exponentiate
 public import VerifiedGarbage.Proof.Mont.X86.WordConst
 public import VerifiedGarbage.Proof.Rsa.AcceptanceMask32
 public import VerifiedGarbage.Proof.Rsa.BytesFrame
@@ -333,15 +329,11 @@ import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.ContextMath
 import VerifiedGarbage.Proof.Mont.X86.ContextMul
-import VerifiedGarbage.Proof.Mont.X86.DynamicSelect
 import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
-import VerifiedGarbage.Proof.Mont.X86.ExponentLoop
 import VerifiedGarbage.Proof.Mont.X86.ExponentMask
 import VerifiedGarbage.Proof.Mont.X86.ExponentShift
-import VerifiedGarbage.Proof.Mont.X86.ExponentStep
 import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks
 import VerifiedGarbage.Proof.Mont.X86.ExponentWord
-import VerifiedGarbage.Proof.Mont.X86.Exponentiate
 import VerifiedGarbage.Proof.Mont.X86.WordConst
 import VerifiedGarbage.Proof.Rsa.AcceptanceMask32
 import VerifiedGarbage.Proof.Rsa.BytesFrame
@@ -399,7 +391,6 @@ public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Bignum.X86.PublicPair
 public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
 public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
