@@ -9,7 +9,7 @@ Untrusted: everything here is checked by Lean. Interleaved decryption loops
 that read the ciphertext from one buffer and write the plaintext to another
 (for `vg_aes_gcm_decrypt_blocks_to`) start from a state meeting `SPreTo`
 (`Stitch/SpecTo.lean`), with the ciphertext in `r8` and the output in `r10`.
-`DPostTo` is what they do (`StitchFromOkM`): `EPostTo`, but `Y` continued
+`DPostTo` is what they do (`StitchToDecOkM`): `EPostTo`, but `Y` continued
 over the ciphertext, which nothing writes.
 -/
 
@@ -36,7 +36,7 @@ structure DPostTo (s₀ s : State) : Prop where
 /-- An out-of-place interleaved decryption loop `dec`, for a key context of
 kind `M`, meets these contracts for a number of blocks that is a multiple of
 `w`. -/
-def StitchFromOkM (M : CtxMode) (dec : Prog isa) (w : Nat := 16) : Prop :=
+def StitchToDecOkM (M : CtxMode) (dec : Prog isa) (w : Nat := 16) : Prop :=
   ∀ s₀, SPreTo M s₀ → nb s₀ % w = 0 → WP isa dec s₀ (DPostTo s₀)
 
 end VG.Proof.Gcm.X86_64.Stitch

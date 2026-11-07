@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksFrom.Run
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksToDec.Run
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Tail
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Stitch
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksFrom.Run
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksToDec.Run
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
@@ -54,8 +54,8 @@ meta import VerifiedGarbage.Proof.Gcm.Be64
 meta import VerifiedGarbage.Proof.Gcm.Bits
 meta import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksFrom.Contract
-public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksFrom
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksToDec.Contract
+public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksToDec
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
@@ -64,11 +64,11 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # AES-GCM decryption of whole blocks out of place, x86-64: constant time, and the callee
 
-Untrusted: everything here is checked by Lean. `BlkFromFn M`: an instance of
+Untrusted: everything here is checked by Lean. `BlkToDecFn M`: an instance of
 `vg_aes_gcm_decrypt_blocks_to` for a key context of kind `M`, with what its
 callers need: its contract (`decryptBlocksToX86_64M`), constant time, and its
 code's static facts (no load of `mxcsr`, `rsp` kept, 24 bytes of stack).
-`BlkFromFn.ofBlocks` builds it from an instance of
+`BlkToDecFn.ofBlocks` builds it from an instance of
 `vg_aes_gcm_decrypt_blocks` and, if any, an out-of-place decryption loop.
 
 Constant time (`decrypt_ct`), as `BlocksTo/CT.lean` proves of
@@ -85,7 +85,7 @@ the call of `vg_aes_gcm_decrypt_blocks` get the same pointers and lengths
 
 set_option linter.unusedSimpArgs false
 
-namespace VG.Proof.AesGcm.X86_64.BlocksFrom
+namespace VG.Proof.AesGcm.X86_64.BlocksToDec
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.BlocksTo
 open VG.Proof.AesGcm.X86_64.BlocksTo
@@ -115,7 +115,7 @@ theorem ptrsM_ok {q : Nat} {st : State} (h : MidD s q q st) (h11 : st.gpr .r11 =
     (hcx : st.gpr .rcx = BitVec.ofNat 64 (n s - q)) :
     WP isa (.block ptrsB) st fun st' => MidD s q q st' ∧ st'.gpr .rsi = sq s q ∧ st'.gpr .rdi = dq s q ∧
       st'.gpr .rcx = BitVec.ofNat 64 (n s - q) :=
-  WP.mono (BlocksFrom.ptrs_ok hp h h11) fun _ ⟨hsi, hdi, g₂, m₂, rd₂, wr₂⟩ =>
+  WP.mono (BlocksToDec.ptrs_ok hp h h11) fun _ ⟨hsi, hdi, g₂, m₂, rd₂, wr₂⟩ =>
     ⟨h.copy hp (by rw [m₂]; exact Frame.refl _ _) (g₂ _ (by decide) (by decide))
       (fun r hr => g₂ r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)) rd₂ wr₂,
       hsi, hdi, by rw [g₂ _ (by decide) (by decide), hcx]⟩
@@ -124,13 +124,13 @@ theorem ptrsM_ok {q : Nat} {st : State} (h : MidD s q q st) (h11 : st.gpr .r11 =
 theorem copyM_ok {q : Nat} {st : State} (h : MidD s q q st) (hlt : q < n s)
     (hsi : st.gpr .rsi = sq s q) (hdi : st.gpr .rdi = dq s q) (hcx : st.gpr .rcx = BitVec.ofNat 64 (n s - q)) :
     WP isa copyBlocks st (MidD s q q) :=
-  WP.mono (BlocksFrom.copy_ok hp h hlt hsi hdi hcx) fun _ ⟨_, f₃, g₃, rd₃, wr₃⟩ =>
+  WP.mono (BlocksToDec.copy_ok hp h hlt hsi hdi hcx) fun _ ⟨_, f₃, g₃, rd₃, wr₃⟩ =>
     h.copy hp f₃ (g₃ _ (by decide) (by decide))
       (fun r hr => g₃ r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)) rd₃ wr₃
 
 /-- `MidD` after the arguments of the call. -/
 theorem argsM_ok {q : Nat} {st : State} (h : MidD s q q st) : WP isa (.block argsB) st (AP s q) :=
-  WP.mono (BlocksFrom.args_ok hp h) fun _ ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, sp₄, cs₄, m₄, rd₄, wr₄⟩ =>
+  WP.mono (BlocksToDec.args_ok hp h) fun _ ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, sp₄, cs₄, m₄, rd₄, wr₄⟩ =>
     ⟨h.slots hp (by rw [sp₄, h.rsp]) (fun r hr => by rw [cs₄ r hr, h.saved r hr]) (by rw [m₄]; exact h.kept)
       (by rw [m₄]; exact Frame.refl _ _) rd₄ wr₄, a₁, a₂, a₃, a₄, a₅, a₆, a₇⟩
 
@@ -159,13 +159,13 @@ theorem mid_rsp {q k q' k' : Nat} {s₁ s₂ : State} (h₁ : MidD s₀ q k s₁
   intro r hr; simp only [List.mem_singleton] at hr; subst hr; rw [h₁.rsp, h₂.rsp, pb.sp]
 
 /-- The interleaved part (or nothing) and `rest`, in two runs. -/
-theorem part_rel {aligned : Bool} (st : Option (StitchFromCode M aligned)) :
+theorem part_rel {aligned : Bool} (st : Option (StitchToDecCode M aligned)) :
     RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: BlocksTo.args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
       (head (st.map (·.dec)) aligned false)
       fun s₁ s₂ => ∃ q, MidD s₀ q q s₁ ∧ MidD s₀' q q s₂ := by
   have me : ∀ (s s₁ : State), BT M s → EntryPost s s₁ → MidD s 0 0 s₁ := fun s s₁ hp h => by
     obtain ⟨_, _, g₁, k₁, f₁, rd₁, wr₁⟩ := h
-    exact BlocksFrom.mid_entry hp (g₁ _ (by decide) (by decide))
+    exact BlocksToDec.mid_entry hp (g₁ _ (by decide) (by decide))
       (fun r hr => g₁ r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr))
       k₁ f₁ rd₁ wr₁
   cases st with
@@ -182,13 +182,13 @@ theorem part_rel {aligned : Bool} (st : Option (StitchFromCode M aligned)) :
       · exact h.1 r hr
     rcases p with ⟨dec, ok, P⟩
     have a := rel_wp (rel_regs _ [.rsp] false ag P.ct) (fun _ _ h => h.2)
-      (fun _ h => BlocksFrom.stitch_ok hp ok h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2)
-      (fun _ h => BlocksFrom.stitch_ok hp' ok h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2)
+      (fun _ h => BlocksToDec.stitch_ok hp ok h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2)
+      (fun _ h => BlocksToDec.stitch_ok hp' ok h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2)
     have b := rel_wp (rel_r11 (l₀ := rest) (l := rest.tail) rfl
       (P := fun s₁ s₂ => (∀ r ∈ [Reg.rsp], s₁.gpr r = s₂.gpr r) ∧
         MidD s₀ (n s₀ - n s₀ % 16) 0 s₁ ∧ MidD s₀' (n s₀' - n s₀' % 16) 0 s₂) [.rsp] [.rsp] (by simp)
       (fun _ _ h => h.1) (fun _ _ h => mid_hS hp hp' pb h.2.1 h.2.2) rest_check)
-      (fun _ _ h => h.2) (fun _ h => BlocksFrom.rest_ok hp rfl h) (fun _ h => BlocksFrom.rest_ok hp' rfl h)
+      (fun _ _ h => h.2) (fun _ h => BlocksToDec.rest_ok hp rfl h) (fun _ h => BlocksToDec.rest_ok hp' rfl h)
     refine (RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => ⟨h.1.1, h.2⟩) b).mono (fun _ _ h => h)
       fun _ _ h => ⟨n s₀ - n s₀ % 16, h.2.1, ?_⟩
     rw [← pb.en]; exact h.2.2
@@ -200,9 +200,9 @@ theorem frame_rel (B : BlkFn M) {q : Nat} (hlt : q < n s₀) :
   have hlt' : q < n s₀' := by rw [pb.en]; exact hlt
   refine RelCT.frame (fun _ _ h => by rw [h.1.1.rsp, h.2.1.rsp, pb.sp]) (blkD_rel B fun _ _ ⟨s₁, s₂, h, ha, hb⟩ => ?_)
   obtain ⟨⟨M₁, a₁, a₂, a₃, a₄, a₅, a₆, a₇⟩, ⟨M₂, b₁, b₂, b₃, b₄, b₅, b₆, b₇⟩⟩ := h
-  have c₂ := BlocksFrom.blkCall_of hp' M₂ hlt' b₁ b₂ b₃ b₄ b₅ b₆ b₇
+  have c₂ := BlocksToDec.blkCall_of hp' M₂ hlt' b₁ b₂ b₃ b₄ b₅ b₆ b₇
   rw [pb.k, pb.c, pb.y, pb.edq, pb.sc, pb.eR, pb.en] at c₂
-  exact ⟨_, _, _, _, _, _, _, ha ▸ BlocksFrom.blkCall_of hp M₁ hlt a₁ a₂ a₃ a₄ a₅ a₆ a₇, hb ▸ c₂,
+  exact ⟨_, _, _, _, _, _, _, ha ▸ BlocksToDec.blkCall_of hp M₁ hlt a₁ a₂ a₃ a₄ a₅ a₆ a₇, hb ▸ c₂,
     by rw [ha, hb, pushed_rsp, pushed_rsp, M₁.rsp, M₂.rsp, pb.sp]⟩
 
 /-- `tail`, from two runs at the same point. -/
@@ -212,8 +212,8 @@ theorem tail_rel (B : BlkFn M) {q : Nat} :
       (P := fun s₁ s₂ => MidD s₀ q q s₁ ∧ MidD s₀' q q s₂) [.rsp] [.rsp] (by simp)
       (fun _ _ h => mid_rsp pb h.1 h.2) (fun _ _ h => mid_hS hp hp' pb h.1 h.2) tailHead_check)
     (fun _ _ h => h) (G₁ := TH s₀ q) (G₂ := TH s₀' q)
-    (fun _ h => WP.mono (BlocksFrom.tailHead_ok hp h) fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩)
-    (fun _ h => WP.mono (BlocksFrom.tailHead_ok hp' h) fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩)
+    (fun _ h => WP.mono (BlocksToDec.tailHead_ok hp h) fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩)
+    (fun _ h => WP.mono (BlocksToDec.tailHead_ok hp' h) fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩)
   rw [tail_eq]
   refine RelCT.seq a (rel_ite_e (fun _ _ h => by rw [h.2.1.2.1, h.2.2.2.1, pb.en]) ?_ ?_)
   · exact (rel_taint [] (fun _ _ _ r hr => by cases hr) empty_check).mono (fun _ _ h => h) fun _ _ h => h
@@ -251,19 +251,19 @@ theorem tail_rel (B : BlkFn M) {q : Nat} :
 
 end
 
-theorem decrypt_ct {M : CtxMode} (B : BlkFn M) {aligned : Bool} (st : Option (StitchFromCode M aligned)) :
+theorem decrypt_ct {M : CtxMode} (B : BlkFn M) {aligned : Bool} (st : Option (StitchToDecCode M aligned)) :
     ConstantTime isa (Proof.AesGcm.decryptBlocksToX86_64M M).pre Proof.AesGcm.blocksToPub
-      (BlocksFrom.decrypt B.dec (st.map (·.dec)) aligned) := by
+      (BlocksToDec.decrypt B.dec (st.map (·.dec)) aligned) := by
   refine ct_of_rel fun s₀ s₀' h h' hq => ?_
   have hp := BT.ofM h
   have hp' := BT.ofM h'
   have pb := Pub.of hq
-  unfold BlocksFrom.decrypt BlocksTo.encrypt
+  unfold BlocksToDec.decrypt BlocksTo.encrypt
   refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq (part_rel hp hp' pb st) ?_)
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨q, M₁, M₂⟩ e₁ e₂
   exact tail_rel hp hp' pb B _ _ _ _ _ _ ⟨M₁, M₂⟩ e₁ e₂
 
-end VG.Proof.AesGcm.X86_64.BlocksFrom
+end VG.Proof.AesGcm.X86_64.BlocksToDec
 
 
 
@@ -273,7 +273,7 @@ open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 open Gcm.X86_64.Stitch (CtxMode)
 
 /-- An instance of `vg_aes_gcm_decrypt_blocks_to`, with what its callers need. -/
-structure BlkFromFn (M : CtxMode) where
+structure BlkToDecFn (M : CtxMode) where
   fn : Fn
   ok : ∀ s, (Proof.AesGcm.decryptBlocksToX86_64M M).pre s →
     ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ (Proof.AesGcm.decryptBlocksToX86_64M M).post s s'
@@ -284,7 +284,7 @@ structure BlkFromFn (M : CtxMode) where
   spAll : fn.code.all (fun i => !X86_64.isa.writesSp i) = true
 
 section
-variable {M : CtxMode} {aligned : Bool} (st : Option (StitchFromCode M aligned)) (B : BlkFn M)
+variable {M : CtxMode} {aligned : Bool} (st : Option (StitchToDecCode M aligned)) (B : BlkFn M)
 
 theorem headFrom_mx : (BlocksTo.head (st.map (·.dec)) aligned false).allInstrs (fun i => !loadsMxcsr i) = true := by
   rcases st with _ | ⟨dec, ok, P⟩
@@ -304,29 +304,29 @@ theorem headFrom_xdepth : (BlocksTo.head (st.map (·.dec)) aligned false).x86_64
   · simp only [Option.map, BlocksTo.head, BlocksTo.stitchPart, Code.x86_64Depth, P.xdepth]
     cases aligned <;> rfl
 
-theorem decryptTo_mx : (BlocksFrom.decrypt B.dec (st.map (·.dec)) aligned).allInstrs (fun i => !loadsMxcsr i) = true := by
+theorem decryptTo_mx : (BlocksToDec.decrypt B.dec (st.map (·.dec)) aligned).allInstrs (fun i => !loadsMxcsr i) = true := by
   have e := B.decMx
-  simp only [BlocksFrom.decrypt, BlocksTo.encrypt, BlocksTo.tail, BlocksTo.copyBlocks, Code.allInstrs, headFrom_mx st, e,
+  simp only [BlocksToDec.decrypt, BlocksTo.encrypt, BlocksTo.tail, BlocksTo.copyBlocks, Code.allInstrs, headFrom_mx st, e,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem decryptTo_spSafe :
-    (BlocksFrom.decrypt B.dec (st.map (·.dec)) aligned).all (fun i => !X86_64.isa.writesSp i) = true := by
+    (BlocksToDec.decrypt B.dec (st.map (·.dec)) aligned).all (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.decSp
-  simp only [BlocksFrom.decrypt, BlocksTo.encrypt, BlocksTo.tail, BlocksTo.copyBlocks, Code.all, headFrom_spSafe st, e,
+  simp only [BlocksToDec.decrypt, BlocksTo.encrypt, BlocksTo.tail, BlocksTo.copyBlocks, Code.all, headFrom_spSafe st, e,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem decryptTo_xdepth : (BlocksFrom.decrypt B.dec (st.map (·.dec)) aligned).x86_64Depth ≤ 24 := by
+theorem decryptTo_xdepth : (BlocksToDec.decrypt B.dec (st.map (·.dec)) aligned).x86_64Depth ≤ 24 := by
   have e := B.decXd
-  simp only [BlocksFrom.decrypt, BlocksTo.encrypt, BlocksTo.tail, BlocksTo.copyBlocks, Code.x86_64Depth,
+  simp only [BlocksToDec.decrypt, BlocksTo.encrypt, BlocksTo.tail, BlocksTo.copyBlocks, Code.x86_64Depth,
     X86_64.Instr.frameBytes, List.length_cons, List.length_nil, headFrom_xdepth st, Nat.max_le]
   omega
 
 theorem decryptToM_correct (s : State) (hs : (Proof.AesGcm.decryptBlocksToX86_64M M).pre s) :
-    ∃ t s', Exec isa (BlocksFrom.decrypt B.dec (st.map (·.dec)) aligned) s t s' ∧ abiPreserved s s' ∧
-      Proof.AesGcm.blocksFromPost s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := BlocksFrom.decrypt_wp B aligned (st.map (·.dec))
+    ∃ t s', Exec isa (BlocksToDec.decrypt B.dec (st.map (·.dec)) aligned) s t s' ∧ abiPreserved s s' ∧
+      Proof.AesGcm.blocksToDecPost s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := BlocksToDec.decrypt_wp B aligned (st.map (·.dec))
     (fun p e => by obtain ⟨i, rfl, rfl⟩ := Option.map_eq_some_iff.1 e; exact i.ok) hs
   exact ⟨t, s', he, abiPreserved_of_exec (decryptTo_mx st B) he hg, hp⟩
 
@@ -334,11 +334,11 @@ end
 
 /-- The instance of `vg_aes_gcm_decrypt_blocks_to` named `n`, calling `B`'s
 `vg_aes_gcm_decrypt_blocks` and running the out-of-place loop `st`, if any. -/
-def BlkFromFn.ofBlocks {M : CtxMode} (n : String) (B : BlkFn M) {aligned : Bool}
-    (st : Option (StitchFromCode M aligned)) : BlkFromFn M where
-  fn := ⟨n, BlocksFrom.decrypt B.dec (st.map (·.dec)) aligned⟩
+def BlkToDecFn.ofBlocks {M : CtxMode} (n : String) (B : BlkFn M) {aligned : Bool}
+    (st : Option (StitchToDecCode M aligned)) : BlkToDecFn M where
+  fn := ⟨n, BlocksToDec.decrypt B.dec (st.map (·.dec)) aligned⟩
   ok := decryptToM_correct st B
-  ct := BlocksFrom.decrypt_ct B st
+  ct := BlocksToDec.decrypt_ct B st
   sp := SpSafe.of_all (decryptTo_spSafe st B)
   xd := decryptTo_xdepth st B
   mx := decryptTo_mx st B

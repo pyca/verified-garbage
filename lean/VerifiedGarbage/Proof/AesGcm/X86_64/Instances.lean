@@ -40,11 +40,11 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Gather
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.BlocksVerified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenTo.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToS.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToSplit.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Fn
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksFrom.Fn
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchFrom.Loop
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.DecFrom
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksToDec.Fn
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchToDec.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.DecTo
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.PreparedContract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
@@ -610,8 +610,8 @@ def openFnR16 (v : GcmVariant) (r : R16 v) : OpenTo.OpenFn Proof.Gcm.X86_64.Stit
 /-! ## The instances `vg_aes_gcm_open_to` calls in one pass -/
 
 /-- The prepared powers give the products of a decryption body
-(`StitchFrom.PowFinD`). -/
-theorem powFinD : Proof.Gcm.X86_64.StitchFrom.PowFinD :=
+(`StitchToDec.PowFinD`). -/
+theorem powFinD : Proof.Gcm.X86_64.StitchToDec.PowFinD :=
   fun H => Proof.Gcm.X86_64.Stitch.finD fun _ _ _ _ => Proof.Gcm.X86_64.StitchR.x_φ_hInvF H _
 
 /-- The same, for the 512-bit loops (`StitchZH.PowFinZ`). -/
@@ -621,89 +621,89 @@ theorem powFinZ : Proof.Gcm.X86_64.StitchZH.PowFinZ :=
 
 /-- The out-of-place decryption loop of a variant, for a key context of
 `vg_aes_gcm_prepare`. -/
-def GcmVariant.stitchFromR (v : GcmVariant) :
-    Option (StitchFromCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
-  (v.stitch.bind (·.toPart)).bind fun p => p.pieceFromR.bind (code p.name)
+def GcmVariant.stitchToDecR (v : GcmVariant) :
+    Option (StitchToDecCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
+  (v.stitch.bind (·.toPart)).bind fun p => p.pieceToDecR.bind (code p.name)
 where
   /-- The loop named `n` and its proof. -/
-  code : (n : StitchToName) → PieceFromR n → Option (StitchFromCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true)
-    | .vaes, q => some ⟨_, Proof.Gcm.X86_64.StitchFrom.decR_okN powFinD 24, q.dec⟩
-    | .vaesAvx512, q => some ⟨_, Proof.Gcm.X86_64.StitchZH.decFromR_ok powFinZ, q.dec⟩
+  code : (n : StitchToName) → PieceToDecR n → Option (StitchToDecCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true)
+    | .vaes, q => some ⟨_, Proof.Gcm.X86_64.StitchToDec.decToR_okN powFinD 24, q.dec⟩
+    | .vaesAvx512, q => some ⟨_, Proof.Gcm.X86_64.StitchZH.decToR_ok powFinZ, q.dec⟩
     | .aesniAvx, _ => none
 
 /-- The out-of-place decryption loop of a variant, for a key context of
 `vg_aes_gcm_prepare16`: the 256-bit loop's only (the 512-bit loop reads
 more powers than that context holds). -/
-def GcmVariant.stitchFromR16 (v : GcmVariant) :
-    Option (StitchFromCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 true) :=
-  (v.stitch.bind (·.toPart)).bind fun p => p.pieceFromR.bind (code p.name)
+def GcmVariant.stitchToDecR16 (v : GcmVariant) :
+    Option (StitchToDecCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 true) :=
+  (v.stitch.bind (·.toPart)).bind fun p => p.pieceToDecR.bind (code p.name)
 where
   /-- The loop named `n` and its proof. -/
-  code : (n : StitchToName) → PieceFromR n → Option (StitchFromCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 true)
-    | .vaes, q => some ⟨_, Proof.Gcm.X86_64.StitchFrom.decR_okN powFinD 8, q.dec⟩
+  code : (n : StitchToName) → PieceToDecR n → Option (StitchToDecCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 true)
+    | .vaes, q => some ⟨_, Proof.Gcm.X86_64.StitchToDec.decToR_okN powFinD 8, q.dec⟩
     | _, _ => none
 
 /-- The instance of `vg_aes_gcm_decrypt_blocks_to_prepared` of a variant. -/
-def blkFromR (v : GcmVariant) : BlkFromFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
-  .ofBlocks ("vg_aes_gcm_decrypt_blocks_to_prepared" ++ v.impl.suffix) (blkR v) v.stitchFromR
+def blkToDecR (v : GcmVariant) : BlkToDecFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  .ofBlocks ("vg_aes_gcm_decrypt_blocks_to_prepared" ++ v.impl.suffix) (blkR v) v.stitchToDecR
 
 /-- The instance of `vg_aes_gcm_decrypt_blocks_to_prepared16` of a variant. -/
-def blkFromR16 (v : GcmVariant) : BlkFromFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
-  .ofBlocks ("vg_aes_gcm_decrypt_blocks_to_prepared16" ++ v.impl.suffix) (blkR16 v) v.stitchFromR16
+def blkFromR16 (v : GcmVariant) : BlkToDecFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
+  .ofBlocks ("vg_aes_gcm_decrypt_blocks_to_prepared16" ++ v.impl.suffix) (blkR16 v) v.stitchToDecR16
 
 /-- The instance of `vg_aes_gcm_open_split_prepared` of a variant. -/
-def openSplitFnR (v : GcmVariant) : OpenToS.OpenSplitFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
-  .of ("vg_aes_gcm_open_split_prepared" ++ v.impl.suffix) v.impl (blkR v) (blkFromR v)
+def openSplitFnR (v : GcmVariant) : OpenToSplit.OpenSplitFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  .of ("vg_aes_gcm_open_split_prepared" ++ v.impl.suffix) v.impl (blkR v) (blkToDecR v)
 
 /-- The instance of `vg_aes_gcm_open_split_prepared16` of a variant. -/
-def openSplitFnR16 (v : GcmVariant) : OpenToS.OpenSplitFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
+def openSplitFnR16 (v : GcmVariant) : OpenToSplit.OpenSplitFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 :=
   .of ("vg_aes_gcm_open_split_prepared16" ++ v.impl.suffix) v.impl (blkR16 v) (blkFromR16 v)
 
 /-- `vg_aes_gcm_open_to_prepared` of a variant: in one pass from
-`OpenToS.thr` bytes on if it has the out-of-place decryption loop
-(`stitchFromR`), and otherwise by a copy. -/
+`OpenToSplit.thr` bytes on if it has the out-of-place decryption loop
+(`stitchToDecR`), and otherwise by a copy. -/
 def openToCodeR (v : GcmVariant) : Prog VG.X86_64.isa :=
-  if v.stitchFromR.isSome then
-    Impl.AesGcm.X86_64.OpenToS.openToL Impl.AesGcm.X86_64.OpenToS.thr v.impl.copyW (openFnR v).fn
+  if v.stitchToDecR.isSome then
+    Impl.AesGcm.X86_64.OpenToSplit.openToSel Impl.AesGcm.X86_64.OpenToSplit.thr v.impl.copyW (openFnR v).fn
       (openSplitFnR v).fn
   else Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFnR v).fn
 
 /-- The stack `openToCodeR` uses. -/
-def openToStackR (v : GcmVariant) : Nat := if v.stitchFromR.isSome then 2776 else 2728
+def openToStackR (v : GcmVariant) : Nat := if v.stitchToDecR.isSome then 2776 else 2728
 
 theorem openToCodeR_verified (v : GcmVariant) :
     Verified X86_64.target (openToCodeR v) (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi (openToStackR v)) := by
   unfold openToCodeR openToStackR; split
-  · exact OpenToS.openToLPrepared_verified _ v.impl.copyW (openFnR v) (openSplitFnR v)
+  · exact OpenToSplit.openToSelPrepared_verified _ v.impl.copyW (openFnR v) (openSplitFnR v)
   · exact OpenTo.openToPrepared_verified v.impl.copyW (openFnR v)
 
 theorem openToCodeR_spAll (v : GcmVariant) :
     (openToCodeR v).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
   unfold openToCodeR; split
-  · exact OpenToS.openToL_spAll _ v.impl.copyW _ _ (openFnR v).spAll (openSplitFnR v).spAll
+  · exact OpenToSplit.openToSel_spAll _ v.impl.copyW _ _ (openFnR v).spAll (openSplitFnR v).spAll
   · exact OpenTo.openTo_spAll v.impl.copyW _ (openFnR v).spAll
 
 /-- `vg_aes_gcm_open_to_prepared16` of a variant, as `openToCodeR`. -/
 def openToCodeR16 (v : GcmVariant) (r : R16 v) : Prog VG.X86_64.isa :=
-  if v.stitchFromR16.isSome then
-    Impl.AesGcm.X86_64.OpenToS.openToL Impl.AesGcm.X86_64.OpenToS.thr v.impl.copyW (openFnR16 v r).fn
+  if v.stitchToDecR16.isSome then
+    Impl.AesGcm.X86_64.OpenToSplit.openToSel Impl.AesGcm.X86_64.OpenToSplit.thr v.impl.copyW (openFnR16 v r).fn
       (openSplitFnR16 v).fn
   else Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFnR16 v r).fn
 
 /-- The stack `openToCodeR16` uses. -/
-def openToStackR16 (v : GcmVariant) : Nat := if v.stitchFromR16.isSome then 2776 else 2728
+def openToStackR16 (v : GcmVariant) : Nat := if v.stitchToDecR16.isSome then 2776 else 2728
 
 theorem openToCodeR16_verified (v : GcmVariant) (r : R16 v) :
     Verified X86_64.target (openToCodeR16 v r)
       (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi (openToStackR16 v)) := by
   unfold openToCodeR16 openToStackR16; split
-  · exact OpenToS.openToLPrepared16_verified _ v.impl.copyW (openFnR16 v r) (openSplitFnR16 v)
+  · exact OpenToSplit.openToSelPrepared16_verified _ v.impl.copyW (openFnR16 v r) (openSplitFnR16 v)
   · exact OpenTo.openToPrepared16_verified v.impl.copyW (openFnR16 v r)
 
 theorem openToCodeR16_spAll (v : GcmVariant) (r : R16 v) :
     (openToCodeR16 v r).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
   unfold openToCodeR16; split
-  · exact OpenToS.openToL_spAll _ v.impl.copyW _ _ (openFnR16 v r).spAll (openSplitFnR16 v).spAll
+  · exact OpenToSplit.openToSel_spAll _ v.impl.copyW _ _ (openFnR16 v r).spAll (openSplitFnR16 v).spAll
   · exact OpenTo.openTo_spAll v.impl.copyW _ (openFnR16 v r).spAll
 
 end VG.Proof.AesGcm.X86_64

@@ -17,7 +17,7 @@ piece reads from `src` and the call from its copy.
 
 @[expose] public section
 
-namespace VG.Impl.AesGcm.X86_64.BlocksFrom
+namespace VG.Impl.AesGcm.X86_64.BlocksToDec
 
 open VG.X86_64
 
@@ -27,4 +27,4 @@ rest. -/
 def decrypt (dec : Fn) (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa :=
   BlocksTo.encrypt dec piece aligned false
 
-end VG.Impl.AesGcm.X86_64.BlocksFrom
+end VG.Impl.AesGcm.X86_64.BlocksToDec
