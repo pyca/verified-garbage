@@ -5,13 +5,18 @@ public import VerifiedGarbage.Impl.ChaCha20.X86
 /-!
 # ChaCha20 keystream XOR: x86 (32-bit) implementation
 
-`vg_chacha20_xor(state, data, len, buf)`, cdecl: the arguments are at
-`[esp + 4]`, `[esp + 8]`, `[esp + 12]` and `[esp + 16]`.
+`vg_chacha20_xor(state, src, len, buf)`, with `dst` in `esi`, writes the
+`len` bytes at `src` XORed with the keystream to `dst`, which is either `src`
+itself (in place) or a buffer apart from it. It is cdecl but for `dst`: the
+four arguments are at `[esp + 4]`, `[esp + 8]`, `[esp + 12]` and
+`[esp + 16]`, and `dst` comes in `esi`, a callee-saved register that its
+callers can set (`vg_chacha20_apply` keeps the data there already), so that
+calls take no more stack than they did.
 
 While more than 64 bytes remain, four blocks of keystream (the counters
 `c, c + 1, c + 2, c + 3` modulo 2³², `c` being word 12 of the state) are
-computed at once with SSE2 and XORed into the next 256 bytes, or into all
-that remain if fewer (`body4`):
+computed at once with SSE2, XORed with the next 256 bytes of the source and
+written to the destination, or all that remain if fewer (`body4`):
 
 * Word `k` of the four states is kept in its slot, `buf[16 k, 16 k + 16)`,
   doubleword `l` for block `l`, or in an XMM register: each row of the
@@ -30,10 +35,11 @@ that remain if fewer (`body4`):
   added (their rows broadcast again from `state`, through `xmm4` and
   `xmm5`, and the counters reloaded from `buf[272, 288)`), the four
   registers are transposed (`punpck{l,h}{dq,qdq}`, through `xmm4` and
-  `xmm5`) into that row of each block, and each 16 bytes are XORed into the
-  data through `xmm6` if they all lie within the data; the 16 bytes that
-  run past its end, if any, are stored in `buf[0, 16)` (whose slot has been
-  read), and their first bytes XORed into the data afterwards (`last`).
+  `xmm5`) into that row of each block, and each 16 bytes are XORed with the
+  source and written to the destination through `xmm6` if they all lie
+  within the data; the 16 bytes that run past its end, if any, are stored in
+  `buf[0, 16)` (whose slot has been read), and their first bytes XORed with
+  the source afterwards (`last`).
 
 `vg_chacha20_xor_ssse3` (`xorSsse3`) is the same code with `vqr3` for `vqr`,
 whose rotations by 16 and 8 bits are `pshufb`: the prologue stores its
@@ -41,25 +47,30 @@ controls in `buf[288, 320)` (`masks`), which nothing else writes.
 
 If 64 bytes or fewer remain after that, `vg_chacha20_block(state, buf)` is
 called and the first bytes of its output (the first 64 bytes of `buf`) are
-XORed into the data (`tail`), 16 at a time through `xmm4` and `xmm5`, then
-one at a time.
+XORed with the source into the destination (`tail`), 16 at a time through
+`xmm4` and `xmm5`, then one at a time.
 
-Across the calls, `ebx` holds `state`, `esi` the data not yet processed,
-`edi` `buf` and `ebp` the number of bytes left: the block function preserves
-them (it is cdecl). Our caller's values of those registers are saved in
-`buf[256, 272)`, which is not passed to the block function. The call
-pushes its two arguments (`buf`, then `state`) in a frame of its own, popped
-(into `eax`) when it returns: with the return address the call stores, it
-uses the 12 bytes below `esp`.
+`ebx` holds `state`, `esi` the source not yet processed, `edx` the
+destination, `edi` `buf` and `ebp` the number of bytes left. Our caller's
+`ebx, esi, edi, ebp` are saved in `buf[256, 272)`, which is not passed to
+the block function. The block function preserves `ebx, esi, edi, ebp` (it is
+cdecl) but not `edx`, so before calling it `tail` moves the destination to
+`ebx` and `state` to `eax`. The call pushes its two arguments (`buf`, then
+`state`) in a frame of its own, popped (into `eax`) when it returns: with
+the return address the call stores, it uses the 12 bytes below `esp`. The
+destination is never loaded from memory, which the constant-time analysis
+would not know to be public once secrets are stored into it.
 
-In the byte loop, `edx` points at the next byte of keystream and `ecx`
-counts the bytes left; the data byte is XORed with the (little-endian) word
-at `edx`, whose low byte is that keystream byte (the word lies within
-`buf`).
+The source and the destination advance together. Each byte, or 16 bytes,
+of the source is loaded before the destination's is stored, so in place the
+source not yet consumed is intact. In the byte loop, `ebp` points at the
+next byte of keystream and `ecx` counts the bytes left; the source byte is
+XORed with the (little-endian) word at `ebp`, whose low byte is that
+keystream byte (the word lies within `buf`).
 
 The branches are on the length only, and every address is `esp`, a pointer
-plus a constant or a pointer plus a count, so only the pointers and the length can affect
-timing. On return `eax` holds `buf`.
+plus a constant or a pointer plus a count, so only the pointers and the
+length can affect timing. On return `eax` holds `buf`, and `esi` `dst` again.
 -/
 
 @[expose] public section
@@ -78,19 +89,21 @@ def save : List Instr := saved.map fun (r, d) => .store (at_ .eax d) r
 /-- Restore them, with `buf` in `eax`. -/
 def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .eax d))
 
-/-- With `buf` in `eax`: save our caller's registers, and load the other
-arguments. -/
+/-- With `buf` in `eax` and `dst` in `esi`: save our caller's registers, and
+load the other arguments. -/
 def prologue : List Instr :=
-  save ++ ([.mov .edi (.reg .eax), .mov .ebx (.mem (at_ .esp 4)), .mov .esi (.mem (at_ .esp 8)),
-    .mov .ebp (.mem (at_ .esp 12))] : List Instr)
+  save ++ ([.mov .edx (.reg .esi), .mov .edi (.reg .eax), .mov .ebx (.mem (at_ .esp 4)),
+    .mov .esi (.mem (at_ .esp 8)), .mov .ebp (.mem (at_ .esp 12))] : List Instr)
 
-/-- `vg_chacha20_block(state, buf)`: the keystream block into `buf`. -/
+/-- `vg_chacha20_block(state, buf)`, with `state` in `eax`: the keystream
+block into `buf`. -/
 def callBlock : Prog isa :=
-  .frame (.push [.edi, .ebx]) (.call "vg_chacha20_block" block) (.pop .eax 2)
+  .frame (.push [.edi, .eax]) (.call "vg_chacha20_block" block) (.pop .eax 2)
 
 /-! ## XORing keystream into the data -/
 
-/-- One byte: the data byte at `esi`, XORed with the keystream byte at `edx`. -/
+/-- One byte, in place: the data byte at `esi`, XORed with the keystream
+byte at `edx` (`vg_chacha20_apply`'s bytes of a buffered block). -/
 def xorBody : List Instr :=
   [.movzx8 .eax (at_ .esi 0), .alu .xor .eax (.mem (at_ .edx 0)), .store8 (at_ .esi 0) .al,
    .alu .add .esi (.imm 1), .alu .add .edx (.imm 1), .alu .sub .ecx (.imm 1)]
@@ -102,23 +115,41 @@ def xorLoop : Prog isa := .loop (.block xorBody) .ne
 def xorBytes : Prog isa :=
   .seq (.block [.alu .test .ecx (.reg .ecx)]) (.ite .e (.block []) xorLoop)
 
-/-- 16 bytes: the data at `esi`, XORed with the keystream at `edx`, through
-`xmm4` and `xmm5`; then `CF` is clear if at least 16 bytes remain. -/
-def chunkBody : List Instr :=
-  [.movdquLoad .xmm4 (at_ .esi 0), .movdquLoad .xmm5 (at_ .edx 0), xb .pxor .xmm4 .xmm5,
-   .movdquStore (at_ .esi 0) .xmm4, .alu .add .esi (.imm 16), .alu .add .edx (.imm 16),
-   .alu .sub .ecx (.imm 16), .alu .cmp .ecx (.imm 16)]
+/-- One byte: the source byte at `esi`, XORed with the keystream byte at
+`ebp`, to the destination at `edx`. -/
+def xorToBody : List Instr :=
+  [.movzx8 .eax (at_ .esi 0), .alu .xor .eax (.mem (at_ .ebp 0)), .store8 (at_ .edx 0) .al,
+   .alu .add .esi (.imm 1), .alu .add .edx (.imm 1), .alu .add .ebp (.imm 1), .alu .sub .ecx (.imm 1)]
 
-/-- XORs the `ecx` bytes at `edx` into the data (`esi`), 16 at a time and then
-one at a time, advancing both. -/
+/-- XORs the first `ecx` bytes of the keystream with the source into the
+destination (`ecx > 0`). -/
+def xorToLoop : Prog isa := .loop (.block xorToBody) .ne
+
+/-- XORs the `ecx` bytes at `ebp` with those at `esi` into those at `edx`,
+advancing all three. -/
+def xorBytesTo : Prog isa :=
+  .seq (.block [.alu .test .ecx (.reg .ecx)]) (.ite .e (.block []) xorToLoop)
+
+/-- 16 bytes: the source at `esi`, XORed with the keystream at `ebp`, to the
+destination at `edx`, through `xmm4` and `xmm5`; then `CF` is clear if at
+least 16 bytes remain. -/
+def chunkBody : List Instr :=
+  [.movdquLoad .xmm4 (at_ .esi 0), .movdquLoad .xmm5 (at_ .ebp 0), xb .pxor .xmm4 .xmm5,
+   .movdquStore (at_ .edx 0) .xmm4, .alu .add .esi (.imm 16), .alu .add .edx (.imm 16),
+   .alu .add .ebp (.imm 16), .alu .sub .ecx (.imm 16), .alu .cmp .ecx (.imm 16)]
+
+/-- XORs the `ecx` bytes at `ebp` with those at `esi` into those at `edx`,
+16 at a time and then one at a time, advancing all three. -/
 def xorWide : Prog isa :=
   .seq (.block [.alu .cmp .ecx (.imm 16)])
-  (.seq (.ite .b (.block []) (.loop (.block chunkBody) .ae)) xorBytes)
+  (.seq (.ite .b (.block []) (.loop (.block chunkBody) .ae)) xorBytesTo)
 
-/-- The last bytes (`0 < ebp ≤ 64`): the block of keystream into `buf`, and
-its first `ebp` bytes XORed into the data. -/
+/-- The last bytes (`0 < ebp ≤ 64`): the block of keystream into `buf` (the
+destination kept in `ebx` across the call), and its first `ebp` bytes XORed
+with the source into the destination. -/
 def tail : Prog isa :=
-  .seq callBlock (.seq (.block [.mov .edx (.reg .edi), .mov .ecx (.reg .ebp)]) xorWide)
+  .seq (.block [.mov .eax (.reg .ebx), .mov .ebx (.reg .edx)])
+  (.seq callBlock (.seq (.block [.mov .ecx (.reg .ebp), .mov .ebp (.reg .edi), .mov .edx (.reg .ebx)]) xorWide))
 
 /-! ## Four blocks at once, with SSE2 -/
 
@@ -247,12 +278,14 @@ def transpose : List Instr :=
 def outReg : Nat → XReg
   | 0 => .xmm1 | 1 => .xmm4 | 2 => .xmm3 | _ => .xmm0
 
-/-- The 16 bytes of `x` XORed into the data at `esi + off`, through `xmm6`. -/
+/-- The 16 bytes of `x` XORed with the source at `esi + off` into the
+destination at `edx + off`, through `xmm6`. -/
 def xor16 (x : XReg) (off : Nat) : List Instr :=
-  [.movdquLoad .xmm6 (at_ .esi off), xb .pxor .xmm6 x, .movdquStore (at_ .esi off) .xmm6]
+  [.movdquLoad .xmm6 (at_ .esi off), xb .pxor .xmm6 x, .movdquStore (at_ .edx off) .xmm6]
 
 /-- The 16 bytes of keystream in `x`, for the data at offset `off`: XORed
-into the data if it has at least `off + 16` bytes (`ebp`), stored in
+with the source into the destination if the data has at least `off + 16`
+bytes (`ebp`), stored in
 `buf[0, 16)` if it has more than `off`, and dropped otherwise. -/
 def chunk (x : XReg) (off : Nat) : Prog isa :=
   .seq (.block [.alu .cmp .ebp (.imm (BitVec.ofNat 32 (off + 16)))])
@@ -275,20 +308,21 @@ def finish4 : Prog isa :=
   .seq (finishRow 0) (.seq (finishRow 1) (.seq (finishRow 2) (finishRow 3)))
 
 /-- At most 256 bytes were left (`ebp`): the first `ebp % 16` bytes of
-`buf[0, 16)` XORed into the data that follows the multiple of 16, and no
-bytes left. -/
+`buf[0, 16)` XORed with the source that follows the multiple of 16 into the
+destination, and no bytes left. -/
 def last : Prog isa :=
   .seq (.block [.mov .ecx (.reg .ebp), .alu .and .ecx (.imm 15), .alu .and .ebp (.imm 0xfffffff0),
-    .alu .add .esi (.reg .ebp), .mov .edx (.reg .edi), .mov .ebp (.imm 0)]) xorBytes
+    .alu .add .esi (.reg .ebp), .alu .add .edx (.reg .ebp), .mov .ebp (.reg .edi)])
+  (.seq xorBytesTo (.block [.mov .ebp (.imm 0)]))
 
-/-- More than 256 bytes were left: advance the counter by 4 and the data by
-256 bytes. -/
+/-- More than 256 bytes were left: advance the counter by 4, and the source
+and the destination by 256 bytes. -/
 def next4 : List Instr :=
   [.mov .eax (.mem (at_ .ebx 48)), .alu .add .eax (.imm 4), .store (at_ .ebx 48) .eax,
-   .alu .add .esi (.imm 256), .alu .sub .ebp (.imm 256)]
+   .alu .add .esi (.imm 256), .alu .add .edx (.imm 256), .alu .sub .ebp (.imm 256)]
 
-/-- Four blocks of keystream, XORed into the next 256 bytes of data, or all
-that is left if fewer; then `CF` is clear if more than 64 bytes remain. -/
+/-- Four blocks of keystream, XORed with the next 256 bytes of the source
+into the destination, or all that is left if fewer; then `CF` is clear if more than 64 bytes remain. -/
 def body4 (k : Kernel) : Prog isa :=
   .seq (.block setup4) (.seq (rounds10 k) (.seq finish4
   (.seq (.block [.alu .cmp .ebp (.imm 257)]) (.seq (.ite .b last (.block next4))
