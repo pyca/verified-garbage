@@ -6,7 +6,7 @@
 /// The CPU features `vg_dit_enter` requires (`Artifact.features`).
 pub const VG_DIT_ENTER_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::DIT);
 
-/// Turns data independent timing on (on AArch64, PSTATE.DIT), and returns 1 if it was already on and 0 if it was off. Writes no memory.
+/// Turns data independent timing on (on AArch64, PSTATE.DIT), and returns 1 if it was already on and 0 if it was off. Writes no memory. Its time may depend on whether the mode was on, which is public.
 ///
 /// Contract: `VG.Spec.Dit.enterContract`, and its effect on the mode is `VG.Proof.Dit.AArch64.enter_dit` (on AArch64).
 ///
