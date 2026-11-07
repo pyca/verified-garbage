@@ -21,59 +21,6 @@ pub(super) fn table(hash: Hash) -> Option<super::Table> {
     Some(h.hash_table())
 }
 
-/// The verified functions: `functions`, which chooses, for a CPU with the
-/// features `f`, the implementation of the RSA operations it runs best
-/// (`crate::rsa::Backend`), and returns encryption and decryption calling
-/// them; it does not compile if one needs a CPU feature that RSA's
-/// `select` does not require to choose its implementation.
-///
-/// Each arm names, for one of RSA's backends on the architecture, encryption
-/// or decryption, with the generated constants of the CPU features it needs
-/// (none for the baseline ISA's).
-macro_rules! oaep_functions {
-    (
-        encrypt: {$($(#[$eattr:meta])* $eb:ident => $enc:path [$($ereq:ident),*]),* $(,)?},
-        decrypt: {$($(#[$dattr:meta])* $db:ident => $dec:path [$($dreq:ident),*]),* $(,)?} $(,)?
-    ) => {
-        // Each function needs no CPU feature that RSA's `select` does not
-        // require to choose the implementation it is listed for.
-        $(
-            $(#[$eattr])*
-            const _: () = assert!(
-                crate::rsa::Backend::REQUIRES[crate::rsa::Backend::$eb as usize]
-                    .contains(verified_garbage_cpu::Features::all(&[$($ereq),*])),
-                "an encryption needs a CPU feature its implementation is not chosen for"
-            );
-        )*
-        $(
-            $(#[$dattr])*
-            const _: () = assert!(
-                crate::rsa::Backend::REQUIRES[crate::rsa::Backend::$db as usize]
-                    .contains(verified_garbage_cpu::Features::all(&[$($dreq),*])),
-                "a decryption needs a CPU feature its implementation is not chosen for"
-            );
-        )*
-
-        /// The functions, `(encrypt, decrypt)`, for the implementation that a
-        /// CPU with the features `f` runs best.
-        pub(in crate::rsa::oaep) fn functions(
-            f: verified_garbage_cpu::Features,
-        ) -> (crate::rsa::oaep::EncryptFn, crate::rsa::oaep::DecryptFn) {
-            let rsa = crate::rsa::Backend::select(f);
-            (
-                match rsa {
-                    $($(#[$eattr])* crate::rsa::Backend::$eb => $enc,)*
-                },
-                match rsa {
-                    $($(#[$dattr])* crate::rsa::Backend::$db => $dec,)*
-                },
-            )
-        }
-    };
-}
-
-pub(super) use oaep_functions;
-
 #[cfg(test)]
 mod tests {
     use super::{Hash, table};
