@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 
@@ -37,36 +38,36 @@ def keySat : State where
   wr := [⟨0x1000, 64⟩, ⟨0x2000, 64⟩, ⟨0x3000, 32⟩, ⟨0x4000, 32⟩, ⟨0x5000, 32⟩, ⟨0x6000, 32⟩, ⟨0x7000, 32⟩,
     ⟨0x10000, 8448⟩]
 
-theorem key_implies : keyCtr.Implies (Spec.RsaKeyGen.keyContract abi) where
+theorem key_implies : keyCtr.Implies (Proof.RsaKeyGen.keyContract abi) where
   pre := by
     intro s h
-    sig_pre [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre,
+    sig_pre [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre,
       stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
-    sig_pre [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre,
+    sig_pre [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre,
       stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     sig_split h
-    sig_reduce [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre,
+    sig_reduce [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre,
       stackArgs_twelve, List.append_eq, List.range, List.range.loop]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
   post := by
     intro s s' _ h
-    sig_post [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre, keyPost, keyRes,
+    sig_post [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre, keyPost, keyRes,
       keyOuts, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
-    sig_reduce [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre, keyPost, keyRes,
+    sig_reduce [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre, keyPost, keyRes,
       keyOuts, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
-    sig_simp [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre, keyPost, keyRes,
+    sig_simp [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre, keyPost, keyRes,
       keyOuts, stackArgs_twelve, List.append_eq] [] at h
     obtain ⟨h1, h2⟩ := h
     refine ⟨h1, ?_⟩
     revert h2
     simp only [arg]
-    generalize Spec.RsaKeyGen.keyOp _ _ _ _ = r
+    generalize Proof.RsaKeyGen.keyOp _ _ _ _ = r
     rcases r with (f | ys) | u <;> first | exact id | simp
   pub := by
     intro s₁ s₂ _ _ h
-    sig_pub [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPub,
+    sig_pub [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPub,
       keyLeak, keyRes, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h
     refine ⟨hdi, hsi, hdx, hcx, h8, h9, hsp, fun i hi => ?_, hl⟩
@@ -84,7 +85,7 @@ theorem key_implies : keyCtr.Implies (Spec.RsaKeyGen.keyContract abi) where
     · exact a9
     · exact a10
     · exact a11
-  sat := by sig_implies_sat [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs,
+  sat := by sig_implies_sat [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs,
     keyCtr, keyPre, stackArgs_twelve, List.append_eq] [keySat, stackArg, stackArgAddr, Mem.readW, Mem.read] using keySat
 
 end VG.Proof.RsaKeyGen.X86_64.Key

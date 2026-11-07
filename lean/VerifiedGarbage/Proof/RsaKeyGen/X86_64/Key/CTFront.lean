@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Res
 public import VerifiedGarbage.Proof.Rsa.X86_64.Div
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Entry
@@ -194,7 +195,7 @@ structure KP where
 def KIn.pub (I : KIn) : KQ := ⟨I.B, I.Z, I.pl, I.pN, I.pD, I.pP, I.pQ, I.pDp, I.pDq, I.pQi, I.pE, I.el, I.eb, I.Wr, I.sp⟩
 
 /-- The status of the inputs. -/
-abbrev KIn.st (I : KIn) : Nat := Spec.RsaKeyGen.keyStatus (Spec.RsaKeyGen.keyOp I.pl I.eb I.pb I.qb)
+abbrev KIn.st (I : KIn) : Nat := Proof.RsaKeyGen.keyStatus (Proof.RsaKeyGen.keyOp I.pl I.eb I.pb I.qb)
 
 /-- Between the pieces: the state of some inputs with the public data `p`,
 with the facts `F`. -/

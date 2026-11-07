@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Steps
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Loop
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Correct
@@ -562,7 +563,7 @@ theorem key_pub_of {s₁ s₂ : State} (hr : ∀ r ∈ RISCV64.argRegs, s₁.gpr
     (he : Spec.Rsa.bytesAt s₁.mem (stackArg s₁ 6) (stackArg s₁ 7).toNat =
       Spec.Rsa.bytesAt s₂.mem (stackArg s₂ 6) (stackArg s₂ 7).toNat)
     (hk : keyStatus (Key.resOf s₁) = keyStatus (Key.resOf s₂)) :
-    (Spec.RsaKeyGen.keyContract RISCV64.abi).pub s₁ s₂ := by
+    (Proof.RsaKeyGen.keyContract RISCV64.abi).pub s₁ s₂ := by
   have r0 := hr .a0 (by decide)
   have r1 := hr .a1 (by decide)
   have r2 := hr .a2 (by decide)
@@ -581,9 +582,9 @@ theorem key_pub_of {s₁ s₂ : State} (hr : ∀ r ∈ RISCV64.argRegs, s₁.gpr
   have b7 := ha 7 (by decide)
   have b8 := ha 8 (by decide)
   have b9 := ha 9 (by decide)
-  sig_pub [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
+  sig_pub [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
     Key.stackArgs_ten, List.append_eq, List.range, List.range.loop]
-  sig_reduce [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
+  sig_reduce [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
     Key.stackArgs_ten, List.append_eq, List.range, List.range.loop, List.getD]
   sig_and_intros
   all_goals first

@@ -315,7 +315,7 @@ theorem search_correct_ok (c : Cand) {s : State} (h : contract.pre s) :
     simp only [changes, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     exacts [A.retO, A.retU, A.retB, A.retS, by rw [← hp.low_eq]; exact retL]
-  · sig_post [contract, Spec.RsaKeyGen.primeSearchContract, Spec.RsaKeyGen.primeSearchSig, abi, argSlots, argVal,
+  · sig_post [contract, Proof.RsaKeyGen.primeSearchContract, Proof.RsaKeyGen.primeSearchSig, abi, argSlots, argVal,
       argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
     rw [ax4, mem4, BitVec.setWidth_append_eq_right]
     have st := (status_lt (searchResult s)).1

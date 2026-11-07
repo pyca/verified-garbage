@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Call
 import VerifiedGarbage.Proof.RsaKeyGen.SearchSpec
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ZeroOut
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SearchInit
+import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
