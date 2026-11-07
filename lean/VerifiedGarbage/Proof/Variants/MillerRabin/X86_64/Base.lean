@@ -19,7 +19,7 @@ namespace VG.Proof.Variants.MillerRabin.X86_64.Base
 
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 
-def variant : RoundImpl where
+def arith : RoundArith where
   mont := Mont.fnBase
   inlineMont := Mont.fnBase
   inlineDepth := by intro o a b; rfl
@@ -28,11 +28,10 @@ def variant : RoundImpl where
   mmOk := inline_call_inlineOk (by decide +kernel)
   mmInline := inline_call_inline (by decide +kernel)
   mxSafe := by decide +kernel
-  spSafe := by decide +kernel
-  depth := by decide +kernel
   arithDepth := by intro o a b; rfl
   arithSafe := by intro o a b; rfl
-  suffix := ""
-  features := []
+
+
+def variant : RoundImpl := RoundImpl.ofArith arith (by decide +kernel) (by decide +kernel) "" []
 
 end VG.Proof.Variants.MillerRabin.X86_64.Base

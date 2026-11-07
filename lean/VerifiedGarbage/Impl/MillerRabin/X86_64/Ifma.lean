@@ -15,22 +15,23 @@ The exponent is the prepared `E = (c − 1) / 2^σ` (array `aE`), whose lowest
 set bit ends a window of 4 bits and so one of 2 bits: windows of 2 bits
 (`Proof/MillerRabin/WindowK.lean`) need a table of four entries, which
 with every other number of the radix fits in the round's table arrays
-(`aT0` to `aT0 + 15`), the only arrays it may write but `aAcc`, `aTmp`,
-`aXm`, `aY`. The area, from array `aT0` (`rbx`, rounded up to a cache line): the modulus and `k₀`,
-`Y`, the selected entry `S`, the table `T_j = b^j R' mod c` (`j < 4`, so
-`T_0 = R' mod c`), `T_0 + c`, `c − T_0` and `c − T_0 + c`, and the MXCSR
-slots. Every number is below `2 c` with limbs below `2⁵²`, and the
-constants are below `2 c` and reduced limb by limb, so that `y ≡ ±1` is
-one of two limb-wise equalities.
+(`aT0` to `aT0 + 15`); the round writes nothing else but its frame. The
+area, from array `aT0` rounded up to a cache line (`rbx`, so that no 32-byte
+access of the vector code is split): the modulus and `k₀`, `Y`, the
+selected entry `S`, the table `T_j = b^j R' mod c` (`j < 4`, so `T_0 = R'
+mod c`), `T_0 + c`, `c − T_0` and `c − T_0 + c`, the word of `E` being
+scanned, the MXCSR slots and the flag. Every number has limbs below `2⁵²` and is below
+`2 c`, so that `y ≡ ±1` is one of two limb-wise equalities with the
+constants.
 
-Before the vector code, in 64-bit words: `K = 2^(104 S − 64 w) mod c` and
-`T_0` by doublings of `R mod c` (`aR1`) in `aY`, and `c − T_0` in `aTmp`;
-`T_1 = b R mod c` (`aXm`) times `K` makes `b R'`. The flag is in `rbp`, the
-word of `E` being scanned in `r15` (its windows from the top), the windows
-left of it in `r14` and the multiplications left of a window in `r13`; the
-words left in the header's `kWords`. After the last word, one more pass of
-three squarings, each or'ing the flag with `y = −1` under the mask of
-`σ > j` (`Round.mrLast`).
+Before the vector code, in limbs: `K = 2^(104 S − 64 w) mod c` and `T_0` by
+doublings of `R mod c` (`aR1`), `c − T_0` and the sums; `T_1 = b R mod c`
+(`aXm`) times `K` makes `b R'`. The flag is a mask at `oF`, the words of `E` left
+in `r15`, the windows left of a word in `r14` and the multiplications left
+of a window in `r13`. After the last word, one more pass of three
+squarings, each or'ing the flag with `y = −1` under the mask of `σ > j`
+(`Round.mrLast`). No branch or address depends on anything but `rdi`, `rsp`
+and these counters.
 -/
 
 @[expose] public section
@@ -39,16 +40,11 @@ namespace VG.Impl.MillerRabin.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
   VG.Impl.Rsa.X86_64.CrtIfma VG.Impl.RsaKeyGen.X86_64.Candidate
+open VG.Impl.Rsa.X86_64.PubIfma (arr base ld52 setOps)
 
 variable (l : Lay)
 
 /-! ## The area -/
-
-/-- The offset of array `j` in the workspace of `W` words. -/
-def arr (j : Nat) : Nat := hdrBytes + j * (8 * (l.W + 2))
-
-/-- The area: from array `aT0`. -/
-def oArea : Nat := arr l aT0
 
 def oY : Nat := l.NB + 32
 def oS : Nat := oY l + l.NB
@@ -58,69 +54,74 @@ def oT (j : Nat) : Nat := oS l + l.NB + j * l.NB
 def oP1c : Nat := oT l 4
 def oM1 : Nat := oP1c l + l.NB
 def oM1c : Nat := oM1 l + l.NB
+/-- The word of `E` being scanned. -/
+def oV : Nat := oM1c l + l.NB
 /-- The caller's MXCSR and `0x1FBF`. -/
-def oMx : Nat := oM1c l + l.NB
+def oMx : Nat := oV l + 8
+/-- The flag, a mask. -/
+def oF : Nat := oMx l + 8
 
 /-- The doublings of `R mod c` that make `T_0 = R' mod c`. -/
 def shifts : Nat := 52 * l.S - 64 * l.W
 
-/-! ## Before the vector code -/
+/-! ## Numbers in limbs, before the vector code (`r12` holds `2⁵² − 1`) -/
 
-/-- `r := rdi + arr j`. -/
-def base (r : Reg) (j : Nat) : List Instr :=
-  [.mov r (.reg .rdi), .alu .add r (.imm (BitVec.ofNat 32 (arr l j)))]
-
-/-- Array `j` into the limbs at offset `o` of the area (`r12` holds `2⁵² − 1`). -/
-def ld52 (j o : Nat) : List Instr :=
-  base l .rsi j ++ ([.mov .r11 (.reg .rbx), .alu .add .r11 (.imm (BitVec.ofNat 32 o))] : List Instr) ++ to52 l
-
-/-- `[o] := [a] + [b]` limb by limb, the carries propagated (`r12` holds
-`2⁵² − 1`), through `rdx` and `rax`. -/
+/-- `[o] := [a] + [b]`, the carries propagated, through `rdx` and `rax`. -/
 def addN (o a b : Nat) : List Instr :=
   .mov32 .rdx (.imm 0) :: (List.range l.L).flatMap fun j =>
     [.alu .add .rdx (.mem (at_ .rbx (a + l.off j))), .alu .add .rdx (.mem (at_ .rbx (b + l.off j))),
       .mov .rax (.reg .rdx), .alu .and .rax (.reg .r12), .store (at_ .rbx (o + l.off j)) .rax,
       .shift .shr .rdx 52]
 
-/-- `aY := 2^n R mod c`: `R mod c` (`aR1`) copied, doubled `n` times (the
-count in `kBits`). -/
-def dbl (n : Nat) : List (Prog isa) :=
-  [.block (([.mov .r12 (.mem (hdr sW))] : List Instr) ++ base l .rsi aR1 ++ [.mov .rbx (.mem (hdr (sArr aY)))]),
-    copyWords, .block [.mov32 .rcx (.imm (BitVec.ofNat 32 n))], doubles aN aAcc aTmp aY kBits]
+/-- `[o] := [a] − [b] mod 2^(52 L)`, a limb `a_j + (2⁵² − 1) + n − b_j` at a
+time (`n` the carry, 1 for no borrow); `rdx` ends 1 if `[a] ≥ [b]`, else 0. -/
+def subN (o a b : Nat) : List Instr :=
+  .mov32 .rdx (.imm 1) :: (List.range l.L).flatMap fun j =>
+    [.mov .rax (.mem (at_ .rbx (a + l.off j))), .alu .add .rax (.reg .r12), .alu .add .rax (.reg .rdx),
+      .alu .sub .rax (.mem (at_ .rbx (b + l.off j))), .mov .rdx (.reg .rax), .shift .shr .rdx 52,
+      .alu .and .rax (.reg .r12), .store (at_ .rbx (o + l.off j)) .rax]
 
-/-- The area's base, array `aT0` rounded up to a multiple of 64 bytes (a
-cache line, so that no 32-byte access of the vector code is split; there is
-room for the area at any of the eight offsets), and `2⁵² − 1` in `r12`. -/
+/-- `[o] := [t]` under the mask `rdx`, limb by limb. -/
+def selN (o t : Nat) : List Instr :=
+  (List.range l.L).flatMap fun j =>
+    [.mov .rax (.mem (at_ .rbx (o + l.off j))), .mov .rcx (.mem (at_ .rbx (t + l.off j))),
+      .alu .xor .rcx (.reg .rax), .alu .and .rcx (.reg .rdx), .alu .xor .rax (.reg .rcx),
+      .store (at_ .rbx (o + l.off j)) .rax]
+
+/-- `[x] := 2 [x] mod c` (the modulus at 0), through `[tmp] := 2 [x]`. -/
+def dbl1 (x tmp : Nat) : List Instr :=
+  addN l tmp x x ++ subN l x tmp 0 ++ [.alu .cmp .rdx (.imm 1), .alu .sbb .rdx (.reg .rdx)] ++ selN l x tmp
+
+/-- `[x] := 2^n [x] mod c`, `n ≥ 1` (`r13` counting). -/
+def dbls (x tmp n : Nat) : Prog isa :=
+  .seq (.block [.mov32 .r13 (.imm (BitVec.ofNat 32 n))])
+    (.loop (.block (dbl1 l x tmp ++ [.alu .sub .r13 (.imm 1)])) .ne)
+
+/-- The area's base, array `aT0` rounded up to a multiple of 64 bytes, and
+`2⁵² − 1` in `r12`. -/
 def area : List Instr :=
   base l .rbx aT0 ++ ([.alu .add .rbx (.imm 63), .alu .and .rbx (.imm (BitVec.ofInt 32 (-64))),
     .movImm64 .r12 mask52] : List Instr)
 
-/-- The numbers of the area before the vector code: the modulus and `k₀`;
-`b R mod c` (`aXm`) at `T_1`, `K` at `S`, `T_0`, `c − T_0`, and the sums. -/
+/-- The numbers of the area before the vector code: the modulus and `k₀`,
+`b R mod c` (`aXm`) at `T_1`, `K` at `S`, `T_0`, `c − T_0` and the sums. -/
 def setup : List (Prog isa) :=
   [.block (area l ++ ld52 l aN 0 ++
       ([.mov .rax (.mem (hdr sMinv)), .alu .and .rax (.reg .r12)] : List Instr) ++
-      (List.range 4).map (fun i => .store (at_ .rbx (l.NB + 8 * i)) .rax) ++ ld52 l aXm (oT l 1))] ++
-  dbl l l.dbls ++ [.block (area l ++ ld52 l aY (oS l))] ++
-  dbl l (shifts l) ++ [.block (area l ++ ld52 l aY (oT l 0))] ++
-  [.block (([.mov .r12 (.mem (hdr sW))] : List Instr) ++ base l .r8 aN ++ base l .r10 aY ++ base l .rsi aTmp),
-    subMod,
-    .block (area l ++ ld52 l aTmp (oM1 l) ++ addN l (oP1c l) (oT l 0) 0 ++ addN l (oM1c l) (oM1 l) 0)]
+      (List.range 4).map (fun i => .store (at_ .rbx (l.NB + 8 * i)) .rax) ++ ld52 l aXm (oT l 1) ++
+      ld52 l aR1 (oS l) ++ ld52 l aR1 (oT l 0)),
+    dbls l (oS l) (oY l) l.dbls, dbls l (oT l 0) (oY l) (shifts l),
+    .block (subN l (oM1 l) 0 (oT l 0) ++ addN l (oP1c l) (oT l 0) 0 ++ addN l (oM1c l) (oM1 l) 0)]
 
 /-! ## The vector code (`rbx` the area) -/
-
-/-- `[o] := [a] [b] 2^(-52 S)`. -/
-def ops (o a b : Nat) : List Instr :=
-  [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 a)), .mov .r9 (.reg .rbx),
-    .alu .add .r9 (.imm (BitVec.ofNat 32 b)), .mov .r11 (.reg .rbx), .alu .add .r11 (.imm (BitVec.ofNat 32 o))]
 
 /-- The table, by one multiplication in a loop (`r13` counting from 3):
 `T_1 := T_1 K`, `T_2 := T_1 T_1`, `T_3 := T_2 T_1`. -/
 def table : Prog isa :=
   .seq (.block [.mov32 .r13 (.imm 3)])
-    (.loop (.seq (.seq (.block [.alu .cmp .r13 (.imm 3)]) (.ite .e (.block (ops (oT l 1) (oT l 1) (oS l)))
-        (.seq (.block [.alu .cmp .r13 (.imm 2)]) (.ite .e (.block (ops (oT l 2) (oT l 1) (oT l 1)))
-          (.block (ops (oT l 3) (oT l 2) (oT l 1)))))))
+    (.loop (.seq (.seq (.block [.alu .cmp .r13 (.imm 3)]) (.ite .e (.block (setOps (oT l 1) (oT l 1) (oS l)))
+        (.seq (.block [.alu .cmp .r13 (.imm 2)]) (.ite .e (.block (setOps (oT l 2) (oT l 1) (oT l 1)))
+          (.block (setOps (oT l 3) (oT l 2) (oT l 1)))))))
       (.seq (ammMul l) (.block [.alu .sub .r13 (.imm 1)]))) .ne)
 
 /-- `[o] := [a]`, a number, through `vreg 0`. -/
@@ -143,12 +144,12 @@ def isM1 : List Instr :=
 def isPM1 : List Instr :=
   isM1 l ++ eqN l (oT l 0) ++ [.alu .or .rdx (.reg .rcx)] ++ eqN l (oP1c l) ++ [.alu .or .rdx (.reg .rcx)]
 
-/-- `[S] := T_d`, `d` the window's digit (the top two bits of `r15`): for
-each entry `j`, OR'ed in under the mask of `j = d` (one `vpternlogq` per
-register), in registers `0`–`R − 1`, with the mask in `R` and a temporary
-in `R + 1`. -/
+/-- `[S] := T_d`, `d` the window's digit (the top two bits of the word at
+`oV`): for each entry `j`, OR'ed in under the mask of `j = d` (one
+`vpternlogq` per register), in registers `0`–`R − 1`, with the mask in `R`
+and a temporary in `R + 1`. -/
 def select : List Instr :=
-  ([.mov .rdx (.reg .r15), .shift .shr .rdx 62] : List Instr) ++
+  ([.mov .rdx (.mem (at_ .rbx (oV l))), .shift .shr .rdx 62] : List Instr) ++
   (List.range l.R).map (fun k => .eop (.bin .vpxorq (vreg k) (vreg k) (vreg k))) ++
   (List.range 4).flatMap (fun j =>
     ([.mov .rax (.reg .rdx), .alu .xor .rax (.imm (BitVec.ofNat 32 j)), .alu .cmp .rax (.imm 1),
@@ -158,33 +159,36 @@ def select : List Instr :=
       .eop (.vpternlogq (vreg k) (vreg (l.R + 1)) (vreg l.R) 0xF8)]) ++
   (List.range l.R).map (fun k => .evStore (at_ .rbx (oS l + 32 * k)) (vreg k))
 
-/-- After a window's multiplication by `T_d`: the flag `rbp := d ≠ 0 ? y ≡ ±1 : rbp`. -/
+/-- After a window's multiplication by `T_d`: the flag `F := d ≠ 0 ? y ≡ ±1 : F`. -/
 def afterMul : List Instr :=
-  isPM1 l ++ [.mov .rax (.reg .r15), .shift .shr .rax 62, .alu .cmp .rax (.imm 1), .alu .sbb .rax (.reg .rax),
-    .alu .and .rbp (.reg .rax), .alu .xor .rax (.imm (BitVec.ofInt 32 (-1))), .alu .and .rdx (.reg .rax),
-    .alu .or .rbp (.reg .rdx)]
+  isPM1 l ++ [.mov .rcx (.mem (at_ .rbx (oF l))), .mov .rax (.mem (at_ .rbx (oV l))), .shift .shr .rax 62,
+    .alu .cmp .rax (.imm 1), .alu .sbb .rax (.reg .rax), .alu .and .rcx (.reg .rax),
+    .alu .xor .rax (.imm (BitVec.ofInt 32 (-1))), .alu .and .rdx (.reg .rax), .alu .or .rcx (.reg .rdx),
+    .store (at_ .rbx (oF l)) .rcx]
 
-/-- After a squaring of a window: `rbp |= y ≡ −1`. -/
-def afterSq : List Instr := isM1 l ++ [.alu .or .rbp (.reg .rdx)]
+/-- After a squaring of a window: `F |= y ≡ −1`. -/
+def afterSq : List Instr :=
+  isM1 l ++ [.mov .rcx (.mem (at_ .rbx (oF l))), .alu .or .rcx (.reg .rdx), .store (at_ .rbx (oF l)) .rcx]
 
-/-- After squaring `j` of the last three (`r13 = 4 − j`): `rbp |= y ≡ −1`
-under the mask of `σ > j` (from the word after `E`'s, as `Round.mrLast`). -/
+/-- After squaring `j` of the last three: `F |= y ≡ −1` under the mask of
+`σ > j` (from the word after `E`'s, as `Round.mrLast`). -/
 def afterLast (j : Nat) : List Instr :=
   isM1 l ++ [.movImm64 .rax (sigK j), .alu .and .rax (.mem { base := .rdi, disp := ((arr l aE + 8 * l.W : Nat) : Int) }),
     .alu .cmp .rax (.imm 1), .alu .sbb .rax (.reg .rax), .alu .xor .rax (.imm (BitVec.ofInt 32 (-1))),
-    .alu .and .rdx (.reg .rax), .alu .or .rbp (.reg .rdx)]
+    .alu .and .rdx (.reg .rax), .mov .rcx (.mem (at_ .rbx (oF l))), .alu .or .rcx (.reg .rdx),
+    .store (at_ .rbx (oF l)) .rcx]
 
-/-- Whether the pass is the last one, three squarings after the windows:
-ZF iff `kWords = 0`. -/
-def isLast : List Instr := [.mov .rax (.mem (hdr kWords)), .alu .test .rax (.reg .rax)]
+/-- ZF iff the pass is the last one, three squarings after the windows (no
+words of `E` left). -/
+def isLast : List Instr := [.alu .test .r15 (.reg .r15)]
 
 /-- A multiplication of a window (`r13` of them left): `S := T_d` and
 `Y := Y S` for the last of a window's three, `Y := Y Y` otherwise; then the
 flag. -/
 def mult : Prog isa :=
-  .seq (.seq (.block isLast) (.ite .e (.block (ops (oY l) (oY l) (oY l)))
-      (.seq (.block [.alu .cmp .r13 (.imm 1)]) (.ite .e (.block (select l ++ ops (oY l) (oY l) (oS l)))
-        (.block (ops (oY l) (oY l) (oY l)))))))
+  .seq (.seq (.block isLast) (.ite .e (.block (setOps (oY l) (oY l) (oY l)))
+      (.seq (.block [.alu .cmp .r13 (.imm 1)]) (.ite .e (.block (select l ++ setOps (oY l) (oY l) (oS l)))
+        (.block (setOps (oY l) (oY l) (oY l)))))))
     (.seq (ammMul l)
       (.seq (.seq (.block isLast) (.ite .e
           (.seq (.block [.alu .cmp .r13 (.imm 3)]) (.ite .e (.block (afterLast l 1))
@@ -195,34 +199,36 @@ def mult : Prog isa :=
 /-- A window: three multiplications; then the next digit. -/
 def window : Prog isa :=
   .seq (.block [.mov32 .r13 (.imm 3)])
-    (.seq (.loop (mult l) .ne) (.block [.shift .shl .r15 2, .alu .sub .r14 (.imm 1)]))
+    (.seq (.loop (mult l) .ne)
+      (.block [.mov .rax (.mem (at_ .rbx (oV l))), .shift .shl .rax 2, .store (at_ .rbx (oV l)) .rax,
+        .alu .sub .r14 (.imm 1)]))
 
-/-- A pass over a word of `E`: with `kWords` words left, the next word into
-`r15` and its 32 windows; with none left (`kWords = 0`), one pass of three
-squarings (`isLast`). -/
+/-- A pass over a word of `E`: with `r15` words left, word `r15 − 1` into
+`oV` and its 32 windows; with none left, one pass of three squarings. -/
 def word : Prog isa :=
   .seq (.seq (.block isLast) (.ite .e (.block [.mov32 .r14 (.imm 1)])
-      (.block [.mov .rax (.mem (hdr kWords)), .alu .sub .rax (.imm 1),
-        .mov .r15 (.mem { base := .rdi, index := some .rax, scale := 8, disp := ((arr l aE : Nat) : Int) }),
-        .mov32 .r14 (.imm 32)])))
+      (.block [.mov .rax (.reg .r15), .alu .sub .rax (.imm 1),
+        .mov .rcx (.mem { base := .rdi, index := some .rax, scale := 8, disp := ((arr l aE : Nat) : Int) }),
+        .store (at_ .rbx (oV l)) .rcx, .mov32 .r14 (.imm 32)])))
     (.loop (window l) .ne)
 
-/-- The windows: `y := T_0`, the flag clear, `kWords := w`; a pass of `word`
-for each word and one more, each taking one off `kWords`, to `−1`. -/
+/-- The windows: `y := T_0`, the flag clear, `r15 := w`; a pass of `word` for
+each word and one more, each taking one off `r15`, to `−1`. -/
 def windows : List (Prog isa) :=
-  [.block (copyN l (oY l) (oT l 0) ++
-      ([.mov32 .rbp (.imm 0), .mov32 .rax (.imm (BitVec.ofNat 32 l.W)), .store (hdr kWords) .rax] : List Instr)),
-    .loop (.seq (word l) (.block [.mov .rax (.mem (hdr kWords)), .alu .sub .rax (.imm 1),
-      .store (hdr kWords) .rax, .alu .cmp .rax (.imm (BitVec.ofInt 32 (-1)))])) .ne]
+  [.block (copyN l (oY l) (oT l 0) ++ ([.mov32 .rax (.imm 0), .store (at_ .rbx (oF l)) .rax,
+      .mov32 .r15 (.imm (BitVec.ofNat 32 l.W))] : List Instr)),
+    .loop (.seq (word l) (.block [.alu .sub .r15 (.imm 1), .alu .cmp .r15 (.imm (BitVec.ofInt 32 (-1)))])) .ne]
 
 /-- Intel's MXCSR prologue and epilogue around `c` (see "MCDT" in
-`TCB/X86_64/Isa.lean`), the slots at `oMx`: `PubIfma.withMx`'s. -/
+`TCB/X86_64/Isa.lean`), the caller's MXCSR (its bits 15:0) kept in `rbp`,
+which `c` never writes: the shape of a save and restore that the proofs check
+(`ctlOk`), as `Ffdh.X86_64.Ifma.withMx`. -/
 def withMx (c : Prog isa) : Prog isa :=
-  .seq (.block [.stmxcsr (at_ .rbx (oMx l)), .mov32 .r11 (.mem (at_ .rbx (oMx l))), .alu32 .and .r11 (.imm 0xFFFF),
-      .store32 (at_ .rbx (oMx l)) .r11])
-    (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rbx (oMx l + 4)) .rax,
-        .ldmxcsr (at_ .rbx (oMx l + 4)), .lfence]) (.seq c (.block [.lfence])))
-      (.block [.ldmxcsr (at_ .rbx (oMx l)), .vop .vzeroupper]))
+  .seq (.seq (.block [.stmxcsr (at_ .rbx (oMx l)), .mov32 .rbp (.mem (at_ .rbx (oMx l))), .alu32 .and .rbp (.imm 0xFFFF)])
+      (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rbx (oMx l + 4)) .rax,
+          .ldmxcsr (at_ .rbx (oMx l + 4)), .lfence]) (.seq c (.block [.lfence])))
+        (.block [.store32 (at_ .rbx (oMx l)) .rbp, .ldmxcsr (at_ .rbx (oMx l))])))
+    (.block [.vop .vzeroupper])
 
 /-- The vector code: the table, then the windows. -/
 def vec : Prog isa := withMx l (seqs (table l :: windows l))
@@ -230,14 +236,14 @@ def vec : Prog isa := withMx l (seqs (table l :: windows l))
 /-- The passing flag into `rax`, and the callee-saved registers back from
 the frame (`rbx` pushed first). -/
 def finish : List Instr :=
-  [.mov .rax (.reg .rbp), .alu .and .rax (.imm 1),
+  [.mov .rax (.mem (at_ .rbx (oF l))), .alu .and .rax (.imm 1),
     .mov .r15 (.mem { base := .rsp, disp := 0 }), .mov .r14 (.mem { base := .rsp, disp := 8 }),
     .mov .r13 (.mem { base := .rsp, disp := 16 }), .mov .r12 (.mem { base := .rsp, disp := 24 }),
     .mov .rbp (.mem { base := .rsp, disp := 32 }), .mov .rbx (.mem { base := .rsp, disp := 40 })]
 
 /-- The round of a layout, in a frame of the six callee-saved registers. -/
 def ifma : Prog isa :=
-  .frame (.push [.rbx, .rbp, .r12, .r13, .r14, .r15]) (seqs (setup l ++ [vec l, .block (finish)])) (.pop .r11 6)
+  .frame (.push [.rbx, .rbp, .r12, .r13, .r14, .r15]) (seqs (setup l ++ [vec l, .block (finish l)])) (.pop .r11 6)
 
 end VG.Impl.MillerRabin.X86_64.Ifma
 
