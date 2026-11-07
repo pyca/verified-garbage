@@ -285,7 +285,8 @@ vg_aes_xts_decrypt_vaes_vpclmul:
 	je 213f
 215:
 	movdqu xmm0, XMMWORD PTR [r11]
-	vpxor xmm0, xmm0, XMMWORD PTR [rax]
+	movdqu xmm9, XMMWORD PTR [rax]
+	pxor xmm0, xmm9
 	movdqu xmm8, XMMWORD PTR [r10]
 	pxor xmm0, xmm8
 	cmp rsi, 10
@@ -326,7 +327,8 @@ vg_aes_xts_decrypt_vaes_vpclmul:
 	aesdec xmm0, xmm8
 	movdqu xmm8, XMMWORD PTR [rdi]
 	aesdeclast xmm0, xmm8
-	vpxor xmm0, xmm0, XMMWORD PTR [rax]
+	movdqu xmm9, XMMWORD PTR [rax]
+	pxor xmm0, xmm9
 	movdqu XMMWORD PTR [r11], xmm0
 	add r11, 16
 	add rax, 16
