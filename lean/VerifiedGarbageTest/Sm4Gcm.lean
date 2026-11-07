@@ -8,22 +8,57 @@ import VerifiedGarbage.Spec.Sm4.Gcm.Contract
 meta import VerifiedGarbage.Spec.Sm4.Gcm.Contract
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbageTest.Gcm
+meta import VerifiedGarbageTest.Gcm
 
 /-!
 # SM4-GCM specification tests
 
 Read the byte-for-byte RFC 8998 file under `vectors/rfc8998/` (see its
 `vectors/sources/` manifest) and check its one SM4-GCM example
-(Appendix A.1) against `VG.Spec.Sm4.gcmEncrypt` and `gcmDecrypt`: the
-ciphertext and tag, the decryption of the ciphertext, and the rejection of
-the example with a byte of its tag, its ciphertext or its additional data
-changed. The contract's memory layouts are checked on the example's key
-schedule and blocks.
+(Appendix A.1) against SM4-GCM (`gcmEncrypt` and `gcmDecrypt` here: GCM-AE
+and GCM-AD with `VG.Spec.Sm4.gcmCipherOfKey`): the ciphertext and tag, the
+decryption of the ciphertext, and the rejection of the example with a byte
+of its tag, its ciphertext or its additional data changed. The contract's
+memory layouts are checked on the example's key schedule and blocks, and
+GCM-AE and GCM-AD with a key context that `vg_sm4_gcm_init` writes are
+SM4-GCM with its key (`encryptWith_ctx`, `decryptWith_ctx`).
 -/
 
 namespace VG.Test.Sm4Gcm
 
 open Lean Elab Command Spec
+
+/-- SM4-GCM authenticated encryption (RFC 8998 §3.5.1, GCM-AE of SP 800-38D
+§7.1) under the 16-byte key `key`, with a tag of `t` bytes. -/
+def gcmEncrypt (key : List Byte) (t : Nat) (iv p a : List Byte) : List Byte × List Byte :=
+  Gcm.encrypt (Sm4.gcmCipherOfKey key) t iv p a
+
+/-- SM4-GCM authenticated decryption (RFC 8998 §3.5.1, GCM-AD of SP 800-38D
+§7.2) under the 16-byte key `key`, with a tag of `t` bytes. -/
+def gcmDecrypt (key : List Byte) (t : Nat) (iv c a tag : List Byte) : Option (List Byte) :=
+  Test.Gcm.decrypt (Sm4.gcmCipherOfKey key) t iv c a tag
+
+/-- GCM-AE with the key context of `key` is SM4-GCM's with `key`. -/
+theorem encryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : Sm4.Gcm.KeyRepr m p key)
+    (t : Nat) (iv pt a : List Byte) :
+    Gcm.encryptWith (Sm4.Gcm.ctxCiph m p) (Gcm.ctxH m p) t iv pt a = gcmEncrypt key t iv pt a := by
+  unfold Sm4.Gcm.ctxCiph
+  rw [hk.1, hk.2]
+  rfl
+
+/-- GCM-AD with the key context of `key` is SM4-GCM's with `key`, for
+lengths that step 1 accepts. -/
+theorem decryptWith_ctx {m : Mem} {p : Addr} {key : List Byte} (hk : Sm4.Gcm.KeyRepr m p key)
+    (t : Nat) (iv c a tag : List Byte)
+    (hs : Test.Gcm.supported iv.length c.length a.length = true) (ht : tag.length = t) :
+    Gcm.decryptWith (Sm4.Gcm.ctxCiph m p) (Gcm.ctxH m p) t iv c a tag =
+      gcmDecrypt key t iv c a tag := by
+  unfold Sm4.Gcm.ctxCiph
+  rw [hk.1, hk.2, gcmDecrypt, Test.Gcm.decrypt, hs, ht]
+  simp only [Bool.not_true, Bool.false_or, ne_eq, not_true_eq_false, decide_false,
+    Bool.false_eq_true, ↓reduceIte]
+  rfl
 
 def unhex (s : String) : Except String (List Byte) := do
   let cs := s.toLower.toList.filter (!·.isWhitespace)
@@ -64,17 +99,17 @@ def checkExample (ex : String) : Except String Unit := do
   unless iv.length == 12 && key.length == 16 && pt.length == 64 && aad.length == 20 &&
       ct.length == 64 && tag.length == 16 do
     throw "unexpected lengths"
-  unless Sm4.gcmEncrypt key 16 iv pt aad == (ct, tag) do throw "encryption differs"
-  unless Sm4.gcmDecrypt key 16 iv ct aad tag == some pt do throw "decryption differs"
+  unless gcmEncrypt key 16 iv pt aad == (ct, tag) do throw "encryption differs"
+  unless gcmDecrypt key 16 iv ct aad tag == some pt do throw "decryption differs"
   -- A truncated tag is the first bytes of the full one.
-  unless Sm4.gcmEncrypt key 12 iv pt aad == (ct, tag.take 12) do throw "truncated tag differs"
-  unless Sm4.gcmDecrypt key 12 iv ct aad (tag.take 12) == some pt do
+  unless gcmEncrypt key 12 iv pt aad == (ct, tag.take 12) do throw "truncated tag differs"
+  unless gcmDecrypt key 12 iv ct aad (tag.take 12) == some pt do
     throw "truncated decryption differs"
   -- Any change is rejected.
-  unless Sm4.gcmDecrypt key 16 iv ct aad (flip tag 15) == none do throw "accepted a changed tag"
-  unless Sm4.gcmDecrypt key 16 iv (flip ct 0) aad tag == none do
+  unless gcmDecrypt key 16 iv ct aad (flip tag 15) == none do throw "accepted a changed tag"
+  unless gcmDecrypt key 16 iv (flip ct 0) aad tag == none do
     throw "accepted a changed ciphertext"
-  unless Sm4.gcmDecrypt key 16 iv ct (flip aad 19) tag == none do
+  unless gcmDecrypt key 16 iv ct (flip aad 19) tag == none do
     throw "accepted changed additional data"
   -- The contract's layouts: the schedule `vg_sm4_expand_key` writes, and
   -- the blocks of GCM, the first byte the most significant.
@@ -112,8 +147,8 @@ run_cmd do
   | .ok () => pure ()
   | .error e => throwError "SM4-GCM: {e}"
 
-#assert_standard_axioms VG.Spec.Sm4.gcmEncrypt
-#assert_standard_axioms VG.Spec.Sm4.gcmDecrypt
+#assert_standard_axioms gcmEncrypt
+#assert_standard_axioms gcmDecrypt
 #assert_standard_axioms VG.Spec.Sm4.Gcm.initContract
 #assert_standard_axioms VG.Spec.Sm4.Gcm.sealContract
 #assert_standard_axioms VG.Spec.Sm4.Gcm.openContract
@@ -121,7 +156,7 @@ run_cmd do
 #assert_standard_axioms VG.Spec.Sm4.Gcm.streamDecryptContract
 #assert_standard_axioms VG.Spec.Sm4.Gcm.streamFinishContract
 #assert_standard_axioms VG.Spec.Sm4.Gcm.streamVerifyContract
-#assert_standard_axioms VG.Spec.Sm4.Gcm.encryptWith_ctx
-#assert_standard_axioms VG.Spec.Sm4.Gcm.decryptWith_ctx
+#assert_standard_axioms encryptWith_ctx
+#assert_standard_axioms decryptWith_ctx
 
 end VG.Test.Sm4Gcm

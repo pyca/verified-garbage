@@ -14,7 +14,8 @@ loops over random tapes, allocation and encoding:
   of exactly `p_len` octets (`domainValid`);
 * `vg_ffdh_check_public`: `publicValid` of an imported y;
 * `vg_ffdh_check_private`: `privateFrom` of an imported (y, x);
-* `vg_ffdh_generate_key`: one attempt of `generate`, from random octets;
+* `vg_ffdh_generate_key`: one key-generation attempt, from random octets
+  (`scalarOfOctets`, `keyStatus`);
 * `vg_ffdh_exchange`: `exchange`, padded to the modulus' length.
 
 The domain is one buffer, `domain`: p, g and, if `domain_len` is `3 p_len`,
@@ -242,7 +243,7 @@ def generateKeySig : Sig where
     ("rand", .slice false .u8 "rand_len"), ("scratch", .slice true .u64 "scratch_len")]
   ret := some .u32
 
-/-- For a valid domain, one attempt of `generate` with the scalar
+/-- For a valid domain, one key-generation attempt with the scalar
 `scalarOfOctets` of `rand`: `keyStatus`, and for 1 the scalar and the public
 value at `x` and `y`, `p_len` octets each; zeros at both otherwise. Timing
 may depend on the domain and the status, not otherwise on `rand`. -/

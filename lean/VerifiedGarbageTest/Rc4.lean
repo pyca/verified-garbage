@@ -55,7 +55,6 @@ def checkChunks (ctx : Spec.Rc4.Context) (input : List Byte) (splits : List Nat)
     next := c
     output := output ++ bs
   unless output == expected && same next last do throw "byte-at-a-time mismatch"
-  unless (finalize last).isEmpty do throw "finalization emitted bytes"
 
 def checkRfc (text : String) : Except String Unit := do
   let mut keys := 0

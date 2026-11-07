@@ -18,9 +18,11 @@ with both indices zero, independently of the KSA's final index.
 
 This is raw RC4: no nonce, padding, authentication or automatic stream
 discard. Encryption and decryption are the same XOR operation. Updates
-consume exactly their input length and preserve the next stream position;
-finalization emits nothing. These are value definitions, not permission
-to leak table indices: key bytes, the permutation and `j` remain secret.
+consume exactly their input length and preserve the next stream position.
+Raw RC4 has no final block or tag, so finalization emits nothing and has no
+model here; the Rust API may consume its context. These are value
+definitions, not permission to leak table indices: key bytes, the
+permutation and `j` remain secret.
 RC4 is obsolete and insecure (see RFC 6229 §3 and RFC 7465).
 -/
 
@@ -74,9 +76,6 @@ def update (ctx : Context) : List Byte → Context × List Byte
     let (next, k) := step ctx
     let (last, rest) := update next bs
     (last, (b ^^^ k) :: rest)
-
-/-- Raw RC4 has no final block or tag. The Rust API may consume its context. -/
-def finalize (_ctx : Context) : List Byte := []
 
 /-! ## Byte-oriented memory layout, shared by all targets -/
 

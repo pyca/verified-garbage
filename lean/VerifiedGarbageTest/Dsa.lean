@@ -92,6 +92,31 @@ def digest (v : Vector) : Except String (List Byte) :=
   | "SHA-512" => pure (Spec.Sha512.sha512 v.msg)
   | h => throw s!"unknown hash {h}"
 
+/-! ## Operations over the specification
+
+Import, export and randomized signing as a caller composes them from the
+specification's `parametersValid`, `keyValid` and `signWithNonce`. -/
+
+/-- Import public (x=none) or private components, with consistency checks.
+Like RSA import, this does not test primality.
+No private key is manufactured by silently reducing x modulo q. -/
+def fromComponents (p q g y : Nat) (x : Option Nat := none) : Option Key :=
+  let key : Key := ⟨⟨p, q, g⟩, y, x⟩
+  if parametersValid key.params && keyValid key then some key else none
+
+/-- Export the exact components; public exports have no private scalar. -/
+def toComponents (key : Key) : Nat × Nat × Nat × Nat × Option Nat :=
+  (key.params.p, key.params.q, key.params.g, key.y, key.x)
+
+/-- Randomized signing: consume fresh independent N-bit candidates until a
+nonzero signature is obtained; exhaustion reports failure. No deterministic
+signing or nonce-reuse behavior is specified. -/
+def sign (key : Key) (digest : List Byte) : List Nat → Option Signature
+  | [] => none
+  | k :: ks => match signWithNonce key digest k with
+    | some sig => some sig
+    | none => sign key digest ks
+
 /-! The checks of a signing vector compute the same exponentiations modulo
 `p` again (`g^q`, `y^q` and `g^x` validating the domain and the key in
 every function, `g^k` signing, `g^u₁` and `y^u₂` verifying): they evaluate
@@ -351,10 +376,8 @@ def checkPrimality : Except String Unit := do
 #assert_standard_axioms Spec.Dsa.signContract
 #assert_standard_axioms Spec.Dsa.verifyContract
 #assert_standard_axioms Spec.Dsa.probablePrime
-#assert_standard_axioms Spec.Dsa.fromComponents
-#assert_standard_axioms Spec.Dsa.sign
 #assert_standard_axioms Spec.Dsa.verify
-#assert_no_compiler_overrides Spec.Dsa.fromComponents Spec.Dsa.sign Spec.Dsa.verify
+#assert_no_compiler_overrides Spec.Dsa.verify
 #assert_no_compiler_overrides Spec.Dsa.validatePublicKeyApi Spec.Dsa.verifyPrevalidatedApi
 #assert_standard_axioms Spec.Dsa.validatePrivateKeyContract
 #assert_standard_axioms Spec.Dsa.randomSignPrevalidatedContract

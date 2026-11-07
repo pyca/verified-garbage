@@ -20,7 +20,8 @@ transcription error in the spec fails the build:
   blocks, and MACs of 5 to 8 bytes.
 * Verification, for two- and three-key TDEA: the first two vectors of every
   message and MAC length but the 65536-byte messages, checking
-  `VG.Spec.Cmac.verify`; they include both outcomes.
+  `VG.Test.Cmac.verify` (built from `VG.Spec.Cmac.mac`); they include both
+  outcomes.
 
 Every record's key is `Key1 ‖ Key2 ‖ Key3` (the files give all three, also
 for two-key TDEA, where some failing records change `Key3`); where
@@ -73,10 +74,10 @@ run_cmd do
       | .ok ((key, short), msg, t, result) =>
         let valid := result == "P"
         unless valid || result.startsWith "F" do throwError "{name}: `Result = {result}`"
-        unless Spec.Cmac.verify (Spec.Cmac.tdes key) 8 msg t == valid do
+        unless Cmac.verify (Spec.Cmac.tdes key) 8 msg t == valid do
           throwError "{name}, Count = {(r.get "Count").toOption}: CMAC verification is wrong"
         if let some key := short then
-          unless Spec.Cmac.verify (Spec.Cmac.tdes key) 8 msg t == valid do
+          unless Cmac.verify (Spec.Cmac.tdes key) 8 msg t == valid do
             throwError "{name}, Count = {(r.get "Count").toOption}: two-key CMAC verification is wrong"
         if valid then pass := pass + 1 else fail := fail + 1
   unless pass == 14 && fail == 42 do

@@ -19,7 +19,7 @@ Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)       (decryption: Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)),
 ```
 "the remaining b-u bits of the last output block are discarded". So the
 message is XORed with the first bytes of `O₁ ‖ … ‖ Oₙ`, `Oⱼ = CIPH_K(Tⱼ)`
-(`cryptFinal`, as `aesCtr` for AES).
+(`cryptFinal`, with `Cbc.aes` for AES).
 
 A final function leaves in `ctr` the counter block after the last one used,
 `Tₙ₊₁` (`Ctr.next` after `n` blocks, whole or partial): the block a further

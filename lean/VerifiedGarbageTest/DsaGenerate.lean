@@ -24,7 +24,6 @@ open Lean Elab Command Spec.Dsa
 #guard ¬supportedSizes 3072 160
 #guard ¬lengthsValid 128 28
 #guard ¬lengthsValid 384 20
-#guard subgroupBits 2048 == some 256
 #guard ¬generationLengthsValid 256 20
 #guard ¬generationLengthsValid 256 28
 #guard lengthsValid 256 28

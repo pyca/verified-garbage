@@ -22,8 +22,8 @@ Read from the unmodified published files under `vectors/` (provenance in
   against the implementation). These cover empty messages, complete and
   partial last blocks, and MACs of 4 to 16 bytes.
 * NIST CAVP CMAC verification, for 128- and 256-bit keys: the first two
-  vectors of every message and MAC length, checking `VG.Spec.Cmac.verify`;
-  they include both outcomes.
+  vectors of every message and MAC length, checking `Cmac.verify` below
+  (built from `VG.Spec.Cmac.mac`); they include both outcomes.
 -/
 
 @[expose] public section
@@ -69,6 +69,12 @@ def firstOfLengths (k : Nat) (p : Record → Bool) (rs : List Record) : List Rec
       seen := (key, n + 1) :: seen.filter (·.1 != key)
   return out.toList
 
+/-- §6.3, MAC verification: whether `T'` is `MSB_Tlen(Cₙ)` for the message
+`M'`, with `Tlen` the length of `T'` (at most `b` bytes). (Protected,
+so that it is `Cmac.verify` also in the tests that open this namespace.) -/
+protected def verify (ciph : Spec.Cmac.Cipher) (b : Nat) (m t : List Byte) : Bool :=
+  t.length ≤ b && Spec.Cmac.mac ciph b t.length m == t
+
 /-- The contents of `vectors/<path>`. -/
 def readFile (path : System.FilePath) : CommandElabM String := do
   -- This file is `lean/VerifiedGarbageTest/<File>.lean`.
@@ -84,7 +90,7 @@ run_cmd do
     | none => throwError "RFC 4493: no `{k}`"
   let key ← get "K"
   unless key.length == 16 do throwError "RFC 4493: a {key.length}-byte key"
-  unless Spec.Aes.encrypt key (Spec.Cmac.zeros 16) == (← get "AES-128(key,0)") do
+  unless Aes.encrypt key (Spec.Cmac.zeros 16) == (← get "AES-128(key,0)") do
     throwError "RFC 4493: L = CIPH_K(0) is wrong"
   unless Spec.Cmac.subkeys (Spec.Cmac.aes key) 16 == (← get "K1", ← get "K2") do
     throwError "RFC 4493: the subkeys are wrong"
@@ -126,7 +132,7 @@ run_cmd do
         unless key.length == bits / 8 do throwError "{name}: a {key.length}-byte key"
         let valid := result == "P"
         unless valid || result.startsWith "F" do throwError "{name}: `Result = {result}`"
-        unless Spec.Cmac.verify (Spec.Cmac.aes key) 16 msg t == valid do
+        unless Cmac.verify (Spec.Cmac.aes key) 16 msg t == valid do
           throwError "{name}, Count = {(r.get "Count").toOption}: CMAC verification is wrong"
         if valid then pass := pass + 1 else fail := fail + 1
   unless pass + fail == 44 && pass > 0 && fail > 0 do

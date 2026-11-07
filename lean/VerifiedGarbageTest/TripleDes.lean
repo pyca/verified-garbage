@@ -54,14 +54,48 @@ def block (bs : List Byte) : Except String Block := do
   unless bs.length == 8 do throw s!"not an 8-byte block: {bs.length}"
   return Vector.ofFn fun i => bs.getD i 0
 
+/-! ## A streaming model
 
-def context (key : List Byte) (direction : Direction) : Except String Spec.TripleDes.Context :=
+The streaming interface of the Rust API (issue #1's `init`, `update` and
+`finalize`), written here over the specification's `expandKey` and `ecb`:
+updates buffer a partial block and emit the complete blocks, and
+finalization rejects a partial block. There is no padding. -/
+
+instance (n : Nat) : Decidable (validKey n) :=
+  inferInstanceAs (Decidable (n = 16 ∨ n = 24))
+
+/-- The complete 8-byte blocks of `data`; a partial suffix is left out. -/
+def blocks (data : List Byte) : List Block :=
+  (List.range (data.length / 8)).map fun j =>
+    Vector.ofFn fun i => data.getD (8 * j + i.val) 0
+
+structure Context where
+  schedule : Schedule
+  direction : Direction
+  pending : List Byte := []
+
+inductive Error | invalidKeyLength | incompleteBlock
+  deriving DecidableEq, Repr
+
+def init (key : List Byte) (direction : Direction) : Except Error Context := do
+  unless validKey key.length do throw .invalidKeyLength
+  return { schedule := expandKey key, direction }
+
+def update (ctx : Context) (data : List Byte) : Context × List Byte :=
+  let input := ctx.pending ++ data
+  ({ ctx with pending := input.drop (8 * (input.length / 8)) },
+    (ecb ctx.schedule ctx.direction (blocks input)).flatMap Vector.toList)
+
+def finalize (ctx : Context) : Except Error (List Byte) :=
+  if ctx.pending.isEmpty then .ok [] else .error .incompleteBlock
+
+def context (key : List Byte) (direction : Direction) : Except String Context :=
   (init key direction).mapError (fun e => s!"initialization: {repr e}")
 
-def finalized (ctx : Spec.TripleDes.Context) : Bool :=
+def finalized (ctx : Context) : Bool :=
   match finalize ctx with | .ok bs => bs.isEmpty | .error _ => false
 
-def incomplete (ctx : Spec.TripleDes.Context) : Bool :=
+def incomplete (ctx : Context) : Bool :=
   match finalize ctx with | .error .incompleteBlock => true | _ => false
 
 /-- Every cached result carries its equality to the specification computation. -/
@@ -82,8 +116,8 @@ private def cachedEcb (key : EcbInput) : StateT EcbCache (Except String)
   return ⟨result, rfl⟩
 
 /-- Reuse only the ECB computation; buffering and every stream assertion still run. -/
-private def cachedUpdate (ctx : Spec.TripleDes.Context) (data : List Byte) :
-    StateT EcbCache (Except String) {result : Spec.TripleDes.Context × List Byte //
+private def cachedUpdate (ctx : Context) (data : List Byte) :
+    StateT EcbCache (Except String) {result : Context × List Byte //
       result = update ctx data} := do
   let input := ctx.pending ++ data
   let output ← cachedEcb (ctx.schedule, ctx.direction, blocks input)
@@ -91,7 +125,7 @@ private def cachedUpdate (ctx : Spec.TripleDes.Context) (data : List Byte) :
     congrArg (fun bytes => ({ctx with pending := input.drop (8 * (input.length / 8))}, bytes))
       output.property⟩
 
-def checkStream (ctx : Spec.TripleDes.Context) (input expected : List Byte) : Except String Unit := (do
+def checkStream (ctx : Context) (input expected : List Byte) : Except String Unit := (do
   let empty := (← cachedUpdate ctx []).val
   unless empty.2.isEmpty && empty.1.schedule == ctx.schedule &&
       empty.1.direction == ctx.direction && empty.1.pending.isEmpty && finalized empty.1 do

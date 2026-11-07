@@ -13,12 +13,14 @@ decryption (`Spec/Rc2.lean`) on 8-byte blocks (this does not assert that RC2
 is a NIST-approved cipher).
 
 The streaming model follows issue #1's `init(key, iv, direction)`,
-`update(ctx, data)` and `finalize(ctx)`. The default effective bit count is
-eight times the key length; `initWithEffectiveBits` makes it explicit.
-Updates emit all complete blocks and retain a partial block. Finalization
-rejects a partial block; padding is the caller's responsibility. The
-immutable model returns the next context; the Rust API can mutate its own
-context and consume it on finalization.
+`update(ctx, data)` and `finalize(ctx)`: initialization
+(`initWithEffectiveBits`) takes the effective bit count explicitly (issue
+#1's default is eight times the key length), and `update` emits all
+complete blocks and retains a partial block. Unpadded CBC's finalization
+emits no bytes and rejects a partial block (`Error.incompleteBlock`) in
+either direction; padding is the caller's responsibility. The immutable
+model returns the next context; the Rust API can mutate its own context
+and consume it on finalization.
 
 The signatures derive memory validity, non-overlap, permitted
 writes and public pointers/lengths from `Sig.contract`. Key bytes, expanded
@@ -43,8 +45,8 @@ holds nothing an implementation may branch on, as constant time requires.
 itself, in `initWithEffectiveBits`'s order, and returns `Error.code` of the
 first that fails, or 0: so the verified code decides every outcome of
 initialization, although the lengths are public and the caller could check
-them. `finalize` has no primitive: `finalize` of a context is
-`.ok []` exactly if its pending input is empty, which, by `contextAt`, is
+them. Finalization has no primitive: it succeeds, with no bytes, exactly
+if the context's pending input is empty, which, by `contextAt`, is
 `pending_len = 0`, a public length the caller holds. Unpadded CBC emits
 nothing at finalization, and nothing secret is involved.
 
@@ -95,10 +97,6 @@ def initWithEffectiveBits (key iv : List Byte) (direction : Direction) (effectiv
     direction := direction
     iv := Vector.ofFn fun i => iv.getD i 0 }
 
-/-- Issue #1's initialization, defaulting to the supplied key's bit length. -/
-def init (key iv : List Byte) (direction : Direction) : Except Error Context :=
-  initWithEffectiveBits key iv direction (8 * key.length)
-
 /-- Emit all complete blocks, retaining at most seven bytes for the next
 update. The complete blocks of the pending bytes followed by `data` are
 encrypted or decrypted by CBC (`Cbc.encrypt`, `Cbc.decrypt`) from the
@@ -120,11 +118,6 @@ def update (ctx : Context) (data : List Byte) : Context × List Byte :=
       iv := Vector.ofFn fun i => (Cbc.next ctx.iv.toList ciphertext).getD i.val 0
       pending := input.drop (8 * (input.length / 8)) },
     output.flatten)
-
-/-- Unpadded CBC: success emits no bytes; a trailing partial block is an
-error in either direction. -/
-def finalize (ctx : Context) : Except Error (List Byte) :=
-  if ctx.pending.isEmpty then .ok [] else .error .incompleteBlock
 
 /-! ## Streaming -/
 

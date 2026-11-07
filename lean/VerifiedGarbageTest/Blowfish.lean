@@ -52,6 +52,41 @@ def lines (text : String) : List String :=
 def words (line : String) : List String :=
   (line.splitOn " ").filter (!·.isEmpty)
 
+/-! ## A streaming model
+
+The streaming interface of the Rust API (issue #1's `init`, `update` and
+`finalize`), written here over the specification's `expandKey` and `ecb`:
+updates buffer a partial block and emit the complete blocks, and
+finalization rejects a partial block. There is no padding. -/
+
+instance (n : Nat) : Decidable (validKey n) :=
+  inferInstanceAs (Decidable (4 ≤ n ∧ n ≤ 56))
+
+/-- The complete 8-byte blocks of `data`; a partial suffix is left out. -/
+def blocks (data : List Byte) : List Block :=
+  (List.range (data.length / 8)).map fun j =>
+    Vector.ofFn fun i => data.getD (8 * j + i.val) 0
+
+structure Context where
+  schedule : Schedule
+  direction : Direction
+  pending : List Byte := []
+
+inductive Error | invalidKeyLength | incompleteBlock
+  deriving DecidableEq, Repr
+
+def init (key : List Byte) (direction : Direction) : Except Error Context := do
+  unless validKey key.length do throw .invalidKeyLength
+  return { schedule := expandKey key, direction }
+
+def update (ctx : Context) (data : List Byte) : Context × List Byte :=
+  let input := ctx.pending ++ data
+  ({ ctx with pending := input.drop (8 * (input.length / 8)) },
+    (ecb ctx.schedule ctx.direction (blocks input)).flatMap Vector.toList)
+
+def finalize (ctx : Context) : Except Error (List Byte) :=
+  if ctx.pending.isEmpty then .ok [] else .error .incompleteBlock
+
 /-! ## The constants -/
 
 /-- The hexadecimal digits of π after the initial 3, as 32-bit words. -/
@@ -108,16 +143,16 @@ def check (key : List Byte) (pt ct : Block) (what : String) : Except String Unit
   unless encryptBlock k pt == ct do throw s!"{what}: encryption failed"
   unless decryptBlock k ct == pt do throw s!"{what}: decryption failed"
 
-def finalized (ctx : Spec.Blowfish.Context) : Bool :=
+def finalized (ctx : Context) : Bool :=
   match finalize ctx with | .ok bs => bs.isEmpty | .error _ => false
 
-def incomplete (ctx : Spec.Blowfish.Context) : Bool :=
+def incomplete (ctx : Context) : Bool :=
   match finalize ctx with | .error .incompleteBlock => true | _ => false
 
-def context (key : List Byte) (direction : Direction) : Except String Spec.Blowfish.Context :=
+def context (key : List Byte) (direction : Direction) : Except String Context :=
   (init key direction).mapError (fun e => s!"initialization: {repr e}")
 
-def checkStream (ctx : Spec.Blowfish.Context) (input expected : List Byte) :
+def checkStream (ctx : Context) (input expected : List Byte) :
     Except String Unit := do
   let empty := update ctx []
   unless empty.2.isEmpty && empty.1.pending.isEmpty && finalized empty.1 do

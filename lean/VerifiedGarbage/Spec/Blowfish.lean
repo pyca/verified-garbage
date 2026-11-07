@@ -34,18 +34,18 @@ Keys have 4–56 bytes: the paper's key expansion takes "a key of at most
 (https://www.schneier.com/academic/blowfish/) gives the variable key
 length as "32 bits to 448 bits".
 `expandKey` is defined on every list (the vendored set-key vectors also
-use 1- to 3-byte keys); initialization and the key-expansion contract
-require a valid length. Weak keys are accepted: this specifies the cipher,
-not a key-generation policy.
+use 1- to 3-byte keys); the key-expansion contract requires a valid length
+(`validKey`). Weak keys are accepted: this specifies the cipher, not a
+key-generation policy.
 
 ECB applies the cipher independently to each block (SP 800-38A §6.1's
 construction; this does not assert that Blowfish is a NIST-approved
-cipher). The streaming interface buffers partial blocks, emits complete
-8-byte blocks, and rejects a partial block at finalization. There is no
-padding. Key bytes, the expanded P-array and S-boxes and the data are
-secret in the contracts: the S-boxes are key-dependent and indexed by
-secret bytes, and the contracts do not permit an implementation to index
-memory with them.
+cipher), on complete 8-byte blocks only. The Rust API's streaming
+interface buffers partial blocks, emits complete blocks, and rejects a
+partial block at finalization; there is no padding. Key bytes, the
+expanded P-array and S-boxes and the data are secret in the contracts: the
+S-boxes are key-dependent and indexed by secret bytes, and the contracts do
+not permit an implementation to index memory with them.
 -/
 
 @[expose] public section
@@ -283,9 +283,6 @@ def expandKey (key : List Byte) : Schedule :=
 
 def validKey (n : Nat) : Prop := 4 ≤ n ∧ n ≤ 56
 
-instance (n : Nat) : Decidable (validKey n) :=
-  inferInstanceAs (Decidable (4 ≤ n ∧ n ≤ 56))
-
 /-! ## Blocks and ECB -/
 
 /-- A big-endian word from four bytes. -/
@@ -311,30 +308,6 @@ inductive Direction | encrypt | decrypt
 /-- SP 800-38A §6.1, including empty input. -/
 def ecb (k : Schedule) (direction : Direction) (input : List Block) : List Block :=
   input.map (match direction with | .encrypt => encryptBlock k | .decrypt => decryptBlock k)
-
-def blocks (data : List Byte) : List Block :=
-  (List.range (data.length / 8)).map fun j =>
-    Vector.ofFn fun i => data.getD (8 * j + i.val) 0
-
-structure Context where
-  schedule : Schedule
-  direction : Direction
-  pending : List Byte := []
-
-inductive Error | invalidKeyLength | incompleteBlock
-  deriving DecidableEq, Repr
-
-def init (key : List Byte) (direction : Direction) : Except Error Context := do
-  unless validKey key.length do throw .invalidKeyLength
-  return { schedule := expandKey key, direction }
-
-def update (ctx : Context) (data : List Byte) : Context × List Byte :=
-  let input := ctx.pending ++ data
-  ({ ctx with pending := input.drop (8 * (input.length / 8)) },
-    (ecb ctx.schedule ctx.direction (blocks input)).flatMap Vector.toList)
-
-def finalize (ctx : Context) : Except Error (List Byte) :=
-  if ctx.pending.isEmpty then .ok [] else .error .incompleteBlock
 
 /-! ## Memory layouts for contracts -/
 

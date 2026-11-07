@@ -25,58 +25,55 @@ unkeyed, with its longest digests.
 
 namespace VG.Spec.Mgf1
 
-/-- A hash function as RSA's padding uses it: its name, the name that stands
-for it in Rust names (`sha256`), the Lean name of this record (for the
-documentation), its digest length `hLen` in octets, and the digest of a
-message. -/
+/-- A hash function as RSA's padding uses it: the name that stands for it in
+Rust names (`sha256`), its digest length `hLen` in octets, and the digest of
+a message. -/
 structure Hash where
-  name : String
   rust : String
-  lean : String
   len : Nat
   hash : List Byte → List Byte
 
 /-- MD5 (RFC 1321): 16-octet digests. -/
-def md5 : Hash := ⟨"MD5", "md5", "md5", 16, Md5.hash⟩
+def md5 : Hash := ⟨"md5", 16, Md5.hash⟩
 
 /-- SHA-1 (FIPS 180-4): 20-octet digests. -/
-def sha1 : Hash := ⟨"SHA-1", "sha1", "sha1", 20, Sha1.hash⟩
+def sha1 : Hash := ⟨"sha1", 20, Sha1.hash⟩
 
 /-- SHA-224 (FIPS 180-4): 28-octet digests. -/
-def sha224 : Hash := ⟨"SHA-224", "sha224", "sha224", 28, Sha256.sha224⟩
+def sha224 : Hash := ⟨"sha224", 28, Sha256.sha224⟩
 
 /-- SHA-256 (FIPS 180-4): 32-octet digests. -/
-def sha256 : Hash := ⟨"SHA-256", "sha256", "sha256", 32, Sha256.hash⟩
+def sha256 : Hash := ⟨"sha256", 32, Sha256.hash⟩
 
 /-- SHA-384 (FIPS 180-4): 48-octet digests. -/
-def sha384 : Hash := ⟨"SHA-384", "sha384", "sha384", 48, Sha512.sha384⟩
+def sha384 : Hash := ⟨"sha384", 48, Sha512.sha384⟩
 
 /-- SHA-512 (FIPS 180-4): 64-octet digests. -/
-def sha512 : Hash := ⟨"SHA-512", "sha512", "sha512", 64, Sha512.sha512⟩
+def sha512 : Hash := ⟨"sha512", 64, Sha512.sha512⟩
 
 /-- SHA-512/224 (FIPS 180-4): 28-octet digests. -/
-def sha512_224 : Hash := ⟨"SHA-512/224", "sha512_224", "sha512_224", 28, Sha512.sha512_224⟩
+def sha512_224 : Hash := ⟨"sha512_224", 28, Sha512.sha512_224⟩
 
 /-- SHA-512/256 (FIPS 180-4): 32-octet digests. -/
-def sha512_256 : Hash := ⟨"SHA-512/256", "sha512_256", "sha512_256", 32, Sha512.sha512_256⟩
+def sha512_256 : Hash := ⟨"sha512_256", 32, Sha512.sha512_256⟩
 
 /-- SHA3-224 (FIPS 202): 28-octet digests. -/
-def sha3_224 : Hash := ⟨"SHA3-224", "sha3_224", "sha3_224", 28, Sha3.sha3_224⟩
+def sha3_224 : Hash := ⟨"sha3_224", 28, Sha3.sha3_224⟩
 
 /-- SHA3-256 (FIPS 202): 32-octet digests. -/
-def sha3_256 : Hash := ⟨"SHA3-256", "sha3_256", "sha3_256", 32, Sha3.sha3_256⟩
+def sha3_256 : Hash := ⟨"sha3_256", 32, Sha3.sha3_256⟩
 
 /-- SHA3-384 (FIPS 202): 48-octet digests. -/
-def sha3_384 : Hash := ⟨"SHA3-384", "sha3_384", "sha3_384", 48, Sha3.sha3_384⟩
+def sha3_384 : Hash := ⟨"sha3_384", 48, Sha3.sha3_384⟩
 
 /-- SHA3-512 (FIPS 202): 64-octet digests. -/
-def sha3_512 : Hash := ⟨"SHA3-512", "sha3_512", "sha3_512", 64, Sha3.sha3_512⟩
+def sha3_512 : Hash := ⟨"sha3_512", 64, Sha3.sha3_512⟩
 
 /-- BLAKE2b-512 (RFC 7693): unkeyed BLAKE2b with 64-octet digests. -/
-def blake2b512 : Hash := ⟨"BLAKE2b-512", "blake2b512", "blake2b512", 64, Blake2.blake2b 64 []⟩
+def blake2b512 : Hash := ⟨"blake2b512", 64, Blake2.blake2b 64 []⟩
 
 /-- BLAKE2s-256 (RFC 7693): unkeyed BLAKE2s with 32-octet digests. -/
-def blake2s256 : Hash := ⟨"BLAKE2s-256", "blake2s256", "blake2s256", 32, Blake2.blake2s 32 []⟩
+def blake2s256 : Hash := ⟨"blake2s256", 32, Blake2.blake2s 32 []⟩
 
 /-- Every hash function above. -/
 def hashes : List Hash :=

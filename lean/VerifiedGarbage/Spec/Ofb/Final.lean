@@ -18,8 +18,8 @@ significant `u` bytes of the last output block,
 Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)       (decryption: Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)),
 ```
 "the remaining b-u bits of the last output block are discarded". So the
-message is XORed with the first bytes of `O₁ ‖ … ‖ Oₙ` (`cryptFinal`, as
-`aesOfb` for AES).
+message is XORed with the first bytes of `O₁ ‖ … ‖ Oₙ` (`cryptFinal`, with
+`Cbc.aes` for AES).
 
 A final function leaves in `iv` the last output block used, `Oₙ` (`Ofb.next`
 after `n` blocks, whole or partial): the block a further call continues from
