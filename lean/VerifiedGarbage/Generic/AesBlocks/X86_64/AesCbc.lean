@@ -12,7 +12,10 @@ namespace VG.Generic.AesBlocks.X86_64.AesCbc
 
 open VG.Proof.AesCbc.X86_64
 
-def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
+/-- Encryption, which is sequential, runs the same code with VAES as with
+AES-NI (`Caller.encrypt`), so it has no VAES variant. -/
+def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact :=
+  (if Caller.vaes v then [] else [
   Spec.Cbc.aesEncryptApi.artifact X86_64.target {
     suffix := v.suffix
     code := Caller.encrypt v
@@ -21,7 +24,7 @@ def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
     spSafe := Caller.spSafe v
     written := Caller.written v
     writtenOk := Caller.written_ok v
-    features := Caller.encFeatures v },
+    features := Caller.encFeatures v }]) ++ [
   Spec.Cbc.aesDecryptApi.artifact X86_64.target {
     suffix := v.suffix
     code := Caller.decrypt v

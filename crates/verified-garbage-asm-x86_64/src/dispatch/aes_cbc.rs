@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cbc_encrypt_vaes` if the CPU supports its features (`VG_AES_CBC_ENCRYPT_VAES_FEATURES`); or else `vg_aes_cbc_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cbc_encrypt_aesni` if the CPU supports its features (`VG_AES_CBC_ENCRYPT_AESNI_FEATURES`); or else `vg_aes_cbc_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -22,10 +22,10 @@
 #[inline]
 pub unsafe fn vg_aes_cbc_encrypt_auto(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_cbc::VG_AES_CBC_ENCRYPT_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_cbc_encrypt_vaes`'s, and the CPU
+    if cpu.contains(crate::aes_cbc::VG_AES_CBC_ENCRYPT_AESNI_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_cbc_encrypt_aesni`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::aes_cbc::vg_aes_cbc_encrypt_vaes(schedule, rounds, iv, data, n, scratch) };
+        return unsafe { crate::aes_cbc::vg_aes_cbc_encrypt_aesni(schedule, rounds, iv, data, n, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::aes_cbc::vg_aes_cbc_encrypt(schedule, rounds, iv, data, n, scratch) }
