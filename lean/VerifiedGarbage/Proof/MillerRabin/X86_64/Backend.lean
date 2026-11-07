@@ -66,27 +66,6 @@ theorem RoundArith.round_correct (v : RoundArith) (s : State) (h : roundPre s) :
 theorem RoundArith.round_ct (v : RoundArith) : ConstantTime isa roundPre roundPub (round v.mm) :=
   round_call_ct v.mont v.body_inlineOk v.body_inline
 
-/-- Code that never loads MXCSR restores it (`ctlOk`). -/
-theorem ctlOk_of_noLoad' {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr i) = true) : ctlOk c = true := by
-  induction c with
-  | block is =>
-    rw [Code.allInstrs_eq] at h
-    exact (KList.all_eq _ _).trans h
-  | seq _ _ iha ihb =>
-    simp only [Code.allInstrs, Bool.and_eq_true] at h
-    simp only [ctlOk, iha h.1, ihb h.2, Bool.and_self, Bool.or_true]
-  | ite _ _ _ iht ihe =>
-    simp only [Code.allInstrs, Bool.and_eq_true] at h
-    simp only [ctlOk, iht h.1, ihe h.2, Bool.and_self]
-  | loop _ _ ih => exact ih h
-  | call _ _ ih => exact ih h
-  | frame _ _ _ ih =>
-    simp only [Code.allInstrs, Bool.and_eq_true] at h
-    simp only [ctlOk, h.1.1, h.2, ih h.1.2, Bool.and_self]
-  | icall _ _ _ _ ihb ihn =>
-    simp only [Code.allInstrs, Bool.and_eq_true] at h
-    simp only [ctlOk, h.1.1, ihb h.1.2, ihn h.2, Bool.and_self]
-
 /-- A backend: its arithmetic, and the round as the emitter emits it
 (`code`, `round mm` unless the backend runs a round of its own), which the
 callers call (`RoundImpl.name`) under the round's contract. The round may
@@ -108,7 +87,7 @@ def RoundImpl.ofArith (a : RoundArith) (spSafe : (round a.mm).all (fun i => !isa
     code := round a.mm
     spSafe := spSafe
     depth := depth
-    ctl := ctlOk_of_noLoad' a.mxSafe
+    ctl := ctlOk_of_noLoad a.mxSafe
     correct := a.round_correct
     ct := a.round_ct
     suffix := suffix
