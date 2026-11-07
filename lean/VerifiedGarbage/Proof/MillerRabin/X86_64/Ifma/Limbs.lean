@@ -397,9 +397,8 @@ theorem cmpSbb_rcx {s : State} :
     t.gpr .rcx = mask (decide (s.gpr .rcx = 0#64)) ∧ t.mem = s.mem ∧ t.mxcsr = s.mxcsr) ?_ rfl)
     fun t ⟨⟨c, m, x⟩, k⟩ => ⟨c, k, m, x⟩
   xrun
-  refine ⟨?_, rfl, rfl⟩
   rw [decide_eq_decide.2 (lt1_iff _)]
-  rfl
+  exact ⟨rfl, rfl⟩
 
 theorem cmpSbb_rdx {s : State} :
     WP isa (.block [.alu .cmp .rdx (.imm 1), .alu .sbb .rdx (.reg .rdx)]) s fun t =>
@@ -408,9 +407,8 @@ theorem cmpSbb_rdx {s : State} :
     t.gpr .rdx = mask (decide (s.gpr .rdx = 0#64)) ∧ t.mem = s.mem ∧ t.mxcsr = s.mxcsr) ?_ rfl)
     fun t ⟨⟨c, m, x⟩, k⟩ => ⟨c, k, m, x⟩
   xrun
-  refine ⟨?_, rfl, rfl⟩
   rw [decide_eq_decide.2 (lt1_iff _)]
-  rfl
+  exact ⟨rfl, rfl⟩
 
 
 /-- `[o] := p ? [t] : [o]`, limb by limb, for `rdx = mask p` (`o` and `t`
