@@ -70,15 +70,20 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Sha256.Stream
 
-/-! # Argon2 on x86-64, for every BLAKE2b backend and every implementation of G -/
+/-! # Argon2 on x86-64, for each BLAKE2b backend with the implementation of G for the same CPUs -/
 
 @[expose] public section
 
 namespace VG.Generic.Blake2b.Argon2Compress.X86_64.Argon2
 
+/-- Argon2 for a BLAKE2b backend and an implementation of G of the same
+suffix (the baseline with the baseline, `_avx2` with `_avx2`, `_avx512`
+with `_avx512`): any other pair needs the features of one of these, which
+runs both its parts with them. -/
 def artifacts (v : Proof.Blake2.X86_64.Backend) (c : Proof.Argon2.X86_64.CompressImpl) :
     List Artifact :=
   have : Proof.Argon2.X86_64.CompressImpl := c
+  if v.suffix != c.suffix then [] else
   [Spec.Argon2.deriveApi.artifact VG.X86_64.target {
     suffix := Emit.qualifiedName "" [("blake2b", v.suffix), ("g", c.suffix)]
     code := Impl.Argon2.X86_64.Derive.code ("vg_argon2_hprime" ++ v.suffix)
