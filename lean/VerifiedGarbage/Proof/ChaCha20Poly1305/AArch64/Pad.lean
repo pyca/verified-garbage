@@ -44,7 +44,7 @@ theorem zero_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s₀
         fun r hr => by rw [v r (hv0 r hr)]⟩
 
 /-- The stream's arguments, with the counter set to 1. -/
-theorem args_ok {s₀ s : State} (hp : APre e s₀) (h : Inv s₀ s) :
+theorem args_ok {s₀ s : State} (hp : APre e s₀) (h : Inv e s₀ s) :
     WP isa (.block args) s fun s' =>
       s'.mem = s.mem.writeW (off (cx s₀) 112) (1 : BitVec 32) ∧ s'.gpr .x0 = off (cx s₀) 64 ∧
       s'.gpr .x1 = off (cx s₀) 768 ∧ s'.gpr .x2 = BitVec.ofNat 64 512 ∧
@@ -83,16 +83,16 @@ theorem ks_prefix (S : VG.Spec.ChaCha20.State) {n i : Nat} (hi : i < n) (hn : n 
 
 /-- `Pad.cryptPad` encrypts up to 512 bytes of data from counter 1. -/
 theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀)
-    (h512 : L s₀ ≤ 512) : CryptOk s₀ (cryptPad v.callee false) := by
+    (h512 : L s₀ ≤ 512) : CryptOk e s₀ (cryptPad v.callee (!e)) := by
   intro s h hst
   have hL' := Nat.le_of_lt (s₀.gpr .x5).isLt
   have wc := hp.wrap_c
   unfold cryptPad
   refine WP.seq (WP.block_append (WP.mono (zero_ok hp h.x21 h.wr) fun s₁ ⟨k₁, z₁, v₁⟩ => ?_))
-  have i₁ : Inv s₀ s₁ := h.step1 k₁ (by omega_arith) (by omega_arith) (by omega_arith)
+  have i₁ : Inv e s₀ s₁ := h.step1 k₁ (by omega_arith) (by omega_arith) (by omega_arith)
   refine WP.mono (WP.preservedV (args_ok hp i₁) (by lit_decide))
     fun s₂ ⟨⟨m₂, x0₂, x1₂, x2₂, x3₂, k₂⟩, v₂⟩ => ?_
-  have i₂ : Inv s₀ s₂ := i₁.step1 k₂ (by omega_arith) (by omega_arith) (by omega_arith)
+  have i₂ : Inv e s₀ s₂ := i₁.step1 k₂ (by omega_arith) (by omega_arith) (by omega_arith)
   have wr₂ : s₂.wr = s₀.wr := i₂.wr
   have hw : Covers [⟨off (cx s₀) 64, 64⟩, ⟨off (cx s₀) 768, 512⟩, ⟨off (cx s₀) 128, 320⟩] s₂.wr := by
     refine Covers.of_sub fun r hr => ?_
@@ -106,7 +106,7 @@ theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
     (sub_disj s₀ (a := 768) (n := 512) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
     (by rw [hp.off_toNat (by decide)]; lit_omega) hw fun s₃ v₃ k₃ data₃ => ?_)
-  have i₃ : Inv s₀ s₃ := i₂.step k₃ (fun r hr => by
+  have i₃ : Inv e s₀ s₃ := i₂.step k₃ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;>
         exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩)
@@ -130,17 +130,14 @@ theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   -- The data XORed with it.
   have x22₃ : s₃.gpr .x22 = dp s₀ + BitVec.ofNat 64 0 := by rw [i₃.x22, BitVec.add_zero]
   have x23₃ : s₃.gpr .x23 = BitVec.ofNat 64 (L s₀) := by rw [i₃.x23, hL s₀]
-  refine WP.seq (WP.mono (WP.preservedV (xorKsFromAt_ok hp (k := 768) (o := 0) (n := L s₀) (by omega_arith)
-    (by omega_arith) i₃.x21 x22₃ x23₃ i₃.rd i₃.wr) (by lit_decide)) fun s₄ ⟨⟨k₄, d₄, _, _⟩, v₄⟩ => ?_)
-  have i₄ : Inv s₀ s₄ := i₃.step k₄
-    (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, by simp, fun _ h => h⟩)
-    (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega)))
+  refine WP.seq (WP.mono (WP.preservedV (Short.xorKsFromDst_ok hp hp.o (!e) (k := 768) (o := 0) (n := L s₀)
+    (by omega_arith) (by omega_arith) i₃.x21 x22₃ (cond_out s₀ (i₃.un .x28 (by decide)) 0) x23₃ i₃.rd
+    i₃.wr) (by cases e <;> lit_decide)) fun s₄ ⟨⟨k₄, d₄, _, _⟩, v₄⟩ => ?_)
+  have i₄ : Inv e s₀ s₄ := i₃.step k₄ (oR_inv hp).1 (oR_inv hp).2
   -- The keystream zeroed.
   refine WP.mono (zero_ok hp i₄.x21 i₄.wr) fun s₅ ⟨k₅, _, v₅⟩ => ?_
-  have i₅ : Inv s₀ s₅ := i₄.step1 k₅ (by omega_arith) (by omega_arith) (by omega_arith)
-  have T₁ : ∀ r ∈ [sub s₀ 768 512], ∃ r' ∈ [sub s₀ 64 384, dR s₀, sub s₀ 768 512], Region.Sub r r' :=
+  have i₅ : Inv e s₀ s₅ := i₄.step1 k₅ (by omega_arith) (by omega_arith) (by omega_arith)
+  have T₁ : ∀ r ∈ [sub s₀ 768 512], ∃ r' ∈ [sub s₀ 64 384, oR e s₀, sub s₀ 768 512], Region.Sub r r' :=
     fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
   refine ⟨fun r hr => (v₅ r hr).trans ((v₄ r hr).trans ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr)))),
     i₅, ?_, ?_⟩
@@ -153,7 +150,7 @@ theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
       · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
       · exact ⟨sub s₀ 768 512, by simp, fun _ h => h⟩
       · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, by simp, fun _ h => h⟩
+    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨oR e s₀, by simp, fun _ h => h⟩
   · have dat : ∀ i < L s₀, s₃.mem (dp s₀ + BitVec.ofNat 64 i) = s.mem (dp s₀ + BitVec.ofNat 64 i) :=
       fun i hi => by
         rw [k₃.frame.bytes (R := dR s₀) (by rdisj_all) hL' hi, k₂.frame.bytes (R := dR s₀) (by rdisj_all) hL' hi,
@@ -164,7 +161,7 @@ theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
     · simp [VG.Proof.Poly1305.length_bytesAt, VG.Proof.ChaCha20.length_keystream]
     · intro i h₁ h₂
       have hi : i < L s₀ := by simpa only [VG.Proof.Poly1305.length_bytesAt] using h₁
-      have e1 : (bytesAt s₄.mem (dp s₀) (L s₀))[i] = s₄.mem (dp s₀ + BitVec.ofNat 64 i) := by
+      have e1 : (bytesAt s₄.mem (op e s₀) (L s₀))[i] = s₄.mem (op e s₀ + BitVec.ofNat 64 i) := by
         simp [bytesAt]
       have e2 : ∀ h : i < (bytesAt s.mem (dp s₀) (L s₀)).length,
           (bytesAt s.mem (dp s₀) (L s₀))[i] = s.mem (dp s₀ + BitVec.ofNat 64 i) := fun h => by
