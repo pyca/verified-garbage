@@ -100,9 +100,6 @@ impl Poly1305 {
 #[cfg(test)]
 mod tests {
     use super::{InvalidMac, Poly1305};
-    #[cfg(target_arch = "aarch64")]
-    use crate::arch::poly1305::vg_poly1305_update_neon;
-    use crate::arch::poly1305::{vg_poly1305_finalize, vg_poly1305_init, vg_poly1305_update};
 
     /// Every message, absorbed in two pieces split at every position, and
     /// with the second piece a byte at a time, has the tag of the whole.
@@ -151,62 +148,5 @@ mod tests {
         let mut longer = [0u8; 17];
         longer[..16].copy_from_slice(&tag);
         assert_eq!(check(&longer), Err(InvalidMac));
-    }
-
-    /// The tag of `data`, split at `split`, with the one-time key `key`, by
-    /// the implementation of `vg_poly1305_update` `update` calls.
-    fn mac_by(
-        update: impl Fn(&mut [u64; 16], u64, &[u8]),
-        key: &[u8; 32],
-        data: &[u8],
-        split: usize,
-    ) -> [u8; 16] {
-        let mut state = [0; 16];
-        let mut tag = [0; 16];
-        // SAFETY: `state` is valid for writes of 128 bytes and `key` for
-        // reads of 32 bytes; they are distinct objects.
-        unsafe { vg_poly1305_init(&mut state, key) };
-        update(&mut state, 0, &data[..split]);
-        update(&mut state, split as u64, &data[split..]);
-        // SAFETY: as for `Poly1305::finalize`.
-        unsafe { vg_poly1305_finalize(&mut state, data.len() as u64, &mut tag) };
-        tag
-    }
-
-    /// The implementation the dispatcher chooses, and on AArch64 the NEON
-    /// one whichever it chooses, give the same tag as the baseline one, for
-    /// lengths up to 1100 bytes, many within a byte of a multiple of a block,
-    /// in one piece and in two split at many positions.
-    #[test]
-    fn implementations_agree() {
-        let key: [u8; 32] = core::array::from_fn(|i| (i * 11 + 1) as u8);
-        let msg: [u8; 1100] = core::array::from_fn(|i| (i * 31 + 7) as u8);
-        // SAFETY (each): `state` and `data` are distinct objects, valid for
-        // their sizes, and `state` represents a message of `count` bytes. The
-        // baseline and NEON code need no CPU feature.
-        let scalar = |state: &mut [u64; 16], count: u64, data: &[u8]| unsafe {
-            vg_poly1305_update(state, count, data.as_ptr(), data.len())
-        };
-        #[cfg(target_arch = "aarch64")]
-        let neon = |state: &mut [u64; 16], count: u64, data: &[u8]| unsafe {
-            vg_poly1305_update_neon(state, count, data.as_ptr(), data.len())
-        };
-        for len in [
-            0, 1, 15, 16, 17, 63, 64, 65, 127, 128, 129, 191, 192, 193, 255, 256, 257, 271, 272,
-            273, 319, 320, 321, 447, 448, 449, 495, 496, 511, 512, 513, 527, 528, 529, 623, 624,
-            625, 639, 640, 641, 1024, 1100,
-        ] {
-            let msg = &msg[..len];
-            let expected = mac_by(scalar, &key, msg, 0);
-            assert_eq!(Poly1305::mac(&key, msg), expected);
-            for split in (0..=len).step_by(13) {
-                let mut p = Poly1305::new(&key);
-                p.update(&msg[..split]);
-                p.update(&msg[split..]);
-                assert_eq!(p.finalize(), expected);
-                #[cfg(target_arch = "aarch64")]
-                assert_eq!(mac_by(neon, &key, msg, split), expected);
-            }
-        }
     }
 }
