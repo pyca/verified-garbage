@@ -29,25 +29,13 @@ open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Impl.Aes.X86_64.AesNi (at_)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
 open VG.Impl.Gcm.X86_64.StitchAvx8 (prepOff)
-open VG.Impl.Gcm.X86_64.PrepareAvx (step plan plan48 setup)
+open VG.Impl.Gcm.X86_64.PrepareAvx (step plan plan48 setup stepS setupS sqS mulDS)
 open VG.Proof.Gcm.X86_64.Pclmul (Only eq_prepared constImm_ok ldrev_ok hInvImm_ok rev_eq)
 open VG.Proof.Gcm.X86_64.Stitch (in_sub in_sub_int)
 open VG.Spec.Gcm (Block hpow)
 
 /-- A step: destination, operands, and the power it computes. -/
 abbrev Step := XReg × XReg × XReg × Nat
-
-/-- The SSE code of `PrepareAvx.step p`. -/
-def stepS (p : Step) : List Instr :=
-  (if p.2.1 = p.2.2.1 then sqS p.1 p.2.1 else mulDS p.1 p.2.1 p.2.2.1) ++
-  [.movdquStore (at_ .rdi (prepOff p.2.2.2)) p.1]
-
-/-- The SSE code of `PrepareAvx.setup`. -/
-def setupS : List Instr :=
-  Impl.Gcm.X86_64.Pclmul.constImm .xmm0 Impl.Gcm.X86_64.Pclmul.revMask ++
-  Impl.Gcm.X86_64.Pclmul.constImm .xmm1 poly ++
-  [.movdquLoad .xmm7 (at_ .rdi 240), .xop (.bin .pshufb .xmm7 .xmm0)] ++ Impl.Gcm.X86_64.Pclmul.hInvImm ++
-  [.movdquStore (at_ .rdi (prepOff 1)) .xmm3]
 
 theorem lane0_prepare16 :
     lane0Block (setup ++ plan.flatMap step) = some (setupS ++ plan.flatMap stepS) := by
@@ -340,5 +328,23 @@ theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) 
 theorem prepare_verified :
     Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepare (Spec.Gcm.prepareContract X86_64.abi) :=
   Prepare.verified_of _ (fun _ hw _ => prepare_ok hw) (by decide +kernel) Prepare16.prepareAvx_ct
+
+/-- `prepareSse`, the SSE code itself: the 48 prepared powers of the hash
+subkey at `C + 240` into pairs 0–23 of the context at `C`, nothing else
+written. -/
+theorem prepareSse_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024) :
+    WP isa Impl.Gcm.X86_64.PrepareAvx.prepareSse s₀ (Prepare.PrepOk s₀) := by
+  simp only [Impl.Gcm.X86_64.PrepareAvx.prepareSse]
+  rw [WP.block_append_iff]
+  refine WP.mono (setupS_ok (.inr rfl) s₀ hw) fun t₁ ⟨hi₁, g₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono (planS_ok plan48 _ _ t₁ plan48_valid hi₁) fun s ⟨hi, g, rd, wr⟩ =>
+    ⟨fun k hk l hl => ?_, hi.fr, fun r hr _ => by rw [g r hr, g₁ r hr], by rw [rd, rd₁], by rw [wr, wr₁]⟩
+  have := (hi.st _ (plan48_stored k hk l hl)).2.2
+  rw [prepOff_pair hl] at this
+  exact this
+
+theorem prepareSse_verified :
+    Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepareSse (Spec.Gcm.prepareContract X86_64.abi) :=
+  Prepare.verified_of _ (fun _ hw _ => prepareSse_ok hw) (by decide +kernel) Prepare16.prepareSse_ct
 
 end VG.Proof.Gcm.X86_64.PrepareAvx
