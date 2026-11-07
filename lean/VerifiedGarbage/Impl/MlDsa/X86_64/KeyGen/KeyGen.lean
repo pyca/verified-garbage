@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Prims
 public import VerifiedGarbage.Spec.MlDsa
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`
@@ -37,7 +38,8 @@ them; then the working space of `vg_mldsa_rej_ntt_poly4` (8 KiB, `oR4`).
    polynomial is reduced, and small, whatever the samplers return, without a
    branch.
 3. `ρ` and `K` to `sk`; `s₁` and `s₂`, `BitPack`ed, to `sk`; `ŝ₁ = NTT(s₁)`.
-4. For each row `i`: `t = NTT⁻¹(Σⱼ Â[i, j] ŝ₁[j]) + s₂[i]`, `Power2Round`, and
+4. For each row `i`: `t = NTT⁻¹(Σⱼ Â[i, j] ŝ₁[j]) + s₂[i]`, the sum and the
+   inverse NTT in one call (`vg_mldsa_dot_inverse{ℓ}`), `Power2Round`, and
    `t₁` `SimpleBitPack`ed to `pk`, `t₀` `BitPack`ed to `sk`; `ρ` to `pk`.
 5. `tr = H(pk, 64)` to `sk`; return `r15`.
 
@@ -86,14 +88,11 @@ def imm (r : Reg) (v : Nat) : List Instr := [.mov32 r (.imm (BitVec.ofNat 32 v))
 def nttAt (sfx : String) (c : Prog isa) (f : Ptr) : Prog isa :=
   .seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call ("vg_mldsa_ntt" ++ sfx) c)
 
-def invNttAt (sfx : String) (c : Prog isa) (f : Ptr) (mont : Bool := false) : Prog isa :=
-  .seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call ((if mont then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ sfx) c)
-
-def mulAt (sfx : String) (c : Prog isa) (h f g : Ptr) (mont : Bool := false) : Prog isa :=
-  .seq (.block (lea .rdi h ++ lea .rsi f ++ lea .rdx g)) (.call ((if mont then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ sfx) c)
-
-def mulAddAt (sfx : String) (c : Prog isa) (h f g : Ptr) (mont : Bool := false) : Prog isa :=
-  .seq (.block (lea .rdi h ++ lea .rsi f ++ lea .rdx g)) (.call ((if mont then "vg_mldsa_montgomery_multiply_add_ntt" else "vg_mldsa_multiply_add_ntt") ++ sfx) c)
+/-- `h = NTT⁻¹(Σⱼ f[j] g[j])` over the `c` polynomials from `f` and from `g`,
+with the working space at `oSS`. -/
+def dotInvAt (sfx : String) (c : Prog isa) (count : Nat) (h f g : Ptr) : Prog isa :=
+  .seq (.block (lea .rdi h ++ lea .rsi f ++ lea .rdx g ++ lea .rcx (sc oSS)))
+    (.call (Sign.dotInvName count ++ sfx) c)
 
 def addAt (sfx : String) (c : Prog isa) (f g : Ptr) : Prog isa :=
   .seq (.block (lea .rdi f ++ lea .rsi g)) (.call ("vg_mldsa_add" ++ sfx) c)
@@ -176,12 +175,11 @@ def nttS (P : Prims) (p : Params) (j : Nat) : Prog isa := nttAt P.sfx P.ntt (sP 
 
 /-- Row `i`: `t = NTT⁻¹(Σⱼ Â[i, j] ŝ₁[j]) + s₂[i]`, and its `t₁` to `pk` and `t₀` to `sk`. -/
 def row (P : Prims) (p : Params) (i : Nat) : Prog isa :=
-  .seq (mulAt (mont := P.montgomery) P.sfx P.mul (tP p) (aP (p.ℓ * i)) (sP p 0))
-    (.seq (seqR (fun j => mulAddAt (mont := P.montgomery) P.sfx P.mulAdd (tP p) (aP (p.ℓ * i + j)) (sP p j)) 1 (p.ℓ - 1))
-    (.seq (invNttAt (mont := P.montgomery) P.sfx P.invNtt (tP p)) (.seq (addAt P.sfx P.add (tP p) (sP p (p.ℓ + i)))
+  .seq (dotInvAt P.sfx (P.dotInv p.ℓ) p.ℓ (tP p) (aP (p.ℓ * i)) (sP p 0))
+    (.seq (addAt P.sfx P.add (tP p) (sP p (p.ℓ + i)))
     (.seq (power2RoundAt P.power2Round (tP p) (t1P p) (t0P p))
     (.seq (simpleBitPackAt P.simpleBitPack (t1P p) 1023 (.r12, 32 + 320 * i) 320)
-      (bitPackAt P.bitPack (t0P p) 4095 4096 (.r13, oT0 p + 416 * i) 416))))))
+      (bitPackAt P.bitPack (t0P p) 4095 4096 (.r13, oT0 p + 416 * i) 416))))
 
 /-- `tr = H(pk, 64)` to `sk`. -/
 def trHash (p : Params) : Prog isa := hashAt [((.r12, 0), p.pkLen)] 136 0x1f (.r13, 64) 64
