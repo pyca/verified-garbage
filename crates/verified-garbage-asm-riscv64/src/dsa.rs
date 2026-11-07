@@ -23012,7 +23012,7 @@ j 215f
 .insn 2, 0x8626
 .insn 2, 0x101c
 .insn 2, 0x88da
-call {vg_dsa_derive_key}
+call {vg_dsa_derive_key_checked}
 .insn 2, 0x1502
 .insn 2, 0x9101
 beqz a0, 216f
@@ -23077,7 +23077,7 @@ j 219f
 .insn 2, 0x8082
 .option pop",
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
-        vg_dsa_derive_key = sym super::dsa::vg_dsa_derive_key,
+        vg_dsa_derive_key_checked = sym super::dsa::vg_dsa_derive_key_checked::vg_dsa_derive_key_checked,
     )
 }
 
@@ -50624,6 +50624,10 @@ bnez t5, 2691b
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_check_parameters.rs"]
 pub(crate) mod vg_dsa_check_parameters;
+
+#[rustfmt::skip]
+#[path = "internal/vg_dsa_derive_key_checked.rs"]
+pub(crate) mod vg_dsa_derive_key_checked;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_sign_prevalidated.rs"]

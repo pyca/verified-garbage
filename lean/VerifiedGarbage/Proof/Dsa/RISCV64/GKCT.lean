@@ -130,7 +130,8 @@ theorem derive_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h�
     (b10 : t₂.gpr .s10 = BitVec.ofNat 64 (sampleStatus (drawOf s₂)))
     (k₁ : ∀ x, (drawOf s₁).scalar = some x → Spec.Dsa.decodeBE (cands (eOf s₁) t₁.mem) = x)
     (k₂ : ∀ x, (drawOf s₂).scalar = some x → Spec.Dsa.decodeBE (cands (eOf s₂) t₂.mem) = x)
-    (est : sampleStatus (drawOf s₁) = sampleStatus (drawOf s₂)) (emk : mkOf s₁ = mkOf s₂) :
+    (est : sampleStatus (drawOf s₁) = sampleStatus (drawOf s₂)) (emk : mkOf s₁ = mkOf s₂)
+    (ch₁ : chkOf s₁ = true) (ch₂ : chkOf s₂ = true) :
     SameTrace isa Impl.Dsa.RISCV64.Generate.derive t₁ t₂ := by
   have hL₁ := glOf_ok h₁
   have hL₂ := glOf_ok h₂
@@ -171,7 +172,8 @@ theorem derive_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h�
     simp only [dresOf, dkOf, parOf]; rw [mw₂, cz₂.par, nn₂]
   have hs : Spec.Dsa.signStatus (dresOf (glOf s₁) w₁.mem) = Spec.Dsa.signStatus (dresOf (glOf s₂) w₂.mem) := by
     rw [es₁, es₂]; simp only [Spec.Dsa.signStatus, isSome_eq hx₁ hx₂ emk]
-  refine SameTrace.seq (dcall_st h₁ h₂ eL ep A₁ A₂ hs) (derive_ok h₁ A₁) (derive_ok h₂ A₂) fun v₁ v₂ D₁ D₂ => ?_
+  refine SameTrace.seq (dcall_st h₁ h₂ eL ep A₁ A₂ hs ch₁ ch₂) (derive_ok h₁ A₁ ch₁) (derive_ok h₂ A₂ ch₂)
+    fun v₁ v₂ D₁ D₂ => ?_
   exact deriveFinish_st (by rw [D₁.ctx.sp, D₂.ctx.sp, eL]) D₁.a0 D₂.a0 hs
 
 /-! ## A valid domain, and the function -/
@@ -245,7 +247,7 @@ theorem valid_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h�
   rw [List.drop_zero] at so₁ so₂
   obtain ⟨cy₁, ny₁⟩ := after_sample h₁ hc sc₁ (fun j hj => by rw [m₁]; exact ck₁.nonce j hj) so₁
   obtain ⟨cy₂, ny₂⟩ := after_sample h₂ hq₂ sc₂ (fun j hj => by rw [m₂]; exact ck₂.nonce j hj) so₂
-  exact derive_st h₁ h₂ eL ep hc hq₂ cy₁ cy₂ ny₁ ny₂ so₁.s10 so₂.s10 so₁.cand so₂.cand est emk
+  exact derive_st h₁ h₂ eL ep hc hq₂ cy₁ cy₂ ny₁ ny₂ so₁.s10 so₂.s10 so₁.cand so₂.cand est emk c₁ c₂
 
 theorem generate_ct : ConstantTime isa gkContract.pre gkContract.pub Impl.Dsa.RISCV64.Generate.code := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ hp => ?_

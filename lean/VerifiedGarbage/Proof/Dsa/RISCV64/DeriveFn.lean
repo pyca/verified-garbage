@@ -22,7 +22,8 @@ As on PPC64LE (`Proof/Dsa/PPC64LE/Derive/Fn.lean`). `deriveKey_correct`:
 `checkParams` either runs `body` (`dbody_ok`) or `zeroOut` (`dzero_ok`), and
 `restore` gives back the callee-saved registers (`sfinish_ok`); the result is
 the specification's by `deriveKey_spec`, from `Proof/Dsa/Derive.lean`'s
-`deriveKeyBytes_eq`.
+`deriveKeyBytes_eq`. `deriveWith_ok` is this for any check of the domain
+(`Prevalidated.setup` for a domain known to pass, `DeriveChecked.lean`).
 -/
 
 @[expose] public section
@@ -104,11 +105,25 @@ theorem deriveKey_spec {m : Mem} {L : Lay} {key x : Addr} (hv : Spec.Dsa.lengths
     exact ⟨⟨hs, hp, hq⟩, hgq, hd, ⟨hy, Nat.mod_lt _ (show 0 < pOf m L key by omega)⟩, hg, hx⟩
   · rfl
 
-theorem deriveKey_correct (s : State) (h : dContract.pre s) :
-    ∃ tr t, Exec isa Derive.derive s tr t ∧ abiPreserved s t ∧ dContract.post s t := by
-  show WP isa Derive.derive s fun t => abiPreserved s t ∧ dContract.post s t
-  suffices main : WP isa Derive.derive s fun t =>
-      ((∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.gpr .ra = s.gpr .ra) ∧ dContract.post s t from
+/-- `vg_dsa_derive_key`'s run, with any check `X` of the domain that runs
+`rest` from what `checkParams` leaves exactly when the domain passes
+`ParamsOk`, and `fail` otherwise, as `checkParams` does (`checkParams_ok`);
+`X` may assume what the caller knows of the domain at entry. -/
+theorem deriveWith_ok {X : Prog isa → Prog isa → Prog isa} (s : State) (h : dContract.pre s)
+    (hX : ∀ {u : State} {Q : State → Prop} {rest fail : Prog isa},
+      Outside (dlayOf s).S 0 (dlayOf s).Z s.mem u.mem → ScrL u (dlayOf s) →
+      Regs u (dlayOf s) (s.gpr .a2) (s.gpr .a5) →
+      word u.mem (dlayOf s).S hLens = pack (dlayOf s).pl (dlayOf s).ql 0 0 →
+      Src u (dlayOf s) (s.gpr .a2) (2 * (dlayOf s).pl + (dlayOf s).ql) →
+      (∀ t, ParamsOk u.mem (dlayOf s) (s.gpr .a2) → Checked u t (dlayOf s) (s.gpr .a2) (s.gpr .a5) 0 →
+        Kept (dlayOf s) u.mem t.mem → Keep cpRegs u t → WP isa rest t Q) →
+      (∀ t, ¬ ParamsOk u.mem (dlayOf s) (s.gpr .a2) → Kept (dlayOf s) u.mem t.mem →
+        Regs t (dlayOf s) (s.gpr .a2) (s.gpr .a5) → ScrL t (dlayOf s) → Keep cpRegs u t → WP isa fail t Q) →
+      WP isa (X rest fail) u Q) :
+    WP isa (.seq (.block Derive.entry) (.seq (X Derive.body Derive.zeroOut) (.block restore))) s fun t =>
+      abiPreserved s t ∧ dContract.post s t := by
+  suffices main : WP isa (.seq (.block Derive.entry) (.seq (X Derive.body Derive.zeroOut) (.block restore))) s
+      fun t => ((∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.gpr .ra = s.gpr .ra) ∧ dContract.post s t from
     WP.mono (WP.rdwr main) fun t ⟨⟨⟨hp, hra⟩, hpost⟩, _, _, hsp⟩ => ⟨⟨hp, hsp, hra⟩, hpost⟩
   have hL := dlayOf_ok h
   have hZ := hL.z256
@@ -154,7 +169,6 @@ theorem deriveKey_correct (s : State) (h : dContract.pre s) :
     unfold dRes
     rw [h3]
     exact deriveKey_spec hv
-  unfold Derive.derive
   refine WP.seq (WP.mono (dfront_ok hpre) fun s₁ ⟨F, k₁⟩ => ?_)
   have hsav' : ∀ u : State, Kept (dlayOf s) s₁.mem u.mem → ∀ i < 13,
       word u.mem (s.gpr .a7) (saveOff i) = s.gpr (saved i) := fun u hu i hi =>
@@ -185,7 +199,7 @@ theorem deriveKey_correct (s : State) (h : dContract.pre s) :
     (srcX s rfl rfl).bytes Out₁ (by omega)
   have hPs : ParamsOk s₁.mem (dlayOf s) (s.gpr .a2) ↔ ParamsOk s.mem (dlayOf s) (s.gpr .a2) := by
     simp only [ParamsOk, ep₁, eq₁, eg₁]
-  refine WP.seq (checkParams_ok hL F.scr F.regs F.lens (by decide) (srcK s₁ k₁.2.1 k₁.2.2)
+  refine WP.seq (hX Out₁ F.scr F.regs F.lens (srcK s₁ k₁.2.1 k₁.2.2)
     (fun t hP hc Kd kc => ?_) (fun t hn Kd hrt scrt kc => ?_))
   · have kt := k₁.trans kc
     refine WP.mono (dbody_ok hL hP hc Kd (hwo t Kd) (srcK t kt.2.1 kt.2.2) (srcX t kt.2.1 kt.2.2)
@@ -212,5 +226,10 @@ theorem deriveKey_correct (s : State) (h : dContract.pre s) :
     refine ⟨?_, ?_⟩
     · rw [w0, u0, hres]; rfl
     · rw [wm, h1, ub, hres]; rfl
+
+theorem deriveKey_correct (s : State) (h : dContract.pre s) :
+    ∃ tr t, Exec isa Derive.derive s tr t ∧ abiPreserved s t ∧ dContract.post s t :=
+  deriveWith_ok (X := checkParams) s h fun _ hs hr hl hk hrest hfail =>
+    checkParams_ok (dlayOf_ok h) hs hr hl (by decide) hk hrest hfail
 
 end VG.Proof.Dsa.RISCV64
