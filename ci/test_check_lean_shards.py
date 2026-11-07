@@ -635,13 +635,15 @@ class BuildTime(unittest.TestCase):
 
 class RebuildFrontier(unittest.TestCase):
     @mock.patch.object(shards, "PARALLELISM", 2.0)
-    @mock.patch.object(shards, "SHARD_OVERHEAD", 95.0)
     def test_solo_participates_in_the_latency_tolerance(self):
         imps = {str(i): [] for i in range(4)}
-        # Solo: 200 s; two shards: 100 + 95 s. The five-second
-        # improvement is within 5%, so avoid extra runners altogether.
-        self.assertEqual(shards.schedule(imps, shards.closures(imps), set(imps),
-                                         dict.fromkeys(imps, 100.0))[2], ([], [], []))
+        # Solo takes 200 s. A 195 s sharded finish is outside the 2% band;
+        # a 198 s finish is inside it, so avoid extra runners in that case.
+        for overhead, count in [(95.0, 2), (98.0, 0)]:
+            with self.subTest(overhead=overhead), mock.patch.object(shards, "SHARD_OVERHEAD", overhead):
+                _, _, (_, targets, _) = shards.schedule(imps, shards.closures(imps), set(imps),
+                                                        dict.fromkeys(imps, 100.0))
+                self.assertEqual(len(targets), count)
 
     def test_a_cached_module_between_two_stale_modules(self):
         imps = {"A": [], "B": ["A"], "C": ["B"], "D": ["A"]}
@@ -893,6 +895,7 @@ class Chain(Project):
         self.manifest["times"].update({m: 100.0 for m in self.CHAIN})
         self.manifest["times"].update({m: 30.0 for m in self.SHORT})
 
+    @mock.patch.object(shards, "SLACK", 0.05)
     def test_solo_hides_independent_work_behind_the_chain(self):
         # Balancing the work alone would give the chain's shard a quarter of
         # the short modules (each shard about 450 s of work); but the chain
@@ -901,7 +904,8 @@ class Chain(Project):
         p = shards.plan(self.manifest)
         # The old planner chose two shards even though a single runner
         # could hide every short module behind the chain. Solo now takes
-        # part in the same latency tolerance as the sharded candidates.
+        # part in the same latency tolerance as the sharded candidates;
+        # this fixture permits a 5% margin for its contention behind the chain.
         self.assertEqual(p["targets"], [])
 
 
@@ -962,8 +966,8 @@ class Many(Project):
 
     def test_counts_are_not_capped_by_work(self):
         # 2000 s of independent work: the old work/800 cutoff allowed only
-        # three shards. Seven finish close to eight, using fewer runners.
-        self.assertEqual(self.count(50), 7)
+        # three shards. Seven finish about 4% after eight, outside the 2% band.
+        self.assertEqual(self.count(50), 8)
 
     def test_uncompetitive_counts_are_not_simulated(self):
         imps = {str(i): [] for i in range(40)}
@@ -994,7 +998,7 @@ class Many(Project):
         # Small work stays local. Larger independent work can benefit from
         # more than the two shards the old work cutoff would allow.
         self.assertEqual(self.count(10), 0)
-        self.assertEqual(self.count(22), 7)
+        self.assertEqual(self.count(22), 8)
 
 
 class Prune(Project):

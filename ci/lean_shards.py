@@ -118,7 +118,7 @@ MAX_SHARDS = 12
 SHARD_OVERHEAD = 90.0
 # How much slower than the fastest finish (including overhead) a cheaper
 # plan may be. The single-runner build participates in the same comparison.
-SLACK = 0.05
+SLACK = 0.02
 # How many modules a runner's build runs at once (as measured: the shards'
 # module times add up to 5.4 times their builds' wall times). The simulation
 # has ceil(PARALLELISM) slots sharing this throughput when all are occupied.
