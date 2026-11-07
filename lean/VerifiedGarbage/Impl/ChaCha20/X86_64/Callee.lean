@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512VL
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Ssse3
 
 /-!
 # The implementations of `vg_chacha20_xor` on x86-64
@@ -42,6 +43,9 @@ structure Callee where
 
 /-- The baseline computes one block at a time: nothing to gain. -/
 def Callee.scalar : Callee := ⟨"vg_chacha20_xor", Xor.xor, 0, 0, 4, false⟩
+/-- Four blocks at a time while more than 64 bytes remain, then the last by
+`vg_chacha20_xor`: as the baseline for ChaCha20-Poly1305. -/
+def Callee.ssse3 : Callee := ⟨"vg_chacha20_xor_ssse3", Ssse3.xor, 0, 0, 4, false⟩
 /-- Up to 512 bytes in one call: up to 384 in one computation of at most six
 blocks (`Avx2Tail.last3`), 512 in one of eight (the loop). -/
 def Callee.avx2 : Callee := ⟨"vg_chacha20_xor_avx2", Avx2.xor, 448, 0, 5, false⟩

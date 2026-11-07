@@ -6,6 +6,8 @@ public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Ssse3.Xor
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Ssse3.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -96,6 +98,38 @@ def scalar : XorImpl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := ""
   features := []
+  poly := .scalar
+  fold_poly := Or.inl ⟨rfl, rfl, rfl, rfl⟩
+
+theorem ssse3_ok : ∀ s, (xorStack 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.ssse3.code s t s' ∧
+    abiPreserved s s' ∧ (xorStack 16).post s s' :=
+  fun s hs => Ssse3.xor_rsi s hs
+
+theorem ssse3_ct : ConstantTime isa (xorStack 16).pre (xorStack 16).pub Impl.ChaCha20.X86_64.Callee.ssse3.code :=
+  Ssse3.xor_ct
+
+theorem ssse3_nosp : NoSp Impl.ChaCha20.X86_64.Callee.ssse3.code := by
+  have : ((instrs Impl.ChaCha20.X86_64.Callee.ssse3.code).all fun i => !Taint.clobbers i .rsp) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  exact fun i hi => by simpa using List.all_eq_true.mp this i hi
+
+/-- The SSSE3 implementation, `vg_chacha20_xor_ssse3`, for CPUs without
+AVX2: its callers that also call `vg_poly1305_blocks` call the baseline
+`vg_poly1305_blocks`, as the baseline implementation's do. -/
+def ssse3 : XorImpl where
+  callee := .ssse3
+  fold_le := by decide
+  stack := 16
+  stack_le := by decide
+  depth_le := by lit_decide
+  xdepth := by lit_decide
+  ok := ssse3_ok
+  ct := ssse3_ct
+  nosp := ssse3_nosp
+  mxcsr := by lit_decide
+  spSafe := Code.all_of_allInstrs (by lit_decide)
+  suffix := "_ssse3"
+  features := ["ssse3"]
   poly := .scalar
   fold_poly := Or.inl ⟨rfl, rfl, rfl, rfl⟩
 
