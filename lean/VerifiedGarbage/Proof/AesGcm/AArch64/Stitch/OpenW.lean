@@ -57,8 +57,8 @@ theorem openRunWithS_postX (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch6
   have F₀ : Frame [workR W, ⟨D, n⟩] s₀.mem t.mem :=
     o.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entry16_work W r hr⟩
   obtain ⟨hc₃, hH₃, hN₃, hA₃, hD₃⟩ := o.vals
-  refine (openRunWithS_split v.callees cl tb).symm.wp (WP.seq (WP.mono (openRunASX_ok cl v hMK gh o h4 h5 h6 h7
-    hal hok hexW hexD hexC (fun hi f => hI hi (f.sub fun r hr => ⟨workR W, List.mem_cons_self .., by
+  refine (openRunWithS_split v.callees cl tb false).symm.wp (WP.seq (WP.mono (openRunASX_ok cl v hMK gh
+    (to := false) o h4 h5 h6 h7 hal hok o.dat.ok o.dat.ctx o.ddW rfl hexW hexD hexC (fun hi f => hI hi (f.sub fun r hr => ⟨workR W, List.mem_cons_self .., by
       simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩))
     (fun s' _ _ _ _ hc sY sS hrd hwr hsp hf hd => hgh s' hc sY sS (hrd.trans o.rd₀) (hwr.trans o.wr₀) hsp
       (F₀.trans hf) hd)
@@ -74,17 +74,21 @@ theorem openRunWithS_postX (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch6
     · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩)
   obtain ⟨he₄, x0₄, d₄⟩ := hpost
   have F₄ := (mo.frame.mono fun r hr => List.mem_append_left _ hr).trans
-    (f₈.mono fun r hr => List.mem_append_right (⟨D, Stitch.pre n⟩ :: (fastFrame W ++ ex)) hr)
+    (f₈.mono fun r hr => List.mem_append_right (⟨D, n⟩ :: (fastFrame W ++ ex)) hr)
   refine ⟨⟨he₄, o.sv.frame F₄ fun r hr => ?_, ?_⟩, I₄⟩
   · rcases List.mem_append.mp hr with hr | hr
     · rcases List.mem_cons.mp hr with h | hr
       · subst h
-        exact ((o.ddW.sub_left (Region.sub_prefix (Nat.mul_div_le n 128))).sub_right (Lay.wSub (by decide))).symm
+        exact (o.ddW.sub_right (Lay.wSub (by decide))).symm
       rcases List.mem_append.mp hr with hr | hr
       · exact saved_fastFrame W r hr
       · exact (hexW r hr).sub_left (Lay.wSub (by decide))
     · exact saved_crFrame L o.dat r hr
-  · rw [hc₃, hH₃, hN₃, hA₃, hD₃, hT₃] at x0₄ d₄
+  · have hCs : bytesAt t.mem D (Stitch.pre n) ++
+        bytesAt t.mem (D + BitVec.ofNat 64 (Stitch.pre n)) (n - Stitch.pre n) = bytesAt t.mem D n := by
+      rw [← bytesAt_add, Nat.add_sub_cancel' (Nat.mul_div_le n 128)]
+    rw [hCs] at x0₄ d₄
+    rw [hc₃, hH₃, hN₃, hA₃, hD₃, hT₃] at x0₄ d₄
     rw [Spec.Gcm.openResult, ite_eq_left hok, Spec.Gcm.decryptWith]
     by_cases hc : (Spec.Gcm.fullTag (ctxCiph s₀.mem Ctx R) (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np 12)
         (bytesAt s₀.mem A al) (bytesAt s₀.mem D n)).take tl = bytesAt s₀.mem Tg tl
