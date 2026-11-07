@@ -3,6 +3,20 @@
 //! `assembly/internal/vg_keccak_f1600_x2.s`.
 #![allow(dead_code)]
 
+/// The implementations of `vg_keccak_f1600_x2` (`VG.Rust.internalRanking`) that a dispatcher of them would try, in order, best first, in each module whose functions call it: each with the CPU features it would be tried on (none: where detection reports some feature) and the vendors of the targets it would be tried for alone (or where `VG_CPU_FEATURES` names every feature it needs), before `vg_keccak_f1600_x2`. The verified code calling them chooses which it calls: only `ci/check_variants.py` reads this, to check that it calls the best.
+#[allow(clippy::type_complexity)]
+pub(crate) const VG_KECCAK_F1600_X2_RANKING: &[(&str, &[(&str, verified_garbage_cpu::Features, &[&str])])] = &[
+    ("mldsa44", &[
+        ("vg_keccak_f1600_x2_sha3", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3), &[]),
+    ]),
+    ("mldsa65", &[
+        ("vg_keccak_f1600_x2_sha3", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3), &[]),
+    ]),
+    ("mldsa87", &[
+        ("vg_keccak_f1600_x2_sha3", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3), &[]),
+    ]),
+];
+
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety

@@ -1100,6 +1100,8 @@ structure Internal where
   name : String
   /-- The module whose file declares the internal function's (`internalOwner`). -/
   owner : String
+  /-- The modules of the artifacts that call it (`internalsOf`), in order of their names. -/
+  callers : List String
   lines : List Line
   features : List String
   tables : List (String × List (BitVec 64))
@@ -1134,9 +1136,9 @@ abbrev Internal.target (h : Internal) : EmitTarget := h.fn.1
 abbrev Internal.code (h : Internal) : Prog h.target.isa := h.fn.2
 
 /-- The internal function `name` whose target and code are `f`, declared by the
-module `owner`. -/
-def Internal.of (name owner : String) (f : Fn) : Internal :=
-  ⟨f, name, owner, _, _, _, _, rfl, rfl, rfl, rfl⟩
+module `owner` and called by artifacts of the modules `callers`. -/
+def Internal.of (name owner : String) (callers : List String) (f : Fn) : Internal :=
+  ⟨f, name, owner, callers, _, _, _, _, rfl, rfl, rfl, rfl⟩
 
 /-- The internal functions of the artifacts of `ps` (`Internal`): of each
 target, every function the code of one of its artifacts calls (`Code.calls`,
@@ -1162,7 +1164,8 @@ def internalsOf (ps : List Prepared) : List Internal := Id.run do
         | none => ((t, n), [a.module]) :: callers
   return found.reverse.map fun (t, n, f) =>
     let modules := Rust.dedup ((ps.filter (·.art.target.name == t)).map (·.art.module))
-    Internal.of n (internalOwner n modules (((callers.find? (·.1 == (t, n))).map (·.2)).getD [])) f
+    let cs := (((callers.find? (·.1 == (t, n))).map (·.2)).getD []).mergeSort (· ≤ ·)
+    Internal.of n (internalOwner n modules cs) cs f
 
 /-- The internal function of `hs` that a call of `name` in an artifact of the
 target `t` calls, if there is one. -/
@@ -1588,17 +1591,20 @@ def internalDoc : String :=
 
 /-- The file of the internal function `h`, `internal/<name>.rs`: the constant of
 the CPU features its code needs (`featuresConst`, for the checks of the
-generated code, `ci/check_variants.py`), and the function, a naked function
-of no parameters, `pub(crate)`, with the `cfg` attribute of those features
-(`Printer.featureCfg`); `moduleOf` gives the module of each function it calls,
-from the crate's root (`internalModule` for an internal function). -/
-def internalFile (h : Internal) (moduleOf : String → String) : String :=
+generated code, `ci/check_variants.py`), its `ranking` (`internalRanking`,
+for the same checks, if it has other implementations), and the function, a
+naked function of no parameters, `pub(crate)`, with the `cfg` attribute of
+those features (`Printer.featureCfg`); `moduleOf` gives the module of each
+function it calls, from the crate's root (`internalModule` for an internal
+function). -/
+def internalFile (h : Internal) (moduleOf : String → String) (ranking : String := "") : String :=
   let T := h.target
   let gate := cfgGate (h.features.filterMap T.printer.featureCfg)
   header ++ s!"//! The internal function `{h.name}` for `{T.name}`, whose text is in\n" ++
   s!"//! `{assemblyFile s!"internal/{h.name}"}`.\n" ++
   "#![allow(dead_code)]\n\n" ++
   featuresConst h.name gate h.features "pub(crate)" "VG.Rust.Internal.features" ++
+  ranking ++
   docComment "" internalDoc ++
   gate ++
   "#[unsafe(naked)]\n" ++
@@ -2063,6 +2069,104 @@ def tableDispatchers (rs : List Rank) (t : String) (names : List String) (ts : L
     tableDispatcher rs t features gate rankModule b ms
   return String.join (texts.map ("\n" ++ ·))
 
+/-! ## The ranking of internal functions
+
+An internal function has no dispatcher (only verified code calls it, and
+that code chooses which implementation it calls), but the checks of the
+generated code (`ci/check_variants.py`) need to know which of its
+implementations is best on a CPU, to check that the code a dispatcher runs
+calls it. So the file of each internal function with other implementations
+states their ranking as a dispatcher of them would try them (`armsOf`) in
+each module whose artifacts call it (`Internal.callers`), as `Rank`s may
+rank a suffix differently in different modules:
+
+```rust
+/// …
+#[allow(clippy::type_complexity)]
+pub(crate) const <NAME>_RANKING: &[(&str, &[(&str, verified_garbage_cpu::Features, &[&str])])] = &[
+    ("<module>", &[
+        ("<implementation>", verified_garbage_cpu::Features(<its features and `extra` ones>), &[<vendors>]),
+        …
+    ]),
+    …
+];
+```
+
+It is a constant nothing reads but those checks: it changes no code that
+runs, and like the ranking itself (`Rank`) is not trusted. -/
+
+/-- The internal functions `hs` of a target, with their implementations: in
+order of their names' lengths, an internal function is an implementation of
+the one with the longest name found whose name, followed by `_`, starts its
+own, and whose suffix (what follows that name in its own) `rs` ranks in a
+module whose artifacts call it (`Internal.callers`, `rankOf`); and is
+otherwise the base of one of its own. A suffix of parts (`partsOf`) does not
+count: without a signature to compare, `_prepared16_vaes_vpclmul` would make
+another function's implementation one of `vg_aes_gcm_decrypt_blocks`. -/
+def internalGroupsOf (rs : List Rank) (hs : List Internal) :
+    List (Internal × List (Internal × String)) := Id.run do
+  let sorted := hs.mergeSort fun a b => a.name.length ≤ b.name.length
+  let mut gs : Array (Internal × List (Internal × String)) := #[]
+  for h in sorted do
+    let ranked (b : Internal) : Bool :=
+      let s := (h.name.drop b.name.length).toString
+      h.name.startsWith (b.name ++ "_") && b.callers.any fun m => (rankOf rs m s).isSome
+    -- Of the groups whose base it extends with a ranked suffix, the longest base's.
+    let best := gs.toList.zipIdx.foldl (init := (none : Option (Nat × Nat)))
+      fun best ((b, _), i) =>
+        if !ranked b then best else match best with
+        | some (_, n) => if b.name.length > n then some (i, b.name.length) else best
+        | none => some (i, b.name.length)
+    match best.map (·.1) with
+    | some i =>
+      gs := gs.modify i fun (b, ms) => (b, ms ++ [(h, (h.name.drop b.name.length).toString)])
+    | none => gs := gs.push (h, [])
+  return gs.toList
+
+/-- The ranking of the implementations `members` (each with its suffix) of
+the internal function `b` (see above): for each module whose artifacts call
+it (`Internal.callers`), the implementations whose suffixes `rs` ranks there
+that a dispatcher of them would try, in order (`armsOf`), each with the CPU
+features it would be tried on (its own and its ranking's `extra` ones) and
+the vendors it would be tried for alone (`Rank.vendor`); nothing if it has
+no other implementation; or why `rs` does not rank them. -/
+def internalRanking (rs : List Rank) (b : Internal) (members : List (Internal × String)) :
+    Except String String := do
+  if members.isEmpty then return ""
+  let impl (h : Internal) : Impl :=
+    ⟨h.name, internalModule h, h.features, h.features.filterMap h.target.printer.featureCfg⟩
+  let row (a : Arm) : String :=
+    let bits := (dedup (a.impl.features ++ a.extra)).map fun f =>
+      s!"verified_garbage_cpu::feature::{featureConst f}"
+    let bits := if bits.isEmpty then "0" else " | ".intercalate bits
+    let vendors := ", ".intercalate (a.vendors.map fun v => s!"\"{v}\"")
+    s!"        (\"{a.impl.name}\", verified_garbage_cpu::Features({bits}), &[{vendors}]),\n"
+  let modules ← b.callers.mapM fun m => do
+    let ms := members.filter fun (_, s) => (rankOf rs m s).isSome
+    let arms ← armsOf rs m b.target.name (ms.map fun (h, s) => (impl h, s))
+    return s!"    (\"{m}\", &[\n" ++ String.join (arms.map row) ++ "    ]),\n"
+  return docComment "" (s!"The implementations of `{b.name}` (`VG.Rust.internalRanking`) that a \
+      dispatcher of them would try, in order, best first, in each module whose functions call \
+      it: each with the CPU features it would be tried on (none: where detection reports some \
+      feature) and the vendors of the targets it would be tried for alone (or where \
+      `VG_CPU_FEATURES` names every feature it needs), before `{b.name}`. The verified code \
+      calling them chooses which it calls: only `ci/check_variants.py` reads this, to check \
+      that it calls the best.") ++
+    "#[allow(clippy::type_complexity)]\n" ++
+    s!"pub(crate) const {b.name.toUpper}_RANKING: \
+      &[(&str, &[(&str, verified_garbage_cpu::Features, &[&str])])] = &[\n" ++
+    String.join modules ++ "];\n\n"
+
+/-- The rankings of the internal functions `hs` of the target `t`
+(`internalRanking`), by name, of those with other implementations and no CPU
+features of their own (as a dispatcher's base); or why `rs` does not rank
+them. -/
+def internalRankings (rs : List Rank) (t : String) (hs : List Internal) :
+    Except String (List (String × String)) :=
+  ((internalGroupsOf rs (hs.filter (·.target.name == t))).filter fun (b, ms) =>
+      b.features.isEmpty && !ms.isEmpty).mapM fun (b, ms) =>
+    return (b.name, ← internalRanking rs b ms)
+
 /-- The module of the dispatchers of the target `t` (`dispatch/mod.rs` of its
 `codeDir`), declaring the file of each module `ms` with any. -/
 def dispatchMod (t : String) (ms : List String) : String :=
@@ -2085,7 +2189,8 @@ def dispatchFile (t m text : String) : String :=
 function each artifact calls; each artifact's code as `ps` printed it
 (`Prepared.lines`). -/
 def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → String → String)
-    (disp : String → String → String := fun _ _ => "") :
+    (disp : String → String → String := fun _ _ => "")
+    (ranking : String → String → String := fun _ _ => "") :
     List (String × String) :=
   let as := ps.map (·.art)
   let targets := distinct as (·.target.name)
@@ -2118,7 +2223,7 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
         dmods.map fun m => (s!"{src}/dispatch/{m}.rs", dispatchFile t m (disp t m))) ++
     (hs.map fun h => Task.spawn fun _ =>
       let m := s!"internal/{h.name}"
-      [(s!"{src}/{m}.rs", internalFile h (moduleOf t)),
+      [(s!"{src}/{m}.rs", internalFile h (moduleOf t) (ranking t h.name)),
        (s!"{crateDir t}/{assemblyFile m}", assemblyHeader t m ++
          moduleAssembly.functionAssembly h.target h.name (bodyLines h.target h.lines))]).flatMap
       Task.get ++
@@ -2149,8 +2254,9 @@ code has an instruction its target's printer cannot encode
 `fullDoc` adds to it (`checkLayout`) or a bound on what it writes is not of a
 writable array parameter, at most its size (`checkWritten`), or `ranking`
 (each target's, by its name) does not rank an implementation a dispatcher
-calls (`dispatchers`, `checkRanks`); with each module's dispatchers after its
-functions. Each check of
+calls (`dispatchers`, `checkRanks`) or an internal function's
+(`internalRankings`); with each module's dispatchers after its functions, and
+each internal function's ranking in its file. Each check of
 every artifact runs on `tasks` tasks (`forMPar`), one check after the other,
 so the error is the
 one checking them in order would give; what they read of an artifact more
@@ -2199,10 +2305,13 @@ def files (as : List Artifact) (ranking : Ranking := []) :
     let tabs ← tableDispatchers rs t names (fnTables arts) (fnTableFeatures tps hs t) gate
       rankModule
     return fns ++ (if tabs.isEmpty then [] else [((t, "fn_tables"), tabs)])
+  let ranks ← (targetsOf as).flatMapM fun (t, _) => do
+    return (← internalRankings ((ranking.lookup t).getD []) t hs).map fun (n, r) => ((t, n), r)
   return render ps hs (fun t n =>
     match as.find? fun b => b.target.name == t && b.name == n with
     | some b => b.module
     | none => ((internal? hs t n).map internalModule).getD "")
     (fun t m => (disp.lookup (t, m)).getD "")
+    (fun t n => (ranks.lookup (t, n)).getD "")
 
 end VG.Rust

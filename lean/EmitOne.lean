@@ -30,9 +30,11 @@ registration file emits into it): `Emit.lean` handles those. Each table of
 constants has a file of its own (`consts/<name>.rs` of the crate, which
 depends only on the table), so it writes those of its artifacts' tables and
 leaves the others; a new table is a new file. So does each internal function
-(`internal/<name>.rs`, `VG.Rust.Internal`), which depends only on its code;
-the module whose file declares it depends on all the modules calling it,
-which only `Emit.lean` sees. It is a
+(`internal/<name>.rs`, `VG.Rust.Internal`), which depends only on its code
+but for its ranking (`VG.Rust.internalRanking`), of which it keeps the
+file's: the ranking depends on the function's other implementations and the
+modules calling it, and the module whose file declares it on all the modules
+calling it, which only `Emit.lean` sees. It is a
 convenience while iterating, not a replacement: `Emit.lean --check`, which CI
 runs, checks every artifact and every file.
 -/
@@ -56,6 +58,18 @@ def nativeTCB (names : List String) : List (String × FilePath) :=
     if ts.contains t then ts else ts ++ [t]
   ("NativeTCB", sharedLib "VerifiedGarbage_NativeTCB") ::
     targets.map fun t => (s!"NativeTCB{t}", sharedLib s!"VerifiedGarbage_NativeTCB{t}")
+
+/-- The file of an internal function, `text`, as its text before its ranking
+(`VG.Rust.internalRanking`, which starts with its documentation and ends
+with the end of its constant), its ranking, and its text after; with no
+ranking, the whole text and two empty ones. -/
+def splitRanking (text : String) : String × String × String :=
+  let start := "/// The implementations of `"
+  match text.splitOn start with
+  | [a, b] => match b.splitOn "\n];\n\n" with
+    | [r, c] => (a, start ++ r ++ "\n];\n\n", c)
+    | _ => (text, "", "")
+  | _ => (text, "", "")
 
 def usage : String := "usage: lake env lean --run EmitOne.lean [--check] <Alg>.<Target> …"
 
@@ -151,12 +165,16 @@ def main (args : List String) : IO UInt32 := do
         path.fileName != some "lib.rs" do continue
     let rel := (path.toString.dropPrefix (out.toString ++ "/")).toString
     let target := dest / rel
-    let text ← IO.FS.readFile path
+    let mut text ← IO.FS.readFile path
     unless ← target.pathExists do
       IO.eprintln s!"{target} does not exist: a new module, run Emit.lean"
       ok := false
       continue
     let current ← IO.FS.readFile target
+    -- An internal function's file keeps its ranking (see above).
+    if (rel.splitOn "/src/internal/").length == 2 then
+      let (a, _, c) := splitRanking text
+      text := a ++ (splitRanking current).2.1 ++ c
     if unreadFns current || unreadFns text then
       IO.eprintln s!"{target}: cannot read the names of its functions: run Emit.lean"
       ok := false
@@ -174,13 +192,13 @@ def main (args : List String) : IO UInt32 := do
       if m.endsWith ".rs" && (!m.contains '/' || m.startsWith "internal/") then
         let l := s!"{crate}/{VG.Rust.assemblyFile (m.dropEnd 3).toString}"
         pairs := pairs.push (dest / l, ← IO.FS.readFile (out / l))
-    for (tgt, text) in pairs do
+    for (tgt, new) in pairs do
       let current ← if ← tgt.pathExists then IO.FS.readFile tgt else pure ""
-      if current == text then continue
+      if current == new then continue
       if check then
         IO.eprintln s!"{tgt} is out of date"
         ok := false
       else
-        IO.FS.writeFile tgt text
+        IO.FS.writeFile tgt new
         IO.println s!"wrote {tgt}"
   return if ok then 0 else 1

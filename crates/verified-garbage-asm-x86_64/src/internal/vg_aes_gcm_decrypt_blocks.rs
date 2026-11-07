@@ -3,6 +3,23 @@
 //! `assembly/internal/vg_aes_gcm_decrypt_blocks.s`.
 #![allow(dead_code)]
 
+/// The implementations of `vg_aes_gcm_decrypt_blocks` (`VG.Rust.internalRanking`) that a dispatcher of them would try, in order, best first, in each module whose functions call it: each with the CPU features it would be tried on (none: where detection reports some feature) and the vendors of the targets it would be tried for alone (or where `VG_CPU_FEATURES` names every feature it needs), before `vg_aes_gcm_decrypt_blocks`. The verified code calling them chooses which it calls: only `ci/check_variants.py` reads this, to check that it calls the best.
+#[allow(clippy::type_complexity)]
+pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_RANKING: &[(&str, &[(&str, verified_garbage_cpu::Features, &[&str])])] = &[
+    ("gcm", &[
+        ("vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES), &[]),
+        ("vg_aes_gcm_decrypt_blocks_vaes_vpclmul", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES), &[]),
+        ("vg_aes_gcm_decrypt_blocks_vaes_pclmul", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES), &[]),
+        ("vg_aes_gcm_decrypt_blocks_aesni_vpclmul", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES), &[]),
+        ("vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx", verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3), &[]),
+        ("vg_aes_gcm_decrypt_blocks_aesni_pclmul", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES), &[]),
+        ("vg_aes_gcm_decrypt_blocks_vaes", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES), &[]),
+        ("vg_aes_gcm_decrypt_blocks_aesni", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES), &[]),
+        ("vg_aes_gcm_decrypt_blocks_vpclmul", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VPCLMULQDQ), &[]),
+        ("vg_aes_gcm_decrypt_blocks_pclmul", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ), &[]),
+    ]),
+];
+
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety

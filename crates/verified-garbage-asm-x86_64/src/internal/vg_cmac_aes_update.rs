@@ -3,6 +3,23 @@
 //! `assembly/internal/vg_cmac_aes_update.s`.
 #![allow(dead_code)]
 
+/// The implementations of `vg_cmac_aes_update` (`VG.Rust.internalRanking`) that a dispatcher of them would try, in order, best first, in each module whose functions call it: each with the CPU features it would be tried on (none: where detection reports some feature) and the vendors of the targets it would be tried for alone (or where `VG_CPU_FEATURES` names every feature it needs), before `vg_cmac_aes_update`. The verified code calling them chooses which it calls: only `ci/check_variants.py` reads this, to check that it calls the best.
+#[allow(clippy::type_complexity)]
+pub(crate) const VG_CMAC_AES_UPDATE_RANKING: &[(&str, &[(&str, verified_garbage_cpu::Features, &[&str])])] = &[
+    ("aes_ccm", &[
+        ("vg_cmac_aes_update_vaes", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES), &[]),
+        ("vg_cmac_aes_update_aesni", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES), &[]),
+    ]),
+    ("aes_siv", &[
+        ("vg_cmac_aes_update_vaes", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES), &[]),
+        ("vg_cmac_aes_update_aesni", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES), &[]),
+    ]),
+    ("cmac_aes", &[
+        ("vg_cmac_aes_update_vaes", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES), &[]),
+        ("vg_cmac_aes_update_aesni", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES), &[]),
+    ]),
+];
+
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety

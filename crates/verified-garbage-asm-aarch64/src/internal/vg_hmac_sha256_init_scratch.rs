@@ -3,6 +3,50 @@
 //! `assembly/internal/vg_hmac_sha256_init_scratch.s`.
 #![allow(dead_code)]
 
+/// The implementations of `vg_hmac_sha256_init_scratch` (`VG.Rust.internalRanking`) that a dispatcher of them would try, in order, best first, in each module whose functions call it: each with the CPU features it would be tried on (none: where detection reports some feature) and the vendors of the targets it would be tried for alone (or where `VG_CPU_FEATURES` names every feature it needs), before `vg_hmac_sha256_init_scratch`. The verified code calling them chooses which it calls: only `ci/check_variants.py` reads this, to check that it calls the best.
+#[allow(clippy::type_complexity)]
+pub(crate) const VG_HMAC_SHA256_INIT_SCRATCH_RANKING: &[(&str, &[(&str, verified_garbage_cpu::Features, &[&str])])] = &[
+    ("ecdsa_brainpoolp256r1", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+    ("ecdsa_brainpoolp384r1", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+    ("ecdsa_brainpoolp512r1", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+    ("ecdsa_p192", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+    ("ecdsa_p224", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+    ("ecdsa_p256", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+    ("ecdsa_p384", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+    ("ecdsa_p521", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+    ("ecdsa_secp256k1", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+    ("hmac_sha256", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+    ("pbkdf2_sha256", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+    ("rsa_pkcs1_enc", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+    ("scrypt", &[
+        ("vg_hmac_sha256_init_scratch_sha2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2), &[]),
+    ]),
+];
+
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety

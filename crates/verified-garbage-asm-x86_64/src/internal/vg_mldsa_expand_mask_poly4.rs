@@ -3,6 +3,23 @@
 //! `assembly/internal/vg_mldsa_expand_mask_poly4.s`.
 #![allow(dead_code)]
 
+/// The implementations of `vg_mldsa_expand_mask_poly4` (`VG.Rust.internalRanking`) that a dispatcher of them would try, in order, best first, in each module whose functions call it: each with the CPU features it would be tried on (none: where detection reports some feature) and the vendors of the targets it would be tried for alone (or where `VG_CPU_FEATURES` names every feature it needs), before `vg_mldsa_expand_mask_poly4`. The verified code calling them chooses which it calls: only `ci/check_variants.py` reads this, to check that it calls the best.
+#[allow(clippy::type_complexity)]
+pub(crate) const VG_MLDSA_EXPAND_MASK_POLY4_RANKING: &[(&str, &[(&str, verified_garbage_cpu::Features, &[&str])])] = &[
+    ("mldsa44", &[
+        ("vg_mldsa_expand_mask_poly4_avx512", verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL), &[]),
+        ("vg_mldsa_expand_mask_poly4_avx2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2), &[]),
+    ]),
+    ("mldsa65", &[
+        ("vg_mldsa_expand_mask_poly4_avx512", verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL), &[]),
+        ("vg_mldsa_expand_mask_poly4_avx2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2), &[]),
+    ]),
+    ("mldsa87", &[
+        ("vg_mldsa_expand_mask_poly4_avx512", verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL), &[]),
+        ("vg_mldsa_expand_mask_poly4_avx2", verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2), &[]),
+    ]),
+];
+
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety

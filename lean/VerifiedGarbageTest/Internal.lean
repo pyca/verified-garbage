@@ -80,4 +80,54 @@ def blockLines : List Line :=
 #guard ["", "vg_", "rc2_encrypt", "vg_Rc2", "vg_a-b", "vg_a()", "vg_a b", "vg_é"].all
   (!Rust.internalName ·)
 
+-- The modules of the artifacts calling an internal function, in order of
+-- their names: RC2's.
+#guard (Rust.internalsOf (Rust.prepareAll (arts.map Rust.Shared.of))).all (·.callers == ["rc2"])
+
+/-! ## The ranking of internal functions (`Rust.internalRanking`) -/
+
+/-- The internal function `n`, called by artifacts of the modules `callers`,
+with RC2's block code (only its name, callers and features matter here). -/
+def mk (n : String) (callers : List String := ["m"]) : Rust.Internal :=
+  .of n "m" callers ⟨.of AArch64.target, Impl.Rc2.AArch64.encryptBlock⟩
+
+def rs : List Rust.Rank :=
+  [{ suffix := "_x_neon" }, { suffix := "_sha3", modules := ["other"] },
+    { suffix := "_neon", extra := ["neon"], vendor := some "apple" }]
+
+def groups (hs : List Rust.Internal) : List (String × List String) :=
+  (Rust.internalGroupsOf rs hs).map fun (b, ms) => (b.name, ms.map (·.1.name))
+
+-- The implementations of the longest base they extend with a ranked suffix:
+-- `vg_f_x_neon` is `vg_f_x`'s, though `vg_f` and `_x_neon` would do too.
+#guard groups [mk "vg_f", mk "vg_f_x", mk "vg_f_x_neon", mk "vg_f_neon"] ==
+  [("vg_f", ["vg_f_neon"]), ("vg_f_x", ["vg_f_x_neon"])]
+-- Only a suffix ranked in a module calling it, and not one of parts
+-- (`_tag_neon`), whose tag could be part of another function's name.
+#guard groups [mk "vg_g", mk "vg_g_sha3", mk "vg_g_tag_neon"] ==
+  [("vg_g", []), ("vg_g_sha3", []), ("vg_g_tag_neon", [])]
+#guard groups [mk "vg_g" ["m", "other"], mk "vg_g_sha3"] == [("vg_g", ["vg_g_sha3"])]
+
+-- Its ranking, in each module calling it, with each implementation's
+-- features and `extra` ones, and vendors, leaving out one that can be chosen
+-- only where one before it can (`vg_f_neon` in `other`); none without other
+-- implementations.
+def ranking (b : Rust.Internal) (ms : List Rust.Internal) : String :=
+  match Rust.internalRanking rs b (ms.map fun h => (h, (h.name.drop b.name.length).toString)) with
+  | .ok r => r
+  | .error e => e
+
+#guard ranking (mk "vg_f") [] == ""
+#guard has (ranking (mk "vg_f" ["m", "other"]) [mk "vg_f_neon", mk "vg_f_sha3"])
+  "pub(crate) const VG_F_RANKING: &[(&str, &[(&str, verified_garbage_cpu::Features, &[&str])])] = &[
+    (\"m\", &[
+        (\"vg_f_neon\", verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON), &[\"apple\"]),
+    ]),
+    (\"other\", &[
+        (\"vg_f_sha3\", verified_garbage_cpu::Features(0), &[]),
+    ]),
+];
+
+"
+
 end VG.Test.Internal
