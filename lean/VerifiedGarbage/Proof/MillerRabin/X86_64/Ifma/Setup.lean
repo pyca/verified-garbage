@@ -432,10 +432,10 @@ theorem tail_ok (hl : PubOk l) {s : State} {B : Addr} {c k t0 : Nat} (hB : s.gpr
 theorem setup_ok (hl : PubOk l) {s : State} {H : Addr} {n c bR : Nat}
     (hdi : s.gpr .rdi = H) (hwr : (⟨H, 8 * n⟩ : Region) ∈ s.wr) (hn : H.toNat + 8 * n ≤ 2 ^ 64)
     (hsz : arr l 27 ≤ 8 * n)
-    (hc : wv s.mem H (arr l aN) l.W = c) (h3 : 3 ≤ c) (hodd : c % 2 = 1)
+    (hc : wv s.mem H (arr l aN) l.W = c) (h3 : 3 ≤ c)
     (hinv : ((word s.mem H (arr l aN)).toNat * (word s.mem H (8 * sMinv)).toNat + 1) % 2 ^ 64 = 0)
     (hr1 : wv s.mem H (arr l aR1) l.W = 2 ^ (64 * l.W) % c)
-    (hx : wv s.mem H (arr l aXm) l.W = bR) (hbR : bR < c) :
+    (hx : wv s.mem H (arr l aXm) l.W = bR) :
     WP isa (VG.Impl.Bignum.X86_64.seqs (setup l)) s fun t =>
       t.gpr .rbx = areaBase l H ∧ t.gpr .r12 = mask52 ∧ t.gpr .rdi = H ∧
       Pre l t.mem (areaBase l H) c ((word s.mem H (8 * sMinv)).toNat % 2 ^ 52) bR ∧
@@ -443,6 +443,75 @@ theorem setup_ok (hl : PubOk l) {s : State} {H : Addr} {n c bR : Nat}
       (∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r11 → r ≠ .r12 → r ≠ .r13 →
         r ≠ .rbp → t.gpr r = s.gpr r) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
-  sorry
+  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, -, -, o13, o14, o15, o16, o17, o18⟩ := PubOk.offs hl
+  obtain ⟨e1, e2, e3⟩ := PubOk.ends hl
+  have o6₁ := o6 1
+  have o6₄ := o6 4
+  have e1₀ := e1 0 (by decide)
+  have e1₁ := e1 1 (by decide)
+  have hN31 : l.NB + 32 < 2 ^ 31 := by omega_arith
+  have h27 : arr l (aT0 + 16) ≤ arr l 27 := by simp only [arr, aT0]; omega
+  have hs : Scr s H (8 * n) := Scr.of_mem hwr hn
+  have hn' : H.toNat + arr l (aT0 + 16) ≤ 2 ^ 64 := by omega_arith
+  obtain ⟨hd, hd', hBd⟩ := areaBase_ofs hl hn'
+  generalize ofs H (areaBase l H) = d at hd hd' hBd
+  generalize hB : areaBase l H = B at hBd ⊢
+  have hsB : Scr s B (size l) := by
+    rw [hBd]; exact hs.sub (by omega_arith) (by unfold size; omega)
+  have hc0 : 0 < c := by omega
+  have hR : 2 ^ (64 * l.W) % c < c := Nat.mod_lt _ hc0
+  have fa : ∀ {m m' : Mem} {rs : List (Nat × Nat)}, Frm B rs m m' → (∀ r ∈ rs, r.1 + r.2 ≤ size l) →
+      Frm H [(arr l aT0, 16 * (8 * (l.W + 2)))] m m' := fun f hr => frm_area f hBd hd hd' hn' hr
+  unfold setup
+  simp only [VG.Impl.Bignum.X86_64.seqs]
+  refine WP.seq (WP.mono (block_ok hl hdi hs hsz hB hBd hd hd' hc hinv)
+    fun t₁ ⟨b₁, r12₁, m₁, T1₁, S₁, T0₁, F₁, k₁, x₁⟩ => ?_)
+  rw [hx] at T1₁
+  rw [hr1] at S₁ T0₁
+  -- `K` at `S`.
+  refine WP.seq (WP.mono (dbls_ok hl b₁ r12₁ (hsB.congr k₁.2.2) m₁ (x := oS l) (tmp := oY l) (n := l.dbls)
+    (by omega_arith) (by omega_arith) o2 (.inr (by omega_arith)) (.inr (by omega_arith)) (.inr (by omega_arith))
+    o15 o16 S₁.1 (by rw [S₁.2]; exact hR)) fun t₂ ⟨S₂, vS₂, F₂, k₂, x₂⟩ => ?_)
+  rw [S₁.2, pow_mod_shift (show l.dbls + 64 * l.W = 104 * l.S - 64 * l.W by
+    simp only [VG.Impl.Rsa.X86_64.CrtIfma.Lay.dbls]; omega_arith)] at vS₂
+  have m₂ := mod_frm hl m₁ F₂ (two_r (p := fun r => l.NB + 32 ≤ r.1) (by omega_arith) (by omega_arith)) hN31
+  have T0₂ := num_frm hl F₂ T0₁ (two_r (p := fun r => oT l 0 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 0)
+    (.inr (by omega_arith)) (.inr (by omega_arith))) (by omega_arith)
+  have b₂ := (k₂.gpr (by decide)).trans b₁
+  have r12₂ := (k₂.gpr (by decide)).trans r12₁
+  -- `T_0`.
+  refine WP.seq (WP.mono (dbls_ok hl b₂ r12₂ ((hsB.congr k₁.2.2).congr k₂.2.2) m₂ (x := oT l 0) (tmp := oY l)
+    (n := shifts l) (by omega_arith) (by omega_arith) o2 (.inr (by omega_arith)) (.inr (by omega_arith))
+    (.inr (by omega_arith)) o17 o18 T0₂.1 (by rw [T0₂.2]; exact hR)) fun t₃ ⟨T0₃, vT0₃, F₃, k₃, x₃⟩ => ?_)
+  rw [T0₂.2, pow_mod_shift (show shifts l + 64 * l.W = 52 * l.S by unfold shifts; omega_arith)] at vT0₃
+  have m₃ := mod_frm hl m₂ F₃ (two_r (p := fun r => l.NB + 32 ≤ r.1) (by omega_arith) (by omega_arith)) hN31
+  have b₃ := (k₃.gpr (by decide)).trans b₂
+  have r12₃ := (k₃.gpr (by decide)).trans r12₂
+  -- `c − T_0` and the sums.
+  refine WP.mono (tail_ok hl b₃ r12₃ (((hsB.congr k₁.2.2).congr k₂.2.2).congr k₃.2.2) m₃ ⟨T0₃, vT0₃⟩
+    (Nat.mod_lt _ hc0)) fun t ⟨M1, P1c, M1c, F₄, k₄, x₄⟩ => ?_
+  have kk := ((k₁.trans k₂).trans k₃).trans k₄
+  have hT1 := num_frm hl F₄ (num_frm hl F₃ (num_frm hl F₂ T1₁
+    (two_r (p := fun r => oT l 1 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 1) (.inr (by omega_arith)) (.inr (by omega_arith)))
+      (by omega_arith))
+    (two_r (p := fun r => oT l 1 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 1) (.inr (by omega_arith)) (.inr (by omega_arith)))
+      (by omega_arith))
+    (three_r (p := fun r => oT l 1 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 1) (.inl (by omega_arith)) (.inl (by omega_arith))
+      (.inl (by omega_arith))) (by omega_arith)
+  have hS := num_frm hl F₄ (num_frm hl F₃ ⟨S₂, vS₂⟩
+    (two_r (p := fun r => oS l + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oS l) (.inl (by omega_arith)) (.inr (by omega_arith)))
+      (by omega_arith))
+    (three_r (p := fun r => oS l + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oS l) (.inl (by omega_arith)) (.inl (by omega_arith))
+      (.inl (by omega_arith))) (by omega_arith)
+  have hT0 := num_frm hl F₄ ⟨T0₃, vT0₃⟩
+    (three_r (p := fun r => oT l 0 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 0) (.inl (by omega_arith)) (.inl (by omega_arith))
+      (.inl (by omega_arith))) (by omega_arith)
+  refine ⟨(k₄.gpr (by decide)).trans b₃, (k₄.gpr (by decide)).trans r12₃, (kk.gpr (by decide)).trans hdi,
+    ⟨mod_frm hl m₃ F₄ (three_r (p := fun r => l.NB + 32 ≤ r.1) (by omega_arith) (by omega_arith) (by omega_arith))
+      hN31, hT0, hT1, hS, M1, P1c, M1c⟩, ?_, fun r h1 h2 h3 h4 h5 h6 h7 h8 h9 => kk.gpr (by simp [h1, h2, h3, h4, h5, h6, h7, h8, h9]),
+    kk.2.1, kk.2.2, by rw [x₄, x₃, x₂, x₁]⟩
+  exact ((F₁.trans (fa F₂ (two_r (p := fun r => r.1 + r.2 ≤ size l) (by omega_arith) (by omega_arith)))).trans
+    (fa F₃ (two_r (p := fun r => r.1 + r.2 ≤ size l) (by omega_arith) (by omega_arith)))).trans
+    (fa F₄ (three_r (p := fun r => r.1 + r.2 ≤ size l) (by omega_arith) (by omega_arith) (by omega_arith)))
 
 end VG.Proof.MillerRabin.X86_64.Ifma
