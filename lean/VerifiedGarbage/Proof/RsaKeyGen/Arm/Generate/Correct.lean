@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top1
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchSpec
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Verified
@@ -33,6 +34,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Arm.SearchInit
 import VerifiedGarbage.Proof.Rc2.PairMem
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.RsaKeyGen.Contract
+meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # The controller's correctness (ARMv7)
@@ -1977,8 +1979,8 @@ open VG.Proof.RsaKeyGen.Arm (slot writeSlots slotValue slot_writeSlots)
 open VG.Spec.RsaKeyGen
 
 /-- The contract's precondition from the key proof's. -/
-theorem pre_of_cin {s : State} (h : Key.CIn s) : (Spec.RsaKeyGen.keyContract abi 56).pre s := by
-  sig_pre [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, reduceClassify, Loc.val]
+theorem pre_of_cin {s : State} (h : Key.CIn s) : (Proof.RsaKeyGen.keyContract abi 56).pre s := by
+  sig_pre [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, reduceClassify, Loc.val]
   exact ⟨h.spLo, h.spHi, h.rd, h.wr, h.nD, h.nP, h.nQ, h.nDp, h.nDq, h.nQi, h.nE, h.nS, h.nA, h.dP, h.dQ, h.dDp,
     h.dDq, h.dQi, h.dE, h.dS, h.dA, h.pQ, h.pDp, h.pDq, h.pQi, h.pE, h.pS, h.pA, h.qDp, h.qDq, h.qQi, h.qE, h.qS,
     h.qA, h.dpDq, h.dpQi, h.dpE, h.dpS, h.dpA, h.dqQi, h.dqE, h.dqS, h.dqA, h.qiE, h.qiS, h.qiA, h.eS, h.SA, h.Fn,
@@ -2302,7 +2304,7 @@ theorem state_apartK (h : GenFrame p o used st s) {d n : Nat} (hdn : d + n ≤ 5
   · exact (sT.sub_left h.f3Stack).symm.sub_left sub
 
 /-- The key's call, in its frame of arguments. -/
-theorem key_run (name : String) {kc : Prog isa} (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56))
+theorem key_run (name : String) {kc : Prog isa} (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56))
     (hks : FrameStack.armStack kc ≤ 56) (h : GenFrame p o used st s) :
     WP isa (keyRun (.call name kc)) s (AfterKey p o used st s) := by
   have room := h.facts.room
@@ -2315,7 +2317,7 @@ theorem key_run (name : String) {kc : Prog isa} (hv : Verified target kc (Spec.R
   have hS3 : 56 ≤ u.sp.toNat := by rw [hr.sp, h.S3_toNat]; omega
   refine FrameStack.WP.callF hv.1 (pre_of_cin (h.callK_cin hr)) cov covW
     (Nat.le_trans hks hS3) fun t htr htw htsp hfr hpres hpost => ?_
-  sig_post [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, reduceClassify, Loc.val] at hpost
+  sig_post [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, reduceClassify, Loc.val] at hpost
   have a0 : stackArg (callK p u) 0 = p.kp + BitVec.ofNat 32 (4 * p.L) := h.kArg hr (by decide)
   have a1 : stackArg (callK p u) 1 = BitVec.ofNat 32 p.L := h.kArg hr (by decide)
   have a2 : stackArg (callK p u) 2 = p.kp + BitVec.ofNat 32 (5 * p.L) := h.kArg hr (by decide)
@@ -3302,7 +3304,7 @@ theorem keyStatus_lt (r : Except Failure (List (List Byte)) ⊕ Unit) : keyStatu
   unfold keyStatus; split <;> decide
 
 /-- After `q`: the key. -/
-theorem classify_key (name : String) {kc : Prog isa} (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56))
+theorem classify_key (name : String) {kc : Prog isa} (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56))
     (hks : FrameStack.armStack kc ≤ 56) (hm : Mid p o final used st u) {c : Nat} {pB : List Byte}
     (ho : (rOf p o used st).outcome = .accepted c) (hpos : 0 < (rOf p o used st).used)
     (hph : st.phase = .q pB) :
@@ -3390,7 +3392,7 @@ theorem classify_key (name : String) {kc : Prog isa} (hv : Verified target kc (S
 
 /-- A prime accepted, having read some octets: `q`'s search, or the key. -/
 theorem accepted_ok (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56)
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56)
     (hm : Mid p o final used st u) {c : Nat} (ho : (rOf p o used st).outcome = .accepted c)
     (hpos : 0 < (rOf p o used st).used) :
     WP isa (accepted (.call name kc)) u (StepPost p o final used st) := by
@@ -3450,7 +3452,7 @@ theorem status_cases (r : PrimeSearchResult) :
 
 /-- After the search: its outcome. -/
 theorem classify_ok (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56)
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56)
     (hi : GenIter p o final used st s) (ha : AfterSearch p o used st s t) :
     WP isa (Impl.RsaKeyGen.Arm.Generate.classify (.call name kc)) t (StepPost p o final used st) := by
   obtain ⟨hl, hfin⟩ := hi
@@ -3522,7 +3524,7 @@ theorem GenIter.keep {t' : State} (h : GenIter p o final used st t) {ws : List R
 
 /-- One iteration. -/
 theorem iteration_ok (sname : String) (c : Search.Cand) (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56)
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56)
     (hi : GenIter p o final used st s) :
     WP isa (iteration (.call sname (Impl.RsaKeyGen.Arm.Search.code c.call)) (.call name kc)) s
       (IterPost p o final used st) := by
@@ -3538,7 +3540,7 @@ theorem iteration_ok (sname : String) (c : Search.Cand) (name : String) {kc : Pr
 
 /-- The loop: the key search's result. -/
 theorem gen_loop (sname : String) (c : Search.Cand) (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56)
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56)
     (hi : GenIter p o final used st s) :
     WP isa (.loop (iteration (.call sname (Impl.RsaKeyGen.Arm.Search.code c.call)) (.call name kc)) .eq) s
       (GenDone p o final) := by
@@ -3618,7 +3620,7 @@ theorem phaseWord_eq (ph : KeyPhase) : phaseWord ph = if ph = .p then 0 else 1 :
 
 /-- The controller from its contract's precondition. -/
 theorem gen_correct_ok (sname : String) (c : Search.Cand) (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56)
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56)
     {s : State} (hpre : genPre s) :
     WP isa (code (.call sname (Impl.RsaKeyGen.Arm.Search.code c.call)) (.call name kc)) s fun t =>
       genPost s t ∧ abiPreserved s t := by

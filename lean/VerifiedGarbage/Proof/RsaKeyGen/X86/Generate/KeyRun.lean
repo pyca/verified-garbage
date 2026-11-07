@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyABI
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.ABI
@@ -1579,8 +1580,8 @@ theorem search_pre {p : GenPublic} {o s₀ t : State} {used ph : Nat} {st : KeyP
     rw [show searchArg p used ph 11 = p.stp from rfl, sa1 hi, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
       rdw 16 (by decide)]
     exact hst.cap
-  sig_pre [VG.Proof.RsaKeyGen.X86.Search.contract, Spec.RsaKeyGen.primeSearchContract,
-    Spec.RsaKeyGen.primeSearchSig, abi, argSlots, argVal, argBytes, Abi.withConsts,
+  sig_pre [VG.Proof.RsaKeyGen.X86.Search.contract, Proof.RsaKeyGen.primeSearchContract,
+    Proof.RsaKeyGen.primeSearchSig, abi, argSlots, argVal, argBytes, Abi.withConsts,
     VG.Impl.RsaKeyGen.TrialTable32.consts, VG.Proof.RsaKeyGen.X86.Candidate.packed_length, stackBelow]
   simp only [ce_arg h ha _ _ (show 0 < 12 by decide), ce_arg h ha _ _ (show 1 < 12 by decide),
     ce_arg h ha _ _ (show 2 < 12 by decide), ce_arg h ha _ _ (show 3 < 12 by decide),
@@ -1905,8 +1906,8 @@ theorem search_run (c : Srch) {p : GenPublic} {o s : State} {used : Nat} {st : K
   refine WP.of_syms (WP.call c.verified.1 c.noSp (by have := c.stack; omega)
     (search_pre F ha hst h.used_le) cov covW fun u' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ sy' => ?_)
   have hp := hpost
-  sig_post [VG.Proof.RsaKeyGen.X86.Search.contract, Spec.RsaKeyGen.primeSearchContract,
-    Spec.RsaKeyGen.primeSearchSig, abi, argSlots, argVal, argBytes, Abi.withConsts,
+  sig_post [VG.Proof.RsaKeyGen.X86.Search.contract, Proof.RsaKeyGen.primeSearchContract,
+    Proof.RsaKeyGen.primeSearchSig, abi, argSlots, argVal, argBytes, Abi.withConsts,
     VG.Impl.RsaKeyGen.TrialTable32.consts] at hp
   have hk : KeyOk p st u.mem := h.key.frame hi.kBound'
     (by rw [← hi.kR_eq]; exact A.lowK.sub_left (low_sub (by decide))) hfr
@@ -2337,7 +2338,7 @@ theorem key_pre {p : GenPublic} {o s₀ t : State} (h : Fr p o s₀ 72 t) (ha : 
     rw [l1, l17]
     have := A.scratchLength
     rwa [← hi.L_eq, ← hi.words_eq] at this
-  sig_pre [VG.Proof.RsaKeyGen.X86.Key.contract, Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argSlots,
+  sig_pre [VG.Proof.RsaKeyGen.X86.Key.contract, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argSlots,
     argVal, argBytes, stackBelow, VG.Proof.RsaKeyGen.X86.Key.keyStack]
   simp only [ce_key h ha _ _ (show 0 < 18 by decide), ce_key h ha _ _ (show 1 < 18 by decide), ce_key h ha _ _ (show 2 < 18 by decide), ce_key h ha _ _ (show 3 < 18 by decide), ce_key h ha _ _ (show 4 < 18 by decide), ce_key h ha _ _ (show 5 < 18 by decide), ce_key h ha _ _ (show 6 < 18 by decide), ce_key h ha _ _ (show 7 < 18 by decide), ce_key h ha _ _ (show 8 < 18 by decide), ce_key h ha _ _ (show 9 < 18 by decide), ce_key h ha _ _ (show 10 < 18 by decide), ce_key h ha _ _ (show 11 < 18 by decide), ce_key h ha _ _ (show 12 < 18 by decide), ce_key h ha _ _ (show 13 < 18 by decide), ce_key h ha _ _ (show 14 < 18 by decide), ce_key h ha _ _ (show 15 < 18 by decide), ce_key h ha _ _ (show 16 < 18 by decide), ce_key h ha _ _ (show 17 < 18 by decide), ha0, hret, hlw]
   sig_and_intros
@@ -2361,7 +2362,8 @@ namespace VG.Proof.RsaKeyGen.X86.Generate
 open VG VG.X86
 open VG.Proof.MlDsa.X86.Pack (Keep)
 open VG.Impl.RsaKeyGen.X86.Generate
-open VG.Spec.RsaKeyGen (KeyProgress keyOp keyStatus)
+open VG.Spec.RsaKeyGen (KeyProgress)
+open VG.Proof.RsaKeyGen (keyOp keyStatus)
 
 /-- The key from the primes at the slots of `p` and `q`. -/
 abbrev keyOf (p : GenPublic) (m : Mem) : Except Spec.RsaKeyGen.Failure (List (List Byte)) ⊕ Unit :=
@@ -2479,7 +2481,7 @@ theorem key_run (c : KeyImpl) {p : GenPublic} {o s : State} {used : Nat} {st : K
   refine WP.of_syms (WP.call c.verified.1 c.noSp (by have := c.stack; omega)
     (key_pre F ha) cov covW fun u' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ sy' => ?_)
   have hp := hpost
-  sig_post [VG.Proof.RsaKeyGen.X86.Key.contract, Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argSlots,
+  sig_post [VG.Proof.RsaKeyGen.X86.Key.contract, Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argSlots,
     argVal, argBytes] at hp
   simp only [ce_key F ha _ _ (show 0 < 18 by decide), ce_key F ha _ _ (show 1 < 18 by decide), ce_key F ha _ _ (show 2 < 18 by decide), ce_key F ha _ _ (show 4 < 18 by decide), ce_key F ha _ _ (show 5 < 18 by decide), ce_key F ha _ _ (show 6 < 18 by decide), ce_key F ha _ _ (show 8 < 18 by decide), ce_key F ha _ _ (show 10 < 18 by decide), ce_key F ha _ _ (show 12 < 18 by decide), ce_key F ha _ _ (show 14 < 18 by decide), ce_key F ha _ _ (show 15 < 18 by decide), ret_key F] at hp
   have hsl := c.stack

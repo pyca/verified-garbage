@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Search
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Search.Data
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Frame
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SearchInit
+import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

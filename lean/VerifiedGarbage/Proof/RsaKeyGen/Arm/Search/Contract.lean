@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-public import VerifiedGarbage.Spec.RsaKeyGen.GenerationContract
+public import VerifiedGarbage.Proof.RsaKeyGen.SearchContract
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract

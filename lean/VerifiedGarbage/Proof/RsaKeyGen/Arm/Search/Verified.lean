@@ -123,7 +123,7 @@ theorem cand_stack (v : RoundImpl) :
 
 theorem search_verified_of (c : Cand) :
     Verified target (Impl.RsaKeyGen.Arm.Search.code c.call)
-      (Spec.RsaKeyGen.primeSearchContract abi stackUse) :=
+      (Proof.RsaKeyGen.primeSearchContract abi stackUse) :=
   Verified.of_correct (search_correct c) (search_constantTime c) search_implies
 
 /-- `vg_rsa_keygen_candidate` calling the shared round `v`, as the search
@@ -139,7 +139,7 @@ abbrev searchCode [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) : Prog isa :=
   Impl.RsaKeyGen.Arm.Search.code (Cand.ofRound v).call
 
 theorem search_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
-    Verified target (searchCode v) (Spec.RsaKeyGen.primeSearchContract abi stackUse) :=
+    Verified target (searchCode v) (Proof.RsaKeyGen.primeSearchContract abi stackUse) :=
   search_verified_of (Cand.ofRound v)
 
 end VG.Proof.RsaKeyGen.Arm.Search

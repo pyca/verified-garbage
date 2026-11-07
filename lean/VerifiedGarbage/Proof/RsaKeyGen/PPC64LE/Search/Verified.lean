@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Body
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.CTTop
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.TrialOk
-public import VerifiedGarbage.Spec.RsaKeyGen.GenerationContract
+public import VerifiedGarbage.Proof.RsaKeyGen.SearchContract
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.Correct
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.CT
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Search.Implies
@@ -29,7 +29,7 @@ open VG.Proof.MillerRabin.PPC64LE (RoundImpl)
 
 theorem search_verified_of (c : Cand) :
     Verified target (Impl.RsaKeyGen.PPC64LE.Search.code c.call)
-      (Spec.RsaKeyGen.primeSearchContract (abi.withConsts tables) stackUse) :=
+      (Proof.RsaKeyGen.primeSearchContract (abi.withConsts tables) stackUse) :=
   Verified.of_correct (search_correct c) (search_constantTime c) search_implies
 
 theorem sdepth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : sdepth c = 0 := by
@@ -58,7 +58,7 @@ def Cand.ofRound (v : RoundImpl) : Cand where
 abbrev searchCode (v : RoundImpl) : Prog isa := Impl.RsaKeyGen.PPC64LE.Search.code (Cand.ofRound v).call
 
 theorem search_verified (v : RoundImpl) :
-    Verified target (searchCode v) (Spec.RsaKeyGen.primeSearchContract (abi.withConsts tables) stackUse) :=
+    Verified target (searchCode v) (Proof.RsaKeyGen.primeSearchContract (abi.withConsts tables) stackUse) :=
   search_verified_of (Cand.ofRound v)
 
 end VG.Proof.RsaKeyGen.PPC64LE.Search
