@@ -55,7 +55,12 @@ reaches the callers of one variant, without anyone listing it.
 The artifacts emitted include each generic function applied to each variant
 of its interface and target (each combination of a variant of each of its
 interfaces, and the list of every variant of each `All` interface), in order
-of their module names. What a variant is (its type)
+of their module names, but for a combination no CPU chooses: one that the
+function's dispatcher would never call, as every CPU that can run it runs
+another ranked before it (`Rust.neverChosen`; for instance Argon2's BLAKE2b
+`_avx2` with G's baseline, where G's `_avx2` needs the same features).
+Leaving it out only removes code: anything that calls it fails the
+emitter's check of calls (`Rust.checkCalls`). What a variant is (its type)
 is up to the interface, as long as every variant and every generic function
 of it agree, which elaboration checks. Nothing here needs trusting beyond
 the files found: every artifact carries its own proof, and
@@ -228,15 +233,19 @@ def driver (mods : List String) (gens : List (List String × List String) := [])
   imp "VerifiedGarbage.Dispatch" ++
   String.join ((mods ++ gens.flatMap (·.2) ++ vars.flatMap (·.2)).map imp) ++
   "\npublic section\n\nnamespace VG.Emit\n\n" ++
-  "def all : List Artifact := List.flatten [\n" ++
+  "def registered : List Artifact := List.flatten [\n" ++
   String.join (mods.map fun m => s!"  {listOf m},\n") ++
+  "  []]\n\n" ++
+  "def generic : List Artifact := List.flatten [\n" ++
   String.join (groups.map fun (gs, vs) => s!"  {instances gs vs},\n") ++
   "  []]\n\n" ++
+  "def all : List Artifact := registered ++ generic\n\n" ++
   "#assert_standard_axioms all\n" ++
   "#assert_no_compiler_overrides all VG.Dispatch.ranking run\n" ++
   "#assert_spec_origin\n\n" ++
   "end VG.Emit\n\n" ++
-  "def main (args : List String) : IO UInt32 :=\n  VG.Emit.run VG.Emit.all VG.Dispatch.ranking args\n\nend\n"
+  "def main (args : List String) : IO UInt32 :=\n  \
+    VG.Emit.run VG.Emit.registered VG.Emit.generic VG.Dispatch.ranking args\n\nend\n"
 
 /-- The target directory a registration, generic or variant module's path
 names: `X86_64` for `VerifiedGarbage.Artifacts.Sha3.X86_64`,
@@ -345,8 +354,11 @@ def codeDirs (dir : FilePath) : IO (List String) := do
       ds := ds ++ (Rust.generatedDirs (e.fileName.drop (Rust.crateDir "").length).toString).toArray
   return (ds.qsort (· < ·)).toList
 
-/-- Writes the files generated from `as` (with the dispatchers that `ranking`
-orders, `Rust.Rank`) under the directory in `args` (by
+/-- Writes the files generated from the registered artifacts `regs` and the
+instances of generic functions `gens` (with the dispatchers that `ranking`
+orders, `Rust.Rank`), but for each instance no dispatcher would ever call
+(`Rust.neverChosen`: a combination of variants no CPU chooses), under the
+directory in `args` (by
 default `../crates`), deleting any other generated file in the directories of
 generated files of a crate of generated code there (`codeDirs`, and nothing
 else: the rest of those crates, and the other crates, are not the emitter's);
@@ -357,8 +369,22 @@ With `--part FILE`, `as` are the artifacts of a part (`parts`): only the
 files of their targets' crates are written or checked, and the other generated
 files in those crates' directories of generated files; then `FILE` gets their targets, for `finish`, which
 checks the rest. -/
-def run (as : List Artifact) (ranking : Rust.Ranking) (args : List String) : IO UInt32 := do
+def run (regs gens : List Artifact) (ranking : Rust.Ranking) (args : List String) :
+    IO UInt32 := do
   let some (check, part, dir) := parseArgs args | do IO.eprintln usage; return 2
+  let never ← match Rust.neverChosen ranking (regs ++ gens) with
+    | .ok ns => pure ns
+    | .error e => do IO.eprintln e; return 1
+  -- A registration file lists its functions by hand: one no CPU chooses is to be
+  -- removed there.
+  let unchosen := regs.filter fun a => never.contains (a.target.name, a.name)
+  unless unchosen.isEmpty do
+    for a in unchosen do
+      IO.eprintln s!"{a.target.name}: {a.name}: its dispatcher never chooses it, as every CPU \
+        able to run it runs another implementation ranked before it: remove it from its \
+        registration file"
+    return 1
+  let as := regs ++ gens.filter fun a => !never.contains (a.target.name, a.name)
   let files ← match Rust.files as ranking with
     | .ok files => pure files
     | .error e => do IO.eprintln e; return 1

@@ -64,9 +64,14 @@ open VG.Emit
   \n\
   namespace VG.Emit\n\
   \n\
-  def all : List Artifact := List.flatten [\n  \
+  def registered : List Artifact := List.flatten [\n  \
     VG.Artifacts.Sha3.X86_64.artifacts,\n  \
     []]\n\
+  \n\
+  def generic : List Artifact := List.flatten [\n  \
+    []]\n\
+  \n\
+  def all : List Artifact := registered ++ generic\n\
   \n\
   #assert_standard_axioms all\n\
   #assert_no_compiler_overrides all VG.Dispatch.ranking run\n\
@@ -75,7 +80,7 @@ open VG.Emit
   end VG.Emit\n\
   \n\
   def main (args : List String) : IO UInt32 :=\n  \
-    VG.Emit.run VG.Emit.all VG.Dispatch.ranking args\n\
+    VG.Emit.run VG.Emit.registered VG.Emit.generic VG.Dispatch.ranking args\n\
   \n\
   end\n"
 
@@ -113,12 +118,17 @@ open VG.Emit
   \n\
   namespace VG.Emit\n\
   \n\
-  def all : List Artifact := List.flatten [\n  \
+  def registered : List Artifact := List.flatten [\n  \
     VG.Artifacts.Sha256.X86_64.artifacts,\n  \
+    []]\n\
+  \n\
+  def generic : List Artifact := List.flatten [\n  \
     (List.flatMap (fun v => List.flatten [VG.Generic.I.X86_64.A.artifacts v, \
       VG.Generic.I.X86_64.B.artifacts v]) \
       [VG.Variants.I.X86_64.P.variant, VG.Variants.I.X86_64.Q.variant]),\n  \
     []]\n\
+  \n\
+  def all : List Artifact := registered ++ generic\n\
   \n\
   #assert_standard_axioms all\n\
   #assert_no_compiler_overrides all VG.Dispatch.ranking run\n\
@@ -127,7 +137,7 @@ open VG.Emit
   end VG.Emit\n\
   \n\
   def main (args : List String) : IO UInt32 :=\n  \
-    VG.Emit.run VG.Emit.all VG.Dispatch.ranking args\n\
+    VG.Emit.run VG.Emit.registered VG.Emit.generic VG.Dispatch.ranking args\n\
   \n\
   end\n"
 
@@ -179,12 +189,17 @@ open VG.Emit
   \n\
   namespace VG.Emit\n\
   \n\
-  def all : List Artifact := List.flatten [\n  \
+  def registered : List Artifact := List.flatten [\n  \
+    []]\n\
+  \n\
+  def generic : List Artifact := List.flatten [\n  \
     (List.flatMap (fun v => (List.flatMap (fun v2 => \
       List.flatten [VG.Generic.I.J.X86_64.A.artifacts v v2]) \
       [VG.Variants.J.X86_64.R.variant, VG.Variants.J.X86_64.S.variant])) \
       [VG.Variants.I.X86_64.P.variant, VG.Variants.I.X86_64.Q.variant]),\n  \
     []]\n\
+  \n\
+  def all : List Artifact := registered ++ generic\n\
   \n\
   #assert_standard_axioms all\n\
   #assert_no_compiler_overrides all VG.Dispatch.ranking run\n\
@@ -193,7 +208,7 @@ open VG.Emit
   end VG.Emit\n\
   \n\
   def main (args : List String) : IO UInt32 :=\n  \
-    VG.Emit.run VG.Emit.all VG.Dispatch.ranking args\n\
+    VG.Emit.run VG.Emit.registered VG.Emit.generic VG.Dispatch.ranking args\n\
   \n\
   end\n"
 

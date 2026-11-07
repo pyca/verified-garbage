@@ -1824,11 +1824,37 @@ structure Arm where
   /-- Whether the ranking leaves it out (`Rank.skip`). -/
   skip : Bool
 
+/-- On x86 and x86-64, each CPU feature that `verified_garbage_cpu` reports
+only with another, and that other (`decode` and `REPORTED_WITH` in
+`crates/verified-garbage-cpu/src/detect.rs`): the features whose
+instructions are VEX- or EVEX-encoded only with AVX, and BMI2, ADX and
+AVX-512F only with AVX2, AES-NI only with SSSE3 and VAES only with AES-NI,
+as every CPU with the one has the other. -/
+def reportedWith : List (String × String) :=
+  [("avx2", "avx"), ("sha512", "avx"), ("vaes", "avx"), ("vpclmulqdq", "avx"),
+    ("avx512ifma", "avx"), ("avx512vl", "avx"), ("avx512bw", "avx"),
+    ("bmi2", "avx2"), ("adx", "avx2"), ("avx512f", "avx2"), ("aes", "ssse3"), ("vaes", "aes")]
+
+/-- The CPU features `verified_garbage_cpu` reports whenever it reports all
+of `fs` on the target `t` (`reportedWith`). It only decides which
+implementations no dispatcher chooses (`armsSplit`): a dispatcher still
+checks every feature an implementation needs before it runs it. -/
+def reported (t : String) (fs : List String) : List String :=
+  if t == "x86" || t == "x86_64" then go reportedWith.length fs else fs
+where
+  go : Nat → List String → List String
+    | 0, fs => fs
+    | n + 1, fs => go n (dedup (fs ++ reportedWith.filterMap fun (f, w) =>
+        if fs.contains f then some w else none))
+
 /-- The implementations `members` (each with its suffix) of a function or
 table of the module `m` of the target `t`, but its base, that its dispatcher
-tries, in order (see above), or why `rs` does not rank them. -/
-def armsOf (rs : List Rank) (m t : String) (members : List (Impl × String)) :
-    Except String (List Arm) := do
+tries, in order (see above), then those it leaves out because each can be
+chosen only where one before it can, given what the CPU detection reports
+(`reported`; never `Rank.skip`'s, which the Rust code calls itself); or why
+`rs` does not rank them. -/
+def armsSplit (rs : List Rank) (m t : String) (members : List (Impl × String)) :
+    Except String (List Arm × List Arm) := do
   let arm (a : Impl) (ranks : List Rank) : Arm :=
     ⟨a, dedup (ranks.flatMap (·.extra)), dedup (ranks.filterMap (·.vendor)),
       ranks.any (·.skip)⟩
@@ -1855,10 +1881,17 @@ def armsOf (rs : List Rank) (m t : String) (members : List (Impl × String)) :
   let sorted := keyed.mergeSort fun a b => lexLe a.1 b.1
   -- Leave out each implementation that can be chosen only where one before it can.
   let weaker (e l : Arm) : Bool :=
-    (e.impl.features ++ e.extra).all (l.impl.features ++ l.extra).contains &&
+    (e.impl.features ++ e.extra).all (reported t (l.impl.features ++ l.extra)).contains &&
       e.vendors.all l.vendors.contains && e.impl.gate.all l.impl.gate.contains
-  return sorted.foldl (init := []) fun acc (_, l) =>
-    if acc.any (weaker · l) then acc else acc ++ [l]
+  return sorted.foldl (init := ([], [])) fun (acc, out) (_, l) =>
+    if acc.any (weaker · l) then (acc, out ++ [l]) else (acc ++ [l], out)
+
+/-- The implementations `members` (each with its suffix) of a function or
+table of the module `m` of the target `t`, but its base, that its dispatcher
+tries, in order (see above), or why `rs` does not rank them. -/
+def armsOf (rs : List Rank) (m t : String) (members : List (Impl × String)) :
+    Except String (List Arm) :=
+  (armsSplit rs m t members).map (·.1)
 
 /-- The name of the dispatcher of the function whose base is `base`. -/
 def autoName (base : String) : String := base ++ "_auto"
@@ -2062,6 +2095,26 @@ def tableDispatchers (rs : List Rank) (t : String) (names : List String) (ts : L
       throw s!"{t}: {tableAutoName b.name} is both an artifact and the dispatcher of {b.name}"
     tableDispatcher rs t features gate rankModule b ms
   return String.join (texts.map ("\n" ++ ·))
+
+/-- The implementations of the artifacts `as` (by target and name) that no
+dispatcher would ever call, given `ranking`: those of a function with a
+dispatcher that each CPU able to run them would run another one ranked
+before (`armsSplit`). `Emit.run` does not emit those that are instances of
+generic functions (`Emit.instances`): such a combination of variants is one
+no CPU chooses, and nothing else calls it (`checkCalls` fails on a call of
+an artifact that is not emitted). -/
+def neverChosen (ranking : Ranking) (as : List Artifact) :
+    Except String (List (String × String)) :=
+  (targetsOf as).flatMapM fun (t, _) =>
+    let rs := (ranking.lookup t).getD []
+    let arts := as.filter (·.target.name == t)
+    (distinct arts (·.module)).flatMapM fun m =>
+      let gs := (groupsOf (arts.filter (·.module == m))).filter fun g =>
+        g.base.features.isEmpty && !g.members.isEmpty
+      gs.flatMapM fun g =>
+        match armsSplit rs m t (g.members.map fun (a, s) => (Impl.ofArtifact a, s)) with
+        | .ok (_, out) => .ok (out.map fun a => (t, a.impl.name))
+        | .error e => .error e
 
 /-- The module of the dispatchers of the target `t` (`dispatch/mod.rs` of its
 `codeDir`), declaring the file of each module `ms` with any. -/

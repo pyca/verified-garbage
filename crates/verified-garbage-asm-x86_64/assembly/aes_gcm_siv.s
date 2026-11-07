@@ -18326,7 +18326,7 @@ vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2:
 	jmp 21b
 	.p2align 6
 
-vg_aes_gcm_siv_seal_aesni_vpclmul:
+vg_aes_gcm_siv_seal_aesni_vpclmul_avx2:
 	lea rsp, [rsp-3848]
 	mov rax, QWORD PTR [rsp+3856]
 	mov QWORD PTR [rsp+8], rax
@@ -19119,7 +19119,7 @@ vg_aes_gcm_siv_seal_aesni_vpclmul:
 	ret
 	.p2align 6
 
-vg_aes_gcm_siv_open_aesni_vpclmul:
+vg_aes_gcm_siv_open_aesni_vpclmul_avx2:
 	lea rsp, [rsp-3848]
 	mov rax, QWORD PTR [rsp+3856]
 	mov QWORD PTR [rsp+8], rax
@@ -19954,10 +19954,6 @@ vg_aes_gcm_siv_open_aesni_vpclmul:
 	lea rsp, [rsp+3848]
 	ret
 	.p2align 6
-
-// vg_aes_gcm_siv_seal_aesni_vpclmul_avx2: the function `vg_aes_gcm_siv_seal_aesni_vpclmul`
-
-// vg_aes_gcm_siv_open_aesni_vpclmul_avx2: the function `vg_aes_gcm_siv_open_aesni_vpclmul`
 
 vg_aes_gcm_siv_seal_pclmul:
 	lea rsp, [rsp-3848]
@@ -28225,7 +28221,7 @@ vg_aes_gcm_siv_open_avx2:
 	jmp 21b
 	.p2align 6
 
-vg_aes_gcm_siv_seal_vaes:
+vg_aes_gcm_siv_seal_vaes_avx2:
 	lea rsp, [rsp-3848]
 	mov rax, QWORD PTR [rsp+3856]
 	mov QWORD PTR [rsp+8], rax
@@ -29018,7 +29014,7 @@ vg_aes_gcm_siv_seal_vaes:
 	ret
 	.p2align 6
 
-vg_aes_gcm_siv_open_vaes:
+vg_aes_gcm_siv_open_vaes_avx2:
 	lea rsp, [rsp-3848]
 	mov rax, QWORD PTR [rsp+3856]
 	mov QWORD PTR [rsp+8], rax
@@ -29854,11 +29850,7 @@ vg_aes_gcm_siv_open_vaes:
 	ret
 	.p2align 6
 
-// vg_aes_gcm_siv_seal_vaes_avx2: the function `vg_aes_gcm_siv_seal_vaes`
-
-// vg_aes_gcm_siv_open_vaes_avx2: the function `vg_aes_gcm_siv_open_vaes`
-
-vg_aes_gcm_siv_seal_vaes_pclmul:
+vg_aes_gcm_siv_seal_vaes_pclmul_avx2:
 	lea rsp, [rsp-3848]
 	mov rax, QWORD PTR [rsp+3856]
 	mov QWORD PTR [rsp+8], rax
@@ -30651,7 +30643,7 @@ vg_aes_gcm_siv_seal_vaes_pclmul:
 	ret
 	.p2align 6
 
-vg_aes_gcm_siv_open_vaes_pclmul:
+vg_aes_gcm_siv_open_vaes_pclmul_avx2:
 	lea rsp, [rsp-3848]
 	mov rax, QWORD PTR [rsp+3856]
 	mov QWORD PTR [rsp+8], rax
@@ -31487,11 +31479,7 @@ vg_aes_gcm_siv_open_vaes_pclmul:
 	ret
 	.p2align 6
 
-// vg_aes_gcm_siv_seal_vaes_pclmul_avx2: the function `vg_aes_gcm_siv_seal_vaes_pclmul`
-
-// vg_aes_gcm_siv_open_vaes_pclmul_avx2: the function `vg_aes_gcm_siv_open_vaes_pclmul`
-
-vg_aes_gcm_siv_seal_vaes_vpclmul:
+vg_aes_gcm_siv_seal_vaes_vpclmul_avx512:
 	lea rsp, [rsp-3848]
 	mov rax, QWORD PTR [rsp+3856]
 	mov QWORD PTR [rsp+8], rax
@@ -33437,7 +33425,7 @@ vg_aes_gcm_siv_seal_vaes_vpclmul:
 	ret
 	.p2align 6
 
-vg_aes_gcm_siv_open_vaes_vpclmul:
+vg_aes_gcm_siv_open_vaes_vpclmul_avx512:
 	lea rsp, [rsp-3848]
 	mov rax, QWORD PTR [rsp+3856]
 	mov QWORD PTR [rsp+8], rax
@@ -35710,11 +35698,7 @@ vg_aes_gcm_siv_open_vaes_vpclmul:
 	ret
 	.p2align 6
 
-// vg_aes_gcm_siv_seal_vaes_vpclmul_avx512: the function `vg_aes_gcm_siv_seal_vaes_vpclmul`
-
-// vg_aes_gcm_siv_open_vaes_vpclmul_avx512: the function `vg_aes_gcm_siv_open_vaes_vpclmul`
-
-vg_aes_gcm_siv_seal_vpclmul:
+vg_aes_gcm_siv_seal_vpclmul_avx2:
 	lea rsp, [rsp-3848]
 	mov rax, QWORD PTR [rsp+3856]
 	mov QWORD PTR [rsp+8], rax
@@ -36507,7 +36491,7 @@ vg_aes_gcm_siv_seal_vpclmul:
 	ret
 	.p2align 6
 
-vg_aes_gcm_siv_open_vpclmul:
+vg_aes_gcm_siv_open_vpclmul_avx2:
 	lea rsp, [rsp-3848]
 	mov rax, QWORD PTR [rsp+3856]
 	mov QWORD PTR [rsp+8], rax
@@ -37342,7 +37326,3 @@ vg_aes_gcm_siv_open_vpclmul:
 	lea rsp, [rsp+3848]
 	ret
 	.p2align 6
-
-// vg_aes_gcm_siv_seal_vpclmul_avx2: the function `vg_aes_gcm_siv_seal_vpclmul`
-
-// vg_aes_gcm_siv_open_vpclmul_avx2: the function `vg_aes_gcm_siv_open_vpclmul`
