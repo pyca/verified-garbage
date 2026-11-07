@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Modes.Ctr
 public import VerifiedGarbage.Spec.Cfb.Final
+public import VerifiedGarbage.Spec.Ofb.Final
 public import VerifiedGarbage.Proof.Modes.Fb
 import VerifiedGarbage.Proof.Modes.Cbc
+import VerifiedGarbage.Proof.AesOfb.Spec
+import VerifiedGarbage.Proof.Modes.CbcEnc
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
@@ -15,8 +18,10 @@ segments of a block of `L` bytes the last of which may be partial
 block, and leaves the block to continue from, `fbNextF`: the input block
 after the whole blocks, or the partial segment's output block. When it has,
 the data and the block are `Spec.Cfb.encryptFinal`'s and
-`encryptFinalNext`'s (`cfbEncFinal_of_bytes`), or `decryptFinal`'s and
-`decryptFinalNext`'s (`cfbDecFinal_of_bytes`). Nothing here depends on a
+`encryptFinalNext`'s (`cfbEncFinal_of_bytes`), `decryptFinal`'s and
+`decryptFinalNext`'s (`cfbDecFinal_of_bytes`), or, for OFB,
+`Spec.Ofb.cryptFinal`'s and the last output block used, `Spec.Ofb.next`
+after `⌈len / L⌉` blocks (`ofbFinal_of_bytes`). Nothing here depends on a
 cipher or a target.
 -/
 
@@ -217,5 +222,68 @@ theorem cfbDecFinal_of_bytes {L : Nat} (hL : 0 < L) {ciph : Spec.Cbc.Cipher} (hc
   refine ⟨cfbDecFinal_of ciph m₀ m' D iv len (by rw [fbFinal_blocks hc h, hb]) ?_, ?_⟩
   · rw [fbFinal_tail hL hc h, hn]
   · rw [fbNextF, hn]; exact cfbDecFinalNext_of ciph m₀ D iv len
+
+/-! ## OFB of a message's last piece -/
+
+/-- The number of blocks of `len` bytes, the last possibly partial:
+`len / L`, and one more if `len % L ≠ 0`. -/
+theorem blockCount_eq {L : Nat} (hL : 0 < L) (len : Nat) :
+    Spec.Ofb.blockCount L len = if len % L = 0 then len / L else len / L + 1 := by
+  have hd := Nat.div_add_mod len L
+  have hr := Nat.mod_lt len hL
+  unfold Spec.Ofb.blockCount
+  generalize len / L = n at hd
+  generalize len % L = r at hd hr
+  subst hd
+  split
+  · subst r
+    rw [Nat.add_zero, Nat.add_sub_assoc (by omega), Nat.mul_add_div hL, Nat.div_eq_of_lt (by omega), Nat.add_zero]
+  · rw [Nat.add_assoc, Nat.add_sub_assoc (by omega), Nat.mul_add_div hL,
+      Nat.div_eq_of_lt_le (k := 1) (by omega) (by omega)]
+
+theorem length_flatten_outputs {L : Nat} {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = L) :
+    ∀ (n : Nat) (iv : List Byte), (Spec.Ofb.outputs ciph iv n).flatten.length = L * n
+  | 0, _ => rfl
+  | n + 1, iv => by
+    rw [outputs_succ, List.flatten_cons, List.length_append, hc, length_flatten_outputs hc n, Nat.mul_succ,
+      Nat.add_comm]
+
+/-- XORing `n` blocks with OFB's `n` output blocks, all at once. -/
+theorem xor_flatten_outputs {L : Nat} {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = L) (m₀ : Mem) :
+    ∀ (n : Nat) (D : Addr) (iv : List Byte),
+      Spec.Cbc.xor (blocksOf L m₀ D n).flatten (Spec.Ofb.outputs ciph iv n).flatten =
+        (List.zipWith Spec.Cbc.xor (blocksOf L m₀ D n) (Spec.Ofb.outputs ciph iv n)).flatten
+  | 0, _, _ => rfl
+  | n + 1, D, iv => by
+    rw [blocksOf_succ, outputs_succ, List.flatten_cons, List.flatten_cons, List.zipWith_cons_cons,
+      List.flatten_cons, ← xor_flatten_outputs hc m₀ n]
+    exact List.zipWith_append (by rw [hc, bytesAt_length])
+
+/-- OFB of the `len` bytes at `D`, from the bytes and the block a final
+function leaves: `Spec.Ofb.cryptFinal`, and the last output block used,
+`Spec.Ofb.next` after `⌈len / L⌉` blocks. -/
+theorem ofbFinal_of_bytes {L : Nat} (hL : 0 < L) {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = L)
+    {m₀ m' : Mem} {D : Addr} {iv : List Byte} {len : Nat}
+    (h : ∀ i < len, m' (D + BitVec.ofNat 64 i) = (fbOut .ofb L ciph m₀ D iv (i / L)).getD (i % L) 0) :
+    bytesAt m' D len = Spec.Ofb.cryptFinal ciph L iv (bytesAt m₀ D len) ∧
+      fbNextF .ofb L ciph m₀ D iv len = Spec.Ofb.next ciph iv (Spec.Ofb.blockCount L len) := by
+  obtain ⟨hb, hn⟩ := ofb_of L ciph m₀ D iv (len / L)
+  have hx := xor_flatten_outputs hc m₀ (len / L) D iv
+  have hT := fbFinal_tail hL hc h
+  rw [hn] at hT
+  have hnB : (blocksOf L m₀ D (len / L)).length = len / L := by simp [blocksOf]
+  refine ⟨?_, ?_⟩
+  · rw [bytesAt_blocks_tail L m' D len, fbFinal_blocks hc h, hb, hT, Spec.Ofb.cryptFinal, bytesAt_length,
+      blockCount_eq hL, bytesAt_blocks_tail L m₀ D len, Spec.Ofb.crypt, hnB]
+    split
+    · rename_i h0
+      rw [h0, ← hx]
+      simp [bytesAt, Spec.Cbc.xor]
+    · rw [AesOfb.outputs_succ, List.flatten_append, List.flatten_singleton, ← hx]
+      exact (List.zipWith_append (by rw [← bytesAt_mul, bytesAt_length, length_flatten_outputs hc])).symm
+  · rw [fbNextF, hn, blockCount_eq hL]
+    split
+    · rfl
+    · exact (AesOfb.next_succ ciph iv _).symm
 
 end VG.Proof.Modes

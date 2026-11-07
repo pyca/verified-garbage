@@ -16,7 +16,9 @@ namespace VG
 
 materialize_code Impl.TripleDes.X86_64.cfbEncryptFinal
 materialize_code Impl.TripleDes.X86_64.cfbDecryptFinal
+materialize_code Impl.TripleDes.X86_64.ofbFinal
 materialize_code Impl.TripleDes.X86_64.cfbEncryptFinalI
 materialize_code Impl.TripleDes.X86_64.cfbDecryptFinalI
+materialize_code Impl.TripleDes.X86_64.ofbFinalI
 
 end VG
