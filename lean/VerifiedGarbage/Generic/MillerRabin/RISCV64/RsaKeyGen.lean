@@ -2,24 +2,25 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Backend
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
-public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Search.Verified
+public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Verified
+public import VerifiedGarbage.Proof.Rsa.RISCV64.Instances
 public import VerifiedGarbage.TCB.RISCV64.Print
 
-/-! # The RSA prime search on RISC-V, its candidates calling each shared Miller–Rabin implementation -/
+/-! # RSA key generation on RISC-V, its prime searches' candidates calling each shared Miller–Rabin implementation -/
 
 @[expose] public section
 
 namespace VG.Generic.MillerRabin.RISCV64.RsaKeyGen
 
 def artifacts (v : Proof.MillerRabin.RISCV64.RoundImpl) : List Artifact := [
-  Spec.RsaKeyGen.primeSearchApi.artifact RISCV64.target {
+  Spec.RsaKeyGen.keySearchApi.artifact RISCV64.target {
     suffix := v.suffix
-    stack := 496
+    stack := 656
     consts := Impl.RsaKeyGen.TrialTable32.consts
-    code := Proof.RsaKeyGen.RISCV64.Search.searchCode v
-    verified := Proof.RsaKeyGen.RISCV64.Search.search_verified v
+    code := Proof.RsaKeyGen.RISCV64.Generate.genCode v
+    verified := Proof.RsaKeyGen.RISCV64.Generate.gen_verified v
     features := v.features }]
 
 end VG.Generic.MillerRabin.RISCV64.RsaKeyGen
