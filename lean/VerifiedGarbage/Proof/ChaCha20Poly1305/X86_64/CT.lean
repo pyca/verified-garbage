@@ -4157,28 +4157,21 @@ theorem XArgsTo.pre (v : Proof.ChaCha20.X86_64.XorImpl) :
 
 end
 
-/-- More than `fold` bytes, from the ciphertext at `t` (`r12`) to the
-destination: the first `m` from the keystream of the prologue, the rest from
-counter `1 + m / 64`, by the implementation `v` of `vg_chacha20_xor` from the
-source to the destination (`Xor.callTo`). -/
-theorem cryptBigTo_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) {s : State}
-    (h : InvT s₀ t₁₂ s) (hs : SrcIO s₀ t₁₂) (hbig : ¬ L s₀ ≤ v.callee.fold)
-    (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀))
-    (hks : ∀ k < mOf v.callee.fold v.callee.pass (L s₀), s.mem (off (cx s₀) (736 + k)) =
-      (keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0) :
-    WP isa (cryptBig v.callee true) s (CryptedT s₀ t₁₂ s) := by
+/-- The call of the implementation `v` of `vg_chacha20_xor` from the
+ciphertext at `t` to the destination, for the bytes after the first `m`. -/
+theorem callTo_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) {t₁₂ : Addr}
+    (hs : SrcIO s₀ t₁₂) {m : Nat} {s₁ : State} (a₁ : XArgsTo s₀ t₁₂ m s₁) :
+    WP isa (callX v.callee true) s₁ fun s₂ =>
+      s₂.gpr .rsi = off (cx s₀) 128 ∧ (∀ r ∈ calleeSaved, s₂.gpr r = s₁.gpr r) ∧ s₂.rd = s₁.rd ∧
+      s₂.wr = s₁.wr ∧ Frame [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩, stkR s₀] s₁.mem s₂.mem ∧
+      Spec.ChaCha20.bytesAt s₂.mem (off (dp s₀) m) (L s₀ - m) = List.zipWith (· ^^^ ·)
+        (Spec.ChaCha20.bytesAt s₁.mem (off t₁₂ m) (L s₀ - m))
+        (keystream (stateAt s₁.mem (off (cx s₀) 64)) (L s₀ - m)) := by
   have hL9 := (s₀.gpr .r9).isLt
-  have hfl := v.fold_le
   have hd := v.depth_le
-  have hM := mOf_le v.callee.fold v.callee.pass (L s₀)
-  have hML := mOf_le_len v.callee.fold v.callee.pass (L s₀)
-  have hdvd : 64 ∣ mOf v.callee.fold v.callee.pass (L s₀) := by
-    rw [mOf_big hbig]; exact splitOf_dvd (pass_of v) _
-  generalize hm : mOf v.callee.fold v.callee.pass (L s₀) = m at hM hML hdvd hks
+  have hML := a₁.le
   have hLlt : L s₀ < 2 ^ 64 := hL9
   have sS := hs.1
-  refine WP.seq (WP.mono (cryptPreTo_ok v (pass_of v) hp h hs) fun s₁ ⟨a₁, cs₁, mx, fx, dx, m₁⟩ => ?_)
-  rw [hm] at a₁ fx dx m₁
   -- The regions of the call.
   have hsub : Region.Sub ⟨off t₁₂ m, L s₀ - m⟩ ⟨t₁₂, L s₀⟩ := off_sub_ofNat t₁₂ hML
   have hQ : s₁.gpr .r11 + s₁.gpr .rsi = off (dp s₀) m := by
@@ -4211,6 +4204,40 @@ theorem cryptBigTo_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : A
       stateAt_frame fT (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ((hp.stk_sub (k := 64) (n := 64) (by lit_omega)).sub_left (by rw [hrsp]; exact below8_24' _)).symm)]
+  have f₂' : Frame [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩, stkR s₀] s₁.mem s₂.mem := by
+    refine f₂.sub fun r hr => ?_
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨stkR s₀, by simp, by rw [hrsp]; exact below_sub (by omega_using [hd]) (by lit_omega)⟩
+  exact ⟨by rw [← hg₃ .rsi (by decide), hrsi₃, hE .rcx (by decide) (by decide), a₁.rcx], cs₂, rd₂, wr₂, f₂', data₂⟩
+
+/-- More than `fold` bytes, from the ciphertext at `t` (`r12`) to the
+destination: the first `m` from the keystream of the prologue, the rest from
+counter `1 + m / 64`, by the implementation `v` of `vg_chacha20_xor` from the
+source to the destination (`Xor.callTo`). -/
+theorem cryptBigTo_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) {s : State}
+    (h : InvT s₀ t₁₂ s) (hs : SrcIO s₀ t₁₂) (hbig : ¬ L s₀ ≤ v.callee.fold)
+    (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀))
+    (hks : ∀ k < mOf v.callee.fold v.callee.pass (L s₀), s.mem (off (cx s₀) (736 + k)) =
+      (keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0) :
+    WP isa (cryptBig v.callee true) s (CryptedT s₀ t₁₂ s) := by
+  have hL9 := (s₀.gpr .r9).isLt
+  have hfl := v.fold_le
+  have hd := v.depth_le
+  have hM := mOf_le v.callee.fold v.callee.pass (L s₀)
+  have hML := mOf_le_len v.callee.fold v.callee.pass (L s₀)
+  have hdvd : 64 ∣ mOf v.callee.fold v.callee.pass (L s₀) := by
+    rw [mOf_big hbig]; exact splitOf_dvd (pass_of v) _
+  generalize hm : mOf v.callee.fold v.callee.pass (L s₀) = m at hM hML hdvd hks
+  have hLlt : L s₀ < 2 ^ 64 := hL9
+  have sS := hs.1
+  refine WP.seq (WP.mono (cryptPreTo_ok v (pass_of v) hp h hs) fun s₁ ⟨a₁, cs₁, mx, fx, dx, m₁⟩ => ?_)
+  rw [hm] at a₁ fx dx m₁
+  refine WP.mono (callTo_ok v hp hs a₁) fun s₂ ⟨rsi₂, cs₂, rd₂, wr₂, f₂', data₂⟩ => ?_
+  have hrsp : s₁.gpr .rsp = s₀.gpr .rsp := a₁.rsp
   have fw : Frame [sub s₀ 64 64] mx s₁.mem := by
     rw [m₁]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
@@ -4221,14 +4248,6 @@ theorem cryptBigTo_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : A
   have st₁ : stateAt s₁.mem (off (cx s₀) 64) =
       VG.Proof.ChaCha20.ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (m / 64) := by
     rw [m₁, stateAt_ctrW, stateAt_frame fx dpre, hst, set12_ctr]
-  have f₂' : Frame [⟨off (cx s₀) 64, 64⟩, dRm s₀ m, ⟨off (cx s₀) 128, 320⟩, stkR s₀] s₁.mem s₂.mem := by
-    refine f₂.sub fun r hr => ?_
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨stkR s₀, by simp, by rw [hrsp]; exact below_sub (by omega_using [hd]) (by lit_omega)⟩
   -- A byte of the destination or the source is in none of the context's regions or the stack.
   have nctx : ∀ {k a n : Nat}, k < L s₀ → a + n ≤ 1696 → ¬ (sub s₀ a n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
     fun hk ha hc => hp.c_d _ (sub_ctx s₀ ha _ hc) (byte_dR hk)
@@ -4250,7 +4269,7 @@ theorem cryptBigTo_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : A
       exact fun hc => Offset.disjoint_base (dp s₀) (d := k) (n := 1) (by omega_using [hk])
         (by simp only [L] at hkL; omega_arith) _ (Region.contains_self _ _) hc
     · exact fun hc => d _ (Region.sub_prefix hML _ hc) (Offset.contains_base _ (by omega_using [hkL]) (by omega_arith))
-  refine ⟨by rw [← hg₃ .rsi (by decide), hrsi₃, hE .rcx (by decide) (by decide), a₁.rcx],
+  refine ⟨rsi₂,
     fun r hr _ => by rw [cs₂ r hr, cs₁ r hr], by rw [rd₂, a₁.rd, h.rd], by rw [wr₂, a₁.wr, h.wr], ?_, ?_⟩
   · refine (fx.sub fun r hr => ?_).trans ((fw.sub fun r hr => ?_).trans (f₂'.sub fun r hr => ?_))
     · simp only [List.mem_singleton] at hr; subst hr
