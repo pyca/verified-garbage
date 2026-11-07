@@ -16,7 +16,7 @@ writes.
 blocks in place, from the block in `iv`, which they replace with the one to
 continue from, the last ciphertext block (`Cbc.next`): a caller may encrypt
 or decrypt a message in pieces of whole blocks, keeping `iv` between calls.
-A partial last segment is the caller's.
+A partial last segment is left to the final functions (`Spec/Sm4/CfbFinal.lean`).
 
 Only the pointers and `n` are public: no part of the chaining value may
 affect timing.
