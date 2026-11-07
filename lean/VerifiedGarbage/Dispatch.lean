@@ -58,10 +58,12 @@ def ranking : Rust.Ranking := [
     { suffix := "_aes_cbc", skip := true },
     { suffix := "_aes_sha3" },
     { suffix := "_aes" },
-    -- FEAT_SHA3's Keccak is faster on Apple's cores, and slower on Neoverse N2.
+    -- FEAT_SHA3's Keccak is faster on Apple's cores, and slower on Neoverse N2:
+    -- ML-KEM's, SHA-3's and Ed448's. Elsewhere `_sha3` is SHA-512's code, or
+    -- ML-DSA's, which is chosen on every CPU with FEAT_SHA3.
     { suffix := "_x2_sha3_keccak_sha3", vendor := some "apple" },
     { suffix := "_x2_sha3" },
-    { suffix := "_sha3", modules := ["sha3"], vendor := some "apple" },
+    { suffix := "_sha3", modules := ["sha3", "ed448"], vendor := some "apple" },
     { suffix := "_sha3" },
     { suffix := "_sha2" },
     { suffix := "_sve2" },
