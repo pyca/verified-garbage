@@ -174,6 +174,9 @@ def encodeBlock (x : BitVec 64) : Block :=
 
 def validKey (n : Nat) : Prop := n = 16 ∨ n = 24
 
+instance (n : Nat) : Decidable (validKey n) :=
+  inferInstanceAs (Decidable (n = 16 ∨ n = 24))
+
 /-- For 16-byte keys the third component repeats the first. Defined on
 all lists; the expansion contract requires a valid length (`validKey`). -/
 def expandKey (key : List Byte) : Schedule :=

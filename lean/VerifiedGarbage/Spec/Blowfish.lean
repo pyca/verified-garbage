@@ -283,6 +283,9 @@ def expandKey (key : List Byte) : Schedule :=
 
 def validKey (n : Nat) : Prop := 4 ≤ n ∧ n ≤ 56
 
+instance (n : Nat) : Decidable (validKey n) :=
+  inferInstanceAs (Decidable (4 ≤ n ∧ n ≤ 56))
+
 /-! ## Blocks and ECB -/
 
 /-- A big-endian word from four bytes. -/

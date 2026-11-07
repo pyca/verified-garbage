@@ -61,9 +61,6 @@ The streaming interface of the Rust API (issue #1's `init`, `update` and
 updates buffer a partial block and emit the complete blocks, and
 finalization rejects a partial block. There is no padding. -/
 
-instance (n : Nat) : Decidable (validKey n) :=
-  inferInstanceAs (Decidable (n = 16 ∨ n = 24))
-
 /-- The complete 8-byte blocks of `data`; a partial suffix is left out. -/
 def blocks (data : List Byte) : List Block :=
   (List.range (data.length / 8)).map fun j =>
