@@ -16,7 +16,8 @@ Untrusted: everything here is checked by Lean. One iteration (`body_ok`):
 batch `c` encrypted (or decrypted) while batch `h` is hashed, woven
 (`parts_ok`, the parts independent by `Weave.lean`), then stored;
 `seal`'s (`c = h + 1`) hashes the ciphertext the previous iteration stored,
-`open`'s (`c = h`) the batch as it was. The setup (`setup_ok`), the loops for
+`open`'s (`c = h`) the batch as it was, the plaintext stored over it or,
+out of place, to the destination at `x15` (`advO_ok` advancing it). The setup (`setup_ok`), the loops for
 any number of rounds (`encLoop_ok`, `decLoop_ok`) and the end (`finish_ok`)
 make `enc` and `dec` meet `EPost` and `DPost` (`enc_ok`, `dec_ok`).
 -/
@@ -57,47 +58,78 @@ theorem adv_ok {s₀ : State} {u : State} {h c : Nat} (hc : c < nb s₀)
     rw [Offset.ofNat_sub_ofNat (by omega), show nb s₀ - c - 1 = nb s₀ - (c + 1) by omega]
   · rw [gpr_write_of_ne _ _ _ h11, gpr_write_of_ne _ _ _ h9]
 
+/-- The destination's pointer past the batch, out of place. -/
+theorem advO_ok {to : Bool} (u : State) :
+    WP isa (.block (cond to [.addImm .x .x15 .x15 128] [])) u fun u' =>
+      (to = true → u'.gpr .x15 = u.gpr .x15 + BitVec.ofNat 64 128) ∧
+      (∀ r, (to = true → r ≠ .x15) → u'.gpr r = u.gpr r) ∧ u'.v = u.v ∧ u'.mem = u.mem ∧
+      u'.sp = u.sp ∧ u'.rd = u.rd ∧ u'.wr = u.wr := by
+  cases to with
+  | false => exact WP.block_nil ⟨nofun, fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩
+  | true =>
+    rw [cond, WP.block_cons_iff]
+    refine ⟨_, exec_addImm_x (imm := 128) (by decide), WP.block_nil ?_⟩
+    refine ⟨fun _ => ?_, fun r hr => gpr_write_of_ne _ _ _ (hr rfl), rfl, rfl, rfl, rfl, rfl⟩
+    simp only [gpr_write_self, State.read, BitVec.setWidth_eq]
+
 /-! ## One iteration -/
 
-theorem body_ok {s₀ : State} (hp : KPre s₀) (gh : Gh8Ok) {hb : Nat → Block} {c h o : Nat}
+theorem body_ok {s₀ : State} {to : Bool} (hp : KPreM s₀ to) (gh : Gh8Ok) {hb : Nat → Block} {c h o : Nat}
     (hc : c < nb s₀) (hh : h < nb s₀) (hho : 128 * h + o = 128 * c) (ho : o = 0 ∨ o = 128)
-    {s : State} (hI : LInv s₀ hb c h s)
+    (hto : to = true → o = 0) {s : State} (hI : LInv s₀ to hb c h s)
     (hhb : ∀ j < 8, blockAt s.mem (dp s₀ + BitVec.ofNat 64 (16 * (8 * h + j))) = hb (8 * h + j)) :
-    WP isa (.block (parts (rounds s₀) o ++ stores o ++
-      ([.addImm .x .x9 .x9 128, .subImm .x .x11 .x11 1] : List Instr))) s (LInv s₀ hb (c + 1) (h + 1)) := by
+    WP isa (.block (parts (rounds s₀) o ++ storesAt (outReg to) o ++ adv to)) s
+      (LInv s₀ to hb (c + 1) (h + 1)) := by
   have ho' : o ≤ 128 := by omega
   have ho16 : o % 16 = 0 := by omega
+  have hout : s.gpr (outReg to) + BitVec.ofNat 64 o = op s₀ to + BitVec.ofNat 64 (128 * c) := by
+    cases to with
+    | false =>
+      show s.gpr .x9 + BitVec.ofNat 64 o = dp s₀ + BitVec.ofNat 64 (128 * c)
+      rw [hI.x9, Offset.add_add_eq _ hho]
+    | true =>
+      show s.gpr .x15 + BitVec.ofNat 64 o = s₀.gpr .x15 + BitVec.ofNat 64 (128 * c)
+      rw [hto rfl, BitVec.add_zero, hI.xo rfl]
+  have hout10 : outReg to ≠ .x10 := by cases to <;> decide
+  have hout12 : outReg to ≠ .x12 := by cases to <;> decide
   rw [List.append_assoc, WP.block_append_iff]
   refine parts_ok hp.rounds ho ?_
   refine WP.mono (aesStep hp hI hc hho ho' ho16) fun t ⟨hv, x10t, frt⟩ => ?_
   have gt : ∀ r, r ≠ .x10 → r ≠ .x12 → t.gpr r = s.gpr r := fun r h1 h2 => frt.gpr r (by simp [h1, h2])
   refine WP.mono (ghStep hp gh (hb := hb) (t := t) (by rw [frt.v _ (by decide), hI.y])
     (by rw [frt.v _ (by decide), hI.cr]) (by rw [gt _ (by decide) (by decide), hI.x9]) hh
-    (by rw [gt _ (by decide) (by decide), hI.gpr _ (by decide)])
+    (by rw [gt _ (by decide) (by decide), hI.gpr _ (notMem_kRegsT _ (by decide))])
     (by rw [frt.rd, frt.wr, hI.rd, hI.wr]) (by rw [frt.mem]; exact hI.frame)
     (fun j hj => by rw [frt.mem]; exact hhb j hj)) fun u ⟨hy, ou⟩ => ?_
   rw [WP.block_append_iff]
   have gu : ∀ r, r ≠ .x10 → r ≠ .x12 → u.gpr r = s.gpr r := fun r h1 h2 => by rw [ou.gpr, gt r h1 h2]
-  refine WP.mono (stores_ok hp hc ho' ho16 u (by rw [gu _ (by decide) (by decide), hI.x9,
-      Offset.add_add_eq _ hho]) (by rw [ou.mem, frt.mem]; exact hI.data) (by rw [ou.wr, frt.wr, hI.wr])
+  refine WP.mono (stores_ok hp hc ho' ho16 u (outReg to) (by rw [gu _ hout10 hout12, hout])
+      (by rw [ou.mem, frt.mem]; exact hI.data) (by rw [ou.wr, frt.wr, hI.wr])
     (fun j hj tt htt => by rw [ou.v _ (by unfold breg; split <;> decide)]; exact hv j hj tt htt))
     fun u₁ ⟨d₁, f₁, g₁, v₁, sp₁, rd₁, wr₁⟩ => ?_
-  refine WP.mono (adv_ok (h := h) hc (by rw [g₁, gu _ (by decide) (by decide), hI.x9])
-    (by rw [g₁, gu _ (by decide) (by decide), hI.x11])) fun u' ⟨x9', x11', g', v', m', sp', rd', wr'⟩ => ?_
-  have gall : ∀ r, r ≠ .x9 → r ≠ .x11 → u'.gpr r = u.gpr r := fun r h9 h11 => by rw [g' r h9 h11, g₁]
-  refine ⟨by omega, x9', ?_, x11', fun r hr => ?_, ?_, ?_, by rw [m']; exact d₁, ?_, ?_, ?_, ?_⟩
+  rw [adv, WP.block_append_iff]
+  refine WP.mono (advO_ok u₁) fun u₂ ⟨x15₂, g₂, v₂, m₂, sp₂, rd₂, wr₂⟩ => ?_
+  have g₂' : ∀ r, r ≠ .x15 → u₂.gpr r = u₁.gpr r := fun r h => g₂ r fun _ => h
+  refine WP.mono (adv_ok (h := h) hc (by rw [g₂' _ (by decide), g₁, gu _ (by decide) (by decide), hI.x9])
+    (by rw [g₂' _ (by decide), g₁, gu _ (by decide) (by decide), hI.x11]))
+    fun u' ⟨x9', x11', g', v', m', sp', rd', wr'⟩ => ?_
+  have gall : ∀ r, r ≠ .x9 → r ≠ .x11 → (to = true → r ≠ .x15) → u'.gpr r = u.gpr r :=
+    fun r h9 h11 h15 => by rw [g' r h9 h11, g₂ r h15, g₁]
+  refine ⟨by omega, x9', ?_, x11', fun ht => ?_, fun r hr => ?_, ?_, ?_, by rw [m', m₂]; exact d₁, ?_, ?_, ?_, ?_⟩
   · simp only [State.read] at x10t ⊢
-    rw [gall _ (by decide) (by decide), ou.gpr]; exact x10t
-  · simp only [kRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rw [gall r hr.1 hr.2.2.1, gu r hr.2.1 hr.2.2.2.1, hI.gpr r (by simp [kRegs, hr.1, hr.2.1, hr.2.2.1,
-      hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2])]
-  · rw [v', v₁, hy]
-  · rw [v', v₁, ou.v C (by decide), frt.v C (by decide), hI.cr]
-  · rw [m']
+    rw [gall _ (by decide) (by decide) (fun _ => by decide), ou.gpr]; exact x10t
+  · rw [g' _ (by decide) (by decide), x15₂ ht, g₁, gu _ (by decide) (by decide), hI.xo ht,
+      Offset.add_add_eq _ (show 128 * c + 128 = 128 * (c + 1) by omega)]
+  · obtain ⟨hrk, hr15⟩ := kRegsT_not hr
+    simp only [kRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hrk
+    rw [gall r hrk.1 hrk.2.2.1 hr15, gu r hrk.2.1 hrk.2.2.2.1, hI.gpr r hr]
+  · rw [v', v₂, v₁, hy]
+  · rw [v', v₂, v₁, ou.v C (by decide), frt.v C (by decide), hI.cr]
+  · rw [m', m₂]
     have : s.mem = u.mem := by rw [ou.mem, frt.mem]
     exact hI.frame.trans (this ▸ f₁)
-  · rw [sp', sp₁, ou.sp, frt.sp, hI.sp]
-  · rw [rd', rd₁, ou.rd, frt.rd, hI.rd]
-  · rw [wr', wr₁, ou.wr, frt.wr, hI.wr]
+  · rw [sp', sp₂, sp₁, ou.sp, frt.sp, hI.sp]
+  · rw [rd', rd₂, rd₁, ou.rd, frt.rd, hI.rd]
+  · rw [wr', wr₂, wr₁, ou.wr, frt.wr, hI.wr]
 
 end VG.Proof.Gcm.AArch64.Stitch

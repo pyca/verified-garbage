@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 
+
 /-!
 # Interleaved counter mode and GHASH on AArch64: the invariant of the loops
 
@@ -52,28 +53,85 @@ abbrev yh (hb : Nat → Block) (n : Nat) : Block := ghashFrom (hk s₀) (y₀ s�
 
 end
 
-/-- The invariant of the loops, after `c` batches encrypted and `h` hashed. -/
-structure LInv (s₀ : State) (hb : Nat → Block) (c h : Nat) (s : State) : Prop where
+/-- The bytes at `O`: the `16 k` first, the `16 k` at `D` XORed with the
+keystream; the rest, as they were. With `O = D`, `DataInv` (`dataInvM_self`). -/
+def DataInvM (m₀ m : Mem) (D O : Addr) (n k : Nat) (ks : Nat → Byte) : Prop :=
+  ∀ i < 16 * n, m (O + BitVec.ofNat 64 i) =
+    if i < 16 * k then m₀ (D + BitVec.ofNat 64 i) ^^^ ks i else m₀ (O + BitVec.ofNat 64 i)
+
+theorem dataInvM_self {m₀ m : Mem} {D : Addr} {n k : Nat} {ks : Nat → Byte} :
+    DataInvM m₀ m D D n k ks ↔ DataInv m₀ m D n k ks := by
+  refine ⟨fun h i hi => ?_, fun h i hi => ?_⟩ <;> rw [h i hi] <;> by_cases hk : i < 16 * k
+  · rw [ite_eq_left hk, ite_eq_left hk]
+  · rw [ite_eq_right hk, ite_eq_right hk]; exact BitVec.xor_zero.symm
+  · rw [ite_eq_left hk, ite_eq_left hk]
+  · rw [ite_eq_right hk, ite_eq_right hk]; exact BitVec.xor_zero
+
+/-- The invariant of the loops, after `c` batches encrypted and `h` hashed,
+the output at `op s₀ to` (`to` only for the decryption). -/
+structure LInv (s₀ : State) (to : Bool) (hb : Nat → Block) (c h : Nat) (s : State) : Prop where
   le : c ≤ nb s₀
   x9 : s.gpr .x9 = dp s₀ + BitVec.ofNat 64 (128 * h)
   x10 : s.read .w .x10 = ctr0 s₀ + BitVec.ofNat 32 (8 * c)
   x11 : s.gpr .x11 = BitVec.ofNat 64 (nb s₀ - c)
-  gpr : ∀ r, r ∉ kRegs → s.gpr r = s₀.gpr r
+  xo : to = true → s.gpr .x15 = s₀.gpr .x15 + BitVec.ofNat 64 (128 * c)
+  gpr : ∀ r, r ∉ kRegsT to → s.gpr r = s₀.gpr r
   y : s.v Y = ext8 (yh s₀ hb (8 * h)) (yh s₀ hb (8 * h))
   cr : s.v C = ofVDwords Impl.Gcm.AArch64.Pmull.poly Impl.Gcm.AArch64.Pmull.poly
-  data : DataInv s₀.mem s.mem (dp s₀) (8 * nb s₀) (8 * c) (kst s₀)
-  frame : Frame [dR s₀] s₀.mem s.mem
+  data : DataInvM s₀.mem s.mem (dp s₀) (op s₀ to) (8 * nb s₀) (8 * c) (kst s₀)
+  frame : Frame [oR s₀ to] s₀.mem s.mem
   sp : s.sp = s₀.sp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
+
+theorem dataInvM_frame {m₀ m m' : Mem} {D O : Addr} {n k : Nat} {ks : Nat → Byte} {rs : List Region}
+    (hf : Frame rs m m') (hd : ∀ r ∈ rs, Region.Disjoint ⟨O, 16 * n⟩ r) (hn : 16 * n < 2 ^ 64)
+    (h : DataInvM m₀ m D O n k ks) : DataInvM m₀ m' D O n k ks := fun i hi => by
+  rw [← h i hi]
+  exact hf.bytes (R := ⟨O, 16 * n⟩) hd (by simp only; omega) hi
+
+/-- A register the decryption keeps, in either mode. -/
+theorem notMem_kRegsT {r : Reg} (to : Bool) (h : r ∉ Reg.x15 :: kRegs) : r ∉ kRegsT to := by
+  cases to with
+  | false => exact fun h' => h (List.mem_cons_of_mem _ h')
+  | true => exact h
+
+theorem kRegsT_not {r : Reg} {to : Bool} (h : r ∉ kRegsT to) : r ∉ kRegs ∧ (to = true → r ≠ .x15) := by
+  cases to with
+  | false => exact ⟨h, nofun⟩
+  | true => exact ⟨fun h' => h (List.mem_cons_of_mem _ h'), fun _ e => h (e ▸ List.mem_cons_self ..)⟩
 
 /-! ## Memory -/
 
 theorem read_eq_readW (m : Mem) (p : Addr) : m.read p 16 = m.readW p 128 := by
   simp [Mem.readW]
 
-namespace KPre
-variable {s₀ : State} (hp : KPre s₀)
+/-- The in-place precondition, as the decryption's to the text. -/
+theorem KPre.toM {s₀ : State} (hp : KPre s₀) : KPreM s₀ false where
+  rounds := hp.rounds
+  nb1 := hp.nb1
+  k_in := hp.k_in
+  y_in := hp.y_in
+  c_in := hp.c_in
+  d_in := Proof.Aes.AArch64.Aese.inRegions_wr hp.d_in
+  o_in := hp.d_in
+  t_in := hp.t_in
+  d_k := hp.d_k
+  o_k := hp.d_k
+  o_y := hp.d_y
+  o_c := hp.d_c
+  o_t := hp.d_t
+  d_o := nofun
+  y_c := hp.y_c
+  wrap_d := hp.wrap_d
+  wrap_o := hp.wrap_d
+  wrap_k := hp.wrap_k
+  wrap_t := hp.wrap_t
+  wrap_s := hp.wrap_s
+  tbl := hp.tbl
+
+namespace KPreM
+variable {s₀ : State} {to : Bool} (hp : KPreM s₀ to)
 include hp
 
 theorem n16 : 128 * nb s₀ < 2 ^ 64 := by
@@ -88,25 +146,41 @@ theorem n16 : 128 * nb s₀ < 2 ^ 64 := by
       omega) (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_ofNat]; omega)
     exact this
 
-theorem c_frame {m : Mem} (hf : Frame [dR s₀] s₀.mem m) :
+theorem c_frame {m : Mem} (hf : Frame [oR s₀ to] s₀.mem m) :
     blockAt m (stp s₀ + BitVec.ofNat 64 48) = icb s₀ :=
   Proof.Gcm.blockAt_congr fun _ hk => hf.bytes (R := cR s₀)
-    (by simp only [List.mem_singleton, forall_eq]; exact hp.d_c.symm) (by show (16 : Nat) ≤ 2 ^ 64; decide) hk
+    (by simp only [List.mem_singleton, forall_eq]; exact hp.o_c.symm) (by show (16 : Nat) ≤ 2 ^ 64; decide) hk
 
-theorem t_frame {m : Mem} (hf : Frame [dR s₀] s₀.mem m) {o : Nat} (ho : o + 16 ≤ 192) :
+theorem t_frame {m : Mem} (hf : Frame [oR s₀ to] s₀.mem m) {o : Nat} (ho : o + 16 ≤ 192) :
     m.readW (wp s₀ + BitVec.ofNat 64 512 + BitVec.ofNat 64 o) 128 =
       s₀.mem.readW (wp s₀ + BitVec.ofNat 64 512 + BitVec.ofNat 64 o) 128 :=
   hf.readW (r := tR s₀) (Offset.contains_base _ (by omega) (by omega))
-    (by simp only [List.mem_singleton, forall_eq]; exact hp.d_t.symm) (by decide)
+    (by simp only [List.mem_singleton, forall_eq]; exact hp.o_t.symm) (by decide)
 
-theorem sch_frame {m : Mem} (hf : Frame [dR s₀] s₀.mem m) :
+theorem sch_frame {m : Mem} (hf : Frame [oR s₀ to] s₀.mem m) :
     Spec.Aes.bytesAt m (kc s₀) (16 * (Stitch.rounds s₀ + 1)) = ksch s₀ := by
   have hR := hp.rounds
   exact Proof.Cmac.bytesAt_frame hf (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact hp.d_k.symm.sub_left (Region.sub_prefix (by omega))) (by omega)
+    exact hp.o_k.symm.sub_left (Region.sub_prefix (by omega))) (by omega)
 
-end KPre
+end KPreM
+
+/-- The text from batch `c` on, as it was: in place, not yet written; out of
+place, never written. -/
+theorem LInv.src {s₀ : State} {to : Bool} (hp : KPreM s₀ to) {hb : Nat → Block} {c h : Nat} {s : State}
+    (hI : LInv s₀ to hb c h s) {i : Nat} (hc : 16 * (8 * c) ≤ i) (hi : i < 16 * (8 * nb s₀)) :
+    s.mem (dp s₀ + BitVec.ofNat 64 i) = s₀.mem (dp s₀ + BitVec.ofNat 64 i) := by
+  cases to with
+  | false =>
+    have := hI.data i hi
+    rw [ite_eq_right (by omega)] at this
+    exact this
+  | true =>
+    have hn := hp.n16
+    exact hI.frame.bytes (R := ⟨dp s₀, 16 * (8 * nb s₀)⟩) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (hp.d_o rfl).sub_left (Region.sub_prefix (by omega))) (by simp only; omega) hi
 
 /-! ## The blocks -/
 
