@@ -168,6 +168,15 @@ class Internal(unittest.TestCase):
         self.assertEqual(check_variants.variants(t), {"vg_g_s": ("vg_g", "s"), "vg_g_x_s": ("vg_g", "x_s"),
                                                       "vg_f_s": ("vg_f", "s")})
 
+    def test_qualified_part(self):
+        # `vg_f_t_s`'s suffix is a qualified part of `vg_g_t_s_u_s`'s whose
+        # `s` is a suffix (`vg_k_s`'s); `vg_f_u` has no such `<suffix>`.
+        t = self.targets({"vg_f": [], "vg_f_t_s": [], "vg_f_u": [], "vg_k": [], "vg_k_s": [],
+                          "vg_g": ["vg_f"], "vg_g_t_s_u_s": ["vg_f_t_s"]})["x"]
+        self.assertEqual(check_variants.variants(t), {"vg_k_s": ("vg_k", "s"),
+                                                      "vg_g_t_s_u_s": ("vg_g", "t_s_u_s"),
+                                                      "vg_f_t_s": ("vg_f", "t_s")})
+
     def test_flow(self):
         calls = {"vg_f": [], "vg_f_s": [], "vg_g": ["vg_f"], "vg_g_s": ["vg_f"], "vg_h": [],
                  "vg_h_s": []}
@@ -350,6 +359,13 @@ class Qualified(unittest.TestCase):
 
     def test_qualified(self):
         self.assertEqual(check_variants.check(fns(self.CALLS), self.RUST), [])
+
+    def test_qualified_part_in_any_position(self):
+        # Only the combination: its first part is the variant for `h_a`, its
+        # second the one for `f_b` (as DSA's `_sha1_avx_bmi_sha256_avx2`).
+        calls = {"vg_h": [], "vg_h_a": [], "vg_f": [], "vg_f_b": [],
+                 "vg_g": ["vg_h", "vg_f"], "vg_g_p_a_q_b": ["vg_h_a", "vg_f_b"]}
+        self.assertEqual(check_variants.check(fns(calls), "vg_g vg_g_p_a_q_b"), [])
 
     def test_qualified_missing(self):
         calls = {k: v for k, v in self.CALLS.items() if k != "vg_g_p_a_q_a"}
