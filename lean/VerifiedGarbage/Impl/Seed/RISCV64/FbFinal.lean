@@ -4,10 +4,10 @@ public import VerifiedGarbage.Impl.Seed.RISCV64.Modes
 public import VerifiedGarbage.Impl.Modes.RISCV64.SeqFinal
 
 /-!
-# SEED-CFB128 of a message's last piece on RISC-V
+# SEED-CFB128 and SEED-OFB of a message's last piece on RISC-V
 
-`cfbEncryptFinal` and `cfbDecryptFinal` (schedule = a0, iv = a1, data = a2,
-len = a3): the modes' CFB over a message's last piece, of any length
+`cfbEncryptFinal`, `cfbDecryptFinal` and `ofbFinal` (schedule = a0, iv = a1, data = a2,
+len = a3): the modes' CFB and OFB over a message's last piece, of any length
 (`Impl/Modes/RISCV64/SeqFinal.lean`), over Seed's one-block encryption core
 (`Modes.lean`), in its frame.
 -/
@@ -23,5 +23,8 @@ def cfbEncryptFinal : Prog isa := (dirCore .encrypt 1).seqFinal (Modes.Mode.cfbE
 
 /-- `vg_seed_cfb128_decrypt_final`. -/
 def cfbDecryptFinal : Prog isa := (dirCore .encrypt 1).seqFinal (Modes.Mode.cfbDec 4)
+
+/-- `vg_seed_ofb_final`. -/
+def ofbFinal : Prog isa := (dirCore .encrypt 1).seqFinal (Modes.Mode.ofb 4)
 
 end VG.Impl.Seed.RISCV64

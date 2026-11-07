@@ -1038,10 +1038,10 @@ theorem Ciph.pt {M : Mode} {s₀ s : State} (hp : FPre s₀) (h : Ciph M s₀ s)
 theorem Done.pt {M : Mode} {s₀ s : State} (hp : FPre s₀) (h : Done M s₀ s) : Pt s₀ s :=
   ⟨h.esp, h.wr, fun _ hi => hp.arg_keep (big_of h.frame) hi⟩
 
-theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
-    (hv : ∀ s, (modeX86 (cfbMode enc)).pre s →
-      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeX86 (cfbMode enc)).post s s')
-    (hct : ConstantTime isa (modeX86 (cfbMode enc)).pre (modeX86 (cfbMode enc)).pub whole)
+theorem final_rel {enc : Bool} {M : Mode} {name : String} {whole : Prog isa}
+    (hv : ∀ s, (modeX86 M).pre s →
+      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeX86 M).post s s')
+    (hct : ConstantTime isa (modeX86 M).pre (modeX86 M).pub whole)
     (hsp : NoSp whole) (hst : stackUse whole = 24) (v : BlocksImpl) {s₀ s₀' : State}
     (h0 : (finalX86 enc).pre s₀) (h0' : (finalX86 enc).pre s₀') (hq : (finalX86 enc).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (final name whole v.enc) fun _ _ => True := by
@@ -1071,9 +1071,9 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
   -- The whole blocks.
   have eRd : wholeRd s₀' = wholeRd s₀ := by simp only [wholeRd, fSch, fW, fE, qW, qE]
   have eWr : wholeWr s₀' = wholeWr s₀ := by simp only [wholeWr, fIvR, fBlk, fScr, fIv, fD, fS, qIv, qD, qS, qN]
-  have c₂ := RelCT.callWith (k := modeX86 (cfbMode enc)) (n := name) (rs := wholeRegs) hv hct
+  have c₂ := RelCT.callWith (k := modeX86 M) (n := name) (rs := wholeRegs) hv hct
     (P := fun a b => Setup s₀ a ∧ Setup s₀' b) (wholeRd s₀) (wholeWr s₀) fun a b ⟨ha, hb⟩ => by
-      have pb := hb.callPre (M := cfbMode enc) hp'
+      have pb := hb.callPre (M := M) hp'
       rw [eRd, eWr] at pb
       obtain ⟨a0, a1, a2, a3, a4, a5⟩ := ha.args hp
       obtain ⟨b0, b1, b2, b3, b4, b5⟩ := hb.args hp'
@@ -1088,18 +1088,18 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
         · rw [a4, b4, qN]
         · rw [a5, b5, qS]
   have r₂ : RelCT isa (fun a b => Setup s₀ a ∧ Setup s₀' b) (wholeCall name whole)
-      (fun a b => Whole (cfbMode enc) s₀ a ∧ Whole (cfbMode enc) s₀' b) :=
-    (RelCT.wp (c := wholeCall name whole) (F₁ := Whole (cfbMode enc) s₀) (F₂ := Whole (cfbMode enc) s₀') c₂
+      (fun a b => Whole M s₀ a ∧ Whole M s₀' b) :=
+    (RelCT.wp (c := wholeCall name whole) (F₁ := Whole M s₀) (F₂ := Whole M s₀') c₂
       fun a b h => ⟨whole_wp hv hsp hst hp h.1, whole_wp hv hsp hst hp' h.2⟩).mono
       (fun _ _ h => h) fun _ _ h => h.2
   -- The test.
   obtain ⟨_, t₃⟩ : ∃ h, (taint.check (argTaint [] (4 + 4 * 7)) (.block tailTest) h).isSome = true :=
     ⟨_, by taint_decide⟩
   have r₃ := ((RelCT.taint (A := taint)
-    (P := fun a b => Whole (cfbMode enc) s₀ a ∧ Whole (cfbMode enc) s₀' b) _
+    (P := fun a b => Whole M s₀ a ∧ Whole M s₀' b) _
     (fun a b h => Pt.agree (rs := []) hq hp hp' (h.1.pt hp) (h.2.pt hp') fun r hr => by simp at hr) t₃).wp
-    (F₁ := fun (s : State) => Whole (cfbMode enc) s₀ s ∧ s.zf = some (decide (fU s₀ = 0)))
-    (F₂ := fun (s : State) => Whole (cfbMode enc) s₀' s ∧ s.zf = some (decide (fU s₀' = 0)))
+    (F₁ := fun (s : State) => Whole M s₀ s ∧ s.zf = some (decide (fU s₀ = 0)))
+    (F₂ := fun (s : State) => Whole M s₀' s ∧ s.zf = some (decide (fU s₀' = 0)))
     fun a b h => ⟨final_test_wp hp h.1, final_test_wp hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
   -- The partial last segment.
   obtain ⟨_, t₄⟩ : ∃ h, (taint.check (argTaint [] (4 + 4 * 7)) (.block Impl.AesOfb.X86.ivArgs) h).isSome =
@@ -1107,36 +1107,36 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
   obtain ⟨_, t₅⟩ : ∃ h, (taint.check (argTaint [] (4 + 4 * 7))
       (.seq (.block xorArgs) (.loop (.block Impl.Modes.X86.tailByte) .ne)) h).isSome = true :=
     ⟨_, by taint_decide⟩
-  have tail (hu : fU s₀ ≠ 0) : RelCT isa (fun a b => Whole (cfbMode enc) s₀ a ∧ Whole (cfbMode enc) s₀' b)
-      (finalTail v.enc) fun a b => Done (cfbMode enc) s₀ a ∧ Done (cfbMode enc) s₀' b := by
+  have tail (hu : fU s₀ ≠ 0) : RelCT isa (fun a b => Whole M s₀ a ∧ Whole M s₀' b)
+      (finalTail v.enc) fun a b => Done M s₀ a ∧ Done M s₀' b := by
     have hu' : fU s₀' ≠ 0 := qU ▸ hu
     have a₄ := ((RelCT.taint (A := taint)
-      (P := fun a b => Whole (cfbMode enc) s₀ a ∧ Whole (cfbMode enc) s₀' b) _
+      (P := fun a b => Whole M s₀ a ∧ Whole M s₀' b) _
       (fun a b h => Pt.agree (rs := []) hq hp hp' (h.1.pt hp) (h.2.pt hp') fun r hr => by simp at hr) t₄).wp
-      (F₁ := fun (s : State) => Whole (cfbMode enc) s₀ s ∧ BlkPre s (fW s₀) (fIv s₀) (fS s₀) (fR s₀))
-      (F₂ := fun (s : State) => Whole (cfbMode enc) s₀' s ∧ BlkPre s (fW s₀') (fIv s₀') (fS s₀') (fR s₀'))
+      (F₁ := fun (s : State) => Whole M s₀ s ∧ BlkPre s (fW s₀) (fIv s₀) (fS s₀) (fR s₀))
+      (F₂ := fun (s : State) => Whole M s₀' s ∧ BlkPre s (fW s₀') (fIv s₀') (fS s₀') (fR s₀'))
       fun a b h => ⟨final_ivArgs_wp hp h.1, final_ivArgs_wp hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
     have a₅ := ((blk_rel (b := v.enc) v.encOk v.encCt (E := fE s₀)
-      (P := fun a b => (Whole (cfbMode enc) s₀ a ∧ BlkPre a (fW s₀) (fIv s₀) (fS s₀) (fR s₀)) ∧
-        (Whole (cfbMode enc) s₀' b ∧ BlkPre b (fW s₀') (fIv s₀') (fS s₀') (fR s₀')))
+      (P := fun a b => (Whole M s₀ a ∧ BlkPre a (fW s₀) (fIv s₀) (fS s₀) (fR s₀)) ∧
+        (Whole M s₀' b ∧ BlkPre b (fW s₀') (fIv s₀') (fS s₀') (fR s₀')))
       fun a b h => by
         have e₂ := h.2.2
         rw [← qW, ← qIv, ← qS, ← qR] at e₂
         exact ⟨h.1.2, e₂, h.1.1.esp, by rw [h.2.1.esp, qE]⟩).wp
-      (F₁ := Ciph (cfbMode enc) s₀) (F₂ := Ciph (cfbMode enc) s₀')
+      (F₁ := Ciph M s₀) (F₂ := Ciph M s₀')
       fun a b h => ⟨final_ciph_wp v hp h.1, final_ciph_wp v hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
     have a₆ := ((RelCT.taint (A := taint)
-      (P := fun a b => Ciph (cfbMode enc) s₀ a ∧ Ciph (cfbMode enc) s₀' b) _
+      (P := fun a b => Ciph M s₀ a ∧ Ciph M s₀' b) _
       (fun a b h => Pt.agree (rs := []) hq hp hp' (h.1.pt hp) (h.2.pt hp') fun r hr => by simp at hr) t₅).wp
-      (F₁ := Done (cfbMode enc) s₀) (F₂ := Done (cfbMode enc) s₀')
+      (F₁ := Done M s₀) (F₂ := Done M s₀')
       fun a b h => ⟨WP.seq (WP.mono (final_xorArgs_wp hp h.1) fun _ h₃ => final_xor_wp hp h₃ hu),
         WP.seq (WP.mono (final_xorArgs_wp hp' h.2) fun _ h₃ => final_xor_wp hp' h₃ hu')⟩).mono
           (fun _ _ h => h) fun _ _ h => h.2
     exact a₄.seq (a₅.seq a₆)
-  have r₄ : RelCT isa (fun a b => (Whole (cfbMode enc) s₀ a ∧ a.zf = some (decide (fU s₀ = 0))) ∧
-      (Whole (cfbMode enc) s₀' b ∧ b.zf = some (decide (fU s₀' = 0))))
+  have r₄ : RelCT isa (fun a b => (Whole M s₀ a ∧ a.zf = some (decide (fU s₀ = 0))) ∧
+      (Whole M s₀' b ∧ b.zf = some (decide (fU s₀' = 0))))
       (.ite .e (.block []) (finalTail v.enc))
-      (fun a b => Done (cfbMode enc) s₀ a ∧ Done (cfbMode enc) s₀' b) := by
+      (fun a b => Done M s₀ a ∧ Done M s₀' b) := by
     refine RelCT.ite (fun a b h => ?_) ?_ ?_
     · show a.zf = b.zf; rw [h.1.2, h.2.2, qU]
     · refine RelCT.block_nil fun a b h => ?_
@@ -1149,14 +1149,14 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
   -- The registers restored.
   obtain ⟨_, t₆⟩ : ∃ h, (taint.check (argTaint [] (4 + 4 * 7)) (.block finalRestore) h).isSome = true :=
     ⟨_, by taint_decide⟩
-  have r₅ := RelCT.taint (A := taint) (P := fun a b => Done (cfbMode enc) s₀ a ∧ Done (cfbMode enc) s₀' b) _
+  have r₅ := RelCT.taint (A := taint) (P := fun a b => Done M s₀ a ∧ Done M s₀' b) _
     (fun a b h => Pt.agree (rs := []) hq hp hp' (h.1.pt hp) (h.2.pt hp') fun r hr => by simp at hr) t₆
   exact r₁.seq (r₂.seq (r₃.seq (r₄.seq r₅)))
 
-theorem final_ct {enc : Bool} {name : String} {whole : Prog isa}
-    (hv : ∀ s, (modeX86 (cfbMode enc)).pre s →
-      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeX86 (cfbMode enc)).post s s')
-    (hct : ConstantTime isa (modeX86 (cfbMode enc)).pre (modeX86 (cfbMode enc)).pub whole)
+theorem final_ct {enc : Bool} {M : Mode} {name : String} {whole : Prog isa}
+    (hv : ∀ s, (modeX86 M).pre s →
+      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeX86 M).post s s')
+    (hct : ConstantTime isa (modeX86 M).pre (modeX86 M).pub whole)
     (hsp : NoSp whole) (hst : stackUse whole = 24) (v : BlocksImpl) :
     ConstantTime isa (finalX86 enc).pre (finalX86 enc).pub (final name whole v.enc) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (final_rel hv hct hsp hst v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1

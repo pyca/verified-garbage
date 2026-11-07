@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Cast5.CfbFinal
 public import VerifiedGarbage.Proof.Modes.PPC64LE.SeqFinal
 public import VerifiedGarbage.Impl.Cast5.PPC64LE.FbFinal
 public import VerifiedGarbage.Spec.Cast5.CfbFinal
+public import VerifiedGarbage.Spec.Cast5.OfbFinal
 import VerifiedGarbage.Proof.Cast5.PPC64LE.FbFinalLit
 import VerifiedGarbage.Proof.Cast5.ModeMem
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
@@ -20,6 +21,7 @@ meta import VerifiedGarbage.Proof.Cast5.CfbFinal
 meta import VerifiedGarbage.Proof.Modes.PPC64LE.SeqFinal
 meta import VerifiedGarbage.Impl.Cast5.PPC64LE.FbFinal
 meta import VerifiedGarbage.Spec.Cast5.CfbFinal
+meta import VerifiedGarbage.Spec.Cast5.OfbFinal
 meta import VerifiedGarbage.Proof.Cast5.ModeMem
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
@@ -29,11 +31,12 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
-# CAST5-CFB64 of a message's last piece on PPC64LE meets its contracts
+# CAST5-CFB64 and CAST5-OFB of a message's last piece on PPC64LE meet their contracts
 
 `modeFn m` moves the arguments to the modes' registers and runs `m n` for
 the count of rounds `n` (`modeFn_wp`), and each `m n` is here the modes' CFB
-over a message's last piece (`Proof.Modes.PPC64LE.cfbEncFinal_wp`, …) over
+or OFB over a message's last piece (`Proof.Modes.PPC64LE.cfbEncFinal_wp`, …,
+`ofbFinal_wp`) over
 CAST5's core with `n` rounds (`Mode.dirCoreSpec`). With the working space as
 the sixth argument (`finalP`, under the calling convention with the table:
 `finalPC`), as the whole-block functions are (`ModesVerified.lean`), but the
@@ -190,14 +193,12 @@ theorem cfbDecryptFinal_constantTime (pre : State → Prop) : ConstantTime isa p
 
 /-- The final functions' scratch contract with the table, from `finalP`'s
 implying it without. -/
-theorem implies_consts {post : State → State → Prop} {post' : Spec.Cast5.cfbFinalSig.Post abi.ptrBits}
-    (h : (finalP post).Implies (Proof.Cast5.modeScratchContract abi Spec.Cast5.cfbFinalSig 22
-      (Spec.Cast5.cfbFinalPre abi.ptrBits) post'))
+theorem implies_consts {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : State → State → Prop} {post' : sig.Post abi.ptrBits}
+    (h : (finalP post).Implies (Proof.Cast5.modeScratchContract abi sig 22 pre post'))
     (hpost : ∀ s s', post s s' → post (stripConsts ecbConsts s) s')
-    (hsat : ∃ s, (Proof.Cast5.modeScratchContract (abi.withConsts ecbConsts) Spec.Cast5.cfbFinalSig 22
-      (Spec.Cast5.cfbFinalPre abi.ptrBits) post').pre s) :
-    (finalPC post).Implies (Proof.Cast5.modeScratchContract (abi.withConsts ecbConsts) Spec.Cast5.cfbFinalSig 22
-      (Spec.Cast5.cfbFinalPre abi.ptrBits) post') where
+    (hsat : ∃ s, (Proof.Cast5.modeScratchContract (abi.withConsts ecbConsts) sig 22 pre post').pre s) :
+    (finalPC post).Implies (Proof.Cast5.modeScratchContract (abi.withConsts ecbConsts) sig 22 pre post') where
   pre s hs := by
     unfold Proof.Cast5.modeScratchContract Sig.scratchContract at hs
     exact ⟨h.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
@@ -322,5 +323,110 @@ theorem cfbDecryptFinal_framed :
     cfbDecryptFinal_verified (by decide) (by decide) (by decide)
     (fun vs m₁ m₂ hl _ h => Proof.Cast5.cfbFinalPre_local _ vs m₁ m₂ hl h)
     (Proof.Cast5.cfbDecFinalPost_local _) (Proof.Cast5.cfbDecFinalPostOut_local _) (frame_sat _)
+
+/-! ## OFB of a message's last piece -/
+
+/-- The final OFB function's postcondition. -/
+def ofbPost (s s' : State) : Prop :=
+  Spec.Ofb.CryptFinal (Spec.Cast5.cipher (keyOf s) (rounds s)) 8 s.mem s'.mem (s.gpr .r5) (s.gpr .r6)
+    (s.gpr .r7).toNat
+
+theorem ofbFinal_correct (s : State) (hs : (finalPC ofbPost).pre s) :
+    ∃ t s', Exec isa ofbFinal s t s' ∧ abiPreserved s s' ∧ ofbPost s s' := by
+  refine modeFn_wp (rounds_of hs) fun s₁ h₁ => WP.mono (Proof.Modes.PPC64LE.ofbFinal_wp
+    (dirCoreSpec true _ (rounds_of hs)) (seqPre_of hs h₁ true) (keyArgs_of hs h₁ true))
+    fun s' ⟨h1, h2⟩ => ⟨h₁.abi h1, ?_⟩
+  obtain ⟨eP, eD, eN⟩ := args_eq h₁
+  simp only [dirCore, dirCoreSpec, Proof.Cast5.dirCipher, ↓reduceIte, eP, eD, eN, h₁.mem] at h2
+  exact h2
+
+theorem ofbFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub ofbFinal :=
+  VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
+    (fun _ _ _ _ hp => modes_agree _ _ hp) (by taint_decide)
+
+/-- `finalP`'s precondition, public data and witness are the OFB scratch
+contract's under `abi`, for any postcondition it implies. -/
+theorem ofbFinalP_implies {post : State → State → Prop} {post' : Spec.Cast5.ofbFinalSig.Post abi.ptrBits}
+    (hpost : ∀ s s', post s s' → (Proof.Cast5.modeScratchContract abi Spec.Cast5.ofbFinalSig 22
+      (Spec.Cast5.ofbFinalPre abi.ptrBits) post').post s s') :
+    (finalP post).Implies (Proof.Cast5.modeScratchContract abi Spec.Cast5.ofbFinalSig 22
+      (Spec.Cast5.ofbFinalPre abi.ptrBits) post') where
+  pre s h := by
+    sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch,
+      Spec.Cast5.ofbFinalSig, Spec.Cast5.ofbFinalPre, abi, argRegs, stackBelow] at h
+    simp only [Curry.app] at h
+    exact h
+  post s s' _ hp := hpost s s' hp
+  pub s₁ s₂ _ _ h := by
+    sig_pub [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch,
+      Spec.Cast5.ofbFinalSig, abi, argRegs] at h
+    obtain ⟨hsp, h3, h4, h5, h6, h7, h8⟩ := h
+    exact ⟨hsp, by simp [h3, h4, h5, h6, h7, h8]⟩
+  sat := ⟨modeSat, by
+    sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch,
+      Spec.Cast5.ofbFinalSig, Spec.Cast5.ofbFinalPre, abi, argRegs, stackBelow]
+    simp only [Curry.app]
+    repeat' apply And.intro
+    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)⟩
+
+theorem ofbFinal_sat (post : Spec.Cast5.ofbFinalSig.Post abi.ptrBits) :
+    ∃ s, (Proof.Cast5.modeScratchContract (abi.withConsts ecbConsts) Spec.Cast5.ofbFinalSig 22
+      (Spec.Cast5.ofbFinalPre abi.ptrBits) post).pre s := by
+  refine ⟨modeSatC, ?_⟩
+  have hl : s1234.length = 512 := by rw [Impl.Cast5.s1234, table_length]
+  have held := ecbSatMem_held
+  generalize e : modeSatC = s
+  sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch,
+    Spec.Cast5.ofbFinalSig, Spec.Cast5.ofbFinalPre, abi, argRegs, ecbConsts_eq, Abi.withConsts,
+    Abi.constRegions, Abi.constsHeld, stackBelow, Proof.Cast5.s1234_length]
+  subst e
+  simp only [Curry.app]
+  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, ?_⟩
+  · change r ∈ [(⟨0x2000, 8⟩ : Region), ⟨0x3000, 0⟩, ⟨0x4000, 176⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · repeat' apply And.intro
+    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+
+theorem ofb_implies : (finalPC ofbPost).Implies (Proof.Cast5.modeScratchContract (abi.withConsts ecbConsts)
+    Spec.Cast5.ofbFinalSig 22 (Spec.Cast5.ofbFinalPre abi.ptrBits) (Proof.Cast5.ofbFinalPost abi.ptrBits)) :=
+  implies_consts (ofbFinalP_implies fun s s' hp => by
+    sig_post [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch,
+      Spec.Cast5.ofbFinalSig, Proof.Cast5.ofbFinalPost, abi, argRegs]
+    simp only [Curry.app]
+    exact hp) (fun _ _ h => h) (ofbFinal_sat _)
+
+theorem ofbFinal_verified : Verified target ofbFinal
+    (Proof.Cast5.modeScratchContract (abi.withConsts ecbConsts) Spec.Cast5.ofbFinalSig 22
+      (Spec.Cast5.ofbFinalPre abi.ptrBits) (Proof.Cast5.ofbFinalPost abi.ptrBits)) :=
+  Verified.of_correct ofbFinal_correct (ofbFinal_constantTime _) ofb_implies
+
+theorem ofbFrame_sat (post : Spec.Cast5.ofbFinalSig.Post abi.ptrBits) :
+    ∃ s, (Spec.Cast5.ofbFinalSig.contract (abi.withConsts ecbConsts) (Spec.Cast5.ofbFinalPre abi.ptrBits)
+      post true (0 + 208)).pre s := by
+  refine ⟨frameSatC, ?_⟩
+  have held := ecbSatMem_held
+  have hl := Proof.Cast5.s1234_length
+  generalize e : frameSatC = s
+  sig_pre [Spec.Cast5.ofbFinalSig, Spec.Cast5.ofbFinalPre, abi, argRegs, ecbConsts_eq, Abi.withConsts,
+    Abi.constRegions, Abi.constsHeld, stackBelow, Proof.Cast5.s1234_length]
+  subst e
+  refine ⟨by decide, rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, ?_⟩
+  · change r ∈ [(⟨0x2000, 8⟩ : Region), ⟨0x3000, 0⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · repeat' apply And.intro
+    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+
+/-- `ofbFinal` with its working space on the stack. -/
+theorem ofbFinal_framed :
+    Verified target (Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 ofbFinal)
+      (Proof.Cast5.ofbFinalRoundsContract (abi.withConsts ecbConsts) 208) :=
+  PPC64LE.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbFinalSig)
+    (nm := "scratch") (e := .u64) (n := 22) (pre := Spec.Cast5.ofbFinalPre abi.ptrBits)
+    (post := Proof.Cast5.ofbFinalPost abi.ptrBits) (wa := true) (stack := 0) (bytes := 208) (words := 22)
+    ofbFinal_verified (by decide) (by decide) (by decide)
+    (fun vs m₁ m₂ hl _ h => Proof.Cast5.ofbFinalPre_local _ vs m₁ m₂ hl h)
+    (Proof.Cast5.ofbFinalPost_local _) (Proof.Cast5.ofbFinalPostOut_local _) (ofbFrame_sat _)
 
 end VG.Proof.Cast5.PPC64LE.FbFinal

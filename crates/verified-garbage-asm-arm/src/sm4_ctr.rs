@@ -2371,3 +2371,100 @@ bx lr",
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
     )
 }
+
+/// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.ctrFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the counter block or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr` and `data` may overlap the 1584 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_sm4_ctr_final(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #64
+add r12, sp, #0
+str lr, [r12, #4]
+add lr, sp, #8
+str lr, [r12, #0]
+ldr lr, [sp, #4]
+ldr r12, [sp, #0]
+str r4, [r12, #0]
+str r5, [r12, #4]
+str r6, [r12, #8]
+str r7, [r12, #12]
+str r8, [r12, #16]
+str r9, [r12, #20]
+str r10, [r12, #24]
+str r11, [r12, #28]
+str lr, [r12, #32]
+mov r4, r0
+mov r6, r1
+and r8, r3, #15
+lsr r3, r3, #4
+add r7, r2, r3, lsl #4
+bl {vg_sm4_ctr}
+cmp r8, #0
+beq 20f
+ldr r12, [sp, #0]
+mov r0, #0
+str r0, [r12, #40]
+str r0, [r12, #44]
+str r0, [r12, #48]
+str r0, [r12, #52]
+mov r0, r4
+mov r1, r6
+add r2, r12, #40
+mov r3, #1
+bl {vg_sm4_ctr}
+ldr r12, [sp, #0]
+add r0, r12, #40
+mov r6, r7
+mov r7, r8
+22:
+ldrb r9, [r6, #0]
+ldrb r10, [r0, #0]
+eor r9, r9, r10
+strb r9, [r6, #0]
+add r0, r0, #1
+add r6, r6, #1
+subs r7, r7, #1
+bne 22b
+b 21f
+20:
+21:
+ldr r12, [sp, #0]
+ldr r4, [r12, #0]
+ldr r5, [r12, #4]
+ldr r6, [r12, #8]
+ldr r7, [r12, #12]
+ldr r8, [r12, #16]
+ldr r9, [r12, #20]
+ldr r10, [r12, #24]
+ldr r11, [r12, #28]
+ldr lr, [r12, #32]
+add r12, sp, #8
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+str r2, [r12, #40]
+str r2, [r12, #44]
+str r2, [r12, #48]
+str r2, [r12, #52]
+add sp, sp, #64
+bx lr",
+        vg_sm4_ctr = sym super::sm4_ctr::vg_sm4_ctr,
+    )
+}

@@ -1246,3 +1246,105 @@ vg_camellia_ctr:
 	lea esp, [esp+2756]
 	ret
 	.p2align 6
+
+vg_camellia_ctr_final:
+	lea esp, [esp-60]
+	mov eax, DWORD PTR [esp+64]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+72]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+76]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+80]
+	mov DWORD PTR [esp+20], eax
+	mov eax, esp
+	add eax, 28
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+24]
+	mov DWORD PTR [eax], ebx
+	mov DWORD PTR [eax+4], esi
+	mov DWORD PTR [eax+8], edi
+	mov DWORD PTR [eax+12], ebp
+	mov eax, DWORD PTR [esp+4]
+	mov ecx, DWORD PTR [esp+8]
+	mov edx, DWORD PTR [esp+12]
+	mov ebx, DWORD PTR [esp+16]
+	mov esi, DWORD PTR [esp+20]
+	shr esi, 4
+	push esi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_camellia_ctr}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [esp+20]
+	and eax, 15
+	test eax, eax
+	je 20f
+	mov eax, DWORD PTR [esp+24]
+	mov ecx, 0
+	mov DWORD PTR [eax+16], ecx
+	mov DWORD PTR [eax+20], ecx
+	mov DWORD PTR [eax+24], ecx
+	mov DWORD PTR [eax+28], ecx
+	mov ebx, eax
+	add ebx, 16
+	mov eax, DWORD PTR [esp+4]
+	mov ecx, DWORD PTR [esp+8]
+	mov edx, DWORD PTR [esp+12]
+	mov esi, 1
+	push esi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_camellia_ctr}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov ebx, DWORD PTR [esp+24]
+	add ebx, 16
+	mov esi, DWORD PTR [esp+16]
+	mov ebp, DWORD PTR [esp+20]
+	mov eax, ebp
+	and ebp, 15
+	sub eax, ebp
+	add esi, eax
+22:
+	movzx eax, BYTE PTR [ebx]
+	movzx ecx, BYTE PTR [esi]
+	xor ecx, eax
+	mov BYTE PTR [esi], cl
+	add ebx, 1
+	add esi, 1
+	sub ebp, 1
+	jne 22b
+	jmp 21f
+20:
+21:
+	mov eax, DWORD PTR [esp+24]
+	mov ebx, DWORD PTR [eax]
+	mov esi, DWORD PTR [eax+4]
+	mov edi, DWORD PTR [eax+8]
+	mov ebp, DWORD PTR [eax+12]
+	mov ecx, 0
+	mov DWORD PTR [esp+28], ecx
+	mov DWORD PTR [esp+32], ecx
+	mov DWORD PTR [esp+36], ecx
+	mov DWORD PTR [esp+40], ecx
+	mov DWORD PTR [esp+44], ecx
+	mov DWORD PTR [esp+48], ecx
+	mov DWORD PTR [esp+52], ecx
+	mov DWORD PTR [esp+56], ecx
+	lea esp, [esp+60]
+	ret
+	.p2align 6

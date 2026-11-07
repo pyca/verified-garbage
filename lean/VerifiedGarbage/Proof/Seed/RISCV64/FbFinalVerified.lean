@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Seed.RISCV64.ModesVerified
 public import VerifiedGarbage.Proof.Modes.RISCV64.SeqFinal
 public import VerifiedGarbage.Impl.Seed.RISCV64.FbFinal
 public import VerifiedGarbage.Spec.Seed.CfbFinal
+public import VerifiedGarbage.Spec.Seed.OfbFinal
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.Lit
@@ -12,16 +13,17 @@ meta import VerifiedGarbage.Proof.Seed.RISCV64.ModesVerified
 meta import VerifiedGarbage.Proof.Modes.RISCV64.SeqFinal
 meta import VerifiedGarbage.Impl.Seed.RISCV64.FbFinal
 meta import VerifiedGarbage.Spec.Seed.CfbFinal
+meta import VerifiedGarbage.Spec.Seed.OfbFinal
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Seed.RISCV64.FbFinalLit
 
 /-!
-# SEED-CFB128 of a message's last piece on RISC-V meets its contracts
+# SEED-CFB128 and SEED-OFB of a message's last piece on RISC-V meet their contracts
 
-The modes' CFB over a message's last piece (`Proof.Modes.RISCV64.cfbEncFinal_wp`,
-`cfbDecFinal_wp`) over Seed's one-block encryption core meets the contracts,
+The modes' CFB and OFB over a message's last piece (`Proof.Modes.RISCV64.cfbEncFinal_wp`,
+`cfbDecFinal_wp`, `ofbFinal_wp`) over Seed's one-block encryption core meet the contracts,
 with `stack := 1104`, that core's frame (`ModesVerified.lean`), whose
 precondition, with the data `len` bytes, is `seq`'s for the data a byte at a
 time (`byteMode`). Constant time as the whole-block functions.
@@ -41,6 +43,8 @@ def encFinalPost (s s' : State) : Prop :=
   Spec.Cfb.EncryptFinal (ciph s) 16 s.mem s'.mem (s.gpr .a1) (s.gpr .a2) (s.gpr .a3).toNat
 def decFinalPost (s s' : State) : Prop :=
   Spec.Cfb.DecryptFinal (ciph s) 16 s.mem s'.mem (s.gpr .a1) (s.gpr .a2) (s.gpr .a3).toNat
+def ofbFinalPost (s s' : State) : Prop :=
+  Spec.Ofb.CryptFinal (ciph s) 16 s.mem s'.mem (s.gpr .a1) (s.gpr .a2) (s.gpr .a3).toNat
 
 /-- A final function on RISC-V, with its frame below the stack pointer, the
 data `len` bytes, and the postcondition `post`. -/
@@ -93,6 +97,11 @@ theorem cfbDecryptFinal_correct (s : State) (hs : (finalContract decFinalPost).p
   WP.mono (Proof.Modes.RISCV64.cfbDecFinal_wp (dirCoreSpec .encrypt 1 (by decide) (by decide)) (seqPreF_of hs) (keyArgsF_of hs))
     fun _ ⟨h1, h2, _⟩ => by simp only [cipher_enc] at h2; exact ⟨h1, h2⟩
 
+theorem ofbFinal_correct (s : State) (hs : (finalContract ofbFinalPost).pre s) :
+    ∃ t s', Exec isa ofbFinal s t s' ∧ abiPreserved s s' ∧ (finalContract ofbFinalPost).post s s' :=
+  WP.mono (Proof.Modes.RISCV64.ofbFinal_wp (dirCoreSpec .encrypt 1 (by decide) (by decide)) (seqPreF_of hs) (keyArgsF_of hs))
+    fun _ ⟨h1, h2, _⟩ => by simp only [cipher_enc] at h2; exact ⟨h1, h2⟩
+
 /-! ## Constant time -/
 
 theorem cfbEncryptFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbEncryptFinal :=
@@ -100,6 +109,10 @@ theorem cfbEncryptFinal_constantTime (pre : State → Prop) : ConstantTime isa p
     (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
 
 theorem cfbDecryptFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbDecryptFinal :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+    (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
+
+theorem ofbFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub ofbFinal :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
     (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
 
@@ -116,5 +129,11 @@ theorem cfbDecryptFinal_verified :
   refine Verified.of_correct cfbDecryptFinal_correct (cfbDecryptFinal_constantTime _) ?_
   contract_implies [Spec.Seed.cfbDecryptFinalContract, Spec.Seed.cfbFinalSig, RISCV64.abi,
     RISCV64.argRegs, finalContract, decFinalPost, modePub_iff] [modeSat] using modeSat
+
+theorem ofbFinal_verified :
+    Verified RISCV64.target ofbFinal (Spec.Seed.ofbFinalContract RISCV64.abi (frameBytes 1)) := by
+  refine Verified.of_correct ofbFinal_correct (ofbFinal_constantTime _) ?_
+  contract_implies [Spec.Seed.ofbFinalContract, Spec.Seed.ofbFinalSig, RISCV64.abi,
+    RISCV64.argRegs, finalContract, ofbFinalPost, modePub_iff] [modeSat] using modeSat
 
 end VG.Proof.Seed.RISCV64.Modes

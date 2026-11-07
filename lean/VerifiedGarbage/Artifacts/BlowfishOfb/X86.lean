@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
 import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
+public import VerifiedGarbage.Proof.Blowfish.X86.FbFinalVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Blowfish.X86.FbFinalLit
 
 /-! # Blowfish-OFB artifacts on baseline x86 (32-bit) -/
 
@@ -15,6 +17,10 @@ def artifacts : List Artifact := [
   Spec.Blowfish.ofbApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofb
     stack := 112
-    verified := Proof.Blowfish.X86.Fb.ofb_framed }]
+    verified := Proof.Blowfish.X86.Fb.ofb_framed },
+  Spec.Blowfish.ofbFinalApi.artifact X86.target {
+    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofbFinal
+    stack := 112
+    verified := Proof.Blowfish.X86.FbFinal.ofbFinal_framed }]
 
 end VG.Artifacts.BlowfishOfb.X86

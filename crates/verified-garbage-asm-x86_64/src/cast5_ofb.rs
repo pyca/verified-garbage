@@ -65,3 +65,75 @@ jmp 21f
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
 }
+
+/// CAST5-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 2144 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Cast5.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_cast5_ofb_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJBD///9JieFJg8EITYnJSYmZqAAAAEmJqbAAAABNiaG4AAAATYmpwAAAAE2JscgAAABNibnQAAAAZkwPbvpJicxNicVIiwdJiUEoSItHCEmJQTBIi0cQSYlBOEiLRxhJiUFASItHIEmJQUhIi0coSYlBUEiLRzBJiUFYSItHOEmJQWBIi0dASYlBaEiLR0hJiUFwSItHUEmJQXhIi0dYSYmBgAAAAEiLR2BJiYGIAAAASItHaEmJgZAAAABIi0dwSYmBmAAAAEiLR3hJiYGgAAAAZkwPfvhIiyhJiWkQTYXt"
+je 20f
+22:
+.base64 "ZkwPfvlNichNiWAYTYloIEyJykiDwhBMic9Ig8coixoPy4tqBA/NSYn8SYn1ScHtAkmDxQFIg/4Q"
+23:
+.base64 "QYsEJAHoRYtMJEBFic5Bg+YBQYPuAUGJx0HBzx9EMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzx5EMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzxxEMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzxhEMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzxBEMfhEIfBEMfhBicFBgeH/AAAAQYnGQcHuCEGB5v8AAABJweYgTQnxZkkPbsFBicFBwekQQYHh/wAAAEGJxkHB7hhJweYgTQnxZkkPbuFmD2zE"
+lea r10, [rip + {VG_CAST5_S1234}]
+.base64 "QbtAAAAAZg/vyWYP79JmD3bbZg9y0x9mD2/gZg/b42YP7/ZmD/r0Zg9v4GYPctQBZg/b42YP7/9mD/r8ZkQPb8BmQQ9y0AI="
+24:
+.base64 "80EPbyLzQQ9vahBmD+/sZg/b7mYP7+XzRQ9vSiDzQQ9vajBmQQ/v6WYP2+5mRA/vzWZED+/MZkQP289mQQ/v4WZBD2/oZg926mYP2+VmD+vMZg/+00mDwkBJg+sB"
+jne 24b
+.base64 "80EPfwhBi0AMQTNACEErQARBAwAx2InricVJg8QEQYsEJDHoRYtMJEBFic5Bg+YBQYPuAUGJx0HBzx9EMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzx5EMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzxxEMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzxhEMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzxBEMfhEIfBEMfhBicFBgeH/AAAAQYnGQcHuCEGB5v8AAABJweYgTQnxZkkPbsFBicFBwekQQYHh/wAAAEGJxkHB7hhJweYgTQnxZkkPbuFmD2zE"
+lea r10, [rip + {VG_CAST5_S1234}]
+.base64 "QbtAAAAAZg/vyWYP79JmD3bbZg9y0x9mD2/gZg/b42YP7/ZmD/r0Zg9v4GYPctQBZg/b42YP7/9mD/r8ZkQPb8BmQQ9y0AI="
+25:
+.base64 "80EPbyLzQQ9vahBmD+/sZg/b7mYP7+XzRQ9vSiDzQQ9vajBmQQ/v6WYP2+5mRA/vzWZED+/MZkQP289mQQ/v4WZBD2/oZg926mYP2+VmD+vMZg/+00mDwkBJg+sB"
+jne 25b
+.base64 "80EPfwhBi0AMQStACEEDQARBMwAx2InricVJg8QEQYsEJCnoRYtMJEBFic5Bg+YBQYPuAUGJx0HBzx9EMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzx5EMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzxxEMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzxhEMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzxBEMfhEIfBEMfhBicFBgeH/AAAAQYnGQcHuCEGB5v8AAABJweYgTQnxZkkPbsFBicFBwekQQYHh/wAAAEGJxkHB7hhJweYgTQnxZkkPbuFmD2zE"
+lea r10, [rip + {VG_CAST5_S1234}]
+.base64 "QbtAAAAAZg/vyWYP79JmD3bbZg9y0x9mD2/gZg/b42YP7/ZmD/r0Zg9v4GYPctQBZg/b42YP7/9mD/r8ZkQPb8BmQQ9y0AI="
+26:
+.base64 "80EPbyLzQQ9vahBmD+/sZg/b7mYP7+XzRQ9vSiDzQQ9vajBmQQ/v6WYP2+5mRA/vzWZED+/MZkQP289mQQ/v4WZBD2/oZg926mYP2+VmD+vMZg/+00mDwkBJg+sB"
+jne 26b
+.base64 "80EPfwhBi0AMQQNACEEzQARBKwAx2InricVJg8QESYPtAQ=="
+jne 23b
+.base64 "SIP+EA=="
+je 27f
+jmp 28f
+27:
+.base64 "QYsEJAHoRYtMJEBFic5Bg+YBQYPuAUGJx0HBzx9EMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzx5EMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzxxEMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzxhEMfhEIfBEMfhB0elFic5Bg+YBQYPuAUGJx0HBzxBEMfhEIfBEMfhBicFBgeH/AAAAQYnGQcHuCEGB5v8AAABJweYgTQnxZkkPbsFBicFBwekQQYHh/wAAAEGJxkHB7hhJweYgTQnxZkkPbuFmD2zE"
+lea r10, [rip + {VG_CAST5_S1234}]
+.base64 "QbtAAAAAZg/vyWYP79JmD3bbZg9y0x9mD2/gZg/b42YP7/ZmD/r0Zg9v4GYPctQBZg/b42YP7/9mD/r8ZkQPb8BmQQ9y0AI="
+29:
+.base64 "80EPbyLzQQ9vahBmD+/sZg/b7mYP7+XzRQ9vSiDzQQ9vajBmQQ/v6WYP2+5mRA/vzWZED+/MZkQP289mQQ/v4WZBD2/oZg926mYP2+VmD+vMZg/+00mDwkBJg+sB"
+jne 29b
+.base64 "80EPfwhBi0AMQTNACEErQARBAwAx2InricVJg8QE"
+28:
+.base64 "D82JKg/LiVoESIPCCEiD6QFNi2AYTYtoIE2JwUiDwQFmTA9u+UmD/Qg="
+jb 210f
+.base64 "SYsEJEkzQRBJiQQkSYPECEmD7Qg="
+jmp 211f
+210:
+.base64 "TInISIPAEA=="
+212:
+.base64 "RA+2EEEPtgwkTDHRQYgMJEiDwAFJg8QBSYPtAQ=="
+jne 212b
+211:
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "ZkwPfvhJi2kQSIkoSYuZqAAAAEmLqbAAAABNi6G4AAAATYupwAAAAE2LscgAAABNi7nQAAAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEiNpCTwAAAAww=="
+.p2align 6"#,
+        VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
+    )
+}

@@ -11,9 +11,10 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.ByteStep
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Modes.Ctr
+import VerifiedGarbage.Proof.AesOfb.Spec
 
 /-!
-# CFB of a message's last piece on PPC64LE, for any core
+# CFB and OFB of a message's last piece on PPC64LE, for any core
 
 `seqFinal_wp`: `c.seqFinal M`, for a core `c` with `CoreSpec c` and a mode
 `M` whose `pre` copies the chaining value to the buffer and whose
@@ -25,7 +26,8 @@ first bytes of `CIPH_K` of the chaining value after them, and replaces the
 IV with that chaining value if `r = 0` and with its encryption otherwise; it
 keeps the registers the caller expects preserved, the stack pointer and the
 return address. `cfbEncFinal_wp` and `cfbDecFinal_wp` state these as CFB's
-(`Spec.Cfb.EncryptFinal`, …).
+(`Spec.Cfb.EncryptFinal`, …), and `ofbFinal_wp` as OFB's
+(`Spec.Ofb.CryptFinal`, by `ofbFinal_of`).
 
 The loop over segments (`seg_wp`) is `seq`'s step (`Step.lean`: `regs`,
 `cont`, `cryptBuf`), with the data's area within the `len` bytes
@@ -1162,6 +1164,42 @@ theorem cfbDecFinal_changes (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : 
     (hk : cs.KeyArgs s₀ (wrs0 c byteMode s₀) k) :
     WP isa (c.seqFinal (Mode.cfbDec c.bw)) s₀ (Changes c byteMode s₀) :=
   WP.mono (seqFinal_changes_wp cs hp rfl rfl (cfbDec_post_inBounds c) (cfbDec_computes (cs.cipher_len k)) hk)
+    fun _ h => h.2.2.2.2
+
+/-! ## OFB -/
+
+theorem ofb_post_inBounds (c : Core) : ∀ o ∈ (Mode.ofb c.bw).post, o.InBounds (lens c (4 * c.bw)) :=
+  fun o ho => (List.mem_append.mp ho).elim
+    (copyBlk_inBounds (by simp [lens]) (by simp [lens]) o)
+    (xorBlk_inBounds (by simp [lens]) (by simp [lens]) (by simp [lens]) o)
+
+/-- OFB of a message's last piece: `seqFinal`'s results as
+`Spec.Ofb.CryptFinal`'s, for the `len` bytes at the data. -/
+theorem ofbFinal_wp (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : SeqPre c byteMode s₀)
+    (hk : cs.KeyArgs s₀ (wrs0 c byteMode s₀) k) :
+    WP isa (c.seqFinal (Mode.ofb c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
+      Spec.Ofb.CryptFinal (cs.cipher k) (4 * c.bw) s₀.mem s'.mem (P s₀) (Dp s₀) (N s₀) := by
+  have hL0 : 0 < 4 * c.bw := Nat.mul_pos (by decide) hp.layout.bw_pos
+  have hxs : (wb0 c s₀).length = N s₀ / (4 * c.bw) := chunksAt_length _ _ _ _
+  refine WP.mono (seqFinal_wp cs hp rfl rfl (ofb_post_inBounds c) (ofb_computes (cs.cipher_len k)) hk)
+    fun s' ⟨h1, h2, h3, h4⟩ => ⟨h1, ?_, ?_⟩
+  · obtain ⟨e1, e2⟩ := ofb_run (cs.cipher k) (iv0 c s₀) (wb0 c s₀)
+    rw [← e1] at h2
+    rw [← e2, hxs] at h3
+    exact ofbFinal_of hL0 (cs.cipher_len k) s₀.mem s'.mem _ _ _ h2 h3
+  · obtain ⟨-, e2⟩ := ofb_run (cs.cipher k) (iv0 c s₀) (wb0 c s₀)
+    rw [← e2, hxs] at h4
+    refine h4.trans ?_
+    rw [blockCount_eq hL0]
+    split
+    · rfl
+    · exact (AesOfb.next_succ _ _ _).symm
+
+/-- What OFB of a message's last piece changes. -/
+theorem ofbFinal_changes (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : SeqPre c byteMode s₀)
+    (hk : cs.KeyArgs s₀ (wrs0 c byteMode s₀) k) :
+    WP isa (c.seqFinal (Mode.ofb c.bw)) s₀ (Changes c byteMode s₀) :=
+  WP.mono (seqFinal_changes_wp cs hp rfl rfl (ofb_post_inBounds c) (ofb_computes (cs.cipher_len k)) hk)
     fun _ h => h.2.2.2.2
 
 end VG.Proof.Modes.PPC64LE

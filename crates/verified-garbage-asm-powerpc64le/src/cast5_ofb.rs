@@ -139,3 +139,160 @@ b 218f
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
 }
+
+/// CAST5-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 2144 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Cast5.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 208 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_cast5_ofb_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "Mf8h+CAAATl4I4p8eCukfHgzxXx4O+Z8eEMHffT/SjkAACoo"
+beq %cr0, 20f
+.base64 "pgIIfJgAB/iAAKf7iADH+5AA5/t4I518eDPefHgjn3x4K6Z8eDvlfAAAH4GgAAWRBAAfgaQABZF4M998AAA+KA=="
+beq %cr0, 22f
+24:
+.base64 "oAAFgQAABZGkAAWBBAAFkXjrpn9488d/CADF+RAA5fkYAAX6IAAl+igARfowAGX6OACF+kAApfpIAMX6UADl+lgABftgACX7aABF+3AAZft4AIX7"
+bcl 20, 31, 2f
+2:
+mflr %r27
+addis %r27, %r27, ({VG_CAST5_S1234} - 2b)@ha
+addi %r27, %r27, ({VG_CAST5_S1234} - 2b)@l
+.base64 "/wBAOwAAADgQAIA4LAQFfQQABTssBDh9eBtqfHgji3wBAIA5"
+25:
+.base64 "AAAsKA=="
+beq %cr0, 26f
+.base64 "//8MOwAAOCg="
+beq %cr0, 28f
+.base64 "AACKg3hKnH8="
+b 29f
+28:
+.base64 "AACKgxRKnH8="
+29:
+b 27f
+26:
+.base64 "AACKg1DgiX8="
+27:
+.base64 "QACqgwb4vnvgD957///eOz4ImFd4wpl/OPA5f3jKHH9G8L574A/ee///3js+EJhXeMKZfzjwOX94yhx/hui+e+AP3nv//947PiCYV3jCmX848Dl/eMocf8bgvnvgD957///eOz5AmFd4wpl/OPA5f3jKHH8G2b574A/ee///3js+gJhXeMKZfzjwOX94yhx/ONCOfz7Cj1c40O99PoSQVzjQEH4+RpFXeNt3fwAAwDoAAEA6AABgOgAAgDoAAKA6"
+210:
+.base64 "AAA3g3iy2H3//xg74A8Ye1AAGH84wDl/eMtSfgQAN4N4svh9//8YO+APGHtQABh/OMA5f3jLc34IADeDeLIYfv//GDvgDxh7UAAYfzjAOX94y5R+DAA3g3iyOH7//xg74A8Ye1AAGH84wDl/eMu1fhAA9zoBANY6AP8WOwAAOCg="
+bne %cr0, 210b
+.base64 "AAAsKA=="
+beq %cr0, 211f
+.base64 "//8MOwAAOCg="
+beq %cr0, 213f
+.base64 "UKiUfxSanH94kpx/"
+b 214f
+213:
+.base64 "eKK8flDgk38Ukpx/"
+214:
+b 212f
+211:
+.base64 "FKKVf3ianH9Q4JJ/"
+212:
+.base64 "eEKcf3hLKH1444l/BABKOf7/DDsAADgo"
+beq %cr0, 215f
+.base64 "AQCMOQ=="
+b 216f
+215:
+.base64 "AACAOQ=="
+216:
+.base64 "//9rOQAAKyg="
+bne %cr0, 25b
+.base64 "LAUlfQQABTssBRh9CADF6RAA5ekYAAXqIAAl6igAReowAGXqOACF6kAApepIAMXqUADl6lgABetgACXraABF63AAZet4AIXreDPdfHg7/nzC6Mh7AAAoKA=="
+beq %cr0, 217f
+.base64 "AAAFgaAABZEEAAWBpAAFkQAAH4EAACWBeEoIfQAAH5EEAB+BBAAlgXhKCH0EAB+RCAD/O/j/3js="
+b 218f
+217:
+.base64 "AAAFgaAABZEEAAWBpAAFkQAABTk="
+219:
+.base64 "AAA/iQAASIl4Uil9AAA/mQEACDkBAP87///eOwAAPig="
+bne %cr0, 219b
+218:
+.base64 "AAA+KA=="
+bne %cr0, 24b
+b 23f
+22:
+23:
+.base64 "eOu/f6AABYEAAB+RpAAFgQQAH5GAAKXriADF65AA5euYAAXopgMIfA=="
+b 21f
+20:
+.base64 "pgIIfJgAB/iAAKf7iADH+5AA5/t4I518eDPefHgjn3x4K6Z8eDvlfAAAH4GgAAWRBAAfgaQABZF4M998AAA+KA=="
+beq %cr0, 220f
+222:
+.base64 "oAAFgQAABZGkAAWBBAAFkXjrpn9488d/CADF+RAA5fkYAAX6IAAl+igARfowAGX6OACF+kAApfpIAMX6UADl+lgABftgACX7aABF+3AAZft4AIX7"
+bcl 20, 31, 2f
+2:
+mflr %r27
+addis %r27, %r27, ({VG_CAST5_S1234} - 2b)@ha
+addi %r27, %r27, ({VG_CAST5_S1234} - 2b)@l
+.base64 "/wBAOwAAADgMAIA4LAQFfQQABTssBDh9eBtqfHgji3wBAIA5"
+223:
+.base64 "AAAsKA=="
+beq %cr0, 224f
+.base64 "//8MOwAAOCg="
+beq %cr0, 226f
+.base64 "AACKg3hKnH8="
+b 227f
+226:
+.base64 "AACKgxRKnH8="
+227:
+b 225f
+224:
+.base64 "AACKg1DgiX8="
+225:
+.base64 "QACqgwb4vnvgD957///eOz4ImFd4wpl/OPA5f3jKHH9G8L574A/ee///3js+EJhXeMKZfzjwOX94yhx/hui+e+AP3nv//947PiCYV3jCmX848Dl/eMocf8bgvnvgD957///eOz5AmFd4wpl/OPA5f3jKHH8G2b574A/ee///3js+gJhXeMKZfzjwOX94yhx/ONCOfz7Cj1c40O99PoSQVzjQEH4+RpFXeNt3fwAAwDoAAEA6AABgOgAAgDoAAKA6"
+228:
+.base64 "AAA3g3iy2H3//xg74A8Ye1AAGH84wDl/eMtSfgQAN4N4svh9//8YO+APGHtQABh/OMA5f3jLc34IADeDeLIYfv//GDvgDxh7UAAYfzjAOX94y5R+DAA3g3iyOH7//xg74A8Ye1AAGH84wDl/eMu1fhAA9zoBANY6AP8WOwAAOCg="
+bne %cr0, 228b
+.base64 "AAAsKA=="
+beq %cr0, 229f
+.base64 "//8MOwAAOCg="
+beq %cr0, 231f
+.base64 "UKiUfxSanH94kpx/"
+b 232f
+231:
+.base64 "eKK8flDgk38Ukpx/"
+232:
+b 230f
+229:
+.base64 "FKKVf3ianH9Q4JJ/"
+230:
+.base64 "eEKcf3hLKH1444l/BABKOf7/DDsAADgo"
+beq %cr0, 233f
+.base64 "AQCMOQ=="
+b 234f
+233:
+.base64 "AACAOQ=="
+234:
+.base64 "//9rOQAAKyg="
+bne %cr0, 223b
+.base64 "LAUlfQQABTssBRh9CADF6RAA5ekYAAXqIAAl6igAReowAGXqOACF6kAApepIAMXqUADl6lgABetgACXraABF63AAZet4AIXreDPdfHg7/nzC6Mh7AAAoKA=="
+beq %cr0, 235f
+.base64 "AAAFgaAABZEEAAWBpAAFkQAAH4EAACWBeEoIfQAAH5EEAB+BBAAlgXhKCH0EAB+RCAD/O/j/3js="
+b 236f
+235:
+.base64 "AAAFgaAABZEEAAWBpAAFkQAABTk="
+237:
+.base64 "AAA/iQAASIl4Uil9AAA/mQEACDkBAP87///eOwAAPig="
+bne %cr0, 237b
+236:
+.base64 "AAA+KA=="
+bne %cr0, 222b
+b 221f
+220:
+221:
+.base64 "eOu/f6AABYEAAB+RpAAFgQQAH5GAAKXriADF65AA5euYAAXopgMIfA=="
+21:
+.base64 "IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz50AAhOCAAgE4=""#,
+        VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
+    )
+}
