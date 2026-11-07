@@ -124,11 +124,13 @@ use crate::arch::gcm::{
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
-    vg_aes_gcm_open_with_powers_aes, vg_aes_gcm_seal_with_powers_aes, vg_aes_gcm_store_powers_aes,
+    vg_aes_gcm_open_to_with_powers_aes, vg_aes_gcm_open_with_powers_aes,
+    vg_aes_gcm_seal_with_powers_aes, vg_aes_gcm_store_powers_aes,
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
-    vg_aes_gcm_open_with_powers_aes_sha3, vg_aes_gcm_seal_with_powers_aes_sha3,
+    vg_aes_gcm_open_to_with_powers_aes_sha3, vg_aes_gcm_open_with_powers_aes_sha3,
+    vg_aes_gcm_seal_with_powers_aes_sha3,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
@@ -444,8 +446,9 @@ struct Fns {
     /// `_CTX_WRITTEN`, or all of them).
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     written: usize,
-    /// On AArch64, the `_with_powers` instances of `seal` and `open`, which
-    /// read the powers `AesGcm::new` stores (`AesGcm::powers`).
+    /// On AArch64, the `_with_powers` instances of `seal`, `open` and
+    /// `open_to`, which read the powers `AesGcm::new` stores
+    /// (`AesGcm::powers`).
     #[cfg(target_arch = "aarch64")]
     powers: Option<Prepared>,
 }
@@ -697,7 +700,6 @@ struct Prepared {
     features: Features,
     seal: SealPrepared,
     open: OpenPrepared,
-    #[cfg(target_arch = "x86_64")]
     open_to: OpenToPrepared,
     /// None on AArch64, where `encrypt` copies its pieces and calls `seal`.
     #[cfg(target_arch = "x86_64")]
@@ -787,8 +789,9 @@ use prepared_types::{OpenPrepared, OpenToPrepared, SealGatherPrepared, SealPrepa
 type Ctx = [u64; 128];
 #[cfg(target_arch = "aarch64")]
 type Ctx = [u64; 16];
-/// The `_with_powers` instances of `seal` and `open`: `vg_aes_gcm_seal`'s
-/// and `vg_aes_gcm_open`'s arguments, then the powers.
+/// The `_with_powers` instances of `seal`, `open` and `open_to`:
+/// `vg_aes_gcm_seal`'s, `vg_aes_gcm_open`'s and `vg_aes_gcm_open_to`'s
+/// arguments, then the powers.
 #[cfg(target_arch = "aarch64")]
 type SealPrepared = unsafe extern "C" fn(
     *const [u64; 32],
@@ -805,6 +808,22 @@ type SealPrepared = unsafe extern "C" fn(
 #[cfg(target_arch = "aarch64")]
 type OpenPrepared = unsafe extern "C" fn(
     *const [u64; 32],
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *mut u8,
+    usize,
+    *const u8,
+    usize,
+    *const Ctx,
+) -> u32;
+#[cfg(target_arch = "aarch64")]
+type OpenToPrepared = unsafe extern "C" fn(
+    *const [u64; 32],
+    usize,
+    *const u8,
     usize,
     *const u8,
     usize,
@@ -864,12 +883,14 @@ static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
 const PREPARED_AES: Prepared = Prepared {
     seal: vg_aes_gcm_seal_with_powers_aes,
     open: vg_aes_gcm_open_with_powers_aes,
+    open_to: vg_aes_gcm_open_to_with_powers_aes,
 };
 
 #[cfg(target_arch = "aarch64")]
 const PREPARED_AES_SHA3: Prepared = Prepared {
     seal: vg_aes_gcm_seal_with_powers_aes_sha3,
     open: vg_aes_gcm_open_with_powers_aes_sha3,
+    open_to: vg_aes_gcm_open_to_with_powers_aes_sha3,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -1310,10 +1331,9 @@ impl AesGcm {
     }
 
     /// `vg_aes_gcm_open_to`, which writes zeros to `out` if the tag is wrong,
-    /// on every architecture. On AArch64, a key with `_with_powers` instances
-    /// copies the ciphertext and calls them instead (`open_to_copy`), as
-    /// `encrypt` does there (`seal_pieces_prepared`): there is no
-    /// `_with_powers` instance of `vg_aes_gcm_open_to`.
+    /// on every architecture; on AArch64, for a key with `_with_powers`
+    /// instances, that of `vg_aes_gcm_open_to_with_powers`
+    /// (`open_to_prepared`).
     fn open_to(
         &self,
         nonce: &[u8],
@@ -1323,8 +1343,8 @@ impl AesGcm {
         tag: &[u8],
     ) -> Result<(), Error> {
         #[cfg(target_arch = "aarch64")]
-        if self.fns.powers.is_some() {
-            return self.open_to_copy(nonce, aad, src, out, tag);
+        if let Some(p) = &self.fns.powers {
+            return self.open_to_prepared(p, nonce, aad, src, out, tag);
         }
         let open_to = self.fns.open_to;
         // SAFETY: as in `encrypt_in_place`, with `src` and the received tag
@@ -1352,26 +1372,6 @@ impl AesGcm {
         } else {
             Err(Error::TagMismatch)
         }
-    }
-
-    /// On AArch64, for a key with `_with_powers` instances: the ciphertext
-    /// copied to `out` and decrypted there, and `out` zeroed if the tag is
-    /// wrong, as `vg_aes_gcm_open_to` does.
-    #[cfg(target_arch = "aarch64")]
-    fn open_to_copy(
-        &self,
-        nonce: &[u8],
-        aad: &[u8],
-        src: &[u8],
-        out: &mut [u8],
-        tag: &[u8],
-    ) -> Result<(), Error> {
-        out.copy_from_slice(src);
-        let r = self.open(nonce, aad, out, tag);
-        if r.is_err() {
-            out.fill(0);
-        }
-        r
     }
 
     /// The most pieces [`encrypt`](Self::encrypt) takes a plaintext in.
@@ -1531,6 +1531,44 @@ impl AesGcm {
             )
         };
         // As in `open`.
+        if ok == 1 {
+            Ok(())
+        } else {
+            Err(Error::TagMismatch)
+        }
+    }
+
+    /// `open_to` with the `_with_powers` instances `p` and the powers.
+    #[inline]
+    fn open_to_prepared(
+        &self,
+        p: &Prepared,
+        nonce: &[u8],
+        aad: &[u8],
+        src: &[u8],
+        out: &mut [u8],
+        tag: &[u8],
+    ) -> Result<(), Error> {
+        let open_to = p.open_to;
+        // SAFETY: as in `open_to`, with the powers as in `seal_prepared`.
+        let ok = unsafe {
+            open_to(
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src.as_ptr(),
+                src.len(),
+                out.as_mut_ptr(),
+                out.len(),
+                tag.as_ptr(),
+                tag.len(),
+                &self.powers,
+            )
+        };
+        // As in `open_to`.
         if ok == 1 {
             Ok(())
         } else {
@@ -2252,6 +2290,8 @@ mod tests {
         {
             use crate::arch::gcm::{
                 VG_AES_GCM_INIT_AES_FEATURES, VG_AES_GCM_OPEN_AES_FEATURES,
+                VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES,
+                VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES,
                 VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES,
                 VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES, VG_AES_GCM_SEAL_AES_FEATURES,
                 VG_AES_GCM_SEAL_GATHER_AES_FEATURES, VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES,
@@ -2273,6 +2313,7 @@ mod tests {
                 VG_AES_GCM_SEAL_GATHER_AES_FEATURES,
                 VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES,
                 VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES,
+                VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES,
                 VG_AES_GCM_STORE_POWERS_AES_FEATURES,
             ] {
                 assert!(VG_AES_GCM_SEAL_AES_FEATURES.contains(other));
@@ -2289,6 +2330,7 @@ mod tests {
                 VG_AES_GCM_SEAL_GATHER_AES_FEATURES,
                 VG_AES_GCM_SEAL_AES_FEATURES,
                 VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES,
+                VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES,
                 VG_AES_GCM_STORE_POWERS_AES_FEATURES,
             ] {
                 assert!(VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES.contains(other));
