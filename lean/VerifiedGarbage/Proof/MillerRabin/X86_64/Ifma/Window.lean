@@ -237,7 +237,7 @@ theorem word_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m')
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
 
-theorem limb_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o : Nat} (ho : Away l o) :
+theorem wlimb_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o : Nat} (ho : Away l o) :
     ∀ j < l.L, limb l m' B o j = limb l m B o j := fun j hj => by
   have := VG.Proof.Bignum.X86_64.Ifma.off_ltN hl.amm hj
   simp only [limb]
@@ -245,10 +245,10 @@ theorem limb_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m')
   rw [word_frm hl f (by omega_arith)]
 
 theorem canon_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o : Nat} (ho : Away l o)
-    (h : Canon l m B o) : Canon l m' B o := fun j hj => by rw [limb_frm hl f ho j hj]; exact h j hj
+    (h : Canon l m B o) : Canon l m' B o := fun j hj => by rw [wlimb_frm hl f ho j hj]; exact h j hj
 
 theorem val_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o : Nat} (ho : Away l o) :
-    val52 l m' B o = val52 l m B o := lval_congr (limb_frm hl f ho)
+    val52 l m' B o = val52 l m B o := lval_congr (wlimb_frm hl f ho)
 
 theorem rep_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') {o c x : Nat} (ho : Away l o)
     (h : Rep l m B c o x) : Rep l m' B c o x :=
@@ -264,9 +264,9 @@ theorem tab_frm (hl : PubOk l) {B : Addr} {m m' : Mem} (f : Frm B (wrs l) m m') 
   obtain ⟨a0, aT, aP, aM, aMc⟩ := away hl
   obtain ⟨z0, z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12, z13⟩ := PubOk.lay hl
   have hm := h.mod
-  refine ⟨⟨fun j hj => by rw [limb_frm hl f a0 j hj]; exact hm.lt j hj, by rw [val_frm hl f a0]; exact hm.val,
+  refine ⟨⟨fun j hj => by rw [wlimb_frm hl f a0 j hj]; exact hm.lt j hj, by rw [val_frm hl f a0]; exact hm.val,
     fun t ht => by rw [word_frm hl f (by simp only [VG.Impl.Rsa.X86_64.CrtIfma.Lay.oK0]; omega_arith)]; exact hm.k0 t ht, hm.klt,
-    by rw [limb_frm hl f a0 0 (by simp only [VG.Impl.Rsa.X86_64.CrtIfma.Lay.L]; have := hl.amm.bounds.1; omega_arith)]; exact hm.inv, hm.big⟩,
+    by rw [wlimb_frm hl f a0 0 (by simp only [VG.Impl.Rsa.X86_64.CrtIfma.Lay.L]; have := hl.amm.bounds.1; omega_arith)]; exact hm.inv, hm.big⟩,
     fun j hj => rep_frm hl f (aT j hj) (h.t j hj), by rw [val_frm hl f (aT 0 (by decide))]; exact h.t0,
     ⟨canon_frm hl f aM h.m1.1, by rw [val_frm hl f aM]; exact h.m1.2⟩,
     ⟨canon_frm hl f aP h.p1c.1, by rw [val_frm hl f aP]; exact h.p1c.2⟩,
@@ -357,7 +357,7 @@ theorem ea_at'' (t : State) (r : Reg) (d : Nat) : t.ea (at_ r d) = t.gpr r + Bit
   simp only [State.ea, at_]
   exact congrArg _ (BitVec.ofInt_natCast ..)
 
-theorem tail_ok {t : State} {B : Addr} {o n : Nat} (hB : t.gpr .rbx = B)
+theorem wtail_ok {t : State} {B : Addr} {o n : Nat} (hB : t.gpr .rbx = B)
     (hld : InRegions (t.rd ++ t.wr) (B + BitVec.ofNat 64 o) 8) (hst : InRegions t.wr (B + BitVec.ofNat 64 o) 8)
     (h14 : t.gpr .r14 = BitVec.ofNat 64 n) (hn : 1 ≤ n) (hn' : n < 2 ^ 63) :
     WP isa (.block [.mov .rax (.mem (at_ .rbx o)), .shift .shl .rax 2, .store (at_ .rbx o) .rax,
@@ -855,7 +855,7 @@ theorem window_gen (hl : PubOk l) {s : State} {B H : Addr} {c k b n : Nat} (sts 
     (fun i hi u hI h13 => WP.mono (hstep i hi u hI h13) fun v m => ⟨hI.step m, m.r13, m.zf⟩)
     (fun _ h => h) I₀ r13₀) fun u₃ I₃ => ?_)
   have hs₃ := I₃.env.scr
-  refine WP.mono (tail_ok (o := oV l) I₃.env.rbx (hs₃.ld (by omega_arith)) (hs₃.st (by omega_arith))
+  refine WP.mono (wtail_ok (o := oV l) I₃.env.rbx (hs₃.ld (by omega_arith)) (hs₃.st (by omega_arith))
     ((I₃.keep.gpr (by decide)).trans h14) hn (by omega_arith)) fun t ⟨m, r14, zf, kt, xt⟩ => ?_
   have ow : Outside B (oV l) 8 u₃.mem t.mem := by
     rw [m]; exact VG.Proof.Bignum.writeW_outside _ B _ (by omega_arith)
