@@ -4,15 +4,18 @@ public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
 public import VerifiedGarbage.Spec.MlDsa
 
 /-!
-# ML-DSA on x86 (32-bit): `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
+# ML-DSA on x86 (32-bit): `vg_mldsa{44,65,87}_verify_core`
 
-`verify P p (pk, mu, sig, scratch) -> eax`: `ML-DSA.Verify_internal(pk, M′, σ)`
+`verify P p (pk, mu, sig, scratch, t1) -> eax`: `ML-DSA.Verify_internal(pk, M′, σ)`
 (FIPS 204 Algorithm 8) with the message representative `μ` given
 (`verifyMu`), for the parameter set `p`, as calls of the primitives `P`
 (`Prims`, any implementations of them) and of the SHA-3 sponge functions. As
 key generation (`Impl/MlDsa/X86/KeyGen/`), it is a leaf that keeps `scratch`
 (argument 3) in `esi`, and its result so far in the word `oACC` of
-`scratch`.
+`scratch`. It is the code that `vg_mldsa*_verify` and
+`vg_mldsa*_verify_prepared` share (`Entry.lean`): `t1` holds the `k`
+polynomials `t̂₁[r] = NTT(t₁[r] · 2ᵈ)` of `pk`, which the former computes
+and the latter finds in its prepared key.
 
 The layout of `scratch` (in bytes): the Keccak state at 0 and the sponge
 functions' working space at 200; the result at 900 (`oACC`); the seed of
@@ -32,7 +35,7 @@ of the primitives at 4096 (2048 bytes); and polynomials of 1024 bytes from
    its output masked with it (`maskA`), so that it is reduced whatever the
    sampler returns, without a branch on it.
 4. `ẑ[i] = NTT(z[i])`, `ĉ = NTT(c)`; for each row `r`:
-   `w′ = NTT⁻¹(Σₛ Â[r, s] ẑ[s] - ĉ · NTT(t₁[r] · 2ᵈ))`, `w′₁ = UseHint(h[r], w′)`,
+   `w′ = NTT⁻¹(Σₛ Â[r, s] ẑ[s] - ĉ · t̂₁[r])`, `w′₁ = UseHint(h[r], w′)`,
    and its `SimpleBitPack` to `oB + r · 32 bitlen b`.
 5. `c̃′ = H(μ ‖ w1Encode(w′₁), λ/4)` to `oCT`, and the result ANDed with
    `c̃′ = c̃`, without a branch.
@@ -103,6 +106,9 @@ abbrev pT2 : Buf := pB 17
 abbrev pW : Buf := pB 18
 abbrev pW1 : Buf := pB 19
 abbrev pA (r s : Nat) : Buf := pB (20 + 8 * r + s)
+/-- `t̂₁[r] = NTT(t₁[r] · 2ᵈ)`, polynomial `r` of the argument `t1` (4). -/
+abbrev tB (r : Nat) : Buf := ⟨4, 1024 * r, 1024⟩
+
 /-- The hint, as `k` polynomials. -/
 abbrev hB (k : Nat) : Buf := sb (oP 0) (256 * k * 4)
 /-- The working space of the primitives. -/
@@ -192,9 +198,7 @@ def mulAddS (r s : Nat) : Prog isa :=
 def row (r : Nat) : Prog isa :=
   .seq (callP vS "vg_mldsa_multiply_ntt" P.mul [.buf pW, .buf (pA r 0), .buf (pZ 0)]) <|
   .seq (seqR (mulAddS P r) 1 (p.ℓ - 1)) <|
-  .seq (callP vS "vg_mldsa_unpack_t1" P.unpackT1 [.buf ⟨0, 32 + 320 * r, 320⟩, .buf pT]) <|
-  .seq (nttAt P pT) <|
-  .seq (callP vS "vg_mldsa_multiply_ntt" P.mul [.buf pT2, .buf pC, .buf pT]) <|
+  .seq (callP vS "vg_mldsa_multiply_ntt" P.mul [.buf pT2, .buf pC, .buf (tB r)]) <|
   .seq (callP vS "vg_mldsa_sub" P.sub [.buf pW, .buf pT2]) <|
   .seq (callP vS "vg_mldsa_inv_ntt" P.invNtt [.buf pW, .buf (ssB 1024)]) <|
   .seq (callP vS "vg_mldsa_use_hint" P.useHint [.buf (pB r), .buf pW, .imm p.γ₂, .buf pW1])

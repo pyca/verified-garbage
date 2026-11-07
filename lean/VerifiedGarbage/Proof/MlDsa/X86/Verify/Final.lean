@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Compute
 public import VerifiedGarbage.Proof.MlKem.X86.DecapsCmp
 
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
@@ -128,16 +128,19 @@ section
 variable {P : Prims} (hP : PrimsOk P) {p : Params} (hF : VFacts p)
 include hP hF
 
-theorem compute_piece : VP p (SC p) (VFin p) (compute P p) := by
+theorem compute_piece : VP p (fun s₀ s => SC p s₀ s ∧ T1Ok p s₀) (fun s₀ s => VFin p s₀ s ∧ T1Ok p s₀)
+    (compute P p) := by
   have hl := hF.l; have hk := hF.k
   unfold compute
-  refine Piece.seq (B := (CI p · p.ℓ false 0)) ((seqR_piece (I := fun j => (CI p · j false 0)) p.ℓ 0
-    fun j _ hj => nttZ_piece hP hF (by omega)).mono (fun _ _ _ h => ci_of_sc h)
-      fun _ _ _ h => by simpa using h) ?_
-  refine (nttC_piece hP hF).seq ?_
-  refine Piece.seq (B := (CI p · p.ℓ true p.k)) ((seqR_piece (I := fun r => (CI p · p.ℓ true r)) p.k 0
-    fun r _ hr => row_piece hP hF (by omega)).mono (fun _ _ _ h => h) fun _ _ _ h => by simpa using h) ?_
-  exact (hash_piece hF).seq (cmp_piece' hF)
+  refine Piece.seq (B := fun s₀ s => CI p s₀ p.ℓ false 0 s ∧ T1Ok p s₀)
+    (piece_pure (T1Ok p) ((seqR_piece (I := fun j => (CI p · j false 0)) p.ℓ 0
+      fun j _ hj => nttZ_piece hP hF (by omega)).mono (fun _ _ _ h => ci_of_sc h)
+        fun _ _ _ h => by simpa using h)) ?_
+  refine (piece_pure (T1Ok p) (nttC_piece hP hF)).seq ?_
+  refine Piece.seq (B := fun s₀ s => CI p s₀ p.ℓ true p.k s ∧ T1Ok p s₀)
+    ((seqR_piece (I := fun r s₀ s => CI p s₀ p.ℓ true r s ∧ T1Ok p s₀) p.k 0
+      fun r _ hr => row_piece hP hF (by omega)).mono (fun _ _ _ h => h) fun _ _ _ h => by simpa using h) ?_
+  exact piece_pure (T1Ok p) ((hash_piece hF).seq (cmp_piece' hF))
 
 end
 

@@ -46,7 +46,7 @@ import VerifiedGarbage.Proof.MlKem.X86.EncV
 import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 import VerifiedGarbage.Proof.MlKem.X86.Table
 
-/-! # ML-DSA (FIPS 204) on x86 (32-bit): signing messages -/
+/-! # ML-DSA (FIPS 204) on x86 (32-bit): signing messages, with encoded and prepared keys -/
 
 @[expose] public section
 
@@ -57,18 +57,39 @@ open VG
 def artifacts : List Artifact := [
   Spec.MlDsa.signMessage44Api.artifact X86.target {
     code := Impl.MlDsa.X86.Message.signMessage Spec.MlDsa.sign44Api.name
-      (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44
-    stack := 136
+      (Impl.MlDsa.X86.Sign.signEntry Spec.MlDsa.mlDsa44 (Impl.MlDsa.X86.Sign.coreName "mldsa44")
+        (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa44)) Spec.MlDsa.mlDsa44
+    stack := 176
     verified := Proof.MlDsa.X86.Message.signMessage44_verified },
+  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86.target {
+    code := Impl.MlDsa.X86.Message.signMessage (Impl.MlDsa.X86.Sign.preparedName "mldsa44")
+      (Impl.MlDsa.X86.Sign.signPrepared Spec.MlDsa.mlDsa44 (Impl.MlDsa.X86.Sign.coreName "mldsa44")
+        (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa44)) Spec.MlDsa.mlDsa44
+    stack := 176
+    verified := Proof.MlDsa.X86.Message.signMessagePrepared44_verified },
   Spec.MlDsa.signMessage65Api.artifact X86.target {
     code := Impl.MlDsa.X86.Message.signMessage Spec.MlDsa.sign65Api.name
-      (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
-    stack := 136
+      (Impl.MlDsa.X86.Sign.signEntry Spec.MlDsa.mlDsa65 (Impl.MlDsa.X86.Sign.coreName "mldsa65")
+        (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa65)) Spec.MlDsa.mlDsa65
+    stack := 176
     verified := Proof.MlDsa.X86.Message.signMessage65_verified },
+  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86.target {
+    code := Impl.MlDsa.X86.Message.signMessage (Impl.MlDsa.X86.Sign.preparedName "mldsa65")
+      (Impl.MlDsa.X86.Sign.signPrepared Spec.MlDsa.mlDsa65 (Impl.MlDsa.X86.Sign.coreName "mldsa65")
+        (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa65)) Spec.MlDsa.mlDsa65
+    stack := 176
+    verified := Proof.MlDsa.X86.Message.signMessagePrepared65_verified },
   Spec.MlDsa.signMessage87Api.artifact X86.target {
     code := Impl.MlDsa.X86.Message.signMessage Spec.MlDsa.sign87Api.name
-      (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
-    stack := 136
-    verified := Proof.MlDsa.X86.Message.signMessage87_verified }]
+      (Impl.MlDsa.X86.Sign.signEntry Spec.MlDsa.mlDsa87 (Impl.MlDsa.X86.Sign.coreName "mldsa87")
+        (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa87)) Spec.MlDsa.mlDsa87
+    stack := 176
+    verified := Proof.MlDsa.X86.Message.signMessage87_verified },
+  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86.target {
+    code := Impl.MlDsa.X86.Message.signMessage (Impl.MlDsa.X86.Sign.preparedName "mldsa87")
+      (Impl.MlDsa.X86.Sign.signPrepared Spec.MlDsa.mlDsa87 (Impl.MlDsa.X86.Sign.coreName "mldsa87")
+        (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa87)) Spec.MlDsa.mlDsa87
+    stack := 176
+    verified := Proof.MlDsa.X86.Message.signMessagePrepared87_verified }]
 
 end VG.Artifacts.MlDsaSignMessage.X86
