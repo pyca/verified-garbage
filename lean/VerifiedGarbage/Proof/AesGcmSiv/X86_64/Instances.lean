@@ -10,6 +10,10 @@ public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.RingTheory.AdjoinRoot
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.EntryBranch
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # AES-GCM-SIV on x86-64: the code a variant's artifacts run
@@ -336,5 +340,215 @@ theorem wideSeal_spSafe (v : GcmImpl) : (wideSealCode v).all (fun i => !X86_64.i
 
 theorem wideOpen_spSafe (v : GcmImpl) : (wideOpenCode v).all (fun i => !X86_64.isa.writesSp i) = true :=
   openWith_spSafe v true
+
+
+/-! ## Choosing by the lengths
+
+`bySize wide narrow` runs `wide`, the code with the AVX2 copies, when the
+text (`len`, the first stack argument) or the additional data (`aad_len`,
+`r8`) is 128 bytes or more, and `narrow`, which has none of their loop
+checks, otherwise: `len ||| aad_len` is at least 128 exactly then. The
+comparison writes only `rax` and the flags, which no contract reads
+(`Same`), and leaks only the address of `len`; the branch depends only on
+`len` and `aad_len`, which are public (`bySize_verified`). -/
+
+section
+
+open VG VG.X86_64 VG.X86_64.RegUpd
+open VG.Impl.AesGcm.X86_64 (at_)
+
+/-- Clears the carry flag exactly when `len ||| aad_len` is 128 or more. -/
+def cmpLens : List Instr :=
+  [.mov .rax (.mem (at_ .rsp 8)), .alu .or .rax (.reg .r8), .alu .cmp .rax (.imm 128)]
+
+/-- `wide` when the text or the additional data is 128 bytes or more, and
+`narrow` otherwise. -/
+def bySize (wide narrow : Prog isa) : Prog isa :=
+  .seq (.block cmpLens) (Code.iteCold .ae wide narrow)
+
+/-- `u` is `s` but for `rax` and the flags. -/
+structure Same (s u : State) : Prop where
+  gpr : ∀ r, r ≠ .rax → u.gpr r = s.gpr r
+  mem : u.mem = s.mem
+  rd : u.rd = s.rd
+  wr : u.wr = s.wr
+  mx : u.mxcsr = s.mxcsr
+
+theorem Same.saa {s u : State} (h : Same s u) (i : Nat) : stackArgAddr u i = stackArgAddr s i := by
+  simp only [stackArgAddr, h.gpr .rsp (by decide)]
+
+theorem Same.sa {s u : State} (h : Same s u) (i : Nat) : stackArg u i = stackArg s i := by
+  simp only [stackArg, h.saa, h.mem]
+
+theorem Same.saF {s u : State} (h : Same s u) : stackArg u = stackArg s := funext h.sa
+
+theorem Same.saaF {s u : State} (h : Same s u) : stackArgAddr u = stackArgAddr s := funext h.saa
+
+theorem Same.abi {s u s' : State} (h : Same s u) (a : abiPreserved u s') : abiPreserved s s' :=
+  ⟨fun r hr => by rw [a.1 r hr, h.gpr r (by rintro rfl; simp [calleeSaved] at hr)],
+    by rw [← h.gpr .rsp (by decide), a.2.1, h.mem], by rw [a.2.2, h.mx]⟩
+
+/-- The comparison. -/
+theorem cmpLens_run (s : State) (hin : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8) :
+    ∃ u, execBlock isa cmpLens s = some (u, [.addr (stackArgAddr s 0)]) ∧ Same s u ∧
+      eval .ae u = some (decide (128 ≤ (stackArg s 0 ||| s.gpr .r8).toNat)) := by
+  have ea : s.ea (at_ .rsp 8) = stackArgAddr s 0 := rfl
+  refine ⟨?u, ?h1, ⟨?h2, ?h3, ?h4, ?h5, ?h6⟩, ?h7⟩
+  case h1 => simp [execBlock, cmpLens, exec, readSrc, ea, hin, addrs, srcAddrs, State.load64, execAlu]; rfl
+  case h3 => rfl
+  case h4 => rfl
+  case h5 => rfl
+  case h6 => rfl
+  case h2 => intro r hr; simp [gpr_arithFlags, gpr_setReg, hr]
+  case h7 =>
+    simp only [eval, cf_arithFlags, gpr_setReg, gpr_arithFlags, ↓reduceIte, reduceCtorEq,
+      Option.map_some, ← decide_not, Nat.not_lt]
+    rfl
+
+/-- `bySize wide narrow` is verified against any contract both are, whose
+precondition, postcondition and public data do not read `rax` or the flags,
+and which makes `len` and `aad_len` public. -/
+theorem bySize_verified {k : Contract isa} {wide narrow : Prog isa}
+    (hw : Verified X86_64.target wide k) (hn : Verified X86_64.target narrow k)
+    (hin : ∀ s, k.pre s → InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8)
+    (hpre : ∀ s u, Same s u → k.pre s → k.pre u)
+    (hpost : ∀ s u s', Same s u → k.post u s' → k.post s s')
+    (hpub : ∀ s u s' u', Same s u → Same s' u' → k.pub s s' → k.pub u u')
+    (hargs : ∀ s s', k.pub s s' →
+      stackArg s 0 = stackArg s' 0 ∧ s.gpr .r8 = s'.gpr .r8 ∧ s.gpr .rsp = s'.gpr .rsp) :
+    Verified X86_64.target (bySize wide narrow) k := by
+  refine Verified.entryBranch (p := fun s => decide (128 ≤ (stackArg s 0 ||| s.gpr .r8).toNat))
+    (fun s => [.addr (stackArgAddr s 0)]) hw hn (fun s hs => ?_) ?_ hw.2.2
+  · obtain ⟨u, e, hS, ev⟩ := cmpLens_run s (hin s hs)
+    exact ⟨u, e, ev, fun _ => ⟨hpre s u hS hs, fun s' a q => ⟨hS.abi a, hpost s u s' hS q⟩⟩,
+      fun _ => ⟨hpre s u hS hs, fun s' a q => ⟨hS.abi a, hpost s u s' hS q⟩⟩⟩
+  · intro s s' u u' hs hs' hq e e'
+    obtain ⟨u₀, e₀, hS, -⟩ := cmpLens_run s (hin s hs)
+    obtain ⟨u₀', e₀', hS', -⟩ := cmpLens_run s' (hin s' hs')
+    rw [e₀] at e; rw [e₀'] at e'
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e)
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e')
+    obtain ⟨a0, a8, asp⟩ := hargs s s' hq
+    exact ⟨by simp only [stackArgAddr, asp], by rw [a0, a8],
+      fun _ => hpub s u₀ s' u₀' hS hS' hq, fun _ => hpub s u₀ s' u₀' hS hS' hq⟩
+
+
+/-- `seal` by the lengths, from its code with and without the AVX2 copies. -/
+theorem seal_bySize {wide narrow : Prog isa}
+    (hw : Verified X86_64.target wide (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856))
+    (hn : Verified X86_64.target narrow (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856)) :
+    Verified X86_64.target (bySize wide narrow) (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856) := by
+  refine bySize_verified hw hn (fun s hs => ?_) (fun s u h hs => ?_) (fun s u s' h q => ?_)
+    (fun s u s' u' h h' q => ?_) (fun s s' q => ?_)
+  · sig_pre [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, X86_64.abi,
+      X86_64.argRegs] at hs
+    obtain ⟨-, -, hrd, -⟩ := hs
+    refine ⟨⟨stackArgAddr s 0, 16⟩, List.mem_append_left _ ?_, ?_⟩
+    · rw [hrd]; simp
+    · simp [Region.Contains]
+  · sig_pre [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, X86_64.abi,
+      X86_64.argRegs] at hs ⊢
+    simp only [h.saF, h.saaF, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
+      h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem,
+      h.rd, h.wr]
+    exact hs
+  · sig_post [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Proof.AesGcmSiv.sealRoundsPost,
+      X86_64.abi, X86_64.argRegs] at q ⊢
+    simp only [h.saF, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
+      h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.mem] at q
+    exact q
+  · sig_pub [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, X86_64.abi, X86_64.argRegs] at q ⊢
+    simp only [h.saF, h.saaF, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
+      h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem,
+      h'.saF, h'.saaF, h'.gpr .rdi (by decide), h'.gpr .rsi (by decide), h'.gpr .rdx (by decide),
+      h'.gpr .rcx (by decide), h'.gpr .r8 (by decide), h'.gpr .r9 (by decide), h'.gpr .rsp (by decide),
+      h'.mem]
+    exact q
+  · sig_pub [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, X86_64.abi, X86_64.argRegs] at q
+    obtain ⟨hsp, -, -, -, -, h8, -, h6, -⟩ := q
+    exact ⟨by simpa [List.getD, List.range, List.range.loop] using h6, h8, hsp⟩
+
+
+/-- `open` by the lengths, from its code with and without the AVX2 copies. -/
+theorem open_bySize {wide narrow : Prog isa}
+    (hw : Verified X86_64.target wide (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856))
+    (hn : Verified X86_64.target narrow (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856)) :
+    Verified X86_64.target (bySize wide narrow) (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856) := by
+  refine bySize_verified hw hn (fun s hs => ?_) (fun s u h hs => ?_) (fun s u s' h q => ?_)
+    (fun s u s' u' h h' q => ?_) (fun s s' q => ?_)
+  · sig_pre [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, X86_64.abi,
+      X86_64.argRegs] at hs
+    obtain ⟨-, -, hrd, -⟩ := hs
+    refine ⟨⟨stackArgAddr s 0, 16⟩, List.mem_append_left _ ?_, ?_⟩
+    · rw [hrd]; simp
+    · simp [Region.Contains]
+  · sig_pre [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, X86_64.abi,
+      X86_64.argRegs] at hs ⊢
+    simp only [h.saF, h.saaF, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
+      h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem,
+      h.rd, h.wr]
+    exact hs
+  · sig_post [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Proof.AesGcmSiv.openRoundsPost,
+      X86_64.abi, X86_64.argRegs] at q ⊢
+    simp only [h.saF, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
+      h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.mem] at q
+    exact q
+  · sig_pub [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openLeak, X86_64.abi, X86_64.argRegs] at q ⊢
+    simp only [h.saF, h.saaF, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
+      h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem,
+      h'.saF, h'.saaF, h'.gpr .rdi (by decide), h'.gpr .rsi (by decide), h'.gpr .rdx (by decide),
+      h'.gpr .rcx (by decide), h'.gpr .r8 (by decide), h'.gpr .r9 (by decide), h'.gpr .rsp (by decide),
+      h'.mem]
+    exact q
+  · sig_pub [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openLeak, X86_64.abi, X86_64.argRegs] at q
+    obtain ⟨hsp, -, -, -, -, -, h8, -, h6, -⟩ := q
+    exact ⟨by simpa [List.getD, List.range, List.range.loop] using h6, h8, hsp⟩
+
+
+/-- The code of `v`'s `seal` with the AVX2 copies (its `_avx2` instance):
+when `v`'s code does not take them already (`sivWide`), by the lengths,
+with the code without them below 128 bytes, where the copies are not used. -/
+def avx2SealCode (v : GcmImpl) : Prog isa :=
+  if sivWide v then Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideSealCode v)
+  else bySize (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideSealCode v))
+    (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v))
+
+/-- `open`'s, as `avx2SealCode`. -/
+def avx2OpenCode (v : GcmImpl) : Prog isa :=
+  if sivWide v then Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideOpenCode v)
+  else bySize (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideOpenCode v))
+    (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v))
+
+theorem avx2Seal_verified (v : GcmImpl) :
+    Verified X86_64.target (avx2SealCode v) (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856) := by
+  unfold avx2SealCode
+  split
+  · exact wideSeal_framed v
+  · exact seal_bySize (wideSeal_framed v) (sealCode_framed v)
+
+theorem avx2Open_verified (v : GcmImpl) :
+    Verified X86_64.target (avx2OpenCode v) (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856) := by
+  unfold avx2OpenCode
+  split
+  · exact wideOpen_framed v
+  · exact open_bySize (wideOpen_framed v) (openCode_framed v)
+
+theorem avx2Seal_spSafe (v : GcmImpl) : (avx2SealCode v).all (fun i => !X86_64.isa.writesSp i) = true := by
+  unfold avx2SealCode
+  split
+  · exact X86_64.withStackArgScratch_spSafe (wideSeal_spSafe v)
+  · simp only [bySize, Code.iteCold, Code.all, X86_64.withStackArgScratch_spSafe (wideSeal_spSafe v),
+      X86_64.withStackArgScratch_spSafe (sealCode_spSafe v), Bool.and_true]
+    rfl
+
+theorem avx2Open_spSafe (v : GcmImpl) : (avx2OpenCode v).all (fun i => !X86_64.isa.writesSp i) = true := by
+  unfold avx2OpenCode
+  split
+  · exact X86_64.withStackArgScratch_spSafe (wideOpen_spSafe v)
+  · simp only [bySize, Code.iteCold, Code.all, X86_64.withStackArgScratch_spSafe (wideOpen_spSafe v),
+      X86_64.withStackArgScratch_spSafe (openCode_spSafe v), Bool.and_true]
+    rfl
+
+end
 
 end VG.Proof.AesGcmSiv.X86_64

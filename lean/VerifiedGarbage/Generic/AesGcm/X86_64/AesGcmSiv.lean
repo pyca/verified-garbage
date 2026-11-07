@@ -51,21 +51,22 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := sivFeatures v }]
 
 /-- The instances with the AVX2 copies (`_avx2`), for a variant that has
-them (`hasWide`). -/
+them (`hasWide`), by the lengths where the variant's code does not take
+them already. -/
 def wideArtifactsOf (v : GcmImpl) : List Artifact := [
     Spec.GcmSiv.sealApi.artifact X86_64.target {
       suffix := v.suffix ++ "_avx2"
-      code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideSealCode v)
+      code := avx2SealCode v
       stack := 3856
-      verified := Proof.AesGcmSiv.seal_keyed (wideSeal_framed v)
-      spSafe := X86_64.withStackArgScratch_spSafe (wideSeal_spSafe v)
+      verified := Proof.AesGcmSiv.seal_keyed (avx2Seal_verified v)
+      spSafe := avx2Seal_spSafe v
       features := (features v ++ ["avx", "avx2"]).dedup },
     Spec.GcmSiv.openApi.artifact X86_64.target {
       suffix := v.suffix ++ "_avx2"
-      code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideOpenCode v)
+      code := avx2OpenCode v
       stack := 3856
-      verified := Proof.AesGcmSiv.open_keyed (wideOpen_framed v)
-      spSafe := X86_64.withStackArgScratch_spSafe (wideOpen_spSafe v)
+      verified := Proof.AesGcmSiv.open_keyed (avx2Open_verified v)
+      spSafe := avx2Open_spSafe v
       features := (features v ++ ["avx", "avx2"]).dedup }]
 
 
