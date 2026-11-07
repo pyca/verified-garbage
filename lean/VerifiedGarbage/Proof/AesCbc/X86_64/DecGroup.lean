@@ -237,7 +237,7 @@ theorem decGroup_ok (v : BlocksImpl) : GroupOk (cbcMode false) (decGroup v.dec) 
       · exact ⟨stkR s₀, by simp, fun _ h => h⟩
     all_goals subst hr; exact ⟨_, by simp, fun _ h => h⟩
   have big₄ : Frame (Big s₀) s₀.mem t₅.mem :=
-    (UPre.big_of h.frame).trans (UPre.bigStep (a.frame.sub (all_cons ⟨gR s₀, by simp, fun _ h => h⟩ all_nil)))
+    (UPre.big_ofG h.frame).trans (UPre.bigStep (a.frame.sub (all_cons ⟨gR s₀, by simp, fun _ h => h⟩ all_nil)))
   have hb (j : Nat) (hj : j < 4) :
       bytesAt s.mem (blk s₀ (k + j)) 16 = (blks s₀)[k + j]'(by rw [len]; omega) := h.blockAt (by omega) (by omega)
   -- The blocks after the call, and the slots and chaining value it left.

@@ -173,7 +173,23 @@ theorem UPre.sched_bytes {m : Mem} (hf : Frame (Big s₀) s₀.mem m) :
   · exact hp.stk_sch.symm.sub_left (Region.sub_prefix hR)
 
 omit hp in
-theorem UPre.big_of {m : Mem} (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀, stkR s₀] (savedMem s₀) m) :
+theorem UPre.big_of {m : Mem} (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, stkR s₀] (savedMem s₀) m) :
+    Frame (Big s₀) s₀.mem m := by
+  have f₀ : Frame (Big s₀) s₀.mem (savedMem s₀) :=
+    (savedMem_frame s₀).sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨scrR s₀, by simp, UPre.scr_sub (by decide)⟩
+  exact f₀.trans (hf.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨ivR s₀, by simp, fun _ h => h⟩
+    · exact ⟨dataR s₀, by simp, fun _ h => h⟩
+    · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩
+    · exact ⟨stkR s₀, by simp, fun _ h => h⟩)
+
+omit hp in
+/-- `big_of`, with the slots of a group (`gR`) too, as the invariant's frame. -/
+theorem UPre.big_ofG {m : Mem} (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀, stkR s₀] (savedMem s₀) m) :
     Frame (Big s₀) s₀.mem m := by
   have f₀ : Frame (Big s₀) s₀.mem (savedMem s₀) :=
     (savedMem_frame s₀).sub fun r hr => by
@@ -390,7 +406,7 @@ theorem epilogue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {s₂ : State} (h
     rw [rdwr, hp.rd, hp.wr, h₂.r15]
     exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega) (by have := hp.scr_wrap; omega))
   · rw [mem₃]
-    refine (UPre.big_of h₂.frame).readW (r := ⟨s₀.gpr .rsp, 8⟩) (Region.contains_self _ _)
+    refine (UPre.big_ofG h₂.frame).readW (r := ⟨s₀.gpr .rsp, 8⟩) (Region.contains_self _ _)
       (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
