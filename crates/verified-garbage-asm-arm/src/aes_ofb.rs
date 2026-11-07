@@ -80,3 +80,106 @@ bx lr",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
+
+/// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Ofb.aesFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 72 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_ofb_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #56
+add r12, sp, #0
+str lr, [r12, #12]
+ldr lr, [sp, #56]
+str lr, [r12, #0]
+ldr lr, [sp, #60]
+str lr, [r12, #4]
+add lr, sp, #16
+str lr, [r12, #8]
+ldr lr, [sp, #12]
+ldr r12, [sp, #8]
+str r4, [r12, #0]
+str r5, [r12, #4]
+str r6, [r12, #8]
+str r7, [r12, #12]
+str r8, [r12, #16]
+str r9, [r12, #20]
+str r10, [r12, #24]
+str r11, [r12, #28]
+str lr, [r12, #32]
+mov r4, r0
+mov r5, r1
+mov r6, r2
+ldr r8, [sp, #0]
+ldr r10, [sp, #4]
+lsr r12, r8, #4
+and r8, r8, #15
+add r7, r3, r12, lsl #4
+mov lr, r10
+push {{r12, lr}}
+bl {vg_aes_ofb}
+ldr r12, [sp], #8
+cmp r8, #0
+beq 20f
+mov r0, r4
+mov r1, r5
+mov r2, r6
+mov r3, #1
+mov r12, r10
+push {{r12, lr}}
+bl {vg_aes_encrypt_blocks}
+ldr r12, [sp], #8
+mov r0, r6
+mov r6, r7
+mov r7, r8
+22:
+ldrb r9, [r6, #0]
+ldrb r10, [r0, #0]
+eor r9, r9, r10
+strb r9, [r6, #0]
+add r0, r0, #1
+add r6, r6, #1
+subs r7, r7, #1
+bne 22b
+b 21f
+20:
+21:
+ldr r12, [sp, #8]
+ldr r4, [r12, #0]
+ldr r5, [r12, #4]
+ldr r6, [r12, #8]
+ldr r7, [r12, #12]
+ldr r8, [r12, #16]
+ldr r9, [r12, #20]
+ldr r10, [r12, #24]
+ldr r11, [r12, #28]
+ldr lr, [r12, #32]
+add r12, sp, #16
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+str r2, [r12, #32]
+str r2, [r12, #36]
+add sp, sp, #56
+bx lr",
+        vg_aes_ofb = sym super::aes_ofb::vg_aes_ofb,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+    )
+}

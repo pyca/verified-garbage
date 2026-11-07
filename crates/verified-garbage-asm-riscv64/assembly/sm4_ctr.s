@@ -19447,3 +19447,71 @@ vg_sm4_ctr:
 	addi sp, sp, 2032
 	ret
 	.option pop
+
+vg_sm4_ctr_final:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -80
+	addi a4, sp, 0
+	sd ra, 0(a4)
+	sd s1, 8(a4)
+	sd s2, 16(a4)
+	sd s3, 24(a4)
+	sd s4, 32(a4)
+	sd s5, 40(a4)
+	sd s6, 48(a4)
+	sd s7, 56(a4)
+	addi s1, a0, 0
+	addi s5, a1, 0
+	addi s7, a4, 0
+	srli t0, a3, 4
+	slli t1, t0, 4
+	add s2, a2, t1
+	sub s3, a3, t1
+	addi a3, t0, 0
+	call {vg_sm4_ctr}
+	beqz s3, 20f
+	addi t0, zero, 0
+	sd t0, 64(s7)
+	sd t0, 72(s7)
+	addi a0, s1, 0
+	addi a1, s5, 0
+	addi a2, s7, 64
+	addi a3, zero, 1
+	call {vg_sm4_ctr}
+	addi t2, s7, 64
+22:
+	lbu t0, 0(s2)
+	lbu t1, 0(t2)
+	xor t0, t0, t1
+	sb t0, 0(s2)
+	addi s2, s2, 1
+	addi t2, t2, 1
+	addi s3, s3, -1
+	bnez s3, 22b
+	j 21f
+20:
+21:
+	ld ra, 0(s7)
+	ld s1, 8(s7)
+	ld s2, 16(s7)
+	ld s3, 24(s7)
+	ld s4, 32(s7)
+	ld s5, 40(s7)
+	ld s6, 48(s7)
+	ld s7, 56(s7)
+	addi t5, sp, 0
+	addi t6, zero, 0
+	sd t6, 0(t5)
+	sd t6, 8(t5)
+	sd t6, 16(t5)
+	sd t6, 24(t5)
+	sd t6, 32(t5)
+	sd t6, 40(t5)
+	sd t6, 48(t5)
+	sd t6, 56(t5)
+	sd t6, 64(t5)
+	sd t6, 72(t5)
+	addi sp, sp, 80
+	ret
+	.option pop

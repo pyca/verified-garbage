@@ -48,3 +48,39 @@ jmp 25f
         vg_camellia_crypt_prepared = sym super::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
     )
 }
+
+/// Camellia-CTR encryption or decryption (NIST SP 800-38A §6.5, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Camellia.ctrFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the counter block or the data.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 272 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
+/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_camellia_ctr_final(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jWQkxItEJECJRCQEi0QkRIlEJAiLRCRIiUQkDItEJEyJRCQQi0QkUIlEJBSJ4IPAHIlEJBiLRCQYiRiJcASJeAiJaAyLRCQEi0wkCItUJAyLXCQQi3QkFMHuBFZTUlFQ"
+call {vg_camellia_ctr}
+.base64 "WFhYWFiLRCQUg+APhcA="
+je 20f
+.base64 "i0QkGLkAAAAAiUgQiUgUiUgYiUgcicODwxCLRCQEi0wkCItUJAy+AQAAAFZTUlFQ"
+call {vg_camellia_ctr}
+.base64 "WFhYWFiLXCQYg8MQi3QkEItsJBSJ6IPlDynoAcY="
+22:
+.base64 "D7YDD7YOMcGIDoPDAYPGAYPtAQ=="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i0QkGIsYi3AEi3gIi2gMuQAAAACJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOI1kJDzD"
+.p2align 6"#,
+        vg_camellia_ctr = sym super::camellia_ctr::vg_camellia_ctr,
+    )
+}

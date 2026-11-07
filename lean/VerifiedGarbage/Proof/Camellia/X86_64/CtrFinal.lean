@@ -619,7 +619,7 @@ theorem tail_args_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KWhole s�
       simp only [Spill.saveMem, zeroSlots, Spill.slot, Offset.add_add], z₂]
     exact AesCtr.X86_64.zero_bytes _ _
 
-theorem cipher_length (sk : Spec.Camellia.Subkeys) (b : List Byte) : (Spec.Camellia.cipher sk b).length = 16 := by
+theorem ctr_cipher_length (sk : Spec.Camellia.Subkeys) (b : List Byte) : (Spec.Camellia.cipher sk b).length = 16 := by
   simp [Spec.Camellia.cipher]
 
 /-- What the call on the block leaves. -/
@@ -709,7 +709,7 @@ theorem tail_call_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KTArgs s�
       · exact (hp.data_sv.sub_left (blk_sub s₀)).sub_right (blk_sv_sub s₀)
       · exact hp.stk_data.symm.sub_left (blk_sub s₀)]
     exact h.blocks
-  · exact Modes.CtrFinal.bytesAt_of_blocksAt_one (cipher_length _) eZ pb
+  · exact Modes.CtrFinal.bytesAt_of_blocksAt_one (ctr_cipher_length _) eZ pb
 
 theorem key_load_wp {s₀ s : State} (h : KTCall s₀ s) : WP isa (.block ctrFinalLoad) s (Loaded (KTCall s₀) s₀) :=
   WP.of_runBlock ⟨_, load_ok s, s, h, by rw [h.r15]⟩
@@ -876,7 +876,7 @@ theorem final_wp {s₀ : State} (hp : KPre s₀) :
 
 theorem final_post {s₀ s₁ s' : State} (h : KDone s₀ s₁) (hm : s'.mem = s₁.mem) : ctrFinalX86_64.post s₀ s' := by
   show Spec.Ctr.CryptFinal (kCiph s₀) s₀.mem s'.mem (fIv s₀) (fD s₀) (fL s₀)
-  exact Modes.CtrFinal.cryptFinal_of (cipher_length _) (by rw [hm]; exact h.blocks)
+  exact Modes.CtrFinal.cryptFinal_of (ctr_cipher_length _) (by rw [hm]; exact h.blocks)
     (fun q hq => by rw [hm]; exact h.tail q hq) (by rw [hm]; exact h.ctr)
 
 theorem ctrFinal_mx : ctrFinal.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide

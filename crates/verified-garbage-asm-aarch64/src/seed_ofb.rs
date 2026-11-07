@@ -53,3 +53,63 @@ b 21f
         vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
     )
 }
+
+/// SEED-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 4269 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`.
+///
+/// Contract: `VG.Spec.Seed.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 1456 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_seed_ofb_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd116c3ff,0x910003e4,0x91000085,0xf902a8b3,0xf902acb4,0xf902b0b5,0xf902b4b6,0xf902b8b7
+.inst 0xf902bcb8,0xf902c0b9,0xf902c4ba,0xf902c8bb,0xf902ccbc,0x91000039,0x91000057,0x91000078
+.inst 0x4e080f3f,0xf9400006,0xf90268a6,0xf9400406,0xf9026ca6,0xf9400806,0xf90270a6,0xf9400c06
+.inst 0xf90274a6,0xf9401006,0xf90278a6,0xf9401406,0xf9027ca6,0xf9401806,0xf90280a6,0xf9401c06
+.inst 0xf90284a6,0xf9402006,0xf90288a6,0xf9402406,0xf9028ca6,0xf9402806,0xf90290a6,0xf9402c06
+.inst 0xf90294a6,0xf9403006,0xf90298a6,0xf9403406,0xf9029ca6,0xf9403806,0xf902a0a6,0xf9403c06
+.inst 0xf902a4a6,0x4e083ff9,0xf9400326,0xf901e8a6,0xf9400726,0xf901eca6
+cbz x24, 20f
+22:
+.inst 0x4e080f3f,0x4e080fdc,0x4e080cbb,0x4e080efd,0x4e080f1e,0x911340a0,0x910f40a1,0xd2800202
+.inst 0x910000a3
+bl {vg_seed_encrypt_blocks}
+.inst 0x4e083f65,0x4e083f9e,0x4e083fb7,0x4e083fd8,0x4e083ff9,0xd344ff08
+cbz x8, 23f
+.inst 0xf94002e6,0xf941e8a7,0xca0700c6,0xf90002e6,0xf94006e6,0xf941eca7,0xca0700c6,0xf90006e6
+.inst 0x910042f7,0xd1004318
+b 24f
+23:
+.inst 0x910f40a9
+25:
+.inst 0x39400126,0x394002e7,0xca0600e7,0x390002e7,0x91000529,0x910006f7,0xd1000718
+cbnz x24, 25b
+24:
+cbnz x24, 22b
+b 21f
+20:
+21:
+.inst 0xf941e8a6,0xf9000326,0xf941eca6,0xf9000726,0xf942a8b3,0xf942acb4,0xf942b0b5,0xf942b4b6
+.inst 0xf942b8b7,0xf942bcb8,0xf942c0b9,0xf942c4ba,0xf942c8bb,0xf942ccbc,0xd2800011,0x910003f0
+.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611
+.inst 0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611,0xa90f4611
+.inst 0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611,0xa9174611
+.inst 0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611
+.inst 0x910803f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611
+.inst 0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611,0xa90e4611
+.inst 0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611,0xa9164611
+.inst 0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611
+.inst 0xa91f4611,0x911003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
+.inst 0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611,0xa90c4611,0xa90d4611
+.inst 0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611
+.inst 0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0x9116c3ff,0xd65f03c0
+.p2align 6",
+        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks::vg_seed_encrypt_blocks,
+    )
+}
