@@ -480,6 +480,54 @@ jmp 21f
 pub(crate) mod vg_chacha20_block;
 
 #[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_open_body.rs"]
+pub(crate) mod vg_chacha20_poly1305_open_body;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_open_body_avx2.rs"]
+pub(crate) mod vg_chacha20_poly1305_open_body_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_open_body_avx512.rs"]
+pub(crate) mod vg_chacha20_poly1305_open_body_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_open_body_avx512vl.rs"]
+pub(crate) mod vg_chacha20_poly1305_open_body_avx512vl;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_open_body_ifma.rs"]
+pub(crate) mod vg_chacha20_poly1305_open_body_ifma;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_open_body_ssse3.rs"]
+pub(crate) mod vg_chacha20_poly1305_open_body_ssse3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_body.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_body;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_body_avx2.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_body_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_body_avx512.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_body_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_body_avx512vl.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_body_avx512vl;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_body_ifma.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_body_ifma;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_body_ssse3.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_body_ssse3;
+
+#[rustfmt::skip]
 #[path = "internal/vg_chacha20_poly1305_seal_split_avx512.rs"]
 pub(crate) mod vg_chacha20_poly1305_seal_split_avx512;
 
