@@ -30,5 +30,6 @@ materialize_code Impl.ChaCha20Poly1305.Arm.openMain
 materialize_code Impl.ChaCha20Poly1305.Arm.openEnd
 materialize_code Impl.ChaCha20Poly1305.Arm.seal
 materialize_code Impl.ChaCha20Poly1305.Arm.open
+materialize_code Impl.ChaCha20Poly1305.Arm.openTo
 
 end VG

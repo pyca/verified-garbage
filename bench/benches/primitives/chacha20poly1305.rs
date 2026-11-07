@@ -145,6 +145,7 @@ pub fn bench(c: &mut Criterion) {
     // Decryption out of place: from the ciphertext into a separate buffer,
     // which it is not copied to first.
     #[cfg(any(
+        target_arch = "arm",
         target_arch = "riscv64",
         all(target_arch = "powerpc64", target_endian = "little")
     ))]
