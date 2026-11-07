@@ -37,6 +37,25 @@ theorem carry_toNat (x y : BitVec 64) :
       rw [BitVec.lt_def, BitVec.toNat_add]; omega
     simp only [this, h, ite_false, decide_false, Bool.toNat_false]; rfl
 
+/-- The arithmetic of a product-first multiply-add: `x` added into the
+product's low word first and `c` last, the two carries into its high word,
+make `x + p q + c`, below `2¹²⁸`. -/
+theorem sqr_chain (x p q c : BitVec 64) :
+    (p * q + x + c).toNat +
+      2 ^ 64 * (BitVec.ofNat 64 (p.toNat * q.toNat / 2 ^ 64) + (if p * q + x < x then 1 else 0) +
+        (if p * q + x + c < c then 1 else 0)).toNat =
+      x.toNat + p.toNat * q.toNat + c.toNat := by
+  have hx := x.isLt
+  have hp := p.isLt
+  have hq := q.isLt
+  have hc := c.isLt
+  have hP : p.toNat * q.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  simp only [BitVec.toNat_add (_ + _), BitVec.toNat_add (BitVec.ofNat 64 _), carry_toNat]
+  simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat]
+  by_cases h1 : 2 ^ 64 ≤ p.toNat * q.toNat % 2 ^ 64 + x.toNat <;>
+    by_cases h2 : 2 ^ 64 ≤ (p.toNat * q.toNat % 2 ^ 64 + x.toNat) % 2 ^ 64 + c.toNat <;>
+    simp only [h1, h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
+
 /-- The arithmetic of one of a step's two sums: with `c₁ = c + x` and its
 carry `k₁`, and `l = p q + c₁` and its carry `k₂`, the low word `l` and
 `2⁶⁴` times the high word of `p q` plus both carries make `x + p q + c`,
@@ -86,8 +105,8 @@ theorem fiosStep_ok {s : State} {B : Addr} {Z dT dB dM k : Nat} (hs : Scr s B Z)
     hs.al8 (show dM + (k + 16) + 8 ≤ Z by omega_arith) (by omega_arith),
     hs.al8 (show dT + k + 8 ≤ Z by omega_arith) (by omega_arith)]
   refine ⟨_, rfl, ?_⟩
-  have h1 := fios_chain (word s.mem B (dT + (k + 8))) (s.gpr .t6) (word s.mem B (dB + (k + 8))) (s.gpr .s0)
-  have h2 := fios_chain (s.gpr .t6 * word s.mem B (dB + (k + 8)) + (s.gpr .s0 + word s.mem B (dT + (k + 8))))
+  have h1 := sqr_chain (word s.mem B (dT + (k + 8))) (s.gpr .t6) (word s.mem B (dB + (k + 8))) (s.gpr .s0)
+  have h2 := sqr_chain (s.gpr .t6 * word s.mem B (dB + (k + 8)) + word s.mem B (dT + (k + 8)) + s.gpr .s0)
     (s.gpr .t2) (word s.mem B (dM + (k + 8))) (s.gpr .s1)
   simp only [Nat.reducePow, word] at h1 h2 ⊢
   omega_arith
