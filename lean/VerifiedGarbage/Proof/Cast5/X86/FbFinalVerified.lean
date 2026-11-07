@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Cast5.X86.ModesVerified
 public import VerifiedGarbage.Impl.Cast5.X86.FbFinal
 public import VerifiedGarbage.Spec.Cast5.CfbFinal
+public import VerifiedGarbage.Spec.Cast5.OfbFinal
 public import VerifiedGarbage.Proof.Cast5.CfbFinal
 public import VerifiedGarbage.Proof.Modes.X86.SeqFinal
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -18,6 +19,7 @@ import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Cast5.X86.ModesVerified
 meta import VerifiedGarbage.Impl.Cast5.X86.FbFinal
 meta import VerifiedGarbage.Spec.Cast5.CfbFinal
+meta import VerifiedGarbage.Spec.Cast5.OfbFinal
 meta import VerifiedGarbage.Proof.Cast5.CfbFinal
 meta import VerifiedGarbage.Proof.Modes.X86.SeqFinal
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -32,10 +34,11 @@ meta import VerifiedGarbage.Proof.Framework.X86.StackScratchConsts
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 
 /-!
-# CAST5-CFB64 of a message's last piece on x86 (32-bit): correctness and contracts
+# CAST5-CFB64 and CAST5-OFB of a message's last piece on x86 (32-bit): correctness and contracts
 
-`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`: the modes' CFB over a message's
-last piece (`Proof.Modes.X86.cfbEncFinal_wp`, `cfbDecFinal_wp`) over CAST5's
+`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`, `ofbFinal_wp`: the modes' CFB
+and OFB over a message's last piece (`Proof.Modes.X86.cfbEncFinal_wp`,
+`cfbDecFinal_wp`, `ofbFinal_wp`) over CAST5's
 encrypting core (`Mode.dirCoreSpec true`), with the working space as a sixth
 argument (`finalX`: `ModeFns.modeX true` but the data `len` bytes). The table
 of S-boxes is readable, where the static `VG_CAST5_S1234` puts it, and holds
@@ -414,5 +417,39 @@ theorem cfbDecryptFinal_framed :
     cfbDecryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun vs m₁ m₂ hl _ h => Proof.Cast5.cfbFinalPre_local _ vs m₁ m₂ hl h)
     (Proof.Cast5.cfbDecFinalPost_local _) (Proof.Cast5.cfbDecFinalPostOut_local _) (final_frameSat _)
+
+/-! ## OFB of a message's last piece -/
+
+/-- The final OFB function's postcondition. -/
+def ofbPost (s s' : State) : Prop :=
+  Spec.Ofb.CryptFinal (ciph s) 8 s.mem s'.mem ((arg s 2).setWidth 64) ((arg s 3).setWidth 64) (arg s 4).toNat
+
+theorem ofbFinal_wp {s₀ : State} (hp : (finalX ofbPost).pre s₀) :
+    WP isa ofbFinal s₀ fun s' => abiPreserved s₀ s' ∧ (finalX ofbPost).post s₀ s' :=
+  WP.mono (Proof.Modes.X86.ofbFinal_wp (dirCoreSpec true) (seqPre_of hp) rfl rfl (keyArgs_of hp))
+    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+
+theorem ofbFinal_ct : ConstantTime isa (finalX ofbPost).pre (finalX ofbPost).pub ofbFinal :=
+  VG.Taint.constantTime (A := taintSym [s1234Sym]) τFb (fun _ _ h₁ h₂ hp => τFb_agree h₁ h₂ hp)
+    (by taint_decide)
+
+theorem ofbFinal_verified :
+    Verified X86.target ofbFinal
+      (fbK Spec.Cast5.ofbFinalSig (Spec.Cast5.ofbFinalPre X86.abi.ptrBits) (Proof.Cast5.ofbFinalPost X86.abi.ptrBits)) :=
+  finalK_verified (fun _ hs => ofbFinal_wp hs) ofbFinal_ct (fun s s' _ h => by
+      sig_post [Sig.scratchContract, Sig.withScratch, Spec.Cast5.ofbFinalSig, Proof.Cast5.ofbFinalPost, X86.abi,
+        X86.argSlots, X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Curry.withScratch]
+      exact h) ⟨_, final_sat⟩
+
+/-- The final OFB function with its working space on the stack. -/
+theorem ofbFinal_framed :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 332 5 76 ofbFinal)
+      (Proof.Cast5.ofbFinalRoundsContract (X86.abi.withConsts ecbConsts) 336) :=
+  X86.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbFinalSig)
+    (nm := "scratch") (e := .u64) (n := 38) (pre := Spec.Cast5.ofbFinalPre X86.abi.ptrBits)
+    (post := Proof.Cast5.ofbFinalPost X86.abi.ptrBits) (wa := true) (stack := 4) (bytes := 332)
+    ofbFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (fun vs m₁ m₂ hl _ h => Proof.Cast5.ofbFinalPre_local _ vs m₁ m₂ hl h)
+    (Proof.Cast5.ofbFinalPost_local _) (Proof.Cast5.ofbFinalPostOut_local _) (final_frameSat _)
 
 end VG.Proof.Cast5.X86.FbFinal

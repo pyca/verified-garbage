@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
@@ -89,7 +88,7 @@ theorem rest_call (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre
     (hdata : ∀ k < L s₀, w.mem (dp s₀ + BitVec.ofNat 64 k) =
       if k < P then s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0
       else s.mem (dp s₀ + BitVec.ofNat 64 k)) :
-    WP isa (.call v.callee.name v.callee.code) w fun s' =>
+    WP isa v.callee.inPlace w fun s' =>
       (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) ∧
       Kept [sub s₀ 64 384, dR s₀] w s' ∧ Frame [sub s₀ 64 384, restR s₀ P] w.mem s'.mem ∧
       bytesAt s'.mem (dp s₀) (L s₀) =
@@ -108,7 +107,7 @@ theorem rest_call (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
     ((hp.c_d.symm.sub_right (sub_ctx s₀ (k := 128) (n := 320) (by lit_omega))).sub_left ts)
     (by have := hp.wrap_d; simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)
-    (Covers.right hw) hw fun s' v' k' d' => ?_
+    hw fun s' v' k' d' => ?_
   refine ⟨v', ?_, ?_, ?_⟩
   · refine k'.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

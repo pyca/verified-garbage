@@ -15,97 +15,11 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "aarch64")]
-use crate::arch::aes_ocb::{
-    VG_AES_OCB_INIT_AES_FEATURES, VG_AES_OCB_OPEN_AES_FEATURES, VG_AES_OCB_SEAL_AES_FEATURES,
-    vg_aes_ocb_init_aes, vg_aes_ocb_open_aes, vg_aes_ocb_seal_aes,
+use crate::arch::dispatch::aes_ocb::{
+    vg_aes_ocb_init_auto, vg_aes_ocb_open_auto, vg_aes_ocb_seal_auto,
 };
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::aes_ocb::{
-    VG_AES_OCB_INIT_AESNI_FEATURES, VG_AES_OCB_OPEN_AESNI_FEATURES, VG_AES_OCB_SEAL_AESNI_FEATURES,
-    vg_aes_ocb_init_aesni, vg_aes_ocb_open_aesni, vg_aes_ocb_seal_aesni,
-};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::aes_ocb::{
-    VG_AES_OCB_INIT_VAES_FEATURES, VG_AES_OCB_OPEN_VAES_FEATURES, VG_AES_OCB_SEAL_VAES_FEATURES,
-    vg_aes_ocb_init_vaes, vg_aes_ocb_open_vaes, vg_aes_ocb_seal_vaes,
-};
-use crate::arch::aes_ocb::{vg_aes_ocb_init, vg_aes_ocb_open, vg_aes_ocb_seal};
-use crate::cipher::aes::Backend;
-use crate::cpu::detected;
 use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
-use verified_garbage_cpu::Features;
-
-/// The variant of a function for `backend`: the baseline one, or its
-/// `_aesni`, `_vaes` or `_aes` one.
-macro_rules! instance {
-    ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident, $aes:ident) => {
-        match $backend {
-            Backend::Scalar => $scalar,
-            #[cfg(target_arch = "x86_64")]
-            Backend::AesNi => $aesni,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Vaes => $vaes,
-            #[cfg(target_arch = "x86")]
-            Backend::AesNi => $aesni,
-            #[cfg(target_arch = "aarch64")]
-            Backend::Aes => $aes,
-        }
-    };
-}
-
-/// The best implementation of AES a CPU with the features `f` can run, with
-/// the AES-OCB functions for it.
-#[cfg(target_arch = "x86_64")]
-fn select(f: Features) -> Backend {
-    const AESNI: Features = Features::all(&[
-        VG_AES_OCB_INIT_AESNI_FEATURES,
-        VG_AES_OCB_SEAL_AESNI_FEATURES,
-        VG_AES_OCB_OPEN_AESNI_FEATURES,
-    ]);
-    const VAES: Features = Features::all(&[
-        VG_AES_OCB_INIT_VAES_FEATURES,
-        VG_AES_OCB_SEAL_VAES_FEATURES,
-        VG_AES_OCB_OPEN_VAES_FEATURES,
-    ]);
-    Backend::select_for(f, VAES, AESNI)
-}
-
-/// The best implementation of AES a CPU with the features `f` can run, with
-/// the AES-OCB functions for it.
-#[cfg(target_arch = "x86")]
-fn select(f: Features) -> Backend {
-    const AESNI: Features = Features::all(&[
-        VG_AES_OCB_INIT_AESNI_FEATURES,
-        VG_AES_OCB_SEAL_AESNI_FEATURES,
-        VG_AES_OCB_OPEN_AESNI_FEATURES,
-    ]);
-    Backend::select_for(f, AESNI)
-}
-
-/// The best implementation of AES a CPU with the features `f` can run, with
-/// the AES-OCB functions for it.
-#[cfg(target_arch = "aarch64")]
-fn select(f: Features) -> Backend {
-    const AES: Features = Features::all(&[
-        VG_AES_OCB_INIT_AES_FEATURES,
-        VG_AES_OCB_SEAL_AES_FEATURES,
-        VG_AES_OCB_OPEN_AES_FEATURES,
-    ]);
-    Backend::select_for(f, AES)
-}
-
-/// The only implementation of AES on ARMv7, PPC64LE and RISC-V, with the
-/// AES-OCB functions for it.
-#[cfg(any(
-    target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little"),
-    target_arch = "riscv64"
-))]
-fn select(f: Features) -> Backend {
-    Backend::select(f)
-}
 
 /// Fails to compile unless `T` is a tag length OCB allows: 1 to 16 bytes.
 macro_rules! assert_tag_length {
@@ -139,8 +53,6 @@ pub struct AesOcb {
     ctx: [u64; 32],
     /// The number of rounds of AES.
     rounds: usize,
-    /// The implementation of AES of the functions called.
-    backend: Backend,
 }
 
 impl Drop for AesOcb {
@@ -168,22 +80,14 @@ impl AesOcb {
         let mut k = AesOcb {
             ctx: [0; 32],
             rounds: key.len() / 4 + 6,
-            backend: select(detected()),
         };
-        let init = instance!(
-            k.backend,
-            vg_aes_ocb_init,
-            vg_aes_ocb_init_aesni,
-            vg_aes_ocb_init_vaes,
-            vg_aes_ocb_init_aes
-        );
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
         // 24 or 32; `k.ctx` is valid for reads and writes of 256 bytes. They
         // are distinct objects, so they do not overlap, nor do they overlap
         // the return address on the stack or the stack below it, and neither
-        // wraps around the end of the address space. The CPU has the features
-        // of the implementation selected.
-        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
+        // wraps around the end of the address space. The dispatcher calls only
+        // an implementation the CPU has the features of.
+        unsafe { vg_aes_ocb_init_auto(key.as_ptr(), key.len(), &mut k.ctx) };
         Ok(k)
     }
 
@@ -203,13 +107,6 @@ impl AesOcb {
     ) -> Result<[u8; T], Error> {
         assert_tag_length!(T);
         check(nonce)?;
-        let seal = instance!(
-            self.backend,
-            vg_aes_ocb_seal,
-            vg_aes_ocb_seal_aesni,
-            vg_aes_ocb_seal_vaes,
-            vg_aes_ocb_seal_aes
-        );
         let mut tag = [0u8; T];
         // SAFETY: `self.ctx` is the key context `vg_aes_ocb_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes.
@@ -220,9 +117,10 @@ impl AesOcb {
         // overlap neither each other nor the other buffers; no buffer
         // overlaps the arguments on the stack, the return address or the
         // stack below it, and none wraps around the end of the address
-        // space. The CPU has the features of the implementation selected.
+        // space. The dispatcher calls only an implementation the CPU has the
+        // features of.
         unsafe {
-            seal(
+            vg_aes_ocb_seal_auto(
                 &self.ctx,
                 self.rounds,
                 nonce.as_ptr(),
@@ -253,18 +151,11 @@ impl AesOcb {
     ) -> Result<(), Error> {
         assert_tag_length!(T);
         check(nonce)?;
-        let open = instance!(
-            self.backend,
-            vg_aes_ocb_open,
-            vg_aes_ocb_open_aesni,
-            vg_aes_ocb_open_vaes,
-            vg_aes_ocb_open_aes
-        );
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
         // valid for reads of `T` bytes; `tag` is a shared borrow, which
         // `data`, a unique one, does not overlap.
         let ok = unsafe {
-            open(
+            vg_aes_ocb_open_auto(
                 &self.ctx,
                 self.rounds,
                 nonce.as_ptr(),

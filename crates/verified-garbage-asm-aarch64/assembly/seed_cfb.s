@@ -221,10 +221,23 @@ vg_seed_cfb128_decrypt:
 	str x26, [x5, #1416]
 	str x27, [x5, #1424]
 	str x28, [x5, #1432]
-	add x25, x1, #0
+	ldr x6, [x1, #0]
+	str x6, [x5, #1440]
+	ldr x6, [x1, #8]
+	str x6, [x5, #1448]
+	cbz x3, 20f
+	sub x7, x3, #1
+	lsl x7, x7, #4
+	add x7, x7, x2
+	ldr x6, [x7, #0]
+	str x6, [x1, #0]
+	ldr x6, [x7, #8]
+	str x6, [x1, #8]
+	b 21f
+20:
+21:
 	add x23, x2, #0
 	add x24, x3, #0
-	dup v31.2d, x25
 	ldr x6, [x0, #0]
 	str x6, [x5, #1232]
 	ldr x6, [x0, #8]
@@ -257,14 +270,40 @@ vg_seed_cfb128_decrypt:
 	str x6, [x5, #1344]
 	ldr x6, [x0, #120]
 	str x6, [x5, #1352]
-	umov x25, v31.d[0]
-	ldr x6, [x25, #0]
-	str x6, [x5, #976]
-	ldr x6, [x25, #8]
-	str x6, [x5, #984]
-	cbz x24, 20f
-22:
-	dup v31.2d, x25
+	cbz x24, 22f
+24:
+	lsr x13, x24, #4
+	cbnz x13, 25f
+	add x16, x24, #0
+	b 26f
+25:
+	movz x16, #16, lsl #0
+26:
+	ldr x8, [x5, #1440]
+	str x8, [x5, #976]
+	ldr x8, [x5, #1448]
+	str x8, [x5, #984]
+	add x14, x5, #976
+	add x14, x14, #16
+	add x15, x23, #0
+	sub x17, x16, #1
+	cbz x17, 27f
+29:
+	ldr x8, [x15, #0]
+	str x8, [x14, #0]
+	ldr x8, [x15, #8]
+	str x8, [x14, #8]
+	add x14, x14, #16
+	add x15, x15, #16
+	sub x17, x17, #1
+	cbnz x17, 29b
+	b 28f
+27:
+28:
+	ldr x8, [x15, #0]
+	str x8, [x5, #1440]
+	ldr x8, [x15, #8]
+	str x8, [x5, #1448]
 	dup v28.2d, x30
 	dup v27.2d, x5
 	dup v29.2d, x23
@@ -278,33 +317,36 @@ vg_seed_cfb128_decrypt:
 	umov x30, v28.d[0]
 	umov x23, v29.d[0]
 	umov x24, v30.d[0]
-	umov x25, v31.d[0]
-	ldr x6, [x23, #0]
-	ldr x7, [x5, #976]
-	eor x6, x6, x7
-	str x6, [x23, #0]
-	ldr x6, [x23, #8]
-	ldr x7, [x5, #984]
-	eor x6, x6, x7
-	str x6, [x23, #8]
-	ldr x6, [x5, #976]
-	ldr x7, [x23, #0]
-	eor x6, x6, x7
-	str x6, [x5, #976]
-	ldr x6, [x5, #984]
-	ldr x7, [x23, #8]
-	eor x6, x6, x7
-	str x6, [x5, #984]
-	add x23, x23, #16
-	sub x24, x24, #1
-	cbnz x24, 22b
-	b 21f
-20:
-21:
-	ldr x6, [x5, #976]
-	str x6, [x25, #0]
-	ldr x6, [x5, #984]
-	str x6, [x25, #8]
+	lsr x13, x24, #4
+	cbnz x13, 210f
+	add x16, x24, #0
+	b 211f
+210:
+	movz x16, #16, lsl #0
+211:
+	add x14, x5, #0
+	add x14, x14, #976
+	add x15, x23, #0
+	add x17, x16, #0
+212:
+	ldr x8, [x14, #0]
+	ldr x9, [x15, #0]
+	eor x8, x8, x9
+	str x8, [x15, #0]
+	ldr x8, [x14, #8]
+	ldr x9, [x15, #8]
+	eor x8, x8, x9
+	str x8, [x15, #8]
+	add x14, x14, #16
+	add x15, x15, #16
+	sub x17, x17, #1
+	cbnz x17, 212b
+	add x23, x15, #0
+	sub x24, x24, x16
+	cbnz x24, 24b
+	b 23f
+22:
+23:
 	ldr x19, [x5, #1360]
 	ldr x20, [x5, #1368]
 	ldr x21, [x5, #1376]

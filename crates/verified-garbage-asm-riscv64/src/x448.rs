@@ -275,5 +275,9 @@ call {vg_x448_tail}
 pub(crate) mod vg_x448;
 
 #[rustfmt::skip]
+#[path = "internal/vg_x448_chain223.rs"]
+pub(crate) mod vg_x448_chain223;
+
+#[rustfmt::skip]
 #[path = "internal/vg_x448_tail.rs"]
 pub(crate) mod vg_x448_tail;

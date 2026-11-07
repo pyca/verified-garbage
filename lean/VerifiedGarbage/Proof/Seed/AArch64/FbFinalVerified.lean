@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Seed.AArch64.FbFinalLit
 import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 public import VerifiedGarbage.Impl.Seed.AArch64.FbFinal
 public import VerifiedGarbage.Spec.Seed.CfbFinal
+public import VerifiedGarbage.Spec.Seed.OfbFinal
 public import VerifiedGarbage.Proof.Modes.FbFinal
 public import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 public import VerifiedGarbage.Proof.Framework.Scratch
@@ -22,6 +23,7 @@ meta import VerifiedGarbage.Proof.Seed.AArch64.FbFinalLit
 meta import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 meta import VerifiedGarbage.Impl.Seed.AArch64.FbFinal
 meta import VerifiedGarbage.Spec.Seed.CfbFinal
+meta import VerifiedGarbage.Spec.Seed.OfbFinal
 meta import VerifiedGarbage.Proof.Modes.FbFinal
 meta import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
@@ -32,13 +34,14 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
-# SEED-CFB128 of a message's last piece on AArch64 meets its contracts
+# SEED-CFB128 and SEED-OFB of a message's last piece on AArch64 meet their contracts
 
-`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`: the modes' CFB over a message's
-last piece (`Proof.Modes.AArch64.fbFinal_wp`) over SEED encryption's core
-(`fbCoreSpec`), with the IV's address in `x25`, kept in `v31` around the
-core, as for the whole-block functions (`FbVerified.lean`), and the
-specification's results (`Proof.Modes.cfbEncFinal_of_bytes`, …).
+`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`, `ofbFinal_wp`: the modes' CFB and
+OFB over a message's last piece (`Proof.Modes.AArch64.fbFinal_wp`) over SEED
+encryption's core (`fbCoreSpec`), with the IV's address in `x25`, kept in
+`v31` around the core, as for the whole-block functions (`FbVerified.lean`),
+and the specification's results (`Proof.Modes.cfbEncFinal_of_bytes`, …,
+`Proof.Modes.ofbFinal_of_bytes`).
 `cfbEncryptFinal_verified`, …: each is correct and constant time, by the
 taint analysis, as the whole-block functions are; `cfbEncryptFinal_framed`,
 … run them with their working space on the stack, zeroed on return: 1456
@@ -186,5 +189,47 @@ theorem cfbDecryptFinal_framed :
     (n := 182) (post := Proof.Modes.decFinalPost ciphAt 16 AArch64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 1456) cfbDecryptFinal_verified
     (by decide) (by decide) (by decide) (Proof.Modes.decFinalPost_local _) cfbDecFinalFrameSat_pre
+
+/-! ## OFB of a message's last piece -/
+
+/-- The final OFB function's contract on AArch64. -/
+def ofbFinalAArch64 : Contract isa where
+  pre := fbPre finalLen
+  post s s' := Spec.Ofb.CryptFinal (ciphOf s) 16 s.mem s'.mem (s.gpr .x1) (s.gpr .x2) (finalLen s)
+  pub := fbPub
+
+theorem ofbFinal_wp {s₀ : State} (hp : ofbFinalAArch64.pre s₀) :
+    WP isa ofbFinal s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+      s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ ofbFinalAArch64.post s₀ s' :=
+  WP.mono (fbFinal_wp' .ofb hp) fun s' ⟨hg, hd, hv⟩ => by
+    obtain ⟨h1, h2⟩ := Modes.ofbFinal_of_bytes (by decide) (cipher_length _) hd
+    exact ⟨hg, h1, hv.trans h2⟩
+
+theorem ofbFinal_keeps_x30 : Modes.AArch64.KeepsReg .x30 ofbFinal := by keeps_x30
+
+theorem ofbFinal_verified :
+    Verified AArch64.target ofbFinal (Sig.scratchContract AArch64.abi finalSig "scratch" .u64 182
+      (Curry.const (fun _ => True) _) (Proof.Modes.ofbFinalPost ciphAt 16 AArch64.abi.ptrBits) true 0) :=
+  Verified.of_correct (k := ofbFinalAArch64) (fun s hs => by
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' ofbFinal_keeps_x30 (ofbFinal_wp hs)
+      exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩)
+    (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
+      (by taint_decide)) (by
+    sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+      Proof.Modes.ofbFinalPost, ofbFinalAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [finalSat]
+      using finalSat)
+
+theorem ofbFinalFrameSat_pre : ∃ s, (Spec.Seed.ofbFinalContract AArch64.abi 1456).pre s := by
+  implies_sat [Spec.Seed.ofbFinalContract, Spec.Seed.ofbFinalSig, AArch64.abi, AArch64.argRegs]
+    [finalFrameSat] using finalFrameSat
+
+/-- The final OFB function with its working space on the stack. -/
+theorem ofbFinal_framed :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 ofbFinal)
+      (Spec.Seed.ofbFinalContract AArch64.abi 1456) :=
+  AArch64.Verified.stackScratchWiped (sig := Spec.Seed.ofbFinalSig) (nm := "scratch") (e := .u64)
+    (n := 182) (post := Proof.Modes.ofbFinalPost ciphAt 16 AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 1456) ofbFinal_verified
+    (by decide) (by decide) (by decide) (Proof.Modes.ofbFinalPost_local _) ofbFinalFrameSat_pre
 
 end VG.Proof.Seed.AArch64

@@ -298,10 +298,10 @@ theorem openMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
       ⟨by rw [u₂.other _ (by decide), u₁.gpr], by rw [u₂.gpr, u₁.other _ (by decide)],
         fun r h22 h23 => by rw [u₂.other _ h23, u₁.other _ h22], by rw [u₂.mem, u₁.mem]⟩)).mono
     fun s₁₃ ⟨⟨x22₁₃, x23₁₃, g₁₃, m₁₃⟩, vv₁₃, sp₁₃, rd₁₃, wr₁₃⟩ => ?_)
-  have g₁₁' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13) :
+  have g₁₁' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x15) :
       s₁₁.gpr r = s₁₀.gpr r :=
-    have ⟨h9, h10, h11, h12, h13⟩ := h
-    g₁₁ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13⟩)
+    have ⟨h9, h10, h11, h12, h13, h15⟩ := h
+    g₁₁ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13, h15⟩)
   have x21₁₃ : s₁₃.gpr .x21 = cx s₀ := by
     rw [g₁₃ _ (by decide) (by decide), g₁₂ _ (by decide),
       g₁₁' _ (by decide), x21₁₀]
@@ -316,15 +316,15 @@ theorem openMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   -- The rest XORed with its keystream at `ctx + 128`.
   refine WP.seq (WP.mono (WP.preservedV (Short.xorKsAt_ok hp (o := 448) (n := L s₀ - 448) (by omega_arith)
     (by omega_arith) x21₁₃ x22₁₃ x23₁₃ rd₁₃' wr₁₃') (by lit_decide)) fun s₁₄ ⟨⟨k₁₄, e₁₄, f₁₄, g₁₄⟩, v₁₄⟩ => ?_)
-  have g₁₄' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13) :
+  have g₁₄' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x15) :
       s₁₄.gpr r = s₁₃.gpr r :=
-    have ⟨h9, h10, h11, h12, h13⟩ := h
-    g₁₄ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13⟩)
+    have ⟨h9, h10, h11, h12, h13, h15⟩ := h
+    g₁₄ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13, h15⟩)
   -- Registers.
   have to₇ (r : Reg) (h : r ∈ preserved ∧ r ≠ .x30 ∧ r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧
-      r ≠ .x13 ∧ r ≠ .x14 ∧ r ≠ .x22 ∧ r ≠ .x23) : s₁₄.gpr r = s₇.gpr r := by
-    obtain ⟨hr, h30, h9, h10, h11, h12, h13, h14, h22, h23⟩ := h
-    rw [g₁₄' r ⟨h9, h10, h11, h12, h13⟩, g₁₃ r h22 h23, g₁₂ r h23, g₁₁' r ⟨h9, h10, h11, h12, h13⟩, g₁₀ r h14 h23,
+      r ≠ .x13 ∧ r ≠ .x14 ∧ r ≠ .x15 ∧ r ≠ .x22 ∧ r ≠ .x23) : s₁₄.gpr r = s₇.gpr r := by
+    obtain ⟨hr, h30, h9, h10, h11, h12, h13, h14, h15, h22, h23⟩ := h
+    rw [g₁₄' r ⟨h9, h10, h11, h12, h13, h15⟩, g₁₃ r h22 h23, g₁₂ r h23, g₁₁' r ⟨h9, h10, h11, h12, h13, h15⟩, g₁₀ r h14 h23,
       g₉ r h22 h23, k₈.cs r hr h30]
   have r32 (d : Nat) (hd : d = 32 ∨ d = 40) :
       s₆.mem.readW (off (cx s₀) d) 64 = s₅.mem.readW (off (cx s₀) d) 64 :=

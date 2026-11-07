@@ -230,6 +230,19 @@ theorem polyIn_ok {s₀ : State} (hp : APre e s₀) {s : State} (hx21 : s.gpr .x
       u.rd = s.rd ∧ u.wr = s.wr) ∧ u.v = s.v ∧ u.sp = s.sp ∧ u.rd = s.rd ∧ u.wr = s.wr :=
   VG.Proof.ChaCha20.AArch64.Mixed5.keeps_vectors (by decide +kernel) (polyIn_core hp hx21 hrd hwr)
 
+/-- The bulk's destination: `x4` set from `x1` (and `x28` if `to`). -/
+theorem bulkDst_ok (to : Bool) (s : State) :
+    WP isa (.block [bulkDst to]) s fun u => u.gpr .x4 = cond to (s.gpr .x1 + s.gpr .x28) (s.gpr .x1) ∧
+      (∀ r, r ≠ .x4 → u.gpr r = s.gpr r) ∧ u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp ∧
+      u.v = s.v := by
+  cases to
+  · show WP isa (.block [VG.Impl.ChaCha20.AArch64.Xor.mov .x4 .x1]) s _
+    exact VG.Proof.ChaCha20.AArch64.Xor.wp_movS fun u hu hsp hv =>
+      WP.block_nil ⟨hu.gpr, hu.other, hu.mem, hu.rd, hu.wr, hsp, hv⟩
+  · refine VG.Proof.ChaCha20.AArch64.Xor.WP.cons (s' := s.write .x .x4 (s.gpr .x1 + s.gpr .x28))
+      (by simp [bulkDst, exec, State.read]) (WP.block_nil ?_)
+    exact ⟨by simp [State.write], fun r h => by simp [State.write, h], rfl, rfl, rfl, rfl, rfl⟩
+
 /-- The accumulator's value in `x21`–`x23`. -/
 abbrev hacc (s : State) : Nat :=
   (s.gpr .x21).toNat + 2 ^ 64 * (s.gpr .x22).toNat + 2 ^ 128 * (s.gpr .x23).toNat

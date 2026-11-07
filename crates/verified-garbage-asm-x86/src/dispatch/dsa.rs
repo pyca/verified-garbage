@@ -8,12 +8,6 @@
 #[allow(unused_imports)]
 pub use crate::dsa::vg_dsa_derive_key as vg_dsa_derive_key_auto;
 
-/// `vg_dsa_sign_random`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::dsa::vg_dsa_sign_random as vg_dsa_sign_random_auto;
-
 /// `vg_dsa_generate_key`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
 /// target.
@@ -67,8 +61,20 @@ pub use crate::dsa::vg_dsa_validate_public_key as vg_dsa_validate_public_key_aut
 #[allow(unused_imports)]
 pub use crate::dsa::vg_dsa_verify_prevalidated as vg_dsa_verify_prevalidated_auto;
 
+/// `vg_dsa_validate_private_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use crate::dsa::vg_dsa_validate_private_key as vg_dsa_validate_private_key_auto;
+
 /// `vg_dsa_parameter_search_init`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
 /// target.
 #[allow(unused_imports)]
 pub use crate::dsa::vg_dsa_parameter_search_init as vg_dsa_parameter_search_init_auto;
+
+/// `vg_dsa_sign_random_prevalidated`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use crate::dsa::vg_dsa_sign_random_prevalidated as vg_dsa_sign_random_prevalidated_auto;

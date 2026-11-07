@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed
@@ -39,7 +38,6 @@ meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
-meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed

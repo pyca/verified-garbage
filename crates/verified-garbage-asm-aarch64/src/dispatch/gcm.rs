@@ -90,6 +90,39 @@ pub unsafe fn vg_aes_gcm_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
     unsafe { crate::gcm::vg_aes_gcm_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
 }
 
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_open_to_aes_sha3` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_AES_SHA3_FEATURES`); or else `vg_aes_gcm_open_to`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_open_to_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_AES_SHA3_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_to_aes_sha3`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_open_to_aes_sha3(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::gcm::vg_aes_gcm_open_to(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) }
+}
+
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.

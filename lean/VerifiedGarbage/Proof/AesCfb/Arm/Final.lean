@@ -1027,16 +1027,15 @@ theorem FPre.argsWf {s₀ : State} (hp : FPre s₀) :
   · exact hp.scr_arg.symm
   · exact hp.sv_arg.symm
 
-theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
-    (hv : ∀ s, (modeArm (cfbMode enc)).pre s →
-      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeArm (cfbMode enc)).post s s')
-    (hct : ConstantTime isa (modeArm (cfbMode enc)).pre (modeArm (cfbMode enc)).pub whole)
+theorem final_rel {enc : Bool} {M : Mode} {name : String} {whole : Prog isa}
+    (hv : ∀ s, (modeArm M).pre s →
+      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeArm M).post s s')
+    (hct : ConstantTime isa (modeArm M).pre (modeArm M).pub whole)
     (hd : armStack whole = 8) {s₀ s₀' : State}
     (h0 : (finalArm enc).pre s₀) (h0' : (finalArm enc).pre s₀') (hq : (finalArm enc).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (final name whole) fun _ _ => True := by
   have hp := FPre.of h0
   have hp' := FPre.of h0'
-  let M := cfbMode enc
   -- The registers saved and the arguments set up.
   have r₁ := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀') (G := Setup s₀) (G' := Setup s₀')
     (argTaint [.r0, .r1, .r2, .r3] 12)
@@ -1128,10 +1127,10 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
     (fun _ h => WP.mono (final_end_wp hp' h) fun _ _ => trivial)
   exact (r₁.seq (r₂.seq (r₃.seq (r₄.seq r₅)))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
-theorem final_ct {enc : Bool} {name : String} {whole : Prog isa}
-    (hv : ∀ s, (modeArm (cfbMode enc)).pre s →
-      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeArm (cfbMode enc)).post s s')
-    (hct : ConstantTime isa (modeArm (cfbMode enc)).pre (modeArm (cfbMode enc)).pub whole)
+theorem final_ct {enc : Bool} {M : Mode} {name : String} {whole : Prog isa}
+    (hv : ∀ s, (modeArm M).pre s →
+      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeArm M).post s s')
+    (hct : ConstantTime isa (modeArm M).pre (modeArm M).pub whole)
     (hd : armStack whole = 8) :
     ConstantTime isa (finalArm enc).pre (finalArm enc).pub (final name whole) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (final_rel hv hct hd h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
@@ -1174,14 +1173,14 @@ theorem decrypt_stack : armStack decrypt = 8 := by
 
 theorem encryptFinal_verified : Verified Arm.target encryptFinal (finalScratchContract true) :=
   Verified.of_correct (final_correct (fun _ hs => AesCbc.Arm.whole_wp encBody_ok hs) encrypt_stack)
-    (final_ct (fun _ hs => AesCbc.Arm.whole_wp encBody_ok hs) (AesCbc.Arm.whole_ct encBody_ok encBody_ct)
-      encrypt_stack)
+    (final_ct (enc := true) (fun _ hs => AesCbc.Arm.whole_wp encBody_ok hs)
+      (AesCbc.Arm.whole_ct encBody_ok encBody_ct) encrypt_stack)
     (final_implies true)
 
 theorem decryptFinal_verified : Verified Arm.target decryptFinal (finalScratchContract false) :=
   Verified.of_correct (final_correct (fun _ hs => AesCbc.Arm.whole_wp decBody_ok hs) decrypt_stack)
-    (final_ct (fun _ hs => AesCbc.Arm.whole_wp decBody_ok hs) (AesCbc.Arm.whole_ct decBody_ok decBody_ct)
-      decrypt_stack)
+    (final_ct (enc := false) (fun _ hs => AesCbc.Arm.whole_wp decBody_ok hs)
+      (AesCbc.Arm.whole_ct decBody_ok decBody_ct) decrypt_stack)
     (final_implies false)
 
 /-! ## With `save` on the stack

@@ -12,7 +12,7 @@ meta import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 
-/-! # SM4's final CFB functions on PPC64LE, evaluated once -/
+/-! # SM4's final CFB and OFB functions on PPC64LE, evaluated once -/
 
 @[expose] public section
 
@@ -20,5 +20,6 @@ namespace VG
 
 materialize_code Impl.Sm4.PPC64LE.cfbEncryptFinal
 materialize_code Impl.Sm4.PPC64LE.cfbDecryptFinal
+materialize_code Impl.Sm4.PPC64LE.ofbFinal
 
 end VG

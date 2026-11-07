@@ -12,7 +12,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
-/-! # IDEA-CFB64's final functions' x86 (32-bit) code as literals, for kernel-evaluated checks -/
+/-! # IDEA-CFB64's and IDEA-OFB's final functions' x86 (32-bit) code as literals, for kernel-evaluated checks -/
 
 @[expose] public section
 
@@ -20,5 +20,6 @@ namespace VG.Proof.Idea.X86
 
 materialize_flat_code cfbEncryptFinalCode := Impl.Idea.X86.cfbEncryptFinal
 materialize_flat_code cfbDecryptFinalCode := Impl.Idea.X86.cfbDecryptFinal
+materialize_flat_code ofbFinalCode := Impl.Idea.X86.ofbFinal
 
 end VG.Proof.Idea.X86

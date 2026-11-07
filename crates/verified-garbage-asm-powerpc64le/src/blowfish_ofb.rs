@@ -48,3 +48,59 @@ b 21f
 .base64 "eOu/f0gABYEAAB+RTAAFgQQAH5EoAKXrMADF6zgA5etAAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5gAAhOCAAgE4=""#,
     )
 }
+
+/// Blowfish-OFB encryption or decryption (NIST SP 800-38A §6.4, Schneier, FSE 1994) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is Blowfish encryption under the schedule written by `vg_blowfish_expand_key`.
+///
+/// Contract: `VG.Spec.Blowfish.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 4168 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_blowfish_ofb_final(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "gf8h+CAA4TimAgh8QAAH+CgAp/swAMf7OADn+3gjnXx4M958eCOffHgrpnx4O+V8AAAfgUgABZEEAB+BTAAFkXgz33wAAD4o"
+beq %cr0, 20f
+22:
+.base64 "SAAFgSAABZFMAAWBJAAFkXgrpnwAAMb5CADm+RAABvoYACb6AAAAOCAABjosBJB8BACQOSwErHwAEAM5"
+23:
+.base64 "AACIgXhihHzGB4l4IEYpef8AwDkG+Ct54A9reVAAa30+QMxVeHKMfThYjH14Ys59RvAreeAPa3lQAGt9PoDMVXhyjH04WIx9eGLOfQAAQDl4G298"
+24:
+.base64 "gvAref//azngD2t5UABrfThwa338/yk5AACPgThYjH14Y0p9AAGPgThYjH0+QIxVeGNKfQACj4E4WIx9PoCMVXhjSn0AA4+BOFiMfT7AjFV4Y0p9BADvOVB4g30A/4w5AAAsKA=="
+bne %cr0, 24b
+.base64 "BvgreeAPa3lQAGt9PsBMVXhSjH04WIx9eGJKfUbwK3ngD2t5UABrfT6ATFV4Uox9OFiMfXhiSn14U0d9xkWJeCBGKXn/AMA5BvgreeAPa3lQAGt9PkDMVXhyjH04WIx9eGLOfUbwK3ngD2t5UABrfT6AzFV4cox9OFiMfXhizn0AAEA5eBtvfA=="
+25:
+.base64 "gvAref//azngD2t5UABrfThwa338/yk5AASPgThYjH14Y0p9AAWPgThYjH0+QIxVeGNKfQAGj4E4WIx9PoCMVXhjSn0AB4+BOFiMfT7AjFV4Y0p9BADvOVB4g30A/4w5AAAsKA=="
+bne %cr0, 25b
+.base64 "BvgreeAPa3lQAGt9PsBMVXhSjH04WIx9eGJKfUbwK3ngD2t5UABrfT6ATFV4Uox9OFiMfXhiSn0UUud8xoOJeCBGKXn/AMA5BvgreeAPa3lQAGt9PkDMVXhyjH04WIx9eGLOfUbwK3ngD2t5UABrfT6AzFV4cox9OFiMfXhizn0AAEA5eBtvfA=="
+26:
+.base64 "gvAref//azngD2t5UABrfThwa338/yk5AAiPgThYjH14Y0p9AAmPgThYjH0+QIxVeGNKfQAKj4E4WIx9PoCMVXhjSn0AC4+BOFiMfT7AjFV4Y0p9BADvOVB4g30A/4w5AAAsKA=="
+bne %cr0, 26b
+.base64 "BvgreeAPa3lQAGt9PsBMVXhSjH04WIx9eGJKfUbwK3ngD2t5UABrfT6ATFV4Uox9OFiMfXhiSn14Uud8xsGJeCBGKXn/AMA5BvgreeAPa3lQAGt9PkDMVXhyjH04WIx9eGLOfUbwK3ngD2t5UABrfT6AzFV4cox9OFiMfXhizn0AAEA5eBtvfA=="
+27:
+.base64 "gvAref//azngD2t5UABrfThwa338/yk5AAyPgThYjH14Y0p9AA2PgThYjH0+QIxVeGNKfQAOj4E4WIx9PoCMVXhjSn0AD4+BOFiMfT7AjFV4Y0p9BADvOVB4g30A/4w5AAAsKA=="
+bne %cr0, 27b
+.base64 "BvgreeAPa3lQAGt9PsBMVXhSjH04WIx9eGJKfUbwK3ngD2t5UABrfT6ATFV4Uox9OFiMfXhiSn0UUud8eDqlfHgjjHx4K6R8eGOFfQQACDlQQIN9wO+MOQAALCg="
+bne %cr0, 23b
+.base64 "AACIgXhijHwEAIiAeCqEfHhjhX0sBZB8BACQOSwFrHwIABA6//8xOngzxXwAAMbpCADm6RAABuoYACbqwujIewAAKCg="
+beq %cr0, 28f
+.base64 "IAAFgUgABZEkAAWBTAAFkQAAH4EgACWBeEoIfQAAH5EEAB+BJAAlgXhKCH0EAB+RCAD/O/j/3js="
+b 29f
+28:
+.base64 "IAAFgUgABZEkAAWBTAAFkSAABTk="
+210:
+.base64 "AAA/iQAASIl4Uil9AAA/mQEACDkBAP87///eOwAAPig="
+bne %cr0, 210b
+29:
+.base64 "AAA+KA=="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "eOu/f0gABYEAAB+RTAAFgQQAH5EoAKXrMADF6zgA5etAAAXopgMIfCAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5gAAhOCAAgE4=""#,
+    )
+}

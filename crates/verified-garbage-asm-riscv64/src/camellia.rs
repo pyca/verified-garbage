@@ -10996,3 +10996,27 @@ j 24f
 .option pop",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_modes_crypt_18.rs"]
+pub(crate) mod vg_camellia_modes_crypt_18;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_modes_crypt_24.rs"]
+pub(crate) mod vg_camellia_modes_crypt_24;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_modes_prepare_decrypt_18.rs"]
+pub(crate) mod vg_camellia_modes_prepare_decrypt_18;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_modes_prepare_decrypt_24.rs"]
+pub(crate) mod vg_camellia_modes_prepare_decrypt_24;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_modes_prepare_encrypt_18.rs"]
+pub(crate) mod vg_camellia_modes_prepare_encrypt_18;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_modes_prepare_encrypt_24.rs"]
+pub(crate) mod vg_camellia_modes_prepare_encrypt_24;

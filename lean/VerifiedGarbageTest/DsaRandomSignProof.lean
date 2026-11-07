@@ -3,10 +3,22 @@ module
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignVerified
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ValidatePrivateVerified
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignVerified
+import VerifiedGarbage.Proof.Dsa.Arm.RandomSignVerified
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomSignVerified
+import VerifiedGarbage.Proof.Dsa.Arm.ValidatePrivateVerified
+meta import VerifiedGarbage.Proof.Dsa.Arm.ValidatePrivateVerified
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignVerified
 import VerifiedGarbage.Proof.Dsa.AArch64.ValidatePrivateVerified
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ValidatePrivateVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.ValidatePrivateVerified
+import VerifiedGarbage.Proof.Dsa.RISCV64.RSVerified
+meta import VerifiedGarbage.Proof.Dsa.RISCV64.RSVerified
+import VerifiedGarbage.Proof.Dsa.RISCV64.ValidatePrivateVerified
+meta import VerifiedGarbage.Proof.Dsa.RISCV64.ValidatePrivateVerified
+import VerifiedGarbage.Proof.Dsa.X86.RandomSignInstance
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomSignInstance
+import VerifiedGarbage.Proof.Dsa.X86.ValidatePrivateVerified
+meta import VerifiedGarbage.Proof.Dsa.X86.ValidatePrivateVerified
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareCT
@@ -67,3 +79,11 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
 #assert_standard_axioms VG.Proof.Dsa.AArch64.random_sign_prevalidated_verified
 #assert_standard_axioms VG.Proof.Dsa.AArch64.prevalidated_sign_verified
 #assert_standard_axioms VG.Proof.Dsa.AArch64.validating_private_verified
+#assert_standard_axioms VG.Proof.Dsa.RISCV64.randomSign_verified
+#assert_standard_axioms VG.Proof.Dsa.RISCV64.randomSignPre_verified
+#assert_standard_axioms VG.Proof.Dsa.RISCV64.validatePrivate_verified
+#assert_standard_axioms VG.Proof.Dsa.Arm.randomSigningPrevalidated_verified
+#assert_standard_axioms VG.Proof.Dsa.Arm.validating_private_verified
+#assert_standard_axioms VG.Proof.Dsa.X86.randomSigningPrevalidated_verified
+#assert_standard_axioms VG.Proof.Dsa.X86.prevalidatedSigning_verified
+#assert_standard_axioms VG.Proof.Dsa.X86.privateValidating_verified

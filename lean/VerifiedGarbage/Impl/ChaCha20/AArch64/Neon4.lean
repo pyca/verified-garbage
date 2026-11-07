@@ -8,7 +8,8 @@ public import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
 Each vector holds one word from four independent blocks. The four column
 quarter rounds are scheduled together, as are the four diagonal quarter
 rounds. Only caller-saved vector registers are used. The bulk stream keeps
-the keystream in registers through the input XOR.
+the keystream in registers through the input XOR, from the source at `x1` to
+the destination at `x6` (`x4` is the kernel's scratch register).
 -/
 
 @[expose] public section
@@ -109,33 +110,52 @@ def transpose (a b c d : VReg) : List Instr :=
 
 def rowWord (r i : Fin 4) : Fin 16 := ⟨4 * r + i, by omega⟩
 
-def xorRow (r j : Fin 4) : List Instr :=
+/-- Row `r` of block `j` of the source (at `x1`) XORed with the keystream
+into the destination (at `d`), the source's loaded before the destination's
+is stored. -/
+def xorRowTo (d : Reg) (r j : Fin 4) : List Instr :=
   [.ldrq .v31 .x1 (64 * j + 16 * r),
    .vop (.logic .eor .v31 .v31 (vreg (rowWord r j))),
-   .strq .v31 .x1 (64 * j + 16 * r)]
+   .strq .v31 d (64 * j + 16 * r)]
 
-def finishRowFor (js : List (Fin 4)) (r : Fin 4) : List Instr :=
+/-- In place, at `x1`. -/
+def xorRow (r j : Fin 4) : List Instr := xorRowTo .x1 r j
+
+def finishRowForTo (d : Reg) (js : List (Fin 4)) (r : Fin 4) : List Instr :=
   transpose (vreg (rowWord r 0)) (vreg (rowWord r 1))
     (vreg (rowWord r 2)) (vreg (rowWord r 3)) ++
-  js.flatMap (xorRow r)
+  js.flatMap (xorRowTo d r)
 
-def finishRow (r : Fin 4) : List Instr := finishRowFor (List.finRange 4) r
+def finishRowFor (js : List (Fin 4)) (r : Fin 4) : List Instr := finishRowForTo .x1 js r
 
-def finish : List Instr :=
-  (List.finRange 16).flatMap addWord ++ (List.finRange 4).flatMap finishRow
+def finishRowTo (d : Reg) (r : Fin 4) : List Instr := finishRowForTo d (List.finRange 4) r
 
-def chunk (sve : Bool := false) : Prog isa := .seq (.block setup) (.seq (roundLoop sve) (.block finish))
+def finishRow (r : Fin 4) : List Instr := finishRowTo .x1 r
 
-/-- Advance four counters and one 256-byte chunk; x5 tests for another chunk. -/
+/-- The keystream of the four blocks, XORed with the source (at `x1`) into the
+destination (at `d`). -/
+def finishTo (d : Reg) : List Instr :=
+  (List.finRange 16).flatMap addWord ++ (List.finRange 4).flatMap (finishRowTo d)
+
+def finish : List Instr := finishTo .x1
+
+/-- A chunk, from the source at `x1` to the destination at `x6`. -/
+def chunk (sve : Bool := false) : Prog isa :=
+  .seq (.block setup) (.seq (roundLoop sve) (.block (finishTo .x6)))
+
+/-- Advance four counters and one 256-byte chunk of the source and the
+destination, which is also left in `x4`; x5 tests for another chunk. -/
 def next : List Instr :=
   [.ldr .w .x4 .x0 48, .addImm .w .x4 .x4 4, .str .w .x4 .x0 48,
-   .addImm .x .x1 .x1 256, .subImm .x .x2 .x2 256, .lsr .x .x5 .x2 8]
+   .addImm .x .x1 .x1 256, .addImm .x .x6 .x6 256, .subImm .x .x2 .x2 256, .lsr .x .x5 .x2 8,
+   VG.Impl.ChaCha20.AArch64.Xor.mov .x4 .x6]
 
 def body (sve : Bool := false) : Prog isa := .seq (chunk sve) (.block next)
 
-/-- Short inputs and the remaining bytes use the scalar stream implementation. -/
+/-- Short inputs and the remaining bytes use the scalar stream implementation;
+the destination is kept in `x6` meanwhile. -/
 def xor : Prog isa :=
-  .seq (.block [.lsr .x .x5 .x2 8])
+  .seq (.block [.lsr .x .x5 .x2 8, VG.Impl.ChaCha20.AArch64.Xor.mov .x6 .x4])
     (.seq (.ite (.zero .x .x5) (.block []) (.loop body (.nonzero .x .x5)))
       VG.Impl.ChaCha20.AArch64.Xor.xor)
 

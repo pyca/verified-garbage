@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 
 namespace VG.Proof.ChaCha20.AArch64.Rows6
 open VG VG.AArch64 VG.Impl.ChaCha20.AArch64.Rows6
-open VG.Proof.ChaCha20.AArch64.Xor (XPre st dp L bp stR dR bR)
+open VG.Proof.ChaCha20.AArch64.Xor (st dp L bp stR dR bR)
 
 theorem read_write_self (m : Mem) (p : Addr) (v : BitVec 128) :
     (m.write p 16 v).read p 16 = v := by

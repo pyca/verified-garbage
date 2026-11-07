@@ -340,12 +340,23 @@ def chain223 (z : Nat) : Prog isa :=
   .seq (sqn T6 T6 2) <| .seq (mul T6 T6 T0) <|        -- z^(2^222 - 1)
   .seq (sqn R T6 1) (mul R R z)                       -- z^(2^223 - 1)
 
+/-- Load the saved return address before the chain overwrites product scratch.
+The chain preserves `t2`. -/
+def chain223Shared : Prog isa :=
+  .seq (.block [.load .d .t2 .a3 ACC]) (chain223 Z2)
+
+/-- Share the fixed addition chain using existing product scratch to save `ra`.
+No stack or additional scratch is needed. -/
+def chain223Call : Prog isa :=
+  .seq (.block [.store .d .ra .a3 ACC])
+    (.seq (.call "vg_x448_chain223" chain223Shared) (.block [.addi .ra .t2 0]))
+
 /-- From `chain223 Z2`: `[R] = [Z2]^(p - 2)`. -/
 def invTail : Prog isa :=
   .seq (sqn R R 225) <| .seq (sqn T6 T6 2) <| .seq (mul T6 T6 Z2) (mul R R T6)
 
 /-- `[R] = [Z2]^(p-2)`. -/
-def invert : Prog isa := .seq (chain223 Z2) invTail
+def invert : Prog isa := .seq chain223Call invTail
 
 /-- What follows the setup. -/
 def tail : Prog isa :=

@@ -37,7 +37,7 @@ open VG.Proof.Gcm (lensBlock)
 /-- The regions `tag o` writes. -/
 abbrev tagFrame (st w : Addr) (o : Nat) (sp : Addr) : List Region :=
   [⟨st, 32⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 o, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩,
-    below sp 3232]
+    below sp 3248]
 
 /-- After `tag o`, from `m₀`: the tag of the accumulator `Y` (before the
 lengths block) and the counter block `J`. -/

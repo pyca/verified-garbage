@@ -43,7 +43,7 @@ the number of rounds `R` (`modeFn_wp`), and each `m R` is a mode of
 `Proof/Modes/RISCV64/` over Camellia's core with `R` rounds
 (`Mode.dirCoreSpec`), as CAST5's are (`Proof/Cast5/RISCV64/ModesVerified.lean`).
 `cbcEncryptChained_verified`, `ofb_verified`, …: each meets the shared
-contract with `stack := 3248`: the mode's frame of 406 slots below the stack
+contract with `stack := 3264`: the mode's frame of 408 slots below the stack
 pointer, which holds ECB's scratch buffer and which it zeroes before
 returning. The proofs are written against `modeContract`, which states the
 frame.
@@ -60,7 +60,7 @@ open VG.Proof.Camellia.RISCV64 (modePub)
 open VG.Proof.Camellia (schedWords)
 
 /-- The frame's bytes. -/
-abbrev frameBytes : Nat := 3248
+abbrev frameBytes : Nat := 3264
 
 /-! ## The arguments -/
 

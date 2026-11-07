@@ -83,3 +83,94 @@ jmp 21f
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
 }
+
+/// CAST5-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 2144 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 8, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Cast5.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 336 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_cast5_ofb_final(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQktP7//4uEJFABAACJRCQEi4QkVAEAAIlEJAiLhCRYAQAAiUQkDIuEJFwBAACJRCQQi4QkYAEAAIlEJBSJ4IPAHIlEJBiLRCQYiZgIAQAAibAMAQAAibgQAQAAiagUAQAAiceLdCQMiwaJhyABAACLRgSJhyQBAACLRCQQiYcYAQAAi0QkFImHHAEAAIXA"
+je 20f
+22:
+.base64 "i7cYAQAAi68cAQAAi4cgAQAAiYcAAQAAi4ckAQAAiYcEAQAAif6LRCQEiUYwi0QkCIlGNInwBQABAACJRjiLVjiLGg/Li2oED82LVjCJVkCLTjTB6QKDwQGJTkSLTjSD+RA="
+23:
+.base64 "i1ZAiwIB6ItKQInKg+IBg+oBicfBzx8x+CHQMfjR6YnKg+IBg+oBicfBzx4x+CHQMfjR6YnKg+IBg+oBicfBzxwx+CHQMfjR6YnKg+IBg+oBicfBzxgx+CHQMfjR6YnKg+IBg+oBicfBzxAx+CHQMfiJwYHh/wAAAInCweoIgeL/AAAAicfB7xCB5/8AAADB6BhmD27BZg9u4mYPYsRmD27nZg9u6GYPYuVmD2zE"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_CAST5_S1234} - 2b
+.base64 "WYnBukAAAABmD+/JZg/v0rgBAAAAZg9u2GYPcNsAuP////9mD27wZg9w9gA="
+24:
+.base64 "Zg9v4GYP7+JmD/7mZg9y1AhmD2/8Zg9y9whmD+vn8w9vKWYP2+xmD+vNZg/+02YPb+BmD+/iZg/+5mYPctQIZg9v/GYPcvcIZg/r5/MPb2kQZg/b7GYP681mD/7TZg9v4GYP7+JmD/7mZg9y1AhmD2/8Zg9y9whmD+vn8w9vaSBmD9vsZg/rzWYP/tNmD2/gZg/v4mYP/uZmD3LUCGYPb/xmD3L3CGYP6+fzD29pMGYP2+xmD+vNZg/+04PBQIPqAQ=="
+jne 24b
+.base64 "8w9/DotGDDNGCCtGBAMGMdiJ64nFi1ZAg8IEiVZAi1ZAiwIx6ItKQInKg+IBg+oBicfBzx8x+CHQMfjR6YnKg+IBg+oBicfBzx4x+CHQMfjR6YnKg+IBg+oBicfBzxwx+CHQMfjR6YnKg+IBg+oBicfBzxgx+CHQMfjR6YnKg+IBg+oBicfBzxAx+CHQMfiJwYHh/wAAAInCweoIgeL/AAAAicfB7xCB5/8AAADB6BhmD27BZg9u4mYPYsRmD27nZg9u6GYPYuVmD2zE"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_CAST5_S1234} - 2b
+.base64 "WYnBukAAAABmD+/JZg/v0rgBAAAAZg9u2GYPcNsAuP////9mD27wZg9w9gA="
+25:
+.base64 "Zg9v4GYP7+JmD/7mZg9y1AhmD2/8Zg9y9whmD+vn8w9vKWYP2+xmD+vNZg/+02YPb+BmD+/iZg/+5mYPctQIZg9v/GYPcvcIZg/r5/MPb2kQZg/b7GYP681mD/7TZg9v4GYP7+JmD/7mZg9y1AhmD2/8Zg9y9whmD+vn8w9vaSBmD9vsZg/rzWYP/tNmD2/gZg/v4mYP/uZmD3LUCGYPb/xmD3L3CGYP6+fzD29pMGYP2+xmD+vNZg/+04PBQIPqAQ=="
+jne 25b
+.base64 "8w9/DotGDCtGCANGBDMGMdiJ64nFi1ZAg8IEiVZAi1ZAiwIp6ItKQInKg+IBg+oBicfBzx8x+CHQMfjR6YnKg+IBg+oBicfBzx4x+CHQMfjR6YnKg+IBg+oBicfBzxwx+CHQMfjR6YnKg+IBg+oBicfBzxgx+CHQMfjR6YnKg+IBg+oBicfBzxAx+CHQMfiJwYHh/wAAAInCweoIgeL/AAAAicfB7xCB5/8AAADB6BhmD27BZg9u4mYPYsRmD27nZg9u6GYPYuVmD2zE"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_CAST5_S1234} - 2b
+.base64 "WYnBukAAAABmD+/JZg/v0rgBAAAAZg9u2GYPcNsAuP////9mD27wZg9w9gA="
+26:
+.base64 "Zg9v4GYP7+JmD/7mZg9y1AhmD2/8Zg9y9whmD+vn8w9vKWYP2+xmD+vNZg/+02YPb+BmD+/iZg/+5mYPctQIZg9v/GYPcvcIZg/r5/MPb2kQZg/b7GYP681mD/7TZg9v4GYP7+JmD/7mZg9y1AhmD2/8Zg9y9whmD+vn8w9vaSBmD9vsZg/rzWYP/tNmD2/gZg/v4mYP/uZmD3LUCGYPb/xmD3L3CGYP6+fzD29pMGYP2+xmD+vNZg/+04PBQIPqAQ=="
+jne 26b
+.base64 "8w9/DotGDANGCDNGBCsGMdiJ64nFi1ZAg8IEiVZAi1ZEg+oBiVZE"
+jne 23b
+.base64 "i040g/kQ"
+je 27f
+jmp 28f
+27:
+.base64 "i1ZAiwIB6ItKQInKg+IBg+oBicfBzx8x+CHQMfjR6YnKg+IBg+oBicfBzx4x+CHQMfjR6YnKg+IBg+oBicfBzxwx+CHQMfjR6YnKg+IBg+oBicfBzxgx+CHQMfjR6YnKg+IBg+oBicfBzxAx+CHQMfiJwYHh/wAAAInCweoIgeL/AAAAicfB7xCB5/8AAADB6BhmD27BZg9u4mYPYsRmD27nZg9u6GYPYuVmD2zE"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_CAST5_S1234} - 2b
+.base64 "WYnBukAAAABmD+/JZg/v0rgBAAAAZg9u2GYPcNsAuP////9mD27wZg9w9gA="
+29:
+.base64 "Zg9v4GYP7+JmD/7mZg9y1AhmD2/8Zg9y9whmD+vn8w9vKWYP2+xmD+vNZg/+02YPb+BmD+/iZg/+5mYPctQIZg9v/GYPcvcIZg/r5/MPb2kQZg/b7GYP681mD/7TZg9v4GYP7+JmD/7mZg9y1AhmD2/8Zg9y9whmD+vn8w9vaSBmD9vsZg/rzWYP/tNmD2/gZg/v4mYP/uZmD3LUCGYPb/xmD3L3CGYP6+fzD29pMGYP2+xmD+vNZg/+04PBQIPqAQ=="
+jne 29b
+.base64 "8w9/DotGDDNGCCtGBAMGMdiJ64nFi1ZAg8IEiVZA"
+28:
+.base64 "i1Y4i4YYAQAAi44cAQAAD82JKg/LiVoEiYYYAQAAiY4cAQAAifeLtxgBAACLrxwBAACD/Qg="
+jb 210f
+.base64 "i4cAAQAAiYcgAQAAi4cEAQAAiYckAQAAiwYzhwABAACJBotGBDOHBAEAAIlGBIPGCIPtCIm3GAEAAImvHAEAAA=="
+jmp 211f
+210:
+.base64 "i4cAAQAAiYcgAQAAi4cEAQAAiYckAQAAifuBwwABAAA="
+212:
+.base64 "D7YDD7YOMcGIDoPDAYPGAYPtAQ=="
+jne 212b
+.base64 "ibcYAQAAia8cAQAA"
+211:
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i3QkDIuHIAEAAIkGi4ckAQAAiUYEi58IAQAAi7cMAQAAi68UAQAAi78QAQAAuQAAAACJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAjaQkTAEAAMM="
+.p2align 6"#,
+        VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
+    )
+}

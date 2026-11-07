@@ -4,10 +4,10 @@ public import VerifiedGarbage.Impl.Camellia.X86.Modes
 public import VerifiedGarbage.Impl.Modes.X86.SeqFinal
 
 /-!
-# Camellia-CFB128 of a message's last piece on x86 (32-bit)
+# Camellia-CFB128 and Camellia-OFB of a message's last piece on x86 (32-bit)
 
-`cfbEncryptFinal` and `cfbDecryptFinal` (cdecl: schedule, rounds, iv, data, len,
-scratch): the modes' CFB over a message's last piece, of any length
+`cfbEncryptFinal`, `cfbDecryptFinal` and `ofbFinal` (cdecl: schedule, rounds, iv, data, len,
+scratch): the modes' CFB and OFB over a message's last piece, of any length
 (`Impl/Modes/X86/SeqFinal.lean`), over Camellia's core in the encryption
 direction, with the arguments of `cfbEncrypt` but the data's length in bytes.
 -/
@@ -23,5 +23,8 @@ def cfbEncryptFinal : Prog isa := (dirCore .encrypt).seqFinal (Modes.Mode.cfbEnc
 
 /-- `vg_camellia_cfb128_decrypt_final`. -/
 def cfbDecryptFinal : Prog isa := (dirCore .encrypt).seqFinal (Modes.Mode.cfbDec 4)
+
+/-- `vg_camellia_ofb_final`. -/
+def ofbFinal : Prog isa := (dirCore .encrypt).seqFinal (Modes.Mode.ofb 4)
 
 end VG.Impl.Camellia.X86

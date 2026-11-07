@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.X448.RISCV64.R64.Ladder
 public import VerifiedGarbage.Proof.X448.Invert
 public import VerifiedGarbage.Proof.X448.RISCV64.Invert
 import VerifiedGarbage.Proof.X25519.RISCV64.Instr
+import VerifiedGarbage.Proof.Framework.RISCV64.Call
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X448 on RISC-V, 64-bit limbs: the inversion
@@ -264,6 +266,64 @@ theorem chain223_ok {qs : List Nat} {v : Nat → Fe} (hR : Sep8 R qs = true) (hZ
         · subst eZ; rw [upd_self, VG.Proof.X448.pw_one]
         · rw [upd_of_ne _ _ eZ]
 
+/-- The shared chain restores `ra`, keeps the field frame, and carries the
+saved return address in the caller-saved register `t2`. -/
+theorem chain223Call_ok {qs : List Nat} {v : Nat → Fe} {s : State}
+    (hR : Sep8 R qs = true) (hZ : Z2 ∈ qs) (hT : TempsOk qs = true)
+    (h : CurE b s0 a qs v s) :
+    WP isa chain223Call s (CurE b s0 (s.gpr .ra) (R :: T6 :: qs) (chainV v)) := by
+  obtain ⟨c, h⟩ := h
+  unfold chain223Call
+  refine WP.seq (sd_ok h.ctx (by decide) (by decide) fun s1 u1 => WP.block_nil ?_)
+  have hc1 : Ctx b s1 := h.ctx.of_rest (u1.rest []) (by decide)
+  have fs : Frame [⟨b + BitVec.ofNat 64 ACC, 8⟩] s.mem s1.mem := by
+    rw [u1.mem]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by simp [Region.Contains])
+  have f1 : Frame [VG.Proof.X448.RISCV64.FA b] s.mem s1.mem :=
+    fs.sub fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩
+  have hACC : ACC = 952 := rfl
+  have sl1 : SlotsOk s1.mem b qs v := by
+    intro q hq
+    have hb := (sep1_get (sep8_sep1 hR) hq).2.1
+    have e := VG.Proof.X448.RISCV64.limb_frame fs (o := q) fun r hr k hk => by
+      rw [List.mem_singleton.mp hr]
+      exact Offset.disjoint b (.inl (by omega_using [hb, hk]))
+        (by omega_using [hb, hk, hACC]) (by decide)
+    rw [FS, VG.Proof.X448.RISCV64.V, val32_congr e]
+    exact h.slots q hq
+  have hcE : Ctx b s1.callEntry := ⟨hc1.a3, hc1.al, hc1.wr⟩
+  have body : WP isa chain223Shared s1.callEntry fun t =>
+      CurE b s1.callEntry (s.gpr .ra) (R :: T6 :: qs) (chainV v) t := by
+    unfold chain223Shared
+    refine WP.seq (ld_ok hcE (by decide) (by decide) fun s2 u2 => WP.block_nil ?_)
+    have ht2 : s2.gpr .t2 = s.gpr .ra := by
+      rw [u2.gpr, State.callEntry_mem, u1.mem, Mem.readW_writeW_self64]
+    have hc2 := hcE.of_rest (u2.rest (ws := [.t2]) (by decide)) (by decide)
+    exact chain223_ok hR hZ hT ⟨_, hc2,
+      Stp.of_rest (u2.rest (ws := [.t2]) (by decide)) (by decide) u2.mem,
+      ht2, rfl, by rw [u2.mem, State.callEntry_mem]; exact sl1⟩
+  obtain ⟨tr, s3, he, c3, h3⟩ := body
+  have hra := h3.stp.rest.gpr .ra (by decide)
+  have hret : isa.ret s1.callEntry s3 = some s3 := by
+    simp only [isa, ret, hra, ↓reduceIte]
+  refine WP.seq ⟨_, s3, Exec.call (call_callEntry s1) he hret, ?_⟩
+  refine wp_addi (by decide) fun s4 u4 => WP.block_nil ⟨c3, h3.ctx.of_rest
+    (u4.rest (ws := [.ra]) (by decide)) (by decide), ?_, ?_, ?_, ?_⟩
+  · refine h.stp.trans ⟨⟨?_, u4.rd.trans (h3.stp.rest.rd.trans u1.rd),
+        u4.wr.trans (h3.stp.rest.wr.trans u1.wr),
+        u4.sp.trans (h3.stp.rest.sp.trans u1.sp)⟩, ?_⟩
+    · intro r hr
+      by_cases er : r = .ra
+      · subst r; rw [u4.gpr, h3.t2, BitVec.add_zero]
+      · rw [u4.other r er, h3.stp.rest.gpr r hr,
+          State.callEntry_gpr s1 (by cases r <;> simp_all [work, linkRegs]), u1.gpr]
+    · rw [u4.mem]; exact f1.trans h3.stp.frame
+  · rw [u4.other _ (by decide)]; exact h3.t2
+  · rw [u4.other _ (by decide)]; exact h3.t1
+  · rw [u4.mem]; exact h3.slots
+
 /-- The exponent of the inversion's chain. -/
 theorem inv_exp : (2 ^ 223 - 1) * 2 ^ 225 + ((2 ^ 222 - 1) * 2 ^ 2 + 1) = P - 2 := by decide +kernel
 
@@ -307,7 +367,7 @@ theorem invertQ_ok {qs : List Nat} (hq : Sep8 R qs = true) (hZ : Z2 ∈ qs)
   have hZf : Z2 ∈ qs.filter (· ≠ R) := by simp [hZ, hZR]
   obtain ⟨f6, _⟩ := temps_get hfT (t := T6) (by decide)
   unfold Impl.X448.RISCV64.R64.invert invTail
-  refine WP.seq (WP.mono (chain223_ok hfR hZf hfT hC) fun s1 h1 => ?_)
+  refine WP.seq (WP.mono (chain223Call_ok hfR hZf hfT hC) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 223 - 1) (by decide) (by decide) (by sep8)
     (by decide) (by simp) (by look) h1) fun s2 h2 => ?_)
   refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 222 - 1) (by decide) (by decide) (by sep8)

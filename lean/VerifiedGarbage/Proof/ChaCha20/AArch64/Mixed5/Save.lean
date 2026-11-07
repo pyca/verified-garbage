@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Chunk
 
 namespace VG.Proof.ChaCha20.AArch64.Mixed5
 open VG VG.AArch64 VG.Impl.ChaCha20.AArch64.Mixed5
-open VG.Proof.ChaCha20.AArch64.Xor (XPre st dp L bp stR dR bR)
+open VG.Proof.ChaCha20.AArch64.Xor (st dp L bp stR dR bR)
 
 theorem read_saved (m : Mem) (p : Addr) (a b c : BitVec 64) (j : Fin 3) :
     (((m.writeW (p + BitVec.ofNat 64 256) a).writeW (p + BitVec.ofNat 64 264) b).writeW

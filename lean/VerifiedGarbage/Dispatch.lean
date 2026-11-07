@@ -38,8 +38,28 @@ def ranking : Rust.Ranking := [
     -- ChaCha20-Poly1305's `_ifma` is, and `_avx512vl` on the other CPUs with
     -- AVX512VL.
     { suffix := "_ifma", modules := ["chacha20"], extra := ["avx512ifma"] },
+    -- FFDH's `_ifma` key generation from a context is the ADX code of the
+    -- Miller–Rabin round's IFMA instance, needing only BMI2 and ADX: it is
+    -- chosen where the round's IFMA code can run (AVX, AVX512F, AVX512_IFMA
+    -- and AVX512VL), and `_adx` on the other CPUs.
+    { suffix := "_ifma", modules := ["ffdh"],
+      extra := ["avx", "avx512f", "avx512ifma", "avx512vl"] },
+    -- FFDH's domain operations, ranked by their whole suffixes so that the
+    -- entry above does not apply to their parts: `_mr_ifma` is another name
+    -- of `_mr_adx`, chosen with BMI2 and ADX.
+    { suffix := "_mr_ifma_exp_ifma", modules := ["ffdh"] },
+    { suffix := "_mr_adx_exp_ifma", modules := ["ffdh"] },
+    { suffix := "_exp_ifma", modules := ["ffdh"] },
+    { suffix := "_mr_ifma", modules := ["ffdh"] },
+    { suffix := "_mr_adx", modules := ["ffdh"] },
     { suffix := "_ifma" },
     { suffix := "_avx512vl" },
+    -- ML-DSA's `_avx512` key preparation is its `_avx2` code but for the name
+    -- of the NTT it calls (whose two instances are the same code), needing
+    -- only AVX2: it is chosen where its other `_avx512` functions are, and
+    -- `_avx2` on the other CPUs.
+    { suffix := "_avx512", modules := ["mldsa44", "mldsa65", "mldsa87"],
+      extra := ["avx512f", "avx512vl"] },
     { suffix := "_avx512" },
     { suffix := "_shani" },
     { suffix := "_avx_bmi" },
@@ -58,10 +78,12 @@ def ranking : Rust.Ranking := [
     { suffix := "_aes_cbc", skip := true },
     { suffix := "_aes_sha3" },
     { suffix := "_aes" },
-    -- FEAT_SHA3's Keccak is faster on Apple's cores, and slower on Neoverse N2.
+    -- FEAT_SHA3's Keccak is faster on Apple's cores, and slower on Neoverse N2:
+    -- ML-KEM's, SHA-3's and Ed448's. Elsewhere `_sha3` is SHA-512's code, or
+    -- ML-DSA's, which is chosen on every CPU with FEAT_SHA3.
     { suffix := "_x2_sha3_keccak_sha3", vendor := some "apple" },
     { suffix := "_x2_sha3" },
-    { suffix := "_sha3", modules := ["sha3"], vendor := some "apple" },
+    { suffix := "_sha3", modules := ["sha3", "ed448"], vendor := some "apple" },
     { suffix := "_sha3" },
     { suffix := "_sha2" },
     { suffix := "_sve2" },

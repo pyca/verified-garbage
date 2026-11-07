@@ -3093,6 +3093,86 @@ vg_aes_gcm_seal_gather_aesni:
 	ret
 	.p2align 6
 
+vg_aes_gcm_open_to_aesni:
+	lea esp, [esp-48]
+	mov DWORD PTR [esp+40], esi
+	mov DWORD PTR [esp+44], edi
+	mov eax, DWORD PTR [esp+52]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+56]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+60]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+64]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+72]
+	mov DWORD PTR [esp+20], eax
+	mov eax, DWORD PTR [esp+84]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+80]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+92]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+96]
+	mov DWORD PTR [esp+36], eax
+	mov esi, esp
+	add esi, 76
+	mov edx, DWORD PTR [esp+84]
+	mov edi, DWORD PTR [esi]
+	mov ecx, DWORD PTR [esi+4]
+	shr ecx, 2
+	cmp ecx, 0
+	je 20f
+22:
+	mov eax, DWORD PTR [edi]
+	mov DWORD PTR [edx], eax
+	add edi, 4
+	add edx, 4
+	sub ecx, 1
+	jne 22b
+	jmp 21f
+20:
+21:
+	mov ecx, DWORD PTR [esi+4]
+	and ecx, 3
+	je 23f
+25:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 25b
+	jmp 24f
+23:
+24:
+	call {vg_aes_gcm_open_aesni}
+	test eax, eax
+	je 26f
+	jmp 27f
+26:
+	mov edx, DWORD PTR [esp+84]
+	mov ecx, DWORD PTR [esp+80]
+	mov eax, 0
+	cmp ecx, 0
+	je 28f
+210:
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	jne 210b
+	jmp 29f
+28:
+29:
+27:
+	mov esi, DWORD PTR [esp+40]
+	mov edi, DWORD PTR [esp+44]
+	lea esp, [esp+48]
+	ret
+	.p2align 6
+
 // vg_aes_gcm_init_aesni_pclmul: the function `vg_aes_gcm_init_aesni`
 
 // vg_aes_gcm_stream_aad_aesni_pclmul: the function `vg_aes_gcm_stream_aad_pclmul`
@@ -6103,6 +6183,86 @@ vg_aes_gcm_seal_gather_aesni_pclmul:
 21:
 	call {vg_aes_gcm_seal_aesni_pclmul}
 	mov ebx, DWORD PTR [esp+36]
+	mov esi, DWORD PTR [esp+40]
+	mov edi, DWORD PTR [esp+44]
+	lea esp, [esp+48]
+	ret
+	.p2align 6
+
+vg_aes_gcm_open_to_aesni_pclmul:
+	lea esp, [esp-48]
+	mov DWORD PTR [esp+40], esi
+	mov DWORD PTR [esp+44], edi
+	mov eax, DWORD PTR [esp+52]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+56]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+60]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+64]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+72]
+	mov DWORD PTR [esp+20], eax
+	mov eax, DWORD PTR [esp+84]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+80]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+92]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+96]
+	mov DWORD PTR [esp+36], eax
+	mov esi, esp
+	add esi, 76
+	mov edx, DWORD PTR [esp+84]
+	mov edi, DWORD PTR [esi]
+	mov ecx, DWORD PTR [esi+4]
+	shr ecx, 2
+	cmp ecx, 0
+	je 20f
+22:
+	mov eax, DWORD PTR [edi]
+	mov DWORD PTR [edx], eax
+	add edi, 4
+	add edx, 4
+	sub ecx, 1
+	jne 22b
+	jmp 21f
+20:
+21:
+	mov ecx, DWORD PTR [esi+4]
+	and ecx, 3
+	je 23f
+25:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 25b
+	jmp 24f
+23:
+24:
+	call {vg_aes_gcm_open_aesni_pclmul}
+	test eax, eax
+	je 26f
+	jmp 27f
+26:
+	mov edx, DWORD PTR [esp+84]
+	mov ecx, DWORD PTR [esp+80]
+	mov eax, 0
+	cmp ecx, 0
+	je 28f
+210:
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	jne 210b
+	jmp 29f
+28:
+29:
+27:
 	mov esi, DWORD PTR [esp+40]
 	mov edi, DWORD PTR [esp+44]
 	lea esp, [esp+48]
@@ -9556,6 +9716,86 @@ vg_aes_gcm_seal_gather_pclmul:
 21:
 	call {vg_aes_gcm_seal_pclmul}
 	mov ebx, DWORD PTR [esp+36]
+	mov esi, DWORD PTR [esp+40]
+	mov edi, DWORD PTR [esp+44]
+	lea esp, [esp+48]
+	ret
+	.p2align 6
+
+vg_aes_gcm_open_to_pclmul:
+	lea esp, [esp-48]
+	mov DWORD PTR [esp+40], esi
+	mov DWORD PTR [esp+44], edi
+	mov eax, DWORD PTR [esp+52]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+56]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+60]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+64]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+72]
+	mov DWORD PTR [esp+20], eax
+	mov eax, DWORD PTR [esp+84]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+80]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+92]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+96]
+	mov DWORD PTR [esp+36], eax
+	mov esi, esp
+	add esi, 76
+	mov edx, DWORD PTR [esp+84]
+	mov edi, DWORD PTR [esi]
+	mov ecx, DWORD PTR [esi+4]
+	shr ecx, 2
+	cmp ecx, 0
+	je 20f
+22:
+	mov eax, DWORD PTR [edi]
+	mov DWORD PTR [edx], eax
+	add edi, 4
+	add edx, 4
+	sub ecx, 1
+	jne 22b
+	jmp 21f
+20:
+21:
+	mov ecx, DWORD PTR [esi+4]
+	and ecx, 3
+	je 23f
+25:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 25b
+	jmp 24f
+23:
+24:
+	call {vg_aes_gcm_open_pclmul}
+	test eax, eax
+	je 26f
+	jmp 27f
+26:
+	mov edx, DWORD PTR [esp+84]
+	mov ecx, DWORD PTR [esp+80]
+	mov eax, 0
+	cmp ecx, 0
+	je 28f
+210:
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	jne 210b
+	jmp 29f
+28:
+29:
+27:
 	mov esi, DWORD PTR [esp+40]
 	mov edi, DWORD PTR [esp+44]
 	lea esp, [esp+48]
@@ -13082,6 +13322,86 @@ vg_aes_gcm_seal_gather:
 21:
 	call {vg_aes_gcm_seal}
 	mov ebx, DWORD PTR [esp+36]
+	mov esi, DWORD PTR [esp+40]
+	mov edi, DWORD PTR [esp+44]
+	lea esp, [esp+48]
+	ret
+	.p2align 6
+
+vg_aes_gcm_open_to:
+	lea esp, [esp-48]
+	mov DWORD PTR [esp+40], esi
+	mov DWORD PTR [esp+44], edi
+	mov eax, DWORD PTR [esp+52]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+56]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+60]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+64]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+72]
+	mov DWORD PTR [esp+20], eax
+	mov eax, DWORD PTR [esp+84]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+80]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+92]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+96]
+	mov DWORD PTR [esp+36], eax
+	mov esi, esp
+	add esi, 76
+	mov edx, DWORD PTR [esp+84]
+	mov edi, DWORD PTR [esi]
+	mov ecx, DWORD PTR [esi+4]
+	shr ecx, 2
+	cmp ecx, 0
+	je 20f
+22:
+	mov eax, DWORD PTR [edi]
+	mov DWORD PTR [edx], eax
+	add edi, 4
+	add edx, 4
+	sub ecx, 1
+	jne 22b
+	jmp 21f
+20:
+21:
+	mov ecx, DWORD PTR [esi+4]
+	and ecx, 3
+	je 23f
+25:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 25b
+	jmp 24f
+23:
+24:
+	call {vg_aes_gcm_open}
+	test eax, eax
+	je 26f
+	jmp 27f
+26:
+	mov edx, DWORD PTR [esp+84]
+	mov ecx, DWORD PTR [esp+80]
+	mov eax, 0
+	cmp ecx, 0
+	je 28f
+210:
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	jne 210b
+	jmp 29f
+28:
+29:
+27:
 	mov esi, DWORD PTR [esp+40]
 	mov edi, DWORD PTR [esp+44]
 	lea esp, [esp+48]

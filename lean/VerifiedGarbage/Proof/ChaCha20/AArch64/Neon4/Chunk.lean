@@ -28,15 +28,21 @@ structure ChunkKeep (s s' : State) : Prop where
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
 
+/-- A chunk: the keystream of four blocks XORed with the 256 bytes of the
+source (at `x1`) into the destination (at `x6`), which is the source or apart
+from it. -/
 theorem chunk_ok {sve : Bool} (s : State)
     (hin : ∀ k : Fin 16, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (4 * k)) 4)
+    (halias : s.gpr .x1 = s.gpr .x6 ∨ (⟨s.gpr .x1, 256⟩ : Region).Disjoint ⟨s.gpr .x6, 256⟩)
+    (hsrc : ∀ r j : Fin 4, InRegions (s.rd ++ s.wr)
+      (s.gpr .x1 + BitVec.ofNat 64 (64 * j + 16 * r)) 16)
     (hout : ∀ r j : Fin 4, InRegions s.wr
-      (s.gpr .x1 + BitVec.ofNat 64 (64 * j + 16 * r)) 16) :
+      (s.gpr .x6 + BitVec.ofNat 64 (64 * j + 16 * r)) 16) :
     WP isa (chunk sve) s fun s' =>
-      (∀ k < 256, s'.mem (s.gpr .x1 + BitVec.ofNat 64 k) =
+      (∀ k < 256, s'.mem (s.gpr .x6 + BitVec.ofNat 64 k) =
         s.mem (s.gpr .x1 + BitVec.ofNat 64 k) ^^^
         (serialize (block (ctr (stateAt s.mem (s.gpr .x0)) (k / 64)))).getD (k % 64) 0) ∧
-      Frame [⟨s.gpr .x1, 256⟩] s.mem s'.mem ∧ ChunkKeep s s' := by
+      Frame [⟨s.gpr .x6, 256⟩] s.mem s'.mem ∧ ChunkKeep s s' := by
   apply WP.seq
   refine (setup_ok s hin).mono fun a ⟨ha, hsa, hta⟩ => ?_
   apply WP.seq
@@ -52,11 +58,16 @@ theorem chunk_ok {sve : Bool} (s : State)
     simp only [block]
     rw [hc k j hj, input_same hsb, input_eq]
     simp only [Fin.getElem_fin, Vector.getElem_zipWith]
-  have ho : ∀ r j : Fin 4, InRegions c.wr (c.gpr .x1 + BitVec.ofNat 64 (64 * j + 16 * r)) 16 := by
-    intro r j; rw [hsc.wr, hsc.gpr _ (by decide)]; exact hout r j
-  refine (finishBlocks_ok hc' ho).mono fun d ⟨hd, hf, hs⟩ => ⟨?_, ?_, ?_⟩
-  · simpa only [hsc.gpr _ (by decide : Reg.x1 ≠ .x4), hsc.mem] using hd
-  · simpa only [hsc.gpr _ (by decide : Reg.x1 ≠ .x4), hsc.mem] using hf
+  have h1 : c.gpr .x1 = s.gpr .x1 := hsc.gpr _ (by decide)
+  have h6 : c.gpr .x6 = s.gpr .x6 := hsc.gpr _ (by decide)
+  have hi' : ∀ r j : Fin 4, InRegions (c.rd ++ c.wr) (c.gpr .x1 + BitVec.ofNat 64 (64 * j + 16 * r)) 16 := by
+    intro r j; rw [hsc.rd, hsc.wr, h1]; exact hsrc r j
+  have ho : ∀ r j : Fin 4, InRegions c.wr (c.gpr .x6 + BitVec.ofNat 64 (64 * j + 16 * r)) 16 := by
+    intro r j; rw [hsc.wr, h6]; exact hout r j
+  refine (finishBlocksTo_ok .x6 hc' (by rw [h1, h6]; exact halias) hi' ho).mono
+    fun d ⟨hd, hf, hs⟩ => ⟨?_, ?_, ?_⟩
+  · simpa only [h1, h6, hsc.mem] using hd
+  · simpa only [h6, hsc.mem] using hf
   · exact ⟨fun r hr => by rw [hs.gpr]; exact hsc.gpr r hr,
       hs.rd.trans hsc.rd, hs.wr.trans hsc.wr, hs.sp.trans hsc.sp⟩
 
