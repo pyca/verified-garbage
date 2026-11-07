@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
 public import VerifiedGarbage.Impl.Blowfish.X86.FbFinal
 public import VerifiedGarbage.Spec.Blowfish.CfbFinal
+public import VerifiedGarbage.Spec.Blowfish.OfbFinal
 public import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Modes.X86.SeqFinal
@@ -13,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
 meta import VerifiedGarbage.Impl.Blowfish.X86.FbFinal
 meta import VerifiedGarbage.Spec.Blowfish.CfbFinal
+meta import VerifiedGarbage.Spec.Blowfish.OfbFinal
 meta import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Modes.X86.SeqFinal
@@ -26,10 +28,11 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
-# Blowfish-CFB64 of a message's last piece on x86 (32-bit) meets its contracts
+# Blowfish-CFB64 and Blowfish-OFB of a message's last piece on x86 (32-bit) meet their contracts
 
-`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`: the modes' CFB over a message's
-last piece (`Proof.Modes.X86.cfbEncFinal_wp`, `cfbDecFinal_wp`) over Blowfish's
+`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`, `ofbFinal_wp`: the modes' CFB
+and OFB over a message's last piece (`Proof.Modes.X86.cfbEncFinal_wp`,
+`cfbDecFinal_wp`, `ofbFinal_wp`) over Blowfish's
 encrypting core (`dirCoreSpec true`), with the working space as a fifth argument
 (`finalX86`), as the whole-block functions are (`FbVerified.lean`), but the
 data `len` bytes. Each is correct and constant time, by the taint analysis
@@ -351,5 +354,68 @@ theorem cfbDecryptFinal_framed :
     (bytes := 112) cfbDecryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Modes.decFinalPost_inLocal _ ciphAt_congr) (Proof.Modes.decFinalPost_local _) (frameSat_pre _)
+
+/-! ## OFB of a message's last piece -/
+
+/-- The final OFB function's postcondition. -/
+def ofbPost (s s' : State) : Prop :=
+  Spec.Ofb.CryptFinal (ciph s) 8 s.mem s'.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) (arg s 3).toNat
+
+theorem ofbFinal_wp {s₀ : State} (hp : (finalX86 ofbPost).pre s₀) :
+    WP isa ofbFinal s₀ fun s' => abiPreserved s₀ s' ∧ (finalX86 ofbPost).post s₀ s' :=
+  WP.mono (Proof.Modes.X86.ofbFinal_wp (dirCoreSpec true) (seqPre_of hp) rfl rfl (keyArgs_of hp))
+    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+
+theorem ofbFinal_ct : ConstantTime isa (finalX86 ofbPost).pre (finalX86 ofbPost).pub ofbFinal :=
+  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
+    (by taint_decide)
+
+/-- The final OFB function's contract with the working space as an argument. -/
+abbrev ofbScratch : Contract isa :=
+  Sig.scratchContract X86.abi finalSig "scratch" .u64 11 (Curry.const (fun _ => True) _)
+    (Proof.Modes.ofbFinalPost ciphAt 8 X86.abi.ptrBits) true 0
+
+theorem wide_implies_ofb : (wideContract ofbPost).Implies ofbScratch := by
+  refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
+  · intro s h
+    sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+      Proof.Modes.ofbFinalPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, finalX86,
+      ofbPost] at h
+    sig_split h
+    sig_reduce [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+      Proof.Modes.ofbFinalPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, finalX86, ofbPost]
+    sig_and_intros
+    sig_close
+    all_goals first
+      | with_reducible assumption
+      | with_reducible exact Region.Disjoint.symm ‹_›
+      | omega_arith
+      | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
+  · sig_implies_post [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+      Proof.Modes.ofbFinalPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, finalX86, ofbPost,
+      ciph, ciphAt]
+  · sig_implies_pub [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+      Proof.Modes.ofbFinalPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, finalX86, ofbPost]
+  · sig_implies_sat [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+      Proof.Modes.ofbFinalPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, finalX86, ofbPost]
+      [satState, arg, argAddr, Mem.readW, Mem.read] using satState
+
+theorem ofbFinal_verified : Verified X86.target ofbFinal ofbScratch :=
+  final_verified (fun _ hs => ofbFinal_wp hs) ofbFinal_ct (fun _ _ _ _ _ _ h => h) wide_implies_ofb
+
+theorem ofbFrameSat_pre (post : Spec.Blowfish.ofbFinalSig.Post X86.abi.ptrBits) :
+    ∃ s, (Spec.Blowfish.ofbFinalSig.contract X86.abi (post := post) (writeArgs := true) (stack := 112)).pre s := by
+  implies_sat [Spec.Blowfish.ofbFinalSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
+
+/-- The final OFB function with its working space on the stack. -/
+theorem ofbFinal_framed :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 112 4 22 ofbFinal)
+      (Spec.Blowfish.ofbFinalContract X86.abi 112) :=
+  X86.Verified.stackScratchWiped (sig := Spec.Blowfish.ofbFinalSig) (nm := "scratch") (e := .u64)
+    (n := 11) (post := Proof.Modes.ofbFinalPost ciphAt 8 X86.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 112) ofbFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (Proof.Modes.ofbFinalPost_inLocal _ ciphAt_congr) (Proof.Modes.ofbFinalPost_local _) (ofbFrameSat_pre _)
 
 end VG.Proof.Blowfish.X86.FbFinal

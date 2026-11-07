@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.AesOfb.Spec
 
 /-!
 # OFB and CFB of a message's last piece on x86 (32-bit), for any core
@@ -22,7 +23,8 @@ IV, XORs the `r = len % L` bytes after them with the first bytes of
 `CIPH_K` of the chaining value after them, and replaces the IV with that
 chaining value if `r = 0` and with its encryption otherwise; it keeps the
 callee-saved registers and the return address. `cfbEncFinal_wp` and
-`cfbDecFinal_wp` state these as CFB's (`Spec.Cfb.EncryptFinal`, …).
+`cfbDecFinal_wp` state these as CFB's (`Spec.Cfb.EncryptFinal`, …), and
+`ofbFinal_wp` as OFB's (`Spec.Ofb.CryptFinal`, by `ofbFinal_of`).
 
 The loop over segments (`seg_wp`) is `seq`'s step (`Step.lean`: `regs`,
 `areasOk`, `crypt_step`), the bytes left in `nSlot`, with the partial
@@ -1154,5 +1156,57 @@ theorem cfbDecFinal_wp (cs : CoreSpec c) {M' : Mode} {s₀ : State} {k : cs.Key}
   · obtain ⟨-, e2⟩ := cfbDec_run (cs.cipher k) (iv0 c s₀) (wb0 c s₀)
     rw [← e2] at h4
     exact h4.trans (cfbDecFinalNext_of (cs.cipher k) s₀.mem _ _ _)
+
+/-! ## OFB -/
+
+theorem ofb_post_inBounds (c : Core) : ∀ o ∈ (Mode.ofb c.bw).post, o.InBounds (lens c (4 * c.bw)) :=
+  fun o ho => (List.mem_append.mp ho).elim
+    (copyBlk_inBounds (by simp [lens]) (by simp [lens]) o)
+    (xorBlk_inBounds (by simp [lens]) (by simp [lens]) (by simp [lens]) o)
+
+/-- OFB of the `len` bytes at `D` by a final function: its `n = len / L`
+whole blocks replaced by `Spec.Ofb.crypt`'s from `iv`, and its last
+`len % L` bytes XORed with `CIPH_K(Oₙ)`, `Oₙ` the last whole output block
+(`Spec.Ofb.next` after `n`): `Spec.Ofb.cryptFinal`. -/
+theorem ofbFinal_of {L : Nat} (hL : 0 < L) {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = L)
+    (m₀ m' : Mem) (D : Addr) (iv : List Byte) (len : Nat)
+    (hblocks : blocksOf L m' D (len / L) = Spec.Ofb.crypt ciph iv (blocksOf L m₀ D (len / L)))
+    (htail : bytesAt m' (D + BitVec.ofNat 64 (L * (len / L))) (len % L) =
+      Spec.Cbc.xor (bytesAt m₀ (D + BitVec.ofNat 64 (L * (len / L))) (len % L))
+        (ciph (Spec.Ofb.next ciph iv (len / L)))) :
+    bytesAt m' D len = Spec.Ofb.cryptFinal ciph L iv (bytesAt m₀ D len) := by
+  have hx := xor_flatten_outputs hc m₀ (len / L) D iv
+  have hnB : (blocksOf L m₀ D (len / L)).length = len / L := by simp [blocksOf]
+  rw [bytesAt_blocks_tail L m' D len, hblocks, htail, Spec.Ofb.cryptFinal, bytesAt_length,
+    blockCount_eq hL, bytesAt_blocks_tail L m₀ D len, Spec.Ofb.crypt, hnB]
+  split
+  · rename_i h0
+    rw [h0, ← hx]
+    simp [bytesAt, Spec.Cbc.xor]
+  · rw [AesOfb.outputs_succ, List.flatten_append, List.flatten_singleton, ← hx]
+    exact (List.zipWith_append (by rw [← bytesAt_mul, bytesAt_length, length_flatten_outputs hc])).symm
+
+/-- OFB of a message's last piece: `seqFinal`'s results as
+`Spec.Ofb.CryptFinal`'s, for the `len` bytes at the data. -/
+theorem ofbFinal_wp (cs : CoreSpec c) {M' : Mode} {s₀ : State} {k : cs.Key} (hp : SeqPre c M' s₀)
+    (hst : M'.step = 1) (hiv : M'.ivOut = true) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
+    WP isa (c.seqFinal (Mode.ofb c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
+      Spec.Ofb.CryptFinal (cs.cipher k) (4 * c.bw) s₀.mem s'.mem ((P s₀ c).setWidth 64) ((Dp s₀ c).setWidth 64)
+        (N s₀ c) := by
+  have hL0 : 0 < 4 * c.bw := Nat.mul_pos (by decide) hp.layout.bw_pos
+  have hxs : (wb0 c s₀).length = N s₀ c / (4 * c.bw) := chunksAt_length _ _ _ _
+  refine WP.mono (seqFinal_wp cs hp hst hiv rfl rfl (ofb_post_inBounds c) (ofb_computes (cs.cipher_len k)) hk)
+    fun s' ⟨h1, h2, h3, h4⟩ => ⟨h1, ?_, ?_⟩
+  · obtain ⟨e1, e2⟩ := ofb_run (cs.cipher k) (iv0 c s₀) (wb0 c s₀)
+    rw [← e1] at h2
+    rw [← e2, hxs] at h3
+    exact ofbFinal_of hL0 (cs.cipher_len k) s₀.mem s'.mem _ _ _ h2 h3
+  · obtain ⟨-, e2⟩ := ofb_run (cs.cipher k) (iv0 c s₀) (wb0 c s₀)
+    rw [← e2, hxs] at h4
+    refine h4.trans ?_
+    rw [blockCount_eq hL0]
+    split
+    · rfl
+    · exact (AesOfb.next_succ _ _ _).symm
 
 end VG.Proof.Modes.X86
