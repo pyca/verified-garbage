@@ -27,6 +27,10 @@ key schedule, `rsi` holds `rounds`, `r10` the last round key's address;
 `rdx` points to the counter block at entry, then to the group being hashed,
 and `rax` to the counter block; `rcx` to
 `Y`, `r8` to `H`, `r11` to the powers' working space, `r9` counts the blocks.
+
+`open` and `seal` take their loops on the groups as an argument (`Loops`):
+these, with VAES and VPCLMULQDQ (`vaesLoops`), or those on 128-bit registers
+with AES-NI, PCLMULQDQ and AVX (`Impl.AesGcmSiv.X86_64StitchAvx.loops`).
 -/
 
 @[expose] public section
@@ -130,7 +134,15 @@ open VG.Impl.AesGcm.X86_64 (imm ptr Callees Fn)
 open VG.Impl.AesGcmSiv.X86_64 (entry recv keys keysS expand absorb lens tagIn tag tagOut cmp mask restore crypt polyval cryptChunk
   cryptTail okO tagO cmO yO hO skO scrO ghO roundsO aadO alenO dataO lenO bO)
 
-variable (c : Callees) (e : Fn) (wide : Bool)
+/-- The loops `open` and `seal` run on the data's 256-byte groups: the
+interleaved one of `open` (`dec`), and those of `seal`, POLYVAL (`hash`) and
+counter mode (`ctr`), with the registers and contracts of this file's. -/
+structure Loops where
+  dec : Prog isa
+  hash : Prog isa
+  ctr : Prog isa
+
+variable (L : Loops) (c : Callees) (e : Fn) (wide : Bool)
 
 /-- The data from the 256-byte groups on (`r12`, its length `rbp`): its whole
 blocks and its last bytes deciphered from the counter block at `W + cmO`. -/
@@ -159,7 +171,7 @@ def stitched : Prog isa :=
       ([.mov .r12 (.mem (Impl.AesGcm.X86_64.at_ .r15 dataO)), .mov .r9 (.mem (Impl.AesGcm.X86_64.at_ .r15 lenO)), .shift .shr .r9 8,
         .alu .add .r9 (.reg .r9), .alu .add .r9 (.reg .r9), .alu .add .r9 (.reg .r9), .alu .add .r9 (.reg .r9)] :
         List Instr)))
-  (.seq dec
+  (.seq L.dec
   (.seq (.block rest)
   (.seq (cryptRest c e wide)
   (.seq (.block rest)
@@ -170,7 +182,7 @@ def stitched : Prog isa :=
 def «open» : Prog isa :=
   .seq (.block entry) (.seq (.block recv) (.seq (keys c e)
     (.seq (.block [.mov .rax (.mem (Impl.AesGcm.X86_64.at_ .r15 lenO)), .alu .cmp .rax (imm 256)])
-    (.seq (.ite .b (.seq (crypt c e wide) (polyval c wide)) (stitched c e wide))
+    (.seq (.ite .b (.seq (crypt c e wide) (polyval c wide)) (stitched L c e wide))
     (.seq (tag c bO)
     (.seq (.block cmp) (.seq mask (.block (([.mov .rax (.mem (Impl.AesGcm.X86_64.at_ .r15 okO))] : List Instr) ++ restore)))))))))
 
@@ -233,7 +245,7 @@ def hashS : Prog isa :=
   .seq (.block [.mov .r12 (.mem (Impl.AesGcm.X86_64.at_ .r15 aadO)), .mov .rbp (.mem (Impl.AesGcm.X86_64.at_ .r15 alenO))])
   (.seq (absorb c wide)
   (.seq (.block (ptr .rcx .r15 yO ++ ptr .r8 .r15 hO ++ ptr .r11 .r15 ghO ++ groups .rdx))
-  (.seq hash
+  (.seq L.hash
   (.seq (.block rest)
   (.seq (absorb c wide)
   (.seq (lens c) (.block tagIn)))))))
@@ -248,15 +260,18 @@ def cryptS : Prog isa :=
       .mov .r12 (.mem (Impl.AesGcm.X86_64.at_ .r15 aadO)), .mov .rbp (.mem (Impl.AesGcm.X86_64.at_ .r15 alenO))])
   (.seq (.block (ptr .rdi .r15 skO ++ ([.mov .rsi (.mem (Impl.AesGcm.X86_64.at_ .r15 roundsO))] : List Instr) ++
       ptr .rdx .r15 cmO ++ ptr .rcx .r15 yO ++ ptr .r8 .r15 hO ++ ptr .r11 .r15 scrO ++ groups .r12))
-  (.seq ctr
+  (.seq L.ctr
   (.seq (.block rest) (cryptRest c e wide))))
 
 /-- `vg_aes_gcm_siv_seal`, with the loops from 256 bytes of data. -/
 def «seal» : Prog isa :=
   .seq (.block entry) (.seq (keysS e)
-    (.seq (.block lenCmp) (.seq (.ite .b (polyval c wide) (hashS c wide))
+    (.seq (.block lenCmp) (.seq (.ite .b (polyval c wide) (hashS L c wide))
     (.seq (expand c) (.seq (tag c tagO)
-    (.seq (.block lenCmp) (.seq (.ite .b (crypt c e wide) (cryptS c e wide))
+    (.seq (.block lenCmp) (.seq (.ite .b (crypt c e wide) (cryptS L c e wide))
     (.block (tagOut ++ restore)))))))))
+
+/-- The loops with VAES and VPCLMULQDQ. -/
+def vaesLoops : Loops := ⟨dec, hash, ctr⟩
 
 end VG.Impl.AesGcmSiv.X86_64Stitch
