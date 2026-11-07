@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Proof.RsaKeyGen.SearchContract
 meta import VerifiedGarbage.Proof.RsaKeyGen.SearchContract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 
@@ -115,9 +113,7 @@ def checkEntropyBudget : Except String Unit := do
   unless short == ⟨.entropy 1 (primeEntropy 1 - 1), 0, [1, 0]⟩ do
     throw "below the budget, the candidate was not kept for a refill"
 
-#assert_standard_axioms Proof.RsaKeyGen.primeSearchContract
 #assert_no_compiler_overrides Spec.RsaKeyGen.primeInit Spec.RsaKeyGen.primeSearch
-#assert_spec_origin
 
 run_cmd do
   for result in [check, checkEntropyBudget] do

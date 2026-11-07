@@ -878,7 +878,6 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
   have eU : fU s₀ = fL s₀ % 16 := rfl
   have hc := h.ciph
   have xp : Modes.X86.XPre s (fIv s₀) (fT s₀) (fU s₀) := {
-    pos := by omega
     fitK := by have := hp.iv_fit; omega
     fitR := by rw [hT]; omega
     disj := by
@@ -1025,9 +1024,6 @@ theorem Pt.agree {enc : Bool} {s₀ s₀' : State} (hq : (finalX86 enc).pub s₀
     VG.X86.Taint.Agree (argTaint rs (4 + 4 * 7)) s₁ s₂ :=
   agree_argTaint hr (by rw [h₁.esp, h₂.esp, fE, fE, hq.1]) (hp.argsOut h₁) (hp'.argsOut h₂)
     fun i hi => by rw [arg_cur h₁.esp (h₁.args i hi), arg_cur h₂.esp (h₂.args i hi), hq.2 i hi]
-
-theorem Setup.pt {s₀ s : State} (hp : FPre s₀) (h : Setup s₀ s) : Pt s₀ s :=
-  ⟨h.esp, h.wr, fun _ hi => by rw [h.mem]; exact hp.arg_keep (big_of (Frame.refl _ _)) hi⟩
 
 theorem Whole.pt {M : Mode} {s₀ s : State} (hp : FPre s₀) (h : Whole M s₀ s) : Pt s₀ s :=
   ⟨h.esp, h.wr, fun _ hi => hp.arg_keep (big_of h.frame') hi⟩

@@ -85,9 +85,23 @@ def x86Rank (module suffix : String) : Option Nat :=
   | some a, some s => a < s
   | _, _ => false
 
--- ChaCha20's `_ifma` needs AVX512_IFMA too, which its own features do not
--- name: it is chosen where ChaCha20-Poly1305's `_ifma` is.
-#guard ((Rust.rankOf ((Dispatch.ranking.lookup "x86_64").getD []) "chacha20" "_ifma").map
+-- AES-CMAC's, AES-SIV's and AES-CCM's dispatchers rank `_aesni`, which needs
+-- only AES-NI and SSSE3, so they never choose the baseline with those
+-- (`NEVER_WITH` in `ci/check_variants.py`).
+#guard ["cmac_aes", "aes_siv", "aes_ccm"].all fun m => (x86Rank m "_aesni").isSome
+
+-- AES-GCM-SIV's dispatchers try `_aesni_pclmul_avx_avx2` before `_aesni_avx2`
+-- and `_pclmul_avx2`, and `_vaes_vpclmul_avx512` before `_vaes_avx2` and
+-- `_vpclmul_avx2` (`NEVER_WITH` in `ci/check_variants.py`).
+#guard [("_aesni_pclmul_avx_avx2", "_aesni_avx2"), ("_aesni_pclmul_avx_avx2", "_pclmul_avx2"),
+    ("_vaes_vpclmul_avx512", "_vaes_avx2"), ("_vaes_vpclmul_avx512", "_vpclmul_avx2")].all fun (a, b) =>
+  match x86Rank "aes_gcm_siv" a, x86Rank "aes_gcm_siv" b with
+  | some i, some j => i < j
+  | _, _ => false
+
+-- ChaCha20's `_avx512` needs AVX512_IFMA too, which its own features do not
+-- name: it is chosen where ChaCha20-Poly1305's `_ifma`, built on it, is.
+#guard ((Rust.rankOf ((Dispatch.ranking.lookup "x86_64").getD []) "chacha20" "_avx512").map
   (·.2.extra)) == some ["avx512ifma"]
 
 -- An unranked suffix fails the emitter.

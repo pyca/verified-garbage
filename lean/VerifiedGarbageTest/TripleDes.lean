@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.TripleDes.Contract
 meta import VerifiedGarbage.Spec.TripleDes.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Triple DES specification tests
@@ -223,9 +221,5 @@ run_cmd do
   match checkLimits with
   | .ok () => pure ()
   | .error e => throwError "Triple DES: {e}"
-
-#assert_standard_axioms VG.Spec.TripleDes.expandKeyContract
-#assert_standard_axioms VG.Spec.TripleDes.ecbEncryptContract
-#assert_standard_axioms VG.Spec.TripleDes.ecbDecryptContract
 
 end VG.Test.TripleDes

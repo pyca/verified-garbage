@@ -20,6 +20,10 @@
 /// * `finalize(state, count: u64, out: *mut [u8; MAX])` writes the
 ///   final hash value, whose first `outlen` bytes are the digest.
 ///
+/// `update` and `finalize` are their dispatchers
+/// (`crate::arch::dispatch::blake2<b|s>`), which run the best
+/// implementation this CPU runs.
+///
 /// Every region is a distinct Rust object, so none overlaps another, the
 /// return address (on x86-64 and x86), the arguments on the stack (on 32-bit
 /// ARM and x86) or the stack below them that the call uses, and none wraps
@@ -33,97 +37,10 @@ macro_rules! blake2 {
             block: $block:literal,
             max: $max:literal,
             init: $init:path,
-            backends: $backend:ident {
-                $base:ident => ($update:path, $finalize:path)
-                $(, $(#[$attr:meta])* $variant:ident if [$($req:path),*] => ($vupdate:path, $vfinalize:path))*
-                $(,)?
-            } $(,)?
+            update: $update:path,
+            finalize: $finalize:path $(,)?
         }
     ) => {
-        /// The implementations of the streaming primitives.
-        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-        pub(crate) enum $backend {
-            /// For the baseline ISA.
-            $base,
-            $(
-                $(#[$attr])*
-                /// Needing CPU features.
-                $variant,
-            )*
-        }
-
-        impl $backend {
-            /// The CPU features `select` requires to choose each
-            /// implementation, by its discriminant (none for the baseline):
-            /// every CPU it is chosen for has them, so a function chosen
-            /// with it may need no other, which its caller checks when it
-            /// compiles (`assert!` in a `const`). (Without an
-            /// implementation but the baseline, nothing uses it.)
-            #[allow(dead_code)]
-            pub(crate) const REQUIRES: &[verified_garbage_cpu::Features] = &[
-                verified_garbage_cpu::Features(0),
-                $(
-                    $(#[$attr])*
-                    verified_garbage_cpu::Features::all(&[$($req),*]),
-                )*
-            ];
-
-            /// The best implementation a CPU with the features `f` can run.
-            pub(crate) fn select(f: verified_garbage_cpu::Features) -> Self {
-                $(
-                    $(#[$attr])*
-                    if f.contains(Self::REQUIRES[Self::$variant as usize]) {
-                        return Self::$variant;
-                    }
-                )*
-                let _ = f;
-                Self::$base
-            }
-
-            /// `update`.
-            ///
-            /// # Safety
-            ///
-            /// As for the artifacts; the CPU must have the features of the
-            /// implementation (as `select` guarantees).
-            pub(crate) unsafe fn update(
-                self,
-                state: &mut [u8; $state],
-                count: u64,
-                data: *const u8,
-                len: usize,
-            ) {
-                // SAFETY: the caller's obligations.
-                unsafe {
-                    match self {
-                        Self::$base => $update(state, count, data, len),
-                        $($(#[$attr])* Self::$variant => $vupdate(state, count, data, len),)*
-                    }
-                }
-            }
-
-            /// `finalize`.
-            ///
-            /// # Safety
-            ///
-            /// As for the artifacts; the CPU must have the features of the
-            /// implementation (as `select` guarantees).
-            pub(crate) unsafe fn finalize(
-                self,
-                state: &mut [u8; $state],
-                count: u64,
-                out: &mut [u8; $max],
-            ) {
-                // SAFETY: the caller's obligations.
-                unsafe {
-                    match self {
-                        Self::$base => $finalize(state, count, out),
-                        $($(#[$attr])* Self::$variant => $vfinalize(state, count, out),)*
-                    }
-                }
-            }
-        }
-
         $(#[$doc])*
         ///
         /// `N` is the size of the digest, 1 to
@@ -137,8 +54,6 @@ macro_rules! blake2 {
             /// The length of the data so far (the key block included), in
             /// bytes.
             length: u64,
-            /// The implementation this CPU runs.
-            backend: $backend,
         }
 
         impl<const N: usize> Drop for $name<N> {
@@ -186,8 +101,7 @@ macro_rules! blake2 {
                 unsafe { $init(&mut state, N, key.as_ptr(), key.len()) };
                 // The key block is the first block of the data.
                 let length = if key.is_empty() { 0 } else { $block };
-                let backend = $backend::select($crate::cpu::detected());
-                $name { state, length, backend }
+                $name { state, length }
             }
 
             /// Absorbs `data`.
@@ -208,15 +122,9 @@ macro_rules! blake2 {
                 // call uses, and do not wrap around the end of the address
                 // space. `self.length` is the length of the data
                 // `self.state` represents, and adding `data.len()` to it
-                // does not reach 2⁶⁴.
-                unsafe {
-                    self.backend.update(
-                        &mut self.state,
-                        self.length,
-                        data.as_ptr(),
-                        data.len(),
-                    )
-                };
+                // does not reach 2⁶⁴. The dispatcher calls only an
+                // implementation the CPU has the features of.
+                unsafe { $update(&mut self.state, self.length, data.as_ptr(), data.len()) };
                 self.length = length;
             }
 
@@ -231,8 +139,9 @@ macro_rules! blake2 {
                 // x86) or the stack below them that the call uses, and do not
                 // wrap around the end of the address space. `self.length` is
                 // the exact length, less than 2⁶⁴, of the data `self.state`
-                // represents.
-                unsafe { self.backend.finalize(&mut self.state, self.length, &mut out) };
+                // represents. The dispatcher calls only an implementation
+                // the CPU has the features of.
+                unsafe { $finalize(&mut self.state, self.length, &mut out) };
                 let mut digest = [0; N];
                 digest.copy_from_slice(&out[..N]);
                 digest

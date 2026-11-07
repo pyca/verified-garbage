@@ -12,30 +12,9 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha1::{
-    VG_SHA1_FINALIZE_AVX_BMI_FEATURES, VG_SHA1_UPDATE_AVX_BMI_FEATURES, vg_sha1_finalize_avx_bmi,
-    vg_sha1_update_avx_bmi,
+use crate::arch::dispatch::sha1::{
+    vg_sha1_digest_auto, vg_sha1_finalize_auto, vg_sha1_init_auto, vg_sha1_update_auto,
 };
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha1::{
-    VG_SHA1_FINALIZE_SHA2_FEATURES, VG_SHA1_UPDATE_SHA2_FEATURES, vg_sha1_finalize_sha2,
-    vg_sha1_update_sha2,
-};
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::sha1::{
-    VG_SHA1_FINALIZE_SHANI_FEATURES, VG_SHA1_UPDATE_SHANI_FEATURES, vg_sha1_finalize_shani,
-    vg_sha1_update_shani,
-};
-use crate::arch::sha1::{vg_sha1_finalize, vg_sha1_init, vg_sha1_update};
-
-use crate::arch::sha1::vg_sha1_digest;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha1::vg_sha1_digest_avx_bmi;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha1::vg_sha1_digest_sha2;
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::sha1::vg_sha1_digest_shani;
 
 super::streaming_hash!(
     /// An incremental SHA-1 computation.
@@ -43,53 +22,10 @@ super::streaming_hash!(
         state: 84,
         block: 64,
         output: 20,
-        init: vg_sha1_init,
-        backends: Sha1Backend {
-            Scalar => (vg_sha1_update, vg_sha1_finalize),
-            #[cfg(target_arch = "aarch64")]
-            Sha2 if [VG_SHA1_UPDATE_SHA2_FEATURES, VG_SHA1_FINALIZE_SHA2_FEATURES] =>
-                (vg_sha1_update_sha2, vg_sha1_finalize_sha2),
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            ShaNi if [VG_SHA1_UPDATE_SHANI_FEATURES, VG_SHA1_FINALIZE_SHANI_FEATURES] =>
-                (vg_sha1_update_shani, vg_sha1_finalize_shani),
-            #[cfg(target_arch = "x86_64")]
-            AvxBmi if [VG_SHA1_UPDATE_AVX_BMI_FEATURES, VG_SHA1_FINALIZE_AVX_BMI_FEATURES] =>
-                (vg_sha1_update_avx_bmi, vg_sha1_finalize_avx_bmi),
-        },
-        digests: {
-            Scalar => vg_sha1_digest,
-            #[cfg(target_arch = "aarch64")]
-            Sha2 => vg_sha1_digest_sha2,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            ShaNi => vg_sha1_digest_shani,
-            #[cfg(target_arch = "x86_64")]
-            AvxBmi => vg_sha1_digest_avx_bmi,
-        },
-        tables: {
-            Scalar => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA1 [],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA1 [],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA1 [],
-            },
-            #[cfg(target_arch = "aarch64")]
-            Sha2 => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA1_SHA2 [crate::arch::fn_tables::VG_HASH_SHA1_SHA2_FEATURES],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA1_SHA2 [crate::arch::fn_tables::VG_MD_HASH_SHA1_SHA2_FEATURES],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA1_SHA2 [crate::arch::fn_tables::VG_HMAC_SHA1_SHA2_FEATURES],
-            },
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            ShaNi => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA1_SHANI [crate::arch::fn_tables::VG_HASH_SHA1_SHANI_FEATURES],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA1_SHANI [crate::arch::fn_tables::VG_MD_HASH_SHA1_SHANI_FEATURES],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA1_SHANI [crate::arch::fn_tables::VG_HMAC_SHA1_SHANI_FEATURES],
-            },
-            #[cfg(target_arch = "x86_64")]
-            AvxBmi => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA1_AVX_BMI [crate::arch::fn_tables::VG_HASH_SHA1_AVX_BMI_FEATURES],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA1_AVX_BMI [crate::arch::fn_tables::VG_MD_HASH_SHA1_AVX_BMI_FEATURES],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA1_AVX_BMI [crate::arch::fn_tables::VG_HMAC_SHA1_AVX_BMI_FEATURES],
-            },
-        },
+        init: vg_sha1_init_auto,
+        update: vg_sha1_update_auto,
+        finalize: vg_sha1_finalize_auto,
+        digest: vg_sha1_digest_auto,
     }
 );
 

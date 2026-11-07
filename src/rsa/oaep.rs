@@ -18,33 +18,15 @@
     feature = "alloc"
 ))]
 
-mod aarch64;
-mod arm;
-mod powerpc64;
-mod riscv64;
 mod table;
-mod x86;
-mod x86_64;
-
-// The verified functions and tables of the target's architecture.
-#[cfg(target_arch = "aarch64")]
-use aarch64 as arch;
-#[cfg(target_arch = "arm")]
-use arm as arch;
-#[cfg(target_arch = "powerpc64")]
-use powerpc64 as arch;
-#[cfg(target_arch = "riscv64")]
-use riscv64 as arch;
-#[cfg(target_arch = "x86")]
-use x86 as arch;
-#[cfg(target_arch = "x86_64")]
-use x86_64 as arch;
 
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::cpu::detected;
+use crate::arch::dispatch::rsa_oaep::{
+    vg_rsa_oaep_decrypt_auto, vg_rsa_oaep_encrypt_precomputed_auto,
+};
 pub use crate::rsa::pkcs1_sig::Hash;
 use crate::rsa::{PrivateKey, PublicKey};
 use crate::zeroize::zeroize;
@@ -109,86 +91,10 @@ fn scratch_words(n_len: usize) -> usize {
 /// the tables of `Hash` (`crate::arch::fn_tables`).
 type Table = *const [usize; 5];
 
-/// Declares the types of verified functions, in the calling convention the
-/// emitter generates on each target: `sysv64` on x86-64 (on Windows too),
-/// and C's elsewhere; the tables of the label's hash function and of MGF1's
-/// are their last arguments.
-macro_rules! verified_fn_types {
-    ($(
-        $(#[$doc:meta])*
-        type $name:ident = fn($($arg:ty),* $(,)?) -> $ret:ty;
-    )*) => {$(
-        $(#[$doc])*
-        #[cfg(target_arch = "x86_64")]
-        type $name = unsafe extern "sysv64" fn($($arg,)* Table, Table) -> $ret;
-        $(#[$doc])*
-        #[cfg(not(target_arch = "x86_64"))]
-        type $name = unsafe extern "C" fn($($arg,)* Table, Table) -> $ret;
-    )*};
-}
-
-verified_fn_types! {
-    /// The type of the implementations of `vg_rsa_oaep_encrypt_precomputed`.
-    type EncryptFn = fn(
-        *mut u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *mut u64,
-        usize,
-        *const u64,
-        usize,
-    ) -> u32;
-
-    /// The type of the implementations of `vg_rsa_oaep_decrypt`.
-    type DecryptFn = fn(
-        *mut u8,
-        usize,
-        *mut [u64; 1],
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *mut u64,
-        usize,
-    ) -> u32;
-}
-
-/// The verified functions for the implementations this CPU runs best,
-/// `(encrypt, decrypt)`, with the tables of the label's hash function `hash`
-/// and of MGF1's `mgf1_hash` (`table::table`), or `None` if this module does
-/// not support them.
-fn with_tables(hash: Hash, mgf1_hash: Hash) -> Option<(EncryptFn, DecryptFn, Table, Table)> {
-    let f = detected();
-    let (encrypt, decrypt) = arch::functions(f);
-    Some((
-        encrypt,
-        decrypt,
-        table::table(hash, f)?,
-        table::table(mgf1_hash, f)?,
-    ))
+/// The tables of the label's hash function `hash` and of MGF1's `mgf1_hash`
+/// (`table::table`), or `None` if this module does not support them.
+fn with_tables(hash: Hash, mgf1_hash: Hash) -> Option<(Table, Table)> {
+    Some((table::table(hash)?, table::table(mgf1_hash)?))
 }
 
 impl PublicKey {
@@ -223,19 +129,18 @@ impl PublicKey {
         label: &[u8],
         random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Vec<u8>, Error> {
-        let (f, _, h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
-        encrypt_with(self, plaintext, label, f, (h, hash.digest_len()), m, random)
+        let (h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
+        encrypt_with(self, plaintext, label, (h, hash.digest_len()), m, random)
     }
 }
 
-/// `f`, a `vg_rsa_oaep_encrypt_precomputed` that this CPU can run, with the
-/// label's hash function `hash` (its table and digest length) and MGF1's
-/// `mgf1`, and a seed from `random`.
+/// `vg_rsa_oaep_encrypt_precomputed` with the label's hash function `hash`
+/// (its table and digest length) and MGF1's `mgf1`, and a seed from
+/// `random`.
 fn encrypt_with(
     key: &PublicKey,
     plaintext: &[u8],
     label: &[u8],
-    f: EncryptFn,
     (hash, len): (Table, usize),
     mgf1: Table,
     mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
@@ -259,12 +164,11 @@ fn encrypt_with(
     // precomputation for `key.n`, with `2 * ceil(n_len / 8)` words; `hash`
     // and `mgf1` are the words of tables of the crate's of `Hash`, and
     // `seed_len` is the digest length of `hash`'s, its word 4
-    // (`hashes::tables::tests::table_words` checks it); and the CPU has the features of `f` and
-    // of the tables' functions, which `functions` and `table::table` chose
-    // for the features detected (which fails to compile if they
-    // need others).
+    // (`hashes::tables::tests::table_words` checks it); and the dispatchers,
+    // the function's and the tables' (`table::table`), call only
+    // implementations the CPU has the features of.
     let r = unsafe {
-        f(
+        vg_rsa_oaep_encrypt_precomputed_auto(
             out.as_mut_ptr(),
             k,
             key.n.as_ptr(),
@@ -310,18 +214,17 @@ impl PrivateKey {
         mgf1_hash: Hash,
         label: &[u8],
     ) -> Result<Vec<u8>, Error> {
-        let (_, f, h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
-        decrypt_with(self, ciphertext, label, f, h, m)
+        let (h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
+        decrypt_with(self, ciphertext, label, h, m)
     }
 }
 
-/// `f`, a `vg_rsa_oaep_decrypt` that this CPU can run, with the label's hash
-/// function `hash` and MGF1's `mgf1`.
+/// `vg_rsa_oaep_decrypt` with the label's hash function `hash` and MGF1's
+/// `mgf1`.
 fn decrypt_with(
     key: &PrivateKey,
     ciphertext: &[u8],
     label: &[u8],
-    f: DecryptFn,
     hash: Table,
     mgf1: Table,
 ) -> Result<Vec<u8>, Error> {
@@ -339,12 +242,11 @@ fn decrypt_with(
     // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
     // `dp_len = qinv_len = p_len`, `dq_len = q_len` and
     // `scratch_len = 16 n_len + 1056`; `hash` and `mgf1` are the words of
-    // tables of the crate's of `Hash`; and the CPU has the features of `f`
-    // and of the tables' functions, which `functions` and `table::table`
-    // chose for the features detected (which fails to compile if they
-    // need others).
+    // tables of the crate's of `Hash`; and the dispatchers, the function's
+    // and the tables' (`table::table`), call only implementations the CPU
+    // has the features of.
     let r = unsafe {
-        f(
+        vg_rsa_oaep_decrypt_auto(
             out.as_mut_ptr(),
             k,
             &mut len,

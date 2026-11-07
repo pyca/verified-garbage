@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCheckedVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedSignVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidatePrivateVerified
@@ -63,6 +64,9 @@ def variant : Backend where
   prevalidatedSignDepth := by decide +kernel
   validatePrivateVerified := validating_private_verified Mont.calledProductEight
   validatePrivateSp := by decide +kernel
+  deriveCheckedVerified := derive_checked_verified Mont.calledProductEight
+  deriveCheckedSp := by decide +kernel
+  deriveCheckedDepth := by decide +kernel
   stackBound := by decide
 
 end VG.Proof.Variants.DsaArithmetic.AArch64.Base

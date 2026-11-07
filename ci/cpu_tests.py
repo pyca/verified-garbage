@@ -116,7 +116,7 @@ GROUPS = {
         "tests": ["blake2_kat::blake2b", "blake2_kat::blake2s", "rfc7693::blake2b", "rfc7693::blake2s"],
     },
     "brainpoolp256r1": {
-        "lib": ["ec::brainpoolp256r1", "ec::validate::tests::brainpoolp256r1", "ec::compressed::tests::brainpoolp256r1"],
+        "lib": ["ec::validate::tests::brainpoolp256r1", "ec::compressed::tests::brainpoolp256r1"],
         "tests": [
             "rfc7027::brainpoolp256r1",
             "rfc7027::brainpoolp256r1_ecdsa",
@@ -126,7 +126,7 @@ GROUPS = {
         ],
     },
     "brainpoolp384r1": {
-        "lib": ["ec::brainpoolp384r1", "ec::validate::tests::brainpoolp384r1", "ec::compressed::tests::brainpoolp384r1"],
+        "lib": ["ec::validate::tests::brainpoolp384r1", "ec::compressed::tests::brainpoolp384r1"],
         "tests": [
             "rfc7027::brainpoolp384r1",
             "rfc7027::brainpoolp384r1_ecdsa",
@@ -136,7 +136,7 @@ GROUPS = {
         ],
     },
     "brainpoolp512r1": {
-        "lib": ["ec::brainpoolp512r1", "ec::validate::tests::brainpoolp512r1", "ec::compressed::tests::brainpoolp512r1"],
+        "lib": ["ec::validate::tests::brainpoolp512r1", "ec::compressed::tests::brainpoolp512r1"],
         "tests": [
             "rfc7027::brainpoolp512r1",
             "rfc7027::brainpoolp512r1_ecdsa",
@@ -223,7 +223,7 @@ GROUPS = {
         "tests": ["acvp::mlkem1024", "acvp::mlkem768", "wycheproof::mlkem1024", "wycheproof::mlkem768"],
     },
     "p224": {
-        "lib": ["ec::p224", "ec::validate::tests::p224", "ec::compressed::tests::p224"],
+        "lib": ["ec::validate::tests::p224", "ec::compressed::tests::p224"],
         "tests": [
             "cavp::ecdh_p224",
             "rfc6979::p224",
@@ -237,7 +237,7 @@ GROUPS = {
         "tests": ["rfc6979::p224::p224_sha224"],
     },
     "p256": {
-        "lib": ["ec::p256", "ec::validate::tests::p256", "ec::compressed::tests::p256"],
+        "lib": ["ec::validate::tests::p256", "ec::compressed::tests::p256"],
         "tests": [
             "cavp::ecdh_p256",
             "cavp::ecdsa_p256",
@@ -251,7 +251,7 @@ GROUPS = {
         "tests": ["rfc6979::p256::p256_sha256", "rfc6979::p256::p256_sha384"],
     },
     "p521": {
-        "lib": ["ec::p521", "ec::validate::tests::p521", "ec::compressed::tests::p521"],
+        "lib": ["ec::validate::tests::p521", "ec::compressed::tests::p521"],
         "tests": [
             "cavp::ecdh_p521",
             "rfc6979::p521",
@@ -260,7 +260,7 @@ GROUPS = {
         ],
     },
     "p384": {
-        "lib": ["ec::p384", "ec::validate::tests::p384", "ec::compressed::tests::p384"],
+        "lib": ["ec::validate::tests::p384", "ec::compressed::tests::p384"],
         "tests": [
             "cavp::ecdh_p384",
             "rfc6979::p384",
@@ -355,7 +355,7 @@ GROUPS = {
         "tests": ["rfc7914::key_lengths", "rfc7914::verify_keys"],
     },
     "secp256k1": {
-        "lib": ["ec::secp256k1", "ec::validate::tests::secp256k1", "ec::compressed::tests::secp256k1"],
+        "lib": ["ec::validate::tests::secp256k1", "ec::compressed::tests::secp256k1"],
         "tests": [
             "secp256k1",
             "wycheproof::ec_compressed::secp256k1",
@@ -427,6 +427,9 @@ GROUPS = {
     },
     "sha512": {
         "lib": [
+            # Every hash's tables of functions: their dispatchers' choices
+            # of the SHA-512 family's tables, which only these lines make.
+            "hashes::tables",
             "hashes::sha512",
             "hashes::sha512_224",
             "hashes::sha512_256",

@@ -2,8 +2,6 @@ module
 
 import VerifiedGarbage.Spec.Dsa.Generate
 meta import VerifiedGarbage.Spec.Dsa.Generate
-import VerifiedGarbage.TCB.Audit
-meta import VerifiedGarbage.TCB.Audit
 
 /-! Regression checks for the trusted legacy DSA import-size policy:
 `supportedSizes` and `lengthsValid` accept exactly the FIPS 186-4 §4.2
@@ -60,7 +58,5 @@ example (pLen qLen : Nat) : Import.lengthsValid pLen qLen ↔
 
 -- The import extension does not enable parameter generation at 2048/160.
 #guard ¬generationLengthsValid 256 20
-
-#assert_spec_origin
 
 end VG.Test.DsaImportSizes

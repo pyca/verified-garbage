@@ -264,8 +264,6 @@ end
 
 /-- The precondition, by name. -/
 structure FPre (s₀ : State) : Prop where
-  sp_lo : 16 ≤ (fSp s₀).toNat
-  sp_hi : (fSp s₀).toNat + 16 ≤ 2 ^ 64
   rd : s₀.rd = [fSch s₀, fArg s₀]
   wr : s₀.wr = [fIvR s₀, fData s₀, fScr s₀, fSv s₀]
   sch_iv : (fSch s₀).Disjoint (fIvR s₀)
@@ -282,30 +280,26 @@ structure FPre (s₀ : State) : Prop where
   scr_sv : (fScr s₀).Disjoint (fSv s₀)
   scr_arg : (fScr s₀).Disjoint (fArg s₀)
   sv_arg : (fSv s₀).Disjoint (fArg s₀)
-  ret_sch : (⟨fSp s₀, 8⟩ : Region).Disjoint (fSch s₀)
   ret_iv : (⟨fSp s₀, 8⟩ : Region).Disjoint (fIvR s₀)
   ret_data : (⟨fSp s₀, 8⟩ : Region).Disjoint (fData s₀)
   ret_scr : (⟨fSp s₀, 8⟩ : Region).Disjoint (fScr s₀)
   ret_sv : (⟨fSp s₀, 8⟩ : Region).Disjoint (fSv s₀)
-  ret_arg : (⟨fSp s₀, 8⟩ : Region).Disjoint (fArg s₀)
   stk_sch : (fStk s₀).Disjoint (fSch s₀)
   stk_iv : (fStk s₀).Disjoint (fIvR s₀)
   stk_data : (fStk s₀).Disjoint (fData s₀)
   stk_scr : (fStk s₀).Disjoint (fScr s₀)
   stk_sv : (fStk s₀).Disjoint (fSv s₀)
   stk_arg : (fStk s₀).Disjoint (fArg s₀)
-  sch_wrap : (fW s₀).toNat + 240 ≤ 2 ^ 64
   iv_wrap : (fIv s₀).toNat + 16 ≤ 2 ^ 64
   data_wrap : (fD s₀).toNat + fL s₀ ≤ 2 ^ 64
   scr_wrap : (fS s₀).toNat + 2176 ≤ 2 ^ 64
-  sv_wrap : (fV s₀).toNat + 48 ≤ 2 ^ 64
   rounds : fR s₀ = 10 ∨ fR s₀ = 12 ∨ fR s₀ = 14
 
 theorem FPre.of {enc : Bool} {s₀ : State} (h : (finalX86_64 enc).pre s₀) : FPre s₀ :=
-  let ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22,
-    a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36⟩ := h
-  ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22,
-    a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36⟩
+  let ⟨_, _, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, _, a20, a21, a22,
+    a23, _, a25, a26, a27, a28, a29, a30, _, a32, a33, a34, _, a36⟩ := h
+  ⟨a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,
+    a20, a21, a22, a23, a25, a26, a27, a28, a29, a30, a32, a33, a34, a36⟩
 
 /-! ## Regions -/
 
@@ -720,10 +714,7 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
   have eN := fN_eq s₀
   have eU := fU_eq s₀
   have xp : Modes.X86_64.XPre (s.setReg .rax (s.gpr .r12)) (fIv s₀) (fT s₀) (fU s₀) .r13 .r14 := {
-    pos := by omega
     small := by omega
-    fitK := by have := hp.iv_wrap; omega
-    fitR := by rw [hT]; omega
     disj := (hp.iv_data.sub_left (Region.sub_prefix (by omega))).sub_right (tail_sub s₀)
     rdK := fun q hq => by
       rw [rd_setReg, wr_setReg, h.rd, h.wr, hp.rd, hp.wr]

@@ -16,8 +16,7 @@ the implementation of AES they call (`Ctr32`, the `ExpandKey` that goes with
 it, and `sfx`, the suffix of the names of the CMAC functions made with it),
 and `absorb`, which calls only `vg_cmac_aes_update`, over the implementation
 of that (`Update`): e.g. `vg_cmac_aes_absorb_aesni` calls
-`vg_cmac_aes_update_aesni`, and `vg_cmac_aes_absorb_aesni_cbc`
-`vg_cmac_aes_update_aesni_cbc`.
+`vg_cmac_aes_update_aesni`.
 
 The state (`VG.Spec.Cmac.Repr`) is the key schedule (bytes 0–239), the
 subkeys (240–271), the chaining value (272–287) and the bytes held back

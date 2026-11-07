@@ -15,6 +15,14 @@ mod vg_brainpoolp256r1_comb7;
 pub use vg_brainpoolp256r1_comb7::VG_BRAINPOOLP256R1_COMB7;
 
 #[rustfmt::skip]
+mod vg_brainpoolp384r1_comb7;
+pub use vg_brainpoolp384r1_comb7::VG_BRAINPOOLP384R1_COMB7;
+
+#[rustfmt::skip]
+mod vg_brainpoolp512r1_comb7;
+pub use vg_brainpoolp512r1_comb7::VG_BRAINPOOLP512R1_COMB7;
+
+#[rustfmt::skip]
 mod vg_cast5_s1234;
 pub use vg_cast5_s1234::VG_CAST5_S1234;
 

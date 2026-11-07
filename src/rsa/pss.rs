@@ -20,33 +20,13 @@
     feature = "alloc"
 ))]
 
-mod aarch64;
-mod arm;
-mod powerpc64;
-mod riscv64;
 mod table;
-mod x86;
-mod x86_64;
-
-// The verified functions and tables of the target's architecture.
-#[cfg(target_arch = "aarch64")]
-use aarch64 as arch;
-#[cfg(target_arch = "arm")]
-use arm as arch;
-#[cfg(target_arch = "powerpc64")]
-use powerpc64 as arch;
-#[cfg(target_arch = "riscv64")]
-use riscv64 as arch;
-#[cfg(target_arch = "x86")]
-use x86 as arch;
-#[cfg(target_arch = "x86_64")]
-use x86_64 as arch;
 
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::cpu::detected;
+use crate::arch::dispatch::rsa_pss::{vg_rsa_pss_sign_auto, vg_rsa_pss_verify_precomputed_auto};
 use crate::error::InvalidSignature;
 use crate::rsa::{PrivateKey, PublicKey};
 use crate::zeroize::zeroize;
@@ -134,82 +114,10 @@ type MdTable = *const [usize; 11];
 /// one of the tables of `Hash`, their last argument, `mgf1`.
 type Table = *const [usize; 5];
 
-/// Declares the types of verified functions, in the calling convention the
-/// emitter generates on each target: `sysv64` on x86-64 (on Windows too),
-/// and C's elsewhere; the tables of the hash function and of MGF1's are
-/// their last arguments.
-macro_rules! verified_fn_types {
-    ($(
-        $(#[$doc:meta])*
-        type $name:ident = fn($($arg:ty),* $(,)?) -> $ret:ty;
-    )*) => {$(
-        $(#[$doc])*
-        #[cfg(target_arch = "x86_64")]
-        type $name = unsafe extern "sysv64" fn($($arg,)* MdTable, Table) -> $ret;
-        $(#[$doc])*
-        #[cfg(not(target_arch = "x86_64"))]
-        type $name = unsafe extern "C" fn($($arg,)* MdTable, Table) -> $ret;
-    )*};
-}
-
-verified_fn_types! {
-    /// The type of the implementations of `vg_rsa_pss_sign`.
-    type SignFn = fn(
-        *mut u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *mut u64,
-        usize,
-    ) -> u32;
-
-    /// The type of the implementations of `vg_rsa_pss_verify_precomputed`.
-    type VerifyFn = fn(
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        *const u8,
-        usize,
-        usize,
-        u32,
-        *mut u64,
-        usize,
-        *const u64,
-        usize,
-    ) -> u32;
-}
-
-/// The verified functions for the implementations this CPU runs best,
-/// `(sign, verify)`, with the tables of the hash function `hash` and of
-/// MGF1's `mgf1_hash` (`table::md_table`, `table::table`).
-fn with_tables(hash: Hash, mgf1_hash: Hash) -> (SignFn, VerifyFn, MdTable, Table) {
-    let f = detected();
-    let (sign, verify) = arch::functions(f);
-    (
-        sign,
-        verify,
-        table::md_table(hash, f),
-        table::table(mgf1_hash, f),
-    )
+/// The tables of the hash function `hash` and of MGF1's `mgf1_hash`
+/// (`table::md_table`, `table::table`).
+fn with_tables(hash: Hash, mgf1_hash: Hash) -> (MdTable, Table) {
+    (table::md_table(hash), table::table(mgf1_hash))
 }
 
 /// The words of working space the functions need for an `n_len`-byte
@@ -260,7 +168,7 @@ fn sign_with(
     let k = key.n.len();
     let mut out = vec![0; k];
     let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
-    let (f, _, h, m) = with_tables(hash, mgf1_hash);
+    let (h, m) = with_tables(hash, mgf1_hash);
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
     // distinct Rust allocations; `PrivateKey::from_crt` gives
@@ -270,13 +178,11 @@ fn sign_with(
     // words of a table of the crate's of `MdHash` and `mgf1` of one of
     // `Hash`, and `digest_len` is the digest length of `hash`'s, its word 6
     // (`hashes::tables::tests::table_words` checks it, and `sign_pss`
-    // the length); and the
-    // CPU has the features of `f` and of the tables' functions, which
-    // `functions`, `table::md_table` and `table::table` chose for the
-    // features detected (which fails to compile if they need
-    // others).
+    // the length); and the dispatchers, the function's and the tables'
+    // (`table::md_table`, `table::table`), call only implementations the
+    // CPU has the features of.
     let r = unsafe {
-        f(
+        vg_rsa_pss_sign_auto(
             out.as_mut_ptr(),
             k,
             key.n.as_ptr(),
@@ -337,7 +243,7 @@ impl PublicKey {
             SaltLength::Len(l) => (l, 0),
             SaltLength::Any => (0, 1),
         };
-        let (_, f, h, m) = with_tables(hash, mgf1_hash);
+        let (h, m) = with_tables(hash, mgf1_hash);
         let mut scratch = self.verify_scratch.take(public_scratch_words(k), false);
         let pre = self.pre(&mut scratch);
         // SAFETY: each pointer is valid for its length (`scratch` for writes),
@@ -348,12 +254,12 @@ impl PublicKey {
         // precomputed values for `self.n`, with their required length; `hash` is
         // the words of a table of the crate's of `MdHash` and `mgf1` of one of
         // `Hash`, and `digest_len` is the digest length of `hash`'s, its word 6
-        // (`hashes::tables::tests::table_words` checks it); and the CPU has the
-        // features of `f` and of the tables' functions, which `functions`,
-        // `table::md_table` and `table::table` chose for the features detected
-        // (which fails to compile if they need others).
+        // (`hashes::tables::tests::table_words` checks it); and the
+        // dispatchers, the function's and the tables' (`table::md_table`,
+        // `table::table`), call only implementations the CPU has the features
+        // of.
         let r = unsafe {
-            f(
+            vg_rsa_pss_verify_precomputed_auto(
                 self.n.as_ptr(),
                 k,
                 self.e.as_ptr(),

@@ -14481,7 +14481,7 @@ vg_dsa_generate_key:
 	ldr r7, [r11, #132]
 	ldr r8, [r11, #136]
 	push {r4, r5, r6, r7, r8, r9, r10, r11}
-	bl {vg_dsa_derive_key}
+	bl {vg_dsa_derive_key_checked}
 	ldr r4, [sp], #32
 	str r0, [r11, #60]
 235:

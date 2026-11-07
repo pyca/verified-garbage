@@ -41,6 +41,9 @@ structure Callee where
   for short data in its place (`Callee.small`). -/
   vl : Bool := false
 
+/-- A call of `x` in place: the destination (`r8`) is the source (`rsi`). -/
+def Callee.inPlace (x : Callee) : Prog isa := Xor.callIn x.name x.code
+
 /-- The baseline computes one block at a time: nothing to gain. -/
 def Callee.scalar : Callee := ⟨"vg_chacha20_xor", Xor.xor, 0, 0, 4, false⟩
 /-- Four blocks at a time while more than 64 bytes remain, then the last by

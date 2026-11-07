@@ -73,4 +73,15 @@ def deriveKey (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
     Core.pow mul pWorkspace Core.generator Core.privateScalar (Core.element t2),
     copyY, Checks.signingKey mul, writeKey, .block result])]
 
+/-- Key derivation for a domain whose check (`checkParameters`) has
+succeeded: `deriveKey` with the signer's checks of g and y but the
+exponentiation `g^q mod p = 1`, which that check established. Key
+generation calls it once the domain check has passed. -/
+def deriveChecked (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+  .block deriveEntry, Checks.domainShape,
+  .ite (.zero .x .x3) deriveFailure (seqs [
+    workspaces, Checks.range qWorkspace Core.privateScalar,
+    Core.pow mul pWorkspace Core.generator Core.privateScalar (Core.element t2),
+    copyY, seqs (Checks.publicPrefix mul), writeKey, .block result])]
+
 end VG.Impl.Dsa.AArch64.Generate

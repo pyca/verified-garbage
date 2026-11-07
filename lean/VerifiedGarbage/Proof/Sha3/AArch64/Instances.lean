@@ -1017,11 +1017,6 @@ theorem squeeze_shake128 (v : Permutation) :
       (Spec.Sha3.xofSqueezeContract AArch64.abi Spec.Sha3.xofShake128 (16 + 640)) :=
   xofSqueeze_verified v (by decide)
 
-theorem update_shake256 (v : Permutation) :
-    Verified AArch64.target (update v.callee Spec.Sha3.xofShake256.rate)
-      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.xofShake256.rate 16) :=
-  update_verified v (by decide)
-
 theorem finalize_shake256 (v : Permutation) :
     Verified AArch64.target (xofFinalize v.callee Spec.Sha3.xofShake256.rate)
       (Spec.Sha3.xofFinalizeContract AArch64.abi Spec.Sha3.xofShake256 (16 + 640)) :=

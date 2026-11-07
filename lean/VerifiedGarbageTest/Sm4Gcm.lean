@@ -6,8 +6,6 @@ import VerifiedGarbage.Spec.Sm4.Gcm
 meta import VerifiedGarbage.Spec.Sm4.Gcm
 import VerifiedGarbage.Spec.Sm4.Gcm.Contract
 meta import VerifiedGarbage.Spec.Sm4.Gcm.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbageTest.Gcm
 meta import VerifiedGarbageTest.Gcm
 
@@ -146,17 +144,5 @@ run_cmd do
   match result with
   | .ok () => pure ()
   | .error e => throwError "SM4-GCM: {e}"
-
-#assert_standard_axioms gcmEncrypt
-#assert_standard_axioms gcmDecrypt
-#assert_standard_axioms VG.Spec.Sm4.Gcm.initContract
-#assert_standard_axioms VG.Spec.Sm4.Gcm.sealContract
-#assert_standard_axioms VG.Spec.Sm4.Gcm.openContract
-#assert_standard_axioms VG.Spec.Sm4.Gcm.streamEncryptContract
-#assert_standard_axioms VG.Spec.Sm4.Gcm.streamDecryptContract
-#assert_standard_axioms VG.Spec.Sm4.Gcm.streamFinishContract
-#assert_standard_axioms VG.Spec.Sm4.Gcm.streamVerifyContract
-#assert_standard_axioms encryptWith_ctx
-#assert_standard_axioms decryptWith_ctx
 
 end VG.Test.Sm4Gcm

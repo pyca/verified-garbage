@@ -1,28 +1,14 @@
 //! A public key's precomputed modulus values, computed at the key's first
 //! operation.
 
-use super::{Backend, public_scratch_words};
+use super::public_scratch_words;
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::{
     fmt, ptr,
     sync::atomic::{AtomicPtr, Ordering},
 };
 
-use crate::arch::rsa::vg_rsa_public_precompute;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::rsa::vg_rsa_public_precompute_adx;
-#[cfg(all(
-    target_arch = "arm",
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
-))]
-use crate::arch::rsa::vg_rsa_public_precompute_umaal;
-use crate::cpu::detected;
+use crate::arch::dispatch::rsa::vg_rsa_public_precompute_auto;
 
 /// The words of a modulus' precomputed values for an `n_len`-byte modulus
 /// (`VG.Spec.Rsa.precomputedWords`).
@@ -45,31 +31,14 @@ fn precompute(n: &[u8], scratch: &mut [u64]) -> (Vec<u64>, u32) {
     let k = n.len();
     assert!((64..=1024).contains(&k) && scratch.len() >= public_scratch_words(k));
     let mut pre = vec![0u64; precomputed_words(k)];
-    let f = match Backend::select(detected()) {
-        Backend::Baseline => vg_rsa_public_precompute,
-        // `select` chose it because the CPU has the features it needs.
-        #[cfg(target_arch = "x86_64")]
-        Backend::Adx | Backend::Ifma => vg_rsa_public_precompute_adx,
-        #[cfg(all(
-            target_arch = "arm",
-            any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd"
-            )
-        ))]
-        Backend::Umaal => vg_rsa_public_precompute_umaal,
-    };
     // SAFETY: each pointer is valid for its length (`pre` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
     // distinct Rust allocations (`scratch` borrowed exclusively); the check
     // above gives `64 ≤ n_len ≤ 1024` and `scratch_len ≥ 8 ⌈n_len / 8⌉ + 48`, and
-    // `pre_len = 2 ⌈n_len / 8⌉`; and the CPU has the features of the
-    // function `select` chose.
+    // `pre_len = 2 ⌈n_len / 8⌉`; and the dispatcher calls only an
+    // implementation the CPU has the features of.
     let r = unsafe {
-        f(
+        vg_rsa_public_precompute_auto(
             pre.as_mut_ptr(),
             pre.len(),
             n.as_ptr(),

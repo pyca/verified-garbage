@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract

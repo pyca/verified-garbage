@@ -9,30 +9,9 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha256::{
-    VG_SHA256_FINALIZE_AVX2_FEATURES, VG_SHA256_UPDATE_AVX2_FEATURES, vg_sha256_finalize_avx2,
-    vg_sha256_update_avx2,
+use crate::arch::dispatch::sha256::{
+    vg_sha256_digest_auto, vg_sha256_finalize_auto, vg_sha256_init_auto, vg_sha256_update_auto,
 };
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha256::{
-    VG_SHA256_FINALIZE_SHA2_FEATURES, VG_SHA256_UPDATE_SHA2_FEATURES, vg_sha256_finalize_sha2,
-    vg_sha256_update_sha2,
-};
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::sha256::{
-    VG_SHA256_FINALIZE_SHANI_FEATURES, VG_SHA256_UPDATE_SHANI_FEATURES, vg_sha256_finalize_shani,
-    vg_sha256_update_shani,
-};
-use crate::arch::sha256::{vg_sha256_finalize, vg_sha256_init, vg_sha256_update};
-
-use crate::arch::sha256::vg_sha256_digest;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha256::vg_sha256_digest_avx2;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha256::vg_sha256_digest_sha2;
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::sha256::vg_sha256_digest_shani;
 
 super::streaming_hash!(
     /// An incremental SHA-256 computation.
@@ -40,53 +19,10 @@ super::streaming_hash!(
         state: 96,
         block: 64,
         output: 32,
-        init: vg_sha256_init,
-        backends: Sha256Backend {
-            Scalar => (vg_sha256_update, vg_sha256_finalize),
-            #[cfg(target_arch = "aarch64")]
-            Sha2 if [VG_SHA256_UPDATE_SHA2_FEATURES, VG_SHA256_FINALIZE_SHA2_FEATURES] =>
-                (vg_sha256_update_sha2, vg_sha256_finalize_sha2),
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            ShaNi if [VG_SHA256_UPDATE_SHANI_FEATURES, VG_SHA256_FINALIZE_SHANI_FEATURES] =>
-                (vg_sha256_update_shani, vg_sha256_finalize_shani),
-            #[cfg(target_arch = "x86_64")]
-            Avx2 if [VG_SHA256_UPDATE_AVX2_FEATURES, VG_SHA256_FINALIZE_AVX2_FEATURES] =>
-                (vg_sha256_update_avx2, vg_sha256_finalize_avx2),
-        },
-        digests: {
-            Scalar => vg_sha256_digest,
-            #[cfg(target_arch = "aarch64")]
-            Sha2 => vg_sha256_digest_sha2,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            ShaNi => vg_sha256_digest_shani,
-            #[cfg(target_arch = "x86_64")]
-            Avx2 => vg_sha256_digest_avx2,
-        },
-        tables: {
-            Scalar => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA256 [],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA256 [],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA256 [],
-            },
-            #[cfg(target_arch = "aarch64")]
-            Sha2 => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA256_SHA2 [crate::arch::fn_tables::VG_HASH_SHA256_SHA2_FEATURES],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA256_SHA2 [crate::arch::fn_tables::VG_MD_HASH_SHA256_SHA2_FEATURES],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA256_SHA2 [crate::arch::fn_tables::VG_HMAC_SHA256_SHA2_FEATURES],
-            },
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            ShaNi => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA256_SHANI [crate::arch::fn_tables::VG_HASH_SHA256_SHANI_FEATURES],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA256_SHANI [crate::arch::fn_tables::VG_MD_HASH_SHA256_SHANI_FEATURES],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA256_SHANI [crate::arch::fn_tables::VG_HMAC_SHA256_SHANI_FEATURES],
-            },
-            #[cfg(target_arch = "x86_64")]
-            Avx2 => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA256_AVX2 [crate::arch::fn_tables::VG_HASH_SHA256_AVX2_FEATURES],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA256_AVX2 [crate::arch::fn_tables::VG_MD_HASH_SHA256_AVX2_FEATURES],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA256_AVX2 [crate::arch::fn_tables::VG_HMAC_SHA256_AVX2_FEATURES],
-            },
-        },
+        init: vg_sha256_init_auto,
+        update: vg_sha256_update_auto,
+        finalize: vg_sha256_finalize_auto,
+        digest: vg_sha256_digest_auto,
     }
 );
 

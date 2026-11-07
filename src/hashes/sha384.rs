@@ -9,27 +9,9 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::sha512::vg_sha384_digest;
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha512::vg_sha384_digest_sha3;
-use crate::arch::sha512::vg_sha384_init;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha512::{
-    VG_SHA384_FINALIZE_AVX2_FEATURES, VG_SHA384_FINALIZE_SHANI_FEATURES,
-    VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_UPDATE_SHANI_FEATURES,
+use crate::arch::dispatch::sha512::{
+    vg_sha384_digest_auto, vg_sha384_finalize_auto, vg_sha384_init_auto, vg_sha512_update_auto,
 };
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha512::{VG_SHA384_FINALIZE_SHA3_FEATURES, VG_SHA512_UPDATE_SHA3_FEATURES};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha512::{vg_sha384_digest_avx2, vg_sha384_digest_shani};
-use crate::arch::sha512::{vg_sha384_finalize, vg_sha512_update};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::sha512::{
-    vg_sha384_finalize_avx2, vg_sha384_finalize_shani, vg_sha512_update_avx2,
-    vg_sha512_update_shani,
-};
-#[cfg(target_arch = "aarch64")]
-use crate::arch::sha512::{vg_sha384_finalize_sha3, vg_sha512_update_sha3};
 
 super::streaming_hash!(
     /// An incremental SHA-384 computation (FIPS 180-4 §6.5).
@@ -37,53 +19,10 @@ super::streaming_hash!(
         state: 192,
         block: 128,
         output: 48,
-        init: vg_sha384_init,
-        backends: Sha384Backend {
-            Scalar => (vg_sha512_update, vg_sha384_finalize),
-            #[cfg(target_arch = "aarch64")]
-            Sha3 if [VG_SHA512_UPDATE_SHA3_FEATURES, VG_SHA384_FINALIZE_SHA3_FEATURES] =>
-                (vg_sha512_update_sha3, vg_sha384_finalize_sha3),
-            #[cfg(target_arch = "x86_64")]
-            ShaNi if [VG_SHA512_UPDATE_SHANI_FEATURES, VG_SHA384_FINALIZE_SHANI_FEATURES] =>
-                (vg_sha512_update_shani, vg_sha384_finalize_shani),
-            #[cfg(target_arch = "x86_64")]
-            Avx2 if [VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA384_FINALIZE_AVX2_FEATURES] =>
-                (vg_sha512_update_avx2, vg_sha384_finalize_avx2),
-        },
-        digests: {
-            Scalar => vg_sha384_digest,
-            #[cfg(target_arch = "aarch64")]
-            Sha3 => vg_sha384_digest_sha3,
-            #[cfg(target_arch = "x86_64")]
-            ShaNi => vg_sha384_digest_shani,
-            #[cfg(target_arch = "x86_64")]
-            Avx2 => vg_sha384_digest_avx2,
-        },
-        tables: {
-            Scalar => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA384 [],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA384 [],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA384 [],
-            },
-            #[cfg(target_arch = "aarch64")]
-            Sha3 => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA384_SHA3 [crate::arch::fn_tables::VG_HASH_SHA384_SHA3_FEATURES],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA384_SHA3 [crate::arch::fn_tables::VG_MD_HASH_SHA384_SHA3_FEATURES],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA384_SHA3 [crate::arch::fn_tables::VG_HMAC_SHA384_SHA3_FEATURES],
-            },
-            #[cfg(target_arch = "x86_64")]
-            ShaNi => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA384_SHANI [crate::arch::fn_tables::VG_HASH_SHA384_SHANI_FEATURES],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA384_SHANI [crate::arch::fn_tables::VG_MD_HASH_SHA384_SHANI_FEATURES],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA384_SHANI [crate::arch::fn_tables::VG_HMAC_SHA384_SHANI_FEATURES],
-            },
-            #[cfg(target_arch = "x86_64")]
-            Avx2 => {
-                hash: crate::arch::fn_tables::VG_HASH_SHA384_AVX2 [crate::arch::fn_tables::VG_HASH_SHA384_AVX2_FEATURES],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_SHA384_AVX2 [crate::arch::fn_tables::VG_MD_HASH_SHA384_AVX2_FEATURES],
-                hmac: crate::arch::fn_tables::VG_HMAC_SHA384_AVX2 [crate::arch::fn_tables::VG_HMAC_SHA384_AVX2_FEATURES],
-            },
-        },
+        init: vg_sha384_init_auto,
+        update: vg_sha512_update_auto,
+        finalize: vg_sha384_finalize_auto,
+        digest: vg_sha384_digest_auto,
     }
 );
 

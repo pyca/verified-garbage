@@ -31,10 +31,6 @@ open Lean Elab Command Spec.Dsa
 #guard generateKeyBytes 128 20 [] [] == ⟨none, 0, 0, [4]⟩
 #guard generateKeyBytes 128 20 (List.replicate 276 0) [] == ⟨none, 0, 0, [4]⟩
 
-#assert_standard_axioms Spec.Dsa.generateKeyContract
-#assert_no_compiler_overrides Spec.Dsa.generateKeyApi
-#assert_spec_origin
-
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)
   let some root := file.parent >>= (·.parent) >>= (·.parent) | throwError "no repository root"

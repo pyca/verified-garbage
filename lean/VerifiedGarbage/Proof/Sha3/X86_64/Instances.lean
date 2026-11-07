@@ -1066,10 +1066,6 @@ theorem squeeze_shake128 :
     Verified X86_64.target (xofSqueeze Spec.Sha3.xofShake128.rate) (Spec.Sha3.xofSqueezeContract X86_64.abi Spec.Sha3.xofShake128 656) :=
   xofSqueeze_verified (by decide)
 
-theorem update_shake256 :
-    Verified X86_64.target (update Spec.Sha3.xofShake256.rate) (Spec.Sha3.updateContract X86_64.abi Spec.Sha3.xofShake256.rate 8) :=
-  update_verified (by decide)
-
 theorem finalize_shake256 :
     Verified X86_64.target (xofFinalize Spec.Sha3.xofShake256.rate) (Spec.Sha3.xofFinalizeContract X86_64.abi Spec.Sha3.xofShake256 656) :=
   xofFinalize_verified VG.Proof.Sha3.Instances.shake256_sponge (by decide)

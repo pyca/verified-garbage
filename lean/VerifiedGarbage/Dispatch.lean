@@ -25,8 +25,6 @@ def gcmX86_64 : List String := ["_vaes_vpclmul_avx512", "_vaes_vpclmul", "_vaes_
 
 def ranking : Rust.Ranking := [
   ("x86_64",
-    -- AES-SIV's CMAC by AES-NI's CBC code, which it runs on long inputs.
-    { suffix := "_aesni_cbc", skip := true } ::
     -- AES-GCM-SIV: each of AES-GCM's implementations with its AVX2 copies
     -- (`_avx2`), then without.
     ((gcmX86_64 ++ [""]).flatMap fun g =>
@@ -34,32 +32,12 @@ def ranking : Rust.Ranking := [
         if g.isEmpty then [] else [{ suffix := g, modules := ["aes_gcm_siv"] }]) ++
     { suffix := "_vaes_avx512" } ::
     gcmX86_64.map (fun g => { suffix := g }) ++ [
-    -- ChaCha20's `_ifma` needs no AVX512_IFMA itself: it is chosen where
-    -- ChaCha20-Poly1305's `_ifma` is, and `_avx512vl` on the other CPUs with
-    -- AVX512VL.
-    { suffix := "_ifma", modules := ["chacha20"], extra := ["avx512ifma"] },
-    -- FFDH's `_ifma` key generation from a context is the ADX code of the
-    -- Miller–Rabin round's IFMA instance, needing only BMI2 and ADX: it is
-    -- chosen where the round's IFMA code can run (AVX, AVX512F, AVX512_IFMA
-    -- and AVX512VL), and `_adx` on the other CPUs.
-    { suffix := "_ifma", modules := ["ffdh"],
-      extra := ["avx", "avx512f", "avx512ifma", "avx512vl"] },
-    -- FFDH's domain operations, ranked by their whole suffixes so that the
-    -- entry above does not apply to their parts: `_mr_ifma` is another name
-    -- of `_mr_adx`, chosen with BMI2 and ADX.
-    { suffix := "_mr_ifma_exp_ifma", modules := ["ffdh"] },
-    { suffix := "_mr_adx_exp_ifma", modules := ["ffdh"] },
-    { suffix := "_exp_ifma", modules := ["ffdh"] },
-    { suffix := "_mr_ifma", modules := ["ffdh"] },
-    { suffix := "_mr_adx", modules := ["ffdh"] },
+    -- ChaCha20's 512-bit code (`_avx512`) is chosen where ChaCha20-Poly1305's
+    -- `_ifma` is, on CPUs with AVX512_IFMA, and `_avx512vl` on the other CPUs
+    -- with AVX512VL.
+    { suffix := "_avx512", modules := ["chacha20"], extra := ["avx512ifma"] },
     { suffix := "_ifma" },
     { suffix := "_avx512vl" },
-    -- ML-DSA's `_avx512` key preparation is its `_avx2` code but for the name
-    -- of the NTT it calls (whose two instances are the same code), needing
-    -- only AVX2: it is chosen where its other `_avx512` functions are, and
-    -- `_avx2` on the other CPUs.
-    { suffix := "_avx512", modules := ["mldsa44", "mldsa65", "mldsa87"],
-      extra := ["avx512f", "avx512vl"] },
     { suffix := "_avx512" },
     { suffix := "_shani" },
     { suffix := "_avx_bmi" },
@@ -74,8 +52,6 @@ def ranking : Rust.Ranking := [
     { suffix := "_shani" },
     { suffix := "_ssse3" }]),
   ("aarch64", [
-    -- AES-SIV's CMAC by the AES extension's CBC code, which it runs on long inputs.
-    { suffix := "_aes_cbc", skip := true },
     { suffix := "_aes_sha3" },
     { suffix := "_aes" },
     -- FEAT_SHA3's Keccak is faster on Apple's cores, and slower on Neoverse N2:

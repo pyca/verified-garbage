@@ -12,7 +12,7 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::md5::{vg_md5_finalize, vg_md5_init, vg_md5_update};
+use crate::arch::dispatch::md5::{vg_md5_finalize_auto, vg_md5_init_auto, vg_md5_update_auto};
 
 super::streaming_hash!(
     /// An incremental MD5 computation.
@@ -20,17 +20,9 @@ super::streaming_hash!(
         state: 80,
         block: 64,
         output: 16,
-        init: vg_md5_init,
-        backends: Md5Backend {
-            Scalar => (vg_md5_update, vg_md5_finalize),
-        },
-        tables: {
-            Scalar => {
-                hash: crate::arch::fn_tables::VG_HASH_MD5 [],
-                md_hash: crate::arch::fn_tables::VG_MD_HASH_MD5 [],
-                hmac: crate::arch::fn_tables::VG_HMAC_MD5 [],
-            },
-        },
+        init: vg_md5_init_auto,
+        update: vg_md5_update_auto,
+        finalize: vg_md5_finalize_auto,
     }
 );
 

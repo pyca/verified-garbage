@@ -133,7 +133,7 @@ theorem lay_oD (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (hw : l.w ≠ 4) : l.oE + l.
 /-- The padded exponent: `E ≤ P`, `P` in whole quadwords at most `XE` bytes. -/
 theorem lay_P (hl : AmmOk l) : l.E ≤ l.P ∧ l.P ≤ 8 * ((l.P + 7) / 8) ∧ 8 * ((l.P + 7) / 8) ≤ l.XE ∧
     l.oD = l.oE + (l.P + 31) / 32 * 32 ∧ l.oE + l.XE = l.oK1 ∧ 8 * ((l.P + 7) / 8) ≤ (l.P + 31) / 32 * 32 := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The byte of each digit is in `[oE, oK1)`. -/
 theorem lay_dAt (hl : AmmOk l) {i : Nat} (hi : i < l.ND) : l.oE ≤ dAt l i ∧ dAt l i < l.oK1 := by
@@ -149,7 +149,7 @@ theorem lay_dAt (hl : AmmOk l) {i : Nat} (hi : i < l.ND) : l.oE ≤ dAt l i ∧ 
 
 /-- The windows: `w` bits, 4 or 5. -/
 theorem AmmOk.w_bounds (hl : AmmOk l) : 4 ≤ l.w ∧ l.w ≤ 5 := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- Digit `i` of prime `p` into its quadword `V`. -/
 theorem ldD_ok (hl : AmmOk l) (hw : l.w ≠ 4) {s : State} {B : Addr} {p i : Nat} (hp : p < l.nl) (hi : i < l.ND)
@@ -224,7 +224,7 @@ structure DigOut (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (B : Addr) (i : Nat) (m m'
   f : Out2 l B l.oV 8 m m'
 
 theorem AmmOk.nl12 (hl : AmmOk l) : l.nl = 1 ∨ l.nl = 2 := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- One lane's digit, written. -/
 theorem DigOut.of_one (hn : l.nl = 1) {B : Addr} {i : Nat} {m m' : Mem}
@@ -263,7 +263,7 @@ theorem digNib2_ok (hl : AmmOk l) (hn : l.nl = 2) (hw : l.w = 4) {s : State} {B 
   rw [hn] at hs
   have hdA : dAt l i = l.oE + i / 2 := by simp only [dAt, hw, ite_true]
   have hn' := hs.nowrap
-  have hND : l.ND < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  have hND : l.ND < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   have hsh : BitVec.ofNat 64 i >>> 1 = BitVec.ofNat 64 (i / 2) := ofNat_ushr1 (by omega_using [hi, hND])
   have e0 : B + BitVec.ofNat 64 (i / 2) + BitVec.ofNat 64 (l.D * 0 + l.oE) = off B (l.D * 0 + dAt l i) := by
     rw [hdA, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_arith
@@ -311,7 +311,7 @@ theorem digNib1_ok (hl : AmmOk l) (hn : l.nl = 1) (hw : l.w = 4) {s : State} {B 
   have hD := hl.D_bounds
   rw [hn, Nat.one_mul] at hs
   have hdA : dAt l i = l.oE + i / 2 := by simp only [dAt, hw, ite_true]
-  have hND : l.ND < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  have hND : l.ND < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   have hsh : BitVec.ofNat 64 i >>> 1 = BitVec.ofNat 64 (i / 2) := ofNat_ushr1 (by omega_using [hi, hND])
   have e0 : B + BitVec.ofNat 64 (i / 2) + BitVec.ofNat 64 (l.D * 0 + l.oE) = off B (l.D * 0 + dAt l i) := by
     rw [hdA, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_arith
@@ -575,7 +575,7 @@ theorem window_eq : VG.Impl.Bignum.X86_64.seqs (window l) =
   simp only [window, normCode, finCode, List.append_assoc]; rfl
 
 theorem ND_lt (hl : AmmOk l) : l.ND < 2 ^ 31 := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The comparison of `r13` (digit `i`) with `ND`. -/
 theorem r13Cmp_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i ≤ l.ND) (h13 : s.gpr .r13 = BitVec.ofNat 64 i) :
@@ -607,7 +607,7 @@ theorem digByte_ok (hl : AmmOk l) (hw : l.w ≠ 4) {s : State} {B : Addr} {i : N
       VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rdx, .rsi, .r8] s s' ∧ s'.mxcsr = s.mxcsr := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨d1, d2⟩ := lay_oD l hw
-  have hnl : l.nl = 2 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> first | rfl | exact absurd rfl hw
+  have hnl : l.nl = 2 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> first | rfl | exact absurd rfl hw
   have hn := (show Scr s B (2 * l.D) from hnl ▸ hs).nowrap
   have hdg : ∀ (m : Mem) p, dig l m B p i = (m (off B (l.D * p + l.oD + i))).toNat := fun m p => by
     simp only [dig, nibOf, dAt, hw, ite_false, Nat.add_assoc]
@@ -642,7 +642,7 @@ theorem digLoad_ok (hl : AmmOk l) {s : State} {B : Addr} {i : Nat} (hi : i < l.N
         ⟨DigOut.of_one hn m (by omega_using [o8, o10, hD]), k, x⟩
     · exact WP.mono (digNib2_ok hl hn hw hi hB h13 hs) fun s' ⟨m, k, x⟩ =>
         ⟨DigOut.of_two hn m (by omega_using [o8, o10, hD]) (by omega_using [o8, o10]), k, x⟩
-  · have hn : l.nl = 2 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> first | rfl | exact absurd rfl hw
+  · have hn : l.nl = 2 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> first | rfl | exact absurd rfl hw
     exact WP.mono (digByte_ok hl hw hi hB h13 hs) fun s' ⟨m, k, x⟩ =>
       ⟨DigOut.of_two hn m (by omega_using [o8, o10, hD]) (by omega_using [o8, o10]), k, x⟩
 

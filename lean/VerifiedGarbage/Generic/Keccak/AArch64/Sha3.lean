@@ -81,12 +81,6 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     code := Impl.Sha3.AArch64.Instances.xofSqueeze v.callee Spec.Sha3.xofShake128.rate
     stack := 16 + 640
     verified := Proof.Sha3.AArch64.Instances.squeeze_shake128 v },
-  Spec.Sha3.updateShake256Api.artifact AArch64.target {
-    suffix := v.callee.suffix
-    features := v.features
-    code := Impl.Sha3.AArch64.Instances.update v.callee Spec.Sha3.xofShake256.rate
-    stack := 16
-    verified := Proof.Sha3.AArch64.Instances.update_shake256 v },
   Spec.Sha3.finalizeShake256Api.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features

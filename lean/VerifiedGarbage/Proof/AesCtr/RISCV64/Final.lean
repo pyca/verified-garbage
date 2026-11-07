@@ -181,7 +181,6 @@ structure CPre (s₀ : State) : Prop where
   data_scr : (fData s₀).Disjoint (fScr s₀)
   data_sv : (fData s₀).Disjoint (cSv s₀)
   scr_sv : (fScr s₀).Disjoint (cSv s₀)
-  sch_wrap : (fW s₀).toNat + 240 ≤ 2 ^ 64
   iv_wrap : (fIv s₀).toNat + 16 ≤ 2 ^ 64
   data_wrap : (fD s₀).toNat + fL s₀ ≤ 2 ^ 64
   scr_wrap : (fS s₀).toNat + 2176 ≤ 2 ^ 64
@@ -190,8 +189,8 @@ structure CPre (s₀ : State) : Prop where
   rounds : fR s₀ = 10 ∨ fR s₀ = 12 ∨ fR s₀ = 14
 
 theorem CPre.of {s₀ : State} (h : ctrFinalRISCV64.pre s₀) : CPre s₀ :=
-  let ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19⟩ := h
-  ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19⟩
+  let ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, _, a14, a15, a16, a17, a18, a19⟩ := h
+  ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a14, a15, a16, a17, a18, a19⟩
 
 /-! ## Regions -/
 
@@ -619,7 +618,6 @@ theorem tail_xor_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : TCall s₀ 
   have eN := fN_eq s₀
   have eU := fU_eq s₀
   have xp : XPre s₁ (cBk s₀) (fT s₀) (fU s₀) := {
-    pos := by omega
     fK := by omega
     fR := by omega
     disj := (((hp.data_sv.sub_left (tail_sub s₀)).sub_right (blk_sv_sub s₀)).sub_right
