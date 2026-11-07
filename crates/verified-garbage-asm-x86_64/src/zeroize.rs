@@ -86,3 +86,26 @@ jmp 27f
 .p2align 6"#,
     )
 }
+
+/// Wipes a buffer: sets the `len` bytes at `p` to zero, and writes no other memory. A call of it is not a dead store the compiler may remove, since the compiler cannot see its code.
+///
+/// Contract: `VG.Spec.Zeroize.zeroizeContract`. Constant time: only `p` and `len` may affect timing, not the bytes wiped.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_zeroize_avx` if the CPU supports its features (`VG_ZEROIZE_AVX_FEATURES`); or else `vg_zeroize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `p` must be valid for reads and writes of `len` bytes.
+/// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_zeroize_auto(p: *mut u8, len: usize) {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(VG_ZEROIZE_AVX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_zeroize_avx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_zeroize_avx(p, len) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_zeroize(p, len) }
+}

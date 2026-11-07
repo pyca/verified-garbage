@@ -77,3 +77,9 @@ bl {vg_brainpoolp256r1_mul_mod_p}
         vg_brainpoolp256r1_point_add = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_point_add::vg_brainpoolp256r1_point_add,
     )
 }
+
+/// `vg_ecdh_brainpoolp256r1`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_ecdh_brainpoolp256r1 as vg_ecdh_brainpoolp256r1_auto;

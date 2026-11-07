@@ -104,3 +104,15 @@ call {vg_brainpoolp512r1_sub_mod_p}
         vg_brainpoolp512r1_sub_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_sub_mod_p::vg_brainpoolp512r1_sub_mod_p,
     )
 }
+
+/// `vg_ec_brainpoolp512r1_compress_public_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_ec_brainpoolp512r1_compress_public_key as vg_ec_brainpoolp512r1_compress_public_key_auto;
+
+/// `vg_ec_brainpoolp512r1_decompress_public_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_ec_brainpoolp512r1_decompress_public_key as vg_ec_brainpoolp512r1_decompress_public_key_auto;

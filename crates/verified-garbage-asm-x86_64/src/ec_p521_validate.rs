@@ -50,3 +50,29 @@ call {vg_p521_check_point_adx}
         vg_p521_check_point_adx = sym super::ec_p521_compressed::vg_p521_check_point_adx::vg_p521_check_point_adx,
     )
 }
+
+/// P-521 public-key validation (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): returns 1 if `public` is a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 66 bytes each, most significant first), and 0 otherwise. Checks the encoding tag, both coordinates below the field prime and the curve equation; rejects infinity and compressed or hybrid encodings. The curve has cofactor one, so no scalar multiplication is required.
+///
+/// Contract: `VG.Spec.EcKey.Instance.validatePublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ec_p521_validate_public_key_adx` if the CPU supports its features (`VG_EC_P521_VALIDATE_PUBLIC_KEY_ADX_FEATURES`); or else `vg_ec_p521_validate_public_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `public` must be valid for reads of 133 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `scratch` must not overlap `public` (distinct Rust objects never do).
+/// * Neither `public` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ec_p521_validate_public_key_auto(public: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(VG_EC_P521_VALIDATE_PUBLIC_KEY_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ec_p521_validate_public_key_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_ec_p521_validate_public_key_adx(public, scratch) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_ec_p521_validate_public_key(public, scratch) }
+}

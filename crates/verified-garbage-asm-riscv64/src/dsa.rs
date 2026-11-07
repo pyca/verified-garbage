@@ -38605,6 +38605,36 @@ bnez t5, 2703b
     )
 }
 
+/// `vg_dsa_derive_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_dsa_derive_key as vg_dsa_derive_key_auto;
+
+/// `vg_dsa_sign_random`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_dsa_sign_random as vg_dsa_sign_random_auto;
+
+/// `vg_dsa_generate_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_dsa_generate_key as vg_dsa_generate_key_auto;
+
+/// `vg_dsa_validate_public_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_dsa_validate_public_key as vg_dsa_validate_public_key_auto;
+
+/// `vg_dsa_verify_prevalidated`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_dsa_verify_prevalidated as vg_dsa_verify_prevalidated_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_check_parameters.rs"]
 pub(crate) mod vg_dsa_check_parameters;

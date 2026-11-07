@@ -517,6 +517,72 @@ call {vg_triple_des_ecb_decrypt_core}
     )
 }
 
+/// `vg_triple_des_expand_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_triple_des_expand_key as vg_triple_des_expand_key_auto;
+
+/// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_ecb_encrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES`); `vg_triple_des_ecb_encrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES`); or else `vg_triple_des_ecb_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1040 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_triple_des_ecb_encrypt_auto(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_triple_des_ecb_encrypt_avx512`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_triple_des_ecb_encrypt_avx512(schedule, data, n) };
+    }
+    if cpu.contains(VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_triple_des_ecb_encrypt_avx2`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_triple_des_ecb_encrypt_avx2(schedule, data, n) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_triple_des_ecb_encrypt(schedule, data, n) }
+}
+
+/// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_ecb_decrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES`); `vg_triple_des_ecb_decrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES`); or else `vg_triple_des_ecb_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `data` must be valid for reads and writes of `8 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1040 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_triple_des_ecb_decrypt_auto(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_triple_des_ecb_decrypt_avx512`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_triple_des_ecb_decrypt_avx512(schedule, data, n) };
+    }
+    if cpu.contains(VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_triple_des_ecb_decrypt_avx2`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_triple_des_ecb_decrypt_avx2(schedule, data, n) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_triple_des_ecb_decrypt(schedule, data, n) }
+}
+
 #[rustfmt::skip]
 #[path = "internal/vg_triple_des_decrypt_block.rs"]
 pub(crate) mod vg_triple_des_decrypt_block;

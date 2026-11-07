@@ -78,6 +78,14 @@ its module (`pub use self::<f> as <name>;`, `Rust.alias` in
 `lean/VerifiedGarbage/TCB/Rust.lean`) is that function's code: it has its
 signature and callees, and a use of it is a use of that function.
 
+A *dispatcher* (`<f>_auto`, `Rust.dispatcher`: an ordinary Rust function,
+`pub unsafe fn`, or for a function with one implementation another name of
+it, `pub use self::<f> as <f>_auto;`) runs the best of `f`'s implementations
+the CPU supports. It is not a variant, and its calls are not those of a
+generated function: a use of it by the Rust code is a use of each
+implementation it calls, so that a variant whose dispatcher nothing uses is
+not used either.
+
 See "An optimized implementation reaches everything built on it" in
 CLAUDE.md.
 """
@@ -97,8 +105,13 @@ FN = re.compile(
     r"^pub(?:\(crate\))? unsafe extern \"[\w-]+\" fn (vg_\w+)\((.*?)\)(?: -> ([^{]+?))? \{\n",
     re.MULTILINE | re.DOTALL,
 )
-# Another name of a function of the same module (`Rust.alias`).
+# Another name of a function of the same module (`Rust.alias`), or the
+# dispatcher of a function with one implementation (`<f>_auto`,
+# `Rust.soleDispatcher`).
 ALIAS = re.compile(r"^pub(?:\(crate\))? use self::(vg_\w+) as (vg_\w+);$", re.MULTILINE)
+# A dispatcher (`Rust.dispatcher`), to the end of its body, and each function it calls.
+DISPATCHER = re.compile(r"^pub unsafe fn (vg_\w+)\(.*?^\}\n", re.MULTILINE | re.DOTALL)
+DISPATCHED = re.compile(r"unsafe \{ (vg_\w+)\(")
 # `<operand> = sym <path>`, found from the literal ` = sym ` (a leading
 # `\w+` would be tried at every word character of the code: 30 times slower).
 SYM = re.compile(r" = sym (?:\w+::)*(vg_\w+)")
@@ -148,8 +161,26 @@ def functions(srcs):
 
 def aliases(text):
     """Each other name of a function of a generated file (`Rust.alias`), by
-    the name it gives it: `{name: function}`."""
-    return {m.group(2): m.group(1) for m in ALIAS.finditer(text)}
+    the name it gives it: `{name: function}`; not a dispatcher's."""
+    return {m.group(2): m.group(1) for m in ALIAS.finditer(text)
+            if m.group(2) != m.group(1) + "_auto"}
+
+
+def file_dispatchers(text):
+    """Each dispatcher of a generated file (`Rust.dispatcher`), with the
+    functions it calls: `{name: {function, …}}`."""
+    out = {m.group(1): set(DISPATCHED.findall(m.group(0))) for m in DISPATCHER.finditer(text)}
+    out.update({m.group(2): {m.group(1)} for m in ALIAS.finditer(text)
+                if m.group(2) == m.group(1) + "_auto"})
+    return out
+
+
+def dispatchers(srcs):
+    """For each target, `file_dispatchers` of its files together."""
+    targets = {}
+    for target, text in srcs:
+        targets.setdefault(target, {}).update(file_dispatchers(text))
+    return targets
 
 
 def all_aliases(srcs):
@@ -464,17 +495,23 @@ def production_rust(src):
         " ".join(strip_tests(toks[p])) for p in paths if p not in test_only
     )
 
-def check(targets, rust, feats=None, names=None):
+def check(targets, rust, feats=None, names=None, disp=None):
     """The errors of the generated functions `targets`, given the production
-    Rust code `rust`, the features of each function `feats` (`features`) and
-    the other names of functions `names` (`all_aliases`)."""
+    Rust code `rust`, the features of each function `feats` (`features`),
+    the other names of functions `names` (`all_aliases`) and the
+    dispatchers `disp` (`dispatchers`)."""
     errors = []
     # The identifiers of the Rust code: `name` is one exactly when
     # `\bname\b` matches it, and a set answers without scanning the code.
-    words = set(re.findall(r"\w+", rust))
+    rust_words = set(re.findall(r"\w+", rust))
     for target, fns in sorted(targets.items()):
         al = (names or {}).get(target, {})
-        # A use of another name of a function is a use of it.
+        # A use of a dispatcher is a use of each function it calls, and a use
+        # of another name of a function a use of it.
+        words = set(rust_words)
+        for d, called_by in (disp or {}).get(target, {}).items():
+            if d in words:
+                words |= called_by
         words |= {canon for name, canon in al.items() if name in words}
         var = variants(fns)
         errors += best_callees(target, fns, var, (feats or {}).get(target, {}))
@@ -608,7 +645,10 @@ def unread(srcs):
     for target, text in srcs:
         for what, total, read in [
             ("naked functions", text.count("#[unsafe(naked)]"), sum(1 for _ in bodies(text))),
-            ("other names", text.count(" use self::vg_"), len(aliases(text))),
+            ("other names", text.count(" use self::vg_"),
+             len(aliases(text)) + sum(1 for d in file_dispatchers(text) if d not in
+                                     {m.group(1) for m in DISPATCHER.finditer(text)})),
+            ("dispatchers", text.count("\npub unsafe fn vg_"), len(DISPATCHER.findall(text))),
             ("_FEATURES constants", text.count("_FEATURES: "), len(FEATURES.findall(text))),
         ]:
             if read < total:
@@ -619,7 +659,8 @@ def unread(srcs):
 def main():
     srcs = sources()
     errors = unread(srcs) + check(
-        functions(srcs), production_rust(ROOT / "src"), features(srcs), all_aliases(srcs)
+        functions(srcs), production_rust(ROOT / "src"), features(srcs), all_aliases(srcs),
+        dispatchers(srcs)
     )
     for e in errors:
         print(e, file=sys.stderr)

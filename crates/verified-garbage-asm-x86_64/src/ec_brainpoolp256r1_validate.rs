@@ -24,3 +24,9 @@ call {vg_brainpoolp256r1_check_point}
         vg_brainpoolp256r1_check_point = sym super::ec_brainpoolp256r1_compressed::vg_brainpoolp256r1_check_point::vg_brainpoolp256r1_check_point,
     )
 }
+
+/// `vg_ec_brainpoolp256r1_validate_public_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_ec_brainpoolp256r1_validate_public_key as vg_ec_brainpoolp256r1_validate_public_key_auto;

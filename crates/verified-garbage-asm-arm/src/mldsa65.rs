@@ -7485,3 +7485,39 @@ bx lr",
         vg_mldsa65_verify = sym super::mldsa65::vg_mldsa65_verify,
     )
 }
+
+/// `vg_mldsa65_sign`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa65_sign as vg_mldsa65_sign_auto;
+
+/// `vg_mldsa65_pk_tr`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa65_pk_tr as vg_mldsa65_pk_tr_auto;
+
+/// `vg_mldsa65_keygen`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa65_keygen as vg_mldsa65_keygen_auto;
+
+/// `vg_mldsa65_verify`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa65_verify as vg_mldsa65_verify_auto;
+
+/// `vg_mldsa65_sign_message`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa65_sign_message as vg_mldsa65_sign_message_auto;
+
+/// `vg_mldsa65_verify_message_cached`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_mldsa65_verify_message_cached as vg_mldsa65_verify_message_cached_auto;

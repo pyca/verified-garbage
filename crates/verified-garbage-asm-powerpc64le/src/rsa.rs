@@ -3409,6 +3409,30 @@ bne %cr0, 2424b
     )
 }
 
+/// `vg_rsa_check_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_check_key as vg_rsa_check_key_auto;
+
+/// `vg_rsa_crt_values`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_crt_values as vg_rsa_crt_values_auto;
+
+/// `vg_rsa_public_precompute`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_public_precompute as vg_rsa_public_precompute_auto;
+
+/// `vg_rsa_recover_primes_det`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_recover_primes_det as vg_rsa_recover_primes_det_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_pkcs1_encrypt_precomputed.rs"]
 pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed;

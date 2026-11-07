@@ -4483,6 +4483,12 @@ bx lr",
     )
 }
 
+/// `vg_argon2`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_argon2 as vg_argon2_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_argon2_compress.rs"]
 pub(crate) mod vg_argon2_compress;

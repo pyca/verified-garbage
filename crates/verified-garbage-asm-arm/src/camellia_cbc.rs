@@ -266,3 +266,15 @@ bx lr",
         vg_camellia_ecb_decrypt = sym super::camellia::vg_camellia_ecb_decrypt,
     )
 }
+
+/// `vg_camellia_cbc_encrypt_chained`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_camellia_cbc_encrypt_chained as vg_camellia_cbc_encrypt_chained_auto;
+
+/// `vg_camellia_cbc_decrypt_chained`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_camellia_cbc_decrypt_chained as vg_camellia_cbc_decrypt_chained_auto;

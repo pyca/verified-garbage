@@ -187,9 +187,20 @@ PLATFORMS = {
 # entry's `asm`, which bench.yml checks out.
 ASM_DIRS = {"powerpc64": "powerpc64le"}
 
-# The crate of `Features` and the features' bits, which `src/cpu.rs`
-# re-exports.
+# The crate of `Features`, the features' bits and their detection, which
+# `src/cpu.rs` re-exports.
 CPU_CRATE = "crates/verified-garbage-cpu/"
+# The detection of the features (`CPU_RS`), which was `src/cpu.rs` (`OLD_CPU_RS`)
+# before it moved to the crate the generated dispatchers ask too.
+CPU_RS = CPU_CRATE + "src/detect.rs"
+OLD_CPU_RS = "src/cpu.rs"
+
+
+def read_cpu(revision=None):
+    """The text of the features' detection at `revision` (or in the tree):
+    `CPU_RS`, or `OLD_CPU_RS` at a revision from before it moved; None if
+    there is neither."""
+    return read(CPU_RS, revision) or read(OLD_CPU_RS, revision)
 
 
 
@@ -346,7 +357,8 @@ BIT = re.compile(r"\bfeature::([A-Z0-9_]+)")
 # Each architecture's feature detection in `src/cpu.rs`: its `cfg`, and the
 # body, which names each feature in quotes or as a `let`; on x86 and x86-64,
 # `runtime` reads the CPU and `decode` (under the same `cfg`) names them.
-RUNTIME = re.compile(r"(#\[cfg\([^\n]*\)\])\nfn (?:runtime\(\)|decode\([^\n]*\)) -> u32 \{\n(.*?)\n\}\n", re.S)
+RUNTIME = re.compile(r"(#\[cfg\([^\n]*\)\])\n(?:pub )?fn (?:runtime\(\)|decode\([^\n]*\)) -> u32 \{\n(.*?)\n\}\n",
+                     re.S)
 LET = re.compile(r"\blet ([a-z0-9_]+) =")
 # A top-level module only tests compile: from its `#[cfg(test)]` to the `}`
 # closing it, alone in column 0 as rustfmt writes it.
@@ -1047,7 +1059,7 @@ def requirements(arch, modules, revisions):
     cannot be read."""
     reqs = set()
     for revision in revisions:
-        arch_features = detectable(arch, read("src/cpu.rs", revision) or "")
+        arch_features = detectable(arch, read_cpu(revision) or "")
         if arch_features is None:
             return None if CPU_FEATURES.get(arch) else set()
         quoted = re.compile(r'"(%s)"' % "|".join(map(re.escape, sorted(arch_features))))
@@ -1100,7 +1112,7 @@ def arches(changed, base=None):
             need(arch, name)
 
     for path in changed:
-        if path.startswith(CPU_CRATE):
+        if path.startswith(CPU_CRATE) and path != CPU_RS:
             # `Features` and the features' bits, which every architecture
             # compiles, as a change to them in `src/cpu.rs` (`cpu_changes`'s
             # "*"): every module that chooses by a feature.
@@ -1142,7 +1154,7 @@ def arches(changed, base=None):
                         need_asm(arch, name)
                     else:
                         need(arch, name)
-        elif path == "src/cpu.rs":
+        elif path in (CPU_RS, OLD_CPU_RS):
             changes = cpu_changes(base)
             for a in targets:
                 if changes is None:
@@ -1244,7 +1256,7 @@ def cpu_changes(base):
     architecture whose own detection changed, the first feature each changed
     line names (ALL if none does); "*" for a change to code every
     architecture compiles; None if either revision cannot be read."""
-    old, new = read("src/cpu.rs", base) if base else None, read("src/cpu.rs")
+    old, new = read_cpu(base) if base else None, read_cpu()
     if old is None or new is None:
         return None
     names = [QUOTED.findall(m[1]) if (m := NAMES.search(t)) else [] for t in (old, new)]
@@ -1388,7 +1400,7 @@ def manual(arch_names="", cpu_features="", modules=""):
 def choices():
     """What `--all` can be given, in words: each architecture's configurations
     and the CPU features it detects, and each module benchmarks use."""
-    cpu = read("src/cpu.rs") or ""
+    cpu = read_cpu() or ""
     lines = ["Architectures (--arches), each with the VG_CPU_FEATURES configurations a run"
              " without --cpu-features uses ('-' is none) and the features src/cpu.rs detects"
              " there, which a configuration may combine (comma-separated; 'none' for the"

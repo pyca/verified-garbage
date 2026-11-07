@@ -7231,3 +7231,15 @@ bnez t5, 2189b
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
     )
 }
+
+/// `vg_rsa_pss_sign`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_pss_sign as vg_rsa_pss_sign_auto;
+
+/// `vg_rsa_pss_verify_precomputed`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_pss_verify_precomputed as vg_rsa_pss_verify_precomputed_auto;

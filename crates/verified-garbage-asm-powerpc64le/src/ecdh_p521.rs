@@ -70,3 +70,9 @@ bl {vg_p521_mul_mod_p}
         vg_p521_mul = sym super::ec_p521::vg_p521_mul::vg_p521_mul,
     )
 }
+
+/// `vg_ecdh_p521`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_ecdh_p521 as vg_ecdh_p521_auto;

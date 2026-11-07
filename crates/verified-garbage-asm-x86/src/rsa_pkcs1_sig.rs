@@ -668,3 +668,21 @@ jne 257b
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
     )
 }
+
+/// `vg_rsa_pkcs1_sign`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_pkcs1_sign as vg_rsa_pkcs1_sign_auto;
+
+/// `vg_rsa_pkcs1_verify_precomputed`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_pkcs1_verify_precomputed as vg_rsa_pkcs1_verify_precomputed_auto;
+
+/// `vg_rsa_pkcs1_recover_precomputed`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_pkcs1_recover_precomputed as vg_rsa_pkcs1_recover_precomputed_auto;

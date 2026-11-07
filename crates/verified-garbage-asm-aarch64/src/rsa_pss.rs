@@ -235,6 +235,18 @@ b 21f
     )
 }
 
+/// `vg_rsa_pss_sign`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_pss_sign as vg_rsa_pss_sign_auto;
+
+/// `vg_rsa_pss_verify_precomputed`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_pss_verify_precomputed as vg_rsa_pss_verify_precomputed_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_pss_md5_check_encoding.rs"]
 pub(crate) mod vg_rsa_pss_md5_check_encoding;

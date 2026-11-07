@@ -281,6 +281,18 @@ bne %cr0, 214b
     )
 }
 
+/// `vg_ecdsa_p224_sign`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_ecdsa_p224_sign as vg_ecdsa_p224_sign_auto;
+
+/// `vg_ecdsa_p224_verify`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_ecdsa_p224_verify as vg_ecdsa_p224_verify_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_ecdsa_p224_sign_k.rs"]
 pub(crate) mod vg_ecdsa_p224_sign_k;

@@ -8495,6 +8495,68 @@ bx lr",
     )
 }
 
+/// Deterministic ECDSA signature generation over brainpoolP256r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
+///
+/// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ecdsa_brainpoolp256r1_sign_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_ECDSA_BRAINPOOLP256R1_SIGN_UMAAL_FEATURES`); or else `vg_ecdsa_brainpoolp256r1_sign`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `d` must be valid for reads of 32 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `hmac` must be valid for reads of `6 * size_of::<usize>()` bytes.
+/// * `digest_len` must be the digest length of the hash function `hmac` names.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
+/// * `out` and `scratch` must not overlap each other, `d`, `digest`, `hmac` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 536 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ecdsa_brainpoolp256r1_sign_auto(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+    if cpu.contains(VG_ECDSA_BRAINPOOLP256R1_SIGN_UMAAL_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ecdsa_brainpoolp256r1_sign_umaal`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_ecdsa_brainpoolp256r1_sign_umaal(out, d, digest, digest_len, scratch, hmac) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_ecdsa_brainpoolp256r1_sign(out, d, digest, digest_len, scratch, hmac) }
+}
+
+/// ECDSA signature verification over brainpoolP256r1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 256 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
+///
+/// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ecdsa_brainpoolp256r1_verify_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_ECDSA_BRAINPOOLP256R1_VERIFY_UMAAL_FEATURES`); or else `vg_ecdsa_brainpoolp256r1_verify`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `public` must be valid for reads of 65 bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `sig` must be valid for reads of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `scratch` must not overlap `public`, `digest`, `sig` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `public`, `digest`, `sig` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ecdsa_brainpoolp256r1_verify_auto(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+    if cpu.contains(VG_ECDSA_BRAINPOOLP256R1_VERIFY_UMAAL_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ecdsa_brainpoolp256r1_verify_umaal`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_ecdsa_brainpoolp256r1_verify_umaal(public, digest, digest_len, sig, scratch) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_ecdsa_brainpoolp256r1_verify(public, digest, digest_len, sig, scratch) }
+}
+
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp256r1_add_mod_n.rs"]
 pub(crate) mod vg_brainpoolp256r1_add_mod_n;

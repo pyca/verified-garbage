@@ -29,7 +29,8 @@ VerifiedGarbage/
                     call is of the function whose code the model runs for it (an
                     artifact, or an internal function the emitter writes from that
                     code), and that each artifact declares the CPU features its
-                    code needs
+                    code needs; and each function's dispatcher (`<name>_auto`),
+                    which calls the best of its implementations the CPU supports
     Axioms.lean     `#assert_standard_axioms`
     Audit.lean      `#assert_no_compiler_overrides` (the compiled code the emitter
                     runs is what the kernel checked) and `#assert_spec_origin`
@@ -57,6 +58,8 @@ VerifiedGarbage/
                   `Generic/<Iface₁>/<Iface₂>/<Target>/<Alg>.lean`, each instance
                   named by `Emit.qualifiedName` (a tag and the suffix of each
                   interface's non-baseline variant: `vg_argon2_blake2b_avx2_g_avx512`)
+  Dispatch.lean   The order in which each target's dispatchers try the variants, by
+                  suffix (untrusted: it only decides which proven implementation runs)
 VerifiedGarbageTest/  Golden tests for the (unverified) printers and calling conventions
 Emit.lean       Renders every artifact into `../crates/` (see `TCB/Emit.lean`)
 EmitOne.lean    The same, for the registration files named, while iterating
@@ -149,7 +152,13 @@ artifact using them declares those features (`Artifact.features`), the
 emitter checks the declaration is exact, and the generated function's
 `# Safety` section makes their presence the caller's obligation. The Rust
 that calls it checks for them first, using the generated `<NAME>_FEATURES`
-constant.
+constant, or calls the function's generated dispatcher, `<name>_auto`
+(`Rust.dispatcher`), which checks them itself with the features
+`verified_garbage_cpu::detected()` reports (`crates/verified-garbage-cpu/`),
+and needs none: it calls an implementation only on a CPU with that
+implementation's features, in the order `Dispatch.lean` ranks them, and
+otherwise the baseline. The ranking is not trusted: every implementation it
+may choose is proven against the same contract.
 
 ## What you need to trust
 
@@ -160,6 +169,10 @@ constant.
   refers to), its `sig` and `doc` (its `Api` in `Spec/`), and
   `TCB/Emit.lean`, which decides what is emitted. Not the internal functions
   it calls, which have no contract: its proof covers their code.
+* The detection of CPU features (`crates/verified-garbage-cpu/src/detect.rs`):
+  the dispatchers, and the Rust that checks a `<NAME>_FEATURES` constant
+  itself, call code needing a feature only where it reports the CPU and
+  operating system support it.
 * Lean's kernel, and the assembler in `rustc`/LLVM for what is printed as
   text: ARM's code, and the branches, calls, addresses of statics and
   directives of the others.

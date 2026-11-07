@@ -97,3 +97,9 @@ bx lr",
         vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
     )
 }
+
+/// `vg_triple_des_ofb`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_triple_des_ofb as vg_triple_des_ofb_auto;

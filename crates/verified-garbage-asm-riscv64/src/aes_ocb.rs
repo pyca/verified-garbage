@@ -2422,3 +2422,21 @@ j 235f
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
     )
 }
+
+/// `vg_aes_ocb_init`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_aes_ocb_init as vg_aes_ocb_init_auto;
+
+/// `vg_aes_ocb_seal`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_aes_ocb_seal as vg_aes_ocb_seal_auto;
+
+/// `vg_aes_ocb_open`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_aes_ocb_open as vg_aes_ocb_open_auto;

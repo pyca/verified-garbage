@@ -66,6 +66,12 @@ call {vg_secp256k1_mul_mod_p}
     )
 }
 
+/// `vg_ec_secp256k1_public_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_ec_secp256k1_public_key as vg_ec_secp256k1_public_key_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_secp256k1_add_mod_p.rs"]
 pub(crate) mod vg_secp256k1_add_mod_p;

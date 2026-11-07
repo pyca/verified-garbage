@@ -123,6 +123,18 @@ bl {vg_md5_compress}
     )
 }
 
+/// `vg_hmac_md5_init`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_hmac_md5_init as vg_hmac_md5_init_auto;
+
+/// `vg_hmac_md5_finalize`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_hmac_md5_finalize as vg_hmac_md5_finalize_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_md5_finalize_scratch.rs"]
 pub(crate) mod vg_hmac_md5_finalize_scratch;

@@ -308,6 +308,24 @@ call {vg_cmac_aes_finalize}
     )
 }
 
+/// `vg_cmac_aes_init`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_cmac_aes_init as vg_cmac_aes_init_auto;
+
+/// `vg_cmac_aes_absorb`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_cmac_aes_absorb as vg_cmac_aes_absorb_auto;
+
+/// `vg_cmac_aes_finish`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_cmac_aes_finish as vg_cmac_aes_finish_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_cmac_aes_finalize.rs"]
 pub(crate) mod vg_cmac_aes_finalize;

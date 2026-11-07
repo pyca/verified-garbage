@@ -17899,6 +17899,18 @@ call {vg_p224_sub_mod_p}
     )
 }
 
+/// `vg_ec_p224_compress_public_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_ec_p224_compress_public_key as vg_ec_p224_compress_public_key_auto;
+
+/// `vg_ec_p224_decompress_public_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_ec_p224_decompress_public_key as vg_ec_p224_decompress_public_key_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_p224_check_point.rs"]
 pub(crate) mod vg_p224_check_point;

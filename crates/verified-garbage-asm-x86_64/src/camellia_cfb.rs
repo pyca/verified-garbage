@@ -234,3 +234,27 @@ jmp 25f
         vg_camellia_crypt_prepared = sym super::camellia::vg_camellia_crypt_prepared::vg_camellia_crypt_prepared,
     )
 }
+
+/// `vg_camellia_cfb128_encrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_camellia_cfb128_encrypt as vg_camellia_cfb128_encrypt_auto;
+
+/// `vg_camellia_cfb128_decrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_camellia_cfb128_decrypt as vg_camellia_cfb128_decrypt_auto;
+
+/// `vg_camellia_cfb128_encrypt_final`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_camellia_cfb128_encrypt_final as vg_camellia_cfb128_encrypt_final_auto;
+
+/// `vg_camellia_cfb128_decrypt_final`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_camellia_cfb128_decrypt_final as vg_camellia_cfb128_decrypt_final_auto;

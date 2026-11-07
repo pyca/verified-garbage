@@ -77,6 +77,18 @@ call {vg_aes_cbc_dec_wide}
     )
 }
 
+/// `vg_aes_cbc_encrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_aes_cbc_encrypt as vg_aes_cbc_encrypt_auto;
+
+/// `vg_aes_cbc_decrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_aes_cbc_decrypt as vg_aes_cbc_decrypt_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_aes_cbc_chain.rs"]
 pub(crate) mod vg_aes_cbc_chain;

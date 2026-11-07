@@ -247,6 +247,48 @@ b 21f
     )
 }
 
+/// `vg_chacha20_init`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_chacha20_init as vg_chacha20_init_auto;
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+///
+/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_apply_sve2` if the CPU supports its features (`VG_CHACHA20_APPLY_SVE2_FEATURES`); `vg_chacha20_apply_neon` if it also supports `neon`; or else `vg_chacha20_apply`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `data` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_chacha20_apply_auto(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(VG_CHACHA20_APPLY_SVE2_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_chacha20_apply_sve2`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_chacha20_apply_sve2(state, data, len) };
+    }
+    if cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {
+        // SAFETY: the caller's obligations, which are `vg_chacha20_apply_neon`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_chacha20_apply_neon(state, data, len) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_chacha20_apply(state, data, len) }
+}
+
+/// `vg_chacha20_set_nonce`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_chacha20_set_nonce as vg_chacha20_set_nonce_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_chacha20_block.rs"]
 pub(crate) mod vg_chacha20_block;

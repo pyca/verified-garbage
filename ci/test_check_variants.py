@@ -46,6 +46,36 @@ class Composition(unittest.TestCase):
                       errors[0])
 
 
+class Dispatchers(unittest.TestCase):
+    # `f` has the variant `f_s`, which only its dispatcher `f_auto` calls.
+    CALLS = {"vg_f": [], "vg_f_s": []}
+    DISP = {"x": {"vg_f_auto": {"vg_f_s", "vg_f"}}}
+
+    def test_used_dispatcher_uses_its_variants(self):
+        self.assertEqual(check_variants.check(fns(self.CALLS), "vg_f_auto", disp=self.DISP), [])
+
+    def test_unused_dispatcher_uses_none(self):
+        errors = check_variants.check(fns(self.CALLS), "vg_f", disp=self.DISP)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("the variant vg_f_s is neither called", errors[0])
+
+    def test_read_from_generated_code(self):
+        text = (
+            "pub unsafe fn vg_f_auto(out: *mut u8) {\n"
+            "    if cpu.contains(VG_F_S_FEATURES) {\n"
+            "        return unsafe { vg_f_s(out) };\n"
+            "    }\n"
+            "    unsafe { vg_f(out) }\n"
+            "}\n"
+            "pub use self::vg_g as vg_g_auto;\n"
+            "pub use self::vg_h as vg_h_s;\n"
+        )
+        self.assertEqual(check_variants.file_dispatchers(text),
+                         {"vg_f_auto": {"vg_f_s", "vg_f"}, "vg_g_auto": {"vg_g"}})
+        self.assertEqual(check_variants.aliases(text), {"vg_h_s": "vg_h"})
+        self.assertEqual(check_variants.unread([("x", text)]), [])
+
+
 class Flow(unittest.TestCase):
     # `g` calls `f`, which has the variant `f_s`.
     BASE = {"vg_f": [], "vg_f_s": [], "vg_g": ["vg_f"]}

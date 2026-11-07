@@ -66,3 +66,15 @@ b 21f
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
+
+/// `vg_aes_cfb128_encrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_aes_cfb128_encrypt as vg_aes_cfb128_encrypt_auto;
+
+/// `vg_aes_cfb128_decrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_aes_cfb128_decrypt as vg_aes_cfb128_decrypt_auto;

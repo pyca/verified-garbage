@@ -352,6 +352,24 @@ bx lr",
     )
 }
 
+/// `vg_blake2s_init`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_blake2s_init as vg_blake2s_init_auto;
+
+/// `vg_blake2s_update`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_blake2s_update as vg_blake2s_update_auto;
+
+/// `vg_blake2s_finalize`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_blake2s_finalize as vg_blake2s_finalize_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_blake2s_compress.rs"]
 pub(crate) mod vg_blake2s_compress;

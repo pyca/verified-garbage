@@ -192,3 +192,15 @@ bne %cr0, 217b
         vg_rsa_pkcs1_encrypt_precomputed = sym super::rsa::vg_rsa_pkcs1_encrypt_precomputed::vg_rsa_pkcs1_encrypt_precomputed,
     )
 }
+
+/// `vg_rsa_pkcs1_decrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_pkcs1_decrypt as vg_rsa_pkcs1_decrypt_auto;
+
+/// `vg_rsa_pkcs1_encrypt_random`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_rsa_pkcs1_encrypt_random as vg_rsa_pkcs1_encrypt_random_auto;

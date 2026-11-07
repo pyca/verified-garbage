@@ -97,3 +97,9 @@ bx lr",
         vg_idea_ecb = sym super::idea::vg_idea_ecb,
     )
 }
+
+/// `vg_idea_ofb`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_idea_ofb as vg_idea_ofb_auto;

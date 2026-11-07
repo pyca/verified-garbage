@@ -94,6 +94,12 @@ bx lr",
     )
 }
 
+/// `vg_scrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_scrypt as vg_scrypt_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_pbkdf2_hmac_sha256_scratch.rs"]
 pub(crate) mod vg_pbkdf2_hmac_sha256_scratch;

@@ -117,3 +117,9 @@ bx lr",
         vg_seed_ecb_encrypt = sym super::seed::vg_seed_ecb_encrypt,
     )
 }
+
+/// `vg_seed_ofb`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_seed_ofb as vg_seed_ofb_auto;

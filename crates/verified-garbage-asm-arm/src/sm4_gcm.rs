@@ -2565,3 +2565,57 @@ bx lr",
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }
+
+/// `vg_sm4_gcm_init`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sm4_gcm_init as vg_sm4_gcm_init_auto;
+
+/// `vg_sm4_gcm_seal`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sm4_gcm_seal as vg_sm4_gcm_seal_auto;
+
+/// `vg_sm4_gcm_open`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sm4_gcm_open as vg_sm4_gcm_open_auto;
+
+/// `vg_sm4_gcm_stream_aad`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sm4_gcm_stream_aad as vg_sm4_gcm_stream_aad_auto;
+
+/// `vg_sm4_gcm_stream_init`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sm4_gcm_stream_init as vg_sm4_gcm_stream_init_auto;
+
+/// `vg_sm4_gcm_stream_finish`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sm4_gcm_stream_finish as vg_sm4_gcm_stream_finish_auto;
+
+/// `vg_sm4_gcm_stream_verify`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sm4_gcm_stream_verify as vg_sm4_gcm_stream_verify_auto;
+
+/// `vg_sm4_gcm_stream_encrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sm4_gcm_stream_encrypt as vg_sm4_gcm_stream_encrypt_auto;
+
+/// `vg_sm4_gcm_stream_decrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sm4_gcm_stream_decrypt as vg_sm4_gcm_stream_decrypt_auto;

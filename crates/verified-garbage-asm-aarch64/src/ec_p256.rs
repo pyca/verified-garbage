@@ -1204,3 +1204,9 @@ cbnz x19, 22b
         VG_P256_COMB = sym super::consts::VG_P256_COMB,
     )
 }
+
+/// `vg_ec_p256_public_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_ec_p256_public_key as vg_ec_p256_public_key_auto;

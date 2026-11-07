@@ -159,6 +159,24 @@ jmp 21f
     )
 }
 
+/// `vg_triple_des_expand_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_triple_des_expand_key as vg_triple_des_expand_key_auto;
+
+/// `vg_triple_des_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_triple_des_ecb_encrypt as vg_triple_des_ecb_encrypt_auto;
+
+/// `vg_triple_des_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_triple_des_ecb_decrypt as vg_triple_des_ecb_decrypt_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_triple_des_decrypt_block.rs"]
 pub(crate) mod vg_triple_des_decrypt_block;

@@ -60,9 +60,10 @@ def nativeTCB (names : List String) : List (String × FilePath) :=
 def usage : String := "usage: lake env lean --run EmitOne.lean [--check] <Alg>.<Target> …"
 
 /-- The names of the functions a generated file defines: each line declaring
-`extern "<abi>" fn <name>(`, whatever its ABI (`"C"`, `"sysv64"`, …), and
-each other name of one of them, `pub use self::<f> as <name>;`
-(`VG.Rust.alias`). -/
+`extern "<abi>" fn <name>(`, whatever its ABI (`"C"`, `"sysv64"`, …), each
+dispatcher, `pub unsafe fn <name>(` (`VG.Rust.dispatcher`), and each other
+name of one of them, `pub use self::<f> as <name>;` (`VG.Rust.alias`,
+`VG.Rust.soleDispatcher`). -/
 def fnNames (text : String) : List String :=
   (text.splitOn "\n").filterMap fun line =>
     match line.splitOn "extern \"" with
@@ -71,7 +72,9 @@ def fnNames (text : String) : List String :=
       | [_, decl] => some ((decl.splitOn "(").headD "")
       | _ => none
     | _ =>
-      if line.startsWith "pub use self::vg_" then
+      if line.startsWith "pub unsafe fn vg_" then
+        some ((((line.drop "pub unsafe fn ".length).toString).splitOn "(").headD "")
+      else if line.startsWith "pub use self::vg_" then
         match line.splitOn " as " with
         | [_, name] => some ((name.splitOn ";").headD "")
         | _ => none

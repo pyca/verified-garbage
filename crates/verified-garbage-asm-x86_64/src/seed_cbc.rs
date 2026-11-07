@@ -101,3 +101,15 @@ jmp 23f
         vg_seed_decrypt_blocks = sym super::seed::vg_seed_decrypt_blocks::vg_seed_decrypt_blocks,
     )
 }
+
+/// `vg_seed_cbc_encrypt_chained`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_seed_cbc_encrypt_chained as vg_seed_cbc_encrypt_chained_auto;
+
+/// `vg_seed_cbc_decrypt_chained`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_seed_cbc_decrypt_chained as vg_seed_cbc_decrypt_chained_auto;

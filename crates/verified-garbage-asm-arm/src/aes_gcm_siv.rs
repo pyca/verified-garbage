@@ -1104,6 +1104,18 @@ bx lr",
     )
 }
 
+/// `vg_aes_gcm_siv_seal`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_seal as vg_aes_gcm_siv_seal_auto;
+
+/// `vg_aes_gcm_siv_open`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_aes_gcm_siv_open as vg_aes_gcm_siv_open_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_ghash.rs"]
 pub(crate) mod vg_ghash;

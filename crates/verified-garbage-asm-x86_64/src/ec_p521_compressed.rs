@@ -143,6 +143,60 @@ call {vg_p521_mul_mod_p_adx}
     )
 }
 
+/// Validate and compress a P-521 public key (SEC 1 §§2.3.3–2.3.4, SP 800-56A §5.6.2.3.3): reads `04` then `x` and `y` in 66 bytes each, most significant first; checks both coordinates below the field prime and the curve equation; writes `02` for even `y` or `03` for odd `y`, then `x` in 66 bytes, and returns 1. On invalid input, writes 67 zero bytes and returns 0. Rejects infinity and hybrid encodings.
+///
+/// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ec_p521_compress_public_key_adx` if the CPU supports its features (`VG_EC_P521_COMPRESS_PUBLIC_KEY_ADX_FEATURES`); or else `vg_ec_p521_compress_public_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 67 bytes.
+/// * `public` must be valid for reads of 133 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
+/// * None of `out`, `public` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ec_p521_compress_public_key_auto(out: *mut [u8; 67], public: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(VG_EC_P521_COMPRESS_PUBLIC_KEY_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ec_p521_compress_public_key_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_ec_p521_compress_public_key_adx(out, public, scratch) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_ec_p521_compress_public_key(out, public, scratch) }
+}
+
+/// Validate and decompress a P-521 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 66 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 66 bytes each and returns 1. If no such finite point exists, writes 133 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
+///
+/// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ec_p521_decompress_public_key_adx` if the CPU supports its features (`VG_EC_P521_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES`); or else `vg_ec_p521_decompress_public_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 133 bytes.
+/// * `public` must be valid for reads of 67 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
+/// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
+/// * None of `out`, `public` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_ec_p521_decompress_public_key_auto(out: *mut [u8; 133], public: *const [u8; 67], scratch: *mut [u64; 1024]) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(VG_EC_P521_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ec_p521_decompress_public_key_adx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { vg_ec_p521_decompress_public_key_adx(out, public, scratch) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { vg_ec_p521_decompress_public_key(out, public, scratch) }
+}
+
 #[rustfmt::skip]
 #[path = "internal/vg_p521_check_point.rs"]
 pub(crate) mod vg_p521_check_point;

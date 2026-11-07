@@ -149,6 +149,24 @@ jmp 22f
     )
 }
 
+/// `vg_sm4_expand_key`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sm4_expand_key as vg_sm4_expand_key_auto;
+
+/// `vg_sm4_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sm4_ecb_encrypt as vg_sm4_ecb_encrypt_auto;
+
+/// `vg_sm4_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sm4_ecb_decrypt as vg_sm4_ecb_decrypt_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_sm4_crypt_prepared.rs"]
 pub(crate) mod vg_sm4_crypt_prepared;

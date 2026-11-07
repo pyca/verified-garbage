@@ -1830,6 +1830,84 @@ bx lr",
     )
 }
 
+/// `vg_sha384_init`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha384_init as vg_sha384_init_auto;
+
+/// `vg_sha512_init`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha512_init as vg_sha512_init_auto;
+
+/// `vg_sha512_update`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha512_update as vg_sha512_update_auto;
+
+/// `vg_sha384_digest`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha384_digest as vg_sha384_digest_auto;
+
+/// `vg_sha512_digest`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha512_digest as vg_sha512_digest_auto;
+
+/// `vg_sha512_224_init`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha512_224_init as vg_sha512_224_init_auto;
+
+/// `vg_sha512_256_init`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha512_256_init as vg_sha512_256_init_auto;
+
+/// `vg_sha512_finalize`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha512_finalize as vg_sha512_finalize_auto;
+
+/// `vg_sha384_finalize`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha384_finalize as vg_sha384_finalize_auto;
+
+/// `vg_sha512_224_digest`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha512_224_digest as vg_sha512_224_digest_auto;
+
+/// `vg_sha512_256_digest`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha512_256_digest as vg_sha512_256_digest_auto;
+
+/// `vg_sha512_256_finalize`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha512_256_finalize as vg_sha512_256_finalize_auto;
+
+/// `vg_sha512_224_finalize`, the only implementation of it on this target, which needs no CPU feature
+/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
+/// target.
+#[allow(unused_imports)]
+pub use self::vg_sha512_224_finalize as vg_sha512_224_finalize_auto;
+
 #[rustfmt::skip]
 #[path = "internal/vg_sha512_compress.rs"]
 pub(crate) mod vg_sha512_compress;
