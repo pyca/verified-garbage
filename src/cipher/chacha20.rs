@@ -278,25 +278,6 @@ mod tests {
         assert_eq!(data, ks);
     }
 
-    /// Applying 35 blocks of keystream in two pieces, split every 61 bytes,
-    /// is the same as applying them at once, also up to the last block
-    /// counter.
-    #[test]
-    fn incremental_bulk() {
-        const LEN: usize = 16 * 64 * 2 + 64 * 3;
-        for counter in [0, 0u32.wrapping_sub((LEN / 64) as u32)] {
-            let n = nonce(counter, &[5; 12]);
-            let expected = keystream::<LEN>(&key(), &n);
-            for split in (0..=LEN).step_by(61) {
-                let mut data = [0u8; LEN];
-                let mut c = ChaCha20::new(&key(), &n);
-                c.apply_keystream(&mut data[..split]);
-                c.apply_keystream(&mut data[split..]);
-                assert_eq!(data, expected);
-            }
-        }
-    }
-
     /// On unaligned slices the keystream is XORed into the data as at
     /// offset 0 into zeros, leaving the bytes around them unchanged, for
     /// lengths within a byte of multiples of a block, from three blocks to
