@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.OpenTo.Fn
+public import VerifiedGarbage.Proof.AesGcm.AArch64.OpenTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.RoundsTo
+import VerifiedGarbage.Proof.AesGcm.AArch64.OpenTo.CT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
+import VerifiedGarbage.Proof.Framework.EntryBranch
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.AesGcm.AArch64.OpenSplit.Contract
 import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
 import VerifiedGarbage.Proof.AesGcm.CtxFrame
@@ -14,6 +20,14 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.OpenTo.Fn
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.OpenSplit.Contract
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM decryption out of place, in one pass, AArch64: the call
@@ -615,19 +629,15 @@ theorem SCalled.arg {s z : State} (h : SLay s) (hz : SCalled s z) (i : Nat) (hi 
       (by omega_arith) (by have := h.hBn; omega_arith)
     rwa [BitVec.add_zero] at this
 
-/-- When the call failed: `dst` zeroed. -/
-theorem swipe_wp {s z : State} (h : SLay s) (hz : SCalled s z) (hres : res s = none) :
-    WP isa (wipe 5) z (SDone s) := by
+theorem swipeArgs_wp {s z : State} (h : SLay s) (hz : SCalled s z) : WP isa (.block (wipeArgs 5)) z (WArgs s z) := by
   have to := h.pre.to
   have hP : P2 s = B2 s + BitVec.ofNat 64 2608 := rfl
-  have x0 : (z.gpr .x0).setWidth 32 = 0 := by have := hz.out; rw [hres] at this; exact this
   have inA (d : Nat) (h₁ : 48 ≤ d) (h₂ : d + 8 ≤ 64) :
       InRegions (z.rd ++ z.wr) (z.sp + BitVec.ofNat 64 d) 8 := by
     rw [hz.sp, hP, Offset.add_ofNat_add_ofNat, hz.rd]
     exact h.inArg (2608 + d) (by omega_arith) (by omega_arith) _
-  unfold wipe
-  refine WP.seq (WP.mono (wipeArgs5_ok z (inA 48 (by decide) (by decide)) (inA 56 (by decide) (by decide)))
-    fun a ⟨x9a, x10a, x11a, ga, ma, spa, rda, wra, va⟩ => ?_)
+  refine WP.mono (wipeArgs5_ok z (inA 48 (by decide) (by decide)) (inA 56 (by decide) (by decide)))
+    fun a ⟨x9a, x10a, x11a, ga, ma, spa, rda, wra, va⟩ => ?_
   rw [hz.sp, hP, Offset.add_ofNat_add_ofNat,
     show B2 s + BitVec.ofNat 64 (2608 + 48) = B2 s + BitVec.ofNat 64 (2656 + 8 * 0) from rfl,
     hz.arg h 0 (by decide)] at x9a
@@ -637,18 +647,27 @@ theorem swipe_wp {s z : State} (h : SLay s) (hz : SCalled s z) (hres : res s = n
   have hL : stackArg s 1 = BitVec.ofNat 64 (L s) := by
     apply BitVec.eq_of_toNat_eq; rw [to.dl, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (s.gpr .x7).isLt]
   rw [hL] at x10a
+  exact ⟨x9a, x10a, x11a, ga, ma, spa, rda, wra, va⟩
+
+/-- When the call failed: `dst` zeroed. -/
+theorem swipe_wp {s z : State} (h : SLay s) (hz : SCalled s z) (hres : res s = none) :
+    WP isa (wipe 5) z (SDone s) := by
+  have to := h.pre.to
+  have x0 : (z.gpr .x0).setWidth 32 = 0 := by have := hz.out; rw [hres] at this; exact this
+  unfold wipe
+  refine WP.seq (WP.mono (swipeArgs_wp h hz) fun a ha => ?_)
   have hw : Covers [⟨Dst s, L s⟩] a.wr := by
-    rw [wra, hz.wr, to.wr]; exact covers_cons (covers_of_mem (by simp)) covers_nil
-  refine WP.mono (wipeLoop_wp a (s.gpr .x7).isLt x9a x10a x11a hw to.od)
+    rw [ha.wr, hz.wr, to.wr]; exact covers_cons (covers_of_mem (by simp)) covers_nil
+  refine WP.mono (wipeLoop_wp a (s.gpr .x7).isLt ha.x9 ha.x10 ha.x11 hw to.od)
     fun u ⟨pz, fu, gu, spu, rdu, wru, vu⟩ => ?_
   have g' : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → u.gpr r = z.gpr r := fun r a b c => by
-    rw [gu r a b, ga r a b c]
-  refine ⟨?_, ?_, fun r hr h30 => ?_, by rw [spu, spa, hz.sp], by rw [rdu, rda, hz.rd],
-    by rw [wru, wra, hz.wr], fun r hr => by rw [vu, va]; exact hz.v r hr⟩
+    rw [gu r a b, ha.gpr r a b c]
+  refine ⟨?_, ?_, fun r hr h30 => ?_, by rw [spu, ha.sp, hz.sp], by rw [rdu, ha.rd, hz.rd],
+    by rw [wru, ha.wr, hz.wr], fun r hr => by rw [vu, ha.v]; exact hz.v r hr⟩
   · show match res s with | some pt => _ | none => _
     rw [hres]
     exact ⟨by rw [g' _ (by decide) (by decide) (by decide)]; exact x0, bytesAt_zeros pz⟩
-  · rw [← hz.ra, ← ma]
+  · rw [← hz.ra, ← ha.mem]
     refine Frame.read fu (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
     exact (h.pre.bd.symm.sub_right (SEntered.stk_sub2 (s := s) 2648 8 (by decide))).symm
@@ -713,5 +732,292 @@ theorem openToSplit_wp (F : SplitFn) {s : State} (hs : SPre s) :
   refine WP.seq (WP.mono (sentered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (scalled_wp F h he) fun z hz => ?_)
   exact WP.seq (WP.mono (safter_ok h hz) fun u hu => sret_wp h hu)
+
+/-! ## Constant time -/
+
+open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint rel_ite ct_of)
+
+/-- The call's public data, from the arguments. -/
+theorem SEntered.leak {s e : State} (h : SLay s) (he : SEntered s e) : callSLeak (xSS s e) = toLeak s := by
+  obtain ⟨-, c1, -, -, -, -, -, -⟩ := he.callGpr
+  simp only [callSLeak, toLeak, he.xres h, State.withRegions_gpr, c1]
+
+/-- Whether the call failed, from what it left. -/
+theorem SCalled.zero {s z : State} (hz : SCalled s z) : ((z.gpr .x0).setWidth 32 == 0) = (res s).isNone := by
+  have ho := hz.out
+  revert ho
+  cases res s with
+  | some pt => intro ho; rw [ho.1]; rfl
+  | none => intro ho; rw [ho]; rfl
+
+theorem openToSplit_rel (F : SplitFn) {σ₁ σ₂ : State} (p₁ : SPre σ₁) (p₂ : SPre σ₂)
+    (hq : toPub 3 σ₁ σ₂) : RelCT isa (Eq2 σ₁ σ₂) (openToSplit F.fn) TT := by
+  have h₁ := slay p₁
+  have h₂ := slay p₂
+  obtain ⟨qsp, ql, q0, q1, q2, q3, q4, q5, q6, q7, qa⟩ := hq
+  have a0 := qa 0 (by omega)
+  have a2 := qa 2 (by omega)
+  have a3 := qa 3 (by omega)
+  have a4 := qa 4 (by omega)
+  unfold openToSplit
+  have hB : B2 σ₁ = B2 σ₂ := by simp only [B2, qsp]
+  have hP : P2 σ₁ = P2 σ₂ := by simp only [P2, hB]
+  have asp (σ : State) (h : SLay σ) : (allocated 48 σ).sp = P2 σ := by
+    show σ.sp - BitVec.ofNat 64 48 = _
+    rw [h.hB, add_ofNat_sub_ofNat _ (by decide)]
+  refine (RelCT.alloc (P := Eq2 σ₁ σ₂) (R := TT)
+    ((?_ : RelCT isa (Eq2 (allocated 48 σ₁) (allocated 48 σ₂)) _ TT).mono
+      (fun a b ⟨s, t, ⟨hs, ht⟩, ha, hb⟩ => by subst hs ht; exact ⟨ha, hb⟩) fun _ _ h => h)).mono
+    (fun _ _ h => h) fun _ _ _ => trivial
+  -- The entry.
+  refine rel_seq (rel_taint [] (by rw [asp _ h₁, asp _ h₂, hP]) (by agree_tac []) ⟨_, by taint_decide⟩)
+    (sentered_wp h₁) (sentered_wp h₂) fun e₁ e₂ he₁ he₂ => ?_
+  -- The call, by its callee's contract.
+  have hrd : rdS σ₂ = rdS σ₁ := by
+    simp only [rdS, kR, nR, aR, tR, pR, sR, K, Nn, NL, Ad, AL, Tg, TL, Src, L, q0, q2, q3, q4, q5, q6, q7, a2, a3,
+      a4, hP]
+  have hwr : wrS σ₂ = wrS σ₁ := by simp only [wrS, dR, Dst, L, a0, q7]
+  obtain ⟨cp₁, cv₁, cw₁⟩ := he₁.call h₁
+  obtain ⟨cp₂, cv₂, cw₂⟩ := he₂.call h₂
+  have lk₁ := he₁.leak h₁
+  have lk₂ := he₂.leak h₂
+  have hx₂ : xSS σ₂ e₂ = e₂.callEntry.withRegions (rdS σ₁) (wrS σ₁) := by rw [← hrd, ← hwr]
+  rw [hx₂] at cp₂ lk₂
+  rw [hrd, hwr] at cv₂
+  rw [hwr] at cw₂
+  obtain ⟨r0₁, r1₁, r2₁, r3₁, r4₁, r5₁, r6₁, r7₁⟩ := he₁.callGpr
+  obtain ⟨r0₂, r1₂, r2₂, r3₂, r4₂, r5₂, r6₂, r7₂⟩ := he₂.callGpr
+  obtain ⟨b0₁, b1₁, b2₁, b3₁, b4₁⟩ := he₁.stackArgs h₁
+  obtain ⟨b0₂, b1₂, b2₂, b3₂, b4₂⟩ := he₂.stackArgs h₂
+  rw [hx₂] at r0₂ r1₂ r2₂ r3₂ r4₂ r5₂ r6₂ r7₂ b0₂ b1₂ b2₂ b3₂ b4₂
+  refine rel_seq (RelCT.call F.verified.1 F.verified.2.1 (rdS σ₁) (wrS σ₁) fun a b ⟨ha, hb⟩ => by
+      subst ha hb
+      refine ⟨splitSpec_pre cp₁, splitSpec_pre cp₂, splitSpec_pub ⟨?_, by rw [lk₁, lk₂, ql], ?_⟩, cv₁, cw₁, cv₂,
+        cw₂⟩
+      · simp only [State.withRegions_sp, State.callEntry_sp, he₁.sp, he₂.sp, hP]
+      · simp only [r0₁, r1₁, r2₁, r3₁, r4₁, r5₁, r6₁, r7₁, r0₂, r1₂, r2₂, r3₂, r4₂, r5₂, r6₂, r7₂, q0, q1, q2, q3,
+          q4, q5, q7, Dst, a0, true_and]
+        intro i hi
+        have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+        rcases this with rfl | rfl | rfl | rfl | rfl
+        · rw [b0₁, b0₂, a2]
+        · rw [b1₁, b1₂, a3]
+        · rw [b2₁, b2₂, a4]
+        · rw [b3₁, b3₂, q6]
+        · rw [b4₁, b4₂, q7])
+    (scalled_wp F h₁ he₁) (scalled_wp F h₂ he₂) fun z₁ z₂ hz₁ hz₂ => ?_
+  -- After the call: the same branch in both runs.
+  have hn : (res σ₁).isNone = (res σ₂).isNone := by
+    simp only [toLeak, p₁.to.hR, p₂.to.hR, not_true_eq_false, ↓reduceIte, List.cons.injEq, and_true] at ql
+    revert ql
+    cases res σ₁ <;> cases res σ₂ <;> simp
+  have ev₁ : isa.eval (.zero .w .x0) z₁ = some (res σ₁).isNone := by
+    show some (_ == _) = _; rw [← hz₁.zero]; rfl
+  have ev₂ : isa.eval (.zero .w .x0) z₂ = some (res σ₁).isNone := by
+    show some (_ == _) = _; rw [hn, ← hz₂.zero]; rfl
+  refine rel_seq (rel_ite ev₁ ev₂ (fun _ => ?_) fun _ => ?_) (safter_ok h₁ hz₁) (safter_ok h₂ hz₂)
+    fun u₁ u₂ hu₁ hu₂ => ?_
+  · -- `wipe`, from the same public arguments.
+    refine rel_seq (rel_taint [] (by rw [hz₁.sp, hz₂.sp, hP]) (by agree_tac []) ⟨_, by taint_decide⟩)
+      (swipeArgs_wp h₁ hz₁) (swipeArgs_wp h₂ hz₂) fun w₁ w₂ hw₁ hw₂ => ?_
+    exact rel_taint [.x9, .x10] (by rw [hw₁.sp, hw₂.sp, hz₁.sp, hz₂.sp, hP])
+      (by agree_tac [hw₁.x9, hw₂.x9, hw₁.x10, hw₂.x10, Dst, L, a0, q7]) ⟨_, by taint_decide⟩
+  · exact rel_taint [] (by rw [hz₁.sp, hz₂.sp, hP]) (by agree_tac []) ⟨_, by taint_decide⟩
+  -- The return address.
+  exact rel_taint [] (by rw [hu₁.sp, hu₂.sp, hP]) (by agree_tac []) ⟨_, by taint_decide⟩
+
+
+theorem openToSplit_ct (F : SplitFn) :
+    ConstantTime isa SPre (toPub 3) (openToSplit F.fn) :=
+  ct_of fun _ _ p₁ p₂ hq => openToSplit_rel F p₁ p₂ hq
+
+/-! ## `vg_aes_gcm_open_to_with_powers`, choosing on entry -/
+
+open VG.Proof.AesGcm.AArch64.Gather (filter_true' filter_false' filterMap_some' filterMap_none' pairFacts_ro)
+
+/-- The shared contract with 2656 bytes of stack gives `ToPre` and the 2656
+bytes apart from the buffers. -/
+theorem toPre2656 {s : State} (h : (Proof.AesGcm.openToWithPowersRoundsContract AArch64.abi 2656).pre s) :
+    ToPre pwShape s ∧ 2656 ≤ s.sp.toNat ∧ (stk2 s).Disjoint (kR s) ∧ (stk2 s).Disjoint (nR s) ∧
+      (stk2 s).Disjoint (aR s) ∧ (stk2 s).Disjoint (sR s) ∧ (stk2 s).Disjoint (dR s) ∧
+      (stk2 s).Disjoint (tR s) ∧ (stk2 s).Disjoint (pR s) ∧ (stk2 s).Disjoint (argR s 3) := by
+  sig_pre [Proof.AesGcm.openToWithPowersRoundsContract, Spec.Gcm.openToWithPowersSig,
+    Spec.Gcm.openToWithPowersPre, Spec.Gcm.openToSig, Spec.Gcm.withPowersParam, Spec.Gcm.openToPre,
+    AArch64.abi, AArch64.argRegs, stackArgs_five, List.append_eq] at h
+  rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
+  simp only [filter_true', filter_false', filterMap_some', filterMap_none', List.map_id', Sig.conj_cons,
+    Sig.conj_append, Sig.conj_map, Bool.cond_false, Bool.cond_true, List.filterMap_cons, List.filterMap_nil,
+    List.append_nil, List.nil_append, Sig.conj, Bool.true_or, Bool.or_true, Bool.false_or, Bool.or_false,
+    List.cons_append, List.singleton_append, Sig.descRegion, Function.comp_def, Bool.not_false,
+    Bool.false_eq_true, ite_true, ite_false, List.filter_nil] at h
+  obtain ⟨w₁, w₂, rd, wr, ⟨kd, nd, ad, sd, dt, dp, da⟩, bk, bn, ba, bs, bd, bt, bp, barg, ok, on, oa, os, od, ot, op,
+    hR, dl, rep⟩ := h
+  rw [dl] at wr kd nd ad sd dt dp da bd od
+  have sb := Offset.sub_below s.sp (a := 2624) (n := 2624) (b := 2656) (m := 2656) (by omega) (by omega)
+  exact ⟨⟨by omega, w₂, rd, wr, kd, nd, ad, sd, dt, by simpa [pwShape, pwR] using dp, da, bk.sub_left sb,
+    bn.sub_left sb, ba.sub_left sb, bs.sub_left sb, bd.sub_left sb, bt.sub_left sb,
+    by simpa [pwShape, pwR] using bp.sub_left sb, barg.sub_left sb, ok, on, oa, os, od, ot,
+    by simpa [pwShape, pwR] using op, hR, dl, by simpa [pwShape, pwX] using rep⟩, w₁, bk, bn, ba, bs, bd, bt,
+    by simpa [pwShape, pwR] using bp, barg⟩
+
+theorem toPost2656 {s s' : State} (h : toPost s s') :
+    (Proof.AesGcm.openToWithPowersRoundsContract AArch64.abi 2656).post s s' := by
+  sig_post [Proof.AesGcm.openToWithPowersRoundsContract, Spec.Gcm.openToWithPowersSig, Spec.Gcm.openToSig,
+    Spec.Gcm.withPowersParam, Proof.AesGcm.openToWithPowersRoundsPost, Proof.AesGcm.openToRoundsPost,
+    AArch64.abi, AArch64.argRegs, stackArgs_five, List.append_eq]
+  exact fun _ => h
+
+theorem toPub2656 {s₁ s₂ : State}
+    (hp : (Proof.AesGcm.openToWithPowersRoundsContract AArch64.abi 2656).pub s₁ s₂) : toPub 3 s₁ s₂ := by
+  sig_pub [Proof.AesGcm.openToWithPowersRoundsContract, Spec.Gcm.openToWithPowersSig, Spec.Gcm.openToSig,
+    Spec.Gcm.withPowersParam, Spec.Gcm.openToWithPowersLeak, Spec.Gcm.openToLeak,
+    AArch64.abi, AArch64.argRegs, stackArgs_five, List.append_eq] at hp
+  simp only [List.getD_cons_succ, List.getD_cons_zero] at hp
+  obtain ⟨sp, l, x0, x1, x2, x3, x4, x5, x6, x7, a0, a1, a2, a3, a4⟩ := hp
+  refine ⟨sp, l, x0, x1, x2, x3, x4, x5, x6, x7, fun i hi => ?_⟩
+  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+  rcases this with rfl | rfl | rfl | rfl | rfl
+  exacts [a0, a1, a2, a3, a4]
+
+/-- A state satisfying the precondition with 2656 bytes of stack: `toSatPw`,
+with a 12-byte nonce. -/
+def toSatS : State :=
+  { toSatPw with
+    gpr := fun r => match r with
+      | .x0 => 0x1000 | .x1 => 10 | .x2 => 0x2000 | .x3 => 12 | .x4 => 0x3000 | .x6 => 0x4000 | _ => 0
+    rd := [⟨0x1000, 256⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0, 0⟩, ⟨0, 128⟩, ⟨0x9000, 40⟩] }
+
+theorem toSatS_pre : ∃ s, (Proof.AesGcm.openToWithPowersRoundsContract AArch64.abi 2656).pre s ∧
+    (s.gpr .x3).toNat = 12 ∧ (s.gpr .x5).toNat ≤ 16 := by
+  refine ⟨toSatS, ?_, by decide, by decide⟩
+  sig_pre [Proof.AesGcm.openToWithPowersRoundsContract, Spec.Gcm.openToWithPowersSig,
+    Spec.Gcm.openToWithPowersPre, Spec.Gcm.openToSig, Spec.Gcm.withPowersParam, Spec.Gcm.openToPre,
+    AArch64.abi, AArch64.argRegs, stackArgs_five, List.append_eq, toSatS, toSatPw, toSat, stackArg, stackArgAddr,
+    Mem.readW, Mem.read]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact Proof.AesGcm.powers8Repr_of_zeroMem (by decide) fun _ _ => rfl
+
+/-- The one-pass branch, against its contract. -/
+def splitK : Contract isa where
+  pre := SPre
+  post := toPost
+  pub := toPub 3
+
+theorem openToSplit_verified (F : SplitFn) : Verified AArch64.target (openToSplit F.fn) splitK := by
+  refine ⟨fun s hs => ?_, openToSplit_ct F, ?_⟩
+  · obtain ⟨t, s', he, ha, hp⟩ := openToSplit_wp F hs
+    exact ⟨t, s', he, ha, hp⟩
+  · obtain ⟨s, hs, h12, h16⟩ := toSatS_pre
+    obtain ⟨to, w, bk, bn, ba, bs, bd, bt, bp, barg⟩ := toPre2656 hs
+    exact ⟨s, to, w, bk, bn, ba, bs, bd, bt, bp, barg, h12, h16⟩
+
+/-- The copying branch, against `toK pwShape`. -/
+theorem openToPw_verifiedK (F : OpenFn pwShape) : Verified AArch64.target (openTo 3 F.fn) (toK pwShape) := by
+  refine ⟨fun s hs => openTo_correct F s hs, openTo_ct F, ?_⟩
+  obtain ⟨s, hs⟩ := toSatPw_pre
+  exact ⟨s, toPwPre_of_spec hs⟩
+
+/-- `selSplit`'s flag: zero for a 12-byte nonce, less than 16 bytes of
+additional data and from 768 bytes of text. -/
+def selFlag (s : State) : BitVec 64 :=
+  ((s.gpr .x5 >>> 4) ||| ((s.gpr .x7 - BitVec.ofNat 64 768) >>> 63)) ||| (s.gpr .x3 ^^^ BitVec.ofNat 64 12)
+
+/-- What `selSplit` leaves of a state: all but `x9` and `x10`. -/
+structure SelRan (s u : State) : Prop where
+  g : ∀ r, r ≠ .x9 → r ≠ .x10 → u.gpr r = s.gpr r
+  sp : u.sp = s.sp
+  mem : u.mem = s.mem
+  rd : u.rd = s.rd
+  wr : u.wr = s.wr
+  v : u.v = s.v
+
+theorem sel_run (s : State) :
+    ∃ u, execBlock isa selSplit s = some (u, []) ∧ SelRan s u ∧
+      isa.eval (.zero .x .x10) u = some (selFlag s == 0) := by
+  refine ⟨_, rfl, ⟨fun r h9 h10 => ?_, rfl, rfl, rfl, rfl, rfl⟩, ?_⟩
+  · simp [State.write, h9, h10]
+  · simp [eval, State.write, State.read, selFlag, Size.bits]
+
+theorem selFlag_ok {s : State} (h : (selFlag s == 0) = true) :
+    (s.gpr .x3).toNat = 12 ∧ (s.gpr .x5).toNat ≤ 16 := by
+  have h0 : selFlag s = 0#64 := beq_iff_eq.mp h
+  unfold selFlag at h0
+  obtain ⟨h1, h3⟩ := BitVec.or_eq_zero_iff.mp h0
+  obtain ⟨h5, -⟩ := BitVec.or_eq_zero_iff.mp h1
+  refine ⟨by rw [BitVec.xor_eq_zero_iff.mp h3]; rfl, ?_⟩
+  have := congrArg BitVec.toNat h5
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow] at this
+  omega
+
+theorem openToSel_verified (F : OpenFn pwShape) (G : SplitFn) :
+    Verified AArch64.target (openToSel F.fn G.fn) (Proof.AesGcm.openToWithPowersRoundsContract AArch64.abi 2656) := by
+  have hp : ∀ r ∈ preserved, r ≠ .x9 ∧ r ≠ .x10 := by decide
+  have sat : ∃ s, (Proof.AesGcm.openToWithPowersRoundsContract AArch64.abi 2656).pre s :=
+    let ⟨s, hs, _⟩ := toSatS_pre; ⟨s, hs⟩
+  refine Verified.entryBranch (p := fun s => selFlag s == 0) (fun _ => []) (openToSplit_verified G)
+    (openToPw_verifiedK F) (fun s hs => ?_) ?_ sat
+  · obtain ⟨u, e, r, ev⟩ := sel_run s
+    have abi : ∀ s', AArch64.target.abiPreserved u s' → AArch64.target.abiPreserved s s' := fun s' a =>
+      ⟨fun x hx => by
+        obtain ⟨h9, h10⟩ := hp x hx
+        rw [a.1 x hx, r.g x h9 h10], by rw [a.2.1, r.sp], fun x hx => by rw [a.2.2 x hx, r.v]⟩
+    have hu : (Proof.AesGcm.openToWithPowersRoundsContract AArch64.abi 2656).pre u := by
+      sig_pre [Proof.AesGcm.openToWithPowersRoundsContract, Spec.Gcm.openToWithPowersSig,
+        Spec.Gcm.openToWithPowersPre, Spec.Gcm.openToSig, Spec.Gcm.withPowersParam, Spec.Gcm.openToPre,
+        AArch64.abi, AArch64.argRegs, stackArgs_five, List.append_eq] at hs ⊢
+      have sa (i : Nat) : stackArg u i = stackArg s i := by simp only [stackArg, stackArgAddr, r.mem, r.sp]
+      have saa : stackArgAddr u 0 = stackArgAddr s 0 := by simp only [stackArgAddr, r.sp]
+      rw [sa 0, sa 1, sa 2, sa 3, sa 4, saa, r.g .x0 (by decide) (by decide), r.g .x1 (by decide) (by decide), r.g .x2 (by decide) (by decide),
+        r.g .x3 (by decide) (by decide), r.g .x4 (by decide) (by decide), r.g .x5 (by decide) (by decide),
+        r.g .x6 (by decide) (by decide), r.g .x7 (by decide) (by decide), r.sp, r.mem, r.rd, r.wr]
+      exact hs
+    have hres : res u = res s := by
+      simp only [res, K, R, Nn, NL, Ad, AL, Src, L, Tg, TL, stackArg, stackArgAddr, r.mem, r.sp,
+        r.g .x0 (by decide) (by decide), r.g .x1 (by decide) (by decide), r.g .x2 (by decide) (by decide),
+        r.g .x3 (by decide) (by decide), r.g .x4 (by decide) (by decide), r.g .x5 (by decide) (by decide),
+        r.g .x6 (by decide) (by decide), r.g .x7 (by decide) (by decide)]
+    have hpost : ∀ s', toPost u s' → toPost s s' := fun s' q => by
+      unfold toPost at q ⊢
+      rw [hres] at q
+      simpa only [Dst, L, stackArg, stackArgAddr, r.mem, r.sp, r.g .x7 (by decide) (by decide)] using q
+    obtain ⟨to, w, bk, bn, ba, bs, bd, bt, bp, barg⟩ := toPre2656 hu
+    refine ⟨u, e, ev, fun hf => ⟨?_, fun s' a q => ⟨abi s' a, toPost2656 (hpost s' q)⟩⟩,
+      fun _ => ⟨to, fun s' a q => ⟨abi s' a, toPost2656 (hpost s' q)⟩⟩⟩
+    obtain ⟨h12, h16⟩ := selFlag_ok hf
+    exact ⟨to, w, bk, bn, ba, bs, bd, bt, bp, barg,
+      by show (u.gpr .x3).toNat = 12; rw [r.g .x3 (by decide) (by decide)]; exact h12,
+      by show (u.gpr .x5).toNat ≤ 16; rw [r.g .x5 (by decide) (by decide)]; exact h16⟩
+  · intro s s' u u' hs hs' hq e e'
+    obtain ⟨u₀, e₀, r, -⟩ := sel_run s
+    obtain ⟨u₀', e₀', r', -⟩ := sel_run s'
+    rw [e₀] at e; rw [e₀'] at e'
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e)
+    obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e')
+    obtain ⟨qsp, ql, q0, q1, q2, q3, q4, q5, q6, q7, qa⟩ := toPub2656 hq
+    have pu : toPub 3 u₀ u₀' := by
+      have g (r₀ : Reg) (h9 : r₀ ≠ .x9) (h10 : r₀ ≠ .x10) : u₀.gpr r₀ = s.gpr r₀ ∧ u₀'.gpr r₀ = s'.gpr r₀ :=
+        ⟨r.g r₀ h9 h10, r'.g r₀ h9 h10⟩
+      have sa (i : Nat) : stackArg u₀ i = stackArg s i ∧ stackArg u₀' i = stackArg s' i := by
+        exact ⟨by simp only [stackArg, stackArgAddr, r.mem, r.sp], by simp only [stackArg, stackArgAddr, r'.mem, r'.sp]⟩
+      refine ⟨by rw [r.sp, r'.sp, qsp], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => ?_⟩
+      · simp only [toLeak, res, K, R, Nn, NL, Ad, AL, Src, L, Tg, TL, (sa 0).1, (sa 0).2, (sa 1).1, (sa 1).2,
+          (sa 2).1, (sa 2).2, (sa 3).1, (sa 3).2, r.mem, r'.mem, (g .x0 (by decide) (by decide)).1,
+          (g .x0 (by decide) (by decide)).2, (g .x1 (by decide) (by decide)).1, (g .x1 (by decide) (by decide)).2,
+          (g .x2 (by decide) (by decide)).1, (g .x2 (by decide) (by decide)).2, (g .x3 (by decide) (by decide)).1,
+          (g .x3 (by decide) (by decide)).2, (g .x4 (by decide) (by decide)).1, (g .x4 (by decide) (by decide)).2,
+          (g .x5 (by decide) (by decide)).1, (g .x5 (by decide) (by decide)).2, (g .x6 (by decide) (by decide)).1,
+          (g .x6 (by decide) (by decide)).2, (g .x7 (by decide) (by decide)).1, (g .x7 (by decide) (by decide)).2]
+        exact ql
+      all_goals first
+        | (rw [(g _ (by decide) (by decide)).1, (g _ (by decide) (by decide)).2]; assumption)
+        | (rw [(sa i).1, (sa i).2]; exact qa i hi)
+    refine ⟨rfl, ?_, fun _ => pu, fun _ => pu⟩
+    simp only [selFlag, (r.g .x3 (by decide) (by decide)), (r.g .x5 (by decide) (by decide)),
+      (r.g .x7 (by decide) (by decide)), (r'.g .x3 (by decide) (by decide)), (r'.g .x5 (by decide) (by decide)),
+      (r'.g .x7 (by decide) (by decide)), q3, q5, q7]
 
 end VG.Proof.AesGcm.AArch64.OpenTo
