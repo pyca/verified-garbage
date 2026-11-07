@@ -84,23 +84,23 @@ GROUPS = {
         "tests": ["rfc7253::aes_ocb_iterative", "rfc7253::aes_ocb_sample_results"],
     },
     "aes_ofb": {
-        "lib": ["cipher::aes::ofb"],
+        "lib": [],
         "tests": ["cavp::aes_ofb"],
     },
     "aes_cfb": {
-        "lib": ["cipher::aes::cfb"],
+        "lib": [],
         "tests": ["cavp::aes_cfb"],
     },
     "aes_cfb8": {
-        "lib": ["cipher::aes::cfb8"],
+        "lib": [],
         "tests": ["cavp::aes_cfb8"],
     },
     "aes_ctr": {
-        "lib": ["cipher::aes::ctr"],
+        "lib": [],
         "tests": ["rfc3686"],
     },
     "aes_xts": {
-        "lib": ["cipher::aes::xts"],
+        "lib": [],
         "tests": ["cavp::aes_xts", "wycheproof::aes_xts"],
     },
     "aes_siv": {
@@ -193,11 +193,11 @@ GROUPS = {
         ],
     },
     "ed25519": {
-        "lib": ["ed25519"],
+        "lib": [],
         "tests": ["rfc8032::ed25519_vectors", "wycheproof::ed25519"],
     },
     "ed448": {
-        "lib": ["ed448"],
+        "lib": [],
         "tests": ["rfc8032::ed448", "wycheproof::ed448"],
     },
     "message_boundaries_and_unaligned_inputs": {
@@ -351,8 +351,8 @@ GROUPS = {
         "tests": ["wycheproof::rsa_pss::rsa_pss_every_hash"],
     },
     "scrypt": {
-        "lib": ["kdf::scrypt"],
-        "tests": [],
+        "lib": [],
+        "tests": ["rfc7914::key_lengths", "rfc7914::verify_keys"],
     },
     "secp256k1": {
         "lib": ["ec::secp256k1", "ec::validate::tests::secp256k1", "ec::compressed::tests::secp256k1"],
@@ -480,7 +480,7 @@ GROUPS = {
         "tests": ["cavp::triple_des_cfb"],
     },
     "triple_des_ecb": {
-        "lib": ["cipher::triple_des::ecb"],
+        "lib": [],
         "tests": ["cavp::triple_des_ecb"],
     },
     "x25519": {

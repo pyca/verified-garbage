@@ -3,9 +3,11 @@ module
 public import VerifiedGarbage.Impl.Modes.Arm.SeqFinal
 public import VerifiedGarbage.Proof.Modes.Arm.SeqBody
 public import VerifiedGarbage.Spec.Cfb.Final
+public import VerifiedGarbage.Spec.Ofb.Final
 import VerifiedGarbage.Proof.Modes.Arm.SeqLoop
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 import VerifiedGarbage.Proof.Modes.FbFinal
+import VerifiedGarbage.Proof.AesOfb.Spec
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.CmacAes.Arm.Words
 import VerifiedGarbage.Proof.Framework.Arm.Syms
@@ -17,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
-# CFB of a message's last piece on ARMv7: the contract and its proof
+# CFB and OFB of a message's last piece on ARMv7: the contract and its proof
 
 `seqFinalArm c S M`: the contract `Core.seqFinal c M` meets, for any core
 `c` (with `S : CoreSpec c`) and mode `M` whose operations are all after a
@@ -29,7 +31,8 @@ first bytes of `CIPH_K` of the chaining block `runSeq` leaves, and the IV
 becomes that chaining block if `r = 0`, and its image under the cipher
 otherwise (`seqFinal_wp`). `cfbEncFinal_post` and `cfbDecFinal_post` state
 this as the specification's (`Spec.Cfb.EncryptFinal`, `DecryptFinal`) for
-`cfbEnc` and `cfbDecF`.
+`cfbEnc` and `cfbDecF`, and `ofbFinal_post` as `Spec.Ofb.CryptFinal` for
+`ofb`.
 
 The prologue is `seq`'s (`prologue_wp`), and its invariant for no element
 gives the loop's for no whole block (`FInv`): the registers hold the
@@ -1062,6 +1065,31 @@ theorem cfbEnc_finalOk (c : Core) (h1 : 1 ≤ c.lg) (h31 : c.lg ≤ 31) (hl : 2 
   ⟨rfl, rfl, rfl, rfl, rfl, hl, h1, h31⟩
 
 theorem cfbDecF_finalOk (c : Core) (h1 : 1 ≤ c.lg) (h31 : c.lg ≤ 31) (hl : 2 ^ c.lg = c.bs) : FinalOk c cfbDecF :=
+  ⟨rfl, rfl, rfl, rfl, rfl, hl, h1, h31⟩
+
+/-! ## OFB -/
+
+/-- The final function with `ofb` encrypts and decrypts as
+`Spec.Ofb.CryptFinal` says, for a cipher whose every output is a block. -/
+theorem ofbFinal_post {c : Core} {S : CoreSpec c} {s s' : State} (h : (seqFinalArm c S ofb).post s s')
+    (hc : ∀ b, (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1) b).length = c.bs) :
+    Spec.Ofb.CryptFinal (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)) c.bs s.mem s'.mem
+      (State.addr (ivArg c s)) (State.addr (dArg c s)) (nArg c s).toNat := by
+  obtain ⟨h1, h2, h3⟩ := h
+  have hL : 0 < c.bs := Nat.mul_pos (by decide) S.bw_pos
+  have e := runSeq_ofb (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)) ⟨[], bytesAt s.mem
+    (State.addr (ivArg c s)) c.bs, bytesAt s.mem (State.addr (scArg c s) + BitVec.ofNat 64 (oOff + c.bs)) c.bs⟩
+    (blocksOf c.bs s.mem (State.addr (dArg c s)) ((nArg c s).toNat / c.bs))
+  rw [length_blocksOf] at e
+  rw [e.1] at h1
+  rw [e.2] at h2 h3
+  refine ⟨ofbFinal_of hL hc s.mem s'.mem _ _ _ h1 h2, h3.trans ?_⟩
+  rw [VG.Proof.Modes.blockCount_eq hL]
+  split
+  · rfl
+  · exact (VG.Proof.AesOfb.next_succ _ _ _).symm
+
+theorem ofb_finalOk (c : Core) (h1 : 1 ≤ c.lg) (h31 : c.lg ≤ 31) (hl : 2 ^ c.lg = c.bs) : FinalOk c ofb :=
   ⟨rfl, rfl, rfl, rfl, rfl, hl, h1, h31⟩
 
 end VG.Proof.Modes.Arm

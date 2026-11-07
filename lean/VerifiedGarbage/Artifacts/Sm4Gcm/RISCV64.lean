@@ -22,15 +22,15 @@ open VG.Proof.Sm4Gcm.RISCV64
 def artifacts : List Artifact := [
   Spec.Sm4.Gcm.initApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a2 Impl.Sm4Gcm.RISCV64.init
-    stack := 5792
+    stack := 5808
     verified := init_framed },
   Spec.Sm4.Gcm.sealApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.Sm4Gcm.RISCV64.«seal»
-    stack := 5808
+    stack := 5824
     verified := seal_framed },
   Spec.Sm4.Gcm.openApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 1 Impl.Sm4Gcm.RISCV64.«open»
-    stack := 5808
+    stack := 5824
     verified := open_framed },
   Spec.Sm4.Gcm.streamInitApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit
@@ -42,19 +42,19 @@ def artifacts : List Artifact := [
     verified := Proof.AesGcm.RISCV64.streamAad_framed },
   Spec.Sm4.Gcm.streamEncryptApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamEncrypt
-    stack := 5792
+    stack := 5808
     verified := streamEncrypt_framed },
   Spec.Sm4.Gcm.streamDecryptApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamDecrypt
-    stack := 5792
+    stack := 5808
     verified := streamDecrypt_framed },
   Spec.Sm4.Gcm.streamFinishApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.Sm4Gcm.RISCV64.streamFinish
-    stack := 5792
+    stack := 5808
     verified := streamFinish_framed },
   Spec.Sm4.Gcm.streamVerifyApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamVerify
-    stack := 5792
+    stack := 5808
     verified := streamVerify_framed }]
 
 end VG.Artifacts.Sm4Gcm.RISCV64

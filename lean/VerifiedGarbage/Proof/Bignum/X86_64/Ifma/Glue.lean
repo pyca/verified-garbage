@@ -35,10 +35,10 @@ def resRanges (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : List (Nat × Nat) :=
   [(slot l.W Public.aAcc, 8 * (l.W + 2)), (slot l.W Public.aTmp, 8 * (l.W + 2)), (slot l.W Public.aY, 8 * (l.W + 2))]
 
 /-- `result`'s block: `Y`'s seventeen words at `aAcc`, and the bases for the subtraction. -/
-theorem resBlock_ok (hl : LayOk l) {s : State} {B : Addr} {Z o a p : Nat} {mx : BitVec 64} (hs : Scr s B Z)
+theorem resBlock_ok (hl : AmmOk l) {s : State} {B : Addr} {Z o a p : Nat} {mx : BitVec 64} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = off B o) (hH : Hdr s.mem (off B o) l.W mx)
-    (hia : word s.mem (off B o) (8 * sIfma) = off B a) (hoa : o + slot l.W 8 + wsTab l.W ≤ a)
-    (haZ : a + 2 * l.D + 8 ≤ Z) (hp : p < 2)
+    (hia : word s.mem (off B o) (8 * sIfma) = off B a) (hoa : o + slot l.W 8 ≤ a)
+    (haZ : a + l.nl * l.D + 8 ≤ Z) (hp : p < l.nl)
     (hL : ∀ j < l.L, limb l s.mem (off B a) (l.D * p + l.oY) j < 2 ^ 52)
     (hV : val52 l s.mem (off B a) (l.D * p + l.oY) < 2 * wv s.mem (off B o) (slot l.W Public.aN) l.W) :
     WP isa (.block (([.mov .r11 (.mem (hdr sIfma)), .alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p + l.oY))),
@@ -51,17 +51,18 @@ theorem resBlock_ok (hl : LayOk l) {s : State} {B : Addr} {Z o a p : Nat} {mx : 
       t.gpr .r10 = off (off B o) (slot l.W Public.aN) ∧ t.gpr .r12 = BitVec.ofNat 64 l.W ∧
       t.gpr .rsi = off (off B o) (slot l.W Public.aTmp) ∧
       Keep [.r11, .r8, .rax, .rcx, .rbp, .rbx, .r10, .r12, .rsi] s t := by
+  have hS8 : slot l.W 8 = 256 + 64 * (l.W + 2) := by unfold slot hdrBytes; omega_using []
   have hn := hs.nowrap
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
-  obtain ⟨hW1, hW2⟩ := W_bounds hl
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+  obtain ⟨hW1, hW2⟩ := W_boundsN hl
+  have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
   have h8 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
   have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
   have lA := slot_le (w := l.W) (show Public.aAcc < 8 by decide)
   have hA0 := hdr_lt_slot l.W Public.aAcc (show 31 < 32 by decide)
   have hH' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off B o) (8 * i)) 8 := fun i hi => by
-    rw [off_off]; exact hs.ld (by have := hdr_lt_slot l.W 8 hi; omega_using [hoa, haZ, this])
+    rw [off_off]; exact hs.ld (by have := hdr_lt_slot l.W 8 hi; omega_using [hoa, hS8, haZ, this])
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.r11, .r8] (Q := fun t => t.gpr .r11 = off (off B a) (l.D * p + l.oY) ∧
     t.gpr .r8 = off (off B o) (slot l.W Public.aAcc) ∧ t.mem = s.mem) (by
@@ -73,16 +74,16 @@ theorem resBlock_ok (hl : LayOk l) {s : State} {B : Addr} {Z o a p : Nat} {mx : 
   have hsep : ∀ m m' : Mem, Outside (off (off B o) (slot l.W Public.aAcc)) 0 (8 * (l.W + 1)) m m' → ∀ j < l.L,
       word m' (off (off B a) (l.D * p + l.oY)) (l.off j) = word m (off (off B a) (l.D * p + l.oY)) (l.off j) :=
     fun m m' ho j hj => by
-    have := off_lt hl hj
-    have f := Frm.of_outside_off (B := B) (by rw [off_off] at ho; exact ho) (by omega_using [hoa, haZ, hn, lA])
-        (by omega_using [hoa, haZ, hn, lA])
+    have := off_ltN hl hj
+    have f := Frm.of_outside_off (B := B) (by rw [off_off] at ho; exact ho) (by omega_using [hoa, hS8, haZ, hn, lA])
+        (by omega_using [hoa, hS8, haZ, hn, lA])
     rw [word_off, word_off, word_off, word_off]
-    exact f.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by simp only; omega_using [hoa, lA]))
+    exact f.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by simp only; omega_using [hoa, hS8, lA]))
         (by omega_using [haZ, hn, o2, o10, hDp, this])
   refine WP.mono (to64_ok r11 r8 (fun j hj => by
-      have := off_lt hl hj
+      have := off_ltN hl hj
       rw [k₁.2.1, k₁.2.2, off_off, AmmSym.off_add]; exact hs.ld (by omega_using [haZ, o2, o10, hDp, this]))
-    (fun w hw => by rw [k₁.2.2, off_off, AmmSym.off_add]; exact hs.st (by omega_using [hoa, haZ, lA, hw]))
+    (fun w hw => by rw [k₁.2.2, off_off, AmmSym.off_add]; exact hs.st (by omega_using [hoa, hS8, haZ, lA, hw]))
     (fun j hj => by rw [me, word_off]; exact hL j hj) (by omega_using [hW2]) hsep) fun s₂ ⟨hw₂, ho₂, k₂, _⟩ => ?_
   have hlv : VG.Proof.Bignum.Amm52.lval (fun j => (limbsAt l s₁.mem (off (off B a) (l.D * p + l.oY)) j).toNat) l.L =
       val52 l s.mem (off B a) (l.D * p + l.oY) := VG.Proof.Bignum.Amm52.lval_congr fun j hj => by
@@ -91,13 +92,13 @@ theorem resBlock_ok (hl : LayOk l) {s : State} {B : Addr} {Z o a p : Nat} {mx : 
   rw [hlv] at hw₂
   have hacc := wv_to64_lt hV hw₂
   rw [me] at ho₂
-  have f₂ := Frm.of_outside_off (B := B) (by rw [off_off] at ho₂; exact ho₂) (by omega_using [hoa, haZ, hn, lA])
-      (by omega_using [hoa, haZ, hn, lA])
+  have f₂ := Frm.of_outside_off (B := B) (by rw [off_off] at ho₂; exact ho₂) (by omega_using [hoa, hS8, haZ, hn, lA])
+      (by omega_using [hoa, hS8, haZ, hn, lA])
   have hh : ∀ i < 32, word s₂.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := fun i hi => by
     have := hdr_lt_slot l.W Public.aAcc hi
     rw [word_off, word_off]
     exact f₂.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only; omega_using [this]))
-        (by omega_using [hoa, haZ, hn, lA, this])
+        (by omega_using [hoa, hS8, haZ, hn, lA, this])
   have hH₂ : Hdr s₂.mem (off B o) l.W mx := ⟨(hh _ (by decide)).trans hH.hw, (hh _ (by decide)).trans hH.hminv,
     fun j hj => (hh _ (by unfold sArr; omega_using [hj])).trans (hH.harr j hj)⟩
   have hl₂ : ∀ i < 32, InRegions (s₂.rd ++ s₂.wr) (off (off B o) (8 * i)) 8 := fun i hi => by
@@ -114,25 +115,26 @@ theorem resBlock_ok (hl : LayOk l) {s : State} {B : Addr} {Z o a p : Nat} {mx : 
     · exact hH₂.hw
     · exact hH₂.harr _ (by decide)) rfl) fun t ⟨⟨bx, r10, r12, si, me₃⟩, k₃⟩ => ?_
   rw [wv_off, Nat.add_zero] at hacc
-  refine ⟨by rw [me₃]; exact hacc, by rw [me₃]; exact AmmSym.Outside.rebase ho₂ (by omega_using [hoa, haZ, hn, lA]) (by omega_using [hoa, haZ, hn, lA]), by rw [k₃.gpr (by decide), k₂.gpr (by decide)]; exact r8,
+  refine ⟨by rw [me₃]; exact hacc, by rw [me₃]; exact AmmSym.Outside.rebase ho₂ (by omega_using [hoa, hS8, haZ, hn, lA]) (by omega_using [hoa, hS8, haZ, hn, lA]), by rw [k₃.gpr (by decide), k₂.gpr (by decide)]; exact r8,
     bx, r10, r12, si, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-- `result p`: `aY := Y mod X` in the prime's workspace `off B o` (16
 words, `aN = X`), `Y` the limbs at `l.oY` of region `p` of the area `off B a`. -/
-theorem result_ok (hl : LayOk l) {s : State} {B : Addr} {Z o a p X : Nat} {mx : BitVec 64} (hs : Scr s B Z)
+theorem result_ok (hl : AmmOk l) {s : State} {B : Addr} {Z o a p X : Nat} {mx : BitVec 64} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = off B o) (hH : Hdr s.mem (off B o) l.W mx)
-    (hia : word s.mem (off B o) (8 * sIfma) = off B a) (hoa : o + slot l.W 8 + wsTab l.W ≤ a)
-    (haZ : a + 2 * l.D + 8 ≤ Z) (hp : p < 2) (hN : wv s.mem (off B o) (slot l.W Public.aN) l.W = X)
+    (hia : word s.mem (off B o) (8 * sIfma) = off B a) (hoa : o + slot l.W 8 ≤ a)
+    (haZ : a + l.nl * l.D + 8 ≤ Z) (hp : p < l.nl) (hN : wv s.mem (off B o) (slot l.W Public.aN) l.W = X)
     (hL : ∀ j < l.L, limb l s.mem (off B a) (l.D * p + l.oY) j < 2 ^ 52)
     (hV : val52 l s.mem (off B a) (l.D * p + l.oY) < 2 * X) :
     WP isa (seqs (result l p)) s fun t =>
       wv t.mem (off B o) (slot l.W Public.aY) l.W = val52 l s.mem (off B a) (l.D * p + l.oY) % X ∧
       Frm B (shiftRanges o (resRanges l)) s.mem t.mem ∧ t.gpr .rdi = s.gpr .rdi ∧ Keep mmRegs s t := by
+  have hS8 : slot l.W 8 = 256 + 64 * (l.W + 2) := by unfold slot hdrBytes; omega_using []
   have hn := hs.nowrap
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
-  obtain ⟨hW1, hW2⟩ := W_bounds hl
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+  obtain ⟨hW1, hW2⟩ := W_boundsN hl
+  have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
   have h8 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
   have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
   have lA := slot_le (w := l.W) (show Public.aAcc < 8 by decide)
@@ -145,16 +147,16 @@ theorem result_ok (hl : LayOk l) {s : State} {B : Addr} {Z o a p X : Nat} {mx : 
   have sTN := slot_sep (w := l.W) (show Public.aTmp ≠ Public.aN by decide)
   have hA0 := hdr_lt_slot l.W Public.aAcc (show 31 < 32 by decide)
   have hH' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off B o) (8 * i)) 8 := fun i hi => by
-    rw [off_off]; exact hs.ld (by have := hdr_lt_slot l.W 8 hi; omega_using [hoa, haZ, this])
+    rw [off_off]; exact hs.ld (by have := hdr_lt_slot l.W 8 hi; omega_using [hoa, hS8, haZ, this])
   have hT8 := hdr_lt_slot l.W Public.aTmp (show 31 < 32 by decide)
   unfold result
   simp only [seqs]
   refine WP.seq (WP.mono (resBlock_ok hl hs hdi hH hia hoa haZ hp hL (by rw [hN]; exact hV))
     fun s₁ ⟨hacc, ho₁, r8, bx, r10, r12, si, k₁⟩ => ?_)
-  have hsW : Scr s₁ (off B o) (slot l.W 8) := (hs.congr k₁.2.2).sub (by omega_using [hoa, haZ]) (by omega_using [lN])
+  have hsW : Scr s₁ (off B o) (slot l.W 8) := (hs.congr k₁.2.2).sub (by omega_using [hoa, hS8, haZ]) (by omega_using [lN])
   have hN₁ : wv s₁.mem (off B o) (slot l.W Public.aN) l.W = X := by
     rw [ho₁.wv (by rcases slot_sep (w := l.W) (show Public.aAcc ≠ Public.aN by decide) with h | h <;> omega_using [h])
-      (by omega_using [hoa, haZ, hn, lN])]; exact hN
+      (by omega_using [hoa, hS8, haZ, hn, lN])]; exact hN
   refine WP.seq (WP.mono (subMod_ok hsW r8 r10 si r12 (by omega_using [hW1]) (by omega_using [hW2])
       (by omega_using [lA]) (by omega_using [lN]) (by omega_using [lT])
     (by omega_using [sAT]) (by omega_using [sTN])) fun s₂ ⟨c, lt, hbp, hlt, hD₂, ho₂, k₂⟩ => ?_)
@@ -165,7 +167,7 @@ theorem result_ok (hl : LayOk l) {s : State} {B : Addr} {Z o a p X : Nat} {mx : 
     (by omega_using [lA]) (by omega_using [lT]) (by omega_using [lY]) (by omega_using [sAY])
         (by omega_using [sTY])) fun t ⟨hv, ho₃, k₃⟩ => ?_
   have hA₂ : wv s₂.mem (off B o) (slot l.W Public.aAcc) l.W = wv s₁.mem (off B o) (slot l.W Public.aAcc) l.W :=
-    ho₂.wv (by omega_using [sAT]) (by omega_using [hoa, haZ, hn, lA])
+    ho₂.wv (by omega_using [sAT]) (by omega_using [hoa, hS8, haZ, hn, lA])
   rw [wv] at hacc
   rw [hN₁] at hD₂
   have hX := VG.Proof.Bignum.wv_lt s.mem (off B o) (slot l.W Public.aN) l.W
@@ -179,9 +181,9 @@ theorem result_ok (hl : LayOk l) {s : State} {B : Addr} {Z o a p X : Nat} {mx : 
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [hv, hA₂, hlt, ← hres]
     by_cases h : (word s₁.mem (off B o) (slot l.W Public.aAcc + 8 * l.W)).toNat < c.toNat <;> simp [h]
-  · refine (((Frm.of_outside_off ho₁ (by omega_using [hoa, haZ, hn]) (by omega_using [hoa, haZ, hn, lA])).append
-      (Frm.of_outside_off ho₂ (by omega_using [hoa, haZ, hn]) (by omega_using [hoa, haZ, hn, lT]))).append
-      (Frm.of_outside_off ho₃ (by omega_using [hoa, haZ, hn]) (by omega_using [hoa, haZ, hn, lY]))).widen fun r hr => ?_
+  · refine (((Frm.of_outside_off ho₁ (by omega_using [hoa, hS8, haZ, hn]) (by omega_using [hoa, hS8, haZ, hn, lA])).append
+      (Frm.of_outside_off ho₂ (by omega_using [hoa, hS8, haZ, hn]) (by omega_using [hoa, hS8, haZ, hn, lT]))).append
+      (Frm.of_outside_off ho₃ (by omega_using [hoa, hS8, haZ, hn]) (by omega_using [hoa, hS8, haZ, hn, lY]))).widen fun r hr => ?_
     simp only [List.mem_append, List.mem_singleton] at hr
     rcases hr with (rfl | rfl) | rfl
     · exact ⟨_, List.mem_map.mpr ⟨_, List.mem_cons_self .., rfl⟩, by simp only; omega_using []⟩
@@ -195,9 +197,9 @@ theorem result_ok (hl : LayOk l) {s : State} {B : Addr} {Z o a p X : Nat} {mx : 
 
 /-- `ifma`'s first block: the area after `q`'s workspace and table, its base
 into both primes' `sIfma`, and into `p`'s workspace. -/
-theorem ifmaHead_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq : Nat} {minv mq : BitVec 64} (hg : VG.Proof.Bignum.X86_64.Good s B Z w minv)
+theorem ifmaHead_ok (hl : AmmOk l) {s : State} {B : Addr} {Z w op oq : Nat} {minv mq : BitVec 64} (hg : VG.Proof.Bignum.X86_64.Good s B Z w minv)
     (hlo : slot w 8 ≤ op) (hpq : op + slot l.W 8 + wsTab l.W ≤ oq)
-    (haZ : oq + slot l.W 8 + wsTab l.W + 2 * l.D + 8 ≤ Z)
+    (haZ : oq + slot l.W 8 + wsTab l.W + l.nl * l.D + 8 ≤ Z)
     (hsp : word s.mem B (8 * sWsP) = off B op) (hsq : word s.mem B (8 * sWsQ) = off B oq)
     (hwsq : WsAt s.mem B oq l.W mq) :
     WP isa (.block (([.mov .rdx (.mem (hdr sWsQ))] : List Instr) ++ wsEndT ++
@@ -213,7 +215,7 @@ theorem ifmaHead_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq : Nat} {min
   have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
-  obtain ⟨hW1, hW2⟩ := W_bounds hl
+  obtain ⟨hW1, hW2⟩ := W_boundsN hl
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hs.ld (by have := hdr_lt_slot w 8 hi; omega_using [haZ, hT, hi])
   rw [WP.block_append_iff, WP.block_append_iff]

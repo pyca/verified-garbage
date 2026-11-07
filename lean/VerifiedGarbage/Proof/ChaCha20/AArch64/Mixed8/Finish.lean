@@ -18,7 +18,25 @@ open VG.Spec.ChaCha20 (stateAt innerBlock block serialize)
 
 abbrev firstR (s : State) : Region := ⟨s.gpr .x1,384⟩
 
-structure Finished (s₀ s : State) : Prop where
+/-- The source of a chunk, at `r`: `x1` itself (in place, the destination),
+or `x27` (`vg_chacha20_xor`'s chunks, whose `x1` is the destination): readable,
+apart from the state and the working space, and the destination or apart from
+it. -/
+structure SrcOK (r : Reg) (s : State) : Prop where
+  reg : r = .x1 ∨ r = .x27
+  src : ∀ d n, d + n ≤ 512 → InRegions (s.rd ++ s.wr) (s.gpr r + BitVec.ofNat 64 d) n
+  st_s : (sr s).Disjoint ⟨s.gpr r,512⟩
+  s_b : (⟨s.gpr r,512⟩ : Region).Disjoint (br s)
+  alias : s.gpr r = s.gpr .x1 ∨ (⟨s.gpr r,512⟩ : Region).Disjoint (dr s)
+
+/-- In place. -/
+theorem CP.src {s : State} (hp : CP s) : SrcOK .x1 s :=
+  ⟨.inl rfl, fun d n h => by obtain ⟨q,hq,hc⟩ := hp.data d n h; exact ⟨q,List.mem_append_right _ hq,hc⟩,
+    hp.st_d, hp.d_b, .inl rfl⟩
+
+/-- After the vector blocks' keystream is XORed with the source (at `r`)
+into the destination (at `x1`). -/
+structure FinishedFrom (r : Reg) (s₀ s : State) : Prop where
   x0 : s.gpr .x0 = s₀.gpr .x0
   x1 : s.gpr .x1 = s₀.gpr .x1
   x2 : s.gpr .x2 = s₀.gpr .x2
@@ -31,12 +49,12 @@ structure Finished (s₀ s : State) : Prop where
   buf : ∀ r : Fin 8, s.mem.read (s₀.gpr .x3 + BitVec.ofNat 64 (16 * r)) 16 =
     VG.Proof.ChaCha20.AArch64.Neon4.output (fun j => block (ctr (source s₀) (6 + j))) r
   data : ∀ k < 384, s.mem (s₀.gpr .x1 + BitVec.ofNat 64 k) =
-    s₀.mem (s₀.gpr .x1 + BitVec.ofNat 64 k) ^^^
+    s₀.mem (s₀.gpr r + BitVec.ofNat 64 k) ^^^
       (serialize (block (ctr (source s₀) (k / 64)))).getD (k % 64) 0
   frame : Frame [sr s₀,scalarBuf s₀,firstR s₀] s₀.mem s.mem
 
-theorem finish_ok {s₀ s : State} (hp : CP s₀) (h : Spilled2 s₀ s) :
-    WP isa vectorFinish s (Finished s₀) := by
+theorem finishFrom_ok (r : Reg) {s₀ s : State} (hp : CP s₀) (hs : SrcOK r s₀) (h : Spilled2 s₀ s) :
+    WP isa (vectorFinishFrom r) s (FinishedFrom r s₀) := by
   have nx20 : ¬ VG.Proof.ChaCha20.AArch64.Words .x20 := by
     rintro ⟨k,hk,he⟩
     exact (show ∀ k < 16, Reg.x20 ≠ VG.Impl.ChaCha20.AArch64.wreg k by decide) k hk he
@@ -98,7 +116,23 @@ theorem finish_ok {s₀ s : State} (hp : CP s₀) (h : Spilled2 s₀ s) :
   have hout : ∀ k : Fin 24, InRegions c.wr
       (c.gpr .x1 + BitVec.ofNat 64 (16 * k.val)) 16 := by
     intro k; rw [hwc,hcb1]; exact hp.data _ _ (by omega)
-  refine (VG.Proof.ChaCha20.AArch64.Rows6.finishBlocks_ok hvc' hout).mono fun d ⟨hd,hfd,hcd⟩ => ?_
+  have hcbr : c.gpr r = s₀.gpr r := by
+    rcases hs.reg with rfl | rfl
+    · exact hcb1
+    · rw [hbc.gpr _ (by decide),hbg _ (by decide),hag _ (by decide) (by decide) (by decide)]
+      exact h.keep _ (VG.Proof.ChaCha20.AArch64.not_words_preserved (by simp [preserved]))
+        (by decide) (by decide) (by decide)
+  have hin : ∀ k : Fin 24, InRegions (c.rd ++ c.wr)
+      (c.gpr r + BitVec.ofNat 64 (16 * k.val)) 16 := by
+    intro k; rw [hrc,hwc,hcbr]; exact hs.src _ _ (by omega)
+  have halias : c.gpr r = c.gpr .x1 ∨ (⟨c.gpr r,384⟩ : Region).Disjoint ⟨c.gpr .x1,384⟩ := by
+    rw [hcbr,hcb1]
+    rcases hs.alias with he | hd
+    · exact .inl he
+    · exact .inr ((hd.sub_left (Region.sub_prefix (by decide : 384 ≤ 512))).sub_right
+        (Region.sub_prefix (by decide : 384 ≤ 512)))
+  refine (VG.Proof.ChaCha20.AArch64.Rows6.finishBlocksFrom_ok r hvc' halias hin hout).mono
+    fun d ⟨hd,hfd,hcd⟩ => ?_
   have hfd' : Frame [firstR s₀] c.mem d.mem := by simpa only [hcb1] using hfd
   have hfc : Frame [sr s₀] s.mem c.mem := by rw [hbc.mem,← ham]; exact hfb
   have hpre : Frame [sr s₀,scalarBuf s₀] s₀.mem c.mem :=
@@ -129,13 +163,13 @@ theorem finish_ok {s₀ s : State} (hp : CP s₀) (h : Spilled2 s₀ s) :
           exact hp.st_b.symm.sub_left (Region.sub_prefix (by decide : 128 ≤ 320))) (by decide)]
     exact h.read16 r
   · intro k hk
-    rw [hcb1] at hd
-    rw [hd k hk,hpre.bytes (R := dr s₀) (by
+    rw [hcb1,hcbr] at hd
+    rw [hd k hk,hpre.bytes (R := ⟨s₀.gpr r,512⟩) (by
       intro q hq
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
       rcases hq with rfl | rfl
-      · exact hp.st_d.symm
-      · exact hp.d_b.sub_right (Region.sub_prefix (by decide : 128 ≤ 320)))
+      · exact hs.st_s.symm
+      · exact hs.s_b.sub_right (Region.sub_prefix (by decide : 128 ≤ 320)))
       (by change 512 ≤ 2 ^ 64; decide) (by change k < 512; omega)]
 
 end VG.Proof.ChaCha20.AArch64.Mixed8

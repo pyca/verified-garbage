@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
@@ -16,8 +17,7 @@ namespace VG.Proof.Ffdh.X86_64.CheckPrivate
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.Ffdh.X86_64.Domain
 
 theorem kp_verified (M : Mont) (E : CrtExpL M) (R : R2Impl M) (hE : ExpCTL E sX sXl)
-    (hmx : (VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.code M.mm E.code (.seq (.block r2Head) R.code)).allInstrs
-      (fun i => !loadsMxcsr i) = true) :
+    (hmx : ctlOk (VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.code M.mm E.code (.seq (.block r2Head) R.code)) = true) :
     Verified target (VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.code M.mm E.code (.seq (.block r2Head) R.code))
       (Spec.Ffdh.checkPrivateContract abi) := by
   exact Verified.of_correct (kp_correct M E R hmx) (kp_constantTime M E R hE) kp_implies

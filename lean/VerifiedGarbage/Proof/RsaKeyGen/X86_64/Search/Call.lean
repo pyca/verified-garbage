@@ -664,7 +664,7 @@ theorem search_candidate_run (v : RoundImpl) {p : SearchPublic} {original s : St
   have hd := sharedCandidate_depth v
   have hmc : MmCalls v.mont v.mm := ⟨v.mmOk, v.mmInline⟩
   refine WP.callF (k := sharedCandContract)
-    (sharedCode_correct v.mont hmc (Kernel.called v) (sharedCandidate_mx v))
+    (sharedCode_correct v.mont hmc (Kernel.called v) (sharedCandidate_ctl v))
     (SpSafe.of_all (sharedCandidate_sp v))
     (by change (sharedCandidateCode v).x86_64Depth + 16 < 2 ^ 64; omega) hpre
     (call_covers_reads h k.2.1 k.2.2) (call_covers_writes h k.2.2) ?_

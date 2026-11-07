@@ -5,7 +5,7 @@ import Mathlib.Tactic.NormNum.Inv
 import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86-64 -/
 
@@ -30,19 +30,17 @@ def openFeatures (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
 def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
   Spec.ChaCha20Poly1305.sealApi.artifact X86_64.target {
     suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1728 1 42
-      (Impl.ChaCha20Poly1305.X86_64.Stitch.sealFor v.callee v.poly)
-    stack := 1752
-    verified := Stitch.sealFor_framed v
-    spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.sealFor_spSafe v)
+    code := Impl.ChaCha20Poly1305.X86_64.Shared.sealCode v.callee v.poly
+    stack := 1768
+    verified := Shared.seal_verified v
+    spSafe := Shared.seal_sp v
     features := features v },
   Spec.ChaCha20Poly1305.openZeroApi.artifact X86_64.target {
     suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1728 1 42
-      (Impl.ChaCha20Poly1305.X86_64.Stitch.openFor v.callee v.poly)
-    stack := 1752
-    verified := Stitch.openFor_framed v
-    spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.openFor_spSafe v)
+    code := Impl.ChaCha20Poly1305.X86_64.Shared.openCode v.callee v.poly
+    stack := 1768
+    verified := Shared.open_verified v
+    spSafe := Shared.open_sp v
     features := openFeatures v },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact X86_64.target {
     suffix := v.suffix

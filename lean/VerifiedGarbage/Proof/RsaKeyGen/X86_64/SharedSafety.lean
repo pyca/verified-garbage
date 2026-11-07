@@ -68,6 +68,23 @@ private theorem template_instrs (p : Instr → Bool) (mul : Nat → Nat → Nat 
   repeat' rw [i_empty] at hp
   exact hp
 
+private theorem template_ctlC (mul : Nat → Nat → Nat → Prog isa) (body : Prog isa)
+    (hp : ctlC (codeWith (fun _ _ _ => .block []) (.block [])) = true)
+    (hm : ∀ o a b, ctlC (mul o a b) = true) (hb : ctlC body = true) :
+    ctlC (codeWith mul body) = true := by
+  unfold codeWith kMainWith millerRabinWith mrRoundWith montSetup at hp ⊢
+  repeat' first
+    | rw [ctlC_seqs] at *
+    | rw [ctlC_seq] at *
+    | rw [ctlC_ite] at *
+    | rw [ctlC_loop] at *
+    | rw [List.all_append] at *
+    | rw [List.all_cons] at *
+  repeat' rw [hm]
+  rw [hb]
+  repeat' rw [ctlC_empty] at hp
+  exact hp
+
 private theorem template_all (p : Instr → Bool) (mul : Nat → Nat → Nat → Prog isa) (body : Prog isa)
     (hp : (codeWith (fun _ _ _ => .block []) (.block [])).all p = true)
     (hm : ∀ o a b, (mul o a b).all p = true) (hb : body.all p = true) :
@@ -104,12 +121,17 @@ private theorem arith_sp (v : RoundImpl) (o a b : Nat) :
 def sharedCandidateCode (v : RoundImpl) : Prog isa :=
   codeWith v.mm (VG.Impl.MillerRabin.X86_64.Caller.call v.name v.code)
 
-theorem sharedCandidate_mx (v : RoundImpl) :
-    (sharedCandidateCode v).allInstrs (fun i => !loadsMxcsr i) = true := by
-  apply template_instrs _ _ _ (by decide +kernel) (arith_mx v)
-  have h : v.code.allInstrs (fun i => !loadsMxcsr i) = true := v.mxSafe
-  simp only [VG.Impl.MillerRabin.X86_64.Caller.call, Code.allInstrs, h]
-  decide +kernel
+/-- The candidate loads MXCSR only where the round restores it. -/
+theorem sharedCandidate_ctlC (v : RoundImpl) : ctlC (sharedCandidateCode v) = true := by
+  apply template_ctlC _ _ (by decide +kernel) (fun o a b => ctlC_of_noLoad (arith_mx v o a b))
+  unfold VG.Impl.MillerRabin.X86_64.Caller.call
+  rw [ctlC_seq, ctlC_seq, ctlC_call, v.ctl,
+    show ctlC (Code.block VG.Impl.MillerRabin.X86_64.Caller.save : Prog isa) = true from by decide +kernel,
+    show ctlC (Code.block VG.Impl.MillerRabin.X86_64.Caller.restore : Prog isa) = true from by decide +kernel]
+  rfl
+
+theorem sharedCandidate_ctl (v : RoundImpl) : ctlOk (sharedCandidateCode v) = true :=
+  ctlOk_of_ctlC (sharedCandidate_ctlC v)
 
 theorem sharedCandidate_sp (v : RoundImpl) :
     (sharedCandidateCode v).all (fun i => !isa.writesSp i) = true := by

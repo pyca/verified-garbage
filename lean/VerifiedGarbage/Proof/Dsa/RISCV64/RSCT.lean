@@ -39,15 +39,16 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # Randomized DSA signing on RISC-V: constant time
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/RandomSign/CT.lean`). `randomSign_ct`:
-two runs from states that satisfy `rsContract` and agree on its public
+As on PPC64LE (`Proof/Dsa/PPC64LE/RandomSign/CT.lean`). `randomSignWith_ct`:
+over a signer `S` (`Signer`), two runs from states that satisfy
+`rsContract`, with keys `S` accepts, and agree on its public
 data (the arguments, the key's public octets, and the result's status,
 octets consumed and trace) leak the same trace. The runs are followed
 together (`SameTrace`): the pieces the taint analysis checks from the
 registers both runs agree on (`st_taint`), cut after the loads whose
 results the code uses as addresses (the scan's length; `out` and `used`,
-`RSCTFin.lean`), the calls of `vg_dsa_sign`, constant time
-(`CT.sign_ct`) for the key's public octets and the call's success, which
+`RSCTFin.lean`), the calls of the signer, constant time (`Signer.ct`) for
+the key's public octets and the call's success, which
 the trace declassifies (`call_st`), and the branches on public data: q,
 the sampling decisions (`sample_st`), the attempts' statuses, with the
 callee's `u32` result zero-extended.
@@ -215,16 +216,17 @@ theorem leak_eq {s₀ w : State} (h : rsContract.pre s₀) (A : Args (rlOf s₀)
   show Spec.Dsa.publicBytesLeak _ _ (Spec.Rsa.bytesAt w.mem _ _) ++ _ = _
   rw [A.ctx.key]
 
-theorem call_st {s₁ s₂ w₁ w₂ : State} (h₁ : rsContract.pre s₁) (h₂ : rsContract.pre s₂) (eL : rlOf s₁ = rlOf s₂)
+theorem call_st (S : Signer) {s₁ s₂ w₁ w₂ : State} (h₁ : rsContract.pre s₁) (h₂ : rsContract.pre s₂)
+    (hv₁ : RandomValid S s₁) (hv₂ : RandomValid S s₂) (eL : rlOf s₁ = rlOf s₂)
     (ek : keyLeak s₁ = keyLeak s₂) (A₁ : Args (rlOf s₁) s₁ w₁) (A₂ : Args (rlOf s₂) s₂ w₂)
     (hs : Spec.Dsa.signStatus (sresOf (rlOf s₁) w₁.mem) = Spec.Dsa.signStatus (sresOf (rlOf s₂) w₂.mem)) :
-    SameTrace isa (.call "vg_dsa_sign" Impl.Dsa.RISCV64.Sign.sign) w₁ w₂ := by
-  refine SameTrace.of_relCT (RelCT.callEx (k := sContract) sign_correct CT.sign_ct
+    SameTrace isa (.call S.name S.code) w₁ w₂ := by
+  refine SameTrace.of_relCT (RelCT.callEx (k := sContractWith S.valid) S.correct S.ct
     (P := fun a b => a = w₁ ∧ b = w₂) fun _ _ ⟨e₁, e₂⟩ => ?_) ⟨rfl, rfl⟩
   subst e₁ e₂
   obtain ⟨c₁, cw₁⟩ := sign_cov h₁ A₁.ctx
   obtain ⟨c₂, cw₂⟩ := sign_cov h₂ A₂.ctx
-  refine ⟨_, _, _, _, sign_pre h₁ A₁, sign_pre h₂ A₂, ?_, c₁, cw₁, c₂, cw₂⟩
+  refine ⟨_, _, _, _, signWith_pre S h₁ hv₁ A₁, signWith_pre S h₂ hv₂ A₂, ?_, c₁, cw₁, c₂, cw₂⟩
   obtain ⟨p0, p3, p4, p5, p6, p7, p8, p9, p10, q0, q1, q2⟩ := narrow_vals A₁ (signRd (rlOf s₁)) (signWr (rlOf s₁))
   obtain ⟨r0, r3, r4, r5, r6, r7, r8, r9, r10, u0, u1, u2⟩ := narrow_vals A₂ (signRd (rlOf s₂)) (signWr (rlOf s₂))
   refine ⟨by rw [p0, r0, eL], by rw [p3, r3, eL], by rw [p4, r4, eL], by rw [p5, r5, eL], by rw [p6, r6, eL],
@@ -269,12 +271,13 @@ theorem sres_draw {s₀ t w : State} (hc : Ctx (rlOf s₀) s₀ t) (hw : w.mem =
   simp only [sresOf, inpOf]
   rw [hw, hc.key, hc.digB, hn]
 
-theorem attempt_st {s₁ s₂ x₁ x₂ : State} {a u : Nat} (h₁ : rsContract.pre s₁) (h₂ : rsContract.pre s₂)
+theorem attempt_st (S : Signer) {s₁ s₂ x₁ x₂ : State} {a u : Nat} (h₁ : rsContract.pre s₁)
+    (h₂ : rsContract.pre s₂) (hv₁ : RandomValid S s₁) (hv₂ : RandomValid S s₂)
     (eL : rlOf s₁ = rlOf s₂) (ek : keyLeak s₁ = keyLeak s₂) (hq : 1 < qOf s₁) (A₁ : AttInv s₁ a u x₁)
     (A₂ : AttInv s₂ a u x₂)
     (ht : (randomSignRemaining (inpOf (rlOf s₁) s₁.mem) u a).trace =
       (randomSignRemaining (inpOf (rlOf s₂) s₂.mem) u a).trace) :
-    SameTrace isa attempt x₁ x₂ := by
+    SameTrace isa (attempt S.name S.code) x₁ x₂ := by
   have eq := qb_eq h₁ eL ek
   have hL₁ := rlOf_ok h₁
   have hL₂ := rlOf_ok h₂
@@ -344,7 +347,7 @@ theorem attempt_st {s₁ s₂ x₁ x₂ : State} {a u : Nat} (h₁ : rsContract.
       SampleOut (eOf s₀) (randOf (rlOf s₀) s₀.mem) u S x y → Keep [.a0] y z → Keep argRegs' z w →
       w.gpr .s6 = BitVec.ofNat 64 (a' + 1) := fun A so k kw =>
     (kw.gpr (by decide)).trans ((k.gpr (by decide)).trans ((so.keep.gpr (by decide)).trans A.s6))
-  refine SameTrace.seq (call_st h₁ h₂ eL ek A₁' A₂' hs) (sign_ok h₁ A₁') (sign_ok h₂ A₂') fun v₁ v₂ S₁ S₂ => ?_
+  refine SameTrace.seq (call_st S h₁ h₂ hv₁ hv₂ eL ek A₁' A₂' hs) (sign_ok S h₁ hv₁ A₁') (sign_ok S h₂ hv₂ A₂') fun v₁ v₂ S₁ S₂ => ?_
   exact callFinish_st (by rw [S₁.ctx.sp, S₂.ctx.sp, eL])
     (by rw [S₁.pres _ (by decide), S₂.pres _ (by decide), w6 A₁ so₁ k1 kw₁, w6 A₂ so₂ k2 kw₂]) S₁.a0 S₂.a0 hs
 
@@ -377,17 +380,18 @@ theorem draw_agree {s₁ s₂ : State} {u fuel : Nat} (h₁ : rsContract.pre s�
   have := VG.Proof.Dsa.Random.sample_trace_agree tS
   rwa [dq₁, ← eQ, dq₂] at this
 
-theorem attempts_st {s₁ s₂ : State} (h₁ : rsContract.pre s₁) (h₂ : rsContract.pre s₂) (eL : rlOf s₁ = rlOf s₂)
+theorem attempts_st (S : Signer) {s₁ s₂ : State} (h₁ : rsContract.pre s₁) (h₂ : rsContract.pre s₂)
+    (hv₁ : RandomValid S s₁) (hv₂ : RandomValid S s₂) (eL : rlOf s₁ = rlOf s₂)
     (ek : keyLeak s₁ = keyLeak s₂) (hq : 1 < qOf s₁) {n : Nat} {x₁ x₂ : State} (hi : AI s₁ s₂ n x₁ x₂) :
-    SameTrace isa attempts x₁ x₂ := by
+    SameTrace isa (attempts S.name S.code) x₁ x₂ := by
   have hq₂ : 1 < qOf s₂ := (same_q eL (qb_eq h₁ eL ek)).1 ▸ hq
   unfold attempts
   refine st_loop (AI s₁ s₂) (fun n x₁ x₂ ⟨u, A₁, A₂, ht⟩ => ?_) hi
   have xsp : x₁.sp = x₂.sp := by rw [A₁.sc.ctx.sp, A₂.sc.ctx.sp, eL]
-  refine ⟨SameTrace.seq (attempt_st h₁ h₂ eL ek hq A₁ A₂ ht) (WP.of_seq (attempt_ok h₁ hq A₁))
-    (WP.of_seq (attempt_ok h₂ hq₂ A₂)) fun y₁ y₂ e₁ e₂ => by
-      exact st_taint [] (by rw [e₁, e₂, xsp]) trivial (by taint_decide), _, _, attempt_ok h₁ hq A₁,
-    attempt_ok h₂ hq₂ A₂, fun t₁ t₂ ⟨ev₁, _, c₁⟩ ⟨ev₂, _, c₂⟩ => ?_⟩
+  refine ⟨SameTrace.seq (attempt_st S h₁ h₂ hv₁ hv₂ eL ek hq A₁ A₂ ht) (WP.of_seq (attempt_ok S h₁ hv₁ hq A₁))
+    (WP.of_seq (attempt_ok S h₂ hv₂ hq₂ A₂)) fun y₁ y₂ e₁ e₂ => by
+      exact st_taint [] (by rw [e₁, e₂, xsp]) trivial (by taint_decide), _, _, attempt_ok S h₁ hv₁ hq A₁,
+    attempt_ok S h₂ hv₂ hq₂ A₂, fun t₁ t₂ ⟨ev₁, _, c₁⟩ ⟨ev₂, _, c₂⟩ => ?_⟩
   obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by have := A₁.ha1; omega⟩
   obtain ⟨eU, eS, eSt⟩ := draw_agree h₁ h₂ eL ek ht
   have hst := VG.Proof.Dsa.random_sign_attempt_status_agree ht eS eSt
@@ -418,15 +422,17 @@ theorem att_init {s₀ t₁ t₂ : State} (h : rsContract.pre s₀) (hq : 1 < qO
   have e2 : (eOf s₀).ql = (rlOf s₀).ql := rfl
   exact he.nonce j (by omega)
 
-theorem randomSign_ct : ConstantTime isa rsContract.pre rsContract.pub Impl.Dsa.RISCV64.RandomSign.code := by
-  refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ hp => ?_
+theorem randomSignWith_ct (S : Signer) :
+    ConstantTime isa (fun s => rsContract.pre s ∧ RandomValid S s) rsContract.pub
+      (Impl.Dsa.RISCV64.RandomSign.codeWith S.name S.code) := by
+  refine SameTrace.constantTime fun s₁ s₂ ⟨h₁, hv₁⟩ ⟨h₂, hv₂⟩ hp => ?_
   obtain ⟨eL, ek, est, etr⟩ := pub_facts h₁ h₂ hp
   have eq := qb_eq h₁ eL ek
   obtain ⟨eQ, -⟩ := same_q eL eq
   have hL₁ := rlOf_ok h₁
   have hL₂ := rlOf_ok h₂
   have hsp : s₁.sp = s₂.sp := hp.1
-  unfold Impl.Dsa.RISCV64.RandomSign.code
+  unfold Impl.Dsa.RISCV64.RandomSign.codeWith
   refine st_alloc ?_
   unfold Impl.Dsa.RISCV64.RandomSign.body
   refine SameTrace.seq (st_taint [] (by simp only [allocd, hsp]) trivial (by taint_decide))
@@ -452,8 +458,8 @@ theorem randomSign_ct : ConstantTime isa rsContract.pre rsContract.pub Impl.Dsa.
     have hq₂ : 1 < qOf s₂ := eQ ▸ hc
     have i₁ := att_init h₁ hc E₁ sc₁ m₁ k₁
     have i₂ := att_init h₂ hq₂ E₂ sc₂ m₂ k₂
-    exact SameTrace.seq (attempts_st h₁ h₂ eL ek hc ⟨0, i₁, i₂, etr⟩) (attempts_ok h₁ hc 8 0 u₁ i₁)
-      (attempts_ok h₂ hq₂ 8 0 u₂ i₂) fun x₁ x₂ o₁ o₂ =>
+    exact SameTrace.seq (attempts_st S h₁ h₂ hv₁ hv₂ eL ek hc ⟨0, i₁, i₂, etr⟩) (attempts_ok S h₁ hv₁ hc 8 0 u₁ i₁)
+      (attempts_ok S h₂ hv₂ hq₂ 8 0 u₂ i₂) fun x₁ x₂ o₁ o₂ =>
         finish_st h₁ h₂ eL o₁.sc.ctx o₂.sc.ctx o₁.s10 (o₂.s10.trans (by rw [est]))
 
 end VG.Proof.Dsa.RISCV64.RS

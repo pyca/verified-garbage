@@ -346,14 +346,15 @@ theorem rest_ok (sve : Bool) {s₀ s w₀ u : State} (hp : APre false s₀) {key
   refine (Short.xorKsAt_ok hp (o := P) (n := r) hr₂ (by omega_arith) x21₆ (by rw [x22₆, x24₅])
     (by rw [x23₆, x25₅]) rd₆' wr₆').mono fun s₇ ⟨k₇, d₇, f₇, g₇⟩ => fun vw spw => ?_
   -- Registers.
-  have g₇' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13) :
+  have g₇' (r : Reg) (h : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x15) :
       s₇.gpr r = s₆.gpr r :=
-    have ⟨h9, h10, h11, h12, h13⟩ := h
-    g₇ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13⟩)
-  have to₄ (r : Reg) (h : r ∈ preserved ∧ r ≠ .x30 ∧ r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x22 ∧ r ≠ .x23) :
+    have ⟨h9, h10, h11, h12, h13, h15⟩ := h
+    g₇ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h9, h10, h11, h12, h13, h15⟩)
+  have to₄ (r : Reg) (h : r ∈ preserved ∧ r ≠ .x30 ∧ r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧
+      r ≠ .x15 ∧ r ≠ .x22 ∧ r ≠ .x23) :
       s₇.gpr r = s₄.gpr r := by
-    obtain ⟨hr, h30, h9, h10, h11, h12, h13, h22, h23⟩ := h
-    rw [g₇' r ⟨h9, h10, h11, h12, h13⟩, g₆ r h22 h23, k₅.cs r hr h30]
+    obtain ⟨hr, h30, h9, h10, h11, h12, h13, h15, h22, h23⟩ := h
+    rw [g₇' r ⟨h9, h10, h11, h12, h13, h15⟩, g₆ r h22 h23, k₅.cs r hr h30]
   have r32 (d : Nat) (hd : d = 32 ∨ d = 40) :
       s₃.mem.readW (off (cx s₀) d) 64 = s₂.mem.readW (off (cx s₀) d) 64 :=
     f₃.readW (r := sub s₀ d 8) (Region.contains_self _ _) (fun r hr => by

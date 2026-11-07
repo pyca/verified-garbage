@@ -191,3 +191,94 @@ j 21f
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
+
+/// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Ctr.aesFinalContract`. Constant time: only the pointers, `rounds`, `len` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes, and aligned for `u64`.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `ctr`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_ctr_final(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 2, 0x715d
+.insn 2, 0x880a
+.insn 4, 0x00183023
+.insn 4, 0x00983423
+.insn 4, 0x01283823
+.insn 4, 0x01383c23
+.insn 4, 0x03483023
+.insn 4, 0x03583423
+.insn 4, 0x03683823
+.insn 4, 0x03783c23
+.insn 2, 0x84aa
+.insn 2, 0x8a2e
+.insn 2, 0x8ab2
+.insn 2, 0x8b3e
+.insn 2, 0x8bc2
+.insn 4, 0x00475293
+.insn 4, 0x00429313
+.insn 4, 0x00668933
+.insn 4, 0x406709b3
+.insn 2, 0x8716
+call {vg_aes_ctr}
+beqz s3, 20f
+.insn 2, 0x4281
+.insn 4, 0x045bb023
+.insn 4, 0x045bb423
+.insn 2, 0x8526
+.insn 2, 0x85d2
+.insn 2, 0x8656
+.insn 4, 0x040b8693
+.insn 2, 0x4705
+.insn 2, 0x87da
+call {vg_aes_ctr}
+.insn 4, 0x040b8393
+22:
+.insn 4, 0x00094283
+.insn 4, 0x0003c303
+.insn 4, 0x0062c2b3
+.insn 4, 0x00590023
+.insn 2, 0x0905
+.insn 2, 0x0385
+.insn 2, 0x19fd
+bnez s3, 22b
+j 21f
+20:
+21:
+.insn 4, 0x000bb083
+.insn 4, 0x008bb483
+.insn 4, 0x010bb903
+.insn 4, 0x018bb983
+.insn 4, 0x020bba03
+.insn 4, 0x028bba83
+.insn 4, 0x030bbb03
+.insn 4, 0x038bbb83
+.insn 2, 0x8f0a
+.insn 2, 0x4f81
+.insn 4, 0x01ff3023
+.insn 4, 0x01ff3423
+.insn 4, 0x01ff3823
+.insn 4, 0x01ff3c23
+.insn 4, 0x03ff3023
+.insn 4, 0x03ff3423
+.insn 4, 0x03ff3823
+.insn 4, 0x03ff3c23
+.insn 4, 0x05ff3023
+.insn 4, 0x05ff3423
+.insn 2, 0x6161
+.insn 2, 0x8082
+.option pop",
+        vg_aes_ctr = sym super::aes_ctr::vg_aes_ctr,
+    )
+}

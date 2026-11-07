@@ -84,10 +84,11 @@ def next : List Instr := counter 5 ++
 
 def body : Prog isa := .seq (chunk false) (.block next)
 
+/-- The stream in place (`Small.xor`'s destination, `x4`, set to `x1`). -/
 def xor : Prog isa :=
   .seq (.block check)
   (.seq (.ite (.nonzero .x .x5) (.block [])
     (.seq (.block enter) (.seq (.loop body (.zero .x .x5)) (.block leave))))
-    VG.Impl.ChaCha20.AArch64.Small.xor)
+    (.seq (.block [.addImm .x .x4 .x1 0]) VG.Impl.ChaCha20.AArch64.Small.xor))
 
 end VG.Impl.ChaCha20.AArch64.Mixed5

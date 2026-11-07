@@ -32,10 +32,10 @@ def pairTrace (p : Addr) (pairs : Nat) : List Leak :=
   (List.range pairs).flatMap fun k =>
     [.addr (p + BitVec.ofNat 64 (16 * k)), .addr (p + BitVec.ofNat 64 (16 * k) + 8)]
 
-/-- The trace of `wipePairChunks pairs` from a state whose stack pointer is `sp`. -/
-def chunksTrace (sp : Addr) (pairs : Nat) : List Leak :=
-  (List.range (pairs / 32)).flatMap (fun j => pairTrace (sp + BitVec.ofNat 64 (512 * j)) 32) ++
-    if pairs % 32 = 0 then [] else pairTrace (sp + BitVec.ofNat 64 (512 * (pairs / 32))) (pairs % 32)
+/-- The trace of `wipePairChunks o pairs` from a state whose stack pointer is `sp`. -/
+def chunksTrace (sp : Addr) (o pairs : Nat) : List Leak :=
+  (List.range (pairs / 32)).flatMap (fun j => pairTrace (sp + BitVec.ofNat 64 (o + 512 * j)) 32) ++
+    if pairs % 32 = 0 then [] else pairTrace (sp + BitVec.ofNat 64 (o + 512 * (pairs / 32))) (pairs % 32)
 
 theorem wipePairStores_succ (w : Nat) :
     wipePairStores (w + 1) = wipePairStores w ++ ([.stp .x17 .x17 .x16 (16 * w)] : List Instr) := by
@@ -73,16 +73,18 @@ theorem wipePairStores_run (R : Region) (u : State) (hR : R ∈ u.wr) : ∀ pair
       pairTrace, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       State.read, Size.bits]
 
-/-- Chunk `j` of the wipe from `u`: `x16` set to `sp + 512 j`, and memory
-changed only in `R`. -/
-theorem wipePairChunk_run (R : Region) (u : State) (hR : R ∈ u.wr) (j pairs : Nat)
-    (hj : 512 * j < 4096) (hp : pairs ≤ 32) (hc : PairsIn R (u.sp + BitVec.ofNat 64 (512 * j)) (2 * pairs)) :
-    ∃ m', execBlock isa (wipePairChunk j pairs) u =
-        some ({ u.write .x .x16 (u.sp + BitVec.ofNat 64 (512 * j)) with mem := m' },
-          pairTrace (u.sp + BitVec.ofNat 64 (512 * j)) pairs) ∧ Frame [R] u.mem m' := by
-  have h16 : (u.write .x .x16 (u.sp + BitVec.ofNat 64 (512 * j))).gpr .x16 = u.sp + BitVec.ofNat 64 (512 * j) := by
+/-- Chunk `j` of the wipe from `u`: `x16` set to `sp + o + 512 j`, and
+memory changed only in `R`. -/
+theorem wipePairChunk_run (R : Region) (u : State) (hR : R ∈ u.wr) (o j pairs : Nat)
+    (hj : o + 512 * j < 4096) (hp : pairs ≤ 32)
+    (hc : PairsIn R (u.sp + BitVec.ofNat 64 (o + 512 * j)) (2 * pairs)) :
+    ∃ m', execBlock isa (wipePairChunk o j pairs) u =
+        some ({ u.write .x .x16 (u.sp + BitVec.ofNat 64 (o + 512 * j)) with mem := m' },
+          pairTrace (u.sp + BitVec.ofNat 64 (o + 512 * j)) pairs) ∧ Frame [R] u.mem m' := by
+  have h16 : (u.write .x .x16 (u.sp + BitVec.ofNat 64 (o + 512 * j))).gpr .x16 =
+      u.sp + BitVec.ofNat 64 (o + 512 * j) := by
     simp [State.write]
-  obtain ⟨m', he, hf⟩ := wipePairStores_run R (u.write .x .x16 (u.sp + BitVec.ofNat 64 (512 * j)))
+  obtain ⟨m', he, hf⟩ := wipePairStores_run R (u.write .x .x16 (u.sp + BitVec.ofNat 64 (o + 512 * j)))
     (by simpa [State.write]) pairs hp (by rw [h16]; exact hc)
   refine ⟨m', ?_, by simpa [State.write] using hf⟩
   simp only [wipePairChunk, execBlock, isa, exec, hj, ↓reduceIte]
@@ -96,32 +98,33 @@ def Wiped (u u' : State) : Prop :=
 theorem Wiped.refl (u : State) : Wiped u u := ⟨u.gpr, u.mem, rfl, fun _ _ _ => rfl⟩
 
 /-- The chunks of the wipe from a state `u` that may write `R`, which holds
-the `2 * pairs` doublewords at `sp`: memory changes only in `R`, and the
+the `2 * pairs` doublewords at `sp + o`: memory changes only in `R`, and the
 trace is that of the stack pointer. -/
-theorem wipePairChunks_run (R : Region) (u : State) (hR : R ∈ u.wr) (pairs : Nat) (hp : pairs ≤ 256)
-    (hc : PairsIn R u.sp (2 * pairs)) :
-    ∃ u', execBlock isa (wipePairChunks pairs) u = some (u', chunksTrace u.sp pairs) ∧
+theorem wipePairChunks_run (R : Region) (u : State) (hR : R ∈ u.wr) (o pairs : Nat)
+    (hp : o + 16 * pairs ≤ 4096) (hc : ∀ i < 2 * pairs, R.Contains (u.sp + BitVec.ofNat 64 (o + 8 * i)) 8) :
+    ∃ u', execBlock isa (wipePairChunks o pairs) u = some (u', chunksTrace u.sp o pairs) ∧
       Wiped u u' ∧ Frame [R] u.mem u'.mem := by
-  -- The pairs of chunk `j`, of `q` pairs, are among those at `sp`.
-  have hchunk : ∀ j q, 32 * j + q ≤ pairs → PairsIn R (u.sp + BitVec.ofNat 64 (512 * j)) (2 * q) :=
+  -- The pairs of chunk `j`, of `q` pairs, are among those at `sp + o`.
+  have hchunk : ∀ j q, 32 * j + q ≤ pairs → PairsIn R (u.sp + BitVec.ofNat 64 (o + 512 * j)) (2 * q) :=
     fun j q hq i hi => by
-      rw [Offset.add_add_eq _ (c := 8 * (64 * j + i)) (by omega_using [])]
+      rw [Offset.add_add_eq _ (c := o + 8 * (64 * j + i)) (by omega_using [])]
       exact hc _ (by omega_using [hq, hi])
   -- Any state with `u`'s stack pointer and regions runs chunk `j` the same way.
   have hstep : ∀ (v : State) (j q : Nat), Wiped u v → Frame [R] u.mem v.mem → 32 * j + q ≤ pairs → 0 < q →
       q ≤ 32 →
-      ∃ v', execBlock isa (wipePairChunk j q) v = some (v', pairTrace (u.sp + BitVec.ofNat 64 (512 * j)) q) ∧
+      ∃ v', execBlock isa (wipePairChunk o j q) v =
+          some (v', pairTrace (u.sp + BitVec.ofNat 64 (o + 512 * j)) q) ∧
         Wiped u v' ∧ Frame [R] u.mem v'.mem := by
     rintro v j q ⟨g, m, rfl, hg⟩ hf hq hq0 hq32
-    obtain ⟨m', he, hf'⟩ := wipePairChunk_run R { u with gpr := g, mem := m } hR j q
+    obtain ⟨m', he, hf'⟩ := wipePairChunk_run R { u with gpr := g, mem := m } hR o j q
       (by omega_using [hq, hp, hq0]) hq32 (hchunk j q hq)
     refine ⟨_, he, ⟨_, m', rfl, fun r h₁ h₂ => ?_⟩, fun a ha => (hf' a ha).trans (hf a ha)⟩
     simp only [State.write, h₁, ↓reduceIte]
     exact hg r h₁ h₂
   -- The full chunks, by induction.
   have hfull : ∀ n, n ≤ pairs / 32 →
-      ∃ v, execBlock isa ((List.range n).flatMap fun j => wipePairChunk j 32) u =
-          some (v, (List.range n).flatMap fun j => pairTrace (u.sp + BitVec.ofNat 64 (512 * j)) 32) ∧
+      ∃ v, execBlock isa ((List.range n).flatMap fun j => wipePairChunk o j 32) u =
+          some (v, (List.range n).flatMap fun j => pairTrace (u.sp + BitVec.ofNat 64 (o + 512 * j)) 32) ∧
         Wiped u v ∧ Frame [R] u.mem v.mem := by
     intro n
     induction n with
@@ -147,44 +150,57 @@ theorem wipePairChunks_run (R : Region) (u : State) (hR : R ∈ u.wr) (pairs : N
     simp only [h0, ↓reduceIte, Option.bind_some, he', Option.map_some]
     exact ⟨v', rfl, hw', hf'⟩
 
-/-- The trace of `wipe words` from a state whose stack pointer is `sp`. -/
-def wipeTrace (sp : Addr) (words : Nat) : List Leak :=
-  chunksTrace sp (words / 2) ++
-    if words % 2 = 0 then [] else [.addr (sp + BitVec.ofNat 64 (8 * (words - 1)))]
+/-- The trace of `wipeAt o words` from a state whose stack pointer is `sp`. -/
+def wipeTraceAt (sp : Addr) (o words : Nat) : List Leak :=
+  chunksTrace sp o (words / 2) ++
+    if words % 2 = 0 then [] else [.addr (sp + BitVec.ofNat 64 (o + 8 * (words - 1)))]
 
-/-- `wipe words` from `u`, with the `words` doublewords at `sp` in the region
-`R`, which `u` may write: it writes only `x16` and `x17`, changes memory only
-in `R`, and leaves a trace of the stack pointer alone. -/
-theorem wipe_run (R : Region) (u : State) (words : Nat) (hR : R ∈ u.wr) (hwb : 8 * words ≤ 4096)
-    (hc : ∀ k < words, R.Contains (u.sp + BitVec.ofNat 64 (8 * k)) 8) :
-    ∃ u', execBlock isa (wipe words) u = some (u', wipeTrace u.sp words) ∧
+/-- The trace of `wipe words`. -/
+abbrev wipeTrace (sp : Addr) (words : Nat) : List Leak := wipeTraceAt sp 0 words
+
+/-- `wipeAt o words` from `u`, with the `words` doublewords at `sp + o` in the
+region `R`, which `u` may write: it writes only `x16` and `x17`, changes
+memory only in `R`, and leaves a trace of the stack pointer alone. -/
+theorem wipeAt_run (R : Region) (u : State) (o words : Nat) (hR : R ∈ u.wr) (ho : o % 8 = 0)
+    (hwb : o + 8 * words ≤ 4096)
+    (hc : ∀ k < words, R.Contains (u.sp + BitVec.ofNat 64 (o + 8 * k)) 8) :
+    ∃ u', execBlock isa (wipeAt o words) u = some (u', wipeTraceAt u.sp o words) ∧
       Wiped u u' ∧ Frame [R] u.mem u'.mem := by
   obtain ⟨u', he, ⟨g, m', rfl, hg⟩, hf⟩ := wipePairChunks_run R
-    (u.write .x .x17 ((0 : BitVec 16).setWidth 64 <<< (16 * 0))) (by simpa [State.write]) (words / 2)
+    (u.write .x .x17 ((0 : BitVec 16).setWidth 64 <<< (16 * 0))) (by simpa [State.write]) o (words / 2)
     (by omega_using [hwb]) (by simpa [State.write] using fun i hi => hc i (by omega_using [hi]))
   by_cases h0 : words % 2 = 0
   · refine ⟨_, ?_, ⟨g, m', rfl, fun q h₁ h₂ => ?_⟩, hf⟩
-    · simp only [wipe, h0, ↓reduceIte, List.append_nil, execBlock, isa, exec,
+    · simp only [wipeAt, h0, ↓reduceIte, List.append_nil, execBlock, isa, exec,
         show 16 * 0 < Size.bits .x by decide]
       rw [he]
-      simp [addrs, State.write, wipeTrace, h0]
+      simp [addrs, State.write, wipeTraceAt, h0]
     · rw [hg q h₁ h₂]; simp [State.write, h₂]
-  · have hk : R.Contains (u.sp + BitVec.ofNat 64 (8 * (words - 1))) 8 := hc _ (by omega_using [h0])
-    have hin : InRegions u.wr (u.sp + BitVec.ofNat 64 (8 * (words - 1))) 8 := ⟨R, hR, hk⟩
-    have hoff : 8 * (words - 1) % 8 = 0 ∧ 8 * (words - 1) < 32768 :=
-      ⟨by omega_using [], by omega_using [hwb]⟩
-    refine ⟨_, ?_, ⟨g, m'.write (u.sp + BitVec.ofNat 64 (8 * (words - 1))) 8 ((g .x17).setWidth 64), rfl,
+  · have hk : R.Contains (u.sp + BitVec.ofNat 64 (o + 8 * (words - 1))) 8 := hc _ (by omega_using [h0])
+    have hin : InRegions u.wr (u.sp + BitVec.ofNat 64 (o + 8 * (words - 1))) 8 := ⟨R, hR, hk⟩
+    have hoff : (o + 8 * (words - 1)) % 8 = 0 ∧ o + 8 * (words - 1) < 32768 :=
+      ⟨by omega_using [ho], by omega_using [hwb]⟩
+    refine ⟨_, ?_, ⟨g, m'.write (u.sp + BitVec.ofNat 64 (o + 8 * (words - 1))) 8 ((g .x17).setWidth 64), rfl,
       fun q h₁ h₂ => ?_⟩, hf.write (List.mem_singleton_self _) _ hk⟩
     · have hm : isa.exec (.movz .x .x17 0 0) u = some (u.write .x .x17 ((0 : BitVec 16).setWidth 64 <<< (16 * 0))) := by
         simp [isa, exec]
-      rw [show wipe words = .movz .x .x17 0 0 ::
-          (wipePairChunks (words / 2) ++ ([.strSp .x17 (8 * (words - 1))] : List Instr)) by simp [wipe, h0],
+      rw [show wipeAt o words = .movz .x .x17 0 0 ::
+          (wipePairChunks o (words / 2) ++ ([.strSp .x17 (o + 8 * (words - 1))] : List Instr)) by
+            simp [wipeAt, h0],
         execBlock, hm]
       simp only []
       rw [execBlock_append, he]
       simp only [Option.bind_some, execBlock]
-      simp [exec, addrs, State.write, State.store, State.read, wipeTrace, h0, hoff, hin]
+      simp [exec, addrs, State.write, State.store, State.read, wipeTraceAt, h0, hoff, hin]
     · rw [hg q h₁ h₂]; simp [State.write, h₂]
+
+/-- `wipe words` from `u`, with the `words` doublewords at `sp` in `R`
+(`wipeAt_run`). -/
+theorem wipe_run (R : Region) (u : State) (words : Nat) (hR : R ∈ u.wr) (hwb : 8 * words ≤ 4096)
+    (hc : ∀ k < words, R.Contains (u.sp + BitVec.ofNat 64 (8 * k)) 8) :
+    ∃ u', execBlock isa (wipe words) u = some (u', wipeTrace u.sp words) ∧
+      Wiped u u' ∧ Frame [R] u.mem u'.mem :=
+  wipeAt_run R u 0 words hR rfl (by omega_using [hwb]) fun k hk => by rw [Nat.zero_add]; exact hc k hk
 
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}

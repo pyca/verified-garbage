@@ -1,4 +1,16 @@
 module
+
+import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
+meta import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
+
+import VerifiedGarbage.Impl.MlKem.X86.Basic
+meta import VerifiedGarbage.Impl.MlKem.X86.Basic
+
+import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.Framework.Semantics
+
+import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inst
 public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Inst
 public import VerifiedGarbage.Impl.MlDsa.X86.Sign.Entry
@@ -205,16 +217,42 @@ theorem verifyPrepared_sat {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p
       | exact Region.disjoint_of_sep (by decide +kernel)
       | decide +kernel
 
+private theorem noSp_all {f : Prog isa} (h : NoSp f) :
+    f.allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+  rw [Code.allInstrs_eq, List.all_eq_true]
+  intro i hi
+  simp only [h i hi, Bool.not_false]
+
+-- Check the wrapper once without re-evaluating its verified callee.
+private theorem entryBody_all {q : Instr → Bool} {f : Prog isa}
+    (hf : f.allInstrs q = true) (p : Params) (pre : Prog isa) (n : String) :
+    (VG.Impl.MlDsa.X86.Sign.entryBody p pre n f).allInstrs q =
+      (VG.Impl.MlDsa.X86.Sign.entryBody p pre n (.block [])).allInstrs q := by
+  simp only [VG.Impl.MlDsa.X86.Sign.entryBody, VG.Impl.MlDsa.X86.KeyGen.callPR,
+    VG.Impl.MlKem.X86.callRet, Code.allInstrs, hf]
+
+private theorem signEntry_all {q : Instr → Bool} {f : Prog isa}
+    (hf : f.allInstrs q = true) (p : Params) (n : String) :
+    (signEntry p n f).allInstrs q = (signEntry p n (.block [])).allInstrs q := by
+  simp only [signEntry, VG.Impl.MlKem.X86.leaf, Code.allInstrs, entryBody_all hf]
+
+private theorem signPrepared_all {q : Instr → Bool} {f : Prog isa}
+    (hf : f.allInstrs q = true) (p : Params) (n : String) :
+    (signPrepared p n f).allInstrs q = (signPrepared p n (.block [])).allInstrs q := by
+  simp only [signPrepared, VG.Impl.MlKem.X86.leaf, Code.allInstrs, entryBody_all hf]
+
 /-! ## ML-DSA-44 -/
 
+private theorem core44_noSp : NoSp (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa44) := NoSp.of_all (by lit_decide)
+
 theorem sign44_verified : Verified X86.target (signEntry mlDsa44 (Impl.MlDsa.X86.Sign.coreName "mldsa44") (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa44)) (signContract mlDsa44 X86.abi 136) :=
-  SignEntry.entry_verified (.inl rfl) Sign.signCore44_verified (NoSp.of_all (by lit_decide)) (by lit_decide)
-    (by native_taint_decide) (NoSp.of_all (by lit_decide))
+  SignEntry.entry_verified (.inl rfl) Sign.signCore44_verified core44_noSp (by lit_decide)
+    (by native_taint_decide) (NoSp.of_all (by rw [entryBody_all (noSp_all core44_noSp)]; lit_decide))
 
 theorem signPrepared44_verified :
     Verified X86.target (signPrepared mlDsa44 (Impl.MlDsa.X86.Sign.coreName "mldsa44") (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa44)) (Proof.MlDsa.preparedSignContract mlDsa44 X86.abi 136) :=
-  SignEntry.prepared_verified (.inl rfl) Sign.signCore44_verified (NoSp.of_all (by lit_decide)) (by lit_decide)
-    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (NoSp.of_all (by lit_decide))
+  SignEntry.prepared_verified (.inl rfl) Sign.signCore44_verified core44_noSp (by lit_decide)
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (NoSp.of_all (by rw [entryBody_all (noSp_all core44_noSp)]; lit_decide))
     (PreparedKey.prepared_sign_sat Verify.prims_ok (.inl rfl))
 
 theorem verify44_verified : Verified X86.target Impl.MlDsa.X86.Verify.verify44 (verifyContract mlDsa44 X86.abi 136) :=
@@ -227,9 +265,9 @@ theorem verifyPrepared44_verified :
     (by native_taint_decide) (NoSp.of_all (by lit_decide)) (PreparedKey.prepared_verify_sat Verify.prims_ok (.inl rfl))
 
 theorem sign44Fn : SignFn mlDsa44 (plainKey mlDsa44.skLen) (signEntry mlDsa44 (Impl.MlDsa.X86.Sign.coreName "mldsa44") (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa44)) :=
-  ⟨by rw [← signContract_eq]; exact sign44_verified, NoSp.of_all (by lit_decide), by lit_decide⟩
+  ⟨by rw [← signContract_eq]; exact sign44_verified, NoSp.of_all (by rw [signEntry_all (noSp_all core44_noSp)]; lit_decide), by lit_decide⟩
 theorem signPrepared44Fn : SignFn mlDsa44 (secretKey mlDsa44) (signPrepared mlDsa44 (Impl.MlDsa.X86.Sign.coreName "mldsa44") (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa44)) :=
-  ⟨by rw [← preparedSignContract_eq]; exact signPrepared44_verified, NoSp.of_all (by lit_decide), by lit_decide⟩
+  ⟨by rw [← preparedSignContract_eq]; exact signPrepared44_verified, NoSp.of_all (by rw [signPrepared_all (noSp_all core44_noSp)]; lit_decide), by lit_decide⟩
 theorem verify44Fn : VerifyFn mlDsa44 (plainKey mlDsa44.pkLen) Impl.MlDsa.X86.Verify.verify44 :=
   ⟨by rw [← verifyContract_eq]; exact verify44_verified, NoSp.of_all (by lit_decide), by lit_decide⟩
 theorem verifyPrepared44Fn : VerifyFn mlDsa44 (publicKey mlDsa44) (verifyPreparedOf mlDsa44 "mldsa44") :=
@@ -262,14 +300,16 @@ theorem verifyMessagePrepared44_verified :
 
 /-! ## ML-DSA-65 -/
 
+private theorem core65_noSp : NoSp (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa65) := NoSp.of_all (by lit_decide)
+
 theorem sign65_verified : Verified X86.target (signEntry mlDsa65 (Impl.MlDsa.X86.Sign.coreName "mldsa65") (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa65)) (signContract mlDsa65 X86.abi 136) :=
-  SignEntry.entry_verified (.inr (.inl rfl)) Sign.signCore65_verified (NoSp.of_all (by lit_decide)) (by lit_decide)
-    (by native_taint_decide) (NoSp.of_all (by lit_decide))
+  SignEntry.entry_verified (.inr (.inl rfl)) Sign.signCore65_verified core65_noSp (by lit_decide)
+    (by native_taint_decide) (NoSp.of_all (by rw [entryBody_all (noSp_all core65_noSp)]; lit_decide))
 
 theorem signPrepared65_verified :
     Verified X86.target (signPrepared mlDsa65 (Impl.MlDsa.X86.Sign.coreName "mldsa65") (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa65)) (Proof.MlDsa.preparedSignContract mlDsa65 X86.abi 136) :=
-  SignEntry.prepared_verified (.inr (.inl rfl)) Sign.signCore65_verified (NoSp.of_all (by lit_decide)) (by lit_decide)
-    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (NoSp.of_all (by lit_decide))
+  SignEntry.prepared_verified (.inr (.inl rfl)) Sign.signCore65_verified core65_noSp (by lit_decide)
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (NoSp.of_all (by rw [entryBody_all (noSp_all core65_noSp)]; lit_decide))
     (PreparedKey.prepared_sign_sat Verify.prims_ok (.inr (.inl rfl)))
 
 theorem verify65_verified : Verified X86.target Impl.MlDsa.X86.Verify.verify65 (verifyContract mlDsa65 X86.abi 136) :=
@@ -282,9 +322,9 @@ theorem verifyPrepared65_verified :
     (by native_taint_decide) (NoSp.of_all (by lit_decide)) (PreparedKey.prepared_verify_sat Verify.prims_ok (.inr (.inl rfl)))
 
 theorem sign65Fn : SignFn mlDsa65 (plainKey mlDsa65.skLen) (signEntry mlDsa65 (Impl.MlDsa.X86.Sign.coreName "mldsa65") (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa65)) :=
-  ⟨by rw [← signContract_eq]; exact sign65_verified, NoSp.of_all (by lit_decide), by lit_decide⟩
+  ⟨by rw [← signContract_eq]; exact sign65_verified, NoSp.of_all (by rw [signEntry_all (noSp_all core65_noSp)]; lit_decide), by lit_decide⟩
 theorem signPrepared65Fn : SignFn mlDsa65 (secretKey mlDsa65) (signPrepared mlDsa65 (Impl.MlDsa.X86.Sign.coreName "mldsa65") (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa65)) :=
-  ⟨by rw [← preparedSignContract_eq]; exact signPrepared65_verified, NoSp.of_all (by lit_decide), by lit_decide⟩
+  ⟨by rw [← preparedSignContract_eq]; exact signPrepared65_verified, NoSp.of_all (by rw [signPrepared_all (noSp_all core65_noSp)]; lit_decide), by lit_decide⟩
 theorem verify65Fn : VerifyFn mlDsa65 (plainKey mlDsa65.pkLen) Impl.MlDsa.X86.Verify.verify65 :=
   ⟨by rw [← verifyContract_eq]; exact verify65_verified, NoSp.of_all (by lit_decide), by lit_decide⟩
 theorem verifyPrepared65Fn : VerifyFn mlDsa65 (publicKey mlDsa65) (verifyPreparedOf mlDsa65 "mldsa65") :=
@@ -317,14 +357,16 @@ theorem verifyMessagePrepared65_verified :
 
 /-! ## ML-DSA-87 -/
 
+private theorem core87_noSp : NoSp (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa87) := NoSp.of_all (by lit_decide)
+
 theorem sign87_verified : Verified X86.target (signEntry mlDsa87 (Impl.MlDsa.X86.Sign.coreName "mldsa87") (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa87)) (signContract mlDsa87 X86.abi 136) :=
-  SignEntry.entry_verified (.inr (.inr rfl)) Sign.signCore87_verified (NoSp.of_all (by lit_decide)) (by lit_decide)
-    (by native_taint_decide) (NoSp.of_all (by lit_decide))
+  SignEntry.entry_verified (.inr (.inr rfl)) Sign.signCore87_verified core87_noSp (by lit_decide)
+    (by native_taint_decide) (NoSp.of_all (by rw [entryBody_all (noSp_all core87_noSp)]; lit_decide))
 
 theorem signPrepared87_verified :
     Verified X86.target (signPrepared mlDsa87 (Impl.MlDsa.X86.Sign.coreName "mldsa87") (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa87)) (Proof.MlDsa.preparedSignContract mlDsa87 X86.abi 136) :=
-  SignEntry.prepared_verified (.inr (.inr rfl)) Sign.signCore87_verified (NoSp.of_all (by lit_decide)) (by lit_decide)
-    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (NoSp.of_all (by lit_decide))
+  SignEntry.prepared_verified (.inr (.inr rfl)) Sign.signCore87_verified core87_noSp (by lit_decide)
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (NoSp.of_all (by rw [entryBody_all (noSp_all core87_noSp)]; lit_decide))
     (PreparedKey.prepared_sign_sat Verify.prims_ok (.inr (.inr rfl)))
 
 theorem verify87_verified : Verified X86.target Impl.MlDsa.X86.Verify.verify87 (verifyContract mlDsa87 X86.abi 136) :=
@@ -337,9 +379,9 @@ theorem verifyPrepared87_verified :
     (by native_taint_decide) (NoSp.of_all (by lit_decide)) (PreparedKey.prepared_verify_sat Verify.prims_ok (.inr (.inr rfl)))
 
 theorem sign87Fn : SignFn mlDsa87 (plainKey mlDsa87.skLen) (signEntry mlDsa87 (Impl.MlDsa.X86.Sign.coreName "mldsa87") (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa87)) :=
-  ⟨by rw [← signContract_eq]; exact sign87_verified, NoSp.of_all (by lit_decide), by lit_decide⟩
+  ⟨by rw [← signContract_eq]; exact sign87_verified, NoSp.of_all (by rw [signEntry_all (noSp_all core87_noSp)]; lit_decide), by lit_decide⟩
 theorem signPrepared87Fn : SignFn mlDsa87 (secretKey mlDsa87) (signPrepared mlDsa87 (Impl.MlDsa.X86.Sign.coreName "mldsa87") (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa87)) :=
-  ⟨by rw [← preparedSignContract_eq]; exact signPrepared87_verified, NoSp.of_all (by lit_decide), by lit_decide⟩
+  ⟨by rw [← preparedSignContract_eq]; exact signPrepared87_verified, NoSp.of_all (by rw [signPrepared_all (noSp_all core87_noSp)]; lit_decide), by lit_decide⟩
 theorem verify87Fn : VerifyFn mlDsa87 (plainKey mlDsa87.pkLen) Impl.MlDsa.X86.Verify.verify87 :=
   ⟨by rw [← verifyContract_eq]; exact verify87_verified, NoSp.of_all (by lit_decide), by lit_decide⟩
 theorem verifyPrepared87Fn : VerifyFn mlDsa87 (publicKey mlDsa87) (verifyPreparedOf mlDsa87 "mldsa87") :=

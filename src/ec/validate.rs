@@ -2,40 +2,10 @@
 
 #![cfg(target_arch = "x86_64")]
 
-use crate::cpu::detected;
-
-use verified_garbage_cpu::Features;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Backend {
-    Baseline,
-    Adx,
-}
-
-impl Backend {
-    fn select(cpu: Features, required: Features) -> Self {
-        if cpu.contains(required) {
-            Self::Adx
-        } else {
-            Self::Baseline
-        }
-    }
-}
-
-macro_rules! check {
-    ($base:ident, $public:ident, $ws:ident) => {
-        $base($public, &mut $ws)
-    };
-    ($base:ident, $public:ident, $ws:ident, $adx:ident, $features:ident) => {
-        match Backend::select(detected(), $features) {
-            Backend::Baseline => $base($public, &mut $ws),
-            Backend::Adx => $adx($public, &mut $ws),
-        }
-    };
-}
-
+/// The validation of the curve `$curve`, whose coordinates are `$len` bytes,
+/// by the dispatcher `$validate` of `crate::arch::dispatch::$module`.
 macro_rules! validate {
-    ($curve:ident, $len:literal, $module:ident, $base:ident, [$($adx:ident, $features:ident)?]) => {
+    ($curve:ident, $len:literal, $module:ident, $validate:ident) => {
         impl super::$curve {
             /// Checks an uncompressed SEC 1 public key (`04 || x || y`).
             ///
@@ -45,14 +15,14 @@ macro_rules! validate {
             /// scalar multiplication is needed. Infinity and compressed or
             /// hybrid encodings are rejected. Available on x86-64.
             pub fn validate_public_key(public: &[u8; 2 * $len + 1]) -> bool {
-                use crate::arch::$module::{$base, $($adx, $features)?};
+                use crate::arch::dispatch::$module::$validate;
                 let mut ws = [0u64; 1024];
                 // SAFETY: public is readable for the complete encoding;
                 // ws is a separate, writable 8192-byte Rust object. They
                 // cannot overlap each other or the call's stack frame, or
-                // wrap around the address space. Dispatch checks the CPU
-                // features required by the selected variant.
-                let ok = unsafe { check!($base, public, ws $(, $adx, $features)?) };
+                // wrap around the address space. The dispatcher calls only
+                // an implementation the CPU has the features of.
+                let ok = unsafe { $validate(public, &mut ws) };
                 // The verified contract returns exactly zero or one.
                 ok == 1
             }
@@ -64,104 +34,72 @@ validate!(
     P192,
     24,
     ec_p192_validate,
-    vg_ec_p192_validate_public_key,
-    []
+    vg_ec_p192_validate_public_key_auto
 );
 
 validate!(
     P224,
     28,
     ec_p224_validate,
-    vg_ec_p224_validate_public_key,
-    []
+    vg_ec_p224_validate_public_key_auto
 );
 
 validate!(
     P256,
     32,
     ec_p256_validate,
-    vg_ec_p256_validate_public_key,
-    [
-        vg_ec_p256_validate_public_key_adx,
-        VG_EC_P256_VALIDATE_PUBLIC_KEY_ADX_FEATURES
-    ]
+    vg_ec_p256_validate_public_key_auto
 );
 
 validate!(
     P384,
     48,
     ec_p384_validate,
-    vg_ec_p384_validate_public_key,
-    [
-        vg_ec_p384_validate_public_key_adx,
-        VG_EC_P384_VALIDATE_PUBLIC_KEY_ADX_FEATURES
-    ]
+    vg_ec_p384_validate_public_key_auto
 );
 
 validate!(
     P521,
     66,
     ec_p521_validate,
-    vg_ec_p521_validate_public_key,
-    [
-        vg_ec_p521_validate_public_key_adx,
-        VG_EC_P521_VALIDATE_PUBLIC_KEY_ADX_FEATURES
-    ]
+    vg_ec_p521_validate_public_key_auto
 );
 
 validate!(
     Secp256k1,
     32,
     ec_secp256k1_validate,
-    vg_ec_secp256k1_validate_public_key,
-    []
+    vg_ec_secp256k1_validate_public_key_auto
 );
 
 validate!(
     BrainpoolP256r1,
     32,
     ec_brainpoolp256r1_validate,
-    vg_ec_brainpoolp256r1_validate_public_key,
-    []
+    vg_ec_brainpoolp256r1_validate_public_key_auto
 );
 
 validate!(
     BrainpoolP384r1,
     48,
     ec_brainpoolp384r1_validate,
-    vg_ec_brainpoolp384r1_validate_public_key,
-    []
+    vg_ec_brainpoolp384r1_validate_public_key_auto
 );
 
 validate!(
     BrainpoolP512r1,
     64,
     ec_brainpoolp512r1_validate,
-    vg_ec_brainpoolp512r1_validate_public_key,
-    []
+    vg_ec_brainpoolp512r1_validate_public_key_auto
 );
 
 #[cfg(test)]
 mod tests {
-    use super::{Backend, Features};
     use crate::ec::PrivateKey;
     use crate::ec::{
         BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, P192, P224, P256, P384, P521, PublicKey,
         Secp256k1,
     };
-    use verified_garbage_cpu::feature;
-
-    #[test]
-    fn select() {
-        let required = crate::arch::ec_p256_validate::VG_EC_P256_VALIDATE_PUBLIC_KEY_ADX_FEATURES;
-        for bits in [0, feature::BMI2, feature::ADX] {
-            assert_eq!(Backend::select(Features(bits), required), Backend::Baseline);
-        }
-        assert_eq!(
-            Backend::select(Features(feature::BMI2 | feature::ADX), required),
-            Backend::Adx
-        );
-    }
 
     macro_rules! cases {
         ($name:ident, $curve:ident, $len:literal) => {

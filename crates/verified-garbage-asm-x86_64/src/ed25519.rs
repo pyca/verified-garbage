@@ -1171,6 +1171,22 @@ call {vg_ed25519_public_key_expanded_ifma}
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed25519_decode_powers.rs"]
+pub(crate) mod vg_ed25519_decode_powers;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed25519_decode_powers_adx.rs"]
+pub(crate) mod vg_ed25519_decode_powers_adx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed25519_point_decode.rs"]
+pub(crate) mod vg_ed25519_point_decode;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed25519_point_decode_adx.rs"]
+pub(crate) mod vg_ed25519_point_decode_adx;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed25519_public_key_expanded.rs"]
 pub(crate) mod vg_ed25519_public_key_expanded;
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86 -/
 
@@ -27,6 +28,14 @@ def artifacts (v : Proof.ChaCha20.X86.XorImpl) : List Artifact := [
     verified := Proof.ChaCha20Poly1305.X86.open_framed v
     spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
       (Proof.ChaCha20Poly1305.X86.open_spSafe v)
+    features := v.features },
+  Spec.ChaCha20Poly1305.openToApi.artifact X86.target {
+    suffix := v.suffix
+    code := Impl.StackScratch.X86.withStackScratchWiped 748 9 176 (Impl.ChaCha20Poly1305.X86.openTo v.callee)
+    stack := 780
+    verified := Proof.ChaCha20Poly1305.X86.openTo_framed v
+    spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
+      (Proof.ChaCha20Poly1305.X86.openTo_spSafe v)
     features := v.features },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact X86.target {
     suffix := v.suffix

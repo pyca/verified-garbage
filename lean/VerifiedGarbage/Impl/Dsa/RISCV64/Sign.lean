@@ -117,10 +117,13 @@ def output : Prog isa :=
       (.seq (.block ([.load .d .s7 .s6 hOut] ++ getQ .s8)) (.seq (storeBE 1)
         (.seq (.block [.add .s7 .s7 .s8]) (.seq (storeBE 2) (.block [.logicImm .and .a0 .a4 1]))))))))))
 
+/-- The signing after the mask of `g^x mod p = y` (`keyPair`): from `g^k mod p`
+on. -/
+def tail : Prog isa :=
+  .seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK (.seq sValue output)))))
+
 /-- The signing, after the check of the key. -/
-def body : Prog isa :=
-  .seq keyPair (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
-    (.seq sValue output))))))
+def body : Prog isa := .seq keyPair tail
 
 /-- `out`'s `2 q_len` octets := 0, and `a0 := 0`. -/
 def zeroOut : Prog isa :=

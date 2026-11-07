@@ -185,7 +185,7 @@ theorem dbody_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
   WP.mono (dbodyM_ok hp.toM hf he hI.toM) fun _ ⟨h, hc⟩ => ⟨h.toDInv, hc⟩
 
 /-- What the decryption leaves, in place or out of place: `DPost`, or
-`DPostTo` (`StitchFrom`), with the output block by block. -/
+`DPostTo` (`StitchToDec`), with the output block by block. -/
 structure DPostM (ix : Bool) (s₀ s : State) : Prop where
   data : ∀ k < nb s₀, blockAt s.mem (wAddr ix s₀ k) = ctb s₀ k
   ctr : blockAt s.mem (cp s₀) = Nat.repeat inc32 (nb s₀) (cb s₀)

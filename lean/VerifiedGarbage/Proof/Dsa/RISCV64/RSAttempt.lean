@@ -156,8 +156,9 @@ theorem frame_byte {L : RL} (hL : L.Ok) {m m' : Mem} (hf : Frame (signWr L) m m'
   · exact hL.dFS _ hin hc
 
 /-- One attempt. -/
-theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 1 < qOf s₀) (hi : AttInv s₀ a u t) :
-    WP isa (.seq attempt (.block [.addi .a0 .s10 (-4)])) t fun t' =>
+theorem attempt_ok (S : Signer) {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hv : RandomValid S s₀)
+    (hq : 1 < qOf s₀) (hi : AttInv s₀ a u t) :
+    WP isa (.seq (attempt S.name S.code) (.block [.addi .a0 .s10 (-4)])) t fun t' =>
       isa.eval (.zero .a0) t' = some (decide (randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u a = 4)) ∧
         (randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u a ≠ 4 → AttOut s₀ t') ∧
         (randomSignAttemptStatus (inpOf (rlOf s₀) s₀.mem) u a = 4 → 1 < a ∧
@@ -197,7 +198,7 @@ theorem attempt_ok {s₀ t : State} {a u : Nat} (h : rsContract.pre s₀) (hq : 
       rw [m2]
       exact nonce_eq (W := (eOf s₀).W) hE.Wq z₁ (so.cand k hk)
     refine WP.seq (WP.mono (callArgs_ok hL rfl sc₂.ctx) fun t₃ ⟨⟨ha3, m3, k3⟩, sp3⟩ => ?_)
-    refine WP.seq (WP.mono (sign_ok h ha3) fun t₄ sg => ?_)
+    refine WP.seq (WP.mono (sign_ok S h hv ha3) fun t₄ sg => ?_)
     have es : sresOf (rlOf s₀) t₃.mem = Spec.Dsa.signBytes (rlOf s₀).pl (rlOf s₀).ql
         (inpOf (rlOf s₀) s₀.mem).key (Spec.Dsa.encodeBE (rlOf s₀).ql k) (inpOf (rlOf s₀) s₀.mem).digest := by
       simp only [sresOf, inpOf]; rw [m3, sc₂.ctx.key, sc₂.ctx.digB, hnonce]

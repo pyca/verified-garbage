@@ -91,7 +91,7 @@ theorem argD {s : State} {Ctx W SP Np A D : Addr} {nl al n : Nat} (C : OneCtx s 
 
 section
 variable (v : GcmImpl) {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
-  {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M)
+  {M : CtxMode} (B : BlkFn M) (T : BlkToDecFn M)
 include L
 
 /-- `OneS`, after code that writes only the tag length's slot. -/
@@ -319,7 +319,7 @@ theorem rel_reassoc8 {P Q : State → State → Prop} {a b c d e f g h i : Prog 
 
 /-- `open_split` after the entry, in two runs with the same result, for an
 allowed tag length. -/
-theorem midS_rel (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M) {s₀ s₀' : State}
+theorem midS_rel (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToDecFn M) {s₀ s₀' : State}
     {Ctx W SP Np A D S Tp : Addr} {nl al n t R : Nat}
     (C : OSCtx s₀ M.len Ctx W SP Np A D S Tp nl al n t) (C' : OSCtx s₀' M.len Ctx W SP Np A D S Tp nl al n t)
     (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (X' : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
@@ -383,7 +383,7 @@ theorem openBodyS_relOf {s₀ s₀' : State} {Ctx W SP A D S : Addr} {n t : Nat}
 
 /-- `vg_aes_gcm_open_split`, in two runs from states with the same public
 values. -/
-theorem openSplitM_rel (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M) {s₀ s₀' : State}
+theorem openSplitM_rel (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToDecFn M) {s₀ s₀' : State}
     (hp : (Proof.AesGcm.openSplitX86_64M M).pre s₀) (hp' : (Proof.AesGcm.openSplitX86_64M M).pre s₀')
     (hq : (Proof.AesGcm.openSplitX86_64M M).pub s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (OpenSplit.openSplit (v.withBlk B) T.fn) fun _ _ => True := by
@@ -443,7 +443,7 @@ theorem openSplitM_rel (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn 
     midS_rel v B T C C' X X' rfl rfl rfl rfl q₃.symm (by rw [← q₄]) (by rw [← q₆]) (by rw [← q₂]) hT₁ hT₂ htl₁ htl₂
       hres hok
 
-theorem openSplitM_ct (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkFromFn M) :
+theorem openSplitM_ct (v : GcmImpl) {M : CtxMode} (B : BlkFn M) (T : BlkToDecFn M) :
     ConstantTime isa (Proof.AesGcm.openSplitX86_64M M).pre (Proof.AesGcm.openSplitX86_64M M).pub
       (OpenSplit.openSplit (v.withBlk B) T.fn) :=
   ct_of_rel fun _ _ hp hp' hq => openSplitM_rel v B T hp hp' hq

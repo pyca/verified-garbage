@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Matrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.MatrixTiming
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.LastTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
@@ -61,7 +62,7 @@ theorem apart_of {s₀ s : State} (hp : Pre P L s₀) {N₀ : Nat} (hN : N₀ + 
     by rw [bR]; exact tb.t.apart.sub_right (scratch_sub hp (by lom))⟩
 
 /-- A pair computing PRF outputs `N₀`, …, `N₀ + m - 1`. -/
-theorem prfPair_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
+theorem prfPair_relCT_inline {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     (hk : Stk128 P L σ) (hk' : Stk128 P L τ) (sm : Same L M σ τ) {ρ : List Byte} {i N₀ m : Nat}
     (he : 2 * i + 1 < P.k * P.k) (hN : N₀ + 3 ≤ 12) (hm : m ≤ 3) :
     RelCT isa (PRel P L σ τ ρ (2 * i) N₀) (Impl.MlKem.AArch64.Kem16P.pairP SB SS AH RB (TP P) P (2 * i) N₀ m)
@@ -97,6 +98,28 @@ theorem prfPair_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
   have hv := exec_post (paired_stepP hq hk' he hN hm h₂ t₂) eu
   exact ⟨(ct _ _ _ _ _ _ ⟨rfl, rfl⟩ (pairP_exec et) (pairP_exec eu)).1, ⟨_, ht.1⟩, ⟨_, hv.1⟩, ht.2, hv.2,
     by rw [Exec.syms et, Exec.syms eu]; exact sh⟩
+
+/-- A direct call adds no address leakage on AArch64 and returns its body's final state. -/
+theorem call_exec {name : String} {body : Prog isa} {s t : State} {tr : List Leak}
+    (he : Exec isa (.call name body) s tr t) : Exec isa body s.callEntry tr t := by
+  cases he with
+  | call hc hb hr =>
+    rw [call_callEntry] at hc
+    cases Option.some.inj hc
+    cases ret_eq hr
+    simpa only [isa, List.map_nil, List.nil_append, List.append_nil] using hb
+
+/-- A pair computing PRF outputs `N₀`, …, `N₀ + m - 1`. -/
+theorem prfPair_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
+    (hk : Stk128 P L σ) (hk' : Stk128 P L τ) (sm : Same L M σ τ) {ρ : List Byte} {i N₀ m : Nat}
+    (he : 2 * i + 1 < P.k * P.k) (hN : N₀ + 3 ≤ 12) (hm : m ≤ 3) :
+    RelCT isa (PRel P L σ τ ρ (2 * i) N₀) (Impl.MlKem.AArch64.Kem16P.pairPCall SB SS AH RB (TP P) P (2 * i) N₀ m)
+      (PRel P L σ τ ρ (2 * i + 2) (N₀ + m)) := by
+  intro s u tr ur t v h et eu
+  obtain ⟨⟨mσ, hs⟩, ⟨mτ, hu⟩, ts, tu, sym⟩ := h
+  exact prfPair_relCT_inline hp hq hk hk' sm he hN hm _ _ _ _ _ _
+    ⟨⟨mσ, hs.callEntry⟩, ⟨mτ, hu.callEntry⟩, ts.callEntry, tu.callEntry, sym⟩
+    (call_exec et) (call_exec eu)
 
 /-- A pair computing no PRF output after `G`. -/
 theorem plainPairP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
@@ -241,7 +264,7 @@ theorem matrixP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
   · have r := RelCTs.range (n := Impl.MlKem.AArch64.Kem16P.pairs P - H)
       (I := fun j => PRel P L σ τ ρ (2 * (j + H)) (min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j)))
       (f := (fun i => if Impl.MlKem.AArch64.Kem16P.pairCount P H i = 0 then Paired.pair P false (2 * i) true
-        else Impl.MlKem.AArch64.Kem16P.pairP SB SS AH RB (TP P) P (2 * i) (3 * (i - H)) (Impl.MlKem.AArch64.Kem16P.pairCount P H i)) ∘
+        else Impl.MlKem.AArch64.Kem16P.pairPCall SB SS AH RB (TP P) P (2 * i) (3 * (i - H)) (Impl.MlKem.AArch64.Kem16P.pairCount P H i)) ∘
           (· + H))
       fun j hj => by
         have he : 2 * (j + H) + 1 < P.k * P.k := by omega_arith

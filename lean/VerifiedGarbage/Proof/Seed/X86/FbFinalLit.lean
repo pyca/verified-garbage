@@ -12,7 +12,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
-/-! # SEED-CFB128's final functions' x86 (32-bit) code as literals, for kernel-evaluated checks -/
+/-! # SEED-CFB128's and SEED-OFB's final functions' x86 (32-bit) code as literals, for kernel-evaluated checks -/
 
 @[expose] public section
 
@@ -20,5 +20,6 @@ namespace VG.Proof.Seed.X86
 
 materialize_code cfbEncryptFinalCode := Impl.Seed.X86.cfbEncryptFinal
 materialize_code cfbDecryptFinalCode := Impl.Seed.X86.cfbDecryptFinal
+materialize_code ofbFinalCode := Impl.Seed.X86.ofbFinal
 
 end VG.Proof.Seed.X86

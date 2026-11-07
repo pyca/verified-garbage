@@ -376,15 +376,15 @@ theorem selMask_ok {s : State} {i v : Nat} (hi : i < 32) (hv : v < 32)
     (hc : s.gpr .rcx = BitVec.ofNat 64 i) (hd : s.gpr .rdx = BitVec.ofNat 64 v) :
     WP isa (.block [.mov .rax (.reg .rcx), .alu .xor .rax (.reg .rdx), .alu .cmp .rax (.imm 1),
       .alu .sbb .rax (.reg .rax)]) s fun s' => s'.gpr .rax = selMask (decide (i = v)) ∧ Keep [.rax] s s' ∧
-        s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.mxcsr = s.mxcsr := by
+        s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.mxcsr = s.mxcsr ∧ s'.ymmH = s.ymmH := by
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax] (Q := fun s' => s'.gpr .rax = selMask (decide (i = v)) ∧
-    s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.mxcsr = s.mxcsr) (by
+    s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.mxcsr = s.mxcsr ∧ s'.ymmH = s.ymmH) (by
     xrun [hc, hd]
     and_intros
     any_goals rfl
     rw [lt_one_iff, show decide (BitVec.ofNat 64 i ^^^ BitVec.ofNat 64 v = 0) = decide (i = v) from
       decide_eq_decide.mpr (xor_zero_iff.trans (ofNat64_inj' (by omega) (by omega)))]
-    cases decide (i = v) <;> rfl) rfl) fun s' ⟨⟨h, m, x, y, z⟩, k⟩ => ⟨h, k, m, x, y, z⟩
+    cases decide (i = v) <;> rfl) rfl) fun s' ⟨⟨h, m, x, y, z, w⟩, k⟩ => ⟨h, k, m, x, y, z, w⟩
 
 theorem selMask_and (w : BitVec 64) (c : Bool) : (w &&& selMask c) = if c then w else 0 := by
   cases c

@@ -72,7 +72,7 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
     (hdata : ∀ k < L s₀, w.mem (dp s₀ + BitVec.ofNat 64 k) =
       if k < P then s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0
       else s.mem (dp s₀ + BitVec.ofNat 64 k)) :
-    WP isa (padRest v.callee n) w
+    WP isa (padRest v.callee false n) w
       fun s' =>
       (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) ∧
       Kept [sub s₀ 64 384, dR s₀, sub s₀ 768 512] w s' ∧
@@ -101,7 +101,7 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
     (sub_disj s₀ (a := 64) (n := 64) (b := 768) (m := n) (by omega_arith) (by omega_arith) (by omega_arith))
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
     (sub_disj s₀ (a := 768) (n := n) (b := 128) (m := 320) (by omega_arith) (by omega_arith) (by omega_arith))
-    (by rw [hp.off_toNat (by decide)]; lit_omega) (Covers.right hw) hw fun s₃ v₃ k₃ data₃ => ?_)
+    (by rw [hp.off_toNat (by decide)]; lit_omega) hw fun s₃ v₃ k₃ data₃ => ?_)
   have ctxData : ∀ {a n : Nat}, a + n ≤ 1280 → ∀ k < L s₀,
       ¬ (sub s₀ a n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
     fun h k hk hh => hp.c_d.sub_left (sub_ctx s₀ h) _ hh (data_in hk)
@@ -305,7 +305,7 @@ theorem padRest_after (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : 
       if k < P then s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0
       else s.mem (dp s₀ + BitVec.ofNat 64 k))
     (k : Kept [] w w') (vw : ∀ r ∈ preservedV, (w'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) :
-    WP isa (padRest v.callee n) w' fun s' =>
+    WP isa (padRest v.callee false n) w' fun s' =>
       (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) ∧
       Kept [sub s₀ 64 384, dR s₀, sub s₀ 768 512] w s' ∧
       Frame [sub s₀ 64 384, restR s₀ P, sub s₀ 768 512] w.mem s'.mem ∧
@@ -332,7 +332,7 @@ theorem cryptRest_after (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
       if k < P then s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0
       else s.mem (dp s₀ + BitVec.ofNat 64 k))
     (k : Kept [] w w') (vw : ∀ r ∈ preservedV, (w'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) :
-    WP isa (cryptRest v.callee) w' fun s' =>
+    WP isa (cryptRest v.callee false) w' fun s' =>
       (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) ∧
       Kept [sub s₀ 64 384, dR s₀, sub s₀ 768 512] w s' ∧
       Frame [sub s₀ 64 384, restR s₀ P, sub s₀ 768 512] w.mem s'.mem ∧

@@ -1038,6 +1038,10 @@ call {vg_ed448_verify_equation}
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed448_decode_core.rs"]
+pub(crate) mod vg_ed448_decode_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed448_scalar_base.rs"]
 pub(crate) mod vg_ed448_scalar_base;
 

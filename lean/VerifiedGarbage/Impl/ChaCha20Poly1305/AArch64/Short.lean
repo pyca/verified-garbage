@@ -83,43 +83,54 @@ def prologue (sve : Bool) : Prog isa :=
   (.seq (.seq (VG.Impl.ChaCha20.AArch64.Mixed5.chunk sve) (.block leave))
     (.call "vg_poly1305_init" Impl.Poly1305.AArch64.init))
 
-/-- XORs `x11` (nonzero) blocks of 16 bytes at `x10` into `x9`, advancing both. -/
+/-- XORs `x11` (nonzero) blocks of 16 bytes at `x9` with those at `x10` into
+`x15`, advancing all three. -/
 def xor16 : Prog isa :=
-  .loop (.block [.ldrq .v0 .x9 0, .ldrq .v1 .x10 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x9 0,
-    .addImm .x .x9 .x9 16, .addImm .x .x10 .x10 16, .subImm .x .x11 .x11 1]) (.nonzero .x .x11)
+  .loop (.block [.ldrq .v0 .x9 0, .ldrq .v1 .x10 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x15 0,
+    .addImm .x .x9 .x9 16, .addImm .x .x10 .x10 16, .addImm .x .x15 .x15 16, .subImm .x .x11 .x11 1])
+    (.nonzero .x .x11)
 
-/-- XORs the `x11` (nonzero) bytes at `x10` into `x9`, advancing both. -/
+/-- XORs the `x11` (nonzero) bytes at `x9` with those at `x10` into `x15`,
+advancing all three. -/
 def xor1 : Prog isa :=
-  .loop (.block [.ldrb .x12 .x9 0, .ldrb .x13 .x10 0, .logic .eor .w .x12 .x12 .x13, .strb .x12 .x9 0,
-    .addImm .x .x9 .x9 1, .addImm .x .x10 .x10 1, .subImm .x .x11 .x11 1]) (.nonzero .x .x11)
+  .loop (.block [.ldrb .x12 .x9 0, .ldrb .x13 .x10 0, .logic .eor .w .x12 .x12 .x13, .strb .x12 .x15 0,
+    .addImm .x .x9 .x9 1, .addImm .x .x10 .x10 1, .addImm .x .x15 .x15 1, .subImm .x .x11 .x11 1])
+    (.nonzero .x .x11)
 
-/-- The data (`x22`, `x23` bytes) XORed with its keystream, at the address
-`setup` puts in `x10` (with the data's in `x9` and `x23 >> 4` in `x11`). -/
+/-- The data (`x22`, `x23` bytes) XORed with its keystream into its
+destination, at the addresses `setup` puts in `x10` and `x15` (with the
+data's in `x9` and `x23 >> 4` in `x11`). -/
 def xorKsWith (setup : List Instr) : Prog isa :=
   .seq (.block setup)
   (.seq (.ite (.zero .x .x11) (.block []) xor16)
   (.seq (.block [.lsl .x .x11 .x23 60, .lsr .x .x11 .x11 60])
     (.ite (.zero .x .x11) (.block []) xor1)))
 
-/-- The data (`x22`, `x23` bytes) XORed with its keystream, at `ctx + k`. -/
-def xorKsFrom (k : Nat) : Prog isa :=
-  xorKsWith [mov .x9 .x22, .addImm .x .x10 .x21 k, .lsr .x .x11 .x23 4]
+/-- The destination of the data at `x9`, into `x15`: `x9 + x28` if `to` (`open`,
+which keeps in `x28` the destination's distance from the data), else the data
+itself (`seal`, in place). -/
+def dstOf (to : Bool) : Instr := if to then .add .x .x15 .x9 .x28 else mov .x15 .x9
+
+/-- The data (`x22`, `x23` bytes) XORed with its keystream, at `ctx + k`, into
+its destination (`dstOf to`). -/
+def xorKsFrom (to : Bool) (k : Nat) : Prog isa :=
+  xorKsWith [mov .x9 .x22, dstOf to, .addImm .x .x10 .x21 k, .lsr .x .x11 .x23 4]
 
 /-- The data XORed with its keystream, at `ctx + 128`. -/
-def xorKs : Prog isa := xorKsFrom 128
+def xorKs (to : Bool) : Prog isa := xorKsFrom to 128
 
 /-- `seal` but for the tag, after the prologue: the data encrypted, then
 the MAC's input absorbed in one pass (`Fused.macAll`). -/
 def sealAfter : Prog isa :=
   .seq (.block lengths)
-  (.seq xorKs
+  (.seq (xorKs false)
     Fused.macAll)
 
 /-- `open` up to the tag computed, after the prologue. -/
 def openAfter : Prog isa :=
   .seq (.block lengths)
   (.seq Fused.macAll
-  (.seq xorKs
+  (.seq (xorKs false)
     (finalizeTo 48)))
 
 end VG.Impl.ChaCha20Poly1305.AArch64.Short

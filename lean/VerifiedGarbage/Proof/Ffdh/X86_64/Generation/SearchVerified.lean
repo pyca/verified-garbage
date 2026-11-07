@@ -163,7 +163,7 @@ private theorem search_return_address (v : RoundImpl) {s t : State} {tr : List L
 theorem search_correct (v : RoundImpl) (s : State) (h : searchContract.pre s) :
     ∃ tr t, Exec isa (searchCode v) s tr t ∧ abiPreserved s t ∧ searchContract.post s t := by
   obtain ⟨tr, t, he, hp, hg, _, _⟩ := search_correct_ok v h
-  exact ⟨tr, t, he, abiPreserved_of_exec (searchCode_mx v) he
+  exact ⟨tr, t, he, abiPreserved_of_ctl (ctlOk_of_ctlC (searchCode_ctlC v)) he
     ⟨hg, search_return_address v h he⟩, hp⟩
 
 end VG.Proof.Ffdh.X86_64.Generation

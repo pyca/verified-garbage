@@ -231,38 +231,4 @@ theorem ctxCiph_eq {m : Mem} {p : Addr} {key : List Byte}
     ctxCiph m p (Aes.rounds (key.length / 4)) = aes key := by
   rw [ctxCiph, hk, aes]
 
-/-- Encryption with the key schedule of `key` (for its number of rounds) is
-AES-GCM-SIV encryption with `key`. -/
-theorem encryptWith_ctx {m : Mem} {p : Addr} {key : List Byte}
-    (hl : key.length = 16 ∨ key.length = 32)
-    (hk : Aes.bytesAt m p (16 * (Aes.rounds (key.length / 4) + 1)) = Aes.expandKey key)
-    (nonce pt aad : List Byte) (hs : supported pt.length aad.length = true) :
-    encrypt key nonce pt aad =
-      some ((encryptWith (ctxCiph m p (Aes.rounds (key.length / 4)))
-          (keyLen (Aes.rounds (key.length / 4))) nonce pt aad).1 ++
-        (encryptWith (ctxCiph m p (Aes.rounds (key.length / 4)))
-          (keyLen (Aes.rounds (key.length / 4))) nonce pt aad).2) := by
-  have hn : keyLen (Aes.rounds (key.length / 4)) = key.length := by
-    unfold keyLen Aes.rounds; omega
-  rw [ctxCiph_eq hk, hn, encrypt]
-  simp only [hs, ↓reduceIte]
-
-/-- Decryption with the key schedule of `key` (for its number of rounds) is
-AES-GCM-SIV decryption with `key`, for lengths that are accepted. -/
-theorem decryptWith_ctx {m : Mem} {p : Addr} {key : List Byte}
-    (hl : key.length = 16 ∨ key.length = 32)
-    (hk : Aes.bytesAt m p (16 * (Aes.rounds (key.length / 4) + 1)) = Aes.expandKey key)
-    (nonce ct aad tag : List Byte) (ht : tag.length = 16)
-    (hs : supported ct.length aad.length = true) :
-    decrypt key nonce (ct ++ tag) aad =
-      decryptWith (ctxCiph m p (Aes.rounds (key.length / 4)))
-        (keyLen (Aes.rounds (key.length / 4))) nonce ct aad tag := by
-  have hn : keyLen (Aes.rounds (key.length / 4)) = key.length := by
-    unfold keyLen Aes.rounds; omega
-  have hc : (ct ++ tag).length - 16 = ct.length := by simp [ht]
-  have hlt : decide ((ct ++ tag).length < 16) = false := by simp [ht]
-  rw [ctxCiph_eq hk, hn, decrypt, hc, hs, hlt]
-  simp only [Bool.not_true, Bool.or_false, Bool.false_eq_true, ↓reduceIte, List.take_left,
-    List.drop_left]
-
 end VG.Spec.GcmSiv

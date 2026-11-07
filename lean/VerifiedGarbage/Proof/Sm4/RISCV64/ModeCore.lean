@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.RISCV64.Core
+public import VerifiedGarbage.Proof.Modes.RISCV64.Shared
 public import VerifiedGarbage.Impl.Sm4.RISCV64.Modes
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Prologue
 public import VerifiedGarbage.Proof.Sm4.RISCV64.PreparedBody
@@ -24,8 +24,8 @@ import VerifiedGarbage.Proof.Sm4.RISCV64.LayersLit
 /-!
 # SM4's core for the modes on RISC-V
 
-`dirCoreSpec d`: SM4's core for the direction `d`
-(`Impl.Sm4.RISCV64.dirCore d`) meets what the modes need of a core
+`inlineCoreSpec d`: SM4's core for the direction `d`
+(`Impl.Sm4.RISCV64.inlineCore d`) meets what the modes need of a core
 (`Proof.Modes.RISCV64.CoreSpec`), with the key a schedule, its cipher
 `Spec.Sm4.cipher` for encryption and `Spec.Sm4.invCipher` for decryption,
 as on PPC64LE (`Proof/Sm4/PPC64LE/ModeCore.lean`).
@@ -204,7 +204,7 @@ theorem dirCipher_bytes (d : Dir) (k : Spec.Sm4.Schedule) (m : Mem) (p : Addr) :
   · rw [dirCipher, Spec.Sm4.cipher, Proof.Sm4.bytesAt_eq_blockAt, Proof.Sm4.ofFn_toList]; rfl
   · rw [dirCipher, Spec.Sm4.invCipher, Proof.Sm4.bytesAt_eq_blockAt, Proof.Sm4.ofFn_toList]; rfl
 
-theorem layout (d : Dir) : Layout (dirCore d) :=
+theorem inlineLayout (d : Dir) : Layout (inlineCore d) :=
   ⟨by cases d <;> decide, .inr rfl, by cases d <;> decide, by cases d <;> decide, by cases d <;> decide,
     by cases d <;> decide, by cases d <;> decide⟩
 
@@ -212,7 +212,7 @@ theorem layout (d : Dir) : Layout (dirCore d) :=
 the mode writes. -/
 theorem word_apart (d : Dir) {B : Addr} {k : Nat} (hk : k < slots)
     (hkb : k < tailSlot ∨ tailSlot + 32 ≤ k) {r : Region}
-    (hr : Region.Disjoint (coreRegion (dirCore d) B) r ∨ Region.Sub r (blkRegion (dirCore d) B)) :
+    (hr : Region.Disjoint (coreRegion (inlineCore d) B) r ∨ Region.Sub r (blkRegion (inlineCore d) B)) :
     Region.Disjoint ⟨wordAddr (ecbA B) k, 8⟩ r := by
   rw [slots_eq] at hk
   rw [tailSlot_eq] at hkb
@@ -228,7 +228,7 @@ theorem word_apart (d : Dir) {B : Addr} {k : Nat} (hk : k < slots)
 
 theorem ready_frame (d : Dir) {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule}
     {rs : List Region} (h : Ready d s B ws k) (ha : s'.gpr .a0 = s.gpr .a0) (hf : Frame rs s.mem s'.mem)
-    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore d) B) r ∨ Region.Sub r (blkRegion (dirCore d) B)) :
+    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (inlineCore d) B) r ∨ Region.Sub r (blkRegion (inlineCore d) B)) :
     Ready d s' B ws k := by
   obtain ⟨hm, hk, hka⟩ := h
   have keep : ∀ j < slots, (j < tailSlot ∨ tailSlot + 32 ≤ j) →
@@ -259,7 +259,7 @@ theorem ecbA_add (B : Addr) (o : Nat) : ecbA B + BitVec.ofNat 64 o = B + BitVec.
 
 /-- A range of the frame within the core's slots. -/
 theorem sub_core (d : Dir) (B : Addr) {o n : Nat} (h₁ : 48 ≤ o) (h₂ : o + n ≤ 3232) :
-    Region.Sub ⟨B + BitVec.ofNat 64 o, n⟩ (coreRegion (dirCore d) B) := by
+    Region.Sub ⟨B + BitVec.ofNat 64 o, n⟩ (coreRegion (inlineCore d) B) := by
   show Region.Sub _ ⟨B + BitVec.ofNat 64 (8 * 6), 8 * (404 - 6)⟩
   exact Offset.sub B (by omega) (by omega)
 
@@ -300,10 +300,10 @@ theorem tail_wp {s₀ t : State} {B : Addr} {body : Prog isa} {P Q : State → P
   · rw [ot .ra (by decide) (by decide) (by decide), hr .ra (by decide)]
 
 theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Schedule}
-    (hB : s.gpr Impl.Modes.RISCV64.sb = B) (hS : ScrIn s B (dirCore d).total)
-    (hm : (⟨B, 8 * (dirCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
-    WP isa (dirCore d).prepare s fun s' => Ready d s' B rs k ∧ s'.gpr Impl.Modes.RISCV64.sb = B ∧
-      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
+    (hB : s.gpr Impl.Modes.RISCV64.sb = B) (hS : ScrIn s B (inlineCore d).total)
+    (hm : (⟨B, 8 * (inlineCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
+    WP isa (inlineCore d).prepare s fun s' => Ready d s' B rs k ∧ s'.gpr Impl.Modes.RISCV64.sb = B ∧
+      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (inlineCore d) B] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨hkk, hin, hkfit, hd⟩ := hk
   have hfit : B.toNat + 8 * 404 ≤ 2 ^ 64 := hS.fit
@@ -347,7 +347,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
         · exact List.mem_append_left _ h
         · exact List.mem_append_right _ (List.mem_cons_of_mem _ h),
       hkfit, Region.Disjoint.sub_right dK (Offset.sub_base B (by rw [slots_eq]; decide))⟩
-  have F₄ : Frame [coreRegion (dirCore d) B] s.mem s₄.mem := by
+  have F₄ : Frame [coreRegion (inlineCore d) B] s.mem s₄.mem := by
     have h1 : Frame [⟨keyA B, 8⟩] s.mem s₁.mem := by
       rw [u₁.mem]; exact (Frame.refl _ s.mem).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
     have h2 := f₂
@@ -426,11 +426,11 @@ theorem blockAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   exact hf.bytes (R := ⟨p, 16⟩) hd (by show 16 ≤ 2 ^ 64; omega) j.isLt
 
 theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule}
-    (hB : s.gpr Impl.Modes.RISCV64.sb = B) (hS : ScrIn s B (dirCore d).total) (hR : Ready d s B ws k) :
-    WP isa (dirCore d).crypt s fun s' => s'.gpr Impl.Modes.RISCV64.sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
-      Ready d s' B ws k ∧ Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
-      (∀ j < (dirCore d).G, bytesAt s'.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw) =
-        dirCipher d k (bytesAt s.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw))) ∧
+    (hB : s.gpr Impl.Modes.RISCV64.sb = B) (hS : ScrIn s B (inlineCore d).total) (hR : Ready d s B ws k) :
+    WP isa (inlineCore d).crypt s fun s' => s'.gpr Impl.Modes.RISCV64.sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      Ready d s' B ws k ∧ Frame [coreRegion (inlineCore d) B] s.mem s'.mem ∧
+      (∀ j < (inlineCore d).G, bytesAt s'.mem (blkAddr (inlineCore d) B j) (4 * (inlineCore d).bw) =
+        dirCipher d k (bytesAt s.mem (blkAddr (inlineCore d) B j) (4 * (inlineCore d).bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨hmk, hek, hka⟩ := hR
   have hfit : B.toNat + 8 * 404 ≤ 2 ^ 64 := hS.fit
@@ -528,7 +528,7 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.S
       refine ⟨_, List.mem_singleton_self _, sub_core d B ?_ ?_⟩ <;>
       (try simp only [savedSlot_eq, tableSlot_eq]) <;> decide
   · have hj' : j < 16 := hj
-    have hP : blkAddr (dirCore d) B j = s₄.gpr sb + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := by
+    have hP : blkAddr (inlineCore d) B j = s₄.gpr sb + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := by
       rw [sb₄]
       show B + BitVec.ofNat 64 (8 * 103) + BitVec.ofNat 64 (4 * 4 * j) = B + BitVec.ofNat 64 56 + _
       rw [Offset.add_add, Offset.add_add, tailSlot_eq, show 8 * 103 + 4 * 4 * j = 56 + (8 * 96 + 16 * j) by omega]
@@ -543,16 +543,35 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.S
     rfl
 
 /-- SM4's core for the direction `d` meets what the modes need. -/
-def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
+def inlineCoreSpec (d : Dir) : CoreSpec (inlineCore d) where
   Key := Spec.Sm4.Schedule
   cipher := dirCipher d
   KeyArgs := KeyArgs
   Ready := Ready d
-  cipher_len k b := by cases d <;> simp [dirCipher, Spec.Sm4.cipher, Spec.Sm4.invCipher, dirCore]
-  layout := layout d
+  cipher_len k b := by cases d <;> simp [dirCipher, Spec.Sm4.cipher, Spec.Sm4.invCipher, inlineCore]
+  layout := inlineLayout d
   keyArgs_congr h e r w _ f := keyArgs_congr h e.a0 r w f
   ready_frame h e _ _ _ f _ hc := ready_frame d h e.a0 f hc
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d
+
+open VG.Proof.Modes.RISCV64 (KeyMove ReadyMove)
+
+theorem shared_key (d : Dir) : KeyMove (inlineCoreSpec d) := by
+  intro s t rs ts k hk ha rd wr hf hs
+  obtain ⟨hk, hin, fit, hd⟩ := keyArgs_congr hk ha rd wr hf
+  exact ⟨hk, hin, fit, fun r hr => by
+    obtain ⟨r', hr', sub⟩ := hs r hr
+    exact (hd r' hr').sub_right sub⟩
+
+theorem shared_ready (d : Dir) : ReadyMove (inlineCoreSpec d) := by
+  intro s t B ws k rs hr ha rd wr hf hs hd
+  exact ready_frame (ws := ws) d hr ha hf hd
+
+def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) :=
+  (inlineCoreSpec d).shared (by dsimp only [inlineCore]; decide) (by dsimp only [inlineCore]; decide) (shared_key d) (shared_ready d) (by cases d <;> rfl) rfl _ _
+
+theorem layout (d : Dir) : Layout (dirCore d) :=
+  VG.Proof.Modes.RISCV64.shared_layout (inlineLayout d) (by dsimp only [inlineCore]; decide) _ _
 
 end VG.Proof.Sm4.RISCV64.Mode

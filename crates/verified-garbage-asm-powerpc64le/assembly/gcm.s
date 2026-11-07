@@ -2738,3 +2738,80 @@ vg_aes_gcm_seal_gather:
 21:
 	addi %r1, %r1, 160
 	blr
+
+vg_aes_gcm_open_to:
+	stdu %r1, -160(%r1)
+	addi %r12, %r1, 0
+	std %r3, 112(%r12)
+	std %r4, 120(%r12)
+	std %r5, 128(%r12)
+	std %r6, 136(%r12)
+	mflr %r0
+	std %r0, 152(%r12)
+	ld %r0, 272(%r12)
+	std %r0, 96(%r12)
+	ld %r0, 280(%r12)
+	std %r0, 104(%r12)
+	or %r3, %r9, %r9
+	or %r4, %r10, %r10
+	ld %r9, 256(%r12)
+	rldicl %r5, %r4, 61, 3
+	cmpldi %cr0, %r5, 0
+	beq %cr0, 20f
+22:
+	ld %r0, 0(%r3)
+	std %r0, 0(%r9)
+	addi %r3, %r3, 8
+	addi %r9, %r9, 8
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 22b
+	b 21f
+20:
+21:
+	li %r6, 7
+	and %r4, %r4, %r6
+	cmpldi %cr0, %r4, 0
+	beq %cr0, 23f
+25:
+	lbz %r0, 0(%r3)
+	stb %r0, 0(%r9)
+	addi %r3, %r3, 1
+	addi %r9, %r9, 1
+	addi %r4, %r4, -1
+	cmpldi %cr0, %r4, 0
+	bne %cr0, 25b
+	b 24f
+23:
+24:
+	ld %r3, 112(%r12)
+	ld %r4, 120(%r12)
+	ld %r5, 128(%r12)
+	ld %r6, 136(%r12)
+	ld %r9, 256(%r12)
+	bl {vg_aes_gcm_open}
+	cmplwi %cr0, %r3, 0
+	beq %cr0, 26f
+	b 27f
+26:
+	addi %r12, %r1, 0
+	ld %r9, 256(%r12)
+	ld %r10, 264(%r12)
+	li %r11, 0
+	cmpldi %cr0, %r10, 0
+	beq %cr0, 28f
+210:
+	stb %r11, 0(%r9)
+	addi %r9, %r9, 1
+	addi %r10, %r10, -1
+	cmpldi %cr0, %r10, 0
+	bne %cr0, 210b
+	b 29f
+28:
+29:
+27:
+	addi %r12, %r1, 0
+	ld %r0, 152(%r12)
+	mtlr %r0
+	addi %r1, %r1, 160
+	blr

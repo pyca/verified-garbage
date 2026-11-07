@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.CtrVerified
+public import VerifiedGarbage.Proof.Sm4.X86.CtrFinal
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.CtrLit
@@ -15,6 +16,11 @@ def artifacts : List Artifact := [
   Spec.Sm4.ctrApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ctr
     stack := 1516
-    verified := Proof.Sm4.X86.Ctr.ctr_framed }]
+    verified := Proof.Sm4.X86.Ctr.ctr_framed },
+  Spec.Sm4.ctrFinalApi.artifact X86.target {
+    code := Impl.StackScratch.X86.withStackScratchWiped 56 4 8 Impl.Sm4.X86.ctrFinal
+    stack := 1592
+    verified := Proof.Sm4.X86.CtrFinal.ctrFinal_framed
+    spSafe := Proof.Sm4.X86.CtrFinal.ctrFinal_framed_spSafe }]
 
 end VG.Artifacts.Sm4Ctr.X86

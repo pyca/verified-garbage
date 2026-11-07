@@ -103,6 +103,14 @@ instructions in an ISA model) go in their own PR before either.
    interface append the suffix alone. Never list the
    implementations in the caller: a new implementation is a new variant
    file, and its callers follow.
+   The emitter writes each function's dispatcher, `<name>_auto` (in
+   `crate::arch::dispatch::<module>`), which
+   tries its implementations in the order `Dispatch.lean` ranks their
+   suffixes on the target (a suffix of several parts by the rank of each
+   part's): a variant with a suffix it does not rank yet fails the
+   emitter, so rank it there, best first (`VG.Rust.Rank`: its `extra`
+   features, a `vendor`, or `skip` for one the Rust code chooses by
+   something other than the CPU).
    Registration files (`Artifacts/`, `Generic/`) and variant files
    (`Variants/`) are reviewed by hand, so they only bind: no theorems, no
    tactic proofs beyond the defaults (not even a `(by decide)` argument),
@@ -127,7 +135,8 @@ instructions in an ISA model) go in their own PR before either.
    Mathlib algebra of its proof), and the registration file is
    `Generic/<Curve>/<Target>/<Alg>.lean` (`Generic/<Iface>/<Curve>/<Target>/`
    when it is generic over an implementation too). The law has no suffix.
-5. Regenerate the generated crates, build the public Rust API on top of the primitive,
+5. Regenerate the generated crates, build the public Rust API on top of the primitive
+   (calling each function's dispatcher, `<name>_auto`, where it has variants),
    and test it against the Wycheproof vectors in `tests/wycheproof/` (set
    `WYCHEPROOF_ROOT` to a checkout of C2SP/wycheproof). Benchmark the new
    API in `bench/benches/primitives/<alg>.rs`, next to the same operation in
@@ -157,4 +166,6 @@ name and a suffix that is the whole suffix of a variant of a function with
 a signature on the target (`_shani`, `_avx2`, `_blake2b_avx2`, …), each
 variant of a variant adding one (`vg_keccak_f1600_x2` is not a variant of
 `vg_keccak_f1600`: no such function has a variant `_x2`), and its CPU
-features are in the `_FEATURES` constant of its file.
+features are in the `_FEATURES` constant of its file. A dispatcher
+(`<name>_auto`) is not a variant: a use of it by the Rust code is a use of
+each implementation it calls.
