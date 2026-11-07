@@ -9,6 +9,14 @@ use crate::arch::ffdh::{
     VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES, VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES,
     VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES,
 };
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ffdh::{
+    VG_FFDH_CHECK_DOMAIN_MR_IFMA_FEATURES, VG_FFDH_CHECK_PRIVATE_MR_IFMA_FEATURES,
+    VG_FFDH_CHECK_PUBLIC_MR_IFMA_FEATURES, VG_FFDH_DERIVE_PUBLIC_MR_ADX_FEATURES,
+    VG_FFDH_DERIVE_PUBLIC_MR_IFMA_FEATURES, VG_FFDH_EXCHANGE_MR_IFMA_FEATURES,
+    VG_FFDH_GENERATE_KEY_CACHED_IFMA_FEATURES, VG_FFDH_GENERATE_KEY_PRECOMPUTE_IFMA_FEATURES,
+    VG_FFDH_GENERATE_KEY_SEARCH_CACHED_IFMA_FEATURES, VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES,
+};
 #[cfg(target_arch = "arm")]
 use crate::arch::ffdh::{
     VG_FFDH_CHECK_DOMAIN_UMAAL_FEATURES, VG_FFDH_CHECK_PRIVATE_UMAAL_FEATURES,
@@ -39,14 +47,20 @@ pub(super) fn scalar(a: &[u8], len: usize) -> Vec<u8> {
     out
 }
 /// The implementations of the verified functions FFDH calls: the baseline
-/// ISA's, x86-64 ADX variants, or ARMv7 UMAAL variants. Each use selects it from the
-/// features of the functions it calls; RSA's private-key routines have
-/// additional feature requirements that do not apply to these functions.
+/// ISA's, x86-64 ADX variants, x86-64 IFMA variants (the `_ifma` instances
+/// of the Miller–Rabin round's callers, `_mr_ifma` of the domain
+/// operations, which the generated code names for the `_adx` and `_mr_adx`
+/// code where the round is not called), or ARMv7 UMAAL variants. Each use
+/// selects it from the features of the functions it calls; RSA's
+/// private-key routines have additional feature requirements that do not
+/// apply to these functions.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Backend {
     Baseline,
     #[cfg(target_arch = "x86_64")]
     Adx,
+    #[cfg(target_arch = "x86_64")]
+    Ifma,
     #[cfg(target_arch = "arm")]
     Umaal,
 }
@@ -59,10 +73,29 @@ impl Backend {
         if _f.contains(
             const {
                 Features::all(&[
+                    VG_FFDH_CHECK_DOMAIN_MR_IFMA_FEATURES,
+                    VG_FFDH_CHECK_PUBLIC_MR_IFMA_FEATURES,
+                    VG_FFDH_CHECK_PRIVATE_MR_IFMA_FEATURES,
+                    VG_FFDH_EXCHANGE_MR_IFMA_FEATURES,
+                    VG_FFDH_DERIVE_PUBLIC_MR_IFMA_FEATURES,
+                    VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES,
+                    VG_FFDH_GENERATE_KEY_PRECOMPUTE_IFMA_FEATURES,
+                    VG_FFDH_GENERATE_KEY_CACHED_IFMA_FEATURES,
+                    VG_FFDH_GENERATE_KEY_SEARCH_CACHED_IFMA_FEATURES,
+                ])
+            },
+        ) {
+            return Self::Ifma;
+        }
+        #[cfg(target_arch = "x86_64")]
+        if _f.contains(
+            const {
+                Features::all(&[
                     VG_FFDH_CHECK_DOMAIN_MR_ADX_FEATURES,
                     VG_FFDH_CHECK_PUBLIC_MR_ADX_FEATURES,
                     VG_FFDH_CHECK_PRIVATE_MR_ADX_FEATURES,
                     VG_FFDH_EXCHANGE_MR_ADX_FEATURES,
+                    VG_FFDH_DERIVE_PUBLIC_MR_ADX_FEATURES,
                     VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES,
                     VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES,
                     VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES,
@@ -91,6 +124,33 @@ impl Backend {
             return Self::Umaal;
         }
         Self::Baseline
+    }
+
+    /// Every implementation.
+    #[cfg(test)]
+    pub(super) const ALL: &[Self] = &[
+        Self::Baseline,
+        #[cfg(target_arch = "x86_64")]
+        Self::Adx,
+        #[cfg(target_arch = "x86_64")]
+        Self::Ifma,
+        #[cfg(target_arch = "arm")]
+        Self::Umaal,
+    ];
+
+    /// Whether a CPU with the features `_f` can run this implementation: it
+    /// has the features `ffdh` chooses it with (IFMA's include ADX's).
+    #[cfg(test)]
+    pub(super) fn runs_on(self, _f: Features) -> bool {
+        match self {
+            Self::Baseline => true,
+            #[cfg(target_arch = "x86_64")]
+            Self::Adx => matches!(Self::ffdh(_f), Self::Adx | Self::Ifma),
+            #[cfg(target_arch = "x86_64")]
+            Self::Ifma => Self::ffdh(_f) == Self::Ifma,
+            #[cfg(target_arch = "arm")]
+            Self::Umaal => Self::ffdh(_f) == Self::Umaal,
+        }
     }
 }
 
@@ -124,6 +184,20 @@ impl Exp {
         }
         Self::Baseline
     }
+
+    /// Every exponentiation.
+    #[cfg(test)]
+    pub(super) const ALL: &[Self] = &[
+        Self::Baseline,
+        #[cfg(target_arch = "x86_64")]
+        Self::Ifma,
+    ];
+
+    /// Whether a CPU with the features `f` can run this exponentiation.
+    #[cfg(test)]
+    pub(super) fn runs_on(self, f: Features) -> bool {
+        self == Self::Baseline || self == Self::ffdh(f)
+    }
 }
 
 #[cfg(all(test, target_arch = "x86_64"))]
@@ -133,10 +207,12 @@ mod tests {
 
     #[test]
     fn backend_feature_requirements() {
-        // The selection needs exactly BMI2 and ADX, the generated feature
-        // sets of the functions it calls. AVX, AVX2 and IFMA belong to
-        // other RSA routines: they neither enable ADX nor gate it when BMI2
-        // and ADX are present.
+        // ADX needs exactly BMI2 and ADX, the generated feature sets of the
+        // functions it calls; IFMA needs those and AVX, AVX512F,
+        // AVX512_IFMA and AVX512VL, its Miller–Rabin round's. AVX2 belongs
+        // to other RSA routines: it neither enables a variant nor gates one.
+        let adx = feature::BMI2 | feature::ADX;
+        let ifma = adx | feature::AVX | feature::AVX512F | feature::AVX512IFMA | feature::AVX512VL;
         let cases: &[(u32, Backend)] = &[
             (0, Backend::Baseline),
             (feature::BMI2, Backend::Baseline),
@@ -150,29 +226,23 @@ mod tests {
                 feature::AVX | feature::AVX2 | feature::ADX,
                 Backend::Baseline,
             ),
+            (ifma & !feature::BMI2, Backend::Baseline),
+            (ifma & !feature::ADX, Backend::Baseline),
             (
-                feature::AVX
-                    | feature::AVX2
-                    | feature::AVX512F
-                    | feature::AVX512IFMA
-                    | feature::AVX512VL,
+                (ifma | feature::AVX2) & !feature::BMI2 & !feature::ADX,
                 Backend::Baseline,
             ),
-            (feature::BMI2 | feature::ADX, Backend::Adx),
+            (adx, Backend::Adx),
             (
                 feature::AVX | feature::AVX2 | feature::BMI2 | feature::ADX,
                 Backend::Adx,
             ),
-            (
-                feature::AVX
-                    | feature::AVX2
-                    | feature::AVX512F
-                    | feature::BMI2
-                    | feature::ADX
-                    | feature::AVX512IFMA
-                    | feature::AVX512VL,
-                Backend::Adx,
-            ),
+            (ifma & !feature::AVX, Backend::Adx),
+            (ifma & !feature::AVX512F, Backend::Adx),
+            (ifma & !feature::AVX512IFMA, Backend::Adx),
+            (ifma & !feature::AVX512VL, Backend::Adx),
+            (ifma, Backend::Ifma),
+            (ifma | feature::AVX2, Backend::Ifma),
         ];
         for &(features, expected) in cases {
             let selected = Backend::ffdh(Features(features));

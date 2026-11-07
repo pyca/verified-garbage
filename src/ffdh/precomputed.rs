@@ -30,6 +30,8 @@ impl Precomputed {
             Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_precompute_umaal,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_precompute_adx,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Ifma => crate::arch::ffdh::vg_ffdh_generate_key_precompute_ifma,
         };
         // SAFETY: the domain was accepted by vg_ffdh_check_domain. Its
         // length is 2*p_len or 3*p_len, p_len is in 64..=1024, words has

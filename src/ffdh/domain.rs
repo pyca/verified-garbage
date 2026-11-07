@@ -3,27 +3,169 @@
 
 use super::arithmetic::{Backend, Exp, scalar};
 use crate::arch::ffdh::{
-    vg_ffdh_check_domain, vg_ffdh_check_private, vg_ffdh_check_public, vg_ffdh_exchange,
-    vg_ffdh_key_generation_init,
+    vg_ffdh_check_domain, vg_ffdh_check_private, vg_ffdh_check_public, vg_ffdh_derive_public,
+    vg_ffdh_exchange, vg_ffdh_key_generation_init,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::{
     vg_ffdh_check_domain_exp_ifma, vg_ffdh_check_domain_mr_adx,
-    vg_ffdh_check_domain_mr_adx_exp_ifma, vg_ffdh_check_private_exp_ifma,
+    vg_ffdh_check_domain_mr_adx_exp_ifma, vg_ffdh_check_domain_mr_ifma,
+    vg_ffdh_check_domain_mr_ifma_exp_ifma, vg_ffdh_check_private_exp_ifma,
     vg_ffdh_check_private_mr_adx, vg_ffdh_check_private_mr_adx_exp_ifma,
+    vg_ffdh_check_private_mr_ifma, vg_ffdh_check_private_mr_ifma_exp_ifma,
     vg_ffdh_check_public_exp_ifma, vg_ffdh_check_public_mr_adx,
-    vg_ffdh_check_public_mr_adx_exp_ifma, vg_ffdh_derive_public_exp_ifma,
-    vg_ffdh_derive_public_mr_adx, vg_ffdh_derive_public_mr_adx_exp_ifma, vg_ffdh_exchange_exp_ifma,
-    vg_ffdh_exchange_mr_adx, vg_ffdh_exchange_mr_adx_exp_ifma,
+    vg_ffdh_check_public_mr_adx_exp_ifma, vg_ffdh_check_public_mr_ifma,
+    vg_ffdh_check_public_mr_ifma_exp_ifma, vg_ffdh_derive_public_exp_ifma,
+    vg_ffdh_derive_public_mr_adx, vg_ffdh_derive_public_mr_adx_exp_ifma,
+    vg_ffdh_derive_public_mr_ifma, vg_ffdh_derive_public_mr_ifma_exp_ifma,
+    vg_ffdh_exchange_exp_ifma, vg_ffdh_exchange_mr_adx, vg_ffdh_exchange_mr_adx_exp_ifma,
+    vg_ffdh_exchange_mr_ifma, vg_ffdh_exchange_mr_ifma_exp_ifma,
+};
+#[cfg(target_arch = "arm")]
+use crate::arch::ffdh::{
+    vg_ffdh_check_domain_umaal, vg_ffdh_check_private_umaal, vg_ffdh_check_public_umaal,
+    vg_ffdh_derive_public_umaal, vg_ffdh_exchange_umaal,
 };
 use crate::cpu::detected;
 use crate::rsa::Scratch;
 
-/// The arithmetic and the exponentiation of the domain operations for the
-/// CPU's features.
-fn domain_variant() -> (Backend, Exp) {
-    let f = detected();
-    (Backend::ffdh(f), Exp::ffdh(f))
+/// The type of a generated function with arguments `$a`, in the ABI the
+/// target's functions are emitted in.
+#[cfg(target_arch = "x86_64")]
+macro_rules! asm_fn {
+    ($($a:ty),*) => { unsafe extern "sysv64" fn($($a),*) -> u32 };
+}
+#[cfg(not(target_arch = "x86_64"))]
+macro_rules! asm_fn {
+    ($($a:ty),*) => { unsafe extern "C" fn($($a),*) -> u32 };
+}
+
+/// The domain operations of one implementation: `vg_ffdh_check_domain`,
+/// `_check_public`, `_check_private`, `_derive_public` and `_exchange`.
+#[derive(Clone, Copy)]
+struct Ops {
+    check_domain: asm_fn!(*const u8, usize, usize, *mut u64, usize),
+    check_public: asm_fn!(*const u8, usize, usize, *const u8, usize, *mut u64, usize),
+    check_private: asm_fn!(
+        *const u8,
+        usize,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *mut u64,
+        usize
+    ),
+    derive_public: asm_fn!(
+        *mut u8,
+        usize,
+        *const u8,
+        usize,
+        usize,
+        *const u8,
+        usize,
+        *mut u64,
+        usize
+    ),
+    exchange: asm_fn!(
+        *mut u8,
+        usize,
+        *const u8,
+        usize,
+        usize,
+        *const u8,
+        usize,
+        *const u8,
+        usize,
+        *mut u64,
+        usize
+    ),
+}
+
+impl Ops {
+    /// The domain operations of the arithmetic `backend` and the
+    /// exponentiation `exp`. Every combination is named, so a new backend
+    /// does not compile until the domain operations handle it; a CPU with
+    /// IFMA's arithmetic also has IFMA's exponentiation, so it never
+    /// chooses `(Backend::Ifma, Exp::Baseline)`.
+    fn of(backend: Backend, exp: Exp) -> Self {
+        macro_rules! ops {
+            ($check_domain:ident, $check_public:ident, $check_private:ident, $derive_public:ident, $exchange:ident) => {
+                Self {
+                    check_domain: $check_domain,
+                    check_public: $check_public,
+                    check_private: $check_private,
+                    derive_public: $derive_public,
+                    exchange: $exchange,
+                }
+            };
+        }
+        match (backend, exp) {
+            (Backend::Baseline, Exp::Baseline) => ops!(
+                vg_ffdh_check_domain,
+                vg_ffdh_check_public,
+                vg_ffdh_check_private,
+                vg_ffdh_derive_public,
+                vg_ffdh_exchange
+            ),
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Baseline, Exp::Ifma) => ops!(
+                vg_ffdh_check_domain_exp_ifma,
+                vg_ffdh_check_public_exp_ifma,
+                vg_ffdh_check_private_exp_ifma,
+                vg_ffdh_derive_public_exp_ifma,
+                vg_ffdh_exchange_exp_ifma
+            ),
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Adx, Exp::Baseline) => ops!(
+                vg_ffdh_check_domain_mr_adx,
+                vg_ffdh_check_public_mr_adx,
+                vg_ffdh_check_private_mr_adx,
+                vg_ffdh_derive_public_mr_adx,
+                vg_ffdh_exchange_mr_adx
+            ),
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Adx, Exp::Ifma) => ops!(
+                vg_ffdh_check_domain_mr_adx_exp_ifma,
+                vg_ffdh_check_public_mr_adx_exp_ifma,
+                vg_ffdh_check_private_mr_adx_exp_ifma,
+                vg_ffdh_derive_public_mr_adx_exp_ifma,
+                vg_ffdh_exchange_mr_adx_exp_ifma
+            ),
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Ifma, Exp::Baseline) => ops!(
+                vg_ffdh_check_domain_mr_ifma,
+                vg_ffdh_check_public_mr_ifma,
+                vg_ffdh_check_private_mr_ifma,
+                vg_ffdh_derive_public_mr_ifma,
+                vg_ffdh_exchange_mr_ifma
+            ),
+            #[cfg(target_arch = "x86_64")]
+            (Backend::Ifma, Exp::Ifma) => ops!(
+                vg_ffdh_check_domain_mr_ifma_exp_ifma,
+                vg_ffdh_check_public_mr_ifma_exp_ifma,
+                vg_ffdh_check_private_mr_ifma_exp_ifma,
+                vg_ffdh_derive_public_mr_ifma_exp_ifma,
+                vg_ffdh_exchange_mr_ifma_exp_ifma
+            ),
+            #[cfg(target_arch = "arm")]
+            (Backend::Umaal, Exp::Baseline) => ops!(
+                vg_ffdh_check_domain_umaal,
+                vg_ffdh_check_public_umaal,
+                vg_ffdh_check_private_umaal,
+                vg_ffdh_derive_public_umaal,
+                vg_ffdh_exchange_umaal
+            ),
+        }
+    }
+
+    /// The domain operations for the CPU's features: their arithmetic and
+    /// their exponentiation, each chosen by the features it needs.
+    fn detected() -> Self {
+        let f = detected();
+        Self::of(Backend::ffdh(f), Exp::ffdh(f))
+    }
 }
 
 /// The working space every function needs, `16 p_len + 32` words.
@@ -44,6 +186,10 @@ impl Domain {
     /// each padded to p's width, and checks them (`vg_ffdh_check_domain`).
     /// `None` for an invalid domain.
     pub(super) fn new(p: &[u8], g: &[u8], q: Option<&[u8]>) -> Option<Self> {
+        Self::new_with(Ops::detected(), p, g, q)
+    }
+
+    fn new_with(ops: Ops, p: &[u8], g: &[u8], q: Option<&[u8]>) -> Option<Self> {
         let p_len = p.len();
         if !(64..=1024).contains(&p_len) || g.len() > p_len || q.is_some_and(|q| q.len() > p_len) {
             return None;
@@ -55,17 +201,7 @@ impl Domain {
             bytes[3 * p_len - q.len()..].copy_from_slice(q);
         }
         let mut ws = scratch(p_len);
-        let f = match domain_variant() {
-            (Backend::Baseline, Exp::Baseline) => vg_ffdh_check_domain,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Baseline) => vg_ffdh_check_domain_mr_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Baseline, Exp::Ifma) => vg_ffdh_check_domain_exp_ifma,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Ifma) => vg_ffdh_check_domain_mr_adx_exp_ifma,
-            #[cfg(target_arch = "arm")]
-            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_check_domain_umaal,
-        };
+        let f = ops.check_domain;
         // SAFETY: `bytes` is `2 p_len` or `3 p_len` bytes for a `p_len` in
         // 64..=1024, and `ws` is `16 p_len + 32` words; they are distinct
         // Rust objects. The CPU variant is selected only when the CPU has
@@ -97,22 +233,16 @@ impl Domain {
     /// Whether `y` (without leading zeros) is a valid public value
     /// (`vg_ffdh_check_public`).
     pub(super) fn check_public(&self, y: &[u8]) -> bool {
+        self.check_public_with(Ops::detected(), y)
+    }
+
+    fn check_public_with(&self, ops: Ops, y: &[u8]) -> bool {
         if y.len() > self.p_len {
             return false;
         }
         let y = scalar(y, self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match domain_variant() {
-            (Backend::Baseline, Exp::Baseline) => vg_ffdh_check_public,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Baseline) => vg_ffdh_check_public_mr_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Baseline, Exp::Ifma) => vg_ffdh_check_public_exp_ifma,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Ifma) => vg_ffdh_check_public_mr_adx_exp_ifma,
-            #[cfg(target_arch = "arm")]
-            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_check_public_umaal,
-        };
+        let f = ops.check_public;
         // SAFETY: `self.bytes` is a domain laid out by `new`, `y` is `p_len`
         // bytes and `ws` `16 p_len + 32` words; all are distinct objects.
         // The CPU variant is selected only when the CPU has its generated
@@ -133,22 +263,16 @@ impl Domain {
     /// Whether `x` (1 to `p_len` bytes) and `y` (without leading zeros) are
     /// a valid key pair (`vg_ffdh_check_private`).
     pub(super) fn check_private(&self, y: &[u8], x: &[u8]) -> bool {
+        self.check_private_with(Ops::detected(), y, x)
+    }
+
+    fn check_private_with(&self, ops: Ops, y: &[u8], x: &[u8]) -> bool {
         if y.len() > self.p_len || x.is_empty() || x.len() > self.p_len {
             return false;
         }
         let y = scalar(y, self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match domain_variant() {
-            (Backend::Baseline, Exp::Baseline) => vg_ffdh_check_private,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Baseline) => vg_ffdh_check_private_mr_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Baseline, Exp::Ifma) => vg_ffdh_check_private_exp_ifma,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Ifma) => vg_ffdh_check_private_mr_adx_exp_ifma,
-            #[cfg(target_arch = "arm")]
-            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_check_private_umaal,
-        };
+        let f = ops.check_private;
         // SAFETY: as in `check_public`, and `x` is 1 to `p_len` bytes.
         unsafe {
             f(
@@ -169,19 +293,13 @@ impl Domain {
     /// into `y` (`p_len` bytes): 1, or 2 for a scalar out of range and 3 for
     /// a degenerate public value, with zeros (`vg_ffdh_derive_public`).
     pub(super) fn derive_public(&self, x: &[u8], y: &mut [u8]) -> u32 {
+        self.derive_public_with(Ops::detected(), x, y)
+    }
+
+    fn derive_public_with(&self, ops: Ops, x: &[u8], y: &mut [u8]) -> u32 {
         assert!(!x.is_empty() && x.len() <= self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match domain_variant() {
-            (Backend::Baseline, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_derive_public,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Baseline) => vg_ffdh_derive_public_mr_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Baseline, Exp::Ifma) => vg_ffdh_derive_public_exp_ifma,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Ifma) => vg_ffdh_derive_public_mr_adx_exp_ifma,
-            #[cfg(target_arch = "arm")]
-            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_derive_public_umaal,
-        };
+        let f = ops.derive_public;
         // SAFETY: `y` is `p_len` bytes, `x` 1 to `p_len`, the domain, `ws`
         // and the variant as in `check_public`; all are distinct objects.
         unsafe {
@@ -231,6 +349,8 @@ impl Domain {
             Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_search_cached_umaal,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_search_cached_adx,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Ifma => crate::arch::ffdh::vg_ffdh_generate_key_search_cached_ifma,
         };
         let mut used = [0u64; 1];
         // SAFETY: `state` came from `key_state` for this domain and has only
@@ -277,6 +397,8 @@ impl Domain {
             Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_cached_umaal,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_cached_adx,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Ifma => crate::arch::ffdh::vg_ffdh_generate_key_cached_ifma,
         };
         // SAFETY: `x`, `y` and `rand` are `p_len` bytes each, the domain,
         // `ws` and the variant as in `check_public`; all are distinct
@@ -305,6 +427,10 @@ impl Domain {
     /// bytes), or `false` and zeros for a degenerate one
     /// (`vg_ffdh_exchange`).
     pub(super) fn exchange(&self, x: &[u8], y: &[u8], out: &mut [u8]) -> bool {
+        self.exchange_with(Ops::detected(), x, y, out)
+    }
+
+    fn exchange_with(&self, ops: Ops, x: &[u8], y: &[u8], out: &mut [u8]) -> bool {
         assert!(
             !x.is_empty()
                 && x.len() <= self.p_len
@@ -313,17 +439,7 @@ impl Domain {
         );
         let y = scalar(y, self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match domain_variant() {
-            (Backend::Baseline, Exp::Baseline) => vg_ffdh_exchange,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Baseline) => vg_ffdh_exchange_mr_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Baseline, Exp::Ifma) => vg_ffdh_exchange_exp_ifma,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Ifma) => vg_ffdh_exchange_mr_adx_exp_ifma,
-            #[cfg(target_arch = "arm")]
-            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_exchange_umaal,
-        };
+        let f = ops.exchange;
         // SAFETY: `out` and `y` are `p_len` bytes, `x` 1 to `p_len`, the
         // domain, `ws` and the variant as in `check_public`; all are
         // distinct objects.
@@ -347,9 +463,9 @@ impl Domain {
 
 #[cfg(test)]
 mod cache_tests {
-    use super::Domain;
     #[cfg(any(target_arch = "arm", target_arch = "x86_64"))]
-    use super::{Backend, detected, scratch};
+    use super::scratch;
+    use super::{Backend, Domain, Exp, Ops, detected};
 
     #[test]
     fn clones_share_immutable_context_and_keep_it_alive() {
@@ -379,16 +495,19 @@ mod cache_tests {
     #[cfg(any(target_arch = "arm", target_arch = "x86_64"))]
     #[test]
     fn canonical_context_crosses_arithmetic_backends() {
-        // Feature-forced baseline CI runs take the first path; UMAAL and ADX
-        // runs also exercise both directions with the actual generated
-        // functions.
-        #[cfg(target_arch = "arm")]
-        let variant = Backend::Umaal;
-        #[cfg(target_arch = "x86_64")]
-        let variant = Backend::Adx;
-        if Backend::ffdh(detected()) != variant {
-            return;
+        // Feature-forced baseline CI runs run none of these; UMAAL, ADX and
+        // IFMA runs exercise both directions with each variant the CPU can
+        // run, with the actual generated functions.
+        let variants = Backend::ALL
+            .iter()
+            .filter(|&&b| b != Backend::Baseline && b.runs_on(detected()));
+        for &variant in variants {
+            canonical_context_crosses(variant);
         }
+    }
+
+    #[cfg(any(target_arch = "arm", target_arch = "x86_64"))]
+    fn canonical_context_crosses(variant: Backend) {
         let mut p = alloc::vec![0; 64];
         p[0] = 0x80;
         p[63] = 1;
@@ -424,6 +543,8 @@ mod cache_tests {
                     Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_cached_umaal,
                     #[cfg(target_arch = "x86_64")]
                     Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_cached_adx,
+                    #[cfg(target_arch = "x86_64")]
+                    Backend::Ifma => crate::arch::ffdh::vg_ffdh_generate_key_cached_ifma,
                 };
                 let (mut x, mut y) = (alloc::vec![0; domain.p_len], alloc::vec![0; domain.p_len]);
                 // SAFETY: domain was checked, context was initialized for these
@@ -451,6 +572,46 @@ mod cache_tests {
                 assert_eq!(x, expected_x);
                 assert_eq!(y, expected_y);
                 assert_eq!(context.words(), domain.precomputed.words());
+            }
+        }
+    }
+
+    /// Each implementation of the domain operations the CPU can run agrees
+    /// with the one it chooses on a published group, and every combination
+    /// of arithmetic and exponentiation has its operations, including
+    /// IFMA's arithmetic with the baseline exponentiation, which no CPU
+    /// chooses.
+    #[test]
+    fn domain_operations_of_every_implementation() {
+        let p = super::super::vetted_tests::modp_groups().remove(0);
+        let chosen = Domain::new(&p, &[2], None).unwrap();
+        let len = chosen.p_len;
+        let x = [3u8];
+        let mut y = alloc::vec![0; len];
+        assert_eq!(chosen.derive_public(&x, &mut y), 1);
+        let mut shared = alloc::vec![0; len];
+        assert!(chosen.exchange(&x, &y, &mut shared));
+        let f = detected();
+        for &backend in Backend::ALL {
+            for &exp in Exp::ALL {
+                let ops = Ops::of(backend, exp);
+                if !(backend.runs_on(f) && exp.runs_on(f)) {
+                    continue;
+                }
+                let domain = Domain::new_with(ops, &p, &[2], None).unwrap();
+                // Not a domain: p is even.
+                let mut even = p.clone();
+                even[len - 1] ^= 1;
+                assert!(Domain::new_with(ops, &even, &[2], None).is_none());
+                assert!(domain.check_public_with(ops, &y));
+                assert!(!domain.check_public_with(ops, &[1]));
+                assert!(domain.check_private_with(ops, &y, &x));
+                assert!(!domain.check_private_with(ops, &y, &[4]));
+                let mut z = alloc::vec![0; len];
+                assert_eq!(domain.derive_public_with(ops, &x, &mut z), 1);
+                assert_eq!(z, y);
+                assert!(domain.exchange_with(ops, &x, &y, &mut z));
+                assert_eq!(z, shared);
             }
         }
     }
