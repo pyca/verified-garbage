@@ -1130,12 +1130,14 @@ jobs:
   # main run every job to the end, to report every failure). A job per job
   # that runs alongside others, which starts only once that job has failed
   # (and its matrix entries cancelled each other, `fail-fast`): a passing run
-  # skips them all, and so takes no runner. They hold `actions: write`, which
-  # also starts workflows, so that no job running the repository's code (or
-  # its dependencies) has to.
-  cancel-lean:
-    name: "Merge queue: cancel after Lean: plan and build"
-    needs: lean
+  # skips them all, and so takes no runner. A failed ancestor counts too
+  # (`failure()`): `cancel-lean-shard` also catches `lean`, whose failure
+  # skips `lean-shard` at once, and `cancel-rust` catches `rust-arches`.
+  # They hold `actions: write`, which also starts workflows, so that no job
+  # running the repository's code (or its dependencies) has to.
+  cancel-lean-shard:
+    name: "Merge queue: cancel after Lean: shard"
+    needs: lean-shard
     if: ${{ failure() && github.event_name == 'merge_group' }}
     runs-on: ubuntu-26.04
     permissions:
@@ -1145,15 +1147,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-
-  cancel-lean-shard:
-    name: "Merge queue: cancel after Lean: shard"
-    needs: lean-shard
-    if: ${{ failure() && github.event_name == 'merge_group' }}
-    runs-on: ubuntu-26.04
-    permissions:
-      actions: write
-    steps: *cancel
 
   cancel-lean-imports:
     name: "Merge queue: cancel after Static checks"
