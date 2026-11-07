@@ -617,7 +617,8 @@ vg_aes_gcm_siv_seal:
 	addi a5, s0, 1792
 	addi a3, s0, 0
 	addi a4, zero, 1
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	addi s9, s6, 0
 	addi s10, s7, 0
 	ld a0, 0(s0)
@@ -690,7 +691,8 @@ vg_aes_gcm_siv_seal:
 	addi a5, s0, 1792
 	addi a3, s0, 240
 	addi a4, zero, 1
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	addi a0, s0, 240
 	addi a1, s9, 0
 	addi a2, s10, 0
@@ -1002,7 +1004,8 @@ vg_aes_gcm_siv_open:
 	addi a5, s0, 1792
 	addi a3, s0, 240
 	addi a4, zero, 1
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	addi a0, s0, 240
 	addi a1, s9, 0
 	addi a2, s10, 0
@@ -1490,7 +1493,8 @@ vg_aes_gcm_siv_open:
 	addi a5, s0, 1792
 	addi a3, s0, 240
 	addi a4, zero, 1
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	ld a0, 0(s0)
 	ld a1, 240(s0)
 	xor a0, a0, a1

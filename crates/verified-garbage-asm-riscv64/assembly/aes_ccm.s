@@ -357,7 +357,8 @@ vg_aes_ccm_seal:
 	addi a5, s1, 384
 	addi a3, s1, 0
 	addi a4, zero, 1
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	addi s5, s9, 0
 	srli s6, s10, 4
 	addi s7, zero, 1
@@ -423,7 +424,8 @@ vg_aes_ccm_seal:
 	addi a5, s1, 384
 	addi a3, s5, 0
 	addi a4, s8, 0
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	sub s6, s6, s8
 	add s7, s7, s8
 	slli t1, s8, 4
@@ -485,7 +487,8 @@ vg_aes_ccm_seal:
 	addi a5, s1, 384
 	addi a3, s1, 80
 	addi a4, zero, 1
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	addi a0, s1, 80
 	addi a1, s5, 0
 	addi a2, s8, 0
@@ -646,7 +649,8 @@ vg_aes_ccm_open:
 	addi a5, s1, 384
 	addi a3, s5, 0
 	addi a4, s8, 0
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	sub s6, s6, s8
 	add s7, s7, s8
 	slli t1, s8, 4
@@ -708,7 +712,8 @@ vg_aes_ccm_open:
 	addi a5, s1, 384
 	addi a3, s1, 80
 	addi a4, zero, 1
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	addi a0, s1, 80
 	addi a1, s5, 0
 	addi a2, s8, 0
@@ -1023,7 +1028,8 @@ vg_aes_ccm_open:
 	addi a5, s1, 384
 	addi a3, s1, 96
 	addi a4, zero, 1
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	ld s5, 240(s1)
 	addi t0, zero, 0
 	sd t0, 256(s1)

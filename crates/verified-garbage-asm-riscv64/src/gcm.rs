@@ -52,7 +52,8 @@ call {vg_aes_expand_key_scratch}
 .insn 4, 0x0f090693
 .insn 2, 0x4705
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 2, 0x8322
 .insn 4, 0x08033403
 .insn 4, 0x08833483
@@ -72,7 +73,7 @@ call {vg_aes_ctr32}
 .insn 2, 0x8082
 .option pop",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -569,7 +570,8 @@ beqz a4, 29f
 .insn 2, 0x85ce
 .insn 4, 0x03048613
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 j 210f
 29:
 210:
@@ -583,7 +585,8 @@ beqz s5, 211f
 .insn 2, 0x85ce
 .insn 4, 0x03048613
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x04048513
 .insn 2, 0x85d2
 .insn 2, 0x8656
@@ -729,7 +732,7 @@ j 215f
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
@@ -933,7 +936,8 @@ beqz a4, 232f
 .insn 2, 0x85ce
 .insn 4, 0x03048613
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 j 233f
 232:
 233:
@@ -947,7 +951,8 @@ beqz s5, 234f
 .insn 2, 0x85ce
 .insn 4, 0x03048613
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x04048513
 .insn 2, 0x85d2
 .insn 2, 0x8656
@@ -985,7 +990,7 @@ j 224f
 .insn 2, 0x8082
 .option pop",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -1111,7 +1116,8 @@ call {vg_ghash}
 .insn 2, 0x86a2
 .insn 2, 0x4705
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x00044283
 .insn 4, 0x005c8023
 .insn 4, 0x00144283
@@ -1163,7 +1169,7 @@ call {vg_aes_ctr32}
 .insn 2, 0x8082
 .option pop",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -1322,7 +1328,8 @@ call {vg_ghash}
 .insn 2, 0x86a2
 .insn 2, 0x4705
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 2, 0x4281
 .insn 4, 0x10543823
 .insn 4, 0x10543c23
@@ -1372,7 +1379,7 @@ j 27f
 .insn 2, 0x8082
 .option pop",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -1788,7 +1795,8 @@ beqz a4, 249f
 .insn 2, 0x85ce
 .insn 4, 0x03048613
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 j 250f
 249:
 250:
@@ -1802,7 +1810,8 @@ beqz s5, 251f
 .insn 2, 0x85ce
 .insn 4, 0x03048613
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x04048513
 .insn 2, 0x85d2
 .insn 2, 0x8656
@@ -1974,7 +1983,8 @@ call {vg_ghash}
 .insn 2, 0x86a2
 .insn 2, 0x4705
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x00044283
 .insn 4, 0x005c8023
 .insn 4, 0x00144283
@@ -2026,7 +2036,7 @@ call {vg_aes_ctr32}
 .insn 2, 0x8082
 .option pop",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -2572,7 +2582,8 @@ call {vg_ghash}
 .insn 4, 0x07040693
 .insn 2, 0x4705
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 2, 0x4281
 .insn 4, 0x10543023
 .insn 4, 0x10543423
@@ -2661,7 +2672,8 @@ beqz a4, 280f
 .insn 2, 0x85ce
 .insn 4, 0x03048613
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 j 281f
 280:
 281:
@@ -2675,7 +2687,8 @@ beqz s5, 282f
 .insn 2, 0x85ce
 .insn 4, 0x03048613
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x04048513
 .insn 2, 0x85d2
 .insn 2, 0x8656
@@ -2721,7 +2734,7 @@ j 27f
 .insn 2, 0x8082
 .option pop",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -3388,7 +3401,8 @@ call {vg_ghash}
 .insn 4, 0x07040693
 .insn 2, 0x4705
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 2, 0x4281
 .insn 4, 0x10543023
 .insn 4, 0x10543423
@@ -3495,7 +3509,8 @@ beqz s5, 282f
 .insn 2, 0x85ce
 .insn 4, 0x03048613
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x04048513
 .insn 2, 0x85d2
 .insn 4, 0x014c8733
@@ -3561,7 +3576,6 @@ j 288f
 .insn 2, 0x8082
 .option pop",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }

@@ -52,7 +52,8 @@ call {vg_aes_expand_key_scratch}
 .insn 4, 0x0f090693
 .insn 2, 0x4705
 .insn 4, 0x20040793
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 2, 0x8322
 .insn 4, 0x08033403
 .insn 4, 0x08833483
@@ -72,7 +73,7 @@ call {vg_aes_ctr32}
 .insn 2, 0x8082
 .option pop",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 

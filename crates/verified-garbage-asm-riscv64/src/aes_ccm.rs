@@ -374,7 +374,8 @@ j 218f
 .insn 4, 0x18048793
 .insn 2, 0x86a6
 .insn 2, 0x4705
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 2, 0x8ae6
 .insn 4, 0x004d5b13
 .insn 2, 0x4b85
@@ -440,7 +441,8 @@ j 224f
 .insn 4, 0x18048793
 .insn 2, 0x86d6
 .insn 2, 0x8762
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x418b0b33
 .insn 2, 0x9be2
 .insn 4, 0x004c1313
@@ -502,7 +504,8 @@ beqz s8, 225f
 .insn 4, 0x18048793
 .insn 4, 0x05048693
 .insn 2, 0x4705
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x05048513
 .insn 2, 0x85d6
 .insn 2, 0x8662
@@ -544,7 +547,7 @@ bnez a2, 228b
 .insn 2, 0x8082
 .option pop",
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
@@ -685,7 +688,8 @@ j 25f
 .insn 4, 0x18048793
 .insn 2, 0x86d6
 .insn 2, 0x8762
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x418b0b33
 .insn 2, 0x9be2
 .insn 4, 0x004c1313
@@ -747,7 +751,8 @@ beqz s8, 26f
 .insn 4, 0x18048793
 .insn 4, 0x05048693
 .insn 2, 0x4705
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x05048513
 .insn 2, 0x85d6
 .insn 2, 0x8662
@@ -1062,7 +1067,8 @@ j 226f
 .insn 4, 0x18048793
 .insn 4, 0x06048693
 .insn 2, 0x4705
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x0f04ba83
 .insn 2, 0x4281
 .insn 4, 0x1054b023
@@ -1132,7 +1138,7 @@ j 231f
 .insn 4, 0x7f010113
 .insn 2, 0x8082
 .option pop",
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }

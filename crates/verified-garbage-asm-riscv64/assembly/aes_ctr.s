@@ -54,7 +54,8 @@ vg_aes_ctr:
 	addi a3, s4, 0
 	addi a4, t2, 0
 	addi a5, s6, 0
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	addi t0, s6, 2047
 	addi t0, t0, 8
 	andi t0, t0, -8

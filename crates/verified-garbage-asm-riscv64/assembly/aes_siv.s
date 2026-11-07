@@ -505,7 +505,8 @@ vg_aes_siv_encrypt:
 	addi a2, s1, 96
 	addi a5, s1, 384
 	addi a3, s6, 0
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	srli t0, s7, 4
 	slli t0, t0, 33
 	srli t0, t0, 33
@@ -566,7 +567,8 @@ vg_aes_siv_encrypt:
 	addi a5, s1, 384
 	addi a3, s1, 80
 	addi a4, zero, 1
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	srli t1, s7, 4
 	addi a2, s7, 0
 	addi a0, s1, 80
@@ -966,7 +968,8 @@ vg_aes_siv_decrypt:
 	addi a2, s1, 96
 	addi a5, s1, 384
 	addi a3, s6, 0
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	srli t0, s7, 4
 	slli t0, t0, 33
 	srli t0, t0, 33
@@ -1027,7 +1030,8 @@ vg_aes_siv_decrypt:
 	addi a5, s1, 384
 	addi a3, s1, 80
 	addi a4, zero, 1
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	srli t1, s7, 4
 	addi a2, s7, 0
 	addi a0, s1, 80

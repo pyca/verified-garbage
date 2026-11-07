@@ -40,7 +40,8 @@ vg_aes_ocb_init:
 	addi a3, s2, 240
 	addi a4, zero, 1
 	addi a5, s0, 512
-	call {vg_aes_ctr32}
+	addi a6, a3, 0
+	call {vg_aes_ctr32_to}
 	addi t1, s0, 0
 	ld s0, 128(t1)
 	ld s1, 136(t1)

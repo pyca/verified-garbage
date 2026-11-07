@@ -69,7 +69,8 @@ beqz s5, 20f
 .insn 2, 0x86d2
 .insn 2, 0x871e
 .insn 2, 0x87da
-call {vg_aes_ctr32}
+.insn 2, 0x8836
+call {vg_aes_ctr32_to}
 .insn 4, 0x7ffb0293
 .insn 2, 0x02a1
 .insn 4, 0xff82f293
@@ -188,7 +189,7 @@ j 21f
 .insn 4, 0x0402bb03
 .insn 2, 0x8082
 .option pop",
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
 }
 
