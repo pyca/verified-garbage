@@ -101,7 +101,7 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
     (sub_disj s₀ (a := 64) (n := 64) (b := 768) (m := n) (by omega_arith) (by omega_arith) (by omega_arith))
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
     (sub_disj s₀ (a := 768) (n := n) (b := 128) (m := 320) (by omega_arith) (by omega_arith) (by omega_arith))
-    (by rw [hp.off_toNat (by decide)]; lit_omega) (Covers.right hw) hw fun s₃ v₃ k₃ data₃ => ?_)
+    (by rw [hp.off_toNat (by decide)]; lit_omega) hw fun s₃ v₃ k₃ data₃ => ?_)
   have ctxData : ∀ {a n : Nat}, a + n ≤ 1280 → ∀ k < L s₀,
       ¬ (sub s₀ a n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
     fun h k hk hh => hp.c_d.sub_left (sub_ctx s₀ h) _ hh (data_in hk)

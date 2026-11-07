@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Step
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Loop
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Lit
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
 import VerifiedGarbage.Proof.Framework.AArch64.Call
@@ -17,101 +16,21 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 namespace VG.Proof.ChaCha20.AArch64.Small
 open VG VG.AArch64
 open VG.Proof.ChaCha20 (ctr length_keystream keystream_getD bytesAt_xor xorAArch64)
-open VG.Proof.ChaCha20.AArch64.Xor (XPre st dp L bp stR dR bR S0 D0 KS)
+open VG.Proof.ChaCha20.AArch64.Xor (TPre st dp tp L bp stR dR tR bR S0 D0 KS)
 open VG.Spec.ChaCha20 (stateAt keystream bytesAt serialize block)
-open VG.Proof.ChaCha20.AArch64.Neon4 (data_in)
 
-theorem ks_shift (S : CState) {len n k : Nat} (hk : k < len) (ht : 64*n ≤ k) :
-    (keystream S len).getD k 0 =
-      (serialize (block (ctr (ctr S n) ((k-64*n)/64)))).getD ((k-64*n)%64) 0 := by
-  rw [keystream_getD _ hk,Neon4.ctr_add,
-    show n+(k-64*n)/64=k/64 by omega_arith,show (k-64*n)%64=k%64 by omega_arith]
-
-abbrev tailR (s₀ : State) (n : Nat) : Region :=
-  ⟨dp s₀ + BitVec.ofNat 64 (64 * n), L s₀ - 64 * n⟩
-
-theorem tail_sub {s₀ : State} {n : Nat} (ht : 64 * n ≤ L s₀) :
-    Region.Sub (tailR s₀ n) (dR s₀) := Offset.sub_base _ (by omega_arith)
-
-theorem not_tail {s₀ : State} {n k : Nat} (hk : k < 64 * n) (ht : 64 * n ≤ L s₀) :
-    ¬ (tailR s₀ n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 := by
-  have hL := Xor.L_lt s₀
-  simp only [Region.Contains]
-  rw [Offset.sub_toNat' _ (by omega_arith) (by omega_arith)]
-  split <;> omega_arith
-
-theorem bytes_of_bytesAt {m m' : Mem} {p : Addr} {n : Nat} {ks : List Byte} (hks : ks.length = n)
-    (h : bytesAt m' p n = List.zipWith (· ^^^ ·) (bytesAt m p n) ks) {k : Nat} (hk : k < n) :
-    m' (p + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k) ^^^ ks.getD k 0 := by
-  have e := congrArg (fun l => l[k]?) h
-  simp only [bytesAt, List.getElem?_map, List.getElem?_range hk, Option.map_some,
-    List.getElem?_zipWith, List.getElem?_eq_getElem (show k < ks.length by omega_arith)] at e
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show k < ks.length by omega_arith),
-    Option.getD_some]
-  simpa using e
-
-theorem tail_ok {s₀ : State} (hp : XPre s₀) {n : Nat} {s : State} (h : Prefix s₀ n s) (hle : 64*n ≤ L s₀) :
+/-- The scalar stream after `n` blocks of the vector kernel. -/
+theorem tail_ok {s₀ : State} (hp : TPre s₀) {n : Nat} {s : State} (h : Prefix s₀ n s) (hle : 64*n ≤ L s₀) :
     WP isa Impl.ChaCha20.AArch64.Xor.xor s fun s' =>
       GprAbi s₀ s' ∧ xorAArch64.post s₀ s' ∧
-      s'.gpr .x0 = s₀.gpr .x0 ∧ s'.gpr .x1 = s₀.gpr .x3 := by
-  have hL := Xor.L_lt s₀
-  have hn : (BitVec.ofNat 64 (L s₀ - 64 * n)).toNat = L s₀ - 64 * n :=
-    by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
-  let wr := [stR s₀, tailR s₀ n, bR s₀]
-  have hs : xorAArch64.pre (s.withRegions [] wr) := by
-    simp only [xorAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-      h.x0, h.x1, h.x2, h.x3, hn]
-    have ts := tail_sub hle
-    exact ⟨trivial, rfl, hp.st_d.sub_right ts, hp.st_b, hp.d_b.sub_left ts, by
-      have := hp.nowrap
-      simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-      omega_arith⟩
-  have hc : Covers wr s.wr := by
-    rw [h.wr, hp.wr]
-    refine Covers.of_sub fun r hr => ?_
-    simp only [wr, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
-    · exact ⟨dR s₀, by simp, 64 * n, rfl, by dsimp; omega_arith⟩
-    · exact ⟨bR s₀, by simp, 0, by simp, by simp⟩
-  have hw : WP isa Impl.ChaCha20.AArch64.Xor.xor (s.withRegions [] wr) fun u =>
-      abiPreserved (s.withRegions [] wr) u ∧ xorAArch64.post (s.withRegions [] wr) u ∧
-      u.gpr .x0 = s.gpr .x0 ∧ u.gpr .x1 = s.gpr .x3 :=
-    Xor.xor_x1 BlockImpl.scalar _ hs
-  refine WP.narrow hw ?_ hc ?_ BlockImpl.scalar.xorNoFrames
-  · rw [h.rd, hp.rd]; exact hc
-  · intro u _ _ hsp hf ⟨ha, hpost, h0, h1⟩
-    simp only [State.withRegions_gpr, State.withRegions_sp, abiPreserved] at ha
-    simp only [xorAArch64, State.withRegions_gpr, State.withRegions_mem,
-      h.x0, h.x1, h.x2, hn, h.cnt] at hpost
-    refine ⟨⟨?_, hsp.trans h.sp⟩, ?_, h0.trans h.x0, h1.trans h.x3⟩
-    · intro r hr
-      rw [ha.1 r hr]
-      exact h.cs r hr
-    · refine bytesAt_xor (length_keystream _ _) fun k hk => ?_
-      have hk2 : k < L s₀ := hk
-      have ns : ¬ (stR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
-        fun hh => hp.st_d _ hh (data_in hk)
-      have nb : ¬ (bR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
-        fun hh => hp.d_b _ (data_in hk) hh
-      by_cases hk' : k < 64 * n
-      · rw [hf _ (by
-          intro r hr; simp only [wr, List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl | rfl
-          · exact ns
-          · exact not_tail hk' hle
-          · exact nb), h.data k hk, ite_eq_left hk']
-      · have ea : dp s₀ + BitVec.ofNat 64 (64 * n) + BitVec.ofNat 64 (k - 64 * n) =
-            dp s₀ + BitVec.ofNat 64 k := by
-          rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega_arith)]
-        have x := bytes_of_bytesAt (length_keystream _ _) hpost (k := k - 64 * n) (by omega_arith)
-        rw [ea, h.data k hk, ite_eq_right hk', keystream_getD _ (by omega_arith)] at x
-        rw [x, ks_shift _ hk (n := n) (by omega_arith)]
-        simp
-
+      s'.gpr .x0 = s₀.gpr .x0 ∧ s'.gpr .x1 = s₀.gpr .x3 :=
+  (Xor.rest_ok BlockImpl.scalar.xorNoFrames (fun s hs _ => Xor.xor_gpr BlockImpl.scalar s hs) hp
+    (n := 64*n) hle (by omega) h.x0 h.x1 h.x2 h.x3 h.x4 h.rd h.wr
+    (by rw [h.cnt, show 64*n/64 = n by omega]) h.data h.src).mono fun _ ⟨ha, hpost, h0, h1⟩ =>
+    ⟨⟨fun r hr => (ha.1 r hr).trans (h.cs r hr), ha.2.trans h.sp⟩, hpost, h0, h1⟩
 
 structure CheckKeep (s a : State) : Prop where
-  gpr : ∀ r, r ≠ .x5 → a.gpr r = s.gpr r
+  gpr : ∀ r, r ≠ .x5 → r ≠ .x6 → a.gpr r = s.gpr r
   mem : a.mem = s.mem
   rd : a.rd = s.rd
   wr : a.wr = s.wr
@@ -119,19 +38,21 @@ structure CheckKeep (s a : State) : Prop where
 
 theorem CheckKeep.pre {s a : State} (h : CheckKeep s a) (hp : xorAArch64.pre s) :
     xorAArch64.pre a := by
-  simpa only [xorAArch64,h.rd,h.wr,h.gpr .x0 (by decide),h.gpr .x1 (by decide),
-    h.gpr .x2 (by decide),h.gpr .x3 (by decide)] using hp
+  simpa only [xorAArch64,h.rd,h.wr,h.gpr .x0 (by decide) (by decide),h.gpr .x1 (by decide) (by decide),
+    h.gpr .x2 (by decide) (by decide),h.gpr .x3 (by decide) (by decide),
+    h.gpr .x4 (by decide) (by decide)] using hp
 
 theorem CheckKeep.finish {s a u : State} (h : CheckKeep s a)
     (hu : GprAbi a u ∧ xorAArch64.post a u ∧ u.gpr .x0=a.gpr .x0 ∧ u.gpr .x1=a.gpr .x3) :
     GprAbi s u ∧ xorAArch64.post s u ∧ u.gpr .x0=s.gpr .x0 ∧ u.gpr .x1=s.gpr .x3 := by
   obtain ⟨hab,hp,h0,h1⟩ := hu
-  refine ⟨⟨?_,hab.2.trans h.sp⟩,?_,h0.trans (h.gpr _ (by decide)),h1.trans (h.gpr _ (by decide))⟩
+  refine ⟨⟨?_,hab.2.trans h.sp⟩,?_,h0.trans (h.gpr _ (by decide) (by decide)),
+    h1.trans (h.gpr _ (by decide) (by decide))⟩
   · intro r hr
-    have hn : r ≠ .x5 := by revert hr; decide +revert
-    exact (hab.1 r hr).trans (h.gpr r hn)
-  · simpa only [xorAArch64,h.mem,h.gpr .x0 (by decide),h.gpr .x1 (by decide),
-      h.gpr .x2 (by decide)] using hp
+    have hn : r ≠ .x5 ∧ r ≠ .x6 := by revert hr; decide +revert
+    exact (hab.1 r hr).trans (h.gpr r hn.1 hn.2)
+  · simpa only [xorAArch64,h.mem,h.gpr .x0 (by decide) (by decide),h.gpr .x1 (by decide) (by decide),
+      h.gpr .x2 (by decide) (by decide),h.gpr .x4 (by decide) (by decide)] using hp
 
 theorem check_ok (s : State) (b : Nat) (hb : b < 64) :
     WP isa (.block [.lsr .x .x5 .x2 b]) s fun a =>
@@ -140,7 +61,7 @@ theorem check_ok (s : State) (b : Nat) (hb : b < 64) :
   simp only [↓reduceIte, runBlock_cons,runBlock_nil,exec,State.read,
     Size.bits,hb,Option.some.injEq,isa,runStep_some,exists_eq_left']
   refine ⟨⟨?_,rfl,rfl,rfl,rfl⟩,?_⟩
-  · intro r hr; exact RegUpd.gpr_write_of_ne _ _ _ hr
+  · intro r hr _; exact RegUpd.gpr_write_of_ne _ _ _ hr
   · rw [RegUpd.gpr_write_self,BitVec.setWidth_eq]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.setWidth_eq,BitVec.toNat_ushiftRight,BitVec.toNat_ofNat,Nat.shiftRight_eq_div_pow]
@@ -155,13 +76,14 @@ theorem check_zero {s : State} {n b : Nat} (_hb : b < 64) (hn : n < 2^64)
 
 theorem check3_ok (s : State) (hl : L s < 256) :
     WP isa (.block [.lsr .x .x5 .x2 6,.subImm .x .x5 .x5 3,.lsr .x .x5 .x5 63]) s fun a =>
-      CheckKeep s a ∧ a.gpr .x5=BitVec.ofNat 64 (if L s < 192 then 1 else 0) := by
+      CheckKeep s a ∧ a.gpr .x5=BitVec.ofNat 64 (if L s < 192 then 1 else 0) ∧
+      a.gpr .x6 = s.gpr .x6 := by
   apply WP.of_runBlock
   simp only [↓reduceIte, Nat.reduceLT, runBlock_cons,runBlock_nil,exec,State.read,
     Size.bits,Option.some.injEq,isa,runStep_some,exists_eq_left',
     RegUpd.gpr_write_self]
-  refine ⟨⟨?_,rfl,rfl,rfl,rfl⟩,?_⟩
-  · intro r hr;simp only [RegUpd.gpr_write,hr,ite_false]
+  refine ⟨⟨?_,rfl,rfl,rfl,rfl⟩,?_,?_⟩
+  · intro r hr _;simp only [RegUpd.gpr_write,hr,ite_false]
   · simp only [BitVec.setWidth_eq]
     have he : s.gpr .x2 >>> 6 = BitVec.ofNat 64 (L s/64) := by
       apply BitVec.eq_of_toNat_eq
@@ -172,6 +94,7 @@ theorem check3_ok (s : State) (hl : L s < 256) :
     have hcases : L s/64=0 ∨ L s/64=1 ∨ L s/64=2 ∨ L s/64=3 := by omega_arith
     rcases hcases with h|h|h|h <;>
       simp only [show (L s < 192) ↔ (L s/64 < 3) by omega_arith,h] <;> decide
+  · simp only [RegUpd.gpr_write,show Reg.x6 ≠ .x5 by decide,ite_false]
 
 theorem check3_nonzero {s : State} {n : Nat}
     (h : s.gpr .x5=BitVec.ofNat 64 (if n < 192 then 1 else 0)) :
@@ -179,96 +102,70 @@ theorem check3_nonzero {s : State} {n : Nat}
   rw [show isa.eval (.nonzero .x .x5) s = some (!(s.gpr .x5 == 0)) from Xor.eval_nonzero s .x5,h]
   by_cases hn : n < 192 <;> simp [hn]
 
+/-- `short`'s first block: the check, and the destination copied to `x6`. -/
+theorem check7_ok (s : State) :
+    WP isa (.block [.lsr .x .x5 .x2 7, Impl.ChaCha20.AArch64.Xor.mov .x6 .x4]) s fun a =>
+      CheckKeep s a ∧ a.gpr .x5=BitVec.ofNat 64 (L s / 2^7) ∧ a.gpr .x6 = s.gpr .x4 := by
+  apply WP.of_runBlock
+  simp only [↓reduceIte, Nat.reduceLT, runBlock_cons,runBlock_nil,exec,State.read,
+    Impl.ChaCha20.AArch64.Xor.mov,Size.bits,Option.some.injEq,isa,runStep_some,exists_eq_left',
+    BitVec.add_zero]
+  refine ⟨⟨?_,rfl,rfl,rfl,rfl⟩,?_,?_⟩
+  · intro r h5 h6; simp only [RegUpd.gpr_write,h5,h6,ite_false]
+  · simp only [RegUpd.gpr_write,show Reg.x5 ≠ .x6 by decide,ite_false,ite_true,BitVec.setWidth_eq]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_ushiftRight,BitVec.toNat_ofNat,Nat.shiftRight_eq_div_pow]
+    exact (Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (s.gpr .x2).isLt)).symm
+  · simp only [RegUpd.gpr_write,ite_true,show Reg.x4 ≠ .x5 by decide,ite_false,BitVec.setWidth_eq]
+
 theorem short_ok {sve : Bool} (s : State) (hp : xorAArch64.pre s) (hl : L s < 256) :
     WP isa (Impl.ChaCha20.AArch64.Small.short sve) s fun u =>
       GprAbi s u ∧ xorAArch64.post s u ∧ u.gpr .x0=s.gpr .x0 ∧ u.gpr .x1=s.gpr .x3 := by
   apply WP.seq
-  refine (check_ok s 7 (by decide)).mono fun a ⟨ha,h5⟩ => ?_
+  refine (check7_ok s).mono fun a ⟨ha,h5,h6⟩ => ?_
   apply WP.ite (decide (L s < 128)) (check_zero (by decide) (Xor.L_lt s) h5)
   · intro _
-    have hw : WP isa Impl.ChaCha20.AArch64.Xor.xor a fun u =>
-      abiPreserved a u ∧ xorAArch64.post a u ∧ u.gpr .x0=a.gpr .x0 ∧ u.gpr .x1=a.gpr .x3 :=
-        Xor.xor_x1 BlockImpl.scalar a (ha.pre hp)
-    exact hw.mono fun _ h => ha.finish ⟨⟨h.1.1,h.1.2.1⟩,h.2⟩
+    exact (Xor.xor_gpr BlockImpl.scalar a (ha.pre hp)).mono fun _ h => ha.finish h
   · intro hshort
     have hge : 128 ≤ L s := by have := of_decide_eq_false hshort;omega_arith
     apply WP.seq
     apply WP.seq
-    refine (check3_ok a (by simpa only [L,ha.gpr .x2 (by decide)] using hl)).mono fun b ⟨hb,hb5⟩ => ?_
-    have hla : L a=L s := by simp only [L,ha.gpr .x2 (by decide)]
+    refine (check3_ok a (by simpa only [L,ha.gpr .x2 (by decide) (by decide)] using hl)).mono
+      fun b ⟨hb,hb5,hb6⟩ => ?_
+    have hla : L a=L s := by simp only [L,ha.gpr .x2 (by decide) (by decide)]
     rw [hla] at hb5
+    have hpb := Xor.TPre.of b (hb.pre (ha.pre hp))
+    have hb6' : b.gpr .x6 = tp b := by
+      rw [hb6, h6, ← ha.gpr .x4 (by decide) (by decide), ← hb.gpr .x4 (by decide) (by decide)]
     apply WP.ite (decide (L s < 192)) (check3_nonzero hb5)
     · intro h192
-      have hlen : 128 ≤ L b := by simp only [L,hb.gpr .x2 (by decide),ha.gpr .x2 (by decide)];exact hge
-      exact ((step_ok (sve := sve) b (XPre.of b (hb.pre (ha.pre hp))) 2 (by decide) hlen).mono fun c hc =>
-        (tail_ok (XPre.of b (hb.pre (ha.pre hp))) hc hlen).mono fun _ hu => ha.finish (hb.finish hu))
+      have hlen : 128 ≤ L b := by
+        simp only [L,hb.gpr .x2 (by decide) (by decide),ha.gpr .x2 (by decide) (by decide)];exact hge
+      exact ((step_ok (sve := sve) b hpb hb6' 2 (by decide) hlen).mono fun c hc =>
+        (tail_ok hpb hc hlen).mono fun _ hu => ha.finish (hb.finish hu))
     · intro h192
       have hge192 : 192 ≤ L s := by have := of_decide_eq_false h192;omega_arith
-      have hlen : 192 ≤ L b := by simp only [L,hb.gpr .x2 (by decide),ha.gpr .x2 (by decide)];exact hge192
-      exact ((step_ok (sve := sve) b (XPre.of b (hb.pre (ha.pre hp))) 3 (by decide) hlen).mono fun c hc =>
-        (tail_ok (XPre.of b (hb.pre (ha.pre hp))) hc hlen).mono fun _ hu => ha.finish (hb.finish hu))
+      have hlen : 192 ≤ L b := by
+        simp only [L,hb.gpr .x2 (by decide) (by decide),ha.gpr .x2 (by decide) (by decide)];exact hge192
+      exact ((step_ok (sve := sve) b hpb hb6' 3 (by decide) hlen).mono fun c hc =>
+        (tail_ok hpb hc hlen).mono fun _ hu => ha.finish (hb.finish hu))
 
 theorem short_noFrames (sve : Bool) : (Impl.ChaCha20.AArch64.Small.short sve).noFrames = true := by
   cases sve <;> lit_decide
 
 /-- `short` after the four-block chunks: run on the data the chunks left. -/
-theorem tail_short {sve : Bool} {s₀ : State} (hp : XPre s₀) {t : Nat} {s : State} (h : Neon4.LInv s₀ t s)
+theorem tail_short {sve : Bool} {s₀ : State} (hp : TPre s₀) {t : Nat} {s : State} (h : Neon4.LInv s₀ t s)
     (hlt : L s₀ - 256 * t < 256) :
     WP isa (Impl.ChaCha20.AArch64.Small.short sve) s fun s' =>
       GprAbi s₀ s' ∧ xorAArch64.post s₀ s' ∧
-      s'.gpr .x0 = s₀.gpr .x0 ∧ s'.gpr .x1 = s₀.gpr .x3 := by
-  have hL := Xor.L_lt s₀
-  have hle := h.le
-  have hn : (BitVec.ofNat 64 (L s₀ - 256 * t)).toNat = L s₀ - 256 * t :=
-    by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
-  let wr := [stR s₀, Neon4.tailR s₀ t, bR s₀]
-  have hs : xorAArch64.pre (s.withRegions [] wr) := by
-    simp only [xorAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-      h.x0, h.x1, h.x2, h.x3, hn]
-    have ts := Neon4.tail_sub h.le
-    exact ⟨trivial, rfl, hp.st_d.sub_right ts, hp.st_b, hp.d_b.sub_left ts, by
-      have := hp.nowrap
-      simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-      omega_arith⟩
-  have hc : Covers wr s.wr := by
-    rw [h.wr, hp.wr]
-    refine Covers.of_sub fun r hr => ?_
-    simp only [wr, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
-    · exact ⟨dR s₀, by simp, 256 * t, rfl, by dsimp; omega_arith⟩
-    · exact ⟨bR s₀, by simp, 0, by simp, by simp⟩
-  have hw := short_ok (sve := sve) _ hs (by simp only [L, State.withRegions_gpr, h.x2, hn]; exact hlt)
-  refine WP.narrow hw ?_ hc ?_ (short_noFrames sve)
-  · rw [h.rd, hp.rd]; exact hc
-  · intro u _ _ hsp hf ⟨ha, hpost, h0, h1⟩
-    simp only [State.withRegions_gpr, State.withRegions_sp, GprAbi] at ha
-    simp only [xorAArch64, State.withRegions_gpr, State.withRegions_mem,
-      h.x0, h.x1, h.x2, hn, h.cnt] at hpost
-    simp only [State.withRegions_gpr] at h0 h1
-    refine ⟨⟨?_, hsp.trans h.sp⟩, ?_, h0.trans h.x0, h1.trans h.x3⟩
-    · intro r hr
-      rw [ha.1 r hr]
-      apply h.keep r <;> intro he <;> subst r <;> simp [preserved] at hr
-    · refine bytesAt_xor (length_keystream _ _) fun k hk => ?_
-      have hk2 : k < L s₀ := hk
-      have ns : ¬ (stR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
-        fun hh => hp.st_d _ hh (data_in hk)
-      have nb : ¬ (bR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
-        fun hh => hp.d_b _ (data_in hk) hh
-      by_cases hk' : k < 256 * t
-      · rw [hf _ (by
-          intro r hr; simp only [wr, List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl | rfl
-          · exact ns
-          · exact Neon4.not_tail hk' h.le
-          · exact nb), h.data k hk, ite_eq_left hk']
-      · have ea : dp s₀ + BitVec.ofNat 64 (256 * t) + BitVec.ofNat 64 (k - 256 * t) =
-            dp s₀ + BitVec.ofNat 64 k := by
-          rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega_arith)]
-        have x := bytes_of_bytesAt (length_keystream _ _) hpost (k := k - 256 * t) (by omega_arith)
-        rw [ea, h.data k hk, ite_eq_right hk', keystream_getD _ (by omega_arith)] at x
-        rw [x, Neon4.ks_shift _ hk (t := t) (by omega_arith)]
+      s'.gpr .x0 = s₀.gpr .x0 ∧ s'.gpr .x1 = s₀.gpr .x3 :=
+  (Xor.rest_ok (short_noFrames sve) (fun s hs hl => short_ok (sve := sve) s hs (by rw [hl]; exact hlt))
+    hp (n := 256 * t) h.le (by omega) h.x0 h.x1 h.x2 h.x3 h.x4 h.rd h.wr
+    (by rw [h.cnt, show 256 * t / 64 = 4 * t by omega]) h.data h.src).mono fun _ ⟨ha, hpost, h0, h1⟩ =>
+    ⟨⟨fun r hr => (ha.1 r hr).trans (h.keep r (by intro he; subst he; simp [preserved] at hr)
+      (by intro he; subst he; simp [preserved] at hr) (by intro he; subst he; simp [preserved] at hr)
+      (by intro he; subst he; simp [preserved] at hr) (by intro he; subst he; simp [preserved] at hr)),
+      ha.2.trans h.sp⟩, hpost, h0, h1⟩
 
 theorem correct {sve : Bool} (s : State) (hp : xorAArch64.pre s) :
     WP isa (Impl.ChaCha20.AArch64.Small.xor sve) s fun u =>
@@ -277,8 +174,8 @@ theorem correct {sve : Bool} (s : State) (hp : xorAArch64.pre s) :
   apply WP.seq
   refine (Neon4.init_ok s).mono fun u ⟨hi, h5⟩ => ?_
   apply WP.seq
-  refine (Neon4.bulk_ok (XPre.of s hp) hi h5).mono fun v ⟨t, hlt, hv⟩ => ?_
-  exact tail_short (sve := sve) (XPre.of s hp) hv hlt
+  refine (Neon4.bulk_ok (Xor.TPre.of s hp) hi h5).mono fun v ⟨t, hlt, hv⟩ => ?_
+  exact tail_short (sve := sve) (Xor.TPre.of s hp) hv hlt
 
 theorem xor_noFrames (sve : Bool) : (Impl.ChaCha20.AArch64.Small.xor sve).noFrames = true := by
   cases sve <;> lit_decide

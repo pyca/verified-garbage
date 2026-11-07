@@ -171,7 +171,7 @@ theorem rest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ s : State} (hp : APre
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
     ((hp.c_d.symm.sub_right (sub_ctx s₀ (k := 128) (n := 320) (by lit_omega))).sub_left (restR_sub hL))
     (by have := Short.toNat_add_le (dp s₀) 256; simp only [L, dp] at wd hL this ⊢; omega)
-    (Covers.right hw) hw fun s₂ v₂ k₂ data₂ => ?_
+    hw fun s₂ v₂ k₂ data₂ => ?_
   have k : Kept (streamR s₀) s s₂ := (k₁.sub fun r hr => absurd hr List.not_mem_nil).trans k₂
   refine ⟨fun r hr => (v₂ r hr).trans (v₁ r hr), h.step k (streamR_work hL) (streamR_saved hp hL), k, ?_⟩
   rw [data₂, m₁, hst]

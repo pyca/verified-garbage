@@ -60,7 +60,7 @@ def first : Prog isa :=
 def rest (c : XorCallee) : Prog isa :=
   .seq (.block [.addImm .x .x0 .x21 64, .addImm .x .x1 .x22 256, .subImm .x .x2 .x23 256,
     .addImm .x .x3 .x21 128])
-    (.call c.name c.code)
+    c.inPlace
 
 /-- `seal` but for the tag, after the prologue. -/
 def sealAfter (c : XorCallee) : Prog isa :=

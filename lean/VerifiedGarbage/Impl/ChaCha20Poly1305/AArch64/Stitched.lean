@@ -177,7 +177,7 @@ def cryptStitched (sve enc : Bool) : Prog isa :=
 stream's counter. -/
 def cryptRest (c : XorCallee) : Prog isa :=
   .seq (.block [.addImm .x .x0 .x21 64, mov .x1 .x22, mov .x2 .x23, .addImm .x .x3 .x21 128])
-    (.call c.name c.code)
+    c.inPlace
 
 /-- The keystream of `n` bytes (256: four blocks; 512: eight) from the
 stream's counter at `ctx[768, 768 + n)`, the data XORed with it, and
@@ -186,7 +186,7 @@ counter the chunks left). -/
 def padRest (c : XorCallee) (n : Nat) : Prog isa :=
   .seq (.block (Pad.zero ++ [.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 768, .movz .x .x2 (BitVec.ofNat 16 n) 0,
       .addImm .x .x3 .x21 128]))
-    (.seq (.call c.name c.code) (.seq (Short.xorKsFrom 768) (.block Pad.zero)))
+    (.seq c.inPlace (.seq (Short.xorKsFrom 768) (.block Pad.zero)))
 
 /-- `x9 = 0` iff `1 ≤ x23 ≤ 2^k`: `(x23 - 1) >> k`. -/
 def atMost (k : Nat) : List Instr := [.subImm .x .x9 .x23 1, .lsr .x .x9 .x9 k]
@@ -350,7 +350,7 @@ def skip : List Instr := [.addImm .x .x22 .x22 448, .subImm .x .x23 .x23 448]
 def openMain (c : XorCallee) : Prog isa :=
   .seq (.block (save ++ moves ++ initState ++ ([.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 128] : List Instr)))
   (.seq (.block (copy ++ Pad.zero ++ args))
-  (.seq (.call c.name c.code)
+  (.seq c.inPlace
   (.seq (.block keyArgs)
   (.seq (.call "vg_poly1305_init" Impl.Poly1305.AArch64.init)
   (.seq (macPad .x24 .x25)
@@ -395,7 +395,7 @@ def pre : List Instr :=
 def sealMain (c : XorCallee) : Prog isa :=
   .seq (.block (save ++ moves ++ initState ++ ([.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 128] : List Instr)))
   (.seq (.block (OpenKey.copy ++ Pad.zero ++ OpenKey.args))
-  (.seq (.call c.name c.code)
+  (.seq c.inPlace
   (.seq (.block OpenKey.keyArgs)
   (.seq (.call "vg_poly1305_init" Impl.Poly1305.AArch64.init)
   (.seq (macPad .x24 .x25)
@@ -419,7 +419,7 @@ def sealStitchedMain (c : XorCallee) : Prog isa :=
   (.seq (.block lengths)
   (.seq (.block counterOne)
   (.seq (cryptStitched c.sve true)
-  (.seq (.call c.name c.code)
+  (.seq c.inPlace
   (.seq (macPad .x22 .x23)
     absorbLengths))))))
 
@@ -466,7 +466,7 @@ def sealWideMain (c : XorCallee) : Prog isa :=
   (.seq absorbFirst
   (.seq (.block skipFirst)
   (.seq (cryptStitched c.sve true)
-  (.seq (.call c.name c.code)
+  (.seq c.inPlace
   (.seq (macPad .x22 .x23)
     absorbLengths)))))))))
 
