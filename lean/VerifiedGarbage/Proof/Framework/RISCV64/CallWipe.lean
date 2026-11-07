@@ -426,6 +426,309 @@ theorem zeroArgs_run (n : Nat) (hn : n < 4095) {c : State}
   rw [cwZ1_t0, show (cwZ2 c).gpr .t0 + BitVec.ofNat 64 8 = c.sp + BitVec.ofNat 64 8 from cwZ1_t0 c 8]
   rfl
 
+/-- What the caller's contract gives of the array: its region is within the
+writable ones, and does not wrap. -/
+theorem cw_array (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    {r : Reg} {e : Elem} {k : Nat} {s : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
+    (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s)) :
+    (⟨s.gpr r, k * e.size⟩ : Region) ∈ s.wr ∧ (s.gpr r).toNat + k * e.size ≤ 2 ^ 64 := by
+  rw [pre_regs' hk hl] at hs
+  obtain ⟨-, -, hwr, -, -, hnw, -, -⟩ := hs
+  exact ⟨hwr ▸ List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨harr, rfl⟩, rfl⟩, hnw _ harr⟩
+
+end
+
+/-! ## The zeroize function's contract -/
+
+theorem zeroize_bufs (X : State) :
+    Sig.bufs Spec.Zeroize.zeroizeSig.params (regArgs Spec.Zeroize.zeroizeSig X) =
+      [(⟨X.gpr .a0, (X.gpr .a1).toNat * 1⟩, true)] := rfl
+
+/-- The zeroize function's precondition, from what it says of the state. -/
+theorem zeroize_pre_of {zst n : Nat} {X : State} (hn : (X.gpr .a1).toNat = n)
+    (hal : X.sp.toNat % 16 = 0) (hwf : zst = 0 ∨ zst ≤ X.sp.toNat) (hrd : X.rd = [])
+    (hwr : X.wr = [⟨X.gpr .a0, n⟩])
+    (hres : ∀ x ∈ stackBelow X.sp zst, x.Disjoint ⟨X.gpr .a0, n⟩)
+    (hb : (X.gpr .a0).toNat + n ≤ 2 ^ 64) :
+    (Spec.Zeroize.zeroizeContract abi zst).pre X := by
+  unfold Spec.Zeroize.zeroizeContract
+  refine (pre_regs' (leak := none) (by decide) (by decide)).mpr ?_
+  rw [zeroize_bufs, hn, Nat.mul_one]
+  refine ⟨⟨hal, hwf⟩, hrd, hwr, List.pairwise_singleton _ _, fun x hx a ha => ?_, fun a ha => ?_, ?_,
+    fun p hp => absurd hp (by
+      rw [show Sig.alignedBufs Spec.Zeroize.zeroizeSig.params (regArgs Spec.Zeroize.zeroizeSig X) = [] from rfl]
+      exact List.not_mem_nil)⟩
+  · simp only [List.mem_singleton] at ha; subst ha; exact hres x hx
+  · simp only [List.mem_singleton] at ha; subst ha; exact hb
+  · rw [Curry.apply_const]; trivial
+
+/-- The zeroize function's postcondition. -/
+theorem zeroize_post_iff {zst : Nat} {X Y : State} :
+    (Spec.Zeroize.zeroizeContract abi zst).post X Y ↔
+      Spec.Zeroize.bytesAt Y.mem (X.gpr .a0) ((X.gpr .a1).setWidth 64).toNat =
+        Spec.Zeroize.zeros ((X.gpr .a1).setWidth 64).toNat := Iff.rfl
+
+/-- The zeroize function's public data. -/
+theorem zeroize_pub_of {zst : Nat} {X₁ X₂ : State} (hsp : X₁.sp = X₂.sp)
+    (h0 : X₁.gpr .a0 = X₂.gpr .a0) (h1 : X₁.gpr .a1 = X₂.gpr .a1) :
+    (Spec.Zeroize.zeroizeContract abi zst).pub X₁ X₂ := by
+  unfold Spec.Zeroize.zeroizeContract
+  refine (pub_regs (by decide) (by decide)).mpr ⟨hsp, fun i _ => ?_⟩
+  show ([X₁.gpr .a0, X₁.gpr .a1].getD i 0).setWidth _ = ([X₂.gpr .a0, X₂.gpr .a1].getD i 0).setWidth _
+  rw [h0, h1]
+
+section
+variable {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits}
+  {wa : Bool} {stack : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {r : Reg}
+
+theorem cwZero_a0' {s c : State} (hc : AfterBody sig post r stack s c) (n : Nat) :
+    (cwZero n c).gpr .a0 = s.gpr r := by
+  rw [cwZero_a0, hc.2.2.1]; exact hc.2.2.2.2.2.1
+
+/-- The zeroize function's entry state. -/
+theorem cwZeroEntry {s c : State} (hc : AfterBody sig post r stack s c) {n : Nat} (hn : n < 4095)
+    (R : Region) :
+    ((cwZero n c).callEntry.withRegions [] [R]).gpr .a0 = s.gpr r ∧
+      (((cwZero n c).callEntry.withRegions [] [R]).gpr .a1).toNat = n ∧
+      ((cwZero n c).callEntry.withRegions [] [R]).sp = s.sp - BitVec.ofNat 64 32 := by
+  rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide),
+    cwZero_a0' hc, cwZero_a1 hn]
+  exact ⟨rfl, rfl, hc.2.2.1⟩
+
+/-- The zeroize function's precondition, at its entry. -/
+theorem cw_zeroPre (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    {e : Elem} {k n zst : Nat} {s c : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
+    (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
+    (hn : n ≤ k * e.size) (hn12 : n < 4095) (hzs : zst ≤ stack) (hc : AfterBody sig post r stack s c) :
+    (Spec.Zeroize.zeroizeContract abi zst).pre
+      ((cwZero n c).callEntry.withRegions [] [⟨s.gpr r, n⟩]) := by
+  obtain ⟨hal, hsb⟩ := cw_sp hk hl hs
+  have hA := cw_out hk hl hs _ harr
+  have hnw := (cw_array hk hl hs harr).2
+  have hsubA : Region.Sub ⟨s.gpr r, n⟩ ⟨s.gpr r, k * e.size⟩ := Region.sub_prefix hn
+  obtain ⟨h0, h1, hsp⟩ := cwZeroEntry hc hn12 ⟨s.gpr r, n⟩
+  refine zeroize_pre_of h1 (by rw [hsp]; exact sub32_aligned hal (by omega_using [hsb])) (.inr ?_) rfl
+    (by rw [h0]; rfl) ?_ (by rw [h0]; omega_using [hnw, hn])
+  · rw [hsp, toNat_sub_ofNat' (by omega_using [hsb])]; omega_using [hsb, hzs]
+  · rw [hsp, h0]
+    intro x hx
+    rcases Nat.eq_zero_or_pos zst with hz0 | hz0
+    · subst hz0; simp [stackBelow] at hx
+    · rw [stackBelow_pos _ hz0, List.mem_singleton] at hx; subst hx
+      exact (hA (zst + 32) (zst + 32) (Nat.le_refl _) (by omega_using [hzs])).symm.sub_right hsubA
+        |>.sub_left (below_below _ 32 zst)
+
+/-- The zeroize function's public data, at its entry, if the array's
+address is public. -/
+theorem cw_zeroPub {n zst : Nat} (hn : n < 4095) {s₁ s₂ c₁ c₂ : State} (hsp : s₁.sp = s₂.sp)
+    (hpp : s₁.gpr r = s₂.gpr r) (hc₁ : AfterBody sig post r stack s₁ c₁)
+    (hc₂ : AfterBody sig post r stack s₂ c₂) :
+    (Spec.Zeroize.zeroizeContract abi zst).pub ((cwZero n c₁).callEntry.withRegions [] [⟨s₁.gpr r, n⟩])
+      ((cwZero n c₂).callEntry.withRegions [] [⟨s₂.gpr r, n⟩]) := by
+  obtain ⟨d₁, i₁, p₁⟩ := cwZeroEntry hc₁ hn ⟨s₁.gpr r, n⟩
+  obtain ⟨d₂, i₂, p₂⟩ := cwZeroEntry hc₂ hn ⟨s₂.gpr r, n⟩
+  exact zeroize_pub_of (by rw [p₁, p₂, hsp]) (by rw [d₁, d₂, hpp])
+    (BitVec.eq_of_toNat_eq (by rw [i₁, i₂]))
+
+/-- What the zeroize function's run leaves, from the caller's state `s`: the
+first function's, but for the first `n` bytes of the array, which are zero,
+and its result, at `sp + 16` of the frame. -/
+def AfterZero (sig : Sig) (post : sig.Post abi.ptrBits) (r : Reg) (stack n : Nat) (s e : State) : Prop :=
+  ∃ c, AfterBody sig post r stack s c ∧
+    e.rd = s.rd ∧ e.wr = ⟨s.sp - BitVec.ofNat 64 32, 32⟩ :: s.wr ∧ e.sp = s.sp - BitVec.ofNat 64 32 ∧
+    (∀ q ∈ preserved, e.gpr q = s.gpr q) ∧
+    e.mem.readW (slot s 0) 64 = s.gpr .ra ∧ e.mem.readW (slot s 16) 64 = c.gpr .a0 ∧
+    Frame (s.wr ++ [below s.sp (stack + 32)]) s.mem e.mem ∧
+    Frame [⟨s.gpr r, n⟩, below s.sp (stack + 32)] c.mem e.mem ∧
+    Spec.Zeroize.bytesAt e.mem (s.gpr r) n = Spec.Zeroize.zeros n
+
+/-- The zeroize function may write only the first `n` bytes of the array. -/
+theorem cw_zeroCovers (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    {e : Elem} {k n : Nat} {s c : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
+    (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
+    (hn : n ≤ k * e.size) (hc : AfterBody sig post r stack s c) :
+    Covers [⟨s.gpr r, n⟩] (cwZero n c).wr :=
+  Covers.one ⟨_, by rw [cwZero_wr, hc.2.1]; exact List.mem_cons_of_mem _ (cw_array hk hl hs harr).1, by
+    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; exact hn⟩
+
+/-- The frame lies apart from the array and from the stack below it. -/
+theorem cw_frameApartZ (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    {e : Elem} {k n : Nat} {s : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
+    (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
+    (hn : n ≤ k * e.size) {d : Nat} (hd : d ≤ stack) :
+    ∀ x ∈ [⟨s.gpr r, n⟩] ++ [below (s.sp - BitVec.ofNat 64 32) d], (below s.sp 32).Disjoint x := by
+  have hsb := (cw_sp hk hl hs).2
+  intro x hx
+  rcases List.mem_append.mp hx with hx | hx
+  · simp only [List.mem_singleton] at hx; subst hx
+    exact (cw_out hk hl hs _ harr (a := 32) (n := 32) (by decide) (by omega_using [])).symm.sub_right
+      (Region.sub_prefix hn)
+  · simp only [List.mem_singleton] at hx; subst hx
+    exact Offset.base_disjoint_below _ (by omega_using [hd, hsb])
+
+theorem preserved_args : ∀ q ∈ preserved, q ≠ .a0 ∧ q ≠ .a1 ∧ q ≠ .t0 ∧ q ≠ .ra := by decide
+
+/-- The call of the zeroize function. -/
+theorem cw_zero_wp {zname : String} {zcode : Prog isa} {zst : Nat}
+    (hz : Verified target zcode (Spec.Zeroize.zeroizeContract abi zst))
+    (hzd : sdepth zcode ≤ zst) (hzs : zst ≤ stack)
+    (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    {e : Elem} {k n : Nat} {s c : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
+    (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
+    (hn : n ≤ k * e.size) (hn12 : n < 4095) (hc : AfterBody sig post r stack s c) :
+    WP isa (.call zname zcode) (cwZero n c) (AfterZero sig post r stack n s) := by
+  have hsb := (cw_sp hk hl hs).2
+  obtain ⟨hAw, -⟩ := cw_array hk hl hs harr
+  have hsubA : Region.Sub ⟨s.gpr r, n⟩ ⟨s.gpr r, k * e.size⟩ := Region.sub_prefix hn
+  obtain ⟨hrdc, hwrc, hspc, hcsc, h0c, -, hfc, -⟩ := id hc
+  have hcw := cw_zeroCovers hk hl hs harr hn hc
+  have hap := cw_frameApartZ hk hl hs harr hn (d := sdepth zcode) (by omega_using [hzd, hzs])
+  refine WP.callAny (k := Spec.Zeroize.zeroizeContract abi zst) hz.1 (rd := []) (wr := [⟨s.gpr r, n⟩])
+    (cw_zeroPre hk hl hs harr hn hn12 hzs hc) (Covers.right hcw) hcw ?_ (by omega_using [hzd, hzs, hsb])
+  intro g hrd hwr hsp hfr hcs hq
+  rw [cwZero_sp, hspc] at hfr hsp
+  -- The result's slot, which `zeroArgs` writes.
+  have fD : Frame [below s.sp 32] c.mem (cwZero n c).mem := by
+    rw [cwZero_mem, cwZeroMem, hspc]
+    exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (slot_contains s (off := 16) (by decide))
+  have hbelowZ : Region.Sub (below (s.sp - BitVec.ofNat 64 32) (sdepth zcode)) (below s.sp (stack + 32)) :=
+    fun y hy => below_sub (sp := s.sp) (a := sdepth zcode + 32) (b := stack + 32)
+      (by omega_using [hzd, hzs]) (by omega_using [hzd, hzs, hsb]) y (below_below _ 32 _ y hy)
+  have hframeSub : Region.Sub (below s.sp 32) (below s.sp (stack + 32)) :=
+    below_sub (by omega_using []) (by omega_using [hsb])
+  refine ⟨c, hc, by rw [hrd, cwZero_rd, hrdc], by rw [hwr, cwZero_wr, hwrc], hsp,
+    fun q hq => ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · obtain ⟨h₀, h₁, ht, -⟩ := preserved_args q hq
+    rw [hcs q hq, cwZero_gpr n c h₀ h₁ ht, hcsc q hq]
+  · -- The return address, at `sp`, which neither `zeroArgs` nor the zeroize function writes.
+    rw [hfr.readW (slot_contains s (by decide)) hap (by decide), cwZero_mem, cwZeroMem, hspc,
+      show s.sp - BitVec.ofNat 64 32 + BitVec.ofNat 64 16 = slot s 16 from rfl,
+      Mem.readW_writeW_sep (slot_sep s (a := 0) (b := 16) (.inl (by decide)) (by decide) (by decide))
+        (by decide), h0c]
+  · -- The result, at `sp + 16`, which the zeroize function does not write.
+    rw [hfr.readW (slot_contains s (by decide)) hap (by decide), cwZero_mem, cwZeroMem, hspc,
+      show s.sp - BitVec.ofNat 64 32 + BitVec.ofNat 64 16 = slot s 16 from rfl, Mem.readW_writeW_self64]
+  · refine Frame.trans hfc (Frame.trans (Frame.sub fD fun x hx => ?_) (Frame.sub hfr fun x hx => ?_))
+    · simp only [List.mem_singleton] at hx; subst hx
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), hframeSub⟩
+    · rcases List.mem_append.mp hx with hx | hx
+      · simp only [List.mem_singleton] at hx; subst hx
+        exact ⟨_, List.mem_append_left _ hAw, hsubA⟩
+      · simp only [List.mem_singleton] at hx; subst hx
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), hbelowZ⟩
+  · refine Frame.trans (Frame.sub fD fun x hx => ?_) (Frame.sub hfr fun x hx => ?_)
+    · simp only [List.mem_singleton] at hx; subst hx
+      exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), hframeSub⟩
+    · rcases List.mem_append.mp hx with hx | hx
+      · simp only [List.mem_singleton] at hx; subst hx
+        exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+      · simp only [List.mem_singleton] at hx; subst hx
+        exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), hbelowZ⟩
+  · -- The zeroize function's postcondition.
+    obtain ⟨h0, h1, -⟩ := cwZeroEntry hc hn12 ⟨s.gpr r, n⟩
+    rw [zeroize_post_iff, h0, BitVec.setWidth_eq, h1, State.withRegions_mem] at hq
+    exact hq
+
+/-! ## The whole call -/
+
+/-- The state after `restore`. -/
+def cwRestore (g : State) : State :=
+  ((cwZ1 g).write .a0 (g.mem.readW (g.sp + BitVec.ofNat 64 16) 64)).write .ra
+    (g.mem.readW (g.sp + BitVec.ofNat 64 0) 64)
+
+theorem restore_run {g : State} (ha16 : (g.sp + BitVec.ofNat 64 16).toNat % 8 = 0)
+    (ha0 : (g.sp + BitVec.ofNat 64 0).toNat % 8 = 0)
+    (h16 : InRegions (g.rd ++ g.wr) (g.sp + BitVec.ofNat 64 16) 8)
+    (h0 : InRegions (g.rd ++ g.wr) (g.sp + BitVec.ofNat 64 0) 8) :
+    execBlock isa restore g =
+      some (cwRestore g, [.addr (g.sp + BitVec.ofNat 64 16), .addr (g.sp + BitVec.ofNat 64 0)]) := by
+  have e₀ : exec (.addSp .t0 0) g = some (cwZ1 g) := exec_addSp (by decide)
+  have e₁ : exec (.load .d .a0 .t0 16) (cwZ1 g) =
+      some ((cwZ1 g).write .a0 (g.mem.readW (g.sp + BitVec.ofNat 64 16) 64)) := by
+    rw [exec_load_d (by decide) (by rw [cwZ1_t0]; exact ha16) (by rw [cwZ1_t0]; exact h16), cwZ1_t0]
+    rfl
+  have e₂ : exec (.load .d .ra .t0 0) ((cwZ1 g).write .a0 (g.mem.readW (g.sp + BitVec.ofNat 64 16) 64)) =
+      some (cwRestore g) := by
+    have ht : ((cwZ1 g).write .a0 (g.mem.readW (g.sp + BitVec.ofNat 64 16) 64)).gpr .t0 + BitVec.ofNat 64 0 =
+        g.sp + BitVec.ofNat 64 0 := by
+      rw [RegUpd.gpr_write_of_ne _ _ (by decide), cwZ1_t0]
+    rw [exec_load_d (by decide) (by rw [ht]; exact ha0) (by rw [ht]; exact h0), ht]
+    rfl
+  simp only [restore, execBlock, isa, e₀, e₁, e₂, Option.map_some, addrs, List.map_cons, List.map_nil,
+    List.nil_append, List.cons_append]
+  rw [cwZ1_t0, RegUpd.gpr_write_of_ne _ _ (by decide), cwZ1_t0]
+
+/-- A run of `callWipe` from the caller's state `s`: it keeps what the
+calling convention requires, its postcondition is the first function's if
+that reads the memory on return only within the buffers apart from the
+array (`hout`), and the first `n` bytes of the array are zero. -/
+theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
+    (h : Verified target body (sig.contract abi pre post wa stack leak))
+    (hz : Verified target zcode (Spec.Zeroize.zeroizeContract abi zst))
+    (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true) (hr : r ≠ .t0)
+    (hd : sdepth body ≤ stack) (hzd : sdepth zcode ≤ zst) (hzs : zst ≤ stack)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hpost : ∀ vs m₁ m₂ m' x, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' x →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
+    {e : Elem} {k n : Nat} (hn : n ≤ k * e.size) (hn12 : n < 4095)
+    {s : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
+    (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
+    (hout : ∀ m₁ m₂ x, (∀ b ∈ Sig.bufs sig.params (regArgs sig s), b.1.Disjoint ⟨s.gpr r, k * e.size⟩ →
+        ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post (regArgs sig s) s.mem m₁ x →
+        Curry.apply (sig.words abi.ptrBits) post (regArgs sig s) s.mem m₂ x) :
+    WP isa (callWipe r n name body zname zcode) s fun g =>
+      abiPreserved s g ∧ (sig.contract abi pre post wa (stack + 32) leak).post s g ∧
+        Spec.Zeroize.bytesAt g.mem (s.gpr r) n = Spec.Zeroize.zeros n := by
+  obtain ⟨hal, hsb⟩ := cw_sp hk hl hs
+  have hout' := cw_out hk hl hs
+  have hsp32 : 32 ≤ s.sp.toNat := by omega_using [hsb]
+  have hal' : ∀ off, off % 8 = 0 → off + 8 ≤ 32 → (slot s off).toNat % 8 = 0 :=
+    fun off ho h => slot_aligned hal hsp32 ho h
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ hsp32 ?_
+  refine WP.seq (WP.block ⟨_, saveArg_run hr hal hsp32, ?_⟩)
+  refine WP.seq (WP.mono (cw_body_wp h hk hl hd hpre hpost hs) fun c hc => ?_)
+  obtain ⟨hrdc, hwrc, hspc, -⟩ := id hc
+  refine WP.seq (WP.block ⟨_, zeroArgs_run n hn12 (by rw [hspc]; exact hal' 16 (by decide) (by decide))
+    (by rw [hspc]; exact hal' 8 (by decide) (by decide))
+    (by rw [hwrc, hspc]; exact slot_in s (by decide))
+    (by rw [hwrc, hspc]; exact slot_in' s c.rd (by decide)), ?_⟩)
+  refine WP.seq (WP.mono (cw_zero_wp hz hzd hzs hk hl hs harr hn hn12 hc) fun g hg => ?_)
+  obtain ⟨c', hc', hrdg, hwrg, hspg, hcsg, h0g, h16g, hfs, hfc, hz0⟩ := hg
+  refine WP.block ⟨_, restore_run (by rw [hspg]; exact hal' 16 (by decide) (by decide))
+    (by rw [hspg]; exact hal' 0 (by decide) (by decide))
+    (by rw [hwrg, hspg]; exact slot_in' s g.rd (by decide))
+    (by rw [hwrg, hspg]; exact slot_in' s g.rd (by decide)), ?_⟩
+  have hra : (cwRestore g).gpr .ra = s.gpr .ra := by
+    rw [cwRestore, RegUpd.gpr_write_self, hspg]; exact h0g
+  have ha0 : (cwRestore g).gpr .a0 = c'.gpr .a0 := by
+    rw [cwRestore, RegUpd.gpr_write_of_ne _ _ (by decide), RegUpd.gpr_write_self, hspg]
+    exact h16g
+  refine ⟨⟨fun q hq => ?_, ?_, ?_⟩, ?_, hz0⟩
+  · -- The callee-saved registers.
+    obtain ⟨h₀, -, ht, hra'⟩ := preserved_args q hq
+    show (cwRestore g).gpr q = s.gpr q
+    rw [cwRestore, RegUpd.gpr_write_of_ne _ _ hra', RegUpd.gpr_write_of_ne _ _ h₀, cwZ1,
+      RegUpd.gpr_write_of_ne _ _ ht]
+    exact hcsg q hq
+  · show (cwRestore g).sp + BitVec.ofNat 64 32 = s.sp
+    rw [cwRestore, RegUpd.sp_write, RegUpd.sp_write, cwZ1, RegUpd.sp_write, hspg, BitVec.sub_add_cancel]
+  · exact hra
+  · -- The postcondition, which reads the memory on return only within the buffers apart from the array.
+    rw [post_regs' hk]
+    show Curry.apply _ post (regArgs sig s) s.mem (cwRestore g).mem (((cwRestore g).gpr .a0).setWidth _)
+    rw [ha0]
+    refine hout c'.mem _ _ (fun b hb hbA x hx => ?_) hc'.2.2.2.2.2.2.2
+    refine (hfc x fun R hR hc => ?_).symm
+    rcases List.mem_cons.mp hR with rfl | hR
+    · exact hbA x hx (Region.sub_prefix hn x hc)
+    · simp only [List.mem_singleton] at hR; subst hR
+      exact hout' b hb (stack + 32) (stack + 32) (Nat.le_refl _) (Nat.le_refl _) x hx hc
+
 end
 
 end VG.RISCV64
