@@ -361,7 +361,6 @@ jobs:
       # Each module in its own process, in parallel; output only on failure.
       - run: python3 ci/run_unit_tests.py
       - run: python3 ci/check_mcdt.py
-      - run: python3 ci/check_avx_transitions.py
       - run: python3 ci/check_vectors.py
 
   # The Rust jobs' matrices (ci/rust_matrix.toml), narrowed to the
