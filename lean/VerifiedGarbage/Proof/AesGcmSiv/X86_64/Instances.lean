@@ -307,6 +307,16 @@ theorem openCode_framed (v : GcmImpl) :
 theorem openCode_spSafe (v : GcmImpl) : (openCode v).all (fun i => !X86_64.isa.writesSp i) = true :=
   openWith_spSafe v _
 
+/-- Whether `v`'s `seal` and `open` have instances with the AVX2 copies
+(`_avx2`), which the CPUs with AVX2 run at every length. Two would never
+run: with VAES and VPCLMULQDQ (`sivStitch`) the code takes those copies
+already, and the instance is an other name of the one without, which the
+dispatcher reaches first; and AES-NI with PCLMULQDQ without AVX's loops
+would need AVX as well, so it would run only where the instance with AVX's
+loops (`sivAvx`), which the dispatcher prefers, runs. -/
+def hasWide (v : GcmImpl) : Bool :=
+  !sivStitch v && (sivWide v || sivAvx v || !(v.ctr.features.contains "aes" && v.gh.features.contains "pclmulqdq"))
+
 /-- The copy/XOR variant: the code of `seal` and `open` with the AVX2
 copies, which those whose callees need AVX2 already take. -/
 def wideSealCode (v : GcmImpl) : Prog X86_64.isa := sealWith v true (loopsOf v)

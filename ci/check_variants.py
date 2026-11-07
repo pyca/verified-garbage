@@ -228,7 +228,24 @@ NEVER_WITH = {
     # The dispatchers of ChaCha20 and ChaCha20-Poly1305 rank `_avx2` (and
     # better) above `_ssse3` (`VG.Dispatch.ranking`), so choose it whenever
     # AVX2 is present (`VerifiedGarbageTest/Dispatch.lean` checks it).
-    "x86_64": {"vg_chacha20_xor_ssse3": [{"avx", "avx2"}]},
+    "x86_64": {
+        "vg_chacha20_xor_ssse3": [{"avx", "avx2"}],
+        # AES-GCM-SIV's dispatchers rank `_aesni_pclmul_avx_avx2` above
+        # `_aesni_avx2` and `_pclmul_avx2`, and `_vaes_vpclmul_avx512` above
+        # `_vaes_avx2` and `_vpclmul_avx2`, each needing only the features of
+        # the one it is above with those listed here, so never choose these
+        # with them (`VerifiedGarbageTest/Dispatch.lean` checks the ranking).
+        **{
+            f"vg_aes_gcm_siv_{f}_{v}": [sets]
+            for f in ("seal", "open")
+            for v, sets in (
+                ("aesni_avx2", {"pclmulqdq"}),
+                ("pclmul_avx2", {"aes"}),
+                ("vaes_avx2", {"pclmulqdq", "vpclmulqdq"}),
+                ("vpclmul_avx2", {"aes", "vaes"}),
+            )
+        },
+    },
 }
 
 
