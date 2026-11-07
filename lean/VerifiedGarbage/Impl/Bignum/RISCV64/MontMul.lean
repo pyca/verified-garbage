@@ -53,8 +53,8 @@ it restores), and the memory of `[o]`, the accumulator and the temporary.
 
 The inner steps put the incoming carry last, after the product and the
 accumulator word, so only the last three additions/comparisons depend on
-the preceding step. Each product has adjacent `mulhu` then `mul`, with
-the high destination distinct from both inputs, permitting multiply fusion.
+the preceding step. Compute the low half before the high half, so the
+accumulator addition can start as soon as the low half is available.
 -/
 
 @[expose] public section
@@ -102,10 +102,10 @@ mod 2⁶⁴ + u mⱼ + d` (`mⱼ` in `a7`), `d` := its high word, and its low wo
 stored at `t3 + k`: word `j - 1` of `(T + aᵢ b + u m) / 2⁶⁴`; `bⱼ₊₁` and
 `mⱼ₊₁` (at `t4 + k + 16` and `a0 + k + 16`) into `a6` and `a7`. -/
 def fiosStep (k : Nat) : List Instr :=
-  [.load .d .s2 .t3 (k + 8), .mulhu .s3 .t6 .a6, .mul .s4 .t6 .a6,
+  [.load .d .s2 .t3 (k + 8), .mul .s4 .t6 .a6, .mulhu .s3 .t6 .a6,
     .load .d .a6 .t4 (k + 16), .add .s4 .s4 .s2, .sltu .s2 .s4 .s2, .add .s3 .s3 .s2,
     .add .s4 .s4 .s0, .sltu .s2 .s4 .s0, .add .s0 .s3 .s2,
-    .mulhu .s3 .t2 .a7, .mul .s2 .t2 .a7, .load .d .a7 .a0 (k + 16),
+    .mul .s2 .t2 .a7, .mulhu .s3 .t2 .a7, .load .d .a7 .a0 (k + 16),
     .add .s2 .s2 .s4, .sltu .s4 .s2 .s4, .add .s3 .s3 .s4,
     .add .s2 .s2 .s1, .sltu .s4 .s2 .s1, .add .s1 .s3 .s4, .store .d .s2 .t3 k]
 

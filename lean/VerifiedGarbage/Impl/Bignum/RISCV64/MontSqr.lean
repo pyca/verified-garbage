@@ -77,7 +77,7 @@ loaded into `a7`. `tⱼ` is added into the product's low word first and the
 carry `c` last, each addition's carry into the high word: three operations
 on each carry chain. -/
 def sqrMac (k : Nat) : List Instr :=
-  [.load .d .s4 .t4 k, .mulhu .s2 .s0 .a7, .mul .s3 .s0 .a7, .load .d .a7 .a0 (k + 8),
+  [.load .d .s4 .t4 k, .mul .s3 .s0 .a7, .mulhu .s2 .s0 .a7, .load .d .a7 .a0 (k + 8),
     .add .s3 .s3 .s4, .sltu .s4 .s3 .s4, .add .s2 .s2 .s4,
     .add .s3 .s3 .s1, .sltu .s4 .s3 .s1, .add .s1 .s2 .s4, .store .d .s3 .t4 k]
 
