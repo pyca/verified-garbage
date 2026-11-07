@@ -15,7 +15,10 @@ use core::mem::MaybeUninit;
 
 #[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES;
-#[cfg(target_arch = "riscv64")]
+#[cfg(any(
+    target_arch = "riscv64",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 use crate::arch::chacha20poly1305::vg_chacha20_poly1305_open_to;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20poly1305::{
@@ -327,7 +330,10 @@ impl ChaCha20Poly1305 {
     /// authenticates it; otherwise returns [`Error::TagMismatch`] and zeroes
     /// `out`. `ciphertext` is read where it is, not copied to `out` first. A
     /// length error leaves `out` as it was.
-    #[cfg(target_arch = "riscv64")]
+    #[cfg(any(
+        target_arch = "riscv64",
+        all(target_arch = "powerpc64", target_endian = "little")
+    ))]
     pub fn decrypt(
         &self,
         nonce: &[u8; 12],
@@ -523,7 +529,10 @@ mod tests {
     /// to 300 bytes, from and to buffers at several alignments, leaving the
     /// ciphertext as it was; zeroes the output on a wrong tag; and leaves it
     /// as it was on a length error.
-    #[cfg(target_arch = "riscv64")]
+    #[cfg(any(
+        target_arch = "riscv64",
+        all(target_arch = "powerpc64", target_endian = "little")
+    ))]
     #[test]
     fn decrypt_out_of_place() {
         let aead = ChaCha20Poly1305::new(&core::array::from_fn(|i| (i * 9) as u8));

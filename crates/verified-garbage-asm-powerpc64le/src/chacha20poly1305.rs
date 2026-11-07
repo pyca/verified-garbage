@@ -19,9 +19,9 @@
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "Uf0h+CAAQTnQAQr72AEq++ABSvvoAWr78AGK+/gBqvumAgh8AAIK+AAACjsAACU7AABGOwAAZzsAAIg7AACpO3BhgD1leIxhQAGYkSAzgD1uZIxhRAGYkWJ5gD0yLYxhSAGYkSBrgD10ZYxhTAGYkQAAg4FQAZiRBACDgVQBmJEIAIOBWAGYkQwAg4FcAZiREACDgWABmJEUAIOBZAGYkRgAg4FoAZiRHACDgWwBmJEAAIA5cAGYkQAAhIF0AZiRBACEgXgBmJEIAISBfAGYkUABeDgAAJg4"
+        r#".base64 "Uf0h+CAAQTkAAGc50AEK+9gBKvvgAUr76AFq+/ABivv4Aar7AALq+6YCCHwIAgr4AAAKOwAAJTsAAEY7AABnOwAAiDsAAKk7AADrO3BhgD1leIxhQAGYkSAzgD1uZIxhRAGYkWJ5gD0yLYxhSAGYkSBrgD10ZYxhTAGYkQAAg4FQAZiRBACDgVQBmJEIAIOBWAGYkQwAg4FcAZiREACDgWABmJEUAIOBZAGYkRgAg4FoAZiRHACDgWwBmJEAAIA5cAGYkQAAhIF0AZiRBACEgXgBmJEIAISBfAGYkUABeDgAAJg4"
 bl {vg_chacha20_block}
-.base64 "AACY6YABmPkIAJjpiAGY+RAAmOmQAZj5GACY6ZgBmPkBAIA5cAGYkUABeDgAAJs4AAC8OAAA2DgAAPs4"
+.base64 "AACY6YABmPkIAJjpiAGY+RAAmOmQAZj5GACY6ZgBmPkBAIA5cAGYkUABeDgAAJs4AAC8OAAA2DgAAP84"
 bl {vg_chacha20_xor}
 .base64 "AAB4OIABmDg="
 bl {vg_poly1305_init}
@@ -53,9 +53,9 @@ b 24f
 24:
 .base64 "sAFY+7gBmPuwAZg4AQCgOAAAeDg="
 bl {vg_poly1305_blocks}
-.base64 "AuFEew8AgDk4YEx/DwCMOQLhjHkUYoR8AuGFew8AgDk4YIx/DwCMOQLhjHkUYqV8FCqEfAEAhDjkJoR4AAB4OAAAvTgIAtg4"
+.base64 "AuFEew8AgDk4YEx/DwCMOQLhjHkUYoR8AuGFew8AgDk4YIx/DwCMOQLhjHkUYqV8FCqEfAEAhDjkJoR4AAB4OAAAvTgQAtg4"
 bl {vg_poly1305_finalize_scratch}
-.base64 "AACYOQACDOimAwh80AEM69gBLOvgAUzr6AFs6/ABjOv4AazrIACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmwAiE4IACATg==""#,
+.base64 "AACYOQgCDOimAwh80AEM69gBLOvgAUzr6AFs6/ABjOv4AazrAALs6yAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5iAJs+bACITggAIBO""#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -80,7 +80,7 @@ bl {vg_poly1305_finalize_scratch}
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "Uf0h+CAAQTnQAQr72AEq++ABSvvoAWr78AGK+/gBqvumAgh8AAIK+AAACjsAACU7AABGOwAAZzsAAIg7AACpO3BhgD1leIxhQAGYkSAzgD1uZIxhRAGYkWJ5gD0yLYxhSAGYkSBrgD10ZYxhTAGYkQAAg4FQAZiRBACDgVQBmJEIAIOBWAGYkQwAg4FcAZiREACDgWABmJEUAIOBZAGYkRgAg4FoAZiRHACDgWwBmJEAAIA5cAGYkQAAhIF0AZiRBACEgXgBmJEIAISBfAGYkUABeDgAAJg4"
+        r#".base64 "Uf0h+CAAQTkAAGc50AEK+9gBKvvgAUr76AFq+/ABivv4Aar7AALq+6YCCHwIAgr4AAAKOwAAJTsAAEY7AABnOwAAiDsAAKk7AADrO3BhgD1leIxhQAGYkSAzgD1uZIxhRAGYkWJ5gD0yLYxhSAGYkSBrgD10ZYxhTAGYkQAAg4FQAZiRBACDgVQBmJEIAIOBWAGYkQwAg4FcAZiREACDgWABmJEUAIOBZAGYkRgAg4FoAZiRHACDgWwBmJEAAIA5cAGYkQAAhIF0AZiRBACEgXgBmJEIAISBfAGYkUABeDgAAJg4"
 bl {vg_chacha20_block}
 .base64 "AACY6YABmPkIAJjpiAGY+RAAmOmQAZj5GACY6ZgBmPkAAHg4gAGYOA=="
 bl {vg_poly1305_init}
@@ -112,15 +112,15 @@ b 24f
 24:
 .base64 "sAFY+7gBmPuwAZg4AQCgOAAAeDg="
 bl {vg_poly1305_blocks}
-.base64 "AuFEew8AgDk4YEx/DwCMOQLhjHkUYoR8AuGFew8AgDk4YIx/DwCMOQLhjHkUYqV8FCqEfAEAhDjkJoR4AAB4OMABuDgIAtg4"
+.base64 "AuFEew8AgDk4YEx/DwCMOQLhjHkUYoR8AuGFew8AgDk4YIx/DwCMOQLhjHkUYqV8FCqEfAEAhDjkJoR4AAB4OMABuDgQAtg4"
 bl {vg_poly1305_finalize_scratch}
-.base64 "AQCAOXABmJFAAXg4AACbOAAAvDgAANg4AAD7OA=="
+.base64 "AQCAOXABmJFAAXg4AACbOAAAvDgAANg4AAD/OA=="
 bl {vg_chacha20_xor}
 .base64 "wAF46AAAneh4ImN8yAGY6AgAveh4KoR8eCNjfAAAgDhQIIN8eCNjfOAPY3gBAIA4UCBjfAAAIyg="
 beq %cr0, 26f
 b 27f
 26:
-.base64 "AACbOAAAvDgAACUo"
+.base64 "AACfOAAAvDgAACUo"
 beq %cr0, 28f
 210:
 .base64 "AABkmAEAhDj//6U4AAAlKA=="
@@ -129,7 +129,84 @@ b 29f
 28:
 29:
 27:
-.base64 "AACYOQACDOimAwh80AEM69gBLOvgAUzr6AFs6/ABjOv4AazrIACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPmAAWz5iAFs+ZABbPmYAWz5oAFs+agBbPmwAWz5uAFs+cABbPnIAWz50AFs+dgBbPngAWz56AFs+fABbPn4AWz5AAJs+QgCbPkQAmz5GAJs+SACbPkoAmz5MAJs+TgCbPlAAmz5SAJs+VACbPlYAmz5YAJs+WgCbPlwAmz5eAJs+YACbPmwAiE4IACATg==""#,
+.base64 "AACYOQgCDOimAwh80AEM69gBLOvgAUzr6AFs6/ABjOv4AazrAALs6yAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5iAJs+bACITggAIBO""#,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
+        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+    )
+}
+
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `dst_len` must equal `len`.
+/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
+/// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 928 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "Af0h+AAAgTlgAwzoYAAM+HAADDhoAAz4AABpOQAAgTlgACzpaABM6dABCvvYASr74AFK++gBavvwAYr7+AGq+wAC6vumAgh8CAIK+AAACjsAACU7AABGOwAAZzsAAIg7AACpOwAA6ztwYYA9ZXiMYUABmJEgM4A9bmSMYUQBmJFieYA9Mi2MYUgBmJEga4A9dGWMYUwBmJEAAIOBUAGYkQQAg4FUAZiRCACDgVgBmJEMAIOBXAGYkRAAg4FgAZiRFACDgWQBmJEYAIOBaAGYkRwAg4FsAZiRAACAOXABmJEAAISBdAGYkQQAhIF4AZiRCACEgXwBmJFAAXg4AACYOA=="
+bl {vg_chacha20_block}
+.base64 "AACY6YABmPkIAJjpiAGY+RAAmOmQAZj5GACY6ZgBmPkAAHg4gAGYOA=="
+bl {vg_poly1305_init}
+.base64 "AACZOALhRXsAAHg4"
+bl {vg_poly1305_blocks}
+.base64 "DwCAOThgTH8AACwo"
+beq %cr0, 20f
+.base64 "UNCMfBQimXwAAGA5oAF4+agBePmgAdg4"
+22:
+.base64 "AABkiQAAZpkBAIQ4AQDGOP//jDkAACwo"
+bne %cr0, 22b
+.base64 "oAGYOAEAoDgAAHg4"
+bl {vg_poly1305_blocks}
+b 21f
+20:
+21:
+.base64 "AACbOALhhXsAAHg4"
+bl {vg_poly1305_blocks}
+.base64 "DwCAOThgjH8AACwo"
+beq %cr0, 23f
+.base64 "UOCMfBQim3wAAGA5oAF4+agBePmgAdg4"
+25:
+.base64 "AABkiQAAZpkBAIQ4AQDGOP//jDkAACwo"
+bne %cr0, 25b
+.base64 "oAGYOAEAoDgAAHg4"
+bl {vg_poly1305_blocks}
+b 24f
+23:
+24:
+.base64 "sAFY+7gBmPuwAZg4AQCgOAAAeDg="
+bl {vg_poly1305_blocks}
+.base64 "AuFEew8AgDk4YEx/DwCMOQLhjHkUYoR8AuGFew8AgDk4YIx/DwCMOQLhjHkUYqV8FCqEfAEAhDjkJoR4AAB4OMABuDgQAtg4"
+bl {vg_poly1305_finalize_scratch}
+.base64 "AQCAOXABmJFAAXg4AACbOAAAvDgAANg4AAD/OA=="
+bl {vg_chacha20_xor}
+.base64 "wAF46AAAneh4ImN8yAGY6AgAveh4KoR8eCNjfAAAgDhQIIN8eCNjfOAPY3gBAIA4UCBjfAAAIyg="
+beq %cr0, 26f
+b 27f
+26:
+.base64 "AACfOAAAvDgAACUo"
+beq %cr0, 28f
+210:
+.base64 "AABkmAEAhDj//6U4AAAlKA=="
+bne %cr0, 210b
+b 29f
+28:
+29:
+27:
+.base64 "AACYOQgCDOimAwh80AEM69gBLOvgAUzr6AFs6/ABjOv4AazrAALs63AAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5iAJs+QADITggAIBO""#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,

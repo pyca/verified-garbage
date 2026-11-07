@@ -144,7 +144,7 @@ pub fn bench(c: &mut Criterion) {
 
     // Decryption out of place: from the ciphertext into a separate buffer,
     // which it is not copied to first.
-    #[cfg(target_arch = "riscv64")]
+    #[cfg(any(target_arch = "riscv64", all(target_arch = "powerpc64", target_endian = "little")))]
     {
         let mut g = c.benchmark_group("chacha20poly1305-decrypt-out-of-place");
         for size in SIZES {
