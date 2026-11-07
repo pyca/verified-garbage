@@ -306,7 +306,23 @@ vg_seed_cfb128_decrypt:
 	mov QWORD PTR [r9+1496], r13
 	mov QWORD PTR [r9+1504], r14
 	mov QWORD PTR [r9+1512], r15
-	movq xmm15, rsi
+	mov rax, QWORD PTR [rsi]
+	mov QWORD PTR [r9+1520], rax
+	mov rax, QWORD PTR [rsi+8]
+	mov QWORD PTR [r9+1528], rax
+	test rcx, rcx
+	je 20f
+	mov rax, rcx
+	sub rax, 1
+	shl rax, 4
+	add rax, rdx
+	mov rbx, QWORD PTR [rax]
+	mov QWORD PTR [rsi], rbx
+	mov rbx, QWORD PTR [rax+8]
+	mov QWORD PTR [rsi+8], rbx
+	jmp 21f
+20:
+21:
 	mov r12, rdx
 	mov r13, rcx
 	mov rax, QWORD PTR [rdi]
@@ -341,14 +357,41 @@ vg_seed_cfb128_decrypt:
 	mov QWORD PTR [r9+1456], rax
 	mov rax, QWORD PTR [rdi+120]
 	mov QWORD PTR [r9+1464], rax
-	movq rax, xmm15
-	mov rbp, QWORD PTR [rax]
-	mov QWORD PTR [r9+1088], rbp
-	mov rbp, QWORD PTR [rax+8]
-	mov QWORD PTR [r9+1096], rbp
 	test r13, r13
-	je 20f
-22:
+	je 22f
+24:
+	movabs rcx, 16
+	cmp r13, 16
+	jb 25f
+	jmp 26f
+25:
+	mov rcx, r13
+26:
+	mov rbp, QWORD PTR [r9+1520]
+	mov QWORD PTR [r9+1088], rbp
+	mov rbp, QWORD PTR [r9+1528]
+	mov QWORD PTR [r9+1096], rbp
+	mov rax, r9
+	add rax, 1104
+	mov rbx, r12
+	sub rcx, 1
+	je 27f
+29:
+	mov rbp, QWORD PTR [rbx]
+	mov QWORD PTR [rax], rbp
+	mov rbp, QWORD PTR [rbx+8]
+	mov QWORD PTR [rax+8], rbp
+	add rax, 16
+	add rbx, 16
+	sub rcx, 1
+	jne 29b
+	jmp 28f
+27:
+28:
+	mov rbp, QWORD PTR [rbx]
+	mov QWORD PTR [r9+1520], rbp
+	mov rbp, QWORD PTR [rbx+8]
+	mov QWORD PTR [r9+1528], rbp
 	movq xmm12, r9
 	movq xmm13, r12
 	movq xmm14, r13
@@ -362,29 +405,34 @@ vg_seed_cfb128_decrypt:
 	movq r9, xmm12
 	movq r12, xmm13
 	movq r13, xmm14
-	mov rax, QWORD PTR [r12]
-	xor rax, QWORD PTR [r9+1088]
-	mov QWORD PTR [r12], rax
-	mov rax, QWORD PTR [r12+8]
-	xor rax, QWORD PTR [r9+1096]
-	mov QWORD PTR [r12+8], rax
-	mov rax, QWORD PTR [r9+1088]
-	xor rax, QWORD PTR [r12]
-	mov QWORD PTR [r9+1088], rax
-	mov rax, QWORD PTR [r9+1096]
-	xor rax, QWORD PTR [r12+8]
-	mov QWORD PTR [r9+1096], rax
-	add r12, 16
-	sub r13, 1
-	jne 22b
-	jmp 21f
-20:
-21:
-	movq rax, xmm15
-	mov rbp, QWORD PTR [r9+1088]
-	mov QWORD PTR [rax], rbp
-	mov rbp, QWORD PTR [r9+1096]
-	mov QWORD PTR [rax+8], rbp
+	movabs rcx, 16
+	cmp r13, 16
+	jb 210f
+	jmp 211f
+210:
+	mov rcx, r13
+211:
+	mov rax, r9
+	add rax, 1088
+	mov rbx, r12
+	mov r10, rcx
+212:
+	mov rbp, QWORD PTR [rax]
+	xor rbp, QWORD PTR [rbx]
+	mov QWORD PTR [rbx], rbp
+	mov rbp, QWORD PTR [rax+8]
+	xor rbp, QWORD PTR [rbx+8]
+	mov QWORD PTR [rbx+8], rbp
+	add rax, 16
+	add rbx, 16
+	sub rcx, 1
+	jne 212b
+	mov r12, rbx
+	sub r13, r10
+	jne 24b
+	jmp 23f
+22:
+23:
 	mov rbx, QWORD PTR [r9+1472]
 	mov rbp, QWORD PTR [r9+1480]
 	mov r12, QWORD PTR [r9+1488]
