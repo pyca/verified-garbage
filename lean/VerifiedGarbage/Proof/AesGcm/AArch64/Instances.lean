@@ -51,7 +51,7 @@ theorem openPwCode_depth (v : GcmImpl) (g : GhashWithImpl) :
   have h0 : (openPwCode v g).aarch64Depth = 0 := by
     unfold openPwCode
     split
-    · simp only [Stitch.openWithPw, Stitch.openWithS, Stitch.openFastS, Stitch.openRunWithS, Stitch.openShortF,
+    · simp only [Stitch.openWithPw, Stitch.openWithS, Stitch.openFastS, Stitch.openRunWithS, Stitch.decPart, cond, Stitch.openShortF,
         Stitch.openShort, Stitch.shortPre, Stitch.textIn, Stitch.copyQ, Stitch.ctToB2, Stitch.aadIn,
         Stitch.plainOut, Stitch.stitched, Fast.pwSel, Fast.pwCall, Impl.AesGcm.AArch64.Fast.openFastP,
         Impl.AesGcm.AArch64.Fast.openRunWithP, Impl.AesGcm.AArch64.Fast.front, Impl.AesGcm.AArch64.Fast.cond,

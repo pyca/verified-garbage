@@ -85,13 +85,31 @@ def runWithS (tb : List Instr) (cl : Prog isa) : Prog isa :=
   (.seq (.block tagOut)
     (.block restore)))))))))))
 
+/-- Out of place, before the loop: the text's bytes past the first
+`128 ⌊len / 128⌋` copied from the ciphertext (`x23`) to the destination (kept
+at `W + dataO`), and the destination in `x15`, where the loop stores. -/
+def tailTo : Prog isa :=
+  .seq (.block (whole ++ [.ldr .x .x11 .x19 dataO, .add .x .x11 .x11 .x9, .add .x .x12 .x23 .x9,
+      .sub .x .x13 .x26 .x9]))
+    (.seq copy (.block [.ldr .x .x15 .x19 dataO]))
+
+/-- The first bytes decrypted and hashed by the interleaved loop: in place,
+or (`to`) from the ciphertext at `x23` to the destination, after `tailTo`,
+which then takes the text's place (`x23`). -/
+def decPart (tb : List Instr) (to : Bool) : Prog isa :=
+  cond to
+    (.seq tailTo (.seq (stitched [] tb (Gcm.AArch64.Stitch.dec true)) (.block [.ldr .x .x23 .x19 dataO])))
+    (stitched [] tb Gcm.AArch64.Stitch.dec)
+
 /-- `openRunWithP`, the first bytes decrypted and hashed by the interleaved
 loop, the first counter block kept; the rest decrypted if the tag is right,
-and the first bytes encrypted again from it if not. -/
-def openRunWithS (tb : List Instr) (cl : Prog isa) : Prog isa :=
+and the first bytes encrypted again from it if not. Out of place (`to`), the
+loop reads the ciphertext and writes the destination (`decPart`), and the
+rest is as in place, on the destination. -/
+def openRunWithS (tb : List Instr) (cl : Prog isa) (to : Bool := false) : Prog isa :=
   .seq front
   (.seq (.block [.ldrq .v0 .x20 48, .strq .v0 .x19 cbO])
-  (.seq (stitched [] tb Gcm.AArch64.Stitch.dec)
+  (.seq (decPart tb to)
   (.seq (.block (whole ++ [.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] ++ absSeg2 16))
   (.seq cl
   (.seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24, mov .x12 .x23]))
@@ -108,9 +126,9 @@ def openRunWithS (tb : List Instr) (cl : Prog isa) : Prog isa :=
     (.block [mov .x0 .x27]))))))))))))
 
 /-- `openFastP` with `openRunWithS`. -/
-def openFastS (tb : List Instr) (cl : Prog isa) : Prog isa :=
+def openFastS (tb : List Instr) (cl : Prog isa) (to : Bool := false) : Prog isa :=
   .seq tagLenOk
-  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openRunWithS c tb cl)))
+  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openRunWithS c tb cl to)))
     (.block restore))
 
 /-! ## Short records
@@ -302,5 +320,24 @@ def sealWithPw (gh : Fn) : Prog isa := sealWithS c 16 (pwTbl 8) (pwSel c 8 gh) t
 
 /-- `vg_aes_gcm_open_with_powers`, hashing the rest by `gh`. -/
 def openWithPw (gh : Fn) : Prog isa := openWithS c 24 (pwTbl 16) (pwSel c 16 gh) true
+
+/-! ## Out of place
+
+`vg_aes_gcm_open_split_with_powers` `(ctx = x0, rounds = x1, nonce = x2,
+nonce_len = x3, aad = x4, aad_len = x5, dst = x6, len = x7, tag = [sp],
+tag_len = [sp + 8], pw = [sp + 16], src = [sp + 24], work = [sp + 32])`:
+`vg_aes_gcm_open_with_powers` of the `len` bytes of ciphertext at `src`, the
+plaintext written to `dst`, for a TLS record of at least `minLen` bytes (a
+12-byte nonce, at most 16 bytes of additional data), which its only caller,
+`vg_aes_gcm_open_to_with_powers`, checks. Its entry is `open`'s, with `dst`
+kept as the text (`dataO`), then `src` in `x6`, which `front` takes as the
+text: the loop decrypts the ciphertext to `dst` (`decPart`), and the rest
+is `open`'s on `dst`. If the tag is wrong, `dst` holds the ciphertext again
+and `x0` is 0 (its caller then zeroes `dst`). -/
+
+/-- `vg_aes_gcm_open_split_with_powers`, hashing the rest by `gh`. -/
+def openSplitWithPw (gh : Fn) : Prog isa :=
+  .seq (.block (oneEntry 32 ++ stashArg 8 ++ ([.ldrSp .x12 0, .ldrSp .x6 24] : List Instr)))
+    (openFastS c (pwTbl 16) (pwSel c 16 gh) true)
 
 end VG.Impl.AesGcm.AArch64.Stitch
