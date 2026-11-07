@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86.OpenTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
@@ -125,7 +127,18 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
     spSafe := Gather.sealGather_spSafe v
     features := v.features }]
 
+/-- `vg_aes_gcm_open_to`, calling the instance of `vg_aes_gcm_open` of the implementations `v`. -/
+def artifactsOpenTo (v : GcmImpl) : List Artifact := [
+  Spec.Gcm.openToApi.artifact X86.target {
+    suffix := v.suffix
+    code := Impl.AesGcm.X86.OpenTo.openTo (OpenTo.openFn v).name (OpenTo.openFn v).code
+    stack := 2688
+    verified := Proof.AesGcm.openTo_keyed (OpenTo.openTo_verified (OpenTo.openFn v))
+    spSafe := OpenTo.openTo_spSafe v
+    features := v.features }]
+
 /-- The artifacts of a variant, from the implementations it names. -/
-def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl ++ artifactsGather v.impl
+def artifacts (v : GcmVariant) : List Artifact :=
+  artifactsOf v.impl ++ artifactsGather v.impl ++ artifactsOpenTo v.impl
 
 end VG.Generic.AesGcm.X86.AesGcm
