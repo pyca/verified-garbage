@@ -48,12 +48,21 @@ namespace VG.Impl.Gcm.X86_64.StitchZ
 open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
-open VG.Impl.Aes.X86_64.VaesZ (aesZ ctrsZ xorDataZ)
+open VG.Impl.Aes.X86_64.VaesZ (aesZ ctrsZ)
 
-/-- Sixteen blocks encrypted into the data blocks at `rdx + 64 j`, the GHASH
-work `g i` after round `i`. -/
-def batch (j : Nat) (g : Nat → List Instr) : Prog isa :=
-  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs)) (.seq (aesZ .xmm13 aregs g) (.block (xorDataZ .xmm13 .rdx aregs j)))
+/-- XOR block register `i` into the four blocks read at
+`Stitch.srcK ld (64 (j + i))`, through `t`, and store the result to
+`Stitch.dstK ix (64 (j + i))` (in place, `VaesZ.xorDataZ t .rdx`). -/
+def xorDataZM (ix : Bool) (t : XReg) (ld : Bool) : List XReg → Nat → List Instr
+  | [], _ => []
+  | b :: bs, j => ([.vmovdqu32Load t (Stitch.srcK ld (64 * j)), .zop (.zbin .vpxord b b t),
+      .vmovdqu32Store (Stitch.dstK ix (64 * j)) b] : List Instr) ++ xorDataZM ix t ld bs (j + 1)
+
+/-- Sixteen blocks encrypted into the data blocks at `rdx + 64 j`, or, out of
+place, from there to `rdx + r8 + 64 j` (`ix`) or from `rdx + r8 + 64 j` to
+there (`ld`), the GHASH work `g i` after round `i`. -/
+def batch (j : Nat) (g : Nat → List Instr) (ix : Bool := false) (ld : Bool := false) : Prog isa :=
+  .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs)) (.seq (aesZ .xmm13 aregs g) (.block (xorDataZM ix .xmm13 ld aregs j)))
 
 /-- The carry-less products of the lanes of `a` and `b`, written to `lo`,
 `mid`, `hi`. -/

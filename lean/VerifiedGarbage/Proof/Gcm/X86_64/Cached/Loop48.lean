@@ -277,18 +277,18 @@ theorem dbody48M_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {T : N
   have hQ₀ : Q 0 1 s := ⟨hE.mono (Nat.zero_le _), by
     rw [ite_f (by decide)]; exact ⟨fun h => absurd h (by decide), fun _ _ _ => rfl⟩⟩
   -- Each group is hashed after rounds 1 and 3, before its blocks are decrypted.
-  refine WP.seq (WP.mono (batchM_ok hp (gq48 0) gRegs48 gRegs48_ok (Q 0) (hgq 0 (by decide)) (hq 0)
+  refine WP.seq (WP.mono (batchM_ok (ld := false) hp (by cases ix <;> rfl) (fun h => absurd h (by decide)) (gq48 0) gRegs48 gRegs48_ok (Q 0) (hgq 0 (by decide)) (hq 0)
     (hqx 0 (by omega_arith)) (c := 16 * (e + 0)) (j := 0) (by omega_arith) (by simpa using hI.a) hCache (gq48_keeps 0)
-    (by show a.toNat + _ = _; omega_arith) hQ₀) fun s₁ ⟨hA₁, hQ₁, hg₁, _, _, hCache₁⟩ => ?_)
-  refine WP.seq (WP.mono (batchM_ok hp (gq48 1) gRegs48 gRegs48_ok (Q 1) (hgq 1 (by decide)) (hq 1)
+    hI.r8 (by show a.toNat + _ = (dp s₀).toNat + _; omega_arith) hQ₀) fun s₁ ⟨hA₁, hQ₁, hg₁, _, _, hCache₁⟩ => ?_)
+  refine WP.seq (WP.mono (batchM_ok (ld := false) hp (by cases ix <;> rfl) (fun h => absurd h (by decide)) (gq48 1) gRegs48 gRegs48_ok (Q 1) (hgq 1 (by decide)) (hq 1)
     (hqx 1 (by omega_arith)) (c := 16 * (e + 1)) (j := 4) (by omega_arith)
     (by rw [show 16 * (e + 1) = 16 * (e + 0) + 16 by omega_arith]; exact hA₁) hCache₁ (gq48_keeps 1)
-    (by rw [hg₁]; show a.toNat + _ = _; omega_arith) (hQ₁.next (by decide) (hnx 0)))
+    (fun hi => by rw [hg₁]; exact hI.r8 hi) (by rw [hg₁]; show a.toNat + _ = (dp s₀).toNat + _; omega_arith) (hQ₁.next (by decide) (hnx 0)))
     fun s₂ ⟨hA₂, hQ₂, hg₂, _, _, hCache₂⟩ => ?_)
-  refine WP.seq (WP.mono (batchM_ok hp (gq48 2) gRegs48 gRegs48_ok (Q 2) (hgq 2 (by decide)) (hq 2)
+  refine WP.seq (WP.mono (batchM_ok (ld := false) hp (by cases ix <;> rfl) (fun h => absurd h (by decide)) (gq48 2) gRegs48 gRegs48_ok (Q 2) (hgq 2 (by decide)) (hq 2)
     (hqx 2 (by omega_arith)) (c := 16 * (e + 2)) (j := 8) (by omega_arith)
     (by rw [show 16 * (e + 2) = 16 * (e + 1) + 16 by omega_arith]; exact hA₂) hCache₂ (gq48_keeps 2)
-    (by rw [hg₂, hg₁]; show a.toNat + _ = _; omega_arith) (hQ₂.next (by decide) (hnx 1)))
+    (fun hi => by rw [hg₂, hg₁]; exact hI.r8 hi) (by rw [hg₂, hg₁]; show a.toNat + _ = (dp s₀).toNat + _; omega_arith) (hQ₂.next (by decide) (hnx 1)))
     fun s₃ ⟨hA₃, hQ₃, hg₃, _, _, _⟩ => ?_)
   refine WP.mono (next48_ok s₃ 48 48 (by decide)) fun s' ⟨frdx, fr9, fcf, fg, fl, fm, frd, fwr⟩ => ?_
   obtain ⟨hE₃, h2⟩ := hQ₃
@@ -300,6 +300,7 @@ theorem dbody48M_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {T : N
     congr 1
   refine ⟨⟨by rw [show 16 * (e + 3) = 16 * (e + 2) + 16 by omega_arith]; exact hA₃.gpr2 fg fl fm frd fwr,
     ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
+    fun hi => by rw [gk _ (by decide) (by decide)]; exact hI.r8 hi,
     fun r h1 h2 h3 h4 h5 => by rw [gk r h2 h4]; exact hI.gpr r h1 h2 h3 h4 h5,
     fun g hg k hk l hl => by rw [fm]; exact hE₃.pv g hg k hk l hl, fun l hl => by rw [fm]; exact hE₃.pm l hl,
     ?_, fun l h1 h4 => by rw [fl]; exact h2.2 l h1 h4⟩, ?_⟩
@@ -346,13 +347,14 @@ theorem bigDRestM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : 
 
   have hI₁ : DInv3M ix s₀ T 0 s₁ :=
     ⟨hA₁, by rw [hg₁]; exact hI.rdx, by rw [hg₁]; exact hI.r9, by rw [hg₁]; exact hI.rax,
+      fun hi => by rw [hg₁]; exact hI.r8 hi,
       fun r h1 h2 h3 h4 h5 => by rw [hg₁]; exact hI.gpr r h1 h2 h3 h4 h5, hv₁, hm₁,
       by rw [hl₁ 0 (by decide)]; exact hI.y, fun l h1 h4 => by rw [hl₁ l h4]; exact hI.y1 l h1 h4⟩
   refine WP.seq (WP.mono (loopD48M_ok hp hT hI₁ (by omega_arith) hCache) fun s₂ ⟨e, _, hI₂, _⟩ => ?_)
   have hr11₂ : s₂.gpr .r11 = pp s₀ := hI₂.gpr .r11 (by decide) (by decide) (fun _ => by decide) (by decide) (by decide)
   refine WP.mono (reloadM_ok hp s₂ hr11₂ hI₂.a.wr hI₂.pm) fun s₃ ⟨p₃, f₃⟩ => ⟨e, ?_⟩
   exact ⟨hI₂.a.zframe f₃ (by decide) (by decide) (by decide), by rw [f₃.gpr]; exact hI₂.rdx,
-    by rw [f₃.gpr]; exact hI₂.r9, by rw [f₃.gpr]; exact hI₂.rax,
+    by rw [f₃.gpr]; exact hI₂.r9, by rw [f₃.gpr]; exact hI₂.rax, fun hi => by rw [f₃.gpr]; exact hI₂.r8 hi,
     fun r h1 h2 h3 h4 h5 => by rw [f₃.gpr]; exact hI₂.gpr r h1 h2 h3 h4 h5,
     fun k hk l hl => by
       have h := hI₂.pv 2 (by decide) k hk l hl

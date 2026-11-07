@@ -163,7 +163,7 @@ theorem AInvM.gpr2 {ix : Bool} {s₀ : State} {c : Nat} {s s' : State} (h : AInv
   ⟨h.le, fun l hl' => by rw [hl]; exact h.ctr l hl', fun l hl' => by rw [hl]; exact h.msk l hl',
     fun l hl' => by rw [hl]; exact h.inc l hl',
     by rw [hg _ (by decide) (by decide)]; exact h.rdi, by rw [hg _ (by decide) (by decide)]; exact h.rsi,
-    by rw [hg _ (by decide) (by decide)]; exact h.r10, fun hi => by rw [hg _ (by decide) (by decide)]; exact h.r8 hi,
+    by rw [hg _ (by decide) (by decide)]; exact h.r10,
     by rw [hm]; exact h.frame, fun k hk => by rw [hm]; exact h.out k hk,
     fun k hk hc => by rw [hm]; exact h.src k hk hc, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
 
@@ -181,7 +181,7 @@ theorem AInvM.pow {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {c : Nat
   refine ⟨h.le, fun l hl' => by rw [k _ (by decide) l hl']; exact h.ctr l hl',
     fun l hl' => by rw [k _ (by decide) l hl']; exact h.msk l hl',
     fun l hl' => by rw [k _ (by decide) l hl']; exact h.inc l hl',
-    by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by rw [hg]; exact h.r10, fun hi => by rw [hg]; exact h.r8 hi,
+    by rw [hg]; exact h.rdi, by rw [hg]; exact h.rsi, by rw [hg]; exact h.r10,
     h.frame.trans (hf.sub fun r hr => ⟨pR s₀, by simp, fun a ha => by
       simp only [List.mem_singleton] at hr; subst hr; exact ha⟩),
     fun k hk => ?_, fun k hk hc => ?_, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
@@ -645,6 +645,7 @@ structure DInv3M (ix : Bool) (s₀ : State) (T : Nat → Nat → Nat → Block) 
   rdx : s.gpr .rdx = dp s₀ + BitVec.ofNat 64 (256 * e)
   r9 : s.gpr .r9 = BitVec.ofNat 64 (nb s₀ - 16 * e)
   rax : s.gpr .rax = cp s₀
+  r8 : ix = true → s.gpr .r8 = Stitch.op s₀ - dp s₀
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → (ix = true → r ≠ .r8) → r ≠ .r9 → r ≠ .r10 → s.gpr r = s₀.gpr r
   pv : ∀ g < 3, ∀ k < 4, ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l
   pm : ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly
@@ -653,7 +654,8 @@ structure DInv3M (ix : Bool) (s₀ : State) (T : Nat → Nat → Nat → Block) 
 
 theorem DInv3.toM {s₀ : State} {T : Nat → Nat → Nat → Block} {e : Nat} {s : State} (h : DInv3 s₀ T e s) :
     DInv3M false s₀ T e s :=
-  ⟨h.a.toM, h.rdx, h.r9, h.rax, fun r h1 h2 _ h4 h5 => h.gpr r h1 h2 h4 h5, h.pv, h.pm, h.y, h.y1⟩
+  ⟨h.a.toM, h.rdx, h.r9, h.rax, fun h' => absurd h' (by decide), fun r h1 h2 _ h4 h5 => h.gpr r h1 h2 h4 h5, h.pv,
+    h.pm, h.y, h.y1⟩
 
 theorem DInv3M.toDInv3 {s₀ : State} {T : Nat → Nat → Nat → Block} {e : Nat} {s : State}
     (h : DInv3M false s₀ T e s) : DInv3 s₀ T e s :=
@@ -808,7 +810,8 @@ theorem DInvM.of_eq {ix : Bool} {s₀ : State} {P : Nat → Nat → Block} {e : 
     (hg : s'.gpr = s.gpr) (hl : ∀ r l, s'.zlane r l = s.zlane r l) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
     (hwr : s'.wr = s.wr) : DInvM ix s₀ P e s' :=
   ⟨h.a.gpr2 (fun r _ _ => by rw [hg]) hl hm hrd hwr, by rw [hg]; exact h.rdx, by rw [hg]; exact h.r9,
-    by rw [hg]; exact h.rax, fun r h1 h2 h3 h4 h5 => by rw [hg]; exact h.gpr r h1 h2 h3 h4 h5,
+    by rw [hg]; exact h.rax, fun hi => by rw [hg]; exact h.r8 hi,
+    fun r h1 h2 h3 h4 h5 => by rw [hg]; exact h.gpr r h1 h2 h3 h4 h5,
     fun k hk l hl' => by rw [hm]; exact h.pw k hk l hl', fun l hl' => by rw [hl]; exact h.m1 l hl',
     by rw [hl]; exact h.y, fun l h1 h4 => by rw [hl]; exact h.y1 l h1 h4⟩
 
