@@ -29,7 +29,7 @@ last piece (`Proof.Modes.RISCV64.cfbEncFinal_wp`, `cfbDecFinal_wp`,
 `ofbFinal_wp`) over Camellia's encryption core (`Mode.dirCoreSpec`) meet the
 contracts on the subkeys, and so the specification's
 (`Proof.Camellia.cfbEncryptFinal_of_sk`, …, `Proof.Camellia.ofbFinal_of_sk`),
-with `stack := 3248`, the whole-block functions' frame, whose precondition,
+with `stack := 3264`, the whole-block functions' frame, whose precondition,
 with the data `len` bytes, is `seq`'s for the data a byte at a time
 (`byteMode`). Constant time as the whole-block functions.
 -/

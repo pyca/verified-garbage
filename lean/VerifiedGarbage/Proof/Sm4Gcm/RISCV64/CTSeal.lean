@@ -66,9 +66,9 @@ theorem sealEntry_wp {s₀ : State} (h : sealPre s₀) :
     ca, wa⟩ := h
   have hk₀ : StkOk (s₀.gpr .a0) (stackArg s₀ 0 + BitVec.ofNat 64 16) (stackArg s₀ 0) s₀.sp :=
     one_stk3 hstk (by simp) (by simp)
-  have bc₀ : (below s₀.sp 3232).Disjoint ⟨s₀.gpr .a0, 256⟩ := hstk.buf3 (by simp)
-  have bw₀ : (below s₀.sp 3232).Disjoint ⟨stackArg s₀ 0, 2560⟩ := hstk.buf3 (by simp)
-  have bd₀ : (below s₀.sp 3232).Disjoint ⟨s₀.gpr .a5, (s₀.gpr .a6).toNat⟩ := hstk.buf3 (by simp)
+  have bc₀ : (below s₀.sp 3248).Disjoint ⟨s₀.gpr .a0, 256⟩ := hstk.buf3 (by simp)
+  have bw₀ : (below s₀.sp 3248).Disjoint ⟨stackArg s₀ 0, 2560⟩ := hstk.buf3 (by simp)
+  have bd₀ : (below s₀.sp 3248).Disjoint ⟨s₀.gpr .a5, (s₀.gpr .a6).toNat⟩ := hstk.buf3 (by simp)
   have hC : Covers [⟨s₀.gpr .a0, 256⟩] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
   have hW : Covers [⟨stackArg s₀ 0, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   have hA : Covers [args s₀ 1] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))

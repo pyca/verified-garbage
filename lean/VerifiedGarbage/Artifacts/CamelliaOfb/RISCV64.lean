@@ -16,11 +16,11 @@ namespace VG.Artifacts.CamelliaOfb.RISCV64
 def artifacts : List Artifact := [
   Spec.Camellia.ofbApi.artifact RISCV64.target {
     code := Impl.Camellia.RISCV64.ofb
-    stack := 3248
+    stack := 3264
     verified := Proof.Camellia.RISCV64.Modes.ofb_verified },
   Spec.Camellia.ofbFinalApi.artifact RISCV64.target {
     code := Impl.Camellia.RISCV64.ofbFinal
-    stack := 3248
+    stack := 3264
     verified := Proof.Camellia.RISCV64.Modes.ofbFinal_verified }]
 
 end VG.Artifacts.CamelliaOfb.RISCV64

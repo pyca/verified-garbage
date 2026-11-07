@@ -16,19 +16,19 @@ namespace VG.Artifacts.BlowfishCfb.RISCV64
 def artifacts : List Artifact := [
   Spec.Blowfish.cfbEncryptApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.cfbEncrypt
-    stack := 4224
+    stack := 4240
     verified := Proof.Blowfish.RISCV64.Modes.cfbEncrypt_verified },
   Spec.Blowfish.cfbDecryptApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.cfbDecrypt
-    stack := 4320
+    stack := 4336
     verified := Proof.Blowfish.RISCV64.Modes.cfbDecrypt_verified },
   Spec.Blowfish.cfbEncryptFinalApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.cfbEncryptFinal
-    stack := 4224
+    stack := 4240
     verified := Proof.Blowfish.RISCV64.Modes.cfbEncryptFinal_verified },
   Spec.Blowfish.cfbDecryptFinalApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.cfbDecryptFinal
-    stack := 4224
+    stack := 4240
     verified := Proof.Blowfish.RISCV64.Modes.cfbDecryptFinal_verified }]
 
 end VG.Artifacts.BlowfishCfb.RISCV64

@@ -24,7 +24,7 @@ meta import VerifiedGarbage.Proof.Sm4.RISCV64.FbFinalLit
 
 The modes' CFB and OFB over a message's last piece (`Proof.Modes.RISCV64.cfbEncFinal_wp`,
 `cfbDecFinal_wp`, `ofbFinal_wp`) over Sm4's one-block encryption core meet the contracts,
-with `stack := 3232`, that core's frame (`ModesVerified.lean`), whose
+with `stack := 3248`, that core's frame (`ModesVerified.lean`), whose
 precondition, with the data `len` bytes, is `seq`'s for the data a byte at a
 time (`byteMode`). Constant time as the whole-block functions.
 -/

@@ -30,7 +30,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.StackScratchArgs
 Untrusted: everything here is checked by Lean. Correctness and constant time,
 a state satisfying each precondition, and the shared contracts of
 `Spec/Sm4/Gcm/Contract.lean` with the working space as a last argument
-(`Proof/Sm4Gcm/Scratch.lean`), with the 3232 bytes of stack that
+(`Proof/Sm4Gcm/Scratch.lean`), with the 3248 bytes of stack that
 `vg_sm4_ctr32`'s frame takes (the deepest of the callees'). Then each
 function in a frame that allocates its working space, as AES-GCM's
 (`Proof/AesGcm/RISCV64/Verified.lean`); `vg_sm4_gcm_stream_init` and
@@ -109,34 +109,34 @@ def verSat : State where
 /-! ## The shared contracts -/
 
 theorem init_verified :
-    Verified RISCV64.target init (Proof.Sm4Gcm.initScratchContract RISCV64.abi 3232) :=
+    Verified RISCV64.target init (Proof.Sm4Gcm.initScratchContract RISCV64.abi 3248) :=
   Verified.of_correct init_correct init_ct (by
     sig_implies [Proof.Sm4Gcm.initScratchContract, Proof.Sm4Gcm.initScratchSig, Spec.Sm4.Gcm.initPost,
       initRISCV64, RISCV64.abi, RISCV64.argRegs, stackBelow, stkOk3, stkAll3, and_true] [initSat] using initSat)
 
 theorem streamEncrypt_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
-    Verified RISCV64.target streamEncrypt (Proof.Sm4Gcm.streamEncryptScratchContract RISCV64.abi 3232) :=
+    Verified RISCV64.target streamEncrypt (Proof.Sm4Gcm.streamEncryptScratchContract RISCV64.abi 3248) :=
   Verified.of_correct streamEncrypt_correct streamEncrypt_ct (by
     sig_implies [Proof.Sm4Gcm.streamEncryptScratchContract, Proof.Sm4Gcm.streamCryptScratchSig,
       Spec.Sm4.Gcm.streamEncryptPost, streamEncryptRISCV64, streamCryptPre, streamCryptPub, RISCV64.abi,
       RISCV64.argRegs, stackBelow, stkOk3, stkAll3, and_true] [streamCryptSat] using streamCryptSat)
 
 theorem streamDecrypt_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
-    Verified RISCV64.target streamDecrypt (Proof.Sm4Gcm.streamDecryptScratchContract RISCV64.abi 3232) :=
+    Verified RISCV64.target streamDecrypt (Proof.Sm4Gcm.streamDecryptScratchContract RISCV64.abi 3248) :=
   Verified.of_correct streamDecrypt_correct streamDecrypt_ct (by
     sig_implies [Proof.Sm4Gcm.streamDecryptScratchContract, Proof.Sm4Gcm.streamCryptScratchSig,
       Spec.Sm4.Gcm.streamDecryptPost, streamDecryptRISCV64, streamCryptPre, streamCryptPub, RISCV64.abi,
       RISCV64.argRegs, stackBelow, stkOk3, stkAll3, and_true] [streamCryptSat] using streamCryptSat)
 
 theorem streamFinish_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
-    Verified RISCV64.target streamFinish (Proof.Sm4Gcm.streamFinishScratchContract RISCV64.abi 3232) :=
+    Verified RISCV64.target streamFinish (Proof.Sm4Gcm.streamFinishScratchContract RISCV64.abi 3248) :=
   Verified.of_correct streamFinish_correct streamFinish_ct (by
     sig_implies [Proof.Sm4Gcm.streamFinishScratchContract, Proof.Sm4Gcm.streamFinishScratchSig,
       Spec.Sm4.Gcm.streamFinishPost, streamFinishRISCV64, finPre, RISCV64.abi,
       RISCV64.argRegs, stackBelow, stkOk3, stkAll3, and_true] [finSat] using finSat)
 
 theorem streamVerify_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
-    Verified RISCV64.target streamVerify (Proof.Sm4Gcm.streamVerifyScratchContract RISCV64.abi 3232) :=
+    Verified RISCV64.target streamVerify (Proof.Sm4Gcm.streamVerifyScratchContract RISCV64.abi 3248) :=
   Verified.of_correct streamVerify_correct streamVerify_ct (by
     sig_implies [Proof.Sm4Gcm.streamVerifyScratchContract, Proof.Sm4Gcm.streamVerifyScratchSig,
       Spec.Sm4.Gcm.streamVerifyPost, streamVerifyRISCV64, verPre, RISCV64.abi,
@@ -152,7 +152,7 @@ def sealSat : State where
   wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩, ⟨0x6000, 2560⟩]
 
 theorem seal_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
-    Verified RISCV64.target «seal» (Proof.Sm4Gcm.sealScratchContract RISCV64.abi 3232) :=
+    Verified RISCV64.target «seal» (Proof.Sm4Gcm.sealScratchContract RISCV64.abi 3248) :=
   Verified.of_correct seal_correct seal_ct (by
     sig_implies [Proof.Sm4Gcm.sealScratchContract, Proof.Sm4Gcm.sealScratchSig, Spec.Sm4.Gcm.sealPost,
       sealRISCV64, sealPre, onePub, args, RISCV64.abi, RISCV64.argRegs, stackBelow, stkOk3, stkAll3, and_true,
@@ -175,7 +175,7 @@ theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true t
 /-- The postconditions match on `openResult`; the result is the low 32 bits
 of `a0`; and `open`'s public data include its leak, whether it succeeds. -/
 theorem open_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
-    Verified RISCV64.target «open» (Proof.Sm4Gcm.openScratchContract RISCV64.abi 3232) :=
+    Verified RISCV64.target «open» (Proof.Sm4Gcm.openScratchContract RISCV64.abi 3248) :=
   Verified.of_correct open_correct open_ct
     { pre := by
         sig_implies_pre [Proof.Sm4Gcm.openScratchContract, Proof.Sm4Gcm.openScratchSig,
@@ -218,75 +218,75 @@ stack argument.
 space. -/
 def initFrameSat : State := { initSat with wr := [⟨0x2000, 256⟩] }
 
-theorem initFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.initContract RISCV64.abi 5792).pre s := by
+theorem initFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.initContract RISCV64.abi 5808).pre s := by
   implies_sat [Spec.Sm4.Gcm.initContract, Spec.Sm4.Gcm.initSig, Spec.Sm4.Gcm.initPost,
     RISCV64.abi, RISCV64.argRegs] [initFrameSat, initSat] using initFrameSat
 
 theorem init_framed :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a2 init)
-      (Spec.Sm4.Gcm.initContract RISCV64.abi 5792) :=
+      (Spec.Sm4.Gcm.initContract RISCV64.abi 5808) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (pre := Curry.const (fun _ => True) _) (post := Spec.Sm4.Gcm.initPost RISCV64.abi.ptrBits)
-    (wa := true) (stack := 3232) (bytes := 2560) init_verified (by decide) (by decide) initFrameSat_pre
+    (wa := true) (stack := 3248) (bytes := 2560) init_verified (by decide) (by decide) initFrameSat_pre
 
 /-- A state satisfying the preconditions of `vg_sm4_gcm_stream_encrypt` and
 `vg_sm4_gcm_stream_decrypt`, without the working space. -/
 def streamCryptFrameSat : State := { streamCryptSat with wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩] }
 
-theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamEncryptContract RISCV64.abi 5792).pre s := by
+theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamEncryptContract RISCV64.abi 5808).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamEncryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamEncryptPost,
     RISCV64.abi, RISCV64.argRegs] [streamCryptFrameSat, streamCryptSat] using streamCryptFrameSat
 
 theorem streamEncrypt_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 streamEncrypt)
-      (Spec.Sm4.Gcm.streamEncryptContract RISCV64.abi 5792) :=
+      (Spec.Sm4.Gcm.streamEncryptContract RISCV64.abi 5808) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Curry.const (fun _ => True) _)
-    (post := Spec.Sm4.Gcm.streamEncryptPost RISCV64.abi.ptrBits) (wa := true) (stack := 3232)
+    (post := Spec.Sm4.Gcm.streamEncryptPost RISCV64.abi.ptrBits) (wa := true) (stack := 3248)
     (bytes := 2560) streamEncrypt_verified (by decide) (by decide) streamEncryptFrameSat_pre
 
-theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract RISCV64.abi 5792).pre s := by
+theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract RISCV64.abi 5808).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamDecryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamDecryptPost,
     RISCV64.abi, RISCV64.argRegs] [streamCryptFrameSat, streamCryptSat] using streamCryptFrameSat
 
 theorem streamDecrypt_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 streamDecrypt)
-      (Spec.Sm4.Gcm.streamDecryptContract RISCV64.abi 5792) :=
+      (Spec.Sm4.Gcm.streamDecryptContract RISCV64.abi 5808) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (pre := Curry.const (fun _ => True) _)
-    (post := Spec.Sm4.Gcm.streamDecryptPost RISCV64.abi.ptrBits) (wa := true) (stack := 3232)
+    (post := Spec.Sm4.Gcm.streamDecryptPost RISCV64.abi.ptrBits) (wa := true) (stack := 3248)
     (bytes := 2560) streamDecrypt_verified (by decide) (by decide) streamDecryptFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_finish`'s precondition, without
 the working space. -/
 def finFrameSat : State := { finSat with wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩] }
 
-theorem finFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamFinishContract RISCV64.abi 5792).pre s := by
+theorem finFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamFinishContract RISCV64.abi 5808).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamFinishContract, Spec.Sm4.Gcm.streamFinishSig,
     Spec.Sm4.Gcm.streamFinishPost, RISCV64.abi, RISCV64.argRegs] [finFrameSat, finSat] using finFrameSat
 
 theorem streamFinish_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 streamFinish)
-      (Spec.Sm4.Gcm.streamFinishContract RISCV64.abi 5792) :=
+      (Spec.Sm4.Gcm.streamFinishContract RISCV64.abi 5808) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Curry.const (fun _ => True) _)
-    (post := Spec.Sm4.Gcm.streamFinishPost RISCV64.abi.ptrBits) (wa := true) (stack := 3232)
+    (post := Spec.Sm4.Gcm.streamFinishPost RISCV64.abi.ptrBits) (wa := true) (stack := 3248)
     (bytes := 2560) streamFinish_verified (by decide) (by decide) finFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_verify`'s precondition, without
 the working space. -/
 def verFrameSat : State := { verSat with wr := [⟨0x3000, 80⟩] }
 
-theorem verFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract RISCV64.abi 5792).pre s := by
+theorem verFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract RISCV64.abi 5808).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamVerifyContract, Spec.Sm4.Gcm.streamVerifySig,
     Spec.Sm4.Gcm.streamVerifyPost, RISCV64.abi, RISCV64.argRegs] [verFrameSat, verSat] using verFrameSat
 
 theorem streamVerify_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 streamVerify)
-      (Spec.Sm4.Gcm.streamVerifyContract RISCV64.abi 5792) :=
+      (Spec.Sm4.Gcm.streamVerifyContract RISCV64.abi 5808) :=
   RISCV64.Verified.stackScratchL (sig := Spec.Sm4.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 320) (pre := Curry.const (fun _ => True) _)
-    (post := Spec.Sm4.Gcm.streamVerifyPost RISCV64.abi.ptrBits) (wa := true) (stack := 3232)
+    (post := Spec.Sm4.Gcm.streamVerifyPost RISCV64.abi.ptrBits) (wa := true) (stack := 3248)
     (bytes := 2560) streamVerify_verified (by decide) (by decide) verFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_seal`'s precondition, without the working
@@ -294,7 +294,7 @@ space: no stack arguments. -/
 def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩], wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.sealContract RISCV64.abi 5808).pre s := by
+theorem sealFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.sealContract RISCV64.abi 5824).pre s := by
   implies_sat [Spec.Sm4.Gcm.sealContract, Spec.Sm4.Gcm.sealSig, Spec.Sm4.Gcm.sealPost, RISCV64.abi,
     RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
     [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealFrameSat
@@ -303,10 +303,10 @@ theorem sealFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.sealContract RISCV64.abi 5808).p
 its address above its stack pointer (`Verified.stackScratchArgs`). -/
 theorem seal_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 «seal»)
-      (Spec.Sm4.Gcm.sealContract RISCV64.abi 5808) :=
+      (Spec.Sm4.Gcm.sealContract RISCV64.abi 5824) :=
   RISCV64.Verified.stackScratchArgs (sig := Spec.Sm4.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Curry.const (fun _ => True) _) (post := Spec.Sm4.Gcm.sealPost RISCV64.abi.ptrBits)
-    (wa := true) (stack := 3232) (bytes := 2576) (m := 0) seal_verified (by decide) (by decide)
+    (wa := true) (stack := 3248) (bytes := 2576) (m := 0) seal_verified (by decide) (by decide)
     (Proof.Sm4Gcm.pre_local _ _) (Proof.Sm4Gcm.sealPost_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_open`'s precondition, without the working
@@ -315,7 +315,7 @@ def openFrameSat : State :=
   { openSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x5000, 0⟩, ⟨0x9000, 8⟩],
                  wr := [⟨0x4000, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.openContract RISCV64.abi 5808).pre s := by
+theorem openFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.openContract RISCV64.abi 5824).pre s := by
   implies_sat [Spec.Sm4.Gcm.openContract, Spec.Sm4.Gcm.openSig, Spec.Sm4.Gcm.openPost, Spec.Sm4.Gcm.openLeak,
     RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
     [openFrameSat, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openFrameSat
@@ -323,10 +323,10 @@ theorem openFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.openContract RISCV64.abi 5808).p
 /-- `open`, whose `tag_len` arrives on the stack before the working space. -/
 theorem open_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 1 «open»)
-      (Spec.Sm4.Gcm.openContract RISCV64.abi 5808) :=
+      (Spec.Sm4.Gcm.openContract RISCV64.abi 5824) :=
   RISCV64.Verified.stackScratchArgs (sig := Spec.Sm4.Gcm.openSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Curry.const (fun _ => True) _) (post := Spec.Sm4.Gcm.openPost RISCV64.abi.ptrBits)
-    (wa := true) (stack := 3232) (bytes := 2576) (m := 1)
+    (wa := true) (stack := 3248) (bytes := 2576) (m := 1)
     (leak := some (Spec.Sm4.Gcm.openLeak RISCV64.abi.ptrBits))
     open_verified (by decide) (by decide) (Proof.Sm4Gcm.pre_local _ _) (Proof.Sm4Gcm.openPost_local _)
     openFrameSat_pre (hleak := Proof.Sm4Gcm.openLeak_local _)

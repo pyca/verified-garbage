@@ -16,11 +16,11 @@ namespace VG.Artifacts.Sm4Ofb.RISCV64
 def artifacts : List Artifact := [
   Spec.Sm4.ofbApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.ofb
-    stack := 3232
+    stack := 3248
     verified := Proof.Sm4.RISCV64.Modes.ofb_verified },
   Spec.Sm4.ofbFinalApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.ofbFinal
-    stack := 3232
+    stack := 3248
     verified := Proof.Sm4.RISCV64.Modes.ofbFinal_verified }]
 
 end VG.Artifacts.Sm4Ofb.RISCV64

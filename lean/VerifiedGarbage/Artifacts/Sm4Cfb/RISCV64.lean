@@ -16,19 +16,19 @@ namespace VG.Artifacts.Sm4Cfb.RISCV64
 def artifacts : List Artifact := [
   Spec.Sm4.cfbEncryptApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.cfbEncrypt
-    stack := 3232
+    stack := 3248
     verified := Proof.Sm4.RISCV64.Modes.cfbEncrypt_verified },
   Spec.Sm4.cfbDecryptApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.cfbDecrypt
-    stack := 3232
+    stack := 3248
     verified := Proof.Sm4.RISCV64.Modes.cfbDecrypt_verified },
   Spec.Sm4.cfbEncryptFinalApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.cfbEncryptFinal
-    stack := 3232
+    stack := 3248
     verified := Proof.Sm4.RISCV64.Modes.cfbEncryptFinal_verified },
   Spec.Sm4.cfbDecryptFinalApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.cfbDecryptFinal
-    stack := 3232
+    stack := 3248
     verified := Proof.Sm4.RISCV64.Modes.cfbDecryptFinal_verified }]
 
 end VG.Artifacts.Sm4Cfb.RISCV64
