@@ -137,10 +137,23 @@ def copyLoop : Prog isa :=
   .loop (.block [.ldrb .r12 .r1 0, .strb .r12 .r2 0, addI .r1 .r1 1, addI .r2 .r2 1,
     .subs .r3 .r3 (imm 1)]) .ne
 
+/-- Where `xorLoopG` reads the text: `r2`, the bytes it writes, in place;
+`r4` out of place. -/
+def xsrc (to : Bool) : Reg := if to then .r4 else .r2
+
+/-- One byte: that at `xsrc to` XORed with that at `r1`, written to `r2`,
+the pointers advanced. -/
+def xorBodyG (to : Bool) : List Instr :=
+  [.ldrb .r12 (xsrc to) 0, .ldrb .r0 .r1 0, .dp .eor .r12 .r12 (.reg .r0), .strb .r12 .r2 0,
+    addI .r1 .r1 1, addI .r2 .r2 1] ++ (if to then [addI .r4 .r4 1] else []) ++ [.subs .r3 .r3 (imm 1)]
+
+/-- XORs the `r3` (at least 1) bytes at `r1` into those at `r2` (`to =
+false`), or into those at `r4`, written to `r2` (`to`), advancing the
+pointers. -/
+def xorLoopG (to : Bool) : Prog isa := .loop (.block (xorBodyG to)) .ne
+
 /-- XORs the `r3` (at least 1) bytes at `r1` into those at `r2`, advancing both. -/
-def xorLoop : Prog isa :=
-  .loop (.block [.ldrb .r12 .r2 0, .ldrb .r0 .r1 0, .dp .eor .r12 .r12 (.reg .r0), .strb .r12 .r2 0,
-    addI .r1 .r1 1, addI .r2 .r2 1, .subs .r3 .r3 (imm 1)]) .ne
+def xorLoop : Prog isa := xorLoopG false
 
 /-- `r3 := min (16 - r6, r5)`: the carry of `r5 - (16 - r6)`, into `r12`, says
 whether `16 - r6 ≤ r5`. -/
@@ -250,21 +263,15 @@ def tailArgs : List Instr :=
 /-- Where the text is written: `r4` in place, `r6` out of place. -/
 def dreg (to : Bool) : Reg := if to then .r6 else .r4
 
-/-- The new keystream block XORed into the `r5` bytes at `dreg to`. -/
+/-- The new keystream block XORed into the `r5` bytes at `r4`, written to
+`dreg to`. -/
 def tailXor (to : Bool) : Prog isa :=
-  .seq (.block [addI .r1 .r10 64, .mov .r2 (.reg (dreg to)), .mov .r3 (.reg .r5)]) xorLoop
-
-/-- The last `r5` bytes at `r4` with the new keystream block XORed in: in
-place; out of place, copied to `r6` first, and XORed in there. -/
-def tailOut : Bool → Prog isa
-  | false => tailXor false
-  | true => .seq (.seq (.block [.mov .r1 (.reg .r4), .mov .r2 (.reg .r6), .mov .r3 (.reg .r5)]) copyLoop)
-      (tailXor true)
+  .seq (.block [addI .r1 .r10 64, .mov .r2 (.reg (dreg to)), .mov .r3 (.reg .r5)]) (xorLoopG to)
 
 /-- The last `r5` bytes at `r4`, with a new keystream block, in place or (`to`) to `r6`. -/
 def cryptTailG (to : Bool) : Prog isa :=
   .seq (.block [.cmp .r5 (imm 0)])
-    (.ite .eq (.block []) (.seq (.seq (.block tailArgs) ctrFrame) (tailOut to)))
+    (.ite .eq (.block []) (.seq (.seq (.block tailArgs) ctrFrame) (tailXor to)))
 
 /-- The rest of the keystream block first, if the text so far ends within a block. -/
 def cryptFill : Prog isa :=

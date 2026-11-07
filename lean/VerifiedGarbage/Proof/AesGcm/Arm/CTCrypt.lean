@@ -255,7 +255,7 @@ theorem cryptTail_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {n
       ⟨_, _, _, _, _, _, ctrTail_mk L he₁ a0 a1 a2 a3 a12 alr hR, ctrTail_mk L he₂ b0 b1 b2 b3 b12 blr hR,
         he₁.sp.trans he₂.sp.symm⟩
   · cases to
-    · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r4, .r5, .r10]) (tailOut false)
+    · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r4, .r5, .r10]) (tailXor false)
           h).isSome = true := ⟨_, by taint_decide⟩
       refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, h₁⟩ ⟨_, _, _, _, _, h₂⟩ r hr => ?_) hc
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -263,7 +263,7 @@ theorem cryptTail_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {n
       · rw [h₁.r4, h₂.r4]
       · rw [h₁.r5, h₂.r5]
       · exact h₁.env.pin h₂.env (by simp)
-    · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r4, .r5, .r6, .r10]) (tailOut true)
+    · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r4, .r5, .r6, .r10]) (tailXor true)
           h).isSome = true := ⟨_, by taint_decide⟩
       refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, h₁⟩ ⟨_, _, _, _, _, h₂⟩ r hr => ?_) hc
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
