@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Sel
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ESym
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # The IFMA Miller–Rabin round: the multiplications and the table
@@ -53,8 +54,6 @@ theorem PubOk.offs (hl : PubOk l) :
   rcases hl with rfl | rfl | rfl <;> refine ⟨by decide, by decide, rfl, rfl, rfl, fun j => by
     simp only [oT]; omega, rfl, rfl, rfl, rfl, rfl, by decide, by decide, by decide, by decide, by decide, by decide,
     by decide⟩
-
-set_option warningAsError false
 
 /-- `ammMul` with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of the area `B`
 (`o` may be `a` or `b`). -/
@@ -561,7 +560,7 @@ private theorem mod_out (hl : PubOk l) {m m' : Mem} {B : Addr} {M k o n : Nat} (
   · rw [f.word (by simp only [Lay.oK0]; omega) (by simp only [Lay.oK0]; omega)]; exact h.k0 t ht
 
 /-- `sub r13, 1`. -/
-private theorem sub13_ok {t : State} {n : Nat} (hn : 1 ≤ n) (hn3 : n ≤ 3) (h13 : t.gpr .r13 = BitVec.ofNat 64 n) :
+private theorem tdec_ok {t : State} {n : Nat} (hn : 1 ≤ n) (hn3 : n ≤ 3) (h13 : t.gpr .r13 = BitVec.ofNat 64 n) :
     WP isa (.block [.alu .sub .r13 (.imm 1)]) t fun t' =>
       t'.gpr .r13 = BitVec.ofNat 64 (n - 1) ∧ t'.zf = some (decide (n - 1 = 0)) ∧
       VG.Proof.MlKem.X86_64.Keep [.r13] t t' ∧ t'.mem = t.mem ∧ t'.mxcsr = t.mxcsr := by
@@ -570,7 +569,10 @@ private theorem sub13_ok {t : State} {n : Nat} (hn : 1 ≤ n) (hn3 : n ≤ 3) (h
     xrun [h13, VG.Proof.Bignum.X86_64.AmmSym.se_ofNat (show 1 < 2 ^ 31 by decide)]
     and_intros
     any_goals rfl
-    all_goals sorry) rfl) fun t' ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, k, c, d⟩
+    · rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) hn]
+    · rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
+        VG.Proof.Bignum.X86_64.ofNat_sub_beq (by omega) (by decide)]
+      exact decide_eq_decide.mpr (by omega)) rfl) fun t' ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, k, c, d⟩
 
 /-- The loop's invariant with `r13 = n` multiplications left. -/
 private structure TInv (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s : State) (B : Addr) (c b n : Nat) (t : State) :
@@ -620,7 +622,7 @@ private theorem tsel_ok (hl : PubOk l) {t : State} {B : Addr} {n : Nat} (hB : t.
         VG.Proof.MlKem.X86_64.Keep [.r8, .r9, .r11] t u ∧ u.mem = t.mem ∧ u.mxcsr = t.mxcsr :=
     fun o a b' eo ea eb t' hB' g' rd' wr' m' x' ho ha hb =>
       WP.mono (VG.Proof.Bignum.X86_64.Ifma.Pub.setOps_ok hB' ho ha hb) fun u ⟨r8, r9, r11, k, m, x⟩ =>
-        ⟨eo ▸ ea ▸ eb ▸ r8, eb ▸ r9, eo ▸ r11,
+        ⟨by rw [r8, ea], by rw [r9, eb], by rw [r11, eo],
           ⟨fun r hr => (k.gpr hr).trans (congrFun g' r), k.2.1.trans rd', k.2.2.trans wr'⟩, m.trans m', x.trans x'⟩
   refine WP.ite (decide (n = 3)) (by simp [eval, z₁]) (fun hb => ?_) (fun hb => ?_)
   · have e : n = 3 := by simpa using hb
@@ -639,7 +641,7 @@ private theorem tsel_ok (hl : PubOk l) {t : State} {B : Addr} {n : Nat} (hB : t.
       (rd₂.trans rd₁) (wr₂.trans wr₁) (m₂.trans m₁) (x₂.trans x₁) (by omega) (by omega) (by omega)
 
 /-- One multiplication of the table's loop. -/
-private theorem titer_ok (hl : PubOk l) {s t : State} {B : Addr} {c k b n : Nat} (hB : s.gpr .rbx = B)
+private theorem titer_ok (hl : PubOk l) {s t : State} {B : Addr} {c k b n : Nat}
     (h12 : s.gpr .r12 = mask52) (hs : Scr s B (size l)) (hodd : c % 2 = 1)
     (hp : Pre l s.mem B c k (b * 2 ^ (64 * l.W) % c)) (hn1 : 1 ≤ n) (hn3 : n ≤ 3) (hI : TInv l s B c b n t) :
     WP isa (.seq (.seq (.block [.alu .cmp .r13 (.imm 3)]) (.ite .e (.block (setOps (oT l 1) (oT l 1) (oS l)))
@@ -656,13 +658,13 @@ private theorem titer_ok (hl : PubOk l) {s t : State} {B : Addr} {c k b n : Nat}
   have b2 := hT 2 (by decide)
   have b3 := hT 3 (by decide)
   have hZ32 : l.NB + 32 ≤ size l := by have := hT 0 (by decide); omega
+  have hc0 : 0 < c := by omega
   refine WP.seq (WP.mono (tsel_ok hl hI.rbx hI.r13 hn3) fun u ⟨r8, r9, r11, ku, mu, xu⟩ => ?_)
   have hBu : u.gpr .rbx = B := by rw [ku.gpr (by decide)]; exact hI.rbx
   have hsu : Scr u B (size l) := hs.congr (by rw [ku.2.2, hI.wr])
-  have fu : Outside B (oT l 1) (3 * l.NB) s.mem u.mem := by rw [mu]; exact hI.frame
-  have hmu : Mod l u.mem B c k := mod_out hl hp.mod fu (by omega) (by omega)
+  have hmu : Mod l u.mem B c k := by rw [mu]; exact mod_out hl hp.mod hI.frame (by omega) (by omega)
   -- the operands' values
-  have kS := canon_congr (limb_out hl fu (by omega) (by omega)) hp.kk.1
+  have kS := canon_congr (limb_out hl hI.frame (by omega) (by omega)) hp.kk.1
   have hO : tO l n + l.NB ≤ size l := by unfold tO; split <;> (try split) <;> omega
   have hA : tA l n + l.NB ≤ size l := by unfold tA; split <;> (try split) <;> omega
   have hB' : tB l n + l.NB ≤ size l := by unfold tB; split <;> omega
@@ -677,17 +679,18 @@ private theorem titer_ok (hl : PubOk l) {s t : State} {B : Addr} {c k b n : Nat}
       · simp only [tA, tB, e, e', ite_false]; rw [mu]; exact ⟨(hI.r2 (by omega)).1, r1.1⟩
   refine WP.seq (WP.mono (amm_ok hl hBu r8 r9 r11 hsu hsz hZ32 hmu hO hA hB' cA.1 cA.2)
     fun w ⟨cw, vw, ow, gw, w12, rdw, wrw, xw⟩ => ?_)
-  refine WP.mono (sub13_ok hn1 hn3 (by rw [gw _ (by decide) (by decide) (by decide) (by decide) (by decide)
+  rw [mu] at vw ow
+  refine WP.mono (tdec_ok hn1 hn3 (by rw [gw _ (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide), ku.gpr (by decide)]; exact hI.r13)) fun t' ⟨r13', z', k', m', x'⟩ => ⟨?_, z'⟩
-  have ow' : Outside B (tO l n) l.NB u.mem t'.mem := by rw [m']; exact ow
-  have fo : Outside B (oT l 1) (3 * l.NB) u.mem t'.mem :=
+  have ow' : Outside B (tO l n) l.NB t.mem t'.mem := by rw [m']; exact ow
+  have fo : Outside B (oT l 1) (3 * l.NB) t.mem t'.mem :=
     ow'.mono (by unfold tO; split <;> (try split) <;> omega) (by unfold tO; split <;> (try split) <;> omega)
   have keepT : ∀ o, o + l.NB ≤ tO l n ∨ tO l n + l.NB ≤ o → o + l.NB < 2 ^ 31 →
-      ∀ j < l.L, limb l t'.mem B o j = limb l u.mem B o j := fun o ho hb => limb_out hl ow' ho hb
+      ∀ j < l.L, limb l t'.mem B o j = limb l t.mem B o j := fun o ho hb => limb_out hl ow' ho hb
   refine ⟨by rw [k'.gpr (by decide), gw _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), ku.gpr (by decide)]; exact hI.rbx, by rw [k'.gpr (by decide)]; exact w12, r13',
     fun r a1 a2 a3 a4 a5 a6 a7 a8 a9 => ?_, by rw [k'.2.1, rdw, ku.2.1, hI.rd], by rw [k'.2.2, wrw, ku.2.2, hI.wr],
-    by rw [x', xw, xu, hI.mx], by rw [← mu] at fu; exact fu.trans fo, fun h => absurd h (by omega), ?_, ?_, ?_⟩
+    by rw [x', xw, xu, hI.mx], hI.frame.trans fo, fun h => absurd h (by omega), ?_, ?_, ?_⟩
   · rw [k'.gpr (by simp [a9])]
     by_cases r12 : r = .r12
     · subst r12; rw [w12, ← h12]
@@ -699,8 +702,8 @@ private theorem titer_ok (hl : PubOk l) {s t : State} {B : Addr} {c k b n : Nat}
     · subst e
       have v1 := canon_congr (hI.t1 rfl) hp.t1.1
       simp only [tO, tA, tB, ite_true] at cw vw keepT
-      refine ⟨cw, ?_⟩
-      rw [mu, v1.2, hp.t1.2, kS.2, hp.kk.2] at vw
+      refine ⟨by rw [m']; exact cw, ?_⟩
+      rw [v1.2, hp.t1.2, kS.2, hp.kk.2] at vw
       obtain ⟨lt, ev⟩ := vw (by have := Nat.mod_lt (b * 2 ^ (64 * l.W)) hc0; omega)
         (by have := Nat.mod_lt (2 ^ (104 * l.S - 64 * l.W)) hc0; omega)
       refine ⟨by rw [m']; exact lt, ?_⟩
@@ -710,40 +713,38 @@ private theorem titer_ok (hl : PubOk l) {s t : State} {B : Addr} {c k b n : Nat}
         show 64 * l.W + (104 * l.S - 64 * l.W) = 52 * l.S + 52 * l.S by omega, Nat.pow_add, ← Nat.mul_assoc]
     · have r1 := hI.r1 (by omega)
       refine rep_congr (keepT _ (by unfold tO; simp only [e, ite_false]; split <;> omega) (by omega))
-        (by rw [mu] at r1; exact r1)
+        r1
   · intro hn1'
     by_cases e : n = 2
     · subst e
       have r1 := hI.r1 (by omega)
-      rw [mu] at r1
       simp only [tO, tA, tB, show (2 : Nat) ≠ 3 by decide, ite_true, ite_false] at cw vw
-      rw [m'] at cw ⊢
+      rw [m']
       exact rep_of_amm hodd cw vw r1 r1
     · have r2 := hI.r2 (by omega)
-      rw [mu] at r2
       refine rep_congr (keepT _ (by unfold tO; simp only [e, show n ≠ 3 by omega, ite_false]; omega) (by omega)) r2
   · intro hn0
     obtain rfl : n = 1 := by omega
     have r1 := hI.r1 (by omega)
     have r2 := hI.r2 (by omega)
-    rw [mu] at r1 r2
     simp only [tO, tA, tB, show (1 : Nat) ≠ 3 by decide, show (1 : Nat) ≠ 2 by decide, ite_false] at cw vw
-    rw [m'] at cw ⊢
+    rw [m']
     exact rep_of_amm hodd cw vw r2 r1
 
 /-- The table: `T_1 := T_1 K`, `T_2 := T_1²`, `T_3 := T_2 T_1`, for `T_1 = b R
 mod c` on entry; `c` odd, `3 ≤ c`, `c < 2^(64 W)`. -/
 theorem table_ok (hl : PubOk l) {s : State} {B : Addr} {c k b : Nat} (hB : s.gpr .rbx = B)
     (h12 : s.gpr .r12 = mask52) (hs : Scr s B (size l)) (hodd : c % 2 = 1) (h3 : 3 ≤ c)
-    (hc : c < 2 ^ (64 * l.W)) (hp : Pre l s.mem B c k (b * 2 ^ (64 * l.W) % c)) :
+    (_hc : c < 2 ^ (64 * l.W)) (hp : Pre l s.mem B c k (b * 2 ^ (64 * l.W) % c)) :
     WP isa (table l) s fun t =>
       Tab l t.mem B c k b ∧ Frm B [(oT l 1, 3 * l.NB)] s.mem t.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r13 →
         t.gpr r = s.gpr r) ∧
       t.gpr .r12 = mask52 ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
   obtain ⟨-, hsz, h1, h2, h3, hTj, h4, h5, h6, h7, h8, -⟩ := PubOk.offs hl
-  obtain ⟨hT, -, -⟩ := PubOk.ends hl
+  obtain ⟨hT, -, hVe⟩ := PubOk.ends hl
   obtain ⟨-, -, hNB, -⟩ := PubOk.regs hl
+  have b0 := hT 0 (by decide)
   have e1 := hTj 1
   have e2 := hTj 2
   have e3 := hTj 3
@@ -767,7 +768,7 @@ theorem table_ok (hl : PubOk l) {s : State} {B : Addr} {c k b : Nat} (hB : s.gpr
   refine WP.loop (M := isa) (c := .ne) (Q := TInv l s B c b 0) (fun n t => 1 ≤ n ∧ n ≤ 3 ∧ TInv l s B c b n t)
     ?_ 3 t₀ ⟨by decide, Nat.le_refl _, I₀⟩ |>.mono fun t I => ?_
   · intro n t ⟨hn1, hn3, hI⟩
-    refine WP.mono (titer_ok hl hB h12 hs hodd hp hn1 hn3 hI) fun t' ⟨hI', hz⟩ => ?_
+    refine WP.mono (titer_ok hl h12 hs hodd hp hn1 hn3 hI) fun t' ⟨hI', hz⟩ => ?_
     simp only [eval, hz, Option.map_some]
     by_cases h : n = 1
     · subst h; exact .inl ⟨by simp, hI'⟩

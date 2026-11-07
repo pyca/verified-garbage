@@ -117,7 +117,7 @@ def addL (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (o a b j : Nat) : List Instr :=
     .shift .shr .rdx 52]
 
 theorem addN_eq {o a b : Nat} :
-    addN l o a b = [.mov32 .rdx (.imm 0)] ++ (List.range l.L).flatMap (addL l o a b) := rfl
+    addN l o a b = ([.mov32 .rdx (.imm 0)] : List Instr) ++ (List.range l.L).flatMap (addL l o a b) := rfl
 
 theorem addL_ok {t : State} {B : Addr} {o a b j c : Nat} (hB : t.gpr .rbx = B) (h12 : t.gpr .r12 = mask52)
     (hd : t.gpr .rdx = BitVec.ofNat 64 c)
@@ -148,7 +148,6 @@ theorem add_step {X Ya Yb c la lb P : Nat} (hv : X + c * P = Ya + Yb) :
   have e := Nat.mod_add_div (c + la + lb) (2 ^ 52)
   grind
 
-set_option warningAsError false
 
 /-- `[o] := [a] + [b]` (no overlap of `o` with `a` or `b`). -/
 theorem addN_ok (hl : PubOk l) {s : State} {B : Addr} {Z o a b : Nat}
@@ -212,7 +211,7 @@ def subL (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (o a b j : Nat) : List Instr :=
     .alu .and .rax (.reg .r12), .store (at_ .rbx (o + l.off j)) .rax]
 
 theorem subN_eq {o a b : Nat} :
-    subN l o a b = [.mov32 .rdx (.imm 1)] ++ (List.range l.L).flatMap (subL l o a b) := rfl
+    subN l o a b = ([.mov32 .rdx (.imm 1)] : List Instr) ++ (List.range l.L).flatMap (subL l o a b) := rfl
 
 theorem m52 : mask52.toNat = 2 ^ 52 - 1 := by
   unfold mask52; rw [BitVec.toNat_ofNat]
@@ -366,8 +365,8 @@ def eqL (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (k j : Nat) : List Instr :=
   [.mov .rax (.mem (at_ .rbx (oY l + l.off j))), .alu .xor .rax (.mem (at_ .rbx (k + l.off j))),
     .alu .or .rcx (.reg .rax)]
 
-theorem eqN_eq {k : Nat} : eqN l k = [.mov32 .rcx (.imm 0)] ++ ((List.range l.L).flatMap (eqL l k) ++
-    [.alu .cmp .rcx (.imm 1), .alu .sbb .rcx (.reg .rcx)]) := rfl
+theorem eqN_eq {k : Nat} : eqN l k = ([.mov32 .rcx (.imm 0)] : List Instr) ++ ((List.range l.L).flatMap (eqL l k) ++
+    ([.alu .cmp .rcx (.imm 1), .alu .sbb .rcx (.reg .rcx)] : List Instr)) := rfl
 
 theorem eqL_ok {t : State} {B : Addr} {k j : Nat} (hB : t.gpr .rbx = B)
     (ry : InRegions (t.rd ++ t.wr) (B + BitVec.ofNat 64 (oY l + l.off j)) 8)
@@ -487,6 +486,117 @@ theorem eqN_ok (hl : PubOk l) {s : State} {B : Addr} {Z k : Nat}
     · intro h
       exact ⟨fun j hj => h j (by omega_arith), BitVec.eq_of_toNat_eq (h n (by omega_arith))⟩
 
+/-! ## Doublings -/
+
+theorem pub_pos (hl : PubOk l) : 0 < l.L ∧ 8 ≤ l.NB ∧ l.S = l.L := by
+  rcases hl with rfl | rfl | rfl <;> decide
+
+/-- The limbs at 0, through changes of `x` and `tmp` only. -/
+theorem frm_word0 (hl : PubOk l) {m m' : Mem} {B : Addr} {x tmp : Nat}
+    (h : Frm B [(x, l.NB), (tmp, l.NB)] m m') (sx0 : Sep l x 0) (st0 : Sep l tmp 0) (hN : l.NB < 2 ^ 63)
+    {j : Nat} (hj : j < l.L) : word m' B (0 + l.off j) = word m B (0 + l.off j) := by
+  have := off_ltN hl.amm hj
+  unfold Sep at sx0 st0
+  refine h.word_eq (fun r hr => ?_) (by omega_arith)
+  simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr
+  rcases hr with rfl | rfl <;> (try dsimp only) <;> omega_arith
+
+/-- `dbl1`, the modulus given by its limbs at 0. -/
+theorem dbl1_core (hl : PubOk l) {s : State} {B : Addr} {Z x tmp c : Nat}
+    (hB : s.gpr .rbx = B) (h12 : s.gpr .r12 = mask52) (hs : Scr s B Z)
+    (h0c : Canon l s.mem B 0) (h0v : val52 l s.mem B 0 = c) (hbig : 4 * c ≤ 2 ^ (52 * l.S))
+    (hx : x + l.NB ≤ Z) (ht : tmp + l.NB ≤ Z) (hZ : Z < 2 ^ 31)
+    (sxt : Sep l x tmp) (sx0 : Sep l x 0) (st0 : Sep l tmp 0)
+    (hcx : Canon l s.mem B x) (hlt : val52 l s.mem B x < c) :
+    WP isa (.block (dbl1 l x tmp)) s fun t =>
+      Canon l t.mem B x ∧ val52 l t.mem B x = 2 * val52 l s.mem B x % c ∧
+      Frm B [(x, l.NB), (tmp, l.NB)] s.mem t.mem ∧ VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rdx] s t ∧
+      t.mxcsr = s.mxcsr := by
+  obtain ⟨-, hNB, hSL⟩ := pub_pos hl
+  have h0 : 0 + l.NB ≤ Z := by unfold Sep at sx0; omega_arith
+  obtain ⟨v, hv⟩ : ∃ v, val52 l s.mem B x = v := ⟨_, rfl⟩
+  have hP : val52 l s.mem B x + val52 l s.mem B x < 2 ^ (52 * l.L) := by
+    rw [hSL] at hbig; rw [hv]; rw [hv] at hlt
+    generalize 2 ^ (52 * l.L) = P at hbig ⊢; omega_arith
+  rw [hv]
+  unfold dbl1
+  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (addN_ok hl hB h12 hs ht hx hx hZ (Or.symm sxt) (Or.symm sxt) hcx hcx hP)
+    fun t1 ⟨c1, v1, f1, k1, x1⟩ => ?_
+  rw [hv] at v1
+  have hw0 : ∀ j < l.L, limb l t1.mem B 0 j = limb l s.mem B 0 j := fun j hj =>
+    congrArg BitVec.toNat (word_out hl f1 st0 (by omega_arith) hj)
+  have c01 : Canon l t1.mem B 0 := fun j hj => by rw [hw0 j hj]; exact h0c j hj
+  have v01 : val52 l t1.mem B 0 = c := by rw [← h0v]; unfold val52; exact lval_congr hw0
+  refine WP.mono (subN_ok hl ((k1.gpr (by decide)).trans hB) ((k1.gpr (by decide)).trans h12) (hs.congr k1.2.2)
+    hx ht h0 hZ sxt sx0 c1 c01) fun t2 ⟨c2, v2, d2, f2, k2, x2⟩ => ?_
+  rw [v01, v1] at v2 d2
+  have hwt : ∀ j < l.L, word t2.mem B (tmp + l.off j) = word t1.mem B (tmp + l.off j) := fun j hj =>
+    word_out hl f2 sxt (by omega_arith) hj
+  refine WP.mono cmpSbb_rdx fun t3 ⟨d3, k3, m3, x3⟩ => ?_
+  have hp : t3.gpr .rdx = mask (decide (v + v < c)) := by
+    rw [d3, d2]
+    refine congrArg mask (decide_eq_decide.2 ?_)
+    by_cases h : c ≤ v + v
+    · rw [VG.Proof.MlKem.X86_64.ifp h]
+      exact ⟨fun e => absurd e (by decide), fun e => absurd h (by omega_arith)⟩
+    · rw [VG.Proof.MlKem.X86_64.ifn h]
+      exact ⟨fun _ => by omega_arith, fun _ => rfl⟩
+  have hB3 : t3.gpr .rbx = B :=
+    (k3.gpr (by decide)).trans ((k2.gpr (by decide)).trans ((k1.gpr (by decide)).trans hB))
+  refine WP.mono (selN_ok hl hB3 hp (hs.congr (k3.2.2.trans (k2.2.2.trans k1.2.2))) hx ht hZ sxt)
+    fun t4 ⟨h4, f4, k4, x4⟩ => ?_
+  have m3' : t3.mem = t2.mem := m3
+  refine ⟨fun j hj => ?_, ?_, ?_, (((k1.trans k2).trans k3).trans k4).mono (by decide),
+    x4.trans (x3.trans (x2.trans x1))⟩
+  · rw [h4 j hj, m3']
+    split
+    · simp only [limb]; rw [hwt j hj]; exact c1 j hj
+    · exact c2 j hj
+  · by_cases hc : v + v < c
+    · have e : val52 l t4.mem B x = val52 l t1.mem B tmp := by
+        unfold val52
+        refine lval_congr fun j hj => ?_
+        rw [h4 j hj, m3', decide_eq_true hc, VG.Proof.MlKem.X86_64.ifp rfl]
+        simp only [limb]; rw [hwt j hj]
+      rw [e, v1, ← Nat.two_mul, Nat.mod_eq_of_lt (by omega_arith)]
+    · have e : val52 l t4.mem B x = val52 l t2.mem B x := by
+        unfold val52
+        refine lval_congr fun j hj => ?_
+        rw [h4 j hj, m3', decide_eq_false hc, VG.Proof.MlKem.X86_64.ifn Bool.false_ne_true]
+      rw [VG.Proof.MlKem.X86_64.ifp (show c ≤ v + v by omega_arith)] at v2
+      rw [e, Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
+  · have F1 : Frm B [(x, l.NB), (tmp, l.NB)] s.mem t1.mem :=
+      VG.Proof.Bignum.Frm.of_outside f1 (List.mem_cons_of_mem _ (List.mem_singleton_self _))
+    have F2 : Frm B [(x, l.NB), (tmp, l.NB)] t1.mem t2.mem :=
+      VG.Proof.Bignum.Frm.of_outside f2 (List.mem_cons_self ..)
+    have F4 : Frm B [(x, l.NB), (tmp, l.NB)] t3.mem t4.mem :=
+      VG.Proof.Bignum.Frm.of_outside f4 (List.mem_cons_self ..)
+    rw [m3'] at F4
+    exact (F1.trans F2).trans F4
+
+theorem mov32n_ok {s : State} (r : Reg) {n : Nat} (hn : n < 2 ^ 31) :
+    WP isa (.block [.mov32 r (.imm (BitVec.ofNat 32 n))]) s fun t =>
+      t.gpr r = BitVec.ofNat 64 n ∧ Keep [r] s t ∧ t.mem = s.mem ∧ t.mxcsr = s.mxcsr := by
+  refine WP.block_cons_iff.2 ⟨s.setReg32 r _, rfl, WP.block_nil ⟨?_, ⟨fun q hq => ?_, rfl, rfl⟩, rfl, rfl⟩⟩
+  · rw [State.setReg32, RegUpd.gpr_setReg_self]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    omega
+  · rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ (fun h => hq (by simp [h]))]
+
+theorem sub13_ok {s : State} {k : Nat} (h : s.gpr .r13 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 31) :
+    WP isa (.block [.alu .sub .r13 (.imm 1)]) s fun t =>
+      t.gpr .r13 = BitVec.ofNat 64 (k - 1) ∧ t.zf = some (decide (k - 1 = 0)) ∧ Keep [.r13] s t ∧
+      t.mem = s.mem ∧ t.mxcsr = s.mxcsr := by
+  refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r13] (Q := fun t =>
+    t.gpr .r13 = BitVec.ofNat 64 (k - 1) ∧ t.zf = some (decide (k - 1 = 0)) ∧ t.mem = s.mem ∧
+      t.mxcsr = s.mxcsr) ?_ rfl) fun t ⟨⟨a, b, c, d⟩, kk⟩ => ⟨a, b, kk, c, d⟩
+  xrun [h, VG.Proof.MlKem.X86_64.ofNat64_pred hk (by omega),
+    VG.Proof.MlKem.X86_64.ofNat64_beq_zero (k := k - 1) (by omega)]
+  rfl
+
 /-- `[x] := 2 [x] mod c`, the modulus `c` at 0, through `tmp`. -/
 theorem dbl1_ok (hl : PubOk l) {s : State} {B : Addr} {Z x tmp c k : Nat}
     (hB : s.gpr .rbx = B) (h12 : s.gpr .r12 = mask52) (hs : Scr s B Z) (hm : Mod l s.mem B c k)
@@ -497,7 +607,7 @@ theorem dbl1_ok (hl : PubOk l) {s : State} {B : Addr} {Z x tmp c k : Nat}
       Canon l t.mem B x ∧ val52 l t.mem B x = 2 * val52 l s.mem B x % c ∧
       Frm B [(x, l.NB), (tmp, l.NB)] s.mem t.mem ∧ VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rdx] s t ∧
       t.mxcsr = s.mxcsr := by
-  sorry
+  exact dbl1_core hl hB h12 hs hm.lt hm.val hm.big hx ht hZ sxt sx0 st0 hcx hlt
 
 /-- `[x] := 2^n [x] mod c`, through `tmp`, `r13` counting. -/
 theorem dbls_ok (hl : PubOk l) {s : State} {B : Addr} {Z x tmp c k n : Nat}
@@ -509,6 +619,37 @@ theorem dbls_ok (hl : PubOk l) {s : State} {B : Addr} {Z x tmp c k n : Nat}
       Canon l t.mem B x ∧ val52 l t.mem B x = 2 ^ n * val52 l s.mem B x % c ∧
       Frm B [(x, l.NB), (tmp, l.NB)] s.mem t.mem ∧ VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rdx, .r13] s t ∧
       t.mxcsr = s.mxcsr := by
-  sorry
+  obtain ⟨-, hNB, -⟩ := pub_pos hl
+  have hc0 : 0 < c := by omega_arith
+  have hN : l.NB < 2 ^ 63 := by omega_arith
+  obtain ⟨v, hv⟩ : ∃ v, val52 l s.mem B x = v := ⟨_, rfl⟩
+  rw [hv] at hlt ⊢
+  unfold dbls
+  refine WP.seq (WP.mono (mov32n_ok .r13 hn') fun t0 ⟨r0, k0, m0, x0⟩ => ?_)
+  refine VG.Proof.Bignum.X86_64.wp_upto (a := 0) (N := n) (by omega_arith) (fun j t =>
+      t.gpr .r13 = BitVec.ofNat 64 (n - j) ∧ Canon l t.mem B x ∧ val52 l t.mem B x = 2 ^ j * v % c ∧
+      Frm B [(x, l.NB), (tmp, l.NB)] s.mem t.mem ∧ Keep [.rax, .rcx, .rdx, .r13] s t ∧ t.mxcsr = s.mxcsr)
+    ?_ (fun t ⟨_, h1, h2, h3, h4, h5⟩ => ⟨h1, h2, h3, h4, h5⟩)
+    ⟨by rw [r0, Nat.sub_zero], by rw [m0]; exact hcx,
+      by rw [m0, hv, Nat.pow_zero, Nat.one_mul, Nat.mod_eq_of_lt hlt], by rw [m0]; exact Frm.refl _ _ _,
+      k0.mono (by decide), x0⟩
+  intro j _ hj t ⟨r, hcn, hval, F, k, xx⟩
+  have hw0 : ∀ i < l.L, word t.mem B (0 + l.off i) = word s.mem B (0 + l.off i) := fun i hi =>
+    frm_word0 hl F sx0 st0 hN hi
+  have c0 : Canon l t.mem B 0 := fun i hi => by simp only [limb]; rw [hw0 i hi]; exact hm.lt i hi
+  have v0 : val52 l t.mem B 0 = c := by
+    rw [← hm.val]; unfold val52; exact lval_congr fun i hi => congrArg BitVec.toNat (hw0 i hi)
+  rw [WP.block_append_iff]
+  refine WP.mono (dbl1_core hl ((k.gpr (by decide)).trans hB) ((k.gpr (by decide)).trans h12) (hs.congr k.2.2)
+    c0 v0 hm.big hx ht hZ sxt sx0 st0 hcn (by rw [hval]; exact Nat.mod_lt _ hc0))
+    fun t1 ⟨c1, v1, F1, k1, x1⟩ => ?_
+  refine WP.mono (sub13_ok (k := n - j) ((k1.gpr (by decide)).trans r) (by omega_arith) (by omega_arith))
+    fun t2 ⟨r2, z2, k2, m2, x2⟩ => ?_
+  refine ⟨by rw [z2]; exact congrArg some (decide_eq_decide.2 (by omega_arith)), ?_, ?_, ?_, ?_,
+    ((k.trans k1).trans k2).mono (by decide), x2.trans (x1.trans xx)⟩
+  · rw [r2, Nat.sub_sub]
+  · rw [m2]; exact c1
+  · rw [m2, v1, hval, Nat.mul_mod_mod, ← Nat.mul_assoc, ← Nat.pow_succ']
+  · rw [m2]; exact F.trans F1
 
 end VG.Proof.MillerRabin.X86_64.Ifma
