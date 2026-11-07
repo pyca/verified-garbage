@@ -26,7 +26,9 @@ IV, and the frame is zeroed (`Changes`).
 
 Both are `seqWith_changes_wp` for the loops of `Core.seq`, `Core.steps M`
 (`steps_ok`): the function around any loops that take all the steps
-(`LoopsOk`), as `Core.seq2`'s do too (`Wide.lean`).
+(`LoopsOk`), as `Core.seq2`'s do too (`Wide.lean`). `seqWith_changesO_wp`
+is the function around loops that leave any data and chaining value
+(`LoopsOkO`), as those of the final CFB functions do (`SeqFinal.lean`).
 -/
 
 @[expose] public section
@@ -486,13 +488,46 @@ def LoopsOk (cs : CoreSpec c) (M : Mode) (F : StepFn) (s₀ : State) (k : cs.Key
     Inv cs s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step (wrs0 c M s₀) (N s₀) 1 k F (iv0 c s₀) (xs0 M s₀) 0 s₂ →
     WP isa loops s₂ (Done (c := c) s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step F (iv0 c s₀) (xs0 M s₀))
 
-/-- The function around the loops `loops`: `seqWith_wp`, and what it changes
-(`Changes`). -/
-theorem seqWith_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} {loops : Prog isa}
-    (hp : SeqPre c M s₀) (hloops : LoopsOk cs M F s₀ k loops) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
+/-- `Done`, with the data's steps `outD` and the chaining value `outC` at
+the end, whatever gives them. -/
+structure DoneO (s₂ : State) (B D : Addr) (n st : Nat) (outD : List (List Byte)) (outC : List Byte) (s : State) :
+    Prop where
+  b : s.gpr sb = B
+  keep : ∀ r ∈ kept, r ≠ .s3 → r ≠ .s2 → s.gpr r = s₂.gpr r
+  rd : s.rd = s₂.rd
+  wr : s.wr = s₂.wr
+  data : chunksAt st s.mem D n = outD
+  chn : bytesAt s.mem (slotA B Core.chnSlot) (4 * c.bw) = outC
+  frame : Frame (big c B D n st) s₂.mem s.mem
+
+/-- `LoopsOk`, with the data's steps `outD` and the chaining value `outC`
+at the end (`DoneO`): loops that need not take `F`'s steps, from `F`'s
+invariant for none. -/
+def LoopsOkO (cs : CoreSpec c) (M : Mode) (F : StepFn) (s₀ : State) (k : cs.Key) (outD : List (List Byte))
+    (outC : List Byte) (loops : Prog isa) : Prop :=
+  ∀ s₂, Fixed c s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step (4 * c.bw) (wrs0 c M s₀) (N s₀) 1 →
+    Inv cs s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step (wrs0 c M s₀) (N s₀) 1 k F (iv0 c s₀) (xs0 M s₀) 0 s₂ →
+    WP isa loops s₂ (DoneO (c := c) s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step outD outC)
+
+theorem LoopsOk.toO {cs : CoreSpec c} {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} {loops : Prog isa}
+    (h : LoopsOk cs M F s₀ k loops) :
+    LoopsOkO cs M F s₀ k (run F (iv0 c s₀) (xs0 M s₀)).1 (run F (iv0 c s₀) (xs0 M s₀)).2 loops :=
+  fun s₂ hF hI => WP.mono (h s₂ hF hI) fun _ d => ⟨d.b, d.keep, d.rd, d.wr, d.data, d.chn, d.frame⟩
+
+theorem LoopsOkO.toLoopsOk {cs : CoreSpec c} {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key}
+    {loops : Prog isa}
+    (h : LoopsOkO cs M F s₀ k (run F (iv0 c s₀) (xs0 M s₀)).1 (run F (iv0 c s₀) (xs0 M s₀)).2 loops) :
+    LoopsOk cs M F s₀ k loops :=
+  fun s₂ hF hI => WP.mono (h s₂ hF hI) fun _ d => ⟨d.b, d.keep, d.rd, d.wr, d.data, d.chn, d.frame⟩
+
+/-- The function around the loops `loops`, which leave the data's steps
+`outD` and the chaining value `outC`, and what it changes (`Changes`). -/
+theorem seqWith_changesO_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key}
+    {outD : List (List Byte)} {outC : List Byte} {loops : Prog isa}
+    (hp : SeqPre c M s₀) (hloops : LoopsOkO cs M F s₀ k outD outC loops) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
     WP isa (c.seqWith loops M.ivOut) s₀ fun s' => abiPreserved s₀ s' ∧
-      chunksAt M.step s'.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 ∧
-      (M.ivOut = true → bytesAt s'.mem (P s₀) (4 * c.bw) = (run F (iv0 c s₀) (xs0 M s₀)).2) ∧
+      chunksAt M.step s'.mem (Dp s₀) (N s₀) = outD ∧
+      (M.ivOut = true → bytesAt s'.mem (P s₀) (4 * c.bw) = outC) ∧
       Changes c M s₀ s' := by
   have hL := hp.layout
   have hg := total_ge hL
@@ -569,7 +604,7 @@ theorem seqWith_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : Sta
       s₀.gpr (Core.savedRegs.getD i .s1) := fun i hi => by
     rw [← sv₂ i hi]
     exact h₄.frame.readW (Region.contains_self _ _) (slotOut i hi) (by decide)
-  have data₄ : chunksAt M.step s₄.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 := h₄.data
+  have data₄ : chunksAt M.step s₄.mem (Dp s₀) (N s₀) = outD := h₄.data
   have keep₄ : ∀ r ∈ kept, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 → s₄.gpr r = s₀.gpr r :=
     fun r hr h1 h2 h3 h4 => by rw [h₄.keep r hr h3 h2, kp r hr, h₁.keep r hr h1 h2 h3 h4]
   have s1₄ : s₄.gpr .s1 = P s₀ := by rw [h₄.keep _ (by decide) (by decide) (by decide), kp _ (by decide), h₁.s1]
@@ -675,6 +710,16 @@ theorem seqWith_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : Sta
       simp only [areaRegions, ivAreas, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; exact ⟨_, by simp, fun _ h => h⟩
 
+/-- The function around the loops `loops`: `seqWith_wp`, and what it changes
+(`Changes`). -/
+theorem seqWith_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} {loops : Prog isa}
+    (hp : SeqPre c M s₀) (hloops : LoopsOk cs M F s₀ k loops) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
+    WP isa (c.seqWith loops M.ivOut) s₀ fun s' => abiPreserved s₀ s' ∧
+      chunksAt M.step s'.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 M s₀)).1 ∧
+      (M.ivOut = true → bytesAt s'.mem (P s₀) (4 * c.bw) = (run F (iv0 c s₀) (xs0 M s₀)).2) ∧
+      Changes c M s₀ s' :=
+  seqWith_changesO_wp cs hp hloops.toO hk
+
 /-- One step at a time. -/
 theorem steps_ok (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} {w : Bool}
     (hpre : ∀ o ∈ M.pre, o.InBounds (lens c M.step (4 * c.bw)))
@@ -692,10 +737,11 @@ theorem and3 (x : BitVec 64) : x &&& BitVec.ofInt 64 3 = BitVec.ofNat 64 (x.toNa
   omega
 
 /-- The loops `L w`, `w` whether the data's address is a multiple of 4, as
-`Core.aligned` chooses them. -/
-theorem aligned_ok (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} {L : Bool → Prog isa}
-    (h : ∀ w, (w = true → (Dp s₀).toNat % 4 = 0 ∧ M.step % 4 = 0) → LoopsOk cs M F s₀ k (L w)) :
-    LoopsOk cs M F s₀ k (Core.aligned M.step L) := by
+`Core.aligned` chooses them for steps of `st` bytes, for any outputs. -/
+theorem aligned_okO (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key}
+    {outD : List (List Byte)} {outC : List Byte} {st : Nat} {L : Bool → Prog isa}
+    (h : ∀ w, (w = true → (Dp s₀).toNat % 4 = 0 ∧ st % 4 = 0) → LoopsOkO cs M F s₀ k outD outC (L w)) :
+    LoopsOkO cs M F s₀ k outD outC (Core.aligned st L) := by
   unfold Core.aligned
   split
   · rename_i hst
@@ -711,8 +757,8 @@ theorem aligned_ok (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k :
         cs.ready_frame (rs := []) hI.ready (fun r hr _ _ _ _ => o₃ r (kept_ne r hr).1) u₃.rd u₃.wr sy₃
           (by rw [u₃.mem]; exact Frame.refl _ _) (fun _ h => nomatch h) (fun _ h => nomatch h),
         by rw [u₃.mem]; exact hI.data, by rw [u₃.mem]; exact hI.chn, Frame.refl _ _⟩
-    have back : ∀ {t}, Done (c := c) s₃ (Fb s₀ c) (Dp s₀) (N s₀) M.step F (iv0 c s₀) (xs0 M s₀) t →
-        Done (c := c) s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step F (iv0 c s₀) (xs0 M s₀) t := fun d =>
+    have back : ∀ {t}, DoneO (c := c) s₃ (Fb s₀ c) (Dp s₀) (N s₀) M.step outD outC t →
+        DoneO (c := c) s₂ (Fb s₀ c) (Dp s₀) (N s₀) M.step outD outC t := fun d =>
       ⟨d.b, fun r hr h3 h2 => by rw [d.keep r hr h3 h2, o₃ r (kept_ne r hr).1], by rw [d.rd, u₃.rd],
         by rw [d.wr, u₃.wr], d.data, d.chn, by rw [← u₃.mem]; exact d.frame⟩
     have ev : isa.eval (.zero .t0) s₃ = some (decide ((Dp s₀).toNat % 4 = 0)) := by
@@ -721,6 +767,13 @@ theorem aligned_ok (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k :
     exact WP.ite _ ev (fun hd => WP.mono (h true (fun _ => ⟨by simpa using hd, hst⟩) s₃ hF₃ hI₃) fun _ d => back d)
       (fun _ => WP.mono (h false (fun e => by cases e) s₃ hF₃ hI₃) fun _ d => back d)
   · exact h false fun e => by cases e
+
+/-- The loops `L w`, `w` whether the data's address is a multiple of 4, as
+`Core.aligned` chooses them. -/
+theorem aligned_ok (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} {L : Bool → Prog isa}
+    (h : ∀ w, (w = true → (Dp s₀).toNat % 4 = 0 ∧ M.step % 4 = 0) → LoopsOk cs M F s₀ k (L w)) :
+    LoopsOk cs M F s₀ k (Core.aligned M.step L) :=
+  (aligned_okO cs fun w hw => (h w hw).toO).toLoopsOk
 
 /-- `seq_wp`, and what the function changes (`Changes`). -/
 theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c M s₀)
