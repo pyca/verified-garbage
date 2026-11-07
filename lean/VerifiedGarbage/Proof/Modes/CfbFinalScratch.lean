@@ -10,8 +10,10 @@ A final function's signature (`finalSig`): a key schedule, the block at
 `iv` and the `len` bytes at `data`, the same for every block cipher but
 their names and sizes, and its postconditions on it (`encFinalPost`,
 `decFinalPost`), which read the memory on return only within the function's
-buffers (`encFinalPost_local`, `decFinalPost_local`), as the frame that keeps
-a scratch buffer on the stack needs (`Verified.stackScratchWiped`). Nothing
+buffers (`encFinalPost_local`, `decFinalPost_local`), and the memory on entry
+likewise for a cipher that reads only the schedule (`encFinalPost_inLocal`,
+`decFinalPost_inLocal`, which 32-bit x86's frame needs too), as the frame that
+keeps a scratch buffer on the stack needs (`Verified.stackScratchWiped`). Nothing
 here depends on a cipher or a target.
 -/
 
@@ -71,6 +73,24 @@ private theorem final_bufs {b pb : Nat} {vs : List (BitVec 64)} (hlen : vs.lengt
     exact ⟨k, iv, data, len, rfl, bytesAt_congr hv, bytesAt_congr fun i hi =>
       hd i (by rw [BitVec.toNat_setWidth] at hi; omega)⟩
 
+/-- The memory on entry, within the schedule (of bytes), the data and the
+block. -/
+private theorem final_bufsIn {b pb nkLen : Nat} {vs : List (BitVec 64)} (hlen : vs.length = 4)
+    (hb : ∀ r ∈ Sig.bufs (finalSig nk .u8 nkLen b).params vs, ∀ a, r.1.Contains a 1 → m₁ a = m₂ a) :
+    ∃ k iv data len, vs = [k, iv, data, len] ∧
+      (∀ i < nkLen, m₂ (k + BitVec.ofNat 64 i) = m₁ (k + BitVec.ofNat 64 i)) ∧
+      bytesAt m₂ iv b = bytesAt m₁ iv b ∧
+      bytesAt m₂ data (len.setWidth pb).toNat = bytesAt m₁ data (len.setWidth pb).toNat := by
+  match vs, hlen with
+  | [k, iv, data, len], _ =>
+    simp only [finalSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hd := agree_of hb.2.2
+    have hv := agree_of hb.2.1
+    have := Nat.mod_le len.toNat (2 ^ pb)
+    exact ⟨k, iv, data, len, rfl, agree_of hb.1, bytesAt_congr hv, bytesAt_congr fun i hi =>
+      hd i (by rw [BitVec.toNat_setWidth] at hi; omega)⟩
+
 end
 
 variable (pb : Nat)
@@ -99,6 +119,38 @@ theorem decFinalPost_local {ciph : Mem → Addr → Spec.Cbc.Cipher} {b : Nat} :
   change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (decFinalPost ciph b pb) _ m m₂ r
   dsimp only [Curry.apply, decFinalPost, ArgWord.ofRaw, Spec.Cfb.DecryptFinal] at h ⊢
   rw [hv, hd]
+  exact h
+
+/-- `encFinalPost` reads the memory on entry only within the function's
+buffers, for a cipher that reads only the schedule (`hc`). -/
+theorem encFinalPost_inLocal {ciph : Mem → Addr → Spec.Cbc.Cipher} {b : Nat}
+    (hc : ∀ m₁ m₂ k, (∀ i < nkLen, m₂ (k + BitVec.ofNat 64 i) = m₁ (k + BitVec.ofNat 64 i)) → ciph m₂ k = ciph m₁ k) :
+    ∀ vs m₁ m₂ m' r, vs.length = ((finalSig nk .u8 nkLen b).words pb).length →
+      (∀ r ∈ Sig.bufs (finalSig nk .u8 nkLen b).params vs, ∀ a, r.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply ((finalSig nk .u8 nkLen b).words pb) (encFinalPost ciph b pb) vs m₁ m' r →
+        Curry.apply ((finalSig nk .u8 nkLen b).words pb) (encFinalPost ciph b pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨k, iv, data, len, rfl, hk, hv, hd⟩ := final_bufsIn (pb := pb) hlen hb
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (encFinalPost ciph b pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (encFinalPost ciph b pb) _ m₂ m' r
+  dsimp only [Curry.apply, encFinalPost, ArgWord.ofRaw, Spec.Cfb.EncryptFinal] at h ⊢
+  rw [hc m₁ m₂ _ hk, hv, hd]
+  exact h
+
+/-- `decFinalPost` reads the memory on entry only within the function's
+buffers, for a cipher that reads only the schedule (`hc`). -/
+theorem decFinalPost_inLocal {ciph : Mem → Addr → Spec.Cbc.Cipher} {b : Nat}
+    (hc : ∀ m₁ m₂ k, (∀ i < nkLen, m₂ (k + BitVec.ofNat 64 i) = m₁ (k + BitVec.ofNat 64 i)) → ciph m₂ k = ciph m₁ k) :
+    ∀ vs m₁ m₂ m' r, vs.length = ((finalSig nk .u8 nkLen b).words pb).length →
+      (∀ r ∈ Sig.bufs (finalSig nk .u8 nkLen b).params vs, ∀ a, r.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply ((finalSig nk .u8 nkLen b).words pb) (decFinalPost ciph b pb) vs m₁ m' r →
+        Curry.apply ((finalSig nk .u8 nkLen b).words pb) (decFinalPost ciph b pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨k, iv, data, len, rfl, hk, hv, hd⟩ := final_bufsIn (pb := pb) hlen hb
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (decFinalPost ciph b pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (decFinalPost ciph b pb) _ m₂ m' r
+  dsimp only [Curry.apply, decFinalPost, ArgWord.ofRaw, Spec.Cfb.DecryptFinal] at h ⊢
+  rw [hc m₁ m₂ _ hk, hv, hd]
   exact h
 
 end VG.Proof.Modes

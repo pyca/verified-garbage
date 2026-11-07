@@ -1108,6 +1108,10 @@ theorem seqFinal_wp (cs : CoreSpec c) {M M' : Mode} {F : StepFn} {s₀ : State} 
 
 /-! ## CFB -/
 
+/-- A mode of steps of a byte that writes the IV back: `seq`'s precondition
+for it is `seqFinal`'s, the data `len` bytes. -/
+def byteMode : Mode := { pre := [], post := [], step := 1, ivOut := true }
+
 theorem cfbEnc_post_inBounds (c : Core) : ∀ o ∈ (Mode.cfbEnc c.bw).post, o.InBounds (lens c (4 * c.bw)) :=
   fun o ho => (List.mem_append.mp ho).elim
     (xorBlk_inBounds (by simp [lens]) (by simp [lens]) (by simp [lens]) o)
