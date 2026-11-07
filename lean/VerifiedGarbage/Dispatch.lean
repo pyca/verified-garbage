@@ -62,6 +62,11 @@ def ranking : Rust.Ranking := [
   ("aarch64", [
     -- AES-SIV's CMAC by the AES extension's CBC code, which it runs on long inputs.
     { suffix := "_aes_cbc", skip := true },
+    -- AES-GCM's `_aes_sha3` functions but `seal` and `open` with the powers
+    -- need only AES (most are its `_aes` code under another name): they are
+    -- chosen where those two are, with FEAT_SHA3, and `_aes` on the other
+    -- CPUs.
+    { suffix := "_aes_sha3", modules := ["gcm"], extra := ["sha3"] },
     { suffix := "_aes_sha3" },
     { suffix := "_aes" },
     -- FEAT_SHA3's Keccak is faster on Apple's cores, and slower on Neoverse N2:
