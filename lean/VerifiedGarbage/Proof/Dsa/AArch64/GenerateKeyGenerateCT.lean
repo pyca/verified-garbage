@@ -92,8 +92,8 @@ theorem keygen_generate_ct (v : Backend) {s t a b : State}
     (hstatus : (keygenResult s).status = (keygenResult t).status)
     (htrace : (keygenResult s).trace = (keygenResult t).trace)
     {tsa tsb : List Leak} {u w : State}
-    (ea : Exec isa (GenerateKey.generate (keygenDeriveName v) (Generate.deriveKey v.mul)) a tsa u)
-    (eb : Exec isa (GenerateKey.generate (keygenDeriveName v) (Generate.deriveKey v.mul)) b tsb w) :
+    (ea : Exec isa (GenerateKey.generate (keygenDeriveName v) (Generate.deriveChecked v.mul)) a tsa u)
+    (eb : Exec isa (GenerateKey.generate (keygenDeriveName v) (Generate.deriveChecked v.mul)) b tsb w) :
     tsa = tsb := by
   have hct : keygenChecked t = true := hp.checked ▸ hc
   have hqs := keygen_q_valid hs hc
@@ -174,13 +174,13 @@ theorem keygen_generate_ct (v : Backend) {s t a b : State}
       have hst := keygen_deriveStatus_eq hs ht hc hct hxs hxt hstatus ((hnea).trans (hna ks hxs))
         ((hneb).trans (hnb kt hxt))
       have hCall := (keygen_derive_ct v _ _ _ _ _ _
-        ⟨s, t, hs, ht, _, _, hea, heb, hrega, hregb, hp, hst⟩ eaCall ebCall).1
+        ⟨s, t, hs, ht, _, _, hea, heb, hrega, hregb, hp, hst, hc, hct⟩ eaCall ebCall).1
       obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, aw⟩ := hrega
       obtain ⟨b1, b2, b3, b4, b5, b6, b7, b8, bw⟩ := hregb
       obtain ⟨-, -, huca, -⟩ := random_post_of_exec
-        (keygen_derive_call v hs hea.sp aw a1 a2 a3 a4 a5 a6 a7 a8 hea.rd hea.wr) eaCall
+        (keygen_derive_call v hs hea.sp aw a1 a2 a3 a4 a5 a6 a7 a8 hea.rd hea.wr (keygen_bytes_params hea) hc) eaCall
       obtain ⟨-, -, hucb, -⟩ := random_post_of_exec
-        (keygen_derive_call v ht heb.sp bw b1 b2 b3 b4 b5 b6 b7 b8 heb.rd heb.wr) ebCall
+        (keygen_derive_call v ht heb.sp bw b1 b2 b3 b4 b5 b6 b7 b8 heb.rd heb.wr (keygen_bytes_params heb) hct) ebCall
       have hK := (keygen_keepStatus_ct _ _ _ _ _ _ (by
         dsimp only
         rw [huca, hucb, hea.sp, heb.sp]

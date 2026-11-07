@@ -23,6 +23,11 @@ registers in `scratch`'s header and keeps the domain p||q||g, x and `out` in
 
 A domain that fails the checks zeroes `out` and returns 0. Nothing branches
 on x or y, only on the domain and the lengths.
+
+`deriveChecked` is the derivation for a domain that has passed
+`vg_dsa_check_parameters` (key generation calls it after that check): its
+check of the domain (`checkDomain`) is `checkParams` without g's
+`g^q mod p = 1` (`elemOrder`), the exponentiation that check established.
 -/
 
 @[expose] public section
@@ -76,5 +81,22 @@ def zeroOut : Prog isa :=
 /-- `vg_dsa_derive_key`. -/
 def derive : Prog isa :=
   .seq (.block entry) (.seq (checkParams body zeroOut) (.block restore))
+
+/-- The number at `r12` (`p_len` octets, in `r6`) into array 4, then
+`r0 := 0` exactly when it is above 1 and below p: `checkElem` without
+`elemOrder`. -/
+def rangeElem : Prog isa := .seq (loadArr 4) elemRange
+
+/-- The check of a domain that has passed `checkParams` before: sizes,
+oddness, `p mod q = 1` and `1 < g < p`, but not `g^q mod p = 1`; then
+`rest`, or `fail`. In the P space after it, with p in array 0 and
+`R² mod p` in array 8. -/
+def checkDomain (rest fail : Prog isa) : Prog isa :=
+  sizes (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG) rangeElem) rest fail)) fail) fail) fail
+
+/-- Key derivation for a domain that has passed `vg_dsa_check_parameters`:
+`derive` with `checkDomain` for `checkParams`. -/
+def deriveChecked : Prog isa :=
+  .seq (.block entry) (.seq (checkDomain body zeroOut) (.block restore))
 
 end VG.Impl.Dsa.PPC64LE.Derive

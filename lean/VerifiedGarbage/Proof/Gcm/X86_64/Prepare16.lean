@@ -31,7 +31,7 @@ namespace VG.Proof.Gcm.X86_64.Prepare16
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Impl.Aes.X86_64.AesNi (at_)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
-open VG.Impl.Gcm.X86_64.Prepare16 (Op plan setup mulD fold prepare16)
+open VG.Impl.Gcm.X86_64.Prepare16 (Op plan plan48 setup mulD fold prepare16 prepare)
 open VG.Impl.Gcm.X86_64.Stitch (storesK)
 open VG.Impl.Gcm.X86_64.PrepareAvx (sqS mulDS)
 open VG.Proof.Gcm.X86_64.PrepareAvx (sqS_ok mulDS_ok scratch not_scratch)
@@ -118,26 +118,26 @@ abbrev Env := List (XReg × Option Nat × Option Nat)
 def addE (a b : Option Nat) : Option Nat := a.bind fun m => b.map (m + ·)
 
 /-- No step reads or writes a scratch register; each step's operands hold
-powers; each pair stored is the pair of its place. -/
-def valid : Env → List Op → Bool
+powers; each pair stored is the pair of its place, one of the first `N`. -/
+def valid (N : Nat) : Env → List Op → Bool
   | _, [] => true
   | env, .sq d a :: ops =>
     !scratch.contains d && !scratch.contains a &&
     (match env.lookup a with
-     | some (a0, a1) => valid ((d, a0.map (2 * ·), a1.map (2 * ·)) :: env) ops
+     | some (a0, a1) => valid N ((d, a0.map (2 * ·), a1.map (2 * ·)) :: env) ops
      | none => false)
   | env, .mul d a b :: ops =>
     !scratch.contains d && !scratch.contains a && !scratch.contains b &&
     (match env.lookup a, env.lookup b with
-     | some (a0, a1), some (b0, b1) => valid ((d, addE a0 b0, addE a1 b1) :: env) ops
+     | some (a0, a1), some (b0, b1) => valid N ((d, addE a0 b0, addE a1 b1) :: env) ops
      | _, _ => false)
   | env, .ins d a b :: ops =>
     !scratch.contains d &&
     (match env.lookup a, env.lookup b with
-     | some (a0, _), some (b0, _) => valid ((d, a0, b0) :: env) ops
+     | some (a0, _), some (b0, _) => valid N ((d, a0, b0) :: env) ops
      | _, _ => false)
   | env, .st r k :: ops =>
-    decide (k < 8) && env.lookup r == some (some (2 * k + 2), some (2 * k + 1)) && valid env ops
+    decide (k < N) && env.lookup r == some (some (2 * k + 2), some (2 * k + 1)) && valid N env ops
 
 /-- The pairs stored by the steps, and before them. -/
 def storedAfter : List Nat → List Op → List Nat
@@ -145,16 +145,17 @@ def storedAfter : List Nat → List Op → List Nat
   | S, .st _ k :: ops => storedAfter (k :: S) ops
   | S, _ :: ops => storedAfter S ops
 
-/-- What holds between steps. -/
-structure Inv (H : Block) (C : Addr) (m₀ : Mem) (env : Env) (S : List Nat) (t : State) : Prop where
+/-- What holds between steps, storing pairs 0 to `N - 1`. -/
+structure Inv (N : Nat) (H : Block) (C : Addr) (m₀ : Mem) (env : Env) (S : List Nat) (t : State) : Prop where
   h1 : ∀ l < 2, t.lane .xmm1 l = poly
   pw : ∀ r e0 e1, env.lookup r = some (e0, e1) → r ∉ scratch ∧ Holds H t r 0 e0 ∧ Holds H t r 1 e1
-  st : ∀ k ∈ S, k < 8 ∧ ∀ l < 2, t.mem.readW (C + BitVec.ofNat 64 (256 + 32 * k + 16 * l)) 128 =
+  st : ∀ k ∈ S, k < N ∧ ∀ l < 2, t.mem.readW (C + BitVec.ofNat 64 (256 + 32 * k + 16 * l)) 128 =
     Spec.Gcm.preparedPower (hpow H (2 * k + 2 - l))
-  fr : Frame [⟨C + BitVec.ofNat 64 256, 256⟩] m₀ t.mem
+  fr : Frame [⟨C + BitVec.ofNat 64 256, 32 * N⟩] m₀ t.mem
   rdi : t.gpr .rdi = C
   wr : InRegions t.wr C 1024
   wrap : C.toNat + 1024 ≤ 2 ^ 64
+  n24 : N ≤ 24
 
 theorem lookup_cons {env : Env} {d r : XReg} {v : Option Nat × Option Nat} :
     ((d, v) :: env).lookup r = if r = d then some v else env.lookup r := by
@@ -165,14 +166,14 @@ theorem lookup_cons {env : Env} {d r : XReg} {v : Option Nat × Option Nat} :
 
 /-- A register step: `d` gets `v`, and the registers `rs` (scratch, and `d`)
 are all it writes. -/
-theorem Inv.set {H : Block} {C : Addr} {m₀ : Mem} {env : Env} {S : List Nat} {t t' : State} {d : XReg}
-    {v : Option Nat × Option Nat} (hi : Inv H C m₀ env S t) (hd : d ∉ scratch)
+theorem Inv.set {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} {env : Env} {S : List Nat} {t t' : State} {d : XReg}
+    {v : Option Nat × Option Nat} (hi : Inv N H C m₀ env S t) (hd : d ∉ scratch)
     (k : Keep [.xmm8, .xmm9, .xmm10, .xmm11, d] t t')
     (h0 : Holds H t' d 0 v.1) (h1 : Holds H t' d 1 v.2) :
-    Inv H C m₀ ((d, v) :: env) S t' := by
+    Inv N H C m₀ ((d, v) :: env) S t' := by
   obtain ⟨d1, d8, d9, d10, d11⟩ := not_scratch hd
   refine ⟨fun l hl => ?_, fun r e0 e1 hr => ?_, fun j hj => ?_, by rw [k.mem]; exact hi.fr,
-    by rw [k.gpr]; exact hi.rdi, by rw [k.wr]; exact hi.wr, hi.wrap⟩
+    by rw [k.gpr]; exact hi.rdi, by rw [k.wr]; exact hi.wr, hi.wrap, hi.n24⟩
   · rw [k.lane _ (by simp [Ne.symm d1]) l hl]; exact hi.h1 l hl
   · rw [lookup_cons] at hr
     split at hr
@@ -207,10 +208,10 @@ theorem holds_sq {H : Block} {t t' : State} {d a : XReg} {l : Nat} {ea : Option 
   rw [two_mul]; exact pow_mul he (ha m hm) (ha m hm)
 
 /-- One step. -/
-theorem op_ok {H : Block} {C : Addr} {m₀ : Mem} {env : Env} {S : List Nat} {op : Op} {ops : List Op}
-    (hv : valid env (op :: ops) = true) (t : State) (hi : Inv H C m₀ env S t) :
+theorem op_ok {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} {env : Env} {S : List Nat} {op : Op}
+    {ops : List Op} (hv : valid N env (op :: ops) = true) (t : State) (hi : Inv N H C m₀ env S t) :
     WP isa (.block op.code) t fun t' =>
-      ∃ env', valid env' ops = true ∧ Inv H C m₀ env' (storedAfter S [op]) t' ∧
+      ∃ env', valid N env' ops = true ∧ Inv N H C m₀ env' (storedAfter S [op]) t' ∧
         (∀ q, q ≠ .rax → t'.gpr q = t.gpr q) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   cases op with
   | sq d a =>
@@ -281,10 +282,11 @@ theorem op_ok {H : Block} {C : Addr} {m₀ : Mem} {env : Env} {S : List Nat} {op
     have hin : ∀ k < [r].length, InRegions t.wr (t.gpr .rdi + BitVec.ofInt 64 ((32 * (8 + j + k) : Nat) : Int)) 32 :=
       fun k hk => by
         simp only [List.length_singleton] at hk
-        rw [hi.rdi]; exact in_sub_int hi.wr (by omega)
-    refine WP.mono (storesK_ok .rdi [r] (8 + j) t hin (by rw [hi.rdi]; simp only [List.length_singleton]; have := hi.wrap; omega))
+        rw [hi.rdi]; exact in_sub_int hi.wr (by have := hi.n24; omega)
+    refine WP.mono (storesK_ok .rdi [r] (8 + j) t hin (by rw [hi.rdi]; simp only [List.length_singleton]; have := hi.wrap; have := hi.n24; omega))
       fun t' ⟨sv, sf, g, rd, wr, ln⟩ => ⟨env, hm, ⟨fun l hl => by rw [ln]; exact hi.h1 l hl,
-        fun q e0 e1 hq => ?_, fun k hk => ?_, ?_, by rw [g]; exact hi.rdi, by rw [wr]; exact hi.wr, hi.wrap⟩,
+        fun q e0 e1 hq => ?_, fun k hk => ?_, ?_, by rw [g]; exact hi.rdi, by rw [wr]; exact hi.wr, hi.wrap,
+        hi.n24⟩,
         fun q _ => by rw [g], rd, wr⟩
     · obtain ⟨hs, q0, q1⟩ := hi.pw q e0 e1 hq
       exact ⟨hs, fun n hn => by rw [ln]; exact q0 n hn, fun n hn => by rw [ln]; exact q1 n hn⟩
@@ -306,19 +308,20 @@ theorem op_ok {H : Block} {C : Addr} {m₀ : Mem} {env : Env} {S : List Nat} {op
         rw [← hs l hl]
         exact sf.readW (Region.contains_self _ _) (fun r' hr' => by
           simp only [List.mem_singleton] at hr'; subst hr'
-          exact Offset.disjoint C (by omega) (by omega) (by have := hi.wrap; omega)) (by decide)
+          exact Offset.disjoint C (by have := hi.n24; omega) (by have := hi.n24; omega)
+            (by have := hi.wrap; have := hi.n24; omega)) (by decide)
     · rw [hi.rdi] at sf
       simp only [List.length_singleton, Nat.mul_one] at sf
       exact hi.fr.trans (sf.sub fun r' hr' => ⟨_, List.mem_singleton_self _, by
         simp only [List.mem_singleton] at hr'; subst hr'
-        exact Offset.sub C (by omega) (by omega)⟩)
+        exact Offset.sub C (by omega) (by have := hi.n24; omega)⟩)
 
 /-- The steps, one after the other. -/
-theorem plan_ok {H : Block} {C : Addr} {m₀ : Mem} :
-    ∀ (ops : List Op) (env : Env) (S : List Nat) (t : State), valid env ops = true →
-      Inv H C m₀ env S t →
+theorem plan_ok {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} :
+    ∀ (ops : List Op) (env : Env) (S : List Nat) (t : State), valid N env ops = true →
+      Inv N H C m₀ env S t →
       WP isa (.block (ops.flatMap Op.code)) t fun t' =>
-        (∃ env', Inv H C m₀ env' (storedAfter S ops) t') ∧ (∀ q, q ≠ .rax → t'.gpr q = t.gpr q) ∧
+        (∃ env', Inv N H C m₀ env' (storedAfter S ops) t') ∧ (∀ q, q ≠ .rax → t'.gpr q = t.gpr q) ∧
           t'.rd = t.rd ∧ t'.wr = t.wr
   | [], env, _, _, _, hi => WP.block_nil ⟨⟨env, hi⟩, fun _ _ => rfl, rfl, rfl⟩
   | op :: ops, env, S, t, hv, hi => by
@@ -330,14 +333,15 @@ theorem plan_ok {H : Block} {C : Addr} {m₀ : Mem} :
     refine WP.mono (plan_ok ops env₁ _ t₁ hv₁ hi₁) fun t' ⟨hi', g', rd', wr'⟩ =>
       ⟨hi', fun q hq => by rw [g' q hq, g₁ q hq], rd'.trans rd₁, wr'.trans wr₁⟩
 
-theorem plan_valid : valid [(.xmm3, some 1, none)] plan = true := by decide
+theorem plan_valid : valid 8 [(.xmm3, some 1, none)] plan = true := by decide
 
 theorem plan_stored : ∀ k < 8, k ∈ storedAfter [] plan := by decide
 
 /-- The setup: `H'` in `xmm3`, and the reduction constant in both lanes. -/
-theorem setup_ok (t : State) (hw : InRegions t.wr (t.gpr .rdi) 1024) (hwrap : (t.gpr .rdi).toNat + 1024 ≤ 2 ^ 64) :
+theorem setup_ok {N : Nat} (hN : N ≤ 24) (t : State) (hw : InRegions t.wr (t.gpr .rdi) 1024)
+    (hwrap : (t.gpr .rdi).toNat + 1024 ≤ 2 ^ 64) :
     WP isa (.block setup) t fun t' =>
-      Inv (Spec.Gcm.ctxH t.mem (t.gpr .rdi)) (t.gpr .rdi) t.mem [(.xmm3, some 1, none)] [] t' ∧
+      Inv N (Spec.Gcm.ctxH t.mem (t.gpr .rdi)) (t.gpr .rdi) t.mem [(.xmm3, some 1, none)] [] t' ∧
         (∀ q, q ≠ .rax → t'.gpr q = t.gpr q) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   have hin : InRegions (t.rd ++ t.wr) (t.gpr .rdi + BitVec.ofInt 64 ((240 : Nat) : Int)) 16 := by
     obtain ⟨r, hr, hc⟩ := in_sub_int (off := 240) (n := 16) hw (by decide)
@@ -359,7 +363,7 @@ theorem setup_ok (t : State) (hw : InRegions t.wr (t.gpr .rdi) 1024) (hwrap : (t
   refine WP.mono (ins_ok .xmm1 .xmm1 .xmm1 t₄) fun t' ⟨e0, e1, k⟩ =>
     ⟨⟨fun l hl => ?_, fun r e0 e1 hr => ?_, fun j hj => absurd hj (by simp),
       by rw [k.mem, o₁₄.mem]; exact Frame.refl _ _, by rw [k.gpr, o₁₄.gpr _ (by decide)],
-      by rw [k.wr, o₁₄.wr]; exact hw, hwrap⟩,
+      by rw [k.wr, o₁₄.wr]; exact hw, hwrap, hN⟩,
       fun q hq => by rw [k.gpr, o₁₄.gpr q hq], by rw [k.rd, o₁₄.rd], by rw [k.wr, o₁₄.wr]⟩
   · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
     · rw [e0]; exact p₁
@@ -383,7 +387,7 @@ theorem prepare16_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024
     WP isa prepare16 s₀ (PrepOk16 s₀) := by
   simp only [prepare16]
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (setup_ok s₀ hw hwrap) fun t₁ ⟨hi₁, g₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono (setup_ok (N := 8) (by decide) s₀ hw hwrap) fun t₁ ⟨hi₁, g₁, rd₁, wr₁⟩ => ?_
   refine WP.mono (plan_ok plan _ _ t₁ plan_valid hi₁) fun t₂ ⟨⟨_, hi₂⟩, g₂, rd₂, wr₂⟩ => ?_
   refine WP.mono (Prepare.vzu_ok t₂) fun s ⟨g, m, rd, wr⟩ =>
     ⟨fun k hk l hl => ?_, by rw [m]; exact hi₂.fr, fun r hr => by rw [g, g₂ r hr, g₁ r hr],
@@ -435,5 +439,29 @@ theorem prepare16_verified :
   Verified.of_correct prepare16_correct prepare16_ct (by
     sig_implies [Spec.Gcm.prepare16Contract, Spec.Gcm.prepareSig, Spec.Gcm.prepare16Post, prepare16X86_64,
       X86_64.abi, X86_64.argRegs] [satState] using satState)
+
+/-! ## `vg_aes_gcm_prepare`: the 48 powers -/
+
+theorem plan48_valid : valid 24 [(.xmm3, some 1, none)] plan48 = true := by decide
+
+theorem plan48_stored : ∀ k < 24, k ∈ storedAfter [] plan48 := by decide
+
+/-- `prepare`: the 48 prepared powers of the hash subkey at `C + 240` into
+pairs 0–23 of the context at `C`, nothing else written. -/
+theorem prepare_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024)
+    (hwrap : (s₀.gpr .rdi).toNat + 1024 ≤ 2 ^ 64) :
+    WP isa prepare s₀ (Prepare.PrepOk s₀) := by
+  simp only [prepare]
+  rw [WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (setup_ok (N := 24) (by decide) s₀ hw hwrap) fun t₁ ⟨hi₁, g₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono (plan_ok plan48 _ _ t₁ plan48_valid hi₁) fun t₂ ⟨⟨_, hi₂⟩, g₂, rd₂, wr₂⟩ => ?_
+  refine WP.mono (Prepare.vzu_ok t₂) fun s ⟨g, m, rd, wr⟩ =>
+    ⟨fun k hk l hl => ?_, by rw [m]; exact hi₂.fr, fun r hr _ => by rw [g, g₂ r hr, g₁ r hr],
+      by rw [rd, rd₂, rd₁], by rw [wr, wr₂, wr₁]⟩
+  rw [m]; exact (hi₂.st k (plan48_stored k hk)).2 l hl
+
+theorem prepare_verified : Verified X86_64.target prepare (Spec.Gcm.prepareContract X86_64.abi) :=
+  Prepare.verified_of prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel)
+    Prepare16.prepare_ct
 
 end VG.Proof.Gcm.X86_64.Prepare16

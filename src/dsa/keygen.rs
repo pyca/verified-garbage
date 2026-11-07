@@ -13,11 +13,8 @@
 use alloc::{vec, vec::Vec};
 use core::sync::atomic::AtomicU8;
 
-use super::{Backend, Error, PrivateKey, PublicKey, Secret};
-use crate::arch::dsa::vg_dsa_generate_key;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::dsa::vg_dsa_generate_key_adx;
-use crate::cpu::detected;
+use super::{Error, PrivateKey, PublicKey, Secret};
+use crate::arch::dispatch::dsa::{vg_dsa_derive_key_auto, vg_dsa_generate_key_auto};
 use crate::entropy::{self, Step, Stop};
 
 // On x86, give one call of the verified sampler eight draws, so that a
@@ -49,20 +46,14 @@ impl PrivateKey {
         for component in [p, q, g] {
             params.extend_from_slice(component);
         }
-        let backend = Backend::select(detected());
         let mut output = Secret(vec![0u8; 3 * p_len + 2 * q_len]);
         let mut scratch = Secret(vec![0u64; 16 * p_len]);
-        let derive = match backend {
-            Backend::Baseline => crate::arch::dsa::vg_dsa_derive_key,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => crate::arch::dsa::vg_dsa_derive_key_adx,
-        };
         // SAFETY: the checks establish the supported widths and buffer sizes.
         // Output and scratch are separate allocations, disjoint from all inputs.
-        // Backend selection establishes the required CPU features. Both secret
-        // allocations are wiped on drop, including on failure.
+        // The dispatcher calls only an implementation the CPU has the features
+        // of. Both secret allocations are wiped on drop, including on failure.
         let status = unsafe {
-            derive(
+            vg_dsa_derive_key_auto(
                 output.0.as_mut_ptr(),
                 output.0.len(),
                 params.as_ptr(),
@@ -82,7 +73,6 @@ impl PrivateKey {
                 packed: output.0[..3 * p_len + q_len].to_vec(),
                 p_len,
                 q_len,
-                backend,
                 validated: AtomicU8::new(0),
             },
             output,
@@ -122,42 +112,32 @@ impl PrivateKey {
         for component in [p, q, g] {
             params.extend_from_slice(component);
         }
-        let backend = Backend::select(detected());
         // A draw never takes more than q_len bytes.
         let batch = DRAW_BATCH * q_len;
         let mut scratch = Secret(vec![0u64; 64 * p_len + 1024]);
         let mut output = Secret(vec![0u8; 3 * p_len + 2 * q_len]);
         let generated = entropy::serve(batch, random, |tape| {
             let mut used = [0u64; 1];
-            macro_rules! generate {
-                ($function:path) => {
-                    // SAFETY: the checks above establish supported widths,
-                    // params_len = 2*p_len + q_len and out_len =
-                    // 3*p_len + 2*q_len. All writable buffers are separate
-                    // owned allocations, disjoint from the domain and the
-                    // random tape. Scratch has the contract's 64*p_len + 1024
-                    // words, and backend selection establishes CPU features.
-                    unsafe {
-                        $function(
-                            output.0.as_mut_ptr(),
-                            output.0.len(),
-                            &mut used,
-                            params.as_ptr(),
-                            params.len(),
-                            p_len,
-                            q_len,
-                            tape.as_ptr(),
-                            tape.len(),
-                            scratch.0.as_mut_ptr(),
-                            scratch.0.len(),
-                        )
-                    }
-                };
-            }
-            let status = match backend {
-                Backend::Baseline => generate!(vg_dsa_generate_key),
-                #[cfg(target_arch = "x86_64")]
-                Backend::Adx => generate!(vg_dsa_generate_key_adx),
+            // SAFETY: the checks above establish supported widths,
+            // params_len = 2*p_len + q_len and out_len = 3*p_len + 2*q_len.
+            // All writable buffers are separate owned allocations, disjoint
+            // from the domain and the random tape. Scratch has the contract's
+            // 64*p_len + 1024 words. The dispatcher calls only an
+            // implementation the CPU has the features of.
+            let status = unsafe {
+                vg_dsa_generate_key_auto(
+                    output.0.as_mut_ptr(),
+                    output.0.len(),
+                    &mut used,
+                    params.as_ptr(),
+                    params.len(),
+                    p_len,
+                    q_len,
+                    tape.as_ptr(),
+                    tape.len(),
+                    scratch.0.as_mut_ptr(),
+                    scratch.0.len(),
+                )
             };
             match status {
                 1 => Step::Done,
@@ -179,7 +159,6 @@ impl PrivateKey {
             packed: output.0[..3 * p_len + q_len].to_vec(),
             p_len,
             q_len,
-            backend,
             validated: AtomicU8::new(0),
         };
         // The packed private key p || q || g || y || x is the output itself.

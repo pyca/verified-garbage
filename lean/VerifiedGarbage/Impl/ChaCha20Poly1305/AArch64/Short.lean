@@ -130,7 +130,7 @@ def sealAfter : Prog isa :=
 def openAfter : Prog isa :=
   .seq (.block lengths)
   (.seq Fused.macAll
-  (.seq (xorKs false)
+  (.seq (xorKs true)
     (finalizeTo 48)))
 
 end VG.Impl.ChaCha20Poly1305.AArch64.Short

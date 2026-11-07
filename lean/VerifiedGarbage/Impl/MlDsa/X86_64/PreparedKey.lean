@@ -42,7 +42,7 @@ abbrev slot (len i : Nat) : Ptr := (.rbx, len + 1024 * i)
 
 /-- The NTT of the polynomial at `f`, with the first KiB of `prepared` as working space. -/
 def nttAt (P : Prims) (f : Ptr) : Prog isa :=
-  callAt ("vg_mldsa_ntt" ++ P.sfx) P.ntt [(.rdi, .ptr f), (.rsi, .ptr (.rbx, 0))]
+  callAt ("vg_mldsa_ntt" ++ P.asfx) P.ntt [(.rdi, .ptr f), (.rsi, .ptr (.rbx, 0))]
 
 /-- The key of `len` bytes and the NTTs of its `m` polynomials. -/
 def prepare (P : Prims) (len m : Nat) (unpack : Nat → Prog isa) : Prog isa :=

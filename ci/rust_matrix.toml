@@ -234,11 +234,11 @@ pclmulqdq,ssse3 | aes_gcm aes_gcm_siv sm4_gcm cpu
 # private-key operation selects its table's entries with AVX2, and
 # P-256's, P-384's, P-521's and Ed25519's `_adx` functions, whose
 # combs select their entries with AVX2, P-384's and P-521's with
-# SHA-512's baseline code); AVX-512F without AVX2, for Argon2 with G's
-# AVX-512 code and BLAKE2b's baseline code; and AVX-512F without
-# AVX512VL, for Argon2 with G's AVX-512 code and BLAKE2b's AVX2
-# code, and for ChaCha20's and ChaCha20-Poly1305's `_avx512`
-# instances, which the CPU's AVX512VL replaces with `_avx512vl`.
+# SHA-512's baseline code); and AVX-512F without AVX512VL, for
+# Argon2's AVX2 code (BLAKE2b's and G's), which its AVX-512 code
+# replaces only with AVX512VL, and for ChaCha20's and
+# ChaCha20-Poly1305's `_avx512` instances, which the CPU's AVX512VL
+# replaces with `_avx512vl`.
 # The unrestricted line runs RSA's ADX arithmetic in full; the line
 # without BMI1 (whose SHA-256 is then the baseline's) runs only the small
 # RSA groups that reach each hash's implementation.
@@ -248,7 +248,6 @@ arch = "x86_64"
 runs = """
 - | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb triple_des_cbc triple_des_cfb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
 avx,avx2,bmi2,adx | ffdh dsa ed448 rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs p256 p384 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-avx,avx512f | argon2 rfc9106 cpu
 avx,avx2,avx512f | argon2 rfc9106 mlkem chacha20 cpu
 avx,avx2,avx512f,avx512vl | mldsa cpu
 """
@@ -315,7 +314,9 @@ avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
 # FFDH domain operations exponentiate with AVX512_IFMA too
 # (`_mr_ifma_exp_ifma`), and the domain operations do without IFMA's
 # arithmetic (`_exp_ifma`, which no chip chooses) on the line without
-# BMI2 and ADX.
+# BMI2 and ADX. DSA's parameter generation also runs on the two lines
+# without SHA: with IFMA's round and the baseline SHA-1 and SHA-256 (no
+# BMI1), and with SHA-1's AVX/BMI and SHA-256's AVX2 code.
 # The unrestricted line runs RSA's full suite when the host has
 # AVX512_IFMA. On SDE hosts without it, ci/cpu_tests.py substitutes a
 # focused RSA group at run time. Feature lines stay identical so shards
@@ -329,8 +330,8 @@ shards = 2
 runs = """
 - | x25519 ed25519 rsa ffdh dsa_parameters message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm aes_xts cmac chacha20 poly1305 cpu
 avx,avx512f,avx512ifma,avx512vl | ffdh cpu
-avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs cpu
+avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 dsa_parameters rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl | dsa_parameters rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs cpu
 avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl,sha,ssse3 | rsa_oaep_pairs cpu
 aes,avx,avx2,ssse3,vaes | aes_gcm cpu
 aes,avx,avx2,avx512f,vaes | aes_cbc cpu

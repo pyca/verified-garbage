@@ -59,7 +59,7 @@ variable {e : Bool}
 
 /-- `pre`: the counter set to 8, the kernel's arguments, the length in `x2`,
 and 448 in `x23`. -/
-theorem pre_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv0 s₀ s) :
+theorem pre_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv0 e s₀ s) :
     WP isa (.block SealKey.pre) s fun s' =>
       s'.mem = s.mem.writeW (off (cx s₀) 112) (8 : BitVec 32) ∧ s'.gpr .x0 = off (cx s₀) 64 ∧
       s'.gpr .x3 = off (cx s₀) 128 ∧ s'.gpr .x2 = s.gpr .x23 ∧ s'.gpr .x23 = BitVec.ofNat 64 448 ∧
@@ -149,7 +149,7 @@ theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   have sp₆' : s₆.sp = s₀.sp := by rw [sp₆, k₅.sp, sp₄, i₃.sp]
   have rd₆' : s₆.rd = s₀.rd := by rw [rd₆, k₅.rd, rd₄, i₃.rd]
   have wr₆' : s₆.wr = s₀.wr := by rw [wr₆, k₅.wr, wr₄, i₃.wr]
-  have i₆ : Inv0 s₀ s₆ := by
+  have i₆ : Inv0 true s₀ s₆ := by
     refine ⟨by rw [to₃ _ (by decide),
         i₃.x21], fun r hr => ?_, sp₆', rd₆', wr₆', ?_, ?_⟩
     · have hu : r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x14 ∧ r ≠ .x15 ∧ r ≠ .x23 := by
@@ -341,7 +341,7 @@ theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   have Fb : Frame out s₁₀.mem s₁₁.mem := k₁₁.frame.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, by simp [out], fun _ h => h⟩
   have F : Frame out s₆.mem s₁₁.mem := Fa.trans Fb
-  have i₁₁ : Inv0 s₀ s₁₁ := ⟨by rw [to₁₀ _ (by decide), x21₁₀],
+  have i₁₁ : Inv0 true s₀ s₁₁ := ⟨by rw [to₁₀ _ (by decide), x21₁₀],
     un₁₁, by rw [k₁₁.sp, sp₁₀, sp₉, sp₈, sp₇, i₆.sp], by rw [k₁₁.rd, rd₁₀'], by rw [k₁₁.wr, wr₁₀'],
     i₆.saved.frame F (fun r hr => by
       simp only [out, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -367,7 +367,7 @@ theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok0 hp i₁₂) (by lit_decide))
     fun s₁₃ ⟨⟨i₁₃, k₁₃, r₁₃⟩, v₁₃⟩ => ?_)
   refine WP.mono (Pad.zero_ok hp i₁₃.x21 i₁₃.wr) fun s₁₄ ⟨k₁₄, _, v₁₄⟩ => ?_
-  have i₁₄ : Inv0 s₀ s₁₄ := i₁₃.step k₁₄
+  have i₁₄ : Inv0 true s₀ s₁₄ := i₁₃.step k₁₄
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩)

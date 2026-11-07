@@ -39,14 +39,15 @@ theorem generateKey_satisfiable : ∃ s, (Spec.Dsa.generateKeyContract Arm.abi 1
     [generateKeySat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using generateKeySat
 
 theorem generateKey_verified (check derive : String) :
-    Verified Arm.target (code check derive Generate.checkParameters Generate.deriveKey)
+    Verified Arm.target (code check derive Generate.checkParameters Generate.deriveChecked)
       (Spec.Dsa.generateKeyContract Arm.abi 144) :=
   ⟨generateKey_correct check derive, generateKey_constantTime check derive, generateKey_satisfiable⟩
 
-/-- Key generation, calling the registered `vg_dsa_check_parameters` and `vg_dsa_derive_key`. -/
+/-- Key generation, calling `vg_dsa_check_parameters` and the internal
+`vg_dsa_derive_key_checked`. -/
 theorem generating_verified :
-    Verified Arm.target (code "vg_dsa_check_parameters" Spec.Dsa.deriveKeyApi.name
-      Generate.checkParameters Generate.deriveKey) (Spec.Dsa.generateKeyContract Arm.abi 144) :=
+    Verified Arm.target (code "vg_dsa_check_parameters" "vg_dsa_derive_key_checked"
+      Generate.checkParameters Generate.deriveChecked) (Spec.Dsa.generateKeyContract Arm.abi 144) :=
   generateKey_verified _ _
 
 end VG.Proof.Dsa.Arm.Key

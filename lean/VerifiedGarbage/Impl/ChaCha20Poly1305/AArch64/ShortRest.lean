@@ -80,8 +80,8 @@ def openAfter (c : XorCallee) : Prog isa :=
   (.seq (macPad .x22 .x23)
   (.seq (.block lengths)
   (.seq absorbLengths
-  (.seq (first false)
-  (.seq (rest c false)
+  (.seq (first true)
+  (.seq (rest c true)
     (finalizeTo 48)))))))
 
 /-- `seal` but for the tag, for `lo ≤ len ≤ 511` (`Short.check`): the

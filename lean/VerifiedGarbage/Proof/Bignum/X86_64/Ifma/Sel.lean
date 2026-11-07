@@ -67,7 +67,7 @@ def checkSel (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Bool :=
   | none => false
 
 theorem checkSel_ok (hl : AmmOk l) : checkSel l = true := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide +kernel
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 theorem selVec_ok (hl : AmmOk l) {s : State} (hc : Ctx (selLim l) s) :
     WP isa (.block (selVec l)) s fun s' =>
@@ -93,7 +93,7 @@ theorem NB_lt (hl : AmmOk l) : l.NB < 2 ^ 31 := by
 
 /-- The table's entries: `T = 2^w`, 16 or 32. -/
 theorem AmmOk.T_bounds (hl : AmmOk l) : 16 ≤ l.T ∧ l.T ≤ 32 := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The entry's end: the next entry, `ZF` after the last. -/
 theorem selTail_ok (hl : AmmOk l) {s : State} {base : Addr} {i : Nat} (hi : i < l.T)
@@ -213,7 +213,7 @@ def checkZerosR (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Bool :=
   | none => false
 
 theorem checkZerosR_ok (hl : AmmOk l) : checkZerosR l = true := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide +kernel
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 theorem zerosR_ok (hl : AmmOk l) {s : State} :
     WP isa (.block (zerosR l)) s fun s' => (∀ r < l.R, ∀ t < 4, qv s' (vreg r) t = 0) ∧ Keeps s s' := by
@@ -232,7 +232,7 @@ theorem zerosR_ok (hl : AmmOk l) {s : State} :
 def nib (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (p : Nat) : Nat := (word m B (l.D * p + l.oV)).toNat
 
 theorem oV_bounds (hl : AmmOk l) : l.oTab + l.T * l.NB ≤ l.oV ∧ l.oS + l.NB ≤ l.oTab ∧ l.oV + 8 ≤ l.D := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- `[S] := T_v` for prime `p`. -/
 theorem select_ok (hl : AmmOk l) {s : State} {B : Addr} {p : Nat} (hp : p < l.nl) (hB : s.gpr .rbx = B)

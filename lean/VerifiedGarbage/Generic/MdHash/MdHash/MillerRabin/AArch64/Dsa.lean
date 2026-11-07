@@ -13,7 +13,12 @@ namespace VG.Generic.MdHash.MdHash.MillerRabin.AArch64.Dsa
 
 open VG.Proof.Dsa.AArch64.Generation VG.Proof.MillerRabin.AArch64
 
+/-- DSA's parameter search for a SHA-1 and a SHA-256 backend for the same
+CPUs (both baselines or both SHA-2 extensions), with each Miller–Rabin
+round: either other pair needs the features of one of these, which runs
+both hashes with them. -/
 def artifacts (v1 v256 : Proof.Pbkdf2.Md.AArch64.MdHash) (v : RoundImpl) : List Artifact :=
+  if v1.suffix != v256.suffix then [] else
   if h1 : v1.mgf.G.rust = "sha1" then
     if h256 : v256.mgf.G.rust = "sha256" then
       let hashes := v1.features ++ v256.features.filter (!v1.features.contains ·)

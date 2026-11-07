@@ -65,12 +65,14 @@ scratch, scratch_len)`. -/
 def deriveEntry : List Instr :=
   Entry.openScratch 3 ++ deriveArguments.flatMap Entry.saveArgument ++ Entry.keyPointers
 
-/-- The domain's checks, x's range, y = g^x mod p and y's range. -/
-def deriveCompute (pLen qLen : Nat) : Prog isa := Core.sequence [
-  parameters pLen qLen,
+/-- x's range, y = g^x mod p and y's range. -/
+def keyCompute (pLen qLen : Nat) : Prog isa := Core.sequence [
   Validate.range qLen .q (.input .nonce),
   Core.power pLen qLen .p (.input .g) (.input .nonce) t2,
   Validate.range pLen .p (.local t2) true]
+
+/-- The domain's checks, then `keyCompute`. -/
+def deriveCompute (pLen qLen : Nat) : Prog isa := .seq (parameters pLen qLen) (keyCompute pLen qLen)
 
 def copyStep : List Instr :=
   [.ldrb .r0 .r1 0, .dp .and .r0 .r0 (.reg .r3), .strb .r0 .r10 0,
@@ -96,11 +98,20 @@ def deriveFailure (pLen qLen : Nat) : Prog isa := Core.sequence [
   .loop (.block [.strb .r4 .r11 0, .dp .add .r11 .r11 (.imm 1), .cmp .r11 (.reg .lr)]) .ne,
   .block [.mov .r0 (.imm 0)]]
 
-def deriveSized (pLen qLen : Nat) : Prog isa :=
+/-- A derivation of one width, with `compute` the checks and y. -/
+def deriveSized (compute : Nat → Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (Shape.check pLen qLen)
-    (.ite .eq (deriveFailure pLen qLen) (.seq (deriveCompute pLen qLen) (writeKey pLen qLen)))
+    (.ite .eq (deriveFailure pLen qLen) (.seq (compute pLen qLen) (writeKey pLen qLen)))
 
-def deriveKey : Prog isa := Core.sequence [
-  .block deriveEntry, dispatch deriveSized widths, .block Entry.restore]
+def deriveWith (compute : Nat → Nat → Prog isa) : Prog isa := Core.sequence [
+  .block deriveEntry, dispatch (deriveSized compute) widths, .block Entry.restore]
+
+def deriveKey : Prog isa := deriveWith deriveCompute
+
+/-- Key derivation for a domain whose check (`checkParameters`) has
+succeeded: `deriveKey` without the domain's checks, which include the
+exponentiation `g^q mod p = 1`; x's and y's ranges remain. Key generation
+calls it once the domain check has passed. -/
+def deriveChecked : Prog isa := deriveWith keyCompute
 
 end VG.Impl.Dsa.Arm.Generate

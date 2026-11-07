@@ -915,10 +915,6 @@ theorem squeeze_shake128 :
     Verified RISCV64.target (xofSqueeze Spec.Sha3.xofShake128.rate) (Spec.Sha3.xofSqueezeContract RISCV64.abi Spec.Sha3.xofShake128 1168) :=
   xofSqueeze_verified (by decide)
 
-theorem update_shake256 :
-    Verified RISCV64.target (update Spec.Sha3.xofShake256.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.xofShake256.rate 608) :=
-  update_verified (by decide)
-
 theorem finalize_shake256 :
     Verified RISCV64.target (xofFinalize Spec.Sha3.xofShake256.rate) (Spec.Sha3.xofFinalizeContract RISCV64.abi Spec.Sha3.xofShake256 1136) :=
   xofFinalize_verified VG.Proof.Sha3.Instances.shake256_sponge (by decide)

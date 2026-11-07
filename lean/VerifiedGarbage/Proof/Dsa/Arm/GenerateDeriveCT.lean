@@ -1,6 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.Arm.GenerateTrace
+public import VerifiedGarbage.Proof.Dsa.Arm.GenerateTrace
+public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCompute
 import VerifiedGarbage.Proof.Dsa.Arm.GenerateDerive
 import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
@@ -166,7 +167,11 @@ theorem derive_bytes {s₁ s₂ : State} (hl : deriveLeak s₁ = deriveLeak s₂
     (List.append_inj hl (by simp [Spec.Rsa.bytesAt])).1
   rw [← VG.Proof.Dsa.bytesAt_slice _ _ hol, ← VG.Proof.Dsa.bytesAt_slice _ _ hol, E]
 
-theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Generate.deriveKey := by
+/-- A derivation whose computation reads through the same pointers in two
+runs and changes only its own working space. -/
+theorem deriveWith_constantTime {compute : Nat → Nat → Prog isa} {C : Nat → Nat → Nat → Nat → Prop}
+    [∀ P Q G X, Decidable (C P Q G X)] (hc : ComputeOk compute C) (ht : ComputeTrace compute) :
+    ConstantTime isa deriveArm.pre deriveArm.pub (Generate.deriveWith compute) := by
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ pub => ?_
   obtain ⟨hsp, hl, hr0, hr1, hr2, hr3, ha⟩ := pub
   have a0 := ha 0 (by decide)
@@ -182,7 +187,7 @@ theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Gener
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   have hb₂ : State.addr (arg s₂ 3) = State.addr (arg s₁ 3) := by rw [a3]
   have hz₂ : (arg s₂ 4).toNat * 8 = (arg s₁ 4).toNat * 8 := by rw [a4]
-  simp only [Generate.deriveKey, Core.sequence, List.foldr]
+  simp only [Generate.deriveWith, Core.sequence, List.foldr]
   refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 20 _ rfl) (agree_args (n := 5) hsp (by omega_arith) ha
       (fun r hr => by
         rw [wr₁] at hr
@@ -201,7 +206,7 @@ theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Gener
       have E := Env.of_installed I (by rw [hz₂]; omega_arith)
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
-  refine genDispatch_trace Generate.deriveSized _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (genWidths_mem hv) (by decide)
+  refine genDispatch_trace (Generate.deriveSized compute) _ E₁.ws E₂.ws (by omega_arith) (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₁.field (d := 100) (v := arg s₁ 0) (by simp)]) (by rw [E₁.field (d := 104) (v := arg s₁ 2) (by simp)])
     (by rw [E₂.field (d := 100) (v := arg s₂ 0) (by simp), a0])
     (by rw [E₂.field (d := 104) (v := arg s₂ 2) (by simp), a2])
@@ -272,9 +277,9 @@ theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Gener
         (arg s₁ 2).toNat (((arg s₁ 0).toNat + 7) / 8) (((arg s₁ 2).toNat + 7) / 8)
         (deriveIns (arg s₁ 0).toNat (arg s₁ 2).toNat) (deriveVal s₁) (deriveVal s₂) v₁ v₂ :=
       ⟨D₁, D₂, pe G₁ G₂⟩
-    refine SameTrace.assoc_left (SameTrace.seq (deriveCompute_trace X mp mq mg mx Dm₁ Dm₂)
-      (deriveCompute_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp mx) Dm₁.hP Dm₁.hPo Dm₁.hQ Dm₁.hQo)
-      (deriveCompute_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp mx) Dm₂.hP Dm₂.hPo Dm₂.hQ Dm₂.hQo)
+    refine SameTrace.assoc_left (SameTrace.seq (ht X mp mq mg mx Dm₁ Dm₂)
+      (hc X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp mx) Dm₁.hP Dm₁.hPo Dm₁.hQ Dm₁.hQo)
+      (hc X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp mx) Dm₂.hP Dm₂.hPo Dm₂.hQ Dm₂.hQo)
       fun w₁ w₂ ⟨_, _, Rn₁⟩ ⟨_, _, Rn₂⟩ => ?_)
     have keep : ∀ r ∈ runRanges, r.1 + r.2 ≤ (arg s₁ 4).toNat * 8 ∧
         (r.1 + r.2 ≤ 64 ∨ 164 ≤ r.1 ∨ (112 ≤ r.1 ∧ r.1 + r.2 ≤ 128)) := fun r hr => by
@@ -284,5 +289,13 @@ theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Gener
     have H₂ := G₂.keep (deriveFields_ok s₂) Rn₂.rest (by decide) Rn₂.mem keep
     obtain ⟨e96, e64, e88⟩ := ho H₁ H₂
     exact writeKey_trace _ _ H₁.ws H₂.ws (by omega_arith) (by omega_arith) e96 e64 e88
+
+theorem derive_constantTime : ConstantTime isa deriveArm.pre deriveArm.pub Generate.deriveKey :=
+  deriveWith_constantTime (C := deriveChecks) deriveCompute_computeOk deriveCompute_computeTrace
+
+theorem deriveChecked_constantTime :
+    ConstantTime isa deriveCheckedArm.pre deriveCheckedArm.pub Generate.deriveChecked :=
+  fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ =>
+    deriveWith_constantTime (C := keyChecks) keyCompute_computeOk keyCompute_computeTrace s₁ s₂ t₁ t₂ u₁ u₂ h₁.1 h₂.1
 
 end VG.Proof.Dsa.Arm

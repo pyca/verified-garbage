@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
+public import VerifiedGarbage.Proof.AesGcm.AArch64.BasePw
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
@@ -178,13 +179,14 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
 def artifactsOpenTo (v : GcmImpl) : List Artifact := [
   Spec.Gcm.openToApi.artifact AArch64.target {
     suffix := v.suffix
-    code := Impl.AesGcm.AArch64.OpenTo.openTo (Proof.AesGcm.AArch64.openFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
+    code := Impl.AesGcm.AArch64.OpenTo.openTo 2 (Proof.AesGcm.AArch64.openFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
     stack := 2624
     verified := Proof.AesGcm.openTo_keyed (Proof.AesGcm.AArch64.OpenTo.openTo_verified (Proof.AesGcm.AArch64.openFn v Proof.Gcm.AArch64.Pmull.mulV_keyV))
     features := v.features }]
 
 /-- `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers`, calling
-`g` on the path for TLS records. -/
+`g` on the path for TLS records, and `vg_aes_gcm_open_to_with_powers`,
+calling that instance of `vg_aes_gcm_open_with_powers`. -/
 def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
   [Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
@@ -197,7 +199,31 @@ def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openPwCode v g)
     stack := 2592
     verified := Proof.AesGcm.openWithPowers_keyed (openPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g)
+    features := v.stitchFeatures },
+  Spec.Gcm.openToWithPowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    code := Impl.AesGcm.AArch64.OpenTo.openTo 3
+      (Proof.AesGcm.AArch64.openPwFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok).fn
+    stack := 2624
+    verified := Proof.AesGcm.openToWithPowers_keyed (Proof.AesGcm.AArch64.OpenTo.openToPw_verified
+      (Proof.AesGcm.AArch64.openPwFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok))
     features := v.stitchFeatures }]
+
+/-- `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers` of
+implementations without code that reads the powers: their `seal` and `open`. -/
+def basePwArtifacts (v : GcmImpl) : List Artifact :=
+  [Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v)
+    stack := 2576
+    verified := sealBasePw_verified v Proof.Gcm.AArch64.Pmull.mulV_keyV
+    features := v.features },
+  Spec.Gcm.openWithPowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode v)
+    stack := 2592
+    verified := openBasePw_verified v Proof.Gcm.AArch64.Pmull.mulV_keyV
+    features := v.features }]
 
 /-- The artifacts of a variant, from the implementations it names: those that
 do not use the stitched loops only for the variant without them, of which
@@ -205,6 +231,7 @@ the variant with them would be the same functions. -/
 def artifacts (v : GcmVariant) : List Artifact :=
   (if v.stitch then [] else
     artifactsOf v.impl ++ artifactsGather v.impl ++ artifactsOpenTo v.impl) ++
-    (v.impl.gh.withPowers.map (withPowersArtifacts v.impl)).getD []
+    (v.impl.gh.withPowers.map (withPowersArtifacts v.impl)).getD
+      (if v.stitch then [] else basePwArtifacts v.impl)
 
 end VG.Generic.AesGcm.AArch64.AesGcm

@@ -49,7 +49,7 @@ theorem rest_orig {s₀ s w u : State} {key msg : List Byte} {o T : Nat}
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]; rfl
   have hle := hc.le
   have hi' : i < L s₀ - (o + 512 * T) := hi
-  rw [e, hc.data _ (by omega_arith), ite_eq_right (by omega_arith)]
+  rw [e, hc.data _ (by omega_arith) (by omega_arith)]
 
 theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀) :
     WP isa (openStitchedMain v.callee) s₀ (MainO s₀) := by
@@ -84,13 +84,13 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
   have hc' := TailO.Crypted.keep hc k₄' g₄' v₄'
   have hm₄ : s₄'.mem = s₄.mem := by funext x; exact k₄'.frame x fun r hr => by simp at hr
   refine WP.seq (WP.mono (Q := fun (s₆ : State) =>
-    (∀ r ∈ preservedV, (s₆.v r).extractLsb' 0 64 = (s₄.v r).extractLsb' 0 64) ∧ Inv0 s₀ s₆ ∧
-    Frame [sub s₀ 16 16, sub s₀ 32 16, sub s₀ 64 512, sub s₀ 768 512, dR s₀] s₄.mem s₆.mem ∧
+    (∀ r ∈ preservedV, (s₆.v r).extractLsb' 0 64 = (s₄.v r).extractLsb' 0 64) ∧ Inv0 false s₀ s₆ ∧
+    Frame [sub s₀ 16 16, sub s₀ 32 16, sub s₀ 64 512, sub s₀ 768 512, oR false s₀] s₄.mem s₆.mem ∧
     Repr s₆.mem (off (cx s₀) 448) (otk s₀) (([] ++ (bytesAt s₁.mem (ad s₀) (AL s₀) ++ pad16 (bytesAt s₁.mem (ad s₀) (AL s₀))) ++
       bytesAt s₃'.mem (dp s₀) (512 * T)) ++
       (bytesAt s₃'.mem (dp s₀ + BitVec.ofNat 64 (512 * T)) (L s₀ - 512 * T) ++
         pad16 (bytesAt s₃'.mem (dp s₀ + BitVec.ofNat 64 (512 * T)) (L s₀ - 512 * T)))) ∧
-    bytesAt s₆.mem (dp s₀) (L s₀) =
+    bytesAt s₆.mem (op false s₀) (L s₀) =
       Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s₃'.mem (dp s₀) (L s₀))) ?_ ?_)
   · refine WP.iteCold_iff.mpr (WP.ite (decide (65 ≤ L s₀ - 512 * T ∧ L s₀ - 512 * T ≤ 256)) e₄ (fun h => ?_) (fun h => ?_))
     · have h' := of_decide_eq_true h
@@ -110,24 +110,29 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
       have hd₅ : ∀ r ∈ macR s₀, (dR s₀).Disjoint r := by
         intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> exact hp.c_d.symm.sub_right (sub_ctx s₀ (by lit_omega))
+      have hq₅ : ∀ r ∈ macR s₀, (oR false s₀).Disjoint r := by
+        intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> exact hp.o.ctx.symm.sub_right (sub_ctx s₀ (by lit_omega))
       refine (openRest_ok v hp (s := s₃') (P := 512 * T) (by omega_arith) (by omega_arith) (fun _ => by omega_arith)
         i₅.x21 (by rw [k₅.cs _ (pres .x22) (pres30 .x22), hc'.x22, hpre])
         (by rw [k₅.cs _ (pres .x23) (pres30 .x23), hc'.x23, hpre]) i₅.rd i₅.wr
         (fun _ => by rw [stateAt_frame k₅.frame (by rdisj_all), hc'.cnt,
           show 512 * T / 64 = 0 / 64 + 8 * T by omega_arith])
-        (fun k hk => by rw [data_frame k₅.frame hd₅ hk, hc'.data k hk, Nat.zero_add])).mono
+        (by rw [k₅.cs _ (by decide) (by decide), hc'.inv.un .x28 (by decide)])
+        (fun k hk hk' => by rw [data_frame k₅.frame hd₅ hk, hc'.data k hk (by omega_arith)])
+        (fun k hk => by rw [out_frame k₅.frame hq₅ (by omega_arith), hc'.out k (by omega_arith)])).mono
         fun s₆ ⟨v₆, k₅₆, _, pt₆⟩ => ?_
-      have i₆ : Inv0 s₀ s₆ := i₅.step k₅₆ (fun r hr => by
+      have i₆ : Inv0 false s₀ s₆ := i₅.step k₅₆ (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl
           · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
-          · exact ⟨dR s₀, by simp, fun _ h => h⟩
+          · exact ⟨oR false s₀, by simp, fun _ h => h⟩
           · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩)
         (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl
           · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
-          · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))
+          · exact hp.o.ctx.sub_left (sub_ctx s₀ (by lit_omega))
           · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))
       have R₄ := hc'.mac
       simp only [Bool.false_eq_true, ↓reduceIte] at R₄
@@ -144,7 +149,7 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact ⟨sub s₀ 64 512, by simp, sub_sub s₀ (by decide) (by decide) (by lit_omega)⟩
-        · exact ⟨dR s₀, by simp, fun _ h => h⟩
+        · exact ⟨oR false s₀, by simp, fun _ h => h⟩
         · exact ⟨sub s₀ 768 512, by simp, fun _ h => h⟩
   rintro s₆ ⟨v₆, i₆, f₆, R₆, pt₆⟩
   rw [D₃'] at pt₆
@@ -209,16 +214,16 @@ theorem openWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
     fun s₆ ⟨⟨i₆, k₆, len₆⟩, v₆⟩ => ?_)
   refine WP.seq (WP.mono (skipFirst_ok i₆ hL256) fun s₇ ⟨i₇, x22₇, x23₇, m₇, v₇⟩ => ?_)
   have E : Entry false 256 s₀ s₃ (otk s₀) (A s₀ ++ pad16 (A s₀)) s₇ := by
-    refine ⟨i₇, by decide, hL256, x22₇, x23₇, ?_, fun k hk => ?_, ?_, fun r hr => ?_⟩
+    refine ⟨i₇, by decide, hL256, x22₇, x23₇, ?_, fun k hk h => ?_, fun k h => ?_, ?_, fun r hr => ?_⟩
     · rw [m₇, stateAt_frame k₆.frame (by rdisj_all), stateAt_frame k₅.frame (by rdisj_all),
         stateAt_frame k₄.frame (by rdisj_all), stateAt_frame k₃.frame (by rdisj_all), st₂,
         VG.Proof.ChaCha20Poly1305.ctr_initState,
         show (1 : BitVec 32) + BitVec.ofNat 32 (256 / 64) = 5 by decide]
-    · rw [m₇, data_frame k₆.frame (by rdisj_all) hk]
-      by_cases h : k < 256
-      · rw [x₅ k h, K₄ k h, Short.ks5_eq s₀ hk, data_frame k₄.frame (by rdisj_all) hk, ite_eq_left h]
-      · rw [f₅ _ (ShortRest.rest_out hp (by omega_arith) hk), data_frame k₄.frame (by rdisj_all) hk,
-          ite_eq_right h]
+    · rw [m₇, data_frame k₆.frame (by rdisj_all) hk, f₅ _ (ShortRest.rest_out hp.o h hk),
+        data_frame k₄.frame (by rdisj_all) hk]
+    · have hk : k < L s₀ := by omega_arith
+      rw [m₇, out_frame k₆.frame (by rdisj_all) hk, x₅ k h, K₄ k h, Short.ks5_eq s₀ hk,
+        data_frame k₄.frame (by rdisj_all) hk]
     · simp only [Bool.false_eq_true, ite_false]
       rw [m₇]
       exact Repr.frame k₆.frame (by rdisj_all) (Repr.frame k₅.frame (by rdisj_all) (r₄ _ _ R₃))
@@ -233,25 +238,30 @@ theorem openWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   have hd₉ : ∀ r ∈ macR s₀, (dR s₀).Disjoint r := by
     intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact hp.c_d.symm.sub_right (sub_ctx s₀ (by lit_omega))
+  have hq₉ : ∀ r ∈ macR s₀, (oR false s₀).Disjoint r := by
+    intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact hp.o.ctx.symm.sub_right (sub_ctx s₀ (by lit_omega))
   refine WP.seq ((openRest_ok v hp (s := s₃) (P := 256 + 512 * T) hle hc.lt (fun _ => by omega_arith) i₉.x21
     (by rw [k₉.cs _ (pres .x22) (pres30 .x22), hc.x22, hpre])
     (by rw [k₉.cs _ (pres .x23) (pres30 .x23), hc.x23, hpre]) i₉.rd i₉.wr
     (fun _ => by rw [stateAt_frame k₉.frame (by rdisj_all), hc.cnt,
       show (256 + 512 * T) / 64 = 256 / 64 + 8 * T by omega_arith])
-    (fun k hk => by rw [data_frame k₉.frame hd₉ hk, hc.data k hk])).mono
+    (by rw [k₉.cs _ (by decide) (by decide), hc.inv.un .x28 (by decide)])
+    (fun k hk hk' => by rw [data_frame k₉.frame hd₉ hk, hc.data k hk hk'])
+    (fun k hk => by rw [out_frame k₉.frame hq₉ (by omega_arith), hc.out k hk])).mono
     fun s₁₀ ⟨v₁₀, k₉₁₀, _, pt₁₀⟩ => ?_)
   rw [D₃] at pt₁₀
-  have i₁₀ : Inv0 s₀ s₁₀ := i₉.step k₉₁₀ (fun r hr => by
+  have i₁₀ : Inv0 false s₀ s₁₀ := i₉.step k₉₁₀ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
-      · exact ⟨dR s₀, by simp, fun _ h => h⟩
+      · exact ⟨oR false s₀, by simp, fun _ h => h⟩
       · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩)
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
-      · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))
+      · exact hp.o.ctx.sub_left (sub_ctx s₀ (by lit_omega))
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))
   refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok0 hp i₁₀) (by lit_decide))
     fun s₁₁ ⟨⟨i₁₁, k₁₁, r₁₁⟩, v₁₁⟩ => ?_)

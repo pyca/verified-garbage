@@ -68,7 +68,7 @@ def cryptPad (c : XorCallee) (to : Bool) : Prog isa :=
 
 def sealMain (c : XorCallee) : Prog isa := sealMainWith (cryptPad c false)
 
-def openMain (c : XorCallee) : Prog isa := openMainWith (cryptPad c false)
+def openMain (c : XorCallee) : Prog isa := openMainWith (cryptPad c true)
 
 /-- From `lo` to 511 bytes when encrypting: `ShortRest.lean`'s code up to
 `threshold`, then this file's. -/

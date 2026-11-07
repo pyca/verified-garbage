@@ -29,7 +29,7 @@ open VG VG.X86_64 VG.Proof.Bignum.Amm52
 open VG.Proof.Bignum (off word ofs Outside mask Frm)
 open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Proof.Bignum.X86_64.Ifma (limb val52)
-open VG.Proof.Bignum.X86_64.Ifma.Pub (PubOk Mod)
+open VG.Proof.Bignum.X86_64.Ifma.Pub (Mod)
 open VG.Impl.Rsa.X86_64.CrtIfma (mask52 ammMul vreg Lay at_)
 open VG.Impl.Rsa.X86_64.PubIfma (setOps)
 open VG.Impl.MillerRabin.X86_64.Ifma
@@ -46,18 +46,18 @@ def Rep (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (c o x : Nat) 
 
 /-- The layouts' offsets: the area below `2^31`, its numbers apart and the
 moduli's room. -/
-theorem PubOk.offs (hl : PubOk l) :
+theorem MrOk.offs (hl : MrOk l) :
     size l + 63 ≤ 16 * (8 * (l.W + 2)) ∧ size l < 2 ^ 31 ∧ l.NB + 32 = oY l ∧ oY l + l.NB = oS l ∧
     oS l + l.NB = oT l 0 ∧ (∀ j, oT l j = oT l 0 + j * l.NB) ∧ oT l 4 = oP1c l ∧ oP1c l + l.NB = oM1 l ∧
     oM1 l + l.NB = oM1c l ∧ oM1c l + l.NB = oV l ∧ oV l + 8 = oMx l ∧ l.NB % 32 = 0 ∧ 64 * l.W + 2 ≤ 52 * l.S ∧
     l.S ≤ l.L ∧ 1 ≤ l.dbls ∧ l.dbls < 2 ^ 31 ∧ 1 ≤ shifts l ∧ shifts l < 2 ^ 31 := by
-  rcases hl with rfl | rfl | rfl <;> refine ⟨by decide, by decide, rfl, rfl, rfl, fun j => by
+  rcases hl with rfl | rfl | rfl | rfl | rfl <;> refine ⟨by decide, by decide, rfl, rfl, rfl, fun j => by
     simp only [oT]; omega, rfl, rfl, rfl, rfl, rfl, by decide, by decide, by decide, by decide, by decide, by decide,
     by decide⟩
 
 /-- `ammMul` with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of the area `B`
 (`o` may be `a` or `b`). -/
-theorem amm_ok (hl : PubOk l) {s : State} {B : Addr} {Z c k o a b : Nat} (hB : s.gpr .rbx = B)
+theorem amm_ok (hl : MrOk l) {s : State} {B : Addr} {Z c k o a b : Nat} (hB : s.gpr .rbx = B)
     (r8 : s.gpr .r8 = off B a) (r9 : s.gpr .r9 = off B b) (r11 : s.gpr .r11 = off B o)
     (hs : Scr s B Z) (hZ : Z < 2 ^ 31) (hZ32 : l.NB + 32 ≤ Z) (hm : Mod l s.mem B c k)
     (ho : o + l.NB ≤ Z) (ha : a + l.NB ≤ Z) (hb : b + l.NB ≤ Z)
@@ -86,7 +86,7 @@ theorem amm_ok (hl : PubOk l) {s : State} {B : Addr} {Z c k o a b : Nat} (hB : s
     fun t ⟨hv, hf, hg, h12, hrd, hwr, hx⟩ => ?_
   have v := hv 0 (by omega_arith)
   simp only [h0, hM] at v
-  exact ⟨v.1, fun hA hB' => v.2 hA hB' hm.big, VG.Proof.Bignum.X86_64.Ifma.Pub.OutN.one hl hf, hg, h12, hrd, hwr, hx⟩
+  exact ⟨v.1, fun hA hB' => v.2 hA hB' hm.big, VG.Proof.Bignum.X86_64.Ifma.Pub.OutN.one' hl.nl hf, hg, h12, hrd, hwr, hx⟩
 
 /-- `amm_ok`'s values on numbers in Montgomery form. -/
 private theorem rep_of_amm {m m' : Mem} {B : Addr} {c o a b x y : Nat} (hodd : c % 2 = 1)
@@ -100,7 +100,7 @@ private theorem rep_of_amm {m m' : Mem} {B : Addr} {c o a b x y : Nat} (hodd : c
   rw [e, Nat.mul_mod, hxa.2.2, hyb.2.2, ← Nat.mul_mod, Nat.mul_mul_mul_comm, ← Nat.mul_assoc]
 
 /-- `amm_ok` on numbers in Montgomery form, for an odd `c`. -/
-theorem amm_rep (hl : PubOk l) {s : State} {B : Addr} {Z c k o a b x y : Nat} (hB : s.gpr .rbx = B)
+theorem amm_rep (hl : MrOk l) {s : State} {B : Addr} {Z c k o a b x y : Nat} (hB : s.gpr .rbx = B)
     (r8 : s.gpr .r8 = off B a) (r9 : s.gpr .r9 = off B b) (r11 : s.gpr .r11 = off B o)
     (hs : Scr s B Z) (hZ : Z < 2 ^ 31) (hZ32 : l.NB + 32 ≤ Z) (hm : Mod l s.mem B c k) (hodd : c % 2 = 1)
     (ho : o + l.NB ≤ Z) (ha : a + l.NB ≤ Z) (hb : b + l.NB ≤ Z)
@@ -113,8 +113,8 @@ theorem amm_rep (hl : PubOk l) {s : State} {B : Addr} {Z c k o a b x y : Nat} (h
     ⟨rep_of_amm hodd hc hv hxa hyb, rest⟩
 
 /-- The layouts' vector registers: `R` of 32 bytes for a number. -/
-theorem PubOk.regs (hl : PubOk l) : 2 ≤ l.R ∧ l.R ≤ 20 ∧ l.NB = 32 * l.R ∧ l.L = 4 * l.R := by
-  rcases hl with rfl | rfl | rfl <;> decide
+theorem MrOk.regs (hl : MrOk l) : 2 ≤ l.R ∧ l.R ≤ 20 ∧ l.NB = 32 * l.R ∧ l.L = 4 * l.R := by
+  rcases hl with rfl | rfl | rfl | rfl | rfl <;> decide
 
 open VG.Proof.Bignum.X86_64.AmmSym (wrList writeW256_outside word_wrList_unique readW256_outside off_add
   wrList_outside') in
@@ -160,13 +160,13 @@ private theorem copies_ok {B : Addr} {Z : Nat} (hZ : Z < 2 ^ 31) :
       (by omega_using [hZ, this]))
 
 /-- `[o] := [a]`. -/
-theorem copyN_ok (hl : PubOk l) {s : State} {B : Addr} {Z o a : Nat} (hB : s.gpr .rbx = B)
+theorem copyN_ok (hl : MrOk l) {s : State} {B : Addr} {Z o a : Nat} (hB : s.gpr .rbx = B)
     (hs : Scr s B Z) (hZ : Z < 2 ^ 31) (ho : o + l.NB ≤ Z) (ha : a + l.NB ≤ Z) (hoa : Sep l o a)
     (_ho32 : o % 32 = 0) (_ha32 : a % 32 = 0) :
     WP isa (.block (copyN l o a)) s fun t =>
       (∀ j < l.L, limb l t.mem B o j = limb l s.mem B a j) ∧ Outside B o l.NB s.mem t.mem ∧
       VG.Proof.MlKem.X86_64.Keep [] s t ∧ t.mxcsr = s.mxcsr := by
-  obtain ⟨hR, hR20, hNB, hL⟩ := PubOk.regs hl
+  obtain ⟨hR, hR20, hNB, hL⟩ := MrOk.regs hl
   let xs : List (Nat × Nat) := (List.range l.R).map fun k => (a + 32 * k, o + 32 * k)
   have hxs : ∀ x ∈ xs, ∃ k < l.R, x = (a + 32 * k, o + 32 * k) := fun x hx => by
     obtain ⟨k, hk, rfl⟩ := List.mem_map.1 hx
@@ -214,9 +214,9 @@ theorem copyN_ok (hl : PubOk l) {s : State} {B : Addr} {Z o a : Nat} (hB : s.gpr
 /-! ## `select`, a vector register at a time -/
 
 /-- The table's entries, `S` and the word at `oV` lie in the area. -/
-theorem PubOk.ends (hl : PubOk l) : (∀ j < 4, oT l j + l.NB ≤ size l) ∧ oS l + l.NB ≤ size l ∧
+theorem MrOk.ends (hl : MrOk l) : (∀ j < 4, oT l j + l.NB ≤ size l) ∧ oS l + l.NB ≤ size l ∧
     oV l + 8 ≤ size l := by
-  rcases hl with rfl | rfl | rfl <;> decide
+  rcases hl with rfl | rfl | rfl | rfl | rfl <;> decide
 
 section Sel
 
@@ -375,14 +375,14 @@ private def entryC (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (j : Nat) : List Instr :
       .eop (.vpternlogq (vreg k) (vreg (l.R + 1)) (vreg l.R) 0xF8)]
 
 /-- Entry `j`: OR'ed in if `j = v`. -/
-private theorem entry_ok (hl : PubOk l) {s : State} {B : Addr} {j v : Nat} (hB : s.gpr .rbx = B)
+private theorem entry_ok (hl : MrOk l) {s : State} {B : Addr} {j v : Nat} (hB : s.gpr .rbx = B)
     (hs : Scr s B (size l)) (hj : j < 4) (hv : v < 4) (hd : s.gpr .rdx = BitVec.ofNat 64 v) :
     WP isa (.block (entryC l j)) s fun t =>
       (∀ r < l.R, ∀ q < 4, qv t (vreg r) q =
         qv s (vreg r) q ||| (if v = j then s.mem.readW (off B (oT l j + 32 * r + 8 * q)) 64 else 0)) ∧
       VG.Proof.MlKem.X86_64.Keep [.rax] s t ∧ t.mem = s.mem ∧ t.mxcsr = s.mxcsr := by
-  obtain ⟨hR, hR20, hNB, hL⟩ := PubOk.regs hl
-  have hT := (PubOk.ends hl).1 j hj
+  obtain ⟨hR, hR20, hNB, hL⟩ := MrOk.regs hl
+  have hT := (MrOk.ends hl).1 j hj
   unfold entryC
   rw [WP.block_append_iff]
   refine WP.mono (mask_ok (R := l.R) (by omega) hj hv hd) fun t ⟨tm, tr, kt, mt, xt⟩ => ?_
@@ -395,7 +395,7 @@ private theorem entry_ok (hl : PubOk l) {s : State} {B : Addr} {j v : Nat} (hB :
   simp only [decide_eq_true_eq]
 
 /-- The four entries, for `rdx = v`. -/
-private theorem entries_ok (hl : PubOk l) {B : Addr} {v : Nat} (hv : v < 4) :
+private theorem entries_ok (hl : MrOk l) {B : Addr} {v : Nat} (hv : v < 4) :
     ∀ J, J ≤ 4 → ∀ s : State, s.gpr .rbx = B → Scr s B (size l) → s.gpr .rdx = BitVec.ofNat 64 v →
       WP isa (.block ((List.range J).flatMap (entryC l))) s fun t =>
         (∀ r < l.R, ∀ q < 4, qv t (vreg r) q =
@@ -421,15 +421,15 @@ private theorem entries_ok (hl : PubOk l) {B : Addr} {v : Nat} (hv : v < 4) :
 end Sel
 
 /-- `[S] := T_d`, `d` the top two bits of the word at `oV`. -/
-theorem select_ok (hl : PubOk l) {s : State} {B : Addr} (hB : s.gpr .rbx = B)
+theorem select_ok (hl : MrOk l) {s : State} {B : Addr} (hB : s.gpr .rbx = B)
     (hs : Scr s B (size l)) :
     WP isa (.block (select l)) s fun t =>
       (∀ j < l.L, limb l t.mem B (oS l) j =
         limb l s.mem B (oT l ((word s.mem B (oV l)).toNat / 2 ^ 62)) j) ∧
       Outside B (oS l) l.NB s.mem t.mem ∧ VG.Proof.MlKem.X86_64.Keep [.rax, .rdx] s t ∧ t.mxcsr = s.mxcsr := by
-  obtain ⟨hR, hR20, hNB, hL⟩ := PubOk.regs hl
-  obtain ⟨-, hsz, -⟩ := PubOk.offs hl
-  obtain ⟨-, hSe, hVe⟩ := PubOk.ends hl
+  obtain ⟨hR, hR20, hNB, hL⟩ := MrOk.regs hl
+  obtain ⟨-, hsz, -⟩ := MrOk.offs hl
+  obtain ⟨-, hSe, hVe⟩ := MrOk.ends hl
   generalize hv : (word s.mem B (oV l)).toNat / 2 ^ 62 = v
   have hv4 : v < 4 := by
     rw [← hv]
@@ -531,7 +531,7 @@ structure Tab (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (c k b :
   m1c : Canon l m B (oM1c l) ∧ val52 l m B (oM1c l) = c - 2 ^ (52 * l.S) % c + c
 
 /-- The limbs at `a` through writes elsewhere. -/
-private theorem limb_out (hl : PubOk l) {m m' : Mem} {B : Addr} {o a n : Nat} (h : Outside B o n m m')
+private theorem limb_out (hl : MrOk l) {m m' : Mem} {B : Addr} {o a n : Nat} (h : Outside B o n m m')
     (hs : a + l.NB ≤ o ∨ o + n ≤ a) (hb : a + l.NB < 2 ^ 31) :
     ∀ j < l.L, limb l m' B a j = limb l m B a j := fun j hj => by
   have := VG.Proof.Bignum.X86_64.Ifma.off_ltN hl.amm hj
@@ -548,7 +548,7 @@ private theorem rep_congr {m m' : Mem} {B : Addr} {c a x : Nat}
   exact ⟨hc, by rw [hv]; exact hr.2.1, by rw [hv]; exact hr.2.2⟩
 
 /-- `Mod` through writes from `o ≥ NB + 32` on. -/
-private theorem mod_out (hl : PubOk l) {m m' : Mem} {B : Addr} {M k o n : Nat} (h : Mod l m B M k)
+private theorem mod_out (hl : MrOk l) {m m' : Mem} {B : Addr} {M k o n : Nat} (h : Mod l m B M k)
     (f : Outside B o n m m') (ho : l.NB + 32 ≤ o) (hn : o + n ≤ 2 ^ 63) : Mod l m' B M k := by
   have hlimb : ∀ j < l.L, limb l m' B 0 j = limb l m B 0 j := fun j hj => by
     have := VG.Proof.Bignum.X86_64.Ifma.off_ltN hl.amm hj
@@ -599,15 +599,15 @@ private def tA (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (n : Nat) : Nat :=
 private def tB (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (n : Nat) : Nat := if n = 3 then oS l else oT l 1
 
 /-- The choice of the operands. -/
-private theorem tsel_ok (hl : PubOk l) {t : State} {B : Addr} {n : Nat} (hB : t.gpr .rbx = B)
+private theorem tsel_ok (hl : MrOk l) {t : State} {B : Addr} {n : Nat} (hB : t.gpr .rbx = B)
     (h13 : t.gpr .r13 = BitVec.ofNat 64 n) (hn : n ≤ 3) :
     WP isa (.seq (.block [.alu .cmp .r13 (.imm 3)]) (.ite .e (.block (setOps (oT l 1) (oT l 1) (oS l)))
         (.seq (.block [.alu .cmp .r13 (.imm 2)]) (.ite .e (.block (setOps (oT l 2) (oT l 1) (oT l 1)))
           (.block (setOps (oT l 3) (oT l 2) (oT l 1))))))) t fun u =>
       u.gpr .r8 = off B (tA l n) ∧ u.gpr .r9 = off B (tB l n) ∧ u.gpr .r11 = off B (tO l n) ∧
       VG.Proof.MlKem.X86_64.Keep [.r8, .r9, .r11] t u ∧ u.mem = t.mem ∧ u.mxcsr = t.mxcsr := by
-  obtain ⟨-, hsz, -⟩ := PubOk.offs hl
-  obtain ⟨hT, hS, -⟩ := PubOk.ends hl
+  obtain ⟨-, hsz, -⟩ := MrOk.offs hl
+  obtain ⟨hT, hS, -⟩ := MrOk.ends hl
   have b1 := hT 1 (by decide)
   have b2 := hT 2 (by decide)
   have b3 := hT 3 (by decide)
@@ -641,7 +641,7 @@ private theorem tsel_ok (hl : PubOk l) {t : State} {B : Addr} {n : Nat} (hB : t.
       (rd₂.trans rd₁) (wr₂.trans wr₁) (m₂.trans m₁) (x₂.trans x₁) (by omega) (by omega) (by omega)
 
 /-- One multiplication of the table's loop. -/
-private theorem titer_ok (hl : PubOk l) {s t : State} {B : Addr} {c k b n : Nat}
+private theorem titer_ok (hl : MrOk l) {s t : State} {B : Addr} {c k b n : Nat}
     (h12 : s.gpr .r12 = mask52) (hs : Scr s B (size l)) (hodd : c % 2 = 1)
     (hp : Pre l s.mem B c k (b * 2 ^ (64 * l.W) % c)) (hn1 : 1 ≤ n) (hn3 : n ≤ 3) (hI : TInv l s B c b n t) :
     WP isa (.seq (.seq (.block [.alu .cmp .r13 (.imm 3)]) (.ite .e (.block (setOps (oT l 1) (oT l 1) (oS l)))
@@ -649,8 +649,8 @@ private theorem titer_ok (hl : PubOk l) {s t : State} {B : Addr} {c k b n : Nat}
           (.block (setOps (oT l 3) (oT l 2) (oT l 1)))))))
       (.seq (ammMul l) (.block [.alu .sub .r13 (.imm 1)]))) t fun t' =>
       TInv l s B c b (n - 1) t' ∧ t'.zf = some (decide (n - 1 = 0)) := by
-  obtain ⟨-, hsz, h1, h2, h3, hTj, h4, h5, h6, h7, h8, -, h9, -⟩ := PubOk.offs hl
-  obtain ⟨hT, hS, -⟩ := PubOk.ends hl
+  obtain ⟨-, hsz, h1, h2, h3, hTj, h4, h5, h6, h7, h8, -, h9, -⟩ := MrOk.offs hl
+  obtain ⟨hT, hS, -⟩ := MrOk.ends hl
   have e1 := hTj 1
   have e2 := hTj 2
   have e3 := hTj 3
@@ -733,7 +733,7 @@ private theorem titer_ok (hl : PubOk l) {s t : State} {B : Addr} {c k b n : Nat}
 
 /-- The table: `T_1 := T_1 K`, `T_2 := T_1²`, `T_3 := T_2 T_1`, for `T_1 = b R
 mod c` on entry; `c` odd, `3 ≤ c`, `c < 2^(64 W)`. -/
-theorem table_ok (hl : PubOk l) {s : State} {B : Addr} {c k b : Nat} (hB : s.gpr .rbx = B)
+theorem table_ok (hl : MrOk l) {s : State} {B : Addr} {c k b : Nat} (hB : s.gpr .rbx = B)
     (h12 : s.gpr .r12 = mask52) (hs : Scr s B (size l)) (hodd : c % 2 = 1) (h3 : 3 ≤ c)
     (_hc : c < 2 ^ (64 * l.W)) (hp : Pre l s.mem B c k (b * 2 ^ (64 * l.W) % c)) :
     WP isa (table l) s fun t =>
@@ -741,9 +741,9 @@ theorem table_ok (hl : PubOk l) {s : State} {B : Addr} {c k b : Nat} (hB : s.gpr
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r13 →
         t.gpr r = s.gpr r) ∧
       t.gpr .r12 = mask52 ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
-  obtain ⟨-, hsz, h1, h2, h3, hTj, h4, h5, h6, h7, h8, -⟩ := PubOk.offs hl
-  obtain ⟨hT, -, hVe⟩ := PubOk.ends hl
-  obtain ⟨-, -, hNB, -⟩ := PubOk.regs hl
+  obtain ⟨-, hsz, h1, h2, h3, hTj, h4, h5, h6, h7, h8, -⟩ := MrOk.offs hl
+  obtain ⟨hT, -, hVe⟩ := MrOk.ends hl
+  obtain ⟨-, -, hNB, -⟩ := MrOk.regs hl
   have b0 := hT 0 (by decide)
   have e1 := hTj 1
   have e2 := hTj 2

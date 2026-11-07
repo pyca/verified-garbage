@@ -41,10 +41,9 @@ namespace VG.Proof.MillerRabin.X86_64.Ifma
 open VG VG.X86_64
 open VG.Proof.Bignum (off word ofs Outside mask Frm wv)
 open VG.Proof.Bignum.X86_64 (Scr)
-open VG.Proof.Bignum.X86_64.Ifma.Pub (PubOk)
 open VG.Proof.MlKem.X86_64 (Keep)
 open VG.Impl.Rsa.X86_64.CrtIfma (mask52 at_)
-open VG.Impl.Rsa.X86_64.PubIfma (arr pay2048 pay3072 pay4096)
+open VG.Impl.Rsa.X86_64.PubIfma (arr pay1024 pay1536 pay2048 pay3072 pay4096)
 open VG.Impl.MillerRabin.X86_64.Ifma
 open VG.Impl.RsaKeyGen.X86_64.Candidate (aE aT0)
 open VG.Proof.RsaKeyGen (mrA mrE wEnd)
@@ -144,9 +143,9 @@ theorem hword_area {B H : Addr} {m m' : Mem} (f : Frm B [(0, size l)] m m') {d :
     exact .inr (by simp only [Nat.zero_add]; exact this)
 
 /-- `Pre` through the MXCSR slots. -/
-theorem pre_mx (hl : PubOk l) {B : Addr} {m m' : Mem} {c k bR : Nat} (hp : Pre l m B c k bR)
+theorem pre_mx (hl : MrOk l) {B : Addr} {m m' : Mem} {c k bR : Nat} (hp : Pre l m B c k bR)
     (f : Frm B [(oMx l, 8)] m m') : Pre l m' B c k bR := by
-  obtain ⟨-, hsz, h1, h2, h3, hTj, h4, h5, h6, h7, h8, -⟩ := PubOk.offs hl
+  obtain ⟨-, hsz, h1, h2, h3, hTj, h4, h5, h6, h7, h8, -⟩ := MrOk.offs hl
   have e1 := hTj 1
   have e4 := hTj 4
   have hN : l.NB + 32 < 2 ^ 31 := by unfold size oF at hsz; omega_arith
@@ -166,7 +165,7 @@ theorem pre_mx (hl : PubOk l) {B : Addr} {m m' : Mem} {c k bR : Nat} (hp : Pre l
 
 /-- The vector code: the table and the windows, under the MXCSR prologue and
 epilogue; the flag at `oF`. -/
-theorem vec_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b : Nat}
+theorem vec_ok (hl : MrOk l) {s : State} {B H : Addr} {c k b : Nat}
     (hB : s.gpr .rbx = B) (hdi : s.gpr .rdi = H) (h12 : s.gpr .r12 = mask52) (hs : Scr s B (size l))
     (hodd : c % 2 = 1) (h3 : 3 ≤ c) (hc : c < 2 ^ (64 * l.W))
     (hp : Pre l s.mem B c k (b * 2 ^ (64 * l.W) % c))
@@ -178,7 +177,7 @@ theorem vec_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b : Nat}
       word t.mem B (oF l) = mask (wEnd c (kRun 2 c b (mrE c) (32 * l.W) (32 * l.W))).2 ∧
       t.gpr .rbx = B ∧ t.gpr .rsp = s.gpr .rsp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       Frm B [(0, size l)] s.mem t.mem := by
-  obtain ⟨-, hsz, h1, h2, h3', hTj, h4, h5, h6, h7, h8, -⟩ := PubOk.offs hl
+  obtain ⟨-, hsz, h1, h2, h3', hTj, h4, h5, h6, h7, h8, -⟩ := MrOk.offs hl
   have e1 := hTj 1
   have e4 := hTj 4
   have hmx : oMx l + 8 ≤ size l := by unfold size oF; omega_arith
@@ -204,7 +203,7 @@ theorem vec_ok (hl : PubOk l) {s : State} {B H : Addr} {c k b : Nat}
       r ≠ .r13 → t.gpr r = s₁.gpr r := g₂
   have FA : Frm B [(0, size l)] s.mem t.mem :=
     (area_frm F₁ (one_r (p := fun r => r.1 + r.2 ≤ size l) hmx)).trans
-      (area_frm F₂ (one_r (p := fun r => r.1 + r.2 ≤ size l) (by have := (PubOk.ends hl).2.2; omega_arith)))
+      (area_frm F₂ (one_r (p := fun r => r.1 + r.2 ≤ size l) (by have := (MrOk.ends hl).2.2; omega_arith)))
   have e₂ : WEnv l B H c k b t :=
     ⟨(g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
         (by decide)).trans hB₁,
@@ -238,7 +237,7 @@ open VG.Impl.RsaKeyGen.X86_64.Candidate (aR1)
 /-- The setup, the vector code and the flag, from the prepared workspace at
 `H`: the passing flag in `rax`, the words at `rsp` in the callee-saved
 registers; only the table arrays change. -/
-theorem mid_ok (hl : PubOk l) {s : State} {H : Addr} {n c b : Nat}
+theorem mid_ok (hl : MrOk l) {s : State} {H : Addr} {n c b : Nat}
     (hdi : s.gpr .rdi = H) (hwr : (⟨H, 8 * n⟩ : Region) ∈ s.wr) (hn : H.toNat + 8 * n ≤ 2 ^ 64)
     (hsz : arr l 27 ≤ 8 * n) (hc : wv s.mem H (arr l aN) l.W = c) (h3 : 3 ≤ c) (hodd : c % 2 = 1)
     (hinv : ((word s.mem H (arr l aN)).toNat * (word s.mem H (8 * sMinv)).toNat + 1) % 2 ^ 64 = 0)
@@ -264,7 +263,7 @@ theorem mid_ok (hl : PubOk l) {s : State} {H : Addr} {n c b : Nat}
   have hEa : arr l aE = arr l (aT0 + 16) := rfl
   have hE27 : arr l aE + 8 * (l.W + 1) ≤ arr l 27 := by simp only [arr, aE]; omega_arith
   obtain ⟨hd, hd', hBd⟩ := areaBase_ofs hl hn'
-  have hsz' : size l < 2 ^ 31 := (PubOk.offs hl).2.1
+  have hsz' : size l < 2 ^ 31 := (MrOk.offs hl).2.1
   have hF8 : oF l + 8 ≤ size l := Nat.le_refl _
   refine VG.Proof.Bignum.X86_64.AmmSym.wp_seqs_app (by simp [setup]) (by simp) ?_
   refine WP.mono (setup_ok hl hdi hwr hn hsz hc h3 hinv hr1 hx)
@@ -335,7 +334,7 @@ theorem frame_at {S : Addr} {H : Addr} {N : Nat} (d : Nat) (hd : d + 8 ≤ 48) :
 open VG.Proof.Bignum.X86_64.MontFn (numAt_eq)
 
 /-- The round of a layout of the candidate's size. -/
-theorem ifma_ok (hl : PubOk l) {s : State} (h : roundPre s)
+theorem ifma_ok (hl : MrOk l) {s : State} (h : roundPre s)
     (hw : Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) = l.W) :
     WP isa (ifma l) s fun t =>
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ roundPost s t ∧
@@ -494,7 +493,7 @@ def Out (s t : State) : Prop :=
     roundPost s t
 
 /-- A layout's round, from a state of the dispatch. -/
-theorem ifma_out (hl : PubOk l) {s u : State} (h : roundPre s) (hm : u.mem = s.mem) (k : Keep [.rax] s u)
+theorem ifma_out (hl : MrOk l) {s u : State} (h : roundPre s) (hm : u.mem = s.mem) (k : Keep [.rax] s u)
     (hw : Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) = l.W) : WP isa (ifma l) u (Out s) := by
   have hu := pre_congr hm k h
   have hsp : u.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
@@ -526,40 +525,62 @@ theorem code_wp (v : RoundArith) (s : State) (h : roundPre s) : WP isa (code v.m
   have hg := hctx.good
   have hw31 : Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) < 2 ^ 31 := by have := hdim.w128; omega_arith
   unfold code
-  refine WP.seq (WP.mono (isW_ok 32 hg hdim.z (by decide) hw31) fun u₁ ⟨z₁, m₁, k₁⟩ => ?_)
-  refine WP.ite (decide (Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) = 32)) (by simp only [eval, z₁]) (fun hb => ifma_out (.inl rfl) h m₁ k₁ (of_decide_eq_true hb))
-    (fun _ => ?_)
-  have g₁ : VG.Proof.Bignum.X86_64.Good u₁ (s.gpr .rdi) ((s.gpr .rsi).toNat * 8)
+  have m₀ : s.mem = s.mem := rfl
+  have k₀ : Keep [.rax] s s := Keep.refl _ _
+  refine WP.seq (WP.mono (isW_ok 16 hg hdim.z (by decide) hw31) fun u1 ⟨z1, m1, k1⟩ => ?_)
+  have m1' : u1.mem = s.mem := m1.trans m₀
+  have k1' : Keep [.rax] s u1 := (k₀.trans k1).mono (by decide)
+  refine WP.ite (decide (Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) = 16)) (by simp only [eval, z1])
+    (fun hb => ifma_out (.inl rfl) h m1' k1' (of_decide_eq_true hb)) (fun _ => ?_)
+  have g1 : VG.Proof.Bignum.X86_64.Good u1 (s.gpr .rdi) ((s.gpr .rsi).toNat * 8)
       (Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi)) (word s.mem (s.gpr .rdi) (8 * sMinv)) :=
-    ⟨hg.scr.congr k₁.2.2, (k₁.gpr (by decide)).trans hg.rdi, by rw [m₁]; exact hg.hdr⟩
-  refine WP.seq (WP.mono (isW_ok 48 g₁ hdim.z (by decide) hw31) fun u₂ ⟨z₂, m₂, k₂⟩ => ?_)
-  have m₂' : u₂.mem = s.mem := m₂.trans m₁
-  have k₂' : Keep [.rax] s u₂ := (k₁.trans k₂).mono (by decide)
-  refine WP.ite (decide (Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) = 48)) (by simp only [eval, z₂]) (fun hb => ifma_out (.inr (.inl rfl)) h m₂' k₂' (of_decide_eq_true hb))
-    (fun _ => ?_)
-  have g₂ : VG.Proof.Bignum.X86_64.Good u₂ (s.gpr .rdi) ((s.gpr .rsi).toNat * 8)
+    ⟨hg.scr.congr k1'.2.2, (k1'.gpr (by decide)).trans hg.rdi, by rw [m1']; exact hg.hdr⟩
+  refine WP.seq (WP.mono (isW_ok 24 g1 hdim.z (by decide) hw31) fun u2 ⟨z2, m2, k2⟩ => ?_)
+  have m2' : u2.mem = s.mem := m2.trans m1'
+  have k2' : Keep [.rax] s u2 := (k1'.trans k2).mono (by decide)
+  refine WP.ite (decide (Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) = 24)) (by simp only [eval, z2])
+    (fun hb => ifma_out (.inr (.inl rfl)) h m2' k2' (of_decide_eq_true hb)) (fun _ => ?_)
+  have g2 : VG.Proof.Bignum.X86_64.Good u2 (s.gpr .rdi) ((s.gpr .rsi).toNat * 8)
       (Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi)) (word s.mem (s.gpr .rdi) (8 * sMinv)) :=
-    ⟨hg.scr.congr k₂'.2.2, (k₂'.gpr (by decide)).trans hg.rdi, by rw [m₂']; exact hg.hdr⟩
-  refine WP.seq (WP.mono (isW_ok 64 g₂ hdim.z (by decide) hw31) fun u₃ ⟨z₃, m₃, k₃⟩ => ?_)
-  have m₃' : u₃.mem = s.mem := m₃.trans m₂'
-  have k₃' : Keep [.rax] s u₃ := (k₂'.trans k₃).mono (by decide)
-  exact WP.ite (decide (Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) = 64)) (by simp only [eval, z₃]) (fun hb => ifma_out (.inr (.inr rfl)) h m₃' k₃' (of_decide_eq_true hb))
-    (fun _ => round_out v h m₃' k₃')
+    ⟨hg.scr.congr k2'.2.2, (k2'.gpr (by decide)).trans hg.rdi, by rw [m2']; exact hg.hdr⟩
+  refine WP.seq (WP.mono (isW_ok 32 g2 hdim.z (by decide) hw31) fun u3 ⟨z3, m3, k3⟩ => ?_)
+  have m3' : u3.mem = s.mem := m3.trans m2'
+  have k3' : Keep [.rax] s u3 := (k2'.trans k3).mono (by decide)
+  refine WP.ite (decide (Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) = 32)) (by simp only [eval, z3])
+    (fun hb => ifma_out (.inr (.inr (.inl rfl))) h m3' k3' (of_decide_eq_true hb)) (fun _ => ?_)
+  have g3 : VG.Proof.Bignum.X86_64.Good u3 (s.gpr .rdi) ((s.gpr .rsi).toNat * 8)
+      (Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi)) (word s.mem (s.gpr .rdi) (8 * sMinv)) :=
+    ⟨hg.scr.congr k3'.2.2, (k3'.gpr (by decide)).trans hg.rdi, by rw [m3']; exact hg.hdr⟩
+  refine WP.seq (WP.mono (isW_ok 48 g3 hdim.z (by decide) hw31) fun u4 ⟨z4, m4, k4⟩ => ?_)
+  have m4' : u4.mem = s.mem := m4.trans m3'
+  have k4' : Keep [.rax] s u4 := (k3'.trans k4).mono (by decide)
+  refine WP.ite (decide (Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) = 48)) (by simp only [eval, z4])
+    (fun hb => ifma_out (.inr (.inr (.inr (.inl rfl)))) h m4' k4' (of_decide_eq_true hb)) (fun _ => ?_)
+  have g4 : VG.Proof.Bignum.X86_64.Good u4 (s.gpr .rdi) ((s.gpr .rsi).toNat * 8)
+      (Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi)) (word s.mem (s.gpr .rdi) (8 * sMinv)) :=
+    ⟨hg.scr.congr k4'.2.2, (k4'.gpr (by decide)).trans hg.rdi, by rw [m4']; exact hg.hdr⟩
+  refine WP.seq (WP.mono (isW_ok 64 g4 hdim.z (by decide) hw31) fun u5 ⟨z5, m5, k5⟩ => ?_)
+  have m5' : u5.mem = s.mem := m5.trans m4'
+  have k5' : Keep [.rax] s u5 := (k4'.trans k5).mono (by decide)
+  exact WP.ite (decide (Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) = 64)) (by simp only [eval, z5])
+    (fun hb => ifma_out (.inr (.inr (.inr (.inr rfl)))) h m5' k5' (of_decide_eq_true hb)) (fun _ => round_out v h m5' k5')
 
 /-! ## The round's properties as a backend's -/
 
 /-- What the backend needs of a layout's code, checked together (the kernel
 builds the code once for both). -/
-theorem ifma_checks (hl : PubOk l) :
+theorem ifma_checks (hl : MrOk l) :
     ctlOk (ifma l) = true ∧ (ifma l).all (fun i => !isa.writesSp i) = true := by
-  rcases hl with rfl | rfl | rfl <;> lit_decide
+  rcases hl with rfl | rfl | rfl | rfl | rfl <;> lit_decide
 
-theorem ifma_ctl (hl : PubOk l) : ctlOk (ifma l) = true := (ifma_checks hl).1
+theorem ifma_ctl (hl : MrOk l) : ctlOk (ifma l) = true := (ifma_checks hl).1
 
 theorem code_ctl (v : RoundArith) : ctlOk (code v.mm) = true :=
   ctlOk_seq_of (by decide) (ctlOk_ite_of (ifma_ctl (.inl rfl)) (ctlOk_seq_of (by decide)
     (ctlOk_ite_of (ifma_ctl (.inr (.inl rfl))) (ctlOk_seq_of (by decide)
-      (ctlOk_ite_of (ifma_ctl (.inr (.inr rfl))) (ctlOk_of_noLoad v.mxSafe))))))
+      (ctlOk_ite_of (ifma_ctl (.inr (.inr (.inl rfl)))) (ctlOk_seq_of (by decide)
+        (ctlOk_ite_of (ifma_ctl (.inr (.inr (.inr (.inl rfl))))) (ctlOk_seq_of (by decide)
+          (ctlOk_ite_of (ifma_ctl (.inr (.inr (.inr (.inr rfl))))) (ctlOk_of_noLoad v.mxSafe))))))))))
 
 /-- The round with the IFMA layouts, `round mul` otherwise. -/
 theorem code_correct (v : RoundArith) (s : State) (h : roundPre s) :
@@ -567,7 +588,7 @@ theorem code_correct (v : RoundArith) (s : State) (h : roundPre s) :
   obtain ⟨tr, t, he, hr, hra, hp⟩ := code_wp v s h
   exact ⟨tr, t, he, ⟨hr, hra, Exec.ctl (code_ctl v) he⟩, hp⟩
 
-theorem ifma_sp (hl : PubOk l) : (ifma l).all (fun i => !isa.writesSp i) = true := (ifma_checks hl).2
+theorem ifma_sp (hl : MrOk l) : (ifma l).all (fun i => !isa.writesSp i) = true := (ifma_checks hl).2
 
 theorem all_seq {p : Instr → Bool} {a b : Prog isa} (ha : a.all p = true) (hb : b.all p = true) :
     (Code.seq a b).all p = true := by
@@ -581,16 +602,20 @@ theorem code_spSafe (v : RoundArith)
     (hr : (VG.Impl.MillerRabin.X86_64.round v.mm).all (fun i => !isa.writesSp i) = true) :
     (code v.mm).all (fun i => !isa.writesSp i) = true :=
   all_seq (by decide) (all_ite (ifma_sp (.inl rfl)) (all_seq (by decide) (all_ite (ifma_sp (.inr (.inl rfl)))
-    (all_seq (by decide) (all_ite (ifma_sp (.inr (.inr rfl))) hr)))))
+    (all_seq (by decide) (all_ite (ifma_sp (.inr (.inr (.inl rfl))))
+      (all_seq (by decide) (all_ite (ifma_sp (.inr (.inr (.inr (.inl rfl)))))
+        (all_seq (by decide) (all_ite (ifma_sp (.inr (.inr (.inr (.inr rfl))))) hr)))))))))
 
-theorem ifma_depth (hl : PubOk l) : (ifma l).x86_64Depth = 48 := by
-  rcases hl with rfl | rfl | rfl <;> lit_decide
+theorem ifma_depth (hl : MrOk l) : (ifma l).x86_64Depth = 48 := by
+  rcases hl with rfl | rfl | rfl | rfl | rfl <;> lit_decide
 
 theorem code_depth (v : RoundArith) (hd : (VG.Impl.MillerRabin.X86_64.round v.mm).x86_64Depth ≤ 120) :
     (code v.mm).x86_64Depth ≤ 120 := by
-  show max 0 (max (ifma pay2048).x86_64Depth (max 0 (max (ifma pay3072).x86_64Depth
-    (max 0 (max (ifma pay4096).x86_64Depth (VG.Impl.MillerRabin.X86_64.round v.mm).x86_64Depth))))) ≤ 120
-  rw [ifma_depth (.inl rfl), ifma_depth (.inr (.inl rfl)), ifma_depth (.inr (.inr rfl))]
+  show max 0 (max (ifma pay1024).x86_64Depth (max 0 (max (ifma pay1536).x86_64Depth
+    (max 0 (max (ifma pay2048).x86_64Depth (max 0 (max (ifma pay3072).x86_64Depth
+      (max 0 (max (ifma pay4096).x86_64Depth (VG.Impl.MillerRabin.X86_64.round v.mm).x86_64Depth))))))))) ≤ 120
+  rw [ifma_depth (.inl rfl), ifma_depth (.inr (.inl rfl)), ifma_depth (.inr (.inr (.inl rfl))),
+    ifma_depth (.inr (.inr (.inr (.inl rfl)))), ifma_depth (.inr (.inr (.inr (.inr rfl))))]
   omega_arith
 
 end VG.Proof.MillerRabin.X86_64.Ifma

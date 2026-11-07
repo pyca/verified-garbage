@@ -100,11 +100,14 @@ theorem checkCall_ct (name : String) : RelCT isa CheckRel (callWith name Generat
 
 /-! ## The derivation -/
 
-/-- Two runs about to call the derivation alike, with the same status. -/
+/-- Two runs about to call the derivation alike, with the same status, their
+domains checked. -/
 def DeriveRel (t₁ t₂ : State) : Prop :=
   ∃ s₁ s₂, KeyABI s₁ ∧ KeyABI s₂ ∧ pubOf s₁ = pubOf s₂ ∧ (rInput s₁).key = (rInput s₂).key ∧
     RReady s₁ t₁ ∧ RReady s₂ t₂ ∧ DeriveRegs s₁ t₁ ∧ DeriveRegs s₂ t₂ ∧
-    Spec.Dsa.signStatus (deriveResult s₁ t₁) = Spec.Dsa.signStatus (deriveResult s₂ t₂)
+    Spec.Dsa.signStatus (deriveResult s₁ t₁) = Spec.Dsa.signStatus (deriveResult s₂ t₂) ∧
+    Spec.Dsa.checkParametersBytes (rInput s₁).pLen (rInput s₁).qLen (rInput s₁).key = true ∧
+    Spec.Dsa.checkParametersBytes (rInput s₂).pLen (rInput s₂).qLen (rInput s₂).key = true
 
 theorem derive_pub {s₁ s₂ t₁ t₂ : State} (A₁ : KeyABI s₁) (A₂ : KeyABI s₂) (e : pubOf s₁ = pubOf s₂)
     (hk : (rInput s₁).key = (rInput s₂).key) (h₁ : RReady s₁ t₁) (h₂ : RReady s₂ t₂) (C₁ : DeriveRegs s₁ t₁)
@@ -127,25 +130,26 @@ theorem derive_pub {s₁ s₂ t₁ t₂ : State} (A₁ : KeyABI s₁) (A₂ : Ke
     · rw [dc_a3 A₁ h₁ C₁, dc_a3 A₂ h₂ C₂, pub_arg e 5 (by decide)]
     · rw [dc_a4 A₁ h₁ C₁, dc_a4 A₂ h₂ C₂, pub_arg e 6 (by decide)]
 
-theorem deriveCall_ct (name : String) : RelCT isa DeriveRel (callWith name Generate.deriveKey)
+theorem deriveCall_ct (name : String) : RelCT isa DeriveRel (callWith name Generate.deriveChecked)
     fun _ _ => True := by
   unfold callWith
   refine RelCT.frame (fun t₁ t₂ ⟨s₁, s₂, _, _, e, _, h₁, h₂, _⟩ => by rw [h₁.sp, h₂.sp, pub_sp e]) ?_
   intro a b ta tb a' b' hp ea eb
-  obtain ⟨t₁, t₂, ⟨s₁, s₂, A₁, A₂, e, hk, h₁, h₂, C₁, C₂, hr⟩, p₁, p₂⟩ := hp
+  obtain ⟨t₁, t₂, ⟨s₁, s₂, A₁, A₂, e, hk, h₁, h₂, C₁, C₂, hr, hc₁, hc₂⟩, p₁, p₂⟩ := hp
   rw [push_pushed (by decide) (call_sp_le A₁ h₁), Option.some.injEq] at p₁
   rw [push_pushed (by decide) (call_sp_le A₂ h₂), Option.some.injEq] at p₂
   subst p₁ p₂
-  refine RelCT.call (P := fun x y => x = pushed callPush t₁ ∧ y = pushed callPush t₂) (k := deriveArm)
-    (fun s hs => let ⟨t, s', e, ha, hp⟩ := derive_correct hs; ⟨t, s', e, ha, hp⟩) derive_constantTime
+  refine RelCT.call (P := fun x y => x = pushed callPush t₁ ∧ y = pushed callPush t₂) (k := deriveCheckedArm)
+    (fun s hs => let ⟨t, s', e, ha, hp⟩ := deriveChecked_correct hs; ⟨t, s', e, ha, hp⟩) deriveChecked_constantTime
     (deriveRd s₁) (deriveWr s₁) (fun _ _ ⟨r₁, r₂⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ ea eb
   subst r₁ r₂
   obtain ⟨c₁, w₁⟩ := derive_covers A₁ h₁
   obtain ⟨c₂, w₂⟩ := derive_covers A₂ h₂
-  have p₂ : deriveArm.pre (callEntryOf (deriveRd s₂) (deriveWr s₂) t₂) := derive_call_pre A₂ h₂ C₂
+  have p₂ : deriveCheckedArm.pre (callEntryOf (deriveRd s₂) (deriveWr s₂) t₂) :=
+    derive_call_checked A₂ h₂ C₂ (by rw [key_bytes A₂ h₂]; exact hc₂)
   have pb := derive_pub A₁ A₂ e hk h₁ h₂ C₁ C₂ hr
   rw [← pub_deriveRd e, ← pub_deriveWr e] at p₂ c₂ pb
   rw [← pub_deriveWr e] at w₂
-  exact ⟨derive_call_pre A₁ h₁ C₁, p₂, pb, c₁, w₁, c₂, w₂⟩
+  exact ⟨derive_call_checked A₁ h₁ C₁ (by rw [key_bytes A₁ h₁]; exact hc₁), p₂, pb, c₁, w₁, c₂, w₂⟩
 
 end VG.Proof.Dsa.Arm.Key

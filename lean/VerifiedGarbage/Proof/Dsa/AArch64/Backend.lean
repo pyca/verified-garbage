@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Spec.Dsa.DomainChecked
 public import VerifiedGarbage.Proof.Dsa.Contract
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
 public import VerifiedGarbage.Impl.Dsa.AArch64.PrevalidatedSign
@@ -52,6 +53,10 @@ structure Backend where
   validatePrivateVerified : Verified target (PrevalidatedSign.validate mul)
     (Spec.Dsa.validatePrivateKeyContract abi stack)
   validatePrivateSp : (PrevalidatedSign.validate mul).all (fun i => !isa.writesSp i) = true
+  deriveCheckedVerified : Verified target (Generate.deriveChecked mul)
+    (Spec.Dsa.deriveKeyDomainCheckedContract abi stack)
+  deriveCheckedSp : (Generate.deriveChecked mul).all (fun i => !isa.writesSp i) = true
+  deriveCheckedDepth : 16 * (Generate.deriveChecked mul).aarch64Depth ≤ stack
   stackBound : stack < 2 ^ 32
 
 end VG.Proof.Dsa.AArch64

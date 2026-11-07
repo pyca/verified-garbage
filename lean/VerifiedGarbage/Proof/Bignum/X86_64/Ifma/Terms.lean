@@ -195,10 +195,11 @@ theorem checkStep_2048 : ∀ i < lay2048.R, checkStep lay2048 i = true := by dec
 theorem checkStep_3072 : ∀ i < lay3072.R, checkStep lay3072 i = true := by decide +kernel
 theorem checkStep_4096 : ∀ i < lay4096.R, checkStep lay4096 i = true := by decide +kernel
 
-open VG.Impl.Rsa.X86_64.PubIfma (pay2048 pay3072 pay4096) in
-/-- The layouts the multiplication runs: the CRT's, and the public operation's. -/
+open VG.Impl.Rsa.X86_64.PubIfma (pay1024 pay1536 pay2048 pay3072 pay4096) in
+/-- The layouts the multiplication runs: the CRT's, the public operation's,
+and the one-lane layouts of 1024- and 1536-bit Miller–Rabin candidates. -/
 def AmmOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop :=
-  LayOk l ∨ l = pay2048 ∨ l = pay3072 ∨ l = pay4096
+  LayOk l ∨ l = pay2048 ∨ l = pay3072 ∨ l = pay4096 ∨ l = pay1024 ∨ l = pay1536
 
 theorem LayOk.amm {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : LayOk l) : AmmOk l := .inl hl
 
@@ -212,14 +213,21 @@ theorem checkStep_p3072 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay3072.R,
 theorem checkStep_p4096 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay4096.R,
     checkStep VG.Impl.Rsa.X86_64.PubIfma.pay4096 i = true := by decide +kernel
 
+theorem checkStep_p1024 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay1024.R,
+    checkStep VG.Impl.Rsa.X86_64.PubIfma.pay1024 i = true := by decide +kernel
+theorem checkStep_p1536 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay1536.R,
+    checkStep VG.Impl.Rsa.X86_64.PubIfma.pay1536 i = true := by decide +kernel
+
 theorem checkStep_ok {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : AmmOk l) : ∀ i < l.R, checkStep l i = true := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl
   · exact checkStep_2048
   · exact checkStep_3072
   · exact checkStep_4096
   · exact checkStep_p2048
   · exact checkStep_p3072
   · exact checkStep_p4096
+  · exact checkStep_p1024
+  · exact checkStep_p1536
 
 theorem run_ammStep {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : AmmOk l) {i : Nat} (hi : i < l.R) :
     ∃ σ, ESym.init.run (lim l) (ammStep l i) = some σ ∧ ∀ r < 32, σ.reg r = expReg l i r := by

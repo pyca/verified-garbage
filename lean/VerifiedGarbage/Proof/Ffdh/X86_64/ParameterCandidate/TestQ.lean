@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 
 `phaseTest_ok`: one modulus's witnesses, then what follows if they pass.
 p's first witness (`testFirst_ok`), then q's (`testQ_ok`), then p's others
-(`testP_ok`), after q's trial division (`sieveQ_ok`).
+(`testP_ok`), after q's trial division (`sieveQ_ok`) and p's (`sieveP_ok`).
 -/
 
 @[expose] public section
@@ -128,6 +128,39 @@ theorem testFirst_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   phaseTest_ok M R K false .first _ h (p.odd_P (by omega_using [h.base.bits1])) (shape_prep h hdi havail)
     fun u t ht hdt _ => testQ_ok M R K ht hdt havail hq
 
+theorem sieveP_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+    {p : CandidateP} {used : Nat} {s : State}
+    (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length)
+    (hq : p.Q % 2 = 1) :
+    WP isa (sieveP M.mm R.code K.run) s (PhasePost p used (sievedP p (p.rand.drop used)) s) := by
+  unfold sieveP
+  simp only [seqs]
+  refine WP.seq (WP.mono (shapeOriginal_ok h hdi havail) fun s₁ ⟨h₁, hd₁, hv₁, hs₁, hf₁, k₁, _⟩ => ?_)
+  refine WP.seq (WP.mono (phaseSetup_state_ok h₁ hd₁ false .all)
+    fun s₂ ⟨mi, h₂, hg₂, hp₂, hs₂, hf₂, k₂, ho₂⟩ => ?_)
+  refine WP.seq (WP.mono (loadOutput_ok h₂ hg₂ hp₂ (by rw [ho₂]; exact hv₁))
+    fun s₃ ⟨h₃, hg₃, hp₃, hn₃, hs₃, hf₃, k₃, _⟩ => ?_)
+  refine WP.seq (WP.mono (primeCheck_state_ok h₃ hg₃ hp₃ hn₃)
+    fun s₄ ⟨h₄, hg₄, hp₄, hn₄, hz₄, hs₄, hf₄, k₄, _⟩ => ?_)
+  have hs := ((hs₁.trans hs₂).trans hs₃).trans hs₄
+  have hf := ((hf₁.trans hf₂).trans hf₃).trans hf₄
+  have kk : Keep (.rdi :: mmRegs) s s₄ := (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)
+  refine WP.ite (p.sieved p.P) (by simpa [eval, CandidateP.phaseValue, CandidateP.sieved] using hz₄) ?_ ?_
+  · intro hshape
+    refine WP.seq (WP.mono (leavePhase_ok h₄ hg₄.rdi hp₄.link)
+      fun s₅ ⟨h₅, hd₅, _, hs₅, hf₅, k₅⟩ => ?_)
+    refine WP.mono (testFirst_ok M R K h₅ hd₅ havail hq)
+      fun t ⟨n, hn, ht, hdt, hr, hvt, hst, hft, kt⟩ => ?_
+    exact ⟨n, hn, ht, hdt, by simpa only [sievedP, hshape, ite_true] using hr, hvt,
+      (hs.trans hs₅).trans hst, (hf.trans hf₅).trans hft, ((kk.trans k₅).trans kt).mono (by decide)⟩
+  · intro hshape
+    refine WP.mono (innerStatus_ok h₄ hg₄.rdi hp₄.link (n := 2) (by decide))
+      fun t ⟨ht, hdt, hst, hsave, hframe, kt⟩ => ?_
+    exact ⟨0, Nat.zero_le _, by simpa only [Nat.add_zero] using ht, hdt,
+      by simpa only [sievedP, hshape, Bool.false_eq_true, ite_false] using tape_reject (used := used) hst,
+      fun he => by rw [hst] at he; contradiction,
+      hs.trans hsave, hf.trans hframe, (kk.trans kt).mono (by decide)⟩
+
 theorem sieveQ_ok (M : Mont) (R : R2Impl M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State}
     (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length)
@@ -149,7 +182,7 @@ theorem sieveQ_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   · intro hshape
     refine WP.seq (WP.mono (leavePhase_ok h₄ hg₄.rdi hp₄.link)
       fun s₅ ⟨h₅, hd₅, _, hs₅, hf₅, k₅⟩ => ?_)
-    refine WP.mono (testFirst_ok M R K h₅ hd₅ havail (odd_of_sieved hshape))
+    refine WP.mono (sieveP_ok M R K h₅ hd₅ havail (odd_of_sieved hshape))
       fun t ⟨n, hn, ht, hdt, hr, hvt, hst, hft, kt⟩ => ?_
     exact ⟨n, hn, ht, hdt, by simpa only [sievedPolicy, hshape, ite_true] using hr, hvt,
       (hs.trans hs₅).trans hst, (hf.trans hf₅).trans hft, ((kk.trans k₅).trans kt).mono (by decide)⟩
