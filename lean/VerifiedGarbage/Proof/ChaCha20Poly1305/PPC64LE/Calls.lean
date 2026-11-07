@@ -77,8 +77,9 @@ theorem block_call {s : State} {S B : Addr} (h3 : s.gpr .r3 = S) (h4 : s.gpr .r4
 
 /-! ## `vg_chacha20_xor` -/
 
+/-- `vg_chacha20_xor` in place (`Proof.ChaCha20.PPC64LE.Xor.xor_call`). -/
 theorem xor_call {s : State} {S D B : Addr} {n : Nat} (h3 : s.gpr .r3 = S) (h4 : s.gpr .r4 = D)
-    (h5 : s.gpr .r5 = BitVec.ofNat 64 n) (h6 : s.gpr .r6 = B) (hn : n < 2 ^ 64)
+    (h5 : s.gpr .r5 = BitVec.ofNat 64 n) (h6 : s.gpr .r6 = B) (h7 : s.gpr .r7 = D) (hn : n < 2 ^ 64)
     (hSD : (⟨S, 64⟩ : Region).Disjoint ⟨D, n⟩)
     (hSB : (⟨S, 64⟩ : Region).Disjoint ⟨B, 320⟩)
     (hDB : (⟨D, n⟩ : Region).Disjoint ⟨B, 320⟩) (hD : D.toNat + n ≤ 2 ^ 64)
@@ -89,23 +90,9 @@ theorem xor_call {s : State} {S D B : Addr} {n : Nat} (h3 : s.gpr .r3 = S) (h4 :
       Spec.ChaCha20.bytesAt s'.mem D n =
         List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem D n)
           (keystream (stateAt s.mem S) n) → Q s') :
-    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Xor.xor) s Q := by
-  have hn' : (BitVec.ofNat 64 n).toNat = n := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
-  refine WP.call (k := Proof.ChaCha20.xorPPC64LE) Proof.ChaCha20.PPC64LE.Xor.xor_correct
-    (rd := []) (wr := [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩]) ?_ hc hw ?_
-  · simp only [Proof.ChaCha20.xorPPC64LE, State.withRegions_gpr, State.withRegions_rd,
-      State.withRegions_wr, State.callEntry_gpr s (by decide : Reg.r3 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.r4 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.r5 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.r6 ∉ linkRegs), h3, h4, h5, h6, hn']
-    exact ⟨trivial, trivial, hSD, hSB, hDB, hD⟩
-  · intro s' hrd hwr hsp hf hcs _ hpost
-    simp only [Proof.ChaCha20.xorPPC64LE, State.withRegions_gpr, State.withRegions_mem,
-      State.callEntry_mem, State.callEntry_gpr s (by decide : Reg.r3 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.r4 ∉ linkRegs),
-      State.callEntry_gpr s (by decide : Reg.r5 ∉ linkRegs), h3, h4, h5, hn'] at hpost
-    exact hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ hpost
+    WP isa (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Xor.xor) s Q :=
+  Proof.ChaCha20.PPC64LE.Xor.xor_call h3 h4 h5 h6 h7 hn hSD hSB hDB hD hc hw
+    fun s' hrd hwr hsp hf hcs _ hpost => hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ hpost
 
 /-! ## `vg_poly1305_init` -/
 

@@ -93,29 +93,32 @@ structure Args (s₀ s : State) : Prop where
   r4 : s.gpr .r4 = dp s₀ + BitVec.ofNat 64 (H s₀)
   r5 : s.gpr .r5 = BitVec.ofNat 64 (64 * NB s₀)
   r6 : s.gpr .r6 = st s₀ + BitVec.ofNat 64 256
+  r7 : s.gpr .r7 = dp s₀ + BitVec.ofNat 64 (H s₀)
   rd : s.rd = []
   wr : s.wr = [stR s₀, dR s₀]
 
 theorem args_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) :
     WP isa (.block blocksArgs) s (Args s₀) :=
-  WP.mono (args_exec h.r24 (h.w hp) (by rw [h.rd, hp.rd])) fun _ ⟨_, r3₁, r4₁, r6₁, r5₁, _, _, _, _, rd₁, wr₁⟩ =>
-    ⟨r3₁, by rw [r4₁, h.r25], by rw [r5₁, h.r5], r6₁, by rw [rd₁, h.rd, hp.rd], by rw [wr₁, h.wr, hp.wr]⟩
+  WP.mono (args_exec h.r24 (h.w hp) (by rw [h.rd, hp.rd])) fun _ ⟨_, r3₁, r4₁, r6₁, r5₁, _, _, _, r7₁, _, rd₁, wr₁⟩ =>
+    ⟨r3₁, by rw [r4₁, h.r25], by rw [r5₁, h.r5], r6₁, by rw [r7₁, h.r25], by rw [rd₁, h.rd, hp.rd],
+      by rw [wr₁, h.wr, hp.wr]⟩
 
 theorem Args.covers {s₀ s : State} (h : Args s₀ s) :
-    Covers ([] ++ [cpR s₀, blR s₀, wkR s₀]) (s.rd ++ s.wr) ∧ Covers [cpR s₀, blR s₀, wkR s₀] s.wr := by
-  have hcov : ∀ r ∈ [cpR s₀, blR s₀, wkR s₀], ∃ r' ∈ [stR s₀, dR s₀], ∃ o,
+    Covers ([blR s₀] ++ [cpR s₀, blR s₀, wkR s₀]) (s.rd ++ s.wr) ∧ Covers [cpR s₀, blR s₀, wkR s₀] s.wr := by
+  have hcov : ∀ r ∈ [blR s₀, cpR s₀, blR s₀, wkR s₀], ∃ r' ∈ [stR s₀, dR s₀], ∃ o,
       r.base = r'.base + BitVec.ofNat 64 o ∧ o + r.len ≤ r'.len := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨dR s₀, by simp, H s₀, rfl, HNB_le s₀⟩
     · exact ⟨stR s₀, by simp, 192, rfl, by simp⟩
     · exact ⟨dR s₀, by simp, H s₀, rfl, HNB_le s₀⟩
     · exact ⟨stR s₀, by simp, 256, rfl, by simp⟩
-  exact ⟨by rw [h.rd, h.wr, List.nil_append, List.nil_append]; exact Covers.of_sub hcov,
-    by rw [h.wr]; exact Covers.of_sub hcov⟩
+  exact ⟨by rw [h.rd, h.wr, List.nil_append]; exact Covers.of_sub hcov,
+    by rw [h.wr]; exact Covers.of_sub fun r hr => hcov r (List.mem_cons_of_mem _ hr)⟩
 
 theorem Args.pre {s₀ s : State} (hp : APre s₀) (h : Args s₀ s) :
-    Proof.ChaCha20.xorPPC64LE.pre (s.callEntry.withRegions [] [cpR s₀, blR s₀, wkR s₀]) := by
+    Proof.ChaCha20.xorPPC64LE.pre (s.callEntry.withRegions [blR s₀] [cpR s₀, blR s₀, wkR s₀]) := by
   have hL := L_lt s₀
   have hH := H_le s₀
   have hHNB := HNB_le s₀
@@ -127,10 +130,12 @@ theorem Args.pre {s₀ s : State} (hp : APre s₀) (h : Args s₀ s) :
   simp only [Proof.ChaCha20.xorPPC64LE, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, callEntry_gpr' s (by decide : Reg.r3 ∉ linkRegs),
     callEntry_gpr' s (by decide : Reg.r4 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.r5 ∉ linkRegs),
-    callEntry_gpr' s (by decide : Reg.r6 ∉ linkRegs), h.r3, h.r4, h.r5, h.r6, hn]
-  exact ⟨trivial, trivial, (hp.st_d.sub_left (cpR_sub s₀)).sub_right (blR_sub s₀),
-    Offset.disjoint _ (by omega) (by omega) (by omega),
-    (hp.st_d.sub_left (wkR_sub s₀)).symm.sub_left (blR_sub s₀), hwrap⟩
+    callEntry_gpr' s (by decide : Reg.r6 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.r7 ∉ linkRegs),
+    h.r3, h.r4, h.r5, h.r6, h.r7, hn]
+  have hSD : (cpR s₀).Disjoint (blR s₀) := (hp.st_d.sub_left (cpR_sub s₀)).sub_right (blR_sub s₀)
+  have hDB : (blR s₀).Disjoint (wkR s₀) := (hp.st_d.sub_left (wkR_sub s₀)).symm.sub_left (blR_sub s₀)
+  exact ⟨trivial, trivial, hSD, hSD, Offset.disjoint _ (by omega) (by omega) (by omega), hDB, hDB,
+    .inl trivial, hwrap, hwrap⟩
 
 /-! ## The call of the block function -/
 
@@ -223,7 +228,7 @@ theorem xor_rel :
   have ecp : cpR b = cpR a := by simp only [cpR, h.hst]
   have ebl : blR b = blR a := by simp only [blR, h.hdp, h.eqH, h.eqNB]
   have ewk : wkR b = wkR a := by simp only [wkR, h.hst]
-  refine RelCT.call Proof.ChaCha20.PPC64LE.Xor.xor_correct Proof.ChaCha20.PPC64LE.Xor.xor_ct []
+  refine RelCT.call Proof.ChaCha20.PPC64LE.Xor.xor_correct Proof.ChaCha20.PPC64LE.Xor.xor_ct [blR a]
     [cpR a, blR a, wkR a] fun x y ⟨⟨hx, sx⟩, ⟨hy, sy⟩⟩ => ?_
   have py := hy.pre h.pb
   have cy := hy.covers
@@ -234,8 +239,10 @@ theorem xor_rel :
     callEntry_gpr' x (by decide : Reg.r5 ∉ linkRegs), callEntry_gpr' x (by decide : Reg.r6 ∉ linkRegs),
     callEntry_gpr' y (by decide : Reg.r3 ∉ linkRegs), callEntry_gpr' y (by decide : Reg.r4 ∉ linkRegs),
     callEntry_gpr' y (by decide : Reg.r5 ∉ linkRegs), callEntry_gpr' y (by decide : Reg.r6 ∉ linkRegs),
-    hx.r3, hx.r4, hx.r5, hx.r6, hy.r3, hy.r4, hy.r5, hy.r6, h.hst, h.hdp, h.eqH, h.eqNB, sx, sy, h.hsp]
-  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
+    callEntry_gpr' x (by decide : Reg.r7 ∉ linkRegs), callEntry_gpr' y (by decide : Reg.r7 ∉ linkRegs),
+    hx.r3, hx.r4, hx.r5, hx.r6, hx.r7, hy.r3, hy.r4, hy.r5, hy.r6, hy.r7, h.hst, h.hdp, h.eqH, h.eqNB,
+    sx, sy, h.hsp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
 
 theorem part2_rel :
     RelCT isa (fun x y => Sp Q1 a x ∧ Sp Q1 b y) part2 fun x y => Sp Q2 a x ∧ Sp Q2 b y := by
