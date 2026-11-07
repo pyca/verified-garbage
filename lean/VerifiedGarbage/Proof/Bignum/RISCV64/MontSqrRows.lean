@@ -24,6 +24,25 @@ namespace VG.Proof.Bignum.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Impl.Bignum.RISCV64
 
+/-- The arithmetic of a step, in `sqrMac`'s order: `x` added into the
+product's low word first and `c` last, the two carries into its high word,
+make `x + p q + c`, below `2¹²⁸`. -/
+theorem sqr_chain (x p q c : BitVec 64) :
+    (p * q + x + c).toNat +
+      2 ^ 64 * (BitVec.ofNat 64 (p.toNat * q.toNat / 2 ^ 64) + (if p * q + x < x then 1 else 0) +
+        (if p * q + x + c < c then 1 else 0)).toNat =
+      x.toNat + p.toNat * q.toNat + c.toNat := by
+  have hx := x.isLt
+  have hp := p.isLt
+  have hq := q.isLt
+  have hc := c.isLt
+  have hP : p.toNat * q.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  simp only [BitVec.toNat_add (_ + _), BitVec.toNat_add (BitVec.ofNat 64 _), carry_toNat]
+  simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat]
+  by_cases h1 : 2 ^ 64 ≤ p.toNat * q.toNat % 2 ^ 64 + x.toNat <;>
+    by_cases h2 : 2 ^ 64 ≤ (p.toNat * q.toNat % 2 ^ 64 + x.toNat) % 2 ^ 64 + c.toNat <;>
+    simp only [h1, h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
+
 theorem sqr_rem8 (n : Nat) (h : n < 2 ^ 64) :
     BitVec.ofNat 64 n &&& BitVec.ofNat 64 7 = BitVec.ofNat 64 (n % 8) := by
   apply BitVec.eq_of_toNat_eq
