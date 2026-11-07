@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.Vec
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Glue
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTIfma
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Region
 import VerifiedGarbage.Proof.Bignum.FrameTrim
@@ -10,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.Vec
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Glue
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTIfma
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Region
 meta import VerifiedGarbage.Proof.Bignum.FrameTrim
@@ -270,10 +274,89 @@ theorem head_mid (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : Bit
   exact ⟨⟨SubCtx.of_frmW hc hT fW (expRanges_ok l.W) k.2.2 (k.gpr (by decide)), ho, arr, nw, below sp hsp,
     below sl hsl, he.congr iS k.2.1 k.2.2, fW⟩, k⟩
 
-/-- `Ifma.exp` of a one-lane layout, for the prime's `W` words and an
-exponent of at most `8 W` bytes: `CrtExpL.ok`'s claims, but its frame also
-covers `sCtr` (which it restores: `exp_ok`). -/
-theorem expW_ok (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitVec 64} {X x : Nat} {Q : Prop}
+/-! ## The pieces' hypotheses, in a chain
+
+As `CrtIfma`'s `ifma_chain`: each piece's hypotheses about its public data
+(`BPub`, as `EPre`), and that the piece leads to the next's (`C0` to `C4`),
+to `Final`, which holds what the exponentiation gives for the ghost values
+`Gh` that only correctness needs. The constant time follows the chain. -/
+
+/-- The values only correctness needs: the start, the modulus, the base,
+the claim of the congruences, and the exponent. -/
+structure Gh where
+  s₀ : State
+  X : Nat
+  x : Nat
+  Q : Prop
+  eb : List Byte
+
+/-- The region's public data. -/
+def regP (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) : RegPub :=
+  ⟨p.x.B, p.x.Z, p.x.o, p.x.o + oArea l, p.ptr, p.len⟩
+
+/-- The vector code's public data. -/
+def vP (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) : Addr × Nat × Nat × Nat :=
+  (p.x.B, p.x.Z, p.x.o, p.x.o + oArea l)
+
+/-- The result's public data. -/
+def resP (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) : ResPub := ⟨p.x.B, p.x.Z, p.x.o, p.x.o + oArea l⟩
+
+/-- What `head` reads. -/
+def HPre (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) (s : State) : Prop :=
+  Scr s p.x.B p.x.Z ∧ s.gpr .rdi = off p.x.B p.x.o ∧ word s.mem (off p.x.B p.x.o) (8 * sLink) = p.x.B ∧
+    p.x.o + slot l.W 8 ≤ p.x.Z
+
+/-- What `tail` reads. -/
+def TPre (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) (s : State) : Prop :=
+  Scr s p.x.B p.x.Z ∧ s.gpr .rdi = off p.x.B p.x.o ∧
+    word s.mem (off p.x.B p.x.o) (8 * sIfma) = off p.x.B (p.x.o + oArea l) ∧ p.x.o + slot l.W 8 ≤ p.x.o + oArea l ∧
+    p.x.o + oArea l + oSv l + 8 ≤ p.x.Z
+
+/-- What the exponentiation gives. -/
+def Final (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) (g : Gh) (t : State) : Prop :=
+  wv t.mem (off p.x.B p.x.o) (slot l.W Public.aY) l.W < g.X ∧
+    (g.Q → wv t.mem (off p.x.B p.x.o) (slot l.W Public.aY) l.W % g.X =
+      g.x ^ Spec.Rsa.os2ip g.eb * 2 ^ (64 * l.W) % g.X) ∧
+    Frm (off p.x.B p.x.o) (expRanges l.W) g.s₀.mem t.mem ∧
+    word t.mem (off p.x.B p.x.o) (8 * sCtr) = word g.s₀.mem (off p.x.B p.x.o) (8 * sCtr) ∧
+    t.wr = g.s₀.wr ∧ t.gpr .rdi = g.s₀.gpr .rdi ∧ Keep mmRegs g.s₀ t
+
+/-- Before `tail`. -/
+def C4 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) (g : Gh) (t : State) : Prop :=
+  TPre l p t ∧ WP isa (.block (tail l)) t (Final l p g)
+
+/-- Before the result. -/
+def C3 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) (g : Gh) (t : State) : Prop :=
+  ResPre l 0 (resP l p) t ∧ WP isa (seqs (result l 0)) t (C4 l p g)
+
+/-- Before the vector code. -/
+def C2 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : BPub) (g : Gh) (t : State) : Prop :=
+  VPre (vP l p) t ∧ WP isa (seqs [.block [.mov .rbx (.mem (hdr sIfma))], Impl.Ffdh.X86_64.Ifma.vec l]) t (C3 l p g)
+
+/-- Before the region. -/
+def C1 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (sp sl : Nat) (p : BPub) (g : Gh) (t : State) : Prop :=
+  RegPre l 0 sp sl (regP l p) t ∧ WP isa (seqs (region l 0 sp sl)) t (C2 l p g)
+
+/-- Before `head`. -/
+def C0 (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (sp sl : Nat) (p : BPub) (g : Gh) (t : State) : Prop :=
+  HPre l p t ∧ WP isa (.block (head l sl)) t (C1 l sp sl p g)
+
+theorem exp_eq (sp sl : Nat) : exp l sp sl = [.block (head l sl)] ++ (region l 0 sp sl ++
+    ([.block [.mov .rbx (.mem (hdr sIfma))], Impl.Ffdh.X86_64.Ifma.vec l] ++ (result l 0 ++ [.block (tail l)]))) := by
+  simp only [exp, List.append_assoc]
+
+/-- The chain runs the exponentiation. -/
+theorem C0.wp {sp sl : Nat} {p : BPub} {g : Gh} {s : State} (h : C0 l sp sl p g s) :
+    WP isa (seqs (exp l sp sl)) s (Final l p g) := by
+  rw [exp_eq]
+  refine wp_seqs_append (by simp) (by simp [region, k1, copyArr]) (WP.mono h.2 fun s₁ h₁ => ?_)
+  refine wp_seqs_append (by simp [region, k1, copyArr]) (by simp) (WP.mono h₁.2 fun s₂ h₂ => ?_)
+  refine wp_seqs_append (by simp) (by simp [result]) (WP.mono h₂.2 fun s₃ h₃ => ?_)
+  exact wp_seqs_append (by simp [result]) (by simp) (WP.mono h₃.2 fun s₄ h₄ => h₄.2)
+
+/-- The chain of `Ifma.exp` of a one-lane layout, for the prime's `W`
+words and an exponent of at most `8 W` bytes. -/
+theorem expW_chain (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitVec 64} {X x : Nat} {Q : Prop}
     (hc : SubCtx s B Z o w l.W minv) (hT : o + slot l.W 8 + wsTab l.W ≤ Z)
     (hn : wv s.mem (off B o) (slot l.W Public.aN) l.W = X)
     (hinv : ((word s.mem (off B o) (slot l.W Public.aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
@@ -285,12 +368,7 @@ theorem expW_ok (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitV
     {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
     (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
     (hL1 : 1 ≤ eb.length) (hLW : eb.length ≤ 8 * l.W) (he : Src s B Z ep eb) :
-    WP isa (seqs (exp l sp sl)) s fun t =>
-      wv t.mem (off B o) (slot l.W Public.aY) l.W < X ∧
-      (Q → wv t.mem (off B o) (slot l.W Public.aY) l.W % X = x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * l.W) % X) ∧
-      Frm (off B o) (expRanges l.W) s.mem t.mem ∧
-      word t.mem (off B o) (8 * sCtr) = word s.mem (off B o) (8 * sCtr) ∧
-      t.wr = s.wr ∧ t.gpr .rdi = s.gpr .rdi ∧ Keep mmRegs s t := by
+    C0 l sp sl ⟨⟨B, Z, o, w, l.W⟩, ep, eb.length⟩ ⟨s, X, x, Q, eb⟩ s := by
   obtain ⟨hA, hn1, hw4, hE, hP, hND, hv, hSt, hSv, hW1, hW2, hP31, hD31⟩ := PubOk.sizes hl
   have hla := hl.amm
   have hs := hc.scr
@@ -305,20 +383,21 @@ theorem expW_ok (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitV
   have haZ : o + oArea l + l.nl * l.D + 8 ≤ Z := by omega_using [hnD, hA, hT, hv, hSv]
   have hoZ : o < 2 ^ 64 := by omega_using [hnw, hT, hS8]
   have hER := expRanges_ok l.W
-  rw [show exp l sp sl = [.block (head l sl)] ++ (region l 0 sp sl ++ ([.block [.mov .rbx (.mem (hdr sIfma))],
-      Impl.Ffdh.X86_64.Ifma.vec l] ++ (result l 0 ++ [.block (tail l)]))) by simp only [exp, List.append_assoc]]
-  refine wp_seqs_append (by simp) (by simp [region, k1, copyArr]) (WP.mono (head_mid hl hc hT hsp hsl hel hLW he)
-    fun s₁ ⟨mi₁, k₁⟩ => ?_)
+  dsimp only [C0, HPre]
+  refine ⟨⟨hs, hc.rdi, hc.link, by omega_using [hT]⟩, WP.mono (head_mid hl hc hT hsp hsl hel hLW he)
+    fun s₁ ⟨mi₁, k₁⟩ => ?_⟩
   have hN₁ : wv s₁.mem (off B o) (slot l.W Public.aN) l.W = X := by rw [mi₁.arr _ (by decide)]; exact hn
   have hY₁ : wv s₁.mem (off B o) (slot l.W Public.aY) l.W = wv s.mem (off B o) (slot l.W Public.aY) l.W :=
     mi₁.arr _ (by decide)
   have hX₁ : wv s₁.mem (off B o) (slot l.W Crt.aXc) l.W = wv s.mem (off B o) (slot l.W Crt.aXc) l.W :=
     mi₁.arr _ (by decide)
   -- the region
-  refine wp_seqs_append (by simp [region, k1, copyArr]) (by simp) (WP.mono
+  dsimp only [C1, regP]
+  refine ⟨regPre_of (by omega_using [hA]) haZ (by omega_using [hn1]) hsp hsl hL1 (by omega_using [hLW, hE]) mi₁.sub
+    mi₁.ho.ia hN₁ (by rw [hY₁]; exact hyl) (mi₁.pv.trans hep) (mi₁.lv.trans hel) mi₁.src, WP.mono
     (region_ok hla (p := 0) mi₁.sub mi₁.ho.ia (by omega_using [hA]) haZ (by omega_using [hn1]) hN₁
       (by rw [hY₁]; exact hyl) hsp hsl (mi₁.pv.trans hep) (mi₁.lv.trans hel) mi₁.src hL1 (by omega_using [hLW, hE]))
-    fun s₂ ⟨ro, f₂, wr₂, di₂, k₂⟩ => ?_)
+    fun s₂ ⟨ro, f₂, wr₂, di₂, k₂⟩ => ?_⟩
   have hdi₁ : s₁.gpr .rdi = off B o := mi₁.sub.rdi
   have hk1 : ∀ r ∈ k1Ranges l.W, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot l.W 8 := by
     have := slot_le (w := l.W) (show Public.aAcc < 8 by decide)
@@ -372,9 +451,10 @@ theorem expW_ok (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitV
   have hs₂ := sub₂.scr
   have hld₂ : InRegions (s₂.rd ++ s₂.wr) (off (off B o) (8 * sIfma)) 8 := by
     rw [off_off]; exact hs₂.ld (by unfold sIfma sFn; omega_using [hT, hS8, hT'])
-  refine wp_seqs_append (by simp) (by simp [result]) (WP.seq (WP.mono (WP.keep [.rbx] (Q := fun u =>
+  dsimp only [C2, vP]
+  refine ⟨vPre_of hs₂ sub₂.rdi ia₂ (by omega_using [hT, hS8]), WP.seq (WP.mono (WP.keep [.rbx] (Q := fun u =>
     u.gpr .rbx = off B (o + oArea l) ∧ u.mem = s₂.mem ∧ u.mxcsr = s₂.mxcsr) (by
-      xrun [State.ea, hdr, sub₂.rdi, hdrOff, hld₂, ia₂]; rfl) rfl) fun s₃ ⟨⟨bx₃, me₃, mx₃⟩, k₃⟩ => ?_))
+      xrun [State.ea, hdr, sub₂.rdi, hdrOff, hld₂, ia₂]; rfl) rfl) fun s₃ ⟨⟨bx₃, me₃, mx₃⟩, k₃⟩ => ?_)⟩
   have hs₃ : Scr s₃ B Z := hs₂.congr k₃.2.2
   have h0 : ∀ p < l.nl, p = 0 := fun p hp => by omega_using [hp, hn1]
   have hXp : 0 < X := by omega_using [hodd]
@@ -443,8 +523,10 @@ theorem expW_ok (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitV
       (by omega_using [lN, hnw, hT, hoZ])
   obtain ⟨gY, cY⟩ := v₄ 0 (by omega_using [hn1])
   -- the result into `aY`
-  refine wp_seqs_append (by simp [result]) (by simp) (WP.mono (result_ok hla (p := 0) sub₄.scr sub₄.rdi sub₄.hdr ia₄
-    (by omega_using [hA]) haZ (by omega_using [hn1]) hN₄ gY.lt gY.v) fun s₅ ⟨vY, f₅, d₅, k₅⟩ => ?_)
+  dsimp only [C3, resP]
+  refine ⟨resPre_of sub₄.scr sub₄.rdi sub₄.hdr ia₄ (by omega_using [hA]) haZ (by omega_using [hn1]) gY.lt
+    (by rw [hN₄]; exact gY.v), WP.mono (result_ok hla (p := 0) sub₄.scr sub₄.rdi sub₄.hdr ia₄
+    (by omega_using [hA]) haZ (by omega_using [hn1]) hN₄ gY.lt gY.v) fun s₅ ⟨vY, f₅, d₅, k₅⟩ => ?_⟩
   have f₅' : Frm (off B o) (resRanges l) s₄.mem s₅.mem := Frm.unshift f₅ hoZ
   have f₅W : Frm (off B o) (expRanges l.W) s₄.mem s₅.mem := f₅'.mono fun r h => by
     simp only [resRanges, List.mem_cons, List.not_mem_nil, or_false] at h
@@ -471,8 +553,10 @@ theorem expW_ok (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitV
     exact ia₄
   have hs₅ : Scr s₅ B Z := sub₄.scr.congr k₅.2.2
   -- `sCtr` back
-  refine WP.mono (tail_ok hl hs₅ (d₅.trans sub₄.rdi) ia₅ sv₅ (by omega_using [hA]) (by omega_using [hA, hv, hSv, hT]))
-    fun t ⟨me₆, k₆⟩ => ?_
+  dsimp only [C4, TPre]
+  refine ⟨⟨hs₅, d₅.trans sub₄.rdi, ia₅, by omega_using [hA], by omega_using [hA, hv, hSv, hT]⟩,
+    WP.mono (tail_ok hl hs₅ (d₅.trans sub₄.rdi) ia₅ sv₅ (by omega_using [hA]) (by omega_using [hA, hv, hSv, hT]))
+    fun t ⟨me₆, k₆⟩ => ?_⟩
   have hC : 8 * sCtr + 8 ≤ 2 ^ 64 := by unfold sCtr sFn; omega_using []
   have f₆ : Frm (off B o) [(8 * sCtr, 8)] s₅.mem t.mem := by
     rw [me₆]; exact Frm.of_outside (writeW_outside _ _ _ hC) (List.mem_singleton.mpr rfl)
@@ -486,6 +570,7 @@ theorem expW_ok (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitV
     (fun h => hr (by subst h; decide)) (fun h => hr (by subst h; decide)) (fun h => hr (by subst h; decide))
     (fun h => hr (by subst h; decide)) (fun h => hr (by subst h; decide)) (fun h => hr (by subst h; decide))
     (fun h => hr (by subst h; decide)), rd₄, wr₄⟩
+  dsimp only [Final]
   refine ⟨?_, fun q => ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hY₆, vY]; exact Nat.mod_lt _ hXp
   · rw [hY₆, vY, Nat.mod_mod, cY q, Nat.mul_mod, hY₁, hyc q, ← Nat.mul_mod]
@@ -495,6 +580,30 @@ theorem expW_ok (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitV
   · rw [k₆.2.2, k₅.2.2, wr₄', wr₂, k₁.2.2]
   · rw [k₆.gpr (by decide), d₅, sub₄.rdi, hc.rdi]
   · exact ((((k₁.trans k₂).trans k₃).trans hk₄).trans k₅).trans k₆ |>.mono (by decide)
+
+
+/-- `Ifma.exp` of a one-lane layout, for the prime's `W` words and an
+exponent of at most `8 W` bytes: `CrtExpL.ok`'s claims, but its frame also
+covers `sCtr` (which it restores: `exp_ok`). -/
+theorem expW_ok (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : BitVec 64} {X x : Nat} {Q : Prop}
+    (hc : SubCtx s B Z o w l.W minv) (hT : o + slot l.W 8 + wsTab l.W ≤ Z)
+    (hn : wv s.mem (off B o) (slot l.W Public.aN) l.W = X)
+    (hinv : ((word s.mem (off B o) (slot l.W Public.aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
+    (hodd : X % 2 = 1)
+    (hxl : wv s.mem (off B o) (slot l.W Crt.aXc) l.W < X)
+    (hxc : Q → wv s.mem (off B o) (slot l.W Crt.aXc) l.W % X = x * 2 ^ (64 * l.W) % X)
+    (hyl : wv s.mem (off B o) (slot l.W Public.aY) l.W < X)
+    (hyc : Q → wv s.mem (off B o) (slot l.W Public.aY) l.W % X = 2 ^ (64 * l.W) % X)
+    {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
+    (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
+    (hL1 : 1 ≤ eb.length) (hLW : eb.length ≤ 8 * l.W) (he : Src s B Z ep eb) :
+    WP isa (seqs (exp l sp sl)) s fun t =>
+      wv t.mem (off B o) (slot l.W Public.aY) l.W < X ∧
+      (Q → wv t.mem (off B o) (slot l.W Public.aY) l.W % X = x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * l.W) % X) ∧
+      Frm (off B o) (expRanges l.W) s.mem t.mem ∧
+      word t.mem (off B o) (8 * sCtr) = word s.mem (off B o) (8 * sCtr) ∧
+      t.wr = s.wr ∧ t.gpr .rdi = s.gpr .rdi ∧ Keep mmRegs s t :=
+  C0.wp (expW_chain hl hc hT hn hinv hodd hxl hxc hyl hyc hsp hsl hep hel hL1 hLW he)
 
 /-- `fits`: ZF, whether the workspace has `l.W` words and the exponent at
 most `8 l.W` bytes. -/
