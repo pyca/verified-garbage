@@ -11,9 +11,9 @@ import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # FFDH parameter generation on x86-64: generator policy at the p phase
 
-The check accepts p only if, besides the generator's congruence, neither 3,
-5 nor 7 divides p or q = (p − 1)/2 (and q is odd), all of which the trial
-division of p and q that follows would reject: `congruent_sieved`. -/
+The check accepts p only if, besides the generator's congruence, q =
+(p − 1)/2 is odd and neither 3, 5 nor 17 divides p or q, all of which the
+trial division of p and q that follows would reject: `congruent_sieved`. -/
 
 @[expose] public section
 
@@ -28,39 +28,35 @@ implies it) and `screen`. -/
 def CandidateP.congruent (p : CandidateP) : Bool :=
   Spec.Ffdh.generationShape p.bits p.gen p.P && screen p.gen p.P
 
-private theorem fin2 : ∀ r < 840, r % 2 = 1 ∧ r % 24 = 11 ∧ r % 5 ≠ 0 ∧ r % 7 ≠ 0 ∧
-    (r - 1) / 2 % 5 ≠ 0 ∧ (r - 1) / 2 % 7 ≠ 0 → r ∈ allowed2 := by decide +kernel
-
-private theorem fin5 : ∀ r < 420, r % 2 = 1 ∧ (r % 10 = 3 ∨ r % 10 = 7) ∧ r % 3 ≠ 0 ∧ r % 7 ≠ 0 ∧
-    (r - 1) / 2 % 2 = 1 ∧ (r - 1) / 2 % 3 ≠ 0 ∧ (r - 1) / 2 % 7 ≠ 0 → r ∈ allowed5 := by
+private theorem fin2 : ∀ r < 255, r % 3 = 2 ∧ 2 ≤ r % 5 ∧ 2 ≤ r % 17 → r ∈ allowed2 := by
   decide +kernel
 
-private theorem tab012 : VG.Impl.RsaKeyGen.tabEntry 0 = 3 ∧ VG.Impl.RsaKeyGen.tabEntry 1 = 5 ∧
-    VG.Impl.RsaKeyGen.tabEntry 2 = 7 := by
+private theorem fin5 : ∀ r < 255, r % 3 = 2 ∧ (r % 5 = 2 ∨ r % 5 = 3) ∧ 2 ≤ r % 17 → r ∈ allowed5 := by
+  decide +kernel
+
+private theorem tab_small : VG.Impl.RsaKeyGen.tabEntry 0 = 3 ∧ VG.Impl.RsaKeyGen.tabEntry 1 = 5 ∧
+    VG.Impl.RsaKeyGen.tabEntry 5 = 17 := by
   unfold VG.Impl.RsaKeyGen.tabEntry VG.Impl.RsaKeyGen.slots
   rw [VG.Impl.RsaKeyGen.primes.lit_eq]
   exact ⟨rfl, rfl, rfl⟩
 
 private theorem small_of_primeShape {v : Nat} (hv : 8161 < v) (ho : v % 2 = 1)
-    (h : Spec.Ffdh.primeShape v = true) : v % 3 ≠ 0 ∧ v % 5 ≠ 0 ∧ v % 7 ≠ 0 := by
+    (h : Spec.Ffdh.primeShape v = true) : v % 3 ≠ 0 ∧ v % 5 ≠ 0 ∧ v % 17 ≠ 0 := by
   rw [VG.Proof.Ffdh.ParameterCandidate.primeShape_sieve hv ho] at h
   simp only [Bool.not_eq_eq_eq_not, Bool.not_true, List.any_eq_false, List.mem_range, beq_iff_eq] at h
-  obtain ⟨h3, h5, h7⟩ := tab012
+  obtain ⟨h3, h5, h17⟩ := tab_small
   exact ⟨by simpa only [h3] using h 0 (by decide), by simpa only [h5] using h 1 (by decide),
-    by simpa only [h7] using h 2 (by decide)⟩
+    by simpa only [h17] using h 5 (by decide)⟩
 
 private theorem odd_of_primeShape {v : Nat} (h : Spec.Ffdh.primeShape v = true) : v % 2 = 1 := by
   unfold Spec.Ffdh.primeShape at h
   exact beq_iff_eq.mp ((Bool.and_eq_true _ _).mp ((Bool.and_eq_true _ _).mp h).1).2
 
-private theorem half840 {P : Nat} (h : P % 2 = 1) :
-    (P % 840 - 1) / 2 % 5 = (P - 1) / 2 % 5 ∧ (P % 840 - 1) / 2 % 7 = (P - 1) / 2 % 7 := by
-  omega
-
-private theorem half420 {P : Nat} (h : P % 2 = 1) :
-    (P % 420 - 1) / 2 % 2 = (P - 1) / 2 % 2 ∧ (P % 420 - 1) / 2 % 3 = (P - 1) / 2 % 3 ∧
-      (P % 420 - 1) / 2 % 7 = (P - 1) / 2 % 7 := by
-  omega
+/-- q = (p − 1)/2 is divisible by an odd s exactly when p ≡ 1 mod s. -/
+private theorem half3 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 3 ≠ 0) : P % 3 ≠ 1 := by omega
+private theorem half5 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 5 ≠ 0) : P % 5 ≠ 1 := by omega
+private theorem half17 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 17 ≠ 0) : P % 17 ≠ 1 := by omega
+private theorem half2 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 2 = 1) : P % 4 = 3 := by omega
 
 /-- A candidate with the generator's congruence whose p and q have the
 sieved shape passes `screen`. -/
@@ -69,34 +65,38 @@ theorem screen_of_shape {bits generator P : Nat} (hgen : generator = 2 ∨ gener
     (hs : Spec.Ffdh.generationShape bits generator P = true)
     (hp : Spec.Ffdh.primeShape P = true) (hq : Spec.Ffdh.primeShape ((P - 1) / 2) = true) :
     screen generator P = true := by
-  obtain ⟨p3, p5, p7⟩ := small_of_primeShape hP hodd hp
+  obtain ⟨p3, p5, p17⟩ := small_of_primeShape hP hodd hp
   have qodd := odd_of_primeShape hq
-  obtain ⟨q3, q5, q7⟩ := small_of_primeShape hQ qodd hq
-  have mm := fun (m k : Nat) (h : k ∣ m) => Nat.mod_mod_of_dvd P h
+  obtain ⟨q3, q5, q17⟩ := small_of_primeShape hQ qodd hq
+  have e3 := half3 hodd q3
+  have e5 := half5 hodd q5
+  have e17 := half17 hodd q17
+  have e4 := half2 hodd qodd
+  have hr : P % 255 < 255 := Nat.mod_lt _ (by decide)
+  have m3 : P % 255 % 3 = P % 3 := Nat.mod_mod_of_dvd P (by decide)
+  have m5 : P % 255 % 5 = P % 5 := Nat.mod_mod_of_dvd P (by decide)
+  have m17 : P % 255 % 17 = P % 17 := Nat.mod_mod_of_dvd P (by decide)
   rcases hgen with rfl | rfl
   · have h24 : P % 24 = 11 := by
       unfold Spec.Ffdh.generationShape at hs
       simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq, ite_true] at hs
       exact hs.2
-    have hr : P % 840 < 840 := Nat.mod_lt _ (by decide)
-    have hscreen : screen 2 P = decide (P % 840 ∈ allowed2) := ite_eq_left_of_eq_true _ _ (eq_true rfl)
-    rw [hscreen]
-    obtain ⟨e5, e7⟩ := half840 hodd
-    exact decide_eq_true <| fin2 (P % 840) hr ⟨(mm 840 2 (by decide)).trans hodd,
-      (mm 840 24 (by decide)).trans h24, (mm 840 5 (by decide)).symm ▸ p5,
-      (mm 840 7 (by decide)).symm ▸ p7, e5 ▸ q5, e7 ▸ q7⟩
+    have h8 : P % 8 = 3 := by omega_using [h24]
+    have hscreen : screen 2 P = (decide (P % 8 = 3) && decide (P % 255 ∈ allowed2)) :=
+      ite_eq_left_of_eq_true _ _ (eq_true rfl)
+    rw [hscreen, h8, show decide ((3 : Nat) = 3) = true from rfl, Bool.true_and]
+    exact decide_eq_true <| fin2 (P % 255) hr ⟨by omega_using [m3, p3, e3], by omega_using [m5, p5, e5],
+      by omega_using [m17, p17, e17]⟩
   · have h10 : P % 10 = 3 ∨ P % 10 = 7 := by
       unfold Spec.Ffdh.generationShape at hs
       simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq, Bool.or_eq_true,
         show ((5 : Nat) == 2) = false from rfl, Bool.false_eq_true, ite_false, true_and] at hs
       exact hs.2
-    have hr : P % 420 < 420 := Nat.mod_lt _ (by decide)
-    have hscreen : screen 5 P = decide (P % 420 ∈ allowed5) := ite_eq_right_of_eq_false _ _ (eq_false (by decide))
-    rw [hscreen]
-    obtain ⟨e2, e3, e7⟩ := half420 hodd
-    exact decide_eq_true <| fin5 (P % 420) hr ⟨(mm 420 2 (by decide)).trans hodd,
-      (mm 420 10 (by decide)).symm ▸ h10, (mm 420 3 (by decide)).symm ▸ p3,
-      (mm 420 7 (by decide)).symm ▸ p7, e2.trans qodd, e3 ▸ q3, e7 ▸ q7⟩
+    have hscreen : screen 5 P = (decide (P % 4 = 3) && decide (P % 255 ∈ allowed5)) :=
+      ite_eq_right_of_eq_false _ _ (eq_false (by decide))
+    rw [hscreen, e4, show decide ((3 : Nat) = 3) = true from rfl, Bool.true_and]
+    exact decide_eq_true <| fin5 (P % 255) hr ⟨by omega_using [m3, p3, e3], by omega_using [m5, h10],
+      by omega_using [m17, p17, e17]⟩
 
 /-- Rejecting by `screen` before the sieve rejects nothing the sieve accepts. -/
 theorem congruent_sieved {p : CandidateP} (hb : 512 ≤ p.bits) (hgen : p.gen = 2 ∨ p.gen = 5) :
