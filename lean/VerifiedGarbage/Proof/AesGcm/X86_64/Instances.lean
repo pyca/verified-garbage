@@ -52,6 +52,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 public import VerifiedGarbage.Proof.Gcm.Prepared16Contract
+import VerifiedGarbage.Proof.Framework.X86_64.WidenArray
 
 /-!
 # AES-GCM on x86-64: the functions a variant's artifacts are built from
@@ -705,5 +706,115 @@ theorem openToCodeR16_spAll (v : GcmVariant) (r : R16 v) :
   unfold openToCodeR16; split
   · exact OpenToSplit.openToSel_spAll _ v.impl.copyW _ _ (openFnR16 v r).spAll (openSplitFnR16 v).spAll
   · exact OpenTo.openTo_spAll v.impl.copyW _ (openFnR16 v r).spAll
+
+/-! ## The prepared contracts of every implementation
+
+The implementations that read only the key context of `vg_aes_gcm_init`
+(256 bytes) are proven against the contracts of the `*_prepared` functions,
+whose 1024-byte context begins with it (`Verified.widenFirstArray`); those
+that read its first sixteen prepared powers (`*_prepared16`) are proven
+against them too, as `PreparedPowersRepr` implies `PreparedPowers16Repr`.
+So every implementation has the prepared functions, and their dispatchers a
+baseline. -/
+/-- A context of 24 prepared pairs holds the first 8. -/
+theorem preparedPowers16Repr_of {m : Mem} {p : Addr} (h : Spec.Gcm.PreparedPowersRepr m p) :
+    Spec.Gcm.PreparedPowers16Repr m p :=
+  fun k hk => h k (by omega)
+
+/-! ## From the key context -/
+
+theorem sealPrepared_of_base {c : Prog X86_64.isa}
+    (h : Verified X86_64.target c (Proof.AesGcm.sealRoundsContract X86_64.abi 2624)) :
+    Verified X86_64.target c (Proof.AesGcm.sealPreparedRoundsContract X86_64.abi 2624) :=
+  VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 128) (by decide) h
+    (fun _ _ _ _ _ _ _ _ _ _ h => h.1) sealFrameSatPrepared_pre
+
+theorem openPrepared_of_base {c : Prog X86_64.isa}
+    (h : Verified X86_64.target c (Proof.AesGcm.openRoundsContract X86_64.abi 2632)) :
+    Verified X86_64.target c (Proof.AesGcm.openPreparedRoundsContract X86_64.abi 2632) :=
+  VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 128) (by decide) h
+    (fun _ _ _ _ _ _ _ _ _ _ _ h => h.1) openFrameSatPrepared_pre
+
+theorem streamEncryptPrepared_of_base {c : Prog X86_64.isa}
+    (h : Verified X86_64.target c (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608)) :
+    Verified X86_64.target c (Proof.AesGcm.streamEncryptPreparedRoundsContract X86_64.abi 2608) :=
+  VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 128) (by decide) h
+    (fun _ _ _ _ _ _ _ _ h => h.1) streamEncryptFrameSatPrepared_pre
+
+theorem streamDecryptPrepared_of_base {c : Prog X86_64.isa}
+    (h : Verified X86_64.target c (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608)) :
+    Verified X86_64.target c (Proof.AesGcm.streamDecryptPreparedRoundsContract X86_64.abi 2608) :=
+  VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 128) (by decide) h
+    (fun _ _ _ _ _ _ _ _ h => h.1) streamDecryptFrameSatPrepared_pre
+
+theorem sealGatherPrepared_of_base {c : Prog X86_64.isa}
+    (h : Verified X86_64.target c (Proof.AesGcm.sealGatherRoundsContract X86_64.abi 5128)) :
+    Verified X86_64.target c (Proof.AesGcm.sealGatherPreparedRoundsContract X86_64.abi 5128) :=
+  VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 128) (by decide) h
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1⟩) Gather.gatherFrameSatPrepared_pre
+
+/-- The instance of `vg_aes_gcm_open_prepared` of an implementation that
+reads only the key context. -/
+def openFnW (v : GcmImpl) : OpenTo.OpenFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  .ofPrepared ⟨Spec.Gcm.openPreparedApi.name ++ v.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode v.callees)⟩
+    (openPrepared_of_base (openSel_framed v Short.shortFacts))
+    (X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkB))
+    (StreamTo.framed_xdepth (openCode_xdepth v v.blkB)) (StreamTo.framed_mx (openCode_mx v v.blkB))
+
+/-! ## From sixteen prepared powers -/
+
+theorem sealPrepared_of_16 {c : Prog X86_64.isa}
+    (h : Verified X86_64.target c (Proof.AesGcm.sealPrepared16RoundsContract X86_64.abi 2624)) :
+    Verified X86_64.target c (Proof.AesGcm.sealPreparedRoundsContract X86_64.abi 2624) :=
+  VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 128) (by decide) h
+    (fun _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, preparedPowers16Repr_of h.2⟩) sealFrameSatPrepared_pre
+
+theorem openPrepared_of_16 {c : Prog X86_64.isa}
+    (h : Verified X86_64.target c (Proof.AesGcm.openPrepared16RoundsContract X86_64.abi 2632)) :
+    Verified X86_64.target c (Proof.AesGcm.openPreparedRoundsContract X86_64.abi 2632) :=
+  VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 128) (by decide) h
+    (fun _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, preparedPowers16Repr_of h.2⟩) openFrameSatPrepared_pre
+
+theorem streamEncryptPrepared_of_16 {c : Prog X86_64.isa}
+    (h : Verified X86_64.target c
+      (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608)) :
+    Verified X86_64.target c (Proof.AesGcm.streamEncryptPreparedRoundsContract X86_64.abi 2608) :=
+  VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 128) (by decide) h
+    (fun _ _ _ _ _ _ _ _ h => ⟨h.1, preparedPowers16Repr_of h.2⟩)
+    streamEncryptFrameSatPrepared_pre
+
+theorem streamDecryptPrepared_of_16 {c : Prog X86_64.isa}
+    (h : Verified X86_64.target c
+      (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608)) :
+    Verified X86_64.target c (Proof.AesGcm.streamDecryptPreparedRoundsContract X86_64.abi 2608) :=
+  VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 128) (by decide) h
+    (fun _ _ _ _ _ _ _ _ h => ⟨h.1, preparedPowers16Repr_of h.2⟩)
+    streamDecryptFrameSatPrepared_pre
+
+theorem sealGatherPrepared_of_16 {c : Prog X86_64.isa}
+    (h : Verified X86_64.target c
+      (Proof.AesGcm.sealGatherPrepared16RoundsContract X86_64.abi 5128)) :
+    Verified X86_64.target c (Proof.AesGcm.sealGatherPreparedRoundsContract X86_64.abi 5128) :=
+  VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 128) (by decide) h
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1, preparedPowers16Repr_of h.2.2⟩)
+    Gather.gatherFrameSatPrepared_pre
+
+theorem openToPrepared_of_16 {c : Prog X86_64.isa} {stack : Nat}
+    (h : Verified X86_64.target c (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi stack))
+    (hs : ∃ s, (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi stack).pre s) :
+    Verified X86_64.target c (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi stack) :=
+  VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 128) (by decide) h
+    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1, preparedPowers16Repr_of h.2.2⟩) hs
+
+/-- `vg_aes_gcm_open_to_prepared16` of a variant, against the prepared
+contract. -/
+theorem openToCodeR16_prepared (v : GcmVariant) (r : R16 v) :
+    Verified X86_64.target (openToCodeR16 v r)
+      (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi (openToStackR16 v)) := by
+  refine openToPrepared_of_16 (openToCodeR16_verified v r) ?_
+  unfold openToStackR16; split
+  · exact OpenToSplit.toSatP2776_pre
+  · exact OpenTo.toSatP_pre
 
 end VG.Proof.AesGcm.X86_64
