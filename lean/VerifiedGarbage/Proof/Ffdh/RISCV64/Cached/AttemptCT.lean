@@ -28,6 +28,7 @@ import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.ContextRows
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
 -- separate module: the constant-time proof, apart from the correctness proof's chain of modules
 
 /-!

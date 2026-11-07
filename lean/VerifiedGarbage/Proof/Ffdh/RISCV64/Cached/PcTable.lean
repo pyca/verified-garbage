@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Rsa.FixedBaseCombMont
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
 -- separate module: the precompute's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
 /-! # FFDH's context on RISC-V: the comb's table

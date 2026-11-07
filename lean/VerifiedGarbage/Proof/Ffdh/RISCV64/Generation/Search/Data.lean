@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
 
 /-! # The parameter search's contract, public data, loop states and writes (RISC-V)
 

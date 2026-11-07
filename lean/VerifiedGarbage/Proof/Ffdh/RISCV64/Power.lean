@@ -310,8 +310,8 @@ end VG.Proof.Ffdh.RISCV64
 ## FFDH's exchange on RISC-V: p, its check and `R² mod p`
 
 `loadN_X`, `check1_X`, `check2_X`: p into array 0 (`X2`), then whether it
-is a valid modulus, in `s0` (`X4`). `r2t_ok`: `Precompute.r2`, as
-`r2_ok`, also leaving `-p⁻¹ mod 2⁶⁴` in `t1`.
+is a valid modulus, in `s0` (`X4`). `r2t_ok`: `Precompute.r2`, `R² mod p`
+in array 1, also leaving `-p⁻¹ mod 2⁶⁴` in `t1`.
 -/
 
 namespace VG.Proof.Ffdh.RISCV64
@@ -395,7 +395,9 @@ theorem loadP_X {x : XD} {s : State} (h : Base x s) : WP isa loadP s fun t => X4
   refine WP.mono (check2_X h2) fun t ⟨h4, m4⟩ => ⟨h4, ?_⟩
   rw [m4, m2]; exact a1
 
-/-- `Precompute.r2`, as `r2_ok`, with `-n⁻¹ mod 2⁶⁴` in `t1`. -/
+/-- `Precompute.r2`: `x := R² mod n = 2^(128 w) mod n` in array 1, for an odd
+`n` of `w` words, at least `2^(64 (w − 1))`, in array 0, changing only arrays
+1–3, with `-n⁻¹ mod 2⁶⁴` in `t1`. -/
 theorem r2t_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     (h2 : s.gpr .a2 = off B (slot w 1)) (h5 : s.gpr .a5 = off B (slot w 2)) (h6 : s.gpr .a6 = off B (slot w 3))
     (h7 : s.gpr .a7 = off B (slot w 0)) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)

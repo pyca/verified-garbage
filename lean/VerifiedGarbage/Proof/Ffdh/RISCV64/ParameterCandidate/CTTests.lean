@@ -35,7 +35,7 @@ open VG VG.RISCV64 VG.RISCV64.Taint VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Big
   VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
 open VG.RISCV64.Steps (eval_zero eval_nonzero eval_zero_ofNat eval_nonzero_ofNat)
-open VG.Impl.MillerRabin.RISCV64 VG.Impl.MillerRabin.RISCV64.Search
+open VG.Impl.MillerRabin.RISCV64 VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
 open VG.Proof.MillerRabin.RISCV64 (RoundImpl A)
 open VG.Proof.Bignum.RISCV64.Pre (Two Pins two_post two_taint)
 open VG.Impl.Bignum.RISCV64.PublicChecked (base)
@@ -198,13 +198,13 @@ def DR (d : DrawD) (t : State) : Prop :=
 
 theorem round_ct {R : RoundImpl} (hR : RoundCall R) :
     RelCT isa (Two fun d s => (DMd d s ∧ decide (wA d.mb d.q.r d.u < 2) = false) ∧
-      decide (¬ wA d.mb d.q.r d.u < d.N - 1) = false) (Search.round R.name R.code) fun _ _ => True := by
+      decide (¬ wA d.mb d.q.r d.u < d.N - 1) = false) (VG.Impl.Ffdh.RISCV64.Search.round R.name R.code) fun _ _ => True := by
   have hrc : ∀ d s, ((DMd d s ∧ decide (wA d.mb d.q.r d.u < 2) = false) ∧
       decide (¬ wA d.mb d.q.r d.u < d.N - 1) = false) → RC (rcOf d) s := by
     rintro d s ⟨⟨⟨sv, h, _⟩, h2⟩, hN⟩
     simp only [decide_eq_false_iff_not, Decidable.not_not] at h2 hN
     exact h.rc (by show wA d.mb d.q.r d.u < d.N; omega)
-  unfold Search.round
+  unfold VG.Impl.Ffdh.RISCV64.Search.round
   refine RelCT.seq (two_post (two_map rcOf hrc hR.ct) (Ψ := DR) fun d s h => ?_) ?_
   · exact WP.mono (hR.ok _ s (hrc d s h)) fun t ht => ⟨ht.a0, ht.prep.s6⟩
   refine two_ite' (fun d => decide ((if Proof.MillerRabin.Round.round d.N (wA d.mb d.q.r d.u) then 1 else 0) = 0))

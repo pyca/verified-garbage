@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.Ffdh.GenerationBounds
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
 
 /-! # The parameter search's correctness (RISC-V)
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.MillerRabin.RISCV64.Search
+public import VerifiedGarbage.Impl.Ffdh.RISCV64.Search
 public import VerifiedGarbage.Impl.RsaKeyGen.RISCV64.Trial
 
 /-!
@@ -52,12 +52,13 @@ namespace VG.Impl.Ffdh.RISCV64.ParameterCandidate
 
 open VG VG.RISCV64 VG.Impl.Bignum VG.Impl.Bignum.RISCV64
 open VG.Impl.Bignum.RISCV64.Precompute (loadN)
-open VG.Impl.MillerRabin.RISCV64.Search
+open VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
 
 /-! ## Header words
 
-The prime search's words are `Impl.MillerRabin.RISCV64.Search`'s; these are
-the candidate's own (the words it leaves to its caller). -/
+The prime search's words are `Impl.MillerRabin.RISCV64.Search`'s and
+`Impl.Ffdh.RISCV64.Search`'s; these are the candidate's own (the words it
+leaves to its caller). -/
 
 def hOut : Nat := 2
 def hLen : Nat := 3
@@ -146,7 +147,7 @@ def residue : Prog isa :=
 
 /-- The sieve: `hBad |= ` the flag of an odd prime below 256 dividing
 array 0. -/
-def sieve : Prog isa := VG.Impl.MillerRabin.RISCV64.Search.sieve oddPrimes256
+def sieve : Prog isa := VG.Impl.Ffdh.RISCV64.Search.sieve oddPrimes256
 
 /-- RSA's trial division (`Spec.RsaKeyGen.obviouslyComposite`): `hBad |=`
 the flag of one of the first 512 entries of `VG_RSA_KEYGEN_TRIAL32` (1024

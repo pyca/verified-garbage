@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Search
 
 -- separate module: the candidate's shape checks, whose symbolic executions the tests' changes need not re-check
 
@@ -43,8 +44,8 @@ variable {C : Nat}
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
 open VG.RISCV64.Steps (eval_zero eval_zero_ofNat)
-open VG.Impl.MillerRabin.RISCV64.Search
-open VG.Proof.MillerRabin.RISCV64.Search (rw_self frm_writeW shl3_ofNat smallMod_ok smRegs bad_post sieve_ok trRegs)
+open VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
+open VG.Proof.Ffdh.RISCV64.Search (rw_self frm_writeW shl3_ofNat smallMod_ok smRegs bad_post sieve_ok trRegs)
 open VG.Impl.Bignum.RISCV64.Precompute (loadN)
 
 theorem slot_zero (w : Nat) : slot w 0 = 256 := by simp [slot, hdrBytes]
@@ -554,7 +555,7 @@ theorem MB.sieve {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB p 
   have hZe : p.Z = 8 * p.n := rfl
   have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
   have hZw : slot (wOf p.bits) 0 + 8 * wOf p.bits ≤ p.Z := by rw [hsl]; omega_arith
-  refine WP.mono_syms (WP.rdwr (sieve_ok oddPrimes256 VG.Proof.MillerRabin.RISCV64.Search.oddPrimes256_bounds
+  refine WP.mono_syms (WP.rdwr (sieve_ok oddPrimes256 VG.Proof.Ffdh.RISCV64.Search.oddPrimes256_bounds
     h.st.scr h.st.s6 h.ph.a7 h.ph.t0 h.n (by omega_arith) (by omega_arith) hZw (by rw [hsl]) (by omega_arith)))
     fun t ⟨⟨⟨hb, f⟩, k⟩, _, _, tsp⟩ sy => ?_
   obtain ⟨st, ph, hU⟩ := shapeStep h.st h.ph h.u f (fun r hr => .inl (List.mem_singleton.mp hr)) k tsp

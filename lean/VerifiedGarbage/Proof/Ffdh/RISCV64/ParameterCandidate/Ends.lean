@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.RISCV64.Search
 
 -- separate module: the entry, the end and the exit, whose symbolic executions the tests' changes need not re-check
 
@@ -33,8 +34,8 @@ namespace VG.Proof.Ffdh.RISCV64.ParameterCandidate
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
-open VG.Impl.MillerRabin.RISCV64.Search
-open VG.Proof.MillerRabin.RISCV64.Search (rw_self frm_writeW shl3_ofNat)
+open VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
+open VG.Proof.Ffdh.RISCV64.Search (rw_self frm_writeW shl3_ofNat)
 
 /-! ## The entry -/
 
