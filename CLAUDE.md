@@ -77,7 +77,9 @@ own changes are rebuilt either way, on top of the restored build.
   architecture's jobs alone must cover every line that architecture builds
   (`ci/merge_rust_coverage.py`). Add tests or delete dead code; only exclude
   lines that genuinely cannot run, between `// NO-COVERAGE-START` and
-  `// NO-COVERAGE-END`, with a comment saying why. A branch that only one
+  `// NO-COVERAGE-END`, with a comment saying why (a generated dispatcher no
+  test reaches at all, one the library does not call, is not counted: one it
+  calls must have every line covered). A branch that only one
   pointer width or architecture takes is a `cfg`, not a test at run time,
   and a test helper only some architectures call is built only for them.
   A pull request starts the Rust jobs (`ci/rust_matrix.toml`) of only the
