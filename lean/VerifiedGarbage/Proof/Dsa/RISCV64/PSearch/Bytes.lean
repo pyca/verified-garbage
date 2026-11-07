@@ -286,12 +286,19 @@ theorem arrs_fit {L j : Nat} (hj : j < nArrs) :
   simp only [kz, S, nArrs, arr] at *
   omega
 
+/-- Words read past a `Frame` that leaves their region alone. -/
+theorem wordsVal_frame {m m' : Mem} {base : Addr} {d n : Nat} {rs : List Region} {r : Region}
+    (F : Frame rs m m') (inside : r.Contains (VG.Proof.Mont.off base d) (8 * n))
+    (apart : ∀ other ∈ rs, r.Disjoint other) (fit : 8 * n < 2 ^ 64) :
+    VG.Proof.Mont.wordsVal m' base d n = VG.Proof.Mont.wordsVal m base d n := by
+  rw [VG.Proof.Bignum.wordsVal_read, VG.Proof.Bignum.wordsVal_read, F.read inside apart fit]
+
 theorem num_frame {B : Addr} {L : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) {m m' : Mem}
     {rs : List Region} (f : Frame rs m m') (hd : ∀ r ∈ rs, (⟨B, kz L⟩ : Region).Disjoint r)
     {j : Nat} (hj : j < nArrs) : num m' B (L / 8) j = num m B (L / 8) j := by
   have := arrs_fit (L := L) hj
   have := kz_le hL
-  refine VG.Proof.Bignum.wordsVal_frame f (Offset.contains_base _ (by simp only [S] at *; omega) (by omega)) hd
+  refine wordsVal_frame f (Offset.contains_base _ (by simp only [S] at *; omega) (by omega)) hd
     (by omega)
 
 theorem slot_frame {B : Addr} {L : Nat} {m m' : Mem}
