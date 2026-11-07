@@ -22943,7 +22943,7 @@ vg_dsa_generate_key:
 	addi a2, s1, 0
 	addi a5, sp, 32
 	addi a7, s6, 0
-	call {vg_dsa_derive_key}
+	call {vg_dsa_derive_key_checked}
 	slli a0, a0, 32
 	srli a0, a0, 32
 	beqz a0, 216f

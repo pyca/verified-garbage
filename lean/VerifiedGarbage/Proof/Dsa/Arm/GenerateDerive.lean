@@ -138,18 +138,32 @@ theorem bytesIn_env {s₀ t : State} {base : Addr} {size : Nat} {fields : Fields
     rw [off, BitVec.add_zero, Nat.zero_add] at this
     rw [this]; exact hi
 
-theorem derive_correct {s : State} (h : derivePre s) :
-    WP isa Generate.deriveKey s fun t => abiPreserved s t ∧ deriveArm.post s t := by
+/-- The domain's components and x, as the derivation reads them. -/
+abbrev deriveP (s : State) : Nat := Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r2)) (arg s 0).toNat)
+abbrev deriveQ (s : State) : Nat :=
+  Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r2) + BitVec.ofNat 64 (arg s 0).toNat) (arg s 2).toNat)
+abbrev deriveG (s : State) : Nat :=
+  Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem
+    (State.addr (s.gpr .r2) + BitVec.ofNat 64 ((arg s 0).toNat + (arg s 2).toNat)) (arg s 0).toNat)
+abbrev deriveXv (s : State) : Nat := Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (State.addr (arg s 1)) (arg s 2).toNat)
+
+/-- A derivation whose computation makes the checks `C`, which for the
+domain at hand are the derivation's. -/
+theorem deriveWith_correct {compute : Nat → Nat → Prog isa} {C : Nat → Nat → Nat → Nat → Prop}
+    [∀ P Q G X, Decidable (C P Q G X)] (hc : ComputeOk compute C) {s : State} (h : derivePre s)
+    (hC : shapeValid (deriveP s) (deriveQ s) →
+      (C (deriveP s) (deriveQ s) (deriveG s) (deriveXv s) ↔ deriveChecks (deriveP s) (deriveQ s) (deriveG s) (deriveXv s))) :
+    WP isa (Generate.deriveWith compute) s fun t => abiPreserved s t ∧ deriveArm.post s t := by
   obtain ⟨hsp, hrd, hwr, dOP, dOX, dOS, dOA, dPS, dXS, dSA, fO, fP, fX, fS, hv, hr1, hr3, hsw⟩ := id h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
   have hs16 : 128 * (arg s 0).toNat ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
-  simp only [Generate.deriveKey, Core.sequence, List.foldr]
+  simp only [Generate.deriveWith, Core.sequence, List.foldr]
   refine WP.seq (WP.mono (deriveEntry_ok h) fun u I => ?_)
   have E₀ := Env.of_installed I (by omega_arith)
   have fok := deriveFields_ok s
-  refine WP.seq (genDispatch_ok Generate.deriveSized _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
+  refine WP.seq (genDispatch_ok (Generate.deriveSized compute) _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₀.field (d := 100) (v := arg s 0) (by simp)]) (by rw [E₀.field (d := 104) (v := arg s 2) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
@@ -202,12 +216,12 @@ theorem derive_correct {s : State} (h : derivePre s) :
       rw [M]; unfold mask32; split
       · rfl
       · next hn => exact absurd valid hn
-    refine WP.seq (WP.mono (deriveCompute_ok ⟨E₂.ws, by omega_arith, wp, wq, qp, q32⟩ Ip Iq Ig Ix hP hPo hQ hQo)
+    refine WP.seq (WP.mono (hc ⟨E₂.ws, by omega_arith, wp, wq, qp, q32⟩ Ip Iq Ig Ix hP hPo hQ hQo)
       fun t₃ ⟨F₃, Y₃, Rn₃⟩ => ?_)
     have E₃ := E₂.keep fok Rn₃.rest (by decide) Rn₃.mem (fun r hr => by
       simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega_arith)
-    rw [hm, BitVec.allOnes_and] at F₃
+    rw [hm, BitVec.allOnes_and, mask32_iff (hC valid)] at F₃
     have po₃ : pointerValue (State.addr (arg s 3)) t₃ (.input .out) = s.gpr .r0 :=
       E₃.field (d := 96) (v := s.gpr .r0) (by simp)
     have pp₃ : pointerValue (State.addr (arg s 3)) t₃ (.input .p) = s.gpr .r2 :=
@@ -248,5 +262,28 @@ theorem derive_correct {s : State} (h : derivePre s) :
       · exact absurd ⟨valid, hc₁⟩ hc₂
       · exact absurd hc₂.2 hc₁
       · rfl
+
+theorem derive_correct {s : State} (h : derivePre s) :
+    WP isa Generate.deriveKey s fun t => abiPreserved s t ∧ deriveArm.post s t :=
+  deriveWith_correct deriveCompute_computeOk h fun _ => Iff.rfl
+
+/-- A checked domain passes the domain's checks. -/
+theorem deriveDomain_checked {s : State} (h : deriveCheckedArm.pre s) :
+    domainChecks (deriveP s) (deriveQ s) (deriveG s) := by
+  obtain ⟨⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, hv, -, hr3, -⟩, hc⟩ := h
+  have hpl : (deriveParams s).length = 2 * (arg s 0).toNat + (arg s 2).toNat := by
+    simp only [deriveParams, Spec.Rsa.bytesAt, List.length_map, List.length_range]; exact hr3
+  have e := (checkParametersBytes_iff hv hpl).mp hc
+  simp only [deriveParams] at e
+  rw [paramsBytes_at s.mem (State.addr (s.gpr .r2)) (pLen := (arg s 0).toNat) (qLen := (arg s 2).toNat)
+    (total := (s.gpr .r3).toNat) (by omega_arith)] at e
+  exact e.2
+
+/-- `vg_dsa_derive_key_checked`: the derivation without the domain's checks,
+which its precondition makes. -/
+theorem deriveChecked_correct {s : State} (h : deriveCheckedArm.pre s) :
+    WP isa Generate.deriveChecked s fun t => abiPreserved s t ∧ deriveCheckedArm.post s t :=
+  deriveWith_correct keyCompute_computeOk h.1 fun _ =>
+    ⟨fun k => ⟨deriveDomain_checked h, k⟩, fun k => k.2⟩
 
 end VG.Proof.Dsa.Arm

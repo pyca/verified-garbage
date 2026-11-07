@@ -30,8 +30,8 @@ def artifacts : List Artifact := [
     code := Impl.Dsa.Arm.Generate.deriveKey
     verified := Proof.Dsa.Arm.derive_verified },
   Spec.Dsa.generateKeyApi.artifact Arm.target {
-    code := Impl.Dsa.Arm.GenerateKey.code "vg_dsa_check_parameters" Spec.Dsa.deriveKeyApi.name
-      Impl.Dsa.Arm.Generate.checkParameters Impl.Dsa.Arm.Generate.deriveKey
+    code := Impl.Dsa.Arm.GenerateKey.code "vg_dsa_check_parameters" "vg_dsa_derive_key_checked"
+      Impl.Dsa.Arm.Generate.checkParameters Impl.Dsa.Arm.Generate.deriveChecked
     verified := Proof.Dsa.Arm.Key.generating_verified
     stack := 144 },
   Spec.Dsa.validatePublicKeyApi.artifact Arm.target {

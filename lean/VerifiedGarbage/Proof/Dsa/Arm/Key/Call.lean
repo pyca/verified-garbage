@@ -21,8 +21,9 @@ As the randomized signer calls the supplied-nonce signer (`RandomCall.lean`):
 `checkArgs` and `deriveArgs` load the callee's register arguments and the
 words of its stack arguments, and `callWith` pushes them, as a frame of
 `r4`–`r11` below ours, and calls `vg_dsa_check_parameters`
-(`Generate.checkParameters`) or `vg_dsa_derive_key` (`Generate.deriveKey`)
-under its own contract (`checkArm`, `deriveArm`): each returns its status in
+(`Generate.checkParameters`) or, once the domain has passed that check,
+`vg_dsa_derive_key_checked` (`Generate.deriveChecked`) under its own contract
+(`checkArm`, `deriveCheckedArm`): each returns its status in
 `r0`, and the derivation writes `out`, changing only `out`, `scratch` and
 the pushed words.
 -/
@@ -396,6 +397,20 @@ theorem derive_call_pre : derivePre (callEntryOf (deriveRd s₀) (deriveWr s₀)
   · have := A.scratchLength
     unfold Spec.Dsa.generationScratchWords at this; unfold Spec.Dsa.scratchWords; omega
 
+/-- The domain, in `u`, has passed its check: so it has at the call. -/
+theorem derive_call_checked
+    (hc : Spec.Dsa.checkParametersBytes (stackArg s₀ 1).toNat (stackArg s₀ 2).toNat
+      (Spec.Rsa.bytesAt u.mem (State.addr (s₀.gpr .r3)) (stackArg s₀ 0).toNat) = true) :
+    deriveCheckedArm.pre (callEntryOf (deriveRd s₀) (deriveWr s₀) u) := by
+  refine ⟨derive_call_pre A h C, ?_⟩
+  have hf := call_push_frame A h
+  unfold deriveParams
+  simp only [State.withRegions_mem, State.callEntry_mem, dc_r2 C, dc_r3 C, dc_a0 A h C, dc_a2 A h C]
+  rw [rBytes_frame hf (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact (A.stackKey.sub_left (low_sub s₀ (by decide))).symm)
+    (by have := (stackArg s₀ 0).isLt; omega)]
+  exact hc
+
 /-- The bytes the derivation reads are those of `u`, which the push leaves. -/
 theorem deriveRes_call : deriveRes (callEntryOf (deriveRd s₀) (deriveWr s₀) u) = deriveResult s₀ u := by
   have hql := rQBytes_le A
@@ -438,25 +453,27 @@ theorem derive_covers :
 
 end
 
-/-- `vg_dsa_derive_key` uses no stack of its own. -/
-theorem derive_armStack : armStack Generate.deriveKey = 0 := by decide +kernel
+/-- `vg_dsa_derive_key_checked` uses no stack of its own. -/
+theorem derive_armStack : armStack Generate.deriveChecked = 0 := by decide +kernel
 
 theorem status_lt (r : Option (List Byte)) : Spec.Dsa.signStatus r < 2 := by
   unfold Spec.Dsa.signStatus; split <;> decide
 
 /-- The call of the derivation, its stack arguments pushed. -/
-theorem callDerive_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C : DeriveRegs s₀ u) (name : String) :
-    WP isa (callWith name Generate.deriveKey) u fun v => RReady s₀ v ∧ Frame (deriveWrites s₀) u.mem v.mem ∧
+theorem callDerive_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C : DeriveRegs s₀ u) (name : String)
+    (hc : Spec.Dsa.checkParametersBytes (stackArg s₀ 1).toNat (stackArg s₀ 2).toNat
+      (Spec.Rsa.bytesAt u.mem (State.addr (s₀.gpr .r3)) (stackArg s₀ 0).toNat) = true) :
+    WP isa (callWith name Generate.deriveChecked) u fun v => RReady s₀ v ∧ Frame (deriveWrites s₀) u.mem v.mem ∧
       (∀ r ∈ [Reg.r5, .r6, .r7, .r8, .r9, .r10, .r11], v.gpr r = u.gpr r) ∧
       v.gpr .r0 = BitVec.ofNat 32 (Spec.Dsa.signStatus (deriveResult s₀ u)) ∧
       Spec.Rsa.bytesAt v.mem (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat =
         (deriveResult s₀ u).getD (List.replicate (s₀.gpr .r1).toNat 0) := by
-  obtain ⟨hc, hcw⟩ := derive_covers A h
+  obtain ⟨hcv, hcw⟩ := derive_covers A h
   unfold callWith
   refine WP.frame (rs := callPush) (r := .r4) (by decide) (call_sp_le A h) (by decide) ?_
-  refine FrameStack.WP.callF (k := deriveArm) (fun s hs => ?_) (derive_call_pre A h C) hc hcw
+  refine FrameStack.WP.callF (k := deriveCheckedArm) (fun s hs => ?_) (derive_call_checked A h C hc) hcv hcw
     (by rw [derive_armStack]; exact Nat.zero_le _) fun s' hrd hwr hsp hf hpres hpost => ?_
-  · obtain ⟨t, s', e, ha, hp⟩ := derive_correct hs
+  · obtain ⟨t, s', e, ha, hp⟩ := deriveChecked_correct hs
     exact ⟨t, s', e, ha, hp⟩
   rw [derive_armStack] at hf
   have hpu : ∀ r ∈ preserved, r ≠ .lr → s'.gpr r = u.gpr r := fun r hr hl => by rw [hpres r hr hl, pushed_gpr]
