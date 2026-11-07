@@ -67,7 +67,7 @@ theorem fin48P (H : Block) (T : Nat → Nat → Nat → Block)
 theorem enc_ok {s₀ : State} (hp : SPreP s₀) (hm : nb s₀ % 16 = 0) : WP isa Impl.Gcm.X86_64.StitchZP.enc s₀ (EPost s₀) :=
   WP.seq (WP.mono (setupP_ok hp) fun _ ⟨_, hR, hpw⟩ =>
     encTailG_ok hp.base hm (finZ (finP hpw))
-      144 (by decide) (by decide) (fun _ h hI => bigP_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI) hR)
+      144 (by decide) (by decide) (fun _ h hI => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI) hR)
 
 /-- The decryption of `n` blocks (a multiple of 16, at least 16). -/
 theorem dec_ok {s₀ : State} (hp : SPreP s₀) (hm : nb s₀ % 16 = 0) : WP isa Impl.Gcm.X86_64.StitchZP.dec s₀ (DPost s₀) :=
@@ -229,7 +229,7 @@ theorem setupPTo_ok {s₀ : State} (hp : SPreTo CtxMode.powers s₀) :
 theorem stitchToP_ok : StitchToOkM CtxMode.powers Impl.Gcm.X86_64.StitchZTo.encP := fun s₀ hp hm =>
   WP.seq (WP.mono (setupPTo_ok hp) fun _ ⟨_, hR, hpw⟩ =>
     encTailGTo_ok hp hm (finZ (finP hpw))
-      144 (by decide) (by decide) (fun _ h hI => bigPTo_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI) hR)
+      144 (by decide) (by decide) (fun _ h hI => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI) hR)
 
 end VG.Proof.Gcm.X86_64.StitchZTo
 

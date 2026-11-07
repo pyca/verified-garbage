@@ -305,7 +305,7 @@ theorem ctx_keep {s₀ : State} (hp : SPreP s₀) {m : Mem} (hf : Frame [dR s₀
   rw [kb _ (by omega_arith), hp.pow k hk, hH]; rfl
 
 /-- `bigP`: `big` with the tables loaded. -/
-theorem bigP_ok {s₀ : State} (hp : SPreP s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+theorem bigP_ok {s₀ : State} (hp : SPreP s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
     (hFin : ∀ T : Nat → Nat → Nat → Block,
       (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →

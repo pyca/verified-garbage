@@ -32,7 +32,7 @@ open VG.Impl.Gcm.X86_64.StitchZTo (bigPTo)
 open VG.Spec.Gcm (Block)
 
 /-- `bigPTo`: `bigTo` with the tables loaded. -/
-theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.powers s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.powers s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
     (hFin : ∀ T : Nat → Nat → Nat → Block,
       (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
