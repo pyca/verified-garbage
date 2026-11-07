@@ -178,13 +178,14 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
 def artifactsOpenTo (v : GcmImpl) : List Artifact := [
   Spec.Gcm.openToApi.artifact AArch64.target {
     suffix := v.suffix
-    code := Impl.AesGcm.AArch64.OpenTo.openTo (Proof.AesGcm.AArch64.openFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
+    code := Impl.AesGcm.AArch64.OpenTo.openTo 2 (Proof.AesGcm.AArch64.openFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
     stack := 2624
     verified := Proof.AesGcm.openTo_keyed (Proof.AesGcm.AArch64.OpenTo.openTo_verified (Proof.AesGcm.AArch64.openFn v Proof.Gcm.AArch64.Pmull.mulV_keyV))
     features := v.features }]
 
 /-- `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers`, calling
-`g` on the path for TLS records. -/
+`g` on the path for TLS records, and `vg_aes_gcm_open_to_with_powers`,
+calling that instance of `vg_aes_gcm_open_with_powers`. -/
 def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
   [Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
@@ -197,6 +198,14 @@ def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openPwCode v g)
     stack := 2592
     verified := Proof.AesGcm.openWithPowers_keyed (openPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g)
+    features := v.stitchFeatures },
+  Spec.Gcm.openToWithPowersApi.artifact AArch64.target {
+    suffix := v.suffix
+    code := Impl.AesGcm.AArch64.OpenTo.openTo 3
+      (Proof.AesGcm.AArch64.openPwFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok).fn
+    stack := 2624
+    verified := Proof.AesGcm.openToWithPowers_keyed (Proof.AesGcm.AArch64.OpenTo.openToPw_verified
+      (Proof.AesGcm.AArch64.openPwFn v g Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok))
     features := v.stitchFeatures }]
 
 /-- The artifacts of a variant, from the implementations it names: those that

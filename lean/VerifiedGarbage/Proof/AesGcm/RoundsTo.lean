@@ -13,7 +13,9 @@ instances for prepared key contexts are written against, as
 cipher and the hash subkey of the key context given (`Spec.Gcm.ctxCiph`,
 `Spec.Gcm.ctxH`), from which the shared contracts of
 `Spec/Gcm/OutOfPlace.lean`, `Spec/Gcm/Prepared.lean` and
-`Spec/Gcm/Prepared16.lean` follow (`openTo_keyed`).
+`Spec/Gcm/Prepared16.lean` follow (`openTo_keyed`), and those of its
+instance with the powers in a buffer of their own (`Spec/Gcm/Powers8.lean`,
+`openToWithPowers_keyed`).
 -/
 
 @[expose] public section
@@ -57,6 +59,18 @@ def openToPrepared16RoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Co
     (post := openToRoundsPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openToLeak A.ptrBits))
 
+/-- `openToRoundsPost`, which does not depend on `pw`. -/
+def openToWithPowersRoundsPost (pb : Nat) : openToWithPowersSig.Post pb :=
+  fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _pw m m' r =>
+    openToRoundsPost pb ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen m m' r
+
+/-- `openToWithPowersPre`, `openToWithPowersRoundsPost`, and what
+`Spec.Gcm.openToWithPowersContract` may leak (`openToWithPowersLeak`). -/
+def openToWithPowersRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  openToWithPowersSig.contract A (pre := openToWithPowersPre A.ptrBits)
+    (post := openToWithPowersRoundsPost A.ptrBits) (writeArgs := true) (stack := stack)
+    (leak := some (openToWithPowersLeak A.ptrBits))
+
 theorem openToPost_imp (pb : Nat) : openToSig.PostImp pb (openToRoundsPost pb) (Spec.Gcm.openToPost pb) :=
   fun ctx rounds _ _ _ _ _ _ _ _ _ _ m _ _ hp key hk => by
     dsimp only [openToRoundsPost, Spec.Gcm.openToPost] at hp ⊢
@@ -84,5 +98,16 @@ theorem openToPrepared16_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {st
     (h : Verified T c (openToPrepared16RoundsContract A stack)) :
     Verified T c (Spec.Gcm.openToPrepared16Contract A stack) :=
   h.post_mono (openToPost_imp _)
+
+theorem openToWithPowersPost_imp (pb : Nat) :
+    openToWithPowersSig.PostImp pb (openToWithPowersRoundsPost pb) (Spec.Gcm.openToWithPowersPost pb) :=
+  fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _ m m' r hp =>
+    openToPost_imp pb ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen m m' r hp
+
+/-- `Spec.Gcm.openToWithPowersContract` from `openToWithPowersRoundsContract`. -/
+theorem openToWithPowers_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
+    (h : Verified T c (openToWithPowersRoundsContract A stack)) :
+    Verified T c (Spec.Gcm.openToWithPowersContract A stack) :=
+  h.post_mono (openToWithPowersPost_imp _)
 
 end VG.Proof.AesGcm
