@@ -912,8 +912,8 @@ abbrev tl0 (c : Core) (s₀ : State) : List Byte :=
   bytesAt s₀.mem (tailA c (Dp s₀) (N s₀)) (N s₀ % (4 * c.bw))
 
 /-- `c.seqFinal M`, with `seq`'s precondition for `byteMode` (the data `len`
-bytes). -/
-theorem seqFinal_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c byteMode s₀)
+bytes), and what it changes (`Changes`). -/
+theorem seqFinal_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c byteMode s₀)
     (hM : M.step = 4 * c.bw) (hpre : M.pre = copyBlk c.bw .buf .chn)
     (hpost : ∀ o ∈ M.post, o.InBounds (lens c (4 * c.bw))) (hcomp : Computes M (4 * c.bw) (cs.cipher k) F)
     (hk : cs.KeyArgs s₀ (wrs0 c byteMode s₀) k) :
@@ -921,9 +921,9 @@ theorem seqFinal_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k 
       chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀ / (4 * c.bw)) = (run F (iv0 c s₀) (wb0 c s₀)).1 ∧
       bytesAt s'.mem (tailA c (Dp s₀) (N s₀)) (N s₀ % (4 * c.bw)) =
         Spec.Cbc.xor (tl0 c s₀) (cs.cipher k (run F (iv0 c s₀) (wb0 c s₀)).2) ∧
-      bytesAt s'.mem (P s₀) (4 * c.bw) =
+      (bytesAt s'.mem (P s₀) (4 * c.bw) =
         if N s₀ % (4 * c.bw) = 0 then (run F (iv0 c s₀) (wb0 c s₀)).2
-        else cs.cipher k (run F (iv0 c s₀) (wb0 c s₀)).2 := by
+        else cs.cipher k (run F (iv0 c s₀) (wb0 c s₀)).2) ∧ Changes c byteMode s₀ s' := by
   have hL := hp.layout
   have hfit := hp.scr.fit
   have hroom := hL.room
@@ -1061,7 +1061,7 @@ theorem seqFinal_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k 
     (by rw [wr₆, u₅.wr, wr₄]) sv₆ lr₆ fun t g29 g30 g31 glr g m hsp =>
       ⟨abi t hsp glr g29 g30 g31 fun r hr h29 h30 h31 => by
         rw [g r h29 h30 h31 (ne0 r hr), g₆' r (kept_ne r hr).1 (kept_ne r hr).2 h31, keep₄ r hr h29 h30 h31],
-        ?_, ?_, ?_⟩
+        ?_, ?_, ?_, ⟨?_, ?_⟩⟩
   · rw [m, chunksAt_frame f₆ (ivOnly (ivD.sub_right sW).symm) (by omega_using [hdm, dFit]), h₄.data]
   · rw [m, ← h₄.tail]
     exact List.map_congr_left fun i hi => f₆.bytes (ivOnly (ivD.sub_right sT).symm)
@@ -1073,6 +1073,39 @@ theorem seqFinal_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k 
     simp only [cont, ivAreas] at e₆
     rw [e₆, copyBlk_apply (by decide), ite_eq_left ⟨rfl, hi⟩]
     rfl
+  · show t.gpr .r5 = _
+    rw [g _ r0ne.1 r0ne.2.1 r0ne.2.2.1 r0ne.2.2.2, g₆' _ (by decide) (by decide) (by decide)]; exact h₄.b
+  · rw [m]
+    have m1 : ∀ {a b : Region} {l : List Region}, b ∈ a :: b :: l := List.mem_cons_of_mem _ List.mem_cons_self
+    have m2 : ∀ {a b c' : Region} {l : List Region}, c' ∈ a :: b :: c' :: l :=
+      List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
+    have m3 : ∀ {a b c' d : Region} {l : List Region}, d ∈ a :: b :: c' :: d :: l :=
+      List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
+    refine ((h₃.frame.mono fun r hr => ?_).trans (h₄.frame.sub fun r hr => ?_)).trans (f₆.sub fun r hr => ?_)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact m1
+      · exact List.mem_cons_self
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+      · exact ⟨modeR c (S s₀), m1, VG.Offset.sub _ (by slot_omega) (by slot_omega)⟩
+      · exact ⟨_, m2, fun _ h => h⟩
+    · simp only [areaRegions, ivAreas, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
+      subst hr; exact ⟨_, m3, fun _ h => h⟩
+
+theorem seqFinal_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} (hp : SeqPre c byteMode s₀)
+    (hM : M.step = 4 * c.bw) (hpre : M.pre = copyBlk c.bw .buf .chn)
+    (hpost : ∀ o ∈ M.post, o.InBounds (lens c (4 * c.bw))) (hcomp : Computes M (4 * c.bw) (cs.cipher k) F)
+    (hk : cs.KeyArgs s₀ (wrs0 c byteMode s₀) k) :
+    WP isa (c.seqFinal M) s₀ fun s' => abiPreserved s₀ s' ∧
+      chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀ / (4 * c.bw)) = (run F (iv0 c s₀) (wb0 c s₀)).1 ∧
+      bytesAt s'.mem (tailA c (Dp s₀) (N s₀)) (N s₀ % (4 * c.bw)) =
+        Spec.Cbc.xor (tl0 c s₀) (cs.cipher k (run F (iv0 c s₀) (wb0 c s₀)).2) ∧
+      bytesAt s'.mem (P s₀) (4 * c.bw) =
+        if N s₀ % (4 * c.bw) = 0 then (run F (iv0 c s₀) (wb0 c s₀)).2
+        else cs.cipher k (run F (iv0 c s₀) (wb0 c s₀)).2 :=
+  WP.mono (seqFinal_changes_wp cs hp hM hpre hpost hcomp hk) fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩
 
 /-! ## CFB -/
 
@@ -1116,5 +1149,19 @@ theorem cfbDecFinal_wp (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : SeqPr
   · obtain ⟨-, e2⟩ := cfbDec_run (cs.cipher k) (iv0 c s₀) (wb0 c s₀)
     rw [← e2] at h4
     exact h4.trans (cfbDecFinalNext_of (cs.cipher k) s₀.mem _ _ _)
+
+/-- What CFB encryption of a message's last piece changes. -/
+theorem cfbEncFinal_changes (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : SeqPre c byteMode s₀)
+    (hk : cs.KeyArgs s₀ (wrs0 c byteMode s₀) k) :
+    WP isa (c.seqFinal (Mode.cfbEnc c.bw)) s₀ (Changes c byteMode s₀) :=
+  WP.mono (seqFinal_changes_wp cs hp rfl rfl (cfbEnc_post_inBounds c) (cfbEnc_computes (cs.cipher_len k)) hk)
+    fun _ h => h.2.2.2.2
+
+/-- What CFB decryption of a message's last piece changes. -/
+theorem cfbDecFinal_changes (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : SeqPre c byteMode s₀)
+    (hk : cs.KeyArgs s₀ (wrs0 c byteMode s₀) k) :
+    WP isa (c.seqFinal (Mode.cfbDec c.bw)) s₀ (Changes c byteMode s₀) :=
+  WP.mono (seqFinal_changes_wp cs hp rfl rfl (cfbDec_post_inBounds c) (cfbDec_computes (cs.cipher_len k)) hk)
+    fun _ h => h.2.2.2.2
 
 end VG.Proof.Modes.PPC64LE
