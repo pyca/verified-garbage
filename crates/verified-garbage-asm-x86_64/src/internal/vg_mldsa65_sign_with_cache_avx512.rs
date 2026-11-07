@@ -61,71 +61,71 @@ jne 27f
 .base64 "SInvSIHHgAAAAL6AAAAAugQAAAC5BAAAAEmJ2EmBwACAAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAIAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHAAEAAL6AAAAAugQAAAC5BAAAAEmJ2EmBwACEAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAIQAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHgAEAAL6AAAAAugQAAAC5BAAAAEmJ2EmBwACIAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAIgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHAAIAAL6AAAAAugQAAAC5BAAAAEmJ2EmBwACMAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAIwAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHgAIAAL6AAAAAugQAAAC5BAAAAEmJ2EmBwACQAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAJAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHAAMAAL6AAAAAugQAAAC5BAAAAEmJ2EmBwACUAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAJQAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHgAMAAL6AAAAAugQAAAC5BAAAAEmJ2EmBwACYAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAJgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHAAQAAL6AAAAAugQAAAC5BAAAAEmJ2EmBwACcAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAJwAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHgAQAAL6AAAAAugQAAAC5BAAAAEmJ2EmBwACgAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAKAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHAAUAAL6AAAAAugQAAAC5BAAAAEmJ2EmBwACkAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAKQAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHgAUAAL6AAAAAugQAAAC5BAAAAEmJ2EmBwACoAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAKgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHAAYAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwACsAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAKwAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHoAcAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwACwAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHALAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHQAkAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwAC0AAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHALQAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHH4AoAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwAC4AAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHALgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHgAwAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwAC8AAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHALwAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInvSIHHIA4AAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwADAAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAMAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "uAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEiJ6UiDwSBBuCAAAABJidlJgcHIAAAA"
 call {vg_keccak_absorb_scratch}
 .base64 "SInfSIPHAL6IAAAAuiAAAABMielIg8EAQbggAAAASYnZSYHByAAAAA=="
@@ -178,25 +178,25 @@ call {vg_mldsa_expand_mask_poly4_avx512}
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 215b
 .base64 "SInfSIHHAFQAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInfSIHHAFgAAEiJ3kiBxgBEAAC5gAAAAA=="
 216:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 216b
 .base64 "SInfSIHHAFgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInfSIHHAFwAAEiJ3kiBxgBIAAC5gAAAAA=="
 217:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 217b
 .base64 "SInfSIHHAFwAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgBMAAC5gAAAAA=="
 218:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 218b
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SIuDgAMAAEiDwASIgwAEAABIwegIiIMBBAAASInfSIHHwAMAAL4AAAgASInaSIHCAFAAAEiJ2UiBwQAMAAA="
 call {vg_mldsa_expand_mask_poly}
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBQAAC5gAAAAA=="
@@ -204,41 +204,41 @@ call {vg_mldsa_expand_mask_poly}
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 219b
 .base64 "SInfSIHHAGQAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDEAABIidpIgcIAVAAASInZSIHBAAwAAA=="
-call {vg_mldsa_dot_inverse5_avx512}
+call {vg_mldsa_dot_inverse5_avx2}
 .base64 "SInfSIHHAGwAAEiJ3kiBxgDYAABIidpIgcIAVAAASInZSIHBAAwAAA=="
-call {vg_mldsa_dot_inverse5_avx512}
+call {vg_mldsa_dot_inverse5_avx2}
 .base64 "SInfSIHHAHAAAEiJ3kiBxgDsAABIidpIgcIAVAAASInZSIHBAAwAAA=="
-call {vg_mldsa_dot_inverse5_avx512}
+call {vg_mldsa_dot_inverse5_avx2}
 .base64 "SInfSIHHAHQAAEiJ3kiBxgAAAQBIidpIgcIAVAAASInZSIHBAAwAAA=="
-call {vg_mldsa_dot_inverse5_avx512}
+call {vg_mldsa_dot_inverse5_avx2}
 .base64 "SInfSIHHAHgAAEiJ3kiBxgAUAQBIidpIgcIAVAAASInZSIHBAAwAAA=="
-call {vg_mldsa_dot_inverse5_avx512}
+call {vg_mldsa_dot_inverse5_avx2}
 .base64 "SInfSIHHAHwAAEiJ3kiBxgAoAQBIidpIgcIAVAAASInZSIHBAAwAAA=="
-call {vg_mldsa_dot_inverse5_avx512}
+call {vg_mldsa_dot_inverse5_avx2}
 .base64 "SInfSIHHAGgAAL4A/wMASInaSIHCABgAAA=="
-call {vg_mldsa_high_bits_avx512}
+call {vg_mldsa_high_bits_avx2}
 .base64 "SInfSIHHABgAAL4PAAAASInaSIHCAAgAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGwAAL4A/wMASInaSIHCABgAAA=="
-call {vg_mldsa_high_bits_avx512}
+call {vg_mldsa_high_bits_avx2}
 .base64 "SInfSIHHABgAAL4PAAAASInaSIHCgAgAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAHAAAL4A/wMASInaSIHCABgAAA=="
-call {vg_mldsa_high_bits_avx512}
+call {vg_mldsa_high_bits_avx2}
 .base64 "SInfSIHHABgAAL4PAAAASInaSIHCAAkAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAHQAAL4A/wMASInaSIHCABgAAA=="
-call {vg_mldsa_high_bits_avx512}
+call {vg_mldsa_high_bits_avx2}
 .base64 "SInfSIHHABgAAL4PAAAASInaSIHCgAkAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAHgAAL4A/wMASInaSIHCABgAAA=="
-call {vg_mldsa_high_bits_avx512}
+call {vg_mldsa_high_bits_avx2}
 .base64 "SInfSIHHABgAAL4PAAAASInaSIHCAAoAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAHwAAL4A/wMASInaSIHCABgAAA=="
-call {vg_mldsa_high_bits_avx512}
+call {vg_mldsa_high_bits_avx2}
 .base64 "SInfSIHHABgAAL4PAAAASInaSIHCgAoAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "uAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEyJ4UiDwQBBuEAAAABJidlJgcHIAAAA"
@@ -257,63 +257,63 @@ jne 220f
 jmp 221f
 220:
 .base64 "SInfSIHHABQAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt_avx512}
+call {vg_mldsa_ntt_avx2}
 .base64 "Qb8BAAAAuAAAAABIiYOIAwAASInfSIHHABgAAEiJ3kiBxgAUAABIidpIgcIAgAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHAEAAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHAEAAAL48/wcA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHRYX/"
 jne 222f
 jmp 223f
 222:
 .base64 "SInfSIHHABgAAEiJ3kiBxgAUAABIidpIgcIAhAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHAEQAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHAEQAAL48/wcA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHRYX/"
 jne 224f
 jmp 225f
 224:
 .base64 "SInfSIHHABgAAEiJ3kiBxgAUAABIidpIgcIAiAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHAEgAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHAEgAAL48/wcA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHRYX/"
 jne 226f
 jmp 227f
 226:
 .base64 "SInfSIHHABgAAEiJ3kiBxgAUAABIidpIgcIAjAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHAEwAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHAEwAAL48/wcA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHRYX/"
 jne 228f
 jmp 229f
 228:
 .base64 "SInfSIHHABgAAEiJ3kiBxgAUAABIidpIgcIAkAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHAFAAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHAFAAAL48/wcA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHRYX/"
 jne 230f
 jmp 231f
@@ -328,85 +328,85 @@ jne 232f
 jmp 233f
 232:
 .base64 "SInfSIHHABgAAEiJ3kiBxgAUAABIidpIgcIAlAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_sub_avx512}
+call {vg_mldsa_sub_avx2}
 .base64 "SInfSIHHAGgAAL4A/wMASInaSIHCABwAAA=="
-call {vg_mldsa_low_bits_avx512}
+call {vg_mldsa_low_bits_avx2}
 .base64 "SInfSIHHABwAAL48/gMA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHRYX/"
 jne 234f
 jmp 235f
 234:
 .base64 "SInfSIHHABgAAEiJ3kiBxgAUAABIidpIgcIAmAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHAGwAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_sub_avx512}
+call {vg_mldsa_sub_avx2}
 .base64 "SInfSIHHAGwAAL4A/wMASInaSIHCABwAAA=="
-call {vg_mldsa_low_bits_avx512}
+call {vg_mldsa_low_bits_avx2}
 .base64 "SInfSIHHABwAAL48/gMA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHRYX/"
 jne 236f
 jmp 237f
 236:
 .base64 "SInfSIHHABgAAEiJ3kiBxgAUAABIidpIgcIAnAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHAHAAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_sub_avx512}
+call {vg_mldsa_sub_avx2}
 .base64 "SInfSIHHAHAAAL4A/wMASInaSIHCABwAAA=="
-call {vg_mldsa_low_bits_avx512}
+call {vg_mldsa_low_bits_avx2}
 .base64 "SInfSIHHABwAAL48/gMA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHRYX/"
 jne 238f
 jmp 239f
 238:
 .base64 "SInfSIHHABgAAEiJ3kiBxgAUAABIidpIgcIAoAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHAHQAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_sub_avx512}
+call {vg_mldsa_sub_avx2}
 .base64 "SInfSIHHAHQAAL4A/wMASInaSIHCABwAAA=="
-call {vg_mldsa_low_bits_avx512}
+call {vg_mldsa_low_bits_avx2}
 .base64 "SInfSIHHABwAAL48/gMA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHRYX/"
 jne 240f
 jmp 241f
 240:
 .base64 "SInfSIHHABgAAEiJ3kiBxgAUAABIidpIgcIApAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHAHgAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_sub_avx512}
+call {vg_mldsa_sub_avx2}
 .base64 "SInfSIHHAHgAAL4A/wMASInaSIHCABwAAA=="
-call {vg_mldsa_low_bits_avx512}
+call {vg_mldsa_low_bits_avx2}
 .base64 "SInfSIHHABwAAL48/gMA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHRYX/"
 jne 242f
 jmp 243f
 242:
 .base64 "SInfSIHHABgAAEiJ3kiBxgAUAABIidpIgcIAqAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHAHwAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_sub_avx512}
+call {vg_mldsa_sub_avx2}
 .base64 "SInfSIHHAHwAAL4A/wMASInaSIHCABwAAA=="
-call {vg_mldsa_low_bits_avx512}
+call {vg_mldsa_low_bits_avx2}
 .base64 "SInfSIHHABwAAL48/gMA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHRYX/"
 jne 244f
 jmp 245f
@@ -422,101 +422,101 @@ jne 246f
 jmp 247f
 246:
 .base64 "SInfSIHHACAAAEiJ3kiBxgAUAABIidpIgcIArAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHACAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHACAAAL4A/wMA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHSInfSIHHACQAAEiJ3kiBxgBoAAC5gAAAAA=="
 248:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 248b
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAgAAA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACQAAEiJ3kiBxgBoAAA="
-call {vg_mldsa_sub_avx512}
+call {vg_mldsa_sub_avx2}
 .base64 "SInfSIHHACQAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQAoAAA="
-call {vg_mldsa_make_hint_avx512}
+call {vg_mldsa_make_hint_avx2}
 .base64 "i4uIAwAAAcFIiYuIAwAASInfSIHHACAAAEiJ3kiBxgAUAABIidpIgcIAsAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHACAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHACAAAL4A/wMA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHSInfSIHHACQAAEiJ3kiBxgBsAAC5gAAAAA=="
 249:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 249b
 .base64 "SInfSIHHAGwAAEiJ3kiBxgAgAAA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACQAAEiJ3kiBxgBsAAA="
-call {vg_mldsa_sub_avx512}
+call {vg_mldsa_sub_avx2}
 .base64 "SInfSIHHACQAAEiJ3kiBxgBsAAC6AP8DAEiJ2UiBwQAsAAA="
-call {vg_mldsa_make_hint_avx512}
+call {vg_mldsa_make_hint_avx2}
 .base64 "i4uIAwAAAcFIiYuIAwAASInfSIHHACAAAEiJ3kiBxgAUAABIidpIgcIAtAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHACAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHACAAAL4A/wMA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHSInfSIHHACQAAEiJ3kiBxgBwAAC5gAAAAA=="
 250:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 250b
 .base64 "SInfSIHHAHAAAEiJ3kiBxgAgAAA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACQAAEiJ3kiBxgBwAAA="
-call {vg_mldsa_sub_avx512}
+call {vg_mldsa_sub_avx2}
 .base64 "SInfSIHHACQAAEiJ3kiBxgBwAAC6AP8DAEiJ2UiBwQAwAAA="
-call {vg_mldsa_make_hint_avx512}
+call {vg_mldsa_make_hint_avx2}
 .base64 "i4uIAwAAAcFIiYuIAwAASInfSIHHACAAAEiJ3kiBxgAUAABIidpIgcIAuAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHACAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHACAAAL4A/wMA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHSInfSIHHACQAAEiJ3kiBxgB0AAC5gAAAAA=="
 251:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 251b
 .base64 "SInfSIHHAHQAAEiJ3kiBxgAgAAA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACQAAEiJ3kiBxgB0AAA="
-call {vg_mldsa_sub_avx512}
+call {vg_mldsa_sub_avx2}
 .base64 "SInfSIHHACQAAEiJ3kiBxgB0AAC6AP8DAEiJ2UiBwQA0AAA="
-call {vg_mldsa_make_hint_avx512}
+call {vg_mldsa_make_hint_avx2}
 .base64 "i4uIAwAAAcFIiYuIAwAASInfSIHHACAAAEiJ3kiBxgAUAABIidpIgcIAvAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHACAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHACAAAL4A/wMA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHSInfSIHHACQAAEiJ3kiBxgB4AAC5gAAAAA=="
 252:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 252b
 .base64 "SInfSIHHAHgAAEiJ3kiBxgAgAAA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACQAAEiJ3kiBxgB4AAA="
-call {vg_mldsa_sub_avx512}
+call {vg_mldsa_sub_avx2}
 .base64 "SInfSIHHACQAAEiJ3kiBxgB4AAC6AP8DAEiJ2UiBwQA4AAA="
-call {vg_mldsa_make_hint_avx512}
+call {vg_mldsa_make_hint_avx2}
 .base64 "i4uIAwAAAcFIiYuIAwAASInfSIHHACAAAEiJ3kiBxgAUAABIidpIgcIAwAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx512}
+call {vg_mldsa_montgomery_multiply_ntt_avx2}
 .base64 "SInfSIHHACAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx512}
+call {vg_mldsa_montgomery_inv_ntt_avx2}
 .base64 "SInfSIHHACAAAL4A/wMA"
-call {vg_mldsa_norm_lt_avx512}
+call {vg_mldsa_norm_lt_avx2}
 .base64 "QSHHSInfSIHHACQAAEiJ3kiBxgB8AAC5gAAAAA=="
 253:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 253b
 .base64 "SInfSIHHAHwAAEiJ3kiBxgAgAAA="
-call {vg_mldsa_add_avx512}
+call {vg_mldsa_add_avx2}
 .base64 "SInfSIHHACQAAEiJ3kiBxgB8AAA="
-call {vg_mldsa_sub_avx512}
+call {vg_mldsa_sub_avx2}
 .base64 "SInfSIHHACQAAEiJ3kiBxgB8AAC6AP8DAEiJ2UiBwQA8AAA="
-call {vg_mldsa_make_hint_avx512}
+call {vg_mldsa_make_hint_avx2}
 .base64 "i4uIAwAAAcFIiYuIAwAAi4OIAwAASIPoOEjB6D9BIcc="
 247:
 233:
@@ -557,23 +557,23 @@ call {vg_mldsa_hint_bit_pack}
         vg_mldsa_rej_ntt_poly4_avx512 = sym crate::mldsa44::vg_mldsa_rej_ntt_poly4_avx512::vg_mldsa_rej_ntt_poly4_avx512,
         vg_mldsa_rej_ntt_poly = sym crate::mldsa44::vg_mldsa_rej_ntt_poly::vg_mldsa_rej_ntt_poly,
         vg_mldsa_bit_unpack = sym crate::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
-        vg_mldsa_ntt_avx512 = sym crate::mldsa44::vg_mldsa_ntt_avx512::vg_mldsa_ntt_avx512,
+        vg_mldsa_ntt_avx2 = sym crate::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
         vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym crate::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
         vg_mldsa_expand_mask_poly4_avx512 = sym crate::mldsa44::vg_mldsa_expand_mask_poly4_avx512::vg_mldsa_expand_mask_poly4_avx512,
         vg_mldsa_expand_mask_poly = sym crate::mldsa44::vg_mldsa_expand_mask_poly::vg_mldsa_expand_mask_poly,
-        vg_mldsa_dot_inverse5_avx512 = sym crate::mldsa65::vg_mldsa_dot_inverse5_avx512::vg_mldsa_dot_inverse5_avx512,
-        vg_mldsa_high_bits_avx512 = sym crate::mldsa44::vg_mldsa_high_bits_avx512::vg_mldsa_high_bits_avx512,
+        vg_mldsa_dot_inverse5_avx2 = sym crate::mldsa65::vg_mldsa_dot_inverse5_avx2::vg_mldsa_dot_inverse5_avx2,
+        vg_mldsa_high_bits_avx2 = sym crate::mldsa44::vg_mldsa_high_bits_avx2::vg_mldsa_high_bits_avx2,
         vg_mldsa_simple_bit_pack = sym crate::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
         vg_mldsa_sample_in_ball = sym crate::mldsa44::vg_mldsa_sample_in_ball::vg_mldsa_sample_in_ball,
-        vg_mldsa_montgomery_multiply_ntt_avx512 = sym crate::mldsa44::vg_mldsa_montgomery_multiply_ntt_avx512::vg_mldsa_montgomery_multiply_ntt_avx512,
-        vg_mldsa_montgomery_inv_ntt_avx512 = sym crate::mldsa44::vg_mldsa_montgomery_inv_ntt_avx512::vg_mldsa_montgomery_inv_ntt_avx512,
-        vg_mldsa_add_avx512 = sym crate::mldsa44::vg_mldsa_add_avx512::vg_mldsa_add_avx512,
-        vg_mldsa_norm_lt_avx512 = sym crate::mldsa44::vg_mldsa_norm_lt_avx512::vg_mldsa_norm_lt_avx512,
-        vg_mldsa_sub_avx512 = sym crate::mldsa44::vg_mldsa_sub_avx512::vg_mldsa_sub_avx512,
-        vg_mldsa_low_bits_avx512 = sym crate::mldsa44::vg_mldsa_low_bits_avx512::vg_mldsa_low_bits_avx512,
-        vg_mldsa_make_hint_avx512 = sym crate::mldsa44::vg_mldsa_make_hint_avx512::vg_mldsa_make_hint_avx512,
+        vg_mldsa_montgomery_multiply_ntt_avx2 = sym crate::mldsa44::vg_mldsa_montgomery_multiply_ntt_avx2::vg_mldsa_montgomery_multiply_ntt_avx2,
+        vg_mldsa_montgomery_inv_ntt_avx2 = sym crate::mldsa44::vg_mldsa_montgomery_inv_ntt_avx2::vg_mldsa_montgomery_inv_ntt_avx2,
+        vg_mldsa_add_avx2 = sym crate::mldsa44::vg_mldsa_add_avx2::vg_mldsa_add_avx2,
+        vg_mldsa_norm_lt_avx2 = sym crate::mldsa44::vg_mldsa_norm_lt_avx2::vg_mldsa_norm_lt_avx2,
+        vg_mldsa_sub_avx2 = sym crate::mldsa44::vg_mldsa_sub_avx2::vg_mldsa_sub_avx2,
+        vg_mldsa_low_bits_avx2 = sym crate::mldsa44::vg_mldsa_low_bits_avx2::vg_mldsa_low_bits_avx2,
+        vg_mldsa_make_hint_avx2 = sym crate::mldsa44::vg_mldsa_make_hint_avx2::vg_mldsa_make_hint_avx2,
         vg_mldsa_bit_pack = sym crate::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
         vg_mldsa_hint_bit_pack = sym crate::mldsa44::vg_mldsa_hint_bit_pack::vg_mldsa_hint_bit_pack,
     )
