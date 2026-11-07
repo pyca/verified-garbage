@@ -83,7 +83,9 @@ that verified functions call but that has no contract: it has no Rust
 signature (`fn <name>()`), so its variants are not found by their
 signature. A variant of an internal function `f` is the internal function
 `f_<suffix>` whose suffix is the suffix of a variant of a function with a
-signature on the target (`_shani`, `_avx2`, `_blake2b_avx2`, …), each
+signature on the target (`_shani`, `_avx2`, `_blake2b_avx2`, …), or a
+qualified part `_<tag>_<suffix>` of one whose `<suffix>` is one
+(`_sha1_avx_bmi` of `_sha1_avx_bmi_sha256_avx2`), each
 variant of a variant adding one: `vg_p384_mul_mod_n` is not a variant of
 `vg_p384_mul`, as no function of a signature has a variant `_mod_n`, nor
 `vg_keccak_f1600_x2` of `vg_keccak_f1600`, as none has a variant `_x2`
@@ -254,8 +256,18 @@ def variants(fns):
 
     out = find([n for n, (sig, _) in fns.items() if sig != INTERNAL], lambda _: True)
     suffixes = {suffix for _, suffix in out.values()}
-    out.update(find([n for n, (sig, _) in fns.items() if sig == INTERNAL],
-                    lambda ws: "_".join(ws) in suffixes))
+
+    def internal_suffix(ws):
+        """A suffix of a variant of a function with a signature, or one of
+        its qualified parts `<tag>_<suffix>` (`Emit.qualifiedName`), whose
+        `<suffix>` is one."""
+        s = "_".join(ws)
+        if s in suffixes:
+            return True
+        return len(ws) > 1 and "_".join(ws[1:]) in suffixes and any(
+            f"_{s}_" in f"_{suffix}_" for suffix in suffixes)
+
+    out.update(find([n for n, (sig, _) in fns.items() if sig == INTERNAL], internal_suffix))
     return out
 
 
@@ -270,13 +282,16 @@ def chain(var, name):
 
 
 def qualified_extension(sufs, suffixes, suffix):
-    """Whether the suffixes `sufs` are `suffixes` and one more, `<tag>_<suffix>`."""
+    """Whether the suffixes `sufs` are `suffixes` and one more, made of
+    qualified parts `<tag>_<suffix>` (`Emit.qualifiedName`), one of which
+    ends with `_<suffix>`, in any position (`sha1_avx_bmi_sha256_avx2` for
+    `avx_bmi` or `avx2`)."""
     rest = list(sufs)
     for s in suffixes:
         if s not in rest:
             return False
         rest.remove(s)
-    return len(rest) == 1 and rest[0].endswith("_" + suffix)
+    return len(rest) == 1 and f"_{suffix}_" in f"_{rest[0]}_" and rest[0] != suffix
 
 
 
