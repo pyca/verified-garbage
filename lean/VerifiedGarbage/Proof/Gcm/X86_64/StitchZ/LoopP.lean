@@ -331,7 +331,7 @@ theorem bigP_ok {s₀ : State} (hp : SPreP s₀) (hm : nb s₀ % 16 = 0) {P : Na
     by_cases h2 : g = 2
     · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
     · simp only [T, h2, ↓reduceIte]; exact t g (by omega_arith) k hk l hl
-  exact bigRest_ok hp.base hm hf hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
+  exact bigRest_ok hp.base hf hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
     (hI.a.pow hp.base fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl) hv pm g₁
     fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl
 

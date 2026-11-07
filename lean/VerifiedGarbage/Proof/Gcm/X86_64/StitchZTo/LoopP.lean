@@ -59,7 +59,7 @@ theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.powers s₀) (hm : nb s₀
     by_cases h2 : g = 2
     · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
     · simp only [T, h2, ↓reduceIte]; exact t g (by omega) k hk l hl
-  exact (bigRestTo_ok hp hm hf hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
+  exact (bigRestTo_ok hp hf hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
     (hI.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl) hv pm g₁
     fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
 
