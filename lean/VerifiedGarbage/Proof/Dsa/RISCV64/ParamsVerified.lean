@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Dsa.Contract
 public import VerifiedGarbage.Impl.Dsa.RISCV64.Params
 public import VerifiedGarbage.TCB.RISCV64.Target
 
+-- separate module: `vg_dsa_check_parameters`' Verified as it was on main before #4305 removed it as dead, kept whole so that it diffs against its original
+
 /-!
 # `vg_dsa_check_parameters` on RISC-V: verified against its contract
 
