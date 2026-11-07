@@ -34,10 +34,10 @@ def ranking : Rust.Ranking := [
         if g.isEmpty then [] else [{ suffix := g, modules := ["aes_gcm_siv"] }]) ++
     { suffix := "_vaes_avx512" } ::
     gcmX86_64.map (fun g => { suffix := g }) ++ [
-    -- ChaCha20's `_ifma` needs no AVX512_IFMA itself: it is chosen where
-    -- ChaCha20-Poly1305's `_ifma` is, and `_avx512vl` on the other CPUs with
-    -- AVX512VL.
-    { suffix := "_ifma", modules := ["chacha20"], extra := ["avx512ifma"] },
+    -- ChaCha20's 512-bit code (`_avx512`) is chosen where ChaCha20-Poly1305's
+    -- `_ifma` is, on CPUs with AVX512_IFMA, and `_avx512vl` on the other CPUs
+    -- with AVX512VL.
+    { suffix := "_avx512", modules := ["chacha20"], extra := ["avx512ifma"] },
     { suffix := "_ifma" },
     { suffix := "_avx512vl" },
     -- ML-DSA's `_avx512` key preparation is its `_avx2` code but for the name
