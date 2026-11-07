@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.Arm.Isa
 @[expose] public section
 
 namespace VG.Proof.Bignum.Arm
-open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
+open VG VG.Arm VG.Proof.Mont
 open VG.Proof.Rsa.Mont (arrAt wordAt wOf numAt Layout Operand Keeps)
 open VG.Proof.X25519.Arm (Rest)
 

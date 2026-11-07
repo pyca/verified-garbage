@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
 public import VerifiedGarbage.TCB.X86.State
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Weierstrass.Words32
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Mont.X86.Instr
