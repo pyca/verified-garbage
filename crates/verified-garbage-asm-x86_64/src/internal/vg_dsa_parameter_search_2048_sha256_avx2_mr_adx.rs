@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_dsa_parameter_search_2048_sha256_avx2_mr_adx.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_dsa_parameter_search_2048_sha256_avx2_mr_adx` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_DSA_PARAMETER_SEARCH_2048_SHA256_AVX2_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety

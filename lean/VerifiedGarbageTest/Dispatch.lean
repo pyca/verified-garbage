@@ -78,16 +78,19 @@ def x86Rank (module suffix : String) : Option Nat :=
   (Rust.rankOf ((Dispatch.ranking.lookup "x86_64").getD []) module suffix).map (·.1)
 
 -- ChaCha20's and ChaCha20-Poly1305's dispatchers try `_avx2` before `_ssse3`,
--- so they never choose `_ssse3` with AVX2 (`NEVER_WITH` in
--- `ci/check_variants.py`), and `_ssse3` without it.
+-- so they never choose `_ssse3` with AVX2, and `_ssse3` without it.
 #guard ["chacha20", "chacha20poly1305"].all fun m =>
   match x86Rank m "_avx2", x86Rank m "_ssse3" with
   | some a, some s => a < s
   | _, _ => false
 
+-- AES-CMAC's, AES-SIV's and AES-CCM's dispatchers rank `_aesni`, which needs
+-- only AES-NI and SSSE3, so they never choose the baseline with those.
+#guard ["cmac_aes", "aes_siv", "aes_ccm"].all fun m => (x86Rank m "_aesni").isSome
+
 -- AES-GCM-SIV's dispatchers try `_aesni_pclmul_avx_avx2` before `_aesni_avx2`
 -- and `_pclmul_avx2`, and `_vaes_vpclmul_avx512` before `_vaes_avx2` and
--- `_vpclmul_avx2` (`NEVER_WITH` in `ci/check_variants.py`).
+-- `_vpclmul_avx2`.
 #guard [("_aesni_pclmul_avx_avx2", "_aesni_avx2"), ("_aesni_pclmul_avx_avx2", "_pclmul_avx2"),
     ("_vaes_vpclmul_avx512", "_vaes_avx2"), ("_vaes_vpclmul_avx512", "_vpclmul_avx2")].all fun (a, b) =>
   match x86Rank "aes_gcm_siv" a, x86Rank "aes_gcm_siv" b with

@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_hmac_sha512_256_finalize_scratch_sha3.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_hmac_sha512_256_finalize_scratch_sha3` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_HMAC_SHA512_256_FINALIZE_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety

@@ -37,7 +37,7 @@ pub unsafe fn vg_aes_siv_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
 ///
 /// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_siv_encrypt_vaes` if the CPU supports its features (`VG_AES_SIV_ENCRYPT_VAES_FEATURES`); `vg_aes_siv_encrypt_aesni` if the CPU supports its features (`VG_AES_SIV_ENCRYPT_AESNI_FEATURES`); or else `vg_aes_siv_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_siv_encrypt_aesni` if the CPU supports its features (`VG_AES_SIV_ENCRYPT_AESNI_FEATURES`); or else `vg_aes_siv_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -52,11 +52,6 @@ pub unsafe fn vg_aes_siv_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
 #[inline]
 pub unsafe fn vg_aes_siv_encrypt_auto(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_siv::VG_AES_SIV_ENCRYPT_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_siv_encrypt_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_siv::vg_aes_siv_encrypt_vaes(ctx, rounds, ads, ads_count, data, len, siv) };
-    }
     if cpu.contains(crate::aes_siv::VG_AES_SIV_ENCRYPT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_siv_encrypt_aesni`'s, and the CPU
         // has the features it needs.
@@ -70,7 +65,7 @@ pub unsafe fn vg_aes_siv_encrypt_auto(ctx: *const [u64; 64], rounds: usize, ads:
 ///
 /// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_siv_decrypt_vaes` if the CPU supports its features (`VG_AES_SIV_DECRYPT_VAES_FEATURES`); `vg_aes_siv_decrypt_aesni` if the CPU supports its features (`VG_AES_SIV_DECRYPT_AESNI_FEATURES`); or else `vg_aes_siv_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_siv_decrypt_aesni` if the CPU supports its features (`VG_AES_SIV_DECRYPT_AESNI_FEATURES`); or else `vg_aes_siv_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -85,11 +80,6 @@ pub unsafe fn vg_aes_siv_encrypt_auto(ctx: *const [u64; 64], rounds: usize, ads:
 #[inline]
 pub unsafe fn vg_aes_siv_decrypt_auto(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_siv::VG_AES_SIV_DECRYPT_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_siv_decrypt_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_siv::vg_aes_siv_decrypt_vaes(ctx, rounds, ads, ads_count, data, len, siv) };
-    }
     if cpu.contains(crate::aes_siv::VG_AES_SIV_DECRYPT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_siv_decrypt_aesni`'s, and the CPU
         // has the features it needs.

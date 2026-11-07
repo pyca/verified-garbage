@@ -237,8 +237,8 @@ def checkMgf1 : Except String Unit := do
     for len in [0, 1, H.len - 1, H.len, H.len + 1, 3 * H.len + 5] do
       let blocks := (List.range 4).flatMap fun c =>
         H.hash (seed ++ [0, 0, 0, BitVec.ofNat 8 c])
-      unless mgf1 H seed len == blocks.take len do throw s!"MGF1 with {H.name}, {len} octets"
-    unless (H.hash []).length == H.len do throw s!"{H.name}: digest length"
+      unless mgf1 H seed len == blocks.take len do throw s!"MGF1 with {H.rust}, {len} octets"
+    unless (H.hash []).length == H.len do throw s!"{H.rust}: digest length"
 
 #assert_no_compiler_overrides Spec.RsaPss.encodeK Spec.RsaPss.verify Spec.RsaPss.sign Spec.Mgf1.mgf1
 

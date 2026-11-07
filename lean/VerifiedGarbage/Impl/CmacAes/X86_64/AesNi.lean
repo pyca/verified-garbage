@@ -5,7 +5,7 @@ public import VerifiedGarbage.TCB.X86_64.Isa
 /-!
 # AES-CMAC's chaining with AES-NI on x86-64
 
-`vg_cmac_aes_update_aesni_cbc(schedule = rdi, rounds = rsi, state = rdx, data = rcx, n = r8,
+`vg_cmac_aes_update_aesni(schedule = rdi, rounds = rsi, state = rdx, data = rcx, n = r8,
 scratch = r9)`, for CPUs with AES-NI: §6.2 step 6,
 `Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)`, one block after the other in registers.
 

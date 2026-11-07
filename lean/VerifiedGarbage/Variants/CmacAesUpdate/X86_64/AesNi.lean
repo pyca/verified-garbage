@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
 
-/-! # `vg_cmac_aes_update` on x86-64: by calls of `vg_aes_ctr32_aesni` -/
+/-! # `vg_cmac_aes_update` on x86-64: the chaining in AES-NI registers -/
 
 @[expose] public section
 
 namespace VG.Variants.CmacAesUpdate.X86_64.AesNi
 
-def variant : Proof.CmacAes.X86_64.UpdateImpl := .ctr32 .aesni
+def variant : Proof.CmacAes.X86_64.UpdateImpl := .aesniCbc
 
 end VG.Variants.CmacAesUpdate.X86_64.AesNi

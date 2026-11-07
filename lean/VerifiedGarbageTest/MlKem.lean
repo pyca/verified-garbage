@@ -47,6 +47,12 @@ def readVectors (dir : String) : CommandElabM Json := do
   | .ok j => pure j
   | .error e => throwError "{dir}: {e}"
 
+/-- ML-KEM-512 (FIPS 203, Table 2): `k = 2`, `η₁ = 3`, `η₂ = 2`, `d_u = 10`,
+`d_v = 4`. The library does not implement it, so `Spec/MlKem.lean` names
+only ML-KEM-768 and ML-KEM-1024; its vectors check the spec's algorithms
+with another `k` and `η₁`. -/
+def mlKem512 : Params := { k := 2, η₁ := 3, η₂ := 2, du := 10, dv := 4 }
+
 /-- The parameter set named `name`. -/
 def params (name : String) : Option Params :=
   match name with

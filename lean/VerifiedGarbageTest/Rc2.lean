@@ -88,6 +88,16 @@ def checkRfc (text : String) : Except String Unit := do
     unless encryptBlock k pt == ct do throw s!"RFC encryption, {key.length} bytes/{bits} bits"
     unless decryptBlock k ct == pt do throw s!"RFC decryption, {key.length} bytes/{bits} bits"
 
+/-- Issue #1's initialization, defaulting to the supplied key's bit length:
+`initWithEffectiveBits` with eight times the key's length. -/
+def init (key iv : List Byte) (direction : Direction) : Except Error Spec.Rc2.Context :=
+  initWithEffectiveBits key iv direction (8 * key.length)
+
+/-- Unpadded CBC's finalization: success emits no bytes; a trailing partial
+block is an error in either direction. -/
+def finalize (ctx : Spec.Rc2.Context) : Except Error (List Byte) :=
+  if ctx.pending.isEmpty then .ok [] else .error .incompleteBlock
+
 def context (key iv : List Byte) (direction : Direction) (bits : Nat) : Except String Spec.Rc2.Context :=
   (initWithEffectiveBits key iv direction bits).mapError (fun e => s!"initialization: {repr e}")
 

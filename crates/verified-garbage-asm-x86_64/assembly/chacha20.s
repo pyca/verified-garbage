@@ -140,6 +140,7 @@ vg_chacha20_apply_avx2:
 	add rcx, 256
 	add rbp, rdx
 	sub r12, rdx
+	mov r8, rsi
 	call {vg_chacha20_xor_avx2}
 	jmp 211f
 210:
@@ -284,6 +285,7 @@ vg_chacha20_apply_avx512:
 	add rcx, 256
 	add rbp, rdx
 	sub r12, rdx
+	mov r8, rsi
 	call {vg_chacha20_xor_avx512}
 	jmp 211f
 210:
@@ -428,6 +430,7 @@ vg_chacha20_apply_avx512vl:
 	add rcx, 256
 	add rbp, rdx
 	sub r12, rdx
+	mov r8, rsi
 	call {vg_chacha20_xor_avx512vl}
 	jmp 211f
 210:
@@ -572,6 +575,7 @@ vg_chacha20_apply:
 	add rcx, 256
 	add rbp, rdx
 	sub r12, rdx
+	mov r8, rsi
 	call {vg_chacha20_xor}
 	jmp 211f
 210:
@@ -716,6 +720,7 @@ vg_chacha20_apply_ssse3:
 	add rcx, 256
 	add rbp, rdx
 	sub r12, rdx
+	mov r8, rsi
 	call {vg_chacha20_xor_ssse3}
 	jmp 211f
 210:

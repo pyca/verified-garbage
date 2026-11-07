@@ -53,16 +53,4 @@ def decrypt (ciph : Cipher) (iv : List Byte) : List (List Byte) → List (List B
   | [] => []
   | c :: cs => xor c (ciph iv) :: decrypt ciph c cs
 
-/-! ## With AES -/
-
-/-- AES-CFB128 encryption of the plaintext `pt` (a multiple of 16 bytes)
-under the key `key` (16, 24 or 32 bytes) with the 16-byte `iv`. -/
-def aesCfbEncrypt (key iv pt : List Byte) : List Byte :=
-  (encrypt (Cbc.aes key) iv (Cbc.blocks pt)).flatten
-
-/-- AES-CFB128 decryption of the ciphertext `ct` (a multiple of 16 bytes)
-under the key `key` (16, 24 or 32 bytes) with the 16-byte `iv`. -/
-def aesCfbDecrypt (key iv ct : List Byte) : List Byte :=
-  (decrypt (Cbc.aes key) iv (Cbc.blocks ct)).flatten
-
 end VG.Spec.Cfb

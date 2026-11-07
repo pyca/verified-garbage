@@ -11,6 +11,7 @@ vg_chacha20_poly1305_open_body_avx512vl:
 	mov rax, rsp
 	add rax, 24
 	mov QWORD PTR [rsp+16], rax
+	mov r11, r8
 	mov rax, QWORD PTR [rsp+16]
 	mov r11, QWORD PTR [rsp+8]
 	mov QWORD PTR [rax], rbx
@@ -89,6 +90,7 @@ vg_chacha20_poly1305_open_body_avx512vl:
 	cmovb rax, r10
 	cmp rax, 192
 	jb 23f
+	mov r8, rsi
 	call {vg_chacha20_xor_avx512vl}
 	jmp 24f
 23:
@@ -8366,6 +8368,7 @@ vg_chacha20_poly1305_open_body_avx512vl:
 	mov rdx, rbp
 	mov rcx, r15
 	add rcx, 128
+	mov r8, rsi
 	call {vg_chacha20_xor_avx512vl}
 	jmp 251f
 250:
@@ -8674,6 +8677,7 @@ vg_chacha20_poly1305_open_body_avx512vl:
 	mov rdx, r15
 	add rdx, 48
 	call {vg_poly1305_finalize_scratch}
+	mov r12, QWORD PTR [rsp+8]
 	mov rax, QWORD PTR [rcx]
 	xor rax, QWORD PTR [r12]
 	mov rdx, QWORD PTR [rcx+8]

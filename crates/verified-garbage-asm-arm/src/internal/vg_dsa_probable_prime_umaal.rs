@@ -3,10 +3,6 @@
 //! `assembly/internal/vg_dsa_probable_prime_umaal.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_dsa_probable_prime_umaal` requires (`VG.Rust.Internal.features`).
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_DSA_PROBABLE_PRIME_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety

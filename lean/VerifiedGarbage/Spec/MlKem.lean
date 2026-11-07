@@ -9,8 +9,9 @@ public import VerifiedGarbage.Spec.Sha3
 key-encapsulation mechanism ML-KEM, transcribed from FIPS 203,
 *Module-Lattice-Based Key-Encapsulation Mechanism Standard* (August 2024);
 section, algorithm, table and appendix numbers below refer to it. The
-algorithms are written for any parameter set (`Params`), and the three of
-Table 2 are `mlKem512`, `mlKem768` and `mlKem1024`.
+algorithms are written for any parameter set (`Params`); ML-KEM-768 and
+ML-KEM-1024 of Table 2, the parameter sets the library implements, are
+`mlKem768` and `mlKem1024`.
 
 Byte arrays are lists of bytes, and bit arrays `Array`s of `Bool`s (a bit
 `b` is the integer `b.toNat` where the standard does arithmetic with it). An
@@ -69,9 +70,6 @@ structure Params where
   η₂ : Nat
   du : Nat
   dv : Nat
-
-/-- ML-KEM-512 (Table 2): `k = 2`, `η₁ = 3`, `η₂ = 2`, `d_u = 10`, `d_v = 4`. -/
-def mlKem512 : Params := { k := 2, η₁ := 3, η₂ := 2, du := 10, dv := 4 }
 
 /-- ML-KEM-768 (Table 2): `k = 3`, `η₁ = 2`, `η₂ = 2`, `d_u = 10`, `d_v = 4`. -/
 def mlKem768 : Params := { k := 3, η₁ := 2, η₂ := 2, du := 10, dv := 4 }

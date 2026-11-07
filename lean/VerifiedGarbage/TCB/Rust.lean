@@ -1586,19 +1586,17 @@ def internalDoc : String :=
   * Only the verified functions of this crate may call it, as their code does: it is not \
   visible outside the crate."
 
-/-- The file of the internal function `h`, `internal/<name>.rs`: the constant of
-the CPU features its code needs (`featuresConst`, for the checks of the
-generated code, `ci/check_variants.py`), and the function, a naked function
-of no parameters, `pub(crate)`, with the `cfg` attribute of those features
-(`Printer.featureCfg`); `moduleOf` gives the module of each function it calls,
-from the crate's root (`internalModule` for an internal function). -/
+/-- The file of the internal function `h`, `internal/<name>.rs`: the function, a
+naked function of no parameters, `pub(crate)`, with the `cfg` attribute of
+the CPU features its code needs (`Printer.featureCfg`); `moduleOf` gives the
+module of each function it calls, from the crate's root (`internalModule`
+for an internal function). -/
 def internalFile (h : Internal) (moduleOf : String → String) : String :=
   let T := h.target
   let gate := cfgGate (h.features.filterMap T.printer.featureCfg)
   header ++ s!"//! The internal function `{h.name}` for `{T.name}`, whose text is in\n" ++
   s!"//! `{assemblyFile s!"internal/{h.name}"}`.\n" ++
   "#![allow(dead_code)]\n\n" ++
-  featuresConst h.name gate h.features "pub(crate)" "VG.Rust.Internal.features" ++
   docComment "" internalDoc ++
   gate ++
   "#[unsafe(naked)]\n" ++

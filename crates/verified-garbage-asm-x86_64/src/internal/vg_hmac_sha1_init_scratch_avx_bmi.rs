@@ -3,9 +3,6 @@
 //! `assembly/internal/vg_hmac_sha1_init_scratch_avx_bmi.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_hmac_sha1_init_scratch_avx_bmi` requires (`VG.Rust.Internal.features`).
-pub(crate) const VG_HMAC_SHA1_INIT_SCRATCH_AVX_BMI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
-
 /// An internal function of the verified functions of this crate (`VG.Rust.Internal`): code that they call, which is not itself an artifact. It has no contract of its own: the proof of each function that calls it covers its code, which the model runs for the call (`Code.call`), and the emitter checks that every call of it is of this code.
 ///
 /// # Safety

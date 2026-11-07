@@ -21,8 +21,8 @@ of the associated data (§3).
 
 The functions take AES-CMAC under `K1` as a function on byte strings
 (`mac`, the PRF of S2V), and the cipher of `K2` as a function on 16-byte
-blocks (`ciph`): `encryptWith`, `decryptWith`. `encrypt` and `decrypt` are
-SIV with a key. S2V is computed in steps (`s2vStart`, `s2vStep`, which
+blocks (`ciph`): `encryptWith`, `decryptWith`. SIV with a key is these
+with `cmac K1` and `Cmac.aes K2`. S2V is computed in steps (`s2vStart`, `s2vStep`, which
 absorbs one component of associated data, and `s2vFinish`, which absorbs
 the last component and returns `V`), and so is the whole AEAD
 (`sealWith`, `openWith` from the S2V state of the associated data), which
@@ -178,23 +178,6 @@ theorem decryptWith_eq (mac : List Byte → List Byte) (ciph : Cipher) (ads : Li
 /-- AES-CMAC under the AES key `k` (RFC 4493, SP 800-38B with AES): the
 whole 128-bit MAC. -/
 def cmac (k : List Byte) : List Byte → List Byte := Cmac.macFull (Cmac.aes k) 16
-
-/-- §2.6, SIV-AES encryption under the key `key` (32, 48 or 64 bytes,
-`K1 = leftmost(K, len(K)/2)`, `K2 = rightmost(K, len(K)/2)`) of the
-plaintext `p` with the associated data `ads`: `Z = V ‖ C`. -/
-def encrypt (key : List Byte) (ads : List (List Byte)) (p : List Byte) : List Byte :=
-  let k1 := key.take (key.length / 2)
-  let k2 := key.drop (key.length / 2)
-  let (v, c) := encryptWith (cmac k1) (Cmac.aes k2) ads p
-  v ++ c
-
-/-- §2.7, SIV-AES decryption under the key `key` (32, 48 or 64 bytes) of
-`Z = V ‖ C` with the associated data `ads`: the plaintext, or `none` (FAIL)
-if `Z` is shorter than `V` or `V` is wrong. -/
-def decrypt (key : List Byte) (ads : List (List Byte)) (z : List Byte) : Option (List Byte) :=
-  let k1 := key.take (key.length / 2)
-  let k2 := key.drop (key.length / 2)
-  if z.length < 16 then none else decryptWith (cmac k1) (Cmac.aes k2) ads (z.take 16) (z.drop 16)
 
 /-! ## The key context
 
