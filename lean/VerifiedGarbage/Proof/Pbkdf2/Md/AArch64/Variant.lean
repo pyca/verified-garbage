@@ -49,7 +49,7 @@ structure StreamFn where
   stack : Nat := 0
   verified : Verified AArch64.target code contract
   ofSig : ∃ pre post leak,
-      contract = api.sig.contract AArch64.target.abi pre post api.writeArgs stack leak := by
+      contract = api.sig.contract (AArch64.target.abi.withMode api.pubMode) pre post api.writeArgs stack leak := by
     exact ⟨_, _, _, rfl⟩
   ofApi : contract = api.contract AArch64.target.abi stack := by exact rfl
   spSafe : code.all (fun i => !AArch64.target.isa.writesSp i) = true
