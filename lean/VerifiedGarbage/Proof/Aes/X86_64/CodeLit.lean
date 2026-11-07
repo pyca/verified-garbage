@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.X86_64.Blocks
+public import VerifiedGarbage.Impl.Aes.X86_64.Sse
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesBlocks
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Impl.Aes.X86_64.Blocks
+meta import VerifiedGarbage.Impl.Aes.X86_64.Sse
 meta import VerifiedGarbage.Impl.Aes.X86_64.VaesBlocks
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Mem
@@ -24,6 +26,11 @@ file's `spSafe`) read the literal instead of building the code again.
 -/
 
 @[expose] public section
+
+namespace VG.Impl.Aes.X86_64.Sse
+-- The S-box's allocated code, which the round's code and its proofs read.
+materialize_value sboxCode
+end VG.Impl.Aes.X86_64.Sse
 
 namespace VG.Impl.Aes.X86_64
 materialize_code ctr32

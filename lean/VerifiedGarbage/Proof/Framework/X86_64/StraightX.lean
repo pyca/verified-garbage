@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.StraightY
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
@@ -10,8 +13,10 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 As `StraightY`, for the 128-bit `xmm` registers of two-operand SSE2 code and
 16-byte slots: a block of `pxor`, `pand`, `por`, `pandn`, `movdqa`,
 quadword shifts (`psllq`, `psrlq`) and `movdqu` loads and stores of slots
-`[base + 16k]` computes each of the two quadwords of its results from the
-same quadword of its operands. `eval` runs it once over an abstract domain on
+`[base + 16k]`, and of the lane-local `psrlw`, `psllw` (word shifts, a
+quadword shift masked to its words) and `pshufd` with `1 0 3 2` (a rotation
+of each quadword by 32 bits) computes each of the two quadwords of its
+results from the same quadword of its operands. `eval` runs it once over an abstract domain on
 64-bit words, and `run` relates quadword `q` of every register and slot by
 `R q`, for each `q < 2`. A constant in both quadwords (a mask) is made by
 `movabs r, v`, `movq x, r` and `punpcklqdq x, x`. The legacy SSE
@@ -56,9 +61,15 @@ def Cfg.loc (c : Cfg) (m : MemOp) : Option Nat :=
 
 /-- The register an SSE instruction writes, if any. -/
 def xdst : Instr → Option XReg
-  | .xop (.bin _ d _) | .xop (.shift _ d _) | .xop (.movq d _) => some d
+  | .xop (.bin _ d _) | .xop (.shift _ d _) | .xop (.movq d _) | .xop (.pshufd d _ _) => some d
   | .movdquLoad d _ => some d
   | _ => none
+
+/-- The bits of each 16-bit word that `psrlw` by `n` keeps, in a quadword. -/
+def wordMaskR (n : Nat) : BitVec 64 := ofBits 64 fun i => decide (i % 16 + n < 16)
+
+/-- The bits of each 16-bit word that `psllw` by `n` keeps, in a quadword. -/
+def wordMaskL (n : Nat) : BitVec 64 := ofBits 64 fun i => decide (n ≤ i % 16)
 
 section
 variable (D : Dom α 64) (c : Cfg)
@@ -87,8 +98,15 @@ def step (e : Env α) : Instr → Option (Env α)
       match op, e.reg d with
       | .psrlq, some a => (D.shr n.toNat a).map (e.setReg d)
       | .psllq, some a => (shl D n.toNat a).map (e.setReg d)
+      | .psrlw, some a => if n.toNat ≤ 15 then
+          ((D.shr n.toNat a).bind fun t => (D.const (wordMaskR n.toNat)).bind (D.and t)).map (e.setReg d)
+        else none
+      | .psllw, some a => if n.toNat ≤ 15 then
+          ((shl D n.toNat a).bind fun t => (D.const (wordMaskL n.toNat)).bind (D.and t)).map (e.setReg d)
+        else none
       | _, _ => none
     else none
+  | .xop (.pshufd d r o) => if o = 0xb1 then ((e.reg r).bind (D.ror 32)).map (e.setReg d) else none
   | .movdquLoad d m => match c.loc m with
     | some k => (e.slot k).map (e.setReg d)
     | none => none
@@ -125,6 +143,48 @@ end
 theorem getLsbD_qword (x : BitVec 128) {q i : Nat} (hi : i < 64) :
     (qword x q).getLsbD i = x.getLsbD (64 * q + i) := by
   simp [qword, hi]
+
+theorem qword_psrlw (a : BitVec 128) {n : BitVec 8} (hn : n.toNat ≤ 15) {q : Nat} (hq : q < 2) :
+    qword (XShiftOp.eval .psrlw a n) q = (qword a q >>> n.toNat) &&& wordMaskR n.toNat := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [XShiftOp.eval, show ¬ 15 < n.toNat by omega, ite_false]
+  rw [getLsbD_qword _ hi, show 64 * q + i = 16 * (4 * q + i / 16) + i % 16 by omega,
+    getLsbD_ofWords _ (by omega) (Nat.mod_lt _ (by omega))]
+  simp only [BitVec.getLsbD_ushiftRight, getLsbD_word, BitVec.getLsbD_and, wordMaskR, getLsbD_ofBits,
+    qword, BitVec.getLsbD_extractLsb', decide_eq_true hi, Bool.true_and]
+  by_cases h : n.toNat + i % 16 < 16
+  · simp only [h, decide_true, Bool.true_and, show n.toNat + i < 64 by omega,
+      show i % 16 + n.toNat < 16 by omega, Bool.and_true]
+    exact congrArg _ (by omega)
+  · simp [h, show ¬ i % 16 + n.toNat < 16 by omega]
+
+theorem qword_psllw (a : BitVec 128) {n : BitVec 8} (hn : n.toNat ≤ 15) {q : Nat} (hq : q < 2) :
+    qword (XShiftOp.eval .psllw a n) q = (qword a q <<< n.toNat) &&& wordMaskL n.toNat := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [XShiftOp.eval, show ¬ 15 < n.toNat by omega, ite_false]
+  rw [getLsbD_qword _ hi, show 64 * q + i = 16 * (4 * q + i / 16) + i % 16 by omega,
+    getLsbD_ofWords _ (by omega) (Nat.mod_lt _ (by omega))]
+  simp only [BitVec.getLsbD_shiftLeft, getLsbD_word, BitVec.getLsbD_and, wordMaskL, getLsbD_ofBits,
+    qword, BitVec.getLsbD_extractLsb', decide_eq_true hi, Bool.true_and, Nat.mod_lt _ (show 16 > 0 by omega)]
+  by_cases h : n.toNat ≤ i % 16
+  · simp only [h, decide_true, Bool.and_true, show ¬ i % 16 < n.toNat by omega, show ¬ i < n.toNat by omega,
+      decide_false, Bool.not_false, Bool.true_and, show i % 16 - n.toNat < 16 by omega,
+      show i - n.toNat < 64 by omega]
+    exact congrArg _ (by omega)
+  · simp [h, show i % 16 < n.toNat by omega]
+
+/-- `pshufd` with `1 0 3 2` rotates each quadword by 32 bits. -/
+theorem qword_pshufd_b1 (a : BitVec 128) {q : Nat} (hq : q < 2) :
+    qword (shufDwords a 0xb1) q = (qword a q).rotateRight 32 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  rw [getLsbD_qword _ hi, shufDwords_b1, getLsbD_ofDwords, BitVec.getLsbD_rotateRight_of_lt (by omega)]
+  simp only [qword, BitVec.getLsbD_extractLsb', getLsbD_dword]
+  rcases (by omega : q = 0 ∨ q = 1) with rfl | rfl
+  all_goals
+    rcases (by omega : i < 32 ∨ 32 ≤ i) with h | h
+    all_goals
+      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
+      exact congrArg _ (by omega)
 
 /-! ## Relating abstract and machine states -/
 
@@ -326,7 +386,43 @@ theorem step_ok (hD : ∀ q < 2, D.Sound (R q)) {e e' : Env α} {s : State} (hok
           simp only [shl, Option.bind_eq_some_iff] at hb
           obtain ⟨t, ⟨o, ho, ht⟩, hc⟩ := hb
           exact (hD q hq).ror ((hD q hq).and (hrel.reg d a ha q hq) ((hD q hq).const ho) ht) hc
+        · rename_i a ha
+          split at h
+          · rename_i h15
+            obtain ⟨b, hb, rfl⟩ := Option.map_eq_some_iff.mp h
+            refine (post_setXmm hok hrel fun q hq => ?_).writes (fun r h => by simp [xdst, h])
+              (fun _ h => h.elim)
+            rw [qword_psrlw _ h15 hq]
+            simp only [Option.bind_eq_some_iff] at hb
+            obtain ⟨t, ht, o, ho, hc⟩ := hb
+            exact (hD q hq).and ((hD q hq).shr (hrel.reg d a ha q hq) ht) ((hD q hq).const ho) hc
+          · cases h
+        · rename_i a ha
+          split at h
+          · rename_i h15
+            obtain ⟨b, hb, rfl⟩ := Option.map_eq_some_iff.mp h
+            refine (post_setXmm hok hrel fun q hq => ?_).writes (fun r h => by simp [xdst, h])
+              (fun _ h => h.elim)
+            rw [qword_psllw _ h15 hq, ← shl_eq _ hn.1 (by omega)]
+            simp only [Option.bind_eq_some_iff] at hb
+            obtain ⟨t, ht, o, ho, hc⟩ := hb
+            simp only [shl, Option.bind_eq_some_iff] at ht
+            obtain ⟨t', ⟨o', ho', ht'⟩, hc'⟩ := ht
+            exact (hD q hq).and ((hD q hq).ror ((hD q hq).and (hrel.reg d a ha q hq)
+              ((hD q hq).const ho') ht') hc') ((hD q hq).const ho) hc
+          · cases h
         · cases h
+      · cases h
+    | pshufd d r o =>
+      simp only [step] at h
+      split at h
+      · rename_i ho
+        subst ho
+        simp only [Option.map_eq_some_iff, Option.bind_eq_some_iff] at h
+        obtain ⟨b, ⟨a, ha, hb⟩, rfl⟩ := h
+        exact ⟨_, rfl, (post_setXmm hok hrel fun q hq => by
+          rw [qword_pshufd_b1 _ hq]; exact (hD q hq).ror (hrel.reg r a ha q hq) hb).writes
+          (fun r h => by simp [xdst, h]) (fun _ h => h.elim)⟩
       · cases h
     | movq d r =>
       simp only [step] at h
