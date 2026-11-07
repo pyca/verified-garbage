@@ -614,6 +614,11 @@ def openFnR16 (v : GcmVariant) (r : R16 v) : OpenTo.OpenFn Proof.Gcm.X86_64.Stit
 theorem powFinD : Proof.Gcm.X86_64.StitchFrom.PowFinD :=
   fun H => Proof.Gcm.X86_64.Stitch.finD fun _ _ _ _ => Proof.Gcm.X86_64.StitchR.x_φ_hInvF H _
 
+/-- The same, for the 512-bit loops (`StitchZH.PowFinZ`). -/
+theorem powFinZ : Proof.Gcm.X86_64.StitchZH.PowFinZ :=
+  ⟨fun _ _ hP => Proof.Gcm.X86_64.StitchZ.finZ (Proof.Gcm.X86_64.StitchZP.finP hP),
+    Proof.Gcm.X86_64.StitchZP.fin48P⟩
+
 /-- The out-of-place decryption loop of a variant, for a key context of
 `vg_aes_gcm_prepare`. -/
 def GcmVariant.stitchFromR (v : GcmVariant) :
@@ -623,7 +628,7 @@ where
   /-- The loop named `n` and its proof. -/
   code : (n : StitchToName) → PieceFromR n → Option (StitchFromCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true)
     | .vaes, q => some ⟨_, Proof.Gcm.X86_64.StitchFrom.decR_okN powFinD 24, q.dec⟩
-    | .vaesAvx512, q => some ⟨_, Proof.Gcm.X86_64.StitchZH.decFromR_ok, q.dec⟩
+    | .vaesAvx512, q => some ⟨_, Proof.Gcm.X86_64.StitchZH.decFromR_ok powFinZ, q.dec⟩
     | .aesniAvx, _ => none
 
 /-- The out-of-place decryption loop of a variant, for a key context of

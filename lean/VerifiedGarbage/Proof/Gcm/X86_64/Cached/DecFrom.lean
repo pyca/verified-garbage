@@ -7,11 +7,10 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecFrom
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchFrom.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
@@ -93,14 +92,25 @@ theorem setupFrom_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
     by rw [f.zlane _ (by simp) 0 (by decide)]; exact hI.y,
     fun l h1 h4 => by rw [f.zlane _ (by simp) l h4]; exact hI.y1 l h1 h4⟩, hpw, hK⟩
 
+/-- The prepared powers the setup loads, and the tables of 48 blocks computed
+from them, give the products of the loops' bodies (`StitchZ.finZ`,
+`StitchZP.fin48P`), which `AesGcm/X86_64/Instances.lean` proves where the
+field is imported. -/
+def PowFinZ : Prop :=
+  (∀ (H : Block) (P : Nat → Nat → Block),
+      (∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow H (16 - 4 * k - l))) → FinOk H P) ∧
+    ∀ (H : Block) (T : Nat → Nat → Nat → Block),
+      (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow H (48 - 16 * g - 4 * k - l))) →
+        StitchZ.FinOk48 H T
+
 /-- The out-of-place decryption loop, for a prepared key context, for any
 number of blocks from 16 on that is a multiple of 16. -/
-theorem decFromR_ok : Stitch.StitchFromOkM CtxMode.prepared decFromR := by
+theorem decFromR_ok (hz : PowFinZ) : Stitch.StitchFromOkM CtxMode.prepared decFromR := by
   intro s₀ hp hm16
   have hm := hp.toM
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   refine WP.seq (WP.mono (setupFrom_ok hp) fun s ⟨P, hI₁, hpw, hCache⟩ => ?_)
-  have hf : FinOk (hk s₀) P := StitchZ.finZ (StitchZP.finP hpw)
+  have hf : FinOk (hk s₀) P := hz.1 _ _ hpw
   refine WP.seq (WP.mono (WP.hkeep rfl (cmp_ok s Impl.Gcm.X86_64.StitchZ.bigMinP 96 (by decide)))
     fun s₂ ⟨⟨hcf, g, l, m, rd, wr⟩, hh⟩ => ?_)
   have hI₂ := hI₁.of_eq g l m rd wr
@@ -109,7 +119,7 @@ theorem decFromR_ok : Stitch.StitchFromOkM CtxMode.prepared decFromR := by
   refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, DInvM true s₀ P e s' ∧
       VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * 0 < 96))
     (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨0, hI₂, hCache₂⟩)
-    (fun h => bigDPM_ok hm hp.toPrepared hpw (StitchZP.fin48P (hk s₀)) (by simp at h; omega) hI₂ hCache₂))
+    (fun h => bigDPM_ok hm hp.toPrepared hpw (hz.2 (hk s₀)) (by simp at h; omega) hI₂ hCache₂))
     fun s₃ ⟨e, hI₃, hCache₃⟩ => ?_)
   refine WP.seq (WP.mono (WP.hkeep (by decide) (cmp_ok s₃ 16 16 (by decide)))
     fun s₄ ⟨⟨hcf₄, g₄, l₄, m₄, rd₄, wr₄⟩, hh₄⟩ => ?_)
