@@ -27,7 +27,8 @@ use core::sync::atomic::{AtomicU8, Ordering};
 #[cfg(not(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 )))]
 use crate::arch::dsa::vg_dsa_sign_random;
 #[cfg(target_arch = "x86_64")]
@@ -41,7 +42,8 @@ use crate::arch::dsa::{
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 use crate::arch::dsa::{vg_dsa_sign_random_prevalidated, vg_dsa_validate_private_key};
 use crate::arch::dsa::{vg_dsa_validate_public_key, vg_dsa_verify_prevalidated};
@@ -239,13 +241,14 @@ impl PublicKey {
 pub struct PrivateKey {
     public: PublicKey,
     packed: Secret<u8>,
-    // On x86-64, AArch64 and PPC64LE, whether `vg_dsa_validate_private_key`
-    // accepts the owned, immutable `packed`: 0 = unchecked, 1 = valid,
-    // 2 = invalid.
+    // On x86-64, AArch64, PPC64LE and RISC-V 64, whether
+    // `vg_dsa_validate_private_key` accepts the owned, immutable `packed`:
+    // 0 = unchecked, 1 = valid, 2 = invalid.
     #[cfg(any(
         target_arch = "x86_64",
         target_arch = "aarch64",
-        all(target_arch = "powerpc64", target_endian = "little")
+        all(target_arch = "powerpc64", target_endian = "little"),
+        target_arch = "riscv64"
     ))]
     validated: AtomicU8,
 }
@@ -287,7 +290,8 @@ impl PrivateKey {
             #[cfg(any(
                 target_arch = "x86_64",
                 target_arch = "aarch64",
-                all(target_arch = "powerpc64", target_endian = "little")
+                all(target_arch = "powerpc64", target_endian = "little"),
+                target_arch = "riscv64"
             ))]
             validated: AtomicU8::new(0),
         }
@@ -303,9 +307,9 @@ impl PrivateKey {
     ///
     /// At most eight signing attempts are made, each with at most 128 nonce
     /// draws. Invalid keys therefore return an error instead of retrying
-    /// indefinitely. Each retry draws a fresh nonce. On x86-64, AArch64 and
-    /// PPC64LE the first signature validates the immutable key, and later
-    /// ones reuse that result, as [`PublicKey::verify`] does.
+    /// indefinitely. Each retry draws a fresh nonce. On x86-64, AArch64,
+    /// PPC64LE and RISC-V 64 the first signature validates the immutable key,
+    /// and later ones reuse that result, as [`PublicKey::verify`] does.
     pub fn sign(&self, digest: &[u8]) -> Result<Vec<u8>, Error> {
         self.sign_from(digest, |buf| {
             getrandom::fill(buf).map_err(|_| Error::Randomness)
@@ -323,7 +327,8 @@ impl PrivateKey {
         #[cfg(any(
             target_arch = "x86_64",
             target_arch = "aarch64",
-            all(target_arch = "powerpc64", target_endian = "little")
+            all(target_arch = "powerpc64", target_endian = "little"),
+            target_arch = "riscv64"
         ))]
         if !self.validate(&mut scratch.0) {
             return Err(Error::InvalidKeyOrNonce);
@@ -357,20 +362,22 @@ impl PrivateKey {
                     }
                 };
             }
-            // On x86-64, AArch64 and PPC64LE, the validation above, or a
-            // cached result for the exact same immutable owned bytes,
-            // establishes the prevalidated signer's precondition.
+            // On x86-64, AArch64, PPC64LE and RISC-V 64, the validation
+            // above, or a cached result for the exact same immutable owned
+            // bytes, establishes the prevalidated signer's precondition.
             let status = match self.public.backend {
                 #[cfg(not(any(
                     target_arch = "x86_64",
                     target_arch = "aarch64",
-                    all(target_arch = "powerpc64", target_endian = "little")
+                    all(target_arch = "powerpc64", target_endian = "little"),
+                    target_arch = "riscv64"
                 )))]
                 Backend::Baseline => sign!(vg_dsa_sign_random),
                 #[cfg(any(
                     target_arch = "x86_64",
                     target_arch = "aarch64",
-                    all(target_arch = "powerpc64", target_endian = "little")
+                    all(target_arch = "powerpc64", target_endian = "little"),
+                    target_arch = "riscv64"
                 ))]
                 Backend::Baseline => sign!(vg_dsa_sign_random_prevalidated),
                 #[cfg(target_arch = "x86_64")]
@@ -400,7 +407,8 @@ impl PrivateKey {
     #[cfg(any(
         target_arch = "x86_64",
         target_arch = "aarch64",
-        all(target_arch = "powerpc64", target_endian = "little")
+        all(target_arch = "powerpc64", target_endian = "little"),
+        target_arch = "riscv64"
     ))]
     fn validate(&self, scratch: &mut [u64]) -> bool {
         match self.validated.load(Ordering::Relaxed) {
