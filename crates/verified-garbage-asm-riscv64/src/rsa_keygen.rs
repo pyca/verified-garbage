@@ -10907,9 +10907,5 @@ beqz t1, 20b
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_miller_rabin_round.rs"]
-pub(crate) mod vg_miller_rabin_round;
-
-#[rustfmt::skip]
 #[path = "internal/vg_rsa_keygen_candidate.rs"]
 pub(crate) mod vg_rsa_keygen_candidate;
