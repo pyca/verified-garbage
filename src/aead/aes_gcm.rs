@@ -29,13 +29,6 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(any(
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64"
-))]
 use crate::arch::gcm::vg_aes_gcm_open_to;
 use crate::arch::gcm::vg_aes_gcm_seal_gather;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -373,15 +366,7 @@ type SealFn = asm_fn!(
 /// `vg_aes_gcm_open`, on the key's context.
 type OpenFn = asm_fn!(*const KeyCtx, usize, *const u8, usize, *const u8, usize, *mut u8, usize, *const u8,
     usize => u32);
-/// On x86-64, x86, AArch64, Arm and PPC64LE, `vg_aes_gcm_open_to`, on the key's
-/// context.
-#[cfg(any(
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "powerpc64"
-))]
+/// `vg_aes_gcm_open_to`, on the key's context.
 type OpenToFn = asm_fn!(*const KeyCtx, usize, *const u8, usize, *const u8, usize, *const u8, usize, *mut u8,
     usize, *const u8, usize => u32);
 /// `vg_aes_gcm_seal_gather`, on the key's context.
@@ -460,15 +445,7 @@ struct Fns {
     init: InitFn,
     seal: SealFn,
     open: OpenFn,
-    /// On x86-64, x86, AArch64, Arm and PPC64LE, `vg_aes_gcm_open_to`; elsewhere
-    /// `AesGcm::decrypt` copies the ciphertext and calls `open`.
-    #[cfg(any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "powerpc64"
-    ))]
+    /// `vg_aes_gcm_open_to`.
     open_to: OpenToFn,
     seal_gather: SealGatherFn,
     stream_init: StreamInitFn,
@@ -540,13 +517,6 @@ impl Backend {
                 aarch64: [vg_aes_gcm_open_aes, vg_aes_gcm_open_aes_sha3]),
                 usize, *const u8, usize, *const u8, usize, *mut u8, usize, *const u8, usize => u32;
                 OpenFn),
-            #[cfg(any(
-                target_arch = "x86",
-                target_arch = "x86_64",
-                target_arch = "aarch64",
-                target_arch = "arm",
-                target_arch = "powerpc64"
-            ))]
             open_to: on_key_ctx!(instance!(self, vg_aes_gcm_open_to,
                 x86_64: [vg_aes_gcm_open_to_aesni, vg_aes_gcm_open_to_pclmul, vg_aes_gcm_open_to_aesni_pclmul],
                 vaes: [vg_aes_gcm_open_to_vaes, vg_aes_gcm_open_to_vpclmul, vg_aes_gcm_open_to_vaes_pclmul,
@@ -1358,18 +1328,11 @@ impl AesGcm {
         self.open_to(nonce, aad, ciphertext, out, tag)
     }
 
-    /// On x86-64, x86, AArch64, Arm and PPC64LE, `vg_aes_gcm_open_to`, which
-    /// writes zeros to `out` if the tag is wrong. On AArch64, a key with
-    /// `_with_powers` instances copies the ciphertext and calls them instead
-    /// (`open_to_copy`), as `encrypt` does there (`seal_pieces_prepared`):
-    /// there is no `_with_powers` instance of `vg_aes_gcm_open_to`.
-    #[cfg(any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "powerpc64"
-    ))]
+    /// `vg_aes_gcm_open_to`, which writes zeros to `out` if the tag is wrong,
+    /// on every architecture. On AArch64, a key with `_with_powers` instances
+    /// copies the ciphertext and calls them instead (`open_to_copy`), as
+    /// `encrypt` does there (`seal_pieces_prepared`): there is no
+    /// `_with_powers` instance of `vg_aes_gcm_open_to`.
     fn open_to(
         &self,
         nonce: &[u8],
@@ -1410,33 +1373,10 @@ impl AesGcm {
         }
     }
 
-    /// Elsewhere, `open_to_copy`.
-    #[cfg(not(any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "powerpc64"
-    )))]
-    fn open_to(
-        &self,
-        nonce: &[u8],
-        aad: &[u8],
-        src: &[u8],
-        out: &mut [u8],
-        tag: &[u8],
-    ) -> Result<(), Error> {
-        self.open_to_copy(nonce, aad, src, out, tag)
-    }
-
-    /// The ciphertext copied to `out` and decrypted there, and `out` zeroed
-    /// if the tag is wrong, as `vg_aes_gcm_open_to` does.
-    #[cfg(not(any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        target_arch = "arm",
-        target_arch = "powerpc64"
-    )))]
+    /// On AArch64, for a key with `_with_powers` instances: the ciphertext
+    /// copied to `out` and decrypted there, and `out` zeroed if the tag is
+    /// wrong, as `vg_aes_gcm_open_to` does.
+    #[cfg(target_arch = "aarch64")]
     fn open_to_copy(
         &self,
         nonce: &[u8],
