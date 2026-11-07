@@ -28,6 +28,37 @@ def pairs(s):
         return f'\tmulhu {high}, {x}, {y}\n\tmul {low}, {x}, {y}\n'
     return p.sub(sub,s),count
 
+def pipeline_square(body):
+    # Stage the next independent product before consuming the current carry.
+    step=re.compile(r"\tld s4, (\d+)\(t4\)\n\tmul s3, s0, a7\n\tmulhu s2, s0, a7\n\tld a7, (\d+)\(a0\)\n\tadd s3, s3, s4\n\tsltu s4, s3, s4\n\tadd s2, s2, s4\n\tadd s3, s3, s1\n\tsltu s4, s3, s1\n\tadd s1, s2, s4\n\tsd s3, \1\(t4\)\n")
+    matches=list(step.finditer(body)); chunks=[];last=0;count=0;i=0
+    while i+1<len(matches):
+        a,b=matches[i:i+2];k,nxt=map(int,a.groups());k2,nxt2=map(int,b.groups())
+        if a.end()!=b.start() or k2!=k+8 or nxt2!=nxt+8:i+=1;continue
+        chunks.append(body[last:a.start()]);chunks.append(
+            f"\tld s4, {k}(t4)\n\tmul s3, s0, a7\n\tmulhu s2, s0, a7\n\tld a7, {nxt}(a0)\n"
+            f"\tmul a4, s0, a7\n\tmulhu a2, s0, a7\n\tld a7, {nxt2}(a0)\n"
+            "\tadd s3, s3, s4\n\tsltu s4, s3, s4\n\tadd s2, s2, s4\n"
+            "\tadd s3, s3, s1\n\tsltu s4, s3, s1\n\tadd s1, s2, s4\n"
+            f"\tsd s3, {k}(t4)\n\tld s4, {k2}(t4)\n"
+            "\tadd a4, a4, s4\n\tsltu s4, a4, s4\n\tadd a2, a2, s4\n"
+            "\tadd a4, a4, s1\n\tsltu s4, a4, s1\n\tadd s1, a2, s4\n"
+            f"\tsd a4, {k2}(t4)\n")
+        last=b.end();count+=1;i+=2
+    assert count==8,count
+    chunks.append(body[last:]);result=''.join(chunks)
+    at=result.rindex('\taddi t3, a5, 0\n\taddi t4, a6, 0\n\taddi a0, a7, 0\n')
+    result=result[:at]+'\tld a2, 0(sp)\n'+result[at:]
+    return '\taddi sp, sp, -16\n\tsd a2, 0(sp)\n\tsd a4, 8(sp)\n'+result+'\tld a4, 8(sp)\n\taddi sp, sp, 16\n'
+
+SELECT=re.compile(r'\taddi s8, zero, 0\n.*?\taddi t2, s8, -16\n\tbnez t2, \d+b\n',re.S)
+def select_words(_):
+    text="\tslli t3, s5, 3\n\tadd t3, a7, t3\n\tslli s4, s5, 2\n\tadd s4, s4, s5\n\tadd s4, a7, s4\n\tmv t5, t0\n991:\n\tmv s1, t3\n\tli s0, 0\n\tli t6, 1\n\tsll t6, t6, a1\n"
+    for j in range(16):
+        text+='\tld s2, 0(s1)\n\tandi t2, t6, 1\n\tneg t2, t2\n\tand s2, s2, t2\n\tor s0, s0, s2\n'
+        if j!=15:text+='\tsrli t6, t6, 1\n\tadd s1, s1, s5\n'
+    return text+'\tsd s0, 0(s4)\n\taddi s4, s4, 8\n\taddi t3, t3, 8\n\taddi t5, t5, -1\n\tbnez t5, 991b\n'
+
 def fixtures():
     keys=[];sources=[]
     for bits in (2048,3072,4096):
@@ -61,6 +92,11 @@ def main():
     variants['one']=MONT.sub(lambda m:call_c('c_one'),alltext)
     variants['two']=MONT.sub(lambda m:call_c('c_two'),alltext)
     variants['column']=SQR.sub(lambda m:call_c('c_column'),alltext)
+    variants['montpair']=MONT.sub(lambda m:pairs(m[0])[0],alltext)
+    variants['pipeline']=SQR.sub(lambda m:pipeline_square(m[0]),alltext)
+    variants['select']=SELECT.sub(select_words,alltext)
+    variants['combined']=MONT.sub(lambda m:pairs(m[0])[0],variants['select'])
+    assert len(SELECT.findall(alltext))==4
     report={'mont_sites':nm,'square_sites':ns,'reordered_pairs':pairs(alltext)[1]}
     (OUT/'transforms.json').write_text(json.dumps(report,indent=2));print(report)
     # Numeric local labels remain scoped by nearest definition; globals are namespaced.
@@ -71,7 +107,7 @@ def main():
         (OUT/f'{name}.S').write_text('.text\n'+text+'\n.section .note.GNU-stack,"",@progbits\n')
     micro='.text\n.option arch, +m, +c\n'
     mb=MONT.search(crt)[0];sb=SQR.search(crt)[0]
-    for name,body in [('base_mont',mb),('pair_mont',pairs(mb)[0]),('base_square',sb),('pair_square',pairs(sb)[0])]:micro+=entry(name,body)
+    for name,body in [('base_mont',mb),('pair_mont',pairs(mb)[0]),('base_square',sb),('pair_square',pairs(sb)[0]),('pipeline_square',pipeline_square(sb))]:micro+=entry(name,body)
     (OUT/'micro.S').write_text(micro+'\n.section .note.GNU-stack,"",@progbits\n')
     for name in ('fixtures.h','fixtures.json'):
         (OUT/name).write_bytes((ROOT/'experiments/riscv-rsa/fixtures'/name).read_bytes())
