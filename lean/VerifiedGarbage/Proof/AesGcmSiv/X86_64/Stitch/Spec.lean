@@ -100,4 +100,48 @@ structure DPost (s₀ s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
+/-! ## Sealing's loops -/
+
+/-- What counter mode on the groups leaves: the data enciphered, the counter
+block advanced, nothing else written but the working space. -/
+structure CPost (s₀ s : State) : Prop where
+  data : ∀ k < nb s₀, bytesAt s.mem (bAddr s₀ k) 16 = ctb s₀ k
+  ctr : bytesAt s.mem (cp s₀) 16 = Spec.GcmSiv.counterBlock (icb s₀) (nb s₀)
+  frame : Frame [cR s₀, dR s₀, pR s₀] s₀.mem s.mem
+  gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r9 → r ≠ .r10 → s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+
+section
+variable (s₀ : State)
+
+/-- The data hashed: `rdx`. -/
+abbrev xp : Addr := s₀.gpr .rdx
+abbrev xR : Region := ⟨xp s₀, 16 * nb s₀⟩
+/-- Its block `k`, as POLYVAL's field element. -/
+abbrev xel (k : Nat) : Block := Spec.GcmSiv.ofBytes (bytesAt s₀.mem (xp s₀ + BitVec.ofNat 64 (16 * k)) 16)
+
+end
+
+structure HPre (s₀ : State) : Prop where
+  nb16 : 16 ≤ nb s₀
+  nm : nb s₀ % 16 = 0
+  h_in : InRegions (s₀.rd ++ s₀.wr) (hp s₀) 16
+  y_in : InRegions s₀.wr (yp s₀) 16
+  x_in : InRegions (s₀.rd ++ s₀.wr) (xp s₀) (16 * nb s₀)
+  p_in : InRegions s₀.wr (pp s₀) 256
+  p_y : (pR s₀).Disjoint (yR s₀)
+  p_x : (pR s₀).Disjoint (xR s₀)
+  wrap_x : (xp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
+  wrap_p : (pp s₀).toNat + 256 ≤ 2 ^ 64
+
+/-- What it leaves: `Y` continued over the blocks, nothing else written but
+the working space. -/
+structure HPost (s₀ s : State) : Prop where
+  y : blockAt s.mem (yp s₀) = ghashFrom (hk s₀) (y₀ s₀) ((List.range (nb s₀)).map (xel s₀))
+  frame : Frame [yR s₀, pR s₀] s₀.mem s.mem
+  gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r9 → s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+
 end VG.Proof.AesGcmSiv.X86_64.Stitch
