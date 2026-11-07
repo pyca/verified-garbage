@@ -65,6 +65,10 @@ pub mod aes_ctr;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
+pub mod aes_ecb;
+
+#[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
+#[rustfmt::skip]
 pub mod aes_gcm_siv;
 
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
