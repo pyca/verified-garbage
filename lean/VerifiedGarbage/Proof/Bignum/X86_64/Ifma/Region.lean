@@ -327,7 +327,7 @@ def k1Ranges (wx : Nat) : List (Nat × Nat) :=
   [(slot wx Public.aAcc, 8 * (wx + 2)), (slot wx Public.aTmp, 8 * (wx + 2)),
     (slot wx VG.Impl.Rsa.X86_64.Crt.aT, 8 * (wx + 2)), (8 * sCtr, 8)]
 
-theorem W_boundsN (hl : AmmOk l) : 16 ≤ l.W ∧ l.W ≤ 64 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+theorem W_boundsN (hl : AmmOk l) : 16 ≤ l.W ∧ l.W ≤ 64 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem W_bounds (hl : LayOk l) : 16 ≤ l.W ∧ l.W ≤ 32 := by rcases hl with rfl | rfl | rfl <;> decide
 
@@ -349,7 +349,7 @@ theorem k1_ok (hl : AmmOk l) {s : State} {W : Addr} {wx : Nat} {minv : BitVec 64
   have hg₁ := hg.of_outsideArr ho₁ k₁
   have hN₁ : wv s₁.mem W (slot wx Public.aN) wx = X := by rw [ho₁.wv (by omega_using [sTN]) (by omega_using [hn, lN])]; exact hN
   simp only [VG.Impl.Bignum.X86_64.seqs]
-  have hdb : 1 ≤ l.dbls ∧ l.dbls < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  have hdb : 1 ≤ l.dbls ∧ l.dbls < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   refine WP.seq (WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = BitVec.ofNat 64 l.dbls ∧ t.mem = s₁.mem) (by
     xrun; and_intros
     · apply BitVec.eq_of_toNat_eq
@@ -1056,7 +1056,7 @@ theorem regOut4 (hl : AmmOk l) (hw : l.w = 4) {m : Mem} {B : Addr} {a p X K1 Xc 
 
 /-- The digits (where `recode` writes them) end within a region. -/
 theorem lay_oDD (hl : AmmOk l) : l.oD + l.ND ≤ l.D := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl <;> decide
+  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- `region p`: prime `p`'s region of the area at `off B a`, from its
 workspace at `off B o` (16 words). -/
