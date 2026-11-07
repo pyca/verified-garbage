@@ -128,18 +128,21 @@ def group (f : List XReg → Prog isa) : Prog isa :=
         .alu .cmp .r9 (.imm 8)] : List Instr))))
 
 /-- Load block register `i` from the data block `r11 + 16 (k + i)`, and XOR
-in its tweak from `rax + 16 (k + i)`. -/
+in its tweak from `rax + 16 (k + i)`, loaded into `xmm9`. These and the
+other 128-bit tweak helpers are legacy SSE, so that the AES-NI functions
+need no AVX: `pxor` with a memory operand requires it aligned, so the
+tweak goes through `xmm9`. -/
 def tPre : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, k => ([.movdquLoad b (at_ .r11 (16 * k)), .vbinLoad .vpxor .l128 b b (at_ .rax (16 * k))] : List Instr) ++
-      tPre bs (k + 1)
+  | b :: bs, k => ([.movdquLoad b (at_ .r11 (16 * k)), .movdquLoad .xmm9 (at_ .rax (16 * k)),
+      .xop (.bin .pxor b .xmm9)] : List Instr) ++ tPre bs (k + 1)
 
-/-- XOR the tweak into block register `i` again, and store it to the data
-block `r11 + 16 (k + i)`. -/
+/-- XOR the tweak (through `xmm9`) into block register `i` again, and store
+it to the data block `r11 + 16 (k + i)`. -/
 def tPost : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, k => ([.vbinLoad .vpxor .l128 b b (at_ .rax (16 * k)), .movdquStore (at_ .r11 (16 * k)) b] : List Instr) ++
-      tPost bs (k + 1)
+  | b :: bs, k => ([.movdquLoad .xmm9 (at_ .rax (16 * k)), .xop (.bin .pxor b .xmm9),
+      .movdquStore (at_ .r11 (16 * k)) b] : List Instr) ++ tPost bs (k + 1)
 
 /-- One block through `f`. -/
 def tail1 (f : List XReg → Prog isa) : Prog isa :=

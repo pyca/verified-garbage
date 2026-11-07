@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 /-! # `vg_rsa_keygen_candidate`'s contract
 
 One candidate for a prime (`VG.Spec.RsaKeyGen.candidateOp`). Only the
-verified prime searches call it (`VG.Spec.RsaKeyGen.primeSearchContract`),
+verified prime searches call it (`VG.Proof.RsaKeyGen.primeSearchContract`),
 so it is an internal function, with its contract here rather than in
 `Spec/`: the searches' proofs rest on it, and nothing else does.
 -/

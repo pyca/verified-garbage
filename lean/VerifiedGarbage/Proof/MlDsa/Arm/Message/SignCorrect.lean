@@ -8,12 +8,13 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 
 /-!
 # ML-DSA on ARMv7, `sign_message`: correctness
 
 Untrusted: everything here is checked by Lean. From a state satisfying
-`signMessageContract p Arm.abi 36`, `signMessage n c p` returns 2 if the
+`signMessageContract p Arm.abi 52`, `signMessage n c p` returns 2 if the
 context string is longer than 255 bytes; otherwise it computes `μ` of the
 formatted message and calls the signing function on `μ` `c`, which gives
 the signature of `ML-DSA.Sign_internal` on the formatted message
@@ -62,7 +63,7 @@ theorem chk_ok {s : State} (hin : InRegions (s.rd ++ s.wr) (State.addr (s.sp + B
   rfl
 
 /-- The words on the stack of a state satisfying `SPre` are readable. -/
-theorem SPre.args {p : Params} {s : State} (h : SPre p s) {o : Nat} (ho : o + 4 ≤ 16) :
+theorem SPre.args {p : Params} {prepared : Bool} {s : State} (h : SPre p prepared s) {o : Nat} (ho : o + 4 ≤ 16) :
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 o)) 4 := by
   refine ⟨rArgs s 16, by simp [h.rd], ?_⟩
   simp only [rArgs, stackArgAddr0]
@@ -78,11 +79,10 @@ theorem Ctx.slotOffV {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
   simp only [Arg.val] at this ⊢
   rw [this]; rfl
 
-theorem signMessage_wp {p : Params} {n : String} {c : Prog isa}
-    (hS : SignFn p c) (hp : p ∈ params) {s : State} (hpre : (signMessageContract p Arm.abi 36).pre s) :
+theorem signMessage_wp {p : Params} {prepared : Bool} {n : String} {c : Prog isa}
+    (hS : SignFn p prepared c) (hp : p ∈ params) {s : State} (h : SPre p prepared s) :
     WP isa (signMessage n c p) s fun s' =>
-      abiPreserved s s' ∧ (signMessageContract p Arm.abi 36).post s s' := by
-  have h := sPre_of hpre
+      abiPreserved s s' ∧ (signMessageContract p Arm.abi 52).post s s' := by
   unfold signMessage top
   refine WP.seq (WP.mono (chk_ok (h.args (by omega))) fun s1 ⟨o1, hc1⟩ => ?_)
   by_cases h8 : (stackArg s 0).toNat < 256
@@ -102,16 +102,17 @@ theorem signMessage_wp {p : Params} {n : String} {c : Prog isa}
         · exact (hs1 8 (by decide)).trans (stackArg_eq s 2)
         · exact (hs1 12 (by decide)).trans (stackArg_eq s 3))) fun t hc => ?_))
     have hsk := (skLen_ge hp).1
-    have ekey : State.addr ((slay p s).key + BitVec.ofNat 32 64) = State.addr (slay p s).key + BitVec.ofNat 64 64 :=
+    have hkl := skLen_le (p := p) prepared
+    have ekey : State.addr ((slay p prepared s).key + BitVec.ofNat 32 64) = State.addr (slay p prepared s).key + BitVec.ofNat 64 64 :=
       addr_add (by have := h.nSk; simp only [slay]; omega)
-    have wtr : Within ⟨State.addr ((slay p s).key + BitVec.ofNat 32 64), 64⟩ (slay p s).KEY := by
-      rw [ekey]; exact within_off _ (show 64 + 64 ≤ p.skLen by omega)
-    have hfit : ((slay p s).key + BitVec.ofNat 32 64).toNat + 64 ≤ 2 ^ 32 := by
+    have wtr : Within ⟨State.addr ((slay p prepared s).key + BitVec.ofNat 32 64), 64⟩ (slay p prepared s).KEY := by
+      rw [ekey]; exact within_off _ (show 64 + 64 ≤ secretKeyLen p prepared by omega)
+    have hfit : ((slay p prepared s).key + BitVec.ofNat 32 64).toNat + 64 ≤ 2 ^ 32 := by
       have := h.nSk
       simp only [slay]
       rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 64) (by decide), Nat.mod_eq_of_lt (by omega)]
       omega
-    have hst : Region.Sub ⟨(slay p s).ST, 200⟩ (slay p s).SC := by
+    have hst : Region.Sub ⟨(slay p prepared s).ST, 200⟩ (slay p prepared s).SC := by
       have := hL.sub_sc (e := 0) (k := 200) (by omega)
       simpa only [x0] using this
     refine WP.seq (WP.seq (WP.mono (muHash_ok hL hc (tr := .slotOff fKey 64) (by decide) rfl
@@ -119,21 +120,30 @@ theorem signMessage_wp {p : Params} {n : String} {c : Prog isa}
       ((hL.xKey.symm.sub_left wtr.sub).sub_right hst)
       ((hL.xKey.symm.sub_left wtr.sub).sub_right (hL.sub_sc (by omega : 200 + 640 ≤ 1024)))
       (hL.kKey.sub_right wtr.sub)) fun t₁ ⟨hc₁, hμ⟩ => ?_))
-    refine WP.mono (signCall_ok hS hp h h8 hc₁) fun s' ⟨hf, hq⟩ => ?_
+    have hm₀ : s1.mem = s.mem := o1.mem
+    have hkey : SecretKeyOk p prepared t₁.mem (State.addr (s.gpr .r0)) := fun hpr =>
+      VG.Proof.MlDsa.PreparedKey.preparedSecretKey_of_bytes (by
+        subst hpr
+        have := hc₁.bytesAt_eq (p := State.addr (slay p true s).key) (n := secretKeyLen p true) hL.xKey hL.kKey
+          (by have := h.nSk; omega)
+        rw [hm₀] at this
+        exact this) (h.key hpr)
+    refine WP.mono (signCall_ok hS hp h h8 hc₁ hkey) fun s' ⟨hf, hq⟩ => ?_
     refine WP.mono (leave_ok hL hf) fun s'' ⟨hcs, hsp, hm, hx0, _, _⟩ => ?_
     refine ⟨⟨fun r hr => by rw [hcs r hr]; exact o1.get r (fun e => by
         simp only [List.mem_singleton] at e; subst e; revert hr; decide), by rw [hsp]; rfl⟩, ?_⟩
     sig_post [signMessageContract, signMessageSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     rw [formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact h8)]
     simp only [signInternal, messageRep, skTr]
-    have hm₀ : s1.mem = s.mem := o1.mem
     have ek : bytesAt t₁.mem (State.addr (s.gpr .r0)) p.skLen = bytesAt s.mem (State.addr (s.gpr .r0)) p.skLen :=
-      (hc₁.bytesAt_eq (p := State.addr (slay p s).key) (n := p.skLen) hL.xKey hL.kKey (by have := h.nSk; omega)).trans
+      (hc₁.bytesAt_eq (p := State.addr (slay p prepared s).key) (n := p.skLen)
+        (hL.xKey.sub_right (Region.sub_prefix hkl)) (hL.kKey.sub_right (Region.sub_prefix hkl))
+        (by have := h.nSk; omega)).trans
         (by rw [hm₀]; rfl)
     have er : bytesAt t₁.mem (State.addr (stackArg s 1)) 32 = bytesAt s.mem (State.addr (stackArg s 1)) 32 :=
-      (hc₁.bytesAt_eq (p := State.addr (slay p s).rnd) (n := 32) h.rndScr.symm h.stkRnd (by decide)).trans
+      (hc₁.bytesAt_eq (p := State.addr (slay p prepared s).rnd) (n := 32) h.rndScr.symm h.stkRnd (by decide)).trans
         (by rw [hm₀]; rfl)
-    have etr : bytesAt t.mem (State.addr ((slay p s).key + BitVec.ofNat 32 64)) 64 =
+    have etr : bytesAt t.mem (State.addr ((slay p prepared s).key + BitVec.ofNat 32 64)) 64 =
         ((bytesAt s.mem (State.addr (s.gpr .r0)) p.skLen).drop 64).take 64 := by
       rw [hc.bytesAt_eq (hL.xKey.sub_right wtr.sub) (hL.kKey.sub_right wtr.sub) (by decide), hm₀, ekey,
         Proof.MlKem.bytesAt_slice _ _ (by omega)]

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Steps
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Key.Contract
 public import VerifiedGarbage.Proof.Rsa.RISCV64.InvLaw
@@ -39,11 +40,11 @@ open VG.Proof.Rsa.RISCV64 (InvLaw)
 open VG.Proof.RsaKeyGen.RISCV64.Search (WP.keepS KeepS)
 
 /-- The key's precondition, from its fields by name. -/
-theorem key_pre_of {s : State} (h : Key.PreC s) : (Spec.RsaKeyGen.keyContract RISCV64.abi).pre s := by
+theorem key_pre_of {s : State} (h : Key.PreC s) : (Proof.RsaKeyGen.keyContract RISCV64.abi).pre s := by
   obtain ⟨sp16, sp2, hrd, hwr, nd, np, nq, ndp, ndq, nqi, ne, ns, na, dp, dq, ddp, ddq, dqi, de, ds, da, pq, pdp,
     pdq, pqi, pe, ps, pa, qdp, qdq, qqi, qe, qs, qa, dpdq, dpqi, dpe, dps, dpa, dqqi, dqe, dqs, dqa, qie, qis, qia,
     es, sa, wn, wd, wp, wq, wdp, wdq, wqi, we, ws, p32, p512, p8, hn, hd, hq, hdp, hdq, hqi, e1, e2, hs, al⟩ := h
-  sig_pre [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
+  sig_pre [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, RISCV64.abi, RISCV64.argRegs,
     Key.stackArgs_ten, List.append_eq, List.range, List.range.loop]
   sig_and_intros
   all_goals first
@@ -293,7 +294,7 @@ end
 theorem callK_pre {p : GenPublic} {original s u : State} {used : Nat} {st : KeyProgress}
     (h : GenFrame p original used st s) (hu : u.sp = keySp p) (ha : KeyRegs p u)
     (hm : u.mem = keyMem p s) :
-    (Spec.RsaKeyGen.keyContract RISCV64.abi).pre (callK p u) := by
+    (Proof.RsaKeyGen.keyContract RISCV64.abi).pre (callK p u) := by
   have hf := h.input.cfacts
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9⟩ := callK_args (s := s) hu hm
   obtain ⟨r3, r4, r5, r6, r7, r8, r9, r10⟩ := ha

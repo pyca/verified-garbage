@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Tail
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
@@ -170,7 +171,8 @@ namespace VG.Proof.RsaKeyGen.X86_64.Key
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.RsaKeyGen.X86_64.Key
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 open VG.Spec.Rsa (bytesAt)
-open VG.Spec.RsaKeyGen (keyOp keyStatus keyFromPrimes)
+open VG.Spec.RsaKeyGen (keyFromPrimes)
+open VG.Proof.RsaKeyGen (keyOp keyStatus)
 
 /-- The status and the outputs `keyOp` gives. -/
 def OutsRes (I : KIn) (m : Mem) (rax : BitVec 64) : Prop :=

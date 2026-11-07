@@ -20,6 +20,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RISCV64.Spill
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
+public import VerifiedGarbage.Proof.Framework.RISCV64.StackScratchArgsWipe
 public import VerifiedGarbage.Proof.Zeroize.Common
 public import VerifiedGarbage.Proof.Framework.RelCT
 
@@ -47,7 +50,7 @@ variable {e : Bool}
 
 /-- A byte of a part of the context through a frame apart from it. -/
 theorem byte_frame {s₀ : State} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {k n : Nat}
-    (hd : ∀ r ∈ rs, (sub s₀ k n).Disjoint r) (hn : k + n ≤ 608) {i : Nat} (hi : i < n) :
+    (hd : ∀ r ∈ rs, (sub s₀ k n).Disjoint r) (hn : k + n ≤ 616) {i : Nat} (hi : i < n) :
     m' (off (cx s₀) (k + i)) = m (off (cx s₀) (k + i)) := by
   have := hf.bytes (R := sub s₀ k n) hd (by show n ≤ 2 ^ 64; omega) hi
   rwa [Offset.add_add] at this
@@ -58,7 +61,7 @@ theorem aad_eq {s₀ s : State} (hp : APre e s₀) (h : Inv s₀ s) : bytesAt s.
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hp.a_w
-    · exact hp.a_d) (Nat.le_of_lt (s₀.gpr .a3).isLt)
+    · exact hp.a_o) (Nat.le_of_lt (s₀.gpr .a3).isLt)
 
 /-- The received tag is unchanged. -/
 theorem tag_eq {s₀ s : State} (hp : APre e s₀) (h : Inv s₀ s) : bytesAt s.mem (tp s₀) 16 = T0 s₀ :=
@@ -66,18 +69,18 @@ theorem tag_eq {s₀ s : State} (hp : APre e s₀) (h : Inv s₀ s) : bytesAt s.
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hp.t_w
-    · exact hp.d_t.symm) (by decide)
+    · exact hp.o_t.symm) (by decide)
 
 /-! ## Restoring the registers -/
 
 /-- The registers `restore` loads. -/
-abbrev restored : List Reg := [.s7, .s8, .s9, .s10, .s11, .ra]
+abbrev restored : List Reg := [.s7, .s8, .s9, .s10, .s11, .ra, .s6]
 
 theorem restore_ok {s₀ : State} (hp : APre e s₀) {s : State} (ht : s.gpr .t0 = cx s₀) (hs : Saved s₀ s.mem)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
     WP isa (.block restore) s fun s' => (∀ r ∈ restored, s'.gpr r = s₀.gpr r) ∧
       (∀ r, r ∉ restored → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.sp = s.sp := by
-  have hin : ∀ d, d + 8 ≤ 48 → InRegions (s.rd ++ s.wr) (off (cx s₀) (savOff + d)) 8 := fun d hd => by
+  have hin : ∀ d, d + 8 ≤ 56 → InRegions (s.rd ++ s.wr) (off (cx s₀) (savOff + d)) 8 := fun d hd => by
     rw [hrd, hwr]; exact hp.in_w' (by simp only [savOff]; omega)
   have hal : ∀ d, d % 8 = 0 → (off (cx s₀) (savOff + d)).toNat % 8 = 0 := fun d hd =>
     cx_al s₀ (by simp only [savOff]; omega)
@@ -100,24 +103,34 @@ theorem restore_ok {s₀ : State} (hp : APre e s₀) {s : State} (ht : s.gpr .t0
     (by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
       u₁.other _ (by decide), ht]) (hal 40 (by decide))
     (by rw [u₅.rd, u₅.wr, u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin 40 (by decide))
-    fun s₆ u₆ => WP.block_nil ?_
+    fun s₆ u₆ => ?_
+  refine wp_ld (a := off (cx s₀) (savOff + 48)) (by decide)
+    (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
+      u₂.other _ (by decide), u₁.other _ (by decide), ht]) (hal 48 (by decide))
+    (by rw [u₆.rd, u₆.wr, u₅.rd, u₅.wr, u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]
+        exact hin 48 (by decide))
+    fun s₇ u₇ => WP.block_nil ?_
   have m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  refine ⟨fun r hr => ?_, fun r hr => ?_, by rw [u₆.mem, m₅], by
-    rw [u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]⟩
+  have m₆ : s₆.mem = s.mem := by rw [u₆.mem, m₅]
+  refine ⟨fun r hr => ?_, fun r hr => ?_, by rw [u₇.mem, m₆], by
+    rw [u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-    · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
-        u₂.other _ (by decide), u₁.gpr, hs.s7]
-    · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
-        u₂.gpr, u₁.mem, hs.s8]
-    · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.mem, u₁.mem,
-        hs.s9]
-    · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.mem, u₂.mem, u₁.mem, hs.s10]
-    · rw [u₆.other _ (by decide), u₅.gpr, u₄.mem, u₃.mem, u₂.mem, u₁.mem, hs.s11]
-    · rw [u₆.gpr, m₅, hs.ra]
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+        u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, hs.s7]
+    · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+        u₃.other _ (by decide), u₂.gpr, u₁.mem, hs.s8]
+    · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+        u₃.gpr, u₂.mem, u₁.mem, hs.s9]
+    · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.mem, u₂.mem,
+        u₁.mem, hs.s10]
+    · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.mem, u₃.mem, u₂.mem, u₁.mem, hs.s11]
+    · rw [u₇.other _ (by decide), u₆.gpr, m₅, hs.ra]
+    · rw [u₇.gpr, m₆, hs.s6]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    obtain ⟨h7, h8, h9, h10, h11, hra⟩ := hr
-    rw [u₆.other r hra, u₅.other r h11, u₄.other r h10, u₃.other r h9, u₂.other r h8, u₁.other r h7]
+    obtain ⟨h7, h8, h9, h10, h11, hra, h6⟩ := hr
+    rw [u₇.other r h6, u₆.other r hra, u₅.other r h11, u₄.other r h10, u₃.other r h9, u₂.other r h8,
+      u₁.other r h7]
 
 /-- The callee-saved registers on return, from those restored and those kept. -/
 theorem abi_of {s₀ s s' : State} (h : Inv s₀ s)
@@ -142,7 +155,7 @@ structure AfterAad (s₀ s : State) : Prop where
   zero : ∀ i < 16, s.mem (off (cx s₀) (zeroOff + i)) = 0
   lens : bytesAt s.mem (off (cx s₀) lenOff) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀)
 
-theorem st_disj (s₀ : State) {k n : Nat} (h : 64 ≤ k) (hk : k + n ≤ 608) :
+theorem st_disj (s₀ : State) {k n : Nat} (h : 64 ≤ k) (hk : k + n ≤ 616) :
     ∀ r ∈ [sub s₀ k n], (⟨cx s₀, 64⟩ : Region).Disjoint r := fun r hr => by
   simp only [List.mem_singleton] at hr; subst hr
   rw [st_sub]; exact sub_disj s₀ (.inl h) (by decide) hk
@@ -156,7 +169,7 @@ theorem head_ok {s₀ : State} (hp : APre e s₀) {rest : Prog isa} {Q : State �
   refine WP.seq (WP.mono (polyInit_ok hp i₂ a₂ k₂) fun s₃ ⟨st₃, a₃, r₃⟩ => ?_)
   have i₃ := i₂.step1 st₃ (by decide)
   have hz : ∀ {m m' : Mem} {k n : Nat}, Frame [sub s₀ k n] m m' → (zeroOff + 16 ≤ k ∨ k + n ≤ zeroOff) →
-      k + n ≤ 608 → ∀ i < 16, m' (off (cx s₀) (zeroOff + i)) = m (off (cx s₀) (zeroOff + i)) :=
+      k + n ≤ 616 → ∀ i < 16, m' (off (cx s₀) (zeroOff + i)) = m (off (cx s₀) (zeroOff + i)) :=
     fun hf h hk i hi => byte_sub s₀ hf (by omega) hk (by simp only [zeroOff]; omega)
   have z₃ : ∀ i < 16, s₃.mem (off (cx s₀) (zeroOff + i)) = 0 := fun i hi => by
     rw [hz st₃.frame (by decide) (by decide) i hi, hz st₂.frame (by decide) (by decide) i hi, p₁.zero i hi]
@@ -165,7 +178,7 @@ theorem head_ok {s₀ : State} (hp : APre e s₀) {rest : Prog isa} {Q : State �
   have i₄ := i₃.step1 st₄ (by decide)
   rw [aad_eq hp i₃] at b₄
   have hl : ∀ {m m' : Mem} {k n : Nat}, Frame [sub s₀ k n] m m' → (lenOff + 16 ≤ k ∨ k + n ≤ lenOff) →
-      k + n ≤ 608 → bytesAt m' (off (cx s₀) lenOff) 16 = bytesAt m (off (cx s₀) lenOff) 16 :=
+      k + n ≤ 616 → bytesAt m' (off (cx s₀) lenOff) 16 = bytesAt m (off (cx s₀) lenOff) 16 :=
     fun hf h hk => bytesAt_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact sub_disj s₀ (a := lenOff) (n := 16) h (by decide) hk) (by decide)
@@ -183,23 +196,23 @@ theorem head_ok {s₀ : State} (hp : APre e s₀) {rest : Prog isa} {Q : State �
 /-! ## After the encryption -/
 
 theorem crypt_sub (s₀ : State) :
-    ∀ r ∈ [sub s₀ 0 64, dR s₀, sub s₀ 64 320], ∃ r' ∈ [wR s₀, dR s₀], Region.Sub r r' := by
+    ∀ r ∈ [sub s₀ 0 64, oR s₀, sub s₀ 64 320], ∃ r' ∈ [wR s₀, oR s₀], Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact ⟨wR s₀, by simp, sub_work s₀ (by decide)⟩
-  · exact ⟨dR s₀, by simp, fun _ h => h⟩
+  · exact ⟨oR s₀, by simp, fun _ h => h⟩
   · exact ⟨wR s₀, by simp, sub_work s₀ (by decide)⟩
 
 /-- The parts of the context from the Poly1305 state on are apart from what
 `crypt` writes. -/
-theorem crypt_disj {s₀ : State} (hp : APre e s₀) {k n : Nat} (hk : 384 ≤ k) (hn : k + n ≤ 608) :
-    ∀ r ∈ [sub s₀ 0 64, dR s₀, sub s₀ 64 320], (sub s₀ k n).Disjoint r := by
+theorem crypt_disj {s₀ : State} (hp : APre e s₀) {k n : Nat} (hk : 384 ≤ k) (hn : k + n ≤ 616) :
+    ∀ r ∈ [sub s₀ 0 64, oR s₀, sub s₀ 64 320], (sub s₀ k n).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact sub_disj s₀ (.inr (by omega)) hn (by decide)
-  · exact (APre.w_sub (s₀ := s₀) hp.d_w hn).symm
+  · exact (APre.w_sub (s₀ := s₀) hp.o_w hn).symm
   · exact sub_disj s₀ (.inr (by omega)) hn (by decide)
 
 /-- The data is apart from the working space. -/
@@ -224,12 +237,12 @@ theorem seal_correct {s₀ : State} (hp : APre true s₀) :
   unfold «seal»
   refine head_ok hp fun s₄ h₄ => ?_
   refine WP.seq (WP.mono (crypt_ok hp h₄.inv h₄.a0 h₄.st) fun s₅ ⟨st₅, a₅, c₅⟩ => ?_)
-  rw [data_eq hp h₄.fw] at c₅
+  rw [data_eq hp h₄.fw, show op s₀ = dp s₀ from hp.inPlace] at c₅
   have i₅ : Inv s₀ s₅ := h₄.inv.step st₅ (crypt_sub s₀) fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact sub_disj s₀ (.inr (by decide)) (by decide) (by decide)
-    · exact (APre.w_sub (s₀ := s₀) hp.d_w (by decide)).symm
+    · exact (APre.w_sub (s₀ := s₀) hp.o_w (by decide)).symm
     · exact sub_disj s₀ (.inr (by decide)) (by decide) (by decide)
   have B₅ := Buffered.frame st₅.frame (crypt_disj hp (k := polyOff) (n := 128) (by decide) (by decide)) h₄.buf
   have z₅ : ∀ i < 16, s₅.mem (off (cx s₀) (zeroOff + i)) = 0 := fun i hi => by
@@ -244,7 +257,7 @@ theorem seal_correct {s₀ : State} (hp : APre true s₀) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨wR s₀, hp.w_wr, pad (wk s₀) + polyOff, cx_off s₀ _, by
-        show pad (wk s₀) + polyOff + 128 ≤ 616; simp only [polyOff]; omega⟩
+        show pad (wk s₀) + polyOff + 128 ≤ 624; simp only [polyOff]; omega⟩
     · exact ⟨tR s₀, hp.t_wr, 0, (BitVec.add_zero _).symm, by simp⟩
   refine WP.seq (WP.mono (macData_ok hp i₅ a₅ B₅ (length_pad16 _) z₅ l₅ (out := mov .a2 .s11) (O := tp s₀)
     (fun s i _ Q k => wp_mv fun s' u => WP.block_nil (k s' (by rw [i.regs.s11] at u; exact u)))
@@ -268,7 +281,9 @@ theorem seal_correct {s₀ : State} (hp : APre true s₀) :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact APre.w_sub (s₀ := s₀) hp.d_w (by decide)
-        · exact hp.d_t) (Nat.le_of_lt (fit_d' s₀))
+        · have := hp.o_t
+          simp only [oR, op, dp] at this ⊢
+          rwa [show s₀.gpr .t6 = s₀.gpr .a4 from hp.inPlace] at this) (Nat.le_of_lt (fit_d' s₀))
     show Spec.ChaCha20Poly1305.encrypt (K s₀) (N s₀) (A s₀) (D s₀) =
       (bytesAt s'.mem (dp s₀) (L s₀), bytesAt s'.mem (tp s₀) 16)
     rw [hm, u₇.mem, d₆, t₆, c₅, Spec.ChaCha20Poly1305.encrypt, macData_eq, length_encrypt,
@@ -393,48 +408,48 @@ theorem ofNat_ne_zero {n : Nat} (h : 0 < n) (hn : n < 2 ^ 64) : BitVec.ofNat 64 
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn] at this
   exact Nat.ne_of_gt h this
 
-/-- One step of `zeroData`'s loop: the byte at `dp + j` zeroed, with `t1`
+/-- One step of `zeroData`'s loop: the byte at `op + j` zeroed, with `t1`
 zero and `t2` at it. -/
 theorem zeroStep_ok {s₀ : State} (hp : APre false s₀) {u : State} (hu : Inv s₀ u) {j : Nat}
-    (hj : j < L s₀) (ht1 : u.gpr .t1 = 0) (ht2 : u.gpr .t2 = dp s₀ + BitVec.ofNat 64 j)
-    (hz : Proof.Zeroize.Prefix u.mem (dp s₀) j) :
+    (hj : j < L s₀) (ht1 : u.gpr .t1 = 0) (ht2 : u.gpr .t2 = op s₀ + BitVec.ofNat 64 j)
+    (hz : Proof.Zeroize.Prefix u.mem (op s₀) j) :
     WP isa (.block [.store .b .t1 .t2 0, .addi .t2 .t2 1, .addi .t3 .t3 (-1)]) u fun u' =>
-      Inv s₀ u' ∧ u'.gpr .t1 = 0 ∧ u'.gpr .t2 = dp s₀ + BitVec.ofNat 64 (j + 1) ∧
+      Inv s₀ u' ∧ u'.gpr .t1 = 0 ∧ u'.gpr .t2 = op s₀ + BitVec.ofNat 64 (j + 1) ∧
       u'.gpr .t3 = u.gpr .t3 - 1 ∧ (∀ r, r ≠ .t2 → r ≠ .t3 → u'.gpr r = u.gpr r) ∧
-      Proof.Zeroize.Prefix u'.mem (dp s₀) (j + 1) := by
-  have hfit := hp.fit_d
+      Proof.Zeroize.Prefix u'.mem (op s₀) (j + 1) := by
+  have hfit := hp.fit_o
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .a5).isLt
-  have hc : (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 j) 1 :=
+  have hc : (oR s₀).Contains (op s₀ + BitVec.ofNat 64 j) 1 :=
     Offset.contains_base _ (by omega) (by omega)
-  refine wp_sb (off := 0) (a := dp s₀ + BitVec.ofNat 64 j) (by decide)
-    (by rw [ht2, BitVec.add_zero]) ⟨dR s₀, by rw [hu.wr]; exact hp.d_wr, hc⟩ fun u₁ m₁ => ?_
+  refine wp_sb (off := 0) (a := op s₀ + BitVec.ofNat 64 j) (by decide)
+    (by rw [ht2, BitVec.add_zero]) ⟨oR s₀, by rw [hu.wr]; exact hp.o_wr, hc⟩ fun u₁ m₁ => ?_
   refine wp_addi (imm := 1) (by decide) fun u₂ v₂ =>
     wp_subi (imm := 1) (by decide) fun u₃ v₃ => WP.block_nil ?_
-  have st₁ : Step [dR s₀] u u₁ :=
+  have st₁ : Step [oR s₀] u u₁ :=
     ⟨fun r _ => by rw [m₁.gpr], m₁.sp, m₁.rd, m₁.wr,
       by rw [m₁.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hc⟩
-  have st : Step [dR s₀] u u₃ := (st₁.trans (Step.upd _ v₂)).trans (Step.upd _ v₃)
+  have st : Step [oR s₀] u u₃ := (st₁.trans (Step.upd _ v₂)).trans (Step.upd _ v₃)
   have o : ∀ r, r ≠ .t2 → r ≠ .t3 → u₃.gpr r = u.gpr r := fun r a b => by
     rw [v₃.other r b, v₂.other r a, m₁.gpr]
-  refine ⟨hu.step st (fun r hr => ⟨dR s₀, by simp, by
+  refine ⟨hu.step st (fun r hr => ⟨oR s₀, by simp, by
       simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (APre.w_sub (s₀ := s₀) hp.d_w (by decide)).symm),
+        exact (APre.w_sub (s₀ := s₀) hp.o_w (by decide)).symm),
     by rw [o _ (by decide) (by decide), ht1], ?_, by rw [v₃.gpr, v₂.other _ (by decide), m₁.gpr]; rfl, o, ?_⟩
   · rw [v₃.other _ (by decide), v₂.gpr, m₁.gpr, ht2, BitVec.add_assoc, BitVec.ofNat_add]
   · rw [v₃.mem, v₂.mem, m₁.mem, ht1, show BitVec.setWidth 8 (0 : BitVec 64) = 0 by decide]
     exact Proof.Zeroize.prefix_writeW hz (by omega)
 
-/-- `zeroData`, with `t1` zero: zeros at `data`, and only `t2` and `t3`
+/-- `zeroData`, with `t1` zero: zeros at the destination, and only `t2` and `t3`
 written. -/
 theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s₀ s) (ht1 : s.gpr .t1 = 0) :
-    WP isa zeroData s fun s' => Inv s₀ s' ∧ bytesAt s'.mem (dp s₀) (L s₀) = List.replicate (L s₀) 0 ∧
+    WP isa zeroData s fun s' => Inv s₀ s' ∧ bytesAt s'.mem (op s₀) (L s₀) = List.replicate (L s₀) 0 ∧
       (∀ r, r ≠ .t2 → r ≠ .t3 → s'.gpr r = s.gpr r) := by
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .a5).isLt
   unfold zeroData
   refine WP.seq (wp_mv fun u₁ v₁ => wp_mv fun u₂ v₂ => WP.block_nil ?_)
-  have t2₂ : u₂.gpr .t2 = dp s₀ := by rw [v₂.other _ (by decide), v₁.gpr, h.regs.s9]
+  have t2₂ : u₂.gpr .t2 = op s₀ := by rw [v₂.other _ (by decide), v₁.gpr, h.regs.s6]
   have t3₂ : u₂.gpr .t3 = BitVec.ofNat 64 (L s₀) := by
     rw [v₂.gpr, v₁.other _ (by decide), h.regs.s10, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have i₂ : Inv s₀ u₂ := h.step ((Step.upd [] v₁).trans (Step.upd [] v₂)) (by simp) (by simp)
@@ -448,8 +463,8 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s
     refine WP.ite false (by show some (u₂.gpr .t3 == 0) = some false; rw [t3₂, beq_false_of_ne hne])
       (by simp) fun _ => ?_
     refine WP.loop (M := isa) (fun rem u => ∃ j, j < L s₀ ∧ rem = L s₀ - j ∧ Inv s₀ u ∧ u.gpr .t1 = 0 ∧
-      u.gpr .t2 = dp s₀ + BitVec.ofNat 64 j ∧ u.gpr .t3 = BitVec.ofNat 64 (L s₀ - j) ∧
-      (∀ r, r ≠ .t2 → r ≠ .t3 → u.gpr r = s.gpr r) ∧ Proof.Zeroize.Prefix u.mem (dp s₀) j) ?_ (L s₀) u₂
+      u.gpr .t2 = op s₀ + BitVec.ofNat 64 j ∧ u.gpr .t3 = BitVec.ofNat 64 (L s₀ - j) ∧
+      (∀ r, r ≠ .t2 → r ≠ .t3 → u.gpr r = s.gpr r) ∧ Proof.Zeroize.Prefix u.mem (op s₀) j) ?_ (L s₀) u₂
       ⟨0, by omega, by omega, i₂, by rw [o₂ _ (by decide) (by decide), ht1],
         by rw [t2₂]; exact (BitVec.add_zero _).symm, by rw [t3₂, Nat.sub_zero], o₂,
         fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
@@ -483,11 +498,11 @@ theorem tail_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s₀ 
     (by rw [u₉.sp, hsp, h.sp])
 
 /-- Everything but the epilogue: `t1` is whether the tag is right, the
-plaintext is at `data`, and the context is in `t0`. -/
+plaintext is at the destination, and the context is in `t0`. -/
 theorem body_ok {s₀ : State} (hp : APre false s₀) :
     WP isa openBody s₀ fun s₇ => Inv s₀ s₇ ∧ s₇.gpr .t0 = cx s₀ ∧
       s₇.gpr .t1 = (if mac (otk s₀) (Spec.ChaCha20Poly1305.macData (A s₀) (D s₀)) = T0 s₀ then 1 else 0) ∧
-      bytesAt s₇.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
+      bytesAt s₇.mem (op s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
   unfold openBody
   refine head_ok hp fun s₄ h₄ => ?_
   have hOw : Covers [sub s₀ polyOff 128, sub s₀ tagOff 16] s₀.wr := by
@@ -496,9 +511,9 @@ theorem body_ok {s₀ : State} (hp : APre false s₀) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨wR s₀, hp.w_wr, pad (wk s₀) + polyOff, cx_off s₀ _, by
-        show pad (wk s₀) + polyOff + 128 ≤ 616; simp only [polyOff]; omega⟩
+        show pad (wk s₀) + polyOff + 128 ≤ 624; simp only [polyOff]; omega⟩
     · exact ⟨wR s₀, hp.w_wr, pad (wk s₀) + tagOff, cx_off s₀ _, by
-        show pad (wk s₀) + tagOff + 16 ≤ 616; simp only [tagOff]; omega⟩
+        show pad (wk s₀) + tagOff + 16 ≤ 624; simp only [tagOff]; omega⟩
   have hO : ps s₀ + BitVec.ofNat 64 (tagOff - polyOff) = off (cx s₀) tagOff := (ps_add _ _).trans rfl
   refine WP.seq (WP.mono (macData_ok hp h₄.inv h₄.a0 h₄.buf (length_pad16 _) h₄.zero h₄.lens
     (out := .addi .a2 .a0 (tagOff - polyOff)) (O := off (cx s₀) tagOff)
@@ -510,8 +525,8 @@ theorem body_ok {s₀ : State} (hp : APre false s₀) :
   have f₅ : Frame [wR s₀] s₀.mem s₅.mem := h₄.fw.trans (st₅.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_singleton_self _, sub_work s₀ (by decide)⟩
-    · exact ⟨_, List.mem_singleton_self _, sub_work s₀ (by decide)⟩)
+    · exact ⟨_, List.mem_singleton_self _, sub_work s₀ (k := polyOff) (n := 128) (by decide)⟩
+    · exact ⟨_, List.mem_singleton_self _, sub_work s₀ (k := tagOff) (n := 16) (by decide)⟩)
   have hst₅ : stateAt s₅.mem (cx s₀) = initState (K s₀) 0 (N s₀) := by
     rw [stateAt_frame st₅.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -524,7 +539,7 @@ theorem body_ok {s₀ : State} (hp : APre false s₀) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact sub_disj s₀ (.inr (by decide)) (by decide) (by decide)
-    · exact (APre.w_sub (s₀ := s₀) hp.d_w (by decide)).symm
+    · exact (APre.w_sub (s₀ := s₀) hp.o_w (by decide)).symm
     · exact sub_disj s₀ (.inr (by decide)) (by decide) (by decide)
   have t₆ : bytesAt s₆.mem (off (cx s₀) tagOff) 16 =
       mac (otk s₀) (Spec.ChaCha20Poly1305.macData (A s₀) (D s₀)) := by
@@ -541,14 +556,21 @@ theorem body_ok {s₀ : State} (hp : APre false s₀) :
     rw [t1₇, t₆, tag_eq hp i₆]
   exact ⟨i₇, t0₇, ok₇, by rw [m₇, c₆]⟩
 
+/-- What `open`'s body leaves, from the source to the destination: the
+result in `a0`, and the plaintext or zeros at the destination. -/
+def CorePost (s₀ s' : State) : Prop :=
+  match Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (D s₀) (T0 s₀) with
+  | some pt => s'.gpr .a0 = 1 ∧ bytesAt s'.mem (op s₀) (L s₀) = pt
+  | none => s'.gpr .a0 = 0 ∧ bytesAt s'.mem (op s₀) (L s₀) = List.replicate (L s₀) 0
+
 theorem open_correct {s₀ : State} (hp : APre false s₀) :
-    WP isa Impl.ChaCha20Poly1305.RISCV64.«open» s₀ fun s' => abiPreserved s₀ s' ∧ openRISCV64.post s₀ s' := by
+    WP isa Impl.ChaCha20Poly1305.RISCV64.«open» s₀ fun s' => abiPreserved s₀ s' ∧ CorePost s₀ s' := by
   unfold «open»
   refine WP.seq (WP.mono (body_ok hp) fun s₇ ⟨i₇, t0₇, ok₇, d₇⟩ => ?_)
   show WP isa (.seq (.ite (.zero .t1) zeroData (.block [])) (.block (restore ++ [mov .a0 .t1]))) s₇ fun s' =>
     abiPreserved s₀ s' ∧ match Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (D s₀) (T0 s₀) with
-      | some pt => s'.gpr .a0 = 1 ∧ bytesAt s'.mem (dp s₀) (L s₀) = pt
-      | none => s'.gpr .a0 = 0 ∧ bytesAt s'.mem (dp s₀) (L s₀) = List.replicate (L s₀) 0
+      | some pt => s'.gpr .a0 = 1 ∧ bytesAt s'.mem (op s₀) (L s₀) = pt
+      | none => s'.gpr .a0 = 0 ∧ bytesAt s'.mem (op s₀) (L s₀) = List.replicate (L s₀) 0
   refine WP.seq ?_
   by_cases hc : mac (otk s₀) (Spec.ChaCha20Poly1305.macData (A s₀) (D s₀)) = T0 s₀
   · simp only [hc, ↓reduceIte] at ok₇
@@ -570,11 +592,12 @@ theorem open_correct {s₀ : State} (hp : APre false s₀) :
 
 /-! ## Constant time
 
-Two runs of `open` from states with the same public data leak the same:
-`openBody` by the taint analysis; then both branch the same way, as whether
-the tag is right is public (`openRISCV64.pub`); the zeroing and the epilogue
-by the taint analysis, from the public data that `body_ok` and
-`zeroData_ok` give them in both runs. -/
+Two runs of `open`'s body from states with the same public data leak the
+same (`open_rel`): `openBody` by the taint analysis; then both branch the
+same way, as whether the tag is right is public; the zeroing and the
+epilogue by the taint analysis, from the public data that `body_ok` and
+`zeroData_ok` give them in both runs. Each entry then reaches that body
+with the same public data in both runs. -/
 
 /-- Both states satisfy `I`. -/
 abbrev Both (I : State → Prop) : State → State → Prop := fun s₁ s₂ => I s₁ ∧ I s₂
@@ -607,66 +630,143 @@ theorem ok_iff (s₀ : State) :
 theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true then 1 else 0]) : a = b := by
   cases a <;> cases b <;> simp_all
 
-theorem open_ct : ConstantTime isa openRISCV64.pre openRISCV64.pub Impl.ChaCha20Poly1305.RISCV64.«open» := by
+/-- The registers the body reads as public on entry. -/
+abbrev pubRegs : List Reg := [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t6]
+
+/-- What two runs of the body agree on: the public registers (`v`), the
+stack pointer and whether the tag is right. -/
+def Core (v : Reg → BitVec 64) (sp : Addr) (b : Bool) (s : State) : Prop :=
+  APre false s ∧ (∀ r ∈ pubRegs, s.gpr r = v r) ∧ s.sp = sp ∧ okRISCV64 s = b
+
+theorem open_rel (v : Reg → BitVec 64) (sp : Addr) (bo : Bool) :
+    RelCT isa (Both (Core v sp bo)) Impl.ChaCha20Poly1305.RISCV64.«open» fun _ _ => True := by
+  let c : Addr := v .a7 + BitVec.ofNat 64 (pad (v .a7))
+  let b : BitVec 64 := if bo then 1 else 0
+  let J : State → Prop := fun s => s.sp = sp ∧ s.gpr .t0 = c ∧ s.gpr .t1 = b ∧
+    s.gpr .s6 = v .t6 ∧ s.gpr .s10 = v .a5 ∧ ∃ t₀, Core v sp bo t₀ ∧ Inv t₀ s
+  let J' : State → Prop := fun s => s.sp = sp ∧ s.gpr .t0 = c
+  unfold «open»
+  refine ct_seq (J := J) ?_ ?_ ?_
+  · obtain ⟨_, hc⟩ := openBody_taint
+    exact ct_taint _ v sp (fun s ⟨_, e, esp, _⟩ => ⟨esp, e⟩) hc
+  · intro s ⟨hp, e, esp, eok⟩
+    refine WP.mono (body_ok hp) fun s' ⟨i, t0, t1, _⟩ => ⟨by rw [i.sp, esp], ?_, ?_,
+      by rw [i.regs.s6, e .t6 (by decide)], by rw [i.regs.s10, e .a5 (by decide)], s, ⟨hp, e, esp, eok⟩, i⟩
+    · rw [t0]; show wk s + _ = _; simp only [wk, e .a7 (by decide), c]
+    · rw [t1]; show _ = if bo = true then _ else _
+      rw [← eok]; simp only [ok_iff]
+  · refine ct_seq (J := J') ?_ ?_ ?_
+    · refine RelCT.ite (fun _ _ h => by simp only [VG.RISCV64.eval, h.1.2.2.1, h.2.2.2.1]) ?_ ?_
+      · obtain ⟨_, hc⟩ := zeroData_taint
+        refine RelCT.mono (ct_taint (I := J) _ (fun r => match r with | .s6 => v .t6 | _ => v .a5)
+          sp (fun s hs => ⟨hs.1, ?_⟩) hc)
+          (fun _ _ h => h.1) fun _ _ h => h
+        intro r hr
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact hs.2.2.2.1
+        · exact hs.2.2.2.2.1
+      · intro _ _ _ _ _ _ _ x₁ x₂
+        cases x₁ with
+        | block h₁ =>
+          cases x₂ with
+          | block h₂ =>
+            simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h₁ h₂
+            exact ⟨h₁.2.symm.trans h₂.2, trivial⟩
+    · rintro s ⟨esp, et0, et1, -, -, t₀, ⟨hp, -⟩, i⟩
+      by_cases hb : bo = true
+      · have : s.gpr .t1 = 1 := by rw [et1]; simp only [b, hb, ↓reduceIte]
+        exact WP.ite (M := isa) (c := .zero .t1) false (by simp only [VG.RISCV64.eval, this]; rfl) (by simp)
+          fun _ => WP.block_nil ⟨esp, et0⟩
+      · have : s.gpr .t1 = 0 := by rw [et1]; simp only [b, hb, Bool.false_eq_true, ↓reduceIte]
+        exact WP.ite (M := isa) (c := .zero .t1) true (by simp only [VG.RISCV64.eval, this]; rfl)
+          (fun _ => WP.mono (zeroData_ok hp i this) fun s' ⟨i', _, o'⟩ =>
+            ⟨by rw [i'.sp, ← i.sp, esp], by rw [o' _ (by decide) (by decide), et0]⟩) (by simp)
+    · obtain ⟨_, hc⟩ := tail_taint
+      exact ct_taint _ (fun _ => c) sp (fun s hs => ⟨hs.1, fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact hs.2⟩) hc
+
+/-! ## In place -/
+
+/-- After `mv t6, a4`, from the precondition of `seal` or `open`: the
+destination is the source. -/
+theorem apre_inPlace {enc : Bool} {s s₁ : State} (hs : preRISCV64 enc s)
+    (u : Steps.Upd s s₁ .t6 (s.gpr .a4)) : APre enc s₁ := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩ := hs
+  have g : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7], s₁.gpr r = s.gpr r := fun r hr =>
+    u.other r (by revert r; decide)
+  have g6 : s₁.gpr .t6 = s.gpr .a4 := u.gpr
+  have e : ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7], s₁.gpr r = s.gpr r := g
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at e
+  obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := e
+  have rd : s₁.rd = s.rd := u.rd
+  have wr : s₁.wr = s.wr := u.wr
+  refine {
+    k_rd := by simp only [kR, kp, e0, rd, h1]; cases enc <;> simp
+    n_rd := by simp only [nR, np, e1, rd, h1]; cases enc <;> simp
+    a_rd := by simp only [aR, ad, AL, e2, e3, rd, h1]; cases enc <;> simp
+    d_in := by simp only [dR, dp, L, e4, e5, rd, wr, h1, h2]; cases enc <;> simp
+    o_wr := by simp only [oR, op, L, g6, e5, wr, h2]; cases enc <;> simp
+    w_wr := by simp only [wR, wk, e7, wr, h2]; cases enc <;> simp
+    t_in := by cases enc <;> simp only [tR, tp, e6, rd, wr, h1, h2, ↓reduceIte] <;> simp
+    k_w := ?_, n_w := ?_, a_w := ?_, d_w := ?_, t_w := ?_,
+    k_o := ?_, n_o := ?_, a_o := ?_, o_t := ?_, o_w := ?_, alias := ?_, enc_t := ?_,
+    fit_k := ?_, fit_n := ?_, fit_a := ?_, fit_d := ?_, fit_o := ?_, fit_t := ?_, fit_w := ?_ } <;>
+  simp only [kR, kp, nR, np, aR, ad, AL, dR, dp, L, tR, tp, wR, wk, oR, op, e0, e1, e2, e3, e4, e5, e6, e7,
+    g6] <;>
+  first
+    | exact .inl rfl
+    | with_reducible assumption
+    | (cases enc <;> simp_all)
+
+theorem abi_inPlace {s s₁ s' : State} (u : Steps.Upd s s₁ .t6 (s.gpr .a4)) (h : abiPreserved s₁ s') :
+    abiPreserved s s' :=
+  ⟨fun r hr => by rw [h.1 r hr, u.other r (by revert r; decide)], by rw [h.2.1, u.sp],
+    by rw [h.2.2, u.other _ (by decide)]⟩
+
+theorem inPlace_ok {enc : Bool} {c : Prog isa} {s : State} (hs : preRISCV64 enc s) {Q : State → Prop}
+    (k : ∀ s₁, Steps.Upd s s₁ .t6 (s.gpr .a4) → APre enc s₁ → WP isa c s₁ Q) :
+    WP isa (Impl.ChaCha20Poly1305.RISCV64.inPlace c) s Q :=
+  WP.seq (wp_mv fun s₁ u => WP.block_nil (k s₁ u (apre_inPlace hs u)))
+
+theorem ok_inPlace {s s₁ : State} (u : Steps.Upd s s₁ .t6 (s.gpr .a4)) : okRISCV64 s₁ = okRISCV64 s := by
+  simp only [okRISCV64, u.mem, u.other .a0 (by decide), u.other .a1 (by decide), u.other .a2 (by decide),
+    u.other .a3 (by decide), u.other .a4 (by decide), u.other .a5 (by decide), u.other .a6 (by decide)]
+
+theorem open_ct : ConstantTime isa openRISCV64.pre openRISCV64.pub
+    (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«open») := by
   intro σ₁ σ₂ t₁ t₂ σ₁' σ₂' h₁ h₂ hq e₁ e₂
   obtain ⟨⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp⟩, ql⟩ := hq
   have qok : okRISCV64 σ₁ = okRISCV64 σ₂ := leak_bool ql
-  let I₀ : State → Prop := fun s => preRISCV64 false s ∧ s.gpr .a0 = σ₁.gpr .a0 ∧
-    s.gpr .a1 = σ₁.gpr .a1 ∧ s.gpr .a2 = σ₁.gpr .a2 ∧ s.gpr .a3 = σ₁.gpr .a3 ∧ s.gpr .a4 = σ₁.gpr .a4 ∧
-    s.gpr .a5 = σ₁.gpr .a5 ∧ s.gpr .a6 = σ₁.gpr .a6 ∧ s.gpr .a7 = σ₁.gpr .a7 ∧ s.sp = σ₁.sp ∧
-    okRISCV64 s = okRISCV64 σ₁
-  let b : BitVec 64 := if okRISCV64 σ₁ then 1 else 0
-  let J : State → Prop := fun s => s.sp = σ₁.sp ∧ s.gpr .t0 = cx σ₁ ∧ s.gpr .t1 = b ∧
-    s.gpr .s9 = σ₁.gpr .a4 ∧ s.gpr .s10 = σ₁.gpr .a5 ∧ ∃ t₀, I₀ t₀ ∧ Inv t₀ s
-  let J' : State → Prop := fun s => s.sp = σ₁.sp ∧ s.gpr .t0 = cx σ₁
-  have hc : RelCT isa (Both I₀) Impl.ChaCha20Poly1305.RISCV64.«open» fun _ _ => True := by
-    unfold «open»
-    refine ct_seq (J := J) ?_ ?_ ?_
-    · obtain ⟨_, hc⟩ := openBody_taint
-      refine ct_taint _ σ₁.gpr σ₁.sp (fun s ⟨_, e0, e1, e2, e3, e4, e5, e6, e7, esp, _⟩ => ⟨esp, ?_⟩) hc
-      intro r hr
+  let v : Reg → BitVec 64 := fun r => if r = .t6 then σ₁.gpr .a4 else σ₁.gpr r
+  let I₀ : State → Prop := fun s => preRISCV64 false s ∧ (∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7],
+    s.gpr r = σ₁.gpr r) ∧ s.sp = σ₁.sp ∧ okRISCV64 s = okRISCV64 σ₁
+  have hc : RelCT isa (Both I₀)
+      (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«open») fun _ _ => True := by
+    unfold Impl.ChaCha20Poly1305.RISCV64.inPlace
+    refine ct_seq (J := Core v σ₁.sp (okRISCV64 σ₁)) ?_ ?_ (open_rel v σ₁.sp _)
+    · obtain ⟨_, hc⟩ := inPlace_taint
+      exact ct_taint _ σ₁.gpr σ₁.sp (fun s ⟨_, e, esp, _⟩ => ⟨esp, e⟩) hc
+    · intro s ⟨hpre, e, esp, eok⟩
+      refine wp_mv fun s₁ u => WP.block_nil ⟨apre_inPlace hpre u, fun r hr => ?_, by rw [u.sp, esp],
+        by rw [ok_inPlace u, eok]⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-    · intro s hs
-      have ⟨hpre, _, _, _, _, e4, e5, _, e7, esp, eok⟩ := hs
-      refine WP.mono (body_ok (APre.of s hpre)) fun s' ⟨i, t0, t1, _⟩ => ⟨by rw [i.sp, esp], ?_, ?_,
-        by rw [i.regs.s9, e4], by rw [i.regs.s10, e5], s, hs, i⟩
-      · rw [t0]; show wk s + _ = wk σ₁ + _; simp only [wk, e7]
-      · rw [t1]; show _ = if okRISCV64 σ₁ = true then _ else _
-        rw [← eok]; simp only [ok_iff]
-    · refine ct_seq (J := J') ?_ ?_ ?_
-      · refine RelCT.ite (fun _ _ h => by simp only [VG.RISCV64.eval, h.1.2.2.1, h.2.2.2.1]) ?_ ?_
-        · obtain ⟨_, hc⟩ := zeroData_taint
-          refine RelCT.mono (ct_taint (I := J) _ (fun r => match r with | .s9 => σ₁.gpr .a4 | _ => σ₁.gpr .a5)
-            σ₁.sp (fun s hs => ⟨hs.1, ?_⟩) hc)
-            (fun _ _ h => h.1) fun _ _ h => h
-          intro r hr
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl
-          · exact hs.2.2.2.1
-          · exact hs.2.2.2.2.1
-        · intro _ _ _ _ _ _ _ x₁ x₂
-          cases x₁ with
-          | block h₁ =>
-            cases x₂ with
-            | block h₂ =>
-              simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h₁ h₂
-              exact ⟨h₁.2.symm.trans h₂.2, trivial⟩
-      · rintro s ⟨esp, et0, et1, -, -, t₀, ⟨hpre, -⟩, i⟩
-        by_cases hb : okRISCV64 σ₁ = true
-        · have : s.gpr .t1 = 1 := by rw [et1]; simp only [b, hb, ↓reduceIte]
-          refine WP.ite (M := isa) (c := .zero .t1) false (by simp only [VG.RISCV64.eval, this]; rfl) (by simp)
-            fun _ => WP.block_nil ⟨esp, et0⟩
-        · have : s.gpr .t1 = 0 := by rw [et1]; simp only [b, hb, Bool.false_eq_true, ↓reduceIte]
-          refine WP.ite (M := isa) (c := .zero .t1) true (by simp only [VG.RISCV64.eval, this]; rfl)
-            (fun _ => WP.mono (zeroData_ok (APre.of t₀ hpre) i this) fun s' ⟨i', _, o'⟩ =>
-              ⟨by rw [i'.sp, ← i.sp, esp], by rw [o' _ (by decide) (by decide), et0]⟩) (by simp)
-      · obtain ⟨_, hc⟩ := tail_taint
-        exact ct_taint _ (fun _ => cx σ₁) σ₁.sp (fun s hs => ⟨hs.1, fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact hs.2⟩) hc
-  exact (hc _ _ _ _ _ _ ⟨⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩,
-    ⟨h₂, q0.symm, q1.symm, q2.symm, q3.symm, q4.symm, q5.symm, q6.symm, q7.symm, qsp.symm, qok.symm⟩⟩
-    e₁ e₂).1
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · show s₁.gpr .a0 = σ₁.gpr .a0; rw [u.other _ (by decide)]; exact e .a0 (by simp)
+      · show s₁.gpr .a1 = σ₁.gpr .a1; rw [u.other _ (by decide)]; exact e .a1 (by simp)
+      · show s₁.gpr .a2 = σ₁.gpr .a2; rw [u.other _ (by decide)]; exact e .a2 (by simp)
+      · show s₁.gpr .a3 = σ₁.gpr .a3; rw [u.other _ (by decide)]; exact e .a3 (by simp)
+      · show s₁.gpr .a4 = σ₁.gpr .a4; rw [u.other _ (by decide)]; exact e .a4 (by simp)
+      · show s₁.gpr .a5 = σ₁.gpr .a5; rw [u.other _ (by decide)]; exact e .a5 (by simp)
+      · show s₁.gpr .a6 = σ₁.gpr .a6; rw [u.other _ (by decide)]; exact e .a6 (by simp)
+      · show s₁.gpr .a7 = σ₁.gpr .a7; rw [u.other _ (by decide)]; exact e .a7 (by simp)
+      · show s₁.gpr .t6 = σ₁.gpr .a4; rw [u.gpr]; exact e .a4 (by simp)
+  exact (hc _ _ _ _ _ _ ⟨⟨h₁, fun r _ => rfl, rfl, rfl⟩,
+    ⟨h₂, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [q0.symm, q1.symm, q2.symm, q3.symm, q4.symm, q5.symm, q6.symm, q7.symm],
+      qsp.symm, qok.symm⟩⟩ e₁ e₂).1
 
 /-! ## `Verified` -/
 
@@ -679,22 +779,41 @@ def sealSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩]
-  wr := [⟨0, 0⟩, ⟨0x3000, 16⟩, ⟨0x4000, 616⟩]
+  wr := [⟨0, 0⟩, ⟨0x3000, 16⟩, ⟨0x4000, 624⟩]
 
 /-- A state satisfying `open`'s precondition (as `sealSat`, with `tag` read). -/
 def openSat : State :=
-  { sealSat with rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x3000, 16⟩], wr := [⟨0, 0⟩, ⟨0x4000, 616⟩] }
+  { sealSat with rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x3000, 16⟩], wr := [⟨0, 0⟩, ⟨0x4000, 624⟩] }
 
 theorem seal_ok (s : State) (hs : sealRISCV64.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20Poly1305.RISCV64.«seal» s t s' ∧ abiPreserved s s' ∧ sealRISCV64.post s s' :=
-  seal_correct (APre.of s hs)
+    ∃ t s', Exec isa (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«seal») s t s' ∧
+      abiPreserved s s' ∧ sealRISCV64.post s s' :=
+  inPlace_ok hs fun s₁ u hp => WP.mono (seal_correct hp) fun s' ⟨ha, hpost⟩ => ⟨abi_inPlace u ha, by
+    simpa only [sealRISCV64, u.mem, u.other .a0 (by decide), u.other .a1 (by decide), u.other .a2 (by decide),
+      u.other .a3 (by decide), u.other .a4 (by decide), u.other .a5 (by decide), u.other .a6 (by decide)]
+      using hpost⟩
 
 theorem open_ok (s : State) (hs : openRISCV64.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20Poly1305.RISCV64.«open» s t s' ∧ abiPreserved s s' ∧ openRISCV64.post s s' :=
-  open_correct (APre.of s hs)
+    ∃ t s', Exec isa (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«open») s t s' ∧
+      abiPreserved s s' ∧ openRISCV64.post s s' :=
+  inPlace_ok hs fun s₁ u hp => WP.mono (open_correct hp) fun s' ⟨ha, hpost⟩ => ⟨abi_inPlace u ha, by
+    have ed : Spec.ChaCha20Poly1305.decrypt (K s₁) (N s₁) (A s₁) (D s₁) (T0 s₁) =
+        Spec.ChaCha20Poly1305.decrypt (bytesAt s.mem (s.gpr .a0) 32) (bytesAt s.mem (s.gpr .a1) 12)
+          (bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) (bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat)
+          (bytesAt s.mem (s.gpr .a6) 16) := by
+      simp only [K, N, A, D, T0, kp, np, ad, AL, dp, L, tp, u.mem, u.other .a0 (by decide),
+        u.other .a1 (by decide), u.other .a2 (by decide), u.other .a3 (by decide), u.other .a4 (by decide),
+        u.other .a5 (by decide), u.other .a6 (by decide)]
+    have eo : op s₁ = s.gpr .a4 := u.gpr
+    have eL : L s₁ = (s.gpr .a5).toNat := by simp only [L, u.other .a5 (by decide)]
+    unfold CorePost at hpost
+    rw [ed, eo, eL] at hpost
+    simp only [openRISCV64]
+    split at hpost <;> rename_i heq <;> simp only [heq] <;> exact hpost⟩
 
 theorem seal_verified :
-    Verified RISCV64.target Impl.ChaCha20Poly1305.RISCV64.«seal» (sealScratchContract RISCV64.abi 77) :=
+    Verified RISCV64.target (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«seal»)
+      (sealScratchContract RISCV64.abi 78) :=
   Verified.of_correct seal_ok seal_ct (by
     sig_implies [Proof.ChaCha20Poly1305.sealScratchContract, Proof.ChaCha20Poly1305.sealScratchSig,
       Spec.ChaCha20Poly1305.sealPost, Proof.ChaCha20Poly1305.sealRISCV64, Proof.ChaCha20Poly1305.preRISCV64,
@@ -704,7 +823,8 @@ theorem seal_verified :
 
 /-- The postconditions match on `decrypt`; the result is the low word of `a0`. -/
 theorem open_verified :
-    Verified RISCV64.target Impl.ChaCha20Poly1305.RISCV64.«open» (openZeroScratchContract RISCV64.abi 77) :=
+    Verified RISCV64.target (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«open»)
+      (openZeroScratchContract RISCV64.abi 78) :=
   Verified.of_correct open_ok open_ct
     { pre := by
         sig_implies_pre [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
@@ -756,11 +876,12 @@ theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract RISCV64.ab
 after the code. -/
 theorem seal_framed :
     Verified RISCV64.target
-      (Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 77 Impl.ChaCha20Poly1305.RISCV64.«seal»)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 78
+        (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«seal»))
       (Spec.ChaCha20Poly1305.sealContract RISCV64.abi 624) :=
   RISCV64.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
-    (n := 77) (post := Spec.ChaCha20Poly1305.sealPost RISCV64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 624) (words := 77) seal_verified (by decide) (by decide) (by decide)
+    (n := 78) (post := Spec.ChaCha20Poly1305.sealPost RISCV64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 624) (words := 78) seal_verified (by decide) (by decide) (by decide)
     (sealPost_out _) sealFrameSat_pre
 
 /-- A state satisfying `open`'s precondition, without the working space. -/
@@ -777,12 +898,251 @@ theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openZeroContract RISCV6
 after the code. -/
 theorem open_framed :
     Verified RISCV64.target
-      (Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 77 Impl.ChaCha20Poly1305.RISCV64.«open»)
+      (Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 78
+        (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«open»))
       (Spec.ChaCha20Poly1305.openZeroContract RISCV64.abi 624) :=
   RISCV64.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
-    (n := 77) (post := Spec.ChaCha20Poly1305.openZeroPost RISCV64.abi.ptrBits) (wa := true) (stack := 0)
+    (n := 78) (post := Spec.ChaCha20Poly1305.openZeroPost RISCV64.abi.ptrBits) (wa := true) (stack := 0)
     (leak := some (Spec.ChaCha20Poly1305.openLeak RISCV64.abi.ptrBits))
-    (bytes := 624) (words := 77) open_verified (by decide) (by decide) (by decide)
+    (bytes := 624) (words := 78) open_verified (by decide) (by decide) (by decide)
     (openZeroPost_out _) openFrameSat_pre
+
+/-! ## Out of place
+
+`vg_chacha20_poly1305_open_to` is `open`'s body after `toEntry`: `dst` into
+`t6`, and `tag` and `work` from the stack into `a6` and `a7`, where the body
+expects them. -/
+
+/-- After `toEntry`. -/
+structure ToEntered (s s₄ : State) : Prop where
+  gpr : ∀ r, r ≠ .t6 → r ≠ .t0 → r ≠ .a6 → r ≠ .a7 → s₄.gpr r = s.gpr r
+  t6 : s₄.gpr .t6 = s.gpr .a6
+  a6 : s₄.gpr .a6 = stackArg s 0
+  a7 : s₄.gpr .a7 = stackArg s 1
+  mem : s₄.mem = s.mem
+  sp : s₄.sp = s.sp
+  rd : s₄.rd = s.rd
+  wr : s₄.wr = s.wr
+
+theorem toEntry_ok {s : State} (hs : openToPreRISCV64 s) : WP isa (.block toEntry) s (ToEntered s) := by
+  obtain ⟨hrd, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hfa, hal, _, _⟩ := hs
+  have hin : ∀ j, j < 2 → InRegions (s.rd ++ s.wr) (stackArgAddr s j) 8 := fun j hj => by
+    refine ⟨toArgs s, by rw [hrd]; simp, ?_⟩
+    show (⟨s.sp + BitVec.ofNat 64 (8 * 0), 16⟩ : Region).Contains (s.sp + BitVec.ofNat 64 (8 * j)) 8
+    exact Offset.contains _ (by omega) (by omega) (by simp only [stackArgAddr] at hfa; omega)
+  have hal8 : ∀ j, (stackArgAddr s j).toNat % 8 = 0 := fun j =>
+    Spill.al8 (by omega) (by omega)
+  unfold toEntry
+  refine wp_mv fun s₁ u₁ => wp_addSp (imm := 0) (by decide) fun s₂ u₂ => ?_
+  have p₂ : s₂.gpr .t0 = s.sp := by rw [u₂.gpr, u₁.sp, BitVec.add_zero]
+  refine wp_ld (a := stackArgAddr s 0) (by decide) (by rw [p₂]; rfl) (hal8 0)
+    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin 0 (by decide)) fun s₃ u₃ => ?_
+  refine wp_ld (a := stackArgAddr s 1) (by decide) (by rw [u₃.other _ (by decide), p₂]; rfl) (hal8 1)
+    (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin 1 (by decide)) fun s₄ u₄ => WP.block_nil ?_
+  have hm : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  exact ⟨fun r h6 h0 ha6 ha7 => by rw [u₄.other r ha7, u₃.other r ha6, u₂.other r h0, u₁.other r h6],
+    by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr],
+    by rw [u₄.other _ (by decide), u₃.gpr, u₂.mem, u₁.mem]; rfl,
+    by rw [u₄.gpr, u₃.mem, u₂.mem, u₁.mem]; rfl, hm,
+    by rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp], by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd],
+    by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
+
+theorem apre_openTo {s s₄ : State} (hs : openToPreRISCV64 s) (h : ToEntered s s₄) : APre false s₄ := by
+  obtain ⟨h1, h2, dk, dn, da, ds, dt, dw, dg, wk', wn, wa, ws, wt, wg, f0, f1, f2, f4, f6, ft, fw, -, -, hl, -⟩ :=
+    hs
+  have e0 := h.gpr .a0 (by decide) (by decide) (by decide) (by decide)
+  have e1 := h.gpr .a1 (by decide) (by decide) (by decide) (by decide)
+  have e2 := h.gpr .a2 (by decide) (by decide) (by decide) (by decide)
+  have e3 := h.gpr .a3 (by decide) (by decide) (by decide) (by decide)
+  have e4 := h.gpr .a4 (by decide) (by decide) (by decide) (by decide)
+  have e5 := h.gpr .a5 (by decide) (by decide) (by decide) (by decide)
+  simp only [hl] at h1 h2 dk dn da ds dt dw dg f6
+  refine {
+    k_rd := ?_, n_rd := ?_, a_rd := ?_, d_in := ?_, o_wr := ?_, w_wr := ?_, t_in := ?_,
+    k_w := ?_, n_w := ?_, a_w := ?_, d_w := ?_, t_w := ?_,
+    k_o := ?_, n_o := ?_, a_o := ?_, o_t := ?_, o_w := ?_, enc_t := trivial,
+    alias := by
+      refine .inr ⟨rfl, ?_⟩
+      simp only [dR, dp, L, oR, op, e4, e5, h.t6]
+      exact ds.symm,
+    fit_k := ?_, fit_n := ?_, fit_a := ?_, fit_d := ?_, fit_o := ?_, fit_t := ?_, fit_w := ?_ } <;>
+  simp only [kR, kp, nR, np, aR, ad, AL, dR, dp, L, tR, tp, wR, wk, oR, op, e0, e1, e2, e3, e4, e5, h.t6,
+    h.a6, h.a7, h.rd, h.wr, h1, h2, Bool.false_eq_true, ↓reduceIte] <;>
+  first
+    | with_reducible assumption
+    | (apply Region.Disjoint.symm; with_reducible assumption)
+    | simp
+    | omega
+
+theorem abi_openTo {s s₄ s' : State} (h : ToEntered s s₄) (ha : abiPreserved s₄ s') : abiPreserved s s' :=
+  ⟨fun r hr => by
+    rw [ha.1 r hr, h.gpr r (by revert r; decide) (by revert r; decide) (by revert r; decide)
+      (by revert r; decide)], by rw [ha.2.1, h.sp],
+    by rw [ha.2.2, h.gpr _ (by decide) (by decide) (by decide) (by decide)]⟩
+
+theorem ok_openTo {s s₄ : State} (h : ToEntered s s₄) : okRISCV64 s₄ = (openToRes s).isSome := by
+  simp only [okRISCV64, openToRes, h.mem, h.a6, h.gpr .a0 (by decide) (by decide) (by decide) (by decide),
+    h.gpr .a1 (by decide) (by decide) (by decide) (by decide),
+    h.gpr .a2 (by decide) (by decide) (by decide) (by decide),
+    h.gpr .a3 (by decide) (by decide) (by decide) (by decide),
+    h.gpr .a4 (by decide) (by decide) (by decide) (by decide),
+    h.gpr .a5 (by decide) (by decide) (by decide) (by decide)]
+
+theorem openTo_ok (s : State) (hs : openToRISCV64.pre s) :
+    ∃ t s', Exec isa Impl.ChaCha20Poly1305.RISCV64.openTo s t s' ∧ abiPreserved s s' ∧
+      openToRISCV64.post s s' :=
+  WP.seq (WP.mono (toEntry_ok hs) fun s₄ h₄ => WP.mono (open_correct (apre_openTo hs h₄))
+    fun s' ⟨ha, hpost⟩ => ⟨abi_openTo h₄ ha, by
+      have ed : Spec.ChaCha20Poly1305.decrypt (K s₄) (N s₄) (A s₄) (D s₄) (T0 s₄) = openToRes s := by
+        simp only [K, N, A, D, T0, kp, np, ad, AL, dp, L, tp, openToRes, h₄.mem, h₄.a6,
+          h₄.gpr .a0 (by decide) (by decide) (by decide) (by decide),
+          h₄.gpr .a1 (by decide) (by decide) (by decide) (by decide),
+          h₄.gpr .a2 (by decide) (by decide) (by decide) (by decide),
+          h₄.gpr .a3 (by decide) (by decide) (by decide) (by decide),
+          h₄.gpr .a4 (by decide) (by decide) (by decide) (by decide),
+          h₄.gpr .a5 (by decide) (by decide) (by decide) (by decide)]
+      have eo : op s₄ = s.gpr .a6 := h₄.t6
+      have eL : L s₄ = (s.gpr .a5).toNat := by
+        simp only [L, h₄.gpr .a5 (by decide) (by decide) (by decide) (by decide)]
+      unfold CorePost at hpost
+      rw [ed, eo, eL] at hpost
+      simp only [openToRISCV64]
+      split at hpost <;> rename_i heq <;> simp only [heq] <;> exact hpost⟩)
+
+theorem openTo_ct : ConstantTime isa openToRISCV64.pre openToRISCV64.pub Impl.ChaCha20Poly1305.RISCV64.openTo := by
+  intro σ₁ σ₂ t₁ t₂ σ₁' σ₂' h₁ h₂ hq e₁ e₂
+  obtain ⟨⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp⟩, qa, ql⟩ := hq
+  have qok : (openToRes σ₁).isSome = (openToRes σ₂).isSome := leak_bool ql
+  let v : Reg → BitVec 64 := fun r =>
+    if r = .t6 then σ₁.gpr .a6 else if r = .a6 then stackArg σ₁ 0 else if r = .a7 then stackArg σ₁ 1
+    else σ₁.gpr r
+  let I₀ : State → Prop := fun s => openToPreRISCV64 s ∧ (∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7],
+    s.gpr r = σ₁.gpr r) ∧ s.sp = σ₁.sp ∧ (∀ i < 2, stackArg s i = stackArg σ₁ i) ∧
+    (openToRes s).isSome = (openToRes σ₁).isSome
+  have hc : RelCT isa (Both I₀) Impl.ChaCha20Poly1305.RISCV64.openTo fun _ _ => True := by
+    unfold Impl.ChaCha20Poly1305.RISCV64.openTo
+    refine ct_seq (J := Core v σ₁.sp (openToRes σ₁).isSome) ?_ ?_ (open_rel v σ₁.sp _)
+    · obtain ⟨_, hc⟩ := toEntry_taint
+      exact ct_taint _ σ₁.gpr σ₁.sp (fun s ⟨_, e, esp, _⟩ => ⟨esp, e⟩) hc
+    · intro s ⟨hpre, e, esp, ea, eok⟩
+      refine WP.mono (toEntry_ok hpre) fun s₄ h₄ => ⟨apre_openTo hpre h₄, fun r hr => ?_,
+        by rw [h₄.sp, esp], by rw [ok_openTo h₄, eok]⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      have g : ∀ r, r ≠ .t6 → r ≠ .t0 → r ≠ .a6 → r ≠ .a7 → r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7] →
+          s₄.gpr r = σ₁.gpr r := fun r a b c d hm => (h₄.gpr r a b c d).trans (e r hm)
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact g .a0 (by decide) (by decide) (by decide) (by decide) (by simp)
+      · exact g .a1 (by decide) (by decide) (by decide) (by decide) (by simp)
+      · exact g .a2 (by decide) (by decide) (by decide) (by decide) (by simp)
+      · exact g .a3 (by decide) (by decide) (by decide) (by decide) (by simp)
+      · exact g .a4 (by decide) (by decide) (by decide) (by decide) (by simp)
+      · exact g .a5 (by decide) (by decide) (by decide) (by decide) (by simp)
+      · show s₄.gpr .a6 = stackArg σ₁ 0; rw [h₄.a6]; exact ea 0 (by decide)
+      · show s₄.gpr .a7 = stackArg σ₁ 1; rw [h₄.a7]; exact ea 1 (by decide)
+      · show s₄.gpr .t6 = σ₁.gpr .a6; rw [h₄.t6]; exact e .a6 (by simp)
+  exact (hc _ _ _ _ _ _ ⟨⟨h₁, fun r _ => rfl, rfl, fun i _ => rfl, rfl⟩,
+    ⟨h₂, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [q0.symm, q1.symm, q2.symm, q3.symm, q4.symm, q5.symm, q6.symm, q7.symm],
+      qsp.symm, fun i hi => (qa i hi).symm, qok.symm⟩⟩ e₁ e₂).1
+
+/-- A state satisfying `open_to`'s precondition (with no additional data and
+no data): `key`, `nonce` and `aad` as in `sealSat`, `src` at `0x5000`, `dst`
+at 0, `tag` at `0x3000` and `work` at `0x4000`, both on the stack at `sp`. -/
+def openToSat : State where
+  gpr r := match r with
+    | .a0 => 0x1000 | .a1 => 0x1100 | .a2 => 0x2000 | .a4 => 0x5000 | _ => 0
+  sp := 0x8000
+  mem a := bif Nat.beq a.toNat 0x8001 then 0x30 else bif Nat.beq a.toNat 0x8009 then 0x40 else 0
+  rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x5000, 0⟩, ⟨0x3000, 16⟩, ⟨0x8000, 16⟩]
+  wr := [⟨0, 0⟩, ⟨0x4000, 624⟩]
+
+/-- The postconditions match on `decrypt`; the result is the low word of `a0`. -/
+theorem openTo_verified :
+    Verified RISCV64.target Impl.ChaCha20Poly1305.RISCV64.openTo (openToScratchContract RISCV64.abi 78) :=
+  Verified.of_correct openTo_ok openTo_ct
+    { pre := by
+        intro s h
+        sig_pre [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
+            Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
+            Proof.ChaCha20Poly1305.openToRISCV64, Proof.ChaCha20Poly1305.openToPreRISCV64,
+            Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.openToLeakRISCV64,
+            Proof.ChaCha20Poly1305.toArgs, Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs,
+            RISCV64.stackArg, RISCV64.stackArgAddr, List.getD, List.range, List.range.loop] at h
+        sig_split h
+        sig_reduce [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
+            Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
+            Proof.ChaCha20Poly1305.openToRISCV64, Proof.ChaCha20Poly1305.openToPreRISCV64,
+            Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.openToLeakRISCV64,
+            Proof.ChaCha20Poly1305.toArgs, Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs,
+            RISCV64.stackArg, RISCV64.stackArgAddr, List.getD, List.range, List.range.loop]
+        sig_and_intros
+        sig_close
+        all_goals first
+          | with_reducible assumption
+          | sig_disjoint_symm
+          | omega
+          | bv_omega_arith
+      post := by
+        intro s s' _ h
+        sig_eval [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
+          Spec.ChaCha20Poly1305.openToPost, RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg,
+          RISCV64.stackArgAddr, List.getD, List.range, List.range.loop]
+        simp only [Proof.ChaCha20Poly1305.openToRISCV64, Proof.ChaCha20Poly1305.openToRes] at h
+        split at h
+        next _ pt e₁ =>
+          split
+          next _ pt' e₂ =>
+            obtain rfl := Option.some.inj (e₁.symm.trans e₂)
+            exact ⟨by rw [h.1]; rfl, h.2⟩
+          next _ e₂ => exact absurd (e₁.symm.trans e₂) (by simp)
+        next _ e₁ =>
+          split
+          next _ pt' e₂ => exact absurd (e₁.symm.trans e₂) (by simp)
+          next _ e₂ => exact ⟨by rw [h.1]; rfl, h.2⟩
+      pub := by
+        sig_implies_pub [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
+            Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
+            Proof.ChaCha20Poly1305.openToRISCV64, Proof.ChaCha20Poly1305.openToPreRISCV64,
+            Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.openToLeakRISCV64,
+            Proof.ChaCha20Poly1305.toArgs, Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs,
+            RISCV64.stackArg, RISCV64.stackArgAddr, List.getD, List.range, List.range.loop]
+      sat := by
+        sig_implies_sat [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
+            Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
+            Proof.ChaCha20Poly1305.openToRISCV64, Proof.ChaCha20Poly1305.openToPreRISCV64,
+            Proof.ChaCha20Poly1305.openToRes, Proof.ChaCha20Poly1305.openToLeakRISCV64,
+            Proof.ChaCha20Poly1305.toArgs, Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs,
+            RISCV64.stackArg, RISCV64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [Proof.ChaCha20Poly1305.RISCV64.openToSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
+          using Proof.ChaCha20Poly1305.RISCV64.openToSat }
+
+/-- A state satisfying `open_to`'s precondition, without the working space:
+`tag`, its one stack argument. -/
+def openToFrameSat : State :=
+  { openToSat with rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x5000, 0⟩, ⟨0x3000, 16⟩, ⟨0x8000, 8⟩],
+                   wr := [⟨0, 0⟩] }
+
+theorem openToFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openToContract RISCV64.abi 640).pre s := by
+  implies_sat [Spec.ChaCha20Poly1305.openToContract, Spec.ChaCha20Poly1305.openToSig,
+    Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
+    RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg, RISCV64.stackArgAddr, List.getD, List.range,
+    List.range.loop] [openToFrameSat, openToSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
+    using openToFrameSat
+
+/-- `open_to` with its working space in a frame of 640 bytes on the stack
+(after the copy of `tag` and the working space's address), wiped after the
+code. -/
+theorem openTo_framed :
+    Verified RISCV64.target
+      (Impl.StackScratch.RISCV64.withStackScratchArgsWiped 640 1 78 Impl.ChaCha20Poly1305.RISCV64.openTo)
+      (Spec.ChaCha20Poly1305.openToContract RISCV64.abi 640) :=
+  RISCV64.Verified.stackScratchArgsWiped (sig := Spec.ChaCha20Poly1305.openToSig) (nm := "work") (e := .u64)
+    (n := 78) (pre := Spec.ChaCha20Poly1305.openToPre RISCV64.abi.ptrBits)
+    (post := Spec.ChaCha20Poly1305.openToPost RISCV64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 640)
+    (m := 1) (words := 78) (leak := some (Spec.ChaCha20Poly1305.openToLeak RISCV64.abi.ptrBits))
+    openTo_verified (by decide) (by decide) (by decide) (by decide) (openToPre_local _) (openToPost_local _)
+    (openToPost_out _) openToFrameSat_pre (hleak := openToLeak_local _)
 
 end VG.Proof.ChaCha20Poly1305.RISCV64

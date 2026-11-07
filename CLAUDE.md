@@ -122,7 +122,12 @@ own changes are rebuilt either way, on top of the restored build.
   `ci/check_variants.py` checks the generated code for this (the
   `adding-a-primitive` skill says what it checks). There are no
   exceptions: never add a caller that calls only the baseline
-  implementation, or a way to excuse one.
+  implementation, or a way to excuse one. Only a combination no CPU can
+  choose is not required: one with an implementation the Rust code never
+  chooses on a CPU with features the combination needs (ChaCha20's SSSE3
+  code, never chosen with AVX and AVX2, which every Poly1305 variant needs),
+  listed with those features in `NEVER_WITH` in `ci/check_variants.py`, and
+  its choice unit-tested both ways.
   A variant is chosen by the CPU's features; only when no feature tells
   apart the CPUs it is faster on may the choice also depend on the
   compilation target (`vg_poly1305_update_neon`, faster on Apple's cores and

@@ -15,7 +15,9 @@ block at a time, in place. They are generic over the implementation they call
 
 The scratch buffer (2176 bytes): `[0, 2048)` is the working space of the
 block function, `[2048, 2064)` the ciphertext block that decryption keeps
-across the call, and `[2064, 2112)` our caller's callee-saved registers.
+across the call, `[2064, 2112)` our caller's callee-saved registers, and
+`[2112, 2176)` the four blocks that a group of decryption keeps across its
+call (AES-CFB128's, `Impl/AesCfb/X86_64.lean`, the inputs of its call).
 
 Both keep their arguments in `rbx` (schedule), `rbp` (rounds), `r12` (the
 chaining value), `r13` (the next block), `r14` (blocks left) and `r15`
@@ -23,9 +25,15 @@ chaining value), `r13` (the next block), `r14` (blocks left) and `r15`
 
 * `encrypt`, each block: `Pⱼ ⊕ Cⱼ₋₁` in place, enciphered in place, and
   copied to the chaining value.
-* `decrypt`, each block: `Cⱼ` saved in the scratch buffer, deciphered in
-  place, XORed with the chaining value `Cⱼ₋₁`, and the saved `Cⱼ` copied to
-  the chaining value.
+* `decrypt`, each group of four blocks while at least four are left
+  (`decGroup`): the four `Cⱼ` saved in the scratch buffer at `[2112, 2176)`
+  (`gOff`), deciphered in place by one call (as many blocks as the
+  bitsliced block function deciphers at once, which bitslices the round
+  keys once for the call), each XORed with `Cⱼ₋₁` (the chaining value for
+  the first, the saved block before it for the others), and the last saved
+  `Cⱼ` copied to the chaining value; then each block left (`decBody`): `Cⱼ`
+  saved at `cOff`, deciphered in place, XORed with the chaining value, and
+  the saved `Cⱼ` copied to the chaining value.
 
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
 on `n`.
@@ -97,6 +105,54 @@ def decBody (b : Blocks) : Prog isa :=
   .seq (.block (copy .r15 cOff .r13 0 ++ callArgs))
     (.seq (.call b.name b.code) (.block (xorInto .r13 .r12 ++ copy .r12 0 .r15 cOff ++ advance)))
 
-def decrypt (b : Blocks) : Prog isa := whole (decBody b)
+/-! ## Groups of four blocks -/
+
+/-- The offset of the four blocks a group keeps in the scratch buffer. -/
+def gOff : Nat := 2112
+
+/-- The block at `src + e` XORed into the block at `dst + d`. -/
+def xorAt (dst : Reg) (d : Nat) (src : Reg) (e : Nat) : List Instr :=
+  [.mov .rax (.mem (at_ dst d)), .alu .xor .rax (.mem (at_ src e)), .store (at_ dst d) .rax,
+   .mov .rax (.mem (at_ dst (d + 8))), .alu .xor .rax (.mem (at_ src (e + 8))), .store (at_ dst (d + 8)) .rax]
+
+/-- On to the block after the four (CF is set when fewer than four are left). -/
+def advance4 : List Instr := [.alu .add .r13 (.imm 64), .alu .sub .r14 (.imm 4), .alu .cmp .r14 (.imm 4)]
+
+/-- `group` while at least four blocks are left, then `one` for each block
+left (`r14` is not zero on entry). -/
+def groups (group one : Prog isa) : Prog isa :=
+  .seq (.block [.alu .cmp .r14 (.imm 4)])
+    (.seq (.ite .b (.block []) (.loop group .ae))
+      (.seq (.block [.alu .test .r14 (.reg .r14)]) (.ite .e (.block []) (.loop one .ne))))
+
+/-- The registers saved and the arguments set up, `groups group one`, and
+the registers restored. -/
+def batched (group one : Prog isa) : Prog isa :=
+  .seq (.block (save ++ setup)) (.seq (.ite .e (.block []) (groups group one)) (.block restore))
+
+/-- Block `j` of the four at `r13` saved in slot `j` at `gOff`. -/
+def saveAt (j : Nat) : List Instr := copy .r15 (gOff + 16 * j) .r13 (16 * j)
+
+/-- The four blocks at `r13` saved at `gOff`. -/
+def decSave : List Instr := saveAt 0 ++ saveAt 1 ++ saveAt 2 ++ saveAt 3
+
+/-- The arguments of the block function for the four blocks at `r13`. -/
+def callArgs4 : List Instr :=
+  [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r13), .mov32 .rcx (.imm 4),
+   .mov .r8 (.reg .r15)]
+
+/-- Deciphered block `j + 1` XORed with the saved block `j`. -/
+def fixAt (j : Nat) : List Instr := xorAt .r13 (16 * (j + 1)) .r15 (gOff + 16 * j)
+
+/-- Each deciphered block XORed with `Cⱼ₋₁` (the chaining value for the
+first), and the last saved `Cⱼ` the chaining value. -/
+def decFix : List Instr :=
+  xorAt .r13 0 .r12 0 ++ fixAt 0 ++ fixAt 1 ++ fixAt 2 ++ copy .r12 0 .r15 (gOff + 16 * 3)
+
+/-- Four blocks: saved, deciphered by one call, and fixed up. -/
+def decGroup (b : Blocks) : Prog isa :=
+  .seq (.block (decSave ++ callArgs4)) (.seq (.call b.name b.code) (.block (decFix ++ advance4)))
+
+def decrypt (b : Blocks) : Prog isa := batched (decGroup b) (decBody b)
 
 end VG.Impl.AesCbc.X86_64

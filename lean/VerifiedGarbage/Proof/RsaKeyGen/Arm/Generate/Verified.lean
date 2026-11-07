@@ -36,6 +36,7 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CTStep
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Spec.RsaKeyGen.Contract
+meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.CT
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
@@ -205,7 +206,7 @@ theorem next_point {q : GenPoint} {o t : State} {st : KeyProgress} {final : KeyS
     · rw [← hs, rOf_status, ho, ← hph, hp]; simp [Spec.Entropy.Outcome.status, phaseWord, List.length_append]
 
 theorem gen_ct_step (sname : String) (c : Search.Cand) (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56)
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56)
     (q : GenPoint) (s : State) (h : GenCTL q s) :
     WP isa (iteration (.call sname (Impl.RsaKeyGen.Arm.Search.code c.call)) (.call name kc)) s (GenCTStep q) := by
   obtain ⟨o, st, ha, hl, -⟩ := h
@@ -496,7 +497,7 @@ def CallKCT (q : GenPoint) (u : State) : Prop :=
     st.phase = .q pB ∧ KeyReady q.inputs o s u
 
 theorem key_call_ct (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) :
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) :
     RelCT isa (Two CallKCT) (.call name kc) (fun _ _ => True) := by
   intro u₁ u₂ t₁ t₂ v₁ v₂ ⟨q, h₁, h₂, hsp⟩ e₁ e₂
   have ct : RelCT isa (fun a b => CallKCT q a ∧ CallKCT q b ∧ a.sp = b.sp) (.call name kc) (fun _ _ => True) := by
@@ -509,7 +510,7 @@ theorem key_call_ct (name : String) {kc : Prog isa}
     have k₂ : KeyCT q s₂ := ⟨o₂, st₂, f₂, c₂, pB₂, a₂, m₂, ho₂, hp₂, hph₂⟩
     refine ⟨pre_of_cin (g₁.callK_cin r₁), pre_of_cin (g₂.callK_cin r₂), ?_, (g₁.key_covers r₁).1,
       (g₁.key_covers r₁).2, (g₂.key_covers r₂).1, (g₂.key_covers r₂).2⟩
-    sig_pub [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, reduceClassify, Loc.val]
+    sig_pub [Proof.RsaKeyGen.keyContract, Proof.RsaKeyGen.keySig, abi, argRegs, reduceClassify, Loc.val]
     obtain ⟨l₁, e₁, p₁, q₁⟩ := callK_inputs g₁ r₁
     obtain ⟨l₂, e₂, p₂, q₂⟩ := callK_inputs g₂ r₂
     have st₁ := k₁.status
@@ -551,7 +552,7 @@ theorem KeyCT.regs {q : GenPoint} {u : State} (h : KeyCT q u) : regsOf q.inputs 
   let ⟨_, _, _, _, _, _, hm, _⟩ := h; hm.frame.regsOf
 
 theorem key_run_ct (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) :
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) :
     RelCT isa (Two KeyCT) (keyRun (.call name kc)) (fun _ _ => True) := by
   unfold keyRun
   refine alloc_ct (R := fun _ _ => True) ?_
@@ -674,7 +675,7 @@ theorem afterKey_ct : RelCT isa (Two AfterKCT) afterKey fun _ _ => True := by
 
 /-- The key's branch: the key, and its status's. -/
 theorem keyBranch_ct (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
     RelCT isa (Two KeyCT) (.seq (keyRun (.call name kc)) afterKey) fun _ _ => True := by
   refine RelCT.seq (two_post (key_run_ct name hv) fun q u hk => ?_) afterKey_ct
   have hst := hk.status
@@ -690,7 +691,7 @@ def AccCT (q : GenPoint) (u : State) : Prop :=
   MidF q u ∧ ¬q.status = 0 ∧ ¬q.status = 3 ∧ ¬q.cand = 0
 
 theorem accepted_ct (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
     RelCT isa (Two AccCT) (accepted (.call name kc)) fun _ _ => True := by
   unfold accepted
   refine RelCT.seq (two_post (Ψ := fun q u => AccCT q u ∧ isa.eval .eq u = some (decide (q.ph = 0)))
@@ -754,7 +755,7 @@ def AfterCT (q : GenPoint) (t : State) : Prop :=
   ∃ o st s, AtPoint q o st ∧ GenLive q.inputs o q.used st s ∧ AfterSearch q.inputs o q.used st s t
 
 theorem classify_ct (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
     RelCT isa (Two AfterCT) (Impl.RsaKeyGen.Arm.Generate.classify (.call name kc)) fun _ _ => True := by
   unfold Impl.RsaKeyGen.Arm.Generate.classify
   refine RelCT.seq (two_post (Ψ := fun q u => MidCT q u ∧ isa.eval .eq u = some (decide (q.status = 0)))
@@ -788,7 +789,7 @@ theorem classify_ct (name : String) {kc : Prog isa}
     (fun q u ⟨⟨⟨⟨o, st, final, a, hm, _⟩, h0⟩, h3⟩, hc⟩ => ⟨⟨o, st, final, a, hm⟩, h0, h3, hc⟩) h) fun _ _ h => h
 
 theorem iteration_ct (sname : String) (c : Search.Cand) (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
     RelCT isa (Two GenCTL) (iteration (.call sname (Impl.RsaKeyGen.Arm.Search.code c.call)) (.call name kc))
       fun _ _ => True := by
   unfold iteration
@@ -948,7 +949,7 @@ def LoopPair (n : Nat) (s t : State) : Prop :=
   ∃ q : GenPoint, n = q.measure ∧ GenCTL q s ∧ GenCTL q t ∧ s.sp = t.sp
 
 theorem iteration_pair (sname : String) (c : Search.Cand) (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) (n : Nat) :
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) (n : Nat) :
     RelCT isa (LoopPair n) (iteration (.call sname (Impl.RsaKeyGen.Arm.Search.code c.call)) (.call name kc))
       fun s t => isa.eval .eq s = isa.eval .eq t ∧ (isa.eval .eq s = some false → Two DoneCT s t) ∧
         (isa.eval .eq s = some true → ∃ m < n, LoopPair m s t) := by
@@ -972,7 +973,7 @@ theorem iteration_pair (sname : String) (c : Search.Cand) (name : String) {kc : 
     exact ⟨hes.trans het.symm, fun _ => ⟨q, ⟨o₁, f₁, d₁⟩, ⟨o₂, f₂, d₂⟩, sp⟩, (fun h => by rw [hes] at h; cases h)⟩
 
 theorem loop_ct (sname : String) (c : Search.Cand) (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
     RelCT isa (Two GenCTL)
       (.loop (iteration (.call sname (Impl.RsaKeyGen.Arm.Search.code c.call)) (.call name kc)) .eq) (Two DoneCT) := by
   intro s t ts tt u v ⟨q, hs, ht, sp⟩ es et
@@ -986,7 +987,7 @@ theorem finish_ct : RelCT isa (Two DoneCT) (.block finish) fun _ _ => True := by
     (.r10, 24), (.r11, 28), (.lr, 36)]).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 theorem body_ct (sname : String) (c : Search.Cand) (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
     RelCT isa (Two StartCT) (body (.call sname (Impl.RsaKeyGen.Arm.Search.code c.call)) (.call name kc))
       fun _ _ => True := by
   unfold body
@@ -1050,7 +1051,7 @@ theorem start_same {s t : State} (h : genPub s t) :
     show off (genOfState s).st 24 = genStp s + BitVec.ofNat 64 24 from rfl, w3]
 
 theorem code_ct (sname : String) (c : Search.Cand) (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
     RelCT isa (fun s t => genPre s ∧ genPre t ∧ genPub s t)
       (code (.call sname (Impl.RsaKeyGen.Arm.Search.code c.call)) (.call name kc)) (fun _ _ => True) := by
   unfold code
@@ -1069,7 +1070,7 @@ theorem code_ct (sname : String) (c : Search.Cand) (name : String) {kc : Prog is
       by simp only [pushed_sp, hp.1]⟩ e1 e2
 
 theorem gen_constantTime (sname : String) (c : Search.Cand) (name : String) {kc : Prog isa}
-    (hv : Verified target kc (Spec.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
+    (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
     ConstantTime isa genContract.pre genContract.pub
       (code (.call sname (Impl.RsaKeyGen.Arm.Search.code c.call)) (.call name kc)) :=
   RelCT.constantTime (code_ct sname c name hv hks)

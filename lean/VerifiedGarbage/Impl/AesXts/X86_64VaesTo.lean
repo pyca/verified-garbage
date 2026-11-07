@@ -58,8 +58,8 @@ def preXor : List XReg → List XReg → Nat → List Instr
 /-- `X86_64Vaes.tPre`, with the blocks loaded from `src`. -/
 def tPre : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, k => ([.movdquLoad b (ix (16 * k)), .vbinLoad .vpxor .l128 b b (at_ .rax (16 * k))] : List Instr) ++
-      tPre bs (k + 1)
+  | b :: bs, k => ([.movdquLoad b (ix (16 * k)), .movdquLoad .xmm9 (at_ .rax (16 * k)),
+      .xop (.bin .pxor b .xmm9)] : List Instr) ++ tPre bs (k + 1)
 
 /-- `X86_64Vaes.group`, with the blocks loaded from `src`. -/
 def group (f : List XReg → Prog isa) : Prog isa :=

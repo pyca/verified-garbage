@@ -57,30 +57,33 @@ theorem stateAt_writeW_counter (m : Mem) (p : Addr) (v : BitVec 32) :
 
 theorem cryptA_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) :
     WP isa (.block [.li .r12 1, .store .w .r12 .r24 (stOff + 48), .addi .r3 .r24 stOff, mov .r4 .r27,
-      mov .r5 .r28, mov .r6 .r24]) s fun s' =>
+      mov .r5 .r28, mov .r6 .r24, mov .r7 .r27]) s fun s' =>
       s'.mem = s.mem.writeW (off (cx s₀) (stOff + 48)) (1 : BitVec 32) ∧ s'.gpr .r3 = off (cx s₀) stOff ∧
-      s'.gpr .r4 = dp s₀ ∧ s'.gpr .r5 = s₀.gpr .r8 ∧ s'.gpr .r6 = cx s₀ ∧
+      s'.gpr .r4 = dp s₀ ∧ s'.gpr .r5 = s₀.gpr .r8 ∧ s'.gpr .r6 = cx s₀ ∧ s'.gpr .r7 = dp s₀ ∧
       Kept [sub s₀ (stOff + 48) 4] s s' := by
   have h14 := h.regs.r24
   refine wp_li (by decide) fun s₁ u₁ => ?_
   refine wp_stw (a := off (cx s₀) (stOff + 48)) (by decide) (by decide) (by rw [u₁.other _ (by decide), h14])
     (by rw [u₁.wr, h.wr]; exact hp.in_ctx (by decide)) fun s₂ u₂ => ?_
   refine wp_addi (by decide) (by decide) fun s₃ u₃ => wp_mov fun s₄ u₄ => wp_mov fun s₅ u₅ =>
-    wp_mov fun s₆ u₆ => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.gpr, u₁.mem]; rfl
-  · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.gpr,
-      u₁.other _ (by decide), h14]
-  · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₂.gpr,
-      u₁.other _ (by decide), h.regs.r27]
-  · rw [u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr,
-      u₁.other _ (by decide), h.regs.r28]
-  · rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr,
-      u₁.other _ (by decide), h14]
-  · refine ⟨fun r hr => ?_, by rw [u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp],
-      by rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd], by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr], ?_⟩
-    · rw [u₆.other _ (ne_of_pres hr), u₅.other _ (ne_of_pres hr), u₄.other _ (ne_of_pres hr),
-        u₃.other _ (ne_of_pres hr), u₂.gpr, u₁.other _ (ne_of_pres hr)]
-    · rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+    wp_mov fun s₆ u₆ => wp_mov fun s₇ u₇ => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.gpr, u₁.mem]; rfl
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+      u₃.gpr, u₂.gpr, u₁.other _ (by decide), h14]
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr,
+      u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h.regs.r27]
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide),
+      u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h.regs.r28]
+  · rw [u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide),
+      u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h14]
+  · rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+      u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h.regs.r27]
+  · refine ⟨fun r hr => ?_, by rw [u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp],
+      by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd],
+      by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr], ?_⟩
+    · rw [u₇.other _ (ne_of_pres hr), u₆.other _ (ne_of_pres hr), u₅.other _ (ne_of_pres hr),
+        u₄.other _ (ne_of_pres hr), u₃.other _ (ne_of_pres hr), u₂.gpr, u₁.other _ (ne_of_pres hr)]
+    · rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
       exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
         (contains_sub s₀ (w := 32 / 8) (by omega) (by omega) (by decide))
 
@@ -94,7 +97,7 @@ theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     WP isa crypt s fun s' => Inv s₀ s' ∧ Kept [sub s₀ 0 (stOff + 64), dR s₀] s s' ∧
       bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
   unfold crypt
-  refine WP.seq (WP.mono (cryptA_ok hp h) fun s₁ ⟨m₁, h3, h4, h5, h6, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (cryptA_ok hp h) fun s₁ ⟨m₁, h3, h4, h5, h6, h7, k₁⟩ => ?_)
   have i₁ := h.step1 k₁ (by decide) (by decide)
   have hw : Covers [⟨off (cx s₀) stOff, 64⟩, ⟨dp s₀, L s₀⟩, ⟨cx s₀, 320⟩] s₁.wr := by
     refine Covers.of_sub fun r hr => ?_
@@ -114,7 +117,7 @@ theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
   have hDB : (⟨dp s₀, L s₀⟩ : Region).Disjoint ⟨cx s₀, 320⟩ := by
     rw [← sub_zero s₀ 320]; exact hp.d_c.sub_right (sub_ctx s₀ (by decide))
   have h5' : s₁.gpr .r5 = BitVec.ofNat 64 (L s₀) := by rw [h5, hL]
-  refine xor_call h3 h4 h5' h6 (s₀.gpr .r8).isLt hSD hSB hDB hp.fit_d hcv hw
+  refine xor_call h3 h4 h5' h6 h7 (s₀.gpr .r8).isLt hSD hSB hDB hp.fit_d hcv hw
     fun s₂ k₂ data₂ => ?_
   have hsub : ∀ r ∈ [(⟨off (cx s₀) stOff, 64⟩ : Region), ⟨dp s₀, L s₀⟩, ⟨cx s₀, 320⟩],
       ∃ r' ∈ [sub s₀ 0 (stOff + 64), dR s₀], Region.Sub r r' := by

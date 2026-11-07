@@ -30,7 +30,8 @@ open VG.Impl.ChaCha20.RISCV64.Xor (mov)
 
 /-- `vg_chacha20_poly1305_seal`, in its frame. -/
 def sealCode : Prog isa :=
-  Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 77 Impl.ChaCha20Poly1305.RISCV64.«seal»
+  Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 78
+    (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«seal»)
 
 /-- `tag` into `t5`, from the stack above our frame, and `dst` into `t6`. -/
 def entry : List Instr := [.addSp .t5 16, .load .d .t5 .t5 0, mov .t6 .a6]

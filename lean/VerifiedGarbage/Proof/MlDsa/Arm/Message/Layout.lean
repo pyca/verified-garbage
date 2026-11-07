@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 # ML-DSA on ARMv7, `sign_message` and `verify_message_cached`: where everything is
 
 Untrusted: everything here is checked by Lean. The function's buffers, the
-36 bytes of stack below the stack pointer on entry (`STK`, which the calls'
+52 bytes of stack below the stack pointer on entry (`STK`, which the calls'
 frames use), `scratch` (`SC`) and the 1 KiB `X` in it after the working
 space of the function on `μ` (`Lay`): the Keccak state, the sponge
 functions' working space and `μ` in its first 904 bytes (`W`), then the
@@ -67,8 +67,8 @@ namespace Lay
 
 variable (L : Lay)
 
-/-- The 36 bytes of stack the calls' frames use. -/
-abbrev STK : Region := ⟨State.addr L.SP - BitVec.ofNat 64 36, 36⟩
+/-- The 52 bytes of stack the calls' frames use. -/
+abbrev STK : Region := ⟨State.addr L.SP - BitVec.ofNat 64 52, 52⟩
 /-- `scratch`. -/
 abbrev SC : Region := ⟨State.addr L.scr, L.scrLen⟩
 /-- The 1 KiB, as a register holds it and as an address. -/
@@ -93,7 +93,7 @@ structure Ok : Prop where
   ctxLt : L.ctxLen.toNat < 256
   hE : L.E + 1024 ≤ L.scrLen
   hKey : 128 ≤ L.keyLen ∧ L.keyLen < 2 ^ 16
-  nSP : 36 ≤ L.SP.toNat
+  nSP : 52 ≤ L.SP.toNat
   nScr : L.scr.toNat + L.scrLen ≤ 2 ^ 32
   inSC : L.SC ∈ L.wr
   inKey : L.KEY ∈ L.rd

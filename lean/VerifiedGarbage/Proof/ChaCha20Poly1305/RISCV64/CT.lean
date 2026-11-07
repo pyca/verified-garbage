@@ -34,7 +34,8 @@ theorem agree₀ {s₁ s₂ : State} (hpub : pubRISCV64 s₁ s₂) :
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem seal_ct :
-    ConstantTime isa sealRISCV64.pre sealRISCV64.pub Impl.ChaCha20Poly1305.RISCV64.«seal» :=
+    ConstantTime isa sealRISCV64.pre sealRISCV64.pub
+      (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«seal») :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7])
     (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
 
@@ -42,10 +43,17 @@ theorem seal_ct :
 leak: the taint analysis checks the parts around the branch, which
 `open_ct` (`Verified.lean`) composes. -/
 
-theorem openBody_taint : ∃ h, (VG.Taint.check taint (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7])
+theorem openBody_taint : ∃ h, (VG.Taint.check taint
+    (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t6])
     Impl.ChaCha20Poly1305.RISCV64.openBody h).isSome = true := ⟨_, by taint_decide⟩
 
-theorem zeroData_taint : ∃ h, (VG.Taint.check taint (Taint.ofRegs [.s9, .s10])
+theorem inPlace_taint : ∃ h, (VG.Taint.check taint (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7])
+    (.block [Impl.ChaCha20.RISCV64.Xor.mov .t6 .a4]) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem toEntry_taint : ∃ h, (VG.Taint.check taint (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7])
+    (.block Impl.ChaCha20Poly1305.RISCV64.toEntry) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem zeroData_taint : ∃ h, (VG.Taint.check taint (Taint.ofRegs [.s6, .s10])
     Impl.ChaCha20Poly1305.RISCV64.zeroData h).isSome = true := ⟨_, by taint_decide⟩
 
 theorem tail_taint : ∃ h, (VG.Taint.check taint (Taint.ofRegs [.t0])

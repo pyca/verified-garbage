@@ -87,41 +87,52 @@ theorem mcSat_digest {p : Params} (hp : p.pkLen < 0xB000) :
     Nat.add_sub_cancel_left]
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
 
-/-- `vg_mldsa*_sign_message` of the parameter set `p`, calling the signing
-function on `μ` `f`, named `n`, meets its contract with `S` bytes of stack. -/
-theorem signMessage_verified {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {S : Nat}
-    (h48 : 48 ≤ S) {f : Prog isa} (hf : Callee f (fun stk => signContract p PPC64LE.abi stk) S) (n : String)
-    (hsat : (signMessageContract p PPC64LE.abi S).pre (msSat p)) :
-    Verified PPC64LE.target (signMessage n f p) (signMessageContract p PPC64LE.abi S) := by
+/-- `vg_mldsa*_sign_message` (or `_sign_message_prepared`, `pr`) of the
+parameter set `p`, calling the signing function on `μ` `f`, named `n`, meets
+its contract with `S` bytes of stack. -/
+theorem signMessage_verified {p : Params} {pr : Bool} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {S : Nat}
+    (h48 : 48 ≤ S) {f : Prog isa} (hf : Callee f (fun stk => signK p pr PPC64LE.abi stk) S) (n : String)
+    (hsat : ∃ s, (msgSK p pr PPC64LE.abi S).pre s) :
+    Verified PPC64LE.target (signMessage n f p) (msgSK p pr PPC64LE.abi S) := by
   have hF := mfacts hp3
   obtain ⟨k, rfl⟩ : ∃ k, S = k + 1 := ⟨S - 1, by omega⟩
   refine ⟨fun s hs => signMessage_wp hF h48 hf (Nat.le_refl _) (mspre_of hs),
-    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ⟨msSat p, hsat⟩⟩
-  sig_pub [signMessageContract, signMessageSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
-  obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hpub
-  refine signMessage_ct hF h48 hf (Nat.le_refl _) s₁ s₂ t₁ t₂ s₁' s₂' (mspre_of h₁) (mspre_of h₂)
-    ⟨hsp, hl, fun r hr => ?_⟩ e₁ e₂
-  simp only [mArgs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [h3, h4, h5, h6, h7, h8, h9, h10]
+    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, hsat⟩
+  have hpub' : MSPub p s₁ s₂ := by
+    cases pr <;> simp only [msgSK, Bool.false_eq_true, ↓reduceIte] at hpub
+    all_goals
+      sig_pub [signMessageContract, signMessageSig, preparedSignMessageContract, preparedSignMessageSig,
+        PPC64LE.abi, PPC64LE.argRegs] at hpub
+      obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hpub
+      refine ⟨hsp, hl, fun r hr => ?_⟩
+      simp only [mArgs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [h3, h4, h5, h6, h7, h8, h9, h10]
+  exact signMessage_ct hF h48 hf (Nat.le_refl _) s₁ s₂ t₁ t₂ s₁' s₂' (mspre_of h₁) (mspre_of h₂)
+    hpub' e₁ e₂
 
-/-- `vg_mldsa*_verify_message_cached` of the parameter set `p`, calling the
-verification function on `μ` `f`, named `n`, meets its contract with `S`
-bytes of stack. -/
-theorem verifyMessageCached_verified {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {S : Nat}
-    (h48 : 48 ≤ S) {f : Prog isa} (hf : Callee f (fun stk => verifyContract p PPC64LE.abi stk) S) (n : String)
-    (hsat : (verifyMessageCachedContract p PPC64LE.abi S).pre (mcSat p)) :
-    Verified PPC64LE.target (verifyMessageCached n f p) (verifyMessageCachedContract p PPC64LE.abi S) := by
+/-- `vg_mldsa*_verify_message_cached` (or `_verify_message_prepared`, `pr`) of
+the parameter set `p`, calling the verification function on `μ` `f`, named
+`n`, meets its contract with `S` bytes of stack. -/
+theorem verifyMessageCached_verified {p : Params} {pr : Bool} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87)
+    {S : Nat} (h48 : 48 ≤ S) {f : Prog isa} (hf : Callee f (fun stk => verifyK p pr PPC64LE.abi stk) S) (n : String)
+    (hsat : ∃ s, (msgVK p pr PPC64LE.abi S).pre s) :
+    Verified PPC64LE.target (verifyMessageCached n f p) (msgVK p pr PPC64LE.abi S) := by
   have hF := mfacts hp3
   obtain ⟨k, rfl⟩ : ∃ k, S = k + 1 := ⟨S - 1, by omega⟩
   refine ⟨fun s hs => verifyMessageCached_wp hF h48 hf (Nat.le_refl _) (mcpre_of hs),
-    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ⟨mcSat p, hsat⟩⟩
-  sig_pub [verifyMessageCachedContract, verifyMessageCachedSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
-  obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hpub
-  refine verifyMessageCached_ct hF h48 hf (Nat.le_refl _) s₁ s₂ t₁ t₂ s₁' s₂' (mcpre_of h₁) (mcpre_of h₂)
-    ⟨hsp, hl, fun r hr => ?_⟩ e₁ e₂
-  simp only [cArgs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [h3, h4, h5, h6, h7, h8, h9, h10]
+    fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, hsat⟩
+  have hpub' : MCPub p s₁ s₂ := by
+    cases pr <;> simp only [msgVK, Bool.false_eq_true, ↓reduceIte] at hpub
+    all_goals
+      sig_pub [verifyMessageCachedContract, verifyMessageCachedSig, preparedVerifyMessageContract,
+        preparedVerifyMessageSig, PPC64LE.abi, PPC64LE.argRegs] at hpub
+      obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10⟩ := hpub
+      refine ⟨hsp, hl, fun r hr => ?_⟩
+      simp only [cArgs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [h3, h4, h5, h6, h7, h8, h9, h10]
+  exact verifyMessageCached_ct hF h48 hf (Nat.le_refl _) s₁ s₂ t₁ t₂ s₁' s₂' (mcpre_of h₁) (mcpre_of h₂)
+    hpub' e₁ e₂
 
 end VG.Proof.MlDsa.PPC64LE.Message

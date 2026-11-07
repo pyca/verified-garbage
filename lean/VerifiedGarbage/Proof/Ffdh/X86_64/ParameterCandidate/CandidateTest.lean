@@ -1,12 +1,12 @@
 module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PolicyResult
-
+public 
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestQ
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeOriginal
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Consume
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseSetup
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 import VerifiedGarbage.Proof.Framework.Omega
@@ -25,7 +25,7 @@ open VG.Impl.Ffdh.X86_64.ParameterCandidate VG.Impl.Bignum.X86_64.Public
 open VG.Proof.MlKem.X86_64 VG.Proof.MillerRabin.X86_64
 
 def candidateTail (p : CandidateP) (r : List Byte) : Option (Bool × List Byte) :=
-  if Spec.Ffdh.generationShape p.bits p.gen p.P && p.sieved p.P then sievedPolicy p r
+  if p.congruent && p.sieved p.P then sievedPolicy p r
   else some (false, r)
 
 def CandidateTestPost (p : CandidateP) (s t : State) : Prop :=
@@ -59,7 +59,7 @@ theorem testCandidate_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   have hs' := hs.trans hs₅
   have hf' := hf.trans hf₅
   have kk' : Keep (.rdi :: mmRegs) s s₅ := (kk.trans k₅).mono (by decide)
-  refine WP.ite (Spec.Ffdh.generationShape p.bits p.gen p.P) (by simp [eval, hz₅]) ?_ ?_
+  refine WP.ite p.congruent (by simp [eval, hz₅]) ?_ ?_
   · intro hgen
     refine WP.seq (WP.mono (primeCheck_state_ok h₅ hg₅ hp₅ hn₅)
       fun s₆ ⟨h₆, hg₆, hp₆, _, hz₆, hs₆, hf₆, k₆, ho₆⟩ => ?_)

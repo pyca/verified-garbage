@@ -82,7 +82,7 @@ theorem call_ok {M : Mode} (v : BlocksImpl) {s₀ : State} (hp : UPre s₀) {k :
   refine WP.seq (WP.mono (ivA_wp hp h) fun s₁ a => ?_)
   have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := by rw [a.saved .rsp (by simp [calleeSaved]), h.rsp]
   refine WP.seq (WP.mono (blk_call v.encOk v.encNosp v.encDepth a.pre) fun s₂ c => hq s₂ ?_)
-  have big : Frame (Big s₀) s₀.mem s.mem := UPre.big_of h.frame
+  have big : Frame (Big s₀) s₀.mem s.mem := UPre.big_ofG h.frame
   refine ⟨fun r hr => by rw [c.saved r hr, a.saved r hr], by rw [c.wr, a.wr, h.wrs hp],
     by rw [c.rd, c.wr, a.rd, a.wr, h.regs hp], by rw [c.rd, a.rd], by rw [c.wr, a.wr], ?_, ?_⟩
   · have fr := c.frame; rw [rsp₁, a.mem] at fr; exact fr
@@ -142,7 +142,7 @@ theorem linv_succ {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k <
     exact h.rd
   · rw [wr₅, wr₄, a.wr']
     exact h.wr
-  · rw [mem₅]; exact h.frame.trans (stepFrame hk fStep)
+  · rw [mem₅]; exact h.frame.trans (stepFrameG hk fStep)
   · rw [mem₅, hp.blocksAt_step hk fStep, h.data, hout,
       set_prefix _ _ _ hl' (by simp [Spec.Cbc.blocksAt]; exact hk)]
   · rw [mem₅, hiv]

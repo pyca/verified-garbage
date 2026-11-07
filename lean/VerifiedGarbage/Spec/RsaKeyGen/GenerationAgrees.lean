@@ -5,9 +5,9 @@ public import VerifiedGarbage.Spec.RsaKeyGen.Generation
 /-!
 # The RSA prime search is FIPS 186-5's
 
-**Trusted** (its statements; their proofs are checked). `vg_rsa_prime_search`
-is required to compute `primeSearch` (`GenerationContract.lean`), over the
-host's refilled tapes. This file proves that `primeSearch` is the search for a
+**Trusted** (its statements; their proofs are checked). `vg_rsa_generate`
+runs `primeSearch` for each prime (`keySearch`, `KeySearchContract.lean`), over
+the host's refilled tapes. This file proves that `primeSearch` is the search for a
 prime of FIPS 186-5 Appendix A.1.3 steps 4 and 5, `generatePrime`, on the
 stream of random octets the host hands out, so that `generatePrime` is what
 the search is required to compute: a reviewer reads `generatePrime`

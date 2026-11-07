@@ -83,3 +83,30 @@ fn decrypt_unaligned() {
         );
     }
 }
+
+/// Every length below 35 blocks, partial segments included, round-trips:
+/// decryption, which enciphers up to eight blocks at a time, undoes
+/// encryption, in place at an offset of the length modulo 16, with guards.
+#[test]
+fn round_trips() {
+    let iv = [0x3c; 16];
+    for len in [16, 24, 32] {
+        let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
+        let message: Vec<_> = crate::bytes::pattern(16 * 34 + 16, 7, 1);
+        for n in 0..message.len() {
+            let mut buffer = message[..n].to_vec();
+            CamelliaCfb128Encryptor::new(&key, &iv)
+                .unwrap()
+                .encrypt_final(&mut buffer);
+            let offset = n % 16;
+            let mut guarded = vec![0xa5; offset + n + 16];
+            guarded[offset..offset + n].copy_from_slice(&buffer);
+            CamelliaCfb128Decryptor::new(&key, &iv)
+                .unwrap()
+                .decrypt_final(&mut guarded[offset..offset + n]);
+            assert_eq!(guarded[offset..offset + n], message[..n]);
+            assert!(crate::bytes::all_equal(&guarded[..offset], 0xa5));
+            assert!(crate::bytes::all_equal(&guarded[offset + n..], 0xa5));
+        }
+    }
+}

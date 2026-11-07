@@ -171,7 +171,7 @@ def aesniPclmul : XtsImpl where
   decSpSafe := OnePassNi.decrypt_spSafe
   to := VaesTo.toAesNi
   suffix := "_aesni_pclmul"
-  features := ["aes", "avx", "pclmulqdq"]
+  features := ["aes", "pclmulqdq"]
 
 /-- The one-pass functions with AVX-512 VAES, sixteen blocks at a time,
 `vg_aes_xts_encrypt_vaes_vpclmul_avx512` and
