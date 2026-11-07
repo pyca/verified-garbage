@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Camellia.X86.FbVerified
 meta import VerifiedGarbage.Impl.Camellia.X86.FbFinal
 meta import VerifiedGarbage.Spec.Camellia.CfbFinal
@@ -28,6 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # Camellia-CFB128 of a message's last piece on x86 (32-bit) meets its contracts

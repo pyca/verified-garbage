@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Seed.Scratch
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Seed.X86.FbVerified
 meta import VerifiedGarbage.Impl.Seed.X86.FbFinal
 meta import VerifiedGarbage.Spec.Seed.CfbFinal
@@ -26,6 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # SEED-CFB128 of a message's last piece on x86 (32-bit) meets its contracts
