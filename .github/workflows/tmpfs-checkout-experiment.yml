@@ -591,4 +591,3 @@ jobs:
           name: tmpfs-checkout-${{ matrix.os }}
           path: |
             ${{ runner.temp }}/results.json
-            ${{ runner.temp }}/trace-*.jsonl
