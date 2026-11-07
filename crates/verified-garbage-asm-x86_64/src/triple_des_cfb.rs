@@ -33,6 +33,84 @@ jmp 21f
     )
 }
 
+/// Triple DES-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_triple_des_cfb64_encrypt_final(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJDD8//9JieBJg8AITYnBSYmZiAMAAEmJqZADAABNiaGYAwAATYmpoAMAAE2JsagDAABNibmwAwAAZkwPbv5JidRJic1IiwdJiYEIAgAASItHCEmJgRACAABIi0cQSYmBGAIAAEiLRxhJiYEgAgAASItHIEmJgSgCAABIi0coSYmBMAIAAEiLRzBJiYE4AgAASItHOEmJgUACAABIi0dASYmBSAIAAEiLR0hJiYFQAgAASItHUEmJgVgCAABIi0dYSYmBYAIAAEiLR2BJiYFoAgAASItHaEmJgXACAABIi0dwSYmBeAIAAEiLR3hJiYGAAgAASIuHgAAAAEmJgYgCAABIi4eIAAAASYmBkAIAAEiLh5AAAABJiYGYAgAASIuHmAAAAEmJgaACAABIi4egAAAASYmBqAIAAEiLh6gAAABJiYGwAgAASIuHsAAAAEmJgbgCAABIi4e4AAAASYmBwAIAAEiLh8AAAABJiYHIAgAASIuHyAAAAEmJgdACAABIi4fQAAAASYmB2AIAAEiLh9gAAABJiYHgAgAASIuH4AAAAEmJgegCAABIi4foAAAASYmB8AIAAEiLh/AAAABJiYH4AgAASIuH+AAAAEmJgQADAABIi4cAAQAASYmBCAMAAEiLhwgBAABJiYEQAwAASIuHEAEAAEmJgRgDAABIi4cYAQAASYmBIAMAAEiLhyABAABJiYEoAwAASIuHKAEAAEmJgTADAABIi4cwAQAASYmBOAMAAEiLhzgBAABJiYFAAwAASIuHQAEAAEmJgUgDAABIi4dIAQAASYmBUAMAAEiLh1ABAABJiYFYAwAASIuHWAEAAEmJgWADAABIi4dgAQAASYmBaAMAAEiLh2gBAABJiYFwAwAASIuHcAEAAEmJgXgDAABIi4d4AQAASYmBgAMAAGZMD374SIsoSYmpAAIAAE2F7Q=="
+je 20f
+22:
+.base64 "TInPSIHHCAIAAEyJzkiBxgACAABMico="
+call {vg_triple_des_encrypt_block}
+.base64 "SYnRSYP9CA=="
+jb 23f
+.base64 "SYsEJEkzgQACAABJiQQkSYsEJEmJgQACAABJg8QISYPtCA=="
+jmp 24f
+23:
+.base64 "TInISAUAAgAA"
+25:
+.base64 "RA+2EEEPtgwkTDHRQYgMJEiDwAFJg8QBSYPtAQ=="
+jne 25b
+24:
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "ZkwPfvhJi6kAAgAASIkoSYuZiAMAAEmLqZADAABNi6GYAwAATYupoAMAAE2LsagDAABNi7mwAwAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABIjaQk0AMAAMM="
+.p2align 6"#,
+        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+    )
+}
+
+/// Triple DES-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
+///
+/// Contract: `VG.Spec.TripleDes.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 384 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_triple_des_cfb64_decrypt_final(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJDD8//9JieBJg8AITYnBSYmZiAMAAEmJqZADAABNiaGYAwAATYmpoAMAAE2JsagDAABNibmwAwAAZkwPbv5JidRJic1IiwdJiYEIAgAASItHCEmJgRACAABIi0cQSYmBGAIAAEiLRxhJiYEgAgAASItHIEmJgSgCAABIi0coSYmBMAIAAEiLRzBJiYE4AgAASItHOEmJgUACAABIi0dASYmBSAIAAEiLR0hJiYFQAgAASItHUEmJgVgCAABIi0dYSYmBYAIAAEiLR2BJiYFoAgAASItHaEmJgXACAABIi0dwSYmBeAIAAEiLR3hJiYGAAgAASIuHgAAAAEmJgYgCAABIi4eIAAAASYmBkAIAAEiLh5AAAABJiYGYAgAASIuHmAAAAEmJgaACAABIi4egAAAASYmBqAIAAEiLh6gAAABJiYGwAgAASIuHsAAAAEmJgbgCAABIi4e4AAAASYmBwAIAAEiLh8AAAABJiYHIAgAASIuHyAAAAEmJgdACAABIi4fQAAAASYmB2AIAAEiLh9gAAABJiYHgAgAASIuH4AAAAEmJgegCAABIi4foAAAASYmB8AIAAEiLh/AAAABJiYH4AgAASIuH+AAAAEmJgQADAABIi4cAAQAASYmBCAMAAEiLhwgBAABJiYEQAwAASIuHEAEAAEmJgRgDAABIi4cYAQAASYmBIAMAAEiLhyABAABJiYEoAwAASIuHKAEAAEmJgTADAABIi4cwAQAASYmBOAMAAEiLhzgBAABJiYFAAwAASIuHQAEAAEmJgUgDAABIi4dIAQAASYmBUAMAAEiLh1ABAABJiYFYAwAASIuHWAEAAEmJgWADAABIi4dgAQAASYmBaAMAAEiLh2gBAABJiYFwAwAASIuHcAEAAEmJgXgDAABIi4d4AQAASYmBgAMAAGZMD374SIsoSYmpAAIAAE2F7Q=="
+je 20f
+22:
+.base64 "TInPSIHHCAIAAEyJzkiBxgACAABMico="
+call {vg_triple_des_encrypt_block}
+.base64 "SYnRSYP9CA=="
+jb 23f
+.base64 "SYsEJEkzgQACAABJiQQkSYuBAAIAAEkzBCRJiYEAAgAASYPECEmD7Qg="
+jmp 24f
+23:
+.base64 "TInISAUAAgAA"
+25:
+.base64 "RA+2EEEPtgwkTDHRQYgMJEiDwAFJg8QBSYPtAQ=="
+jne 25b
+24:
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "ZkwPfvhJi6kAAgAASIkoSYuZiAMAAEmLqZADAABNi6GYAwAATYupoAMAAE2LsagDAABNi7mwAwAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABIjaQk0AMAAMM="
+.p2align 6"#,
+        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
+    )
+}
+
 /// The CPU features `vg_triple_des_cfb64_decrypt_avx2` requires (`Artifact.features`).
 pub const VG_TRIPLE_DES_CFB64_DECRYPT_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
@@ -218,83 +296,5 @@ jmp 23f
 .base64 "SYuZCAgAAEmLqRAIAABNi6EYCAAATYupIAgAAE2LsSgIAABNi7kwCAAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEyJnCQIBAAATImcJBAEAABMiZwkGAQAAEyJnCQgBAAATImcJCgEAABMiZwkMAQAAEyJnCQ4BAAATImcJEAEAABMiZwkSAQAAEyJnCRQBAAATImcJFgEAABMiZwkYAQAAEyJnCRoBAAATImcJHAEAABMiZwkeAQAAEyJnCSABAAATImcJIgEAABMiZwkkAQAAEyJnCSYBAAATImcJKAEAABMiZwkqAQAAEyJnCSwBAAATImcJLgEAABMiZwkwAQAAEyJnCTIBAAATImcJNAEAABMiZwk2AQAAEyJnCTgBAAATImcJOgEAABMiZwk8AQAAEyJnCT4BAAATImcJAAFAABMiZwkCAUAAEyJnCQQBQAATImcJBgFAABMiZwkIAUAAEyJnCQoBQAATImcJDAFAABMiZwkOAUAAEyJnCRABQAATImcJEgFAABMiZwkUAUAAEyJnCRYBQAATImcJGAFAABMiZwkaAUAAEyJnCRwBQAATImcJHgFAABMiZwkgAUAAEyJnCSIBQAATImcJJAFAABMiZwkmAUAAEyJnCSgBQAATImcJKgFAABMiZwksAUAAEyJnCS4BQAATImcJMAFAABMiZwkyAUAAEyJnCTQBQAATImcJNgFAABMiZwk4AUAAEyJnCToBQAATImcJPAFAABMiZwk+AUAAEyJnCQABgAATImcJAgGAABMiZwkEAYAAEyJnCQYBgAATImcJCAGAABMiZwkKAYAAEyJnCQwBgAATImcJDgGAABMiZwkQAYAAEyJnCRIBgAATImcJFAGAABMiZwkWAYAAEyJnCRgBgAATImcJGgGAABMiZwkcAYAAEyJnCR4BgAATImcJIAGAABMiZwkiAYAAEyJnCSQBgAATImcJJgGAABMiZwkoAYAAEyJnCSoBgAATImcJLAGAABMiZwkuAYAAEyJnCTABgAATImcJMgGAABMiZwk0AYAAEyJnCTYBgAATImcJOAGAABMiZwk6AYAAEyJnCTwBgAATImcJPgGAABMiZwkAAcAAEyJnCQIBwAATImcJBAHAABMiZwkGAcAAEyJnCQgBwAATImcJCgHAABMiZwkMAcAAEyJnCQ4BwAATImcJEAHAABMiZwkSAcAAEyJnCRQBwAATImcJFgHAABMiZwkYAcAAEyJnCRoBwAATImcJHAHAABMiZwkeAcAAEyJnCSABwAATImcJIgHAABMiZwkkAcAAEyJnCSYBwAATImcJKAHAABMiZwkqAcAAEyJnCSwBwAATImcJLgHAABMiZwkwAcAAEyJnCTIBwAATImcJNAHAABMiZwk2AcAAEyJnCTgBwAATImcJOgHAABMiZwk8AcAAEyJnCT4BwAATImcJAAIAABMiZwkCAgAAEyJnCQQCAAATImcJBgIAABMiZwkIAgAAEyJnCQoCAAATImcJDAIAABMiZwkOAgAAEyJnCRACAAATImcJEgIAABIjaQkUAgAAMM="
 .p2align 6"#,
         vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
-    )
-}
-
-/// Triple DES-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
-///
-/// Contract: `VG.Spec.TripleDes.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 384 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_triple_des_cfb64_encrypt_final(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJDD8//9JieBJg8AITYnBSYmZiAMAAEmJqZADAABNiaGYAwAATYmpoAMAAE2JsagDAABNibmwAwAAZkwPbv5JidRJic1IiwdJiYEIAgAASItHCEmJgRACAABIi0cQSYmBGAIAAEiLRxhJiYEgAgAASItHIEmJgSgCAABIi0coSYmBMAIAAEiLRzBJiYE4AgAASItHOEmJgUACAABIi0dASYmBSAIAAEiLR0hJiYFQAgAASItHUEmJgVgCAABIi0dYSYmBYAIAAEiLR2BJiYFoAgAASItHaEmJgXACAABIi0dwSYmBeAIAAEiLR3hJiYGAAgAASIuHgAAAAEmJgYgCAABIi4eIAAAASYmBkAIAAEiLh5AAAABJiYGYAgAASIuHmAAAAEmJgaACAABIi4egAAAASYmBqAIAAEiLh6gAAABJiYGwAgAASIuHsAAAAEmJgbgCAABIi4e4AAAASYmBwAIAAEiLh8AAAABJiYHIAgAASIuHyAAAAEmJgdACAABIi4fQAAAASYmB2AIAAEiLh9gAAABJiYHgAgAASIuH4AAAAEmJgegCAABIi4foAAAASYmB8AIAAEiLh/AAAABJiYH4AgAASIuH+AAAAEmJgQADAABIi4cAAQAASYmBCAMAAEiLhwgBAABJiYEQAwAASIuHEAEAAEmJgRgDAABIi4cYAQAASYmBIAMAAEiLhyABAABJiYEoAwAASIuHKAEAAEmJgTADAABIi4cwAQAASYmBOAMAAEiLhzgBAABJiYFAAwAASIuHQAEAAEmJgUgDAABIi4dIAQAASYmBUAMAAEiLh1ABAABJiYFYAwAASIuHWAEAAEmJgWADAABIi4dgAQAASYmBaAMAAEiLh2gBAABJiYFwAwAASIuHcAEAAEmJgXgDAABIi4d4AQAASYmBgAMAAGZMD374SIsoSYmpAAIAAE2F7Q=="
-je 20f
-22:
-.base64 "TInPSIHHCAIAAEyJzkiBxgACAABMico="
-call {vg_triple_des_encrypt_block}
-.base64 "SYnRSYP9CA=="
-jb 23f
-.base64 "SYsEJEkzgQACAABJiQQkSYsEJEmJgQACAABJg8QISYPtCA=="
-jmp 24f
-23:
-.base64 "TInISAUAAgAA"
-25:
-.base64 "RA+2EEEPtgwkTDHRQYgMJEiDwAFJg8QBSYPtAQ=="
-jne 25b
-24:
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "ZkwPfvhJi6kAAgAASIkoSYuZiAMAAEmLqZADAABNi6GYAwAATYupoAMAAE2LsagDAABNi7mwAwAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABIjaQk0AMAAMM="
-.p2align 6"#,
-        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
-    )
-}
-
-/// Triple DES-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; FIPS 46-3) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
-///
-/// Contract: `VG.Spec.TripleDes.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 384 bytes.
-/// * `iv` must be valid for reads and writes of 8 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 984 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_triple_des_cfb64_decrypt_final(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJDD8//9JieBJg8AITYnBSYmZiAMAAEmJqZADAABNiaGYAwAATYmpoAMAAE2JsagDAABNibmwAwAAZkwPbv5JidRJic1IiwdJiYEIAgAASItHCEmJgRACAABIi0cQSYmBGAIAAEiLRxhJiYEgAgAASItHIEmJgSgCAABIi0coSYmBMAIAAEiLRzBJiYE4AgAASItHOEmJgUACAABIi0dASYmBSAIAAEiLR0hJiYFQAgAASItHUEmJgVgCAABIi0dYSYmBYAIAAEiLR2BJiYFoAgAASItHaEmJgXACAABIi0dwSYmBeAIAAEiLR3hJiYGAAgAASIuHgAAAAEmJgYgCAABIi4eIAAAASYmBkAIAAEiLh5AAAABJiYGYAgAASIuHmAAAAEmJgaACAABIi4egAAAASYmBqAIAAEiLh6gAAABJiYGwAgAASIuHsAAAAEmJgbgCAABIi4e4AAAASYmBwAIAAEiLh8AAAABJiYHIAgAASIuHyAAAAEmJgdACAABIi4fQAAAASYmB2AIAAEiLh9gAAABJiYHgAgAASIuH4AAAAEmJgegCAABIi4foAAAASYmB8AIAAEiLh/AAAABJiYH4AgAASIuH+AAAAEmJgQADAABIi4cAAQAASYmBCAMAAEiLhwgBAABJiYEQAwAASIuHEAEAAEmJgRgDAABIi4cYAQAASYmBIAMAAEiLhyABAABJiYEoAwAASIuHKAEAAEmJgTADAABIi4cwAQAASYmBOAMAAEiLhzgBAABJiYFAAwAASIuHQAEAAEmJgUgDAABIi4dIAQAASYmBUAMAAEiLh1ABAABJiYFYAwAASIuHWAEAAEmJgWADAABIi4dgAQAASYmBaAMAAEiLh2gBAABJiYFwAwAASIuHcAEAAEmJgXgDAABIi4d4AQAASYmBgAMAAGZMD374SIsoSYmpAAIAAE2F7Q=="
-je 20f
-22:
-.base64 "TInPSIHHCAIAAEyJzkiBxgACAABMico="
-call {vg_triple_des_encrypt_block}
-.base64 "SYnRSYP9CA=="
-jb 23f
-.base64 "SYsEJEkzgQACAABJiQQkSYuBAAIAAEkzBCRJiYEAAgAASYPECEmD7Qg="
-jmp 24f
-23:
-.base64 "TInISAUAAgAA"
-25:
-.base64 "RA+2EEEPtgwkTDHRQYgMJEiDwAFJg8QBSYPtAQ=="
-jne 25b
-24:
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "ZkwPfvhJi6kAAgAASIkoSYuZiAMAAEmLqZADAABNi6GYAwAATYupoAMAAE2LsagDAABNi7mwAwAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABIjaQk0AMAAMM="
-.p2align 6"#,
-        vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
