@@ -251,7 +251,8 @@ theorem one_aadOk {n wi : Nat} {t : State} (h : onePre n wi t) :
   obtain ⟨hrd, -, -, -, -, -, -, daW, -, -, -, -, -, ba, -, -, -, -, fa, -⟩ := hp
   exact ⟨covers_of_mem (List.mem_append_left _ hrd.2.2.1), (arg t 1).isLt, fa, oSt_disj h daW, daW, ba⟩
 
-theorem one_argsCr {n wi : Nat} {t : State} (h : onePre n wi t) :
+theorem one_argsCr {n wi : Nat} {t : State} (h : onePre n wi t)
+    (hw : (⟨State.addr (arg t 2), (arg t 3).toNat⟩ : Region) ∈ t.wr) :
     ∀ r ∈ crFrame (oSt t wi) (arg t wi) t.sp (arg t 2) (arg t 3).toNat, (args t n).Disjoint r := by
   have hst := oSt_addr h
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
@@ -259,7 +260,7 @@ theorem one_argsCr {n wi : Nat} {t : State} (h : onePre n wi t) :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact dDA.symm
+  · exact (dDA hw).symm
   · rw [hst, add_ofNat_assoc]; exact (dWA.sub_left (Lay.wSub (by decide))).symm
   · exact (dWA.sub_left (Lay.wSub (by decide))).symm
   · exact (below_args t spf).symm
@@ -331,7 +332,8 @@ theorem oneAad_rel :
     (fun s h => fl_wpI L spf' hJ' (Nat.mod_lt _ (by decide)) h.1 h.2)
   exact x1.seq (x2.seq (x3.seq (x4.seq x5)))
 
-theorem oneCrypt_rel :
+theorem oneCrypt_rel (hw : (⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩ : Region) ∈ s₀.wr)
+    (hw' : (⟨State.addr (arg s₀' 2), (arg s₀' 3).toNat⟩ : Region) ∈ s₀'.wr) :
     RelCT isa (fun a b => OF na wi s₀ s₀ a ∧ OF na wi s₀ s₀' b) oneCrypt fun a b => OF na wi s₀ s₀ a ∧ OF na wi s₀ s₀' b := by
   obtain ⟨q₀, q₁, q₂, q₃, q₄, qa⟩ := hq
   have L := oneLay h0
@@ -354,20 +356,20 @@ theorem oneCrypt_rel :
   have hd' : DataOk (oSt s₀ wi) (arg s₀ wi) s₀.sp s₀' (arg s₀ 2) (arg s₀ 3).toNat := by
     have := one_dataOk h0' (ArgsKeep.refl na s₀'); rwa [est, e4, ← q₀, ← qa 2 (by omega_arith), ← qa 3 (by omega_arith)] at this
   have hwD : Covers [⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩] s₀.wr := by
-    exact covers_of_mem h0.2.1.1
+    exact covers_of_mem hw
   have hwD' : Covers [⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩] s₀'.wr := by
-    rw [qa 2 (by omega_arith), qa 3 (by omega_arith)]; exact covers_of_mem h0'.2.1.1
+    rw [qa 2 (by omega_arith), qa 3 (by omega_arith)]; exact covers_of_mem hw'
   have hcD' : (⟨State.addr (s₀.gpr .r0), 256⟩ : Region).Disjoint ⟨State.addr (arg s₀ 2), (arg s₀ 3).toNat⟩ := by
-    rw [q₁, qa 2 (by omega_arith), qa 3 (by omega_arith)]; exact h0'.2.2.1
-  have hA := one_argsCr h0
+    rw [q₁, qa 2 (by omega_arith), qa 3 (by omega_arith)]; exact h0'.2.2.1 hw'
+  have hA := one_argsCr h0 hw
   have hA' : ∀ r ∈ crFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp (arg s₀ 2) (arg s₀ 3).toNat, (args s₀' na).Disjoint r := by
-    have := one_argsCr h0'; rwa [est, e4, ← q₀, ← qa 2 (by omega_arith), ← qa 3 (by omega_arith)] at this
+    have := one_argsCr h0' hw'; rwa [est, e4, ← q₀, ← qa 2 (by omega_arith), ← qa 3 (by omega_arith)] at this
   have x2 := rel_wp (F := D1 s₀) (F' := D1 s₀') (G := OF na wi s₀ s₀) (G' := OF na wi s₀ s₀')
     (rel_of_ct (crypt_ct L (k8 := BitVec.ofNat 32 (s₀.gpr .r1).toNat) (R := (s₀.gpr .r1).toNat) (D := arg s₀ 2)
         (n := (arg s₀ 3).toNat) (q := 0))
-      (fun s h => (cr_wpI L spf hd hwD h0.2.2.1 hA hR h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).1)
+      (fun s h => (cr_wpI L spf hd hwD (h0.2.2.1 hw) hA hR h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).1)
       (fun s h => (cr_wpI L spf' hd' hwD' hcD' hA' hR h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).1))
-    (fun s h => (cr_wpI L spf hd hwD h0.2.2.1 hA hR h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).2)
+    (fun s h => (cr_wpI L spf hd hwD (h0.2.2.1 hw) hA hR h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).2)
     (fun s h => (cr_wpI L spf' hd' hwD' hcD' hA' hR h.1 h.2.1 (by rw [h.2.2.1]; simp) h.2.2.2).2)
   exact x1.seq x2
 

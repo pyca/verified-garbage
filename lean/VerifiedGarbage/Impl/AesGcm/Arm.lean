@@ -117,6 +117,15 @@ its stack arguments. -/
 def ctrFrame : Prog isa :=
   .frame (.push [.r12, .lr]) (.call "vg_aes_ctr32" Impl.Aes.Arm.ctr32) (.pop .r12 8)
 
+/-- `vg_aes_ctr32_to`, with `n` in `r0`, the working space in `r1` and the
+destination in `r2` pushed as its stack arguments; the arguments in
+registers are set in the frame, and its pop loads `n` into `r12`. -/
+def ctrToFrame : Prog isa :=
+  .frame (.push [.r0, .r1, .r2])
+    (.seq (.block [.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r10 48])
+      (.call "vg_aes_ctr32_to" Impl.Aes.Arm.ctr32To))
+    (.pop .r12 12)
+
 /-- `vg_ghash`, with the working space in `r12` pushed as its stack argument. -/
 def ghFrame : Prog isa :=
   .frame (.push [.r12, .lr]) (.call "vg_ghash" Impl.Gcm.Arm.ghash) (.pop .r12 8)
@@ -218,12 +227,19 @@ def splitCtr : List Instr :=
   [.mov .r3 (.reg .r4), .mov .r12 (.shifted .r5 .lsr 4), .dp .and .r0 .r5 (imm 15),
    .dp .sub .r1 .r5 (.reg .r0), .dp .add .r4 .r4 (.reg .r1), .mov .r5 (.reg .r0), .cmp .r12 (imm 0)]
 
-/-- Whole blocks at `r4`, by `vg_aes_ctr32`. -/
-def cryptWhole : Prog isa :=
-  .seq (.block splitCtr)
-    (.ite .eq (.block [])
-      (.seq (.block [.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r10 48, addI .lr .r11 scrO])
-        ctrFrame))
+/-- The call on the whole blocks split off: in place, `vg_aes_ctr32` on
+them; out of place, `vg_aes_ctr32_to` from them to the destination `r6`,
+which is then advanced past them (by the number of blocks, which the frame's
+pop loads into `r12`). -/
+def wholeCall : Bool → Prog isa
+  | false => .seq (.block [.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r10 48, addI .lr .r11 scrO])
+      ctrFrame
+  | true => .seq (.block [.mov .r2 (.reg .r6), .mov .r0 (.reg .r12), addI .r1 .r11 scrO])
+      (.seq ctrToFrame (.block [.dp .add .r6 .r6 (.shifted .r12 .lsl 4)]))
+
+/-- Whole blocks at `r4`, in place or (`to`) to `r6`. -/
+def cryptWholeG (to : Bool) : Prog isa :=
+  .seq (.block splitCtr) (.ite .eq (.block []) (wholeCall to))
 
 /-- The keystream block zeroed, and the arguments of `vg_aes_ctr32` on it. -/
 def tailArgs : List Instr :=
@@ -231,19 +247,36 @@ def tailArgs : List Instr :=
    .mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r10 48, addI .r3 .r10 64, .mov .r12 (imm 1),
    addI .lr .r11 scrO]
 
-/-- The last `r5` bytes at `r4`, with a new keystream block. -/
-def cryptTail : Prog isa :=
+/-- Where the text is written: `r4` in place, `r6` out of place. -/
+def dreg (to : Bool) : Reg := if to then .r6 else .r4
+
+/-- The new keystream block XORed into the `r5` bytes at `dreg to`. -/
+def tailXor (to : Bool) : Prog isa :=
+  .seq (.block [addI .r1 .r10 64, .mov .r2 (.reg (dreg to)), .mov .r3 (.reg .r5)]) xorLoop
+
+/-- The last `r5` bytes at `r4` with the new keystream block XORed in: in
+place; out of place, copied to `r6` first, and XORed in there. -/
+def tailOut : Bool → Prog isa
+  | false => tailXor false
+  | true => .seq (.seq (.block [.mov .r1 (.reg .r4), .mov .r2 (.reg .r6), .mov .r3 (.reg .r5)]) copyLoop)
+      (tailXor true)
+
+/-- The last `r5` bytes at `r4`, with a new keystream block, in place or (`to`) to `r6`. -/
+def cryptTailG (to : Bool) : Prog isa :=
   .seq (.block [.cmp .r5 (imm 0)])
-    (.ite .eq (.block [])
-      (.seq (.seq (.block tailArgs) ctrFrame)
-        (.seq (.block [addI .r1 .r10 64, .mov .r2 (.reg .r4), .mov .r3 (.reg .r5)]) xorLoop)))
+    (.ite .eq (.block []) (.seq (.seq (.block tailArgs) ctrFrame) (tailOut to)))
 
 /-- The rest of the keystream block first, if the text so far ends within a block. -/
 def cryptFill : Prog isa :=
   .seq (.block [.cmp .r6 (imm 0)]) (.ite .eq (.block []) cryptHead)
 
 def crypt : Prog isa :=
-  .seq (.block [.cmp .r5 (imm 0)]) (.ite .eq (.block []) (.seq cryptFill (.seq cryptWhole cryptTail)))
+  .seq (.block [.cmp .r5 (imm 0)])
+    (.ite .eq (.block []) (.seq cryptFill (.seq (cryptWholeG false) (cryptTailG false))))
+
+/-- `crypt` from the first counter block, from `r4` to `r6`. -/
+def cryptTo : Prog isa :=
+  .seq (.block [.cmp .r5 (imm 0)]) (.ite .eq (.block []) (.seq (cryptWholeG true) (cryptTailG true)))
 
 /-! ## The tag and `J₀` -/
 
@@ -290,9 +323,12 @@ def j0 : Prog isa :=
 def zero16 (o : Nat) : List Instr :=
   [.mov .r0 (imm 0), .str .r0 .r11 o, .str .r0 .r11 (o + 4), .str .r0 .r11 (o + 8), .str .r0 .r11 (o + 12)]
 
-/-- The `r6` bytes of the received tag (at `tag`, `[sp + 16]`), padded with zeros at `W + rO`. -/
-def recv : Prog isa :=
-  .seq (.block (.ldrSp .r1 16 :: zero16 rO ++ [addI .r2 .r11 rO, .mov .r3 (.reg .r6)])) copyLoop
+/-- The `r6` bytes of the received tag (at `tag`, `[sp + o]`), padded with zeros at `W + rO`. -/
+def recvAt (o : Nat) : Prog isa :=
+  .seq (.block (.ldrSp .r1 o :: zero16 rO ++ [addI .r2 .r11 rO, .mov .r3 (.reg .r6)])) copyLoop
+
+/-- The received tag at `[sp + 16]`. -/
+def recv : Prog isa := recvAt 16
 
 /-- Word `k` of the XOR of the two padded tags into `d`. -/
 def xorW (d : Reg) (k : Nat) : List Instr :=
@@ -456,24 +492,69 @@ def oneTag (o : Nat) : Prog isa :=
 /-- The data encrypted or decrypted, from the first counter block. -/
 def oneCrypt : Prog isa := .seq (.block dataArgs) crypt
 
+/-- The source (`[sp + 8]`, `len = [sp + 12]`) and the destination (`[sp + 16]`). -/
+def dataArgsTo : List Instr := [.ldrSp .r4 8, .ldrSp .r5 12, .ldrSp .r6 16]
+
+/-- The data decrypted, in place or (`to`) from the source to the destination. -/
+def oneCryptG : Bool → Prog isa
+  | false => oneCrypt
+  | true => .seq (.block dataArgsTo) cryptTo
+
 /-- `vg_aes_gcm_seal`, with `work = [sp + 20]`. -/
 def «seal» : Prog isa :=
   .seq (.block (oneEntry 20))
     (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.seq (.block tagOut) (.block restore)))))
 
-/-- `vg_aes_gcm_open`, with `tag_len = [sp + 20]` and `work = [sp + 24]`. -/
-def «open» : Prog isa :=
-  .seq (.block (oneEntry 24 ++ ([.ldrSp .r6 20] : List Instr)))
+/-! ## Decryption, in place or out of place
+
+`open` and `open_to` are one body (`openG`), but for where it decrypts to
+(`oneCryptG`), the offsets of their stack arguments, and the wipe of the
+destination when `open_to` fails (`openEnd`). In place the arguments are
+`(…, data = [sp + 8], len = [sp + 12], tag = [sp + 16], tag_len = [sp + 20],
+work = [sp + 24])`; out of place `(…, src = [sp + 8], len = [sp + 12],
+dst = [sp + 16], dst_len = [sp + 20], tag = [sp + 24], tag_len = [sp + 28],
+work = [sp + 32])`. -/
+
+/-- The offset of `tag`. -/
+def tagOff (to : Bool) : Nat := if to then 24 else 16
+/-- The offset of `tag_len`. -/
+def tagLenOff (to : Bool) : Nat := if to then 28 else 20
+/-- The offset of `work`. -/
+def workOff (to : Bool) : Nat := if to then 32 else 24
+
+/-- The `r2` bytes at `r1` zeroed, a byte at a time, with `r3` zero. -/
+def wipeLoop : Prog isa :=
+  .seq (.block [.cmp .r2 (imm 0)])
+    (.ite .eq (.block []) (.loop (.block [.strb .r3 .r1 0, addI .r1 .r1 1, .subs .r2 .r2 (imm 1)]) .ne))
+
+/-- The `len` bytes at `dst` zeroed. -/
+def wipeDst : Prog isa := .seq (.block [.ldrSp .r1 16, .ldrSp .r2 12, .mov .r3 (imm 0)]) wipeLoop
+
+/-- After the registers are restored: out of place, the destination wiped if
+the result is 0. -/
+def openEnd : Bool → Prog isa
+  | false => .block restore
+  | true => .seq (.block restore) (.seq (.block [.cmp .r0 (imm 0)]) (.ite .eq wipeDst (.block [])))
+
+/-- `open` (`to = false`) or `open_to`. -/
+def openG (to : Bool) : Prog isa :=
+  .seq (.block (oneEntry (workOff to) ++ ([.ldrSp .r6 (tagLenOff to)] : List Instr)))
   (.seq tagLenOk
   (.seq (.ite .eq (.block [.mov .r0 (imm 0)])
       (.seq oneAad
       (.seq (oneTag uO)
-      (.seq (.block [.ldrSp .r6 20])
-      (.seq recv
+      (.seq (.block [.ldrSp .r6 (tagLenOff to)])
+      (.seq (recvAt (tagOff to))
       (.seq (cmp uO)
       (.seq (.block [.mov .r7 (.reg .r0), .cmp .r0 (imm 0)])
-      (.seq (.ite .eq (.block []) oneCrypt)
+      (.seq (.ite .eq (.block []) (oneCryptG to))
         (.block [.mov .r0 (.reg .r7)])))))))))
-    (.block restore)))
+    (openEnd to)))
+
+/-- `vg_aes_gcm_open`, with `tag_len = [sp + 20]` and `work = [sp + 24]`. -/
+def «open» : Prog isa := openG false
+
+/-- `vg_aes_gcm_open_to`, with `tag_len = [sp + 28]` and `work = [sp + 32]`. -/
+def openTo : Prog isa := openG true
 
 end VG.Impl.AesGcm.Arm

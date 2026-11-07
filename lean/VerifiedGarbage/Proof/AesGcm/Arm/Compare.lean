@@ -243,20 +243,20 @@ theorem cmpTail_ok {s : State} (he : Env c st w sp k7 k8 s) :
 
 /-- `recv`: the received tag (`r6` bytes at `T`, the stack argument at `[sp + 16]`), padded
 with zeros at `W + 256`. -/
-theorem recv_ok {s : State} (he : Env c st w sp k7 k8 s) {T : BitVec 32} {tl : Nat}
-    (hTi : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 16)) 4)
-    (hTv : s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 16)) 32 = T)
+theorem recvAt_ok {o : Nat} (ho : o < 4096) {s : State} (he : Env c st w sp k7 k8 s) {T : BitVec 32} {tl : Nat}
+    (hTi : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 o)) 4)
+    (hTv : s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 o)) 32 = T)
     (hTr : Covers [⟨State.addr T, tl⟩] (s.rd ++ s.wr)) (hTf : T.toNat + tl ≤ 2 ^ 32)
     (hTd : (⟨State.addr T, tl⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 256, 16⟩)
     (h6 : s.gpr .r6 = BitVec.ofNat 32 tl) (h1 : 1 ≤ tl) (h16 : tl ≤ 16) :
-    WP isa recv s fun s' => bytesAt s'.mem (State.addr w + BitVec.ofNat 64 256) 16 =
+    WP isa (recvAt o) s fun s' => bytesAt s'.mem (State.addr w + BitVec.ofNat 64 256) 16 =
         bytesAt s.mem (State.addr T) tl ++ zeros (16 - tl) ∧
       Frame [⟨State.addr w + BitVec.ofNat 64 256, 16⟩] s.mem s'.mem ∧
       (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  obtain ⟨s₀, run₀, h1₀, g₀, k₀⟩ : ∃ s₀, runBlock isa [.ldrSp .r1 16] s = some s₀ ∧ s₀.gpr .r1 = T ∧
+  obtain ⟨s₀, run₀, h1₀, g₀, k₀⟩ : ∃ s₀, runBlock isa [.ldrSp .r1 o] s = some s₀ ∧ s₀.gpr .r1 = T ∧
       (∀ r, r ≠ .r1 → s₀.gpr r = s.gpr r) ∧ Keeps s s₀ := by
-    refine ⟨_, by arun [hTi, hTv], ?_, ?_, ?_⟩
+    refine ⟨_, by arun [ho, hTi, hTv], ?_, ?_, ?_⟩
     · simp [gpr_setReg, hTv]
     · intro r hr; simp [gpr_setReg, hr]
     · exact ⟨rfl, rfl, rfl, rfl⟩
@@ -273,8 +273,8 @@ theorem recv_ok {s : State} (he : Env c st w sp k7 k8 s) {T : BitVec 32} {tl : N
     · simp [gpr_setReg, g₁ .r6 (by decide), g₀ .r6 (by decide), h6]
     · intro r x y; simp [gpr_setReg, x, y]
     · exact ⟨rfl, rfl, rfl, rfl⟩
-  have run : runBlock isa (.ldrSp .r1 16 :: zero16 rO ++ [addI .r2 .r11 rO, .mov .r3 (.reg .r6)]) s = some s₂ :=
-    runBlock_app_of (a := [.ldrSp .r1 16]) run₀ (runBlock_app_of run₁ run₂)
+  have run : runBlock isa (.ldrSp .r1 o :: zero16 rO ++ [addI .r2 .r11 rO, .mov .r3 (.reg .r6)]) s = some s₂ :=
+    runBlock_app_of (a := [.ldrSp .r1 o]) run₀ (runBlock_app_of run₁ run₂)
   refine WP.seq (WP.of_runBlock ⟨s₂, run, ?_⟩)
   have he₂ := he₀.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -289,6 +289,19 @@ theorem recv_ok {s : State} (he : Env c st w sp k7 k8 s) {T : BitVec 32} {tl : N
   refine ⟨hb, hf, fun r a b d e f => ?_, lo.rd.trans (k₂.rd.trans (rd₁.trans k₀.rd)),
     lo.wr.trans (k₂.wr.trans (wr₁.trans k₀.wr)), lo.sp.trans (k₂.sp.trans (sp₁.trans k₀.sp))⟩
   rw [lo.other r a b d e f, g₂ r d e, g₁ r a, g₀ r b]
+
+theorem recv_ok {s : State} (he : Env c st w sp k7 k8 s) {T : BitVec 32} {tl : Nat}
+    (hTi : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 16)) 4)
+    (hTv : s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 16)) 32 = T)
+    (hTr : Covers [⟨State.addr T, tl⟩] (s.rd ++ s.wr)) (hTf : T.toNat + tl ≤ 2 ^ 32)
+    (hTd : (⟨State.addr T, tl⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 256, 16⟩)
+    (h6 : s.gpr .r6 = BitVec.ofNat 32 tl) (h1 : 1 ≤ tl) (h16 : tl ≤ 16) :
+    WP isa recv s fun s' => bytesAt s'.mem (State.addr w + BitVec.ofNat 64 256) 16 =
+        bytesAt s.mem (State.addr T) tl ++ zeros (16 - tl) ∧
+      Frame [⟨State.addr w + BitVec.ofNat 64 256, 16⟩] s.mem s'.mem ∧
+      (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp :=
+  recvAt_ok L (by decide) he hTi hTv hTr hTf hTd h6 h1 h16
 
 /-- `cmp o`: the first `r6` bytes of the tag at `W + o`, padded with zeros at
 `W + 240`, compared with the received tag at `W + 256`. -/
