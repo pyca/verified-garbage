@@ -41,6 +41,10 @@ meta import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
 #assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.generatorCheck_ok
 #assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.sieve_ct
 #assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.sievePrefix_ok
+#assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.sieveFirst_ok
+#assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.sieveFirst_ct
+#assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.earlyCheck_ct
+#assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.earlyOk_of_sieved
 #assert_standard_axioms VG.Proof.Ffdh.X86_64.ParameterCandidate.generatorCheck_ct
 #assert_standard_axioms VG.Proof.Ffdh.ParameterCandidate.half_word_shape
 #assert_standard_axioms VG.Proof.Ffdh.ParameterCandidate.candidate_load_widths

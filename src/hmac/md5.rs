@@ -9,13 +9,13 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::hmac_md5::{vg_hmac_md5_finalize, vg_hmac_md5_init};
-use crate::hashes::md5::{Md5, Md5Backend};
+use crate::arch::dispatch::hmac_md5::{vg_hmac_md5_finalize_auto, vg_hmac_md5_init_auto};
+use crate::hashes::md5::Md5;
 
 super::streaming_hmac!(
-    Md5 (Md5Backend) {
-        Scalar => (vg_hmac_md5_init, vg_hmac_md5_finalize),
-    },
+    Md5,
+    init: vg_hmac_md5_init_auto,
+    finalize: vg_hmac_md5_finalize_auto,
     state: 80,
     output: 16,
 );
