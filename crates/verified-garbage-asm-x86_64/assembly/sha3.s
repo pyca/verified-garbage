@@ -561,8 +561,6 @@ vg_shake128_squeeze:
 	ret
 	.p2align 6
 
-// vg_shake256_update: the function `vg_sha3_256_update`
-
 vg_shake256_finalize:
 	lea rsp, [rsp-648]
 	mov rdx, rsp

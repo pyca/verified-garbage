@@ -5,7 +5,8 @@
 //! and domain-separation suffix and whose contracts name the function of
 //! FIPS 202 they compute (`VG.Spec.Sha3`): `update` absorbs a piece of the
 //! message, and `finalize` writes the digest (SHA-3) or pads the message for
-//! `squeeze` to output it in pieces (SHAKE). This module keeps the state and
+//! `squeeze` to output it in pieces (SHAKE). Absorbing depends only on the
+//! rate, so SHAKE256 absorbs with SHA3-256's `update`, of the same rate. This module keeps the state and
 //! the position in the block that each call returns for the next; each call
 //! runs the function's dispatcher (`crate::arch::dispatch::sha3`).
 
@@ -23,7 +24,7 @@ use crate::arch::dispatch::sha3::{
     vg_sha3_256_update_auto, vg_sha3_384_finalize_auto, vg_sha3_384_update_auto,
     vg_sha3_512_finalize_auto, vg_sha3_512_update_auto, vg_shake128_finalize_auto,
     vg_shake128_squeeze_auto, vg_shake128_update_auto, vg_shake256_finalize_auto,
-    vg_shake256_squeeze_auto, vg_shake256_update_auto,
+    vg_shake256_squeeze_auto,
 };
 use core::mem::MaybeUninit;
 
@@ -317,7 +318,9 @@ shake!(
     /// The output of SHAKE256, squeezed in pieces.
     Shake256Reader {
         rate: 136,
-        update: vg_shake256_update_auto,
+        // SHA3-256's: absorbing depends only on the rate, which they share
+        // (`VG.Spec.Sha3.updateContract`).
+        update: vg_sha3_256_update_auto,
         finalize: vg_shake256_finalize_auto,
         squeeze: vg_shake256_squeeze_auto,
     }
