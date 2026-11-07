@@ -389,24 +389,6 @@ jmp 21f
     )
 }
 
-/// Absorbs data into a SHAKE256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// The machine code of this function is that of `vg_sha3_256_update`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 136.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(unused_imports)]
-pub use self::vg_sha3_256_update as vg_shake256_update;
-
 /// Finishes absorbing a SHAKE256 message: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, as `vg_shake256_update` leaves it), it becomes a state that, squeezed by `vg_shake256_squeeze` from position 0, gives the output of SHAKE256 of that message (`VG.Spec.Sha3.shake256`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
 ///
 /// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointer and `pos` may affect timing, not the state.

@@ -599,11 +599,6 @@ theorem update_shake128 :
       (Spec.Sha3.updateContract X86.abi Spec.Sha3.xofShake128.rate 40) :=
   update_verified (by decide) (update_ct (by decide) (by taint_decide))
 
-theorem update_shake256 :
-    Verified X86.target (update Spec.Sha3.xofShake256.rate)
-      (Spec.Sha3.updateContract X86.abi Spec.Sha3.xofShake256.rate 40) :=
-  update_verified (by decide) (update_ct (by decide) (by taint_decide))
-
 /-- Two regions below `p`, apart. -/
 theorem bdisj (p : Addr) (c : Nat) {a n b k : Nat} (ha : a ≤ c) (hb : b ≤ c)
     (h : c - a + n ≤ c - b ∨ c - b + k ≤ c - a) (hn : c - a + n ≤ 2 ^ 64) (hk : c - b + k ≤ 2 ^ 64) :

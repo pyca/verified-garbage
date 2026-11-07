@@ -32,12 +32,6 @@ pub use crate::sha3::vg_sha3_512_update as vg_sha3_512_update_auto;
 #[allow(unused_imports)]
 pub use crate::sha3::vg_shake128_update as vg_shake128_update_auto;
 
-/// `vg_shake256_update`, the only implementation of it on this target, which needs no CPU feature
-/// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
-/// target.
-#[allow(unused_imports)]
-pub use crate::sha3::vg_shake256_update as vg_shake256_update_auto;
-
 /// `vg_shake128_squeeze`, the only implementation of it on this target, which needs no CPU feature
 /// (`VG.Rust.Group`): another name of it, so that the code calling it is the same on every
 /// target.
