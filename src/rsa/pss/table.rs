@@ -31,59 +31,6 @@ pub(super) fn table(hash: Hash) -> super::Table {
     table_hash(hash).hash_table()
 }
 
-/// The verified functions: `functions`, which chooses, for a CPU with the
-/// features `f`, the implementation of the RSA operations it runs best
-/// (`crate::rsa::Backend`), and returns signing and verification calling
-/// them; it does not compile if one needs a CPU feature that RSA's
-/// `select` does not require to choose its implementation.
-///
-/// Each arm names, for one of RSA's backends on the architecture, signing
-/// or verification, with the generated constants of the CPU features it
-/// needs (none for the baseline ISA's).
-macro_rules! pss_functions {
-    (
-        sign: {$($(#[$sattr:meta])* $sb:ident => $sign:path [$($sreq:path),*]),* $(,)?},
-        verify: {$($(#[$vattr:meta])* $vb:ident => $verify:path [$($vreq:path),*]),* $(,)?} $(,)?
-    ) => {
-        // Each function needs no CPU feature that RSA's `select` does not
-        // require to choose the implementation it is listed for.
-        $(
-            $(#[$sattr])*
-            const _: () = assert!(
-                crate::rsa::Backend::REQUIRES[crate::rsa::Backend::$sb as usize]
-                    .contains(verified_garbage_cpu::Features::all(&[$($sreq),*])),
-                "a signature needs a CPU feature its implementation is not chosen for"
-            );
-        )*
-        $(
-            $(#[$vattr])*
-            const _: () = assert!(
-                crate::rsa::Backend::REQUIRES[crate::rsa::Backend::$vb as usize]
-                    .contains(verified_garbage_cpu::Features::all(&[$($vreq),*])),
-                "a verification needs a CPU feature its implementation is not chosen for"
-            );
-        )*
-
-        /// The functions, `(sign, verify)`, for the implementation that a
-        /// CPU with the features `f` runs best.
-        pub(in crate::rsa::pss) fn functions(
-            f: verified_garbage_cpu::Features,
-        ) -> (crate::rsa::pss::SignFn, crate::rsa::pss::VerifyFn) {
-            let rsa = crate::rsa::Backend::select(f);
-            (
-                match rsa {
-                    $($(#[$sattr])* crate::rsa::Backend::$sb => $sign,)*
-                },
-                match rsa {
-                    $($(#[$vattr])* crate::rsa::Backend::$vb => $verify,)*
-                },
-            )
-        }
-    };
-}
-
-pub(super) use pss_functions;
-
 #[cfg(test)]
 mod tests {
     use super::{Hash, md_table, table};

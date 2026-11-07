@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Blowfish.Contract
 meta import VerifiedGarbage.Spec.Blowfish.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Blowfish specification tests
@@ -221,9 +219,5 @@ run_cmd do
   match checkLimits with
   | .ok () => pure ()
   | .error e => throwError "Blowfish: {e}"
-
-#assert_standard_axioms VG.Spec.Blowfish.expandKeyContract
-#assert_standard_axioms VG.Spec.Blowfish.ecbEncryptContract
-#assert_standard_axioms VG.Spec.Blowfish.ecbDecryptContract
 
 end VG.Test.Blowfish

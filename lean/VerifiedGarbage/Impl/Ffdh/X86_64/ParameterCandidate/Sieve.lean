@@ -24,15 +24,54 @@ def sieveNext : List Instr :=
   [.alu .add .r13 (.imm 1), .mov .rax (.mem (hdr kT0)), .alu .sub .rax (.reg .r13),
     .mov .rcx (.mem (hdr kT2)), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1))), .alu .and .rax (.reg .rcx)]
 
-/-- Four consecutive odd primes, with RSA's reductions. -/
-def sieveWord : List (Prog isa) := [.block sieveLoad] ++
-  trialEntry 0 ++ trialEntry 1 ++ trialEntry 2 ++ trialEntry 3 ++ [.block sieveNext]
+/-- Field `j` of the table word in `rax` into `rcx`, multiplied into `rbx`. -/
+def productField (j : Nat) : List Instr :=
+  [.mov .rcx (.reg .rax), .shift .shr .rcx (16 * j), .alu .and .rcx (.imm 0xFFFF), .imul .rbx .rcx]
+
+/-- `M`, the product of the four primes of the table word in `kT1`, into
+`rbx` (below `2^52`), and `−M⁻¹ mod 2^64` into `r15`; then the candidate's
+base into `r8`, `w` into `r12` and `acc := 0` into `rbp`. -/
+def productHead : List Instr :=
+  [.mov .rax (.mem (hdr kT1)), .mov .rbx (.reg .rax), .alu .and .rbx (.imm 0xFFFF)] ++
+    productField 1 ++ productField 2 ++ productField 3 ++ minv ++
+    [.mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)]
+
+/-- `acc := (acc + x) 2^(−64) mod M` (below `M + 2`) for the candidate's word
+`x` (`r14`), `acc` in `rbp`, `M` in `rbx` and `−M⁻¹ mod 2^64` in `r15`:
+Montgomery reduction of `acc + x < M 2^64`, its carry kept in `rcx`. -/
+def redc64 : List Instr :=
+  [.mov .rsi (.mem (ix .r8 .r14)), .alu .add .rsi (.reg .rbp), .alu .sbb .rcx (.reg .rcx),
+    .mov .rax (.reg .rsi), .imul .rax .r15, .mul .rbx, .alu .add .rax (.reg .rsi),
+    .alu .adc .rdx (.imm 0), .alu .sub .rdx (.reg .rcx), .mov .rbp (.reg .rdx)]
+
+/-- The candidate reduced modulo the table word's product `M`, once for its
+four primes: `acc 2^(64 w) ≡ c (mod M)` into `r8`. -/
+def productReduce : List (Prog isa) :=
+  [.block productHead, wordLoop 0 redc64, .block [.mov .r8 (.reg .rbp)]]
+
+/-- For entry `j` of the table word in `kT1`, as RSA's `trialEntry` but on
+the reduced candidate `acc` in `r8` rather than the candidate: `s` into
+`rbx`, `−s⁻¹` into `r15`, `acc` reduced over its two halves, and the mask
+of `s ∣ c` or'ed into `kT2`. -/
+def accEntry (j : Nat) : List Instr :=
+  ([.mov .rbx (.mem (hdr kT1))] : List Instr) ++ (if j = 0 then [] else [.shift .shr .rbx (16 * j)]) ++
+    ([.alu .and .rbx (.imm 0xFFFF)] : List Instr) ++ minv ++
+    [.mov32 .rbp (.imm 0), .mov32 .rax (.reg .r8)] ++ redc32 ++ [.mov .rax (.reg .r8), .shift .shr .rax 32] ++
+    redc32 ++
+    [.mov .rax (.reg .rbp), .alu .cmp .rax (.imm 1), .alu .sbb .rdx (.reg .rdx), .alu .xor .rax (.reg .rbx),
+      .alu .cmp .rax (.imm 1), .alu .sbb .rcx (.reg .rcx), .alu .or .rdx (.reg .rcx), .alu .or .rdx (.mem (hdr kT2)),
+      .store (hdr kT2) .rdx]
+
+/-- Four consecutive odd primes: the candidate reduced once modulo their
+product, then each prime's test on that. -/
+def sieveWord : List (Prog isa) := [.block sieveLoad] ++ productReduce ++
+  [.block (accEntry 0), .block (accEntry 1), .block (accEntry 2), .block (accEntry 3), .block sieveNext]
 
 /-- The count in RAX into `kT0`, the flag cleared, from the table's first word. -/
 def sieveStart : List Instr :=
   [.store (hdr kT0) .rax, .mov32 .rax (.imm 0), .store (hdr kT2) .rax, .mov32 .r13 (.imm 0)]
 
-/-- RSA's trial division by the first 512 entries of its table, 1024 above
+/-- Trial division by the first 512 entries of RSA's table, 1024 above
 1024 bits (`Spec.RsaKeyGen.obviouslyComposite`), as RSA's `trial`, but with
 the count chosen by the requested width in RDX (p's, for q as well), and
 stopping after the first word of the table with a divisor. The separate

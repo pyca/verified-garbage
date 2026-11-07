@@ -826,6 +826,6 @@ theorem prologueX_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {
   obtain ⟨hf, -, hw⟩ := avx2_of v hv
   subst hpass
   rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;>
-    (simp only [prologueX, xsel, xselV, xselA, hl, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, v.mxcsr, hf, hw]; rfl)
+    (simp only [prologueX, Impl.ChaCha20.X86_64.Callee.inPlace, xsel, xselV, xselA, hl, ↓reduceIte, Bool.false_eq_true, Code.allInstrs, v.mxcsr, hf, hw]; rfl)
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch

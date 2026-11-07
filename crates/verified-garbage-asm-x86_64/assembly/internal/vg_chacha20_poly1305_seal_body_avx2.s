@@ -93,6 +93,7 @@ vg_chacha20_poly1305_seal_body_avx2:
 	add rsi, 672
 	mov rcx, r15
 	add rcx, 128
+	mov r8, rsi
 	call {vg_chacha20_xor_avx2}
 	mov r15, rsi
 	sub r15, 128
@@ -30352,6 +30353,7 @@ vg_chacha20_poly1305_seal_body_avx2:
 222:
 	test rdx, rdx
 	je 2149f
+	mov r8, rsi
 	call {vg_chacha20_xor_avx2}
 	jmp 2150f
 2149:

@@ -78,7 +78,7 @@ namespace VG.Impl.ChaCha20Poly1305.X86_64
 
 open VG.X86_64
 open VG.Impl.ChaCha20.X86_64 (at_)
-open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
+open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX xorBufXTo)
 
 /-- `r + d` into `d'`. -/
 def ptr (d' r : Reg) (k : Nat) : List Instr := [.mov d' (.reg r), .alu .add d' (.imm (BitVec.ofNat 32 k))]
@@ -91,6 +91,14 @@ def saved : List (Reg × Nat) :=
 
 /-- `work` into `rax` and `tag` into `r11`, from the stack. -/
 def entry : List Instr := [.mov .rax (.mem (at_ .rsp 16)), .mov .r11 (.mem (at_ .rsp 8))]
+
+/-- `open`'s entry: `work` into `rax`; the address of the ciphertext is in
+`r11` already (`srcIn`, or `open_to`'s entry), which `moves` keeps in `r12`.
+The tag is read from the stack when it is compared (`openTail`). -/
+def entryO : List Instr := [.mov .rax (.mem (at_ .rsp 16))]
+
+/-- `open`'s entry in place: the ciphertext is the data. -/
+def srcIn : List Instr := [.mov .r11 (.reg .r8)]
 
 /-- Saves the registers, with the context in `rax`. -/
 def save : List Instr := saved.map fun (r, d) => .store (at_ .rax d) r
@@ -231,7 +239,7 @@ def prologueB : Prog isa :=
 bytes by the implementation `x` of `vg_chacha20_xor`, and the Poly1305 state
 for the one-time key. -/
 def prologue (x : ChaCha20.X86_64.Callee) : Prog isa :=
-  .seq (prologueA x.fold x.pass x.wide) (.seq (.call x.name x.code) prologueB)
+  .seq (prologueA x.fold x.pass x.wide) (.seq x.inPlace prologueB)
 
 /-- `[rsi + rcx]` and `[r15 + rcx + 576]`. -/
 def copyByte : MemOp := { base := .rsi, index := some .rcx }
@@ -369,29 +377,51 @@ def cryptArgsM : List Instr :=
    .mov .rsi (.reg .r14), .alu .add .rsi (.reg .rdx), .mov .rax (.reg .r13), .alu .sub .rax (.reg .rdx),
    .mov .rdx (.reg .rax)] ++ ptr .rdi .r15 64 ++ ptr .rcx .r15 128
 
+/-- The keystream at `rsi` XORed into the `rdx` bytes of the data (at
+`r14`) in place, or (`to`) from the ciphertext at `r12` (through `r10`, which
+`xorBufXTo` advances) to the destination at `r14`. -/
+def xorKs (w : Nat) (to : Bool) : Prog isa :=
+  bif to then .seq (.block [.mov .r10 (.reg .r12)]) (xorBufXTo w .r14 .r10) else xorBufX w .r14
+
+/-- `cryptArgsM`, or (`to`) with the source after the first `m` bytes of the
+ciphertext (at `r12`), and the destination's distance from it in `r11`. -/
+def cryptArgsMTo (to : Bool) : List Instr :=
+  bif to then
+    [.mov .rax (.reg .rdx), .shift .shr .rax 6, .alu .add .rax (.imm 1), .store32 (at_ .r15 112) .rax,
+     .mov .rsi (.reg .r12), .alu .add .rsi (.reg .rdx), .mov .rax (.reg .r13), .alu .sub .rax (.reg .rdx),
+     .mov .rdx (.reg .rax)] ++ ptr .rdi .r15 64 ++ ptr .rcx .r15 128 ++
+     [.mov .r11 (.reg .r14), .alu .sub .r11 (.reg .r12)]
+  else cryptArgsM
+
 /-- More than `fold` bytes, up to the second call of `vg_chacha20_xor`: the
 first `m` (`foldM`; a multiple of 64, maybe 0) by XORing the keystream in
-`ctx[736, 736 + m)` into them, and the arguments of the call for the rest
-(`cryptArgsM`). -/
-def cryptPre (fold pass w : Nat) : Prog isa :=
+`ctx[736, 736 + m)` into them (`xorKs`), and the arguments of the call for
+the rest (`cryptArgsMTo`). -/
+def cryptPre (fold pass w : Nat) (to : Bool) : Prog isa :=
   .seq (foldM fold pass) (.seq (.block [.alu .test .rdx (.reg .rdx)])
-  (.seq (.ite .e (.block []) (.seq (.block (ptr .rsi .r15 736)) (xorBufX w .r14)))
-  (.seq (foldM fold pass) (.block cryptArgsM))))
+  (.seq (.ite .e (.block []) (.seq (.block (ptr .rsi .r15 736)) (xorKs w to)))
+  (.seq (foldM fold pass) (.block (cryptArgsMTo to)))))
+
+/-- The call of the implementation `x` of `vg_chacha20_xor`: in place, or
+(`to`) to `rsi + r11`. -/
+def callX (x : ChaCha20.X86_64.Callee) (to : Bool) : Prog isa :=
+  bif to then ChaCha20.X86_64.Xor.callTo x.name x.code else x.inPlace
 
 /-- More than `fold` bytes: `cryptPre`, then the rest by the implementation
 `x` of `vg_chacha20_xor`, from counter `1 + m / 64`. -/
-def cryptBig (x : ChaCha20.X86_64.Callee) : Prog isa :=
-  .seq (cryptPre x.fold x.pass x.wide) (.call x.name x.code)
+def cryptBig (x : ChaCha20.X86_64.Callee) (to : Bool) : Prog isa :=
+  .seq (cryptPre x.fold x.pass x.wide to) (callX x to)
 
-/-- The data encrypted or decrypted, then the keystream wiped. If its length
+/-- The data encrypted or decrypted, in place or (`to`) from the ciphertext
+at `r12` to the destination at `r14`, then the keystream wiped. If its length
 is at most `fold`, by XORing the keystream in `ctx[736, 736 + len)` into it;
 otherwise by `cryptBig`. Either way `rsi` then points at `ctx + 128`. -/
-def crypt (x : ChaCha20.X86_64.Callee) : Prog isa :=
+def crypt (x : ChaCha20.X86_64.Callee) (to : Bool) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))])
   (.seq (.ite .b
     (.seq (.block (ptr .rsi .r15 736 ++ ([.mov .rdx (.reg .r13)] : List Instr)))
-      (.seq (xorBufX x.wide .r14) (.block (ptr .rsi .r15 128))))
-    (cryptBig x))
+      (.seq (xorKs x.wide to) (.block (ptr .rsi .r15 128))))
+    (cryptBig x to))
   (.seq (.block (anchor .rsi 128))
   (.seq (foldM x.fold x.pass)
   (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide)))))
@@ -417,7 +447,7 @@ def «seal» (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog is
   (.seq (prologue x)
   (.seq (macPad b .rbx .rbp)
   (.seq (.block lengths)
-  (.seq (crypt x)
+  (.seq (crypt x false)
   (.seq (macPadLengths b .r14 .r13)
   (.seq finalizeTag
     (.block restore)))))))
@@ -436,25 +466,35 @@ def zeroData : Prog isa :=
     (.ite .e (.block [])
       (.loop (.block [.store8 { base := .rdx } .rax, .alu .add .rdx (.imm 1), .alu .sub .rcx (.imm 1)]) .ne))
 
-/-- After the tag computed: the tags compared without a branch, then, if
-they differ (`eax` 0, which `ZF` then says), the data zeroed, branching on
-the result, which `open`'s contract lets it leak; then the registers
-restored. -/
-def openTail : Prog isa :=
-  .seq (.block (compare ++ [.alu32 .cmp .rax (.imm 0)]))
-    (.seq (.ite .e zeroData (.block [])) (.block restore))
+/-- The received tag's address into `r12`, from the stack. -/
+def tagLoad : List Instr := [.mov .r12 (.mem (at_ .rsp 8))]
 
-/-- `open` up to the tag computed. -/
+/-- After the tag computed: the received tag's address loaded (`tagLoad`),
+the tags compared without a branch, then, if they differ (`eax` 0, which
+`ZF` then says), the destination zeroed, branching on the result, which
+`open`'s contract lets it leak; then the registers restored. -/
+def openTail : Prog isa :=
+  .seq (.block tagLoad) (.seq (.block (compare ++ [.alu32 .cmp .rax (.imm 0)]))
+    (.seq (.ite .e zeroData (.block [])) (.block restore)))
+
+/-- `open` up to the tag computed, from the ciphertext at `r11` (kept in
+`r12`) to the destination at `r8` (kept in `r14`): the ciphertext absorbed,
+then decrypted (`crypt` from it to the destination). -/
 def openBody (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
-  .seq (.block entry)
+  .seq (.block entryO)
   (.seq (prologue x)
   (.seq (macPad b .rbx .rbp)
   (.seq (.block lengths)
-  (.seq (macPadLengths b .r14 .r13)
-  (.seq (crypt x)
+  (.seq (macPadLengths b .r12 .r13)
+  (.seq (crypt x true)
     (finalizeTo 48))))))
 
-def «open» (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+/-- `openBody` and `openTail`: what `open` and `open_to` share, after their
+entries. -/
+def openShared (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
   .seq (openBody x b) openTail
+
+def «open» (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (.block srcIn) (openShared x b)
 
 end VG.Impl.ChaCha20Poly1305.X86_64

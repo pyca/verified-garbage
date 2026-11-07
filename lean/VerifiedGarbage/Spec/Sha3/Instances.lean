@@ -215,8 +215,11 @@ def xofFinalizeContract {M : ISA} (A : Abi M) (X : Xof) (stack : Nat := 0) : Con
     (writeArgs := true) (stack := stack)
 
 /-- `vg_<f>_finalize` for the extendable-output function `X`, named `xofName`
-in `Spec/Sha3.lean`, on every target. -/
-def xofFinalizeApi (X : Xof) (xofName : String) : Api where
+in `Spec/Sha3.lean`, on every target. `update` names the function whose
+states it finishes: `X`'s own, or, for SHAKE256, SHA3-256's, of the same
+rate. -/
+def xofFinalizeApi (X : Xof) (xofName : String) (update : String := s!"vg_{X.rust}_update") :
+    Api where
   module := "sha3"
   name := s!"vg_{X.rust}_finalize"
   sig := xofFinalizeSig
@@ -224,7 +227,7 @@ def xofFinalizeApi (X : Xof) (xofName : String) : Api where
   contracts := some fun A stack => xofFinalizeContract A X stack
   summary := s!"Finishes absorbing a {X.name} message: if the state `*state` represents a message \
     whose length is `pos` modulo {X.rate} (`VG.Spec.Sha3.Repr` with {X.name}'s rate, as \
-    `vg_{X.rust}_update` leaves it), it becomes a state that, squeezed by `vg_{X.rust}_squeeze` \
+    `{update}` leaves it), it becomes a state that, squeezed by `vg_{X.rust}_squeeze` \
     from position 0, gives the output of {X.name} of that message (`VG.Spec.Sha3.{xofName}`) from \
     its first byte on (`VG.Spec.Sha3.XofRepr`).\n\n\
     Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xof{xofName.capitalize}`. \
@@ -276,9 +279,8 @@ def xofSqueezeApi (X : Xof) (xofName : String) : Api where
   safety := [s!"`pos` must be at most {X.rate}."]
 
 def updateShake128Api : Api := updateApi xofShake128.name xofShake128.rust xofShake128.rate
-def updateShake256Api : Api := updateApi xofShake256.name xofShake256.rust xofShake256.rate
 def finalizeShake128Api : Api := xofFinalizeApi xofShake128 "shake128"
-def finalizeShake256Api : Api := xofFinalizeApi xofShake256 "shake256"
+def finalizeShake256Api : Api := xofFinalizeApi xofShake256 "shake256" "vg_sha3_256_update"
 def squeezeShake128Api : Api := xofSqueezeApi xofShake128 "shake128"
 def squeezeShake256Api : Api := xofSqueezeApi xofShake256 "shake256"
 

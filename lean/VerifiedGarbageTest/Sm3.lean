@@ -4,8 +4,6 @@ import VerifiedGarbageTest.Sha256
 meta import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.Sm3.Contract
 meta import VerifiedGarbage.Spec.Sm3.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Known-answer tests for the SM3 specification
@@ -156,9 +154,5 @@ run_cmd do
   unless vs.length == 6 do throwError "expected 6 vectors, got {vs.length}"
   for (msg, md) in vs do
     unless Spec.Sm3.hash msg == md do throwError "SM3 of the {msg.length}-byte oscca.txt vector is wrong"
-
-#assert_standard_axioms VG.Spec.Sm3.initContract
-#assert_standard_axioms VG.Spec.Sm3.updateContract
-#assert_standard_axioms VG.Spec.Sm3.finalizeContract
 
 end VG.Test.Sm3

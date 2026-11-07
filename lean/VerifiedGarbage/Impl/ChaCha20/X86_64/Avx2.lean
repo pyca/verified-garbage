@@ -5,16 +5,18 @@ public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2Tail
 /-!
 # ChaCha20 keystream XOR: x86-64 implementation with AVX2
 
-`vg_chacha20_xor_avx2(state = rdi, data = rsi, len = rdx, buf = rcx)`, with
-the contract of `vg_chacha20_xor`, for CPUs with AVX2.
+`vg_chacha20_xor_avx2(state = rdi, src = rsi, len = rdx, buf = rcx, dst = r8)`,
+with the contract of `vg_chacha20_xor`, for CPUs with AVX2. On entry `r11`
+is set to `dst - src` (`XorBuf.delta`): the destination of the source byte
+at `rsi + d` is at `rsi + r11 + d`.
 
 While at least 512 bytes of data remain, eight blocks of keystream (the
 counters `c, c + 1, …, c + 7` modulo 2³², `c` being word 12 of the state)
-are computed at once and XORed into the next 512 bytes of the data, and
-word 12 of the state is advanced by 8. If 385 to 511 bytes remain, they are
-XORed by one more computation of eight blocks (`last8`), the first six into
-the data and the rest through `buf`; fewer bytes by `Avx2Tail.tail`, two to
-six blocks at a time.
+are computed at once and XORed with the next 512 bytes of the source into
+the destination, and word 12 of the state is advanced by 8. If 385 to 511
+bytes remain, they are XORed by one more computation of eight blocks
+(`last8`), the first six directly and the rest through `buf`; fewer bytes
+by `Avx2Tail.tail`, two to six blocks at a time.
 
 * Each of the sixteen words of the eight states is kept in an AVX register,
   lane `j` (doubleword `j % 4` of 128-bit lane `j / 4`) holding it for block
@@ -32,7 +34,9 @@ six blocks at a time.
 * At the end, the four registers holding a row of the eight states are
   transposed within each 128-bit lane (`vpunpck{l,h}{dq,qdq}`), so that each
   holds that row of block `i` in its low lane and of block `i + 4` in its
-  high lane, and each 16 bytes are XORed into the data.
+  high lane, and each 16 bytes are XORed with the source's into the
+  destination's (each 16 bytes of the source loaded before the destination's
+  are stored, so that it may be the source itself).
 * `buf` holds the home slots of words 8–11 (32 bytes each, `[0, 128)`), the
   two masks and the counter increments (`[128, 224)`), written once on entry.
   No callee-saved register is written; `vzeroupper` precedes the call.
@@ -198,18 +202,20 @@ def transpose (x0 x1 x2 x3 : XReg) : List Instr := [
   v .vpunpcklqdq x0 .xmm12 .xmm14, v .vpunpckhqdq x1 .xmm12 .xmm14,
   v .vpunpcklqdq x2 .xmm13 .xmm15, v .vpunpckhqdq x3 .xmm13 .xmm15]
 
-/-- XOR the 16 bytes in lane 0 of `x` into the data at `rsi + off`, through `ymm12`
-(`vpxor` with the data as its memory operand). -/
-def xor16 (x : XReg) (off : Nat) : List Instr :=
-  [.vbinLoad .vpxor .l128 .xmm12 x (at_ .rsi off), .vmovdquStore .l128 (at_ .rsi off) .xmm12]
+/-- XOR the 16 bytes in lane 0 of `x` with the source at `rsi + off` into
+the destination's (`Avx2Tail.dst`: at `rsi + r11 + off` if `to`, in place
+otherwise), through `ymm12` (`vpxor` with the source as its memory
+operand). -/
+def xor16 (to : Bool) (x : XReg) (off : Nat) : List Instr :=
+  [.vbinLoad .vpxor .l128 .xmm12 x (at_ .rsi off), .vmovdquStore .l128 (Avx2Tail.dst to off) .xmm12]
 
 /-- XOR row `row` of the eight blocks, transposed into `xs`, into the data:
 `xs[i]` holds it for block `i` in lane 0 and for block `i + 4` in lane 1
 (extracted into `ymm13`). -/
-def xorRow (row : Nat) (xs : List XReg) : List Instr :=
+def xorRow (to : Bool) (row : Nat) (xs : List XReg) : List Instr :=
   (List.range 4).flatMap fun i =>
-    xor16 (xs.getD i .xmm0) (64 * i + 16 * row) ++
-    ([.vop (.vextracti128 .xmm13 (xs.getD i .xmm0) 1)] : List Instr) ++ xor16 .xmm13 (64 * (i + 4) + 16 * row)
+    xor16 to (xs.getD i .xmm0) (64 * i + 16 * row) ++
+    ([.vop (.vextracti128 .xmm13 (xs.getD i .xmm0) 1)] : List Instr) ++ xor16 to .xmm13 (64 * (i + 4) + 16 * row)
 
 /-- The rounds' result plus the input state, each row transposed by
 `transpose`, the input state's row added (`addT`), and written out by
@@ -233,9 +239,12 @@ def finishWith (out : Nat → List XReg → List Instr) : List Instr :=
   transpose .xmm0 .xmm1 .xmm2 .xmm3 ++ addT 2 [.xmm0, .xmm1, .xmm2, .xmm3] ++
     out 2 [.xmm0, .xmm1, .xmm2, .xmm3]
 
-/-- The rounds' result plus the input state, XORed into the next 512 bytes of
-data. -/
-def finish : List Instr := finishWith xorRow
+/-- The rounds' result plus the input state, XORed with the next 512 bytes
+of the source into the destination's (`to`), or in place. -/
+def finishTo (to : Bool) : List Instr := finishWith (xorRow to)
+
+/-- `finishTo` in place. -/
+def finish : List Instr := finishTo false
 
 /-- Advance the counter by 8 and the data by 512 bytes; `CF` is clear if at
 least 512 bytes remain. -/
@@ -243,8 +252,9 @@ def next : List Instr :=
   [.mov32 .rax (.mem (at_ .rdi 48)), .alu32 .add .rax (.imm 8), .store32 (at_ .rdi 48) .rax,
    .alu .add .rsi (.imm 512), .alu .sub .rdx (.imm 512), .alu .cmp .rdx (.imm 512)]
 
-/-- Eight blocks, with `vprold` if `vl`. -/
-def body (vl : Bool) : Prog isa := .seq (.block setup) (.seq (roundsFor vl) (.block (finish ++ next)))
+/-- Eight blocks, with `vprold` if `vl`, from the source to the
+destination. -/
+def body (vl : Bool) : Prog isa := .seq (.block setup) (.seq (roundsFor vl) (.block (finishTo true ++ next)))
 
 /-! ## The last 385 to 511 bytes
 
@@ -263,9 +273,9 @@ def b67Off (j : Nat) : Nat := if j = 0 then 128 else 224
 stored to `buf` instead. -/
 def xorRow8 (row : Nat) (xs : List XReg) : List Instr :=
   (List.range 4).flatMap fun i =>
-    xor16 (xs.getD i .xmm0) (64 * i + 16 * row) ++
+    xor16 true (xs.getD i .xmm0) (64 * i + 16 * row) ++
     ([.vop (.vextracti128 .xmm13 (xs.getD i .xmm0) 1)] : List Instr) ++
-    if i < 2 then xor16 .xmm13 (64 * (i + 4) + 16 * row)
+    if i < 2 then xor16 true .xmm13 (64 * (i + 4) + 16 * row)
     else [.vmovdquStore .l128 (at_ .rcx (b67Off (i - 2) + 16 * row)) .xmm13]
 
 /-- Blocks 6 and 7 to `buf[0, 128)`, through `ymm12`. -/
@@ -281,9 +291,12 @@ def last8 (vl : Bool) : Prog isa :=
     ([.mov .r9 (.reg .rcx), .alu .add .rsi (.imm 384), .alu .sub .rdx (.imm 384)] : List Instr)))
   (.seq (Avx2Tail.fromBuf vl) (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))))
 
-/-- The kernel, with `vprold` if `vl`. -/
+/-- The kernel, with `vprold` if `vl`, from the source to the destination:
+`r11` is set to the destination's distance from the source on entry
+(`XorBuf.delta`), and never written again (but by the last bytes'
+`fromBuf`). -/
 def xorWith (vl : Bool) : Prog isa :=
-  .seq (.block (Avx2Tail.consts ++ consts ++ ([.alu .cmp .rdx (.imm 512)] : List Instr)))
+  .seq (.block (Avx2Tail.consts ++ consts ++ XorBuf.delta ++ ([.alu .cmp .rdx (.imm 512)] : List Instr)))
   (.seq (.ite .b (.block []) (.loop (body vl) .ae))
   (.seq (.block [.alu .cmp .rdx (.imm 385)]) (.ite .b (Avx2Tail.tail vl) (last8 vl))))
 
