@@ -640,7 +640,9 @@ theorem tailKs_ok {to : Bool} {R : Nat} {icb : Block} {P : Nat} {S T : BitVec 32
 
 omit L in
 theorem ne_xsrc {to : Bool} {r : Reg} (h₂ : r ≠ .r2) (h₄ : r ≠ .r4) : r ≠ xsrc to := by
-  cases to <;> assumption
+  cases to
+  · exact h₂
+  · exact h₄
 
 /-- The last bytes of the source, at `S + j`, XORed with the new keystream
 block and written to `T + j` (in place, `S = T`), in one pass. -/
