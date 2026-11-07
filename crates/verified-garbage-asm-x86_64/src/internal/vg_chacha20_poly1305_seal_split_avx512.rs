@@ -82,7 +82,7 @@ jmp 219f
 222:
 .base64 "YtF+SH+ED6ACAABIg8FASDnR"
 jb 222b
-.base64 "xfh3TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAA"
+.base64 "xfh3TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAASYnw"
 call {vg_chacha20_xor_avx512}
 .base64 "SYn3SYHvgAAAAEyJ/0iBx8ABAABMif5IgcagAgAA"
 call {vg_poly1305_init}
@@ -515,6 +515,7 @@ jmp 2167f
 .base64 "xfh3TInO"
 jmp 2114f
 2113:
+.base64 "SYnw"
 call {vg_chacha20_xor_avx512}
 2114:
 .base64 "TIn+SIHGgAAAAA=="

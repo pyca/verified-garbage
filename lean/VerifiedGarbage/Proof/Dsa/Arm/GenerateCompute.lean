@@ -9,8 +9,9 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 # DSA domain checks and key derivation on 32-bit ARM: the computations
 
 `domain_gen_ok`: the flag `&=` g's range and `q ∣ p - 1`; `subgroup_gen_ok`:
-`g^q = 1 mod p`; `parameters_ok`: both. `deriveCompute_ok`: the flag `&=`
-those, x's range and y's, with y = g^x mod p stored at `t2`.
+`g^q = 1 mod p`; `parameters_ok`: both. `keyCompute_ok`: the flag `&=`
+x's range and y's, with y = g^x mod p stored at `t2`; `deriveCompute_ok`:
+both.
 -/
 
 @[expose] public section
@@ -24,9 +25,11 @@ open VG.Proof.Ecdsa.Arm (mask32 mask32_and)
 /-- The checks of a domain beyond its shape. -/
 abbrev domainChecks (P Q G : Nat) : Prop := ((1 < G ∧ G < P) ∧ (P - 1) % Q = 0) ∧ G ^ Q % P = 1
 
+/-- The checks of a key beyond its domain's: x's range and y's. -/
+abbrev keyChecks (P Q G X : Nat) : Prop := (0 < X ∧ X < Q) ∧ (1 < G ^ X % P ∧ G ^ X % P < P)
+
 /-- The checks of a derivation beyond the domain's shape. -/
-abbrev deriveChecks (P Q G X : Nat) : Prop :=
-  domainChecks P Q G ∧ (0 < X ∧ X < Q) ∧ (1 < G ^ X % P ∧ G ^ X % P < P)
+abbrev deriveChecks (P Q G X : Nat) : Prop := domainChecks P Q G ∧ keyChecks P Q G X
 
 theorem domain_gen_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G : Nat}
     (S : Sched s base size pLen qLen nP nQ)
@@ -113,13 +116,14 @@ theorem parameters_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G : Na
       (Ig.run Ru (by omega_arith) fits) hP hPo) fun t ⟨Ft, Rt⟩ => ⟨?_, Ru.trans Rt⟩)
   rw [Ft, Fu, BitVec.and_assoc, mask32_and]
 
-theorem deriveCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X : Nat}
+/-- The flag `&=` x's range and y's, with y = g^x mod p stored at `t2`. -/
+theorem keyCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X : Nat}
     (S : Sched s base size pLen qLen nP nQ)
     (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
     (Ig : Input s base size (.input .g) pLen G) (Ix : Input s base size (.input .nonce) qLen X)
-    (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
-    WP isa (Generate.deriveCompute pLen qLen) s fun t =>
-      maskW base t = maskW base s &&& mask32 (deriveChecks P Q G X) ∧
+    (hP : 1 < P) (hPo : P % 2 = 1) :
+    WP isa (Generate.keyCompute pLen qLen) s fun t =>
+      maskW base t = maskW base s &&& mask32 (keyChecks P Q G X) ∧
       Spec.Rsa.bytesAt t.mem (off base Impl.Dsa.Layout.t2) pLen = Spec.Dsa.encodeBE pLen (G ^ X % P) ∧
       Run base s t := by
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := S.lens
@@ -129,18 +133,14 @@ theorem deriveCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X
   have ho : 4960 ≤ Impl.Dsa.Layout.t2 ∧ Impl.Dsa.Layout.t2 + pLen ≤ 15712 := by
     simp only [Impl.Dsa.Layout.t2]; omega_arith
   have ht : Impl.Dsa.Layout.t2 + pLen < size := by omega_arith
-  simp only [Generate.deriveCompute, Core.sequence, List.foldr]
-  refine WP.seq (WP.mono (parameters_ok S Ip Iq Ig hP hPo hQ hQo) fun v₁ ⟨F₁, R₁⟩ => ?_)
-  have S₁ := S.run R₁
-  have nx : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₁ base size p len v :=
-    fun I => I.run R₁ (by omega_arith) fits
+  simp only [Generate.keyCompute, Core.sequence, List.foldr]
   -- `0 < x < q`
-  refine WP.seq (WP.mono (range_ok S₁.ws (by omega_arith) S.wq (nx Iq).toReady (nx Ix).toReady false)
+  refine WP.seq (WP.mono (range_ok S.ws (by omega_arith) S.wq Iq.toReady Ix.toReady false)
     fun v₂ ⟨F₂, St₂⟩ => ?_)
-  rw [(nx Iq).value, (nx Ix).value] at F₂
-  have S₂ := S₁.stage St₂
+  rw [Iq.value, Ix.value] at F₂
+  have S₂ := S.stage St₂
   have nx₂ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₂ base size p len v :=
-    fun I => (nx I).next S₁ St₂ (.inl ⟨rfl, rfl⟩)
+    fun I => I.next S St₂ (.inl ⟨rfl, rfl⟩)
   -- `y = g^x mod p`
   refine WP.seq (WP.mono (power_ok (output := Impl.Dsa.Layout.t2) S₂.ws (by omega_arith) S.wp q4 qp qw (nx₂ Ip).toReady
     (nx₂ Ig).toReady (nx₂ Ix).toReady (nx₂ Ip).value hP hPo ho.1 (by omega_arith) (by decide)) fun v₃ ⟨B₃, St₃⟩ => ?_)
@@ -152,8 +152,8 @@ theorem deriveCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X
     fun v₄ ⟨F₄, St₄⟩ => WP.block_nil ⟨?_, ?_, ?_⟩)
   · rw [local_operand S₃.ws (by omega_arith), localVal_of_bytes B₃ (Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Plt),
       Ip₃.value] at F₄
-    rw [F₄, St₃.maskW (by decide), F₂, F₁, BitVec.and_assoc, BitVec.and_assoc, mask32_and, mask32_and]
-    exact congrArg _ (mask32_iff (by simp only [Bool.false_eq_true, ↓reduceIte, deriveChecks] <;> omega_arith))
+    rw [F₄, St₃.maskW (by decide), F₂, BitVec.and_assoc, mask32_and]
+    exact congrArg _ (mask32_iff (by simp only [Bool.false_eq_true, ↓reduceIte, keyChecks] <;> omega_arith))
   · have K : localVal base v₄ Impl.Dsa.Layout.t2 pLen = G ^ X % P :=
       (St₄.localVal_eq (by decide) (by omega_arith) (by decide) (.inr (by simp only [Impl.Dsa.Layout.t2]; omega_arith))).trans
         (localVal_of_bytes B₃ (Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Plt))
@@ -163,6 +163,44 @@ theorem deriveCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X
     rw [L] at e
     rw [← K]
     exact e.symm
-  · exact ((R₁.trans (St₂.run (.inl ⟨rfl, rfl⟩))).trans (St₃.run (.inr ho))).trans (St₄.run (.inl ⟨rfl, rfl⟩))
+  · exact ((St₂.run (.inl ⟨rfl, rfl⟩)).trans (St₃.run (.inr ho))).trans (St₄.run (.inl ⟨rfl, rfl⟩))
+
+/-- What a derivation's computation does, with `C` the checks it makes:
+the flag `&=` them, y = g^x mod p at `t2`, and nothing else changed. -/
+def ComputeOk (compute : Nat → Nat → Prog isa) (C : Nat → Nat → Nat → Nat → Prop)
+    [∀ P Q G X, Decidable (C P Q G X)] : Prop :=
+  ∀ {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X : Nat},
+    Sched s base size pLen qLen nP nQ → Input s base size (.input .p) pLen P →
+    Input s base size (.input .q) qLen Q → Input s base size (.input .g) pLen G →
+    Input s base size (.input .nonce) qLen X → 1 < P → P % 2 = 1 → 255 < Q → Q % 2 = 1 →
+    WP isa (compute pLen qLen) s fun t =>
+      maskW base t = maskW base s &&& mask32 (C P Q G X) ∧
+      Spec.Rsa.bytesAt t.mem (off base Impl.Dsa.Layout.t2) pLen = Spec.Dsa.encodeBE pLen (G ^ X % P) ∧
+      Run base s t
+
+theorem deriveCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G X : Nat}
+    (S : Sched s base size pLen qLen nP nQ)
+    (Ip : Input s base size (.input .p) pLen P) (Iq : Input s base size (.input .q) qLen Q)
+    (Ig : Input s base size (.input .g) pLen G) (Ix : Input s base size (.input .nonce) qLen X)
+    (hP : 1 < P) (hPo : P % 2 = 1) (hQ : 255 < Q) (hQo : Q % 2 = 1) :
+    WP isa (Generate.deriveCompute pLen qLen) s fun t =>
+      maskW base t = maskW base s &&& mask32 (deriveChecks P Q G X) ∧
+      Spec.Rsa.bytesAt t.mem (off base Impl.Dsa.Layout.t2) pLen = Spec.Dsa.encodeBE pLen (G ^ X % P) ∧
+      Run base s t := by
+  have big := S.big
+  have fits := S.fits
+  unfold Generate.deriveCompute
+  refine WP.seq (WP.mono (parameters_ok S Ip Iq Ig hP hPo hQ hQo) fun v₁ ⟨F₁, R₁⟩ => ?_)
+  have nx : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₁ base size p len v :=
+    fun I => I.run R₁ (by omega_arith) fits
+  refine WP.mono (keyCompute_ok (S.run R₁) (nx Ip) (nx Iq) (nx Ig) (nx Ix) hP hPo) fun t ⟨F, Y, R⟩ =>
+    ⟨?_, Y, R₁.trans R⟩
+  rw [F, F₁, BitVec.and_assoc, mask32_and]
+
+theorem keyCompute_computeOk : ComputeOk Generate.keyCompute keyChecks :=
+  fun S Ip Iq Ig Ix hP hPo _ _ => keyCompute_ok S Ip Iq Ig Ix hP hPo
+
+theorem deriveCompute_computeOk : ComputeOk Generate.deriveCompute deriveChecks :=
+  fun S Ip Iq Ig Ix hP hPo hQ hQo => deriveCompute_ok S Ip Iq Ig Ix hP hPo hQ hQo
 
 end VG.Proof.Dsa.Arm

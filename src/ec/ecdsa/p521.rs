@@ -9,15 +9,10 @@
     target_arch = "riscv64"
 ))]
 
-use super::table::{HmacHash, SignFn, sign_with};
+use super::table::{HmacHash, sign_with};
 use super::{SignatureHash, sealed};
-use crate::arch::dispatch::ecdsa_p521::vg_ecdsa_p521_verify_auto;
-use crate::arch::ecdsa_p521::vg_ecdsa_p521_sign;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p521::vg_ecdsa_p521_sign_adx;
-use crate::cpu::detected;
+use crate::arch::dispatch::ecdsa_p521::{vg_ecdsa_p521_sign_auto, vg_ecdsa_p521_verify_auto};
 use crate::ec::P521;
-use crate::ec::p521::Mul;
 use crate::error::{InvalidKey, InvalidSignature};
 
 /// Whether `signature` verifies with `q` for the hash `digest`.
@@ -45,15 +40,17 @@ fn verify_with(
 
 impl<H: HmacHash> sealed::Functions<P521> for H {
     fn sign(d: &[u8; 66], digest: &H::Output) -> Result<[u8; 132], InvalidKey> {
-        let f = detected();
-        let sign: SignFn<66, 132> = match Mul::select(f) {
-            Mul::Baseline => vg_ecdsa_p521_sign,
-            #[cfg(target_arch = "x86_64")]
-            Mul::Adx => vg_ecdsa_p521_sign_adx,
-        };
-        // SAFETY: `sign` needs no CPU feature that the multiplications
-        // selected for this CPU do not.
-        unsafe { sign_with::<H, 66, 132>(sign, d, digest) }
+        sign_with::<H, 66, 132>(
+            |out, d, digest, scratch, table| {
+                // SAFETY: as `sign_with` says of its arguments; the dispatcher
+                // calls only an implementation the CPU has the features of.
+                unsafe {
+                    vg_ecdsa_p521_sign_auto(out, d, digest.as_ptr(), digest.len(), scratch, table)
+                }
+            },
+            d,
+            digest,
+        )
     }
 
     /// The verified function takes the hash itself, of any length, and

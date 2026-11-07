@@ -242,7 +242,7 @@ end
 theorem sealSplitBody_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks}
     {s s' : State} {t : List Leak} (h : Exec isa (sealSplitBody x b) s t s') :
     Exec isa (.seq (.block entry) (.seq (prologueA 960 1024 6)
-      (.seq (.call x.name x.code)
+      (.seq x.inPlace
       (.seq (sealMid 960 b) (.seq (.ite .b (cryptSmall 6) cryptBigSplit) (sealPost 960 1024 6 b)))))) s t s' := by
   cases h with | seq e₀ h => cases h with | seq hP h => cases hP with | seq ePA hP => cases hP with
   | seq eC ePB => cases h with | seq eMA h => cases h with | seq eLEN h => cases h with | seq hC h =>

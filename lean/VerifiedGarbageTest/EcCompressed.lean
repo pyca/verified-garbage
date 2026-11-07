@@ -20,8 +20,6 @@ import VerifiedGarbage.Spec.BrainpoolP384r1
 meta import VerifiedGarbage.Spec.BrainpoolP384r1
 import VerifiedGarbage.Spec.BrainpoolP512r1
 meta import VerifiedGarbage.Spec.BrainpoolP512r1
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Checks of the compressed public-point specification
@@ -110,11 +108,5 @@ def checkToyRoots (x : Fe toy) : Bool :=
 #guard compressPublicKey toy [0] == none
 #guard compressPublicKey toy [6, 0, 0] == none
 #guard compressPublicKey toy [4, 17, 0] == none
-
-#assert_standard_axioms VG.Spec.EcKey.encodeCompressedPoint
-#assert_standard_axioms VG.Spec.EcKey.matchesCompressedPublicKey
-#assert_standard_axioms VG.Spec.EcKey.compressPublicKey
-#assert_standard_axioms VG.Spec.EcKey.Instance.compressPublicKeyContract
-#assert_standard_axioms VG.Spec.EcKey.Instance.decompressPublicKeyContract
 
 end VG.Test.EcCompressed

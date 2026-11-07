@@ -9,17 +9,10 @@
     target_arch = "riscv64"
 ))]
 
-use super::table::{HmacHash, SignFn, sign_with};
+use super::table::{HmacHash, sign_with};
 use super::{SignatureHash, sealed};
-use crate::arch::dispatch::ecdsa_p384::vg_ecdsa_p384_verify_auto;
-use crate::arch::ecdsa_p384::vg_ecdsa_p384_sign;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p384::vg_ecdsa_p384_sign_adx;
-#[cfg(target_arch = "arm")]
-use crate::arch::ecdsa_p384::vg_ecdsa_p384_sign_umaal;
-use crate::cpu::detected;
+use crate::arch::dispatch::ecdsa_p384::{vg_ecdsa_p384_sign_auto, vg_ecdsa_p384_verify_auto};
 use crate::ec::P384;
-use crate::ec::p384::Mul;
 use crate::error::{InvalidKey, InvalidSignature};
 
 /// Whether `signature` verifies with `q` for the hash `digest`.
@@ -43,17 +36,17 @@ fn verify_with(q: &[u8; 97], digest: &[u8], signature: &[u8; 96]) -> Result<(), 
 
 impl<H: HmacHash> sealed::Functions<P384> for H {
     fn sign(d: &[u8; 48], digest: &H::Output) -> Result<[u8; 96], InvalidKey> {
-        let f = detected();
-        let sign: SignFn<48, 96> = match Mul::select(f) {
-            Mul::Baseline => vg_ecdsa_p384_sign,
-            #[cfg(target_arch = "x86_64")]
-            Mul::Adx => vg_ecdsa_p384_sign_adx,
-            #[cfg(target_arch = "arm")]
-            Mul::Umaal => vg_ecdsa_p384_sign_umaal,
-        };
-        // SAFETY: `sign` needs no CPU feature that the multiplications
-        // selected for this CPU do not.
-        unsafe { sign_with::<H, 48, 96>(sign, d, digest) }
+        sign_with::<H, 48, 96>(
+            |out, d, digest, scratch, table| {
+                // SAFETY: as `sign_with` says of its arguments; the dispatcher
+                // calls only an implementation the CPU has the features of.
+                unsafe {
+                    vg_ecdsa_p384_sign_auto(out, d, digest.as_ptr(), digest.len(), scratch, table)
+                }
+            },
+            d,
+            digest,
+        )
     }
 
     /// The verified function takes the hash itself, of any length, and

@@ -738,7 +738,7 @@ def smallS (w : Nat) : Prog isa :=
 
 /-- The call of `vg_chacha20_xor` if data is left. -/
 def callIf (x : Impl.ChaCha20.X86_64.Callee) : Prog isa :=
-  .seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block [.mov .rsi (.reg .rcx)]) (.call x.name x.code))
+  .seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block [.mov .rsi (.reg .rcx)]) x.inPlace)
 
 /-- `cryptS`'s branch for more: `m` (`mLoad`), by which `bigS` or `preS`, then
 the call if data is left. -/
@@ -758,7 +758,7 @@ def postS (fold w : Nat) (b : Impl.Poly1305.X86_64.Blocks) : Prog isa :=
 
 theorem sealS_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
     {t : List Leak} (h : Exec isa (sealStitched x b) s t s') :
-    Exec isa (.seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq (.call x.name x.code)
+    Exec isa (.seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq x.inPlace
       (.seq (sealMid x.fold b) (.seq (iteS x) (postS x.fold x.wide b)))))) s t s' := by
   cases h with | seq e₀ h => cases h with | seq hP h => cases hP with | seq ePA hP => cases hP with
   | seq eC ePB => cases h with | seq eMA h => cases h with | seq eLEN h => cases h with | seq hC h =>
@@ -935,7 +935,7 @@ theorem MidS.pre (v : Proof.ChaCha20.X86_64.XorImpl) :
 
 omit h in
 theorem MidS.call (v : Proof.ChaCha20.X86_64.XorImpl) (h : MidS v.callee.fold s₀ s) :
-    WP isa (.call v.callee.name v.callee.code) s (AfterS v.callee.fold s₀) := by
+    WP isa v.callee.inPlace s (AfterS v.callee.fold s₀) := by
   obtain ⟨σ, key, msg, E, a, hi, hm⟩ := h
   refine WP.mono (call_mid v hp hi hm) fun s' c => ?_
   obtain ⟨a', aO, -, -, rbx, rbp, -⟩ := c.abs
@@ -1463,8 +1463,8 @@ theorem bigR_rel :
       ⟨prOk hp h.1.1 h.2, prOk hp' h.1.2 (by
         rw [← h.2]; obtain ⟨⟨_, z₁⟩, ⟨_, z₂⟩⟩ := h.1; simp only [eval, z₁, z₂, eL])⟩).mono
     (fun _ _ h => h) fun _ _ h => h.2
-  have call := (RelCT.callEx (n := v.callee.name)
-    (P := fun s₁ s₂ => MidS v.callee.fold s₀ s₁ ∧ MidS v.callee.fold s₀' s₂) v.ok v.ct
+  have call := (v.relIn
+    (P := fun s₁ s₂ => MidS v.callee.fold s₀ s₁ ∧ MidS v.callee.fold s₀' s₂)
     fun s₁ s₂ ⟨m₁, m₂⟩ => ⟨[], _, [], _, MidS.pre hp m₁ v, MidS.pre hp' m₂ v, ?_, Covers.right (MidS.hw hp m₁),
       MidS.hw hp m₁, Covers.right (MidS.hw hp' m₂), MidS.hw hp' m₂,
       by rw [(MidS.vals m₁).2.2.2.2.1, (MidS.vals m₂).2.2.2.2.1, p7]⟩).wp
@@ -1844,7 +1844,7 @@ theorem sealS_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
   have h₃ := tailP_spSafe v.callee.vl
   generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb h₁ h₂ h₃ ⊢
   rw [hv] at hb ⊢
-  simp only [dataCopy, sealStitched, prologue, cryptS, preS, Code.all, hc, hb, h₁, h₂, h₃, hf, hw,
+  simp only [Impl.ChaCha20.X86_64.Callee.inPlace, dataCopy, sealStitched, prologue, cryptS, preS, Code.all, hc, hb, h₁, h₂, h₃, hf, hw,
     macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
   subst hP; lit_decide
 
@@ -1882,7 +1882,7 @@ theorem sealS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
   have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
-  simp only [sealStitched, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
+  simp only [Impl.ChaCha20.X86_64.Callee.inPlace, sealStitched, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
     padRest, padCopy, padTail, cryptS, wipeL_xdepth, preS, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
     foldM_xdepth, init_xdepth, finalize_xdepth, bigS_xdepth, bulkP_xdepth, tailP_xdepth, Nat.max_le] at hc ha ⊢
   omega_arith
@@ -3337,7 +3337,7 @@ theorem restCall_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APr
     (h : Inv s₀ s) {E : Nat} (hE : E % 64 = 0) (hEL : E ≤ L s₀)
     (hrbx : s.gpr .rbx = dp s₀ + BitVec.ofNat 64 E) (hrbp : s.gpr .rbp = BitVec.ofNat 64 (L s₀ - E))
     (hst : stateAt s.mem (off (cx s₀) 64) = ctr (initState (K s₀) 1 (N s₀)) (E / 64)) :
-    WP isa (.seq (.block restArgs) (.call v.callee.name v.callee.code)) s (RestP s₀ s E) := by
+    WP isa (.seq (.block restArgs) v.callee.inPlace) s (RestP s₀ s E) := by
   have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have dsub : Region.Sub ⟨dp s₀ + BitVec.ofNat 64 E, L s₀ - E⟩ (dR s₀) := Offset.sub_base _ (by omega_arith)
   refine WP.seq (WP.mono_mx (by lit_decide) (restArgs_ok (s₀ := s₀) h.r15)
@@ -3352,7 +3352,7 @@ theorem restCall_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APr
     · exact ⟨ctxR s₀, by rw [wr₁, h.wr]; exact hp.ctx_wr, 64, by simp [off_eq], by show 64 + 64 ≤ 1696; omega_arith⟩
     · exact ⟨dR s₀, by rw [wr₁, h.wr]; exact hp.d_wr, E, rfl, by show E + (L s₀ - E) ≤ L s₀; omega_arith⟩
     · exact ⟨ctxR s₀, by rw [wr₁, h.wr]; exact hp.ctx_wr, 128, by simp [off_eq], by show 128 + 320 ≤ 1696; omega_arith⟩
-  refine WP.mono_mx (by simp only [Code.allInstrs, v.mxcsr]) (Q := fun s' => s'.gpr .rsi = off (cx s₀) 128 ∧
+  refine WP.mono_mx (by simp only [Impl.ChaCha20.X86_64.Callee.inPlace, Code.allInstrs, v.mxcsr, Bool.and_true]; rfl) (Q := fun s' => s'.gpr .rsi = off (cx s₀) 128 ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame [sub s₀ 64 384, dR s₀, stkR s₀] s.mem s'.mem ∧
       (∀ k < L s₀, s'.mem (dp s₀ + BitVec.ofNat 64 k) = if k < E then s.mem (dp s₀ + BitVec.ofNat 64 k)
@@ -3598,7 +3598,7 @@ theorem decRest_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre
   -- The call, with the rest's own pointers, from a state with `s`'s.
   have call : ∀ s₁ : State, (∀ r, r ≠ .rax → s₁.gpr r = s.gpr r) → s₁.mem = s.mem → s₁.rd = s.rd →
       s₁.wr = s.wr → s₁.mxcsr = s.mxcsr → 512 ≤ L s₀ → ¬ TailC (L s₀) E → ¬ TailK (L s₀) E →
-      WP isa (.seq (.block restArgs) (.call v.callee.name v.callee.code)) s₁ (RestP s₀ s E) := by
+      WP isa (.seq (.block restArgs) v.callee.inPlace) s₁ (RestP s₀ s E) := by
     intro s₁ g₁ m₁ rd₁ wr₁ mx₁ hge nt nk
     have ⟨bx, bp⟩ : s.gpr .rbx = dp s₀ + BitVec.ofNat 64 E ∧ s.gpr .rbp = BitVec.ofNat 64 (L s₀ - E) := by
       rcases ht with ⟨hl, -⟩ | ⟨-, -, -, x, y⟩ | ⟨t, -⟩ | ⟨t, -⟩
@@ -4474,7 +4474,7 @@ theorem XO.pre (v : Proof.ChaCha20.X86_64.XorImpl) {s : State} (h : XO s₀ s) :
 omit hp' hq in
 include hp in
 theorem XO.call (v : Proof.ChaCha20.X86_64.XorImpl) {s : State} (h : XO s₀ s) :
-    WP isa (.call v.callee.name v.callee.code) s (After s₀) := by
+    WP isa v.callee.inPlace s (After s₀) := by
   have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have hE : Eof (L s₀) ≤ L s₀ := by simp only [Eof]; omega_arith
   have dsub : Region.Sub ⟨dp s₀ + BitVec.ofNat 64 (Eof (L s₀)), L s₀ - Eof (L s₀)⟩ (dR s₀) :=
@@ -4772,7 +4772,7 @@ theorem bigO_rel (hf448 : v.callee.fold = 448) :
       ⟨macO_done v.poly hp h.1, macO_done v.poly hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
   have callR : ∀ {P : State → State → Prop}, (∀ s₁ s₂, P s₁ s₂ →
       (MacDone s₀ s₁ ∧ MacDone s₀' s₂) ∧ 512 ≤ L s₀ ∧ ¬ TailC (L s₀) (Eof (L s₀)) ∧ ¬ TailK (L s₀) (Eof (L s₀))) →
-      RelCT isa P (.seq (.block restArgs) (.call v.callee.name v.callee.code))
+      RelCT isa P (.seq (.block restArgs) v.callee.inPlace)
         fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂ := by
     intro P hP
     have rest := ((RelCT.taint (A := taintS) (P := P) (τM false)
@@ -4783,7 +4783,7 @@ theorem bigO_rel (hf448 : v.callee.fold = 448) :
           (by rw [eL]; exact (hP _ _ h).2.2.2))⟩).mono
       (fun _ _ h => h)
       fun _ _ h => h.2
-    have call := (RelCT.callEx (n := v.callee.name) (P := fun s₁ s₂ => XO s₀ s₁ ∧ XO s₀' s₂) v.ok v.ct
+    have call := (v.relIn (P := fun s₁ s₂ => XO s₀ s₁ ∧ XO s₀' s₂)
       fun s₁ s₂ ⟨m₁, m₂⟩ => ⟨[], _, [], _, m₁.pre hp v, m₂.pre hp' v, ?_, Covers.right (m₁.hw hp),
         m₁.hw hp, Covers.right (m₂.hw hp'), m₂.hw hp', by rw [m₁.rsp, m₂.rsp, p7]⟩).wp
       (F₁ := After s₀) (F₂ := After s₀') fun _ _ h => ⟨h.1.call hp v, h.2.call hp' v⟩
@@ -4987,7 +4987,7 @@ theorem openS_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
   generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ho hk hk4 hwo hkB ⊢
   rw [hv] at hb ⊢
   rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;> rw [hl] at ho hk hk4 hwo hkB <;>
-  simp only [dataCopy, openStitched, openStitchedBody, openTail, zeroData, prologueX, xsel, xselV, xselA, hl, ↓reduceIte, Bool.false_eq_true, cryptO,
+  simp only [Impl.ChaCha20.X86_64.Callee.inPlace, dataCopy, openStitched, openStitchedBody, openTail, zeroData, prologueX, xsel, xselV, xselA, hl, ↓reduceIte, Bool.false_eq_true, cryptO,
     decRest, xorTail, Code.all, hc, hb, ho, hk, hk4, hkB, hwo, hf, hpass, hw, macPad, macPadLengths, Code.iteCold,
     wholeBlocks, padRest, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and] <;>
   subst hP <;> lit_decide
@@ -5063,7 +5063,7 @@ theorem openS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
   have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
   rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;>
-  simp only [openStitched, openStitchedBody, openTail, zeroData, prologueX, xsel, xselV, xselA, hl, ↓reduceIte, Bool.false_eq_true, twoKsB_xdepth,
+  simp only [Impl.ChaCha20.X86_64.Callee.inPlace, openStitched, openStitchedBody, openTail, zeroData, prologueX, xsel, xselV, xselA, hl, ↓reduceIte, Bool.false_eq_true, twoKsB_xdepth,
     prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
     padRest, padCopy, padTail, cryptO, decRest, xorTail, absorbLengths, finalizeTo, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
     xorTail_xdepth, foldM_xdepth, wipeL_xdepth, init_xdepth,

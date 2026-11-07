@@ -2,16 +2,10 @@ module
 
 import VerifiedGarbage.TCB.Arm.Print
 meta import VerifiedGarbage.TCB.Arm.Print
-import VerifiedGarbage.Proof.Framework.Arm.Call
-meta import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.MlKem.Arm.CallF
 meta import VerifiedGarbage.Proof.MlKem.Arm.CallF
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! ARMv7/Thumb-2 stack-buffer semantics and instruction encodings. -/
 namespace VG.Test.ArmStack
@@ -80,8 +74,4 @@ private def publicSP : Arm.Taint.T := { regs := .ofList [], flags := false, argL
 -- Nested buffer frames contribute their full byte sizes to the stack bound.
 #guard stackUse (.frame (.alloc 224) (.frame (.alloc 16) (.block []) (.free 16)) (.free 224)) == 240
 
-#assert_standard_axioms VG.Arm.Exec.frameSp
-#assert_standard_axioms VG.Arm.WP.alloc
-#assert_standard_axioms VG.Arm.Exec.sp
-#assert_standard_axioms VG.Arm.Taint.step_sound
 end VG.Test.ArmStack

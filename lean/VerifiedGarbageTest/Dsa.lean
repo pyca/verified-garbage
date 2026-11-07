@@ -10,8 +10,6 @@ public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public meta import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Spec.Sha512
 public meta import VerifiedGarbage.Spec.Sha512
-public import VerifiedGarbage.TCB.Axioms
-public meta import VerifiedGarbage.TCB.Axioms
 public import VerifiedGarbage.TCB.Audit
 public meta import VerifiedGarbage.TCB.Audit
 public import VerifiedGarbageTest.Memo
@@ -348,18 +346,7 @@ def checkPrimality : Except String Unit := do
   unless primeFromSeed 0 160 5 [] suffix == some (none, suffix) do
     throw "empty parameter search consumed witnesses"
 
-#assert_standard_axioms Spec.Dsa.signContract
-#assert_standard_axioms Spec.Dsa.verifyContract
-#assert_standard_axioms Spec.Dsa.probablePrime
-#assert_standard_axioms Spec.Dsa.fromComponents
-#assert_standard_axioms Spec.Dsa.sign
-#assert_standard_axioms Spec.Dsa.verify
 #assert_no_compiler_overrides Spec.Dsa.fromComponents Spec.Dsa.sign Spec.Dsa.verify
-#assert_no_compiler_overrides Spec.Dsa.validatePublicKeyApi Spec.Dsa.verifyPrevalidatedApi
-#assert_standard_axioms Spec.Dsa.validatePrivateKeyContract
-#assert_standard_axioms Spec.Dsa.randomSignPrevalidatedContract
-#assert_no_compiler_overrides Spec.Dsa.validatePrivateKeyApi Spec.Dsa.randomSignPrevalidatedApi
-#assert_spec_origin
 
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)

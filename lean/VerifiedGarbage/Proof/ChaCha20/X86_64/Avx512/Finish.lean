@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
 
 /-!
-# ChaCha20 on x86-64 with AVX-512: the sixteen blocks, into the data
+# ChaCha20 on x86-64 with AVX-512: the sixteen blocks, from the source into the destination
 -/
 
 @[expose] public section
@@ -22,14 +22,14 @@ def outT (w j : Nat) : T :=
   if w = 12 then .add (.add (.reg 12 j) (.mem 0 12)) (.mem 1 (32 + j)) else .add (.reg w j) (.mem 0 w)
 
 def finishCheck : Bool :=
-  match Sym.init.run finish with
-  | some σ => (List.range 256).all fun i => σ.mem 2 i == .xor (.mem 2 i) (outT (i % 16) (i / 16))
+  match Sym.init.runT true finish with
+  | some σ => (List.range 256).all fun i => σ.mem 3 i == .xor (.mem 2 i) (outT (i % 16) (i / 16))
   | none => false
 
 theorem finishCheck_eq : finishCheck = true := by decide +kernel
 
-theorem finish_run : ∃ σ, Sym.init.run finish = some σ ∧
-    ∀ i < 256, σ.mem 2 i = .xor (.mem 2 i) (outT (i % 16) (i / 16)) := by
+theorem finish_run : ∃ σ, Sym.init.runT true finish = some σ ∧
+    ∀ i < 256, σ.mem 3 i = .xor (.mem 2 i) (outT (i % 16) (i / 16)) := by
   have e := finishCheck_eq
   unfold finishCheck at e
   split at e
@@ -52,22 +52,24 @@ theorem outT_eval {s : State} {vs : Nat → CState} (hz : ZH vs s) (hi : Incs s.
   simp only [plus, Vector.getElem_zipWith, Avx2.ctr_get _ _ _ hw, outT]
   split
   · rename_i e; subst e
-    simp only [T.eval, regn, baseR, r, stateAt_get _ _ (show 12 < 16 by decide), hi j hj,
+    simp only [T.eval, memBase_0, memBase_1, r, stateAt_get _ _ (show 12 < 16 by decide), hi j hj,
       BitVec.add_assoc]
-  · simp only [T.eval, regn, baseR, r, stateAt_get _ _ hw]
+  · simp only [T.eval, memBase_0, r, stateAt_get _ _ hw]
 
-theorem finish_ok {s : State} (hc : Ctx s) (hi : Incs s.mem (s.gpr .rcx)) {vs : Nat → CState}
+/-- The sixteen blocks, XORed with the 1024 bytes of the source at `rsi`
+into the destination at `rsi + r11` (`dstR`). -/
+theorem finish_ok {s : State} (hc : CtxT true s) (hi : Incs s.mem (s.gpr .rcx)) {vs : Nat → CState}
     (hz : ZH vs s) :
     WP isa (.block finish) s fun s' =>
-      (∀ k < 1024, s'.mem (s.gpr .rsi + BitVec.ofNat 64 k) = s.mem (s.gpr .rsi + BitVec.ofNat 64 k) ^^^
+      (∀ k < 1024, s'.mem ((dstR 256 s).base + BitVec.ofNat 64 k) = s.mem (s.gpr .rsi + BitVec.ofNat 64 k) ^^^
         (serialize (plus vs (stateAt s.mem (s.gpr .rdi)) (k / 64))).getD (k % 64) 0) ∧
-      Frame (wregs s) s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+      Frame (wregsT true s) s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨σ, hr, hm⟩ := finish_run
-  refine WP.mono (srun_ok hc finish (SRel.init s) hr) fun s' h => ⟨fun k hk => ?_, h.frame, h.gpr,
+  refine WP.mono (srunT_ok hc finish (SRelT.init true s) hr) fun s' h => ⟨fun k hk => ?_, h.frame, h.gpr,
     h.rd, h.wr⟩
-  have d := h.mem 2 (k / 4) (by decide) (by simp only [bsize]; omega)
+  have d := h.mem3 rfl (k / 4) (by omega)
   rw [hm _ (by omega)] at d
-  simp only [T.eval, regn, baseR] at d
+  simp only [T.eval, memBase_2] at d
   rw [show k / 4 % 16 = k % 64 / 4 by omega, show k / 4 / 16 = k / 64 by omega] at d
   rw [byte_dword s'.mem, byte_dword s.mem, d, BitVec.extractLsb'_xor,
     serialize_getD _ (Nat.mod_lt _ (by decide)), outT_eval hz hi (by omega) (by omega),
