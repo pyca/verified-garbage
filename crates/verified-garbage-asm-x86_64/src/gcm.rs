@@ -27,6 +27,30 @@ lea rax, [rip + {VG_GCM_CONSTS}]
     )
 }
 
+/// The CPU features `vg_aes_gcm_prepare_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_PREPARE_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+
+/// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 1024 bytes.
+/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul(ctx: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r#"lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzD2+/8AAAAGYPOAD4"
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "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"
+.p2align 6"#,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
 /// The CPU features `vg_aes_gcm_prepare16_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
