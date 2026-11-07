@@ -53,7 +53,8 @@ theorem VC.congr {p : Params} {STK : Nat} {σ s s' : State} (h : VC p STK σ s)
       have : r ≠ .r24 ∧ r ≠ .r26 := ⟨fun e => by subst e; simp [savedTop] at hs,
         fun e => by subst e; simp [savedTop] at hs⟩
       rw [hr r hp this.1 this.2]; exact h.pres r hp hs,
-    by rw [hm]; exact h.sav, by rw [hm]; exact h.pk, by rw [hm]; exact h.mu, by rw [hm]; exact h.sg⟩
+    by rw [hm]; exact h.sav, by rw [hm]; exact h.pk, by rw [hm]; exact h.mu, by rw [hm]; exact h.sg,
+    fun hc hne => by rw [hm]; exact h.cache hc hne⟩
 
 /-! ## The comparison -/
 

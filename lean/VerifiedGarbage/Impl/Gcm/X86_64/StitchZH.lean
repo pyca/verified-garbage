@@ -37,27 +37,19 @@ open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv fin bigMinP bigMinPE)
 open VG.Impl.Gcm.X86_64.StitchZR (setupP powP48)
 open VG.Impl.Gcm.X86_64.StitchZTo (atIx)
 
-/-- XOR block register `i` into the four blocks at `rdx + 64 (j + i)`,
-through `t`, and store the result to `Stitch.dstK ix (64 (j + i))` (in place,
-`VaesZ.xorDataZ t .rdx`). -/
-def xorDataZM (ix : Bool) (t : XReg) : List XReg → Nat → List Instr
-  | [], _ => []
-  | b :: bs, j => ([.vmovdqu32Load t (at_ .rdx (64 * j)), .zop (.zbin .vpxord b b t),
-      .vmovdqu32Store (Stitch.dstK ix (64 * j)) b] : List Instr) ++ xorDataZM ix t bs (j + 1)
-
-/-- Sixteen blocks at `rdx + 64 j` encrypted, in place or, out of place
-(`ix`), to `rdx + r8 + 64 j`. -/
-def batch (j : Nat) (g : Nat → List Instr) (ix : Bool := false) : Prog isa :=
+/-- Sixteen blocks at `rdx + 64 j` encrypted, in place or, out of place, to
+`rdx + r8 + 64 j` (`ix`) or from `rdx + r8 + 64 j` (`ld`). -/
+def batch (j : Nat) (g : Nat → List Instr) (ix : Bool := false) (ld : Bool := false) : Prog isa :=
   .seq (.block (ctrsZ .xmm14 .xmm0 .xmm15 aregs))
-    (.seq (Aes.X86_64.VaesZH.aes aregs g) (.block (xorDataZM ix .xmm13 aregs j)))
+    (.seq (Aes.X86_64.VaesZH.aes aregs g) (.block (StitchZ.xorDataZM ix .xmm13 ld aregs j)))
 
-def first : Prog isa := batch 0 fun _ => []
+def first (ld : Bool := false) : Prog isa := batch 0 (fun _ => []) false ld
 
-def body : Prog isa :=
-  .seq (batch 4 gq) (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 32)])
+def body (ld : Bool := false) : Prog isa :=
+  .seq (batch 4 gq false ld) (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 32)])
 
-def body48 : Prog isa :=
-  .seq (batch 12 (gq48 0)) (.seq (batch 16 (gq48 1)) (.seq (batch 20 (gq48 2))
+def body48 (ld : Bool := false) : Prog isa :=
+  .seq (batch 12 (gq48 0) false ld) (.seq (batch 16 (gq48 1) false ld) (.seq (batch 20 (gq48 2) false ld)
     (.block [.alu .add .rdx (.imm 768), .alu .sub .r9 (.imm 48), .alu .cmp .r9 (.imm 96)])))
 
 def dbody (ix : Bool := false) : Prog isa :=
@@ -67,9 +59,11 @@ def dbody48 (ix : Bool := false) : Prog isa :=
   .seq (batch 0 (gq48 0) ix) (.seq (batch 4 (gq48 1) ix) (.seq (batch 8 (gq48 2) ix)
     (.block [.alu .add .rdx (.imm 768), .alu .sub .r9 (.imm 48), .alu .cmp .r9 (.imm 48)])))
 
-def bigP : Prog isa :=
-  .seq (.block powP48) (.seq (batch 4 fun _ => []) (.seq (batch 8 fun _ => [])
-    (.seq (.loop body48 .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv))))))
+def bigRest (ld : Bool := false) : Prog isa :=
+  .seq (batch 4 (fun _ => []) false ld) (.seq (batch 8 (fun _ => []) false ld)
+    (.seq (.loop (body48 ld) .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv)))))
+
+def bigP (ld : Bool := false) : Prog isa := .seq (.block powP48) (bigRest ld)
 
 def bigDP (ix : Bool := false) : Prog isa :=
   .seq (.block powP48) (.seq (.loop (dbody48 ix) .ae) (.block [.vmovdqu32Load .xmm1 (at_ .r11 832)]))
