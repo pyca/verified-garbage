@@ -17,139 +17,10 @@
     target_arch = "riscv64"
 ))]
 
-#[cfg(target_arch = "x86_64")]
-use crate::arch::chacha20::{
-    VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES,
-    VG_CHACHA20_APPLY_AVX512VL_FEATURES, VG_CHACHA20_APPLY_IFMA_FEATURES, vg_chacha20_apply_avx2,
-    vg_chacha20_apply_avx512, vg_chacha20_apply_avx512vl, vg_chacha20_apply_ifma,
-};
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::chacha20::{VG_CHACHA20_APPLY_SSSE3_FEATURES, vg_chacha20_apply_ssse3};
-#[cfg(target_arch = "aarch64")]
-use crate::arch::chacha20::{
-    VG_CHACHA20_APPLY_SVE2_FEATURES, vg_chacha20_apply_neon, vg_chacha20_apply_sve2,
-};
-use crate::arch::chacha20::{vg_chacha20_apply, vg_chacha20_init, vg_chacha20_set_nonce};
-use crate::cpu::detected;
+use crate::arch::chacha20::{vg_chacha20_init, vg_chacha20_set_nonce};
+use crate::arch::dispatch::chacha20::vg_chacha20_apply_auto;
 use crate::zeroize::zeroize_raw;
 use core::mem::MaybeUninit;
-use verified_garbage_cpu::Features;
-
-/// The implementations of `vg_chacha20_apply`, which ChaCha20-Poly1305
-/// follows (`crate::aead::chacha20poly1305`): each variant but `Scalar` is the
-/// one with its suffix.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Backend {
-    /// The baseline implementation.
-    Scalar,
-    /// `_neon`.
-    #[cfg(target_arch = "aarch64")]
-    Neon,
-    /// `_sve2`.
-    #[cfg(target_arch = "aarch64")]
-    Sve2,
-    /// `_avx2`.
-    #[cfg(target_arch = "x86_64")]
-    Avx2,
-    /// `_avx512`.
-    #[cfg(target_arch = "x86_64")]
-    Avx512,
-    /// `_avx512vl`, on CPUs without AVX512_IFMA.
-    #[cfg(target_arch = "x86_64")]
-    Avx512Vl,
-    /// `_ifma`, on CPUs with AVX512_IFMA.
-    #[cfg(target_arch = "x86_64")]
-    Ifma,
-    /// `_ssse3`.
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    Ssse3,
-}
-
-/// AVX512_IFMA, which `VG_CHACHA20_APPLY_IFMA_FEATURES` does not name:
-/// `Backend::Ifma` is chosen on the CPUs whose ChaCha20-Poly1305 runs its
-/// `_ifma` variants, which need it.
-#[cfg(target_arch = "x86_64")]
-const IFMA: Features = Features(verified_garbage_cpu::feature::AVX512IFMA);
-
-impl Backend {
-    /// AdvSIMD is part of our AArch64 baseline. Tracking it also lets
-    /// `VG_CPU_FEATURES=none` exercise the scalar implementation. SVE2 is
-    /// not: its variants need `VG_CHACHA20_APPLY_SVE2_FEATURES` (which
-    /// ChaCha20-Poly1305's need too, see its tests).
-    #[cfg(target_arch = "aarch64")]
-    pub(crate) fn select(f: Features) -> Backend {
-        if f.contains(const { Features(verified_garbage_cpu::feature::NEON) })
-            && f.contains(VG_CHACHA20_APPLY_SVE2_FEATURES)
-        {
-            Backend::Sve2
-        } else if f.contains(const { Features(verified_garbage_cpu::feature::NEON) }) {
-            Backend::Neon
-        } else {
-            Backend::Scalar
-        }
-    }
-
-    /// The best implementation a CPU with the features `f` can run.
-    #[cfg(target_arch = "x86_64")]
-    pub(crate) fn select(f: Features) -> Backend {
-        Backend::select_for(
-            f,
-            Features::all(&[VG_CHACHA20_APPLY_IFMA_FEATURES, IFMA]),
-            VG_CHACHA20_APPLY_AVX512VL_FEATURES,
-            VG_CHACHA20_APPLY_AVX512_FEATURES,
-            VG_CHACHA20_APPLY_AVX2_FEATURES,
-            VG_CHACHA20_APPLY_SSSE3_FEATURES,
-        )
-    }
-
-    /// The best implementation a CPU with the features `f` can run, for
-    /// functions whose variants `_ifma`, `_avx512vl`, `_avx512`, `_avx2`
-    /// and `_ssse3` need the features `ifma`, `avx512vl`, `avx512`, `avx2`
-    /// and `ssse3` (ChaCha20-Poly1305's need more than
-    /// `vg_chacha20_apply`'s). `ifma` comes first, so `_avx512vl` is chosen
-    /// only on CPUs without AVX512_IFMA, and `ssse3` last, for CPUs without
-    /// AVX2.
-    #[cfg(target_arch = "x86_64")]
-    pub(crate) fn select_for(
-        f: Features,
-        ifma: Features,
-        avx512vl: Features,
-        avx512: Features,
-        avx2: Features,
-        ssse3: Features,
-    ) -> Backend {
-        if f.contains(ifma) {
-            Backend::Ifma
-        } else if f.contains(avx512vl) {
-            Backend::Avx512Vl
-        } else if f.contains(avx512) {
-            Backend::Avx512
-        } else if f.contains(avx2) {
-            Backend::Avx2
-        } else if f.contains(ssse3) {
-            Backend::Ssse3
-        } else {
-            Backend::Scalar
-        }
-    }
-
-    /// The best implementation a CPU with the features `f` can run.
-    #[cfg(target_arch = "x86")]
-    pub(crate) fn select(f: Features) -> Backend {
-        if f.contains(VG_CHACHA20_APPLY_SSSE3_FEATURES) {
-            Backend::Ssse3
-        } else {
-            Backend::Scalar
-        }
-    }
-
-    /// The best implementation a CPU with the features `f` can run: there
-    /// is only one here.
-    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86")))]
-    pub(crate) fn select(_: Features) -> Backend {
-        Backend::Scalar
-    }
-}
 
 /// A ChaCha20 keystream, applied incrementally.
 ///
@@ -172,7 +43,6 @@ pub struct ChaCha20 {
     nonce: [u8; 16],
     /// Whether `init` has yet to run: `state` holds nothing.
     pending: bool,
-    backend: Backend,
 }
 
 impl Drop for ChaCha20 {
@@ -202,7 +72,6 @@ impl ChaCha20 {
             key: *key,
             nonce: *nonce,
             pending: true,
-            backend: Backend::select(detected()),
         }
     }
 
@@ -241,32 +110,17 @@ impl ChaCha20 {
         if self.pending {
             self.start();
         }
-        let f = match self.backend {
-            Backend::Scalar => vg_chacha20_apply,
-            #[cfg(target_arch = "aarch64")]
-            Backend::Neon => vg_chacha20_apply_neon,
-            #[cfg(target_arch = "aarch64")]
-            Backend::Sve2 => vg_chacha20_apply_sve2,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Avx2 => vg_chacha20_apply_avx2,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Avx512 => vg_chacha20_apply_avx512,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Avx512Vl => vg_chacha20_apply_avx512vl,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Ifma => vg_chacha20_apply_ifma,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            Backend::Ssse3 => vg_chacha20_apply_ssse3,
-        };
         // SAFETY: `state` is valid for reads and writes of 768 bytes (the
         // bytes `apply` reads before writing them are those `init` and
         // `set_nonce` wrote) and `data` for reads and writes of `data.len()`
         // bytes; they are
         // distinct objects, so they do not overlap each other, the stack
         // frame of the call (the return address) or the stack below it, and
-        // do not wrap around the end of the address space. The CPU has the
-        // features of the implementation selected.
-        let ok = unsafe { f(self.state.as_mut_ptr(), data.as_mut_ptr(), data.len()) };
+        // do not wrap around the end of the address space. The dispatcher
+        // calls only an implementation the CPU has the features of.
+        let ok = unsafe {
+            vg_chacha20_apply_auto(self.state.as_mut_ptr(), data.as_mut_ptr(), data.len())
+        };
         // `apply` checks the block counter itself, and leaves the data and the
         // state unchanged when it would overflow.
         assert!(ok == 1, "ChaCha20 block counter would overflow");
@@ -275,8 +129,7 @@ impl ChaCha20 {
 
 #[cfg(test)]
 mod tests {
-    use super::{Backend, ChaCha20};
-    use crate::cpu::detected;
+    use super::ChaCha20;
 
     fn unhex<const N: usize>(s: &str) -> [u8; N] {
         let mut out = [0u8; N];
@@ -425,21 +278,15 @@ mod tests {
         assert_eq!(data, ks);
     }
 
-    /// The implementation chosen gives the same keystream as the baseline
-    /// one, for 35 blocks in one call and split every 61 bytes, and up to the
-    /// last block counter.
+    /// Applying 35 blocks of keystream in two pieces, split every 61 bytes,
+    /// is the same as applying them at once, also up to the last block
+    /// counter.
     #[test]
-    fn implementations_agree() {
+    fn incremental_bulk() {
         const LEN: usize = 16 * 64 * 2 + 64 * 3;
         for counter in [0, 0u32.wrapping_sub((LEN / 64) as u32)] {
             let n = nonce(counter, &[5; 12]);
-            let mut expected = [0u8; LEN];
-            let mut scalar = ChaCha20::new(&key(), &n);
-            scalar.backend = Backend::Scalar;
-            scalar.apply_keystream(&mut expected);
-            let mut once = [0u8; LEN];
-            ChaCha20::new(&key(), &n).apply_keystream(&mut once);
-            assert_eq!(once, expected);
+            let expected = keystream::<LEN>(&key(), &n);
             for split in (0..=LEN).step_by(61) {
                 let mut data = [0u8; LEN];
                 let mut c = ChaCha20::new(&key(), &n);
@@ -450,8 +297,8 @@ mod tests {
         }
     }
 
-    /// The implementation chosen gives the same keystream as the baseline
-    /// one on unaligned slices, leaving the bytes around them unchanged, for
+    /// On unaligned slices the keystream is XORed into the data as at
+    /// offset 0 into zeros, leaving the bytes around them unchanged, for
     /// lengths within a byte of multiples of a block, from three blocks to
     /// sixteen, and up to the last block counter.
     #[test]
@@ -464,10 +311,12 @@ mod tests {
                 for counter in [7, u32::MAX - (len as u32).div_ceil(64) + 1] {
                     let n = nonce(counter, &[6; 12]);
                     let msg: [u8; 1040] = core::array::from_fn(|i| (i * 29) as u8);
+                    let mut ks = [0u8; 1024];
+                    ChaCha20::new(&key(), &n).apply_keystream(&mut ks[..len]);
                     let mut expected = msg;
-                    let mut scalar = ChaCha20::new(&key(), &n);
-                    scalar.backend = Backend::Scalar;
-                    scalar.apply_keystream(&mut expected[offset..offset + len]);
+                    for (e, k) in expected[offset..offset + len].iter_mut().zip(ks) {
+                        *e ^= k;
+                    }
                     let mut actual = msg;
                     ChaCha20::new(&key(), &n).apply_keystream(&mut actual[offset..offset + len]);
                     assert_eq!(actual, expected);
@@ -480,91 +329,6 @@ mod tests {
                     assert_eq!(fragmented, expected);
                 }
             }
-        }
-    }
-
-    /// The implementation chosen for each set of features.
-    #[test]
-    fn select() {
-        let best = ChaCha20::new(&key(), &nonce(0, &[0; 12])).backend;
-        assert_eq!(best, Backend::select(detected()));
-        #[cfg(target_arch = "aarch64")]
-        {
-            use verified_garbage_cpu::Features;
-            assert_eq!(
-                Backend::select(Features(verified_garbage_cpu::feature::NEON)),
-                Backend::Neon
-            );
-            assert_eq!(
-                Backend::select(Features(
-                    verified_garbage_cpu::feature::NEON | verified_garbage_cpu::feature::SVE2
-                )),
-                Backend::Sve2
-            );
-            assert_eq!(
-                Backend::select(Features(verified_garbage_cpu::feature::SVE2)),
-                Backend::Scalar
-            );
-            assert_eq!(Backend::select(Features(0)), Backend::Scalar);
-        }
-        #[cfg(target_arch = "x86_64")]
-        {
-            use crate::arch::chacha20::{
-                VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES,
-                VG_CHACHA20_APPLY_AVX512VL_FEATURES, VG_CHACHA20_APPLY_IFMA_FEATURES,
-                VG_CHACHA20_APPLY_SSSE3_FEATURES,
-            };
-            use verified_garbage_cpu::Features;
-            let ssse3 = VG_CHACHA20_APPLY_SSSE3_FEATURES;
-            assert_eq!(Backend::select(ssse3), Backend::Ssse3);
-            assert_eq!(
-                Backend::select(Features::all(&[
-                    ssse3,
-                    Features(verified_garbage_cpu::feature::AVX)
-                ])),
-                Backend::Ssse3
-            );
-            assert_eq!(
-                Backend::select(Features::all(&[ssse3, VG_CHACHA20_APPLY_AVX2_FEATURES])),
-                Backend::Avx2
-            );
-            assert_eq!(Backend::select(Features(0)), Backend::Scalar);
-            let avx2 = VG_CHACHA20_APPLY_AVX2_FEATURES;
-            let avx512 = VG_CHACHA20_APPLY_AVX512_FEATURES;
-            let avx512vl = VG_CHACHA20_APPLY_AVX512VL_FEATURES;
-            assert_eq!(Backend::select(avx2), Backend::Avx2);
-            assert_eq!(Backend::select(avx512), Backend::Avx512);
-            assert_eq!(Backend::select(avx512vl), Backend::Avx512Vl);
-            assert_eq!(VG_CHACHA20_APPLY_IFMA_FEATURES, avx512);
-            assert_eq!(
-                Backend::select(Features::all(&[avx512, super::IFMA])),
-                Backend::Ifma
-            );
-            assert_eq!(
-                Backend::select(Features::all(&[avx512vl, super::IFMA])),
-                Backend::Ifma
-            );
-            assert_eq!(
-                Backend::select(Features::all(&[
-                    VG_CHACHA20_APPLY_AVX2_FEATURES,
-                    VG_CHACHA20_APPLY_AVX512_FEATURES
-                ])),
-                Backend::Avx512
-            );
-            assert_eq!(
-                Backend::select(Features(verified_garbage_cpu::feature::AVX)),
-                Backend::Scalar
-            );
-        }
-        #[cfg(target_arch = "x86")]
-        {
-            use crate::arch::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES;
-            use verified_garbage_cpu::Features;
-            assert_eq!(
-                Backend::select(VG_CHACHA20_APPLY_SSSE3_FEATURES),
-                Backend::Ssse3
-            );
-            assert_eq!(Backend::select(Features(0)), Backend::Scalar);
         }
     }
 }

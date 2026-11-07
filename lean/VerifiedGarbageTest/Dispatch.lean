@@ -73,6 +73,23 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
 #guard has (((out.find? (·.1 == "verified-garbage-asm-aarch64/src/dispatch/mod.rs")).map (·.2)).getD "")
   "pub mod poly1305;\n"
 
+/-- The position of a suffix in x86-64's ranking for a module. -/
+def x86Rank (module suffix : String) : Option Nat :=
+  (Rust.rankOf ((Dispatch.ranking.lookup "x86_64").getD []) module suffix).map (·.1)
+
+-- ChaCha20's and ChaCha20-Poly1305's dispatchers try `_avx2` before `_ssse3`,
+-- so they never choose `_ssse3` with AVX2 (`NEVER_WITH` in
+-- `ci/check_variants.py`), and `_ssse3` without it.
+#guard ["chacha20", "chacha20poly1305"].all fun m =>
+  match x86Rank m "_avx2", x86Rank m "_ssse3" with
+  | some a, some s => a < s
+  | _, _ => false
+
+-- ChaCha20's `_ifma` needs AVX512_IFMA too, which its own features do not
+-- name: it is chosen where ChaCha20-Poly1305's `_ifma` is.
+#guard ((Rust.rankOf ((Dispatch.ranking.lookup "x86_64").getD []) "chacha20" "_ifma").map
+  (·.2.extra)) == some ["avx512ifma"]
+
 -- An unranked suffix fails the emitter.
 #guard match Rust.files Artifacts.Poly1305.AArch64.artifacts [("aarch64", [])] with
   | .error e => has e "vg_poly1305_update_neon: its suffix `_neon` is not ranked"

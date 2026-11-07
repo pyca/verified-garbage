@@ -225,8 +225,9 @@ INTERNAL = ("", "")
 # same function there: a combination with one of them that needs all of a
 # set is one no CPU chooses (see the module's docstring).
 NEVER_WITH = {
-    # `cipher::chacha20::Backend::select_for` chooses `_avx2` (or better)
-    # over `_ssse3` whenever AVX2 is present.
+    # The dispatchers of ChaCha20 and ChaCha20-Poly1305 rank `_avx2` (and
+    # better) above `_ssse3` (`VG.Dispatch.ranking`), so choose it whenever
+    # AVX2 is present (`VerifiedGarbageTest/Dispatch.lean` checks it).
     "x86_64": {"vg_chacha20_xor_ssse3": [{"avx", "avx2"}]},
 }
 
