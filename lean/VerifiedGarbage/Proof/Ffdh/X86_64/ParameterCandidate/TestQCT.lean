@@ -49,6 +49,37 @@ theorem testFirst_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
   exact two_post (two_map CandidatePublic.outer (fun _ _ h => h.1.header) shapeOriginal_ct)
     (fun d s h => WP.mono (shape_outer d s h.1) fun _ ht => ⟨ht, h.2⟩)
 
+private theorem p_leave (d : CandidatePublic) (s : State)
+    (h : (PhaseChecked false .all d s ∧ QOdd d.p) ∧ isa.eval .e s = some true) :
+    WP isa (.block [VG.Impl.Rsa.X86_64.Crt.leave]) s (fun t => OuterState d t ∧ QOdd d.p) := by
+  obtain ⟨_, hg, hp, _⟩ := h.1.1.1.2
+  exact WP.mono (leavePhase_ok h.1.1.1.1.1 hg.rdi hp.link)
+    fun _ ⟨ht, hd, _, _, _, k⟩ => ⟨⟨⟨ht, k.2.2.trans h.1.1.1.1.2.1, h.1.1.1.1.2.2⟩, hd⟩, h.1.2⟩
+
+/-- p's whole trial division, once q has passed its own. -/
+theorem sieveP_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
+    RelCT isa (Two fun d s => OuterState d s ∧ QOdd d.p) (sieveP M.mm R.code K.run) fun _ _ => True := by
+  unfold sieveP
+  simp only [VG.Impl.Bignum.X86_64.seqs]
+  refine RelCT.seq (R := Two fun d s => OuterValue false d s ∧ QOdd d.p)
+    (two_post (two_map CandidatePublic.outer (fun _ _ h => h.1.header) shapeOriginal_ct)
+    (fun d s h => WP.mono (shape_outer d s h.1) fun _ ht => ⟨ht, h.2⟩)) ?_
+  refine RelCT.seq (R := Two fun d s => PhaseSet false .all d s ∧ QOdd d.p) (two_post
+    (two_map CandidatePublic.outer (fun _ _ h => h.1.1.header) (phaseSetup_ct false .all))
+    (fun d s h => WP.mono (setup_phase false .all d s h.1) fun _ ht => ⟨ht, h.2⟩)) ?_
+  refine RelCT.seq (R := Two fun d s => PhaseLoaded false .all d s ∧ QOdd d.p)
+    (two_post (two_map (fun d : CandidatePublic => d) (fun _ _ h => h.1) (loadOutput_ct false .all))
+    (fun d s h => WP.mono (load_phase false .all d s h.1) fun _ ht => ⟨ht, h.2⟩)) ?_
+  refine RelCT.seq (R := Two fun d s => PhaseChecked false .all d s ∧ QOdd d.p)
+    (two_post (two_map (fun d : CandidatePublic => d) (fun _ _ h => h.1) (primeCheck_ct false .all))
+    (fun d s h => WP.mono (prime_checked false .all d s h.1) fun _ ht => ⟨ht, h.2⟩)) ?_
+  refine two_ite (fun _ _ _ h₁ h₂ => by simp [eval, h₁.1.2, h₂.1.2]) ?_ ?_
+  · exact RelCT.seq (two_post
+      (two_map (fun d : CandidatePublic => (⟨d.p.B, d.wr⟩ : LinkPublic)) (fun _ _ h => h.1.1.1.link) leave_ct)
+      p_leave) (testFirst_ct M R K)
+  · exact two_map (fun d : CandidatePublic => (⟨d.p.B, d.wr⟩ : LinkPublic))
+      (fun _ _ h => h.1.1.1.link) innerReject_ct
+
 private theorem q_leave (d : CandidatePublic) (s : State)
     (h : PhaseChecked true .all d s ∧ isa.eval .e s = some true) :
     WP isa (.block [VG.Impl.Rsa.X86_64.Crt.leave]) s (fun t => OuterState d t ∧ QOdd d.p) := by
@@ -71,7 +102,7 @@ theorem sieveQ_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
   refine two_ite (fun _ _ _ h₁ h₂ => by simp [eval, h₁.2, h₂.2]) ?_ ?_
   · exact RelCT.seq (two_post
       (two_map (fun d : CandidatePublic => (⟨d.p.B, d.wr⟩ : LinkPublic)) (fun _ _ h => h.1.1.link) leave_ct)
-      q_leave) (testFirst_ct M R K)
+      q_leave) (sieveP_ct M R K)
   · exact two_map (fun d : CandidatePublic => (⟨d.p.B, d.wr⟩ : LinkPublic))
       (fun _ _ h => h.1.1.link) innerReject_ct
 
