@@ -3401,7 +3401,7 @@ b 221f
 220:
 .inst 0xf94047e0,0x910003ef,0xf90001e0,0xf94017e0,0xf9401be1,0xf94023e2,0xf94027e3,0xf9402be4
 .inst 0x910323e5,0xf9402fe6,0xf94043e7
-bl {vg_dsa_derive_key}
+bl {vg_dsa_derive_key_checked}
 .inst 0xf94077fe,0x2a000000,0x910303ef,0xf90001e0
 221:
 b 28f
@@ -3424,7 +3424,7 @@ cbnz x9, 224b
 .inst 0xf90001e0,0xf9401fe2,0xf9404be0,0xf9000040,0xf94063e0,0x910403ff,0xd65f03c0
 .p2align 6",
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
-        vg_dsa_derive_key = sym super::dsa::vg_dsa_derive_key,
+        vg_dsa_derive_key_checked = sym super::dsa::vg_dsa_derive_key_checked::vg_dsa_derive_key_checked,
     )
 }
 
@@ -7573,6 +7573,10 @@ cbnz x9, 2288b
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_check_parameters.rs"]
 pub(crate) mod vg_dsa_check_parameters;
+
+#[rustfmt::skip]
+#[path = "internal/vg_dsa_derive_key_checked.rs"]
+pub(crate) mod vg_dsa_derive_key_checked;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_generator_1024.rs"]
