@@ -90,8 +90,8 @@ end
 /-- The registers the decryption writes: out of place, `x15` too. -/
 abbrev kRegsT (to : Bool) : List Reg := cond to (.x15 :: kRegs) kRegs
 
-/-- `KPre` for the decryption that stores to `op s₀ to`: the text only read,
-the output written, apart from the key, `Y`, the counter block, the table
+/-- `KPre` for the decryption that stores to `op s₀ to`: the text only read
+(it may overlap the key), the output written, apart from the key, `Y`, the counter block, the table
 and (out of place) the text. -/
 structure KPreM (s₀ : State) (to : Bool) : Prop where
   rounds : rounds s₀ = 10 ∨ rounds s₀ = 12 ∨ rounds s₀ = 14
@@ -102,7 +102,6 @@ structure KPreM (s₀ : State) (to : Bool) : Prop where
   d_in : InRegions (s₀.rd ++ s₀.wr) (dp s₀) (128 * nb s₀)
   o_in : InRegions s₀.wr (op s₀ to) (128 * nb s₀)
   t_in : InRegions (s₀.rd ++ s₀.wr) (wp s₀ + BitVec.ofNat 64 512) 192
-  d_k : (dR s₀).Disjoint (kR s₀)
   o_k : (oR s₀ to).Disjoint (kR s₀)
   o_y : (oR s₀ to).Disjoint (yR s₀)
   o_c : (oR s₀ to).Disjoint (cR s₀)

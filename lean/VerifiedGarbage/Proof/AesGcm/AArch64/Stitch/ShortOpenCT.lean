@@ -330,7 +330,7 @@ theorem openWithShX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok)
             (fun s' _ _ _ _ c sY sS hr hw hsp hf hd =>
               WP.mono (hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd) fun _ g => ⟨g, trivial⟩) htb₂) fun _ q => q.1)
         fun p₁' p₂' rt₁ rt₂ hok hx₁ hx₂ => openRunWithS_relX v cl hMK gh (to := false) (hexW p₁) (hexD p₁)
-          (hexC p₁) p₁' p₂' hc.2 (regs kk₁ hx₁) (regs kk₂ hx₂) hc.1 rt₁ rt₂ hok p₁'.dat.ok p₂'.dat.ok p₁'.dat.ctx
+          (hexC p₁) p₁' p₂' hc.2 (regs kk₁ hx₁) (regs kk₂ hx₂) hc.1 rt₁ rt₂ hok p₁'.dat.ok p₂'.dat.ok
           p₁'.ddW rfl p₁'.vals.2.2.2.2 p₂'.vals.2.2.2.2 hb
           (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh p₁ c sY sS hr hw hsp hf hd)
           (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd)

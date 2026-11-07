@@ -601,12 +601,15 @@ structure OpenIn (Ctx W SP Np A D Tg : Addr) (R nl al n tl : Nat) (s₀ s : Stat
   rd₀ : s.rd = s₀.rd
   wr₀ : s.wr = s₀.wr
 
-theorem OpenIn.of_regs {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ s s' : State}
-    (o : OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ s) (r : Regs [.x9, .x10] s s') :
+theorem OpenIn.of_regs {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ s s' : State} {rs : List Reg}
+    (o : OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ s) (r : Regs rs s s')
+    (hd : ∀ q ∈ [Reg.x19, .x20, .x21, .x22, .x23, .x24, .x26, .x27, .x28], q ∉ rs := by decide) :
     OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ s' :=
-  ⟨o.lay, o.env.of_regs r, by rw [r.others _ (by decide), o.x22], o.rounds, by rw [r.others _ (by decide), o.x23],
-    by rw [r.others _ (by decide), o.x24], by rw [r.others _ (by decide), o.x26],
-    by rw [r.others _ (by decide), o.x27], by rw [r.others _ (by decide), o.x28], o.tlt,
+  ⟨o.lay, o.env.of_regs r fun q hq => hd q (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq ⊢; rcases hq with rfl | rfl | rfl <;> simp),
+    by rw [r.others _ (hd _ (by simp)), o.x22], o.rounds, by rw [r.others _ (hd _ (by simp)), o.x23],
+    by rw [r.others _ (hd _ (by simp)), o.x24], by rw [r.others _ (hd _ (by simp)), o.x26],
+    by rw [r.others _ (hd _ (by simp)), o.x27], by rw [r.others _ (hd _ (by simp)), o.x28], o.tlt,
     o.non.of_eq r.rd r.wr, o.aad.of_eq r.rd r.wr, o.dat.of_eq r.rd r.wr, by rw [r.rd, r.wr]; exact o.tagR,
     o.dnW, o.daW, o.ddW, o.dcW, o.dtW,
     by rw [r.mem, o.sA], by rw [r.mem, o.sL], by rw [r.mem, o.sD], by rw [r.mem, o.sN], by rw [r.mem, o.sT],

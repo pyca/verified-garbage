@@ -81,7 +81,6 @@ structure SInM (Ctx St W SP : Addr) (H : Block) (x : List Byte) (icb : Block) (R
   x23 : s.gpr .x23 = D
   x26 : s.gpr .x26 = BitVec.ofNat 64 n
   src : DataOk St W s D n
-  sctx : (⟨Ctx, 256⟩ : Region).Disjoint ⟨D, n⟩
   out : DataW Ctx St W s O n
   mode : cond to (s.gpr .x15 = O ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D)
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
@@ -91,7 +90,7 @@ structure SInM (Ctx St W SP : Addr) (H : Block) (x : List Byte) (icb : Block) (R
 
 theorem SIn.toM {Ctx St W SP : Addr} {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {n : Nat}
     {s : State} (h : SIn Ctx St W SP H x icb R D n s) : SInM Ctx St W SP H x icb R D D n false s :=
-  ⟨h.env, h.x22, h.rounds, h.x23, h.x26, h.data.ok, h.data.ctx, h.data, rfl, h.hH, h.cb, h.y, h.xm⟩
+  ⟨h.env, h.x22, h.rounds, h.x23, h.x26, h.data.ok, h.data, rfl, h.hH, h.cb, h.y, h.xm⟩
 
 /-- After the interleaved loop, from `s`: the first `pre n` bytes at `D`
 encrypted (or decrypted) to `O`, the counter past them, and `Y` continued
@@ -120,7 +119,7 @@ include L
 /-- The loops' precondition, from the environment and the table. -/
 theorem kpre_of {t : State} {R : Nat} {D O : Addr} {n : Nat} {to : Bool} (he : Env Ctx St W SP t)
     (h22 : t.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) (h23 : t.gpr .x23 = D)
-    (h26 : t.gpr .x26 = BitVec.ofNat 64 n) (hd : DataOk St W t D n) (hc : (⟨Ctx, 256⟩ : Region).Disjoint ⟨D, n⟩)
+    (h26 : t.gpr .x26 = BitVec.ofNat 64 n) (hd : DataOk St W t D n)
     (ho : DataW Ctx St W t O n) (hm : cond to (t.gpr .x15 = O ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D))
     (h1 : 128 ≤ n) (tok : TblOk t.mem W (blockAt t.mem (Ctx + BitVec.ofNat 64 240))) : KPreM t to := by
   have hn := hd.lt
@@ -145,9 +144,6 @@ theorem kpre_of {t : State} {R : Nat} {D O : Addr} {n : Nat} {to : Bool} (he : E
     o_in := by
       rw [hnb, hop]; exact covers_prefix ho.wr hp _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
     t_in := perm.wR (d := 512) (n := 192) (by decide)
-    d_k := by
-      simp only [Gcm.AArch64.Stitch.dR, Gcm.AArch64.Stitch.kR, hnb]
-      exact hc.symm.sub_left (Region.sub_prefix hp)
     o_k := by
       simp only [Gcm.AArch64.Stitch.oR, Gcm.AArch64.Stitch.kR, hnb, hop]
       exact ho.ctx.symm.sub_left (Region.sub_prefix hp)
@@ -236,7 +232,7 @@ theorem stitch_core {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D O : A
       | true => exact ⟨by rw [gts _ (by decide) (by decide)]; exact this.1, this.2⟩
     refine hk t (kpre_of L het (by rw [gts _ (by decide) (by decide), hs.x22]) hs.rounds
       (by rw [gts _ (by decide) (by decide), hs.x23]) (by rw [gts _ (by decide) (by decide), hs.x26])
-      (hs.src.of_eq (by rw [rdt, rd₁]) (by rw [wrt, wr₁])) hs.sctx (hs.out.of_eq (by rw [rdt, rd₁]) (by rw [wrt, wr₁]))
+      (hs.src.of_eq (by rw [rdt, rd₁]) (by rw [wrt, wr₁])) (hs.out.of_eq (by rw [rdt, rd₁]) (by rw [wrt, wr₁]))
       hm h1 (hH ▸ tok)) het ft gts (by rw [spt, sp₁]) (by rw [rdt, rd₁]) (by rw [wrt, wr₁])
 
 /-- `SMid`, from what the loops leave. -/
@@ -496,7 +492,6 @@ structure DecIn (Ctx St W SP : Addr) (H : Block) (x : List Byte) (icb : Block) (
   x23 : s.gpr .x23 = S
   x26 : s.gpr .x26 = BitVec.ofNat 64 n
   src : DataOk St W s S n
-  sctx : (⟨Ctx, 256⟩ : Region).Disjoint ⟨S, n⟩
   out : DataW Ctx St W s D n
   mode : cond to ((⟨S, n⟩ : Region).Disjoint ⟨D, n⟩) (S = D)
   slot : s.mem.readW (W + BitVec.ofNat 64 232) 64 = D
@@ -588,7 +583,6 @@ theorem tailPre_ok {H : Block} {x : List Byte} {icb : Block} {R : Nat} {S D : Ad
       x23 := by rw [gs₃ _ (by decide), i.x23]
       x26 := by rw [gs₃ _ (by decide), i.x26]
       src := i.src.of_eq rd₃ wr₃
-      sctx := i.sctx
       out := i.out.of_eq rd₃ wr₃
       mode := ⟨x15₃, hSD⟩
       hH := by rw [blockAt_frame f₃ fun r hr => (dC r hr).sub_left (Lay.ctxSub (by decide)), i.hH]
@@ -639,7 +633,7 @@ theorem decPart_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : N
     have hSD : S = D := i.mode
     subst hSD
     have hs : SInM Ctx St W SP H x icb R S S n false s :=
-      ⟨i.env, i.x22, i.rounds, i.x23, i.x26, i.src, i.sctx, i.out, rfl, i.hH, i.cb, i.y, i.xm⟩
+      ⟨i.env, i.x22, i.rounds, i.x23, i.x26, i.src, i.out, rfl, i.hH, i.cb, i.y, i.xm⟩
     refine WP.mono (stitchDM_ok L gh (i.tbOk s i.env rfl rfl (Frame.refl _ _)) hs) fun t q => ?_
     exact {
       env := q.env

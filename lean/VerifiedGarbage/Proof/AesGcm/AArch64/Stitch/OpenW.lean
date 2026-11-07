@@ -43,7 +43,7 @@ theorem openRunWithS_postXT (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch
     (h4 : t.gpr .x4 = A) (h5 : t.gpr .x5 = BitVec.ofNat 64 al) (h6 : t.gpr .x6 = S)
     (h7 : t.gpr .x7 = BitVec.ofNat 64 n) (hal : al ≤ 16) (hT₃ : bytesAt t.mem W tl = bytesAt s₀.mem Tg tl)
     (hok : Spec.Gcm.tagLenOk tl = true)
-    (hsrc : DataOk (W + BitVec.ofNat 64 16) W t S n) (hsc : (⟨Ctx, 256⟩ : Region).Disjoint ⟨S, n⟩)
+    (hsrc : DataOk (W + BitVec.ofNat 64 16) W t S n)
     (hsW : (⟨S, n⟩ : Region).Disjoint (workR W)) (hm : cond to ((⟨S, n⟩ : Region).Disjoint ⟨D, n⟩) (S = D))
     (hS : bytesAt t.mem S n = bytesAt s₀.mem S n)
     (hexW : ∀ r ∈ ex, (workR W).Disjoint r) (hexD : ∀ r ∈ ex, (⟨D, n⟩ : Region).Disjoint r)
@@ -64,7 +64,7 @@ theorem openRunWithS_postXT (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch
     o.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entry16_work W r hr⟩
   obtain ⟨hc₃, hH₃, hN₃, hA₃, -⟩ := o.vals
   refine (openRunWithS_split v.callees cl tb to).symm.wp (WP.seq (WP.mono (openRunASX_ok cl v hMK gh
-    o h4 h5 h6 h7 hal hok hsrc hsc hsW hm hexW hexD hexC (fun hi f => hI hi (f.sub fun r hr => ⟨workR W, List.mem_cons_self .., by
+    o h4 h5 h6 h7 hal hok hsrc hsW hm hexW hexD hexC (fun hi f => hI hi (f.sub fun r hr => ⟨workR W, List.mem_cons_self .., by
       simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩))
     (fun s' _ _ _ _ hc sY sS hrd hwr hsp hf hd => hgh s' hc sY sS (hrd.trans o.rd₀) (hwr.trans o.wr₀) hsp
       (F₀.trans hf) hd)
@@ -124,7 +124,7 @@ theorem openRunWithS_postX (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch6
     (htb : TbForO tb Ctx W SP D n s₀) :
     WP isa (Impl.AesGcm.AArch64.Stitch.openRunWithS v.callees tb cl) t fun u =>
       OpenPost Ctx W SP Np A D Tg R nl al n tl s₀ u ∧ I u.mem :=
-  openRunWithS_postXT v cl hMK gh (to := false) o h12 h4 h5 h6 h7 hal hT₃ hok o.dat.ok o.dat.ctx o.ddW rfl
+  openRunWithS_postXT v cl hMK gh (to := false) o h12 h4 h5 h6 h7 hal hT₃ hok o.dat.ok o.ddW rfl
     o.vals.2.2.2.2 hexW hexD hexC hI hgh htb
 
 end VG.Proof.AesGcm.AArch64.Fast

@@ -116,7 +116,6 @@ theorem KPre.toM {s₀ : State} (hp : KPre s₀) : KPreM s₀ false where
   d_in := Proof.Aes.AArch64.Aese.inRegions_wr hp.d_in
   o_in := hp.d_in
   t_in := hp.t_in
-  d_k := hp.d_k
   o_k := hp.d_k
   o_y := hp.d_y
   o_c := hp.d_c
@@ -139,7 +138,7 @@ theorem KPreM.toKPre {s₀ : State} (hp : KPreM s₀ false) : KPre s₀ where
   c_in := hp.c_in
   d_in := hp.o_in
   t_in := hp.t_in
-  d_k := hp.d_k
+  d_k := hp.o_k
   d_y := hp.o_y
   d_c := hp.o_c
   d_t := hp.o_t
@@ -155,14 +154,14 @@ variable {s₀ : State} {to : Bool} (hp : KPreM s₀ to)
 include hp
 
 theorem n16 : 128 * nb s₀ < 2 ^ 64 := by
-  have := hp.wrap_d
+  have := hp.wrap_o
   have h1 := hp.nb1
   rcases Nat.lt_or_ge (128 * nb s₀) (2 ^ 64) with h | h
   · exact h
   · exfalso
-    have := hp.d_k (kc s₀) (by
+    have := hp.o_k (kc s₀) (by
       simp only [Region.Contains]
-      have := (kc s₀ - dp s₀).isLt
+      have := (kc s₀ - op s₀ to).isLt
       omega) (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_ofNat]; omega)
     exact this
 

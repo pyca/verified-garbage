@@ -50,7 +50,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
     (o : OpenIn Ctx W SP Np A D Tg R 12 al n tl s₀ t)
     (h4 : t.gpr .x4 = A) (h5 : t.gpr .x5 = BitVec.ofNat 64 al) (h6 : t.gpr .x6 = S)
     (h7 : t.gpr .x7 = BitVec.ofNat 64 n) (hal : al ≤ 16) (hok : Spec.Gcm.tagLenOk tl = true)
-    (hsrc : DataOk (W + BitVec.ofNat 64 16) W t S n) (hsc : (⟨Ctx, 256⟩ : Region).Disjoint ⟨S, n⟩)
+    (hsrc : DataOk (W + BitVec.ofNat 64 16) W t S n)
     (hsW : (⟨S, n⟩ : Region).Disjoint (workR W)) (hm : cond to ((⟨S, n⟩ : Region).Disjoint ⟨D, n⟩) (S = D))
     (hexW : ∀ r ∈ ex, (workR W).Disjoint r) (hexD : ∀ r ∈ ex, (⟨D, n⟩ : Region).Disjoint r)
     (hexC : ∀ r ∈ ex, (⟨Ctx, 256⟩ : Region).Disjoint r)
@@ -133,7 +133,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
       exact L.w_w (.inl (by decide)) (by decide) (by decide)) (by decide) (by decide),
       slot_kept h₂.frame (slots_frontFrame' L) (by decide) (by decide), o.sD]
   refine WP.seq (WP.mono (Stitch.decPart_ok L gh ⟨hTb, he₂c, by rw [g₂c, h₂.x22, o.x22], hRb,
-    by rw [g₂c, h₂.x23], by rw [g₂c, h₂.x26], hsrc.of_eq (by rw [rd₂c, h₂.rd]) (by rw [wr₂c, h₂.wr]), hsc,
+    by rw [g₂c, h₂.x23], by rw [g₂c, h₂.x26], hsrc.of_eq (by rw [rd₂c, h₂.rd]) (by rw [wr₂c, h₂.wr]),
     hdat₂, hm, hsl₂c, hH₂c,
     by rw [blockAt_frame fcb (dcbR (L.st_w (a := 48) (n := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm), cb₂],
     by rw [blockAt_frame fcb (dcbR (L.st_w (a := 16) (n := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm), y₂],
