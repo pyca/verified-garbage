@@ -710,8 +710,8 @@ theorem seqWith_changesO_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : St
       simp only [areaRegions, ivAreas, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; exact ⟨_, by simp, fun _ h => h⟩
 
-/-- The function around the loops `loops`: `seqWith_wp`, and what it changes
-(`Changes`). -/
+/-- The function around the loops `loops` meets the mode's postcondition, and
+changes only `Changes`. -/
 theorem seqWith_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k : cs.Key} {loops : Prog isa}
     (hp : SeqPre c M s₀) (hloops : LoopsOk cs M F s₀ k loops) (hk : cs.KeyArgs s₀ (wrs0 c M s₀) k) :
     WP isa (c.seqWith loops M.ivOut) s₀ fun s' => abiPreserved s₀ s' ∧

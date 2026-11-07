@@ -160,7 +160,6 @@ end
 /-- What the byte loop works on: the `r` bytes at `R` (in `s2`, their count
 in `s3`) and those at `K` (in `t2`), apart, readable and writable. -/
 structure XPre (s₀ : State) (K R : Addr) (r : Nat) : Prop where
-  pos : 0 < r
   fK : K.toNat + r ≤ 2 ^ 64
   fR : R.toNat + r ≤ 2 ^ 64
   disj : Region.Disjoint ⟨K, r⟩ ⟨R, r⟩
@@ -338,11 +337,6 @@ theorem cryptBuf_copy_dat {bw n : Nat} (ciph : Spec.Cbc.Cipher) (a : Areas) (i :
   simp only [cryptBuf, reduceCtorEq, ite_false]
   rw [copyBlk_apply (by decide), ite_eq_right (by simp)]
 
-theorem cryptBuf_copy_chn {bw n : Nat} (ciph : Spec.Cbc.Cipher) (a : Areas) (i : Nat) :
-    cryptBuf n ciph (applyOps (copyBlk bw .buf .chn) a) .chn i = a .chn i := by
-  simp only [cryptBuf, reduceCtorEq, ite_false]
-  rw [copyBlk_apply (by decide), ite_eq_right (by simp)]
-
 /-! ## The segments -/
 
 /-- The invariant after `j` whole blocks. -/
@@ -507,7 +501,7 @@ theorem tail_seg (hM : FinalOk c M)
   have dRS : Region.Disjoint ⟨tailA c s₀, rF c s₀⟩ (scrRegion c (Fb s₀ c)) :=
     (show Region.Disjoint ⟨Dp s₀, 1 * N s₀⟩ _ from hfx.dataScr).sub_left subR
   have hX : XPre s₆ (slotA (Fb s₀ c) c.buf) (tailA c s₀) (rF c s₀) := by
-    refine ⟨hr, by rw [hK]; omega_arith, by rw [hTA]; omega_arith, (dRS.sub_right subK).symm,
+    refine ⟨by rw [hK]; omega_arith, by rw [hTA]; omega_arith, (dRS.sub_right subK).symm,
       fun i hi => ?_, fun i hi => ?_⟩
     · rw [rd₆, wr₆, VG.Offset.add_add]; exact inRd_of (hS.low _ _ (by omega_arith))
     · show InRegions s₆.wr (Dp s₀ + BitVec.ofNat 64 (4 * c.bw * nF c s₀) + BitVec.ofNat 64 i) 1

@@ -701,7 +701,6 @@ theorem tail_xor_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KCall s₀ 
   have eN := fN_eq s₀
   have eU := fU_eq s₀
   have xp : Proof.Modes.AArch64.XPre s₁ (kBk s₀) (fT s₀) (fU s₀) .x22 .x23 := {
-    pos := by omega
     small := by omega
     disj := (((hp.data_sv.sub_left (tail_sub s₀)).sub_right (blk_sv_sub s₀)).sub_right
       (Region.sub_prefix (by omega))).symm
