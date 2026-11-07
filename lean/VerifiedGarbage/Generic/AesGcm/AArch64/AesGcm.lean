@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Instances
+public import VerifiedGarbage.Proof.AesGcm.AArch64.OpenTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -172,6 +174,15 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
     verified := Proof.AesGcm.sealGather_keyed (Proof.AesGcm.AArch64.Gather.sealGather_verified (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV))
     features := v.features }]
 
+/-- `vg_aes_gcm_open_to`, calling the instance of `vg_aes_gcm_open` of the implementations `v`. -/
+def artifactsOpenTo (v : GcmImpl) : List Artifact := [
+  Spec.Gcm.openToApi.artifact AArch64.target {
+    suffix := v.suffix
+    code := Impl.AesGcm.AArch64.OpenTo.openTo (Proof.AesGcm.AArch64.openFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
+    stack := 2624
+    verified := Proof.AesGcm.openTo_keyed (Proof.AesGcm.AArch64.OpenTo.openTo_verified (Proof.AesGcm.AArch64.openFn v Proof.Gcm.AArch64.Pmull.mulV_keyV))
+    features := v.features }]
+
 /-- `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers`, calling
 `g` on the path for TLS records. -/
 def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
@@ -190,7 +201,7 @@ def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
 
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifacts (v : GcmVariant) : List Artifact :=
-  artifactsOf v.impl ++ artifactsGather v.impl ++
+  artifactsOf v.impl ++ artifactsGather v.impl ++ artifactsOpenTo v.impl ++
     (v.impl.gh.withPowers.map (withPowersArtifacts v.impl)).getD []
 
 end VG.Generic.AesGcm.AArch64.AesGcm
