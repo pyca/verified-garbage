@@ -12,6 +12,16 @@ len = [sp + 4], tag = [sp + 8], work = [sp + 12])` and `vg_chacha20_poly1305_ope
 ChaCha20 and Poly1305 functions. `work` is the working space, which the
 artifact's frame allocates on the stack (`withStackScratchWiped`).
 
+One body serves in place and out of place: it reads the data at `r10`
+(`src`) and writes the result to the destination in `r6` (`dst`, either
+`src` or apart from it, `vg_chacha20_xor` from `src` to `dst`). Each entry
+(`prologue`) saves the registers and moves the arguments where the body
+keeps them: `seal` and `open` in place, with `r6 = r10` (`inPlace`);
+`vg_chacha20_poly1305_open_to(key, nonce, aad, aad_len, src = [sp],
+len = [sp + 4], dst = [sp + 8], dst_len = [sp + 12], tag = [sp + 16],
+work = [sp + 20])` runs `open`'s body with `dst` from the stack
+(`toEntry`, `openTo`).
+
 The working space (632 bytes, called the context below):
 
 * `[0, 320)`: the working space of `vg_chacha20_block` and `vg_chacha20_xor`
@@ -27,13 +37,12 @@ The working space (632 bytes, called the context below):
 * `[628, 632)`: unused, as `work` is a whole number of 8-byte words.
 
 `r7` holds the context, `r8` the additional data, `r9` its length, `r10`
-the data and `r11` its length throughout: they are callee-saved, so every
-callee restores them. `r0`–`r3` and `r12` are temporaries, and `r5` passes
-`vg_chacha20_xor` its fifth argument, `dst` (the data, in place). The ChaCha20
-state is built from the key and the nonce at `r0` and `r1`; `tag` is loaded
-from the stack where it is needed: `seal` passes it to
-`vg_poly1305_finalize_scratch` as `out`, and `open` compares the tag computed
-with it.
+the source, `r11` its length, `r4` the tag and `r6` the destination
+throughout: they are callee-saved, so every callee restores them. `r0`–`r3`
+and `r12` are temporaries, and `r5` passes `vg_chacha20_xor` its fifth
+argument, `dst`. The ChaCha20 state is built from the key and the nonce at
+`r0` and `r1`; `seal` passes the tag to `vg_poly1305_finalize_scratch` as
+`out`, and `open` compares the tag computed with it.
 
 `vg_poly1305_finalize_scratch(state, count, out, scratch)` takes `out` and
 `scratch` on the stack: a frame pushes them (`push {r1, r12}`, `out` at
@@ -50,7 +59,7 @@ and `bne`, and the tags are compared without a branch, as
 Constant time: only the pointers and the lengths can affect timing (the
 branches are on the lengths, and every address is a pointer plus a constant
 or a count), but for `open`'s branch on whether the tag is right, which its
-contract lets it leak, to zero the data if it is not. The callees save our
+contract lets it leak, to zero the destination if it is not. The callees save our
 registers in memory and restore them, so for the taint analysis, which
 follows them through public slots of known
 regions, every callee's working space starts at the context (`[0, 320)` for
@@ -93,12 +102,25 @@ def save : List Instr := saved.map fun (r, d) => .str r .r12 d
 /-- Restore them, with the context in `r12`. -/
 def restore : List Instr := .mov .r12 (.reg .r7) :: saved.map fun (r, d) => .ldr r .r12 d
 
-/-- `work` into `r12`, from the stack. -/
-def entry : List Instr := [.ldrSp .r12 12]
+/-- `work` into `r12`, from the stack at `sp + w`. -/
+def entry (w : Nat) : List Instr := [.ldrSp .r12 w]
 
-/-- The arguments moved to where they are kept. -/
-def moves : List Instr :=
-  [.mov .r7 (.reg .r12), .mov .r8 (.reg .r2), .mov .r9 (.reg .r3), .ldrSp .r10 0, .ldrSp .r11 4]
+/-- The arguments moved to where they are kept, the tag from `sp + t`. -/
+def moves (t : Nat) : List Instr :=
+  [.mov .r7 (.reg .r12), .mov .r8 (.reg .r2), .mov .r9 (.reg .r3), .ldrSp .r10 0, .ldrSp .r11 4,
+   .ldrSp .r4 t]
+
+/-- The registers saved, with `work` at `sp + w`, and the arguments moved
+where the body keeps them, with the tag at `sp + t` and the destination set
+by `dst`. -/
+def prologue (w t : Nat) (dst : Instr) : List Instr := entry w ++ save ++ moves t ++ [dst]
+
+/-- `seal` and `open`: in place, the destination the data. -/
+def inPlace : List Instr := prologue 12 8 (.mov .r6 (.reg .r10))
+
+/-- `vg_chacha20_poly1305_open_to`: `work` at `sp + 20`, the tag at
+`sp + 16` and the destination at `sp + 8`. -/
+def toEntry : List Instr := prologue 20 16 (.ldrSp .r6 8)
 
 /-! ## The ChaCha20 state -/
 
@@ -167,12 +189,12 @@ def macPad (p n : Reg) : Prog isa :=
     (.ite .eq (.block [])
       (.seq (.block [.dp .sub .r1 n (.reg .r3), .dp .add .r1 p (.reg .r1)]) padTail))))
 
-/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted in
-place (`vg_chacha20_xor`'s `dst`, in `r5`, is `src`). -/
+/-- The ChaCha20 counter set to 1, and the source encrypted or decrypted to
+the destination (`vg_chacha20_xor` from `r10` to `r6`, through `r5`). -/
 def crypt : Prog isa :=
   .seq (.block [.mov .r12 (.imm 1), .str .r12 .r7 (stOff + 48),
     .dp .add .r0 .r7 (.imm (BitVec.ofNat 32 stOff)), .mov .r1 (.reg .r10), .mov .r2 (.reg .r11),
-    .mov .r3 (.reg .r7), .mov .r5 (.reg .r10)])
+    .mov .r3 (.reg .r7), .mov .r5 (.reg .r6)])
   (.seq (.call "vg_chacha20_xor" Impl.ChaCha20.Arm.Xor.xor)
     (.block [.mov .r7 (.reg .r1)]))
 
@@ -204,31 +226,34 @@ def finalize : Prog isa :=
 
 /-! ## Seal -/
 
-/-- Up to the tag: the registers saved, the one-time key, the data
+/-- Up to the tag, after the prologue: the one-time key, the data
 encrypted, and the MAC of the additional data, the ciphertext and the
 lengths, up to the arguments of `vg_poly1305_finalize_scratch`. -/
 def sealMain : Prog isa :=
-  .seq (.block (entry ++ save ++ moves ++ initState))
+  .seq (.block initState)
   (.seq keyGen
   (.seq crypt
   (.seq polyInit
   (.seq (macPad .r8 .r9)
   (.seq (macPad .r10 .r11)
   (.seq lengths
-    (.block (finalizeArgs (.ldrSp .r1 8)))))))))
+    (.block (finalizeArgs (.mov .r1 (.reg .r4))))))))))
 
 /-- The registers restored. -/
 def sealEnd : List Instr := restore
 
-def «seal» : Prog isa := .seq sealMain (.seq finalize (.block sealEnd))
+/-- `seal` after the prologue. -/
+def sealBody : Prog isa := .seq sealMain (.seq finalize (.block sealEnd))
+
+def «seal» : Prog isa := .seq (.block inPlace) sealBody
 
 /-! ## Open -/
 
-/-- Up to the tag: the registers saved, the one-time key, and the MAC of the
+/-- Up to the tag, after the prologue: the one-time key, and the MAC of the
 additional data, the ciphertext and the lengths, up to the arguments of
 `vg_poly1305_finalize_scratch`. -/
 def openMain : Prog isa :=
-  .seq (.block (entry ++ save ++ moves ++ initState))
+  .seq (.block initState)
   (.seq keyGen
   (.seq polyInit
   (.seq (macPad .r8 .r9)
@@ -237,32 +262,38 @@ def openMain : Prog isa :=
     (.block (finalizeArgs (.dp .add .r1 .r7 (.imm (BitVec.ofNat 32 tagOff))))))))))
 
 /-- `r0 = 1` if the tag computed (at `r7 + 448`) is the one received (at
-`tag`, loaded into `r3`), else 0, without a branch: with `x` the OR of the
+`tag`, in `r4`), else 0, without a branch: with `x` the OR of the
 XORs of their words, `(x | -x) >> 31` is 0 if `x = 0` and 1 otherwise. -/
 def compare : List Instr :=
-  ([.ldrSp .r3 8, .ldr .r0 .r7 tagOff, .ldr .r1 .r3 0, .dp .eor .r0 .r0 (.reg .r1)] : List Instr) ++
+  ([.ldr .r0 .r7 tagOff, .ldr .r1 .r4 0, .dp .eor .r0 .r0 (.reg .r1)] : List Instr) ++
   (List.range 3).flatMap (fun i =>
-    [.ldr .r1 .r7 (tagOff + 4 * (i + 1)), .ldr .r2 .r3 (4 * (i + 1)),
+    [.ldr .r1 .r7 (tagOff + 4 * (i + 1)), .ldr .r2 .r4 (4 * (i + 1)),
      .dp .eor .r1 .r1 (.reg .r2), .dp .orr .r0 .r0 (.reg .r1)]) ++
   ([.mov .r1 (.imm 0), .dp .sub .r1 .r1 (.reg .r0), .dp .orr .r0 .r0 (.reg .r1),
    .mov .r0 (.shifted .r0 .lsr 31), .mov .r1 (.imm 1), .dp .sub .r0 .r1 (.reg .r0)] : List Instr)
 
-/-- The `r11` bytes at `r10` zeroed, a byte at a time, with `r0` zero:
-through `r2` (the address) and `r3` (the count). -/
+/-- The `r11` bytes at `r6` (the destination) zeroed, a byte at a time, with
+`r0` zero: through `r2` (the address) and `r3` (the count). -/
 def zeroData : Prog isa :=
-  .seq (.block [.mov .r2 (.reg .r10), .mov .r3 (.reg .r11), .cmp .r3 (.imm 0)])
+  .seq (.block [.mov .r2 (.reg .r6), .mov .r3 (.reg .r11), .cmp .r3 (.imm 0)])
     (.ite .eq (.block [])
       (.loop (.block [.strb .r0 .r2 0, .dp .add .r2 .r2 (.imm 1), .subs .r3 .r3 (.imm 1)]) .ne))
 
-/-- If the tag is wrong (`r0` is 0, which sets `Z`), the data zeroed; then
-the registers restored. -/
+/-- If the tag is wrong (`r0` is 0, which sets `Z`), the destination zeroed;
+then the registers restored. -/
 def openTail : Prog isa := .seq (.ite .eq zeroData (.block [])) (.block restore)
 
-/-- The data decrypted, the tags compared, the data zeroed if they differ,
-branching on the result, which `open`'s contract lets it leak, and the
-registers restored. -/
+/-- The source decrypted to the destination, the tags compared, the
+destination zeroed if they differ, branching on the result, which `open`'s
+contract lets it leak, and the registers restored. -/
 def openEnd : Prog isa := .seq (.seq crypt (.block (compare ++ [.cmp .r0 (.imm 0)]))) openTail
 
-def «open» : Prog isa := .seq openMain (.seq finalize openEnd)
+/-- `open` after the prologue. -/
+def openBody : Prog isa := .seq openMain (.seq finalize openEnd)
+
+def «open» : Prog isa := .seq (.block inPlace) openBody
+
+/-- `vg_chacha20_poly1305_open_to`: `open`'s body out of place. -/
+def openTo : Prog isa := .seq (.block toEntry) openBody
 
 end VG.Impl.ChaCha20Poly1305.Arm

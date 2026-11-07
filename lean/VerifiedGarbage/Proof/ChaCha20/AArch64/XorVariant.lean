@@ -52,10 +52,12 @@ structure XorImpl where
   rest, rather than calling it for all of the data. -/
   stitched : Bool
   /-- ChaCha20-Poly1305's code up to the tag is constant time (the rest,
-  `sealTail` and `openTail`, does not depend on the backend). -/
+  `sealTail` and `openTail`, does not depend on the backend); `open`'s from
+  its destination (`x8`) and the destination's distance from the data
+  (`x28`) too. -/
   sealTaint : ∃ h, (taint.check (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7])
     (Impl.ChaCha20Poly1305.AArch64.sealMainCode callee stitched) h).isSome = true
-  openTaint : ∃ h, (taint.check (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7])
+  openTaint : ∃ h, (taint.check (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x28])
     (Impl.ChaCha20Poly1305.AArch64.openMainCode callee stitched) h).isSome = true
 
 /-- A call's arguments, but the destination's register (`x4`): the state at

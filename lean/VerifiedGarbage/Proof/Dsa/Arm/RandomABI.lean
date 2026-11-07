@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
 public import VerifiedGarbage.Proof.Dsa.DomainShape
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 
 /-!
 # The randomized signer's resources on 32-bit ARM, from the shared contract
@@ -80,8 +81,8 @@ structure RandomABI (s : State) : Prop where
   keyLength : (stackArg s 0).toNat = 3 * (stackArg s 1).toNat + 2 * (stackArg s 2).toNat
   scratchLength : Spec.Dsa.randomSignScratchWords (stackArg s 1).toNat ≤ (stackArg s 8).toNat
 
-theorem randomABI_of {s : State} (h : (Spec.Dsa.randomSignContract Arm.abi 144).pre s) : RandomABI s := by
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+theorem randomABI_of {s : State} (h : (randomSignCheckedContract Arm.abi 144).pre s) : RandomABI s := by
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.stackArgAddr, BitVec.add_zero] at h
   obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22,
     a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36⟩ := h

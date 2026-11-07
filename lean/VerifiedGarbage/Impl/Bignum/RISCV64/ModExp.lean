@@ -59,17 +59,39 @@ def table : Prog isa :=
         (.block [.addi .s7 .s7 1, .addi .t2 .s7 (-16)]))) (.nonzero .t2))
       (copy 6 8))))))
 
-/-- `s4 :=` all ones if `s8 = a1`, else 0 (both below 16). -/
-def isDigit : List Instr :=
-  [.logic .xor .t2 .s8 .a1, .addi .t2 .t2 (-1), .shift .srl .d .t2 .t2 63, .li .t3 0, .sub .s4 .t3 .t2]
+/-- Public pointers to the first table word and destination, and the word count. -/
+def wordSelectInit : List Instr :=
+  [.shift .sll .d .t3 .s5 3, .add .t3 .a7 .t3, .shift .sll .d .s4 .s5 2,
+    .add .s4 .s4 .s5, .add .s4 .a7 .s4, .addi .t5 .t0 0]
 
-/-- `T_d` into array 5, `d` in `a1`: for each pair of entries `j`, `j + 1`,
-array 3 `:= j = d ? T_j : [5]`, then array 5 `:= j + 1 = d ? T_(j+1) : [3]`. -/
-def select : Prog isa :=
-  .seq (.block [.li .s8 0])
-    (.loop (.seq (.block (isDigit ++ entry .a5 .s8 ++ base .a6 5 ++ base .a2 3)) (.seq selectAcc64
-      (.seq (.block ([.addi .s8 .s8 1] ++ isDigit ++ entry .a5 .s8 ++ base .a6 3 ++ base .a2 5)) (.seq selectAcc64
-        (.block [.addi .s8 .s8 1, .addi .t2 .s8 (-16)]))))) (.nonzero .t2))
+/-- Start one column's masked scan. The digit affects only a register shift. -/
+def wordSelectHead : List Instr :=
+  [.addi .s1 .t3 0, .li .s0 0, .li .s3 0, .li .t6 1, .shiftReg .sll .d .t6 .t6 .a1]
+
+/-- Accumulate one table word under the low bit of the one-hot digit. -/
+def wordSelectCell : List Instr :=
+  [.load .d .s2 .s1 0, .logicImm .and .t2 .t6 1, .sub .t2 .s3 .t2,
+    .logic .and .s2 .s2 .t2, .logic .or .s0 .s0 .s2]
+
+/-- Advance to the same column of the next table entry. -/
+def wordSelectAdvance : List Instr :=
+  [.shift .srl .d .t6 .t6 1, .add .s1 .s1 .s5]
+
+/-- A fixed number of cells, each followed by the public pointer advance. -/
+def wordSelectPrefix (n : Nat) : List Instr :=
+  (List.range n).flatMap fun _ => wordSelectCell ++ wordSelectAdvance
+
+/-- Store one selected word, then advance both column pointers. -/
+def wordSelectStore : List Instr :=
+  [.store .d .s0 .s4 0, .addi .s4 .s4 8, .addi .t3 .t3 8]
+
+/-- Scan every table entry for each word; only the selected word is stored. -/
+def wordSelect : Prog isa :=
+  .seq (.block wordSelectInit) (countLoop .t5
+    (wordSelectHead ++ wordSelectPrefix 15 ++ wordSelectCell ++ wordSelectStore))
+
+/-- Select the secret-indexed table entry with a fixed word-oriented scan. -/
+def select : Prog isa := wordSelect
 
 /-- One window, its digit at the top of `s7`: four squares, `a := a T_d`,
 then `s7 := s7 << 4`. -/

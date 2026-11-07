@@ -14,10 +14,13 @@
 use core::mem::MaybeUninit;
 
 #[cfg(any(
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
     target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
-use crate::arch::chacha20poly1305::vg_chacha20_poly1305_open_to;
+use crate::arch::dispatch::chacha20poly1305::vg_chacha20_poly1305_open_to_auto;
 use crate::arch::dispatch::chacha20poly1305::{
     vg_chacha20_poly1305_open_auto, vg_chacha20_poly1305_seal_auto,
     vg_chacha20_poly1305_seal_gather_auto,
@@ -224,6 +227,9 @@ impl ChaCha20Poly1305 {
     /// `out`. `ciphertext` is read where it is, not copied to `out` first. A
     /// length error leaves `out` as it was.
     #[cfg(any(
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "x86",
         target_arch = "riscv64",
         all(target_arch = "powerpc64", target_endian = "little")
     ))]
@@ -246,7 +252,7 @@ impl ChaCha20Poly1305 {
         // none of the shared borrows `self.key`, `nonce`, `aad`,
         // `ciphertext` and `tag`.
         let ok = unsafe {
-            vg_chacha20_poly1305_open_to(
+            vg_chacha20_poly1305_open_to_auto(
                 &self.key,
                 nonce,
                 aad.as_ptr(),
@@ -417,6 +423,9 @@ mod tests {
     /// ciphertext as it was; zeroes the output on a wrong tag; and leaves it
     /// as it was on a length error.
     #[cfg(any(
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "x86",
         target_arch = "riscv64",
         all(target_arch = "powerpc64", target_endian = "little")
     ))]
@@ -448,6 +457,29 @@ mod tests {
             );
             assert!(out[..len].iter().all(|&b| b == 0));
             assert!(out[len..].iter().all(|&b| b == 0xAA));
+        }
+        // Lengths the long paths take (whole chunks of 512 bytes, the rests
+        // after them, and the paths through the keystream of eight blocks).
+        let msg: [u8; 4097] = core::array::from_fn(|i| (i * 13) as u8);
+        for len in [
+            449, 511, 512, 513, 576, 577, 704, 705, 768, 769, 896, 1024, 1350, 2049, 4097,
+        ] {
+            let mut ct = [0u8; 4097 + 7];
+            let ct = &mut ct[7..7 + len];
+            ct.copy_from_slice(&msg[..len]);
+            let tag = aead.encrypt_in_place(&nonce, &aad, ct).unwrap();
+            let ct = &*ct;
+            let mut out = [0xAAu8; 4097 + 3];
+            let dst = &mut out[3..3 + len];
+            assert_eq!(aead.decrypt(&nonce, &aad, ct, &tag, dst), Ok(()));
+            assert_eq!(dst, &msg[..len]);
+            let mut bad = tag;
+            bad[0] ^= 1;
+            assert_eq!(
+                aead.decrypt(&nonce, &aad, ct, &bad, dst),
+                Err(Error::TagMismatch)
+            );
+            assert!(dst.iter().all(|&b| b == 0));
         }
         let ct = [1u8; 4];
         let mut out = [0xAAu8; 5];

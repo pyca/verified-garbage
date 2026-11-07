@@ -57,9 +57,10 @@ words of other stack arguments, is a scratch buffer of `n` elements `e`, with
 allocates the buffer in a frame of `bytes` more bytes of stack and zeroes
 its first `words` words after the code (`withStackScratchWiped`), if its
 precondition reads memory only within the function's buffers (`hpre`), and
-its postcondition both the memory on entry and the memory on return
-(`hpost`, `hpostOut`), and so must its leak, if any (`hleak`). -/
-theorem Verified.stackScratchWiped {c : Prog isa}
+its postcondition both the memory on entry and, when the precondition holds,
+the memory on return (`hpost`, `hpostOut`), and so must its leak, if any
+(`hleak`). -/
+theorem Verified.stackScratchWipedPre {c : Prog isa}
     {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
     (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
@@ -73,6 +74,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
     (hpostOut : ∀ vs mm m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) pre vs mm →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs mm m₁ r →
         Curry.apply (sig.words abi.ptrBits) post vs mm m₂ r)
@@ -165,7 +167,11 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       sig.params post _ _ (hlen s)) _) s₃.mem) _) hq'
     have h₄ := hpost _ _ _ _ _ (hlen s)
       (narrow_agree hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hs) h₃
-    refine hpostOut _ _ _ _ _ (hlen s) (fun b hb' a ha' => ?_) h₄
+    have hpr : Curry.apply (sig.words abi.ptrBits) pre (armArgs sig s) s.mem := by
+      have hs' := hs
+      rw [pre_arm hl] at hs'
+      exact hs'.2.2.2.2.2.2
+    refine hpostOut _ _ _ _ _ (hlen s) hpr (fun b hb' a ha' => ?_) h₄
     exact (hfr a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hdisj s hs b hb' a ha').symm
@@ -175,6 +181,34 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       hct _ _ _ _ _ _ (narrow_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpreL h₁)
         (narrow_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpreL h₂)
         (narrow_pub hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ h₁ h₂ hp hleak) f₁ f₂]
+
+/-- `Verified.stackScratchWipedPre` for a postcondition that reads the
+memory on return only within the function's buffers whatever the
+precondition (`hpostOut`). -/
+theorem Verified.stackScratchWiped {c : Prog isa}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
+    (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
+    (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n)
+    (hw : 4 * words ≤ n * e.size)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hpost : ∀ vs m₁ m₂ m' r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
+    (hpostOut : ∀ vs mm m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs mm m₁ r →
+        Curry.apply (sig.words abi.ptrBits) post vs mm m₂ r)
+    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s)
+    (hl : Sig.noLists sig.params = true := by decide)
+    (hleak : Sig.LeakLocalL abi.ptrBits sig leak := by trivial) :
+    Verified target (withStackScratchWiped bytes m words c)
+      (sig.contract abi pre post wa (stack + bytes) leak) :=
+  Verified.stackScratchWipedPre h hcl hN hloc hb hw hpre hpost
+    (fun vs mm m₁ m₂ r hl' _ => hpostOut vs mm m₁ m₂ r hl') hsat hl hleak
 
 end
 

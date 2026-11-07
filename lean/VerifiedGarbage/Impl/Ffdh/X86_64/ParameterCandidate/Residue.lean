@@ -25,10 +25,17 @@ def fold : Prog isa := .seq
     .mov32 .r14 (.imm 0)])
   (.loop (.seq (.block foldWord) (.block [.alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r12)])) .ne)
 
-/-- RSI := RSI mod 255 (255 divides 2^64 − 1), bit by bit as RSA's `modWord`. -/
-def reduce255 : Prog isa := .seq
-  (.block [.mov .rdx (.reg .rsi), .mov32 .rsi (.imm 0), .mov32 .rbx (.imm 255), .mov32 .r13 (.imm 64)])
-  (.loop (.block (modBit ++ [.alu .sub .r13 (.imm 1)])) .ne)
+/-- RSI := RSI mod 2^k + RSI / 2^k, which keeps RSI modulo 255 for k a
+multiple of 8 (2^8 ≡ 1 mod 255). -/
+def foldStep (k : Nat) : List Instr :=
+  [.mov .rdx (.reg .rsi), .shift .shl .rdx (64 - k), .shift .shr .rdx (64 - k), .shift .shr .rsi k,
+    .alu .add .rsi (.reg .rdx)]
+
+/-- RSI := RSI mod 255 (255 divides 2^64 − 1): folds of 32, 16, 8 and 8
+bits leave a value below 264, then one conditional subtraction. -/
+def reduce255 : List Instr :=
+  foldStep 32 ++ foldStep 16 ++ foldStep 8 ++ foldStep 8 ++
+    [.mov .rdx (.reg .rsi), .alu .sub .rdx (.imm 255), .cmov .ae .rsi (.reg .rdx)]
 
 /-- One value of `member`: RAX := RCX (1) if RSI is `v`. -/
 def memberStep (v : Nat) : List Instr :=
@@ -61,13 +68,13 @@ def allowed5 : List Nat :=
 
 /-- Generator 2's congruence, with the small primes that q's and p's trial
 division would reject anyway: they are rejected here, before the sieve.
-One pass over the candidate's words (`fold`), then one word. ZF means
+One pass over the candidate's words (`fold`), then one word (`reduce255`). ZF means
 acceptance. -/
-def generator2 : Prog isa := .seq fold (.seq reduce255 (.block (memberFlag allowed2 ++ lowCheck (2 ^ 3 - 1))))
+def generator2 : Prog isa := .seq fold (.block (reduce255 ++ memberFlag allowed2 ++ lowCheck (2 ^ 3 - 1)))
 
 /-- Generator 5's congruence, with the small primes that q's and p's trial
 division would reject anyway. ZF means acceptance. -/
-def generator5 : Prog isa := .seq fold (.seq reduce255 (.block (memberFlag allowed5 ++ lowCheck (2 ^ 2 - 1))))
+def generator5 : Prog isa := .seq fold (.block (reduce255 ++ memberFlag allowed5 ++ lowCheck (2 ^ 2 - 1)))
 
 /-- Select the congruence check for the public generator in rdx (2 or 5). -/
 def generatorCheck : Prog isa := .seq (.block [.alu .cmp .rdx (.imm 2)])

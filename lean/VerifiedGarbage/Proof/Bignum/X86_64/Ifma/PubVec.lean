@@ -38,7 +38,8 @@ variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 /-- The public operation's layouts. -/
 def PubOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop := l = pay2048 ∨ l = pay3072 ∨ l = pay4096
 
-theorem PubOk.amm (hl : PubOk l) : AmmOk l := .inr hl
+theorem PubOk.amm (hl : PubOk l) : AmmOk l :=
+  .inr (hl.elim .inl fun h => .inr (h.elim .inl fun h => .inr (.inl h)))
 
 theorem PubOk.nl (hl : PubOk l) : l.nl = 1 := by rcases hl with rfl | rfl | rfl <;> rfl
 
@@ -172,11 +173,14 @@ theorem Mod.of_outside (hl : PubOk l) {m m' : Mem} {B : Addr} {M k n : Nat} (h :
   · rw [← h.val]; exact lval_congr hlimb
   · rw [f.word (by simp only [Lay.oK0]; omega_arith) (by simp only [Lay.oK0]; omega_arith)]; exact h.k0 t ht
 
-theorem OutN.one (hl : PubOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : OutN l B o n m m') :
+theorem OutN.one' (hn : l.nl = 1) {B : Addr} {o n : Nat} {m m' : Mem} (h : OutN l B o n m m') :
     Outside B o n m m' := fun x hx => h x fun p hp => by
-  rw [hl.nl] at hp
+  rw [hn] at hp
   obtain rfl : p = 0 := by omega_arith
   simpa only [Nat.mul_zero, Nat.zero_add] using hx
+
+theorem OutN.one (hl : PubOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : OutN l B o n m m') :
+    Outside B o n m m' := OutN.one' hl.nl h
 
 /-- `ammMul` with `r8`, `r9` at offsets `a`, `b` of `B = rbx`, into `A`. -/
 theorem core_ok (hl : PubOk l) {s : State} {B : Addr} {M k a b : Nat} (hB : s.gpr .rbx = B)
@@ -237,7 +241,7 @@ theorem inc_ok {s : State} {c : Nat} (hc : c < 20) (h13 : s.gpr .r13 = BitVec.of
     fun s' ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, k, c, d⟩
 
 /-- `ld52 j o`: array `j`'s `W` words, at `rdi + arr j`, into the limbs at `B + o`. -/
-theorem ld52_ok (hl : PubOk l) {s : State} {B H : Addr} {j o : Nat} (hB : s.gpr .rbx = B) (hdi : s.gpr .rdi = H)
+theorem ld52_ok (hl : AmmOk l) {s : State} {B H : Addr} {j o : Nat} (hB : s.gpr .rbx = B) (hdi : s.gpr .rdi = H)
     (h12 : s.gpr .r12 = mask52) (hj : arr l j < 2 ^ 31)
     (hrd : ∀ i < l.W, InRegions (s.rd ++ s.wr) (off H (arr l j) + BitVec.ofNat 64 (8 * i)) 8)
     (hwr : ∀ q < l.L, InRegions s.wr (off B (o + l.off q)) 8) (ho : o + l.NB < 2 ^ 31)
@@ -254,7 +258,7 @@ theorem ld52_ok (hl : PubOk l) {s : State} {B H : Addr} {j o : Nat} (hB : s.gpr 
       simp only [List.cons_append, List.nil_append]
       xrun [hdi, hB, se_ofNat hj, se_ofNat (show o < 2 ^ 31 by omega_arith)]
       all_goals rfl) rfl) fun t ⟨⟨hsi, h11, hm, hx⟩, kt⟩ => ?_
-  refine WP.mono (to52_ok hl.amm hsi h11 ((kt.gpr (by decide)).trans h12)
+  refine WP.mono (to52_ok hl hsi h11 ((kt.gpr (by decide)).trans h12)
     (fun i hi => by rw [kt.2.1, kt.2.2]; exact hrd i hi)
     (fun q hq => by rw [kt.2.2, AmmSym.off_add]; exact hwr q hq)
     (fun m m' f => hsep m m' (AmmSym.Outside.rebase f (by omega_arith) (by omega_arith))))
@@ -360,7 +364,7 @@ theorem sel_ok (hl : PubOk l) {t₀ t : State} {B H X : Addr} {M k R0 c : Nat} (
         rw [Nat.zero_add]; exact e.sepX _ _ (h.frame.mono (Nat.le_refl _) (by omega_arith)) i hi
     rw [WP.block_append_iff]
     have hXv' : wv t₂.mem (off H (arr l aX)) 0 l.W = wv t₀.mem X 0 l.W := by rw [← e.hX]; exact hXv
-    refine WP.mono (ld52_ok hl (s := t₂) (B := B) (H := H) (j := aX) (o := oB l)
+    refine WP.mono (ld52_ok hl.amm (s := t₂) (B := B) (H := H) (j := aX) (o := oB l)
       (by rw [g₂, g₁]; exact h.rbx) (by rw [g₂, g₁]; exact h.rdi) (by rw [g₂, g₁]; exact h.r12) e.hx
       (fun i hi => by rw [rd₂, wr₂, rd₁, wr₁, h.keep.2.1, h.keep.2.2, ← e.hX]; exact e.hrd i hi)
       (fun q hq => by rw [wr₂, wr₁]; exact hs.st (show oB l + l.off q + 8 ≤ _ by have := hF q hq; omega_arith))

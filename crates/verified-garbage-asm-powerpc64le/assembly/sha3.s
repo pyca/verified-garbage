@@ -622,8 +622,6 @@ vg_shake128_squeeze:
 	addi %r1, %r1, 672
 	blr
 
-// vg_shake256_update: the function `vg_sha3_256_update`
-
 vg_shake256_finalize:
 	stdu %r1, -672(%r1)
 	addi %r5, %r1, 32

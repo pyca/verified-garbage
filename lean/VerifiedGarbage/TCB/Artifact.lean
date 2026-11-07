@@ -168,6 +168,9 @@ structure Api where
   /-- The function's contract on every target, `fun A stack => fooContract A
   stack`. The emitter refuses an artifact without one (`Rust.checkApi`). -/
   contracts : Option Contracts := none
+  /-- Whether `contracts` make the mode public (`Abi.withMode`): only those
+  of `Spec/Dit.lean`, whose functions set it. -/
+  pubMode : Bool := false
   /-- The documentation, up to its `# Safety` section. -/
   summary : String
   /-- The items of the `# Safety` section, but for those `Sig.validDoc` and

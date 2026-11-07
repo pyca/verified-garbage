@@ -204,12 +204,7 @@ verified_fn_types! {
 fn with_tables(hash: Hash, mgf1_hash: Hash) -> (SignFn, VerifyFn, MdTable, Table) {
     let f = detected();
     let (sign, verify) = arch::functions(f);
-    (
-        sign,
-        verify,
-        table::md_table(hash, f),
-        table::table(mgf1_hash, f),
-    )
+    (sign, verify, table::md_table(hash), table::table(mgf1_hash))
 }
 
 /// The words of working space the functions need for an `n_len`-byte
@@ -271,10 +266,10 @@ fn sign_with(
     // `Hash`, and `digest_len` is the digest length of `hash`'s, its word 6
     // (`hashes::tables::tests::table_words` checks it, and `sign_pss`
     // the length); and the
-    // CPU has the features of `f` and of the tables' functions, which
-    // `functions`, `table::md_table` and `table::table` chose for the
-    // features detected (which fails to compile if they need
-    // others).
+    // CPU has the features of `f`, which `functions` chose for the
+    // features detected (which fails to compile if it needs others), and
+    // of the tables' functions, which their dispatchers chose
+    // (`table::md_table`, `table::table`).
     let r = unsafe {
         f(
             out.as_mut_ptr(),
@@ -349,9 +344,10 @@ impl PublicKey {
         // the words of a table of the crate's of `MdHash` and `mgf1` of one of
         // `Hash`, and `digest_len` is the digest length of `hash`'s, its word 6
         // (`hashes::tables::tests::table_words` checks it); and the CPU has the
-        // features of `f` and of the tables' functions, which `functions`,
-        // `table::md_table` and `table::table` chose for the features detected
-        // (which fails to compile if they need others).
+        // features of `f`, which `functions` chose for the features detected
+        // (which fails to compile if it needs others), and of the tables'
+        // functions, which their dispatchers chose (`table::md_table`,
+        // `table::table`).
         let r = unsafe {
             f(
                 self.n.as_ptr(),

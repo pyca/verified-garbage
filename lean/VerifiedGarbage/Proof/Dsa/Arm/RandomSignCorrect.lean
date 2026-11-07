@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomFinish
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomCall
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 
 import VerifiedGarbage.Proof.Dsa.Arm.RandomBody
 import VerifiedGarbage.Proof.Framework.Omega
@@ -27,15 +28,15 @@ theorem code_ok (S : Signer) (name : String) {s₀ : State} (A : RandomABI s₀)
 
 /-- `vg_dsa_sign_random` meets its contract. -/
 theorem randomSign_correct (S : Signer) (name : String) (s : State)
-    (hpre : (Spec.Dsa.randomSignContract Arm.abi 144).pre s) (V : RValid S s) :
+    (hpre : (randomSignCheckedContract Arm.abi 144).pre s) (V : RValid S s) :
     ∃ t s', Exec isa (code name S.code) s t s' ∧ abiPreserved s s' ∧
-      (Spec.Dsa.randomSignContract Arm.abi 144).post s s' := by
+      (randomSignCheckedContract Arm.abi 144).post s s' := by
   have A := randomABI_of hpre
   obtain ⟨t, s', he, u, hF, rfl⟩ := code_ok S name A V
   refine ⟨t, _, he, ⟨fun r hr => hF.regs r hr, by
     show u.sp + BitVec.ofNat 32 frameBytes = s.sp
     rw [hF.sp, BitVec.sub_add_cancel]⟩, ?_⟩
-  sig_post [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_post [randomSignCheckedContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.stackArgAddr, BitVec.add_zero]
   have hle := rResult_status_le A
   have hul : (rResult s).used < 2 ^ 32 := by

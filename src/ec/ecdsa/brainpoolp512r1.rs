@@ -59,7 +59,7 @@ impl<H: HmacHash> sealed::Functions<BrainpoolP512r1> for H {
         };
         // SAFETY: `sign` needs no CPU feature that the multiplications
         // selected for this CPU do not.
-        unsafe { sign_with::<H, 64, 128>(sign, f, d, digest) }
+        unsafe { sign_with::<H, 64, 128>(sign, d, digest) }
     }
 
     /// The verified function takes the hash itself, of any length, and

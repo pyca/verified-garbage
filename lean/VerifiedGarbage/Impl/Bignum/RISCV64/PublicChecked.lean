@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.RISCV64.Precompute
+public import VerifiedGarbage.Impl.Bignum.RISCV64.MontSqr
 
 /-!
 # The RSA public-key operation on RISC-V
@@ -23,7 +24,9 @@ Montgomery multiplications are `MontMul.lean`'s `tail`, inline, in its
 working space (`n` in array 0, `R² mod n` in array 1, its accumulator and
 temporary in arrays 2 and 3, the input and then the result in array 4, `a`
 in array 5, `x R mod n` in array 6, 1 in array 7). The result is written
-with a mask of whether `e` and the input are valid.
+with a mask of whether `e` and the input are valid. The running power uses
+`MontSqr.sqrTail` for its squares, with the now-dead R-squared array 1 as
+the temporary.
 
 `pre` may hold anything, so before the multiplications `n` is made odd and
 at least 2 and `R² mod n` below it (`sanitize`), which changes nothing in the
@@ -153,17 +156,23 @@ all ones. -/
 def initA : Prog isa :=
   .seq (.block ([.li .s4 (-1)] ++ base .a5 6 ++ base .a6 6 ++ base .a2 5)) selectAcc64
 
+/-- Square the running power with the dedicated Montgomery squaring kernel.
+Array 1's R-squared value is dead after conversion of the input into array 6,
+so it supplies the temporary without overwriting the input or either power. -/
+def square : Prog isa :=
+  .seq (.block (base .a2 5 ++ base .a3 5 ++ base .a5 2 ++ base .a6 1)) sqrTail
+
 /-- A bit of `e` after the first but the last: `a := a²`, then `a := a x` if
 the top bit of `s7` is set, which is shifted left. -/
 def bitStep : Prog isa :=
-  .seq (montOp 5 5 5) (.seq (.block [.shift .srl .d .t3 .s7 63, .shift .sll .d .s7 .s7 1])
+  .seq square (.seq (.block [.shift .srl .d .t3 .s7 63, .shift .sll .d .s7 .s7 1])
     (.ite (.nonzero .t3) (montOp 5 5 6) (.block [])))
 
 /-- The last bit of `e`: `a := a²`, then out of Montgomery form into array 4
 by a multiplication by the input (array 4) if the top bit of `s7` is set,
 else by 1. -/
 def lastBit : Prog isa :=
-  .seq (montOp 5 5 5) (.seq (.block [.shift .srl .d .t3 .s7 63])
+  .seq square (.seq (.block [.shift .srl .d .t3 .s7 63])
     (.ite (.nonzero .t3) (montOp 4 4 5) (montOp 4 7 5)))
 
 /-- The bits after the first, `s8` of them at the top of `s7`. -/

@@ -42,6 +42,9 @@ structure Prims where
   dotInv7 : Prog isa
   /-- What the names of the polynomial arithmetic's functions end with (`Arith.Backend`). -/
   sfx : String := ""
+  /-- What the names of the polynomial arithmetic\'s functions but the samplers end with
+  (`Arith.Backend.asfx`). -/
+  asfx : String := sfx
 
 /-- `vg_mldsa_dot_inverse{c}`, for `c` of 4, 5 and 7. -/
 abbrev Prims.dotInv (P : Prims) (c : Nat) : Prog isa :=

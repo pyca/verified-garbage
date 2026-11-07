@@ -130,6 +130,7 @@ def abi : Abi isa where
   wr s := s.wr
   ret s := s.gpr .x0
   sym := some fun s name => s.syms name
+  mode s := if s.dit then 1 else 0
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
 every module that names it, which then builds a target of its own, so the emitter
