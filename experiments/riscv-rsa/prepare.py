@@ -8,7 +8,7 @@ ASM=ROOT/'crates/verified-garbage-asm-riscv64/assembly'
 # Each match is an entire inlined arithmetic kernel, including its local loops.
 END=r'\txor s3, s3, s2\n\tand s3, s3, s4\n\txor s3, s3, s2\n\tsd s3, 0\(a0\)\n\taddi t3, t3, 8\n\taddi t4, t4, 8\n\taddi a0, a0, 8\n\taddi t5, t5, -1\n\tbnez t5, \d+b\n'
 MONT=re.compile(r'\taddi a1, t0, 0\n\taddi t3, a5, 0\n\taddi t5, t0, 1\n.*?'+END,re.S)
-SQR=re.compile(r'\taddi t3, a5, 0\n\tadd t5, t0, t0\n\taddi t5, t5, 2\n.*?'+END,re.S)
+SQR=re.compile(r'\taddi t3, a5, 0\n\tadd t5, t0, t0\n\taddi t5, t5, 2\n.*?'+END+r'\tslli t3, t0, 3\n\tsub a5, a5, t3\n',re.S)
 REGS=['ra','t0','t1','t2','t3','t4','t5','t6']+[f'a{i}' for i in range(8)]+[f's{i}' for i in range(12)]
 def save():return '\taddi sp, sp, -224\n'+''.join(f'\tsd {r}, {8*i}(sp)\n' for i,r in enumerate(REGS))
 def restore():return ''.join(f'\tld {r}, {8*i}(sp)\n' for i,r in enumerate(REGS))+'\taddi sp, sp, 224\n'
