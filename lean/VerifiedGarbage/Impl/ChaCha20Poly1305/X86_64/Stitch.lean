@@ -512,12 +512,12 @@ slower with `twoKs`). -/
 def xselV (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block xTestV) (.ite .b
     (.seq (.block [.alu .cmp .rax (.imm 64)]) (.ite .b (twoKsB x.vl) (fourKs x.vl)))
-    (.call x.name x.code))
+    x.inPlace)
 
 /-- The choice of the others: the call up to `fold` bytes, otherwise `twoKs`
 or `fourKs`. -/
 def xselA (x : ChaCha20.X86_64.Callee) : Prog isa :=
-  .seq (.block xTest) (.ite .b (.call x.name x.code)
+  .seq (.block xTest) (.ite .b x.inPlace
     (.seq (.block fTest) (.ite .b (fourKs x.vl) (twoKs x.vl))))
 
 /-- The prologue's choice: the one-time key's block alone (the call) or with
@@ -545,7 +545,7 @@ def cryptS (x : ChaCha20.X86_64.Callee) : Prog isa :=
     (.seq (.block [.alu .test .rdx (.reg .rdx)])
       (.seq (.ite .e (bigS x.vl) (preS x))
         (.seq (.block [.alu .test .rdx (.reg .rdx)])
-          (.ite .e (.block [.mov .rsi (.reg .rcx)]) (.call x.name x.code)))))))
+          (.ite .e (.block [.mov .rsi (.reg .rcx)]) x.inPlace))))))
   (.seq (.block (anchor .rsi 128))
   (.seq (wipeL x.fold 512)
   (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide)))))
@@ -840,7 +840,7 @@ def decRest (x : ChaCha20.X86_64.Callee) : Prog isa :=
             (.seq (xorTail x.wide 736) (.seq (.block (restTest 257 255))
               (.ite .b (.seq (.block [.mov32 .rdx (.imm 576)])
                 (.seq (zeroKs x.wide) (.block (padIns .rax 3)))) (.block []))))
-            (.seq (.block restArgs) (.call x.name x.code))))))
+            (.seq (.block restArgs) x.inPlace)))))
       (.block (padIns .rax 20))))
 
 /-- `open`'s `macPadLengths` and `crypt`: if the data is at most `fold`

@@ -21,7 +21,7 @@ jmp 21f
 22:
 .base64 "80EPf4QPoAIAAEiDwRBIOdE="
 jb 22b
-.base64 "TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAA"
+.base64 "TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAASYnw"
 call {vg_chacha20_xor}
 .base64 "SYn3SYHvgAAAAEyJ/0iBx8ABAABMif5IgcagAgAA"
 call {vg_poly1305_init}
@@ -100,7 +100,7 @@ jmp 229f
 228:
 .base64 "TInq"
 229:
-.base64 "SInQSMHoBkiDwAFBiUdwTIn2SAHWTInoSCnQSInCTIn/SIPHQEyJ+UiBwYAAAAA="
+.base64 "SInQSMHoBkiDwAFBiUdwTIn2SAHWTInoSCnQSInCTIn/SIPHQEyJ+UiBwYAAAABJifA="
 call {vg_chacha20_xor}
 jmp 214f
 213:

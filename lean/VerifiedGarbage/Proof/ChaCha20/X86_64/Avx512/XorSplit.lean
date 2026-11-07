@@ -16,10 +16,10 @@ The contract the proof of `vg_chacha20_xor_split_avx512` is written against
 (`xorSplitX86_64`), and its loop over 1024-byte chunks (`bodySel_ok`).
 
 The proof runs against the state `V s₀`, in which `vg_chacha20_xor_avx512`
-would XOR in place what this function XORs: its data is `dst`, holding the
-input `I s₀` (the `src_len` bytes at `src`, then the bytes of `dst` after
-them), and the rest is as on entry. The in-place proofs about it
-(`Avx2.APre (V s₀)`, `Avx512.ctx_of`, `Avx512.next_ok`, …) then serve here
+would XOR in place what this function XORs: its source and its destination
+are `dst`, holding the input `I s₀` (the `src_len` bytes at `src`, then the
+bytes of `dst` after them), and the rest is as on entry. The proofs about it
+(`Avx2.TPre (V s₀)`, `Avx512.ctx_of`, `Avx512.next_ok`, …) then serve here
 too. The loop's invariant (`SInv`) holds the output for the chunks done,
 and for the rest the bytes of `dst` from `C` on, which are the input's;
 before `C`, the input is in `src`, which is never written.
@@ -134,11 +134,12 @@ theorem APre.of (s₀ : State) (h : xorSplitX86_64.pre s₀) : APre s₀ := by
 def vmem (s₀ : State) : Mem := fun a =>
   if (a - sdp s₀).toNat < sL s₀ then I s₀ (a - sdp s₀).toNat else s₀.mem a
 
-/-- The arguments of `vg_chacha20_xor_avx512` for `dst`. -/
+/-- The arguments of `vg_chacha20_xor_avx512` for `dst`, in place. -/
 def vgpr (s₀ : State) : Reg → BitVec 64
   | .rsi => sdp s₀
   | .rdx => s₀.gpr .r8
   | .rcx => sbp s₀
+  | .r8 => sdp s₀
   | r => s₀.gpr r
 
 /-- `vg_chacha20_xor_avx512`'s entry state, XORing the input into `dst`. -/
@@ -148,6 +149,7 @@ def V (s₀ : State) : State := { s₀ with gpr := vgpr s₀, mem := vmem s₀ }
 @[simp] theorem V_rsi (s₀ : State) : (V s₀).gpr .rsi = sdp s₀ := rfl
 @[simp] theorem V_rdx (s₀ : State) : (V s₀).gpr .rdx = s₀.gpr .r8 := rfl
 @[simp] theorem V_rcx (s₀ : State) : (V s₀).gpr .rcx = sbp s₀ := rfl
+@[simp] theorem V_r8 (s₀ : State) : (V s₀).gpr .r8 = sdp s₀ := rfl
 @[simp] theorem V_rsp (s₀ : State) : (V s₀).gpr .rsp = s₀.gpr .rsp := rfl
 @[simp] theorem V_rd (s₀ : State) : (V s₀).rd = s₀.rd := rfl
 @[simp] theorem V_wr (s₀ : State) : (V s₀).wr = s₀.wr := rfl
@@ -174,20 +176,25 @@ theorem vmem_out (s₀ : State) {a : Addr} (ha : ¬ (sdR s₀).Contains a 1) : v
 theorem vmem_frame (s₀ : State) : Frame [sdR s₀] (vmem s₀) s₀.mem := fun _ hx =>
   (vmem_out s₀ (hx _ (List.mem_singleton_self _))).symm
 
-theorem V_APre {s₀ : State} (hp : APre s₀) : Avx2.APre (V s₀) := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [Avx2.frR, Avx2.stR, Avx2.est, Avx2.edR, Avx2.edp, Avx2.eL, Avx2.bufR, Avx2.ebp, Avx2.eret,
-      Avx2.estk, V_rdi, V_rsi, V_rdx, V_rcx, V_rsp, V_wr]
+theorem V_TPre {s₀ : State} (hp : APre s₀) : Avx2.TPre (V s₀) := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, .inl rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp only [Avx2.frT, Avx2.stR, Avx2.est, Avx2.edR, Avx2.eqR, Avx2.edp, Avx2.edq, Avx2.eL, Avx2.bufR,
+      Avx2.ebp, Avx2.eret, Avx2.estk, V_rdi, V_rsi, V_rdx, V_rcx, V_r8, V_rsp, V_wr, V_rd]
+  · rw [hp.wr]; exact List.mem_append_right _ (by simp)
   · exact hp.wr
   · exact hp.st_d
+  · exact hp.st_d
   · exact hp.st_b
+  · exact hp.d_b
   · exact hp.d_b
   · exact hp.ret_st
   · exact hp.ret_d
   · exact hp.ret_b
   · exact hp.stk_st.sub_left (below_sub (by decide) (by decide))
   · exact hp.stk_d.sub_left (below_sub (by decide) (by decide))
+  · exact hp.stk_d.sub_left (below_sub (by decide) (by decide))
   · exact hp.stk_b.sub_left (below_sub (by decide) (by decide))
+  · exact hp.wrap_d
   · exact hp.wrap_d
 
 theorem V_S0 {s₀ : State} (hp : APre s₀) : Avx2.S0 (V s₀) = stateAt s₀.mem (sst s₀) := by
@@ -197,17 +204,17 @@ theorem V_S0 {s₀ : State} (hp : APre s₀) : Avx2.S0 (V s₀) = stateAt s₀.m
 
 theorem V_D0 (s₀ : State) {k : Nat} (hk : k < sL s₀) : Avx2.D0 (V s₀) k = I s₀ k := vmem_dst s₀ hk
 
-/-- The frame of the in-place proofs, from that of this function. -/
+/-- The frame of the proofs about `V s₀`, from that of this function. -/
 theorem V_frame {s₀ : State} {m : Mem} (hf : Frame [stR s₀, sdR s₀, bufR s₀] s₀.mem m) :
-    Frame (Avx2.frR (V s₀)) (V s₀).mem m := fun x hx => by
-  have h₂ : ¬ (sdR s₀).Contains x 1 := hx _ (by simp [Avx2.frR, Avx2.edR, Avx2.edp, Avx2.eL])
+    Frame (Avx2.frT (V s₀)) (V s₀).mem m := fun x hx => by
+  have h₂ : ¬ (sdR s₀).Contains x 1 := hx _ (by simp [Avx2.frT, Avx2.eqR, Avx2.edq, Avx2.eL])
   rw [hf x (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact hx _ (by simp [Avx2.frR, Avx2.stR, Avx2.est])
+    · exact hx _ (by simp [Avx2.frT, Avx2.stR, Avx2.est])
     · exact h₂
-    · exact hx _ (by simp [Avx2.frR, Avx2.bufR, Avx2.ebp])), V_mem, vmem_out s₀ h₂]
+    · exact hx _ (by simp [Avx2.frT, Avx2.bufR, Avx2.ebp])), V_mem, vmem_out s₀ h₂]
 
 /-- The input, outside the regions written. -/
 theorem src_frame {s₀ : State} (hp : APre s₀) {m : Mem} (hf : Frame [stR s₀, sdR s₀, bufR s₀] s₀.mem m) {k : Nat}
@@ -357,7 +364,7 @@ theorem bodySel_ok {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {
     (hge : 1024 ≤ sL s₀ - 1024 * t) {s : State} (h : SInv s₀ C t s) :
     WP isa bodySel s fun s' =>
       SInv s₀ C (t + 1) s' ∧ s'.cf = some (decide (sL s₀ - 1024 * (t + 1) < 1024)) := by
-  have hV := V_APre hp
+  have hV := V_TPre hp
   have hL := sL_lt s₀
   have hS := sS_lt s₀
   have hCS := hC.le
@@ -365,16 +372,16 @@ theorem bodySel_ok {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {
   have sw := win_sub (s₀ := V s₀) hw
   have dsd := hV.st_d.sub_right sw
   have dbd := hV.d_b.symm.sub_right sw
-  have hc : Ctx s := Avx512.ctx_of hV hw h.rdi h.rcx h.rsi h.wr
+  have hc : Ctx s := Avx512.ctx_of hV rfl hw h.rdi h.rcx h.rsi h.wr
   have hi : Incs s.mem (s.gpr .rcx) := by rw [h.rcx]; exact h.incs
   rw [bodySel_eq]
-  refine WP.seq (WP.mono (setup_ok hc hi) fun s₁ ⟨hz₁, m₁, g₁, rd₁, wr₁⟩ => ?_)
+  refine WP.seq (WP.mono (setup_ok (to := false) hc hi) fun s₁ ⟨hz₁, m₁, g₁, rd₁, wr₁⟩ => ?_)
   refine WP.seq (WP.mono (VG.Proof.ChaCha20.X86_64.Avx512.rounds_ok hz₁ 10) fun s₂ ⟨hz₂, sm₂⟩ => ?_)
   have g₂ : s₂.gpr = s.gpr := sm₂.gpr.trans g₁
   have m₂ : s₂.mem = s.mem := sm₂.mem.trans m₁
   have rd₂ : s₂.rd = s.rd := sm₂.rd.trans rd₁
   have wr₂ : s₂.wr = s.wr := sm₂.wr.trans wr₁
-  have hc₂ : Ctx s₂ := Avx512.ctx_of hV hw (by rw [g₂]; exact h.rdi) (by rw [g₂]; exact h.rcx)
+  have hc₂ : Ctx s₂ := Avx512.ctx_of hV rfl hw (by rw [g₂]; exact h.rdi) (by rw [g₂]; exact h.rcx)
     (by rw [g₂]; exact h.rsi) (by rw [wr₂]; exact h.wr)
   have hs₂ : SelOk s₂ := selOk_of hp hC hw (by rw [g₂]; exact h.rcx) (by rw [g₂]; exact h.rsi)
     (by rw [g₂]; exact h.r8) (by rw [g₂]; exact h.r10) (by rw [rd₂]; exact h.rd)
@@ -388,7 +395,7 @@ theorem bodySel_ok {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {
     (by rw [g₃']; exact h.r10)) fun s₄ ⟨r8₄, r10₄, g₄, m₄, rd₄, wr₄, _⟩ => ?_)
   have gk₄ : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r10 → s₄.gpr r = s.gpr r := fun r a b c => by
     rw [g₄ r a b c, g₃']
-  refine WP.mono (Avx512.next_ok hV hge (by rw [gk₄ _ (by decide) (by decide) (by decide)]; exact h.rdi)
+  refine WP.mono (Avx512.next_ok hV.w_st hge (by rw [gk₄ _ (by decide) (by decide) (by decide)]; exact h.rdi)
     (by rw [gk₄ _ (by decide) (by decide) (by decide)]; exact h.rsi)
     (by rw [gk₄ _ (by decide) (by decide) (by decide)]; exact h.rdx) (by rw [rd₄, rd₃, rd₂, h.rd]; rfl)
     (by rw [wr₄, wr₃, wr₂, h.wr]; rfl))

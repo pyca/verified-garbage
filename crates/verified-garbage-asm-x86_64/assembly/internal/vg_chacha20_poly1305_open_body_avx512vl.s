@@ -89,6 +89,7 @@ vg_chacha20_poly1305_open_body_avx512vl:
 	cmovb rax, r10
 	cmp rax, 192
 	jb 23f
+	mov r8, rsi
 	call {vg_chacha20_xor_avx512vl}
 	jmp 24f
 23:
@@ -8366,6 +8367,7 @@ vg_chacha20_poly1305_open_body_avx512vl:
 	mov rdx, rbp
 	mov rcx, r15
 	add rcx, 128
+	mov r8, rsi
 	call {vg_chacha20_xor_avx512vl}
 	jmp 251f
 250:

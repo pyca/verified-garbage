@@ -134,14 +134,14 @@ def StoreEff (buf : Addr) (row : Nat) (B : Nat → CState) (m m' : Mem) : Prop :
   ∀ k < 512, m' (kA buf + BitVec.ofNat 64 k) =
     if k % 64 / 16 = row then (serialize (B (k / 64))).getD (k % 64) 0 else m (kA buf + BitVec.ofNat 64 k)
 
-theorem storeRow_out {buf : Addr} {g : Reg → BitVec 64} {w : List Region} (hrcx : g .rcx = buf)
+theorem storeRow_out {buf : Addr} {g : Reg → BitVec 64} {rd w : List Region} (hrcx : g .rcx = buf)
     (hk : kR buf ∈ w) {row : Nat} (hrow : row < 4) {x0 x1 x2 x3 : XReg}
     (h0 : x0 ≠ .xmm12 ∧ x0 ≠ .xmm13 ∧ x0 ≠ .xmm14 ∧ x0 ≠ .xmm15)
     (h1 : x1 ≠ .xmm12 ∧ x1 ≠ .xmm13 ∧ x1 ≠ .xmm14 ∧ x1 ≠ .xmm15)
     (h2 : x2 ≠ .xmm12 ∧ x2 ≠ .xmm13 ∧ x2 ≠ .xmm14 ∧ x2 ≠ .xmm15)
     (h3 : x3 ≠ .xmm12 ∧ x3 ≠ .xmm13 ∧ x3 ≠ .xmm14 ∧ x3 ≠ .xmm15) :
-    OutOk (storeRow kOff) (StoreEff buf) [kR buf] g w row x0 x1 x2 x3 := by
-  intro B s hB hg hws
+    OutOk (storeRow kOff) (StoreEff buf) [kR buf] g rd w row x0 x1 x2 x3 := by
+  intro B s hB hg _ hws
   refine WP.mono (storeRow_ok hrow h0.2.1 h1.2.1 h2.2.1 h3.2.1 (by rw [hg]; exact hrcx) (by rw [hws]; exact hk))
     fun s₂ ⟨d₂, f₂, l₂, g₂, r₂, w₂⟩ => ⟨fun k hk => ?_, f₂, fun r l _ _ _ _ _ n13 _ _ => l₂ r l n13, g₂, r₂, w₂⟩
   rw [d₂ k hk]

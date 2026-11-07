@@ -5,24 +5,27 @@ public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
 /-!
 # ChaCha20 keystream XOR with AVX-512: the last bytes
 
-`tail` XORs the last `rdx` bytes of data (fewer than 1024, at `rsi`) with the
-keystream of the state at `rdi`, for `vg_chacha20_xor_avx512`, in at most
-two computations of eight or four blocks:
+`tail` XORs the last `rdx` bytes of the source (fewer than 1024, at `rsi`)
+with the keystream of the state at `rdi` into the destination (at
+`rsi + r11`, `XorBuf.atDst`), for `vg_chacha20_xor_avx512`, in at most two
+computations of eight or four blocks:
 
 * if at least 512 bytes remain, eight blocks (the counters `c, …, c + 7`
-  modulo 2³², `c` being word 12 of the state) are XORed into the next 512
+  modulo 2³², `c` being word 12 of the state) are XORed with the next 512
   bytes, and word 12 advanced by 8;
 * then, if more than 256 bytes remain, eight blocks are computed: the first
-  four XORed into the next 256 bytes, the other four stored to `buf[0, 256)`
-  and as many of their bytes as remain XORed into the data
-  (`XorBuf.xorBuf`);
+  four XORed with the next 256 bytes, the other four stored to
+  `buf[0, 256)` and as many of their bytes as remain XORed from there
+  (`fromBuf`);
 * otherwise, if some remain, four blocks are computed into `buf[0, 256)`,
-  and as many of their bytes as remain XORed into the data.
+  and as many of their bytes as remain XORed from there.
 
-`part3`, which `vg_chacha20_xor_avx512` runs for 513 to 768 bytes in place
-of `tail`, computes twelve blocks in three sets: the first eight XORed into
-the next 512 bytes, the other four stored to `buf[0, 256)` and the rest of
-the data XORed from there.
+Each 64 bytes of the source are loaded before the destination's are
+stored, so that it may be the source itself. `part3`, which
+`vg_chacha20_xor_avx512` runs for 513 to 768 bytes in place of `tail`,
+computes twelve blocks in three sets: the first eight XORed with the next
+512 bytes, the other four stored to `buf[0, 256)` and the rest XORed from
+there.
 
 The states are kept one per 128-bit lane, four to a set of four `zmm`
 registers (`zmm0 … zmm3`, and `zmm4 … zmm7` for the second four): row `r`
@@ -36,8 +39,8 @@ by lane, from `buf[256, 320)` (`buf[192, 256)`), written once by `consts`.
 At the end, the input state is added again, and eight `vshufi32x4` gather
 the lanes of a set's four registers into its four blocks.
 
-`buf` is in `r9` throughout, which `xorBuf` keeps; `xorBuf` writes `rax`,
-`r8` and `rcx`. No callee-saved register is written. The branches are on
+`buf` is in `r9` throughout, which `fromBuf` keeps; `fromBuf` writes `rax`,
+`r8`, `r10` and `rcx`. No callee-saved register is written. The branches are on
 the length only, and every address is a pointer plus a constant or a count,
 so only the pointers and the length can affect timing.
 -/
@@ -167,9 +170,11 @@ def finish2 : List Instr :=
   gather .xmm0 .xmm1 .xmm2 .xmm3 .xmm8 .xmm9 .xmm10 .xmm11 ++
   gather .xmm4 .xmm5 .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm11
 
-/-- XOR the 64 bytes in `x` into the data at `rsi + off`, through `zmm8`. -/
+/-- XOR the 64 bytes in `x` with the source at `rsi + off` into the
+destination's, at `rsi + r11 + off` (`XorBuf.atDst`), through `zmm8`. -/
 def xor64 (x : XReg) (off : Nat) : List Instr :=
-  [.vmovdqu32Load .xmm8 (at_ .rsi off), z .vpxord .xmm8 .xmm8 x, .vmovdqu32Store (at_ .rsi off) .xmm8]
+  [.vmovdqu32Load .xmm8 (at_ .rsi off), z .vpxord .xmm8 .xmm8 x,
+   .vmovdqu32Store (XorBuf.atDst (some .r11) off) .xmm8]
 
 /-- The four blocks `a, b, c, d` XORed into the data at `rsi + off`. -/
 def xor256 (a b c d : XReg) (off : Nat) : List Instr :=
@@ -217,9 +222,10 @@ def setup3 : List Instr :=
    .vmovdqu32Load .xmm14 (at_ .r9 inc3Off),
    z .vpaddd .xmm7 .xmm3 .xmm13, z .vpaddd .xmm11 .xmm3 .xmm14, z .vpaddd .xmm3 .xmm3 .xmm12]
 
-/-- XOR the 64 bytes in `x` into the data at `rsi + off`, through `zmm12`. -/
+/-- As `xor64`, through `zmm12`. -/
 def xor64T (x : XReg) (off : Nat) : List Instr :=
-  [.vmovdqu32Load .xmm12 (at_ .rsi off), z .vpxord .xmm12 .xmm12 x, .vmovdqu32Store (at_ .rsi off) .xmm12]
+  [.vmovdqu32Load .xmm12 (at_ .rsi off), z .vpxord .xmm12 .xmm12 x,
+   .vmovdqu32Store (XorBuf.atDst (some .r11) off) .xmm12]
 
 /-- The four blocks `a, b, c, d` XORed into the data at `rsi + off`, through
 `zmm12`. -/
@@ -247,8 +253,9 @@ def finish3 : List Instr :=
 
 /-! ## The tail -/
 
-/-- XOR the `rdx` bytes of keystream in `buf` into the data. -/
-def fromBuf : Prog isa := XorBuf.xorBuf .rsi .r9
+/-- XOR the `rdx` bytes of keystream in `buf` with the source into the
+destination, eight bytes at a time (`Avx2Tail.fromBuf true`). -/
+def fromBuf : Prog isa := Avx2Tail.fromBuf true
 
 /-- Eight blocks into the next 512 bytes of data; the counter, the data and
 the length advanced. -/

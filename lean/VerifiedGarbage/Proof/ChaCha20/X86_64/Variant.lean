@@ -10,6 +10,9 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Ssse3.Xor
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Ssse3.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # Implementations of `vg_chacha20_xor` on x86-64
@@ -21,6 +24,15 @@ caller (in `Generic/ChaCha20Xor/X86_64/`) is emitted once for each of them
 (see `TCB/Emit.lean`). Callers leave room for 16 bytes of stack below its
 return address (`stack_le`), and for two levels of calls (`depth_le`), which
 take at most those 16 bytes (`xdepth`).
+
+Every implementation takes the destination in `r8` and is proven from a
+source to a destination (`xorTo`). Callers call one in place with
+`Callee.inPlace` (`mov r8, rsi`, then the call), through `XorImpl.wpIn` and
+`XorImpl.relIn` (`wpCallIn`, `relCallIn`, from the proofs called in place
+that `okIn_of_okTo` and `ctIn_of_ctTo` give), which take what `WP.call` and
+`RelCT.callEx` take with the in-place contract `xorStack`; or from a source
+to a destination with `Xor.callTo` (`r8` set to `rsi + r11`), through
+`XorImpl.wpTo` and `XorImpl.relTo` (`wpCallTo`, `relCallTo`).
 
 An implementation also names the implementation of `vg_poly1305_blocks` for
 the same CPUs (`poly`), which ChaCha20-Poly1305's instance for it calls: so
@@ -46,11 +58,12 @@ structure XorImpl where
   depth_le : callee.code.depth ≤ 2
   /-- Its calls take at most 16 bytes of stack below its return address. -/
   xdepth : callee.code.x86_64Depth ≤ 16
-  /-- It is correct, and returns with `rsi` pointing at `buf`. -/
-  ok : ∀ s, (xorStack stack).pre s →
-    ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ (xorStack stack).post s s'
+  /-- It is correct from a source to a destination, and returns with `rsi`
+  pointing at `buf`. -/
+  ok : ∀ s, (xorTo stack).pre s →
+    ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ (xorTo stack).post s s'
   /-- It is constant time. -/
-  ct : ConstantTime isa (xorStack stack).pre (xorStack stack).pub callee.code
+  ct : ConstantTime isa (xorTo stack).pre (xorTo stack).pub callee.code
   /-- It never writes the stack pointer. -/
   nosp : NoSp callee.code
   /-- It never loads MXCSR. -/
@@ -80,12 +93,6 @@ structure XorImpl where
 
 namespace XorImpl
 
-theorem scalar_ok : ∀ s, (xorStack 8).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.scalar.code s t s' ∧
-    abiPreserved s s' ∧ (xorStack 8).post s s' :=
-  fun s hs => Xor.xor_rsi s hs
-
-theorem scalar_ct : ConstantTime isa (xorStack 8).pre (xorStack 8).pub Impl.ChaCha20.X86_64.Callee.scalar.code :=
-  Xor.xor_ct
 
 /-- The scalar implementation, `vg_chacha20_xor`, in the baseline ISA. -/
 def scalar : XorImpl where
@@ -95,8 +102,8 @@ def scalar : XorImpl where
   stack_le := by decide
   depth_le := by lit_decide
   xdepth := by lit_decide
-  ok := scalar_ok
-  ct := scalar_ct
+  ok := Xor.xor_to
+  ct := Xor.xor_ctTo
   nosp := Avx2.xor_nosp
   mxcsr := by lit_decide
   spSafe := Code.all_of_allInstrs (by lit_decide)
@@ -105,17 +112,17 @@ def scalar : XorImpl where
   poly := .scalar
   fold_poly := Or.inl ⟨rfl, rfl, rfl, rfl⟩
 
-theorem ssse3_ok : ∀ s, (xorStack 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.ssse3.code s t s' ∧
-    abiPreserved s s' ∧ (xorStack 16).post s s' :=
-  fun s hs => Ssse3.xor_rsi s hs
-
-theorem ssse3_ct : ConstantTime isa (xorStack 16).pre (xorStack 16).pub Impl.ChaCha20.X86_64.Callee.ssse3.code :=
-  Ssse3.xor_ct
-
 theorem ssse3_nosp : NoSp Impl.ChaCha20.X86_64.Callee.ssse3.code := by
   have : ((instrs Impl.ChaCha20.X86_64.Callee.ssse3.code).all fun i => !Taint.clobbers i .rsp) = true := by
     rw [← Code.allInstrs_eq]; lit_decide
   exact fun i hi => by simpa using List.all_eq_true.mp this i hi
+
+theorem ssse3_ok : ∀ s, (xorTo 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.ssse3.code s t s' ∧
+    abiPreserved s s' ∧ (xorTo 16).post s s' :=
+  Ssse3.xor_to
+
+theorem ssse3_ct : ConstantTime isa (xorTo 16).pre (xorTo 16).pub Impl.ChaCha20.X86_64.Callee.ssse3.code :=
+  Ssse3.xor_ctTo
 
 /-- The SSSE3 implementation, `vg_chacha20_xor_ssse3`, for CPUs without
 AVX2: its callers that also call `vg_poly1305_blocks` call the baseline
@@ -137,12 +144,12 @@ def ssse3 : XorImpl where
   poly := .scalar
   fold_poly := Or.inl ⟨rfl, rfl, rfl, rfl⟩
 
-theorem avx2_ok : ∀ s, (xorStack 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.avx2.code s t s' ∧
-    abiPreserved s s' ∧ (xorStack 16).post s s' :=
-  fun s hs => Avx2.xor_rsi s hs
+theorem avx2_ok : ∀ s, (xorTo 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.avx2.code s t s' ∧
+    abiPreserved s s' ∧ (xorTo 16).post s s' :=
+  Avx2.xor_to
 
-theorem avx2_ct : ConstantTime isa (xorStack 16).pre (xorStack 16).pub Impl.ChaCha20.X86_64.Callee.avx2.code :=
-  Avx2.xor_ct
+theorem avx2_ct : ConstantTime isa (xorTo 16).pre (xorTo 16).pub Impl.ChaCha20.X86_64.Callee.avx2.code :=
+  Avx2.xor_ctTo
 
 theorem avx2_nosp : NoSp Impl.ChaCha20.X86_64.Callee.avx2.code := by
   have : ((instrs Impl.ChaCha20.X86_64.Callee.avx2.code).all fun i => !Taint.clobbers i .rsp) = true := by
@@ -167,12 +174,12 @@ def avx2 : XorImpl where
   poly := .avx2
   fold_poly := Or.inr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
 
-theorem avx512_ok : ∀ s, (xorStack 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.avx512.code s t s' ∧
-    abiPreserved s s' ∧ (xorStack 16).post s s' :=
-  fun s hs => Avx512.xor_rsi s hs
+theorem avx512_ok : ∀ s, (xorTo 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.avx512.code s t s' ∧
+    abiPreserved s s' ∧ (xorTo 16).post s s' :=
+  Avx512.xor_to
 
-theorem avx512_ct : ConstantTime isa (xorStack 16).pre (xorStack 16).pub Impl.ChaCha20.X86_64.Callee.avx512.code :=
-  Avx512.xor_ct
+theorem avx512_ct : ConstantTime isa (xorTo 16).pre (xorTo 16).pub Impl.ChaCha20.X86_64.Callee.avx512.code :=
+  Avx512.xor_ctTo
 
 theorem avx512_nosp : NoSp Impl.ChaCha20.X86_64.Callee.avx512.code := by
   have : ((instrs Impl.ChaCha20.X86_64.Callee.avx512.code).all fun i => !Taint.clobbers i .rsp) = true := by
@@ -234,8 +241,8 @@ def avx512vl : XorImpl where
   stack_le := by decide
   depth_le := by lit_decide
   xdepth := by lit_decide
-  ok := Avx512VL.xor_rsi
-  ct := Avx512VL.xor_ct
+  ok := Avx512VL.xor_to
+  ct := Avx512VL.xor_ctTo
   nosp := avx512vl_nosp
   mxcsr := by lit_decide
   spSafe := Code.all_of_allInstrs (by lit_decide)
@@ -276,6 +283,70 @@ theorem small_callee (v : XorImpl) : v.small.callee = v.callee.small := by
   by_cases h : v.callee.vl = true
   · simp only [small, Impl.ChaCha20.X86_64.Callee.small, h, ite_true, asAvx2]
   · simp only [small, Impl.ChaCha20.X86_64.Callee.small, h, ite_false, Bool.false_eq_true]; rfl
+
+end XorImpl
+
+/-! ## Calling an implementation in place
+
+A caller calls an implementation in place with `Callee.inPlace`: `r8` (the
+destination) set to `rsi` (the source), then the call. `wpIn` and `relIn`
+take what `WP.call` and `RelCT.callEx` take for the call of the code with the
+in-place contract `xorStack` (`wpCallIn`, `relCallIn`). -/
+
+namespace XorImpl
+
+/-- A call of `v` in place (`Callee.inPlace`): as `WP.call` with the in-place
+contract `xorStack`. -/
+theorem wpIn (v : XorImpl) {s : State} {rd wr : List Region}
+    (hpre : (xorStack v.stack).pre (s.callEntry.withRegions rd wr))
+    (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
+      Frame (wr ++ [below (s.gpr .rsp) (8 * (v.callee.code.depth + 1))]) s.mem s'.mem →
+      (∀ r, (∀ i ∈ instrs v.callee.inPlace, Taint.clobbers i r = false) → s'.gpr r = s.gpr r) →
+      (∃ s₂ : State, s₂.mem = s'.mem ∧ (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧
+        (xorStack v.stack).post (s.callEntry.withRegions rd wr) s₂) → Q s') :
+    WP isa v.callee.inPlace s Q := by
+  have hd := v.depth_le
+  exact wpCallIn (okIn_of_okTo v.ok) v.nosp (by omega) hpre hc hw hQ
+
+/-- Two runs that call `v` in place (`Callee.inPlace`) with the in-place
+contract's public arguments agreeing: as `RelCT.callEx`. -/
+theorem relIn (v : XorImpl) {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → ∃ rd₁ wr₁ rd₂ wr₂ : List Region,
+      (xorStack v.stack).pre (s₁.callEntry.withRegions rd₁ wr₁) ∧
+      (xorStack v.stack).pre (s₂.callEntry.withRegions rd₂ wr₂) ∧
+      (xorStack v.stack).pub (s₁.callEntry.withRegions rd₁ wr₁) (s₂.callEntry.withRegions rd₂ wr₂) ∧
+      Covers (rd₁ ++ wr₁) (s₁.rd ++ s₁.wr) ∧ Covers wr₁ s₁.wr ∧
+      Covers (rd₂ ++ wr₂) (s₂.rd ++ s₂.wr) ∧ Covers wr₂ s₂.wr ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P v.callee.inPlace fun _ _ => True :=
+  relCallIn (okIn_of_okTo v.ok) (ctIn_of_ctTo v.ok v.ct) hP
+
+/-- A call of `v` from a source to a destination (`Xor.callTo`, `r8` at
+`rsi + r11`): as `WP.call` with `xorTo`, for the state with `r8` set. -/
+theorem wpTo (v : XorImpl) {s : State} {rd wr : List Region}
+    (hpre : (xorTo v.stack).pre ((toR8 s).callEntry.withRegions rd wr))
+    (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
+      Frame (wr ++ [below (s.gpr .rsp) (8 * (v.callee.code.depth + 1))]) s.mem s'.mem →
+      (∀ r, (∀ i ∈ instrs (Impl.ChaCha20.X86_64.Xor.callTo v.callee.name v.callee.code),
+        Taint.clobbers i r = false) → s'.gpr r = s.gpr r) →
+      (∃ s₂ : State, s₂.mem = s'.mem ∧ (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧
+        (xorTo v.stack).post ((toR8 s).callEntry.withRegions rd wr) s₂) → Q s') :
+    WP isa (Impl.ChaCha20.X86_64.Xor.callTo v.callee.name v.callee.code) s Q := by
+  have hd := v.depth_le
+  exact wpCallTo v.ok v.nosp (by omega) hpre hc hw hQ
+
+/-- Two runs that call `v` from a source to a destination (`Xor.callTo`)
+with `xorTo`'s public arguments agreeing: as `RelCT.callEx`. -/
+theorem relTo (v : XorImpl) {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → ∃ rd₁ wr₁ rd₂ wr₂ : List Region,
+      (xorTo v.stack).pre ((toR8 s₁).callEntry.withRegions rd₁ wr₁) ∧
+      (xorTo v.stack).pre ((toR8 s₂).callEntry.withRegions rd₂ wr₂) ∧
+      (xorTo v.stack).pub ((toR8 s₁).callEntry.withRegions rd₁ wr₁) ((toR8 s₂).callEntry.withRegions rd₂ wr₂) ∧
+      Covers (rd₁ ++ wr₁) (s₁.rd ++ s₁.wr) ∧ Covers wr₁ s₁.wr ∧
+      Covers (rd₂ ++ wr₂) (s₂.rd ++ s₂.wr) ∧ Covers wr₂ s₂.wr ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (Impl.ChaCha20.X86_64.Xor.callTo v.callee.name v.callee.code) fun _ _ => True :=
+  relCallTo v.ok v.ct hP
 
 end XorImpl
 

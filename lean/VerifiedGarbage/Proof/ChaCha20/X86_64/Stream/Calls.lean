@@ -103,13 +103,12 @@ theorem xor_call (v : Proof.ChaCha20.X86_64.XorImpl) {s : State} {S D B : Addr} 
       Frame [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩, below (s.gpr .rsp) 24] s.mem s'.mem →
       bytesAt s'.mem D n = List.zipWith (· ^^^ ·) (bytesAt s.mem D n) (keystream (stateAt s.mem S) n) →
       Q s') :
-    WP isa (.call v.callee.name v.callee.code) s Q := by
+    WP isa v.callee.inPlace s Q := by
   have hn' : (BitVec.ofNat 64 n).toNat = n := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
   have hd := v.depth_le
   have h8 := below8_24 s
-  refine WP.call (k := Proof.ChaCha20.xorStack v.stack) v.ok v.nosp (by omega)
-    (xor_pre v hrdi hrsi hrdx hrcx hn hSD hSB hDB hwrap hsS hsD hsB) hc hw ?_
+  refine v.wpIn (xor_pre v hrdi hrsi hrdx hrcx hn hSD hSB hDB hwrap hsS hsD hsB) hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost, _⟩
   have hf' : Frame [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩, below (s.gpr .rsp) 24] s.mem s'.mem := by
     refine hf.sub fun r hr => ?_

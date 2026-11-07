@@ -31,7 +31,7 @@ jmp 23f
 24:
 .base64 "xMF+f4QPoAIAAEiDwSBIOdE="
 jb 24b
-.base64 "xfh3TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAA"
+.base64 "xfh3TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAASYnw"
 call {vg_chacha20_xor_avx2}
 .base64 "SYn3SYHvgAAAAEyJ/0iBx8ABAABMif5IgcagAgAA"
 call {vg_poly1305_init}
@@ -408,6 +408,7 @@ jmp 2112f
 222:
 .base64 "SIXS"
 je 2149f
+.base64 "SYnw"
 call {vg_chacha20_xor_avx2}
 jmp 2150f
 2149:

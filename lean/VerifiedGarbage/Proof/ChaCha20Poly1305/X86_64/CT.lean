@@ -420,13 +420,12 @@ theorem xor_call (v : Proof.ChaCha20.X86_64.XorImpl) {s : State} {S D B : Addr} 
       Frame [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩, below (s.gpr .rsp) 24] s.mem s'.mem → s'.gpr .rsi = B →
       Spec.ChaCha20.bytesAt s'.mem D n =
         List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem D n) (keystream (stateAt s.mem S) n) → Q s') :
-    WP isa (.call v.callee.name v.callee.code) s Q := by
+    WP isa v.callee.inPlace s Q := by
   have hn' : (BitVec.ofNat 64 n).toNat = n := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
   have hd := v.depth_le
   have h8 := below8_24 s
-  refine WP.call (k := Proof.ChaCha20.xorStack v.stack) v.ok v.nosp (by lit_omega)
-    (xor_pre v hrdi hrsi hrdx hrcx hn hSD hSB hDB hwrap hsS hsD hsB) hc hw ?_
+  refine v.wpIn (xor_pre v hrdi hrsi hrdx hrcx hn hSD hSB hDB hwrap hsS hsD hsB) hc hw ?_
   intro s' hrd hwr hcs hf hkeep ⟨s₂, hm₂, hg₂, hpost, hrsi₂⟩
   have hf' : Frame [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩, below (s.gpr .rsp) 24] s.mem s'.mem := by
     refine hf.sub fun r hr => ?_
@@ -1834,7 +1833,7 @@ structure AfterF (fold pass : Nat) (s₀ : State) (s : State) : Prop where
 /-- The call of the implementation `v` of `vg_chacha20_xor` in the prologue. -/
 theorem foldCall_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} {s₀ : State} (hp : APre e s₀) {s : State}
     (h : FArgs v.callee.fold pass s₀ s) :
-    WP isa (.call v.callee.name v.callee.code) s (AfterF v.callee.fold pass s₀) := by
+    WP isa v.callee.inPlace s (AfterF v.callee.fold pass s₀) := by
   have hm := mOf_le v.callee.fold pass (L s₀)
   have hfl := v.fold_le
   have hn : 64 + mOf v.callee.fold pass (L s₀) ≤ 1024 := by omega_using [hm, hfl]
@@ -3553,7 +3552,7 @@ theorem XArgsM.call (v : Proof.ChaCha20.X86_64.XorImpl) {Q : State → Prop}
         (Spec.ChaCha20.bytesAt s.mem (off (dp s₀) m) (L s₀ - m))
         (keystream (stateAt s.mem (off (cx s₀) 64)) (L s₀ - m)) →
       Q s') :
-    WP isa (.call v.callee.name v.callee.code) s Q :=
+    WP isa v.callee.inPlace s Q :=
   xor_call v h.rdi h.rsi h.rdx h.rcx (by have := (s₀.gpr .r9).isLt; simp only [L]; omega_arith)
     ((hp.c_d.sub_left (sub_ctx s₀ (k := 64) (n := 64) (by lit_omega))).sub_right (dRm_sub s₀ h.le))
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
@@ -4168,7 +4167,7 @@ theorem ret_kept {s₀ : State} (hp : APre e s₀) {m₆ m' : Mem} (hi : Frame [
 theorem prologue_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
     (prologue v.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
   rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
-    (simp only [prologue, Code.allInstrs, v.mxcsr, hf, hpass, hw]; rfl)
+    (simp only [prologue, Impl.ChaCha20.X86_64.Callee.inPlace, Code.allInstrs, v.mxcsr, hf, hpass, hw]; rfl)
 
 /-- The keystream in `ctx[736, 1696)` survives a frame apart from it. -/
 theorem ks_frame {s₀ : State} {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
@@ -4181,7 +4180,8 @@ theorem ks_frame {s₀ : State} {rs : List Region} {m m' : Mem} (hf : Frame rs m
 theorem crypt_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
     (crypt v.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
   rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
-    (simp only [crypt, cryptBig, Code.allInstrs, v.mxcsr, hf, hpass, hw]; rfl)
+    (simp only [crypt, cryptBig, Impl.ChaCha20.X86_64.Callee.inPlace, Code.allInstrs, v.mxcsr, hf, hpass, hw];
+      rfl)
 
 theorem seal_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre true s₀) :
     WP isa («seal» v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ sealX86_64.post s₀ s' := by
@@ -4419,7 +4419,7 @@ def openPost (fold pass w : Nat) : Prog isa :=
 
 theorem seal_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
     {t : List Leak} (h : Exec isa («seal» x b) s t s') :
-    Exec isa (.seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq (.call x.name x.code)
+    Exec isa (.seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq x.inPlace
       (.seq (sealMid x.fold b) (.seq (cryptIte x) (sealPost x.fold x.pass x.wide b)))))) s t s' := by
   cases h with | seq e₀ h => cases h with | seq hP h => cases hP with | seq ePA hP => cases hP with
   | seq eC ePB => cases h with | seq eMA h => cases h with | seq eLEN h => cases h with | seq hC h =>
@@ -4434,7 +4434,7 @@ theorem seal_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Bl
 
 theorem open_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
     {t : List Leak} (h : Exec isa (openBody x b) s t s') :
-    Exec isa (.seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq (.call x.name x.code)
+    Exec isa (.seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq x.inPlace
       (.seq (openMid x.fold b) (.seq (cryptIte x) (openPost x.fold x.pass x.wide)))))) s t s' := by
   cases h with | seq e₀ h => cases h with | seq hP h => cases hP with | seq ePA hP => cases hP with
   | seq eC ePB => cases h with | seq eMA h => cases h with | seq eLEN h => cases h with | seq eMC h =>
@@ -4548,10 +4548,10 @@ include hp hp' hq in
 /-- The call of any implementation `v` of `vg_chacha20_xor` for the data
 after its first `m` bytes. -/
 theorem callM_rel (v : Proof.ChaCha20.X86_64.XorImpl) (m : Nat) :
-    RelCT isa (fun s₁ s₂ => XArgsM s₀ m s₁ ∧ XArgsM s₀' m s₂) (.call v.callee.name v.callee.code)
+    RelCT isa (fun s₁ s₂ => XArgsM s₀ m s₁ ∧ XArgsM s₀' m s₂) v.callee.inPlace
       fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂ := by
   obtain ⟨-, -, -, -, p5, p6, p7, -, p9⟩ := hq
-  have ct := RelCT.callEx (n := v.callee.name) (P := fun s₁ s₂ => XArgsM s₀ m s₁ ∧ XArgsM s₀' m s₂) v.ok v.ct
+  have ct := v.relIn (P := fun s₁ s₂ => XArgsM s₀ m s₁ ∧ XArgsM s₀' m s₂)
     fun s₁ s₂ ⟨a₁, a₂⟩ =>
     ⟨[], _, [], _, a₁.pre hp v, a₂.pre hp' v, by
       simp only [Proof.ChaCha20.xorStack, Proof.ChaCha20.xorX86_64, State.withRegions_gpr,
@@ -4565,7 +4565,7 @@ theorem callM_rel (v : Proof.ChaCha20.X86_64.XorImpl) (m : Nat) :
       (Covers.right (a₁.hw hp)), a₁.hw hp, (Covers.right (a₂.hw hp')),
       a₂.hw hp', by rw [a₁.rsp, a₂.rsp, p7]⟩
   have after : ∀ {σ₀ s : State}, APre e σ₀ → XArgsM σ₀ m s →
-      WP isa (.call v.callee.name v.callee.code) s (After σ₀) := fun hp a =>
+      WP isa v.callee.inPlace s (After σ₀) := fun hp a =>
     a.call hp v fun _ _ wr cs _ rsi _ =>
       ⟨rsi, by rw [cs _ calleeSaved_rsp, a.rsp], by rw [cs _ (by decide), a.r13],
         by rw [cs _ (by decide), a.r14], by rw [cs _ (by decide), a.r12],
@@ -4718,12 +4718,12 @@ include hp hp' hq in
 /-- The call in the prologue, of any implementation `v` of `vg_chacha20_xor`. -/
 theorem call1_rel (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} :
     RelCT isa (fun s₁ s₂ => FArgs v.callee.fold pass s₀ s₁ ∧ FArgs v.callee.fold pass s₀' s₂)
-      (.call v.callee.name v.callee.code)
+      v.callee.inPlace
       fun s₁ s₂ => AfterF v.callee.fold pass s₀ s₁ ∧ AfterF v.callee.fold pass s₀' s₂ := by
   obtain ⟨-, -, -, -, p5, p6, p7, -, p9⟩ := hq
   have hfl := v.fold_le
-  have ct := RelCT.callEx (n := v.callee.name)
-    (P := fun s₁ s₂ => FArgs v.callee.fold pass s₀ s₁ ∧ FArgs v.callee.fold pass s₀' s₂) v.ok v.ct fun s₁ s₂ ⟨a₁, a₂⟩ =>
+  have ct := v.relIn
+    (P := fun s₁ s₂ => FArgs v.callee.fold pass s₀ s₁ ∧ FArgs v.callee.fold pass s₀' s₂) fun s₁ s₂ ⟨a₁, a₂⟩ =>
     ⟨[], _, [], _, a₁.pre hp v, a₂.pre hp' v, by
       simp only [Proof.ChaCha20.xorStack, Proof.ChaCha20.xorX86_64, State.withRegions_gpr,
         State.callEntry_rsp, callEntry_gpr' s₁ (by decide : Reg.rdi ≠ .rsp),
@@ -4842,7 +4842,7 @@ theorem toPost_rel {enc : Bool} (hp : APre enc s₀) (hp' : APre enc s₀') (hq 
     {mid : Prog isa} (hmid : RelCT isa (fun s₁ s₂ => AfterF v.callee.fold v.callee.pass s₀ s₁ ∧ AfterF v.callee.fold v.callee.pass s₀' s₂) mid
       (fun s₁ s₂ => AtIte v.callee.fold v.callee.pass s₀ s₁ ∧ AtIte v.callee.fold v.callee.pass s₀' s₂)) :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀')
-      (.seq (.block entry) (.seq (prologueA v.callee.fold v.callee.pass v.callee.wide) (.seq (.call v.callee.name v.callee.code)
+      (.seq (.block entry) (.seq (prologueA v.callee.fold v.callee.pass v.callee.wide) (.seq v.callee.inPlace
         (.seq mid (cryptIte v.callee)))))
       fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂ := by
   have hfl := v.fold_le
