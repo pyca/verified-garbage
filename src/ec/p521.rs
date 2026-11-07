@@ -9,18 +9,21 @@
     target_arch = "riscv64"
 ))]
 
-use crate::arch::ec_p521::vg_ec_p521_public_key;
+use crate::arch::dispatch::ec_p521::vg_ec_p521_public_key_auto;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::ec_p521::{VG_EC_P521_PUBLIC_KEY_ADX_FEATURES, vg_ec_p521_public_key_adx};
+use crate::arch::ec_p521::VG_EC_P521_PUBLIC_KEY_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdh_p521::VG_ECDH_P521_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p521::{VG_ECDSA_P521_SIGN_ADX_FEATURES, VG_ECDSA_P521_VERIFY_ADX_FEATURES};
-use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use verified_garbage_cpu::Features;
 
 /// The multiplications of P-521's field elements.
+///
+/// Only ECDSA signing still chooses by it: it passes its function, with the
+/// HMAC table, to `ecdsa::table::sign_with`. The other operations call their
+/// generated dispatchers (`crate::arch::dispatch`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Mul {
     /// The baseline implementation.
@@ -60,18 +63,13 @@ impl Mul {
 pub(crate) fn public_key(d: &[u8; 66]) -> Option<[u8; 133]> {
     let mut out = [0; 133];
     let mut scratch = [0u64; 1024];
-    let ok = match Mul::select(detected()) {
-        // SAFETY: `out` is valid for reads and writes of 133 bytes, `d` for
-        // reads of 66 and `scratch` for reads and writes of 8192; `out` and
-        // `scratch` are distinct objects from each other and `d`, so none
-        // overlaps another or the call's stack frame, and, as Rust objects,
-        // none wraps around the address space.
-        Mul::Baseline => unsafe { vg_ec_p521_public_key(&mut out, d, &mut scratch) },
-        // SAFETY: as for `Mul::Baseline`, and the CPU has BMI2 and ADX
-        // (`Mul::select`).
-        #[cfg(target_arch = "x86_64")]
-        Mul::Adx => unsafe { vg_ec_p521_public_key_adx(&mut out, d, &mut scratch) },
-    };
+    // SAFETY: `out` is valid for reads and writes of 133 bytes, `d` for reads
+    // of 66 and `scratch` for reads and writes of 8192; `out` and `scratch` are
+    // distinct objects from each other and `d`, so none overlaps another or the
+    // call's stack frame, and, as Rust objects, none wraps around the address
+    // space. The dispatcher calls only an implementation the CPU has the
+    // features of.
+    let ok = unsafe { vg_ec_p521_public_key_auto(&mut out, d, &mut scratch) };
     zeroize(&mut scratch);
     (ok == 1).then_some(out)
 }
