@@ -23,6 +23,7 @@ pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: 
 .option arch, +m, +c
 .insn 4, 0xd9010113
 .insn 2, 0x888a
+.insn 2, 0x8fba
 .insn 4, 0x00788293
 .insn 4, 0xff82f293
 .insn 4, 0x2372b823
@@ -31,11 +32,13 @@ pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: 
 .insn 4, 0x25a2b423
 .insn 4, 0x25b2b823
 .insn 4, 0x2412bc23
+.insn 4, 0x2762b023
 .insn 2, 0x8bb2
 .insn 2, 0x8c36
 .insn 2, 0x8cba
 .insn 2, 0x8d3e
 .insn 2, 0x8dc2
+.insn 2, 0x8b7e
 .insn 4, 0x06500313
 .insn 4, 0x00628023
 .insn 4, 0x07800313
@@ -191,7 +194,7 @@ call {vg_poly1305_update}
 .insn 2, 0x85e6
 .insn 2, 0x866a
 .insn 4, 0x04050693
-.insn 2, 0x8766
+.insn 2, 0x875a
 call {vg_chacha20_xor}
 .insn 4, 0x18050513
 .insn 4, 0x00fc0593
@@ -230,6 +233,7 @@ call {vg_poly1305_finalize}
 .insn 4, 0x2482bd03
 .insn 4, 0x2502bd83
 .insn 4, 0x2582b083
+.insn 4, 0x2602bb03
 .insn 2, 0x8f0a
 .insn 2, 0x4f81
 .insn 4, 0x01ff3023
@@ -309,6 +313,7 @@ call {vg_poly1305_finalize}
 .insn 4, 0x25ff3823
 .insn 4, 0x25ff3c23
 .insn 4, 0x27ff3023
+.insn 4, 0x27ff3423
 .insn 4, 0x27010113
 .insn 2, 0x8082
 .option pop",
@@ -340,6 +345,7 @@ pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: 
 .option arch, +m, +c
 .insn 4, 0xd9010113
 .insn 2, 0x888a
+.insn 2, 0x8fba
 .insn 4, 0x00788293
 .insn 4, 0xff82f293
 .insn 4, 0x2372b823
@@ -348,11 +354,13 @@ pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: 
 .insn 4, 0x25a2b423
 .insn 4, 0x25b2b823
 .insn 4, 0x2412bc23
+.insn 4, 0x2762b023
 .insn 2, 0x8bb2
 .insn 2, 0x8c36
 .insn 2, 0x8cba
 .insn 2, 0x8d3e
 .insn 2, 0x8dc2
+.insn 2, 0x8b7e
 .insn 4, 0x06500313
 .insn 4, 0x00628023
 .insn 4, 0x07800313
@@ -537,7 +545,7 @@ call {vg_poly1305_finalize}
 .insn 2, 0x85e6
 .insn 2, 0x866a
 .insn 4, 0x04050693
-.insn 2, 0x8766
+.insn 2, 0x875a
 call {vg_chacha20_xor}
 .insn 4, 0x18050513
 .insn 4, 0xe8050293
@@ -611,7 +619,7 @@ call {vg_chacha20_xor}
 beqz t1, 20f
 j 21f
 20:
-.insn 2, 0x83e6
+.insn 2, 0x83da
 .insn 2, 0x8e6a
 beqz t3, 22f
 24:
@@ -629,6 +637,7 @@ j 23f
 .insn 4, 0x2482bd03
 .insn 4, 0x2502bd83
 .insn 4, 0x2582b083
+.insn 4, 0x2602bb03
 .insn 2, 0x851a
 .insn 2, 0x8f0a
 .insn 2, 0x4f81
@@ -709,7 +718,424 @@ j 23f
 .insn 4, 0x25ff3823
 .insn 4, 0x25ff3c23
 .insn 4, 0x27ff3023
+.insn 4, 0x27ff3423
 .insn 4, 0x27010113
+.insn 2, 0x8082
+.option pop",
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_update = sym super::poly1305::vg_poly1305_update,
+        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+    )
+}
+
+/// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `dst_len` must equal `len`.
+/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
+/// * `dst` must not overlap `key`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m, +c
+.insn 4, 0xd8010113
+.insn 2, 0x828a
+.insn 4, 0x28028313
+.insn 4, 0x00033303
+.insn 4, 0x0062b023
+.insn 4, 0x01028313
+.insn 4, 0x0062b423
+.insn 2, 0x8fc2
+.insn 2, 0x828a
+.insn 4, 0x0002b803
+.insn 4, 0x0082b883
+.insn 4, 0x00788293
+.insn 4, 0xff82f293
+.insn 4, 0x2372b823
+.insn 4, 0x2382bc23
+.insn 4, 0x2592b023
+.insn 4, 0x25a2b423
+.insn 4, 0x25b2b823
+.insn 4, 0x2412bc23
+.insn 4, 0x2762b023
+.insn 2, 0x8bb2
+.insn 2, 0x8c36
+.insn 2, 0x8cba
+.insn 2, 0x8d3e
+.insn 2, 0x8dc2
+.insn 2, 0x8b7e
+.insn 4, 0x06500313
+.insn 4, 0x00628023
+.insn 4, 0x07800313
+.insn 4, 0x006280a3
+.insn 4, 0x07000313
+.insn 4, 0x00628123
+.insn 4, 0x06100313
+.insn 4, 0x006281a3
+.insn 4, 0x06e00313
+.insn 4, 0x00628223
+.insn 4, 0x06400313
+.insn 4, 0x006282a3
+.insn 4, 0x02000313
+.insn 4, 0x00628323
+.insn 4, 0x03300313
+.insn 4, 0x006283a3
+.insn 4, 0x03200313
+.insn 4, 0x00628423
+.insn 4, 0x02d00313
+.insn 4, 0x006284a3
+.insn 4, 0x06200313
+.insn 4, 0x00628523
+.insn 4, 0x07900313
+.insn 4, 0x006285a3
+.insn 4, 0x07400313
+.insn 4, 0x00628623
+.insn 4, 0x06500313
+.insn 4, 0x006286a3
+.insn 4, 0x02000313
+.insn 4, 0x00628723
+.insn 4, 0x06b00313
+.insn 4, 0x006287a3
+.insn 4, 0x00054303
+.insn 4, 0x00628823
+.insn 4, 0x00154303
+.insn 4, 0x006288a3
+.insn 4, 0x00254303
+.insn 4, 0x00628923
+.insn 4, 0x00354303
+.insn 4, 0x006289a3
+.insn 4, 0x00454303
+.insn 4, 0x00628a23
+.insn 4, 0x00554303
+.insn 4, 0x00628aa3
+.insn 4, 0x00654303
+.insn 4, 0x00628b23
+.insn 4, 0x00754303
+.insn 4, 0x00628ba3
+.insn 4, 0x00854303
+.insn 4, 0x00628c23
+.insn 4, 0x00954303
+.insn 4, 0x00628ca3
+.insn 4, 0x00a54303
+.insn 4, 0x00628d23
+.insn 4, 0x00b54303
+.insn 4, 0x00628da3
+.insn 4, 0x00c54303
+.insn 4, 0x00628e23
+.insn 4, 0x00d54303
+.insn 4, 0x00628ea3
+.insn 4, 0x00e54303
+.insn 4, 0x00628f23
+.insn 4, 0x00f54303
+.insn 4, 0x00628fa3
+.insn 4, 0x01054303
+.insn 4, 0x02628023
+.insn 4, 0x01154303
+.insn 4, 0x026280a3
+.insn 4, 0x01254303
+.insn 4, 0x02628123
+.insn 4, 0x01354303
+.insn 4, 0x026281a3
+.insn 4, 0x01454303
+.insn 4, 0x02628223
+.insn 4, 0x01554303
+.insn 4, 0x026282a3
+.insn 4, 0x01654303
+.insn 4, 0x02628323
+.insn 4, 0x01754303
+.insn 4, 0x026283a3
+.insn 4, 0x01854303
+.insn 4, 0x02628423
+.insn 4, 0x01954303
+.insn 4, 0x026284a3
+.insn 4, 0x01a54303
+.insn 4, 0x02628523
+.insn 4, 0x01b54303
+.insn 4, 0x026285a3
+.insn 4, 0x01c54303
+.insn 4, 0x02628623
+.insn 4, 0x01d54303
+.insn 4, 0x026286a3
+.insn 4, 0x01e54303
+.insn 4, 0x02628723
+.insn 4, 0x01f54303
+.insn 4, 0x026287a3
+.insn 2, 0x4301
+.insn 4, 0x02628823
+.insn 2, 0x4301
+.insn 4, 0x026288a3
+.insn 2, 0x4301
+.insn 4, 0x02628923
+.insn 2, 0x4301
+.insn 4, 0x026289a3
+.insn 4, 0x0005c303
+.insn 4, 0x02628a23
+.insn 4, 0x0015c303
+.insn 4, 0x02628aa3
+.insn 4, 0x0025c303
+.insn 4, 0x02628b23
+.insn 4, 0x0035c303
+.insn 4, 0x02628ba3
+.insn 4, 0x0045c303
+.insn 4, 0x02628c23
+.insn 4, 0x0055c303
+.insn 4, 0x02628ca3
+.insn 4, 0x0065c303
+.insn 4, 0x02628d23
+.insn 4, 0x0075c303
+.insn 4, 0x02628da3
+.insn 4, 0x0085c303
+.insn 4, 0x02628e23
+.insn 4, 0x0095c303
+.insn 4, 0x02628ea3
+.insn 4, 0x00a5c303
+.insn 4, 0x02628f23
+.insn 4, 0x00b5c303
+.insn 4, 0x02628fa3
+.insn 2, 0x4301
+.insn 4, 0x2062b023
+.insn 4, 0x2062b423
+.insn 4, 0x2182b823
+.insn 4, 0x21a2bc23
+.insn 2, 0x8516
+.insn 4, 0x04050593
+call {vg_chacha20_block}
+.insn 4, 0x04050593
+.insn 4, 0x18050513
+call {vg_poly1305_init}
+.insn 2, 0x4581
+.insn 2, 0x865e
+.insn 2, 0x86e2
+call {vg_poly1305_update}
+.insn 2, 0x85e2
+.insn 2, 0x4681
+.insn 4, 0x418686b3
+.insn 2, 0x8abd
+.insn 4, 0x08050613
+call {vg_poly1305_update}
+.insn 4, 0x00fc0593
+.insn 2, 0x99c1
+.insn 2, 0x8666
+.insn 2, 0x86ea
+call {vg_poly1305_update}
+.insn 4, 0x00fc0593
+.insn 2, 0x99c1
+.insn 2, 0x95ea
+.insn 2, 0x4681
+.insn 4, 0x41a686b3
+.insn 2, 0x8abd
+.insn 4, 0x08050613
+call {vg_poly1305_update}
+.insn 4, 0x00fc0593
+.insn 2, 0x99c1
+.insn 4, 0x00fd0293
+.insn 4, 0xff02f293
+.insn 2, 0x9596
+.insn 4, 0x09050613
+.insn 2, 0x46c1
+call {vg_poly1305_update}
+.insn 4, 0x00fc0593
+.insn 2, 0x99c1
+.insn 4, 0x00fd0293
+.insn 4, 0xff02f293
+.insn 2, 0x9596
+.insn 2, 0x05c1
+.insn 4, 0x0a050613
+call {vg_poly1305_finalize}
+.insn 4, 0xe8050513
+.insn 2, 0x4285
+.insn 4, 0x02550823
+.insn 2, 0x85e6
+.insn 2, 0x866a
+.insn 4, 0x04050693
+.insn 2, 0x875a
+call {vg_chacha20_xor}
+.insn 4, 0x18050513
+.insn 4, 0xe8050293
+.insn 2, 0x4301
+.insn 4, 0x2202c383
+.insn 4, 0x000dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2212c383
+.insn 4, 0x001dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2222c383
+.insn 4, 0x002dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2232c383
+.insn 4, 0x003dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2242c383
+.insn 4, 0x004dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2252c383
+.insn 4, 0x005dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2262c383
+.insn 4, 0x006dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2272c383
+.insn 4, 0x007dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2282c383
+.insn 4, 0x008dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x2292c383
+.insn 4, 0x009dce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x22a2c383
+.insn 4, 0x00adce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x22b2c383
+.insn 4, 0x00bdce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x22c2c383
+.insn 4, 0x00cdce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x22d2c383
+.insn 4, 0x00ddce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x22e2c383
+.insn 4, 0x00edce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 4, 0x22f2c383
+.insn 4, 0x00fdce03
+.insn 4, 0x01c3c3b3
+.insn 4, 0x00736333
+.insn 2, 0x4385
+.insn 4, 0x00733333
+beqz t1, 20f
+j 21f
+20:
+.insn 2, 0x83da
+.insn 2, 0x8e6a
+beqz t3, 22f
+24:
+.insn 4, 0x00638023
+.insn 2, 0x0385
+.insn 2, 0x1e7d
+bnez t3, 24b
+j 23f
+22:
+23:
+21:
+.insn 4, 0x2302bb83
+.insn 4, 0x2382bc03
+.insn 4, 0x2402bc83
+.insn 4, 0x2482bd03
+.insn 4, 0x2502bd83
+.insn 4, 0x2582b083
+.insn 4, 0x2602bb03
+.insn 2, 0x851a
+.insn 4, 0x01010f13
+.insn 2, 0x4f81
+.insn 4, 0x01ff3023
+.insn 4, 0x01ff3423
+.insn 4, 0x01ff3823
+.insn 4, 0x01ff3c23
+.insn 4, 0x03ff3023
+.insn 4, 0x03ff3423
+.insn 4, 0x03ff3823
+.insn 4, 0x03ff3c23
+.insn 4, 0x05ff3023
+.insn 4, 0x05ff3423
+.insn 4, 0x05ff3823
+.insn 4, 0x05ff3c23
+.insn 4, 0x07ff3023
+.insn 4, 0x07ff3423
+.insn 4, 0x07ff3823
+.insn 4, 0x07ff3c23
+.insn 4, 0x09ff3023
+.insn 4, 0x09ff3423
+.insn 4, 0x09ff3823
+.insn 4, 0x09ff3c23
+.insn 4, 0x0bff3023
+.insn 4, 0x0bff3423
+.insn 4, 0x0bff3823
+.insn 4, 0x0bff3c23
+.insn 4, 0x0dff3023
+.insn 4, 0x0dff3423
+.insn 4, 0x0dff3823
+.insn 4, 0x0dff3c23
+.insn 4, 0x0fff3023
+.insn 4, 0x0fff3423
+.insn 4, 0x0fff3823
+.insn 4, 0x0fff3c23
+.insn 4, 0x11ff3023
+.insn 4, 0x11ff3423
+.insn 4, 0x11ff3823
+.insn 4, 0x11ff3c23
+.insn 4, 0x13ff3023
+.insn 4, 0x13ff3423
+.insn 4, 0x13ff3823
+.insn 4, 0x13ff3c23
+.insn 4, 0x15ff3023
+.insn 4, 0x15ff3423
+.insn 4, 0x15ff3823
+.insn 4, 0x15ff3c23
+.insn 4, 0x17ff3023
+.insn 4, 0x17ff3423
+.insn 4, 0x17ff3823
+.insn 4, 0x17ff3c23
+.insn 4, 0x19ff3023
+.insn 4, 0x19ff3423
+.insn 4, 0x19ff3823
+.insn 4, 0x19ff3c23
+.insn 4, 0x1bff3023
+.insn 4, 0x1bff3423
+.insn 4, 0x1bff3823
+.insn 4, 0x1bff3c23
+.insn 4, 0x1dff3023
+.insn 4, 0x1dff3423
+.insn 4, 0x1dff3823
+.insn 4, 0x1dff3c23
+.insn 4, 0x1fff3023
+.insn 4, 0x1fff3423
+.insn 4, 0x1fff3823
+.insn 4, 0x1fff3c23
+.insn 4, 0x21ff3023
+.insn 4, 0x21ff3423
+.insn 4, 0x21ff3823
+.insn 4, 0x21ff3c23
+.insn 4, 0x23ff3023
+.insn 4, 0x23ff3423
+.insn 4, 0x23ff3823
+.insn 4, 0x23ff3c23
+.insn 4, 0x25ff3023
+.insn 4, 0x25ff3423
+.insn 4, 0x25ff3823
+.insn 4, 0x25ff3c23
+.insn 4, 0x27ff3023
+.insn 4, 0x27ff3423
+.insn 4, 0x28010113
 .insn 2, 0x8082
 .option pop",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,

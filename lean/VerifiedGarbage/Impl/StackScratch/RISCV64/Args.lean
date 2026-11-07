@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.RISCV64.Isa
+public import VerifiedGarbage.Impl.StackScratch.RISCV64
 
 /-!
 # A scratch buffer on the stack, for a function with stack arguments (RISC-V)
@@ -15,6 +16,11 @@ stack (`addi sp, sp, -bytes`) and lays out in it what `c` expects to find
 from `sp` on entry (`setArgs`): a copy of the `m` doublewords of arguments,
 then the address of the buffer, which follows them. The buffer is below the
 stack pointer on entry, where no Rust object lies.
+
+`withStackScratchArgsWiped bytes m words c` is the same, but zeroes the
+first `words` doublewords of the buffer after the code (`wipeFrom`), for a
+function whose working space may hold secrets, as `withStackScratchWiped`
+does for one with no stack arguments.
 -/
 
 @[expose] public section
@@ -46,5 +52,14 @@ others, with the buffer in a frame of `bytes` bytes on the stack, at
 `sp + 8 + 8m`. -/
 def withStackScratchArgs (bytes m : Nat) (c : Prog isa) : Prog isa :=
   .frame (.alloc bytes) (.seq (.block (setArgs bytes m)) c) (.free bytes)
+
+/-- `wipe words` from `sp + off` rather than `sp`. -/
+def wipeFrom (off words : Nat) : List Instr :=
+  .addSp .t5 off :: .li .t6 0 :: wipeChunks (words / 256) words
+
+/-- `withStackScratchArgs`, zeroing the first `words` doublewords of the
+buffer, at `sp + 8 + 8m`, after the code. -/
+def withStackScratchArgsWiped (bytes m words : Nat) (c : Prog isa) : Prog isa :=
+  withStackScratchArgs bytes m (.seq c (.block (wipeFrom (8 + 8 * m) words)))
 
 end VG.Impl.StackScratch.RISCV64

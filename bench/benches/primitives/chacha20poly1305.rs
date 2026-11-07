@@ -10,7 +10,8 @@ pub const USES: &[&str] = &["chacha20poly1305", "chacha20", "poly1305"];
 /// encryption out of place for all three, of a plaintext in two pieces as a
 /// TLS 1.3 record's is (its payload and its content type, the last byte),
 /// next to this library's copy of the pieces followed by encryption in
-/// place, which `encrypt` should be no slower than.
+/// place, which `encrypt` should be no slower than; and decryption out of
+/// place (`decrypt`), on the architectures that have it.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -140,6 +141,61 @@ pub fn bench(c: &mut Criterion) {
         });
     }
     g.finish();
+
+    // Decryption out of place: from the ciphertext into a separate buffer,
+    // which it is not copied to first.
+    #[cfg(target_arch = "riscv64")]
+    {
+        let mut g = c.benchmark_group("chacha20poly1305-decrypt-out-of-place");
+        for size in SIZES {
+            g.throughput(Throughput::Bytes(size as u64));
+            let mut ciphertext = vec![0u8; size];
+            let tag = ChaCha20Poly1305::new(&key)
+                .encrypt_in_place(&nonce, &aad, &mut ciphertext)
+                .unwrap();
+            let mut out = vec![0u8; size];
+            g.bench(BenchmarkId::new(VG, size), |b| {
+                b.iter(|| {
+                    ChaCha20Poly1305::new(black_box(&key))
+                        .decrypt(
+                            black_box(&nonce),
+                            black_box(&aad),
+                            black_box(&ciphertext),
+                            black_box(&tag),
+                            black_box(&mut out),
+                        )
+                        .unwrap()
+                })
+            });
+            g.bench(BenchmarkId::new(OPENSSL, size), |b| {
+                b.iter(|| {
+                    decrypt_aead(
+                        Cipher::chacha20_poly1305(),
+                        black_box(&key),
+                        Some(black_box(&nonce)),
+                        black_box(&aad),
+                        black_box(&ciphertext),
+                        black_box(&tag),
+                    )
+                    .unwrap()
+                })
+            });
+            g.bench(BenchmarkId::new(AWS_LC, size), |b| {
+                b.iter(|| {
+                    aws_lc_key(black_box(&key))
+                        .open_separate_gather(
+                            Nonce::assume_unique_for_key(*black_box(&nonce)),
+                            Aad::from(black_box(&aad)),
+                            black_box(&ciphertext),
+                            black_box(&tag),
+                            black_box(&mut out),
+                        )
+                        .unwrap()
+                })
+            });
+        }
+        g.finish();
+    }
 
     // Out of place: from `data` and `content_type`, the last byte, into a
     // separate buffer.
