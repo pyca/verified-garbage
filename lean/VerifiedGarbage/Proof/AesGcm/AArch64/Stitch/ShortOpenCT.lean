@@ -329,12 +329,13 @@ theorem openWithShX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok)
             (hexW p₁) (hexD p₁) (hexC p₁) (fun _ _ => trivial)
             (fun s' _ _ _ _ c sY sS hr hw hsp hf hd =>
               WP.mono (hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd) fun _ g => ⟨g, trivial⟩) htb₂) fun _ q => q.1)
-        fun p₁' p₂' rt₁ rt₂ hok hx₁ hx₂ => openRunWithS_relX v cl hMK gh (hexW p₁) (hexD p₁) (hexC p₁) p₁' p₂' hc.2
-          (regs kk₁ hx₁) (regs kk₂ hx₂) hc.1 rt₁ rt₂ hok hb
+        fun p₁' p₂' rt₁ rt₂ hok hx₁ hx₂ => openRunWithS_relX v cl hMK gh (to := false) (hexW p₁) (hexD p₁)
+          (hexC p₁) p₁' p₂' hc.2 (regs kk₁ hx₁) (regs kk₂ hx₂) hc.1 rt₁ rt₂ hok p₁'.dat.ok p₂'.dat.ok p₁'.dat.ctx
+          p₁'.ddW rfl p₁'.vals.2.2.2.2 p₂'.vals.2.2.2.2 hb
           (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh p₁ c sY sS hr hw hsp hf hd)
           (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd)
           (fun c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd => hrel p₁ p₂ hq₀ c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd)
-          (htb p₁) htb₂ (fun v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂ => htbrel p₁ p₂ hq₀ v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂)
+          (htb p₁) htb₂ (fun v₁ v₂ sp₁ sp₂ hr _ r₁ w₁ f₁ r₂ w₂ f₂ => htbrel p₁ p₂ hq₀ v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂)
   · exact openRestWith_rel v₁ v₂ y12₁ y12₂ (fun o' hT hok _ => openMain_post v o' hT hok)
       (fun o' hT hok _ => openMain_post v o' hT hok) fun p₁' p₂' rt₁ rt₂ hok _ _ =>
         openMain_rel v p₁' p₂' rt₁ rt₂ hok hb
