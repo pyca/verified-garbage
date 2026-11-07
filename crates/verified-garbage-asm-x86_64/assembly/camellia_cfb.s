@@ -968,7 +968,23 @@ vg_camellia_cfb128_decrypt:
 	mov QWORD PTR [r9+3232], r13
 	mov QWORD PTR [r9+3240], r14
 	mov QWORD PTR [r9+3248], r15
-	movq xmm15, rdx
+	mov rax, QWORD PTR [rdx]
+	mov QWORD PTR [r9+3256], rax
+	mov rax, QWORD PTR [rdx+8]
+	mov QWORD PTR [r9+3264], rax
+	test r8, r8
+	je 20f
+	mov rax, r8
+	sub rax, 1
+	shl rax, 4
+	add rax, rcx
+	mov rbx, QWORD PTR [rax]
+	mov QWORD PTR [rdx], rbx
+	mov rbx, QWORD PTR [rax+8]
+	mov QWORD PTR [rdx+8], rbx
+	jmp 21f
+20:
+21:
 	mov rdx, rcx
 	mov r8, r8
 	movabs r14, 71777214294589695
@@ -982,11 +998,11 @@ vg_camellia_cfb128_decrypt:
 	movabs r14, 1099494850560
 	mov QWORD PTR [r9+416], r14
 	cmp rsi, 18
-	je 20f
+	je 22f
 	mov rsi, r9
 	add rsi, 768
 	movabs r15, 34
-22:
+24:
 	mov rax, QWORD PTR [rdi]
 	mov rbx, rax
 	mov rcx, rax
@@ -1212,16 +1228,16 @@ vg_camellia_cfb128_decrypt:
 	add rsi, 64
 	add rdi, 8
 	sub r15, 1
-	jne 22b
+	jne 24b
 	mov rdi, r9
 	add rdi, 2816
 	movabs rdi, 24
-	jmp 21f
-20:
+	jmp 23f
+22:
 	mov rsi, r9
 	add rsi, 768
 	movabs r15, 26
-23:
+25:
 	mov rax, QWORD PTR [rdi]
 	mov rbx, rax
 	mov rcx, rax
@@ -1447,19 +1463,46 @@ vg_camellia_cfb128_decrypt:
 	add rsi, 64
 	add rdi, 8
 	sub r15, 1
-	jne 23b
+	jne 25b
 	mov rdi, r9
 	add rdi, 2304
 	movabs rdi, 18
-21:
-	movq rax, xmm15
-	mov rbp, QWORD PTR [rax]
-	mov QWORD PTR [r9+3016], rbp
-	mov rbp, QWORD PTR [rax+8]
-	mov QWORD PTR [r9+3024], rbp
+23:
 	test r8, r8
-	je 24f
-26:
+	je 26f
+28:
+	movabs rcx, 8
+	cmp r8, 8
+	jb 29f
+	jmp 210f
+29:
+	mov rcx, r8
+210:
+	mov rbp, QWORD PTR [r9+3256]
+	mov QWORD PTR [r9+3016], rbp
+	mov rbp, QWORD PTR [r9+3264]
+	mov QWORD PTR [r9+3024], rbp
+	mov rax, r9
+	add rax, 3032
+	mov rbx, rdx
+	sub rcx, 1
+	je 211f
+213:
+	mov rbp, QWORD PTR [rbx]
+	mov QWORD PTR [rax], rbp
+	mov rbp, QWORD PTR [rbx+8]
+	mov QWORD PTR [rax+8], rbp
+	add rax, 16
+	add rbx, 16
+	sub rcx, 1
+	jne 213b
+	jmp 212f
+211:
+212:
+	mov rbp, QWORD PTR [rbx]
+	mov QWORD PTR [r9+3256], rbp
+	mov rbp, QWORD PTR [rbx+8]
+	mov QWORD PTR [r9+3264], rbp
 	mov r12, rdx
 	mov r13, r8
 	mov r14, rdi
@@ -1469,29 +1512,34 @@ vg_camellia_cfb128_decrypt:
 	mov rdx, r12
 	mov r8, r13
 	mov rdi, r14
-	mov rax, QWORD PTR [rdx]
-	xor rax, QWORD PTR [r9+3016]
-	mov QWORD PTR [rdx], rax
-	mov rax, QWORD PTR [rdx+8]
-	xor rax, QWORD PTR [r9+3024]
-	mov QWORD PTR [rdx+8], rax
-	mov rax, QWORD PTR [r9+3016]
-	xor rax, QWORD PTR [rdx]
-	mov QWORD PTR [r9+3016], rax
-	mov rax, QWORD PTR [r9+3024]
-	xor rax, QWORD PTR [rdx+8]
-	mov QWORD PTR [r9+3024], rax
-	add rdx, 16
-	sub r8, 1
-	jne 26b
-	jmp 25f
-24:
-25:
-	movq rax, xmm15
-	mov rbp, QWORD PTR [r9+3016]
-	mov QWORD PTR [rax], rbp
-	mov rbp, QWORD PTR [r9+3024]
-	mov QWORD PTR [rax+8], rbp
+	movabs rcx, 8
+	cmp r8, 8
+	jb 214f
+	jmp 215f
+214:
+	mov rcx, r8
+215:
+	mov rax, r9
+	add rax, 3016
+	mov rbx, rdx
+	mov r10, rcx
+216:
+	mov rbp, QWORD PTR [rax]
+	xor rbp, QWORD PTR [rbx]
+	mov QWORD PTR [rbx], rbp
+	mov rbp, QWORD PTR [rax+8]
+	xor rbp, QWORD PTR [rbx+8]
+	mov QWORD PTR [rbx+8], rbp
+	add rax, 16
+	add rbx, 16
+	sub rcx, 1
+	jne 216b
+	mov rdx, rbx
+	sub r8, r10
+	jne 28b
+	jmp 27f
+26:
+27:
 	mov rbx, QWORD PTR [r9+3208]
 	mov rbp, QWORD PTR [r9+3216]
 	mov r12, QWORD PTR [r9+3224]
