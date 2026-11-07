@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 public import VerifiedGarbage.Impl.Camellia.X86_64.FbFinal
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Spec.Camellia.CfbFinal
+public import VerifiedGarbage.Spec.Camellia.OfbFinal
 public import VerifiedGarbage.Proof.Modes.FbFinal
 public import VerifiedGarbage.Proof.Camellia.CfbFinalScratch
 public import VerifiedGarbage.Proof.Framework.Scratch
@@ -25,6 +26,7 @@ meta import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 meta import VerifiedGarbage.Impl.Camellia.X86_64.FbFinal
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Spec.Camellia.CfbFinal
+meta import VerifiedGarbage.Spec.Camellia.OfbFinal
 meta import VerifiedGarbage.Proof.Modes.FbFinal
 meta import VerifiedGarbage.Proof.Camellia.CfbFinalScratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
@@ -36,13 +38,14 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
-# Camellia-CFB128 of a message's last piece on x86-64 meets its contracts
+# Camellia-CFB128 and Camellia-OFB of a message's last piece on x86-64 meet their contracts
 
-`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`: the modes' CFB over a message's
-last piece (`Proof.Modes.X86_64.fbFinal_wp`) over Camellia's core, with the
-specification's results (`Proof.Modes.cfbEncFinal_of_bytes`, …).
-`cfbEncryptFinal_verified`, …: each is correct and constant time, by the
-taint analysis, as the whole-block functions are (`FbVerified.lean`);
+`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`, `ofbFinal_wp`: the modes' CFB and
+OFB over a message's last piece (`Proof.Modes.X86_64.fbFinal_wp`) over
+Camellia's core, with the specification's results
+(`Proof.Modes.cfbEncFinal_of_bytes`, …, `Proof.Modes.ofbFinal_of_bytes`).
+`cfbEncryptFinal_verified`, …: each is correct and constant time, by the taint
+analysis, as the whole-block functions are (`FbVerified.lean`);
 `cfbEncryptFinal_framed`, … run them with their working space on the stack,
 zeroed on return, and give the specification's contracts on every key whose
 subkeys are at `schedule` (`Proof.Camellia.cfbEncryptFinal_of_sk`, …).
@@ -214,5 +217,49 @@ theorem cfbDecryptFinal_framed :
     (bytes := 3280) cfbDecryptFinal_verified
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cfbDecryptFinalPostOut_local _) cfbDecryptFinalFrameSat_pre
+
+/-! ## OFB of a message's last piece -/
+
+/-- The final OFB function's contract on x86-64: the data `len = r8` bytes
+long, and the data and the IV as `Spec.Ofb.CryptFinal` says. -/
+def ofbFinalX86_64 : Contract isa where
+  pre := fbPre finalLen
+  post s s' := Spec.Ofb.CryptFinal (ciphOf s) 16 s.mem s'.mem (s.gpr .rdx) (s.gpr .rcx) (finalLen s)
+  pub := fbPub
+
+theorem ofbFinal_wp {s₀ : State} (hp : ofbFinalX86_64.pre s₀) :
+    WP isa ofbFinal s₀ fun s' => gprPreserved s₀ s' ∧ ofbFinalX86_64.post s₀ s' :=
+  WP.mono (fbFinal_wp' .ofb hp) fun s' ⟨hg, hd, hv⟩ => by
+    obtain ⟨h1, h2⟩ := Modes.ofbFinal_of_bytes (by decide) (cipher_length s₀) hd
+    exact ⟨hg, h1, hv.trans h2⟩
+
+theorem ofbFinal_ct : ConstantTime isa ofbFinalX86_64.pre ofbFinalX86_64.pub ofbFinal :=
+  VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree finalLen_congr) (by taint_decide)
+
+theorem ofbFinal_verified :
+    Verified X86_64.target ofbFinal (Proof.Camellia.ofbFinalScratchContract X86_64.abi 409 8) :=
+  Verified.of_correct (k := ofbFinalX86_64) (fun s hs => by
+      obtain ⟨t, s', he, hg, hpost⟩ := ofbFinal_wp hs
+      exact ⟨t, s', he, abiPreserved_of_exec (c := ofbFinal) (by lit_decide) he hg, hpost⟩)
+    ofbFinal_ct (by
+    sig_implies [Proof.Camellia.ofbFinalScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch,
+      Curry.app, Spec.Camellia.ofbFinalSig, Spec.Camellia.ofbFinalPre, Proof.Camellia.ofbFinalPostSk, ofbFinalX86_64, fbPre,
+      fbPub, X86_64.abi, X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [finalSat] using finalSat)
+
+theorem ofbFinalFrameSat_pre : ∃ s, (Proof.Camellia.ofbFinalContractSk X86_64.abi 3288).pre s := by
+  implies_sat [Proof.Camellia.ofbFinalContractSk, Spec.Camellia.ofbFinalSig, Spec.Camellia.ofbFinalPre,
+    Proof.Camellia.ofbFinalPostSk, X86_64.abi, X86_64.argRegs] [finalFrameSat] using finalFrameSat
+
+/-- The final OFB function with its working space on the stack. -/
+theorem ofbFinal_framed :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3280 .r9 409 ofbFinal)
+      (Spec.Camellia.ofbFinalContract X86_64.abi 3288) :=
+  Proof.Camellia.ofbFinal_of_sk <|
+  X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.ofbFinalSig) (nm := "scratch") (e := .u64)
+    (n := 409) (pre := Spec.Camellia.ofbFinalPre X86_64.abi.ptrBits)
+    (post := Proof.Camellia.ofbFinalPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 3280) ofbFinal_verified
+    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by lit_decide) (by decide) (Proof.Camellia.ofbFinalPostOut_local _) ofbFinalFrameSat_pre
 
 end VG.Proof.Camellia.X86_64

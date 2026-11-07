@@ -259,7 +259,7 @@ pub unsafe fn vg_ffdh_generate_key_cached_auto(x: *mut u8, x_len: usize, y: *mut
 
 /// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_generate_parameters_adx` if the CPU supports its features (`VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES`); or else `vg_ffdh_generate_parameters`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ffdh_generate_parameters_ifma` if the CPU supports its features (`VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES`); `vg_ffdh_generate_parameters_adx` if the CPU supports its features (`VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES`); or else `vg_ffdh_generate_parameters`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -278,6 +278,11 @@ pub unsafe fn vg_ffdh_generate_key_cached_auto(x: *mut u8, x_len: usize, y: *mut
 #[inline]
 pub unsafe fn vg_ffdh_generate_parameters_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_ffdh_generate_parameters_ifma`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::ffdh::vg_ffdh_generate_parameters_ifma(out, out_len, used, bits, generator, rand, rand_len, scratch, scratch_len, state) };
+    }
     if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_ffdh_generate_parameters_adx`'s, and the CPU
         // has the features it needs.

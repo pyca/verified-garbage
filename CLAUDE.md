@@ -55,6 +55,23 @@ own changes are rebuilt either way, on top of the restored build.
   code, `TCB/<ISA>/Encode.lean`, but ARM's, whose one crate serves both A32
   and Thumb, as text), and its assembly file, the text of that code,
   `assembly/<module>.s`, which is not compiled: read the code there.
+* **The cryptography is in the verified code, never in Rust.** The Rust
+  around a verified function is tested, not proven, so it does only what
+  cannot be verified: it checks the API's arguments, lays out buffers and
+  state, calls the dispatcher (`<function>_auto`), serves entropy
+  (`crate::entropy::serve`) and maps results to errors. Everything else is
+  verified code with a contract in `Spec/`. That includes padding, partial
+  blocks and segments, the order of absorb, pad and squeeze, constants
+  (rates, suffixes, lengths), rejection sampling, the retry and outer loops
+  of key generation, comparing tags, and wiping output on failure. When the
+  verified functions cannot do what the API needs, never fill the gap in
+  Rust, even "for now" or on only some targets: add the verified function
+  first, in its own spec PR, then the implementation PR. If you find
+  cryptography in Rust, do not extend it or copy it to a new algorithm or
+  target. Move it into verified code and delete the Rust. Nothing checks
+  this automatically: list any cryptography left in Rust in the README's
+  [What is not verified](README.md#what-is-not-verified), and keep that
+  list shrinking.
 * **No unverified shortcuts in proofs.** No `sorry`, `admit`, `native_decide`,
   `bv_decide` or new `axiom`s in anything an artifact depends on.
   `lake build` and the emitter enforce this (warnings are errors, and
@@ -118,8 +135,8 @@ own changes are rebuilt either way, on top of the restored build.
   too, and their callers, without anyone listing it. The Rust code that
   chooses among implementations matches exhaustively on the primitive's
   backend enum (`streaming_hash!`'s, which `streaming_hmac!` and `whole_pbkdf2!`
-  follow; `cipher::chacha20::Backend`, which ChaCha20-Poly1305 follows; a caller of
-  several, like Argon2, matches on each of their enums together): a new
+  follow; a caller of several, like Argon2, matches on each of their enums
+  together): a new
   backend does not compile until everything built on it handles it.
   `ci/check_variants.py` checks the generated code for this (the
   `adding-a-primitive` skill says what it checks). There are no
@@ -135,6 +152,9 @@ own changes are rebuilt either way, on top of the restored build.
   `lean/VerifiedGarbage/TCB/Rust.lean`), which runs
   the best of its implementations the CPU supports and needs no CPU
   feature: Rust code that calls it names no variant and chooses nothing.
+  So does each table of functions' (`<table>_auto()`, in
+  `crate::arch::dispatch::fn_tables`, `Rust.tableDispatcher`), which
+  returns the best of the tables of its interface and data.
   Which is best is not trusted: `lean/VerifiedGarbage/Dispatch.lean` ranks
   the suffixes of each target (with a variant's `extra` features, and its
   `vendor` for a choice by compilation target), and the emitter fails on

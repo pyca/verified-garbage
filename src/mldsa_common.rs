@@ -10,52 +10,6 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-/// The implementations of ML-DSA's verified functions: each variant but
-/// `Scalar` is the one with its suffix.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Backend {
-    /// The baseline implementation.
-    Scalar,
-    /// `_sha3`.
-    #[cfg(target_arch = "aarch64")]
-    Sha3,
-    /// `_avx2`.
-    #[cfg(target_arch = "x86_64")]
-    Avx2,
-    /// `_avx512`.
-    #[cfg(target_arch = "x86_64")]
-    Avx512,
-}
-
-impl Backend {
-    /// Chosen by the features `required` of ML-DSA's own variants, not with
-    /// `crate::hashes::sha3::Backend`: their speed is not the standalone
-    /// hash functions'.
-    #[cfg_attr(
-        not(any(target_arch = "x86_64", target_arch = "aarch64")),
-        allow(unused_variables)
-    )]
-    pub(crate) fn select(
-        f: verified_garbage_cpu::Features,
-        required: verified_garbage_cpu::Features,
-        #[cfg(target_arch = "x86_64")] required_avx512: verified_garbage_cpu::Features,
-    ) -> Backend {
-        #[cfg(target_arch = "aarch64")]
-        if f.contains(required) {
-            return Backend::Sha3;
-        }
-        #[cfg(target_arch = "x86_64")]
-        if f.contains(required_avx512) {
-            return Backend::Avx512;
-        }
-        #[cfg(target_arch = "x86_64")]
-        if f.contains(required) {
-            return Backend::Avx2;
-        }
-        Backend::Scalar
-    }
-}
-
 /// A prepared key's buffer, aligned to a cache line, which the prepared
 /// functions read faster.
 #[cfg(any(
@@ -71,8 +25,9 @@ pub(crate) struct Aligned<T>(pub(crate) T);
 
 /// Defines the API of one ML-DSA parameter set: its `SigningKey` and
 /// `VerifyingKey`, whose functions fail with `crate::error::MlDsaError`,
-/// over its verified `keygen`, `sign_message` and `verify_message_cached`
-/// functions (which takes the hash `tr` of the public key the
+/// over the dispatchers (`_auto`, which run the best implementation the CPU
+/// supports) of its verified `keygen`, `sign_message` and
+/// `verify_message_cached` functions (which takes the hash `tr` of the public key the
 /// `VerifyingKey` keeps, from `keygen` or from `pk_tr`), its `sign` and
 /// `verify` functions (which take a precomputed `μ`) and its sizes; and its
 /// `PreparedSigningKey` and `PreparedVerifyingKey`, which on AArch64, 32-bit
@@ -97,32 +52,6 @@ macro_rules! ml_dsa {
         prepare_verify: $prepare_verify:path,
         sign_message_prepared: $sign_message_prepared:path,
         verify_message_prepared: $verify_message_prepared:path,
-        keygen_sha3: ($keygen_sha3:path, $keygen_sha3_features:path),
-        sign_sha3: ($sign_sha3:path, $sign_sha3_features:path),
-        verify_sha3: ($verify_sha3:path, $verify_sha3_features:path),
-        sign_message_sha3: ($sign_message_sha3:path, $sign_message_sha3_features:path),
-        verify_message_cached_sha3: ($verify_message_cached_sha3:path, $verify_message_cached_sha3_features:path),
-        pk_tr_sha3: ($pk_tr_sha3:path, $pk_tr_sha3_features:path),
-        sign_message_prepared_sha3: ($sign_message_prepared_sha3:path, $sign_message_prepared_sha3_features:path),
-        verify_message_prepared_sha3: ($verify_message_prepared_sha3:path, $verify_message_prepared_sha3_features:path),
-        keygen_avx2: ($keygen_avx2:path, $keygen_avx2_features:path),
-        keygen_avx512: ($keygen_avx512:path, $keygen_avx512_features:path),
-        sign_avx2: ($sign_avx2:path, $sign_avx2_features:path),
-        sign_avx512: ($sign_avx512:path, $sign_avx512_features:path),
-        verify_avx2: ($verify_avx2:path, $verify_avx2_features:path),
-        verify_avx512: ($verify_avx512:path, $verify_avx512_features:path),
-        sign_message_avx2: ($sign_message_avx2:path, $sign_message_avx2_features:path),
-        sign_message_avx512: ($sign_message_avx512:path, $sign_message_avx512_features:path),
-        verify_message_cached_avx2: ($verify_message_cached_avx2:path, $verify_message_cached_avx2_features:path),
-        verify_message_cached_avx512: ($verify_message_cached_avx512:path, $verify_message_cached_avx512_features:path),
-        prepare_sign_avx2: ($prepare_sign_avx2:path, $prepare_sign_avx2_features:path),
-        prepare_sign_avx512: ($prepare_sign_avx512:path, $prepare_sign_avx512_features:path),
-        prepare_verify_avx2: ($prepare_verify_avx2:path, $prepare_verify_avx2_features:path),
-        prepare_verify_avx512: ($prepare_verify_avx512:path, $prepare_verify_avx512_features:path),
-        sign_message_prepared_avx2: ($sign_message_prepared_avx2:path, $sign_message_prepared_avx2_features:path),
-        sign_message_prepared_avx512: ($sign_message_prepared_avx512:path, $sign_message_prepared_avx512_features:path),
-        verify_message_prepared_avx2: ($verify_message_prepared_avx2:path, $verify_message_prepared_avx2_features:path),
-        verify_message_prepared_avx512: ($verify_message_prepared_avx512:path, $verify_message_prepared_avx512_features:path),
         pk: $pk:literal,
         sk: $sk:literal,
         sig: $sig:literal,
@@ -132,55 +61,7 @@ macro_rules! ml_dsa {
         message_scratch: $message_scratch:literal $(,)?
     ) => {
         use $crate::zeroize::zeroize;
-        use $crate::mldsa_common::Backend;
         use $crate::error::{InvalidSignature, MlDsaError};
-
-        /// Select from the generated requirements of every accelerated caller.
-        fn backend() -> Backend {
-            #[cfg(target_arch = "aarch64")]
-            const REQUIRED: &[verified_garbage_cpu::Features] = &[
-                $keygen_sha3_features,
-                $sign_sha3_features,
-                $verify_sha3_features,
-                $sign_message_sha3_features,
-                $verify_message_cached_sha3_features,
-                $pk_tr_sha3_features,
-                $sign_message_prepared_sha3_features,
-                $verify_message_prepared_sha3_features,
-            ];
-            #[cfg(target_arch = "x86_64")]
-            const REQUIRED: &[verified_garbage_cpu::Features] = &[
-                $keygen_avx2_features,
-                $sign_avx2_features,
-                $verify_avx2_features,
-                $sign_message_avx2_features,
-                $verify_message_cached_avx2_features,
-                $prepare_sign_avx2_features,
-                $prepare_verify_avx2_features,
-                $sign_message_prepared_avx2_features,
-                $verify_message_prepared_avx2_features,
-            ];
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-            const REQUIRED: &[verified_garbage_cpu::Features] = &[];
-            #[cfg(target_arch = "x86_64")]
-            const REQUIRED_AVX512: &[verified_garbage_cpu::Features] = &[
-                $keygen_avx512_features,
-                $sign_avx512_features,
-                $verify_avx512_features,
-                $sign_message_avx512_features,
-                $verify_message_cached_avx512_features,
-                $prepare_sign_avx512_features,
-                $prepare_verify_avx512_features,
-                $sign_message_prepared_avx512_features,
-                $verify_message_prepared_avx512_features,
-            ];
-            Backend::select(
-                $crate::cpu::detected(),
-                const { verified_garbage_cpu::Features::all(REQUIRED) },
-                #[cfg(target_arch = "x86_64")]
-                const { verified_garbage_cpu::Features::all(REQUIRED_AVX512) },
-            )
-        }
 
         /// The working space of the assembly functions on `μ`.
         type Scratch = [u64; $scratch];
@@ -219,20 +100,12 @@ macro_rules! ml_dsa {
                 // (and, for `tr` and `scratch`, writes) of their sizes; they
                 // are distinct Rust objects, so they do not overlap each other
                 // or the stack, or wrap around the end of the address space.
-                // `backend()` chose an implementation whose features the CPU
-                // has. `pk_tr` writes `tr = H(bytes, 64)`
+                // The dispatcher calls only an implementation the CPU has the
+                // features of. `pk_tr` writes `tr = H(bytes, 64)`
                 // (`VG.Spec.MlDsa.pkTrContract`), which
                 // `verify_message_cached` requires.
                 unsafe {
-                    match backend() {
-                        Backend::Scalar => $pk_tr(bytes, &mut tr, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $pk_tr_sha3(bytes, &mut tr, scratch.as_mut_ptr()),
-                        // x86-64 has one implementation of `pk_tr`: its
-                        // sponge has no variants.
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 | Backend::Avx512 => $pk_tr(bytes, &mut tr, scratch.as_mut_ptr()),
-                    }
+                    $pk_tr(bytes, &mut tr, scratch.as_mut_ptr())
                 }
                 $VerifyingKey { bytes: *bytes, tr }
             }
@@ -258,20 +131,10 @@ macro_rules! ml_dsa {
                 // `msg` and `ctx` for reads of their lengths; they are
                 // distinct Rust objects, so they do not overlap each other or
                 // the stack, or wrap around the end of the address space.
-                // Backend selection checks the generated CPU feature requirements.
+                // The dispatcher calls only an implementation the CPU has the
+                // features of.
                 let r = unsafe {
-                    match backend() {
-                        // Both constructors establish tr = H(bytes, 64) with
-                        // verified code (`pk_tr`, `keygen`); the key and digest
-                        // remain private and immutable.
-                        Backend::Scalar => $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $verify_message_cached_avx2(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $verify_message_cached_avx512(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
-                    }
+                    $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr)
                 };
                 // 2 is a context longer than 255 bytes.
                 if r == 1 { Ok(()) } else { Err(InvalidSignature) }
@@ -291,18 +154,10 @@ macro_rules! ml_dsa {
                 // for reads (and, for `scratch`, writes) of their sizes; they
                 // are distinct Rust objects, so they do not overlap each other
                 // or the stack, or wrap around the end of the address space.
-                // `backend()` chose an implementation whose features the CPU
-                // has.
+                // The dispatcher calls only an implementation the CPU has the
+                // features of.
                 let r = unsafe {
-                    match backend() {
-                        Backend::Scalar => $verify(&self.bytes, mu, sig, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $verify_sha3(&self.bytes, mu, sig, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $verify_avx2(&self.bytes, mu, sig, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $verify_avx512(&self.bytes, mu, sig, scratch.as_mut_ptr()),
-                    }
+                    $verify(&self.bytes, mu, sig, scratch.as_mut_ptr())
                 };
                 if r == 1 { Ok(()) } else { Err(InvalidSignature) }
             }
@@ -357,18 +212,10 @@ macro_rules! ml_dsa {
                 // sizes; they are distinct Rust objects, so they do not
                 // overlap each other or the stack, or wrap around the end of
                 // the address space. `seed` is the caller's seed.
-                // `backend()` chose an implementation whose features the CPU
-                // has.
+                // The dispatcher calls only an implementation the CPU has the
+                // features of.
                 let r = unsafe {
-                    match backend() {
-                        Backend::Scalar => $keygen(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $keygen_sha3(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $keygen_avx2(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $keygen_avx512(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
-                    }
+                    $keygen(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr())
                 };
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
@@ -429,25 +276,10 @@ macro_rules! ml_dsa {
                 // distinct Rust objects, so they do not overlap each other or
                 // the stack, or wrap around the end of the address space.
                 // `self.sk` was written by the key generation.
-                // Backend selection checks the generated CPU feature requirements.
+                // The dispatcher calls only an implementation the CPU has the
+                // features of.
                 let r = unsafe {
-                    match backend() {
-                        Backend::Scalar => {
-                            $sign_message(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
-                        }
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => {
-                            $sign_message_sha3(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
-                        }
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => {
-                            $sign_message_avx2(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
-                        }
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => {
-                            $sign_message_avx512(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
-                        }
-                    }
+                    $sign_message(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                 };
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
@@ -488,18 +320,10 @@ macro_rules! ml_dsa {
                 // overlap each other or the stack, or wrap around the end of
                 // the address space. `self.sk` was written by the key
                 // generation.
-                // `backend()` chose an implementation whose features the CPU
-                // has.
+                // The dispatcher calls only an implementation the CPU has the
+                // features of.
                 let r = unsafe {
-                    match backend() {
-                        Backend::Scalar => $sign(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $sign_sha3(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $sign_avx2(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $sign_avx512(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
-                    }
+                    $sign(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr())
                 };
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
@@ -521,7 +345,7 @@ macro_rules! ml_dsa {
             /// This key, prepared for many verifications: see
             #[doc = concat!("[`", stringify!($PreparedVerifyingKey), "`].")]
             pub fn prepare(self) -> $PreparedVerifyingKey {
-                #[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little")))]
+                #[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little")))]
                 {
                     let mut prepared = $crate::mldsa_common::Aligned([0u8; $prepared_pk]);
                     // The verified contract accepts arbitrary initial scratch bytes.
@@ -534,30 +358,6 @@ macro_rules! ml_dsa {
                     // prepared key of `self.bytes` to `prepared`
                     // (`VG.Spec.MlDsa.preparePublicKeyContract`).
                     unsafe { $prepare_verify(&self.bytes, &mut prepared.0, work.as_mut_ptr()) };
-                    $PreparedVerifyingKey { prepared, key: self }
-                }
-                #[cfg(target_arch = "x86_64")]
-                {
-                    let mut prepared = $crate::mldsa_common::Aligned([0u8; $prepared_pk]);
-                    // The verified contract accepts arbitrary initial scratch bytes.
-                    let mut work = core::mem::MaybeUninit::<[u64; 128]>::uninit();
-                    let (b, p, w) = (&self.bytes, &mut prepared.0, work.as_mut_ptr());
-                    // SAFETY: `self.bytes`, `prepared` and `work` are valid
-                    // for reads (and, for the last two, writes) of their
-                    // sizes; they are distinct Rust objects, so they do not
-                    // overlap each other or the stack, or wrap around the end
-                    // of the address space. `prepare_verify` writes the
-                    // prepared key of `self.bytes` to `prepared`
-                    // (`VG.Spec.MlDsa.preparePublicKeyContract`).
-                    // `backend()` chose an implementation whose features the
-                    // CPU has.
-                    unsafe {
-                        match backend() {
-                            Backend::Scalar => $prepare_verify(b, p, w),
-                            Backend::Avx2 => $prepare_verify_avx2(b, p, w),
-                            Backend::Avx512 => $prepare_verify_avx512(b, p, w),
-                        }
-                    };
                     $PreparedVerifyingKey { prepared, key: self }
                 }
                 #[cfg(not(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little"))))]
@@ -609,18 +409,10 @@ macro_rules! ml_dsa {
                     // the end of the address space. `self.prepared` is the
                     // prepared key of `self.key.bytes`, and `self.key.tr` is
                     // H(self.key.bytes, 64), from its constructors.
-                    // `backend()` chose an implementation whose features the
-                    // CPU has.
+                    // The dispatcher calls only an implementation the CPU has
+                    // the features of.
                     let r = unsafe {
-                        match backend() {
-                            Backend::Scalar => $verify_message_prepared(&self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr),
-                            #[cfg(target_arch = "aarch64")]
-                            Backend::Sha3 => $verify_message_prepared_sha3(&self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr),
-                            #[cfg(target_arch = "x86_64")]
-                            Backend::Avx2 => $verify_message_prepared_avx2(&self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr),
-                            #[cfg(target_arch = "x86_64")]
-                            Backend::Avx512 => $verify_message_prepared_avx512(&self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr),
-                        }
+                        $verify_message_prepared(&self.prepared.0, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.key.tr)
                     };
                     // 2 is a context longer than 255 bytes.
                     if r == 1 { Ok(()) } else { Err(InvalidSignature) }
@@ -636,7 +428,7 @@ macro_rules! ml_dsa {
             /// This key, prepared for many signatures: see
             #[doc = concat!("[`", stringify!($PreparedSigningKey), "`].")]
             pub fn prepare(self) -> $PreparedSigningKey {
-                #[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little")))]
+                #[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little")))]
                 {
                     let mut prepared = $crate::mldsa_common::Aligned([0u8; $prepared_sk]);
                     // The verified contract accepts arbitrary initial scratch bytes.
@@ -649,32 +441,6 @@ macro_rules! ml_dsa {
                     // `self.sk` to `prepared`
                     // (`VG.Spec.MlDsa.prepareSecretKeyContract`).
                     unsafe { $prepare_sign(&self.sk, &mut prepared.0, work.as_mut_ptr()) };
-                    // SAFETY: the entire working space is writable, including
-                    // bytes the preparation may not have initialized.
-                    unsafe { $crate::zeroize::zeroize_raw(work.as_mut_ptr().cast(), core::mem::size_of_val(&work)) };
-                    $PreparedSigningKey { prepared, key: self }
-                }
-                #[cfg(target_arch = "x86_64")]
-                {
-                    let mut prepared = $crate::mldsa_common::Aligned([0u8; $prepared_sk]);
-                    // The verified contract accepts arbitrary initial scratch bytes.
-                    let mut work = core::mem::MaybeUninit::<[u64; 128]>::uninit();
-                    let (k, p, w) = (&self.sk, &mut prepared.0, work.as_mut_ptr());
-                    // SAFETY: `self.sk`, `prepared` and `work` are valid for
-                    // reads (and, for the last two, writes) of their sizes;
-                    // they are distinct Rust objects, so they do not overlap
-                    // each other or the stack, or wrap around the end of the
-                    // address space. `prepare_sign` writes the prepared key of
-                    // `self.sk` to `prepared`
-                    // (`VG.Spec.MlDsa.prepareSecretKeyContract`). `backend()`
-                    // chose an implementation whose features the CPU has.
-                    unsafe {
-                        match backend() {
-                            Backend::Scalar => $prepare_sign(k, p, w),
-                            Backend::Avx2 => $prepare_sign_avx2(k, p, w),
-                            Backend::Avx512 => $prepare_sign_avx512(k, p, w),
-                        }
-                    };
                     // SAFETY: the entire working space is writable, including
                     // bytes the preparation may not have initialized.
                     unsafe { $crate::zeroize::zeroize_raw(work.as_mut_ptr().cast(), core::mem::size_of_val(&work)) };
@@ -752,18 +518,10 @@ macro_rules! ml_dsa {
                 // are distinct Rust objects, so they do not overlap each other
                 // or the stack, or wrap around the end of the address space.
                 // `self.prepared` is the prepared key of `self.key.sk`, which
-                // the key generation wrote. `backend()` chose an
-                // implementation whose features the CPU has.
+                // the key generation wrote. The dispatcher calls only an
+                // implementation the CPU has the features of.
                 let r = unsafe {
-                    match backend() {
-                        Backend::Scalar => $sign_message_prepared(&self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $sign_message_prepared_sha3(&self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $sign_message_prepared_avx2(&self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
-                        #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $sign_message_prepared_avx512(&self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr()),
-                    }
+                    $sign_message_prepared(&self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                 };
                 // SAFETY: the entire scratch allocation is writable, including
                 // bytes the operation may not have initialized.
@@ -791,42 +549,6 @@ pub(crate) use ml_dsa;
 mod tests {
     use crate::error::{InvalidSignature, MlDsaError};
     use crate::mldsa44::SigningKey44;
-
-    #[cfg(target_arch = "x86_64")]
-    #[test]
-    fn x86_backends_require_every_feature() {
-        use super::Backend;
-        use crate::arch::mldsa44::{
-            VG_MLDSA44_KEYGEN_AVX2_FEATURES, VG_MLDSA44_KEYGEN_AVX512_FEATURES,
-        };
-        use verified_garbage_cpu::Features;
-
-        let avx2 = VG_MLDSA44_KEYGEN_AVX2_FEATURES;
-        let avx512 = VG_MLDSA44_KEYGEN_AVX512_FEATURES;
-        assert_eq!(Backend::select(Features(0), avx2, avx512), Backend::Scalar);
-        assert_eq!(Backend::select(avx2, avx2, avx512), Backend::Avx2);
-        assert_eq!(Backend::select(avx512, avx2, avx512), Backend::Avx512);
-        for bit in 0..32 {
-            let f = Features(avx512.0 & !(1 << bit));
-            if f != avx512 {
-                assert_ne!(Backend::select(f, avx2, avx512), Backend::Avx512);
-            }
-        }
-    }
-
-    #[cfg(target_arch = "aarch64")]
-    #[test]
-    fn accelerated_dispatch_requires_all_features() {
-        use super::Backend;
-        use verified_garbage_cpu::{Features, feature};
-        let required = Features(feature::SHA3 | feature::SHA2);
-        assert_eq!(Backend::select(Features(0), required), Backend::Scalar);
-        assert_eq!(
-            Backend::select(Features(feature::SHA3), required),
-            Backend::Scalar
-        );
-        assert_eq!(Backend::select(required, required), Backend::Sha3);
-    }
 
     #[test]
     fn context_too_long() {

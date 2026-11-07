@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Camellia.X86.FbVerified
 public import VerifiedGarbage.Impl.Camellia.X86.FbFinal
 public import VerifiedGarbage.Spec.Camellia.CfbFinal
+public import VerifiedGarbage.Spec.Camellia.OfbFinal
 public import VerifiedGarbage.Proof.Camellia.CfbFinalScratch
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Modes.X86.SeqFinal
@@ -18,6 +19,7 @@ import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Camellia.X86.FbVerified
 meta import VerifiedGarbage.Impl.Camellia.X86.FbFinal
 meta import VerifiedGarbage.Spec.Camellia.CfbFinal
+meta import VerifiedGarbage.Spec.Camellia.OfbFinal
 meta import VerifiedGarbage.Proof.Camellia.CfbFinalScratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Modes.X86.SeqFinal
@@ -32,10 +34,11 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
-# Camellia-CFB128 of a message's last piece on x86 (32-bit) meets its contracts
+# Camellia-CFB128 and Camellia-OFB of a message's last piece on x86 (32-bit) meet their contracts
 
-`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`: the modes' CFB over a message's
-last piece (`Proof.Modes.X86.cfbEncFinal_wp`, `cfbDecFinal_wp`) over
+`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`, `ofbFinal_wp`: the modes' CFB
+and OFB over a message's last piece (`Proof.Modes.X86.cfbEncFinal_wp`,
+`cfbDecFinal_wp`, `ofbFinal_wp`) over
 Camellia's core in the encryption direction (`dirCoreSpec .encrypt`), with the
 working space as a sixth argument (`finalX86`), as the whole-block functions
 are (`FbVerified.lean`), but the data `len` bytes. Each is correct and
@@ -376,5 +379,67 @@ theorem cfbDecryptFinal_framed :
     (bytes := 2756) cfbDecryptFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.cfbFinalPre_local _)
     (Proof.Camellia.cfbDecryptFinalPost_local _) (Proof.Camellia.cfbDecryptFinalPostOut_local _) (frameSat_pre _)
+
+/-! ## OFB of a message's last piece -/
+
+/-- The final OFB function's postcondition. -/
+def ofbPost (s s' : State) : Prop :=
+  Spec.Ofb.CryptFinal (ciph s) 16 s.mem s'.mem ((arg s 2).setWidth 64) ((arg s 3).setWidth 64) (arg s 4).toNat
+
+theorem ofbFinal_wp {s₀ : State} (hp : (finalX86 ofbPost).pre s₀) :
+    WP isa ofbFinal s₀ fun s' => abiPreserved s₀ s' ∧ (finalX86 ofbPost).post s₀ s' :=
+  WP.mono (Proof.Modes.X86.ofbFinal_wp (dirCoreSpec .encrypt) (seqPre_of hp) rfl rfl (keyArgs_of hp))
+    fun _ ⟨h1, h2⟩ => ⟨h1, by show ofbPost _ _; rw [ofbPost, ← Fb.cipher_eq]; exact h2⟩
+
+theorem ofbFinal_ct : ConstantTime isa (finalX86 ofbPost).pre (finalX86 ofbPost).pub ofbFinal :=
+  let ⟨_, h⟩ := (by native_taint_decide_sum [cryptCallSum] :
+    ∃ h, (VG.X86.taint.check fbTaint ofbFinal h).isSome = true)
+  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
+
+theorem wide_implies_ofb : (wideContract ofbPost).Implies (Proof.Camellia.ofbFinalScratchContract X86.abi 341 16) := by
+  refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
+  · intro s h
+    sig_pre [Proof.Camellia.ofbFinalScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch,
+      Curry.app, Spec.Camellia.ofbFinalSig, Proof.Camellia.ofbFinalPostSk, Spec.Camellia.ofbFinalPre, X86.abi,
+      X86.argSlots, X86.argVal, X86.argBytes, wideContract, finalX86, ofbPost] at h
+    sig_split h
+    sig_reduce [Proof.Camellia.ofbFinalScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch,
+      Curry.app, Spec.Camellia.ofbFinalSig, Proof.Camellia.ofbFinalPostSk, Spec.Camellia.ofbFinalPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, finalX86, ofbPost]
+    sig_and_intros
+    sig_close
+    all_goals first
+      | with_reducible assumption
+      | with_reducible exact Region.Disjoint.symm ‹_›
+      | omega_arith
+      | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
+  · sig_implies_post [Proof.Camellia.ofbFinalScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch,
+      Curry.app, Spec.Camellia.ofbFinalSig, Proof.Camellia.ofbFinalPostSk, Spec.Camellia.ofbFinalPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, finalX86, ofbPost,
+      ciph]
+  · sig_implies_pub [Proof.Camellia.ofbFinalScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch,
+      Curry.app, Spec.Camellia.ofbFinalSig, Proof.Camellia.ofbFinalPostSk, Spec.Camellia.ofbFinalPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, finalX86, ofbPost]
+  · sig_implies_sat [Proof.Camellia.ofbFinalScratchContract, Sig.scratchContract, Sig.withScratch, Curry.withScratch,
+      Curry.app, Spec.Camellia.ofbFinalSig, Proof.Camellia.ofbFinalPostSk, Spec.Camellia.ofbFinalPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, finalX86, ofbPost]
+      [satState, arg, argAddr, Mem.readW, Mem.read] using satState
+
+theorem ofbFinal_verified : Verified X86.target ofbFinal (Proof.Camellia.ofbFinalScratchContract X86.abi 341 16) :=
+  final_verified (fun _ hs => ofbFinal_wp hs) ofbFinal_ct (fun _ _ _ _ _ _ h => h) wide_implies_ofb
+
+theorem ofbFrameSat_pre (post : Spec.Camellia.ofbFinalSig.Post X86.abi.ptrBits) :
+    ∃ s, (Spec.Camellia.ofbFinalSig.contract X86.abi (pre := Spec.Camellia.ofbFinalPre X86.abi.ptrBits) (post := post)
+      (writeArgs := true) (stack := 2772)).pre s := by
+  implies_sat [Spec.Camellia.ofbFinalSig, Spec.Camellia.ofbFinalPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
+
+/-- The final OFB function with its working space on the stack. -/
+theorem ofbFinal_framed :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 ofbFinal)
+      (Spec.Camellia.ofbFinalContract X86.abi 2772) :=
+  Proof.Camellia.ofbFinal_of_sk <|
+  X86.Verified.stackScratchWiped (sig := Spec.Camellia.ofbFinalSig) (nm := "scratch") (e := .u64)
+    (n := 341) (pre := Spec.Camellia.ofbFinalPre X86.abi.ptrBits)
+    (post := Proof.Camellia.ofbFinalPostSk X86.abi.ptrBits) (wa := true) (stack := 16)
+    (bytes := 2756) ofbFinal_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (Proof.Camellia.ofbFinalPre_local _)
+    (Proof.Camellia.ofbFinalPost_local _) (Proof.Camellia.ofbFinalPostOut_local _) (ofbFrameSat_pre _)
 
 end VG.Proof.Camellia.X86.FbFinal

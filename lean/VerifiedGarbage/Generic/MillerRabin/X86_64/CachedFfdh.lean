@@ -12,27 +12,28 @@ public import VerifiedGarbage.TCB.X86_64.Print
 
 namespace VG.Generic.MillerRabin.X86_64.CachedFfdh
 
-def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
+def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact :=
+  if v.roundOnly then [] else [
   Spec.Ffdh.generationPrecomputeApi.artifact X86_64.target {
     suffix := v.suffix
     stack := 8
     code := Proof.Ffdh.X86_64.Cached.precomputeCode v
     verified := Proof.Ffdh.X86_64.Cached.precomputeCode_verified v
     spSafe := Proof.Ffdh.X86_64.Cached.precomputeCode_sp v
-    features := v.features },
+    features := v.arithFeatures },
   Spec.Ffdh.cachedGenerateKeyApi.artifact X86_64.target {
     suffix := v.suffix
     stack := 8
     code := Proof.Ffdh.X86_64.Cached.attemptCode v
     verified := Proof.Ffdh.X86_64.Cached.attemptCode_verified v
     spSafe := Proof.Ffdh.X86_64.Cached.attemptCode_sp v
-    features := v.features },
+    features := v.arithFeatures },
   Spec.Ffdh.cachedKeySearchApi.artifact X86_64.target {
     suffix := v.suffix
     stack := 72
     code := Proof.Ffdh.X86_64.Cached.SearchProof.keyCode v
     verified := Proof.Ffdh.X86_64.Cached.SearchProof.key_verified v
     spSafe := Proof.Ffdh.X86_64.Cached.SearchProof.keyCode_sp v
-    features := v.features }]
+    features := v.arithFeatures }]
 
 end VG.Generic.MillerRabin.X86_64.CachedFfdh

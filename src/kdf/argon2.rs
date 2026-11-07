@@ -19,73 +19,8 @@
 
 use alloc::vec::Vec;
 
-use crate::arch::argon2::vg_argon2;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::argon2::{
-    VG_ARGON2_G_AVX2_FEATURES, VG_ARGON2_G_AVX512_FEATURES, vg_argon2_blake2b_avx2,
-    vg_argon2_blake2b_avx2_g_avx2, vg_argon2_blake2b_avx2_g_avx512, vg_argon2_blake2b_avx512,
-    vg_argon2_blake2b_avx512_g_avx2, vg_argon2_blake2b_avx512_g_avx512, vg_argon2_g_avx2,
-    vg_argon2_g_avx512,
-};
+use crate::arch::dispatch::argon2::vg_argon2_auto;
 use crate::error::PasswordHashError;
-use crate::hashes::blake2b::Blake2bBackend;
-use verified_garbage_cpu::Features;
-
-/// The implementations of Argon2's compression function G, which the
-/// variants of `vg_argon2` follow (their `_g_<suffix>`), with each BLAKE2b
-/// backend.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum CompressBackend {
-    /// The baseline implementation.
-    Scalar,
-    /// `_g_avx2`.
-    #[cfg(target_arch = "x86_64")]
-    Avx2,
-    /// `_g_avx512`.
-    #[cfg(target_arch = "x86_64")]
-    Avx512,
-}
-
-impl CompressBackend {
-    /// The best implementation a CPU with the features `f` can run.
-    #[cfg(target_arch = "x86_64")]
-    pub(crate) fn select(f: Features) -> CompressBackend {
-        if f.contains(VG_ARGON2_G_AVX512_FEATURES) {
-            CompressBackend::Avx512
-        } else if f.contains(VG_ARGON2_G_AVX2_FEATURES) {
-            CompressBackend::Avx2
-        } else {
-            CompressBackend::Scalar
-        }
-    }
-
-    /// The best implementation a CPU with the features `f` can run: there
-    /// is only one here.
-    #[cfg(not(target_arch = "x86_64"))]
-    pub(crate) fn select(_: Features) -> CompressBackend {
-        CompressBackend::Scalar
-    }
-}
-
-// BLAKE2b's `select` chooses `_avx2` exactly when G's `_avx2` features are
-// present, and `_avx512` only when G's `_avx512` features are: so the pairs
-// of BLAKE2b's and G's implementations a CPU gets are scalar with scalar or
-// `_avx512`, `_avx2` with `_avx2` or `_avx512`, and `_avx512` with
-// `_avx512`.
-#[cfg(target_arch = "x86_64")]
-const _: () = {
-    let blake2b_avx2 = Blake2bBackend::REQUIRES[Blake2bBackend::Avx2 as usize];
-    assert!(
-        blake2b_avx2.contains(VG_ARGON2_G_AVX2_FEATURES)
-            && VG_ARGON2_G_AVX2_FEATURES.contains(blake2b_avx2),
-        "BLAKE2b's _avx2 is not chosen for exactly G's _avx2 features"
-    );
-    assert!(
-        Blake2bBackend::REQUIRES[Blake2bBackend::Avx512 as usize]
-            .contains(VG_ARGON2_G_AVX512_FEATURES),
-        "BLAKE2b's _avx512 is chosen without G's _avx512 features"
-    );
-};
 
 /// Argon2's addressing variant.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -334,40 +269,6 @@ impl<'a> Derivation<'a> {
             secret,
             associated_data,
         } = self.inputs;
-        let features = crate::cpu::detected();
-        let derive = match (
-            Blake2bBackend::select(features),
-            CompressBackend::select(features),
-        ) {
-            (Blake2bBackend::Scalar, CompressBackend::Scalar) => vg_argon2,
-            #[cfg(target_arch = "x86_64")]
-            (Blake2bBackend::Scalar, CompressBackend::Avx512) => vg_argon2_g_avx512,
-            #[cfg(target_arch = "x86_64")]
-            (Blake2bBackend::Avx2, CompressBackend::Avx2) => vg_argon2_blake2b_avx2_g_avx2,
-            #[cfg(target_arch = "x86_64")]
-            (Blake2bBackend::Avx2, CompressBackend::Avx512) => vg_argon2_blake2b_avx2_g_avx512,
-            #[cfg(target_arch = "x86_64")]
-            (Blake2bBackend::Avx512, CompressBackend::Avx512) => vg_argon2_blake2b_avx512_g_avx512,
-            // BLAKE2b's `_avx2` backend needs the features that
-            // `VG_ARGON2_G_AVX2_FEATURES` names, and G's `_avx2` is chosen
-            // whenever they are present and `VG_ARGON2_G_AVX512_FEATURES` are
-            // not; BLAKE2b's `_avx512` backend needs a superset of
-            // `VG_ARGON2_G_AVX512_FEATURES` (checked when this compiles, by
-            // the assertions after `CompressBackend::select`): a CPU
-            // never gets one of the `_avx2` ones without the other, and never
-            // BLAKE2b's `_avx512` backend without G's, so these are never
-            // chosen.
-            // NO-COVERAGE-START
-            #[cfg(target_arch = "x86_64")]
-            (Blake2bBackend::Scalar, CompressBackend::Avx2) => vg_argon2_g_avx2,
-            #[cfg(target_arch = "x86_64")]
-            (Blake2bBackend::Avx2, CompressBackend::Scalar) => vg_argon2_blake2b_avx2,
-            #[cfg(target_arch = "x86_64")]
-            (Blake2bBackend::Avx512, CompressBackend::Scalar) => vg_argon2_blake2b_avx512,
-            #[cfg(target_arch = "x86_64")]
-            (Blake2bBackend::Avx512, CompressBackend::Avx2) => vg_argon2_blake2b_avx512_g_avx2,
-            // NO-COVERAGE-END
-        };
         // SAFETY: `Derivation::new` validated the costs and the lengths of
         // the inputs and `out`, which establishes every numeric precondition
         // of `deriveContract`, and `threads` is 1, in its range 1..2²⁴. The
@@ -376,11 +277,10 @@ impl<'a> Derivation<'a> {
         // both allocations are distinct mutable objects. They do not overlap
         // each other, any input, the caller's stack arguments or the
         // assembly stack frame (344 bytes on x86-64, 400 on ARM64, 244 on x86,
-        // 240 on ARM), and no region wraps the address space. The CPU has
-        // every feature the selected BLAKE2b backend and implementation of G
-        // need, and an instance needs exactly those of both.
+        // 240 on ARM), and no region wraps the address space. The dispatcher
+        // calls only an implementation the CPU has the features of.
         unsafe {
-            derive(
+            vg_argon2_auto(
                 variant as u32,
                 password.as_ptr(),
                 password.len(),
@@ -427,9 +327,7 @@ fn allocate<T: Clone>(len: usize, zero: T) -> Result<Vec<T>, PasswordHashError> 
 
 #[cfg(test)]
 mod tests {
-    use super::{CompressBackend, Features, PasswordHashError, allocate, valid};
-    #[cfg(target_arch = "x86_64")]
-    use super::{VG_ARGON2_G_AVX2_FEATURES, VG_ARGON2_G_AVX512_FEATURES};
+    use super::{PasswordHashError, allocate, valid};
 
     #[test]
     fn length_limits() {
@@ -443,38 +341,6 @@ mod tests {
             lengths[j] = u32::MAX as usize + 1;
             assert!(!valid(1, 8, 1, lengths));
         }
-    }
-
-    /// The implementation of G chosen for each set of features.
-    #[test]
-    fn select() {
-        #[cfg(target_arch = "x86_64")]
-        {
-            assert_eq!(
-                CompressBackend::select(VG_ARGON2_G_AVX2_FEATURES),
-                CompressBackend::Avx2
-            );
-            assert_eq!(
-                CompressBackend::select(VG_ARGON2_G_AVX512_FEATURES),
-                CompressBackend::Avx512
-            );
-            assert_eq!(
-                CompressBackend::select(Features(
-                    verified_garbage_cpu::feature::AVX
-                        | verified_garbage_cpu::feature::AVX2
-                        | verified_garbage_cpu::feature::AVX512F
-                )),
-                CompressBackend::Avx512
-            );
-            assert_eq!(
-                CompressBackend::select(Features(verified_garbage_cpu::feature::AVX)),
-                CompressBackend::Scalar
-            );
-        }
-        assert_eq!(
-            CompressBackend::select(Features(0)),
-            CompressBackend::Scalar
-        );
     }
 
     #[test]

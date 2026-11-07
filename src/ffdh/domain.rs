@@ -1,30 +1,15 @@
 //! The FFDH operations: the domain, public-key and key-pair checks, key
 //! generation and the exchange.
 
-use super::arithmetic::{Backend, Exp, scalar};
-use crate::arch::ffdh::{
-    vg_ffdh_check_domain, vg_ffdh_check_private, vg_ffdh_check_public, vg_ffdh_exchange,
-    vg_ffdh_key_generation_init,
+use super::arithmetic::scalar;
+#[cfg(test)]
+use crate::arch::dispatch::ffdh::vg_ffdh_generate_key_cached_auto;
+use crate::arch::dispatch::ffdh::{
+    vg_ffdh_check_domain_auto, vg_ffdh_check_private_auto, vg_ffdh_check_public_auto,
+    vg_ffdh_derive_public_auto, vg_ffdh_exchange_auto, vg_ffdh_generate_key_search_cached_auto,
 };
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ffdh::{
-    vg_ffdh_check_domain_exp_ifma, vg_ffdh_check_domain_mr_adx,
-    vg_ffdh_check_domain_mr_adx_exp_ifma, vg_ffdh_check_private_exp_ifma,
-    vg_ffdh_check_private_mr_adx, vg_ffdh_check_private_mr_adx_exp_ifma,
-    vg_ffdh_check_public_exp_ifma, vg_ffdh_check_public_mr_adx,
-    vg_ffdh_check_public_mr_adx_exp_ifma, vg_ffdh_derive_public_exp_ifma,
-    vg_ffdh_derive_public_mr_adx, vg_ffdh_derive_public_mr_adx_exp_ifma, vg_ffdh_exchange_exp_ifma,
-    vg_ffdh_exchange_mr_adx, vg_ffdh_exchange_mr_adx_exp_ifma,
-};
-use crate::cpu::detected;
+use crate::arch::ffdh::vg_ffdh_key_generation_init;
 use crate::rsa::Scratch;
-
-/// The arithmetic and the exponentiation of the domain operations for the
-/// CPU's features.
-fn domain_variant() -> (Backend, Exp) {
-    let f = detected();
-    (Backend::ffdh(f), Exp::ffdh(f))
-}
 
 /// The working space every function needs, `16 p_len + 32` words.
 fn scratch(p_len: usize) -> Scratch {
@@ -55,23 +40,12 @@ impl Domain {
             bytes[3 * p_len - q.len()..].copy_from_slice(q);
         }
         let mut ws = scratch(p_len);
-        let f = match domain_variant() {
-            (Backend::Baseline, Exp::Baseline) => vg_ffdh_check_domain,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Baseline) => vg_ffdh_check_domain_mr_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Baseline, Exp::Ifma) => vg_ffdh_check_domain_exp_ifma,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Ifma) => vg_ffdh_check_domain_mr_adx_exp_ifma,
-            #[cfg(target_arch = "arm")]
-            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_check_domain_umaal,
-        };
         // SAFETY: `bytes` is `2 p_len` or `3 p_len` bytes for a `p_len` in
         // 64..=1024, and `ws` is `16 p_len + 32` words; they are distinct
-        // Rust objects. The CPU variant is selected only when the CPU has
-        // its generated feature set.
+        // Rust objects. The dispatcher calls only an implementation the CPU
+        // has the features of.
         let ok = unsafe {
-            f(
+            vg_ffdh_check_domain_auto(
                 bytes.as_ptr(),
                 bytes.len(),
                 p_len,
@@ -102,23 +76,12 @@ impl Domain {
         }
         let y = scalar(y, self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match domain_variant() {
-            (Backend::Baseline, Exp::Baseline) => vg_ffdh_check_public,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Baseline) => vg_ffdh_check_public_mr_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Baseline, Exp::Ifma) => vg_ffdh_check_public_exp_ifma,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Ifma) => vg_ffdh_check_public_mr_adx_exp_ifma,
-            #[cfg(target_arch = "arm")]
-            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_check_public_umaal,
-        };
         // SAFETY: `self.bytes` is a domain laid out by `new`, `y` is `p_len`
         // bytes and `ws` `16 p_len + 32` words; all are distinct objects.
-        // The CPU variant is selected only when the CPU has its generated
-        // feature set.
+        // The dispatcher calls only an implementation the CPU has the
+        // features of.
         unsafe {
-            f(
+            vg_ffdh_check_public_auto(
                 self.bytes.as_ptr(),
                 self.bytes.len(),
                 self.p_len,
@@ -138,20 +101,9 @@ impl Domain {
         }
         let y = scalar(y, self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match domain_variant() {
-            (Backend::Baseline, Exp::Baseline) => vg_ffdh_check_private,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Baseline) => vg_ffdh_check_private_mr_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Baseline, Exp::Ifma) => vg_ffdh_check_private_exp_ifma,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Ifma) => vg_ffdh_check_private_mr_adx_exp_ifma,
-            #[cfg(target_arch = "arm")]
-            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_check_private_umaal,
-        };
         // SAFETY: as in `check_public`, and `x` is 1 to `p_len` bytes.
         unsafe {
-            f(
+            vg_ffdh_check_private_auto(
                 self.bytes.as_ptr(),
                 self.bytes.len(),
                 self.p_len,
@@ -171,21 +123,10 @@ impl Domain {
     pub(super) fn derive_public(&self, x: &[u8], y: &mut [u8]) -> u32 {
         assert!(!x.is_empty() && x.len() <= self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match domain_variant() {
-            (Backend::Baseline, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_derive_public,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Baseline) => vg_ffdh_derive_public_mr_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Baseline, Exp::Ifma) => vg_ffdh_derive_public_exp_ifma,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Ifma) => vg_ffdh_derive_public_mr_adx_exp_ifma,
-            #[cfg(target_arch = "arm")]
-            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_derive_public_umaal,
-        };
         // SAFETY: `y` is `p_len` bytes, `x` 1 to `p_len`, the domain, `ws`
-        // and the variant as in `check_public`; all are distinct objects.
+        // and the dispatcher as in `check_public`; all are distinct objects.
         unsafe {
-            f(
+            vg_ffdh_derive_public_auto(
                 y.as_mut_ptr(),
                 y.len(),
                 self.bytes.as_ptr(),
@@ -225,24 +166,17 @@ impl Domain {
     ) -> (u32, usize, usize) {
         assert!(x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match Backend::ffdh(detected()) {
-            Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_search_cached,
-            #[cfg(target_arch = "arm")]
-            Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_search_cached_umaal,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_search_cached_adx,
-        };
         let mut used = [0u64; 1];
         // SAFETY: `state` came from `key_state` for this domain and has only
         // been passed to this function since, which keeps its words as the
         // contract's precondition needs; the domain was checked by
         // `vg_ffdh_check_domain`; `x` and `y` are `p_len` bytes and `ws`
-        // `16 p_len + 32` words. All are distinct Rust objects. The CPU
-        // variant is selected only when the CPU has its generated feature
-        // set. The public context is the immutable canonical allocation written
+        // `16 p_len + 32` words. All are distinct Rust objects. The
+        // dispatcher calls only an implementation the CPU has the features
+        // of. The public context is the immutable canonical allocation written
         // once for this checked domain and its exact ctx_len.
         let status = unsafe {
-            f(
+            vg_ffdh_generate_key_search_cached_auto(
                 x.as_mut_ptr(),
                 x.len(),
                 y.as_mut_ptr(),
@@ -271,18 +205,11 @@ impl Domain {
     pub(super) fn generate_key(&self, rand: &[u8], x: &mut [u8], y: &mut [u8]) -> u32 {
         assert!(rand.len() == self.p_len && x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match Backend::ffdh(detected()) {
-            Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_cached,
-            #[cfg(target_arch = "arm")]
-            Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_cached_umaal,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_cached_adx,
-        };
         // SAFETY: `x`, `y` and `rand` are `p_len` bytes each, the domain,
-        // `ws` and the variant as in `check_public`; all are distinct
+        // `ws` and the dispatcher as in `check_public`; all are distinct
         // objects.
         unsafe {
-            f(
+            vg_ffdh_generate_key_cached_auto(
                 x.as_mut_ptr(),
                 x.len(),
                 y.as_mut_ptr(),
@@ -313,22 +240,11 @@ impl Domain {
         );
         let y = scalar(y, self.p_len);
         let mut ws = scratch(self.p_len);
-        let f = match domain_variant() {
-            (Backend::Baseline, Exp::Baseline) => vg_ffdh_exchange,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Baseline) => vg_ffdh_exchange_mr_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Baseline, Exp::Ifma) => vg_ffdh_exchange_exp_ifma,
-            #[cfg(target_arch = "x86_64")]
-            (Backend::Adx, Exp::Ifma) => vg_ffdh_exchange_mr_adx_exp_ifma,
-            #[cfg(target_arch = "arm")]
-            (Backend::Umaal, Exp::Baseline) => crate::arch::ffdh::vg_ffdh_exchange_umaal,
-        };
         // SAFETY: `out` and `y` are `p_len` bytes, `x` 1 to `p_len`, the
-        // domain, `ws` and the variant as in `check_public`; all are
+        // domain, `ws` and the dispatcher as in `check_public`; all are
         // distinct objects.
         unsafe {
-            f(
+            vg_ffdh_exchange_auto(
                 out.as_mut_ptr(),
                 out.len(),
                 self.bytes.as_ptr(),
@@ -348,8 +264,6 @@ impl Domain {
 #[cfg(test)]
 mod cache_tests {
     use super::Domain;
-    #[cfg(any(target_arch = "arm", target_arch = "x86_64"))]
-    use super::{Backend, detected, scratch};
 
     #[test]
     fn clones_share_immutable_context_and_keep_it_alive() {
@@ -373,85 +287,6 @@ mod cache_tests {
             assert_eq!(x, draw);
             assert_eq!(super::super::arithmetic::canonical(&y), &[8]);
             assert_eq!(cloned.precomputed.words(), expected);
-        }
-    }
-
-    #[cfg(any(target_arch = "arm", target_arch = "x86_64"))]
-    #[test]
-    fn canonical_context_crosses_arithmetic_backends() {
-        // Feature-forced baseline CI runs take the first path; UMAAL and ADX
-        // runs also exercise both directions with the actual generated
-        // functions.
-        #[cfg(target_arch = "arm")]
-        let variant = Backend::Umaal;
-        #[cfg(target_arch = "x86_64")]
-        let variant = Backend::Adx;
-        if Backend::ffdh(detected()) != variant {
-            return;
-        }
-        let mut p = alloc::vec![0; 64];
-        p[0] = 0x80;
-        p[63] = 1;
-        // Exercise an uncapped domain and a published vetted group without
-        // deriving or repeating their sampling policy in Rust.
-        let vetted = super::super::vetted_tests::modp_groups().remove(0);
-        for p in [p, vetted] {
-            let domain = Domain::new(&p, &[2], None).unwrap();
-            let mut ws = scratch(domain.p_len);
-            let baseline = super::super::precomputed::Precomputed::new_with_backend(
-                &domain.bytes,
-                domain.p_len,
-                &mut ws,
-                Backend::Baseline,
-            );
-            let other = super::super::precomputed::Precomputed::new_with_backend(
-                &domain.bytes,
-                domain.p_len,
-                &mut ws,
-                variant,
-            );
-            // Every word of the context is the same.
-            assert_eq!(baseline.words(), other.words());
-            let mut draw = alloc::vec![0; domain.p_len];
-            draw[domain.p_len - 1] = 3;
-            let (mut expected_x, mut expected_y) =
-                (alloc::vec![0; domain.p_len], alloc::vec![0; domain.p_len]);
-            let expected = domain.generate_key(&draw, &mut expected_x, &mut expected_y);
-            for (context, backend) in [(&baseline, variant), (&other, Backend::Baseline)] {
-                let f = match backend {
-                    Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_cached,
-                    #[cfg(target_arch = "arm")]
-                    Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_cached_umaal,
-                    #[cfg(target_arch = "x86_64")]
-                    Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_cached_adx,
-                };
-                let (mut x, mut y) = (alloc::vec![0; domain.p_len], alloc::vec![0; domain.p_len]);
-                // SAFETY: domain was checked, context was initialized for these
-                // exact parameters by the opposite arithmetic backend, all byte
-                // outputs/draw have p_len entries, ws has the required capacity,
-                // allocations are disjoint, and the CPU supports both backends.
-                let status = unsafe {
-                    f(
-                        x.as_mut_ptr(),
-                        x.len(),
-                        y.as_mut_ptr(),
-                        y.len(),
-                        domain.bytes.as_ptr(),
-                        domain.bytes.len(),
-                        domain.p_len,
-                        draw.as_ptr(),
-                        draw.len(),
-                        ws.as_mut_ptr(),
-                        ws.len(),
-                        context.words().as_ptr(),
-                        context.words().len(),
-                    )
-                };
-                assert_eq!(status, expected);
-                assert_eq!(x, expected_x);
-                assert_eq!(y, expected_y);
-                assert_eq!(context.words(), domain.precomputed.words());
-            }
         }
     }
 }

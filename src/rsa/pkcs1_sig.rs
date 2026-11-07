@@ -25,32 +25,12 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::arch::rsa_pkcs1_sig::{
-    vg_rsa_pkcs1_recover_precomputed, vg_rsa_pkcs1_sign, vg_rsa_pkcs1_verify_precomputed,
+use crate::arch::dispatch::rsa_pkcs1_sig::{
+    vg_rsa_pkcs1_recover_precomputed_auto, vg_rsa_pkcs1_sign_auto,
+    vg_rsa_pkcs1_verify_precomputed_auto,
 };
-#[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_pkcs1_sig::{
-    vg_rsa_pkcs1_recover_precomputed_adx, vg_rsa_pkcs1_recover_precomputed_ifma,
-    vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma, vg_rsa_pkcs1_verify_precomputed_adx,
-    vg_rsa_pkcs1_verify_precomputed_ifma,
-};
-#[cfg(all(
-    target_arch = "arm",
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
-))]
-use crate::arch::rsa_pkcs1_sig::{
-    vg_rsa_pkcs1_recover_precomputed_umaal, vg_rsa_pkcs1_sign_umaal,
-    vg_rsa_pkcs1_verify_precomputed_umaal,
-};
-use crate::cpu::detected;
 use crate::error::InvalidSignature;
-use crate::rsa::{Backend, PrivateKey, PublicKey, public_scratch_words, scratch_words};
+use crate::rsa::{PrivateKey, PublicKey, public_scratch_words, scratch_words};
 
 /// The hash function of a hash value (`VG.Spec.RsaPkcs1Sig.Hash`), each with
 /// the number the verified functions take (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
@@ -133,34 +113,15 @@ impl PrivateKey {
         let k = self.n.len();
         let mut out = vec![0; k];
         let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
-        let f = match Backend::select(detected()) {
-            Backend::Baseline => vg_rsa_pkcs1_sign,
-            // `select` chose them because the CPU has the features they need.
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_rsa_pkcs1_sign_adx,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Ifma => vg_rsa_pkcs1_sign_ifma,
-            #[cfg(all(
-                target_arch = "arm",
-                any(
-                    target_os = "linux",
-                    target_os = "android",
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-                )
-            ))]
-            Backend::Umaal => vg_rsa_pkcs1_sign_umaal,
-        };
         // SAFETY: each pointer is valid for its length (`out` for writes,
         // `scratch` too), and none overlaps another or wraps around, as they are
         // distinct Rust allocations; `PrivateKey::from_crt` gives
         // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`,
         // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len` and `dq_len = q_len`;
-        // `out_len = n_len` and `scratch_len = 16 n_len + 32`; and the CPU has the
-        // features of the function `select` chose.
+        // `out_len = n_len` and `scratch_len = 16 n_len + 32`; and the
+        // dispatcher calls only an implementation the CPU has the features of.
         let r = unsafe {
-            f(
+            vg_rsa_pkcs1_sign_auto(
                 out.as_mut_ptr(),
                 k,
                 self.n.as_ptr(),
@@ -214,32 +175,15 @@ impl PublicKey {
         let k = self.n.len();
         let mut scratch = self.verify_scratch.take(public_scratch_words(k), false);
         let pre = self.pre(&mut scratch);
-        let f = match Backend::select(detected()) {
-            Backend::Baseline => vg_rsa_pkcs1_verify_precomputed,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_rsa_pkcs1_verify_precomputed_adx,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Ifma => vg_rsa_pkcs1_verify_precomputed_ifma,
-            #[cfg(all(
-                target_arch = "arm",
-                any(
-                    target_os = "linux",
-                    target_os = "android",
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-                )
-            ))]
-            Backend::Umaal => vg_rsa_pkcs1_verify_precomputed_umaal,
-        };
         // SAFETY: each pointer is valid for its length (`scratch` for writes),
         // and none overlaps another or wraps around, as they are distinct Rust
         // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024` and
         // `1 ≤ e_len ≤ 5 ≤ n_len`; `scratch_len = 8 ⌈n_len / 8⌉ + 48`; and `pre`
         // holds the verified precomputation for `self.n`, with `2 * ceil(n_len / 8)`
-        // words. The CPU supports the selected function's features.
+        // words. The dispatcher calls only an implementation the CPU has the
+        // features of.
         let r = unsafe {
-            f(
+            vg_rsa_pkcs1_verify_precomputed_auto(
                 self.n.as_ptr(),
                 k,
                 self.e.as_ptr(),
@@ -279,34 +223,16 @@ impl PublicKey {
         let mut out = vec![0; hash.digest_len()];
         let mut scratch = vec![0u64; public_scratch_words(k)];
         let pre = self.pre(&mut scratch);
-        let f = match Backend::select(detected()) {
-            Backend::Baseline => vg_rsa_pkcs1_recover_precomputed,
-            // `select` chose it because the CPU has the features it needs.
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_rsa_pkcs1_recover_precomputed_adx,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Ifma => vg_rsa_pkcs1_recover_precomputed_ifma,
-            #[cfg(all(
-                target_arch = "arm",
-                any(
-                    target_os = "linux",
-                    target_os = "android",
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-                )
-            ))]
-            Backend::Umaal => vg_rsa_pkcs1_recover_precomputed_umaal,
-        };
         // SAFETY: each pointer is valid for its length (`out` and `scratch` for
         // writes), and none overlaps another or wraps around, as they are
         // distinct Rust allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024`
         // and `1 ≤ e_len ≤ 5 ≤ n_len`; `hash` is in `0..=11` and `out_len` is the
         // length of its values; `scratch_len = 8 ⌈n_len / 8⌉ + 48`; `pre` holds the
         // verified precomputation for `self.n`, with `2 * ceil(n_len / 8)` words;
-        // and the CPU supports the selected function's features.
+        // and the dispatcher calls only an implementation the CPU has the
+        // features of.
         let r = unsafe {
-            f(
+            vg_rsa_pkcs1_recover_precomputed_auto(
                 out.as_mut_ptr(),
                 out.len(),
                 self.n.as_ptr(),

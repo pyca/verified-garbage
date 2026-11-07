@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCorrect
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignConstantTime
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignABI
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSignVerified
+public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 import VerifiedGarbage.Proof.Framework.Omega
 /-! Complete verification of randomized DSA signing for every x86-64 backend:
@@ -58,8 +59,8 @@ private theorem sat_arg_6 : stackArg randomSignSatState 6 = 2112 := by
   decide +kernel
 
 theorem random_sign_sat_pre (extra : Nat) (hb : extra < 2 ^ 32) :
-    (Spec.Dsa.randomSignContract abi (extra + 256)).pre randomSignSatState := by
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven]
+    (randomSignCheckedContract abi (extra + 256)).pre randomSignSatState := by
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven]
   sig_and_intros
   all_goals try simp only [sat_arg_0, sat_arg_1, sat_arg_2, sat_arg_3, sat_arg_4, sat_arg_5, sat_arg_6]
   all_goals first
@@ -69,7 +70,7 @@ theorem random_sign_sat_pre (extra : Nat) (hb : extra < 2 ^ 32) :
     | (intro a h₁ h₂; simp only [Region.Contains, stackArgAddr, randomSignSatState] at h₁ h₂; bv_omega)
 
 theorem random_sign_satisfiable (v : Backend) :
-    ∃ s, (Spec.Dsa.randomSignContract abi (v.stack + 256)).pre s :=
+    ∃ s, (randomSignCheckedContract abi (v.stack + 256)).pre s :=
   ⟨_, random_sign_sat_pre v.stack v.stackBound⟩
 
 /-- A backend's fully checked signer, which accepts every key. -/
@@ -88,7 +89,7 @@ def Backend.signer (v : Backend) : Signer where
 
 theorem random_sign_verified (v : Backend) :
     Verified target (RandomSign.code (randomSignerName v) (SignVerify.sign v.sq v.mul))
-      (Spec.Dsa.randomSignContract abi (v.stack + 256)) :=
+      (randomSignCheckedContract abi (v.stack + 256)) :=
   ⟨fun s h => random_sign_correct v.signer s h rfl,
     fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ => random_sign_constantTime v.signer s₁ s₂ t₁ t₂ u₁ u₂ ⟨h₁, rfl⟩ ⟨h₂, rfl⟩,
     random_sign_satisfiable v⟩
@@ -108,7 +109,7 @@ def Backend.prevalidatedSigner (v : Backend) : Signer where
 
 theorem randomPrevalidated_pre {extra : Nat} {s : State}
     (h : (Spec.Dsa.randomSignPrevalidatedContract abi (extra + 256)).pre s) :
-    (Spec.Dsa.randomSignContract abi (extra + 256)).pre s ∧
+    (randomSignCheckedContract abi (extra + 256)).pre s ∧
       Spec.Dsa.validatePrivateKeyBytes (s.gpr .r9).toNat (stackArg s 0).toNat
         (Spec.Rsa.bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat) = true := by
   sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven,
@@ -117,20 +118,20 @@ theorem randomPrevalidated_pre {extra : Nat} {s : State}
     List.range, List.range.loop] at h
   sig_split h
   refine ⟨?_, by assumption⟩
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven,
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven,
     show extra + 256 = (extra + 255) + 1 from rfl, List.range, List.range.loop]
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven,
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven,
     List.range, List.range.loop]
   sig_and_intros <;> with_reducible assumption
 
 theorem randomPrevalidated_of_pre {extra : Nat} {s : State}
-    (h : (Spec.Dsa.randomSignContract abi (extra + 256)).pre s)
+    (h : (randomSignCheckedContract abi (extra + 256)).pre s)
     (hv : Spec.Dsa.validatePrivateKeyBytes (s.gpr .r9).toNat (stackArg s 0).toNat
         (Spec.Rsa.bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat) = true) :
     (Spec.Dsa.randomSignPrevalidatedContract abi (extra + 256)).pre s := by
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven,
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven,
     show extra + 256 = (extra + 255) + 1 from rfl, List.range, List.range.loop] at h
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven,
+  sig_pre [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven,
     List.range, List.range.loop] at h
   sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven,
     show extra + 256 = (extra + 255) + 1 from rfl, List.range, List.range.loop]

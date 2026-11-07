@@ -83,7 +83,9 @@ verified functions, through their contracts (`WP.call`, `blk_call`):
 Constant time (`final_rel`): the blocks by the taint analysis, the calls by
 their contracts' constant time (`RelCT.callEx`, `blk_rel`), every address
 and branch from the pointers and `len`, which agree in both runs.
-`encryptFinal_framed` runs the code with `save` in a frame of 64 bytes on
+`final_wp` and `final_rel` hold for any mode `M` of the whole-block
+function, so AES-OFB's final function (`Proof/AesOfb/RISCV64/Final.lean`)
+reuses them. `encryptFinal_framed` runs the code with `save` in a frame of 64 bytes on
 the stack (`RISCV64.Verified.stackScratchWiped`), zeroed on return.
 -/
 
@@ -210,7 +212,6 @@ structure FPre (s₀ : State) : Prop where
   data_scr : (fData s₀).Disjoint (fScr s₀)
   data_sv : (fData s₀).Disjoint (fSv s₀)
   scr_sv : (fScr s₀).Disjoint (fSv s₀)
-  sch_wrap : (fW s₀).toNat + 240 ≤ 2 ^ 64
   iv_wrap : (fIv s₀).toNat + 16 ≤ 2 ^ 64
   data_wrap : (fD s₀).toNat + fL s₀ ≤ 2 ^ 64
   scr_wrap : (fS s₀).toNat + 2176 ≤ 2 ^ 64
@@ -219,8 +220,8 @@ structure FPre (s₀ : State) : Prop where
   rounds : fR s₀ = 10 ∨ fR s₀ = 12 ∨ fR s₀ = 14
 
 theorem FPre.of {enc : Bool} {s₀ : State} (h : (finalRISCV64 enc).pre s₀) : FPre s₀ :=
-  let ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19⟩ := h
-  ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19⟩
+  let ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, _, a14, a15, a16, a17, a18, a19⟩ := h
+  ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a14, a15, a16, a17, a18, a19⟩
 
 /-! ## Regions -/
 
@@ -648,7 +649,6 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
   have eN := fN_eq s₀
   have eU := fU_eq s₀
   have xp : XPre s₁ (fIv s₀) (fT s₀) (fU s₀) := {
-    pos := by omega
     fK := by omega
     fR := by omega
     disj := (hp.iv_data.sub_left (Region.sub_prefix (by omega))).sub_right (tail_sub s₀)
@@ -772,10 +772,10 @@ theorem agree_of {s₁ s₂ : State} {rs : List Reg} (hsp : s₁.sp = s₂.sp) (
     taint.Agree (Taint.ofRegs rs) s₁ s₂ :=
   ⟨hsp, fun r hr => h r (Taint.mem_ofRegs.mp hr)⟩
 
-theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
-    (hv : ∀ s, (modeRISCV64 (cfbMode enc)).pre s →
-      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeRISCV64 (cfbMode enc)).post s s')
-    (hct : ConstantTime isa (modeRISCV64 (cfbMode enc)).pre (modeRISCV64 (cfbMode enc)).pub whole)
+theorem final_rel {enc : Bool} {M : Mode} {name : String} {whole : Prog isa}
+    (hv : ∀ s, (modeRISCV64 M).pre s →
+      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeRISCV64 M).post s s')
+    (hct : ConstantTime isa (modeRISCV64 M).pre (modeRISCV64 M).pub whole)
     (nf : whole.noFrames = true) {s₀ s₀' : State}
     (h0 : (finalRISCV64 enc).pre s₀) (h0' : (finalRISCV64 enc).pre s₀') (hq : (finalRISCV64 enc).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (final name whole) fun _ _ => True := by
@@ -797,10 +797,10 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
     (F₁ := Setup s₀) (F₂ := Setup s₀')
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨final_setup_wp hp, final_setup_wp hp'⟩
   -- The whole blocks.
-  have r₂ := (RelCT.callEx (k := modeRISCV64 (cfbMode enc)) (n := name) hv hct
+  have r₂ := (RelCT.callEx (k := modeRISCV64 M) (n := name) hv hct
     (P := fun a b => Setup s₀ a ∧ Setup s₀' b) fun a b ⟨ha, hb⟩ => by
-      obtain ⟨pa, ca, wa⟩ := whole_pre (M := cfbMode enc) hp ha
-      obtain ⟨pb, cb, wb⟩ := whole_pre (M := cfbMode enc) hp' hb
+      obtain ⟨pa, ca, wa⟩ := whole_pre (M := M) hp ha
+      obtain ⟨pb, cb, wb⟩ := whole_pre (M := M) hp' hb
       refine ⟨_, _, _, _, pa, pb, ?_, ca, wa, cb, wb⟩
       simp only [modeRISCV64, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
         callEntry a (by decide : Reg.a0 ∉ linkRegs), callEntry a (by decide : Reg.a1 ∉ linkRegs),
@@ -812,7 +812,7 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
         ha.a0, ha.a1, ha.a2, ha.a3, ha.a4, ha.a5, ha.sp, hb.a0, hb.a1, hb.a2, hb.a3, hb.a4, hb.a5, hb.sp]
       rw [fW, fW, fIv, fIv, fD, fD, fS, fS, qW, qR, qIv, qD, qS, qSp, qN]
       exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩).wp
-    (F₁ := Whole (cfbMode enc) s₀) (F₂ := Whole (cfbMode enc) s₀')
+    (F₁ := Whole M s₀) (F₂ := Whole M s₀')
     fun a b h => ⟨whole_wp hv nf hp h.1, whole_wp hv nf hp' h.2⟩
   -- The partial last segment.
   obtain ⟨_, t₃⟩ : ∃ h, (taint.check (Taint.ofRegs [.s1, .s4, .s5, .s6])
@@ -821,11 +821,11 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
       (.seq (.block [Impl.AesCbc.RISCV64.mov .t2 .s5])
         (.loop (.block Impl.Modes.RISCV64.xorStep) (.nonzero .s3))) h).isSome = true :=
     ⟨_, by taint_decide⟩
-  have tail (hu : fU s₀ ≠ 0) : RelCT isa (fun a b => Whole (cfbMode enc) s₀ a ∧ Whole (cfbMode enc) s₀' b)
-      finalTail fun a b => Done (cfbMode enc) s₀ a ∧ Done (cfbMode enc) s₀' b := by
+  have tail (hu : fU s₀ ≠ 0) : RelCT isa (fun a b => Whole M s₀ a ∧ Whole M s₀' b)
+      finalTail fun a b => Done M s₀ a ∧ Done M s₀' b := by
     have hu' : fU s₀' ≠ 0 := qU ▸ hu
     have a₃ := (RelCT.taint (A := taint)
-      (P := fun a b => Whole (cfbMode enc) s₀ a ∧ Whole (cfbMode enc) s₀' b) _
+      (P := fun a b => Whole M s₀ a ∧ Whole M s₀' b) _
       (fun a b h => agree_of (by rw [h.1.sp, h.2.sp, qSp]) fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
@@ -833,11 +833,11 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
         · rw [h.1.s4, h.2.s4, qR]
         · rw [h.1.s5, h.2.s5, fIv, fIv, qIv]
         · rw [h.1.s6, h.2.s6, fS, fS, qS]) t₃).wp
-      (F₁ := IvA (cfbMode enc) s₀) (F₂ := IvA (cfbMode enc) s₀')
+      (F₁ := IvA M s₀) (F₂ := IvA M s₀')
       fun a b h => ⟨final_ivArgs_wp hp h.1, final_ivArgs_wp hp' h.2⟩
     have a₄ := (AesCbc.RISCV64.blk_rel (name := "vg_aes_encrypt_blocks")
       Proof.Aes.RISCV64.encryptBlocks_correct Proof.Aes.RISCV64.encryptBlocks_ct
-      (P := fun a b => IvA (cfbMode enc) s₀ a ∧ IvA (cfbMode enc) s₀' b)
+      (P := fun a b => IvA M s₀ a ∧ IvA M s₀' b)
       fun a b h => by
         have e₂ := h.2.pre
         have eW : fW s₀' = fW s₀ := qW.symm
@@ -846,23 +846,23 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
         have eR : fR s₀' = fR s₀ := by simp only [fR, qR]
         rw [eW, eIv, eS, eR] at e₂
         exact ⟨h.1.pre, e₂, by rw [h.1.whole.sp, h.2.whole.sp, qSp]⟩).wp
-      (F₁ := Ciph (cfbMode enc) s₀) (F₂ := Ciph (cfbMode enc) s₀')
+      (F₁ := Ciph M s₀) (F₂ := Ciph M s₀')
       fun a b h => ⟨final_ciph_wp hp h.1, final_ciph_wp hp' h.2⟩
     have a₅ := (RelCT.taint (A := taint)
-      (P := fun a b => Ciph (cfbMode enc) s₀ a ∧ Ciph (cfbMode enc) s₀' b) _
+      (P := fun a b => Ciph M s₀ a ∧ Ciph M s₀' b) _
       (fun a b h => agree_of (by rw [h.1.sp, h.2.sp, qSp]) fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · rw [h.1.s5, h.2.s5, fIv, fIv, qIv]
         · rw [h.1.s2, h.2.s2, qT]
         · rw [h.1.s3, h.2.s3, qU]) t₄).wp
-      (F₁ := Done (cfbMode enc) s₀) (F₂ := Done (cfbMode enc) s₀')
+      (F₁ := Done M s₀) (F₂ := Done M s₀')
       fun a b h => ⟨final_xor_wp hp h.1 hu, final_xor_wp hp' h.2 hu'⟩
     exact (a₃.mono (fun _ _ h => h) fun _ _ h => h.2).seq
       ((a₄.mono (fun _ _ h => h) fun _ _ h => h.2).seq (a₅.mono (fun _ _ h => h) fun _ _ h => h.2))
-  have r₃ : RelCT isa (fun a b => Whole (cfbMode enc) s₀ a ∧ Whole (cfbMode enc) s₀' b)
+  have r₃ : RelCT isa (fun a b => Whole M s₀ a ∧ Whole M s₀' b)
       (.ite (.zero .s3) (.block []) finalTail)
-      (fun a b => Done (cfbMode enc) s₀ a ∧ Done (cfbMode enc) s₀' b) := by
+      (fun a b => Done M s₀ a ∧ Done M s₀' b) := by
     refine RelCT.ite (fun a b h => by rw [eval_u h.1, eval_u h.2, qU]) ?_ ?_
     · refine RelCT.block_nil fun a b h => ?_
       have h0 : fU s₀ = 0 := by
@@ -878,17 +878,17 @@ theorem final_rel {enc : Bool} {name : String} {whole : Prog isa}
   -- The registers restored.
   obtain ⟨_, t₅⟩ : ∃ h, (taint.check (Taint.ofRegs [.s7]) (.block finalRestore) h).isSome = true :=
     ⟨_, by taint_decide⟩
-  have r₄ := RelCT.taint (A := taint) (P := fun a b => (Done (cfbMode enc) s₀ a ∧ Done (cfbMode enc) s₀' b) ∧
+  have r₄ := RelCT.taint (A := taint) (P := fun a b => (Done M s₀ a ∧ Done M s₀' b) ∧
       a.sp = s₀.sp ∧ b.sp = s₀'.sp) _
     (fun a b h => agree_of (by rw [h.2.1, h.2.2, qSp]) fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1.s7, h.1.2.s7, fV, fV, qV]) t₅
   exact (r₁.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((r₂.mono (fun _ _ h => h) fun _ _ h => h.2).seq
     (r₃'.seq r₄))
 
-theorem final_ct {enc : Bool} {name : String} {whole : Prog isa}
-    (hv : ∀ s, (modeRISCV64 (cfbMode enc)).pre s →
-      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeRISCV64 (cfbMode enc)).post s s')
-    (hct : ConstantTime isa (modeRISCV64 (cfbMode enc)).pre (modeRISCV64 (cfbMode enc)).pub whole)
+theorem final_ct {enc : Bool} {M : Mode} {name : String} {whole : Prog isa}
+    (hv : ∀ s, (modeRISCV64 M).pre s →
+      ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeRISCV64 M).post s s')
+    (hct : ConstantTime isa (modeRISCV64 M).pre (modeRISCV64 M).pub whole)
     (nf : whole.noFrames = true) :
     ConstantTime isa (finalRISCV64 enc).pre (finalRISCV64 enc).pub (final name whole) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (final_rel hv hct nf h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
@@ -897,11 +897,11 @@ theorem final_ct {enc : Bool} {name : String} {whole : Prog isa}
 
 theorem encryptFinal_verified : Verified RISCV64.target encryptCode (finalScratchContract true) :=
   Verified.of_correct (final_correct encrypt_correct encrypt_noFrames)
-    (final_ct encrypt_correct encrypt_ct encrypt_noFrames) (final_implies true)
+    (final_ct (enc := true) encrypt_correct encrypt_ct encrypt_noFrames) (final_implies true)
 
 theorem decryptFinal_verified : Verified RISCV64.target decryptCode (finalScratchContract false) :=
   Verified.of_correct (final_correct decrypt_correct decrypt_noFrames)
-    (final_ct decrypt_correct decrypt_ct decrypt_noFrames) (final_implies false)
+    (final_ct (enc := false) decrypt_correct decrypt_ct decrypt_noFrames) (final_implies false)
 
 /-! ## With `save` on the stack
 

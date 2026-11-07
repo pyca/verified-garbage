@@ -7,14 +7,18 @@ public import VerifiedGarbage.Impl.Poly1305.AArch64.Radix64
 # ChaCha20-Poly1305: AArch64 implementation
 
 `vg_chacha20_poly1305_seal(key = x0, nonce = x1, aad = x2, aad_len = x3, data = x4,
-len = x5, tag = x6, work = x7)` and `vg_chacha20_poly1305_open` (the same
-arguments, returning `w0`, and zeroing the data if the tag is wrong),
-composed of calls of the verified ChaCha20 and Poly1305 functions. `work` is
-the working space, which the artifact's frame allocates on the stack
-(`withStackScratchWiped`): `seal`'s is the context, `open`'s the context and
-16 bytes after it, `[1280, 1296)`, where it saves `data` and `len`
-(`saveData`) for the zeroing (`zeroData`), as no register keeps them through
-every path of its code.
+len = x5, tag = x6, work = x7)`, and `open`'s body (`Stitched.lean`'s
+`openCode`), with the same arguments and the destination in `x8`, which
+decrypts from the data to the destination, returns `w0`, and zeroes the
+destination if the tag is wrong: `vg_chacha20_poly1305_open` runs it in place
+(`openInPlace`), and `vg_chacha20_poly1305_open_to` from `src` to `dst`
+(`openTo`). They are composed of calls of the verified ChaCha20 and Poly1305
+functions. `work` is the working space, which the artifact's frame allocates
+on the stack (`withStackScratchWiped`, `withStackArgScratchWiped`): `seal`'s
+is the context, `open`'s the context and 32 bytes after it, `[1280, 1312)`,
+where it saves the destination and `len` (`saveData`) for the zeroing
+(`zeroData`), as no register keeps them through every path of its code, and
+our caller's `x28`.
 
 The working space (1280 bytes, called the context below):
 
@@ -36,9 +40,16 @@ The working space (1280 bytes, called the context below):
 
 `x21` holds the context, `x22` the data, `x23` its length, `x24` the
 additional data and `x25` its length throughout: they are callee-saved, and
-no callee writes them (`vg_chacha20_xor` saves and restores `x19` and `x20`,
-which we therefore do not use), so they stay public for the constant-time
-analysis. No register is left for the address of `tag` throughout (the
+no callee writes them (`vg_chacha20_xor` saves and restores the ones it uses,
+`x19`, `x20`, `x26` and `x27`, which we therefore keep nothing in across its
+calls), so they stay public for the constant-time analysis. `seal` calls
+the stream in place (`XorCallee.inPlace`: its destination, `x4`, set to its
+source), `open` with its destination at `x28` after the source
+(`XorCallee.callWith true`): `saveData` sets `x28` to the destination's
+distance from the data, which no callee writes, and which the code that
+restores it from memory (the eight-block stream's, after `polyIn` saved it)
+sets again from registers, so that it stays public too; `openTail` restores
+our caller's. No register is left for the address of `tag` throughout (the
 eight-block stream's code uses every other one), so it is saved in the
 context with the registers, and loaded from there when it is needed: after
 the rest (`sealMain`, `openMain`), whose analysis does not need it, by its
@@ -127,11 +138,12 @@ def macPad (p n : Reg) : Prog isa :=
     (.ite (.zero .x .x10) (.block [])
       (.seq (.block [.sub .x .x9 n .x10, .add .x .x1 p .x9]) padTail))))
 
-/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted. -/
-def cryptWith (c : XorCallee) : Prog isa :=
+/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted into its
+destination (`XorCallee.callWith to`). -/
+def cryptWith (c : XorCallee) (to : Bool) : Prog isa :=
   .seq (.block [.movz .w .x9 1 0, .str .w .x9 .x21 112, .addImm .x .x0 .x21 64, mov .x1 .x22,
     mov .x2 .x23, .addImm .x .x3 .x21 128])
-    (.call c.name c.code)
+    (c.callWith to)
 
 /-- The lengths block. -/
 def lengths : List Instr := [.str .x .x25 .x21 0, .str .x .x23 .x21 8]
@@ -162,7 +174,7 @@ def sealMainWith (crypt : Prog isa) : Prog isa :=
   (.seq (macPad .x22 .x23)
     absorbLengths))))
 
-def sealMain (c : XorCallee) : Prog isa := sealMainWith (cryptWith c)
+def sealMain (c : XorCallee) : Prog isa := sealMainWith (cryptWith c false)
 
 /-- The tag written to `tag`, whose address is loaded from the context, and
 the registers restored. -/
@@ -191,13 +203,17 @@ def openMainWith (crypt : Prog isa) : Prog isa :=
   (.seq crypt
     (finalizeTo 48))))))
 
-def openMain (c : XorCallee) : Prog isa := openMainWith (cryptWith c)
+def openMain (c : XorCallee) : Prog isa := openMainWith (cryptWith c true)
 
-/-- `open`'s `data` and `len` saved after the context, at `work + 1280`. -/
-def saveData : List Instr := [.str .x .x4 .x7 1280, .str .x .x5 .x7 1288]
+/-- `open`'s destination (`x8`), `len` and our caller's `x28` saved after the
+context, at `work + 1280`, and `x28` set to the destination's distance from
+the data (`x4`), which the code adds to the data's addresses to write the
+plaintext (`XorCallee.callWith true`, `Short.dstOf true`). -/
+def saveData : List Instr :=
+  [.str .x .x8 .x7 1280, .str .x .x5 .x7 1288, .str .x .x28 .x7 1296, .sub .x .x28 .x8 .x4]
 
-/-- `data` into `x9` and `len` into `x10`, from after the context, and zero
-into `x11`. -/
+/-- The destination into `x9` and `len` into `x10`, from after the context,
+and zero into `x11`. -/
 def zeroLoad : List Instr := [.ldr .x .x9 .x21 1280, .ldr .x .x10 .x21 1288, .movz .x .x11 0 0]
 
 /-- The `x10` bytes at `x9` zeroed, a byte at a time. -/
@@ -206,16 +222,17 @@ def zeroLoop : Prog isa :=
     (.loop (.block [.strb .x11 .x9 0, .addImm .x .x9 .x9 1, .subImm .x .x10 .x10 1])
       (.nonzero .x .x10))
 
-/-- The `len` bytes at `data`, loaded from after the context, zeroed. -/
+/-- The `len` bytes at the destination, loaded from after the context, zeroed. -/
 def zeroData : Prog isa := .seq (.block zeroLoad) zeroLoop
 
 /-- The tags compared, with the address of `tag` loaded from the context,
-the data zeroed if they differ, and the registers restored. -/
+the destination zeroed if they differ, and the registers restored, `x28` from
+after the context. -/
 def openTail : Prog isa :=
   .seq (.block [.ldr .x .x12 .x21 624])
   (.seq (.block compare)
   (.seq (.ite (.zero .w .x0) zeroData (.block []))
-    (.block restore)))
+    (.block (.ldr .x .x28 .x21 1296 :: restore))))
 
 def «seal» := sealWith .scalar
 

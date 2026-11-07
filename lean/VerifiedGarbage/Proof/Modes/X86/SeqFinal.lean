@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.AesOfb.Spec
 
 /-!
 # OFB and CFB of a message's last piece on x86 (32-bit), for any core
@@ -22,7 +23,8 @@ IV, XORs the `r = len % L` bytes after them with the first bytes of
 `CIPH_K` of the chaining value after them, and replaces the IV with that
 chaining value if `r = 0` and with its encryption otherwise; it keeps the
 callee-saved registers and the return address. `cfbEncFinal_wp` and
-`cfbDecFinal_wp` state these as CFB's (`Spec.Cfb.EncryptFinal`, …).
+`cfbDecFinal_wp` state these as CFB's (`Spec.Cfb.EncryptFinal`, …), and
+`ofbFinal_wp` as OFB's (`Spec.Ofb.CryptFinal`, by `ofbFinal_of`).
 
 The loop over segments (`seg_wp`) is `seq`'s step (`Step.lean`: `regs`,
 `areasOk`, `crypt_step`), the bytes left in `nSlot`, with the partial
@@ -46,7 +48,6 @@ the byte at the same offset of `R`, and changes memory only there.
 
 /-- What the loop works on. -/
 structure XPre (s₀ : State) (K R : BitVec 32) (r : Nat) : Prop where
-  pos : 0 < r
   fitK : K.toNat + r ≤ 2 ^ 32
   fitR : R.toNat + r ≤ 2 ^ 32
   disj : Region.Disjoint ⟨K.setWidth 64, r⟩ ⟨R.setWidth 64, r⟩
@@ -76,7 +77,6 @@ structure XDone (s₀ : State) (K R : BitVec 32) (r : Nat) (s : State) : Prop wh
   frame : Frame [⟨R.setWidth 64, r⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  syms : s.syms = s₀.syms
   gpr : ∀ x, x ≠ .eax → x ≠ .ecx → x ≠ .ebx → x ≠ .esi → x ≠ .ebp → s.gpr x = s₀.gpr x
 
 /-- `[K + j]`, as the code addresses it. -/
@@ -170,7 +170,7 @@ theorem tailByte_wp {s₀ : State} {K R : BitVec 32} {r : Nat} (hp : XPre s₀ K
     rw [z₇, ebp₆, Wp.ofNat_pred (by omega_using [hj]), Wp.ofNat_beq_zero (by omega_using [hR])]
     exact congrArg some (decide_eq_decide.mpr (by omega_using [hj]))
   by_cases hdone : j + 1 = r
-  · refine .inl ⟨by rw [hz, decide_eq_true hdone], fun q hq => ?_, fr₇, rd₇, wr₇, sy₇, gpr₇⟩
+  · refine .inl ⟨by rw [hz, decide_eq_true hdone], fun q hq => ?_, fr₇, rd₇, wr₇, gpr₇⟩
     rw [data₇ q hq, ite_eq_left (by omega_using [hq, hdone])]
   · exact .inr ⟨by rw [hz, decide_eq_false hdone], ebx₇, esi₇, ebp₇, by omega_using [hj, hdone], data₇, fr₇, rd₇,
       wr₇, sy₇, gpr₇⟩
@@ -731,8 +731,7 @@ theorem part_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
   have wr₆ : s₆.wr = s₀.wr := by rw [u₆.wr, u₅.wr, wr₄, hm.wr]
   have sT : Region.Sub ⟨tailA c D len, rr⟩ ⟨D.setWidth 64, len⟩ := VG.Offset.sub_base _ (by omega_using [hdm, hrr])
   have hxp : XPre s₆ (B + BitVec.ofNat 32 (4 * c.buf)) Dt rr :=
-    { pos := hr
-      fitK := by rw [tK]; omega_arith
+    { fitK := by rw [tK]; omega_arith
       fitR := by rw [tDt]; omega_using [hD, hdm, hrr]
       disj := by
         rw [hK, eDt]
@@ -1154,5 +1153,35 @@ theorem cfbDecFinal_wp (cs : CoreSpec c) {M' : Mode} {s₀ : State} {k : cs.Key}
   · obtain ⟨-, e2⟩ := cfbDec_run (cs.cipher k) (iv0 c s₀) (wb0 c s₀)
     rw [← e2] at h4
     exact h4.trans (cfbDecFinalNext_of (cs.cipher k) s₀.mem _ _ _)
+
+/-! ## OFB -/
+
+theorem ofb_post_inBounds (c : Core) : ∀ o ∈ (Mode.ofb c.bw).post, o.InBounds (lens c (4 * c.bw)) :=
+  fun o ho => (List.mem_append.mp ho).elim
+    (copyBlk_inBounds (by simp [lens]) (by simp [lens]) o)
+    (xorBlk_inBounds (by simp [lens]) (by simp [lens]) (by simp [lens]) o)
+
+/-- OFB of a message's last piece: `seqFinal`'s results as
+`Spec.Ofb.CryptFinal`'s, for the `len` bytes at the data. -/
+theorem ofbFinal_wp (cs : CoreSpec c) {M' : Mode} {s₀ : State} {k : cs.Key} (hp : SeqPre c M' s₀)
+    (hst : M'.step = 1) (hiv : M'.ivOut = true) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
+    WP isa (c.seqFinal (Mode.ofb c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
+      Spec.Ofb.CryptFinal (cs.cipher k) (4 * c.bw) s₀.mem s'.mem ((P s₀ c).setWidth 64) ((Dp s₀ c).setWidth 64)
+        (N s₀ c) := by
+  have hL0 : 0 < 4 * c.bw := Nat.mul_pos (by decide) hp.layout.bw_pos
+  have hxs : (wb0 c s₀).length = N s₀ c / (4 * c.bw) := chunksAt_length _ _ _ _
+  refine WP.mono (seqFinal_wp cs hp hst hiv rfl rfl (ofb_post_inBounds c) (ofb_computes (cs.cipher_len k)) hk)
+    fun s' ⟨h1, h2, h3, h4⟩ => ⟨h1, ?_, ?_⟩
+  · obtain ⟨e1, e2⟩ := ofb_run (cs.cipher k) (iv0 c s₀) (wb0 c s₀)
+    rw [← e1] at h2
+    rw [← e2, hxs] at h3
+    exact ofbFinal_of hL0 (cs.cipher_len k) s₀.mem s'.mem _ _ _ h2 h3
+  · obtain ⟨-, e2⟩ := ofb_run (cs.cipher k) (iv0 c s₀) (wb0 c s₀)
+    rw [← e2, hxs] at h4
+    refine h4.trans ?_
+    rw [blockCount_eq hL0]
+    split
+    · rfl
+    · exact (AesOfb.next_succ _ _ _).symm
 
 end VG.Proof.Modes.X86

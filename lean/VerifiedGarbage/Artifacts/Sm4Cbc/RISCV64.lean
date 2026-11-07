@@ -14,11 +14,11 @@ namespace VG.Artifacts.Sm4Cbc.RISCV64
 def artifacts : List Artifact := [
   Spec.Sm4.cbcEncryptChainedApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.cbcEncryptChained
-    stack := 3232
+    stack := 3248
     verified := Proof.Sm4.RISCV64.Modes.cbcEncryptChained_verified },
   Spec.Sm4.cbcDecryptChainedApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.cbcDecryptChained
-    stack := 3232
+    stack := 3248
     verified := Proof.Sm4.RISCV64.Modes.cbcDecryptChained_verified }]
 
 end VG.Artifacts.Sm4Cbc.RISCV64

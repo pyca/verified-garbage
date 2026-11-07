@@ -15,8 +15,8 @@ with CAST5's encryption (RFC 2144 §2, `Spec/Cast5.lean`; `cipher`,
 `vg_cast5_cfb64_encrypt` and `vg_cast5_cfb64_decrypt` transform `n` whole
 blocks in place, from the block in `iv`, which they replace with the one to
 continue from, the last ciphertext block (`Cbc.next`): a caller may encrypt or
-decrypt a message in pieces of whole blocks, keeping `iv` between calls. A
-partial last segment is the caller's.
+decrypt a message in pieces of whole blocks, keeping `iv` between calls. A partial last
+segment is left to the final functions (`Spec/Cast5/CfbFinal.lean`).
 
 Only the pointers, `rounds` and `n` are public: no part of the chaining value
 may affect timing.

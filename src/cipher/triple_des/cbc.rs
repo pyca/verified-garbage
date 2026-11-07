@@ -10,16 +10,9 @@
     target_arch = "riscv64"
 ))]
 
-use super::ecb::Backend;
+use crate::arch::dispatch::triple_des_cbc::vg_triple_des_cbc_decrypt_chained_auto;
 use crate::arch::triple_des::vg_triple_des_expand_key;
-use crate::arch::triple_des_cbc::{
-    vg_triple_des_cbc_decrypt_chained, vg_triple_des_cbc_encrypt_chained,
-};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::triple_des_cbc::{
-    vg_triple_des_cbc_decrypt_chained_avx2, vg_triple_des_cbc_decrypt_chained_avx512,
-};
-use crate::cpu::detected;
+use crate::arch::triple_des_cbc::vg_triple_des_cbc_encrypt_chained;
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -72,9 +65,6 @@ pub struct TripleDesCbcDecryptor {
     key: Key,
     /// The chaining value: the IV, then the last ciphertext block.
     iv: [u8; 8],
-    /// The implementation of ECB decryption the CPU runs best, whose
-    /// variant of CBC decryption runs.
-    backend: Backend,
 }
 
 impl TripleDesCbcDecryptor {
@@ -85,7 +75,6 @@ impl TripleDesCbcDecryptor {
         Ok(Self {
             key: Key::new(key)?,
             iv: *iv,
-            backend: Backend::select(detected()),
         })
     }
 
@@ -93,7 +82,7 @@ impl TripleDesCbcDecryptor {
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of 8.
     pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
-        self.key.decrypt(self.backend, &mut self.iv, buffer)
+        self.key.decrypt(&mut self.iv, buffer)
     }
 }
 
@@ -141,26 +130,14 @@ impl Key {
     /// for empty input).
     /// Returns an error without changing anything if the buffer's length is
     /// not a multiple of eight.
-    fn decrypt(
-        &self,
-        backend: Backend,
-        iv: &mut [u8; 8],
-        buffer: &mut [u8],
-    ) -> Result<(), IncompleteBlock> {
+    fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
         if !buffer.len().is_multiple_of(8) {
             return Err(IncompleteBlock);
         }
-        let f = match backend {
-            Backend::Scalar => vg_triple_des_cbc_decrypt_chained,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Avx2 => vg_triple_des_cbc_decrypt_chained_avx2,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Avx512 => vg_triple_des_cbc_decrypt_chained_avx512,
-        };
-        // SAFETY: as in `encrypt`; `Backend::select` chose `f` for the CPU's
-        // features, which its ECB function needs too.
+        // SAFETY: as in `encrypt`; the dispatcher calls only an implementation
+        // the CPU has the features of.
         unsafe {
-            f(
+            vg_triple_des_cbc_decrypt_chained_auto(
                 &self.schedule,
                 iv,
                 buffer.as_mut_ptr().cast(),

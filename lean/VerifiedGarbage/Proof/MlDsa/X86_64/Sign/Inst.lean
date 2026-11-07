@@ -80,6 +80,7 @@ def primsWith (B : Impl.MlDsa.X86_64.Arith.Backend) : Prims :=
     normLt := B.normLt
     makeHint := B.makeHint
     sfx := B.sfx
+    asfx := B.asfx
     montgomery := B.montgomery
     dotInv4 := B.dotInv4
     dotInv5 := B.dotInv5

@@ -668,7 +668,7 @@ bne %cr0, 2190b
     )
 }
 
-/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Returns exactly what vg_dsa_sign_random returns (`VG.Spec.Dsa.randomSignContract`): 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
+/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
 ///
 /// # Safety
 ///
@@ -828,7 +828,7 @@ beq %cr0, 214f
 b 215f
 214:
 .base64 "AAByOBSilHwUooR8FKqEfBSqhHwAALM4FKLUfBSqxnwAAPQ4eAABOQAANTkAAFY5"
-bl {vg_dsa_derive_key}
+bl {vg_dsa_derive_key_checked}
 .base64 "AAADKA=="
 beq %cr0, 216f
 .base64 "AQDgOw=="
@@ -856,7 +856,7 @@ b 219f
 219:
 .base64 "AACBOQAAADh4AAz4gAAM+IgADPiQAAz4AAA++wAAfzgAAIE5KAEM6KYDCHyYAMzpoADs6agADOqwACzquABM6sAAbOrIAIzq0ACs6tgAzOrgAOzq6AAM6/AALOv4AEzrAAFs6wgBjOsQAazrGAHM6yAB7OswASE4IACATg==""#,
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
-        vg_dsa_derive_key = sym super::dsa::vg_dsa_derive_key,
+        vg_dsa_derive_key_checked = sym super::dsa::vg_dsa_derive_key_checked::vg_dsa_derive_key_checked,
     )
 }
 
@@ -5654,6 +5654,10 @@ bne %cr0, 2642b
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_check_parameters.rs"]
 pub(crate) mod vg_dsa_check_parameters;
+
+#[rustfmt::skip]
+#[path = "internal/vg_dsa_derive_key_checked.rs"]
+pub(crate) mod vg_dsa_derive_key_checked;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_probable_prime_1024.rs"]

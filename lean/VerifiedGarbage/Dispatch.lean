@@ -34,10 +34,10 @@ def ranking : Rust.Ranking := [
         if g.isEmpty then [] else [{ suffix := g, modules := ["aes_gcm_siv"] }]) ++
     { suffix := "_vaes_avx512" } ::
     gcmX86_64.map (fun g => { suffix := g }) ++ [
-    -- ChaCha20's `_ifma` needs no AVX512_IFMA itself: it is chosen where
-    -- ChaCha20-Poly1305's `_ifma` is, and `_avx512vl` on the other CPUs with
-    -- AVX512VL.
-    { suffix := "_ifma", modules := ["chacha20"], extra := ["avx512ifma"] },
+    -- ChaCha20's 512-bit code (`_avx512`) is chosen where ChaCha20-Poly1305's
+    -- `_ifma` is, on CPUs with AVX512_IFMA, and `_avx512vl` on the other CPUs
+    -- with AVX512VL.
+    { suffix := "_avx512", modules := ["chacha20"], extra := ["avx512ifma"] },
     { suffix := "_ifma" },
     { suffix := "_avx512vl" },
     { suffix := "_avx512" },
@@ -58,10 +58,12 @@ def ranking : Rust.Ranking := [
     { suffix := "_aes_cbc", skip := true },
     { suffix := "_aes_sha3" },
     { suffix := "_aes" },
-    -- FEAT_SHA3's Keccak is faster on Apple's cores, and slower on Neoverse N2.
+    -- FEAT_SHA3's Keccak is faster on Apple's cores, and slower on Neoverse N2:
+    -- ML-KEM's, SHA-3's and Ed448's. Elsewhere `_sha3` is SHA-512's code, or
+    -- ML-DSA's, which is chosen on every CPU with FEAT_SHA3.
     { suffix := "_x2_sha3_keccak_sha3", vendor := some "apple" },
     { suffix := "_x2_sha3" },
-    { suffix := "_sha3", modules := ["sha3"], vendor := some "apple" },
+    { suffix := "_sha3", modules := ["sha3", "ed448"], vendor := some "apple" },
     { suffix := "_sha3" },
     { suffix := "_sha2" },
     { suffix := "_sve2" },

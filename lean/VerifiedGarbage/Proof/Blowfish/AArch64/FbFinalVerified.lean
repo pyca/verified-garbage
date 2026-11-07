@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Blowfish.AArch64.FbFinalLit
 import VerifiedGarbage.Proof.Blowfish.AArch64.ModesLit
 public import VerifiedGarbage.Impl.Blowfish.AArch64.FbFinal
 public import VerifiedGarbage.Spec.Blowfish.CfbFinal
+public import VerifiedGarbage.Spec.Blowfish.OfbFinal
 public import VerifiedGarbage.Proof.Modes.FbFinal
 public import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 public import VerifiedGarbage.Proof.Framework.Scratch
@@ -21,6 +22,7 @@ meta import VerifiedGarbage.Proof.Blowfish.AArch64.FbFinalLit
 meta import VerifiedGarbage.Proof.Blowfish.AArch64.ModesLit
 meta import VerifiedGarbage.Impl.Blowfish.AArch64.FbFinal
 meta import VerifiedGarbage.Spec.Blowfish.CfbFinal
+meta import VerifiedGarbage.Spec.Blowfish.OfbFinal
 meta import VerifiedGarbage.Proof.Modes.FbFinal
 meta import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
@@ -30,13 +32,14 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
-# Blowfish-CFB64 of a message's last piece on AArch64 meets its contracts
+# Blowfish-CFB64 and Blowfish-OFB of a message's last piece on AArch64 meet their contracts
 
-`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`: the modes' CFB over a message's
-last piece (`Proof.Modes.AArch64.fbFinal_wp`) over Blowfish's encryption
+`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`, `ofbFinal_wp`: the modes' CFB and
+OFB over a message's last piece (`Proof.Modes.AArch64.fbFinal_wp`) over Blowfish's encryption
 core (`dirCoreSpec true`), with the IV's address in `x25`, as for the
 whole-block functions (`FbVerified.lean`), and the specification's results
-(`Proof.Modes.cfbEncFinal_of_bytes`, …). The low halves of `v8`–`v15` are
+(`Proof.Modes.cfbEncFinal_of_bytes`, …,
+`Proof.Modes.ofbFinal_of_bytes`). The low halves of `v8`–`v15` are
 kept as there: the modes' code writes no vector register and every run of
 `crypt` keeps them. `cfbEncryptFinal_verified`, …: each is correct and
 constant time, by the taint analysis, as the whole-block functions are;
@@ -98,6 +101,12 @@ def cfbDecFinalAArch64 : Contract isa where
   post s s' := Spec.Cfb.DecryptFinal (ciphOf s) 8 s.mem s'.mem (s.gpr .x1) (s.gpr .x2) (finalLen s)
   pub := fbPub
 
+/-- The final OFB function's contract on AArch64. -/
+def ofbFinalAArch64 : Contract isa where
+  pre := fbPre finalLen
+  post s s' := Spec.Ofb.CryptFinal (ciphOf s) 8 s.mem s'.mem (s.gpr .x1) (s.gpr .x2) (finalLen s)
+  pub := fbPub
+
 theorem cfbEncryptFinal_wp {s₀ : State} (hp : cfbEncFinalAArch64.pre s₀) :
     WP isa cfbEncryptFinal s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbEncFinalAArch64.post s₀ s' :=
@@ -110,6 +119,13 @@ theorem cfbDecryptFinal_wp {s₀ : State} (hp : cfbDecFinalAArch64.pre s₀) :
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecFinalAArch64.post s₀ s' :=
   WP.mono (fbFinal_wp' .cfbDec hp) fun s' ⟨hg, hd, hv⟩ => by
     obtain ⟨h1, h2⟩ := Modes.cfbDecFinal_of_bytes (by decide) (cipher_length _) hd
+    exact ⟨hg, h1, hv.trans h2⟩
+
+theorem ofbFinal_wp {s₀ : State} (hp : ofbFinalAArch64.pre s₀) :
+    WP isa ofbFinal s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+      s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ ofbFinalAArch64.post s₀ s' :=
+  WP.mono (fbFinal_wp' .ofb hp) fun s' ⟨hg, hd, hv⟩ => by
+    obtain ⟨h1, h2⟩ := Modes.ofbFinal_of_bytes (by decide) (cipher_length _) hd
     exact ⟨hg, h1, hv.trans h2⟩
 
 /-- Every instruction keeps `v8`–`v15`, but in `crypt`. -/
@@ -179,12 +195,29 @@ theorem cfbDecryptFinal_verified :
       Proof.Modes.decFinalPost, cfbDecFinalAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [finalSat]
       using finalSat)
 
+theorem ofbFinal_verified :
+    Verified AArch64.target ofbFinal (Sig.scratchContract AArch64.abi finalSig "scratch" .u64 28
+      (Curry.const (fun _ => True) _) (Proof.Modes.ofbFinalPost ciphAt 8 AArch64.abi.ptrBits) true 0) :=
+  Verified.of_correct (k := ofbFinalAArch64) (fun s hs => by
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (ofbFinal_wp hs) (by lit_decide)
+        (by lit_decide)
+      exact ⟨t, s', he, finalAbi_of he h₁ h₃, h₂⟩)
+    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
+      (by taint_decide)) (by
+    sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+      Proof.Modes.ofbFinalPost, ofbFinalAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [finalSat]
+      using finalSat)
+
 theorem cfbEncFinalFrameSat_pre : ∃ s, (Spec.Blowfish.cfbEncryptFinalContract AArch64.abi 224).pre s := by
   implies_sat [Spec.Blowfish.cfbEncryptFinalContract, Spec.Blowfish.cfbFinalSig, AArch64.abi, AArch64.argRegs]
     [finalFrameSat] using finalFrameSat
 
 theorem cfbDecFinalFrameSat_pre : ∃ s, (Spec.Blowfish.cfbDecryptFinalContract AArch64.abi 224).pre s := by
   implies_sat [Spec.Blowfish.cfbDecryptFinalContract, Spec.Blowfish.cfbFinalSig, AArch64.abi, AArch64.argRegs]
+    [finalFrameSat] using finalFrameSat
+
+theorem ofbFinalFrameSat_pre : ∃ s, (Spec.Blowfish.ofbFinalContract AArch64.abi 224).pre s := by
+  implies_sat [Spec.Blowfish.ofbFinalContract, Spec.Blowfish.ofbFinalSig, AArch64.abi, AArch64.argRegs]
     [finalFrameSat] using finalFrameSat
 
 /-- The final CFB64 encryption with its working space on the stack. -/
@@ -204,5 +237,14 @@ theorem cfbDecryptFinal_framed :
     (n := 28) (post := Proof.Modes.decFinalPost ciphAt 8 AArch64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 224) cfbDecryptFinal_verified
     (by decide) (by decide) (by decide) (Proof.Modes.decFinalPost_local _) cfbDecFinalFrameSat_pre
+
+/-- The final OFB function with its working space on the stack. -/
+theorem ofbFinal_framed :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 ofbFinal)
+      (Spec.Blowfish.ofbFinalContract AArch64.abi 224) :=
+  AArch64.Verified.stackScratchWiped (sig := Spec.Blowfish.ofbFinalSig) (nm := "scratch") (e := .u64)
+    (n := 28) (post := Proof.Modes.ofbFinalPost ciphAt 8 AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 224) ofbFinal_verified
+    (by decide) (by decide) (by decide) (Proof.Modes.ofbFinalPost_local _) ofbFinalFrameSat_pre
 
 end VG.Proof.Blowfish.AArch64

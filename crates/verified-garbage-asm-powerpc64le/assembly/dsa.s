@@ -4099,7 +4099,7 @@ vg_dsa_generate_key:
 	addi %r8, %r1, 120
 	addi %r9, %r21, 0
 	addi %r10, %r22, 0
-	bl {vg_dsa_derive_key}
+	bl {vg_dsa_derive_key_checked}
 	cmplwi %cr0, %r3, 0
 	beq %cr0, 216f
 	li %r31, 1

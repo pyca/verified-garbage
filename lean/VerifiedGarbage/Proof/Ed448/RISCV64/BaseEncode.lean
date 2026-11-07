@@ -74,7 +74,7 @@ theorem byte0 {m : Mem} {o : Addr} {x : Nat} (h : VG.Spec.X448.bytesAt m o 56 = 
 theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .a0 = o)
     (hout : (⟨o, 57⟩ : Region) ∈ s.wr) (hdisj : Region.Disjoint ⟨b, 2048⟩ ⟨o, 57⟩) {p : Point}
     (hS : SlotsOk s.mem b RQ (ptV p p)) :
-    WP isa baseEncode s fun s' => Spec.Ed448.bytesAt s'.mem o 57 = Spec.Ed448.encodePoint p := by
+    WP isa baseEncode s fun s' => Spec.Ed448.bytesAt s'.mem o 57 = Spec.Ed448.encodePoint p ∧ Rest R64.work s s' := by
   have hd56 : Region.Disjoint ⟨b, 2048⟩ ⟨o, 56⟩ := hdisj.sub_right (Region.sub_prefix (by decide))
   have hv : ∀ q ∈ EQ, q ≠ R → FS s.mem b q = ptV p p q := fun q hq hqR => hS q (by
     simp only [EQ, List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -131,6 +131,8 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .a0 = o)
     simp only [upd, ptV, RX, RY, RZ, X2, Z2, R, Nat.reduceEqDiff, ↓reduceIte]
   have hm10 : s10.mem = s9.mem.writeW (o + BitVec.ofNat 64 56) ((s9.gpr .t1).setWidth 8) := u10.mem
   have e12' : s9.gpr .t1 = s7.gpr .t1 := by rw [hr9.gpr _ (by decide), hr8.gpr _ (by decide)]
+  refine ⟨?_, hr2'.trans ((hr3.mono (by decide)).trans ((hr7.mono (by decide)).trans
+    ((hr8.mono (by decide)).trans ((hr9.mono (by decide)).trans ((u10.rest []).mono (by decide))))))⟩
   -- The bytes.
   obtain ⟨X, Y', Z⟩ := p
   rw [Proof.Ed448.encodePoint_code, Proof.X448.invert_eq, Proof.X448.pow_pw,

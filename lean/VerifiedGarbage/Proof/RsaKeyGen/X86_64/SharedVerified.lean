@@ -19,7 +19,7 @@ theorem sharedCandidate_verified (v : RoundImpl) : Verified target (sharedCandid
     (Proof.RsaKeyGen.candidateContract abi 128) := by
   have hmc : MmCalls v.mont v.mm := ⟨v.mmOk, v.mmInline⟩
   exact Verified.of_correct
-    (sharedCode_correct v.mont hmc (Kernel.called v) (sharedCandidate_mx v))
+    (sharedCode_correct v.mont hmc (Kernel.called v) (sharedCandidate_ctl v))
     (sharedCode_constantTime v.mont hmc (Kernel.called v)) sharedCand_implies
 
 end VG.Proof.RsaKeyGen.X86_64

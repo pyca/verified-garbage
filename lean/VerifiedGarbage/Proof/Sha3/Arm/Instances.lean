@@ -1624,11 +1624,6 @@ theorem update_shake128 :
       (Spec.Sha3.updateContract Arm.abi Spec.Sha3.xofShake128.rate 16) :=
   upd_arm Spec.Sha3.xofShake128
 
-theorem update_shake256 :
-    Verified Arm.target (update Spec.Sha3.xofShake256.rate)
-      (Spec.Sha3.updateContract Arm.abi Spec.Sha3.xofShake256.rate 16) :=
-  upd_arm Spec.Sha3.xofShake256
-
 theorem finalize_sha3_256 :
     Verified Arm.target (finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len)
       (Spec.Sha3.finalizeContract Arm.abi Spec.Sha3.hashSha3_256 664) :=

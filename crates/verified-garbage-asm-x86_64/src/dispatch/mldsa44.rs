@@ -152,7 +152,7 @@ pub unsafe fn vg_mldsa44_sign_message_auto(sk: *const [u8; 2560], msg: *const u8
 ///
 /// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa44_prepare_signing_key_avx512` if the CPU supports its features (`VG_MLDSA44_PREPARE_SIGNING_KEY_AVX512_FEATURES`); or else `vg_mldsa44_prepare_signing_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa44_prepare_signing_key_avx2` if the CPU supports its features (`VG_MLDSA44_PREPARE_SIGNING_KEY_AVX2_FEATURES`); or else `vg_mldsa44_prepare_signing_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -167,10 +167,10 @@ pub unsafe fn vg_mldsa44_sign_message_auto(sk: *const [u8; 2560], msg: *const u8
 #[inline]
 pub unsafe fn vg_mldsa44_prepare_signing_key_auto(sk: *const [u8; 2560], prepared: *mut [u8; 14848], scratch: *mut [u64; 128]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::mldsa44::VG_MLDSA44_PREPARE_SIGNING_KEY_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa44_prepare_signing_key_avx512`'s, and the CPU
+    if cpu.contains(crate::mldsa44::VG_MLDSA44_PREPARE_SIGNING_KEY_AVX2_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_mldsa44_prepare_signing_key_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mldsa44::vg_mldsa44_prepare_signing_key_avx512(sk, prepared, scratch) };
+        return unsafe { crate::mldsa44::vg_mldsa44_prepare_signing_key_avx2(sk, prepared, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::mldsa44::vg_mldsa44_prepare_signing_key(sk, prepared, scratch) }
@@ -180,7 +180,7 @@ pub unsafe fn vg_mldsa44_prepare_signing_key_auto(sk: *const [u8; 2560], prepare
 ///
 /// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa44_prepare_verifying_key_avx512` if the CPU supports its features (`VG_MLDSA44_PREPARE_VERIFYING_KEY_AVX512_FEATURES`); or else `vg_mldsa44_prepare_verifying_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa44_prepare_verifying_key_avx2` if the CPU supports its features (`VG_MLDSA44_PREPARE_VERIFYING_KEY_AVX2_FEATURES`); or else `vg_mldsa44_prepare_verifying_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -194,10 +194,10 @@ pub unsafe fn vg_mldsa44_prepare_signing_key_auto(sk: *const [u8; 2560], prepare
 #[inline]
 pub unsafe fn vg_mldsa44_prepare_verifying_key_auto(pk: *const [u8; 1312], prepared: *mut [u8; 5408], scratch: *mut [u64; 128]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::mldsa44::VG_MLDSA44_PREPARE_VERIFYING_KEY_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa44_prepare_verifying_key_avx512`'s, and the CPU
+    if cpu.contains(crate::mldsa44::VG_MLDSA44_PREPARE_VERIFYING_KEY_AVX2_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_mldsa44_prepare_verifying_key_avx2`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::mldsa44::vg_mldsa44_prepare_verifying_key_avx512(pk, prepared, scratch) };
+        return unsafe { crate::mldsa44::vg_mldsa44_prepare_verifying_key_avx2(pk, prepared, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::mldsa44::vg_mldsa44_prepare_verifying_key(pk, prepared, scratch) }

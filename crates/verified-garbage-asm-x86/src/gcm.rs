@@ -34,43 +34,32 @@ call {vg_aes_ctr32_aesni}
     )
 }
 
-/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
-/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// The machine code of this function is that of `vg_aes_gcm_stream_aad`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_stream_aad as vg_aes_gcm_stream_aad_aesni;
-
-/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
-///
-/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
-/// The machine code of this function is that of `vg_aes_gcm_stream_init`, which is emitted once and named both ways: the two are the same function.
-///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_stream_init as vg_aes_gcm_stream_init_aesni;
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk7PX//4uEJBgKAACJRCQEi4QkHAoAAIlEJAiLhCQgCgAAiUQkDIngg8AUiUQkEItEJBCJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLTCQIicvB6wKDwwaLRCQEifKBxQACAABVUlFQ"
+call {vg_aes_expand_key_scratch}
+.base64 "WFhYWIHtAAIAALgAAAAAiYbwAAAAiYb0AAAAiYb4AAAAiYb8AAAAuAAAAACJRWCJRWSJRWiJRWyJ8InZieqDwmCJ84HD8AAAAL8BAAAAgcUAAgAAVVdTUlFQ"
+call {vg_aes_ctr32}
+.base64 "WFhYWFhYge0AAgAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkFAoAAMM="
+.p2align 6"#,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
@@ -1071,73 +1060,68 @@ call {vg_aes_gcm_seal_aesni}
     )
 }
 
-/// The CPU features `vg_aes_gcm_init_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+/// The CPU features `vg_aes_gcm_open_to_aesni` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
-/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
-/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// The machine code of this function is that of `vg_aes_gcm_init_aesni`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_pclmul;
-
-/// The CPU features `vg_aes_gcm_stream_aad_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
-
-/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
-///
-/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// The machine code of this function is that of `vg_aes_gcm_stream_aad_pclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_aesni_pclmul;
-
-/// The CPU features `vg_aes_gcm_stream_init_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
-
-/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
-///
-/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// The machine code of this function is that of `vg_aes_gcm_stream_init_pclmul`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_aesni_pclmul;
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_open_to_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "jWQk0Il0JCiJfCQsi0QkNIkEJItEJDiJRCQEi0QkPIlEJAiLRCRAiUQkDItEJESJRCQQi0QkSIlEJBSLRCRUiUQkGItEJFCJRCQci0QkXIlEJCCLRCRgiUQkJInmg8ZMi1QkVIs+i04EwekCg/kA"
+je 20f
+22:
+.base64 "iweJAoPHBIPCBIPpAQ=="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i04Eg+ED"
+je 23f
+25:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 25b
+jmp 24f
+23:
+24:
+call {vg_aes_gcm_open_aesni}
+.base64 "hcA="
+je 26f
+jmp 27f
+26:
+.base64 "i1QkVItMJFC4AAAAAIP5AA=="
+je 28f
+210:
+.base64 "iAKDwgGD6QE="
+jne 210b
+jmp 29f
+28:
+29:
+27:
+.base64 "i3QkKIt8JCyNZCQwww=="
+.p2align 6"#,
+        vg_aes_gcm_open_aesni = sym super::gcm::vg_aes_gcm_open_aesni,
+    )
+}
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
@@ -2138,103 +2122,14 @@ call {vg_aes_gcm_seal_aesni_pclmul}
     )
 }
 
-/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// The machine code of this function is that of `vg_aes_gcm_init`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_init as vg_aes_gcm_init_pclmul;
+/// The CPU features `vg_aes_gcm_open_to_aesni_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// The CPU features `vg_aes_gcm_stream_aad_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
-
-/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
-/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk4PX//4uEJCQKAACJRCQEi4QkKAoAAIlEJAiLhCQsCgAAiUQkDIuEJDAKAACJRCQQi4QkNAoAAIlEJBSLhCQ4CgAAiUQkGIngg8AgiUQkHItEJByJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAiLRCQEiYWQAAAAi0QkFImFEAEAAItEJBiJhRQBAACLRCQMg+APiYUYAQAAi4UUAQAAhcA="
-je 20f
-.base64 "i4UYAQAAhcA="
-je 22f
-.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
-jb 24f
-jmp 25f
-24:
-.base64 "icE="
-25:
-.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
-26:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 26b
-.base64 "i4UYAQAAg/gQ"
-je 27f
-jmp 28f
-27:
-.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-28:
-jmp 23f
-22:
-23:
-.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 29f
-.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 210f
-29:
-210:
-.base64 "i40UAQAAhck="
-je 211f
-.base64 "i70QAQAAifKDwiA="
-213:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 213b
-jmp 212f
-211:
-212:
-jmp 21f
-20:
-21:
-.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkIAoAAMM="
-.p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_stream_init_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
-
-/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
-///
-/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -2242,82 +2137,51 @@ pub const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub unsafe extern "C" fn vg_aes_gcm_open_to_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "jaQk6PX//4uEJBwKAACJRCQEi4QkIAoAAIlEJAiLhCQkCgAAiUQkDIuEJCgKAACJRCQQieCDwBiJRCQUi0QkFImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAAC4AAAAAImFvAAAAIuFwAAAAIP4DA=="
+        r#".base64 "jWQk0Il0JCiJfCQsi0QkNIkEJItEJDiJRCQEi0QkPIlEJAiLRCRAiUQkDItEJESJRCQQi0QkSIlEJBSLRCRUiUQkGItEJFCJRCQci0QkXIlEJCCLRCRgiUQkJInmg8ZMi1QkVIs+i04EwekCg/kA"
 je 20f
-.base64 "uAAAAACJBolGBIlGCIlGDImFGAEAAIuFFAEAAIXA"
-je 22f
-.base64 "i4UYAQAAhcA="
-je 24f
-.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
-jb 26f
-jmp 27f
-26:
-.base64 "icE="
-27:
-.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
-28:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 28b
-.base64 "i4UYAQAAg/gQ"
-je 29f
-jmp 210f
-29:
-.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-210:
-jmp 25f
-24:
-25:
-.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 211f
-.base64 "i4WQAAAABfAAAACJ8oPCAIHFAAIAAFVXU1JQ"
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 212f
-211:
-212:
-.base64 "i40UAQAAhck="
-je 213f
-.base64 "i70QAQAAifKDwiA="
-215:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 215b
-jmp 214f
-213:
-214:
-jmp 23f
 22:
-23:
-.base64 "i4XAAAAAg+APiYUYAQAAi40YAQAAhck="
-je 216f
-.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
-218:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 218b
-.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
-jmp 217f
-216:
-217:
-.base64 "i4W8AAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhcAAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IAgcUAAgAAVVdTUlA="
-call {vg_ghash_pclmul}
-.base64 "WFhYWFiB7QACAAA="
+.base64 "iweJAoPHBIPCBIPpAQ=="
+jne 22b
 jmp 21f
 20:
-.base64 "i70QAQAAiweLTwSLVwiJBolOBIlWCLgAAAABiUYM"
 21:
-.base64 "iwaJRjCLRgSJRjSLRgiJRjiLRgwPyIPAAQ/IiUY8uAAAAACJRhCJRhSJRhiJRhyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQYCgAAww=="
+.base64 "i04Eg+ED"
+je 23f
+25:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 25b
+jmp 24f
+23:
+24:
+call {vg_aes_gcm_open_aesni_pclmul}
+.base64 "hcA="
+je 26f
+jmp 27f
+26:
+.base64 "i1QkVItMJFC4AAAAAIP5AA=="
+je 28f
+210:
+.base64 "iAKDwgGD6QE="
+jne 210b
+jmp 29f
+28:
+29:
+27:
+.base64 "i3QkKIt8JCyNZCQwww=="
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_open_aesni_pclmul = sym super::gcm::vg_aes_gcm_open_aesni_pclmul,
     )
 }
 
@@ -3320,105 +3184,14 @@ call {vg_aes_gcm_seal_pclmul}
     )
 }
 
-/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk7PX//4uEJBgKAACJRCQEi4QkHAoAAIlEJAiLhCQgCgAAiUQkDIngg8AUiUQkEItEJBCJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAyLTCQIicvB6wKDwwaLRCQEifKBxQACAABVUlFQ"
-call {vg_aes_expand_key_scratch}
-.base64 "WFhYWIHtAAIAALgAAAAAiYbwAAAAiYb0AAAAiYb4AAAAiYb8AAAAuAAAAACJRWCJRWSJRWiJRWyJ8InZieqDwmCJ84HD8AAAAL8BAAAAgcUAAgAAVVdTUlFQ"
-call {vg_aes_ctr32}
-.base64 "WFhYWFhYge0AAgAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkFAoAAMM="
-.p2align 6"#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-    )
-}
+/// The CPU features `vg_aes_gcm_open_to_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
-/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk4PX//4uEJCQKAACJRCQEi4QkKAoAAIlEJAiLhCQsCgAAiUQkDIuEJDAKAACJRCQQi4QkNAoAAIlEJBSLhCQ4CgAAiUQkGIngg8AgiUQkHItEJByJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAiLRCQEiYWQAAAAi0QkFImFEAEAAItEJBiJhRQBAACLRCQMg+APiYUYAQAAi4UUAQAAhcA="
-je 20f
-.base64 "i4UYAQAAhcA="
-je 22f
-.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
-jb 24f
-jmp 25f
-24:
-.base64 "icE="
-25:
-.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
-26:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 26b
-.base64 "i4UYAQAAg/gQ"
-je 27f
-jmp 28f
-27:
-.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
-call {vg_ghash}
-.base64 "WFhYWFiB7QACAAA="
-28:
-jmp 23f
-22:
-23:
-.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 29f
-.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
-call {vg_ghash}
-.base64 "WFhYWFiB7QACAAA="
-jmp 210f
-29:
-210:
-.base64 "i40UAQAAhck="
-je 211f
-.base64 "i70QAQAAifKDwiA="
-213:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 213b
-jmp 212f
-211:
-212:
-jmp 21f
-20:
-21:
-.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkIAoAAMM="
-.p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-    )
-}
-
-/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
-///
-/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -3426,81 +3199,51 @@ jmp 21f
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub unsafe extern "C" fn vg_aes_gcm_open_to_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "jaQk6PX//4uEJBwKAACJRCQEi4QkIAoAAIlEJAiLhCQkCgAAiUQkDIuEJCgKAACJRCQQieCDwBiJRCQUi0QkFImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAAC4AAAAAImFvAAAAIuFwAAAAIP4DA=="
+        r#".base64 "jWQk0Il0JCiJfCQsi0QkNIkEJItEJDiJRCQEi0QkPIlEJAiLRCRAiUQkDItEJESJRCQQi0QkSIlEJBSLRCRUiUQkGItEJFCJRCQci0QkXIlEJCCLRCRgiUQkJInmg8ZMi1QkVIs+i04EwekCg/kA"
 je 20f
-.base64 "uAAAAACJBolGBIlGCIlGDImFGAEAAIuFFAEAAIXA"
-je 22f
-.base64 "i4UYAQAAhcA="
-je 24f
-.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
-jb 26f
-jmp 27f
-26:
-.base64 "icE="
-27:
-.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
-28:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 28b
-.base64 "i4UYAQAAg/gQ"
-je 29f
-jmp 210f
-29:
-.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
-call {vg_ghash}
-.base64 "WFhYWFiB7QACAAA="
-210:
-jmp 25f
-24:
-25:
-.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
-je 211f
-.base64 "i4WQAAAABfAAAACJ8oPCAIHFAAIAAFVXU1JQ"
-call {vg_ghash}
-.base64 "WFhYWFiB7QACAAA="
-jmp 212f
-211:
-212:
-.base64 "i40UAQAAhck="
-je 213f
-.base64 "i70QAQAAifKDwiA="
-215:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 215b
-jmp 214f
-213:
-214:
-jmp 23f
 22:
-23:
-.base64 "i4XAAAAAg+APiYUYAQAAi40YAQAAhck="
-je 216f
-.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
-218:
-.base64 "D7YHiAKDxwGDwgGD6QE="
-jne 218b
-.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
-call {vg_ghash}
-.base64 "WFhYWFiB7QACAAA="
-jmp 217f
-216:
-217:
-.base64 "i4W8AAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhcAAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IAgcUAAgAAVVdTUlA="
-call {vg_ghash}
-.base64 "WFhYWFiB7QACAAA="
+.base64 "iweJAoPHBIPCBIPpAQ=="
+jne 22b
 jmp 21f
 20:
-.base64 "i70QAQAAiweLTwSLVwiJBolOBIlWCLgAAAABiUYM"
 21:
-.base64 "iwaJRjCLRgSJRjSLRgiJRjiLRgwPyIPAAQ/IiUY8uAAAAACJRhCJRhSJRhiJRhyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQYCgAAww=="
+.base64 "i04Eg+ED"
+je 23f
+25:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 25b
+jmp 24f
+23:
+24:
+call {vg_aes_gcm_open_pclmul}
+.base64 "hcA="
+je 26f
+jmp 27f
+26:
+.base64 "i1QkVItMJFC4AAAAAIP5AA=="
+je 28f
+210:
+.base64 "iAKDwgGD6QE="
+jne 210b
+jmp 29f
+28:
+29:
+27:
+.base64 "i3QkKIt8JCyNZCQwww=="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_gcm_open_pclmul = sym super::gcm::vg_aes_gcm_open_pclmul,
     )
 }
 
@@ -4472,5 +4215,386 @@ call {vg_aes_gcm_seal}
 .base64 "i1wkJIt0JCiLfCQsjWQkMMM="
 .p2align 6"#,
         vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
+    )
+}
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2688 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "jWQk0Il0JCiJfCQsi0QkNIkEJItEJDiJRCQEi0QkPIlEJAiLRCRAiUQkDItEJESJRCQQi0QkSIlEJBSLRCRUiUQkGItEJFCJRCQci0QkXIlEJCCLRCRgiUQkJInmg8ZMi1QkVIs+i04EwekCg/kA"
+je 20f
+22:
+.base64 "iweJAoPHBIPCBIPpAQ=="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i04Eg+ED"
+je 23f
+25:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 25b
+jmp 24f
+23:
+24:
+call {vg_aes_gcm_open}
+.base64 "hcA="
+je 26f
+jmp 27f
+26:
+.base64 "i1QkVItMJFC4AAAAAIP5AA=="
+je 28f
+210:
+.base64 "iAKDwgGD6QE="
+jne 210b
+jmp 29f
+28:
+29:
+27:
+.base64 "i3QkKIt8JCyNZCQwww=="
+.p2align 6"#,
+        vg_aes_gcm_open = sym super::gcm::vg_aes_gcm_open,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_stream_aad_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+
+/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk4PX//4uEJCQKAACJRCQEi4QkKAoAAIlEJAiLhCQsCgAAiUQkDIuEJDAKAACJRCQQi4QkNAoAAIlEJBSLhCQ4CgAAiUQkGIngg8AgiUQkHItEJByJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAiLRCQEiYWQAAAAi0QkFImFEAEAAItEJBiJhRQBAACLRCQMg+APiYUYAQAAi4UUAQAAhcA="
+je 20f
+.base64 "i4UYAQAAhcA="
+je 22f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 24f
+jmp 25f
+24:
+.base64 "icE="
+25:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+26:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 26b
+.base64 "i4UYAQAAg/gQ"
+je 27f
+jmp 28f
+27:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+28:
+jmp 23f
+22:
+23:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 29f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 210f
+29:
+210:
+.base64 "i40UAQAAhck="
+je 211f
+.base64 "i70QAQAAifKDwiA="
+213:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 213b
+jmp 212f
+211:
+212:
+jmp 21f
+20:
+21:
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkIAoAAMM="
+.p2align 6"#,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_stream_init_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+
+/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk6PX//4uEJBwKAACJRCQEi4QkIAoAAIlEJAiLhCQkCgAAiUQkDIuEJCgKAACJRCQQieCDwBiJRCQUi0QkFImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAAC4AAAAAImFvAAAAIuFwAAAAIP4DA=="
+je 20f
+.base64 "uAAAAACJBolGBIlGCIlGDImFGAEAAIuFFAEAAIXA"
+je 22f
+.base64 "i4UYAQAAhcA="
+je 24f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 26f
+jmp 27f
+26:
+.base64 "icE="
+27:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+28:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 28b
+.base64 "i4UYAQAAg/gQ"
+je 29f
+jmp 210f
+29:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+210:
+jmp 25f
+24:
+25:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 211f
+.base64 "i4WQAAAABfAAAACJ8oPCAIHFAAIAAFVXU1JQ"
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 212f
+211:
+212:
+.base64 "i40UAQAAhck="
+je 213f
+.base64 "i70QAQAAifKDwiA="
+215:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 215b
+jmp 214f
+213:
+214:
+jmp 23f
+22:
+23:
+.base64 "i4XAAAAAg+APiYUYAQAAi40YAQAAhck="
+je 216f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+218:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 218b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 217f
+216:
+217:
+.base64 "i4W8AAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhcAAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IAgcUAAgAAVVdTUlA="
+call {vg_ghash_pclmul}
+.base64 "WFhYWFiB7QACAAA="
+jmp 21f
+20:
+.base64 "i70QAQAAiweLTwSLVwiJBolOBIlWCLgAAAABiUYM"
+21:
+.base64 "iwaJRjCLRgSJRjSLRgiJRjiLRgwPyIPAAQ/IiUY8uAAAAACJRhCJRhSJRhiJRhyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQYCgAAww=="
+.p2align 6"#,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+    )
+}
+
+/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk4PX//4uEJCQKAACJRCQEi4QkKAoAAIlEJAiLhCQsCgAAiUQkDIuEJDAKAACJRCQQi4QkNAoAAIlEJBSLhCQ4CgAAiUQkGIngg8AgiUQkHItEJByJmIAAAACJsIQAAACJuIgAAACJqIwAAACJxYt0JAiLRCQEiYWQAAAAi0QkFImFEAEAAItEJBiJhRQBAACLRCQMg+APiYUYAQAAi4UUAQAAhcA="
+je 20f
+.base64 "i4UYAQAAhcA="
+je 22f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 24f
+jmp 25f
+24:
+.base64 "icE="
+25:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+26:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 26b
+.base64 "i4UYAQAAg/gQ"
+je 27f
+jmp 28f
+27:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwhCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+28:
+jmp 23f
+22:
+23:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 29f
+.base64 "i4WQAAAABfAAAACJ8oPCEIHFAAIAAFVXU1JQ"
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 210f
+29:
+210:
+.base64 "i40UAQAAhck="
+je 211f
+.base64 "i70QAQAAifKDwiA="
+213:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 213b
+jmp 212f
+211:
+212:
+jmp 21f
+20:
+21:
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkIAoAAMM="
+.p2align 6"#,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+    )
+}
+
+/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk6PX//4uEJBwKAACJRCQEi4QkIAoAAIlEJAiLhCQkCgAAiUQkDIuEJCgKAACJRCQQieCDwBiJRCQUi0QkFImYgAAAAImwhAAAAIm4iAAAAImojAAAAInFi3QkEItEJASJhZAAAACLRCQIiYUQAQAAi0QkDImFFAEAAItEJAyJhcAAAAC4AAAAAImFvAAAAIuFwAAAAIP4DA=="
+je 20f
+.base64 "uAAAAACJBolGBIlGCIlGDImFGAEAAIuFFAEAAIXA"
+je 22f
+.base64 "i4UYAQAAhcA="
+je 24f
+.base64 "uRAAAAArjRgBAACLhRQBAAA5yA=="
+jb 26f
+jmp 27f
+26:
+.base64 "icE="
+27:
+.base64 "i70QAQAAifKDwiADlRgBAACLhRQBAAApyImFFAEAAIuFGAEAAAHIiYUYAQAAifgByImFEAEAAA=="
+28:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 28b
+.base64 "i4UYAQAAg/gQ"
+je 29f
+jmp 210f
+29:
+.base64 "ifODwyC/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+210:
+jmp 25f
+24:
+25:
+.base64 "i50QAQAAi70UAQAAwe8Ei4UUAQAAicKD4g+JlRQBAAAp0AHYiYUQAQAAhf8="
+je 211f
+.base64 "i4WQAAAABfAAAACJ8oPCAIHFAAIAAFVXU1JQ"
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 212f
+211:
+212:
+.base64 "i40UAQAAhck="
+je 213f
+.base64 "i70QAQAAifKDwiA="
+215:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 215b
+jmp 214f
+213:
+214:
+jmp 23f
+22:
+23:
+.base64 "i4XAAAAAg+APiYUYAQAAi40YAQAAhck="
+je 216f
+.base64 "uAAAAACJRWCJRWSJRWiJRWyJ94PHIInqg8Jg"
+218:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 218b
+.base64 "ieuDw2C/AQAAAIuFkAAAAAXwAAAAifKDwgCBxQACAABVV1NSUA=="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 217f
+216:
+217:
+.base64 "i4W8AAAAi428AAAAAckByQHJicLB6h0B0QHAAcABwA/JD8iJTWCJRWSLhcAAAACLjbwAAAAByQHJAcmJwsHqHQHRAcABwAHAD8kPyIlNaIlFbInrg8NgvwEAAACLhZAAAAAF8AAAAInyg8IAgcUAAgAAVVdTUlA="
+call {vg_ghash}
+.base64 "WFhYWFiB7QACAAA="
+jmp 21f
+20:
+.base64 "i70QAQAAiweLTwSLVwiJBolOBIlWCLgAAAABiUYM"
+21:
+.base64 "iwaJRjCLRgSJRjSLRgiJRjiLRgwPyIPAAQ/IiUY8uAAAAACJRhCJRhSJRhiJRhyLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQYCgAAww=="
+.p2align 6"#,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }

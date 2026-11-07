@@ -3138,7 +3138,1657 @@ jne 2317b
     )
 }
 
-/// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
+/// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; scratch_len must be at least 16*p_len words; destroy scratch after use.
+/// * `scratch` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 108 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_dsa_validate_private_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "i0QkFImYQCAAAImoRCAAAImwSCAAAIm4TCAAAInHi0QkBImHACAAAItEJAyJhyQgAACLRCQQiYcoIAAAi0QkDImHLCAAAIuHACAAAAOHJCAAAImHBCAAAAOHKCAAAImHCCAAAAOHJCAAAImHDCAAAAOHJCAAAImHECAAAIuHECAAAImHGCAAAIuHJCAAAD2AAAAA"
+je 20f
+.base64 "uAAAAACD+AE="
+jmp 21f
+20:
+.base64 "i4coIAAAg/gU"
+21:
+je 22f
+.base64 "i4ckIAAAPQABAAA="
+je 24f
+.base64 "uAAAAACD+AE="
+jmp 25f
+24:
+.base64 "i4coIAAAg/gc"
+25:
+je 26f
+.base64 "i4ckIAAAPQABAAA="
+je 28f
+.base64 "uAAAAACD+AE="
+jmp 29f
+28:
+.base64 "i4coIAAAg/gg"
+29:
+je 210f
+.base64 "i4ckIAAAPYABAAA="
+je 212f
+.base64 "uAAAAACD+AE="
+jmp 213f
+212:
+.base64 "i4coIAAAg/gg"
+213:
+je 214f
+.base64 "i4ckIAAAPQABAAA="
+je 216f
+.base64 "uAAAAACD+AE="
+jmp 217f
+216:
+.base64 "i4coIAAAg/gU"
+217:
+je 218f
+.base64 "uAAAAAA="
+jmp 219f
+218:
+.base64 "i7cAIAAAifOBw/wAAACJ/Q=="
+220:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 220b
+.base64 "uAAAAACJ/Q=="
+221:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 221b
+.base64 "uAAAAICJh/wQAAC5AAAAAIn9"
+222:
+.base64 "i0VAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 222b
+.base64 "iciD8P+Jw7gAAAAAif0="
+223:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 223b
+.base64 "uAEAAACJhwARAAC5AAAAAIn9"
+224:
+.base64 "i0VAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 224b
+.base64 "icgh2InCiVcguAAAAACJ/Q=="
+225:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 225b
+.base64 "uAAAAICJh3wRAAC5AAAAAIn9"
+226:
+.base64 "i0VAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 226b
+.base64 "iciD8P+Jw4naiVckugAAAACJVyiLR0CJRziLtwQgAACJ84PDEIn9"
+227:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IUOdU="
+jne 227b
+.base64 "uAAAAACJR1S4AAAAAIn9"
+228:
+.base64 "iYUAAgAAg8UEifqDwhg51Q=="
+jne 228b
+.base64 "uAAAAICJhxACAAC5AAAAAIn9"
+229:
+.base64 "i0VAugAAAAA5yhuFAAIAABnJg8UEifqDwhg51Q=="
+jne 229b
+.base64 "iciD8P+Jw7gAAAAAif0="
+230:
+.base64 "iYUAAgAAg8UEifqDwhg51Q=="
+jne 230b
+.base64 "uAEAAACJhxQCAAC5AAAAAIn9"
+231:
+.base64 "i0VAugAAAAA5yhuFAAIAABnJg8UEifqDwhg51Q=="
+jne 231b
+.base64 "icgh2InCiVcsugAAAACJVzC6AAAAAIlXNItXQCNXOIPiAbgAAAAAKdCJRziLRyAjRyyLXzALXywLXzQjXyQJ2ItfKCNfNAnYI0c4iYc0IAAAi0csg+AUi1cwg+IcCcKLRzSD4CAJwouHLCAAADnQGdsx0CHYMcKJlzAgAACLhzQgAACD+AA="
+je 232f
+.base64 "i7cAIAAAifOBw/wAAACJ/Q=="
+234:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 234b
+.base64 "i7cIIAAAifOBw/wAAACJ/Q=="
+235:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 235b
+.base64 "uQAAAACJ/Q=="
+236:
+.base64 "i4VoCgAAugAAAAA5yhtFQBnJg8UEifqBwgABAAA51Q=="
+jne 236b
+.base64 "iciJw7kAAAAAif0="
+237:
+.base64 "C41oCgAAg8UEifqBwgABAAA51Q=="
+jne 237b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAuAAAAACJ/Q=="
+238:
+.base64 "iYV4DgAAg8UEifqBwgABAAA51Q=="
+jne 238b
+.base64 "uAIAAACJh3gOAAC5AAAAAIn9"
+239:
+.base64 "i4VoCgAAugAAAAA5yhuFeA4AABnJg8UEifqBwgABAAA51Q=="
+jne 239b
+.base64 "iciD8P+JwouHNCAAACHQiYc0IAAAi7cAIAAAifOBw/wAAACJ/Q=="
+240:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 240b
+.base64 "i7cMIAAAifOBw/wAAACJ/Q=="
+241:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 241b
+.base64 "uQAAAACJ/Q=="
+242:
+.base64 "i4VoCgAAugAAAAA5yhtFQBnJg8UEifqBwgABAAA51Q=="
+jne 242b
+.base64 "iciJw7kAAAAAif0="
+243:
+.base64 "C41oCgAAg8UEifqBwgABAAA51Q=="
+jne 243b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAuAAAAACJ/Q=="
+244:
+.base64 "iYV4DgAAg8UEifqBwgABAAA51Q=="
+jne 244b
+.base64 "uAIAAACJh3gOAAC5AAAAAIn9"
+245:
+.base64 "i4VoCgAAugAAAAA5yhuFeA4AABnJg8UEifqBwgABAAA51Q=="
+jne 245b
+.base64 "iciD8P+JwouHNCAAACHQiYc0IAAAi7cAIAAAifOBw/wAAACJ/Q=="
+246:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 246b
+.base64 "uAAAAACJ/Q=="
+247:
+.base64 "iYV4DgAAg8UEifqBwgABAAA51Q=="
+jne 247b
+.base64 "uAEAAACJh3gOAAC5AAAAAIn9"
+248:
+.base64 "i0VAugAAAAA5yhuFeA4AAImFcAwAABnJg8UEifqBwgABAAA51Q=="
+jne 248b
+.base64 "if6BxmA6AAC5/////4nzgcP8AAAAif0="
+249:
+.base64 "i4VwDAAAIcgPyIkDg+sEg8UEifqBwgABAAA51Q=="
+jne 249b
+.base64 "i7cEIAAAifODwxCJ/Q=="
+250:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IUOdU="
+jne 250b
+.base64 "uAAAAACJR1SJ/oHGYDoAALsAAQAAuEcAAABTVlBX"
+call {vg_dsa_reduce_3}
+.base64 "WFhYWIn+gcbgOQAAuf////+J84PDEIn9"
+251:
+.base64 "i4WQAQAAIcgPyIkDg+sEg8UEifqDwhQ51Q=="
+jne 251b
+.base64 "if6BxuA5AACJ84PDEIn9"
+252:
+.base64 "iwMPyImFWAEAAIPrBIPFBIn6g8IUOdU="
+jne 252b
+.base64 "uAAAAACJh2wBAAC5AAAAAIn9"
+253:
+.base64 "C41YAQAAg8UEifqDwhg51Q=="
+jne 253b
+.base64 "icq5AAAAACnRGdKD8v+LhzQgAAAh0ImHNCAAAIu3BCAAAInzg8MQif0="
+254:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IUOdU="
+jne 254b
+.base64 "uAAAAACJR1S4AAAAAIn9"
+255:
+.base64 "iYXIAQAAg8UEifqDwhg51Q=="
+jne 255b
+.base64 "uAIAAACJh8gBAAC5AAAAAIn9"
+256:
+.base64 "i0VAugAAAAA5yhuFyAEAAImFkAEAABnJg8UEifqDwhg51Q=="
+jne 256b
+.base64 "if6BxkA6AAC5/////4nzg8MQif0="
+257:
+.base64 "i4WQAQAAIcgPyIkDg+sEg8UEifqDwhQ51Q=="
+jne 257b
+.base64 "i7cAIAAAifOBw/wAAACJ/Q=="
+258:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 258b
+.base64 "i7cIIAAAifOBw/wAAACJ/Q=="
+259:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 259b
+.base64 "i7cEIAAAifODwxCJ/Q=="
+260:
+.base64 "iwMPyImFgBAAAIPrBIPFBIn6g8IUOdU="
+jne 260b
+.base64 "uAAAAACJ/Q=="
+261:
+.base64 "iYWUEAAAg8UEifqBwuwAAAA51Q=="
+jne 261b
+.base64 "uFECAABQVw=="
+call {vg_dsa_pow_32_5}
+.base64 "WFiJ/oHGYDoAALn/////ifOBw/wAAACJ/Q=="
+262:
+.base64 "i4VwDAAAIcgPyIkDg+sEg8UEifqBwgABAAA51Q=="
+jne 262b
+.base64 "if6BxmA6AACJ84HD/AAAAIn9"
+263:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 263b
+.base64 "uAAAAACJ/Q=="
+264:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 264b
+.base64 "uAEAAACJh4AQAAC5AAAAAIn9"
+265:
+.base64 "i4VoCgAAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 265b
+.base64 "iciJw7kAAAAAif0="
+266:
+.base64 "i4WAEAAAugAAAAA5yhuFaAoAABnJg8UEifqBwgABAAA51Q=="
+jne 266b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLtwAgAACJ84HD/AAAAIn9"
+267:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 267b
+.base64 "i7cMIAAAifOBw/wAAACJ/Q=="
+268:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 268b
+.base64 "i7cEIAAAifODwxCJ/Q=="
+269:
+.base64 "iwMPyImFgBAAAIPrBIPFBIn6g8IUOdU="
+jne 269b
+.base64 "uAAAAACJ/Q=="
+270:
+.base64 "iYWUEAAAg8UEifqBwuwAAAA51Q=="
+jne 270b
+.base64 "uFECAABQVw=="
+call {vg_dsa_pow_32_5}
+.base64 "WFiJ/oHGYDoAALn/////ifOBw/wAAACJ/Q=="
+271:
+.base64 "i4VwDAAAIcgPyIkDg+sEg8UEifqBwgABAAA51Q=="
+jne 271b
+.base64 "if6BxmA6AACJ84HD/AAAAIn9"
+272:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 272b
+.base64 "uAAAAACJ/Q=="
+273:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 273b
+.base64 "uAEAAACJh4AQAAC5AAAAAIn9"
+274:
+.base64 "i4VoCgAAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 274b
+.base64 "iciJw7kAAAAAif0="
+275:
+.base64 "i4WAEAAAugAAAAA5yhuFaAoAABnJg8UEifqBwgABAAA51Q=="
+jne 275b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLtwQgAACJ84PDEIn9"
+276:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IUOdU="
+jne 276b
+.base64 "uAAAAACJR1SLtxAgAACJ84PDEIn9"
+277:
+.base64 "iwMPyImFWAEAAIPrBIPFBIn6g8IUOdU="
+jne 277b
+.base64 "uAAAAACJh2wBAAC5AAAAAIn9"
+278:
+.base64 "i4VYAQAAugAAAAA5yhtFQBnJg8UEifqDwhg51Q=="
+jne 278b
+.base64 "iciJw7kAAAAAif0="
+279:
+.base64 "C41YAQAAg8UEifqDwhg51Q=="
+jne 279b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAi7cEIAAAifODwxCJ/Q=="
+280:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IUOdU="
+jne 280b
+.base64 "uAAAAACJR1SLtxggAACJ84PDEIn9"
+281:
+.base64 "iwMPyImFWAEAAIPrBIPFBIn6g8IUOdU="
+jne 281b
+.base64 "uAAAAACJh2wBAAC5AAAAAIn9"
+282:
+.base64 "i4VYAQAAugAAAAA5yhtFQBnJg8UEifqDwhg51Q=="
+jne 282b
+.base64 "iciJw7kAAAAAif0="
+283:
+.base64 "C41YAQAAg8UEifqDwhg51Q=="
+jne 283b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAi7cAIAAAifOBw/wAAACJ/Q=="
+284:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 284b
+.base64 "i7cIIAAAifOBw/wAAACJ/Q=="
+285:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 285b
+.base64 "i7cQIAAAifODwxCJ/Q=="
+286:
+.base64 "iwMPyImFgBAAAIPrBIPFBIn6g8IUOdU="
+jne 286b
+.base64 "uAAAAACJ/Q=="
+287:
+.base64 "iYWUEAAAg8UEifqBwuwAAAA51Q=="
+jne 287b
+.base64 "uFECAABQVw=="
+call {vg_dsa_pow_32_5}
+.base64 "WFiJ/oHGYDoAALn/////ifOBw/wAAACJ/Q=="
+288:
+.base64 "i4VwDAAAIcgPyIkDg+sEg8UEifqBwgABAAA51Q=="
+jne 288b
+.base64 "if6BxmA6AACJ84HD/AAAAIn9"
+289:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 289b
+.base64 "i7cMIAAAifOBw/wAAACJ/Q=="
+290:
+.base64 "iwMPyImFgBAAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 290b
+.base64 "uQAAAACJ/Q=="
+291:
+.base64 "i4VoCgAAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 291b
+.base64 "iciJw7kAAAAAif0="
+292:
+.base64 "i4WAEAAAugAAAAA5yhuFaAoAABnJg8UEifqBwgABAAA51Q=="
+jne 292b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLhzQgAACD4AE="
+jmp 233f
+232:
+.base64 "uAAAAAA="
+233:
+219:
+jmp 215f
+214:
+.base64 "i7cAIAAAifOBw3wBAACJ/Q=="
+293:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAQAAOdU="
+jne 293b
+.base64 "uAAAAACJ/Q=="
+294:
+.base64 "iYWAGAAAg8UEifqBwoABAAA51Q=="
+jne 294b
+.base64 "uAAAAICJh/wYAAC5AAAAAIn9"
+295:
+.base64 "i0VAugAAAAA5yhuFgBgAABnJg8UEifqBwoABAAA51Q=="
+jne 295b
+.base64 "iciD8P+Jw7gAAAAAif0="
+296:
+.base64 "iYWAGAAAg8UEifqBwoABAAA51Q=="
+jne 296b
+.base64 "uAEAAACJhwAZAAC5AAAAAIn9"
+297:
+.base64 "i0VAugAAAAA5yhuFgBgAABnJg8UEifqBwoABAAA51Q=="
+jne 297b
+.base64 "icgh2InCiVcguAAAAACJ/Q=="
+298:
+.base64 "iYWAGAAAg8UEifqBwoABAAA51Q=="
+jne 298b
+.base64 "uAAAAICJh3wZAAC5AAAAAIn9"
+299:
+.base64 "i0VAugAAAAA5yhuFgBgAABnJg8UEifqBwoABAAA51Q=="
+jne 299b
+.base64 "iciD8P+Jw7gAAAAAif0="
+2100:
+.base64 "iYWAGAAAg8UEifqBwoABAAA51Q=="
+jne 2100b
+.base64 "uAEAAACJh4AZAAC5AAAAAIn9"
+2101:
+.base64 "i0VAugAAAAA5yhuFgBgAABnJg8UEifqBwoABAAA51Q=="
+jne 2101b
+.base64 "icgh2InCiVckuAAAAACJ/Q=="
+2102:
+.base64 "iYWAGAAAg8UEifqBwoABAAA51Q=="
+jne 2102b
+.base64 "uAAAAICJh/wZAAC5AAAAAIn9"
+2103:
+.base64 "i0VAugAAAAA5yhuFgBgAABnJg8UEifqBwoABAAA51Q=="
+jne 2103b
+.base64 "iciD8P+Jw4naiVcoi0dAiUc4i7cEIAAAifODwxyJ/Q=="
+2104:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IgOdU="
+jne 2104b
+.base64 "uAAAAACJ/Q=="
+2105:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2105b
+.base64 "uAAAAICJh5ACAAC5AAAAAIn9"
+2106:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2106b
+.base64 "iciD8P+Jw7gAAAAAif0="
+2107:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2107b
+.base64 "uAEAAACJh5QCAAC5AAAAAIn9"
+2108:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2108b
+.base64 "icgh2InCiVcsuAAAAACJ/Q=="
+2109:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2109b
+.base64 "uAAAAICJh5gCAAC5AAAAAIn9"
+2110:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2110b
+.base64 "iciD8P+Jw7gAAAAAif0="
+2111:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2111b
+.base64 "uAEAAACJh5wCAAC5AAAAAIn9"
+2112:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2112b
+.base64 "icgh2InCiVcwuAAAAACJ/Q=="
+2113:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2113b
+.base64 "uAAAAICJh5wCAAC5AAAAAIn9"
+2114:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2114b
+.base64 "iciD8P+Jw4naiVc0i1dAI1c4g+IBuAAAAAAp0IlHOItHICNHLItfMAtfLAtfNCNfJAnYi18oI180CdgjRziJhzQgAACLRyyD4BSLVzCD4hwJwotHNIPgIAnCi4csIAAAOdAZ2zHQIdgxwomXMCAAAIuHNCAAAIP4AA=="
+je 2115f
+.base64 "i7cAIAAAifOBw3wBAACJ/Q=="
+2117:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAQAAOdU="
+jne 2117b
+.base64 "i7cIIAAAifOBw3wBAACJ/Q=="
+2118:
+.base64 "iwMPyImFaA8AAIPrBIPFBIn6gcKAAQAAOdU="
+jne 2118b
+.base64 "uQAAAACJ/Q=="
+2119:
+.base64 "i4VoDwAAugAAAAA5yhtFQBnJg8UEifqBwoABAAA51Q=="
+jne 2119b
+.base64 "iciJw7kAAAAAif0="
+2120:
+.base64 "C41oDwAAg8UEifqBwoABAAA51Q=="
+jne 2120b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAuAAAAACJ/Q=="
+2121:
+.base64 "iYV4FQAAg8UEifqBwoABAAA51Q=="
+jne 2121b
+.base64 "uAIAAACJh3gVAAC5AAAAAIn9"
+2122:
+.base64 "i4VoDwAAugAAAAA5yhuFeBUAABnJg8UEifqBwoABAAA51Q=="
+jne 2122b
+.base64 "iciD8P+JwouHNCAAACHQiYc0IAAAi7cAIAAAifOBw3wBAACJ/Q=="
+2123:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAQAAOdU="
+jne 2123b
+.base64 "i7cMIAAAifOBw3wBAACJ/Q=="
+2124:
+.base64 "iwMPyImFaA8AAIPrBIPFBIn6gcKAAQAAOdU="
+jne 2124b
+.base64 "uQAAAACJ/Q=="
+2125:
+.base64 "i4VoDwAAugAAAAA5yhtFQBnJg8UEifqBwoABAAA51Q=="
+jne 2125b
+.base64 "iciJw7kAAAAAif0="
+2126:
+.base64 "C41oDwAAg8UEifqBwoABAAA51Q=="
+jne 2126b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAuAAAAACJ/Q=="
+2127:
+.base64 "iYV4FQAAg8UEifqBwoABAAA51Q=="
+jne 2127b
+.base64 "uAIAAACJh3gVAAC5AAAAAIn9"
+2128:
+.base64 "i4VoDwAAugAAAAA5yhuFeBUAABnJg8UEifqBwoABAAA51Q=="
+jne 2128b
+.base64 "iciD8P+JwouHNCAAACHQiYc0IAAAi7cAIAAAifOBw3wBAACJ/Q=="
+2129:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAQAAOdU="
+jne 2129b
+.base64 "uAAAAACJ/Q=="
+2130:
+.base64 "iYV4FQAAg8UEifqBwoABAAA51Q=="
+jne 2130b
+.base64 "uAEAAACJh3gVAAC5AAAAAIn9"
+2131:
+.base64 "i0VAugAAAAA5yhuFeBUAAImFcBIAABnJg8UEifqBwoABAAA51Q=="
+jne 2131b
+.base64 "if6BxmA6AAC5/////4nzgcN8AQAAif0="
+2132:
+.base64 "i4VwEgAAIcgPyIkDg+sEg8UEifqBwoABAAA51Q=="
+jne 2132b
+.base64 "i7cEIAAAifODwxyJ/Q=="
+2133:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IgOdU="
+jne 2133b
+.base64 "if6BxmA6AAC7gAEAALhZAAAAU1ZQVw=="
+call {vg_dsa_reduce_4}
+.base64 "WFhYWIn+gcbgOQAAuf////+J84PDHIn9"
+2134:
+.base64 "i4XwAQAAIcgPyIkDg+sEg8UEifqDwiA51Q=="
+jne 2134b
+.base64 "if6BxuA5AACJ84PDHIn9"
+2135:
+.base64 "iwMPyImFqAEAAIPrBIPFBIn6g8IgOdU="
+jne 2135b
+.base64 "uQAAAACJ/Q=="
+2136:
+.base64 "C42oAQAAg8UEifqDwiA51Q=="
+jne 2136b
+.base64 "icq5AAAAACnRGdKD8v+LhzQgAAAh0ImHNCAAAIu3BCAAAInzg8Mcif0="
+2137:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IgOdU="
+jne 2137b
+.base64 "uAAAAACJ/Q=="
+2138:
+.base64 "iYU4AgAAg8UEifqDwiA51Q=="
+jne 2138b
+.base64 "uAIAAACJhzgCAAC5AAAAAIn9"
+2139:
+.base64 "i0VAugAAAAA5yhuFOAIAAImF8AEAABnJg8UEifqDwiA51Q=="
+jne 2139b
+.base64 "if6BxkA6AAC5/////4nzg8Mcif0="
+2140:
+.base64 "i4XwAQAAIcgPyIkDg+sEg8UEifqDwiA51Q=="
+jne 2140b
+.base64 "i7cAIAAAifOBw3wBAACJ/Q=="
+2141:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAQAAOdU="
+jne 2141b
+.base64 "i7cIIAAAifOBw3wBAACJ/Q=="
+2142:
+.base64 "iwMPyImFaA8AAIPrBIPFBIn6gcKAAQAAOdU="
+jne 2142b
+.base64 "i7cEIAAAifODwxyJ/Q=="
+2143:
+.base64 "iwMPyImFgBgAAIPrBIPFBIn6g8IgOdU="
+jne 2143b
+.base64 "uAAAAACJ/Q=="
+2144:
+.base64 "iYWgGAAAg8UEifqBwmABAAA51Q=="
+jne 2144b
+.base64 "uHEDAABQVw=="
+call {vg_dsa_pow_48_8}
+.base64 "WFiJ/oHGYDoAALn/////ifOBw3wBAACJ/Q=="
+2145:
+.base64 "i4VwEgAAIcgPyIkDg+sEg8UEifqBwoABAAA51Q=="
+jne 2145b
+.base64 "if6BxmA6AACJ84HDfAEAAIn9"
+2146:
+.base64 "iwMPyImFaA8AAIPrBIPFBIn6gcKAAQAAOdU="
+jne 2146b
+.base64 "uAAAAACJ/Q=="
+2147:
+.base64 "iYWAGAAAg8UEifqBwoABAAA51Q=="
+jne 2147b
+.base64 "uAEAAACJh4AYAAC5AAAAAIn9"
+2148:
+.base64 "i4VoDwAAugAAAAA5yhuFgBgAABnJg8UEifqBwoABAAA51Q=="
+jne 2148b
+.base64 "iciJw7kAAAAAif0="
+2149:
+.base64 "i4WAGAAAugAAAAA5yhuFaA8AABnJg8UEifqBwoABAAA51Q=="
+jne 2149b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLtwAgAACJ84HDfAEAAIn9"
+2150:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAQAAOdU="
+jne 2150b
+.base64 "i7cMIAAAifOBw3wBAACJ/Q=="
+2151:
+.base64 "iwMPyImFaA8AAIPrBIPFBIn6gcKAAQAAOdU="
+jne 2151b
+.base64 "i7cEIAAAifODwxyJ/Q=="
+2152:
+.base64 "iwMPyImFgBgAAIPrBIPFBIn6g8IgOdU="
+jne 2152b
+.base64 "uAAAAACJ/Q=="
+2153:
+.base64 "iYWgGAAAg8UEifqBwmABAAA51Q=="
+jne 2153b
+.base64 "uHEDAABQVw=="
+call {vg_dsa_pow_48_8}
+.base64 "WFiJ/oHGYDoAALn/////ifOBw3wBAACJ/Q=="
+2154:
+.base64 "i4VwEgAAIcgPyIkDg+sEg8UEifqBwoABAAA51Q=="
+jne 2154b
+.base64 "if6BxmA6AACJ84HDfAEAAIn9"
+2155:
+.base64 "iwMPyImFaA8AAIPrBIPFBIn6gcKAAQAAOdU="
+jne 2155b
+.base64 "uAAAAACJ/Q=="
+2156:
+.base64 "iYWAGAAAg8UEifqBwoABAAA51Q=="
+jne 2156b
+.base64 "uAEAAACJh4AYAAC5AAAAAIn9"
+2157:
+.base64 "i4VoDwAAugAAAAA5yhuFgBgAABnJg8UEifqBwoABAAA51Q=="
+jne 2157b
+.base64 "iciJw7kAAAAAif0="
+2158:
+.base64 "i4WAGAAAugAAAAA5yhuFaA8AABnJg8UEifqBwoABAAA51Q=="
+jne 2158b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLtwQgAACJ84PDHIn9"
+2159:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IgOdU="
+jne 2159b
+.base64 "i7cQIAAAifODwxyJ/Q=="
+2160:
+.base64 "iwMPyImFqAEAAIPrBIPFBIn6g8IgOdU="
+jne 2160b
+.base64 "uQAAAACJ/Q=="
+2161:
+.base64 "i4WoAQAAugAAAAA5yhtFQBnJg8UEifqDwiA51Q=="
+jne 2161b
+.base64 "iciJw7kAAAAAif0="
+2162:
+.base64 "C42oAQAAg8UEifqDwiA51Q=="
+jne 2162b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAi7cEIAAAifODwxyJ/Q=="
+2163:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IgOdU="
+jne 2163b
+.base64 "i7cYIAAAifODwxyJ/Q=="
+2164:
+.base64 "iwMPyImFqAEAAIPrBIPFBIn6g8IgOdU="
+jne 2164b
+.base64 "uQAAAACJ/Q=="
+2165:
+.base64 "i4WoAQAAugAAAAA5yhtFQBnJg8UEifqDwiA51Q=="
+jne 2165b
+.base64 "iciJw7kAAAAAif0="
+2166:
+.base64 "C42oAQAAg8UEifqDwiA51Q=="
+jne 2166b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAi7cAIAAAifOBw3wBAACJ/Q=="
+2167:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAQAAOdU="
+jne 2167b
+.base64 "i7cIIAAAifOBw3wBAACJ/Q=="
+2168:
+.base64 "iwMPyImFaA8AAIPrBIPFBIn6gcKAAQAAOdU="
+jne 2168b
+.base64 "i7cQIAAAifODwxyJ/Q=="
+2169:
+.base64 "iwMPyImFgBgAAIPrBIPFBIn6g8IgOdU="
+jne 2169b
+.base64 "uAAAAACJ/Q=="
+2170:
+.base64 "iYWgGAAAg8UEifqBwmABAAA51Q=="
+jne 2170b
+.base64 "uHEDAABQVw=="
+call {vg_dsa_pow_48_8}
+.base64 "WFiJ/oHGYDoAALn/////ifOBw3wBAACJ/Q=="
+2171:
+.base64 "i4VwEgAAIcgPyIkDg+sEg8UEifqBwoABAAA51Q=="
+jne 2171b
+.base64 "if6BxmA6AACJ84HDfAEAAIn9"
+2172:
+.base64 "iwMPyImFaA8AAIPrBIPFBIn6gcKAAQAAOdU="
+jne 2172b
+.base64 "i7cMIAAAifOBw3wBAACJ/Q=="
+2173:
+.base64 "iwMPyImFgBgAAIPrBIPFBIn6gcKAAQAAOdU="
+jne 2173b
+.base64 "uQAAAACJ/Q=="
+2174:
+.base64 "i4VoDwAAugAAAAA5yhuFgBgAABnJg8UEifqBwoABAAA51Q=="
+jne 2174b
+.base64 "iciJw7kAAAAAif0="
+2175:
+.base64 "i4WAGAAAugAAAAA5yhuFaA8AABnJg8UEifqBwoABAAA51Q=="
+jne 2175b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLhzQgAACD4AE="
+jmp 2116f
+2115:
+.base64 "uAAAAAA="
+2116:
+215:
+jmp 211f
+210:
+.base64 "i7cAIAAAifOBw/wAAACJ/Q=="
+2176:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2176b
+.base64 "uAAAAACJ/Q=="
+2177:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 2177b
+.base64 "uAAAAICJh/wQAAC5AAAAAIn9"
+2178:
+.base64 "i0VAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 2178b
+.base64 "iciD8P+Jw7gAAAAAif0="
+2179:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 2179b
+.base64 "uAEAAACJhwARAAC5AAAAAIn9"
+2180:
+.base64 "i0VAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 2180b
+.base64 "icgh2InCiVcguAAAAACJ/Q=="
+2181:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 2181b
+.base64 "uAAAAICJh3wRAAC5AAAAAIn9"
+2182:
+.base64 "i0VAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 2182b
+.base64 "iciD8P+Jw4naiVckugAAAACJVyiLR0CJRziLtwQgAACJ84PDHIn9"
+2183:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IgOdU="
+jne 2183b
+.base64 "uAAAAACJ/Q=="
+2184:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2184b
+.base64 "uAAAAICJh5ACAAC5AAAAAIn9"
+2185:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2185b
+.base64 "iciD8P+Jw7gAAAAAif0="
+2186:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2186b
+.base64 "uAEAAACJh5QCAAC5AAAAAIn9"
+2187:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2187b
+.base64 "icgh2InCiVcsuAAAAACJ/Q=="
+2188:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2188b
+.base64 "uAAAAICJh5gCAAC5AAAAAIn9"
+2189:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2189b
+.base64 "iciD8P+Jw7gAAAAAif0="
+2190:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2190b
+.base64 "uAEAAACJh5wCAAC5AAAAAIn9"
+2191:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2191b
+.base64 "icgh2InCiVcwuAAAAACJ/Q=="
+2192:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2192b
+.base64 "uAAAAICJh5wCAAC5AAAAAIn9"
+2193:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2193b
+.base64 "iciD8P+Jw4naiVc0i1dAI1c4g+IBuAAAAAAp0IlHOItHICNHLItfMAtfLAtfNCNfJAnYi18oI180CdgjRziJhzQgAACLRyyD4BSLVzCD4hwJwotHNIPgIAnCi4csIAAAOdAZ2zHQIdgxwomXMCAAAIuHNCAAAIP4AA=="
+je 2194f
+.base64 "i7cAIAAAifOBw/wAAACJ/Q=="
+2196:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2196b
+.base64 "i7cIIAAAifOBw/wAAACJ/Q=="
+2197:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2197b
+.base64 "uQAAAACJ/Q=="
+2198:
+.base64 "i4VoCgAAugAAAAA5yhtFQBnJg8UEifqBwgABAAA51Q=="
+jne 2198b
+.base64 "iciJw7kAAAAAif0="
+2199:
+.base64 "C41oCgAAg8UEifqBwgABAAA51Q=="
+jne 2199b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAuAAAAACJ/Q=="
+2200:
+.base64 "iYV4DgAAg8UEifqBwgABAAA51Q=="
+jne 2200b
+.base64 "uAIAAACJh3gOAAC5AAAAAIn9"
+2201:
+.base64 "i4VoCgAAugAAAAA5yhuFeA4AABnJg8UEifqBwgABAAA51Q=="
+jne 2201b
+.base64 "iciD8P+JwouHNCAAACHQiYc0IAAAi7cAIAAAifOBw/wAAACJ/Q=="
+2202:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2202b
+.base64 "i7cMIAAAifOBw/wAAACJ/Q=="
+2203:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2203b
+.base64 "uQAAAACJ/Q=="
+2204:
+.base64 "i4VoCgAAugAAAAA5yhtFQBnJg8UEifqBwgABAAA51Q=="
+jne 2204b
+.base64 "iciJw7kAAAAAif0="
+2205:
+.base64 "C41oCgAAg8UEifqBwgABAAA51Q=="
+jne 2205b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAuAAAAACJ/Q=="
+2206:
+.base64 "iYV4DgAAg8UEifqBwgABAAA51Q=="
+jne 2206b
+.base64 "uAIAAACJh3gOAAC5AAAAAIn9"
+2207:
+.base64 "i4VoCgAAugAAAAA5yhuFeA4AABnJg8UEifqBwgABAAA51Q=="
+jne 2207b
+.base64 "iciD8P+JwouHNCAAACHQiYc0IAAAi7cAIAAAifOBw/wAAACJ/Q=="
+2208:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2208b
+.base64 "uAAAAACJ/Q=="
+2209:
+.base64 "iYV4DgAAg8UEifqBwgABAAA51Q=="
+jne 2209b
+.base64 "uAEAAACJh3gOAAC5AAAAAIn9"
+2210:
+.base64 "i0VAugAAAAA5yhuFeA4AAImFcAwAABnJg8UEifqBwgABAAA51Q=="
+jne 2210b
+.base64 "if6BxmA6AAC5/////4nzgcP8AAAAif0="
+2211:
+.base64 "i4VwDAAAIcgPyIkDg+sEg8UEifqBwgABAAA51Q=="
+jne 2211b
+.base64 "i7cEIAAAifODwxyJ/Q=="
+2212:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IgOdU="
+jne 2212b
+.base64 "if6BxmA6AAC7AAEAALhZAAAAU1ZQVw=="
+call {vg_dsa_reduce_4}
+.base64 "WFhYWIn+gcbgOQAAuf////+J84PDHIn9"
+2213:
+.base64 "i4XwAQAAIcgPyIkDg+sEg8UEifqDwiA51Q=="
+jne 2213b
+.base64 "if6BxuA5AACJ84PDHIn9"
+2214:
+.base64 "iwMPyImFqAEAAIPrBIPFBIn6g8IgOdU="
+jne 2214b
+.base64 "uQAAAACJ/Q=="
+2215:
+.base64 "C42oAQAAg8UEifqDwiA51Q=="
+jne 2215b
+.base64 "icq5AAAAACnRGdKD8v+LhzQgAAAh0ImHNCAAAIu3BCAAAInzg8Mcif0="
+2216:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IgOdU="
+jne 2216b
+.base64 "uAAAAACJ/Q=="
+2217:
+.base64 "iYU4AgAAg8UEifqDwiA51Q=="
+jne 2217b
+.base64 "uAIAAACJhzgCAAC5AAAAAIn9"
+2218:
+.base64 "i0VAugAAAAA5yhuFOAIAAImF8AEAABnJg8UEifqDwiA51Q=="
+jne 2218b
+.base64 "if6BxkA6AAC5/////4nzg8Mcif0="
+2219:
+.base64 "i4XwAQAAIcgPyIkDg+sEg8UEifqDwiA51Q=="
+jne 2219b
+.base64 "i7cAIAAAifOBw/wAAACJ/Q=="
+2220:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2220b
+.base64 "i7cIIAAAifOBw/wAAACJ/Q=="
+2221:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2221b
+.base64 "i7cEIAAAifODwxyJ/Q=="
+2222:
+.base64 "iwMPyImFgBAAAIPrBIPFBIn6g8IgOdU="
+jne 2222b
+.base64 "uAAAAACJ/Q=="
+2223:
+.base64 "iYWgEAAAg8UEifqBwuAAAAA51Q=="
+jne 2223b
+.base64 "uFECAABQVw=="
+call {vg_dsa_pow_32_8}
+.base64 "WFiJ/oHGYDoAALn/////ifOBw/wAAACJ/Q=="
+2224:
+.base64 "i4VwDAAAIcgPyIkDg+sEg8UEifqBwgABAAA51Q=="
+jne 2224b
+.base64 "if6BxmA6AACJ84HD/AAAAIn9"
+2225:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2225b
+.base64 "uAAAAACJ/Q=="
+2226:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 2226b
+.base64 "uAEAAACJh4AQAAC5AAAAAIn9"
+2227:
+.base64 "i4VoCgAAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 2227b
+.base64 "iciJw7kAAAAAif0="
+2228:
+.base64 "i4WAEAAAugAAAAA5yhuFaAoAABnJg8UEifqBwgABAAA51Q=="
+jne 2228b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLtwAgAACJ84HD/AAAAIn9"
+2229:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2229b
+.base64 "i7cMIAAAifOBw/wAAACJ/Q=="
+2230:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2230b
+.base64 "i7cEIAAAifODwxyJ/Q=="
+2231:
+.base64 "iwMPyImFgBAAAIPrBIPFBIn6g8IgOdU="
+jne 2231b
+.base64 "uAAAAACJ/Q=="
+2232:
+.base64 "iYWgEAAAg8UEifqBwuAAAAA51Q=="
+jne 2232b
+.base64 "uFECAABQVw=="
+call {vg_dsa_pow_32_8}
+.base64 "WFiJ/oHGYDoAALn/////ifOBw/wAAACJ/Q=="
+2233:
+.base64 "i4VwDAAAIcgPyIkDg+sEg8UEifqBwgABAAA51Q=="
+jne 2233b
+.base64 "if6BxmA6AACJ84HD/AAAAIn9"
+2234:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2234b
+.base64 "uAAAAACJ/Q=="
+2235:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 2235b
+.base64 "uAEAAACJh4AQAAC5AAAAAIn9"
+2236:
+.base64 "i4VoCgAAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 2236b
+.base64 "iciJw7kAAAAAif0="
+2237:
+.base64 "i4WAEAAAugAAAAA5yhuFaAoAABnJg8UEifqBwgABAAA51Q=="
+jne 2237b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLtwQgAACJ84PDHIn9"
+2238:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IgOdU="
+jne 2238b
+.base64 "i7cQIAAAifODwxyJ/Q=="
+2239:
+.base64 "iwMPyImFqAEAAIPrBIPFBIn6g8IgOdU="
+jne 2239b
+.base64 "uQAAAACJ/Q=="
+2240:
+.base64 "i4WoAQAAugAAAAA5yhtFQBnJg8UEifqDwiA51Q=="
+jne 2240b
+.base64 "iciJw7kAAAAAif0="
+2241:
+.base64 "C42oAQAAg8UEifqDwiA51Q=="
+jne 2241b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAi7cEIAAAifODwxyJ/Q=="
+2242:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IgOdU="
+jne 2242b
+.base64 "i7cYIAAAifODwxyJ/Q=="
+2243:
+.base64 "iwMPyImFqAEAAIPrBIPFBIn6g8IgOdU="
+jne 2243b
+.base64 "uQAAAACJ/Q=="
+2244:
+.base64 "i4WoAQAAugAAAAA5yhtFQBnJg8UEifqDwiA51Q=="
+jne 2244b
+.base64 "iciJw7kAAAAAif0="
+2245:
+.base64 "C42oAQAAg8UEifqDwiA51Q=="
+jne 2245b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAi7cAIAAAifOBw/wAAACJ/Q=="
+2246:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2246b
+.base64 "i7cIIAAAifOBw/wAAACJ/Q=="
+2247:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2247b
+.base64 "i7cQIAAAifODwxyJ/Q=="
+2248:
+.base64 "iwMPyImFgBAAAIPrBIPFBIn6g8IgOdU="
+jne 2248b
+.base64 "uAAAAACJ/Q=="
+2249:
+.base64 "iYWgEAAAg8UEifqBwuAAAAA51Q=="
+jne 2249b
+.base64 "uFECAABQVw=="
+call {vg_dsa_pow_32_8}
+.base64 "WFiJ/oHGYDoAALn/////ifOBw/wAAACJ/Q=="
+2250:
+.base64 "i4VwDAAAIcgPyIkDg+sEg8UEifqBwgABAAA51Q=="
+jne 2250b
+.base64 "if6BxmA6AACJ84HD/AAAAIn9"
+2251:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2251b
+.base64 "i7cMIAAAifOBw/wAAACJ/Q=="
+2252:
+.base64 "iwMPyImFgBAAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2252b
+.base64 "uQAAAACJ/Q=="
+2253:
+.base64 "i4VoCgAAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 2253b
+.base64 "iciJw7kAAAAAif0="
+2254:
+.base64 "i4WAEAAAugAAAAA5yhuFaAoAABnJg8UEifqBwgABAAA51Q=="
+jne 2254b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLhzQgAACD4AE="
+jmp 2195f
+2194:
+.base64 "uAAAAAA="
+2195:
+211:
+jmp 27f
+26:
+.base64 "i7cAIAAAifOBw/wAAACJ/Q=="
+2255:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2255b
+.base64 "uAAAAACJ/Q=="
+2256:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 2256b
+.base64 "uAAAAICJh/wQAAC5AAAAAIn9"
+2257:
+.base64 "i0VAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 2257b
+.base64 "iciD8P+Jw7gAAAAAif0="
+2258:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 2258b
+.base64 "uAEAAACJhwARAAC5AAAAAIn9"
+2259:
+.base64 "i0VAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 2259b
+.base64 "icgh2InCiVcguAAAAACJ/Q=="
+2260:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 2260b
+.base64 "uAAAAICJh3wRAAC5AAAAAIn9"
+2261:
+.base64 "i0VAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 2261b
+.base64 "iciD8P+Jw4naiVckugAAAACJVyiLR0CJRziLtwQgAACJ84PDGIn9"
+2262:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IcOdU="
+jne 2262b
+.base64 "uAAAAACJR1y4AAAAAIn9"
+2263:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2263b
+.base64 "uAAAAICJh5ACAAC5AAAAAIn9"
+2264:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2264b
+.base64 "iciD8P+Jw7gAAAAAif0="
+2265:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2265b
+.base64 "uAEAAACJh5QCAAC5AAAAAIn9"
+2266:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2266b
+.base64 "icgh2InCiVcsuAAAAACJ/Q=="
+2267:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2267b
+.base64 "uAAAAICJh5gCAAC5AAAAAIn9"
+2268:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2268b
+.base64 "iciD8P+Jw7gAAAAAif0="
+2269:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2269b
+.base64 "uAEAAACJh5wCAAC5AAAAAIn9"
+2270:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2270b
+.base64 "icgh2InCiVcwuAAAAACJ/Q=="
+2271:
+.base64 "iYWAAgAAg8UEifqDwiA51Q=="
+jne 2271b
+.base64 "uAAAAICJh5wCAAC5AAAAAIn9"
+2272:
+.base64 "i0VAugAAAAA5yhuFgAIAABnJg8UEifqDwiA51Q=="
+jne 2272b
+.base64 "iciD8P+Jw4naiVc0i1dAI1c4g+IBuAAAAAAp0IlHOItHICNHLItfMAtfLAtfNCNfJAnYi18oI180CdgjRziJhzQgAACLRyyD4BSLVzCD4hwJwotHNIPgIAnCi4csIAAAOdAZ2zHQIdgxwomXMCAAAIuHNCAAAIP4AA=="
+je 2273f
+.base64 "i7cAIAAAifOBw/wAAACJ/Q=="
+2275:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2275b
+.base64 "i7cIIAAAifOBw/wAAACJ/Q=="
+2276:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2276b
+.base64 "uQAAAACJ/Q=="
+2277:
+.base64 "i4VoCgAAugAAAAA5yhtFQBnJg8UEifqBwgABAAA51Q=="
+jne 2277b
+.base64 "iciJw7kAAAAAif0="
+2278:
+.base64 "C41oCgAAg8UEifqBwgABAAA51Q=="
+jne 2278b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAuAAAAACJ/Q=="
+2279:
+.base64 "iYV4DgAAg8UEifqBwgABAAA51Q=="
+jne 2279b
+.base64 "uAIAAACJh3gOAAC5AAAAAIn9"
+2280:
+.base64 "i4VoCgAAugAAAAA5yhuFeA4AABnJg8UEifqBwgABAAA51Q=="
+jne 2280b
+.base64 "iciD8P+JwouHNCAAACHQiYc0IAAAi7cAIAAAifOBw/wAAACJ/Q=="
+2281:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2281b
+.base64 "i7cMIAAAifOBw/wAAACJ/Q=="
+2282:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2282b
+.base64 "uQAAAACJ/Q=="
+2283:
+.base64 "i4VoCgAAugAAAAA5yhtFQBnJg8UEifqBwgABAAA51Q=="
+jne 2283b
+.base64 "iciJw7kAAAAAif0="
+2284:
+.base64 "C41oCgAAg8UEifqBwgABAAA51Q=="
+jne 2284b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAuAAAAACJ/Q=="
+2285:
+.base64 "iYV4DgAAg8UEifqBwgABAAA51Q=="
+jne 2285b
+.base64 "uAIAAACJh3gOAAC5AAAAAIn9"
+2286:
+.base64 "i4VoCgAAugAAAAA5yhuFeA4AABnJg8UEifqBwgABAAA51Q=="
+jne 2286b
+.base64 "iciD8P+JwouHNCAAACHQiYc0IAAAi7cAIAAAifOBw/wAAACJ/Q=="
+2287:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2287b
+.base64 "uAAAAACJ/Q=="
+2288:
+.base64 "iYV4DgAAg8UEifqBwgABAAA51Q=="
+jne 2288b
+.base64 "uAEAAACJh3gOAAC5AAAAAIn9"
+2289:
+.base64 "i0VAugAAAAA5yhuFeA4AAImFcAwAABnJg8UEifqBwgABAAA51Q=="
+jne 2289b
+.base64 "if6BxmA6AAC5/////4nzgcP8AAAAif0="
+2290:
+.base64 "i4VwDAAAIcgPyIkDg+sEg8UEifqBwgABAAA51Q=="
+jne 2290b
+.base64 "i7cEIAAAifODwxiJ/Q=="
+2291:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IcOdU="
+jne 2291b
+.base64 "uAAAAACJR1yJ/oHGYDoAALsAAQAAuFkAAABTVlBX"
+call {vg_dsa_reduce_4}
+.base64 "WFhYWIn+gcbgOQAAuf////+J84PDGIn9"
+2292:
+.base64 "i4XwAQAAIcgPyIkDg+sEg8UEifqDwhw51Q=="
+jne 2292b
+.base64 "if6BxuA5AACJ84PDGIn9"
+2293:
+.base64 "iwMPyImFqAEAAIPrBIPFBIn6g8IcOdU="
+jne 2293b
+.base64 "uAAAAACJh8QBAAC5AAAAAIn9"
+2294:
+.base64 "C42oAQAAg8UEifqDwiA51Q=="
+jne 2294b
+.base64 "icq5AAAAACnRGdKD8v+LhzQgAAAh0ImHNCAAAIu3BCAAAInzg8MYif0="
+2295:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IcOdU="
+jne 2295b
+.base64 "uAAAAACJR1y4AAAAAIn9"
+2296:
+.base64 "iYU4AgAAg8UEifqDwiA51Q=="
+jne 2296b
+.base64 "uAIAAACJhzgCAAC5AAAAAIn9"
+2297:
+.base64 "i0VAugAAAAA5yhuFOAIAAImF8AEAABnJg8UEifqDwiA51Q=="
+jne 2297b
+.base64 "if6BxkA6AAC5/////4nzg8MYif0="
+2298:
+.base64 "i4XwAQAAIcgPyIkDg+sEg8UEifqDwhw51Q=="
+jne 2298b
+.base64 "i7cAIAAAifOBw/wAAACJ/Q=="
+2299:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2299b
+.base64 "i7cIIAAAifOBw/wAAACJ/Q=="
+2300:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2300b
+.base64 "i7cEIAAAifODwxiJ/Q=="
+2301:
+.base64 "iwMPyImFgBAAAIPrBIPFBIn6g8IcOdU="
+jne 2301b
+.base64 "uAAAAACJ/Q=="
+2302:
+.base64 "iYWcEAAAg8UEifqBwuQAAAA51Q=="
+jne 2302b
+.base64 "uFECAABQVw=="
+call {vg_dsa_pow_32_7}
+.base64 "WFiJ/oHGYDoAALn/////ifOBw/wAAACJ/Q=="
+2303:
+.base64 "i4VwDAAAIcgPyIkDg+sEg8UEifqBwgABAAA51Q=="
+jne 2303b
+.base64 "if6BxmA6AACJ84HD/AAAAIn9"
+2304:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2304b
+.base64 "uAAAAACJ/Q=="
+2305:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 2305b
+.base64 "uAEAAACJh4AQAAC5AAAAAIn9"
+2306:
+.base64 "i4VoCgAAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 2306b
+.base64 "iciJw7kAAAAAif0="
+2307:
+.base64 "i4WAEAAAugAAAAA5yhuFaAoAABnJg8UEifqBwgABAAA51Q=="
+jne 2307b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLtwAgAACJ84HD/AAAAIn9"
+2308:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2308b
+.base64 "i7cMIAAAifOBw/wAAACJ/Q=="
+2309:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2309b
+.base64 "i7cEIAAAifODwxiJ/Q=="
+2310:
+.base64 "iwMPyImFgBAAAIPrBIPFBIn6g8IcOdU="
+jne 2310b
+.base64 "uAAAAACJ/Q=="
+2311:
+.base64 "iYWcEAAAg8UEifqBwuQAAAA51Q=="
+jne 2311b
+.base64 "uFECAABQVw=="
+call {vg_dsa_pow_32_7}
+.base64 "WFiJ/oHGYDoAALn/////ifOBw/wAAACJ/Q=="
+2312:
+.base64 "i4VwDAAAIcgPyIkDg+sEg8UEifqBwgABAAA51Q=="
+jne 2312b
+.base64 "if6BxmA6AACJ84HD/AAAAIn9"
+2313:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2313b
+.base64 "uAAAAACJ/Q=="
+2314:
+.base64 "iYWAEAAAg8UEifqBwgABAAA51Q=="
+jne 2314b
+.base64 "uAEAAACJh4AQAAC5AAAAAIn9"
+2315:
+.base64 "i4VoCgAAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 2315b
+.base64 "iciJw7kAAAAAif0="
+2316:
+.base64 "i4WAEAAAugAAAAA5yhuFaAoAABnJg8UEifqBwgABAAA51Q=="
+jne 2316b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLtwQgAACJ84PDGIn9"
+2317:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IcOdU="
+jne 2317b
+.base64 "uAAAAACJR1yLtxAgAACJ84PDGIn9"
+2318:
+.base64 "iwMPyImFqAEAAIPrBIPFBIn6g8IcOdU="
+jne 2318b
+.base64 "uAAAAACJh8QBAAC5AAAAAIn9"
+2319:
+.base64 "i4WoAQAAugAAAAA5yhtFQBnJg8UEifqDwiA51Q=="
+jne 2319b
+.base64 "iciJw7kAAAAAif0="
+2320:
+.base64 "C42oAQAAg8UEifqDwiA51Q=="
+jne 2320b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAi7cEIAAAifODwxiJ/Q=="
+2321:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IcOdU="
+jne 2321b
+.base64 "uAAAAACJR1yLtxggAACJ84PDGIn9"
+2322:
+.base64 "iwMPyImFqAEAAIPrBIPFBIn6g8IcOdU="
+jne 2322b
+.base64 "uAAAAACJh8QBAAC5AAAAAIn9"
+2323:
+.base64 "i4WoAQAAugAAAAA5yhtFQBnJg8UEifqDwiA51Q=="
+jne 2323b
+.base64 "iciJw7kAAAAAif0="
+2324:
+.base64 "C42oAQAAg8UEifqDwiA51Q=="
+jne 2324b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAi7cAIAAAifOBw/wAAACJ/Q=="
+2325:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcIAAQAAOdU="
+jne 2325b
+.base64 "i7cIIAAAifOBw/wAAACJ/Q=="
+2326:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2326b
+.base64 "i7cQIAAAifODwxiJ/Q=="
+2327:
+.base64 "iwMPyImFgBAAAIPrBIPFBIn6g8IcOdU="
+jne 2327b
+.base64 "uAAAAACJ/Q=="
+2328:
+.base64 "iYWcEAAAg8UEifqBwuQAAAA51Q=="
+jne 2328b
+.base64 "uFECAABQVw=="
+call {vg_dsa_pow_32_7}
+.base64 "WFiJ/oHGYDoAALn/////ifOBw/wAAACJ/Q=="
+2329:
+.base64 "i4VwDAAAIcgPyIkDg+sEg8UEifqBwgABAAA51Q=="
+jne 2329b
+.base64 "if6BxmA6AACJ84HD/AAAAIn9"
+2330:
+.base64 "iwMPyImFaAoAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2330b
+.base64 "i7cMIAAAifOBw/wAAACJ/Q=="
+2331:
+.base64 "iwMPyImFgBAAAIPrBIPFBIn6gcIAAQAAOdU="
+jne 2331b
+.base64 "uQAAAACJ/Q=="
+2332:
+.base64 "i4VoCgAAugAAAAA5yhuFgBAAABnJg8UEifqBwgABAAA51Q=="
+jne 2332b
+.base64 "iciJw7kAAAAAif0="
+2333:
+.base64 "i4WAEAAAugAAAAA5yhuFaAoAABnJg8UEifqBwgABAAA51Q=="
+jne 2333b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLhzQgAACD4AE="
+jmp 2274f
+2273:
+.base64 "uAAAAAA="
+2274:
+27:
+jmp 23f
+22:
+.base64 "i7cAIAAAifODw3yJ/Q=="
+2334:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAAAAOdU="
+jne 2334b
+.base64 "uAAAAACJ/Q=="
+2335:
+.base64 "iYWACAAAg8UEifqBwoAAAAA51Q=="
+jne 2335b
+.base64 "uAAAAICJh/wIAAC5AAAAAIn9"
+2336:
+.base64 "i0VAugAAAAA5yhuFgAgAABnJg8UEifqBwoAAAAA51Q=="
+jne 2336b
+.base64 "iciD8P+Jw4naiVcgugAAAACJVyS6AAAAAIlXKItHQIlHOIu3BCAAAInzg8MQif0="
+2337:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IUOdU="
+jne 2337b
+.base64 "uAAAAACJR1S4AAAAAIn9"
+2338:
+.base64 "iYUAAgAAg8UEifqDwhg51Q=="
+jne 2338b
+.base64 "uAAAAICJhxACAAC5AAAAAIn9"
+2339:
+.base64 "i0VAugAAAAA5yhuFAAIAABnJg8UEifqDwhg51Q=="
+jne 2339b
+.base64 "iciD8P+Jw7gAAAAAif0="
+2340:
+.base64 "iYUAAgAAg8UEifqDwhg51Q=="
+jne 2340b
+.base64 "uAEAAACJhxQCAAC5AAAAAIn9"
+2341:
+.base64 "i0VAugAAAAA5yhuFAAIAABnJg8UEifqDwhg51Q=="
+jne 2341b
+.base64 "icgh2InCiVcsugAAAACJVzC6AAAAAIlXNItXQCNXOIPiAbgAAAAAKdCJRziLRyAjRyyLXzALXywLXzQjXyQJ2ItfKCNfNAnYI0c4iYc0IAAAi0csg+AUi1cwg+IcCcKLRzSD4CAJwouHLCAAADnQGdsx0CHYMcKJlzAgAACLhzQgAACD+AA="
+je 2342f
+.base64 "i7cAIAAAifODw3yJ/Q=="
+2344:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAAAAOdU="
+jne 2344b
+.base64 "i7cIIAAAifODw3yJ/Q=="
+2345:
+.base64 "iwMPyImFaAUAAIPrBIPFBIn6gcKAAAAAOdU="
+jne 2345b
+.base64 "uQAAAACJ/Q=="
+2346:
+.base64 "i4VoBQAAugAAAAA5yhtFQBnJg8UEifqBwoAAAAA51Q=="
+jne 2346b
+.base64 "iciJw7kAAAAAif0="
+2347:
+.base64 "C41oBQAAg8UEifqBwoAAAAA51Q=="
+jne 2347b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAuAAAAACJ/Q=="
+2348:
+.base64 "iYV4BwAAg8UEifqBwoAAAAA51Q=="
+jne 2348b
+.base64 "uAIAAACJh3gHAAC5AAAAAIn9"
+2349:
+.base64 "i4VoBQAAugAAAAA5yhuFeAcAABnJg8UEifqBwoAAAAA51Q=="
+jne 2349b
+.base64 "iciD8P+JwouHNCAAACHQiYc0IAAAi7cAIAAAifODw3yJ/Q=="
+2350:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAAAAOdU="
+jne 2350b
+.base64 "i7cMIAAAifODw3yJ/Q=="
+2351:
+.base64 "iwMPyImFaAUAAIPrBIPFBIn6gcKAAAAAOdU="
+jne 2351b
+.base64 "uQAAAACJ/Q=="
+2352:
+.base64 "i4VoBQAAugAAAAA5yhtFQBnJg8UEifqBwoAAAAA51Q=="
+jne 2352b
+.base64 "iciJw7kAAAAAif0="
+2353:
+.base64 "C41oBQAAg8UEifqBwoAAAAA51Q=="
+jne 2353b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAuAAAAACJ/Q=="
+2354:
+.base64 "iYV4BwAAg8UEifqBwoAAAAA51Q=="
+jne 2354b
+.base64 "uAIAAACJh3gHAAC5AAAAAIn9"
+2355:
+.base64 "i4VoBQAAugAAAAA5yhuFeAcAABnJg8UEifqBwoAAAAA51Q=="
+jne 2355b
+.base64 "iciD8P+JwouHNCAAACHQiYc0IAAAi7cAIAAAifODw3yJ/Q=="
+2356:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAAAAOdU="
+jne 2356b
+.base64 "uAAAAACJ/Q=="
+2357:
+.base64 "iYV4BwAAg8UEifqBwoAAAAA51Q=="
+jne 2357b
+.base64 "uAEAAACJh3gHAAC5AAAAAIn9"
+2358:
+.base64 "i0VAugAAAAA5yhuFeAcAAImFcAYAABnJg8UEifqBwoAAAAA51Q=="
+jne 2358b
+.base64 "if6BxmA6AAC5/////4nzg8N8if0="
+2359:
+.base64 "i4VwBgAAIcgPyIkDg+sEg8UEifqBwoAAAAA51Q=="
+jne 2359b
+.base64 "i7cEIAAAifODwxCJ/Q=="
+2360:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IUOdU="
+jne 2360b
+.base64 "uAAAAACJR1SJ/oHGYDoAALuAAAAAuEcAAABTVlBX"
+call {vg_dsa_reduce_3}
+.base64 "WFhYWIn+gcbgOQAAuf////+J84PDEIn9"
+2361:
+.base64 "i4WQAQAAIcgPyIkDg+sEg8UEifqDwhQ51Q=="
+jne 2361b
+.base64 "if6BxuA5AACJ84PDEIn9"
+2362:
+.base64 "iwMPyImFWAEAAIPrBIPFBIn6g8IUOdU="
+jne 2362b
+.base64 "uAAAAACJh2wBAAC5AAAAAIn9"
+2363:
+.base64 "C41YAQAAg8UEifqDwhg51Q=="
+jne 2363b
+.base64 "icq5AAAAACnRGdKD8v+LhzQgAAAh0ImHNCAAAIu3BCAAAInzg8MQif0="
+2364:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IUOdU="
+jne 2364b
+.base64 "uAAAAACJR1S4AAAAAIn9"
+2365:
+.base64 "iYXIAQAAg8UEifqDwhg51Q=="
+jne 2365b
+.base64 "uAIAAACJh8gBAAC5AAAAAIn9"
+2366:
+.base64 "i0VAugAAAAA5yhuFyAEAAImFkAEAABnJg8UEifqDwhg51Q=="
+jne 2366b
+.base64 "if6BxkA6AAC5/////4nzg8MQif0="
+2367:
+.base64 "i4WQAQAAIcgPyIkDg+sEg8UEifqDwhQ51Q=="
+jne 2367b
+.base64 "i7cAIAAAifODw3yJ/Q=="
+2368:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAAAAOdU="
+jne 2368b
+.base64 "i7cIIAAAifODw3yJ/Q=="
+2369:
+.base64 "iwMPyImFaAUAAIPrBIPFBIn6gcKAAAAAOdU="
+jne 2369b
+.base64 "i7cEIAAAifODwxCJ/Q=="
+2370:
+.base64 "iwMPyImFgAgAAIPrBIPFBIn6g8IUOdU="
+jne 2370b
+.base64 "uAAAAACJ/Q=="
+2371:
+.base64 "iYWUCAAAg8UEifqDwmw51Q=="
+jne 2371b
+.base64 "uDEBAABQVw=="
+call {vg_dsa_pow_16_5}
+.base64 "WFiJ/oHGYDoAALn/////ifODw3yJ/Q=="
+2372:
+.base64 "i4VwBgAAIcgPyIkDg+sEg8UEifqBwoAAAAA51Q=="
+jne 2372b
+.base64 "if6BxmA6AACJ84PDfIn9"
+2373:
+.base64 "iwMPyImFaAUAAIPrBIPFBIn6gcKAAAAAOdU="
+jne 2373b
+.base64 "uAAAAACJ/Q=="
+2374:
+.base64 "iYWACAAAg8UEifqBwoAAAAA51Q=="
+jne 2374b
+.base64 "uAEAAACJh4AIAAC5AAAAAIn9"
+2375:
+.base64 "i4VoBQAAugAAAAA5yhuFgAgAABnJg8UEifqBwoAAAAA51Q=="
+jne 2375b
+.base64 "iciJw7kAAAAAif0="
+2376:
+.base64 "i4WACAAAugAAAAA5yhuFaAUAABnJg8UEifqBwoAAAAA51Q=="
+jne 2376b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLtwAgAACJ84PDfIn9"
+2377:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAAAAOdU="
+jne 2377b
+.base64 "i7cMIAAAifODw3yJ/Q=="
+2378:
+.base64 "iwMPyImFaAUAAIPrBIPFBIn6gcKAAAAAOdU="
+jne 2378b
+.base64 "i7cEIAAAifODwxCJ/Q=="
+2379:
+.base64 "iwMPyImFgAgAAIPrBIPFBIn6g8IUOdU="
+jne 2379b
+.base64 "uAAAAACJ/Q=="
+2380:
+.base64 "iYWUCAAAg8UEifqDwmw51Q=="
+jne 2380b
+.base64 "uDEBAABQVw=="
+call {vg_dsa_pow_16_5}
+.base64 "WFiJ/oHGYDoAALn/////ifODw3yJ/Q=="
+2381:
+.base64 "i4VwBgAAIcgPyIkDg+sEg8UEifqBwoAAAAA51Q=="
+jne 2381b
+.base64 "if6BxmA6AACJ84PDfIn9"
+2382:
+.base64 "iwMPyImFaAUAAIPrBIPFBIn6gcKAAAAAOdU="
+jne 2382b
+.base64 "uAAAAACJ/Q=="
+2383:
+.base64 "iYWACAAAg8UEifqBwoAAAAA51Q=="
+jne 2383b
+.base64 "uAEAAACJh4AIAAC5AAAAAIn9"
+2384:
+.base64 "i4VoBQAAugAAAAA5yhuFgAgAABnJg8UEifqBwoAAAAA51Q=="
+jne 2384b
+.base64 "iciJw7kAAAAAif0="
+2385:
+.base64 "i4WACAAAugAAAAA5yhuFaAUAABnJg8UEifqBwoAAAAA51Q=="
+jne 2385b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLtwQgAACJ84PDEIn9"
+2386:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IUOdU="
+jne 2386b
+.base64 "uAAAAACJR1SLtxAgAACJ84PDEIn9"
+2387:
+.base64 "iwMPyImFWAEAAIPrBIPFBIn6g8IUOdU="
+jne 2387b
+.base64 "uAAAAACJh2wBAAC5AAAAAIn9"
+2388:
+.base64 "i4VYAQAAugAAAAA5yhtFQBnJg8UEifqDwhg51Q=="
+jne 2388b
+.base64 "iciJw7kAAAAAif0="
+2389:
+.base64 "C41YAQAAg8UEifqDwhg51Q=="
+jne 2389b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAi7cEIAAAifODwxCJ/Q=="
+2390:
+.base64 "iwMPyIlFQIPrBIPFBIn6g8IUOdU="
+jne 2390b
+.base64 "uAAAAACJR1SLtxggAACJ84PDEIn9"
+2391:
+.base64 "iwMPyImFWAEAAIPrBIPFBIn6g8IUOdU="
+jne 2391b
+.base64 "uAAAAACJh2wBAAC5AAAAAIn9"
+2392:
+.base64 "i4VYAQAAugAAAAA5yhtFQBnJg8UEifqDwhg51Q=="
+jne 2392b
+.base64 "iciJw7kAAAAAif0="
+2393:
+.base64 "C41YAQAAg8UEifqDwhg51Q=="
+jne 2393b
+.base64 "icq5AAAAACnRGdIh2ouHNCAAACHQiYc0IAAAi7cAIAAAifODw3yJ/Q=="
+2394:
+.base64 "iwMPyIlFQIPrBIPFBIn6gcKAAAAAOdU="
+jne 2394b
+.base64 "i7cIIAAAifODw3yJ/Q=="
+2395:
+.base64 "iwMPyImFaAUAAIPrBIPFBIn6gcKAAAAAOdU="
+jne 2395b
+.base64 "i7cQIAAAifODwxCJ/Q=="
+2396:
+.base64 "iwMPyImFgAgAAIPrBIPFBIn6g8IUOdU="
+jne 2396b
+.base64 "uAAAAACJ/Q=="
+2397:
+.base64 "iYWUCAAAg8UEifqDwmw51Q=="
+jne 2397b
+.base64 "uDEBAABQVw=="
+call {vg_dsa_pow_16_5}
+.base64 "WFiJ/oHGYDoAALn/////ifODw3yJ/Q=="
+2398:
+.base64 "i4VwBgAAIcgPyIkDg+sEg8UEifqBwoAAAAA51Q=="
+jne 2398b
+.base64 "if6BxmA6AACJ84PDfIn9"
+2399:
+.base64 "iwMPyImFaAUAAIPrBIPFBIn6gcKAAAAAOdU="
+jne 2399b
+.base64 "i7cMIAAAifODw3yJ/Q=="
+2400:
+.base64 "iwMPyImFgAgAAIPrBIPFBIn6gcKAAAAAOdU="
+jne 2400b
+.base64 "uQAAAACJ/Q=="
+2401:
+.base64 "i4VoBQAAugAAAAA5yhuFgAgAABnJg8UEifqBwoAAAAA51Q=="
+jne 2401b
+.base64 "iciJw7kAAAAAif0="
+2402:
+.base64 "i4WACAAAugAAAAA5yhuFaAUAABnJg8UEifqBwoAAAAA51Q=="
+jne 2402b
+.base64 "icgJ2IPw/4nCi4c0IAAAIdCJhzQgAACLhzQgAACD4AE="
+jmp 2343f
+2342:
+.base64 "uAAAAAA="
+2343:
+23:
+.base64 "i59AIAAAi69EIAAAi7dIIAAAi79MIAAAww=="
+.p2align 6"#,
+        vg_dsa_reduce_3 = sym super::dsa::vg_dsa_reduce_3::vg_dsa_reduce_3,
+        vg_dsa_pow_32_5 = sym super::dsa::vg_dsa_pow_32_5::vg_dsa_pow_32_5,
+        vg_dsa_reduce_4 = sym super::dsa::vg_dsa_reduce_4::vg_dsa_reduce_4,
+        vg_dsa_pow_48_8 = sym super::dsa::vg_dsa_pow_48_8::vg_dsa_pow_48_8,
+        vg_dsa_pow_32_8 = sym super::dsa::vg_dsa_pow_32_8::vg_dsa_pow_32_8,
+        vg_dsa_pow_32_7 = sym super::dsa::vg_dsa_pow_32_7::vg_dsa_pow_32_7,
+        vg_dsa_pow_16_5 = sym super::dsa::vg_dsa_pow_16_5::vg_dsa_pow_16_5,
+    )
+}
+
+/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -3153,11 +4803,12 @@ jne 2317b
 /// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
 /// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
 /// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
-/// * Caller must assure domain validity and provide fresh independent random octets; never reuse a completed signing tape for another signature.
+/// * The exact key bytes must satisfy validatePrivateKeyBytes p_len q_len key = true. A successful vg_dsa_validate_private_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
+/// * Provide fresh independent random octets; never reuse a completed signing tape for another signature.
 /// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest` or `rand` (distinct Rust objects never do).
 /// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 232 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_sign_random(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_sign_random_prevalidated(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jWQkiIlcJCyJdCQwiXwkNIlsJDi4AAAAAIlEJDy4CAAAAIlEJEC4AAAAAIlEJFiJRCRciUQkYIlEJGSJRCRoiUQkbIlEJHCJRCR0i7QkiAAAAAO0JJAAAACLjCSUAAAAuwAAAAC6AAAAAA=="
 20:
@@ -3270,7 +4921,7 @@ je 237f
 jmp 238f
 237:
 .base64 "i0QkfIkEJIuEJIAAAACJRCQEi4QkiAAAAIlEJAiLhCSMAAAAiUQkDIuEJJAAAACJRCQQieCDwFiJRCQUi4QklAAAAIlEJBiLhCSYAAAAiUQkHIuEJJwAAACJRCQgi4QkqAAAAIlEJCSLhCSsAAAAiUQkKA=="
-call {vg_dsa_sign}
+call {vg_dsa_sign_prevalidated}
 .base64 "iUQkVIP4AA=="
 je 239f
 jmp 240f
@@ -3300,7 +4951,7 @@ jne 245b
 244:
 .base64 "uAAAAACJRCRYiUQkXIlEJGCJRCRkiUQkaIlEJGyJRCRwiUQkdIuUJIQAAACLRCQ8iQK4AAAAAIlCBItcJCyLdCQwi3wkNItsJDiLRCRUjWQkeMM="
 .p2align 6"#,
-        vg_dsa_sign = sym super::dsa::vg_dsa_sign::vg_dsa_sign,
+        vg_dsa_sign_prevalidated = sym super::dsa::vg_dsa_sign_prevalidated::vg_dsa_sign_prevalidated,
     )
 }
 
@@ -7379,2608 +9030,6 @@ jmp 2334f
     )
 }
 
-/// The CPU features `vg_dsa_parameter_search_sha256_shani` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
-/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
-///
-/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
-/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
-/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other or `rand` (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_parameter_search_sha256_shani(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "U1VWV4t8JCiLRCQUiYcAHAAAi0QkHImHDBwAAItEJCCJhxQcAACLRCQkiYcYHAAAi0QkMImHEBwAALgAAAAAiYdMHAAAuAAAAACJh0QcAACLXCQwiwOJhwgcAACLQwg9gAAAAA=="
-je 20f
-.base64 "PQABAAA="
-je 22f
-24:
-.base64 "i4cIHAAAg/gA"
-je 25f
-.base64 "i4cYHAAAi49MHAAAKciD+CA="
-jb 27f
-.base64 "i49MHAAAi4cUHAAAAciJhwQcAACDwSCJjxwcAACLtwQcAACJ+4HDoBwAALkgAAAA"
-29:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 29b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFgCIAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgcD7aHgCIAAA2AAAAAiIeAIgAAD7aHnyIAAIPIAYiHnyIAAIn+gcaAIgAAifuBw0BAAAC5IAAAAA=="
-210:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 210b
-.base64 "i48cHAAAi5cUHAAAAcqLnxgcAAApyw=="
-je 211f
-jmp 212f
-211:
-.base64 "i5cUHAAA"
-212:
-.base64 "ifgFADoAALnIBQAAif2BxSAcAABVU1JRUA=="
-call {vg_dsa_probable_prime_256}
-.base64 "WVlZWVmJhygcAACD+AA="
-je 213f
-.base64 "i4cgHAAAA4ccHAAAiYccHAAA"
-jmp 214f
-213:
-214:
-.base64 "i4coHAAAg/gA"
-je 215f
-.base64 "i4coHAAAg/gB"
-je 217f
-jmp 218f
-217:
-.base64 "uAAAAACJhywcAAC4AQAAAImHMBwAALgEAAAAiYc0HAAA"
-219:
-.base64 "i7cEHAAAifuBw6AcAAC5IAAAAA=="
-220:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 220b
-.base64 "ifqBwr8cAACLjzAcAACDwQC+IAAAAA=="
-221:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 221b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFwCAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-222:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 222b
-.base64 "ifqBwr8cAACLjzAcAACDwQG+IAAAAA=="
-223:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 223b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFoCAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-224:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 224b
-.base64 "ifqBwr8cAACLjzAcAACDwQK+IAAAAA=="
-225:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 225b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFgCAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-226:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 226b
-.base64 "ifqBwr8cAACLjzAcAACDwQO+IAAAAA=="
-227:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 227b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFYCAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-228:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 228b
-.base64 "ifqBwr8cAACLjzAcAACDwQS+IAAAAA=="
-229:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 229b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFQCAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-230:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 230b
-.base64 "ifqBwr8cAACLjzAcAACDwQW+IAAAAA=="
-231:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 231b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFICAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-232:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 232b
-.base64 "ifqBwr8cAACLjzAcAACDwQa+IAAAAA=="
-233:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 233b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFACAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-234:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 234b
-.base64 "ifqBwr8cAACLjzAcAACDwQe+IAAAAA=="
-235:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 235b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgF4B8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-236:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 236b
-.base64 "ifqBwr8cAACLjzAcAACDwQi+IAAAAA=="
-237:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 237b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFwB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-238:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 238b
-.base64 "ifqBwr8cAACLjzAcAACDwQm+IAAAAA=="
-239:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 239b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFoB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-240:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 240b
-.base64 "ifqBwr8cAACLjzAcAACDwQq+IAAAAA=="
-241:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 241b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFgB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-242:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 242b
-.base64 "ifqBwr8cAACLjzAcAACDwQu+IAAAAA=="
-243:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 243b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFYB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgcD7aHYB8AAA2AAAAAiIdgHwAAD7aH3yAAAIPIAYiH3yAAAIn+gcZgHwAAuYABAAC4AAAAAIn9"
-244:
-.base64 "iYUAJgAAg8UEifqBwoABAAA51Q=="
-jne 244b
-.base64 "ifuBwwAmAAABzoPuAQ=="
-245:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 245b
-.base64 "if6BxmAfAAC5gAEAALgAAAAAif0="
-246:
-.base64 "iYVALAAAg8UEifqBwoABAAA51Q=="
-jne 246b
-.base64 "ifuBw0AsAAABzoPuAQ=="
-247:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 247b
-.base64 "if6BxoAiAAC5IAAAALgAAAAAif0="
-248:
-.base64 "iYWAMgAAg8UEifqBwoABAAA51Q=="
-jne 248b
-.base64 "ifuBw4AyAAABzoPuAQ=="
-249:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 249b
-.base64 "uAAAAACJhwA0AAC5AAAAAIn9"
-250:
-.base64 "i4WAMgAAugAAAAA5yhOFgDIAAImFICkAABnJg8UEifqBwoQBAAA51Q=="
-jne 250b
-.base64 "uAAAAACJ/Q=="
-251:
-.base64 "iYWQJwAAg8UEifqBwoQBAAA51Q=="
-jne 251b
-.base64 "vgAMAAA="
-252:
-.base64 "uQAAAACJ/Q=="
-253:
-.base64 "i4UAJgAAugAAAAA5yhOFACYAAImFsCoAABnJg8UEifqBwoABAAA51Q=="
-jne 253b
-.base64 "icuD4wG5AAAAAIn9"
-254:
-.base64 "i4WwKgAAi5WwKgAAMcIhyjHQiYUAJgAAg8UEifqBwoABAAA51Q=="
-jne 254b
-.base64 "uQAAAACJ/Q=="
-255:
-.base64 "i4WQJwAAugAAAAA5yhOFkCcAAImFsCoAABnJg8UEifqBwoQBAAA51Q=="
-jne 255b
-.base64 "uQAAAACJ/Q=="
-256:
-.base64 "i4WwKgAAi5WwKgAAMcIhyjHQiYWQJwAAg8UEifqBwoQBAAA51Q=="
-jne 256b
-.base64 "i4eQJwAAAdiJh5AnAAC5AAAAAIn9"
-257:
-.base64 "i4WQJwAAugAAAAA5yhuFICkAAImFsCoAABnJg8UEifqBwoQBAAA51Q=="
-jne 257b
-.base64 "icuD8/+D4wGD8f+J/Q=="
-258:
-.base64 "i4WQJwAAi5WwKgAAMcIhyjHQiYWQJwAAg8UEifqBwoQBAAA51Q=="
-jne 258b
-.base64 "i4cAJgAAAdiJhwAmAACD7gGD/gA="
-jne 252b
-.base64 "uQAAAACJ/Q=="
-259:
-.base64 "i4VALAAAugAAAAA5yhuFkCcAAImF0C0AABnJg8UEifqBwoABAAA51Q=="
-jne 259b
-.base64 "uQAAAACJ/Q=="
-260:
-.base64 "i4UAJgAAugAAAAA5yhOFACYAAImFYC8AABnJg8UEifqBwoABAAA51Q=="
-jne 260b
-.base64 "uAAAAACJ/Q=="
-261:
-.base64 "iYXwMAAAg8UEifqBwoABAAA51Q=="
-jne 261b
-.base64 "uAEAAACJh/AwAAC5AAAAAIn9"
-262:
-.base64 "i4XQLQAAugAAAAA5yhOF8DAAAImFoDUAABnJg8UEifqBwoABAAA51Q=="
-jne 262b
-.base64 "ifuBwwAhAAC5gAEAAIn+gcagNQAAAc6D7gE="
-263:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 263b
-.base64 "D7aHACEAACWAAAAAg/gA"
-je 264f
-.base64 "if6BxgAhAACJ+4HDwGYAALmAAQAA"
-266:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 266b
-.base64 "i48cHAAAi5cUHAAAAcqLnxgcAAApyw=="
-je 267f
-jmp 268f
-267:
-.base64 "i5cUHAAA"
-268:
-.base64 "ifgFADoAALnIBQAAif2BxSAcAABVU1JRUA=="
-call {vg_dsa_probable_prime_3072}
-.base64 "WVlZWVmJhygcAACD+AA="
-je 269f
-.base64 "i4cgHAAAA4ccHAAAiYccHAAA"
-jmp 270f
-269:
-270:
-.base64 "i4coHAAAg/gA"
-je 271f
-.base64 "i4coHAAAg/gB"
-je 273f
-jmp 274f
-273:
-.base64 "uAEAAACJhzQcAAA="
-274:
-jmp 272f
-271:
-.base64 "uAAAAACJhzQcAAA="
-272:
-jmp 265f
-264:
-265:
-.base64 "i4c0HAAAg/gE"
-je 275f
-jmp 276f
-275:
-.base64 "i4csHAAAg8ABiYcsHAAAi48wHAAAg8EMiY8wHAAAPQAwAAA="
-je 277f
-jmp 278f
-277:
-.base64 "uAIAAACJhzQcAAA="
-278:
-276:
-.base64 "i4c0HAAAg/gE"
-je 219b
-.base64 "i4c0HAAAg/gA"
-je 279f
-.base64 "i4c0HAAAg/gB"
-je 281f
-jmp 282f
-281:
-.base64 "i48cHAAAi4cUHAAAAciJh1AcAACLhxgcAAApyImHVBwAAD0AwAAA"
-jb 283f
-.base64 "uADAAACJh1QcAAA="
-jmp 284f
-283:
-284:
-.base64 "i4dQHAAAiYc4HAAAi4dUHAAAiYc8HAAAuAQAAACJh0AcAAA="
-285:
-.base64 "i4c8HAAAPYABAAA="
-jb 286f
-.base64 "i7c4HAAAuYABAAC4AAAAAIn9"
-288:
-.base64 "iYUQNAAAg8UEifqBwoABAAA51Q=="
-jne 288b
-.base64 "ifuBwxA0AAABzoPuAQ=="
-289:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 289b
-.base64 "uQAAAACJ/Q=="
-290:
-.base64 "i4XwMAAAugAAAAA5yhuFEDQAAImFgDIAABnJg8UEifqBwoABAAA51Q=="
-jne 290b
-.base64 "iY9IHAAAuQAAAACJ/Q=="
-291:
-.base64 "i4UQNAAAugAAAAA5yhuF0C0AAImFgDIAABnJg8UEifqBwoABAAA51Q=="
-jne 291b
-.base64 "I49IHAAAg/kA"
-je 292f
-.base64 "uQAAAACJ/Q=="
-294:
-.base64 "i4WgNQAAi5WgNQAAMcIhyjHQiUVAg8UEifqBwoABAAA51Q=="
-jne 294b
-.base64 "uQAAAACJ/Q=="
-295:
-.base64 "i4UQNAAAi5UQNAAAMcIhyjHQiYVoDwAAg8UEifqBwoABAAA51Q=="
-jne 295b
-.base64 "uQAAAACJ/Q=="
-296:
-.base64 "i4VgLwAAi5VgLwAAMcIhyjHQiYWAGAAAg8UEifqBwmQBAAA51Q=="
-jne 296b
-.base64 "uHEDAABQVw=="
-call {vg_dsa_pow_48_89}
-.base64 "WFi5AAAAAIn9"
-297:
-.base64 "i4XwMAAAugAAAAA5yhuFcBIAAImFgDIAABnJg8UEifqBwoABAAA51Q=="
-jne 297b
-.base64 "g/kA"
-je 298f
-.base64 "ifuBw6AiAAC5gAEAAIn+gcZwEgAAAc6D7gE="
-2100:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2100b
-.base64 "uAEAAACJh0AcAAA="
-jmp 299f
-298:
-299:
-jmp 293f
-292:
-293:
-.base64 "i4c4HAAABYABAACJhzgcAACLhzwcAAAtgAEAAImHPBwAAA=="
-jmp 287f
-286:
-.base64 "uAIAAACJh0AcAAA="
-287:
-.base64 "i4dAHAAAg/gE"
-je 285b
-.base64 "i4c4HAAAi48UHAAAKciJhxwcAACLh0AcAACD+AE="
-je 2101f
-.base64 "i4dUHAAAPQDAAAA="
-jb 2103f
-jmp 2104f
-2103:
-.base64 "uAIAAACJh0QcAAA="
-2104:
-jmp 2102f
-2101:
-.base64 "ifgFACEAALkgAwAAuoABAAC7IAAAAIn+gcYAaQAAvQAYAABVVlNSUVA="
-call {vg_dsa_check_parameters}
-.base64 "WVlZWVlZg/gB"
-je 2105f
-jmp 2106f
-2105:
-.base64 "uAEAAACJh0QcAAA="
-2106:
-2102:
-282:
-jmp 280f
-279:
-.base64 "uAIAAACJh0QcAAA="
-280:
-218:
-jmp 216f
-215:
-.base64 "uAIAAACJh0QcAAA="
-216:
-.base64 "i4dEHAAAg/gA"
-je 2107f
-jmp 2108f
-2107:
-.base64 "i4ccHAAAiYdMHAAAi4cIHAAAg+gBiYcIHAAA"
-2108:
-jmp 28f
-27:
-.base64 "uAIAAACJh0QcAAA="
-28:
-jmp 26f
-25:
-.base64 "uAMAAACJh0QcAAA="
-26:
-.base64 "i4dEHAAAg/gA"
-je 24b
-.base64 "i4dEHAAAg/gB"
-je 2109f
-.base64 "i7cAHAAAuSADAAC4AAAAAA=="
-2111:
-.base64 "iAaDxgGD6QE="
-jne 2111b
-jmp 2110f
-2109:
-.base64 "i58AHAAAif6BxgAhAAC5IAMAAA=="
-2112:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2112b
-2110:
-.base64 "i4dEHAAAg/gB"
-je 2113f
-.base64 "i4dEHAAAg/gC"
-je 2115f
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLh0wcAACJA7gDAAAA"
-jmp 2116f
-2115:
-.base64 "i4cYHAAAi49MHAAAKcg9gAHAAA=="
-jb 2117f
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLh0wcAACJA7gDAAAA"
-jmp 2118f
-2117:
-.base64 "PQCAAQA="
-jb 2119f
-jmp 2120f
-2119:
-.base64 "uACAAQA="
-2120:
-.base64 "AcA9gAHAAA=="
-jb 2121f
-.base64 "uIABwAA="
-jmp 2122f
-2121:
-2122:
-.base64 "icGLlwgcAACLnxAcAACJE4lLGLgAAAAAiUMEiUMci58MHAAAiUMEi4dMHAAAiQO4AAAAAA=="
-2118:
-2116:
-jmp 2114f
-2113:
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLhxwcAACJA7gBAAAA"
-2114:
-jmp 23f
-22:
-2123:
-.base64 "i4cIHAAAg/gA"
-je 2124f
-.base64 "i4cYHAAAi49MHAAAKciD+CA="
-jb 2126f
-.base64 "i49MHAAAi4cUHAAAAciJhwQcAACDwSCJjxwcAACLtwQcAACJ+4HDoBwAALkgAAAA"
-2128:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2128b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFACIAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgcD7aHACIAAA2AAAAAiIcAIgAAD7aHHyIAAIPIAYiHHyIAAIn+gcYAIgAAifuBw0BAAAC5IAAAAA=="
-2129:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2129b
-.base64 "i48cHAAAi5cUHAAAAcqLnxgcAAApyw=="
-je 2130f
-jmp 2131f
-2130:
-.base64 "i5cUHAAA"
-2131:
-.base64 "ifgFADoAALnIBQAAif2BxSAcAABVU1JRUA=="
-call {vg_dsa_probable_prime_256}
-.base64 "WVlZWVmJhygcAACD+AA="
-je 2132f
-.base64 "i4cgHAAAA4ccHAAAiYccHAAA"
-jmp 2133f
-2132:
-2133:
-.base64 "i4coHAAAg/gA"
-je 2134f
-.base64 "i4coHAAAg/gB"
-je 2136f
-jmp 2137f
-2136:
-.base64 "uAAAAACJhywcAAC4AQAAAImHMBwAALgEAAAAiYc0HAAA"
-2138:
-.base64 "i7cEHAAAifuBw6AcAAC5IAAAAA=="
-2139:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2139b
-.base64 "ifqBwr8cAACLjzAcAACDwQC+IAAAAA=="
-2140:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2140b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFQCAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2141:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2141b
-.base64 "ifqBwr8cAACLjzAcAACDwQG+IAAAAA=="
-2142:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2142b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFICAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2143:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2143b
-.base64 "ifqBwr8cAACLjzAcAACDwQK+IAAAAA=="
-2144:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2144b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFACAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2145:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2145b
-.base64 "ifqBwr8cAACLjzAcAACDwQO+IAAAAA=="
-2146:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2146b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgF4B8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2147:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2147b
-.base64 "ifqBwr8cAACLjzAcAACDwQS+IAAAAA=="
-2148:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2148b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFwB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2149:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2149b
-.base64 "ifqBwr8cAACLjzAcAACDwQW+IAAAAA=="
-2150:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2150b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFoB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2151:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2151b
-.base64 "ifqBwr8cAACLjzAcAACDwQa+IAAAAA=="
-2152:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2152b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFgB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2153:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2153b
-.base64 "ifqBwr8cAACLjzAcAACDwQe+IAAAAA=="
-2154:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2154b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFYB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgcD7aHYB8AAA2AAAAAiIdgHwAAD7aHXyAAAIPIAYiHXyAAAIn+gcZgHwAAuQABAAC4AAAAAIn9"
-2155:
-.base64 "iYUAJgAAg8UEifqBwgABAAA51Q=="
-jne 2155b
-.base64 "ifuBwwAmAAABzoPuAQ=="
-2156:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2156b
-.base64 "if6BxmAfAAC5AAEAALgAAAAAif0="
-2157:
-.base64 "iYVALAAAg8UEifqBwgABAAA51Q=="
-jne 2157b
-.base64 "ifuBw0AsAAABzoPuAQ=="
-2158:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2158b
-.base64 "if6BxgAiAAC5IAAAALgAAAAAif0="
-2159:
-.base64 "iYWAMgAAg8UEifqBwgABAAA51Q=="
-jne 2159b
-.base64 "ifuBw4AyAAABzoPuAQ=="
-2160:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2160b
-.base64 "uAAAAACJh4AzAAC5AAAAAIn9"
-2161:
-.base64 "i4WAMgAAugAAAAA5yhOFgDIAAImFICkAABnJg8UEifqBwgQBAAA51Q=="
-jne 2161b
-.base64 "uAAAAACJ/Q=="
-2162:
-.base64 "iYWQJwAAg8UEifqBwgQBAAA51Q=="
-jne 2162b
-.base64 "vgAIAAA="
-2163:
-.base64 "uQAAAACJ/Q=="
-2164:
-.base64 "i4UAJgAAugAAAAA5yhOFACYAAImFsCoAABnJg8UEifqBwgABAAA51Q=="
-jne 2164b
-.base64 "icuD4wG5AAAAAIn9"
-2165:
-.base64 "i4WwKgAAi5WwKgAAMcIhyjHQiYUAJgAAg8UEifqBwgABAAA51Q=="
-jne 2165b
-.base64 "uQAAAACJ/Q=="
-2166:
-.base64 "i4WQJwAAugAAAAA5yhOFkCcAAImFsCoAABnJg8UEifqBwgQBAAA51Q=="
-jne 2166b
-.base64 "uQAAAACJ/Q=="
-2167:
-.base64 "i4WwKgAAi5WwKgAAMcIhyjHQiYWQJwAAg8UEifqBwgQBAAA51Q=="
-jne 2167b
-.base64 "i4eQJwAAAdiJh5AnAAC5AAAAAIn9"
-2168:
-.base64 "i4WQJwAAugAAAAA5yhuFICkAAImFsCoAABnJg8UEifqBwgQBAAA51Q=="
-jne 2168b
-.base64 "icuD8/+D4wGD8f+J/Q=="
-2169:
-.base64 "i4WQJwAAi5WwKgAAMcIhyjHQiYWQJwAAg8UEifqBwgQBAAA51Q=="
-jne 2169b
-.base64 "i4cAJgAAAdiJhwAmAACD7gGD/gA="
-jne 2163b
-.base64 "uQAAAACJ/Q=="
-2170:
-.base64 "i4VALAAAugAAAAA5yhuFkCcAAImF0C0AABnJg8UEifqBwgABAAA51Q=="
-jne 2170b
-.base64 "uQAAAACJ/Q=="
-2171:
-.base64 "i4UAJgAAugAAAAA5yhOFACYAAImFYC8AABnJg8UEifqBwgABAAA51Q=="
-jne 2171b
-.base64 "uAAAAACJ/Q=="
-2172:
-.base64 "iYXwMAAAg8UEifqBwgABAAA51Q=="
-jne 2172b
-.base64 "uAEAAACJh/AwAAC5AAAAAIn9"
-2173:
-.base64 "i4XQLQAAugAAAAA5yhOF8DAAAImFoDUAABnJg8UEifqBwgABAAA51Q=="
-jne 2173b
-.base64 "ifuBwwAhAAC5AAEAAIn+gcagNQAAAc6D7gE="
-2174:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2174b
-.base64 "D7aHACEAACWAAAAAg/gA"
-je 2175f
-.base64 "if6BxgAhAACJ+4HDwFgAALkAAQAA"
-2177:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2177b
-.base64 "i48cHAAAi5cUHAAAAcqLnxgcAAApyw=="
-je 2178f
-jmp 2179f
-2178:
-.base64 "i5cUHAAA"
-2179:
-.base64 "ifgFADoAALnIBQAAif2BxSAcAABVU1JRUA=="
-call {vg_dsa_probable_prime_2048}
-.base64 "WVlZWVmJhygcAACD+AA="
-je 2180f
-.base64 "i4cgHAAAA4ccHAAAiYccHAAA"
-jmp 2181f
-2180:
-2181:
-.base64 "i4coHAAAg/gA"
-je 2182f
-.base64 "i4coHAAAg/gB"
-je 2184f
-jmp 2185f
-2184:
-.base64 "uAEAAACJhzQcAAA="
-2185:
-jmp 2183f
-2182:
-.base64 "uAAAAACJhzQcAAA="
-2183:
-jmp 2176f
-2175:
-2176:
-.base64 "i4c0HAAAg/gE"
-je 2186f
-jmp 2187f
-2186:
-.base64 "i4csHAAAg8ABiYcsHAAAi48wHAAAg8EIiY8wHAAAPQAgAAA="
-je 2188f
-jmp 2189f
-2188:
-.base64 "uAIAAACJhzQcAAA="
-2189:
-2187:
-.base64 "i4c0HAAAg/gE"
-je 2138b
-.base64 "i4c0HAAAg/gA"
-je 2190f
-.base64 "i4c0HAAAg/gB"
-je 2192f
-jmp 2193f
-2192:
-.base64 "i48cHAAAi4cUHAAAAciJh1AcAACLhxgcAAApyImHVBwAAD0AgAAA"
-jb 2194f
-.base64 "uACAAACJh1QcAAA="
-jmp 2195f
-2194:
-2195:
-.base64 "i4dQHAAAiYc4HAAAi4dUHAAAiYc8HAAAuAQAAACJh0AcAAA="
-2196:
-.base64 "i4c8HAAAPQABAAA="
-jb 2197f
-.base64 "i7c4HAAAuQABAAC4AAAAAIn9"
-2199:
-.base64 "iYUQNAAAg8UEifqBwgABAAA51Q=="
-jne 2199b
-.base64 "ifuBwxA0AAABzoPuAQ=="
-2200:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2200b
-.base64 "uQAAAACJ/Q=="
-2201:
-.base64 "i4XwMAAAugAAAAA5yhuFEDQAAImFgDIAABnJg8UEifqBwgABAAA51Q=="
-jne 2201b
-.base64 "iY9IHAAAuQAAAACJ/Q=="
-2202:
-.base64 "i4UQNAAAugAAAAA5yhuF0C0AAImFgDIAABnJg8UEifqBwgABAAA51Q=="
-jne 2202b
-.base64 "I49IHAAAg/kA"
-je 2203f
-.base64 "uQAAAACJ/Q=="
-2205:
-.base64 "i4WgNQAAi5WgNQAAMcIhyjHQiUVAg8UEifqBwgABAAA51Q=="
-jne 2205b
-.base64 "uQAAAACJ/Q=="
-2206:
-.base64 "i4UQNAAAi5UQNAAAMcIhyjHQiYVoCgAAg8UEifqBwgABAAA51Q=="
-jne 2206b
-.base64 "uQAAAACJ/Q=="
-2207:
-.base64 "i4VgLwAAi5VgLwAAMcIhyjHQiYWAEAAAg8UEifqBwuQAAAA51Q=="
-jne 2207b
-.base64 "uFECAABQVw=="
-call {vg_dsa_pow_32_57}
-.base64 "WFi5AAAAAIn9"
-2208:
-.base64 "i4XwMAAAugAAAAA5yhuFcAwAAImFgDIAABnJg8UEifqBwgABAAA51Q=="
-jne 2208b
-.base64 "g/kA"
-je 2209f
-.base64 "ifuBwyAiAAC5AAEAAIn+gcZwDAAAAc6D7gE="
-2211:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2211b
-.base64 "uAEAAACJh0AcAAA="
-jmp 2210f
-2209:
-2210:
-jmp 2204f
-2203:
-2204:
-.base64 "i4c4HAAABQABAACJhzgcAACLhzwcAAAtAAEAAImHPBwAAA=="
-jmp 2198f
-2197:
-.base64 "uAIAAACJh0AcAAA="
-2198:
-.base64 "i4dAHAAAg/gE"
-je 2196b
-.base64 "i4c4HAAAi48UHAAAKciJhxwcAACLh0AcAACD+AE="
-je 2212f
-.base64 "i4dUHAAAPQCAAAA="
-jb 2214f
-jmp 2215f
-2214:
-.base64 "uAIAAACJh0QcAAA="
-2215:
-jmp 2213f
-2212:
-.base64 "ifgFACEAALkgAgAAugABAAC7IAAAAIn+gcYAaQAAvQAQAABVVlNSUVA="
-call {vg_dsa_check_parameters}
-.base64 "WVlZWVlZg/gB"
-je 2216f
-jmp 2217f
-2216:
-.base64 "uAEAAACJh0QcAAA="
-2217:
-2213:
-2193:
-jmp 2191f
-2190:
-.base64 "uAIAAACJh0QcAAA="
-2191:
-2137:
-jmp 2135f
-2134:
-.base64 "uAIAAACJh0QcAAA="
-2135:
-.base64 "i4dEHAAAg/gA"
-je 2218f
-jmp 2219f
-2218:
-.base64 "i4ccHAAAiYdMHAAAi4cIHAAAg+gBiYcIHAAA"
-2219:
-jmp 2127f
-2126:
-.base64 "uAIAAACJh0QcAAA="
-2127:
-jmp 2125f
-2124:
-.base64 "uAMAAACJh0QcAAA="
-2125:
-.base64 "i4dEHAAAg/gA"
-je 2123b
-.base64 "i4dEHAAAg/gB"
-je 2220f
-.base64 "i7cAHAAAuSACAAC4AAAAAA=="
-2222:
-.base64 "iAaDxgGD6QE="
-jne 2222b
-jmp 2221f
-2220:
-.base64 "i58AHAAAif6BxgAhAAC5IAIAAA=="
-2223:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2223b
-2221:
-.base64 "i4dEHAAAg/gB"
-je 2224f
-.base64 "i4dEHAAAg/gC"
-je 2226f
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLh0wcAACJA7gDAAAA"
-jmp 2227f
-2226:
-.base64 "i4cYHAAAi49MHAAAKcg9AAGAAA=="
-jb 2228f
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLh0wcAACJA7gDAAAA"
-jmp 2229f
-2228:
-.base64 "PQAAAQA="
-jb 2230f
-jmp 2231f
-2230:
-.base64 "uAAAAQA="
-2231:
-.base64 "AcA9AAGAAA=="
-jb 2232f
-.base64 "uAABgAA="
-jmp 2233f
-2232:
-2233:
-.base64 "icGLlwgcAACLnxAcAACJE4lLGLgAAAAAiUMEiUMci58MHAAAiUMEi4dMHAAAiQO4AAAAAA=="
-2229:
-2227:
-jmp 2225f
-2224:
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLhxwcAACJA7gBAAAA"
-2225:
-23:
-jmp 21f
-20:
-2234:
-.base64 "i4cIHAAAg/gA"
-je 2235f
-.base64 "i4cYHAAAi49MHAAAKciD+BQ="
-jb 2237f
-.base64 "i49MHAAAi4cUHAAAAciJhwQcAACDwRSJjxwcAACLtwQcAACJ+4HDlBwAALkUAAAA"
-2239:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2239b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFgCEAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQD7aHgCEAAA2AAAAAiIeAIQAAD7aHkyEAAIPIAYiHkyEAAIn+gcaAIQAAifuBw0BAAAC5FAAAAA=="
-2240:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2240b
-.base64 "i48cHAAAi5cUHAAAAcqLnxgcAAApyw=="
-je 2241f
-jmp 2242f
-2241:
-.base64 "i5cUHAAA"
-2242:
-.base64 "ifgFADoAALnIBQAAif2BxSAcAABVU1JRUA=="
-call {vg_dsa_probable_prime_160}
-.base64 "WVlZWVmJhygcAACD+AA="
-je 2243f
-.base64 "i4cgHAAAA4ccHAAAiYccHAAA"
-jmp 2244f
-2243:
-2244:
-.base64 "i4coHAAAg/gA"
-je 2245f
-.base64 "i4coHAAAg/gB"
-je 2247f
-jmp 2248f
-2247:
-.base64 "uAAAAACJhywcAAC4AQAAAImHMBwAALgEAAAAiYc0HAAA"
-2249:
-.base64 "i7cEHAAAifuBw5QcAAC5FAAAAA=="
-2250:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2250b
-.base64 "ifqBwqccAACLjzAcAACDwQC+FAAAAA=="
-2251:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2251b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFzB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi7cEHAAAifuBw5QcAAC5FAAAAA=="
-2252:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2252b
-.base64 "ifqBwqccAACLjzAcAACDwQG+FAAAAA=="
-2253:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2253b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFuB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi7cEHAAAifuBw5QcAAC5FAAAAA=="
-2254:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2254b
-.base64 "ifqBwqccAACLjzAcAACDwQK+FAAAAA=="
-2255:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2255b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFpB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi7cEHAAAifuBw5QcAAC5FAAAAA=="
-2256:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2256b
-.base64 "ifqBwqccAACLjzAcAACDwQO+FAAAAA=="
-2257:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2257b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFkB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi7cEHAAAifuBw5QcAAC5FAAAAA=="
-2258:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2258b
-.base64 "ifqBwqccAACLjzAcAACDwQS+FAAAAA=="
-2259:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2259b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFfB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi7cEHAAAifuBw5QcAAC5FAAAAA=="
-2260:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2260b
-.base64 "ifqBwqccAACLjzAcAACDwQW+FAAAAA=="
-2261:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2261b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFaB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi7cEHAAAifuBw5QcAAC5FAAAAA=="
-2262:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2262b
-.base64 "ifqBwqccAACLjzAcAACDwQa+FAAAAA=="
-2263:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2263b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFVB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQD7aHYB8AAA2AAAAAiIdgHwAAD7aH3x8AAIPIAYiH3x8AAIn+gcZgHwAAuYAAAAC4AAAAAIn9"
-2264:
-.base64 "iYUAJgAAg8UEifqBwoAAAAA51Q=="
-jne 2264b
-.base64 "ifuBwwAmAAABzoPuAQ=="
-2265:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2265b
-.base64 "if6BxmAfAAC5gAAAALgAAAAAif0="
-2266:
-.base64 "iYVALAAAg8UEifqBwoAAAAA51Q=="
-jne 2266b
-.base64 "ifuBw0AsAAABzoPuAQ=="
-2267:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2267b
-.base64 "if6BxoAhAAC5FAAAALgAAAAAif0="
-2268:
-.base64 "iYWAMgAAg8UEifqBwoAAAAA51Q=="
-jne 2268b
-.base64 "ifuBw4AyAAABzoPuAQ=="
-2269:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2269b
-.base64 "uAAAAACJhwAzAAC5AAAAAIn9"
-2270:
-.base64 "i4WAMgAAugAAAAA5yhOFgDIAAImFICkAABnJg8UEifqBwoQAAAA51Q=="
-jne 2270b
-.base64 "uAAAAACJ/Q=="
-2271:
-.base64 "iYWQJwAAg8UEifqBwoQAAAA51Q=="
-jne 2271b
-.base64 "vgAEAAA="
-2272:
-.base64 "uQAAAACJ/Q=="
-2273:
-.base64 "i4UAJgAAugAAAAA5yhOFACYAAImFsCoAABnJg8UEifqBwoAAAAA51Q=="
-jne 2273b
-.base64 "icuD4wG5AAAAAIn9"
-2274:
-.base64 "i4WwKgAAi5WwKgAAMcIhyjHQiYUAJgAAg8UEifqBwoAAAAA51Q=="
-jne 2274b
-.base64 "uQAAAACJ/Q=="
-2275:
-.base64 "i4WQJwAAugAAAAA5yhOFkCcAAImFsCoAABnJg8UEifqBwoQAAAA51Q=="
-jne 2275b
-.base64 "uQAAAACJ/Q=="
-2276:
-.base64 "i4WwKgAAi5WwKgAAMcIhyjHQiYWQJwAAg8UEifqBwoQAAAA51Q=="
-jne 2276b
-.base64 "i4eQJwAAAdiJh5AnAAC5AAAAAIn9"
-2277:
-.base64 "i4WQJwAAugAAAAA5yhuFICkAAImFsCoAABnJg8UEifqBwoQAAAA51Q=="
-jne 2277b
-.base64 "icuD8/+D4wGD8f+J/Q=="
-2278:
-.base64 "i4WQJwAAi5WwKgAAMcIhyjHQiYWQJwAAg8UEifqBwoQAAAA51Q=="
-jne 2278b
-.base64 "i4cAJgAAAdiJhwAmAACD7gGD/gA="
-jne 2272b
-.base64 "uQAAAACJ/Q=="
-2279:
-.base64 "i4VALAAAugAAAAA5yhuFkCcAAImF0C0AABnJg8UEifqBwoAAAAA51Q=="
-jne 2279b
-.base64 "uQAAAACJ/Q=="
-2280:
-.base64 "i4UAJgAAugAAAAA5yhOFACYAAImFYC8AABnJg8UEifqBwoAAAAA51Q=="
-jne 2280b
-.base64 "uAAAAACJ/Q=="
-2281:
-.base64 "iYXwMAAAg8UEifqBwoAAAAA51Q=="
-jne 2281b
-.base64 "uAEAAACJh/AwAAC5AAAAAIn9"
-2282:
-.base64 "i4XQLQAAugAAAAA5yhOF8DAAAImFoDUAABnJg8UEifqBwoAAAAA51Q=="
-jne 2282b
-.base64 "ifuBwwAhAAC5gAAAAIn+gcagNQAAAc6D7gE="
-2283:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2283b
-.base64 "D7aHACEAACWAAAAAg/gA"
-je 2284f
-.base64 "if6BxgAhAACJ+4HDwEoAALmAAAAA"
-2286:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2286b
-.base64 "i48cHAAAi5cUHAAAAcqLnxgcAAApyw=="
-je 2287f
-jmp 2288f
-2287:
-.base64 "i5cUHAAA"
-2288:
-.base64 "ifgFADoAALnIBQAAif2BxSAcAABVU1JRUA=="
-call {vg_dsa_probable_prime_1024}
-.base64 "WVlZWVmJhygcAACD+AA="
-je 2289f
-.base64 "i4cgHAAAA4ccHAAAiYccHAAA"
-jmp 2290f
-2289:
-2290:
-.base64 "i4coHAAAg/gA"
-je 2291f
-.base64 "i4coHAAAg/gB"
-je 2293f
-jmp 2294f
-2293:
-.base64 "uAEAAACJhzQcAAA="
-2294:
-jmp 2292f
-2291:
-.base64 "uAAAAACJhzQcAAA="
-2292:
-jmp 2285f
-2284:
-2285:
-.base64 "i4c0HAAAg/gE"
-je 2295f
-jmp 2296f
-2295:
-.base64 "i4csHAAAg8ABiYcsHAAAi48wHAAAg8EHiY8wHAAAPQAQAAA="
-je 2297f
-jmp 2298f
-2297:
-.base64 "uAIAAACJhzQcAAA="
-2298:
-2296:
-.base64 "i4c0HAAAg/gE"
-je 2249b
-.base64 "i4c0HAAAg/gA"
-je 2299f
-.base64 "i4c0HAAAg/gB"
-je 2301f
-jmp 2302f
-2301:
-.base64 "i48cHAAAi4cUHAAAAciJh1AcAACLhxgcAAApyImHVBwAAD0AQAAA"
-jb 2303f
-.base64 "uABAAACJh1QcAAA="
-jmp 2304f
-2303:
-2304:
-.base64 "i4dQHAAAiYc4HAAAi4dUHAAAiYc8HAAAuAQAAACJh0AcAAA="
-2305:
-.base64 "i4c8HAAAPYAAAAA="
-jb 2306f
-.base64 "i7c4HAAAuYAAAAC4AAAAAIn9"
-2308:
-.base64 "iYUQNAAAg8UEifqBwoAAAAA51Q=="
-jne 2308b
-.base64 "ifuBwxA0AAABzoPuAQ=="
-2309:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2309b
-.base64 "uQAAAACJ/Q=="
-2310:
-.base64 "i4XwMAAAugAAAAA5yhuFEDQAAImFgDIAABnJg8UEifqBwoAAAAA51Q=="
-jne 2310b
-.base64 "iY9IHAAAuQAAAACJ/Q=="
-2311:
-.base64 "i4UQNAAAugAAAAA5yhuF0C0AAImFgDIAABnJg8UEifqBwoAAAAA51Q=="
-jne 2311b
-.base64 "I49IHAAAg/kA"
-je 2312f
-.base64 "uQAAAACJ/Q=="
-2314:
-.base64 "i4WgNQAAi5WgNQAAMcIhyjHQiUVAg8UEifqBwoAAAAA51Q=="
-jne 2314b
-.base64 "uQAAAACJ/Q=="
-2315:
-.base64 "i4UQNAAAi5UQNAAAMcIhyjHQiYVoBQAAg8UEifqBwoAAAAA51Q=="
-jne 2315b
-.base64 "uQAAAACJ/Q=="
-2316:
-.base64 "i4VgLwAAi5VgLwAAMcIhyjHQiYWACAAAg8UEifqDwnA51Q=="
-jne 2316b
-.base64 "uDEBAABQVw=="
-call {vg_dsa_pow_16_28}
-.base64 "WFi5AAAAAIn9"
-2317:
-.base64 "i4XwMAAAugAAAAA5yhuFcAYAAImFgDIAABnJg8UEifqBwoAAAAA51Q=="
-jne 2317b
-.base64 "g/kA"
-je 2318f
-.base64 "ifuBw5QhAAC5gAAAAIn+gcZwBgAAAc6D7gE="
-2320:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2320b
-.base64 "uAEAAACJh0AcAAA="
-jmp 2319f
-2318:
-2319:
-jmp 2313f
-2312:
-2313:
-.base64 "i4c4HAAABYAAAACJhzgcAACLhzwcAAAtgAAAAImHPBwAAA=="
-jmp 2307f
-2306:
-.base64 "uAIAAACJh0AcAAA="
-2307:
-.base64 "i4dAHAAAg/gE"
-je 2305b
-.base64 "i4c4HAAAi48UHAAAKciJhxwcAACLh0AcAACD+AE="
-je 2321f
-.base64 "i4dUHAAAPQBAAAA="
-jb 2323f
-jmp 2324f
-2323:
-.base64 "uAIAAACJh0QcAAA="
-2324:
-jmp 2322f
-2321:
-.base64 "ifgFACEAALkUAQAAuoAAAAC7FAAAAIn+gcYAaQAAvQAIAABVVlNSUVA="
-call {vg_dsa_check_parameters}
-.base64 "WVlZWVlZg/gB"
-je 2325f
-jmp 2326f
-2325:
-.base64 "uAEAAACJh0QcAAA="
-2326:
-2322:
-2302:
-jmp 2300f
-2299:
-.base64 "uAIAAACJh0QcAAA="
-2300:
-2248:
-jmp 2246f
-2245:
-.base64 "uAIAAACJh0QcAAA="
-2246:
-.base64 "i4dEHAAAg/gA"
-je 2327f
-jmp 2328f
-2327:
-.base64 "i4ccHAAAiYdMHAAAi4cIHAAAg+gBiYcIHAAA"
-2328:
-jmp 2238f
-2237:
-.base64 "uAIAAACJh0QcAAA="
-2238:
-jmp 2236f
-2235:
-.base64 "uAMAAACJh0QcAAA="
-2236:
-.base64 "i4dEHAAAg/gA"
-je 2234b
-.base64 "i4dEHAAAg/gB"
-je 2329f
-.base64 "i7cAHAAAuRQBAAC4AAAAAA=="
-2331:
-.base64 "iAaDxgGD6QE="
-jne 2331b
-jmp 2330f
-2329:
-.base64 "i58AHAAAif6BxgAhAAC5FAEAAA=="
-2332:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2332b
-2330:
-.base64 "i4dEHAAAg/gB"
-je 2333f
-.base64 "i4dEHAAAg/gC"
-je 2335f
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLh0wcAACJA7gDAAAA"
-jmp 2336f
-2335:
-.base64 "i4cYHAAAi49MHAAAKcg9gABAAA=="
-jb 2337f
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLh0wcAACJA7gDAAAA"
-jmp 2338f
-2337:
-.base64 "PQCAAAA="
-jb 2339f
-jmp 2340f
-2339:
-.base64 "uACAAAA="
-2340:
-.base64 "AcA9gABAAA=="
-jb 2341f
-.base64 "uIAAQAA="
-jmp 2342f
-2341:
-2342:
-.base64 "icGLlwgcAACLnxAcAACJE4lLGLgAAAAAiUMEiUMci58MHAAAiUMEi4dMHAAAiQO4AAAAAA=="
-2338:
-2336:
-jmp 2334f
-2333:
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLhxwcAACJA7gBAAAA"
-2334:
-21:
-.base64 "izwki3QkBItsJAhbW1tbww=="
-.p2align 6"#,
-        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
-        vg_dsa_probable_prime_256 = sym super::dsa::vg_dsa_probable_prime_256::vg_dsa_probable_prime_256,
-        vg_dsa_probable_prime_3072 = sym super::dsa::vg_dsa_probable_prime_3072::vg_dsa_probable_prime_3072,
-        vg_dsa_pow_48_89 = sym super::dsa::vg_dsa_pow_48_89::vg_dsa_pow_48_89,
-        vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
-        vg_dsa_probable_prime_2048 = sym super::dsa::vg_dsa_probable_prime_2048::vg_dsa_probable_prime_2048,
-        vg_dsa_pow_32_57 = sym super::dsa::vg_dsa_pow_32_57::vg_dsa_pow_32_57,
-        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
-        vg_dsa_probable_prime_160 = sym super::dsa::vg_dsa_probable_prime_160::vg_dsa_probable_prime_160,
-        vg_dsa_probable_prime_1024 = sym super::dsa::vg_dsa_probable_prime_1024::vg_dsa_probable_prime_1024,
-        vg_dsa_pow_16_28 = sym super::dsa::vg_dsa_pow_16_28::vg_dsa_pow_16_28,
-    )
-}
-
-/// The CPU features `vg_dsa_parameter_search_sha1_shani` requires (`Artifact.features`).
-pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
-/// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
-///
-/// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 32 bytes.
-/// * `state` must come from `vg_dsa_parameter_search_init`, or from the last call of this function that returned 0.
-/// * `out_len` must be `2 * state[1]` plus 20 if `state[1]` is 128, else plus 32.
-/// * `rand_len` must be at most the entropy budget, `state[2]`.
-/// * `scratch_len` must be at least `64 * state[1] + 1024` words.
-/// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
-/// * `out`, `used`, `scratch` and `state` must not overlap each other or `rand` (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_dsa_parameter_search_sha1_shani(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "U1VWV4t8JCiLRCQUiYcAHAAAi0QkHImHDBwAAItEJCCJhxQcAACLRCQkiYcYHAAAi0QkMImHEBwAALgAAAAAiYdMHAAAuAAAAACJh0QcAACLXCQwiwOJhwgcAACLQwg9gAAAAA=="
-je 20f
-.base64 "PQABAAA="
-je 22f
-24:
-.base64 "i4cIHAAAg/gA"
-je 25f
-.base64 "i4cYHAAAi49MHAAAKciD+CA="
-jb 27f
-.base64 "i49MHAAAi4cUHAAAAciJhwQcAACDwSCJjxwcAACLtwQcAACJ+4HDoBwAALkgAAAA"
-29:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 29b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFgCIAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgcD7aHgCIAAA2AAAAAiIeAIgAAD7aHnyIAAIPIAYiHnyIAAIn+gcaAIgAAifuBw0BAAAC5IAAAAA=="
-210:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 210b
-.base64 "i48cHAAAi5cUHAAAAcqLnxgcAAApyw=="
-je 211f
-jmp 212f
-211:
-.base64 "i5cUHAAA"
-212:
-.base64 "ifgFADoAALnIBQAAif2BxSAcAABVU1JRUA=="
-call {vg_dsa_probable_prime_256}
-.base64 "WVlZWVmJhygcAACD+AA="
-je 213f
-.base64 "i4cgHAAAA4ccHAAAiYccHAAA"
-jmp 214f
-213:
-214:
-.base64 "i4coHAAAg/gA"
-je 215f
-.base64 "i4coHAAAg/gB"
-je 217f
-jmp 218f
-217:
-.base64 "uAAAAACJhywcAAC4AQAAAImHMBwAALgEAAAAiYc0HAAA"
-219:
-.base64 "i7cEHAAAifuBw6AcAAC5IAAAAA=="
-220:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 220b
-.base64 "ifqBwr8cAACLjzAcAACDwQC+IAAAAA=="
-221:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 221b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFwCAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-222:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 222b
-.base64 "ifqBwr8cAACLjzAcAACDwQG+IAAAAA=="
-223:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 223b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFoCAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-224:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 224b
-.base64 "ifqBwr8cAACLjzAcAACDwQK+IAAAAA=="
-225:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 225b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFgCAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-226:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 226b
-.base64 "ifqBwr8cAACLjzAcAACDwQO+IAAAAA=="
-227:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 227b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFYCAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-228:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 228b
-.base64 "ifqBwr8cAACLjzAcAACDwQS+IAAAAA=="
-229:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 229b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFQCAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-230:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 230b
-.base64 "ifqBwr8cAACLjzAcAACDwQW+IAAAAA=="
-231:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 231b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFICAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-232:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 232b
-.base64 "ifqBwr8cAACLjzAcAACDwQa+IAAAAA=="
-233:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 233b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFACAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-234:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 234b
-.base64 "ifqBwr8cAACLjzAcAACDwQe+IAAAAA=="
-235:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 235b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgF4B8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-236:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 236b
-.base64 "ifqBwr8cAACLjzAcAACDwQi+IAAAAA=="
-237:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 237b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFwB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-238:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 238b
-.base64 "ifqBwr8cAACLjzAcAACDwQm+IAAAAA=="
-239:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 239b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFoB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-240:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 240b
-.base64 "ifqBwr8cAACLjzAcAACDwQq+IAAAAA=="
-241:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 241b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFgB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-242:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 242b
-.base64 "ifqBwr8cAACLjzAcAACDwQu+IAAAAA=="
-243:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 243b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFYB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgcD7aHYB8AAA2AAAAAiIdgHwAAD7aH3yAAAIPIAYiH3yAAAIn+gcZgHwAAuYABAAC4AAAAAIn9"
-244:
-.base64 "iYUAJgAAg8UEifqBwoABAAA51Q=="
-jne 244b
-.base64 "ifuBwwAmAAABzoPuAQ=="
-245:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 245b
-.base64 "if6BxmAfAAC5gAEAALgAAAAAif0="
-246:
-.base64 "iYVALAAAg8UEifqBwoABAAA51Q=="
-jne 246b
-.base64 "ifuBw0AsAAABzoPuAQ=="
-247:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 247b
-.base64 "if6BxoAiAAC5IAAAALgAAAAAif0="
-248:
-.base64 "iYWAMgAAg8UEifqBwoABAAA51Q=="
-jne 248b
-.base64 "ifuBw4AyAAABzoPuAQ=="
-249:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 249b
-.base64 "uAAAAACJhwA0AAC5AAAAAIn9"
-250:
-.base64 "i4WAMgAAugAAAAA5yhOFgDIAAImFICkAABnJg8UEifqBwoQBAAA51Q=="
-jne 250b
-.base64 "uAAAAACJ/Q=="
-251:
-.base64 "iYWQJwAAg8UEifqBwoQBAAA51Q=="
-jne 251b
-.base64 "vgAMAAA="
-252:
-.base64 "uQAAAACJ/Q=="
-253:
-.base64 "i4UAJgAAugAAAAA5yhOFACYAAImFsCoAABnJg8UEifqBwoABAAA51Q=="
-jne 253b
-.base64 "icuD4wG5AAAAAIn9"
-254:
-.base64 "i4WwKgAAi5WwKgAAMcIhyjHQiYUAJgAAg8UEifqBwoABAAA51Q=="
-jne 254b
-.base64 "uQAAAACJ/Q=="
-255:
-.base64 "i4WQJwAAugAAAAA5yhOFkCcAAImFsCoAABnJg8UEifqBwoQBAAA51Q=="
-jne 255b
-.base64 "uQAAAACJ/Q=="
-256:
-.base64 "i4WwKgAAi5WwKgAAMcIhyjHQiYWQJwAAg8UEifqBwoQBAAA51Q=="
-jne 256b
-.base64 "i4eQJwAAAdiJh5AnAAC5AAAAAIn9"
-257:
-.base64 "i4WQJwAAugAAAAA5yhuFICkAAImFsCoAABnJg8UEifqBwoQBAAA51Q=="
-jne 257b
-.base64 "icuD8/+D4wGD8f+J/Q=="
-258:
-.base64 "i4WQJwAAi5WwKgAAMcIhyjHQiYWQJwAAg8UEifqBwoQBAAA51Q=="
-jne 258b
-.base64 "i4cAJgAAAdiJhwAmAACD7gGD/gA="
-jne 252b
-.base64 "uQAAAACJ/Q=="
-259:
-.base64 "i4VALAAAugAAAAA5yhuFkCcAAImF0C0AABnJg8UEifqBwoABAAA51Q=="
-jne 259b
-.base64 "uQAAAACJ/Q=="
-260:
-.base64 "i4UAJgAAugAAAAA5yhOFACYAAImFYC8AABnJg8UEifqBwoABAAA51Q=="
-jne 260b
-.base64 "uAAAAACJ/Q=="
-261:
-.base64 "iYXwMAAAg8UEifqBwoABAAA51Q=="
-jne 261b
-.base64 "uAEAAACJh/AwAAC5AAAAAIn9"
-262:
-.base64 "i4XQLQAAugAAAAA5yhOF8DAAAImFoDUAABnJg8UEifqBwoABAAA51Q=="
-jne 262b
-.base64 "ifuBwwAhAAC5gAEAAIn+gcagNQAAAc6D7gE="
-263:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 263b
-.base64 "D7aHACEAACWAAAAAg/gA"
-je 264f
-.base64 "if6BxgAhAACJ+4HDwGYAALmAAQAA"
-266:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 266b
-.base64 "i48cHAAAi5cUHAAAAcqLnxgcAAApyw=="
-je 267f
-jmp 268f
-267:
-.base64 "i5cUHAAA"
-268:
-.base64 "ifgFADoAALnIBQAAif2BxSAcAABVU1JRUA=="
-call {vg_dsa_probable_prime_3072}
-.base64 "WVlZWVmJhygcAACD+AA="
-je 269f
-.base64 "i4cgHAAAA4ccHAAAiYccHAAA"
-jmp 270f
-269:
-270:
-.base64 "i4coHAAAg/gA"
-je 271f
-.base64 "i4coHAAAg/gB"
-je 273f
-jmp 274f
-273:
-.base64 "uAEAAACJhzQcAAA="
-274:
-jmp 272f
-271:
-.base64 "uAAAAACJhzQcAAA="
-272:
-jmp 265f
-264:
-265:
-.base64 "i4c0HAAAg/gE"
-je 275f
-jmp 276f
-275:
-.base64 "i4csHAAAg8ABiYcsHAAAi48wHAAAg8EMiY8wHAAAPQAwAAA="
-je 277f
-jmp 278f
-277:
-.base64 "uAIAAACJhzQcAAA="
-278:
-276:
-.base64 "i4c0HAAAg/gE"
-je 219b
-.base64 "i4c0HAAAg/gA"
-je 279f
-.base64 "i4c0HAAAg/gB"
-je 281f
-jmp 282f
-281:
-.base64 "i48cHAAAi4cUHAAAAciJh1AcAACLhxgcAAApyImHVBwAAD0AwAAA"
-jb 283f
-.base64 "uADAAACJh1QcAAA="
-jmp 284f
-283:
-284:
-.base64 "i4dQHAAAiYc4HAAAi4dUHAAAiYc8HAAAuAQAAACJh0AcAAA="
-285:
-.base64 "i4c8HAAAPYABAAA="
-jb 286f
-.base64 "i7c4HAAAuYABAAC4AAAAAIn9"
-288:
-.base64 "iYUQNAAAg8UEifqBwoABAAA51Q=="
-jne 288b
-.base64 "ifuBwxA0AAABzoPuAQ=="
-289:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 289b
-.base64 "uQAAAACJ/Q=="
-290:
-.base64 "i4XwMAAAugAAAAA5yhuFEDQAAImFgDIAABnJg8UEifqBwoABAAA51Q=="
-jne 290b
-.base64 "iY9IHAAAuQAAAACJ/Q=="
-291:
-.base64 "i4UQNAAAugAAAAA5yhuF0C0AAImFgDIAABnJg8UEifqBwoABAAA51Q=="
-jne 291b
-.base64 "I49IHAAAg/kA"
-je 292f
-.base64 "uQAAAACJ/Q=="
-294:
-.base64 "i4WgNQAAi5WgNQAAMcIhyjHQiUVAg8UEifqBwoABAAA51Q=="
-jne 294b
-.base64 "uQAAAACJ/Q=="
-295:
-.base64 "i4UQNAAAi5UQNAAAMcIhyjHQiYVoDwAAg8UEifqBwoABAAA51Q=="
-jne 295b
-.base64 "uQAAAACJ/Q=="
-296:
-.base64 "i4VgLwAAi5VgLwAAMcIhyjHQiYWAGAAAg8UEifqBwmQBAAA51Q=="
-jne 296b
-.base64 "uHEDAABQVw=="
-call {vg_dsa_pow_48_89}
-.base64 "WFi5AAAAAIn9"
-297:
-.base64 "i4XwMAAAugAAAAA5yhuFcBIAAImFgDIAABnJg8UEifqBwoABAAA51Q=="
-jne 297b
-.base64 "g/kA"
-je 298f
-.base64 "ifuBw6AiAAC5gAEAAIn+gcZwEgAAAc6D7gE="
-2100:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2100b
-.base64 "uAEAAACJh0AcAAA="
-jmp 299f
-298:
-299:
-jmp 293f
-292:
-293:
-.base64 "i4c4HAAABYABAACJhzgcAACLhzwcAAAtgAEAAImHPBwAAA=="
-jmp 287f
-286:
-.base64 "uAIAAACJh0AcAAA="
-287:
-.base64 "i4dAHAAAg/gE"
-je 285b
-.base64 "i4c4HAAAi48UHAAAKciJhxwcAACLh0AcAACD+AE="
-je 2101f
-.base64 "i4dUHAAAPQDAAAA="
-jb 2103f
-jmp 2104f
-2103:
-.base64 "uAIAAACJh0QcAAA="
-2104:
-jmp 2102f
-2101:
-.base64 "ifgFACEAALkgAwAAuoABAAC7IAAAAIn+gcYAaQAAvQAYAABVVlNSUVA="
-call {vg_dsa_check_parameters}
-.base64 "WVlZWVlZg/gB"
-je 2105f
-jmp 2106f
-2105:
-.base64 "uAEAAACJh0QcAAA="
-2106:
-2102:
-282:
-jmp 280f
-279:
-.base64 "uAIAAACJh0QcAAA="
-280:
-218:
-jmp 216f
-215:
-.base64 "uAIAAACJh0QcAAA="
-216:
-.base64 "i4dEHAAAg/gA"
-je 2107f
-jmp 2108f
-2107:
-.base64 "i4ccHAAAiYdMHAAAi4cIHAAAg+gBiYcIHAAA"
-2108:
-jmp 28f
-27:
-.base64 "uAIAAACJh0QcAAA="
-28:
-jmp 26f
-25:
-.base64 "uAMAAACJh0QcAAA="
-26:
-.base64 "i4dEHAAAg/gA"
-je 24b
-.base64 "i4dEHAAAg/gB"
-je 2109f
-.base64 "i7cAHAAAuSADAAC4AAAAAA=="
-2111:
-.base64 "iAaDxgGD6QE="
-jne 2111b
-jmp 2110f
-2109:
-.base64 "i58AHAAAif6BxgAhAAC5IAMAAA=="
-2112:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2112b
-2110:
-.base64 "i4dEHAAAg/gB"
-je 2113f
-.base64 "i4dEHAAAg/gC"
-je 2115f
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLh0wcAACJA7gDAAAA"
-jmp 2116f
-2115:
-.base64 "i4cYHAAAi49MHAAAKcg9gAHAAA=="
-jb 2117f
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLh0wcAACJA7gDAAAA"
-jmp 2118f
-2117:
-.base64 "PQCAAQA="
-jb 2119f
-jmp 2120f
-2119:
-.base64 "uACAAQA="
-2120:
-.base64 "AcA9gAHAAA=="
-jb 2121f
-.base64 "uIABwAA="
-jmp 2122f
-2121:
-2122:
-.base64 "icGLlwgcAACLnxAcAACJE4lLGLgAAAAAiUMEiUMci58MHAAAiUMEi4dMHAAAiQO4AAAAAA=="
-2118:
-2116:
-jmp 2114f
-2113:
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLhxwcAACJA7gBAAAA"
-2114:
-jmp 23f
-22:
-2123:
-.base64 "i4cIHAAAg/gA"
-je 2124f
-.base64 "i4cYHAAAi49MHAAAKciD+CA="
-jb 2126f
-.base64 "i49MHAAAi4cUHAAAAciJhwQcAACDwSCJjxwcAACLtwQcAACJ+4HDoBwAALkgAAAA"
-2128:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2128b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFACIAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgcD7aHACIAAA2AAAAAiIcAIgAAD7aHHyIAAIPIAYiHHyIAAIn+gcYAIgAAifuBw0BAAAC5IAAAAA=="
-2129:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2129b
-.base64 "i48cHAAAi5cUHAAAAcqLnxgcAAApyw=="
-je 2130f
-jmp 2131f
-2130:
-.base64 "i5cUHAAA"
-2131:
-.base64 "ifgFADoAALnIBQAAif2BxSAcAABVU1JRUA=="
-call {vg_dsa_probable_prime_256}
-.base64 "WVlZWVmJhygcAACD+AA="
-je 2132f
-.base64 "i4cgHAAAA4ccHAAAiYccHAAA"
-jmp 2133f
-2132:
-2133:
-.base64 "i4coHAAAg/gA"
-je 2134f
-.base64 "i4coHAAAg/gB"
-je 2136f
-jmp 2137f
-2136:
-.base64 "uAAAAACJhywcAAC4AQAAAImHMBwAALgEAAAAiYc0HAAA"
-2138:
-.base64 "i7cEHAAAifuBw6AcAAC5IAAAAA=="
-2139:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2139b
-.base64 "ifqBwr8cAACLjzAcAACDwQC+IAAAAA=="
-2140:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2140b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFQCAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2141:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2141b
-.base64 "ifqBwr8cAACLjzAcAACDwQG+IAAAAA=="
-2142:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2142b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFICAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2143:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2143b
-.base64 "ifqBwr8cAACLjzAcAACDwQK+IAAAAA=="
-2144:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2144b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFACAAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2145:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2145b
-.base64 "ifqBwr8cAACLjzAcAACDwQO+IAAAAA=="
-2146:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2146b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgF4B8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2147:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2147b
-.base64 "ifqBwr8cAACLjzAcAACDwQS+IAAAAA=="
-2148:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2148b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFwB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2149:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2149b
-.base64 "ifqBwr8cAACLjzAcAACDwQW+IAAAAA=="
-2150:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2150b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFoB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2151:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2151b
-.base64 "ifqBwr8cAACLjzAcAACDwQa+IAAAAA=="
-2152:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2152b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFgB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgci7cEHAAAifuBw6AcAAC5IAAAAA=="
-2153:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2153b
-.base64 "ifqBwr8cAACLjzAcAACDwQe+IAAAAA=="
-2154:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2154b
-.base64 "ifuBw4AcAAC5Z+YJaokLuYWuZ7uJSwS5cvNuPIlLCLk69U+liUsMuX9SDlGJSxC5jGgFm4lLFLmr2YMfiUsYuRnN4FuJSxy5gAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAAEAiUtcidiDwCCJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWIn7gcOAHAAAifgFYB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi0sUD8mJSBSLSxgPyYlIGItLHA/JiUgcD7aHYB8AAA2AAAAAiIdgHwAAD7aHXyAAAIPIAYiHXyAAAIn+gcZgHwAAuQABAAC4AAAAAIn9"
-2155:
-.base64 "iYUAJgAAg8UEifqBwgABAAA51Q=="
-jne 2155b
-.base64 "ifuBwwAmAAABzoPuAQ=="
-2156:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2156b
-.base64 "if6BxmAfAAC5AAEAALgAAAAAif0="
-2157:
-.base64 "iYVALAAAg8UEifqBwgABAAA51Q=="
-jne 2157b
-.base64 "ifuBw0AsAAABzoPuAQ=="
-2158:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2158b
-.base64 "if6BxgAiAAC5IAAAALgAAAAAif0="
-2159:
-.base64 "iYWAMgAAg8UEifqBwgABAAA51Q=="
-jne 2159b
-.base64 "ifuBw4AyAAABzoPuAQ=="
-2160:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2160b
-.base64 "uAAAAACJh4AzAAC5AAAAAIn9"
-2161:
-.base64 "i4WAMgAAugAAAAA5yhOFgDIAAImFICkAABnJg8UEifqBwgQBAAA51Q=="
-jne 2161b
-.base64 "uAAAAACJ/Q=="
-2162:
-.base64 "iYWQJwAAg8UEifqBwgQBAAA51Q=="
-jne 2162b
-.base64 "vgAIAAA="
-2163:
-.base64 "uQAAAACJ/Q=="
-2164:
-.base64 "i4UAJgAAugAAAAA5yhOFACYAAImFsCoAABnJg8UEifqBwgABAAA51Q=="
-jne 2164b
-.base64 "icuD4wG5AAAAAIn9"
-2165:
-.base64 "i4WwKgAAi5WwKgAAMcIhyjHQiYUAJgAAg8UEifqBwgABAAA51Q=="
-jne 2165b
-.base64 "uQAAAACJ/Q=="
-2166:
-.base64 "i4WQJwAAugAAAAA5yhOFkCcAAImFsCoAABnJg8UEifqBwgQBAAA51Q=="
-jne 2166b
-.base64 "uQAAAACJ/Q=="
-2167:
-.base64 "i4WwKgAAi5WwKgAAMcIhyjHQiYWQJwAAg8UEifqBwgQBAAA51Q=="
-jne 2167b
-.base64 "i4eQJwAAAdiJh5AnAAC5AAAAAIn9"
-2168:
-.base64 "i4WQJwAAugAAAAA5yhuFICkAAImFsCoAABnJg8UEifqBwgQBAAA51Q=="
-jne 2168b
-.base64 "icuD8/+D4wGD8f+J/Q=="
-2169:
-.base64 "i4WQJwAAi5WwKgAAMcIhyjHQiYWQJwAAg8UEifqBwgQBAAA51Q=="
-jne 2169b
-.base64 "i4cAJgAAAdiJhwAmAACD7gGD/gA="
-jne 2163b
-.base64 "uQAAAACJ/Q=="
-2170:
-.base64 "i4VALAAAugAAAAA5yhuFkCcAAImF0C0AABnJg8UEifqBwgABAAA51Q=="
-jne 2170b
-.base64 "uQAAAACJ/Q=="
-2171:
-.base64 "i4UAJgAAugAAAAA5yhOFACYAAImFYC8AABnJg8UEifqBwgABAAA51Q=="
-jne 2171b
-.base64 "uAAAAACJ/Q=="
-2172:
-.base64 "iYXwMAAAg8UEifqBwgABAAA51Q=="
-jne 2172b
-.base64 "uAEAAACJh/AwAAC5AAAAAIn9"
-2173:
-.base64 "i4XQLQAAugAAAAA5yhOF8DAAAImFoDUAABnJg8UEifqBwgABAAA51Q=="
-jne 2173b
-.base64 "ifuBwwAhAAC5AAEAAIn+gcagNQAAAc6D7gE="
-2174:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2174b
-.base64 "D7aHACEAACWAAAAAg/gA"
-je 2175f
-.base64 "if6BxgAhAACJ+4HDwFgAALkAAQAA"
-2177:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2177b
-.base64 "i48cHAAAi5cUHAAAAcqLnxgcAAApyw=="
-je 2178f
-jmp 2179f
-2178:
-.base64 "i5cUHAAA"
-2179:
-.base64 "ifgFADoAALnIBQAAif2BxSAcAABVU1JRUA=="
-call {vg_dsa_probable_prime_2048}
-.base64 "WVlZWVmJhygcAACD+AA="
-je 2180f
-.base64 "i4cgHAAAA4ccHAAAiYccHAAA"
-jmp 2181f
-2180:
-2181:
-.base64 "i4coHAAAg/gA"
-je 2182f
-.base64 "i4coHAAAg/gB"
-je 2184f
-jmp 2185f
-2184:
-.base64 "uAEAAACJhzQcAAA="
-2185:
-jmp 2183f
-2182:
-.base64 "uAAAAACJhzQcAAA="
-2183:
-jmp 2176f
-2175:
-2176:
-.base64 "i4c0HAAAg/gE"
-je 2186f
-jmp 2187f
-2186:
-.base64 "i4csHAAAg8ABiYcsHAAAi48wHAAAg8EIiY8wHAAAPQAgAAA="
-je 2188f
-jmp 2189f
-2188:
-.base64 "uAIAAACJhzQcAAA="
-2189:
-2187:
-.base64 "i4c0HAAAg/gE"
-je 2138b
-.base64 "i4c0HAAAg/gA"
-je 2190f
-.base64 "i4c0HAAAg/gB"
-je 2192f
-jmp 2193f
-2192:
-.base64 "i48cHAAAi4cUHAAAAciJh1AcAACLhxgcAAApyImHVBwAAD0AgAAA"
-jb 2194f
-.base64 "uACAAACJh1QcAAA="
-jmp 2195f
-2194:
-2195:
-.base64 "i4dQHAAAiYc4HAAAi4dUHAAAiYc8HAAAuAQAAACJh0AcAAA="
-2196:
-.base64 "i4c8HAAAPQABAAA="
-jb 2197f
-.base64 "i7c4HAAAuQABAAC4AAAAAIn9"
-2199:
-.base64 "iYUQNAAAg8UEifqBwgABAAA51Q=="
-jne 2199b
-.base64 "ifuBwxA0AAABzoPuAQ=="
-2200:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2200b
-.base64 "uQAAAACJ/Q=="
-2201:
-.base64 "i4XwMAAAugAAAAA5yhuFEDQAAImFgDIAABnJg8UEifqBwgABAAA51Q=="
-jne 2201b
-.base64 "iY9IHAAAuQAAAACJ/Q=="
-2202:
-.base64 "i4UQNAAAugAAAAA5yhuF0C0AAImFgDIAABnJg8UEifqBwgABAAA51Q=="
-jne 2202b
-.base64 "I49IHAAAg/kA"
-je 2203f
-.base64 "uQAAAACJ/Q=="
-2205:
-.base64 "i4WgNQAAi5WgNQAAMcIhyjHQiUVAg8UEifqBwgABAAA51Q=="
-jne 2205b
-.base64 "uQAAAACJ/Q=="
-2206:
-.base64 "i4UQNAAAi5UQNAAAMcIhyjHQiYVoCgAAg8UEifqBwgABAAA51Q=="
-jne 2206b
-.base64 "uQAAAACJ/Q=="
-2207:
-.base64 "i4VgLwAAi5VgLwAAMcIhyjHQiYWAEAAAg8UEifqBwuQAAAA51Q=="
-jne 2207b
-.base64 "uFECAABQVw=="
-call {vg_dsa_pow_32_57}
-.base64 "WFi5AAAAAIn9"
-2208:
-.base64 "i4XwMAAAugAAAAA5yhuFcAwAAImFgDIAABnJg8UEifqBwgABAAA51Q=="
-jne 2208b
-.base64 "g/kA"
-je 2209f
-.base64 "ifuBwyAiAAC5AAEAAIn+gcZwDAAAAc6D7gE="
-2211:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2211b
-.base64 "uAEAAACJh0AcAAA="
-jmp 2210f
-2209:
-2210:
-jmp 2204f
-2203:
-2204:
-.base64 "i4c4HAAABQABAACJhzgcAACLhzwcAAAtAAEAAImHPBwAAA=="
-jmp 2198f
-2197:
-.base64 "uAIAAACJh0AcAAA="
-2198:
-.base64 "i4dAHAAAg/gE"
-je 2196b
-.base64 "i4c4HAAAi48UHAAAKciJhxwcAACLh0AcAACD+AE="
-je 2212f
-.base64 "i4dUHAAAPQCAAAA="
-jb 2214f
-jmp 2215f
-2214:
-.base64 "uAIAAACJh0QcAAA="
-2215:
-jmp 2213f
-2212:
-.base64 "ifgFACEAALkgAgAAugABAAC7IAAAAIn+gcYAaQAAvQAQAABVVlNSUVA="
-call {vg_dsa_check_parameters}
-.base64 "WVlZWVlZg/gB"
-je 2216f
-jmp 2217f
-2216:
-.base64 "uAEAAACJh0QcAAA="
-2217:
-2213:
-2193:
-jmp 2191f
-2190:
-.base64 "uAIAAACJh0QcAAA="
-2191:
-2137:
-jmp 2135f
-2134:
-.base64 "uAIAAACJh0QcAAA="
-2135:
-.base64 "i4dEHAAAg/gA"
-je 2218f
-jmp 2219f
-2218:
-.base64 "i4ccHAAAiYdMHAAAi4cIHAAAg+gBiYcIHAAA"
-2219:
-jmp 2127f
-2126:
-.base64 "uAIAAACJh0QcAAA="
-2127:
-jmp 2125f
-2124:
-.base64 "uAMAAACJh0QcAAA="
-2125:
-.base64 "i4dEHAAAg/gA"
-je 2123b
-.base64 "i4dEHAAAg/gB"
-je 2220f
-.base64 "i7cAHAAAuSACAAC4AAAAAA=="
-2222:
-.base64 "iAaDxgGD6QE="
-jne 2222b
-jmp 2221f
-2220:
-.base64 "i58AHAAAif6BxgAhAAC5IAIAAA=="
-2223:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2223b
-2221:
-.base64 "i4dEHAAAg/gB"
-je 2224f
-.base64 "i4dEHAAAg/gC"
-je 2226f
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLh0wcAACJA7gDAAAA"
-jmp 2227f
-2226:
-.base64 "i4cYHAAAi49MHAAAKcg9AAGAAA=="
-jb 2228f
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLh0wcAACJA7gDAAAA"
-jmp 2229f
-2228:
-.base64 "PQAAAQA="
-jb 2230f
-jmp 2231f
-2230:
-.base64 "uAAAAQA="
-2231:
-.base64 "AcA9AAGAAA=="
-jb 2232f
-.base64 "uAABgAA="
-jmp 2233f
-2232:
-2233:
-.base64 "icGLlwgcAACLnxAcAACJE4lLGLgAAAAAiUMEiUMci58MHAAAiUMEi4dMHAAAiQO4AAAAAA=="
-2229:
-2227:
-jmp 2225f
-2224:
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLhxwcAACJA7gBAAAA"
-2225:
-23:
-jmp 21f
-20:
-2234:
-.base64 "i4cIHAAAg/gA"
-je 2235f
-.base64 "i4cYHAAAi49MHAAAKciD+BQ="
-jb 2237f
-.base64 "i49MHAAAi4cUHAAAAciJhwQcAACDwRSJjxwcAACLtwQcAACJ+4HDlBwAALkUAAAA"
-2239:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2239b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFgCEAAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQD7aHgCEAAA2AAAAAiIeAIQAAD7aHkyEAAIPIAYiHkyEAAIn+gcaAIQAAifuBw0BAAAC5FAAAAA=="
-2240:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2240b
-.base64 "i48cHAAAi5cUHAAAAcqLnxgcAAApyw=="
-je 2241f
-jmp 2242f
-2241:
-.base64 "i5cUHAAA"
-2242:
-.base64 "ifgFADoAALnIBQAAif2BxSAcAABVU1JRUA=="
-call {vg_dsa_probable_prime_160}
-.base64 "WVlZWVmJhygcAACD+AA="
-je 2243f
-.base64 "i4cgHAAAA4ccHAAAiYccHAAA"
-jmp 2244f
-2243:
-2244:
-.base64 "i4coHAAAg/gA"
-je 2245f
-.base64 "i4coHAAAg/gB"
-je 2247f
-jmp 2248f
-2247:
-.base64 "uAAAAACJhywcAAC4AQAAAImHMBwAALgEAAAAiYc0HAAA"
-2249:
-.base64 "i7cEHAAAifuBw5QcAAC5FAAAAA=="
-2250:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2250b
-.base64 "ifqBwqccAACLjzAcAACDwQC+FAAAAA=="
-2251:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2251b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFzB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi7cEHAAAifuBw5QcAAC5FAAAAA=="
-2252:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2252b
-.base64 "ifqBwqccAACLjzAcAACDwQG+FAAAAA=="
-2253:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2253b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFuB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi7cEHAAAifuBw5QcAAC5FAAAAA=="
-2254:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2254b
-.base64 "ifqBwqccAACLjzAcAACDwQK+FAAAAA=="
-2255:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2255b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFpB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi7cEHAAAifuBw5QcAAC5FAAAAA=="
-2256:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2256b
-.base64 "ifqBwqccAACLjzAcAACDwQO+FAAAAA=="
-2257:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2257b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFkB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi7cEHAAAifuBw5QcAAC5FAAAAA=="
-2258:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2258b
-.base64 "ifqBwqccAACLjzAcAACDwQS+FAAAAA=="
-2259:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2259b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFfB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi7cEHAAAifuBw5QcAAC5FAAAAA=="
-2260:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2260b
-.base64 "ifqBwqccAACLjzAcAACDwQW+FAAAAA=="
-2261:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2261b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFaB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQi7cEHAAAifuBw5QcAAC5FAAAAA=="
-2262:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2262b
-.base64 "ifqBwqccAACLjzAcAACDwQa+FAAAAA=="
-2263:
-.base64 "D7YCAciIAsHoCInBg+oBg+4Bg/4A"
-jne 2263b
-.base64 "ifuBw4AcAAC5ASNFZ4kLuYmrze+JSwS5/ty6mIlLCLl2VDIQiUsMufDh0sOJSxC5gAAAAIlLKLkAAAAAiUssuQAAAACJSzC5AAAAAIlLNLkAAAAAiUs4uQAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAACgiUtQidiDwBSJ/YHFAB0AALkBAAAAVVFQUw=="
-call {vg_sha1_compress_shani}
-.base64 "WFhYWIn7gcOAHAAAifgFVB8AAIsLD8mJCItLBA/JiUgEi0sID8mJSAiLSwwPyYlIDItLEA/JiUgQD7aHYB8AAA2AAAAAiIdgHwAAD7aH3x8AAIPIAYiH3x8AAIn+gcZgHwAAuYAAAAC4AAAAAIn9"
-2264:
-.base64 "iYUAJgAAg8UEifqBwoAAAAA51Q=="
-jne 2264b
-.base64 "ifuBwwAmAAABzoPuAQ=="
-2265:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2265b
-.base64 "if6BxmAfAAC5gAAAALgAAAAAif0="
-2266:
-.base64 "iYVALAAAg8UEifqBwoAAAAA51Q=="
-jne 2266b
-.base64 "ifuBw0AsAAABzoPuAQ=="
-2267:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2267b
-.base64 "if6BxoAhAAC5FAAAALgAAAAAif0="
-2268:
-.base64 "iYWAMgAAg8UEifqBwoAAAAA51Q=="
-jne 2268b
-.base64 "ifuBw4AyAAABzoPuAQ=="
-2269:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2269b
-.base64 "uAAAAACJhwAzAAC5AAAAAIn9"
-2270:
-.base64 "i4WAMgAAugAAAAA5yhOFgDIAAImFICkAABnJg8UEifqBwoQAAAA51Q=="
-jne 2270b
-.base64 "uAAAAACJ/Q=="
-2271:
-.base64 "iYWQJwAAg8UEifqBwoQAAAA51Q=="
-jne 2271b
-.base64 "vgAEAAA="
-2272:
-.base64 "uQAAAACJ/Q=="
-2273:
-.base64 "i4UAJgAAugAAAAA5yhOFACYAAImFsCoAABnJg8UEifqBwoAAAAA51Q=="
-jne 2273b
-.base64 "icuD4wG5AAAAAIn9"
-2274:
-.base64 "i4WwKgAAi5WwKgAAMcIhyjHQiYUAJgAAg8UEifqBwoAAAAA51Q=="
-jne 2274b
-.base64 "uQAAAACJ/Q=="
-2275:
-.base64 "i4WQJwAAugAAAAA5yhOFkCcAAImFsCoAABnJg8UEifqBwoQAAAA51Q=="
-jne 2275b
-.base64 "uQAAAACJ/Q=="
-2276:
-.base64 "i4WwKgAAi5WwKgAAMcIhyjHQiYWQJwAAg8UEifqBwoQAAAA51Q=="
-jne 2276b
-.base64 "i4eQJwAAAdiJh5AnAAC5AAAAAIn9"
-2277:
-.base64 "i4WQJwAAugAAAAA5yhuFICkAAImFsCoAABnJg8UEifqBwoQAAAA51Q=="
-jne 2277b
-.base64 "icuD8/+D4wGD8f+J/Q=="
-2278:
-.base64 "i4WQJwAAi5WwKgAAMcIhyjHQiYWQJwAAg8UEifqBwoQAAAA51Q=="
-jne 2278b
-.base64 "i4cAJgAAAdiJhwAmAACD7gGD/gA="
-jne 2272b
-.base64 "uQAAAACJ/Q=="
-2279:
-.base64 "i4VALAAAugAAAAA5yhuFkCcAAImF0C0AABnJg8UEifqBwoAAAAA51Q=="
-jne 2279b
-.base64 "uQAAAACJ/Q=="
-2280:
-.base64 "i4UAJgAAugAAAAA5yhOFACYAAImFYC8AABnJg8UEifqBwoAAAAA51Q=="
-jne 2280b
-.base64 "uAAAAACJ/Q=="
-2281:
-.base64 "iYXwMAAAg8UEifqBwoAAAAA51Q=="
-jne 2281b
-.base64 "uAEAAACJh/AwAAC5AAAAAIn9"
-2282:
-.base64 "i4XQLQAAugAAAAA5yhOF8DAAAImFoDUAABnJg8UEifqBwoAAAAA51Q=="
-jne 2282b
-.base64 "ifuBwwAhAAC5gAAAAIn+gcagNQAAAc6D7gE="
-2283:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2283b
-.base64 "D7aHACEAACWAAAAAg/gA"
-je 2284f
-.base64 "if6BxgAhAACJ+4HDwEoAALmAAAAA"
-2286:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2286b
-.base64 "i48cHAAAi5cUHAAAAcqLnxgcAAApyw=="
-je 2287f
-jmp 2288f
-2287:
-.base64 "i5cUHAAA"
-2288:
-.base64 "ifgFADoAALnIBQAAif2BxSAcAABVU1JRUA=="
-call {vg_dsa_probable_prime_1024}
-.base64 "WVlZWVmJhygcAACD+AA="
-je 2289f
-.base64 "i4cgHAAAA4ccHAAAiYccHAAA"
-jmp 2290f
-2289:
-2290:
-.base64 "i4coHAAAg/gA"
-je 2291f
-.base64 "i4coHAAAg/gB"
-je 2293f
-jmp 2294f
-2293:
-.base64 "uAEAAACJhzQcAAA="
-2294:
-jmp 2292f
-2291:
-.base64 "uAAAAACJhzQcAAA="
-2292:
-jmp 2285f
-2284:
-2285:
-.base64 "i4c0HAAAg/gE"
-je 2295f
-jmp 2296f
-2295:
-.base64 "i4csHAAAg8ABiYcsHAAAi48wHAAAg8EHiY8wHAAAPQAQAAA="
-je 2297f
-jmp 2298f
-2297:
-.base64 "uAIAAACJhzQcAAA="
-2298:
-2296:
-.base64 "i4c0HAAAg/gE"
-je 2249b
-.base64 "i4c0HAAAg/gA"
-je 2299f
-.base64 "i4c0HAAAg/gB"
-je 2301f
-jmp 2302f
-2301:
-.base64 "i48cHAAAi4cUHAAAAciJh1AcAACLhxgcAAApyImHVBwAAD0AQAAA"
-jb 2303f
-.base64 "uABAAACJh1QcAAA="
-jmp 2304f
-2303:
-2304:
-.base64 "i4dQHAAAiYc4HAAAi4dUHAAAiYc8HAAAuAQAAACJh0AcAAA="
-2305:
-.base64 "i4c8HAAAPYAAAAA="
-jb 2306f
-.base64 "i7c4HAAAuYAAAAC4AAAAAIn9"
-2308:
-.base64 "iYUQNAAAg8UEifqBwoAAAAA51Q=="
-jne 2308b
-.base64 "ifuBwxA0AAABzoPuAQ=="
-2309:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2309b
-.base64 "uQAAAACJ/Q=="
-2310:
-.base64 "i4XwMAAAugAAAAA5yhuFEDQAAImFgDIAABnJg8UEifqBwoAAAAA51Q=="
-jne 2310b
-.base64 "iY9IHAAAuQAAAACJ/Q=="
-2311:
-.base64 "i4UQNAAAugAAAAA5yhuF0C0AAImFgDIAABnJg8UEifqBwoAAAAA51Q=="
-jne 2311b
-.base64 "I49IHAAAg/kA"
-je 2312f
-.base64 "uQAAAACJ/Q=="
-2314:
-.base64 "i4WgNQAAi5WgNQAAMcIhyjHQiUVAg8UEifqBwoAAAAA51Q=="
-jne 2314b
-.base64 "uQAAAACJ/Q=="
-2315:
-.base64 "i4UQNAAAi5UQNAAAMcIhyjHQiYVoBQAAg8UEifqBwoAAAAA51Q=="
-jne 2315b
-.base64 "uQAAAACJ/Q=="
-2316:
-.base64 "i4VgLwAAi5VgLwAAMcIhyjHQiYWACAAAg8UEifqDwnA51Q=="
-jne 2316b
-.base64 "uDEBAABQVw=="
-call {vg_dsa_pow_16_28}
-.base64 "WFi5AAAAAIn9"
-2317:
-.base64 "i4XwMAAAugAAAAA5yhuFcAYAAImFgDIAABnJg8UEifqBwoAAAAA51Q=="
-jne 2317b
-.base64 "g/kA"
-je 2318f
-.base64 "ifuBw5QhAAC5gAAAAIn+gcZwBgAAAc6D7gE="
-2320:
-.base64 "D7YGiAODwwGD7gGD6QGD+QA="
-jne 2320b
-.base64 "uAEAAACJh0AcAAA="
-jmp 2319f
-2318:
-2319:
-jmp 2313f
-2312:
-2313:
-.base64 "i4c4HAAABYAAAACJhzgcAACLhzwcAAAtgAAAAImHPBwAAA=="
-jmp 2307f
-2306:
-.base64 "uAIAAACJh0AcAAA="
-2307:
-.base64 "i4dAHAAAg/gE"
-je 2305b
-.base64 "i4c4HAAAi48UHAAAKciJhxwcAACLh0AcAACD+AE="
-je 2321f
-.base64 "i4dUHAAAPQBAAAA="
-jb 2323f
-jmp 2324f
-2323:
-.base64 "uAIAAACJh0QcAAA="
-2324:
-jmp 2322f
-2321:
-.base64 "ifgFACEAALkUAQAAuoAAAAC7FAAAAIn+gcYAaQAAvQAIAABVVlNSUVA="
-call {vg_dsa_check_parameters}
-.base64 "WVlZWVlZg/gB"
-je 2325f
-jmp 2326f
-2325:
-.base64 "uAEAAACJh0QcAAA="
-2326:
-2322:
-2302:
-jmp 2300f
-2299:
-.base64 "uAIAAACJh0QcAAA="
-2300:
-2248:
-jmp 2246f
-2245:
-.base64 "uAIAAACJh0QcAAA="
-2246:
-.base64 "i4dEHAAAg/gA"
-je 2327f
-jmp 2328f
-2327:
-.base64 "i4ccHAAAiYdMHAAAi4cIHAAAg+gBiYcIHAAA"
-2328:
-jmp 2238f
-2237:
-.base64 "uAIAAACJh0QcAAA="
-2238:
-jmp 2236f
-2235:
-.base64 "uAMAAACJh0QcAAA="
-2236:
-.base64 "i4dEHAAAg/gA"
-je 2234b
-.base64 "i4dEHAAAg/gB"
-je 2329f
-.base64 "i7cAHAAAuRQBAAC4AAAAAA=="
-2331:
-.base64 "iAaDxgGD6QE="
-jne 2331b
-jmp 2330f
-2329:
-.base64 "i58AHAAAif6BxgAhAAC5FAEAAA=="
-2332:
-.base64 "D7YGiAODwwGDxgGD6QGD+QA="
-jne 2332b
-2330:
-.base64 "i4dEHAAAg/gB"
-je 2333f
-.base64 "i4dEHAAAg/gC"
-je 2335f
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLh0wcAACJA7gDAAAA"
-jmp 2336f
-2335:
-.base64 "i4cYHAAAi49MHAAAKcg9gABAAA=="
-jb 2337f
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLh0wcAACJA7gDAAAA"
-jmp 2338f
-2337:
-.base64 "PQCAAAA="
-jb 2339f
-jmp 2340f
-2339:
-.base64 "uACAAAA="
-2340:
-.base64 "AcA9gABAAA=="
-jb 2341f
-.base64 "uIAAQAA="
-jmp 2342f
-2341:
-2342:
-.base64 "icGLlwgcAACLnxAcAACJE4lLGLgAAAAAiUMEiUMci58MHAAAiUMEi4dMHAAAiQO4AAAAAA=="
-2338:
-2336:
-jmp 2334f
-2333:
-.base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLhxwcAACJA7gBAAAA"
-2334:
-21:
-.base64 "izwki3QkBItsJAhbW1tbww=="
-.p2align 6"#,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
-        vg_dsa_probable_prime_256 = sym super::dsa::vg_dsa_probable_prime_256::vg_dsa_probable_prime_256,
-        vg_dsa_probable_prime_3072 = sym super::dsa::vg_dsa_probable_prime_3072::vg_dsa_probable_prime_3072,
-        vg_dsa_pow_48_89 = sym super::dsa::vg_dsa_pow_48_89::vg_dsa_pow_48_89,
-        vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
-        vg_dsa_probable_prime_2048 = sym super::dsa::vg_dsa_probable_prime_2048::vg_dsa_probable_prime_2048,
-        vg_dsa_pow_32_57 = sym super::dsa::vg_dsa_pow_32_57::vg_dsa_pow_32_57,
-        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
-        vg_dsa_probable_prime_160 = sym super::dsa::vg_dsa_probable_prime_160::vg_dsa_probable_prime_160,
-        vg_dsa_probable_prime_1024 = sym super::dsa::vg_dsa_probable_prime_1024::vg_dsa_probable_prime_1024,
-        vg_dsa_pow_16_28 = sym super::dsa::vg_dsa_pow_16_28::vg_dsa_pow_16_28,
-    )
-}
-
 /// The CPU features `vg_dsa_parameter_search_sha1_shani_sha256_shani` requires (`Artifact.features`).
 pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
@@ -11419,8 +10468,8 @@ pub(crate) mod vg_dsa_reduce_3;
 pub(crate) mod vg_dsa_reduce_4;
 
 #[rustfmt::skip]
-#[path = "internal/vg_dsa_sign.rs"]
-pub(crate) mod vg_dsa_sign;
+#[path = "internal/vg_dsa_sign_prevalidated.rs"]
+pub(crate) mod vg_dsa_sign_prevalidated;
 
 #[rustfmt::skip]
 #[path = "internal/vg_miller_rabin_round.rs"]

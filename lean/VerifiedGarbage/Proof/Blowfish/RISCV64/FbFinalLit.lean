@@ -12,7 +12,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 
-/-! # Blowfish's final CFB functions on RISC-V, evaluated once -/
+/-! # Blowfish's final CFB and OFB functions on RISC-V, evaluated once -/
 
 @[expose] public section
 
@@ -20,5 +20,6 @@ namespace VG
 
 materialize_code Impl.Blowfish.RISCV64.cfbEncryptFinal
 materialize_code Impl.Blowfish.RISCV64.cfbDecryptFinal
+materialize_code Impl.Blowfish.RISCV64.ofbFinal
 
 end VG

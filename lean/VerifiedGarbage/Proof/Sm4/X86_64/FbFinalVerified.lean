@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
 public import VerifiedGarbage.Impl.Sm4.X86_64.FbFinal
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Spec.Sm4.CfbFinal
+public import VerifiedGarbage.Spec.Sm4.OfbFinal
 public import VerifiedGarbage.Proof.Modes.FbFinal
 public import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 public import VerifiedGarbage.Proof.Framework.Scratch
@@ -25,6 +26,7 @@ meta import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
 meta import VerifiedGarbage.Impl.Sm4.X86_64.FbFinal
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Spec.Sm4.CfbFinal
+meta import VerifiedGarbage.Spec.Sm4.OfbFinal
 meta import VerifiedGarbage.Proof.Modes.FbFinal
 meta import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
@@ -36,15 +38,16 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
-# SM4-CFB128 of a message's last piece on x86-64 meets its contracts
+# SM4-CFB128 and SM4-OFB of a message's last piece on x86-64 meet their contracts
 
-`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`: the modes' CFB over a message's
-last piece (`Proof.Modes.X86_64.fbFinal_wp`) over SM4's core
-(`dirCoreSpec .encrypt`), with the specification's results
-(`Proof.Modes.cfbEncFinal_of_bytes`, …). `cfbEncryptFinal_verified`, …:
-each is correct and constant time, by the taint analysis, as the
-whole-block functions are (`FbVerified.lean`); `cfbEncryptFinal_framed`, …
-run them with their working space on the stack, zeroed on return.
+`cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`, `ofbFinal_wp`: the modes' CFB and
+OFB over a message's last piece (`Proof.Modes.X86_64.fbFinal_wp`) over SM4's
+core (`dirCoreSpec .encrypt`), with the specification's results
+(`Proof.Modes.cfbEncFinal_of_bytes`, …, `Proof.Modes.ofbFinal_of_bytes`).
+`cfbEncryptFinal_verified`, …: each is correct and constant time, by the taint
+analysis, as the whole-block functions are (`FbVerified.lean`);
+`cfbEncryptFinal_framed`, … run them with their working space on the stack,
+zeroed on return.
 -/
 
 @[expose] public section
@@ -193,6 +196,46 @@ theorem cfbDecryptFinal_framed :
     (bytes := 3208) cfbDecryptFinal_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Modes.decFinalPost_local _)
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-! ## OFB of a message's last piece -/
+
+/-- The final OFB function's contract on x86-64: the data `len = rcx` bytes
+long, and the data and the IV as `Spec.Ofb.CryptFinal` says. -/
+def ofbFinalX86_64 : Contract isa where
+  pre := fbPre finalLen
+  post s s' := Spec.Ofb.CryptFinal (ciphOf s) 16 s.mem s'.mem (s.gpr .rsi) (s.gpr .rdx) (finalLen s)
+  pub := fbPub
+
+theorem ofbFinal_wp {s₀ : State} (hp : ofbFinalX86_64.pre s₀) :
+    WP isa ofbFinal s₀ fun s' => gprPreserved s₀ s' ∧ ofbFinalX86_64.post s₀ s' :=
+  WP.mono (fbFinal_wp' .ofb hp) fun s' ⟨hg, hd, hv⟩ => by
+    obtain ⟨h1, h2⟩ := Modes.ofbFinal_of_bytes (by decide) (cipher_length _) hd
+    exact ⟨hg, h1, hv.trans h2⟩
+
+theorem ofbFinal_ct : ConstantTime isa ofbFinalX86_64.pre ofbFinalX86_64.pub ofbFinal :=
+  (VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree finalLen_congr) (by taint_decide))
+
+theorem ofbFinal_verified :
+    Verified X86_64.target ofbFinal (Sig.scratchContract X86_64.abi finalSig "scratch" .u64 400
+      (Curry.const (fun _ => True) _) (Proof.Modes.ofbFinalPost ciphAt 16 X86_64.abi.ptrBits) true 8) :=
+  Verified.of_correct (k := ofbFinalX86_64) (fun s hs => by
+      obtain ⟨t, s', he, hg, hpost⟩ := ofbFinal_wp hs
+      exact ⟨t, s', he, abiPreserved_of_exec (c := ofbFinal) (by lit_decide) he hg, hpost⟩)
+    ofbFinal_ct (by
+    sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Proof.Modes.finalSig,
+      Proof.Modes.ofbFinalPost, ofbFinalX86_64, fbPre, fbPub, X86_64.abi, X86_64.argRegs, slots, savedSlot, tableEnd, tableSlot] [finalSat]
+      using finalSat)
+
+/-- The final OFB function with its working space on the stack. -/
+theorem ofbFinal_framed :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 ofbFinal)
+      (Spec.Sm4.ofbFinalContract X86_64.abi 3216) :=
+  X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.ofbFinalSig) (nm := "scratch") (e := .u64)
+    (n := 400) (post := Proof.Modes.ofbFinalPost ciphAt 16 X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 3208) ofbFinal_verified (by decide) (by decide) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Proof.Modes.ofbFinalPost_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sm4.X86_64

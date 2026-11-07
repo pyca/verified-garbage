@@ -23,23 +23,10 @@
 use alloc::vec;
 use core::fmt;
 
-#[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_keygen::vg_rsa_generate_adx;
-#[cfg(all(
-    target_arch = "arm",
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    )
-))]
-use crate::arch::rsa_keygen::vg_rsa_generate_umaal;
-use crate::arch::rsa_keygen::{vg_rsa_generate, vg_rsa_generate_init};
-use crate::cpu::detected;
+use crate::arch::dispatch::rsa_keygen::vg_rsa_generate_auto;
+use crate::arch::rsa_keygen::vg_rsa_generate_init;
 use crate::entropy::{Step, Stop, serve};
-use crate::rsa::{Backend, BigUint, PrivateKey};
+use crate::rsa::{BigUint, PrivateKey};
 
 /// Why a key was not generated.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -132,23 +119,6 @@ fn generate_counted(
         0 => return (Err(Error::InvalidExponent), 0),
         _ => return (Err(Error::InvalidModulusLength), 0),
     }
-    let f = match Backend::select(detected()) {
-        Backend::Baseline => vg_rsa_generate,
-        // `select` chose it because the CPU has the features it needs.
-        #[cfg(target_arch = "x86_64")]
-        Backend::Adx | Backend::Ifma => vg_rsa_generate_adx,
-        #[cfg(all(
-            target_arch = "arm",
-            any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd"
-            )
-        ))]
-        Backend::Umaal => vg_rsa_generate_umaal,
-    };
     let len = state[1] as usize;
     let mut key = vec![0u8; 9 * len];
     let mut scratch = vec![0u64; crate::rsa::scratch_words(2 * len)];
@@ -161,10 +131,10 @@ fn generate_counted(
         // or from the last call, with the same `key`, which returned 0;
         // `key_len` is `9 state[1]`; the tape is as long as the length
         // `state[3]` asked for, which is at most the budget, `state[2]`;
-        // `scratch_len` is `32 state[1] + 32`; and the CPU has the features
-        // of the function `select` chose.
+        // `scratch_len` is `32 state[1] + 32`; and the dispatcher calls only
+        // an implementation the CPU has the features of.
         status = unsafe {
-            f(
+            vg_rsa_generate_auto(
                 key.as_mut_ptr(),
                 key.len(),
                 &mut used,

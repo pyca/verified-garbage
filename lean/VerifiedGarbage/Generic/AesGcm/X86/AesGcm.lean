@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86.OpenTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
@@ -51,27 +53,6 @@ open VG.Proof.AesGcm.X86
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  Spec.Gcm.initApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesGcm.X86.init v.callees)
-    stack := 2608
-    verified := init_framed v
-    spSafe := withStackScratch_spSafe (init_spSafe v)
-    features := (v.ctr.features) },
-  Spec.Gcm.streamAadApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch 2592 6 (Impl.AesGcm.X86.streamAad v.callees)
-    stack := 2616
-    verified := streamAad_framed v
-    spSafe := withStackScratch_spSafe (streamAad_spSafe v)
-    features := v.gh.features },
-  Spec.Gcm.streamInitApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch 2584 4 (Impl.AesGcm.X86.streamInit v.callees)
-    stack := 2608
-    verified := streamInit_framed v
-    spSafe := withStackScratch_spSafe (streamInit_spSafe v)
-    features := v.gh.features },
   Spec.Gcm.streamEncryptApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamEncrypt v.callees)
@@ -125,7 +106,18 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
     spSafe := Gather.sealGather_spSafe v
     features := v.features }]
 
+/-- `vg_aes_gcm_open_to`, calling the instance of `vg_aes_gcm_open` of the implementations `v`. -/
+def artifactsOpenTo (v : GcmImpl) : List Artifact := [
+  Spec.Gcm.openToApi.artifact X86.target {
+    suffix := v.suffix
+    code := Impl.AesGcm.X86.OpenTo.openTo (OpenTo.openFn v).name (OpenTo.openFn v).code
+    stack := 2688
+    verified := Proof.AesGcm.openTo_keyed (OpenTo.openTo_verified (OpenTo.openFn v))
+    spSafe := OpenTo.openTo_spSafe v
+    features := v.features }]
+
 /-- The artifacts of a variant, from the implementations it names. -/
-def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl ++ artifactsGather v.impl
+def artifacts (v : GcmVariant) : List Artifact :=
+  artifactsOf v.impl ++ artifactsGather v.impl ++ artifactsOpenTo v.impl
 
 end VG.Generic.AesGcm.X86.AesGcm

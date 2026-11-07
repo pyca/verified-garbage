@@ -8,8 +8,10 @@ vg_chacha20_xor:
 	str x19, [x3, #256]
 	str x20, [x3, #264]
 	str x30, [x3, #272]
+	str x27, [x3, #280]
 	add x19, x1, #0
 	add x20, x2, #0
+	add x27, x4, #0
 	add x1, x3, #0
 	cbz x20, 20f
 22:
@@ -27,8 +29,9 @@ vg_chacha20_xor:
 	ldrb w6, [x19, #0]
 	ldrb w8, [x7, #0]
 	eor w6, w6, w8
-	strb w6, [x19, #0]
+	strb w6, [x27, #0]
 	add x19, x19, #1
+	add x27, x27, #1
 	add x7, x7, #1
 	sub x2, x2, #1
 	cbnz x2, 25b
@@ -42,5 +45,6 @@ vg_chacha20_xor:
 	ldr x19, [x1, #256]
 	ldr x20, [x1, #264]
 	ldr x30, [x1, #272]
+	ldr x27, [x1, #280]
 	ret
 	.p2align 6

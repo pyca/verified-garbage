@@ -23,7 +23,7 @@ namespace VG.Proof.ChaCha20.AArch64.Neon4
 
 open VG VG.AArch64
 open VG.Proof.ChaCha20 (ctr length_keystream keystream_getD bytesAt_xor xorAArch64)
-open VG.Proof.ChaCha20.AArch64.Xor (XPre st dp L bp stR dR bR S0 D0 KS)
+open VG.Proof.ChaCha20.AArch64.Xor (st dp L bp stR dR bR S0 D0 KS)
 open VG.Spec.ChaCha20 (stateAt keystream bytesAt)
 
 abbrev tailR (s₀ : State) (t : Nat) : Region :=

@@ -28,8 +28,8 @@ namespace VG.Proof.ChaCha20Poly1305.AArch64.Stitch
 
 open VG VG.AArch64 VG.Impl.ChaCha20Poly1305.AArch64.Stitch VG.Impl.ChaCha20Poly1305.AArch64
 open VG.Proof.ChaCha20.AArch64 (Words not_words_x1 not_words_x0 not_words_preserved)
-open VG.Proof.ChaCha20.AArch64.Mixed8 (CP Prepared Second Spilled2 Finished Chunked source sr
-  lowBuf scalarBuf prepare_ok second_ok spill2_ok finish_ok last_ok)
+open VG.Proof.ChaCha20.AArch64.Mixed8 (CP Prepared Second Spilled2 FinishedFrom ChunkedFrom SrcOK source sr
+  br dr lowBuf scalarBuf prepare_ok second_ok spill2_ok finishFrom_ok lastFrom_ok)
 open VG.Proof.ChaCha20 (ctr)
 open VG.Spec.ChaCha20 (innerBlock)
 open VG.Spec.Poly1305 (bytesAt)
@@ -37,8 +37,9 @@ open VG.Proof.Poly1305 (absorbAll)
 
 variable {sve : Bool}
 
-/-- The accumulator's registers, apart from the pointer `x20`. -/
-abbrev accRegs : List Reg := [.x21, .x22, .x23, .x24, .x25, .x27, .x28, .x30]
+/-- The accumulator's registers, apart from the pointer `x20` and `x27`, which
+each phase sets back to the chunk's source (`Stitch.back`). -/
+abbrev accRegs : List Reg := [.x21, .x22, .x23, .x24, .x25, .x28, .x30]
 
 /-- `s₀` with the accumulator's registers of `u`. -/
 def rebase (s₀ u : State) : State :=
@@ -77,17 +78,33 @@ theorem source_rebase (s₀ u : State) : source (rebase s₀ u) = source s₀ :=
 abbrev dataOf (enc : Bool) (B : Addr) : Addr := B + BitVec.ofNat 64 (if enc then 512 else 0)
 
 theorem start_ok (enc : Bool) (half : Nat) (hh : half ≤ 1) (B : Addr) (s : State)
-    (hx : s.gpr .x26 = dataOf enc B) :
+    (hx : enc = true → s.gpr .x26 = dataOf true B) (hx27 : enc = false → s.gpr .x27 = B) :
     exec (start enc half) s = some (s.write .x .x20 (B + BitVec.ofNat 64 (256 * half))) := by
   cases enc
   · simp only [start, Bool.false_eq_true, ite_false]
     rw [exec_addImm_x (by omega)]
-    simp only [State.read, BitVec.setWidth_eq, hx, dataOf, Bool.false_eq_true, ite_false,
-      BitVec.add_zero]
+    simp only [State.read, BitVec.setWidth_eq, hx27 rfl]
   · simp only [start, ite_true]
     rw [exec_subImm_x (by omega)]
-    simp only [State.read, BitVec.setWidth_eq, hx, dataOf, ite_true]
+    simp only [State.read, BitVec.setWidth_eq, hx rfl, dataOf, ite_true]
     rw [Offset.add_ofNat_sub B (by omega), show 512 - (512 - 256 * half) = 256 * half by omega]
+
+/-- `x27` set back to the chunk's source after phase `half`, which absorbed the
+256 bytes from `B + 256 half`: when decrypting, `B`; when encrypting, in place,
+the chunk's data, `x26`. -/
+theorem back_ok (enc : Bool) (half : Nat) (hh : half ≤ 1) (B X : Addr) (w : State)
+    (hx20 : w.gpr .x20 = B + BitVec.ofNat 64 (256 * half) + BitVec.ofNat 64 256)
+    (hX : X = if enc then w.gpr .x26 else B) :
+    exec (back enc half) w = some (w.write .x .x27 X) := by
+  cases enc
+  · simp only [back, Bool.false_eq_true, ite_false] at hX ⊢
+    rw [exec_subImm_x (by omega)]
+    simp only [State.read, BitVec.setWidth_eq, hx20, hX]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 256 * half + 256 = 256 * (half + 1) by omega,
+      BitVec.add_sub_cancel]
+  · simp only [back, ite_true] at hX ⊢
+    rw [exec_addImm_x (by decide)]
+    simp only [State.read, BitVec.setWidth_eq, BitVec.add_zero, hX]
 
 /-- The phase's precondition, from a stage of the kernel. -/
 theorem readable_of {B : Addr} {n : Nat} {s₀ s : State} (hr : ∀ d, d + 8 ≤ n →
@@ -99,13 +116,18 @@ theorem readable_of {B : Addr} {n : Nat} {s₀ s : State} (hr : ∀ d, d + 8 ≤
   ⟨fun d hd => by rw [hrd, hwr]; exact hr d hd, by rw [hrd, hwr, hx0]; exact hk0,
     by rw [hrd, hwr, hx0]; exact hk1⟩
 
+theorem not_poly {r : Reg} (ha : r ∉ accRegs) (h20 : r ≠ .x20) (h27 : r ≠ .x27) : r ∉ Poly.regs := by
+  intro hm
+  simp only [Poly.regs, accRegs, List.mem_cons, List.not_mem_nil, or_false] at hm ha
+  rcases hm with h' | h' | h' | h' | h' | h' | h' | h' | h' <;> simp_all
+
 /-- After the first phase. -/
 theorem prepared_rebase {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.ChaCha20.State}
     {R a : Nat} {W : Addr} {n : Nat} {s₀ s u : State}
     (hx : s₀.gpr .x20 = s₀.gpr .x0 + 64#64) (h : Prepared s₀ s)
     (hb : blocks = fun j => Nat.repeat innerBlock 0 (ctr (source s₀) j))
     (hv : v = Nat.repeat innerBlock (2 * 0) (ctr (source s₀) 6))
-    (hd : Done blocks v R a W n .x26 s u) : Prepared (rebase s₀ u) u 5 := by
+    (hd : Done blocks v R a W n .x26 (s₀.gpr .x27) s u) : Prepared (rebase s₀ u) u 5 := by
   subst hb hv
   have hx0 : s.gpr .x0 = s₀.gpr .x0 := h.keep _ not_words_x0 (by decide) (by decide)
   have hsrc : source u = source s := by
@@ -129,21 +151,13 @@ theorem prepared_rebase {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.C
       exact h.saved.data
     by_cases h20 : r = .x20
     · subst r; rw [hd.x20, hx0, hx]
-    have hp' : r ∉ Poly.regs := by
-      intro hm
-      rcases List.mem_cons.mp hm with h' | h'
-      · exact h20 h'
-      · exact ha h'
-    rw [hd.keep r hw h1 hp']
+    by_cases h27 : r = .x27
+    · subst r; exact hd.x27
+    rw [hd.keep r hw h1 (not_poly ha h20 h27)]
     exact h.keep r hw h19 h26
   · rw [hd.mem]
     simpa only [sr, rebase_mem, rebase_of (show Reg.x0 ∉ accRegs by decide)] using h.frame
 
-theorem not_poly {r : Reg} (ha : r ∉ accRegs) (h20 : r ≠ .x20) : r ∉ Poly.regs := by
-  intro hm
-  rcases List.mem_cons.mp hm with h' | h'
-  · exact h20 h'
-  · exact ha h'
 
 /-- After the second phase. -/
 theorem second_rebase {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.ChaCha20.State}
@@ -151,7 +165,7 @@ theorem second_rebase {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.Cha
     (hx : s₀.gpr .x20 = s₀.gpr .x0 + 64#64) (h : Second s₀ s)
     (hb : blocks = fun j => Nat.repeat innerBlock 5 (ctr (source s₀) j))
     (hv : v = Nat.repeat innerBlock (2 * 0) (ctr (source s₀) 7))
-    (hd : Done blocks v R a W n .x20 s u) : Second (rebase s₀ u) u 5 := by
+    (hd : Done blocks v R a W n .x20 (s₀.gpr .x27) s u) : Second (rebase s₀ u) u 5 := by
   subst hb hv
   have hx0 : s.gpr .x0 = s₀.gpr .x0 := h.keep _ not_words_x0 (by decide) (by decide) (by decide)
   have hsrc : source u = source s := by
@@ -181,7 +195,9 @@ theorem second_rebase {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.Cha
     rw [rebase_of ha]
     by_cases h20' : r = .x20
     · subst r; rw [h20, ← hp.x20]
-    rw [hd.keep r hw h1 (not_poly ha h20')]
+    by_cases h27 : r = .x27
+    · subst r; exact hd.x27
+    rw [hd.keep r hw h1 (not_poly ha h20' h27)]
     exact h.keep r hw h1 h19 h26
   · rw [hd.x1, h20, rebase_of (by decide)]
   · rw [hd.mem]
@@ -235,14 +251,21 @@ theorem Acc.frame {R a : Nat} {s u : State} (h : Acc R a s)
 
 /-- What a chunk needs, absorbing the `n₀` bytes from `B₀` and the `n₁` from
 `B₁` (as the phases' starts, `st₀` and `st₁`, point `x20` at them, from the
-chunk's saved arguments: its data in `x26`, its length in `x19`). -/
-structure ChunkPreW (st₀ st₁ : Instr) (B₀ B₁ : Addr) (n₀ n₁ : Nat) (s : State) : Prop where
+chunk's saved arguments, its data in `x26` and its length in `x19`, or its
+source in `x27`, which the phases' ends, `bk₀` and `bk₁`, set back), and
+XORing the source at `r` into the data. -/
+structure ChunkPreW (st₀ st₁ bk₀ bk₁ : Instr) (r : Reg) (B₀ B₁ : Addr) (n₀ n₁ : Nat) (s : State) : Prop where
   cp : CP s
   x20 : s.gpr .x20 = s.gpr .x0 + 64#64
-  st₀ : ∀ u : State, u.gpr .x19 = s.gpr .x2 → u.gpr .x26 = s.gpr .x1 →
+  st₀ : ∀ u : State, u.gpr .x19 = s.gpr .x2 → u.gpr .x26 = s.gpr .x1 → u.gpr .x27 = s.gpr .x27 →
     exec st₀ u = some (u.write .x .x20 B₀)
-  st₁ : ∀ u : State, u.gpr .x19 = s.gpr .x2 → u.gpr .x26 = s.gpr .x1 →
+  st₁ : ∀ u : State, u.gpr .x19 = s.gpr .x2 → u.gpr .x26 = s.gpr .x1 → u.gpr .x27 = s.gpr .x27 →
     exec st₁ u = some (u.write .x .x20 B₁)
+  bk₀ : ∀ w : State, w.gpr .x20 = B₀ + BitVec.ofNat 64 n₀ → w.gpr .x26 = s.gpr .x1 →
+    exec bk₀ w = some (w.write .x .x27 (s.gpr .x27))
+  bk₁ : ∀ w : State, w.gpr .x20 = B₁ + BitVec.ofNat 64 n₁ → w.gpr .x26 = s.gpr .x1 →
+    exec bk₁ w = some (w.write .x .x27 (s.gpr .x27))
+  src : SrcOK r s
   blk₀ : ∀ d, d + 8 ≤ n₀ → InRegions (s.rd ++ s.wr) (B₀ + BitVec.ofNat 64 d) 8
   blk₁ : ∀ d, d + 8 ≤ n₁ → InRegions (s.rd ++ s.wr) (B₁ + BitVec.ofNat 64 d) 8
   k0 : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 Poly.r0Off) 8
@@ -252,6 +275,17 @@ structure ChunkPreW (st₀ st₁ : Instr) (B₀ B₁ : Addr) (n₀ n₁ : Nat) (
   le₀ : n₀ ≤ 2 ^ 64
   le₁ : n₁ ≤ 2 ^ 64
   key : ∀ r ∈ [sr s, scalarBuf s, VG.Proof.ChaCha20.AArch64.Mixed8.dr s], (keyR s).Disjoint r
+
+/-- A chunk's source, for states with the accumulator's registers of `u`. -/
+theorem srcOK_rebase {r : Reg} {s : State} (h : SrcOK r s) (u : State) : SrcOK r (rebase s u) := by
+  have hr : (rebase s u).gpr r = s.gpr r := by
+    rcases h.reg with rfl | rfl <;> exact rebase_of (by decide)
+  have e0 : (rebase s u).gpr .x0 = s.gpr .x0 := rebase_of (by decide)
+  have e1 : (rebase s u).gpr .x1 = s.gpr .x1 := rebase_of (by decide)
+  have e3 : (rebase s u).gpr .x3 = s.gpr .x3 := rebase_of (by decide)
+  exact ⟨h.reg, by simpa only [hr, rebase_rd, rebase_wr] using h.src,
+    by simpa only [sr, hr, e0] using h.st_s, by simpa only [br, hr, e3] using h.s_b,
+    by simpa only [dr, hr, e1] using h.alias⟩
 
 /-- The key's words, in a state that has written only regions disjoint from
 the key since `s`. -/
@@ -264,10 +298,11 @@ theorem acc_regs_keep {s u : State} (h : ∀ r ∈ accRegs, u.gpr r = s.gpr r) :
     ∀ r ∈ [Reg.x21, .x22, .x23], u.gpr r = s.gpr r := fun r hr =>
   h r ((show ∀ r ∈ [Reg.x21, .x22, .x23], r ∈ accRegs by decide) r hr)
 
-theorem chunkWith_ok {st₀ st₁ : Instr} {l₀ k₀ l₁ k₁ : Nat} {R a : Nat} {B₀ B₁ : Addr} (s : State)
-    (hp : ChunkPreW st₀ st₁ B₀ B₁ (16 * (l₀ + 5 * k₀)) (16 * (l₁ + 5 * k₁)) s) (ha : Acc R a s) :
-    WP isa (chunkWith sve st₀ st₁ l₀ k₀ l₁ k₁) s fun g =>
-      Chunked (rebase s g) g ∧ Acc R (absorbAll R a (bytesAt s.mem B₀ (16 * (l₀ + 5 * k₀)) ++
+theorem chunkWith_ok {st₀ st₁ bk₀ bk₁ : Instr} {r : Reg} {l₀ k₀ l₁ k₁ : Nat} {R a : Nat} {B₀ B₁ : Addr}
+    (s : State) (hp : ChunkPreW st₀ st₁ bk₀ bk₁ r B₀ B₁ (16 * (l₀ + 5 * k₀)) (16 * (l₁ + 5 * k₁)) s)
+    (ha : Acc R a s) :
+    WP isa (chunkWith sve st₀ st₁ l₀ k₀ l₁ k₁ bk₀ bk₁ r) s fun g =>
+      ChunkedFrom r (rebase s g) g ∧ Acc R (absorbAll R a (bytesAt s.mem B₀ (16 * (l₀ + 5 * k₀)) ++
         bytesAt s.mem B₁ (16 * (l₁ + 5 * k₁)))) g := by
   have hcp := hp.cp
   have hkey (rs : List Region) (h : ∀ r ∈ rs, r ∈ [sr s, scalarBuf s, VG.Proof.ChaCha20.AArch64.Mixed8.dr s]) :
@@ -285,8 +320,11 @@ theorem chunkWith_ok {st₀ st₁ : Instr} {l₀ k₀ l₁ k₁ : Nat} {R a : Na
     readable_of hp.blk₀ hp.k0 hp.k1 hpa.rd hpa.wr x0a
   -- The first phase.
   apply WP.seq
+  have x27a : pa.gpr .x27 = s.gpr .x27 :=
+    hpa.keep _ (not_words_preserved (by decide)) (by decide) (by decide)
   refine (phaseWith_ok (W := B₀) (len := 16 * (l₀ + 5 * k₀)) (Nat.le_refl _) hpa.vec hpa.scalar
-    hpa.table (hp.st₀ pa hpa.saved.len hpa.saved.data) accA rdA).mono fun pb hpb => ?_
+    hpa.table (hp.st₀ pa hpa.saved.len hpa.saved.data x27a)
+    (fun w h20 h26 => hp.bk₀ w h20 (h26.trans hpa.saved.data)) accA rdA).mono fun pb hpb => ?_
   have prB := prepared_rebase hp.x20 hpa rfl rfl hpb
   have hcp₁ := rebase_cp pb hcp
   -- The second block.
@@ -317,19 +355,25 @@ theorem chunkWith_ok {st₀ st₁ : Instr} {l₀ k₀ l₁ k₁ : Nat} {R a : Na
     readable_of hp.blk₁ hp.k0 hp.k1 (hpc.rd.trans (rebase_rd _ _)) (hpc.wr.trans (rebase_wr _ _)) x0c
   -- The second phase.
   apply WP.seq
+  have x27c : pc.gpr .x27 = s.gpr .x27 :=
+    (hpc.keep _ (not_words_preserved (by decide)) (by decide) (by decide) (by decide)).trans
+      (rebase_of (by decide))
   refine (phaseWith_ok (W := B₁) (len := 16 * (l₁ + 5 * k₁)) (Nat.le_refl _) hpc.vec hpc.scalar
-    hpc.table (hp.st₁ pc x19c x26c) accC rdC).mono fun pd hpd => ?_
+    hpc.table (hp.st₁ pc x19c x26c x27c) (fun w h20 h26 => hp.bk₁ w h20 (h26.trans x26c)) accC rdC).mono
+    fun pd hpd => ?_
   have hcp₂ := rebase_cp pd hcp₁
   have hx₁ : (rebase s pb).gpr .x20 = (rebase s pb).gpr .x0 + 64#64 := by
     rw [rebase_of (by decide), rebase_of (by decide)]; exact hp.x20
-  have seD := second_rebase hcp₁ hx₁ hpc (by rw [source_rebase]) (by rw [source_rebase]) hpd
+  have seD := second_rebase hcp₁ hx₁ hpc (by rw [source_rebase]) (by rw [source_rebase])
+    (by rw [rebase_of (show Reg.x27 ∉ accRegs by decide)]; exact hpd)
   rw [rebase_rebase] at seD hcp₂
+  have hsr₂ : SrcOK r (rebase s pd) := srcOK_rebase hp.src pd
   -- The rest of the kernel's chunk.
   apply WP.seq
   refine (spill2_ok hcp₂ seD).mono fun pe hpe => ?_
   apply WP.seq
-  refine (finish_ok hcp₂ hpe).mono fun pf hpf => ?_
-  refine (last_ok hcp₂ hpf).mono fun pg hpg => ?_
+  refine (finishFrom_ok r hcp₂ hsr₂ hpe).mono fun pf hpf => ?_
+  refine (lastFrom_ok r hcp₂ hsr₂ hpf).mono fun pg hpg => ?_
   have hacc : ∀ r ∈ accRegs, pg.gpr r = pd.gpr r := fun r hr =>
     (hpg.cs r (acc_preserved r hr).1 (acc_preserved r hr).2.1 (acc_preserved r hr).2.2.1).trans
       (rebase_acc hr)
@@ -364,11 +408,15 @@ theorem chunkWith_ok {st₀ st₁ : Instr} {l₀ k₀ l₁ k₁ : Nat} {R a : Na
   rw [← Poly1305.absorbAll_append hl] at accG
   exact accG
 
-/-- What a chunk needs. -/
+/-- What a chunk needs: it absorbs the 512 bytes from `B` (the source,
+at `x27`, when decrypting; the output before the destination, at `x1`, which
+is also the source, when encrypting in place). -/
 structure ChunkPre (enc : Bool) (B : Addr) (s : State) : Prop where
   cp : CP s
   x20 : s.gpr .x20 = s.gpr .x0 + 64#64
-  x1 : s.gpr .x1 = dataOf enc B
+  x27 : s.gpr .x27 = dataOf enc B
+  x1 : enc = true → s.gpr .x1 = s.gpr .x27
+  src : SrcOK .x27 s
   blk : ∀ d, d + 8 ≤ 512 → InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 d) 8
   k0 : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 Poly.r0Off) 8
   k1 : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 Poly.r1Off) 8
@@ -378,7 +426,7 @@ structure ChunkPre (enc : Bool) (B : Addr) (s : State) : Prop where
 theorem chunk_ok (enc : Bool) {R a : Nat} {B : Addr} (s : State) (hp : ChunkPre enc B s)
     (ha : Acc R a s) :
     WP isa (chunk sve enc) s fun g =>
-      Chunked (rebase s g) g ∧ Acc R (absorbAll R a (bytesAt s.mem B 512)) g := by
+      ChunkedFrom .x27 (rebase s g) g ∧ Acc R (absorbAll R a (bytesAt s.mem B 512)) g := by
   have hwin (k : Nat) (hk : k ≤ 1) : (⟨B + BitVec.ofNat 64 (256 * k), 256⟩ : Region).Sub ⟨B, 512⟩ :=
     Offset.sub_base _ (by omega)
   have hb (k : Nat) (hk : k ≤ 1) : ∀ d, d + 8 ≤ 16 * (1 + 5 * 3) →
@@ -386,11 +434,27 @@ theorem chunk_ok (enc : Bool) {R a : Nat} {B : Addr} (s : State) (hp : ChunkPre 
     intro d hd
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     exact hp.blk _ (by omega)
-  have pre : ChunkPreW (start enc 0) (start enc 1) (B + BitVec.ofNat 64 (256 * 0))
-      (B + BitVec.ofNat 64 (256 * 1)) (16 * (1 + 5 * 3)) (16 * (1 + 5 * 3)) s :=
-    ⟨hp.cp, hp.x20, fun u _ hx => start_ok enc 0 (by decide) B u (hx.trans hp.x1),
-      fun u _ hx => start_ok enc 1 (by decide) B u (hx.trans hp.x1), hb 0 (by decide),
-      hb 1 (by decide), hp.k0, hp.k1,
+  -- The chunk's data (`x26` in its phases) and source (`x27`).
+  have hst (k : Nat) (hk : k ≤ 1) : ∀ u : State, u.gpr .x19 = s.gpr .x2 → u.gpr .x26 = s.gpr .x1 →
+      u.gpr .x27 = s.gpr .x27 →
+      exec (start enc k) u = some (u.write .x .x20 (B + BitVec.ofNat 64 (256 * k))) := by
+    intro u _ h26 h27
+    cases enc
+    · exact start_ok false k hk B u (fun h => nomatch h)
+        (fun _ => by rw [h27, hp.x27]; simp only [dataOf, Bool.false_eq_true, ite_false, BitVec.add_zero])
+    · exact start_ok true k hk B u (fun _ => by rw [h26, hp.x1 rfl, hp.x27]) (fun h => nomatch h)
+  have hbk (k : Nat) (hk : k ≤ 1) : ∀ w : State,
+      w.gpr .x20 = B + BitVec.ofNat 64 (256 * k) + BitVec.ofNat 64 (16 * (1 + 5 * 3)) →
+      w.gpr .x26 = s.gpr .x1 → exec (back enc k) w = some (w.write .x .x27 (s.gpr .x27)) := by
+    intro w h20 h26
+    refine back_ok enc k hk B _ w h20 ?_
+    cases enc
+    · simp only [Bool.false_eq_true, ite_false, hp.x27, dataOf, BitVec.add_zero]
+    · simp only [ite_true, h26, hp.x1 rfl]
+  have pre : ChunkPreW (start enc 0) (start enc 1) (back enc 0) (back enc 1) .x27
+      (B + BitVec.ofNat 64 (256 * 0)) (B + BitVec.ofNat 64 (256 * 1)) (16 * (1 + 5 * 3)) (16 * (1 + 5 * 3)) s :=
+    ⟨hp.cp, hp.x20, hst 0 (by decide), hst 1 (by decide), hbk 0 (by decide), hbk 1 (by decide), hp.src,
+      hb 0 (by decide), hb 1 (by decide), hp.k0, hp.k1,
       fun r hr => (hp.win r hr).sub_left (hwin 0 (by decide)),
       fun r hr => (hp.win r hr).sub_left (hwin 1 (by decide)), by decide, by decide, hp.key⟩
   refine (chunkWith_ok s pre ha).mono fun g ⟨hg, hag⟩ => ⟨hg, ?_⟩

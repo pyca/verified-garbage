@@ -24,7 +24,7 @@ public import VerifiedGarbage.TCB.Artifact
 namespace VG.Proof.ChaCha20.AArch64.Rows6
 open VG VG.AArch64 VG.Impl.ChaCha20.AArch64.Rows6
 open VG.Proof.ChaCha20 (xorAArch64)
-open VG.Proof.ChaCha20.AArch64.Xor (XPre st dp L bp stR dR bR)
+open VG.Proof.ChaCha20.AArch64.Xor (st dp L bp stR dR bR)
 open VG.Spec.ChaCha20 (stateAt bytesAt)
 
 /-- The six other callee-saved vectors are never destinations. -/

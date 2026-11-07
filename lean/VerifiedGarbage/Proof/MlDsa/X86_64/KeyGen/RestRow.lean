@@ -133,7 +133,7 @@ include hP hF hp hi
 
 /-- `t = NTT⁻¹(Σⱼ Â[i, j] ŝ₁[j])`. -/
 theorem dot_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State} (h : KR p σ A S R (p.ℓ + p.k) p.ℓ i s) :
-    WP isa (dotInvAt P.sfx (P.dotInv p.ℓ) p.ℓ (tP p) (aP (p.ℓ * i)) (sP p 0)) s fun s' =>
+    WP isa (dotInvAt P.asfx (P.dotInv p.ℓ) p.ℓ (tP p) (aP (p.ℓ * i)) (sP p 0)) s fun s' =>
       KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => nttInv (dotK p A S i p.ℓ)) A S s' := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   have hx0 := idx_lt (j := 0) hi (by omega_arith)
@@ -157,7 +157,7 @@ theorem dot_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
 /-- `t = t + s₂[i]`. -/
 theorem addS2_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
     (h : KR p σ A S R (p.ℓ + p.k) p.ℓ i s) (ht : tIs p (fun A S => nttInv (dotK p A S i p.ℓ)) A S s) :
-    WP isa (addAt P.sfx P.add (tP p) (sP p (p.ℓ + i))) s fun s' =>
+    WP isa (addAt P.asfx P.add (tP p) (sP p (p.ℓ + i))) s fun s' =>
       KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => tK p A S i) A S s' := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   dsimp only [tIs] at ht
@@ -256,7 +256,7 @@ variable {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {i : Nat} (hi
 include hP hF hi
 
 theorem dot_piece : Piece p (KRx p (p.ℓ + p.k) p.ℓ i) (RowI p i (tIs p fun A S => nttInv (dotK p A S i p.ℓ)))
-    (dotInvAt P.sfx (P.dotInv p.ℓ) p.ℓ (tP p) (aP (p.ℓ * i)) (sP p 0)) := by
+    (dotInvAt P.asfx (P.dotInv p.ℓ) p.ℓ (tP p) (aP (p.ℓ * i)) (sP p 0)) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   have hx0 := idx_lt (j := 0) hi (by omega_arith)
   rw [Nat.add_zero] at hx0
@@ -272,7 +272,7 @@ theorem dot_piece : Piece p (KRx p (p.ℓ + p.k) p.ℓ i) (RowI p i (tIs p fun A
     (show Reg.rbx ∈ kgRegs by decide)
 
 theorem addS2_piece : Piece p (RowI p i (tIs p fun A S => nttInv (dotK p A S i p.ℓ)))
-    (RowI p i (tIs p fun A S => Proof.MlDsa.KeyGen.tK p A S i)) (addAt P.sfx P.add (tP p) (sP p (p.ℓ + i))) := by
+    (RowI p i (tIs p fun A S => Proof.MlDsa.KeyGen.tK p A S i)) (addAt P.asfx P.add (tP p) (sP p (p.ℓ + i))) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   refine ⟨fun _ _ hp ⟨A, S, R, h, ht⟩ => WP.mono (addS2_ok hP hF hp hi h ht) fun _ h => ⟨A, S, R, h⟩, ?_⟩
   refine rel_of (Q := fun x y => Two p x y ∧ (Reduced x.mem (pa x (tP p)) ∧ Reduced x.mem (pa x (sP p (p.ℓ + i)))) ∧

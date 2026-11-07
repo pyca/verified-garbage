@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Cast5.CfbFinal
 public import VerifiedGarbage.Proof.Modes.RISCV64.SeqFinal
 public import VerifiedGarbage.Impl.Cast5.RISCV64.FbFinal
 public import VerifiedGarbage.Spec.Cast5.CfbFinal
+public import VerifiedGarbage.Spec.Cast5.OfbFinal
 import VerifiedGarbage.Proof.Cast5.Table
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
@@ -15,6 +16,7 @@ meta import VerifiedGarbage.Proof.Cast5.CfbFinal
 meta import VerifiedGarbage.Proof.Modes.RISCV64.SeqFinal
 meta import VerifiedGarbage.Impl.Cast5.RISCV64.FbFinal
 meta import VerifiedGarbage.Spec.Cast5.CfbFinal
+meta import VerifiedGarbage.Spec.Cast5.OfbFinal
 meta import VerifiedGarbage.Proof.Cast5.Table
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Taint
@@ -22,12 +24,13 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Cast5.RISCV64.FbFinalLit
 
 /-!
-# CAST5-CFB64 of a message's last piece on RISC-V meets its contracts
+# CAST5-CFB64 and CAST5-OFB of a message's last piece on RISC-V meet their contracts
 
-`modeFn` (`ModesVerified.lean`) of the modes' CFB over a message's last
-piece (`Proof.Modes.RISCV64.cfbEncFinal_wp`, `cfbDecFinal_wp`) over CAST5's
-encryption core (`Mode.dirCoreSpec`) meets the contracts with the count of
-rounds (`Proof.Cast5.cfbEncryptFinalRoundsContract`, …) with `stack := 128`,
+`modeFn` (`ModesVerified.lean`) of the modes' CFB and OFB over a message's
+last piece (`Proof.Modes.RISCV64.cfbEncFinal_wp`, `cfbDecFinal_wp`,
+`ofbFinal_wp`) over CAST5's encryption core (`Mode.dirCoreSpec`) meet the
+contracts with the count of rounds (`Proof.Cast5.cfbEncryptFinalRoundsContract`,
+…, `Proof.Cast5.ofbFinalRoundsContract`) with `stack := 128`,
 the whole-block functions' frame, under the calling convention with the
 table, as the whole-block functions do: the proof's contract (`finalPC`) is
 `finalP` for the state without the table's region, whose precondition, with
@@ -74,6 +77,9 @@ def encFinalPost (s s' : State) : Prop :=
     (s.gpr .a4).toNat
 def decFinalPost (s s' : State) : Prop :=
   Spec.Cfb.DecryptFinal (Spec.Cast5.cipher (keyOf s) (rounds s)) 8 s.mem s'.mem (s.gpr .a2) (s.gpr .a3)
+    (s.gpr .a4).toNat
+def ofbFinalPost (s s' : State) : Prop :=
+  Spec.Ofb.CryptFinal (Spec.Cast5.cipher (keyOf s) (rounds s)) 8 s.mem s'.mem (s.gpr .a2) (s.gpr .a3)
     (s.gpr .a4).toNat
 
 section
@@ -168,6 +174,16 @@ theorem cfbDecryptFinal_correct (s : State) (hs : (finalPC decFinalPost).pre s) 
   rw [e1, e2, e3, h₁.mem] at h2
   exact h2
 
+theorem ofbFinal_correct (s : State) (hs : (finalPC ofbFinalPost).pre s) :
+    ∃ t s', Exec isa ofbFinal s t s' ∧ abiPreserved s s' ∧ ofbFinalPost s s' := by
+  refine modeFn_wp (roundsF_of hs) fun s₁ h₁ => WP.mono (Proof.Modes.RISCV64.ofbFinal_wp
+    (dirCoreSpec true _ (roundsF_of hs)) (seqPreF_of hs h₁ true) (keyArgsF_of hs h₁ true))
+    fun s' ⟨h1, h2, _⟩ => ⟨h₁.abi h1, ?_⟩
+  obtain ⟨e1, e2, e3⟩ := argsF_eq h₁
+  simp only [dirCore, dirCoreSpec, Proof.Cast5.dirCipher, ↓reduceIte] at h2
+  rw [e1, e2, e3, h₁.mem] at h2
+  exact h2
+
 /-! ## Constant time -/
 
 theorem cfbEncryptFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbEncryptFinal :=
@@ -175,6 +191,10 @@ theorem cfbEncryptFinal_constantTime (pre : State → Prop) : ConstantTime isa p
     (fun _ _ _ _ hp => modes_agree _ _ hp) (by taint_decide)
 
 theorem cfbDecryptFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbDecryptFinal :=
+  VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
+    (fun _ _ _ _ hp => modes_agree _ _ hp) (by taint_decide)
+
+theorem ofbFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub ofbFinal :=
   VG.Taint.constantTime (A := taintSym [s1234Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
     (fun _ _ _ _ hp => modes_agree _ _ hp) (by taint_decide)
 
@@ -249,6 +269,11 @@ theorem cfbDecFinal_implies : (finalPC decFinalPost).Implies
   final_implies [Proof.Cast5.cfbDecryptFinalRoundsContract, Spec.Cast5.cfbFinalSig, Spec.Cast5.cfbFinalPre,
     Proof.Cast5.cfbDecFinalPost, decFinalPost]
 
+theorem ofbFinal_implies : (finalPC ofbFinalPost).Implies
+    (Proof.Cast5.ofbFinalRoundsContract (abi.withConsts ecbConsts) frameBytes) := by
+  final_implies [Proof.Cast5.ofbFinalRoundsContract, Spec.Cast5.ofbFinalSig, Spec.Cast5.ofbFinalPre,
+    Proof.Cast5.ofbFinalPost, ofbFinalPost]
+
 /-! ## Verified -/
 
 theorem cfbEncryptFinal_verified : Verified target cfbEncryptFinal
@@ -258,5 +283,9 @@ theorem cfbEncryptFinal_verified : Verified target cfbEncryptFinal
 theorem cfbDecryptFinal_verified : Verified target cfbDecryptFinal
     (Proof.Cast5.cfbDecryptFinalRoundsContract (abi.withConsts ecbConsts) frameBytes) :=
   Verified.of_correct cfbDecryptFinal_correct (cfbDecryptFinal_constantTime _) cfbDecFinal_implies
+
+theorem ofbFinal_verified : Verified target ofbFinal
+    (Proof.Cast5.ofbFinalRoundsContract (abi.withConsts ecbConsts) frameBytes) :=
+  Verified.of_correct ofbFinal_correct (ofbFinal_constantTime _) ofbFinal_implies
 
 end VG.Proof.Cast5.RISCV64.Modes

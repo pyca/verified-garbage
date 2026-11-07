@@ -777,8 +777,6 @@ vg_shake128_squeeze:
 	ret
 	.option pop
 
-// vg_shake256_update: the function `vg_sha3_256_update`
-
 vg_shake256_finalize:
 	.option push
 	.option arch, +m, +c

@@ -64,7 +64,7 @@ pub unsafe fn vg_dsa_generate_key_auto(out: *mut u8, out_len: usize, used: *mut 
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_FEATURES`); `vg_dsa_parameter_search_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES`); or else `vg_dsa_parameter_search`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_shani_sha256_shani` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES`); `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_FEATURES`); `vg_dsa_parameter_search_mr_ifma` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES`); `vg_dsa_parameter_search_mr_adx` if the CPU supports its features (`VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES`); or else `vg_dsa_parameter_search`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -84,6 +84,11 @@ pub unsafe fn vg_dsa_generate_key_auto(out: *mut u8, out_len: usize, used: *mut 
 #[inline]
 pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_ifma(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
+    }
     if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_MR_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_shani_sha256_shani_mr_adx`'s, and the CPU
         // has the features it needs.
@@ -93,6 +98,11 @@ pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *
         // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_shani_sha256_shani`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_shani_sha256_shani(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
+    }
+    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_ifma(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
     }
     if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_SHA256_AVX2_MR_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2_mr_adx`'s, and the CPU
@@ -104,15 +114,10 @@ pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *
         // has the features it needs.
         return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_sha256_avx2(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
     }
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_MR_ADX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi_mr_adx`'s, and the CPU
+    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_IFMA_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_mr_ifma`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi_mr_adx(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
-    }
-    if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_AVX_BMI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_sha1_avx_bmi`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::dsa::vg_dsa_parameter_search_sha1_avx_bmi(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
+        return unsafe { crate::dsa::vg_dsa_parameter_search_mr_ifma(out, out_len, used, rand, rand_len, scratch, scratch_len, state) };
     }
     if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_MR_ADX_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_dsa_parameter_search_mr_adx`'s, and the CPU
@@ -208,7 +213,7 @@ pub unsafe fn vg_dsa_validate_private_key_auto(key: *const u8, key_len: usize, p
 #[allow(unused_imports)]
 pub use crate::dsa::vg_dsa_parameter_search_init as vg_dsa_parameter_search_init_auto;
 
-/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Returns exactly what vg_dsa_sign_random returns (`VG.Spec.Dsa.randomSignContract`): 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
+/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_dsa_sign_random_prevalidated_adx` if the CPU supports its features (`VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES`); or else `vg_dsa_sign_random_prevalidated`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///

@@ -24,56 +24,13 @@ use alloc::{vec, vec::Vec};
 use core::fmt;
 use core::sync::atomic::{AtomicU8, Ordering};
 
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    all(target_arch = "powerpc64", target_endian = "little"),
-    target_arch = "riscv64"
-)))]
-use crate::arch::dsa::vg_dsa_sign_random;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::dsa::{
-    VG_DSA_GENERATE_KEY_ADX_FEATURES, VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES,
-    VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES, VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES,
-    VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES, vg_dsa_sign_random_prevalidated_adx,
-    vg_dsa_validate_private_key_adx, vg_dsa_validate_public_key_adx,
-    vg_dsa_verify_prevalidated_adx,
+use crate::arch::dispatch::dsa::{
+    vg_dsa_sign_random_prevalidated_auto, vg_dsa_validate_private_key_auto,
+    vg_dsa_validate_public_key_auto, vg_dsa_verify_prevalidated_auto,
 };
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    all(target_arch = "powerpc64", target_endian = "little"),
-    target_arch = "riscv64"
-))]
-use crate::arch::dsa::{vg_dsa_sign_random_prevalidated, vg_dsa_validate_private_key};
-use crate::arch::dsa::{vg_dsa_validate_public_key, vg_dsa_verify_prevalidated};
-use crate::cpu::detected;
 use crate::entropy::{self, Step, Stop};
 use crate::error::InvalidSignature;
 use crate::zeroize::{Int, zeroize};
-use verified_garbage_cpu::Features;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Backend {
-    Baseline,
-    #[cfg(target_arch = "x86_64")]
-    Adx,
-}
-
-impl Backend {
-    fn select(_features: Features) -> Self {
-        #[cfg(target_arch = "x86_64")]
-        if _features.contains(VG_DSA_SIGN_RANDOM_PREVALIDATED_ADX_FEATURES)
-            && _features.contains(VG_DSA_VALIDATE_PRIVATE_KEY_ADX_FEATURES)
-            && _features.contains(VG_DSA_VALIDATE_PUBLIC_KEY_ADX_FEATURES)
-            && _features.contains(VG_DSA_VERIFY_PREVALIDATED_ADX_FEATURES)
-            && _features.contains(VG_DSA_GENERATE_KEY_ADX_FEATURES)
-        {
-            return Self::Adx;
-        }
-        Self::Baseline
-    }
-}
 
 struct Secret<T: Int>(Vec<T>);
 
@@ -113,7 +70,6 @@ pub struct PublicKey {
     packed: Vec<u8>,
     p_len: usize,
     q_len: usize,
-    backend: Backend,
     // 0 = unchecked, 1 = valid, 2 = invalid. The owned key bytes never change.
     validated: AtomicU8,
 }
@@ -124,7 +80,6 @@ impl Clone for PublicKey {
             packed: self.packed.clone(),
             p_len: self.p_len,
             q_len: self.q_len,
-            backend: self.backend,
             validated: AtomicU8::new(self.validated.load(Ordering::Relaxed)),
         }
     }
@@ -150,7 +105,6 @@ impl PublicKey {
             packed,
             p_len: p.len(),
             q_len: q.len(),
-            backend: Backend::select(detected()),
             validated: AtomicU8::new(0),
         })
     }
@@ -173,16 +127,12 @@ impl PublicKey {
         }
         let mut scratch = Secret(vec![0u64; 16 * self.p_len]);
         if validation == 0 {
-            let validate = match self.backend {
-                Backend::Baseline => vg_dsa_validate_public_key,
-                #[cfg(target_arch = "x86_64")]
-                Backend::Adx => vg_dsa_validate_public_key_adx,
-            };
             // SAFETY: import establishes widths, the key owns its immutable
             // bytes, and scratch is a separate allocation of 16*p_len words.
-            // CPU features select the backend.
+            // The dispatcher calls only an implementation the CPU has the
+            // features of.
             let valid = unsafe {
-                validate(
+                vg_dsa_validate_public_key_auto(
                     self.packed.as_ptr(),
                     self.packed.len(),
                     self.p_len,
@@ -200,34 +150,26 @@ impl PublicKey {
                 return Err(InvalidSignature);
             }
         }
-        macro_rules! verify {
-            ($function:path) => {
-                // SAFETY: import establishes all widths. The key owns its
-                // bytes; scratch is a fresh allocation, disjoint from every
-                // input, with the contract's 16*p_len words. Read-only inputs
-                // may overlap one another. CPU features select the backend.
-                unsafe {
-                    $function(
-                        self.packed.as_ptr(),
-                        self.packed.len(),
-                        self.p_len,
-                        self.q_len,
-                        signature.as_ptr(),
-                        signature.len(),
-                        digest.as_ptr(),
-                        digest.len(),
-                        scratch.0.as_mut_ptr(),
-                        scratch.0.len(),
-                    )
-                }
-            };
-        }
-        let result = match self.backend {
-            // SAFETY: successful validation above, or a cached result for the
-            // exact same immutable owned bytes, establishes the new precondition.
-            Backend::Baseline => verify!(vg_dsa_verify_prevalidated),
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => verify!(vg_dsa_verify_prevalidated_adx),
+        // SAFETY: successful validation above, or a cached result for the
+        // exact same immutable owned bytes, establishes the precondition.
+        // Import establishes all widths. The key owns its bytes; scratch is a
+        // fresh allocation, disjoint from every input, with the contract's
+        // 16*p_len words. Read-only inputs may overlap one another. The
+        // dispatcher calls only an implementation the CPU has the features
+        // of.
+        let result = unsafe {
+            vg_dsa_verify_prevalidated_auto(
+                self.packed.as_ptr(),
+                self.packed.len(),
+                self.p_len,
+                self.q_len,
+                signature.as_ptr(),
+                signature.len(),
+                digest.as_ptr(),
+                digest.len(),
+                scratch.0.as_mut_ptr(),
+                scratch.0.len(),
+            )
         };
         if result == 1 {
             Ok(())
@@ -241,15 +183,8 @@ impl PublicKey {
 pub struct PrivateKey {
     public: PublicKey,
     packed: Secret<u8>,
-    // On x86-64, AArch64, PPC64LE and RISC-V 64, whether
-    // `vg_dsa_validate_private_key` accepts the owned, immutable `packed`:
-    // 0 = unchecked, 1 = valid, 2 = invalid.
-    #[cfg(any(
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        all(target_arch = "powerpc64", target_endian = "little"),
-        target_arch = "riscv64"
-    ))]
+    // Whether `vg_dsa_validate_private_key` accepts the owned, immutable
+    // `packed`: 0 = unchecked, 1 = valid, 2 = invalid.
     validated: AtomicU8,
 }
 
@@ -287,12 +222,6 @@ impl PrivateKey {
         Self {
             public,
             packed,
-            #[cfg(any(
-                target_arch = "x86_64",
-                target_arch = "aarch64",
-                all(target_arch = "powerpc64", target_endian = "little"),
-                target_arch = "riscv64"
-            ))]
             validated: AtomicU8::new(0),
         }
     }
@@ -307,9 +236,9 @@ impl PrivateKey {
     ///
     /// At most eight signing attempts are made, each with at most 128 nonce
     /// draws. Invalid keys therefore return an error instead of retrying
-    /// indefinitely. Each retry draws a fresh nonce. On x86-64, AArch64,
-    /// PPC64LE and RISC-V 64 the first signature validates the immutable key,
-    /// and later ones reuse that result, as [`PublicKey::verify`] does.
+    /// indefinitely. Each retry draws a fresh nonce. The first signature
+    /// validates the immutable key, and later ones reuse that result, as
+    /// [`PublicKey::verify`] does.
     pub fn sign(&self, digest: &[u8]) -> Result<Vec<u8>, Error> {
         self.sign_from(digest, |buf| {
             getrandom::fill(buf).map_err(|_| Error::Randomness)
@@ -324,12 +253,6 @@ impl PrivateKey {
     ) -> Result<Vec<u8>, Error> {
         let q_len = self.public.q_len;
         let mut scratch = Secret(vec![0u64; 16 * self.public.p_len + 64]);
-        #[cfg(any(
-            target_arch = "x86_64",
-            target_arch = "aarch64",
-            all(target_arch = "powerpc64", target_endian = "little"),
-            target_arch = "riscv64"
-        ))]
         if !self.validate(&mut scratch.0) {
             return Err(Error::InvalidKeyOrNonce);
         }
@@ -337,51 +260,29 @@ impl PrivateKey {
         // The first call needs no random bytes: it checks the key first.
         let signed = entropy::serve(0, random, |tape| {
             let mut used = [0u64; 1];
-            macro_rules! sign {
-                ($function:path) => {
-                    // SAFETY: imports establish supported widths. All writable
-                    // buffers are separate owned allocations, disjoint from
-                    // the key, digest and random tape. Scratch has the required
-                    // size, and backend selection establishes CPU features.
-                    unsafe {
-                        $function(
-                            output.as_mut_ptr(),
-                            output.len(),
-                            &mut used,
-                            self.packed.0.as_ptr(),
-                            self.packed.0.len(),
-                            self.public.p_len,
-                            q_len,
-                            digest.as_ptr(),
-                            digest.len(),
-                            tape.as_ptr(),
-                            tape.len(),
-                            scratch.0.as_mut_ptr(),
-                            scratch.0.len(),
-                        )
-                    }
-                };
-            }
-            // On x86-64, AArch64, PPC64LE and RISC-V 64, the validation
+            // SAFETY: imports establish supported widths, and the validation
             // above, or a cached result for the exact same immutable owned
-            // bytes, establishes the prevalidated signer's precondition.
-            let status = match self.public.backend {
-                #[cfg(not(any(
-                    target_arch = "x86_64",
-                    target_arch = "aarch64",
-                    all(target_arch = "powerpc64", target_endian = "little"),
-                    target_arch = "riscv64"
-                )))]
-                Backend::Baseline => sign!(vg_dsa_sign_random),
-                #[cfg(any(
-                    target_arch = "x86_64",
-                    target_arch = "aarch64",
-                    all(target_arch = "powerpc64", target_endian = "little"),
-                    target_arch = "riscv64"
-                ))]
-                Backend::Baseline => sign!(vg_dsa_sign_random_prevalidated),
-                #[cfg(target_arch = "x86_64")]
-                Backend::Adx => sign!(vg_dsa_sign_random_prevalidated_adx),
+            // bytes, establishes the prevalidated signer's precondition. All
+            // writable buffers are separate owned allocations, disjoint from
+            // the key, digest and random tape. Scratch has the required size.
+            // The dispatcher calls only an implementation the CPU has the
+            // features of.
+            let status = unsafe {
+                vg_dsa_sign_random_prevalidated_auto(
+                    output.as_mut_ptr(),
+                    output.len(),
+                    &mut used,
+                    self.packed.0.as_ptr(),
+                    self.packed.0.len(),
+                    self.public.p_len,
+                    q_len,
+                    digest.as_ptr(),
+                    digest.len(),
+                    tape.as_ptr(),
+                    tape.len(),
+                    scratch.0.as_mut_ptr(),
+                    scratch.0.len(),
+                )
             };
             match status {
                 1 => Step::Done,
@@ -404,28 +305,17 @@ impl PrivateKey {
 
     /// Whether `vg_dsa_validate_private_key` accepts the key, validating it
     /// on the first call. `scratch` holds at least 16*p_len words.
-    #[cfg(any(
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        all(target_arch = "powerpc64", target_endian = "little"),
-        target_arch = "riscv64"
-    ))]
     fn validate(&self, scratch: &mut [u64]) -> bool {
         match self.validated.load(Ordering::Relaxed) {
             0 => {}
             state => return state == 1,
         }
-        let validate = match self.public.backend {
-            Backend::Baseline => vg_dsa_validate_private_key,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_dsa_validate_private_key_adx,
-        };
         // SAFETY: import establishes the widths and key_len = 3*p_len +
         // 2*q_len; the key owns its immutable bytes, and scratch is a separate
-        // allocation of at least 16*p_len words. CPU features select the
-        // backend.
+        // allocation of at least 16*p_len words. The dispatcher calls only an
+        // implementation the CPU has the features of.
         let valid = unsafe {
-            validate(
+            vg_dsa_validate_private_key_auto(
                 self.packed.0.as_ptr(),
                 self.packed.0.len(),
                 self.public.p_len,

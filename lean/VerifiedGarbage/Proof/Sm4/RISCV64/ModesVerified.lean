@@ -31,7 +31,7 @@ meta import VerifiedGarbage.Proof.Sm4.RISCV64.PreparedBody
 
 `cbcEncryptChained_verified`, `ctr_verified`, … : the modes of
 `Proof/Modes/RISCV64/` over SM4's core (`Mode.dirCoreSpec`) meet the
-shared contracts, with `stack := 3232`: the mode's frame of 404 slots below
+shared contracts, with `stack := 3248`: the mode's frame of 406 slots below
 the stack pointer, which holds ECB's scratch buffer and which it zeroes
 before returning. The proofs are written against `modeContract`, which
 states the frame.
@@ -47,7 +47,7 @@ open VG.Proof.Sm4.RISCV64.Mode (dirCoreSpec KeyArgs layout dirCipher)
 open VG.Proof.Sm4.RISCV64 (modePub)
 
 /-- The frame's bytes. -/
-abbrev frameBytes : Nat := 3232
+abbrev frameBytes : Nat := 3248
 
 /-- SM4 under the schedule at `a0`, and its inverse. -/
 abbrev ciph (s : State) : Spec.Cbc.Cipher := Spec.Sm4.cipher (Spec.Sm4.scheduleAt s.mem (s.gpr .a0))

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Modes.RISCV64.Seq
+public import VerifiedGarbage.Impl.Modes.RISCV64.Shared
 public import VerifiedGarbage.Impl.Modes.RISCV64.Wide
 public import VerifiedGarbage.Impl.Modes.Wide
 public import VerifiedGarbage.Impl.Modes.CbcChained
@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Blowfish.RISCV64
 /-!
 # Blowfish's modes on RISC-V
 
-`dirCore up`: ECB's block function, inlined, as a core for the modes
+`inlineCore up`: ECB's block function, inlined, as a core for the modes
 (`Impl/Modes/RISCV64/Seq.lean`), encrypting (`up`) or decrypting the block
 in its buffer in place. Its slots: the buffer's one block (slot 6), and a
 copy of the schedule after it (from slot 7), which `prepare` makes a byte
@@ -19,7 +19,7 @@ modes', which the mode zeroes before it frees them. The block function
 writes only temporaries and argument registers but `a0`, so it keeps the
 modes' state in `s1`–`s4` and the schedule's argument.
 
-`dirCore2 up`: the same with ECB's block function of two blocks
+`inlineCore2 up`: the same with ECB's block function of two blocks
 (`cipher2`), on the buffer's two blocks (slots 6 and 7), the schedule's copy
 after them (from slot 8). That function writes `s1`–`s10`, among them the
 modes' state. Memory is secret to the analysis of constant time, so the
@@ -31,10 +31,18 @@ copy (from slot 529, `saved2`), through `t0`, which the core sets from the
 copy's address (`slotBase`), and restored after: 540 slots in all.
 
 `cbcEncryptChained`, `ofb` and `cfbEncrypt` (schedule = a0, iv = a1,
-data = a2, n = a3) are the modes over `dirCore`, with the encryption but
+data = a2, n = a3) are the modes over `inlineCore`, with the encryption but
 CBC encryption's; `cbcDecryptChained` and `cfbDecrypt`, whose blocks can be
-deciphered independently, take two blocks a step over `dirCore2` while two
+deciphered independently, take two blocks a step over `inlineCore2` while two
 are left (`Core.seq2`), then one.
+
+`dirCore` wraps this body with named internal calls (`Core.shared`), so the
+key preparation and batch code are emitted once across modes, alignment
+branches, and wide and tail paths. Two additional slots preserve the
+caller's return address and keep the frame aligned; the mode wipes them
+with the original frame. The callee computes its own pointers after the
+call, which may clobber all temporary registers.
+`dirCore2` shares the two-block body in the same way.
 -/
 
 @[expose] public section
@@ -66,7 +74,7 @@ def modeCrypt (up : Bool) : Prog isa :=
     (.seq (.block loadBlock) (.seq (cipher up) (.block storeBlock)))
 
 /-- Blowfish's core for the modes, encrypting (`up`) or decrypting. -/
-def dirCore (up : Bool) : Modes.RISCV64.Core where
+def inlineCore (up : Bool) : Modes.RISCV64.Core where
   prepare := modePrepare
   crypt := modeCrypt up
   total := 528
@@ -105,13 +113,23 @@ def modeCrypt2 (up : Bool) : Prog isa :=
       (.block (storeBlock2 ++ unpark2 ++ slotBase ++ saved2.map fun (r, d) => .load .d r rowPtr d))))
 
 /-- Blowfish's core for the modes, two blocks at a time. -/
-def dirCore2 (up : Bool) : Modes.RISCV64.Core where
+def inlineCore2 (up : Bool) : Modes.RISCV64.Core where
   prepare := modePrepare2
   crypt := modeCrypt2 up
   total := 540
   buf := bufSlot
   G := 2
   bw := 2
+
+/-- Shared key preparation and batch encryption, with a saved return address. -/
+def dirCore (up : Bool) : Modes.RISCV64.Core :=
+  (inlineCore up).shared "vg_blowfish_modes_prepare"
+    (("vg_blowfish_modes_crypt_" ++ (if up then "encrypt" else "decrypt")))
+
+/-- The two-block core shared by wide and tail paths. -/
+def dirCore2 (up : Bool) : Modes.RISCV64.Core :=
+  (inlineCore2 up).shared "vg_blowfish_modes_prepare2"
+    ("vg_blowfish_modes_crypt2_" ++ (if up then "encrypt" else "decrypt"))
 
 /-- `vg_blowfish_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := (dirCore true).seq (Modes.Mode.cbcEncChained 2)

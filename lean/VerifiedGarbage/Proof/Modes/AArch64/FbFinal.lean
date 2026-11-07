@@ -65,7 +65,6 @@ open VG.WriteBytes (writeW8_apply)
 /-- What the loop works on: the block at `K`, the `r` bytes at `R`, the
 registers `Rd` and `Rl`. -/
 structure XPre (s₀ : State) (K R : Addr) (r : Nat) (Rd Rl : Reg) : Prop where
-  pos : 0 < r
   small : r < 2 ^ 64
   disj : Region.Disjoint ⟨K, r⟩ ⟨R, r⟩
   rdK : ∀ q < r, InRegions (s₀.rd ++ s₀.wr) (K + BitVec.ofNat 64 q) 1
@@ -366,8 +365,7 @@ theorem fbSeg_wp (cs : BlockSpec c) (mo : FbMode) {ivR : Reg} (hivR : ivR ∉ mo
     have subTr : Region.Sub ⟨T, r⟩ ⟨T, 8 * c.bw⟩ := Region.sub_prefix (by omega_arith)
     have subAr : Region.Sub ⟨A, r⟩ ⟨D, len⟩ := VG.Offset.sub_base D (by omega_arith)
     have hxp : XPre s₄ T A r c.dataReg c.leftReg :=
-      { pos := hr0
-        small := by omega_arith
+      { small := by omega_arith
         disj := ((dDS subT).sub_left subAr).sub_right subTr |>.symm
         rdK := fun q hq => by
           rw [rd₄', wr₄']

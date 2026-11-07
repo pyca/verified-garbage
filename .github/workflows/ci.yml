@@ -408,7 +408,8 @@ jobs:
     needs: rust-arches
     if: ${{ needs.rust-arches.outputs.rust != '[]' }}
     strategy:
-      fail-fast: false
+      # In the merge queue, as `cancel-*` below.
+      fail-fast: ${{ github.event_name == 'merge_group' }}
       matrix:
         include: ${{ fromJSON(needs.rust-arches.outputs.rust) }}
     runs-on: ${{ matrix.os }}
@@ -433,7 +434,9 @@ jobs:
           persist-credentials: false
           # Not the proofs, nor other architectures' verified functions, which
           # this target never compiles (but their crates' manifests, which
-          # Cargo reads for every path dependency, built or not).
+          # Cargo reads for every path dependency, built or not), nor the text
+          # of its own (`assembly/`), which only the checks of the emitter's
+          # output and ci/check_mcdt.py read.
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
@@ -442,6 +445,7 @@ jobs:
             !/crates/verified-garbage-asm-*/
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-${{ matrix.asm || matrix.arch }}/
+            !/crates/verified-garbage-asm-*/assembly/
       - uses: ./.github/actions/runner-info
 
       - name: Install Rust
@@ -610,7 +614,8 @@ jobs:
     needs: rust-arches
     if: ${{ needs.rust-arches.outputs.thumb != '[]' }}
     strategy:
-      fail-fast: false
+      # In the merge queue, as `cancel-*` below.
+      fail-fast: ${{ github.event_name == 'merge_group' }}
       matrix:
         include: ${{ fromJSON(needs.rust-arches.outputs.thumb) }}
     name: Rust (Thumb, ${{ matrix.rust }})
@@ -633,7 +638,8 @@ jobs:
           # Not the proofs, nor other architectures' verified functions, which
           # this target never compiles (or formats: rustfmt skips a missing
           # module file that a `cfg` leaves out), but their crates'
-          # manifests, which Cargo reads for every path dependency, built or not.
+          # manifests, which Cargo reads for every path dependency, built or
+          # not; nor the text of its own (`assembly/`, as `rust`'s).
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
@@ -643,6 +649,7 @@ jobs:
             !/crates/verified-garbage-asm-*/
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-${{ matrix.arch }}/
+            !/crates/verified-garbage-asm-*/assembly/
       - uses: ./.github/actions/runner-info
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -704,7 +711,8 @@ jobs:
     needs: rust-arches
     if: ${{ needs.rust-arches.outputs.lint != '[]' }}
     strategy:
-      fail-fast: false
+      # In the merge queue, as `cancel-*` below.
+      fail-fast: ${{ github.event_name == 'merge_group' }}
       matrix:
         crate: [library, benchmarks]
     runs-on: ubuntu-26.04
@@ -719,12 +727,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # Every architecture's verified functions, but not the proofs.
+          # Every architecture's verified functions, but not the proofs, nor
+          # their text (`assembly/`, as `rust`'s).
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
             !/lean/
             !/docs/
+            !/crates/verified-garbage-asm-*/assembly/
       - name: Install Rust
         run: rustup toolchain install stable --profile minimal --component clippy,rustfmt --target "$(python3 ci/rust_lint.py targets "$CRATE")"
       # As `rust`'s: a push to main lints the commit the merge queue linted,
@@ -796,7 +806,8 @@ jobs:
     needs: [rust-arches, cpu-features-times]
     if: ${{ needs.rust-arches.outputs.cpu != '[]' }}
     strategy:
-      fail-fast: false
+      # In the merge queue, as `cancel-*` below.
+      fail-fast: ${{ github.event_name == 'merge_group' }}
       matrix:
         include: ${{ fromJSON(needs.rust-arches.outputs.cpu) }}
     name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }}${{ matrix.shard && format(', {0}', matrix.shard) || '' }})
@@ -821,7 +832,8 @@ jobs:
           # Not the proofs, nor other architectures' verified functions, which
           # this target never compiles (or formats: rustfmt skips a missing
           # module file that a `cfg` leaves out), but their crates'
-          # manifests, which Cargo reads for every path dependency, built or not.
+          # manifests, which Cargo reads for every path dependency, built or
+          # not; nor the text of its own (`assembly/`, as `rust`'s).
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
@@ -831,6 +843,7 @@ jobs:
             !/crates/verified-garbage-asm-*/
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-${{ matrix.arch || 'x86_64' }}/
+            !/crates/verified-garbage-asm-*/assembly/
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
@@ -1088,6 +1101,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # The Rust sources the coverage maps, but not the proofs, nor the
+          # verified functions' text (`assembly/`, as `rust`'s).
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/crates/verified-garbage-asm-*/assembly/
       - run: |
           python3 -m venv .venv
           .venv/bin/pip install -r ci/requirements-coverage.txt
@@ -1130,6 +1151,74 @@ jobs:
           name: _html-coverage-report
           path: htmlcov
           if-no-files-found: ignore
+
+  # In the merge queue, one failed job cancels the whole run, so that the
+  # entry fails at once rather than after every other job (pull requests and
+  # main run every job to the end, to report every failure). A job per job
+  # that runs alongside others, which starts only once that job has failed
+  # (and its matrix entries cancelled each other, `fail-fast`): a passing run
+  # skips them all, and so takes no runner. A failed ancestor counts too
+  # (`failure()`): `cancel-lean-shard` also catches `lean`, whose failure
+  # skips `lean-shard` at once, and `cancel-rust` catches `rust-arches`.
+  # They hold `actions: write`, which also starts workflows, so that no job
+  # running the repository's code (or its dependencies) has to.
+  cancel-lean-shard:
+    name: "Merge queue: cancel after Lean: shard"
+    needs: lean-shard
+    if: ${{ failure() && github.event_name == 'merge_group' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      actions: write
+    steps: &cancel
+      - run: gh run cancel "$GITHUB_RUN_ID"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+
+  cancel-lean-imports:
+    name: "Merge queue: cancel after Static checks"
+    needs: lean-imports
+    if: ${{ failure() && github.event_name == 'merge_group' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      actions: write
+    steps: *cancel
+
+  cancel-rust:
+    name: "Merge queue: cancel after Rust"
+    needs: rust
+    if: ${{ failure() && github.event_name == 'merge_group' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      actions: write
+    steps: *cancel
+
+  cancel-rust-thumb:
+    name: "Merge queue: cancel after Rust (Thumb)"
+    needs: rust-thumb
+    if: ${{ failure() && github.event_name == 'merge_group' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      actions: write
+    steps: *cancel
+
+  cancel-rust-lint:
+    name: "Merge queue: cancel after Rust lints"
+    needs: rust-lint
+    if: ${{ failure() && github.event_name == 'merge_group' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      actions: write
+    steps: *cancel
+
+  cancel-rust-cpu-features:
+    name: "Merge queue: cancel after Rust CPU features"
+    needs: rust-cpu-features
+    if: ${{ failure() && github.event_name == 'merge_group' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      actions: write
+    steps: *cancel
 
   # The one check to require in branch protection (and so for the merge queue),
   # so the required checks don't have to track every job and matrix entry.

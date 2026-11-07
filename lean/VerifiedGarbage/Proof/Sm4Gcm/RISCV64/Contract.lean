@@ -13,7 +13,7 @@ Untrusted: everything here is checked by Lean. The artifacts' contracts are
 the shared ones of `Spec/Sm4/Gcm/Contract.lean`, which imply these
 (`Verified.lean`). They are AES-GCM's (`Proof/AesGcm/RISCV64/Contract.lean`)
 with SM4's key context and no number of rounds, so with the arguments one
-register earlier. The functions call `vg_sm4_ctr32`, whose frame takes 3232
+register earlier. The functions call `vg_sm4_ctr32`, whose frame takes 3248
 bytes of stack below the stack pointer, `vg_sm4_expand_key` (3168) and
 `vg_ghash` (2048) (`stkOk3`); the buffers of `u64` are 8-byte aligned.
 -/
@@ -28,20 +28,20 @@ open VG.Spec.Gcm (StreamRepr ctxH gctr inc32 j0 fullTag tagLenOk encryptWith ope
 open VG.Spec.Sm4.Gcm (KeyRepr ctxCiph)
 open VG.Proof.AesGcm.RISCV64 (args onePub)
 
-/-- The 3232 bytes below `sp` are apart from each of `rs`. -/
+/-- The 3248 bytes below `sp` are apart from each of `rs`. -/
 def stkAll3 (sp : Addr) : List Region → Prop
   | [] => True
-  | r :: rs => (below sp 3232).Disjoint r ∧ stkAll3 sp rs
+  | r :: rs => (below sp 3248).Disjoint r ∧ stkAll3 sp rs
 
 theorem stkAll3_mem {sp : Addr} : ∀ {rs : List Region}, stkAll3 sp rs → ∀ {r : Region}, r ∈ rs →
-    (below sp 3232).Disjoint r
+    (below sp 3248).Disjoint r
   | _ :: _, h, _, .head _ => h.1
   | _ :: _, h, _, .tail _ hr => stkAll3_mem h.2 hr
 
-/-- The stack pointer is aligned, and the 3232 bytes below it, which the
+/-- The stack pointer is aligned, and the 3248 bytes below it, which the
 callees' frames use, are apart from the buffers `rs`. -/
 def stkOk3 (s : State) (rs : List Region) : Prop :=
-  s.sp.toNat % 16 = 0 ∧ 3232 ≤ s.sp.toNat ∧ stkAll3 s.sp rs
+  s.sp.toNat % 16 = 0 ∧ 3248 ≤ s.sp.toNat ∧ stkAll3 s.sp rs
 
 /-- `vg_sm4_gcm_init(key = a0, ctx = a1, scratch = a2)`. -/
 def initRISCV64 : Contract isa where

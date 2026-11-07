@@ -11,10 +11,10 @@
 
 use super::table::{HmacHash, SignFn, sign_with};
 use super::{SignatureHash, sealed};
+use crate::arch::dispatch::ecdsa_p521::vg_ecdsa_p521_verify_auto;
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_sign;
-use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p521::{vg_ecdsa_p521_sign_adx, vg_ecdsa_p521_verify_adx};
+use crate::arch::ecdsa_p521::vg_ecdsa_p521_sign_adx;
 use crate::cpu::detected;
 use crate::ec::P521;
 use crate::ec::p521::Mul;
@@ -27,21 +27,14 @@ fn verify_with(
     signature: &[u8; 132],
 ) -> Result<(), InvalidSignature> {
     let mut scratch = [0u64; 1024];
-    let ok = match Mul::select(detected()) {
-        // SAFETY: `q` is valid for reads of 133 bytes, `digest` of `digest.len()`,
-        // `signature` of 132 and `scratch` for reads and writes of 8192; `scratch`
-        // is a distinct object from the others, so it overlaps neither them nor the
-        // call's stack frame, and, as Rust objects, none wraps around the address
-        // space.
-        Mul::Baseline => unsafe {
-            vg_ecdsa_p521_verify(q, digest.as_ptr(), digest.len(), signature, &mut scratch)
-        },
-        // SAFETY: as for `Mul::Baseline`, and the CPU has BMI2 and ADX
-        // (`Mul::select`).
-        #[cfg(target_arch = "x86_64")]
-        Mul::Adx => unsafe {
-            vg_ecdsa_p521_verify_adx(q, digest.as_ptr(), digest.len(), signature, &mut scratch)
-        },
+    // SAFETY: `q` is valid for reads of 133 bytes, `digest` of `digest.len()`,
+    // `signature` of 132 and `scratch` for reads and writes of 8192; `scratch`
+    // is a distinct object from the others, so it overlaps neither them nor the
+    // call's stack frame, and, as Rust objects, none wraps around the address
+    // space. The dispatcher calls only an implementation the CPU has the
+    // features of.
+    let ok = unsafe {
+        vg_ecdsa_p521_verify_auto(q, digest.as_ptr(), digest.len(), signature, &mut scratch)
     };
     if ok == 1 {
         Ok(())
@@ -60,7 +53,7 @@ impl<H: HmacHash> sealed::Functions<P521> for H {
         };
         // SAFETY: `sign` needs no CPU feature that the multiplications
         // selected for this CPU do not.
-        unsafe { sign_with::<H, 66, 132>(sign, f, d, digest) }
+        unsafe { sign_with::<H, 66, 132>(sign, d, digest) }
     }
 
     /// The verified function takes the hash itself, of any length, and

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_init_aes_sha3` if the CPU supports its features (`VG_AES_GCM_INIT_AES_SHA3_FEATURES`); or else `vg_aes_gcm_init`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_init_aes` if the CPU supports its features (`VG_AES_GCM_INIT_AES_FEATURES`); or else `vg_aes_gcm_init`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -19,10 +19,10 @@
 #[inline]
 pub unsafe fn vg_aes_gcm_init_auto(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_INIT_AES_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_init_aes_sha3`'s, and the CPU
+    if cpu.contains(crate::gcm::VG_AES_GCM_INIT_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_init_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_init_aes_sha3(key, key_len, ctx) };
+        return unsafe { crate::gcm::vg_aes_gcm_init_aes(key, key_len, ctx) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::gcm::vg_aes_gcm_init(key, key_len, ctx) }
@@ -34,7 +34,7 @@ pub unsafe fn vg_aes_gcm_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_seal_aes_sha3` if the CPU supports its features (`VG_AES_GCM_SEAL_AES_SHA3_FEATURES`); or else `vg_aes_gcm_seal`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_seal_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_AES_FEATURES`); or else `vg_aes_gcm_seal`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -50,10 +50,10 @@ pub unsafe fn vg_aes_gcm_init_auto(key: *const u8, key_len: usize, ctx: *mut [u6
 #[inline]
 pub unsafe fn vg_aes_gcm_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_AES_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_aes_sha3`'s, and the CPU
+    if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_seal_aes_sha3(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) };
+        return unsafe { crate::gcm::vg_aes_gcm_seal_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::gcm::vg_aes_gcm_seal(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag) }
@@ -65,7 +65,7 @@ pub unsafe fn vg_aes_gcm_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_open_aes_sha3` if the CPU supports its features (`VG_AES_GCM_OPEN_AES_SHA3_FEATURES`); or else `vg_aes_gcm_open`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_open_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_AES_FEATURES`); or else `vg_aes_gcm_open`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -81,20 +81,53 @@ pub unsafe fn vg_aes_gcm_seal_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
 #[inline]
 pub unsafe fn vg_aes_gcm_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_AES_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_aes_sha3`'s, and the CPU
+    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_open_aes_sha3(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
+        return unsafe { crate::gcm::vg_aes_gcm_open_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::gcm::vg_aes_gcm_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len) }
+}
+
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_aes_gcm_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
+///
+/// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_open_to_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_AES_FEATURES`); or else `vg_aes_gcm_open_to`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_open_to_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_to_aes`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_open_to_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::gcm::vg_aes_gcm_open_to(ctx, rounds, nonce, nonce_len, aad, aad_len, src, len, dst, dst_len, tag, tag_len) }
 }
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_aad_aes_sha3` if the CPU supports its features (`VG_AES_GCM_STREAM_AAD_AES_SHA3_FEATURES`); or else `vg_aes_gcm_stream_aad`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_aad_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_AAD_AES_FEATURES`); or else `vg_aes_gcm_stream_aad`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -107,10 +140,10 @@ pub unsafe fn vg_aes_gcm_open_auto(ctx: *const [u64; 32], rounds: usize, nonce: 
 #[inline]
 pub unsafe fn vg_aes_gcm_stream_aad_auto(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_AAD_AES_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_aad_aes_sha3`'s, and the CPU
+    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_AAD_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_aad_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_aad_aes_sha3(ctx, state, aad_len, data, len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_aad_aes(ctx, state, aad_len, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::gcm::vg_aes_gcm_stream_aad(ctx, state, aad_len, data, len) }
@@ -122,7 +155,7 @@ pub unsafe fn vg_aes_gcm_stream_aad_auto(ctx: *const [u64; 32], state: *mut [u64
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_init_aes_sha3` if the CPU supports its features (`VG_AES_GCM_STREAM_INIT_AES_SHA3_FEATURES`); or else `vg_aes_gcm_stream_init`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_init_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_INIT_AES_FEATURES`); or else `vg_aes_gcm_stream_init`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -135,10 +168,10 @@ pub unsafe fn vg_aes_gcm_stream_aad_auto(ctx: *const [u64; 32], state: *mut [u64
 #[inline]
 pub unsafe fn vg_aes_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_INIT_AES_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_init_aes_sha3`'s, and the CPU
+    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_INIT_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_init_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_init_aes_sha3(ctx, nonce, nonce_len, state) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_init_aes(ctx, nonce, nonce_len, state) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::gcm::vg_aes_gcm_stream_init(ctx, nonce, nonce_len, state) }
@@ -150,7 +183,7 @@ pub unsafe fn vg_aes_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_seal_gather_aes_sha3` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES`); or else `vg_aes_gcm_seal_gather`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_seal_gather_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AES_FEATURES`); or else `vg_aes_gcm_seal_gather`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -168,20 +201,45 @@ pub unsafe fn vg_aes_gcm_stream_init_auto(ctx: *const [u64; 32], nonce: *const u
 #[inline]
 pub unsafe fn vg_aes_gcm_seal_gather_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_gather_aes_sha3`'s, and the CPU
+    if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_gather_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_seal_gather_aes_sha3(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) };
+        return unsafe { crate::gcm::vg_aes_gcm_seal_gather_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::gcm::vg_aes_gcm_seal_gather(ctx, rounds, nonce, nonce_len, aad, aad_len, src, src_count, dst, len, tag) }
+}
+
+/// Writes to `*pw` the 8 prepared powers of the hash subkey `H` of the key context `*ctx` of `vg_aes_gcm_init` (its bytes 240 to 255, `VG.Spec.Gcm.ctxH`): at byte `32*k`, for `k` from 0 to 3, `preparedPower(H^(2*k+2))` then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words (`VG.Spec.Gcm.Powers8Repr`, `VG.Spec.Gcm.preparedPower`), as the `*_with_powers` functions require for that key context. It reads only `*ctx` and writes only `*pw`. The key context and the powers are secret: only the pointers may affect timing.
+///
+/// Contract: `VG.Spec.Gcm.storePowersContract`.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_store_powers_aes` if the CPU supports its features (`VG_AES_GCM_STORE_POWERS_AES_FEATURES`); or else `vg_aes_gcm_store_powers`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `pw` must be valid for reads and writes of 128 bytes.
+/// * `pw` must not overlap `ctx` (distinct Rust objects never do).
+/// * Neither `ctx` nor `pw` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_store_powers_auto(ctx: *const [u64; 32], pw: *mut [u64; 16]) {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::gcm::VG_AES_GCM_STORE_POWERS_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_store_powers_aes`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_store_powers_aes(ctx, pw) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::gcm::vg_aes_gcm_store_powers(ctx, pw) }
 }
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_finish_aes_sha3` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AES_SHA3_FEATURES`); or else `vg_aes_gcm_stream_finish`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_finish_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AES_FEATURES`); or else `vg_aes_gcm_stream_finish`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -196,10 +254,10 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(ctx: *const [u64; 32], rounds: usize, 
 #[inline]
 pub unsafe fn vg_aes_gcm_stream_finish_auto(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AES_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_finish_aes_sha3`'s, and the CPU
+    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_finish_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_finish_aes_sha3(ctx, rounds, state, aad_len, text_len, tag) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_finish_aes(ctx, rounds, state, aad_len, text_len, tag) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::gcm::vg_aes_gcm_stream_finish(ctx, rounds, state, aad_len, text_len, tag) }
@@ -209,7 +267,7 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(ctx: *const [u64; 32], rounds: usize
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_verify_aes_sha3` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AES_SHA3_FEATURES`); or else `vg_aes_gcm_stream_verify`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_verify_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AES_FEATURES`); or else `vg_aes_gcm_stream_verify`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -224,10 +282,10 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(ctx: *const [u64; 32], rounds: usize
 #[inline]
 pub unsafe fn vg_aes_gcm_stream_verify_auto(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AES_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_verify_aes_sha3`'s, and the CPU
+    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_verify_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_verify_aes_sha3(ctx, rounds, state, aad_len, text_len, tag, tag_len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_verify_aes(ctx, rounds, state, aad_len, text_len, tag, tag_len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::gcm::vg_aes_gcm_stream_verify(ctx, rounds, state, aad_len, text_len, tag, tag_len) }
@@ -239,7 +297,7 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(ctx: *const [u64; 32], rounds: usize
 ///
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_encrypt_aes_sha3` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_AES_SHA3_FEATURES`); or else `vg_aes_gcm_stream_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_encrypt_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES`); or else `vg_aes_gcm_stream_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -253,10 +311,10 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(ctx: *const [u64; 32], rounds: usize
 #[inline]
 pub unsafe fn vg_aes_gcm_stream_encrypt_auto(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AES_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_encrypt_aes_sha3`'s, and the CPU
+    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_encrypt_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_encrypt_aes_sha3(ctx, rounds, state, aad_len, text_len, data, len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_encrypt_aes(ctx, rounds, state, aad_len, text_len, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::gcm::vg_aes_gcm_stream_encrypt(ctx, rounds, state, aad_len, text_len, data, len) }
@@ -268,7 +326,7 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_auto(ctx: *const [u64; 32], rounds: usiz
 ///
 /// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_decrypt_aes_sha3` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_AES_SHA3_FEATURES`); or else `vg_aes_gcm_stream_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_stream_decrypt_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES`); or else `vg_aes_gcm_stream_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -282,11 +340,79 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_auto(ctx: *const [u64; 32], rounds: usiz
 #[inline]
 pub unsafe fn vg_aes_gcm_stream_decrypt_auto(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AES_SHA3_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_decrypt_aes_sha3`'s, and the CPU
+    if cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_stream_decrypt_aes`'s, and the CPU
         // has the features it needs.
-        return unsafe { crate::gcm::vg_aes_gcm_stream_decrypt_aes_sha3(ctx, rounds, state, aad_len, text_len, data, len) };
+        return unsafe { crate::gcm::vg_aes_gcm_stream_decrypt_aes(ctx, rounds, state, aad_len, text_len, data, len) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::gcm::vg_aes_gcm_stream_decrypt(ctx, rounds, state, aad_len, text_len, data, len) }
+}
+
+/// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_seal_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_seal_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES`); or else `vg_aes_gcm_seal_with_powers`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_seal_with_powers_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_with_powers_aes_sha3`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_seal_with_powers_aes_sha3(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, pw) };
+    }
+    if cpu.contains(crate::gcm::VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_seal_with_powers_aes`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_seal_with_powers_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, pw) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::gcm::vg_aes_gcm_seal_with_powers(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, pw) }
+}
+
+/// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
+///
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_gcm_open_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_open_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES`); or else `vg_aes_gcm_open_with_powers`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `pw` must be valid for reads of 128 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_aes_gcm_open_with_powers_auto(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_with_powers_aes_sha3`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_open_with_powers_aes_sha3(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, pw) };
+    }
+    if cpu.contains(crate::gcm::VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_gcm_open_with_powers_aes`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::gcm::vg_aes_gcm_open_with_powers_aes(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, pw) };
+    }
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::gcm::vg_aes_gcm_open_with_powers(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, pw) }
 }

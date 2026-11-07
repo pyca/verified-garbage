@@ -85,6 +85,7 @@ def stepFn : Instr → Step
   -- secret, and writing it changes no register.
   | .mrsDit t => ⟨fun τ => some (set τ t false)⟩
   | .msrDitImm _ => ⟨fun τ => some τ⟩
+  | .barrier _ => ⟨fun τ => some τ⟩
   -- Frames are analysed by the `push` and `pop` hooks (`Taint.push`,
   -- `Taint.pop`), not here.
   | .push .. | .pop .. | .alloc _ | .free _ => ⟨fun _ => none⟩
@@ -401,6 +402,10 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain rfl := Option.some.inj hs
     obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
     exact ⟨rfl, ha.1, ha.2⟩
+  | barrier _ =>
+    obtain rfl := Option.some.inj hs
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha⟩
 
 theorem cond_sound {τ : T} {c : Cond} {s₁ s₂ : State} (ha : Agree τ s₁ s₂)
     (hc : condPub τ c = true) : eval c s₁ = eval c s₂ := by

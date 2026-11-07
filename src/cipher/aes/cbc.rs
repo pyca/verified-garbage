@@ -32,8 +32,7 @@ use crate::arch::aes_cbc::{
     VG_AES_CBC_DECRYPT_AESNI_SCRATCH_WRITTEN, VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES,
     VG_AES_CBC_DECRYPT_VAES_AVX512_SCRATCH_WRITTEN, VG_AES_CBC_DECRYPT_VAES_FEATURES,
     VG_AES_CBC_DECRYPT_VAES_SCRATCH_WRITTEN, VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN,
-    VG_AES_CBC_ENCRYPT_VAES_FEATURES, VG_AES_CBC_ENCRYPT_VAES_SCRATCH_WRITTEN,
-    vg_aes_cbc_decrypt_vaes, vg_aes_cbc_decrypt_vaes_avx512, vg_aes_cbc_encrypt_vaes,
+    vg_aes_cbc_decrypt_vaes, vg_aes_cbc_decrypt_vaes_avx512,
 };
 use crate::arch::aes_cbc::{vg_aes_cbc_decrypt, vg_aes_cbc_encrypt};
 #[cfg(not(target_arch = "x86_64"))]
@@ -82,11 +81,11 @@ fn select(f: Features) -> Backend {
         VG_AES_CBC_DECRYPT_AESNI_FEATURES,
     ]);
     const VAES: Features = Features::all(&[
-        VG_AES_CBC_ENCRYPT_VAES_FEATURES,
+        VG_AES_CBC_ENCRYPT_AESNI_FEATURES,
         VG_AES_CBC_DECRYPT_VAES_FEATURES,
     ]);
     const VAES512: Features = Features::all(&[
-        VG_AES_CBC_ENCRYPT_VAES_FEATURES,
+        VG_AES_CBC_ENCRYPT_AESNI_FEATURES,
         VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES,
     ]);
     if f.contains(VAES512) {
@@ -239,8 +238,8 @@ impl Key {
             self.backend,
             vg_aes_cbc_encrypt,
             vg_aes_cbc_encrypt_aesni,
-            vg_aes_cbc_encrypt_vaes,
-            vg_aes_cbc_encrypt_vaes,
+            vg_aes_cbc_encrypt_aesni,
+            vg_aes_cbc_encrypt_aesni,
             vg_aes_cbc_encrypt_aes
         );
         #[cfg(target_arch = "aarch64")]
@@ -251,8 +250,9 @@ impl Key {
         #[cfg(target_arch = "x86_64")]
         let scratch_written = match self.backend {
             Backend::Scalar => 2176,
-            Backend::AesNi => VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN,
-            Backend::Vaes | Backend::VaesAvx512 => VG_AES_CBC_ENCRYPT_VAES_SCRATCH_WRITTEN,
+            Backend::AesNi | Backend::Vaes | Backend::VaesAvx512 => {
+                VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN
+            }
         };
         #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
         let scratch_written = 2176;

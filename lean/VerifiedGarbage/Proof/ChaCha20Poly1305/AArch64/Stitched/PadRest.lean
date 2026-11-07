@@ -69,20 +69,22 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
     (hx23 : w.gpr .x23 = BitVec.ofNat 64 (L s₀ - P)) (hrd : w.rd = s₀.rd) (hwr : w.wr = s₀.wr)
     (hcnt : P < L s₀ →
       stateAt w.mem (off (cx s₀) 64) = ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (P / 64))
-    (hdata : ∀ k < L s₀, w.mem (dp s₀ + BitVec.ofNat 64 k) =
-      if k < P then s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0
-      else s.mem (dp s₀ + BitVec.ofNat 64 k)) :
-    WP isa (padRest v.callee n) w
+    (h28 : w.gpr .x28 = s₀.gpr .x28)
+    (hdata : ∀ k < L s₀, P ≤ k → w.mem (dp s₀ + BitVec.ofNat 64 k) = s.mem (dp s₀ + BitVec.ofNat 64 k))
+    (hout : ∀ k < P, w.mem (op e s₀ + BitVec.ofNat 64 k) =
+      s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0) :
+    WP isa (padRest v.callee (!e) n) w
       fun s' =>
       (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) ∧
-      Kept [sub s₀ 64 384, dR s₀, sub s₀ 768 512] w s' ∧
-      Frame [sub s₀ 64 384, restR s₀ P, sub s₀ 768 512] w.mem s'.mem ∧
-      bytesAt s'.mem (dp s₀) (L s₀) =
+      Kept [sub s₀ 64 384, oR e s₀, sub s₀ 768 512] w s' ∧
+      Frame [sub s₀ 64 384, restQ s₀ (op e s₀) P, sub s₀ 768 512] w.mem s'.mem ∧
+      bytesAt s'.mem (op e s₀) (L s₀) =
         Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
   have hL' : L s₀ ≤ 2 ^ 64 := Nat.le_of_lt hL
   have wc := hp.wrap_c
-  have ts : Region.Sub (restR s₀ P) (dR s₀) := Offset.sub_base _ (by omega_arith)
+  have wo := hp.o.wrap
+  have ts : Region.Sub (restQ s₀ (op e s₀) P) (oR e s₀) := Offset.sub_base _ (by omega_arith)
   unfold padRest
   -- The keystream's region zeroed, and the stream's arguments.
   refine WP.seq (WP.block_append (WP.mono (Pad.zero_ok hp hx21 hwr) fun s₁ ⟨k₁, z₁, v₁⟩ => ?_))
@@ -101,7 +103,7 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
     (sub_disj s₀ (a := 64) (n := 64) (b := 768) (m := n) (by omega_arith) (by omega_arith) (by omega_arith))
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
     (sub_disj s₀ (a := 768) (n := n) (b := 128) (m := 320) (by omega_arith) (by omega_arith) (by omega_arith))
-    (by rw [hp.off_toNat (by decide)]; lit_omega) (Covers.right hw) hw fun s₃ v₃ k₃ data₃ => ?_)
+    (by rw [hp.off_toNat (by decide)]; lit_omega) hw fun s₃ v₃ k₃ data₃ => ?_)
   have ctxData : ∀ {a n : Nat}, a + n ≤ 1280 → ∀ k < L s₀,
       ¬ (sub s₀ a n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
     fun h k hk hh => hp.c_d.sub_left (sub_ctx s₀ h) _ hh (data_in hk)
@@ -144,30 +146,43 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
       k₁.cs _ (pres .x23) (pres30 .x23), hx23]
   have rd₃ : s₃.rd = s₀.rd := by rw [k₃.rd, k₂.rd, k₁.rd, hrd]
   have wr₃ : s₃.wr = s₀.wr := by rw [k₃.wr, wr₂]
-  refine WP.seq (WP.mono (WP.preservedV (xorKsFromAt_ok hp (k := 768) (o := P) (n := L s₀ - P)
-    (by omega_arith) (by omega_arith) x21₃ x22₃ x23₃ rd₃ wr₃) (by lit_decide)) fun s₄ ⟨⟨k₄, d₄, f₄, _⟩, v₄⟩ => ?_)
+  have x28₃ : s₃.gpr .x28 = s₀.gpr .x28 := by
+    rw [k₃.cs _ (by decide) (by decide), k₂.cs _ (by decide) (by decide), k₁.cs _ (by decide) (by decide), h28]
+  have ctxOut : ∀ {a n : Nat}, a + n ≤ 1280 → ∀ k < L s₀,
+      ¬ (sub s₀ a n).Contains (op e s₀ + BitVec.ofNat 64 k) 1 :=
+    fun h k hk hh => hp.o.ctx.sub_left (sub_ctx s₀ h) _ hh (Offset.contains_base _ (by omega_arith) (by omega_arith))
+  have q₃ : ∀ k < L s₀, s₃.mem (op e s₀ + BitVec.ofNat 64 k) = w.mem (op e s₀ + BitVec.ofNat 64 k) :=
+    fun k hk => by
+      rw [k₃.frame _ (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact ctxOut (a := 64) (n := 64) (by lit_omega) k hk
+        · exact ctxOut (a := 768) (n := n) (by omega_arith) k hk
+        · exact ctxOut (a := 128) (n := 320) (by lit_omega) k hk),
+        k₂.frame _ (fun r hr => absurd hr List.not_mem_nil), k₁.frame _ (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact ctxOut (by lit_omega) k hk)]
+  refine WP.seq (WP.mono (WP.preservedV (Short.xorKsFromDst_ok hp hp.o (!e) (k := 768) (o := P) (n := L s₀ - P)
+    (by omega_arith) (by omega_arith) x21₃ x22₃ (cond_out s₀ x28₃ P) x23₃ rd₃ wr₃) (by cases e <;> lit_decide))
+    fun s₄ ⟨⟨k₄, d₄, f₄, _⟩, v₄⟩ => ?_)
   -- The keystream zeroed again.
   refine WP.mono (Pad.zero_ok hp (by rw [k₄.cs _ (pres .x21) (pres30 .x21), x21₃])
     (by rw [k₄.wr, wr₃])) fun s₅ ⟨k₅, _, v₅⟩ => ?_
-  have tgt : ∀ {rs : List Region}, (∀ r ∈ rs, ∃ r' ∈ [sub s₀ 64 384, dR s₀, sub s₀ 768 512],
-      Region.Sub r r') → ∀ r ∈ rs, ∃ r' ∈ [sub s₀ 64 384, dR s₀, sub s₀ 768 512], Region.Sub r r' :=
-    fun h => h
-  have T768 : ∀ r ∈ [sub s₀ 768 512], ∃ r' ∈ [sub s₀ 64 384, dR s₀, sub s₀ 768 512], Region.Sub r r' :=
+  have T768 : ∀ r ∈ [sub s₀ 768 512], ∃ r' ∈ [sub s₀ 64 384, oR e s₀, sub s₀ 768 512], Region.Sub r r' :=
     fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
   have T3 : ∀ r ∈ [(⟨off (cx s₀) 64, 64⟩ : Region), ⟨off (cx s₀) 768, n⟩, ⟨off (cx s₀) 128, 320⟩],
-      ∃ r' ∈ [sub s₀ 64 384, dR s₀, sub s₀ 768 512], Region.Sub r r' := fun r hr => by
+      ∃ r' ∈ [sub s₀ 64 384, oR e s₀, sub s₀ 768 512], Region.Sub r r' := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
     · exact ⟨sub s₀ 768 512, by simp, sub_sub s₀ (Nat.le_refl _) (by omega_arith) (by omega_arith)⟩
     · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-  have K : Kept [sub s₀ 64 384, dR s₀, sub s₀ 768 512] w s₅ :=
+  have K : Kept [sub s₀ 64 384, oR e s₀, sub s₀ 768 512] w s₅ :=
     ((((k₁.sub T768).trans (k₂.sub fun r hr => absurd hr List.not_mem_nil)).trans (k₃.sub T3)).trans
       (k₄.sub fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, by simp, fun _ h => h⟩)).trans
+        simp only [List.mem_singleton] at hr; subst hr; exact ⟨oR e s₀, by simp, fun _ h => h⟩)).trans
       (k₅.sub T768)
-  have F : Frame [sub s₀ 64 384, restR s₀ P, sub s₀ 768 512] w.mem s₅.mem := by
-    have T768' : ∀ r ∈ [sub s₀ 768 512], ∃ r' ∈ [sub s₀ 64 384, restR s₀ P, sub s₀ 768 512],
+  have F : Frame [sub s₀ 64 384, restQ s₀ (op e s₀) P, sub s₀ 768 512] w.mem s₅.mem := by
+    have T768' : ∀ r ∈ [sub s₀ 768 512], ∃ r' ∈ [sub s₀ 64 384, restQ s₀ (op e s₀) P, sub s₀ 768 512],
         Region.Sub r r' :=
       fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
     refine ((((k₁.frame.sub T768').trans (k₂.frame.sub fun r hr => absurd hr List.not_mem_nil)).trans
@@ -177,26 +192,26 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
       · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
       · exact ⟨sub s₀ 768 512, by simp, sub_sub s₀ (Nat.le_refl _) (by omega_arith) (by omega_arith)⟩
       · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨restR s₀ P, by simp, fun _ h => h⟩
+    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨restQ s₀ (op e s₀) P, by simp, fun _ h => h⟩
   refine ⟨fun r hr => (v₅ r hr).trans ((v₄ r hr).trans ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr)))),
     K, F, ?_⟩
   -- The data encrypted.
   show Spec.ChaCha20.bytesAt _ _ _ = Spec.ChaCha20.encrypt _ _ _ (Spec.ChaCha20.bytesAt _ _ _)
   rw [encrypt_eq, show (Spec.ChaCha20.bytesAt s.mem (dp s₀) (L s₀)).length = L s₀ from
     VG.Proof.Poly1305.length_bytesAt _ _ _]
-  refine VG.Proof.ChaCha20.bytesAt_xor (VG.Proof.ChaCha20.length_keystream _ _) fun k hk => ?_
-  have m₅ : s₅.mem (dp s₀ + BitVec.ofNat 64 k) = s₄.mem (dp s₀ + BitVec.ofNat 64 k) :=
+  refine bytesAt_xor2 (VG.Proof.ChaCha20.length_keystream _ _) fun k hk => ?_
+  have m₅ : s₅.mem (op e s₀ + BitVec.ofNat 64 k) = s₄.mem (op e s₀ + BitVec.ofNat 64 k) :=
     k₅.frame _ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ctxData (by lit_omega) k hk
+      simp only [List.mem_singleton] at hr; subst hr; exact ctxOut (by lit_omega) k hk
   rw [m₅]
   by_cases hk' : k < P
   · rw [f₄ _ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact not_rest hk' hle),
-      m₃ k hk, hdata k hk, ite_eq_left hk']
+        simp only [List.mem_singleton] at hr; subst hr; exact not_restQ hk' hle),
+      q₃ k hk, hout k hk']
   · have hPL : P < L s₀ := by omega_arith
     have h64 := hP hPL
     have x := d₄ (k - P) (by omega_arith)
-    rw [show P + (k - P) = k by omega_arith, m₃ k hk, hdata k hk, ite_eq_right hk'] at x
+    rw [show P + (k - P) = k by omega_arith, m₃ k hk, hdata k hk (by omega_arith)] at x
     rw [x, show kpAt s₀ 768 = off (cx s₀) 768 from rfl, ks₃ (k - P) (by omega_arith), hcnt hPL,
       VG.Proof.ChaCha20.keystream_getD _ (by omega_arith), ks_shift _ hk (q := P / 64) (by omega_arith),
       show 64 * (P / 64) = P by omega_arith]
@@ -301,23 +316,25 @@ theorem padRest_after (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : 
     (hx23 : w.gpr .x23 = BitVec.ofNat 64 (L s₀ - P)) (hrd : w.rd = s₀.rd) (hwr : w.wr = s₀.wr)
     (hcnt : P < L s₀ →
       stateAt w.mem (off (cx s₀) 64) = ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (P / 64))
-    (hdata : ∀ k < L s₀, w.mem (dp s₀ + BitVec.ofNat 64 k) =
-      if k < P then s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0
-      else s.mem (dp s₀ + BitVec.ofNat 64 k))
+    (h28 : w.gpr .x28 = s₀.gpr .x28)
+    (hdata : ∀ k < L s₀, P ≤ k → w.mem (dp s₀ + BitVec.ofNat 64 k) = s.mem (dp s₀ + BitVec.ofNat 64 k))
+    (hout : ∀ k < P, w.mem (op e s₀ + BitVec.ofNat 64 k) =
+      s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0)
     (k : Kept [] w w') (vw : ∀ r ∈ preservedV, (w'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) :
-    WP isa (padRest v.callee n) w' fun s' =>
+    WP isa (padRest v.callee (!e) n) w' fun s' =>
       (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) ∧
-      Kept [sub s₀ 64 384, dR s₀, sub s₀ 768 512] w s' ∧
-      Frame [sub s₀ 64 384, restR s₀ P, sub s₀ 768 512] w.mem s'.mem ∧
-      bytesAt s'.mem (dp s₀) (L s₀) =
+      Kept [sub s₀ 64 384, oR e s₀, sub s₀ 768 512] w s' ∧
+      Frame [sub s₀ 64 384, restQ s₀ (op e s₀) P, sub s₀ 768 512] w.mem s'.mem ∧
+      bytesAt s'.mem (op e s₀) (L s₀) =
         Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
   have mw := k.mem_eq
-  have none : ∀ r ∈ ([] : List Region), ∃ r' ∈ [sub s₀ 64 384, dR s₀, sub s₀ 768 512], Region.Sub r r' :=
+  have none : ∀ r ∈ ([] : List Region), ∃ r' ∈ [sub s₀ 64 384, oR e s₀, sub s₀ 768 512], Region.Sub r r' :=
     fun _ hr => absurd hr List.not_mem_nil
   exact (padRest_ok v hp hn hle hlt hP (by rw [k.cs _ (pres .x21) (pres30 .x21), hx21])
     (by rw [k.cs _ (pres .x22) (pres30 .x22), hx22]) (by rw [k.cs _ (pres .x23) (pres30 .x23), hx23])
     (by rw [k.rd, hrd]) (by rw [k.wr, hwr]) (fun h => by rw [mw]; exact hcnt h)
-    (fun i hi => by rw [mw]; exact hdata i hi)).mono
+    (by rw [k.cs _ (by decide) (by decide), h28])
+    (fun i hi hp' => by rw [mw]; exact hdata i hi hp') (fun i hi => by rw [mw]; exact hout i hi)).mono
       fun u ⟨vu, ku, fu, pu⟩ => ⟨fun r hr => (vu r hr).trans (vw r hr), (k.sub none).trans ku,
         by rw [← mw]; exact fu, pu⟩
 
@@ -325,31 +342,35 @@ theorem padRest_after (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : 
 theorem cryptRest_after (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀)
     {s w w' : State} {P : Nat} (hle : P ≤ L s₀) (hP : P < L s₀ → P % 64 = 0)
     (hx21 : w.gpr .x21 = cx s₀) (hx22 : w.gpr .x22 = dp s₀ + BitVec.ofNat 64 P)
-    (hx23 : w.gpr .x23 = BitVec.ofNat 64 (L s₀ - P)) (hwr : w.wr = s₀.wr)
+    (hx23 : w.gpr .x23 = BitVec.ofNat 64 (L s₀ - P)) (hrd : w.rd = s₀.rd) (hwr : w.wr = s₀.wr)
     (hcnt : P < L s₀ →
       stateAt w.mem (off (cx s₀) 64) = ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (P / 64))
-    (hdata : ∀ k < L s₀, w.mem (dp s₀ + BitVec.ofNat 64 k) =
-      if k < P then s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0
-      else s.mem (dp s₀ + BitVec.ofNat 64 k))
+    (h28 : w.gpr .x28 = s₀.gpr .x28)
+    (hdata : ∀ k < L s₀, P ≤ k → w.mem (dp s₀ + BitVec.ofNat 64 k) = s.mem (dp s₀ + BitVec.ofNat 64 k))
+    (hout : ∀ k < P, w.mem (op e s₀ + BitVec.ofNat 64 k) =
+      s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0)
     (k : Kept [] w w') (vw : ∀ r ∈ preservedV, (w'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) :
-    WP isa (cryptRest v.callee) w' fun s' =>
+    WP isa (cryptRest v.callee (!e)) w' fun s' =>
       (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) ∧
-      Kept [sub s₀ 64 384, dR s₀, sub s₀ 768 512] w s' ∧
-      Frame [sub s₀ 64 384, restR s₀ P, sub s₀ 768 512] w.mem s'.mem ∧
-      bytesAt s'.mem (dp s₀) (L s₀) =
+      Kept [sub s₀ 64 384, oR e s₀, sub s₀ 768 512] w s' ∧
+      Frame [sub s₀ 64 384, restQ s₀ (op e s₀) P, sub s₀ 768 512] w.mem s'.mem ∧
+      bytesAt s'.mem (op e s₀) (L s₀) =
         Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
   have mw := k.mem_eq
-  have none : ∀ r ∈ ([] : List Region), ∃ r' ∈ [sub s₀ 64 384, dR s₀, sub s₀ 768 512],
+  have none : ∀ r ∈ ([] : List Region), ∃ r' ∈ [sub s₀ 64 384, oR e s₀, sub s₀ 768 512],
       Region.Sub r r' := fun _ hr => absurd hr List.not_mem_nil
   unfold cryptRest
   refine WP.seq ((restArgs_ok (s₀ := s₀) (by rw [k.cs _ (pres .x21) (pres30 .x21), hx21])).mono
     fun w₃ ⟨⟨a0, a1, a2, a3, kw⟩, vw₃⟩ => ?_)
   have mw₃ := kw.mem_eq
-  refine (rest_call v hp (s := s) (P := P) hle hP a0
+  refine (rest_callOut v hp (s := s) (P := P) hle hP a0
     (by rw [a1, k.cs _ (pres .x22) (pres30 .x22), hx22])
     (by rw [a2, k.cs _ (pres .x23) (pres30 .x23), hx23]) a3
-    (by rw [kw.wr, k.wr, hwr]) (fun h => by rw [mw₃, mw]; exact hcnt h)
-    (fun i hi => by rw [mw₃, mw]; exact hdata i hi)).mono fun u ⟨vu, ku, fu, pu⟩ =>
+    (by rw [kw.rd, k.rd, hrd]) (by rw [kw.wr, k.wr, hwr])
+    (by rw [kw.cs _ (by decide) (by decide), k.cs _ (by decide) (by decide), h28])
+    (fun h => by rw [mw₃, mw]; exact hcnt h)
+    (fun i hi hp' => by rw [mw₃, mw]; exact hdata i hi hp') (fun i hi => by rw [mw₃, mw]; exact hout i hi)).mono
+    fun u ⟨vu, ku, fu, pu⟩ =>
       ⟨fun r hr => (vu r hr).trans ((vw₃ r hr).trans (vw r hr)),
         ((k.trans kw).sub none).trans (ku.sub fun r hr => ?_), ?_, pu⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -362,28 +383,29 @@ theorem cryptRest_after (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
 /-- `openRest`: the data from `P` (fewer than 512 bytes) encrypted from the
 counter after `P / 64` blocks, as a call of the stream would, but for
 `ctx[768, 1280)`. -/
-theorem openRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀) {s w : State}
+theorem openRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀) {s w : State}
     {P : Nat} (hle : P ≤ L s₀) (hlt : L s₀ - P < 512) (hP : P < L s₀ → P % 64 = 0)
     (hx21 : w.gpr .x21 = cx s₀) (hx22 : w.gpr .x22 = dp s₀ + BitVec.ofNat 64 P)
     (hx23 : w.gpr .x23 = BitVec.ofNat 64 (L s₀ - P)) (hrd : w.rd = s₀.rd) (hwr : w.wr = s₀.wr)
     (hcnt : P < L s₀ →
       stateAt w.mem (off (cx s₀) 64) = ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (P / 64))
-    (hdata : ∀ k < L s₀, w.mem (dp s₀ + BitVec.ofNat 64 k) =
-      if k < P then s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0
-      else s.mem (dp s₀ + BitVec.ofNat 64 k)) :
+    (h28 : w.gpr .x28 = s₀.gpr .x28)
+    (hdata : ∀ k < L s₀, P ≤ k → w.mem (dp s₀ + BitVec.ofNat 64 k) = s.mem (dp s₀ + BitVec.ofNat 64 k))
+    (hout : ∀ k < P, w.mem (op false s₀ + BitVec.ofNat 64 k) =
+      s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0) :
     WP isa (openRest v.callee) w fun s' =>
       (∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) ∧
-      Kept [sub s₀ 64 384, dR s₀, sub s₀ 768 512] w s' ∧
-      Frame [sub s₀ 64 384, restR s₀ P, sub s₀ 768 512] w.mem s'.mem ∧
-      bytesAt s'.mem (dp s₀) (L s₀) =
+      Kept [sub s₀ 64 384, oR false s₀, sub s₀ 768 512] w s' ∧
+      Frame [sub s₀ 64 384, restQ s₀ (op false s₀) P, sub s₀ 768 512] w.mem s'.mem ∧
+      bytesAt s'.mem (op false s₀) (L s₀) =
         Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
   have pad := fun {w' : State} {n : Nat} (hn : n ≤ 512) (hlt' : L s₀ - P ≤ n) (k : Kept [] w w')
       (vw : ∀ r ∈ preservedV, (w'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) =>
-    padRest_after (s := s) v hp hn hle hlt' hP hx21 hx22 hx23 hrd hwr hcnt hdata k vw
+    padRest_after (s := s) v hp hn hle hlt' hP hx21 hx22 hx23 hrd hwr hcnt h28 hdata hout k vw
   have crypt := fun {w' : State} (k : Kept [] w w')
       (vw : ∀ r ∈ preservedV, (w'.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64) =>
-    cryptRest_after (s := s) v hp hle hP hx21 hx22 hx23 hwr hcnt hdata k vw
+    cryptRest_after (s := s) v hp hle hP hx21 hx22 hx23 hrd hwr hcnt h28 hdata hout k vw
   have x23k : ∀ {w' : State}, Kept [] w w' → w'.gpr .x23 = BitVec.ofNat 64 (L s₀ - P) :=
     fun k => by rw [k.cs _ (pres .x23) (pres30 .x23), hx23]
   have evz : ∀ (u : State), isa.eval (.zero .x .x9) u = some (u.gpr .x9 == 0) :=

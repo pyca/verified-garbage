@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
@@ -88,11 +87,11 @@ theorem ks5_eq (s₀ : State) {i n : Nat} (hi : i < n) :
   exact (BitVec.add_zero _).trans (BitVec.add_comm _ _)
 
 /-- The data XORed with its keystream is the data encrypted from counter 1. -/
-theorem ct_eq {s₀ : State} {m₃ m₄ : Mem} (hD : bytesAt m₃ (dp s₀) (L s₀) = D s₀)
+theorem ct_eq {s₀ : State} {Q : Addr} {m₃ m₄ : Mem} (hD : bytesAt m₃ (dp s₀) (L s₀) = D s₀)
     (hk : ∀ i < L s₀, m₃ (kp' s₀ + BitVec.ofNat 64 i) = ks5 s₀ (64 + i))
-    (hx : ∀ i < L s₀, m₄ (dp s₀ + BitVec.ofNat 64 i) = m₃ (dp s₀ + BitVec.ofNat 64 i) ^^^
+    (hx : ∀ i < L s₀, m₄ (Q + BitVec.ofNat 64 i) = m₃ (dp s₀ + BitVec.ofNat 64 i) ^^^
       m₃ (kp' s₀ + BitVec.ofNat 64 i)) :
-    bytesAt m₄ (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
+    bytesAt m₄ Q (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
   rw [encrypt_eq]
   apply List.ext_getElem
   · simp [VG.Proof.Poly1305.length_bytesAt, VG.Proof.ChaCha20.length_keystream]
@@ -118,19 +117,12 @@ theorem ks_post {s₀ : State} {m : Mem} (h : ∀ k < 320, m (off (cx s₀) 64 +
     {i : Nat} (hi : i < 256) : m (kp' s₀ + BitVec.ofNat 64 i) = ks5 s₀ (64 + i) := by
   rw [← h (64 + i) (by omega), kp', off_add, off_add, show 64 + (64 + i) = 128 + i by omega]
 
-/-- The data's region is apart from the saved registers. -/
-theorem dR_inv {s₀ : State} (hp : APre e s₀) :
-    (∀ r ∈ [dR s₀], ∃ r' ∈ [workR s₀, dR s₀], Region.Sub r r') ∧
-    (∀ r ∈ [dR s₀], (sub s₀ 576 56).Disjoint r) :=
-  ⟨fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, by simp, fun _ h => h⟩,
-    fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.c_d.sub_left (sub_ctx s₀ (by decide))⟩
-
 /-- The prologue keeps the callee-saved vector registers. -/
 theorem prologue_keepsV (sve : Bool) : (Short.prologue sve).allInstrs keepsV = true := by
   cases sve <;> lit_decide
 
 /-- After the prologue. -/
-theorem sealAfter_ok {s₀ s₁ : State} (hp : APre true s₀) (hL256 : L s₀ ≤ 256) (h₁ : PostP s₀ s₁)
+theorem sealAfter_ok {s₀ s₁ : State} (hp : APre true s₀) (hL256 : L s₀ ≤ 256) (h₁ : PostP true s₀ s₁)
     (v₁ : ∀ r ∈ preservedV, (s₁.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64) :
     WP isa Short.sealAfter s₁ (MainS s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
@@ -143,10 +135,11 @@ theorem sealAfter_ok {s₀ s₁ : State} (hp : APre true s₀) (hL256 : L s₀ �
   have K₂ : ∀ i < L s₀, s₂.mem (kp' s₀ + BitVec.ofNat 64 i) = ks5 s₀ (64 + i) := fun i hi => by
     rw [ks_frame k₂.frame (by rdisj_all) (by omega)]
     exact ks_post h₁.ks (by omega)
-  refine WP.seq (WP.mono (WP.preservedV (xorKs_ok hp hL256 i₂.x21 i₂.x22 i₂.x23 i₂.rd i₂.wr) (by lit_decide))
-    fun s₃ ⟨⟨k₃, x₃⟩, v₃⟩ => ?_)
-  have i₃ : Inv s₀ s₃ := i₂.step k₃ (dR_inv hp).1 (dR_inv hp).2
+  refine WP.seq (WP.mono (WP.preservedV (xorKsOut_ok hp hL256 i₂.x21 i₂.x22 (i₂.un .x28 (by decide)) i₂.x23
+    i₂.rd i₂.wr) (by lit_decide)) fun s₃ ⟨⟨k₃, x₃⟩, v₃⟩ => ?_)
+  have i₃ : Inv true s₀ s₃ := i₂.step k₃ (oR_inv hp).1 (oR_inv hp).2
   have ct₃ := ct_eq D₂ K₂ x₃
+  rw [op_true] at ct₃
   refine WP.mono (WP.preservedV (Fused.macAll_ok hp (srcA hp) (srcD hp) i₃) (by lit_decide))
     fun s₄ ⟨⟨k₄, r₄⟩, v₄⟩ => ?_
   have i₄ := mac_inv i₃ k₄
@@ -162,7 +155,7 @@ theorem sealAfter_ok {s₀ s₁ : State} (hp : APre true s₀) (hL256 : L s₀ �
   · rw [bytesAt_frame k₄.frame (by rdisj_all) hL', ct₃]
 
 /-- After the prologue. -/
-theorem openAfter_ok {s₀ s₁ : State} (hp : APre false s₀) (hL256 : L s₀ ≤ 256) (h₁ : PostP s₀ s₁)
+theorem openAfter_ok {s₀ s₁ : State} (hp : APre false s₀) (hL256 : L s₀ ≤ 256) (h₁ : PostP false s₀ s₁)
     (v₁ : ∀ r ∈ preservedV, (s₁.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64) :
     WP isa Short.openAfter s₁ (MainO s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
@@ -182,9 +175,9 @@ theorem openAfter_ok {s₀ s₁ : State} (hp : APre false s₀) (hL256 : L s₀ 
   have K₃ : ∀ i < L s₀, s₃.mem (kp' s₀ + BitVec.ofNat 64 i) = ks5 s₀ (64 + i) := fun i hi => by
     rw [ks_frame k₃.frame (by rdisj_all) (by omega), ks_frame k₂.frame (by rdisj_all) (by omega)]
     exact ks_post h₁.ks (by omega)
-  refine WP.seq (WP.mono (WP.preservedV (xorKs_ok hp hL256 i₃.x21 i₃.x22 i₃.x23 i₃.rd i₃.wr) (by lit_decide))
-    fun s₄ ⟨⟨k₄, x₄⟩, v₄⟩ => ?_)
-  have i₄ : Inv s₀ s₄ := i₃.step k₄ (dR_inv hp).1 (dR_inv hp).2
+  refine WP.seq (WP.mono (WP.preservedV (xorKsOut_ok hp hL256 i₃.x21 i₃.x22 (i₃.un .x28 (by decide)) i₃.x23
+    i₃.rd i₃.wr) (by lit_decide)) fun s₄ ⟨⟨k₄, x₄⟩, v₄⟩ => ?_)
+  have i₄ : Inv false s₀ s₄ := i₃.step k₄ (oR_inv hp).1 (oR_inv hp).2
   refine WP.mono (WP.preservedV (finalizeTo_ok hp i₄ (out := 48) (by omega)) (by lit_decide))
     fun s₅ ⟨⟨k₅, tag₅⟩, v₅⟩ => ?_
   have T₅ := tag₅ _ _ (Repr.frame k₄.frame (by rdisj_all) R₃)

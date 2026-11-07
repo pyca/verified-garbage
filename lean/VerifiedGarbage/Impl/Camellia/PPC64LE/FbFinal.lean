@@ -4,10 +4,10 @@ public import VerifiedGarbage.Impl.Camellia.PPC64LE.Modes
 public import VerifiedGarbage.Impl.Modes.PPC64LE.SeqFinal
 
 /-!
-# Camellia-CFB128 of a message's last piece on PPC64LE
+# Camellia-CFB128 and Camellia-OFB of a message's last piece on PPC64LE
 
-`cfbEncryptFinal` and `cfbDecryptFinal` (schedule = r3, rounds = r4, iv =
-r5, data = r6, len = r7, scratch = r8): the modes' CFB over a message's last
+`cfbEncryptFinal`, `cfbDecryptFinal` and `ofbFinal` (schedule = r3, rounds =
+r4, iv = r5, data = r6, len = r7, scratch = r8): the modes' CFB and OFB over a message's last
 piece, of any length (`Impl/Modes/PPC64LE/SeqFinal.lean`), over Camellia's
 core, wrapped for the two key arguments (`wrap`) as `cfbEncrypt` is, with its
 arguments but the data's length in bytes.
@@ -24,5 +24,8 @@ def cfbEncryptFinal : Prog isa := wrap ((dirCore .encrypt).seqFinal (Modes.Mode.
 
 /-- `vg_camellia_cfb128_decrypt_final`, with its scratch buffer as the sixth argument. -/
 def cfbDecryptFinal : Prog isa := wrap ((dirCore .encrypt).seqFinal (Modes.Mode.cfbDec 4))
+
+/-- `vg_camellia_ofb_final`, with its scratch buffer as the sixth argument. -/
+def ofbFinal : Prog isa := wrap ((dirCore .encrypt).seqFinal (Modes.Mode.ofb 4))
 
 end VG.Impl.Camellia.PPC64LE

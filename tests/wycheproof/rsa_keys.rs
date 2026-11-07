@@ -191,7 +191,10 @@ fn rsa_keys_from_components() {
             }
         }
     }
-    let keys: Vec<(String, RsaAnyPrivateKey)> = keys.into_values().collect();
+    let mut keys: Vec<(String, RsaAnyPrivateKey)> = keys.into_values().collect();
+    // Start the expensive private operations first so large keys do not
+    // leave the other workers idle at the end of the test.
+    keys.sort_by_key(|(_, k)| core::cmp::Reverse(trim_zeros(&k.modulus.as_ref().unwrap().0).len()));
     let (with_primes, without_primes) = (Count::default(), Count::default());
     harness::par_each(&keys, |(name, k)| {
         if check_key(name, k) {

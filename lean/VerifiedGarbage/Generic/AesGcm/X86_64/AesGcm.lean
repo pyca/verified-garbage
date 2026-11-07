@@ -23,13 +23,6 @@ open VG.Proof.AesGcm.X86_64
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  Spec.Gcm.initApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.init v.callees)
-    stack := 2576
-    verified := init_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (init_spSafe v)
-    features := (v.ctr.features ++ v.key.features).dedup },
   Spec.Gcm.sealApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees)
@@ -51,22 +44,6 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     verified := Proof.AesGcm.openTo_keyed (OpenTo.openTo_verified v.copyW (openFn v))
     spSafe := OpenTo.openTo_spAll v.copyW _ (openFn v).spAll
     features := v.features },
-  Spec.Gcm.streamInitApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2568 .r8
-      (Impl.AesGcm.X86_64.streamInit v.callees)
-    stack := 2576
-    verified := streamInit_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (streamInit_spSafe v)
-    features := v.gh.features },
-  Spec.Gcm.streamAadApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2568 .r9
-      (Impl.AesGcm.X86_64.streamAad v.callees)
-    stack := 2576
-    verified := streamAad_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (streamAad_spSafe v)
-    features := v.gh.features },
   Spec.Gcm.streamEncryptApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.callees)
@@ -80,21 +57,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     stack := 2608
     verified := Proof.AesGcm.streamDecrypt_keyed (streamDecrypt_framed v)
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v)
-    features := v.features },
-  Spec.Gcm.streamFinishApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish v.callees)
-    stack := 2584
-    verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (streamFinish_spSafe v)
-    features := (v.ctr.features ++ v.gh.features).dedup },
-  Spec.Gcm.streamVerifyApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamVerify v.callees)
-    stack := 2592
-    verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v)
-    features := (v.ctr.features ++ v.gh.features).dedup }]
+    features := v.features }]
 
 /-- The `_precomputed` artifacts calling the implementations `v`. -/
 def artifactsP (v : GcmImpl) : List Artifact := [

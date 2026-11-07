@@ -148,23 +148,26 @@ structure Prims where
   rej4 : Prog isa
   /-- What the names of the polynomial arithmetic's functions end with (`Arith.Backend`). -/
   sfx : String := ""
+  /-- What the names of the polynomial arithmetic\'s functions but the samplers end with
+  (`Arith.Backend.asfx`). -/
+  asfx : String := sfx
   montgomery : Bool := false
 
 section
 variable (P : Prims)
 
-def nttAt (f : Ptr) : Prog isa := callAt ("vg_mldsa_ntt" ++ P.sfx) P.ntt [(.rdi, .ptr f), (.rsi, .ptr (sc oSS))]
+def nttAt (f : Ptr) : Prog isa := callAt ("vg_mldsa_ntt" ++ P.asfx) P.ntt [(.rdi, .ptr f), (.rsi, .ptr (sc oSS))]
 
 def invNttAt (f : Ptr) : Prog isa :=
-  callAt ((if P.montgomery then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ P.sfx) P.invNtt [(.rdi, .ptr f), (.rsi, .ptr (sc oSS))]
+  callAt ((if P.montgomery then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ P.asfx) P.invNtt [(.rdi, .ptr f), (.rsi, .ptr (sc oSS))]
 
 def mulAt (h f g : Ptr) : Prog isa :=
-  callAt ((if P.montgomery then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ P.sfx) P.mul [(.rdi, .ptr h), (.rsi, .ptr f), (.rdx, .ptr g)]
+  callAt ((if P.montgomery then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ P.asfx) P.mul [(.rdi, .ptr h), (.rsi, .ptr f), (.rdx, .ptr g)]
 
 def mulAddAt (h f g : Ptr) : Prog isa :=
-  callAt ((if P.montgomery then "vg_mldsa_montgomery_multiply_add_ntt" else "vg_mldsa_multiply_add_ntt") ++ P.sfx) P.mulAdd [(.rdi, .ptr h), (.rsi, .ptr f), (.rdx, .ptr g)]
+  callAt ((if P.montgomery then "vg_mldsa_montgomery_multiply_add_ntt" else "vg_mldsa_multiply_add_ntt") ++ P.asfx) P.mulAdd [(.rdi, .ptr h), (.rsi, .ptr f), (.rdx, .ptr g)]
 
-def subAt (f g : Ptr) : Prog isa := callAt ("vg_mldsa_sub" ++ P.sfx) P.sub [(.rdi, .ptr f), (.rsi, .ptr g)]
+def subAt (f g : Ptr) : Prog isa := callAt ("vg_mldsa_sub" ++ P.asfx) P.sub [(.rdi, .ptr f), (.rsi, .ptr g)]
 
 def rej4At (a w : Ptr) : Prog isa :=
   callAt ("vg_mldsa_rej_ntt_poly4" ++ P.sfx) P.rej4 [(.rdi, .ptr (sc oSB4)), (.rsi, .ptr a), (.rdx, .ptr w)]
@@ -174,7 +177,7 @@ def ballAt (ct : Ptr) (len tau : Nat) (c : Ptr) : Prog isa :=
     [(.rdi, .ptr ct), (.rsi, .imm len), (.rdx, .imm tau), (.rcx, .ptr c), (.r8, .ptr (sc oSS))]
 
 def useHintAt (h r : Ptr) (g2 : Nat) (out : Ptr) : Prog isa :=
-  callAt ("vg_mldsa_use_hint" ++ P.sfx) P.useHint [(.rdi, .ptr h), (.rsi, .ptr r), (.rdx, .imm g2), (.rcx, .ptr out)]
+  callAt ("vg_mldsa_use_hint" ++ P.asfx) P.useHint [(.rdi, .ptr h), (.rsi, .ptr r), (.rdx, .imm g2), (.rcx, .ptr out)]
 
 def sbpAt (f : Ptr) (b : Nat) (out : Ptr) (len : Nat) : Prog isa :=
   callAt "vg_mldsa_simple_bit_pack" P.simpleBitPack
@@ -192,7 +195,7 @@ def hintUnpackAt (y : Ptr) (len omega : Nat) (h : Ptr) (hlen : Nat) : Prog isa :
     [(.rdi, .ptr y), (.rsi, .imm len), (.rdx, .imm omega), (.rcx, .ptr h), (.r8, .imm hlen)]
 
 def normLtAt (f : Ptr) (bound : Nat) : Prog isa :=
-  callAt ("vg_mldsa_norm_lt" ++ P.sfx) P.normLt [(.rdi, .ptr f), (.rsi, .imm bound)]
+  callAt ("vg_mldsa_norm_lt" ++ P.asfx) P.normLt [(.rdi, .ptr f), (.rsi, .imm bound)]
 
 end
 

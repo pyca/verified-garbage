@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.Modes.RISCV64.Seq
 public import VerifiedGarbage.Impl.Modes.RISCV64.SeqFinal
 public import VerifiedGarbage.Spec.Cfb.Final
+public import VerifiedGarbage.Spec.Ofb.Final
 import VerifiedGarbage.Proof.Modes.FbFinal
+import VerifiedGarbage.Proof.AesOfb.Spec
 import VerifiedGarbage.Proof.Modes.RISCV64.Modes
 public import VerifiedGarbage.Proof.Modes.Words
 import VerifiedGarbage.Proof.Framework.Omega
@@ -25,7 +27,8 @@ the IV, the `r` bytes are XORed with the first bytes of `CIPH_K` of the
 chaining value `F` leaves, and the IV becomes that chaining value if
 `r = 0`, its image under the cipher otherwise (`finalOut`, `finalNext`).
 `cfbEncFinal_wp` and `cfbDecFinal_wp` state this as the specification's
-(`Spec.Cfb.encryptFinal`, `decryptFinal`) for `cfbEnc` and `cfbDec`.
+(`Spec.Cfb.encryptFinal`, `decryptFinal`) for `cfbEnc` and `cfbDec`, and
+`ofbFinal_wp` as `Spec.Ofb.CryptFinal` for `ofb` (`ofbFinal_out`).
 
 The function is `seq`'s around other loops (`seqWith_changesO_wp`), which
 start from `seq`'s invariant for no step (`Inv`, a byte at a time), which
@@ -157,7 +160,6 @@ end
 /-- What the byte loop works on: the `r` bytes at `R` (in `s2`, their count
 in `s3`) and those at `K` (in `t2`), apart, readable and writable. -/
 structure XPre (s₀ : State) (K R : Addr) (r : Nat) : Prop where
-  pos : 0 < r
   fK : K.toNat + r ≤ 2 ^ 64
   fR : R.toNat + r ≤ 2 ^ 64
   disj : Region.Disjoint ⟨K, r⟩ ⟨R, r⟩
@@ -335,11 +337,6 @@ theorem cryptBuf_copy_dat {bw n : Nat} (ciph : Spec.Cbc.Cipher) (a : Areas) (i :
   simp only [cryptBuf, reduceCtorEq, ite_false]
   rw [copyBlk_apply (by decide), ite_eq_right (by simp)]
 
-theorem cryptBuf_copy_chn {bw n : Nat} (ciph : Spec.Cbc.Cipher) (a : Areas) (i : Nat) :
-    cryptBuf n ciph (applyOps (copyBlk bw .buf .chn) a) .chn i = a .chn i := by
-  simp only [cryptBuf, reduceCtorEq, ite_false]
-  rw [copyBlk_apply (by decide), ite_eq_right (by simp)]
-
 /-! ## The segments -/
 
 /-- The invariant after `j` whole blocks. -/
@@ -504,7 +501,7 @@ theorem tail_seg (hM : FinalOk c M)
   have dRS : Region.Disjoint ⟨tailA c s₀, rF c s₀⟩ (scrRegion c (Fb s₀ c)) :=
     (show Region.Disjoint ⟨Dp s₀, 1 * N s₀⟩ _ from hfx.dataScr).sub_left subR
   have hX : XPre s₆ (slotA (Fb s₀ c) c.buf) (tailA c s₀) (rF c s₀) := by
-    refine ⟨hr, by rw [hK]; omega_arith, by rw [hTA]; omega_arith, (dRS.sub_right subK).symm,
+    refine ⟨by rw [hK]; omega_arith, by rw [hTA]; omega_arith, (dRS.sub_right subK).symm,
       fun i hi => ?_, fun i hi => ?_⟩
     · rw [rd₆, wr₆, VG.Offset.add_add]; exact inRd_of (hS.low _ _ (by omega_arith))
     · show InRegions s₆.wr (Dp s₀ + BitVec.ofNat 64 (4 * c.bw * nF c s₀) + BitVec.ofNat 64 i) 1
@@ -736,5 +733,32 @@ theorem cfbDecFinal_wp (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : SeqPr
         ← (cfbDec_run _ _ _).1, ← (cfbDec_run _ _ _).2]; rfl, by
       rw [h3, ← Proof.Modes.cfbDecFinalNext_of, finalNext, ← (cfbDec_run _ _ _).2]; rfl⟩,
       h4⟩
+
+/-! ## OFB -/
+
+theorem ofb_finalOk (c : Core) : FinalOk c (Mode.ofb c.bw) :=
+  ⟨rfl, rfl, fun o ho => by
+    have b := blk_bounds (c := c) (st := (Mode.ofb c.bw).step) rfl
+    exact append_ok (copyBlk_inBounds (b _) (b _)) (xorBlk_inBounds (b _) (b _) (b _)) o ho,
+    append_ok (copyBlk_wordAl _ _ _) (xorBlk_wordAl _ _ _ _)⟩
+
+/-- OFB of a message's last piece, as the specification's. -/
+theorem ofbFinal_wp (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : SeqPre c byteMode s₀)
+    (hk : cs.KeyArgs s₀ (wrs0 c byteMode s₀) k) :
+    WP isa (c.seqFinal (Mode.ofb c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
+      Spec.Ofb.CryptFinal (cs.cipher k) (4 * c.bw) s₀.mem s'.mem (P s₀) (Dp s₀) (N s₀) ∧
+      Changes c byteMode s₀ s' :=
+  WP.mono (seqFinal_wp cs (ofb_finalOk c) (ofb_computes (cs.cipher_len k)) hp hk)
+    fun s' ⟨h1, h2, h3, h4⟩ => by
+      have hL0 : 0 < 4 * c.bw := by rcases hp.layout.bw with h | h <;> omega
+      obtain ⟨e1, e2⟩ := ofb_run (cs.cipher k) (iv0 c s₀) (xsF c s₀)
+      rw [chunksAt_length] at e2
+      refine ⟨h1, ⟨?_, ?_⟩, h4⟩
+      · rw [h2, finalOut, ← e1, ← e2]
+        exact ofbFinal_out hL0 (cs.cipher_len k) s₀.mem (Dp s₀) (iv0 c s₀) (N s₀)
+      · rw [h3, finalNext, ← e2, Proof.Modes.blockCount_eq hL0]
+        split
+        · rfl
+        · exact (Proof.AesOfb.next_succ _ _ _).symm
 
 end VG.Proof.Modes.RISCV64

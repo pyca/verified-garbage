@@ -18767,3 +18767,23 @@ j 21f
 .option pop",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_blowfish_modes_crypt2_decrypt.rs"]
+pub(crate) mod vg_blowfish_modes_crypt2_decrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blowfish_modes_crypt2_encrypt.rs"]
+pub(crate) mod vg_blowfish_modes_crypt2_encrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blowfish_modes_crypt_encrypt.rs"]
+pub(crate) mod vg_blowfish_modes_crypt_encrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blowfish_modes_prepare.rs"]
+pub(crate) mod vg_blowfish_modes_prepare;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blowfish_modes_prepare2.rs"]
+pub(crate) mod vg_blowfish_modes_prepare2;

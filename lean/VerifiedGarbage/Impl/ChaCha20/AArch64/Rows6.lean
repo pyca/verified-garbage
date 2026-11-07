@@ -95,12 +95,19 @@ def feedForward : List Instr :=
   cachedFeedRow 0 ++ cachedFeedRow 1 ++ cachedFeedRow 2 ++
     (List.finRange 6).flatMap (fun b => addRow (row b 3))
 
-/-- Rows already have the output byte order, so no transpose is needed. -/
-def xorRow (k : Fin 24) : List Instr :=
-  [.ldrq .v31 .x1 (16 * k.val), .vop (.logic .eor .v31 .v31 (vreg k)),
+/-- Rows already have the output byte order, so no transpose is needed: row
+`k` of the source (at `r`) XORed with it into the destination (at `x1`), the
+source's loaded before the destination's is stored. -/
+def xorRowFrom (r : Reg) (k : Fin 24) : List Instr :=
+  [.ldrq .v31 r (16 * k.val), .vop (.logic .eor .v31 .v31 (vreg k)),
    .strq .v31 .x1 (16 * k.val)]
 
-def finish : List Instr := feedForward ++ (List.finRange 24).flatMap xorRow
+/-- In place, at `x1`. -/
+def xorRow (k : Fin 24) : List Instr := xorRowFrom .x1 k
+
+def finishFrom (r : Reg) : List Instr := feedForward ++ (List.finRange 24).flatMap (xorRowFrom r)
+
+def finish : List Instr := finishFrom .x1
 
 /-- Six-block core. The outer wrapper supplies ABI preservation and advances
 pointers and the counter after this chunk. -/
@@ -120,7 +127,8 @@ def restore : List Instr := [.ldrq .v8 .x3 256,.ldrq .v9 .x3 272]
 def bulk : Prog isa := .seq (.block check)
   (.ite (.nonzero .x .x5) (.block []) (.loop body (.zero .x .x5)))
 
+/-- The stream in place (`Small.xor`'s destination, `x4`, set to `x1`). -/
 def xor : Prog isa := .seq (.block save)
-  (.seq bulk (.seq (.block restore) VG.Impl.ChaCha20.AArch64.Small.xor))
+  (.seq bulk (.seq (.block (restore ++ [.addImm .x .x4 .x1 0])) VG.Impl.ChaCha20.AArch64.Small.xor))
 
 end VG.Impl.ChaCha20.AArch64.Rows6

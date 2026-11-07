@@ -22,8 +22,8 @@ It reads the AES key schedule that `vg_aes_expand_key`
 start of a 240-byte buffer, and transforms `n` whole blocks in place, from
 the counter block in `ctr`, which it replaces with the one to continue from
 (`Ctr.next`): so a caller may process a message in pieces of whole blocks,
-keeping `ctr` between calls. A partial last block is the caller's: CTR of a
-zero block is the next output block, whose first bytes it XORs in.
+keeping `ctr` between calls. A partial last
+block is left to `vg_aes_ctr_final` (`Spec/Ctr/Final.lean`).
 
 It takes the `scratch` buffer of CBC's functions (`Spec/Cbc/Contract.lean`):
 room for the working space of `vg_aes_encrypt_blocks` (`[u64; 256]`) and
