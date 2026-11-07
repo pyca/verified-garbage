@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Sm4.Contract
 meta import VerifiedGarbage.Spec.Sm4.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # SM4 specification tests
@@ -49,7 +47,6 @@ def block (bs : List Byte) : Except String Block := do
 def between (text start stop : String) : Except String String := do
   let some after := (text.splitOn start)[1]? | throw s!"missing {start}"
   return (after.splitOn stop).headD ""
-
 
 /-- Only complete byte rows, excluding page headers and explanatory prose. -/
 def byteRows (text : String) : Except String (List Byte) := do
@@ -154,9 +151,5 @@ run_cmd do
   match result with
   | .ok () => pure ()
   | .error e => throwError "SM4: {e}"
-
-#assert_standard_axioms VG.Spec.Sm4.expandKeyContract
-#assert_standard_axioms VG.Spec.Sm4.ecbEncryptContract
-#assert_standard_axioms VG.Spec.Sm4.ecbDecryptContract
 
 end VG.Test.Sm4

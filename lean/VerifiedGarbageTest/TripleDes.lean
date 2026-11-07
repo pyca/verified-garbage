@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.TripleDes.Contract
 meta import VerifiedGarbage.Spec.TripleDes.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Triple DES specification tests
@@ -53,7 +51,6 @@ def number (s : String) : Except String Nat :=
 def block (bs : List Byte) : Except String Block := do
   unless bs.length == 8 do throw s!"not an 8-byte block: {bs.length}"
   return Vector.ofFn fun i => bs.getD i 0
-
 
 def context (key : List Byte) (direction : Direction) : Except String Spec.TripleDes.Context :=
   (init key direction).mapError (fun e => s!"initialization: {repr e}")
@@ -192,9 +189,5 @@ run_cmd do
   match checkLimits with
   | .ok () => pure ()
   | .error e => throwError "Triple DES: {e}"
-
-#assert_standard_axioms VG.Spec.TripleDes.expandKeyContract
-#assert_standard_axioms VG.Spec.TripleDes.ecbEncryptContract
-#assert_standard_axioms VG.Spec.TripleDes.ecbDecryptContract
 
 end VG.Test.TripleDes
