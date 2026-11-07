@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.X25519.RISCV64.Field
 
 `root` computes `z^((p-3)/4)` into `R` for the element `z` at `Z2`
 (`rootQ_ok`) by X448's addition chain for the inversion as far as
-`z^(2²²³ - 1)` (`R64.chain223_ok`), then 223 squarings and the product with
+`z^(2²²³ - 1)` (`R64.chain223Call_ok`), then 223 squarings and the product with
 `z^(2²²² - 1)`, since `(p-3)/4 = (2²²³ - 1) 2²²³ + (2²²² - 1)` (`root_exp`).
 -/
 
@@ -41,7 +41,7 @@ theorem rootQ_ok {qs : List Nat} (hq : R64.Sep8 R qs = true) (hZ : Z2 ∈ qs)
   obtain ⟨hfR, hfT, hC⟩ := R64.drop_R hq hT hc hS h0
   have hZf : Z2 ∈ qs.filter (· ≠ R) := by simp [hZ, hZR]
   unfold root
-  refine WP.seq (WP.mono (R64.chain223_ok hfR hZf hfT hC) fun s1 h1 => ?_)
+  refine WP.seq (WP.mono (R64.chain223Call_ok hfR hZf hfT hC) fun s1 h1 => ?_)
   obtain ⟨f6, _⟩ := R64.temps_get hfT (t := T6) (by decide)
   refine WP.seq (WP.mono (R64.sqnP (z := v Z2) (ea := 2 ^ 223 - 1) (by decide) (by decide) (by sep8)
     (by decide) (by simp) (by look) h1) fun s2 h2 => ?_)

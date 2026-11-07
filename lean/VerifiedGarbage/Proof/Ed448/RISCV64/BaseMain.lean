@@ -130,7 +130,8 @@ theorem fs_below_region {m m' : Mem} {e n : Nat} (hf : Frame [⟨b + BitVec.ofNa
 end
 
 theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : baseRISCV64.pre s) :
-    WP isa scalarBase s fun s' => baseRISCV64.post s s' := by
+    WP isa scalarBase s fun s' => baseRISCV64.post s s' ∧
+      Rest [.a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6] s s' := by
   obtain ⟨hrd, hwr, hos, how, hsw⟩ := hp
   have hB : BITS = 1064 := rfl
   obtain ⟨b, hb⟩ : ∃ b, b = Proof.Ed25519.RISCV64.base (s.gpr .a2) := ⟨_, rfl⟩
@@ -221,7 +222,10 @@ theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : b
     · rfl
     · rfl
     · exact h5.d
-  · show Spec.Ed448.bytesAt s6.mem (s.gpr .a0) 57 = _
+  · refine ⟨?_, (hr3'.mono (by decide)).trans ((hr3.mono (by decide)).trans
+      (((u4.rest (ws := [.t1]) (by decide)).mono (by decide)).trans
+      ((h5.stp.rest.mono (by decide)).trans (h6.2.mono (by decide)))))⟩
+    show Spec.Ed448.bytesAt s6.mem (s.gpr .a0) 57 = _
     have hlen : (Spec.Ed448.bytesAt s.mem (s.gpr .a1) 57).length = 57 := by
       simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range]
     have hk := Proof.Ed448.decodeLE_below hlen
@@ -235,7 +239,7 @@ theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : b
       fun h => h
     have eK : Proof.Ed448.Comb.accScalar K 0 = K := Proof.Ed448.Comb.accScalar_total K (lt_npow hk)
     rw [eK] at r5
-    rw [h6, Proof.Ed448.encodePoint_rep r5, Spec.Ed448.scalarBase, hK,
+    rw [h6.1, Proof.Ed448.encodePoint_rep r5, Spec.Ed448.scalarBase, hK,
       Proof.Ed448.encodePoint_rep (Proof.Ed448.pointMul_rep K Proof.Ed448.basePoint_rep)]
 
 end VG.Proof.Ed448.RISCV64

@@ -17,9 +17,9 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 /-!
 # `vg_ed448_verify_equation` on RISC-V, verified
 
-The function meets `verifyRISCV64` (`VTiming.lean`), with no stack: the code
-calls no function and writes only caller-saved registers (`WP.keep`), so the
-ABI's obligations hold of every execution (`verifyEquation_ok`), and it is
+The function meets `verifyRISCV64` (`VTiming.lean`), with no stack. Its
+correctness proof preserves registers across the shared addition-chain call
+and establishes the ABI obligations (`verifyEquation_ok`), and it is
 constant time from its pointers and inputs (`verifyEquation_ct`).
 
 Two runs from states with the same pointers and the same inputs leak the same
@@ -292,8 +292,8 @@ theorem verifyEquation_ok (hR : Proof.Ed448.RecoverOk) (s : State)
     (hs : verifyRISCV64.pre s) :
     ∃ t s', Exec isa Impl.Ed448.RISCV64.verifyEquation s t s' ∧ abiPreserved s s' ∧ verifyRISCV64.post s s' := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := hs
-  obtain ⟨t, s', he, h, hk⟩ := WP.keep [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5, .t6]
-    (verifyEquation_correct hR ⟨h1, h2, h3, h4, h5⟩) (by decide +kernel)
-  exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by decide), h⟩
+  obtain ⟨t, s', he, h, hr⟩ := verifyEquation_correct hR ⟨h1, h2, h3, h4, h5⟩
+  exact ⟨t, s', he, ⟨fun r hm => hr.gpr r (by cases r <;> simp_all [preserved]),
+    hr.sp, hr.gpr .ra (by decide)⟩, h⟩
 
 end VG.Proof.Ed448.RISCV64
