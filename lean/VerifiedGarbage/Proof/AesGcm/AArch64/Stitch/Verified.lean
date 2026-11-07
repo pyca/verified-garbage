@@ -68,4 +68,20 @@ theorem pwTbl_keepsV {k : Nat} (hk : k = 8 ∨ k = 16) :
     (Code.block (Impl.AesGcm.AArch64.Stitch.pwTbl k) : Prog isa).allInstrs keepsV = true := by
   rcases hk with rfl | rfl <;> decide +kernel
 
+/-- `vg_aes_gcm_open_split_with_powers` keeps the callee-saved vector registers. -/
+theorem stitchOpenSplit_keepsV (v : GcmImpl) {gh : Fn}
+    (hcl : (Impl.AesGcm.AArch64.Fast.pwSel v.callees 16 gh).allInstrs keepsV = true) :
+    (Impl.AesGcm.AArch64.Stitch.openSplitWithPw v.callees gh).allInstrs keepsV = true := by
+  have htb := pwTbl_keepsV (.inr rfl)
+  simp only [Code.allInstrs] at htb
+  unfold Impl.AesGcm.AArch64.Stitch.openSplitWithPw
+  generalize Impl.AesGcm.AArch64.Fast.pwSel v.callees 16 gh = cl at hcl ⊢
+  simp only [Impl.AesGcm.AArch64.Stitch.openFastS, Impl.AesGcm.AArch64.Stitch.tailTo,
+    Impl.AesGcm.AArch64.Stitch.openRunWithS, Impl.AesGcm.AArch64.Stitch.decPart, cond,
+    Impl.AesGcm.AArch64.Stitch.stitched, Impl.AesGcm.AArch64.Fast.front, Impl.AesGcm.AArch64.Fast.padMul,
+    Impl.AesGcm.AArch64.Fast.padMulT, Impl.AesGcm.AArch64.Tail.cryptAlT, Impl.AesGcm.AArch64.Tail.crSeg2T,
+    Impl.AesGcm.AArch64.Tail.crTailT, crArgs, tagLenOk, tagIn, cmpSeg, cmp, cmp16, crTail, ctrCall, copy,
+    copyB, Impl.AesGcm.AArch64.xor, GcmImpl.callees, Code.allInstrs, List.nil_append, v.ctr.keepsV, htb, hcl,
+    Bool.and_true, Bool.true_and] <;> decide +kernel
+
 end VG.Proof.AesGcm.AArch64

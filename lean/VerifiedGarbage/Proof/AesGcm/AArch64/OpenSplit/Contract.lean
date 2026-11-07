@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.Powers8
-public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
 
@@ -71,9 +70,24 @@ def contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sig.contract A (pre := pre A.ptrBits) (post := post A.ptrBits) (writeArgs := true) (stack := stack)
     (leak := some (leak A.ptrBits))
 
-/-- Its code before `withStackArgScratch`: the same, with `work` after `src_len`. -/
+/-- `sig` with `work: *mut [u64; 320]`. -/
+def scratchSig : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
+    ("dst", .slice true .u8 "len"), ("tag", .slice false .u8 "tag_len"), ("pw", .array false .u64 16),
+    ("src", .slice false .u8 "src_len"), ("work", .array true .u64 320)]
+  ret := some .u32
+
+/-- Its code before `withStackArgScratch`: `contract`, whatever `work` is. -/
 def scratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  Sig.scratchContract A sig "work" .u64 320 (pre A.ptrBits) (post A.ptrBits) true stack (some (leak A.ptrBits))
+  scratchSig.contract A
+    (pre := fun ctx rounds nonce nonceLen aad aadLen dst len tag tagLen pw src srcLen _work =>
+      pre A.ptrBits ctx rounds nonce nonceLen aad aadLen dst len tag tagLen pw src srcLen)
+    (post := fun ctx rounds nonce nonceLen aad aadLen dst len tag tagLen pw src srcLen _work =>
+      post A.ptrBits ctx rounds nonce nonceLen aad aadLen dst len tag tagLen pw src srcLen)
+    (writeArgs := true) (stack := stack)
+    (leak := some fun ctx rounds nonce nonceLen aad aadLen dst len tag tagLen pw src srcLen _work =>
+      leak A.ptrBits ctx rounds nonce nonceLen aad aadLen dst len tag tagLen pw src srcLen)
 
 /-! ## Locality -/
 
