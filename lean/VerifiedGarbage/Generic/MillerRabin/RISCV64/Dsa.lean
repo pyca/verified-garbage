@@ -18,7 +18,6 @@ def artifacts (v : Proof.MillerRabin.RISCV64.RoundImpl) : List Artifact := [
   Spec.Dsa.parameterSearchApi.artifact RISCV64.target {
     suffix := v.suffix
     stack := 512
-    consts := Impl.RsaKeyGen.TrialTable32.consts
     code := Impl.Dsa.RISCV64.ParameterSearch.code (gen1 v) (gen2 v) (gen3 v)
     verified := params_verified v
     features := v.features }]
