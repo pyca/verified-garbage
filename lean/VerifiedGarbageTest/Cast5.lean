@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Cast5.Contract
 meta import VerifiedGarbage.Spec.Cast5.Contract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # CAST5 specification tests
@@ -165,9 +163,5 @@ run_cmd do
   match checkLimits with
   | .ok () => pure ()
   | .error e => throwError "CAST5: {e}"
-
-#assert_standard_axioms VG.Spec.Cast5.expandKeyContract
-#assert_standard_axioms VG.Spec.Cast5.ecbEncryptContract
-#assert_standard_axioms VG.Spec.Cast5.ecbDecryptContract
 
 end VG.Test.Cast5

@@ -2,8 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Dsa.FixedBaseCombContract
 meta import VerifiedGarbage.Proof.Dsa.FixedBaseCombContract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 

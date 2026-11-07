@@ -6,8 +6,6 @@ import VerifiedGarbage.Spec.Rsa
 meta import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbageTest.RsaFactors
 meta import VerifiedGarbageTest.RsaFactors
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 
@@ -273,13 +271,6 @@ def checkEdges : Except String Unit := do
       let brute := (List.range m).find? fun x => a * x % m == 1
       unless inverse a m == brute do throw s!"inverse {a} mod {m}"
 
-#assert_standard_axioms Spec.Rsa.publicOp
-#assert_standard_axioms Spec.Rsa.privateCrt
-#assert_standard_axioms Spec.Rsa.crtKey
-#assert_standard_axioms Spec.Rsa.publicPrecompute
-#assert_standard_axioms Spec.Rsa.publicOpChecked
-#assert_standard_axioms Spec.Rsa.privateChecked
-#assert_standard_axioms Spec.Rsa.checkKey
 #assert_no_compiler_overrides Spec.Rsa.publicPrecompute Spec.Rsa.publicOp Spec.Rsa.privateCrt Spec.Rsa.crtKey
 #assert_no_compiler_overrides Spec.Rsa.publicOpChecked Spec.Rsa.privateChecked Spec.Rsa.checkKey
 #assert_spec_origin

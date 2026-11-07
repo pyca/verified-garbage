@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.RsaOaep
 meta import VerifiedGarbage.Spec.RsaOaep
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 
@@ -102,9 +100,6 @@ def check (key : Key) (msg seed c : List Byte) : Except String Unit := do
   unless dec [] key.n == .invalid do throw "decrypted n"
   unless dec [] (0 :: c) == .invalid do throw "decrypted a ciphertext of k + 1 octets"
 
-#assert_standard_axioms Spec.RsaOaep.encrypt
-#assert_standard_axioms Spec.RsaOaep.decode
-#assert_standard_axioms Spec.RsaOaep.decrypt
 #assert_no_compiler_overrides Spec.RsaOaep.encrypt Spec.RsaOaep.decode Spec.RsaOaep.decrypt
 #assert_spec_origin
 

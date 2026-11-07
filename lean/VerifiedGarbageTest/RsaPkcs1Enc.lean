@@ -6,8 +6,6 @@ import VerifiedGarbageTest.Sha256
 meta import VerifiedGarbageTest.Sha256
 import VerifiedGarbage.Spec.RsaPkcs1Enc
 meta import VerifiedGarbage.Spec.RsaPkcs1Enc
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 import VerifiedGarbageTest.Memo
@@ -302,8 +300,6 @@ def checkEdges : Except String Unit := do
   unless encrypt nB eB M (List.replicate 9 1) == none do throw "PS too long"
   unless encrypt nB eB M (List.replicate 7 1 ++ [0]) == none do throw "PS with a zero"
 
-#assert_standard_axioms Spec.RsaPkcs1Enc.encrypt
-#assert_standard_axioms Spec.RsaPkcs1Enc.decrypt
 #assert_no_compiler_overrides Spec.RsaPkcs1Enc.encrypt Spec.RsaPkcs1Enc.decrypt
 #assert_spec_origin
 

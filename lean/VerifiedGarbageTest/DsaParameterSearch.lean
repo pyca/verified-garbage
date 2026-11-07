@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 meta import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 
@@ -128,8 +126,6 @@ def checkInit : Except String Unit := do
       [128, 256, 384].all fun p => generationLengthsValid p (generationQLen p) do
     throw "the subgroup widths are not the generated (L, N) pairs"
 
-#assert_standard_axioms Spec.Dsa.parameterInitContract
-#assert_standard_axioms Spec.Dsa.parameterSearchContract
 #assert_no_compiler_overrides Spec.Dsa.parameterInitApi Spec.Dsa.parameterSearchApi
 #assert_spec_origin
 

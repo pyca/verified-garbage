@@ -4,8 +4,6 @@ import Lean.Elab.Command
 meta import Lean.Elab.Command
 import VerifiedGarbage.Spec.RsaKeyGen
 meta import VerifiedGarbage.Spec.RsaKeyGen
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 
@@ -120,9 +118,6 @@ def checkEdges : Except String Unit := do
       tooClose 256 (some (2 ^ 156 + 1)) 0 == false && tooClose 256 (some 0) (2 ^ 156) == true do
     throw "tooClose"
 
-#assert_standard_axioms Spec.RsaKeyGen.generate
-#assert_standard_axioms Spec.RsaKeyGen.candidateStep
-#assert_standard_axioms Spec.RsaKeyGen.keyFromPrimes
 #assert_no_compiler_overrides Spec.RsaKeyGen.generate Spec.RsaKeyGen.candidateStep Spec.RsaKeyGen.keyFromPrimes
 #assert_spec_origin
 

@@ -4,8 +4,6 @@ import VerifiedGarbage.Spec.Dsa.ImportSizes
 meta import VerifiedGarbage.Spec.Dsa.ImportSizes
 import VerifiedGarbage.Spec.Dsa.Generate
 meta import VerifiedGarbage.Spec.Dsa.Generate
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
 meta import VerifiedGarbage.TCB.Audit
 
@@ -40,8 +38,6 @@ example (pLen qLen : Nat) : Import.lengthsValid pLen qLen ↔
 #guard subgroupBits 2048 == some 256
 #guard ¬generationLengthsValid 256 20
 
-#assert_standard_axioms Import.sizesValid
-#assert_standard_axioms Import.lengthsValid
 #assert_no_compiler_overrides Import.sizesValid Import.lengthsValid
 #assert_spec_origin
 

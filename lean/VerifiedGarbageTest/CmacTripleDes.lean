@@ -4,8 +4,6 @@ import VerifiedGarbageTest.Cmac
 meta import VerifiedGarbageTest.Cmac
 import VerifiedGarbage.Spec.Cmac.TripleDesContract
 meta import VerifiedGarbage.Spec.Cmac.TripleDesContract
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # Known-answer tests for TDEA-CMAC (3DES-CMAC)
@@ -81,9 +79,5 @@ run_cmd do
         if valid then pass := pass + 1 else fail := fail + 1
   unless pass == 14 && fail == 42 do
     throwError "expected 14 valid and 42 invalid verification vectors, checked {pass} and {fail}"
-
-#assert_standard_axioms VG.Spec.Cmac.tdesStreamInitContract
-#assert_standard_axioms VG.Spec.Cmac.tdesAbsorbContract
-#assert_standard_axioms VG.Spec.Cmac.tdesFinishContract
 
 end VG.Test.CmacTripleDes

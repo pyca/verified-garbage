@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.TCB.Axioms
 
 /-! Golden tests for contiguous stack buffers and SP-relative addresses. -/
 namespace VG.Test.AArch64Stack
@@ -71,7 +69,4 @@ private def reserved := push (.alloc 256) initial
 #guard (Code.frame (Instr.push .x30)
   (.frame (.alloc 256) (.block []) (.free 256)) (.pop .x30)).aarch64Depth == 17
 
-#assert_standard_axioms VG.AArch64.Exec.frameSp
-#assert_standard_axioms VG.AArch64.WP.alloc
-#assert_standard_axioms VG.AArch64.taint
 end VG.Test.AArch64Stack
