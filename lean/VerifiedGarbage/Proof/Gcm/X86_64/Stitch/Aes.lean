@@ -101,6 +101,7 @@ structure LPre (ix : Bool) (s₀ : State) : Prop where
   p_c : (pR s₀).Disjoint (cR s₀)
   p_y : (pR s₀).Disjoint (yR s₀)
   c_y : (cR s₀).Disjoint (yR s₀)
+  d_p : (dR s₀).Disjoint (pR s₀)
   /-- Out of place, the output is apart from the data. -/
   d_w : ix = true → (dR s₀).Disjoint (wR ix s₀)
   wrap_d : (dp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
@@ -124,6 +125,7 @@ theorem SPre.toM {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) : LPre false s₀
   p_c := hp.p_c
   p_y := hp.p_y
   c_y := hp.c_y
+  d_p := hp.d_p
   d_w := fun h => absurd h (by decide)
   wrap_d := hp.wrap_d
   wrap_w := hp.wrap_d
@@ -146,6 +148,7 @@ theorem SPreTo.toM {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) : LPre true
   p_c := hp.p_c
   p_y := hp.p_y
   c_y := hp.c_y
+  d_p := hp.s_p
   d_w := fun _ => hp.s_o
   wrap_d := hp.wrap_s
   wrap_w := hp.wrap_o

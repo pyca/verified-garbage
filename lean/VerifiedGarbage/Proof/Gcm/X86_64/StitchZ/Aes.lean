@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
@@ -63,6 +63,49 @@ theorem AInv.zframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (h 
 theorem AInv.keys {s₀ : State} (hp : SPre s₀) {c : Nat} {s : State} (hI : AInv s₀ c s) :
     Keys (nr s₀) (sch s₀) s :=
   ⟨by rw [hI.rdi, sch_frame hp hI.frame], by rcases hp.rounds with h | h | h <;> omega,
+    fun j hj => by
+      rw [hI.rd, hI.wr, hI.rdi]
+      exact Stitch.in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega)⟩
+
+/-- `AInv`, in place or out of place (`Stitch.AInvM` on four lanes). -/
+structure AInvM (ix : Bool) (s₀ : State) (c : Nat) (s : State) : Prop where
+  le : c ≤ nb s₀
+  ctr : ∀ l < 4, s.zlane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀)
+  msk : ∀ l < 4, s.zlane .xmm0 l = revMask
+  inc : ∀ l < 4, s.zlane .xmm15 l = four
+  rdi : s.gpr .rdi = kp s₀
+  rsi : s.gpr .rsi = s₀.gpr .rsi
+  r10 : s.gpr .r10 = kp s₀ + BitVec.ofNat 64 (16 * nr s₀)
+  r8 : ix = true → s.gpr .r8 = Stitch.op s₀ - dp s₀
+  frame : Frame [Stitch.wR ix s₀, pR s₀] s₀.mem s.mem
+  out : ∀ k < c, blockAt s.mem (Stitch.wAddr ix s₀ k) = ctb s₀ k
+  src : ∀ k < nb s₀, c ≤ k → blockAt s.mem (bAddr s₀ k) = blk s₀ k
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+
+theorem AInv.toM {s₀ : State} {c : Nat} {s : State} (h : AInv s₀ c s) : AInvM false s₀ c s :=
+  ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, fun h' => absurd h' (by decide), h.frame,
+    fun k hk => (h.blocks k (by have := h.le; omega)).trans (by simp only [hk, ite_true]),
+    fun k hk hc => (h.blocks k hk).trans (by simp only [show ¬ k < c by omega, ite_false]), h.rd, h.wr⟩
+
+theorem AInvM.toAInv {s₀ : State} {c : Nat} {s : State} (h : AInvM false s₀ c s) : AInv s₀ c s :=
+  ⟨h.le, h.ctr, h.msk, h.inc, h.rdi, h.rsi, h.r10, h.frame, fun k hk => by
+    by_cases hc : k < c
+    · simp only [hc, ite_true]; exact h.out k hc
+    · simp only [hc, ite_false]; exact h.src k hk (by omega), h.rd, h.wr⟩
+
+theorem AInvM.zframe {ix : Bool} {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (h : AInvM ix s₀ c s)
+    (f : ZFrame rs s s') (h14 : .xmm14 ∉ rs) (h0 : .xmm0 ∉ rs) (h15 : .xmm15 ∉ rs) : AInvM ix s₀ c s' :=
+  ⟨h.le, fun l hl => by rw [f.zlane _ h14 l hl]; exact h.ctr l hl,
+    fun l hl => by rw [f.zlane _ h0 l hl]; exact h.msk l hl,
+    fun l hl => by rw [f.zlane _ h15 l hl]; exact h.inc l hl, by rw [f.gpr]; exact h.rdi,
+    by rw [f.gpr]; exact h.rsi, by rw [f.gpr]; exact h.r10, fun hi => by rw [f.gpr]; exact h.r8 hi,
+    by rw [f.mem]; exact h.frame, fun k hk => by rw [f.mem]; exact h.out k hk,
+    fun k hk hc => by rw [f.mem]; exact h.src k hk hc, by rw [f.rd]; exact h.rd, by rw [f.wr]; exact h.wr⟩
+
+theorem AInvM.keys {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {c : Nat} {s : State} (hI : AInvM ix s₀ c s) :
+    Keys (nr s₀) (sch s₀) s :=
+  ⟨by rw [hI.rdi, Stitch.sch_frameM hp hI.frame], by rcases hp.rounds with h | h | h <;> omega,
     fun j hj => by
       rw [hI.rd, hI.wr, hI.rdi]
       exact Stitch.in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega)⟩
