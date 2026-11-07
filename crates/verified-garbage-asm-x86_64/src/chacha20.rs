@@ -40,6 +40,170 @@ pub unsafe extern "sysv64" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce
     )
 }
 
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+///
+/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_chacha20_apply_scrub(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHgAAAAEg50A=="
+jb 20f
+.base64 "TImvQAIAAEyJt0gCAABMib9QAgAASYn9SYn2SYnXSInBSCnRSYmNWAIAAEiD4D9IOdA="
+jb 22f
+jmp 23f
+22:
+.base64 "SInC"
+23:
+.base64 "TInuSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
+je 24f
+26:
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "SDnR"
+je 27f
+29:
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
+jne 29b
+jmp 28f
+27:
+28:
+.base64 "SQHWSSnXTIn6SIPiwA=="
+je 210f
+.base64 "SYtFAEmLTQhJi3UQSYt9GE2LRSBNi00oTYtVME2LXThJiYXAAAAASYmNyAAAAEmJtdAAAABJib3YAAAATYmF4AAAAE2JjegAAABNiZXwAAAATYmd+AAAAESJ0EiJ0UjB6QYByEGJRTBMie9IgcfAAAAATIn2TInpSIHBAAEAAEkB1kkp1w=="
+call {vg_chacha20_xor}
+jmp 211f
+210:
+211:
+.base64 "TYX/"
+je 212f
+.base64 "TInvTInuSIPGQA=="
+call {vg_chacha20_block}
+.base64 "QYtFMIPAAUGJRTBMie5Ig8ZATIn6uQAAAABIidBIwegD"
+je 214f
+216:
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "SDnR"
+je 217f
+219:
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
+jne 219b
+jmp 218f
+217:
+218:
+.base64 "SQHWSSnX"
+jmp 213f
+212:
+213:
+.base64 "SYuFWAIAAEmJhYAAAABNi7VIAgAATYu9UAIAAE2LrUACAAC4AQAAAA=="
+jmp 21f
+20:
+.base64 "uAAAAAA="
+21:
+.base64 "SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.p2align 6"#,
+        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+    )
+}
+
+/// The CPU features `vg_chacha20_apply_avx2_scrub` requires (`Artifact.features`).
+pub const VG_CHACHA20_APPLY_AVX2_SCRUB_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
+///
+/// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `state` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_chacha20_apply_avx2_scrub(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHgAAAAEg50A=="
+jb 20f
+.base64 "TImvQAIAAEyJt0gCAABMib9QAgAASYn9SYn2SYnXSInBSCnRSYmNWAIAAEiD4D9IOdA="
+jb 22f
+jmp 23f
+22:
+.base64 "SInC"
+23:
+.base64 "TInuSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
+je 24f
+26:
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "SDnR"
+je 27f
+29:
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
+jne 29b
+jmp 28f
+27:
+28:
+.base64 "SQHWSSnXTIn6SIPiwA=="
+je 210f
+.base64 "SYtFAEmLTQhJi3UQSYt9GE2LRSBNi00oTYtVME2LXThJiYXAAAAASYmNyAAAAEmJtdAAAABJib3YAAAATYmF4AAAAE2JjegAAABNiZXwAAAATYmd+AAAAESJ0EiJ0UjB6QYByEGJRTBMie9IgcfAAAAATIn2TInpSIHBAAEAAEkB1kkp1w=="
+call {vg_chacha20_xor_avx2}
+jmp 211f
+210:
+211:
+.base64 "TYX/"
+je 212f
+.base64 "TInvTInuSIPGQA=="
+call {vg_chacha20_block}
+.base64 "QYtFMIPAAUGJRTBMie5Ig8ZATIn6uQAAAABIidBIwegD"
+je 214f
+216:
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "SDnR"
+je 217f
+219:
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
+jne 219b
+jmp 218f
+217:
+218:
+.base64 "SQHWSSnX"
+jmp 213f
+212:
+213:
+.base64 "SYuFWAIAAEmJhYAAAABNi7VIAgAATYu9UAIAAE2LrUACAAC4AQAAAA=="
+jmp 21f
+20:
+.base64 "uAAAAAA="
+21:
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.p2align 6"#,
+        vg_chacha20_xor_avx2 = sym super::chacha20::vg_chacha20_xor_avx2::vg_chacha20_xor_avx2,
+        vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
+    )
+}
+
 /// The CPU features `vg_chacha20_apply_avx512_scrub` requires (`Artifact.features`).
 pub const VG_CHACHA20_APPLY_AVX512_SCRUB_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F);
 
@@ -59,16 +223,16 @@ pub unsafe extern "sysv64" fn vg_chacha20_apply_avx512_scrub(state: *mut [u64; 9
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
-.base64 "SImfQAIAAEiJr0gCAABMiadQAgAASIn7SIn1SYnUSInBSCnRSImLWAIAAEiD4D9IOdA="
+.base64 "TImvQAIAAEyJt0gCAABMib9QAgAASYn9SYn2SYnXSInBSCnRSYmNWAIAAEiD4D9IOdA="
 jb 22f
 jmp 23f
 22:
 .base64 "SInC"
 23:
-.base64 "SIneSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
+.base64 "TInuSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
 je 24f
 26:
-.base64 "TItEDQBMMwQOTIlEDQBIg8EISIPoAQ=="
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
 jne 26b
 jmp 25f
 24:
@@ -76,26 +240,26 @@ jmp 25f
 .base64 "SDnR"
 je 27f
 29:
-.base64 "D7ZEDQBED7YEDkwxwIhEDQBIg8EBSDnR"
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
 jne 29b
 jmp 28f
 27:
 28:
-.base64 "SAHVSSnUTIniSIPiwA=="
+.base64 "SQHWSSnXTIn6SIPiwA=="
 je 210f
-.base64 "SIsDSItLCEiLcxBIi3sYTItDIEyLSyhMi1MwTItbOEiJg8AAAABIiYvIAAAASImz0AAAAEiJu9gAAABMiYPgAAAATImL6AAAAEyJk/AAAABMiZv4AAAARInQSInRSMHpBgHIiUMwSInfSIHHwAAAAEiJ7kiJ2UiBwQABAABIAdVJKdQ="
+.base64 "SYtFAEmLTQhJi3UQSYt9GE2LRSBNi00oTYtVME2LXThJiYXAAAAASYmNyAAAAEmJtdAAAABJib3YAAAATYmF4AAAAE2JjegAAABNiZXwAAAATYmd+AAAAESJ0EiJ0UjB6QYByEGJRTBMie9IgcfAAAAATIn2TInpSIHBAAEAAEkB1kkp1w=="
 call {vg_chacha20_xor_avx512}
 jmp 211f
 210:
 211:
-.base64 "TYXk"
+.base64 "TYX/"
 je 212f
-.base64 "SInfSIneSIPGQA=="
+.base64 "TInvTInuSIPGQA=="
 call {vg_chacha20_block}
-.base64 "i0Mwg8ABiUMwSIneSIPGQEyJ4rkAAAAASInQSMHoAw=="
+.base64 "QYtFMIPAAUGJRTBMie5Ig8ZATIn6uQAAAABIidBIwegD"
 je 214f
 216:
-.base64 "TItEDQBMMwQOTIlEDQBIg8EISIPoAQ=="
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
 jne 216b
 jmp 215f
 214:
@@ -103,16 +267,16 @@ jmp 215f
 .base64 "SDnR"
 je 217f
 219:
-.base64 "D7ZEDQBED7YEDkwxwIhEDQBIg8EBSDnR"
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
 jne 219b
 jmp 218f
 217:
 218:
-.base64 "SAHVSSnU"
+.base64 "SQHWSSnX"
 jmp 213f
 212:
 213:
-.base64 "SIuDWAIAAEiJg4AAAABIi6tIAgAATIujUAIAAEiLm0ACAAC4AQAAAA=="
+.base64 "SYuFWAIAAEmJhYAAAABNi7VIAgAATYu9UAIAAE2LrUACAAC4AQAAAA=="
 jmp 21f
 20:
 .base64 "uAAAAAA="
@@ -143,16 +307,16 @@ pub unsafe extern "sysv64" fn vg_chacha20_apply_avx2(state: *mut [u64; 96], data
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
-.base64 "SImfQAIAAEiJr0gCAABMiadQAgAASIn7SIn1SYnUSInBSCnRSImLWAIAAEiD4D9IOdA="
+.base64 "TImvQAIAAEyJt0gCAABMib9QAgAASYn9SYn2SYnXSInBSCnRSYmNWAIAAEiD4D9IOdA="
 jb 22f
 jmp 23f
 22:
 .base64 "SInC"
 23:
-.base64 "SIneSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
+.base64 "TInuSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
 je 24f
 26:
-.base64 "TItEDQBMMwQOTIlEDQBIg8EISIPoAQ=="
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
 jne 26b
 jmp 25f
 24:
@@ -160,26 +324,26 @@ jmp 25f
 .base64 "SDnR"
 je 27f
 29:
-.base64 "D7ZEDQBED7YEDkwxwIhEDQBIg8EBSDnR"
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
 jne 29b
 jmp 28f
 27:
 28:
-.base64 "SAHVSSnUTIniSIPiwA=="
+.base64 "SQHWSSnXTIn6SIPiwA=="
 je 210f
-.base64 "SIsDSItLCEiLcxBIi3sYTItDIEyLSyhMi1MwTItbOEiJg8AAAABIiYvIAAAASImz0AAAAEiJu9gAAABMiYPgAAAATImL6AAAAEyJk/AAAABMiZv4AAAARInQSInRSMHpBgHIiUMwSInfSIHHwAAAAEiJ7kiJ2UiBwQABAABIAdVJKdQ="
+.base64 "SYtFAEmLTQhJi3UQSYt9GE2LRSBNi00oTYtVME2LXThJiYXAAAAASYmNyAAAAEmJtdAAAABJib3YAAAATYmF4AAAAE2JjegAAABNiZXwAAAATYmd+AAAAESJ0EiJ0UjB6QYByEGJRTBMie9IgcfAAAAATIn2TInpSIHBAAEAAEkB1kkp1w=="
 call {vg_chacha20_xor_avx2}
 jmp 211f
 210:
 211:
-.base64 "TYXk"
+.base64 "TYX/"
 je 212f
-.base64 "SInfSIneSIPGQA=="
+.base64 "TInvTInuSIPGQA=="
 call {vg_chacha20_block}
-.base64 "i0Mwg8ABiUMwSIneSIPGQEyJ4rkAAAAASInQSMHoAw=="
+.base64 "QYtFMIPAAUGJRTBMie5Ig8ZATIn6uQAAAABIidBIwegD"
 je 214f
 216:
-.base64 "TItEDQBMMwQOTIlEDQBIg8EISIPoAQ=="
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
 jne 216b
 jmp 215f
 214:
@@ -187,16 +351,16 @@ jmp 215f
 .base64 "SDnR"
 je 217f
 219:
-.base64 "D7ZEDQBED7YEDkwxwIhEDQBIg8EBSDnR"
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
 jne 219b
 jmp 218f
 217:
 218:
-.base64 "SAHVSSnU"
+.base64 "SQHWSSnX"
 jmp 213f
 212:
 213:
-.base64 "SIuDWAIAAEiJg4AAAABIi6tIAgAATIujUAIAAEiLm0ACAAC4AQAAAA=="
+.base64 "SYuFWAIAAEmJhYAAAABNi7VIAgAATYu9UAIAAE2LrUACAAC4AQAAAA=="
 jmp 21f
 20:
 .base64 "uAAAAAA="
@@ -246,16 +410,16 @@ pub unsafe extern "sysv64" fn vg_chacha20_apply_avx512vl(state: *mut [u64; 96], 
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
-.base64 "SImfQAIAAEiJr0gCAABMiadQAgAASIn7SIn1SYnUSInBSCnRSImLWAIAAEiD4D9IOdA="
+.base64 "TImvQAIAAEyJt0gCAABMib9QAgAASYn9SYn2SYnXSInBSCnRSYmNWAIAAEiD4D9IOdA="
 jb 22f
 jmp 23f
 22:
 .base64 "SInC"
 23:
-.base64 "SIneSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
+.base64 "TInuSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
 je 24f
 26:
-.base64 "TItEDQBMMwQOTIlEDQBIg8EISIPoAQ=="
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
 jne 26b
 jmp 25f
 24:
@@ -263,26 +427,26 @@ jmp 25f
 .base64 "SDnR"
 je 27f
 29:
-.base64 "D7ZEDQBED7YEDkwxwIhEDQBIg8EBSDnR"
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
 jne 29b
 jmp 28f
 27:
 28:
-.base64 "SAHVSSnUTIniSIPiwA=="
+.base64 "SQHWSSnXTIn6SIPiwA=="
 je 210f
-.base64 "SIsDSItLCEiLcxBIi3sYTItDIEyLSyhMi1MwTItbOEiJg8AAAABIiYvIAAAASImz0AAAAEiJu9gAAABMiYPgAAAATImL6AAAAEyJk/AAAABMiZv4AAAARInQSInRSMHpBgHIiUMwSInfSIHHwAAAAEiJ7kiJ2UiBwQABAABIAdVJKdQ="
+.base64 "SYtFAEmLTQhJi3UQSYt9GE2LRSBNi00oTYtVME2LXThJiYXAAAAASYmNyAAAAEmJtdAAAABJib3YAAAATYmF4AAAAE2JjegAAABNiZXwAAAATYmd+AAAAESJ0EiJ0UjB6QYByEGJRTBMie9IgcfAAAAATIn2TInpSIHBAAEAAEkB1kkp1w=="
 call {vg_chacha20_xor_avx512vl}
 jmp 211f
 210:
 211:
-.base64 "TYXk"
+.base64 "TYX/"
 je 212f
-.base64 "SInfSIneSIPGQA=="
+.base64 "TInvTInuSIPGQA=="
 call {vg_chacha20_block}
-.base64 "i0Mwg8ABiUMwSIneSIPGQEyJ4rkAAAAASInQSMHoAw=="
+.base64 "QYtFMIPAAUGJRTBMie5Ig8ZATIn6uQAAAABIidBIwegD"
 je 214f
 216:
-.base64 "TItEDQBMMwQOTIlEDQBIg8EISIPoAQ=="
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
 jne 216b
 jmp 215f
 214:
@@ -290,16 +454,16 @@ jmp 215f
 .base64 "SDnR"
 je 217f
 219:
-.base64 "D7ZEDQBED7YEDkwxwIhEDQBIg8EBSDnR"
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
 jne 219b
 jmp 218f
 217:
 218:
-.base64 "SAHVSSnU"
+.base64 "SQHWSSnX"
 jmp 213f
 212:
 213:
-.base64 "SIuDWAIAAEiJg4AAAABIi6tIAgAATIujUAIAAEiLm0ACAAC4AQAAAA=="
+.base64 "SYuFWAIAAEmJhYAAAABNi7VIAgAATYu9UAIAAE2LrUACAAC4AQAAAA=="
 jmp 21f
 20:
 .base64 "uAAAAAA="
@@ -330,16 +494,16 @@ pub unsafe extern "sysv64" fn vg_chacha20_apply_ifma(state: *mut [u64; 96], data
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
-.base64 "SImfQAIAAEiJr0gCAABMiadQAgAASIn7SIn1SYnUSInBSCnRSImLWAIAAEiD4D9IOdA="
+.base64 "TImvQAIAAEyJt0gCAABMib9QAgAASYn9SYn2SYnXSInBSCnRSYmNWAIAAEiD4D9IOdA="
 jb 22f
 jmp 23f
 22:
 .base64 "SInC"
 23:
-.base64 "SIneSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
+.base64 "TInuSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
 je 24f
 26:
-.base64 "TItEDQBMMwQOTIlEDQBIg8EISIPoAQ=="
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
 jne 26b
 jmp 25f
 24:
@@ -347,26 +511,26 @@ jmp 25f
 .base64 "SDnR"
 je 27f
 29:
-.base64 "D7ZEDQBED7YEDkwxwIhEDQBIg8EBSDnR"
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
 jne 29b
 jmp 28f
 27:
 28:
-.base64 "SAHVSSnUTIniSIPiwA=="
+.base64 "SQHWSSnXTIn6SIPiwA=="
 je 210f
-.base64 "SIsDSItLCEiLcxBIi3sYTItDIEyLSyhMi1MwTItbOEiJg8AAAABIiYvIAAAASImz0AAAAEiJu9gAAABMiYPgAAAATImL6AAAAEyJk/AAAABMiZv4AAAARInQSInRSMHpBgHIiUMwSInfSIHHwAAAAEiJ7kiJ2UiBwQABAABIAdVJKdQ="
+.base64 "SYtFAEmLTQhJi3UQSYt9GE2LRSBNi00oTYtVME2LXThJiYXAAAAASYmNyAAAAEmJtdAAAABJib3YAAAATYmF4AAAAE2JjegAAABNiZXwAAAATYmd+AAAAESJ0EiJ0UjB6QYByEGJRTBMie9IgcfAAAAATIn2TInpSIHBAAEAAEkB1kkp1w=="
 call {vg_chacha20_xor_avx512}
 jmp 211f
 210:
 211:
-.base64 "TYXk"
+.base64 "TYX/"
 je 212f
-.base64 "SInfSIneSIPGQA=="
+.base64 "TInvTInuSIPGQA=="
 call {vg_chacha20_block}
-.base64 "i0Mwg8ABiUMwSIneSIPGQEyJ4rkAAAAASInQSMHoAw=="
+.base64 "QYtFMIPAAUGJRTBMie5Ig8ZATIn6uQAAAABIidBIwegD"
 je 214f
 216:
-.base64 "TItEDQBMMwQOTIlEDQBIg8EISIPoAQ=="
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
 jne 216b
 jmp 215f
 214:
@@ -374,16 +538,16 @@ jmp 215f
 .base64 "SDnR"
 je 217f
 219:
-.base64 "D7ZEDQBED7YEDkwxwIhEDQBIg8EBSDnR"
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
 jne 219b
 jmp 218f
 217:
 218:
-.base64 "SAHVSSnU"
+.base64 "SQHWSSnX"
 jmp 213f
 212:
 213:
-.base64 "SIuDWAIAAEiJg4AAAABIi6tIAgAATIujUAIAAEiLm0ACAAC4AQAAAA=="
+.base64 "SYuFWAIAAEmJhYAAAABNi7VIAgAATYu9UAIAAE2LrUACAAC4AQAAAA=="
 jmp 21f
 20:
 .base64 "uAAAAAA="
@@ -410,16 +574,16 @@ pub unsafe extern "sysv64" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mu
     core::arch::naked_asm!(
         r#".base64 "SIuHgAAAAEg50A=="
 jb 20f
-.base64 "SImfQAIAAEiJr0gCAABMiadQAgAASIn7SIn1SYnUSInBSCnRSImLWAIAAEiD4D9IOdA="
+.base64 "TImvQAIAAEyJt0gCAABMib9QAgAASYn9SYn2SYnXSInBSCnRSYmNWAIAAEiD4D9IOdA="
 jb 22f
 jmp 23f
 22:
 .base64 "SInC"
 23:
-.base64 "SIneSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
+.base64 "TInuSIHGgAAAAEgpxrkAAAAASInQSMHoAw=="
 je 24f
 26:
-.base64 "TItEDQBMMwQOTIlEDQBIg8EISIPoAQ=="
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
 jne 26b
 jmp 25f
 24:
@@ -427,26 +591,26 @@ jmp 25f
 .base64 "SDnR"
 je 27f
 29:
-.base64 "D7ZEDQBED7YEDkwxwIhEDQBIg8EBSDnR"
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
 jne 29b
 jmp 28f
 27:
 28:
-.base64 "SAHVSSnUTIniSIPiwA=="
+.base64 "SQHWSSnXTIn6SIPiwA=="
 je 210f
-.base64 "SIsDSItLCEiLcxBIi3sYTItDIEyLSyhMi1MwTItbOEiJg8AAAABIiYvIAAAASImz0AAAAEiJu9gAAABMiYPgAAAATImL6AAAAEyJk/AAAABMiZv4AAAARInQSInRSMHpBgHIiUMwSInfSIHHwAAAAEiJ7kiJ2UiBwQABAABIAdVJKdQ="
+.base64 "SYtFAEmLTQhJi3UQSYt9GE2LRSBNi00oTYtVME2LXThJiYXAAAAASYmNyAAAAEmJtdAAAABJib3YAAAATYmF4AAAAE2JjegAAABNiZXwAAAATYmd+AAAAESJ0EiJ0UjB6QYByEGJRTBMie9IgcfAAAAATIn2TInpSIHBAAEAAEkB1kkp1w=="
 call {vg_chacha20_xor}
 jmp 211f
 210:
 211:
-.base64 "TYXk"
+.base64 "TYX/"
 je 212f
-.base64 "SInfSIneSIPGQA=="
+.base64 "TInvTInuSIPGQA=="
 call {vg_chacha20_block}
-.base64 "i0Mwg8ABiUMwSIneSIPGQEyJ4rkAAAAASInQSMHoAw=="
+.base64 "QYtFMIPAAUGJRTBMie5Ig8ZATIn6uQAAAABIidBIwegD"
 je 214f
 216:
-.base64 "TItEDQBMMwQOTIlEDQBIg8EISIPoAQ=="
+.base64 "TYsEDkwzBA5NiQQOSIPBCEiD6AE="
 jne 216b
 jmp 215f
 214:
@@ -454,16 +618,16 @@ jmp 215f
 .base64 "SDnR"
 je 217f
 219:
-.base64 "D7ZEDQBED7YEDkwxwIhEDQBIg8EBSDnR"
+.base64 "QQ+2BA5ED7YEDkwxwEGIBA5Ig8EBSDnR"
 jne 219b
 jmp 218f
 217:
 218:
-.base64 "SAHVSSnU"
+.base64 "SQHWSSnX"
 jmp 213f
 212:
 213:
-.base64 "SIuDWAIAAEiJg4AAAABIi6tIAgAATIujUAIAAEiLm0ACAAC4AQAAAA=="
+.base64 "SYuFWAIAAEmJhYAAAABNi7VIAgAATYu9UAIAAE2LrUACAAC4AQAAAA=="
 jmp 21f
 20:
 .base64 "uAAAAAA="
