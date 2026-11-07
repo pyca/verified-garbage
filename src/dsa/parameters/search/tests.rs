@@ -228,7 +228,7 @@ fn backend_combinations() {
 }
 
 #[test]
-#[cfg(target_arch = "powerpc64")]
+#[cfg(any(target_arch = "powerpc64", target_arch = "riscv64"))]
 fn baseline() {
     check(super::select(detected()));
 }

@@ -445,9 +445,6 @@ impl PrivateKey {
 mod keygen;
 mod parameters;
 
-// Parameter generation is not yet implemented on RISC-V (`parameters.rs`
-// states the architectures it supports).
-#[cfg(not(target_arch = "riscv64"))]
 pub use parameters::Parameters;
 
 #[cfg(test)]
