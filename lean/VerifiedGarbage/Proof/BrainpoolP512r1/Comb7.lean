@@ -1,5 +1,7 @@
 module
 
+-- separate module: its kernel check of the tables (about 3 s) builds in parallel with the signature proof's other imports, and is not rerun when that proof changes
+
 public import VerifiedGarbage.Impl.BrainpoolP512r1.CombTable7
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckW
 public import VerifiedGarbage.Spec.BrainpoolP512r1
