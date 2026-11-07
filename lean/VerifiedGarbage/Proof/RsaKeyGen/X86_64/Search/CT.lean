@@ -386,7 +386,7 @@ theorem call_leak {q : SearchPoint} {u : State} (h : CallCT q u) :
 theorem search_call_ct (v : RoundImpl) : RelCT isa (Two CallCT) (candidateCall v) (fun _ _ => True) := by
   have hmc : MmCalls v.mont v.mm := ⟨v.mmOk, v.mmInline⟩
   refine RelCT.callEx (k := sharedCandContract)
-    (sharedCode_correct v.mont hmc (Kernel.called v) (sharedCandidate_mx v))
+    (sharedCode_correct v.mont hmc (Kernel.called v) (sharedCandidate_ctl v))
     (sharedCode_constantTime v.mont hmc (Kernel.called v)) fun u₁ u₂ ⟨q, h₁, h₂⟩ => ?_
   have hu₁ := h₁.rsp
   have hu₂ := h₂.rsp

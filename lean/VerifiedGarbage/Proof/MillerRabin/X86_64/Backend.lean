@@ -66,6 +66,42 @@ theorem RoundArith.round_correct (v : RoundArith) (s : State) (h : roundPre s) :
 theorem RoundArith.round_ct (v : RoundArith) : ConstantTime isa roundPre roundPub (round v.mm) :=
   round_call_ct v.mont v.body_inlineOk v.body_inline
 
+/-- Code that never loads MXCSR satisfies `ctlC`. -/
+theorem ctlC_of_noLoad {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr i) = true) : ctlC c = true := by
+  induction c with
+  | block is =>
+    rw [Code.allInstrs_eq] at h
+    exact (KList.all_eq _ _).trans h
+  | seq _ _ iha ihb =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [ctlC, iha h.1, ihb h.2, Bool.and_self]
+  | ite _ _ _ iht ihe =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [ctlC, iht h.1, ihe h.2, Bool.and_self]
+  | loop _ _ ih => exact ih h
+  | call _ _ _ => exact ctlOk_of_noLoad h
+  | frame _ _ _ ih =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [ctlC, h.1.1, h.2, ih h.1.2, Bool.and_self]
+  | icall _ _ _ _ _ ihn =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [ctlC, h.1.1, ctlOk_of_noLoad h.1.2, ihn h.2, Bool.and_self]
+
+/-- `ctlC` of a sequence. -/
+theorem ctlC_seqs (l : List (Prog isa)) : ctlC (VG.Impl.Bignum.X86_64.seqs l) = l.all ctlC := by
+  induction l with
+  | nil => rfl
+  | cons a l ih =>
+    cases l with
+    | nil => simp only [VG.Impl.Bignum.X86_64.seqs, List.all_cons, List.all_nil, Bool.and_true]
+    | cons b l => simp only [VG.Impl.Bignum.X86_64.seqs, ctlC, List.all_cons] at ih ⊢; rw [ih]
+
+theorem ctlC_seq (a b : Prog isa) : ctlC (.seq a b) = (ctlC a && ctlC b) := rfl
+theorem ctlC_ite (c : Cond) (a b : Prog isa) : ctlC (.ite c a b) = (ctlC a && ctlC b) := rfl
+theorem ctlC_loop (a : Prog isa) (c : Cond) : ctlC (.loop a c) = ctlC a := rfl
+theorem ctlC_call (n : String) (b : Prog isa) : ctlC (.call n b) = ctlOk b := rfl
+theorem ctlC_empty : ctlC (.block ([] : List Instr) : Prog isa) = true := rfl
+
 /-- A backend: its arithmetic, and the round as the emitter emits it
 (`code`, `round mm` unless the backend runs a round of its own), which the
 callers call (`RoundImpl.name`) under the round's contract. The round may
