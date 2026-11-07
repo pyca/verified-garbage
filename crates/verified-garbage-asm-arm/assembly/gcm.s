@@ -2506,3 +2506,84 @@ vg_aes_gcm_seal_gather:
 	ldr lr, [r12, #20]
 	add sp, sp, #40
 	bx lr
+
+vg_aes_gcm_open_to:
+	sub sp, sp, #48
+	add r12, sp, #0
+	str lr, [r12, #24]
+	str r0, [r12, #28]
+	str r1, [r12, #32]
+	str r2, [r12, #36]
+	str r3, [r12, #40]
+	ldr lr, [r12, #48]
+	str lr, [r12, #0]
+	ldr lr, [r12, #52]
+	str lr, [r12, #4]
+	ldr lr, [r12, #64]
+	str lr, [r12, #8]
+	ldr lr, [r12, #60]
+	str lr, [r12, #12]
+	ldr lr, [r12, #72]
+	str lr, [r12, #16]
+	ldr lr, [r12, #76]
+	str lr, [r12, #20]
+	add r0, r12, #56
+	ldr r2, [r12, #64]
+	ldr r1, [r0, #0]
+	ldr r3, [r0, #4]
+	lsr r3, r3, #2
+	cmp r3, #0
+	beq 20f
+22:
+	ldr r12, [r1, #0]
+	str r12, [r2, #0]
+	add r1, r1, #4
+	add r2, r2, #4
+	subs r3, r3, #1
+	bne 22b
+	b 21f
+20:
+21:
+	ldr r3, [r0, #4]
+	and r3, r3, #3
+	cmp r3, #0
+	beq 23f
+25:
+	ldrb r12, [r1, #0]
+	strb r12, [r2, #0]
+	add r1, r1, #1
+	add r2, r2, #1
+	subs r3, r3, #1
+	bne 25b
+	b 24f
+23:
+24:
+	add r12, sp, #0
+	ldr r0, [r12, #28]
+	ldr r1, [r12, #32]
+	ldr r2, [r12, #36]
+	ldr r3, [r12, #40]
+	bl {vg_aes_gcm_open}
+	cmp r0, #0
+	beq 26f
+	b 27f
+26:
+	add r12, sp, #0
+	ldr r1, [r12, #64]
+	ldr r2, [r12, #60]
+	mov r3, #0
+	cmp r2, #0
+	beq 28f
+210:
+	strb r3, [r1, #0]
+	add r1, r1, #1
+	subs r2, r2, #1
+	bne 210b
+	b 29f
+28:
+29:
+27:
+	add r12, sp, #0
+	ldr lr, [r12, #24]
+	add sp, sp, #48
+	bx lr

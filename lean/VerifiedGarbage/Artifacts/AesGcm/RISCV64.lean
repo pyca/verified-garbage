@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Verified
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -57,6 +59,10 @@ def artifacts : List Artifact := [
   Spec.Gcm.sealGatherApi.artifact RISCV64.target {
     code := Impl.AesGcm.RISCV64.SealGather.sealGather
     stack := 4640
-    verified := Proof.AesGcm.sealGather_keyed Gather.sealGather_verified }]
+    verified := Proof.AesGcm.sealGather_keyed Gather.sealGather_verified },
+  Spec.Gcm.openToApi.artifact RISCV64.target {
+    code := Impl.AesGcm.RISCV64.OpenTo.openTo
+    stack := 4672
+    verified := Proof.AesGcm.openTo_keyed OpenTo.openTo_verified }]
 
 end VG.Artifacts.AesGcm.RISCV64
