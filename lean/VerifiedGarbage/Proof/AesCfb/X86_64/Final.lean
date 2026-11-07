@@ -17,6 +17,8 @@ import VerifiedGarbage.Proof.AesOfb.X86_64.Body
 import VerifiedGarbage.Proof.Modes.X86_64.FbFinal
 import VerifiedGarbage.Proof.AesCfb.X86_64.Body
 import VerifiedGarbage.Proof.AesCbc.X86_64.CT
+import VerifiedGarbage.Proof.AesCbc.X86_64.Group
+import VerifiedGarbage.Proof.AesCfb.X86_64.Group
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 meta import VerifiedGarbage.Impl.AesCfb.X86_64.Final
@@ -36,6 +38,8 @@ meta import VerifiedGarbage.Proof.AesOfb.X86_64.Body
 meta import VerifiedGarbage.Proof.Modes.X86_64.FbFinal
 meta import VerifiedGarbage.Proof.AesCfb.X86_64.Body
 meta import VerifiedGarbage.Proof.AesCbc.X86_64.CT
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Group
+meta import VerifiedGarbage.Proof.AesCfb.X86_64.Group
 meta import VerifiedGarbage.Impl.StackScratch.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 
@@ -888,7 +892,8 @@ theorem encrypt_noSp (v : BlocksImpl) : NoSp (encrypt v.enc) :=
 
 theorem decrypt_noSp (v : BlocksImpl) : NoSp (decrypt v.enc) :=
   noSp_of_all (by
-    simp only [decrypt, Impl.AesCbc.X86_64.whole, body, Code.allInstrs, all_of_noSp v.encNosp]
+    simp only [decrypt, Impl.AesCbc.X86_64.batched, Impl.AesCbc.X86_64.groups, decGroup, body, Code.allInstrs,
+      all_of_noSp v.encNosp]
     decide +kernel)
 
 theorem encrypt_depth (v : BlocksImpl) : (encrypt v.enc).depth = 1 := by
@@ -896,7 +901,8 @@ theorem encrypt_depth (v : BlocksImpl) : (encrypt v.enc).depth = 1 := by
   decide
 
 theorem decrypt_depth (v : BlocksImpl) : (decrypt v.enc).depth = 1 := by
-  simp only [decrypt, Impl.AesCbc.X86_64.whole, body, Code.depth, v.encDepth]
+  simp only [decrypt, Impl.AesCbc.X86_64.batched, Impl.AesCbc.X86_64.groups, decGroup, body, Code.depth,
+    v.encDepth]
   decide
 
 theorem encryptFinal_mx (v : BlocksImpl) :
@@ -924,9 +930,15 @@ theorem encryptFinal_xdepth (v : BlocksImpl) : (encryptFinal v.enc v.suffix).x86
     v.encNoStack]
   decide
 
-theorem decryptFinal_xdepth (v : BlocksImpl) : (decryptFinal v.enc v.suffix).x86_64Depth ≤ 16 := by
-  simp only [decryptFinal, final, finalTail, decrypt, Impl.AesCbc.X86_64.whole, body, Code.x86_64Depth,
+/-- The whole-block decryption uses 8 bytes of stack, the return address of
+its calls of the block function. -/
+theorem decrypt_xdepth (v : BlocksImpl) : (decrypt v.enc).x86_64Depth = 8 := by
+  simp only [decrypt, Impl.AesCbc.X86_64.batched, Impl.AesCbc.X86_64.groups, decGroup, body, Code.x86_64Depth,
     v.encNoStack]
+  decide
+
+theorem decryptFinal_xdepth (v : BlocksImpl) : (decryptFinal v.enc v.suffix).x86_64Depth ≤ 16 := by
+  simp only [decryptFinal, final, finalTail, Code.x86_64Depth, decrypt_xdepth v, v.encNoStack]
   decide
 
 /-! ## Constant time -/
@@ -1090,7 +1102,7 @@ theorem decryptFinal_verified (v : BlocksImpl) :
     Verified X86_64.target (decryptFinal v.enc v.suffix) (finalScratchContract false) :=
   Verified.of_correct
     (final_correct (decrypt_correct v) (decrypt_noSp v) (decrypt_depth v) v (decryptFinal_mx v))
-    (final_ct (decrypt_correct v) (AesCbc.X86_64.whole_ct (decBody_ok v) (decBody_ct v)) (decrypt_noSp v)
+    (final_ct (decrypt_correct v) (AesCbc.X86_64.batched_ct (decGroup_ok v) (decGroup_ct v) (decBody_ok v) (decBody_ct v)) (decrypt_noSp v)
       (decrypt_depth v) v)
     (final_implies false)
 
