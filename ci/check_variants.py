@@ -193,7 +193,11 @@ INTERNAL = ("", "")
 # `features` reads them), because it chooses another implementation of the
 # same function there: a combination with one of them that needs all of a
 # set is one no CPU chooses (see the module's docstring).
-NEVER_WITH = {}
+NEVER_WITH = {
+    # `cipher::chacha20::Backend::select_for` chooses `_avx2` (or better)
+    # over `_ssse3` whenever AVX2 is present.
+    "x86_64": {"vg_chacha20_xor_ssse3": [{"avx", "avx2"}]},
+}
 
 
 def variants(fns):
@@ -508,9 +512,10 @@ def check(targets, rust, feats=None, names=None, never_with=None):
     """The errors of the generated functions `targets`, given the production
     Rust code `rust`, the features of each function `feats` (`features`),
     the other names of functions `names` (`all_aliases`) and the
-    implementations never chosen with some features (`NEVER_WITH`)."""
+    implementations never chosen with some features (`never_with`, for the
+    generated code `NEVER_WITH`)."""
     feats = feats or {}
-    never_with = NEVER_WITH if never_with is None else never_with
+    never_with = never_with or {}
     errors = never_with_errors(targets, feats, never_with)
     # The identifiers of the Rust code: `name` is one exactly when
     # `\bname\b` matches it, and a set answers without scanning the code.
@@ -672,7 +677,7 @@ def unread(srcs):
 def main():
     srcs = sources()
     errors = unread(srcs) + check(
-        functions(srcs), production_rust(ROOT / "src"), features(srcs), all_aliases(srcs)
+        functions(srcs), production_rust(ROOT / "src"), features(srcs), all_aliases(srcs), NEVER_WITH
     )
     for e in errors:
         print(e, file=sys.stderr)
