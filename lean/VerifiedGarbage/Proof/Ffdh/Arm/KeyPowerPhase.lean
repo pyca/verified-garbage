@@ -8,18 +8,22 @@ public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpStep
 public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Impl.Bignum.Arm.TwoExp
-import VerifiedGarbage.Proof.Bignum.Arm.TwoExpState
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
 import VerifiedGarbage.Proof.Bignum.Arm.ExpByteLoad
-import VerifiedGarbage.Impl.Bignum.Arm.Exp
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.FoldedPublic
 import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Impl.Bignum.Arm.DoubleFnBody
+public import VerifiedGarbage.Impl.Bignum.Arm.Exp
+public import VerifiedGarbage.Impl.Bignum.Arm.SelectArray
+import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore
 
 /-! # Public generator dispatch with a full-width secret exponent
 
