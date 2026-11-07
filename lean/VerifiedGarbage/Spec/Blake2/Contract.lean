@@ -22,8 +22,7 @@ nothing for unkeyed hashing), `update` on each piece of the message, and
 (for `1 ≤ nn ≤ P.maxBytes`, a key of at most `P.maxBytes` bytes, and data of
 fewer than 2⁶⁴ bytes): the first `nn` bytes of
 `finalHash P (init P nn kk) (keyBlock w key ++ msg)`, which
-`blake2b_eq_finalHash` and `blake2s_eq_finalHash` below prove are the
-digest. The count the caller passes to
+`blake2_eq_finalHash` below proves is the digest. The count the caller passes to
 `update` and `finalize` is the length of the data so far, the key block
 included.
 
@@ -141,12 +140,6 @@ theorem blake2_eq_finalHash {w : Nat} (P : Params w) (hw : w = 32 ∨ w = 64) (n
 theorem blake2b_eq_finalHash (nn : Nat) (key m : List Byte) (hk : key.length ≤ 64) :
     blake2b nn key m = (finalHash b (init b nn key.length) (keyBlock 64 key ++ m)).take nn :=
   blake2_eq_finalHash b (Or.inr rfl) nn key m (Nat.le_trans hk (by decide))
-
-/-- BLAKE2s (`blake2s`), unkeyed or with a key of at most 32 bytes, is what
-`initSContract`, `updateSContract` and `finalizeSContract` compute. -/
-theorem blake2s_eq_finalHash (nn : Nat) (key m : List Byte) (hk : key.length ≤ 32) :
-    blake2s nn key m = (finalHash s (init s nn key.length) (keyBlock 32 key ++ m)).take nn :=
-  blake2_eq_finalHash s (Or.inl rfl) nn key m (Nat.le_trans hk (by decide))
 
 /-! ## BLAKE2b -/
 

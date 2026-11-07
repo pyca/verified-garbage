@@ -22,10 +22,9 @@ key-generating key, as `vg_aes_expand_key` writes it
 16-byte key, 14 for a 32-byte key. The postconditions are stated for every
 key-generating key whose schedule is at `schedule` with `rounds` rounds
 (`Aes.KeySchedule`), with the cipher of that key (`aes key`) and its length;
-with lengths that §6 accepts, that is AES-GCM-SIV with that key
-(`encryptWith_ctx`, `decryptWith_ctx`). `open`'s leak is stated for the
-cipher of the schedule it is given, for the number of rounds it is given
-(`ctxCiph`, `keyLen`).
+with lengths that §6 accepts, that is AES-GCM-SIV with that key. `open`'s
+leak is stated for the cipher of the schedule it is given, for the number of
+rounds it is given (`ctxCiph`, `keyLen`).
 
 * `vg_aes_gcm_siv_seal` is encryption (`encryptWith`): it encrypts the data
   in place and writes the 16-byte tag.
