@@ -223,52 +223,52 @@ vg_aes_cbc_decrypt_vaes_avx512:
 	vaesdeclast zmm6, zmm6, zmm8
 	vaesdeclast zmm7, zmm7, zmm8
 	vmovdqu32 zmm14, ZMMWORD PTR [rdx]
-	vshufi32x4 zmm14, zmm14, zmm14, 144
-	movdqa xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+48]
-	vpxord zmm0, zmm0, zmm14
+	vshufi32x4 zmm15, zmm15, zmm14, 0
+	vshufi32x4 zmm15, zmm15, zmm14, 152
+	vpxord zmm0, zmm0, zmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+48]
 	vmovdqu32 ZMMWORD PTR [rdx], zmm0
 	vmovdqu32 zmm14, ZMMWORD PTR [rdx+64]
-	vshufi32x4 zmm14, zmm14, zmm14, 144
-	movdqa xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+112]
-	vpxord zmm1, zmm1, zmm14
+	vshufi32x4 zmm15, zmm15, zmm14, 0
+	vshufi32x4 zmm15, zmm15, zmm14, 152
+	vpxord zmm1, zmm1, zmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+112]
 	vmovdqu32 ZMMWORD PTR [rdx+64], zmm1
 	vmovdqu32 zmm14, ZMMWORD PTR [rdx+128]
-	vshufi32x4 zmm14, zmm14, zmm14, 144
-	movdqa xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+176]
-	vpxord zmm2, zmm2, zmm14
+	vshufi32x4 zmm15, zmm15, zmm14, 0
+	vshufi32x4 zmm15, zmm15, zmm14, 152
+	vpxord zmm2, zmm2, zmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+176]
 	vmovdqu32 ZMMWORD PTR [rdx+128], zmm2
 	vmovdqu32 zmm14, ZMMWORD PTR [rdx+192]
-	vshufi32x4 zmm14, zmm14, zmm14, 144
-	movdqa xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+240]
-	vpxord zmm3, zmm3, zmm14
+	vshufi32x4 zmm15, zmm15, zmm14, 0
+	vshufi32x4 zmm15, zmm15, zmm14, 152
+	vpxord zmm3, zmm3, zmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+240]
 	vmovdqu32 ZMMWORD PTR [rdx+192], zmm3
 	vmovdqu32 zmm14, ZMMWORD PTR [rdx+256]
-	vshufi32x4 zmm14, zmm14, zmm14, 144
-	movdqa xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+304]
-	vpxord zmm4, zmm4, zmm14
+	vshufi32x4 zmm15, zmm15, zmm14, 0
+	vshufi32x4 zmm15, zmm15, zmm14, 152
+	vpxord zmm4, zmm4, zmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+304]
 	vmovdqu32 ZMMWORD PTR [rdx+256], zmm4
 	vmovdqu32 zmm14, ZMMWORD PTR [rdx+320]
-	vshufi32x4 zmm14, zmm14, zmm14, 144
-	movdqa xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+368]
-	vpxord zmm5, zmm5, zmm14
+	vshufi32x4 zmm15, zmm15, zmm14, 0
+	vshufi32x4 zmm15, zmm15, zmm14, 152
+	vpxord zmm5, zmm5, zmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+368]
 	vmovdqu32 ZMMWORD PTR [rdx+320], zmm5
 	vmovdqu32 zmm14, ZMMWORD PTR [rdx+384]
-	vshufi32x4 zmm14, zmm14, zmm14, 144
-	movdqa xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+432]
-	vpxord zmm6, zmm6, zmm14
+	vshufi32x4 zmm15, zmm15, zmm14, 0
+	vshufi32x4 zmm15, zmm15, zmm14, 152
+	vpxord zmm6, zmm6, zmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+432]
 	vmovdqu32 ZMMWORD PTR [rdx+384], zmm6
 	vmovdqu32 zmm14, ZMMWORD PTR [rdx+448]
-	vshufi32x4 zmm14, zmm14, zmm14, 144
-	movdqa xmm14, xmm15
-	movdqu xmm15, XMMWORD PTR [rdx+496]
-	vpxord zmm7, zmm7, zmm14
+	vshufi32x4 zmm15, zmm15, zmm14, 0
+	vshufi32x4 zmm15, zmm15, zmm14, 152
+	vpxord zmm7, zmm7, zmm15
+	vmovdqu xmm15, XMMWORD PTR [rdx+496]
 	vmovdqu32 ZMMWORD PTR [rdx+448], zmm7
 	add rdx, 512
 	sub rcx, 32
