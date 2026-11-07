@@ -5,16 +5,16 @@ public import VerifiedGarbage.Spec.Dsa.RandomSign
 /-!
 # Separate DSA private-key validation from randomized signing (trusted)
 
-`vg_dsa_sign_random` checks the whole key on every call: the domain's
-consistency, including `g^q mod p = 1`, and the key's, including
-`g^x mod p = y`. Those are two modular exponentiations of the same size as
-signing's own `g^k mod p`, repeated for every signature although they depend
-only on the key. As `vg_dsa_validate_public_key` does for verification
-(`Prevalidated.lean`), an owner of an immutable packed private key may
-validate it once (`vg_dsa_validate_private_key`) and then sign with
-`vg_dsa_sign_random_prevalidated`, which returns exactly what
-`vg_dsa_sign_random` returns (`randomSignContract`): the same signature,
-status, consumption, output zeroing and permitted leakage.
+Randomized signing that checked the whole key on every call would repeat
+the domain's consistency check, including `g^q mod p = 1`, and the key's,
+including `g^x mod p = y`: two modular exponentiations of the same size as
+signing's own `g^k mod p`, for every signature, although they depend only on
+the key. As `vg_dsa_validate_public_key` does for verification
+(`Prevalidated.lean`), an owner of an immutable packed private key
+validates it once (`vg_dsa_validate_private_key`) and then signs with
+`vg_dsa_sign_random_prevalidated`, whose signature, status, consumption,
+output zeroing and permitted leakage are `randomSignBytes`'s
+(`RandomSign.lean`).
 
 Validation is every check `signBytes` makes of the key alone, independent
 of the nonce and the digest: the supported widths, `parametersValid` of the
@@ -59,7 +59,7 @@ def validatePrivateKeyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
       publicBytesLeak pLen.toNat qLen.toNat kb ++
         [if validatePrivateKeyBytes pLen.toNat qLen.toNat kb then 1 else 0])
 
-/-- `randomSignContract`'s result and leakage, under an explicit
+/-- Bounded randomized signing (`randomSignBytes`), under an explicit
 validated-key precondition on the key's exact bytes. -/
 def randomSignPrevalidatedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   randomSignSig.contract A
@@ -106,9 +106,9 @@ def randomSignPrevalidatedApi : Api where
   writeArgs := true
   contracts := some fun A stack => randomSignPrevalidatedContract A stack
   summary := "Randomized DSA signing of a prehashed digest, for an already validated packed \
-    private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Returns \
-    exactly what vg_dsa_sign_random returns (`VG.Spec.Dsa.randomSignContract`): 1 with \
-    fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero \
+    private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight \
+    signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for \
+    retry exhaustion, or 2 for insufficient random bytes; out is zero \
     on failure and used counts consumed complete draws on every return. Timing may depend on \
     public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on \
     secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`."
