@@ -56,7 +56,7 @@ jobs:
               elif e['event'] == 'exit':
                   argv = starts.get(e['sid'], [])
                   for command in ['fetch', 'checkout']:
-                      if len(argv) > 1 and argv[1] == command:
+                      if command in argv[1:]:
                           phases[command] = phases.get(command, 0) + e['t_abs']
           dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
           head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
@@ -101,7 +101,7 @@ jobs:
               elif e['event'] == 'exit':
                   argv = starts.get(e['sid'], [])
                   for command in ['fetch', 'checkout']:
-                      if len(argv) > 1 and argv[1] == command:
+                      if command in argv[1:]:
                           phases[command] = phases.get(command, 0) + e['t_abs']
           dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
           head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
@@ -146,7 +146,7 @@ jobs:
               elif e['event'] == 'exit':
                   argv = starts.get(e['sid'], [])
                   for command in ['fetch', 'checkout']:
-                      if len(argv) > 1 and argv[1] == command:
+                      if command in argv[1:]:
                           phases[command] = phases.get(command, 0) + e['t_abs']
           dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
           head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
@@ -191,7 +191,7 @@ jobs:
               elif e['event'] == 'exit':
                   argv = starts.get(e['sid'], [])
                   for command in ['fetch', 'checkout']:
-                      if len(argv) > 1 and argv[1] == command:
+                      if command in argv[1:]:
                           phases[command] = phases.get(command, 0) + e['t_abs']
           dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
           head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
@@ -236,7 +236,7 @@ jobs:
               elif e['event'] == 'exit':
                   argv = starts.get(e['sid'], [])
                   for command in ['fetch', 'checkout']:
-                      if len(argv) > 1 and argv[1] == command:
+                      if command in argv[1:]:
                           phases[command] = phases.get(command, 0) + e['t_abs']
           dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
           head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
@@ -281,7 +281,7 @@ jobs:
               elif e['event'] == 'exit':
                   argv = starts.get(e['sid'], [])
                   for command in ['fetch', 'checkout']:
-                      if len(argv) > 1 and argv[1] == command:
+                      if command in argv[1:]:
                           phases[command] = phases.get(command, 0) + e['t_abs']
           dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
           head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
@@ -326,7 +326,7 @@ jobs:
               elif e['event'] == 'exit':
                   argv = starts.get(e['sid'], [])
                   for command in ['fetch', 'checkout']:
-                      if len(argv) > 1 and argv[1] == command:
+                      if command in argv[1:]:
                           phases[command] = phases.get(command, 0) + e['t_abs']
           dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
           head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
@@ -371,7 +371,7 @@ jobs:
               elif e['event'] == 'exit':
                   argv = starts.get(e['sid'], [])
                   for command in ['fetch', 'checkout']:
-                      if len(argv) > 1 and argv[1] == command:
+                      if command in argv[1:]:
                           phases[command] = phases.get(command, 0) + e['t_abs']
           dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
           head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
@@ -416,7 +416,7 @@ jobs:
               elif e['event'] == 'exit':
                   argv = starts.get(e['sid'], [])
                   for command in ['fetch', 'checkout']:
-                      if len(argv) > 1 and argv[1] == command:
+                      if command in argv[1:]:
                           phases[command] = phases.get(command, 0) + e['t_abs']
           dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
           head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
@@ -461,7 +461,7 @@ jobs:
               elif e['event'] == 'exit':
                   argv = starts.get(e['sid'], [])
                   for command in ['fetch', 'checkout']:
-                      if len(argv) > 1 and argv[1] == command:
+                      if command in argv[1:]:
                           phases[command] = phases.get(command, 0) + e['t_abs']
           dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
           head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
@@ -506,7 +506,7 @@ jobs:
               elif e['event'] == 'exit':
                   argv = starts.get(e['sid'], [])
                   for command in ['fetch', 'checkout']:
-                      if len(argv) > 1 and argv[1] == command:
+                      if command in argv[1:]:
                           phases[command] = phases.get(command, 0) + e['t_abs']
           dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
           head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
@@ -551,7 +551,7 @@ jobs:
               elif e['event'] == 'exit':
                   argv = starts.get(e['sid'], [])
                   for command in ['fetch', 'checkout']:
-                      if len(argv) > 1 and argv[1] == command:
+                      if command in argv[1:]:
                           phases[command] = phases.get(command, 0) + e['t_abs']
           dest = pathlib.Path(os.environ['GITHUB_WORKSPACE'])/os.environ['DESTINATION']
           head = subprocess.check_output(['git', '-C', str(dest), 'rev-parse', 'HEAD'], text=True).strip()
