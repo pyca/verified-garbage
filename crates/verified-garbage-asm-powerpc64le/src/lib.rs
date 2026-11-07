@@ -173,6 +173,10 @@ pub mod ct;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
+pub mod dispatch;
+
+#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+#[rustfmt::skip]
 pub mod dsa;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]

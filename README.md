@@ -2885,7 +2885,7 @@ does when run by hand, below):
 python3 ci/bench_compare.py path/to/main-checkout .   # --openssl to add OpenSSL's and aws-lc-rs's times
 ```
 
-For a targeted run, `VG_CPU_FEATURES` (see `src/cpu.rs`) restricts the CPU
+For a targeted run, `VG_CPU_FEATURES` (see `crates/verified-garbage-cpu/src/detect.rs`) restricts the CPU
 features the library uses, `VG_BENCH_MODULES` the library modules whose
 benchmarks run, `VG_BENCHES` the benchmarks (the names of the files of
 `bench/benches/primitives/`) that run, and Criterion's filter the benchmark ids

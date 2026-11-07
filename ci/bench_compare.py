@@ -282,12 +282,15 @@ def build_base(base, head):
 
 
 def cpu_features(checkout):
-    """`VG_CPU_FEATURES` without the features `checkout`'s src/cpu.rs does
-    not know (which it rejects)."""
+    """`VG_CPU_FEATURES` without the features `checkout`'s detection does
+    not know (which it rejects): `crates/verified-garbage-cpu/src/detect.rs`'s,
+    or `src/cpu.rs`'s from before it moved there."""
     features = os.environ.get("VG_CPU_FEATURES", "")
     if features in ("", "none"):
         return features
-    cpu = checkout / "src/cpu.rs"
+    cpu = checkout / "crates/verified-garbage-cpu/src/detect.rs"
+    if not cpu.exists():
+        cpu = checkout / "src/cpu.rs"
     names = NAMES.search(cpu.read_text())
     if not names:
         sys.exit(f"{cpu}: no `const NAMES` table of CPU feature names (ci/bench_arches.py's NAMES)")

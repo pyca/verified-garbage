@@ -13,7 +13,13 @@
 # tests only some architectures checks their coverage; then all of them
 # together, reporting the combined line coverage (and writing an HTML report
 # to htmlcov/ if it is under 100%). Lines between `// NO-COVERAGE-START` and
-# `// NO-COVERAGE-END` are excluded.
+# `// NO-COVERAGE-END` are excluded, and so is a generated dispatcher
+# (`crates/verified-garbage-asm-<target>/src/dispatch/<module>.rs`,
+# `Rust.dispatcher` in lean/VerifiedGarbage/TCB/Rust.lean) that no test
+# reached at all: the emitter writes one for every function, and the library
+# calls only some of them. One that the library calls is reached by the tests
+# of the API calling it, and then each of its lines must be covered, as every
+# other line: each implementation it may choose is run on some CPU.
 
 import collections
 import collections.abc
@@ -63,6 +69,38 @@ def get_excluded_lines(filename: str) -> list[int]:
             elif in_excluded_block:
                 excluded.append(line_num)
     return excluded
+
+
+def dispatcher_spans(file_name: str, text: str | None = None) -> list[tuple[int, int]]:
+    """The first and last lines of each dispatcher of `file_name` (its text
+    `text`, if given), if it is a generated file of dispatchers
+    (`crates/verified-garbage-asm-<target>/src/dispatch/<module>.rs`): from its
+    `pub unsafe fn` line to the `}` closing it, alone in column 0."""
+    parts = pathlib.PurePosixPath(file_name).parts
+    if not (len(parts) >= 4 and parts[-4].startswith("verified-garbage-asm-")
+            and parts[-3:-1] == ("src", "dispatch")):
+        return []
+    if text is None:
+        text = pathlib.Path(file_name).read_text()
+    spans, start = [], None
+    for i, line in enumerate(text.splitlines(), 1):
+        if line.startswith("pub unsafe fn "):
+            start = i
+        elif line == "}" and start is not None:
+            spans.append((start, i))
+            start = None
+    return spans
+
+
+def drop_unreached_dispatchers(raw_data, spans=dispatcher_spans) -> None:
+    """Removes from `raw_data` the lines of each generated dispatcher that no
+    test reached (see the top of this file)."""
+    for file_name, lines in raw_data.items():
+        for first, last in spans(file_name):
+            span = [n for n in lines if first <= n <= last]
+            if not any(lines[n] for n in span):
+                for n in span:
+                    lines.pop(n)
 
 
 def arch_of(lcov: pathlib.Path) -> str:
@@ -122,6 +160,7 @@ def parse_lcovs(
         excluded_lines = get_excluded_lines(file_name)
         for line_num in excluded_lines:
             raw_data[file_name].pop(line_num, None)
+    drop_unreached_dispatchers(raw_data)
 
     covered_lines = {
         file_name: {(-1, line) for line, c in lines.items() if c > 0}

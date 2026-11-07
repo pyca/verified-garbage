@@ -7,7 +7,7 @@ description: "Use when a change could make code slower or claims to make it fast
 
 Measure only what the change affects. `python3 ci/bench_arches.py --choices`
 lists the architectures, each one's `VG_CPU_FEATURES` configurations and the
-features `src/cpu.rs` detects there, and the library modules with the
+features `crates/verified-garbage-cpu/src/detect.rs` detects there, and the library modules with the
 benchmarks that use each (a benchmark's `USES`). On this machine, for the
 features its CPU has (`/proc/cpuinfo`):
 

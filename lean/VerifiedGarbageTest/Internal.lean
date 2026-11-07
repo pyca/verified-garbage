@@ -34,7 +34,9 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
 def internal : List String := ["vg_rc2_cbc_decrypt", "vg_rc2_cbc_encrypt", "vg_rc2_decrypt_block",
   "vg_rc2_encrypt_block", "vg_rc2_expand_key"]
 
-#guard out.map (·.1) == ["verified-garbage-asm-aarch64/src/lib.rs"] ++
+#guard out.map (·.1) == ["verified-garbage-asm-aarch64/src/lib.rs",
+    "verified-garbage-asm-aarch64/src/dispatch/mod.rs",
+    "verified-garbage-asm-aarch64/src/dispatch/rc2.rs"] ++
   internal.flatMap (fun n => [s!"verified-garbage-asm-aarch64/src/internal/{n}.rs",
     s!"verified-garbage-asm-aarch64/assembly/internal/{n}.s"]) ++
   ["verified-garbage-asm-aarch64/src/rc2.rs", "verified-garbage-asm-aarch64/assembly/rc2.s"]

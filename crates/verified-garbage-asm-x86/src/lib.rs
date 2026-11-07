@@ -173,6 +173,10 @@ pub mod ct;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]
+pub mod dispatch;
+
+#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
+#[rustfmt::skip]
 pub mod dsa;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]

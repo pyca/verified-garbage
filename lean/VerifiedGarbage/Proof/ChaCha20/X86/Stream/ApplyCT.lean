@@ -163,25 +163,11 @@ theorem part1_rel (hle : L a ≤ N a) :
     fun x y ⟨hx, hy⟩ => ⟨rest1_ok h.pa hx, rest1_ok h.pb hy⟩
 
 theorem xor_rel (v : XorImpl) (hnb : 0 < NB a) :
-    RelCT isa (fun x y => Args a x ∧ Args b y) (callXor v.callee) fun _ _ => True := by
-  have ew : wrXor b = wrXor a := by
-    simp only [wrXor, cpR, blR, wkR, st, dp, E, h.hst, h.hdp, h.eqH, h.eqNB, h.hesp]
-  refine RelCT.callWith v.ok v.ct [] (wrXor a)
-    fun x y ⟨hx, hy⟩ => ?_
-  have px := xor_pre h.pa ⟨hx.esp, hx.rd, hx.wr⟩ hnb hx.edx hx.esi hx.ecx hx.eax
-  have py := xor_pre h.pb ⟨hy.esp, hy.rd, hy.wr⟩ (by rw [← h.eqNB]; exact hnb) hy.edx hy.esi hy.ecx hy.eax
-  rw [ew] at py
-  have fit := (At.fit h.pa ⟨hx.esp, hx.rd, hx.wr⟩ (rs := [.eax, .ecx, .esi, .edx]) (by decide))
-  have hsp : x.gpr .esp = y.gpr .esp := by rw [hx.esp, hy.esp, h.hesp]
-  have p := entry_pub [] (wrXor a) (by decide) fit hsp (by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · rw [hx.eax, hy.eax, h.hst]
-    · rw [hx.ecx, hy.ecx, h.eqNB]
-    · rw [hx.esi, hy.esi, h.hdp, h.eqH]
-    · rw [hx.edx, hy.edx, h.hst])
-  exact ⟨px, py, hsp, p.1, fun i hi => p.2 i hi⟩
+    RelCT isa (fun x y => Args a x ∧ Args b y) (callXor v.callee) fun _ _ => True :=
+  v.rel fun x y ⟨hx, hy⟩ => by
+    refine ⟨xor_args h.pa ⟨hx.esp, hx.rd, hx.wr⟩ hnb hx.edx hx.esi hx.ecx hx.eax, ?_⟩
+    have py := xor_args h.pb ⟨hy.esp, hy.rd, hy.wr⟩ (by rw [← h.eqNB]; exact hnb) hy.edx hy.esi hy.ecx hy.eax
+    rwa [← h.hesp, ← h.hst, ← h.hdp, ← h.eqH, ← h.eqNB] at py
 
 theorem part2_rel (v : XorImpl) :
     RelCT isa (fun x y => Q1 a x ∧ Q1 b y) (part2 v.callee) fun x y => Q2 a x ∧ Q2 b y := by
