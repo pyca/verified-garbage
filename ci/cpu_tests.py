@@ -193,7 +193,7 @@ GROUPS = {
         ],
     },
     "ed25519": {
-        "lib": ["ed25519"],
+        "lib": [],
         "tests": ["rfc8032::ed25519_vectors", "wycheproof::ed25519"],
     },
     "ed448": {
