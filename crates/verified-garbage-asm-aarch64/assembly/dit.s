@@ -7,7 +7,11 @@
 vg_dit_enter:
 	mrs x0, DIT
 	lsr x0, x0, #24
+	cbz x0, 20f
+	b 21f
+20:
 	msr DIT, #1
+21:
 	ret
 	.p2align 6
 

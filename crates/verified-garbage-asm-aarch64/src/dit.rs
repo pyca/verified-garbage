@@ -46,7 +46,13 @@ pub(crate) mod raw {
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dit_enter() -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd53b42a0,0xd358fc00,0xd503415f,0xd65f03c0
+        r".inst 0xd53b42a0,0xd358fc00
+cbz x0, 20f
+b 21f
+20:
+.inst 0xd503415f
+21:
+.inst 0xd65f03c0
 .p2align 6",
     )
 }
