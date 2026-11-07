@@ -50,23 +50,24 @@ def stashW (k : Nat) : List Instr :=
 counter 5. -/
 def stash : List Instr := (List.range 16).flatMap stashW
 
-/-- The first 256 bytes XORed with their keystream, at `ctx + 128`. -/
-def first : Prog isa :=
+/-- The first 256 bytes XORed with their keystream, at `ctx + 128`, into
+their destination (`Short.dstOf to`). -/
+def first (to : Bool) : Prog isa :=
   .seq (.block [mov .x14 .x23, .movz .x .x23 256 0])
-    (.seq Short.xorKs (.block [mov .x23 .x14]))
+    (.seq (Short.xorKs to) (.block [mov .x23 .x14]))
 
 /-- The rest, after 256 bytes, encrypted or decrypted from the state at
-`ctx + 64`. -/
-def rest (c : XorCallee) : Prog isa :=
+`ctx + 64`, into its destination (`XorCallee.callWith to`). -/
+def rest (c : XorCallee) (to : Bool) : Prog isa :=
   .seq (.block [.addImm .x .x0 .x21 64, .addImm .x .x1 .x22 256, .subImm .x .x2 .x23 256,
     .addImm .x .x3 .x21 128])
-    c.inPlace
+    (c.callWith to)
 
 /-- `seal` but for the tag, after the prologue. -/
 def sealAfter (c : XorCallee) : Prog isa :=
   .seq (.block stash)
-  (.seq first
-  (.seq (rest c)
+  (.seq (first false)
+  (.seq (rest c false)
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
   (.seq (macPad .x22 .x23)
@@ -79,8 +80,8 @@ def openAfter (c : XorCallee) : Prog isa :=
   (.seq (macPad .x22 .x23)
   (.seq (.block lengths)
   (.seq absorbLengths
-  (.seq first
-  (.seq (rest c)
+  (.seq (first false)
+  (.seq (rest c false)
     (finalizeTo 48)))))))
 
 /-- `seal` but for the tag, for `lo ≤ len ≤ 511` (`Short.check`): the

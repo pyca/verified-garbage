@@ -14,34 +14,10 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 namespace VG.Proof.ChaCha20.AArch64.Mixed8
 open VG VG.AArch64 VG.Impl.ChaCha20.AArch64.Mixed8
 open VG.Proof.ChaCha20 (ctr keystream_getD)
-open VG.Proof.ChaCha20.AArch64.Xor (XPre st dp L bp stR dR bR S0 D0 KS)
+open VG.Proof.ChaCha20.AArch64.Xor (st dp L bp stR dR bR S0 D0 KS)
 open VG.Spec.ChaCha20 (stateAt keystream serialize block)
 
 variable {sve : Bool}
-
-structure LInv (s₀ : State) (t : Nat) (s : State) : Prop where
-  x0 : s.gpr .x0 = st s₀
-  x1 : s.gpr .x1 = dp s₀ + BitVec.ofNat 64 (512 * t)
-  x2 : s.gpr .x2 = BitVec.ofNat 64 (L s₀ - 512 * t)
-  x3 : s.gpr .x3 = bp s₀
-  le : 512 * t ≤ L s₀
-  cs : ∀ r ∈ preserved, r ≠ .x20 → r ≠ .x19 → r ≠ .x26 → s.gpr r = s₀.gpr r
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  sp : s.sp = s₀.sp
-  cnt : stateAt s.mem (st s₀) = ctr (S0 s₀) (8 * t)
-  data : ∀ k < L s₀, s.mem (dp s₀ + BitVec.ofNat 64 k) =
-    if k < 512 * t then D0 s₀ k ^^^ (KS s₀).getD k 0 else D0 s₀ k
-  frame : Frame [stR s₀,dR s₀,bR s₀] s₀.mem s.mem
-
-structure GPInv (s₀ : State) (t : Nat) (s : State) : Prop extends LInv s₀ t s where
-  x20 : s.gpr .x20 = bp s₀
-  saved : ∀ j : Fin 3, s.mem.readW (bp s₀ + BitVec.ofNat 64 (256 + 8 * j)) 64 =
-    s₀.gpr ([.x20,.x19,.x26].getD j .x20)
-
-structure BulkInv (s₀ : State) (t : Nat) (s : State) : Prop extends GPInv s₀ t s where
-  savedV : ∀ j : Fin 2, s.mem.read (bp s₀ + BitVec.ofNat 64 (128 + 16 * j)) 16 =
-    s₀.v (#[VReg.v8,VReg.v9][j])
 
 theorem ks_shift (S : CState) {len t k : Nat} (hk : k < len) (ht : 512 * t ≤ k) :
     (keystream S len).getD k 0 =
@@ -79,102 +55,6 @@ theorem ks_shift (S : CState) {len t k : Nat} (hk : k < len) (ht : 512 * t ≤ k
     exact ht
   · exact (Frame.refl _ _).write (List.mem_cons_self ..) _
       (Offset.contains_base _ (by decide : 48 + 4 ≤ 64) (by decide))
-
-abbrev win (s₀ : State) (t : Nat) : Region := ⟨dp s₀ + BitVec.ofNat 64 (512 * t),512⟩
-theorem win_sub {s₀ : State} {t : Nat} (h : 512 * t + 512 ≤ L s₀) :
-    Region.Sub (win s₀ t) (dR s₀) := Offset.sub_base _ h
-
-theorem cp_of_inv {s₀ s : State} (hp : XPre s₀) {t : Nat} (h : BulkInv s₀ t s)
-    (hge : 512 * t + 512 ≤ L s₀) : CP s := by
-  have hL := VG.Proof.ChaCha20.AArch64.Xor.L_lt s₀
-  have hw : s.wr = [stR s₀,dR s₀,bR s₀] := h.wr.trans hp.wr
-  refine ⟨h.x20.trans h.x3.symm,?_,?_,?_,?_,?_,?_,?_,?_⟩
-  · intro k; rw [h.rd,hp.rd,hw,h.x0]
-    exact ⟨stR s₀,by simp,Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  · intro k; rw [h.rd,hp.rd,hw,h.x0]
-    exact ⟨stR s₀,by simp,Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  · rw [hw,h.x0]
-    exact ⟨stR s₀,by simp,Offset.contains_base _ (by decide) (by decide)⟩
-  · intro d n hn; rw [hw,h.x3]
-    exact ⟨bR s₀,by simp,Offset.contains_base _ hn (by omega_arith)⟩
-  · intro d n hn; rw [hw,h.x1,BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact ⟨dR s₀,by simp,Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  · change (⟨s.gpr .x0,64⟩ : Region).Disjoint ⟨s.gpr .x3,320⟩
-    rw [h.x0,h.x3]; exact hp.st_b
-  · change (⟨s.gpr .x0,64⟩ : Region).Disjoint ⟨s.gpr .x1,512⟩
-    rw [h.x0,h.x1]; exact hp.st_d.sub_right (win_sub hge)
-  · change (⟨s.gpr .x1,512⟩ : Region).Disjoint ⟨s.gpr .x3,320⟩
-    rw [h.x1,h.x3]; exact hp.d_b.sub_left (win_sub hge)
-
- theorem chunkData {s₀ s u : State} {t : Nat} (hp : XPre s₀) (h : BulkInv s₀ t s)
-    (hge : 512 * t + 512 ≤ L s₀) (hu : Chunked s u) :
-    ∀ k < L s₀, u.mem (dp s₀ + BitVec.ofNat 64 k) =
-      if k < 512 * (t + 1) then D0 s₀ k ^^^ (KS s₀).getD k 0 else D0 s₀ k := by
-  intro k hk
-  have hL := VG.Proof.ChaCha20.AArch64.Xor.L_lt s₀
-  by_cases hin : 512 * t ≤ k ∧ k < 512 * t + 512
-  · have he : s.gpr .x1 + BitVec.ofNat 64 (k - 512 * t) = dp s₀ + BitVec.ofNat 64 k := by
-      rw [h.x1,BitVec.add_assoc, ← BitVec.ofNat_add,Nat.add_sub_cancel' hin.1]
-    have hh := hu.data (k - 512 * t) (by omega_arith)
-    rw [he,h.data k hk,ite_eq_right (by omega_arith),source,h.x0,h.cnt, ← ks_shift (S0 s₀) hk hin.1] at hh
-    rw [ite_eq_left (by omega_arith)]; exact hh
-  · have hx : ¬ (win s₀ t).Contains (dp s₀ + BitVec.ofNat 64 k) 1 := by
-      simp only [Region.Contains,Nat.add_one_le_iff]
-      rw [Offset.lt_iff _ _ (by omega_arith),Mem.sub_ofNat_toNat _ (by omega_arith : k < 2 ^ 64)]
-      exact hin
-    have hh := hu.frame (dp s₀ + BitVec.ofNat 64 k) (by
-      intro r hr
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · change ¬ (⟨s.gpr .x0,64⟩ : Region).Contains _ 1
-        rw [h.x0]; exact fun hc => hp.st_d _ hc (VG.Proof.ChaCha20.AArch64.Neon4.data_in hk)
-      · exact fun hc => hp.d_b _ (VG.Proof.ChaCha20.AArch64.Neon4.data_in hk)
-          (Region.sub_prefix (by decide : 128 ≤ 320) _ (by simpa only [scalarBuf,h.x3] using hc))
-      · change ¬ (⟨s.gpr .x1,512⟩ : Region).Contains _ 1
-        rw [h.x1]; exact hx)
-    rw [hh,h.data k hk]
-    by_cases hold : k < 512 * t
-    · rw [ite_eq_left hold,ite_eq_left (by omega_arith)]
-    · rw [ite_eq_right hold,ite_eq_right (by omega_arith)]
-
-abbrev guardR (s₀ : State) (j : Fin 3) : Region := ⟨bp s₀ + BitVec.ofNat 64 (256 + 8 * j),8⟩
-
-theorem guard_chunk {s₀ s : State} {t : Nat} (hp : XPre s₀) (h : BulkInv s₀ t s)
-    (hge : 512 * t + 512 ≤ L s₀) (j : Fin 3) :
-    ∀ r ∈ [sr s,scalarBuf s,dr s], (guardR s₀ j).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · change (guardR s₀ j).Disjoint ⟨s.gpr .x0,64⟩
-    rw [h.x0]
-    exact hp.st_b.symm.sub_left (Offset.sub_base _ (by have hj := j.isLt; omega_arith))
-  · change (guardR s₀ j).Disjoint ⟨s.gpr .x3,128⟩
-    rw [h.x3]
-    exact Offset.disjoint_base _ (by have hj := j.isLt; omega_arith) (by have hj := j.isLt; omega_arith)
-  · change (guardR s₀ j).Disjoint ⟨s.gpr .x1,512⟩
-    rw [h.x1]
-    exact (hp.d_b.symm.sub_left (Offset.sub_base _ (by have hj := j.isLt; omega_arith))).sub_right
-      (win_sub hge)
-
-abbrev guardVR (s₀ : State) (j : Fin 2) : Region :=
-  ⟨bp s₀ + BitVec.ofNat 64 (128 + 16 * j),16⟩
-
-theorem guardV_chunk {s₀ s : State} {t : Nat} (hp : XPre s₀) (h : BulkInv s₀ t s)
-    (hge : 512 * t + 512 ≤ L s₀) (j : Fin 2) :
-    ∀ r ∈ [sr s,scalarBuf s,dr s], (guardVR s₀ j).Disjoint r := by
-  intro r hr
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · change (guardVR s₀ j).Disjoint ⟨s.gpr .x0,64⟩
-    rw [h.x0]
-    exact hp.st_b.symm.sub_left (Offset.sub_base _ (by have hj := j.isLt; omega_arith))
-  · change (guardVR s₀ j).Disjoint ⟨s.gpr .x3,128⟩
-    rw [h.x3]
-    exact Offset.disjoint_base _ (by have hj := j.isLt; omega_arith) (by have hj := j.isLt; omega_arith)
-  · change (guardVR s₀ j).Disjoint ⟨s.gpr .x1,512⟩
-    rw [h.x1]
-    exact (hp.d_b.symm.sub_left (Offset.sub_base _ (by have hj := j.isLt; omega_arith))).sub_right
-      (win_sub hge)
 
  theorem zero_batches {s : State} {n : Nat}
     (h : s.gpr .x5 = BitVec.ofNat 64 (if n < 512 then 1 else 0)) :
@@ -314,14 +194,15 @@ theorem tsaved_chunk {s₀ s : State} (hp : TPre s₀) {t : Nat} (h : TInv s₀ 
   · change (⟨bp s₀ + BitVec.ofNat 64 d,n⟩ : Region).Disjoint ⟨s.gpr .x1,512⟩
     rw [h.x1]; exact (hp.t_b.symm.sub_left hsub).sub_right (twin_sub hge)
 
-theorem tbody_ok {s₀ : State} (hp : TPre s₀) {t : Nat}
-    (hge : 512 * t + 512 ≤ L s₀) {s : State} (h : TInv s₀ t s) :
-    WP isa (bodyFrom sve) s fun u => TInv s₀ (t + 1) u ∧
-      u.gpr .x5 = BitVec.ofNat 64 (if L s₀ - 512 * (t + 1) < 512 then 1 else 0) := by
+/-- After a chunk from the source at `x27` (any code that leaves what
+`chunkFrom` does: ChaCha20-Poly1305's stitched chunks too), the counter and
+the pointers advanced. -/
+theorem tnext_ok {s₀ : State} (hp : TPre s₀) {t : Nat}
+    (hge : 512 * t + 512 ≤ L s₀) {s u : State} (h : TInv s₀ t s) (hu : ChunkedFrom .x27 s u) :
+    WP isa (.block (next ++ ([.addImm .x .x27 .x27 512] : List Instr))) u fun v => TInv s₀ (t + 1) v ∧
+      v.gpr .x5 = BitVec.ofNat 64 (if L s₀ - 512 * (t + 1) < 512 then 1 else 0) ∧
+      Frame [stR s₀] u.mem v.mem := by
   have hL := VG.Proof.ChaCha20.AArch64.Xor.L_lt s₀
-  obtain ⟨hcp,hsrc⟩ := tcp_of_inv hp h hge
-  apply WP.seq
-  refine (chunkFrom_ok .x27 s hcp hsrc).mono fun u hu => ?_
   have hx0 : u.gpr .x0 = st s₀ := hu.x0.trans h.x0
   have hx1 : u.gpr .x1 = tp s₀ + BitVec.ofNat 64 (512 * t) := hu.x1.trans h.x1
   have hx2 : u.gpr .x2 = BitVec.ofNat 64 (L s₀ - 512 * t) := hu.x2.trans h.x2
@@ -383,7 +264,8 @@ theorem tbody_ok {s₀ : State} (hp : TPre s₀) {t : Nat}
     change _ + (BitVec.ofNat 64 (512 * t) + BitVec.ofNat 64 512) = _
     rw [← BitVec.ofNat_add,show 512 * t + 512 = 512 * (t + 1) by omega_arith]
   refine ⟨⟨?_,?_,?_,?_,?_,?_,by omega_arith,?_,hrd.trans (hu.rd.trans h.rd),
-    hwr.trans (hu.wr.trans h.wr),hsp.trans (hu.sp.trans h.sp),?_,?_,?_,?_,?_⟩,?_⟩
+    hwr.trans (hu.wr.trans h.wr),hsp.trans (hu.sp.trans h.sp),?_,?_,?_,?_,?_⟩,?_,
+    by simpa only [stR, hx0, RegUpd.mem_write] using hframe⟩
   · rw [g _ (by decide),hkeep _ (by decide) (by decide) (by decide) (by decide),hx0]
   · rw [g _ (by decide),hv1,hx1,hadv]
   · rw [g _ (by decide),hv2,hx2]
@@ -420,6 +302,14 @@ theorem tbody_ok {s₀ : State} (hp : TPre s₀) {t : Nat}
       (Offset.contains (bp s₀) (by omega) (by have := j.isLt; omega) (by decide))
       (fun r hr => (hns r hr).1) (by decide),hsavedV j]
   · rw [g _ (by decide),hv5,hlen,show L s₀ - 512 * t - 512 = L s₀ - 512 * (t + 1) by omega_arith]
+
+theorem tbody_ok {s₀ : State} (hp : TPre s₀) {t : Nat}
+    (hge : 512 * t + 512 ≤ L s₀) {s : State} (h : TInv s₀ t s) :
+    WP isa (bodyFrom sve) s fun u => TInv s₀ (t + 1) u ∧
+      u.gpr .x5 = BitVec.ofNat 64 (if L s₀ - 512 * (t + 1) < 512 then 1 else 0) := by
+  obtain ⟨hcp,hsrc⟩ := tcp_of_inv hp h hge
+  exact WP.seq ((chunkFrom_ok .x27 s hcp hsrc).mono fun _ hu =>
+    (tnext_ok hp hge h hu).mono fun _ ⟨hi, h5, _⟩ => ⟨hi, h5⟩)
 
 theorem tbulk_ok {s₀ : State} (hp : TPre s₀) {s : State} (h : TInv s₀ 0 s)
     (hge : 512 ≤ L s₀) : WP isa (.loop (bodyFrom sve) (.zero .x .x5)) s fun u =>

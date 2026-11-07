@@ -129,11 +129,12 @@ def macPad (p n : Reg) : Prog isa :=
     (.ite (.zero .x .x10) (.block [])
       (.seq (.block [.sub .x .x9 n .x10, .add .x .x1 p .x9]) padTail))))
 
-/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted. -/
-def cryptWith (c : XorCallee) : Prog isa :=
+/-- The ChaCha20 counter set to 1, and the data encrypted or decrypted into its
+destination (`XorCallee.callWith to`). -/
+def cryptWith (c : XorCallee) (to : Bool) : Prog isa :=
   .seq (.block [.movz .w .x9 1 0, .str .w .x9 .x21 112, .addImm .x .x0 .x21 64, mov .x1 .x22,
     mov .x2 .x23, .addImm .x .x3 .x21 128])
-    c.inPlace
+    (c.callWith to)
 
 /-- The lengths block. -/
 def lengths : List Instr := [.str .x .x25 .x21 0, .str .x .x23 .x21 8]
@@ -164,7 +165,7 @@ def sealMainWith (crypt : Prog isa) : Prog isa :=
   (.seq (macPad .x22 .x23)
     absorbLengths))))
 
-def sealMain (c : XorCallee) : Prog isa := sealMainWith (cryptWith c)
+def sealMain (c : XorCallee) : Prog isa := sealMainWith (cryptWith c false)
 
 /-- The tag written to `tag`, whose address is loaded from the context, and
 the registers restored. -/
@@ -193,7 +194,7 @@ def openMainWith (crypt : Prog isa) : Prog isa :=
   (.seq crypt
     (finalizeTo 48))))))
 
-def openMain (c : XorCallee) : Prog isa := openMainWith (cryptWith c)
+def openMain (c : XorCallee) : Prog isa := openMainWith (cryptWith c false)
 
 /-- `open`'s `data` and `len` saved after the context, at `work + 1280`. -/
 def saveData : List Instr := [.str .x .x4 .x7 1280, .str .x .x5 .x7 1288]
