@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_sign_avx512` if the CPU supports its features (`VG_MLDSA65_SIGN_AVX512_FEATURES`) and it also supports `avx512f` and `avx512vl`; `vg_mldsa65_sign_avx2` if the CPU supports its features (`VG_MLDSA65_SIGN_AVX2_FEATURES`); or else `vg_mldsa65_sign`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_sign_avx512` if the CPU supports its features (`VG_MLDSA65_SIGN_AVX512_FEATURES`); `vg_mldsa65_sign_avx2` if the CPU supports its features (`VG_MLDSA65_SIGN_AVX2_FEATURES`); or else `vg_mldsa65_sign`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -24,7 +24,7 @@
 #[inline]
 pub unsafe fn vg_mldsa65_sign_auto(sk: *const [u8; 4032], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(verified_garbage_cpu::Features(crate::mldsa65::VG_MLDSA65_SIGN_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL)) {
+    if cpu.contains(crate::mldsa65::VG_MLDSA65_SIGN_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_sign_avx512`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mldsa65::vg_mldsa65_sign_avx512(sk, mu, rnd, sig, scratch) };
@@ -48,7 +48,7 @@ pub use crate::mldsa65::vg_mldsa65_pk_tr as vg_mldsa65_pk_tr_auto;
 ///
 /// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_keygen_avx512` if the CPU supports its features (`VG_MLDSA65_KEYGEN_AVX512_FEATURES`) and it also supports `avx512f` and `avx512vl`; `vg_mldsa65_keygen_avx2` if the CPU supports its features (`VG_MLDSA65_KEYGEN_AVX2_FEATURES`); or else `vg_mldsa65_keygen`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_keygen_avx512` if the CPU supports its features (`VG_MLDSA65_KEYGEN_AVX512_FEATURES`); `vg_mldsa65_keygen_avx2` if the CPU supports its features (`VG_MLDSA65_KEYGEN_AVX2_FEATURES`); or else `vg_mldsa65_keygen`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -64,7 +64,7 @@ pub use crate::mldsa65::vg_mldsa65_pk_tr as vg_mldsa65_pk_tr_auto;
 #[inline]
 pub unsafe fn vg_mldsa65_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 1952], sk: *mut [u8; 4032], scratch: *mut [u64; 12928]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(verified_garbage_cpu::Features(crate::mldsa65::VG_MLDSA65_KEYGEN_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL)) {
+    if cpu.contains(crate::mldsa65::VG_MLDSA65_KEYGEN_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_keygen_avx512`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mldsa65::vg_mldsa65_keygen_avx512(seed, pk, sk, scratch) };
@@ -82,7 +82,7 @@ pub unsafe fn vg_mldsa65_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 1952],
 ///
 /// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_verify_avx512` if the CPU supports its features (`VG_MLDSA65_VERIFY_AVX512_FEATURES`) and it also supports `avx512f` and `avx512vl`; `vg_mldsa65_verify_avx2` if the CPU supports its features (`VG_MLDSA65_VERIFY_AVX2_FEATURES`); or else `vg_mldsa65_verify`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_verify_avx512` if the CPU supports its features (`VG_MLDSA65_VERIFY_AVX512_FEATURES`); `vg_mldsa65_verify_avx2` if the CPU supports its features (`VG_MLDSA65_VERIFY_AVX2_FEATURES`); or else `vg_mldsa65_verify`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -97,7 +97,7 @@ pub unsafe fn vg_mldsa65_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 1952],
 #[inline]
 pub unsafe fn vg_mldsa65_verify_auto(pk: *const [u8; 1952], mu: *const [u8; 64], sig: *const [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(verified_garbage_cpu::Features(crate::mldsa65::VG_MLDSA65_VERIFY_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL)) {
+    if cpu.contains(crate::mldsa65::VG_MLDSA65_VERIFY_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_verify_avx512`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mldsa65::vg_mldsa65_verify_avx512(pk, mu, sig, scratch) };
@@ -115,7 +115,7 @@ pub unsafe fn vg_mldsa65_verify_auto(pk: *const [u8; 1952], mu: *const [u8; 64],
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_sign_message_avx512` if the CPU supports its features (`VG_MLDSA65_SIGN_MESSAGE_AVX512_FEATURES`) and it also supports `avx512f` and `avx512vl`; `vg_mldsa65_sign_message_avx2` if the CPU supports its features (`VG_MLDSA65_SIGN_MESSAGE_AVX2_FEATURES`); or else `vg_mldsa65_sign_message`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_sign_message_avx512` if the CPU supports its features (`VG_MLDSA65_SIGN_MESSAGE_AVX512_FEATURES`); `vg_mldsa65_sign_message_avx2` if the CPU supports its features (`VG_MLDSA65_SIGN_MESSAGE_AVX2_FEATURES`); or else `vg_mldsa65_sign_message`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -134,7 +134,7 @@ pub unsafe fn vg_mldsa65_verify_auto(pk: *const [u8; 1952], mu: *const [u8; 64],
 #[inline]
 pub unsafe fn vg_mldsa65_sign_message_auto(sk: *const [u8; 4032], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(verified_garbage_cpu::Features(crate::mldsa65::VG_MLDSA65_SIGN_MESSAGE_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL)) {
+    if cpu.contains(crate::mldsa65::VG_MLDSA65_SIGN_MESSAGE_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_sign_message_avx512`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mldsa65::vg_mldsa65_sign_message_avx512(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
@@ -152,7 +152,7 @@ pub unsafe fn vg_mldsa65_sign_message_auto(sk: *const [u8; 4032], msg: *const u8
 ///
 /// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_prepare_signing_key_avx512` if the CPU supports its features (`VG_MLDSA65_PREPARE_SIGNING_KEY_AVX512_FEATURES`) and it also supports `avx512f` and `avx512vl`; `vg_mldsa65_prepare_signing_key_avx2` if the CPU supports its features (`VG_MLDSA65_PREPARE_SIGNING_KEY_AVX2_FEATURES`); or else `vg_mldsa65_prepare_signing_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_prepare_signing_key_avx2` if the CPU supports its features (`VG_MLDSA65_PREPARE_SIGNING_KEY_AVX2_FEATURES`); or else `vg_mldsa65_prepare_signing_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -167,11 +167,6 @@ pub unsafe fn vg_mldsa65_sign_message_auto(sk: *const [u8; 4032], msg: *const u8
 #[inline]
 pub unsafe fn vg_mldsa65_prepare_signing_key_auto(sk: *const [u8; 4032], prepared: *mut [u8; 21440], scratch: *mut [u64; 128]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(verified_garbage_cpu::Features(crate::mldsa65::VG_MLDSA65_PREPARE_SIGNING_KEY_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL)) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa65_prepare_signing_key_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa65::vg_mldsa65_prepare_signing_key_avx512(sk, prepared, scratch) };
-    }
     if cpu.contains(crate::mldsa65::VG_MLDSA65_PREPARE_SIGNING_KEY_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_prepare_signing_key_avx2`'s, and the CPU
         // has the features it needs.
@@ -185,7 +180,7 @@ pub unsafe fn vg_mldsa65_prepare_signing_key_auto(sk: *const [u8; 4032], prepare
 ///
 /// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_prepare_verifying_key_avx512` if the CPU supports its features (`VG_MLDSA65_PREPARE_VERIFYING_KEY_AVX512_FEATURES`) and it also supports `avx512f` and `avx512vl`; `vg_mldsa65_prepare_verifying_key_avx2` if the CPU supports its features (`VG_MLDSA65_PREPARE_VERIFYING_KEY_AVX2_FEATURES`); or else `vg_mldsa65_prepare_verifying_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_prepare_verifying_key_avx2` if the CPU supports its features (`VG_MLDSA65_PREPARE_VERIFYING_KEY_AVX2_FEATURES`); or else `vg_mldsa65_prepare_verifying_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -199,11 +194,6 @@ pub unsafe fn vg_mldsa65_prepare_signing_key_auto(sk: *const [u8; 4032], prepare
 #[inline]
 pub unsafe fn vg_mldsa65_prepare_verifying_key_auto(pk: *const [u8; 1952], prepared: *mut [u8; 8096], scratch: *mut [u64; 128]) {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(verified_garbage_cpu::Features(crate::mldsa65::VG_MLDSA65_PREPARE_VERIFYING_KEY_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL)) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa65_prepare_verifying_key_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa65::vg_mldsa65_prepare_verifying_key_avx512(pk, prepared, scratch) };
-    }
     if cpu.contains(crate::mldsa65::VG_MLDSA65_PREPARE_VERIFYING_KEY_AVX2_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_prepare_verifying_key_avx2`'s, and the CPU
         // has the features it needs.
@@ -217,7 +207,7 @@ pub unsafe fn vg_mldsa65_prepare_verifying_key_auto(pk: *const [u8; 1952], prepa
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_sign_message_prepared_avx512` if the CPU supports its features (`VG_MLDSA65_SIGN_MESSAGE_PREPARED_AVX512_FEATURES`) and it also supports `avx512f` and `avx512vl`; `vg_mldsa65_sign_message_prepared_avx2` if the CPU supports its features (`VG_MLDSA65_SIGN_MESSAGE_PREPARED_AVX2_FEATURES`); or else `vg_mldsa65_sign_message_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_sign_message_prepared_avx512` if the CPU supports its features (`VG_MLDSA65_SIGN_MESSAGE_PREPARED_AVX512_FEATURES`); `vg_mldsa65_sign_message_prepared_avx2` if the CPU supports its features (`VG_MLDSA65_SIGN_MESSAGE_PREPARED_AVX2_FEATURES`); or else `vg_mldsa65_sign_message_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -237,7 +227,7 @@ pub unsafe fn vg_mldsa65_prepare_verifying_key_auto(pk: *const [u8; 1952], prepa
 #[inline]
 pub unsafe fn vg_mldsa65_sign_message_prepared_auto(sk: *const [u8; 21440], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(verified_garbage_cpu::Features(crate::mldsa65::VG_MLDSA65_SIGN_MESSAGE_PREPARED_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL)) {
+    if cpu.contains(crate::mldsa65::VG_MLDSA65_SIGN_MESSAGE_PREPARED_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_sign_message_prepared_avx512`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mldsa65::vg_mldsa65_sign_message_prepared_avx512(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
@@ -255,7 +245,7 @@ pub unsafe fn vg_mldsa65_sign_message_prepared_auto(sk: *const [u8; 21440], msg:
 ///
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_verify_message_cached_avx512` if the CPU supports its features (`VG_MLDSA65_VERIFY_MESSAGE_CACHED_AVX512_FEATURES`) and it also supports `avx512f` and `avx512vl`; `vg_mldsa65_verify_message_cached_avx2` if the CPU supports its features (`VG_MLDSA65_VERIFY_MESSAGE_CACHED_AVX2_FEATURES`); or else `vg_mldsa65_verify_message_cached`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_verify_message_cached_avx512` if the CPU supports its features (`VG_MLDSA65_VERIFY_MESSAGE_CACHED_AVX512_FEATURES`); `vg_mldsa65_verify_message_cached_avx2` if the CPU supports its features (`VG_MLDSA65_VERIFY_MESSAGE_CACHED_AVX2_FEATURES`); or else `vg_mldsa65_verify_message_cached`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -273,7 +263,7 @@ pub unsafe fn vg_mldsa65_sign_message_prepared_auto(sk: *const [u8; 21440], msg:
 #[inline]
 pub unsafe fn vg_mldsa65_verify_message_cached_auto(pk: *const [u8; 1952], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(verified_garbage_cpu::Features(crate::mldsa65::VG_MLDSA65_VERIFY_MESSAGE_CACHED_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL)) {
+    if cpu.contains(crate::mldsa65::VG_MLDSA65_VERIFY_MESSAGE_CACHED_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_verify_message_cached_avx512`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mldsa65::vg_mldsa65_verify_message_cached_avx512(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
@@ -291,7 +281,7 @@ pub unsafe fn vg_mldsa65_verify_message_cached_auto(pk: *const [u8; 1952], msg: 
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_verify_message_prepared_avx512` if the CPU supports its features (`VG_MLDSA65_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES`) and it also supports `avx512f` and `avx512vl`; `vg_mldsa65_verify_message_prepared_avx2` if the CPU supports its features (`VG_MLDSA65_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES`); or else `vg_mldsa65_verify_message_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa65_verify_message_prepared_avx512` if the CPU supports its features (`VG_MLDSA65_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES`); `vg_mldsa65_verify_message_prepared_avx2` if the CPU supports its features (`VG_MLDSA65_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES`); or else `vg_mldsa65_verify_message_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -310,7 +300,7 @@ pub unsafe fn vg_mldsa65_verify_message_cached_auto(pk: *const [u8; 1952], msg: 
 #[inline]
 pub unsafe fn vg_mldsa65_verify_message_prepared_auto(pk: *const [u8; 8096], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056], tr: *const [u8; 64]) -> u32 {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(verified_garbage_cpu::Features(crate::mldsa65::VG_MLDSA65_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL)) {
+    if cpu.contains(crate::mldsa65::VG_MLDSA65_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_mldsa65_verify_message_prepared_avx512`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::mldsa65::vg_mldsa65_verify_message_prepared_avx512(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
