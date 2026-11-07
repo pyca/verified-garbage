@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on ARMv7 -/
 
@@ -20,6 +21,10 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 Impl.ChaCha20Poly1305.Arm.«open»
     stack := 664
     verified := Proof.ChaCha20Poly1305.Arm.open_framed },
+  Spec.ChaCha20Poly1305.openToApi.artifact Arm.target {
+    code := Impl.StackScratch.Arm.withStackScratchWiped 664 5 158 Impl.ChaCha20Poly1305.Arm.openTo
+    stack := 672
+    verified := Proof.ChaCha20Poly1305.Arm.openTo_framed },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact Arm.target {
     code := Impl.ChaCha20Poly1305.Arm.SealGather.sealGather Proof.ChaCha20Poly1305.Arm.Gather.sealFn.name
       Proof.ChaCha20Poly1305.Arm.Gather.sealFn.code

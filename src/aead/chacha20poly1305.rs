@@ -14,10 +14,12 @@
 use core::mem::MaybeUninit;
 
 #[cfg(any(
+    target_arch = "arm",
+    target_arch = "x86",
     target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
-use crate::arch::chacha20poly1305::vg_chacha20_poly1305_open_to;
+use crate::arch::dispatch::chacha20poly1305::vg_chacha20_poly1305_open_to_auto;
 use crate::arch::dispatch::chacha20poly1305::{
     vg_chacha20_poly1305_open_auto, vg_chacha20_poly1305_seal_auto,
     vg_chacha20_poly1305_seal_gather_auto,
@@ -224,6 +226,8 @@ impl ChaCha20Poly1305 {
     /// `out`. `ciphertext` is read where it is, not copied to `out` first. A
     /// length error leaves `out` as it was.
     #[cfg(any(
+        target_arch = "arm",
+        target_arch = "x86",
         target_arch = "riscv64",
         all(target_arch = "powerpc64", target_endian = "little")
     ))]
@@ -246,7 +250,7 @@ impl ChaCha20Poly1305 {
         // none of the shared borrows `self.key`, `nonce`, `aad`,
         // `ciphertext` and `tag`.
         let ok = unsafe {
-            vg_chacha20_poly1305_open_to(
+            vg_chacha20_poly1305_open_to_auto(
                 &self.key,
                 nonce,
                 aad.as_ptr(),
@@ -417,6 +421,8 @@ mod tests {
     /// ciphertext as it was; zeroes the output on a wrong tag; and leaves it
     /// as it was on a length error.
     #[cfg(any(
+        target_arch = "arm",
+        target_arch = "x86",
         target_arch = "riscv64",
         all(target_arch = "powerpc64", target_endian = "little")
     ))]
