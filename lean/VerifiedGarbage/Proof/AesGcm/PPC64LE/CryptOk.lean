@@ -116,6 +116,7 @@ theorem splitCtr_ok {s : State} {D : Addr} {n j : Nat} (hj : j ≤ n) (hn : n < 
       s'.gpr .r6 = D + BitVec.ofNat 64 j ∧ s'.gpr .r7 = BitVec.ofNat 64 ((n - j) / 16) ∧
       s'.gpr .r24 = D + BitVec.ofNat 64 (j + 16 * ((n - j) / 16)) ∧
       s'.gpr .r25 = BitVec.ofNat 64 (n - (j + 16 * ((n - j) / 16))) ∧
+      s'.gpr .r9 = BitVec.ofNat 64 (16 * ((n - j) / 16)) ∧
       (∀ r, r ≠ .r0 → r ≠ .r6 → r ≠ .r7 → r ≠ .r8 → r ≠ .r9 → r ≠ .r24 → r ≠ .r25 →
         s'.gpr r = s.gpr r) ∧ Keeps s s' := by
   have hand := and15 (BitVec.ofNat 64 (n - j))
@@ -160,6 +161,18 @@ theorem ctrWhole_mk {R : Nat} {D : Addr} {j nb : Nat} {s : State} (he : Env V sp
   · exact Covers.cons (he.perm.stC (by decide)) (Covers.cons hdj.wr
       (Covers.cons (he.perm.wC (by decide)) Covers.nil))
 
+omit L in
+/-- `wholeWith split args call`: `split` leaves the number of whole blocks,
+`nb`, in `r7`; with none, nothing more runs, and otherwise `args` and `call`. -/
+theorem wholeWith_ok {split args : List Instr} {call : Prog isa} {nb : Nat} {s : State}
+    {P Q : State → Prop} (hnb : nb < 2 ^ 64) (hsplit : WP isa (.block split) s P)
+    (h7 : ∀ s₁, P s₁ → s₁.gpr .r7 = BitVec.ofNat 64 nb) (hnone : ∀ s₁, P s₁ → nb = 0 → Q s₁)
+    (hsome : ∀ s₁, P s₁ → nb ≠ 0 → WP isa (.seq (.block args) call) s₁ Q) :
+    WP isa (wholeWith split args call) s Q :=
+  WP.seq (WP.mono hsplit fun s₁ hp =>
+    WP.ite (decide (nb = 0)) (eval_zero (h7 s₁ hp) hnb) (fun ht => WP.block_nil (hnone s₁ hp (by simpa using ht)))
+      fun hf => hsome s₁ hp (by simpa using hf))
+
 /-- Whole blocks. -/
 theorem cryptWhole_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
     (h : CrMid V sp R icb P D n m₀ j s) (hc : ciphOf s.mem (V .r29) R = ciphOf m₀ (V .r29) R) :
@@ -167,21 +180,20 @@ theorem cryptWhole_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m�
       n - j' < 16) := by
   have hn' := h.data.ok.lt
   have he := h.env
-  refine WP.seq (WP.mono (splitCtr_ok h.le hn' h.r24 h.r25) fun s₁ ⟨h6, h7, h24, h25, hg₁, hk₁⟩ => ?_)
-  generalize hnb : (n - j) / 16 = nb at h7 h24 h25
-  have h16 : 16 * nb ≤ n - j := by omega_arith
-  have he₁ : Env V sp s₁ := he.keep (fun r hr => hg₁ r (by revert r; decide) (by revert r; decide)
-    (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
-    (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr
-  have hd₁ := h.data.of_eq hk₁.rd hk₁.wr
-  refine WP.ite (decide (nb = 0)) (eval_zero h7 (by omega_arith)) (fun ht => ?_) (fun hf => ?_)
-  · have h0 : nb = 0 := by simpa using ht
-    subst h0
-    refine WP.block_nil ⟨j, by omega_arith, ⟨he₁, h.le, by rw [h24]; rfl, by rw [h25]; rfl, h.r28, h.rounds, hd₁,
+  refine wholeWith_ok (nb := (n - j) / 16) (by omega_arith) (splitCtr_ok h.le hn' h.r24 h.r25) (fun _ h => h.2.1)
+    (fun s₁ ⟨h6, h7, h24, h25, _, hg₁, hk₁⟩ h0 => ?_) (fun s₁ ⟨h6, h7, h24, h25, _, hg₁, hk₁⟩ h0 => ?_)
+  all_goals (
+    generalize hnb : (n - j) / 16 = nb at h0 h7 h24 h25 ⊢
+    have h16 : 16 * nb ≤ n - j := by omega_arith
+    have he₁ : Env V sp s₁ := he.keep (fun r hr => hg₁ r (by revert r; decide) (by revert r; decide)
+      (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
+      (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr
+    have hd₁ := h.data.of_eq hk₁.rd hk₁.wr)
+  · subst h0
+    exact ⟨j, by omega_arith, ⟨he₁, h.le, by rw [h24]; rfl, by rw [h25]; rfl, h.r28, h.rounds, hd₁,
       fun hc₀ => by rw [hk₁.mem]; exact h.ctr hc₀, fun hc₀ => by rw [hk₁.mem]; exact h.done hc₀,
       by rw [hk₁.mem]; exact h.rest, h.whole, by rw [hk₁.mem]; exact h.frame⟩, by omega_arith⟩
-  · have h0 : nb ≠ 0 := by simpa using hf
-    have hw : (P + j) % 16 = 0 := h.whole.resolve_left (by omega_arith)
+  · have hw : (P + j) % 16 = 0 := h.whole.resolve_left (by omega_arith)
     have hdj := h.data.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)
     refine WP.seq (WP.mono (ctrArgs_ok he₁ h.r28) fun s₂ ⟨a3, a4, a5, a8, hg₂, hk₂⟩ => ?_)
     have he₂ : Env V sp s₂ := he₁.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)

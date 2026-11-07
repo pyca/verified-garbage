@@ -161,14 +161,16 @@ theorem splitTo_ok {s : State} {S D : Addr} {n : Nat} (hn : n < 2 ^ 64)
       s'.gpr .r26 = D + BitVec.ofNat 64 (16 * (n / 16)) ∧
       (∀ r, r ≠ .r0 → r ≠ .r6 → r ≠ .r7 → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r24 → r ≠ .r25 →
         r ≠ .r26 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
-  have hand := and15 (BitVec.ofNat 64 n)
-  rw [toNat64 hn] at hand
-  have hsub : BitVec.ofNat 64 n - BitVec.ofNat 64 (n % 16) = BitVec.ofNat 64 (16 * (n / 16)) := by
-    rw [ofNat_sub64 (Nat.mod_le _ _) hn]; congr 1; omega
-  simp only [splitTo, splitCtr, List.cons_append, List.nil_append]
-  crun [h24, h25, h26, mov, BitVec.or_self, hand, hsub, shr4 hn]
-  refine ⟨by congr 1; omega, fun r a b c d e f g i j => by simp [a, b, c, d, e, f, g, i, j],
-    ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
+  have h24' : s.gpr .r24 = S + BitVec.ofNat 64 0 := by rw [h24]; exact (BitVec.add_zero S).symm
+  have h25' : s.gpr .r25 = BitVec.ofNat 64 (n - 0) := by rw [h25, Nat.sub_zero]
+  rw [splitTo, WP.block_append_iff]
+  refine WP.mono (splitCtr_ok (Nat.zero_le n) hn h24' h25') fun s₁ ⟨h6, h7, h24₁, h25₁, h9, hg₁, hk₁⟩ => ?_
+  have h26₁ : s₁.gpr .r26 = D := by
+    rw [hg₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h26]
+  simp only [Nat.sub_zero, Nat.zero_add, BitVec.add_zero] at h6 h7 h24₁ h25₁ h9
+  crun [h26₁, h9, h6, h7, h24₁, h25₁, mov, BitVec.or_self]
+  exact ⟨fun r a b c d e f g i j => by simp [f, j, hg₁ r a b c d e g i],
+    ⟨hk₁.mem, hk₁.rd, hk₁.wr, hk₁.sp, hk₁.lr⟩⟩
 
 /-- Before `cryptTo`: the `n` bytes at `S` (`r24`) to decrypt to `D` (`r26`),
 apart from it, `R` rounds in `r28`. -/
@@ -234,20 +236,18 @@ theorem toCall_mk {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {S D : Addr} {n 
 theorem wholeTo_ok {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {S D : Addr} {n : Nat} {s : State}
     (h : ToIn V sp R S D n s) : WP isa wholeTo s (WholeOut V sp R S D n s) := by
   have hn := h.dst.ok.lt
-  refine WP.seq (WP.mono (splitTo_ok hn h.r24 h.r25 h.r26) fun s₁ ⟨h6, h7, h10, h24, h25, h26, hg₁, hk₁⟩ => ?_)
   have h16 : 16 * (n / 16) ≤ n := Nat.mul_div_le n 16
-  have he₁ : Env V sp s₁ := h.env.keep (fun r hr => hg₁ r (by revert r; decide) (by revert r; decide)
+  refine wholeWith_ok (nb := n / 16) (by omega) (splitTo_ok hn h.r24 h.r25 h.r26) (fun _ h => h.2.1)
+    (fun s₁ ⟨_, _, _, h24, h25, h26, hg₁, hk₁⟩ h0 => ?_) (fun s₁ ⟨h6, h7, h10, h24, h25, h26, hg₁, hk₁⟩ _ => ?_)
+  all_goals have he₁ : Env V sp s₁ := h.env.keep (fun r hr => hg₁ r (by revert r; decide)
     (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
-    (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr
-  refine WP.ite (decide (n / 16 = 0)) (eval_zero h7 (by omega)) (fun ht => ?_) (fun hf => ?_)
-  · have h0 : n / 16 = 0 := by simpa using ht
-    refine WP.block_nil ⟨he₁, h24, h25, h26, hk₁.rd, hk₁.wr, ?_, ?_, ?_⟩
+    (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr
+  · refine ⟨he₁, h24, h25, h26, hk₁.rd, hk₁.wr, ?_, ?_, ?_⟩
     · simp only [h0, Spec.Gcm.blocksAt, List.range_zero, List.map_nil, Spec.Gcm.ctr32, Spec.Gcm.keystream,
         List.length_nil, List.zipWith_nil_left]
     · rw [h0, hk₁.mem]; rfl
     · rw [hk₁.mem]; exact Frame.refl _ _
-  · have h0 : n / 16 ≠ 0 := by simpa using hf
-    refine WP.seq (WP.mono (toArgs_ok he₁ h.r28) fun s₂ ⟨a3, a4, a5, a8, hg₂, hk₂⟩ => ?_)
+  · refine WP.seq (WP.mono (toArgs_ok he₁ h.r28) fun s₂ ⟨a3, a4, a5, a8, hg₂, hk₂⟩ => ?_)
     have he₂ : Env V sp s₂ := he₁.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
       (by revert r; decide) (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr
     have hdst := h.dst.of_eq (hk₂.rd.trans hk₁.rd) (hk₂.wr.trans hk₁.wr)

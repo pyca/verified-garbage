@@ -199,10 +199,14 @@ space. -/
 def ctrArgs (c : Nat) : List Instr :=
   [mov .r3 .r29, mov .r4 .r28, .addi .r5 .r30 c, .addi .r8 .r31 scrO]
 
+/-- Whole blocks: `split` leaves their number in `r7`; if there are any,
+`args` and `call` on them, in place (`cryptWhole`) or to a destination
+(`Impl/AesGcm/PPC64LE/OpenTo.lean`). -/
+def wholeWith (split args : List Instr) (call : Prog isa) : Prog isa :=
+  .seq (.block split) (.ite (.zero .d .r7) (.block []) (.seq (.block args) call))
+
 /-- Whole blocks at `r24`, by `vg_aes_ctr32`. -/
-def cryptWhole : Prog isa :=
-  .seq (.block splitCtr)
-    (.ite (.zero .d .r7) (.block []) (.seq (.block (ctrArgs 48)) ctrCall))
+def cryptWhole : Prog isa := wholeWith splitCtr (ctrArgs 48) ctrCall
 
 /-- The keystream block zeroed, and the arguments of `vg_aes_ctr32` on it. -/
 def tailArgs : List Instr :=

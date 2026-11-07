@@ -60,8 +60,7 @@ destination. -/
 def toArgs : List Instr := [mov .r3 .r29, mov .r4 .r28, .addi .r5 .r30 48, mov .r8 .r10]
 
 /-- The whole blocks at `r24`, decrypted to `r26`. -/
-def wholeTo : Prog isa :=
-  .seq (.block splitTo) (.ite (.zero .d .r7) (.block []) (.seq (.block toArgs) ctrToCall))
+def wholeTo : Prog isa := wholeWith splitTo toArgs ctrToCall
 
 /-- The last `r25` bytes at `r24` copied to `r26`, which is then the data
 (`r24`). -/

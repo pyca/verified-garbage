@@ -121,19 +121,27 @@ def decryptBlocks : Prog isa := blocks true
 def ctrSetup : List Instr :=
   setup ++ setMask counterMask counterControl ++ [.li .r11 12, .loadRev .w .r8 .r5 .r11] ++ load counterBase .r5
 
-def ctr32 : Prog isa :=
+def ctrPre (to : Bool) : List Instr := if to then [.sub .r9 .r8 .r6] else []
+def ctrPost (to : Bool) : List Instr := if to then [mov .r11 .r9] else []
+def ctrOff (to : Bool) : Reg := if to then .r11 else .r0
+def ctrFin (to : Bool) : List Instr := if to then [.li .r11 12] else []
+
+/-- Counter mode on the `n = r7` blocks at `r6`, in place (`to = false`), or
+written to `r8` (`to = true`): then `dst - src` is kept in `r9` across the
+setup (`ctrPre`), then in `r11`, the stores' offset register (`ctrPost`),
+and `r11` is 12 again for the counter's final store (`ctrFin`). -/
+def ctrWith (to : Bool) : Prog isa :=
   .ite (.zero .d .r7) (.block [])
-    (.seq (.block ctrSetup)
-      (.seq (batches false true) (.block [.storeRev .w .r8 .r5 .r11])))
+    (.seq (.block (ctrPre to ++ ctrSetup ++ ctrPost to))
+      (.seq (batches false true (ctrOff to)) (.block (ctrFin to ++ [.storeRev .w .r8 .r5 .r11]))))
+
+/-- `vg_aes_ctr32(schedule = r3, rounds = r4, counter = r5, data = r6, n = r7,
+scratch = r8)`, in place. -/
+def ctr32 : Prog isa := ctrWith false
 
 /-- `vg_aes_ctr32_to(schedule = r3, rounds = r4, counter = r5, src = r6,
 n = r7, dst = r8)`: `ctr32` reading the blocks at `src` and writing the
-results to `dst`: `dst - src` is kept in `r9` across the setup, then in
-`r11`, the stores' offset register, and `r11` is 12 again for the counter's
-final store. -/
-def ctr32To : Prog isa :=
-  .ite (.zero .d .r7) (.block [])
-    (.seq (.block ([.sub .r9 .r8 .r6] ++ ctrSetup ++ [mov .r11 .r9]))
-      (.seq (batches false true .r11) (.block [.li .r11 12, .storeRev .w .r8 .r5 .r11])))
+results to `dst`. -/
+def ctr32To : Prog isa := ctrWith true
 
 end VG.Impl.Aes.PPC64LE.Crypto
