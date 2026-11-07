@@ -40,12 +40,6 @@ def ranking : Rust.Ranking := [
     { suffix := "_ifma", modules := ["chacha20"], extra := ["avx512ifma"] },
     { suffix := "_ifma" },
     { suffix := "_avx512vl" },
-    -- ML-DSA's `_avx512` key preparation is its `_avx2` code but for the name
-    -- of the NTT it calls (whose two instances are the same code), needing
-    -- only AVX2: it is chosen where its other `_avx512` functions are, and
-    -- `_avx2` on the other CPUs.
-    { suffix := "_avx512", modules := ["mldsa44", "mldsa65", "mldsa87"],
-      extra := ["avx512f", "avx512vl"] },
     { suffix := "_avx512" },
     { suffix := "_shani" },
     { suffix := "_avx_bmi" },
