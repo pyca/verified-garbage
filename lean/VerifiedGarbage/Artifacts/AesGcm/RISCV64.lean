@@ -61,8 +61,8 @@ def artifacts : List Artifact := [
     stack := 4640
     verified := Proof.AesGcm.sealGather_keyed Gather.sealGather_verified },
   Spec.Gcm.openToApi.artifact RISCV64.target {
-    code := Impl.AesGcm.RISCV64.OpenTo.openTo
-    stack := 4672
-    verified := Proof.AesGcm.openTo_keyed OpenTo.openTo_verified }]
+    code := Impl.StackScratch.RISCV64.withStackScratchArgs 2608 4 Impl.AesGcm.RISCV64.OpenTo.openTo
+    stack := 4656
+    verified := Proof.AesGcm.openTo_keyed OpenTo.openTo_framed }]
 
 end VG.Artifacts.AesGcm.RISCV64

@@ -34,6 +34,11 @@ def artifacts : List Artifact := [
     code := Impl.Gcm.X86_64.PrepareAvx.prepare
     verified := Proof.Gcm.X86_64.PrepareAvx.prepare_verified
     features := ["avx", "pclmulqdq"] },
+  Spec.Gcm.prepareApi.artifact X86_64.target {
+    suffix := "_pclmul"
+    code := Impl.Gcm.X86_64.PrepareAvx.prepareSse
+    verified := Proof.Gcm.X86_64.PrepareAvx.prepareSse_verified
+    features := ["pclmulqdq", "ssse3"] },
   Spec.Gcm.prepare16Api.artifact X86_64.target {
     suffix := "_vpclmul"
     written := [("ctx", 512)]

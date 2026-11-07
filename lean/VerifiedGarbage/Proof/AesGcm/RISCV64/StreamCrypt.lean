@@ -236,9 +236,9 @@ theorem enc_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptP
   have hd₂₀ := sc_dataW h (s := s₂) (hk₂.wr.trans h1.en.keeps.wr) (hk₂.sp.trans h1.en.keeps.sp)
   have hd₂ : DataW (s₁.gpr .s2) (s₁.gpr .s1) (s₁.gpr .s0) s₂ (s₁.gpr .s9) (s₁.gpr .s8).toNat := by
     rw [h1.s2, h1.s1, h1.s0, h1.s9, h1.s8]; exact hd₂₀
-  have ci : CrIn s₁.gpr s₀.sp (scR s₀) icb ct.length (s₁.gpr .s9) (s₁.gpr .s8).toNat s₂ :=
+  have ci : CrIn false s₁.gpr s₀.sp (scR s₀) icb ct.length (s₁.gpr .s9) (s₁.gpr .s9) (s₁.gpr .s8).toNat s₂ :=
     ⟨he₂, h24, by rw [h25, BitVec.ofNat_toNat, BitVec.setWidth_eq], by rw [h26, h1.s11, hP],
-      by rw [h1.s3, scR, BitVec.ofNat_toNat, BitVec.setWidth_eq], hR, hd₂⟩
+      by rw [h1.s3, scR, BitVec.ofNat_toNat, BitVec.setWidth_eq], hR, hd₂, hd₂.ok, rfl, Bool.noConfusion⟩
   refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L ci)) fun s₃ ⟨co, rd₃, wr₃, sp₃⟩ => ?_)
   have hd₃ := hd₂.ok.of_eq rd₃ wr₃ sp₃
   have f₂ : Frame [savedR (s₀.gpr .a7)] s₀.mem s₂.mem := by rw [hk₂.mem]; exact h1.en.frame
@@ -329,9 +329,10 @@ theorem dec_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptP
   have e20 := ta.env.fr .s9 (by decide)
   have e19 := ta.env.fr .s8 (by decide)
   have e23 := ta.env.fr .s11 (by decide)
-  have ci : CrIn s₁.gpr s₀.sp (scR s₀) icb ct.length (s₁.gpr .s9) (s₁.gpr .s8).toNat s₅ :=
+  have ci : CrIn false s₁.gpr s₀.sp (scR s₀) icb ct.length (s₁.gpr .s9) (s₁.gpr .s9) (s₁.gpr .s8).toNat s₅ :=
     ⟨he₅, by rw [h24, e20], by rw [h25, e19, BitVec.ofNat_toNat, BitVec.setWidth_eq],
-      by rw [h26, e23, h1.s11, hP], by rw [h1.s3, scR, BitVec.ofNat_toNat, BitVec.setWidth_eq], hR, hd₅⟩
+      by rw [h26, e23, h1.s11, hP], by rw [h1.s3, scR, BitVec.ofNat_toNat, BitVec.setWidth_eq], hR, hd₅, hd₅.ok,
+      rfl, Bool.noConfusion⟩
   refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L ci)) fun s₆ ⟨co, rd₆, wr₆, _⟩ => ?_)
   have cf := co.frame
   rw [h1.s1, h1.s0, h1.s9, h1.s8] at cf

@@ -443,23 +443,32 @@ def openEntry : List Instr := oneEntry 112 ++ ([.load .d .r19 .r12 104] : List I
 
 /-- `open` once the tag length is allowed: the nonce's length back in `r25`,
 the tag of the ciphertext at `W + 112`, compared with the received one, the
-result (`r3`) kept in `r19`, and the data decrypted only if they are equal. -/
-def openGood : Prog isa :=
+result (`r3`) kept in `r19`, and the data decrypted by `dec` only if they
+are equal. -/
+def openGoodWith (dec : Prog isa) : Prog isa :=
   .seq (.block [mov .r25 .r18])
   (.seq oneAad
   (.seq (oneTag 112)
   (.seq recv
   (.seq (cmp 112)
   (.seq (.block [mov .r19 .r3])
-  (.seq (.ite (.zero .d .r19) (.block []) oneCrypt)
+  (.seq (.ite (.zero .d .r19) (.block []) dec)
     (.block [mov .r3 .r19])))))))
+
+/-- `openGoodWith`, decrypting the data in place. -/
+def openGood : Prog isa := openGoodWith oneCrypt
+
+/-- `open`'s body, with `dec` decrypting the data once the tag is right:
+`oneCrypt` in place (`open`), or from the data to a destination
+(`Impl/AesGcm/PPC64LE/OpenTo.lean`). -/
+def openWith (dec : Prog isa) : Prog isa :=
+  .seq (.block openEntry)
+  (.seq tagLenOk
+  (.seq (.ite (.zero .d .r25) (.block [.li .r3 0]) (openGoodWith dec))
+    (.block restore)))
 
 /-- `vg_aes_gcm_open`, with `tag = [sp + 96]`, `tag_len = [sp + 104]` and
 `scratch = [sp + 112]`. -/
-def «open» : Prog isa :=
-  .seq (.block openEntry)
-  (.seq tagLenOk
-  (.seq (.ite (.zero .d .r25) (.block [.li .r3 0]) openGood)
-    (.block restore)))
+def «open» : Prog isa := openWith oneCrypt
 
 end VG.Impl.AesGcm.PPC64LE

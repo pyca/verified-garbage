@@ -178,6 +178,8 @@ arch = "x86_64"
 # SHA-512's AVX2 code and RSA's baseline or ADX code (whatever
 # the runner's AVX512_IFMA). And SM4-GCM with each of its GHASH
 # implementations: the baseline's, PCLMULQDQ's and VPCLMULQDQ's.
+# RSAES-PKCS1-v1_5 decryption with SHA-256's SHA extensions and RSA's ADX
+# code, which a runner with AVX512_IFMA never chooses unrestricted.
 # RSA's arithmetic runs in full on the unrestricted line, and its
 # baseline and ADX code on p4p's and skx's, so the restricted lines run
 # only the small RSA groups that reach each hash's implementation.
@@ -198,7 +200,7 @@ avx,avx2,pclmulqdq,ssse3 | aes_gcm_siv cpu
 aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm sm4_gcm aes_xts cpu
 aes,avx,avx2,ssse3,vaes | aes_xts aes_cbc cpu
 sha,ssse3 | dsa_parameters rsa_pkcs1_hashes rsa_pss_hashes rsa_oaep_pairs p256_sha cpu
-avx,avx2,bmi2,adx,sha,ssse3 | dsa_parameters rsa_oaep_pairs cpu
+avx,avx2,bmi2,adx,sha,ssse3 | dsa_parameters rsa_pkcs1_hashes rsa_oaep_pairs cpu
 avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep_pairs cpu
 adx,avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep_pairs cpu
 """
